@@ -1,0 +1,1338 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="system_base">
+      <UniqueIdentifier>{859de5ad-35cd-4688-8d7b-f9ed946a6f9e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="statistics">
+      <UniqueIdentifier>{1f6f5d96-5ce2-457d-8bf6-eb3e9c988f96}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="movement_analysis">
+      <UniqueIdentifier>{d496850b-03b6-403e-8475-72160b515b0d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="job_scheduling">
+      <UniqueIdentifier>{aced6809-2aab-4689-942f-9b04317b5346}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="image_processing">
+      <UniqueIdentifier>{3a9e478d-3b3e-4250-8d0a-a6a4de7dc637}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="image_format_lib">
+      <UniqueIdentifier>{a0d40fd0-8a93-4812-94a8-dd843d342725}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="image_format_lib\jpeg">
+      <UniqueIdentifier>{370f3473-0b3a-4027-900a-3c58b27a1bac}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="image_format_lib\jpeg\h">
+      <UniqueIdentifier>{3785e1d4-3984-4c75-b1b4-80f3cb750207}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="image_format_lib\tiff">
+      <UniqueIdentifier>{58221f35-b78e-439c-84b1-f259c44ca76c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="image_base">
+      <UniqueIdentifier>{9e01c296-3abf-4d73-a134-867a56c73145}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="data_annotation">
+      <UniqueIdentifier>{557da551-6ed3-49ba-8a34-5dc1dbead786}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="worm_browser">
+      <UniqueIdentifier>{753c4ea1-dced-49eb-8c25-666792d0dafe}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="image_acquisition">
+      <UniqueIdentifier>{66a94de2-3cb7-4f41-9c4f-07cd7c356c0a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Resource Files">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    </Filter>
+    <Filter Include="image_server">
+      <UniqueIdentifier>{be6aecb4-78ca-45aa-a48c-27bf197980aa}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="misc_lib">
+      <UniqueIdentifier>{57fe21d3-b752-45b4-ba8a-7cab9479fb39}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="misc_lib\tinyxml">
+      <UniqueIdentifier>{23db4b63-d6c9-4500-900b-5a99c8658993}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="misc_lib\cmtf">
+      <UniqueIdentifier>{160b1c58-38f6-48c5-83b7-ada5f463b973}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="misc_lib\libsvm">
+      <UniqueIdentifier>{957e0abe-b8af-483d-9047-7afb19c5350d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="misc_lib\hungarian">
+      <UniqueIdentifier>{0509593a-68dc-4f09-ad5f-8a4d4cb37e0b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="misc_lib\dmtx">
+      <UniqueIdentifier>{4e55caa2-4626-48f5-847f-fc7d57f6f092}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="misc_lib\wm4_bspline">
+      <UniqueIdentifier>{87d775b0-a792-4a12-977e-f5a495fa1cbd}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="image_format_lib\zlib">
+      <UniqueIdentifier>{062e321a-7c26-45cc-a7c1-20378464b414}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="image_format_lib\ojpeg">
+      <UniqueIdentifier>{f080d816-b29a-4444-8a10-be017ffb7077}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\ns_image_server\system_base\ns_dir.cpp">
+      <Filter>system_base</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ns_image_server\system_base\ns_ex.cpp">
+      <Filter>system_base</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ns_image_server\system_base\ns_socket.cpp">
+      <Filter>system_base</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ns_image_server\system_base\ns_sql.cpp">
+      <Filter>system_base</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ns_image_server\system_base\ns_thread.cpp">
+      <Filter>system_base</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ns_image_server\statistics\ns_captured_image_statistics_set.cpp">
+      <Filter>statistics</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ns_image_server\statistics\ns_machine_analysis_data_loader.cpp">
+      <Filter>statistics</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ns_image_server\statistics\ns_movement_measurement.cpp">
+      <Filter>statistics</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ns_image_server\statistics\ns_normal_distribution.cpp">
+      <Filter>statistics</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ns_image_server\statistics\ns_survival_curve.cpp">
+      <Filter>statistics</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ns_image_server\movement_analysis\ns_hidden_markov_model_posture_analyzer.cpp">
+      <Filter>movement_analysis</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ns_image_server\movement_analysis\ns_time_path_image_analyzer.cpp">
+      <Filter>movement_analysis</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ns_image_server\movement_analysis\ns_time_path_solver.cpp">
+      <Filter>movement_analysis</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ns_image_server\job_scheduling\ns_image_processing_pipeline.cpp">
+      <Filter>job_scheduling</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ns_image_server\job_scheduling\ns_processing_job_processor.cpp">
+      <Filter>job_scheduling</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ns_image_server\job_scheduling\ns_processing_job_push_scheduler.cpp">
+      <Filter>job_scheduling</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ns_image_server\job_scheduling\ns_processing_job_scheduler.cpp">
+      <Filter>job_scheduling</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ns_image_server\image_processing\ns_bspline.cpp">
+      <Filter>image_processing</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ns_image_server\image_processing\ns_complex_segment_cluster_solver.cpp">
+      <Filter>image_processing</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ns_image_server\image_processing\ns_detected_worm_info.cpp">
+      <Filter>image_processing</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ns_image_server\image_processing\ns_difference_thresholder.cpp">
+      <Filter>image_processing</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ns_image_server\image_processing\ns_heat_map_interpolation.cpp">
+      <Filter>image_processing</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ns_image_server\image_processing\ns_identify_contiguous_bitmap_regions.cpp">
+      <Filter>image_processing</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ns_image_server\image_processing\ns_image_tools.cpp">
+      <Filter>image_processing</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ns_image_server\image_processing\ns_movement_visualization_generator.cpp">
+      <Filter>image_processing</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ns_image_server\image_processing\ns_node_topology.cpp">
+      <Filter>image_processing</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ns_image_server\image_processing\ns_segment_topology.cpp">
+      <Filter>image_processing</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ns_image_server\image_processing\ns_spatial_avg.cpp">
+      <Filter>image_processing</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ns_image_server\image_processing\ns_spine_drawer.cpp">
+      <Filter>image_processing</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ns_image_server\image_processing\ns_worm_detection_constants.cpp">
+      <Filter>image_processing</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ns_image_server\image_processing\ns_worm_detector.cpp">
+      <Filter>image_processing</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ns_image_server\image_processing\ns_worm_training_set_image.cpp">
+      <Filter>image_processing</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ns_image_server\image_processing\ns_xvid.cpp">
+      <Filter>image_processing</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_windows_libraries\jpeg-8d\jaricom.c">
+      <Filter>image_format_lib\jpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_windows_libraries\jpeg-8d\jcapimin.c">
+      <Filter>image_format_lib\jpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_windows_libraries\jpeg-8d\jcapistd.c">
+      <Filter>image_format_lib\jpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_windows_libraries\jpeg-8d\jcarith.c">
+      <Filter>image_format_lib\jpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_windows_libraries\jpeg-8d\jccoefct.c">
+      <Filter>image_format_lib\jpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_windows_libraries\jpeg-8d\jccolor.c">
+      <Filter>image_format_lib\jpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_windows_libraries\jpeg-8d\jcdctmgr.c">
+      <Filter>image_format_lib\jpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_windows_libraries\jpeg-8d\jchuff.c">
+      <Filter>image_format_lib\jpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_windows_libraries\jpeg-8d\jcinit.c">
+      <Filter>image_format_lib\jpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_windows_libraries\jpeg-8d\jcmainct.c">
+      <Filter>image_format_lib\jpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_windows_libraries\jpeg-8d\jcmarker.c">
+      <Filter>image_format_lib\jpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_windows_libraries\jpeg-8d\jcmaster.c">
+      <Filter>image_format_lib\jpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_windows_libraries\jpeg-8d\jcomapi.c">
+      <Filter>image_format_lib\jpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_windows_libraries\jpeg-8d\jcparam.c">
+      <Filter>image_format_lib\jpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_windows_libraries\jpeg-8d\jcprepct.c">
+      <Filter>image_format_lib\jpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_windows_libraries\jpeg-8d\jcsample.c">
+      <Filter>image_format_lib\jpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_windows_libraries\jpeg-8d\jctrans.c">
+      <Filter>image_format_lib\jpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_windows_libraries\jpeg-8d\jdapimin.c">
+      <Filter>image_format_lib\jpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_windows_libraries\jpeg-8d\jdapistd.c">
+      <Filter>image_format_lib\jpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_windows_libraries\jpeg-8d\jdarith.c">
+      <Filter>image_format_lib\jpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_windows_libraries\jpeg-8d\jdatadst.c">
+      <Filter>image_format_lib\jpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_windows_libraries\jpeg-8d\jdatasrc.c">
+      <Filter>image_format_lib\jpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_windows_libraries\jpeg-8d\jdcoefct.c">
+      <Filter>image_format_lib\jpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_windows_libraries\jpeg-8d\jdcolor.c">
+      <Filter>image_format_lib\jpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_windows_libraries\jpeg-8d\jddctmgr.c">
+      <Filter>image_format_lib\jpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_windows_libraries\jpeg-8d\jdhuff.c">
+      <Filter>image_format_lib\jpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_windows_libraries\jpeg-8d\jdinput.c">
+      <Filter>image_format_lib\jpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_windows_libraries\jpeg-8d\jdmainct.c">
+      <Filter>image_format_lib\jpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_windows_libraries\jpeg-8d\jdmarker.c">
+      <Filter>image_format_lib\jpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_windows_libraries\jpeg-8d\jdmaster.c">
+      <Filter>image_format_lib\jpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_windows_libraries\jpeg-8d\jdmerge.c">
+      <Filter>image_format_lib\jpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_windows_libraries\jpeg-8d\jdpostct.c">
+      <Filter>image_format_lib\jpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_windows_libraries\jpeg-8d\jdsample.c">
+      <Filter>image_format_lib\jpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_windows_libraries\jpeg-8d\jdtrans.c">
+      <Filter>image_format_lib\jpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_windows_libraries\jpeg-8d\jerror.c">
+      <Filter>image_format_lib\jpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_windows_libraries\jpeg-8d\jfdctflt.c">
+      <Filter>image_format_lib\jpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_windows_libraries\jpeg-8d\jfdctfst.c">
+      <Filter>image_format_lib\jpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_windows_libraries\jpeg-8d\jfdctint.c">
+      <Filter>image_format_lib\jpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_windows_libraries\jpeg-8d\jidctflt.c">
+      <Filter>image_format_lib\jpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_windows_libraries\jpeg-8d\jidctfst.c">
+      <Filter>image_format_lib\jpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_windows_libraries\jpeg-8d\jidctint.c">
+      <Filter>image_format_lib\jpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_windows_libraries\jpeg-8d\jmemmgr.c">
+      <Filter>image_format_lib\jpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_windows_libraries\jpeg-8d\jmemnobs.c">
+      <Filter>image_format_lib\jpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_windows_libraries\jpeg-8d\jquant1.c">
+      <Filter>image_format_lib\jpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_windows_libraries\jpeg-8d\jquant2.c">
+      <Filter>image_format_lib\jpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_windows_libraries\jpeg-8d\jutils.c">
+      <Filter>image_format_lib\jpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_windows_libraries\jpeg-8d\rdbmp.c">
+      <Filter>image_format_lib\jpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_windows_libraries\jpeg-8d\rdcolmap.c">
+      <Filter>image_format_lib\jpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_windows_libraries\jpeg-8d\rdgif.c">
+      <Filter>image_format_lib\jpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_windows_libraries\jpeg-8d\rdppm.c">
+      <Filter>image_format_lib\jpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_windows_libraries\jpeg-8d\rdrle.c">
+      <Filter>image_format_lib\jpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_windows_libraries\jpeg-8d\rdswitch.c">
+      <Filter>image_format_lib\jpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_windows_libraries\jpeg-8d\rdtarga.c">
+      <Filter>image_format_lib\jpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_windows_libraries\jpeg-8d\transupp.c">
+      <Filter>image_format_lib\jpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_windows_libraries\jpeg-8d\wrbmp.c">
+      <Filter>image_format_lib\jpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_windows_libraries\jpeg-8d\wrgif.c">
+      <Filter>image_format_lib\jpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_windows_libraries\jpeg-8d\wrppm.c">
+      <Filter>image_format_lib\jpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_windows_libraries\jpeg-8d\wrrle.c">
+      <Filter>image_format_lib\jpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_windows_libraries\jpeg-8d\wrtarga.c">
+      <Filter>image_format_lib\jpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_windows_libraries\tiff-3.8.2\libtiff\tif_aux.c">
+      <Filter>image_format_lib\tiff</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_windows_libraries\tiff-3.8.2\libtiff\tif_close.c">
+      <Filter>image_format_lib\tiff</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_windows_libraries\tiff-3.8.2\libtiff\tif_codec.c">
+      <Filter>image_format_lib\tiff</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_windows_libraries\tiff-3.8.2\libtiff\tif_color.c">
+      <Filter>image_format_lib\tiff</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_windows_libraries\tiff-3.8.2\libtiff\tif_compress.c">
+      <Filter>image_format_lib\tiff</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_windows_libraries\tiff-3.8.2\libtiff\tif_dir.c">
+      <Filter>image_format_lib\tiff</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_windows_libraries\tiff-3.8.2\libtiff\tif_dirinfo.c">
+      <Filter>image_format_lib\tiff</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_windows_libraries\tiff-3.8.2\libtiff\tif_dirread.c">
+      <Filter>image_format_lib\tiff</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_windows_libraries\tiff-3.8.2\libtiff\tif_dirwrite.c">
+      <Filter>image_format_lib\tiff</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_windows_libraries\tiff-3.8.2\libtiff\tif_dumpmode.c">
+      <Filter>image_format_lib\tiff</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_windows_libraries\tiff-3.8.2\libtiff\tif_error.c">
+      <Filter>image_format_lib\tiff</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_windows_libraries\tiff-3.8.2\libtiff\tif_extension.c">
+      <Filter>image_format_lib\tiff</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_windows_libraries\tiff-3.8.2\libtiff\tif_fax3.c">
+      <Filter>image_format_lib\tiff</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_windows_libraries\tiff-3.8.2\libtiff\tif_fax3sm.c">
+      <Filter>image_format_lib\tiff</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_windows_libraries\tiff-3.8.2\libtiff\tif_flush.c">
+      <Filter>image_format_lib\tiff</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_windows_libraries\tiff-3.8.2\libtiff\tif_getimage.c">
+      <Filter>image_format_lib\tiff</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_windows_libraries\tiff-3.8.2\libtiff\tif_jpeg.c">
+      <Filter>image_format_lib\tiff</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_windows_libraries\tiff-3.8.2\libtiff\tif_luv.c">
+      <Filter>image_format_lib\tiff</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_windows_libraries\tiff-3.8.2\libtiff\tif_lzw.c">
+      <Filter>image_format_lib\tiff</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_windows_libraries\tiff-3.8.2\libtiff\tif_next.c">
+      <Filter>image_format_lib\tiff</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_windows_libraries\tiff-3.8.2\libtiff\tif_ojpeg.c">
+      <Filter>image_format_lib\tiff</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_windows_libraries\tiff-3.8.2\libtiff\tif_open.c">
+      <Filter>image_format_lib\tiff</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_windows_libraries\tiff-3.8.2\libtiff\tif_packbits.c">
+      <Filter>image_format_lib\tiff</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_windows_libraries\tiff-3.8.2\libtiff\tif_pixarlog.c">
+      <Filter>image_format_lib\tiff</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_windows_libraries\tiff-3.8.2\libtiff\tif_predict.c">
+      <Filter>image_format_lib\tiff</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_windows_libraries\tiff-3.8.2\libtiff\tif_print.c">
+      <Filter>image_format_lib\tiff</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_windows_libraries\tiff-3.8.2\libtiff\tif_read.c">
+      <Filter>image_format_lib\tiff</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_windows_libraries\tiff-3.8.2\libtiff\tif_strip.c">
+      <Filter>image_format_lib\tiff</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_windows_libraries\tiff-3.8.2\libtiff\tif_swab.c">
+      <Filter>image_format_lib\tiff</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_windows_libraries\tiff-3.8.2\libtiff\tif_thunder.c">
+      <Filter>image_format_lib\tiff</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_windows_libraries\tiff-3.8.2\libtiff\tif_tile.c">
+      <Filter>image_format_lib\tiff</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_windows_libraries\tiff-3.8.2\libtiff\tif_version.c">
+      <Filter>image_format_lib\tiff</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_windows_libraries\tiff-3.8.2\libtiff\tif_warning.c">
+      <Filter>image_format_lib\tiff</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_windows_libraries\tiff-3.8.2\libtiff\tif_write.c">
+      <Filter>image_format_lib\tiff</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_windows_libraries\tiff-3.8.2\libtiff\tif_zip.c">
+      <Filter>image_format_lib\tiff</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ns_image_server\image_base\ns_font.cpp">
+      <Filter>image_base</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ns_image_server\image_base\ns_image.cpp">
+      <Filter>image_base</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ns_image_server\image_base\ns_image_socket.cpp">
+      <Filter>image_base</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ns_image_server\image_base\ns_jpeg.cpp">
+      <Filter>image_base</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ns_image_server\image_base\ns_libtiff_interface.c">
+      <Filter>image_base</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ns_image_server\image_base\ns_ojp2k.cpp">
+      <Filter>image_base</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ns_image_server\image_base\ns_svg.cpp">
+      <Filter>image_base</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ns_image_server\image_base\ns_tiff.cpp">
+      <Filter>image_base</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ns_image_server\image_base\ns_vector.cpp">
+      <Filter>image_base</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ns_image_server\image_base\ns_vector_bitmap_interface.cpp">
+      <Filter>image_base</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ns_image_server\data_annotation\ns_death_time_annotation.cpp">
+      <Filter>data_annotation</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ns_image_server\data_annotation\ns_experiment_storyboard.cpp">
+      <Filter>data_annotation</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ns_image_server\data_annotation\ns_machine_learning_training_set.cpp">
+      <Filter>data_annotation</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ns_image_server\data_annotation\ns_mask_management.cpp">
+      <Filter>data_annotation</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ns_image_server\image_acquisition\ns_barcode.cpp">
+      <Filter>image_acquisition</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ns_image_server\image_acquisition\ns_buffered_capture_scheduler.cpp">
+      <Filter>image_acquisition</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ns_image_server\image_acquisition\ns_capture_device.cpp">
+      <Filter>image_acquisition</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ns_image_server\image_acquisition\ns_capture_device_manager.cpp">
+      <Filter>image_acquisition</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ns_image_server\image_acquisition\ns_capture_schedule.cpp">
+      <Filter>image_acquisition</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ns_image_server\image_acquisition\ns_image_capture_data_manager.cpp">
+      <Filter>image_acquisition</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ns_image_server\image_acquisition\ns_image_server_alerts.cpp">
+      <Filter>image_acquisition</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ns_image_server\image_acquisition\ns_image_server_dispatcher.cpp">
+      <Filter>image_acquisition</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ns_image_server\image_acquisition\ns_usb.cpp">
+      <Filter>image_acquisition</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ns_image_server\system_base\ns_xml.cpp">
+      <Filter>system_base</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ns_image_server\image_server\ns_graph.cpp">
+      <Filter>image_server</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ns_image_server\image_server\ns_image_server.cpp">
+      <Filter>image_server</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ns_image_server\image_server\ns_image_server_images.cpp">
+      <Filter>image_server</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ns_image_server\image_server\ns_image_server_message.cpp">
+      <Filter>image_server</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ns_image_server\image_server\ns_image_statistics.cpp">
+      <Filter>image_server</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ns_image_server\image_server\ns_image_storage_handler.cpp">
+      <Filter>image_server</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ns_image_server\image_server\ns_ini.cpp">
+      <Filter>image_server</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_libraries\triangle\triangle.cpp">
+      <Filter>misc_lib</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_libraries\tinyxml\tinystr.cpp">
+      <Filter>misc_lib\tinyxml</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_libraries\tinyxml\tinyxml.cpp">
+      <Filter>misc_lib\tinyxml</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_libraries\tinyxml\tinyxmlerror.cpp">
+      <Filter>misc_lib\tinyxml</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_libraries\tinyxml\tinyxmlparser.cpp">
+      <Filter>misc_lib\tinyxml</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_libraries\ctmf\ctmf.c">
+      <Filter>misc_lib\cmtf</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_libraries\libsvm\svm.cpp">
+      <Filter>misc_lib\libsvm</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_libraries\libhungarian\hungarian.c">
+      <Filter>misc_lib\hungarian</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_windows_libraries\libdmtx-0.5.2\dmtx.c">
+      <Filter>misc_lib\dmtx</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_libraries\wm4_bspline\Wm4BSplineBasis.cpp">
+      <Filter>misc_lib\wm4_bspline</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_libraries\wm4_bspline\Wm4BSplineCurve2.cpp">
+      <Filter>misc_lib\wm4_bspline</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_libraries\wm4_bspline\Wm4BSplineCurveFit.cpp">
+      <Filter>misc_lib\wm4_bspline</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_libraries\wm4_bspline\Wm4BSplineFitBasis.cpp">
+      <Filter>misc_lib\wm4_bspline</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_libraries\wm4_bspline\Wm4Command.cpp">
+      <Filter>misc_lib\wm4_bspline</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_libraries\wm4_bspline\Wm4Curve2.cpp">
+      <Filter>misc_lib\wm4_bspline</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_libraries\wm4_bspline\Wm4FoundationPCH.cpp">
+      <Filter>misc_lib\wm4_bspline</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_libraries\wm4_bspline\Wm4Integrate1.cpp">
+      <Filter>misc_lib\wm4_bspline</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_libraries\wm4_bspline\Wm4IntpBSplineUniform.cpp">
+      <Filter>misc_lib\wm4_bspline</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_libraries\wm4_bspline\Wm4IntpBSplineUniform2.cpp">
+      <Filter>misc_lib\wm4_bspline</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_libraries\wm4_bspline\Wm4Math.cpp">
+      <Filter>misc_lib\wm4_bspline</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_libraries\wm4_bspline\Wm4Memory.cpp">
+      <Filter>misc_lib\wm4_bspline</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_libraries\wm4_bspline\Wm4SingleCurve2.cpp">
+      <Filter>misc_lib\wm4_bspline</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_libraries\wm4_bspline\Wm4System.cpp">
+      <Filter>misc_lib\wm4_bspline</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_libraries\wm4_bspline\Wm4Vector2.cpp">
+      <Filter>misc_lib\wm4_bspline</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_windows_libraries\zlib\adler32.c">
+      <Filter>image_format_lib\zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_windows_libraries\zlib\compress.c">
+      <Filter>image_format_lib\zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_windows_libraries\zlib\crc32.c">
+      <Filter>image_format_lib\zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_windows_libraries\zlib\deflate.c">
+      <Filter>image_format_lib\zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_windows_libraries\zlib\gzio.c">
+      <Filter>image_format_lib\zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_windows_libraries\zlib\infback.c">
+      <Filter>image_format_lib\zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_windows_libraries\zlib\inffast.c">
+      <Filter>image_format_lib\zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_windows_libraries\zlib\inflate.c">
+      <Filter>image_format_lib\zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_windows_libraries\zlib\inftrees.c">
+      <Filter>image_format_lib\zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_windows_libraries\zlib\trees.c">
+      <Filter>image_format_lib\zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_windows_libraries\zlib\uncompr.c">
+      <Filter>image_format_lib\zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_windows_libraries\zlib\zutil.c">
+      <Filter>image_format_lib\zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ns_worm_browser\ns_windows_file_dialog.cpp">
+      <Filter>worm_browser</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ns_worm_browser\ns_worm_browser.cpp">
+      <Filter>worm_browser</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_windows_libraries\openjpeg-1.5.0\libopenjpeg\bio.c">
+      <Filter>image_format_lib</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_windows_libraries\openjpeg-1.5.0\libopenjpeg\tpix_manager.c">
+      <Filter>image_format_lib</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_windows_libraries\openjpeg-1.5.0\libopenjpeg\cidx_manager.c">
+      <Filter>image_format_lib</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_windows_libraries\openjpeg-1.5.0\libopenjpeg\cio.c">
+      <Filter>image_format_lib</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_windows_libraries\openjpeg-1.5.0\libopenjpeg\dwt.c">
+      <Filter>image_format_lib</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_windows_libraries\openjpeg-1.5.0\libopenjpeg\event.c">
+      <Filter>image_format_lib</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_windows_libraries\openjpeg-1.5.0\libopenjpeg\image.c">
+      <Filter>image_format_lib</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_windows_libraries\openjpeg-1.5.0\libopenjpeg\j2k.c">
+      <Filter>image_format_lib</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_windows_libraries\openjpeg-1.5.0\libopenjpeg\j2k_lib.c">
+      <Filter>image_format_lib</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_windows_libraries\openjpeg-1.5.0\libopenjpeg\jp2.c">
+      <Filter>image_format_lib</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_windows_libraries\openjpeg-1.5.0\libopenjpeg\jpt.c">
+      <Filter>image_format_lib</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_windows_libraries\openjpeg-1.5.0\libopenjpeg\mct.c">
+      <Filter>image_format_lib</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_windows_libraries\openjpeg-1.5.0\libopenjpeg\mqc.c">
+      <Filter>image_format_lib</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_windows_libraries\openjpeg-1.5.0\libopenjpeg\openjpeg.c">
+      <Filter>image_format_lib</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_windows_libraries\openjpeg-1.5.0\libopenjpeg\phix_manager.c">
+      <Filter>image_format_lib</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_windows_libraries\openjpeg-1.5.0\libopenjpeg\pi.c">
+      <Filter>image_format_lib</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_windows_libraries\openjpeg-1.5.0\libopenjpeg\ppix_manager.c">
+      <Filter>image_format_lib</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_windows_libraries\openjpeg-1.5.0\libopenjpeg\raw.c">
+      <Filter>image_format_lib</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_windows_libraries\openjpeg-1.5.0\libopenjpeg\t1.c">
+      <Filter>image_format_lib</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_windows_libraries\openjpeg-1.5.0\libopenjpeg\t2.c">
+      <Filter>image_format_lib</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_windows_libraries\openjpeg-1.5.0\libopenjpeg\tcd.c">
+      <Filter>image_format_lib</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_windows_libraries\openjpeg-1.5.0\libopenjpeg\tgt.c">
+      <Filter>image_format_lib</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_windows_libraries\openjpeg-1.5.0\libopenjpeg\thix_manager.c">
+      <Filter>image_format_lib</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ns_worm_browser\ns_worm_browser_main.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\ns_image_server\system_base\ns_dir.h">
+      <Filter>system_base</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ns_image_server\system_base\ns_ex.h">
+      <Filter>system_base</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ns_image_server\system_base\ns_lock.h">
+      <Filter>system_base</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ns_image_server\system_base\ns_managed_pointer.h">
+      <Filter>system_base</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ns_image_server\system_base\ns_os_signal_handler.h">
+      <Filter>system_base</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ns_image_server\system_base\ns_socket.h">
+      <Filter>system_base</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ns_image_server\system_base\ns_sql.h">
+      <Filter>system_base</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ns_image_server\system_base\ns_thread.h">
+      <Filter>system_base</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ns_image_server\statistics\ns_by_hand_lifespan.h">
+      <Filter>statistics</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ns_image_server\statistics\ns_jmp_file.h">
+      <Filter>statistics</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ns_image_server\statistics\ns_lifespan_statistics.h">
+      <Filter>statistics</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ns_image_server\statistics\ns_linear_regression_model.h">
+      <Filter>statistics</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ns_image_server\statistics\ns_machine_analysis_data_loader.h">
+      <Filter>statistics</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ns_image_server\statistics\ns_movement_measurement.h">
+      <Filter>statistics</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ns_image_server\statistics\ns_movement_state.h">
+      <Filter>statistics</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ns_image_server\statistics\ns_normal_distribution.h">
+      <Filter>statistics</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ns_image_server\statistics\ns_posture_analysis_models.h">
+      <Filter>statistics</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ns_image_server\statistics\ns_survival_curve.h">
+      <Filter>statistics</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ns_image_server\movement_analysis\ns_hidden_markov_model.h">
+      <Filter>movement_analysis</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ns_image_server\movement_analysis\ns_hidden_markov_model_posture_analyzer.h">
+      <Filter>movement_analysis</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ns_image_server\movement_analysis\ns_image_server_time_path_inferred_worm_aggregator.h">
+      <Filter>movement_analysis</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ns_image_server\movement_analysis\ns_time_path_image_analyzer.h">
+      <Filter>movement_analysis</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ns_image_server\movement_analysis\ns_time_path_posture_movement_solution.h">
+      <Filter>movement_analysis</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ns_image_server\movement_analysis\ns_time_path_solver.h">
+      <Filter>movement_analysis</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ns_image_server\job_scheduling\ns_image_processing_pipeline.h">
+      <Filter>job_scheduling</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ns_image_server\job_scheduling\ns_processing_job.h">
+      <Filter>job_scheduling</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ns_image_server\job_scheduling\ns_processing_job_processor.h">
+      <Filter>job_scheduling</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ns_image_server\job_scheduling\ns_processing_job_pull_scheduler.h">
+      <Filter>job_scheduling</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ns_image_server\job_scheduling\ns_processing_job_push_scheduler.h">
+      <Filter>job_scheduling</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ns_image_server\job_scheduling\ns_processing_job_scheduler.h">
+      <Filter>job_scheduling</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ns_image_server\job_scheduling\ns_processing_tasks.h">
+      <Filter>job_scheduling</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ns_image_server\image_processing\ns_bspline.h">
+      <Filter>image_processing</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ns_image_server\image_processing\ns_complex_segment_cluster_solver.h">
+      <Filter>image_processing</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ns_image_server\image_processing\ns_detected_object.h">
+      <Filter>image_processing</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ns_image_server\image_processing\ns_detected_worm_info.h">
+      <Filter>image_processing</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ns_image_server\image_processing\ns_difference_thresholder.h">
+      <Filter>image_processing</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ns_image_server\image_processing\ns_identify_contiguous_bitmap_regions.h">
+      <Filter>image_processing</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ns_image_server\image_processing\ns_image_registration.h">
+      <Filter>image_processing</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ns_image_server\image_processing\ns_image_tools.h">
+      <Filter>image_processing</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ns_image_server\image_processing\ns_movement_visualization_generator.h">
+      <Filter>image_processing</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ns_image_server\image_processing\ns_node_topology.h">
+      <Filter>image_processing</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ns_image_server\image_processing\ns_node_topology_primitives.h">
+      <Filter>image_processing</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ns_image_server\image_processing\ns_process_16_bit_images.h">
+      <Filter>image_processing</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ns_image_server\image_processing\ns_process_mask_regions.h">
+      <Filter>image_processing</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ns_image_server\image_processing\ns_region_growing_segmenter.h">
+      <Filter>image_processing</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ns_image_server\image_processing\ns_resampler.h">
+      <Filter>image_processing</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ns_image_server\image_processing\ns_segment_topology.h">
+      <Filter>image_processing</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ns_image_server\image_processing\ns_spatial_avg.h">
+      <Filter>image_processing</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ns_image_server\image_processing\ns_spine_drawer.h">
+      <Filter>image_processing</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ns_image_server\image_processing\ns_svm_model_specification.h">
+      <Filter>image_processing</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ns_image_server\image_processing\ns_worm_detection_constants.h">
+      <Filter>image_processing</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ns_image_server\image_processing\ns_worm_detector.h">
+      <Filter>image_processing</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ns_image_server\image_processing\ns_worm_training_set_image.h">
+      <Filter>image_processing</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ns_image_server\image_processing\ns_xvid.h">
+      <Filter>image_processing</Filter>
+    </ClInclude>
+    <ClInclude Include="..\external_windows_libraries\jpeg-8d\cderror.h">
+      <Filter>image_format_lib\jpeg\h</Filter>
+    </ClInclude>
+    <ClInclude Include="..\external_windows_libraries\jpeg-8d\cdjpeg.h">
+      <Filter>image_format_lib\jpeg\h</Filter>
+    </ClInclude>
+    <ClInclude Include="..\external_windows_libraries\jpeg-8d\jdct.h">
+      <Filter>image_format_lib\jpeg\h</Filter>
+    </ClInclude>
+    <ClInclude Include="..\external_windows_libraries\jpeg-8d\jerror.h">
+      <Filter>image_format_lib\jpeg\h</Filter>
+    </ClInclude>
+    <ClInclude Include="..\external_windows_libraries\jpeg-8d\jinclude.h">
+      <Filter>image_format_lib\jpeg\h</Filter>
+    </ClInclude>
+    <ClInclude Include="..\external_windows_libraries\jpeg-8d\jmemsys.h">
+      <Filter>image_format_lib\jpeg\h</Filter>
+    </ClInclude>
+    <ClInclude Include="..\external_windows_libraries\jpeg-8d\jmorecfg.h">
+      <Filter>image_format_lib\jpeg\h</Filter>
+    </ClInclude>
+    <ClInclude Include="..\external_windows_libraries\jpeg-8d\jpegint.h">
+      <Filter>image_format_lib\jpeg\h</Filter>
+    </ClInclude>
+    <ClInclude Include="..\external_windows_libraries\jpeg-8d\jpeglib.h">
+      <Filter>image_format_lib\jpeg\h</Filter>
+    </ClInclude>
+    <ClInclude Include="..\external_windows_libraries\jpeg-8d\jversion.h">
+      <Filter>image_format_lib\jpeg\h</Filter>
+    </ClInclude>
+    <ClInclude Include="..\external_windows_libraries\jpeg-8d\transupp.h">
+      <Filter>image_format_lib\jpeg\h</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ns_image_server\image_base\ns_buffered_random_access_image.h">
+      <Filter>image_base</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ns_image_server\image_base\ns_font.h">
+      <Filter>image_base</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ns_image_server\image_base\ns_image.h">
+      <Filter>image_base</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ns_image_server\image_base\ns_image_easy_io.h">
+      <Filter>image_base</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ns_image_server\image_base\ns_image_socket.h">
+      <Filter>image_base</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ns_image_server\image_base\ns_jpeg.h">
+      <Filter>image_base</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ns_image_server\image_base\ns_libtiff_interface.h">
+      <Filter>image_base</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ns_image_server\image_base\ns_ojp2k.h">
+      <Filter>image_base</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ns_image_server\image_base\ns_svg.h">
+      <Filter>image_base</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ns_image_server\image_base\ns_tiff.h">
+      <Filter>image_base</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ns_image_server\image_base\ns_vector.h">
+      <Filter>image_base</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ns_image_server\image_base\ns_vector_bitmap_interface.h">
+      <Filter>image_base</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ns_image_server\image_base\ns_xmp_encoder.h">
+      <Filter>image_base</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ns_image_server\image_base\xs_Config.h">
+      <Filter>image_base</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ns_image_server\image_base\xs_Float.h">
+      <Filter>image_base</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ns_image_server\data_annotation\ns_death_time_annotation.h">
+      <Filter>data_annotation</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ns_image_server\data_annotation\ns_death_time_annotation_set.h">
+      <Filter>data_annotation</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ns_image_server\data_annotation\ns_experiment_storyboard.h">
+      <Filter>data_annotation</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ns_image_server\data_annotation\ns_machine_learning_training_set.h">
+      <Filter>data_annotation</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ns_image_server\data_annotation\ns_mask_management.h">
+      <Filter>data_annotation</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ns_image_server\image_acquisition\ns_asynchronous_read.h">
+      <Filter>image_acquisition</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ns_image_server\image_acquisition\ns_barcode.h">
+      <Filter>image_acquisition</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ns_image_server\image_acquisition\ns_buffered_capture_scheduler.h">
+      <Filter>image_acquisition</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ns_image_server\image_acquisition\ns_captured_image_statistics_set.h">
+      <Filter>image_acquisition</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ns_image_server\image_acquisition\ns_capture_device.h">
+      <Filter>image_acquisition</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ns_image_server\image_acquisition\ns_capture_device_manager.h">
+      <Filter>image_acquisition</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ns_image_server\image_acquisition\ns_capture_schedule.h">
+      <Filter>image_acquisition</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ns_image_server\image_acquisition\ns_image_cache.h">
+      <Filter>image_acquisition</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ns_image_server\image_acquisition\ns_image_capture_data_manager.h">
+      <Filter>image_acquisition</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ns_image_server\image_acquisition\ns_image_server_alerts.h">
+      <Filter>image_acquisition</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ns_image_server\image_acquisition\ns_image_server_automated_job_scheduler.h">
+      <Filter>image_acquisition</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ns_image_server\image_acquisition\ns_image_server_dispatcher.h">
+      <Filter>image_acquisition</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ns_image_server\image_acquisition\ns_usb.h">
+      <Filter>image_acquisition</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ns_image_server\system_base\ns_xml.h">
+      <Filter>system_base</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ns_image_server\image_server\ns_file_location_specification.h">
+      <Filter>image_server</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ns_image_server\image_server\ns_get_double.h">
+      <Filter>image_server</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ns_image_server\image_server\ns_graph.h">
+      <Filter>image_server</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ns_image_server\image_server\ns_hand_annotation_loader.h">
+      <Filter>image_server</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ns_image_server\image_server\ns_high_precision_timer.h">
+      <Filter>image_server</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ns_image_server\image_server\ns_image_server.h">
+      <Filter>image_server</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ns_image_server\image_server\ns_image_server_images.h">
+      <Filter>image_server</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ns_image_server\image_server\ns_image_server_message.h">
+      <Filter>image_server</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ns_image_server\image_server\ns_image_server_results_storage.h">
+      <Filter>image_server</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ns_image_server\image_server\ns_image_server_sql.h">
+      <Filter>image_server</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ns_image_server\image_server\ns_image_server_stock_quotes.h">
+      <Filter>image_server</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ns_image_server\image_server\ns_image_simple_cache.h">
+      <Filter>image_server</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ns_image_server\image_server\ns_image_statistics.h">
+      <Filter>image_server</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ns_image_server\image_server\ns_image_storage.h">
+      <Filter>image_server</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ns_image_server\image_server\ns_image_storage_handler.h">
+      <Filter>image_server</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ns_image_server\image_server\ns_image_stream_buffers.h">
+      <Filter>image_server</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ns_image_server\image_server\ns_ini.h">
+      <Filter>image_server</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ns_image_server\image_server\ns_performance_statistics.h">
+      <Filter>image_server</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ns_image_server\image_server\ns_progress_reporter.h">
+      <Filter>image_server</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ns_image_server\image_server\ns_simple_image_cache.h">
+      <Filter>image_server</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ns_image_server\image_server\ns_single_thread_coordinator.h">
+      <Filter>image_server</Filter>
+    </ClInclude>
+    <ClInclude Include="..\external_libraries\tinyxml\tinystr.h">
+      <Filter>misc_lib\tinyxml</Filter>
+    </ClInclude>
+    <ClInclude Include="..\external_libraries\libsvm\svm.h">
+      <Filter>misc_lib\libsvm</Filter>
+    </ClInclude>
+    <ClInclude Include="..\external_libraries\wm4_bspline\Wm4BandedMatrix.h">
+      <Filter>misc_lib\wm4_bspline</Filter>
+    </ClInclude>
+    <ClInclude Include="..\external_libraries\wm4_bspline\Wm4BSplineBasis.h">
+      <Filter>misc_lib\wm4_bspline</Filter>
+    </ClInclude>
+    <ClInclude Include="..\external_libraries\wm4_bspline\Wm4BSplineCurve2.h">
+      <Filter>misc_lib\wm4_bspline</Filter>
+    </ClInclude>
+    <ClInclude Include="..\external_libraries\wm4_bspline\Wm4BSplineCurveFit.h">
+      <Filter>misc_lib\wm4_bspline</Filter>
+    </ClInclude>
+    <ClInclude Include="..\external_libraries\wm4_bspline\Wm4BSplineFitBasis.h">
+      <Filter>misc_lib\wm4_bspline</Filter>
+    </ClInclude>
+    <ClInclude Include="..\external_libraries\wm4_bspline\Wm4Command.h">
+      <Filter>misc_lib\wm4_bspline</Filter>
+    </ClInclude>
+    <ClInclude Include="..\external_libraries\wm4_bspline\Wm4Curve2.h">
+      <Filter>misc_lib\wm4_bspline</Filter>
+    </ClInclude>
+    <ClInclude Include="..\external_libraries\wm4_bspline\Wm4FoundationLIB.h">
+      <Filter>misc_lib\wm4_bspline</Filter>
+    </ClInclude>
+    <ClInclude Include="..\external_libraries\wm4_bspline\Wm4FoundationPCH.h">
+      <Filter>misc_lib\wm4_bspline</Filter>
+    </ClInclude>
+    <ClInclude Include="..\external_libraries\wm4_bspline\Wm4Integrate1.h">
+      <Filter>misc_lib\wm4_bspline</Filter>
+    </ClInclude>
+    <ClInclude Include="..\external_libraries\wm4_bspline\Wm4IntpBSplineUniform.h">
+      <Filter>misc_lib\wm4_bspline</Filter>
+    </ClInclude>
+    <ClInclude Include="..\external_libraries\wm4_bspline\Wm4IntpBSplineUniform2.h">
+      <Filter>misc_lib\wm4_bspline</Filter>
+    </ClInclude>
+    <ClInclude Include="..\external_libraries\wm4_bspline\Wm4Math.h">
+      <Filter>misc_lib\wm4_bspline</Filter>
+    </ClInclude>
+    <ClInclude Include="..\external_libraries\wm4_bspline\Wm4MathMCR.h">
+      <Filter>misc_lib\wm4_bspline</Filter>
+    </ClInclude>
+    <ClInclude Include="..\external_libraries\wm4_bspline\Wm4Memory.h">
+      <Filter>misc_lib\wm4_bspline</Filter>
+    </ClInclude>
+    <ClInclude Include="..\external_libraries\wm4_bspline\Wm4Platforms.h">
+      <Filter>misc_lib\wm4_bspline</Filter>
+    </ClInclude>
+    <ClInclude Include="..\external_libraries\wm4_bspline\Wm4SingleCurve2.h">
+      <Filter>misc_lib\wm4_bspline</Filter>
+    </ClInclude>
+    <ClInclude Include="..\external_libraries\wm4_bspline\Wm4System.h">
+      <Filter>misc_lib\wm4_bspline</Filter>
+    </ClInclude>
+    <ClInclude Include="..\external_libraries\wm4_bspline\Wm4THashSet.h">
+      <Filter>misc_lib\wm4_bspline</Filter>
+    </ClInclude>
+    <ClInclude Include="..\external_libraries\wm4_bspline\Wm4THashTable.h">
+      <Filter>misc_lib\wm4_bspline</Filter>
+    </ClInclude>
+    <ClInclude Include="..\external_libraries\wm4_bspline\Wm4TMinHeap.h">
+      <Filter>misc_lib\wm4_bspline</Filter>
+    </ClInclude>
+    <ClInclude Include="..\external_libraries\wm4_bspline\Wm4TSmallUnorderedSet.h">
+      <Filter>misc_lib\wm4_bspline</Filter>
+    </ClInclude>
+    <ClInclude Include="..\external_libraries\wm4_bspline\Wm4TStringHashTable.h">
+      <Filter>misc_lib\wm4_bspline</Filter>
+    </ClInclude>
+    <ClInclude Include="..\external_libraries\wm4_bspline\Wm4TTuple.h">
+      <Filter>misc_lib\wm4_bspline</Filter>
+    </ClInclude>
+    <ClInclude Include="..\external_libraries\wm4_bspline\Wm4Vector2.h">
+      <Filter>misc_lib\wm4_bspline</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ns_worm_browser\ns_death_time_posture_annotater.h">
+      <Filter>worm_browser</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ns_worm_browser\ns_death_time_solo_posture_annotater.h">
+      <Filter>worm_browser</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ns_worm_browser\ns_experiment_storyboard_annotater.h">
+      <Filter>worm_browser</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ns_worm_browser\ns_image_series_annotater.h">
+      <Filter>worm_browser</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ns_worm_browser\ns_windows_file_dialog.h">
+      <Filter>worm_browser</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ns_worm_browser\ns_worm_browser.h">
+      <Filter>worm_browser</Filter>
+    </ClInclude>
+    <ClInclude Include="resource.h">
+      <Filter>Resource Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\external_windows_libraries\openjpeg-1.5.0\libopenjpeg\bio.h">
+      <Filter>image_format_lib</Filter>
+    </ClInclude>
+    <ClInclude Include="..\external_windows_libraries\openjpeg-1.5.0\libopenjpeg\cidx_manager.h">
+      <Filter>image_format_lib</Filter>
+    </ClInclude>
+    <ClInclude Include="..\external_windows_libraries\openjpeg-1.5.0\libopenjpeg\cio.h">
+      <Filter>image_format_lib</Filter>
+    </ClInclude>
+    <ClInclude Include="..\external_windows_libraries\openjpeg-1.5.0\libopenjpeg\dwt.h">
+      <Filter>image_format_lib</Filter>
+    </ClInclude>
+    <ClInclude Include="..\external_windows_libraries\openjpeg-1.5.0\libopenjpeg\event.h">
+      <Filter>image_format_lib</Filter>
+    </ClInclude>
+    <ClInclude Include="..\external_windows_libraries\openjpeg-1.5.0\libopenjpeg\fix.h">
+      <Filter>image_format_lib</Filter>
+    </ClInclude>
+    <ClInclude Include="..\external_windows_libraries\openjpeg-1.5.0\libopenjpeg\image.h">
+      <Filter>image_format_lib</Filter>
+    </ClInclude>
+    <ClInclude Include="..\external_windows_libraries\openjpeg-1.5.0\libopenjpeg\indexbox_manager.h">
+      <Filter>image_format_lib</Filter>
+    </ClInclude>
+    <ClInclude Include="..\external_windows_libraries\openjpeg-1.5.0\libopenjpeg\int.h">
+      <Filter>image_format_lib</Filter>
+    </ClInclude>
+    <ClInclude Include="..\external_windows_libraries\openjpeg-1.5.0\libopenjpeg\j2k.h">
+      <Filter>image_format_lib</Filter>
+    </ClInclude>
+    <ClInclude Include="..\external_windows_libraries\openjpeg-1.5.0\libopenjpeg\j2k_lib.h">
+      <Filter>image_format_lib</Filter>
+    </ClInclude>
+    <ClInclude Include="..\external_windows_libraries\openjpeg-1.5.0\libopenjpeg\jp2.h">
+      <Filter>image_format_lib</Filter>
+    </ClInclude>
+    <ClInclude Include="..\external_windows_libraries\openjpeg-1.5.0\libopenjpeg\jpt.h">
+      <Filter>image_format_lib</Filter>
+    </ClInclude>
+    <ClInclude Include="..\external_windows_libraries\openjpeg-1.5.0\libopenjpeg\mct.h">
+      <Filter>image_format_lib</Filter>
+    </ClInclude>
+    <ClInclude Include="..\external_windows_libraries\openjpeg-1.5.0\libopenjpeg\mqc.h">
+      <Filter>image_format_lib</Filter>
+    </ClInclude>
+    <ClInclude Include="..\external_windows_libraries\openjpeg-1.5.0\libopenjpeg\openjpeg.h">
+      <Filter>image_format_lib</Filter>
+    </ClInclude>
+    <ClInclude Include="..\external_windows_libraries\openjpeg-1.5.0\libopenjpeg\opj_config.h">
+      <Filter>image_format_lib</Filter>
+    </ClInclude>
+    <ClInclude Include="..\external_windows_libraries\openjpeg-1.5.0\libopenjpeg\opj_includes.h">
+      <Filter>image_format_lib</Filter>
+    </ClInclude>
+    <ClInclude Include="..\external_windows_libraries\openjpeg-1.5.0\libopenjpeg\opj_malloc.h">
+      <Filter>image_format_lib</Filter>
+    </ClInclude>
+    <ClInclude Include="..\external_windows_libraries\openjpeg-1.5.0\libopenjpeg\pi.h">
+      <Filter>image_format_lib</Filter>
+    </ClInclude>
+    <ClInclude Include="..\external_windows_libraries\openjpeg-1.5.0\libopenjpeg\raw.h">
+      <Filter>image_format_lib</Filter>
+    </ClInclude>
+    <ClInclude Include="..\external_windows_libraries\openjpeg-1.5.0\libopenjpeg\t1.h">
+      <Filter>image_format_lib</Filter>
+    </ClInclude>
+    <ClInclude Include="..\external_windows_libraries\openjpeg-1.5.0\libopenjpeg\t1_luts.h">
+      <Filter>image_format_lib</Filter>
+    </ClInclude>
+    <ClInclude Include="..\external_windows_libraries\openjpeg-1.5.0\libopenjpeg\t2.h">
+      <Filter>image_format_lib</Filter>
+    </ClInclude>
+    <ClInclude Include="..\external_windows_libraries\openjpeg-1.5.0\libopenjpeg\tcd.h">
+      <Filter>image_format_lib</Filter>
+    </ClInclude>
+    <ClInclude Include="..\external_windows_libraries\openjpeg-1.5.0\libopenjpeg\tgt.h">
+      <Filter>image_format_lib</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="start.tif">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="occupied_image.tif">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="terminal_icon.ico">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="..\external_libraries\wm4_bspline\Wm4BandedMatrix.inl">
+      <Filter>misc_lib\wm4_bspline</Filter>
+    </None>
+    <None Include="..\external_libraries\wm4_bspline\Wm4Math.inl">
+      <Filter>misc_lib\wm4_bspline</Filter>
+    </None>
+    <None Include="..\external_libraries\wm4_bspline\Wm4Memory.inl">
+      <Filter>misc_lib\wm4_bspline</Filter>
+    </None>
+    <None Include="..\external_libraries\wm4_bspline\Wm4System.inl">
+      <Filter>misc_lib\wm4_bspline</Filter>
+    </None>
+    <None Include="..\external_libraries\wm4_bspline\Wm4THashSet.inl">
+      <Filter>misc_lib\wm4_bspline</Filter>
+    </None>
+    <None Include="..\external_libraries\wm4_bspline\Wm4THashTable.inl">
+      <Filter>misc_lib\wm4_bspline</Filter>
+    </None>
+    <None Include="..\external_libraries\wm4_bspline\Wm4TMinHeap.inl">
+      <Filter>misc_lib\wm4_bspline</Filter>
+    </None>
+    <None Include="..\external_libraries\wm4_bspline\Wm4TSmallUnorderedSet.inl">
+      <Filter>misc_lib\wm4_bspline</Filter>
+    </None>
+    <None Include="..\external_libraries\wm4_bspline\Wm4TStringHashTable.inl">
+      <Filter>misc_lib\wm4_bspline</Filter>
+    </None>
+    <None Include="..\external_libraries\wm4_bspline\Wm4TTuple.inl">
+      <Filter>misc_lib\wm4_bspline</Filter>
+    </None>
+    <None Include="..\external_libraries\wm4_bspline\Wm4Vector2.inl">
+      <Filter>misc_lib\wm4_bspline</Filter>
+    </None>
+    <None Include="..\external_windows_libraries\openjpeg-1.5.0\libopenjpeg\CMakeLists.txt">
+      <Filter>image_format_lib</Filter>
+    </None>
+    <None Include="..\external_windows_libraries\openjpeg-1.5.0\libopenjpeg\Makefile.am">
+      <Filter>image_format_lib</Filter>
+    </None>
+    <None Include="..\external_windows_libraries\openjpeg-1.5.0\libopenjpeg\Makefile.in">
+      <Filter>image_format_lib</Filter>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="worm_terminal_2.rc">
+      <Filter>Resource Files</Filter>
+    </ResourceCompile>
+  </ItemGroup>
+</Project>

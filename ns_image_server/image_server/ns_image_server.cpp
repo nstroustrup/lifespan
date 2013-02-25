@@ -1,0 +1,2015 @@
+
+#include "ns_image_server.h"
+
+#include "ns_barcode.h"
+#include "ns_socket.h"
+#include "ns_thread.h"
+#include "ns_image_server_message.h"
+
+#ifndef NS_MINIMAL_SERVER_BUILD
+#include "ns_image_server_dispatcher.h"
+#include "ns_spatial_avg.h"
+#endif
+#include "ns_image_storage_handler.h"
+#include "ns_os_signal_handler.h"
+#include "ns_ini.h"
+#include "ns_dir.h"
+
+#include <iostream>
+using namespace std;
+
+#include <time.h>
+#include "ns_image_server_stock_quotes.h"
+#include "ns_capture_schedule.h"
+//#include "ns_processing_job_push_scheduler.h"
+
+#include "ns_image_server_automated_job_scheduler.h"
+//#include "ns_capture_device_manager.h"
+
+ns_image_server::ns_image_server():event_log_open(false),exit_requested(false),update_software(false), 
+	sql_lock("ns_is::sql"),server_event_lock("ns_is::server_event"),simulator_scan_lock("ns_is::sim_scan"),local_buffer_sql_lock("ns_is::lb"),
+	_act_as_processing_node(true),/*alert_handler_lock("ns_is::alert"),alert_handler_running(false),*/cleared(false),current_sql_server_address_id(0),
+	image_registration_profile_cache(32),_cache_subdirectory("cache"),sql_database_choice(possible_sql_databases.end()),next_scan_for_problems_time(0){
+
+	ns_socket::global_init();
+	ns_worm_detection_constants::init();
+	_software_version_compile = 638;
+	image_storage.cache.set_memory_allocation_limit(maximum_image_cache_memory_size());
+
+}
+bool ns_image_server::scan_for_problems_now(){
+	unsigned long current_time = ns_current_time();
+	if (next_scan_for_problems_time > current_time){
+		return false;
+	}
+	if (next_scan_for_problems_time + 2*mean_problem_scan_interval_in_seconds() < current_time)
+		next_scan_for_problems_time = current_time;
+
+	next_scan_for_problems_time = rand()%(2*mean_problem_scan_interval_in_seconds())+next_scan_for_problems_time;
+	return true;
+}
+void ns_image_server::update_scan_delays_from_db(ns_image_server_sql * con){
+	this->_maximum_allowed_local_scan_delay = atol(get_cluster_constant_value("maximum_local_scan_delay_in_minutes","4",con).c_str());
+	this->_maximum_allowed_remote_scan_delay = atol(get_cluster_constant_value("maximum_remote_scan_delay_in_minutes","10",con).c_str());
+}
+
+void ns_image_server::toggle_central_mysql_server_connection_error_simulation()const{
+	if (ns_sql_connection::unreachable_hostname().empty())
+		ns_sql_connection::simulate_unreachable_mysql_server(sql_server_addresses[current_sql_server_address_id],true);
+	else ns_sql_connection::simulate_unreachable_mysql_server(sql_server_addresses[current_sql_server_address_id],false);
+}
+
+std::string  ns_image_server::video_compilation_parameters(const std::string & input_file, const std::string & output_file, const unsigned long number_of_frames, const std::string & fps, ns_sql & sql){
+	//for x264	
+	string p(get_cluster_constant_value("video_compilation_parameters","--crf=10",&sql));
+	unsigned long distance_between_keyframes(250);
+	if (4*number_of_frames <= distance_between_keyframes)
+		distance_between_keyframes = (number_of_frames-1)/4;
+
+
+	return p + " -I " + ns_to_string(distance_between_keyframes) + " --fps " + fps + " \"" + input_file + "\" -o \"" + output_file + "\"";
+}
+
+bool ns_image_server::register_and_run_simulated_devices(ns_image_server_sql * sql) {
+	string handle_simulated_devices_str(get_cluster_constant_value("run_simulated_devices","",sql));
+	if (handle_simulated_devices_str == ""){
+		set_cluster_constant_value("run_simulated_devices","0",sql);
+		return false;
+	}
+	if (handle_simulated_devices_str == "1" || handle_simulated_devices_str == "yes")
+		return true;
+	return false;
+};
+
+#ifndef NS_MINIMAL_SERVER_BUILD
+void ns_image_server::start_autoscans_for_device(const std::string & device_name, ns_sql & sql){
+
+	sql<< "SELECT id, scan_interval FROM autoscan_schedule WHERE device_name = '" << device_name
+						  << "' AND autoscan_start_time <= " << ns_current_time() 
+						  << " AND autoscan_completed_time = 0 ORDER BY autoscan_start_time ASC";
+	ns_sql_result res;
+	sql.get_rows(res);
+	if (res.size() > 1)
+		image_server.register_server_event(ns_image_server_event("Multiple autoscan schedules were specified for device ") << device_name,&sql);
+	
+	for (string::size_type i = 0; i < res.size(); i++){
+		const long interval(atol(res[i][1].c_str()));
+		image_server.device_manager.set_autoscan_interval(device_name,interval);
+		image_server.register_server_event(ns_image_server_event("Starting scheduled autoscans on device ") << device_name << " with a period of " << res[i][1] << " seconds",&sql);
+		sql << "DELETE FROM autoscan_schedule WHERE device_name = '" << device_name << "'";
+		sql.send_query();
+		sql.send_query("COMMIT");
+	}
+}
+#endif
+struct ns_image_data_disk_size{
+	ns_image_data_disk_size():unprocessed_captured_images(0),
+				processed_captured_images(0),
+			  unprocessed_region_images(0),
+			  processed_region_images(0),
+			  metadata(0),
+			  video(0){}
+
+	double unprocessed_captured_images,
+				processed_captured_images,
+			  unprocessed_region_images,
+			  processed_region_images,
+			  metadata,
+			  video;
+	void update_experiment_metadata(unsigned long experiment_id,ns_sql & sql){
+		sql << "UPDATE experiments SET "
+				"size_unprocessed_captured_images=" << (unsigned long)unprocessed_captured_images << ","
+				"size_processed_captured_images=" << (unsigned long)processed_captured_images << ","
+				"size_unprocessed_region_images=" << (unsigned long)unprocessed_region_images << ","
+				"size_processed_region_images=" << (unsigned long)processed_region_images << ","
+				"size_metadata=" << (unsigned long)metadata << ","
+				"size_video=" << (unsigned long)video << ","
+				"size_calculation_time='" << ns_current_time() <<
+				"' WHERE id = " << experiment_id;
+		sql.send_query();
+
+	}
+	void update_sample_metadata(unsigned long sample_id,ns_sql & sql){
+		sql << "UPDATE capture_samples SET "
+				"size_unprocessed_captured_images=" << (unsigned long)unprocessed_captured_images << ","
+				"size_processed_captured_images=" << (unsigned long)processed_captured_images << ","
+				"size_unprocessed_region_images=" << (unsigned long)unprocessed_region_images << ","
+				"size_processed_region_images=" << (unsigned long)processed_region_images << ","
+				"size_metadata=" << (unsigned long)metadata << ","
+				"size_calculation_time='" << ns_current_time() <<
+				"' WHERE id = " << sample_id;
+		sql.send_query();
+	}
+};
+ns_image_data_disk_size operator+(const ns_image_data_disk_size & a, const ns_image_data_disk_size & b){
+	ns_image_data_disk_size ret(a);
+	ret.metadata+=b.metadata;
+	ret.video+=b.video;
+	ret.processed_captured_images+=b.processed_captured_images;
+	ret.processed_region_images+=b.processed_region_images;
+	ret.unprocessed_captured_images+=b.unprocessed_captured_images;
+	ret.unprocessed_region_images+=b.unprocessed_region_images;
+	return ret;
+}
+
+
+void ns_image_server::calculate_experiment_disk_usage(const unsigned long experiment_id,ns_sql & sql) const{
+	sql << "SELECT name FROM experiments WHERE id = " << experiment_id;
+	ns_sql_result experiment;
+	sql.get_rows(experiment);
+	if(experiment.size() == 0)
+		throw ns_ex("ns_image_server::calculate_experiment_disk_usage()::Could not find experiment ") << experiment_id << " in the database";
+	image_server.register_server_event(ns_image_server_event("ns_image_server::calculate_experiment_disk_usage()::Calculating disk usage for experiment ") << experiment[0][0] << "(" << experiment_id << ")",&sql);
+	
+
+	sql << "SELECT id, name FROM capture_samples WHERE experiment_id = " << experiment_id << " ORDER BY name ASC";
+	ns_sql_result samples;
+	sql.get_rows(samples);
+	
+	ns_image_data_disk_size full_experiment;
+	full_experiment.video = image_storage.get_experiment_video_size_on_disk(experiment_id,sql);
+
+	for (unsigned int i = 0; i < samples.size(); i++){
+		unsigned long sample_id(atol(samples[i][0].c_str()));
+		ns_image_data_disk_size s;
+		s.unprocessed_captured_images= image_storage.get_sample_images_size_on_disk(sample_id,ns_unprocessed,sql);
+			//grab any old-style images stored in the base directory of the region
+		s.unprocessed_captured_images+=image_storage.get_sample_images_size_on_disk(sample_id,ns_process_last_task_marker,sql);
+
+		s.processed_captured_images=image_storage.get_sample_images_size_on_disk(sample_id,ns_process_thumbnail,sql);
+
+		//cerr << samples[i][1] << "::" << s.unprocessed_captured_images + s.processed_captured_images << " ";
+		sql << "SELECT DISTINCT id, name FROM sample_region_image_info WHERE sample_id = " << sample_id << " ORDER BY name ASC";
+		ns_sql_result regions;
+		sql.get_rows(regions);
+		string last_name;
+
+		//heat map directory holds data for the entire sample so we just add it in once
+		if (regions.size() != 0){
+			unsigned long region_id(atol(regions[0][0].c_str()));
+			s.processed_region_images += image_storage.get_region_images_size_on_disk(region_id,ns_process_heat_map,sql);
+			s.processed_region_images += image_storage.get_region_images_size_on_disk(region_id,ns_process_static_mask,sql);
+		}
+		cerr << ((100*i)/samples.size()) << "%...";
+		for (unsigned int j = 0; j < regions.size(); j++){
+			//don't redo duplicate regions
+			if (regions[j][1] == last_name)
+				continue;
+			last_name = regions[j][1];
+		//	cerr << "["<<samples[i][1] << "::" << regions[j][1] << ":";
+			unsigned long region_id(atol(regions[j][0].c_str()));
+			ns_image_data_disk_size r;
+			r.unprocessed_region_images = image_storage.get_region_images_size_on_disk(region_id,ns_unprocessed,sql);
+			//grab any old-style images stored in the base directory of the region
+			r.unprocessed_region_images += image_storage.get_region_images_size_on_disk(region_id,ns_process_last_task_marker,sql);
+			
+			r.metadata = image_storage.get_region_metadata_size_on_disk(region_id,sql);
+
+			r.processed_region_images += image_storage.get_region_images_size_on_disk(region_id,ns_process_spatial,sql);
+			r.processed_region_images += image_storage.get_region_images_size_on_disk(region_id,ns_process_lossy_stretch,sql);
+			r.processed_region_images += image_storage.get_region_images_size_on_disk(region_id,ns_process_threshold,sql);
+			r.processed_region_images += image_storage.get_region_images_size_on_disk(region_id,ns_process_worm_detection,sql);
+			r.processed_region_images += image_storage.get_region_images_size_on_disk(region_id,ns_process_worm_detection_labels,sql);
+			r.processed_region_images += image_storage.get_region_images_size_on_disk(region_id,ns_process_region_vis,sql);
+			r.processed_region_images += image_storage.get_region_images_size_on_disk(region_id,ns_process_interpolated_vis,sql);
+			r.processed_region_images += image_storage.get_region_images_size_on_disk(region_id,ns_process_movement_coloring,sql);
+			r.processed_region_images += image_storage.get_region_images_size_on_disk(region_id,ns_process_movement_mapping,sql);
+			r.processed_region_images += image_storage.get_region_images_size_on_disk(region_id,ns_process_movement_coloring_with_survival,sql);
+			r.processed_region_images += image_storage.get_region_images_size_on_disk(region_id,ns_process_movement_paths_visualization,sql);
+			r.processed_region_images += image_storage.get_region_images_size_on_disk(region_id,ns_process_movement_paths_visualition_with_mortality_overlay,sql);
+			r.processed_region_images += image_storage.get_region_images_size_on_disk(region_id,ns_process_movement_posture_visualization,sql);
+			r.processed_region_images += image_storage.get_region_images_size_on_disk(region_id,ns_process_movement_posture_aligned_visualization,sql);
+			s = s + r;
+			//cerr << r.unprocessed_region_images + r.processed_region_images + r.metadata << "] ";
+		}
+	//	cerr << "\n";
+		s.update_sample_metadata(sample_id,sql);
+		full_experiment = full_experiment + s;
+	}
+	full_experiment.update_experiment_metadata(experiment_id,sql);
+}
+
+
+#ifndef NS_MINIMAL_SERVER_BUILD
+class ns_get_automated_job_scheduler_lock_for_scope{
+public:
+	ns_get_automated_job_scheduler_lock_for_scope(const unsigned long second_delay_until_next_run , ns_sql & sql):current_time(0),next_run_time(0),lock_held(false){
+		wait_for_lock(second_delay_until_next_run,sql);
+	};
+	void release(ns_sql & sql){release_lock(sql);}
+	bool run_requested(){return lock_held;}
+	~ns_get_automated_job_scheduler_lock_for_scope(){if (lock_held)release();}
+private:
+	unsigned long next_run_time,current_time;
+
+	void release(){
+		ns_acquire_for_scope<ns_sql> sql(image_server.new_sql_connection(__FILE__,__LINE__));
+		release_lock(sql());
+		sql.release();
+	}
+	bool lock_held;
+
+	void release_lock(ns_sql & sql){
+		if (!lock_held) return;
+		ns_sql_full_table_lock lock(sql,"automated_job_scheduling_data");
+		sql << "SELECT currently_running_host_id FROM automated_job_scheduling_data";
+		ns_sql_result res;
+		sql.get_rows(res);
+
+		if (res.size() == 0){
+			lock.unlock();
+			image_server.register_server_event(ns_image_server_event("This client's lock on the automation process was deleted!"),&sql);
+			return;
+		}
+
+		if (atol(res[0][0].c_str()) != image_server.host_id()){
+			lock.unlock();
+			image_server.register_server_event(ns_image_server_event("This client's lock on the automation process was usurped!"),&sql);
+			return;
+		}
+
+		sql << "UPDATE automated_job_scheduling_data SET currently_running_host_id = 0";
+		sql.send_query();
+		lock.unlock();
+		lock_held = false;
+	}
+	void wait_for_lock(const unsigned long second_delay_until_next_run, ns_sql & sql){
+		if (lock_held)
+			throw ns_ex("Attempting to take a automation lock that is already held!");
+		//unsigned long counter(0);
+		//while (true){
+			ns_sql_full_table_lock lock(sql,"automated_job_scheduling_data");
+			sql << "SELECT currently_running_host_id, acquisition_time, next_run_time,UNIX_TIMESTAMP() FROM automated_job_scheduling_data";
+			ns_sql_result res;
+			sql.get_rows(res);
+			
+			if(res.size() == 0){
+				sql << "INSERT INTO automated_job_scheduling_data SET currently_running_host_id = 0";
+				sql.send_query();
+				get_ownership(second_delay_until_next_run,sql);
+				lock.unlock();
+				return;
+			}
+			if (res.size() > 1)
+				throw ns_ex("ns_get_automated_job_scheduler_lock_for_scope::wait_for_lock()::Multiple entries for lock : ") << res.size();
+			const unsigned long current_running_id(atol(res[0][0].c_str())),
+								acquisition_time(atol(res[0][1].c_str())),
+								next_run_time(atol(res[0][2].c_str())),
+								cur_time(atol(res[0][3].c_str()));
+
+			//if no event has been registered as having been run, prepare to run it immediately
+			if (next_run_time == 0){
+				get_ownership(second_delay_until_next_run,sql);
+				lock.unlock();
+				return; 
+			}
+			if (current_running_id != 0 && cur_time - acquisition_time >= image_server.automated_job_timeout_in_seconds()){
+				get_ownership(second_delay_until_next_run,sql);
+				lock.unlock();
+				image_server.register_server_event(ns_image_server_event("ns_get_automated_job_scheduler_lock_for_scope()::Claiming abandoned lock."),&sql);
+				return;
+			}
+			if (cur_time > next_run_time){
+				get_ownership(second_delay_until_next_run,sql);
+				lock.unlock();
+				return;
+			}
+			lock.unlock();
+			
+		//	ns_thread::sleep(2);
+		//	counter++;
+		//	if (counter == 30)
+		//		throw ns_ex("Giving up waiting for automation lock!");
+		//}
+	}
+	inline unsigned long id(){
+		unsigned long id = image_server.host_id();
+		if (id == 0) id = 666;
+		return id;
+	}
+	inline void get_ownership(const unsigned long second_delay_until_next_run, ns_sql & sql){
+		sql << "SELECT UNIX_TIMESTAMP()";
+		current_time = sql.get_integer_value();
+		next_run_time = current_time + second_delay_until_next_run;
+
+		sql << "UPDATE automated_job_scheduling_data SET currently_running_host_id = " << id() 
+			<< ", acquisition_time = " << current_time
+			<< ", next_run_time = " << next_run_time;
+
+		sql.send_query();
+		lock_held = true;
+	}
+};
+void ns_image_server_automated_job_scheduler::scan_for_tasks(ns_sql & sql){
+	
+	ns_get_automated_job_scheduler_lock_for_scope lock(image_server.automated_job_interval(),sql);
+	if (!lock.run_requested()){
+		lock.release(sql);
+		return;
+	}
+	image_server.register_server_event(ns_image_server_event("Running automated job scheduler"),&sql);
+	unsigned long start_time(ns_current_time());
+	calculate_capture_schedule_boundaries(sql);
+	identify_experiments_needing_captured_image_protection(sql);
+	//identify_regions_needing_static_mask(sql);
+	lock.release(sql);
+}
+void ns_image_server_automated_job_scheduler::identify_experiments_needing_captured_image_protection(ns_sql & sql){
+	const long number_of_images_to_protect(5);
+	sql << "SELECT s.id,s.name, e.name FROM capture_samples as s, experiments as e WHERE e.id = s.experiment_id "
+			"AND s.first_frames_are_protected=0 AND e.hidden = 0";
+	ns_sql_result samples;
+	sql.get_rows(samples);
+	
+	for (unsigned int i = 0; i < samples.size(); i++){
+		const unsigned long sample_id(atol(samples[i][0].c_str()));
+		sql << "SELECT id, never_delete_image FROM captured_images WHERE image_id != 0 AND problem = 0 "
+			    "AND currently_being_processed = 0 AND sample_id = " << sample_id
+			<< " ORDER BY capture_time ASC LIMIT " << number_of_images_to_protect;
+		ns_sql_result images;
+		sql.get_rows(images);
+		if (images.size() > number_of_images_to_protect)
+			throw ns_ex("ns_image_server::perform_experiment_maintenance()::mysql returned too many rows!");
+		for (unsigned int j = 0; j < images.size(); j++){
+			if (images[j][1] == "1") continue;
+			sql << "UPDATE captured_images SET never_delete_image = 1 WHERE id = " << images[j][0];
+			sql.send_query();
+		}
+		if (images.size() == number_of_images_to_protect){
+
+			sql.send_query("COMMIT");
+			sql << "UPDATE capture_samples SET first_frames_are_protected=1 WHERE id = " << sample_id;
+			sql.send_query();
+			image_server.register_server_event(ns_image_server_event("The first frames of sample ") << samples[i][2] << "::" << samples[i][1] << " are now protected.",&sql);
+		}
+	}
+}
+
+
+void ns_image_server_automated_job_scheduler::calculate_capture_schedule_boundaries(ns_sql & sql){
+	
+	image_server.register_server_event(ns_image_server_event("Calculating Experiment Boundaries"),&sql);
+
+	sql << "SELECT experiment_id,count(*),min(scheduled_time),"
+		  "max(scheduled_time) FROM capture_schedule WHERE censored=0 GROUP BY experiment_id";
+	ns_sql_result res;
+	sql.get_rows(res);
+	for (unsigned int i = 0; i < res.size(); i++){
+		sql << "UPDATE experiments SET num_time_points=" << res[i][1] << ", first_time_point='" << res[i][2] << "', last_time_point='" << res[i][3]
+			<< "' WHERE id = " << res[i][0];
+		sql.send_query();
+	}
+}
+
+
+void ns_image_server_automated_job_scheduler::identify_regions_needing_static_mask(ns_sql & sql){
+	const long number_of_frames_needed_for_static_mask(2*12*4); //four days worth of data
+
+	sql <<	"SELECT r.id,r.name,s.name, e.name FROM sample_region_image_info as r, capture_samples as s, experiments as e "
+			" WHERE e.id = s.experiment_id AND r.sample_id = s.id "
+			" AND r.analysis_scheduling_state=" << (int)ns_waiting_to_begin_static_mask << " AND e.hidden = 0 AND e.run_automated_job_scheduling != 0";
+	ns_sql_result regions;
+	sql.get_rows(regions);
+	bool jobs_submitted(false);
+	ns_sql_result region_images;
+	bool announced(false);
+	for (unsigned int i = 0; i < regions.size(); i++){
+		//check to see if the region has enough of the first few images with median filters specified
+		sql << "SELECT " << ns_processing_step_db_column_name(ns_process_spatial)  << " FROM sample_region_images WHERE region_info_id = " << regions[i][0] << " AND " 
+			<< " currently_under_processing=0 AND problem = 0 ORDER BY capture_time ASC LIMIT " << (3*number_of_frames_needed_for_static_mask/2);
+		sql.get_rows(region_images);
+		unsigned long count(0);
+		for (unsigned int j = 0; j < region_images.size(); ++j){
+			if (region_images[j][0] != "0")
+				count++;
+		}
+		
+		if (count < number_of_frames_needed_for_static_mask)
+			continue;
+		if (!announced){
+			image_server.register_server_event(ns_image_server_event("Starting static image mask jobs."),&sql);
+			announced = true;
+		}
+		ns_processing_job job;
+		job.region_id = atol(regions[i][0].c_str());
+		job.time_submitted = ns_current_time();
+		job.operations[(int)ns_process_heat_map] = true;
+		job.operations[(int)ns_process_static_mask] = true;
+		job.save_to_db(sql);
+		jobs_submitted= true;
+		sql << "UPDATE sample_region_image_info SET analysis_scheduling_state = " << (int)ns_waiting_for_static_mask_completion << " WHERE id = " << regions[i][0];
+		sql.send_query();
+	}
+	if (jobs_submitted)
+		ns_image_server_push_job_scheduler::request_job_queue_discovery(sql);
+}
+void ns_image_server_automated_job_scheduler::register_static_mask_completion(const unsigned long region_id, ns_sql & sql){
+	sql << "UPDATE sample_region_image_info SET analysis_scheduling_state = " << (int)ns_worm_detection << " WHERE id = " << region_id;
+	sql.send_query();
+	schedule_detection_jobs_for_region(region_id,sql);
+	ns_image_server_push_job_scheduler::request_job_queue_discovery(sql);
+}
+void ns_image_server_automated_job_scheduler::schedule_detection_jobs_for_region(const unsigned long region_id,ns_sql & sql){
+	ns_processing_job job;
+	job.region_id = region_id;
+	job.time_submitted = ns_current_time(); 
+	job.operations[(int)ns_process_worm_detection] = true;
+	job.operations[(int)ns_process_worm_detection_labels] = true;
+	job.save_to_db(sql);
+}
+
+
+
+void ns_image_server::perform_experiment_maintenance(ns_sql & sql){
+	automated_job_scheduler.scan_for_tasks(sql);
+}
+#endif
+void ns_image_server::register_alerts_as_handled(){
+	alert_handler_thread.report_as_finished();
+}
+#ifndef NS_MINIMAL_SERVER_BUILD
+void ns_image_server::process_experiment_capture_schedule_specification(const std::string & input_file,const bool overwrite_previous_experiment, const bool submit_to_db, const std::string & summary_output_file, const bool output_to_stdout){
+
+	ns_experiment_capture_specification spec;
+	spec.load_from_xml_file(input_file);
+	ns_acquire_for_scope<ns_sql> sql(image_server.new_sql_connection(__FILE__,__LINE__));
+	
+	string summary(spec.submit_schedule_to_db(sql(),submit_to_db,overwrite_previous_experiment));
+	if (output_to_stdout && !submit_to_db){
+		cout << summary;
+	}
+	else if (summary_output_file.size() > 0 && !submit_to_db){
+		ofstream o(summary_output_file.c_str());
+		if (o.fail())
+			throw ns_ex("Could not open ") << summary_output_file << " for output.";
+		o << summary;
+	}
+	sql.release();
+}
+#endif
+ofstream * ns_image_server::write_device_configuration_file() const{
+	std::string filename = volatile_storage_directory + DIR_CHAR_STR + "device_information";
+	ns_dir::create_directory_recursive(filename);
+	filename += DIR_CHAR_STR;
+	filename += "last_device_configuration.txt";
+	ofstream * out(new ofstream(filename.c_str()));
+	if (out->fail())
+		throw ns_ex("ns_image_server::Could not save last known device config ") << filename;
+	return out;
+}
+ifstream * ns_image_server::read_device_configuration_file() const{
+	std::string filename = volatile_storage_directory + DIR_CHAR_STR + "device_information";
+	ns_dir::create_directory_recursive(filename);
+	filename += DIR_CHAR_STR;
+	filename += "last_device_configuration.txt";
+	return new ifstream(filename.c_str());
+}
+
+void ns_image_server::get_cluster_constant_lock(ns_image_server_sql * sql){
+	*sql << "LOCK TABLES "<< sql->table_prefix() <<"constants WRITE";
+	sql->send_query();
+}
+
+std::string ns_image_server::get_cluster_constant_value_locked(const std::string & key, const std::string & default_value,ns_image_server_sql * sql){
+	*sql << "LOCK TABLES " << sql->table_prefix()<< "constants WRITE";
+	sql->send_query();
+	
+	try{
+		return get_cluster_constant_value(key,default_value,sql);
+	}
+	catch(...){
+		sql->clear_query();
+		release_cluster_constant_lock(sql);
+		throw;
+	}
+}
+void ns_image_server::release_cluster_constant_lock(ns_image_server_sql * sql){
+	sql->send_query("UNLOCK TABLES");
+};
+string ns_image_server::get_cluster_constant_value(const string & key, const string & default_value, ns_image_server_sql * sql){
+	unsigned long value(0);
+	ns_sql_result res;
+	*sql << "SELECT v FROM "<< sql->table_prefix() << "constants WHERE k = '" << key << "'";
+	sql->get_rows(res);
+	if (res.size() != 1){
+		if (res.size() > 1){
+			*sql << "DELETE FROM "<< sql->table_prefix() << "constants WHERE k = '" << key << "'";
+			sql->send_query();
+		}
+		*sql << "INSERT INTO "<< sql->table_prefix() << "constants SET k='" << key << "', v='" << sql->escape_string(default_value) << "'";
+		sql->send_query();
+		return default_value;
+	}
+	return res[0][0].c_str();
+
+}
+
+void ns_image_server::set_cluster_constant_value(const string & key, const string & value, ns_image_server_sql * sql, const int time_stamp){
+	if (get_cluster_constant_value(key,value,sql) == value)
+		return;
+	*sql << "UPDATE "<< sql->table_prefix() << "constants SET v='" << value << "' ";
+	if (time_stamp != -1)
+		*sql << ",time_stamp=FROM_UNIXTIME(" << time_stamp << ") ";
+	*sql << "WHERE k='" << sql->escape_string(key) << "'";
+	sql->send_query();
+}
+
+void add_string_or_number(std::string & destination, const std::string & desired_string, const std::string & fallback_prefix, const int fallback_int){
+	if (desired_string.size() == 0){
+		destination+=fallback_prefix;
+		destination+=ns_to_string(fallback_int);
+	}
+	else destination+=desired_string;
+}
+
+unsigned long ns_image_server::make_record_for_new_sample_mask(const unsigned long sample_id, ns_sql & sql){
+	sql << "SELECT name, experiment_id FROM capture_samples WHERE id = " << sample_id;
+	ns_sql_result res;
+	sql.get_rows(res);
+	if (res.size() == 0)
+		throw ns_ex("ns_image_server::make_record_for_new_sample_mask()::Could not load sample with id") << sample_id;
+	std::string sample_name = res[0][0],
+		   experiment_id = res[0][1];
+	sql << "SELECT name, id FROM experiments WHERE id=" << experiment_id;
+	sql.get_rows(res);
+	if (res.size() == 0)
+		throw ns_ex("ns_image_server::make_record_for_new_sample_mask()::Could not load experiment with id") << experiment_id;
+	std::string experiment_name = res[0][0];
+
+	std::string path;
+	add_string_or_number(path,experiment_name,"experiment_",atol(experiment_id.c_str()));
+	path += DIR_CHAR_STR;
+	path += "region_masks";
+	std::string filename = "mask_";
+	filename += sample_name + ".tif";
+
+	sql << "INSERT INTO images SET host_id = " << host_id() << ", creation_time=" << ns_current_time() << ", currently_under_processing=0, "
+		<< "path = '" << sql.escape_string(path) << "', filename='" << sql.escape_string(filename) << "', partition='" << image_server.image_storage.get_partition_for_experiment(atol(experiment_id.c_str()),&sql) << "'";
+//	cerr << sql.query() << "\n";
+	unsigned long id = sql.send_query_get_id();
+	sql.send_query("COMMIT");
+
+	return id;
+
+}
+void ns_image_server::check_for_sql_database_access(ns_image_server_sql * sql) const {
+	sql->select_db(*sql_database_choice);
+}
+void ns_image_server::reconnect_sql_connection(ns_sql * sql){
+	try{
+		sql->disconnect();
+	}
+	catch(...){}
+	
+	ns_acquire_lock_for_scope lock(sql_lock,__FILE__,__LINE__);
+
+	//Look through all possible paths to the server until one is found to work.
+	if (sql_server_addresses.empty())
+		throw ns_ex("ns_image_server::reconnect_sql_connection()::No addresses are specified for the sql server");
+	unsigned long start_address_id = current_sql_server_address_id;
+	ns_ex er;
+	for (unsigned int i = 0; i < sql_server_addresses.size(); ++i){
+		const unsigned int j = (i+start_address_id)%sql_server_addresses.size();
+		try{
+			sql->connect(sql_server_addresses[j],sql_user,sql_pwd,0);
+			current_sql_server_address_id = j;
+			er.clear_text();
+			break;
+		}
+		catch(ns_ex & ex){
+			er = ex;
+			
+		}
+	}
+	if (!er.text().empty()){
+		lock.release();
+		throw er;
+	}
+
+	lock.release();
+	sql->select_db(*sql_database_choice);
+}
+
+ns_sql * ns_image_server::new_sql_connection_no_lock_or_retry(const std::string & source_file, const unsigned int source_line){
+	ns_sql *con(0);
+	con = new ns_sql();
+	try{
+		for (std::vector<string>::size_type server_i=0;  server_i < sql_server_addresses.size(); server_i++){
+				//cycle through different possible connections
+				const unsigned int server_id = (server_i+current_sql_server_address_id)%sql_server_addresses.size();
+				try{
+					con->connect(sql_server_addresses[server_id],sql_user,sql_pwd,0);
+					current_sql_server_address_id = server_id;
+				
+					con->select_db(*sql_database_choice);
+					return con;
+				}	
+				catch(...){}
+		}
+	}
+	catch(...){
+		delete con;
+		throw;
+	}
+	return 0;
+}
+
+
+ns_local_buffer_connection * ns_image_server::new_local_buffer_connection(const std::string & source_file, const unsigned int source_line){
+	ns_acquire_lock_for_scope lock(local_buffer_sql_lock,__FILE__,__LINE__);
+	ns_local_buffer_connection * buf(new_local_buffer_connection_no_lock_or_retry(source_file,source_line));
+	lock.release();
+	return buf;
+}
+
+void ns_get_table_create(const std::string & table_name, std::string & result, ns_sql & sql){
+	sql << "SHOW CREATE TABLE " << table_name;
+	ns_sql_result res;
+	sql.get_rows(res);
+	if (res.size() == 0)
+		throw ns_ex("ns_get_table_create::Could not find ") << table_name << " in db!";
+	result = res[0][1];
+}
+
+void ns_add_buffer_suffix_to_table_create(const std::string & table_name, std::string & r){
+	std::string::size_type p = r.find(table_name);
+	if (p == r.npos)
+		throw ns_ex("ns_add_buffer_suffix_to_table_create::Could not find table name in create spec: ") << table_name;
+	r.insert(p,"buffered_");
+}
+void ns_image_server::set_up_local_buffer(){
+	ns_acquire_for_scope<ns_local_buffer_connection> buf(new ns_local_buffer_connection);
+	try{
+		buf().connect(local_buffer_ip,local_buffer_user,local_buffer_pwd,0);
+		buf().select_db(local_buffer_db);
+	}
+	catch(ns_ex & ex){
+			throw ns_ex("set_up_local_buffer()::Could not connect to local buffer.  A local database must be running at ")<<
+				local_buffer_ip << " with username \"" << local_buffer_user << "\" granted access to the schema \"" <<
+				local_buffer_db << "\". These credentials can be set in the image server configuration file."
+				<< "  The error was: " << ex.text();;
+	}
+	const unsigned long number_of_tables(7);
+	const std::string table_names[number_of_tables] = {"capture_schedule",
+								  "captured_images",
+								  "images", 
+								  "experiments", 
+								  "capture_samples", 
+								  "constants", 
+								  "host_event_log"};
+
+	std::vector<char> table_found_in_buffer(number_of_tables,0);
+
+	buf() << "SHOW TABLES";
+	ns_sql_result buffer_tables;
+	buf().get_rows(buffer_tables);
+	for (unsigned int i = 0; i < buffer_tables.size(); i++){
+		for (unsigned int j = 0; j < number_of_tables; j++){
+			if (table_found_in_buffer[j]) continue;
+			if (buffer_tables[i][0] == std::string("buffered_") + table_names[j])
+				table_found_in_buffer[j] = true;
+		}
+	}
+	if (buffer_tables.size() != 0){
+		for (unsigned int i = 0; i < number_of_tables; i++){
+			if (!table_found_in_buffer[i]){
+				throw ns_ex("ns_image_server::set_up_local_buffer()::An incomplete local buffer schema is present.  Table buffered_") 
+					<< table_names[i] << " was not found.  Drop all tables to allow an automatic rebuild of the buffer schema.";
+			}
+		}
+		//if everything is present, we're done!
+		return;
+	}
+
+	ns_acquire_for_scope<ns_sql> sql(new_sql_connection(__FILE__,__LINE__));
+
+
+	for (unsigned int i = 0; i < number_of_tables; i++){
+		string create;
+		ns_get_table_create(table_names[i],create,sql());
+		ns_add_buffer_suffix_to_table_create(table_names[i],create);
+		buf().send_query(create);
+	}
+	
+	#ifndef NS_MINIMAL_SERVER_BUILD
+	ns_buffered_capture_scheduler::store_last_update_time_in_db(ns_synchronized_time(ns_buffered_capture_scheduler::ns_default_update_time,ns_buffered_capture_scheduler::ns_default_update_time),buf());
+	#endif
+}
+ns_local_buffer_connection * ns_image_server::new_local_buffer_connection_no_lock_or_retry(const std::string & source_file, const unsigned int source_line){
+	ns_local_buffer_connection * buf(new ns_local_buffer_connection);
+	try{
+		buf->connect(local_buffer_ip,local_buffer_user,local_buffer_pwd,0);
+		buf->select_db(local_buffer_db);
+	}
+	catch(...){
+
+		delete buf;
+		throw;
+	}
+	return buf;
+}
+
+
+void ns_image_server::get_requested_database_from_db(){
+	if (host_name.size() == 0)
+		return;
+	ns_acquire_for_scope<ns_sql> sql(new_sql_connection(__FILE__,__LINE__));
+	sql() << "SELECT database_used FROM hosts WHERE name = '" << host_name << "'";
+	ns_sql_result res;
+	sql().get_rows(res);
+	if (res.size() == 0)
+		return;
+	try{
+		set_sql_database(res[0][0]);
+	}
+	catch(ns_ex & ex){
+		register_server_event(ex,&sql());
+	}
+	sql.release();
+	return;
+};
+
+void ns_image_server::set_sql_database(const std::string & database_name,const bool report_to_db){
+	if (possible_sql_databases.size() == 0)
+		throw ns_ex("ns_image_server::set_sql_database()::No possible databases specified in ini file!");
+	if (database_name.size() == 0){
+		sql_database_choice = possible_sql_databases.begin();
+		return;
+	}
+	std::vector<std::string>::const_iterator p = std::find(possible_sql_databases.begin(),possible_sql_databases.end(),database_name);
+	if (p == possible_sql_databases.end()){
+		throw ns_ex("ns_image_server::set_sql_database()::Requested database name '") << database_name << "' was not found in list of ini-specified possibilities";
+	}
+	if (report_to_db){
+		ns_acquire_for_scope<ns_sql> sql(new_sql_connection(__FILE__,__LINE__));
+		register_server_event(ns_image_server_event("Switching to database ") << *p,&sql());
+		sql() << "UPDATE hosts SET database_used='" << *p << "' WHERE id = " << host_id();
+		sql().send_query();
+		image_server.unregister_host();	
+	}
+	sql_database_choice = p;
+	if (report_to_db){
+		image_server.register_host();
+		image_server.register_devices();
+	}
+}
+ns_sql * ns_image_server::new_sql_connection(const std::string & source_file, const unsigned int source_line, const unsigned int retry_count){
+	//if there's a problem with the sql server, handle it.  Don't just cycle through errors!
+	ns_acquire_lock_for_scope lock(sql_lock,source_file.c_str(),source_line);
+	ns_sql *con(0);
+	unsigned long try_count(0);
+	con = new ns_sql();
+
+	unsigned long start_address_id = current_sql_server_address_id;
+
+	try{
+		if (sql_server_addresses.empty())
+			throw ns_ex("ns_image_server::new_sql_connection()::No addresses are specified for the sql server");
+
+		while(true){
+			//cycle through different possible connections
+			const unsigned int server_id = (try_count+start_address_id)%sql_server_addresses.size();
+			try{
+				con->connect(sql_server_addresses[server_id],sql_user,sql_pwd,0);
+				current_sql_server_address_id = server_id;
+				break;
+			}
+			catch(ns_ex & ex){
+				std::string alert_text;
+				ns_image_server_event sev;
+				if (retry_count > 0){
+					alert_text = "Cannot contact the SQL server on attempt ";
+					alert_text += ns_to_string(try_count) + "/" + ns_to_string(retry_count) + ": ";
+				}
+				else{
+					alert_text = "Cannot contact the SQL server:";
+				}
+
+				alert_text += sql_user + "@" + sql_server_addresses[server_id] + "):: ";
+				alert_text += source_file + "::" + ns_to_string(source_line);
+				
+				if (retry_count > 0){
+					ns_image_server_event sev;
+					sev << alert_text << " : " << ex.text() << "..." << ns_ts_sql_error;
+					register_server_event_no_db(sev);
+
+					try{
+						//after two checks of each possible route to the sql server, send an alert
+						if (try_count == 2*sql_server_addresses.size()){
+							alert_handler.submit_desperate_alert(alert_text);
+						}
+					}
+					catch(ns_ex & ex2){
+						ns_image_server_event sev2;
+						sev2 << "Exception trying to send alert: " << ex2.text() << ns_ts_sql_error;
+						register_server_event_no_db(sev2);					
+					}
+					catch(...){
+						ns_image_server_event sev2;
+						sev2 << "Unknown exception trying to send alert."  << ns_ts_sql_error;
+						register_server_event_no_db(sev2);	
+					}
+				}
+				if (retry_count == 0)
+					throw ns_ex(alert_text);
+
+				if (try_count == sql_server_addresses.size()*retry_count)
+					throw ns_ex("Gave up looking for the sql server.") << ns_sql_fatal;
+
+
+				try_count++;
+				ns_thread::sleep(10);
+				//cerr << "Retrying\n";
+			}
+		}
+
+		lock.release();
+		con->select_db(*sql_database_choice);
+		return con;
+	}
+	catch(...){
+		lock.release();
+		ns_safe_delete(con);
+		throw;
+	}
+}
+
+//look for existing device name, create if not found
+void ns_image_server::register_device(const ns_device_summary & device,ns_sql & con){
+	
+	con << "SELECT host_id FROM devices WHERE name='" << device.name << "'";
+	ns_sql_result device_info;
+	con.get_rows(device_info);
+	if (device_info.size() > 1)
+		throw ns_ex() << static_cast<unsigned long>(device_info.size()) << " devices named " << device.name << " were found!";
+	
+	//if the device does not exist in database, register it.
+	if (device_info.size() == 0){
+		con << "INSERT INTO devices SET host_id ='" << image_server.host_id() << "', name='" << device.name << "',"
+			<< "simulated_device=" << (device.simulated_device?"1":"0") << ", unknown_identity=" << (device.unknown_identity?"1":"0")
+			<< ", pause_captures=" << (device.paused?"1":"0") <<  ", currently_scanning=" << (device.currently_scanning?"1":"0")
+			<< ", autoscan_interval=" << device.autoscan_interval << ",comments='',error_text=''";
+		con.send_query();
+	}
+	else{
+		//if the device is registered as being owned by another server, change its registration.
+		if (atoi(device_info[0][0].c_str()) != image_server.host_id()){
+			con << "UPDATE devices SET host_id ='" << image_server.host_id() << "', in_recognized_error_state='0', "
+			<< "simulated_device= " << (device.simulated_device?"1":"0") << ", unknown_identity=" << (device.unknown_identity?"1":"0")
+			<< ", pause_captures=" << (device.paused?"1":"0") << ", currently_scanning=" << (device.currently_scanning?"1":"0")
+			<< ", autoscan_interval=" << device.autoscan_interval
+			<< " WHERE name='" << device.name << "'";
+			con.send_query();
+		}		
+	}
+}
+
+void ns_image_server::load_quotes(std::vector<std::pair<std::string,std::string> > & quotes, ns_sql & con){
+	ns_sql_result res;
+	con.get_rows("SELECT quote, author FROM daily_quotes",res);
+
+	ns_stock_quotes q;
+	int stk = con.get_integer_value("SELECT count(quote) FROM daily_quotes WHERE stock=1");
+	if (res.size() == 0 || (stk > 0 && stk != q.count())){
+		q.submit_quotes(con);
+		con.get_rows("SELECT quote,author FROM daily_quotes",res);
+	}
+	quotes.resize(res.size());
+	for (unsigned int i = 0; i < res.size(); i++){
+		quotes[i].first = res[i][0];
+		quotes[i].second = res[i][1];
+	}
+}
+bool ns_image_server::new_software_release_available(){
+	ns_sql * con = new_sql_connection(__FILE__,__LINE__);
+	try{
+		bool res = new_software_release_available(*con);
+		delete con;
+		return res;
+	}
+	catch(...){
+		delete con;
+		throw;
+	}
+}
+
+void ns_image_server::wait_for_pending_threads(){
+	alert_handler_thread.block_on_finish();
+};
+
+ns_thread_return_type alert_handler_start(void * a){
+	try{
+		ns_alert_handler * alert_handler(static_cast<ns_alert_handler*>(a));
+		ns_acquire_for_scope<ns_sql> sql(image_server.new_sql_connection(__FILE__,__LINE__,0));
+		alert_handler->initialize(sql());
+		alert_handler->submit_buffered_alerts(sql());
+		if (alert_handler->can_send_alerts())
+			alert_handler->handle_alerts(sql());
+		sql.release();
+	}
+	catch(ns_ex & ex){
+		try{
+			image_server.register_server_event(ns_image_server::ns_register_in_central_db,ns_ex("alert_handler_start::") << ex.text());
+		}
+		catch(ns_ex & ex2){
+			cerr << "alert_handler_start::Could not register the error " << ex.text() << ":" << ex2.text() << "\n";
+		}
+		catch(...){
+			cerr << "alert_handler_start::Could not register the error " << ex.text() << ": due to an unknown error\n";
+		}
+	}
+	catch(...){
+		try{
+			image_server.register_server_event(ns_image_server::ns_register_in_central_db,ns_ex("alert_handler_start::Unknown error occurred!"));
+		}
+		catch(ns_ex & ex2){
+			cerr << "alert_handler_start::Could not register an Unknown Error :" << ex2.text() << "\n";
+		}
+		catch(...){
+			cerr << "alert_handler_start::Could not register an unknown error due to an unknown error!\n";
+		}
+	}
+	
+	try{
+		image_server.register_alerts_as_handled();
+	}
+	catch(ns_ex & ex){
+		try{
+			image_server.register_server_event(ns_image_server::ns_register_in_central_db,ns_ex("alert_handler_start::") << ex.text());
+		}
+		catch(ns_ex & ex2){
+			cerr << "alert_handler_start::Could not register the error " << ex.text() << ":" << ex2.text() << "\n";
+		}
+		catch(...){
+			cerr << "alert_handler_start::Could not register the error " << ex.text() << ": due to an unknown error\n";
+	
+		}
+		return 0;
+	}
+	catch(...){
+		try{
+			image_server.register_server_event(ns_image_server::ns_register_in_central_db,ns_ex("alert_handler_start::Unknown error occurred in thread cleanup!"));
+		}
+		catch(ns_ex & ex2){
+			cerr << "alert_handler_start::Could not register an Unknown Error :" << ex2.text() << "\n";
+		}
+		catch(...){
+			cerr << "alert_handler_start::Could not register an unknown error due to an unknown error!\n";
+		}
+		return 0;
+	}
+	return 0;
+};
+void ns_image_server::handle_alerts(){
+	if (!alert_handler_thread.is_running())
+		alert_handler_thread.run(alert_handler_start,&alert_handler);
+}
+bool ns_image_server::new_software_release_available(ns_sql & sql){
+	sql << "SELECT software_version_major, software_version_minor, software_version_compile FROM hosts WHERE "
+		<< "software_version_major > " << software_version_major() << " OR "
+		<< "(software_version_major = " << software_version_major() << " AND software_version_minor >" << software_version_minor() << ") OR "
+		<< "(software_version_major = " << software_version_major() << " AND software_version_minor =" << software_version_minor() << " AND "
+		<< " software_version_compile > " << software_version_compile() << ")";
+	ns_sql_result res;
+	sql.get_rows(res);
+	return (res.size() > 0);	
+}
+
+void ns_image_server::unregister_host() {
+	ns_acquire_for_scope<ns_sql> sql(new_sql_connection(__FILE__,__LINE__));
+	sql() << "UPDATE hosts SET last_ping = 0 WHERE name = '" << host_name << "'";
+	sql().send_query();
+	sql.release();
+};
+void ns_image_server::register_host(bool overwrite_current_entry){
+	
+	//log in to the server, register the host, get its database id, and update the filed ip address.
+
+	ns_acquire_for_scope<ns_sql> sql(new_sql_connection(__FILE__,__LINE__));
+
+	std::string long_term_storage_ = "0";
+	if (image_storage.long_term_storage_was_recently_writeable())
+		long_term_storage_ = "1";
+	sql().set_autocommit(false);
+	sql().send_query("BEGIN");
+	sql() << "SELECT id, ip, port, long_term_storage_enabled FROM hosts WHERE name='" << host_name << "'";
+	if (overwrite_current_entry)
+		sql() << " FOR UPDATE";
+
+	ns_sql_result h;
+	sql().get_rows(h);
+
+	if (h.size() == 0){
+		sql()<< "INSERT INTO hosts SET name='" << host_name << "', base_host_name='" << base_host_name << "', ip='" << host_ip << "', port='" << _dispatcher_port 
+			<< "', long_term_storage_enabled='" << long_term_storage_ << "',"
+			<< "software_version_major=" << software_version_major() << ", software_version_minor=" << software_version_minor()
+			<< ", software_version_compile=" << software_version_compile()<< ",database_used='" << *sql_database_choice << "'";
+		_host_id = sql().send_query_get_id();
+	}
+	else if (h.size() != 1)
+		throw ns_ex() << (int)h.size() << " hosts found with current hostname!";
+	else{
+			
+		_host_id = atoi(h[0][0].c_str());
+		if (overwrite_current_entry){
+			sql() << "UPDATE hosts SET ip='" << host_ip << "', port='" << _dispatcher_port 
+				<< "', long_term_storage_enabled='" << long_term_storage_ << "', "
+				<< "software_version_major=" << software_version_major() << ", software_version_minor=" << software_version_minor()
+				<< ", software_version_compile=" << software_version_compile() << ",database_used='" << *sql_database_choice << "'" <<
+				" WHERE id='" << _host_id << "'";
+			sql().send_query();
+		}
+	}
+	sql().send_query("COMMIT");
+	sql.release();
+}
+void ns_image_server::update_device_status_in_db(ns_sql & sql) const{
+	#ifndef NS_MINIMAL_SERVER_BUILD
+	ns_image_server_device_manager::ns_device_name_list devices;
+	image_server.device_manager.request_device_list(devices);
+	for (unsigned int i = 0; i < devices.size(); ++i){
+		sql << "UPDATE devices SET currently_scanning=" << (devices[i].currently_scanning?"1":"0") 
+			<< ", last_capture_start_time=" << devices[i].last_capture_start_time
+			<< ", pause_captures=" << devices[i].paused << ", autoscan_interval="<<devices[i].autoscan_interval
+			<< ", last_autoscan_time=" << devices[i].last_autoscan_time
+			<< ", next_autoscan_time=" << devices[i].next_autoscan_time
+			<< " WHERE name = '" << devices[i].name << "'";
+		sql.send_query();
+	}
+	#endif
+}
+void ns_image_server::register_devices(const bool verbose){
+	#ifndef NS_MINIMAL_SERVER_BUILD
+	ns_acquire_for_scope<ns_sql> sql(new_sql_connection(__FILE__,__LINE__));
+
+	ns_image_server_device_manager::ns_device_name_list connected_devices;
+	device_manager.request_device_list(connected_devices);
+
+	//we want to remember specified information about devices, so we download it from the db before clearing the db. 
+	sql() << "SELECT name, pause_captures,autoscan_interval, next_autoscan_time FROM devices WHERE host_id = " << image_server.host_id();
+	ns_sql_result device_state;
+	sql().get_rows(device_state);
+	std::map<string,ns_device_summary> device_state_map;
+	for (unsigned int i = 0; i < device_state.size(); i++){
+		device_state_map[device_state[i][0]].paused = device_state[i][1]!="0";
+		device_state_map[device_state[i][0]].autoscan_interval = atol(device_state[i][2].c_str());
+		device_state_map[device_state[i][0]].next_autoscan_time = atol(device_state[i][3].c_str());
+	}
+	unsigned long current_time(ns_current_time());
+	//only specify new pause states for devices that are currently connected
+	for(unsigned int i = 0; i < connected_devices.size(); i++){
+		std::map<string,ns_device_summary>::iterator p(device_state_map.find(connected_devices[i].name));
+		if (p==device_state_map.end())
+			continue;
+		try{
+			device_manager.set_pause_state(connected_devices[i].name,p->second.paused);
+			if (p->second.next_autoscan_time < current_time)
+				 device_manager.set_autoscan_interval_and_balance(connected_devices[i].name,p->second.autoscan_interval,sql());
+			else device_manager.set_autoscan_interval(connected_devices[i].name,p->second.autoscan_interval,p->second.next_autoscan_time);
+		}
+		catch(ns_ex & ex){
+			image_server.register_server_event(ex,&sql());
+		}
+	}
+
+	sql() << "DELETE from devices WHERE host_id ='" << image_server.host_id() << "'";
+	sql().send_query();
+
+	std::string devices_registered;
+
+	for (unsigned int i = 0; i < connected_devices.size(); i++){
+		register_device(connected_devices[i],sql());	
+		devices_registered += connected_devices[i].name + ",";
+	}
+	ns_image_server_event ev("Registering devices ");
+	ev << devices_registered;
+
+	if (verbose)image_server.register_server_event(ev,&sql());
+	sql.release();
+	
+	#endif
+}
+bool ns_to_bool(const std::string & s){
+	return (s == "yes" || s == "Yes" || s == "YES" || s == "true" || s == "True" || s == "TRUE" || 
+			s == "y" || s == "Y" || s == "1");
+}
+void ns_image_server::load_constants(const ns_image_server::ns_image_server_exec_type & exec_type, const ns_multiprocess_control_options & opt,const bool reject_incorrect_fields){
+	ns_ini constants;
+	constants.reject_incorrect_fields(reject_incorrect_fields);
+	//register ini file constants
+	constants.add_field("host_name");
+	constants.add_field("device_names");
+	constants.add_field("ethernet_interface","");
+	constants.add_field("dispatcher_port","1043");
+	constants.add_field("server_crash_daemon_port","1042");
+	constants.add_field("central_sql_hostname","localhost");
+	constants.add_field("central_sql_username","image_server");
+	constants.add_field("central_sql_password");
+	constants.add_field("central_sql_databases","image_server;image_server_archive");
+
+	constants.add_field("local_buffer_sql_hostname","localhost");
+	constants.add_field("local_buffer_sql_username","image_server");
+	constants.add_field("local_buffer_sql_database","image_server_buffer");
+	constants.add_field("local_buffer_sql_password");
+
+	constants.add_field("long_term_storage_directory","");
+	constants.add_field("results_storage_directory","");
+	constants.add_field("volatile_storage_directory","./");
+	constants.add_field("dispatcher_refresh_interval","6000");
+	constants.add_field("server_timeout_interval","300");
+	constants.add_field("log_filename","image_server_log.txt");
+	constants.add_field("hide_window","no");
+	constants.add_field("device_capture_command","/usr/local/bin/scanimage");
+	constants.add_field("device_list_command","/usr/local/bin/sane-find-scanner");
+	constants.add_field("run_autonomously","yes");
+	constants.add_field("act_as_image_capture_server","no");
+	constants.add_field("device_barcode_coordinates","-l 0in -t 10.3in -x 8in -y 2in");
+	constants.add_field("act_as_processing_node","yes");
+	constants.add_field("video_compiler_filename","./x264.exe");
+	constants.add_field("video_ppt_compiler_filename","./ffmpeg.exe");
+	constants.add_field("compile_videos","yes");
+	constants.add_field("halt_on_new_software_release","yes");	
+	constants.add_field("latest_release_path","image_server_software/image_server_win32.exe");
+	constants.add_field("simulated_device_name", ".");
+	constants.add_field("mail_path", "/usr/bin/mail");
+	constants.add_field("nodes_per_machine", "1");
+
+	ns_ini terminal_constants;
+	terminal_constants.reject_incorrect_fields(reject_incorrect_fields);
+	terminal_constants.add_field("max_width","1024");
+	terminal_constants.add_field("max_height","768");
+	terminal_constants.add_field("hand_annotation_resize_factor","3");
+	terminal_constants.add_field("mask_upload_database","image_server");
+	terminal_constants.add_field("mask_upload_hostname","myhost");
+	string ini_directory,ini_filename;
+	try{
+		//look for the ini file in the current directory
+		if (ns_dir::file_exists("./ns_image_server.ini")){
+			ini_filename = "./ns_image_server.ini";
+			constants.load("./ns_image_server.ini");
+			ini_directory = "./";
+		}
+		//if not found, look for a forwarding file
+		else if (ns_dir::file_exists("./ns_image_server_ini.forward")){
+			ifstream in("./ns_image_server_ini.forward");
+			std::string ini_filename;
+			in >> ini_filename;
+			in.close();
+			ini_directory = ns_dir::extract_path(ini_filename);
+			constants.load(ini_filename);
+		}	
+		else if (ns_dir::file_exists("c:\\ns_image_server_ini.forward")){
+			ifstream in("c:\\ns_image_server_ini.forward");
+			std::string ini_filename;
+			in >> ini_filename;
+			in.close();
+			ini_directory = ns_dir::extract_path(ini_filename);
+			constants.load(ini_filename);
+		}
+		//if not found, look in the default directory location
+		else{
+			ini_filename = NS_INI_PATH;
+			constants.load(NS_INI_PATH);
+			ini_directory = ns_dir::extract_path(NS_INI_PATH);
+		}
+
+		if (exec_type == ns_worm_terminal_type){
+			ini_filename = ini_directory + DIR_CHAR_STR + "ns_worm_terminal.ini";
+			terminal_constants.load(ini_directory + DIR_CHAR_STR + "ns_worm_terminal.ini");
+			max_terminal_window_size.x = atol(terminal_constants["max_width"].c_str());
+			max_terminal_window_size.y = atol(terminal_constants["max_height"].c_str());
+			terminal_hand_annotation_resize_factor = atol(terminal_constants["hand_annotation_resize_factor"].c_str());
+			mask_upload_database = terminal_constants["mask_upload_database"];
+			mask_upload_hostname = terminal_constants["mask_upload_hostname"];
+		}
+		{
+			string sql_server_tmp(constants["central_sql_hostname"]);
+			sql_server_addresses.resize(0);
+			//split the server names into an ordered list.
+			//the earliest addresses will be tried first.
+			if (sql_server_tmp.size() != 0){
+				sql_server_addresses.resize(1);
+				for (unsigned int i = 0; i < sql_server_tmp.size(); i++){
+
+					if (sql_server_tmp[i] == ';' || isspace(sql_server_tmp[i]))
+						sql_server_addresses.resize(sql_server_addresses.size()+1);
+					else
+						(*sql_server_addresses.rbegin()) += sql_server_tmp[i];
+				}
+			}
+		}
+		{
+			string sql_db_tmp(constants["central_sql_databases"]);
+			//split the server database options into an ordered list.
+			//the earliest addresses will be tried first.
+			possible_sql_databases.resize(0);
+			if (sql_db_tmp.size() != 0){
+				possible_sql_databases.resize(1);
+				for (unsigned int i = 0; i < sql_db_tmp.size(); i++){
+
+					if (sql_db_tmp[i] == ';' || isspace(sql_db_tmp[i]))
+						possible_sql_databases.resize(possible_sql_databases.size()+1);
+					else
+						(*possible_sql_databases.rbegin()) += sql_db_tmp[i];
+				}
+			}
+		}
+		//set default database
+		set_sql_database();
+
+		sql_user				= constants["central_sql_username"];
+		sql_pwd					= constants["central_sql_password"];
+
+		local_buffer_db = constants["local_buffer_sql_database"];
+		local_buffer_ip = constants["local_buffer_sql_hostname"];
+		local_buffer_pwd = constants["local_buffer_sql_password"];
+		local_buffer_user = constants["local_buffer_sql_username"]; 
+
+		for (unsigned int i = 0; i < possible_sql_databases.size(); i++){
+			if (local_buffer_db == possible_sql_databases[i])
+				throw ns_ex("The local sql database cannot have the same name as any of the central databases.");
+		}
+
+		if (host_name.size() > 15)
+			throw ns_ex("Host names must be 15 characters or less.  \"") << host_name << "\" is " << host_name.size() << " characters.";
+		base_host_name			= constants["host_name"];
+		host_name				= opt.host_name(base_host_name);
+		number_of_node_processes_per_machine_ = atol(constants["nodes_per_machine"].c_str());
+		volatile_storage_directory	= opt.volatile_storage(ns_dir::format_path(constants["volatile_storage_directory"]));
+		_dispatcher_port		= opt.port(atoi(constants["dispatcher_port"].c_str()));
+		_act_as_an_image_capture_server = ( ns_to_bool(constants["act_as_image_capture_server"]) && opt.manage_capture_devices);
+		_compile_videos = ( ns_to_bool(constants["compile_videos"]) && opt.compile_videos );
+	
+		long_term_storage_directory	= ns_dir::format_path(constants["long_term_storage_directory"]);
+		results_storage_directory	= ns_dir::format_path(constants["results_storage_directory"]);
+
+		_capture_command		= constants["device_capture_command"];
+		_server_crash_daemon_port	= atol(constants["server_crash_daemon_port"].c_str());
+
+		_dispatcher_refresh_interval = atoi(constants["dispatcher_refresh_interval"].c_str())/1000;
+		if (_dispatcher_refresh_interval == 0) _dispatcher_refresh_interval = 1;
+		_server_timeout_interval = atol(constants["server_timeout_interval"].c_str());
+		_log_filename = constants["log_filename"];
+		_hide_window = ns_to_bool(constants["hide_window"]);
+		_run_autonomously = ns_to_bool(constants["run_autonomously"]);
+		_scanner_list_command	= constants["device_list_command"];
+		_scanner_list_coord = constants["device_barcode_coordinates"];
+		_act_as_processing_node = ns_to_bool(constants["act_as_processing_node"]);
+		_halt_on_new_software_release = ns_to_bool(constants["halt_on_new_software_release"]);
+		_video_compiler_filename = constants["video_compiler_filename"];
+		_video_ppt_compiler_filename = constants["video_ppt_compiler_filename"];
+		_latest_release_path = constants["latest_release_path"];
+	//	_local_exec_path = constants["local_exec_path"];
+		_simulated_device_name = base_host_name + "::" + opt.simulated_device_name(constants["simulated_device_name"]);
+		for (unsigned int i = 0; i < _simulated_device_name.size(); i++){
+			if (!isalpha(_simulated_device_name[i]) && !isdigit(_simulated_device_name[i]))
+				_simulated_device_name[i] = '_';
+		}
+		_maximum_allowed_local_scan_delay = 0;
+		_maximum_allowed_remote_scan_delay = 0;
+		if (_simulated_device_name.size() < 2)
+			_simulated_device_name.clear();
+		_mail_path= constants["mail_path"];
+
+		if (_compile_videos){
+			if (!ns_dir::file_exists(image_server.video_compiler_filename()))
+				throw ns_ex ("ns_image_server::Specified video complier filename (") << _video_compiler_filename << ") does not exist.";
+			try{
+				ns_external_execute_options opt;
+				opt.binary = true;
+				ns_external_execute exec;
+				exec.run(image_server.video_compiler_filename(), "", opt);
+				exec.release_io();
+			}
+			catch(ns_ex & ex){
+				throw ns_ex ("ns_image_server::Specified video complier filename (") << _video_compiler_filename << ") cannot be executed: " << ex.text();
+			}
+			catch(...){
+				throw ns_ex ("ns_image_server::Specified video complier filename (") << _video_compiler_filename << ") cannot be executed.";
+			}
+		}
+		#ifndef WIN32
+			//omp_set_num_threads(_number_of_simultaneous_threads);
+			//omp_set_dynamic(_number_of_simultaneous_threads);
+		#endif
+	}
+	catch(ns_ex & ex){
+		ns_ex ex2("Problem identified in ");
+		ex2 << ini_filename << ":" << ex.text();
+		throw ns_ex(ex2);
+	}
+	
+		//	cerr << "LOOP";
+	//set output directories for ther server
+	image_storage.set_directories(volatile_storage_directory, long_term_storage_directory);
+	results_storage.set_results_directory(results_storage_directory);
+	//cerr << "SNAP";
+	//cerr << "GFRP";
+	if (host_name.size() == 0)
+		throw ns_ex("No host name specified in ini file!");
+
+	//open local logfile.
+	std::string lname = volatile_storage_directory;
+	lname += DIR_CHAR_STR;
+	lname += ns_dir::extract_filename_without_extension(_log_filename);
+	string log_suffix;
+	switch(exec_type){
+		case ns_image_server_type:
+				log_suffix = "_server";
+				_cache_subdirectory = "server_cache";
+				break;
+		case ns_worm_terminal_type:
+				log_suffix = "_terminal";
+				_cache_subdirectory = "terminal_cache";
+				break;
+		case ns_sever_updater_type:
+				log_suffix = "_updater";
+				_cache_subdirectory = "updater_cache";
+				break;
+		default: throw ns_ex("ns_image_server::load_constants()::Unknown image server exec type!");
+
+	}
+	lname += log_suffix + ".txt";
+
+	ns_dir::create_directory_recursive(volatile_storage_directory);
+	if (event_log_open){
+		event_log.close();
+		event_log_open = false;
+	}
+	event_log.open(lname.c_str(),ios_base::app);
+	if (event_log.fail())
+		throw ns_ex("ns_image_server::Could not open log file (") << lname << ") for writing";
+	event_log_open = true;
+	//Obtain local network information
+	_ethernet_interface = constants["ethernet_interface"];
+	
+
+	ns_socket socket;
+	host_ip = socket.get_local_ip_address(_ethernet_interface);
+}
+void ns_image_server::pause_host(){
+	
+	image_server.server_pause_status = true;
+	ns_acquire_for_scope<ns_sql> sql(image_server.new_sql_connection(__FILE__,__LINE__));
+	
+	sql() << "UPDATE hosts SET pause_requested=1 WHERE id="<<image_server.host_id();
+	sql().send_query();
+	sql.release();
+}
+
+void ns_image_server::get_alert_suppression_lists(std::vector<std::string> & devices_to_suppress, std::vector<std::string> & experiments_to_suppress,ns_image_server_sql * sql){
+		*sql << "SELECT v FROM constants WHERE k='supress_alerts_for_device'";
+		ns_sql_result res;
+		sql->get_rows(res);
+		if (res.size() == 0)
+			image_server.set_cluster_constant_value("supress_alerts_for_device",".",sql);
+		for (unsigned int i = 0; i < res.size(); i++){
+			if (res[i][0] == ".") continue;
+			devices_to_suppress.push_back(res[i][0]);
+		}
+
+		*sql << "SELECT v FROM constants WHERE k='supress_alerts_for_experiment'";
+		sql->get_rows(res);
+		if (res.size() == 0)
+			image_server.set_cluster_constant_value("supress_alerts_for_experiment",".",sql);
+
+		for (unsigned int i = 0; i < res.size(); i++){
+			if (res[i][0] == ".") continue;
+			experiments_to_suppress.push_back(res[i][0]);
+		}
+}
+
+#ifdef _WIN32 
+void ns_image_server::set_console_window_title(const string & title) const{
+	string t(title);
+	if (t.size() == 0){
+		if (host_name.size() == 0)
+			t="ns_image_server";
+		else t = string("ns_image_server::") + host_name;
+	}
+	SetConsoleTitle(t.c_str());
+}
+#endif
+
+
+void ns_image_server::shut_down_host(){
+	exit_requested = true;
+	//shut down the dispatcher
+	if (!send_message_to_running_server(NS_QUIT))
+		throw ns_ex("Could not submit shutdown command to ") << image_server.dispatcher_ip() << ":" << image_server.dispatcher_port() << ".";
+		
+}
+
+/*void ns_image_server::delete_stored_image(const unsigned long image_id, ns_sql & sql){
+		sql << "SELECT path, filename FROM images WHERE id = " << image_id;
+		ns_sql_result res;
+		sql.get_rows(res);
+		if (res.size() != 0){
+			ns_image_server_image im;
+			im.path = res[0][0];
+			im.filename = res[0][1];
+			image_storage.delete_from_storage(im,sql);
+		}
+		sql << "DELETE FROM images WHERE id = " << image_id;
+		sql.send_query();
+		sql.send_query("COMMIT");
+}*/
+
+void ns_svm_model_specification::write_statistic_ranges(const std::string & filename, bool write_all_features){
+	
+
+	ofstream out(filename.c_str());
+	if (out.fail())
+		throw ns_ex("ns_detected_worm_stats::Could not open range file ") << filename;
+	out << "Feature\tMin\tMax\tAvg\tSTD\tWorm Avg\n";
+	for (unsigned int i = 0; i < (unsigned int)ns_stat_number_of_stats; i++){
+		if (write_all_features || (included_statistics[i]!=0 && statistics_ranges[i].specified)){
+			out << i <<"\t" << statistics_ranges[i].min << "\t" << statistics_ranges[i].max << "\t" 
+			<< statistics_ranges[i].avg << "\t" << statistics_ranges[i].std 
+			<< "\t" << statistics_ranges[i].worm_avg << "\t\t\\\\" << ns_classifier_label((ns_detected_worm_classifier)i) <<"\n";
+		}
+	}
+		out.close();
+}	
+void ns_svm_model_specification::read_statistic_ranges(const std::string & filename){
+	if (statistics_ranges.size() == 0)
+		statistics_ranges.resize((unsigned int)ns_stat_number_of_stats);
+
+	ifstream in(filename.c_str());
+	if (in.fail())
+		throw ns_ex("ns_detected_worm_stats::Could not open range file ") << filename;
+	while(true){
+		char a(in.get());
+		if (in.fail())
+			throw ns_ex("ns_detected_worm_stats::Error in ") << filename << " Line " << 0;
+		if (a == '\n')
+			break;
+	}
+	std::string temp;
+	for (unsigned int i = 0; i < statistics_ranges.size(); i++){
+		statistics_ranges[i].specified = false;
+	}
+	unsigned long line_id(1);
+	while(true){
+		line_id++;
+		unsigned long feature_id;
+		in >> feature_id;
+		if (in.fail())
+			break;
+		if (feature_id >= statistics_ranges.size())
+			throw ns_ex("Invalid feature specified:" ) << feature_id;
+		statistics_ranges[feature_id].specified = true;
+		in >> statistics_ranges[feature_id].min;
+		if (in.fail())
+			throw ns_ex("ns_detected_worm_stats::Error in ") << filename << " Line " << line_id;
+		in >> statistics_ranges[feature_id].max;
+		if (in.fail())
+		if (in.fail())
+			throw ns_ex("ns_detected_worm_stats::Error in ") << filename << " Line " << line_id;
+		in >> statistics_ranges[feature_id].avg;
+		if (in.fail())
+			throw ns_ex("ns_detected_worm_stats::Error in ") << filename << " Line " << line_id;
+		in >> statistics_ranges[feature_id].std;
+		if (in.fail())
+			throw ns_ex("ns_detected_worm_stats::Error in ") << filename << " Line " << line_id;
+		in >> statistics_ranges[feature_id].worm_avg;
+		if (in.fail())
+			throw ns_ex("ns_detected_worm_stats::Error in ") << filename << " Line " << line_id;
+		std::getline(in,temp);
+		if (in.fail())
+			throw ns_ex("ns_detected_worm_stats::Error in ") << filename << " Line " << line_id;
+	}
+	in.close();
+}
+
+
+void ns_svm_model_specification::read_included_stats(const std::string & filename){
+	ifstream in(filename.c_str());
+	if (in.fail())
+		throw ns_ex("ns_model_specification::read_included_stats()Could not load file ") << filename;
+	unsigned long statistics_used(0);
+	string stat_str;
+	int state(0);
+	while(true){
+		char a; 
+		a = in.get();
+		if (in.fail())
+			break;
+		if (state == 0){
+			if (!isspace(a))
+				stat_str+=a;	
+			else{
+				if (stat_str.size() == 0)
+					continue;  //skip leading whitespace
+				int stat_specified = atol(stat_str.c_str());  //we've read in the entire number
+				if (stat_specified >= included_statistics.size())
+					throw ns_ex("ns_model_specification::Invalid statistic specified ") << stat_specified;
+				included_statistics[stat_specified] = 1;
+				statistics_used++;
+				stat_str.resize(0);
+				state = (a == '\n')?0:1;
+			}
+		}
+		else if (state == 1){
+			if (a == '\n') state = 0; //keep going until we find the newline
+			continue;
+		}
+	}
+}
+void ns_svm_model_specification::read_excluded_stats(const std::string & filename){
+	std::vector<unsigned long> excluded_statistics((unsigned int)ns_stat_number_of_stats,0);
+
+	ifstream in(filename.c_str());
+	if (in.fail())
+		throw ns_ex("ns_model_specification::read_excluded_stats()Could not load file ") << filename;
+	while(true){
+		int a = 0;
+		in >> a;
+		if (in.fail())
+			break;
+		if ((unsigned int)a >= excluded_statistics.size())
+			throw ns_ex("ns_model_specification::Invalid statistic exclusion: ") << a;
+	//	cerr << "ns_model_specification::Excluding statistic " << ns_classifier_label((ns_detected_worm_classifier)a) << "\n";
+		excluded_statistics[a] = 1;
+	}
+	included_statistics.resize((unsigned int)ns_stat_number_of_stats);
+	for (unsigned int i = 0; i < included_statistics.size(); i++)
+		included_statistics[i] = !excluded_statistics[i];
+}
+
+void ns_principal_component_transformation_specification::read(const std::string & filename){
+	pc_vectors.resize(0);
+	ifstream in(filename.c_str());
+	if (in.fail())
+		return;
+
+	pc_vectors.resize((int)ns_stat_number_of_stats,std::vector<double>((int)ns_stat_number_of_stats,0));
+
+	std::string temp;
+	for (unsigned int i = 0; i < (unsigned int)ns_stat_number_of_stats; i++){
+		for (unsigned int j = 0; j < (unsigned int)ns_stat_number_of_stats; j++){
+			in >> pc_vectors[j][i];
+			if (in.fail())
+				throw ns_ex("ns_principal_component_transformation_specification::Error in file ") << filename;
+		}
+	}
+	in.close();
+}
+
+std::string ns_image_server::capture_preview_parameters(const ns_capture_device::ns_device_preview_type & type,ns_sql & sql){
+	string transparency_default("--mode=Gray --format=tiff --source=\"Transparency Unit\" --resolution=300 --depth=8 -l 0in -t 0in -x 8.5in -y 10.5in"),
+		   reflective_default("--mode=Gray --format=tiff --source=\"Flatbed\" --resolution=300 --depth=8 -l 0in -t 0in -x 8.5in -y 11.7in");
+
+	switch(type){
+		case ns_capture_device::ns_no_preview:
+			throw ns_ex("ns_image_server::capture_preview_parameters():Requesting capture command for a no_preview request.");
+		case ns_capture_device::ns_transparency_preview:
+			return get_cluster_constant_value("transparency_preview_parameters",transparency_default,&sql);
+		case ns_capture_device::ns_reflective_preview:	
+			return get_cluster_constant_value("reflective_preview_parameters",transparency_default,&sql);
+		default: throw ns_ex("ns_image_server::capture_preview_parameters():Unknown preview request type: ) ") << (unsigned int)type;
+	}
+}
+void ns_image_server::clear_old_server_events(ns_sql & sql){
+	image_server.register_server_event(ns_image_server_event("Cleaning up server event log."),&sql);
+	sql << "DELETE FROM host_event_log WHERE time < " << ns_current_time() - 14*24*60*60;
+	sql.send_query();
+	sql.send_query("COMMIT");
+}
+
+
+
+ns_64_bit ns_image_server::register_server_event(const ns_register_type type,const ns_image_server_event & s_event){
+	if (s_event.type()==ns_ts_error){
+			register_server_event_no_db(s_event);
+			return 1;
+	}
+
+	ns_acquire_for_scope<ns_image_server_sql> sql;
+
+	if (type==ns_register_in_central_db_with_fallback || type == ns_register_in_central_db){
+		try{
+			sql.attach(new_sql_connection_no_lock_or_retry(__FILE__,__LINE__));
+		}
+		catch(ns_ex & ex){
+			if (type!=ns_register_in_central_db_with_fallback)
+				throw;
+
+			sql.attach(new_local_buffer_connection_no_lock_or_retry(__FILE__,__LINE__));
+			register_server_event(ex,&sql());
+		}
+
+		if (sql.is_null())
+			sql.attach(new_local_buffer_connection_no_lock_or_retry(__FILE__,__LINE__));
+	}
+	else 
+		sql.attach(new_local_buffer_connection_no_lock_or_retry(__FILE__,__LINE__));
+
+	try{
+		return register_server_event(s_event,&sql());
+		sql.release();
+	}
+	catch(...){
+		sql.release();
+		throw;
+	}
+}
+
+ns_64_bit ns_image_server::register_server_event(const ns_register_type type,const ns_ex & ex){
+		ns_image_server_event s_event(ex.text());
+		if (ex.type() == ns_sql_fatal) s_event << ns_ts_sql_error;
+		else s_event << ns_ts_error;
+		return register_server_event(type,s_event);
+}
+
+
+
+void ns_image_server::register_server_event_no_db(const ns_image_server_event & s_event){
+	ns_acquire_lock_for_scope lock(server_event_lock,__FILE__,__LINE__);
+	if (s_event.text().size() != 0){	
+		cerr <<"\n";
+		s_event.print(cerr);
+		cerr << "\n";
+		s_event.print(event_log);
+		event_log << "\n";
+		event_log.flush();
+	}
+	lock.release();
+}
+
+
+ns_64_bit ns_image_server::register_server_event(const ns_ex & ex, ns_image_server_sql * sql){
+	ns_image_server_event s_event(ex.text());
+	if (ex.type() == ns_sql_fatal) s_event << ns_ts_sql_error;
+	else s_event << ns_ts_error;
+	return register_server_event(s_event,sql);
+
+}
+
+ns_64_bit ns_image_server::register_server_event(const ns_image_server_event & s_event, ns_image_server_sql * sql,const bool no_display){
+	try{
+		if (!no_display){
+			ns_acquire_lock_for_scope lock(server_event_lock,__FILE__,__LINE__);
+			if (s_event.text().size() != 0){	
+
+				cerr <<"\n";
+				s_event.print(cerr);
+				cerr << "\n";
+			}
+			lock.release();
+		}
+		ns_64_bit event_id(0);
+		//if the event is to be logged and doesn't involve an sql connection error, connect to the db and log it.
+		if (s_event.log && s_event.type() != ns_ts_sql_error){
+			try{
+				sql->clear_query();
+				*sql << "INSERT INTO ";
+				*sql << sql->table_prefix() << "host_event_log SET host_id='" << _host_id << "', event='";
+				*sql << sql->escape_string(s_event.text()) << "', time=";
+				if (s_event.event_time() == 0)
+					*sql << ns_current_time();
+				else *sql << s_event.event_time();
+				*sql << ", processing_job_op =" << (unsigned int)s_event.processing_job_operation;
+				*sql << ", parent_event_id=" << s_event.parent_event_id << ", subject_experiment_id=" << s_event.subject_experiment_id;
+				*sql << ", subject_sample_id=" << s_event.subject_sample_id << ", subject_captured_image_id=" << s_event.subject_captured_image_id;
+				*sql << ", subject_region_info_id=" << s_event.subject_region_info_id << ", subject_region_image_id=" << s_event.subject_region_image_id;
+				*sql << ", subject_image_id=" << s_event.subject_image_id;
+				*sql << ", subject_width = " << s_event.subject_properties.width << ", subject_height = " << s_event.subject_properties.height;
+				*sql << ", processing_duration = " << s_event.processing_duration;
+
+				if (s_event.type() == ns_ts_error)
+					*sql << ", error=1";
+				event_id = sql->send_query_get_id();
+			}
+					
+			catch(ns_ex & ex){
+				event_id = 1;
+				ns_image_server_event ev("ns_image_server::register_server_event()::Could not access ") ;
+				ev << (sql->connected_to_central_database()?("central database"):("local buffer database")) << " to register an error:";
+				ev << ex.text();
+				ns_acquire_lock_for_scope lock(server_event_lock,__FILE__,__LINE__);
+				cerr << "\n";
+				ev.print(cerr);
+				cerr << "\n";
+
+				ev.print(event_log);
+				event_log << "\n";
+				event_log.flush();
+				lock.release();
+			}
+		}
+		else event_id = 1;
+		
+		if (!no_display){
+			ns_acquire_lock_for_scope lock(server_event_lock,__FILE__,__LINE__);
+			s_event.print(event_log);
+			event_log << "\n";
+			event_log.flush();
+			lock.release();
+		}
+
+		return event_id;
+	}
+	catch(ns_ex & ex){
+		cerr << "ns_image_server::register_server_event()::Threw an exception!" << ex.text() << "\n";
+	}
+	catch(...){
+		cerr << "ns_image_server::register_server_event()::Threw an unknown eexception!\n";
+	}
+	return 0;
+}
+
+void ns_image_server::set_up_model_directory(){
+	std::string path = long_term_storage_directory + DIR_CHAR_STR + worm_detection_model_directory();
+	ns_dir::create_directory_recursive(path);
+	path = long_term_storage_directory +  DIR_CHAR_STR + posture_analysis_model_directory();
+	ns_dir::create_directory_recursive(path);
+}
+void ns_image_server::load_all_worm_detection_models(std::vector<ns_svm_model_specification* > & spec){
+	std::string path = long_term_storage_directory + DIR_CHAR_STR + worm_detection_model_directory();
+	ns_dir dir;
+	std::vector<std::string> files;
+	dir.load_masked(path,"txt",files);
+	for (unsigned int i = 0; i < files.size(); i++){
+		std::string::size_type l = files[i].rfind("_model");
+		if (l == std::string::npos)
+			continue;
+	//	l-=5;
+		std::string model_name = files[i].substr(0,l);
+		get_worm_detection_model(model_name);
+	}
+	for (map<std::string,ns_svm_model_specification>::iterator p = worm_detection_models.begin(); p != worm_detection_models.end(); p++)
+		spec.push_back(&(p->second));
+}
+
+const ns_posture_analysis_model & ns_image_server::get_posture_analysis_model_for_region(const unsigned long & region_info_id, ns_sql & sql){
+	sql << "SELECT posture_analysis_model, posture_analysis_method FROM sample_region_image_info WHERE id = " << region_info_id;
+	ns_sql_result res;
+	sql.get_rows(res);
+	if (res.size() == 0)
+		throw ns_ex("ns_image_server::get_posture_analysis_model_for_region()::Could not find region ") << region_info_id << " in db";
+	if (res[0][0].size() == 0)
+		throw ns_ex("ns_image_server::get_posture_analysis_model_for_region()::No posture analysis model was specified for region ")<< region_info_id;
+	ns_posture_analysis_model::ns_posture_analysis_method method(ns_posture_analysis_model::method_from_string(res[0][1]));
+	return get_posture_analysis_model(method,res[0][0]);
+}
+const ns_posture_analysis_model & ns_image_server::get_posture_analysis_model(const ns_posture_analysis_model::ns_posture_analysis_method & m,const std::string & name){
+std::map<std::string,ns_posture_analysis_model>::iterator model = posture_analysis_models.find(name);
+	std::string path(long_term_storage_directory);
+	path+= DIR_CHAR;
+	path += posture_analysis_model_directory();
+	ns_dir::create_directory_recursive(path);
+	path+=DIR_CHAR;
+	if (model == posture_analysis_models.end()){
+		try{
+			
+			ns_posture_analysis_model & spec = posture_analysis_models[name];
+			spec.posture_analysis_method = m;
+
+			if (m == ns_posture_analysis_model::ns_hidden_markov){
+				ifstream moving((path + name + "_moving.csv").c_str());
+				if (moving.fail())
+					throw ns_ex("Could not load ") << path + name + "_moving.csv";
+				
+				ifstream dead((path + name + "_dead.csv").c_str());
+				if (dead.fail())
+					throw ns_ex("Could not load ") << path + name + "_dead.csv";
+				spec.hmm_posture_estimator.read(moving,dead);
+				dead.close();
+				moving.close();
+				return spec;
+			}
+			else if (m == ns_posture_analysis_model::ns_threshold){
+				ifstream thresh((path + name + "_threshold.csv").c_str());
+				if (thresh.fail())
+					throw ns_ex("Could not load ") << path + name + "_thresh.csv";
+				spec.threshold_parameters.read(thresh);
+				thresh.close();
+				return spec;
+			}
+			else if (m == ns_posture_analysis_model::ns_not_specified)
+				throw ns_ex("The plate does not have a posture analysis method specified.");
+			else throw ns_ex("The plate has an unrecognized posture analysis method specified.");
+		}
+		catch(...){
+			//if an error occured while loading the model, erase it from the specification.
+			model = posture_analysis_models.find(name);
+			if (model != posture_analysis_models.end())
+				posture_analysis_models.erase(model);
+			throw;
+		}
+		
+	}
+	return posture_analysis_models[name];
+}
+const ns_svm_model_specification & ns_image_server::get_worm_detection_model(const std::string & name){
+	std::map<std::string,ns_svm_model_specification>::iterator model = worm_detection_models.find(name);
+	std::string path(long_term_storage_directory);
+	path+= DIR_CHAR;
+	path += worm_detection_model_directory();
+	ns_dir::create_directory_recursive(path);
+	path+=DIR_CHAR;
+	if (model == worm_detection_models.end()){
+		try{
+			ns_svm_model_specification & spec = worm_detection_models[name];
+			spec.read_statistic_ranges(path + name + "_range.txt");
+			spec.read_included_stats(path + name + "_included_stats.txt");
+			spec.pca_spec.read(path + name + "_pca_spec.txt");
+			spec.model_name = name;
+			
+			#ifdef NS_USE_MACHINE_LEARNING
+				std::string fn = path + name + "_model.txt";
+				#ifdef NS_USE_TINYSVM
+				if (!spec.model.read(fn.c_str()))
+					throw ns_ex("ns_image_server::Could not load SVM model file: ") << fn;
+				#else
+					spec.model = svm_load_model(fn.c_str());
+					if (spec.model == NULL)
+						throw ns_ex("ns_image_server::Could not load SVM model file:") << fn;
+				#endif
+			#endif
+			return spec;
+		}
+		catch(...){
+			//if an error occured while loading the model, erase it from the specification.
+			model = worm_detection_models.find(name);
+			if (model != worm_detection_models.end())
+				worm_detection_models.erase(model);
+			throw;
+		}
+	}
+	return worm_detection_models[name];
+}
+
+
+#ifdef _WIN32 
+//from example http://www.ddj.com/showArticle.jhtml?documentID=win0312d&pgno=4
+void ns_update_software(const bool just_launch){
+
+	char full_command_line_char[512];
+	GetModuleFileName(NULL,full_command_line_char,512);
+	const std::string full_command_line(full_command_line_char);
+	string dll_path(ns_dir::extract_path(full_command_line));
+	dll_path += "\\ns_image_server_update.dll";
+	if (!ns_dir::file_exists(dll_path))
+		throw ns_ex("Update dll file cannot be located at ") << dll_path;
+
+	 //find rundll32
+    char commandLine[MAX_PATH * 3+1];
+    const unsigned long s(GetWindowsDirectory(commandLine, sizeof(commandLine)));
+	commandLine[s] = 0;
+	std::string command = commandLine;
+	command += "\\rundll32.exe";
+    if (GetFileAttributes(command.c_str()) == INVALID_FILE_ATTRIBUTES){
+        const unsigned long t(GetSystemDirectory(commandLine, sizeof(commandLine)));
+		commandLine[t] = 0;
+        command = commandLine;
+		command += "\\rundll32.exe";
+    }
+
+	//request rundll32 executes the update dll
+    command+=" \"";  //remember to add quotes so that paths with spaces work
+	command+=dll_path;
+	command+= "\"";
+
+	command+=", _get_and_install_update@16 ";
+
+/*	//hack to force "Documents and Settings" directories through despite it having
+	//whitespace
+	std::string short_dir = local_exec_path;
+	std::string search = "Documents and Settings";
+	std::string::size_type pos = short_dir.find(search);
+	if (pos != short_dir.npos){
+		short_dir.replace(pos,search.size(),"Docume~1");
+	}*/
+
+    //give the update dll the commandline to update
+	command += "\"";
+	command += full_command_line;
+	command += "\"";
+
+
+    //Execute the command
+    PROCESS_INFORMATION procInfo;
+    STARTUPINFO startInfo;        
+    memset(&startInfo, 0, sizeof(startInfo));
+    startInfo.dwFlags = STARTF_FORCEOFFFEEDBACK | CREATE_NEW_PROCESS_GROUP;
+    CreateProcess(0, const_cast<char *>(command.c_str()), 0, 0, FALSE, NORMAL_PRIORITY_CLASS, 0, 0,
+                  &startInfo, &procInfo);
+}
+#endif
+
+//global server object
+ns_image_server image_server;
+
+void ns_wrap_m4v_stream(const std::string & m4v_filename, const std::string & output_basename){
+	//we have now produced a raw mpeg4 stream.
+	//compile it into mp4 movies at four different frame_rates
+	for (unsigned int j = 0; j < 5; j++){
+		
+		std::string output,
+			   error_output;
+		std::string param = "-add " + m4v_filename;
+		std::string fps;
+		switch(j){
+			case 0: fps="0.5"; break;
+			case 1: fps="1"; break;
+			case 2: fps="5"; break;
+			case 3: fps="10"; break;
+			case 4: fps="30"; break;
+		}
+		std::string vid_filename = output_basename + "=" + fps + "fps.mp4";
+		ns_dir::delete_file(vid_filename);
+		param += " -mpeg4 -fps " + fps + " " + vid_filename;
+
+		
+		ns_external_execute_options opt;
+		opt.binary = true;
+		ns_external_execute exec;
+		exec.run(image_server.video_compiler_filename(), param, opt);
+		exec.release_io();
+	}
+}
+
+
+
+ns_image_storage_reciever_handle<ns_8_bit> ns_image_server_results_storage::movement_timeseries_collage(ns_image_server_results_subject & spec,const std::string & graph_type ,const ns_image_type & image_type, const unsigned long max_line_length, ns_sql & sql){
+	spec.get_names(sql);
+	string path(results_directory + DIR_CHAR_STR + spec.experiment_name + DIR_CHAR_STR + movement_timeseries_folder());
+	ns_image_server_results_file f(path, spec.experiment_filename()  + graph_type + "=collage.tif");
+	ns_dir::create_directory_recursive(path);
+	return ns_image_storage_reciever_handle<ns_image_storage_handler::ns_component>(new ns_image_storage_reciever_to_disk<ns_image_storage_handler::ns_component>(max_line_length, f.path(),image_type,&image_server.performance_statistics,false));
+}
+
+
+ns_image_storage_reciever_handle<ns_8_bit> ns_image_server_results_storage::machine_learning_training_set_image(ns_image_server_results_subject & spec, const unsigned long max_line_length, ns_sql & sql){
+	spec.get_names(sql);
+	string path(results_directory + DIR_CHAR_STR + machine_learning_training_set_folder());
+	ns_image_server_results_file f(path,spec.region_filename() +"=training_set.tif");
+	ns_dir::create_directory_recursive(path);
+	return ns_image_storage_reciever_handle<ns_image_storage_handler::ns_component>(new ns_image_storage_reciever_to_disk<ns_image_storage_handler::ns_component>(max_line_length, f.path(),ns_tiff,&image_server.performance_statistics,false));
+
+}
+
+ns_image_server_results_file ns_image_server_results_storage::time_path_image_analysis_quantification(ns_image_server_results_subject & spec,const std::string & type, const bool store_in_results_directory,ns_sql & sql, bool abbreviated_time_series){	
+		spec.get_names(sql);
+		string fname(""),dir("");
+		string abbreviated;
+		if(abbreviated_time_series)
+			abbreviated = "=abbreviated";
+		if (spec.region_id != 0){
+			dir = time_path_image_analysis_quantification() + DIR_CHAR_STR + "regions";
+			fname = spec.region_filename() + "=" + type + abbreviated+".csv";
+		}
+		else{
+			dir = time_path_image_analysis_quantification();
+			fname = spec.experiment_filename() + type + abbreviated+ ".csv";
+		}
+
+		if (store_in_results_directory)
+			return ns_image_server_results_file(results_directory + DIR_CHAR_STR + spec.experiment_name + DIR_CHAR_STR + dir, fname);
+		else{
+			return ns_image_server_results_file(image_server.image_storage.movement_file_directory(spec.region_id,&sql,true) + DIR_CHAR_STR + dir, fname);
+		}
+	}
+

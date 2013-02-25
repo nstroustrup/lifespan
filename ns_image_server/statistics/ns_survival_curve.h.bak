@@ -1,0 +1,528 @@
+#ifndef NS_MORTALITY_FILE_LOADER
+#define NS_MORTALITY_FILE_LOADER
+#include "ns_ex.h"
+#include "ns_xml.h"
+#include <fstream>
+#include <string>
+#include <iostream>
+#include "ns_movement_state.h"
+#include "ns_image_server_sql.h"
+#include "ns_death_time_annotation.h"
+
+#define NS_OUTPUT_MULTIWORM_STATS
+
+
+	
+struct ns_metadata_worm_properties{
+typedef enum{ns_long_distance_movement_cessation,ns_local_movement_cessation,ns_death} ns_survival_event_type;
+	double event_time;
+	unsigned long event_frequency;
+	ns_survival_event_type  event_type;
+	ns_death_time_annotation censoring_and_flags;
+
+	inline static std::string  event_type_to_string(const ns_survival_event_type & e){
+			switch(e){
+				case ns_long_distance_movement_cessation: return "Long Distance Movement Cessation";
+				case ns_local_movement_cessation: return "Local Movement Cessation";
+				case ns_death:	return "Death";
+				default: throw ns_ex("ns_region_metadata::event_type_to_string()::Unknown Event Type");
+			}
+	}
+
+};
+
+
+
+struct ns_region_metadata{
+	ns_region_metadata():time_at_which_animals_had_zero_age(0),
+		time_of_last_valid_sample(0),region_id(0),sample_id(0), position_of_region_in_sample(0,0),position_of_sample_on_scanner(0,0),size(0,0){}
+
+	std::string device,
+		technique,
+		experiment_name,
+		sample_name,
+		region_name,
+		strain,
+		strain_condition_1,
+		strain_condition_2,
+		strain_condition_3,
+		culturing_temperature,
+		experiment_temperature,
+		food_source,
+		environmental_conditions,
+		genotype,
+		details,
+		analysis_type;
+
+	bool is_same_strain_and_first_two_conditions(const ns_region_metadata & m) const{
+		return strain == m.strain && 
+				strain_condition_1 == m.strain_condition_1 && 
+				strain_condition_2 == m.strain_condition_2;
+	}
+
+	std::string incubator_name,
+			    incubator_location;
+
+	ns_vector_2d position_of_region_in_sample,
+				 position_of_sample_on_scanner,
+				 size;
+	ns_vector_2d center_position_of_region_on_scanner() const {return position_of_region_in_sample +  position_of_sample_on_scanner + size/2;}
+	
+	unsigned long region_id,
+				  sample_id,
+				  experiment_id;
+
+	const std::string device_regression_match_description() const{
+		return strain + "::" + strain_condition_1 + "::" + strain_condition_2;
+	}
+	const std::string plate_type_summary() const{
+		std::string type;
+
+		const std::string * details[7] = {&	strain_condition_1,
+		&strain_condition_2,
+		&strain_condition_3,
+		&culturing_temperature,
+		&experiment_temperature,
+		&food_source,
+		&environmental_conditions};
+		if (genotype.size() != 0)
+			type+=genotype;
+		else type+= strain;
+		for (unsigned int i = 0; i < 7; i++){
+			if (details[i]->size() != 0){
+				type+="::";
+				type+=*(details[i]);
+			}
+		}
+		return type;
+	}
+	char incubator_column() const{
+		if (incubator_location.size() != 2) 
+			throw ns_ex("Invalid incubator position: ") << incubator_location; 
+		return toupper(incubator_location[1]);
+	}
+	unsigned long incubator_shelf() const{
+		if (incubator_location.size() != 2) 
+			throw ns_ex("Invalid incubator position: ") << incubator_location; 
+		return incubator_location[0]-'0';
+	}
+	bool incubator_location_specified() const {return incubator_location.size() == 2;}
+
+
+
+
+	
+	
+	std::string to_xml() const;
+	bool from_xml(const ns_xml_simple_object & o);
+	static std::string by_hand_technique_label(){return "Machine-Assisted By Hand Annotation";}
+
+	unsigned char plate_column() const{
+		if (this->sample_name.size() == 0)
+			return '.';
+		return *sample_name.rbegin();
+	}
+
+	std::string plate_position() const{
+		std::string s;
+		s += plate_column();
+		s += "::";
+		s += this->region_name;
+		return s;
+	}
+
+	std::string plate_name() const{
+		return sample_name + "::" + region_name;
+	}
+
+	unsigned long time_at_which_animals_had_zero_age,
+				  time_of_last_valid_sample;
+
+
+	static inline void out_JMP_plate_identity_header_short(std::ostream & o){
+		o << "Experiment ID,Plate ID,Strain, Condition 1, Condition 2, Condition 3,"
+			 "Culturing Temperature,Experiment Temperature, Food Source,Environmental Conditions";
+	}
+
+	void out_JMP_plate_identity_data_short(std::ostream & o) const{
+		o << experiment_id << "," << region_id << ","
+		  << strain << "," << strain_condition_1 << "," << strain_condition_2 << "," << strain_condition_3
+		<< "," << culturing_temperature
+		<< "," << experiment_temperature
+		<< "," << food_source
+		<< "," << environmental_conditions;
+	}
+	static inline void out_JMP_plate_identity_header(std::ostream & o){
+		o << "Device,Experiment,Plate Name,Animal Description,Plate Position Name,Plate Row,Plate Column,"
+			"Plate Center Position X (inches),Plate Center Position Y (inches),Plate Size X (inches),Plate Size Y (inches),"
+			"Strain,Genotype,Condition 1,Condition 2,Condition 3,"
+			"Culturing Temperature,Experiment Temperature, Food Source,Environmental Conditions,"
+			"Incubator Name,Incubator Column,Incubator Shelf";
+	}
+	void out_JMP_plate_identity_data(std::ostream & o) const{
+		o << device << ","  << experiment_name << "," << plate_name()   << ",";
+		o << plate_type_summary();
+		o << "," << plate_position() << ","
+		  << region_name << ","  //row
+		  << plate_column() << "," 
+		  << center_position_of_region_on_scanner().x << "," << center_position_of_region_on_scanner().y << ","
+		  << size.x << "," << size.y << ","
+		  << strain << "," << genotype << "," << strain_condition_1 << "," << strain_condition_2 << ","
+		  << strain_condition_3 << "," 
+		  << culturing_temperature << ","
+		  << experiment_temperature << ","
+		  << food_source << "," 
+		  << environmental_conditions << ","
+		  << incubator_name << ",";
+		if(incubator_location_specified())
+			o << incubator_column();
+		o << ",";
+		if(incubator_location_specified())
+			o << incubator_shelf();
+	}
+	
+	
+	
+	void clear(){
+		device.clear();
+		technique.clear();
+		experiment_name.clear();
+		sample_name.clear();
+		region_name.clear();
+		strain.clear();
+		details.clear();
+		analysis_type.clear(); 
+		strain_condition_1.clear();
+		strain_condition_2.clear();
+		strain_condition_3.clear();
+		culturing_temperature.clear();
+		experiment_temperature.clear();
+		food_source.clear();
+		environmental_conditions.clear();
+		genotype.clear();
+		time_at_which_animals_had_zero_age = 0;
+		incubator_name.clear();
+		incubator_location.clear();
+		region_id = 0;
+		sample_id = 0;
+		experiment_id = 0;
+		 position_of_region_in_sample = 
+				 position_of_sample_on_scanner = 
+				 size = ns_vector_2d(0,0);
+	}
+	
+	void load_from_db(const unsigned long region_info_id, const std::string &analysis_type_, ns_sql & sql);
+	
+	void load_only_region_info_from_db(const unsigned long region_info_id, const std::string &analysis_type_, ns_sql & sql);
+
+	void load_only_sample_info_from_db(const unsigned long sample_id, ns_sql & sql);
+
+	static bool is_age_zero_field(const std::string & s);
+	void load_from_fields(const std::map<std::string,std::string> & m,std::map<std::string,std::string> &unknown_values);
+	std::string * get_field_by_name(const std::string & s);
+	static void recognized_field_names(std::vector<std::string> & names);
+};
+
+struct ns_genotype_db_info{
+	std::string strain,
+				genotype;
+};
+struct ns_genotype_db_internal_info{
+	ns_genotype_db_internal_info(const long i, const std::string & g):id(i),genotype(g){}
+	ns_genotype_db_internal_info():id(0){}
+	long id;
+	std::string	genotype;
+};
+class ns_genotype_fetcher{
+
+public:
+	void load_from_db(ns_image_server_sql * sql,const bool load_all=false);
+	void add_information_to_database(const std::vector<ns_genotype_db_info> & info,ns_image_server_sql * sql_);
+	const std::string & genotype_from_strain(const std::string & strain,ns_image_server_sql * sql_) const;
+
+private:
+	typedef std::map<std::string,ns_genotype_db_internal_info> ns_genotype_list;
+	mutable ns_genotype_list genotypes;
+	std::string empty_string;
+};
+
+struct ns_survival_timepoint_event{
+	ns_survival_timepoint_event():event_count(0), censored_count(0),machine_excluded_event_count(0),by_hand_excluded_event_count(0),multiple_conflated_animal_event_count(0),survival_count(0),number_in_event_count_that_came_from_multiple_worm_disambiguation_events(0){}
+
+	unsigned long event_count,
+				  machine_excluded_event_count,
+				  by_hand_excluded_event_count,
+				  censored_count,
+				  multiple_conflated_animal_event_count;
+
+	unsigned long number_in_event_count_that_came_from_multiple_worm_disambiguation_events;
+
+	unsigned long survival_count;
+
+};
+
+ns_survival_timepoint_event operator+(const ns_survival_timepoint_event & a, const ns_survival_timepoint_event & b);
+
+struct ns_survival_timepoint{
+	ns_survival_timepoint():absolute_time(0){}
+	
+	unsigned long absolute_time;
+	ns_survival_timepoint_event deaths,
+								long_distance_movement_cessations,
+								local_movement_cessations;
+};
+
+bool operator<(const ns_survival_timepoint & a, const ns_survival_timepoint & b);
+
+ns_survival_timepoint operator+(const ns_survival_timepoint & a, const ns_survival_timepoint & b);
+
+struct ns_survival_data_quantities{
+	void set_as_zero(){count = by_hand_excluded_count = machine_excluded_count = censored_count= number_of_events_involving_multiple_worm_disambiguation = 0; mean = variance = percentile_90th = percentile_50th = percentile_10th = maximum = minimum = 0.0;}
+	unsigned long count,
+				  machine_excluded_count,
+				  by_hand_excluded_count,
+				  censored_count,
+				  number_of_events_involving_multiple_worm_disambiguation;
+	double mean,
+		   variance,
+		   percentile_90th,
+		   percentile_50th,
+		   percentile_10th,
+		   maximum,
+		   minimum;
+
+	ns_survival_data_quantities scale(const double & d) const{
+		ns_survival_data_quantities n(*this);
+		n.mean/=d;
+		n.maximum/=d;
+		n.minimum/=d;
+		n.percentile_10th/=d;
+		n.percentile_50th/=d;
+		n.percentile_90th/=d;
+		n.variance/=(d*d);
+		return n;
+	}
+	void add(const ns_survival_data_quantities & s);
+	static void out_jmp_header(const std::string & type, std::ostream & o, const std::string & terminator = "\n");
+	void out_jmp_data(const ns_region_metadata & metadata, std::ostream & o, const std::string & terminator = "\n") const;
+	static void out_blank_jmp_data(std::ostream & o, const std::string & terminator = "\n");
+};
+
+
+struct ns_survival_data_summary{
+	ns_region_metadata metadata;
+	ns_survival_data_quantities long_distance_movement_cessation,
+								local_movement_cessation,
+								death;
+	std::string to_xml() const;
+	void from_xml(const ns_xml_simple_object & o);
+	static const char * xml_tag(){return "suvival_data_summary";}
+
+	static void out_jmp_header(const std::string & label,std::ostream & o, const std::string & terminator = "\n");
+	void out_jmp_data(std::ostream & o, const std::string & terminator="\n") const;
+	static void out_blank_jmp_data(std::ostream & o, const std::string & terminator="\n") ;
+	void add(const ns_survival_data_summary & s);
+	void set_stats_as_zero(){
+		long_distance_movement_cessation.set_as_zero();
+		local_movement_cessation.set_as_zero();
+		death.set_as_zero();
+	}
+	ns_survival_data_summary divide_stats_by_count() const{
+		ns_survival_data_summary t(*this);
+		if (t.long_distance_movement_cessation.count!= 0)
+			t.long_distance_movement_cessation = t.long_distance_movement_cessation.scale(1.0/t.long_distance_movement_cessation.count);
+		if (t.local_movement_cessation.count!= 0)
+			t.local_movement_cessation = t.local_movement_cessation.scale(1.0/t.local_movement_cessation.count);
+		if (t.death.count!= 0)
+			t.death = t.death.scale(1.0/t.death.count);
+		return t;
+	}
+	ns_survival_data_summary multiply_stats_by_count() const{
+		ns_survival_data_summary t(*this);
+		t.long_distance_movement_cessation = t.long_distance_movement_cessation.scale(t.long_distance_movement_cessation.count);
+		t.local_movement_cessation = t.local_movement_cessation.scale(t.local_movement_cessation.count);
+		t.death = t.death.scale(t.death.count);
+		return t;
+	}
+};
+
+
+class ns_survival_data{
+public:
+	void clear(){
+		metadata.clear();
+		timepoints.clear();
+	}
+
+	ns_region_metadata metadata;
+	std::vector<ns_survival_timepoint> timepoints;
+	void calculate_survival();
+
+	void convert_absolute_times_to_ages();
+
+	ns_survival_data_summary produce_summary() const;
+
+};
+
+
+struct ns_lifespan_device_normalization_statistics{
+	ns_lifespan_device_normalization_statistics():grand_strain_mean(0),device_strain_mean(0),control_mean_external_fix_point(-1),
+		additive_device_regression_coefficient(0),
+		multiplicative_additive_device_regression_additive_coefficient(0),
+		multiplicative_additive_device_regression_multiplicative_coefficient(0),
+		multiplicative_device_regression_coefficient(0){}
+
+
+
+
+	ns_region_metadata strain_info;
+	double grand_strain_mean,
+		   device_strain_mean;
+	double control_mean_external_fix_point;
+	double  additive_device_regression_coefficient,  //y(i,D) = ybar + betaD + e;
+			multiplicative_additive_device_regression_additive_coefficient,//y(i,D) = ybar + betaD*ei
+			multiplicative_additive_device_regression_multiplicative_coefficient,//y(i,D) = ybar + betaD*ei
+			multiplicative_device_regression_coefficient; //y(i,D) = ybar*betaD*ei
+
+	double calculate_additive_device_regression_residual(const double measurement) const;
+	double calculate_multiplicative_device_regression_residual(const double measurement) const;
+	double calculate_multiplicative_device_regression_residual_additive_offset(const double measurement) const;
+
+	unsigned long number_of_animals_on_device;
+	unsigned long number_of_plates_on_device;
+	bool external_fix_point_specified()const{return control_mean_external_fix_point >=0;}
+};
+struct ns_lifespan_device_normalization_statistics_for_device{
+	ns_lifespan_device_normalization_statistics_for_device():control_strain(0){}
+	ns_lifespan_device_normalization_statistics * control_strain;
+	typedef  std::map<std::string,ns_lifespan_device_normalization_statistics> ns_strain_stat_list;
+	ns_strain_stat_list strains;
+	
+	bool control_specified() const{
+		return control_strain != 0;
+	}
+};
+struct ns_lifespan_device_normalization_statistics_set{
+	//pair <device name, list of all statistics for all strains on the device>
+	typedef std::map<std::string,ns_lifespan_device_normalization_statistics_for_device > ns_device_stats_list;
+	
+	ns_device_stats_list devices;
+	ns_lifespan_device_normalization_statistics_set(const ns_movement_event & e):normalization_event_type(e){}
+	ns_movement_event normalization_event_type;
+	/*void add(const ns_lifespan_device_normalization_statistics & s, const std::string & control_strain){
+		for (ns_device_strain_stats::const_iterator p(s.device_strain_stats.begin()); p != s.device_strain_stats.end(); p++){
+			ns_device_strain_stats::iterator q(device_strain_stats.find(p->first));
+			if (q == device_strain_stats.end())
+				q = device_strain_stats.insert(ns_device_strain_stats::value_type(p->first,ns_device_strain_stat_list())).first;
+			q->second.insert(q->second.end(),p->second.begin(),p->second.end());
+		}
+	}*/
+	static void output_JMP_header(std::ostream & o){
+		o << "Device Name,Animal Details,Is Control Strain,Normalization Event,"
+			"Grand Strain Mean,Device Strain Mean,Externally Specified Mean Fix Point,"
+			"Additive Regression Constant,Multiplicative Regression Coefficient,"
+			"Multiplicative-Additive Regression Additive Coefficient,Multiplicative-Additive Regression Multiplicative Coefficient,"
+			"Number of Animals On Device,Number of Plates on Device\n";
+	}
+	void output_JMP_file(std::ostream & o, const double time_scale_factor){
+		for (ns_device_stats_list::const_iterator device = devices.begin(); device != devices.end(); device++){
+			for (ns_lifespan_device_normalization_statistics_for_device::ns_strain_stat_list::const_iterator strain =  device->second.strains.begin(); strain != device->second.strains.end(); strain++){
+				o << device->first << "," 
+					<< strain->second.strain_info.plate_type_summary() << ",";
+				if (device->second.control_specified()){
+					if (device->second.control_strain == &strain->second)
+						o << "Control,";
+					else o << " Not Control,";
+				}
+				else o << ",";
+				o << ns_movement_event_to_string(normalization_event_type) << ","
+					<< strain->second.grand_strain_mean/time_scale_factor << ","
+					<< strain->second.device_strain_mean/time_scale_factor << ",";
+				if (strain->second.external_fix_point_specified())
+					o << strain->second.control_mean_external_fix_point/time_scale_factor << ",";
+				else o << ",";
+				o << strain->second.additive_device_regression_coefficient/time_scale_factor << ","
+					<< strain->second.multiplicative_device_regression_coefficient<< ","
+					<< strain->second.multiplicative_additive_device_regression_additive_coefficient/time_scale_factor<< "," 
+					<< strain->second.multiplicative_additive_device_regression_multiplicative_coefficient<< "," 
+				<< strain->second.number_of_animals_on_device<< "," 
+				<< strain->second.number_of_plates_on_device << "\n";
+			}
+		}
+	}
+};
+
+class ns_lifespan_experiment_set{
+public:
+	ns_lifespan_experiment_set():curves_on_constant_time_interval(false),
+		normalization_stats_for_death(ns_movement_cessation),
+		normalization_stats_for_translation_cessation(ns_translation_cessation),
+		normalization_stats_for_fast_movement_cessation(ns_fast_movement_cessation){}
+	void load_from_JMP_file(std::ifstream & in);
+	void load_from_by_hand_lifespan_file(std::ifstream & in);
+		
+	typedef enum {ns_seconds,ns_minutes,ns_hours,ns_days} ns_time_units;
+	
+	static void out_JMP_header(std::ostream & o, const std::string & time_units,const std::string & terminator="\n");
+
+	static void out_JMP_event_data(std::ostream & o, const ns_lifespan_device_normalization_statistics * regression_stats,const ns_region_metadata & metadata,const ns_metadata_worm_properties & prop,const double time_scaling_factor,const std::string & terminator="\n");
+	void output_JMP_file(const ns_time_units & time_units,std::ostream & o) const ;
+	void output_xml_summary_file(std::ostream & o) const;
+	void output_JMP_summary_file(std::ostream & o) const ;
+	void output_matlab_file(std::ostream & o) const ;
+	void output_R_file(std::ostream & o)const ;
+
+	std::vector<ns_survival_data> curves;
+
+	void clear(){curves.resize(0);common_time_.clear();}
+
+	void calculate_survival();
+
+	void load_genotypes(ns_sql & sql);
+
+	void convert_absolute_times_to_ages();
+
+	void generate_common_time_set(ns_lifespan_experiment_set & new_set) const;
+
+	void force_common_time_set_to_constant_time_interval(const unsigned long interval_time_in_seconds,ns_lifespan_experiment_set & new_set) const;
+	
+	void compute_device_normalization_regression(const ns_region_metadata & control_strain);
+	
+	void group_strains(ns_lifespan_experiment_set & new_set) const;
+
+	const std::vector<unsigned long> &common_time() const {if (common_time_.empty()) throw ns_ex("Not on common time!"); return common_time_;}
+	bool set_is_on_common_time() const {return !common_time_.empty();}
+	
+	ns_lifespan_device_normalization_statistics_set normalization_stats_for_death,
+													normalization_stats_for_translation_cessation,
+													normalization_stats_for_fast_movement_cessation;
+private:
+	void compute_device_normalization_regression(const ns_movement_event & event_type, const ns_region_metadata & control_strain,ns_lifespan_device_normalization_statistics_set & set) const;
+	bool curves_on_constant_time_interval;
+	std::vector<unsigned long> common_time_;
+	std::vector<unsigned long> &common_time() {if (common_time_.empty()) throw ns_ex("Not on common time!"); return common_time_;}
+};
+
+
+class ns_survival_data_summary_aggregator{
+public:
+	ns_survival_data_summary_aggregator();
+
+	typedef std::map<ns_movement_event,ns_survival_data_summary> ns_plate_normalization_list ;
+	//sorted by normalization type
+	typedef std::map<std::string, ns_plate_normalization_list > ns_plate_list;
+
+	ns_plate_list plate_list;
+
+	void add(const ns_movement_event normalization_type, const ns_survival_data_summary & summary);
+
+	void add(const ns_movement_event normalization_type,const ns_lifespan_experiment_set & set);
+	
+	static void out_JMP_summary_data_header(std::ostream & o, const std::string & terminator);
+	void out_JMP_summary_data(const ns_plate_list::const_iterator & region,std::ostream & o) const;
+	static void out_JMP_empty_summary_data(std::ostream & o);
+
+	void out_JMP_summary_file(std::ostream & o) const;
+	static std::vector<ns_movement_event> events_to_output;
+};
+#endif

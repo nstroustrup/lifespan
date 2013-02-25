@@ -1,0 +1,243 @@
+﻿Build started 2/22/2013 4:20:36 PM.
+     1>Project "C:\server\ns_lifespan_machine_source\ns_worm_browser\build\windows\ns_worm_browser\ns_worm_browser.vcxproj" on node 2 (build target(s)).
+     1>InitializeBuildStatus:
+         Creating "Release\ns_worm_browser.unsuccessfulbuild" because "AlwaysCreate" was specified.
+       ClCompile:
+         C:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\bin\CL.exe /c /Zi /nologo /W3 /WX- /O2 /Oi /Oy- /GL /D _CRT_SECURE_NO_DEPRECATE /D WIN32 /D NTDDI_VERSION=NTDDI_WINXPSP2 /D _WIN32_WINNT=0x501 /D WINVER=0x0501 /D TRILIBRARY /D CPU86 /D NO_TIMER /D ANSI_DECLARATORS /D "NS_DEFAULT_FONT=\"c:/windows/fonts/ARIAL.TTF\"" /D "NS_INI_PATH=\"c:\\server\\ns_image_server.ini\"" /D ARCH_IS_LITTLE_ENDIAN /D INCLUDE_STDAFX /D _MBCS /D _MBCS /Gm- /EHsc /MT /GS- /Gy /arch:SSE2 /fp:precise /Zc:wchar_t /Zc:forScope /Fo"Release\\" /Fd"Release\vc100.pdb" /Gd /TP /analyze- /errorReport:prompt ..\..\..\..\ns_image_server\src\data_annotation\ns_experiment_storyboard.cpp ..\..\..\..\ns_image_server\src\data_annotation\ns_machine_learning_training_set.cpp ..\..\..\..\ns_image_server\src\data_annotation\ns_mask_management.cpp ..\..\..\..\ns_image_server\src\image_acquisition\ns_barcode.cpp ..\..\..\..\ns_image_server\src\image_acquisition\ns_buffered_capture_scheduler.cpp ..\..\..\..\ns_image_server\src\image_acquisition\ns_capture_device.cpp ..\..\..\..\ns_image_server\src\image_acquisition\ns_capture_device_manager.cpp ..\..\..\..\ns_image_server\src\image_acquisition\ns_capture_schedule.cpp ..\..\..\..\ns_image_server\src\image_acquisition\ns_image_capture_data_manager.cpp ..\..\..\..\ns_image_server\src\image_acquisition\ns_image_server_alerts.cpp ..\..\..\..\ns_image_server\src\image_acquisition\ns_image_server_dispatcher.cpp ..\..\..\..\ns_image_server\src\image_base\ns_font.cpp ..\..\..\..\ns_image_server\src\image_base\ns_image.cpp ..\..\..\..\ns_image_server\src\image_base\ns_image_socket.cpp ..\..\..\..\ns_image_server\src\image_base\ns_jpeg.cpp ..\..\..\..\ns_image_server\src\image_base\ns_ojp2k.cpp ..\..\..\..\ns_image_server\src\image_base\ns_tiff.cpp ..\..\..\..\ns_image_server\src\image_base\ns_vector_bitmap_interface.cpp ..\..\..\..\ns_image_server\src\image_processing\ns_complex_segment_cluster_solver.cpp ..\..\..\..\ns_image_server\src\image_processing\ns_detected_worm_info.cpp ..\..\..\..\ns_image_server\src\image_processing\ns_difference_thresholder.cpp ..\..\..\..\ns_image_server\src\image_processing\ns_heat_map_interpolation.cpp ..\..\..\..\ns_image_server\src\image_processing\ns_identify_contiguous_bitmap_regions.cpp ..\..\..\..\ns_image_server\src\image_processing\ns_image_tools.cpp ..\..\..\..\ns_image_server\src\image_processing\ns_movement_visualization_generator.cpp ..\..\..\..\ns_image_server\src\image_processing\ns_node_topology.cpp ..\..\..\..\ns_image_server\src\image_processing\ns_segment_topology.cpp ..\..\..\..\ns_image_server\src\image_processing\ns_spatial_avg.cpp ..\..\..\..\ns_image_server\src\image_processing\ns_spine_drawer.cpp ..\..\..\..\ns_image_server\src\image_processing\ns_worm_detector.cpp ..\..\..\..\ns_image_server\src\image_processing\ns_worm_training_set_image.cpp ..\..\..\..\ns_image_server\src\image_processing\ns_xvid.cpp ..\..\..\..\ns_image_server\src\image_server\ns_graph.cpp ..\..\..\..\ns_image_server\src\image_server\ns_image_server.cpp ..\..\..\..\ns_image_server\src\image_server\ns_image_server_images.cpp ..\..\..\..\ns_image_server\src\image_server\ns_image_server_main.cpp ..\..\..\..\ns_image_server\src\image_server\ns_image_server_message.cpp ..\..\..\..\ns_image_server\src\image_server\ns_image_statistics.cpp ..\..\..\..\ns_image_server\src\image_server\ns_image_storage_handler.cpp ..\..\..\..\ns_image_server\src\image_server\ns_ini.cpp ..\..\..\..\ns_image_server\src\job_scheduling\ns_image_processing_pipeline.cpp ..\..\..\..\ns_image_server\src\job_scheduling\ns_processing_job_processor.cpp ..\..\..\..\ns_image_server\src\job_scheduling\ns_processing_job_push_scheduler.cpp ..\..\..\..\ns_image_server\src\job_scheduling\ns_processing_job_scheduler.cpp ..\..\..\..\ns_image_server\src\movement_analysis\ns_hidden_markov_model_posture_analyzer.cpp ..\..\..\..\ns_image_server\src\movement_analysis\ns_time_path_image_analyzer.cpp ..\..\..\..\ns_image_server\src\movement_analysis\ns_time_path_solver.cpp ..\..\..\..\ns_image_server\src\statistics\ns_captured_image_statistics_set.cpp ..\..\..\..\ns_image_server\src\statistics\ns_machine_analysis_data_loader.cpp ..\..\..\..\ns_image_server\src\statistics\ns_movement_measurement.cpp ..\..\..\..\ns_image_server\src\statistics\ns_survival_curve.cpp ..\..\..\src\ns_worm_browser.cpp ..\..\..\src\ns_worm_browser_main.cpp
+         ns_experiment_storyboard.cpp
+     1>C:\server\ns_lifespan_machine_source\ns_image_server\src\image_base\ns_image.h(8): fatal error C1083: Cannot open include file: 'ns_image_stream_buffers.h': No such file or directory
+         ns_machine_learning_training_set.cpp
+     1>C:\server\ns_lifespan_machine_source\ns_image_server\src\image_base\ns_image.h(8): fatal error C1083: Cannot open include file: 'ns_image_stream_buffers.h': No such file or directory
+         ns_mask_management.cpp
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\image_base\ns_image.h(8): fatal error C1083: Cannot open include file: 'ns_image_stream_buffers.h': No such file or directory
+         ns_barcode.cpp
+     1>C:\server\ns_lifespan_machine_source\ns_image_server\src\image_base\ns_image.h(8): fatal error C1083: Cannot open include file: 'ns_image_stream_buffers.h': No such file or directory
+         ns_buffered_capture_scheduler.cpp
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\image_acquisition\ns_buffered_capture_scheduler.h(3): fatal error C1083: Cannot open include file: 'ns_image_server.h': No such file or directory
+         ns_capture_device.cpp
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\image_acquisition\ns_capture_device.h(5): fatal error C1083: Cannot open include file: 'ns_image_server_images.h': No such file or directory
+         ns_capture_device_manager.cpp
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\image_acquisition\ns_capture_device.h(5): fatal error C1083: Cannot open include file: 'ns_image_server_images.h': No such file or directory
+         ns_capture_schedule.cpp
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\image_acquisition\ns_capture_schedule.h(4): fatal error C1083: Cannot open include file: 'ns_image_server_sql.h': No such file or directory
+         ns_image_capture_data_manager.cpp
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\image_acquisition\ns_image_capture_data_manager.h(3): fatal error C1083: Cannot open include file: 'ns_image_storage_handler.h': No such file or directory
+         ns_image_server_alerts.cpp
+     1>C:\Program Files (x86)\MySQL\MySQL Connector C 6.0.2\include\config-win.h(24): warning C4005: '_WIN32_WINNT' : macro redefinition
+                 command-line arguments :  see previous definition of '_WIN32_WINNT'
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\image_acquisition\ns_image_server_alerts.h(5): fatal error C1083: Cannot open include file: 'ns_image_server_sql.h': No such file or directory
+         ns_image_server_dispatcher.cpp
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\image_acquisition\ns_image_server_dispatcher.h(6): fatal error C1083: Cannot open include file: 'ns_image_server_message.h': No such file or directory
+         ns_font.cpp
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\image_base\ns_image.h(8): fatal error C1083: Cannot open include file: 'ns_image_stream_buffers.h': No such file or directory
+         ns_image.cpp
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\image_base\ns_image.h(8): fatal error C1083: Cannot open include file: 'ns_image_stream_buffers.h': No such file or directory
+         ns_image_socket.cpp
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\image_base\ns_image.h(8): fatal error C1083: Cannot open include file: 'ns_image_stream_buffers.h': No such file or directory
+         ns_jpeg.cpp
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\image_base\ns_image.h(8): fatal error C1083: Cannot open include file: 'ns_image_stream_buffers.h': No such file or directory
+         ns_ojp2k.cpp
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\image_base\ns_image.h(8): fatal error C1083: Cannot open include file: 'ns_image_stream_buffers.h': No such file or directory
+         ns_tiff.cpp
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\image_base\ns_image.h(8): fatal error C1083: Cannot open include file: 'ns_image_stream_buffers.h': No such file or directory
+         ns_vector_bitmap_interface.cpp
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\image_base\ns_image.h(8): fatal error C1083: Cannot open include file: 'ns_image_stream_buffers.h': No such file or directory
+         ns_complex_segment_cluster_solver.cpp
+     1>C:\server\ns_lifespan_machine_source\ns_image_server\src\image_base\ns_image.h(8): fatal error C1083: Cannot open include file: 'ns_image_stream_buffers.h': No such file or directory
+         ns_detected_worm_info.cpp
+     1>C:\server\ns_lifespan_machine_source\ns_image_server\src\image_base\ns_image.h(8): fatal error C1083: Cannot open include file: 'ns_image_stream_buffers.h': No such file or directory
+         Compiling...
+         ns_difference_thresholder.cpp
+     1>C:\server\ns_lifespan_machine_source\ns_image_server\src\image_base\ns_image.h(8): fatal error C1083: Cannot open include file: 'ns_image_stream_buffers.h': No such file or directory
+         ns_heat_map_interpolation.cpp
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\image_processing\ns_heat_map_interpolation.h(5): fatal error C1083: Cannot open include file: 'ns_image_server.h': No such file or directory
+         ns_identify_contiguous_bitmap_regions.cpp
+     1>C:\server\ns_lifespan_machine_source\ns_image_server\src\image_base\ns_image.h(8): fatal error C1083: Cannot open include file: 'ns_image_stream_buffers.h': No such file or directory
+         ns_image_tools.cpp
+     1>C:\server\ns_lifespan_machine_source\ns_image_server\src\image_base\ns_image.h(8): fatal error C1083: Cannot open include file: 'ns_image_stream_buffers.h': No such file or directory
+         ns_movement_visualization_generator.cpp
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\image_processing\ns_movement_visualization_generator.h(4): fatal error C1083: Cannot open include file: 'ns_graph.h': No such file or directory
+         ns_node_topology.cpp
+     1>C:\server\ns_lifespan_machine_source\ns_image_server\src\image_base\ns_image.h(8): fatal error C1083: Cannot open include file: 'ns_image_stream_buffers.h': No such file or directory
+         ns_segment_topology.cpp
+     1>C:\server\ns_lifespan_machine_source\ns_image_server\src\image_base\ns_image.h(8): fatal error C1083: Cannot open include file: 'ns_image_stream_buffers.h': No such file or directory
+         ns_spatial_avg.cpp
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\image_base\ns_image.h(8): fatal error C1083: Cannot open include file: 'ns_image_stream_buffers.h': No such file or directory
+         ns_spine_drawer.cpp
+     1>C:\server\ns_lifespan_machine_source\ns_image_server\src\image_base\ns_image.h(8): fatal error C1083: Cannot open include file: 'ns_image_stream_buffers.h': No such file or directory
+         ns_worm_detector.cpp
+     1>C:\server\ns_lifespan_machine_source\ns_image_server\src\image_base\ns_image.h(8): fatal error C1083: Cannot open include file: 'ns_image_stream_buffers.h': No such file or directory
+         ns_worm_training_set_image.cpp
+     1>C:\server\ns_lifespan_machine_source\ns_image_server\src\image_base\ns_image.h(8): fatal error C1083: Cannot open include file: 'ns_image_stream_buffers.h': No such file or directory
+         ns_xvid.cpp
+     1>C:\server\ns_lifespan_machine_source\ns_image_server\src\image_base\ns_image.h(8): fatal error C1083: Cannot open include file: 'ns_image_stream_buffers.h': No such file or directory
+         ns_graph.cpp
+         ns_image_server.cpp
+     1>C:\Program Files (x86)\MySQL\MySQL Connector C 6.0.2\include\config-win.h(24): warning C4005: '_WIN32_WINNT' : macro redefinition
+                 command-line arguments :  see previous definition of '_WIN32_WINNT'
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\image_server\ns_image_storage_handler.h(66): warning C4800: 'const unsigned long' : forcing value to bool 'true' or 'false' (performance warning)
+     1>..\..\..\..\ns_image_server\src\image_server\ns_image_server.cpp(593): warning C4244: 'initializing' : conversion from 'ns_64_bit' to 'unsigned long', possible loss of data
+     1>..\..\..\..\ns_image_server\src\image_server\ns_image_server.cpp(1048): warning C4244: '=' : conversion from 'ns_64_bit' to 'unsigned int', possible loss of data
+     1>..\..\..\..\ns_image_server\src\image_server\ns_image_server.cpp(1519): warning C4018: '>=' : signed/unsigned mismatch
+     1>..\..\..\..\ns_image_server\src\image_server\ns_image_server.cpp(1982): warning C4244: 'argument' : conversion from 'ns_64_bit' to 'unsigned long', possible loss of data
+     1>C:\server\ns_lifespan_machine_source\ns_image_server\src\image_base\ns_jpeg.h(256): warning C4244: 'argument' : conversion from 'const float' to 'int', possible loss of data
+                 C:\server\ns_lifespan_machine_source\ns_image_server\src\image_base\ns_jpeg.h(237) : while compiling class template member function 'void ns_jpeg_image_output_file<ns_component>::start_decompression(const ns_image_properties &)'
+                 with
+                 [
+                     ns_component=ns_image_storage_handler::ns_component
+                 ]
+                 C:\server\ns_lifespan_machine_source\ns_image_server\src\image_base\ns_jpeg.h(181) : while compiling class template member function 'void ns_jpeg_image_output_file<ns_component>::open_file(const std::string &,const ns_image_properties &)'
+                 with
+                 [
+                     ns_component=ns_image_storage_handler::ns_component
+                 ]
+                 c:\server\ns_lifespan_machine_source\ns_image_server\src\image_server\ns_image_storage.h(91) : see reference to class template instantiation 'ns_jpeg_image_output_file<ns_component>' being compiled
+                 with
+                 [
+                     ns_component=ns_image_storage_handler::ns_component
+                 ]
+                 ..\..\..\..\ns_image_server\src\image_server\ns_image_server.cpp(1951) : see reference to class template instantiation 'ns_image_storage_reciever_to_disk<ns_component>' being compiled
+                 with
+                 [
+                     ns_component=ns_image_storage_handler::ns_component
+                 ]
+         ns_image_server_images.cpp
+     1>C:\Program Files (x86)\MySQL\MySQL Connector C 6.0.2\include\config-win.h(24): warning C4005: '_WIN32_WINNT' : macro redefinition
+                 command-line arguments :  see previous definition of '_WIN32_WINNT'
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\image_server\ns_image_storage_handler.h(66): warning C4800: 'const unsigned long' : forcing value to bool 'true' or 'false' (performance warning)
+     1>..\..\..\..\ns_image_server\src\image_server\ns_image_server_images.cpp(182): warning C4244: 'argument' : conversion from 'ns_64_bit' to 'const unsigned long', possible loss of data
+     1>..\..\..\..\ns_image_server\src\image_server\ns_image_server_images.cpp(208): warning C4244: 'argument' : conversion from 'ns_64_bit' to 'const unsigned long', possible loss of data
+     1>..\..\..\..\ns_image_server\src\image_server\ns_image_server_images.cpp(220): warning C4244: 'argument' : conversion from 'ns_64_bit' to 'const unsigned long', possible loss of data
+     1>..\..\..\..\ns_image_server\src\image_server\ns_image_server_images.cpp(230): warning C4244: 'argument' : conversion from 'ns_64_bit' to 'const unsigned long', possible loss of data
+     1>..\..\..\..\ns_image_server\src\image_server\ns_image_server_images.cpp(273): warning C4244: 'argument' : conversion from 'const ns_64_bit' to 'const int', possible loss of data
+     1>..\..\..\..\ns_image_server\src\image_server\ns_image_server_images.cpp(293): warning C4244: 'argument' : conversion from 'ns_64_bit' to 'const unsigned long', possible loss of data
+     1>..\..\..\..\ns_image_server\src\image_server\ns_image_server_images.cpp(293): warning C4244: 'argument' : conversion from 'ns_64_bit' to 'const unsigned long', possible loss of data
+     1>..\..\..\..\ns_image_server\src\image_server\ns_image_server_images.cpp(293): warning C4244: 'argument' : conversion from 'ns_64_bit' to 'const unsigned long', possible loss of data
+     1>..\..\..\..\ns_image_server\src\image_server\ns_image_server_images.cpp(293): warning C4244: 'argument' : conversion from 'ns_64_bit' to 'const unsigned long', possible loss of data
+     1>..\..\..\..\ns_image_server\src\image_server\ns_image_server_images.cpp(546): warning C4244: 'argument' : conversion from 'ns_64_bit' to 'const unsigned long', possible loss of data
+     1>..\..\..\..\ns_image_server\src\image_server\ns_image_server_images.cpp(559): warning C4244: 'initializing' : conversion from 'ns_64_bit' to 'unsigned int', possible loss of data
+     1>..\..\..\..\ns_image_server\src\image_server\ns_image_server_images.cpp(561): warning C4244: '=' : conversion from 'ns_64_bit' to 'unsigned int', possible loss of data
+     1>..\..\..\..\ns_image_server\src\image_server\ns_image_server_images.cpp(610): warning C4244: 'argument' : conversion from 'ns_64_bit' to 'const unsigned long', possible loss of data
+     1>..\..\..\..\ns_image_server\src\image_server\ns_image_server_images.cpp(616): warning C4244: 'argument' : conversion from 'ns_64_bit' to 'const unsigned long', possible loss of data
+     1>..\..\..\..\ns_image_server\src\image_server\ns_image_server_images.cpp(639): warning C4244: 'initializing' : conversion from 'ns_64_bit' to 'unsigned long', possible loss of data
+     1>..\..\..\..\ns_image_server\src\image_server\ns_image_server_images.cpp(643): warning C4244: '=' : conversion from 'ns_64_bit' to 'unsigned long', possible loss of data
+     1>..\..\..\..\ns_image_server\src\image_server\ns_image_server_images.cpp(698): warning C4244: 'argument' : conversion from 'ns_64_bit' to 'const unsigned long', possible loss of data
+     1>..\..\..\..\ns_image_server\src\image_server\ns_image_server_images.cpp(698): warning C4244: 'argument' : conversion from 'ns_64_bit' to 'const unsigned long', possible loss of data
+     1>..\..\..\..\ns_image_server\src\image_server\ns_image_server_images.cpp(702): warning C4244: 'argument' : conversion from 'ns_64_bit' to 'const unsigned long', possible loss of data
+     1>..\..\..\..\ns_image_server\src\image_server\ns_image_server_images.cpp(722): warning C4244: 'initializing' : conversion from 'ns_64_bit' to 'unsigned long', possible loss of data
+     1>..\..\..\..\ns_image_server\src\image_server\ns_image_server_images.cpp(726): warning C4244: '=' : conversion from 'ns_64_bit' to 'unsigned long', possible loss of data
+     1>..\..\..\..\ns_image_server\src\image_server\ns_image_server_images.cpp(746): warning C4244: 'argument' : conversion from 'ns_64_bit' to 'const unsigned long', possible loss of data
+     1>..\..\..\..\ns_image_server\src\image_server\ns_image_server_images.cpp(751): warning C4244: 'initializing' : conversion from 'ns_64_bit' to 'unsigned long', possible loss of data
+         ns_image_server_main.cpp
+     1>C:\Program Files (x86)\MySQL\MySQL Connector C 6.0.2\include\config-win.h(24): warning C4005: '_WIN32_WINNT' : macro redefinition
+                 command-line arguments :  see previous definition of '_WIN32_WINNT'
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\image_server\ns_image_storage_handler.h(66): warning C4800: 'const unsigned long' : forcing value to bool 'true' or 'false' (performance warning)
+     1>..\..\..\..\ns_image_server\src\image_server\ns_image_server_main.cpp(599): warning C4018: '<' : signed/unsigned mismatch
+     1>..\..\..\..\ns_image_server\src\image_server\ns_image_server_main.cpp(626): warning C4018: '<' : signed/unsigned mismatch
+     1>..\..\..\..\ns_image_server\src\image_server\ns_image_server_main.cpp(738): warning C4305: 'argument' : truncation from 'double' to 'const float'
+     1>..\..\..\..\ns_image_server\src\image_server\ns_image_server_main.cpp(740): warning C4305: 'argument' : truncation from 'double' to 'const float'
+     1>..\..\..\..\ns_image_server\src\image_server\ns_image_server_main.cpp(742): warning C4305: 'argument' : truncation from 'double' to 'const float'
+     1>..\..\..\..\ns_image_server\src\image_server\ns_image_server_main.cpp(788): warning C4018: '<' : signed/unsigned mismatch
+     1>C:\server\ns_lifespan_machine_source\ns_image_server\src\image_base\ns_jpeg.h(256): warning C4244: 'argument' : conversion from 'const float' to 'int', possible loss of data
+                 C:\server\ns_lifespan_machine_source\ns_image_server\src\image_base\ns_jpeg.h(237) : while compiling class template member function 'void ns_jpeg_image_output_file<ns_component>::start_decompression(const ns_image_properties &)'
+                 with
+                 [
+                     ns_component=ns_8_bit
+                 ]
+                 C:\server\ns_lifespan_machine_source\ns_image_server\src\image_base\ns_jpeg.h(181) : while compiling class template member function 'void ns_jpeg_image_output_file<ns_component>::open_file(const std::string &,const ns_image_properties &)'
+                 with
+                 [
+                     ns_component=ns_8_bit
+                 ]
+                 C:\server\ns_lifespan_machine_source\ns_image_server\src\image_base\ns_image_easy_io.h(45) : see reference to class template instantiation 'ns_jpeg_image_output_file<ns_component>' being compiled
+                 with
+                 [
+                     ns_component=ns_8_bit
+                 ]
+                 ..\..\..\..\ns_image_server\src\image_server\ns_image_server_main.cpp(739) : see reference to function template instantiation 'void ns_save_image<ns_8_bit>(const std::string &,const ns_image_whole<ns_component> &)' being compiled
+                 with
+                 [
+                     ns_component=ns_8_bit
+                 ]
+         ns_image_server_message.cpp
+     1>C:\Program Files (x86)\MySQL\MySQL Connector C 6.0.2\include\config-win.h(24): warning C4005: '_WIN32_WINNT' : macro redefinition
+                 command-line arguments :  see previous definition of '_WIN32_WINNT'
+         ns_image_statistics.cpp
+     1>C:\Program Files (x86)\MySQL\MySQL Connector C 6.0.2\include\config-win.h(24): warning C4005: '_WIN32_WINNT' : macro redefinition
+                 command-line arguments :  see previous definition of '_WIN32_WINNT'
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\image_server\ns_image_storage_handler.h(66): warning C4800: 'const unsigned long' : forcing value to bool 'true' or 'false' (performance warning)
+     1>..\..\..\..\ns_image_server\src\image_server\ns_image_statistics.cpp(96): warning C4244: '=' : conversion from 'ns_64_bit' to 'unsigned long', possible loss of data
+         ns_image_storage_handler.cpp
+     1>C:\Program Files (x86)\MySQL\MySQL Connector C 6.0.2\include\config-win.h(24): warning C4005: '_WIN32_WINNT' : macro redefinition
+                 command-line arguments :  see previous definition of '_WIN32_WINNT'
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\image_server\ns_image_storage_handler.h(66): warning C4800: 'const unsigned long' : forcing value to bool 'true' or 'false' (performance warning)
+     1>..\..\..\..\ns_image_server\src\image_server\ns_image_storage_handler.cpp(224): warning C4244: 'argument' : conversion from 'ns_64_bit' to 'const unsigned long', possible loss of data
+     1>..\..\..\..\ns_image_server\src\image_server\ns_image_storage_handler.cpp(233): warning C4244: 'argument' : conversion from 'ns_64_bit' to 'const unsigned long', possible loss of data
+     1>..\..\..\..\ns_image_server\src\image_server\ns_image_storage_handler.cpp(522): warning C4244: 'argument' : conversion from 'ns_64_bit' to 'const unsigned long', possible loss of data
+     1>..\..\..\..\ns_image_server\src\image_server\ns_image_storage_handler.cpp(963): warning C4244: 'argument' : conversion from 'ns_64_bit' to 'const unsigned long', possible loss of data
+     1>..\..\..\..\ns_image_server\src\image_server\ns_image_storage_handler.cpp(970): warning C4244: 'argument' : conversion from 'ns_64_bit' to 'const unsigned long', possible loss of data
+     1>..\..\..\..\ns_image_server\src\image_server\ns_image_storage_handler.cpp(980): warning C4244: 'argument' : conversion from 'ns_64_bit' to 'const unsigned long', possible loss of data
+     1>..\..\..\..\ns_image_server\src\image_server\ns_image_storage_handler.cpp(986): warning C4244: 'argument' : conversion from 'ns_64_bit' to 'const unsigned long', possible loss of data
+     1>..\..\..\..\ns_image_server\src\image_server\ns_image_storage_handler.cpp(1024): warning C4244: 'argument' : conversion from 'ns_64_bit' to 'const unsigned long', possible loss of data
+     1>..\..\..\..\ns_image_server\src\image_server\ns_image_storage_handler.cpp(1029): warning C4244: 'argument' : conversion from 'ns_64_bit' to 'const unsigned long', possible loss of data
+     1>..\..\..\..\ns_image_server\src\image_server\ns_image_storage_handler.cpp(1036): warning C4244: 'argument' : conversion from 'ns_64_bit' to 'const unsigned long', possible loss of data
+     1>..\..\..\..\ns_image_server\src\image_server\ns_image_storage_handler.cpp(1041): warning C4244: 'argument' : conversion from 'ns_64_bit' to 'const unsigned long', possible loss of data
+     1>..\..\..\..\ns_image_server\src\image_server\ns_image_storage_handler.cpp(1063): warning C4244: 'argument' : conversion from 'ns_64_bit' to 'const unsigned long', possible loss of data
+     1>..\..\..\..\ns_image_server\src\image_server\ns_image_storage_handler.cpp(1065): warning C4244: 'argument' : conversion from 'ns_64_bit' to 'const unsigned long', possible loss of data
+     1>..\..\..\..\ns_image_server\src\image_server\ns_image_storage_handler.cpp(1093): warning C4244: 'return' : conversion from 'ns_64_bit' to 'unsigned long', possible loss of data
+     1>C:\server\ns_lifespan_machine_source\ns_image_server\src\image_base\ns_jpeg.h(256): warning C4244: 'argument' : conversion from 'const float' to 'int', possible loss of data
+                 C:\server\ns_lifespan_machine_source\ns_image_server\src\image_base\ns_jpeg.h(237) : while compiling class template member function 'void ns_jpeg_image_output_file<ns_component>::start_decompression(const ns_image_properties &)'
+                 with
+                 [
+                     ns_component=ns_image_storage_handler::ns_component
+                 ]
+                 C:\server\ns_lifespan_machine_source\ns_image_server\src\image_base\ns_jpeg.h(181) : while compiling class template member function 'void ns_jpeg_image_output_file<ns_component>::open_file(const std::string &,const ns_image_properties &)'
+                 with
+                 [
+                     ns_component=ns_image_storage_handler::ns_component
+                 ]
+                 c:\server\ns_lifespan_machine_source\ns_image_server\src\image_server\ns_image_storage.h(91) : see reference to class template instantiation 'ns_jpeg_image_output_file<ns_component>' being compiled
+                 with
+                 [
+                     ns_component=ns_image_storage_handler::ns_component
+                 ]
+                 ..\..\..\..\ns_image_server\src\image_server\ns_image_storage_handler.cpp(430) : see reference to class template instantiation 'ns_image_storage_reciever_to_disk<ns_component>' being compiled
+                 with
+                 [
+                     ns_component=ns_image_storage_handler::ns_component
+                 ]
+         ns_ini.cpp
+         Compiling...
+         ns_image_processing_pipeline.cpp
+     1>C:\server\ns_lifespan_machine_source\ns_image_server\src\image_base\ns_image.h(8): fatal error C1083: Cannot open include file: 'ns_image_stream_buffers.h': No such file or directory
+         ns_processing_job_processor.cpp
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\job_scheduling\ns_processing_job_push_scheduler.h(3): fatal error C1083: Cannot open include file: 'ns_image_server_images.h': No such file or directory
+         ns_processing_job_push_scheduler.cpp
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\job_scheduling\ns_processing_job_push_scheduler.h(3): fatal error C1083: Cannot open include file: 'ns_image_server_images.h': No such file or directory
+         ns_processing_job_scheduler.cpp
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\job_scheduling\ns_processing_job_scheduler.h(3): fatal error C1083: Cannot open include file: 'ns_image_server.h': No such file or directory
+         ns_hidden_markov_model_posture_analyzer.cpp
+     1>C:\server\ns_lifespan_machine_source\ns_image_server\src\data_annotation\ns_death_time_annotation.h(5): fatal error C1083: Cannot open include file: 'ns_image_server_sql.h': No such file or directory
+         ns_time_path_image_analyzer.cpp
+     1>C:\server\ns_lifespan_machine_source\ns_image_server\src\image_base\ns_image.h(8): fatal error C1083: Cannot open include file: 'ns_image_stream_buffers.h': No such file or directory
+         ns_time_path_solver.cpp
+     1>C:\server\ns_lifespan_machine_source\ns_image_server\src\image_base\ns_image.h(8): fatal error C1083: Cannot open include file: 'ns_image_stream_buffers.h': No such file or directory
+         ns_captured_image_statistics_set.cpp
+     1>C:\server\ns_lifespan_machine_source\ns_image_server\src\image_acquisition\ns_captured_image_statistics_set.h(4): fatal error C1083: Cannot open include file: 'ns_image_server_sql.h': No such file or directory
+         ns_machine_analysis_data_loader.cpp
+     1>C:\Program Files (x86)\MySQL\MySQL Connector C 6.0.2\include\config-win.h(24): warning C4005: '_WIN32_WINNT' : macro redefinition
+                 command-line arguments :  see previous definition of '_WIN32_WINNT'
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\data_annotation\ns_death_time_annotation.h(5): fatal error C1083: Cannot open include file: 'ns_image_server_sql.h': No such file or directory
+         ns_movement_measurement.cpp
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\statistics\ns_survival_curve.h(9): fatal error C1083: Cannot open include file: 'ns_image_server_sql.h': No such file or directory
+         ns_survival_curve.cpp
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\statistics\ns_survival_curve.h(9): fatal error C1083: Cannot open include file: 'ns_image_server_sql.h': No such file or directory
+         ns_worm_browser.cpp
+     1>C:\server\ns_lifespan_machine_source\ns_image_server\src\image_base\ns_image.h(8): fatal error C1083: Cannot open include file: 'ns_image_stream_buffers.h': No such file or directory
+         ns_worm_browser_main.cpp
+     1>C:\server\ns_lifespan_machine_source\ns_image_server\src\image_base\ns_image.h(8): fatal error C1083: Cannot open include file: 'ns_image_stream_buffers.h': No such file or directory
+     1>Done Building Project "C:\server\ns_lifespan_machine_source\ns_worm_browser\build\windows\ns_worm_browser\ns_worm_browser.vcxproj" (build target(s)) -- FAILED.
+
+Build FAILED.
+
+Time Elapsed 00:00:37.93

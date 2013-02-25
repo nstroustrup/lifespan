@@ -1,0 +1,349 @@
+#ifndef NS_WORM_T_PATH
+#define NS_WORM_T_PATH
+#include <ostream>
+#include "ns_detected_worm_info.h"
+#include "ns_vector_bitmap_interface.h"
+
+
+struct ns_time_path_solver_parameters{
+	unsigned long short_capture_interval_in_seconds,number_of_consecutive_sample_captures,number_of_samples_per_device;
+	double maximum_object_detection_density_in_events_per_hour() const{return 1.0/(short_capture_interval_in_seconds/60.0/60.0*(double)number_of_samples_per_device);}
+
+	double fraction_of_points_allowed_to_be_missing_in_path_fragment;
+	unsigned long min_stationary_object_path_fragment_duration_in_seconds;
+	unsigned long stationary_object_path_fragment_window_length_in_seconds;
+	unsigned long stationary_object_path_fragment_max_movement_distance;
+	unsigned long maximum_time_between_joined_path_fragments;
+	unsigned long maximum_distance_betweeen_joined_path_fragments;
+	unsigned long min_final_stationary_path_duration_in_minutes;
+	double maximum_path_fragment_displacement_per_hour,
+		   max_average_final_path_average_timepoint_displacement;
+
+	static ns_time_path_solver_parameters default_parameters(const unsigned long experiment_length_in_seconds,
+															const unsigned long short_capture_interval_in_seconds_,
+															const unsigned long number_of_consecutive_sample_captures_,
+															const unsigned long number_of_samples_per_device_);
+
+	static ns_time_path_solver_parameters default_parameters(const unsigned long sample_region_image_info_id, ns_sql & sql);
+};
+
+struct ns_worm_detection_results_set{
+	std::vector<ns_image_worm_detection_results> results;
+};
+
+struct ns_time_element_link{
+	ns_time_element_link(){}
+	ns_time_element_link(const unsigned long t,const unsigned long i):t_id(t),index(i){}
+	unsigned long t_id,index;
+};
+
+struct ns_time_path_element{
+	ns_time_path_element():slowly_moving(false),low_temporal_resolution(false),worm_(0),part_of_a_multiple_worm_disambiguation_cluster(false){}
+	
+	
+	ns_time_path_element(const ns_detected_worm_info * w):
+		region_position(w->region_position_in_source_image),region_size(w->region_size),
+			context_image_position(w->context_position_in_source_image),
+			context_image_size(w->context_image_size),center(w->region_position_in_source_image+w->region_size/2),slowly_moving(false),
+			low_temporal_resolution(false),worm_(w),context_image_position_in_region_vis_image(0,0),part_of_a_multiple_worm_disambiguation_cluster(false){
+		if (context_image_size.x == 0)
+			throw ns_ex("Empty Context Image Found");
+		}
+	ns_vector_2i region_position;
+	ns_vector_2i region_size;
+	ns_vector_2i context_image_position;
+	ns_vector_2i context_image_size;
+	ns_vector_2i center;
+	bool slowly_moving;
+	bool low_temporal_resolution;
+	const ns_detected_worm_info & worm() const{return *worm_;}
+	bool worm_is_loaded()const{return worm_ != 0;}
+	bool part_of_a_multiple_worm_disambiguation_cluster;
+
+	ns_vector_2i context_image_position_in_region_vis_image;
+
+private:
+	const ns_detected_worm_info * worm_;
+};
+
+struct ns_time_path_element_time_sorter{
+	bool operator()(const ns_time_path_element & e1, const ns_time_path_element & e2){
+		return false;
+	}
+};
+
+struct ns_time_path{
+	ns_time_path():is_low_density_path(false){}
+	std::vector<ns_time_element_link> stationary_elements;
+	std::vector<ns_time_element_link> moving_elements;
+	bool is_low_density_path;
+//	bool is_not_stationary;
+	ns_vector_2i center;
+};
+struct ns_time_path_group{
+	std::vector<unsigned long> path_ids;
+};
+
+struct ns_time_path_timepoint{
+	unsigned long time;
+	unsigned long sample_region_image_id;
+	std::vector<ns_time_path_element> elements;
+};
+class ns_time_path_solution{
+public:
+	ns_time_path_solution():detection_results(0),worms_loaded(false){}
+	~ns_time_path_solution(){if (detection_results != 0)delete detection_results; detection_results = 0;}
+	static void output_visualization_csv_header(std::ostream & o){	
+		o << "t,t_abs,x,y,w,h,path_group_id,path_id,slowly_moving,low_temporal_resolution,hand_annotation,number_of_extra_worms,movement\n";
+	};
+	static void output_visualization_csv_data(std::ostream & o,const float relative_time,const unsigned long absolute_time,const ns_vector_2i & pos, const ns_vector_2i & size,
+											  const long path_id,const long path_group_id,const bool slowly_moving,
+											  const bool low_temporal_resolution,const bool by_hand_annotation,const unsigned long number_of_extra_worms,
+											  const ns_movement_state & movement){
+	  o << relative_time << "," << absolute_time << "," << pos.x << "," << pos.y << "," << size.x << "," << size.y << ","
+		<< path_id << "," << (path_group_id?"1":"0") << "," << (slowly_moving?"1":"0") << "," << (low_temporal_resolution?"1":"0") << "," << (by_hand_annotation?"1":"0") << ","
+		<< number_of_extra_worms << "," << (int)movement << "\n";
+	}
+	void output_visualization_csv(std::ostream & o);
+	bool worms_loaded;
+	bool paths_loaded()const {return paths.size() != 0;}
+	ns_time_path_element & element(const ns_time_element_link & e){return timepoints[e.t_id].elements[e.index];}
+	
+	const ns_time_path_element & element(const ns_time_element_link & e) const {return timepoints[e.t_id].elements[e.index];}
+
+	const unsigned long & time(const ns_time_element_link & e) const{return timepoints[e.t_id].time;}
+	unsigned long & time(const ns_time_element_link & e){return timepoints[e.t_id].time;}
+
+
+	std::vector<ns_time_path_timepoint> timepoints;
+	std::vector<ns_time_path> paths;
+	std::vector<ns_time_path_group> path_groups;
+
+	void clear(){
+		if (detection_results != 0)delete detection_results;
+		detection_results = 0;
+		timepoints.resize(0);
+		paths.resize(0);
+		path_groups.resize(0);
+		unassigned_points.stationary_elements.resize(0);
+		unassigned_points.center = ns_vector_2i(0,0);
+		worms_loaded = false;
+	}
+	ns_time_path unassigned_points;
+
+	void set_results(ns_worm_detection_results_set * results){if (detection_results != 0)delete detection_results; detection_results = results;}
+
+	void save_to_db(const unsigned long region_id, ns_sql & sql) const;
+	void load_from_db(const unsigned long region_id, ns_sql & sql);
+	void check_for_duplicate_events();
+private:
+	
+	void save_to_disk(std::ostream & o) const;
+	void load_from_disk(std::istream & o);
+	ns_worm_detection_results_set * detection_results;
+};
+
+
+
+
+class ns_time_path_solver_element{
+public:
+	ns_time_path_solver_element():path_id(0),recursively_named(false),element_assigned(false),element_assigned_in_this_round(false){}
+
+	ns_time_path_element e;
+	std::vector<ns_time_path_element> extra_elements_at_current_position;
+	
+	inline bool overlap(const ns_time_path_solver_element & el) const
+		{return ns_rectangle_intersect(e.region_position,e.region_position+e.region_size,el.e.region_position,el.e.region_position+el.e.region_size);}
+
+	void load(const ns_detected_worm_info * w);
+
+	unsigned long path_id,
+			  recursively_named;
+	bool element_assigned,
+		 element_assigned_in_this_round;
+
+};
+
+struct ns_time_path_solver_timepoint{
+	unsigned long time;
+	unsigned long sample_region_image_id;
+
+	std::vector<ns_time_path_solver_element> elements;
+	void combine_very_close_elements(const unsigned long max_d_squared);
+	void load(const unsigned long worm_detection_results_id,ns_image_worm_detection_results & results,ns_sql & sql);
+
+private:
+	ns_image_worm_detection_results * worm_detection_results;
+};
+
+struct ns_time_path_solver_path_builder_point{
+	ns_time_path_solver_path_builder_point():link(0,0),pos(0,0),time(0){}
+	ns_time_path_solver_path_builder_point(const ns_time_element_link & l, const ns_vector_2i & p, const unsigned long t):link(l),pos(p),time(t){}
+	ns_time_element_link link;
+	ns_vector_2i pos;
+	unsigned long time;
+};
+struct ns_time_path_solver_path_builder{
+
+	ns_time_path_solver_path_builder():center(0,0){}
+	ns_time_path_solver_path_builder(const ns_time_path_solver_path_builder_point & p):center(p.pos),elements(1,p){}
+	
+	double calculate_current_density(const unsigned long current_time,const unsigned long time_density_window) const;
+
+	void calculate_center(const unsigned long time_density_window) const;
+	mutable ns_vector_2d center;
+	std::vector<ns_time_path_solver_path_builder_point> elements;
+};
+
+struct ns_time_path_solver_path{
+	ns_time_path_solver_path():is_low_density_path(false),is_not_stationary(false){}
+	
+	unsigned long path_id,
+				  group_id;
+	ns_vector_2i max_time_position,
+				 min_time_position;
+	unsigned long max_time,
+		          min_time;
+	std::vector<ns_time_element_link> elements;
+	bool is_low_density_path;
+	bool is_not_stationary;
+
+	ns_time_element_link & end(){return elements[elements.size()-1];}
+
+	ns_time_path_solver_path(const ns_time_path_solver_path_builder & b){
+		elements.resize(b.elements.size());
+		is_low_density_path =false;
+		is_not_stationary =false;
+		if (b.elements.empty()){
+			max_time_position = min_time_position = ns_vector_2i(0,0);
+			min_time = max_time = 0;
+			return;
+		}
+		for (unsigned int i = 0; i < elements.size(); i++)
+			elements[i] = b.elements[i].link;
+		max_time = b.elements.begin()->time;
+		max_time_position = b.elements.begin()->pos;
+		min_time = b.elements.rbegin()->time;
+		min_time_position = b.elements.rbegin()->pos;
+	}
+};
+
+
+
+struct ns_time_path_solver_path_group{
+	std::vector<unsigned long> path_ids;
+};
+
+
+
+class ns_time_path_solution_stationary_drift_estimator{
+public:
+	ns_vector_2d estimate(const unsigned long time) const;
+
+	double estimated_distance(const ns_time_path_solution_stationary_drift_estimator & target) const{
+		if (target.match_time <= estimation_time)
+			return -1;
+		return (estimate(target.match_time)-target.match_position).squared();
+	}
+	bool time_does_not_overlap(const unsigned long &time)const{
+		return (is_a_path() && (time < path_bound_min || time > path_bound_max))
+			||
+			(!is_a_path() && (time != match_time));
+	}
+	double estimated_distance_time_invariant(const ns_time_path_solution_stationary_drift_estimator & target) const{
+		//don't allow points to match within a path or at the same time as a point
+		if (!time_does_not_overlap(target.match_time))
+			return -1;
+		return (estimate(target.match_time)-target.match_position).squared();
+	}
+	ns_vector_2d estimation_position;
+	ns_vector_2d estimation_drift;
+	unsigned long estimation_time;
+
+	long path_id;
+	ns_time_element_link stray_point_id;
+	ns_vector_2i match_position;
+	unsigned long match_time;
+
+	unsigned long path_bound_min,path_bound_max;
+	ns_time_path_solution_stationary_drift_estimator():path_id(-1),stray_point_id(0,0),path_bound_min(0),path_bound_max(0){}
+
+	bool is_a_path()const {return path_id !=-1;}
+};
+bool operator < (const ns_time_path_solution_stationary_drift_estimator & l, const ns_time_path_solution_stationary_drift_estimator & r);
+
+
+class ns_time_path_solution_stationary_drift_estimator_group{
+public:
+	typedef std::set<ns_time_path_solution_stationary_drift_estimator> ns_estimator_list;
+	ns_estimator_list estimators;
+	ns_time_path_solution_stationary_drift_estimator_group(){}
+	ns_time_path_solution_stationary_drift_estimator_group(const ns_time_path_solution_stationary_drift_estimator & e){estimators.insert(e);}
+
+	const ns_time_path_solution_stationary_drift_estimator & estimator()const{return (*estimators.rbegin());}
+	bool time_does_not_overlap(const unsigned long & time) const{ 
+		for (ns_estimator_list::const_iterator p=estimators.begin(); p!= estimators.end(); p++)
+				if (!p->time_does_not_overlap(time))
+					return false;
+		return true;
+	}
+
+	bool use_as_a_target,
+		 use_as_a_estimator;
+	bool to_be_deleted;
+
+};
+
+
+
+class ns_time_path_solver{
+public:
+	void load(unsigned long region_id, ns_sql & sql);
+	void solve(const ns_time_path_solver_parameters &parameters, ns_time_path_solution & solution);
+
+	void output_visualization_csv(std::ostream & o);
+
+	
+	ns_time_path_solver():detection_results(new ns_worm_detection_results_set){}
+	~ns_time_path_solver(){if (detection_results != 0) delete detection_results; detection_results = 0;}
+private:
+	std::vector<ns_time_path_solver_timepoint> timepoints;
+	std::vector<ns_time_path_solver_path> paths;
+	std::vector<ns_time_path_solver_path_group> path_groups;
+	std::vector<ns_time_path_solver_path> low_density_paths;
+
+	ns_worm_detection_results_set * detection_results;
+	
+	std::vector<char> path_assign_temp;
+	void mark_unassigned_points();
+
+	//void check_for_duplicate_events();
+	void assign_path_ids_to_elements();
+//	void calculate_path_centers(const unsigned long max_displacement_radius);
+	void merge_overlapping_path_fragments(const unsigned long max_center_distance,const unsigned long max_time_gap);
+	//void assign_paths_to_groups(const unsigned long max_center_distance, const unsigned long max_time_gap);
+	void assign_timepoint_elements_to_paths(std::vector<ns_time_path_solver_element> & elements, const unsigned long max_dist_sq, std::vector<ns_time_path_solver_path_builder> & paths);
+	void find_stationary_path_fragments(const double min_path_density_in_points_per_hour, const unsigned long min_path_duration_in_seconds, const unsigned long time_window_length_in_seconds,const unsigned long max_movement_distance);
+	void find_low_density_stationary_paths(const unsigned long min_path_duration_in_seconds, const unsigned long max_movement_distance);
+	//void remove_short_paths(const unsigned long minimum_length);
+	//void remove_short_paths_by_time(const unsigned long minimum_duration_in_seconds);
+	void transfer_data_to_solution(ns_time_path_solution & solution);
+	
+//	void identify_static_noise(const unsigned long radius, const unsigned long max_time_gap);
+//	void assign_timepoint_elements_to_noise_paths(const unsigned long t_id, const unsigned long max_dist_sq, std::vector<ns_time_path_solver_path> & opaths);
+	
+	void handle_low_density_stationary_paths_and_stray_points(const unsigned long max_movement_distance, const double min_final_stationary_path_duration_in_minutes);
+
+	inline const unsigned long time(const ns_time_element_link & l) const { return timepoints[l.t_id].time;}
+
+	inline const ns_time_path_solver_element & element(const ns_time_element_link & l) const { return timepoints[l.t_id].elements[l.index];}
+	inline ns_time_path_solver_element & element(const ns_time_element_link & l){ return timepoints[l.t_id].elements[l.index];}
+
+	ns_time_path_solution_stationary_drift_estimator get_drift_estimator(const  unsigned long path_id);
+	unsigned long number_of_stationary_paths_at_time(const unsigned long t) const;
+	unsigned long number_of_unassigned_points_at_time(const ns_time_element_link & l) const;
+	bool can_search_for_stray_points_at_time(const ns_time_element_link & l) const;
+};
+
+#endif

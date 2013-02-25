@@ -1,0 +1,229 @@
+#ifndef NS_DEATH_TIME_ANNOTATION_H
+#define NS_DEATH_TIME_ANNOTATION_H
+#include "ns_ex.h"
+#include "ns_vector.h"
+#include "ns_image_server_sql.h"
+#include "ns_movement_state.h"
+#include <stdlib.h>
+
+
+struct ns_stationary_path_id{
+
+	ns_stationary_path_id():group_id(-1),path_id(-1),detection_set_id(0){}
+	ns_stationary_path_id(const long g,const long p, const unsigned long t):group_id(g),path_id(p),detection_set_id(t){}
+	unsigned long detection_set_id;
+	long group_id,
+		 path_id;
+	bool specified()const{return group_id!=-1 && path_id !=-1 && detection_set_id != 0;}
+	
+};
+
+bool operator <(const ns_stationary_path_id & a, const ns_stationary_path_id & b);
+bool operator ==(const ns_stationary_path_id & a, const ns_stationary_path_id & b);
+
+struct ns_death_time_annotation_time{
+	ns_death_time_annotation_time(){}
+	ns_death_time_annotation_time(const unsigned long s, const unsigned long f):start_time(s),end_time(f){}
+	unsigned long start_time,
+				  end_time;
+	bool overlap(const ns_death_time_annotation_time & t) const{
+		return (start_time <= t.start_time && end_time >= t.start_time) ||
+			   (start_time <= t.end_time && end_time >= t.end_time) ||
+			   (start_time >= t.start_time && end_time <= t.end_time);
+	}
+};
+
+struct ns_death_time_annotation_flag{
+	typedef enum{ns_none,ns_point_cloud_analysis_error, ns_movement_registration_error, ns_additional_worm_confuses_analysis} ns_default_flag;
+
+	ns_death_time_annotation_flag():id(ns_none),label_is_cached(false),cached_hidden(false),next_flag_id_in_order(0){}
+	ns_death_time_annotation_flag(const unsigned long id_, const std::string & label_short_, const std::string &label_long_="", const bool &  excluded_=false, const unsigned long & next_flag_id_in_order_=0, const std::string & color_="000000"):
+	id(id_),label_short(label_short_),cached_label(label_long_),cached_excluded(excluded_),label_is_cached(!label_long_.empty() || excluded_),next_flag_id_in_order(next_flag_id_in_order_),cached_hidden(false),cached_color(ns_hex_string_to_color<ns_color_8>(color_)){}
+	unsigned long id;
+	std::string label_short;
+	std::string label() const{
+		if (label_is_cached) 
+			return cached_label;
+		get_cached_info();
+		return cached_label;
+	}
+	void step_event(){
+		
+		if (cached_flags.empty())
+			throw ns_ex("ns_death_time_annotation_flag::step_event()::cached flags are not loaded.");
+		ns_flag_cache::const_iterator p(cached_flags.find(id));
+		if (p == cached_flags.end())
+			throw ns_ex("ns_death_time_annotation_flag::step_event()::could not find current flag in cache");
+		ns_flag_cache::const_iterator q(cached_flags.find(p->second.next_flag_id_in_order));
+		if (q == cached_flags.end())
+			*this = none();
+		*this = q->second;
+		if (this->cached_hidden)
+			step_event();
+	}
+	bool event_should_be_excluded() const{
+		if (label_is_cached)
+			return cached_excluded;
+		get_cached_info();
+		return cached_excluded;
+	}
+	bool specified() const{return !label_short.empty();}
+
+	static void get_flags_from_db(ns_sql & sql){
+		cached_flags.clear();
+		
+		sql << "SELECT id, label_short, label, exclude, next_flag_id_in_order, hidden, color FROM annotation_flags";
+		ns_sql_result res;
+		sql.get_rows(res);
+		for (unsigned int i = 0; i < res.size(); i++){
+			const unsigned long flag_id(atol(res[i][0].c_str()));
+			ns_flag_cache::iterator p = cached_flags.find(flag_id);
+			if (p != cached_flags.end())
+				throw ns_ex("Death Time Annotation Flag id ") << flag_id << " has been specified twice; first as " << p->second.label_short << " and then as " << res[i][1];
+			cached_flags[flag_id] = ns_death_time_annotation_flag(flag_id,res[i][1],res[i][2],res[i][3] == "1",atol(res[i][4].c_str()),res[i][6]);
+			cached_flags[flag_id].cached_hidden = (res[i][5]=="1");
+		}
+	
+		std::vector<ns_death_time_annotation_flag> v;
+		generate_default_flags(v);
+		for (unsigned int i = 0; i < v.size(); i++){
+			ns_flag_cache::iterator p = cached_flags.find(v[i].id);
+			if (p == cached_flags.end()){
+				cached_flags[v[i].id] = v[i];
+				if (v[i].id == 0)
+					continue;	//don't include ns_none
+				//update db with default flags if they aren't present.
+				sql <<  "INSERT INTO annotation_flags SET id=" << v[i].id << ",label_short='" <<v[i].label_short 
+					<< "',label='"<<v[i].cached_label << "',exclude=" << (v[i].cached_excluded?"1":"0") << ",next_flag_id_in_order=" << v[i].next_flag_id_in_order;
+				sql.send_query();
+			}
+		}
+	};
+	
+	ns_color_8 flag_color() const{
+		return cached_color;
+	}
+
+	static void generate_default_flags(std::vector<ns_death_time_annotation_flag> & flags){
+		flags.resize(0);
+		flags.push_back(ns_death_time_annotation_flag::none());
+		flags.push_back(ns_death_time_annotation_flag(ns_point_cloud_analysis_error,"3D_CLOUD_ERR",
+			"Point Cloud Analaysis Error",true,ns_point_cloud_analysis_error+1,"FFFF80"));
+		flags.push_back(ns_death_time_annotation_flag(ns_movement_registration_error,"REG_ERR",
+			"Movement Registration Error",true,ns_movement_registration_error+1,"FF8080"));
+		flags.push_back(ns_death_time_annotation_flag(ns_additional_worm_confuses_analysis,"2ND_WORM_ERR",
+			"Additional Worm Confuses Analysis",true,ns_additional_worm_confuses_analysis+1,"80FF80"));
+	}
+
+	static ns_death_time_annotation_flag none(){
+		return ns_death_time_annotation_flag(ns_none,"","",false,ns_none+1);
+	}
+private:
+	typedef std::map<unsigned long, ns_death_time_annotation_flag> ns_flag_cache;
+	static ns_flag_cache cached_flags;
+	mutable bool label_is_cached;
+	mutable std::string cached_label;
+	mutable bool cached_excluded;
+	mutable bool cached_hidden;
+	mutable unsigned long next_flag_id_in_order;
+	mutable ns_color_8 cached_color;
+
+	void get_cached_info() const{
+		return;
+		if (cached_flags.empty())
+			throw ns_ex("Death time annotation flags have not been loaded from the database!");
+		ns_flag_cache::const_iterator p(cached_flags.find(id));
+		if (p == cached_flags.end())
+			throw ns_ex("Could not load flag information from db for flag ") << id << label_short;
+		label_is_cached = true;;
+		cached_label = p->second.cached_label;
+		cached_excluded = p->second.cached_excluded;
+		cached_hidden = p->second.cached_hidden;
+		cached_color = p->second.cached_color;
+	}
+
+};
+
+//the convention is to have position be the center
+//of the detected object.
+//to get the top left corner, calc position - size/2
+struct ns_death_time_annotation{
+	
+	typedef enum{ns_unknown,ns_posture_image,ns_region_image,ns_lifespan_machine,ns_storyboard} ns_annotation_source_type;
+	typedef enum{ns_not_excluded, ns_excluded,ns_machine_excluded,ns_by_hand_excluded,ns_both_excluded,ns_censored,ns_excluded_and_censored} ns_exclusion_type;
+	typedef enum{ns_single_worm, ns_part_of_a_mutliple_worm_disambiguation_cluster} ns_disambiguation_type;
+
+	ns_death_time_annotation():
+		type(ns_no_movement_event),time(0,0),region_info_id(0),region_id(0),position(0,0),size(0,0),animal_is_part_of_a_complete_trace(false),
+		annotation_source(ns_unknown),excluded(ns_not_excluded),number_of_extra_worms_at_location(0),annotation_time(0),disambiguation_type(ns_single_worm), flag(ns_death_time_annotation_flag::none()){}
+
+	ns_death_time_annotation(const ns_movement_event type_, const unsigned long region_id_, const unsigned long region_info_id_,
+		const ns_death_time_annotation_time time_, const ns_vector_2i & pos, const ns_vector_2i & size_,const ns_exclusion_type excluded_,
+		const unsigned long number_of_extra_worms, const unsigned long annotation_time_, const ns_annotation_source_type source_type, const ns_disambiguation_type & d, const ns_stationary_path_id & s_id,const bool animal_is_part_of_a_complete_trace_,const std::string & annotation_details_=""):
+			type(type_),region_id(region_id_),time(time_),position(pos),size(size_),excluded(excluded_),region_info_id(region_info_id_),
+				number_of_extra_worms_at_location(number_of_extra_worms),annotation_time(annotation_time_),annotation_source(source_type),annotation_source_details(annotation_details_),disambiguation_type(d),stationary_path_id(s_id),flag(ns_death_time_annotation_flag::none()),animal_is_part_of_a_complete_trace(animal_is_part_of_a_complete_trace_){}
+	
+	static std::string source_type_to_string(const ns_annotation_source_type & t);
+
+	std::string description() const;
+
+	std::string to_string() const;
+	void from_string(const std::string v);
+
+	static unsigned long exclusion_value(const ns_exclusion_type & t);
+
+	static std::string exclusion_string(const ns_exclusion_type & t);
+	
+	static inline bool is_censored(const ns_exclusion_type & t){return (t==ns_censored || t==ns_excluded_and_censored);}
+	inline bool is_censored() const{return is_censored(excluded);}
+	static inline bool is_excluded(const ns_exclusion_type & t) {return (t!=ns_not_excluded && t!= ns_censored);}
+	inline bool is_excluded()const {return is_excluded(excluded);}
+
+	void transfer_sticky_properties(ns_death_time_annotation & a) const{
+		if (is_excluded())
+			a.excluded = excluded;
+		if (disambiguation_type != ns_single_worm)
+			a.disambiguation_type = disambiguation_type;
+		if (flag.specified())
+			a.flag = flag;
+		if (number_of_extra_worms_at_location > a.number_of_extra_worms_at_location)
+			a.number_of_extra_worms_at_location = number_of_extra_worms_at_location;
+	}
+	bool has_sticky_properties() const{
+		return is_excluded() || is_censored() || disambiguation_type != ns_single_worm || 
+			   flag.specified() || number_of_extra_worms_at_location != 0;
+	}
+	void clear_sticky_properties(){
+		excluded = ns_not_excluded;
+		disambiguation_type = ns_single_worm;
+		flag = ns_death_time_annotation_flag::none();
+		number_of_extra_worms_at_location = 0;
+	}
+	void clear_movement_properties(){
+		type = ns_no_movement_event;
+		time.end_time = time.start_time = 0;
+	}
+	//sticky properties
+	ns_exclusion_type excluded;
+	ns_disambiguation_type disambiguation_type;
+	unsigned long number_of_extra_worms_at_location;
+	ns_death_time_annotation_flag flag;
+
+	bool animal_is_part_of_a_complete_trace;
+
+	ns_stationary_path_id stationary_path_id;
+
+	ns_vector_2i size;
+
+	ns_movement_event type;
+
+	ns_annotation_source_type annotation_source;
+	std::string annotation_source_details;
+	unsigned long annotation_time;
+	ns_death_time_annotation_time time;
+	unsigned long region_info_id;
+	unsigned long region_id;
+	//the center of the object
+	ns_vector_2i position;
+};
+#endif

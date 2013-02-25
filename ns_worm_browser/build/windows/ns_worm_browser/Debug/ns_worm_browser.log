@@ -1,0 +1,1439 @@
+﻿Build started 2/10/2013 7:48:16 PM.
+     1>Project "C:\server\ns_lifespan_machine_source\ns_worm_browser\build\windows\ns_worm_browser\ns_worm_browser.vcxproj" on node 2 (build target(s)).
+     1>InitializeBuildStatus:
+         Creating "Debug\ns_worm_browser.unsuccessfulbuild" because "AlwaysCreate" was specified.
+       ClCompile:
+         C:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\bin\CL.exe /c /ZI /nologo /W3 /WX- /Od /Oy- /D _CRT_SECURE_NO_DEPRECATE /D WIN32 /D NTDDI_VERSION=NTDDI_WINXPSP2 /D _WIN32_WINNT=0x501 /D WINVER=0x0501 /D TRILIBRARY /D CPU86 /D NO_TIMER /D ANSI_DECLARATORS /D "NS_DEFAULT_FONT=\"c:/windows/fonts/ARIAL.TTF\"" /D "NS_INI_PATH=\"c:\\server\\ns_image_server.ini\"" /D ARCH_IS_LITTLE_ENDIAN /D INCLUDE_STDAFX /D _MBCS /D _MBCS /Gm /EHsc /RTC1 /MTd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Fo"Debug\\" /Fd"Debug\vc100.pdb" /Gd /TP /analyze- /errorReport:prompt ..\..\..\..\ns_image_server\src\data_annotation\ns_death_time_annotation.cpp ..\..\..\..\ns_image_server\src\data_annotation\ns_experiment_storyboard.cpp ..\..\..\..\ns_image_server\src\data_annotation\ns_machine_learning_training_set.cpp ..\..\..\..\ns_image_server\src\data_annotation\ns_mask_management.cpp ..\..\..\..\ns_image_server\src\image_acquisition\ns_buffered_capture_scheduler.cpp ..\..\..\..\ns_image_server\src\image_acquisition\ns_capture_device.cpp ..\..\..\..\ns_image_server\src\image_acquisition\ns_capture_device_manager.cpp ..\..\..\..\ns_image_server\src\image_acquisition\ns_capture_schedule.cpp ..\..\..\..\ns_image_server\src\image_acquisition\ns_image_capture_data_manager.cpp ..\..\..\..\ns_image_server\src\image_acquisition\ns_image_server_alerts.cpp ..\..\..\..\ns_image_server\src\image_acquisition\ns_image_server_dispatcher.cpp ..\..\..\..\ns_image_server\src\image_base\ns_vector_bitmap_interface.cpp ..\..\..\..\ns_image_server\src\image_processing\ns_detected_worm_info.cpp ..\..\..\..\ns_image_server\src\image_processing\ns_heat_map_interpolation.cpp ..\..\..\..\ns_image_server\src\image_processing\ns_identify_contiguous_bitmap_regions.cpp ..\..\..\..\ns_image_server\src\image_processing\ns_movement_visualization_generator.cpp ..\..\..\..\ns_image_server\src\image_processing\ns_worm_detector.cpp ..\..\..\..\ns_image_server\src\image_processing\ns_worm_training_set_image.cpp ..\..\..\..\ns_image_server\src\job_scheduling\ns_image_processing_pipeline.cpp ..\..\..\..\ns_image_server\src\job_scheduling\ns_processing_job_processor.cpp ..\..\..\..\ns_image_server\src\job_scheduling\ns_processing_job_push_scheduler.cpp ..\..\..\..\ns_image_server\src\job_scheduling\ns_processing_job_scheduler.cpp ..\..\..\..\ns_image_server\src\movement_analysis\ns_hidden_markov_model_posture_analyzer.cpp ..\..\..\..\ns_image_server\src\movement_analysis\ns_time_path_image_analyzer.cpp ..\..\..\..\ns_image_server\src\movement_analysis\ns_time_path_solver.cpp ..\..\..\..\ns_image_server\src\ns_image_server.cpp ..\..\..\..\ns_image_server\src\ns_image_server_images.cpp ..\..\..\..\ns_image_server\src\ns_image_statistics.cpp ..\..\..\..\ns_image_server\src\ns_image_storage_handler.cpp ..\..\..\..\ns_image_server\src\statistics\ns_machine_analysis_data_loader.cpp ..\..\..\..\ns_image_server\src\statistics\ns_movement_measurement.cpp ..\..\..\src\ns_worm_browser.cpp ..\..\..\src\ns_worm_browser_main.cpp
+         ns_worm_browser_main.cpp
+     1>c:\program files (x86)\mysql\mysql connector c 6.0.2\include\config-win.h(24): warning C4005: '_WIN32_WINNT' : macro redefinition
+                 command-line arguments :  see previous definition of '_WIN32_WINNT'
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\ns_image_storage_handler.h(66): warning C4800: 'const unsigned long' : forcing value to bool 'true' or 'false' (performance warning)
+     1>c:\server\ns_lifespan_machine_source\ns_worm_browser\src\ns_death_time_posture_annotater.h(85): warning C4018: '<' : signed/unsigned mismatch
+     1>c:\server\ns_lifespan_machine_source\ns_worm_browser\src\ns_death_time_posture_annotater.h(88): warning C4018: '<' : signed/unsigned mismatch
+     1>c:\server\ns_lifespan_machine_source\ns_worm_browser\src\ns_death_time_posture_annotater.h(89): warning C4018: '<' : signed/unsigned mismatch
+     1>c:\server\ns_lifespan_machine_source\ns_worm_browser\src\ns_death_time_posture_annotater.h(214): warning C4018: '<' : signed/unsigned mismatch
+     1>c:\server\ns_lifespan_machine_source\ns_worm_browser\src\ns_death_time_posture_annotater.h(232): warning C4018: '<' : signed/unsigned mismatch
+     1>c:\server\ns_lifespan_machine_source\ns_worm_browser\src\ns_death_time_posture_annotater.h(244): warning C4018: '<' : signed/unsigned mismatch
+     1>c:\server\ns_lifespan_machine_source\ns_worm_browser\src\ns_death_time_posture_annotater.h(257): warning C4018: '<' : signed/unsigned mismatch
+     1>c:\server\ns_lifespan_machine_source\ns_worm_browser\src\ns_death_time_posture_annotater.h(267): warning C4018: '<' : signed/unsigned mismatch
+     1>c:\server\ns_lifespan_machine_source\ns_worm_browser\src\ns_death_time_posture_annotater.h(276): warning C4244: 'initializing' : conversion from 'const float' to 'unsigned long', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_worm_browser\src\ns_death_time_posture_annotater.h(277): warning C4244: 'initializing' : conversion from 'const float' to 'unsigned long', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_worm_browser\src\ns_death_time_posture_annotater.h(281): warning C4018: '<' : signed/unsigned mismatch
+     1>c:\server\ns_lifespan_machine_source\ns_worm_browser\src\ns_experiment_storyboard_annotater.h(122): warning C4018: '<' : signed/unsigned mismatch
+     1>c:\server\ns_lifespan_machine_source\ns_worm_browser\src\ns_experiment_storyboard_annotater.h(123): warning C4018: '<' : signed/unsigned mismatch
+     1>c:\server\ns_lifespan_machine_source\ns_worm_browser\src\ns_experiment_storyboard_annotater.h(188): warning C4018: '<' : signed/unsigned mismatch
+     1>c:\server\ns_lifespan_machine_source\ns_worm_browser\src\ns_experiment_storyboard_annotater.h(213): warning C4018: '<' : signed/unsigned mismatch
+     1>c:\server\ns_lifespan_machine_source\ns_worm_browser\src\ns_experiment_storyboard_annotater.h(247): warning C4018: '>' : signed/unsigned mismatch
+     1>c:\server\ns_lifespan_machine_source\ns_worm_browser\src\ns_experiment_storyboard_annotater.h(249): warning C4018: '>' : signed/unsigned mismatch
+     1>c:\server\ns_lifespan_machine_source\ns_worm_browser\src\ns_experiment_storyboard_annotater.h(290): warning C4018: '<' : signed/unsigned mismatch
+     1>c:\server\ns_lifespan_machine_source\ns_worm_browser\src\ns_experiment_storyboard_annotater.h(299): warning C4018: '<' : signed/unsigned mismatch
+     1>c:\server\ns_lifespan_machine_source\ns_worm_browser\src\ns_experiment_storyboard_annotater.h(308): warning C4018: '<' : signed/unsigned mismatch
+     1>c:\server\ns_lifespan_machine_source\ns_worm_browser\src\ns_experiment_storyboard_annotater.h(312): warning C4018: '<' : signed/unsigned mismatch
+     1>c:\server\ns_lifespan_machine_source\ns_worm_browser\src\ns_experiment_storyboard_annotater.h(326): warning C4018: '<' : signed/unsigned mismatch
+     1>c:\server\ns_lifespan_machine_source\ns_worm_browser\src\ns_experiment_storyboard_annotater.h(331): warning C4018: '<' : signed/unsigned mismatch
+     1>c:\server\ns_lifespan_machine_source\ns_worm_browser\src\ns_death_time_solo_posture_annotater.h(400): warning C4018: '<' : signed/unsigned mismatch
+     1>c:\server\ns_lifespan_machine_source\ns_worm_browser\src\ns_death_time_solo_posture_annotater.h(401): warning C4018: '<' : signed/unsigned mismatch
+     1>c:\server\ns_lifespan_machine_source\ns_worm_browser\src\ns_death_time_solo_posture_annotater.h(428): warning C4305: 'argument' : truncation from 'double' to 'const float'
+     1>c:\server\ns_lifespan_machine_source\ns_worm_browser\src\ns_death_time_solo_posture_annotater.h(438): warning C4244: 'argument' : conversion from 'double' to 'const float', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_worm_browser\src\ns_death_time_solo_posture_annotater.h(495): warning C4244: 'argument' : conversion from 'double' to 'int', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_worm_browser\src\ns_death_time_solo_posture_annotater.h(495): warning C4244: 'argument' : conversion from 'double' to 'int', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_worm_browser\src\ns_death_time_solo_posture_annotater.h(628): warning C4018: '<=' : signed/unsigned mismatch
+     1>c:\server\ns_lifespan_machine_source\ns_worm_browser\src\ns_death_time_solo_posture_annotater.h(658): warning C4018: '>=' : signed/unsigned mismatch
+     1>c:\server\ns_lifespan_machine_source\ns_worm_browser\src\ns_death_time_solo_posture_annotater.h(811): warning C4018: '>=' : signed/unsigned mismatch
+     1>c:\server\ns_lifespan_machine_source\ns_worm_browser\src\ns_death_time_solo_posture_annotater.h(812): warning C4018: '<' : signed/unsigned mismatch
+     1>c:\server\ns_lifespan_machine_source\ns_worm_browser\src\ns_worm_browser.h(186): warning C4018: '>=' : signed/unsigned mismatch
+     1>c:\server\ns_lifespan_machine_source\ns_worm_browser\src\ns_worm_browser.h(186): warning C4018: '>=' : signed/unsigned mismatch
+     1>c:\server\ns_lifespan_machine_source\ns_worm_browser\src\ns_worm_browser.h(187): warning C4018: '>=' : signed/unsigned mismatch
+     1>c:\server\ns_lifespan_machine_source\ns_worm_browser\src\ns_worm_browser.h(187): warning C4018: '>=' : signed/unsigned mismatch
+     1>c:\server\ns_lifespan_machine_source\ns_worm_browser\src\ns_worm_browser_main.cpp(2104): warning C4018: '<' : signed/unsigned mismatch
+     1>c:\server\ns_lifespan_machine_source\ns_worm_browser\src\ns_worm_browser_main.cpp(2117): warning C4018: '<' : signed/unsigned mismatch
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\movement_analysis\ns_image_server_time_path_inferred_worm_aggregator.h(124): warning C4018: '<' : signed/unsigned mismatch
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\movement_analysis\ns_image_server_time_path_inferred_worm_aggregator.h(125): warning C4018: '<' : signed/unsigned mismatch
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\movement_analysis\ns_image_server_time_path_inferred_worm_aggregator.h(126): warning C4800: 'ns_8_bit' : forcing value to bool 'true' or 'false' (performance warning)
+     1>c:\server\ns_lifespan_machine_source\ns_worm_browser\src\ns_worm_browser_main.cpp(2420): warning C4244: 'argument' : conversion from 'ns_64_bit' to 'const unsigned long', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_worm_browser\src\ns_worm_browser_main.cpp(2499): warning C4244: 'argument' : conversion from 'ns_64_bit' to 'const unsigned long', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_worm_browser\src\ns_worm_browser_main.cpp(2568): warning C4244: 'argument' : conversion from 'ns_64_bit' to 'unsigned long', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_worm_browser\src\ns_worm_browser_main.cpp(2585): warning C4244: 'argument' : conversion from 'ns_64_bit' to 'const unsigned long', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_worm_browser\src\ns_worm_browser_main.cpp(2623): warning C4244: 'argument' : conversion from 'ns_64_bit' to 'const unsigned long', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_worm_browser\src\ns_worm_browser_main.cpp(2626): warning C4244: 'argument' : conversion from 'ns_64_bit' to 'unsigned long', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_worm_browser\src\ns_worm_browser_main.cpp(2633): warning C4244: 'argument' : conversion from 'ns_64_bit' to 'const unsigned long', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_worm_browser\src\ns_worm_browser_main.cpp(2928): warning C4018: '<' : signed/unsigned mismatch
+     1>c:\server\ns_lifespan_machine_source\ns_worm_browser\src\ns_worm_browser_main.cpp(2945): warning C4018: '<' : signed/unsigned mismatch
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\image_processing\ns_resampler.h(61): warning C4305: '=' : truncation from 'double' to 'float'
+                 c:\server\ns_lifespan_machine_source\ns_image_server\src\image_processing\ns_resampler.h(35) : while compiling class template member function 'bool ns_resampler<ns_component>::init(const ns_image_properties &)'
+                 with
+                 [
+                     ns_component=ns_8_bit
+                 ]
+                 c:\server\ns_lifespan_machine_source\ns_image_server\src\image_processing\ns_process_16_bit_images.h(164) : see reference to class template instantiation 'ns_resampler<ns_component>' being compiled
+                 with
+                 [
+                     ns_component=ns_8_bit
+                 ]
+                 c:\server\ns_lifespan_machine_source\ns_image_server\src\image_processing\ns_process_16_bit_images.h(170) : see reference to class template instantiation 'ns_image_process_16_bit<features,storage_buffer>' being compiled
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\image_base\ns_vector.h(30): warning C4244: 'initializing' : conversion from 'const double' to 'int', possible loss of data
+                 c:\server\ns_lifespan_machine_source\ns_worm_browser\src\ns_worm_browser_main.cpp(1592) : see reference to function template instantiation 'ns_vector_2<ns_component>::ns_vector_2<double>(const ns_vector_2<double> &)' being compiled
+                 with
+                 [
+                     ns_component=int
+                 ]
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\image_base\ns_vector.h(30): warning C4244: 'initializing' : conversion from 'const double' to 'int', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\image_base\ns_jpeg.h(256): warning C4244: 'argument' : conversion from 'const float' to 'int', possible loss of data
+                 c:\server\ns_lifespan_machine_source\ns_image_server\src\image_base\ns_jpeg.h(237) : while compiling class template member function 'void ns_jpeg_image_output_file<ns_component>::start_decompression(const ns_image_properties &)'
+                 with
+                 [
+                     ns_component=ns_8_bit
+                 ]
+                 c:\server\ns_lifespan_machine_source\ns_image_server\src\image_base\ns_jpeg.h(181) : while compiling class template member function 'void ns_jpeg_image_output_file<ns_component>::open_file(const std::string &,const ns_image_properties &)'
+                 with
+                 [
+                     ns_component=ns_8_bit
+                 ]
+                 c:\server\ns_lifespan_machine_source\ns_image_server\src\image_base\ns_image_easy_io.h(45) : see reference to class template instantiation 'ns_jpeg_image_output_file<ns_component>' being compiled
+                 with
+                 [
+                     ns_component=ns_8_bit
+                 ]
+                 c:\server\ns_lifespan_machine_source\ns_worm_browser\src\ns_death_time_solo_posture_annotater.h(791) : see reference to function template instantiation 'void ns_save_image<ns_8_bit>(const std::string &,const ns_image_whole<ns_component> &)' being compiled
+                 with
+                 [
+                     ns_component=ns_8_bit
+                 ]
+         ns_worm_browser.cpp
+     1>c:\program files (x86)\mysql\mysql connector c 6.0.2\include\config-win.h(24): warning C4005: '_WIN32_WINNT' : macro redefinition
+                 command-line arguments :  see previous definition of '_WIN32_WINNT'
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\ns_image_storage_handler.h(66): warning C4800: 'const unsigned long' : forcing value to bool 'true' or 'false' (performance warning)
+     1>c:\server\ns_lifespan_machine_source\ns_worm_browser\src\ns_death_time_posture_annotater.h(85): warning C4018: '<' : signed/unsigned mismatch
+     1>c:\server\ns_lifespan_machine_source\ns_worm_browser\src\ns_death_time_posture_annotater.h(88): warning C4018: '<' : signed/unsigned mismatch
+     1>c:\server\ns_lifespan_machine_source\ns_worm_browser\src\ns_death_time_posture_annotater.h(89): warning C4018: '<' : signed/unsigned mismatch
+     1>c:\server\ns_lifespan_machine_source\ns_worm_browser\src\ns_death_time_posture_annotater.h(214): warning C4018: '<' : signed/unsigned mismatch
+     1>c:\server\ns_lifespan_machine_source\ns_worm_browser\src\ns_death_time_posture_annotater.h(232): warning C4018: '<' : signed/unsigned mismatch
+     1>c:\server\ns_lifespan_machine_source\ns_worm_browser\src\ns_death_time_posture_annotater.h(244): warning C4018: '<' : signed/unsigned mismatch
+     1>c:\server\ns_lifespan_machine_source\ns_worm_browser\src\ns_death_time_posture_annotater.h(257): warning C4018: '<' : signed/unsigned mismatch
+     1>c:\server\ns_lifespan_machine_source\ns_worm_browser\src\ns_death_time_posture_annotater.h(267): warning C4018: '<' : signed/unsigned mismatch
+     1>c:\server\ns_lifespan_machine_source\ns_worm_browser\src\ns_death_time_posture_annotater.h(276): warning C4244: 'initializing' : conversion from 'const float' to 'unsigned long', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_worm_browser\src\ns_death_time_posture_annotater.h(277): warning C4244: 'initializing' : conversion from 'const float' to 'unsigned long', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_worm_browser\src\ns_death_time_posture_annotater.h(281): warning C4018: '<' : signed/unsigned mismatch
+     1>c:\server\ns_lifespan_machine_source\ns_worm_browser\src\ns_experiment_storyboard_annotater.h(122): warning C4018: '<' : signed/unsigned mismatch
+     1>c:\server\ns_lifespan_machine_source\ns_worm_browser\src\ns_experiment_storyboard_annotater.h(123): warning C4018: '<' : signed/unsigned mismatch
+     1>c:\server\ns_lifespan_machine_source\ns_worm_browser\src\ns_experiment_storyboard_annotater.h(188): warning C4018: '<' : signed/unsigned mismatch
+     1>c:\server\ns_lifespan_machine_source\ns_worm_browser\src\ns_experiment_storyboard_annotater.h(213): warning C4018: '<' : signed/unsigned mismatch
+     1>c:\server\ns_lifespan_machine_source\ns_worm_browser\src\ns_experiment_storyboard_annotater.h(247): warning C4018: '>' : signed/unsigned mismatch
+     1>c:\server\ns_lifespan_machine_source\ns_worm_browser\src\ns_experiment_storyboard_annotater.h(249): warning C4018: '>' : signed/unsigned mismatch
+     1>c:\server\ns_lifespan_machine_source\ns_worm_browser\src\ns_experiment_storyboard_annotater.h(290): warning C4018: '<' : signed/unsigned mismatch
+     1>c:\server\ns_lifespan_machine_source\ns_worm_browser\src\ns_experiment_storyboard_annotater.h(299): warning C4018: '<' : signed/unsigned mismatch
+     1>c:\server\ns_lifespan_machine_source\ns_worm_browser\src\ns_experiment_storyboard_annotater.h(308): warning C4018: '<' : signed/unsigned mismatch
+     1>c:\server\ns_lifespan_machine_source\ns_worm_browser\src\ns_experiment_storyboard_annotater.h(312): warning C4018: '<' : signed/unsigned mismatch
+     1>c:\server\ns_lifespan_machine_source\ns_worm_browser\src\ns_experiment_storyboard_annotater.h(326): warning C4018: '<' : signed/unsigned mismatch
+     1>c:\server\ns_lifespan_machine_source\ns_worm_browser\src\ns_experiment_storyboard_annotater.h(331): warning C4018: '<' : signed/unsigned mismatch
+     1>c:\server\ns_lifespan_machine_source\ns_worm_browser\src\ns_death_time_solo_posture_annotater.h(400): warning C4018: '<' : signed/unsigned mismatch
+     1>c:\server\ns_lifespan_machine_source\ns_worm_browser\src\ns_death_time_solo_posture_annotater.h(401): warning C4018: '<' : signed/unsigned mismatch
+     1>c:\server\ns_lifespan_machine_source\ns_worm_browser\src\ns_death_time_solo_posture_annotater.h(428): warning C4305: 'argument' : truncation from 'double' to 'const float'
+     1>c:\server\ns_lifespan_machine_source\ns_worm_browser\src\ns_death_time_solo_posture_annotater.h(438): warning C4244: 'argument' : conversion from 'double' to 'const float', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_worm_browser\src\ns_death_time_solo_posture_annotater.h(495): warning C4244: 'argument' : conversion from 'double' to 'int', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_worm_browser\src\ns_death_time_solo_posture_annotater.h(495): warning C4244: 'argument' : conversion from 'double' to 'int', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_worm_browser\src\ns_death_time_solo_posture_annotater.h(628): warning C4018: '<=' : signed/unsigned mismatch
+     1>c:\server\ns_lifespan_machine_source\ns_worm_browser\src\ns_death_time_solo_posture_annotater.h(658): warning C4018: '>=' : signed/unsigned mismatch
+     1>c:\server\ns_lifespan_machine_source\ns_worm_browser\src\ns_death_time_solo_posture_annotater.h(811): warning C4018: '>=' : signed/unsigned mismatch
+     1>c:\server\ns_lifespan_machine_source\ns_worm_browser\src\ns_death_time_solo_posture_annotater.h(812): warning C4018: '<' : signed/unsigned mismatch
+     1>c:\server\ns_lifespan_machine_source\ns_worm_browser\src\ns_worm_browser.h(186): warning C4018: '>=' : signed/unsigned mismatch
+     1>c:\server\ns_lifespan_machine_source\ns_worm_browser\src\ns_worm_browser.h(186): warning C4018: '>=' : signed/unsigned mismatch
+     1>c:\server\ns_lifespan_machine_source\ns_worm_browser\src\ns_worm_browser.h(187): warning C4018: '>=' : signed/unsigned mismatch
+     1>c:\server\ns_lifespan_machine_source\ns_worm_browser\src\ns_worm_browser.h(187): warning C4018: '>=' : signed/unsigned mismatch
+     1>c:\server\ns_lifespan_machine_source\ns_worm_browser\src\ns_worm_browser.cpp(371): warning C4244: '=' : conversion from 'unsigned long' to 'ns_8_bit', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_worm_browser\src\ns_worm_browser.cpp(428): warning C4244: '=' : conversion from 'const float' to 'unsigned long', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_worm_browser\src\ns_worm_browser.cpp(429): warning C4244: '=' : conversion from 'const float' to 'unsigned long', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_worm_browser\src\ns_worm_browser.cpp(1019): warning C4244: 'initializing' : conversion from 'double' to 'unsigned long', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_worm_browser\src\ns_worm_browser.cpp(1721): warning C4244: 'argument' : conversion from 'ns_64_bit' to 'const unsigned long', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_worm_browser\src\ns_worm_browser.cpp(2081): warning C4018: '>=' : signed/unsigned mismatch
+     1>c:\server\ns_lifespan_machine_source\ns_worm_browser\src\ns_worm_browser.cpp(2091): warning C4018: '<' : signed/unsigned mismatch
+     1>c:\server\ns_lifespan_machine_source\ns_worm_browser\src\ns_worm_browser.cpp(2116): warning C4018: '<' : signed/unsigned mismatch
+     1>c:\server\ns_lifespan_machine_source\ns_worm_browser\src\ns_worm_browser.cpp(2128): warning C4018: '>=' : signed/unsigned mismatch
+     1>c:\server\ns_lifespan_machine_source\ns_worm_browser\src\ns_worm_browser.cpp(2146): warning C4018: '<' : signed/unsigned mismatch
+     1>c:\server\ns_lifespan_machine_source\ns_worm_browser\src\ns_worm_browser.cpp(2153): warning C4018: '>=' : signed/unsigned mismatch
+     1>c:\server\ns_lifespan_machine_source\ns_worm_browser\src\ns_worm_browser.cpp(2175): warning C4018: '>' : signed/unsigned mismatch
+     1>c:\server\ns_lifespan_machine_source\ns_worm_browser\src\ns_worm_browser.cpp(3307): warning C4244: '=' : conversion from 'ns_64_bit' to 'unsigned long', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_worm_browser\src\ns_worm_browser.cpp(3323): warning C4244: 'initializing' : conversion from 'ns_64_bit' to 'unsigned long', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_worm_browser\src\ns_worm_browser.cpp(3326): warning C4244: 'initializing' : conversion from 'ns_64_bit' to 'unsigned long', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_worm_browser\src\ns_worm_browser.cpp(3739): warning C4305: 'argument' : truncation from 'double' to 'const float'
+     1>c:\server\ns_lifespan_machine_source\ns_worm_browser\src\ns_worm_browser.cpp(4061): warning C4244: 'initializing' : conversion from 'ns_64_bit' to 'unsigned long', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_worm_browser\src\ns_worm_browser.cpp(4386): warning C4244: 'initializing' : conversion from 'const float' to 'unsigned long', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_worm_browser\src\ns_worm_browser.cpp(4403): warning C4244: 'argument' : conversion from 'unsigned long' to 'const float', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_worm_browser\src\ns_worm_browser.cpp(4535): warning C4018: '<' : signed/unsigned mismatch
+     1>c:\server\ns_lifespan_machine_source\ns_worm_browser\src\ns_worm_browser.cpp(4536): warning C4018: '<' : signed/unsigned mismatch
+     1>c:\server\ns_lifespan_machine_source\ns_worm_browser\src\ns_worm_browser.cpp(4622): warning C4018: '>' : signed/unsigned mismatch
+     1>c:\server\ns_lifespan_machine_source\ns_worm_browser\src\ns_worm_browser.cpp(4624): warning C4018: '>' : signed/unsigned mismatch
+     1>c:\server\ns_lifespan_machine_source\ns_worm_browser\src\ns_worm_browser.cpp(4700): warning C4018: '>' : signed/unsigned mismatch
+     1>c:\server\ns_lifespan_machine_source\ns_worm_browser\src\ns_worm_browser.cpp(4702): warning C4018: '>' : signed/unsigned mismatch
+     1>c:\server\ns_lifespan_machine_source\ns_worm_browser\src\ns_worm_browser.cpp(4766): warning C4244: 'argument' : conversion from 'double' to 'const int', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_worm_browser\src\ns_worm_browser.cpp(4766): warning C4244: 'argument' : conversion from 'double' to 'const int', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_worm_browser\src\ns_worm_browser.cpp(4767): warning C4244: 'argument' : conversion from 'double' to 'const int', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_worm_browser\src\ns_worm_browser.cpp(4767): warning C4244: 'argument' : conversion from 'double' to 'const int', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_worm_browser\src\ns_worm_browser.cpp(4768): warning C4244: 'argument' : conversion from 'double' to 'const int', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_worm_browser\src\ns_worm_browser.cpp(4768): warning C4244: 'argument' : conversion from 'double' to 'const int', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_worm_browser\src\ns_worm_browser.cpp(4814): warning C4018: '<' : signed/unsigned mismatch
+     1>c:\server\ns_lifespan_machine_source\ns_worm_browser\src\ns_worm_browser.cpp(4815): warning C4018: '<' : signed/unsigned mismatch
+     1>c:\server\ns_lifespan_machine_source\ns_worm_browser\src\ns_worm_browser.cpp(4817): warning C4018: '>' : signed/unsigned mismatch
+     1>c:\server\ns_lifespan_machine_source\ns_worm_browser\src\ns_worm_browser.cpp(4818): warning C4018: '>' : signed/unsigned mismatch
+     1>c:\server\ns_lifespan_machine_source\ns_worm_browser\src\ns_worm_browser.cpp(4885): warning C4018: '<' : signed/unsigned mismatch
+     1>c:\server\ns_lifespan_machine_source\ns_worm_browser\src\ns_worm_browser.cpp(4886): warning C4018: '<' : signed/unsigned mismatch
+     1>c:\server\ns_lifespan_machine_source\ns_worm_browser\src\ns_worm_browser.cpp(5120): warning C4305: '=' : truncation from 'double' to 'float'
+     1>c:\server\ns_lifespan_machine_source\ns_worm_browser\src\ns_worm_browser.cpp(5156): warning C4244: 'initializing' : conversion from 'double' to 'float', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_worm_browser\src\ns_worm_browser.cpp(5157): warning C4244: 'initializing' : conversion from 'double' to 'float', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_worm_browser\src\ns_worm_browser.cpp(5650): warning C4244: 'initializing' : conversion from 'double' to 'int', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_worm_browser\src\ns_worm_browser.cpp(5666): warning C4018: '<' : signed/unsigned mismatch
+     1>c:\server\ns_lifespan_machine_source\ns_worm_browser\src\ns_worm_browser.cpp(5667): warning C4018: '<' : signed/unsigned mismatch
+     1>c:\server\ns_lifespan_machine_source\ns_worm_browser\src\ns_worm_browser.cpp(5674): warning C4018: '<' : signed/unsigned mismatch
+     1>c:\server\ns_lifespan_machine_source\ns_worm_browser\src\ns_worm_browser.cpp(5676): warning C4018: '<' : signed/unsigned mismatch
+     1>c:\server\ns_lifespan_machine_source\ns_worm_browser\src\ns_worm_browser.cpp(5685): warning C4018: '<' : signed/unsigned mismatch
+     1>c:\server\ns_lifespan_machine_source\ns_worm_browser\src\ns_worm_browser.cpp(5686): warning C4018: '<' : signed/unsigned mismatch
+     1>c:\server\ns_lifespan_machine_source\ns_worm_browser\src\ns_worm_browser.cpp(5687): warning C4018: '<' : signed/unsigned mismatch
+     1>c:\server\ns_lifespan_machine_source\ns_worm_browser\src\ns_worm_browser.cpp(5698): warning C4018: '<' : signed/unsigned mismatch
+     1>c:\server\ns_lifespan_machine_source\ns_worm_browser\src\ns_worm_browser.cpp(5699): warning C4018: '<' : signed/unsigned mismatch
+     1>c:\server\ns_lifespan_machine_source\ns_worm_browser\src\ns_worm_browser.cpp(5700): warning C4018: '<' : signed/unsigned mismatch
+     1>c:\server\ns_lifespan_machine_source\ns_worm_browser\src\ns_worm_browser.cpp(5731): warning C4244: 'initializing' : conversion from 'double' to 'int', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_worm_browser\src\ns_worm_browser.cpp(5743): warning C4018: '<' : signed/unsigned mismatch
+     1>c:\server\ns_lifespan_machine_source\ns_worm_browser\src\ns_worm_browser.cpp(5749): warning C4018: '<' : signed/unsigned mismatch
+     1>c:\server\ns_lifespan_machine_source\ns_worm_browser\src\ns_worm_browser.cpp(5759): warning C4018: '<' : signed/unsigned mismatch
+     1>c:\server\ns_lifespan_machine_source\ns_worm_browser\src\ns_worm_browser.cpp(5785): warning C4018: '<' : signed/unsigned mismatch
+     1>c:\server\ns_lifespan_machine_source\ns_worm_browser\src\ns_worm_browser.cpp(5801): warning C4018: '<' : signed/unsigned mismatch
+     1>c:\server\ns_lifespan_machine_source\ns_worm_browser\src\ns_worm_browser.cpp(5811): warning C4018: '<' : signed/unsigned mismatch
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\image_processing\ns_resampler.h(61): warning C4305: '=' : truncation from 'double' to 'float'
+                 c:\server\ns_lifespan_machine_source\ns_image_server\src\image_processing\ns_resampler.h(35) : while compiling class template member function 'bool ns_resampler<ns_component>::init(const ns_image_properties &)'
+                 with
+                 [
+                     ns_component=ns_8_bit
+                 ]
+                 c:\server\ns_lifespan_machine_source\ns_image_server\src\image_processing\ns_process_16_bit_images.h(164) : see reference to class template instantiation 'ns_resampler<ns_component>' being compiled
+                 with
+                 [
+                     ns_component=ns_8_bit
+                 ]
+                 c:\server\ns_lifespan_machine_source\ns_image_server\src\image_processing\ns_process_16_bit_images.h(170) : see reference to class template instantiation 'ns_image_process_16_bit<features,storage_buffer>' being compiled
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\image_base\ns_jpeg.h(256): warning C4244: 'argument' : conversion from 'const float' to 'int', possible loss of data
+                 c:\server\ns_lifespan_machine_source\ns_image_server\src\image_base\ns_jpeg.h(237) : while compiling class template member function 'void ns_jpeg_image_output_file<ns_component>::start_decompression(const ns_image_properties &)'
+                 with
+                 [
+                     ns_component=ns_8_bit
+                 ]
+                 c:\server\ns_lifespan_machine_source\ns_worm_browser\src\ns_death_time_solo_posture_annotater.h(791) : see reference to function template instantiation 'void ns_save_image<ns_8_bit>(const std::string &,const ns_image_whole<ns_component> &)' being compiled
+                 with
+                 [
+                     ns_component=ns_8_bit
+                 ]
+         ns_image_server.cpp
+     1>c:\program files (x86)\mysql\mysql connector c 6.0.2\include\config-win.h(24): warning C4005: '_WIN32_WINNT' : macro redefinition
+                 command-line arguments :  see previous definition of '_WIN32_WINNT'
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\ns_image_storage_handler.h(66): warning C4800: 'const unsigned long' : forcing value to bool 'true' or 'false' (performance warning)
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\ns_image_server.cpp(593): warning C4244: 'initializing' : conversion from 'ns_64_bit' to 'unsigned long', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\ns_image_server.cpp(1048): warning C4244: '=' : conversion from 'ns_64_bit' to 'unsigned int', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\ns_image_server.cpp(1519): warning C4018: '>=' : signed/unsigned mismatch
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\ns_image_server.cpp(1982): warning C4244: 'argument' : conversion from 'ns_64_bit' to 'unsigned long', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\image_base\ns_jpeg.h(256): warning C4244: 'argument' : conversion from 'const float' to 'int', possible loss of data
+                 c:\server\ns_lifespan_machine_source\ns_image_server\src\image_base\ns_jpeg.h(237) : while compiling class template member function 'void ns_jpeg_image_output_file<ns_component>::start_decompression(const ns_image_properties &)'
+                 with
+                 [
+                     ns_component=ns_image_storage_handler::ns_component
+                 ]
+                 c:\server\ns_lifespan_machine_source\ns_image_server\src\image_base\ns_jpeg.h(181) : while compiling class template member function 'void ns_jpeg_image_output_file<ns_component>::open_file(const std::string &,const ns_image_properties &)'
+                 with
+                 [
+                     ns_component=ns_image_storage_handler::ns_component
+                 ]
+                 c:\server\ns_lifespan_machine_source\ns_image_server\src\ns_image_storage.h(91) : see reference to class template instantiation 'ns_jpeg_image_output_file<ns_component>' being compiled
+                 with
+                 [
+                     ns_component=ns_image_storage_handler::ns_component
+                 ]
+                 c:\server\ns_lifespan_machine_source\ns_image_server\src\ns_image_server.cpp(1951) : see reference to class template instantiation 'ns_image_storage_reciever_to_disk<ns_component>' being compiled
+                 with
+                 [
+                     ns_component=ns_image_storage_handler::ns_component
+                 ]
+         ns_time_path_image_analyzer.cpp
+     1>c:\program files (x86)\mysql\mysql connector c 6.0.2\include\config-win.h(24): warning C4005: '_WIN32_WINNT' : macro redefinition
+                 command-line arguments :  see previous definition of '_WIN32_WINNT'
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\ns_image_storage_handler.h(66): warning C4800: 'const unsigned long' : forcing value to bool 'true' or 'false' (performance warning)
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\movement_analysis\ns_time_path_image_analyzer.cpp(101): warning C4244: '=' : conversion from 'double' to 'unsigned long', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\movement_analysis\ns_time_path_image_analyzer.cpp(102): warning C4244: '=' : conversion from 'double' to 'unsigned long', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\movement_analysis\ns_time_path_image_analyzer.cpp(106): warning C4244: '=' : conversion from 'double' to 'unsigned long', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\movement_analysis\ns_time_path_image_analyzer.cpp(107): warning C4244: '=' : conversion from 'double' to 'unsigned long', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\movement_analysis\ns_time_path_image_analyzer.cpp(108): warning C4244: '=' : conversion from 'double' to 'unsigned long', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\movement_analysis\ns_time_path_image_analyzer.cpp(109): warning C4244: '=' : conversion from 'double' to 'unsigned long', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\movement_analysis\ns_time_path_image_analyzer.cpp(110): warning C4244: '=' : conversion from 'double' to 'unsigned long', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\movement_analysis\ns_time_path_image_analyzer.cpp(111): warning C4244: '=' : conversion from 'double' to 'unsigned long', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\movement_analysis\ns_time_path_image_analyzer.cpp(172): warning C4018: '<' : signed/unsigned mismatch
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\movement_analysis\ns_time_path_image_analyzer.cpp(217): warning C4018: '>=' : signed/unsigned mismatch
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\movement_analysis\ns_time_path_image_analyzer.cpp(324): warning C4244: 'initializing' : conversion from 'float' to 'const unsigned long', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\movement_analysis\ns_time_path_image_analyzer.cpp(365): warning C4244: 'return' : conversion from 'const ns_64_bit' to 'unsigned long', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\movement_analysis\ns_time_path_image_analyzer.cpp(366): warning C4244: 'return' : conversion from 'const ns_64_bit' to 'unsigned long', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\movement_analysis\ns_time_path_image_analyzer.cpp(397): warning C4244: '=' : conversion from 'const ns_64_bit' to 'unsigned long', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\movement_analysis\ns_time_path_image_analyzer.cpp(402): warning C4244: 'argument' : conversion from 'const ns_64_bit' to 'const unsigned long', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\movement_analysis\ns_time_path_image_analyzer.cpp(406): warning C4244: 'argument' : conversion from 'const ns_64_bit' to 'const unsigned long', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\movement_analysis\ns_time_path_image_analyzer.cpp(407): warning C4244: 'argument' : conversion from 'const ns_64_bit' to 'const unsigned long', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\movement_analysis\ns_time_path_image_analyzer.cpp(408): warning C4244: 'argument' : conversion from 'const ns_64_bit' to 'const unsigned long', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\movement_analysis\ns_time_path_image_analyzer.cpp(558): warning C4018: '<' : signed/unsigned mismatch
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\movement_analysis\ns_time_path_image_analyzer.cpp(728): warning C4244: 'argument' : conversion from 'const ns_64_bit' to 'const unsigned long', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\movement_analysis\ns_time_path_image_analyzer.cpp(732): warning C4244: 'argument' : conversion from 'const ns_64_bit' to 'const unsigned long', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\movement_analysis\ns_time_path_image_analyzer.cpp(858): warning C4244: '=' : conversion from 'ns_64_bit' to 'unsigned long', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\movement_analysis\ns_time_path_image_analyzer.cpp(949): warning C4244: '=' : conversion from 'const ns_64_bit' to 'unsigned long', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\movement_analysis\ns_time_path_image_analyzer.cpp(950): warning C4244: 'argument' : conversion from 'const ns_64_bit' to 'const unsigned long', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\movement_analysis\ns_time_path_image_analyzer.cpp(1285): warning C4018: '<' : signed/unsigned mismatch
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\movement_analysis\ns_time_path_image_analyzer.cpp(1389): warning C4018: '<=' : signed/unsigned mismatch
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\movement_analysis\ns_time_path_image_analyzer.cpp(1416): warning C4018: '<=' : signed/unsigned mismatch
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\movement_analysis\ns_time_path_image_analyzer.cpp(1492): warning C4244: '=' : conversion from 'const double' to 'long', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\movement_analysis\ns_time_path_image_analyzer.cpp(1787): warning C4018: '>=' : signed/unsigned mismatch
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\movement_analysis\ns_time_path_image_analyzer.cpp(1788): warning C4018: '>=' : signed/unsigned mismatch
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\movement_analysis\ns_time_path_image_analyzer.cpp(1885): warning C4018: '>=' : signed/unsigned mismatch
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\movement_analysis\ns_time_path_image_analyzer.cpp(1889): warning C4018: '>' : signed/unsigned mismatch
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\movement_analysis\ns_time_path_image_analyzer.cpp(1893): warning C4018: '<' : signed/unsigned mismatch
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\movement_analysis\ns_time_path_image_analyzer.cpp(1900): warning C4018: '>=' : signed/unsigned mismatch
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\movement_analysis\ns_time_path_image_analyzer.cpp(2097): warning C4018: '<' : signed/unsigned mismatch
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\movement_analysis\ns_time_path_image_analyzer.cpp(2126): warning C4018: '>=' : signed/unsigned mismatch
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\movement_analysis\ns_time_path_image_analyzer.cpp(2141): warning C4018: '<' : signed/unsigned mismatch
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\movement_analysis\ns_time_path_image_analyzer.cpp(2166): warning C4018: '>=' : signed/unsigned mismatch
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\movement_analysis\ns_time_path_image_analyzer.cpp(2180): warning C4018: '<' : signed/unsigned mismatch
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\movement_analysis\ns_time_path_image_analyzer.cpp(2400): warning C4018: '>' : signed/unsigned mismatch
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\movement_analysis\ns_time_path_image_analyzer.cpp(2402): warning C4018: '>' : signed/unsigned mismatch
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\movement_analysis\ns_time_path_image_analyzer.cpp(2419): warning C4018: '>=' : signed/unsigned mismatch
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\movement_analysis\ns_time_path_image_analyzer.cpp(2421): warning C4018: '>=' : signed/unsigned mismatch
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\movement_analysis\ns_time_path_image_analyzer.cpp(2436): warning C4018: '>' : signed/unsigned mismatch
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\movement_analysis\ns_time_path_image_analyzer.cpp(2437): warning C4018: '>' : signed/unsigned mismatch
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\movement_analysis\ns_time_path_image_analyzer.cpp(2477): warning C4018: '<' : signed/unsigned mismatch
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\movement_analysis\ns_time_path_image_analyzer.cpp(2504): warning C4018: '<' : signed/unsigned mismatch
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\movement_analysis\ns_time_path_image_analyzer.cpp(2675): warning C4244: '=' : conversion from 'double' to 'float', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\movement_analysis\ns_time_path_image_analyzer.cpp(2682): warning C4244: 'argument' : conversion from 'const float' to 'int', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\movement_analysis\ns_time_path_image_analyzer.cpp(2682): warning C4244: 'argument' : conversion from 'const float' to 'int', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\movement_analysis\ns_time_path_image_analyzer.cpp(2683): warning C4244: 'initializing' : conversion from 'const int' to 'ns_calc_best_alignment::ns_difference_type', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\movement_analysis\ns_time_path_image_analyzer.cpp(2722): warning C4244: 'argument' : conversion from 'float' to 'int', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\movement_analysis\ns_time_path_image_analyzer.cpp(2722): warning C4244: 'argument' : conversion from 'float' to 'int', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\movement_analysis\ns_time_path_image_analyzer.cpp(2723): warning C4244: 'argument' : conversion from 'float' to 'int', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\movement_analysis\ns_time_path_image_analyzer.cpp(2723): warning C4244: 'argument' : conversion from 'float' to 'int', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\movement_analysis\ns_time_path_image_analyzer.cpp(2737): warning C4244: '=' : conversion from 'int' to 'float', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\movement_analysis\ns_time_path_image_analyzer.cpp(2738): warning C4244: '=' : conversion from 'int' to 'float', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\movement_analysis\ns_time_path_image_analyzer.cpp(2853): warning C4244: '=' : conversion from 'const unsigned short' to 'ns_8_bit', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\movement_analysis\ns_time_path_image_analyzer.cpp(2854): warning C4244: '=' : conversion from 'const unsigned short' to 'ns_8_bit', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\movement_analysis\ns_time_path_image_analyzer.cpp(3116): warning C4018: '<' : signed/unsigned mismatch
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\movement_analysis\ns_time_path_image_analyzer.cpp(3135): warning C4018: '<' : signed/unsigned mismatch
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\movement_analysis\ns_time_path_image_analyzer.cpp(3215): warning C4244: '=' : conversion from 'double' to 'unsigned long', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\movement_analysis\ns_time_path_image_analyzer.cpp(3220): warning C4244: '=' : conversion from 'double' to 'unsigned long', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\movement_analysis\ns_time_path_image_analyzer.cpp(3248): warning C4018: '<' : signed/unsigned mismatch
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\movement_analysis\ns_time_path_image_analyzer.cpp(3249): warning C4018: '<' : signed/unsigned mismatch
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\movement_analysis\ns_time_path_image_analyzer.cpp(3324): warning C4018: '>' : signed/unsigned mismatch
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\movement_analysis\ns_time_path_image_analyzer.cpp(3345): warning C4244: '=' : conversion from 'double' to 'int', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\movement_analysis\ns_time_path_image_analyzer.cpp(3347): warning C4244: '=' : conversion from 'double' to 'int', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\movement_analysis\ns_time_path_image_analyzer.cpp(3352): warning C4244: 'argument' : conversion from 'const float' to 'int', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\movement_analysis\ns_time_path_image_analyzer.cpp(3352): warning C4244: 'argument' : conversion from 'const float' to 'int', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\movement_analysis\ns_time_path_image_analyzer.cpp(3358): warning C4018: '<' : signed/unsigned mismatch
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\movement_analysis\ns_time_path_image_analyzer.cpp(3375): warning C4244: '=' : conversion from 'const float' to 'ns_8_bit', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\movement_analysis\ns_time_path_image_analyzer.cpp(3379): warning C4018: '<' : signed/unsigned mismatch
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\movement_analysis\ns_time_path_image_analyzer.cpp(3386): warning C4018: '<' : signed/unsigned mismatch
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\movement_analysis\ns_time_path_image_analyzer.cpp(3387): warning C4018: '<' : signed/unsigned mismatch
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\movement_analysis\ns_time_path_image_analyzer.cpp(3394): warning C4018: '<' : signed/unsigned mismatch
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\movement_analysis\ns_time_path_image_analyzer.cpp(3394): warning C4018: '>' : signed/unsigned mismatch
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\movement_analysis\ns_time_path_image_analyzer.cpp(3398): warning C4018: '<' : signed/unsigned mismatch
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\movement_analysis\ns_time_path_image_analyzer.cpp(3445): warning C4244: 'argument' : conversion from 'const double' to 'const float', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\movement_analysis\ns_time_path_image_analyzer.cpp(3445): warning C4244: 'argument' : conversion from 'const double' to 'const float', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\movement_analysis\ns_time_path_image_analyzer.cpp(3465): warning C4018: '<' : signed/unsigned mismatch
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\movement_analysis\ns_time_path_image_analyzer.cpp(3470): warning C4018: '<' : signed/unsigned mismatch
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\movement_analysis\ns_time_path_image_analyzer.cpp(3471): warning C4018: '<' : signed/unsigned mismatch
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\movement_analysis\ns_time_path_image_analyzer.cpp(3478): warning C4800: 'ns_8_bit' : forcing value to bool 'true' or 'false' (performance warning)
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\movement_analysis\ns_time_path_image_analyzer.cpp(3478): warning C4800: 'ns_8_bit' : forcing value to bool 'true' or 'false' (performance warning)
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\movement_analysis\ns_time_path_image_analyzer.cpp(3478): warning C4800: 'ns_8_bit' : forcing value to bool 'true' or 'false' (performance warning)
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\movement_analysis\ns_time_path_image_analyzer.cpp(3572): warning C4244: 'argument' : conversion from 'double' to 'const float', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\movement_analysis\ns_time_path_image_analyzer.cpp(3572): warning C4244: 'argument' : conversion from 'double' to 'const float', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\movement_analysis\ns_time_path_image_analyzer.cpp(3597): warning C4244: 'argument' : conversion from 'double' to 'int', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\movement_analysis\ns_time_path_image_analyzer.cpp(3597): warning C4244: 'argument' : conversion from 'double' to 'int', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\movement_analysis\ns_time_path_image_analyzer.cpp(3639): warning C4244: 'argument' : conversion from 'double' to 'const float', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\movement_analysis\ns_time_path_image_analyzer.cpp(3639): warning C4244: 'argument' : conversion from 'double' to 'const float', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\movement_analysis\ns_time_path_image_analyzer.cpp(3642): warning C4244: 'argument' : conversion from 'double' to 'const float', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\movement_analysis\ns_time_path_image_analyzer.cpp(3642): warning C4244: 'argument' : conversion from 'double' to 'const float', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\movement_analysis\ns_time_path_image_analyzer.cpp(3993): warning C4018: '<' : signed/unsigned mismatch
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\movement_analysis\ns_time_path_image_analyzer.cpp(4064): warning C4018: '<' : signed/unsigned mismatch
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\movement_analysis\ns_time_path_image_analyzer.cpp(4089): warning C4018: '<' : signed/unsigned mismatch
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\movement_analysis\ns_time_path_image_analyzer.cpp(4093): warning C4018: '>=' : signed/unsigned mismatch
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\movement_analysis\ns_time_path_image_analyzer.cpp(4163): warning C4018: '>=' : signed/unsigned mismatch
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\movement_analysis\ns_time_path_image_analyzer.cpp(4192): warning C4018: '>=' : signed/unsigned mismatch
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\movement_analysis\ns_time_path_image_analyzer.cpp(4233): warning C4244: '=' : conversion from 'const ns_64_bit' to 'unsigned long', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\movement_analysis\ns_time_path_image_analyzer.cpp(4235): warning C4244: 'argument' : conversion from 'const ns_64_bit' to 'const unsigned long', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\movement_analysis\ns_time_path_image_analyzer.cpp(4239): warning C4244: 'argument' : conversion from 'const ns_64_bit' to 'const unsigned long', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\movement_analysis\ns_time_path_image_analyzer.cpp(4281): warning C4018: '>=' : signed/unsigned mismatch
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\movement_analysis\ns_time_path_image_analyzer.cpp(4307): warning C4244: 'argument' : conversion from 'const ns_64_bit' to 'const unsigned long', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\movement_analysis\ns_time_path_image_analyzer.cpp(4325): warning C4244: '=' : conversion from 'ns_64_bit' to 'unsigned long', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\movement_analysis\ns_time_path_image_analyzer.cpp(4326): warning C4244: '=' : conversion from 'ns_64_bit' to 'unsigned long', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\movement_analysis\ns_time_path_image_analyzer.cpp(4472): warning C4018: '>' : signed/unsigned mismatch
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\movement_analysis\ns_time_path_image_analyzer.cpp(4480): warning C4018: '>' : signed/unsigned mismatch
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\movement_analysis\ns_time_path_image_analyzer.cpp(4564): warning C4018: '>' : signed/unsigned mismatch
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\movement_analysis\ns_time_path_image_analyzer.cpp(4601): warning C4018: '<' : signed/unsigned mismatch
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\movement_analysis\ns_time_path_image_analyzer.cpp(4655): warning C4018: '<' : signed/unsigned mismatch
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\movement_analysis\ns_time_path_image_analyzer.cpp(4656): warning C4018: '<' : signed/unsigned mismatch
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\movement_analysis\ns_time_path_image_analyzer.cpp(4833): warning C4018: '<' : signed/unsigned mismatch
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\movement_analysis\ns_time_path_image_analyzer.cpp(4834): warning C4018: '<' : signed/unsigned mismatch
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\movement_analysis\ns_time_path_image_analyzer.cpp(4844): warning C4018: '<' : signed/unsigned mismatch
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\movement_analysis\ns_time_path_image_analyzer.cpp(4845): warning C4018: '<' : signed/unsigned mismatch
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\movement_analysis\ns_time_path_image_analyzer.cpp(4994): warning C4018: '<' : signed/unsigned mismatch
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\movement_analysis\ns_time_path_image_analyzer.cpp(5015): warning C4018: '<' : signed/unsigned mismatch
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\image_base\ns_image.h(879): warning C4244: 'initializing' : conversion from 'double' to 'const float', possible loss of data
+                 c:\server\ns_lifespan_machine_source\ns_image_server\src\image_base\ns_image.h(871) : while compiling class template member function 'const float ns_image_whole<ns_component>::sample_f(const float,const float) const'
+                 with
+                 [
+                     ns_component=ns_8_bit
+                 ]
+                 c:\server\ns_lifespan_machine_source\ns_image_server\src\image_base\ns_font.h(52) : see reference to class template instantiation 'ns_image_whole<ns_component>' being compiled
+                 with
+                 [
+                     ns_component=ns_8_bit
+                 ]
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\image_base\ns_image.h(880): warning C4244: 'initializing' : conversion from 'double' to 'const float', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\image_base\ns_image.h(879): warning C4244: 'initializing' : conversion from 'double' to 'const float', possible loss of data
+                 c:\server\ns_lifespan_machine_source\ns_image_server\src\image_base\ns_image.h(871) : while compiling class template member function 'const float ns_image_whole<ns_component>::sample_f(const float,const float) const'
+                 with
+                 [
+                     ns_component=float
+                 ]
+                 c:\server\ns_lifespan_machine_source\ns_image_server\src\movement_analysis\ns_time_path_image_analyzer.h(470) : see reference to class template instantiation 'ns_image_whole<ns_component>' being compiled
+                 with
+                 [
+                     ns_component=float
+                 ]
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\image_base\ns_image.h(880): warning C4244: 'initializing' : conversion from 'double' to 'const float', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\movement_analysis\ns_time_path_image_analyzer.cpp(2966): warning C4018: '<' : signed/unsigned mismatch
+                 c:\server\ns_lifespan_machine_source\ns_image_server\src\movement_analysis\ns_time_path_image_analyzer.cpp(2958) : while compiling class template member function 'void ns_kernel_smoother<T>::operator ()(const int,const ns_kernel_smoother<T>::ns_fix_point &,T &)'
+                 with
+                 [
+                     T=ns_movement_data_accessor
+                 ]
+                 c:\server\ns_lifespan_machine_source\ns_image_server\src\movement_analysis\ns_time_path_image_analyzer.cpp(3009) : see reference to class template instantiation 'ns_kernel_smoother<T>' being compiled
+                 with
+                 [
+                     T=ns_movement_data_accessor
+                 ]
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\movement_analysis\ns_time_path_image_analyzer.cpp(2966): warning C4018: '<' : signed/unsigned mismatch
+                 c:\server\ns_lifespan_machine_source\ns_image_server\src\movement_analysis\ns_time_path_image_analyzer.cpp(2958) : while compiling class template member function 'void ns_kernel_smoother<T>::operator ()(const int,const ns_kernel_smoother<T>::ns_fix_point &,T &)'
+                 with
+                 [
+                     T=ns_intensity_data_accessor
+                 ]
+                 c:\server\ns_lifespan_machine_source\ns_image_server\src\movement_analysis\ns_time_path_image_analyzer.cpp(3052) : see reference to class template instantiation 'ns_kernel_smoother<T>' being compiled
+                 with
+                 [
+                     T=ns_intensity_data_accessor
+                 ]
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\image_base\ns_vector.h(30): warning C4244: 'initializing' : conversion from 'const double' to 'int', possible loss of data
+                 c:\server\ns_lifespan_machine_source\ns_image_server\src\movement_analysis\ns_time_path_image_analyzer.cpp(2398) : see reference to function template instantiation 'ns_vector_2<ns_component>::ns_vector_2<double>(const ns_vector_2<double> &)' being compiled
+                 with
+                 [
+                     ns_component=int
+                 ]
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\image_base\ns_vector.h(30): warning C4244: 'initializing' : conversion from 'const double' to 'int', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\image_base\ns_vector.h(30): warning C4244: 'initializing' : conversion from 'const double' to 'float', possible loss of data
+                 c:\server\ns_lifespan_machine_source\ns_image_server\src\movement_analysis\ns_time_path_image_analyzer.cpp(2663) : see reference to function template instantiation 'ns_vector_2<ns_component>::ns_vector_2<double>(const ns_vector_2<double> &)' being compiled
+                 with
+                 [
+                     ns_component=float
+                 ]
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\image_base\ns_vector.h(30): warning C4244: 'initializing' : conversion from 'const double' to 'float', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\image_base\ns_vector.h(30): warning C4244: 'initializing' : conversion from 'const int' to 'float', possible loss of data
+                 c:\server\ns_lifespan_machine_source\ns_image_server\src\movement_analysis\ns_time_path_image_analyzer.cpp(2663) : see reference to function template instantiation 'ns_vector_2<ns_component>::ns_vector_2<int>(const ns_vector_2<int> &)' being compiled
+                 with
+                 [
+                     ns_component=float
+                 ]
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\image_base\ns_vector.h(30): warning C4244: 'initializing' : conversion from 'const int' to 'float', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\image_base\ns_vector.h(30): warning C4244: 'initializing' : conversion from 'const float' to 'int', possible loss of data
+                 c:\server\ns_lifespan_machine_source\ns_image_server\src\movement_analysis\ns_time_path_image_analyzer.cpp(2680) : see reference to function template instantiation 'ns_vector_2<ns_component>::ns_vector_2<float>(const ns_vector_2<float> &)' being compiled
+                 with
+                 [
+                     ns_component=int
+                 ]
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\image_base\ns_vector.h(30): warning C4244: 'initializing' : conversion from 'const float' to 'int', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\movement_analysis\ns_time_path_image_analyzer.h(258): warning C4244: 'initializing' : conversion from 'double' to 'const float', possible loss of data
+                 c:\server\ns_lifespan_machine_source\ns_image_server\src\movement_analysis\ns_time_path_image_analyzer.cpp(3376) : see reference to function template instantiation 'void ns_path_aligned_image_set::sample_thresholds<ns_8_bit>(const float,const float,ns_component &,ns_component &)' being compiled
+                 with
+                 [
+                     ns_component=ns_8_bit
+                 ]
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\movement_analysis\ns_time_path_image_analyzer.h(259): warning C4244: 'initializing' : conversion from 'double' to 'const float', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\image_base\ns_jpeg.h(256): warning C4244: 'argument' : conversion from 'const float' to 'int', possible loss of data
+                 c:\server\ns_lifespan_machine_source\ns_image_server\src\image_base\ns_jpeg.h(237) : while compiling class template member function 'void ns_jpeg_image_output_file<ns_component>::start_decompression(const ns_image_properties &)'
+                 with
+                 [
+                     ns_component=ns_8_bit
+                 ]
+                 c:\server\ns_lifespan_machine_source\ns_image_server\src\image_base\ns_jpeg.h(181) : while compiling class template member function 'void ns_jpeg_image_output_file<ns_component>::open_file(const std::string &,const ns_image_properties &)'
+                 with
+                 [
+                     ns_component=ns_8_bit
+                 ]
+                 c:\server\ns_lifespan_machine_source\ns_image_server\src\image_base\ns_image_easy_io.h(45) : see reference to class template instantiation 'ns_jpeg_image_output_file<ns_component>' being compiled
+                 with
+                 [
+                     ns_component=ns_8_bit
+                 ]
+                 c:\server\ns_lifespan_machine_source\ns_image_server\src\movement_analysis\ns_time_path_image_analyzer.cpp(2877) : see reference to function template instantiation 'void ns_save_image<ns_8_bit>(const std::string &,const ns_image_whole<ns_component> &)' being compiled
+                 with
+                 [
+                     ns_component=ns_8_bit
+                 ]
+         Generating Code...
+         Compiling...
+         ns_movement_measurement.cpp
+     1>c:\program files (x86)\mysql\mysql connector c 6.0.2\include\config-win.h(24): warning C4005: '_WIN32_WINNT' : macro redefinition
+                 command-line arguments :  see previous definition of '_WIN32_WINNT'
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\ns_image_storage_handler.h(66): warning C4800: 'const unsigned long' : forcing value to bool 'true' or 'false' (performance warning)
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\statistics\ns_movement_measurement.cpp(476): warning C4018: '>' : signed/unsigned mismatch
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\statistics\ns_movement_measurement.cpp(478): warning C4018: '>=' : signed/unsigned mismatch
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\statistics\ns_movement_measurement.cpp(603): warning C4018: '<' : signed/unsigned mismatch
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\statistics\ns_movement_measurement.cpp(905): warning C4244: 'argument' : conversion from 'double' to 'const float', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\statistics\ns_movement_measurement.cpp(1421): warning C4018: '>=' : signed/unsigned mismatch
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\statistics\ns_movement_measurement.cpp(1467): warning C4018: '>' : signed/unsigned mismatch
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\statistics\ns_movement_measurement.cpp(1470): warning C4018: '>' : signed/unsigned mismatch
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\statistics\ns_movement_measurement.cpp(356): warning C4018: '>=' : signed/unsigned mismatch
+                 c:\server\ns_lifespan_machine_source\ns_image_server\src\statistics\ns_movement_measurement.cpp(355) : while compiling class template member function 'void ns_fast_random_exclusion_set<T>::remove_specific_element(const int)'
+                 with
+                 [
+                     T=unsigned long
+                 ]
+                 c:\server\ns_lifespan_machine_source\ns_image_server\src\statistics\ns_movement_measurement.cpp(578) : see reference to class template instantiation 'ns_fast_random_exclusion_set<T>' being compiled
+                 with
+                 [
+                     T=unsigned long
+                 ]
+         ns_machine_analysis_data_loader.cpp
+     1>c:\program files (x86)\mysql\mysql connector c 6.0.2\include\config-win.h(24): warning C4005: '_WIN32_WINNT' : macro redefinition
+                 command-line arguments :  see previous definition of '_WIN32_WINNT'
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\ns_image_storage_handler.h(66): warning C4800: 'const unsigned long' : forcing value to bool 'true' or 'false' (performance warning)
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\statistics\ns_machine_analysis_data_loader.cpp(68): warning C4804: '>' : unsafe use of type 'bool' in operation
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\statistics\ns_machine_analysis_data_loader.cpp(68): warning C4018: '>' : signed/unsigned mismatch
+         ns_image_storage_handler.cpp
+     1>c:\program files (x86)\mysql\mysql connector c 6.0.2\include\config-win.h(24): warning C4005: '_WIN32_WINNT' : macro redefinition
+                 command-line arguments :  see previous definition of '_WIN32_WINNT'
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\ns_image_storage_handler.h(66): warning C4800: 'const unsigned long' : forcing value to bool 'true' or 'false' (performance warning)
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\ns_image_storage_handler.cpp(224): warning C4244: 'argument' : conversion from 'ns_64_bit' to 'const unsigned long', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\ns_image_storage_handler.cpp(233): warning C4244: 'argument' : conversion from 'ns_64_bit' to 'const unsigned long', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\ns_image_storage_handler.cpp(522): warning C4244: 'argument' : conversion from 'ns_64_bit' to 'const unsigned long', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\ns_image_storage_handler.cpp(963): warning C4244: 'argument' : conversion from 'ns_64_bit' to 'const unsigned long', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\ns_image_storage_handler.cpp(970): warning C4244: 'argument' : conversion from 'ns_64_bit' to 'const unsigned long', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\ns_image_storage_handler.cpp(980): warning C4244: 'argument' : conversion from 'ns_64_bit' to 'const unsigned long', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\ns_image_storage_handler.cpp(986): warning C4244: 'argument' : conversion from 'ns_64_bit' to 'const unsigned long', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\ns_image_storage_handler.cpp(1024): warning C4244: 'argument' : conversion from 'ns_64_bit' to 'const unsigned long', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\ns_image_storage_handler.cpp(1029): warning C4244: 'argument' : conversion from 'ns_64_bit' to 'const unsigned long', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\ns_image_storage_handler.cpp(1036): warning C4244: 'argument' : conversion from 'ns_64_bit' to 'const unsigned long', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\ns_image_storage_handler.cpp(1041): warning C4244: 'argument' : conversion from 'ns_64_bit' to 'const unsigned long', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\ns_image_storage_handler.cpp(1063): warning C4244: 'argument' : conversion from 'ns_64_bit' to 'const unsigned long', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\ns_image_storage_handler.cpp(1065): warning C4244: 'argument' : conversion from 'ns_64_bit' to 'const unsigned long', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\ns_image_storage_handler.cpp(1093): warning C4244: 'return' : conversion from 'ns_64_bit' to 'unsigned long', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\image_base\ns_jpeg.h(256): warning C4244: 'argument' : conversion from 'const float' to 'int', possible loss of data
+                 c:\server\ns_lifespan_machine_source\ns_image_server\src\image_base\ns_jpeg.h(237) : while compiling class template member function 'void ns_jpeg_image_output_file<ns_component>::start_decompression(const ns_image_properties &)'
+                 with
+                 [
+                     ns_component=ns_image_storage_handler::ns_component
+                 ]
+                 c:\server\ns_lifespan_machine_source\ns_image_server\src\image_base\ns_jpeg.h(181) : while compiling class template member function 'void ns_jpeg_image_output_file<ns_component>::open_file(const std::string &,const ns_image_properties &)'
+                 with
+                 [
+                     ns_component=ns_image_storage_handler::ns_component
+                 ]
+                 c:\server\ns_lifespan_machine_source\ns_image_server\src\ns_image_storage.h(91) : see reference to class template instantiation 'ns_jpeg_image_output_file<ns_component>' being compiled
+                 with
+                 [
+                     ns_component=ns_image_storage_handler::ns_component
+                 ]
+                 c:\server\ns_lifespan_machine_source\ns_image_server\src\ns_image_storage_handler.cpp(430) : see reference to class template instantiation 'ns_image_storage_reciever_to_disk<ns_component>' being compiled
+                 with
+                 [
+                     ns_component=ns_image_storage_handler::ns_component
+                 ]
+         ns_image_statistics.cpp
+     1>c:\program files (x86)\mysql\mysql connector c 6.0.2\include\config-win.h(24): warning C4005: '_WIN32_WINNT' : macro redefinition
+                 command-line arguments :  see previous definition of '_WIN32_WINNT'
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\ns_image_storage_handler.h(66): warning C4800: 'const unsigned long' : forcing value to bool 'true' or 'false' (performance warning)
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\ns_image_statistics.cpp(96): warning C4244: '=' : conversion from 'ns_64_bit' to 'unsigned long', possible loss of data
+         ns_image_server_images.cpp
+     1>c:\program files (x86)\mysql\mysql connector c 6.0.2\include\config-win.h(24): warning C4005: '_WIN32_WINNT' : macro redefinition
+                 command-line arguments :  see previous definition of '_WIN32_WINNT'
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\ns_image_storage_handler.h(66): warning C4800: 'const unsigned long' : forcing value to bool 'true' or 'false' (performance warning)
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\ns_image_server_images.cpp(182): warning C4244: 'argument' : conversion from 'ns_64_bit' to 'const unsigned long', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\ns_image_server_images.cpp(208): warning C4244: 'argument' : conversion from 'ns_64_bit' to 'const unsigned long', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\ns_image_server_images.cpp(220): warning C4244: 'argument' : conversion from 'ns_64_bit' to 'const unsigned long', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\ns_image_server_images.cpp(230): warning C4244: 'argument' : conversion from 'ns_64_bit' to 'const unsigned long', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\ns_image_server_images.cpp(273): warning C4244: 'argument' : conversion from 'const ns_64_bit' to 'const int', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\ns_image_server_images.cpp(293): warning C4244: 'argument' : conversion from 'ns_64_bit' to 'const unsigned long', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\ns_image_server_images.cpp(293): warning C4244: 'argument' : conversion from 'ns_64_bit' to 'const unsigned long', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\ns_image_server_images.cpp(293): warning C4244: 'argument' : conversion from 'ns_64_bit' to 'const unsigned long', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\ns_image_server_images.cpp(293): warning C4244: 'argument' : conversion from 'ns_64_bit' to 'const unsigned long', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\ns_image_server_images.cpp(546): warning C4244: 'argument' : conversion from 'ns_64_bit' to 'const unsigned long', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\ns_image_server_images.cpp(559): warning C4244: 'initializing' : conversion from 'ns_64_bit' to 'unsigned int', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\ns_image_server_images.cpp(561): warning C4244: '=' : conversion from 'ns_64_bit' to 'unsigned int', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\ns_image_server_images.cpp(610): warning C4244: 'argument' : conversion from 'ns_64_bit' to 'const unsigned long', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\ns_image_server_images.cpp(616): warning C4244: 'argument' : conversion from 'ns_64_bit' to 'const unsigned long', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\ns_image_server_images.cpp(639): warning C4244: 'initializing' : conversion from 'ns_64_bit' to 'unsigned long', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\ns_image_server_images.cpp(643): warning C4244: '=' : conversion from 'ns_64_bit' to 'unsigned long', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\ns_image_server_images.cpp(698): warning C4244: 'argument' : conversion from 'ns_64_bit' to 'const unsigned long', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\ns_image_server_images.cpp(698): warning C4244: 'argument' : conversion from 'ns_64_bit' to 'const unsigned long', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\ns_image_server_images.cpp(702): warning C4244: 'argument' : conversion from 'ns_64_bit' to 'const unsigned long', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\ns_image_server_images.cpp(722): warning C4244: 'initializing' : conversion from 'ns_64_bit' to 'unsigned long', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\ns_image_server_images.cpp(726): warning C4244: '=' : conversion from 'ns_64_bit' to 'unsigned long', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\ns_image_server_images.cpp(746): warning C4244: 'argument' : conversion from 'ns_64_bit' to 'const unsigned long', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\ns_image_server_images.cpp(751): warning C4244: 'initializing' : conversion from 'ns_64_bit' to 'unsigned long', possible loss of data
+         ns_time_path_solver.cpp
+     1>c:\program files (x86)\mysql\mysql connector c 6.0.2\include\config-win.h(24): warning C4005: '_WIN32_WINNT' : macro redefinition
+                 command-line arguments :  see previous definition of '_WIN32_WINNT'
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\ns_image_storage_handler.h(66): warning C4800: 'const unsigned long' : forcing value to bool 'true' or 'false' (performance warning)
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\movement_analysis\ns_time_path_solver.cpp(23): warning C4244: '=' : conversion from 'double' to 'unsigned long', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\movement_analysis\ns_time_path_solver.cpp(30): warning C4244: '=' : conversion from 'double' to 'unsigned long', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\movement_analysis\ns_time_path_solver.cpp(92): warning C4018: '<' : signed/unsigned mismatch
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\movement_analysis\ns_time_path_solver.cpp(104): warning C4018: '<' : signed/unsigned mismatch
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\movement_analysis\ns_time_path_solver.cpp(233): warning C4305: 'initializing' : truncation from 'double' to 'float'
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\movement_analysis\ns_time_path_solver.cpp(623): warning C4018: '<' : signed/unsigned mismatch
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\movement_analysis\ns_time_path_solver.cpp(700): warning C4800: 'int' : forcing value to bool 'true' or 'false' (performance warning)
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\movement_analysis\ns_time_path_solver.cpp(701): warning C4800: 'int' : forcing value to bool 'true' or 'false' (performance warning)
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\movement_analysis\ns_time_path_solver.cpp(732): warning C4018: '>=' : signed/unsigned mismatch
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\movement_analysis\ns_time_path_solver.cpp(909): warning C4018: '<' : signed/unsigned mismatch
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\movement_analysis\ns_time_path_solver.cpp(1021): warning C4244: 'initializing' : conversion from 'double' to 'const unsigned long', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\movement_analysis\ns_time_path_solver.cpp(1026): warning C4018: '<' : signed/unsigned mismatch
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\movement_analysis\ns_time_path_solver.cpp(1084): warning C4244: '=' : conversion from 'double' to 'int', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\movement_analysis\ns_time_path_solver.cpp(1186): warning C4018: '>=' : signed/unsigned mismatch
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\movement_analysis\ns_time_path_solver.cpp(1188): warning C4018: '<' : signed/unsigned mismatch
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\movement_analysis\ns_time_path_solver.cpp(1282): warning C4018: '<' : signed/unsigned mismatch
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\movement_analysis\ns_time_path_solver.cpp(1289): warning C4018: '>' : signed/unsigned mismatch
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\movement_analysis\ns_time_path_solver.cpp(1315): warning C4018: '<' : signed/unsigned mismatch
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\movement_analysis\ns_time_path_solver.cpp(1523): warning C4018: '<=' : signed/unsigned mismatch
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\movement_analysis\ns_time_path_solver.cpp(1523): warning C4018: '>=' : signed/unsigned mismatch
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\movement_analysis\ns_time_path_solver.cpp(1881): warning C4018: '<=' : signed/unsigned mismatch
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\movement_analysis\ns_time_path_solver.cpp(2059): warning C4244: 'argument' : conversion from 'double' to 'const float', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\movement_analysis\ns_time_path_solver.cpp(2077): warning C4244: 'argument' : conversion from 'double' to 'const float', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\movement_analysis\ns_time_path_solver.cpp(2094): warning C4244: 'argument' : conversion from 'double' to 'const float', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\movement_analysis\ns_time_path_solver.cpp(2117): warning C4244: 'argument' : conversion from 'double' to 'const float', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\ns_get_double.h(20): warning C4800: 'long' : forcing value to bool 'true' or 'false' (performance warning)
+                 c:\server\ns_lifespan_machine_source\ns_image_server\src\movement_analysis\ns_time_path_solver.cpp(684) : see reference to function template instantiation 'char ns_get_int::operator ()<bool>(std::istream &,T &)' being compiled
+                 with
+                 [
+                     T=bool
+                 ]
+         ns_hidden_markov_model_posture_analyzer.cpp
+     1>c:\program files (x86)\mysql\mysql connector c 6.0.2\include\config-win.h(24): warning C4005: '_WIN32_WINNT' : macro redefinition
+                 command-line arguments :  see previous definition of '_WIN32_WINNT'
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\ns_image_storage_handler.h(66): warning C4800: 'const unsigned long' : forcing value to bool 'true' or 'false' (performance warning)
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\movement_analysis\ns_hidden_markov_model_posture_analyzer.cpp(46): warning C4018: '<' : signed/unsigned mismatch
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\movement_analysis\ns_hidden_markov_model_posture_analyzer.cpp(51): warning C4018: '>=' : signed/unsigned mismatch
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\movement_analysis\ns_hidden_markov_model_posture_analyzer.cpp(57): warning C4018: '<' : signed/unsigned mismatch
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\movement_analysis\ns_hidden_markov_model_posture_analyzer.cpp(169): warning C4018: '<' : signed/unsigned mismatch
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\movement_analysis\ns_hidden_markov_model_posture_analyzer.cpp(267): warning C4018: '<' : signed/unsigned mismatch
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\movement_analysis\ns_hidden_markov_model_posture_analyzer.cpp(286): warning C4018: '<' : signed/unsigned mismatch
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\movement_analysis\ns_hidden_markov_model_posture_analyzer.cpp(289): warning C4018: '<' : signed/unsigned mismatch
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\movement_analysis\ns_hidden_markov_model_posture_analyzer.cpp(292): warning C4018: '<' : signed/unsigned mismatch
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\movement_analysis\ns_hidden_markov_model_posture_analyzer.cpp(295): warning C4018: '<' : signed/unsigned mismatch
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\movement_analysis\ns_hidden_markov_model_posture_analyzer.cpp(300): warning C4018: '<' : signed/unsigned mismatch
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\movement_analysis\ns_hidden_markov_model_posture_analyzer.cpp(305): warning C4018: '<' : signed/unsigned mismatch
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\statistics\ns_posture_analysis_models.h(93): warning C4018: '>=' : signed/unsigned mismatch
+                 c:\server\ns_lifespan_machine_source\ns_image_server\src\statistics\ns_posture_analysis_models.h(70) : while compiling class template member function 'void ns_emperical_cdf_generator<T>::read(std::istream &)'
+                 with
+                 [
+                     T=double
+                 ]
+                 c:\server\ns_lifespan_machine_source\ns_image_server\src\statistics\ns_posture_analysis_models.h(129) : see reference to class template instantiation 'ns_emperical_cdf_generator<T>' being compiled
+                 with
+                 [
+                     T=double
+                 ]
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\movement_analysis\ns_hidden_markov_model.h(246): warning C4018: '<' : signed/unsigned mismatch
+                 c:\server\ns_lifespan_machine_source\ns_image_server\src\movement_analysis\ns_hidden_markov_model.h(158) : while compiling class template member function 'void ns_sequential_hidden_markov_state_estimator<number_of_states,ns_markov_state_likelihood_calculator>::run(ns_sequential_hidden_markov_solution &,const std::vector<_Ty> &,const std::vector<_Ty> &,const ns_markov_state_likelihood_calculator &,const bool)'
+                 with
+                 [
+                     number_of_states=3,
+                     ns_markov_state_likelihood_calculator=ns_posture_change_markov_likelihood_estimator,
+                     _Ty=double
+                 ]
+                 c:\server\ns_lifespan_machine_source\ns_image_server\src\movement_analysis\ns_hidden_markov_model_posture_analyzer.cpp(199) : see reference to class template instantiation 'ns_sequential_hidden_markov_state_estimator<number_of_states,ns_markov_state_likelihood_calculator>' being compiled
+                 with
+                 [
+                     number_of_states=3,
+                     ns_markov_state_likelihood_calculator=ns_posture_change_markov_likelihood_estimator
+                 ]
+         ns_processing_job_scheduler.cpp
+     1>c:\program files (x86)\mysql\mysql connector c 6.0.2\include\config-win.h(24): warning C4005: '_WIN32_WINNT' : macro redefinition
+                 command-line arguments :  see previous definition of '_WIN32_WINNT'
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\ns_image_storage_handler.h(66): warning C4800: 'const unsigned long' : forcing value to bool 'true' or 'false' (performance warning)
+         ns_processing_job_push_scheduler.cpp
+     1>c:\program files (x86)\mysql\mysql connector c 6.0.2\include\config-win.h(24): warning C4005: '_WIN32_WINNT' : macro redefinition
+                 command-line arguments :  see previous definition of '_WIN32_WINNT'
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\ns_image_storage_handler.h(66): warning C4800: 'const unsigned long' : forcing value to bool 'true' or 'false' (performance warning)
+         ns_processing_job_processor.cpp
+     1>c:\program files (x86)\mysql\mysql connector c 6.0.2\include\config-win.h(24): warning C4005: '_WIN32_WINNT' : macro redefinition
+                 command-line arguments :  see previous definition of '_WIN32_WINNT'
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\ns_image_storage_handler.h(66): warning C4800: 'const unsigned long' : forcing value to bool 'true' or 'false' (performance warning)
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\movement_analysis\ns_image_server_time_path_inferred_worm_aggregator.h(124): warning C4018: '<' : signed/unsigned mismatch
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\movement_analysis\ns_image_server_time_path_inferred_worm_aggregator.h(125): warning C4018: '<' : signed/unsigned mismatch
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\movement_analysis\ns_image_server_time_path_inferred_worm_aggregator.h(126): warning C4800: 'ns_8_bit' : forcing value to bool 'true' or 'false' (performance warning)
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\job_scheduling\ns_processing_job_processor.cpp(511): warning C4244: 'argument' : conversion from 'ns_64_bit' to 'const unsigned long', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\job_scheduling\ns_processing_job_processor.cpp(666): warning C4244: '=' : conversion from 'const ns_64_bit' to 'unsigned long', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\job_scheduling\ns_processing_job_processor.cpp(668): warning C4244: '=' : conversion from 'const ns_64_bit' to 'unsigned long', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\job_scheduling\ns_processing_job_processor.cpp(670): warning C4244: '=' : conversion from 'const ns_64_bit' to 'unsigned long', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\job_scheduling\ns_processing_job_processor.cpp(709): warning C4244: 'argument' : conversion from 'double' to 'const float', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\job_scheduling\ns_processing_job_processor.cpp(739): warning C4244: 'argument' : conversion from 'ns_64_bit' to 'const unsigned long', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\job_scheduling\ns_processing_job_processor.cpp(743): warning C4244: 'argument' : conversion from 'ns_64_bit' to 'const unsigned long', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\job_scheduling\ns_processing_job_processor.cpp(746): warning C4244: 'argument' : conversion from 'ns_64_bit' to 'unsigned long', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\job_scheduling\ns_processing_job_processor.cpp(751): warning C4244: 'argument' : conversion from 'ns_64_bit' to 'const unsigned long', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\job_scheduling\ns_processing_job_processor.cpp(756): warning C4244: 'argument' : conversion from 'ns_64_bit' to 'const unsigned long', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\job_scheduling\ns_processing_job_processor.cpp(774): warning C4244: 'argument' : conversion from 'ns_64_bit' to 'const unsigned long', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\job_scheduling\ns_processing_job_processor.cpp(775): warning C4244: 'argument' : conversion from 'ns_64_bit' to 'const unsigned long', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\job_scheduling\ns_processing_job_processor.cpp(782): warning C4244: 'argument' : conversion from 'ns_64_bit' to 'const unsigned long', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\job_scheduling\ns_processing_job_processor.cpp(790): warning C4244: 'argument' : conversion from 'ns_64_bit' to 'const unsigned long', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\job_scheduling\ns_processing_job_processor.cpp(799): warning C4244: 'argument' : conversion from 'ns_64_bit' to 'const unsigned long', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\job_scheduling\ns_processing_job_processor.cpp(806): warning C4244: 'argument' : conversion from 'ns_64_bit' to 'const unsigned long', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\job_scheduling\ns_processing_job_processor.cpp(810): warning C4244: 'argument' : conversion from 'ns_64_bit' to 'const unsigned long', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\job_scheduling\ns_processing_job_processor.cpp(949): warning C4244: 'argument' : conversion from 'ns_64_bit' to 'const unsigned long', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\job_scheduling\ns_processing_job_processor.cpp(951): warning C4244: 'argument' : conversion from 'ns_64_bit' to 'const unsigned long', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\job_scheduling\ns_processing_job_processor.cpp(955): warning C4244: 'argument' : conversion from 'ns_64_bit' to 'const unsigned long', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\job_scheduling\ns_processing_job_processor.cpp(958): warning C4244: 'argument' : conversion from 'ns_64_bit' to 'const unsigned long', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\job_scheduling\ns_processing_job_processor.cpp(966): warning C4244: 'argument' : conversion from 'ns_64_bit' to 'const unsigned long', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\job_scheduling\ns_processing_job_processor.cpp(967): warning C4244: 'argument' : conversion from 'ns_64_bit' to 'const unsigned long', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\job_scheduling\ns_processing_job_processor.cpp(972): warning C4244: 'argument' : conversion from 'ns_64_bit' to 'const unsigned long', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\job_scheduling\ns_processing_job_processor.cpp(975): warning C4244: 'argument' : conversion from 'ns_64_bit' to 'const unsigned long', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\job_scheduling\ns_processing_job_processor.cpp(1002): warning C4244: 'argument' : conversion from 'ns_64_bit' to 'const unsigned long', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\job_scheduling\ns_processing_job_processor.cpp(1035): warning C4244: 'argument' : conversion from 'ns_64_bit' to 'const unsigned long', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\job_scheduling\ns_processing_job_processor.cpp(1064): warning C4244: 'initializing' : conversion from 'ns_64_bit' to 'unsigned int', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\job_scheduling\ns_processing_job_processor.cpp(1104): warning C4244: 'initializing' : conversion from 'double' to 'float', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\job_scheduling\ns_processing_job_processor.cpp(1192): warning C4244: 'initializing' : conversion from 'ns_64_bit' to 'const unsigned long', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\job_scheduling\ns_processing_job_processor.cpp(1193): warning C4244: 'initializing' : conversion from 'ns_64_bit' to 'const unsigned long', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\job_scheduling\ns_processing_job_processor.cpp(1200): warning C4018: '<' : signed/unsigned mismatch
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\job_scheduling\ns_processing_job_processor.cpp(1200): warning C4018: '<' : signed/unsigned mismatch
+         ns_image_processing_pipeline.cpp
+     1>c:\program files (x86)\mysql\mysql connector c 6.0.2\include\config-win.h(24): warning C4005: '_WIN32_WINNT' : macro redefinition
+                 command-line arguments :  see previous definition of '_WIN32_WINNT'
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\ns_image_storage_handler.h(66): warning C4800: 'const unsigned long' : forcing value to bool 'true' or 'false' (performance warning)
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\job_scheduling\ns_image_processing_pipeline.cpp(15): warning C4244: 'initializing' : conversion from 'ns_64_bit' to 'const unsigned long', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\job_scheduling\ns_image_processing_pipeline.cpp(48): warning C4244: 'initializing' : conversion from 'ns_64_bit' to 'const unsigned long', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\job_scheduling\ns_image_processing_pipeline.cpp(58): warning C4244: 'initializing' : conversion from 'ns_64_bit' to 'const unsigned long', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\job_scheduling\ns_image_processing_pipeline.cpp(125): warning C4244: 'argument' : conversion from 'ns_64_bit' to 'unsigned long', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\job_scheduling\ns_image_processing_pipeline.cpp(131): warning C4244: 'argument' : conversion from 'ns_64_bit' to 'unsigned long', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\job_scheduling\ns_image_processing_pipeline.cpp(179): warning C4244: 'argument' : conversion from 'ns_64_bit' to 'unsigned long', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\job_scheduling\ns_image_processing_pipeline.cpp(182): warning C4244: 'argument' : conversion from 'ns_64_bit' to 'unsigned long', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\job_scheduling\ns_image_processing_pipeline.cpp(193): warning C4244: 'argument' : conversion from 'ns_64_bit' to 'const unsigned long', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\job_scheduling\ns_image_processing_pipeline.cpp(238): warning C4244: 'initializing' : conversion from 'ns_64_bit' to 'unsigned long', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\job_scheduling\ns_image_processing_pipeline.cpp(260): warning C4244: 'argument' : conversion from 'ns_64_bit' to 'const unsigned long', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\job_scheduling\ns_image_processing_pipeline.cpp(295): warning C4244: 'argument' : conversion from 'ns_64_bit' to 'const unsigned long', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\job_scheduling\ns_image_processing_pipeline.cpp(300): warning C4244: '=' : conversion from 'ns_64_bit' to 'unsigned long', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\job_scheduling\ns_image_processing_pipeline.cpp(513): warning C4244: 'argument' : conversion from 'ns_64_bit' to 'const unsigned long', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\job_scheduling\ns_image_processing_pipeline.cpp(670): warning C4244: 'argument' : conversion from 'ns_64_bit' to 'const unsigned long', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\job_scheduling\ns_image_processing_pipeline.cpp(671): warning C4244: 'argument' : conversion from 'ns_64_bit' to 'const unsigned long', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\job_scheduling\ns_image_processing_pipeline.cpp(701): warning C4244: 'argument' : conversion from 'ns_64_bit' to 'const unsigned long', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\job_scheduling\ns_image_processing_pipeline.cpp(702): warning C4244: 'argument' : conversion from 'ns_64_bit' to 'const unsigned long', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\job_scheduling\ns_image_processing_pipeline.cpp(796): warning C4244: 'argument' : conversion from 'ns_64_bit' to 'const unsigned long', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\job_scheduling\ns_image_processing_pipeline.cpp(959): warning C4244: 'argument' : conversion from 'ns_64_bit' to 'const unsigned long', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\job_scheduling\ns_image_processing_pipeline.cpp(960): warning C4244: 'argument' : conversion from 'ns_64_bit' to 'const unsigned long', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\job_scheduling\ns_image_processing_pipeline.cpp(979): warning C4244: 'argument' : conversion from 'ns_64_bit' to 'const unsigned long', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\job_scheduling\ns_image_processing_pipeline.cpp(980): warning C4244: 'argument' : conversion from 'ns_64_bit' to 'const unsigned long', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\job_scheduling\ns_image_processing_pipeline.cpp(1002): warning C4244: 'argument' : conversion from 'ns_64_bit' to 'const unsigned long', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\job_scheduling\ns_image_processing_pipeline.cpp(1003): warning C4244: 'argument' : conversion from 'ns_64_bit' to 'const unsigned long', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\job_scheduling\ns_image_processing_pipeline.cpp(1067): warning C4244: 'argument' : conversion from 'const ns_64_bit' to 'const unsigned long', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\job_scheduling\ns_image_processing_pipeline.cpp(1094): warning C4244: 'initializing' : conversion from 'double' to 'const float', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\job_scheduling\ns_image_processing_pipeline.cpp(1273): warning C4244: 'argument' : conversion from 'ns_64_bit' to 'const unsigned int', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\job_scheduling\ns_image_processing_pipeline.cpp(1308): warning C4244: 'argument' : conversion from 'ns_64_bit' to 'const unsigned long', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\job_scheduling\ns_image_processing_pipeline.cpp(1340): warning C4244: 'argument' : conversion from 'ns_64_bit' to 'unsigned long', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\job_scheduling\ns_image_processing_pipeline.cpp(1418): warning C4244: 'initializing' : conversion from 'ns_64_bit' to 'unsigned long', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\job_scheduling\ns_image_processing_pipeline.cpp(1450): warning C4244: 'argument' : conversion from 'ns_64_bit' to 'const unsigned long', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\job_scheduling\ns_image_processing_pipeline.cpp(1455): warning C4244: 'argument' : conversion from 'ns_64_bit' to 'const unsigned long', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\job_scheduling\ns_image_processing_pipeline.cpp(1476): warning C4244: 'argument' : conversion from 'ns_64_bit' to 'unsigned long', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\job_scheduling\ns_image_processing_pipeline.cpp(1555): warning C4244: 'initializing' : conversion from 'ns_64_bit' to 'unsigned long', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\job_scheduling\ns_image_processing_pipeline.cpp(1560): warning C4244: 'argument' : conversion from 'ns_64_bit' to 'const unsigned long', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\job_scheduling\ns_image_processing_pipeline.cpp(1564): warning C4244: 'argument' : conversion from 'ns_64_bit' to 'const unsigned long', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\job_scheduling\ns_image_processing_pipeline.cpp(1843): warning C4244: 'initializing' : conversion from 'ns_64_bit' to 'unsigned long', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\job_scheduling\ns_image_processing_pipeline.cpp(2006): warning C4244: 'argument' : conversion from 'ns_64_bit' to 'const unsigned long', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\job_scheduling\ns_image_processing_pipeline.cpp(2061): warning C4244: 'initializing' : conversion from 'ns_64_bit' to 'unsigned long', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\job_scheduling\ns_image_processing_pipeline.cpp(2081): warning C4244: 'initializing' : conversion from 'ns_64_bit' to 'unsigned long', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\job_scheduling\ns_image_processing_pipeline.cpp(2572): warning C4244: 'argument' : conversion from 'ns_64_bit' to 'unsigned long', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\job_scheduling\ns_image_processing_pipeline.cpp(2584): warning C4244: 'argument' : conversion from 'ns_64_bit' to 'unsigned long', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\job_scheduling\ns_image_processing_pipeline.cpp(2587): warning C4244: 'argument' : conversion from 'ns_64_bit' to 'unsigned long', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\image_processing\ns_resampler.h(61): warning C4305: '=' : truncation from 'double' to 'float'
+                 c:\server\ns_lifespan_machine_source\ns_image_server\src\image_processing\ns_resampler.h(35) : while compiling class template member function 'bool ns_resampler<ns_component>::init(const ns_image_properties &)'
+                 with
+                 [
+                     ns_component=ns_8_bit
+                 ]
+                 c:\server\ns_lifespan_machine_source\ns_image_server\src\job_scheduling\ns_image_processing_pipeline.cpp(1780) : see reference to class template instantiation 'ns_resampler<ns_component>' being compiled
+                 with
+                 [
+                     ns_component=ns_8_bit
+                 ]
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\ns_image_simple_cache.h(83): warning C4244: 'argument' : conversion from 'ns_64_bit' to 'const unsigned long', possible loss of data
+                 c:\server\ns_lifespan_machine_source\ns_image_server\src\ns_image_simple_cache.h(81) : while compiling class template member function 'ns_image_whole<ns_component> &ns_image_simple_cache<ns_component>::get_image(ns_image_server_image &,ns_sql &,const bool)'
+                 with
+                 [
+                     ns_component=ns_8_bit
+                 ]
+                 c:\server\ns_lifespan_machine_source\ns_image_server\src\ns_image_storage_handler.h(225) : see reference to class template instantiation 'ns_image_simple_cache<ns_component>' being compiled
+                 with
+                 [
+                     ns_component=ns_image_storage_handler::ns_component
+                 ]
+     1>c:\program files (x86)\microsoft visual studio 10.0\vc\include\utility(163): warning C4244: 'initializing' : conversion from 'ns_64_bit' to 'const unsigned long', possible loss of data
+                 c:\program files (x86)\microsoft visual studio 10.0\vc\include\utility(247) : see reference to function template instantiation 'std::_Pair_base<_Ty1,_Ty2>::_Pair_base<ns_64_bit&,_Ty>(_Other1,_Other2 &&)' being compiled
+                 with
+                 [
+                     _Ty1=const unsigned long,
+                     _Ty2=ns_image_simple_cache_object<ns_image_storage_handler::ns_component>,
+                     _Ty=ns_image_simple_cache_object<ns_image_storage_handler::ns_component>,
+                     _Other1=ns_64_bit &,
+                     _Other2=ns_image_simple_cache_object<ns_image_storage_handler::ns_component>
+                 ]
+                 c:\server\ns_lifespan_machine_source\ns_image_server\src\ns_image_simple_cache.h(104) : see reference to function template instantiation 'std::pair<_Ty1,_Ty2>::pair<ns_64_bit&,ns_image_simple_cache_object<ns_component>>(_Other1,_Other2 &&)' being compiled
+                 with
+                 [
+                     _Ty1=const unsigned long,
+                     _Ty2=ns_image_simple_cache_object<ns_image_storage_handler::ns_component>,
+                     ns_component=ns_image_storage_handler::ns_component,
+                     _Other1=ns_64_bit &,
+                     _Other2=ns_image_simple_cache_object<ns_image_storage_handler::ns_component>
+                 ]
+                 c:\server\ns_lifespan_machine_source\ns_image_server\src\ns_image_simple_cache.h(81) : while compiling class template member function 'ns_image_whole<ns_component> &ns_image_simple_cache<ns_component>::get_image(ns_image_server_image &,ns_sql &,const bool)'
+                 with
+                 [
+                     ns_component=ns_8_bit
+                 ]
+         ns_worm_training_set_image.cpp
+     1>c:\program files (x86)\mysql\mysql connector c 6.0.2\include\config-win.h(24): warning C4005: '_WIN32_WINNT' : macro redefinition
+                 command-line arguments :  see previous definition of '_WIN32_WINNT'
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\ns_image_storage_handler.h(66): warning C4800: 'const unsigned long' : forcing value to bool 'true' or 'false' (performance warning)
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\image_processing\ns_worm_training_set_image.cpp(256): warning C4018: '<' : signed/unsigned mismatch
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\image_processing\ns_worm_training_set_image.cpp(707): warning C4018: '>' : signed/unsigned mismatch
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\image_processing\ns_worm_training_set_image.cpp(708): warning C4018: '>' : signed/unsigned mismatch
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\ns_image_simple_cache.h(83): warning C4244: 'argument' : conversion from 'ns_64_bit' to 'const unsigned long', possible loss of data
+                 c:\server\ns_lifespan_machine_source\ns_image_server\src\ns_image_simple_cache.h(81) : while compiling class template member function 'ns_image_whole<ns_component> &ns_image_simple_cache<ns_component>::get_image(ns_image_server_image &,ns_sql &,const bool)'
+                 with
+                 [
+                     ns_component=ns_8_bit
+                 ]
+                 c:\server\ns_lifespan_machine_source\ns_image_server\src\ns_image_storage_handler.h(225) : see reference to class template instantiation 'ns_image_simple_cache<ns_component>' being compiled
+                 with
+                 [
+                     ns_component=ns_image_storage_handler::ns_component
+                 ]
+     1>c:\program files (x86)\microsoft visual studio 10.0\vc\include\utility(163): warning C4244: 'initializing' : conversion from 'ns_64_bit' to 'const unsigned long', possible loss of data
+                 c:\program files (x86)\microsoft visual studio 10.0\vc\include\utility(247) : see reference to function template instantiation 'std::_Pair_base<_Ty1,_Ty2>::_Pair_base<ns_64_bit&,_Ty>(_Other1,_Other2 &&)' being compiled
+                 with
+                 [
+                     _Ty1=const unsigned long,
+                     _Ty2=ns_image_simple_cache_object<ns_image_storage_handler::ns_component>,
+                     _Ty=ns_image_simple_cache_object<ns_image_storage_handler::ns_component>,
+                     _Other1=ns_64_bit &,
+                     _Other2=ns_image_simple_cache_object<ns_image_storage_handler::ns_component>
+                 ]
+                 c:\server\ns_lifespan_machine_source\ns_image_server\src\ns_image_simple_cache.h(104) : see reference to function template instantiation 'std::pair<_Ty1,_Ty2>::pair<ns_64_bit&,ns_image_simple_cache_object<ns_component>>(_Other1,_Other2 &&)' being compiled
+                 with
+                 [
+                     _Ty1=const unsigned long,
+                     _Ty2=ns_image_simple_cache_object<ns_image_storage_handler::ns_component>,
+                     ns_component=ns_image_storage_handler::ns_component,
+                     _Other1=ns_64_bit &,
+                     _Other2=ns_image_simple_cache_object<ns_image_storage_handler::ns_component>
+                 ]
+                 c:\server\ns_lifespan_machine_source\ns_image_server\src\ns_image_simple_cache.h(81) : while compiling class template member function 'ns_image_whole<ns_component> &ns_image_simple_cache<ns_component>::get_image(ns_image_server_image &,ns_sql &,const bool)'
+                 with
+                 [
+                     ns_component=ns_8_bit
+                 ]
+         ns_worm_detector.cpp
+     1>c:\program files (x86)\mysql\mysql connector c 6.0.2\include\config-win.h(24): warning C4005: '_WIN32_WINNT' : macro redefinition
+                 command-line arguments :  see previous definition of '_WIN32_WINNT'
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\ns_image_storage_handler.h(66): warning C4800: 'const unsigned long' : forcing value to bool 'true' or 'false' (performance warning)
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\image_processing\ns_worm_detector.cpp(65): warning C4018: '>' : signed/unsigned mismatch
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\image_processing\ns_worm_detector.cpp(65): warning C4018: '>' : signed/unsigned mismatch
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\image_processing\ns_worm_detector.cpp(71): warning C4018: '>' : signed/unsigned mismatch
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\image_processing\ns_worm_detector.cpp(71): warning C4018: '>' : signed/unsigned mismatch
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\image_processing\ns_worm_detector.cpp(76): warning C4018: '<' : signed/unsigned mismatch
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\image_processing\ns_worm_detector.cpp(77): warning C4018: '<' : signed/unsigned mismatch
+         ns_movement_visualization_generator.cpp
+     1>c:\program files (x86)\mysql\mysql connector c 6.0.2\include\config-win.h(24): warning C4005: '_WIN32_WINNT' : macro redefinition
+                 command-line arguments :  see previous definition of '_WIN32_WINNT'
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\ns_image_storage_handler.h(66): warning C4800: 'const unsigned long' : forcing value to bool 'true' or 'false' (performance warning)
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\image_processing\ns_movement_visualization_generator.cpp(234): warning C4244: 'initializing' : conversion from 'double' to 'float', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\image_processing\ns_movement_visualization_generator.cpp(237): warning C4244: '=' : conversion from 'double' to 'float', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\image_processing\ns_movement_visualization_generator.cpp(608): warning C4244: '=' : conversion from 'const ns_64_bit' to 'unsigned long', possible loss of data
+         ns_identify_contiguous_bitmap_regions.cpp
+     1>c:\program files (x86)\mysql\mysql connector c 6.0.2\include\config-win.h(24): warning C4005: '_WIN32_WINNT' : macro redefinition
+                 command-line arguments :  see previous definition of '_WIN32_WINNT'
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\ns_image_storage_handler.h(66): warning C4800: 'const unsigned long' : forcing value to bool 'true' or 'false' (performance warning)
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\image_processing\ns_identify_contiguous_bitmap_regions.cpp(31): warning C4018: '<' : signed/unsigned mismatch
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\image_processing\ns_identify_contiguous_bitmap_regions.cpp(35): warning C4018: '>' : signed/unsigned mismatch
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\image_processing\ns_identify_contiguous_bitmap_regions.cpp(38): warning C4018: '<' : signed/unsigned mismatch
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\image_processing\ns_identify_contiguous_bitmap_regions.cpp(42): warning C4018: '>' : signed/unsigned mismatch
+         ns_heat_map_interpolation.cpp
+     1>c:\program files (x86)\mysql\mysql connector c 6.0.2\include\config-win.h(24): warning C4005: '_WIN32_WINNT' : macro redefinition
+                 command-line arguments :  see previous definition of '_WIN32_WINNT'
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\ns_image_storage_handler.h(66): warning C4800: 'const unsigned long' : forcing value to bool 'true' or 'false' (performance warning)
+         ns_detected_worm_info.cpp
+     1>c:\program files (x86)\mysql\mysql connector c 6.0.2\include\config-win.h(24): warning C4005: '_WIN32_WINNT' : macro redefinition
+                 command-line arguments :  see previous definition of '_WIN32_WINNT'
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\ns_image_storage_handler.h(66): warning C4800: 'const unsigned long' : forcing value to bool 'true' or 'false' (performance warning)
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\image_processing\ns_detected_worm_info.cpp(389): warning C4018: '<' : signed/unsigned mismatch
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\image_processing\ns_detected_worm_info.cpp(403): warning C4244: 'initializing' : conversion from 'const double' to 'unsigned long', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\image_processing\ns_detected_worm_info.cpp(429): warning C4018: '<' : signed/unsigned mismatch
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\image_processing\ns_detected_worm_info.cpp(498): warning C4018: '<' : signed/unsigned mismatch
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\image_processing\ns_detected_worm_info.cpp(499): warning C4018: '<' : signed/unsigned mismatch
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\image_processing\ns_detected_worm_info.cpp(501): warning C4018: '<' : signed/unsigned mismatch
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\image_processing\ns_detected_worm_info.cpp(502): warning C4018: '<' : signed/unsigned mismatch
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\image_processing\ns_detected_worm_info.cpp(510): warning C4018: '<' : signed/unsigned mismatch
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\image_processing\ns_detected_worm_info.cpp(511): warning C4018: '<' : signed/unsigned mismatch
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\image_processing\ns_detected_worm_info.cpp(1528): warning C4018: '<' : signed/unsigned mismatch
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\image_processing\ns_detected_worm_info.cpp(1529): warning C4018: '<' : signed/unsigned mismatch
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\image_processing\ns_detected_worm_info.cpp(1535): warning C4018: '<' : signed/unsigned mismatch
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\image_processing\ns_detected_worm_info.cpp(1548): warning C4018: '<' : signed/unsigned mismatch
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\image_processing\ns_detected_worm_info.cpp(1552): warning C4018: '<' : signed/unsigned mismatch
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\image_processing\ns_detected_worm_info.cpp(1553): warning C4018: '<' : signed/unsigned mismatch
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\image_processing\ns_detected_worm_info.cpp(1558): warning C4018: '<' : signed/unsigned mismatch
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\image_processing\ns_detected_worm_info.cpp(1559): warning C4018: '<' : signed/unsigned mismatch
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\image_processing\ns_detected_worm_info.cpp(1848): warning C4244: '=' : conversion from 'ns_64_bit' to 'unsigned long', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\image_processing\ns_detected_worm_info.cpp(2148): warning C4244: '=' : conversion from 'const double' to 'unsigned long', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\image_processing\ns_detected_worm_info.cpp(2149): warning C4244: '=' : conversion from 'const double' to 'unsigned long', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\image_processing\ns_detected_worm_info.cpp(2150): warning C4244: '=' : conversion from 'double' to 'unsigned long', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\image_processing\ns_detected_worm_info.cpp(2245): warning C4800: 'int' : forcing value to bool 'true' or 'false' (performance warning)
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\image_processing\ns_detected_worm_info.cpp(2246): warning C4800: 'int' : forcing value to bool 'true' or 'false' (performance warning)
+         ns_vector_bitmap_interface.cpp
+     1>c:\program files (x86)\mysql\mysql connector c 6.0.2\include\config-win.h(24): warning C4005: '_WIN32_WINNT' : macro redefinition
+                 command-line arguments :  see previous definition of '_WIN32_WINNT'
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\ns_image_storage_handler.h(66): warning C4800: 'const unsigned long' : forcing value to bool 'true' or 'false' (performance warning)
+         ns_image_server_dispatcher.cpp
+     1>c:\program files (x86)\mysql\mysql connector c 6.0.2\include\config-win.h(24): warning C4005: '_WIN32_WINNT' : macro redefinition
+                 command-line arguments :  see previous definition of '_WIN32_WINNT'
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\ns_image_storage_handler.h(66): warning C4800: 'const unsigned long' : forcing value to bool 'true' or 'false' (performance warning)
+         ns_image_server_alerts.cpp
+     1>c:\program files (x86)\mysql\mysql connector c 6.0.2\include\config-win.h(24): warning C4005: '_WIN32_WINNT' : macro redefinition
+                 command-line arguments :  see previous definition of '_WIN32_WINNT'
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\ns_image_storage_handler.h(66): warning C4800: 'const unsigned long' : forcing value to bool 'true' or 'false' (performance warning)
+         Generating Code...
+         Compiling...
+         ns_image_capture_data_manager.cpp
+     1>c:\program files (x86)\mysql\mysql connector c 6.0.2\include\config-win.h(24): warning C4005: '_WIN32_WINNT' : macro redefinition
+                 command-line arguments :  see previous definition of '_WIN32_WINNT'
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\ns_image_storage_handler.h(66): warning C4800: 'const unsigned long' : forcing value to bool 'true' or 'false' (performance warning)
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\image_acquisition\ns_image_capture_data_manager.cpp(132): warning C4244: 'argument' : conversion from 'ns_64_bit' to 'const unsigned long', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\image_acquisition\ns_image_capture_data_manager.cpp(205): warning C4244: 'argument' : conversion from 'ns_64_bit' to 'const unsigned long', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\image_processing\ns_resampler.h(61): warning C4305: '=' : truncation from 'double' to 'float'
+                 c:\server\ns_lifespan_machine_source\ns_image_server\src\image_processing\ns_resampler.h(35) : while compiling class template member function 'bool ns_resampler<ns_component>::init(const ns_image_properties &)'
+                 with
+                 [
+                     ns_component=ns_8_bit
+                 ]
+                 c:\server\ns_lifespan_machine_source\ns_image_server\src\image_processing\ns_process_16_bit_images.h(164) : see reference to class template instantiation 'ns_resampler<ns_component>' being compiled
+                 with
+                 [
+                     ns_component=ns_8_bit
+                 ]
+                 c:\server\ns_lifespan_machine_source\ns_image_server\src\image_processing\ns_process_16_bit_images.h(170) : see reference to class template instantiation 'ns_image_process_16_bit<features,storage_buffer>' being compiled
+         ns_capture_schedule.cpp
+     1>c:\program files (x86)\mysql\mysql connector c 6.0.2\include\config-win.h(24): warning C4005: '_WIN32_WINNT' : macro redefinition
+                 command-line arguments :  see previous definition of '_WIN32_WINNT'
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\ns_image_storage_handler.h(66): warning C4800: 'const unsigned long' : forcing value to bool 'true' or 'false' (performance warning)
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\image_acquisition\ns_capture_schedule.cpp(104): warning C4244: '=' : conversion from 'ns_64_bit' to 'unsigned long', possible loss of data
+         ns_capture_device_manager.cpp
+     1>c:\program files (x86)\mysql\mysql connector c 6.0.2\include\config-win.h(24): warning C4005: '_WIN32_WINNT' : macro redefinition
+                 command-line arguments :  see previous definition of '_WIN32_WINNT'
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\ns_image_storage_handler.h(66): warning C4800: 'const unsigned long' : forcing value to bool 'true' or 'false' (performance warning)
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\image_acquisition\ns_capture_device_manager.cpp(340): warning C4018: '>' : signed/unsigned mismatch
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\image_acquisition\ns_capture_device_manager.cpp(371): warning C4018: '>' : signed/unsigned mismatch
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\image_acquisition\ns_capture_device_manager.cpp(609): warning C4244: 'initializing' : conversion from 'ns_64_bit' to 'unsigned long', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\image_base\ns_jpeg.h(256): warning C4244: 'argument' : conversion from 'const float' to 'int', possible loss of data
+                 c:\server\ns_lifespan_machine_source\ns_image_server\src\image_base\ns_jpeg.h(237) : while compiling class template member function 'void ns_jpeg_image_output_file<ns_component>::start_decompression(const ns_image_properties &)'
+                 with
+                 [
+                     ns_component=ns_8_bit
+                 ]
+                 c:\server\ns_lifespan_machine_source\ns_image_server\src\image_base\ns_jpeg.h(181) : while compiling class template member function 'void ns_jpeg_image_output_file<ns_component>::open_file(const std::string &,const ns_image_properties &)'
+                 with
+                 [
+                     ns_component=ns_8_bit
+                 ]
+                 c:\server\ns_lifespan_machine_source\ns_image_server\src\ns_image_storage.h(91) : see reference to class template instantiation 'ns_jpeg_image_output_file<ns_component>' being compiled
+                 with
+                 [
+                     ns_component=ns_8_bit
+                 ]
+                 c:\server\ns_lifespan_machine_source\ns_image_server\src\ns_image_storage_handler.h(108) : see reference to class template instantiation 'ns_image_storage_reciever_to_disk<ns_component>' being compiled
+                 with
+                 [
+                     ns_component=ns_8_bit
+                 ]
+                 c:\server\ns_lifespan_machine_source\ns_image_server\src\image_acquisition\ns_capture_device_manager.cpp(1007) : see reference to function template instantiation 'ns_image_storage_reciever_handle<ns_component> ns_image_storage_handler::request_volatile_storage<ns_8_bit>(const std::string &,const unsigned long,const bool)' being compiled
+                 with
+                 [
+                     ns_component=ns_image_storage_handler::ns_component
+                 ]
+         ns_capture_device.cpp
+     1>c:\program files (x86)\mysql\mysql connector c 6.0.2\include\config-win.h(24): warning C4005: '_WIN32_WINNT' : macro redefinition
+                 command-line arguments :  see previous definition of '_WIN32_WINNT'
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\ns_image_storage_handler.h(66): warning C4800: 'const unsigned long' : forcing value to bool 'true' or 'false' (performance warning)
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\image_acquisition\ns_capture_device.cpp(509): warning C4244: '=' : conversion from 'const ns_64_bit' to 'unsigned long', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\image_acquisition\ns_capture_device.cpp(562): warning C4244: '=' : conversion from 'const ns_64_bit' to 'unsigned long', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\image_acquisition\ns_capture_device.cpp(578): warning C4244: 'argument' : conversion from 'const ns_64_bit' to 'const unsigned int', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\image_acquisition\ns_capture_device.cpp(584): warning C4244: 'initializing' : conversion from 'ns_64_bit' to 'const unsigned long', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\image_base\ns_jpeg.h(256): warning C4244: 'argument' : conversion from 'const float' to 'int', possible loss of data
+                 c:\server\ns_lifespan_machine_source\ns_image_server\src\image_base\ns_jpeg.h(237) : while compiling class template member function 'void ns_jpeg_image_output_file<ns_component>::start_decompression(const ns_image_properties &)'
+                 with
+                 [
+                     ns_component=ns_16_bit
+                 ]
+                 c:\server\ns_lifespan_machine_source\ns_image_server\src\image_base\ns_jpeg.h(181) : while compiling class template member function 'void ns_jpeg_image_output_file<ns_component>::open_file(const std::string &,const ns_image_properties &)'
+                 with
+                 [
+                     ns_component=ns_16_bit
+                 ]
+                 c:\server\ns_lifespan_machine_source\ns_image_server\src\ns_image_storage.h(91) : see reference to class template instantiation 'ns_jpeg_image_output_file<ns_component>' being compiled
+                 with
+                 [
+                     ns_component=ns_16_bit
+                 ]
+                 c:\server\ns_lifespan_machine_source\ns_image_server\src\ns_image_storage_handler.h(108) : see reference to class template instantiation 'ns_image_storage_reciever_to_disk<ns_component>' being compiled
+                 with
+                 [
+                     ns_component=ns_16_bit
+                 ]
+                 c:\server\ns_lifespan_machine_source\ns_image_server\src\image_acquisition\ns_capture_device.cpp(178) : see reference to function template instantiation 'ns_image_storage_reciever_handle<ns_component> ns_image_storage_handler::request_volatile_storage<ns_component>(const std::string &,const unsigned long,const bool)' being compiled
+                 with
+                 [
+                     ns_component=ns_16_bit
+                 ]
+                 c:\server\ns_lifespan_machine_source\ns_image_server\src\image_acquisition\ns_capture_device.cpp(157) : while compiling class template member function 'void ns_output_simulated_scan_image<ns_component>::create(const std::string &)'
+                 with
+                 [
+                     ns_component=ns_16_bit
+                 ]
+                 c:\server\ns_lifespan_machine_source\ns_image_server\src\image_acquisition\ns_capture_device.cpp(205) : see reference to class template instantiation 'ns_output_simulated_scan_image<ns_component>' being compiled
+                 with
+                 [
+                     ns_component=ns_16_bit
+                 ]
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\image_base\ns_jpeg.h(256): warning C4244: 'argument' : conversion from 'const float' to 'int', possible loss of data
+                 c:\server\ns_lifespan_machine_source\ns_image_server\src\image_base\ns_jpeg.h(237) : while compiling class template member function 'void ns_jpeg_image_output_file<ns_component>::start_decompression(const ns_image_properties &)'
+                 with
+                 [
+                     ns_component=ns_8_bit
+                 ]
+                 c:\server\ns_lifespan_machine_source\ns_image_server\src\image_base\ns_jpeg.h(181) : while compiling class template member function 'void ns_jpeg_image_output_file<ns_component>::open_file(const std::string &,const ns_image_properties &)'
+                 with
+                 [
+                     ns_component=ns_8_bit
+                 ]
+                 c:\server\ns_lifespan_machine_source\ns_image_server\src\ns_image_storage.h(91) : see reference to class template instantiation 'ns_jpeg_image_output_file<ns_component>' being compiled
+                 with
+                 [
+                     ns_component=ns_8_bit
+                 ]
+                 c:\server\ns_lifespan_machine_source\ns_image_server\src\ns_image_storage_handler.h(108) : see reference to class template instantiation 'ns_image_storage_reciever_to_disk<ns_component>' being compiled
+                 with
+                 [
+                     ns_component=ns_8_bit
+                 ]
+                 c:\server\ns_lifespan_machine_source\ns_image_server\src\image_acquisition\ns_capture_device.cpp(178) : see reference to function template instantiation 'ns_image_storage_reciever_handle<ns_component> ns_image_storage_handler::request_volatile_storage<ns_component>(const std::string &,const unsigned long,const bool)' being compiled
+                 with
+                 [
+                     ns_component=ns_image_storage_handler::ns_component
+                 ]
+                 c:\server\ns_lifespan_machine_source\ns_image_server\src\image_acquisition\ns_capture_device.cpp(157) : while compiling class template member function 'void ns_output_simulated_scan_image<ns_component>::create(const std::string &)'
+                 with
+                 [
+                     ns_component=ns_8_bit
+                 ]
+                 c:\server\ns_lifespan_machine_source\ns_image_server\src\image_acquisition\ns_capture_device.cpp(206) : see reference to class template instantiation 'ns_output_simulated_scan_image<ns_component>' being compiled
+                 with
+                 [
+                     ns_component=ns_8_bit
+                 ]
+         ns_buffered_capture_scheduler.cpp
+     1>c:\program files (x86)\mysql\mysql connector c 6.0.2\include\config-win.h(24): warning C4005: '_WIN32_WINNT' : macro redefinition
+                 command-line arguments :  see previous definition of '_WIN32_WINNT'
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\ns_image_storage_handler.h(66): warning C4800: 'const unsigned long' : forcing value to bool 'true' or 'false' (performance warning)
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\image_acquisition\ns_buffered_capture_scheduler.cpp(26): warning C4018: '<' : signed/unsigned mismatch
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\image_acquisition\ns_buffered_capture_scheduler.cpp(27): warning C4018: '<' : signed/unsigned mismatch
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\image_acquisition\ns_buffered_capture_scheduler.cpp(170): warning C4244: '=' : conversion from 'ns_64_bit' to 'unsigned long', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\image_acquisition\ns_buffered_capture_scheduler.cpp(199): warning C4244: '=' : conversion from 'ns_64_bit' to 'unsigned long', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\image_acquisition\ns_buffered_capture_scheduler.cpp(690): warning C4244: 'initializing' : conversion from 'ns_64_bit' to 'unsigned long', possible loss of data
+         ns_mask_management.cpp
+     1>c:\program files (x86)\mysql\mysql connector c 6.0.2\include\config-win.h(24): warning C4005: '_WIN32_WINNT' : macro redefinition
+                 command-line arguments :  see previous definition of '_WIN32_WINNT'
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\ns_image_storage_handler.h(66): warning C4800: 'const unsigned long' : forcing value to bool 'true' or 'false' (performance warning)
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\data_annotation\ns_mask_management.cpp(228): warning C4018: '<' : signed/unsigned mismatch
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\data_annotation\ns_mask_management.cpp(235): warning C4018: '>' : signed/unsigned mismatch
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\data_annotation\ns_mask_management.cpp(240): warning C4018: '>' : signed/unsigned mismatch
+         ns_machine_learning_training_set.cpp
+     1>c:\program files (x86)\mysql\mysql connector c 6.0.2\include\config-win.h(24): warning C4005: '_WIN32_WINNT' : macro redefinition
+                 command-line arguments :  see previous definition of '_WIN32_WINNT'
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\ns_image_storage_handler.h(66): warning C4800: 'const unsigned long' : forcing value to bool 'true' or 'false' (performance warning)
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\data_annotation\ns_machine_learning_training_set.cpp(1219): warning C4244: '=' : conversion from 'const __int64' to 'unsigned long', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\data_annotation\ns_machine_learning_training_set.cpp(1225): warning C4244: '=' : conversion from 'const __int64' to 'unsigned long', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\image_base\ns_jpeg.h(256): warning C4244: 'argument' : conversion from 'const float' to 'int', possible loss of data
+                 c:\server\ns_lifespan_machine_source\ns_image_server\src\image_base\ns_jpeg.h(237) : while compiling class template member function 'void ns_jpeg_image_output_file<ns_component>::start_decompression(const ns_image_properties &)'
+                 with
+                 [
+                     ns_component=ns_8_bit
+                 ]
+                 c:\server\ns_lifespan_machine_source\ns_image_server\src\image_base\ns_jpeg.h(181) : while compiling class template member function 'void ns_jpeg_image_output_file<ns_component>::open_file(const std::string &,const ns_image_properties &)'
+                 with
+                 [
+                     ns_component=ns_8_bit
+                 ]
+                 c:\server\ns_lifespan_machine_source\ns_image_server\src\image_base\ns_image_easy_io.h(45) : see reference to class template instantiation 'ns_jpeg_image_output_file<ns_component>' being compiled
+                 with
+                 [
+                     ns_component=ns_8_bit
+                 ]
+                 c:\server\ns_lifespan_machine_source\ns_image_server\src\data_annotation\ns_machine_learning_training_set.cpp(278) : see reference to function template instantiation 'void ns_save_image<ns_8_bit>(const std::string &,const ns_image_whole<ns_component> &)' being compiled
+                 with
+                 [
+                     ns_component=ns_8_bit
+                 ]
+         ns_experiment_storyboard.cpp
+     1>c:\program files (x86)\mysql\mysql connector c 6.0.2\include\config-win.h(24): warning C4005: '_WIN32_WINNT' : macro redefinition
+                 command-line arguments :  see previous definition of '_WIN32_WINNT'
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\ns_image_storage_handler.h(66): warning C4800: 'const unsigned long' : forcing value to bool 'true' or 'false' (performance warning)
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\data_annotation\ns_experiment_storyboard.cpp(91): warning C4244: '=' : conversion from 'ns_64_bit' to 'unsigned long', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\data_annotation\ns_experiment_storyboard.cpp(118): warning C4244: '=' : conversion from 'ns_64_bit' to 'unsigned long', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\data_annotation\ns_experiment_storyboard.cpp(215): warning C4018: '>=' : signed/unsigned mismatch
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\data_annotation\ns_experiment_storyboard.cpp(215): warning C4018: '>=' : signed/unsigned mismatch
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\data_annotation\ns_experiment_storyboard.cpp(220): warning C4244: 'initializing' : conversion from 'double' to 'float', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\data_annotation\ns_experiment_storyboard.cpp(227): warning C4244: '=' : conversion from 'double' to 'ns_8_bit', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\data_annotation\ns_experiment_storyboard.cpp(228): warning C4244: '=' : conversion from 'double' to 'ns_8_bit', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\data_annotation\ns_experiment_storyboard.cpp(232): warning C4244: '=' : conversion from 'float' to 'ns_8_bit', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\data_annotation\ns_experiment_storyboard.cpp(233): warning C4244: '=' : conversion from 'float' to 'ns_8_bit', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\data_annotation\ns_experiment_storyboard.cpp(241): warning C4244: '=' : conversion from 'double' to 'ns_8_bit', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\data_annotation\ns_experiment_storyboard.cpp(242): warning C4244: '=' : conversion from 'double' to 'ns_8_bit', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\data_annotation\ns_experiment_storyboard.cpp(246): warning C4244: '=' : conversion from 'float' to 'ns_8_bit', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\data_annotation\ns_experiment_storyboard.cpp(247): warning C4244: '=' : conversion from 'float' to 'ns_8_bit', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\data_annotation\ns_experiment_storyboard.cpp(253): warning C4244: '=' : conversion from 'double' to 'ns_8_bit', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\data_annotation\ns_experiment_storyboard.cpp(255): warning C4244: '=' : conversion from 'double' to 'ns_8_bit', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\data_annotation\ns_experiment_storyboard.cpp(258): warning C4244: '=' : conversion from 'float' to 'ns_8_bit', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\data_annotation\ns_experiment_storyboard.cpp(260): warning C4244: '=' : conversion from 'float' to 'ns_8_bit', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\data_annotation\ns_experiment_storyboard.cpp(391): warning C4244: 'initializing' : conversion from 'double' to 'unsigned long', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\data_annotation\ns_experiment_storyboard.cpp(409): warning C4018: '>' : signed/unsigned mismatch
+         ns_death_time_annotation.cpp
+     1>c:\program files (x86)\mysql\mysql connector c 6.0.2\include\config-win.h(24): warning C4005: '_WIN32_WINNT' : macro redefinition
+                 command-line arguments :  see previous definition of '_WIN32_WINNT'
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\ns_image_storage_handler.h(66): warning C4800: 'const unsigned long' : forcing value to bool 'true' or 'false' (performance warning)
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\data_annotation\ns_death_time_annotation.cpp(345): warning C4244: 'argument' : conversion from 'double' to 'const float', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\data_annotation\ns_death_time_annotation.cpp(923): warning C4018: '<' : signed/unsigned mismatch
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\data_annotation\ns_death_time_annotation.cpp(1826): warning C4244: '=' : conversion from 'double' to 'unsigned long', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\data_annotation\ns_death_time_annotation.cpp(1962): warning C4244: '=' : conversion from 'double' to 'unsigned long', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\data_annotation\ns_death_time_annotation.cpp(1641): warning C4244: '=' : conversion from 'double' to 'unsigned long', possible loss of data
+                 c:\server\ns_lifespan_machine_source\ns_image_server\src\data_annotation\ns_death_time_annotation.cpp(1618) : while compiling class template member function 'ns_dying_animal_description ns_dying_animal_description_generator<source_t,dest_t>::generate(const ns_death_time_annotation &,source_t &,const bool) const'
+                 with
+                 [
+                     source_t=ns_death_time_annotation_set,
+                     dest_t=ns_dying_animal_description
+                 ]
+                 c:\server\ns_lifespan_machine_source\ns_image_server\src\data_annotation\ns_death_time_annotation.cpp(1784) : see reference to class template instantiation 'ns_dying_animal_description_generator<source_t,dest_t>' being compiled
+                 with
+                 [
+                     source_t=ns_death_time_annotation_set,
+                     dest_t=ns_dying_animal_description
+                 ]
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\data_annotation\ns_death_time_annotation.cpp(1651): warning C4244: '=' : conversion from 'double' to 'unsigned long', possible loss of data
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\data_annotation\ns_death_time_annotation.cpp(1641): warning C4244: '=' : conversion from 'double' to 'unsigned long', possible loss of data
+                 c:\server\ns_lifespan_machine_source\ns_image_server\src\data_annotation\ns_death_time_annotation.cpp(1618) : while compiling class template member function 'ns_dying_animal_description_const ns_dying_animal_description_generator<source_t,dest_t>::generate(const ns_death_time_annotation &,source_t &,const bool) const'
+                 with
+                 [
+                     source_t=const ns_death_time_annotation_set,
+                     dest_t=ns_dying_animal_description_const
+                 ]
+                 c:\server\ns_lifespan_machine_source\ns_image_server\src\data_annotation\ns_death_time_annotation.cpp(1788) : see reference to class template instantiation 'ns_dying_animal_description_generator<source_t,dest_t>' being compiled
+                 with
+                 [
+                     source_t=const ns_death_time_annotation_set,
+                     dest_t=ns_dying_animal_description_const
+                 ]
+     1>c:\server\ns_lifespan_machine_source\ns_image_server\src\data_annotation\ns_death_time_annotation.cpp(1651): warning C4244: '=' : conversion from 'double' to 'unsigned long', possible loss of data
+         Generating Code...
+         All outputs are up-to-date.
+       ResourceCompile:
+         All outputs are up-to-date.
+       Link:
+         C:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\bin\link.exe /ERRORREPORT:PROMPT /OUT:"C:\server\ns_lifespan_machine_source\ns_image_server\build\windows\ns_image_server\Debug\ns_worm_browser.exe" /NOLOGO opengl32.lib comctl32.lib freetype2410MT_D.lib mysqlclient.lib xvidcored.dll.a fltkformsd.lib fltkimagesd.lib fltkgld.lib fltkd.lib glu32.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /MANIFEST /ManifestFile:"Debug\ns_worm_browser.exe.intermediate.manifest" /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /DEBUG /PDB:"C:\server\ns_lifespan_machine_source\ns_image_server\build\windows\ns_image_server\Debug\ns_worm_browser.pdb" /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"C:\server\ns_lifespan_machine_source\ns_image_server\build\windows\ns_image_server\Debug\ns_worm_browser.lib" /MACHINE:X86 Debug\worm_terminal_2.res
+         Debug\ns_death_time_annotation.obj
+         Debug\ns_experiment_storyboard.obj
+         Debug\ns_machine_learning_training_set.obj
+         Debug\ns_mask_management.obj
+         Debug\ns_barcode.obj
+         Debug\ns_buffered_capture_scheduler.obj
+         Debug\ns_capture_device.obj
+         Debug\ns_capture_device_manager.obj
+         Debug\ns_capture_schedule.obj
+         Debug\ns_image_capture_data_manager.obj
+         Debug\ns_image_server_alerts.obj
+         Debug\ns_image_server_dispatcher.obj
+         Debug\ns_usb.obj
+         Debug\ns_font.obj
+         Debug\ns_image.obj
+         Debug\ns_image_socket.obj
+         Debug\ns_jpeg.obj
+         Debug\ns_libtiff_interface.obj
+         Debug\ns_ojp2k.obj
+         Debug\ns_svg.obj
+         Debug\ns_tiff.obj
+         Debug\ns_vector.obj
+         Debug\ns_vector_bitmap_interface.obj
+         Debug\ns_bspline.obj
+         Debug\ns_complex_segment_cluster_solver.obj
+         Debug\ns_detected_worm_info.obj
+         Debug\ns_difference_thresholder.obj
+         Debug\ns_heat_map_interpolation.obj
+         Debug\ns_identify_contiguous_bitmap_regions.obj
+         Debug\ns_image_tools.obj
+         Debug\ns_movement_visualization_generator.obj
+         Debug\ns_node_topology.obj
+         Debug\ns_segment_topology.obj
+         Debug\ns_spatial_avg.obj
+         Debug\ns_spine_drawer.obj
+         Debug\ns_worm_detection_constants.obj
+         Debug\ns_worm_detector.obj
+         Debug\ns_worm_training_set_image.obj
+         Debug\ns_xvid.obj
+         Debug\ns_image_processing_pipeline.obj
+         Debug\ns_processing_job_processor.obj
+         Debug\ns_processing_job_push_scheduler.obj
+         Debug\ns_processing_job_scheduler.obj
+         Debug\ns_hidden_markov_model_posture_analyzer.obj
+         Debug\ns_time_path_image_analyzer.obj
+         Debug\ns_time_path_solver.obj
+         Debug\ns_graph.obj
+         Debug\ns_image_server.obj
+         Debug\ns_image_server_images.obj
+         Debug\ns_image_server_message.obj
+         Debug\ns_image_statistics.obj
+         Debug\ns_image_storage_handler.obj
+         Debug\ns_ini.obj
+         Debug\ns_captured_image_statistics_set.obj
+         Debug\ns_machine_analysis_data_loader.obj
+         Debug\ns_movement_measurement.obj
+         Debug\ns_normal_distribution.obj
+         Debug\ns_survival_curve.obj
+         Debug\ns_dir.obj
+         Debug\ns_ex.obj
+         Debug\ns_socket.obj
+         Debug\ns_sql.obj
+         Debug\ns_thread.obj
+         Debug\ns_xml.obj
+         Debug\ctmf.obj
+         Debug\dmtx.obj
+         Debug\hungarian.obj
+         Debug\bio.obj
+         Debug\cidx_manager.obj
+         Debug\cio.obj
+         Debug\dwt.obj
+         Debug\event.obj
+         Debug\image.obj
+         Debug\j2k.obj
+         Debug\j2k_lib.obj
+         Debug\jp2.obj
+         Debug\jpt.obj
+         Debug\mct.obj
+         Debug\mqc.obj
+         Debug\openjpeg.obj
+         Debug\phix_manager.obj
+         Debug\pi.obj
+         Debug\ppix_manager.obj
+         Debug\raw.obj
+         Debug\t1.obj
+         Debug\t2.obj
+         Debug\tcd.obj
+         Debug\tgt.obj
+         Debug\thix_manager.obj
+         Debug\tpix_manager.obj
+         Debug\tinystr.obj
+         Debug\tinyxml.obj
+         Debug\tinyxmlerror.obj
+         Debug\tinyxmlparser.obj
+         Debug\triangle.obj
+         Debug\Wm4BSplineBasis.obj
+         Debug\Wm4BSplineCurve2.obj
+         Debug\Wm4BSplineCurveFit.obj
+         Debug\Wm4BSplineFitBasis.obj
+         Debug\Wm4Command.obj
+         Debug\Wm4Curve2.obj
+         Debug\Wm4FoundationPCH.obj
+         Debug\Wm4Integrate1.obj
+         Debug\Wm4IntpBSplineUniform.obj
+         Debug\Wm4IntpBSplineUniform2.obj
+         Debug\Wm4Math.obj
+         Debug\Wm4Memory.obj
+         Debug\Wm4SingleCurve2.obj
+         Debug\Wm4System.obj
+         Debug\Wm4Vector2.obj
+         Debug\adler32.obj
+         Debug\compress.obj
+         Debug\crc32.obj
+         Debug\deflate.obj
+         Debug\gzio.obj
+         Debug\infback.obj
+         Debug\inffast.obj
+         Debug\inflate.obj
+         Debug\inftrees.obj
+         Debug\trees.obj
+         Debug\uncompr.obj
+         Debug\zutil.obj
+         Debug\jaricom.obj
+         Debug\jcapimin.obj
+         Debug\jcapistd.obj
+         Debug\jcarith.obj
+         Debug\jccoefct.obj
+         Debug\jccolor.obj
+         Debug\jcdctmgr.obj
+         Debug\jchuff.obj
+         Debug\jcinit.obj
+         Debug\jcmainct.obj
+         Debug\jcmarker.obj
+         Debug\jcmaster.obj
+         Debug\jcomapi.obj
+         Debug\jcparam.obj
+         Debug\jcprepct.obj
+         Debug\jcsample.obj
+         Debug\jctrans.obj
+         Debug\jdapimin.obj
+         Debug\jdapistd.obj
+         Debug\jdarith.obj
+         Debug\jdatadst.obj
+         Debug\jdatasrc.obj
+         Debug\jdcoefct.obj
+         Debug\jdcolor.obj
+         Debug\jddctmgr.obj
+         Debug\jdhuff.obj
+         Debug\jdinput.obj
+         Debug\jdmainct.obj
+         Debug\jdmarker.obj
+         Debug\jdmaster.obj
+         Debug\jdmerge.obj
+         Debug\jdpostct.obj
+         Debug\jdsample.obj
+         Debug\jdtrans.obj
+         Debug\jerror.obj
+         Debug\jfdctflt.obj
+         Debug\jfdctfst.obj
+         Debug\jfdctint.obj
+         Debug\jidctflt.obj
+         Debug\jidctfst.obj
+         Debug\jidctint.obj
+         Debug\jmemmgr.obj
+         Debug\jmemnobs.obj
+         Debug\jquant1.obj
+         Debug\jquant2.obj
+         Debug\jutils.obj
+         Debug\rdbmp.obj
+         Debug\rdcolmap.obj
+         Debug\rdgif.obj
+         Debug\rdppm.obj
+         Debug\rdrle.obj
+         Debug\rdswitch.obj
+         Debug\rdtarga.obj
+         Debug\transupp.obj
+         Debug\wrbmp.obj
+         Debug\wrgif.obj
+         Debug\wrppm.obj
+         Debug\wrrle.obj
+         Debug\wrtarga.obj
+         Debug\svm.obj
+         Debug\tif_aux.obj
+         Debug\tif_close.obj
+         Debug\tif_codec.obj
+         Debug\tif_color.obj
+         Debug\tif_compress.obj
+         Debug\tif_dir.obj
+         Debug\tif_dirinfo.obj
+         Debug\tif_dirread.obj
+         Debug\tif_dirwrite.obj
+         Debug\tif_dumpmode.obj
+         Debug\tif_error.obj
+         Debug\tif_extension.obj
+         Debug\tif_fax3.obj
+         Debug\tif_fax3sm.obj
+         Debug\tif_flush.obj
+         Debug\tif_getimage.obj
+         Debug\tif_jpeg.obj
+         Debug\tif_luv.obj
+         Debug\tif_lzw.obj
+         Debug\tif_next.obj
+         Debug\tif_ojpeg.obj
+         Debug\tif_open.obj
+         Debug\tif_packbits.obj
+         Debug\tif_pixarlog.obj
+         Debug\tif_predict.obj
+         Debug\tif_print.obj
+         Debug\tif_read.obj
+         Debug\tif_strip.obj
+         Debug\tif_swab.obj
+         Debug\tif_thunder.obj
+         Debug\tif_tile.obj
+         Debug\tif_version.obj
+         Debug\tif_warning.obj
+         Debug\tif_write.obj
+         Debug\tif_zip.obj
+         Debug\ns_windows_file_dialog.obj
+         Debug\ns_worm_browser.obj
+         Debug\ns_worm_browser_main.obj
+         LINK : C:\server\ns_lifespan_machine_source\ns_image_server\build\windows\ns_image_server\Debug\ns_worm_browser.exe not found or not built by the last incremental link; performing full link
+            Creating library C:\server\ns_lifespan_machine_source\ns_image_server\build\windows\ns_image_server\Debug\ns_worm_browser.lib and object C:\server\ns_lifespan_machine_source\ns_image_server\build\windows\ns_image_server\Debug\ns_worm_browser.exp
+     1>ns_ojp2k.obj : warning LNK4217: locally defined symbol _opj_cio_close@4 imported in function "public: void __thiscall ns_8_bit_ojp2k_image_input_file::open_file_i(class std::basic_string<char,struct std::char_traits<char>,class std::allocator<char> > const &)" (?open_file_i@ns_8_bit_ojp2k_image_input_file@@QAEXABV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@Z)
+     1>ns_ojp2k.obj : warning LNK4217: locally defined symbol _opj_destroy_decompress@4 imported in function "public: void __thiscall ns_8_bit_ojp2k_image_input_file::open_file_i(class std::basic_string<char,struct std::char_traits<char>,class std::allocator<char> > const &)" (?open_file_i@ns_8_bit_ojp2k_image_input_file@@QAEXABV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@Z)
+     1>ns_ojp2k.obj : warning LNK4217: locally defined symbol _opj_decode_with_info@12 imported in function "public: void __thiscall ns_8_bit_ojp2k_image_input_file::open_file_i(class std::basic_string<char,struct std::char_traits<char>,class std::allocator<char> > const &)" (?open_file_i@ns_8_bit_ojp2k_image_input_file@@QAEXABV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@Z)
+     1>ns_ojp2k.obj : warning LNK4217: locally defined symbol _opj_cio_open@12 imported in function "public: void __thiscall ns_8_bit_ojp2k_image_input_file::open_file_i(class std::basic_string<char,struct std::char_traits<char>,class std::allocator<char> > const &)" (?open_file_i@ns_8_bit_ojp2k_image_input_file@@QAEXABV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@Z)
+     1>ns_ojp2k.obj : warning LNK4217: locally defined symbol _opj_setup_decoder@8 imported in function "public: void __thiscall ns_8_bit_ojp2k_image_input_file::open_file_i(class std::basic_string<char,struct std::char_traits<char>,class std::allocator<char> > const &)" (?open_file_i@ns_8_bit_ojp2k_image_input_file@@QAEXABV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@Z)
+     1>ns_ojp2k.obj : warning LNK4217: locally defined symbol _opj_set_event_mgr@12 imported in function "public: void __thiscall ns_8_bit_ojp2k_image_input_file::open_file_i(class std::basic_string<char,struct std::char_traits<char>,class std::allocator<char> > const &)" (?open_file_i@ns_8_bit_ojp2k_image_input_file@@QAEXABV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@Z)
+     1>ns_ojp2k.obj : warning LNK4217: locally defined symbol _opj_create_decompress@4 imported in function "public: void __thiscall ns_8_bit_ojp2k_image_input_file::open_file_i(class std::basic_string<char,struct std::char_traits<char>,class std::allocator<char> > const &)" (?open_file_i@ns_8_bit_ojp2k_image_input_file@@QAEXABV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@Z)
+     1>ns_ojp2k.obj : warning LNK4217: locally defined symbol _opj_set_default_decoder_parameters@4 imported in function "public: void __thiscall ns_8_bit_ojp2k_image_input_file::open_file_i(class std::basic_string<char,struct std::char_traits<char>,class std::allocator<char> > const &)" (?open_file_i@ns_8_bit_ojp2k_image_input_file@@QAEXABV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@Z)
+     1>ns_ojp2k.obj : warning LNK4217: locally defined symbol _opj_image_destroy@4 imported in function "public: void __thiscall ns_8_bit_ojp2k_image_input_file::close_i(void)" (?close_i@ns_8_bit_ojp2k_image_input_file@@QAEXXZ)
+     1>j2k.obj : warning LNK4049: locally defined symbol _opj_image_destroy@4 imported
+     1>ns_ojp2k.obj : warning LNK4217: locally defined symbol _opj_image_create@12 imported in function "public: void __thiscall ns_8_bit_ojp2k_image_output_file::open_file_i(class std::basic_string<char,struct std::char_traits<char>,class std::allocator<char> > const &,struct ns_image_properties const &)" (?open_file_i@ns_8_bit_ojp2k_image_output_file@@QAEXABV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@ABUns_image_properties@@@Z)
+     1>ns_ojp2k.obj : warning LNK4217: locally defined symbol _opj_set_default_encoder_parameters@4 imported in function "public: void __thiscall ns_8_bit_ojp2k_image_output_file::open_file_i(class std::basic_string<char,struct std::char_traits<char>,class std::allocator<char> > const &,struct ns_image_properties const &)" (?open_file_i@ns_8_bit_ojp2k_image_output_file@@QAEXABV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@ABUns_image_properties@@@Z)
+     1>ns_ojp2k.obj : warning LNK4217: locally defined symbol _opj_destroy_compress@4 imported in function __catch$?write_lines_i@ns_8_bit_ojp2k_image_output_file@@QAEXPAPBEI@Z$0
+     1>phix_manager.obj : warning LNK4049: locally defined symbol _cio_tell@4 imported
+     1>ppix_manager.obj : warning LNK4049: locally defined symbol _cio_tell@4 imported
+     1>thix_manager.obj : warning LNK4049: locally defined symbol _cio_tell@4 imported
+     1>tpix_manager.obj : warning LNK4049: locally defined symbol _cio_tell@4 imported
+     1>ns_ojp2k.obj : warning LNK4217: locally defined symbol _cio_tell@4 imported in function "public: void __thiscall ns_8_bit_ojp2k_image_output_file::write_lines_i(unsigned char const * *,unsigned int)" (?write_lines_i@ns_8_bit_ojp2k_image_output_file@@QAEXPAPBEI@Z)
+     1>cidx_manager.obj : warning LNK4049: locally defined symbol _cio_tell@4 imported
+     1>j2k.obj : warning LNK4049: locally defined symbol _cio_tell@4 imported
+     1>jp2.obj : warning LNK4049: locally defined symbol _cio_tell@4 imported
+     1>ns_ojp2k.obj : warning LNK4217: locally defined symbol _opj_encode@16 imported in function "public: void __thiscall ns_8_bit_ojp2k_image_output_file::write_lines_i(unsigned char const * *,unsigned int)" (?write_lines_i@ns_8_bit_ojp2k_image_output_file@@QAEXPAPBEI@Z)
+     1>ns_ojp2k.obj : warning LNK4217: locally defined symbol _opj_setup_encoder@12 imported in function "public: void __thiscall ns_8_bit_ojp2k_image_output_file::write_lines_i(unsigned char const * *,unsigned int)" (?write_lines_i@ns_8_bit_ojp2k_image_output_file@@QAEXPAPBEI@Z)
+     1>ns_ojp2k.obj : warning LNK4217: locally defined symbol _opj_create_compress@4 imported in function "public: void __thiscall ns_8_bit_ojp2k_image_output_file::write_lines_i(unsigned char const * *,unsigned int)" (?write_lines_i@ns_8_bit_ojp2k_image_output_file@@QAEXPAPBEI@Z)
+     1>ppix_manager.obj : warning LNK4217: locally defined symbol _cio_seek@8 imported in function _write_ppix
+     1>thix_manager.obj : warning LNK4217: locally defined symbol _cio_seek@8 imported in function _write_thix
+     1>tpix_manager.obj : warning LNK4049: locally defined symbol _cio_seek@8 imported
+     1>cidx_manager.obj : warning LNK4217: locally defined symbol _cio_seek@8 imported in function _write_cidx
+     1>j2k.obj : warning LNK4049: locally defined symbol _cio_seek@8 imported
+     1>jp2.obj : warning LNK4217: locally defined symbol _cio_seek@8 imported in function _jp2_read_jp2h
+     1>phix_manager.obj : warning LNK4217: locally defined symbol _cio_seek@8 imported in function _write_phix
+     1>freetype2410MT_D.lib(autofit.obj) : warning LNK4204: 'C:\server\ns_lifespan_machine_source\ns_image_server\build\windows\ns_image_server\Debug\vc100.pdb' is missing debugging information for referencing module; linking object as if no debug info
+     1>freetype2410MT_D.lib(bdf.obj) : warning LNK4204: 'C:\server\ns_lifespan_machine_source\ns_image_server\build\windows\ns_image_server\Debug\vc100.pdb' is missing debugging information for referencing module; linking object as if no debug info
+     1>freetype2410MT_D.lib(cff.obj) : warning LNK4204: 'C:\server\ns_lifespan_machine_source\ns_image_server\build\windows\ns_image_server\Debug\vc100.pdb' is missing debugging information for referencing module; linking object as if no debug info
+     1>freetype2410MT_D.lib(ftbase.obj) : warning LNK4204: 'C:\server\ns_lifespan_machine_source\ns_image_server\build\windows\ns_image_server\Debug\vc100.pdb' is missing debugging information for referencing module; linking object as if no debug info
+     1>freetype2410MT_D.lib(ftdebug.obj) : warning LNK4204: 'C:\server\ns_lifespan_machine_source\ns_image_server\build\windows\ns_image_server\Debug\vc100.pdb' is missing debugging information for referencing module; linking object as if no debug info
+     1>freetype2410MT_D.lib(ftgzip.obj) : warning LNK4204: 'C:\server\ns_lifespan_machine_source\ns_image_server\build\windows\ns_image_server\Debug\vc100.pdb' is missing debugging information for referencing module; linking object as if no debug info
+     1>freetype2410MT_D.lib(ftinit.obj) : warning LNK4204: 'C:\server\ns_lifespan_machine_source\ns_image_server\build\windows\ns_image_server\Debug\vc100.pdb' is missing debugging information for referencing module; linking object as if no debug info
+     1>freetype2410MT_D.lib(ftlzw.obj) : warning LNK4204: 'C:\server\ns_lifespan_machine_source\ns_image_server\build\windows\ns_image_server\Debug\vc100.pdb' is missing debugging information for referencing module; linking object as if no debug info
+     1>freetype2410MT_D.lib(ftsystem.obj) : warning LNK4204: 'C:\server\ns_lifespan_machine_source\ns_image_server\build\windows\ns_image_server\Debug\vc100.pdb' is missing debugging information for referencing module; linking object as if no debug info
+     1>freetype2410MT_D.lib(smooth.obj) : warning LNK4204: 'C:\server\ns_lifespan_machine_source\ns_image_server\build\windows\ns_image_server\Debug\vc100.pdb' is missing debugging information for referencing module; linking object as if no debug info
+     1>freetype2410MT_D.lib(pcf.obj) : warning LNK4204: 'C:\server\ns_lifespan_machine_source\ns_image_server\build\windows\ns_image_server\Debug\vc100.pdb' is missing debugging information for referencing module; linking object as if no debug info
+     1>freetype2410MT_D.lib(pfr.obj) : warning LNK4204: 'C:\server\ns_lifespan_machine_source\ns_image_server\build\windows\ns_image_server\Debug\vc100.pdb' is missing debugging information for referencing module; linking object as if no debug info
+     1>freetype2410MT_D.lib(psaux.obj) : warning LNK4204: 'C:\server\ns_lifespan_machine_source\ns_image_server\build\windows\ns_image_server\Debug\vc100.pdb' is missing debugging information for referencing module; linking object as if no debug info
+     1>freetype2410MT_D.lib(pshinter.obj) : warning LNK4204: 'C:\server\ns_lifespan_machine_source\ns_image_server\build\windows\ns_image_server\Debug\vc100.pdb' is missing debugging information for referencing module; linking object as if no debug info
+     1>freetype2410MT_D.lib(psmodule.obj) : warning LNK4204: 'C:\server\ns_lifespan_machine_source\ns_image_server\build\windows\ns_image_server\Debug\vc100.pdb' is missing debugging information for referencing module; linking object as if no debug info
+     1>freetype2410MT_D.lib(raster.obj) : warning LNK4204: 'C:\server\ns_lifespan_machine_source\ns_image_server\build\windows\ns_image_server\Debug\vc100.pdb' is missing debugging information for referencing module; linking object as if no debug info
+     1>freetype2410MT_D.lib(sfnt.obj) : warning LNK4204: 'C:\server\ns_lifespan_machine_source\ns_image_server\build\windows\ns_image_server\Debug\vc100.pdb' is missing debugging information for referencing module; linking object as if no debug info
+     1>freetype2410MT_D.lib(truetype.obj) : warning LNK4204: 'C:\server\ns_lifespan_machine_source\ns_image_server\build\windows\ns_image_server\Debug\vc100.pdb' is missing debugging information for referencing module; linking object as if no debug info
+     1>freetype2410MT_D.lib(type1.obj) : warning LNK4204: 'C:\server\ns_lifespan_machine_source\ns_image_server\build\windows\ns_image_server\Debug\vc100.pdb' is missing debugging information for referencing module; linking object as if no debug info
+     1>freetype2410MT_D.lib(type1cid.obj) : warning LNK4204: 'C:\server\ns_lifespan_machine_source\ns_image_server\build\windows\ns_image_server\Debug\vc100.pdb' is missing debugging information for referencing module; linking object as if no debug info
+     1>freetype2410MT_D.lib(type42.obj) : warning LNK4204: 'C:\server\ns_lifespan_machine_source\ns_image_server\build\windows\ns_image_server\Debug\vc100.pdb' is missing debugging information for referencing module; linking object as if no debug info
+     1>freetype2410MT_D.lib(winfnt.obj) : warning LNK4204: 'C:\server\ns_lifespan_machine_source\ns_image_server\build\windows\ns_image_server\Debug\vc100.pdb' is missing debugging information for referencing module; linking object as if no debug info
+     1>fltkgld.lib(Fl_Gl_Choice.obj) : warning LNK4204: 'C:\server\ns_lifespan_machine_source\ns_image_server\build\windows\ns_image_server\Debug\vc100.pdb' is missing debugging information for referencing module; linking object as if no debug info
+     1>fltkgld.lib(Fl_Gl_Window.obj) : warning LNK4204: 'C:\server\ns_lifespan_machine_source\ns_image_server\build\windows\ns_image_server\Debug\vc100.pdb' is missing debugging information for referencing module; linking object as if no debug info
+     1>fltkgld.lib(gl_draw.obj) : warning LNK4204: 'C:\server\ns_lifespan_machine_source\ns_image_server\build\windows\ns_image_server\Debug\vc100.pdb' is missing debugging information for referencing module; linking object as if no debug info
+         ns_worm_browser.vcxproj -> C:\server\ns_lifespan_machine_source\ns_image_server\build\windows\ns_image_server\Debug\ns_worm_browser.exe
+       Manifest:
+         C:\Program Files (x86)\Microsoft SDKs\Windows\v7.0A\bin\mt.exe /nologo /verbose /outputresource:"C:\server\ns_lifespan_machine_source\ns_image_server\build\windows\ns_image_server\Debug\ns_worm_browser.exe;#1" /manifest Debug\ns_worm_browser.exe.intermediate.manifest
+       FinalizeBuildStatus:
+         Deleting file "Debug\ns_worm_browser.unsuccessfulbuild".
+         Touching "Debug\ns_worm_browser.lastbuildstate".
+     1>Done Building Project "C:\server\ns_lifespan_machine_source\ns_worm_browser\build\windows\ns_worm_browser\ns_worm_browser.vcxproj" (build target(s)).
+
+Build succeeded.
+
+Time Elapsed 00:02:24.89

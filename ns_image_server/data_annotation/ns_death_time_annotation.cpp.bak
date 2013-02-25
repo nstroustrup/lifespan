@@ -1,0 +1,1275 @@
+#include "ns_death_time_annotation_set.h"
+#include "ns_time_path_solver.h"
+#include "ns_xml.h"
+using namespace std;
+
+
+std::string ns_death_time_annotation_set::annotation_types_to_string(const ns_annotation_type_to_load & t){
+		switch(t){
+			case ns_all_annotations:return "all annotations";
+			case ns_censoring_data: return "censoring annotations";
+			case ns_movement_transitions:return "movement transition annotations";
+			case ns_movement_states:return "movement state annotations";
+			case ns_censoring_and_movement_transitions:return "censoring and movement transition annotations";
+			case ns_censoring_and_movement_states:return "censoring and movement state annotations";
+			case ns_recalculate_from_movement_quantification_data:return "movement quantification data and recalculating";
+			case ns_no_annotations:return "no annotations";
+			default: throw ns_ex("Unkown ns_annotation_type_to_load::") << (int)t;
+		}
+	}
+
+
+unsigned long ns_death_time_annotation::exclusion_value(const ns_exclusion_type & t){
+		switch(t){
+			case ns_not_excluded: return 0;
+			case ns_excluded: return 1;
+			case ns_machine_excluded: return 2;
+			case ns_by_hand_excluded: return 3;
+			case ns_both_excluded: return 4;
+			case ns_censored: return 5;
+			case ns_excluded_and_censored: return 6;
+			default: throw ns_ex("out_JMP_data()::Unknown censoring type:") << (int)t;
+		}
+}
+std::string ns_death_time_annotation::exclusion_string(const ns_exclusion_type & t){
+		switch(t){
+			case ns_not_excluded: return "Not Excluded or Censored";
+			case ns_excluded: return "Excluded";
+			case ns_machine_excluded: return "Excluded By Machine";
+			case ns_by_hand_excluded: return "Excluded By Hand";
+			case ns_both_excluded: return "Excluded By Machine and Hand";
+			case ns_censored: return "Censored";
+			case ns_excluded_and_censored: return "Censored and Excluded";
+			default: throw ns_ex("out_JMP_data()::Unknown censoring type:") << (int)t;
+		}
+}
+
+ns_vector_2i ns_pos_from_str(const std::string & str){
+	string::size_type p = str.find(",");
+	if (p==string::npos)
+		throw ns_ex("Could not interpret position " ) << str;
+	return ns_vector_2i(atol(str.substr(0,p).c_str()),atol(str.substr(p+1,string::npos).c_str()));
+}
+
+
+std::string ns_death_time_annotation::description() const{
+	return ns_movement_event_to_string(type) + "::" + source_type_to_string(annotation_source) + 
+		"::" + exclusion_string(excluded) +"::pos(" + ns_to_string(position.x) + "," + ns_to_string(position.y) +
+		"): size(" + ns_to_string(size.x) + "," + ns_to_string(size.y) + ") :" + ns_to_string(time.start_time) + "-" + ns_to_string(time.end_time) + "(" + ns_format_time_string_for_human(time.start_time) + "-" + ns_format_time_string_for_human(time.end_time) + ") "
+				" path_id(" + ns_to_string(stationary_path_id.group_id) + "," + ns_to_string(stationary_path_id.path_id) + ") "+ ns_to_string(stationary_path_id.detection_set_id) + ") "
+				+ ((disambiguation_type==ns_death_time_annotation::ns_single_worm)?"Single Worm Source":"Multi-worm disambiguation")
+				+ " [" + ns_to_string(number_of_extra_worms_at_location) + " extra worms at location ] Flag: " + flag.label();
+}
+
+std::string ns_death_time_annotation::to_string() const{
+	std::vector<std::string> s(21);
+	s[0] = ns_to_string(exclusion_value(excluded));
+	s[1] = ns_to_string(number_of_extra_worms_at_location);
+	s[2] = ns_to_string((unsigned long)disambiguation_type);
+	s[3] = ns_to_string((unsigned long)type);
+	std::string as(annotation_source_details);
+	for (unsigned int i = 0; i < as.size(); i++)
+		if (as[i]==',') as[i]='|';
+	
+	s[4] = as;
+	s[5] = ns_to_string(annotation_time);
+	s[6] = ns_to_string(time.end_time);
+	s[7] = ns_to_string(region_info_id);
+	s[8] = ns_to_string(region_id);
+	s[9] = ns_to_string(position.x);
+	s[10] = ns_to_string(position.y);
+	s[11] = ns_to_string(size.x);
+	s[12] = ns_to_string(size.y);
+	s[13] = ns_to_string((int)annotation_source);
+	s[14] = ns_to_string(stationary_path_id.group_id);
+	s[15] = ns_to_string(stationary_path_id.path_id);
+	s[16] = ns_to_string(stationary_path_id.detection_set_id);
+	s[17] = ns_to_string(time.start_time);
+	s[18] = ns_to_string((int)flag.id);	
+	s[19] = flag.label_short;	
+	s[20] = animal_is_part_of_a_complete_trace?"1":"0";
+
+	string ret;
+	ret+=s[0];
+	for (unsigned int i = 1; i < s.size(); i++){
+		ret += ",";
+		ret += s[i];
+	}
+	return ret;
+}
+void ns_death_time_annotation::from_string(const std::string v){
+	std::vector<std::string> s(1);
+	for (unsigned int i = 0; i < v.size(); i++){											
+		if (v[i] == ',')																	
+			s.resize(s.size()+1);															
+		else (*s.rbegin())+=v[i];															
+	}																						
+	if (s.size() != 16 && s.size() != 21)																		
+		throw ns_ex("Invalid annotation encoding: ") << v;									
+
+	excluded =(ns_exclusion_type)atol(s[0].c_str());										
+	number_of_extra_worms_at_location = atol(s[1].c_str());									
+	disambiguation_type = (ns_disambiguation_type)atol(s[2].c_str());						
+	type = (ns_movement_event)atol(s[3].c_str());											
+	annotation_source_details = s[4];														
+	for (unsigned int i = 0; i < annotation_source_details.size(); i++)						
+		if (annotation_source_details[i]=='|') annotation_source_details[i]=',';			
+																							
+	annotation_time = atol(s[5].c_str());													
+	time.end_time = atol(s[6].c_str());
+	region_info_id = atol(s[7].c_str());
+	region_id = atol(s[8].c_str());
+	position.x = atol(s[9].c_str());
+	position.y = atol(s[10].c_str());
+	size.x = atol(s[11].c_str());
+	size.y = atol(s[12].c_str());
+	annotation_source = (ns_annotation_source_type)atol(s[13].c_str());
+	stationary_path_id.group_id = atol(s[14].c_str());
+	stationary_path_id.path_id = atol(s[15].c_str());
+	if (s.size() == 21){
+		stationary_path_id.detection_set_id = atol(s[16].c_str());
+		time.start_time = atol(s[17].c_str());
+		if (s[18].size() == 0)
+			flag = ns_death_time_annotation_flag::none();
+		else{
+			flag.id = atol(s[18].c_str());
+			flag.label_short = s[19].c_str();
+		}
+		animal_is_part_of_a_complete_trace = s[20]=="1";
+	}
+
+}
+
+std::string ns_death_time_annotation::source_type_to_string(const ns_annotation_source_type & t){
+	switch(t){
+		case ns_unknown: return "Unknown";
+		case ns_posture_image: return "Posture Image Analysis";
+		case ns_region_image:  return "Region Image Analysis";
+		case ns_lifespan_machine: return "Lifespan Image Analysis";
+		case ns_storyboard: return "Storyboard";
+		default: return std::string("Unknown source type(") + ns_to_string(t) + ")";// throw ns_ex("Unknown source type:") << t;
+	}
+}
+std::string ns_movement_event_to_string(const ns_movement_event & t){
+	switch(t){
+		case ns_no_movement_event:			return "none";
+		case ns_translation_cessation:		return "translation cessation";
+		case ns_movement_cessation:			return "movement cessation";
+		case ns_fast_movement_cessation:			return "fast movement cessation";
+		case ns_fast_moving_worm_observed:			return "fast moving worm observed";
+		case ns_movement_censored_worm_observed: return "movement-censored worm observed";
+		case ns_slow_moving_worm_observed: return "slow-moving worm observed";
+		case ns_posture_changing_worm_observed: return "posture-changing worm observed";
+		case ns_stationary_worm_observed: return "stationary worm observed";
+		case ns_worm_death_posture_relaxation_termination: return "worm death relaxation termination";
+		case ns_stationary_worm_disappearance: return "stationary worm disappeared";
+		case ns_moving_worm_disappearance: return "moving worm Dissapeared";
+		default:
+			throw ns_ex("ns_movement_event_to_string()::Unknown event type ") << (int)t;
+	}
+}
+std::string ns_movement_event_to_label(const ns_movement_event & t){
+	switch(t){
+		case ns_no_movement_event: return "none";
+		case ns_translation_cessation: return "local_movement_cessation";
+		case ns_movement_cessation: return "death";
+		case ns_fast_movement_cessation: return "long_distance_movement_cessation";
+		case ns_fast_moving_worm_observed: return "fast moving worm observed";
+		case ns_movement_censored_worm_observed: return "movement_censored_worm_observed";
+		case ns_slow_moving_worm_observed: return "slow_moving_worm_observed";
+		case ns_posture_changing_worm_observed: return "posture_changing_worm_observed";
+		case ns_stationary_worm_observed: return "";
+		case ns_worm_death_posture_relaxation_termination: return "worm_death_relaxation_termination";
+		case ns_stationary_worm_disappearance: return "";
+		case ns_moving_worm_disappearance: return "";
+		default: throw ns_ex("ns_movement_event_to_string()::Unknown event type ") << (int)t;
+	}
+}
+
+bool ns_movement_event_is_a_state_transition_event(const ns_movement_event & t){
+	switch(t){
+		case ns_fast_movement_cessation:
+		case ns_translation_cessation:
+		case ns_movement_cessation: 
+		case ns_worm_death_posture_relaxation_termination:
+		case ns_moving_worm_disappearance:
+		case ns_stationary_worm_disappearance: return true;
+
+		case ns_movement_censored_worm_observed: 
+		case ns_fast_moving_worm_observed:
+		case ns_slow_moving_worm_observed:
+		case ns_posture_changing_worm_observed: 
+		case ns_stationary_worm_observed: return false;
+			
+		case ns_no_movement_event: return false;
+
+		default: throw ns_ex("ns_movement_event_is_a_state_transition_event()::Unknown event type ") << (int)t;
+	};
+}
+
+	
+bool ns_movement_event_is_a_state_observation(const ns_movement_event & t){
+	return (t != ns_no_movement_event) && !ns_movement_event_is_a_state_transition_event(t);
+};
+
+ns_movement_state ns_movement_event_state(const ns_movement_event & e){
+	switch(e){
+	case ns_no_movement_event:	
+	case ns_stationary_worm_disappearance:
+				return ns_movement_not_calculated;	
+	case ns_translation_cessation: 
+	case ns_posture_changing_worm_observed:
+		return ns_movement_posture;
+	case ns_movement_cessation:	
+	case ns_stationary_worm_observed: 
+		return ns_movement_stationary;
+	case ns_fast_movement_cessation: 
+	case ns_slow_moving_worm_observed: 
+		return ns_movement_slow;
+	case ns_fast_moving_worm_observed: 
+		return ns_movement_fast;		
+	case ns_movement_censored_worm_observed: 
+		return ns_movement_machine_excluded;	
+	default: throw ns_ex("ns_movement_event_state()::Unknown event type:") << (int)e;
+	}
+}
+bool ns_death_time_annotation_set::annotation_matches(const ns_annotation_type_to_load & type,const ns_death_time_annotation & e){
+	switch(type){
+		case ns_all_annotations: return true;
+		case ns_censoring_data: 
+			return e.is_censored() || e.is_excluded() || e.flag.specified() || e.number_of_extra_worms_at_location > 0;
+			 
+		case ns_movement_transitions: 
+			return ns_movement_event_is_a_state_transition_event(e.type);
+		case ns_censoring_and_movement_transitions: 
+			return e.is_censored() || e.is_excluded() || e.flag.specified()||ns_movement_event_is_a_state_transition_event(e.type) || e.number_of_extra_worms_at_location > 0;
+
+		case ns_movement_states: 
+			return ns_movement_event_is_a_state_observation(e.type);
+		case ns_censoring_and_movement_states:
+			return e.is_censored() || e.is_excluded() || e.flag.specified() || ns_movement_event_is_a_state_observation(e.type) || e.number_of_extra_worms_at_location > 0;
+
+		case ns_recalculate_from_movement_quantification_data:
+			throw ns_ex("Reclaculation event request dispatched to a death time annotation set!");
+		case ns_no_annotations:
+			return false;
+		throw ns_ex("Unknown annotation_type_to_load:") << (int)type;
+	}
+	return false;
+}
+
+
+void ns_death_time_annotation_compiler_region::output_visualization_csv(std::ostream & o,const bool output_header) const{
+	if (output_header)
+		ns_time_path_solution::output_visualization_csv_header(o);
+	for (ns_location_list::const_iterator p = locations.begin(); p != locations.end(); ++p){
+		for (unsigned int i = 0; i < p->annotations.size(); ++i){
+			ns_movement_state state;
+			if (p->properties.excluded == ns_death_time_annotation::ns_by_hand_excluded)
+				state = ns_movement_by_hand_excluded;
+			else if (p->properties.excluded == ns_death_time_annotation::ns_machine_excluded)
+				state = ns_movement_machine_excluded;
+			else{
+				switch(p->annotations[i].type){
+					case ns_no_movement_event:
+						state = ns_movement_fast; break;
+					case ns_translation_cessation:
+						state = ns_movement_posture; break;
+					case ns_movement_cessation:
+						state = ns_movement_stationary; break;
+					case ns_fast_movement_cessation:
+						state = ns_movement_slow; break;
+					case ns_fast_moving_worm_observed:
+						state = ns_movement_fast; break;
+					case ns_worm_death_posture_relaxation_termination:
+						state = ns_movement_death_posture_relaxation;
+					case ns_movement_censored_worm_observed:
+						state = ns_movement_machine_excluded;
+					default: throw ns_ex("ns_death_time_annotation_compiler_region::output_visualization_csv()::Unknown event type:") << p->annotations[i].type;
+				}
+			}
+			ns_time_path_solution::output_visualization_csv_data(o,
+				(p->annotations[i].time.end_time-metadata.time_at_which_animals_had_zero_age)/(24.0*60.0*60.0),
+				p->annotations[i].time.end_time,
+				p->properties.position,
+				p->properties.size,
+				0,0,0,0,
+				1,p->annotations[i].number_of_extra_worms_at_location,
+				state
+			);
+		}
+	}
+}
+void ns_death_time_annotation_set::remove_all_but_specified_event_type(const ns_annotation_type_to_load & t){
+	for (std::vector<ns_death_time_annotation>::iterator p = events.begin(); p!= events.end();){
+		if (!annotation_matches(t,*p))
+			p = events.erase(p);
+		else p++;
+	}
+}
+void ns_death_time_annotation_set::read(const  ns_annotation_type_to_load & type,std::istream & i){
+	char a(i.peek());
+	if (i.fail())
+		throw ns_ex("ns_death_time_annotation_set::read()::Could not read file");
+	if (a == '<')
+		read_xml(type,i);
+	else read_column_format(type,i);
+}
+void ns_death_time_annotation_set::write(std::ostream & o) const{
+	write_column_format(o);
+}
+
+void write_column_format_data(std::ostream & o, const ns_death_time_annotation & a){
+	o << (int)a.type << ","
+		<< a.time.end_time << ","
+		<< a.region_id << ","
+		<< a.region_info_id << ","
+		<< a.position.x << ","
+		<< a.position.y << ","
+		<< a.size.x << ","
+		<< a.size.y << ","
+		<< (int)a.annotation_source << ","
+		<< a.annotation_time << ","
+		<< a.annotation_source_details << ","
+		<< ns_death_time_annotation::exclusion_value(a.excluded) << ","
+		<< a.number_of_extra_worms_at_location << ","
+		<< (int)a.disambiguation_type << ","
+		<< a.stationary_path_id.group_id << ","
+		<< a.stationary_path_id.path_id << ","
+		<< a.stationary_path_id.detection_set_id << ","
+		<< a.time.start_time << ","
+		<< (int)a.flag.id << ","
+		<< a.flag.label_short <<"," 
+		<< a.animal_is_part_of_a_complete_trace << ","
+		<< ","
+		<< "\n";
+}
+void write_column_format_header(std::ostream & o){
+	o << "Event Type,Event Time, Region Image Id, Region Info Id, Position x, Position y, Size X, Size y, Annotation Source,"
+		 "Annotation Finish Time, Annotation Source Details, Censored, Number of Extra Worms, Disambiguation Type, Stationary Worm Group ID,"
+		 "Stationary Worm Path Id, Stationary Worm Detection Set ID,Annotation Start Time,Flag Id,Flag Label,"
+		 "Complete Trace,(Reserved For Expansion),(Reserved For Expansion)\n";
+}
+	
+void ns_death_time_annotation_set::write_split_file_column_format(std::ostream & censored_and_transition_file, std::ostream & state_file)const{
+	write_column_format_header(censored_and_transition_file);
+	write_column_format_header(state_file);
+	for (unsigned int i = 0; i < events.size(); i++){
+		if (!annotation_matches(ns_movement_states,events[i]))
+			write_column_format_data(censored_and_transition_file,events[i]);
+		else 
+			write_column_format_data(state_file,events[i]);
+	
+	}
+
+}
+
+void ns_death_time_annotation_set::write_column_format(std::ostream & o)const{
+	write_column_format_header(o);
+	for (unsigned int i = 0; i < events.size(); i++){
+		write_column_format_data(o,events[i]);
+	}
+}
+
+char ns_conditional_getline(istream & i, std::string & val, const std::string & separators){
+	char a;
+	val.resize(0);
+	while(!i.fail()){
+		a = i.get();
+		for (unsigned int i = 0; i < separators.size(); i++){
+			if (a == separators[i])
+				return a;
+		}
+		val+=a;
+	}
+	return 0;
+}
+void ns_death_time_annotation_set::read_column_format(const  ns_annotation_type_to_load & type_to_load, std::istream & i){
+	char a(' ');
+	while (!i.fail() && isspace(a))
+		a=i.get();
+	if (i.fail() || a != 'E')
+		throw ns_ex("Could not read death time annotation format");
+	
+	string val;
+	getline(i,val,'\n');
+	if (i.fail())
+		throw ns_ex("Could not read death time annotation format");
+
+	ns_death_time_annotation annotation;
+	val.resize(0);
+	while(true){
+		annotation.time.start_time = 0;
+		annotation.time.end_time = 0;
+		getline(i,val,',');
+		if (i.fail())
+			return;
+		events.resize(events.size()+1);
+		ns_death_time_annotation & e(*events.rbegin());
+		e.type = (ns_movement_event)atol(val.c_str());
+		getline(i,val,',');
+		e.time.end_time = atol(val.c_str());
+
+		getline(i,val,',');
+		if (i.fail()) throw ns_ex("ns_death_time_annotation_set::read_column_format()::Unexpected EOF");
+		e.region_id = atol(val.c_str());
+
+		getline(i,val,',');
+		if (i.fail()) throw ns_ex("ns_death_time_annotation_set::read_column_format()::Unexpected EOF");
+		e.region_info_id  = atol(val.c_str());
+		if (e.region_info_id == 0)
+			throw ns_ex("ns_death_time_annotation_set::read_column_format()::Found an annotation with no region info specified");
+
+		getline(i,val,',');
+		if (i.fail()) throw ns_ex("ns_death_time_annotation_set::read_column_format()::Unexpected EOF");
+		e.position.x  = atol(val.c_str());
+
+		getline(i,val,',');
+		if (i.fail()) throw ns_ex("ns_death_time_annotation_set::read_column_format()::Unexpected EOF");
+		e.position.y  = atol(val.c_str());
+
+		getline(i,val,',');
+		if (i.fail()) throw ns_ex("ns_death_time_annotation_set::read_column_format()::Unexpected EOF");
+		e.size.x  = atol(val.c_str());
+
+		getline(i,val,',');
+		if (i.fail()) throw ns_ex("ns_death_time_annotation_set::read_column_format()::Unexpected EOF");
+		e.size.y = atol(val.c_str());
+
+		getline(i,val,',');
+		if (i.fail()) throw ns_ex("ns_death_time_annotation_set::read_column_format()::Unexpected EOF");
+		e.annotation_source = (ns_death_time_annotation::ns_annotation_source_type)atol(val.c_str());
+
+		getline(i,val,',');
+		if (i.fail()) throw ns_ex("ns_death_time_annotation_set::read_column_format()::Unexpected EOF");
+		e.annotation_time  = atol(val.c_str());
+
+		getline(i,val,',');
+		if (i.fail()) throw ns_ex("ns_death_time_annotation_set::read_column_format()::Unexpected EOF");
+		e.annotation_source_details = val;
+
+		getline(i,val,',');
+		if (i.fail()) throw ns_ex("ns_death_time_annotation_set::read_column_format()::Unexpected EOF");
+		
+		e.excluded = (ns_death_time_annotation::ns_exclusion_type)atol(val.c_str());
+		//if we can specifiy a more specific source for the exclusion, do so.
+		if (e.excluded==ns_death_time_annotation::ns_excluded){
+			if (e.annotation_source == ns_death_time_annotation::ns_lifespan_machine)
+				e.excluded= ns_death_time_annotation::ns_machine_excluded;
+			else 
+				e.excluded = ns_death_time_annotation::ns_by_hand_excluded;
+		}
+
+		getline(i,val,',');
+		if (i.fail()) throw ns_ex("ns_death_time_annotation_set::read_column_format()::Unexpected EOF");
+		e.number_of_extra_worms_at_location = atol(val.c_str());
+//		if (e.number_of_extra_worms_at_location != 0)
+		//	cerr << "Extra worm found\n";
+		getline(i,val,',');
+
+		e.disambiguation_type = (ns_death_time_annotation::ns_disambiguation_type)atol(val.c_str());
+		if (i.fail()){
+			if (use_debug_read_columns){
+				if (!annotation_matches(type_to_load,e))
+					events.pop_back();
+				return;
+			}
+			throw ns_ex("ns_death_time_annotation_set::read_column_format()::Unexpected EOF");
+		}
+
+		getline(i,val,',');
+		if (i.fail()) throw ns_ex("ns_death_time_annotation_set::read_column_format()::Unexpected EOF");
+		e.stationary_path_id.group_id = atol(val.c_str());
+
+
+		//allow old style records to be read in.  They have 5 fewer records.
+		const char delim(ns_conditional_getline(i,val,",\n"));
+		const bool old_style_record(delim==0 || delim=='\n');
+
+		e.stationary_path_id.path_id = atol(val.c_str());
+
+		if (!old_style_record){
+			
+			getline(i,val,',');
+			if (i.fail()) throw ns_ex("ns_death_time_annotation_set::read_column_format()::Unexpected EOF");
+			e.stationary_path_id.detection_set_id = atol(val.c_str());
+
+			getline(i,val,',');
+			if (i.fail()) throw ns_ex("ns_death_time_annotation_set::read_column_format()::Unexpected EOF");
+			e.time.start_time = atol(val.c_str());
+
+			//room for expansion
+			getline(i,val,',');
+			if (i.fail()) throw ns_ex("ns_death_time_annotation_set::read_column_format()::Unexpected EOF");
+			if (val.size() == 0)
+				e.flag = ns_death_time_annotation_flag::none();
+			else e.flag.id = atol(val.c_str());
+			getline(i,val,',');
+			e.flag.label_short = val;
+			if (i.fail()) throw ns_ex("ns_death_time_annotation_set::read_column_format()::Unexpected EOF");
+			getline(i,val,',');
+
+			e.animal_is_part_of_a_complete_trace = val=="1";
+			getline(i,val,'\n');
+		}
+		else{
+			e.stationary_path_id.detection_set_id = 0;
+			e.time.start_time = e.time.end_time;
+		}
+
+		if (!annotation_matches(type_to_load,e))
+			events.pop_back();
+
+		if (i.fail())
+			return;
+	}
+}
+void ns_death_time_annotation_set::read_xml(const ns_annotation_type_to_load & t,std::istream & i){
+	ns_xml_simple_object_reader xml;
+	
+	xml.from_stream(i);
+	events.resize(0);
+	events.reserve(xml.objects.size());
+	ns_death_time_annotation a;
+	for (unsigned int i = 0; i < xml.objects.size(); i++){
+		if (xml.objects[i].name != "e")
+			throw ns_ex("Unknown element in death time annotation file: ") << xml.objects[i].name;
+		a.type = (ns_movement_event)atol(xml.objects[i].tag("y").c_str());
+		a.annotation_source = (ns_death_time_annotation::ns_annotation_source_type)atol(xml.objects[i].tag("u").c_str());
+		a.time.end_time = atol(xml.objects[i].tag("t").c_str());
+		a.time.start_time = atol(xml.objects[i].tag("tt").c_str());
+		a.region_info_id = atol(xml.objects[i].tag("i").c_str()),
+		a.region_id = atol(xml.objects[i].tag("r").c_str()),
+		a.position = ns_pos_from_str(xml.objects[i].tag("p"));
+		a.size = ns_pos_from_str(xml.objects[i].tag("s"));
+
+		if (xml.objects[i].tag_specified("a"))
+			a.annotation_time = atol(xml.objects[i].tag("a").c_str());
+		else a.annotation_time = 0;
+
+		if (xml.objects[i].tag_specified("x"))
+			a.number_of_extra_worms_at_location = atol(xml.objects[i].tag("x").c_str());
+		else a.number_of_extra_worms_at_location = 0;
+
+		if (xml.objects[i].tag_specified("c"))
+			a.excluded= (ns_death_time_annotation::ns_exclusion_type)atol(xml.objects[i].tag("c").c_str());
+		else a.excluded = ns_death_time_annotation::ns_not_excluded;
+
+		if (a.excluded==ns_death_time_annotation::ns_excluded){
+			if (a.annotation_source == ns_death_time_annotation::ns_lifespan_machine)
+				a.excluded = ns_death_time_annotation::ns_machine_excluded;
+			else 
+				a.excluded = ns_death_time_annotation::ns_by_hand_excluded;
+		}
+
+		xml.objects[i].assign_if_present("d",a.annotation_source_details);
+
+		if (xml.objects[i].tag_specified("g"))
+			a.disambiguation_type = (ns_death_time_annotation::ns_disambiguation_type)atol(xml.objects[i].tag("g").c_str());
+		
+		if (xml.objects[i].tag_specified("q"))
+			a.stationary_path_id.group_id= atol(xml.objects[i].tag("q").c_str());
+		
+		if (xml.objects[i].tag_specified("w"))
+			a.stationary_path_id.path_id = (ns_death_time_annotation::ns_disambiguation_type)atol(xml.objects[i].tag("w").c_str());
+		
+		if (annotation_matches(t,a))
+			events.push_back(a);
+	}
+}
+void  ns_death_time_annotation_set::write_xml(std::ostream & o) const{
+	ns_xml_simple_writer xml;
+	xml.generate_whitespace(true);
+	xml.add_header();
+	for (unsigned int i = 0; i < events.size(); i++){
+		xml.start_group("e");
+		xml.add_tag("y",(int)events[i].type);
+		xml.add_tag("t",events[i].time.end_time);
+		xml.add_tag("tt",events[i].time.start_time);
+		xml.add_tag("r",events[i].region_id);
+		xml.add_tag("i",events[i].region_info_id);
+		xml.add_tag("p",ns_to_string(events[i].position.x) + "," + ns_to_string(events[i].position.y));
+		xml.add_tag("s",ns_to_string(events[i].size.x) + "," + ns_to_string(events[i].size.y));
+		xml.add_tag("u",(int)events[i].annotation_source);
+		if (events[i].annotation_time > 0)
+			xml.add_tag("a",events[i].annotation_time);
+		if (events[i].annotation_source_details.size() > 0)
+			xml.add_tag("d",events[i].annotation_source_details);
+		xml.add_tag("c",ns_death_time_annotation::exclusion_value(events[i].excluded));
+		if (events[i].number_of_extra_worms_at_location > 0)
+			xml.add_tag("x",ns_to_string(events[i].number_of_extra_worms_at_location));
+		xml.add_tag("g",(unsigned long)events[i].disambiguation_type);
+
+		xml.add_tag("q",events[i].stationary_path_id.group_id);
+		xml.add_tag("w",events[i].stationary_path_id.path_id);
+
+		xml.end_group();
+	}
+	xml.add_footer();
+	o << xml.result();
+}
+
+
+ns_death_time_annotation_compiler_location::ns_death_time_annotation_compiler_location(const ns_death_time_annotation & a){
+	properties.excluded = ns_death_time_annotation::ns_not_excluded;
+	properties.number_of_extra_worms_at_location = 0;
+	properties.position = a.position;
+	properties.size = a.size;
+	
+	add_event(a);
+}
+
+
+bool operator <(const ns_stationary_path_id & a, const ns_stationary_path_id & b){
+	if (a.group_id != b.group_id) return a.group_id < b.group_id;
+	return a.path_id < b.path_id;
+}
+
+bool ns_death_time_annotation_compiler_location::add_event(const ns_death_time_annotation & a){
+	ns_death_time_annotation_set::iterator p(annotations.events.insert(annotations.end(),a));
+	handle_sticky_properties(a);
+	return true;
+}
+
+bool ns_death_time_annotation_compiler_location::location_matches(const unsigned long distance_cutoff_squared,const ns_vector_2i & position) const{
+	return (properties.position - position).squared() < distance_cutoff_squared;
+}
+bool ns_death_time_annotation_compiler_location::attempt_to_add(const unsigned long distance_cutoff_squared,const ns_death_time_annotation & a){
+	if (location_matches(distance_cutoff_squared,a.position)){
+		return add_event(a);
+	}
+	return false;
+}
+
+void ns_death_time_annotation_compiler_location::handle_sticky_properties(const ns_death_time_annotation & a){
+	if (a.stationary_path_id.specified()){
+		if (!this->properties.stationary_path_id.specified())
+			this->properties.stationary_path_id = a.stationary_path_id;
+		else{
+			if (this->properties.stationary_path_id.detection_set_id == a.stationary_path_id.detection_set_id &&
+				(this->properties.stationary_path_id.group_id != a.stationary_path_id.group_id ||
+				this->properties.stationary_path_id.path_id != a.stationary_path_id.path_id))
+				throw ns_ex("ns_death_time_annotation_compiler_location::handle_sticky_properties()::Adding mixed stationary paths!");
+		}
+	}
+	a.transfer_sticky_properties(properties);
+}
+
+void ns_death_time_annotation_compiler_region::add(const ns_death_time_annotation & e){
+//	if (e.stationary_path_id.path_id == 0  && e.stationary_path_id.group_id == 0 && e.stationary_path_id.detection_set_id != 0)
+//			cerr << "WHAA";
+	if (this->metadata.region_id == 12943 && (e.stationary_path_id.group_id ==3 || e.stationary_path_id.group_id == 20))
+		cerr << "WHO";
+	//fast moving worms aren't linked to any specific location.
+	if (e.type == ns_fast_moving_worm_observed){
+		locations.push_back(ns_death_time_annotation_compiler_location(e));
+		return;
+	}
+
+	//if the annotation corresponds to a specific stationary path, sort it in a location corresponding to that path.
+	if (e.stationary_path_id.specified()){
+
+		//try to find a location already specified for the current annotation's stationary path id.
+		//if that fails, find a location that matches the location of the current annotation
+
+		ns_location_list::iterator unassigned_position_match(locations.end());
+		ns_location_list::iterator assigned_position_match(locations.end());
+		
+		for(ns_location_list::iterator p = locations.begin(); p != locations.end(); p++){
+			if (p->properties.stationary_path_id == e.stationary_path_id){
+					assigned_position_match = p;
+					break;
+			}
+			if (
+				(!p->properties.stationary_path_id.specified() || p->properties.stationary_path_id.detection_set_id != e.stationary_path_id.detection_set_id)
+				&& p->location_matches(match_distance_squared,e.position))
+				unassigned_position_match = p;
+		}
+	
+		if (assigned_position_match != locations.end())
+			assigned_position_match->add_event(e);
+		else if (unassigned_position_match != locations.end())
+			unassigned_position_match->add_event(e);
+		else
+			locations.push_back(ns_death_time_annotation_compiler_location(e));
+		return;
+	}
+	//if the annotation isn't labeled as applying to a specific stationary path, check to see if there are any objects
+	//close to its location.
+	for(ns_location_list::iterator p = locations.begin(); p != locations.end(); p++){
+		//if we find one that matches, turn it into the new assigned location
+		if (p->attempt_to_add(match_distance_squared,e))
+			return;
+	}
+	//if we don't find any unassigned matching locations, create a new location.
+
+	//positions at the origin are censoring events or other non-position related events, which should be kept separately
+	if (e.position == ns_vector_2i(0,0) && e.size == ns_vector_2i(0,0))
+		non_location_events.add(e);
+	else
+		locations.push_back(ns_death_time_annotation_compiler_location(e));
+}
+
+
+void ns_death_time_annotation_compiler_location::merge(const ns_death_time_annotation_compiler_location & location){
+	throw ns_ex("Not implemented!");
+	/*
+	for (unsigned int i = 0; i < location.annotations.size(); i++){
+		add_event(location.annotations[i]);
+	}
+	if (location.number_of_extra_worms > number_of_extra_worms)
+		number_of_extra_worms = location.number_of_extra_worms;
+	if (location.machine_excluded)
+		machine_excluded = true;
+	if (location.by_hand_excluded)
+		by_hand_excluded = true;
+		*/
+}
+void ns_death_time_annotation_compiler_region::merge(const ns_death_time_annotation_compiler_region & region){
+	//it's a little faster to add all the specified points first and then add the unspecified poitns afterwards
+	for (ns_death_time_annotation_compiler_region::ns_location_list::const_iterator p = region.locations.begin(); p != region.locations.end(); p++){
+		if (p->properties.stationary_path_id.specified()){
+			for (unsigned int i = 0; i < p->annotations.size(); i++)
+				this->add(p->annotations[i]);
+		}
+	}
+	for (ns_death_time_annotation_compiler_region::ns_location_list::const_iterator p = region.locations.begin(); p != region.locations.end(); p++){
+		if (!p->properties.stationary_path_id.specified()){
+		for (unsigned int i = 0; i < p->annotations.size(); i++)
+			this->add(p->annotations[i]);
+		}
+	}
+}
+
+void ns_death_time_annotation_compiler::add(const ns_death_time_annotation_set & set){
+	for (unsigned int i = 0; i < set.events.size(); i++){
+		if (set.events[i].region_info_id==0)
+			throw ns_ex("Attempting to add a death time annotation set with no region info id specified!");
+		ns_region_list::iterator r(regions.find(set.events[i].region_info_id));
+		if (r == regions.end())
+			r = regions.insert(ns_region_list::value_type(set.events[i].region_info_id,ns_death_time_annotation_compiler_region(match_distance))).first;
+		r->second.add(set.events[i]);
+	}
+}
+
+void ns_death_time_annotation_compiler::add(const ns_death_time_annotation_compiler & compiler){
+
+	for (ns_death_time_annotation_compiler::ns_region_list::const_iterator p = compiler.regions.begin(); p != compiler.regions.end(); p++){
+		ns_death_time_annotation_compiler::ns_region_list::iterator q = regions.find(p->first);
+		if (q == regions.end())
+			regions[p->first] = p->second;
+		else{
+			q->second.merge(p->second);
+		}
+	}
+
+}
+void ns_death_time_annotation_compiler::add(const ns_death_time_annotation_set & set,const ns_region_metadata & metadata){
+	if (set.events.size() == 0)
+		return;
+
+	unsigned long region_info_id(set.events[0].region_info_id);
+	for (unsigned int i = 1; i < set.events.size(); i++){
+		if (set.events[i].region_info_id != region_info_id)
+			throw ns_ex("ns_death_time_annotation_compiler::add()::Cannot add multi-region set and metadata simultaneously");
+	}	
+
+	ns_region_list::iterator r(regions.find(region_info_id));
+	if (r == regions.end())
+		r = regions.insert(ns_region_list::value_type(region_info_id,ns_death_time_annotation_compiler_region(match_distance))).first;
+		
+	for (unsigned int i = 0; i < set.events.size(); i++){
+		r->second.add(set.events[i]);
+		r->second.metadata = metadata;
+	}
+
+}
+
+void ns_death_time_annotation_compiler::specifiy_region_metadata(const unsigned long region_id,const ns_region_metadata & metadata){
+	if (region_id == 0)
+		throw ns_ex("Zero region id!");
+	if (metadata.region_id != region_id)
+		throw ns_ex("Attempting to insert inconsistant metadata");
+	ns_region_list::iterator r(regions.find(region_id));
+	if (r == regions.end())
+		r = regions.insert(ns_region_list::value_type(region_id,ns_death_time_annotation_compiler_region(match_distance))).first;
+	r->second.metadata = metadata;
+}
+
+
+class ns_death_time_event_compiler_time_aggregator{
+	typedef std::map<unsigned long, ns_survival_timepoint> ns_aggregator_timepoint_list;
+	ns_aggregator_timepoint_list timepoints;
+	ns_region_metadata metadata;
+public:
+	ns_death_time_event_compiler_time_aggregator(const ns_region_metadata & metadata_):metadata(metadata_){}
+	void add(const ns_death_time_annotation & e){
+	
+		if (e.type == ns_no_movement_event) return;
+		if (!ns_movement_event_is_a_state_transition_event(e.type))
+			return;
+		if (e.type == ns_stationary_worm_disappearance)
+			return;
+
+		const unsigned long event_time((e.time.end_time == 0)?metadata.time_at_which_animals_had_zero_age:(e.time.end_time));
+		ns_aggregator_timepoint_list::iterator p(timepoints.find(event_time));
+		if (p == timepoints.end()){
+			p = timepoints.insert(ns_aggregator_timepoint_list::value_type(event_time,ns_survival_timepoint())).first;
+			p->second.absolute_time = event_time;
+		}
+
+		
+		ns_survival_timepoint_event * timepoint[3] = {0,0,0};
+		bool unpositioned_censored_object(false);
+		switch(e.type){
+			case ns_fast_movement_cessation:
+				timepoint[0] = &p->second.long_distance_movement_cessations;
+				break;
+			case ns_translation_cessation:
+				timepoint[0] = &p->second.local_movement_cessations;
+				break;
+			case ns_movement_cessation:
+				timepoint[0] = &p->second.deaths;
+				break;
+			case ns_moving_worm_disappearance:
+				if (e.excluded == ns_death_time_annotation::ns_not_excluded)
+					throw ns_ex("Found a censored worm event that wasn't excluded or censored");
+				timepoint[0] = &p->second.long_distance_movement_cessations;
+				timepoint[1] = &p->second.local_movement_cessations;
+				timepoint[2] = &p->second.deaths;
+				break;
+			default: 
+				throw ns_ex("ns_death_time_event_compiler_time_aggregator::add()::Unknown event type:") << (int)e.type;
+		}
+		for (unsigned int i = 0; i < 3; i++){
+			if (timepoint[i] == 0) break;
+			//exclude animals that have misc detail flags
+			if (e.excluded!=ns_death_time_annotation::ns_not_excluded ||
+				e.flag.event_should_be_excluded()){
+				const unsigned long animal_count(1+e.number_of_extra_worms_at_location);
+				switch(e.excluded){
+					case ns_death_time_annotation::ns_excluded:
+					case ns_death_time_annotation::ns_machine_excluded:
+						timepoint[i]->machine_excluded_event_count+=animal_count; break;
+					case ns_death_time_annotation::ns_both_excluded:
+					case ns_death_time_annotation::ns_by_hand_excluded:
+						timepoint[i]->by_hand_excluded_event_count+=animal_count; break;
+
+					//excluded animals are removed entirely from the experiment, so the censoring no longer matters
+					case ns_death_time_annotation::ns_excluded_and_censored:
+						timepoint[i]->machine_excluded_event_count+=animal_count;
+						break;
+
+					case ns_death_time_annotation::ns_censored:
+						timepoint[i]->censored_count+=animal_count;
+						break;
+					default: 
+						if (e.flag.event_should_be_excluded())
+							timepoint[i]->by_hand_excluded_event_count+=animal_count;
+						else throw ns_ex("Unkown death time annotation exclusion type");
+
+				}
+			}
+			else{
+				timepoint[i]->event_count++;
+				timepoint[i]->number_in_event_count_that_came_from_multiple_worm_disambiguation_events+=
+									(e.disambiguation_type==ns_death_time_annotation::ns_part_of_a_mutliple_worm_disambiguation_cluster)?1:0;
+				timepoint[i]->multiple_conflated_animal_event_count+=e.number_of_extra_worms_at_location;
+			}
+		}
+	}
+	void populate_survival_data(ns_survival_data & data){
+		data.metadata = metadata;
+		data.timepoints.resize(timepoints.size());
+		unsigned long i(0);
+		for (ns_aggregator_timepoint_list::iterator p = timepoints.begin(); p != timepoints.end(); ++p){
+			data.timepoints[i] = p->second;
+			i++;
+		}
+	}
+};
+
+bool ns_death_time_annotation_set::use_debug_read_columns = false;
+
+bool operator ==(const ns_stationary_path_id & a, const ns_stationary_path_id & b){
+	return a.group_id == b.group_id 
+		&& a.path_id == b.path_id 
+		&& a.detection_set_id == b.detection_set_id;
+}
+
+void ns_out_times(ostream & o, const ns_death_time_annotation ** machine, const ns_region_metadata & metadata){
+		o << ((machine[2]!=0)?ns_to_string((machine[2]->time.end_time-metadata.time_at_which_animals_had_zero_age)/(60.0*60*24)):"");
+			o << ",";
+			o << ((machine[1]!=0)?ns_to_string((machine[1]->time.end_time-metadata.time_at_which_animals_had_zero_age)/(60.0*60*24)):"");
+			o << ",";
+			o << ((machine[0]!=0)?ns_to_string((machine[0]->time.end_time-metadata.time_at_which_animals_had_zero_age)/(60.0*60*24)):"");
+			o << ",";
+	
+			if (machine[2] != 0 && machine[1] != 0)
+				o << (machine[1]->time.end_time - machine[2]->time.end_time)/(60.0*60*24);
+			o << ",";
+
+			if (machine[0] != 0 &&machine[1] != 0)
+				o << (machine[0]->time.end_time - machine[1]->time.end_time)/(60.0*60*24);
+			o << ",";
+			if (machine[0] != 0 && machine[2] != 0)
+				o << (machine[0]->time.end_time - machine[2]->time.end_time)/(60.0*60*24);
+			o << ",";
+}
+#ifdef NS_GENERATE_IMAGE_STATISTICS
+void ns_death_time_annotation_compiler::generate_detailed_animal_data_file(const bool output_region_image_data,const ns_capture_sample_region_statistics_set & region_data,std::ostream & o) const{
+	
+	//ns_capture_sample_region_statistics_set::out_header(o);
+	ns_region_metadata::out_JMP_plate_identity_header(o);
+	o << ",Excluded,";
+	o << "Machine Fast Movement Cessation Age (Days),Machine Slow Movement Cessation Age (Days), Machine Death Age (Days),"
+		"Machine Slow Movement Duration (Days), Machine Posture Changing Duration (Days), Machine Not Fast Moving Duration (Days),"
+		"By Hand Fast Movement Cessation Age (Days),By Hand Slow Movement Cessation Age (Days),By Hand Death Age (Days),"
+		"By Hand Slow Movement Duration (Days),By Hand Posture Changing Duration (Days),By Hand Not Fast Moving Duration (Days), "
+		"Fast Movement Cessation Position X,Fast Movement Cessation Position Y,"
+		"Slow Movement Cessation Position X,Slow Movement Cessation Position y,"
+		"Death Position X,Death Position y,"
+		"Fast Movement Cessation Detection Details, Slow Movement Cessation Detection Details, Death Detection Movement Details";
+	if (!output_region_image_data)
+		o << "\n";
+	else{
+		o << ",";
+		ns_capture_sample_region_data_timepoint::output_jmp_header("Fast Movement Cessation Image ",o,",");
+		ns_capture_sample_region_data_timepoint::output_jmp_header("Slow Movement Cessation Image ",o,",");
+		ns_capture_sample_region_data_timepoint::output_jmp_header("Death Image ",o,"\n");
+	}
+
+	for (ns_region_list::const_iterator p = regions.begin(); p != regions.end(); ++p){
+		std::map<unsigned long,ns_capture_sample_region_data *>::const_iterator r(region_data.regions_sorted_by_id.end());
+		if(output_region_image_data){
+			r = region_data.regions_sorted_by_id.find(p->second.metadata.region_id);
+			if (r == region_data.regions_sorted_by_id.end())
+				throw ns_ex("Could not find region information for region ") << p->second.metadata.region_id;
+			r->second->generate_timepoints_sorted_by_time();
+		}
+
+		for (ns_death_time_annotation_compiler_region::ns_location_list::const_iterator q = p->second.locations.begin(); q != p->second.locations.end(); ++q){
+			const ns_death_time_annotation * machine[3] = {0,0,0}, // death, local, long
+										   * by_hand[3] = {0,0,0};
+			//find death time
+			for (unsigned int i = 0; i < q->annotations.size(); i++){
+				const ns_death_time_annotation ** annotations;
+				annotations = ((q->annotations[i].annotation_source == ns_death_time_annotation::ns_lifespan_machine)?machine:by_hand);
+
+				if (q->annotations[i].type == ns_movement_cessation &&
+						(annotations[0] == 0 || q->annotations[i].time.end_time > annotations[0]->time.end_time))
+						annotations[0] = &q->annotations[i];
+			}
+			if (machine[0] != 0 && machine[0]->stationary_path_id.specified()){
+				for (unsigned int i = 0; i < q->annotations.size(); i++){
+					const ns_death_time_annotation ** annotations;
+					annotations = ((q->annotations[i].annotation_source == ns_death_time_annotation::ns_lifespan_machine)?machine:by_hand);
+					if (q->annotations[i].annotation_source == ns_death_time_annotation::ns_lifespan_machine &&
+						q->annotations[i].stationary_path_id == annotations[0]->stationary_path_id){
+						if (q->annotations[i].type ==  ns_translation_cessation)
+							annotations[1] = & q->annotations[i];
+						else if (q->annotations[i].type == ns_fast_movement_cessation)
+							annotations[2] = & q->annotations[i];
+					}
+				}
+			}
+			else{
+				//we don't have enough information to make accurate matches between events.
+
+			}
+
+			bool censored(q->properties.is_excluded());
+			if (output_region_image_data) censored = censored || r->second->censored;
+			p->second.metadata.out_JMP_plate_identity_data(o);
+			o << ",";
+			o << (censored?"1":"0") << ",";
+			
+			ns_out_times(o,machine,p->second.metadata);
+			ns_out_times(o,by_hand,p->second.metadata);
+
+			if (machine[2] != 0)
+				o << machine[2]->position.x << "," << machine[2]->position.y << ",";
+			else o <<",,";
+			if (machine[1] != 0)
+				o << machine[1]->position.x << "," << machine[1]->position.y << ",";
+			else o <<",,";
+			if (machine[0] !=0)
+				o << machine[0]->position.x << "," << machine[0]->position.y << ",";
+			else o<< ",,";
+			
+			if (machine[2]!= 0)
+				o << machine[2]->annotation_source_details;
+			o <<",";
+			if (machine[1] != 0)
+				o<< machine[1]->annotation_source_details;
+			o << ",";
+			if (machine[0] !=0)
+				o << machine[0]->annotation_source_details;
+			if (!output_region_image_data){
+				o << "\n";
+			}
+			else{
+				o << ",";
+
+				if (machine[0] != 0){	
+					std::map<unsigned long,ns_capture_sample_region_data_timepoint *>::const_iterator tp = r->second->timepoints_sorted_by_time.find(machine[0]->time.end_time);
+					if (tp == r->second->timepoints_sorted_by_time.end()) throw ns_ex("Could not locate region timepoint");
+					tp->second->output_jmp_data(o,r->second->metadata.time_at_which_animals_had_zero_age,censored,censored,",");	
+				}
+				else
+					ns_capture_sample_region_data_timepoint::output_blank_jmp_data(o,",");
+			
+
+				if (machine[1] != 0){
+					std::map<unsigned long,ns_capture_sample_region_data_timepoint *>::const_iterator tp = r->second->timepoints_sorted_by_time.find(machine[1]->time.end_time);
+					if (tp == r->second->timepoints_sorted_by_time.end()) throw ns_ex("Could not locate region timepoint");
+					tp->second->output_jmp_data(o,r->second->metadata.time_at_which_animals_had_zero_age,censored,censored,",");	
+				}
+				else
+					ns_capture_sample_region_data_timepoint::output_blank_jmp_data(o,",");
+
+
+				if (machine[2] != 0){
+					std::map<unsigned long,ns_capture_sample_region_data_timepoint *>::const_iterator tp = r->second->timepoints_sorted_by_time.find(machine[2]->time.end_time);
+					if (tp == r->second->timepoints_sorted_by_time.end()) throw ns_ex("Could not locate region timepoint");
+					tp->second->output_jmp_data(o,r->second->metadata.time_at_which_animals_had_zero_age,censored,censored,"\n");	
+				}
+				else
+					ns_capture_sample_region_data_timepoint::output_blank_jmp_data(o,"\n");
+			}
+			
+
+		}
+	}
+}
+#else
+
+void ns_death_time_annotation_compiler::generate_detailed_animal_data_file(const bool output_region_image_data,std::ostream & o) const{
+	
+}
+#endif
+
+void ns_death_time_annotation_compiler::generate_animal_event_method_comparison(std::ostream & o) const{
+	
+	ns_region_metadata::out_JMP_plate_identity_header(o);	
+	o << ",position_x,position_y,size_x,size_y,"
+		"Visual Inspection Fast Movement Cessession Time,Visual Inspection Slow Movement Cessession Time,Visual Inspection Death Time,"
+		"Machine Fast Movement Cessation Time,Machine Slow Movement Cessession Time, Machine Death Time,"
+		"Annotated Extra Worm Count, Visual Inspection Excluded, Fully Specified \n";
+	for (ns_region_list::const_iterator p = regions.begin(); p != regions.end(); ++p){
+		for (ns_death_time_annotation_compiler_region::ns_location_list::const_iterator q = p->second.locations.begin(); q != p->second.locations.end(); ++q){
+			unsigned long machine_death(p->second.metadata.time_at_which_animals_had_zero_age),
+						  machine_fast_cess(p->second.metadata.time_at_which_animals_had_zero_age),
+						  machine_slow_cess(p->second.metadata.time_at_which_animals_had_zero_age),
+						  vis_death(p->second.metadata.time_at_which_animals_had_zero_age),
+						  vis_fast_cess(p->second.metadata.time_at_which_animals_had_zero_age),
+						  vis_slow_cess(p->second.metadata.time_at_which_animals_had_zero_age);
+			for (unsigned int i = 0; i < q->annotations.size(); i++){
+				if (q->annotations[i].annotation_source == ns_death_time_annotation::ns_lifespan_machine){
+					switch(q->annotations[i].type){
+						case ns_fast_movement_cessation:
+							machine_fast_cess = q->annotations[i].time.end_time;
+							break;
+						case ns_translation_cessation:
+							machine_slow_cess = q->annotations[i].time.end_time;
+							break;
+						case ns_movement_cessation:
+							machine_death = q->annotations[i].time.end_time;
+							break;
+					}
+				}
+				else if (q->annotations[i].annotation_source == ns_death_time_annotation::ns_posture_image ||
+						 q->annotations[i].annotation_source == ns_death_time_annotation::ns_region_image ||
+						 q->annotations[i].annotation_source == ns_death_time_annotation::ns_storyboard){
+					switch(q->annotations[i].type){
+						case ns_fast_movement_cessation:
+							vis_fast_cess = q->annotations[i].time.end_time;
+							break;
+						case ns_translation_cessation:
+							vis_slow_cess = q->annotations[i].time.end_time;
+							break;
+						case ns_movement_cessation:
+							vis_death = q->annotations[i].time.end_time;
+							break;
+					}
+				}
+			}
+		
+			p->second.metadata.out_JMP_plate_identity_data(o);
+
+			o << "," << q->properties.position.x << "," << q->properties.position.y << "," << q->properties.size.x << "," << q->properties.size.y << ","
+				<< (vis_fast_cess - p->second.metadata.time_at_which_animals_had_zero_age)/(60.0*60.0*24.0) << "," 
+				<< (vis_slow_cess  - p->second.metadata.time_at_which_animals_had_zero_age)/(60.0*60.0*24.0) << "," 
+				<< (vis_death  - p->second.metadata.time_at_which_animals_had_zero_age)/(60.0*60.0*24.0) << "," 
+				<< (machine_fast_cess - p->second.metadata.time_at_which_animals_had_zero_age)/(60.0*60.0*24.0) << "," 
+				<< (machine_slow_cess - p->second.metadata.time_at_which_animals_had_zero_age)/(60.0*60.0*24.0) << "," 
+				<< (machine_death - p->second.metadata.time_at_which_animals_had_zero_age)/(60.0*60.0*24.0) << ","
+				<< q->properties.number_of_extra_worms_at_location << "," << (q->properties.is_excluded()?"1":"0")<< ","
+				<< ((machine_death > p->second.metadata.time_at_which_animals_had_zero_age && vis_death > p->second.metadata.time_at_which_animals_had_zero_age)?"1":"0") << "\n";
+		}
+	}
+
+}
+
+
+void ns_death_time_annotation_compiler::remove_all_but_specified_event_type(const ns_death_time_annotation_set::ns_annotation_type_to_load & t){
+	for(ns_region_list::iterator p = regions.begin(); p != regions.end(); ++p){
+			for (ns_death_time_annotation_compiler_region::ns_location_list::iterator q = p->second.locations.begin(); q != p->second.locations.end(); ++q){
+				q->annotations.remove_all_but_specified_event_type(t);
+			}
+	}
+}
+
+
+void ns_death_time_annotation_compiler_region::output_summary(std::ostream & o) const{
+	for (ns_death_time_annotation_compiler_region::ns_location_list::const_iterator q = locations.begin(); q != locations.end(); ++q){
+		o << "\tLocation position(" << q->properties.position.x << "," << q->properties.position.y << ") size (" <<  q->properties.size.x << ")" << q->properties.size.y << "\n";
+		for (unsigned int i = 0; i < q->annotations.size(); i++){
+			o << "\t\t" << q->annotations[i].description() << "\n";
+		}
+	}
+}
+
+
+void ns_death_time_annotation_compiler::output_summary(std::ostream & o) const{
+	for(ns_region_list::const_iterator p = regions.begin(); p != regions.end(); ++p){
+		o << "Region " << p->first << ": " << p->second.metadata.sample_name << "::" << p->second.metadata.region_name << "(" << p->second.metadata.sample_id << "::" << p->second.metadata.region_id << ")\n";
+		p->second.output_summary(o);
+	}
+}
+
+//unsigned long is_equal(0),is_not_equal(0);
+
+void ns_death_time_annotation_compiler::generate_survival_curve_set(ns_lifespan_experiment_set & survival_curves) const{
+	for(ns_region_list::const_iterator p = regions.begin(); p != regions.end(); ++p){
+		ns_death_time_event_compiler_time_aggregator aggregator(p->second.metadata);
+		const std::vector<ns_survival_data>::size_type s(survival_curves.curves.size());
+		survival_curves.curves.resize(s+1);
+		unsigned long multiple_event_count(0);
+		for (ns_death_time_annotation_compiler_region::ns_location_list::const_iterator q = p->second.locations.begin(); q != p->second.locations.end(); ++q){
+			
+
+			//find the three time spans for the current position.
+			//having a worm die twice would be weird and an alert is generated if that is encountered.
+			//However, it is entirely possibel that worms slow down multiple times, and so those are just ignored
+			//and the latest transition recorded.
+			const ns_death_time_annotation *death_annotation(0),
+									 *last_slow_movement_annotation(0),
+									 *last_fast_movement_annotation(0);
+			
+			for (unsigned int i = 0; i < q->annotations.size(); ++i){
+				switch(q->annotations[i].type){
+					case ns_movement_cessation: 
+						if (death_annotation != 0){
+							cerr << "Multiple deaths found at position!\n";
+							if (death_annotation->time.end_time > q->annotations[i].time.end_time)
+									death_annotation = & q->annotations[i];
+							break;
+						}
+						else {
+							death_annotation = & q->annotations[i];
+							break;
+						}
+				}
+			}
+			for (unsigned int i = 0; i < q->annotations.size(); ++i){
+				if (death_annotation == 0 || !(q->annotations[i].stationary_path_id == death_annotation->stationary_path_id))
+					continue;
+				switch(q->annotations[i].type){
+					case ns_translation_cessation:
+						if (last_slow_movement_annotation == 0)
+							last_slow_movement_annotation = & q->annotations[i];
+						break;
+					case ns_fast_movement_cessation:
+						if (last_fast_movement_annotation == 0 )
+							last_fast_movement_annotation = & q->annotations[i];
+						break;
+
+				}
+			}
+
+
+			//check for duplications in the machine annotation records that 
+			//would suggest something is screwed up or loaded twice
+			for (unsigned int i = 0; i < q->annotations.size(); ++i){
+				if(q->annotations[i].annotation_source != ns_death_time_annotation::ns_lifespan_machine ||
+				   q->annotations[i].disambiguation_type == ns_death_time_annotation::ns_part_of_a_mutliple_worm_disambiguation_cluster)
+					continue;
+				for (unsigned int j = i+1; j < q->annotations.size(); ++j){
+					if(q->annotations[j].annotation_source == ns_death_time_annotation::ns_lifespan_machine &&
+						q->annotations[i].time.end_time == q->annotations[j].time.end_time &&
+						q->annotations[i].type == q->annotations[j].type &&
+						q->annotations[j].disambiguation_type != ns_death_time_annotation::ns_part_of_a_mutliple_worm_disambiguation_cluster){
+						multiple_event_count++;
+					}
+					//	throw ns_ex("Multiple similar events found at location!");
+				}
+			}
+	
+			
+			//ignore animals that don't die!
+			if (death_annotation == 0)
+				continue;
+			if (last_slow_movement_annotation == 0){
+				/*ns_death_time_annotation a(*death_annotation);
+				q->properties.transfer_sticky_properties(a);
+				aggregator.add(a);
+				ofstream o("c:\\debug.txt");
+				p->second.output_summary(o);
+				o.close();*/
+				cerr << "WARNING: An animal was recorded as dead without passing through slow movement, and has been excluded from the output. \n";
+				continue;
+			}
+			if (last_fast_movement_annotation == 0){	
+				/*ns_death_time_annotation a(*death_annotation);
+				q->properties.transfer_sticky_properties(a);
+				aggregator.add(a);
+				ofstream o("c:\\debug.txt");
+				p->second.output_summary(o);
+				o.close();*/
+				cerr << "WARNING:  An animal was recorded as dead without passing through fast movement, and has been excluded from the output. \n";
+				continue;
+			}
+
+			//add fast movement cessation, slow movement cessation, and death events
+			ns_death_time_annotation a[3] = {*death_annotation,
+											 *last_slow_movement_annotation,
+											 *last_fast_movement_annotation};
+	//		if (a[1].time.end_time != a[2].time.end_time)
+	//			is_not_equal++;
+	//		else is_equal++;
+		//	cerr << (100*is_equal)/(is_not_equal + is_equal) << "% have identical fast and slow movement spans";
+
+			for (unsigned int i = 0; i < 3; i++){
+				q->properties.transfer_sticky_properties(a[i]);
+				aggregator.add(a[i]);
+			}
+		}
+		for (unsigned int i = 0; i < p->second.non_location_events.size(); i++)
+			aggregator.add(p->second.non_location_events[i]);
+		aggregator.populate_survival_data(survival_curves.curves[s]);
+		if (multiple_event_count > 0)
+			cerr << "WARNING: " << multiple_event_count << " duplicate animal records were found in analysis.  This could indicate an unusual image processing error\n";
+	}
+	for (std::vector<ns_survival_data>::iterator p = survival_curves.curves.begin(); p != survival_curves.curves.end();){
+		if (p->timepoints.size() == 0)
+			p = survival_curves.curves.erase(p);
+		else p++;
+	}
+}
+
+void ns_death_time_annotation_compiler::normalize_times_to_zero_age(){
+	for(ns_region_list::iterator p = regions.begin(); p != regions.end(); ++p){
+		for (ns_death_time_annotation_compiler_region::ns_location_list::iterator q = p->second.locations.begin(); q != p->second.locations.end(); ++q){
+			for (unsigned int i = 0; i < q->annotations.size(); i++){
+				if (q->annotations[i].time.end_time != 0)
+					q->annotations[i].time.end_time-=p->second.metadata.time_at_which_animals_had_zero_age;
+				if (q->annotations[i].time.start_time != 0)
+					q->annotations[i].time.start_time-=p->second.metadata.time_at_which_animals_had_zero_age;
+			}
+		}
+	}
+}
+
+
+ns_death_time_annotation_flag::ns_flag_cache ns_death_time_annotation_flag::cached_flags;

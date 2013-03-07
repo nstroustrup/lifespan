@@ -8,7 +8,7 @@
 <img src = "worm_watch_small.png"><br><br>
 You have reached the Lifespan Machine Website.<br><br>
 <br>
-<a href="image_server_web/view_experiments.php">[ Enter ]</a></center>
+<a href="image_server_web/view_experiments.php">[ Log in to Manage Data and Equipment ]</a></center>
 </td></tr>
 </table><br>
 <br>

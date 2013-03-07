@@ -351,8 +351,8 @@ catch(ns_exception $ex){
 <tr><td bgcolor="<?php echo $table_colors[1][0] ?>">Posture Analysis Method</td><td bgcolor="<?php echo $table_colors[1][1] ?>">
 
 <select name="posture_analysis_method">
-<option value=""<?php if ($posture_analysis_method == '') echo "selected"?> >None Specified</option>
-<option value="hm" <?php if ($posture_analysis_method == 'hm') echo "selected"?> >Hidden Markov Model</option>
+<option value=""<?php if ($posture_analysis_method == '') echo "selected"?> >None Specified</option><!--
+<option value="hm" <?php if ($posture_analysis_method == 'hm') echo "selected"?> >Hidden Markov Model</option>-->
 <option value="thresh"<?php if ($posture_analysis_method == 'thresh') echo "selected"?> >Thresholding</option>
 </select></td></tr>
 

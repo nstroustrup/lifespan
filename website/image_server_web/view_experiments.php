@@ -397,7 +397,7 @@ Forward any questions to <?php echo $contact_name . " at <a href=\"mailto:" . $c
 </td>
 <td bgcolor="<?php echo $table_colors[1][1]?>">Confirm or reject pending file deletions.</td></tr>
 <td bgcolor="<?php echo $table_colors[0][0]?>">
-<a href="find_genotype.php">Search for Genotypes</a>
+<a href="find_genotype.php">List All Genotypes Observed</a>
 </td><td bgcolor="<?php echo $table_colors[0][1]?>">Identify experiments including a specific strain or genotype
 </td></tr>
 </table></td></tr></table>

@@ -1,5 +1,0 @@
-AuthUserFile /var/www/.htpasswd
-AuthType Basic
-AuthName "Image Server"
-Require valid-user
-Options +FollowSymLinks

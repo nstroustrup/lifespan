@@ -757,8 +757,8 @@ if (sizeof($all_animal_type_values) > 1){
 		echo "<BR>";
 		if (!$edit){
 			echo "<font size=\"-1\">";
-			echo "<a href=\"manage_masks.php?mask_id={$experiment->samples[$i]->mask_id}\">[View Mask]</a><br>";
-			echo "<a href=\"ns_view_sample_images.php?sample_id=" . $experiment->samples[$i]->id() . "\">[View Images]</a>";
+			echo "<a href=\"manage_masks.php?mask_id={$experiment->samples[$i]->mask_id}\">[View Sample Mask]</a><br>";
+			echo "<a href=\"ns_view_sample_images.php?sample_id=" . $experiment->samples[$i]->id() . "\">[View Sample Images]</a>";
 			echo "</font>";
 			}
 		else{
@@ -790,8 +790,8 @@ if (sizeof($all_animal_type_values) > 1){
 			echo "<a href=\"view_processing_job.php?job_id=0&experiment_id=$experiment_id&sample_id=".$experiment->samples[$i]->id()."\"><font size=\"-1\">[Edit]</font></a> <font size=\"-1\">a Sample Job</font></a><br>";
 }
   echo "<a href=\"view_processing_job.php?job_id=0&experiment_id=$experiment_id&sample_id=".$experiment->samples[$i]->id()."&region_id=all&all_new=1\"><font size=\"-1\">[Create]</font>";
-		  echo "<a href=\"view_processing_job.php?job_id=0&experiment_id=$experiment_id&sample_id=".$experiment->samples[$i]->id()."&region_id=all\"><font size=\"-1\">[Edit]</font></a><font size=\"-1\"> a Region Job</font><br>"	;
-		  echo "<a href=\"view_processing_job.php?job_id=0&experiment_id=$experiment_id&sample_id=".$experiment->samples[$i]->id()."&region_id=all&all_new=1&include_censored=1\"><font size=\"-1\">[Create]</font></a><font size=\"-1\"> a Region job w. censored";
+		  echo "<a href=\"view_processing_job.php?job_id=0&experiment_id=$experiment_id&sample_id=".$experiment->samples[$i]->id()."&region_id=all\"><font size=\"-1\">[Edit]</font></a><font size=\"-1\"> a Job for all Sample Regions</font><br>"	;
+		  echo "<a href=\"view_processing_job.php?job_id=0&experiment_id=$experiment_id&sample_id=".$experiment->samples[$i]->id()."&region_id=all&all_new=1&include_censored=1\"><font size=\"-1\">[Create]</font></a><font size=\"-1\"> a job for all Sample Regions including censored";
 		}
 		else{
 		  echo "<table width=\"100%\" cellspacing=\"10\" cellpadding=\"0\"><tr><td>";
@@ -854,10 +854,11 @@ if (sizeof($all_animal_type_values) > 1){
 			echo "</b>";
 			
 			$b = '<BR>';
+			global $show_region_jobs;
 			if (!$show_region_jobs)
 			  $b = '';
-			echo  "<br><font size=\"-2\"><a href=\"ns_view_region_images.php?region_id={$cur_region[0]}&experiment_id={$experiment->id()}\">[View Images]</a></font>$b";
-			echo "<a href=\"view_movement_data.php?region_id={$cur_region[0]}\"><font size=\"-2\">[View Movement]</font></a>$b";
+			echo  "<br><font size=\"-2\"><a href=\"ns_view_region_images.php?region_id={$cur_region[0]}&experiment_id={$experiment->id()}\">[View Region Images]</a></font><br>";
+			//	echo "<a href=\"view_movement_data.php?region_id={$cur_region[0]}\"><font size=\"-2\">[View Movement]</font></a>$b";
 			echo "<a href=\"view_hosts_log.php?region_id={$cur_region[0]}\"><font size=\"-2\">[View Problems]</font></a>$b";
 			echo "</td>\n"; 
 			echo "<td bgcolor=\"$clrs[0]\" colspan=2 valign=\"top\">";
@@ -957,7 +958,7 @@ echo "</table>";
 			  echo "<a href=\"view_processing_job.php?job_id=0&experiment_id=$experiment_id&region_id=".$cur_region[0]."&all_new=1\"><font size=\"-1\">[New Job]</font></a> ";
 			  echo "<a href=\"view_processing_job.php?job_id=0&experiment_id=$experiment_id&region_id=".$cur_region[0]."\"><font size=\"-1\">[Edit Jobs]</font></a>";
 
-  echo "<BR>Plate lifespan: <a href=\"manage_samples.php?experiment_id=$experiment_id&region_id=".$cur_region[0]."&mark_c3=short\"><font size=\"-1\">[short]</font></a><a href=\"manage_samples.php?experiment_id=$experiment_id&region_id=".$cur_region[0]."&mark_c3=long\"><font size=\"-1\">[long]</font></a><a href=\"manage_samples.php?experiment_id=$experiment_id&region_id=".$cur_region[0]."&mark_c3=OK\"><font size=\"-1\">[OK]</font></a>";
+			  //  echo "<BR>Plate lifespan: <a href=\"manage_samples.php?experiment_id=$experiment_id&region_id=".$cur_region[0]."&mark_c3=short\"><font size=\"-1\">[short]</font></a><a href=\"manage_samples.php?experiment_id=$experiment_id&region_id=".$cur_region[0]."&mark_c3=long\"><font size=\"-1\">[long]</font></a><a href=\"manage_samples.php?experiment_id=$experiment_id&region_id=".$cur_region[0]."&mark_c3=OK\"><font size=\"-1\">[OK]</font></a>";
 			 
 			  //		}
 			

@@ -33,7 +33,7 @@ ns_image_server::ns_image_server():event_log_open(false),exit_requested(false),u
 
 	ns_socket::global_init();
 	ns_worm_detection_constants::init();
-	_software_version_compile = 638;
+	_software_version_compile = 642;
 	image_storage.cache.set_memory_allocation_limit(maximum_image_cache_memory_size());
 
 }
@@ -1137,50 +1137,50 @@ void ns_image_server::load_constants(const ns_image_server::ns_image_server_exec
 	ns_ini constants;
 	constants.reject_incorrect_fields(reject_incorrect_fields);
 	//register ini file constants
-	constants.add_field("host_name");
-	constants.add_field("device_names");
-	constants.add_field("ethernet_interface","");
-	constants.add_field("dispatcher_port","1043");
-	constants.add_field("server_crash_daemon_port","1042");
-	constants.add_field("central_sql_hostname","localhost");
-	constants.add_field("central_sql_username","image_server");
-	constants.add_field("central_sql_password");
-	constants.add_field("central_sql_databases","image_server;image_server_archive");
+	constants.add_field("host_name", "ns_server","a unique name for the server that will run on this computer, for example bob or lab_desktop_1");
+	constants.add_field("device_names", "", "used to hardcode scanner names.  Usually left blank");
+	constants.add_field("ethernet_interface","","the name of the network device the software should use (e.g eth0). Leave blank to use default network device");
+	constants.add_field("dispatcher_port","1043","The port on which the dispatcher should listen for remote requests");
+	constants.add_field("server_crash_daemon_port","1042","The port on which the backup dispatcher should listen for remote requests, in case the primary dispatcher crashes");
+	constants.add_field("central_sql_hostname","localhost","The IP address or DNS name of the computer running the central SQL server");
+	constants.add_field("central_sql_username","image_server","The username with which the software should log into the central SQL server");
+	constants.add_field("central_sql_password","","The password with which the software should log into the central SQL server");
+	constants.add_field("central_sql_databases","image_server;image_server_archive","The list of database names (separated by colons) which the server should access.  Most installations will only have one database.");
 
-	constants.add_field("local_buffer_sql_hostname","localhost");
-	constants.add_field("local_buffer_sql_username","image_server");
-	constants.add_field("local_buffer_sql_database","image_server_buffer");
-	constants.add_field("local_buffer_sql_password");
+	constants.add_field("local_buffer_sql_hostname","localhost","The IP address or DNS name of the computer running the local SQL buffer.  This is only needed for image capture servers, and in all but exceptional cases should be set to localhost");
+	constants.add_field("local_buffer_sql_username","image_server","The username with which the software should log into the local SQL buffer");
+	constants.add_field("local_buffer_sql_database","image_server_buffer","The name of the local SQL buffer database");
+	constants.add_field("local_buffer_sql_password","","The password with which the software should log into the local SQL buffer");
 
-	constants.add_field("long_term_storage_directory","");
-	constants.add_field("results_storage_directory","");
-	constants.add_field("volatile_storage_directory","./");
-	constants.add_field("dispatcher_refresh_interval","6000");
-	constants.add_field("server_timeout_interval","300");
-	constants.add_field("log_filename","image_server_log.txt");
-	constants.add_field("hide_window","no");
-	constants.add_field("device_capture_command","/usr/local/bin/scanimage");
-	constants.add_field("device_list_command","/usr/local/bin/sane-find-scanner");
-	constants.add_field("run_autonomously","yes");
-	constants.add_field("act_as_image_capture_server","no");
-	constants.add_field("device_barcode_coordinates","-l 0in -t 10.3in -x 8in -y 2in");
-	constants.add_field("act_as_processing_node","yes");
-	constants.add_field("video_compiler_filename","./x264.exe");
-	constants.add_field("video_ppt_compiler_filename","./ffmpeg.exe");
-	constants.add_field("compile_videos","yes");
-	constants.add_field("halt_on_new_software_release","yes");	
-	constants.add_field("latest_release_path","image_server_software/image_server_win32.exe");
-	constants.add_field("simulated_device_name", ".");
-	constants.add_field("mail_path", "/usr/bin/mail");
-	constants.add_field("nodes_per_machine", "1");
+	constants.add_field("long_term_storage_directory","","The absolute path to the directory where images are stored.  Usually a network accessible storage device or a SAMBA/Cifs mounted directory");
+	constants.add_field("results_storage_directory","","The absolute path to the directory where results files (survival curves, worm locations, etc) are stored");
+	constants.add_field("volatile_storage_directory","","The absolute path to the directory where images are stored temporarily before being transferred to the long term storage directory.");
+	constants.add_field("dispatcher_refresh_interval","6000","How often should image acquisition servers check for pending scanns?  (in seconds).  Also specifies how often analysis servers will check for new jobs.");
+	constants.add_field("server_timeout_interval","300","How long should a server wait before giving up on a dead network connection (in seconds)");
+	constants.add_field("log_filename","image_server_log.txt","filename of the server log file.  Stored in the volatile storage directory");
+	constants.add_field("hide_window","no","On windows, specifies whether the server should start minimized.  (yes / no )");
+	constants.add_field("device_capture_command","/usr/local/bin/scanimage","the path to the SANE component scanimage, with which scans can be started");
+	constants.add_field("device_list_command","/usr/local/bin/sane-find-scanner","the path to the SANE component sane-find-scanners, with which scanners can be identified");
+	constants.add_field("run_autonomously","yes","should the server poll the databse for new scans/jobs, or should it only do so on external command?  Usually set to yes. (yes / no)");
+	constants.add_field("act_as_image_capture_server","no","Should the server try to control attached scanners? (yes / no)");
+	constants.add_field("device_barcode_coordinates","-l 0in -t 10.3in -x 8in -y 2in", "The coordinates of the barcode adhered to the surface of each scanner");
+	constants.add_field("act_as_processing_node","yes","Should the server try to run image processing jobs? (yes / no)");
+	constants.add_field("video_compiler_filename","./x264.exe","Path to the x264 transcoder.  Only needed on image processing servers.");
+	constants.add_field("video_ppt_compiler_filename","./ffmpeg.exe","Path to the ffmpeg transcoder.  Only needed on image processing servers.");
+	constants.add_field("compile_videos","yes","Should the server process videos? (yes / no)");
+	constants.add_field("halt_on_new_software_release","yes", "Should the server shut down if a new version of the software is detected running on the cluster? (yes / no)");	
+	constants.add_field("latest_release_path","image_server_software/image_server_win32.exe", "If a new version of the software is detected running on the cluster, where can the new excecutable be found? (not required)");
+	constants.add_field("simulated_device_name", ".","For software debugging, an image acquisition server can simulate an attached device");
+	constants.add_field("mail_path", "/usr/bin/mail","In the case of errors, the image server can send email.  This is the path to the POSIX mail program");
+	constants.add_field("nodes_per_machine", "1","How many copies of the image processing server should run simultaneously?");
 
 	ns_ini terminal_constants;
 	terminal_constants.reject_incorrect_fields(reject_incorrect_fields);
-	terminal_constants.add_field("max_width","1024");
-	terminal_constants.add_field("max_height","768");
-	terminal_constants.add_field("hand_annotation_resize_factor","3");
-	terminal_constants.add_field("mask_upload_database","image_server");
-	terminal_constants.add_field("mask_upload_hostname","myhost");
+	terminal_constants.add_field("max_width","1024","The maximum width of the worm browser window");
+	terminal_constants.add_field("max_height","768","The maximum height of the worm browser window");
+	terminal_constants.add_field("hand_annotation_resize_factor","3","Larger values result in smaller worms during by hand annotation of worms");
+	terminal_constants.add_field("mask_upload_database","image_server","The SQL database in which image masks should be stored");
+	terminal_constants.add_field("mask_upload_hostname","myhost","The host name (e.g bob or lab_desktop_1) of the server where sample region masks should be sent");
 	string ini_directory,ini_filename;
 	try{
 		//look for the ini file in the current directory
@@ -1214,8 +1214,8 @@ void ns_image_server::load_constants(const ns_image_server::ns_image_server_exec
 		}
 
 		if (exec_type == ns_worm_terminal_type){
-			ini_filename = ini_directory + DIR_CHAR_STR + "ns_worm_terminal.ini";
-			terminal_constants.load(ini_directory + DIR_CHAR_STR + "ns_worm_terminal.ini");
+			ini_filename = ini_directory + DIR_CHAR_STR + "ns_worm_browser.ini";
+			terminal_constants.load(ini_directory + DIR_CHAR_STR + "ns_worm_browser.ini");
 			max_terminal_window_size.x = atol(terminal_constants["max_width"].c_str());
 			max_terminal_window_size.y = atol(terminal_constants["max_height"].c_str());
 			terminal_hand_annotation_resize_factor = atol(terminal_constants["hand_annotation_resize_factor"].c_str());
@@ -1782,6 +1782,7 @@ void ns_image_server::load_all_worm_detection_models(std::vector<ns_svm_model_sp
 		spec.push_back(&(p->second));
 }
 
+#ifndef NS_MINIMAL_SERVER_BUILD
 const ns_posture_analysis_model & ns_image_server::get_posture_analysis_model_for_region(const unsigned long & region_info_id, ns_sql & sql){
 	sql << "SELECT posture_analysis_model, posture_analysis_method FROM sample_region_image_info WHERE id = " << region_info_id;
 	ns_sql_result res;
@@ -1793,6 +1794,7 @@ const ns_posture_analysis_model & ns_image_server::get_posture_analysis_model_fo
 	ns_posture_analysis_model::ns_posture_analysis_method method(ns_posture_analysis_model::method_from_string(res[0][1]));
 	return get_posture_analysis_model(method,res[0][0]);
 }
+
 const ns_posture_analysis_model & ns_image_server::get_posture_analysis_model(const ns_posture_analysis_model::ns_posture_analysis_method & m,const std::string & name){
 std::map<std::string,ns_posture_analysis_model>::iterator model = posture_analysis_models.find(name);
 	std::string path(long_term_storage_directory);
@@ -1842,6 +1844,7 @@ std::map<std::string,ns_posture_analysis_model>::iterator model = posture_analys
 	}
 	return posture_analysis_models[name];
 }
+#endif
 const ns_svm_model_specification & ns_image_server::get_worm_detection_model(const std::string & name){
 	std::map<std::string,ns_svm_model_specification>::iterator model = worm_detection_models.find(name);
 	std::string path(long_term_storage_directory);

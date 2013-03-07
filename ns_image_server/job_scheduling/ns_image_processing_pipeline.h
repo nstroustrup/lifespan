@@ -218,7 +218,7 @@ class ns_lifespan_curve_cache{
 	ns_lifespan_curve_cache_storage data_cache;
 	ns_lifespan_region_timestamp_cache timestamp_cache;
 	public:
-	const ns_lifespan_curve_cache_entry & get_experiment_data(const unsigned long id, ns_sql & sql);
+	const ns_lifespan_curve_cache_entry & get_experiment_data(const ns_64_bit id, ns_sql & sql);
 };
 
 

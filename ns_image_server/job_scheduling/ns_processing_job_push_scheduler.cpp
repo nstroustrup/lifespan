@@ -298,7 +298,7 @@ void ns_image_server_push_job_scheduler::report_new_job(ns_processing_job & job,
 		throw ns_ex("ns_image_server_push_job_schedule::Encountered a job with an invalid job type.");
 	}
 	ns_acquire_for_scope<ns_processing_job_processor> processor(
-		ns_processing_job_processor_factory::generate(job));
+		ns_processing_job_processor_factory::generate(job,image_server));
 	
 	std::vector<ns_processing_job_queue_item> subjects;
 	if (!processor().identify_subjects_of_job_specification(subjects,sql))

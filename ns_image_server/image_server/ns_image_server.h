@@ -11,10 +11,10 @@
 #include "ns_performance_statistics.h"
 #include "ns_image_server_alerts.h"
 #include "ns_svm_model_specification.h"
-#include "ns_posture_analysis_models.h"
 #include "ns_movement_state.h"
 
 #ifndef NS_MINIMAL_SERVER_BUILD
+#include "ns_posture_analysis_models.h"
 #include "ns_image_server_automated_job_scheduler.h"
 
 #include "ns_capture_device_manager.h"
@@ -341,14 +341,17 @@ public:
 	///model file as loaded from the default model directory on the central file server
 	const ns_svm_model_specification & get_worm_detection_model(const std::string & name);
 	
+	#ifndef NS_MINIMAL_SERVER_BUILD
 	const ns_posture_analysis_model & get_posture_analysis_model_for_region(const unsigned long & region_info_id, ns_sql & sql);
 	const ns_posture_analysis_model & get_posture_analysis_model(const ns_posture_analysis_model::ns_posture_analysis_method & m,const std::string & name);
-
+	#endif
 	///Clear all SVM machine learning models from the model cache so they are
 	///reloaded from the disk
 	void clear_model_cache(){
 		worm_detection_models.clear();
+#ifndef NS_MINIMAL_SERVER_BUILD
 		posture_analysis_models.clear();
+#endif
 	}
 
 	 void get_requested_database_from_db();
@@ -486,7 +489,10 @@ private:
 	std::string _font_file;
 	///memory cache of all used SVM models
 	std::map<std::string,ns_svm_model_specification> worm_detection_models;
+	
+#ifndef NS_MINIMAL_SERVER_BUILD
 	std::map<std::string,ns_posture_analysis_model> posture_analysis_models;
+#endif
 
 
 	///registers the specified device in the central database.

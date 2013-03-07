@@ -3972,15 +3972,15 @@ void ns_analyzed_image_time_path::save_movement_images(const ns_analyzed_time_im
 	p.width = d.prop.width*d.prop.components;
 	save_image_buffer.resize(p);
 
-	cerr << start_y << "-" << stop_y << " by " << h << "\n";
+	//cerr << start_y << "-" << stop_y << " by " << h << "\n";
 	//we output the range of the entire path image in h sized chunks
 	for (unsigned long y = start_y; y < stop_y; y+=h){
-		cerr <<y << "-> " << y + h << " modified to ";
+	//	cerr <<y << "-> " << y + h << " modified to ";
 		
 		unsigned long dh(h);	
 		if (dh + y > d.prop.height) dh = d.prop.height-y;
 		if (dh + y > stop_y) dh = stop_y - y;
-		cerr << y << "-> " << y + dh << "\n ";
+	//	cerr << y << "-> " << y + dh << "\n ";
 
 		for (unsigned long dy = 0; dy < dh; dy++){
 			//cy is the current line of the output buffer we are writing

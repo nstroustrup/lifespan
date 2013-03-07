@@ -115,15 +115,34 @@ void ns_bulk_experiment_mask_manager::produce_mask_file(const unsigned int exper
 		image_server.image_storage.set_verbosity(ns_image_storage_handler::ns_verbose);
 		for (ns_sql_result::iterator p = samples.begin(); p != samples.end();){
 			try{
-				*sql << "SELECT image_id FROM captured_images WHERE sample_id = " << (*p)[1] << " and currently_being_processed=0 AND problem=0 ORDER BY capture_time DESC LIMIT 2";
+				//image_id==0  images have already been deleted.
+				*sql << "SELECT image_id FROM captured_images WHERE sample_id = " << (*p)[1] << " and currently_being_processed=0 AND problem=0 AND censored=0 AND image_id != 0 ORDER BY capture_time DESC";
 				ns_sql_result im_id;
 				sql->get_rows(im_id);
 				if (im_id.size() < 2)
-					throw ns_ex("Sample ") << (*p)[0] << "(" << (*p)[1]  << ") does not have two associated captured images.";
-				ns_image_server_image im;
-				im.load_from_db(atoi(im_id[1][0].c_str()),sql);
+					throw ns_ex("Could not find enough good images for sample ") << (*p)[0] << "(" << (*p)[1]  << ").";
 				unsigned int s = (unsigned int)images.size();
-				sources.resize(s+1,image_server.image_storage.request_from_storage(im,sql));
+				bool found_valid_image=false;
+				//find an existing image to use as the mask
+				for (unsigned int i = 1; i < im_id.size(); i++){ //skip first as it's often currently being written to disk
+					ns_image_server_image im;
+					im.load_from_db(atoi(im_id[i][0].c_str()),sql);
+					if (im.filename.find("TEMP") != im.filename.npos)
+						continue;
+					try{
+						sources.resize(s+1,image_server.image_storage.request_from_storage(im,sql));
+						found_valid_image = true;
+						break;
+					}
+					catch(ns_ex & ex){
+						cerr << ex.text() << "\n";
+						if (sources.size() == s+1)
+							sources.pop_back();
+					}
+				}
+				if (!found_valid_image){
+					throw ns_ex("Could not find any good images for sample ") << (*p)[0] << "(" << (*p)[1] << ").";
+				}
 				images.resize(s+1,ns_image_buffered_random_access_input_image<ns_8_bit,ns_image_storage_source<ns_8_bit> >(100));
 				images[s].assign_buffer_source(sources[s].input_stream());
 				p++;

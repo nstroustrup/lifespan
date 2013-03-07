@@ -2302,7 +2302,7 @@ const ns_death_time_annotation_compiler & ns_lifespan_curve_cache_entry::get_reg
 	return p->second.compiler;
 }
 
-const ns_lifespan_curve_cache_entry & ns_lifespan_curve_cache::get_experiment_data(const unsigned long id, ns_sql & sql){
+const ns_lifespan_curve_cache_entry & ns_lifespan_curve_cache::get_experiment_data(const ns_64_bit id, ns_sql & sql){
 	//first we check all the regions to make sure all the data is loaded.
 	sql << "SELECT r.id, r.latest_movement_rebuild_timestamp, r.latest_by_hand_annotation_timestamp "
 			"FROM sample_region_image_info as r, capture_samples as s "

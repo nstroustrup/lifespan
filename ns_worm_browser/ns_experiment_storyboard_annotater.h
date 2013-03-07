@@ -538,12 +538,16 @@ public:
 		if (action == ns_censor_all){
 			bool new_state = false;
 			for (unsigned int i = 0; i < divisions[current_timepoint_id].division->events.size(); i++){
+				if (divisions[current_timepoint_id].division->events[i].event_annotation.flag.specified())
+					continue;
 				if (!divisions[current_timepoint_id].division->events[i].event_annotation.is_excluded()){
 					new_state = true;
 					break;
 				}
 			}
 			for (unsigned int i = 0; i < divisions[current_timepoint_id].division->events.size(); i++){
+				if (divisions[current_timepoint_id].division->events[i].event_annotation.flag.specified())
+					continue;
 				divisions[current_timepoint_id].division->events[i].event_annotation.excluded = new_state?ns_death_time_annotation::ns_by_hand_excluded:ns_death_time_annotation::ns_not_excluded;
 			}
 			
@@ -552,6 +556,8 @@ public:
 					continue;
 				for (unsigned int j = 0; j < divisions[i].division->events.size(); j++){
 					for (unsigned int k = 0; k < divisions[current_timepoint_id].division->events.size(); k++){
+						if (divisions[current_timepoint_id].division->events[k].event_annotation.flag.specified())
+							continue;
 						if (divisions[i].division->events[j].event_annotation.stationary_path_id == divisions[current_timepoint_id].division->events[k].event_annotation.stationary_path_id &&
 							divisions[i].division->events[j].event_annotation.region_info_id == divisions[current_timepoint_id].division->events[k].event_annotation.region_info_id)
 						divisions[i].division->events[j].event_annotation.excluded = new_state?ns_death_time_annotation::ns_by_hand_excluded:ns_death_time_annotation::ns_not_excluded;

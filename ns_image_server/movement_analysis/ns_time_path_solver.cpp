@@ -431,7 +431,7 @@ void ns_time_path_solution::save_to_db(const unsigned long region_id, ns_sql & s
 	}
 
 }
-void ns_time_path_solution::load_from_db(const unsigned long region_id, ns_sql & sql){
+void ns_time_path_solution::load_from_db(const ns_64_bit region_id, ns_sql & sql){
 	sql << "SELECT time_path_solution_id FROM sample_region_image_info WHERE id = " << region_id;
 	ns_sql_result res;
 	sql.get_rows(res);

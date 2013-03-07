@@ -12,15 +12,15 @@
 #include "ns_image_server_time_path_inferred_worm_aggregator.h"
 
 using namespace std;
-ns_processing_job_processor * ns_processing_job_processor_factory::generate(const ns_processing_job & job, ns_image_server * image_server, ns_image_processing_pipeline * pipeline){
+ns_processing_job_processor * ns_processing_job_processor_factory::generate(const ns_processing_job & job, ns_image_server & image_server, ns_image_processing_pipeline * pipeline){
 	
 	if (!job.has_a_valid_job_type())
 		throw ns_ex("ns_processing_job_scheduler::run_job_from_push_queue()::Unknown job type found in queue.");
 
 	if (job.is_job_type(ns_processing_job::ns_sample_job) && !job.is_job_type(ns_processing_job::ns_image_job)){
-		if (image_server==0)
-				return new ns_processing_job_sample_processor(job);
-		else 	return new ns_processing_job_sample_processor(job,*image_server,*pipeline);
+		if (pipeline == 0)
+			return new ns_processing_job_sample_processor(job,image_server);
+		else 	return new ns_processing_job_sample_processor(job,image_server,*pipeline);
 	}
 	
 	if (job.is_job_type(ns_processing_job::ns_movement_job) && job.movement_record_id != 0){
@@ -31,33 +31,33 @@ ns_processing_job_processor * ns_processing_job_processor_factory::generate(cons
 	}
 	
 	if (job.is_job_type(ns_processing_job::ns_region_job)){
-			if (image_server==0)
-					return new ns_processing_job_region_processor(job);
-			else 	return new ns_processing_job_region_processor(job,*image_server,*pipeline);
+		if (pipeline == 0)
+			return new ns_processing_job_region_processor(job,image_server);
+			else 	return new ns_processing_job_region_processor(job,image_server,*pipeline);
 	}
 	
 	if (job.is_job_type(ns_processing_job::ns_whole_region_job)){
-			if (image_server==0)
-					return new ns_processing_job_whole_region_processor(job);
-			else 	return new ns_processing_job_whole_region_processor(job,*image_server,*pipeline);
+		if (pipeline == 0)
+			return new ns_processing_job_whole_region_processor(job,image_server);
+			else 	return new ns_processing_job_whole_region_processor(job,image_server,*pipeline);
 	}
 
 	if (job.is_job_type(ns_processing_job::ns_whole_sample_job)){
-			if (image_server==0)
-					return new ns_processing_job_whole_sample_processor(job);
-			else 	return new ns_processing_job_whole_sample_processor(job,*image_server,*pipeline);
+		if (pipeline == 0)
+			return new ns_processing_job_whole_sample_processor(job,image_server);
+			else 	return new ns_processing_job_whole_sample_processor(job,image_server,*pipeline);
 	}
 
 	if (job.is_job_type(ns_processing_job::ns_maintenance_job)){
-			if (image_server==0)
-					return new ns_processing_job_maintenance_processor(job);
-			else 	return new ns_processing_job_maintenance_processor(job,*image_server,*pipeline);
+		if (pipeline == 0)
+			return new ns_processing_job_maintenance_processor(job,image_server);
+			else 	return new ns_processing_job_maintenance_processor(job,image_server,*pipeline);
 	}
 
 	if (job.is_job_type(ns_processing_job::ns_image_job)){
-			if (image_server==0)
-					return new ns_processing_job_image_processor(job);
-			else 	return new ns_processing_job_image_processor(job,*image_server,*pipeline);
+		if (pipeline == 0)
+			return new ns_processing_job_image_processor(job,image_server);
+			else 	return new ns_processing_job_image_processor(job,image_server,*pipeline);
 	}
 
 	if (job.is_job_type(ns_processing_job::ns_whole_experiment_job) ||
@@ -553,13 +553,17 @@ bool ns_processing_job_whole_region_processor::run_job(ns_sql & sql){
 			<< job.experiment_name <<"(" << job.experiment_id << ")" << job.sample_name << "(" << job.sample_id << ")" 
 			<< job.region_name << "(" << job.region_id << ")",&sql
 		);
-		sql << "SELECT time_at_which_animals_had_zero_age FROM sample_region_image_info WHERE id = " << job.region_id;
+		sql << "SELECT time_at_which_animals_had_zero_age,time_of_last_valid_sample FROM sample_region_image_info WHERE id = " << job.region_id;
 		ns_sql_result res;
 		sql.get_rows(res);
 		if(res.size() == 0)
 			throw ns_ex("Could not load region");
 		const unsigned long zero_time(atol(res[0][0].c_str()));
+		const unsigned long default_stop_time(atol(res[0][1].c_str()));
 #ifndef NS_NO_XVID
+		if (job.subregion_stop_time == 0)
+			job.subregion_stop_time = default_stop_time;
+
 		pipeline->compile_video(region_image,job.operations,
 												ns_video_region_specification(	job.subregion_position.x,
 													 job.subregion_position.y,
@@ -1189,7 +1193,7 @@ bool ns_processing_job_maintenance_processor:: run_job(ns_sql & sql){
 		case ns_maintenance_generate_animal_storyboard_subimage:{
 			std::vector<ns_experiment_storyboard_spec> specs;
 			ns_storyboard_spec_from_job (job,specs);
-			const unsigned long start (job.image_id),
+			const ns_64_bit start (job.image_id),
 							    stop(job.image_id+5);
 			for (unsigned int j = 0; j < specs.size(); j++){
 				ns_experiment_storyboard s;

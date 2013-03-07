@@ -315,7 +315,7 @@ void ns_xvid_encoder::run(const vector<string> & input_files,  ns_xvid_parameter
 		font = &font_server.default_font();
 	
 
-	if (!spec.label_info_is_specified()){
+	if (!spec.label_info_is_specified() && labels.size() > 0){
 		spec.label_size = spec.height/50;
 		font->set_height(spec.label_size);
 		unsigned long w(0);
@@ -437,7 +437,7 @@ void ns_xvid_encoder::run(const vector<string> & input_files,  ns_xvid_parameter
 					if (spec.position_y >= (long)
 						prop.height) throw ns_ex("Frame has incorrect dimensions:");
 
-					prop.width = spec.width;
+					prop.width = spec.width; 
 					prop.height = spec.height;
 
 					if (spec.height + spec.position_y >= (long)im.properties().height)

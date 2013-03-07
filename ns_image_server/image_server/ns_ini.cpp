@@ -20,8 +20,9 @@ int ns_ini::get_integer_value(const string & field) {
 	return atoi(get_value(field).c_str());
 }
 
-void ns_ini::add_field(const string & field, const string & default_value){
+void ns_ini::add_field(const string & field, const string & default_value, const string & comment){
 	data[field] = default_value;
+	data[field].comment = comment;
 }
 
 inline void skip_to_end_of_line(istream & in){
@@ -36,10 +37,16 @@ inline void skip_to_end_of_line(istream & in){
 bool ns_ini::get_field(istream & in) {
 	string field, value;
 	in >> field;
+	
 	if (in.fail())
 		return false;
+
+	//remove leading whitespace
+	while (field.size() > 0 && isspace(field[0]))
+		field = field.substr(1,field.size()-1);
+
 	//ignore comments
-	if (field.size() >= 2 && field[0] == '/' && field[1] == '/'){
+	if (field[0] == '#'){
 		skip_to_end_of_line(in);
 		return true;
 	}
@@ -85,11 +92,17 @@ bool ns_ini::get_field(istream & in) {
 	if (in.fail())
 		return_value = false;
 
+	//remove comments
+	std::string::size_type cp = p->second.value.find('#');
+	if (cp != p->second.value.npos)
+		p->second.value.resize(cp);
+
 	//remove trailing whitespace
 	if(p->second.value.size() > 0)
 		while (isspace(p->second.value[p->second.value.size()-1]))
 			p->second.value.resize(p->second.value.size()-1);
 	p->second.loaded = true;
+	
 
 	return return_value;
 }
@@ -99,20 +112,13 @@ void ns_ini::load(const string & fname){
 	ifstream in(filename.c_str());
 	//if the ini file doesn't exist, make it
 	if (in.fail()){
-		in.close();
-		ofstream out(filename.c_str());
-		if (out.fail()){
-			out.close();
-			throw ns_ex()<< "Could not write to ini file \"" << filename << "\"";
-		}
-		for(map<string,ns_ini_entry>::iterator p = data.begin();  p != data.end(); p++)
-			out << p->first << " = " << p->second.value << "\n";
-		out.close();
+		save(filename);
 		in.open(filename.c_str());
 		if (in.fail()){
 			in.close();
 			throw ns_ex() << "Could not read from the ini file " << filename << " even after writing to it.";
 		}
+		throw ns_ex("Could not find the ") << fname << " configuration file.  A blank template has been created to fill in.";
 	}
 	try{
 		while (get_field(in));
@@ -130,7 +136,11 @@ void ns_ini::save(const string & file_name){
 		out.close();
 		throw ns_ex() << "Could not save to the ini file " << file_name;
 	}
-	for(map<string,ns_ini_entry>::iterator p = data.begin();  p != data.end(); p++)
+	for(map<string,ns_ini_entry>::iterator p = data.begin();  p != data.end(); p++){
+		if (!p->second.comment.empty())
+			out << "#" << p->second.comment << "\n";
 		out << p->first << " = " << p->second.value << "\n";
+	}
+
 	out.close();
 }

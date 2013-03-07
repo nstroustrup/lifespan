@@ -500,7 +500,12 @@ public:
 		}
 		catch(ns_ex & ex){
 			cerr << "Error: " << ex.text();
-		}
+			MessageBox(
+				0,
+				ex.text().c_str(),
+				"Worm Browser",
+				MB_TASKMODAL | MB_ICONEXCLAMATION| MB_DEFBUTTON1 | MB_TOPMOST);
+			}
 	} 
 
 };
@@ -1001,21 +1006,21 @@ public:
 		add(ns_menu_item_spec(file_save,"File/_Save Image",FL_CTRL+'s'));
 		add(ns_menu_item_spec(file_quit,"File/Quit",FL_CTRL+'q'));
 		
-		add(ns_menu_item_spec(save_current_areas,"&Plate Location/Define Areas to Scan/(Open Preview Capture and Draw Image Draw Areas)",0,FL_MENU_INACTIVE));
-		add(ns_menu_item_spec(save_current_areas,"Plate Location/Define Areas to Scan/_Save Selected Areas to Disk"));
-		add(ns_menu_item_spec(clear_current_areas,"Plate Location/Define Areas to Scan/Clear Selected Areas"));
+		add(ns_menu_item_spec(save_current_areas,"&Plate Locations/Define Scan Areas/(Open Preview Capture Image and Draw Scan Areas)",0,FL_MENU_INACTIVE));
+		add(ns_menu_item_spec(save_current_areas,"Plate Locations/Define Scan Areas/_Save Selected Scan Areas to Disk"));
+		add(ns_menu_item_spec(clear_current_areas,"Plate Locations/Define Scan Areas/Clear Selected Scan Areas"));
 
 		//add(ns_menu_item_spec(clipboard_copy,"Clipboard/Copy",FL_CTRL+'c'));
 		//add(ns_menu_item_spec(clipboard_paste,"Clipboard/Paste",FL_CTRL+'v'));
 
-		add(ns_menu_item_spec(masks_generate_composite,"Plate Location/Define Plate Locations/Generate Experiment Mask Composite"));
-		add(ns_menu_item_spec(masks_generate_composite,"Plate Location/Define Plate Locations/(Draw Plate Locations on Mask using Photoshop or GIMP)",0,FL_MENU_INACTIVE));
-		add(ns_menu_item_spec(masks_process_composite,"Plate Location/Define Plate Locations/Analyze Plate Locations Drawn on Experiment Mask Composite"));
-		add(ns_menu_item_spec(masks_submit_composite,"Plate Location/Define Plate Locations/_Submit Analyzed Experiment Mask Composite to Cluster"));
-		add(ns_menu_item_spec(open_individual_mask,"Plate Location/Define Plate Locations/Individual Sample Masks/Open Mask"));
-		add(ns_menu_item_spec(view_current_mask,"Plate Location/Define Plate Locations/Individual Sample Masks/View Current Mask"));
+		add(ns_menu_item_spec(masks_generate_composite,"Plate Locations/Define Sample Masks/Generate Experiment Mask Composite"));
+		add(ns_menu_item_spec(masks_generate_composite,"Plate Locations/Define Sample Masks/(Draw Plate Locations on Mask using Photoshop or GIMP)",0,FL_MENU_INACTIVE));
+		add(ns_menu_item_spec(masks_process_composite,"Plate Locations/Define Sample Masks/Analyze Plate Locations Drawn on Experiment Mask Composite"));
+		add(ns_menu_item_spec(masks_submit_composite,"Plate Locations/Define Sample Masks/_Submit Analyzed Experiment Mask Composite to Cluster"));
+		add(ns_menu_item_spec(open_individual_mask,"Plate Locations/Define Sample Masks/Individual Sample Masks/Open Mask"));
+		add(ns_menu_item_spec(view_current_mask,"Plate Locations/Define Sample Masks/Individual Sample Masks/View Current Mask"));
 	//	add(ns_menu_item_spec(apply_mask_on_current,"Masks/Mask Analysis/Individual Masks/Apply Mask on Current Image"));
-		add(ns_menu_item_spec(submit_individual_mask_to_server,"Plate Location/Define Plate Locations/Individual Sample Masks/Submit Analyzed Mask to Cluster"));
+		add(ns_menu_item_spec(submit_individual_mask_to_server,"Plate Locations/Define Sample Masks/Individual Sample Masks/Submit Analyzed Mask to Cluster"));
 		
 		add(ns_menu_item_spec(start_storyboard_annotation_whole_experiment,"&Annotation/(Generate Storyboards Prior to Annotation)",0,FL_MENU_INACTIVE));
 		ns_menu_item_spec st_an(start_storyboard_annotation_whole_experiment,"Annotation/Browse Entire Experiment");

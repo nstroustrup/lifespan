@@ -86,9 +86,9 @@ struct ns_experiment_storyboard_spec{
 
 	void set_flavor(const ns_storyboard_flavor & f);
 
-	unsigned long region_id;
-	unsigned long sample_id;
-	unsigned long experiment_id;  
+	ns_64_bit region_id;
+	ns_64_bit sample_id;
+	ns_64_bit experiment_id;  
 	bool use_by_hand_annotations;
 	ns_movement_event event_to_mark;
 	ns_region_metadata strain_to_use;

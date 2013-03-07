@@ -11,12 +11,13 @@
 struct ns_ini_entry{
 	ns_ini_entry(const std::string & val = "", const bool ld = false):value(val),loaded(ld){}
 	std::string value;
+	std::string comment;
 	bool loaded;
 };
 
 class ns_ini{
 public:
-	void add_field(const std::string & field, const std::string & default_value="");
+	void add_field(const std::string & field, const std::string & default_value="", const std::string & comment="");
 	void load(const std::string & fname);
 	void save(const std::string & fname);
 

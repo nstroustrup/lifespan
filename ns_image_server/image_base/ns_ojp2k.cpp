@@ -2,7 +2,7 @@
 #include <stdio.h>
 
 #include "openjpeg.h"
-
+#include <fstream>
 #include "ns_xmp_encoder.h"
 
 void ns_ojp2k_initialization::init(){
@@ -42,6 +42,9 @@ void ns_jp2k_info_callback(const char *msg, void *client_data){
 	std::cerr << "ns_jp2k::Info: " << msg;
 }
 
+std::string ns_oj2k_xmp_filename(const std::string &filename){
+	return filename + ".xmp";
+}
 void ns_8_bit_ojp2k_image_input_file::open_file_i(const std::string & filename){
 	if (data != 0)
 		throw ns_ex("Opening already open file");
@@ -60,6 +63,8 @@ void ns_8_bit_ojp2k_image_input_file::open_file_i(const std::string & filename){
 
 	/* setup the decoder decoding parameters using the current image and user parameters */
 	opj_setup_decoder(data->dinfo, &parameters);
+
+
 
 	//load data from file
 	FILE *fsrc(fopen(filename.c_str(), "rb"));
@@ -91,7 +96,26 @@ void ns_8_bit_ojp2k_image_input_file::open_file_i(const std::string & filename){
 		throw ns_ex("Could not decode image!");
 	}
 	std::string xmp_data;
-	if (cstr_info.xmp_data != 0){
+	{
+		std::string xmp_filename(ns_oj2k_xmp_filename(filename));
+		std::ifstream xmp_f(xmp_filename.c_str());
+		if (xmp_f.fail())
+			std::cerr << "Could not locate xmp file associated with " << filename;
+		while(true){
+			char a;
+			a = xmp_f.get();
+			if (xmp_f.fail())
+				break;
+			xmp_data+=a;
+		}
+		ns_xmp_tiff_data tiff_data;
+		ns_long_string_xmp_encoder::read(xmp_data,properties.description,&tiff_data);
+		if (tiff_data.xresolution != tiff_data.yresolution)
+			throw ns_ex("Encountered an XMP specification with different x and y resolutions");
+		properties.resolution = tiff_data.xresolution;
+	}
+
+	/*if (cstr_info.xmp_data != 0){
 		unsigned long iln = strlen((const char *)cstr_info.xmp_data);
 		for (unsigned int i = 0; i < iln; i++){
 			xmp_data+=cstr_info.xmp_data[i];
@@ -103,7 +127,7 @@ void ns_8_bit_ojp2k_image_input_file::open_file_i(const std::string & filename){
 		properties.resolution = tiff_data.xresolution;
 		free(cstr_info.xmp_data);
 		cstr_info.xmp_data = 0;
-	}
+	}*/
 
 	free(src);
 	opj_cio_close(cio);
@@ -246,7 +270,22 @@ void ns_8_bit_ojp2k_image_output_file::open_file_i(const std::string & filename,
 
 	data->output_file = fopen(filename.c_str(), "wb");
 	if (!data->output_file) 
-		throw ns_ex("Could not open output file");
+		throw ns_ex("Could not open output file ") << filename;
+
+	ns_xmp_tiff_data xmp_tiff_data;
+	xmp_tiff_data.orientation = 1;
+	xmp_tiff_data. xresolution = properties.resolution;
+	xmp_tiff_data.yresolution = properties.resolution;
+	xmp_tiff_data.resolution_unit = 2;
+				
+	std::string xmp_output;
+	ns_long_string_xmp_encoder::write(properties.description,xmp_output,&xmp_tiff_data);
+	std::string xmp_filename(ns_oj2k_xmp_filename(filename));
+	std::ofstream xmp_f(xmp_filename.c_str());
+	if (xmp_f.fail())
+		throw ns_ex("Could not open ojp2k metadata file") << xmp_filename;
+	xmp_f << xmp_output;
+	xmp_f.close();	
 }
 
 	void ns_8_bit_ojp2k_image_output_file::close_i(){
@@ -293,23 +332,14 @@ void ns_8_bit_ojp2k_image_output_file::open_file_i(const std::string & filename,
 				if (data->ex != 0)
 					throw *data->ex;
 				
-			
-		
-				ns_xmp_tiff_data xmp_tiff_data;
-				xmp_tiff_data.orientation = 1;
-				xmp_tiff_data. xresolution = properties.resolution;
-				xmp_tiff_data.yresolution = properties.resolution;
-				xmp_tiff_data.resolution_unit = 2;
-				
-				std::string xmp_output;
-				ns_long_string_xmp_encoder::write(properties.description,xmp_output,&xmp_tiff_data);
-				if (xmp_output.size() == 0)
+				/*if (xmp_output.size() == 0)
 					cinfo->xmp_data = 0;
 				else{
 					cinfo->xmp_data = new unsigned char[xmp_output.length()+1];
 					strcpy((char *)cinfo->xmp_data,xmp_output.c_str());
 				}
-				try{
+				*/
+			//*	try{
 					/* setup the encoder parameters using the current image and using user parameters */
 					opj_setup_encoder(cinfo, &data->parameters, data->image);
 					if (data->ex != 0)
@@ -350,14 +380,14 @@ void ns_8_bit_ojp2k_image_output_file::open_file_i(const std::string & filename,
 					opj_destroy_compress(cinfo);
 					throw;
 				}
-			}
-			catch(...){
+		//	}
+			/*catch(...){
 				if (cinfo->xmp_data != 0)
 				delete []cinfo->xmp_data;
 				throw;
 			}
 			if (cinfo->xmp_data != 0)
-				delete []cinfo->xmp_data;
+				delete []cinfo->xmp_data;*/
 			/* free remaining compression structures */
 			opj_destroy_compress(cinfo);
 

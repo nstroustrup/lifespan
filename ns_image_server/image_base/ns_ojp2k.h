@@ -8,6 +8,8 @@ struct ns_ojp2k_initialization{
 	static bool jp2k_initialized;
 };
 
+std::string ns_oj2k_xmp_filename(const std::string &filename);
+
 //ns_8_bit_jp2k_image_input_file contains all the code to interact 
 //with the JASPER jppeg2000 library
 //It is encapsulated as its own (non-templated) class so that

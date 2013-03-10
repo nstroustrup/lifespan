@@ -13,12 +13,18 @@ CXXFLAGS="$CXXFLAGS -I/usr/local/include"
 LDFLAGS="$LDFLAGS -L/usr/local/lib"
 
 AC_SEARCH_LIBS([dmtxDecodeStructInit],[dmtx], [],AC_MSG_ERROR(Could not locate package dmtx.  Is it installed?),"-lm")
-OPJ_CHECK_LIB([tiff.h],[tiff],[TIFFOpen],[],[AC_MSG_ERROR(Could not locate package libtiff.  Is it installed?,[1])] )
+AC_SEARCH_LIBS(TIFFOpen,tiff,[],[AC_MSG_ERROR(Could not locate package libtiff.  Is it installed?,[1])] )
 AC_SEARCH_LIBS(jpeg_destroy_decompress, jpeg, [], [AC_MSG_ERROR(Could not locate package libjpeg.  Is it installed?,[1])],"-lm")
 AC_SEARCH_LIBS([FT_Load_Glyph], [freetype], [], AC_MSG_ERROR([Could not locate package FreeType.  Is it installed?],[1]),"-lm")
 AC_SEARCH_LIBS([pthread_create], [pthread], AC_MSG_ERROR([Could not locate package pthread.  Is it installed?],[1]))
 AC_SEARCH_LIBS(opj_setup_decoder, [openjpeg], [],AC_MSG_ERROR([Could not locate package openjpeg.  Is it installed?],[1]),"-lm")
 AC_SEARCH_LIBS(xvid_encore,xvidcore, [],AC_MSG_ERROR([Could not locate package xvid.  Is it installed?],[1]),"-lm")
 
+NS_USB_1 = 0
+AC_SEARCH_LIBS(libusb_init,libusb-1.0, [],NS_USB_1=1,"-lm")
+if test $NS_USB_1 == 0
+then
+AC_SEARCH_LIBS(usb_init,libusb, [],AC_MSG_ERROR([Could not either libusb or libusb-1.0.  Are either installed?],[1]),"-lm")
+fi
 
 AC_OUTPUT

@@ -254,7 +254,8 @@ INI_PATH = @datarootdir@/ns_image_server.ini
 
 PRE_DEF = -DTRILIBRARY -DNO_TIMER -DANSI_DECLARATORS -DNS_DEFAULT_FONT="\"$(DEF_FONT)\"" -DNS_INI_PATH="\"$(INI_PATH)\""
 bin_PROGRAMS = ns_image_server
-
+#serverdir = @datarootdir@
+dist_data_DATA = ../files/default_font.ttf
 AM_CPPFLAGS = -Iimage_server -Istatistics -Isystem_base \
 			   -Imovement_analysis -Ijob_scheduling \
 			   -Iimage_processing -Iimage_base \

@@ -33,20 +33,22 @@ if ($_POST['detail_level']){
      $denoising_flag = 1;
    $number_of_stationary_images = $_POST['number_of_stationary_images'];
    $maximum_number_of_worms = $_POST['maximum_number_of_worms'];
-   
-   $query = "UPDATE sample_region_image_info as r, capture_samples as s SET r.time_series_denoising_flag = $denoising_flag,r.number_of_frames_used_to_mask_stationary_objects=$number_of_stationary_images,r.maximum_number_of_worms_per_plate=$maximum_number_of_worms WHERE r.sample_id = s.id AND s.experiment_id = " . $experiment_id;
-   $sql->send_query($query);
-   
+   if (!$number_of_stationary_images===''){
+     $query = "UPDATE sample_region_image_info as r, capture_samples as s SET r.time_series_denoising_flag = '$denoising_flag',r.number_of_frames_used_to_mask_stationary_objects='$number_of_stationary_images',r.maximum_number_of_worms_per_plate='$maximum_number_of_worms' WHERE r.sample_id = s.id AND s.experiment_id = " . $experiment_id;
+     $sql->send_query($query);
+   }
+   //die($_POST['apply_vertical_image_registration']);
    $apply_vertical_image_registration = $_POST['apply_vertical_image_registration'] == "apply";
    //die(
    $delete_captured_images = $_POST['delete_captured_images'] == "delete";
    //  die($_POST['delete_captured_images']);
 $query = "UPDATE experiments SET delete_captured_images_after_mask=" . ($delete_captured_images?"1":"0") . " WHERE id = $experiment_id";
 //die($query);
+//die($query);
    $sql->send_query($query);
 
    $query = "UPDATE capture_samples SET apply_vertical_image_registration=" . ($apply_vertical_image_registration?"1":"0"). " WHERE experiment_id = $experiment_id";
-   //die($query);
+   // die($query);
    $sql->send_query($query);
      header("Location: manage_experiment_analysis_configuration.php?$query_parameters\n\n");  
 
@@ -72,7 +74,8 @@ $query = "UPDATE experiments SET delete_captured_images_after_mask=" . ($delete_
  $query = "SELECT apply_vertical_image_registration FROM capture_samples WHERE experiment_id = " . $experiment_id;
  $sql->get_row($query,$vir);
  $apply_vertical_image_registration = $vir[0][0];
-
+ //var_dump($vir);
+ //die();
  $query = "SELECT delete_captured_images_after_mask FROM experiments WHERE id = " . $experiment_id;
  $sql->get_row($query,$dci);
  $delete_captured_images = $dci[0][0];

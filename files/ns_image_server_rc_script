@@ -1,0 +1,57 @@
+#!/bin/bash
+#
+# ns_image_server This shell script takes care of starting and stopping
+#		  the ns_image_server.  Framework adapted from mysqld
+#
+# chkconfig: 345 99 80
+# description:	Image Capture and Processing Server
+# processname: ns_image_server
+
+# Source function library.
+. /etc/rc.d/init.d/functions
+
+start(){
+    echo -n "Starting image server"
+    /usr/local/bin/ns_image_server start daemon
+    return $?
+}
+
+stop(){
+    echo -n "Stopping image server"
+    /usr/local/bin/ns_image_server stop
+    return $ret
+}
+ 
+restart(){
+    echo -n "Restarting image server"
+    /usr/local/bin/ns_image_server restart daemon
+}
+
+condrestart(){
+    restart
+}
+
+# See how we were called.
+case "$1" in
+  start)
+    start
+    ;;
+  stop)
+    stop
+    ;;
+  status)
+    /usr/local/bin/ns_image_server status
+    ;;
+  restart)
+    restart
+    ;;
+  condrestart)
+    condrestart
+    ;;
+  *)
+    echo $"Usage: $0 {start|stop|status|condrestart|restart}"
+    exit 1
+    ;;
+esac
+
+exit $?

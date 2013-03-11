@@ -1,0 +1,36 @@
+34	intensity_rel_roughness_spatial_var	Relative Intensity Roughness (Spatial Variance)
+50	intensity_abs_roughness_spatial_var	Absolute Intensity Roughness (Spatial Variance)
+31	intensity_rel_spine_average	Relative Intensity Average Along Spine
+47	intensity_abs_spine_average	Absolute Intensity Average Along Spine
+38	intensity_rel_dist_from_neighborhood	Relative Intensity Dist from Nbrhd
+27	intensity_rel_average	Relative Intensity
+58	intensity_abs_normalized_spine_average	Absolute Intensity Normalized Avg Along Spine
+40	intensity_rel_normalized_average	Relative Intensity Normalized Average
+42	intensity_rel_normalized_spine_average	Relative Intensity Normalized Avg Along Spine
+4	spine_length	Spine Length
+0	pixel_area	Pixel Area
+28	intensity_rel_variance	Relative Intensity Variance
+3	bitmap_diagonal	Rectangular Diagonal
+5	distance_between_ends	Distance between ends
+54	intensity_abs_dist_from_neighborhood	Absolute Intensity Dist from Nbrhd
+59	edge_area	Edge Area
+35	intensity_rel_dark_avg	Relative Intensity darkest 20% of pixels
+44	intensity_abs_variance	Absolute Intensity Variance
+60	edge_object_area_ratio	Ratio of Edge Area to Object Area
+61	intensity_profile_edge	Intensity Profile at Edge
+62	intensity_profile_center	Intensity Profile at Center
+63	intensity_profile_max	Intensity Profile maximum
+64	intensity_profile_variance	Intensity Profile Variance
+29	intensity_rel_skew	Relative Intensity Skew
+17	spine_length_to_max_width_ratio	SPLength / Maximum Width
+57	intensity_abs_normalized_max	Absolute Intensity Normalized Max
+46	intensity_abs_maximum	Absolute Intensity Maximum 
+48	intensity_abs_spine_variance	Absolute Intensity Variance Along Spine
+29	intensity_rel_skew	Relative Intensity Skew
+17	spine_length_to_max_width_ratio	SPLength / Maximum Width
+57	intensity_abs_normalized_max	Absolute Intensity Normalized Max
+46	intensity_abs_maximum	Absolute Intensity Maximum 
+48	intensity_abs_spine_variance	Absolute Intensity Variance Along Spine
+6	width_average	Average Width
+8	width_min	Minimum Width
+22	curvature_average	Average Curvature

@@ -1,0 +1,66 @@
+Feature	Min	Max	Avg	STD	Worm Avg
+0	397	2526	0	523.665	1290.03		\\Pixel Area
+1	20	142	0	30.0053	68.4423		\\Rectangular Width
+2	22	159	0	32.0668	72.0853		\\Rectangular Height
+3	42.638	215.077	0	35.1179	105.37		\\Rectangular Diagonal
+4	19.7592	190.311	0	33.387	87.8793		\\Spine Length
+5	17.3163	171.59	0	30.4437	76.8492		\\Distance between ends
+6	4.17079	18.0139	0	3.27229	12.5278		\\Average Width
+7	6.30033	24.8134	0	3.95746	16.0689		\\Maximum Width
+8	2.50004	14.8562	0	2.98601	9.84998		\\Minimum Width
+9	0.294694	27.5335	0	5.20591	5.85478		\\Variance in Width
+10	4.28983	23.6303	0	4.43787	14.9912		\\Width at Center
+11	3.38929	17.7583	0	3.40465	11.3479		\\Width at Front
+12	3.25522	17.7335	0	3.33393	11.3612		\\Width at Rear
+13	0.0339068	0.158614	0	0.0256478	0.0750969		\\SPLength / Pixel Area
+14	0.611195	3.81377	0	0.688663	1.56675		\\SPLength / Rect Width
+15	0.591418	3.07719	0	0.528493	1.4098		\\SPLength / Rect Height
+16	0.438734	0.999509	0	0.0951472	0.827047		\\SSPLength / Rect Diagonal
+17	1.32248	16.1248	0	2.66194	5.75621		\\SPLength / Maximum Width
+18	1.65159	27.4062	0	4.18656	7.26074		\\SPLength / Average Width
+19	0.24643	1.28785	0	0.213065	0.781543		\\SPLength / Width at Front
+20	0.262892	1.29954	0	0.209824	0.78584		\\SPLength / Width at Rear
+21	0.337419	1.85974	0	0.297441	1.05372		\\Ratio of end widths
+22	0.0509172	1.37645	0	0.260257	0.273482		\\Average Curvature
+23	0.150575	4.66003	0	0.883876	0.787856		\\Maxiumum Curvature
+24	5.62292	56.6873	0	12.1978	22.3063		\\Total Curvature
+25	0.0341944	29.6039	0	4.47005	1.79764		\\Curvature Variance
+26	1	10	0	1.74103	3.20394		\\Curvature X Intercepts
+27	19	62	0	11.2409	41.4653		\\Relative Intensity
+28	13.8895	705.531	0	187.455	327.291		\\Relative Intensity Variance
+29	-0.204755	1.16602	0	0.308999	0.370054		\\Relative Intensity Skew
+30	98.2857	183.845	0	13.4659	165.114		\\Relative Intensity Maximum 
+31	19.2381	84.0851	0	17.3141	53.8959		\\Relative Intensity Average Along Spine
+32	-469.063	-3.52573	0	100.68	-157.112		\\Relative Intensity Variance Along Spine
+33	2.66642	4.51332	0	0.480483	4.00864		\\Relative Intensity Roughness (Entropy)
+34	10.5735	41.0957	0	6.67463	21.7721		\\Relative Intensity Roughness (Spatial Variance)
+35	13.0964	26.9061	0	3.33549	19.7513		\\Relative Intensity darkest 20% of pixels
+36	0	0	0	0	0		\\Relative Intensity darkest 20% area
+37	1.77965	7.75555	0	1.31072	3.70999		\\Relative Intensity Average in Neighborhood
+38	14.5044	56.4015	0	10.8131	37.7553		\\Relative Intensity Dist from Nbrhd
+39	3	5	0	0.38008	3.99891		\\Relative Intensity of Region
+40	0.782609	2.56	0	0.465032	1.71546		\\Relative Intensity Normalized Average
+41	-159.667	-73.5	0	13.5366	-140.756		\\Relative Intensity Normalized Max
+42	0.765306	3.48718	0	0.715172	2.22788		\\Relative Intensity Normalized Avg Along Spine
+43	57	170	0	20.5102	135.471		\\Absolute Intensity
+44	16.7862	827.383	0	216.988	366.479		\\Absolute Intensity Variance
+45	-0.76334	1.05776	0	0.374036	-0.0789324		\\Absolute Intensity Skew
+46	30.075	157	0	29.0654	99.6084		\\Absolute Intensity Maximum 
+47	19.2381	84.0851	0	17.3141	53.8959		\\Absolute Intensity Average Along Spine
+48	-20114.5	-122.394	0	5706.91	-6177.61		\\Absolute Intensity Variance Along Spine
+49	2.74518	4.58576	0	0.469568	4.08137		\\Absolute Intensity Roughness (Entropy)
+50	40.5334	215.393	0	36.3355	100.535		\\Absolute Intensity Roughness (Spatial Variance)
+51	82.7677	180.961	0	15.1299	159.858		\\Absolute Intensity darkest 20% of pixels
+52	0	0	0	0	0		\\Absolute Intensity darkest 20% area
+53	99.6682	198.093	0	18.916	180.735		\\Absolute Intensity Average in Neighborhood
+54	-67.234	2.8204	0	14.2772	-45.2641		\\Absolute Intensity Dist from Nbrhd
+55	135	157	0	6.61538	144.346		\\Absolute Intensity of Region
+56	0.396104	1.13245	0	0.132451	0.93782		\\Absolute Intensity Normalized Average
+57	-114.583	7.75	0	27.777	-44.7377		\\Absolute Intensity Normalized Max
+58	0.128556	0.588358	0	0.121758	0.37462		\\Absolute Intensity Normalized Avg Along Spine
+59	98	460	0	72.1979	213.938		\\Edge Area
+60	0.124616	0.361254	0	0.0535114	0.182585		\\Ratio of Edge Area to Object Area
+61	18.3805	48.7184	0	7.6112	33.6847		\\Intensity Profile at Edge
+62	19.7857	91	0	19.5198	58.1582		\\Intensity Profile at Center
+63	22.4545	92.7273	0	19.1203	61.7439		\\Intensity Profile maximum
+64	4.6651	552.822	0	138.883	222.684		\\Intensity Profile Variance

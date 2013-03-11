@@ -1,0 +1,32 @@
+Feature	Min	Max	Avg	STD	Worm Avg
+0	381	2637	0	605.879	1566.9		\\Pixel Area
+3	41.3401	184.049	0	37.4308	119.383		\\Rectangular Diagonal
+4	21.5346	157.359	0	33.7304	98.0336		\\Spine Length
+5	18.9701	143.132	0	32.3721	89.093		\\Distance between ends
+6	4.57784	18.5912	0	3.27564	13.861		\\Average Width
+8	2.50439	15.5813	0	3.25494	10.678		\\Minimum Width
+17	1.55409	13.1038	0	2.21661	5.82562		\\SPLength / Maximum Width
+22	0.051003	1.50232	0	0.282679	0.242721		\\Average Curvature
+27	18	64	0	11.8575	39.621		\\Relative Intensity
+28	13.0474	757.862	0	202.216	336.031		\\Relative Intensity Variance
+29	-0.179999	1.33662	0	0.35063	0.554307		\\Relative Intensity Skew
+31	18.1818	83.5135	0	17.29	50.7682		\\Relative Intensity Average Along Spine
+34	9.71125	38.8278	0	6.15827	18.1526		\\Relative Intensity Roughness (Spatial Variance)
+35	12.2239	27.7563	0	3.66546	18.6028		\\Relative Intensity darkest 20% of pixels
+38	13.9943	58.3656	0	11.3643	35.8724		\\Relative Intensity Dist from Nbrhd
+40	0.73913	2.58333	0	0.45402	1.66785		\\Relative Intensity Normalized Average
+42	0.706061	3.3431	0	0.679741	2.13469		\\Relative Intensity Normalized Avg Along Spine
+44	16.8885	851.422	0	227.298	393.338		\\Absolute Intensity Variance
+46	18.9333	165.7	0	31.0383	101.924		\\Absolute Intensity Maximum 
+47	18.1818	83.5135	0	17.29	50.7682		\\Absolute Intensity Average Along Spine
+48	-22968	-139.514	0	6158.01	-7273.91		\\Absolute Intensity Variance Along Spine
+50	30.3896	215.316	0	34.1926	92.6766		\\Absolute Intensity Roughness (Spatial Variance)
+54	-72.3386	-4.67706	0	14.2911	-45.9716		\\Absolute Intensity Dist from Nbrhd
+57	-130.226	9.54545	0	28.8134	-49.9393		\\Absolute Intensity Normalized Max
+58	0.117857	0.546016	0	0.112868	0.333626		\\Absolute Intensity Normalized Avg Along Spine
+59	95	394	0	70.1038	237.718		\\Edge Area
+60	0.118644	0.347826	0	0.0519049	0.164527		\\Ratio of Edge Area to Object Area
+61	17.4971	49.2937	0	7.86919	31.4416		\\Intensity Profile at Edge
+62	18.9487	93.5	0	20.9563	55.8183		\\Intensity Profile at Center
+63	21.3234	95	0	20.5165	59.5949		\\Intensity Profile maximum
+64	3.6484	561.757	0	139.299	207.239		\\Intensity Profile Variance

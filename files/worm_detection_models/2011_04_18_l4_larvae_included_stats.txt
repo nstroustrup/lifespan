@@ -1,0 +1,65 @@
+0	pixel_area	Pixel Area
+1	bitmap_width	Rectangular Width
+2	bitmap_height	Rectangular Height
+3	bitmap_diagonal	Rectangular Diagonal
+4	spine_length	Spine Length
+5	distance_between_ends	Distance between ends
+6	width_average	Average Width
+7	width_max	Maximum Width
+8	width_min	Minimum Width
+9	width_variance	Variance in Width
+10	width_at_center	Width at Center
+11	width_at_end_0	Width at Front
+12	width_at_end_1	Width at Rear
+13	spine_length_to_area	SPLength / Pixel Area
+14	spine_length_to_bitmap_width_ratio	SPLength / Rect Width
+15	spine_length_to_bitmap_height_ratio	SPLength / Rect Height
+16	spine_length_to_bitmap_diagonal_ratio	SSPLength / Rect Diagonal
+17	spine_length_to_max_width_ratio	SPLength / Maximum Width
+18	spine_length_to_average_width	SPLength / Average Width
+19	end_width_to_middle_width_ratio_0	SPLength / Width at Front
+20	end_width_to_middle_width_ratio_1	SPLength / Width at Rear
+21	end_width_ratio	Ratio of end widths
+22	curvature_average	Average Curvature
+23	curvature_maximum	Maxiumum Curvature
+24	curvature_total	Total Curvature
+25	curvature_variance	Curvature Variance
+26	curvature_x_intercepts	Curvature X Intercepts
+27	intensity_rel_average	Relative Intensity
+28	intensity_rel_variance	Relative Intensity Variance
+29	intensity_rel_skew	Relative Intensity Skew
+30	intensity_rel_maximum	Relative Intensity Maximum 
+31	intensity_rel_spine_average	Relative Intensity Average Along Spine
+32	intensity_rel_spine_variance	Relative Intensity Variance Along Spine
+33	intensity_rel_roughness_entropy	Relative Intensity Roughness (Entropy)
+34	intensity_rel_roughness_spatial_var	Relative Intensity Roughness (Spatial Variance)
+35	intensity_rel_dark_avg	Relative Intensity darkest 20% of pixels
+36	intensity_rel_dark_area	Relative Intensity darkest 20% area
+37	intensity_rel_neighborhood	Relative Intensity Average in Neighborhood
+38	intensity_rel_dist_from_neighborhood	Relative Intensity Dist from Nbrhd
+39	intensity_rel_containing_image_average	Relative Intensity of Region
+40	intensity_rel_normalized_average	Relative Intensity Normalized Average
+41	intensity_rel_normalized_max	Relative Intensity Normalized Max
+42	intensity_rel_normalized_spine_average	Relative Intensity Normalized Avg Along Spine
+43	intensity_abs_average	Absolute Intensity
+44	intensity_abs_variance	Absolute Intensity Variance
+45	intensity_abs_skew	Absolute Intensity Skew
+46	intensity_abs_maximum	Absolute Intensity Maximum 
+47	intensity_abs_spine_average	Absolute Intensity Average Along Spine
+48	intensity_abs_spine_variance	Absolute Intensity Variance Along Spine
+49	intensity_abs_roughness_entropy	Absolute Intensity Roughness (Entropy)
+50	intensity_abs_roughness_spatial_var	Absolute Intensity Roughness (Spatial Variance)
+51	intensity_abs_dark_avg	Absolute Intensity darkest 20% of pixels
+52	intensity_abs_dark_area	Absolute Intensity darkest 20% area
+53	intensity_abs_neighborhood	Absolute Intensity Average in Neighborhood
+54	intensity_abs_dist_from_neighborhood	Absolute Intensity Dist from Nbrhd
+55	intensity_abs_containing_image_average	Absolute Intensity of Region
+56	intensity_abs_normalized_average	Absolute Intensity Normalized Average
+57	intensity_abs_normalized_max	Absolute Intensity Normalized Max
+58	intensity_abs_normalized_spine_average	Absolute Intensity Normalized Avg Along Spine
+59	edge_area	Edge Area
+60	edge_object_area_ratio	Ratio of Edge Area to Object Area
+61	intensity_profile_edge	Intensity Profile at Edge
+62	intensity_profile_center	Intensity Profile at Center
+63	intensity_profile_max	Intensity Profile maximum
+64	intensity_profile_variance	Intensity Profile Variance

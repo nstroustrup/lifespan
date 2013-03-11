@@ -4,8 +4,14 @@
 /* Define to 1 if MySQL libraries are available */
 #define HAVE_MYSQL 1
 
-/* Define to 1 if your C compiler doesn't accept -c and -o together. */
-/* #undef NO_MINUS_C_MINUS_O */
+/* Define if you have POSIX threads libraries and header files. */
+#define HAVE_PTHREAD 1
+
+/* Have PTHREAD_PRIO_INHERIT. */
+/* #undef HAVE_PTHREAD_PRIO_INHERIT */
+
+/* Use usb-1.0 library instead of usb-0.1 */
+#define NS_USB_1 1
 
 /* Name of package */
 #define PACKAGE "ns_image_server"
@@ -24,6 +30,10 @@
 
 /* Define to the version of this package. */
 #define PACKAGE_VERSION "1.0"
+
+/* Define to necessary symbol if this constant uses a non-standard name on
+   your system. */
+/* #undef PTHREAD_CREATE_JOINABLE */
 
 /* Version number of package */
 #define VERSION "1.0"

@@ -515,7 +515,7 @@ public:
 	ns_worm_learner():behavior_mode(ns_draw_boxes),mask_analyzer(128), process_mask_menu_displayed(false),
 		worm_detection_results(0),model_specification(&default_model),last_annotation_type_loaded(ns_death_time_annotation_set::ns_no_annotations),
 		current_image_lock("ns_worm_learner::current_image"),
-		movement_data_is_strictly_decreasing_(false),output_svg_spines(false),static_mask(0),generate_mp4_(false),
+		movement_data_is_strictly_decreasing_(false),overwrite_existing_mask_when_submitting(false),output_svg_spines(false),static_mask(0),generate_mp4_(false),
 		/*submit_capture_specification_to_db_when_recieved(false),*/overwrite_submitted_capture_specification(false),maximum_window_size(1024,768),
 		current_annotater(&death_time_annotater),storyboard_annotater(2),main_window("Main Window"),
 				worm_window("Worm Window"){
@@ -606,6 +606,11 @@ public:
 		cout << g?"Existing experiments will be overwritten if necessary.":"Existing experiments will never be overwritten.";
 		overwrite_submitted_capture_specification = g;
 	}
+	void overwrite_existing_masks(const bool & g){
+		cout << g?"Existing masks will be overwritten if necessary.":"Existing masks will not be overwritten.";
+		overwrite_existing_mask_when_submitting = g;
+	}
+	
 	void output_lots_of_worms(const std::string & path);
 	void test_image_metatadata();
 
@@ -772,6 +777,7 @@ private:
 	bool generate_mp4_;
 	//bool submit_capture_specification_to_db_when_recieved;
 	bool overwrite_submitted_capture_specification;
+	bool overwrite_existing_mask_when_submitting;
 	ns_image_standard * static_mask;
 
 	std::string current_filename;

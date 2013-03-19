@@ -334,9 +334,21 @@ void ns_bulk_experiment_mask_manager::submit_masks_to_cluster(const std::string 
 			if (res.size() == 0)
 				throw ns_ex("Could not find sample in db");
 
-			if (balk_on_overwrite && atol(res[0][0].c_str()) != 0)
-				throw ns_ex("ns_bulk_experiment_mask_manager::submit_masks_to_cluster::A mask already exists for specified sample: " ) << collage_info_manager.collage_info[i].sample_id;
+			if (atol(res[0][0].c_str()) != 0){
+				if(balk_on_overwrite){
+					ex_not_ok = true;
+					throw ns_ex("ns_bulk_experiment_mask_manager::submit_masks_to_cluster::A mask already exists for specified sample: " ) << collage_info_manager.collage_info[i].sample_id << ". To continue anyway, select the menu item Config/Set Behavior/Overwrite existing sample masks";
 
+				}
+				else{
+				//	sql() << "DELETE FROM image_masks WHERE id = " << res[0][0];
+				//	sql().send_query();
+					sql() << "UPDATE sample_region_image_info SET name = CONCAT(name,'_old'),censored=1 WHERE sample_id = " << collage_info_manager.collage_info[i].sample_id;
+					sql().send_query();
+					sql() << "UPDATE captured_images SET mask_applied=0 WHERE sample_id = " << collage_info_manager.collage_info[i].sample_id << " AND image_id != 0 AND mask_applied=0";
+					sql().send_query();
+				}
+			}
 			//Connecting to image server
 			cerr << "Connecting to image server...";
 			ns_socket socket;

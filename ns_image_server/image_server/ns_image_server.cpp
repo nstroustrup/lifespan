@@ -33,7 +33,7 @@ ns_image_server::ns_image_server():event_log_open(false),exit_requested(false),u
 
 	ns_socket::global_init();
 	ns_worm_detection_constants::init();
-	_software_version_compile = 642;
+	_software_version_compile = 643;
 	image_storage.cache.set_memory_allocation_limit(maximum_image_cache_memory_size());
 
 }

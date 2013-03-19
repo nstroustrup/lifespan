@@ -843,6 +843,8 @@ class ns_worm_terminal_main_menu_organizer : public ns_menu_organizer{
 	*****************************/
 	static void do_not_overwrite_schedules(const std::string & value){worm_learner.overwrite_submitted_specification(false);}
 	static void overwrite_schedules(const std::string & value){worm_learner.overwrite_submitted_specification(true);}
+	static void do_not_overwrite_existing_masks(const std::string & value){worm_learner.overwrite_existing_masks(false);}
+	static void overwrite_existing_masks(const std::string & value){worm_learner.overwrite_existing_masks(true);}
 	static void generate_mp4(const std::string & value){worm_learner.generate_mp4(true);}
 	static void generate_wmv(const std::string & value){worm_learner.generate_mp4(false);}
 
@@ -1136,11 +1138,14 @@ public:
 			db_spec.options.push_back(image_server.allowed_sql_databases()[i]);
 		add(db_spec);
 
-		add(ns_menu_item_spec(do_not_overwrite_schedules,"Config/Do not overwrite existing Experiment Specifications"));
-		add(ns_menu_item_spec(overwrite_schedules,"Config/_Overwrite existing Experiment Specifications"));
-		add(ns_menu_item_spec(generate_mp4,"Config/Generate Mp4 Videos"));
-		add(ns_menu_item_spec(generate_wmv,"Config/_Generate WMV Videos"));
-		add(ns_menu_item_spec(upload_strain_metadata,"Config/Upload Strain Metadata to the Database"));
+		add(ns_menu_item_spec(do_not_overwrite_schedules,"Config/Set Behavior/Do not overwrite existing Experiment Specifications"));
+		add(ns_menu_item_spec(overwrite_schedules,"Config/Set Behavior/_Overwrite existing Experiment Specifications"));
+		add(ns_menu_item_spec(do_not_overwrite_existing_masks,"Config/Set Behavior/Do not overwrite existing sample masks"));
+		add(ns_menu_item_spec(overwrite_existing_masks,"Config/Set Behavior/_Overwrite existing sample masks"));
+		
+		add(ns_menu_item_spec(generate_mp4,"Config/Set Behavior/Generate Mp4 Videos"));
+		add(ns_menu_item_spec(generate_wmv,"Config/Set Behavior/_Generate WMV Videos"));
+		add(ns_menu_item_spec(upload_strain_metadata,"Config/Set Behavior/Upload Strain Metadata to the Database"));
 	}
 
 	

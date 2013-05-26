@@ -55,14 +55,14 @@ std::string ns_maintenance_task_to_string(const ns_maintenance_task & task){
 	}
 }
 
-bool ns_processing_job_scheduler::run_a_job(ns_sql & sql){
+bool ns_processing_job_scheduler::run_a_job(ns_sql & sql,bool first_in_first_out_job_queue){
 	//if we can't talk to the long term storage we're bound to fail, so don't try.
 	image_server.image_storage.test_connection_to_long_term_storage(true);
 	if (!image_server.image_storage.long_term_storage_was_recently_writeable())
 		return false;
 	ns_image_server_push_job_scheduler push_scheduler;
 
-	ns_processing_job job = push_scheduler.request_job(sql);
+	ns_processing_job job = push_scheduler.request_job(sql,first_in_first_out_job_queue);
 	
 	if (job.id == 0)
 		return false;

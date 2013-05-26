@@ -1000,7 +1000,8 @@ bool ns_image_server_dispatcher::look_for_work(){
 	try{
 		image_server.perform_experiment_maintenance(*work_sql_connection);
 		//search the server for an image processing task
-		action_performed = job_scheduler.run_a_job(*work_sql_connection);
+		const bool first_in_first_out_job_queue (image_server.get_cluster_constant_value("job_queue_is_FIFO","false",work_sql_connection)!="false");
+		action_performed = job_scheduler.run_a_job(*work_sql_connection,first_in_first_out_job_queue);
 		if (action_performed)
 			register_succesful_operation();
 		work_sql_connection->send_query("COMMIT");

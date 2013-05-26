@@ -47,10 +47,11 @@ class ns_image_server_push_job_scheduler{
 public:
 	void report_sample_region_image(std::vector<ns_image_server_captured_image_region> region_images, ns_sql & sql,const ns_64_bit job_to_exclude=0,const ns_processing_job::ns_job_type &job_type_to_exclude=ns_processing_job::ns_no_job_type);
 	void report_capture_sample_image(std::vector<ns_image_server_captured_image> captured_images, ns_sql & sql);
-	void report_new_job(ns_processing_job & job,ns_sql & sql);
+	void report_new_job(const ns_processing_job & job,ns_sql & sql);
+	void report_new_job_and_mark_it_so(const ns_processing_job & job,ns_sql & sql);
 
 	void discover_new_jobs(ns_sql & sql);
-	ns_processing_job request_job(ns_sql & sql);
+	ns_processing_job request_job(ns_sql & sql,bool first_in_first_out=false);
 	void report_job_as_finished(const ns_processing_job & job,ns_sql & sql);
 	void report_job_as_unfinished(const ns_processing_job & job,ns_sql & sql);
 
@@ -60,6 +61,8 @@ public:
 	ns_64_bit report_job_as_problem(const ns_processing_job & job,const ns_ex & ex,ns_sql & sql);
 
 	static void request_job_queue_discovery(ns_sql & sql);
+	bool try_to_process_a_job_pending_anothers_completion(const ns_processing_job & job,ns_sql & sql);
+
 	void delete_job(const ns_processing_job & job, ns_sql & sql);
 
 	//larger numbers get priority over smaller numbers

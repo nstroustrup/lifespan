@@ -984,6 +984,14 @@ public:
 			error_text.resize(0);
 			hardware_alias = device_info.device.hardware_alias;
 			temp_output_filename = std::string("barcode=") + device_info.device.hardware_alias + ".tif";   
+			//remove illegal characters
+			for (unsigned long i = 0; i < temp_output_filename.size(); i++)
+				if (temp_output_filename[i] == ';' || temp_output_filename[i] == ':' ||
+					temp_output_filename[i] == ',' || temp_output_filename[i] == '|' ||
+					temp_output_filename[i] == '\'' || temp_output_filename[i] == '"' ||
+					temp_output_filename[i] == '$')
+					temp_output_filename[i] = '_';
+
 			device_info.currently_scanning = true;
 			device_info.last_capture_start_time = ns_current_time();
 			device_info.capture_thread.run(run_scanner_ider,this);

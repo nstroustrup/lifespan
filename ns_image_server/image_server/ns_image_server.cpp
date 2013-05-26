@@ -33,7 +33,7 @@ ns_image_server::ns_image_server():event_log_open(false),exit_requested(false),u
 
 	ns_socket::global_init();
 	ns_worm_detection_constants::init();
-	_software_version_compile = 643;
+	_software_version_compile = 646;
 	image_storage.cache.set_memory_allocation_limit(maximum_image_cache_memory_size());
 
 }
@@ -351,8 +351,22 @@ void ns_image_server_automated_job_scheduler::scan_for_tasks(ns_sql & sql){
 	unsigned long start_time(ns_current_time());
 	calculate_capture_schedule_boundaries(sql);
 	identify_experiments_needing_captured_image_protection(sql);
+	handle_when_completed_priority_jobs(sql);
 	//identify_regions_needing_static_mask(sql);
 	lock.release(sql);
+}
+void ns_image_server_automated_job_scheduler::handle_when_completed_priority_jobs(ns_sql & sql){
+	sql << ns_processing_job::provide_query_stub() << " FROM processing_jobs  WHERE pending_another_jobs_completion = 1 AND processed_by_push_scheduler = 1";
+	ns_sql_result res;
+	sql.get_rows(res);
+	if (res.size() > 0){
+		ns_image_server_push_job_scheduler push_job_scheduler;
+		for (unsigned long i = 0;  i < res.size(); i++){
+			ns_processing_job job;
+			job.load_from_result(res[i]);
+			push_job_scheduler.try_to_process_a_job_pending_anothers_completion(job,sql);
+		}
+	}
 }
 void ns_image_server_automated_job_scheduler::identify_experiments_needing_captured_image_protection(ns_sql & sql){
 	const long number_of_images_to_protect(5);

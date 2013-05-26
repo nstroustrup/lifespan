@@ -216,6 +216,72 @@ void ns_image_server_push_job_scheduler::request_job_queue_discovery(ns_sql & sq
 		table_lock.unlock();
 	}
 }
+bool ns_image_server_push_job_scheduler::try_to_process_a_job_pending_anothers_completion(const ns_processing_job & job,ns_sql & sql){
+	bool all_necessary_jobs_completed = false;
+	if (!job.is_job_type(ns_processing_job::ns_maintenance_job))
+		all_necessary_jobs_completed = true;
+	else{
+		if (job.region_id != 0){
+			//while region images don't have their worm detection results calculated, don't run the job.
+			sql << "SELECT worm_detection_results_id FROM sample_region_images WHERE region_info_id = " << job.region_id << " AND problem = 0 AND censored = 0";
+			ns_sql_result res;
+			sql.get_rows(res);
+			if (res.size() > 0){
+				all_necessary_jobs_completed = true;
+				for (unsigned int i = 0; i < res.size(); i++){
+					if (res[i][0] == "0"){
+						all_necessary_jobs_completed = false;
+						break;
+					}
+				}
+			}
+		}
+		//while experiments have regions with unanalyzed movements, don't run the job
+		else if (job.experiment_id != 0 && job.sample_id == 0){
+			if (job.maintenance_flag != ns_maintenance_generate_animal_storyboard)
+				throw ns_ex("Only storyboards and movement analysis can be scheduled pending the completion of other jobs.");
+			sql << "SELECT movement_image_analysis_quantification_id FROM sample_region_image_info WHERE id = " << job.experiment_id << " AND excluded_from_analysis = 0 AND censored = 0";
+			ns_sql_result res;
+			sql.get_rows(res);
+			if (res.size() > 0){
+				all_necessary_jobs_completed = true;
+				for (unsigned int i = 0; i < res.size(); i++){
+					if (res[i][0] == "0"){
+						all_necessary_jobs_completed = false;
+						break;
+					}
+				}
+			}
+		}
+		else all_necessary_jobs_completed = true;
+	}
+
+	if (all_necessary_jobs_completed){
+		sql << "UPDATE processing_jobs SET pending_another_jobs_completion = 2 WHERE id = " << job.id;
+		sql.send_query();
+		report_new_job_and_mark_it_so(job,sql);
+		return true;
+	}
+	return false;
+}
+
+void ns_image_server_push_job_scheduler::report_new_job_and_mark_it_so(const ns_processing_job & job,ns_sql & sql){
+			try{
+				sql.send_query("BEGIN");
+				report_new_job(job,sql);
+				sql << "UPDATE processing_jobs SET currently_under_processing = 0, processed_by_push_scheduler = " << image_server.host_id() << " WHERE id=" << job.id;
+				sql.send_query();
+				sql.send_query("COMMIT");
+			}
+			catch(ns_ex & ex){
+				ns_64_bit event_id = image_server.register_server_event(ns_image_server_event("An error occurred processing a new job:") << ex.text(),&sql);
+				sql << "UPDATE processing_jobs SET currently_under_processing = 0, processed_by_push_scheduler = " << image_server.host_id() << ", problem=" << event_id << " WHERE id=" << job.id;
+				sql.send_query();
+				sql.send_query("COMMIT");
+			}
+			
+		}
+
 void ns_image_server_push_job_scheduler::discover_new_jobs(ns_sql & sql){
 	ns_sql_result pending_jobs;
 	try{
@@ -262,20 +328,19 @@ void ns_image_server_push_job_scheduler::discover_new_jobs(ns_sql & sql){
 		//sql.set_autocommit(true);
 		for (unsigned int i = 0; i < p_jobs.size(); i++){
 			try{
-				sql.send_query("BEGIN");
-				report_new_job(p_jobs[i],sql);
-				sql << "UPDATE processing_jobs SET currently_under_processing = 0, processed_by_push_scheduler = " << image_server.host_id() << " WHERE id=" << p_jobs[i].id;
-				sql.send_query();
-				sql.send_query("COMMIT");
-			}
-			catch(ns_ex & ex){
-				ns_64_bit event_id = image_server.register_server_event(ns_image_server_event("An error occurred processing a new job:") << ex.text(),&sql);
-				sql << "UPDATE processing_jobs SET currently_under_processing = 0, processed_by_push_scheduler = " << image_server.host_id() << ", problem=" << event_id << " WHERE id=" << p_jobs[i].id;
-				sql.send_query();
-				sql.send_query("COMMIT");
+				//there's a chance a job pending anothers completion can be run immediately (as all necissary analysis has 
+				//already been performed).  Try it now.
+				if (p_jobs[i].pending_another_jobs_completion)
+					if (!try_to_process_a_job_pending_anothers_completion(p_jobs[i],sql)){
+						sql << "UPDATE processing_jobs SET currently_under_processing = 0, processed_by_push_scheduler = " << image_server.host_id() << " WHERE id=" << p_jobs[i].id;
+						sql.send_query();
+						sql.send_query("COMMIT");
+					}
+				else
+					report_new_job_and_mark_it_so(p_jobs[i],sql);
 			}
 			catch(...){
-				for (unsigned int i = 0; i < pending_jobs.size(); i++){
+				for (unsigned int i = 0; i < p_jobs.size(); i++){
 					sql << "UPDATE processing_jobs SET currently_under_processing = 0 WHERE id=" << p_jobs[i].id;
 					sql.send_query();
 					sql.send_query("COMMIT");
@@ -290,7 +355,7 @@ void ns_image_server_push_job_scheduler::discover_new_jobs(ns_sql & sql){
 	}
 }
 
-void ns_image_server_push_job_scheduler::report_new_job(ns_processing_job & job,ns_sql & sql){
+void ns_image_server_push_job_scheduler::report_new_job(const ns_processing_job & job,ns_sql & sql){
 
 	if (!job.has_a_valid_job_type()){
 		sql << "UPDATE processing_jobs SET problem = 1 WHERE id=" << job.id;
@@ -311,7 +376,7 @@ void ns_image_server_push_job_scheduler::report_new_job(ns_processing_job & job,
 }
 
 
-ns_processing_job ns_image_server_push_job_scheduler::request_job(ns_sql & sql){
+ns_processing_job ns_image_server_push_job_scheduler::request_job(ns_sql & sql,bool first_in_first_out){
 	ns_processing_job job;
 	ns_processing_job_queue_item queue_item;
 	ns_sql_result queue_item_res;
@@ -324,7 +389,10 @@ ns_processing_job ns_image_server_push_job_scheduler::request_job(ns_sql & sql){
 			sql << ns_processing_job_queue_item::provide_stub() << " WHERE processor_id=0 AND problem=0 AND paused=0 ";
 			if (!image_server.compile_videos())
 				sql << " AND job_class = 0 ";
-			sql << "ORDER BY priority DESC LIMIT 1";
+			if (first_in_first_out)
+				sql << "ORDER BY priority DESC, id ASC LIMIT 1";
+			else
+				sql << "ORDER BY priority DESC, id DESC LIMIT 1";
 			
 			sql.get_rows(queue_item_res);
 			//no jobs

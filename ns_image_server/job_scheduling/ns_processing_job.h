@@ -58,6 +58,7 @@ struct ns_processing_job{
 		subregion_stop_time(0),
 		delete_file_job_id(0),
 		urgent(false),
+		pending_another_jobs_completion(0),
 		video_timestamp_type(ns_no_timestamp),
 		death_time_annotations(0),
 		model(0){operations.resize((unsigned int)ns_process_last_task_marker);}
@@ -147,7 +148,8 @@ struct ns_processing_job{
 				 subregion_size;
 	unsigned long subregion_start_time,
 				  subregion_stop_time,
-				  delete_file_job_id;
+				  delete_file_job_id,
+				  pending_another_jobs_completion;
 
 	bool urgent;
 	ns_timestamp_type video_timestamp_type;
@@ -170,7 +172,7 @@ struct ns_processing_job{
 				+ "processing_jobs.urgent, processing_jobs.processor_id, processing_jobs.time_submitted, processing_jobs.mask_id, "
 				+ "processing_jobs.maintenance_task,subregion_position_x,subregion_position_y,subregion_width,subregion_height, "
 				+ "subregion_start_time,subregion_stop_time, processing_jobs.delete_file_job_id, processing_jobs.video_add_timestamp, "
-				+ "maintenance_flag, "
+				+ "maintenance_flag, pending_another_jobs_completion ,"
 
 				+ "processing_jobs.op0, processing_jobs.op1, processing_jobs.op2, processing_jobs.op3, processing_jobs.op4, processing_jobs.op5, processing_jobs.op6, "
  				+ "processing_jobs.op7, processing_jobs.op8, processing_jobs.op9, processing_jobs.op10, processing_jobs.op11, "
@@ -200,10 +202,10 @@ struct ns_processing_job{
 		delete_file_job_id = atol(res[16].c_str());
 		video_timestamp_type = (ns_processing_job::ns_timestamp_type)(atol(res[17].c_str()));
 		maintenance_flag = (ns_maintenance_flag)atol(res[18].c_str());
-
+		pending_another_jobs_completion = atol(res[19].c_str());
 		operations.resize((int)ns_process_last_task_marker);
 		for (unsigned int i = 0; i < operations.size(); i++)
-			operations[i] = (res[i+19] == "1");
+			operations[i] = (res[i+20] == "1");
 	}
 	std::string description() const{
 		ns_text_stream_t t;
@@ -228,7 +230,8 @@ struct ns_processing_job{
 			  << "', subregion_position_x = '" << subregion_position.x << "', subregion_position_y = '" << subregion_position.y 
 			  << "', subregion_width = '" << subregion_size.x << "', subregion_height='" << subregion_size.y 
 			  << "', delete_file_job_id = '" << delete_file_job_id << "', video_add_timestamp = '" << ((int)video_timestamp_type)
-			  << "', maintenance_flag = '" << (long)maintenance_flag;
+			  << "', maintenance_flag = '" << (long)maintenance_flag
+			  << "', pending_another_jobs_completion = '" << pending_another_jobs_completion;
 
 		for (unsigned int i = 0; i < operations.size(); i++){
 			sql << "', op" << ns_to_string(i) << "='";

@@ -29,7 +29,7 @@ public:
 	  current_server(&cur_image_server),db_movement_build_probility(25),pipeline(0){init_pipeline();}
 	~ns_processing_job_scheduler(){destruct_pipeline();}		
 	
-	bool run_a_job(ns_sql & sql);
+	bool run_a_job(ns_sql & sql,bool first_in_first_out_job_queue=false);
 	
 	void clear_heap();
 

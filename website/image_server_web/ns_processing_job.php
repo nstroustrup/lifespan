@@ -171,6 +171,7 @@ class ns_processing_job{
 	  $region_id,
 	  $image_id,
 	  $urgent,
+	  $pending_another_jobs_completion,
 	  $paused,
 	  $processor_id,
 	  $mask_id,
@@ -206,6 +207,7 @@ class ns_processing_job{
 		$this->region_id = 0;
 		$this->image_id = 0;
 		$this->urgent = 0;
+		$this->pending_another_jobs_completion = 0;
 		$this->paused = 0;
 		$this->processor_id = 0;
 		$this->time_submitted = 0;
@@ -232,7 +234,7 @@ class ns_processing_job{
 	    . 'processing_jobs.urgent, processing_jobs.paused,processing_jobs.processor_id, processing_jobs.time_submitted, processing_jobs.mask_id, processing_jobs.maintenance_task, processing_jobs.job_name, ' //5-11
 		                . 'processing_jobs.problem, processing_jobs.currently_under_processing, processed_by_push_scheduler, '//12-14
 
-	    .'subregion_position_x,subregion_position_y,subregion_width,subregion_height,subregion_start_time,subregion_stop_time,delete_file_job_id,video_add_timestamp,maintenance_flag,' //12-23
+	    .'subregion_position_x,subregion_position_y,subregion_width,subregion_height,subregion_start_time,subregion_stop_time,delete_file_job_id,video_add_timestamp,maintenance_flag,pending_another_jobs_completion,' //12-24
 				. 'processing_jobs.op0, processing_jobs.op1, processing_jobs.op2, processing_jobs.op3, processing_jobs.op4, processing_jobs.op5, processing_jobs.op6, '
  				. 'processing_jobs.op7, processing_jobs.op8, processing_jobs.op9, processing_jobs.op10, processing_jobs.op11, processing_jobs.op12, processing_jobs.op13,'
 		  . 'processing_jobs.op14, processing_jobs.op15, processing_jobs.op16, processing_jobs.op17, processing_jobs.op18, processing_jobs.op19, processing_jobs.op20, processing_jobs.op21, processing_jobs.op22, processing_jobs.op23, processing_jobs.op24, processing_jobs.op25,processing_jobs.op26, processing_jobs.op27 ';
@@ -266,8 +268,9 @@ class ns_processing_job{
 	  $this->delete_file_job_id = (int)$res[21];
 	  $this->video_timestamp_type = (int)$res[22];
 	  $this->maintenance_flag = (int)$res[23];
+	  $this->pending_another_jobs_completion = (int)$res[24];
 	  for ($i = 1; $i <= $NS_LAST_PROCESSING_JOB; $i++)
-	    $this->operations[$i] = (int)$res[24+$i];
+	    $this->operations[$i] = (int)$res[25+$i];
 	}
 	
 	function save_to_db($sql){
@@ -297,6 +300,7 @@ class ns_processing_job{
 		$query .= ", video_add_timestamp = " . (int)$this->video_timestamp_type;
 		//	die($query);
 		//	echo $query . "<BR>";
+		$query .= ", pending_another_jobs_completion= " . (int)$this->pending_another_jobs_completion;
 		if ($this->id == 0 || $this->id == '')
 			$this->id = $sql->send_query_get_id($query);
 		else{
@@ -338,7 +342,11 @@ class ns_processing_job{
 		}	
 		if ($this->processor_id != 0){
 			$query = "SELECT name FROM hosts WHERE id='{$this->processor_id}'";
-			$sql->get_value($query,$this->processor_name);
+			$sql->get_row($query,$res);
+			if (sizeof($res) < 0){
+			  $this->processor_name = "(Unknown)";
+			}
+			else $this->processor_name = $res[0][0];
 		}	
 	}
 	//returns an array containing the number of images calculated.
@@ -610,6 +618,9 @@ class ns_processing_job{
 	 if ($this->paused){
 	   $res .='<font size="-1">(Paused)</font>';
 	 }
+	 if ($this->pending_another_jobs_completion==1)
+	   $res .='<font size="-1">(When Ready)</font>';
+
 	  if ($this->currently_under_processing)
 	    $res .= '<a href="view_hosts_and_devices.php?show_host_nodes=1&highlight_host_id='.$this->processor_id.'"><font size="-1">(Processing...)</font></a>';
 	$res .="</div></td></tr></table>\n";

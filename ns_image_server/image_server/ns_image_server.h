@@ -402,7 +402,7 @@ public:
 	std::string mask_upload_hostname;
 
 	unsigned long automated_job_timeout_in_seconds(){ return 15*60;}
-	unsigned long automated_job_interval(){ return 3*60*60;}
+	unsigned long automated_job_interval(){ return 30*60;}
 
 	const std::vector<std::string> & allowed_sql_databases() const{
 		return possible_sql_databases;

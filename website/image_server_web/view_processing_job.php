@@ -11,6 +11,14 @@ $unlock_tables_query = "UNLOCK TABLES";
 
 $set_autocommit_query = "SET AUTOCOMMIT = 0";
 $clear_autocommit_query = "SET AUTOCOMMIT = 1";
+
+$region_processing_jobs_to_display = array($ns_processing_tasks['ns_process_spatial'],
+				$ns_processing_tasks['ns_process_lossy_stretch'],
+$ns_processing_tasks['ns_process_threshold'],
+$ns_processing_tasks['ns_process_worm_detection'],
+$ns_processing_tasks['ns_process_worm_detection_labels'],
+$ns_processing_tasks['ns_process_movement_paths_visualization'],
+				$ns_processing_tasks['ns_process_movement_paths_visualization_with_mortality_overlay']);
 try{
  
 
@@ -662,7 +670,11 @@ else{
    for ($i = 0; $i < sizeof($jobs); $i++){
       $jobs[$i]->processor_id = $_POST['processor_id'];
       $jobs[$i]->video_timestamp_type = $_POST['video_add_timestamp'];
-      $jobs[$i]->urgent = $_POST['urgent'];
+      if ($_POST['urgent'] == 69){
+	$jobs[$i]->pending_another_jobs_completion = 1;
+	$jobs[$i]->urgent = 0;
+      }
+      else $jobs[$i]->urgent = $_POST['urgent'];
       $jobs[$i]->paused = $_POST['paused'];
       $jobs[$i]->processed_by_push_scheduler = 0;
       for ($j = 0; $j <= $NS_LAST_PROCESSING_JOB ; $j++){
@@ -1108,7 +1120,9 @@ Schedule an Image Processing Job Begin
 		continue;
 	}
 else{
-	if ($i == $ns_processing_tasks['ns_process_analyze_mask'] ||  $i==$ns_processing_tasks['ns_process_resized_sample_image'] || $i==$ns_processing_tasks['ns_process_region_vis'] || $i==$ns_processing_tasks['ns_process_region_interpolation_vis'] || $i==$ns_processing_tasks['ns_process_interpolation_vis'] || $i==$ns_processing_tasks['ns_process_movement_coloring'] ||  $i==$ns_processing_tasks['ns_process_movement_posture_aligned_visualization'] || $i==$ns_processing_tasks['ns_process_movement_posture_visualization'] || $i==$ns_processing_tasks['ns_process_movement_mapping'] || $i==$ns_processing_tasks['ns_process_temporal_interpolation'] || $i==$ns_processing_tasks['ns_process_movement_coloring_with_graph']  || $i==$ns_processing_tasks['ns_process_movement_coloring_with_survival'] || $i==$ns_processing_tasks['ns_process_posture_vis']) continue;
+  /*	if ($i == $ns_processing_tasks['ns_process_analyze_mask'] ||  $i==$ns_processing_tasks['ns_process_resized_sample_image'] || $i==$ns_processing_tasks['ns_process_region_vis'] || $i==$ns_processing_tasks['ns_process_region_interpolation_vis'] || $i==$ns_processing_tasks['ns_process_interpolation_vis'] || $i==$ns_processing_tasks['ns_process_movement_coloring'] ||  $i==$ns_processing_tasks['ns_process_movement_posture_aligned_visualization'] || $i==$ns_processing_tasks['ns_process_movement_posture_visualization'] || $i==$ns_processing_tasks['ns_process_movement_mapping'] || $i==$ns_processing_tasks['ns_process_temporal_interpolation'] || $i==$ns_processing_tasks['ns_process_movement_coloring_with_graph']  || $i==$ns_processing_tasks['ns_process_movement_coloring_with_survival'] || $i==$ns_processing_tasks['ns_process_posture_vis']) continue;*/
+  if ($jobs[0]->operations[$i]==0 && array_search($i,$region_processing_jobs_to_display) === FALSE)
+    continue;
 }
   $cc++;
 		$clrs = $table_colors[($cc+1)%2];
@@ -1221,7 +1235,11 @@ $finish = $NS_LAST_PROCESSING_JOB;
 		continue;
 	}
 else{
-	if ($i == $ns_processing_tasks['ns_process_analyze_mask'] ||  /*$i==$ns_processing_tasks['ns_process_resized_sample_image'] ||*/ $i==$ns_processing_tasks['ns_process_region_vis'] || $i==$ns_processing_tasks['ns_process_region_interpolation_vis'] || $i==$ns_processing_tasks['ns_process_interpolation_vis']   || $i==$ns_processing_tasks['ns_process_movement_posture_visualization'] || $i==$ns_processing_tasks['ns_process_movement_mapping'] || $i==$ns_processing_tasks['ns_process_temporal_interpolation'] || $i==$ns_processing_tasks['ns_process_movement_coloring_with_graph']  || $i==$ns_processing_tasks['ns_process_movement_coloring_with_survival'] || $i==$ns_processing_tasks['ns_process_posture_vis']) continue;
+  /*	if ($i == $ns_processing_tasks['ns_process_analyze_mask'] || $i==$ns_processing_tasks['ns_process_region_vis'] || $i==$ns_processing_tasks['ns_process_region_interpolation_vis'] || $i==$ns_processing_tasks['ns_process_interpolation_vis']   || $i==$ns_processing_tasks['ns_process_movement_posture_visualization'] || $i==$ns_processing_tasks['ns_process_movement_mapping'] || $i==$ns_processing_tasks['ns_process_temporal_interpolation'] || $i==$ns_processing_tasks['ns_process_movement_coloring_with_graph']  || $i==$ns_processing_tasks['ns_process_movement_coloring_with_survival'] || $i==$ns_processing_tasks['ns_process_posture_vis']) continue;
+*/
+  if ($i != $ns_processing_jobs['ns_unprocessed'] && array_search($i,$region_processing_jobs_to_display) === FALSE)
+    continue;
+
 }
   $cc++;
   
@@ -1288,6 +1306,7 @@ Schedule Database/File Storage Job Begin
 	   	 	<option value="1" <?php if ($jobs[0]->urgent==1) echo "selected"?> >Urgent</option>
 	   	 	<option value="0" <?php if (sizeof($jobs)==0 || $jobs[0]->urgent==0) echo "selected "?> >Standard</option>
 <option value="-1" <?php if ($jobs[0]->urgent==-1) echo "selected "?> >Low</option>
+<option value="69" <?php if ($jobs[0]->pending_another_jobs_completion) echo "selected "?> >When Ready</option>
 	  	</select><br>
 	</td>
   </tr>  <!--
@@ -1525,7 +1544,10 @@ $finish = $NS_LAST_PROCESSING_JOB;
 		continue;
 	}
 else{
-	if ($i == $ns_processing_tasks['ns_process_analyze_mask'] ||  $i==$ns_processing_tasks['ns_process_apply_mask'] || $i==$ns_processing_tasks['ns_process_resized_sample_image'] || $i==$ns_processing_tasks['ns_process_region_vis'] || $i==$ns_processing_tasks['ns_process_region_interpolation_vis'] || $i==$ns_processing_tasks['ns_process_interpolation_vis'] || $i==$ns_processing_tasks['ns_process_movement_coloring']) continue;
+  /*	if ($i == $ns_processing_tasks['ns_process_analyze_mask'] ||  $i==$ns_processing_tasks['ns_process_apply_mask'] || $i==$ns_processing_tasks['ns_process_resized_sample_image'] || $i==$ns_processing_tasks['ns_process_region_vis'] || $i==$ns_processing_tasks['ns_process_region_interpolation_vis'] || $i==$ns_processing_tasks['ns_process_interpolation_vis'] || $i==$ns_processing_tasks['ns_process_movement_coloring']) continue;*/
+  if ($jobs[0]->operations[$i]== 0 && array_search($i,$region_processing_jobs_to_display) === FALSE)
+    continue;
+
 }
   $cc++;
       $clrs = $table_colors[($cc+1)%2];

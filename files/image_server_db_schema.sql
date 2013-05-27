@@ -2,7 +2,7 @@
 --
 -- Host: localhost    Database: image_server
 -- ------------------------------------------------------
--- Server version	5.0.77-log
+-- Server version	5.0.95-log
 
 /*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
 /*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
@@ -20,8 +20,8 @@
 --
 
 DROP TABLE IF EXISTS `alerts`;
-SET @saved_cs_client     = @@character_set_client;
-SET character_set_client = utf8;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `alerts` (
   `host_id` int(10) unsigned NOT NULL,
   `time` int(10) unsigned NOT NULL,
@@ -34,16 +34,16 @@ CREATE TABLE `alerts` (
   `detailed_text` text NOT NULL,
   `detailed_recipients` text,
   PRIMARY KEY  (`id`)
-) ENGINE=MyISAM AUTO_INCREMENT=924 DEFAULT CHARSET=latin1;
-SET character_set_client = @saved_cs_client;
+) ENGINE=MyISAM AUTO_INCREMENT=1185 DEFAULT CHARSET=latin1;
+/*!40101 SET character_set_client = @saved_cs_client */;
 
 --
 -- Table structure for table `animal_storyboard`
 --
 
 DROP TABLE IF EXISTS `animal_storyboard`;
-SET @saved_cs_client     = @@character_set_client;
-SET character_set_client = utf8;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `animal_storyboard` (
   `id` int(10) unsigned NOT NULL auto_increment,
   `region_id` int(10) unsigned NOT NULL default '0',
@@ -61,16 +61,16 @@ CREATE TABLE `animal_storyboard` (
   `image_delay_time_after_event` int(10) unsigned NOT NULL default '0',
   PRIMARY KEY  (`id`),
   KEY `subject` (`region_id`,`sample_id`,`experiment_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=133119 DEFAULT CHARSET=latin1;
-SET character_set_client = @saved_cs_client;
+) ENGINE=InnoDB AUTO_INCREMENT=139152 DEFAULT CHARSET=latin1;
+/*!40101 SET character_set_client = @saved_cs_client */;
 
 --
 -- Table structure for table `annotation_flags`
 --
 
 DROP TABLE IF EXISTS `annotation_flags`;
-SET @saved_cs_client     = @@character_set_client;
-SET character_set_client = utf8;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `annotation_flags` (
   `id` int(10) unsigned NOT NULL auto_increment,
   `label_short` text NOT NULL,
@@ -82,15 +82,15 @@ CREATE TABLE `annotation_flags` (
   `next_flag_name_in_order` text NOT NULL,
   PRIMARY KEY  (`id`)
 ) ENGINE=MyISAM AUTO_INCREMENT=8 DEFAULT CHARSET=latin1;
-SET character_set_client = @saved_cs_client;
+/*!40101 SET character_set_client = @saved_cs_client */;
 
 --
 -- Table structure for table `automated_job_scheduling_data`
 --
 
 DROP TABLE IF EXISTS `automated_job_scheduling_data`;
-SET @saved_cs_client     = @@character_set_client;
-SET character_set_client = utf8;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `automated_job_scheduling_data` (
   `id` int(10) unsigned NOT NULL auto_increment,
   `currently_running_host_id` int(11) NOT NULL default '0',
@@ -98,15 +98,15 @@ CREATE TABLE `automated_job_scheduling_data` (
   `next_run_time` int(10) unsigned NOT NULL default '0',
   PRIMARY KEY  (`id`)
 ) ENGINE=MEMORY AUTO_INCREMENT=2 DEFAULT CHARSET=latin1;
-SET character_set_client = @saved_cs_client;
+/*!40101 SET character_set_client = @saved_cs_client */;
 
 --
 -- Table structure for table `autoscan_schedule`
 --
 
 DROP TABLE IF EXISTS `autoscan_schedule`;
-SET @saved_cs_client     = @@character_set_client;
-SET character_set_client = utf8;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `autoscan_schedule` (
   `id` int(10) unsigned NOT NULL auto_increment,
   `device_name` varchar(256) NOT NULL default '0',
@@ -115,16 +115,16 @@ CREATE TABLE `autoscan_schedule` (
   `scan_interval` int(10) unsigned NOT NULL default '0',
   PRIMARY KEY  (`id`),
   KEY `lookup` (`device_name`,`autoscan_completed_time`,`autoscan_start_time`)
-) ENGINE=MyISAM AUTO_INCREMENT=2823 DEFAULT CHARSET=latin1;
-SET character_set_client = @saved_cs_client;
+) ENGINE=MyISAM AUTO_INCREMENT=3095 DEFAULT CHARSET=latin1;
+/*!40101 SET character_set_client = @saved_cs_client */;
 
 --
 -- Table structure for table `capture_samples`
 --
 
 DROP TABLE IF EXISTS `capture_samples`;
-SET @saved_cs_client     = @@character_set_client;
-SET character_set_client = utf8;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `capture_samples` (
   `id` int(10) unsigned NOT NULL auto_increment,
   `parameters` text NOT NULL,
@@ -167,16 +167,16 @@ CREATE TABLE `capture_samples` (
   PRIMARY KEY  (`id`),
   KEY `text_find` (`parameters`(400)),
   KEY `device_lookup` (`id`,`device_name`)
-) ENGINE=InnoDB AUTO_INCREMENT=13598 DEFAULT CHARSET=latin1 ROW_FORMAT=DYNAMIC COMMENT='different samples imaged on the scanner with different param';
-SET character_set_client = @saved_cs_client;
+) ENGINE=InnoDB AUTO_INCREMENT=14688 DEFAULT CHARSET=latin1 ROW_FORMAT=DYNAMIC COMMENT='different samples imaged on the scanner with different param';
+/*!40101 SET character_set_client = @saved_cs_client */;
 
 --
 -- Table structure for table `capture_schedule`
 --
 
 DROP TABLE IF EXISTS `capture_schedule`;
-SET @saved_cs_client     = @@character_set_client;
-SET character_set_client = utf8;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `capture_schedule` (
   `id` bigint(20) unsigned NOT NULL auto_increment,
   `experiment_id` int(10) unsigned NOT NULL default '0',
@@ -212,16 +212,16 @@ CREATE TABLE `capture_schedule` (
   KEY `image_reverse_lookup` (`captured_image_id`),
   KEY `shed` (`scheduled_time`,`sample_id`),
   KEY `device_lookup` USING BTREE (`scheduled_time`,`time_at_start`,`sample_id`,`experiment_id`,`missed`,`problem`,`time_at_finish`,`censored`)
-) ENGINE=InnoDB AUTO_INCREMENT=4616921 DEFAULT CHARSET=latin1 COMMENT='InnoDB free: 121856 kB';
-SET character_set_client = @saved_cs_client;
+) ENGINE=InnoDB AUTO_INCREMENT=4954461 DEFAULT CHARSET=latin1 COMMENT='InnoDB free: 121856 kB';
+/*!40101 SET character_set_client = @saved_cs_client */;
 
 --
 -- Table structure for table `captured_images`
 --
 
 DROP TABLE IF EXISTS `captured_images`;
-SET @saved_cs_client     = @@character_set_client;
-SET character_set_client = utf8;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `captured_images` (
   `id` int(10) unsigned NOT NULL auto_increment,
   `image_id` int(10) unsigned NOT NULL default '0',
@@ -244,90 +244,90 @@ CREATE TABLE `captured_images` (
   KEY `image_id_reverse_lookup` (`image_id`),
   KEY `time` (`sample_id`,`capture_time`),
   KEY `job_search` USING BTREE (`sample_id`,`currently_being_processed`,`mask_applied`,`problem`,`small_image_id`,`censored`,`image_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=2307948 DEFAULT CHARSET=latin1;
-SET character_set_client = @saved_cs_client;
+) ENGINE=InnoDB AUTO_INCREMENT=2524423 DEFAULT CHARSET=latin1;
+/*!40101 SET character_set_client = @saved_cs_client */;
 
 --
 -- Table structure for table `constants`
 --
 
 DROP TABLE IF EXISTS `constants`;
-SET @saved_cs_client     = @@character_set_client;
-SET character_set_client = utf8;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `constants` (
   `k` text NOT NULL COMMENT 'key',
   `v` text NOT NULL COMMENT 'value',
   `id` int(10) unsigned NOT NULL auto_increment,
   `time_stamp` timestamp NOT NULL default CURRENT_TIMESTAMP on update CURRENT_TIMESTAMP,
   PRIMARY KEY  (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=75 DEFAULT CHARSET=latin1;
-SET character_set_client = @saved_cs_client;
+) ENGINE=InnoDB AUTO_INCREMENT=76 DEFAULT CHARSET=latin1;
+/*!40101 SET character_set_client = @saved_cs_client */;
 
 --
 -- Table structure for table `daily_quotes`
 --
 
 DROP TABLE IF EXISTS `daily_quotes`;
-SET @saved_cs_client     = @@character_set_client;
-SET character_set_client = utf8;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `daily_quotes` (
   `quote` text,
   `stock` tinyint(3) unsigned NOT NULL default '0',
   `author` text NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
-SET character_set_client = @saved_cs_client;
+/*!40101 SET character_set_client = @saved_cs_client */;
 
 --
 -- Table structure for table `delete_file_jobs`
 --
 
 DROP TABLE IF EXISTS `delete_file_jobs`;
-SET @saved_cs_client     = @@character_set_client;
-SET character_set_client = utf8;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `delete_file_jobs` (
   `id` int(10) unsigned NOT NULL auto_increment,
   `confirmed` int(10) unsigned NOT NULL default '0',
   `parent_job_id` int(10) unsigned NOT NULL default '0' COMMENT 'points to the file deletion specification job that produced this deletion job',
   PRIMARY KEY  (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=2734 DEFAULT CHARSET=latin1 ROW_FORMAT=DYNAMIC;
-SET character_set_client = @saved_cs_client;
+) ENGINE=InnoDB AUTO_INCREMENT=4195 DEFAULT CHARSET=latin1 ROW_FORMAT=DYNAMIC;
+/*!40101 SET character_set_client = @saved_cs_client */;
 
 --
 -- Table structure for table `delete_file_specifications`
 --
 
 DROP TABLE IF EXISTS `delete_file_specifications`;
-SET @saved_cs_client     = @@character_set_client;
-SET character_set_client = utf8;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `delete_file_specifications` (
   `delete_job_id` int(10) unsigned default NULL,
   `relative_directory` text NOT NULL,
   `filename` text NOT NULL,
   `partition` text NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
-SET character_set_client = @saved_cs_client;
+/*!40101 SET character_set_client = @saved_cs_client */;
 
 --
 -- Table structure for table `device_inventory`
 --
 
 DROP TABLE IF EXISTS `device_inventory`;
-SET @saved_cs_client     = @@character_set_client;
-SET character_set_client = utf8;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `device_inventory` (
   `device_name` varchar(23) NOT NULL,
   `incubator_name` varchar(45) NOT NULL,
   `incubator_location` varchar(10) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
-SET character_set_client = @saved_cs_client;
+/*!40101 SET character_set_client = @saved_cs_client */;
 
 --
 -- Table structure for table `devices`
 --
 
 DROP TABLE IF EXISTS `devices`;
-SET @saved_cs_client     = @@character_set_client;
-SET character_set_client = utf8;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `devices` (
   `name` varchar(256) NOT NULL,
   `comments` text NOT NULL,
@@ -347,31 +347,31 @@ CREATE TABLE `devices` (
   `next_autoscan_time` int(10) unsigned NOT NULL default '0',
   KEY `name_lookup` USING BTREE (`name`(5),`in_recognized_error_state`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1 ROW_FORMAT=DYNAMIC COMMENT='InnoDB free: 6144 kB';
-SET character_set_client = @saved_cs_client;
+/*!40101 SET character_set_client = @saved_cs_client */;
 
 --
 -- Table structure for table `experiment_groups`
 --
 
 DROP TABLE IF EXISTS `experiment_groups`;
-SET @saved_cs_client     = @@character_set_client;
-SET character_set_client = utf8;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `experiment_groups` (
   `group_id` int(10) unsigned NOT NULL auto_increment,
   `group_name` text NOT NULL,
   `hidden` tinyint(3) unsigned NOT NULL,
   `group_order` int(10) unsigned NOT NULL,
   PRIMARY KEY  (`group_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=9 DEFAULT CHARSET=latin1;
-SET character_set_client = @saved_cs_client;
+) ENGINE=InnoDB AUTO_INCREMENT=10 DEFAULT CHARSET=latin1;
+/*!40101 SET character_set_client = @saved_cs_client */;
 
 --
 -- Table structure for table `experiments`
 --
 
 DROP TABLE IF EXISTS `experiments`;
-SET @saved_cs_client     = @@character_set_client;
-SET character_set_client = utf8;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `experiments` (
   `id` int(10) unsigned NOT NULL auto_increment,
   `name` text NOT NULL,
@@ -398,16 +398,16 @@ CREATE TABLE `experiments` (
   `latest_storyboard_build_timestamp` bigint(20) unsigned NOT NULL default '0',
   `number_of_regions_in_latest_storyboard_build` bigint(20) unsigned NOT NULL default '0',
   PRIMARY KEY  (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=531 DEFAULT CHARSET=latin1 ROW_FORMAT=DYNAMIC;
-SET character_set_client = @saved_cs_client;
+) ENGINE=InnoDB AUTO_INCREMENT=561 DEFAULT CHARSET=latin1 ROW_FORMAT=DYNAMIC;
+/*!40101 SET character_set_client = @saved_cs_client */;
 
 --
 -- Table structure for table `host_event_log`
 --
 
 DROP TABLE IF EXISTS `host_event_log`;
-SET @saved_cs_client     = @@character_set_client;
-SET character_set_client = utf8;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `host_event_log` (
   `host_id` int(10) unsigned NOT NULL default '0',
   `event` text NOT NULL,
@@ -431,16 +431,16 @@ CREATE TABLE `host_event_log` (
   KEY `host_index` (`host_id`,`time`),
   KEY `sub_events` (`parent_event_id`,`time`),
   KEY `duration` (`processing_duration`)
-) ENGINE=MyISAM AUTO_INCREMENT=18932133 DEFAULT CHARSET=latin1 COMMENT='InnoDB free: 204800 kB';
-SET character_set_client = @saved_cs_client;
+) ENGINE=MyISAM AUTO_INCREMENT=24188795 DEFAULT CHARSET=latin1 COMMENT='InnoDB free: 204800 kB';
+/*!40101 SET character_set_client = @saved_cs_client */;
 
 --
 -- Table structure for table `hosts`
 --
 
 DROP TABLE IF EXISTS `hosts`;
-SET @saved_cs_client     = @@character_set_client;
-SET character_set_client = utf8;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `hosts` (
   `id` int(10) unsigned NOT NULL auto_increment,
   `ip` varchar(15) NOT NULL default '',
@@ -462,15 +462,15 @@ CREATE TABLE `hosts` (
   `time_of_last_successful_long_term_storage_write` bigint(20) unsigned NOT NULL,
   PRIMARY KEY  (`id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=293 DEFAULT CHARSET=latin1;
-SET character_set_client = @saved_cs_client;
+/*!40101 SET character_set_client = @saved_cs_client */;
 
 --
 -- Table structure for table `image_mask_regions`
 --
 
 DROP TABLE IF EXISTS `image_mask_regions`;
-SET @saved_cs_client     = @@character_set_client;
-SET character_set_client = utf8;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `image_mask_regions` (
   `mask_id` int(10) unsigned NOT NULL default '0',
   `x_min` int(10) unsigned NOT NULL default '0',
@@ -484,16 +484,16 @@ CREATE TABLE `image_mask_regions` (
   `id` int(10) unsigned NOT NULL auto_increment,
   PRIMARY KEY  (`id`),
   KEY `mask` (`mask_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=22500 DEFAULT CHARSET=latin1;
-SET character_set_client = @saved_cs_client;
+) ENGINE=InnoDB AUTO_INCREMENT=24572 DEFAULT CHARSET=latin1;
+/*!40101 SET character_set_client = @saved_cs_client */;
 
 --
 -- Table structure for table `image_masks`
 --
 
 DROP TABLE IF EXISTS `image_masks`;
-SET @saved_cs_client     = @@character_set_client;
-SET character_set_client = utf8;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `image_masks` (
   `image_id` int(10) unsigned NOT NULL default '0',
   `id` int(10) unsigned NOT NULL auto_increment,
@@ -501,16 +501,16 @@ CREATE TABLE `image_masks` (
   `visualization_image_id` int(10) unsigned NOT NULL default '0',
   `resize_factor` int(10) unsigned NOT NULL default '1',
   PRIMARY KEY  (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=6521 DEFAULT CHARSET=latin1;
-SET character_set_client = @saved_cs_client;
+) ENGINE=InnoDB AUTO_INCREMENT=7082 DEFAULT CHARSET=latin1;
+/*!40101 SET character_set_client = @saved_cs_client */;
 
 --
 -- Table structure for table `image_statistics`
 --
 
 DROP TABLE IF EXISTS `image_statistics`;
-SET @saved_cs_client     = @@character_set_client;
-SET character_set_client = utf8;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `image_statistics` (
   `id` int(10) unsigned NOT NULL auto_increment,
   `histogram` blob NOT NULL,
@@ -536,16 +536,16 @@ CREATE TABLE `image_statistics` (
   `non_worm_object_intensity_mean` float NOT NULL default '0',
   `non_worm_object_intensity_variance` float NOT NULL default '0',
   PRIMARY KEY  (`id`)
-) ENGINE=MyISAM AUTO_INCREMENT=10261602 DEFAULT CHARSET=latin1 ROW_FORMAT=DYNAMIC;
-SET character_set_client = @saved_cs_client;
+) ENGINE=MyISAM AUTO_INCREMENT=11241763 DEFAULT CHARSET=latin1 ROW_FORMAT=DYNAMIC;
+/*!40101 SET character_set_client = @saved_cs_client */;
 
 --
 -- Table structure for table `images`
 --
 
 DROP TABLE IF EXISTS `images`;
-SET @saved_cs_client     = @@character_set_client;
-SET character_set_client = utf8;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `images` (
   `id` bigint(20) unsigned NOT NULL auto_increment,
   `filename` text NOT NULL,
@@ -557,16 +557,16 @@ CREATE TABLE `images` (
   `partition` text NOT NULL,
   PRIMARY KEY  (`id`),
   KEY `host_lookup` (`host_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=70023947 DEFAULT CHARSET=latin1 ROW_FORMAT=DYNAMIC;
-SET character_set_client = @saved_cs_client;
+) ENGINE=InnoDB AUTO_INCREMENT=74752289 DEFAULT CHARSET=latin1 ROW_FORMAT=DYNAMIC;
+/*!40101 SET character_set_client = @saved_cs_client */;
 
 --
 -- Table structure for table `path_data`
 --
 
 DROP TABLE IF EXISTS `path_data`;
-SET @saved_cs_client     = @@character_set_client;
-SET character_set_client = utf8;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `path_data` (
   `region_id` int(10) unsigned NOT NULL,
   `group_id` int(10) unsigned NOT NULL,
@@ -575,16 +575,16 @@ CREATE TABLE `path_data` (
   `id` int(10) unsigned NOT NULL auto_increment,
   PRIMARY KEY  (`id`),
   KEY `reg_id` USING BTREE (`region_id`,`group_id`,`path_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=981950 DEFAULT CHARSET=latin1;
-SET character_set_client = @saved_cs_client;
+) ENGINE=InnoDB AUTO_INCREMENT=1034612 DEFAULT CHARSET=latin1;
+/*!40101 SET character_set_client = @saved_cs_client */;
 
 --
 -- Table structure for table `performance_statistics`
 --
 
 DROP TABLE IF EXISTS `performance_statistics`;
-SET @saved_cs_client     = @@character_set_client;
-SET character_set_client = utf8;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `performance_statistics` (
   `host_id` int(10) unsigned NOT NULL default '0',
   `operation` int(10) unsigned NOT NULL,
@@ -592,15 +592,15 @@ CREATE TABLE `performance_statistics` (
   `variance` float NOT NULL,
   `count` int(10) unsigned NOT NULL
 ) ENGINE=MEMORY DEFAULT CHARSET=latin1;
-SET character_set_client = @saved_cs_client;
+/*!40101 SET character_set_client = @saved_cs_client */;
 
 --
 -- Table structure for table `processing_job_log`
 --
 
 DROP TABLE IF EXISTS `processing_job_log`;
-SET @saved_cs_client     = @@character_set_client;
-SET character_set_client = utf8;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `processing_job_log` (
   `host_id` int(10) unsigned NOT NULL auto_increment,
   `job_id` int(10) unsigned NOT NULL default '0',
@@ -614,15 +614,15 @@ CREATE TABLE `processing_job_log` (
   `problem` int(10) unsigned NOT NULL,
   PRIMARY KEY  (`host_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
-SET character_set_client = @saved_cs_client;
+/*!40101 SET character_set_client = @saved_cs_client */;
 
 --
 -- Table structure for table `processing_job_queue`
 --
 
 DROP TABLE IF EXISTS `processing_job_queue`;
-SET @saved_cs_client     = @@character_set_client;
-SET character_set_client = utf8;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `processing_job_queue` (
   `id` bigint(20) unsigned NOT NULL auto_increment,
   `priority` int(10) unsigned NOT NULL default '0',
@@ -643,16 +643,16 @@ CREATE TABLE `processing_job_queue` (
   `paused` int(10) unsigned NOT NULL default '0',
   PRIMARY KEY  (`id`),
   KEY `priority_index` USING BTREE (`priority`,`problem`,`job_class`,`processor_id`)
-) ENGINE=MyISAM AUTO_INCREMENT=4639036 DEFAULT CHARSET=latin1;
-SET character_set_client = @saved_cs_client;
+) ENGINE=MyISAM AUTO_INCREMENT=5909596 DEFAULT CHARSET=latin1;
+/*!40101 SET character_set_client = @saved_cs_client */;
 
 --
 -- Table structure for table `processing_jobs`
 --
 
 DROP TABLE IF EXISTS `processing_jobs`;
-SET @saved_cs_client     = @@character_set_client;
-SET character_set_client = utf8;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `processing_jobs` (
   `id` bigint(20) unsigned NOT NULL auto_increment,
   `experiment_id` bigint(20) unsigned NOT NULL default '0',
@@ -710,17 +710,18 @@ CREATE TABLE `processing_jobs` (
   `video_add_timestamp` tinyint(1) NOT NULL default '0',
   `maintenance_flag` int(10) unsigned NOT NULL default '0',
   `paused` int(10) unsigned NOT NULL default '0',
+  `pending_another_jobs_completion` int(11) NOT NULL default '0',
   PRIMARY KEY  (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=161986 DEFAULT CHARSET=latin1 ROW_FORMAT=DYNAMIC COMMENT='InnoDB free: 92160 kB; InnoDB free: 309248 kB';
-SET character_set_client = @saved_cs_client;
+) ENGINE=InnoDB AUTO_INCREMENT=177568 DEFAULT CHARSET=latin1 ROW_FORMAT=DYNAMIC COMMENT='InnoDB free: 92160 kB; InnoDB free: 309248 kB';
+/*!40101 SET character_set_client = @saved_cs_client */;
 
 --
 -- Table structure for table `sample_region_image_aligned_path_images`
 --
 
 DROP TABLE IF EXISTS `sample_region_image_aligned_path_images`;
-SET @saved_cs_client     = @@character_set_client;
-SET character_set_client = utf8;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `sample_region_image_aligned_path_images` (
   `id` int(10) unsigned NOT NULL auto_increment,
   `region_info_id` int(10) unsigned NOT NULL default '0',
@@ -729,15 +730,15 @@ CREATE TABLE `sample_region_image_aligned_path_images` (
   PRIMARY KEY  (`id`),
   KEY `region_lookup` (`region_info_id`,`frame_index`)
 ) ENGINE=MyISAM AUTO_INCREMENT=571487 DEFAULT CHARSET=latin1;
-SET character_set_client = @saved_cs_client;
+/*!40101 SET character_set_client = @saved_cs_client */;
 
 --
 -- Table structure for table `sample_region_image_info`
 --
 
 DROP TABLE IF EXISTS `sample_region_image_info`;
-SET @saved_cs_client     = @@character_set_client;
-SET character_set_client = utf8;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `sample_region_image_info` (
   `mask_region_id` int(10) unsigned NOT NULL default '0',
   `details` text NOT NULL,
@@ -797,19 +798,19 @@ CREATE TABLE `sample_region_image_info` (
   `posture_analysis_method` varchar(10) NOT NULL,
   `worm_detection_model` text NOT NULL,
   `measured_temperature` double NOT NULL default '0',
-  `time_series_denoising_flag` int(10) unsigned NOT NULL,
+  `time_series_denoising_flag` int(10) unsigned NOT NULL default '1',
   PRIMARY KEY  (`id`),
   KEY `experiment` (`mask_region_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=23041 DEFAULT CHARSET=latin1 ROW_FORMAT=DYNAMIC COMMENT='InnoDB free: 6144 kB';
-SET character_set_client = @saved_cs_client;
+) ENGINE=InnoDB AUTO_INCREMENT=25113 DEFAULT CHARSET=latin1 ROW_FORMAT=DYNAMIC COMMENT='InnoDB free: 6144 kB';
+/*!40101 SET character_set_client = @saved_cs_client */;
 
 --
 -- Table structure for table `sample_region_images`
 --
 
 DROP TABLE IF EXISTS `sample_region_images`;
-SET @saved_cs_client     = @@character_set_client;
-SET character_set_client = utf8;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `sample_region_images` (
   `id` int(10) unsigned NOT NULL auto_increment,
   `region_info_id` int(10) unsigned NOT NULL default '0',
@@ -859,16 +860,16 @@ CREATE TABLE `sample_region_images` (
   PRIMARY KEY  (`id`),
   KEY `job_lookup` (`region_info_id`,`problem`,`currently_under_processing`),
   KEY `movement_index` (`region_info_id`,`worm_movement_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=6826295 DEFAULT CHARSET=latin1 ROW_FORMAT=DYNAMIC;
-SET character_set_client = @saved_cs_client;
+) ENGINE=InnoDB AUTO_INCREMENT=7440885 DEFAULT CHARSET=latin1 ROW_FORMAT=DYNAMIC;
+/*!40101 SET character_set_client = @saved_cs_client */;
 
 --
 -- Table structure for table `sample_time_relationships`
 --
 
 DROP TABLE IF EXISTS `sample_time_relationships`;
-SET @saved_cs_client     = @@character_set_client;
-SET character_set_client = utf8;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `sample_time_relationships` (
   `time` bigint(20) unsigned NOT NULL default '0',
   `previous_short` bigint(20) unsigned NOT NULL default '0',
@@ -878,15 +879,15 @@ CREATE TABLE `sample_time_relationships` (
   `sample_id` bigint(20) unsigned NOT NULL default '0',
   KEY `sample_time` (`sample_id`,`time`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
-SET character_set_client = @saved_cs_client;
+/*!40101 SET character_set_client = @saved_cs_client */;
 
 --
 -- Table structure for table `strain_aliases`
 --
 
 DROP TABLE IF EXISTS `strain_aliases`;
-SET @saved_cs_client     = @@character_set_client;
-SET character_set_client = utf8;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `strain_aliases` (
   `strain` text NOT NULL,
   `genotype` text NOT NULL,
@@ -896,15 +897,15 @@ CREATE TABLE `strain_aliases` (
   PRIMARY KEY  (`id`),
   KEY `s` USING BTREE (`used_in_cluster`,`strain`(15))
 ) ENGINE=MyISAM AUTO_INCREMENT=12178 DEFAULT CHARSET=latin1;
-SET character_set_client = @saved_cs_client;
+/*!40101 SET character_set_client = @saved_cs_client */;
 
 --
 -- Table structure for table `worm_detection_results`
 --
 
 DROP TABLE IF EXISTS `worm_detection_results`;
-SET @saved_cs_client     = @@character_set_client;
-SET character_set_client = utf8;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `worm_detection_results` (
   `id` bigint(20) unsigned NOT NULL auto_increment,
   `source_image_id` bigint(20) unsigned NOT NULL default '0',
@@ -927,16 +928,16 @@ CREATE TABLE `worm_detection_results` (
   `data_storage_on_disk_id` bigint(20) unsigned NOT NULL COMMENT 'Worm segment info can be stored in this db, or alternatively saved to disk with filename information provided by the image table row number worm_segment_information_id ',
   PRIMARY KEY  (`id`),
   KEY `reverse_sample_lookup` (`capture_sample_id`)
-) ENGINE=MyISAM AUTO_INCREMENT=6530977 DEFAULT CHARSET=latin1 CHECKSUM=1 COMMENT='myISAM';
-SET character_set_client = @saved_cs_client;
+) ENGINE=MyISAM AUTO_INCREMENT=7204049 DEFAULT CHARSET=latin1 CHECKSUM=1 COMMENT='myISAM';
+/*!40101 SET character_set_client = @saved_cs_client */;
 
 --
 -- Table structure for table `worm_movement`
 --
 
 DROP TABLE IF EXISTS `worm_movement`;
-SET @saved_cs_client     = @@character_set_client;
-SET character_set_client = utf8;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `worm_movement` (
   `id` int(10) unsigned NOT NULL auto_increment,
   `sample_id` int(10) unsigned NOT NULL default '0',
@@ -963,7 +964,7 @@ CREATE TABLE `worm_movement` (
   PRIMARY KEY  (`id`),
   KEY `region_time` (`region_info_id`,`time`)
 ) ENGINE=MyISAM AUTO_INCREMENT=428056 DEFAULT CHARSET=latin1;
-SET character_set_client = @saved_cs_client;
+/*!40101 SET character_set_client = @saved_cs_client */;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 
 /*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
@@ -974,4 +975,4 @@ SET character_set_client = @saved_cs_client;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2013-02-13 21:55:32
+-- Dump completed on 2013-05-26 20:29:19

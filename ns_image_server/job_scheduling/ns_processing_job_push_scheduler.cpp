@@ -330,12 +330,13 @@ void ns_image_server_push_job_scheduler::discover_new_jobs(ns_sql & sql){
 			try{
 				//there's a chance a job pending anothers completion can be run immediately (as all necissary analysis has 
 				//already been performed).  Try it now.
-				if (p_jobs[i].pending_another_jobs_completion)
+				if (p_jobs[i].pending_another_jobs_completion){
 					if (!try_to_process_a_job_pending_anothers_completion(p_jobs[i],sql)){
 						sql << "UPDATE processing_jobs SET currently_under_processing = 0, processed_by_push_scheduler = " << image_server.host_id() << " WHERE id=" << p_jobs[i].id;
 						sql.send_query();
 						sql.send_query("COMMIT");
 					}
+				}
 				else
 					report_new_job_and_mark_it_so(p_jobs[i],sql);
 			}

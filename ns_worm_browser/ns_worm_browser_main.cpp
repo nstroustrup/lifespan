@@ -822,7 +822,7 @@ class ns_worm_terminal_main_menu_organizer : public ns_menu_organizer{
 	static void generate_single_frame_posture_image_pixel_data(const std::string & value){
 		worm_learner.generate_single_frame_posture_image_pixel_data((value.find("Plate") != std::string::npos));
 	}
-	static void generate_worm_posture_model_from_by_hand_annotations(const std::string & value){worm_learner.generate_experiment_movement_image_quantification_analysis_data(ns_worm_learner::ns_build_worm_posture_model_from_by_hand_annotations);	}
+	static void generate_worm_markov_posture_model_from_by_hand_annotations(const std::string & value){worm_learner.generate_experiment_movement_image_quantification_analysis_data(ns_worm_learner::ns_build_worm_markov_posture_model_from_by_hand_annotations);	}
 	
 	static void generate_experiment_detailed_movement_image_quantification_analysis_data(const std::string & value){worm_learner.generate_experiment_movement_image_quantification_analysis_data(ns_worm_learner::ns_quantification_detailed);	}
 	
@@ -1061,12 +1061,12 @@ public:
 		
 		add(ns_menu_item_spec(generate_survival_curve_from_hand_annotations,"&Calibration/Generate Survival Curves from by hand annotations"));
 		add(ns_menu_item_spec(compare_machine_and_by_hand_annotations,"Calibration/Compare by-hand annotations to Machine"));
-		ns_menu_item_spec st4(generate_movement_image_analysis_optimization_data,"Calibration/Generate Posture Analysis Parameter Optimization File");
+		ns_menu_item_spec st4(generate_movement_image_analysis_optimization_data,"Calibration/Generate Threshold Posture Model Parameter Optimization File from By Hand Annotations");
 		st4.options.push_back(ns_menu_item_options("Using Lifespan Parameter Range"));
 		st4.options.push_back(ns_menu_item_options("Using Thermotolerance Parameter Range"));
 		add(st4);
 		
-		add(ns_menu_item_spec(generate_worm_posture_model_from_by_hand_annotations,"Calibration/Build Posture Model From By Hand Annotations"));
+		add(ns_menu_item_spec(generate_worm_markov_posture_model_from_by_hand_annotations,"Calibration/Build Hidden Markov Posture Model From By Hand Annotations"));
 		
 	
 

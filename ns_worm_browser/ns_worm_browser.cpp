@@ -1749,7 +1749,7 @@ void ns_worm_learner::generate_experiment_movement_image_quantification_analysis
 	}
 	else if (detail_level == ns_quantification_summary  || 
 		detail_level == ns_quantification_detailed_with_by_hand ||  
-		detail_level == ns_build_worm_posture_model_from_by_hand_annotations || 
+		detail_level == ns_build_worm_markov_posture_model_from_by_hand_annotations || 
 		detail_level == ns_quantification_abbreviated_detailed){		
 		//since there is less data here, we calculate it on the fly.
 		bool header_written(false);
@@ -1773,7 +1773,7 @@ void ns_worm_learner::generate_experiment_movement_image_quantification_analysis
 															movement_results.samples[i].regions[j].metadata,
 															sql());
 				if (detail_level == ns_quantification_detailed_with_by_hand ||  
-					detail_level == ns_build_worm_posture_model_from_by_hand_annotations){
+					detail_level == ns_build_worm_markov_posture_model_from_by_hand_annotations){
 					//skip regions without by hand movement annotations
 					if (by_hand_annotations.annotations.regions.empty())
 						continue;
@@ -1801,7 +1801,7 @@ void ns_worm_learner::generate_experiment_movement_image_quantification_analysis
 				movement_results.samples[i].regions[j].time_path_solution.load_from_db(movement_results.samples[i].regions[j].metadata.region_id,sql());
 				ns_posture_analysis_model dummy_model(ns_posture_analysis_model::dummy());
 				const ns_posture_analysis_model * posture_analysis_model(&dummy_model);
-				if (detail_level != ns_build_worm_posture_model_from_by_hand_annotations){
+				if (detail_level != ns_build_worm_markov_posture_model_from_by_hand_annotations){
 					posture_analysis_model = &image_server.get_posture_analysis_model_for_region(movement_results.samples[i].regions[j].metadata.region_id,sql());
 				}
 				ns_acquire_for_scope<ns_analyzed_image_time_path_death_time_estimator> death_time_estimator(
@@ -1846,7 +1846,7 @@ void ns_worm_learner::generate_experiment_movement_image_quantification_analysis
 					movement_results.samples[i].regions[j].time_path_image_analyzer.write_detailed_movement_quantification_analysis_data(
 																	movement_results.samples[i].regions[j].metadata,o_all(),(detail_level == ns_quantification_detailed_with_by_hand));
 				}
-				else if (detail_level == ns_build_worm_posture_model_from_by_hand_annotations){
+				else if (detail_level == ns_build_worm_markov_posture_model_from_by_hand_annotations){
 					bool added_data(false);
 					for (unsigned int g = 0; g < movement_results.samples[i].regions[j].time_path_image_analyzer.size(); g++){
 						for (unsigned int p = 0; p < movement_results.samples[i].regions[j].time_path_image_analyzer.group(g).paths.size(); p++){
@@ -1866,7 +1866,7 @@ void ns_worm_learner::generate_experiment_movement_image_quantification_analysis
 			}
 		}
 	}	
-	if (detail_level == ns_build_worm_posture_model_from_by_hand_annotations){
+	if (detail_level == ns_build_worm_markov_posture_model_from_by_hand_annotations){
 		std::string base_path("c:\\");
 		base_path+=experiment_name;
 		for (std::map<string,ns_emperical_posture_quantification_value_estimator>::iterator p = value_estimators.begin(); p!=value_estimators.end(); p++){

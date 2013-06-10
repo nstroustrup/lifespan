@@ -422,6 +422,8 @@ public:
 	long server_crash_daemon_port() const{return _server_crash_daemon_port;}
 
 	unsigned long local_buffer_commit_frequency_in_seconds(){return 10;}
+
+	bool verbose_debug_output() const {return _verbose_debug_output;}
 private:
 	ns_multiprocess_control_options multiprocess_control_options;
 	unsigned long number_of_node_processes_per_machine_;
@@ -445,6 +447,8 @@ private:
 				local_buffer_user, ///username with which to connect to the sql server
 				local_buffer_pwd,  ///password with which to connect to the sql server
 				local_buffer_db;
+
+	bool _verbose_debug_output;
 
 	std::string _capture_command,  ///path of the command used to initiate image capture.
 

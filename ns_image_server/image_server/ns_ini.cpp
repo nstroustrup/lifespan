@@ -15,6 +15,12 @@ const string & ns_ini::get_value(const string & field){
 		throw ns_ex() << "The required variable \"" << field << "\" is not defined  the ini file. (" << filename << ")";
 	else return p->second.value;
 }
+const bool ns_ini::field_specified(const std::string & field) const{
+	const map<string,ns_ini_entry>::const_iterator p = data.find(field);
+	if (p == data.end() || !(p->second.loaded))
+		return false;
+	return true;
+}
 
 int ns_ini::get_integer_value(const string & field) {
 	return atoi(get_value(field).c_str());

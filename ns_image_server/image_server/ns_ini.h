@@ -25,6 +25,7 @@ public:
 	const std::string & get_value(const std::string & field);
 	int get_integer_value(const std::string & field);
 	void reject_incorrect_fields(const bool & reject){reject_incorrect_fields_ = reject;}
+	const bool field_specified(const std::string & field) const;
 private:
 	bool get_field(std::istream & in);
 	bool reject_incorrect_fields_;

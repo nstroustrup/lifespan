@@ -52,6 +52,9 @@ using namespace std;
 #include "ns_experiment_storyboard_annotater.h"
 #include "ns_death_time_solo_posture_annotater.h"
 
+extern bool output_debug_messages;
+extern std::ofstream debug_output;
+
 #include "ns_process_16_bit_images.h"
 void ns_run_first_thermometer_experiment();
 
@@ -63,6 +66,9 @@ void update_strain_choice_menu();
 void update_exclusion_choice_menu();
 ns_vector_2i main_image_window_size_difference();
 ns_vector_2i worm_image_window_size_difference();
+
+void ns_worm_browser_output_debug(const unsigned long line_number,const std::string & source, const std::string & message);
+
 
 void ns_set_main_window_annotation_controls_activity(const bool active);
 
@@ -306,6 +312,8 @@ public:
 	}
 
 	bool select_default_sample_and_region(){
+		
+		ns_worm_browser_output_debug(__LINE__,__FILE__,"Slecting default sample and region");
 		cur_strain = 0;
 		//if (!experiment_strains.empty())
 		//	cur_strain = &experiment_strains.begin()->second;
@@ -446,6 +454,8 @@ public:
 	}
 	bool get_experiment_name(const unsigned long id,std::string & name) const {
 		ns_experiment_region_selector_experiment_info info;
+		
+		ns_worm_browser_output_debug(__LINE__,__FILE__,"Getting experiment info");
 		bool res(get_experiment_info(id, info));
 		name = info.name;
 		return res;
@@ -767,6 +777,7 @@ public:
 				worm_window;
 
 	ns_experiment_storyboard_spec::ns_storyboard_flavor current_storyboard_flavor;
+	ns_svm_model_specification default_model;	
 private:
 	ns_image_standard animation_temp;
 	ns_death_time_annotation_set::ns_annotation_type_to_load last_annotation_type_loaded;
@@ -791,7 +802,6 @@ private:
 	ns_area_handler area_handler;
 
 	ns_svm_model_specification * model_specification;
-	ns_svm_model_specification default_model;	
 
 	ns_image_mask_analyzer<ns_8_bit > mask_analyzer;
 

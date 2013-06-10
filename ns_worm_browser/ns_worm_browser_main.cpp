@@ -14,7 +14,25 @@
 #include "ns_experiment_storyboard.h"
 
 
+bool output_debug_messages = false;
+bool output_debug_file_opened = false;
+std::ofstream debug_output;
 
+void ns_worm_browser_output_debug(const unsigned long line_number,const std::string & source, const std::string & message){
+	if (!output_debug_messages)
+		return;
+	if (!output_debug_file_opened){
+		debug_output.open("verbose_debug_output.txt");
+		output_debug_file_opened = true;
+		if (debug_output.fail()){
+			cerr << "Could not open verbose debug output file";
+			return;
+		}
+	}
+	cerr << source << "::" << line_number << ": " << message << "\n";
+	debug_output << source << "::" << line_number << ": " << message << "\n";
+	debug_output.flush();
+}
 
 ns_worm_learner worm_learner;
 
@@ -2191,39 +2209,52 @@ void refresh_main_window(){
 
 // MAIN
 int main() {
-
+	ns_worm_browser_output_debug(__LINE__,__FILE__,"Launching worm browser");
 	init_time = GetTime();
 	Fl::lock();
 	try{
 	
 		ns_multiprocess_control_options mp_options;
 		mp_options.total_number_of_processes = 1;
+		ns_worm_browser_output_debug(__LINE__,__FILE__,"Loading constants");
 		image_server.load_constants(ns_image_server::ns_worm_terminal_type,mp_options); 
-
-
+		if (image_server.verbose_debug_output())
+			output_debug_messages = true;
+		
 
 		worm_learner.maximum_window_size = image_server.max_terminal_window_size;
 		worm_learner.death_time_annotater.set_resize_factor(image_server.terminal_hand_annotation_resize_factor);
 		
 		//ns_update_sample_info(sql());
+		ns_worm_browser_output_debug(__LINE__,__FILE__,"Checking for new release");
 		if (image_server.new_software_release_available())
 			throw ns_ex("This version of the Worm Browser is outdated.  Please update it.");
-
+		
+		ns_worm_browser_output_debug(__LINE__,__FILE__,"Loading detection models");
 		image_server.load_all_worm_detection_models(worm_learner.model_specifications);
 		{
 		//	image_server.set_sql_database("image_server_archive");
+			
+			ns_worm_browser_output_debug(__LINE__,__FILE__,"Getting flags from db");
 			ns_acquire_for_scope<ns_sql> sql(image_server.new_sql_connection(__FILE__,__LINE__));
 			ns_death_time_annotation_flag::get_flags_from_db(sql());
 			
 
 	//		ns_align_to_reference(5582,sql());
+			
+			ns_worm_browser_output_debug(__LINE__,__FILE__,"Refreshing partition cache");
 			image_server.image_storage.refresh_experiment_partition_cache(&sql());
+			
+			ns_worm_browser_output_debug(__LINE__,__FILE__,"Getting flags from db again");
 			ns_death_time_annotation_flag::get_flags_from_db(sql());
 
 			
+			ns_worm_browser_output_debug(__LINE__,__FILE__,"Loading experient names");
 			worm_learner.data_selector.load_experiment_names(sql());
 			try{
-				worm_learner.data_selector.set_current_experiment(1,sql());
+					
+			ns_worm_browser_output_debug(__LINE__,__FILE__,"Setting current experiment");
+				worm_learner.data_selector.set_current_experiment(-1,sql());
 			}
 			catch(ns_ex & ex){
 				cerr << ex.text() << "\n";
@@ -2232,18 +2263,28 @@ int main() {
 	//		worm_learner.generate_training_set_from_by_hand_annotation();
 			sql.release();
 		}
-
-		if (worm_learner.model_specifications.size() == 0)
+		
+		ns_worm_browser_output_debug(__LINE__,__FILE__,"Loading for models");
+		if (worm_learner.model_specifications.size() == 0){
 			cerr << "No model specifications were found in the default model directory.  Worm detection will probably not work.";
-		else 
+			worm_learner.set_svm_model_specification(worm_learner.default_model);
+		}
+		else {
+			
+			ns_worm_browser_output_debug(__LINE__,__FILE__,"Setting svm model specification");
 			worm_learner.set_svm_model_specification(*worm_learner.model_specifications[0]);
-
+		}
+		
+		ns_worm_browser_output_debug(__LINE__,__FILE__,"Displaying splash image");
 		ns_image_standard im;
 		worm_learner.display_splash_image();
 		
 		
+		ns_worm_browser_output_debug(__LINE__,__FILE__,"Creating new window");
 		current_window = new ns_worm_terminal_main_window(worm_learner.current_image_properties().width,worm_learner.current_image_properties().height, "Worm Browser");
 		
+		
+		ns_worm_browser_output_debug(__LINE__,__FILE__,"Loading occupied animation");
 		std::string tmp_filename = "occupied_animation.tif";
 		ns_load_image_from_resource(IDR_BIN2,tmp_filename);
 		ns_load_image(tmp_filename,worm_learner.animation);
@@ -2253,19 +2294,29 @@ int main() {
 		//worm_learner.compare_machine_and_by_hand_annotations();
 
 		//current_window->resizable(win);
+		
+		ns_worm_browser_output_debug(__LINE__,__FILE__,"Showing window");
 		current_window->show();
 		worm_window = new ns_worm_terminal_worm_window(100,100,"Inspect Worm");
 		worm_window->hide();
 
 		worm_learner.draw();
+		
+		ns_worm_browser_output_debug(__LINE__,__FILE__,"Setting current experiment");
 		ns_acquire_for_scope<ns_sql> sql(image_server.new_sql_connection(__FILE__,__LINE__));
 		//worm_learner.data_selector.set_current_experiment(341,sql());
 		worm_learner.data_selector.set_current_experiment(-1,sql());
+		
+		ns_worm_browser_output_debug(__LINE__,__FILE__,"Setting default sample and region");
 		worm_learner.data_selector.select_default_sample_and_region();
+		
+		ns_worm_browser_output_debug(__LINE__,__FILE__,"Updating information bar");
 		current_window->update_information_bar();
 	
 		//worm_learner.data_selector.select_region("hare_a::0");
 	//	ns_start_death_time_annotation(ns_worm_learner::ns_annotate_storyboard_experiment);
+		
+		ns_worm_browser_output_debug(__LINE__,__FILE__,"Entering idle loop");
 		return(Fl::run());
 	}
 	catch(ns_ex & ex){

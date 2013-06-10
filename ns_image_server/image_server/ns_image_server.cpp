@@ -29,7 +29,7 @@ using namespace std;
 ns_image_server::ns_image_server():event_log_open(false),exit_requested(false),update_software(false), 
 	sql_lock("ns_is::sql"),server_event_lock("ns_is::server_event"),simulator_scan_lock("ns_is::sim_scan"),local_buffer_sql_lock("ns_is::lb"),
 	_act_as_processing_node(true),/*alert_handler_lock("ns_is::alert"),alert_handler_running(false),*/cleared(false),current_sql_server_address_id(0),
-	image_registration_profile_cache(32),_cache_subdirectory("cache"),sql_database_choice(possible_sql_databases.end()),next_scan_for_problems_time(0){
+	image_registration_profile_cache(32),_verbose_debug_output(false),_cache_subdirectory("cache"),sql_database_choice(possible_sql_databases.end()),next_scan_for_problems_time(0){
 
 	ns_socket::global_init();
 	ns_worm_detection_constants::init();
@@ -1187,7 +1187,7 @@ void ns_image_server::load_constants(const ns_image_server::ns_image_server_exec
 	constants.add_field("simulated_device_name", ".","For software debugging, an image acquisition server can simulate an attached device");
 	constants.add_field("mail_path", "/usr/bin/mail","In the case of errors, the image server can send email.  This is the path to the POSIX mail program");
 	constants.add_field("nodes_per_machine", "1","How many copies of the image processing server should run simultaneously?");
-
+	
 	ns_ini terminal_constants;
 	terminal_constants.reject_incorrect_fields(reject_incorrect_fields);
 	terminal_constants.add_field("max_width","1024","The maximum width of the worm browser window");
@@ -1195,6 +1195,7 @@ void ns_image_server::load_constants(const ns_image_server::ns_image_server_exec
 	terminal_constants.add_field("hand_annotation_resize_factor","3","Larger values result in smaller worms during by hand annotation of worms");
 	terminal_constants.add_field("mask_upload_database","image_server","The SQL database in which image masks should be stored");
 	terminal_constants.add_field("mask_upload_hostname","myhost","The host name (e.g bob or lab_desktop_1) of the server where sample region masks should be sent");
+	terminal_constants.add_field("verbose_debug_output","false","Set to true to generate verbose debug output");
 	string ini_directory,ini_filename;
 	try{
 		//look for the ini file in the current directory
@@ -1234,7 +1235,10 @@ void ns_image_server::load_constants(const ns_image_server::ns_image_server_exec
 			max_terminal_window_size.y = atol(terminal_constants["max_height"].c_str());
 			terminal_hand_annotation_resize_factor = atol(terminal_constants["hand_annotation_resize_factor"].c_str());
 			mask_upload_database = terminal_constants["mask_upload_database"];
-			mask_upload_hostname = terminal_constants["mask_upload_hostname"];
+			mask_upload_hostname = terminal_constants["mask_upload_hostname"];	
+			if (terminal_constants.field_specified("verbose_debug_output") && terminal_constants["verbose_debug_output"] == "true" ||
+				constants.field_specified("verbose_debug_output") && constants["verbose_debug_output"] == "true")
+				_verbose_debug_output = true;
 		}
 		{
 			string sql_server_tmp(constants["central_sql_hostname"]);
@@ -1278,6 +1282,8 @@ void ns_image_server::load_constants(const ns_image_server::ns_image_server_exec
 		local_buffer_ip = constants["local_buffer_sql_hostname"];
 		local_buffer_pwd = constants["local_buffer_sql_password"];
 		local_buffer_user = constants["local_buffer_sql_username"]; 
+
+	
 
 		for (unsigned int i = 0; i < possible_sql_databases.size(); i++){
 			if (local_buffer_db == possible_sql_databases[i])

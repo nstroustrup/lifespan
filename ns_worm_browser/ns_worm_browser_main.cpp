@@ -2253,10 +2253,12 @@ int main() {
 			worm_learner.data_selector.load_experiment_names(sql());
 			try{
 					
-			ns_worm_browser_output_debug(__LINE__,__FILE__,"Setting current experiment");
+				ns_worm_browser_output_debug(__LINE__,__FILE__,"Setting current experiment");
 				worm_learner.data_selector.set_current_experiment(-1,sql());
 			}
 			catch(ns_ex & ex){
+				ns_worm_browser_output_debug(__LINE__,__FILE__,std::string("Error setting experiment: ") + ex.text());
+		
 				cerr << ex.text() << "\n";
 			}
 	//		worm_learner.data_selector.select_region("ben_d::1");
@@ -2303,9 +2305,9 @@ int main() {
 		worm_learner.draw();
 		
 		ns_worm_browser_output_debug(__LINE__,__FILE__,"Setting current experiment");
-		ns_acquire_for_scope<ns_sql> sql(image_server.new_sql_connection(__FILE__,__LINE__));
+		//ns_acquire_for_scope<ns_sql> sql(image_server.new_sql_connection(__FILE__,__LINE__));
 		//worm_learner.data_selector.set_current_experiment(341,sql());
-		worm_learner.data_selector.set_current_experiment(-1,sql());
+		//worm_learner.data_selector.set_current_experiment(-1,sql());
 		
 		ns_worm_browser_output_debug(__LINE__,__FILE__,"Setting default sample and region");
 		worm_learner.data_selector.select_default_sample_and_region();

@@ -1187,6 +1187,7 @@ void ns_image_server::load_constants(const ns_image_server::ns_image_server_exec
 	constants.add_field("simulated_device_name", ".","For software debugging, an image acquisition server can simulate an attached device");
 	constants.add_field("mail_path", "/usr/bin/mail","In the case of errors, the image server can send email.  This is the path to the POSIX mail program");
 	constants.add_field("nodes_per_machine", "1","How many copies of the image processing server should run simultaneously?");
+	constants.add_field("verbose_debug_output","false","Set to true to generate verbose debug output");
 	
 	ns_ini terminal_constants;
 	terminal_constants.reject_incorrect_fields(reject_incorrect_fields);
@@ -1236,10 +1237,15 @@ void ns_image_server::load_constants(const ns_image_server::ns_image_server_exec
 			terminal_hand_annotation_resize_factor = atol(terminal_constants["hand_annotation_resize_factor"].c_str());
 			mask_upload_database = terminal_constants["mask_upload_database"];
 			mask_upload_hostname = terminal_constants["mask_upload_hostname"];	
-			if (terminal_constants.field_specified("verbose_debug_output") && terminal_constants["verbose_debug_output"] == "true" ||
-				constants.field_specified("verbose_debug_output") && constants["verbose_debug_output"] == "true")
+			if (terminal_constants.field_specified("verbose_debug_output") && terminal_constants["verbose_debug_output"] == "true" ){
+				_verbose_debug_output = true;
+			}
+		}
+		else{
+			if (constants.field_specified("verbose_debug_output") && constants["verbose_debug_output"] == "true")
 				_verbose_debug_output = true;
 		}
+		
 		{
 			string sql_server_tmp(constants["central_sql_hostname"]);
 			sql_server_addresses.resize(0);

@@ -290,23 +290,30 @@ public:
 	void set_current_experiment(long experiment_id_,ns_sql & sql){
 		//select default experiment
 		if (experiment_id_==-1){
+			ns_worm_browser_output_debug(__LINE__,__FILE__,"Default experiment requested");
 			if (experiment_groups.size() == 0)
 				throw ns_ex("Default experiment requested while no experiment groups exist in cache.");
 			experiment_id_ = 0;
+			ns_worm_browser_output_debug(__LINE__,__FILE__,std::string(ns_to_string(experiment_groups.size())+ " experiment groups found"));
 			for (unsigned int i = 0; i < experiment_groups.size(); i++){
 				if (experiment_groups.size() > 0){
-					experiment_id_ = experiment_groups[i][0].experiment_id;
+					for (unsigned int j = 0; j < experiment_groups[i].size(); j++)
+						ns_worm_browser_output_debug(__LINE__,__FILE__,ns_to_string(i) + "," + ns_to_string(j) + ":" + ns_to_string(experiment_groups[i][j].experiment_id));
+					if (experiment_groups[i].size() > 0)
+						experiment_id_ = experiment_groups[i][0].experiment_id;
 					break;
 				}
 			}
-			if (experiment_id_ == 0)
-				throw ns_ex("Default experiment requested while no experiment exist in cache.");
+			if (experiment_id_ == 0){
+				throw ns_ex("Default experiment requested while no experiments exist in database.");
+			}
 		}
 		else{
 			string experiment_name;
 			if (!get_experiment_name(experiment_id_,experiment_name))
 				throw ns_ex("Could not find experiment in cached experiment information.");
 		}
+				
 		load(experiment_id_,sql);
 		experiment_id = experiment_id_;
 	}
@@ -377,6 +384,8 @@ public:
 	const ns_experiment_region_chooser_region & current_region(){if (cur_region==0)throw ns_ex("No region selected!"); else return *cur_region;}
 
 	void load(const unsigned long experiment_id,ns_sql & sql){
+		ns_worm_browser_output_debug(__LINE__,__FILE__,std::string("Loading experiment data for " + ns_to_string(experiment_id)));
+		
 		sql << "SELECT id,name,device_name FROM capture_samples WHERE experiment_id=" << experiment_id << " AND problem=0 AND censored=0 ORDER BY name ASC";
 		ns_sql_result res;
 		sql.get_rows(res);
@@ -413,6 +422,8 @@ public:
 	ns_experiment_strain_list experiment_strains;
 
 	void load_experiment_names(ns_sql & sql){
+		ns_worm_browser_output_debug(__LINE__,__FILE__,std::string("Loading experiment names from db"));
+		
 		std::map<unsigned long,vector<ns_experiment_region_selector_experiment_info> > experiments_by_group;
 		experiment_groups.resize(0);
 		sql << "SELECT id,name,group_id FROM experiments WHERE hidden = 0 ORDER BY first_time_point DESC";

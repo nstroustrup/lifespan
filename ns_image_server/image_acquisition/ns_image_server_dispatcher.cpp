@@ -608,80 +608,137 @@ void ns_image_server_dispatcher::on_timer(){
 		}
 		
 		map<std::string, ns_capture_device::ns_device_preview_type> preview_requested;
-	
-		ns_image_server_device_manager::ns_device_name_list devices;
-		try{
+		if (image_server.act_as_an_image_capture_server()){
+			ns_image_server_device_manager::ns_device_name_list devices;
+			try{
 		
-			image_server.device_manager.request_device_list(devices);
-			//pair<scanner id, type of preview scan requested (0=none,1=transparency unit, 2=reflective)
-			*timer_sql_connection << "SELECT name,preview_requested,pause_captures, simulated_device,autoscan_interval FROM devices WHERE host_id = " << image_server.host_id();
-			ns_sql_result prev_res;
-			timer_sql_connection->get_rows(prev_res);
-			//check to see if any unrecognized devices are marked as attached to the current host
-			bool device_record_problem = false;
-			for (unsigned int i = 0; i < prev_res.size(); i++){
-				bool found(false);
-				for (unsigned int j = 0; j < devices.size(); j++){
-					if (prev_res[i][0] == devices[j].name){
-						found = true;
+				image_server.device_manager.request_device_list(devices);
+				//pair<scanner id, type of preview scan requested (0=none,1=transparency unit, 2=reflective)
+				*timer_sql_connection << "SELECT name,preview_requested,pause_captures, simulated_device,autoscan_interval FROM devices WHERE host_id = " << image_server.host_id();
+				ns_sql_result prev_res;
+				timer_sql_connection->get_rows(prev_res);
+				//check to see if any unrecognized devices are marked as attached to the current host
+				bool device_record_problem = false;
+				for (unsigned int i = 0; i < prev_res.size(); i++){
+					bool found(false);
+					for (unsigned int j = 0; j < devices.size(); j++){
+						if (prev_res[i][0] == devices[j].name){
+							found = true;
+							break;
+						}
+					}
+					if (!found){
+						device_record_problem = true;
 						break;
 					}
 				}
-				if (!found){
-					device_record_problem = true;
-					break;
+				if (device_record_problem || prev_res.size() != image_server.device_manager.number_of_attached_devices()){
+				//	image_server.load_constants("server",image_server.get_multiprocess_control_options());
+					ns_image_server_event ev("Found an inconsistent device record in the db.");
+					ev << "Devices registered:";
+					for (unsigned int k = 0; k < prev_res.size(); k++)
+						ev << prev_res[k][0] << ",";
+					ev << "; actual devices: ";
+					for (unsigned k = 0; k < devices.size(); k++)
+						ev << devices[k].name << ",";
+					ev << "; refreshing record.";
+
+					image_server.register_server_event(ev,timer_sql_connection);
+				//	image_server.register_host();
+					image_server.register_devices();
+					return;
 				}
-			}
-			if (device_record_problem || prev_res.size() != image_server.device_manager.number_of_attached_devices()){
-			//	image_server.load_constants("server",image_server.get_multiprocess_control_options());
-				image_server.register_server_event(ns_image_server_event("Found an inconsistent device record in the db: Refreshing it."),timer_sql_connection);
-			//	image_server.register_host();
-				image_server.register_devices();
-				return;
-			}
 
-			for (unsigned int i = 0; i < prev_res.size(); i++){
-				preview_requested[prev_res[i][0]] = (ns_capture_device::ns_device_preview_type)atoi(prev_res[i][1].c_str());
-				try{
-					int pause_requested(atoi(prev_res[i][2].c_str()));
+				for (unsigned int i = 0; i < prev_res.size(); i++){
+					preview_requested[prev_res[i][0]] = (ns_capture_device::ns_device_preview_type)atoi(prev_res[i][1].c_str());
+					try{
+						int pause_requested(atoi(prev_res[i][2].c_str()));
 
-					if (image_server.device_manager.set_pause_state(prev_res[i][0],pause_requested)){
-						if (pause_requested)
-							image_server.register_server_event(ns_image_server_event("Pausing device ") << prev_res[i][0],timer_sql_connection);
-						else{
+						if (image_server.device_manager.set_pause_state(prev_res[i][0],pause_requested)){
+							if (pause_requested)
+								image_server.register_server_event(ns_image_server_event("Pausing device ") << prev_res[i][0],timer_sql_connection);
+							else{
 
-							image_server.register_server_event(ns_image_server_event("Un-pausing device ") << prev_res[i][0],timer_sql_connection);
+								image_server.register_server_event(ns_image_server_event("Un-pausing device ") << prev_res[i][0],timer_sql_connection);
 
+							}
 						}
+						int autoscan_interval(atoi(prev_res[i][4].c_str()));	
+						if (image_server.device_manager.set_autoscan_interval_and_balance(prev_res[i][0],autoscan_interval,*timer_sql_connection)){
+							if (autoscan_interval > 0)
+								image_server.register_server_event(ns_image_server_event("Setting autoscan interval to ") << autoscan_interval << " on device " << prev_res[i][0],timer_sql_connection);
+							else
+								image_server.register_server_event(ns_image_server_event("Stopping autoscans on device ") << prev_res[i][0],timer_sql_connection);
+						}
+						//handle any pending queued scans
+						image_server.start_autoscans_for_device(prev_res[i][0],*timer_sql_connection);
 					}
-					int autoscan_interval(atoi(prev_res[i][4].c_str()));	
-					if (image_server.device_manager.set_autoscan_interval_and_balance(prev_res[i][0],autoscan_interval,*timer_sql_connection)){
-						if (autoscan_interval > 0)
-							image_server.register_server_event(ns_image_server_event("Setting autoscan interval to ") << autoscan_interval << " on device " << prev_res[i][0],timer_sql_connection);
-						else
-							image_server.register_server_event(ns_image_server_event("Stopping autoscans on device ") << prev_res[i][0],timer_sql_connection);
+					catch(ns_ex & ex){
+						image_server.register_server_event(ns_image_server_event("Error setting pause state: ") << ex.text(),timer_sql_connection);
 					}
-					//handle any pending queued scans
-					image_server.start_autoscans_for_device(prev_res[i][0],*timer_sql_connection);
+					catch(...){
+						image_server.register_server_event(ns_image_server_event("Error setting pause state: ") << "Unknown error!",timer_sql_connection);
+					}
 				}
-				catch(ns_ex & ex){
-					image_server.register_server_event(ns_image_server_event("Error setting pause state: ") << ex.text(),timer_sql_connection);
-				}
-				catch(...){
-					image_server.register_server_event(ns_image_server_event("Error setting pause state: ") << "Unknown error!",timer_sql_connection);
-				}
-			}
 		
+			}
+			catch(ns_ex & ex){
+				image_server.register_server_event(ex,timer_sql_connection);
+			}
+			try{
+				image_server.update_device_status_in_db(*timer_sql_connection);
+			}
+			catch(ns_ex & ex){
+				image_server.register_server_event(ex,timer_sql_connection);
+			}
+			try{
+				const bool handle_simulated_devices(image_server.register_and_run_simulated_devices(timer_sql_connection));
+
+				for (unsigned int i = 0; i < devices.size(); i++){
+						if (image_server.exit_requested)
+							break;
+						if (devices[i].simulated_device && !handle_simulated_devices)
+							continue;
+						if (image_server.device_manager.device_is_currently_scanning(devices[i].name))
+							continue;
+						if (devices[i].paused)
+							continue;
+					
+						if (preview_requested[devices[i].name] != ns_capture_device::ns_no_preview){
+							if (get_whole_scanner_preview(preview_requested[devices[i].name],devices[i].name))
+								ns_thread::sleep(4);//wait four seconds in between requesting scans to keep USB chatter sane.
+						}
+
+						//if there's nothing else to do, see if we can run pending transfers
+						//image_capture_data_manager.handle_pending_transfers_to_long_term_storage(devices[i].name);
+					}
+					image_server.device_manager.run_pending_autoscans(this,*timer_sql_connection);
+				}
+			catch(ns_ex & ex){
+				image_server.register_server_event(ex,timer_sql_connection);
+			}
+
+			try{
+				image_server.update_device_status_in_db(*timer_sql_connection);
+			}
+			catch(ns_ex & ex){
+				image_server.register_server_event(ex,timer_sql_connection);
+			}
+			try{
+				if (hotplug_requested)
+					run_hotplug();
+				std::vector<std::string> device_names(devices.size());
+				for (unsigned int i = 0; i < devices.size(); i++)
+					device_names[i] = devices[i].name;
+				buffered_capture_scheduler.image_capture_data_manager.handle_pending_transfers_to_long_term_storage(device_names);
+	
+			}
+			catch(ns_ex & ex){
+				image_server.register_server_event(ex,timer_sql_connection);
+			}
+
 		}
-		catch(ns_ex & ex){
-			image_server.register_server_event(ex,timer_sql_connection);
-		}
-		try{
-			image_server.update_device_status_in_db(*timer_sql_connection);
-		}
-		catch(ns_ex & ex){
-			image_server.register_server_event(ex,timer_sql_connection);
-		}
+
 		try{
 			bool do_not_change_pause_status(false);
 			if (!image_server.server_is_paused() && image_server.new_software_release_available(*timer_sql_connection)){
@@ -705,15 +762,7 @@ void ns_image_server_dispatcher::on_timer(){
 		catch(ns_ex & ex){
 			image_server.register_server_event(ex,timer_sql_connection);
 		}
-
-		try{
-			if (hotplug_requested)
-				run_hotplug();
-		}
-		catch(ns_ex & ex){
-			image_server.register_server_event(ex,timer_sql_connection);
-		}
-
+		
 		if (shutdown_requested)
 			image_server.shut_down_host();
 		if (!allow_processing)
@@ -721,39 +770,7 @@ void ns_image_server_dispatcher::on_timer(){
 
 		timer_sql_connection->send_query("COMMIT");
 
-		try{
-			const bool handle_simulated_devices(image_server.register_and_run_simulated_devices(timer_sql_connection));
-
-			for (unsigned int i = 0; i < devices.size(); i++){
-					if (image_server.exit_requested)
-						break;
-					if (devices[i].simulated_device && !handle_simulated_devices)
-						continue;
-					if (image_server.device_manager.device_is_currently_scanning(devices[i].name))
-						continue;
-					if (devices[i].paused)
-						continue;
-					
-					if (preview_requested[devices[i].name] != ns_capture_device::ns_no_preview){
-						if (get_whole_scanner_preview(preview_requested[devices[i].name],devices[i].name))
-							ns_thread::sleep(4);//wait four seconds in between requesting scans to keep USB chatter sane.
-					}
-
-					//if there's nothing else to do, see if we can run pending transfers
-					//image_capture_data_manager.handle_pending_transfers_to_long_term_storage(devices[i].name);
-				}
-				image_server.device_manager.run_pending_autoscans(this,*timer_sql_connection);
-			}
-		catch(ns_ex & ex){
-			image_server.register_server_event(ex,timer_sql_connection);
-		}
-
-		try{
-			image_server.update_device_status_in_db(*timer_sql_connection);
-		}
-		catch(ns_ex & ex){
-			image_server.register_server_event(ex,timer_sql_connection);
-		}
+		
 		//we've gotten everything we need done; we can now allow alerts to be submitted
 		image_server.alert_handler.buffer_all_alerts_locally(false);
 
@@ -827,11 +844,6 @@ void ns_image_server_dispatcher::on_timer(){
 		catch(...){
 			cerr << "Could not manage database settings for an unknown reason!\n";
 		}
-		std::vector<std::string> device_names(devices.size());
-		for (unsigned int i = 0; i < devices.size(); i++)
-			device_names[i] = devices[i].name;
-
-		buffered_capture_scheduler.image_capture_data_manager.handle_pending_transfers_to_long_term_storage(device_names);
 	}
 	catch(ns_ex & ex){
 		ns_image_server_event ev(ex.text());

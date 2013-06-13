@@ -1151,51 +1151,64 @@ void ns_image_server::load_constants(const ns_image_server::ns_image_server_exec
 	ns_ini constants;
 	constants.reject_incorrect_fields(reject_incorrect_fields);
 	//register ini file constants
-	constants.add_field("host_name", "ns_server","a unique name for the server that will run on this computer, for example bob or lab_desktop_1");
-	constants.add_field("device_names", "", "used to hardcode scanner names.  Usually left blank");
-	constants.add_field("ethernet_interface","","the name of the network device the software should use (e.g eth0). Leave blank to use default network device");
-	constants.add_field("dispatcher_port","1043","The port on which the dispatcher should listen for remote requests");
-	constants.add_field("server_crash_daemon_port","1042","The port on which the backup dispatcher should listen for remote requests, in case the primary dispatcher crashes");
+	constants.start_specification_group(ns_ini_specification_group("*** Lifespan Machine Image Server Configuration File ***","This file allows you to specify various configuration options that will determine the behavior of all lifespan machine software running on this machine, including image acquisition servers, image analysis servers, and the worm browser."));
+	
+	constants.start_specification_group(ns_ini_specification_group("Important Configuration Parameters for this machine","These parameters need to be set correctly for the server to function."));
+	constants.add_field("host_name", "ns_server","Each instance of the image acquisition and image analysis servers needs to have a unique name to identify it.  Thus, host_name should be set to a different value on every LINUX or Windows machine running the software.  Use a name that you'll recognize, such as linux_server_on_my_desk, bob, or lab_desktop_1");
+	constants.add_field("long_term_storage_directory","","All image server software must be able to access a central directory used to store images.  This is often located on a NAS or institutional file server.  This directory should be mounted as a path on the machine running the server.  Set this parameter to the location of that directory");
+	constants.add_field("results_storage_directory","","All image server software must be able to access a central directory used to store processed statistical data, including survival curves, descriptions of worm movement, etc.  This is often located on a NAS or institutional file server.  This directory should be mounted as a path on the machine running the server.  Set this parameter to the location of that directory");
+	constants.add_field("volatile_storage_directory","","The image acquisition server and image analysis servers need to store temporary files on the local machine.  Set this parameter to the location of that directory; it can be anywhere you like.  For aquisition servers, this is the local buffer for captured images pending transfer to the long term storage directory, so you should locate the directory on a drive with a couple hundred 100 GB of free space.");
+
+	constants.start_specification_group(ns_ini_specification_group("Access to the central SQL database","These parameters need to be set to match the account set up on your central sql database, to allow the server to log in."));
 	constants.add_field("central_sql_hostname","localhost","The IP address or DNS name of the computer running the central SQL server");
 	constants.add_field("central_sql_username","image_server","The username with which the software should log into the central SQL server");
 	constants.add_field("central_sql_password","","The password with which the software should log into the central SQL server");
-	constants.add_field("central_sql_databases","image_server;image_server_archive","The list of database names (separated by colons) which the server should access.  Most installations will only have one database.");
-
+	constants.add_field("central_sql_databases","image_server","The name of the database set up on the SQL server for the image server.  It's possible to specifiy multiple independant databases, each separated by a colon, but this is not needed in simple installations.");
+	
+	constants.start_specification_group(ns_ini_specification_group("Access to the local SQL database","Image acquisition servers use a local SQL database to store metadata pending its transfer to the central SQL database.  This lets acquisition servers continue to operate correctly through network disruptions, sql database crashes, etc.  These parameters need to be set to match the account set up on the machine's local sql database, to allow the server to log in"));
 	constants.add_field("local_buffer_sql_hostname","localhost","The IP address or DNS name of the computer running the local SQL buffer.  This is only needed for image capture servers, and in all but exceptional cases should be set to localhost");
 	constants.add_field("local_buffer_sql_username","image_server","The username with which the software should log into the local SQL buffer");
 	constants.add_field("local_buffer_sql_database","image_server_buffer","The name of the local SQL buffer database");
 	constants.add_field("local_buffer_sql_password","","The password with which the software should log into the local SQL buffer");
 
-	constants.add_field("long_term_storage_directory","","The absolute path to the directory where images are stored.  Usually a network accessible storage device or a SAMBA/Cifs mounted directory");
-	constants.add_field("results_storage_directory","","The absolute path to the directory where results files (survival curves, worm locations, etc) are stored");
-	constants.add_field("volatile_storage_directory","","The absolute path to the directory where images are stored temporarily before being transferred to the long term storage directory.");
-	constants.add_field("dispatcher_refresh_interval","6000","How often should image acquisition servers check for pending scanns?  (in seconds).  Also specifies how often analysis servers will check for new jobs.");
-	constants.add_field("server_timeout_interval","300","How long should a server wait before giving up on a dead network connection (in seconds)");
-	constants.add_field("log_filename","image_server_log.txt","filename of the server log file.  Stored in the volatile storage directory");
-	constants.add_field("hide_window","no","On windows, specifies whether the server should start minimized.  (yes / no )");
+	constants.start_specification_group(ns_ini_specification_group("Image Acquisition Server Settings ","These settings control the behavior of image acquisition servers"));
+	constants.add_field("act_as_image_capture_server","no","Should the server try to control attached scanners? (yes / no)");
 	constants.add_field("device_capture_command","/usr/local/bin/scanimage","the path to the SANE component scanimage, with which scans can be started");
 	constants.add_field("device_list_command","/usr/local/bin/sane-find-scanner","the path to the SANE component sane-find-scanners, with which scanners can be identified");
-	constants.add_field("run_autonomously","yes","should the server poll the databse for new scans/jobs, or should it only do so on external command?  Usually set to yes. (yes / no)");
-	constants.add_field("act_as_image_capture_server","no","Should the server try to control attached scanners? (yes / no)");
 	constants.add_field("device_barcode_coordinates","-l 0in -t 10.3in -x 8in -y 2in", "The coordinates of the barcode adhered to the surface of each scanner");
-	constants.add_field("act_as_processing_node","yes","Should the server try to run image processing jobs? (yes / no)");
-	constants.add_field("video_compiler_filename","./x264.exe","Path to the x264 transcoder.  Only needed on image processing servers.");
-	constants.add_field("video_ppt_compiler_filename","./ffmpeg.exe","Path to the ffmpeg transcoder.  Only needed on image processing servers.");
-	constants.add_field("compile_videos","yes","Should the server process videos? (yes / no)");
-	constants.add_field("halt_on_new_software_release","yes", "Should the server shut down if a new version of the software is detected running on the cluster? (yes / no)");	
-	constants.add_field("latest_release_path","image_server_software/image_server_win32.exe", "If a new version of the software is detected running on the cluster, where can the new excecutable be found? (not required)");
 	constants.add_field("simulated_device_name", ".","For software debugging, an image acquisition server can simulate an attached device");
-	constants.add_field("mail_path", "/usr/bin/mail","In the case of errors, the image server can send email.  This is the path to the POSIX mail program");
-	constants.add_field("nodes_per_machine", "1","How many copies of the image processing server should run simultaneously?");
+	constants.add_field("device_names", "", "This can be used to explicitly specifiy scanner names on an image acquisition server.  These should be detected just fine automatically, and so in most cases this field can be left blank");
+	
+	constants.start_specification_group(ns_ini_specification_group("Image Analysis Server Settings ","These setings control the behavior of image processing servers"));
+	constants.add_field("act_as_processing_node","yes","Should the server run image processing jobs requested by the user via the website? (yes / no)");
+	constants.add_field("nodes_per_machine", "1","A single computer can run multiple coppies of the image processing server simultaneously, which allows many jobs to be processed in paralell.  Set this value to the number of parallel servers you want to run on this machine.  This can usually be set to the number of physical cores on the machine's processor, or the number of GB of RAM on the machine; whichever is smaller.");
+	constants.add_field("hide_window","no","On windows, specifies whether the server should start minimized.  (yes / no )");
+	constants.add_field("compile_videos","yes","Should the server process videos? (yes / no)");
+	constants.add_field("video_compiler_filename","./x264.exe","Path to the x264 transcoder program required to generate videos.  Only needed on image processing servers.  If you don't have this, set compile_videos to no");
+	constants.add_field("video_ppt_compiler_filename","./ffmpeg.exe","Path to the ffmpeg transcoder required to generate videos. Only needed on image processing servers.  If you don't have this, set compile_videos to no");
+	constants.add_field("halt_on_new_software_release","yes", "Should the server shut down if a new version of the software is detected running on the cluster? (yes / no)");	
+	constants.add_field("latest_release_path","image_server_software/image_server_win32.exe", "Image acquisition servers can be set to automatically update if new versions of the software is identified as running on the cluster.  This is the path name where the new software can be found.");
+	constants.add_field("run_autonomously","yes","should the server poll the databse for new scans/jobs (yes) or should it only do so on external command (no).  Most configurations set this to yes.");
+	
+
+	constants.start_specification_group(ns_ini_specification_group("Other Settings","These settings control the behavior of image acquisition and image processing servers"));
 	constants.add_field("verbose_debug_output","false","Set to true to generate verbose debug output");
+	constants.add_field("dispatcher_refresh_interval","6000","How often should image acquisition servers check for pending scanns?  (in seconds).  Also specifies how often analysis servers will check for new jobs.");
+	constants.add_field("mail_path", "/usr/bin/mail","In the case of errors, the image server can send email.  This is the path to the POSIX mail program");
+	constants.add_field("ethernet_interface","","This field should be left blank if you want the server to access the network through the default network interface.  If you have multiple network interfaces and want to use a specific one, specifiy it here.");
+	constants.add_field("dispatcher_port","1043","The port on which the dispatcher should listen for remote requests");
+	constants.add_field("server_crash_daemon_port","1042","The port on which the backup dispatcher should listen for remote requests, in case the primary dispatcher crashes");
+	constants.add_field("server_timeout_interval","300","How long should a server wait before giving up on a dead network connection (in seconds)");
+	constants.add_field("log_filename","image_server_log.txt","filename of the server log file.  Stored in the volatile storage directory");
 	
 	ns_ini terminal_constants;
 	terminal_constants.reject_incorrect_fields(reject_incorrect_fields);
+	terminal_constants.start_specification_group(ns_ini_specification_group("*** Worm Browser Configuration File ***","This file allows you to specify various configuration options that will determine the behavior of the worm browser software run on this machine.  It's behavior is also influenced by the settings in the ns_image_server configuration file."));
 	terminal_constants.add_field("max_width","1024","The maximum width of the worm browser window");
 	terminal_constants.add_field("max_height","768","The maximum height of the worm browser window");
-	terminal_constants.add_field("hand_annotation_resize_factor","3","Larger values result in smaller worms during by hand annotation of worms");
-	terminal_constants.add_field("mask_upload_database","image_server","The SQL database in which image masks should be stored");
-	terminal_constants.add_field("mask_upload_hostname","myhost","The host name (e.g bob or lab_desktop_1) of the server where sample region masks should be sent");
+	terminal_constants.add_field("hand_annotation_resize_factor","3","How many times should images of worms be shrunk before being displayed when looking at storyboards?  Larger values result in smaller worms during by hand annotation of worms");
+	terminal_constants.add_field("mask_upload_database","image_server","The SQL database in which image masks should be stored.");
+	terminal_constants.add_field("mask_upload_hostname","myhost","The host name (e.g bob or lab_desktop_1) of the server where sample region masks should be uploaded");
 	terminal_constants.add_field("verbose_debug_output","false","Set to true to generate verbose debug output");
 	string ini_directory,ini_filename;
 	try{

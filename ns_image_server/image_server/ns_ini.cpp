@@ -22,6 +22,9 @@ const bool ns_ini::field_specified(const std::string & field) const{
 	return true;
 }
 
+void ns_ini::start_specification_group(const ns_ini_specification_group & group){
+	specification_groups.push_back(group);
+}
 int ns_ini::get_integer_value(const string & field) {
 	return atoi(get_value(field).c_str());
 }
@@ -29,6 +32,8 @@ int ns_ini::get_integer_value(const string & field) {
 void ns_ini::add_field(const string & field, const string & default_value, const string & comment){
 	data[field] = default_value;
 	data[field].comment = comment;
+	if (specification_groups.size() > 0)
+		specification_groups.rbegin()->names_in_order.push_back(field);
 }
 
 inline void skip_to_end_of_line(istream & in){
@@ -135,6 +140,18 @@ void ns_ini::load(const string & fname){
 		throw;
 	}
 }
+void output_comment_wrapped(const std::string & txt,std::ostream & o,const std::string & sep = "# ",const int width=75){
+	unsigned int cur_pos = 0;
+	while (cur_pos < txt.size()){
+		for (int i = cur_pos+width; i > cur_pos; i++){
+			if (isspace(txt[i])){
+				o << sep << txt.substr(cur_pos,i-cur_pos) << "\n";
+				cur_pos = i+1;
+				break;
+			}
+		}
+	}
+}
 
 void ns_ini::save(const string & file_name){
 	ofstream out(file_name.c_str());
@@ -142,10 +159,30 @@ void ns_ini::save(const string & file_name){
 		out.close();
 		throw ns_ex() << "Could not save to the ini file " << file_name;
 	}
-	for(map<string,ns_ini_entry>::iterator p = data.begin();  p != data.end(); p++){
-		if (!p->second.comment.empty())
-			out << "#" << p->second.comment << "\n";
-		out << p->first << " = " << p->second.value << "\n";
+	if (specification_groups.size() == 0){
+		for(map<string,ns_ini_entry>::iterator p = data.begin();  p != data.end(); p++){
+			if (!p->second.comment.empty())
+				out << "# " << p->second.comment << "\n";
+			out << p->first << " = " << p->second.value << "\n";
+		}
+	}
+	else{
+		for (unsigned int i = 0; i < specification_groups.size(); i++){
+			const ns_ini_specification_group & s(specification_groups[i]);
+			if (!s.group_name.empty())
+				out << "#### " << s.group_name << " ####\n";
+			if (!s.description.empty())
+				output_comment_wrapped(s.description,out);
+			if (!s.group_name.empty() || !s.description.empty())
+				out << "\n";
+			
+			for (unsigned int j = 0; j < s.names_in_order.size(); j++){
+				map<string,ns_ini_entry>::iterator p(data.find(s.names_in_order[j]));
+				output_comment_wrapped( p->first + ": " + p->second.comment,out);
+				out << "\n" << p->first << " = " << p->second.value << "\n\n";
+			}
+			out << "\n";
+		}
 	}
 
 	out.close();

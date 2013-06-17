@@ -32,29 +32,30 @@ $root_flag_index = 0;
 $tail = "";
 $number_of_tails = 0;
 $first_not_root_id = -1;
-
-for ($i = 0; $i < sizeof($flags); $i++){
-  $references_to_flags[$flags[$i][3]] = array();
-  $sorted_flags[$flags[$i][0]] = $flags[$i];
-  if ($flags[$i][0] == "MULTI_ERR")
-    $root_flag_index = $i;
-  else if ($first_not_root_id == -1)
-    $first_not_root_id = $i;
-  if (strlen($flags[$i][3]) == 0){
-    $tail = $flags[$i][0];
-    $number_of_tails++;
-  }
-}
-if($number_of_tails != 1){//|| TRUE){
-  
-  //  die("YIKES: Number of Tails" . $number_of_tails);
-  //$query = "UPDATE annotation_flags
+if (sizeof($flags) > 0){
   for ($i = 0; $i < sizeof($flags); $i++){
+    $references_to_flags[$flags[$i][3]] = array();
+    $sorted_flags[$flags[$i][0]] = $flags[$i];
+    if ($flags[$i][0] == "MULTI_ERR")
+      $root_flag_index = $i;
+    else if ($first_not_root_id == -1)
+      $first_not_root_id = $i;
+    if (strlen($flags[$i][3]) == 0){
+      $tail = $flags[$i][0];
+      $number_of_tails++;
+    }
+  }
+  
+  if($number_of_tails != 1){//|| TRUE){
+    
+    //  die("YIKES: Number of Tails" . $number_of_tails);
+    //$query = "UPDATE annotation_flags
+    for ($i = 0; $i < sizeof($flags); $i++){
     echo $flags[$i][0] . "<BR>";
     if ($flags[$i][0] == "MULTI_ERR"){
       $next = $flags[$first_not_root_id][0];
       //   die($next);
-      }
+    }
     else if ($i+1 ==sizeof($flags) || $i+2 == sizeof($flags) && $flags[sizeof($flags)-1][0]="MULTI_ERR"){
       $next='';
     }
@@ -64,28 +65,29 @@ if($number_of_tails != 1){//|| TRUE){
     //  echo $query . "<BR>";
     // die($query);
     $sql->send_query($query);
+    }
+    //die("SDF");
+    header("Location: cluster_configuration.php\n\n");
   }
-  //die("SDF");
-  header("Location: cluster_configuration.php\n\n");
- }
-
-for ($i = 0; $i < sizeof($flags); $i++){
-  array_push($references_to_flags[$flags[$i][3]],$flags[$i][0]);
- }
-//var_dump($sorted_flags);
-//echo "<BR><BR>";
-
-$last_flag_id = $flags[0][0];
-for (;;){
-  // echo "CUR:";
-  // var_dump($sorted_flags[$last_flag_id]);
-  //   echo "<BR>";
-  if (!isset($sorted_flags[$sorted_flags[$last_flag_id][4]]) || $sorted_flags[$last_flag_id][4] == 0  ){
-    //  echo "STOPPING";
-	break;
-      }
-      $last_flag_id = $sorted_flags[$last_flag_id][4];
- }
+  
+  for ($i = 0; $i < sizeof($flags); $i++){
+    array_push($references_to_flags[$flags[$i][3]],$flags[$i][0]);
+  }
+  //var_dump($sorted_flags);
+  //echo "<BR><BR>";
+  
+  $last_flag_id = $flags[0][0];
+  for (;;){
+    // echo "CUR:";
+    // var_dump($sorted_flags[$last_flag_id]);
+    //   echo "<BR>";
+    if (!isset($sorted_flags[$sorted_flags[$last_flag_id][4]]) || $sorted_flags[$last_flag_id][4] == 0  ){
+      //  echo "STOPPING";
+      break;
+    }
+    $last_flag_id = $sorted_flags[$last_flag_id][4];
+  }
+}
 
 if ($_POST['save_label']){
   $label_short = $_POST['label_short'];

@@ -2019,6 +2019,7 @@ void ns_death_time_annotation_flag::get_flags_from_db(ns_sql & sql){
 	sql << "SELECT id, label_short, label, exclude, next_flag_name_in_order, hidden, color FROM annotation_flags";
 	ns_sql_result res;
 	sql.get_rows(res);
+	const bool no_flags_in_database(res.empty());
 	for (unsigned int i = 0; i < res.size(); i++){
 		const std::string & flag_name(res[i][1].c_str());
 		ns_flag_cache_by_short_label::iterator p = cached_flags_by_short_label.find(flag_name);
@@ -2029,9 +2030,7 @@ void ns_death_time_annotation_flag::get_flags_from_db(ns_sql & sql){
 	//	cached_flags_by_id[flag_id] = f;
 		cached_flags_by_short_label[res[i][1]] = f;
 	}
-	
 	std::vector<ns_death_time_annotation_flag> v;
-
 	//link in defaults
 	generate_default_flags(v);
 	unsigned long number_of_ends(0);
@@ -2045,7 +2044,8 @@ void ns_death_time_annotation_flag::get_flags_from_db(ns_sql & sql){
 	}
 
 	const bool need_to_recalculate_order(!cached_flags_by_short_label.empty() && number_of_ends != 1);
-
+	
+	//look for missing default flags in the database
 	for (unsigned int i = 0; i < v.size(); i++){
 		ns_flag_cache_by_short_label::iterator p = cached_flags_by_short_label.find(v[i].label_short);
 		if (p == cached_flags_by_short_label.end()){
@@ -2068,9 +2068,10 @@ void ns_death_time_annotation_flag::get_flags_from_db(ns_sql & sql){
 			if (p->second.cached_color == ns_color_8(0,0,0)){
 				p->second.cached_color = v[i].cached_color;
 			}
-
 		}
+		
 	}
+		
 };
 
 

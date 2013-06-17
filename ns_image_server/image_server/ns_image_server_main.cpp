@@ -1108,6 +1108,7 @@ int main(int argc, char * argv[]){
 			image_server.load_quotes(quotes,*static_cast<ns_sql *>(&sql()));
 			image_server.alert_handler.initialize(*static_cast<ns_sql *>(&sql()));	
 			image_server.alert_handler.reset_all_alert_time_limits(*static_cast<ns_sql *>(&sql()));
+			ns_death_time_annotation_flag::get_flags_from_db(*static_cast<ns_sql *>(&sql()));
 		}
 		
 		const bool register_and_run_simulated_devices(image_server.register_and_run_simulated_devices(&sql()));

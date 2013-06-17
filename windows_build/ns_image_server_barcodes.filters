@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="statistics">
+      <UniqueIdentifier>{6681446a-db08-4473-9e8e-abd2256a4f60}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="system_base">
+      <UniqueIdentifier>{e42f78f1-3cf6-4c27-a726-7ef0b457aad4}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="misc">
+      <UniqueIdentifier>{20f416b2-cbac-425c-b52b-5107541a12cc}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="misc\tinyxml">
+      <UniqueIdentifier>{33e117d0-d5cd-4c40-8283-33eb7972471e}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\ns_image_server\statistics\ns_survival_curve.cpp">
+      <Filter>statistics</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ns_image_server\system_base\ns_dir.cpp">
+      <Filter>system_base</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ns_image_server\system_base\ns_ex.cpp">
+      <Filter>system_base</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ns_image_server\system_base\ns_thread.cpp">
+      <Filter>system_base</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ns_image_server\system_base\ns_xml.cpp">
+      <Filter>system_base</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_libraries\tinyxml\tinystr.cpp">
+      <Filter>misc\tinyxml</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_libraries\tinyxml\tinyxml.cpp">
+      <Filter>misc\tinyxml</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_libraries\tinyxml\tinyxmlerror.cpp">
+      <Filter>misc\tinyxml</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_libraries\tinyxml\tinyxmlparser.cpp">
+      <Filter>misc\tinyxml</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ns_image_server\system_base\ns_sql.cpp">
+      <Filter>system_base</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ns_image_server\data_annotation\ns_death_time_annotation.cpp">
+      <Filter>misc</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ns_image_server_utilities\ns_image_server_barcodes.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\ns_image_server\statistics\ns_survival_curve.h">
+      <Filter>statistics</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ns_image_server\system_base\ns_dir.h">
+      <Filter>system_base</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ns_image_server\system_base\ns_ex.h">
+      <Filter>system_base</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ns_image_server\system_base\ns_managed_pointer.h">
+      <Filter>system_base</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ns_image_server\system_base\ns_thread.h">
+      <Filter>system_base</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ns_image_server\system_base\ns_xml.h">
+      <Filter>system_base</Filter>
+    </ClInclude>
+    <ClInclude Include="..\external_libraries\tinyxml\tinystr.h">
+      <Filter>misc\tinyxml</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ns_image_server\data_annotation\ns_death_time_annotation.h">
+      <Filter>misc</Filter>
+    </ClInclude>
+  </ItemGroup>
+</Project>

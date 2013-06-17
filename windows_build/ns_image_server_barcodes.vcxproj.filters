@@ -1,0 +1,663 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="..\ns_image_server\system_base\ns_dir.cpp" />
+    <ClCompile Include="..\ns_image_server\system_base\ns_ex.cpp" />
+    <ClCompile Include="..\ns_image_server\image_base\ns_font.cpp">
+      <Filter>image_base</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ns_image_server\image_base\ns_image.cpp">
+      <Filter>image_base</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ns_image_server\image_base\ns_jpeg.cpp">
+      <Filter>image_base</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ns_image_server\image_base\ns_libtiff_interface.c">
+      <Filter>image_base</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ns_image_server\image_base\ns_ojp2k.cpp">
+      <Filter>image_base</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ns_image_server\image_base\ns_svg.cpp">
+      <Filter>image_base</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ns_image_server\image_base\ns_tiff.cpp">
+      <Filter>image_base</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ns_image_server\image_base\ns_vector.cpp">
+      <Filter>image_base</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_compile_libraries\libdmtx-0.5.2\dmtx.c">
+      <Filter>dmtx</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_compile_libraries\jpeg-8d\jaricom.c">
+      <Filter>image_format_lib\jpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_compile_libraries\jpeg-8d\jcapimin.c">
+      <Filter>image_format_lib\jpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_compile_libraries\jpeg-8d\jcapistd.c">
+      <Filter>image_format_lib\jpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_compile_libraries\jpeg-8d\jcarith.c">
+      <Filter>image_format_lib\jpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_compile_libraries\jpeg-8d\jccoefct.c">
+      <Filter>image_format_lib\jpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_compile_libraries\jpeg-8d\jccolor.c">
+      <Filter>image_format_lib\jpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_compile_libraries\jpeg-8d\jcdctmgr.c">
+      <Filter>image_format_lib\jpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_compile_libraries\jpeg-8d\jchuff.c">
+      <Filter>image_format_lib\jpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_compile_libraries\jpeg-8d\jcinit.c">
+      <Filter>image_format_lib\jpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_compile_libraries\jpeg-8d\jcmainct.c">
+      <Filter>image_format_lib\jpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_compile_libraries\jpeg-8d\jcmarker.c">
+      <Filter>image_format_lib\jpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_compile_libraries\jpeg-8d\jcmaster.c">
+      <Filter>image_format_lib\jpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_compile_libraries\jpeg-8d\jcomapi.c">
+      <Filter>image_format_lib\jpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_compile_libraries\jpeg-8d\jcparam.c">
+      <Filter>image_format_lib\jpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_compile_libraries\jpeg-8d\jcprepct.c">
+      <Filter>image_format_lib\jpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_compile_libraries\jpeg-8d\jcsample.c">
+      <Filter>image_format_lib\jpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_compile_libraries\jpeg-8d\jctrans.c">
+      <Filter>image_format_lib\jpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_compile_libraries\jpeg-8d\jdapimin.c">
+      <Filter>image_format_lib\jpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_compile_libraries\jpeg-8d\jdapistd.c">
+      <Filter>image_format_lib\jpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_compile_libraries\jpeg-8d\jdarith.c">
+      <Filter>image_format_lib\jpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_compile_libraries\jpeg-8d\jdatadst.c">
+      <Filter>image_format_lib\jpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_compile_libraries\jpeg-8d\jdatasrc.c">
+      <Filter>image_format_lib\jpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_compile_libraries\jpeg-8d\jdcoefct.c">
+      <Filter>image_format_lib\jpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_compile_libraries\jpeg-8d\jdcolor.c">
+      <Filter>image_format_lib\jpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_compile_libraries\jpeg-8d\jddctmgr.c">
+      <Filter>image_format_lib\jpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_compile_libraries\jpeg-8d\jdhuff.c">
+      <Filter>image_format_lib\jpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_compile_libraries\jpeg-8d\jdinput.c">
+      <Filter>image_format_lib\jpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_compile_libraries\jpeg-8d\jdmainct.c">
+      <Filter>image_format_lib\jpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_compile_libraries\jpeg-8d\jdmarker.c">
+      <Filter>image_format_lib\jpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_compile_libraries\jpeg-8d\jdmaster.c">
+      <Filter>image_format_lib\jpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_compile_libraries\jpeg-8d\jdmerge.c">
+      <Filter>image_format_lib\jpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_compile_libraries\jpeg-8d\jdpostct.c">
+      <Filter>image_format_lib\jpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_compile_libraries\jpeg-8d\jdsample.c">
+      <Filter>image_format_lib\jpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_compile_libraries\jpeg-8d\jdtrans.c">
+      <Filter>image_format_lib\jpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_compile_libraries\jpeg-8d\jerror.c">
+      <Filter>image_format_lib\jpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_compile_libraries\jpeg-8d\jfdctflt.c">
+      <Filter>image_format_lib\jpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_compile_libraries\jpeg-8d\jfdctfst.c">
+      <Filter>image_format_lib\jpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_compile_libraries\jpeg-8d\jfdctint.c">
+      <Filter>image_format_lib\jpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_compile_libraries\jpeg-8d\jidctflt.c">
+      <Filter>image_format_lib\jpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_compile_libraries\jpeg-8d\jidctfst.c">
+      <Filter>image_format_lib\jpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_compile_libraries\jpeg-8d\jidctint.c">
+      <Filter>image_format_lib\jpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_compile_libraries\jpeg-8d\jmemmgr.c">
+      <Filter>image_format_lib\jpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_compile_libraries\jpeg-8d\jmemnobs.c">
+      <Filter>image_format_lib\jpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_compile_libraries\jpeg-8d\jquant1.c">
+      <Filter>image_format_lib\jpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_compile_libraries\jpeg-8d\jquant2.c">
+      <Filter>image_format_lib\jpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_compile_libraries\jpeg-8d\jutils.c">
+      <Filter>image_format_lib\jpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_compile_libraries\jpeg-8d\rdbmp.c">
+      <Filter>image_format_lib\jpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_compile_libraries\jpeg-8d\rdcolmap.c">
+      <Filter>image_format_lib\jpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_compile_libraries\jpeg-8d\rdgif.c">
+      <Filter>image_format_lib\jpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_compile_libraries\jpeg-8d\rdppm.c">
+      <Filter>image_format_lib\jpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_compile_libraries\jpeg-8d\rdrle.c">
+      <Filter>image_format_lib\jpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_compile_libraries\jpeg-8d\rdswitch.c">
+      <Filter>image_format_lib\jpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_compile_libraries\jpeg-8d\rdtarga.c">
+      <Filter>image_format_lib\jpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_compile_libraries\jpeg-8d\transupp.c">
+      <Filter>image_format_lib\jpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_compile_libraries\jpeg-8d\wrbmp.c">
+      <Filter>image_format_lib\jpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_compile_libraries\jpeg-8d\wrgif.c">
+      <Filter>image_format_lib\jpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_compile_libraries\jpeg-8d\wrppm.c">
+      <Filter>image_format_lib\jpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_compile_libraries\jpeg-8d\wrrle.c">
+      <Filter>image_format_lib\jpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_compile_libraries\jpeg-8d\wrtarga.c">
+      <Filter>image_format_lib\jpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_compile_libraries\openjpeg-1.5.0\libopenjpeg\bio.c">
+      <Filter>image_format_lib\ojpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_compile_libraries\openjpeg-1.5.0\libopenjpeg\cidx_manager.c">
+      <Filter>image_format_lib\ojpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_compile_libraries\openjpeg-1.5.0\libopenjpeg\cio.c">
+      <Filter>image_format_lib\ojpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_compile_libraries\openjpeg-1.5.0\libopenjpeg\dwt.c">
+      <Filter>image_format_lib\ojpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_compile_libraries\openjpeg-1.5.0\libopenjpeg\event.c">
+      <Filter>image_format_lib\ojpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_compile_libraries\openjpeg-1.5.0\libopenjpeg\image.c">
+      <Filter>image_format_lib\ojpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_compile_libraries\openjpeg-1.5.0\libopenjpeg\j2k.c">
+      <Filter>image_format_lib\ojpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_compile_libraries\openjpeg-1.5.0\libopenjpeg\j2k_lib.c">
+      <Filter>image_format_lib\ojpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_compile_libraries\openjpeg-1.5.0\libopenjpeg\jp2.c">
+      <Filter>image_format_lib\ojpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_compile_libraries\openjpeg-1.5.0\libopenjpeg\jpt.c">
+      <Filter>image_format_lib\ojpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_compile_libraries\openjpeg-1.5.0\libopenjpeg\mct.c">
+      <Filter>image_format_lib\ojpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_compile_libraries\openjpeg-1.5.0\libopenjpeg\mqc.c">
+      <Filter>image_format_lib\ojpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_compile_libraries\openjpeg-1.5.0\libopenjpeg\openjpeg.c">
+      <Filter>image_format_lib\ojpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_compile_libraries\openjpeg-1.5.0\libopenjpeg\phix_manager.c">
+      <Filter>image_format_lib\ojpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_compile_libraries\openjpeg-1.5.0\libopenjpeg\pi.c">
+      <Filter>image_format_lib\ojpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_compile_libraries\openjpeg-1.5.0\libopenjpeg\ppix_manager.c">
+      <Filter>image_format_lib\ojpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_compile_libraries\openjpeg-1.5.0\libopenjpeg\raw.c">
+      <Filter>image_format_lib\ojpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_compile_libraries\openjpeg-1.5.0\libopenjpeg\t1.c">
+      <Filter>image_format_lib\ojpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_compile_libraries\openjpeg-1.5.0\libopenjpeg\t2.c">
+      <Filter>image_format_lib\ojpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_compile_libraries\openjpeg-1.5.0\libopenjpeg\tcd.c">
+      <Filter>image_format_lib\ojpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_compile_libraries\openjpeg-1.5.0\libopenjpeg\tgt.c">
+      <Filter>image_format_lib\ojpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_compile_libraries\openjpeg-1.5.0\libopenjpeg\thix_manager.c">
+      <Filter>image_format_lib\ojpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_compile_libraries\openjpeg-1.5.0\libopenjpeg\tpix_manager.c">
+      <Filter>image_format_lib\ojpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_compile_libraries\zlib\adler32.c">
+      <Filter>image_format_lib\zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_compile_libraries\zlib\compress.c">
+      <Filter>image_format_lib\zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_compile_libraries\zlib\crc32.c">
+      <Filter>image_format_lib\zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_compile_libraries\zlib\deflate.c">
+      <Filter>image_format_lib\zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_compile_libraries\zlib\gzio.c">
+      <Filter>image_format_lib\zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_compile_libraries\zlib\infback.c">
+      <Filter>image_format_lib\zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_compile_libraries\zlib\inffast.c">
+      <Filter>image_format_lib\zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_compile_libraries\zlib\inflate.c">
+      <Filter>image_format_lib\zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_compile_libraries\zlib\inftrees.c">
+      <Filter>image_format_lib\zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_compile_libraries\zlib\trees.c">
+      <Filter>image_format_lib\zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_compile_libraries\zlib\uncompr.c">
+      <Filter>image_format_lib\zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_compile_libraries\zlib\zutil.c">
+      <Filter>image_format_lib\zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_libraries\tiff-3.8.2\libtiff\tif_aux.c">
+      <Filter>image_format_lib\tiff</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_libraries\tiff-3.8.2\libtiff\tif_close.c">
+      <Filter>image_format_lib\tiff</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_libraries\tiff-3.8.2\libtiff\tif_codec.c">
+      <Filter>image_format_lib\tiff</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_libraries\tiff-3.8.2\libtiff\tif_color.c">
+      <Filter>image_format_lib\tiff</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_libraries\tiff-3.8.2\libtiff\tif_compress.c">
+      <Filter>image_format_lib\tiff</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_libraries\tiff-3.8.2\libtiff\tif_dir.c">
+      <Filter>image_format_lib\tiff</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_libraries\tiff-3.8.2\libtiff\tif_dirinfo.c">
+      <Filter>image_format_lib\tiff</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_libraries\tiff-3.8.2\libtiff\tif_dirread.c">
+      <Filter>image_format_lib\tiff</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_libraries\tiff-3.8.2\libtiff\tif_dirwrite.c">
+      <Filter>image_format_lib\tiff</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_libraries\tiff-3.8.2\libtiff\tif_dumpmode.c">
+      <Filter>image_format_lib\tiff</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_libraries\tiff-3.8.2\libtiff\tif_error.c">
+      <Filter>image_format_lib\tiff</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_libraries\tiff-3.8.2\libtiff\tif_extension.c">
+      <Filter>image_format_lib\tiff</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_libraries\tiff-3.8.2\libtiff\tif_fax3.c">
+      <Filter>image_format_lib\tiff</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_libraries\tiff-3.8.2\libtiff\tif_fax3sm.c">
+      <Filter>image_format_lib\tiff</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_libraries\tiff-3.8.2\libtiff\tif_flush.c">
+      <Filter>image_format_lib\tiff</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_libraries\tiff-3.8.2\libtiff\tif_getimage.c">
+      <Filter>image_format_lib\tiff</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_libraries\tiff-3.8.2\libtiff\tif_jpeg.c">
+      <Filter>image_format_lib\tiff</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_libraries\tiff-3.8.2\libtiff\tif_luv.c">
+      <Filter>image_format_lib\tiff</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_libraries\tiff-3.8.2\libtiff\tif_lzw.c">
+      <Filter>image_format_lib\tiff</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_libraries\tiff-3.8.2\libtiff\tif_next.c">
+      <Filter>image_format_lib\tiff</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_libraries\tiff-3.8.2\libtiff\tif_ojpeg.c">
+      <Filter>image_format_lib\tiff</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_libraries\tiff-3.8.2\libtiff\tif_open.c">
+      <Filter>image_format_lib\tiff</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_libraries\tiff-3.8.2\libtiff\tif_packbits.c">
+      <Filter>image_format_lib\tiff</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_libraries\tiff-3.8.2\libtiff\tif_pixarlog.c">
+      <Filter>image_format_lib\tiff</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_libraries\tiff-3.8.2\libtiff\tif_predict.c">
+      <Filter>image_format_lib\tiff</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_libraries\tiff-3.8.2\libtiff\tif_print.c">
+      <Filter>image_format_lib\tiff</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_libraries\tiff-3.8.2\libtiff\tif_read.c">
+      <Filter>image_format_lib\tiff</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_libraries\tiff-3.8.2\libtiff\tif_strip.c">
+      <Filter>image_format_lib\tiff</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_libraries\tiff-3.8.2\libtiff\tif_swab.c">
+      <Filter>image_format_lib\tiff</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_libraries\tiff-3.8.2\libtiff\tif_thunder.c">
+      <Filter>image_format_lib\tiff</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_libraries\tiff-3.8.2\libtiff\tif_tile.c">
+      <Filter>image_format_lib\tiff</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_libraries\tiff-3.8.2\libtiff\tif_version.c">
+      <Filter>image_format_lib\tiff</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_libraries\tiff-3.8.2\libtiff\tif_warning.c">
+      <Filter>image_format_lib\tiff</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_libraries\tiff-3.8.2\libtiff\tif_write.c">
+      <Filter>image_format_lib\tiff</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_libraries\tiff-3.8.2\libtiff\tif_zip.c">
+      <Filter>image_format_lib\tiff</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ns_image_server\system_base\ns_thread.cpp" />
+    <ClCompile Include="..\ns_image_server\image_acquisition\ns_barcode.cpp">
+      <Filter>image_base</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\ns_image_server\system_base\ns_dir.h" />
+    <ClInclude Include="..\ns_image_server\system_base\ns_ex.h" />
+    <ClInclude Include="..\ns_image_server\system_base\ns_managed_pointer.h" />
+    <ClInclude Include="..\ns_image_server\system_base\ns_thread.h" />
+    <ClInclude Include="..\ns_image_server\image_base\ns_buffered_random_access_image.h">
+      <Filter>image_base</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ns_image_server\image_base\ns_font.h">
+      <Filter>image_base</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ns_image_server\image_base\ns_image.h">
+      <Filter>image_base</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ns_image_server\image_base\ns_image_easy_io.h">
+      <Filter>image_base</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ns_image_server\image_base\ns_jpeg.h">
+      <Filter>image_base</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ns_image_server\image_base\ns_libtiff_interface.h">
+      <Filter>image_base</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ns_image_server\image_base\ns_ojp2k.h">
+      <Filter>image_base</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ns_image_server\image_base\ns_svg.h">
+      <Filter>image_base</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ns_image_server\image_base\ns_tiff.h">
+      <Filter>image_base</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ns_image_server\image_base\ns_vector.h">
+      <Filter>image_base</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ns_image_server\image_base\ns_xmp_encoder.h">
+      <Filter>image_base</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ns_image_server\image_base\xs_Config.h">
+      <Filter>image_base</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ns_image_server\image_base\xs_Float.h">
+      <Filter>image_base</Filter>
+    </ClInclude>
+    <ClInclude Include="..\external_compile_libraries\jpeg-8d\cderror.h">
+      <Filter>image_format_lib\jpeg\h</Filter>
+    </ClInclude>
+    <ClInclude Include="..\external_compile_libraries\jpeg-8d\cdjpeg.h">
+      <Filter>image_format_lib\jpeg\h</Filter>
+    </ClInclude>
+    <ClInclude Include="..\external_compile_libraries\jpeg-8d\jdct.h">
+      <Filter>image_format_lib\jpeg\h</Filter>
+    </ClInclude>
+    <ClInclude Include="..\external_compile_libraries\jpeg-8d\jerror.h">
+      <Filter>image_format_lib\jpeg\h</Filter>
+    </ClInclude>
+    <ClInclude Include="..\external_compile_libraries\jpeg-8d\jinclude.h">
+      <Filter>image_format_lib\jpeg\h</Filter>
+    </ClInclude>
+    <ClInclude Include="..\external_compile_libraries\jpeg-8d\jmemsys.h">
+      <Filter>image_format_lib\jpeg\h</Filter>
+    </ClInclude>
+    <ClInclude Include="..\external_compile_libraries\jpeg-8d\jmorecfg.h">
+      <Filter>image_format_lib\jpeg\h</Filter>
+    </ClInclude>
+    <ClInclude Include="..\external_compile_libraries\jpeg-8d\jpegint.h">
+      <Filter>image_format_lib\jpeg\h</Filter>
+    </ClInclude>
+    <ClInclude Include="..\external_compile_libraries\jpeg-8d\jpeglib.h">
+      <Filter>image_format_lib\jpeg\h</Filter>
+    </ClInclude>
+    <ClInclude Include="..\external_compile_libraries\jpeg-8d\jversion.h">
+      <Filter>image_format_lib\jpeg\h</Filter>
+    </ClInclude>
+    <ClInclude Include="..\external_compile_libraries\jpeg-8d\transupp.h">
+      <Filter>image_format_lib\jpeg\h</Filter>
+    </ClInclude>
+    <ClInclude Include="..\external_compile_libraries\openjpeg-1.5.0\libopenjpeg\bio.h">
+      <Filter>image_format_lib\ojpeg</Filter>
+    </ClInclude>
+    <ClInclude Include="..\external_compile_libraries\openjpeg-1.5.0\libopenjpeg\cidx_manager.h">
+      <Filter>image_format_lib\ojpeg</Filter>
+    </ClInclude>
+    <ClInclude Include="..\external_compile_libraries\openjpeg-1.5.0\libopenjpeg\cio.h">
+      <Filter>image_format_lib\ojpeg</Filter>
+    </ClInclude>
+    <ClInclude Include="..\external_compile_libraries\openjpeg-1.5.0\libopenjpeg\dwt.h">
+      <Filter>image_format_lib\ojpeg</Filter>
+    </ClInclude>
+    <ClInclude Include="..\external_compile_libraries\openjpeg-1.5.0\libopenjpeg\event.h">
+      <Filter>image_format_lib\ojpeg</Filter>
+    </ClInclude>
+    <ClInclude Include="..\external_compile_libraries\openjpeg-1.5.0\libopenjpeg\fix.h">
+      <Filter>image_format_lib\ojpeg</Filter>
+    </ClInclude>
+    <ClInclude Include="..\external_compile_libraries\openjpeg-1.5.0\libopenjpeg\image.h">
+      <Filter>image_format_lib\ojpeg</Filter>
+    </ClInclude>
+    <ClInclude Include="..\external_compile_libraries\openjpeg-1.5.0\libopenjpeg\indexbox_manager.h">
+      <Filter>image_format_lib\ojpeg</Filter>
+    </ClInclude>
+    <ClInclude Include="..\external_compile_libraries\openjpeg-1.5.0\libopenjpeg\int.h">
+      <Filter>image_format_lib\ojpeg</Filter>
+    </ClInclude>
+    <ClInclude Include="..\external_compile_libraries\openjpeg-1.5.0\libopenjpeg\j2k.h">
+      <Filter>image_format_lib\ojpeg</Filter>
+    </ClInclude>
+    <ClInclude Include="..\external_compile_libraries\openjpeg-1.5.0\libopenjpeg\j2k_lib.h">
+      <Filter>image_format_lib\ojpeg</Filter>
+    </ClInclude>
+    <ClInclude Include="..\external_compile_libraries\openjpeg-1.5.0\libopenjpeg\jp2.h">
+      <Filter>image_format_lib\ojpeg</Filter>
+    </ClInclude>
+    <ClInclude Include="..\external_compile_libraries\openjpeg-1.5.0\libopenjpeg\jpt.h">
+      <Filter>image_format_lib\ojpeg</Filter>
+    </ClInclude>
+    <ClInclude Include="..\external_compile_libraries\openjpeg-1.5.0\libopenjpeg\mct.h">
+      <Filter>image_format_lib\ojpeg</Filter>
+    </ClInclude>
+    <ClInclude Include="..\external_compile_libraries\openjpeg-1.5.0\libopenjpeg\mqc.h">
+      <Filter>image_format_lib\ojpeg</Filter>
+    </ClInclude>
+    <ClInclude Include="..\external_compile_libraries\openjpeg-1.5.0\libopenjpeg\openjpeg.h">
+      <Filter>image_format_lib\ojpeg</Filter>
+    </ClInclude>
+    <ClInclude Include="..\external_compile_libraries\openjpeg-1.5.0\libopenjpeg\opj_config.h">
+      <Filter>image_format_lib\ojpeg</Filter>
+    </ClInclude>
+    <ClInclude Include="..\external_compile_libraries\openjpeg-1.5.0\libopenjpeg\opj_includes.h">
+      <Filter>image_format_lib\ojpeg</Filter>
+    </ClInclude>
+    <ClInclude Include="..\external_compile_libraries\openjpeg-1.5.0\libopenjpeg\opj_malloc.h">
+      <Filter>image_format_lib\ojpeg</Filter>
+    </ClInclude>
+    <ClInclude Include="..\external_compile_libraries\openjpeg-1.5.0\libopenjpeg\pi.h">
+      <Filter>image_format_lib\ojpeg</Filter>
+    </ClInclude>
+    <ClInclude Include="..\external_compile_libraries\openjpeg-1.5.0\libopenjpeg\raw.h">
+      <Filter>image_format_lib\ojpeg</Filter>
+    </ClInclude>
+    <ClInclude Include="..\external_compile_libraries\openjpeg-1.5.0\libopenjpeg\t1.h">
+      <Filter>image_format_lib\ojpeg</Filter>
+    </ClInclude>
+    <ClInclude Include="..\external_compile_libraries\openjpeg-1.5.0\libopenjpeg\t1_luts.h">
+      <Filter>image_format_lib\ojpeg</Filter>
+    </ClInclude>
+    <ClInclude Include="..\external_compile_libraries\openjpeg-1.5.0\libopenjpeg\t2.h">
+      <Filter>image_format_lib\ojpeg</Filter>
+    </ClInclude>
+    <ClInclude Include="..\external_compile_libraries\openjpeg-1.5.0\libopenjpeg\tcd.h">
+      <Filter>image_format_lib\ojpeg</Filter>
+    </ClInclude>
+    <ClInclude Include="..\external_compile_libraries\openjpeg-1.5.0\libopenjpeg\tgt.h">
+      <Filter>image_format_lib\ojpeg</Filter>
+    </ClInclude>
+    <ClInclude Include="..\external_libraries\tiff-3.8.2\libtiff\t4.h">
+      <Filter>image_format_lib\tiff</Filter>
+    </ClInclude>
+    <ClInclude Include="..\external_libraries\tiff-3.8.2\libtiff\tiff.h">
+      <Filter>image_format_lib\tiff</Filter>
+    </ClInclude>
+    <ClInclude Include="..\external_libraries\tiff-3.8.2\libtiff\tiffconf.h">
+      <Filter>image_format_lib\tiff</Filter>
+    </ClInclude>
+    <ClInclude Include="..\external_libraries\tiff-3.8.2\libtiff\tiffio.h">
+      <Filter>image_format_lib\tiff</Filter>
+    </ClInclude>
+    <ClInclude Include="..\external_libraries\tiff-3.8.2\libtiff\tiffio.hxx">
+      <Filter>image_format_lib\tiff</Filter>
+    </ClInclude>
+    <ClInclude Include="..\external_libraries\tiff-3.8.2\libtiff\tiffiop.h">
+      <Filter>image_format_lib\tiff</Filter>
+    </ClInclude>
+    <ClInclude Include="..\external_libraries\tiff-3.8.2\libtiff\tiffvers.h">
+      <Filter>image_format_lib\tiff</Filter>
+    </ClInclude>
+    <ClInclude Include="..\external_libraries\tiff-3.8.2\libtiff\tif_config.h">
+      <Filter>image_format_lib\tiff</Filter>
+    </ClInclude>
+    <ClInclude Include="..\external_libraries\tiff-3.8.2\libtiff\tif_dir.h">
+      <Filter>image_format_lib\tiff</Filter>
+    </ClInclude>
+    <ClInclude Include="..\external_libraries\tiff-3.8.2\libtiff\tif_fax3.h">
+      <Filter>image_format_lib\tiff</Filter>
+    </ClInclude>
+    <ClInclude Include="..\external_libraries\tiff-3.8.2\libtiff\tif_predict.h">
+      <Filter>image_format_lib\tiff</Filter>
+    </ClInclude>
+    <ClInclude Include="..\external_libraries\tiff-3.8.2\libtiff\uvcode.h">
+      <Filter>image_format_lib\tiff</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="image_base">
+      <UniqueIdentifier>{a89b01ac-2716-4b81-803d-cab6bf778631}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="dmtx">
+      <UniqueIdentifier>{cf6426c7-3199-4e7f-82e7-5f5d423f189b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="image_format_lib">
+      <UniqueIdentifier>{0b998fea-61c7-4c99-8fda-a74a66b8a75e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="image_format_lib\jpeg">
+      <UniqueIdentifier>{6c313408-4b28-48d4-a1ee-7ad1dd38535a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="image_format_lib\jpeg\h">
+      <UniqueIdentifier>{28ba4689-afb2-44c3-83c2-88bcac1640cc}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="image_format_lib\ojpeg">
+      <UniqueIdentifier>{8a85e5ce-4590-4717-94cd-f9a3397b1200}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="image_format_lib\zlib">
+      <UniqueIdentifier>{88703293-8cb9-472c-a2dc-43ebabf779c8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="image_format_lib\tiff">
+      <UniqueIdentifier>{8d0cddec-6a5c-41e5-a9a2-fef30a69ac33}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\external_compile_libraries\openjpeg-1.5.0\libopenjpeg\CMakeLists.txt">
+      <Filter>image_format_lib\ojpeg</Filter>
+    </None>
+    <None Include="..\external_compile_libraries\openjpeg-1.5.0\libopenjpeg\Makefile.am">
+      <Filter>image_format_lib\ojpeg</Filter>
+    </None>
+    <None Include="..\external_compile_libraries\openjpeg-1.5.0\libopenjpeg\Makefile.in">
+      <Filter>image_format_lib\ojpeg</Filter>
+    </None>
+    <None Include="..\external_libraries\tiff-3.8.2\libtiff\tiffconf.h.vc">
+      <Filter>image_format_lib\tiff</Filter>
+    </None>
+    <None Include="..\external_libraries\tiff-3.8.2\libtiff\tif_config.h.in">
+      <Filter>image_format_lib\tiff</Filter>
+    </None>
+    <None Include="..\external_libraries\tiff-3.8.2\libtiff\tif_config.h.vc">
+      <Filter>image_format_lib\tiff</Filter>
+    </None>
+  </ItemGroup>
+</Project>

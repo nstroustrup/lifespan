@@ -488,22 +488,27 @@ public:
 					divisions[cur_i].division->events[j].annotation_was_censored_on_loading = !divisions[cur_i].division->events[j].event_annotation.is_excluded();
 				}
 
-			if (strain_to_display.plate_type_summary().size() != 0){
+			if (!strain_to_display.plate_type_summary().empty()){
 				for (unsigned int j=0; j < divisions[cur_i].division->events.size(); j++){
 					display_events_from_region[divisions[cur_i].division->events[j].event_annotation.region_info_id] = false;
 				}
-
+			}
+			else{
+				for (unsigned int j=0; j < divisions[cur_i].division->events.size(); j++){
+					display_events_from_region[divisions[cur_i].division->events[j].event_annotation.region_info_id] = true;
+				}
 			}
 			cur_i++;
 		}		
 		if (divisions.size() == 0)
 			throw ns_ex("No divisions or animals present in storyboard");
 
-		for (ns_event_display_spec_list::iterator p = display_events_from_region.begin(); p!=display_events_from_region.end();p++){
-			ns_region_metadata m;
-			m.load_from_db(p->first,"",sql());
-			p->second = (m.plate_type_summary() == strain_to_display.plate_type_summary());
-		}
+		if (!strain_to_display.plate_type_summary().empty())
+			for (ns_event_display_spec_list::iterator p = display_events_from_region.begin(); p!=display_events_from_region.end();p++){
+				ns_region_metadata m;
+				m.load_from_db(p->first,"",sql());
+				p->second = (m.plate_type_summary() == strain_to_display.plate_type_summary());
+			}
 
 	//	cerr << divisions.size() << " divisions loaded.\n Loading images...";
 		this->initalize_division_image_population(sql());

@@ -560,7 +560,8 @@ void ns_image_server_dispatcher::on_timer(){
 			}
 		
 			if (file_storage_space < 1024*16){
-				string text("Low Disk Space: ");
+				string text(image_server.host_name_out());
+				text += ": Low Disk Space: ";
 				if (file_storage_space > 1024){
 					text += ns_to_string(file_storage_space/1024);
 					text += "Gb Remaining";
@@ -587,7 +588,10 @@ void ns_image_server_dispatcher::on_timer(){
 		}
 	
 		bool shutdown_requested = (h[0][1] == "1");
-		bool hotplug_requested = (h[0][3] == "1");
+		const bool hotplug_requested = (h[0][3] == "1");
+		if (h[0][3] == "2"){
+			clean_clear_local_db_requested = true;
+		}
 		std::string database_requested = h[0][4];
 		
 	
@@ -607,6 +611,7 @@ void ns_image_server_dispatcher::on_timer(){
 			image_server.register_server_event(ex,timer_sql_connection);
 		}
 		
+
 		map<std::string, ns_capture_device::ns_device_preview_type> preview_requested;
 		if (image_server.act_as_an_image_capture_server()){
 			ns_image_server_device_manager::ns_device_name_list devices;

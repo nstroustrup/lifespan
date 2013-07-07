@@ -94,6 +94,10 @@ bool ns_image_capture_data_manager::transfer_data_to_long_term_storage(ns_image_
 									ns_64_bit & time_during_transfer_to_long_term_storage,
 									ns_64_bit & time_during_deletion_from_local_storage,
 									ns_sql & sql){
+	if (image.capture_images_image_id == 0)
+		throw ns_ex("transfer_data_to_long_term_storage() was passed an image with no captured image image id");
+	if (image.captured_images_id == 0)
+		throw ns_ex("transfer_data_to_long_term_storage() was passed an image with no captured image id");
 	bool had_to_use_local_storage(false);
 	if (image.specified_16_bit){
 		try{
@@ -526,7 +530,7 @@ bool ns_image_capture_data_manager::handle_pending_transfers_to_long_term_storag
 		return false;
 	ns_acquire_for_scope<ns_local_buffer_connection> sql(image_server.new_local_buffer_connection(__FILE__,__LINE__));
 	sql() << "SELECT DISTINCT s.device_name FROM buffered_capture_samples as s, buffered_capture_schedule as sh "
-			 "WHERE sh.id = s.sample_id";
+			 "WHERE sh.id = s.id";
 	ns_sql_result res;
 	sql().get_rows(res);
 	sql.release();

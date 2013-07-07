@@ -11,6 +11,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ns_concatenate_files", "ns_
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ns_image_server_update", "ns_image_server_update.vcxproj", "{83C6E7F6-114B-4CC4-87A0-3063208AF255}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ns_image_server_barcodes", "ns_image_server_barcodes.vcxproj", "{CE96BC79-0218-4C95-B749-C4BBD4810026}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
@@ -54,6 +56,12 @@ Global
 		{83C6E7F6-114B-4CC4-87A0-3063208AF255}.Release|Win32.Build.0 = Release|Win32
 		{83C6E7F6-114B-4CC4-87A0-3063208AF255}.Release|x64.ActiveCfg = Release|x64
 		{83C6E7F6-114B-4CC4-87A0-3063208AF255}.Release|x64.Build.0 = Release|x64
+		{CE96BC79-0218-4C95-B749-C4BBD4810026}.Debug|Win32.ActiveCfg = Debug|Win32
+		{CE96BC79-0218-4C95-B749-C4BBD4810026}.Debug|Win32.Build.0 = Debug|Win32
+		{CE96BC79-0218-4C95-B749-C4BBD4810026}.Debug|x64.ActiveCfg = Debug|Win32
+		{CE96BC79-0218-4C95-B749-C4BBD4810026}.Release|Win32.ActiveCfg = Release|Win32
+		{CE96BC79-0218-4C95-B749-C4BBD4810026}.Release|Win32.Build.0 = Release|Win32
+		{CE96BC79-0218-4C95-B749-C4BBD4810026}.Release|x64.ActiveCfg = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -505,21 +505,7 @@ void ns_image_server_dispatcher::on_timer(){
 		throw;
 	}
 
-	if (clean_clear_local_db_requested){
-		clean_clear_local_db_requested = false;		
-		try{
-			
-			ns_acquire_for_scope<ns_local_buffer_connection> local_buffer_connection(image_server.new_local_buffer_connection(__FILE__,__LINE__));
-			ns_acquire_for_scope<ns_local_buffer_connection> sql(image_server.new_local_buffer_connection(__FILE__,__LINE__));
-			buffered_capture_scheduler.commit_local_changes_to_central_server(sql(),*timer_sql_connection);
-			buffered_capture_scheduler.clear_local_cache(sql());
-			sql.release();
-			local_buffer_connection.release();
-		}
-		catch(ns_ex & ex){
-			image_server.register_server_event_no_db(ns_image_server_event(ex.text()));
-		}
-	}
+
 	try{
 		//if record of this server has been deleted, update it.
 		*timer_sql_connection << "SELECT id, shutdown_requested, pause_requested, hotplug_requested,database_used FROM hosts WHERE id='" << image_server.host_id()<< "'";
@@ -603,7 +589,21 @@ void ns_image_server_dispatcher::on_timer(){
 		*timer_sql_connection << " WHERE id = " << image_server.host_id();
 		timer_sql_connection->send_query();
 		timer_sql_connection->send_query("COMMIT");
-
+		if (clean_clear_local_db_requested){
+			clean_clear_local_db_requested = false;		
+			try{
+			
+				ns_acquire_for_scope<ns_local_buffer_connection> local_buffer_connection(image_server.new_local_buffer_connection(__FILE__,__LINE__));
+				ns_acquire_for_scope<ns_local_buffer_connection> sql(image_server.new_local_buffer_connection(__FILE__,__LINE__));
+				buffered_capture_scheduler.commit_local_changes_to_central_server(sql(),*timer_sql_connection);
+				buffered_capture_scheduler.clear_local_cache(sql());
+				sql.release();
+				local_buffer_connection.release();
+			}
+			catch(ns_ex & ex){
+				image_server.register_server_event_no_db(ns_image_server_event(ex.text()));
+			}
+		}
 		try{
 			image_server.image_storage.refresh_experiment_partition_cache(timer_sql_connection);
 		}

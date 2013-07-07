@@ -87,6 +87,12 @@ if ($_POST['hotplug'] != ''){
   $sql->send_query($query);
 	$refresh = TRUE;
  }
+if ($_POST['buffer_reload'] != ''){
+  $id = $_POST['host_id'];
+  $query = "UPDATE hosts SET hotplug_requested = 2 WHERE id = '$id'";
+  $sql->send_query($query);
+  $refresh = TRUE;
+ }
 if ($_POST['pause_all'] != ''){
   $id = $_POST['host_id'];
   $query = "UPDATE hosts SET pause_requested= 1";
@@ -361,6 +367,8 @@ foreach ($base_hosts as $base_host_name => $host){
 			echo '<input name="shut_down" type="submit" value="Shut Down"></td></tr>';
 			echo '<tr><td><input name="pause" type="submit" value="Pause"><br>';
 			echo '<input name="hotplug" type="submit" value="Hotplug Devices"</td>';
+			echo '<input name="buffer_reload" type="submit" value="Reload Schedule Buffer" onClick="javascript:return confirm(\'This will force the image acquisition server to re-download all pending scans, causing it to be temporarily unresponsive.  Continue?\')">';
+			echo "</td>";
 			echo '<td valign="bottom" align="right"><input name="cancel" type="submit" value="Cancel"></td></tr>';
 			echo '</table>';
 		}

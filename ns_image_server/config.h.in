@@ -3,11 +3,8 @@
 /* Define to 1 if MySQL libraries are available */
 #undef HAVE_MYSQL
 
-/* Define if you have POSIX threads libraries and header files. */
-#undef HAVE_PTHREAD
-
-/* Have PTHREAD_PRIO_INHERIT. */
-#undef HAVE_PTHREAD_PRIO_INHERIT
+/* Define to 1 if your C compiler doesn't accept -c and -o together. */
+#undef NO_MINUS_C_MINUS_O
 
 /* Use usb-1.0 library instead of usb-0.1 */
 #undef NS_USB_1
@@ -29,10 +26,6 @@
 
 /* Define to the version of this package. */
 #undef PACKAGE_VERSION
-
-/* Define to necessary symbol if this constant uses a non-standard name on
-   your system. */
-#undef PTHREAD_CREATE_JOINABLE
 
 /* Version number of package */
 #undef VERSION

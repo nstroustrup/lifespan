@@ -249,13 +249,13 @@ include_dir_external = -I../external_libraries/libsvm \
 	       -I../external_libraries/wm4_bspline \
 	       -I../external_libraries/tinyxml \
 	       -I../external_libraries/tiff-3.8.2/libtiff
-DEF_FONT = @datarootdir@/default_font.ttf
-INI_PATH = @datarootdir@/ns_image_server.ini
+DEF_FONT = $(sysconfdir)/default_font.ttf
+INI_PATH = $(sysconfdir)/ns_image_server.ini
 
 PRE_DEF = -DTRILIBRARY -DNO_TIMER -DANSI_DECLARATORS -DNS_DEFAULT_FONT="\"$(DEF_FONT)\"" -DNS_INI_PATH="\"$(INI_PATH)\""
 bin_PROGRAMS = ns_image_server
 #serverdir = @datarootdir@
-dist_data_DATA = ../files/default_font.ttf
+dist_sysconf_DATA = ../files/default_font.ttf
 AM_CPPFLAGS = -Iimage_server -Istatistics -Isystem_base \
 			   -Imovement_analysis -Ijob_scheduling \
 			   -Iimage_processing -Iimage_base \
@@ -266,11 +266,11 @@ AM_CPPFLAGS = -Iimage_server -Istatistics -Isystem_base \
 			   -I/usr/include/mysql -I/usr/local/include/mysql -I /usr/mysql \
 			   -I/usr/include/freetype2 -I/usr/local/include/freetype2 -I/usr/freetype2 \
 			   $(PRE_DEF) \
-			   $(DEPS_CFLAGS)
+			   $(DEPS_CFLAGS) 
 AM_CXXFLAGS = -g	
-AM_CFLAGS = -O3 $(PTHREAD_CFLAGS)
+AM_CFLAGS = -O3 -pthread
 
-AM_LDFLAGS=$(MYSQL_LDFLAGS) $(DEPS_LIBS) $(PTHREAD_LIBS) -Wl,-rpath=/usr/local/lib
+AM_LDFLAGS=$(MYSQL_LDFLAGS) $(DEPS_LIBS) -lpthread -Wl,-rpath=/usr/local/lib
 
 ns_image_server_SOURCES = $(src_base) $(src_data_annotation) $(src_image_acquisition) \
 	   $(src_image_base) $(src_image_processing) $(src_job_scheduling) \

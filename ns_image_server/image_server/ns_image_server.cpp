@@ -1183,7 +1183,7 @@ void ns_image_server::load_constants(const ns_image_server::ns_image_server_exec
 	constants.add_field("act_as_processing_node","yes","Should the server run image processing jobs requested by the user via the website? (yes / no)");
 	constants.add_field("nodes_per_machine", "1","A single computer can run multiple copies of the image processing server simultaneously, which allows many jobs to be processed in parallel.  Set this value to the number of parallel servers you want to run on this machine.  This can usually be set to the number of physical cores on the machine's processor, or the number of GB of RAM on the machine; whichever is smaller.");
 	constants.add_field("hide_window","no","On windows, specifies whether the server should start minimized.  (yes / no )");
-	constants.add_field("compile_videos","yes","Should the server process videos? (yes / no)");
+	constants.add_field("compile_videos","no","Should the server process videos? (yes / no)");
 	constants.add_field("video_compiler_filename","./x264.exe","Path to the x264 transcoder program required to generate videos.  Only needed on image processing servers.  If you don't have this, set compile_videos to no");
 	constants.add_field("video_ppt_compiler_filename","./ffmpeg.exe","Path to the ffmpeg transcoder required to generate videos. Only needed on image processing servers.  If you don't have this, set compile_videos to no");
 	constants.add_field("halt_on_new_software_release","yes", "Should the server shut down if a new version of the software is detected running on the cluster? (yes / no)");	

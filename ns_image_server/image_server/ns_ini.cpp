@@ -123,6 +123,7 @@ void ns_ini::load(const string & fname){
 	ifstream in(filename.c_str());
 	//if the ini file doesn't exist, make it
 	if (in.fail()){
+		in.close();
 		save(filename);
 		in.open(filename.c_str());
 		if (in.fail()){
@@ -141,9 +142,20 @@ void ns_ini::load(const string & fname){
 	}
 }
 void output_comment_wrapped(const std::string & txt,std::ostream & o,const std::string & sep = "# ",const int width=75){
-	unsigned int cur_pos = 0;
+	long cur_pos = 0;
+	//go through the comment
 	while (cur_pos < txt.size()){
-		for (int i = cur_pos+width; i > cur_pos; i++){
+		//if the comment will end on the next line, write it out.
+		if (cur_pos+width >= txt.size()){
+			o << sep;
+			for (long i = cur_pos; i < txt.size(); i++)
+				o << txt[i];
+			o << "\n";
+			break;
+		}
+		//if the comment is longer than the next line,
+		//find the first whitespace from the end to insert the break.
+		for (long i = cur_pos+width; i > cur_pos; i--){
 			if (isspace(txt[i])){
 				o << sep << txt.substr(cur_pos,i-cur_pos) << "\n";
 				cur_pos = i+1;
@@ -178,6 +190,8 @@ void ns_ini::save(const string & file_name){
 			
 			for (unsigned int j = 0; j < s.names_in_order.size(); j++){
 				map<string,ns_ini_entry>::iterator p(data.find(s.names_in_order[j]));
+				if (p == data.end())
+					throw ns_ex("Could not find ") << s.names_in_order[j] << " in names in order list!";
 				output_comment_wrapped( p->first + ": " + p->second.comment,out);
 				out << "\n" << p->first << " = " << p->second.value << "\n\n";
 			}

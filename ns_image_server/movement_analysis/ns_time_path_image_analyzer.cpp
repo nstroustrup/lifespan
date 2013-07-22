@@ -160,7 +160,8 @@ public:
 		//backwards from data collected before the onset of stationarity,
 		//buffer it with data collected after the onset stationarity
 		if (current_chunk.start_i > -1 &&  current_chunk.start_i <  ns_analyzed_image_time_path::alignment_time_kernel_width){
-				current_chunk.start_i = current_chunk.stop_i = (ns_analyzed_image_time_path::alignment_time_kernel_width);
+
+				current_chunk.start_i = current_chunk.stop_i = (ns_analyzed_image_time_path::alignment_time_kernel_width)-1;
 		}
 		first_chunk_ = current_chunk;
 		current_chunk.processing_direction = ns_analyzed_time_image_chunk::ns_backward;
@@ -185,14 +186,16 @@ public:
 	bool backwards_update_and_check_for_new_chunk(ns_analyzed_time_image_chunk & new_chunk){
 
 		new_chunk.processing_direction= ns_analyzed_time_image_chunk::ns_backward;
-		for (;current_chunk.stop_i >= 0 && path->element(current_chunk.stop_i).path_aligned_image_is_loaded(); 
-			current_chunk.stop_i--);
+		for (;current_chunk.stop_i >= 0 && path->element(current_chunk.stop_i).path_aligned_image_is_loaded(); current_chunk.stop_i--);
+
 		const unsigned long cur_size(current_chunk.start_i-current_chunk.stop_i);
+		//if (cur_size < 7 && cur_size > 0)
+		//	cerr << "MA";
 		if (current_chunk.start_i > -1 && 
 			(cur_size >= chunk_size ||
-			current_chunk.stop_i <= 0)){
-			
+			current_chunk.stop_i == -1)){
 				new_chunk = current_chunk;
+				//mark the current chunk (which will be referenced in the next iteration) as starting at the first unprocessed position (the stop of the new chunk)
 				current_chunk.start_i = current_chunk.stop_i;
 				return true;
 		}
@@ -500,7 +503,7 @@ void ns_time_path_image_movement_analyzer::process_raw_images(const ns_64_bit re
 				for (unsigned int i = start_group; i < stop_group; i++){
 					for (unsigned int j = 0; j < groups[i].paths.size(); j++){
 						groups[i].paths[j].find_first_labeled_stationary_timepoint();
-					//	if (i == 9)
+					//	if (i == 24)
 					//		cerr <<"SHA";
 						chunk_generators[i][j].setup_first_chuck_for_backwards_registration();
 					}
@@ -516,8 +519,8 @@ void ns_time_path_image_movement_analyzer::process_raw_images(const ns_64_bit re
 					if (stop_t < -1)
 						stop_t = -1;
 					try{	
-
-						//only load images that are needed
+						//only load images that are needed,
+						//e.g those located between (t-chunk_size,t)
 						for (long t1 = stop_t+1; t1 < t+1; t1++){
 
 							bool image_needed(false);
@@ -569,6 +572,8 @@ void ns_time_path_image_movement_analyzer::process_raw_images(const ns_64_bit re
 					//		if (i == 3)
 					//			cerr << "WHA";
 							//only continue if a chunk's worth of data is loaded
+						//	if (i == 14)
+						//		cerr << "MWA";
 							if (!chunk_generators[i][j].backwards_update_and_check_for_new_chunk(chunk))
 								continue;
 				//			cerr << "Registering " << i << ": " << chunk.start_i << "-" << chunk.stop_i << "\n";

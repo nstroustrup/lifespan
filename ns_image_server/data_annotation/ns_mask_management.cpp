@@ -102,7 +102,7 @@ void ns_bulk_experiment_mask_manager::produce_mask_file(const unsigned int exper
 	const unsigned label_margin_buffer(300);
 
 	try{
-		*sql << "SELECT name,id FROM capture_samples WHERE experiment_id=" << experiment_id << " ORDER BY name ASC";
+		*sql << "SELECT name,id FROM capture_samples WHERE experiment_id=" << experiment_id << " AND censored = 0 ORDER BY name ASC";
 		ns_sql_result samples;
 		sql->get_rows(samples);
 		if (samples.size() == 0)

@@ -111,7 +111,7 @@ struct ns_image_object_statistics{
 
 class ns_image_statistics{
 public:
-	unsigned long db_id;
+	ns_64_bit db_id;
 	ns_image_statistics():
 		histogram(256,0),
 		size(0,0){}
@@ -136,7 +136,7 @@ public:
 	void calculate_statistics_from_histogram();
 	
 #ifndef NS_NO_SQL
-	void submit_to_db(unsigned long & id,ns_sql & sql,bool include_image_stats=true,bool include_worm_stats=true);
+	void submit_to_db(ns_64_bit & id,ns_sql & sql,bool include_image_stats=true,bool include_worm_stats=true);
 	void calculate_statistics_from_image(ns_image_server_image & im,ns_sql & sql);
 	void from_sql_result(const ns_sql_result_row & res);
 #endif

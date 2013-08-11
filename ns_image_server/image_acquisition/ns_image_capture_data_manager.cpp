@@ -146,7 +146,7 @@ bool ns_image_capture_data_manager::transfer_data_to_long_term_storage(ns_image_
 			ns_sql_result res;
 			sql.get_rows(res);
 			if (res.size() != 0){
-				unsigned long stats_id(atol(res[0][0].c_str()));
+				ns_64_bit stats_id(ns_atoi64(res[0][0].c_str()));
 				processor.image_statistics.calculate_statistics_from_histogram();
 				processor.image_statistics.submit_to_db(stats_id,sql);
 				sql << "UPDATE captured_images SET small_image_id=" << small_image.id << ", image_statistics_id= " << stats_id << " WHERE id = " << image.captured_images_id;
@@ -220,7 +220,7 @@ bool ns_image_capture_data_manager::transfer_data_to_long_term_storage(ns_image_
 }
 
 
-void ns_image_capture_data_manager::transfer_image_to_long_term_storage(const std::string & device_name,unsigned int capture_schedule_entry_id, ns_image_server_captured_image & image, ns_sql & sql){
+void ns_image_capture_data_manager::transfer_image_to_long_term_storage(const std::string & device_name,ns_64_bit capture_schedule_entry_id, ns_image_server_captured_image & image, ns_sql & sql){
 	ns_acquire_lock_for_scope device_lock(device_transfer_state_lock,__FILE__,__LINE__);
 	if (device_transfer_in_progress(device_name)){
 		device_lock.release();
@@ -242,7 +242,7 @@ void ns_image_capture_data_manager::transfer_image_to_long_term_storage(const st
 	}
 }
 
-void ns_image_capture_data_manager::transfer_image_to_long_term_storage_locked(unsigned int capture_schedule_entry_id, ns_image_server_captured_image & image, ns_sql & sql){
+void ns_image_capture_data_manager::transfer_image_to_long_term_storage_locked(ns_64_bit capture_schedule_entry_id, ns_image_server_captured_image & image, ns_sql & sql){
 
 	//First we check what state the current image is in
 	sql << "SELECT transferred_to_long_term_storage FROM capture_schedule WHERE id = " << capture_schedule_entry_id;
@@ -443,14 +443,18 @@ unsigned long ns_image_capture_data_manager::handle_pending_transfers(const stri
 				ev << "Processing a pending image transfer to long term storage: " << device_name << "@" << ns_format_time_string_for_human(atol(events[i][2].c_str()));
 				image_server.register_server_event(ev,&sql());
 				ns_image_server_captured_image im;
-				im.captured_images_id = atol(events[i][1].c_str());
+				im.captured_images_id = ns_atoi64(events[i][1].c_str());
 				im.load_from_db(im.captured_images_id,&sql());
-				unsigned long capture_schedule_id = atol(events[i][0].c_str());
+				ns_64_bit capture_schedule_id = atol(events[i][0].c_str());
 				try{
 					transfer_image_to_long_term_storage_locked(capture_schedule_id,im,sql());
 				}
 				catch(ns_ex & ex){
-					cerr << "Error!" << ex.text() << "\n";
+					cerr << "Error processing capture: " << ex.text() << "\n";
+					cerr << "Details: ";
+					for (unsigned int k = 0; k < events.size(); k++)
+						cerr << events[i][k] << ", ";
+					cerr << "\n";
 					ns_64_bit problem_id(0);
 					try{
 						problem_id = image_server.register_server_event(ex,&sql());

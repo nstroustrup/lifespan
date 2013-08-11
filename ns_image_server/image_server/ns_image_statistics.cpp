@@ -71,7 +71,7 @@ void ns_image_statistics::calculate_statistics_from_histogram(){
 	image_statistics.top_percentile_average = c_sum/(double)percentile;
 }
 
-void ns_image_statistics::submit_to_db(unsigned long & id,ns_sql & sql,bool include_image_stats,bool include_worm_stats){
+void ns_image_statistics::submit_to_db(ns_64_bit & id,ns_sql & sql,bool include_image_stats,bool include_worm_stats){
 	if (id == 0)
 		sql << "INSERT INTO image_statistics SET ";
 	else sql << "UPDATE image_statistics SET ";

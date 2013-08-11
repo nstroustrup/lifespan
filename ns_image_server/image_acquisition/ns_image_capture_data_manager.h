@@ -14,7 +14,7 @@ public:
 
 	void register_capture_stop(ns_image_capture_specification & capture_specification, const ns_64_bit problem_id, ns_local_buffer_connection & local_buffer_sql);
 	
-	void transfer_image_to_long_term_storage(const std::string & device_name,unsigned int capture_schedule_entry_id, ns_image_server_captured_image & image, ns_sql & sql);
+	void transfer_image_to_long_term_storage(const std::string & device_name,ns_64_bit capture_schedule_entry_id, ns_image_server_captured_image & image, ns_sql & sql);
 
 	bool handle_pending_transfers_to_long_term_storage(const std::vector<std::string> & device_names);
 	
@@ -27,7 +27,7 @@ private:
 	ns_sql * check_sql;
 	bool transfer_in_progress_for_device(const std::string & device);
 
-	void transfer_image_to_long_term_storage_locked(unsigned int capture_schedule_entry_id, ns_image_server_captured_image & image, ns_sql & sql);
+	void transfer_image_to_long_term_storage_locked(ns_64_bit capture_schedule_entry_id, ns_image_server_captured_image & image, ns_sql & sql);
 
 	static ns_thread_return_type thread_start_handle_pending_transfers_to_long_term_storage(void * thread_arguments);
 

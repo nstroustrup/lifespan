@@ -2035,7 +2035,7 @@ void ns_image_processing_pipeline::apply_mask(ns_image_server_captured_image & c
 			//mark all regions as processed.
 			for (unsigned int i = 0; i < output_regions.size(); i++){
 				(*mask_splitter.mask_info())[output_regions[i].mask_color]->image_stats.calculate_statistics_from_histogram();
-				unsigned long image_stats_db_id(0);
+				ns_64_bit image_stats_db_id(0);
 				(*mask_splitter.mask_info())[output_regions[i].mask_color]->image_stats.submit_to_db(image_stats_db_id,sql,true,false);
 				sql << "UPDATE sample_region_images SET currently_under_processing=0, image_statistics_id=" << image_stats_db_id << " WHERE id= " << output_regions[i].region_images_id ;
 				sql.send_query();
@@ -2089,7 +2089,7 @@ void ns_image_processing_pipeline::apply_mask(ns_image_server_captured_image & c
 			output_images[i].mark_as_finished_processing(&sql);
 
 		sample_image_statistics.calculate_statistics_from_histogram();
-		unsigned long sample_stats_db_id(0);
+		ns_64_bit sample_stats_db_id(0);
 		sample_image_statistics.submit_to_db(sample_stats_db_id,sql);
 		sql << "UPDATE captured_images SET mask_applied=1, image_statistics_id=" << sample_stats_db_id << " WHERE id= " << captured_image.captured_images_id;
 		sql.send_query();

@@ -30,12 +30,12 @@ void ns_image_handler_register_server_event(ns_ex & ev, ns_image_server_sql * sq
 
 ns_performance_statistics_analyzer & performance_statistics();
 
-int ns_image_storage_handler_host_id();
+ns_64_bit ns_image_storage_handler_host_id();
 long ns_image_storage_handler_server_timeout_interval();
 std::string ns_image_server_scratch_directory();
 std::string ns_image_server_miscellaneous_directory();
 std::string ns_image_server_cache_directory();
-void ns_move_experiment_partition(unsigned int experiment_id, const std::string & partition, ns_sql & sql);
+void ns_move_experiment_partition(ns_64_bit experiment_id, const std::string & partition, ns_sql & sql);
 ns_sql * ns_get_sql_connection();
 ns_local_buffer_connection * ns_get_local_buffer_connection();
 
@@ -63,7 +63,7 @@ public:
 	ns_image_storage_reciever_handle<ns_component> request_storage_ci(ns_image_server_captured_image & captured_image, const ns_image_type & image_type, const unsigned long max_line_length, ns_image_server_sql * sql, bool & had_to_use_local_storage, const bool allow_volatile_storage);
 
 	bool long_term_storage_was_recently_writeable(const unsigned long time_cutoff_in_seconds = 0) const;
-	bool time_of_last_successful_long_term_storage_write()const {return time_of_last_successful_write_check;}
+	unsigned long time_of_last_successful_long_term_storage_write()const {return time_of_last_successful_write_check;}
 	bool test_connection_to_long_term_storage(const bool test_for_write_access);
 
 	bool image_exists(ns_image_server_image & image, ns_image_server_sql * sql, bool only_long_term_storage=false);
@@ -83,7 +83,8 @@ public:
 
 
 	
-	std::ofstream * request_binary_output(ns_image_server_captured_image & image, bool volatile_storage, ns_image_server_sql * sql, const ns_image_type & image_type = ns_tiff);
+	std::ofstream * request_binary_output_for_captured_image(const ns_image_server_captured_image & captured_image, const ns_image_server_image & image, bool volatile_storage,ns_image_server_sql * sql);
+	ns_image_server_image create_image_db_record_for_captured_image(ns_image_server_captured_image & image, ns_image_server_sql * sql, const ns_image_type & image_type = ns_tiff);
 
 	std::ofstream * request_miscellaneous_storage(const std::string & filename);
 
@@ -224,7 +225,7 @@ public:
 	///Cache frequently used masks in memory so they aren't reloaded each time over the network.
 	ns_image_simple_cache<ns_component> cache;
 
-	inline std::string get_partition_for_experiment(const unsigned long experiment_id,ns_image_server_sql * sql,bool request_from_db_on_miss=true){
+	inline std::string get_partition_for_experiment(const ns_64_bit experiment_id,ns_image_server_sql * sql,bool request_from_db_on_miss=true){
 		return get_partition_for_experiment_int(experiment_id,sql,request_from_db_on_miss,true);
 	}
 
@@ -235,33 +236,33 @@ public:
 
 	void set_experiment_partition_cache_update_period(unsigned long seconds);
 
-	void move_experiment_partition(unsigned int experiment_id, const std::string & partition, ns_sql & sql);
+	void move_experiment_partition(ns_64_bit experiment_id, const std::string & partition, ns_sql & sql);
 	
 	void refresh_experiment_partition_cache(ns_image_server_sql * sql);
 
 	ns_file_location_specification get_file_specification_for_image(ns_image_server_image & image,ns_image_server_sql * sql) const;
 	
-	ns_image_server_image get_region_movement_metadata_info(unsigned long region_info_id,const std::string & data_source,ns_sql & sql) const;
+	ns_image_server_image get_region_movement_metadata_info(ns_64_bit region_info_id,const std::string & data_source,ns_sql & sql) const;
 
-	ns_file_location_specification get_path_for_region(unsigned long region_image_info_id,ns_image_server_sql * sql, const ns_processing_task task= ns_unprocessed) const;
-	ns_file_location_specification get_base_path_for_region(unsigned long region_image_info_id,ns_image_server_sql * sql) const;
+	ns_file_location_specification get_path_for_region(ns_64_bit region_image_info_id,ns_image_server_sql * sql, const ns_processing_task task= ns_unprocessed) const;
+	ns_file_location_specification get_base_path_for_region(ns_64_bit region_image_info_id,ns_image_server_sql * sql) const;
 
 	
-	ns_file_location_specification get_path_for_sample(unsigned long sample_id, ns_image_server_sql * sql) const;
-	ns_file_location_specification get_path_for_sample_captured_images(unsigned long sample_id, bool small_images, ns_image_server_sql * sql) const;
+	ns_file_location_specification get_path_for_sample(ns_64_bit sample_id, ns_image_server_sql * sql) const;
+	ns_file_location_specification get_path_for_sample_captured_images(ns_64_bit sample_id, bool small_images, ns_image_server_sql * sql) const;
 
 
-	ns_file_location_specification get_path_for_experiment(unsigned long experiment_id, ns_image_server_sql * sql) const;
-	ns_file_location_specification get_path_for_video_storage(unsigned long experiment_id, ns_image_server_sql * sql) const;
+	ns_file_location_specification get_path_for_experiment(ns_64_bit experiment_id, ns_image_server_sql * sql) const;
+	ns_file_location_specification get_path_for_video_storage(ns_64_bit experiment_id, ns_image_server_sql * sql) const;
 
-	unsigned long create_file_deletion_job(const unsigned long parent_processing_job_id,ns_sql & sql);
-	void delete_file_deletion_job(const unsigned long deletion_job_id, ns_sql & sql);
-	void submit_file_deletion_request(const unsigned long deletion_job_id,const ns_file_location_specification & spec, ns_sql & sql);
-	void get_file_deletion_requests(const unsigned long deletion_job_id, unsigned long & parent_job_id, std::vector<ns_file_location_specification> & specs, ns_sql & sql);
+	ns_64_bit create_file_deletion_job(const ns_64_bit parent_processing_job_id,ns_sql & sql);
+	void delete_file_deletion_job(const ns_64_bit deletion_job_id, ns_sql & sql);
+	void submit_file_deletion_request(const ns_64_bit deletion_job_id,const ns_file_location_specification & spec, ns_sql & sql);
+	void get_file_deletion_requests(const ns_64_bit deletion_job_id, ns_64_bit & parent_job_id, std::vector<ns_file_location_specification> & specs, ns_sql & sql);
 	
 	std::string get_relative_path_for_video(const ns_file_location_specification & spec, const bool for_sample_video, const bool only_base=false);
 	std::string get_absolute_path_for_video(const ns_file_location_specification & spec, const bool for_sample_video, const bool only_base=false);
-	std::string get_absolute_path_for_video_image(const unsigned long experiment_id, const std::string & rel_path, const std::string & filename,ns_sql & sql);
+	std::string get_absolute_path_for_video_image(const ns_64_bit experiment_id, const std::string & rel_path, const std::string & filename,ns_sql & sql);
 	
 	typedef enum{ns_quiet=0,ns_standard=2,ns_deletion_events=4,ns_verbose=6} ns_verbosity_level;
 
@@ -279,7 +280,7 @@ public:
 			default: return "Unknown storage location";
 		}
 	}
-	std::string movement_file_directory(unsigned long region_info_id,ns_image_server_sql * sql,bool abs) const;
+	std::string movement_file_directory(ns_64_bit region_info_id,ns_image_server_sql * sql,bool abs) const;
 private:
 	
 	ns_file_location_specification get_file_specification_for_path_data(const ns_file_location_specification & region_spec) const;
@@ -290,7 +291,7 @@ private:
 	
 	void refresh_experiment_partition_cache_int(ns_image_server_sql * sql,const bool get_lock = true) const;
 
-	std::string get_partition_for_experiment_int(const unsigned long experiment_id, ns_image_server_sql * sql,bool request_from_db_on_miss=true, const bool get_lock=true) const;
+	std::string get_partition_for_experiment_int(const ns_64_bit experiment_id, ns_image_server_sql * sql,bool request_from_db_on_miss=true, const bool get_lock=true) const;
 
 	mutable std::map<unsigned long,std::string> experiment_partition_cache;
 	unsigned long experiment_partition_cache_update_period;

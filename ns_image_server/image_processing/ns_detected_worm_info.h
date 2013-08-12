@@ -142,7 +142,7 @@ public:
 
 	///output summary information about the worm to a text file.
 	void output_html_worm_summary(std::ostream & out);
-	void output_csv_data(const unsigned long region_id, const unsigned long capture_time, const ns_vector_2i & position, const ns_vector_2i & size,const ns_object_hand_annotation_data & hand_data,std::ostream & out);
+	void output_csv_data(const ns_64_bit region_id, const unsigned long capture_time, const ns_vector_2i & position, const ns_vector_2i & size,const ns_object_hand_annotation_data & hand_data,std::ostream & out);
 
 	static void output_csv_header(std::ostream & out);
 
@@ -460,11 +460,11 @@ private:
 ///that summarizes the result of worm detection
 class ns_image_worm_detection_results{
 public:
-	unsigned long id,
+	ns_64_bit id,
 				 source_image_id,
 				 capture_sample_id,
-				 region_info_id,
-				 capture_time;
+				 region_info_id;
+	unsigned long capture_time;
 
 	//ns_object_hand_annotation_data hand_annotations;
 

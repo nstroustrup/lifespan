@@ -65,7 +65,7 @@ struct ns_region_metadata{
 				 size;
 	ns_vector_2d center_position_of_region_on_scanner() const {return position_of_region_in_sample +  position_of_sample_on_scanner + size/2;}
 	
-	unsigned long region_id,
+	ns_64_bit region_id,
 				  sample_id,
 				  experiment_id;
 	unsigned long movement_rebuild_timestamp;
@@ -186,11 +186,11 @@ std::string to_xml() const;
 				 size = ns_vector_2d(0,0);
 	}
 	
-	void load_from_db(const unsigned long region_info_id, const std::string &analysis_type_, ns_sql & sql);
+	void load_from_db(const ns_64_bit region_info_id, const std::string &analysis_type_, ns_sql & sql);
 	
-	void load_only_region_info_from_db(const unsigned long region_info_id, const std::string &analysis_type_, ns_sql & sql);
+	void load_only_region_info_from_db(const ns_64_bit region_info_id, const std::string &analysis_type_, ns_sql & sql);
 
-	void load_only_sample_info_from_db(const unsigned long sample_id, ns_sql & sql);
+	void load_only_sample_info_from_db(const ns_64_bit sample_id, ns_sql & sql);
 
 	static bool is_age_zero_field(const std::string & s);
 	void load_from_fields(const std::map<std::string,std::string> & m,std::map<std::string,std::string> &unknown_values);

@@ -12,7 +12,7 @@ void ns_check_for_file_errors(ns_processing_job & job, ns_sql & sql){
 		ns_image_server_image im;
 		im.load_from_db(job.image_id,&sql);
 		if (!image_server.image_storage.image_exists(im,&sql,true)){
-			const unsigned long event_id(image_server.register_server_event(ns_image_server_event("Image cannot be found on disk:") << im.path << DIR_CHAR_STR << im.filename,&sql));
+			const ns_64_bit event_id(image_server.register_server_event(ns_image_server_event("Image cannot be found on disk:") << im.path << DIR_CHAR_STR << im.filename,&sql));
 			im.mark_as_problem(&sql,event_id);
 		}
 	}
@@ -45,7 +45,7 @@ void ns_check_for_file_errors(ns_processing_job & job, ns_sql & sql){
 				im.load_from_db(im.id,&sql);
 				if (!image_server.image_storage.image_exists(im,&sql,true)){
 					problem = true;
-					const unsigned long event_id(image_server.register_server_event(ns_image_server_event("Large capture image cannot be found on disk:") << experiment_name << "::" << sample_name << "::" << ns_format_time_string(atol(res[i][1].c_str())),&sql));
+					const ns_64_bit event_id(image_server.register_server_event(ns_image_server_event("Large capture image cannot be found on disk:") << experiment_name << "::" << sample_name << "::" << ns_format_time_string(atol(res[i][1].c_str())),&sql));
 					im.mark_as_problem(&sql,event_id);
 				}
 				else large_image_exists = true;
@@ -55,7 +55,7 @@ void ns_check_for_file_errors(ns_processing_job & job, ns_sql & sql){
 			if (im.id != 0){
 				if (!image_server.image_storage.image_exists(im,&sql,true)){
 					if (!large_image_exists){
-						const unsigned long event_id(image_server.register_server_event(ns_image_server_event("Small capture image cannot be found on disk:") << experiment_name << "::" << sample_name << "::" << ns_format_time_string(atol(res[i][1].c_str())),&sql));
+						const ns_64_bit event_id(image_server.register_server_event(ns_image_server_event("Small capture image cannot be found on disk:") << experiment_name << "::" << sample_name << "::" << ns_format_time_string(atol(res[i][1].c_str())),&sql));
 						im.mark_as_problem(&sql,event_id);
 					}
 					else{
@@ -199,7 +199,7 @@ void ns_handle_file_delete_request(ns_processing_job & job, ns_sql & sql){
 ns_processing_job ns_handle_file_delete_action(ns_processing_job & job, ns_sql & sql){
 
 	vector<ns_file_location_specification> specs;
-	unsigned long parent_job_id(0);
+	ns_64_bit parent_job_id(0);
 	image_server.image_storage.get_file_deletion_requests(job.delete_file_job_id,parent_job_id,specs,sql);
 
 	//after handling the request, we will want to delete the metadata of deleted images.  Load this from the parent job.

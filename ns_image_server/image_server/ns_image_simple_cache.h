@@ -72,7 +72,7 @@ public:
 
 private:
 	bool disk_cached_cleared;
-	typedef std::map<unsigned long,ns_image_simple_cache_object<ns_component> > cache_t;
+	typedef std::map<ns_64_bit,ns_image_simple_cache_object<ns_component> > cache_t;
 	cache_t images;
 	ns_image_storage_handler * storage;
 	unsigned long max_memory_usage;

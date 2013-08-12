@@ -59,6 +59,13 @@ struct ns_xml_simple_object{
 		destination = atol(p->second.c_str());
 		return true;
 	}
+	bool assign_if_present(const std::string & key, ns_64_bit & destination) const{
+		std::map<std::string,std::string>::const_iterator p = tags.find(key);
+		if(p == tags.end()) return false;
+		destination = ns_atoi64(p->second.c_str());
+		return true;
+
+	}
 	bool assign_if_present(const std::string & key, double & destination) const{
 		std::map<std::string,std::string>::const_iterator p = tags.find(key);
 		if(p == tags.end()) return false;

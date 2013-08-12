@@ -31,7 +31,7 @@ public:
 	void register_stop();
 	ns_64_bit run_delay_if_necessary();  //returns the delay time in milliseconds
 
-	std::vector<unsigned long> decile_times;
+	std::vector<ns_64_bit> decile_times;
 
 	unsigned long total_bytes_read()const{return bytes_read_so_far;}
 	std::vector<std::string> warnings;

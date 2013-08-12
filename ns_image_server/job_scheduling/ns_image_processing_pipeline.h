@@ -212,8 +212,8 @@ private:
 };
 
 class ns_lifespan_curve_cache{
-	typedef std::map<unsigned long,ns_lifespan_curve_cache_entry> ns_lifespan_curve_cache_storage;
-	typedef std::map<unsigned long,ns_lifespan_curve_region_timestamp_cache_entry> ns_lifespan_region_timestamp_cache;
+	typedef std::map<ns_64_bit,ns_lifespan_curve_cache_entry> ns_lifespan_curve_cache_storage;
+	typedef std::map<ns_64_bit,ns_lifespan_curve_region_timestamp_cache_entry> ns_lifespan_region_timestamp_cache;
 
 	ns_lifespan_curve_cache_storage data_cache;
 	ns_lifespan_region_timestamp_cache timestamp_cache;

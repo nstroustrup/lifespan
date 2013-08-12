@@ -322,8 +322,8 @@ private:
 		//		throw ns_ex("Giving up waiting for automation lock!");
 		//}
 	}
-	inline unsigned long id(){
-		unsigned long id = image_server.host_id();
+	inline ns_64_bit id(){
+		ns_64_bit id = image_server.host_id();
 		if (id == 0) id = 666;
 		return id;
 	}
@@ -568,7 +568,7 @@ void ns_image_server::set_cluster_constant_value(const string & key, const strin
 	sql->send_query();
 }
 
-void add_string_or_number(std::string & destination, const std::string & desired_string, const std::string & fallback_prefix, const int fallback_int){
+void add_string_or_number(std::string & destination, const std::string & desired_string, const std::string & fallback_prefix, const ns_64_bit fallback_int){
 	if (desired_string.size() == 0){
 		destination+=fallback_prefix;
 		destination+=ns_to_string(fallback_int);
@@ -576,7 +576,7 @@ void add_string_or_number(std::string & destination, const std::string & desired
 	else destination+=desired_string;
 }
 
-unsigned long ns_image_server::make_record_for_new_sample_mask(const unsigned long sample_id, ns_sql & sql){
+ns_64_bit ns_image_server::make_record_for_new_sample_mask(const ns_64_bit sample_id, ns_sql & sql){
 	sql << "SELECT name, experiment_id FROM capture_samples WHERE id = " << sample_id;
 	ns_sql_result res;
 	sql.get_rows(res);
@@ -600,7 +600,7 @@ unsigned long ns_image_server::make_record_for_new_sample_mask(const unsigned lo
 	sql << "INSERT INTO images SET host_id = " << host_id() << ", creation_time=" << ns_current_time() << ", currently_under_processing=0, "
 		<< "path = '" << sql.escape_string(path) << "', filename='" << sql.escape_string(filename) << "', partition='" << image_server.image_storage.get_partition_for_experiment(atol(experiment_id.c_str()),&sql) << "'";
 //	cerr << sql.query() << "\n";
-	unsigned long id = sql.send_query_get_id();
+	ns_64_bit id = sql.send_query_get_id();
 	sql.send_query("COMMIT");
 
 	return id;
@@ -1339,7 +1339,10 @@ void ns_image_server::load_constants(const ns_image_server::ns_image_server_exec
 		_video_ppt_compiler_filename = constants["video_ppt_compiler_filename"];
 		_latest_release_path = constants["latest_release_path"];
 	//	_local_exec_path = constants["local_exec_path"];
-		_simulated_device_name = base_host_name + "::" + opt.simulated_device_name(constants["simulated_device_name"]);
+		std::string specified_simulated_device_name(constants["simulated_device_name"]);
+		if (specified_simulated_device_name == "" || specified_simulated_device_name== ".")
+			specified_simulated_device_name = "sim";
+		_simulated_device_name = base_host_name + "_" + opt.simulated_device_name(specified_simulated_device_name);
 		for (unsigned int i = 0; i < _simulated_device_name.size(); i++){
 			if (!isalpha(_simulated_device_name[i]) && !isdigit(_simulated_device_name[i]))
 				_simulated_device_name[i] = '_';

@@ -153,7 +153,7 @@ void ns_machine_analysis_sample_data::load(const ns_death_time_annotation_set::n
 	sample_id_ = sample_id;
 }
 
-void ns_machine_analysis_data_loader::load_just_survival(ns_lifespan_experiment_set & set,const unsigned long region_id, unsigned long sample_id, unsigned long experiment_id_a, ns_sql & sql, const bool load_excluded_regions, const bool load_by_hand_data){
+void ns_machine_analysis_data_loader::load_just_survival(ns_lifespan_experiment_set & set,const ns_64_bit region_id, ns_64_bit sample_id, ns_64_bit experiment_id_a, ns_sql & sql, const bool load_excluded_regions, const bool load_by_hand_data){
 	set_up_spec_to_load(region_id,sample_id,experiment_id_a,sql,load_excluded_regions);
 	
 	ns_region_metadata metadata;
@@ -191,7 +191,7 @@ void ns_machine_analysis_data_loader::load_just_survival(ns_lifespan_experiment_
 	}
 	std::cerr << "\n";
 }
-void ns_machine_analysis_data_loader::load(const ns_death_time_annotation_set::ns_annotation_type_to_load & annotation_types_to_load,const unsigned long region_id, unsigned long sample_id, unsigned long experiment_id_a, ns_sql & sql,
+void ns_machine_analysis_data_loader::load(const ns_death_time_annotation_set::ns_annotation_type_to_load & annotation_types_to_load,const ns_64_bit region_id, ns_64_bit sample_id, ns_64_bit experiment_id_a, ns_sql & sql,
 				const bool load_excluded_regions, const ns_machine_analysis_region_data::ns_loading_details & details){
 		set_up_spec_to_load(region_id,sample_id,experiment_id_a,sql,load_excluded_regions);
 
@@ -221,7 +221,7 @@ void ns_machine_analysis_data_loader::load(const ns_death_time_annotation_set::n
 	if(!be_quiet)
 	std::cerr << "\n";
 }
-void ns_machine_analysis_data_loader::set_up_spec_to_load(const unsigned long & region_id, unsigned long & sample_id, unsigned long & experiment_id_a, ns_sql & sql, const bool load_excluded_regions){
+void ns_machine_analysis_data_loader::set_up_spec_to_load(const ns_64_bit & region_id, ns_64_bit & sample_id, ns_64_bit & experiment_id_a, ns_sql & sql, const bool load_excluded_regions){
 	const bool region_specified(region_id != 0);
 	const bool sample_specified(sample_id != 0);
 	if (region_id == 0 && sample_id == 0 && experiment_id_a==0)

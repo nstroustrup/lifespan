@@ -1092,8 +1092,8 @@ void ns_experiment_storyboard::draw(const unsigned long sub_image_id,ns_image_st
 bool ns_experiment_storyboard::create_storyboard_metadata_from_machine_annotations(ns_experiment_storyboard_spec spec, ns_sql & sql){
 	if (spec.event_to_mark == ns_no_movement_event)
 		throw ns_ex("ns_experiment_storyboard::load_events_from_db()An event type must be specified.");
-	vector<unsigned long> region_ids;
-	vector<unsigned long> experiment_ids;
+	vector<ns_64_bit> region_ids;
+	vector<ns_64_bit> experiment_ids;
 	//get all the regions requested
 	if (spec.region_id != 0){
 		region_ids.push_back(spec.region_id);
@@ -1553,7 +1553,7 @@ void ns_experiment_storyboard::read_metadata(std::istream & in,ns_sql & sql){
 	}
 	if (!spec_found)
 		throw ns_ex("Could not find storyboard specification in metadata file.");
-	unsigned long experiment_id(0);
+	ns_64_bit experiment_id(0);
 	if (subject_specification.experiment_id != 0)
 		experiment_id =subject_specification.experiment_id;
 	else if (subject_specification.sample_id != 0){

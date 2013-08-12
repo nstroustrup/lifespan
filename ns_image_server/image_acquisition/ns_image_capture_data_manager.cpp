@@ -10,19 +10,22 @@ using namespace std;
 void ns_image_capture_data_manager::initialize_capture_start(ns_image_capture_specification & capture_specification, ns_local_buffer_connection & sql){
 	capture_specification.image.capture_images_image_id = 0;
 	try{
-		capture_specification.image.save(&sql,ns_image_server_captured_image::ns_mark_as_busy);
-
-		capture_specification.image.capture_images_image_id = 0;
-		//if a sixteen bit image is requested, we'll have to downsample it.  Mark the initial
+			//if a sixteen bit image is requested, we'll have to downsample it.  Mark the initial
 		//saved copy as temporary.
 		if (capture_specification.capture_parameters_specifiy_16_bit(capture_specification.capture_parameters))
 			capture_specification.image.specified_16_bit = true;
 
-		//get local output for data
-		capture_specification.volatile_storage = storage_handler->request_binary_output(capture_specification.image,true,&sql);
-		
-		//save to update capture image image.
+		//create an image in the db for the captured image
+		ns_image_server_image capture_images_image(storage_handler->create_image_db_record_for_captured_image(capture_specification.image,&sql));
+		capture_specification.image.capture_images_image_id = capture_images_image.id;
+
+	
+
+		//create a capture image record in the captured_images table
 		capture_specification.image.save(&sql,ns_image_server_captured_image::ns_mark_as_busy);
+
+		//open local file in which to write data
+		capture_specification.volatile_storage = storage_handler->request_binary_output_for_captured_image(capture_specification.image,capture_images_image,true,&sql);
 		
 		//if pending capture exists, grab it from the DB and process it.
 		sql.send_query("COMMIT");
@@ -452,7 +455,7 @@ unsigned long ns_image_capture_data_manager::handle_pending_transfers(const stri
 				catch(ns_ex & ex){
 					cerr << "Error processing capture: " << ex.text() << "\n";
 					cerr << "Details: ";
-					for (unsigned int k = 0; k < events.size(); k++)
+					for (unsigned int k = 0; k < events[i].size(); k++)
 						cerr << events[i][k] << ", ";
 					cerr << "\n";
 					ns_64_bit problem_id(0);

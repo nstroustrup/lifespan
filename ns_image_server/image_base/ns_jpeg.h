@@ -253,7 +253,7 @@ void ns_jpeg_image_output_file<ns_component>:: start_decompression(const ns_imag
 
 	//std::cout << "Setting Defaults" << std::endl;
 	jpeg_set_defaults (&cinfo);
-	jpeg_set_quality(&cinfo,properties.compression*100,TRUE);
+	jpeg_set_quality(&cinfo,(int)(properties.compression*100),TRUE);
 	//std::cout << "Starting Compression" << std::endl;
 	jpeg_start_compress(&cinfo, TRUE);
 }

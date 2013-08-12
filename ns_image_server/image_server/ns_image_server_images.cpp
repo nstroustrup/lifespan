@@ -181,14 +181,14 @@ void ns_image_server_captured_image_region::register_worm_detection(ns_image_wor
 std::string ns_image_server_captured_image::experiment_directory(ns_image_server_sql * sql){
 	return experiment_directory(experiment_name,experiment_id);
 }
-std::string ns_image_server_captured_image::experiment_directory(const std::string & experiment_name, const unsigned long experiment_id){
+std::string ns_image_server_captured_image::experiment_directory(const std::string & experiment_name, const ns_64_bit experiment_id){
 
 	std::string path;
 	add_string_or_number(path,experiment_name,"experiment_",experiment_id);
 	return path;
 }
 
-std::string ns_image_server_captured_image::captured_image_directory_d(const std::string & sample_name,const unsigned long sample_id,const std::string & experiment_directory, const bool small_images, const ns_processing_task & task){	
+std::string ns_image_server_captured_image::captured_image_directory_d(const std::string & sample_name,const ns_64_bit sample_id,const std::string & experiment_directory, const bool small_images, const ns_processing_task & task){	
 	
 	string path(ns_sample_directory(sample_name,sample_id,experiment_directory));
 	path += DIR_CHAR_STR;
@@ -219,8 +219,8 @@ std::string ns_image_server_captured_image::small_image_directory(ns_image_serve
 				throw ns_ex("ns_image_server_captured_image: During path creation, experiment and sample information was not specified at runtime or in the db.");
 	return captured_image_directory_d(sample_name,sample_id,experiment_directory(sql),true);
 }
-std::string ns_image_server_captured_image::directory(ns_image_server_sql * sql, const ns_processing_task & task){
-	if (captured_images_id == 0)
+std::string ns_image_server_captured_image::directory(ns_image_server_sql * sql, const ns_processing_task & task,const bool allow_blank_capture_image_id){
+	if (!allow_blank_capture_image_id && captured_images_id == 0)
 		throw ns_ex("ns_image_server_captured_image::Could not create filename with unspecified sample id.");
 	//if not specified, collect information needed to create filename.
 	if (sample_id == 0 || experiment_id == 0 ||
@@ -265,8 +265,6 @@ bool ns_image_server_captured_image::load_from_db(const ns_64_bit _id, ns_image_
 		return true;
 	}
 
-
-
 std::string ns_sample_directory(const std::string & sample_name,const ns_64_bit sample_id,const std::string & experiment_directory){
 	std::string path(experiment_directory);
 	path += DIR_CHAR;
@@ -274,25 +272,26 @@ std::string ns_sample_directory(const std::string & sample_name,const ns_64_bit 
 	return path;
 }
 
-std::string ns_format_base_image_filename(const unsigned long experiment_id,const std::string & experiment_name,
-										  const unsigned long sample_id, const std::string & sample_name,
-										  const unsigned long capture_time, const unsigned long captured_images_id, 
-										  const unsigned long capture_images_image_id){
+std::string ns_format_base_image_filename(const ns_64_bit experiment_id,const std::string & experiment_name,
+										  const ns_64_bit sample_id, const std::string & sample_name,
+										  const unsigned long capture_time, const ns_64_bit captured_images_id, 
+										  const ns_64_bit capture_images_image_id){
 	return std::string(experiment_name + "=" + ns_to_string(experiment_id) + "=" + sample_name + "=" 
 			 + ns_to_string(sample_id) + "=" +ns_to_string(capture_time) + "=" + ns_format_time_string(capture_time) + "="
 			 + ns_to_string(captured_images_id)  + "=" + ns_to_string(capture_images_image_id));
 }
-std::string ns_image_server_captured_image::get_filename(ns_image_server_sql * sql,const bool small_image){
-	if (captured_images_id == 0)
+std::string ns_image_server_captured_image::get_filename(ns_image_server_sql * sql,const bool small_image, bool do_not_load_data){
+	if (!do_not_load_data && captured_images_id == 0)
 		throw ns_ex("ns_image_server_captured_image::Could not create filename with unspecified sample id.");
 	//if not specified, collect information needed to create filename.
-	if (sample_id == 0 || experiment_id == 0 || capture_time == 0 || capture_images_image_id == 0 ||
-		sample_name == "" || device_name == "" || experiment_name == "")
+	if (!do_not_load_data && 
+		(sample_id == 0 || experiment_id == 0 || capture_time == 0 || capture_images_image_id == 0 ||
+		sample_name == "" || device_name == "" || experiment_name == ""))
 			if (!ns_image_server_captured_image::load_from_db(captured_images_id,sql))
 				throw ns_ex("ns_image_server_captured_image: During filename creation, experiment and sample information was not specified at runtime or in the db.");
 	std::string temp(ns_format_base_image_filename(experiment_id,experiment_name,sample_id,sample_name,capture_time,captured_images_id, capture_images_image_id));
 	if (specified_16_bit)
-		temp += "=TEMP";
+		temp += "=64bit";
 	if (small_image)
 		temp += "=small";
 	return temp;
@@ -556,7 +555,7 @@ const ns_image_server_image ns_image_server_captured_image_region::request_proce
 	//	throw ns_ex("ns_image_server_captured_image_region::Data on training set images is not stored.");
 
 	std::string db_table = ns_processing_step_db_table_name(task);
-	unsigned int db_row_id = region_images_id;
+	ns_64_bit db_row_id = region_images_id;
 	if (db_table ==  "sample_region_image_info")
 		db_row_id = region_info_id;
 
@@ -636,7 +635,7 @@ void ns_image_server_captured_image_region::delete_processed_image(const ns_proc
 	ns_image_server_image im;
 	std::string db_table_name;
 	
-	unsigned long db_table_row_id = region_images_id;
+	ns_64_bit db_table_row_id = region_images_id;
 	{
 		const std::string base_db_table_name(ns_processing_step_db_table_name(task));
 		if (base_db_table_name ==  "sample_region_image_info")
@@ -719,7 +718,7 @@ const ns_image_server_image ns_image_server_captured_image_region::create_storag
 	ns_image_server_image im;
 	std::string db_table_name;
 
-	unsigned long db_table_row_id = region_images_id;
+	ns_64_bit db_table_row_id = region_images_id;
 	{
 		const std::string base_db_table_name(ns_processing_step_db_table_name(task));
 		if (base_db_table_name ==  "sample_region_image_info")
@@ -748,7 +747,7 @@ const ns_image_server_image ns_image_server_captured_image_region::create_storag
 
 	sql->send_query("BEGIN");
 
-	unsigned long old_image_id = im.id;
+	ns_64_bit old_image_id = im.id;
 	im.save_to_db(im.id,sql,true);
 	if (old_image_id != im.id){
 		*sql << "UPDATE " << db_table_name << " SET " << ns_processing_step_db_column_name(task) << " = " << im.id<<  " WHERE id = " << db_table_row_id;

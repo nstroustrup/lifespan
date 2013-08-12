@@ -141,6 +141,9 @@ struct ns_image_server_captured_image{
 	static ns_vector_2i small_image_maximum_dimensions(){return ns_vector_2i(1000,10000);}
 
 	virtual std::string filename(ns_image_server_sql * sql){return get_filename(sql,false);}
+
+	virtual std::string filename_no_load_from_db(ns_image_server_sql * sql){return get_filename(sql,false,true);}
+
 	std::string small_image_filename(ns_image_server_sql * sql){return get_filename(sql,true);}
 	typedef enum {ns_mark_as_not_busy,ns_mark_as_busy} ns_busy_specification;
 	void save(ns_image_server_sql * sql,const ns_busy_specification busy_specification=ns_mark_as_not_busy){
@@ -196,11 +199,11 @@ struct ns_image_server_captured_image{
 
 	virtual bool load_from_db(const ns_64_bit _id, ns_image_server_sql * con);
 	
-	virtual std::string directory(ns_image_server_sql * sql, const ns_processing_task & task = ns_unprocessed);  //returns the storage path for the image, given its information.
+	virtual std::string directory(ns_image_server_sql * sql, const ns_processing_task & task = ns_unprocessed,const bool allow_blank_capture_image_id=false);  //returns the storage path for the image, given its information.
 	std::string small_image_directory(ns_image_server_sql * sql);
 	std::string experiment_directory(ns_image_server_sql * sql); //returns the directory of the experiment
-	static std::string experiment_directory(const std::string & experiment_name, const unsigned long experiment_id);
-	static std::string captured_image_directory_d(const std::string & sample_name,const unsigned long sample_id,const std::string & experiment_directory, const bool small_images, const ns_processing_task & task=ns_unprocessed);
+	static std::string experiment_directory(const std::string & experiment_name, const ns_64_bit experiment_id);
+	static std::string captured_image_directory_d(const std::string & sample_name,const ns_64_bit sample_id,const std::string & experiment_directory, const bool small_images, const ns_processing_task & task=ns_unprocessed);
 
 	ns_image_server_image make_small_image_storage(ns_image_server_sql * sql);
 
@@ -237,7 +240,7 @@ struct ns_image_server_captured_image{
 	const ns_image_server_image request_processed_image(const ns_processing_task & task, ns_sql & sql){ return ns_image_server_image();}
 
 	private:
-		std::string get_filename(ns_image_server_sql * sql,const bool small_image);
+		std::string get_filename(ns_image_server_sql * sql,const bool small_image, bool do_not_load_data=false);
 };
 
 

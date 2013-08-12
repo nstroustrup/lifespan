@@ -7,7 +7,7 @@
 
 
 struct ns_sample_capture_specification{
-	unsigned long sample_id;
+	ns_64_bit sample_id;
 	std::string sample_name,
 				capture_configuration_parameters,
 				device;
@@ -36,7 +36,7 @@ struct ns_sample_capture_specification{
 			   ns_to_string_short(width,decimal_points) + "in," + ns_to_string_short(height,decimal_points) + "in";
 	}
 	static double get_inches(const std::string & s);
-	long internal_schedule_id;
+	unsigned long internal_schedule_id;
 };
 
 class ns_sample_capture_specification_sorter{

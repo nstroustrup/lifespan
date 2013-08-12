@@ -69,7 +69,7 @@ struct ns_db_key_mapping{
 	std::string problem_text;
 	unsigned long problem_time;
 	bool problem_minor;
-	unsigned long problem_id,
+	ns_64_bit problem_id,
 				  old_problem_id;
 };
 
@@ -669,6 +669,7 @@ bool ns_buffered_capture_scheduler::run_pending_scans(const std::string & device
 		ca->capture_specification.image.experiment_name = events[0][4];
 		ca->capture_specification.image.sample_name= events[0][2];
 	
+		//create local storage linked to newly created capture_image and image records in the local db
 		image_capture_data_manager.initialize_capture_start(ca->capture_specification,local_buffer_sql);
 
 		//capture thread will delete ca.
@@ -687,7 +688,7 @@ bool ns_buffered_capture_scheduler::run_pending_scans(const std::string & device
 		//Give up for now but swallow exception so that 
 		//the dispatcher can try again later.
 		local_buffer_sql.clear_query();
-		unsigned long event_id = image_server.register_server_event(ex,&local_buffer_sql);
+		ns_64_bit event_id = image_server.register_server_event(ex,&local_buffer_sql);
 		
 		if (ca != 0){
 			local_buffer_sql << "UPDATE capture_schedule SET problem = " << event_id << " WHERE id = " << ca->capture_specification.capture_schedule_entry_id;

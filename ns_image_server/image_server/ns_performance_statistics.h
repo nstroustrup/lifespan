@@ -48,16 +48,16 @@ public:
 	double variance(const ns_processing_task action) const	{return variance((int)action);}
 	double variance(const ns_operation_state state) const	{return variance((int)ns_process_last_task_marker + (int)state);}
 
-	void update_db(const unsigned long host_id, const ns_processing_task action, ns_sql & sql)const 	{update_db(host_id,(int)action,sql);}	
-	void update_db(const unsigned long host_id, const ns_operation_state state, ns_sql & sql)const	{update_db(host_id,(int)ns_process_last_task_marker + (int)state,sql);}
+	void update_db(const ns_64_bit host_id, const ns_processing_task action, ns_sql & sql)const 	{update_db(host_id,(int)action,sql);}	
+	void update_db(const ns_64_bit host_id, const ns_operation_state state, ns_sql & sql)const	{update_db(host_id,(int)ns_process_last_task_marker + (int)state,sql);}
 
-	void update_db(const unsigned long host_id, ns_sql & sql) const {
+	void update_db(const ns_64_bit host_id, ns_sql & sql) const {
 		for (unsigned int i = 0; i < operation_counts.size(); i++){
 			if (operation_counts[i] == 0) continue;
 			update_db(host_id,(ns_processing_task)i,sql);
 		}
 	}
-	void clear_db(const unsigned long host_id, ns_sql & sql) const{
+	void clear_db(const ns_64_bit host_id, ns_sql & sql) const{
 		sql << "DELETE FROM performance_statistics WHERE host_id = '" << host_id << "'";
 		sql.send_query();
 	}
@@ -123,7 +123,7 @@ private:
 		operation_running[i] = 0;
 		operation_counts[i]++;
 	}
-	void update_db(const unsigned long host_id, const unsigned int i, ns_sql & sql)const {
+	void update_db(const ns_64_bit host_id, const unsigned int i, ns_sql & sql)const {
 		sql << "SELECT host_id FROM performance_statistics WHERE host_id = " << host_id << " AND operation= " << i;
 		ns_sql_result res;
 		sql.get_rows(res);

@@ -141,7 +141,7 @@ std::string * ns_region_metadata::get_field_by_name(const std::string & s){
 
 
 	
-void ns_region_metadata::load_only_region_info_from_db(const unsigned long region_info_id, const std::string &analysis_type_, ns_sql & sql){
+void ns_region_metadata::load_only_region_info_from_db(const ns_64_bit region_info_id, const std::string &analysis_type_, ns_sql & sql){
 	sql << "SELECT sample_id, name, strain, strain_condition_1,strain_condition_2,strain_condition_3,"
 		   "culturing_temperature,experiment_temperature,food_source, environmental_conditions,"
 		   "time_at_which_animals_had_zero_age,details,time_of_last_valid_sample,"
@@ -173,7 +173,7 @@ void ns_region_metadata::load_only_region_info_from_db(const unsigned long regio
 	analysis_type = analysis_type_;
 }
 
-void ns_region_metadata::load_only_sample_info_from_db(const unsigned long sample_id_, ns_sql & sql){
+void ns_region_metadata::load_only_sample_info_from_db(const ns_64_bit sample_id_, ns_sql & sql){
 	sample_id = sample_id_;
 	sql << "SELECT experiment_id,name,device_name,incubator_name,incubator_location, position_x, position_y, image_resolution_dpi FROM capture_samples WHERE id = " << sample_id;
 	ns_sql_result res;
@@ -197,7 +197,7 @@ void ns_region_metadata::load_only_sample_info_from_db(const unsigned long sampl
 	experiment_name = res[0][0];
 }
 
-void ns_region_metadata::load_from_db(const unsigned long region_info_id, const std::string &analysis_type_, ns_sql & sql){
+void ns_region_metadata::load_from_db(const ns_64_bit region_info_id, const std::string &analysis_type_, ns_sql & sql){
 	load_only_region_info_from_db(region_info_id,analysis_type_,sql);
 	load_only_sample_info_from_db(sample_id,sql);
 }

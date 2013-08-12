@@ -83,7 +83,7 @@ std::string ns_experiment_capture_specification::submit_schedule_to_db(ns_sql & 
 				else ns_handle_image_metadata_delete_action(job,sql);
 			}
 			
-			sql << "INSERT INTO capture_samples SET experiment_id = " << experiment_id << ",name='" << sql.escape_string(samples[i].sample_name) << "'"
+			sql << "INSERT INTO capture_samples SET experiment_id = " << ns_to_string(experiment_id) << ",name='" << sql.escape_string(samples[i].sample_name) << "'"
 				<< ",device_name='" << sql.escape_string(samples[i].device) << "',parameters='" << sql.escape_string(samples[i].capture_parameters()) << "'"
 				<< ",position_x=" << samples[i].x_position << ",position_y=" << samples[i].y_position
 				<< ",size_x=" << samples[i].width << ",size_y="<<samples[i].height 

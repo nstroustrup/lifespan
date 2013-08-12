@@ -45,7 +45,7 @@ void ns_image_handler_register_server_event_to_central_db(ns_image_server_event 
 }
 
 
-int ns_image_storage_handler_host_id(){
+ns_64_bit ns_image_storage_handler_host_id(){
 	return image_server.host_id();
 }
 long ns_image_storage_handler_server_timeout_interval(){
@@ -150,7 +150,7 @@ double ns_image_storage_handler::get_sample_images_size_on_disk(const unsigned l
 }
 
 
-void ns_move_experiment_partition(unsigned int experiment_id, const std::string & partition, ns_sql & sql){
+void ns_move_experiment_partition(ns_64_bit experiment_id, const std::string & partition, ns_sql & sql){
 		std::vector<unsigned long> image_ids;
 		sql << "SELECT id, mask_id FROM capture_samples WHERE experiment_id = " << experiment_id;
 		ns_sql_result samples;
@@ -502,82 +502,89 @@ ns_image_storage_reciever_handle<ns_image_storage_handler::ns_component> ns_imag
 	else throw stored_error[0];
 	}
 
-ofstream * ns_image_storage_handler::request_binary_output(ns_image_server_captured_image & image, bool volatile_storage, ns_image_server_sql * sql, const ns_image_type & image_type){
+ns_image_server_image ns_image_storage_handler::create_image_db_record_for_captured_image(ns_image_server_captured_image & image,ns_image_server_sql * sql, const ns_image_type & image_type){
 	
-	std::string dir,
-			partition;
-	while (true){
-		
-		
+	std::string dir(image.directory(sql,ns_unprocessed,true));
+
+	string filename(image.filename_no_load_from_db(sql));
+	std::string extension = ns_dir::extract_extension(filename);
+
+	if (extension.size() == 0)
+		ns_add_image_suffix(filename,image_type);
+
+	std::string full_filename = dir + DIR_CHAR_STR + filename;
+	ns_dir::convert_slashes(full_filename);
+	ns_dir::convert_slashes(dir);
+
+	ns_dir::convert_to_unix_slashes(dir);
+
+	ns_image_server_image im;
+	im.filename = filename;
+	im.path = dir;
+	im.id = 0;
+
+	if (image.capture_images_image_id != 0)
+		cerr << "ns_image_storage_handler::create_image_db_record_for_captured_image()::Warning: Overwriting an existing capture_images_image_id\n";
+
+	*sql << "INSERT INTO " << sql->table_prefix() << "images SET filename = '" << filename << "', path='" << dir << "',partition='', currently_under_processing=1";
+	image.capture_images_image_id = sql->send_query_get_id();
+	im.id = image.capture_images_image_id;
+	return im;
+
+}
+
+
+
+
+//this function creates a file in the volatile storage (or long term storage) and creates an image db record for it and saves it 
+//to the image.capture_images_image_id field
+ofstream * ns_image_storage_handler::request_binary_output_for_captured_image(const ns_image_server_captured_image & captured_image, const ns_image_server_image & image, bool volatile_storage,ns_image_server_sql * sql){
+
+		string dir,partition;
+
 		if (volatile_storage) dir += volatile_storage_directory;
 		else{
 			dir = long_term_storage_directory;
-			if (image.experiment_id == 0){
-				if (image.captured_images_id == 0)
-					throw ns_ex("ns_image_storage_handler::request_binary_output()::Could not locate experiment id information from specification (0)");
-				image.load_from_db(image.captured_images_id,sql);
-				if (image.experiment_id == 0)
-					throw ns_ex("ns_image_storage_handler::request_binary_output()::Could not locate experiment id information from specification (1)");
+			if (captured_image.experiment_id || image.id == 0 || image.filename.empty() || image.path == ""){
+				throw ns_ex("ns_image_storage_handler::request_binary_output_for_captured_image()::Incomplete information provided about captured image");
 			}
-			partition = get_partition_for_experiment(image.experiment_id,sql,true);
+			partition = get_partition_for_experiment(captured_image.experiment_id,sql,true);
 			if (partition.size() != 0)
 				dir += DIR_CHAR_STR + partition;
 		}
-		const string im_dir(image.directory(sql));
-		dir += DIR_CHAR_STR + im_dir;
-
-		const string im_f(image.filename(sql));
-
-
-		std::string filename = im_f;
+		dir += DIR_CHAR_STR + image.path;
+		std::string filename = image.filename;
 		std::string extension = ns_dir::extract_extension(filename);
-		// cerr << "EXTENSION = '" << extension << "'\n";
+
 		if (extension.size() == 0)
-		ns_add_image_suffix(filename,image_type);
-		//	else cerr << "SUFFIX VALUE=" << (int)suffix[0];
+			throw ns_ex("ns_image_storage_handler::request_binary_output_for_captured_image()::No extension specified for image");
 
 		std::string full_filename = dir + DIR_CHAR_STR + filename;
 		ns_dir::convert_slashes(full_filename);
 		ns_dir::convert_slashes(dir);
 
 		ns_dir::create_directory_recursive(dir);
-		if (volatile_storage && !ns_dir::file_exists(volatile_storage_directory))	
+
+		if (!ns_dir::file_exists(volatile_storage_directory))	
 			ns_image_handler_submit_alert(ns_alert::ns_volatile_storage_error,
 					"Could not access volatile storage.", 
-					std::string("ns_image_storage_handler::request_binary_output::Could not access volatile storage when attempting to write ") + im_dir + DIR_CHAR_STR + im_f,
+					std::string("ns_image_storage_handler::request_binary_output::Could not access volatile storage when attempting to write ") + full_filename,
 					sql);
+
 		else if (!volatile_storage && !ns_dir::file_exists(long_term_storage_directory))	
 			ns_image_handler_submit_alert(ns_alert::ns_volatile_storage_error,
 					"Could not access volatile storage.", 
-					std::string("ns_image_storage_handler::request_binary_output::Could not access volatile storage when attempting to write ") +im_dir + DIR_CHAR_STR + im_f,
+					std::string("ns_image_storage_handler::request_binary_output::Could not access volatile storage when attempting to write ") + full_filename,
 					sql);
-	
-
-
-		std::string db_path = image.directory(sql);
-		ns_dir::convert_to_unix_slashes(db_path);
-
-		if (image.capture_images_image_id == 0){
-		*sql << "INSERT INTO " << sql->table_prefix() << "images SET filename = '" << filename << "', path='" << db_path << "',partition='" << partition << "', currently_under_processing=1";
-		image.capture_images_image_id = sql->send_query_get_id();
-		}
-		else *sql << "UPDATE " << sql->table_prefix() << "images SET filename = '" << filename << "', path='" << db_path << "',partition='" << partition << "', currently_under_processing=1 WHERE id=" << image.capture_images_image_id;
-
 
 		ofstream * output = new ofstream(full_filename.c_str(), ios_base::binary);
 		//if long-term storage was requested but cannot be accessed, try volatile storage
-		if (output->fail()){
-		if (!volatile_storage){
-		  ns_image_handler_register_server_event(ns_image_server_event("ns_image_storage_handler::Could not open ") << full_filename << " for binary output.  Attempting to use volatile storage.",sql);
-		  volatile_storage = true;
-		  continue;
-		}
-		throw ns_ex("ns_image_storage_handler::request_binary_output()::Could not open requested position in volatile storage: ") << full_filename << ns_file_io; 
-	  }
+		if (output->fail())
+			throw ns_ex("ns_image_storage_handler::request_binary_output()::Could not open requested position in volatile storage: ") << full_filename << ns_file_io; 
+
 	
 	  ns_image_handler_register_server_event(ns_image_server_event("ns_image_storage_handler::Opening ",false) << full_filename << " for binary output." << ns_ts_minor_event,sql); 
 	  return output;
-	}
 }
 
 ofstream * ns_image_storage_handler::request_miscellaneous_storage(const std::string & filename){
@@ -931,7 +938,7 @@ void ns_image_storage_handler::set_experiment_partition_cache_update_period(unsi
 	experiment_partition_cache_update_period = seconds;
 }
 
-void ns_image_storage_handler::move_experiment_partition(unsigned int experiment_id, const std::string & partition, ns_sql & sql){
+void ns_image_storage_handler::move_experiment_partition(ns_64_bit experiment_id, const std::string & partition, ns_sql & sql){
 	experiment_partition_cache_lock.wait_to_acquire(__FILE__,__LINE__);
 	try{
 		ns_move_experiment_partition(experiment_id,partition,sql);
@@ -955,7 +962,7 @@ ns_file_location_specification ns_image_storage_handler::get_file_specification_
 	return look_up_image_location(image,sql);
 }
 
-std::string ns_image_storage_handler::movement_file_directory(unsigned long region_info_id,ns_image_server_sql * sql, bool abs) const{
+std::string ns_image_storage_handler::movement_file_directory(ns_64_bit region_info_id,ns_image_server_sql * sql, bool abs) const{
 		
 	std::string region_name,sample_name,experiment_name,dir;
 	ns_64_bit sample_id,experiment_id;
@@ -987,7 +994,7 @@ ns_file_location_specification ns_image_storage_handler::get_file_specification_
 	spec.filename = experiment_name +"="+sample_name+"="+region_name + "=" + data_source;
 	return spec;
 }
-ns_image_server_image ns_image_storage_handler::get_region_movement_metadata_info(unsigned long region_info_id,const std::string & data_source,ns_sql & sql) const{
+ns_image_server_image ns_image_storage_handler::get_region_movement_metadata_info(ns_64_bit region_info_id,const std::string & data_source,ns_sql & sql) const{
 	ns_file_location_specification spec(get_file_specification_for_movement_data(region_info_id,data_source,&sql));
 	ns_image_server_image im;
 	im.filename = spec.filename;
@@ -1017,7 +1024,7 @@ ns_image_server_image ns_image_storage_handler::get_storage_for_path(const ns_fi
 	return im;
 }
 
-ns_file_location_specification ns_image_storage_handler::get_base_path_for_region(unsigned long region_image_info_id,ns_image_server_sql * sql) const{
+ns_file_location_specification ns_image_storage_handler::get_base_path_for_region(ns_64_bit region_image_info_id,ns_image_server_sql * sql) const{
 	std::string region_name,sample_name,experiment_name;
 	ns_64_bit sample_id,experiment_id;
 	ns_region_info_lookup::get_region_info(region_image_info_id,sql,region_name,sample_name,sample_id,experiment_name,experiment_id);
@@ -1029,7 +1036,7 @@ ns_file_location_specification ns_image_storage_handler::get_base_path_for_regio
 	std::string partition(get_partition_for_experiment_int(experiment_id,sql));
 	return compile_absolute_paths_from_relative(relative_path,partition,"");
 }
-ns_file_location_specification ns_image_storage_handler::get_path_for_region(unsigned long region_image_info_id,ns_image_server_sql * sql, const ns_processing_task task) const{
+ns_file_location_specification ns_image_storage_handler::get_path_for_region(ns_64_bit region_image_info_id,ns_image_server_sql * sql, const ns_processing_task task) const{
 	std::string region_name,sample_name,experiment_name;
 	ns_64_bit sample_id,experiment_id;
 	ns_region_info_lookup::get_region_info(region_image_info_id,sql,region_name,sample_name,sample_id,experiment_name,experiment_id);
@@ -1042,7 +1049,7 @@ ns_file_location_specification ns_image_storage_handler::get_path_for_region(uns
 	return compile_absolute_paths_from_relative(relative_path,partition,"");
 }
 
-ns_file_location_specification ns_image_storage_handler::get_path_for_sample_captured_images(unsigned long sample_id, bool small_images, ns_image_server_sql * sql) const {
+ns_file_location_specification ns_image_storage_handler::get_path_for_sample_captured_images(ns_64_bit sample_id, bool small_images, ns_image_server_sql * sql) const {
 	ns_file_location_specification spec(get_path_for_sample(sample_id,sql));
 	spec.relative_directory += DIR_CHAR_STR;
 
@@ -1053,7 +1060,7 @@ ns_file_location_specification ns_image_storage_handler::get_path_for_sample_cap
 	return compile_absolute_paths_from_relative(spec.relative_directory,spec.partition,"");
 }
 
-ns_file_location_specification ns_image_storage_handler::get_path_for_sample(unsigned long sample_id, ns_image_server_sql * sql) const{
+ns_file_location_specification ns_image_storage_handler::get_path_for_sample(ns_64_bit sample_id, ns_image_server_sql * sql) const{
 	std::string sample_name,experiment_name;
 	ns_64_bit experiment_id;
 	ns_region_info_lookup::get_sample_info(sample_id,sql,sample_name,experiment_name,experiment_id);
@@ -1066,7 +1073,7 @@ ns_file_location_specification ns_image_storage_handler::get_path_for_sample(uns
 	return compile_absolute_paths_from_relative(relative_path,partition,"");
 }
 
-ns_file_location_specification ns_image_storage_handler::get_path_for_video_storage(unsigned long experiment_id, ns_image_server_sql * sql) const{
+ns_file_location_specification ns_image_storage_handler::get_path_for_video_storage(ns_64_bit experiment_id, ns_image_server_sql * sql) const{
 	std::string experiment_name;
 	ns_region_info_lookup::get_experiment_info(experiment_id,sql,experiment_name);
 
@@ -1077,7 +1084,7 @@ ns_file_location_specification ns_image_storage_handler::get_path_for_video_stor
 	return compile_absolute_paths_from_relative(relative_path,partition,"");
 }
 
-ns_file_location_specification ns_image_storage_handler::get_path_for_experiment(unsigned long experiment_id, ns_image_server_sql * sql) const{
+ns_file_location_specification ns_image_storage_handler::get_path_for_experiment(ns_64_bit experiment_id, ns_image_server_sql * sql) const{
 	std::string experiment_name;
 	ns_region_info_lookup::get_experiment_info(experiment_id,sql,experiment_name);
 
@@ -1088,24 +1095,24 @@ ns_file_location_specification ns_image_storage_handler::get_path_for_experiment
 	return compile_absolute_paths_from_relative(relative_path,partition,"");
 }
 
-unsigned long ns_image_storage_handler::create_file_deletion_job(const unsigned long parent_processing_job_id, ns_sql & sql){
+ns_64_bit ns_image_storage_handler::create_file_deletion_job(const ns_64_bit parent_processing_job_id, ns_sql & sql){
 	sql << "INSERT INTO delete_file_jobs SET parent_job_id = " << parent_processing_job_id<< ", confirmed=0";
 	return sql.send_query_get_id();
 }
-void ns_image_storage_handler::delete_file_deletion_job(const unsigned long deletion_job_id, ns_sql & sql){
+void ns_image_storage_handler::delete_file_deletion_job(const ns_64_bit deletion_job_id, ns_sql & sql){
 	sql << "DELETE FROM delete_file_specifications WHERE delete_job_id = " << deletion_job_id;
 	sql.send_query();
 	sql << "DELETE FROM delete_file_jobs WHERE id = " << deletion_job_id;
 	sql.send_query();
 }
-void ns_image_storage_handler::submit_file_deletion_request(const unsigned long deletion_job_id,const ns_file_location_specification & spec, ns_sql & sql){
+void ns_image_storage_handler::submit_file_deletion_request(const ns_64_bit deletion_job_id,const ns_file_location_specification & spec, ns_sql & sql){
 	sql << "INSERT INTO delete_file_specifications SET delete_job_id = " << deletion_job_id << ","
 		<< "relative_directory = '" << sql.escape_string(spec.relative_directory) << "', filename = '" << sql.escape_string(spec.filename) << "'"
 		<< ",partition='" << sql.escape_string(spec.partition) << "'";
 	sql.send_query();
 	sql.send_query("COMMIT");
 }
-void ns_image_storage_handler::get_file_deletion_requests(const unsigned long deletion_job_id, unsigned long & parent_job_id,std::vector<ns_file_location_specification> & specs, ns_sql & sql){
+void ns_image_storage_handler::get_file_deletion_requests(const ns_64_bit deletion_job_id, ns_64_bit & parent_job_id,std::vector<ns_file_location_specification> & specs, ns_sql & sql){
 	sql << "SELECT parent_job_id,confirmed FROM delete_file_jobs WHERE id = " << deletion_job_id;
 	ns_sql_result res;
 	sql.get_rows(res);
@@ -1145,7 +1152,7 @@ std::string ns_image_storage_handler::get_relative_path_for_video(const ns_file_
 std::string ns_image_storage_handler::get_absolute_path_for_video(const ns_file_location_specification & spec, const bool for_sample_video, const bool only_base){
 	return spec.absolute_long_term_directory() + DIR_CHAR_STR + ns_get_video_path_specifics(for_sample_video,only_base);
 } 
-std::string ns_image_storage_handler::get_absolute_path_for_video_image(const unsigned long experiment_id, const std::string & rel_path, const std::string & filename,ns_sql & sql){
+std::string ns_image_storage_handler::get_absolute_path_for_video_image(const ns_64_bit experiment_id, const std::string & rel_path, const std::string & filename,ns_sql & sql){
 	std::string partition(get_partition_for_experiment_int(experiment_id,&sql));
 	ns_file_location_specification spec(compile_absolute_paths_from_relative(rel_path,partition,filename));
 	return spec.absolute_long_term_directory() + DIR_CHAR_STR + filename;
@@ -1228,7 +1235,7 @@ void ns_image_storage_handler::refresh_experiment_partition_cache_int(ns_image_s
 
 }
 
-std::string ns_image_storage_handler::get_partition_for_experiment_int(const unsigned long experiment_id, ns_image_server_sql * sql,bool request_from_db_on_miss, const bool get_lock) const{
+std::string ns_image_storage_handler::get_partition_for_experiment_int(const ns_64_bit experiment_id, ns_image_server_sql * sql,bool request_from_db_on_miss, const bool get_lock) const{
 	if (get_lock)
 		experiment_partition_cache_lock.wait_to_acquire(__FILE__,__LINE__);
 	try{

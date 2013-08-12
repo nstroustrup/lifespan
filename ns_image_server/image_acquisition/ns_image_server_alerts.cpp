@@ -331,7 +331,7 @@ void ns_alert_handler::handle_alerts(ns_sql & sql){
 		sql.set_autocommit(autocommit_state);
 		throw;
 	}
-	unsigned long email_sender_host_id(image_server.host_id());
+	ns_64_bit email_sender_host_id(image_server.host_id());
 	if (email_sender_host_id ==0)
 		email_sender_host_id = 666;
 

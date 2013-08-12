@@ -71,16 +71,16 @@ public:
 	}
 	ns_machine_analysis_data_loader(const bool be_quiet_=false):be_quiet(be_quiet_){}
 	unsigned long total_number_of_regions()const{return total_number_of_regions_;}
-	void load(const ns_death_time_annotation_set::ns_annotation_type_to_load & annotation_types_to_load,const unsigned long region_id, unsigned long sample_id, unsigned long experiment_id_a, ns_sql & sql,
+	void load(const ns_death_time_annotation_set::ns_annotation_type_to_load & annotation_types_to_load,const ns_64_bit region_id, ns_64_bit sample_id, ns_64_bit experiment_id_a, ns_sql & sql,
 				const bool include_excluded_regions=false, const ns_machine_analysis_region_data::ns_loading_details & details=ns_machine_analysis_region_data::ns_load_all);
 	//uses much less memory just to compile the data into a survival curve data set
-	void load_just_survival(ns_lifespan_experiment_set & set,const unsigned long region_id, unsigned long sample_id, unsigned long experiment_id_a, ns_sql & sql, const bool load_excluded_regions, const bool load_by_hand_data);
+	void load_just_survival(ns_lifespan_experiment_set & set,ns_64_bit region_id, ns_64_bit sample_id, ns_64_bit experiment_id_a, ns_sql & sql, const bool load_excluded_regions, const bool load_by_hand_data);
 	const std::string & experiment_name(){return experiment_name_;}
 	const unsigned long experiment_id(){return experiment_id_;}
 	std::vector<ns_machine_analysis_sample_data> samples;
 private:
 	bool be_quiet;
-	void set_up_spec_to_load(const unsigned long & region_id, unsigned long &sample_id, unsigned long & experiment_id_a, ns_sql & sql, const bool load_excluded_regions);
+	void set_up_spec_to_load(const ns_64_bit & region_id, ns_64_bit &sample_id, ns_64_bit & experiment_id_a, ns_sql & sql, const bool load_excluded_regions);
 	std::string experiment_name_;
 	unsigned int experiment_id_;
 	unsigned long total_number_of_regions_;

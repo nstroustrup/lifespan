@@ -606,7 +606,7 @@ ns_thread_return_type ns_image_server_device_manager::run_capture_on_device_inte
 		cerr << "d3";
 		if (arg != 0){
 			try{
-				unsigned long event_id = image_server.register_server_event(ns_image_server::ns_register_in_local_db,exp);
+				ns_64_bit event_id = image_server.register_server_event(ns_image_server::ns_register_in_local_db,exp);
 				if (arg->capture_arguments->capture_specification.capture_schedule_entry_id != 0){
 					
 					cerr << "d4a";

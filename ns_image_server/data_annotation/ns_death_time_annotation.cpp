@@ -1133,7 +1133,7 @@ void ns_death_time_annotation_compiler::add(const ns_death_time_annotation_set &
 	}
 }
 
-void ns_death_time_annotation_compiler::specifiy_region_metadata(const unsigned long region_id,const ns_region_metadata & metadata){
+void ns_death_time_annotation_compiler::specifiy_region_metadata(const ns_64_bit region_id,const ns_region_metadata & metadata){
 	if (region_id == 0)
 		throw ns_ex("Zero region id!");
 	if (metadata.region_id != region_id)

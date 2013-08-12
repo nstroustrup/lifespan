@@ -151,7 +151,7 @@ public:
 	void pause_host();
 
 	///returns the id of the current image server node, as specified in the central sql database.
-	const unsigned int host_id() const{ return _host_id;}
+	const ns_64_bit host_id() const{ return _host_id;}
 
 	static ns_movement_event movement_event_used_for_animal_storyboards(){return ns_movement_cessation;}
 
@@ -360,7 +360,7 @@ public:
 	///a list of all models present there
 	void load_all_worm_detection_models(std::vector<ns_svm_model_specification* > & spec);
 
-	unsigned long make_record_for_new_sample_mask(const unsigned long sample_id, ns_sql & sql);
+	ns_64_bit make_record_for_new_sample_mask(const ns_64_bit sample_id, ns_sql & sql);
 
 	std::string capture_preview_parameters(const ns_capture_device::ns_device_preview_type & type,ns_sql & sql);
 	ns_performance_statistics_analyzer performance_statistics;
@@ -467,7 +467,7 @@ private:
 	unsigned long next_scan_for_problems_time;
 	unsigned int _dispatcher_port;
 	unsigned int _server_crash_daemon_port;
-	unsigned int _host_id; ///database id of the current host
+	ns_64_bit _host_id; ///database id of the current host
 	unsigned int _dispatcher_refresh_interval; ///the period at which the dispatcher checks the db for work, in miliseconds.
 	unsigned long _server_timeout_interval; ///the period after which servers are considered offline (in seconds)
 
@@ -537,7 +537,7 @@ extern ns_image_server image_server;
 
 ///if desired_string != "", then it is appended to the destination std::string.
 ///if desired_string == "", then fall_back_prefix and fallback_int are appended to the destination std::string.
-void add_string_or_number(std::string & destination, const std::string & desired_string, const std::string & fallback_prefix, const int fallback_int);
+void add_string_or_number(std::string & destination, const std::string & desired_string, const std::string & fallback_prefix, const ns_64_bit fallback_int);
 
 #ifdef _WIN32 
 void ns_update_software(const bool just_launch=false);

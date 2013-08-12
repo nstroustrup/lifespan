@@ -1108,7 +1108,7 @@ void ns_detected_worm_stats::output_html_worm_summary(ostream & out){
 	out << "\t</table>\n";
 	out << "</td></tr></table>\n";
 }
-void ns_detected_worm_stats::output_csv_data(const unsigned long region_id, const unsigned long capture_time, const ns_vector_2i & position, const ns_vector_2i & size,const ns_object_hand_annotation_data & hand_data,ostream & out){
+void ns_detected_worm_stats::output_csv_data(const ns_64_bit region_id, const unsigned long capture_time, const ns_vector_2i & position, const ns_vector_2i & size,const ns_object_hand_annotation_data & hand_data,ostream & out){
 	out << region_id << "," << capture_time << "," 
 		<< position.x << "," << position.y << "," 
 		<< size.x << "," << size.y << ",";

@@ -3244,7 +3244,7 @@ struct ns_debug_set_file_info{
 };
 
 void ns_worm_learner::input_subregion_as_new_experiment(const std::string &new_info){
-	ifstream in(new_info.c_str());
+	/*ifstream in(new_info.c_str());
 	if (in.fail())
 		throw ns_ex("Could not open subregion specification file: ") << new_info;
 	ns_get_subregion_source_information(in);
@@ -3357,7 +3357,7 @@ void ns_worm_learner::input_subregion_as_new_experiment(const std::string &new_i
 		delete sql;
 		throw;
 	}
-		
+	*/	
 }
 
 

@@ -10,13 +10,13 @@ public:
 	
 	ns_death_time_annotation_compiler annotations;
 
-	ns_region_metadata load_region_annotations(const ns_death_time_annotation_set::ns_annotation_type_to_load & annotation_type_to_load,const unsigned long region_id, ns_sql & sql){
+	ns_region_metadata load_region_annotations(const ns_death_time_annotation_set::ns_annotation_type_to_load & annotation_type_to_load,const ns_64_bit region_id, ns_sql & sql){
 		ns_region_metadata m;
 		m.load_from_db(region_id,"",sql);
 		load_region_annotations(annotation_type_to_load,region_id,m.experiment_id,m.experiment_name,m,sql);
 		return m;
 	}
-	bool load_region_annotations(const ns_death_time_annotation_set::ns_annotation_type_to_load & annotation_type_to_load,const unsigned long region_id,const unsigned long experiment_id, const std::string & experiment_name,const ns_region_metadata & metadata,ns_sql & sql){
+	bool load_region_annotations(const ns_death_time_annotation_set::ns_annotation_type_to_load & annotation_type_to_load,const ns_64_bit region_id,const ns_64_bit experiment_id, const std::string & experiment_name,const ns_region_metadata & metadata,ns_sql & sql){
 		ns_image_server_results_subject results_subject;
 		results_subject.experiment_id = experiment_id;
 		results_subject.experiment_name = experiment_name;
@@ -45,7 +45,7 @@ public:
 		return true;
 
 	}
-	void load_experiment_annotations(const ns_death_time_annotation_set::ns_annotation_type_to_load & annotation_type_to_load,const unsigned long experiment_id,ns_sql & sql){
+	void load_experiment_annotations(const ns_death_time_annotation_set::ns_annotation_type_to_load & annotation_type_to_load,const ns_64_bit experiment_id,ns_sql & sql){
 		sql << "SELECT name FROM experiments WHERE id = " << experiment_id;
 		ns_sql_result res;
 		sql.get_rows(res);

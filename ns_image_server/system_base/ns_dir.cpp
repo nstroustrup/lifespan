@@ -279,16 +279,19 @@ void ns_dir::load(const string & dir){
 		error = stat(filename.c_str(),&f_stat);
 		if (error != 0)
 			throw ns_ex("ns_dir::An error occured while getting file stats for : ") << filename;
-		switch(f_stat.st_mode){
+		switch(f_stat.st_mode&S_IFMT){
 			case S_IFDIR:
+			  //	  cerr << dir_result->d_name << " is a dir\n";
 				dirs.push_back(dir_result->d_name);
 				dir_is_simlink.push_back(0);
 				break;
 			case S_IFLNK:
+			  //cerr << dir_result->d_name << " is a link\n";
 				dirs.push_back(dir_result->d_name);
 				dir_is_simlink.push_back(1);
 				break;
 			default:
+			  //	  cerr << dir_result->d_name << " is " << f_stat.st_mode << "\n";
 				files.push_back(dir_result->d_name);
 				file_sizes.push_back(f_stat.st_size);
 		}

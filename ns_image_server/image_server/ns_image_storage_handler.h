@@ -71,6 +71,8 @@ public:
 	bool assign_unique_filename(ns_image_server_image & image, ns_image_server_sql * sql);
 	std::ifstream * request_metadata_from_disk(ns_image_server_image & image,const bool binary,ns_image_server_sql * sql);
 
+	void fix_orphaned_captured_images(ns_image_server_sql * sql);
+
 	std::ofstream * request_metadata_output(ns_image_server_image & image, const std::string & extension, const bool binary,ns_image_server_sql * sql);
 
 		

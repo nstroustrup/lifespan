@@ -3,6 +3,94 @@
 
 using namespace std;
 
+bool ns_fix_image(const std::string & filename, ns_image_server_sql * sql){
+  cerr << "Processing " << filename << "\n";
+  ns_image_server_captured_image im;
+  string fn = ns_dir::extract_filename(filename);
+  int a(0);
+  im.from_filename(fn,a);
+  //cerr << "image cid = " << im.captured_images_id << "\n";
+  //cerr << "image ciid = " << im.capture_images_image_id << "\n";;
+  //cerr << "capture_time = " << im.capture_time << "\n";
+  //cerr << "sample_id = " << im.sample_id << "\n";
+
+  *sql << "SELECT id, captured_image_id FROM capture_schedule WHERE sample_id = " << im.sample_id << " AND scheduled_time = " << im.capture_time;
+  ns_sql_result res;
+  sql->get_rows(res);
+  if (res.size() != 1)
+    return false;
+  ns_64_bit sched_id = ns_atoi64(res[0][0].c_str()), 
+  sched_cid = ns_atoi64(res[0][1].c_str());
+  //cerr << "SHED ID = " << sched_id << "; sched_cid = " << sched_cid << "\n";
+  *sql << "SELECT image_id, problem FROM captured_images WHERE id = " << sched_cid;
+  sql->get_rows(res);
+  if (res.size()!= 1)
+    return false;
+  //cerr << "SCHED CI image_id = " << res[0][0] << "\n";
+  bool shed_ci_has_blank_ciid(res[0][0] == "0");
+  *sql << "SELECT id, image_id, problem FROM captured_images WHERE sample_id = " << im.sample_id << " AND capture_time = " << im.capture_time;
+  
+  sql->get_rows(res);
+  if (res.size() != 1)
+    return false;
+  //cerr << "im_db cid = " << res[0][0] << "; im_db ciid = " << res[0][1] << "; problem = " << res[0][2] << "\n";
+  ns_64_bit im_db_cid = ns_atoi64(res[0][0].c_str());
+  ns_64_bit im_db_ciid = ns_atoi64(res[0][1].c_str());
+  *sql << "SELECT filename, path FROM images WHERE id = " << im_db_ciid;
+  sql->get_rows(res); 
+  if (res.size() != 1)
+    return false;
+  bool im_db_has_filename_specified(!res[0][0].empty());
+  //cerr << "DB: " << res[0][0] << "\n" << res[0][1] << "\n";
+ 
+  if(im_db_has_filename_specified && shed_ci_has_blank_ciid){
+    cerr << "This image has an inconsistancy in its schedule record.  The correct capture image has been identified.  Fixing...\n";
+    *sql << "UPDATE capture_schedule SET problem = 0,captured_image_id = " << im_db_cid << " WHERE id = " << sched_id;
+    sql->send_query();
+    
+    //cerr << sql->query();
+  }
+  return true;
+}
+void ns_image_storage_handler::fix_orphaned_captured_images(ns_image_server_sql * sql){
+  //vector<string> d;
+  vector<string> directories_to_process;
+  directories_to_process.push_back(volatile_storage_directory);
+  while(!directories_to_process.empty()){
+    ns_dir dir;
+    // cerr << *directories_to_process.rbegin()<< "\n";
+
+    const std::string cur_dir(*directories_to_process.rbegin());
+    directories_to_process.pop_back();
+    dir.load(cur_dir);
+    
+    if (cur_dir!= volatile_storage_directory && !dir.files.empty() ){
+      bool found(false);
+      cerr << "Processing files in " << cur_dir << "\n";
+      for (unsigned int i = 0; i < dir.files.size(); i++){
+	if (dir.file_sizes[i] == 0)
+	  continue;
+	if (dir.files[i].find(".tif") != dir.files[i].npos){
+	  //cerr << "file size: " << dir.file_sizes[i] << "\n";
+	  bool res = ns_fix_image(cur_dir + DIR_CHAR_STR + dir.files[i],sql);
+	  //  if (res)
+	  //return;
+	}
+      }
+    }
+    // cerr << dir.dirs.size() << "\n";
+    for (unsigned int i = 0; i < dir.dirs.size(); i++){
+      if (dir.dirs[i] == "." || dir.dirs[i] == "..")
+	continue;
+      directories_to_process.push_back(cur_dir+DIR_CHAR_STR+dir.dirs[i]);
+    }
+    
+  }/*
+  for (unsigned int i = 0; i < directories_to_search.size(); i++){
+    cerr << "Processing files in " << directories_to_search[i] << "\n";
+    }*/
+    
+}
 
 ns_performance_statistics_analyzer & performance_statistics(){
 	return image_server.performance_statistics;

@@ -95,7 +95,7 @@ void ns_bulk_experiment_mask_manager::process_mask_file(ns_image_standard & mask
 
 
 
-void ns_bulk_experiment_mask_manager::produce_mask_file(const unsigned int experiment_id,ns_image_stream_file_sink<ns_8_bit> & reciever){
+void ns_bulk_experiment_mask_manager::produce_mask_file(const unsigned int experiment_id,ns_image_stream_file_sink<ns_8_bit> & reciever, const unsigned long mask_time){
 	ns_sql * sql = image_server.new_sql_connection(__FILE__,__LINE__);
 		
 	const unsigned long chunk_max_size(1024);
@@ -116,11 +116,19 @@ void ns_bulk_experiment_mask_manager::produce_mask_file(const unsigned int exper
 		for (ns_sql_result::iterator p = samples.begin(); p != samples.end();){
 			try{
 				//image_id==0  images have already been deleted.
-				*sql << "SELECT image_id FROM captured_images WHERE sample_id = " << (*p)[1] << " and currently_being_processed=0 AND problem=0 AND censored=0 AND image_id != 0 ORDER BY capture_time DESC";
+				*sql << "SELECT image_id FROM captured_images WHERE sample_id = " << (*p)[1] << " and currently_being_processed=0 AND problem=0 AND censored=0 AND image_id != 0";
+				if (mask_time != 0)
+					*sql << " AND capture_time < " << mask_time;
+				*sql << " ORDER BY capture_time DESC";
 				ns_sql_result im_id;
 				sql->get_rows(im_id);
-				if (im_id.size() < 2)
-					throw ns_ex("Could not find enough good images for sample ") << (*p)[0] << "(" << (*p)[1]  << ").";
+				if (im_id.size() < 2){	
+					ns_ex ex("Could not find enough good images for sample ");
+					ex << (*p)[0] << "(" << (*p)[1]  << ").";
+					ex << "Note that the experiment has a mask time specified: " << ns_format_time_string_for_human(mask_time);
+					throw ex;
+				}
+
 				unsigned int s = (unsigned int)images.size();
 				bool found_valid_image=false;
 				//find an existing image to use as the mask

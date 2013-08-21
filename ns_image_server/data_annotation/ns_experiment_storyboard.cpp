@@ -787,7 +787,7 @@ bool ns_experiment_storyboard::load_events_from_annotation_compiler(const ns_loa
 	}*/
 
 	if (number_of_observed_deaths == 0){
-		std::cerr << "No observed deaths on plate\n";
+		std::cerr << "No dead animals, or potentially dead animals, could be identified in the specificed group of plates.\n";
 		return false;
 	}
 	if (animals.empty())
@@ -1518,7 +1518,7 @@ unsigned long  ns_experiment_storyboard_timepoint_element::from_xml_group(ns_xml
 	return atol(o.tag("d_id").c_str());
 }
 
-void ns_experiment_storyboard::read_metadata(std::istream & in,ns_sql & sql){
+bool ns_experiment_storyboard::read_metadata(std::istream & in,ns_sql & sql){
 	ns_xml_simple_object_reader xml;
 	xml.from_stream(in);
 	
@@ -1599,7 +1599,7 @@ void ns_experiment_storyboard::read_metadata(std::istream & in,ns_sql & sql){
 				p->second.metadata.load_from_db(p->first,"",sql);
 		
 	}
-	load_events_from_annotation_compiler(ns_loading_from_storyboard_file,all_events,subject_specification.use_absolute_time,subject_specification.minimum_distance_to_juxtipose_neighbors,sql);
+	return load_events_from_annotation_compiler(ns_loading_from_storyboard_file,all_events,subject_specification.use_absolute_time,subject_specification.minimum_distance_to_juxtipose_neighbors,sql);
 }
 
 void ns_experiment_storyboard::write_metadata(std::ostream & o) const{

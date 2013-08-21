@@ -1139,17 +1139,33 @@ bool ns_processing_job_maintenance_processor:: run_job(ns_sql & sql){
 				std::vector<ns_experiment_storyboard_spec> specs;
 				ns_storyboard_spec_from_job (job,specs);
 				const unsigned long neighbor_distance_to_juxtipose(atol(image_server->get_cluster_constant_value("storyboard_neighbor_distance_to_juxtipose_in_pixels","50",&sql).c_str()));
+				vector<char> storyboard_has_valid_worms(specs.size(),0);
 				
+				bool empty_storyboard(false);
+
 				for (unsigned int j = 0; j < specs.size(); j++){
 					specs[j].minimum_distance_to_juxtipose_neighbors = neighbor_distance_to_juxtipose;
 					if (specs.size() > 1)
 						cerr << "Compiling storyboard outline " << j+1 << " of " << specs.size() << "\n";
-					if (!s.create_storyboard_metadata_from_machine_annotations(specs[j],sql))
-						break;
+					if (!s.create_storyboard_metadata_from_machine_annotations(specs[j],sql)){
+						empty_storyboard = true;
+						continue;
+					}
+					else 
+						storyboard_has_valid_worms[j] = true;
 				
 					ns_experiment_storyboard_manager man;
 					man.delete_metadata_from_db(specs[j],sql);
 					man.save_metadata_to_db(specs[j],s,"xml",sql);
+				}
+				if (empty_storyboard){
+					for (unsigned int j = 0; j < specs.size(); j++){
+						if (storyboard_has_valid_worms[j]){
+							ns_experiment_storyboard_manager man;
+							man.delete_metadata_from_db(specs[j],sql);
+						}
+					}
+					throw ns_ex("The storyboard could not be generated as no dead or potentially dead worms were identified");
 				}
 				//if this is a job for a specific region or sample, just do the work
 				if (job.region_id != 0 || job.sample_id != 0){

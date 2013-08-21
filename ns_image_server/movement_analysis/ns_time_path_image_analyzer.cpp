@@ -440,7 +440,7 @@ void ns_time_path_image_movement_analyzer::process_raw_images(const ns_64_bit re
 			}
 		}
 		if (number_of_paths_to_consider == 0)
-			image_server.register_server_event(ns_image_server_event("The specified region contains no detected animals."),&sql);
+			image_server.register_server_event(ns_image_server_event("No dead animals, or potentially dead animals, were identified in this region."),&sql);
 		else{
 			std::cout << "Registering and Analyzing " << number_of_paths_to_consider << " objects; discarding " << number_of_paths_to_ignore << " as noise.\n";
 			

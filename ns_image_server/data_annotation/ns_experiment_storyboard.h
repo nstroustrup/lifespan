@@ -131,7 +131,7 @@ public:
 	static std::string image_suffix(const ns_experiment_storyboard_spec & spec);
 
 	void write_metadata(std::ostream & o) const;
-	void read_metadata(std::istream & i, ns_sql & sql);
+	bool read_metadata(std::istream & i, ns_sql & sql);
 
 	void clear(){
 		first_time = last_time = 0;

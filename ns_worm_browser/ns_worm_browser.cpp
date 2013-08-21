@@ -27,9 +27,15 @@ void ns_worm_learner::produce_experiment_mask_file(const std::string & filename)
 	ns_tiff_image_output_file<ns_8_bit> tiff_out;
 	ns_image_stream_file_sink<ns_8_bit> file_sink(filename,tiff_out,1024);
 
-
 	cerr << "writing: " << filename  << "\n";	
-	mask_manager.produce_mask_file(experiment_id,file_sink);
+	
+	ns_acquire_for_scope<ns_sql> sql(image_server.new_sql_connection(__FILE__,__LINE__));
+	const string mask_time(image_server.get_cluster_constant_value(string("mask_time=") + ns_to_string(experiment_id),"0",&sql()));
+	const unsigned long mask_time_t(static_cast<unsigned long>(ns_atoi64(mask_time.c_str())));
+	cerr << "Generating mask";
+	if (mask_time_t != 0)
+		cerr << " using images up until" << ns_format_time_string_for_human(mask_time_t);
+	mask_manager.produce_mask_file(experiment_id,file_sink,mask_time_t);
 }
 
 
@@ -2903,8 +2909,8 @@ void ns_worm_learner::calculate_image_statistics_for_experiment_sample(unsigned 
 			im.id = atol(res2[j][1].c_str());
 			stats.calculate_statistics_from_image(im,sql);
 			cerr << "(" << stats.image_statistics.mean << ")";
-			unsigned long previous_db_id(atol(res2[j][2].c_str()));
-			unsigned long db_id(previous_db_id);
+			ns_64_bit previous_db_id(ns_atoi64(res2[j][2].c_str()));
+			ns_64_bit db_id(previous_db_id);
 			stats.submit_to_db(db_id,sql);
 			if (previous_db_id != db_id){
 				sql << "UPDATE captured_images SET image_statistics_id=" << db_id << " WHERE id=" << capture_sample_image_id;

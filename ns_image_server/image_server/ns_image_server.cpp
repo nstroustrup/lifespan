@@ -1639,7 +1639,7 @@ void ns_principal_component_transformation_specification::read(const std::string
 }
 
 std::string ns_image_server::capture_preview_parameters(const ns_capture_device::ns_device_preview_type & type,ns_sql & sql){
-	string transparency_default("--mode=Gray --format=tiff --source=\"Transparency Unit\" --resolution=300 --depth=8 -l 0in -t 0in -x 8.5in -y 10.5in"),
+	string transparency_default("--mode=Gray --format=tiff --source=\"TPU8X10\" --resolution=300 --depth=8 -l 0in -t 0in -x 8.5in -y 10.5in"),
 		   reflective_default("--mode=Gray --format=tiff --source=\"Flatbed\" --resolution=300 --depth=8 -l 0in -t 0in -x 8.5in -y 11.7in");
 
 	switch(type){

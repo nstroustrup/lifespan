@@ -1716,8 +1716,9 @@ void ns_image_server::register_server_event_no_db(const ns_image_server_event & 
 			cerr <<"\n";
 		s_event.print(cerr);
 		//cerr << "\n";
-		s_event.print(event_log);
-		event_log << "\n";
+		s_event.print(event_log);	
+		if (!no_double_endline)
+			event_log << "\n";
 		event_log.flush();
 	}
 	lock.release();

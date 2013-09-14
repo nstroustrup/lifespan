@@ -273,7 +273,7 @@ void ns_worm_movement_summary_series::generate_censoring_annotations(const ns_re
 			ns_death_time_annotation::ns_single_worm,
 			ns_stationary_path_id(),false,
 			"Apparently Moving at end of experiment",
-			1,
+			1,0,
 			this->multiworm_cluster_censoring_strategy,
 			missing_worm_return_strategy)
 		);
@@ -326,7 +326,7 @@ void ns_worm_movement_summary_series::generate_censoring_annotations(const ns_re
 					 ns_death_time_annotation::ns_single_worm,
 					 ns_stationary_path_id(),false,
 					 "Worm Went Missing",
-					 1,
+					 1,0,
 					 this->multiworm_cluster_censoring_strategy,
 					 missing_worm_return_strategy)
 				);
@@ -1136,7 +1136,7 @@ void ns_worm_movement_summary_series::from_death_time_annotations(const ns_death
 		}
 		else{
 			ns_death_time_annotation_set set;
-			ns_multiple_worm_cluster_death_annotation_handler::generate_correct_annotations_for_multiple_worm_cluster(censoring_strategy,number_of_animals,q->properties,d,set);
+			ns_multiple_worm_cluster_death_annotation_handler::generate_correct_annotations_for_multiple_worm_cluster(censoring_strategy,number_of_animals,q->properties,d,set,ns_death_time_annotation_compiler_region::ns_machine_if_not_by_hand);
 			for (unsigned int i = 0; i < set.size(); i++){
 				ns_worm_movement_measurement_summary_timepoint_type t(set[i]);
 				ns_worm_movement_measurement_summary & timepoint(all_timepoints[set[i].time.period_end]);

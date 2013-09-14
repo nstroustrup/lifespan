@@ -92,6 +92,7 @@ std::string ns_death_time_annotation::to_string() const{
 	s[24] = ns_to_string((int)missing_worm_return_strategy);
 	s[25] = ns_to_string(animal_id_at_position);
 	s[26] = ns_to_string(event_observation_type);
+	s[27] = ns_to_string(longest_gap_without_observation);
 
 	string ret;
 	ret+=s[0];
@@ -164,6 +165,7 @@ void ns_death_time_annotation::from_string(const std::string v){
 	missing_worm_return_strategy = (ns_missing_worm_return_strategy)atol(s[24].c_str());
 	animal_id_at_position = atol(s[25].c_str());
 	event_observation_type = (ns_death_time_annotation::ns_event_observation_type)atol(s[26].c_str());
+	longest_gap_without_observation = atol(s[27].c_str());
 }
 
 std::string ns_death_time_annotation::source_type_to_string(const ns_annotation_source_type & t){
@@ -171,8 +173,8 @@ std::string ns_death_time_annotation::source_type_to_string(const ns_annotation_
 		case ns_unknown: return "Unknown";
 		case ns_posture_image: return "Posture Image Analysis";
 		case ns_region_image:  return "Region Image Analysis";
-		case ns_lifespan_machine: return "Lifespan Image Analysis";
-		case ns_storyboard: return "Storyboard";
+		case ns_lifespan_machine: return "Automated Analysis";
+		case ns_storyboard: return "Storyboard Annotation";
 		default: return std::string("Unknown source type(") + ns_to_string(t) + ")";// throw ns_ex("Unknown source type:") << t;
 	}
 }
@@ -232,7 +234,6 @@ bool ns_movement_event_is_a_state_transition_event(const ns_movement_event & t){
 		case ns_stationary_worm_observed: return false;
 			
 		case ns_no_movement_event: return false;
-
 		default: throw ns_ex("ns_movement_event_is_a_state_transition_event()::Unknown event type ") << (int)t;
 	};
 }
@@ -282,7 +283,8 @@ bool ns_death_time_annotation_set::annotation_matches(const ns_annotation_type_t
 	switch(type){
 		case ns_all_annotations: return true;
 		case ns_censoring_data: 
-			return e.is_censored() || e.is_excluded() || e.flag.specified() || (ns_censor_machine_multiple_worms && e.number_of_worms_at_location_marked_by_machine > 1) || e.number_of_worms_at_location_marked_by_hand > 0;
+			return e.is_censored() || e.is_excluded() || e.flag.specified() 
+				|| (ns_censor_machine_multiple_worms && e.number_of_worms_at_location_marked_by_machine > 1) || e.number_of_worms_at_location_marked_by_hand > 0;
 			 
 		case ns_movement_transitions: 
 			return ns_movement_event_is_a_state_transition_event(e.type);
@@ -393,8 +395,9 @@ void write_column_format_data(std::ostream & o, const ns_death_time_annotation &
 		<< (int)a.missing_worm_return_strategy <<","
 		<< a.animal_id_at_position << ","
 		<< (int)a.event_observation_type << "," 
+		<< a.longest_gap_without_observation << ","
 		// reserved for future use
-		<< ",,,,,,,,"
+		<< ",,,,,,,"
 		<< "\n";
 }
 void write_column_format_header(std::ostream & o){
@@ -402,8 +405,8 @@ void write_column_format_header(std::ostream & o){
 		"Annotation Finish Time, Annotation Source Details, Censored, Loglikelihood, Disambiguation Type, Stationary Worm Group ID,"
 		 "Stationary Worm Path Id, Stationary Worm Detection Set ID,Annotation Start Time,Flag Id,Flag Label,"
 		 "Complete Trace,Number of Worms Annotated By machine,Number of Worms Annotated By Hand,"
-		 "Multiple worm cluster censoring strategy,Missing Worm Return Strategy,Extra Animal ID at position,Event Observation Type,(Room For Expansion),"
-		 "(RFE),(RFE),(RFE),(RFE),(RFE),(RFE),(RFE),(RFE)\n";
+		 "Multiple worm cluster censoring strategy,Missing Worm Return Strategy,Extra Animal ID at position,Event Observation Type,Longest gap without observation,"
+		 "(Room For Expansion),(RFE),(RFE),(RFE),(RFE),(RFE),(RFE),(RFE)\n";
 }
 	
 void ns_death_time_annotation_set::write_split_file_column_format(std::ostream & censored_and_transition_file, std::ostream & state_file)const{
@@ -634,6 +637,7 @@ void ns_death_time_annotation_set::read_column_format(const  ns_annotation_type_
 				if (!newest_old_record){
 					getline(i,val,',');
 					if (i.fail()) throw ns_ex("ns_death_time_annotation_set::read_column_format()::Unexpected EOF");
+					e.longest_gap_without_observation = atol(val.c_str());
 					getline(i,val,',');
 					if (i.fail()) throw ns_ex("ns_death_time_annotation_set::read_column_format()::Unexpected EOF");
 					getline(i,val,',');
@@ -1202,34 +1206,35 @@ public:
 		}
 		for (unsigned int i = 0; i < 3; i++){
 			if (timepoint[i] == 0) break;
-				ns_survival_timepoint_event_count ev;
-				ev.events.push_back(e);
-				ev.number_of_worms_in_machine_worm_cluster = e.number_of_worms_at_location_marked_by_machine;
-				if (use_by_hand_data){
-					int count(e.number_of_worms_at_location_marked_by_hand);
-					if (e.number_of_worms_at_location_marked_by_hand==0)
-						count= 1;
-					//ev.number_of_clusters_identified_by_machine = ev.number_of_clusters_identified_by_hand = 1;
-					ev.number_of_worms_in_machine_worm_cluster =
-						ev.number_of_worms_in_by_hand_worm_annotation = count;
-				}
-				else{
-					//ev.number_of_clusters_identified_by_machine =1;
+
+			ns_survival_timepoint_event_count ev;
+			ev.events.push_back(e);
+			ev.number_of_worms_in_machine_worm_cluster = e.number_of_worms_at_location_marked_by_machine;
+			if (use_by_hand_data){
+				int count(e.number_of_worms_at_location_marked_by_hand);
+				if (e.number_of_worms_at_location_marked_by_hand==0)
+					count= 1;
+				//ev.number_of_clusters_identified_by_machine = ev.number_of_clusters_identified_by_hand = 1;
+				ev.number_of_worms_in_machine_worm_cluster =
+					ev.number_of_worms_in_by_hand_worm_annotation = count;
+			}
+			else{
+				//ev.number_of_clusters_identified_by_machine =1;
 					
-					ev.number_of_worms_in_machine_worm_cluster = e.number_of_worms_at_location_marked_by_machine;
-					ev.number_of_worms_in_by_hand_worm_annotation = e.number_of_worms_at_location_marked_by_hand;
-				//	if (e.number_of_worms_at_location_marked_by_hand > 0)
-				//		ev.number_of_clusters_identified_by_hand = 1;
-				//	else ev.number_of_clusters_identified_by_hand = 0;
-				}
+				ev.number_of_worms_in_machine_worm_cluster = e.number_of_worms_at_location_marked_by_machine;
+				ev.number_of_worms_in_by_hand_worm_annotation = e.number_of_worms_at_location_marked_by_hand;
+			//	if (e.number_of_worms_at_location_marked_by_hand > 0)
+			//		ev.number_of_clusters_identified_by_hand = 1;
+			//	else ev.number_of_clusters_identified_by_hand = 0;
+			}
 			//	if (e.multiworm_censoring_strategy != ns_death_time_annotation::ns_none)
 			//		cerr << "SDFD";
-				ev.from_multiple_worm_disambiguation= e.disambiguation_type==ns_death_time_annotation::ns_part_of_a_mutliple_worm_disambiguation_cluster;
-		//		ev.number_of_worms_in_by_hand_worm_annotation = e.number_of_worms_at_location_marked_by_hand;
-				ev.properties = e;
-				if (e.flag.event_should_be_excluded())
-					ev.properties.excluded = ns_death_time_annotation::ns_by_hand_excluded;
-				timepoint[i]->add(ev);
+			ev.from_multiple_worm_disambiguation= e.disambiguation_type==ns_death_time_annotation::ns_part_of_a_mutliple_worm_disambiguation_cluster;
+			//		ev.number_of_worms_in_by_hand_worm_annotation = e.number_of_worms_at_location_marked_by_hand;
+			ev.properties = e;
+			if (e.flag.event_should_be_excluded())
+				ev.properties.excluded = ns_death_time_annotation::ns_by_hand_excluded;
+			timepoint[i]->add(ev);
 		}
 	}
 	void populate_survival_data(ns_survival_data & data){
@@ -1237,14 +1242,7 @@ public:
 		data.timepoints.resize(timepoints.size());
 		unsigned long i(0);
 		for (ns_aggregator_timepoint_list::iterator p = timepoints.begin(); p != timepoints.end(); ++p){
-		/*	for (unsigned int i = 0; i < p->second.deaths.events.size(); i++){
-				for (unsigned int j = 0; j < p->second.deaths.events[i].events.size(); j++)
-					if (p->second.deaths.events[i].events[j].event_observation_type == ns_death_time_annotation::ns_induced_multiple_worm_death)
-						cerr << "RA";
-			}*/
 			data.timepoints[i] = p->second;
-			//WWW
-			//cerr << data.timepoints[i].deaths.events.size() << " events in death time\n";
 			i++;
 		}
 	}
@@ -1793,10 +1791,11 @@ void ns_multiple_worm_cluster_death_annotation_handler::generate_correct_annotat
 						const unsigned long number_of_animals,
 						const ns_death_time_annotation & properties,
 						const ns_dying_animal_description_const & d, 
-						ns_death_time_annotation_set & set){
+						ns_death_time_annotation_set & set,
+						const ns_death_time_annotation_compiler_region::ns_death_times_to_use & death_times_to_use){
 
 	for (unsigned int i = 0; i < ns_death_time_annotation::ns_number_of_multiworm_censoring_strategies; i++)
-		generate_correct_annotations_for_multiple_worm_cluster((ns_death_time_annotation::ns_multiworm_censoring_strategy)i,number_of_animals,properties,d,set);
+		generate_correct_annotations_for_multiple_worm_cluster((ns_death_time_annotation::ns_multiworm_censoring_strategy)i,number_of_animals,properties,d,set,death_times_to_use);
 
 }
 std::string ns_death_time_annotation::event_observation_label(const ns_event_observation_type & e){
@@ -1813,17 +1812,43 @@ void ns_multiple_worm_cluster_death_annotation_handler::generate_correct_annotat
 						const unsigned long number_of_animals,
 						const ns_death_time_annotation & properties,
 						const ns_dying_animal_description_const & d, 
-						ns_death_time_annotation_set & set){
+						ns_death_time_annotation_set & set,const ns_death_time_annotation_compiler_region::ns_death_times_to_use & death_times_to_use){
 	unsigned long start_annotation_index(set.size());
 	if (d.machine.death_annotation == 0)
 		throw ns_ex("Attempting to handle multiple worm cluster with no deaths!");
-	ns_death_time_annotation death(*d.machine.death_annotation);
+
+	ns_dying_animal_description_const::ns_group_type event_data;
+	if (death_times_to_use == ns_death_time_annotation_compiler_region::ns_machine_only)
+		event_data = d.machine;
+	if (death_times_to_use == ns_death_time_annotation_compiler_region::ns_by_hand_only){
+		if (d.by_hand.death_annotation == 0)
+			return;
+	}
+	if (death_times_to_use == ns_death_time_annotation_compiler_region::ns_by_hand_only ||
+		death_times_to_use == ns_death_time_annotation_compiler_region::ns_machine_if_not_by_hand){
+		if (d.by_hand.death_annotation == 0)
+			event_data.death_annotation = d.machine.death_annotation;
+		else
+			event_data.death_annotation = d.by_hand.death_annotation;
+		
+		if (d.by_hand.last_fast_movement_annotation == 0)
+			event_data.last_fast_movement_annotation = d.machine.last_fast_movement_annotation;
+		else
+			event_data.last_fast_movement_annotation = d.by_hand.last_fast_movement_annotation;
+		
+		if (d.by_hand.last_slow_movement_annotation == 0)
+			event_data.last_slow_movement_annotation = d.machine.last_slow_movement_annotation;
+		else
+			event_data.last_slow_movement_annotation = d.by_hand.last_slow_movement_annotation;
+	}
+	
+	ns_death_time_annotation death(*event_data.death_annotation);
 
 	//we use this as debugging info in output file
-	if (d.machine.last_fast_movement_annotation != 0)
+	if (event_data.last_fast_movement_annotation != 0)
 		death.volatile_duration_of_time_not_fast_moving = 	
 							death.time.best_estimate_event_time_for_possible_partially_unbounded_interval() - 
-							d.machine.last_fast_movement_annotation->time.best_estimate_event_time_for_possible_partially_unbounded_interval();
+							event_data.last_fast_movement_annotation->time.best_estimate_event_time_for_possible_partially_unbounded_interval();
 
 	properties.transfer_sticky_properties(death);
 	switch(censoring_strategy){
@@ -1848,7 +1873,7 @@ void ns_multiple_worm_cluster_death_annotation_handler::generate_correct_annotat
 		case ns_death_time_annotation::ns_interval_censor_multiple_worm_clusters:{
 			if (number_of_animals < 2)
 				throw ns_ex("Weird!");
-			if (d.machine.last_slow_movement_annotation == 0){
+			if (event_data.last_slow_movement_annotation == 0){
 				cerr << "Found an unusual situation where a multiple worm cluster has no slow down from fast moving time annotationed (perhaps because it existed at the start of observation?)\n";
 				death.number_of_worms_at_location_marked_by_machine = 
 				death.number_of_worms_at_location_marked_by_hand = number_of_animals;
@@ -1865,7 +1890,7 @@ void ns_multiple_worm_cluster_death_annotation_handler::generate_correct_annotat
 				//we don't interval censor clumps with lots of worms, because we probably can't get the death time correct.
 				//so we right censor them.
 				if (number_of_animals > 3){
-					death.time = d.machine.last_slow_movement_annotation->time;
+					death.time = event_data.last_slow_movement_annotation->time;
 					death.excluded = ns_death_time_annotation::ns_multiworm_censored;
 					death.event_observation_type = ns_death_time_annotation::ns_standard;
 					death.number_of_worms_at_location_marked_by_machine = 
@@ -1883,8 +1908,8 @@ void ns_multiple_worm_cluster_death_annotation_handler::generate_correct_annotat
 					//dying
 					////if(death.time.period_start>2000000000)
 					//	cerr << "WHA";
-					death.time.period_start = d.machine.last_slow_movement_annotation->time.period_start;
-					death.time.period_start_was_not_observed = d.machine.last_slow_movement_annotation->time.period_start_was_not_observed;
+					death.time.period_start = event_data.last_slow_movement_annotation->time.period_start;
+					death.time.period_start_was_not_observed = event_data.last_slow_movement_annotation->time.period_start_was_not_observed;
 					death.number_of_worms_at_location_marked_by_machine = 
 						death.number_of_worms_at_location_marked_by_hand = number_of_animals-1;
 					death.event_observation_type = ns_death_time_annotation::ns_induced_multiple_worm_death;
@@ -1895,7 +1920,7 @@ void ns_multiple_worm_cluster_death_annotation_handler::generate_correct_annotat
 		break;
 			
 		case ns_death_time_annotation::ns_right_censor_multiple_worm_clusters:{
-			if (d.machine.last_slow_movement_annotation == 0){
+			if (event_data.last_slow_movement_annotation == 0){
 				cerr << "Found an unusual situation where a multiple worm cluster has no slow down from fast moving time annotationed (perhaps because it existed at the start of observation?)\n";
 				death.type = ns_moving_worm_disappearance;
 				death.number_of_worms_at_location_marked_by_machine = 
@@ -1904,7 +1929,7 @@ void ns_multiple_worm_cluster_death_annotation_handler::generate_correct_annotat
 				set.push_back(death);
 			}
 			else{
-				death = *d.machine.last_slow_movement_annotation;
+				death = *event_data.last_slow_movement_annotation;
 				properties.transfer_sticky_properties(death);
 				death.type = ns_moving_worm_disappearance;
 				death.number_of_worms_at_location_marked_by_machine = 
@@ -1923,7 +1948,7 @@ void ns_multiple_worm_cluster_death_annotation_handler::generate_correct_annotat
 		set[i].multiworm_censoring_strategy = censoring_strategy;
 }
 
-void ns_death_time_annotation_compiler_region::generate_survival_curve(ns_survival_data & curve, const bool use_by_hand_as_machine, const bool warn_on_movement_problems) const{
+void ns_death_time_annotation_compiler_region::generate_survival_curve(ns_survival_data & curve, const ns_death_times_to_use & death_times_to_use,const bool use_by_hand_worm_cluster_annotations, const bool warn_on_movement_problems) const{
 		unsigned long multiple_event_count(0);
 		//Note that the censoring code will generate censoring events for multi-worm clusters.
 		//The machine also records death events
@@ -1938,30 +1963,91 @@ void ns_death_time_annotation_compiler_region::generate_survival_curve(ns_surviv
 				death.machine.death_annotation->annotation_source == //and only for multiworm clusters that the machine recognized 
 				ns_death_time_annotation::ns_lifespan_machine		 //not by hand annotations that were not matched up to any machine annotation.
 				){
+				ns_death_times_to_use death_times_to_use_2(death_times_to_use);
+				
+			
+
+				//if we need to output both machine and by hand death times, we need to generate censoring data twice
+				if (death_times_to_use == ns_machine_and_by_hand){
+						ns_death_time_annotation_set set;
+						ns_multiple_worm_cluster_death_annotation_handler::generate_correct_annotations_for_multiple_worm_cluster(
+						q->properties.number_of_worms(),q->properties,death,set,ns_machine_only);
+					for (unsigned int i = 0; i < set.size(); i++){
+						set[i].volatile_matches_machine_detected_death = true;
+						aggregator.add(set[i],use_by_hand_worm_cluster_annotations);
+					}
+					death_times_to_use_2 = ns_by_hand_only;
+				}
+				
 				ns_death_time_annotation_set set;
 				ns_multiple_worm_cluster_death_annotation_handler::generate_correct_annotations_for_multiple_worm_cluster(
-					q->properties.number_of_worms(),q->properties,death,set);
-				for (unsigned int i = 0; i < set.size(); i++)
-					aggregator.add(set[i],use_by_hand_as_machine);
+					q->properties.number_of_worms(),q->properties,death,set,death_times_to_use_2);
+				for (unsigned int i = 0; i < set.size(); i++){
+					set[i].volatile_matches_machine_detected_death = true;
+					aggregator.add(set[i],use_by_hand_worm_cluster_annotations);
+				}
 			}
 			else{
-				//add fast movement cessation, slow movement cessation, and death events
-				const ns_death_time_annotation *a[3] = {death.machine.death_annotation,
-												 death.machine.last_slow_movement_annotation,
-												 death.machine.last_fast_movement_annotation};
+			
+				//by_hand == 0: add machine annotations
+				//by_hand == 1: add by_hand annotations
+				for (int by_hand = 0; by_hand < 2; by_hand++){
 
-				for (unsigned int i = 0; i < 3; i++){
-					if (a[i]!=0){
-						ns_death_time_annotation b(*a[i]);
-						q->properties.transfer_sticky_properties(b);
+					//add fast movement cessation, slow movement cessation, and death events
+					const ns_death_time_annotation *a[3] = {0,0,0};
+
+					bool matches_machine_detected_death(death.machine.death_annotation != 0);
+
+					//add a machine annotations if requested
+					if (!by_hand && (death_times_to_use == ns_machine_only|| death_times_to_use == ns_machine_and_by_hand)){
+						a[0] = death.machine.death_annotation;
+						a[1] = death.machine.last_slow_movement_annotation;
+						a[2] = death.machine.last_fast_movement_annotation;
+					}
+					//add a by hand annotation, if requested
+					else if (by_hand && (death_times_to_use == ns_by_hand_only || death_times_to_use == ns_machine_and_by_hand)){
+						a[0] = death.by_hand.death_annotation;
+						a[1] = death.by_hand.last_slow_movement_annotation;
+						a[2] = death.by_hand.last_fast_movement_annotation;
+					}
+					//add a by hand annotation, and if one doesn't exist, add a machine annotation
+					else if (!by_hand && (death_times_to_use == ns_machine_if_not_by_hand)){
+						if (death.by_hand.death_annotation != 0){
+							a[0] = death.by_hand.death_annotation;
+							a[1] = death.by_hand.last_slow_movement_annotation;
+							a[2] = death.by_hand.last_fast_movement_annotation;
+						}
+						else{
+							a[0] = death.machine.death_annotation;
+							a[1] = death.machine.last_slow_movement_annotation;
+							a[2] = death.machine.last_fast_movement_annotation;
+						}
+					}
+					else continue;
+
+					for (unsigned int i = 0; i < 3; i++){
+						if (a[i]!=0){
+							ns_death_time_annotation b(*a[i]);
+							q->properties.transfer_sticky_properties(b);
 						
-						//we use this as debugging info in output file
-						if (a[2] != 0 && a[0] != 0)
-							b.volatile_duration_of_time_not_fast_moving = 
-							a[0]->time.best_estimate_event_time_for_possible_partially_unbounded_interval() - 
-							a[2]->time.best_estimate_event_time_for_possible_partially_unbounded_interval();
+							//we use this as debugging info in output file
+							if (a[2] != 0 && a[0] != 0)
+								b.volatile_duration_of_time_not_fast_moving = 
+								a[0]->time.best_estimate_event_time_for_possible_partially_unbounded_interval() - 
+								a[2]->time.best_estimate_event_time_for_possible_partially_unbounded_interval();
 
-						aggregator.add(b,use_by_hand_as_machine);
+							//regions can be re-analyzed. In this case,
+							//some locations can dissapear (as they no longer exist in the new analysis)
+							//hand anotations remain for these now non-existant locations.
+							//we do not want to discard these old annotations completely in case they become useful later
+							//but we do want to be able to identify them.
+							//therefore, we need to mark locations currently identified by the machine as such.
+							b.volatile_matches_machine_detected_death = matches_machine_detected_death;
+
+							aggregator.add(b,use_by_hand_worm_cluster_annotations);
+
+							
+						}
 					}
 				}
 			}
@@ -1969,7 +2055,9 @@ void ns_death_time_annotation_compiler_region::generate_survival_curve(ns_surviv
 		for (unsigned int i = 0; i < non_location_events.size(); i++){
 			//www
 			//std::cerr << "Adding censoring event\n";
-			aggregator.add(non_location_events[i],use_by_hand_as_machine);
+			ns_death_time_annotation b(non_location_events[i]);
+			b.volatile_matches_machine_detected_death = true;
+			aggregator.add(b,use_by_hand_worm_cluster_annotations);
 		}
 			
 		aggregator.populate_survival_data(curve);
@@ -1978,12 +2066,12 @@ void ns_death_time_annotation_compiler_region::generate_survival_curve(ns_surviv
 		}
 			
 }
-void ns_death_time_annotation_compiler::generate_survival_curve_set(ns_lifespan_experiment_set & survival_curves, const bool use_by_hand_as_machine,const bool warn_on_movement_problems) const{
+void ns_death_time_annotation_compiler::generate_survival_curve_set(ns_lifespan_experiment_set & survival_curves, const ns_death_time_annotation_compiler_region::ns_death_times_to_use & death_times_to_use,const bool use_by_hand_worm_cluster_annotations,const bool warn_on_movement_problems) const{
 	survival_curves.curves.reserve(regions.size());
 	for(ns_region_list::const_iterator p = regions.begin(); p != regions.end(); ++p){
 		const std::vector<ns_survival_data>::size_type s(survival_curves.curves.size());
 		survival_curves.curves.resize(s+1);
-		p->second.generate_survival_curve(survival_curves.curves[s],use_by_hand_as_machine,warn_on_movement_problems);
+		p->second.generate_survival_curve(survival_curves.curves[s],death_times_to_use,use_by_hand_worm_cluster_annotations,warn_on_movement_problems);
 		if (survival_curves.curves[s].timepoints.size() == 0)//don't include empty curves
 			survival_curves.curves.resize(s);
 	}

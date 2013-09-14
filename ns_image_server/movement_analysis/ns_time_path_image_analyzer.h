@@ -460,10 +460,22 @@ struct ns_movement_image_collage_info{
 };
 
 struct ns_time_series_denoising_parameters{
-	ns_time_series_denoising_parameters():subtract_out_median_movement_score_from_time_series(false){}
-	bool subtract_out_median_movement_score_from_time_series;
+	ns_time_series_denoising_parameters():movement_score_normalization(ns_none){}
+	typedef enum{ns_none=0,ns_subtract_out_plate_median=1,ns_subtract_out_median=2,ns_subtract_out_median_of_end=3,ns_subtract_out_device_median=4} ns_movement_score_normalization_type;
+	ns_movement_score_normalization_type movement_score_normalization;
 	static ns_time_series_denoising_parameters load_from_db(const unsigned long region_id, ns_sql & sql);
+	std::string to_string() const{ 
+		switch(movement_score_normalization){
+			case ns_none: return "None";
+			case ns_subtract_out_median: return "Sub Med";
+			case ns_subtract_out_median_of_end: return "Sub End";
+			case ns_subtract_out_plate_median: return "Plate Med";
+			case ns_subtract_out_device_median: return "Device Med";
+			default: throw ns_ex("Unknown normalization technique:") << (unsigned long)movement_score_normalization;
+		}
+	}
 };
+
 struct ns_alignment_state{
 	ns_image_whole<double> consensus;
 	ns_image_whole<ns_16_bit> consensus_count;
@@ -566,7 +578,7 @@ public:
 	void write_detailed_movement_quantification_analysis_header(std::ostream & o);
 	static void write_summary_movement_quantification_analysis_header(std::ostream & o);
 	static void write_analysis_optimization_data_header(std::ostream & o);
-	void write_analysis_optimization_data(const ns_stationary_path_id & id,const std::vector<double> & thresholds, const std::vector<double> & hold_times, const ns_region_metadata & m,std::ostream & o) const;
+	void write_analysis_optimization_data(const ns_stationary_path_id & id,const std::vector<double> & thresholds, const std::vector<double> & hold_times, const ns_region_metadata & m,const ns_time_series_denoising_parameters & denoising_parameters,std::ostream & o) const;
 	void calculate_analysis_optimization_data(const std::vector<double> & thresholds, const std::vector<double> & hold_times, std::vector< std::vector < unsigned long > > & death_times) const;
 
 	ns_vector_2i path_region_position,
@@ -820,9 +832,11 @@ private:
 
 	const ns_time_path_solution * solution;
 	void generate_movement_description_series();
+	void normalize_movement_scores_over_all_paths(const ns_time_series_denoising_parameters &);
 	ns_worm_movement_description_series description_series;
 
-	
+	ns_time_series_denoising_parameters denoising_parameters_used;
+
 	ns_death_time_annotation_set extra_non_path_events;
 	
 	ns_image_standard image_loading_temp,image_loading_temp2;

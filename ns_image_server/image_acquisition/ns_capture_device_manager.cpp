@@ -664,7 +664,7 @@ ns_thread_return_type ns_image_server_device_manager::run_capture_on_device_inte
 }
 
 std::string ns_image_server_device_manager::autoscan_parameters(ns_sql & sql){
-	string default_autoscan_parameters("--mode=Gray --format=tiff --source=\"Transparency Unit\" --resolution=3200 --depth=16 "
+	string default_autoscan_parameters("--mode=Gray --format=tiff --source=\"TPU8X10\" --resolution=3200 --depth=16 "
 		   "-l .2in -t .2in -x 2in -y 8.2in");
 	try{
 		return image_server.get_cluster_constant_value("autoscan_parameters",default_autoscan_parameters,&sql);

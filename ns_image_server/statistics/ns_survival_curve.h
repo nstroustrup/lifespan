@@ -150,7 +150,6 @@ private:
 
 struct ns_survival_timepoint_event{
 	ns_survival_timepoint_event(){}
-
 	std::vector<ns_survival_timepoint_event_count> events;
 	void add(const ns_survival_timepoint_event_count & );
 	void add(const ns_survival_timepoint_event & e);
@@ -559,7 +558,7 @@ public:
 
 	void clear(){curves.resize(0);common_time_.clear();}
 
-	void include_only_machine_events();
+	void include_only_events_detected_by_machine();
 	void generate_survival_statistics();
 	
 	void generate_aggregate_for_strain(const ns_region_metadata & m, ns_lifespan_experiment_set & r) const;

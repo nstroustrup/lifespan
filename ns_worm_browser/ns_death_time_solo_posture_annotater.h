@@ -685,6 +685,8 @@ public:
 					break;
 		
 			timepoints.resize(number_of_valid_elements);
+			if (number_of_valid_elements == 0)
+				throw ns_ex("This path has no valid elements!");
 			for (unsigned int i = 0; i < timepoints.size(); i++){
 				timepoints[i].path_timepoint_element = &current_worm->element(i);
 				timepoints[i].element_id = i;

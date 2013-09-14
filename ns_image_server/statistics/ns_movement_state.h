@@ -24,13 +24,13 @@ public:
 };
 
 
-typedef enum{ns_no_movement_event,					//nothing happens at the specified time
-			ns_translation_cessation,	//the animal's center of mass stops moving and afterwards only posture changes
-			ns_movement_cessation,		//the animal stops moving altogether and appears dead.
-			ns_fast_movement_cessation,	//the animal comes to rest within a small bounding box and moves within it.
-			ns_fast_moving_worm_observed, //a fast moving animal was seen at the specified time point
-											//used for marking animals still moving at the end of a time period,
-			ns_movement_censored_worm_observed,		//either static noise or non-stationary_object
+typedef enum{ns_no_movement_event,				//nothing happens at the specified time
+			ns_translation_cessation,			//the animal's center of mass stops moving and afterwards only posture changes
+			ns_movement_cessation,				//the animal stops moving altogether and appears dead.
+			ns_fast_movement_cessation,			//the animal comes to rest within a small bounding box and moves within it.
+			ns_fast_moving_worm_observed,		//a fast moving animal was seen at the specified time point
+												//used for marking animals still moving at the end of a time period,
+			ns_movement_censored_worm_observed,	//either static noise or non-stationary_object
 			
 			ns_slow_moving_worm_observed,
 			ns_posture_changing_worm_observed,

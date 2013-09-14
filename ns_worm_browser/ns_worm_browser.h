@@ -409,7 +409,7 @@ public:
 				samples[i].regions[j].censored = res2[j][4]!="0";
 				ns_region_metadata m;
 				m.load_from_db(samples[i].regions[j].region_id,"",sql);
-				std::string d(m.plate_type_summary());
+				std::string d(m.device_regression_match_description());
 				if (experiment_strains.find(d) == experiment_strains.end())
 					experiment_strains[d] = m;
 				samples[i].regions[j].region_metadata = &experiment_strains[d];
@@ -605,7 +605,7 @@ public:
 	void output_region_statistics(const unsigned long experiment_id,const unsigned long experiment_group_id);
 	void create_feature_time_series(const std::string & directory);
 	
-	typedef enum{ns_lifespan,ns_thermotolerance} ns_parameter_set_range;
+	typedef enum{ns_lifespan,ns_thermotolerance,ns_quiecent} ns_parameter_set_range;
 
 	void output_movement_analysis_optimization_data(const ns_parameter_set_range & range);
 	typedef enum{ns_quantification_summary,ns_quantification_detailed,ns_quantification_detailed_with_by_hand, ns_build_worm_markov_posture_model_from_by_hand_annotations,ns_quantification_abbreviated_detailed} ns_movement_quantification_type;

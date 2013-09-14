@@ -800,7 +800,7 @@ void ns_lifespan_experiment_set::out_detailed_JMP_event_data(const ns_time_handi
 			if (a.time.period_start_was_not_observed && time_handling_behavior == ns_lifespan_experiment_set::ns_output_single_event_times){
 				a.time.period_start = a.time.period_end;
 				a.time.period_start_was_not_observed = false;
-				cerr << "ns_lifespan_experiment_set::out_detailed_JMP_event_data()::Placing an that started before first observation at the first event time.\n";
+			//	cerr << "ns_lifespan_experiment_set::out_detailed_JMP_event_data()::Placing an that started before first observation at the first event time.\n";
 				//continue;
 			}
 			if (a.time.period_end_was_not_observed && time_handling_behavior == ns_lifespan_experiment_set::ns_output_single_event_times){
@@ -808,10 +808,15 @@ void ns_lifespan_experiment_set::out_detailed_JMP_event_data(const ns_time_handi
 				continue;
 			}
 		}
-	//	double event_time(a.time.best_estimate_event_time_within_interval() - metadata.time_at_which_animals_had_zero_age);
+		if(a.time.period_end <  metadata.time_at_which_animals_had_zero_age){
+			cerr << "An event was identified as occuring before the specified time at which animals had age zero.  It has been ommitted\n";
+			continue;
+		}
+			//	double event_time(a.time.best_estimate_event_time_within_interval() - metadata.time_at_which_animals_had_zero_age);
 		metadata.out_JMP_plate_identity_data(o);
 			o << "," << prop.events->number_of_worms_in_annotation(i) << ",";
 
+	
 		ns_output_JMP_time_interval(time_handling_behavior,a.time - metadata.time_at_which_animals_had_zero_age,
 							time_scaling_factor,o);
 		o << ",";
@@ -902,7 +907,8 @@ void ns_lifespan_experiment_set::out_simple_JMP_header(const ns_time_handing_beh
 	if (time_handling_behavior == ns_output_single_event_times){
 		o << 
 		 "Age at Death (" << time_units << ") Raw,"
-		 "Duration Not Fast Moving (" << time_units << "),";
+		 "Duration Not Fast Moving (" << time_units << "),"
+		 "Longest Gap in Measurement (" << time_units << "),";
 	//	 "Age at Death (" << time_units << ") Additive Regression Model Residuals,"
 	//	 "Age at Death (" << time_units << ") Multiplicative Regression Model Residuals,";
 	}
@@ -910,10 +916,11 @@ void ns_lifespan_experiment_set::out_simple_JMP_header(const ns_time_handing_beh
 		o <<
 		 "Age at Death (" << time_units << ") Raw Start,"
 		 "Age at Death (" << time_units << ") Raw End,"
-		 "Duration Not Fast Moving (" << time_units << "),";
+		 "Duration Not Fast Moving (" << time_units << "),"
+		 "Longest Gap in Measurement (" << time_units << "),";
 	}
 		// "Age at Death (" << time_units << ") Multiplicative + Additive offset Regression Model Residuals,"
-	o << "Censored,Censored Reason,Event Observation Type,Technique,Analysis Type";
+	o << "Censored,Censored Reason,Event Observation Type,Annotation Source,Technique,Analysis Type";
 	if (multiple_events)
 		o << ",Event Type";
 	o << terminator;
@@ -971,6 +978,7 @@ void ns_lifespan_experiment_set::out_simple_JMP_event_data(const ns_time_handing
 							time_scaling_factor,o);
 		o << ",";
 		o << a.volatile_duration_of_time_not_fast_moving/time_scaling_factor << ",";
+		o << a.longest_gap_without_observation/time_scaling_factor << ",";
 		//event_time/time_scaling_factor << ",";
 	
 	/*	if (output_raw_data_as_regression){
@@ -1035,6 +1043,7 @@ void ns_lifespan_experiment_set::out_simple_JMP_event_data(const ns_time_handing
 			o << properties.censor_description();
 		o << "," 
 			<< ns_death_time_annotation::event_observation_label(a.event_observation_type) << ","
+			<< a.source_type_to_string(a.annotation_source) << ","
 			<< metadata.technique << ","
 			<< metadata.analysis_type;
 		if (output_mulitple_events)
@@ -1225,11 +1234,6 @@ void ns_lifespan_experiment_set::output_JMP_file(const ns_lifespan_experiment_se
 							p.flag = ns_death_time_annotation_flag::none();
 							p.control_group = 0;
 							if (!p.events->empty()){
-						/*		for (unsigned int l = 0; l < te.events[k].events.size(); l++){
-									if (te.events[k].events[l].event_observation_type == ns_death_time_annotation::ns_induced_multiple_worm_death){
-										cerr << "HA";
-									}
-								}*/
 								const bool output_control_groups(false);
 								out_simple_JMP_event_data(time_handling_behavior,output_control_groups?ns_include_control_groups:ns_do_not_include_control_groups,
 															ns_death_time_annotation::default_censoring_strategy(),
@@ -1492,7 +1496,7 @@ void ns_lifespan_experiment_set::load_genotypes(ns_sql & sql){
 		curves[i].metadata.genotype = fetcher.genotype_from_strain(curves[i].metadata.strain,&sql);
 	
 }
-void ns_lifespan_experiment_set::include_only_machine_events(){
+void ns_lifespan_experiment_set::include_only_events_detected_by_machine(){
 	for (unsigned int i = 0; i < curves.size(); ++i){
 		for (unsigned int j = 0; j < curves[i].timepoints.size(); j++){
 			curves[i].timepoints[j].deaths.remove_purely_non_machine_events();
@@ -1623,11 +1627,14 @@ ns_survival_timepoint operator+(const ns_survival_timepoint & a, const ns_surviv
 	return ret;
 }*/
 
+//events that occured at a position detected by the machine have 
+//a special annotation added during survival curve assembly.
+//we check for that annotation
 void ns_survival_timepoint_event::remove_purely_non_machine_events(){
 	for (std::vector<ns_survival_timepoint_event_count>::iterator p = events.begin(); p != events.end();){
 		bool found_machine(false);
 		for (unsigned int i = 0; i < p->events.size(); i++){
-			if (p->events[i].annotation_source == ns_death_time_annotation::ns_lifespan_machine){
+			if (p->events[i].volatile_matches_machine_detected_death){
 				found_machine = true;
 				break;
 			}

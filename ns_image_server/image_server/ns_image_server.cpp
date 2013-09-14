@@ -33,7 +33,7 @@ ns_image_server::ns_image_server():event_log_open(false),exit_requested(false),u
 
 	ns_socket::global_init();
 	ns_worm_detection_constants::init();
-	_software_version_compile = 648;
+	_software_version_compile = 656;
 	image_storage.cache.set_memory_allocation_limit(maximum_image_cache_memory_size());
 
 }
@@ -1186,7 +1186,7 @@ void ns_image_server::load_constants(const ns_image_server::ns_image_server_exec
 	constants.add_field("compile_videos","no","Should the server process videos? (yes / no)");
 	constants.add_field("video_compiler_filename","./x264.exe","Path to the x264 transcoder program required to generate videos.  Only needed on image processing servers.  If you don't have this, set compile_videos to no");
 	constants.add_field("video_ppt_compiler_filename","./ffmpeg.exe","Path to the ffmpeg transcoder required to generate videos. Only needed on image processing servers.  If you don't have this, set compile_videos to no");
-	constants.add_field("halt_on_new_software_release","yes", "Should the server shut down if a new version of the software is detected running on the cluster? (yes / no)");	
+	constants.add_field("halt_on_new_software_release","no", "Should the server shut down if a new version of the software is detected running on the cluster? (yes / no)");	
 	constants.add_field("latest_release_path","image_server_software/image_server_win32.exe", "Image acquisition servers can be set to automatically update if new versions of the software is identified as running on the cluster.  This is the path name where the new software can be found.");
 	constants.add_field("run_autonomously","yes","should the server automatically poll the MySQL database for new scans/jobs (yes) or should it only do this when a command is received from an external source (no).  Most configurations set this to yes.");
 	

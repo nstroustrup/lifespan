@@ -34,6 +34,7 @@ void ns_worm_browser_output_debug(const unsigned long line_number,const std::str
 	debug_output.flush();
 }
 
+ns_lock menu_bar_processing_lock("ns_menu_bar_lock");
 ns_worm_learner worm_learner;
 
 void ns_set_menu_bar_activity(bool a);
@@ -848,9 +849,13 @@ class ns_worm_terminal_main_menu_organizer : public ns_menu_organizer{
 	
 	static void generate_movement_image_analysis_optimization_data(const std::string & value){
 	
-		if (value.find("Lifespan") != value.npos)
+		if (value.find("Quiecent") != value.npos)
+			worm_learner.output_movement_analysis_optimization_data(ns_worm_learner::ns_quiecent);
+		else if (value.find("Lifespan") != value.npos)
 			worm_learner.output_movement_analysis_optimization_data(ns_worm_learner::ns_lifespan);
-		else worm_learner.output_movement_analysis_optimization_data(ns_worm_learner::ns_thermotolerance);
+		else 
+			worm_learner.output_movement_analysis_optimization_data(ns_worm_learner::ns_thermotolerance);
+		
 	}
 
 	static void generate_training_set_from_by_hand_annotations(const std::string & value){worm_learner.generate_training_set_from_by_hand_annotation();}
@@ -1077,11 +1082,13 @@ public:
 		add(ns_menu_item_spec(generate_region_stats_for_all_regions_in_group,"Data Files/Other Statistics/_Generate Image Statistics for all Regions in current Experiment Group"));
 	//	add(ns_menu_item_spec(generate_detailed_animal_data_file,"Data/Statistics/_Generate Detailed Animal Statistics for current experiment"));
 		
-		add(ns_menu_item_spec(generate_survival_curve_from_hand_annotations,"&Calibration/Generate Survival Curves from by hand annotations"));
-		add(ns_menu_item_spec(compare_machine_and_by_hand_annotations,"Calibration/Compare by-hand annotations to Machine"));
+		//add(ns_menu_item_spec(generate_survival_curve_from_hand_annotations,"&Calibration/Generate Survival Curves from by hand annotations"));
+		add(ns_menu_item_spec(compare_machine_and_by_hand_annotations,"&Calibration/Compare by-hand annotations to Machine"));
 		ns_menu_item_spec st4(generate_movement_image_analysis_optimization_data,"Calibration/Generate Threshold Posture Model Parameter Optimization File from By Hand Annotations");
-		st4.options.push_back(ns_menu_item_options("Using Lifespan Parameter Range"));
+		
 		st4.options.push_back(ns_menu_item_options("Using Thermotolerance Parameter Range"));
+		st4.options.push_back(ns_menu_item_options("Using Lifespan Parameter Range"));
+		st4.options.push_back(ns_menu_item_options("Using Quiecent Lifespan Parameter Range"));
 		add(st4);
 		
 		add(ns_menu_item_spec(generate_worm_markov_posture_model_from_by_hand_annotations,"Calibration/Build Hidden Markov Posture Model From By Hand Annotations"));
@@ -1243,7 +1250,7 @@ public:
 		bar.activate();
 		string title("");
 		if (worm_learner.data_selector.strain_selected())
-			title = worm_learner.data_selector.current_strain().plate_type_summary();
+			title = worm_learner.data_selector.current_strain().device_regression_match_description();
 		else title = "All Strains";
 		ns_menu_item_spec spec(pick_strain,title);
 		string sep;
@@ -2227,8 +2234,13 @@ int main() {
 		
 		//ns_update_sample_info(sql());
 		ns_worm_browser_output_debug(__LINE__,__FILE__,"Checking for new release");
-		if (image_server.new_software_release_available())
-			throw ns_ex("This version of the Worm Browser is outdated.  Please update it.");
+		if (image_server.new_software_release_available()){
+			MessageBox(
+				0,
+				"This version of the Worm Browser is outdated.  Please update it.",
+				"Worm Browser",
+				MB_TASKMODAL | MB_ICONEXCLAMATION| MB_DEFBUTTON1 | MB_TOPMOST);
+		}
 		
 		ns_worm_browser_output_debug(__LINE__,__FILE__,"Loading detection models");
 		image_server.load_all_worm_detection_models(worm_learner.model_specifications);
@@ -2457,15 +2469,20 @@ void ns_set_menu_bar_activity_internal(bool activate){
 	}
 	Fl::unlock();
 }
-
 void ns_handle_menu_bar_activity_request(){
-	if (set_menu_bar_request == ns_none)
+	menu_bar_processing_lock.wait_to_acquire(__FILE__,__LINE__);
+	if (set_menu_bar_request == ns_none){
+		menu_bar_processing_lock.release();
 		return;
+	}
 	ns_set_menu_bar_activity_internal(set_menu_bar_request==ns_activate);
 	set_menu_bar_request = ns_none;
+	menu_bar_processing_lock.release();
 }
 void ns_set_menu_bar_activity(bool activate){
+	menu_bar_processing_lock.wait_to_acquire(__FILE__,__LINE__);
 	set_menu_bar_request = activate?ns_activate:ns_deactivate;
+	menu_bar_processing_lock.release();
 }
 
 void ask_if_schedule_should_be_submitted_to_db(bool & write_to_disk, bool & write_to_db){

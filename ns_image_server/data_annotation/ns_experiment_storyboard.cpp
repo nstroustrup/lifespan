@@ -607,6 +607,8 @@ bool ns_experiment_storyboard::load_events_from_annotation_compiler(const ns_loa
 			}
 		}
 		std::sort(death_times.begin(), death_times.end());
+		if (death_times.empty())
+			throw ns_ex("ns_experiment_storyboard::load_events_from_annotation_compiler()::No dead animals or potentially dead animals were detected");
 		time_of_last_death = death_times[(unsigned long)(death_times.size()*.9)];
 	}
 

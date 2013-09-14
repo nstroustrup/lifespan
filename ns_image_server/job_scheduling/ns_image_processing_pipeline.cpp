@@ -2368,7 +2368,7 @@ void ns_image_processing_pipeline::overlay_graph(const unsigned long region_id,n
 	if (lifespan_curve.cached_risk_timeseries_metadata.region_id != m.region_id){
 		const ns_death_time_annotation_compiler & compiler(lifespan_curve.get_region_data(ns_death_time_annotation_set::ns_all_annotations,region_id,sql));
 		ns_lifespan_experiment_set set;
-		compiler.generate_survival_curve_set(set,false,false);
+		compiler.generate_survival_curve_set(set,ns_death_time_annotation_compiler_region::ns_machine_if_not_by_hand,true,false);
 	//	set.generate_survival_statistics();
 		set.generage_aggregate_risk_timeseries(m,lifespan_curve.cached_plate_risk_timeseries,lifespan_curve.cached_risk_timeseries_time);
 		lifespan_curve.cached_risk_timeseries_metadata = m;

@@ -184,7 +184,7 @@ void ns_machine_analysis_data_loader::load_just_survival(ns_lifespan_experiment_
 		for (ns_death_time_annotation_compiler::ns_region_list::iterator p = compiler.regions.begin(); p != compiler.regions.end(); p++){
 			const unsigned long s(set.curves.size());
 			set.curves.resize(s+1);
-			p->second.generate_survival_curve(set.curves[s],false,false);
+			p->second.generate_survival_curve(set.curves[s],ns_death_time_annotation_compiler_region::ns_machine_if_not_by_hand,true,false);
 		}
 		samples[i].clear();
 	
@@ -280,6 +280,7 @@ ns_time_series_denoising_parameters ns_time_series_denoising_parameters::load_fr
 	if (res.size() == 0)
 		throw ns_ex("ns_time_series_denoising_parameters::load_from_db()::Could not find region ") << region_id << " in db";
 	ns_time_series_denoising_parameters p;
-	p.subtract_out_median_movement_score_from_time_series = res[0][0] == "1";
+	p.movement_score_normalization = (ns_time_series_denoising_parameters::ns_movement_score_normalization_type)atol(res[0][0].c_str());
+
 	return p;
 }

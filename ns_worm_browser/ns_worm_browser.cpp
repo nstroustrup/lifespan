@@ -770,11 +770,11 @@ void ns_worm_learner::generate_survival_curve_from_hand_annotations(){
 	//loader.load_region_annotations(ns_death_time_annotation_set::ns_censoring_and_movement_transitions,13899,sql());
 	loader.load_experiment_annotations(ns_death_time_annotation_set::ns_censoring_and_movement_transitions,data_selector.current_experiment_id(),sql());
 	ns_lifespan_experiment_set set;
-	loader.annotations.generate_survival_curve_set(set,true,false);
+	loader.annotations.generate_survival_curve_set(set,ns_death_time_annotation_compiler_region::ns_by_hand_only,false,false);
 
-	ns_device_temperature_normalization_data regression_data;
-	regression_data.produce_identity();
-	set.compute_device_normalization_regression(regression_data,ns_lifespan_experiment_set::ns_ignore_censoring_data,ns_lifespan_experiment_set::ns_exclude_tails);
+	//ns_device_temperature_normalization_data regression_data;
+	//regression_data.produce_identity();
+	//set.compute_device_normalization_regression(regression_data,ns_lifespan_experiment_set::ns_ignore_censoring_data,ns_lifespan_experiment_set::ns_exclude_tails);
 
 	ns_image_server_results_subject results_subject;
 	results_subject.experiment_id = data_selector.current_experiment_id();
@@ -982,9 +982,9 @@ struct ns_death_time_annotation_compiler_multiworm_simulation{
 									  means,
 									  maximums;
 	void generate_survival(ns_lifespan_experiment_set_multiworm_simulation & s){
-		minimums.generate_survival_curve_set(s.minimums,false,false);
-		maximums.generate_survival_curve_set(s.maximums,false,false);
-		means.generate_survival_curve_set(s.means,false,false);
+		minimums.generate_survival_curve_set(s.minimums,ns_death_time_annotation_compiler_region::ns_machine_if_not_by_hand,false,false);
+		maximums.generate_survival_curve_set(s.maximums,ns_death_time_annotation_compiler_region::ns_machine_if_not_by_hand,false,false);
+		means.generate_survival_curve_set(s.means,ns_death_time_annotation_compiler_region::ns_machine_if_not_by_hand,false,false);
 	}
 	void clear(){
 		maximums.clear();
@@ -1156,10 +1156,10 @@ void ns_worm_learner::simulate_multiple_worm_clumps(const bool use_waiting_time_
 							   threes,
 							   four_pluses;
 
-	single_worms.generate_survival_curve_set(singles,false,false);
-	two_worms.generate_survival_curve_set(twos,false,false);
-	three_worms.generate_survival_curve_set(threes,false,false);
-	four_plus_worms.generate_survival_curve_set(four_pluses,false,false);
+	single_worms.generate_survival_curve_set(singles,ns_death_time_annotation_compiler_region::ns_machine_if_not_by_hand,false,false);
+	two_worms.generate_survival_curve_set(twos,ns_death_time_annotation_compiler_region::ns_machine_if_not_by_hand,false,false);
+	three_worms.generate_survival_curve_set(threes,ns_death_time_annotation_compiler_region::ns_machine_if_not_by_hand,false,false);
+	four_plus_worms.generate_survival_curve_set(four_pluses,ns_death_time_annotation_compiler_region::ns_machine_if_not_by_hand,false,false);
 	for (unsigned int i = 0; i < singles.curves.size(); i++){
 		singles.curves[i].metadata.analysis_type = "1 Worm Clusters";
 		singles.curves[i].metadata.technique = "Measured";
@@ -1530,7 +1530,7 @@ void ns_worm_learner::generate_scanner_lifespan_statistics(bool use_by_hand_cens
 			ns_acquire_for_scope<ostream> out(results_file.output());
 			if (out.is_null())
 				throw ns_ex("Could not open file ") << results_file.output_filename() << " for output";
-			survival_curve_compiler.generate_survival_curve_set(set,false,false);
+			survival_curve_compiler.generate_survival_curve_set(set,ns_death_time_annotation_compiler_region::ns_machine_if_not_by_hand,false,false);
 
 			//cache for later
 //			set.output_xml_summary_file(out());
@@ -1556,40 +1556,52 @@ void ns_worm_learner::output_movement_analysis_optimization_data(const ns_parame
 	unsigned int experiment_id = data_selector.current_experiment_id();
 
 	//generate optimization training set 
-	const unsigned long near_zero(40);
-	const unsigned long thresh_num(30);
-	vector<double> thresholds(thresh_num+near_zero);
+	const unsigned long near_zero(30);
+	const unsigned long thresh_num(20);
+	vector<double> thresholds;
 	bool by_hand_range(false);
 	vector<double> hold_times;
 	if (range == ns_thermotolerance){
-		//log scale between .1 and .0001
-		//for (unsigned int i = 0; i < thresh_num; i++)
-		//	thresholds[i] = pow(10,-.1-(3.0*i/thresh_num));
-		//thresholds[thresh_num] = 0;
+		
 		for (unsigned int i = 0; i < near_zero; i++){
-			thresholds[i] = i*.005+.01;
+			thresholds.push_back(i*.005+.01);
 		}
 		for (unsigned int i = 0; i < thresh_num; i++){
-			thresholds[i+near_zero] = (0.5*i)/(double)thresh_num+near_zero*.005+.01;
+			thresholds.push_back((0.5*i)/(double)thresh_num+near_zero*.005+.01);
 		}
-		//for (unsigned int i = 0; i < thresh_num; i++)
-		//	thresholds[i+thresh_num] = -pow(10,-.3-(3.0*i/thresh_num));
-	
-		//for (unsigned int i = 0; i < thresh_num; i++)
-		//	thresholds[i] = 1*i;
-
+		
 		hold_times.resize(16);
 		hold_times[0] = 0;
-		//hold_times[1] = 60*15;
 		for (unsigned int i = 0; i < 15; i++)
 			hold_times[i+1] = i*45*60;
 	}
-	else{
+	else if (range ==  ns_quiecent){
+		for (unsigned int i = 0; i < thresh_num; i++){
+			thresholds.push_back((-0.5*i)/(double)thresh_num+near_zero*.002);
+		}
+		
 		for (unsigned int i = 0; i < near_zero; i++){
-			thresholds[i] = i*.0005;
+			thresholds.push_back(i*-.002);
+		}
+		for (unsigned int i = 0; i < near_zero; i++){
+			thresholds.push_back(i*.002);
 		}
 		for (unsigned int i = 0; i < thresh_num; i++){
-			thresholds[i+near_zero] = (0.5*i)/(double)thresh_num+near_zero*.0005;
+			thresholds.push_back((0.5*i)/(double)thresh_num+near_zero*.002);
+		}
+		
+		hold_times.resize(21);
+		for (unsigned int i = 0; i < 6; i++)
+			hold_times[i] = (i)*2*60*60;
+		for (unsigned int i = 6; i < 14; i++)
+			hold_times[i] = hold_times[5]+(i-6)*6*60*60;
+	}
+	else{
+		for (unsigned int i = 0; i < near_zero; i++){
+			thresholds.push_back(i*.0005);
+		}
+		for (unsigned int i = 0; i < thresh_num; i++){
+			thresholds.push_back((0.5*i)/(double)thresh_num+near_zero*.0005);
 		}
 		//for (unsigned int i = 0; i < thresh_num; i++)
 		//	thresholds[i+thresh_num] = -pow(10,-.3-(3.0*i/thresh_num));
@@ -1606,7 +1618,6 @@ void ns_worm_learner::output_movement_analysis_optimization_data(const ns_parame
 		for (unsigned int i = 0; i < 6; i++)
 			hold_times[i+14] = (i+5)*6*60*60;
 	}
-
 	ns_image_server_results_subject sub;
 	sub.experiment_id = experiment_id;
 	ns_acquire_for_scope<ostream> o2(image_server.results_storage.time_path_image_analysis_quantification(sub,"optimization_stats",true,sql()).output());
@@ -1624,33 +1635,43 @@ void ns_worm_learner::output_movement_analysis_optimization_data(const ns_parame
 				data_selector.samples[i].regions[j].excluded)
 				continue;
 			try{
-				const unsigned long region_id(data_selector.samples[i].regions[j].region_id);
-				ns_time_path_solution time_path_solution;
-				time_path_solution.load_from_db(region_id,sql());
-				const ns_time_series_denoising_parameters denoising_parameters(ns_time_series_denoising_parameters::load_from_db(region_id,sql()));
-				ns_time_path_image_movement_analyzer time_path_image_analyzer;
-				ns_acquire_for_scope<ns_analyzed_image_time_path_death_time_estimator> death_time_estimator(
-				ns_get_death_time_estimator_from_posture_analysis_model(
-				image_server.get_posture_analysis_model_for_region(region_id,sql())));
-				time_path_image_analyzer.load_completed_analysis(region_id,time_path_solution,denoising_parameters,&death_time_estimator(),sql());
-				death_time_estimator.release();
-				ns_region_metadata metadata;
+				ns_time_series_denoising_parameters::ns_movement_score_normalization_type norm_type[3] = 
+						{ns_time_series_denoising_parameters::ns_none,
+						ns_time_series_denoising_parameters::ns_subtract_out_median_of_end,
+						ns_time_series_denoising_parameters::ns_subtract_out_plate_median
+						};
+				for (unsigned int k = 0; k < 3; k++){
+					const unsigned long region_id(data_selector.samples[i].regions[j].region_id);
+					ns_time_path_solution time_path_solution;
+					time_path_solution.load_from_db(region_id,sql());
+
+					ns_time_series_denoising_parameters denoising_parameters(ns_time_series_denoising_parameters::load_from_db(region_id,sql()));
+					denoising_parameters.movement_score_normalization = norm_type[k];
+
+					ns_time_path_image_movement_analyzer time_path_image_analyzer;
+					ns_acquire_for_scope<ns_analyzed_image_time_path_death_time_estimator> death_time_estimator(
+					ns_get_death_time_estimator_from_posture_analysis_model(
+					image_server.get_posture_analysis_model_for_region(region_id,sql())));
+					time_path_image_analyzer.load_completed_analysis(region_id,time_path_solution,denoising_parameters,&death_time_estimator(),sql());
+					death_time_estimator.release();
+					ns_region_metadata metadata;
 		
-				try{
-					ns_hand_annotation_loader by_hand_region_annotations;
-					metadata = by_hand_region_annotations.load_region_annotations(ns_death_time_annotation_set::ns_censoring_and_movement_transitions,region_id,sql());
-					time_path_image_analyzer.add_by_hand_annotations(by_hand_region_annotations.annotations);
+					try{
+						ns_hand_annotation_loader by_hand_region_annotations;
+						metadata = by_hand_region_annotations.load_region_annotations(ns_death_time_annotation_set::ns_censoring_and_movement_transitions,region_id,sql());
+						time_path_image_analyzer.add_by_hand_annotations(by_hand_region_annotations.annotations);
 				
-				}
-				catch(ns_ex & ex){
-					cerr << ex.text();
-					metadata.load_from_db(region_id,"",sql());
-				}
+					}
+					catch(ns_ex & ex){
+						cerr << ex.text();
+						metadata.load_from_db(region_id,"",sql());
+					}
 
 				
-				o2() << "\n";
-				cerr << metadata.plate_name() << "\n";
-				time_path_image_analyzer.write_analysis_optimization_data(thresholds,hold_times,metadata,o2());
+					o2() << "\n";
+					cerr << metadata.plate_name() << "\n";
+					time_path_image_analyzer.write_analysis_optimization_data(thresholds,hold_times,metadata,o2());
+				}
 			}
 			catch(ns_ex & ex){
 				std::cerr << "\n" << ex.text() << "\n";
@@ -2569,10 +2590,14 @@ void ns_worm_learner::compile_experiment_survival_and_movement_data(bool use_by_
 	//	ns_acquire_for_scope<ostream> survival_jmp_file_time_interval_multiple_events_days(image_server.results_storage.survival_data(results_subject,"survival_multiple_events","machine_jmp_time_interval_days","csv",sql()).output());
 	//	ns_acquire_for_scope<ostream> survival_jmp_file_time_interval_multiple_events_hours(image_server.results_storage.survival_data(results_subject,"survival_multiple_events","machine_jmp_time_interval_hours","csv",sql()).output());
 		
-		ns_acquire_for_scope<ostream> survival_jmp_file_simple_days(image_server.results_storage.survival_data(results_subject,"survival_simple","machine_jmp_days","csv",sql()).output());
-		ns_acquire_for_scope<ostream> survival_jmp_file_simple_hours(image_server.results_storage.survival_data(results_subject,"survival_simple","machine_jmp_hours","csv",sql()).output());
+		ns_acquire_for_scope<ostream> survival_jmp_file_machine_simple_days(image_server.results_storage.survival_data(results_subject,"survival_simple","machine_jmp_days","csv",sql()).output());
+		ns_acquire_for_scope<ostream> survival_jmp_file_machine_simple_hours(image_server.results_storage.survival_data(results_subject,"survival_simple","machine_jmp_hours","csv",sql()).output());
+		ns_acquire_for_scope<ostream> survival_jmp_file_machine_hand_simple_days(image_server.results_storage.survival_data(results_subject,"survival_simple","machine_hand_jmp_days","csv",sql()).output());
+		ns_acquire_for_scope<ostream> survival_jmp_file_machine_hand_simple_hours(image_server.results_storage.survival_data(results_subject,"survival_simple","machine_hand_jmp_hours","csv",sql()).output());
+	
 		ns_acquire_for_scope<ostream> survival_jmp_file_simple_with_control_groups_days(image_server.results_storage.survival_data(results_subject,"survival_simple_with_control_groups","machine_jmp_days","csv",sql()).output());
 		ns_acquire_for_scope<ostream> survival_jmp_file_simple_with_control_groups_hours(image_server.results_storage.survival_data(results_subject,"survival_simple_with_control_groups","machine_jmp_hours","csv",sql()).output());
+		
 		ns_acquire_for_scope<ostream> survival_jmp_file_time_interval_simple_days(image_server.results_storage.survival_data(results_subject,"survival_simple","machine_jmp_time_interval_days","csv",sql()).output());
 		ns_acquire_for_scope<ostream> survival_jmp_file_time_interval_simple_hours(image_server.results_storage.survival_data(results_subject,"survival_simple","machine_jmp_time_interval_hours","csv",sql()).output());
 
@@ -2591,79 +2616,52 @@ void ns_worm_learner::compile_experiment_survival_and_movement_data(bool use_by_
 		//ns_region_metadata::out_JMP_header(survival_jmp_file());
 	
 
-		ns_lifespan_experiment_set set;
+		ns_lifespan_experiment_set machine_set,machine_hand_set;
 		cerr << "\n";
 		cerr << "Generating Survival Curve Set...\n";
-		survival_curve_compiler.generate_survival_curve_set(set,false,false);
+		survival_curve_compiler.generate_survival_curve_set(machine_set,ns_death_time_annotation_compiler_region::ns_machine_only,false,false);
+		survival_curve_compiler.generate_survival_curve_set(machine_hand_set,ns_death_time_annotation_compiler_region::ns_machine_if_not_by_hand,false,false);
 		
-		set.include_only_machine_events();
-		//ns_lifespan_experiment_set set_on_common_time;
-		//set.generate_common_time_set(set_on_common_time);
-		if (set.curves.size() == 0)
+		machine_set.include_only_events_detected_by_machine();
+		machine_hand_set.include_only_events_detected_by_machine();
+		if (machine_set.curves.size() == 0)
 			throw ns_ex("The current experiment does not have any valid plates.");
-		//set_on_common_time.force_common_time_set_to_constant_time_interval(60*60,set);
 
 		cerr << "Computing Risk Time series...\n";
-		set.generate_survival_statistics();
-		//set_on_common_time.generate_survival_statistics();
-
-		//ns_survival_data_summary_aggregator summary_aggregator;
-		//ns_survival_data_summary_aggregator grouped_summary_aggregator;
-
-		//summary_aggregator.add(ns_no_movement_event,set);
-
-		//ns_lifespan_experiment_set grouped_set;
-	//	set.group_strains(grouped_set);
-		//grouped_summary_aggregator.add(ns_no_movement_event,grouped_set);
-		//for (unsigned int i = 0; i < set.curves.size(); i++){
-		//	for (unsigned int j = 0; j < set.curves[i].timepoints.size(); j++){
-				//if (set.curves[i].timepoints[j].local_movement_cessations.event_count != set.curves[i].timepoints[j].long_distance_movement_cessations.event_count)
-				//	cerr << "shazzoo!.\n";
-		//	}
-		//}
-		/*cerr << "Running Device-Temperature Regression Model...\n";
-		set.generate_survival_statistics();
-		{
-			ns_device_temperature_normalization_data regression_data;
-			regression_data.load_data_for_experiment(experiment_id,sql());
-			if (!regression_data.control_strains.empty()){
-				set.compute_device_normalization_regression(regression_data,ns_lifespan_experiment_set::ns_ignore_censoring_data,ns_lifespan_experiment_set::ns_exclude_tails);
-	//			set_on_common_time.compute_device_normalization_regression(regression_data,ns_lifespan_experiment_set::ns_ignore_censoring_data,ns_lifespan_experiment_set::ns_exclude_tails);
-			}
-		}*/
-		
+		machine_set.generate_survival_statistics();
+	
 		cerr << "Writing Files...\n";
-	//	set.output_JMP_summary_file(survival_jmp_summary_file());
-	//	image_server.results_storage.survival_data();
-	//;
 
-
-		set.output_JMP_file(ns_lifespan_experiment_set::ns_output_single_event_times,ns_lifespan_experiment_set::ns_days,survival_jmp_file_simple_days(),ns_lifespan_experiment_set::ns_simple);
-		survival_jmp_file_simple_days.release();	
-		set.output_JMP_file(ns_lifespan_experiment_set::ns_output_single_event_times,ns_lifespan_experiment_set::ns_days,survival_jmp_file_simple_with_control_groups_days(),ns_lifespan_experiment_set::ns_simple_with_control_groups);
+		machine_set.output_JMP_file(ns_lifespan_experiment_set::ns_output_single_event_times,ns_lifespan_experiment_set::ns_days,survival_jmp_file_machine_simple_days(),ns_lifespan_experiment_set::ns_simple);
+		survival_jmp_file_machine_simple_days.release();	
+		machine_hand_set.output_JMP_file(ns_lifespan_experiment_set::ns_output_single_event_times,ns_lifespan_experiment_set::ns_days,survival_jmp_file_machine_hand_simple_days(),ns_lifespan_experiment_set::ns_simple);
+		survival_jmp_file_machine_hand_simple_days.release();	
+		machine_set.output_JMP_file(ns_lifespan_experiment_set::ns_output_single_event_times,ns_lifespan_experiment_set::ns_days,survival_jmp_file_simple_with_control_groups_days(),ns_lifespan_experiment_set::ns_simple_with_control_groups);
 		survival_jmp_file_simple_with_control_groups_days.release();
-		set.output_JMP_file(ns_lifespan_experiment_set::ns_output_single_event_times,ns_lifespan_experiment_set::ns_days,survival_jmp_file_detailed_days(),ns_lifespan_experiment_set::ns_detailed_with_censoring_repeats);
+		machine_set.output_JMP_file(ns_lifespan_experiment_set::ns_output_single_event_times,ns_lifespan_experiment_set::ns_days,survival_jmp_file_detailed_days(),ns_lifespan_experiment_set::ns_detailed_with_censoring_repeats);
 		survival_jmp_file_detailed_days.release();	
-		set.output_JMP_file(ns_lifespan_experiment_set::ns_output_single_event_times,ns_lifespan_experiment_set::ns_days,survival_jmp_file_multiple_events_days(),ns_lifespan_experiment_set::ns_multiple_events);
-		survival_jmp_file_simple_days.release();	
+		machine_set.output_JMP_file(ns_lifespan_experiment_set::ns_output_single_event_times,ns_lifespan_experiment_set::ns_days,survival_jmp_file_multiple_events_days(),ns_lifespan_experiment_set::ns_multiple_events);
+		survival_jmp_file_multiple_events_days.release();
 
-		set.output_JMP_file(ns_lifespan_experiment_set::ns_output_single_event_times,ns_lifespan_experiment_set::ns_hours,survival_jmp_file_simple_hours(),ns_lifespan_experiment_set::ns_simple);
-		survival_jmp_file_simple_hours.release();
-		set.output_JMP_file(ns_lifespan_experiment_set::ns_output_single_event_times,ns_lifespan_experiment_set::ns_hours,survival_jmp_file_detailed_hours(),ns_lifespan_experiment_set::ns_detailed_with_censoring_repeats);
+		machine_set.output_JMP_file(ns_lifespan_experiment_set::ns_output_single_event_times,ns_lifespan_experiment_set::ns_hours,survival_jmp_file_machine_simple_hours(),ns_lifespan_experiment_set::ns_simple);
+		survival_jmp_file_machine_simple_hours.release();
+		machine_hand_set.output_JMP_file(ns_lifespan_experiment_set::ns_output_single_event_times,ns_lifespan_experiment_set::ns_hours,survival_jmp_file_machine_hand_simple_hours(),ns_lifespan_experiment_set::ns_simple);
+		survival_jmp_file_machine_hand_simple_hours.release();
+		machine_set.output_JMP_file(ns_lifespan_experiment_set::ns_output_single_event_times,ns_lifespan_experiment_set::ns_hours,survival_jmp_file_detailed_hours(),ns_lifespan_experiment_set::ns_detailed_with_censoring_repeats);
 		survival_jmp_file_detailed_hours.release();
-		set.output_JMP_file(ns_lifespan_experiment_set::ns_output_single_event_times,ns_lifespan_experiment_set::ns_hours,survival_jmp_file_simple_with_control_groups_hours(),ns_lifespan_experiment_set::ns_simple_with_control_groups);
+		machine_set.output_JMP_file(ns_lifespan_experiment_set::ns_output_single_event_times,ns_lifespan_experiment_set::ns_hours,survival_jmp_file_simple_with_control_groups_hours(),ns_lifespan_experiment_set::ns_simple_with_control_groups);
 		survival_jmp_file_simple_with_control_groups_hours.release();
-		set.output_JMP_file(ns_lifespan_experiment_set::ns_output_single_event_times,ns_lifespan_experiment_set::ns_hours,survival_jmp_file_multiple_events_hours(),ns_lifespan_experiment_set::ns_multiple_events);
+		machine_set.output_JMP_file(ns_lifespan_experiment_set::ns_output_single_event_times,ns_lifespan_experiment_set::ns_hours,survival_jmp_file_multiple_events_hours(),ns_lifespan_experiment_set::ns_multiple_events);
 		survival_jmp_file_simple_with_control_groups_hours.release();
 
-		set.output_JMP_file(ns_lifespan_experiment_set::ns_output_event_intervals,ns_lifespan_experiment_set::ns_days,survival_jmp_file_time_interval_simple_days(),ns_lifespan_experiment_set::ns_simple);
+		machine_set.output_JMP_file(ns_lifespan_experiment_set::ns_output_event_intervals,ns_lifespan_experiment_set::ns_days,survival_jmp_file_time_interval_simple_days(),ns_lifespan_experiment_set::ns_simple);
 		survival_jmp_file_time_interval_simple_days.release();	
-		set.output_JMP_file(ns_lifespan_experiment_set::ns_output_event_intervals,ns_lifespan_experiment_set::ns_days,survival_jmp_file_time_interval_detailed_days(),ns_lifespan_experiment_set::ns_detailed_with_censoring_repeats);
+		machine_set.output_JMP_file(ns_lifespan_experiment_set::ns_output_event_intervals,ns_lifespan_experiment_set::ns_days,survival_jmp_file_time_interval_detailed_days(),ns_lifespan_experiment_set::ns_detailed_with_censoring_repeats);
 		survival_jmp_file_time_interval_detailed_days.release();		
 
-		set.output_JMP_file(ns_lifespan_experiment_set::ns_output_event_intervals,ns_lifespan_experiment_set::ns_hours,survival_jmp_file_time_interval_simple_hours(),ns_lifespan_experiment_set::ns_simple);
+		machine_set.output_JMP_file(ns_lifespan_experiment_set::ns_output_event_intervals,ns_lifespan_experiment_set::ns_hours,survival_jmp_file_time_interval_simple_hours(),ns_lifespan_experiment_set::ns_simple);
 		survival_jmp_file_time_interval_simple_hours.release();
-		set.output_JMP_file(ns_lifespan_experiment_set::ns_output_event_intervals,ns_lifespan_experiment_set::ns_hours,survival_jmp_file_time_interval_detailed_hours(),ns_lifespan_experiment_set::ns_detailed_with_censoring_repeats);
+		machine_set.output_JMP_file(ns_lifespan_experiment_set::ns_output_event_intervals,ns_lifespan_experiment_set::ns_hours,survival_jmp_file_time_interval_detailed_hours(),ns_lifespan_experiment_set::ns_detailed_with_censoring_repeats);
 		survival_jmp_file_time_interval_detailed_hours.release();
 
 		ns_acquire_for_scope<ostream> regression_stats_file_days(image_server.results_storage.survival_data(results_subject,"summary",
@@ -2675,12 +2673,12 @@ void ns_worm_learner::compile_experiment_survival_and_movement_data(bool use_by_
 
 		ns_lifespan_device_normalization_statistics_set::output_JMP_header(regression_stats_file_days());
 		ns_lifespan_device_normalization_statistics_set::output_JMP_header(regression_stats_file_hours());
-		set.normalization_stats_for_death.output_JMP_file(regression_stats_file_days(),24*60*60);
-		set.normalization_stats_for_death.output_JMP_file(regression_stats_file_hours(),60*60);
-		set.normalization_stats_for_fast_movement_cessation.output_JMP_file(regression_stats_file_days(),24*60*60);
-		set.normalization_stats_for_fast_movement_cessation.output_JMP_file(regression_stats_file_hours(),60*60);
-		set.normalization_stats_for_translation_cessation.output_JMP_file(regression_stats_file_days(),24*60*60);
-		set.normalization_stats_for_translation_cessation.output_JMP_file(regression_stats_file_hours(),60*60);
+		machine_set.normalization_stats_for_death.output_JMP_file(regression_stats_file_days(),24*60*60);
+		machine_set.normalization_stats_for_death.output_JMP_file(regression_stats_file_hours(),60*60);
+		machine_set.normalization_stats_for_fast_movement_cessation.output_JMP_file(regression_stats_file_days(),24*60*60);
+		machine_set.normalization_stats_for_fast_movement_cessation.output_JMP_file(regression_stats_file_hours(),60*60);
+		machine_set.normalization_stats_for_translation_cessation.output_JMP_file(regression_stats_file_days(),24*60*60);
+		machine_set.normalization_stats_for_translation_cessation.output_JMP_file(regression_stats_file_hours(),60*60);
 		regression_stats_file_hours.release();
 		regression_stats_file_days.release();
 		

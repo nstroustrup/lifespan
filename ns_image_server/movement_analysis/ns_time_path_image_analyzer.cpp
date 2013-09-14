@@ -702,8 +702,8 @@ void ns_time_path_image_movement_analyzer::process_raw_images(const ns_64_bit re
 								continue;
 						
 						groups[i].paths[j].denoise_movement_series(times_series_denoising_parameters);
-						groups[i].paths[j].analyze_movement(e,ns_stationary_path_id(i,j,analysis_id));
-						groups[i].paths[j].calculate_movement_quantification_summary();
+						//groups[i].paths[j].analyze_movement(e,ns_stationary_path_id(i,j,analysis_id));
+						//groups[i].paths[j].calculate_movement_quantification_summary();
 					}
 				}
 				memory_pool.clear();
@@ -711,6 +711,16 @@ void ns_time_path_image_movement_analyzer::process_raw_images(const ns_64_bit re
 				current_round++;
 			}
 		}
+		normalize_movement_scores_over_all_paths(times_series_denoising_parameters);
+		for (unsigned int i = 0; i < groups.size(); i++){
+			for (unsigned int j = 0; j < groups[i].paths.size(); j++){
+						if (ns_skip_low_density_paths && groups[i].paths[j].is_low_density_path())
+								continue;
+				groups[i].paths[j].analyze_movement(e,ns_stationary_path_id(i,j,analysis_id));
+				groups[i].paths[j].calculate_movement_quantification_summary();
+			}
+		}
+
 		//ofstream oo("c:\\out.csv");
 		unsigned long total_groups(0);
 		unsigned long total_skipped(0);
@@ -968,7 +978,7 @@ void ns_time_path_image_movement_analyzer::load_completed_analysis(const ns_64_b
 	populate_movement_quantification_from_file(sql);
 	if (exclude_movement_quantification)
 		return;
-
+	
 	for (unsigned long g = 0; g < groups.size(); g++)
 		for (unsigned long p = 0; p < groups[g].paths.size(); p++){
 			unsigned long number_of_valid_points(0);
@@ -987,9 +997,32 @@ void ns_time_path_image_movement_analyzer::load_completed_analysis(const ns_64_b
 		//	if (g == 5)
 		//		cerr << "WHA";
 			groups[g].paths[p].denoise_movement_series(times_series_denoising_parameters);
+		}
+
+	normalize_movement_scores_over_all_paths(times_series_denoising_parameters);
+
+	for (unsigned long g = 0; g < groups.size(); g++)
+		for (unsigned long p = 0; p < groups[g].paths.size(); p++){
+			unsigned long number_of_valid_points(0);
+			for (unsigned int i = 0; i < groups[g].paths[p].element_count(); i++){
+				if (!groups[g].paths[p].element(i).censored && 
+					!groups[g].paths[p].element(i).excluded)
+					number_of_valid_points++;
+			}
+			if (ns_skip_low_density_paths && groups[g].paths[p].is_low_density_path())
+				continue;
+			//invalid paths can result from changing the last valid timepoint and reanalyzing saved movement analyses
+			if (number_of_valid_points <= 1 || groups[g].paths[p].element_count() > 0 && groups[g].paths[p].element(0).absolute_time > this->last_timepoint_in_analysis()){
+				groups[g].paths[p].entirely_excluded = true;
+				continue;
+			}
+		//	if (g == 5)
+		//		cerr << "WHA";
 			groups[g].paths[p].analyze_movement(e,ns_stationary_path_id(g,p,analysis_id));
 			groups[g].paths[p].calculate_movement_quantification_summary();
-		}
+		}	
+
+
 	//generate_movement_description_series();
 	movement_analyzed = true;
 }
@@ -1243,12 +1276,12 @@ void ns_analyzed_image_time_path::write_summary_movement_quantification_analysis
 
 void ns_analyzed_image_time_path::write_analysis_optimization_data_header(std::ostream & o){
 	o << "Experiment,Device,Plate Name,Animal Details,Group ID,Path ID,Excluded,Censored,Number of Worms in Clump,"
-		"Movement Threshold, Min Hold Time (Hours), "
-		"Visual Inspection Death Age (Days), Machine Death Age (Days), Visual Inspection Death Time (Date), Difference Between Machine and By Hand Death Times (Days), Difference Squared, Random Group";
+		"Movement Threshold, Min Hold Time (Hours), Denoising Technique Used, "
+		"Visual Inspection Death Age (Days),Machine Death Age (Days), Visual Inspection Death Time (Date), Difference Between Machine and By Hand Death Times (Days), Difference Squared, Random Group";
 }
 
 std::vector< std::vector < unsigned long > > static_messy_death_time_matrix;
-void ns_analyzed_image_time_path::write_analysis_optimization_data(const ns_stationary_path_id & id, const std::vector<double> & thresholds, const std::vector<double> & hold_times, const ns_region_metadata & m,std::ostream & o) const{
+void ns_analyzed_image_time_path::write_analysis_optimization_data(const ns_stationary_path_id & id, const std::vector<double> & thresholds, const std::vector<double> & hold_times, const ns_region_metadata & m,const ns_time_series_denoising_parameters & denoising_parameters,std::ostream & o) const{
 	
 	long death_time(by_hand_annotation_event_times[(int)ns_movement_cessation].period_end);
 	if (by_hand_annotation_event_times[(int)ns_movement_cessation].fully_unbounded())
@@ -1264,6 +1297,7 @@ void ns_analyzed_image_time_path::write_analysis_optimization_data(const ns_stat
 				<< (censoring_and_flag_details.is_censored()?"1":"0") << ","
 				<< censoring_and_flag_details.number_of_worms() << ","
 				<< thresholds[i] << "," << (hold_times[j])/60.0/60.0 << "," 
+				<< denoising_parameters.to_string() << ","
 				<< (death_time - m.time_at_which_animals_had_zero_age)/(60.0*60.0*24)  << ","
 				<< (static_messy_death_time_matrix[i][j] - m.time_at_which_animals_had_zero_age)/(60.0*60.0*24)  << ","
 				<< death_time << ","
@@ -1303,9 +1337,14 @@ void ns_analyzed_image_time_path::calculate_analysis_optimization_data(const std
 				if (death_times[thresh][hold_t] != 0) continue;
 				if (r >= thresholds[thresh])
 					last_time_point_at_which_movement_was_found[thresh][hold_t] = cur_time;
-				if (death_times[thresh][hold_t] == 0 && 
-					cur_time - last_time_point_at_which_movement_was_found[thresh][hold_t] >= hold_times[hold_t])
+				if (death_times[thresh][hold_t] == 0){
+					unsigned long dt;
+					if (last_time_point_at_which_movement_was_found[thresh][hold_t] == 0)
+						dt = cur_time - elements[start_i].absolute_time;
+					else dt = cur_time - last_time_point_at_which_movement_was_found[thresh][hold_t];
+					if (dt >= hold_times[hold_t])
 						death_times[thresh][hold_t] = last_time_point_at_which_movement_was_found[thresh][hold_t];
+				}
 			}
 		}
 	}
@@ -1598,7 +1637,7 @@ void ns_time_path_image_movement_analyzer::write_analysis_optimization_data(cons
 		for (unsigned int j = 0; j < groups[i].paths.size(); j++){	
 			if (ns_skip_low_density_paths && groups[i].paths[j].is_low_density_path() || groups[i].paths[j].excluded() || !groups[i].paths[j].by_hand_data_specified())
 					continue;
-			groups[i].paths[j].write_analysis_optimization_data(generate_stationary_path_id(i,j),thresholds,hold_times,m,o);
+			groups[i].paths[j].write_analysis_optimization_data(generate_stationary_path_id(i,j),thresholds,hold_times,m,denoising_parameters_used,o);
 		}
 	}
 }
@@ -1932,11 +1971,21 @@ void ns_analyzed_image_time_path::detect_death_times_and_generate_annotations_fr
 	}
 	ns_time_path_posture_movement_solution movement_state_solution(movement_death_time_estimator->operator()(this,true));
 	const double loglikelihood_of_solution(movement_state_solution.loglikelihood_of_solution);
+	const string reason_to_be_censored(movement_state_solution.reason_for_animal_to_be_censored);
 
 	ns_movement_state_observation_boundary_interval slow_moving_interval_including_missed_states,
 														posture_changing_interval_including_missed_states,
 														dead_interval_including_missed_states;
-		
+
+	slow_moving_interval_including_missed_states.longest_observation_gap_within_interval = movement_state_solution.slowing.longest_observation_gap_within_interval;
+	posture_changing_interval_including_missed_states.longest_observation_gap_within_interval = movement_state_solution.moving.longest_observation_gap_within_interval;
+	dead_interval_including_missed_states.longest_observation_gap_within_interval = movement_state_solution.dead.longest_observation_gap_within_interval;
+	
+	
+	unsigned long longest_skipped_interval_before_death = slow_moving_interval_including_missed_states.longest_observation_gap_within_interval;
+	if (longest_skipped_interval_before_death < posture_changing_interval_including_missed_states.longest_observation_gap_within_interval)
+		longest_skipped_interval_before_death = posture_changing_interval_including_missed_states.longest_observation_gap_within_interval;	
+	
 	{
 		ns_movement_state_observation_boundary_interval slow_moving_interval,
 														posture_changing_interval,
@@ -2048,7 +2097,7 @@ void ns_analyzed_image_time_path::detect_death_times_and_generate_annotations_fr
 			}
 		}
 		//dead animals can be skipped without any editing, as we'll never be able to confirm that it happened unless we observed it.
-		}
+	}
 
 	//if the path has extra worms at least 25% of the points leading up to it's death
 		//mark the path as containing that extra worm
@@ -2059,7 +2108,7 @@ void ns_analyzed_image_time_path::detect_death_times_and_generate_annotations_fr
 		unsigned long stop_i(last_valid_element_id.period_end_index);
 		if (!dead_interval_including_missed_states.skipped)
 			stop_i=dead_interval_including_missed_states.entrance_interval.period_end_index;
-
+	
 		unsigned long total_number_of_extra_worms(0),total_mult_worm_d(0);
 		for (unsigned int i = 0; i < stop_i; i++){
 			total_number_of_extra_worms+=elements[i].number_of_extra_worms_observed_at_position;
@@ -2075,7 +2124,6 @@ void ns_analyzed_image_time_path::detect_death_times_and_generate_annotations_fr
 			part_of_a_multiple_worm_disambiguation_group = floor(total_mult_worm_d/(float)(total_observations)+.75) != 0;
 		}
 	}
-
 	const bool part_of_a_full_trace(!dead_interval_including_missed_states.skipped);
 
 	//Since the animal has slowed down enough to count as a path, we mark
@@ -2087,16 +2135,20 @@ void ns_analyzed_image_time_path::detect_death_times_and_generate_annotations_fr
 	
 	//if (path_id.group_id == 28)
 	//	cerr << "MA";
+	ns_death_time_annotation::ns_exclusion_type exclusion_type(ns_death_time_annotation::ns_not_excluded);
+	if (!reason_to_be_censored.empty()){
+		exclusion_type = ns_death_time_annotation::ns_censored;
+	}
 	set.add(
 		ns_death_time_annotation(ns_fast_movement_cessation,
 		0,region_info_id,
 		state_entrance_interval_time(slow_moving_interval_including_missed_states),
 		elements[first_valid_element_id.period_start_index].region_offset_in_source_image(),  //register the position of the object at that time point
 		elements[first_valid_element_id.period_start_index].worm_region_size(),
-		ns_death_time_annotation::ns_not_excluded,
+		exclusion_type,
 		ns_death_time_annotation_event_count(1+number_of_extra_worms_in_path,0),current_time,ns_death_time_annotation::ns_lifespan_machine,
 		(part_of_a_multiple_worm_disambiguation_group)?ns_death_time_annotation::ns_part_of_a_mutliple_worm_disambiguation_cluster:ns_death_time_annotation::ns_single_worm,
-		path_id,part_of_a_full_trace,"",loglikelihood_of_solution));
+		path_id,part_of_a_full_trace,reason_to_be_censored,loglikelihood_of_solution,longest_skipped_interval_before_death));
 	
 	//observations are made at specific times (i.e. we see a fast moving worm at this time)
 	for (unsigned int i = slow_moving_interval_including_missed_states.entrance_interval.period_end_index; i < slow_moving_interval_including_missed_states.entrance_interval.period_end_index; i++){
@@ -2107,10 +2159,10 @@ void ns_analyzed_image_time_path::detect_death_times_and_generate_annotations_fr
 			0,region_info_id,
 			ns_death_time_annotation_time_interval(elements[i].absolute_time,elements[i].absolute_time),
 			elements[i].region_offset_in_source_image(),
-			elements[i].worm_region_size(),ns_death_time_annotation::ns_not_excluded,
+			elements[i].worm_region_size(),exclusion_type,
 			ns_death_time_annotation_event_count(1+elements[i].number_of_extra_worms_observed_at_position,0),current_time,ns_death_time_annotation::ns_lifespan_machine,
 			elements[i].part_of_a_multiple_worm_disambiguation_group?ns_death_time_annotation::ns_part_of_a_mutliple_worm_disambiguation_cluster:ns_death_time_annotation::ns_single_worm,
-			path_id,part_of_a_full_trace,"",loglikelihood_of_solution)
+			path_id,part_of_a_full_trace,reason_to_be_censored,loglikelihood_of_solution,longest_skipped_interval_before_death)
 			);
 	}
 	
@@ -2137,10 +2189,10 @@ void ns_analyzed_image_time_path::detect_death_times_and_generate_annotations_fr
 		state_entrance_interval_time(posture_changing_interval_including_missed_states),
 		elements[posture_changing_interval_including_missed_states.entrance_interval.period_end_index].region_offset_in_source_image(),  //register the position of the object at that time point
 		elements[posture_changing_interval_including_missed_states.entrance_interval.period_end_index].worm_region_size(),
-		ns_death_time_annotation::ns_not_excluded,
+		exclusion_type,
 		ns_death_time_annotation_event_count(number_of_extra_worms_in_path+1,0),current_time,ns_death_time_annotation::ns_lifespan_machine,
 		part_of_a_multiple_worm_disambiguation_group?ns_death_time_annotation::ns_part_of_a_mutliple_worm_disambiguation_cluster:ns_death_time_annotation::ns_single_worm,
-		path_id,part_of_a_full_trace,"",loglikelihood_of_solution));
+		path_id,part_of_a_full_trace,reason_to_be_censored,loglikelihood_of_solution,longest_skipped_interval_before_death));
 	
 	
 	for (unsigned int i = posture_changing_interval_including_missed_states.entrance_interval.period_end_index; i < posture_changing_interval_including_missed_states.exit_interval.period_end_index; i++){
@@ -2151,10 +2203,10 @@ void ns_analyzed_image_time_path::detect_death_times_and_generate_annotations_fr
 			ns_death_time_annotation_time_interval(elements[i].absolute_time,elements[i].absolute_time),
 			elements[i].region_offset_in_source_image(),  //register the position of the object at that time point
 			elements[i].worm_region_size(),
-			ns_death_time_annotation::ns_not_excluded,
+			exclusion_type,
 			ns_death_time_annotation_event_count(1+elements[i].number_of_extra_worms_observed_at_position,0),current_time,ns_death_time_annotation::ns_lifespan_machine,
 			elements[i].part_of_a_multiple_worm_disambiguation_group?ns_death_time_annotation::ns_part_of_a_mutliple_worm_disambiguation_cluster:ns_death_time_annotation::ns_single_worm,
-			path_id,part_of_a_full_trace,"",loglikelihood_of_solution));
+			path_id,part_of_a_full_trace,reason_to_be_censored,loglikelihood_of_solution,longest_skipped_interval_before_death));
 	}
 		
 	if (dead_interval_including_missed_states.skipped)
@@ -2177,10 +2229,10 @@ void ns_analyzed_image_time_path::detect_death_times_and_generate_annotations_fr
 		ns_death_time_annotation_time_interval(state_entrance_interval_time(dead_interval_including_missed_states)),
 		elements[dead_interval_including_missed_states.entrance_interval.period_end_index].region_offset_in_source_image(),
 		elements[dead_interval_including_missed_states.entrance_interval.period_end_index].worm_region_size(),
-		ns_death_time_annotation::ns_not_excluded,
+		exclusion_type,
 		ns_death_time_annotation_event_count(1+number_of_extra_worms_in_path,0),current_time,ns_death_time_annotation::ns_lifespan_machine,
 		part_of_a_multiple_worm_disambiguation_group?ns_death_time_annotation::ns_part_of_a_mutliple_worm_disambiguation_cluster:ns_death_time_annotation::ns_single_worm,
-		path_id,part_of_a_full_trace,"",loglikelihood_of_solution));
+		path_id,part_of_a_full_trace,reason_to_be_censored,loglikelihood_of_solution,longest_skipped_interval_before_death));
 	
 	for (unsigned int i = dead_interval_including_missed_states.entrance_interval.period_end_index; i < dead_interval_including_missed_states.exit_interval.period_end_index; i++){
 		if (elements[i].excluded) continue;
@@ -2190,10 +2242,10 @@ void ns_analyzed_image_time_path::detect_death_times_and_generate_annotations_fr
 			ns_death_time_annotation_time_interval(elements[i].absolute_time,elements[i].absolute_time),
 			elements[i].region_offset_in_source_image(),
 			elements[i].worm_region_size(),
-			ns_death_time_annotation::ns_not_excluded,
+			exclusion_type,
 			ns_death_time_annotation_event_count(elements[i].number_of_extra_worms_observed_at_position+1,0),current_time,ns_death_time_annotation::ns_lifespan_machine,
 			elements[i].part_of_a_multiple_worm_disambiguation_group?ns_death_time_annotation::ns_part_of_a_mutliple_worm_disambiguation_cluster:ns_death_time_annotation::ns_single_worm,
-			path_id,part_of_a_full_trace,"",loglikelihood_of_solution));
+			path_id,part_of_a_full_trace,reason_to_be_censored,loglikelihood_of_solution,longest_skipped_interval_before_death));
 	}
 
 	//const ns_death_time_annotation_time_interval death_exit_time(ns_death_time_annotation_time_interval(state_exit_interval_time(dead_interval)));
@@ -2901,6 +2953,7 @@ class ns_movement_data_accessor{
 public:
 	ns_movement_data_accessor(ns_analyzed_image_time_path::ns_element_list & l):elements(&l){}
 	unsigned long size()const {return elements->size();}
+	const unsigned long time(const unsigned long i){return (*elements)[i].absolute_time;}
 	double raw(const unsigned long i){
 		if (i == 0)
 			return raw(1);
@@ -2929,6 +2982,7 @@ class ns_intensity_data_accessor{
 public:
 	ns_intensity_data_accessor(ns_analyzed_image_time_path::ns_element_list & l):elements(&l){}
 	unsigned long size()const {return elements->size();}
+	const unsigned long time(const unsigned long i){return (*elements)[i].absolute_time;}
 	double raw(const unsigned long i){
 		return (*elements)[i].measurements.change_in_average_normalized_worm_intensity;
 	}
@@ -2943,6 +2997,7 @@ class ns_size_data_accessor{
 public:
 	ns_size_data_accessor(ns_analyzed_image_time_path::ns_element_list & l):elements(&l){}
 	unsigned long size()const {return elements->size();}
+	const unsigned long time(const unsigned long i){return (*elements)[i].absolute_time;}
 	double raw(const unsigned long i){
 		return (*elements)[i].measurements.total_worm_area;
 	}
@@ -2959,14 +3014,12 @@ public:
 	void ns_kernel_smooth(const unsigned int kernel_width,T & data){
 		(*this)(kernel_width,data);
 	}
-	typedef enum{ns_fix_to_median,ns_fix_to_first_value,ns_do_not_fix} ns_fix_point;
-	void operator()(const int kernel_width,const ns_fix_point & fix, T & data){
+	void operator()(const int kernel_width,T & data){
 		if (data.size() == 0)
 			return;
 		if (kernel_width%2 == 0)
 			throw ns_ex("Kernel width must be odd");
 		
-
 		if (1){
 			for (unsigned int i = 0; i < kernel_width; i++)
 				data.processed(i) = data.raw(i);
@@ -2979,27 +3032,6 @@ public:
 			}
 			for (unsigned int i = data.size()-kernel_width; i < data.size(); i++)
 				data.processed(i) = data.raw(i);
-		}
-
-		double median;
-		if (fix == ns_fix_to_median){
-			//find median 
-			std::vector<double> values(data.size());
-			for (unsigned int i = 0; i < data.size(); i++){
-				values[i] = data.processed(i);
-			}
-			std::sort(values.begin(),values.end());
-			if (values.size()%2 == 1)
-				median =  values[values.size()/2];
-			else
-				median =  (values[values.size()/2]+values[values.size()/2-1])/2.0;
-		}
-		else if (fix == ns_fix_to_first_value){
-			median = data.processed(0);
-		}
-		else median=0;
-		for (unsigned int i = 0; i < data.size(); i++){
-			data.processed(i) -=median;
 		}
 	}
 };
@@ -3028,7 +3060,7 @@ void ns_analyzed_image_time_path::denoise_movement_series( const ns_time_series_
 		//These denoised movmenet scores are used for automated movement analaysis.
 		//If the "normalize_movement_timeseries_to_median" flag is set, the set smoothed movement score values
 		//for each object is subtracted out to zero.
-		m(kernel_width,times_series_denoising_parameters.subtract_out_median_movement_score_from_time_series?ns_kernel_smoother<ns_movement_data_accessor>::ns_fix_to_median:ns_kernel_smoother<ns_movement_data_accessor>::ns_do_not_fix,acc);
+		m(kernel_width,acc);
 		
 		for (unsigned int i= 0; i < elements.size(); i++){
 			elements[i].measurements.normalized_worm_area = elements[i].measurements.total_worm_area/(double)elements[0].measurements.total_worm_area;
@@ -3056,7 +3088,7 @@ void ns_analyzed_image_time_path::denoise_movement_series( const ns_time_series_
 			elements[1].measurements.normalized_change_in_worm_intensity;*/
 		ns_kernel_smoother<ns_intensity_data_accessor> i;
 		ns_intensity_data_accessor acc2(elements);
-		i(kernel_width,ns_kernel_smoother<ns_intensity_data_accessor>::ns_do_not_fix,acc2);
+		i(kernel_width,acc2);
 		
 		return;
 	}
@@ -4294,13 +4326,22 @@ void ns_time_path_image_movement_analyzer::reanalyze_stored_aligned_images(const
 				}
 				groups[i].paths[j].end_movement_image_loading(storage);
 				groups[i].paths[j].denoise_movement_series(times_series_denoising_parameters);
-				groups[i].paths[j].analyze_movement(e,generate_stationary_path_id(i,j));
-				
-				groups[i].paths[j].calculate_movement_quantification_summary();
 			
+				//groups[i].paths[j].analyze_movement(e,generate_stationary_path_id(i,j));
+				
+				//groups[i].paths[j].calculate_movement_quantification_summary();
 			//	debug_name += ".csv";
 			//	ofstream tmp(debug_name.c_str());
 			//	groups[i].paths[j].output_image_movement_summary(tmp);
+			}
+		}
+		normalize_movement_scores_over_all_paths(times_series_denoising_parameters);
+		for (unsigned int i = 0; i < groups.size(); i++){
+			for (unsigned int j = 0; j < groups[i].paths.size(); j++){
+				if (ns_skip_low_density_paths && groups[i].paths[j].is_low_density_path())
+					continue;
+				groups[i].paths[j].analyze_movement(e,generate_stationary_path_id(i,j));
+				groups[i].paths[j].calculate_movement_quantification_summary();
 			}
 		}
 		memory_pool.clear();
@@ -4347,6 +4388,88 @@ void ns_time_path_image_movement_analyzer::acquire_region_image_specifications(c
 	}
 }
 
+void ns_time_path_image_movement_analyzer::normalize_movement_scores_over_all_paths(const ns_time_series_denoising_parameters & param){
+	if (param.movement_score_normalization == ns_time_series_denoising_parameters::ns_none ||
+		param.movement_score_normalization == ns_time_series_denoising_parameters::ns_subtract_out_device_median)
+		return;
+
+	denoising_parameters_used = param;
+
+	std::vector<double> medians;
+	std::vector<char> excluded_from_plate_measurements;
+	unsigned long total_measurements(0);
+	for (unsigned int i = 0; i < groups.size(); i++){
+		for (unsigned int j = 0; j < groups[i].paths.size(); j++){
+				if (ns_skip_low_density_paths && groups[i].paths[j].is_low_density_path())
+						continue;
+
+			ns_analyzed_image_time_path::ns_element_list & elements(groups[i].paths[j].elements);
+			
+						
+			//find median of last 15% of curve
+			unsigned long start;
+			if (param.movement_score_normalization == ns_time_series_denoising_parameters::ns_subtract_out_median_of_end ||
+				param.movement_score_normalization == ns_time_series_denoising_parameters::ns_subtract_out_plate_median)
+				start = (17*elements.size())/20;
+			else if (param.movement_score_normalization == ns_time_series_denoising_parameters::ns_subtract_out_median)
+				start = 0;
+			else throw ns_ex("Unknown movement score normalization scheme:") << (long)(param.movement_score_normalization);
+			if (elements.size()-start < 2)
+				start = 0;
+
+			std::vector<double> values(elements.size()-start);
+			for (unsigned int k = start; k < elements.size(); k++){
+				values[k-start] = elements[k].measurements.death_time_posture_analysis_measure();
+			}
+
+			if (elements.size() < 10 || groups[i].paths[j].excluded())
+				excluded_from_plate_measurements.push_back(1);
+			else excluded_from_plate_measurements.push_back(0);
+
+			std::sort(values.begin(),values.end());
+			if (values.size()%2 == 1)
+				medians.push_back(values[values.size()/2]);
+			else
+				medians.push_back((values[values.size()/2]+values[values.size()/2-1])/2.0);
+		}
+	}
+	if (param.movement_score_normalization == ns_time_series_denoising_parameters::ns_subtract_out_plate_median){
+		//weighted median of all measurements made of all animals detected on the plate.
+		std::vector<double> medians_to_use;
+		for (unsigned int i = 0; i < medians.size(); i++){
+			if (!excluded_from_plate_measurements[i])
+				medians_to_use.push_back(medians[i]);
+		}
+		std::sort(medians_to_use.begin(),medians_to_use.end());
+		double median;
+		if (medians_to_use.size()%2 == 1)
+			median = medians_to_use[medians_to_use.size()/2];
+		else
+			median = (medians_to_use[medians_to_use.size()/2]+medians_to_use[medians_to_use.size()/2-1])/2.0;
+		for (unsigned int i = 0; i < groups.size(); i++){
+			for (unsigned int j = 0; j < groups[i].paths.size(); j++){
+				if (ns_skip_low_density_paths && groups[i].paths[j].is_low_density_path())
+						continue; 	
+
+				for (unsigned int k = 0; k < groups[i].paths[j].elements.size(); k++)
+					groups[i].paths[j].elements[k].measurements.death_time_posture_analysis_measure()-=median;
+			}
+		}
+	}
+	else{
+		//weighted median of all samples of that type
+		unsigned long m_pos(0);
+		for (unsigned int i = 0; i < groups.size(); i++){
+			for (unsigned int j = 0; j < groups[i].paths.size(); j++){
+				if (ns_skip_low_density_paths && groups[i].paths[j].is_low_density_path())
+						continue;
+				for (unsigned int k = 0; k < groups[i].paths[j].elements.size(); k++)
+					groups[i].paths[j].elements[k].measurements.death_time_posture_analysis_measure()-=medians[m_pos];
+				m_pos++;
+			}
+		}
+	}
+}
 void ns_time_path_image_movement_analyzer::generate_movement_description_series(){
 	//group sizes and position
 	description_series.group_region_sizes.resize(groups.size(),ns_vector_2i(0,0));
@@ -4996,6 +5119,7 @@ ns_time_path_posture_movement_solution ns_threshold_movement_posture_analyzer::r
 	long last_valid_event_index(-1),
 		first_valid_event_index(path->element_count());
 
+	
 	for (long t = 0; t < path->element_count(); t++){
 		if (path->element(t).excluded || path->element(t).censored || path->element(t).element_before_fast_movement_cessation) continue;
 		if (first_valid_event_index == path->element_count()){
@@ -5016,10 +5140,20 @@ ns_time_path_posture_movement_solution ns_threshold_movement_posture_analyzer::r
 	long last_time_point_at_which_slow_movement_was_observed(first_valid_event_index),
 			last_time_point_at_which_posture_changes_were_observed(first_valid_event_index);
 
+	unsigned long longest_gap_in_slow(0),longest_gap_in_posture(0),longest_gap_in_dead(0);
+
 	
 	for (long t = first_valid_event_index ; t < path->element_count(); t++){
 		if (path->element(t).excluded || path->element(t).censored || path->element(t).element_before_fast_movement_cessation) continue;
 		double r(path->element(t).measurements.death_time_posture_analysis_measure());
+
+		unsigned long observation_gap(0);
+		if (t > first_valid_event_index){
+			observation_gap = path->element(t).absolute_time - path->element(t-1).absolute_time;
+		}
+		
+
+
 		const unsigned long &cur_time (path->element(t).absolute_time);
 		//keep on pushing the last posture time and last sationary
 		//times forward until we hit a low enough movement ratio
@@ -5029,8 +5163,18 @@ ns_time_path_posture_movement_solution ns_threshold_movement_posture_analyzer::r
 		
 		if (r >= parameters.posture_cutoff && !found_slow_movement_cessation)
 			last_time_point_at_which_slow_movement_was_observed = t;
-		if (r >=  parameters.stationary_cutoff)
+		if (r >=  parameters.stationary_cutoff&& !found_posture_change_cessation)
 			last_time_point_at_which_posture_changes_were_observed = t;
+
+		if (!found_slow_movement_cessation && longest_gap_in_slow < observation_gap)
+			longest_gap_in_slow = observation_gap;
+		
+		if (!found_posture_change_cessation && longest_gap_in_posture < observation_gap)  //gaps in slow movement count towards gaps in posture change.
+			longest_gap_in_posture = observation_gap;
+		
+		if (found_posture_change_cessation && longest_gap_in_dead < observation_gap)  //gaps in slow movement count towards gaps in posture change.
+			longest_gap_in_dead = observation_gap;
+		
 
 		if (!found_slow_movement_cessation &&
 
@@ -5055,12 +5199,16 @@ ns_time_path_posture_movement_solution ns_threshold_movement_posture_analyzer::r
 				found_posture_change_cessation = true;
 				if (last_time_point_at_which_posture_changes_were_observed == 1 && first_valid_event_index == 0)
 					last_time_point_at_which_posture_changes_were_observed = 0;
-				break;
 			}
 	}
 
 	ns_time_path_posture_movement_solution solution;
-								//assumed to start as slow, so it's only skipped if it is skipped over
+	//assumed to start as slow, so it's only skipped if it is skipped over
+
+	solution.dead.longest_observation_gap_within_interval = longest_gap_in_dead;
+	solution.slowing.longest_observation_gap_within_interval = longest_gap_in_posture;
+	solution.moving.longest_observation_gap_within_interval = longest_gap_in_slow;
+
 	solution.moving.skipped = last_time_point_at_which_slow_movement_was_observed == first_valid_event_index  && (found_slow_movement_cessation || found_posture_change_cessation);
 	if (!solution.moving.skipped){
 		solution.moving.start_index = first_valid_event_index ;

@@ -71,7 +71,16 @@ struct ns_region_metadata{
 	unsigned long movement_rebuild_timestamp;
 
 	const std::string device_regression_match_description() const{
-		return strain + "::" + strain_condition_1 + "::" + strain_condition_2;
+		std::string s(genotype);
+		if (genotype.empty())
+			s = strain;
+		if (strain_condition_1.empty() && strain_condition_2.empty())
+			return s;
+		if (strain_condition_1.empty())
+			return s + "::" + strain_condition_2;
+		if (strain_condition_2.empty())
+			return s + ":" + strain_condition_1;
+		return s + ":" + strain_condition_1+ ":" + strain_condition_2;
 	}
 	const std::string plate_type_summary() const{
 		std::string type;

@@ -84,6 +84,14 @@ $ns_maintenance_tasks = array('ns_maintenance_no_task'=>0,
 			      'ns_maintenance_generate_animal_storyboard_subimage'=>17,
 			      'ns_maintenance_compress_stored_images'=>18
 			      );
+
+$ns_denoising_option_labels = array(
+		       "No normalization of worm movement scores"=>0,
+		       "Normalize worm movement scores among all worms on a plate (Recommended)"=>1,
+		       "Normalize worm movement scores to individual's median"=>2,
+		       "Normalize worm movement scores to individual's 15% oldest median"=>3,
+		       "Normalize worm movement scores among all worms on a scanner"=>4);
+		       
 function ns_maintenance_task_order($is_region,$is_sample,$is_experiment){
   $r = array();
   global $ns_maintenance_tasks;

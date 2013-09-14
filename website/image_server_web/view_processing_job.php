@@ -189,11 +189,11 @@ if ($specified_experiment_list){
 	if ($include_censored==0)  $censored_string = "censored=0 AND ";
 	if (!$specified_all_regions && $include_censored == 2) $censored_string="censored=1 AND ";
 	$query = "SELECT id FROM capture_samples WHERE $censored_string experiment_id = " . $experiments_to_process[$i];
-	//   die($query);
+	//	  die($query);
 	$sql->get_row($query,$res);
 	for ($j = 0; $j < sizeof($res); $j++)
 		array_push($samples_to_process,$res[$j][0]);
-	// var_dump($samples_to_process);
+	//	var_dump($samples_to_process);die("");
 	}
   }
   else if ($specified_sample_id != 0){
@@ -217,10 +217,12 @@ $region_strain_condition_2 = array();
    $k = 0;
    for ($j = 0; $j < sizeof($samples_to_process); $j++){
      $cur_sample = $samples_to_process[$j];
+    
+     if ($include_censored==0 || $include_censored==='') $censored_string = 'ri.censored=0 AND';
      
-     if ($include_censored==0 || $include_censored=='') $censored_string = 'ri.censored=0 AND';
      if ($include_censored==2) $censored_string = 'ri.censored=1 AND';
      $conditions_string = '';
+     //  die ($censored_string);
      if ($strain_specified) 
        $conditions_string .= "STRCMP(LOWER(ri.strain),LOWER('".mysql_real_escape_string($strain_specification)."'))=0 AND ";
      if ($condition_1_specified)
@@ -249,9 +251,9 @@ $region_strain_condition_2 = array();
     
 
       $query = "SELECT ri.id, s.id,s.experiment_id, ri.name, ri.time_at_which_animals_had_zero_age,ri.time_of_last_valid_sample, ri.strain, ri.strain_condition_1,ri.strain_condition_2, ri.strain_condition_3, ri.culturing_temperature,ri.experiment_temperature,ri.food_source,ri.environmental_conditions FROM sample_region_image_info as ri, capture_samples as s WHERE $censored_string $strain_string $conditions_string ri.sample_id=" . $cur_sample . " AND ri.sample_id = s.id";
-      //	die($query);
+      // die($query);
       $sql->get_row($query,$region_ids);
-
+      //   var_dump($region_ids);die();
 //	echo $query . "<BR>"; var_dump($region_ids); echo $query;
       if (sizeof($region_ids) == 0)
 	continue;
@@ -554,7 +556,7 @@ else{
     	$end_year = $_POST['end_year'];
 
 
-    //  echo "$end_hour:$end_minute $end_month/$end_day/$end_year";
+	//	die( "$end_hour:$end_minute $end_month/$end_day/$end_year");
     $start_time = mktime($start_hour, $start_minute, 0, $start_month,$start_day,$start_year);
     $end_time_date = mktime($end_hour, $end_minute, 0, $end_month, $end_day, $end_year);
     $end_time_age = $_POST['end_age'];
@@ -592,7 +594,7 @@ else{
     if ($set_food_source) array_push($vals,"food_source='" .mysql_real_escape_string($food_source)."'");
     if ($set_environment_conditions) array_push($vals,"environmental_conditions='" .mysql_real_escape_string($environment_conditions)."'");
     if ($set_start_time) array_push($vals,"time_at_which_animals_had_zero_age='$start_time'");
-    if ($set_end_time_date)   array_push($vals,"time_of_last_valid_sample='$end_time'");
+    if ($set_end_time_date)   array_push($vals,"time_of_last_valid_sample='$end_time_date'");
     
     if ($set_end_time_age){
       $time_in_seconds = floor($end_time_age*60*60*24);
@@ -611,7 +613,7 @@ else{
     for ($i = 0; $i < sizeof($jobs); $i++){
       if($jobs[$i]->region_id != 0){
 	$query = "UPDATE sample_region_image_info SET $set_str WHERE id = " . $jobs[$i]->region_id;
-	//	echo $query . "<BR>";	die($query);
+	//		echo $query . "<BR>";	die($query);
 	$sql->send_query($query);
       }
     }
@@ -640,6 +642,80 @@ else{
       // echo $query . "<BR>";
       $sql->send_query($query);
     }
+    header("Location: $back_url\n\n");
+    die("");
+  }
+  if ($_POST['cancel_captures']){
+    $sample_ids = array();
+    $device_names = array();
+    for ($i = 0; $i < sizeof($jobs); $i++){
+      $e_id = $jobs[$i]->experiment_id;
+      if ($e_id == 0)
+	throw ns_exception("No experiment id specified for job!");
+      
+      //echo var_dump($jobs[$i]);
+      if ($jobs[$i]->region_id != 0){
+	$query = "SELECT r.sample_id, s.device_name FROM sample_region_image_info as r, capture_samples as s WHERE r.id = " . $jobs[$i]->region_id . " AND s.id = r.sample_id";
+	$sql->get_row($query,$res);
+	if (sizeof($res) == 0)
+	  throw ns_exception("Could not find sample for region " . $jobs[$i]->region_id);
+	
+	$sample_ids[$res[0][0]] = 1;
+	$device_names[$res[0][1]] = 1;
+      }
+      if ($jobs[$i]->sample_id != 0){
+	$query = "SELECT device_name FROM capture_samples WHERE id = " . $jobs[$i]->sample_id;
+	$sql->get_row($query,$res);
+	if (sizeof($res)==0)
+	  throw ns_exception("Could not find sample id " . $jobs[$i]->sample_id);
+	$sample_ids[$jobs[$i]->sample_id] = 1;
+	$device_names[$res[0][0]] = 1;
+      }
+      else if ($jobs[$i]->experiment_id != 0){
+	$query = "SELECT id, device_name FROM capture_samples WHERE experiment_id = " . $jobs[$i]->experiment_id;
+	$sql->get_row($query,$res);
+	for ($i = 0; $i < sizeof($res); $i++){
+	  $sample_ids[$res[$i][0]] = 1;
+	  $device_names[$res[$i][1]] = 1;
+	}
+      }
+    }
+    $lock_cs = "LOCK TABLES capture_schedule WRITE";
+    $unlock_cs = "UNLOCK TABLES";
+    
+    $sql->send_query($lock_cs);
+    foreach ($sample_ids as $sample_id => $d){
+      $query = "UPDATE capture_schedule SET censored=1 WHERE sample_id='$sample_id' AND time_at_start='0' AND missed='0'";
+      //echo $query . "<br>";
+      $sql->send_query($query);
+    }
+    $sql->send_query($unlock_cs);
+    
+    foreach($device_names as $device_name=>$d){  
+      $query = "DELETE FROM autoscan_schedule WHERE device_name ='" . $device_name . "'";
+      //echo $query . "<br>";
+      $sql->send_query($query); 
+    }
+    header("Location: $back_url\n\n");
+    die("");
+  } 
+  
+  if ($_POST['retry_transfer_to_long_term_storage'] !=''){
+    
+    for ($i = 0; $i < sizeof($jobs); $i++){
+      $e_id = $jobs[$i]->experiment_id;
+      if ($e_id == 0)
+	throw ns_exception("No experiment id specified for job!");
+      
+     //echo var_dump($jobs[$i]);
+      if ($jobs[$i]->region_id != 0)
+	throw ns_exception("Cannot schedule a cache transfer jobon a region!");
+      if ($jobs[$i]->sample_id != 0)
+	ns_attempt_to_retry_transfer_to_long_term_storage($jobs[$i]->sample_id,"",0,$sql);
+      else if ($jobs[$i]->experiment_id != 0)
+	ns_attempt_to_retry_transfer_to_long_term_storage(0,"",$jobs[$i]->experiment_id,$sql);
+    }
+    
     header("Location: $back_url\n\n");
     die("");
   }
@@ -919,7 +995,7 @@ else{
   else $page_title = "Create New";
   $page_title .= " Processing Job";
   if (sizeof($jobs) == 0)
-    die("No Jobs!");
+    die("No Jobs or job subjects could be found matching the specifications.");
   //$jobs[0]->get_names($sql);
 
   
@@ -1336,7 +1412,22 @@ Schedule Database/File Storage Job Begin
 </table>
 </td></tr>
 </table>
+
 <br>
+<?php
+ 	if ($live_dangerously){	  ?>
+<table align="center" border="0" cellpadding="0" cellspacing="1" bgcolor="#000000"><tr><td>
+<table border="0" cellpadding="4" cellspacing="0" width="100%">
+<tr <?php echo $table_header_color?> ><td colspan=2><b>Update capture schedule</b></td></tr>
+<tr><td colspan = 2 bgcolor="<?php echo $table_colors[1][1] ?>">
+				  <br>
+				  <div align="center"><input name="cancel_captures" type="submit" value="Cancel Scheduled Captures" onClick="javascript:return confirm('Are you sure you want to cancel all pending scans?')"><br><br><input name="retry_transfer_to_long_term_storage" type="submit" value="Retry transfer of cached images"><br><br></div>
+					</td></tr>
+</table>
+</td></tr>
+</table>
+<?php }?>
+</form>
 					<?php } ?>
 
 
@@ -1375,12 +1466,14 @@ Set Control Strain Info
 	</td></tr>
 	</table>
 	<br>
+</form>
 	<?php } ?>
 <!--********************************
 Update Region info Begin
 *********************************-->
 
 <?php if ($view_boundaries_taskbar){?>
+<form action="view_processing_job.php?<?php echo $query_parameters?>" method="post">
 <table align="center" border="0" cellpadding="0" cellspacing="1" bgcolor="#000000"><tr><td>
 <table border="0" cellpadding="4" cellspacing="0" width="100%">
 
@@ -1489,7 +1582,7 @@ Update Region info Begin
 
 					</td></tr>
 </table>
-</td><//td>
+</td></td>
 </table>
 </form>
   <br>
@@ -1590,7 +1683,7 @@ Delete images end
 </td>
 </tr></table><br>
 <div align="right">
-<a href = "view_processing_job.php?<?php echo $query_parameters?>&live_dangerously=1" onClick="javascript:return confirm('Really?')">[Enable Dangerous Commands]</a></div>
+<a href = "view_processing_job.php?<?php echo $query_parameters?>&live_dangerously=1" onClick="javascript:return confirm('Dangerous commands can permanantly delete experimental data.  Continue?')">[Enable Dangerous Commands]</a></div>
 
 <?php
 display_worm_page_footer();

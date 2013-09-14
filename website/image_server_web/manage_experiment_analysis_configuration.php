@@ -28,15 +28,24 @@ if ($_POST['detail_level']){
  }
 
  if ($query_string['set_denoising_options']==1){
-   $denoising_flag = 0;
-   if ($_POST['time_series_median']=="subtract")
-     $denoising_flag = 1;
+   $denoising_flag = $_POST['time_series_median'];
+
+   #die("".$denoising_flag);
+
    $number_of_stationary_images = $_POST['number_of_stationary_images'];
+
+    	$end_minute = $_POST['end_minute'];
+    	$end_hour = $_POST['end_hour'];
+    	$end_day = $_POST['end_day'];
+    	$end_month = $_POST['end_month'];
+    	$end_year = $_POST['end_year'];
+  $mask_date = mktime($end_hour, $end_minute, 0, $end_month, $end_day, $end_year);
    $maximum_number_of_worms = $_POST['maximum_number_of_worms'];
-   if (!$number_of_stationary_images===''){
+   //   if (!($number_of_stationary_images==='')){
      $query = "UPDATE sample_region_image_info as r, capture_samples as s SET r.time_series_denoising_flag = '$denoising_flag',r.number_of_frames_used_to_mask_stationary_objects='$number_of_stationary_images',r.maximum_number_of_worms_per_plate='$maximum_number_of_worms' WHERE r.sample_id = s.id AND s.experiment_id = " . $experiment_id;
+     //    die($query);
      $sql->send_query($query);
-   }
+     //  }
    //die($_POST['apply_vertical_image_registration']);
    $apply_vertical_image_registration = $_POST['apply_vertical_image_registration'] == "apply";
    //die(
@@ -50,7 +59,11 @@ $query = "UPDATE experiments SET delete_captured_images_after_mask=" . ($delete_
    $query = "UPDATE capture_samples SET apply_vertical_image_registration=" . ($apply_vertical_image_registration?"1":"0"). " WHERE experiment_id = $experiment_id";
    // die($query);
    $sql->send_query($query);
-     header("Location: manage_experiment_analysis_configuration.php?$query_parameters\n\n");  
+   if ($mask_date != 0){
+     $query = "INSERT INTO constants SET k='mask_time=" .$experiment_id. "', v='$mask_date'";
+     $sql->send_query($query);
+   }
+   header("Location: manage_experiment_analysis_configuration.php?$query_parameters\n\n");  
 
  }
  if ($query_string['regression_setup'] == 1){
@@ -76,6 +89,14 @@ $query = "UPDATE experiments SET delete_captured_images_after_mask=" . ($delete_
  $apply_vertical_image_registration = $vir[0][0];
  //var_dump($vir);
  //die();
+ $query = "SELECT v FROM constants WHERE k = 'mask_time=" . $experiment_id . "'";
+ //die($query);
+ $sql->get_row($query,$res);
+ //var_dump($res);die($res);
+ if(sizeof($res) != 0)
+   $mask_date = $res[0][0];
+ else $mask_date = 0;
+ //die("".$mask_date);
  $query = "SELECT delete_captured_images_after_mask FROM experiments WHERE id = " . $experiment_id;
  $sql->get_row($query,$dci);
  $delete_captured_images = $dci[0][0];
@@ -104,6 +125,7 @@ $query = "UPDATE experiments SET delete_captured_images_after_mask=" . ($delete_
    ." FROM sample_region_image_info as r, capture_samples as s "
    ."WHERE r.sample_id = s.id AND s.experiment_id = " . $experiment_id;
  $sql->get_row($query,$exps);
+ //die($exps[0][8]);
  $time_series_denoising_flag = $exps[0][8];
  $maximum_number_of_worms = $exps[0][9];
  $number_of_stationary_images = $exps[0][10];
@@ -307,10 +329,17 @@ catch(ns_exception $ex){
 <table align="center" border="0" cellpadding="0" cellspacing="1" bgcolor="#000000"><tr><td><table border="0" cellpadding="4" cellspacing="0" width="100%"><tr <?php echo $table_header_color?> ><td colspan=2><b>Image Analysis Options</b></td></tr>
 
 <tr><td bgcolor="<?php echo $table_colors[1][0] ?>">Time Series Denoising</td><td bgcolor="<?php echo $table_colors[1][1] ?>">
-
+     
 <select name="time_series_median">
-<option value=""<?php if ($time_series_denoising_flag == '0') echo "selected"?> >Do not subtract out median movement score</option>
-<option value="subtract" <?php if ($time_series_denoising_flag == '1') echo "selected"?> >Subtract out median movement score</option>
+<?php
+  
+    foreach($ns_denoising_option_labels as $l => $v){
+      echo "<option value=\"" . $v . "\" ";
+      if($time_series_denoising_flag == $v) echo "selected";
+      echo ">";
+      echo  $l . "</option>\n";
+    }
+?>
 </select></td></tr>
 
 <tr><td bgcolor="<?php echo $table_colors[0][0] ?>">Apply Vertical Image Registration</td><td bgcolor="<?php echo $table_colors[0][1] ?>">
@@ -332,7 +361,20 @@ catch(ns_exception $ex){
 		
 	<tr><td bgcolor="<?php echo $table_colors[1][0] ?>">Number of images used to detect stationary plate features <br>(0 for automatic)</td><td bgcolor="<?php echo $table_colors[1][1] ?>"><?php output_editable_field("number_of_stationary_images",$number_of_stationary_images,true,5);?>
 </td></tr>
-		
+		<tr><td bgcolor="<?php echo $table_colors[0][0] ?>">Date of images for plate mask</td><td bgcolor="<?php echo $table_colors[0][1]?>">
+<?php
+	ns_expand_unix_timestamp($mask_date,$i,$h,$d,$m,$y);
+					output_editable_field("end_hour",$h,TRUE,2);
+					echo ":";
+					output_editable_field("end_minute",$i,TRUE,2);
+					echo "<br>";
+					output_editable_field("end_month",$m,TRUE,2);
+					echo "/";
+					output_editable_field("end_day",$d,TRUE,2);
+					echo "/";
+					output_editable_field("end_year",$y,TRUE,4);	
+?>			       
+</td></tr>
 																							
 
 <tr><td bgcolor="<?php echo $table_colors[0][0] ?>" colspan=2>

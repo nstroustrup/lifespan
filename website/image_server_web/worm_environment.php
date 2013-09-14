@@ -23,6 +23,26 @@ function ns_load_experiment_groups(&$experiment_groups,&$group_order,&$sql){
 	$group_order[$i] = 0;
 }
 
+function ns_attempt_to_retry_transfer_to_long_term_storage($sample_id,$device,$experiment_id,&$sql){
+  if ($experiment_id == 0 && $sample_id == 0)
+    die("ns_attempt_to_retry_transfer_to_long_term_storage()::No experiment id or sample id specified");
+  $query = "UPDATE ";
+  //  $query = "SELECT s.name, c.* FROM ";
+  $query .= "capture_samples as s, capture_schedule as c ";
+  $query .= "SET c.problem = 0 ";
+  $query .= "WHERE c.sample_id = s.id AND c.transferred_to_long_term_storage = 1 ";
+  if ($device != "")
+    $query .= "AND s.device_name = '$device' ";
+  if ($sample_id != 0)
+    $query .= "AND s.id = $sample_id";
+  if ($experiment_id != 0)
+    $query .= "AND s.experiment_id = $experiment_id";
+  // $sql->get_row($query,$res);
+   // var_dump($res);
+  $sql->send_query($query);
+  die($query);
+
+}
 function ns_check_db_name($name){
     global $db_name_options;
     $db_found = 0;

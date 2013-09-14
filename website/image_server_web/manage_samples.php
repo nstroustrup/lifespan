@@ -14,7 +14,8 @@ $region_action=@$query_string['region_action'];
 $experiment_action=@$query_string['experiment_action'];
 $hide_sample_jobs=@$query_string['hide_sample_jobs'];
 $hide_region_jobs=@$query_string['hide_region_jobs'];
-$hide_censored=(@$query_string['hide_censored']=== '1');
+$hide_censored=@$query_string['hide_censored']=== '1';
+
 $edit_region_id=@$query_string['edit_region_id'];
 $delete_censored_jobs = @$query_string['delete_censored_jobs'];
 $delete_problem_images = @$query_string['delete_problem_images'];
@@ -54,8 +55,7 @@ try{
  
     }
     $query = "SELECT i.id FROM sample_region_image_info as i, capture_samples as s WHERE i.censored=1 AND i.sample_id = s.id AND s.experiment_id = $experiment_id";
-   if ($hide_censored)
-	$query.=' AND i.censored = 0';
+  
     $sql->get_row($query,$regions);
     
     for ($i = 0; $i < sizeof($regions); $i++){
@@ -74,6 +74,8 @@ try{
   }
   
   $experiment = new ns_experiment($experiment_id,'',$sql,false);
+#if ($hide_censored)die("HIDE");
+# else die("NO HIDE");
   $experiment->get_sample_information($sql,!$hide_censored);
   
   

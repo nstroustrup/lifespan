@@ -225,9 +225,10 @@ class ns_experiment{
 
 	function get_sample_information(&$sql,$load_censored=TRUE){
 		$query = "SELECT id FROM capture_samples WHERE experiment_id='" . $this->id_p . "'";
-		if ($load_censored)
+		if (!$load_censored)
 			$query .= " AND censored=0 ";
 		$query .= " ORDER BY name ASC";
+		//		die($query);
 		$sql->get_row($query,$sample_ids);
 		
 		for ($i = 0; $i < sizeof($sample_ids); $i++){

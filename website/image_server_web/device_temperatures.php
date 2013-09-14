@@ -10,6 +10,7 @@ $selected_devices=@$_POST['selected_devices'];
 $load_from_device_name = '';
 $only_strain = @$query_string['only_strain'];
 $incubators = array();
+$simple_table = $query_string['simple_table']==1;
 try{
   if ($_POST['save']){
     //die(var_dump($devices_to_save));
@@ -76,17 +77,26 @@ $row_color = !$row_color;
 echo "<td bgcolor=\"" . $table_colors[0][$row_color]. "\" valign=\"top\" align=\"center\">\n";
 		echo "<center><b>" . $d . "</b> (" . $device_locations[$d] . ")</center>";
 echo "</td><td  bgcolor=\"" . $table_colors[1][$row_color]. "\" valign=\"top\" align=\"center\">";
-output_editable_field("t_" . $d, $device_temperatures[$d],TRUE);
+ if (!$simple_table)
+   output_editable_field("t_" . $d, $device_temperatures[$d],TRUE);
+ else echo $device_temperatures[$d];
 echo "</td></tr>";
 	}
 
 
 ?>
 </table>
+<?php if (!$simple_table){?>
 <input type="submit" name="save" value="Save"><br><br>
+	    <?php }?>
 </div>
-
-</form>
+<center>
+</form><?php if (!$simple_table){?>
+<a href="device_temperatures.php?simple_table=1&experiment_id=<?php echo $experiment_id?>">[Simple Table]</a>
+	    <?php } else {?>
+<a href="device_temperatures.php?simple_table=0&experiment_id=<?php echo $experiment_id?>">[Editable Table]</a>	  
+	  <?php }?>
+</center>
 <?php
 display_worm_page_footer();
 ?>

@@ -90,6 +90,7 @@ if ($_POST['hotplug'] != ''){
 if ($_POST['buffer_reload'] != ''){
   $id = $_POST['host_id'];
   $query = "UPDATE hosts SET hotplug_requested = 2 WHERE id = '$id'";
+  //die($query);
   $sql->send_query($query);
   $refresh = TRUE;
  }

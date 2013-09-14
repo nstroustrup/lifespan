@@ -136,7 +136,7 @@ try{
 	}
 	$lock_cs = "LOCK TABLES capture_schedule WRITE";
 	$unlock_cs = "UNLOCK TABLES";
-	if ($_POST['delete_future'] != ''){
+	if (0 && $_POST['delete_future'] != ''){
 		$id = $_POST['id'];
 		$sql->send_query($lock_cs);
 		//$query = "DELETE FROM capture_schedule WHERE experiment_id='$id' AND time_at_start='0' AND missed='0' AND time_at_start='0'";
@@ -814,7 +814,7 @@ for ($ss = 0; $ss < sizeof($experiment_strains[$experiment_id]); $ss++){
 	if ($edit){
 		echo " <input type = \"hidden\" name =\"id\" value=\"" . $experiment_id . "\">";
 		echo "<input type=\"submit\" name=\"save\" value=\"Save\"><br>";
-		echo "<input type=\"submit\" name=\"delete_future\" value=\"Cancel Pending Scans\" onClick=\"javascript:return confirm('Are you sure you wish to cancel all pending scans?')\"><br>";		
+		//		echo "<input type=\"submit\" name=\"delete_future\" value=\"Cancel Pending Scans\" onClick=\"javascript:return confirm('Are you sure you wish to cancel all pending scans?')\"><br>";		
 		echo "<input type=\"submit\" name=\"toggle_hide_experiment\" value=\"";
                 if ($experiment[6] == '1')
                       echo 'Un-Hide Experiment';

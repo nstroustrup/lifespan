@@ -9,6 +9,7 @@
 //Rather than rewriting this from scratch we just use wrappers to the extant code.
 //Because all of the _tiff functions are declared as static we pull them in as includes.
 #ifdef _WIN32 
+#include <Windows.h>
 #include "tif_win32.c"
 #else
 #include "tif_unix.c"

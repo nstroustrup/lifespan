@@ -26,6 +26,8 @@ using namespace std;
 #include "ns_image_server_automated_job_scheduler.h"
 //#include "ns_capture_device_manager.h"
 
+void ns_image_server_global_debug_handler(const ns_text_stream_t & t);
+
 ns_image_server::ns_image_server():event_log_open(false),exit_requested(false),update_software(false), 
 	sql_lock("ns_is::sql"),server_event_lock("ns_is::server_event"),simulator_scan_lock("ns_is::sim_scan"),local_buffer_sql_lock("ns_is::lb"),
 	_act_as_processing_node(true),/*alert_handler_lock("ns_is::alert"),alert_handler_running(false),*/cleared(false),current_sql_server_address_id(0),
@@ -33,6 +35,7 @@ ns_image_server::ns_image_server():event_log_open(false),exit_requested(false),u
 
 	ns_socket::global_init();
 	ns_worm_detection_constants::init();
+	ns_set_global_debug_output_handler(ns_image_server_global_debug_handler);
 	_software_version_compile = 656;
 	image_storage.cache.set_memory_allocation_limit(maximum_image_cache_memory_size());
 
@@ -1662,7 +1665,7 @@ void ns_image_server::clear_old_server_events(ns_sql & sql){
 
 
 ns_64_bit ns_image_server::register_server_event(const ns_register_type type,const ns_image_server_event & s_event){
-	if (s_event.type()==ns_ts_error){
+	if (s_event.type()==ns_ts_error || s_event.type() == ns_debug){
 			register_server_event_no_db(s_event);
 			return 1;
 	}
@@ -1984,9 +1987,6 @@ void ns_update_software(const bool just_launch){
 }
 #endif
 
-//global server object
-ns_image_server image_server;
-
 void ns_wrap_m4v_stream(const std::string & m4v_filename, const std::string & output_basename){
 	//we have now produced a raw mpeg4 stream.
 	//compile it into mp4 movies at four different frame_rates
@@ -2057,4 +2057,15 @@ ns_image_server_results_file ns_image_server_results_storage::time_path_image_an
 			return ns_image_server_results_file(image_server.image_storage.movement_file_directory(spec.region_id,&sql,true) + DIR_CHAR_STR + dir, fname);
 		}
 	}
+
+
+
+//global server object
+ns_image_server image_server;
+
+
+void ns_image_server_global_debug_handler(const ns_text_stream_t & t){
+	if (image_server.verbose_debug_output())
+		image_server.register_server_event_no_db(ns_image_server_message() << t.text() << ns_ts_debug);
+}
 

@@ -9,7 +9,7 @@
 #include <io.h>
 #include <malloc.h>
 namespace ns_mysql_header{
-#include "config-win.h"
+//#include "config-win.h"
 #include <mysql.h>
 #else
 #include <stdlib.h>

@@ -740,13 +740,13 @@ bool ns_processing_job_maintenance_processor:: run_job(ns_sql & sql){
 				job.maintenance_task == ns_maintenance_rebuild_movement_from_stored_images || 
 				job.maintenance_task == ns_maintenance_rebuild_movement_from_stored_image_quantification){
 				image_server->register_server_event(ns_image_server_event("Loading point cloud solution from disk."),&sql);
-				time_path_solution.load_from_db(job.region_id,sql); 
+				time_path_solution.load_from_db(job.region_id,sql,image_server->verbose_debug_output()); 
 			}
 			else{
 				image_server->register_server_event(ns_image_server_event("Solving (x,y,t) point cloud."),&sql);
 				ns_time_path_solver_parameters solver_parameters(ns_time_path_solver_parameters::default_parameters(job.region_id,sql));
 			
-				ns_time_path_solver tp_solver;
+				ns_time_path_solver tp_solver(image_server->verbose_debug_output());
 				tp_solver.load(job.region_id,sql);
 				tp_solver.solve(solver_parameters,time_path_solution);
 				time_path_solution.fill_gaps_and_add_path_prefixes(ns_time_path_solution::default_length_of_fast_moving_prefix());

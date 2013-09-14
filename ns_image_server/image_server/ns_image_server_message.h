@@ -10,7 +10,7 @@
 #include <string>
 #pragma warning(disable: 4355) //our use of this in constructors is valid, so we suppress the error message.
 
-typedef enum { ns_ts_standard, ns_ts_error, ns_ts_sql_error, ns_ts_minor_event} ns_text_stream_type;
+typedef enum { ns_ts_standard, ns_ts_error, ns_ts_sql_error, ns_ts_minor_event, ns_ts_debug} ns_text_stream_type;
 
 //holds global information about the current image server host
 //Also used to coordinate threads

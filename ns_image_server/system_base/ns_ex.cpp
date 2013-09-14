@@ -334,3 +334,16 @@ std::string ns_to_lower(const std::string & s){
 		ret[i] = tolower(s[i]);
 	return ret;
 }
+
+ns_global_debug_output_handler global_debug_output_handler = 0;
+void ns_global_debug(const ns_text_stream_t & t){
+	if (global_debug_output_handler == 0){
+		cerr << "Global Debug Handler Unset: " << t.text();
+		return;
+	}
+	global_debug_output_handler(t);
+}
+void ns_set_global_debug_output_handler(ns_global_debug_output_handler handler){
+	global_debug_output_handler = handler;
+}
+

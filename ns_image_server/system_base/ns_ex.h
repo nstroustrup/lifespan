@@ -206,6 +206,11 @@ private:
 #pragma warning(default: 4355)
 
 std::string ns_to_lower(const std::string & s);
+
+
+typedef void (*ns_global_debug_output_handler)(const ns_text_stream_t &);
+void ns_set_global_debug_output_handler(ns_global_debug_output_handler handler);
+void ns_global_debug(const ns_text_stream_t &);
 #endif
 
 

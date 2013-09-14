@@ -296,6 +296,19 @@ void ns_time_path_solver::break_paths_at_large_gaps(double max_gap_factor){
 }
 void ns_time_path_solver::solve(const ns_time_path_solver_parameters &param, ns_time_path_solution & solve){
 
+	ns_global_debug(ns_text_stream_t("ns_time_path_solver::solve()::min_stationary_object_path_fragment_duration_in_seconds: ") <<             param.min_stationary_object_path_fragment_duration_in_seconds);
+	ns_global_debug(ns_text_stream_t("ns_time_path_solver::solve()::stationary_object_path_fragment_window_length_in_seconds: ") <<			  param.stationary_object_path_fragment_window_length_in_seconds);
+	ns_global_debug(ns_text_stream_t("ns_time_path_solver::solve()::stationary_object_path_fragment_max_movement_distance: ") <<				  param.stationary_object_path_fragment_max_movement_distance);
+	ns_global_debug(ns_text_stream_t("ns_time_path_solver::solve()::maximum_time_gap_between_joined_path_fragments: ") <<					  param.maximum_time_gap_between_joined_path_fragments);
+	ns_global_debug(ns_text_stream_t("ns_time_path_solver::solve()::maximum_time_overlap_between_joined_path_fragments: ") <<				  param.maximum_time_overlap_between_joined_path_fragments);
+	ns_global_debug(ns_text_stream_t("ns_time_path_solver::solve()::maximum_distance_betweeen_joined_path_fragments: ") <<					  param.maximum_distance_betweeen_joined_path_fragments);
+	ns_global_debug(ns_text_stream_t("ns_time_path_solver::solve()::min_final_stationary_path_duration_in_minutes: ") <<						  param.min_final_stationary_path_duration_in_minutes);
+	ns_global_debug(ns_text_stream_t("ns_time_path_solver::solve()::maximum_fraction_duplicated_points_between_joined_path_fragments: ") <<	  param.maximum_fraction_duplicated_points_between_joined_path_fragments);
+	ns_global_debug(ns_text_stream_t("ns_time_path_solver::solve()::maximum_path_fragment_displacement_per_hour: ") <<						  param.maximum_path_fragment_displacement_per_hour);
+	ns_global_debug(ns_text_stream_t("ns_time_path_solver::solve()::max_average_final_path_average_timepoint_displacement: ") <<				  param.max_average_final_path_average_timepoint_displacement);
+	ns_global_debug(ns_text_stream_t("ns_time_path_solver::solve()::maximum_fraction_of_points_allowed_to_be_missing_in_path_fragment: ") <<	  param.maximum_fraction_of_points_allowed_to_be_missing_in_path_fragment);
+	ns_global_debug(ns_text_stream_t("ns_time_path_solver::solve()::maximum_fraction_of_median_gap_allowed_in_low_density_paths: ") <<		  param.maximum_fraction_of_median_gap_allowed_in_low_density_paths);
+	
 	//first we find all paths that are long enough and consistant enough to be real
 	//note we discard lots of stray points here
 	find_stationary_path_fragments(param.maximum_object_detection_density_in_events_per_hour()*param. maximum_fraction_of_points_allowed_to_be_missing_in_path_fragment,
@@ -303,6 +316,7 @@ void ns_time_path_solver::solve(const ns_time_path_solver_parameters &param, ns_
 				   param.stationary_object_path_fragment_window_length_in_seconds,
 				   param.stationary_object_path_fragment_max_movement_distance);
 	
+	unsigned long debug_paths_moving_fragments_removed(0);
 	//remove fragments that move to much
 	for (std::vector<ns_time_path_solver_path>::iterator p = paths.begin(); p != paths.end();){
 		if (p->max_time == p->min_time){
@@ -310,10 +324,14 @@ void ns_time_path_solver::solve(const ns_time_path_solver_parameters &param, ns_
 			continue;
 		}
 		const double displacement_per_hour((p->max_time_position-p->min_time_position).mag()/(double)((p->max_time-p->min_time)/60.0/60.0));
-		if (displacement_per_hour > param.maximum_path_fragment_displacement_per_hour)
+		if (displacement_per_hour > param.maximum_path_fragment_displacement_per_hour){
 			p = paths.erase(p);
+			debug_paths_moving_fragments_removed++;
+		}
 		else p++;
 	}
+
+	ns_global_debug(ns_text_stream_t("ns_time_path_solver::solve()::Moving paths removed:") << debug_paths_moving_fragments_removed);
 
 	for (vector<ns_time_path_solver_path>::iterator p = paths.begin(); p != paths.end();p++){
 		for (unsigned int i = 1; i < p->elements.size(); i++){
@@ -756,6 +774,12 @@ void ns_time_path_solution::load_from_disk(istream & in){
 				}
 		}
 	}
+	
+	ns_global_debug(ns_text_stream_t("ns_time_path_solution()::load_from_disk()::Loaded ") << unassigned_points.size() << " unassigned points");
+	ns_global_debug(ns_text_stream_t("ns_time_path_solution()::load_from_disk()::Loaded ") << path_groups.size() << " paths groups.");
+	ns_global_debug(ns_text_stream_t("ns_time_path_solution()::load_from_disk()::Loaded ") << paths.size() << " paths.");
+	ns_global_debug(ns_text_stream_t("ns_time_path_solution()::load_from_disk()::Loaded ") << timepoints.size() << " timepoints.");
+
 	check_for_duplicate_events();
 }
 
@@ -1565,12 +1589,14 @@ void ns_time_path_solver::find_stationary_path_fragments(const double min_path_d
 	std::vector<ns_time_path_solver_path_builder> open_paths;
 	open_paths.reserve(100);
 	paths.reserve(100);
-	
+	unsigned long debug_max_paths(0),debug_paths_discarded_for_being_short(0),debug_paths_discarded_for_low_density(0);
 	for (long i = (long)timepoints.size()-1; i >= 0; i--){
 	//	if (timepoints[i].time == 1301947105)
 		//	cerr << "AHA";
 		//attempt to assign an element to an existing path
 		assign_timepoint_elements_to_paths(timepoints[i].elements,mdsq,open_paths);
+		if (open_paths.size() > debug_max_paths)
+			debug_max_paths = open_paths.size();
 		for (unsigned int j= 0; j < timepoints[i].elements.size(); j++){
 		/*	if ((timepoints[i].elements[j].e.center - ns_vector_2d(1652,5396)).squared() < 100 &&
 				!timepoints[i].elements[j].element_assigned_in_this_round)
@@ -1601,7 +1627,11 @@ void ns_time_path_solver::find_stationary_path_fragments(const double min_path_d
 				
 				if (p->elements.size() > 1 && p->elements.begin()->time-p->elements.rbegin()->time >= min_path_duration_in_seconds)
 					paths.push_back(*p);
-			
+
+				if (p->elements.size() > 1 && p->elements.begin()->time-p->elements.rbegin()->time < min_path_duration_in_seconds)
+					debug_paths_discarded_for_being_short++;
+
+
 				p = open_paths.erase(p);
 			}
 			else p++;
@@ -1610,9 +1640,6 @@ void ns_time_path_solver::find_stationary_path_fragments(const double min_path_d
 	}
 	//close any remaining open paths
 	for (unsigned int i = 0; i < open_paths.size(); i++){
-			//if (open_paths[i].elements.begin()->pos.y ==  4650)
-		//				cerr << "WHA";
-	
 		//make sure that the current open path is high enough density at it's end
 		//const double current_path_point_density(open_paths[i].calculate_current_density(time_window_length_in_seconds,timepoints,open_paths[i].elements[0].link.t_id));
 	
@@ -1620,7 +1647,13 @@ void ns_time_path_solver::find_stationary_path_fragments(const double min_path_d
 		//	&& current_path_point_density >= min_path_density_in_points_per_hour 
 			&& open_paths[i].elements.begin()->time-open_paths[i].elements.rbegin()->time >= min_path_duration_in_seconds)
 			paths.push_back(open_paths[i]);
+
+		if (open_paths[i].elements.size() > 1 && open_paths[i].elements.begin()->time-open_paths[i].elements.rbegin()->time < min_path_duration_in_seconds)
+					debug_paths_discarded_for_being_short++;
 	}
+	ns_global_debug(ns_text_stream_t("ns_time_path_solver::find_stationary_path_fragments::Maximum simultaneous open paths: ") << debug_max_paths);
+	ns_global_debug(ns_text_stream_t("ns_time_path_solver::find_stationary_path_fragments::Paths discarded for being too short: ") << debug_paths_discarded_for_being_short);
+
 }
 
 unsigned long ns_time_path_solver::number_of_unassigned_points_at_time(const ns_time_element_link & l) const {
@@ -1747,15 +1780,53 @@ void ns_time_path_solver::load_detection_results(unsigned long region_id,ns_sql 
 		throw ns_ex("ns_time_path_solver::load()::Could not load region ") << region_id << " from database.";
 	unsigned long time_of_last_valid_sample = atol(res[0][0].c_str());
 
+	if (time_of_last_valid_sample == 0)
+		ns_global_debug(ns_text_stream_t("ns_time_path_solver::load_detection_results()::Time of last valid sample is not set");
+	else
+		ns_global_debug(ns_text_stream_t("ns_time_path_solver::load_detection_results()::Time of last valid sample = ") << ns_format_time_string_for_human(time_of_last_valid_sample));
+	
+
 	sql << "SELECT worm_detection_results_id,capture_time, id FROM sample_region_images WHERE region_info_id = " 
 		<< region_id << " AND worm_detection_results_id != 0 AND problem = 0 AND currently_under_processing = 0 "
 		<< "AND censored = 0";
 	if (time_of_last_valid_sample != 0)
 		sql << " AND capture_time <= " << time_of_last_valid_sample;
 	sql << " ORDER BY capture_time ASC";
-
+	
 	ns_sql_result time_point_result;
 	sql.get_rows(time_point_result);
+	
+	ns_global_debug(ns_text_stream_t("ns_time_path_solver::load_detection_results()::Found ") << time_point_results << " time points (measurement times) in the db");
+	
+	//output a whole bunch of debug information if no results are found
+	if (time_point_result.empty()){
+		ns_sql_result res;
+		sql << "SELECT worm_detection_results_id,capture_time, id FROM sample_region_images WHERE region_info_id = " 
+			<< region_id";
+		sql.get_rows(res.size());
+		ns_global_debug(ns_text_stream_t("ns_time_path_solver::load():Images in region: ")<<res.size());
+
+		sql << "SELECT worm_detection_results_id,capture_time, id FROM sample_region_images WHERE region_info_id = " 
+			<< region_id << " AND worm_detection_results_id != 0";
+		sql.get_rows(res.size());
+		ns_global_debug(ns_text_stream_t("ns_time_path_solver::load():Images with worm detection complete: ")<<res.size());
+
+		sql << "SELECT worm_detection_results_id,capture_time, id FROM sample_region_images WHERE region_info_id = " 
+			<< region_id << " AND worm_detection_results_id != 0 AND problem = 0";
+		sql.get_rows(res.size());
+		ns_global_debug(ns_text_stream_t("ns_time_path_solver::load():Images without problem flag: ")<<res.size());
+
+		sql << "SELECT worm_detection_results_id,capture_time, id FROM sample_region_images WHERE region_info_id = " 
+			<< region_id << " AND worm_detection_results_id != 0 AND problem = 0 AND currently_under_processing = 0";
+		sql.get_rows(res.size());
+		ns_global_debug(ns_text_stream_t("ns_time_path_solver::load():Images not being processed ")<<res.size());
+
+		sql << "SELECT worm_detection_results_id,capture_time, id FROM sample_region_images WHERE region_info_id = " 
+		<< region_id << " AND worm_detection_results_id != 0 AND problem = 0 AND currently_under_processing = 0 "
+		<< "AND censored = 0";
+		sql.get_rows(res.size());
+		ns_global_debug(ns_text_stream_t("ns_time_path_solver::load():Images not censored ")<<res.size());
+	}
 	timepoints.reserve(time_point_result.size());
 	set<long> times;
 	set<long> detection_ids;
@@ -1793,62 +1864,16 @@ void ns_time_path_solver::load_detection_results(unsigned long region_id,ns_sql 
 	}
 	if (timepoints.size() != current_timepoint_i)
 		timepoints.resize(current_timepoint_i);
+	
+	ns_global_debug(ns_text_stream_t("ns_time_path_solver::load_detection_results()::Found ") << timepoints.size() << " valid timepoints.");
 }
 void ns_time_path_solver::load(unsigned long region_id, ns_sql & sql){
-	/*sql << "SELECT time_of_last_valid_sample FROM sample_region_image_info WHERE id = " << region_id;
-	ns_sql_result res;
-	sql.get_rows(res);
-	if (res.size() == 0)
-		throw ns_ex("ns_time_path_solver::load()::Could not load region ") << region_id << " from database.";
-	unsigned long time_of_last_valid_sample = atol(res[0][0].c_str());
-
-	sql << "SELECT worm_detection_results_id,capture_time, id FROM sample_region_images WHERE region_info_id = " 
-		<< region_id << " AND worm_detection_results_id != 0 AND problem = 0 AND currently_under_processing = 0 "
-		<< "AND censored = 0";
-	if (time_of_last_valid_sample != 0)
-		sql << " AND capture_time <= " << time_of_last_valid_sample;
-	sql << " ORDER BY capture_time ASC";
-
-	ns_sql_result time_point_result;
-	sql.get_rows(time_point_result);
-	timepoints.reserve(time_point_result.size());
-	detection_results->results.resize(time_point_result.size());
-	*/
-	/*set<long> times;
-	set<long> detection_ids;
-	cerr << "Compiling Detection Point Cloud...";
-	long last_c(-2);
-	for (unsigned int i = 0; i < time_point_result.size();i++){
-		if ((long)((i*100)/time_point_result.size()) >= last_c+5){
-			cerr << (i*100)/time_point_result.size() << "%...";
-			last_c = i;
-		}
-		timepoints.resize(timepoints.size()+1);
-		timepoints.rbegin()->time = atol(time_point_result[i][1].c_str());
-		timepoints.rbegin()->sample_region_image_id = atol(time_point_result[i][2].c_str());
-		const unsigned long worm_detection_results_id(atol(time_point_result[i][0].c_str()));
-		
-		if (!times.insert(timepoints.rbegin()->time).second){
-			ns_register_path_solver_load_error(region_id,
-			std::string("A duplicate capture sample entry was discovered at time ")
-			+ ns_format_time_string_for_human(timepoints.rbegin()->time) + "(" + ns_to_string(timepoints.rbegin()->time) + ")",sql);
-			timepoints.pop_back();
-		}
-		else if (!detection_ids.insert(worm_detection_results_id).second){
-			ns_register_path_solver_load_error(region_id,
-			std::string("A duplicate capture sample entry was discovered at time ")
-			+ ns_format_time_string_for_human(timepoints.rbegin()->time) + "(" + ns_to_string(timepoints.rbegin()->time) + ")",sql);
-			timepoints.pop_back();
-		}
-		else timepoints.rbegin()->load(worm_detection_results_id,detection_results->results[i],sql);
-		
-	}
-	cerr << "\n";*/
 	
 	load_detection_results(region_id,sql);
 
 	long last_c(-2);
 	cerr << "Compiling Detection Point Cloud...";
+	unsigned long debug_max_points_per_timepoint(0);
 	for (unsigned int i = 0; i < timepoints.size(); i++){
 		
 		if ((long)((i*100)/timepoints.size()) >= last_c+5){
@@ -1858,16 +1883,23 @@ void ns_time_path_solver::load(unsigned long region_id, ns_sql & sql){
 	//	if (timepoints[i].time == 1321821542)
 	//		cerr << "WHA";
 		timepoints[i].load(timepoints[i].worm_results_id,detection_results->results[i],sql);
+		if (timepoints[i].elements.size() > debug_max_points_per_timepoint)
+			debug_max_points_per_timepoint = timepoints[i].elements.size();
 	}
 	cerr << "\n";
-//	check_for_duplicate_events();
+	ns_global_debug(ns_text_stream_t("ns_time_path_solver::load()::Max number of elements per timepoint:") << debug_max_points_per_timepoint);
 	
+	unsigned long debug_combined_elements(0);
 	for (unsigned int i = 0; i < timepoints.size(); i++){
-		timepoints[i].combine_very_close_elements(i);
+		if (timepoints[i].combine_very_close_elements(i))
+			debug_combined_elements++;
 	}
+
+	ns_global_debug(ns_text_stream_t("ns_time_path_solver::load()::Combined elements:") << debug_combined_elements);
+	
 }
 
-void ns_time_path_solver_timepoint::combine_very_close_elements(const unsigned long max_d_squared){
+bool ns_time_path_solver_timepoint::combine_very_close_elements(const unsigned long max_d_squared){
 	for (std::vector<ns_time_path_solver_element>::iterator p = elements.begin(); p != elements.end(); p++)
 		p->element_assigned = false;
 
@@ -1884,13 +1916,16 @@ void ns_time_path_solver_timepoint::combine_very_close_elements(const unsigned l
 			}
 		}
 	}
-
+	bool removed(false);
 	//remove duplicates from base list
 	for (std::vector<ns_time_path_solver_element>::iterator p = elements.begin(); p != elements.end();){
-		if (p->element_assigned)
+		if (p->element_assigned){
 			p = elements.erase(p);
+			removed = true;
+		}
 		else p++;
 	}
+	return removed;
 }
 
 ///void ns_time_path_solver::check_for_duplicate_events(){

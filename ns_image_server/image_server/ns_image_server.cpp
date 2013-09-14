@@ -1665,7 +1665,7 @@ void ns_image_server::clear_old_server_events(ns_sql & sql){
 
 
 ns_64_bit ns_image_server::register_server_event(const ns_register_type type,const ns_image_server_event & s_event){
-	if (s_event.type()==ns_ts_error || s_event.type() == ns_debug){
+	if (s_event.type()==ns_ts_error || s_event.type() == ns_ts_debug){
 			register_server_event_no_db(s_event);
 			return 1;
 	}
@@ -1709,12 +1709,13 @@ ns_64_bit ns_image_server::register_server_event(const ns_register_type type,con
 
 
 
-void ns_image_server::register_server_event_no_db(const ns_image_server_event & s_event){
+void ns_image_server::register_server_event_no_db(const ns_image_server_event & s_event,bool no_double_endline){
 	ns_acquire_lock_for_scope lock(server_event_lock,__FILE__,__LINE__);
 	if (s_event.text().size() != 0){	
-		cerr <<"\n";
+		if (!no_double_endline)
+			cerr <<"\n";
 		s_event.print(cerr);
-		cerr << "\n";
+		//cerr << "\n";
 		s_event.print(event_log);
 		event_log << "\n";
 		event_log.flush();
@@ -2066,6 +2067,6 @@ ns_image_server image_server;
 
 void ns_image_server_global_debug_handler(const ns_text_stream_t & t){
 	if (image_server.verbose_debug_output())
-		image_server.register_server_event_no_db(ns_image_server_message() << t.text() << ns_ts_debug);
+		image_server.register_server_event_no_db(ns_image_server_event() << t.text() << ns_ts_debug,true);
 }
 

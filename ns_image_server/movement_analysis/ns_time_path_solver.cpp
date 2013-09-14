@@ -775,7 +775,8 @@ void ns_time_path_solution::load_from_disk(istream & in){
 		}
 	}
 	
-	ns_global_debug(ns_text_stream_t("ns_time_path_solution()::load_from_disk()::Loaded ") << unassigned_points.size() << " unassigned points");
+	ns_global_debug(ns_text_stream_t("ns_time_path_solution()::load_from_disk()::Loaded ") << unassigned_points.moving_elements.size() << " unassigned moving elements");
+	ns_global_debug(ns_text_stream_t("ns_time_path_solution()::load_from_disk()::Loaded ") << unassigned_points.stationary_elements.size() << " unassigned stationary elements");
 	ns_global_debug(ns_text_stream_t("ns_time_path_solution()::load_from_disk()::Loaded ") << path_groups.size() << " paths groups.");
 	ns_global_debug(ns_text_stream_t("ns_time_path_solution()::load_from_disk()::Loaded ") << paths.size() << " paths.");
 	ns_global_debug(ns_text_stream_t("ns_time_path_solution()::load_from_disk()::Loaded ") << timepoints.size() << " timepoints.");
@@ -1781,7 +1782,7 @@ void ns_time_path_solver::load_detection_results(unsigned long region_id,ns_sql 
 	unsigned long time_of_last_valid_sample = atol(res[0][0].c_str());
 
 	if (time_of_last_valid_sample == 0)
-		ns_global_debug(ns_text_stream_t("ns_time_path_solver::load_detection_results()::Time of last valid sample is not set");
+		ns_global_debug(ns_text_stream_t("ns_time_path_solver::load_detection_results()::Time of last valid sample is not set."));
 	else
 		ns_global_debug(ns_text_stream_t("ns_time_path_solver::load_detection_results()::Time of last valid sample = ") << ns_format_time_string_for_human(time_of_last_valid_sample));
 	
@@ -1796,35 +1797,35 @@ void ns_time_path_solver::load_detection_results(unsigned long region_id,ns_sql 
 	ns_sql_result time_point_result;
 	sql.get_rows(time_point_result);
 	
-	ns_global_debug(ns_text_stream_t("ns_time_path_solver::load_detection_results()::Found ") << time_point_results << " time points (measurement times) in the db");
+	ns_global_debug(ns_text_stream_t("ns_time_path_solver::load_detection_results()::Found ") << time_point_result.size() << " time points (measurement times) in the db");
 	
 	//output a whole bunch of debug information if no results are found
 	if (time_point_result.empty()){
 		ns_sql_result res;
 		sql << "SELECT worm_detection_results_id,capture_time, id FROM sample_region_images WHERE region_info_id = " 
-			<< region_id";
-		sql.get_rows(res.size());
+			<< region_id;
+		sql.get_rows(res);
 		ns_global_debug(ns_text_stream_t("ns_time_path_solver::load():Images in region: ")<<res.size());
 
 		sql << "SELECT worm_detection_results_id,capture_time, id FROM sample_region_images WHERE region_info_id = " 
 			<< region_id << " AND worm_detection_results_id != 0";
-		sql.get_rows(res.size());
+		sql.get_rows(res);
 		ns_global_debug(ns_text_stream_t("ns_time_path_solver::load():Images with worm detection complete: ")<<res.size());
 
 		sql << "SELECT worm_detection_results_id,capture_time, id FROM sample_region_images WHERE region_info_id = " 
 			<< region_id << " AND worm_detection_results_id != 0 AND problem = 0";
-		sql.get_rows(res.size());
+		sql.get_rows(res);
 		ns_global_debug(ns_text_stream_t("ns_time_path_solver::load():Images without problem flag: ")<<res.size());
 
 		sql << "SELECT worm_detection_results_id,capture_time, id FROM sample_region_images WHERE region_info_id = " 
 			<< region_id << " AND worm_detection_results_id != 0 AND problem = 0 AND currently_under_processing = 0";
-		sql.get_rows(res.size());
+		sql.get_rows(res);
 		ns_global_debug(ns_text_stream_t("ns_time_path_solver::load():Images not being processed ")<<res.size());
 
 		sql << "SELECT worm_detection_results_id,capture_time, id FROM sample_region_images WHERE region_info_id = " 
 		<< region_id << " AND worm_detection_results_id != 0 AND problem = 0 AND currently_under_processing = 0 "
 		<< "AND censored = 0";
-		sql.get_rows(res.size());
+		sql.get_rows(res);
 		ns_global_debug(ns_text_stream_t("ns_time_path_solver::load():Images not censored ")<<res.size());
 	}
 	timepoints.reserve(time_point_result.size());

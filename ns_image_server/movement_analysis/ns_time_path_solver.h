@@ -193,7 +193,7 @@ struct ns_time_path_solver_timepoint{
 	unsigned long sample_region_image_id;
 
 	std::vector<ns_time_path_solver_element> elements;
-	void combine_very_close_elements(const unsigned long max_d_squared);
+	bool combine_very_close_elements(const unsigned long max_d_squared);
 	void load(const unsigned long worm_detection_results_id,ns_image_worm_detection_results & results,ns_sql & sql);
 
 	unsigned long worm_results_id;

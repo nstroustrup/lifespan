@@ -411,7 +411,7 @@ public:
 	///updates the database with the specified server event.
 	ns_64_bit register_server_event(const ns_image_server_event & s_event, ns_image_server_sql * sql,const bool no_display=false);
 	ns_64_bit register_server_event(const ns_ex & s_event, ns_image_server_sql * sql);
-	void register_server_event_no_db(const ns_image_server_event & s_event);
+	void register_server_event_no_db(const ns_image_server_event & s_event,bool no_double_endline=false);
 	
 	typedef enum{ns_register_in_local_db, ns_register_in_central_db, ns_register_in_central_db_with_fallback} ns_register_type;
 

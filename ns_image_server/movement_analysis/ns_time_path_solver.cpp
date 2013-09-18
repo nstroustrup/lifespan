@@ -169,13 +169,19 @@ ns_vector_2d ns_time_path_solver::estimate(const ns_time_path_solution_stationar
 }
 void ns_time_path_solver::remove_short_and_moving_paths(const ns_time_path_solver_parameters & param){
 	//remove short paths
+	unsigned long debug_max_length(0);
 	for (std::vector<ns_time_path_solver_path>::iterator p = paths.begin(); p != paths.end();){
 		if (((p->max_time-p->min_time)/60) < param.min_final_stationary_path_duration_in_minutes){
+			if (debug_max_length < p->max_time-p->min_time)
+				debug_max_length = p->max_time-p->min_time;
 			p = paths.erase(p);
 			continue;
 		}
 		else p++;
 	}
+	ns_global_debug(ns_text_stream_t("ns_time_path_solver::::remove_short_and_moving_paths()::Number of paths after short paths removed: ") << paths.size());
+	ns_global_debug(ns_text_stream_t("ns_time_path_solver::::remove_short_and_moving_paths()::Longest short path removed: ") << debug_max_length);
+	
 	std::vector<double> deltas;
 	//remove paths that move too much.
 	for (std::vector<ns_time_path_solver_path>::iterator p = paths.begin(); p != paths.end();){
@@ -196,6 +202,7 @@ void ns_time_path_solver::remove_short_and_moving_paths(const ns_time_path_solve
 			p = paths.erase(p);
 		else p++;
 	}
+	ns_global_debug(ns_text_stream_t("ns_time_path_solver::::remove_short_and_moving_paths()::Number of paths after moving paths removed: ") << paths.size());
 }
 
 void ns_splinter_path_fragment(const ns_time_path_solver_path & source, const unsigned long begin_i,const unsigned long end_i, ns_time_path_solver_path & destination){
@@ -316,6 +323,8 @@ void ns_time_path_solver::solve(const ns_time_path_solver_parameters &param, ns_
 				   param.stationary_object_path_fragment_window_length_in_seconds,
 				   param.stationary_object_path_fragment_max_movement_distance);
 	
+	ns_global_debug(ns_text_stream_t("ns_time_path_solver::solve()::Numer of paths found:") << paths.size());
+
 	unsigned long debug_paths_moving_fragments_removed(0);
 	//remove fragments that move to much
 	for (std::vector<ns_time_path_solver_path>::iterator p = paths.begin(); p != paths.end();){
@@ -349,6 +358,9 @@ void ns_time_path_solver::solve(const ns_time_path_solver_parameters &param, ns_
 									 param.maximum_time_overlap_between_joined_path_fragments,
 									 param.maximum_fraction_duplicated_points_between_joined_path_fragments);
 
+	
+	ns_global_debug(ns_text_stream_t("ns_time_path_solver::solve()::Number of paths after merge:") << paths.size());
+
 	for (vector<ns_time_path_solver_path>::iterator p = paths.begin(); p != paths.end();p++){
 		for (unsigned int i = 1; i < p->elements.size(); i++){
 			if (p->elements[i-1].t_id < p->elements[i].t_id)
@@ -357,7 +369,9 @@ void ns_time_path_solver::solve(const ns_time_path_solver_parameters &param, ns_
 	}
 	
 	remove_short_and_moving_paths(param);
-	
+
+	ns_global_debug(ns_text_stream_t("ns_time_path_solver::solve()::Number of paths after short and moving paths were removed:") << paths.size());
+
 	find_low_density_stationary_paths(param.min_final_stationary_path_duration_in_minutes,
 				   param.stationary_object_path_fragment_max_movement_distance/2);
 
@@ -1297,6 +1311,7 @@ void ns_time_path_solver::handle_low_density_stationary_paths_and_stray_points(c
 			if (ns_is_close4(paths[i].elements[j]))
 				cerr << "Found it in path\n";*/
 	}
+	ns_global_debug(ns_text_stream_t("ns_time_path_solver::handle_low_density_stationary_paths_and_stray_points::Considering ") << estimators.size() << " drift estimators.");
 
 	//we don't want to search through a whole bunch of fast-moving animals
 	//so we use a heuristic to prevent these from being searched
@@ -1591,30 +1606,30 @@ void ns_time_path_solver::find_stationary_path_fragments(const double min_path_d
 	open_paths.reserve(100);
 	paths.reserve(100);
 	unsigned long debug_max_paths(0),debug_paths_discarded_for_being_short(0),debug_paths_discarded_for_low_density(0);
+	unsigned long max_discarded_path_length(0), min_discarded_path_length(INT_MAX);
+	unsigned long debug_paths_discarded_for_being_short_at_end(0);
+	unsigned long longest_path_length(0);
 	for (long i = (long)timepoints.size()-1; i >= 0; i--){
-	//	if (timepoints[i].time == 1301947105)
-		//	cerr << "AHA";
 		//attempt to assign an element to an existing path
 		assign_timepoint_elements_to_paths(timepoints[i].elements,mdsq,open_paths);
 		if (open_paths.size() > debug_max_paths)
 			debug_max_paths = open_paths.size();
 		for (unsigned int j= 0; j < timepoints[i].elements.size(); j++){
-		/*	if ((timepoints[i].elements[j].e.center - ns_vector_2d(1652,5396)).squared() < 100 &&
-				!timepoints[i].elements[j].element_assigned_in_this_round)
-				cerr << "A";*/
 			//if we haven't been able to assign an element, use it to create a new seed
 			if (timepoints[i].elements[j].element_assigned_in_this_round) {
 				open_paths[timepoints[i].elements[j].path_id].elements.push_back(ns_time_path_solver_path_builder_point(ns_time_element_link(i,j),timepoints[i].elements[j].e.center,timepoints[i].time));
 				open_paths[timepoints[i].elements[j].path_id].calculate_center(time_window_length_in_seconds);
 			}
 			else{
-				ns_is_interesting_point(timepoints[i].elements[j].e.center);
+				//ns_is_interesting_point(timepoints[i].elements[j].e.center);
 				open_paths.push_back(ns_time_path_solver_path_builder(ns_time_path_solver_path_builder_point(ns_time_element_link(i,j),timepoints[i].elements[j].e.center,timepoints[i].time)));
 			}
 		}
 		
 		//close paths that have too large a time gap between their end and the current frame
 		for(std::vector<ns_time_path_solver_path_builder>::iterator p = open_paths.begin(); p!=open_paths.end();){
+			if (longest_path_length < p->elements.size())
+				longest_path_length = p->elements.size();
 			//the path is closed.  We either move it to the list of good paths, or delete it.
 			if (p->elements.begin()->time - timepoints[i].time < time_window_length_in_seconds){
 				//don't start deleting potential paths until we have a good estimate of their density
@@ -1629,8 +1644,14 @@ void ns_time_path_solver::find_stationary_path_fragments(const double min_path_d
 				if (p->elements.size() > 1 && p->elements.begin()->time-p->elements.rbegin()->time >= min_path_duration_in_seconds)
 					paths.push_back(*p);
 
-				if (p->elements.size() > 1 && p->elements.begin()->time-p->elements.rbegin()->time < min_path_duration_in_seconds)
+				if (p->elements.size() > 1 && p->elements.begin()->time-p->elements.rbegin()->time < min_path_duration_in_seconds){
+					unsigned long dt(p->elements.begin()->time-p->elements.rbegin()->time);
 					debug_paths_discarded_for_being_short++;
+					if (max_discarded_path_length < dt)
+						max_discarded_path_length = dt;
+					if (min_discarded_path_length > dt)
+						min_discarded_path_length = dt;
+				}
 
 
 				p = open_paths.erase(p);
@@ -1639,22 +1660,31 @@ void ns_time_path_solver::find_stationary_path_fragments(const double min_path_d
 
 		}
 	}
+	
 	//close any remaining open paths
 	for (unsigned int i = 0; i < open_paths.size(); i++){
 		//make sure that the current open path is high enough density at it's end
 		//const double current_path_point_density(open_paths[i].calculate_current_density(time_window_length_in_seconds,timepoints,open_paths[i].elements[0].link.t_id));
 	
 		if (open_paths[i].elements.size() > 1
-		//	&& current_path_point_density >= min_path_density_in_points_per_hour 
 			&& open_paths[i].elements.begin()->time-open_paths[i].elements.rbegin()->time >= min_path_duration_in_seconds)
 			paths.push_back(open_paths[i]);
 
-		if (open_paths[i].elements.size() > 1 && open_paths[i].elements.begin()->time-open_paths[i].elements.rbegin()->time < min_path_duration_in_seconds)
-					debug_paths_discarded_for_being_short++;
+		if (open_paths[i].elements.size() > 1 && open_paths[i].elements.begin()->time-open_paths[i].elements.rbegin()->time < min_path_duration_in_seconds){
+				debug_paths_discarded_for_being_short_at_end++;
+				unsigned long dt(open_paths[i].elements.begin()->time-open_paths[i].elements.rbegin()->time);
+				if (max_discarded_path_length < dt)
+					max_discarded_path_length = dt;
+				if (min_discarded_path_length > dt)
+					min_discarded_path_length = dt;
+		}
 	}
 	ns_global_debug(ns_text_stream_t("ns_time_path_solver::find_stationary_path_fragments::Maximum simultaneous open paths: ") << debug_max_paths);
 	ns_global_debug(ns_text_stream_t("ns_time_path_solver::find_stationary_path_fragments::Paths discarded for being too short: ") << debug_paths_discarded_for_being_short);
-
+	ns_global_debug(ns_text_stream_t("ns_time_path_solver::find_stationary_path_fragments::Paths discarded for being too short at end: ") << debug_paths_discarded_for_being_short_at_end);
+	ns_global_debug(ns_text_stream_t("ns_time_path_solver::find_stationary_path_fragments::Minimum discarded path length: ") << min_discarded_path_length);
+	ns_global_debug(ns_text_stream_t("ns_time_path_solver::find_stationary_path_fragments::Maximum discarded path length: ") << max_discarded_path_length);
+	ns_global_debug(ns_text_stream_t("ns_time_path_solver::find_stationary_path_fragments::Longest path length: ") << longest_path_length);
 }
 
 unsigned long ns_time_path_solver::number_of_unassigned_points_at_time(const ns_time_element_link & l) const {

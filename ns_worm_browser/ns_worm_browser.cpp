@@ -302,21 +302,21 @@ void ns_worm_learner::load_current_experiment_movement_results(const ns_death_ti
 	
 	ns_acquire_for_scope<ns_sql> sql(image_server.new_sql_connection(__FILE__,__LINE__));
 	//if we haven't loaded any data yet, load it
-	if (movement_results.experiment_id() != experiment_id || annotations_to_load != last_annotation_type_loaded){
+//	if (movement_results.experiment_id() != experiment_id || annotations_to_load != last_annotation_type_loaded){
 		movement_results.clear();
 		
 		movement_results.load(annotations_to_load,0,0,experiment_id,sql());
 		last_annotation_type_loaded = annotations_to_load;
 		movement_data_is_strictly_decreasing_ = false;
-	}
+//	}
 	//otherwise, refresh the metadat for the experiments in case it has changed.
-	else{
+/*	else{
 		for (unsigned int i = 0; i < movement_results.samples.size(); i++){
 			for (unsigned int j = 0; j < movement_results.samples[i].regions.size(); j++)
 				movement_results.samples[i].regions[j].metadata.load_from_db(movement_results.samples[i].regions[j].metadata.region_id,"",sql());
 		
 		}
-	}
+	}*/
 	sql.release();
 }
 

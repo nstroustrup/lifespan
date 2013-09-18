@@ -1881,7 +1881,10 @@ void ns_multiple_worm_cluster_death_annotation_handler::generate_correct_annotat
 				//we don't interval censor clumps with lots of worms, because we probably can't get the death time correct.
 				//so we right censor them.
 				if (number_of_animals > 3){
-					death.excluded = ns_death_time_annotation::ns_multiworm_censored;
+					if (death.is_excluded())
+						death.excluded = ns_death_time_annotation::ns_excluded_and_censored;
+					else
+						death.excluded = ns_death_time_annotation::ns_multiworm_censored;
 					death.event_observation_type = ns_death_time_annotation::ns_standard;
 				}
 				set.push_back(death);
@@ -1891,7 +1894,10 @@ void ns_multiple_worm_cluster_death_annotation_handler::generate_correct_annotat
 				//so we right censor them.
 				if (number_of_animals > 3){
 					death.time = event_data.last_slow_movement_annotation->time;
-					death.excluded = ns_death_time_annotation::ns_multiworm_censored;
+					if (death.is_excluded())
+						death.excluded = ns_death_time_annotation::ns_excluded_and_censored;
+					else
+						death.excluded = ns_death_time_annotation::ns_multiworm_censored;
 					death.event_observation_type = ns_death_time_annotation::ns_standard;
 					death.number_of_worms_at_location_marked_by_machine = 
 					death.number_of_worms_at_location_marked_by_hand = number_of_animals;
@@ -1925,7 +1931,9 @@ void ns_multiple_worm_cluster_death_annotation_handler::generate_correct_annotat
 				death.type = ns_moving_worm_disappearance;
 				death.number_of_worms_at_location_marked_by_machine = 
 				death.number_of_worms_at_location_marked_by_hand = number_of_animals;
-				death.excluded = ns_death_time_annotation::ns_multiworm_censored;
+				if (death.is_excluded())
+						death.excluded = ns_death_time_annotation::ns_excluded_and_censored;
+				else death.excluded = ns_death_time_annotation::ns_multiworm_censored;
 				set.push_back(death);
 			}
 			else{
@@ -1934,7 +1942,10 @@ void ns_multiple_worm_cluster_death_annotation_handler::generate_correct_annotat
 				death.type = ns_moving_worm_disappearance;
 				death.number_of_worms_at_location_marked_by_machine = 
 				death.number_of_worms_at_location_marked_by_hand = number_of_animals;
-				death.excluded = ns_death_time_annotation::ns_multiworm_censored;
+				if (death.is_excluded())
+						death.excluded = ns_death_time_annotation::ns_excluded_and_censored;
+				else
+					death.excluded = ns_death_time_annotation::ns_multiworm_censored;
 				set.push_back(death);
 			}
 			break;
@@ -1963,6 +1974,8 @@ void ns_death_time_annotation_compiler_region::generate_survival_curve(ns_surviv
 				death.machine.death_annotation->annotation_source == //and only for multiworm clusters that the machine recognized 
 				ns_death_time_annotation::ns_lifespan_machine		 //not by hand annotations that were not matched up to any machine annotation.
 				){
+
+				
 				ns_death_times_to_use death_times_to_use_2(death_times_to_use);
 				
 			

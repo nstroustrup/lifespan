@@ -4442,10 +4442,14 @@ void ns_time_path_image_movement_analyzer::normalize_movement_scores_over_all_pa
 		}
 		std::sort(medians_to_use.begin(),medians_to_use.end());
 		double median;
-		if (medians_to_use.size()%2 == 1)
-			median = medians_to_use[medians_to_use.size()/2];
-		else
-			median = (medians_to_use[medians_to_use.size()/2]+medians_to_use[medians_to_use.size()/2-1])/2.0;
+		if (medians_to_use.empty())
+			median = 0;
+		else{
+			if (medians_to_use.size()%2 == 1)
+				median = medians_to_use[medians_to_use.size()/2];
+			else
+				median = (medians_to_use[medians_to_use.size()/2]+medians_to_use[medians_to_use.size()/2-1])/2.0;
+		}
 		for (unsigned int i = 0; i < groups.size(); i++){
 			for (unsigned int j = 0; j < groups[i].paths.size(); j++){
 				if (ns_skip_low_density_paths && groups[i].paths[j].is_low_density_path())

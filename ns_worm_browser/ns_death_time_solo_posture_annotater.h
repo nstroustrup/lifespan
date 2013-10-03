@@ -11,7 +11,7 @@
 #include "ns_windows_file_dialog.h"
 void ns_hide_worm_window();
 
-void ns_specifiy_worm_details(const ns_stationary_path_id & worm, const ns_death_time_annotation & sticky_properties, std::vector<ns_death_time_annotation> & event_times);
+void ns_specifiy_worm_details(const unsigned long region_info_id,const ns_stationary_path_id & worm, const ns_death_time_annotation & sticky_properties, std::vector<ns_death_time_annotation> & event_times);
 
 class ns_death_time_solo_posture_annotater_timepoint : public ns_annotater_timepoint{
 private:
@@ -161,12 +161,6 @@ public:
 				}
 			}
 		}
-	/*	for (unsigned int i = 0; i < by_hand_timing_data.size(); i++){
-			//set up some extra fields so when we save the annotations everything is specified.
-			by_hand_timing_data[i].position_data.worm_in_source_image.position = by_hand_timing_data[i].details.position;
-			by_hand_timing_data[i].position_data.worm_in_source_image.size = by_hand_timing_data[i].details.size;
-			by_hand_timing_data[i].position_data.stationary_path_id = by_hand_timing_data[i].details.stationary_path_id;
-		}*/
 
 		//load machine annotations
 		ns_machine_analysis_data_loader machine_annotations;
@@ -593,9 +587,39 @@ public:
 		current_machine_timing_data = 0;
 		current_timepoint_id = 0;
 		current_animal_id = 0;
+		if (!sql.is_null())
+			sql.release();
 	}
 
 	static bool ns_fix_annotation(ns_death_time_annotation & a,ns_analyzed_image_time_path & p);
+	void set_current_timepoint(const unsigned long current_time,const bool require_exact=true,const bool give_up_if_too_long=false){
+		for (current_timepoint_id = 0; current_timepoint_id < current_worm->element_count(); current_timepoint_id++){
+				if (current_worm->element(current_timepoint_id).absolute_time >= current_time)
+					break;
+			}	
+		bool give_up_on_preload(false);
+		if (current_timepoint_id > 50 && give_up_if_too_long){
+			give_up_on_preload = true;
+			current_timepoint_id = 0;
+			for (unsigned int k = 0; k < current_worm->element_count(); k++)
+				if (!current_worm->element(k).element_before_fast_movement_cessation){
+					current_timepoint_id = k;
+					break;
+				}
+		}
+
+		//load images for the worm.
+			
+		//data_cache.load_images_for_worm(properties_for_all_animals.stationary_path_id,current_timepoint_id+10,sql);
+		current_region_data->load_images_for_worm(properties_for_all_animals.stationary_path_id,current_timepoint_id+10,sql());
+
+
+		if (require_exact && current_worm->element(current_timepoint_id).absolute_time != current_time && !give_up_on_preload)
+			throw ns_ex("Could not find requested element time:") << current_time;
+		if (current_timepoint_id+1 < current_worm->element_count())
+			current_timepoint_id++;
+
+	}
 
 	void load_worm(const unsigned long region_info_id_, const ns_stationary_path_id & worm, const unsigned long current_time,const ns_experiment_storyboard  * storyboard,ns_worm_learner * worm_learner_,ns_sql & sql){
 		stop_fast_movement();
@@ -695,24 +719,6 @@ public:
 			}
 //			current_by_hand_timing_data->animals[current_animal_id].first_frame_time = timepoints[0].path_timepoint_element->absolute_time;
 
-			for (current_timepoint_id = 0; current_timepoint_id < current_worm->element_count(); current_timepoint_id++){
-				if (current_worm->element(current_timepoint_id).absolute_time >= current_time)
-					break;
-			}	
-
-		
-			//load images for the worm.
-			
-			//data_cache.load_images_for_worm(properties_for_all_animals.stationary_path_id,current_timepoint_id+10,sql);
-			current_region_data->load_images_for_worm(properties_for_all_animals.stationary_path_id,current_timepoint_id+10,sql);
-
-
-			if (current_worm->element(current_timepoint_id).absolute_time != current_time)
-				throw ns_ex("Could not find requested element time:") << current_time;
-			if (current_timepoint_id+1 < current_worm->element_count())
-				current_timepoint_id++;
-
-	
 
 			//allocate image buffer
 			if (previous_images.size() != max_buffer_size || next_images.size() != max_buffer_size){
@@ -725,7 +731,11 @@ public:
 			}
 			if (current_image.im == 0)
 				current_image.im = new ns_image_standard();
-	
+
+			this->sql.attach(&sql);
+
+			set_current_timepoint(current_time,true,true);
+			
 			timepoints[current_timepoint_id].load_image(1024,current_image,sql,ns_image_standard(),1);
 			draw_metadata(&timepoints[current_timepoint_id],*current_image.im);
 			
@@ -823,8 +833,21 @@ public:
 					click_handled_by_hand_bar_choice = true;
 				}
 			}
-			else 
+			else{
+				ns_vector_2i bottom_margin_bottom(bottom_margin_position());
+				const ns_time_path_limits observation_limit(current_worm->observation_limits());
+
+				unsigned long requested_time = current_machine_timing_data->animals[0].get_time_from_movement_diagram_position(image_position.x,bottom_margin_bottom,
+												ns_vector_2i(current_worm->element(current_element_id()).image().properties().width,0),
+												observation_limit);
+				set_current_timepoint(requested_time,false);
+			
+			
+				timepoints[current_timepoint_id].load_image(1024,current_image,sql(),ns_image_standard(),1);
+				change_made = true;
+
 				click_handled_by_hand_bar_choice = true;
+			}
 		}
 		if (!click_handled_by_hand_bar_choice){
 			switch(action){
@@ -895,8 +918,8 @@ public:
 							vector<dialog_file_type>(1,dialog_file_type("csv","csv")),"csv",plate_name + ".csv"));
 						if (filename == "")
 							break;
-						if (sql.is_null())
-							sql.attach(image_server.new_sql_connection(__FILE__,__LINE__));
+						//if (sql.is_null())
+						//	sql.attach(image_server.new_sql_connection(__FILE__,__LINE__));
 						output_worm_frames(base_directory,filename,sql());
 						break;
 									  }
@@ -925,7 +948,7 @@ public:
 			current_by_hand_timing_data().animals[i].generate_event_timing_data(click_event_cache);
 			current_by_hand_timing_data().animals[i].specified = true;
 		}
-		ns_specifiy_worm_details(properties_for_all_animals.stationary_path_id,properties_for_all_animals,click_event_cache);
+		ns_specifiy_worm_details(properties_for_all_animals.region_info_id,properties_for_all_animals.stationary_path_id,properties_for_all_animals,click_event_cache);
 	}
 		
 	ns_alignment_type alignment_type;

@@ -248,11 +248,11 @@ void ns_move_experiment_partition(ns_64_bit experiment_id, const std::string & p
 
 		for (unsigned int i = 0; i < samples.size(); i++){
 			//update captured images
-			sql << "UPDATE images, captured_images SET images.partition='" << partition  << "'"
+			sql << "UPDATE images, captured_images SET `images`.`partition`='" << partition  << "'"
 				<< " WHERE images.id = captured_images.image_id AND captured_images.sample_id = " << samples[i][0];
 			sql.send_query();
 			//update masks
-			sql << "UPDATE images, image_masks SET images.partition='" << partition << "'"
+			sql << "UPDATE images, image_masks SET `images`.`partition`='" << partition << "'"
 				<< " WHERE images.id = image_masks.image_id AND image_masks.id = " << samples[i][1];
 			sql.send_query();
 			
@@ -261,16 +261,16 @@ void ns_move_experiment_partition(ns_64_bit experiment_id, const std::string & p
 			sql.get_rows(region_info_ids);
 			for (unsigned int j = 0; j < region_info_ids.size(); j++){
 				//some images are stored for the entire region
-				sql << "UPDATE images, sample_region_image_info SET images.partition='" << partition << "'"
+				sql << "UPDATE images, sample_region_image_info SET `images`.`partition`='" << partition << "'"
 					<< " WHERE sample_region_image_info.id = " << region_info_ids[j][0]
 					<< " AND (images.id = sample_region_image_info.op21_image_id || images.id = sample_region_image_info.op22_image_id )";
 				sql.send_query();
-				sql << "UPDATE images, sample_region_images SET images.partition='" << partition << "'"
+				sql << "UPDATE images, sample_region_images SET `images`.`partition`='" << partition << "'"
 						<< " WHERE sample_region_images.region_info_id = " << region_info_ids[j][0]
 						<< " AND image_id = images.id";
 				sql.send_query();
 				for (unsigned int k = 1; k < (unsigned int)ns_process_last_task_marker; k++){
-					sql << "UPDATE images, sample_region_images SET images.partition='" << partition << "'"
+					sql << "UPDATE images, sample_region_images SET `images`.`partition`='" << partition << "'"
 						<< " WHERE sample_region_images.region_info_id = " << region_info_ids[j][0]
 						<< " AND op" << k << "_image_id = images.id";
 					sql.send_query();
@@ -278,7 +278,7 @@ void ns_move_experiment_partition(ns_64_bit experiment_id, const std::string & p
 			}
 
 		}
-		sql << "UPDATE experiments SET partition='" << partition << "' WHERE id=" << experiment_id;
+		sql << "UPDATE experiments SET `partition`='" << partition << "' WHERE id=" << experiment_id;
 		sql.send_query();
 }
 
@@ -614,7 +614,7 @@ ns_image_server_image ns_image_storage_handler::create_image_db_record_for_captu
 	if (image.capture_images_image_id != 0)
 		cerr << "ns_image_storage_handler::create_image_db_record_for_captured_image()::Warning: Overwriting an existing capture_images_image_id\n";
 
-	*sql << "INSERT INTO " << sql->table_prefix() << "images SET filename = '" << filename << "', path='" << dir << "',partition='', currently_under_processing=1";
+	*sql << "INSERT INTO " << sql->table_prefix() << "images SET filename = '" << filename << "', path='" << dir << "',`partition`='', currently_under_processing=1";
 	image.capture_images_image_id = sql->send_query_get_id();
 	im.id = image.capture_images_image_id;
 	return im;
@@ -1196,7 +1196,7 @@ void ns_image_storage_handler::delete_file_deletion_job(const ns_64_bit deletion
 void ns_image_storage_handler::submit_file_deletion_request(const ns_64_bit deletion_job_id,const ns_file_location_specification & spec, ns_sql & sql){
 	sql << "INSERT INTO delete_file_specifications SET delete_job_id = " << deletion_job_id << ","
 		<< "relative_directory = '" << sql.escape_string(spec.relative_directory) << "', filename = '" << sql.escape_string(spec.filename) << "'"
-		<< ",partition='" << sql.escape_string(spec.partition) << "'";
+		<< ",`partition`='" << sql.escape_string(spec.partition) << "'";
 	sql.send_query();
 	sql.send_query("COMMIT");
 }
@@ -1211,7 +1211,7 @@ void ns_image_storage_handler::get_file_deletion_requests(const ns_64_bit deleti
 	if (res[0][1] == "0")
 		throw ns_ex("ns_handle_file_delete_action()::Specified file deletion job has not been confirmed.");
 	parent_job_id = atol(res[0][0].c_str());
-	sql << "SELECT relative_directory,filename,partition FROM delete_file_specifications WHERE delete_job_id = " << deletion_job_id;
+	sql << "SELECT relative_directory,filename,`partition` FROM delete_file_specifications WHERE delete_job_id = " << deletion_job_id;
 	sql.get_rows(res);
 	specs.resize(0);
 	specs.resize(res.size());

@@ -189,7 +189,8 @@ public:
 												spec.experiment_filename() + type + ".svg");
 	}
 
-	ns_image_server_results_file movement_timeseries_data(const ns_death_time_annotation::ns_multiworm_censoring_strategy & multiworm_strategy,
+	ns_image_server_results_file movement_timeseries_data(const ns_death_time_annotation::ns_by_hand_annotation_integration_strategy & by_hand_strategy, 
+		const ns_death_time_annotation::ns_multiworm_censoring_strategy & multiworm_strategy,
 		const ns_death_time_annotation::ns_missing_worm_return_strategy & missing_worm_return_strategy,
 		const ns_animals_that_slow_but_do_not_die_handling_strategy & partial_path_strategy,
 		ns_image_server_results_subject & spec,const std::string & type, const std::string & details,ns_sql & sql){	
@@ -198,6 +199,7 @@ public:
 		replace_spaces_by_underscores(sub_dir);
 		std::string filename(type
 			+ "=" + details
+			+ "=" + ns_death_time_annotation::by_hand_annotation_integration_strategy_label_short(by_hand_strategy)
 			+ "=" + ns_death_time_annotation::multiworm_censoring_strategy_label_short(multiworm_strategy) 
 			+ "="+ ns_death_time_annotation::missing_worm_return_strategy_label_short(missing_worm_return_strategy) 
 			+ "=" + ns_animals_that_slow_but_do_not_die_handling_strategy_label_short(partial_path_strategy));

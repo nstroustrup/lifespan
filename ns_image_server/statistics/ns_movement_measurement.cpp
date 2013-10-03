@@ -60,197 +60,7 @@ struct ns_max_info{
 };
 typedef std::map<ns_worm_movement_measurement_summary_timepoint_type,ns_max_info> 
 	ns_worm_movement_summary_series_maximum_info_list;
-/*
-void ns_worm_movement_summary_series::calculate_survival(){
-	if (measurements.size() < 3)
-		return;
-	//copy data over to processed slot
-	/*for (unsigned int i = 0; i < measurements.size(); i++){
-			for (ns_worm_movement_measurement_summary_timepoint_list::iterator p = measurements[i].measurements.begin(); p != measurements[i].measurements.end(); ++p){
-			p->second.number_stationary_processed = p->second.number_stationary;
-			p->second.number_not_translating = p->second.number_moving_slow +
-											   p->second.number_changing_posture+
-											   p->second.number_stationary;
-			p->second.number_total = 
-						p->second.number_moving_fast + 
-						p->second.number_not_translating;
-		}
-		measurements[i].all_measurement_types_total.number_stationary_processed = 
-			measurements[i].all_measurement_types_total.number_stationary;
 
-		measurements[i].all_measurement_types_total.number_not_translating = 
-			measurements[i].all_measurement_types_total.number_moving_slow + 
-			measurements[i].all_measurement_types_total.number_changing_posture + 
-			measurements[i].all_measurement_types_total.number_stationary;
-		measurements[i].all_measurement_types_total.number_total = 
-			measurements[i].all_measurement_types_total.number_moving_fast + 
-			measurements[i].all_measurement_types_total.number_not_translating;
-		measurements[i].all_measurement_types_excluded_total.number_stationary_processed = 
-			measurements[i].all_measurement_types_excluded_total.number_stationary;
-		measurements[i].all_measurement_types_censored_total.number_not_translating = 
-			measurements[i].all_measurement_types_censored_total.number_moving_slow + 
-			measurements[i].all_measurement_types_censored_total.number_changing_posture + 
-			measurements[i].all_measurement_types_censored_total.number_stationary;
-		measurements[i].all_measurement_types_censored_total.number_total = 
-			measurements[i].all_measurement_types_censored_total.number_moving_fast + 
-			measurements[i].all_measurement_types_censored_total.number_not_translating;
-		measurements[i].all_measurement_types_censored_total.number_stationary_processed = 
-			measurements[i].all_measurement_types_censored_total.number_stationary;
-		measurements[i].all_measurement_types_excluded_total.number_not_translating = 
-			measurements[i].all_measurement_types_excluded_total.number_moving_slow + 
-			measurements[i].all_measurement_types_excluded_total.number_changing_posture + 
-			measurements[i].all_measurement_types_excluded_total.number_stationary;
-		measurements[i].all_measurement_types_excluded_total.number_total = 
-			measurements[i].all_measurement_types_excluded_total.number_moving_fast + 
-			measurements[i].all_measurement_types_excluded_total.number_not_translating;
-	}
-	
-	//smooth processed data
-	//ns_measurement_stationary_processed_accessor< std::vector<ns_worm_movement_measurement_summary> > ac(measurements);
-	//ns_median_smoother(ac,2);
-	//ns_measurement_not_translating_accessor< std::vector<ns_worm_movement_measurement_summary> > tc(measurements);
-	//ns_median_smoother(tc,2);
-		
-	ns_worm_movement_summary_series_maximum_info_list maximums;
-	ns_max_info total_maximums,
-				total_censored_maximums,
-				total_excluded_maximums;
-	if (measurements.size() > 0){
-		total_maximums.survival_max_id = 0;
-		total_maximums.survival_max_value = measurements[0].all_measurement_types_total.number_stationary;
-		total_censored_maximums.survival_max_id = 0;
-		total_censored_maximums.survival_max_value = measurements[0].all_measurement_types_censored_total.number_stationary_processed;
-		total_excluded_maximums.survival_max_id = 0;
-		total_excluded_maximums.survival_max_value = measurements[0].all_measurement_types_excluded_total.number_stationary_processed;
-
-		total_maximums.not_translating_max_id = 0;
-		total_maximums.not_translating_max_value = measurements[0].all_measurement_types_total.number_not_translating;
-		total_censored_maximums.not_translating_max_id= 0;
-		total_censored_maximums.not_translating_max_value = measurements[0].all_measurement_types_censored_total.number_not_translating;
-		total_excluded_maximums.not_translating_max_id = 0;
-		total_excluded_maximums.not_translating_max_value = measurements[0].all_measurement_types_excluded_total.number_not_translating;
-	}
-
-	//locate maximum number of stationary objects
-	for (long t = 0; t < (long)measurements.size(); t++){
-		for (ns_worm_movement_measurement_summary_timepoint_list::iterator p = measurements[t].measurements.begin(); p != measurements[t].measurements.end(); ++p){
-			ns_worm_movement_summary_series_maximum_info_list::iterator maximum(maximums.find(p->first));
-			if (maximum == maximums.end()){
-				maximum = maximums.insert(ns_worm_movement_summary_series_maximum_info_list::value_type(p->first,ns_max_info())).first;
-				maximum->second.not_translating_max_id = 0;
-				maximum->second.not_translating_max_value = p->second.translation;
-				maximum->second.survival_max_id = 0;
-				maximum->second.survival_max_value = p->second.number_stationary_processed;
-			}
-			else{
-				maximum->second.update_max(p->second.number_stationary_processed,p->second.number_not_translating,t);
-			}
-		}
-		total_maximums.update_max(measurements[t].all_measurement_types_total.number_stationary_processed,measurements[t].all_measurement_types_total.number_not_translating,t);
-		total_censored_maximums.update_max(measurements[t].all_measurement_types_censored_total.number_stationary_processed,measurements[t].all_measurement_types_censored_total.number_not_translating,t);
-		total_excluded_maximums.update_max(measurements[t].all_measurement_types_excluded_total.number_stationary_processed,measurements[t].all_measurement_types_excluded_total.number_not_translating,t);
-	}
-
-	for (ns_worm_movement_summary_series_maximum_info_list::const_iterator p = maximums.begin(); p != maximums.end(); p++){
-		ns_worm_movement_measurement_summary_timepoint_data & max_not_translating_measurement(
-				measurements[p->second.not_translating_max_id].measurements[p->first]);
-		ns_worm_movement_measurement_summary_timepoint_data & max_stationary_measurement(
-				measurements[p->second.not_translating_max_id].measurements[p->first]);
-
-		number_of_moving_animals[p->first].at_time_of_maximum_number_of_stationary_animals =  
-															 max_stationary_measurement.number_changing_posture 
-															+ max_stationary_measurement.number_moving_fast
-									   						+ max_stationary_measurement.number_moving_slow;
-		number_of_moving_animals[p->first].at_time_of_maximum_number_of_non_translating_animals =  
-															 max_not_translating_measurement.number_changing_posture 
-															+ max_not_translating_measurement.number_moving_fast
-									   						+ max_not_translating_measurement.number_moving_slow;
-	}
-
-	total_number_of_animals.at_time_of_maximum_number_of_stationary_animals = measurements[total_maximums.survival_max_id].all_measurement_types_total.total_moving();
-	total_number_of_animals.at_time_of_maximum_number_of_non_translating_animals  = measurements[total_maximums.not_translating_max_id].all_measurement_types_total.total_moving();
-	total_number_of_censored_animals.at_time_of_maximum_number_of_stationary_animals = measurements[total_maximums.survival_max_id].all_measurement_types_censored_total.total_moving();
-	total_number_of_censored_animals.at_time_of_maximum_number_of_non_translating_animals  = measurements[total_maximums.not_translating_max_id].all_measurement_types_censored_total.total_moving();
-	total_number_of_excluded_animals.at_time_of_maximum_number_of_stationary_animals = measurements[total_maximums.survival_max_id].all_measurement_types_excluded_total.total_moving();
-	total_number_of_excluded_animals.at_time_of_maximum_number_of_non_translating_animals  = measurements[total_maximums.not_translating_max_id].all_measurement_types_excluded_total.total_moving();
-	
-	
-	//discard stationary objects missing after maximum
-	for (unsigned int t = 0; t < (long)measurements.size(); t++){
-		for (ns_worm_movement_measurement_summary_timepoint_list::iterator p = measurements[t].measurements.begin(); p != measurements[t].measurements.end(); ++p){
-			ns_worm_movement_summary_series_maximum_info_list::iterator maximum(maximums.find(p->first));
-			if (t > maximum->second.not_translating_max_id)
-				p->second.number_not_translating = maximum->second.not_translating_max_value;	
-			if (t > maximum->second.survival_max_id)
-				p->second.number_stationary_processed = maximum->second.survival_max_value;
-		}
-		if (t > total_maximums.not_translating_max_id)
-			measurements[t].all_measurement_types_total.number_not_translating = total_maximums.not_translating_max_value;
-		if (t > total_maximums.survival_max_id)
-			measurements[t].all_measurement_types_total.number_stationary_processed = total_maximums.survival_max_value;
-		
-		if (t > total_censored_maximums.not_translating_max_id)
-			measurements[t].all_measurement_types_censored_total.number_not_translating = total_censored_maximums.not_translating_max_value;
-		if (t > total_censored_maximums.survival_max_id)	
-			measurements[t].all_measurement_types_censored_total.number_stationary_processed = total_censored_maximums.survival_max_value;
-		
-		if (t > total_excluded_maximums.not_translating_max_id)
-			measurements[t].all_measurement_types_excluded_total.number_not_translating = total_excluded_maximums.not_translating_max_value;
-		if (t > total_excluded_maximums.survival_max_id)
-			measurements[t].all_measurement_types_excluded_total.number_stationary_processed = total_excluded_maximums.survival_max_value;
-		
-	}
-
-	//caclulate running minimum
-	//we use variables that say "max" because it doesn't make sense
-	//to make a new container type just to have them say "min".
-	ns_worm_movement_summary_series_maximum_info_list minimums;
-	ns_max_info total_minimums,
-				total_censored_minimums,
-				total_excluded_minimums;
-	if (measurements.size() > 0){
-		total_minimums.survival_max_id = measurements.size()-1;
-		total_minimums.survival_max_value = measurements.rbegin()->all_measurement_types_total.number_stationary_processed;
-		total_censored_minimums.survival_max_id = measurements.size()-1;
-		total_censored_minimums.survival_max_value = measurements.rbegin()->all_measurement_types_censored_total.number_stationary_processed;
-		total_excluded_minimums.survival_max_id = measurements.size()-1;
-		total_excluded_minimums.survival_max_value = measurements.rbegin()->all_measurement_types_excluded_total.number_stationary_processed;
-	}
-	for (long t = measurements.size()-1; t >= 0; t--){
-		for (ns_worm_movement_measurement_summary_timepoint_list::iterator p = measurements[t].measurements.begin(); p != measurements[t].measurements.end(); ++p){
-			ns_worm_movement_summary_series_maximum_info_list::iterator minimum(minimums.find(p->first));
-			if (minimum == minimums.end()){
-				minimum = minimums.insert(ns_worm_movement_summary_series_maximum_info_list::value_type(p->first,ns_max_info())).first;
-				minimum->second.not_translating_max_value = p->second.number_not_translating;
-				minimum->second.survival_max_value = p->second.number_stationary_processed;
-			}
-			else{
-				minimum->second.update_min(p->second.number_stationary_processed,p->second.number_not_translating,t);
-			}
-			p->second.number_not_translating = minimum->second.not_translating_max_value;
-			p->second.survival = minimum->second.survival_max_value;
-		}
-		total_minimums.update_min(measurements[t].all_measurement_types_total.number_stationary_processed,
-									measurements[t].all_measurement_types_total.number_not_translating,
-									t);
-		total_censored_minimums.update_min(measurements[t].all_measurement_types_censored_total.number_stationary_processed,
-									measurements[t].all_measurement_types_censored_total.number_not_translating,
-									t);
-		total_excluded_minimums.update_min(measurements[t].all_measurement_types_excluded_total.number_stationary_processed,
-									measurements[t].all_measurement_types_excluded_total.number_not_translating,
-									t);
-		measurements[t].all_measurement_types_total.number_not_translating = total_minimums.not_translating_max_value;
-		measurements[t].all_measurement_types_total.survival = total_minimums.survival_max_value;
-		measurements[t].all_measurement_types_censored_total.number_not_translating = total_censored_minimums.not_translating_max_value;
-		measurements[t].all_measurement_types_censored_total.survival = total_censored_minimums.survival_max_value;
-		measurements[t].all_measurement_types_excluded_total.number_not_translating = total_excluded_minimums.not_translating_max_value;
-		measurements[t].all_measurement_types_excluded_total.survival = total_excluded_minimums.survival_max_value;
-	}
-
-	calculate_maximums();
-
-	
-}*/
 
 void ns_worm_movement_summary_series::generate_censoring_annotations(const ns_region_metadata & m,ns_death_time_annotation_set & set){
 	
@@ -275,7 +85,8 @@ void ns_worm_movement_summary_series::generate_censoring_annotations(const ns_re
 			"Apparently Moving at end of experiment",
 			1,0,
 			this->multiworm_cluster_censoring_strategy,
-			missing_worm_return_strategy)
+			missing_worm_return_strategy,ns_death_time_annotation::ns_standard,
+			this->by_hand_strategy)
 		);
 	}
 
@@ -328,7 +139,9 @@ void ns_worm_movement_summary_series::generate_censoring_annotations(const ns_re
 					 "Worm Went Missing",
 					 1,0,
 					 this->multiworm_cluster_censoring_strategy,
-					 missing_worm_return_strategy)
+					 missing_worm_return_strategy,
+					 ns_death_time_annotation::ns_standard,
+					 this->by_hand_strategy)
 				);
 	}
 }
@@ -1053,7 +866,14 @@ ns_worm_movement_measurement_summary_timepoint_type::ns_worm_movement_measuremen
 	exclusion_type = a.excluded;
 }
 
-void ns_worm_movement_summary_series::from_death_time_annotations(const ns_death_time_annotation::ns_multiworm_censoring_strategy & censoring_strategy, const ns_animals_that_slow_but_do_not_die_handling_strategy & patial_path_strategy,const ns_death_time_annotation_compiler_region & region, ns_timepoints_sorted_by_time & all_timepoints,std::vector<ns_multiple_worm_description> & multiple_worm_clump_details){
+void ns_worm_movement_summary_series::from_death_time_annotations(
+	const ns_death_time_annotation::ns_by_hand_annotation_integration_strategy & by_hand_strategy,
+	const ns_death_time_annotation::ns_multiworm_censoring_strategy & censoring_strategy, 
+	const ns_animals_that_slow_but_do_not_die_handling_strategy & patial_path_strategy,
+	const ns_death_time_annotation_compiler_region & region, 
+	ns_timepoints_sorted_by_time & all_timepoints,
+	std::vector<ns_multiple_worm_description> & multiple_worm_clump_details){
+
 	//add fast moving animals
 	{
 		for (unsigned int i = 0; i < region.fast_moving_animals.size(); i++){
@@ -1076,67 +896,147 @@ void ns_worm_movement_summary_series::from_death_time_annotations(const ns_death
 			
 
 		ns_worm_movement_measurement_summary_timepoint_type timepoint_type(q->properties);
+		
+		ns_dying_animal_description_const d(q->generate_dying_animal_description_const(true));
+		bool use_machine_state_annotations(
+			by_hand_strategy == ns_death_time_annotation::ns_only_machine_annotations ||
+			d.by_hand.death_annotation == 0);
 
-		//add slow, posture changing animals
-		for (unsigned int i = 0; i < q->annotations.size(); i++){
-			if(q->annotations[i].type !=  ns_slow_moving_worm_observed &&
-				q->annotations[i].type !=  ns_posture_changing_worm_observed &&
-				q->annotations[i].type != ns_fast_moving_worm_observed )
-				continue;
+		if (use_machine_state_annotations){
+			//add slow, posture changing animals
+			for (unsigned int i = 0; i < q->annotations.size(); i++){
+				if(q->annotations[i].type !=  ns_slow_moving_worm_observed &&
+					q->annotations[i].type !=  ns_posture_changing_worm_observed &&
+					q->annotations[i].type != ns_fast_moving_worm_observed )
+					continue;
 			
-			ns_worm_movement_measurement_summary & measurement_summary(all_timepoints[q->annotations[i].time.period_end]);
-			ns_worm_movement_measurement_summary_timepoint_data & measurement(measurement_summary.measurements[timepoint_type]);
-			switch(q->annotations[i].type){
-				case ns_slow_moving_worm_observed: 
-					if (patial_path_strategy == ns_force_to_fast_moving
-						&& !q->annotations[i].animal_is_part_of_a_complete_trace)
-						measurement.number_moving_fast++;
-					else
-						measurement.number_moving_slow++; break;
-				case ns_posture_changing_worm_observed: 
-					if (patial_path_strategy == ns_force_to_fast_moving
-						&& !q->annotations[i].animal_is_part_of_a_complete_trace)
-						measurement.number_moving_fast++;
-					else
-						measurement.number_changing_posture++; break;
-				case ns_fast_moving_worm_observed:
-					measurement.number_moving_fast++; break;
+				ns_worm_movement_measurement_summary & measurement_summary(all_timepoints[q->annotations[i].time.period_end]);
+				ns_worm_movement_measurement_summary_timepoint_data & measurement(measurement_summary.measurements[timepoint_type]);
+			
+				switch(q->annotations[i].type){
+					case ns_slow_moving_worm_observed: 
+						if (patial_path_strategy == ns_force_to_fast_moving
+							&& !q->annotations[i].animal_is_part_of_a_complete_trace)
+							measurement.number_moving_fast++;
+						else
+							measurement.number_moving_slow++; break;
+					case ns_posture_changing_worm_observed: 
+						if (patial_path_strategy == ns_force_to_fast_moving
+							&& !q->annotations[i].animal_is_part_of_a_complete_trace)
+							measurement.number_moving_fast++;
+						else
+							measurement.number_changing_posture++; break;
+					case ns_fast_moving_worm_observed:
+						measurement.number_moving_fast++; break;
+				}
+			}
+		}
+		else{
+			ns_death_time_annotation_time_interval
+						  start_slow,
+						  start_posture,
+						  start_death;
+			bool found_start_slow(false),
+				 found_start_posture(false),
+				 found_start_death(false);
+			if (d.by_hand.last_fast_movement_annotation != 0){
+				start_slow = d.by_hand.last_fast_movement_annotation->time;
+				found_start_slow = true;
+			}
+			else if (d.by_hand.last_fast_movement_annotation != 0){
+				start_slow = d.machine.last_fast_movement_annotation->time;
+				found_start_slow = true;
+			}
+			
+			if (d.by_hand.last_slow_movement_annotation != 0){
+				start_posture = d.by_hand.last_slow_movement_annotation->time;
+				found_start_posture = true;
+			}
+			else if (d.machine.last_slow_movement_annotation != 0){
+				start_posture = d.machine.last_slow_movement_annotation->time;
+				found_start_posture = true;
+			}
+
+			if (d.by_hand.death_annotation != 0){
+				start_death = d.by_hand.death_annotation->time;
+				found_start_death = true;
+			}
+			else if (d.machine.death_annotation != 0){
+				start_death = d.machine.death_annotation->time;
+				found_start_death = true;
+			}
+			if (!found_start_death){
+				start_death.period_end = start_death.period_start = UINT_MAX;
+			}
+			if (!found_start_posture){
+				start_posture.period_end = start_posture.period_start = UINT_MAX;
+			}
+			if (!found_start_slow){
+				start_slow.period_end = start_slow.period_start = UINT_MAX;
+			}
+			//by hand annotation does not automatically generate state events
+			//so we need to reinterpret the state events generated by the machine.
+			for (unsigned int i = 0; i < q->annotations.size(); i++){
+				if(q->annotations[i].type !=  ns_slow_moving_worm_observed &&
+					q->annotations[i].type !=  ns_posture_changing_worm_observed &&
+					q->annotations[i].type != ns_fast_moving_worm_observed &&
+					q->annotations[i].type != ns_stationary_worm_observed)
+					continue;
+				ns_worm_movement_measurement_summary & measurement_summary(all_timepoints[q->annotations[i].time.period_end]);
+				ns_worm_movement_measurement_summary_timepoint_data & measurement(measurement_summary.measurements[timepoint_type]);
+			
+				if (q->annotations[i].time.period_end < start_slow.period_end)
+					measurement.number_moving_fast++;
+				else if (q->annotations[i].time.period_end < start_posture.period_end){
+						if (patial_path_strategy == ns_force_to_fast_moving
+							&& !q->annotations[i].animal_is_part_of_a_complete_trace)
+							measurement.number_moving_fast++;
+						else
+							measurement.number_moving_slow++;
+				}
+				else if (q->annotations[i].time.period_end < start_death.period_end){
+						if (patial_path_strategy == ns_force_to_fast_moving
+							&& !q->annotations[i].animal_is_part_of_a_complete_trace)
+							measurement.number_moving_fast++;
+						else
+							measurement.number_changing_posture++; 
+				}
 			}
 		}
 
 		//now we need to add deaths and and censoring events.
-		ns_dying_animal_description_const d(q->generate_dying_animal_description_const(true));
 		if (d.machine.death_annotation == 0 || d.machine.death_annotation->annotation_source != ns_death_time_annotation::ns_lifespan_machine ||
 			d.machine.death_annotation->time.period_end_was_not_observed){
-				
-	//		if(q->properties.is_excluded())
-	//			cerr << "WHA!";
+
 			continue;
 		}
-			
-	//	if(q->properties.is_excluded())
-	//		cerr << "WHA!";
+		ns_dying_animal_description_const::ns_group_type annotation_to_use;
+		if (by_hand_strategy == ns_death_time_annotation::ns_machine_annotations_if_no_by_hand && d.by_hand.death_annotation != 0)
+			annotation_to_use = d.by_hand;
+		
+		else
+			annotation_to_use = d.machine;
+		
+
 		{
 			ns_multiple_worm_description clump;
 			q->properties.transfer_sticky_properties(clump.properties);
-			clump.time_of_death_machine = d.machine.death_annotation->time.period_end;
-			if (d.machine.last_fast_movement_annotation != 0)
-				clump.time_of_nucleation = d.machine.last_fast_movement_annotation->time.period_end;
+			clump.time_of_death_machine = annotation_to_use.death_annotation->time.period_end;
+			if (annotation_to_use.last_fast_movement_annotation != 0)
+				clump.time_of_nucleation = annotation_to_use.last_fast_movement_annotation->time.period_end;
 			multiple_worm_clump_details.push_back(clump);
 		}
 		const unsigned long number_of_animals(timepoint_type.number_of_worms(ns_worm_movement_measurement_summary_timepoint_type::ns_all));
 		if(number_of_animals <= 1){
-			ns_death_time_annotation a(*d.machine.death_annotation);
+			ns_death_time_annotation a(*annotation_to_use.death_annotation);
 			q->properties.transfer_sticky_properties(a);
-	//		if (a.time.period_end - region.metadata.time_at_which_animals_had_zero_age <= 222828)
-	//			std::cerr << a.region_info_id << " " << region.metadata.plate_name() << "\n";;
 			ns_worm_movement_measurement_summary_timepoint_type t(a);
 			ns_worm_movement_measurement_summary_timepoint_data & timepoint(all_timepoints[a.time.period_end].measurements[t]);
 			timepoint.singleton_deaths.observed++;
 		}
 		else{
 			ns_death_time_annotation_set set;
-			ns_multiple_worm_cluster_death_annotation_handler::generate_correct_annotations_for_multiple_worm_cluster(censoring_strategy,number_of_animals,q->properties,d,set,ns_death_time_annotation_compiler_region::ns_machine_if_not_by_hand);
+			ns_multiple_worm_cluster_death_annotation_handler::generate_correct_annotations_for_multiple_worm_cluster(censoring_strategy,number_of_animals,q->properties,d,set,by_hand_strategy);
 			for (unsigned int i = 0; i < set.size(); i++){
 				ns_worm_movement_measurement_summary_timepoint_type t(set[i]);
 				ns_worm_movement_measurement_summary & timepoint(all_timepoints[set[i].time.period_end]);
@@ -1152,178 +1052,15 @@ void ns_worm_movement_summary_series::from_death_time_annotations(const ns_death
 			}
 		}
 
-		/*
-		ns_worm_movement_measurement_summary *  observed_death_time(0);
-		ns_worm_movement_measurement_summary_timepoint_data * observed_death_time_measurement(0);
-		
-		ns_worm_movement_measurement_summary *  last_observed_alive_time(0);
-		ns_worm_movement_measurement_summary_timepoint_data * last_observed_alive_time_measurement(0);
-		unsigned long death_observation_time(0),
-					  last_alive_observation_time(0);
-
-		if (d.machine.death_annotation != 0 && !d.machine.death_annotation->time.period_end_was_not_observed){
-			death_observation_time = d.machine.death_annotation->time.period_end;
-			observed_death_time = & all_timepoints[d.machine.death_annotation->time.period_end];
-			observed_death_time_measurement = & observed_death_time->measurements[timepoint_type];
-
-			ns_multiple_worm_description clump;
-			q->properties.transfer_sticky_properties(clump.properties);
-			clump.time_of_death_machine = d.machine.death_annotation->time.period_end;
-			if (d.machine.last_fast_movement_annotation != 0)
-				clump.time_of_nucleation = d.machine.last_fast_movement_annotation->time.period_end;
-			multiple_worm_clump_details.push_back(clump);
-		}
-		else 
-			continue;
-
-		if (d.machine.last_fast_movement_annotation != 0 && !d.machine.last_fast_movement_annotation->time.period_end_was_not_observed){
-			last_alive_observation_time = d.machine.last_fast_movement_annotation->time.period_end;
-			last_observed_alive_time = & all_timepoints[last_alive_observation_time];
-			last_observed_alive_time_measurement = & last_observed_alive_time->measurements[timepoint_type];
-		}
 	
-		if(timepoint_type.number_of_worms(ns_worm_movement_measurement_summary_timepoint_type::ns_all) == 1){
-			observed_death_time_measurement->singleton_deaths.observed++;
-		}
-		else{
-			switch(censoring_strategy){
-				case ns_death_time_annotation::ns_include_multiple_worm_cluster_deaths:
-					observed_death_time_measurement->observed_multiple_deaths.observed+=timepoint_type.number_of_worms(ns_worm_movement_measurement_summary_timepoint_type::ns_all);
-					break;
-				case ns_death_time_annotation::ns_none:
-					observed_death_time_measurement->observed_multiple_deaths.observed+=timepoint_type.number_of_worms(ns_worm_movement_measurement_summary_timepoint_type::ns_ignore_by_hand_multiworm_annotations);
-					break;
-				case ns_death_time_annotation::ns_by_hand_censoring:
-					return;	//ignore
-				case ns_death_time_annotation::ns_interval_censor_multiple_worm_clusters:
-					{
-					unsigned long number_of_worms(timepoint_type.number_of_worms(ns_worm_movement_measurement_summary_timepoint_type::ns_all));
-					if (number_of_worms < 2)
-						throw ns_ex("Weird!");
-
-					timepoint_type.number_of_worms_in_cluster_by_machine_annotation = 1;
-					timepoint_type.number_of_worms_in_cluster_by_hand_annotation = 1;
-
-					if (last_observed_alive_time_measurement == 0){
-						cerr << "Found an unusual situation where a multiple worm cluster has no slow down from fast moving time annotationed (perhaps because it existed at the start of observation?)\n";
-						observed_death_time_measurement->observed_multiple_deaths.observed+=number_of_worms;
-					}
-					else{
-						
-						//include the last observed death
-						observed_death_time_measurement->observed_multiple_deaths.observed++;
-						//include the rest as death at the mean time in the interval they cannot be observed.
-						double mean_missing_time(death_observation_time*.5+ last_alive_observation_time*.5);
-						ns_worm_movement_measurement_summary & measurement_summary(all_timepoints[(unsigned long)mean_missing_time]);
-						ns_worm_movement_measurement_summary_timepoint_data & measurement(measurement_summary.measurements[timepoint_type]);
-						measurement.estimated_multiple_deaths.observed+=(number_of_worms-1);
-					}
-					}
-					break;
-			
-				case ns_death_time_annotation::ns_right_censor_multiple_worm_clusters:{
-					unsigned long number_of_worms(timepoint_type.number_of_worms(ns_worm_movement_measurement_summary_timepoint_type::ns_all));
-					if (last_observed_alive_time_measurement == 0){
-						cerr << "Found an unusual situation where a multiple worm cluster has no slow down from fast moving time annotationed (perhaps because it existed at the start of observation?)\n";
-						observed_death_time->censoring_data.number_newly_censored_from_multiworm_clusters+=number_of_worms;
-					}
-					else{
-						last_observed_alive_time->censoring_data.number_newly_censored_from_multiworm_clusters+=number_of_worms;
-					}
-					break;
-				}
-				case ns_death_time_annotation::ns_merge_multiple_worm_clusters_and_missing_and_censor:
-					//ignore multiple deaths entirely and let the machine detect them as missing.
-					break;
-				default: throw ns_ex("ns_worm_movement_summary_series::from_death_time_annotations()::Unknown multiple worm censoring strategy");
-			}
-			*/
-			
-		//this gives us one death if we're ignoring by hand annotations
-		//or if we want to include one death as part of our interval censoring strategy.
-		//it returns multiple worms if we want to include all worms as deaths.
-		/*const unsigned long number_of_worms_
-		const unsigned long number_of_worms_excluding_multiples_if_requested(timepoint_type.number_of_worms(multiple_handing_strategy));
-
-		unsigned long number_of_worms_in_multiple_worm_clump(timepoint_type.number_of_worms(ns_worm_movement_measurement_summary_timepoint_type::ns_all));
-		if (number_of_worms_in_multiple_worm_clump < 2)
-			number_of_worms_in_multiple_worm_clump = 0;
-		
-		{
-		*/
-		
-		/*
-		if (d.machine.stationary_worm_dissapearance != 0 && !d.machine.stationary_worm_dissapearance->time.period_end_was_not_observed){
-			ns_worm_movement_measurement_summary & measurement_summary(all_timepoints[d.machine.stationary_worm_dissapearance->time.period_end]);
-			ns_worm_movement_measurement_summary_timepoint_data & measurement(measurement_summary.measurements[timepoint_type]);
-			measurement.number_of_stationary_worm_dissapearances++;
-		}
-			if (d.machine.death_annotation != 0 && !d.machine.death_annotation->time.period_end_was_not_observed){
-				ns_worm_movement_measurement_summary & measurement_summary(all_timepoints[d.machine.death_annotation->time.period_end]);
-				ns_worm_movement_measurement_summary_timepoint_data & measurement(measurement_summary.measurements[timepoint_type]);
-				measurement.number_of_deaths_observed+= number_of_worms_excluding_multiples_if_requested;
-				
-				ns_multiple_worm_description clump;
-				q->properties.transfer_sticky_properties(clump.properties);
-				clump.time_of_death_machine = d.machine.death_annotation->time.period_end;
-				if (d.machine.last_fast_movement_annotation != 0)
-					clump.time_of_nucleation = d.machine.last_fast_movement_annotation->time.period_end;
-				multiple_worm_clump_details.push_back(clump);
-
-			}
-			
-			
-				
-		}
-			
-		//add censoring events for animals that enter multiworm clusters
-		{
-			unsigned long detection_time_of_multiple_worm_cluster = 0;
-			bool is_fast_moving_worm(false);
-
-			for (unsigned int i = 0; i < q->annotations.size(); i++){
-				if (q->annotations[i].type == ns_fast_movement_cessation)
-					detection_time_of_multiple_worm_cluster = q->annotations[i].time.start_time;
-				if (q->annotations[i].type == ns_fast_moving_worm_observed)
-					is_fast_moving_worm = true;
-			}
-			if (!q->properties.is_excluded() 
-				&& censor_at_start_of_trace 
-				&& censoring_strategy == ns_death_time_annotation::ns_censor_multiple_worm_clusters
-				&& !is_fast_moving_worm){
-
-				if (detection_time_of_multiple_worm_cluster == 0){
-					number_stray_multiworm_clusters++;
-				//	throw ns_ex("Could not find start time of a multi-worm cluster!");
-				}
-				else{
-					number_of_multiworm_clusters_correctly_censored++;
-				ns_worm_movement_measurement_summary & timepoint_data(all_timepoints[detection_time_of_multiple_worm_cluster]);
-					int x = timepoint_type.number_of_worms(ns_worm_movement_measurement_summary_timepoint_type::ns_all);
-					if (x > 0)
-							
-						timepoint_data.censoring_data.number_newly_censored_from_multiworm_clusters+=x;
-				}
-			}
-				
-			if (number_stray_multiworm_clusters > 0){
-		//		std::cerr << "\n" << number_stray_multiworm_clusters << " stray multiworm annotations found out of "
-			//			  << number_of_multiworm_clusters_correctly_censored + number_stray_multiworm_clusters << " total.\n";
-			}
-		}
-		*/
 	}
 	for (ns_timepoints_sorted_by_time::iterator p = all_timepoints.begin(); p != all_timepoints.end(); p++){
 		p->second.time = p->first;
 	}
-	/*	for (ns_worm_movement_measurement_summary_timepoint_list::iterator q = p->second.measurements.begin(); q != p->second.measurements.end(); q++){
-			if (q->second.estimated_multiple_deaths.observed > 0){
-				cerr << "WHA!";
-			}
-		}
-	}*/
+	
 }
-void ns_worm_movement_summary_series::from_death_time_annotations(const ns_death_time_annotation::ns_multiworm_censoring_strategy & censoring_strategy,
+void ns_worm_movement_summary_series::from_death_time_annotations(const ns_death_time_annotation::ns_by_hand_annotation_integration_strategy & by_hand_strategy_s,
+									const ns_death_time_annotation::ns_multiworm_censoring_strategy & censoring_strategy,
 									const ns_death_time_annotation::ns_missing_worm_return_strategy & missing_worm_return_s,
 									const ns_death_time_annotation_compiler & annotation_compiler, 
 									const ns_animals_that_slow_but_do_not_die_handling_strategy & patial_path_strategy){
@@ -1338,11 +1075,12 @@ void ns_worm_movement_summary_series::from_death_time_annotations(const ns_death
 	multiworm_cluster_censoring_strategy = censoring_strategy;
 	missing_worm_return_strategy = missing_worm_return_s;
 	ns_time_series_for_each_region time_series_for_each_region;
+	by_hand_strategy = by_hand_strategy_s;
 	
 	//calculate cumulative and missing statistics for each plate
 	std::set<unsigned long> all_times;
 	for (ns_death_time_annotation_compiler::ns_region_list::const_iterator region = annotation_compiler.regions.begin(); region != annotation_compiler.regions.end(); region++){
-		from_death_time_annotations(censoring_strategy,patial_path_strategy,region->second,time_series_for_each_region.time_series[region->first].measurements,multiple_worm_clump_details);
+		from_death_time_annotations(by_hand_strategy,censoring_strategy,patial_path_strategy,region->second,time_series_for_each_region.time_series[region->first].measurements,multiple_worm_clump_details);
 	}
 	time_series_for_each_region.calculate_totals_and_cumulatives(censoring_strategy,missing_worm_return_strategy);
 	//aggregate statistics and get all observation times
@@ -1394,15 +1132,7 @@ void ns_worm_movement_summary_series::from_death_time_annotations(const ns_death
 			}
 		}
 	}
-	/*for (unsigned int i = 0; i < measurements.size(); i++)
-		measurements[i].calculate_all_measurement_types_total();
-	unsigned long x(0);
-
-	//WWW
-	//for (unsigned int i = 0; i < measurements.size(); i++){
-	///	x+=measurements[i].all_measurement_types_total.number_of_deaths_observed;
-	//	cerr << x << ",";
-	//}*/
+	
 }
 
 void ns_worm_movement_description_series::calculate_visualization_grid(const ns_vector_2i & extra_space_for_metadata) const{

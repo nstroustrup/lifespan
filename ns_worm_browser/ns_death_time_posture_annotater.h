@@ -200,6 +200,15 @@ public:
 			return 255;
 		return (ns_8_bit)(a*1.75);
 	};
+
+	unsigned long get_time_from_movement_diagram_position(const unsigned long x_pos,const ns_vector_2i & pos, const ns_vector_2i & size, const ns_time_path_limits & path_observation_limits){
+		const unsigned long path_start_time(path_observation_limits.interval_before_first_observation.period_end);
+		const unsigned long last_path_frame_time(path_observation_limits.interval_after_last_observation.period_start);
+		const unsigned long total_time = last_path_frame_time - path_start_time;
+		
+		const float dt(size.x/(float)total_time);
+		return x_pos/dt+path_start_time;
+	}
 	void draw_movement_diagram(const ns_vector_2i & pos, const ns_vector_2i & size, const ns_time_path_limits & path_observation_limits, const ns_death_time_annotation_time_interval & current_interval, ns_image_standard & im, const float & scaling){
 		if (path_observation_limits.last_obsevation_of_plate.period_end <= path_observation_limits.first_obsevation_of_plate.period_start)
 			throw ns_ex("draw_movement_diagram()::Invalid path duration");
@@ -532,35 +541,11 @@ public:
 
 	void save_death_timing_data_to_set(const timing_data_container & timing_data, const std::vector<ns_death_time_annotation> & orphaned_events, ns_death_time_annotation_set & set, const bool include_flags_and_censoring){
 		unsigned long current_time(ns_current_time());
+		if (set.size() > 20)
+			cout << "Many annotations specified!\n";
 		for (timing_data_container::const_iterator p =timing_data.begin() ; p != timing_data.end(); ++p){
 			if (p->specified == false)
 				continue;
-			
-			
-			/*if(include_flags_and_censoring &&
-				(p->animal_specific_sticky_properties.is_excluded() || 
-				p->animal_specific_sticky_properties.number_of_worms_at_location_marked_by_hand > 0 || 
-				p->animal_specific_sticky_properties.flag.specified())){
-				
-				ns_death_time_annotation a;
-				a.annotation_source = ns_death_time_annotation::ns_posture_image;
-
-				if (p->sticky_properties.annotation_time == 0)
-					a.annotation_time = current_time;
-				else a.annotation_time = p->sticky_properties.annotation_time;
-
-				a.position = p->position_data.worm_in_source_image.position;
-				a.stationary_path_id = p->position_data.stationary_path_id;
-				a.type = ns_no_movement_event;
-				a.size = p->position_data.worm_in_source_image.size;
-				a.region_info_id = p->region_info_id;
-				a.region_id = p->source_region_id;
-
-				a.excluded = p->sticky_properties.excluded;
-				a.number_of_worms_at_location_marked_by_hand = p->sticky_properties.number_of_worms_at_location_marked_by_hand;
-				a.flag = p->sticky_properties.flag;
-			}
-			*/
 			if (p->translation_cessation.time.period_end != 0)
 				set.add(p->translation_cessation);
 			

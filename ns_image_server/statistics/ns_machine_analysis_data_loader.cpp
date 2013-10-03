@@ -184,7 +184,7 @@ void ns_machine_analysis_data_loader::load_just_survival(ns_lifespan_experiment_
 		for (ns_death_time_annotation_compiler::ns_region_list::iterator p = compiler.regions.begin(); p != compiler.regions.end(); p++){
 			const unsigned long s(set.curves.size());
 			set.curves.resize(s+1);
-			p->second.generate_survival_curve(set.curves[s],ns_death_time_annotation_compiler_region::ns_machine_if_not_by_hand,true,false);
+			p->second.generate_survival_curve(set.curves[s],ns_death_time_annotation::ns_machine_annotations_if_no_by_hand,true,false);
 		}
 		samples[i].clear();
 	
@@ -193,7 +193,7 @@ void ns_machine_analysis_data_loader::load_just_survival(ns_lifespan_experiment_
 }
 void ns_machine_analysis_data_loader::load(const ns_death_time_annotation_set::ns_annotation_type_to_load & annotation_types_to_load,const ns_64_bit region_id, ns_64_bit sample_id, ns_64_bit experiment_id_a, ns_sql & sql,
 				const bool load_excluded_regions, const ns_machine_analysis_region_data::ns_loading_details & details){
-		set_up_spec_to_load(region_id,sample_id,experiment_id_a,sql,load_excluded_regions);
+	set_up_spec_to_load(region_id,sample_id,experiment_id_a,sql,load_excluded_regions);
 
 	ns_region_metadata metadata;
 	metadata.clear();

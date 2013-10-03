@@ -207,7 +207,9 @@ typedef std::map<ns_worm_movement_measurement_summary_timepoint_type,ns_moving_a
 
 struct ns_worm_movement_summary_series{
 	
-	void from_death_time_annotations(const ns_death_time_annotation::ns_multiworm_censoring_strategy & censoring_strategy,
+
+	void from_death_time_annotations(const ns_death_time_annotation::ns_by_hand_annotation_integration_strategy &,
+									const ns_death_time_annotation::ns_multiworm_censoring_strategy & censoring_strategy,
 									const ns_death_time_annotation::ns_missing_worm_return_strategy & missing_worm_return_strategy,
 									const ns_death_time_annotation_compiler & annotation_set, 
 									const ns_animals_that_slow_but_do_not_die_handling_strategy & patial_path_strategy);
@@ -267,7 +269,8 @@ struct ns_worm_movement_summary_series{
 	
 	ns_death_time_annotation::ns_multiworm_censoring_strategy multiworm_cluster_censoring_strategy;
 	ns_death_time_annotation::ns_missing_worm_return_strategy missing_worm_return_strategy;
-	static void from_death_time_annotations(const ns_death_time_annotation::ns_multiworm_censoring_strategy & censoring_strategy, const ns_animals_that_slow_but_do_not_die_handling_strategy & patial_path_strategy,const ns_death_time_annotation_compiler_region & region, ns_timepoints_sorted_by_time & region_events,std::vector<ns_multiple_worm_description> & multiple_worm_clump_details);
+	ns_death_time_annotation::ns_by_hand_annotation_integration_strategy by_hand_strategy;
+	static void from_death_time_annotations(const ns_death_time_annotation::ns_by_hand_annotation_integration_strategy & by_hand_strategy,const ns_death_time_annotation::ns_multiworm_censoring_strategy & censoring_strategy, const ns_animals_that_slow_but_do_not_die_handling_strategy & patial_path_strategy,const ns_death_time_annotation_compiler_region & region, ns_timepoints_sorted_by_time & region_events,std::vector<ns_multiple_worm_description> & multiple_worm_clump_details);
 	mutable unsigned long cached_number_of_worms_at_start;
 };
 class ns_detected_worm_info;

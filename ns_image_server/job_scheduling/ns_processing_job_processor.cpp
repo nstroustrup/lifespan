@@ -736,8 +736,7 @@ bool ns_processing_job_maintenance_processor:: run_job(ns_sql & sql){
 		//	o() << "\n";
 			
 			ns_time_path_solution time_path_solution;
-			if(
-				job.maintenance_task == ns_maintenance_rebuild_movement_from_stored_images || 
+			if( job.maintenance_task == ns_maintenance_rebuild_movement_from_stored_images || 
 				job.maintenance_task == ns_maintenance_rebuild_movement_from_stored_image_quantification){
 				image_server->register_server_event(ns_image_server_event("Loading point cloud solution from disk."),&sql);
 				time_path_solution.load_from_db(job.region_id,sql); 
@@ -750,6 +749,9 @@ bool ns_processing_job_maintenance_processor:: run_job(ns_sql & sql){
 				tp_solver.load(job.region_id,sql);
 				tp_solver.solve(solver_parameters,time_path_solution);
 				time_path_solution.fill_gaps_and_add_path_prefixes(ns_time_path_solution::default_length_of_fast_moving_prefix());
+				
+				//unnecissary save, done for debug
+			//	time_path_solution.save_to_db(job.region_id,sql);
 
 				ns_image_server_time_path_inferred_worm_aggregator ag;
 				ag.create_images_for_solution(job.region_id,time_path_solution,sql);
@@ -823,37 +825,26 @@ bool ns_processing_job_maintenance_processor:: run_job(ns_sql & sql){
 			try{
 				ns_death_time_annotation_set censoring_set;
 				//calculate censoring events according to different censoring strategies
-				for (unsigned int censoring_strategy = 0; censoring_strategy < (int)ns_death_time_annotation::ns_number_of_multiworm_censoring_strategies; censoring_strategy++){
-					if (censoring_strategy == (int)ns_death_time_annotation::ns_by_hand_censoring)
-						continue;
-					//if (censoring_strategy == (int)ns_death_time_annotation::ns_interval_censor_multiple_worm_clusters)
-					//	cerr << "WHA";
-					ns_worm_movement_summary_series summary_series;
-						summary_series.from_death_time_annotations((ns_death_time_annotation::ns_multiworm_censoring_strategy)censoring_strategy,
-																	ns_death_time_annotation::default_missing_return_strategy(),
-																compiler,ns_include_unchanged);
+				ns_death_time_annotation::ns_by_hand_annotation_integration_strategy by_hand_annotation_integration_strategy[2] = 
+				{ns_death_time_annotation::ns_machine_annotations_if_no_by_hand,ns_death_time_annotation::ns_only_machine_annotations};
+
+				for (unsigned int bhais = 0; bhais < 2; bhais++){
+					for (unsigned int censoring_strategy = 0; censoring_strategy < (int)ns_death_time_annotation::ns_number_of_multiworm_censoring_strategies; censoring_strategy++){
+						if (censoring_strategy == (int)ns_death_time_annotation::ns_by_hand_censoring)
+							continue;
+						//if (censoring_strategy == (int)ns_death_time_annotation::ns_interval_censor_multiple_worm_clusters)
+						//	cerr << "WHA";
+						ns_worm_movement_summary_series summary_series;
+							summary_series.from_death_time_annotations(by_hand_annotation_integration_strategy[bhais],
+																	  (ns_death_time_annotation::ns_multiworm_censoring_strategy)censoring_strategy,
+																		ns_death_time_annotation::default_missing_return_strategy(),
+																	compiler,ns_include_unchanged);
 			
-						summary_series.generate_censoring_annotations(metadata,censoring_set);
-					{
-						ns_image_server_results_file movement_timeseries(image_server->results_storage.movement_timeseries_data((
-							ns_death_time_annotation::ns_multiworm_censoring_strategy)censoring_strategy,
-							ns_death_time_annotation::ns_censoring_minimize_missing_times,
-							ns_include_unchanged,
-							results_subject,"single_region","movement_timeseries",sql));
-						ns_acquire_for_scope<std::ostream> movement_out(movement_timeseries.output());
-						ns_worm_movement_measurement_summary::out_header(movement_out());
-						summary_series.to_file(metadata,movement_out());
-						movement_out.release();
-					}
-					if (censoring_strategy == ns_death_time_annotation::ns_merge_multiple_worm_clusters_and_missing_and_censor){
-						summary_series.from_death_time_annotations((ns_death_time_annotation::ns_multiworm_censoring_strategy)censoring_strategy,
-															  ns_death_time_annotation::ns_censoring_assume_uniform_distribution_of_missing_times,
-																compiler,ns_include_unchanged);
-						summary_series.generate_censoring_annotations(metadata,censoring_set);
+							summary_series.generate_censoring_annotations(metadata,censoring_set);
 						{
-							ns_image_server_results_file movement_timeseries(image_server->results_storage.movement_timeseries_data((
-								ns_death_time_annotation::ns_multiworm_censoring_strategy)censoring_strategy,
-								ns_death_time_annotation::ns_censoring_assume_uniform_distribution_of_missing_times,
+							ns_image_server_results_file movement_timeseries(image_server->results_storage.movement_timeseries_data(by_hand_annotation_integration_strategy[bhais],
+								(ns_death_time_annotation::ns_multiworm_censoring_strategy)censoring_strategy,
+								ns_death_time_annotation::ns_censoring_minimize_missing_times,
 								ns_include_unchanged,
 								results_subject,"single_region","movement_timeseries",sql));
 							ns_acquire_for_scope<std::ostream> movement_out(movement_timeseries.output());
@@ -861,14 +852,34 @@ bool ns_processing_job_maintenance_processor:: run_job(ns_sql & sql){
 							summary_series.to_file(metadata,movement_out());
 							movement_out.release();
 						}
-						summary_series.from_death_time_annotations((ns_death_time_annotation::ns_multiworm_censoring_strategy)censoring_strategy,
-															  ns_death_time_annotation::ns_censoring_assume_uniform_distribution_of_only_large_missing_times,
-																compiler,ns_include_unchanged);
-						summary_series.generate_censoring_annotations(metadata,censoring_set);
+						if (censoring_strategy == ns_death_time_annotation::ns_merge_multiple_worm_clusters_and_missing_and_censor){
+							summary_series.from_death_time_annotations(by_hand_annotation_integration_strategy[bhais],
+																 (ns_death_time_annotation::ns_multiworm_censoring_strategy)censoring_strategy,
+																  ns_death_time_annotation::ns_censoring_assume_uniform_distribution_of_missing_times,
+																	compiler,ns_include_unchanged);
+							summary_series.generate_censoring_annotations(metadata,censoring_set);
+							{
+								ns_image_server_results_file movement_timeseries(image_server->results_storage.movement_timeseries_data(
+									by_hand_annotation_integration_strategy[bhais],
+									(ns_death_time_annotation::ns_multiworm_censoring_strategy)censoring_strategy,
+									ns_death_time_annotation::ns_censoring_assume_uniform_distribution_of_missing_times,
+									ns_include_unchanged,
+									results_subject,"single_region","movement_timeseries",sql));
+								ns_acquire_for_scope<std::ostream> movement_out(movement_timeseries.output());
+								ns_worm_movement_measurement_summary::out_header(movement_out());
+								summary_series.to_file(metadata,movement_out());
+								movement_out.release();
+							}
+							summary_series.from_death_time_annotations(by_hand_annotation_integration_strategy[bhais],
+																  (ns_death_time_annotation::ns_multiworm_censoring_strategy)censoring_strategy,
+																  ns_death_time_annotation::ns_censoring_assume_uniform_distribution_of_only_large_missing_times,
+																	compiler,ns_include_unchanged);
+							summary_series.generate_censoring_annotations(metadata,censoring_set);
 
+						}
 					}
+					set.add(censoring_set);
 				}
-				set.add(censoring_set);
 			}
 			catch(ns_ex & ex){
 				censoring_problem = ex;
@@ -1144,6 +1155,7 @@ bool ns_processing_job_maintenance_processor:: run_job(ns_sql & sql){
 				bool empty_storyboard(false);
 
 				for (unsigned int j = 0; j < specs.size(); j++){
+				//	continue;
 					specs[j].minimum_distance_to_juxtipose_neighbors = neighbor_distance_to_juxtipose;
 					if (specs.size() > 1)
 						cerr << "Compiling storyboard outline " << j+1 << " of " << specs.size() << "\n";
@@ -1157,6 +1169,25 @@ bool ns_processing_job_maintenance_processor:: run_job(ns_sql & sql){
 					ns_experiment_storyboard_manager man;
 					man.delete_metadata_from_db(specs[j],sql);
 					man.save_metadata_to_db(specs[j],s,"xml",sql);
+					//reload the storyboard just to confirm it still works
+					if (1){
+						ns_experiment_storyboard s2;
+						try{
+							ns_experiment_storyboard_manager man2;
+							man2.load_metadata_from_db(specs[j],s2,sql);
+						}
+						catch(ns_ex & ex){
+							std::string r;
+							if (r.size() == 0)
+								ex << "\nns_experiment_storyboard::compare()::Found no differences between the storyboards.";
+							else ex << "\n" << s.compare(s2).text();	
+							throw ex;
+						}
+						ns_ex ex(s.compare(s2).text());
+						if (ex.text().size() > 0)
+							throw ex;
+					}
+					
 				}
 				if (empty_storyboard){
 					for (unsigned int j = 0; j < specs.size(); j++){

@@ -10,6 +10,73 @@
 
 using namespace std;
 
+//triangle drawing from http://www.sunshine2k.de/coding/java/TriangleRasterization/TriangleRasterization.html
+void ns_fill_bottom_flat_triangle(const ns_vector_2i & t1, const ns_vector_2i & b2, const ns_vector_2i & b3,const ns_color_8 &c,const double & opacity,ns_image_standard & im){
+  float invslope1 = (b2.x - t1.x) / (float)(b2.y - t1.y);
+  float invslope2 = (b3.x - t1.x) / (float)(b3.y - t1.y);
+
+  float curx1 = t1.x;
+  float curx2 = t1.x;
+  const bool fwds(invslope1 < invslope2);
+  if (fwds){
+	  for (int scanlineY = t1.y; scanlineY <= b2.y; scanlineY++)
+	  {
+		for (unsigned int x = curx1; x < curx2; x++){
+			im[scanlineY][3*x+0] = (1-opacity)*im[scanlineY][3*x+0] + opacity*c.x;
+			im[scanlineY][3*x+1] = (1-opacity)*im[scanlineY][3*x+1] + opacity*c.y;
+			im[scanlineY][3*x+2] = (1-opacity)*im[scanlineY][3*x+2] + opacity*c.z;
+		}
+		curx1 += invslope1;
+		curx2 += invslope2;
+	  }
+  }
+  else{
+	    for (int scanlineY = t1.y; scanlineY <= b2.y; scanlineY++)
+	  {
+		for (unsigned int x = curx2; x < curx1; x++){
+			im[scanlineY][3*x+0] = (1-opacity)*im[scanlineY][3*x+0] + opacity*c.x;
+			im[scanlineY][3*x+1] = (1-opacity)*im[scanlineY][3*x+1] + opacity*c.y;
+			im[scanlineY][3*x+2] = (1-opacity)*im[scanlineY][3*x+2] + opacity*c.z;
+		}
+		curx1 += invslope1;
+		curx2 += invslope2;
+	  }
+  }
+}
+
+void ns_fill_top_flat_triangle(const ns_vector_2i & t1, const ns_vector_2i & t2, const ns_vector_2i & b3,const ns_color_8 &c,const double & opacity,ns_image_standard & im){
+  float invslope1 = (b3.x - t1.x) / (float)(b3.y - t1.y);
+  float invslope2 = (b3.x - t2.x) / (float)(b3.y - t2.y);
+
+  float curx1 = b3.x;
+  float curx2 = b3.x;
+
+  const bool fwds(invslope1 > invslope2);
+  if (fwds){
+	  for (int scanlineY = b3.y; scanlineY > t1.y; scanlineY--)
+	  {
+		curx1 -= invslope1;
+		curx2 -= invslope2; 
+		for (unsigned int x = curx1; x < curx2; x++){
+			im[scanlineY][3*x+0] = (1-opacity)*im[scanlineY][3*x+0] + opacity*c.x;
+			im[scanlineY][3*x+1] = (1-opacity)*im[scanlineY][3*x+1] + opacity*c.y;
+			im[scanlineY][3*x+2] = (1-opacity)*im[scanlineY][3*x+2] + opacity*c.z;
+		}
+	  }
+  }
+  else{
+	   for (int scanlineY = b3.y; scanlineY > t1.y; scanlineY--){
+			curx1 -= invslope1;
+			curx2 -= invslope2; 
+			for (unsigned int x = curx2; x < curx1; x++){
+				im[scanlineY][3*x+0] = (1-opacity)*im[scanlineY][3*x+0] + opacity*c.x;
+				im[scanlineY][3*x+1] = (1-opacity)*im[scanlineY][3*x+1] + opacity*c.y;
+				im[scanlineY][3*x+2] = (1-opacity)*im[scanlineY][3*x+2] + opacity*c.z;
+			}
+		}
+  }
+}
+
 bool operator <(const ns_experiment_storyboard_timepoint_element & a, const ns_experiment_storyboard_timepoint_element & b){
 	if (a.event_annotation.time.period_end_was_not_observed != b.event_annotation.time.period_end_was_not_observed)
 		return a.event_annotation.time.period_end_was_not_observed < b.event_annotation.time.period_end_was_not_observed;	
@@ -343,46 +410,6 @@ void ns_experiment_storyboard_timepoint::calculate_worm_positions(){
 		events_p[i] = &events[i];
 	}
 
-	/*
-	const bool keep_neighbors_juxtiposed_true(true);
-	if (keep_neighbors_juxtiposed_true){
-		//sort in time keeping neighbors juxitposed
-		std::map<ns_region_neighbor_group,ns_timepoint_element_neighbor_list> close_neighbors;
-		for (unsigned int i = 0; i < events.size(); i++){
-			close_neighbors[ns_region_neighbor_group(events[i].event_annotation.region_info_id,events[i].neighbor_group_id)]
-				.elements.push_back(&events[i]);
-		}
-		for (std::map<ns_region_neighbor_group,ns_timepoint_element_neighbor_list>::iterator p = close_neighbors.begin(); p != close_neighbors.end(); p++){
-			p->second.earliest_death = p->second.elements[0]->storyboard_time;
-			p->second.center_sum = p->second.elements[0]->event_annotation.position;
-			for (unsigned int i = 1; i < p->second.elements.size(); i++){
-				p->second.center_sum += p->second.elements[i]->event_annotation.position;
-				if (p->second.earliest_death < p->second.elements[i]->storyboard_time)
-					p->second.earliest_death = p->second.elements[i]->storyboard_time;
-			}
-		}
-		std::vector<ns_timepoint_element_neighbor_list *> close_neighbors_p(close_neighbors.size());
-		unsigned long pos(0);
-		for (std::map<ns_region_neighbor_group,ns_timepoint_element_neighbor_list>::iterator p = close_neighbors.begin(); p != close_neighbors.end(); p++){
-			close_neighbors_p[pos] = &p->second;
-			pos++;
-		}
-		std::sort(close_neighbors_p.begin(),close_neighbors_p.end(),ns_timepoint_element_neighbor_list_orderer());
-		events_p.resize(0);
-		for (unsigned int i = 0; i < close_neighbors_p.size(); i++){
-			std::sort(close_neighbors_p[i]->elements.begin(),close_neighbors_p[i]->elements.end(),ns_annotation_orderer());
-			for (unsigned int j = 0; j < close_neighbors_p[i]->elements.size(); j++){
-				events_p.push_back(close_neighbors_p[i]->elements[j]);
-			}
-		}
-	}
-	else{
-		for (unsigned int i = 0; i < events.size(); i++){
-			events_p[i] = &events[i];
-		}
-		std::sort(events_p.begin(),events_p.end(),ns_annotation_orderer());
-	}*/
-
 	std::vector<unsigned long> cumulative_height(events.size());
 	cumulative_height[0] = events_p[0]->image_image_size().y;
 	for (unsigned int i = 1; i < events_p.size(); i++){
@@ -466,18 +493,28 @@ void ns_experiment_storyboard_timepoint_element::specify_by_hand_annotations(con
 
 		bool event_found(false);
 		
-		for (ns_by_hand_movement_annotation_list::iterator p = by_hand_movement_annotations_for_element.begin(); p != by_hand_movement_annotations_for_element.end();p++){	
+		for (ns_by_hand_movement_annotation_list::iterator p = by_hand_movement_annotations_for_element.begin(); p != by_hand_movement_annotations_for_element.end();){	
 			if (p->annotation.type == movement_events[i].type &&
 				p->annotation.animal_id_at_position == movement_events[i].animal_id_at_position){
-				event_found = true;
-				p->annotation = a;
-				p->loaded_from_disk = false;
-				p->matched = true;
+					if (event_found){
+						cerr << "Found duplicate annotation.\n";
+						p = by_hand_movement_annotations_for_element.erase(p);
+					}
+					else{
+						event_found = true;
+						p->annotation = a;
+						p->loaded_from_disk = false;
+						p->matched = true;
+						p++;
+					}
 			}
+			else
+				p++;
 		}
-		if (!event_found)
+		if (!event_found){
 			by_hand_movement_annotations_for_element.push_back(ns_by_hand_movement_annotation(a,false));
-		by_hand_movement_annotations_for_element.rbegin()->matched = true;
+			by_hand_movement_annotations_for_element.rbegin()->matched = true;
+		}
 	}
 	for (ns_by_hand_movement_annotation_list::iterator p = by_hand_movement_annotations_for_element.begin(); p != by_hand_movement_annotations_for_element.end();){	
 		if (p->annotation.animal_id_at_position == 0 && p->annotation.type == ns_additional_worm_entry ||
@@ -553,12 +590,12 @@ void ns_experiment_storyboard_spec::set_flavor(const ns_storyboard_flavor & f){
 
 
 //unsigned long cc(0); 
-bool ns_experiment_storyboard::load_events_from_annotation_compiler(const ns_loading_type & loading_type,ns_death_time_annotation_compiler & all_events,const bool use_absolute_time, const unsigned long minimum_distance_to_juxtipose_neighbors,ns_sql & sql){
+bool ns_experiment_storyboard::load_events_from_annotation_compiler(const ns_loading_type & loading_type,ns_death_time_annotation_compiler & all_events,const bool use_absolute_time, const bool state_annotations_available_in_loaded_annotations,const unsigned long minimum_distance_to_juxtipose_neighbors,ns_sql & sql){
 	first_time = ns_current_time();
 	last_time = 0;
 
 	std::vector<ns_experiment_storyboard_timepoint_element> animals;
-
+	animals.reserve(50);
 
 	//In all_events we've thrown together in a single list two types of annotations
 	//	1) all the machine annotations that specify the animals that get put into storyboard
@@ -568,73 +605,24 @@ bool ns_experiment_storyboard::load_events_from_annotation_compiler(const ns_loa
 	//and attach the by-hand annotations to their corresponding machine annotations on the storyboard.
 	std::vector<ns_experiment_storyboard_timepoint_element> machine_exclued_animals;
 	std::vector<const ns_death_time_annotation * > state_annotations;
-	
-	ns_movement_event state_to_search;
-	switch(subject_specification.event_to_mark){
-		case ns_fast_movement_cessation:
-			state_to_search = ns_slow_moving_worm_observed;
-			break;
-		case ns_translation_cessation:
-			state_to_search = ns_posture_changing_worm_observed;
-			break;
-		case ns_movement_cessation:
-		case ns_stationary_worm_disappearance:
-		case ns_worm_death_posture_relaxation_termination:
-			state_to_search = ns_stationary_worm_observed;
-			break;
-		default: throw ns_ex("Unknown storyboard event type: ");
-	}
-
-	//find the time of the last death, if that is the time at which we are pulling images.
-	unsigned long time_of_last_death(0);
-	if (subject_specification.choose_images_from_time_of_last_death){
-		unsigned long number_of_events(0);
-		for (ns_death_time_annotation_compiler::ns_region_list::const_iterator r = all_events.regions.begin(); r != all_events.regions.end();r++){
-			for (ns_death_time_annotation_compiler_region::ns_location_list::const_iterator q = r->second.locations.begin(); q !=  r->second.locations.end();q++){
-					number_of_events++;
-			}
-		}
-		
-		std::vector<unsigned long> death_times;
-		death_times.reserve(number_of_events);	
-		for (ns_death_time_annotation_compiler::ns_region_list::const_iterator r = all_events.regions.begin(); r != all_events.regions.end();r++){
-			for (ns_death_time_annotation_compiler_region::ns_location_list::const_iterator q = r->second.locations.begin(); q !=  r->second.locations.end();q++){		
-				if (q->properties.is_excluded())
-					continue;
-				ns_dying_animal_description_const d(q->generate_dying_animal_description_const(false));
-					if (d.machine.death_annotation != 0)
-						death_times.push_back(d.machine.death_annotation->time.period_end);
-			}
-		}
-		std::sort(death_times.begin(), death_times.end());
-		if (death_times.empty())
-			throw ns_ex("ns_experiment_storyboard::load_events_from_annotation_compiler()::No dead animals or potentially dead animals were detected");
-		time_of_last_death = death_times[(unsigned long)(death_times.size()*.9)];
-	}
-
 
 	unsigned long number_of_coincident_worms(0);
 	unsigned long number_of_observed_deaths(0);
 	unsigned long number_of_multi_stationary_event_animals(0);
 	unsigned long cc(0);
 	cout << "Aggregating Region Events.\n";
+	ns_machine_analysis_data_loader region_state_annotations(true);
+	unsigned long last_cc(0);
 	for (ns_death_time_annotation_compiler::ns_region_list::iterator r = all_events.regions.begin(); r != all_events.regions.end();r++){
-		cerr << (100*cc)/all_events.regions.size() << "%...";
-		cc++;
-		//some storyboard types require knowlege of events that occur after the event transition
-		//(ie images of the worms a certain duration after it has died)
-		//In this case we need to load the state annotations.
-		//Because these take up a huge amount of memory, we only load them one region at a time.
-		if (loading_type == ns_creating_from_machine_annotations && 
-			(subject_specification.delay_time_after_event > 0 || subject_specification.choose_images_from_time_of_last_death)){
-			
-			ns_machine_analysis_data_loader region_state_annotations(true);
-			region_state_annotations.load(ns_death_time_annotation_set::ns_movement_states,r->second.metadata.region_id,0,0,sql,true,ns_machine_analysis_region_data::ns_exclude_fast_moving_animals);
-			
-			for (unsigned long i = 0; i < region_state_annotations.samples.begin()->regions.begin()->death_time_annotation_set.size(); i++){
-				r->second.add(region_state_annotations.samples.begin()->regions.begin()->death_time_annotation_set[i],false);
-			}
+		unsigned long cur_cc = (100*cc)/all_events.regions.size();
+		if (cur_cc-last_cc > 5){
+			cerr << cur_cc << "%...";
+			last_cc = cur_cc;
 		}
+		cc++;
+			
+		region_state_annotations.clear();
+		bool region_state_events_loaded(false);
 
 		for (ns_death_time_annotation_compiler_region::ns_location_list::const_iterator q = r->second.locations.begin(); q !=  r->second.locations.end();q++){
 	
@@ -647,34 +635,50 @@ bool ns_experiment_storyboard::load_events_from_annotation_compiler(const ns_loa
 			ns_death_time_annotation event_to_place_on_storyboard;
 			bool found_storyboard_event(false);
 			
+
+			ns_movement_event state_to_search(ns_stationary_worm_observed);
+
 			switch(subject_specification.event_to_mark){
-				case ns_fast_movement_cessation:
-					if (d.machine.last_fast_movement_annotation != 0){
-						event_to_place_on_storyboard = *d.machine.last_fast_movement_annotation;
-						found_storyboard_event = true;
-					}
-					break;
-				case ns_translation_cessation:
-					if (d.machine.last_slow_movement_annotation != 0){
-						event_to_place_on_storyboard = *d.machine.last_slow_movement_annotation;
-						found_storyboard_event = true;
-					}
-					break;
+				
 				case ns_movement_cessation:
 					if (d.machine.death_annotation != 0){
 						event_to_place_on_storyboard = *d.machine.death_annotation;
+						state_to_search = ns_stationary_worm_observed;
 						found_storyboard_event = true;
+						break;
+						//NOTE The synatx here means that we will try to add a translation cessation event
+						//if a movement cessation isn't present.
+						
+					}
+				case ns_translation_cessation:
+					if (d.machine.last_slow_movement_annotation != 0){
+						event_to_place_on_storyboard = * d.machine.last_slow_movement_annotation;
+						state_to_search = ns_posture_changing_worm_observed;
+						found_storyboard_event = true;
+						break;
+						//NOTE The synatx here means that we will try to add a fast moving cessation event
+						//if a movement cessation isn't present.
+					}	
+				case ns_fast_movement_cessation:
+					if (d.machine.last_fast_movement_annotation != 0){
+						if (!d.machine.slow_moving_state_annotations.empty()){
+							event_to_place_on_storyboard = * d.machine.last_fast_movement_annotation;
+							state_to_search = ns_slow_moving_worm_observed;
+							found_storyboard_event = true;
+						}
 					}
 					break;
 				case ns_stationary_worm_disappearance:
 					if (d.machine.stationary_worm_dissapearance != 0){
-						event_to_place_on_storyboard = *d.machine.stationary_worm_dissapearance;
+						state_to_search = ns_stationary_worm_observed;
+						event_to_place_on_storyboard = * d.machine.stationary_worm_dissapearance;
 						found_storyboard_event = true;
 					}
 					break;
 				case ns_worm_death_posture_relaxation_termination:
 					if (d.machine.death_posture_relaxation_termination != 0){
 						event_to_place_on_storyboard = *d.machine.death_posture_relaxation_termination;
+						state_to_search = ns_stationary_worm_observed;
 						found_storyboard_event = true;
 					}
 					break;
@@ -688,25 +692,54 @@ bool ns_experiment_storyboard::load_events_from_annotation_compiler(const ns_loa
 				cerr << "Found fully unbounded event time interval in " << r->second.metadata.plate_name() << " (" <<  r->second.metadata.region_id << ")";
 				continue;
 			}
-			if (event_to_place_on_storyboard.time.period_end_was_not_observed)
-				continue;
+			//if (event_to_place_on_storyboard.time.period_end_was_not_observed)
+			//	continue;
 
 			//now we have the event to use as the storyboard event.
 			ns_death_time_annotation event_whose_image_should_be_used(event_to_place_on_storyboard);
 
-			//if a delay is requested we need to find the image to use for the storyboard.
+
+	
+			//We need to find the image to use for the storyboard.
 			//this is a movement state event.
 			//when we're building the storyboard for the first time,
 			//there are lots of possible state events and we choose the one closest to our desired time.
 			//when we're loading the storyboard from metadata, there's only one and we choose it.
-			if ((subject_specification.delay_time_after_event > 0 ||
-				subject_specification.choose_images_from_time_of_last_death)){
+			if (event_to_place_on_storyboard.type == ns_movement_cessation &&
+				!(subject_specification.delay_time_after_event > 0 ||
+				subject_specification.choose_images_from_time_of_last_death))
+				event_whose_image_should_be_used = event_to_place_on_storyboard;
+			else{
+				
+				//some storyboard types require knowlege of events that occur after the event transition
+				//(ie images of the worms a certain duration after it has died)
+				//In this case we need to load the state annotations.
+				//Because these take up a significant amount of memory, we only store the current region in memory,
+				//and only load it from disk when necissary
+
+				//these might already be loaded in by a previous operation, so we only go to disk if necissary
+				if (!state_annotations_available_in_loaded_annotations){
+					if (!region_state_events_loaded){
+						region_state_annotations.load(ns_death_time_annotation_set::ns_movement_states,r->second.metadata.region_id,0,0,sql,true,ns_machine_analysis_region_data::ns_exclude_fast_moving_animals);
+			
+						for (unsigned long i = 0; i < region_state_annotations.samples.begin()->regions.begin()->death_time_annotation_set.size(); i++){
+							r->second.add(region_state_annotations.samples.begin()->regions.begin()->death_time_annotation_set[i],false);
+						}
+						region_state_events_loaded = true;
+					}
+				}
 
 				unsigned long ideal_time_for_image;
-				if (subject_specification.choose_images_from_time_of_last_death)
+				if (subject_specification.choose_images_from_time_of_last_death){
+					if (time_of_last_death == 0)
+						throw ns_ex("ns_experiment_storyboard::load_events_from_annotation_compiler()::time of death was not calculated");
 					ideal_time_for_image = time_of_last_death;
-				else if (subject_specification.delay_time_after_event > 0)
-					ideal_time_for_image = event_to_place_on_storyboard.time.period_end + subject_specification.delay_time_after_event;
+				}
+				else if (subject_specification.delay_time_after_event > 0){
+					if (event_to_place_on_storyboard.time.period_end_was_not_observed)
+						ideal_time_for_image  = event_to_place_on_storyboard.time.period_start + subject_specification.delay_time_after_event;
+					else ideal_time_for_image = event_to_place_on_storyboard.time.period_end   + subject_specification.delay_time_after_event;
+				}
 				else throw ns_ex("Code flow error");
 
 				bool found_match(false);
@@ -718,13 +751,17 @@ bool ns_experiment_storyboard::load_events_from_annotation_compiler(const ns_loa
 						cerr << "Found fully unbounded event: " << p->description() << "\n";
 						continue;
 					}
-					if (p->type != state_to_search || p->time.period_end_was_not_observed){
+					if (p->type != state_to_search){
 						continue;
 					}
 					unsigned long diff;
-					if ( p->time.period_end >= ideal_time_for_image)
-						diff = p->time.period_end - ideal_time_for_image;
-					else diff = ideal_time_for_image - p->time.period_end;
+					unsigned long event_time;
+					if(p->time.period_end_was_not_observed)
+						event_time = p->time.period_start;
+					else event_time = p->time.period_end;
+					if ( event_time >= ideal_time_for_image)
+						diff = event_time - ideal_time_for_image;
+					else diff = ideal_time_for_image - event_time;
 
 					if ( diff < lowest_diff){
 						found_match = true;
@@ -736,16 +773,11 @@ bool ns_experiment_storyboard::load_events_from_annotation_compiler(const ns_loa
 				if (!found_match)
 					throw ns_ex("Could not find any state events for animal in ") << r->second.metadata.plate_name() << " (" <<  r->second.metadata.region_id << ")";
 			}
-			else{
-				event_whose_image_should_be_used = event_to_place_on_storyboard;
-			}
 
 			ns_experiment_storyboard_timepoint_element * annotation_subject(0);
 			if (event_to_place_on_storyboard.excluded == ns_death_time_annotation::ns_machine_excluded){
 				machine_exclued_animals.resize(machine_exclued_animals.size()+1);
 				annotation_subject = &(*machine_exclued_animals.rbegin());
-			//	machine_exclued_animals.rbegin()->annotation = *e;annotation_subject->annotation.clear_sticky_properties();
-					
 			}
 			else {
 				animals.resize(animals.size()+1);
@@ -766,8 +798,14 @@ bool ns_experiment_storyboard::load_events_from_annotation_compiler(const ns_loa
 					}
 			}
 			annotation_subject->event_annotation.clear_sticky_properties();
-			annotation_subject->storyboard_absolute_time = event_to_place_on_storyboard.time.period_end;
-			annotation_subject->storyboard_time = event_to_place_on_storyboard.time.period_end - (use_absolute_time?0:(r->second.metadata.time_at_which_animals_had_zero_age));
+			if (event_to_place_on_storyboard.time.period_end_was_not_observed){
+				annotation_subject->storyboard_absolute_time = event_to_place_on_storyboard.time.period_start;
+				annotation_subject->storyboard_time = event_to_place_on_storyboard.time.period_start - (use_absolute_time?0:(r->second.metadata.time_at_which_animals_had_zero_age));
+			}
+			else{
+				annotation_subject->storyboard_absolute_time = event_to_place_on_storyboard.time.period_end;
+				annotation_subject->storyboard_time = event_to_place_on_storyboard.time.period_end - (use_absolute_time?0:(r->second.metadata.time_at_which_animals_had_zero_age));
+			}
 			
 			annotation_subject->simplify_and_condense_by_hand_movement_annotations();
 			
@@ -901,12 +939,7 @@ bool ns_experiment_storyboard::load_events_from_annotation_compiler(const ns_loa
 			}
 		}
 	}
-	//ofstream out(string("c:\\raw_worms_") + ns_to_string(cc) + ".csv");
-	//for (unsigned int i = 0; i < animals_p.size(); i++){
-	//	out << animals_p[i]->storyboard_time << "," << animals_p[i]->annotation.time.end_time << "," << animals_p[i]->annotation.position << "," << animals_p[i]->annotation.size << "\n";
-	//}
-	//out.close();
-	//cc++;
+	
 	first_time = (*animals_p.begin())->storyboard_time;
 	unsigned long first_time_in_first_division((*animals_p.begin())->storyboard_time);
 	last_time = (*animals_p.rbegin())->storyboard_time;
@@ -934,12 +967,7 @@ bool ns_experiment_storyboard::load_events_from_annotation_compiler(const ns_loa
 		//try not to have neighbors span pages of the storyboard
 		const unsigned long current_neighbor_group_id = animals_p[i]->neighbor_group_id;
 		const unsigned long number_in_neighbor_group(animals_p[i]->neighbor_group_size);
-	/*	for (unsigned int j = 1; j < animals_p.size()-i; j++){
-			if (animals_p[i]->neighbor_group_id == animals_p[i+j]->neighbor_group_id && 
-				animals_p[i]->event_annotation.region_info_id == animals_p[i+j]->event_annotation.region_info_id)
-				number_in_neighbor_group++;
-			else break;
-		}*/
+	
 		//try to keep all members of a neighbor group in the same division
 		//if we're going to wrap, just skip to the next division
 		if (divisions.rbegin()->events.size() + number_in_neighbor_group > number_of_events_per_division){
@@ -961,19 +989,7 @@ bool ns_experiment_storyboard::load_events_from_annotation_compiler(const ns_loa
 	}
 
 	cerr << animals_p.size() << " animals found in the experiment\n";
-	/*if (all_orphan_by_hand_annotations.size() != 0){
-		cerr << all_orphan_by_hand_annotations.size() << " orphan by hand annotations found\n";
-		for (unsigned int i = 0; i < all_orphan_by_hand_annotations.size(); i++){
-			if (
-				(all_orphan_by_hand_annotations[i].type != ns_no_movement_event ||
-				!(all_orphan_by_hand_annotations[i].position == ns_vector_2i(0,0))
-				|| all_orphan_by_hand_annotations[i].number_of_worms_at_location_marked_by_hand > 1)){
-					orphan_by_hand_annotations.push_back(all_orphan_by_hand_annotations[i]);
-			}
-		}
 	
-		cerr << orphan_by_hand_annotations.size() << " orphan by hand with potentially important information found\n";
-	}*/
 	calculate_worm_positions();
 	subject_specification.use_absolute_time = use_absolute_time;
 	return true;
@@ -1170,67 +1186,7 @@ bool ns_experiment_storyboard::create_storyboard_metadata_from_machine_annotatio
 		}	
 		
 	}
-	/*
-	if (spec.delay_time_after_event > 0){
-		//ns_machine_analysis_data_loader machine_annotations;
-		//machine_annotations.clear();
-	//	machine_annotations.load(ns_death_time_annotation_set::ns_movement_states,spec.region_id,spec.sample_id,experiment_ids[0],sql,true,ns_machine_analysis_region_data::ns_exclude_fast_moving_animals);
-		cerr << "Loading Machine State Annotations...\n";
-		unsigned long number_of_regions(0);
-		
-		for (unsigned int i = 0; i < machine_annotations.samples.size(); i++){
-			for (unsigned int j = 0; j < machine_annotations.samples[i].regions.size(); j++){
-				if (spec.region_id != 0 && spec.region_id != machine_annotations.samples[i].regions[j].metadata.region_id)
-					continue;
-				number_of_regions++;
-			}
-		}
-		unsigned long current_region(0);
-		for (unsigned int i = 0; i < machine_annotations.samples.size(); i++)
-			for (unsigned int j = 0; j < machine_annotations.samples[i].regions.size(); j++){
-				const unsigned long region_id(machine_annotations.samples[i].regions[j].metadata.region_id);
-				if (spec.region_id != 0 && spec.region_id != region_id)
-					continue;
-				cerr << (100*current_region)/number_of_regions << "%...";
-				current_region++;
-				ns_machine_analysis_data_loader region_state_annotations(true);
-				region_state_annotations.load(ns_death_time_annotation_set::ns_movement_states,region_id,0,experiment_ids[0],sql,true,ns_machine_analysis_region_data::ns_exclude_fast_moving_animals);
-				if (region_state_annotations.samples.size() > 1 )
-					throw ns_ex("Too many regions");
-				bool found(false);
-				for (unsigned int k = 0; k < region_state_annotations.samples.begin()->regions.size(); k++){
-					if (region_state_annotations.samples.begin()->regions[k].metadata.region_id == region_id){
-						all_events.add(region_state_annotations.samples.begin()->regions[k].death_time_annotation_set,ns_death_time_annotation_compiler::ns_do_not_create_regions);
-						found = true;
-					}
-				}
-				if (!found)
-					throw ns_ex("Could not find region");
 
-				//There are a ton of state annotations.
-				//to keep memory use down we delete all state annotations we're not going to use.
-				ns_death_time_annotation_compiler::ns_region_list::iterator p = all_events.regions.find(region_id);
-				if (p == all_events.regions.end())
-					throw ns_ex("Could not find region!");
-				for (ns_death_time_annotation_compiler_region::ns_location_list::iterator l = p->second.locations.begin(); l != p->second.locations.end(); l++){
-					ns_dying_animal_description_const d(l->generate_dying_animal_description_const(false));
-					for (ns_death_time_annotation_set::iterator q = l->annotations.begin(); q != l->annotations.end();){
-						if (q->type == ns_slow_moving_worm_observed
-							|| q->type == ns_posture_changing_worm_observed
-							|| q->type ==ns_stationary_worm_observed &&
-							(d.machine.death_annotation == 0 ||
-							d.machine.death_annotation->time.period_end_was_not_observed ||
-							d.machine.death_annotation->time.period_end +
-							spec.delay_time_after_event < q->time.period_end))
-							q = l->annotations.erase(q);
-						else 
-							q++;
-					}
-					
-				}
-			}
-		}
-	*/
 	//load by-hand annotations
 	ns_hand_annotation_loader by_hand_annotations;
 	if (spec.region_id != 0)
@@ -1240,18 +1196,65 @@ bool ns_experiment_storyboard::create_storyboard_metadata_from_machine_annotatio
 	all_events.add(by_hand_annotations.annotations,ns_death_time_annotation_compiler::ns_do_not_create_regions_or_locations);
 
 	subject_specification = spec;
-	return load_events_from_annotation_compiler(ns_creating_from_machine_annotations,all_events,spec.use_absolute_time,spec.minimum_distance_to_juxtipose_neighbors,sql);
-//	calculate_worm_positions();
+
+
+
+	//find the time of the last death, if that is the time at which we are pulling images.
+	if (subject_specification.choose_images_from_time_of_last_death){
+		time_of_last_death = 0;
+		unsigned long number_of_events(0);
+		for (ns_death_time_annotation_compiler::ns_region_list::const_iterator r = all_events.regions.begin(); r != all_events.regions.end();r++){
+			for (ns_death_time_annotation_compiler_region::ns_location_list::const_iterator q = r->second.locations.begin(); q !=  r->second.locations.end();q++){
+					number_of_events++;
+			}
+		}
+		if (spec.choose_images_from_time_of_last_death){
+			std::vector<unsigned long> death_times;
+			death_times.reserve(number_of_events);	
+			for (ns_death_time_annotation_compiler::ns_region_list::const_iterator r = all_events.regions.begin(); r != all_events.regions.end();r++){
+				for (ns_death_time_annotation_compiler_region::ns_location_list::const_iterator q = r->second.locations.begin(); q !=  r->second.locations.end();q++){		
+					if (q->properties.is_excluded())
+						continue;
+					ns_dying_animal_description_const d(q->generate_dying_animal_description_const(false));
+						if (d.machine.death_annotation != 0)
+							death_times.push_back(d.machine.death_annotation->time.period_end);
+				}
+			}
+			std::sort(death_times.begin(), death_times.end());
+			if (death_times.empty())
+				throw ns_ex("ns_experiment_storyboard::load_events_from_annotation_compiler()::No dead animals or potentially dead animals were detected");
+			time_of_last_death = death_times[(unsigned long)(death_times.size()*.9)];
+		}
+	}
+	
+
+	return load_events_from_annotation_compiler(ns_creating_from_machine_annotations,all_events,spec.use_absolute_time,false,spec.minimum_distance_to_juxtipose_neighbors,sql);
 
 }
 
 void ns_experiment_storyboard::save_by_hand_annotations(ns_sql & sql,const ns_death_time_annotation_set & extra_annotations) const{
 	const unsigned long cur_time = ns_current_time();
-	
+
+	//avoid writing duplicates
+	map<unsigned long,map<unsigned long,bool> > worm_ids_written;
+
 	//we make a list of all annotations sorted by region id
 	std::map<unsigned long,ns_death_time_annotation_set > annotations;
 	for (unsigned int i = 0; i < divisions.size(); i++){
 		for (unsigned int j = 0; j < divisions[i].events.size(); j++){
+
+			//only output the annotations once for each worm (even if it is included in multiple neighbor groups)
+			map<unsigned long,map<unsigned long,bool> >::iterator pp = worm_ids_written.find(divisions[i].events[j].event_annotation.region_info_id);
+			if (pp == worm_ids_written.end())
+				worm_ids_written[divisions[i].events[j].event_annotation.region_info_id][divisions[i].events[j].event_annotation.stationary_path_id.group_id] = true;
+			else{
+				map<unsigned long,bool>::iterator q = pp->second.find(divisions[i].events[j].event_annotation.stationary_path_id.group_id);
+				if (q == pp->second.end())
+					pp->second[divisions[i].events[j].event_annotation.stationary_path_id.group_id] = true;
+				else
+					continue;
+			}
+
 			unsigned long region_id(divisions[i].events[j].event_annotation.region_info_id);
 			if (subject().region_id != 0 && region_id != subject().region_id)
 				continue;
@@ -1536,6 +1539,7 @@ bool ns_experiment_storyboard::read_metadata(std::istream & in,ns_sql & sql){
 			last_time = atol(xml.objects[i].tag("lt").c_str());
 			unsigned long worm_images_size_size = atol(xml.objects[i].tag("wis").c_str());
 			worm_images_size.resize(worm_images_size_size,ns_vector_2i(0,0));
+			time_of_last_death = atol(xml.objects[i].tag("ld").c_str());
 		}
 		else if (xml.objects[i].name == "wi"){
 			unsigned long id(atol(xml.objects[i].tag("i").c_str()));
@@ -1601,7 +1605,7 @@ bool ns_experiment_storyboard::read_metadata(std::istream & in,ns_sql & sql){
 				p->second.metadata.load_from_db(p->first,"",sql);
 		
 	}
-	return load_events_from_annotation_compiler(ns_loading_from_storyboard_file,all_events,subject_specification.use_absolute_time,subject_specification.minimum_distance_to_juxtipose_neighbors,sql);
+	return load_events_from_annotation_compiler(ns_loading_from_storyboard_file,all_events,subject_specification.use_absolute_time,true,subject_specification.minimum_distance_to_juxtipose_neighbors,sql);
 }
 
 void ns_experiment_storyboard::write_metadata(std::ostream & o) const{
@@ -1615,6 +1619,7 @@ void ns_experiment_storyboard::write_metadata(std::ostream & o) const{
 	xml.add_tag("ft",first_time);
 	xml.add_tag("lt",last_time);
 	xml.add_tag("wis",number_of_images_in_storyboard());
+	xml.add_tag("ld",time_of_last_death);
 	xml.end_group();
 	for (unsigned int i = 0; i < worm_images_size.size(); i++){
 		xml.start_group("wi");
@@ -1644,6 +1649,72 @@ void ns_experiment_storyboard::write_metadata(std::ostream & o) const{
 	xml.add_footer();
 	o << xml.result();
 	
+}
+
+ns_ex ns_experiment_storyboard::compare(const ns_experiment_storyboard & s){
+	ns_ex ex;
+	if (s.divisions.size() != divisions.size())
+		ex << "Storyboards have different numbers of divisions: " << divisions.size() << " vs " << s.divisions.size() << "\n";;
+	unsigned long stop = divisions.size();
+	if (s.divisions.size() < stop)
+		stop = s.divisions.size();
+	for (unsigned int i = 0; i < stop; i++){
+		if (s.divisions[i].events.size() != divisions[i].events.size())
+			ex << "Storyboards have different number of events in division " << i << ":" << divisions[i].events.size() << " vs " << s.divisions[i].events.size();
+		else{
+			for (unsigned int j = 0; j < divisions[i].events.size(); j++){
+				if (divisions[i].events[j].event_annotation.time.period_start !=
+					s.divisions[i].events[j].event_annotation.time.period_start)
+					ex << "Storyboards have different event times for division " << i << " event " << j << ": " 
+					   << divisions[i].events[j].event_annotation.time.period_start << " vs "
+					   << s.divisions[i].events[j].event_annotation.time.period_start << "\n";
+				if (divisions[i].events[j].event_annotation.time.period_end !=
+					s.divisions[i].events[j].event_annotation.time.period_end)
+					ex << "Storyboards have different event times for division " << i << " event " << j << ": " 
+					   << divisions[i].events[j].event_annotation.time.period_end << " vs " 
+					   << s.divisions[i].events[j].event_annotation.time.period_end << "\n";
+				if (divisions[i].events[j].storyboard_absolute_time !=
+					s.divisions[i].events[j].storyboard_absolute_time)
+					ex << "Storyboards have different storyboard absolute times for division " << i << " event " << j << ": " 
+					   << divisions[i].events[j].storyboard_absolute_time << " vs " 
+					   << s.divisions[i].events[j].storyboard_absolute_time << "\n";
+				if (divisions[i].events[j].event_image_size().x != s.divisions[i].events[j].event_image_size().x ||
+					divisions[i].events[j].event_image_size().y != s.divisions[i].events[j].event_image_size().y)
+					ex << "Storyboards have different sizes for division " << i << " event " << j << ": " 
+					   << divisions[i].events[j].event_image_size() << " vs " 
+					   << s.divisions[i].events[j].event_image_size() << "\n";
+
+				if (divisions[i].events[j].annotation_whose_image_should_be_used.time.period_start !=
+					s.divisions[i].events[j].annotation_whose_image_should_be_used.time.period_start)
+					ex << "Storyboards have different image event times for division " << i << " event " << j << ": " 
+					   << divisions[i].events[j].annotation_whose_image_should_be_used.time.period_start << " vs "
+					   << s.divisions[i].events[j].annotation_whose_image_should_be_used.time.period_start << "\n";
+				if (divisions[i].events[j].annotation_whose_image_should_be_used.time.period_end !=
+					s.divisions[i].events[j].annotation_whose_image_should_be_used.time.period_end)
+					ex << "Storyboards have different image event times for division " << i << " event " << j << ": " 
+					   << divisions[i].events[j].annotation_whose_image_should_be_used.time.period_end << " vs " 
+					   << s.divisions[i].events[j].annotation_whose_image_should_be_used.time.period_end << "\n";
+				if (divisions[i].events[j].storyboard_absolute_time !=
+					s.divisions[i].events[j].storyboard_absolute_time)
+					ex << "Storyboards have different storyboard image absolute times for division " << i << " event " << j << ": " 
+					   << divisions[i].events[j].storyboard_absolute_time << " vs " 
+					   << s.divisions[i].events[j].storyboard_absolute_time << "\n";
+				if (divisions[i].events[j].event_image_size().x != s.divisions[i].events[j].event_image_size().x ||
+					divisions[i].events[j].event_image_size().y != s.divisions[i].events[j].event_image_size().y)
+					ex << "Storyboards have different image sizes for division " << i << " event " << j << ": " 
+					   << divisions[i].events[j].image_image_size() << " vs " 
+					   << s.divisions[i].events[j].image_image_size() << "\n";
+
+				if (divisions[i].events[j].position_on_time_point.x != s.divisions[i].events[j].position_on_time_point.x ||
+					divisions[i].events[j].position_on_time_point.y != s.divisions[i].events[j].position_on_time_point.y)
+					ex << "Storyboards have different poisitions for division " << i << " event " << j << ": " 
+					   << divisions[i].events[j].position_on_time_point << " vs " 
+					   << s.divisions[i].events[j].position_on_time_point << "\n";
+			}
+		}
+	}
+
+	return ex;
 }
 
 bool ns_experiment_storyboard_manager::load_metadata_from_db(const ns_experiment_storyboard_spec & spec, ns_experiment_storyboard & storyboard, ns_sql & sql){

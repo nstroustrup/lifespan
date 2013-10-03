@@ -19,7 +19,7 @@ struct ns_by_hand_movement_annotation{
 		 matched;
 };
 struct ns_experiment_storyboard_timepoint_element{
-	ns_experiment_storyboard_timepoint_element():storyboard_time(0),storyboard_absolute_time(0),neighbor_group_id(0),neighbor_group_size(0),neighbor_group_id_of_which_this_element_is_an_in_situ_duplicate(0){}
+	ns_experiment_storyboard_timepoint_element():storyboard_time(0),storyboard_absolute_time(0),neighbor_group_id(0),neighbor_group_size(0),neighbor_group_id_of_which_this_element_is_an_in_situ_duplicate(0),drawn_worm_bottom_right_overlay(false),drawn_worm_top_right_overlay(false){}
 
 	ns_death_time_annotation event_annotation;
 
@@ -49,6 +49,11 @@ struct ns_experiment_storyboard_timepoint_element{
 	unsigned long neighbor_group_id;
 	unsigned long neighbor_group_size;
 	unsigned long neighbor_group_id_of_which_this_element_is_an_in_situ_duplicate;
+
+	
+	bool drawn_worm_bottom_right_overlay,
+		 drawn_worm_top_right_overlay;
+
 };
 
 struct ns_experiment_storyboard_timepoint{
@@ -120,8 +125,9 @@ struct ns_reg_info{
 class ns_experiment_storyboard{
 
 public:
+	ns_experiment_storyboard(){clear();}
 	typedef enum {ns_creating_from_machine_annotations,ns_loading_from_storyboard_file} ns_loading_type;
-	bool load_events_from_annotation_compiler(const ns_loading_type & loading_type,ns_death_time_annotation_compiler & all_events,const bool use_absolute_time,const unsigned long minimum_distance_to_juxtipose_neighbors, ns_sql & sql);
+	bool load_events_from_annotation_compiler(const ns_loading_type & loading_type,ns_death_time_annotation_compiler & all_events,const bool use_absolute_time,const bool state_annotations_available_in_loaded_annotations,const unsigned long minimum_distance_to_juxtipose_neighbors, ns_sql & sql);
 
 	void draw(const unsigned long sub_image_id,ns_image_standard & im,bool use_color,ns_sql & sql);
 
@@ -133,8 +139,12 @@ public:
 	void write_metadata(std::ostream & o) const;
 	bool read_metadata(std::istream & i, ns_sql & sql);
 
+	ns_ex compare(const ns_experiment_storyboard & s);
 	void clear(){
 		first_time = last_time = 0;
+		time_of_last_death = 0;
+		last_timepoint_in_storyboard = 0;
+		number_of_regions_in_storyboard = 0;
 		worm_images_size.resize(0);
 		subject_specification.clear();
 		divisions.resize(0);
@@ -154,6 +164,7 @@ public:
 
 	unsigned long last_timepoint_in_storyboard;
 	unsigned long number_of_regions_in_storyboard;
+	unsigned long time_of_last_death;
 
 	private:
 		void prepare_to_draw(ns_sql & sql);

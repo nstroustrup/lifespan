@@ -1151,8 +1151,13 @@ int main(int argc, char * argv[]){
 		#endif
 
 			image_server.image_storage.test_connection_to_long_term_storage(true);
-		if (!image_server.image_storage.long_term_storage_was_recently_writeable() && image_server.act_as_processing_node())
-			throw ns_ex("Cannot connect to long term storage.");
+		if (!image_server.image_storage.long_term_storage_was_recently_writeable() && image_server.act_as_processing_node()){
+			if (image_server.act_as_an_image_capture_server()){
+				image_server.set_processing_node_behavior(false);
+				image_server.register_server_event(ns_image_server_event("Cannot connect to long term storage.  This server will not act as an image processing node."),&sql());
+			}
+			else throw ns_ex("Cannot connect to long term storage.");
+		}
 
 		if (sql().connected_to_central_database()){
 			image_server.get_requested_database_from_db();

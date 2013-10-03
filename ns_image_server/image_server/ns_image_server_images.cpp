@@ -618,14 +618,14 @@ void ns_image_server_captured_image_region::create_storage_for_worm_results(ns_i
 
 	if (im.id != 0){
 		sql << "UPDATE images SET host_id = " << im.host_id  << ", creation_time=" << ns_current_time() << ", currently_under_processing=1, "
-			<< "path = '" << sql.escape_string(im.path) << "', filename='" << sql.escape_string(im.filename) << "', partition='" << im.partition << "' "
+			<< "path = '" << sql.escape_string(im.path) << "', filename='" << sql.escape_string(im.filename) << "', `partition`='" << im.partition << "' "
 			<< "WHERE id = " << im.id;
 		sql.send_query();
 	}
 	else{
 		//create a new image if it doesn't exist.
 		sql << "INSERT INTO images SET host_id = " << im.host_id << ", creation_time=" << ns_current_time() << ", currently_under_processing=1, "
-			<< "path = '" << sql.escape_string(im.path) << "', filename='" << sql.escape_string(im.filename) << "', partition='" << im.partition << "' ";
+			<< "path = '" << sql.escape_string(im.path) << "', filename='" << sql.escape_string(im.filename) << "', `partition`='" << im.partition << "' ";
 		im.id = sql.send_query_get_id();
 	}
 	sql.send_query("COMMIT");
@@ -780,7 +780,7 @@ const ns_image_server_image & ns_image_server_image::create_storage_for_processe
 		processed_output_storage->host_id = image_server.host_id();
 		processed_output_storage->capture_time = ns_current_time();
 		*sql << "UPDATE " << sql->table_prefix() << "images SET host_id = " << processed_output_storage->host_id  << ", creation_time=" << processed_output_storage->capture_time << ", currently_under_processing=1,"
-			<< "partition = '" << processed_output_storage->partition << "' WHERE id = " << processed_output_storage->id;
+			<< "`partition` = '" << processed_output_storage->partition << "' WHERE id = " << processed_output_storage->id;
 		sql->send_query();
 		sql->send_query("COMMIT");
 	//}

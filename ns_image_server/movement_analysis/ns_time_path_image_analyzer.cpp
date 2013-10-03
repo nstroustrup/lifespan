@@ -3863,6 +3863,8 @@ ns_analyzed_image_time_path_group::ns_analyzed_image_time_path_group(unsigned lo
 		for (unsigned int j = 1; j < path.elements.size(); j++){
 			const ns_analyzed_image_time_path_element & e(path.elements[j]);
 			const ns_vector_2i & pos(e.context_position_in_source_image);
+			if (pos.x == -1 || pos.y == -1)
+				throw ns_ex("An unspecified context position was found in the time path solution");
 			const ns_vector_2i & size(e.worm_context_size_);
 			if (debug != 0){
 				*debug << tl << "," << br << ",|," << pos << "," << pos+size << "\n";

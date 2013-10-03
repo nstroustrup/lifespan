@@ -8,22 +8,28 @@
 #include "ns_time_path_image_analyzer.h"
 
 
+//triangle drawing from http://www.sunshine2k.de/coding/java/TriangleRasterization/TriangleRasterization.html
+void ns_fill_bottom_flat_triangle(const ns_vector_2i & t1, const ns_vector_2i & b2, const ns_vector_2i & b3,const ns_color_8 &c,const double & opacity,ns_image_standard & im);
+void ns_fill_top_flat_triangle(const ns_vector_2i & t1, const ns_vector_2i & t2, const ns_vector_2i & b3,const ns_color_8 &c,const double & opacity,ns_image_standard & im);
+
+
 void ns_launch_worm_window_for_worm(const unsigned long region_id, const ns_stationary_path_id & worm, const unsigned long current_time);
 
 class ns_experiment_storyboard_annotater;
 class ns_experiment_storyboard_annotater_timepoint : public ns_annotater_timepoint{
 private:
-
 	 ns_image_storage_source_handle<ns_8_bit> get_image(ns_sql & sql){
 		throw ns_ex("Data is stored in memory");
 	 }
 public:
+	void init(){
+		blacked_out_non_subject_animals = false;
+	}
 	ns_experiment_storyboard_annotater * experiment_annotater;
-	ns_experiment_storyboard_annotater_timepoint():division(0){}
-
 	ns_image_standard division_image;
 	ns_vector_2i division_offset_in_image;
 	unsigned long division_id;
+	 bool blacked_out_non_subject_animals;
 
 	ns_experiment_storyboard_timepoint * division;
 	//returns true if a worm was picked and a change was made to the metadata
@@ -105,33 +111,41 @@ private:
 
 		unsigned long uncensored_count(0),
 					  censored_count(0);
-
+		
+		bool black_out_performed(false);
 		for (unsigned int i = 0; i < tp->division->events.size(); i++){
-			bool black_out = tp->division->events[i].annotation_was_censored_on_loading;
-			//write over any animals that aren't of the specified strain
-			if (!display_events_from_region.empty()){
-				ns_event_display_spec_list::iterator p = display_events_from_region.find(tp->division->events[i].event_annotation.region_info_id);
-				ns_death_time_annotation a(tp->division->events[i].event_annotation);
-				if (p == display_events_from_region.end())
-					throw ns_ex("Could not find region ") << tp->division->events[i].event_annotation.region_info_id << " in event strain specification";
-				if (!p->second){
-					black_out = true;
-				}
-			}
-			if (black_out){
-				for (unsigned int y = 0; y < (tp->division->events[i].image_image_size()/resize_factor).y; y++){
-					for (unsigned int x = 0; x < 3*(tp->division->events[i].image_image_size()/resize_factor).x; x++){
-						im[y+ tp->division_offset_in_image.y + tp->division->events[i].position_on_time_point.y/resize_factor]
-							[x + 3*(tp->division_offset_in_image.x + tp->division->events[i].position_on_time_point.x/resize_factor)] = 0;
+				bool black_out = tp->division->events[i].annotation_was_censored_on_loading;
+				//write over any animals that aren't of the specified strain
+				if (!display_events_from_region.empty()){
+					ns_event_display_spec_list::iterator p = display_events_from_region.find(tp->division->events[i].event_annotation.region_info_id);
+					ns_death_time_annotation a(tp->division->events[i].event_annotation);
+					if (p == display_events_from_region.end())
+						throw ns_ex("Could not find region ") << tp->division->events[i].event_annotation.region_info_id << " in event strain specification";
+					if (!p->second){
+						black_out = true;
 					}
 				}
-			}
-			if (tp->division->events[i].event_annotation.is_excluded() || tp->division->events[i].event_annotation.flag.event_should_be_excluded()){
-				censored_count++;
-			}
-			else uncensored_count++;
-		}	
-		
+				if (black_out && !tp->blacked_out_non_subject_animals){
+					black_out_performed = true;
+					for (unsigned int y = 0; y < (tp->division->events[i].image_image_size()/resize_factor).y; y++){
+						for (unsigned int x = 0; x < 3*(tp->division->events[i].image_image_size()/resize_factor).x; x++){
+							unsigned int y_ = y+ tp->division_offset_in_image.y + tp->division->events[i].position_on_time_point.y/resize_factor,
+										 x_ = x + 3*(tp->division_offset_in_image.x + tp->division->events[i].position_on_time_point.x/resize_factor);
+								im[y_][x_] = .15*im[y_][x_];
+						}
+					}
+				}
+			
+				if (!black_out){
+					if (tp->division->events[i].event_annotation.is_excluded() || tp->division->events[i].event_annotation.flag.event_should_be_excluded()){
+						censored_count++;
+					}
+					else uncensored_count++;
+				}
+		}
+		if (black_out_performed)
+				tp->blacked_out_non_subject_animals = true;
+
 		ns_font & font(font_server.default_font());
 		font.set_height(14);
 		for (unsigned int i = 0; i < tp->division->events.size(); i++){
@@ -169,8 +183,40 @@ private:
 			
 			draw_box(box_pos,box_size, ns_color_8(0,0,0),im,thickness_2);
 
-			if (has_movement_events)
-					im.draw_line_color(box_pos,ns_vector_2i(box_pos.x+box_size.x/3,box_pos.y),ns_color_8(255,0,0),2);
+			if(!tp->division->events[i].drawn_worm_bottom_right_overlay){
+				tp->division->events[i].drawn_worm_bottom_right_overlay = true;
+				ns_color_8 br_tab_color;
+				if (tp->division->events[i].event_annotation.type == ns_movement_cessation)
+					br_tab_color = ns_color_8(255,0,0);
+				else br_tab_color =  ns_color_8(0,255,0);
+			
+				unsigned long t_height(box_size.x/5);
+				if (box_size.y/5 < t_height)
+					t_height = box_size.y/5;
+
+				ns_fill_bottom_flat_triangle(box_pos+box_size-ns_vector_2i(0,t_height),
+											box_pos+box_size-ns_vector_2i(t_height,0),
+											box_pos+box_size,
+											br_tab_color,
+											.25,
+											im);
+			}
+
+			
+					//im.draw_line_color(box_pos + ns_vector_2i((2*box_size.x)/3,0),ns_vector_2i(box_pos.x+box_size.x,box_pos.y),ns_color_8(200,200,255),2);
+			if (has_movement_events & !tp->division->events[i].drawn_worm_top_right_overlay){
+					unsigned long t_height(box_size.x/5);
+					if (box_size.y/5 < t_height)
+						t_height = box_size.y/5;
+					ns_fill_top_flat_triangle(box_pos,
+										box_pos+ns_vector_2i(t_height,0),
+										box_pos+ns_vector_2i(0,t_height),
+										ns_color_8(0,0,255),
+										.25,
+										im);
+					tp->division->events[i].drawn_worm_top_right_overlay = true;
+			}
+			
 			//we store whether or not extra worms have been annotate dfor the specified worm because we'll
 			//need to write over the number afterwards.
 			if (tp->has_had_extra_worms_annotated.size() != tp->division->events.size()){
@@ -274,6 +320,7 @@ private:
 		ns_image_standard composit;
 		if (!storyboard_manager.load_image_from_db(subimage_id,storyboard.subject(),composit,sql))
 			throw ns_ex("Could not find storyboard image.");
+		//cerr << "Composit height:" << composit.properties().height << "\n";
 		bool use_color(composit.properties().components == 3);
 		ns_font & font(font_server.default_font());
 		font.set_height(bottom_text_size());
@@ -281,9 +328,15 @@ private:
 		for (unsigned int i = 0; i < divisions.size(); i++){
 			if (divisions[i].division->sub_image_id != subimage_id)
 				continue;
+		//	cerr << "Division height: " << divisions[i].division->size.y << " / "  << division_image_properties.height << "\n";
 			ns_vector_2i s(divisions[i].division->size/resize_factor);
 			divisions[i].division_offset_in_image.x = border;
 			divisions[i].division_offset_in_image.y = division_image_properties.height-bottom_border-s.y;
+
+			if (resize_factor*s.y + divisions[i].division->position_on_storyboard.y >= composit.properties().height)
+				throw ns_ex("Composite and division heights do not match!");
+			if (resize_factor*s.x + divisions[i].division->position_on_storyboard.x >= composit.properties().width)
+				throw ns_ex("Composite and division widths do not match!");
 
 			divisions[i].division_image.prepare_to_recieve_image(division_image_properties);
 			if (use_color){
@@ -303,7 +356,7 @@ private:
 						divisions[i].division_image[y][x] = 0;
 					}
 			}
-			
+		
 			if (use_color){
 				for (unsigned int y = 0; y <s.y; y++){
 					for (unsigned int x = 0; x < 3*division_image_properties.width; x++)
@@ -406,26 +459,23 @@ public:
 		draw_metadata(&divisions[current_timepoint_id],*current_image.im);
 	}
 
-	void specifiy_worm_details(const ns_stationary_path_id & worm, const ns_death_time_annotation & sticky_properties, std::vector<ns_death_time_annotation> & movement_event_times){
+	void specifiy_worm_details(const unsigned long region_id,const ns_stationary_path_id & worm, const ns_death_time_annotation & sticky_properties, std::vector<ns_death_time_annotation> & movement_event_times){
 		if (!worm.specified())
 			throw ns_ex("ns_experiment_storyboard_annotater::specifiy_worm_details()::Requesting specification with unspecified path id");
-		//search current division
-		for (unsigned long i = 0; i < divisions[current_timepoint_id].division->events.size(); i++){
-			if (divisions[current_timepoint_id].division->events[i].event_annotation.stationary_path_id == worm){
-				divisions[current_timepoint_id].division->events[i].specify_by_hand_annotations(sticky_properties,movement_event_times);
-				return;
-			}
-		}
+		
+		int found_count(0);
 		//search all divisions
 		for (unsigned long j = 0; j < divisions.size(); j++){ 
 			for (unsigned long i = 0; i < divisions[j].division->events.size(); i++){
-				if (divisions[j].division->events[i].event_annotation.stationary_path_id == worm){
-				divisions[current_timepoint_id].division->events[i].specify_by_hand_annotations(sticky_properties,movement_event_times);
-					return;
+				if (divisions[j].division->events[i].event_annotation.region_info_id == region_id &&
+					divisions[j].division->events[i].event_annotation.stationary_path_id == worm){
+				divisions[j].division->events[i].specify_by_hand_annotations(sticky_properties,movement_event_times);
+				found_count++;
 				}
 			}
 		}
-		throw ns_ex("ns_experiment_storyboard_annotater::specifiy_worm_details()::Could not find path: ") << worm.detection_set_id << ":" << worm.group_id << "," << worm.path_id; 
+		if (found_count == 0)
+			throw ns_ex("ns_experiment_storyboard_annotater::specifiy_worm_details()::Could not find path: ") << worm.detection_set_id << ":" << worm.group_id << "," << worm.path_id; 
 
 	}
 
@@ -472,6 +522,7 @@ public:
 		divisions.resize(number_of_nonempty_divisions);
 		unsigned long cur_i(0);
 		for (unsigned int i = 0; i < storyboard.divisions.size(); i++){
+			divisions[cur_i].init();
 			if (storyboard.divisions[i].events.size() == 0)
 				continue;
 			divisions[cur_i].division_id = i;
@@ -480,6 +531,7 @@ public:
 			divisions[cur_i].experiment_annotater = this;
 
 			for (unsigned int j=0; j < divisions[cur_i].division->events.size(); j++){
+			
 				if (censor_masking == ns_show_all)
 					divisions[cur_i].division->events[j].annotation_was_censored_on_loading = false;
 				if (censor_masking == ns_hide_censored)
@@ -587,8 +639,8 @@ public:
 						worms.push_back(&divisions[i].division->events[j]);
 				}
 			}
-			if (worms.size() > 1)
-				cerr << "More than one record found for worm in storyboard.\n";
+		//	if (worms.size() > 1)
+		//		cerr << "More than one record found for worm in storyboard.\n";
 			for (unsigned int i = 0; i < worms.size(); i++){
 				switch(action){
 					case ns_cycle_state:  

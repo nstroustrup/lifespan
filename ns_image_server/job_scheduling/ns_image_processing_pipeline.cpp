@@ -1047,7 +1047,7 @@ float ns_image_processing_pipeline::process_mask(ns_image_server_image & source_
 	ns_image_server_image visualization_image;
 	//create new image for visualization if necissary
 	if (res[0][0] == "0"){
-		sql << "INSERT INTO images SET filename = '" << sql.escape_string(new_filename) << "', path='" << sql.escape_string(source_image.path) << "', partition='" << source_image.partition << "', host_id= " << image_server.host_id() << ", creation_time = " << ns_current_time();
+		sql << "INSERT INTO images SET filename = '" << sql.escape_string(new_filename) << "', path='" << sql.escape_string(source_image.path) << "', `partition`='" << source_image.partition << "', host_id= " << image_server.host_id() << ", creation_time = " << ns_current_time();
 		//cerr << sql.query() << "\n";
 		visualization_image.id = sql.send_query_get_id();
 		sql << "UPDATE image_masks SET visualization_image_id='" << visualization_image.id << "' WHERE id='" << mask_id << "'";
@@ -1055,7 +1055,7 @@ float ns_image_processing_pipeline::process_mask(ns_image_server_image & source_
 	}
 	else{
 		visualization_image.id = atol(res[0][0].c_str());
-		sql << "UPDATE images SET filename = '" << sql.escape_string(new_filename) << "', path='" << sql.escape_string(source_image.path) << "', partition='" << source_image.partition << "', host_id= " << image_server.host_id() << ", creation_time = " << ns_current_time()
+		sql << "UPDATE images SET filename = '" << sql.escape_string(new_filename) << "', path='" << sql.escape_string(source_image.path) << "', `partition`='" << source_image.partition << "', host_id= " << image_server.host_id() << ", creation_time = " << ns_current_time()
 				<< " WHERE id=" << 	visualization_image.id;
 	//	cerr << sql.query() << "\n";
 		sql.send_query();
@@ -2007,7 +2007,7 @@ void ns_image_processing_pipeline::apply_mask(ns_image_server_captured_image & c
 				output_image.path = new_region_image.directory(&sql);
 				output_image.filename = new_region_image.filename(&sql) + ".tif";
 				sql << "INSERT INTO images SET filename = '" << sql.escape_string(output_image.filename) << "', path = '" << sql.escape_string(output_image.path) 
-					<< "', creation_time=" << captured_image.capture_time << ", host_id = " << image_server.host_id() << ", partition = '" << output_image.partition << "' ";
+					<< "', creation_time=" << captured_image.capture_time << ", host_id = " << image_server.host_id() << ", `partition` = '" << output_image.partition << "' ";
 				output_image.id = sql.send_query_get_id();
 				new_region_image.region_images_image_id = output_image.id;
 				sql << "UPDATE sample_region_images SET image_id = " << output_image.id << " WHERE id= " << new_region_image.region_images_id ;
@@ -2368,7 +2368,7 @@ void ns_image_processing_pipeline::overlay_graph(const unsigned long region_id,n
 	if (lifespan_curve.cached_risk_timeseries_metadata.region_id != m.region_id){
 		const ns_death_time_annotation_compiler & compiler(lifespan_curve.get_region_data(ns_death_time_annotation_set::ns_all_annotations,region_id,sql));
 		ns_lifespan_experiment_set set;
-		compiler.generate_survival_curve_set(set,ns_death_time_annotation_compiler_region::ns_machine_if_not_by_hand,true,false);
+		compiler.generate_survival_curve_set(set,ns_death_time_annotation::ns_machine_annotations_if_no_by_hand,true,false);
 	//	set.generate_survival_statistics();
 		set.generage_aggregate_risk_timeseries(m,lifespan_curve.cached_plate_risk_timeseries,lifespan_curve.cached_risk_timeseries_time);
 		lifespan_curve.cached_risk_timeseries_metadata = m;

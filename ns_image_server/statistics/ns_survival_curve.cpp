@@ -724,6 +724,7 @@ void ns_lifespan_experiment_set::out_detailed_JMP_header(const ns_time_handing_b
 	#ifdef NS_OUTPUT_MULTIWORM_STATS
 	"Originated as a Mutliworm Disambiguation Result,"
 	#endif 
+	<< "By Hand Annotation Strategy,"
 	"Details" << terminator;
 }
 
@@ -894,6 +895,7 @@ void ns_lifespan_experiment_set::out_detailed_JMP_event_data(const ns_time_handi
 			#ifdef NS_OUTPUT_MULTIWORM_STATS
 			<< (prop.events->from_multiple_worm_disambiguation?"multiple":"single") << ","
 			#endif
+			<< ns_death_time_annotation::by_hand_annotation_integration_strategy_label_short(a.by_hand_annotation_integration_strategy) << ","
 			<< metadata.details << terminator;
 	}
 }
@@ -927,7 +929,7 @@ void ns_lifespan_experiment_set::out_simple_JMP_header(const ns_time_handing_beh
 }
 
 
-void ns_lifespan_experiment_set::out_simple_JMP_event_data(const ns_time_handing_behavior & time_handling_behavior, const ns_control_group_behavior & control_group_behavior,const ns_death_time_annotation::ns_multiworm_censoring_strategy & s, const ns_death_time_annotation::ns_missing_worm_return_strategy & w, std::ostream & o,  const ns_lifespan_device_normalization_statistics * regression_stats,const ns_region_metadata & metadata,const ns_metadata_worm_properties & prop,const double time_scaling_factor,const bool output_mulitple_events,const std::string & terminator, const bool output_raw_data_as_regression){
+void ns_lifespan_experiment_set::out_simple_JMP_event_data(const ns_time_handing_behavior & time_handling_behavior, const ns_control_group_behavior & control_group_behavior,const ns_death_time_annotation::ns_by_hand_annotation_integration_strategy & by_hand_strategy,const ns_death_time_annotation::ns_multiworm_censoring_strategy & s, const ns_death_time_annotation::ns_missing_worm_return_strategy & w, std::ostream & o,  const ns_lifespan_device_normalization_statistics * regression_stats,const ns_region_metadata & metadata,const ns_metadata_worm_properties & prop,const double time_scaling_factor,const bool output_mulitple_events,const std::string & terminator, const bool output_raw_data_as_regression){
 	const ns_death_time_annotation & properties (prop.properties_override_set?prop.properties_override:prop.events->properties);
 	if (properties.is_excluded())
 		return;
@@ -942,12 +944,22 @@ void ns_lifespan_experiment_set::out_simple_JMP_event_data(const ns_time_handing
 	//	if (a.event_observation_type == ns_death_time_annotation::ns_induced_multiple_worm_death)
 	//		cerr << "RA";
 		if (!
-				((a.multiworm_censoring_strategy == ns_death_time_annotation::ns_not_applicable
-				&& !a.is_censored()) ||
-				a.multiworm_censoring_strategy == ns_death_time_annotation::ns_by_hand_censoring ||
-				(a.multiworm_censoring_strategy == s && 
-				(a.missing_worm_return_strategy == w 
-					|| a.missing_worm_return_strategy == ns_death_time_annotation::ns_not_specified))))
+				(
+					(!a.is_censored() && a.multiworm_censoring_strategy == ns_death_time_annotation::ns_not_applicable) 
+					||
+					a.multiworm_censoring_strategy == ns_death_time_annotation::ns_by_hand_censoring 
+					||
+					(	a.multiworm_censoring_strategy == s 
+						&& 
+						a.by_hand_annotation_integration_strategy == by_hand_strategy 
+						&& 
+						(	a.missing_worm_return_strategy == w 
+							|| 
+							a.missing_worm_return_strategy == ns_death_time_annotation::ns_not_specified
+						)
+					)
+				)
+			)
 			continue;
 
 		if (a.excluded == ns_death_time_annotation::ns_censored_at_end_of_experiment)
@@ -1072,7 +1084,7 @@ void ns_genotype_fetcher::add_information_to_database(const std::vector<ns_genot
 	}
 
 }
-void ns_lifespan_experiment_set::output_JMP_file(const ns_lifespan_experiment_set::ns_time_handing_behavior & time_handling_behavior,const ns_time_units & time_units,std::ostream & o,const ns_output_file_type& detail, const bool output_header) const{
+void ns_lifespan_experiment_set::output_JMP_file(const ns_death_time_annotation::ns_by_hand_annotation_integration_strategy & by_hand_strategy,const ns_lifespan_experiment_set::ns_time_handing_behavior & time_handling_behavior,const ns_time_units & time_units,std::ostream & o,const ns_output_file_type& detail, const bool output_header) const{
 	std::string time_unit_string;
 	double time_scaling_factor;
 	switch(time_units){
@@ -1236,6 +1248,7 @@ void ns_lifespan_experiment_set::output_JMP_file(const ns_lifespan_experiment_se
 							if (!p.events->empty()){
 								const bool output_control_groups(false);
 								out_simple_JMP_event_data(time_handling_behavior,output_control_groups?ns_include_control_groups:ns_do_not_include_control_groups,
+															by_hand_strategy,
 															ns_death_time_annotation::default_censoring_strategy(),
 														  ns_death_time_annotation::default_missing_return_strategy(),
 														o,regression_stats,curves[i].metadata,p,
@@ -1270,8 +1283,9 @@ void ns_lifespan_experiment_set::output_JMP_file(const ns_lifespan_experiment_se
 									}
 								}*/
 								out_simple_JMP_event_data(time_handling_behavior,ns_include_control_groups,
-															ns_death_time_annotation::default_censoring_strategy(),
-															ns_death_time_annotation::default_missing_return_strategy(),
+														by_hand_strategy,
+														ns_death_time_annotation::default_censoring_strategy(),
+														ns_death_time_annotation::default_missing_return_strategy(),
 														o,regression_stats,curves[i].metadata,p,
 														time_scaling_factor,false,"\n",output_raw_data_as_normalization_data);
 							}

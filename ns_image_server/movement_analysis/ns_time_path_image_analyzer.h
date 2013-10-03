@@ -551,8 +551,9 @@ public:
 	void denoise_movement_series(const ns_time_series_denoising_parameters &);
 
 	void find_first_labeled_stationary_timepoint(){
+		first_stationary_timepoint_ = 0;
 		for (unsigned int i = 0; i < elements.size(); i++){
-			if (!elements[i].element_before_fast_movement_cessation){
+			if (!elements[i].element_before_fast_movement_cessation ){
 					first_stationary_timepoint_ = i;
 					break;
 			}

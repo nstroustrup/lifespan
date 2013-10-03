@@ -94,7 +94,7 @@ public:
 	unsigned int software_version_major(){return 1;}
 	///image server nodes check the cluster to see if they are running the latest version of the software,
 	///which is specified by (major).(minor).(software_version_compile).
-	unsigned int software_version_minor(){return 7;}
+	unsigned int software_version_minor(){return 8;}
 	///image server nodes check the cluster to see if they are running the latest version of the software,
 	///which is specified by (major).(minor).(software_version_compile).
 	unsigned int software_version_compile(){return _software_version_compile;}
@@ -258,11 +258,13 @@ public:
 	///new processing jobs after the current job is finished.
 	///If false, the server has to be actively contacted via
 	///a NS_CHECK_FOR_WORK command set to the port the dispatcher is listening on.
-	bool run_autonomously(){return _run_autonomously;}
+	bool run_autonomously() const {return _run_autonomously;}
 
 	///returns true if the ini specified that the server perform
 	///processing jobs.
-	bool act_as_processing_node(){return _act_as_processing_node;}
+	bool act_as_processing_node() const {return _act_as_processing_node;}
+
+	void set_processing_node_behavior(const bool act_as_processing_node){_act_as_processing_node = act_as_processing_node;}
 
 	///returns a human-readible description of the sql server the image server is using.
 	std::string sql_info(){

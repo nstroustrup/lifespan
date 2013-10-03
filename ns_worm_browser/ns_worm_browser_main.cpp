@@ -1825,8 +1825,8 @@ public:
 };
 
 
-void ns_specifiy_worm_details(const ns_stationary_path_id & worm, const ns_death_time_annotation & sticky_properties, std::vector<ns_death_time_annotation> & event_times){
-	worm_learner.storyboard_annotater.specifiy_worm_details(worm,sticky_properties,event_times);
+void ns_specifiy_worm_details(const unsigned long region_id,const ns_stationary_path_id & worm, const ns_death_time_annotation & sticky_properties, std::vector<ns_death_time_annotation> & event_times){
+	worm_learner.storyboard_annotater.specifiy_worm_details(region_id,worm,sticky_properties,event_times);
 	worm_learner.storyboard_annotater.redraw_current_metadata();
 	worm_learner.storyboard_annotater.request_refresh();
 }
@@ -2359,7 +2359,7 @@ int main() {
 }
 
 
-ns_sql * worm_window_sql = 0;
+//ns_sql * worm_window_sql = 0;
 struct ns_asynch_worm_launcher{
 
 	unsigned long region_id;
@@ -2374,8 +2374,8 @@ struct ns_asynch_worm_launcher{
 	}
 	void launch(){
 		try{
-			if (worm_window_sql == 0)
-				worm_window_sql = image_server.new_sql_connection(__FILE__,__LINE__);
+			//if (worm_window_sql == 0)
+			ns_sql *	worm_window_sql = image_server.new_sql_connection(__FILE__,__LINE__);
 			worm_learner.death_time_solo_annotater.load_worm(region_id,worm,current_time,storyboard,&worm_learner,*worm_window_sql);
 			worm_learner.death_time_solo_annotater.display_current_frame();
 			show_worm_window = true;
@@ -2525,7 +2525,13 @@ void ask_if_schedule_should_be_submitted_to_db(bool & write_to_disk, bool & writ
 
 
  void ns_experiment_storyboard_annotater_timepoint::load_image(const unsigned long bottom_height,ns_annotater_image_buffer_entry & im,ns_sql & sql,ns_image_standard & temp_buffer,const unsigned long resize_factor_){
-	
+	this->blacked_out_non_subject_animals = false;
+	if (division != 0){
+		for (unsigned int i = 0; i < this->division->events.size(); i++){
+			this->division->events[i].drawn_worm_bottom_right_overlay = false;
+			this->division->events[i].drawn_worm_top_right_overlay = false;
+		}
+	}
 	experiment_annotater->populate_division_images_from_composit(division_id,sql);
 	ns_image_properties prop(division_image.properties());
 	prop.components = 3;

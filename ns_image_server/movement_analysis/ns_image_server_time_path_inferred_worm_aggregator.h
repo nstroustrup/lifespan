@@ -147,45 +147,6 @@ public:
 													false,
 													false);
 			worm_collage.pump(region_bitmap_o.output_stream(),1024);
-
-			//worm.context_image_size = inferred_elements[i]->context_image_size;
-			//worm.context_position_in_source_image = inferred_elements[i]->context_image_position;
-			//worm.part_of_a_multiple_worm_cluster = false;
-
-			//copy images over for new inferred detected worm
-			/*ns_image_properties prop(unprocessed_image.properties());
-			prop.components = 1;
-			prop.height = worm.region_size.y;
-			prop.width = worm.region_size.x;
-			worm.bitmap().prepare_to_recieve_image(prop);
-			worm.bitmap_of_worm_cluster().prepare_to_recieve_image(prop);
-			for (unsigned int y = 0; y < worm.region_size.y; y++)
-				for (unsigned int x = 0; x < worm.region_size.x; x++)
-					worm.bitmap()[y][x] = worm.bitmap_of_worm_cluster()[y][x] 
-						= thresholded_image[y+worm.region_position_in_source_image.y][x+worm.region_position_in_source_image.x]; 
-				
-			worm.absolute_grayscale().prepare_to_recieve_image(prop);
-			for (unsigned int y = 0; y < worm.region_size.y; y++)
-				for (unsigned int x = 0; x < worm.region_size.x; x++)
-						worm.absolute_grayscale()[y][x] = unprocessed_image[y+worm.region_position_in_source_image.y][x+worm.region_position_in_source_image.x]; 
-				
-			worm.relative_grayscale().prepare_to_recieve_image(prop);
-			for (unsigned int y = 0; y < worm.region_size.y; y++)
-				for (unsigned int x = 0; x < worm.region_size.x; x++)
-						worm.relative_grayscale()[y][x] = spatial_image[y+worm.region_position_in_source_image.y][x+worm.region_position_in_source_image.x];
-			prop.width = worm.context_image_size.x;
-			prop.height = worm.context_image_size.y;
-			worm.context_image().absolute_grayscale.prepare_to_recieve_image(prop);
-			for (unsigned int y = 0; y < worm.region_size.y; y++)
-				for (unsigned int x = 0; x < worm.region_size.x; x++)
-						worm.context_image().absolute_grayscale[y][x] = unprocessed_image[y+worm.context_position_in_source_image.y][x+worm.context_position_in_source_image.x];
-			worm.context_image().relative_grayscale.prepare_to_recieve_image(prop);
-			for (unsigned int y = 0; y < worm.region_size.y; y++)
-				for (unsigned int x = 0; x < worm.region_size.x; x++)
-						worm.context_image().relative_grayscale[y][x] = spatial_image[y+worm.context_position_in_source_image.y][x+worm.context_position_in_source_image.x];
-			*/
-			
-			
 			
 		}
 	}

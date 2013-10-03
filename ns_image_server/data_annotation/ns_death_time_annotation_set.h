@@ -117,7 +117,6 @@ class ns_death_time_annotation_compiler_region{
 	unsigned long match_distance_squared;
 
 public:
-	typedef enum{ns_machine_only,ns_by_hand_only,ns_machine_if_not_by_hand,ns_machine_and_by_hand} ns_death_times_to_use;
 
 	ns_death_time_annotation_compiler_region(const unsigned long match_distance_=30):match_distance_squared(match_distance_*match_distance_){}
 	typedef std::vector<ns_death_time_annotation_compiler_location> ns_location_list;
@@ -130,7 +129,7 @@ public:
 	void add(const ns_death_time_annotation & e, const bool create_new_location);
 	ns_region_metadata metadata;
 	
-	void generate_survival_curve(ns_survival_data & curve, const ns_death_times_to_use & death_times_to_use,const bool use_by_hand_worm_cluster_annotations,const bool warn_on_movement_problems) const;
+	void generate_survival_curve(ns_survival_data & curve, const ns_death_time_annotation::ns_by_hand_annotation_integration_strategy & death_times_to_use,const bool use_by_hand_worm_cluster_annotations,const bool warn_on_movement_problems) const;
 	void output_summary(std::ostream & o) const;
 };
 
@@ -146,7 +145,7 @@ public:
 	enum{match_distance=5};
 	
 	void remove_all_but_specified_event_type(const ns_death_time_annotation_set::ns_annotation_type_to_load & t);
-	void generate_survival_curve_set(ns_lifespan_experiment_set & survival_curves, const ns_death_time_annotation_compiler_region::ns_death_times_to_use & death_times_to_use,const bool use_by_hand_worm_cluster_annotations, const bool warn_on_movement_problems) const;
+	void generate_survival_curve_set(ns_lifespan_experiment_set & survival_curves, const ns_death_time_annotation::ns_by_hand_annotation_integration_strategy & death_times_to_use,const bool use_by_hand_worm_cluster_annotations, const bool warn_on_movement_problems) const;
 	void generate_animal_event_method_comparison(std::ostream & o) const;
 	
 	#ifdef NS_GENERATE_IMAGE_STATISTICS
@@ -177,14 +176,14 @@ public:
 				const ns_death_time_annotation & properties,
 				const ns_dying_animal_description_const & d, 
 				ns_death_time_annotation_set & set,
-				const ns_death_time_annotation_compiler_region::ns_death_times_to_use & death_times_to_use);
+				const ns_death_time_annotation::ns_by_hand_annotation_integration_strategy & death_times_to_use);
 	
 	static void generate_correct_annotations_for_multiple_worm_cluster(
 				const unsigned long number_of_animals,
 				const ns_death_time_annotation & properties,
 				const ns_dying_animal_description_const & d, 
 				ns_death_time_annotation_set & set,
-				const ns_death_time_annotation_compiler_region::ns_death_times_to_use & death_times_to_use);
+				const ns_death_time_annotation::ns_by_hand_annotation_integration_strategy & death_times_to_use);
 };
 
 /*

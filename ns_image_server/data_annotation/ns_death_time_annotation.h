@@ -73,7 +73,7 @@ struct ns_death_time_annotation_time_interval{
 
 struct ns_death_time_annotation_flag{
 
-	ns_death_time_annotation_flag():label_is_cached(false),cached_hidden(false){}
+	ns_death_time_annotation_flag():label_is_cached(false),cached_hidden(false),cached_excluded(false),cached_color(0,0,0){}
 	ns_death_time_annotation_flag(const std::string & label_short_, const std::string &label_long_="", const bool &  excluded_=false, const std::string & next_flag_name_in_order_="", const std::string & color_="000000"):
 	label_short(label_short_),cached_label(label_long_),cached_excluded(excluded_),label_is_cached(!label_long_.empty() || excluded_),next_flag_name_in_order(next_flag_name_in_order_),cached_hidden(false),cached_color(ns_hex_string_to_color<ns_color_8>(color_)){}
 	//unsigned long id;
@@ -97,7 +97,8 @@ struct ns_death_time_annotation_flag{
 	static void generate_default_flags(std::vector<ns_death_time_annotation_flag> & flags);
 
 	static ns_death_time_annotation_flag none(){
-		return ns_death_time_annotation_flag("","",false,first_default_flag_short_label());
+		return ns_death_time_annotation_flag();
+		//return ns_death_time_annotation_flag("","",false,first_default_flag_short_label());
 	}
 	static ns_death_time_annotation_flag extra_worm_from_multiworm_disambiguation();
 
@@ -156,6 +157,11 @@ struct ns_death_time_annotation{
 					ns_censoring_assume_uniform_distribution_of_missing_times,
 					ns_censoring_assume_uniform_distribution_of_only_large_missing_times,
 					ns_number_of_missing_worm_return_strategies} ns_missing_worm_return_strategy;
+
+	typedef enum { ns_only_machine_annotations,
+				   ns_machine_annotations_if_no_by_hand,
+				   ns_only_by_hand_annotations,
+				   ns_machine_and_by_hand_annotations} ns_by_hand_annotation_integration_strategy;
 	
 	static ns_multiworm_censoring_strategy default_censoring_strategy();
 	static ns_missing_worm_return_strategy default_missing_return_strategy();
@@ -171,20 +177,21 @@ struct ns_death_time_annotation{
 		type(ns_no_movement_event),time(0,0),region_info_id(0),region_id(0),position(0,0),size(0,0),animal_is_part_of_a_complete_trace(false),
 		annotation_source(ns_unknown),excluded(ns_not_excluded),number_of_worms_at_location_marked_by_hand(0),multiworm_censoring_strategy(ns_not_applicable),
 		number_of_worms_at_location_marked_by_machine(0),annotation_time(0),disambiguation_type(ns_single_worm), flag(ns_death_time_annotation_flag::none()),loglikelihood(1),animal_id_at_position(0),
-		missing_worm_return_strategy(ns_not_specified),volatile_matches_machine_detected_death(false),event_observation_type(ns_standard){}
+		missing_worm_return_strategy(ns_not_specified),volatile_matches_machine_detected_death(false),event_observation_type(ns_standard),
+		by_hand_annotation_integration_strategy(ns_only_machine_annotations){}
 
 	ns_death_time_annotation(const ns_movement_event type_, const unsigned long region_id_, const unsigned long region_info_id_,
 		const ns_death_time_annotation_time_interval time_, const ns_vector_2i & pos, const ns_vector_2i & size_,const ns_exclusion_type excluded_,
 		const ns_death_time_annotation_event_count & event_counts, const unsigned long annotation_time_, const ns_annotation_source_type source_type,
 		const ns_disambiguation_type & d, const ns_stationary_path_id & s_id,const bool animal_is_part_of_a_complete_trace_,const std::string & annotation_details_="",
 		const double loglikelihood_=1,const unsigned long longest_gap_without_observation_ = 0, const ns_multiworm_censoring_strategy & cen_strat = ns_not_applicable, const ns_missing_worm_return_strategy & missing_worm_return_strategy_ = ns_not_specified, 
-		const ns_event_observation_type & event_observation_type_=ns_standard):multiworm_censoring_strategy(cen_strat),loglikelihood(loglikelihood_),
+		const ns_event_observation_type & event_observation_type_=ns_standard, const ns_by_hand_annotation_integration_strategy & by_hand_strategy = ns_only_machine_annotations):multiworm_censoring_strategy(cen_strat),loglikelihood(loglikelihood_),
 				type(type_),region_id(region_id_),time(time_),position(pos),size(size_),excluded(excluded_),region_info_id(region_info_id_),volatile_duration_of_time_not_fast_moving(0),
 				number_of_worms_at_location_marked_by_hand(event_counts.hand_count),
 				number_of_worms_at_location_marked_by_machine(event_counts.machine_count),volatile_matches_machine_detected_death(false),
 				annotation_time(annotation_time_),annotation_source(source_type),annotation_source_details(annotation_details_),
 				disambiguation_type(d),stationary_path_id(s_id),flag(ns_death_time_annotation_flag::none()),event_observation_type(event_observation_type_),
-				animal_is_part_of_a_complete_trace(animal_is_part_of_a_complete_trace_),longest_gap_without_observation(longest_gap_without_observation_),missing_worm_return_strategy(missing_worm_return_strategy_),animal_id_at_position(0){}
+				animal_is_part_of_a_complete_trace(animal_is_part_of_a_complete_trace_),longest_gap_without_observation(longest_gap_without_observation_),missing_worm_return_strategy(missing_worm_return_strategy_),animal_id_at_position(0),by_hand_annotation_integration_strategy(by_hand_strategy){}
 	
 	static std::string source_type_to_string(const ns_annotation_source_type & t);
 
@@ -212,6 +219,7 @@ struct ns_death_time_annotation{
 	static std::string multiworm_censoring_strategy_label_short(const ns_multiworm_censoring_strategy & m);
 	static std::string missing_worm_return_strategy_label(const ns_missing_worm_return_strategy & m);
 	static std::string missing_worm_return_strategy_label_short(const ns_missing_worm_return_strategy & m);
+	static std::string by_hand_annotation_integration_strategy_label_short(const ns_by_hand_annotation_integration_strategy & s);
 
 	unsigned long number_of_worms() const{
 		if (number_of_worms_at_location_marked_by_hand != 0)
@@ -245,6 +253,8 @@ struct ns_death_time_annotation{
 	unsigned long longest_gap_without_observation;
 
 	ns_multiworm_censoring_strategy multiworm_censoring_strategy;
+
+	ns_by_hand_annotation_integration_strategy by_hand_annotation_integration_strategy;
 
 	ns_death_time_annotation_flag flag;
 	ns_event_observation_type event_observation_type;

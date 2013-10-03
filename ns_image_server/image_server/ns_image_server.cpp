@@ -36,7 +36,7 @@ ns_image_server::ns_image_server():event_log_open(false),exit_requested(false),u
 	ns_socket::global_init();
 	ns_worm_detection_constants::init();
 	ns_set_global_debug_output_handler(ns_image_server_global_debug_handler);
-	_software_version_compile = 657;
+	_software_version_compile = 1;
 	image_storage.cache.set_memory_allocation_limit(maximum_image_cache_memory_size());
 
 }
@@ -601,7 +601,7 @@ ns_64_bit ns_image_server::make_record_for_new_sample_mask(const ns_64_bit sampl
 	filename += sample_name + ".tif";
 
 	sql << "INSERT INTO images SET host_id = " << host_id() << ", creation_time=" << ns_current_time() << ", currently_under_processing=0, "
-		<< "path = '" << sql.escape_string(path) << "', filename='" << sql.escape_string(filename) << "', partition='" << image_server.image_storage.get_partition_for_experiment(atol(experiment_id.c_str()),&sql) << "'";
+		<< "path = '" << sql.escape_string(path) << "', filename='" << sql.escape_string(filename) << "', `partition`='" << image_server.image_storage.get_partition_for_experiment(atol(experiment_id.c_str()),&sql) << "'";
 //	cerr << sql.query() << "\n";
 	ns_64_bit id = sql.send_query_get_id();
 	sql.send_query("COMMIT");

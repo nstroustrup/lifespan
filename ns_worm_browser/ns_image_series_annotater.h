@@ -12,6 +12,7 @@ struct ns_annotater_image_buffer_entry{
 ns_color_8 ns_annotation_flag_color(ns_death_time_annotation & a);
 class ns_annotater_timepoint{
 public:
+	
 	unsigned long resize_factor;
 	virtual ns_image_storage_source_handle<ns_8_bit> get_image(ns_sql & sql)=0;
 	virtual void load_image(const unsigned long bottom_border,ns_annotater_image_buffer_entry & im,ns_sql & sql,ns_image_standard & temp_buffer,const unsigned long resize_factor_=1){

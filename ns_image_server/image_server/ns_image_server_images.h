@@ -45,7 +45,7 @@ struct ns_image_server_image{
 	ns_image_server_image * processed_output_storage;
 
 	bool load_from_db(const ns_64_bit _id, ns_image_server_sql * con){
-		*con << "SELECT host_id, creation_time, filename, path, partition FROM " << con->table_prefix() << "images WHERE id=" << _id;
+		*con << "SELECT host_id, creation_time, filename, path, `partition` FROM " << con->table_prefix() << "images WHERE id=" << _id;
 		ns_sql_result info;
 		con->get_rows(info);
 		id = _id;
@@ -68,7 +68,7 @@ struct ns_image_server_image{
 			<< ", currently_under_processing= " << (currently_under_processing?"1":"0") 
 			<< ",filename='"<< sql->escape_string(filename) 
 			<< "',path='" << sql->escape_string(path)
-			<< "',partition='" << sql->escape_string(partition) <<"' ";
+			<< "',`partition`='" << sql->escape_string(partition) <<"' ";
 		if (id_ == 0)
 			id = sql->send_query_get_id();
 		else{
@@ -182,7 +182,7 @@ struct ns_image_server_captured_image{
 	void update_captured_image_image_info(const std::string & partition, const ns_image_type & image_type, ns_image_server_sql * sql){
 		std::string fname = filename(sql);
 		ns_add_image_suffix(fname,image_type);
-		*sql << "UPDATE " << sql->table_prefix() << "images SET filename = '" << sql->escape_string(fname) << "', path = '" << sql->escape_string(directory(sql)) << "', partition='" << sql->escape_string(partition) << "' ";
+		*sql << "UPDATE " << sql->table_prefix() << "images SET filename = '" << sql->escape_string(fname) << "', path = '" << sql->escape_string(directory(sql)) << "', `partition`='" << sql->escape_string(partition) << "' ";
 		*sql << "WHERE id=" << this->capture_images_image_id;
 		sql->send_query();	
 	}

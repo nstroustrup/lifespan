@@ -410,14 +410,15 @@ void ns_buffered_capture_scheduler::update_local_buffer_from_central_server(ns_i
 				}
 				std::string values;
 				
-				values +=capture_samples.column_names[0] + "='" + local_buffer.escape_string(capture_sample_data[i][0]) + "'";
+				values += "`";
+				values += capture_samples.column_names[0] + "`='" + local_buffer.escape_string(capture_sample_data[i][0]) + "'";
 				for (unsigned int j = 1; j < capture_samples.column_names.size(); j++){
 					if (j == capture_samples.time_stamp_column_id)	//we need to update the local time stamp here, so that if there might be a clock asynchrony between the
 						continue;									//central server and local server that would allow remote timestamps to be in the future according to local
 																	//which would trigger the local server to update the central in the next check, ad infinitum.
-					values += std::string(",") +  capture_samples.column_names[j] + "='" + local_buffer.escape_string(capture_sample_data[i][j]) + "'";
+					values += std::string(",`") +  capture_samples.column_names[j] + "`='" + local_buffer.escape_string(capture_sample_data[i][j]) + "'";
 				}
-				values += std::string(",time_stamp=FROM_UNIXTIME(") + ns_to_string(new_timestamp) + ")";
+				values += std::string(",`time_stamp`=FROM_UNIXTIME(") + ns_to_string(new_timestamp) + ")";
 				local_buffer << "INSERT INTO buffered_capture_samples SET " << values
 							 << " ON DUPLICATE KEY UPDATE " << values;
 				local_buffer.send_query();
@@ -426,11 +427,12 @@ void ns_buffered_capture_scheduler::update_local_buffer_from_central_server(ns_i
 			//local_buffer.send_query("DELETE FROM buffered_experiments");
 			for(unsigned int i = 0; i < experiment_data.size(); i++){
 				std::string values;
-				values += experiments.column_names[0] + "='" + local_buffer.escape_string(experiment_data[i][0]) + "'";
+				values += "`";
+				values += experiments.column_names[0] + "`='" + local_buffer.escape_string(experiment_data[i][0]) + "'";
 				for (unsigned int j = 1; j < experiments.column_names.size(); j++){
 					if (experiments.time_stamp_column_id == j)
 						continue;
-					values += std::string(",") + experiments.column_names[j] + "='" + local_buffer.escape_string(experiment_data[i][j]) + "'";
+					values += std::string(",`") + experiments.column_names[j] + "`='" + local_buffer.escape_string(experiment_data[i][j]) + "'";
 				}
 				values += std::string(",time_stamp=FROM_UNIXTIME(") + ns_to_string(new_timestamp) + ")";
 
@@ -448,11 +450,12 @@ void ns_buffered_capture_scheduler::update_local_buffer_from_central_server(ns_i
 					last_displayed_percent = percent;
 				}
 			std::string all_values;
-			all_values += capture_schedule.table_format.column_names[0] + "='" + local_buffer.escape_string(new_schedule[i][5]) + "'";		
+			all_values += "`";
+			all_values += capture_schedule.table_format.column_names[0] + "`='" + local_buffer.escape_string(new_schedule[i][5]) + "'";		
 			for (unsigned int j = 1; j < capture_schedule.table_format.column_names.size(); j++){
 				if (j == capture_schedule.time_stamp_column)
 					continue;
-				all_values += std::string( ", ") + capture_schedule.table_format.column_names[j] + "='" + local_buffer.escape_string(new_schedule[i][5+j]) + "'";
+				all_values += std::string( ", `") + capture_schedule.table_format.column_names[j] + "`='" + local_buffer.escape_string(new_schedule[i][5+j]) + "'";
 			}
 			all_values+=std::string(",time_stamp=FROM_UNIXTIME(") + ns_to_string(new_timestamp) + ")";
 			
@@ -487,9 +490,10 @@ void ns_buffered_capture_scheduler::update_local_buffer_from_central_server(ns_i
 			//local_buffer_db.send_query("DELETE FROM buffered_capture_samples");
 			for(unsigned int i = 0; i < capture_sample_data.size(); i++){
 				std::string values;
-				values +=capture_samples.column_names[0] + "='" + local_buffer.escape_string(capture_sample_data[i][0]) + "'";
+				values += "`";
+				values += capture_samples.column_names[0] + "`='" + local_buffer.escape_string(capture_sample_data[i][0]) + "'";
 				for (unsigned int j = 1; j < capture_samples.column_names.size(); j++)
-					values += std::string(",") +  capture_samples.column_names[j] + "='" + local_buffer.escape_string(capture_sample_data[i][j]) + "'";
+					values += std::string(",`") +  capture_samples.column_names[j] + "`='" + local_buffer.escape_string(capture_sample_data[i][j]) + "'";
 
 				local_buffer << "INSERT INTO buffered_capture_samples SET " << values
 								<< " ON DUPLICATE KEY UPDATE " << values;

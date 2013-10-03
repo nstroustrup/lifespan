@@ -15,12 +15,12 @@ public:
 	ns_death_time_annotation_set death_time_annotation_set;
 	mutable ns_region_metadata metadata;
 	void calculate_survival(){}
-	const ns_worm_movement_summary_series & summary_series(const ns_death_time_annotation::ns_multiworm_censoring_strategy & cs,
+	const ns_worm_movement_summary_series & summary_series(const ns_death_time_annotation::ns_by_hand_annotation_integration_strategy & by_hand_strategy_,const ns_death_time_annotation::ns_multiworm_censoring_strategy & cs,
 		ns_death_time_annotation::ns_missing_worm_return_strategy & css, const ns_animals_that_slow_but_do_not_die_handling_strategy & sls) const{
 		if (!summary_series_generated_){
 			ns_death_time_annotation_compiler c;
 			c.add(death_time_annotation_set);
-			cached_summary_series.from_death_time_annotations(cs,css,c,sls);
+			cached_summary_series.from_death_time_annotations(by_hand_strategy_,cs,css,c,sls);
 			summary_series_generated_=true;
 		}
 		return cached_summary_series;

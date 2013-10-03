@@ -404,6 +404,7 @@ Forward any questions to <?php echo $contact_name . " at <a href=\"mailto:" . $c
 </td></tr></table>
 
 <span class="style1">Experiment List</span><br>
+
 <?php
  echo "<a href=\"view_experiments.php?"
 	."show_hidden_experiments=". ($show_hidden_experiments?"1":"0")
@@ -426,6 +427,15 @@ Forward any questions to <?php echo $contact_name . " at <a href=\"mailto:" . $c
 	 echo ($show_hidden_experiments?"\">[Hide Specified Experiments]</a>":
 				"\">[Show All Experiments]</a>");
 echo "<br>";
+?>
+<hr width="100%">
+  Jump to Experiment Group:
+<?php  foreach($experiment_groups as $name => $v){
+  echo '<a href="view_experiments.php#'.$v[0]."\">[" . $v[1] . "]</a> ";
+}
+echo "<br>";
+?>
+<?php
 if (sizeof($experiments) != 0){?>
 
 <form action="view_experiments.php" method="post">
@@ -435,7 +445,7 @@ for ($i = 0; $i < sizeof($group_order); $i++){
 ?>
 <hr width="100%">
 <table border=0 width="100%" cellpadding=0 cellspacing="0"><TR><TD valign="top">
-<span class="style1" valign="top"><?php echo  $experiment_groups[$group_order[$i]][1] ?></span></TD><td align="right"><a href="view_processing_job.php?sample_id=all&region_id=all&experiment_list=<?php
+<span class="style1" valign="top"><?php echo  $experiment_groups[$group_order[$i]][1] ?></span></TD><a id = "<?php echo $experiment_groups[$group_order[$i]][0]?>"></a><td align="right"><a href="view_processing_job.php?sample_id=all&region_id=all&experiment_list=<?php
 $exps = '';
 if (sizeof($experiments_by_group[$group_order[$i]]) > 0){
 $exps.= $experiments_by_group[$group_order[$i]][0][0];
@@ -813,6 +823,7 @@ for ($ss = 0; $ss < sizeof($experiment_strains[$experiment_id]); $ss++){
 	echo "<td bgcolor=\"$clrs[1]\"  valign='top'><center>";
 	if ($edit){
 		echo " <input type = \"hidden\" name =\"id\" value=\"" . $experiment_id . "\">";
+		echo "<a href=\"view_processing_job.php?job_id=0&experiment_id=$experiment_id&live_dangerously=1&hide_entire_region_job=1\">[Cancel Pending Scans]</a><br>";
 		echo "<input type=\"submit\" name=\"save\" value=\"Save\"><br>";
 		//		echo "<input type=\"submit\" name=\"delete_future\" value=\"Cancel Pending Scans\" onClick=\"javascript:return confirm('Are you sure you wish to cancel all pending scans?')\"><br>";		
 		echo "<input type=\"submit\" name=\"toggle_hide_experiment\" value=\"";

@@ -141,12 +141,12 @@ function format_time($t){
 function ns_expand_unix_timestamp($time, &$minute, &$hour,&$day,&$month,&$year){
 	//die ($time);
   if ($time == 0){
-	$minute = 0;
-	$hour = 0;
-	$day = 0;
-	$month = 0;
-	$year = 0;
-	//return;
+	$minute = "";
+	$hour = "";
+	$day = "";
+	$month = "";
+	$year = "";
+	return;
   }
   $d = getdate($time);
   $minute = $d['minutes'];

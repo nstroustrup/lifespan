@@ -20,6 +20,9 @@ $edit_region_id=@$query_string['edit_region_id'];
 $delete_censored_jobs = @$query_string['delete_censored_jobs'];
 $delete_problem_images = @$query_string['delete_problem_images'];
 $delete_experiment_jobs = @$query_string['delete_experiment_jobs'];
+$pause_jobs_set = isset($query_string['pause_jobs']);
+$pause_jobs = @$query_string['pause_jobs'];
+
 $show_region_jobs=TRUE;
 $show_sample_jobs=TRUE;
 if ($hide_region_jobs!=0)
@@ -27,6 +30,17 @@ if ($hide_region_jobs!=0)
 if ($hide_sample_jobs!=0)
   $show_sample_jobs = FALSE;
 $region_job_query_string = "&hide_region_jobs=$hide_region_jobs&hide_sample_jobs=$hide_sample_jobs";
+
+if ($pause_jobs_set){
+  $v = "0";
+  if ($pause_jobs==="1")
+    $v = "1";
+  $query = "UPDATE processing_jobs SET paused = $v WHERE experiment_id = $experiment_id";
+  //  die($query);
+  $sql->send_query($query);
+  $query = "UPDATE processing_job_queue as q, processing_jobs as p SET q.paused = $v WHERE q.job_id = p.id AND p.experiment_id = $experiment_id";
+  $sql->send_query($query);
+ }
 try{
   
   /*****************
@@ -538,7 +552,8 @@ echo "<a href=\"manage_samples.php?&experiment_id=$experiment_id&experiment_acti
 echo "<a href=\"manage_samples.php?&experiment_id=$experiment_id&experiment_action=remove_busy&$region_job_query_string\"><font size=\"-1\">[Clear Busy Flags]</font></a><br>";
 echo "<a href=\"manage_samples.php?experiment_id=$experiment_id&delete_experiment_jobs=1\">[Delete All Experiment Jobs]</a><br>";
 echo "<a href=\"manage_samples.php?experiment_id=$experiment_id&delete_censored_jobs=1\">[Delete All Censored Jobs]</a><br>";
-echo "<a href=\"manage_samples.php?experiment_id=$experiment_id&delete_problem_images=1\">[Delete problematic processed images]</a>";
+echo "<a href=\"manage_samples.php?experiment_id=$experiment_id&delete_problem_images=1\">[Delete problematic processed images]</a><br>";
+echo "<a href=\"manage_samples.php?experiment_id=$experiment_id&pause_jobs=1\">[Pause]</a> / <a href=\"manage_samples.php?experiment_id=$experiment_id&pause_jobs=0\">[Resume]</a> Image Analysis";
 ?>
 <br><br>
 <b>Sample Jobs</b>
@@ -688,28 +703,36 @@ if (sizeof($all_animal_type_values) > 1){
 <table border="0" cellpadding="0" cellspacing="1" bgcolor="#000000" >
   <tr>
     <td>
-<table border="0" cellpadding="4" cellspacing="0" width="100%"><tr>
-<?php
-	    $c = -1;
-	for ($i = 0; $i < sizeof($experiment_jobs); $i++){
-	  if ($c == 4){//$i + 1 < sizeof($experiment_jobs)){
-	    echo "</tr><tr>";
-	    $c = 0;
+	    <table border="0" cellpadding="4" cellspacing="0" width="100%">
+	    <?php
+	    $number_of_columns = 5;
+	  $c = 0;
+	  $r = 0;
+	  for ($i = 0; $i < sizeof($experiment_jobs); $i++){
+	    if ($c == 0)
+	      echo "<tr>";
+	    $clrs = $table_colors[$c%2];
+	    echo "<td valign=\"top\" bgcolor=\"$clrs[$r]\">";  
+	    echo "<a href=\"view_processing_job.php?job_id={$experiment_jobs[$i]->id}$region_job_query_string\"";
+	    echo format_time($experiment_jobs[$i]->time_submitted);
+	    echo "</a>";
+	    echo $experiment_jobs[$i]->get_job_description($sql);
+	    echo "\n</td>\n";
+	    if ($c == $number_of_columns-1){
+	      echo "</tr>";
+	      $c = 0;
+	      // $r = !$r;
+	    }
+	    else $c++;
 	  }
-	  else $c++;
-		$clrs = $table_colors[$i%2];
-		echo "<td valign=\"top\" bgcolor=\"$clrs[1]\">";  
-		echo "<a href=\"view_processing_job.php?job_id={$experiment_jobs[$i]->id}$region_job_query_string\"";
-		echo format_time($experiment_jobs[$i]->time_submitted);
-		echo "</a>";
-		echo $experiment_jobs[$i]->get_job_description($sql);
-		echo "\n</td>\n";
-	}
-	$r = sizeof($experiment_jobs)%5;
-	if ($r > 1)
-	  echo "<td colspan=".($r-1)." bgcolor=\"$clrs[1]\"><td>";
-     
-	echo "</tr>";
+	  if ($c != 0){
+	    for (;$c < $number_of_columns; $c++){
+	      
+	    $clrs = $table_colors[$c%2];
+	    echo "<td bgcolor=\"$clrs[$r]\"></td>";
+	    }
+	  echo "</tr>";
+	  }
 	  
 ?></td>
   </tr>

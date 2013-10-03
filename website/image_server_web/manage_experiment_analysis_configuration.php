@@ -125,12 +125,14 @@ $query = "UPDATE experiments SET delete_captured_images_after_mask=" . ($delete_
    ." FROM sample_region_image_info as r, capture_samples as s "
    ."WHERE r.sample_id = s.id AND s.experiment_id = " . $experiment_id;
  $sql->get_row($query,$exps);
+ $number_of_regions = sizeof($exps);
  //die($exps[0][8]);
  $time_series_denoising_flag = $exps[0][8];
  $maximum_number_of_worms = $exps[0][9];
  $number_of_stationary_images = $exps[0][10];
 
 $posture_analysis_method = '';
+ $experiment_strains = array();
  for ($i = 0; $i < sizeof($exps); $i++){
    $strain = $exps[$i][1];
    //echo $detail_level;
@@ -162,9 +164,9 @@ $posture_analysis_method = '';
  }
  else{
    $is_single_posture_model = true;
-   $single_posture_model_name = 0;
+   $single_posture_model_name = "";
    foreach ($strain_posture_models as $s => $m){
-     if ($single_posture_model_name === 0)
+     if ($single_posture_model_name === "")
        $single_posture_model_name = $m;
      else if ($single_posture_model_name != $m){
        $is_single_posture_model = FALSE;
@@ -175,14 +177,15 @@ $posture_analysis_method = '';
 
  if (isset($_POST['is_single_detection_model']) && $_POST['is_single_detection_model']=="0"){
    $is_single_detection_model = false;
-
+   $single_detection_model_name="";
+   //die("WHA");
  }
  else{
    $is_single_detection_model = true;
-   $single_detection_model_name = 0;
+   $single_detection_model_name = "";
    foreach ($strain_detection_models as $s => $m){
      //    echo $s . " " . $m . "<BR>";
-     if      ($single_detection_model_name === 0)
+     if      ($single_detection_model_name === "")
               $single_detection_model_name = $m;
      else if ( $single_detection_model_name != $m){
  
@@ -195,6 +198,7 @@ $posture_analysis_method = '';
   
  if ($_POST['set_posture_models']){
    if ($is_single_posture_model){
+     
      $model_name = $_POST['single_posture_model_name'];
      $posture_analysis_method = $_POST['posture_analysis_method'];
      $query = "UPDATE sample_region_image_info as i, capture_samples as s SET posture_analysis_model ='$model_name',posture_analysis_method='$posture_analysis_method' WHERE i.sample_id = s.id AND s.experiment_id = $experiment_id";
@@ -202,8 +206,11 @@ $posture_analysis_method = '';
       $sql->send_query($query);
    }
    else{
+     
      foreach($_POST as $k => $v){
-       if (substr($k,0,14) == "posture_modelZ"){
+       // echo $k . "<BR>";
+       //   echo substr($k,0,14) . "<br>";
+       if (substr($k,0,14) == "posture_model_"){
 	 $region_id = substr($k,14);
 	 $st = $region_strains[$region_id];
 	 
@@ -219,9 +226,9 @@ $posture_analysis_method = '';
 	     $strain_condition .=" AND i.strain_condition_2 = '" . $st[2] . "'";
 	   }
 	 }
-	 //	 echo $region_id . ": " . $model . "<br>";
+	 //	 	 echo $region_id . ": " . $model . "<br>";
 	$query =  " UPDATE sample_region_image_info as i, capture_samples as s SET posture_analysis_model ='$model',posture_analysis_method='$posture_analysis_method' WHERE $strain_condition AND i.sample_id = s.id AND s.experiment_id = $experiment_id";
-	//	echo $query . "<BR>";
+	//		echo $query . "<BR>";
 	
 	$sql->send_query($query);
        }
@@ -280,6 +287,70 @@ catch(ns_exception $ex){
 ?>
 
 <table cellspacing = 5 cellpadding=0 border=0 align="center"><tr><td valign="top">
+
+
+<form action="manage_experiment_analysis_configuration.php?<?php echo $query_parameters . "&set_denoising_options=1"?>" method="post">
+
+<table align="center" border="0" cellpadding="0" cellspacing="1" bgcolor="#000000"><tr><td><table border="0" cellpadding="4" cellspacing="0" width="100%"><tr <?php echo $table_header_color?> ><td colspan=2><b>Image Analysis Options</b></td></tr>
+
+<tr><td bgcolor="<?php echo $table_colors[1][0] ?>">Time Series Denoising</td><td bgcolor="<?php echo $table_colors[1][1] ?>">
+     
+<select name="time_series_median" style="width: 245px">
+<?php
+  
+    foreach($ns_denoising_option_labels as $l => $v){
+      echo "<option value=\"" . $v . "\" ";
+      if($time_series_denoising_flag == $v) echo "selected";
+      echo ">";
+      echo  $l . "</option>\n";
+    }
+?>
+</select></td></tr>
+
+<tr><td bgcolor="<?php echo $table_colors[0][0] ?>">Apply Vertical Image Registration</td><td bgcolor="<?php echo $table_colors[0][1] ?>">
+
+<select name="apply_vertical_image_registration">
+<option value="do_not_apply"<?php if ($apply_vertical_image_registration == '0') echo "selected"?> >Do not apply vertical registration</option>
+<option value="apply" <?php if ($apply_vertical_image_registration == '1') echo "selected"?> >Appy vertical registration</option>
+</select></td></tr>
+		
+<tr><td bgcolor="<?php echo $table_colors[1][0] ?>">Delete Captured Images after Masking</td><td bgcolor="<?php echo $table_colors[1][1] ?>">
+
+<select name="delete_captured_images">
+<option value="do_not_delete"<?php if ($delete_captured_images == '0') echo "selected"?> >Do not delete captured images</option>
+<option value="delete" <?php if ($delete_captured_images == '1') echo "selected"?> >Delete Captured Images</option>
+</select></td></tr>
+		
+<tr><td bgcolor="<?php echo $table_colors[0][0] ?>">Maximum Number of Worms per Plate</td><td bgcolor="<?php echo $table_colors[0][1] ?>">
+	<?php output_editable_field("maximum_number_of_worms",$maximum_number_of_worms,true,5);?></td></tr>
+		<!--
+	<tr><td bgcolor="<?php echo $table_colors[1][0] ?>">Number of images used to detect stationary plate features <br>(0 for automatic)</td><td bgcolor="<?php echo $table_colors[1][1] ?>"><?php output_editable_field("number_of_stationary_images",$number_of_stationary_images,true,5);?>
+</td></tr>-->
+		<tr><td bgcolor="<?php echo $table_colors[0][0] ?>">Date and time of images to use <br> when generating plate region mask</td><td bgcolor="<?php echo $table_colors[0][1]?>">
+<?php
+	ns_expand_unix_timestamp($mask_date,$i,$h,$d,$m,$y);
+					output_editable_field("end_hour",$h,TRUE,2);
+					echo ":";
+					output_editable_field("end_minute",$i,TRUE,2);
+					echo "<br>";
+					output_editable_field("end_month",$m,TRUE,2);
+					echo "/";
+					output_editable_field("end_day",$d,TRUE,2);
+					echo "/";
+					output_editable_field("end_year",$y,TRUE,4);	
+?>			       
+</td></tr>
+																							
+
+<tr><td bgcolor="<?php echo $table_colors[0][0] ?>" colspan=2>
+	<div align="right"><input name="set_denoising_options" type="submit" value="Set Analysis Options">
+	</div>
+	</td></tr>
+	</table>
+	</td></tr>
+	</table>
+</form><br>
+
 <form action="manage_experiment_analysis_configuration.php?<?php echo $query_parameters . "&regression_setup=1"?>" method="post">
 <?php //var_dump($jobs[0]);
 ?>
@@ -324,70 +395,6 @@ catch(ns_exception $ex){
 </form>
 	<br>
 
-<form action="manage_experiment_analysis_configuration.php?<?php echo $query_parameters . "&set_denoising_options=1"?>" method="post">
-
-<table align="center" border="0" cellpadding="0" cellspacing="1" bgcolor="#000000"><tr><td><table border="0" cellpadding="4" cellspacing="0" width="100%"><tr <?php echo $table_header_color?> ><td colspan=2><b>Image Analysis Options</b></td></tr>
-
-<tr><td bgcolor="<?php echo $table_colors[1][0] ?>">Time Series Denoising</td><td bgcolor="<?php echo $table_colors[1][1] ?>">
-     
-<select name="time_series_median">
-<?php
-  
-    foreach($ns_denoising_option_labels as $l => $v){
-      echo "<option value=\"" . $v . "\" ";
-      if($time_series_denoising_flag == $v) echo "selected";
-      echo ">";
-      echo  $l . "</option>\n";
-    }
-?>
-</select></td></tr>
-
-<tr><td bgcolor="<?php echo $table_colors[0][0] ?>">Apply Vertical Image Registration</td><td bgcolor="<?php echo $table_colors[0][1] ?>">
-
-<select name="apply_vertical_image_registration">
-<option value="do_not_apply"<?php if ($apply_vertical_image_registration == '0') echo "selected"?> >Do not apply vertical registration</option>
-<option value="apply" <?php if ($apply_vertical_image_registration == '1') echo "selected"?> >Appy vertical registration</option>
-</select></td></tr>
-		
-<tr><td bgcolor="<?php echo $table_colors[1][0] ?>">Delete Captured Images after Masking</td><td bgcolor="<?php echo $table_colors[1][1] ?>">
-
-<select name="delete_captured_images">
-<option value="do_not_delete"<?php if ($delete_captured_images == '0') echo "selected"?> >Do not delete captured images</option>
-<option value="delete" <?php if ($delete_captured_images == '1') echo "selected"?> >Delete Captured Images</option>
-</select></td></tr>
-		
-<tr><td bgcolor="<?php echo $table_colors[0][0] ?>">Maximum Number of Worms per Plate</td><td bgcolor="<?php echo $table_colors[0][1] ?>">
-	<?php output_editable_field("maximum_number_of_worms",$maximum_number_of_worms,true,5);?></td></tr>
-		
-	<tr><td bgcolor="<?php echo $table_colors[1][0] ?>">Number of images used to detect stationary plate features <br>(0 for automatic)</td><td bgcolor="<?php echo $table_colors[1][1] ?>"><?php output_editable_field("number_of_stationary_images",$number_of_stationary_images,true,5);?>
-</td></tr>
-		<tr><td bgcolor="<?php echo $table_colors[0][0] ?>">Date of images for plate mask</td><td bgcolor="<?php echo $table_colors[0][1]?>">
-<?php
-	ns_expand_unix_timestamp($mask_date,$i,$h,$d,$m,$y);
-					output_editable_field("end_hour",$h,TRUE,2);
-					echo ":";
-					output_editable_field("end_minute",$i,TRUE,2);
-					echo "<br>";
-					output_editable_field("end_month",$m,TRUE,2);
-					echo "/";
-					output_editable_field("end_day",$d,TRUE,2);
-					echo "/";
-					output_editable_field("end_year",$y,TRUE,4);	
-?>			       
-</td></tr>
-																							
-
-<tr><td bgcolor="<?php echo $table_colors[0][0] ?>" colspan=2>
-	<div align="right"><input name="set_denoising_options" type="submit" value="Set Analysis Options">
-	</div>
-	</td></tr>
-	</table>
-	</td></tr>
-	</table>
-</form><br>
-
-
-
 </td><td valign="top">
 <form action="manage_experiment_analysis_configuration.php?<?php echo $query_parameters . "&posture_parameters=1"?>" method="post">
 
@@ -395,18 +402,18 @@ catch(ns_exception $ex){
 
 <tr><td bgcolor="<?php echo $table_colors[1][0] ?>">Posture Analysis Method</td><td bgcolor="<?php echo $table_colors[1][1] ?>">
 
-<select name="posture_analysis_method">
+      <select name="posture_analysis_method" <?php if ($number_of_regions == 0) echo "disabled"?>>
 <option value=""<?php if ($posture_analysis_method == '') echo "selected"?> >None Specified</option><!--
 <option value="hm" <?php if ($posture_analysis_method == 'hm') echo "selected"?> >Hidden Markov Model</option>-->
 <option value="thresh"<?php if ($posture_analysis_method == 'thresh') echo "selected"?> >Thresholding</option>
 </select></td></tr>
 
 <tr><td bgcolor="<?php echo $table_colors[0][0] ?>">Single Model for All Plates</td><TD bgcolor="<?php echo $table_colors[0][1] ?>">
-						      <select name="is_single_posture_model" onchange='this.form.submit()'><option value="1" <?php if ($is_single_posture_model)echo "selected";?>>All plates use the same model</option><option value="0" <?php if (!$is_single_posture_model)echo "selected";?>>Each strain has its own model</option></select>
+						      <select name="is_single_posture_model" onchange='this.form.submit()' <?php if ($number_of_regions == 0) echo "disabled"?>><option value="1" <?php if ($is_single_posture_model)echo "selected";?>>All plates use the same model</option><option value="0" <?php if (!$is_single_posture_model)echo "selected";?>>Each strain has its own model</option></select>
 							     </td></tr>
 							     <?php if ($is_single_posture_model){?>
       <tr><td bgcolor="<?php echo $table_colors[0][0] ?>">All Plate Model:</td><TD bgcolor="<?php echo $table_colors[0][1] ?>">
-	<?php output_editable_field("single_posture_model_name",$single_posture_model_name,true,30);?>
+	<?php output_editable_field("single_posture_model_name",$single_posture_model_name,$number_of_regions>0,30);?>
 							     </td></tr>
 																							   <?} else{?>			    
 
@@ -423,7 +430,7 @@ catch(ns_exception $ex){
 	echo 
 	"<tr><td bgcolor=\"".$table_colors[$c][0] . "\">$strain</td>" .
 	"<td bgcolor=\"" . $table_colors[$c][1] . "\">";
-	output_editable_field("posture_modelZ" . $region_id ,$strain_posture_models[$strain],true,30);
+	output_editable_field("posture_model_" . $region_id ,$strain_posture_models[$strain],$number_of_regions>0,30);
 	echo "</td></tr>\n";
 	$c =!$c;
     }
@@ -432,7 +439,7 @@ catch(ns_exception $ex){
 	<?php }?>
 
 <tr><td bgcolor="<?php echo $table_colors[0][0] ?>" colspan=2>
-	<div align="right"><input name="set_posture_models" type="submit" value="Set Posture Analysis Models">
+					  <div align="right"><input name="set_posture_models" type="submit" value="Set Posture Analysis Models" <?php if ($number_of_regions == 0) echo "disabled";?>>  <?php if ($number_of_regions == 0) echo "<br><font size=\"-2\">These options cannot be set before plate region mask is submitted.</font>"?>
 	</div>
 	</td></tr>
 	</table>
@@ -444,11 +451,11 @@ catch(ns_exception $ex){
 <table align="center" border="0" cellpadding="0" cellspacing="1" bgcolor="#000000"><tr><td><table border="0" cellpadding="4" cellspacing="0" width="100%"><tr <?php echo $table_header_color?> ><td colspan=2><b>Worm Detection Parameter Sets</b></td></tr>
 
 <tr><td bgcolor="<?php echo $table_colors[0][0] ?>">Single Model for All Plates</td><TD bgcolor="<?php echo $table_colors[0][1] ?>">
-						      <select name="is_single_detection_model" onchange='this.form.submit()'><option value="1" <?php if ($is_single_detection_model)echo "selected";?>>All plates use the same model</option><option value="0" <?php if (!$is_single_detection_model)echo "selected";?>>Each strain has its own model</option></select>
+						      <select name="is_single_detection_model" onchange='this.form.submit()' <?php if ($number_of_regions == 0) echo "disabled"?>><option value="1" <?php if ($is_single_detection_model)echo "selected";?>>All plates use the same model</option><option value="0" <?php if (!$is_single_detection_model)echo "selected";?>>Each strain has its own model</option></select>
 							     </td></tr>
 							     <?php if ($is_single_detection_model){?>
       <tr><td bgcolor="<?php echo $table_colors[0][0] ?>">All Plate Model:</td><TD bgcolor="<?php echo $table_colors[0][1] ?>">
-	<?php output_editable_field("single_detection_model_name",$single_detection_model_name,true,30);?>
+	<?php output_editable_field("single_detection_model_name",$single_detection_model_name,$number_of_regions>0,30);?>
 							     </td></tr>
 																							   <?} else{?>			    
 
@@ -475,7 +482,7 @@ catch(ns_exception $ex){
 	<?php }?>
 
 <tr><td bgcolor="<?php echo $table_colors[0][0] ?>" colspan=2>
-	<div align="right"><input name="set_detection_models" type="submit" value="Set Worm Detection Models">
+					  <div align="right"><input name="set_detection_models" type="submit" value="Set Worm Detection Models" <?php if ($number_of_regions == 0) echo "disabled";?>> <?php if ($number_of_regions == 0) echo "<br><font size=\"-2\">These options cannot be set before plate region mask is submitted.</font>"?>
 	</div>
 	</td></tr>
 	</table>

@@ -24,6 +24,7 @@ try{
 
   $jobs = array();		
   $job_id = @$query_string['job_id'];
+  $hide_entire_region_job = @$query_string['hide_entire_region_job'];
   $specified_experiment_id = @(int)$query_string['experiment_id'];
   $specified_sample_id = @(int)$query_string['sample_id'];
   $specified_region_id = @(int)$query_string['region_id'];
@@ -276,6 +277,7 @@ $region_strain_condition_2 = array();
 	  $jobs[$k] = new ns_processing_job;
 	  $jobs[$k]->region_id=$region_ids[$i][0];
 	  $jobs[$k]->sample_id = $region_ids[$i][1];
+	  // die($region_ids[$i][1]);
 	  $jobs[$k]->experiment_id = $region_ids[$i][2];
 	}
 	else{
@@ -366,7 +368,7 @@ $region_strain_condition_2 = array();
   if (!$specified_all_regions && $region_id > 0){
     
     $request_type = "region";
-
+    
     if (!$all_new){
       $query = "SELECT id FROM processing_jobs WHERE region_id = " . $region_id;
       $sql->get_row($query,$extant_jobs);
@@ -376,18 +378,28 @@ $region_strain_condition_2 = array();
     $sql->get_row($query,$smp_name);
     if (sizeof($smp_name) == 0)
       die("No sample name found for region");
+    
     $region_start_times[$region_id] = $smp_name[0][3];
     $region_end_times[$region_id] = $smp_name[0][4];
     $region_name_hash[$region_id] = $smp_name[0][2];
     // echo $query . "::" . sizeof($extant_jobs);
+    //die($extant_jobs);
+    
     if (sizeof($extant_jobs) != 0){
+      
       for ($i = 0; $i < sizeof($extant_jobs); $i++){
 	$jobs[$i] = new ns_processing_job;
 	$jobs[$i]->id = $extant_jobs[$i][0];
 	// die($jobs[$i]->id);
 	$jobs[$i]->load_from_db($jobs[$i]->id,$sql);
 	$jobs[$i]->get_names($sql);
-	$jobs[$i]->sample_name = $smp_name[0][1];
+	
+	//$jobs[$i]->sample_id = $smp_name[0][0];
+	//$jobs[$i]->region_id = $region_id;
+	//	var_dump($smp_name);
+	//die("");
+	//$sample_name_hash[$smp_name[0][0]] = $smp_name[0][1];
+	//$jobs[$i]->sample_name= $smp_name[0][1];
 	//die(	$jobs[$i]->sample_name);
 	// die($jobs[$i]->sample_name());
       }
@@ -397,32 +409,32 @@ $region_strain_condition_2 = array();
   //die("");
   if (($specified_all_experiments || $specified_experiment_list ) && sizeof($samples_to_process) == 0){
     // die("SDF");
-  $request_type = "experiment";
-	for ($i = 0; $i < sizeof($experiments_to_process); $i++){
-		$jobs[$i] = new ns_processing_job;
-		$jobs[$i]->id=0;
-		$jobs[$i]->experiment_id=$experiments_to_process[$i];
-		$jobs[$i]->sample_id=0;
-		$jobs[$i]->region_id=0;
-		$jobs[$i]->image_id=0;
-		$jobs[$i]->maintenance_task = $_POST['maintenance_task'];
-		$jobs[$i]->maintenance_flag = $_POST['maintenance_flag'];
-	}
-
-}
-
+    $request_type = "experiment";
+    for ($i = 0; $i < sizeof($experiments_to_process); $i++){
+      $jobs[$i] = new ns_processing_job;
+      $jobs[$i]->id=0;
+      $jobs[$i]->experiment_id=$experiments_to_process[$i];
+      $jobs[$i]->sample_id=0;
+      $jobs[$i]->region_id=0;
+      $jobs[$i]->image_id=0;
+      $jobs[$i]->maintenance_task = $_POST['maintenance_task'];
+      $jobs[$i]->maintenance_flag = $_POST['maintenance_flag'];
+    }
+    
+  }
+  
   //if we're creating a job to run on a single region
   //on a single sample, or a single experiment
   if (sizeof($samples_to_process) == 0){
- //die("WOOR");
-  //  if ($region_id == '' && $sample_id== '' && $experiment_id=='' &&  $job_id==0)
-  //    throw new ns_exception("No experiment, sample, or region specified as target of requested job!");
+    //die("WOOR");
+    //  if ($region_id == '' && $sample_id== '' && $experiment_id=='' &&  $job_id==0)
+    //    throw new ns_exception("No experiment, sample, or region specified as target of requested job!");
     if (sizeof($jobs) == 0){
-	//die($job_id);
-     if ($job_id != 0){
+      //die($job_id);
+      if ($job_id != 0){
 	$jobs[0] = $specified_job;
-}
-else{
+      }
+      else{
 	$jobs[0] = new ns_processing_job;
 	$jobs[0]->id=$job_id;
 	$jobs[0]->experiment_id=$experiment_id;
@@ -436,10 +448,18 @@ else{
 	if ($jobs[0]->sample_id == '')		$jobs[0]->sample_id = 0;
 	if ($jobs[0]->region_id == '')		$jobs[0]->region_id = 0;
 	if ($jobs[0]->image_id == '')		$jobs[0]->image_id = 0;
-}
 	
-//var_dump($jobs[0]->operations); die("");
+	if ($region_id != 0 && $sample_id == 0){
+	  //  die("WHA")
+	  $query = "SELECT sample_id FROM sample_region_image_info WHERE id=$region_id";
+	  $sql->get_row($query,$res);
+	  $jobs[0]->sample_id = $res[0][0];
+	  
+	}
+      }
     }
+    
+    //var_dump($jobs[0]->operations); die("");
   }
   $query_parameters = $_SERVER['QUERY_STRING'];
   //load all jobs
@@ -1007,33 +1027,37 @@ else{
     $out_first_experiment = TRUE;
     $out_first_sample = TRUE;
     $out_first_region = TRUE;
-
     for ($i = 0; $i < sizeof($jobs); $i++){
-	if ($jobs[$i]->experiment_id != $last_experiment_id){
-	  //$target_text.='a';
-	  if (!$out_first_experiment){
-	    if ($jobs[$i]->sample_id != 0) $target_text .= "<font size=\"+1\"> ]</font>";
-	    $target_text.="<BR>";
-	  }
-	  
-		else $out_first_experiment = $jobs[$i]->sample_id != 0;
-		$target_text .= " <font size=\"+1\">". $experiment_name_hash[$jobs[$i]->experiment_id];
-		if ($jobs[$i]->sample_id != 0) $target_text .= "[";
-		$target_text .= "</font>";
-		$last_experiment_id = $jobs[$i]->experiment_id;
-		$last_sample_id = '';
-		$out_first_sample = TRUE;
+      if ($jobs[$i]->experiment_id != $last_experiment_id){
+	//$target_text.='a';
+	if (!$out_first_experiment){
+	  if ($jobs[$i]->sample_id != 0) $target_text .= "<font size=\"+1\"> ]</font>";
+	  $target_text.="<BR>";
 	}
-	if ($jobs[$i]->sample_id != $last_sample_id){
-		if (!$out_first_sample && $jobs[$i]->region_id != 0) $target_text .= "] ";
-		else $out_first_sample =  $jobs[$i]->region_id == 0;
-		$target_text .= $sample_name_hash[$jobs[$i]->sample_id] . " ";
-		if ($jobs[$i]->region_id != 0) $target_text .= "[";
-		$last_sample_id = $jobs[$i]->sample_id;
-		$out_first_region = TRUE;
-	}
-	if ($jobs[$i]->region_id != 0){
-		$target_text.="<font color=\"gray\" size=\"-1\">";
+	
+	else $out_first_experiment = $jobs[$i]->sample_id != 0;
+	$target_text .= " <font size=\"+1\">". $experiment_name_hash[$jobs[$i]->experiment_id];
+	if ($jobs[$i]->sample_id != 0) $target_text .= "[";
+	$target_text .= "</font>";
+	$last_experiment_id = $jobs[$i]->experiment_id;
+	$last_sample_id = '';
+	$out_first_sample = TRUE;
+      
+      }
+      if ($jobs[$i]->sample_id != $last_sample_id ){
+	if (!$out_first_sample && $jobs[$i]->region_id != 0) $target_text .= "] ";
+	else $out_first_sample =  $jobs[$i]->region_id == 0;
+	//XXX
+	//var_dump($jobs[$i]->sample_id);
+	//	die($sample_name_hash);
+	$target_text .= $sample_name_hash[$jobs[$i]->sample_id] . " ";
+	//$target_text .= $jobs[$i]->sample_name;
+	if ($jobs[$i]->region_id != 0) $target_text .= "[";
+	$last_sample_id = $jobs[$i]->sample_id;
+	$out_first_region = TRUE;
+      }
+      if ($jobs[$i]->region_id != 0){
+	$target_text.="<font color=\"gray\" size=\"-1\">";
 		if (!$out_first_region) $target_text.= ",";
 		else $out_first_region = FALSE;
 		$target_text .= $region_name_hash[$jobs[$i]->region_id];
@@ -1065,7 +1089,7 @@ if ($query_string['delete_file_taskbar']!=''){
  else if (sizeof($jobs) == 0 || $jobs[0]->id == 0){
 	if ($job_type == $IS_EXPERIMENT){
 	$view_processing_taskbar = FALSE;
-	$view_video_taskbar = TRUE;
+	$view_video_taskbar = FALSE;
 	$view_maintenance_taskbar = TRUE;
 	$view_delete_images_taskbar = FALSE;
 	$view_boundaries_taskbar = FALSE;
@@ -1114,15 +1138,16 @@ if ($query_string['delete_file_taskbar']!=''){
     $view_delete_images_taskbar = FALSE;
     $view_boundaries_taskbar = FALSE;
   }
-if ($job_type == $IS_EXPERIMENT){
-  //  die("BLOOP");
+/*if ($job_type == $IS_EXPERIMENT){
+ 
   $view_processing_taskbar = FALSE;
   $view_video_taskbar = FALSE;
   $view_boundaries_taskbar = FALSE;
- }if ($job_type != $IS_REGION){
+
+  }*/
+if ($job_type != $IS_REGION){
   $view_boundaries_taskbar = FALSE;
  }
-
  //die("$view_delete_image_taskbar);
 
 $query = "SELECT id, name, ip, last_ping, comments, long_term_storage_enabled, port FROM hosts ORDER BY name DESC";
@@ -1142,6 +1167,8 @@ else display_worm_page_header($page_title);
 <br><br>
  
 <table width="100%"><tr><td valign="top">
+<table width="100%"><tr><td valign="top">
+
 <!--*********************************
 Schedule an Image Processing Job Begin
 ***********************************-->
@@ -1151,7 +1178,7 @@ Schedule an Image Processing Job Begin
 <table align="center" border="0" cellpadding="0" cellspacing="1" bgcolor="#000000"><tr><td>
 
 <table border="0" cellpadding="4" cellspacing="0" width="100%">
-<tr <?php echo $table_header_color?> ><td colspan=2><b>Schedule an Image Processing Job</a></td></tr>
+<tr <?php echo $table_header_color?> ><td colspan=2><b>Schedule a Job for Individual Images</a></td></tr>
   <tr><td bgcolor="<?php echo  $table_colors[0][0] ?>" >Submission time</td>
 	  <td bgcolor="<?php echo  $table_colors[0][1] ?>"><?php echo format_time($jobs[0]->time_submitted)?></td>
   </tr>  
@@ -1179,7 +1206,7 @@ Schedule an Image Processing Job Begin
 	  </tr>--></table>
 	 <table border="0" cellpadding="4" cellspacing="0" width="100%">
 	<tr <?php echo $table_header_color?>><td colspan=3>Processing Tasks</td></tr>
-	      
+				     <tr ><td bgcolor="<?php echo  $table_colors[1][0] ?>" colspan=3><font size="-1">Only "Median Filter", "Threshold" and "Worm Detection" are necessary.</font></td></tr>
 	<?php 
 				     $cc = 0;
 				     $start = 1;
@@ -1226,13 +1253,12 @@ else{
 Schedule an Image Procesing Job End
 *********************************-->
 
-</td>
-
-
+<br></td></tr><td><tr>
 
  <?php 
  //die("CCC" + $view_video_taskbar);
 ?>
+
 <?php if ($view_video_taskbar){ ?>
 
 <td valign="top">
@@ -1358,6 +1384,8 @@ Make A Video End
 </td>
 
 				     <?php }?>
+</td></tr></table>
+</td>
 <td valign="top">
 
 <!--********************************
@@ -1368,9 +1396,10 @@ Schedule Database/File Storage Job Begin
 <form action="view_processing_job.php?<?php echo $query_parameters?>" method="post">
 <?php //var_dump($jobs[0]);
 ?>
+					<?php if (!$hide_entire_region_job){?>
 <table align="center" border="0" cellpadding="0" cellspacing="1" bgcolor="#000000"><tr><td>
 <table border="0" cellpadding="4" cellspacing="0" width="100%">
-<tr <?php echo $table_header_color?> ><td colspan=2><b>Schedule a Database/File Storage Job</b></td></tr>
+<tr <?php echo $table_header_color?> ><td colspan=2><b>Schedule a Job For an Entire Region</b></td></tr>
   <tr><td bgcolor="<?php echo  $table_colors[0][0] ?>" >Submission time</td>
 	  <td bgcolor="<?php echo  $table_colors[0][1] ?>"><?php echo format_time($jobs[0]->time_submitted)?></td>
   </tr>  
@@ -1413,16 +1442,17 @@ Schedule Database/File Storage Job Begin
 </td></tr>
 </table>
 
-<br>
+<br><
 <?php
+  }
  	if ($live_dangerously){	  ?>
-<table align="center" border="0" cellpadding="0" cellspacing="1" bgcolor="#000000"><tr><td>
+<table align="center" border="0" cellpadding="0" cellspacing="1" bgcolor="#000000" width="50%"><tr><td>
 <table border="0" cellpadding="4" cellspacing="0" width="100%">
 <tr <?php echo $table_header_color?> ><td colspan=2><b>Update capture schedule</b></td></tr>
-<tr><td colspan = 2 bgcolor="<?php echo $table_colors[1][1] ?>">
-				  <br>
-				  <div align="center"><input name="cancel_captures" type="submit" value="Cancel Scheduled Captures" onClick="javascript:return confirm('Are you sure you want to cancel all pending scans?')"><br><br><input name="retry_transfer_to_long_term_storage" type="submit" value="Retry transfer of cached images"><br><br></div>
-					</td></tr>
+				  <tr><td width = "400" bgcolor="<?php echo $table_colors[1][0] ?>">Cancel any scans pending for this experiment.</td><td bgcolor="<?php echo $table_colors[1][1] ?>" width="1%">
+			       
+				  <input name="cancel_captures" type="submit" value="Cancel Scheduled Captures" onClick="javascript:return confirm('Are you sure you want to cancel all pending scans?')"></td></tr><tr><td colspan = 1 bgcolor="<?php echo $table_colors[0][0] ?>">In certain circumstances, image servers may fail to correctly transfer images cached locally to long term storage.  This option instructs the server to retry such transfers.</td><td colspan = 1 bgcolor="<?php echo $table_colors[0][1] ?>"><input name="retry_transfer_to_long_term_storage" type="submit" value="Retry transfer of cached images" width = "1%"></td></tr>
+				      
 </table>
 </td></tr>
 </table>
@@ -1478,6 +1508,7 @@ Update Region info Begin
 <table border="0" cellpadding="4" cellspacing="0" width="100%">
 
 <tr <?php echo $table_header_color ?> ><td colspan=3><b>Update Region Information</td></tr>
+<tr><td bgcolor="<?php echo  $table_colors[0][0] ?>" colspan=3><font size="-1">Only "Time at which animals had 0 age" is needed for analysis</font></td></tr>
 <tr>
 		<td bgcolor="<?php echo  $table_colors[1][0] ?>" >Strain</td>
 		  <td bgcolor="<?php echo  $table_colors[1][1] ?>"><input type="checkbox" name="set_strain" value="1"></td>
@@ -1545,7 +1576,7 @@ Update Region info Begin
 					output_editable_field("end_day",$d,TRUE,2);
 					echo "/";
 					output_editable_field("end_year",$y,TRUE,4);				       
-?>
+?><br><font size="-2">(Leave blank to include all images in analysis)</font>
 </td></tr>
 	<tr>
     <td bgcolor="<?php echo  $table_colors[1][0] ?>" >Final Time Point (Age)</td> <td bgcolor="<?php echo  $table_colors[1][1] ?>" ><input type="checkbox" name="set_end_time_age" value="1"></td>
@@ -1556,7 +1587,7 @@ Update Region info Begin
 						  $end_age = '';
     
 					output_editable_field("end_age",$end_age,TRUE,2)				       
-?> days
+?> days<br><font size="-2">(Leave blank to include all images in analysis)</font>
 </td></tr>
 <!--
 	<tr>

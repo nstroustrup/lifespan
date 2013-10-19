@@ -113,7 +113,7 @@ public:
 				worm.region_position_in_source_image = inferred_elements[i]->region_position;
 				worm.context_image_size = inferred_elements[i]->context_image_size;
 				worm.context_position_in_source_image = inferred_elements[i]->context_image_position;
-
+				worm.movement_state = ns_movement_not_calculated;
 	//			f.draw_grayscale(worm.region_position_in_source_image.x + worm.region_size.x/2,worm.region_position_in_source_image.y + worm.region_size.y/2,
 		//						 255,std::string("w") + ns_to_string(t),spatial_image);
 

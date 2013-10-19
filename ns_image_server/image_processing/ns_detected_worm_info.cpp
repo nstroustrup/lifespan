@@ -1916,7 +1916,7 @@ void ns_image_worm_detection_results::save_data_to_disk(ns_image_server_captured
 	out.release();
 }
 
-void ns_image_worm_detection_results::load_from_db(const bool load_worm_postures,ns_sql & sql){
+void ns_image_worm_detection_results::load_from_db(const bool load_worm_postures,const bool images_comes_from_interpolated_annotations,ns_sql & sql){
 	if (id == 0)
 		throw ns_ex("ns_image_worm_detection_results::Attempting to load from db with id=0.");
 	sql << "SELECT source_image_id, capture_sample_id, bitmap_tiles_per_row, bitmap_tile_width, bitmap_tile_height, "
@@ -1940,66 +1940,7 @@ void ns_image_worm_detection_results::load_from_db(const bool load_worm_postures
 
 	if (data_storage_on_disk.id == 0){
 		throw ns_ex("Database storage of worm information is depreciated!");
-		//load from db
-		/*sql << "SELECT worm_segment_node_counts, worm_segment_information, worm_region_information, interpolated_worm_areas "
-			<< "WHERE id = " << id;
-		std::vector<std::string> data2;
-		sql.get_single_row(data2);
-
-		unsigned int worm_lengths_size = ((unsigned int)data2[0].size())*sizeof(char)/sizeof(unsigned int),
-					 worm_information_size = ((unsigned int)data2[1].size())*sizeof(char)/sizeof(float),
-					 region_information_size = ((unsigned int)data2[2].size())*sizeof(char)/sizeof(float),
-					 interpolated_worm_areas_size = ((unsigned int)data2[3].size())*sizeof(char)/sizeof(unsigned int);
-
-		if (worm_lengths_size != number_of_worms)
-			throw ns_ex("ns_image_worm_detection_results::Worm segment information contained only ") << worm_lengths_size << " segments.";
-
-		const unsigned int * node_counts = reinterpret_cast<const unsigned int *>(data2[0].data());
-		unsigned int total_number_of_nodes = 0;
-		for (unsigned int i = 0; i < number_of_worms; i++)
-			total_number_of_nodes += node_counts[i];
-
-		if (worm_information_size != 6*total_number_of_nodes)
-			throw ns_ex("ns_image_worm_detection_results::Worm segment information contained only ") << worm_information_size/3 << " nodes, whereas "
-					<< "the segment node lengths sum to " << total_number_of_nodes;
 		
-		putative_worms.resize(number_of_worms);
-		const float * node_information = reinterpret_cast<const float *>(data2[1].data());
-
-		unsigned int current_node = 0;
-		for (unsigned int i = 0; i < number_of_worms; i++){
-			putative_worms[i].worm_shape.read_from_buffer(node_information,node_counts[i],current_node);
-			current_node += node_counts[i];
-			if (putative_worms[i].worm_shape.nodes.size() == 0)
-				cerr << "Yikes";
-		}
-		actual_worms.resize(putative_worms.size());
-		for (unsigned int i = 0; i < putative_worms.size(); i++)
-			actual_worms[i] = &putative_worms[i];
-
-		if (region_information_size != 4*number_of_worms)
-			throw ns_ex("ns_image_worm_detection_results::Worm region information contained only ") << worm_information_size/4 << " regions, whereas "
-					<< " there are " << number_of_worms << " worms in the image.";
-
-		const unsigned int * region_information = reinterpret_cast<const unsigned int *>(data2[3].data());
-		for (unsigned int i = 0; i < actual_worms.size(); i++){
-			actual_worms[i]->region_position_in_source_image.x = region_information[4*i];
-			actual_worms[i]->region_position_in_source_image.y = region_information[4*i+1];
-			actual_worms[i]->region_size.x = region_information[4*i+2];
-			actual_worms[i]->region_size.y = region_information[4*i+3];
-		}
-
-		if (number_of_interpolated_worm_areas != interpolated_worm_areas_size/4)
-				throw ns_ex("ns_image_worm_detection_results::Interpolated worm areas contained only ") << interpolated_worm_areas_size/4 << " regions, whereas "
-					<< " there are " << number_of_interpolated_worm_areas << " worms in the image.";
-		interpolated_worm_areas.resize(number_of_interpolated_worm_areas);
-		const unsigned int * interpolated_areas = reinterpret_cast<const unsigned int *>(data2[4].data());
-		for (unsigned int i = 0; i < number_of_interpolated_worm_areas; i++){
-			interpolated_worm_areas[i].position_in_source_image.x = interpolated_areas[4*i + 0];
-			interpolated_worm_areas[i].position_in_source_image.y = interpolated_areas[4*i + 1];
-			interpolated_worm_areas[i].size.x = interpolated_areas[4*i + 2];
-			interpolated_worm_areas[i].size.y = interpolated_areas[4*i + 3];
-		}*/
 	}
 	else{
 		//load from disk
@@ -2032,6 +1973,8 @@ void ns_image_worm_detection_results::load_from_db(const bool load_worm_postures
 		if (number_of_worms != 0){
 		
 			for (unsigned int i = 0; i < putative_worms.size(); i++){
+				
+				putative_worms[i].interpolated = images_comes_from_interpolated_annotations;
 				actual_worms[i] = &putative_worms[i];
 				if (!ns_read_csv_value(in(),putative_worms[i].region_position_in_source_image.x))
 					throw ns_ex("ns_image_worm_detection_results::load_from_disk()::Malformed file");

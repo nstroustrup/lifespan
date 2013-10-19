@@ -94,6 +94,7 @@ std::string ns_death_time_annotation::to_string() const{
 	s[26] = ns_to_string(event_observation_type);
 	s[27] = ns_to_string(longest_gap_without_observation);
 	s[28] = ns_to_string((int)by_hand_annotation_integration_strategy);
+	s[29] = ns_to_string((int)inferred_animal_location);
 	string ret;
 	ret+=s[0];
 	for (unsigned int i = 1; i < s.size(); i++){
@@ -167,6 +168,7 @@ void ns_death_time_annotation::from_string(const std::string v){
 	event_observation_type = (ns_death_time_annotation::ns_event_observation_type)atol(s[26].c_str());
 	longest_gap_without_observation = atol(s[27].c_str());
 	by_hand_annotation_integration_strategy = (ns_death_time_annotation::ns_by_hand_annotation_integration_strategy)atol(s[28].c_str());
+	inferred_animal_location = s[29] == "1";
 }
 
 std::string ns_death_time_annotation::source_type_to_string(const ns_annotation_source_type & t){
@@ -398,8 +400,9 @@ void write_column_format_data(std::ostream & o, const ns_death_time_annotation &
 		<< (int)a.event_observation_type << "," 
 		<< a.longest_gap_without_observation << ","
 		<< (int)a.by_hand_annotation_integration_strategy << ","
+		<< (a.inferred_animal_location?"1":"0") << ","
 		// reserved for future use
-		<< ",,,,,,"
+		<< ",,,,,"
 		<< "\n";
 }
 void write_column_format_header(std::ostream & o){
@@ -408,7 +411,7 @@ void write_column_format_header(std::ostream & o){
 		 "Stationary Worm Path Id, Stationary Worm Detection Set ID,Annotation Start Time,Flag Id,Flag Label,"
 		 "Complete Trace,Number of Worms Annotated By machine,Number of Worms Annotated By Hand,"
 		 "Multiple worm cluster censoring strategy,Missing Worm Return Strategy,Extra Animal ID at position,Event Observation Type,Longest gap without observation,"
-		 "By Hand Annotation Integration Strategy,(Room For Expansion),(RFE),(RFE),(RFE),(RFE),(RFE),(RFE)\n";
+		 "By Hand Annotation Integration Strategy,Inferred animal location,(Room For Expansion),(RFE),(RFE),(RFE),(RFE),(RFE)\n";
 }
 	
 void ns_death_time_annotation_set::write_split_file_column_format(std::ostream & censored_and_transition_file, std::ostream & state_file)const{
@@ -646,6 +649,8 @@ void ns_death_time_annotation_set::read_column_format(const  ns_annotation_type_
 					e.by_hand_annotation_integration_strategy = (ns_death_time_annotation::ns_by_hand_annotation_integration_strategy)atol(val.c_str());
 
 					getline(i,val,',');
+					e.inferred_animal_location = (val=="1");
+
 					if (i.fail()) throw ns_ex("ns_death_time_annotation_set::read_column_format()::Unexpected EOF");
 					getline(i,val,',');
 					if (i.fail()) throw ns_ex("ns_death_time_annotation_set::read_column_format()::Unexpected EOF");

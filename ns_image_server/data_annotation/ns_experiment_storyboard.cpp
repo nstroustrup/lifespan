@@ -116,8 +116,8 @@ void ns_experiment_storyboard_timepoint::load_images(bool use_color,ns_sql & sql
 			throw ns_ex("Attempting to load image for fully unbounded event!");
 		if (events[i].annotation_whose_image_should_be_used.time.period_end_was_not_observed)
 			event_time = events[i].annotation_whose_image_should_be_used.time.period_start;
-		else event_time = events[i].annotation_whose_image_should_be_used.time.period_end;
-
+		else 
+			event_time = events[i].annotation_whose_image_should_be_used.time.period_end;
 		sql << "SELECT id, worm_detection_results_id,problem, worm_interpolation_results_id FROM sample_region_images WHERE "
 			"region_info_id = " << events[i].annotation_whose_image_should_be_used.region_info_id
 			<< " AND capture_time = " << event_time;
@@ -158,7 +158,7 @@ void ns_experiment_storyboard_timepoint::load_images(bool use_color,ns_sql & sql
 			results.id = sorted_events[i].results_id;
 			if (results.id == 0)
 				throw ns_ex("Found an unspecified results id for region ID ") << sorted_events[i].e->event_annotation.region_info_id << " (Image #" << sorted_events[i].region_id << ")";
-			results.load_from_db(false,sql);
+			results.load_from_db(false,false,sql);
 			ns_image_server_captured_image_region reg;
 			reg.load_from_db(sorted_events[i].region_id,&sql);
 			if (!use_color || output_worm_disambiguation_colors == 0)
@@ -185,7 +185,7 @@ void ns_experiment_storyboard_timepoint::load_images(bool use_color,ns_sql & sql
 			interpolated_results.id = sorted_events[i].interpolated_results_id;
 			if (interpolated_results.id != 0){
 				try{
-				interpolated_results.load_from_db(false,sql);
+				interpolated_results.load_from_db(false,true,sql);
 				ns_image_server_captured_image_region reg;
 				reg.load_from_db(sorted_events[i].region_id,&sql);
 				if (!use_color || !output_worm_disambiguation_colors)
@@ -222,22 +222,40 @@ void ns_experiment_storyboard_timepoint::load_images(bool use_color,ns_sql & sql
 		
 		//bool found(false);
 		const ns_detected_worm_info * current_worm(0);
+		const ns_detected_worm_info * current_worm_in_incorrect_image(0);
 		for (unsigned int j = 0; j < worms.size(); j++){
 			if (worms[j]->region_position_in_source_image == sorted_events[i].e->annotation_whose_image_should_be_used.position){
-				current_worm = worms[j];	
-				
-			/*	if (sorted_events[i].e->image.properties().width != sorted_events[i].e->image_size().x ||
-					sorted_events[i].e->image.properties().height != sorted_events[i].e->image_size().y)
-					throw ns_ex("An unusual context image size was encountered: ") << sorted_events[i].e->image.properties().width << "," 
-																					<< sorted_events[i].e->image.properties().height
-																					 << " vs an expected " <<  
-																					 sorted_events[i].e->image_size().x << 
-																					 "," <<
-								*/													  sorted_events[i].e->image_image_size().y;
-				break;
+				if (worms[j]->interpolated != sorted_events[i].e->annotation_whose_image_should_be_used.inferred_animal_location){
+					current_worm_in_incorrect_image = worms[j];
+					cerr << "Found worm in incorrect image.\n";
+					if (sorted_events[i].e->image.properties().width > sorted_events[i].e->image_image_size().x ||
+						sorted_events[i].e->image.properties().height > sorted_events[i].e->image_image_size().y)
+						cerr << "Incorrect image had an incorrect size: " << sorted_events[i].e->image.properties().width << "," 
+																						<< sorted_events[i].e->image.properties().height
+																						 << " vs an expected " <<  
+																						 sorted_events[i].e->image_image_size().x << 
+																						 "," <<
+																					  sorted_events[i].e->image_image_size().y;
+				}
+				else{
+					current_worm = worms[j];	
+					if (sorted_events[i].e->annotation_whose_image_should_be_used.inferred_animal_location)
+						cerr << "Found interpolated worm image.\n";
+
+					if (sorted_events[i].e->image.properties().width > sorted_events[i].e->image_image_size().x ||
+						sorted_events[i].e->image.properties().height > sorted_events[i].e->image_image_size().y)
+						throw ns_ex("An unusual context image size was encountered: ") << sorted_events[i].e->image.properties().width << "," 
+																						<< sorted_events[i].e->image.properties().height
+																						 << " vs an expected " <<  
+																						 sorted_events[i].e->image_image_size().x << 
+																						 "," <<
+																					  sorted_events[i].e->image_image_size().y;
+					break;
+				}
 			}
 		}
 		if (current_worm == 0){
+			throw ns_ex("Could not find image for ") << (sorted_events[i].e->annotation_whose_image_should_be_used.inferred_animal_location?"interpolated":"non-interpolated") << " worm.";
 			sql << "select s.name, r.name,r.sample_id from sample_region_image_info as r, capture_samples as s "
 					"WHERE r.id = " << sorted_events[i].e->annotation_whose_image_should_be_used.region_info_id << " AND s.id = r.sample_id";
 			ns_sql_result res;
@@ -1077,30 +1095,53 @@ void ns_experiment_storyboard::draw(const unsigned long sub_image_id,ns_image_st
 //std::cerr << "\nRendering sub-division " << (i+1) << " of " << divisions.size() << "...";
 		//cerr << (100*i)/divisions.size() << "%...";
 		divisions[i].load_images(use_color,sql);
-
+	
 		for (unsigned int j = 0; j < divisions[i].events.size(); j++){
-			const ns_vector_2i p((divisions[i].events[j].position_on_time_point + divisions[i].position_on_storyboard));
-			if(use_color){
-				for (unsigned int y = 0; y < divisions[i].events[j].image.properties().height; y++){
-					for (unsigned int x = 0; x < 3*divisions[i].events[j].image.properties().width; x++){
-						if (y+p.y >= im.properties().height)
-							throw ns_ex("YIKES");
-						if (x+3*p.x >= 3*im.properties().width)
-							throw ns_ex("YIKES");
-						im[y+p.y][x+3*p.x] = divisions[i].events[j].image[y][x];
+			try{
+				if (divisions[i].events[j].image_image_size().x < 
+					divisions[i].events[j].image.properties().width ||
+					divisions[i].events[j].image_image_size().y < 
+					divisions[i].events[j].image.properties().height
+				
+				){
+					throw ns_ex("There is a disagrement between the annotation (") 
+						<< divisions[i].events[j].image_image_size().x << ","
+						<< divisions[i].events[j].image_image_size().y
+						<< ") and the actual size of the region image "
+						<< divisions[i].events[j].image.properties().width << ","
+						<< divisions[i].events[j].image.properties().height;
+				}
+				const ns_vector_2i p((divisions[i].events[j].position_on_time_point + divisions[i].position_on_storyboard));
+				if(use_color){
+					for (unsigned int y = 0; y < divisions[i].events[j].image.properties().height; y++){
+						for (unsigned int x = 0; x < 3*divisions[i].events[j].image.properties().width; x++){
+							if (y+p.y >= im.properties().height)
+								throw ns_ex("Out of bounds y position encountered while generating storyboard:") << y+p.y << "/" << im.properties().height;
+							if (x+3*p.x >= 3*im.properties().width)
+								throw ns_ex("Out of bounds y position encountered while generating storyboard:") << x+p.x << "/" << im.properties().width;
+							im[y+p.y][x+3*p.x] = divisions[i].events[j].image[y][x];
+						}
+					}
+				}
+				else{
+					for (unsigned int y = 0; y < divisions[i].events[j].image.properties().height; y++){
+						for (unsigned int x = 0; x < divisions[i].events[j].image.properties().width; x++){
+					//		if (y+p.y >= im.properties().height)
+				//				throw ns_ex("YIKES");
+				//			if (x+p.x >= im.properties().width)
+				//				throw ns_ex("YIKES");
+							im[y+p.y][x+p.x] = divisions[i].events[j].image[y][x];
+						}
 					}
 				}
 			}
-			else{
-				for (unsigned int y = 0; y < divisions[i].events[j].image.properties().height; y++){
-					for (unsigned int x = 0; x < divisions[i].events[j].image.properties().width; x++){
-				//		if (y+p.y >= im.properties().height)
-			//				throw ns_ex("YIKES");
-			//			if (x+p.x >= im.properties().width)
-			//				throw ns_ex("YIKES");
-						im[y+p.y][x+p.x] = divisions[i].events[j].image[y][x];
-					}
-				}
+			catch(ns_ex & ex){
+					
+					ns_experiment_storyboard_timepoint_element e(divisions[i].events[j]);
+					throw ns_ex(ex.text()) << "for worm " << e.event_annotation.stationary_path_id.group_id << " in region " << 
+					e.event_annotation.region_info_id << " at time (" <<
+					e.annotation_whose_image_should_be_used.time.period_start << "," <<
+					e.annotation_whose_image_should_be_used.time.period_end << ")";
 			}
 		}
 		divisions[i].clear_images();

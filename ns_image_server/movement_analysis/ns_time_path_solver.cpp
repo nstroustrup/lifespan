@@ -1672,8 +1672,10 @@ void ns_time_path_solver::find_stationary_path_fragments(const double fraction_o
 				);
 			if (current_path_point_density < fraction_of_points_required_to_be_detected){
 				
-				if (p->elements.size() > 1 && p->elements.begin()->time-p->elements.rbegin()->time >= min_path_duration_in_seconds)
+				if (p->elements.size() > 1 && p->elements.begin()->time-p->elements.rbegin()->time >= min_path_duration_in_seconds){
 					paths.push_back(*p);
+					paths.rbegin()->path_id = paths.size();
+				}
 
 				if (p->elements.size() > 1 && p->elements.begin()->time-p->elements.rbegin()->time < min_path_duration_in_seconds){
 					unsigned long dt(p->elements.begin()->time-p->elements.rbegin()->time);
@@ -1698,8 +1700,10 @@ void ns_time_path_solver::find_stationary_path_fragments(const double fraction_o
 		//const double current_path_point_density(open_paths[i].calculate_current_density(time_window_length_in_seconds,timepoints,open_paths[i].elements[0].link.t_id));
 	
 		if (open_paths[i].elements.size() > 1
-			&& open_paths[i].elements.begin()->time-open_paths[i].elements.rbegin()->time >= min_path_duration_in_seconds)
+			&& open_paths[i].elements.begin()->time-open_paths[i].elements.rbegin()->time >= min_path_duration_in_seconds){
 			paths.push_back(open_paths[i]);
+			paths.rbegin()->path_id = paths.size();
+		}
 
 		if (open_paths[i].elements.size() > 1 && open_paths[i].elements.begin()->time-open_paths[i].elements.rbegin()->time < min_path_duration_in_seconds){
 				debug_paths_discarded_for_being_short_at_end++;
@@ -1710,7 +1714,7 @@ void ns_time_path_solver::find_stationary_path_fragments(const double fraction_o
 					min_discarded_path_length = dt;
 		}
 	}
-	ns_global_debug(ns_text_stream_t("ns_time_path_solver::find_stationary_path_fragments::Maximum simultaneous open paths: ") << debug_max_paths);
+	ns_global_debug(ns_text_stream_t("ns_time_path_solver::find_stationary_tyj path_fragments::Maximum simultaneous open paths: ") << debug_max_paths);
 	ns_global_debug(ns_text_stream_t("ns_time_path_solver::find_stationary_path_fragments::Paths discarded for being too short: ") << debug_paths_discarded_for_being_short);
 	ns_global_debug(ns_text_stream_t("ns_time_path_solver::find_stationary_path_fragments::Paths discarded for being too short at end: ") << debug_paths_discarded_for_being_short_at_end);
 	ns_global_debug(ns_text_stream_t("ns_time_path_solver::find_stationary_path_fragments::Minimum discarded path length: ") << min_discarded_path_length);
@@ -1756,6 +1760,7 @@ void ns_time_path_solver::find_low_density_stationary_paths(const unsigned long 
 		if (open_paths[i].elements.size() > 3 && 
 			open_paths[i].elements.begin()->time-open_paths[i].elements.rbegin()->time >= min_path_duration_in_seconds)
 			low_density_paths.push_back(open_paths[i]);
+		
 	}
 	for (unsigned int i = 0; i < low_density_paths.size(); i++){
 		low_density_paths[i].is_low_density_path = true;
@@ -1795,7 +1800,7 @@ void ns_time_path_solver_timepoint::load(const unsigned long worm_detection_resu
 	elements.resize(0);
 	worm_detection_results = &results;
 	results.id = worm_detection_results_id;
-	results.load_from_db(false,sql);
+	results.load_from_db(false,false,sql);
 	const std::vector<const ns_detected_worm_info *> & worms(results.actual_worm_list());
 //	if (results.capture_time == 1321821542)		
 
@@ -2325,15 +2330,17 @@ void ns_time_path_solver::merge_overlapping_path_fragments(const unsigned long m
 	ns_time_path_solver_path_orderer paths_ordered_by_min_time;
 
 	
-	const unsigned long erase_constant(666);
+	const unsigned long erase_constant(6666666666666);
 	for (std::vector<ns_time_path_solver_path>::iterator p = paths.begin(); p != paths.end();p++){
 		p->group_id = 0;
 	}
 	bool merge_performed = false;
 	//merge paths forward in time
 	for (std::vector<ns_time_path_solver_path>::iterator later = paths.begin(); later != paths.end();){
-		if (later->path_id == erase_constant)
+		if (later->path_id == erase_constant){
+			later++;
 			continue;
+		}
 		if (!merge_performed){
 			//paths_ordered_by_max_time.clear();
 			paths_ordered_by_min_time.clear();

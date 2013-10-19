@@ -178,18 +178,18 @@ struct ns_death_time_annotation{
 		annotation_source(ns_unknown),excluded(ns_not_excluded),number_of_worms_at_location_marked_by_hand(0),multiworm_censoring_strategy(ns_not_applicable),
 		number_of_worms_at_location_marked_by_machine(0),annotation_time(0),disambiguation_type(ns_single_worm), flag(ns_death_time_annotation_flag::none()),loglikelihood(1),animal_id_at_position(0),
 		missing_worm_return_strategy(ns_not_specified),volatile_matches_machine_detected_death(false),event_observation_type(ns_standard),
-		by_hand_annotation_integration_strategy(ns_only_machine_annotations){}
+		by_hand_annotation_integration_strategy(ns_only_machine_annotations),inferred_animal_location(false){}
 
 	ns_death_time_annotation(const ns_movement_event type_, const unsigned long region_id_, const unsigned long region_info_id_,
 		const ns_death_time_annotation_time_interval time_, const ns_vector_2i & pos, const ns_vector_2i & size_,const ns_exclusion_type excluded_,
 		const ns_death_time_annotation_event_count & event_counts, const unsigned long annotation_time_, const ns_annotation_source_type source_type,
-		const ns_disambiguation_type & d, const ns_stationary_path_id & s_id,const bool animal_is_part_of_a_complete_trace_,const std::string & annotation_details_="",
+		const ns_disambiguation_type & d, const ns_stationary_path_id & s_id,const bool animal_is_part_of_a_complete_trace_,const bool inferred_animal_location_, const std::string & annotation_details_="",
 		const double loglikelihood_=1,const unsigned long longest_gap_without_observation_ = 0, const ns_multiworm_censoring_strategy & cen_strat = ns_not_applicable, const ns_missing_worm_return_strategy & missing_worm_return_strategy_ = ns_not_specified, 
 		const ns_event_observation_type & event_observation_type_=ns_standard, const ns_by_hand_annotation_integration_strategy & by_hand_strategy = ns_only_machine_annotations):multiworm_censoring_strategy(cen_strat),loglikelihood(loglikelihood_),
 				type(type_),region_id(region_id_),time(time_),position(pos),size(size_),excluded(excluded_),region_info_id(region_info_id_),volatile_duration_of_time_not_fast_moving(0),
 				number_of_worms_at_location_marked_by_hand(event_counts.hand_count),
 				number_of_worms_at_location_marked_by_machine(event_counts.machine_count),volatile_matches_machine_detected_death(false),
-				annotation_time(annotation_time_),annotation_source(source_type),annotation_source_details(annotation_details_),
+				annotation_time(annotation_time_),annotation_source(source_type),annotation_source_details(annotation_details_),inferred_animal_location(inferred_animal_location_),
 				disambiguation_type(d),stationary_path_id(s_id),flag(ns_death_time_annotation_flag::none()),event_observation_type(event_observation_type_),
 				animal_is_part_of_a_complete_trace(animal_is_part_of_a_complete_trace_),longest_gap_without_observation(longest_gap_without_observation_),missing_worm_return_strategy(missing_worm_return_strategy_),animal_id_at_position(0),by_hand_annotation_integration_strategy(by_hand_strategy){}
 	
@@ -277,6 +277,7 @@ struct ns_death_time_annotation{
 	unsigned long animal_id_at_position; //0 for the first worm in the stationary path; //1 for the second, etc
 	ns_vector_2i position;
 	double loglikelihood;
+	bool inferred_animal_location;
 	unsigned long volatile_duration_of_time_not_fast_moving;
 	bool volatile_matches_machine_detected_death;
 };

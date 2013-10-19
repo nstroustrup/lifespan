@@ -642,7 +642,7 @@ public:
 	}
 
 	///Loades detected worm information from the database.  Data is loaded from the entry who's id is stored in ns_image_worm_detection_results::id
-	void load_from_db(const bool load_worm_shape,ns_sql & sql);
+	void load_from_db(const bool load_worm_shape,const bool images_comes_from_interpolated_annotations,ns_sql & sql);
 
 	std::vector<ns_detected_worm_info> & replace_actual_worms_access(){
 		putative_worms.resize(0);
@@ -662,7 +662,7 @@ private:
     ns_image_server_image data_storage_on_disk;
 	void save(ns_image_server_captured_image_region & source_region,const bool interpolated, const bool save_to_disk, const bool only_output_movement_tags,ns_sql & sql);
 
-	void save_data_to_disk(ns_image_server_captured_image_region & region, const bool interpolated,ns_sql & sql);
+	void save_data_to_disk(ns_image_server_captured_image_region & region,const bool interpolated, ns_sql & sql);
 
 	void load_data_from_db(ns_sql & sql);
 	void load_data_from_disk(ns_sql & sql);

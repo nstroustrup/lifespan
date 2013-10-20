@@ -534,7 +534,7 @@ struct ns_time_path_image_movement_analysis_memory_pool{
 
 class ns_analyzed_image_time_path{
 public:
-	ns_analyzed_image_time_path(ns_time_path_image_movement_analysis_memory_pool & memory_pool_):memory_pool(&memory_pool_),first_stationary_timepoint_(0),entirely_excluded(false),image_analysis_temp1(0),image_analysis_temp2(0),images_preallocated(false),low_density_path(false),output_reciever(0),path_db_id(0),region_info_id(0),movement_image_storage(0),number_of_images_loaded(0){by_hand_annotation_event_times.resize((int)ns_number_of_movement_event_types,ns_death_time_annotation_time_interval::unobserved_interval()); state_intervals.resize((int)ns_movement_number_of_states);
+	ns_analyzed_image_time_path(ns_time_path_image_movement_analysis_memory_pool & memory_pool_):memory_pool(&memory_pool_),volatile_backwards_path_data_written(false),first_stationary_timepoint_(0),entirely_excluded(false),image_analysis_temp1(0),image_analysis_temp2(0),images_preallocated(false),low_density_path(false),output_reciever(0),path_db_id(0),region_info_id(0),movement_image_storage(0),number_of_images_loaded(0){by_hand_annotation_event_times.resize((int)ns_number_of_movement_event_types,ns_death_time_annotation_time_interval::unobserved_interval()); state_intervals.resize((int)ns_movement_number_of_states);
 }
 	~ns_analyzed_image_time_path(){
 		ns_safe_delete(output_reciever); 
@@ -561,7 +561,8 @@ public:
 	}
 	
 	mutable std::vector<std::string> posture_quantification_extra_debug_field_names;
-
+	//used by movement analysis algorithm
+	bool volatile_backwards_path_data_written;
 	ns_movement_state movement_state(const unsigned long & t) const;
 	ns_death_time_annotation_time_interval by_hand_death_time() const;
 	ns_movement_state by_hand_movement_state(const unsigned long & t) const;

@@ -564,30 +564,47 @@ void ns_time_path_image_movement_analyzer::process_raw_images(const ns_64_bit re
 								}
 						}
 					}
+					//run chunks for all paths whose images have been loaded in the previous step
 					for (unsigned int i = start_group; i < stop_group; i++){
 						for (unsigned int j = 0; j < groups[i].paths.size(); j++){
 							if (ns_skip_low_density_paths && groups[i].paths[j].is_low_density_path())
 								continue;
 							ns_analyzed_time_image_chunk chunk;
-					//		if (i == 3)
-					//			cerr << "WHA";
-							//only continue if a chunk's worth of data is loaded
-						//	if (i == 14)
-						//		cerr << "MWA";
+					
 							if (!chunk_generators[i][j].backwards_update_and_check_for_new_chunk(chunk))
 								continue;
 				//			cerr << "Registering " << i << ": " << chunk.start_i << "-" << chunk.stop_i << "\n";
 							groups[i].paths[j].calculate_image_registration(chunk,alignment_states[i][j],chunk_generators[i][j].first_chunk());
 							groups[i].paths[j].generate_movement_images(chunk);
 						
+							if (chunk.stop_i == -1){
+									ns_analyzed_time_image_chunk chunk;
+									chunk.direction = ns_analyzed_time_image_chunk::ns_forward;
+									chunk.start_i = 0;
+									chunk.stop_i = groups[i].paths[j].first_stationary_timepoint();
+									if (chunk.stop_i != 0){
+										groups[i].paths[j].quantify_movement(chunk);
+										groups[i].paths[j].save_movement_images(chunk,sql);
+										for (long k = chunk.start_i; k < ((long)chunk.stop_i-(long)clear_lag); k++){
+											groups[i].paths[j].elements[k].clear_path_aligned_images();
+											groups[i].paths[j].elements[k].clear_movement_images();
+										}
+									}
+									groups[i].paths[j].volatile_backwards_path_data_written = true;
+									
+								
+							}
 						}
 					}
+
 				}
 				debug_output_skip = 0;
 				//now we output (in forwards order) the images we registered backwards
 				for (unsigned int i = start_group; i < stop_group; i++){
 					for (unsigned int j = 0; j < groups[i].paths.size(); j++){
 						if (ns_skip_low_density_paths && groups[i].paths[j].is_low_density_path())
+							continue;
+						if (groups[i].paths[j].volatile_backwards_path_data_written)
 							continue;
 						ns_analyzed_time_image_chunk chunk;
 						chunk.direction = ns_analyzed_time_image_chunk::ns_forward;

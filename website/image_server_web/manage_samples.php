@@ -412,8 +412,8 @@ Handle Requests to delete a sample
 	  $cstr .= "::" . strtolower($cur_region[9]);
 	if($cur_region[10] != '')
 	  $cstr .= "::" . strtolower($cur_region[10]);
-	if($cur_region[11] != '')
-	  $cstr .= "::" . strtolower($cur_region[11]);
+	//if($cur_region[11] != '')
+	//  $cstr .= "::" . strtolower($cur_region[11]);
 	if($cur_region[12] != '')
 	  $cstr .= "::" . strtolower($cur_region[12]);
 	if($cur_region[13] != '')
@@ -422,7 +422,7 @@ Handle Requests to delete a sample
 	$all_animal_type_values[$cstr] = 
 	  array($cur_region[4],
 		$cur_region[7],
-		$cur_region[8],$cur_region[9],$cur_region[10],$cur_region[11],$cur_region[12],$cur_region[13]);
+		$cur_region[8],$cur_region[9],$cur_region[10],$cur_region[11],$cur_region[12],$cur_region[13],);
       }
       $region_jobs[$cur_region[0]] = array();
       if ($show_region_jobs){
@@ -664,7 +664,7 @@ if (sizeof($all_animal_type_values) > 1){
 	echo "New Job by Animal Type:<br><font size=\"-1\">";
 		$k = 0;
 		foreach($all_animal_type_values as $v=>$s){
-			echo "<a href=\"view_processing_job.php?job_id=0&experiment_id= $experiment_id&sample_id=all&region_id=all&all_new=1&strain=".$s[0]."&condition_1=".$s[1]. "&condition_2=".urlencode($s[2])."&condition_3=".urlencode($s[3])."&culturing_temperature=".urlencode($s[4])."&experiment_temperature=".urlencode($s[5])."&food_source=".urlencode($s[6])."&environment_conditions=".urlencode($s[7])."&include_censored=1\">[$v]</a> ";
+		  echo "<a href=\"view_processing_job.php?job_id=0&experiment_id= $experiment_id&sample_id=all&region_id=all&all_new=1&strain=".$s[0]."&condition_1=".$s[1]. "&condition_2=".urlencode($s[2])."&condition_3=".urlencode($s[3])."&culturing_temperature=".urlencode($s[4])./*"&experiment_temperature=".urlencode($s[5]).*/"&food_source=".urlencode($s[6])."&environment_conditions=".urlencode($s[7])."&include_censored=1\">[$v]</a> ";
 			$k++;
 			if ($k == $per_line){echo "<br>";$k = 0;}
 		}

@@ -127,8 +127,8 @@ if (!$video_data_present){
 		if ($video_image_id){
 			echo "<br>(Defaulting to still image because $video_problem)<br><br>";
 		}
-		echo "<iframe src=\"http://fontanacluster.med.harvard.edu$image_url\"  width=\"$width\" height=\"$height\"></iframe>";
-		echo "<br><a href=\"http://fontanacluster.med.harvard.edu$image_url\">[View Full Size Image]</a>";
+		echo "<iframe src=\"$image_url\"  width=\"$width\" height=\"$height\"></iframe>";
+		echo "<br><a href=\"$image_url\">[View Full Size Image]</a>";
 		echo "</center>";
 		display_worm_page_footer();
 	}

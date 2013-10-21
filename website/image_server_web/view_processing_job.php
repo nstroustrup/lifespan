@@ -67,8 +67,9 @@ try{
 
   $clear_region = @$_POST["clear_region"];
   $delete_sample_images = @$_POST["delete_sample_images"];
-
+  $job_specified = false;
   if ($job_id != 0){
+    $job_specified = true;
 	$specified_job = new ns_processing_job();
 	$query = $specified_job->provide_query_stub();
 	$query .= " FROM processing_jobs WHERE processing_jobs.id = " . $job_id;
@@ -365,7 +366,7 @@ $region_strain_condition_2 = array();
   }
 //echo "JOB SIZE = " . sizeof($jobs);
   //look for jobs that are attached only to a single region
-  if (!$specified_all_regions && $region_id > 0){
+  if (!$specified_all_regions && $region_id > 0 && !$job_specified){
     
     $request_type = "region";
     
@@ -531,7 +532,7 @@ $region_strain_condition_2 = array();
   }
   if($specified_all_experiments)
 	$back_url = "view_experiments.php";
-  else $back_url =" manage_samples.php?experiment_id={$jobs[0]->experiment_id}";
+  else $back_url =" manage_samples.php?experiment_id={$jobs[0]->experiment_id}&hide_sample_jobs=1&hide_region_jobs=1";
 
   $refresh_url = 'view_processing_job.php?';
   foreach($query_string as $k => $v)
@@ -1206,7 +1207,7 @@ Schedule an Image Processing Job Begin
 	  </tr>--></table>
 	 <table border="0" cellpadding="4" cellspacing="0" width="100%">
 	<tr <?php echo $table_header_color?>><td colspan=3>Processing Tasks</td></tr>
-				     <tr ><td bgcolor="<?php echo  $table_colors[1][0] ?>" colspan=3><font size="-1">Only "Median Filter", "Threshold" and "Worm Detection" are necessary.</font></td></tr>
+				     <?php if ($job_type == $IS_REGION){?><tr ><td bgcolor="<?php echo  $table_colors[1][0] ?>" colspan=3><font size="-1">Only "Median Filter", "Threshold" and "Worm Detection" are necessary.</font></td></tr><?php }?>
 	<?php 
 				     $cc = 0;
 				     $start = 1;
@@ -1442,7 +1443,7 @@ Schedule Database/File Storage Job Begin
 </td></tr>
 </table>
 
-<br><
+<br>
 <?php
   }
  	if ($live_dangerously){	  ?>

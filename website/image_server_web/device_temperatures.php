@@ -62,18 +62,17 @@ echo "device_temperatures.php?experiment_id=$experiment_id";
 <table border="0" cellpadding="0" cellspacing="1" bgcolor="#000000">
 
   <tr>
-<?php if (sizeof($incubators) > 1) echo "<td $table_header_color align=\"center\"><b>Incubator</b></td>";?>
+<?php echo "<td $table_header_color align=\"center\"><b>Incubator</b></td>";?>
 <td <?php echo $table_header_color?> align="center"><b>Device Name<?php echo $column_name?></b></td><td <?php echo $table_header_color?> align="center">Temperature</td></tr>
 <?php
 $row_color = 0;
 	foreach($device_names as $d){
 $row_color = !$row_color;
  echo "<tr>";
- if (sizeof($incubators)>1){
-   ;echo "<td bgcolor=\"" . $table_colors[0][$row_color]. "\" valign=\"top\" align=\"center\">\n";
+ echo "<td bgcolor=\"" . $table_colors[0][$row_color]. "\" valign=\"top\" align=\"center\">\n";
 		echo "<center><b>" . $device_incubator[$d]. "</b></center>";
 		echo "</td>";
- }
+ 
 echo "<td bgcolor=\"" . $table_colors[0][$row_color]. "\" valign=\"top\" align=\"center\">\n";
 		echo "<center><b>" . $d . "</b> (" . $device_locations[$d] . ")</center>";
 echo "</td><td  bgcolor=\"" . $table_colors[1][$row_color]. "\" valign=\"top\" align=\"center\">";

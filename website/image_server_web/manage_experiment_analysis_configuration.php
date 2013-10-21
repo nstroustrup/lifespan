@@ -142,9 +142,13 @@ $posture_analysis_method = '';
      if ($detail_level != 's1'){
        if ($exps[$i][3] != '')
 	 $strain .= "::" . $exps[$i][3];
+     } 
+     if ($detail_level != 's12'){
+       if ($exps[$i][4] != '')
+	 $strain .= "::" . $exps[$i][4];
      }
    }
-   //echo $exps[$i][0] . "<BR>";
+   // echo $strain;
    
    $region_strains[$exps[$i][0]] = array($exps[$i][1],$exps[$i][2],$exps[$i][3],$exps[$i][4]);
    if ($strain_posture_models[$strain] == '')

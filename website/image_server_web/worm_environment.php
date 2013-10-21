@@ -1,7 +1,7 @@
 <?php
 require_once("ns_exception.php");
 require_once("ns_image_server_website.ini");
-$website_version = "1.1";
+$website_version = "1.11";
 
 define("NS_SPATIAL_NORM", 1);
 define("NS_TEMPORAL_NORM", 2);
@@ -345,7 +345,7 @@ function display_worm_page_footer(){
     <td bgcolor="#dbdbdb"><div align="right"><span class="style2"><?php echo format_time(time())?>
 <br>
 <br>
-				    Lifespan Machine website v.<?php echo $website_version?> <br> Nicholas Stroustrup (2013)<br>Harvard Systems Biology </span></div></td>
+				    Lifespan Machine web interface v.<?php echo $website_version?> <br> Nicholas Stroustrup (2013)<br>Harvard Systems Biology </span></div></td>
     <td bgcolor="#dbdbdb">&nbsp;</td>
   </tr>
 </table>

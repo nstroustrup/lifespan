@@ -536,7 +536,8 @@ if (!$show_plate_stats){
 	echo "<a href=\"manage_samples.php?experiment_id=".$experiment_id . "&hide_region_jobs=1&hide_sample_jobs=1\"> [Image Analysis] </a>";
 	echo "</center></td>";
 	echo "<td nowrap=\"nowrap\" bgcolor=\"$clrs[0]\"  valign='top'><center>";
-	echo "<a href=\"view_scanner_schedule.php?experiment_id=".$experiment_id . "&show_past=1\">[Schedule]</a>";
+	echo "<a href=\"view_scanner_schedule.php?experiment_id=".$experiment_id . "&show_past=1\">[View Schedule]</a><br>";
+echo "<a href=\"view_processing_job.php?job_id=0&experiment_id=$experiment_id&live_dangerously=1&hide_entire_region_job=1\">[Cancel Pending Scans]</a>";
         echo "</center></td><td nowrap bgcolor=\"$clrs[1]\"  valign='top'>";
         echo "<center><a href=\"experiment_overview.php?experiment_id=".$experiment_id."\">[By Image]</a>"; 
 echo "<a href=\"plate_labeling.php?experiment_id=".$experiment_id."\">[By Position]</a>";  
@@ -821,9 +822,10 @@ for ($ss = 0; $ss < sizeof($experiment_strains[$experiment_id]); $ss++){
 }
 	
 	echo "<td bgcolor=\"$clrs[1]\"  valign='top'><center>";
+
 	if ($edit){
 		echo " <input type = \"hidden\" name =\"id\" value=\"" . $experiment_id . "\">";
-		echo "<a href=\"view_processing_job.php?job_id=0&experiment_id=$experiment_id&live_dangerously=1&hide_entire_region_job=1\">[Cancel Pending Scans]</a><br>";
+		
 		echo "<input type=\"submit\" name=\"save\" value=\"Save\"><br>";
 		//		echo "<input type=\"submit\" name=\"delete_future\" value=\"Cancel Pending Scans\" onClick=\"javascript:return confirm('Are you sure you wish to cancel all pending scans?')\"><br>";		
 		echo "<input type=\"submit\" name=\"toggle_hide_experiment\" value=\"";

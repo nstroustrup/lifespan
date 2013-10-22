@@ -463,6 +463,16 @@ $region_strain_condition_2 = array();
     //var_dump($jobs[0]->operations); die("");
   }
   $query_parameters = $_SERVER['QUERY_STRING'];
+  
+  $pos = strpos($query_parameters,"include_censored=");
+  // die(":".$pos);
+  if ($pos === FALSE)
+    $query_parameters_without_censored = $query_parameters;
+  else{
+    $query_parameters_without_censored = substr($query_parameters,0,$pos) .
+      substr($query_parameters,$pos+19);
+   # die($query_parameters_without_censored);
+  }
   //load all jobs
   for ($i = 0; $i < sizeof($jobs); $i++){
     if ($jobs[$i]->id != 0){
@@ -1162,8 +1172,19 @@ else display_worm_page_header($page_title);
 
 
 <span class="style1">Job Target(s):</span><br><?php echo $target_text?> 
+<?php 
+if ($query_string["include_censored"] == 1){
+  echo "<a href=\"view_processing_job.php?" . $query_parameters_without_censored."&include_censored=2\">[Include Only Censored]</a>";
+}
+ else if ($query_string["include_censored"] == 2){
+  echo "<a href=\"view_processing_job.php?" . $query_parameters_without_censored."&include_censored=0\">[Exclude Censored]</a>";
+}
+ else{
+  echo "<a href=\"view_processing_job.php?" . $query_parameters_without_censored."&include_censored=1\">[Include Censored]</a>";
 
-<?php if ($condition_3 == 'Nash') echo "<br>follow the white rabbit neo..."?>
+ }
+
+			       //<?php if ($condition_3 == 'Nash') echo "<br>follow the white rabbit neo..."?>
 
 <br><br>
  

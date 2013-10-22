@@ -544,33 +544,36 @@ echo "<a href=\"manage_experiment_analysis_configuration.php?experiment_id=$expe
 echo "<a href=\"ns_view_sample_images.php?experiment_id=$experiment_id\">[View All Captured Images]</a><br>";
 echo "<a href=\"view_hosts_log.php?experiment_id=$experiment_id\">[View Sample Problems]</a><br>";
 echo "<a href=\"view_hosts_log.php?experiment_id=$experiment_id&region_id=all\">[View Region Problems]</a><br>";
-echo "<a href=\"strain_aliases.php?experiment_id=$experiment_id\">[Edit Strain Information]</a><br>";
+echo "<a href=\"strain_aliases.php?experiment_id=$experiment_id\">[Edit Strain Information]</a>";
+?><font size="-1"><?php echo "<br><br>" . $storyboard_info?></font><?php
 echo "</td><td valign=\"top\" bgcolor=\"{$table_colors[1][0]}\">";
 echo "<b>Experiment Jobs</b><br>";
 echo "<a href=\"view_processing_job.php?job_id=0&experiment_id= $experiment_id\">[New Experiment Job]</a><br>";
 echo "<a href=\"manage_samples.php?&experiment_id=$experiment_id&experiment_action=remove_problems&$region_job_query_string\"><font size=\"-1\">[Clear Problem Flags]</font></a>";
 echo "<a href=\"manage_samples.php?&experiment_id=$experiment_id&experiment_action=remove_busy&$region_job_query_string\"><font size=\"-1\">[Clear Busy Flags]</font></a><br>";
 echo "<a href=\"manage_samples.php?experiment_id=$experiment_id&delete_experiment_jobs=1\">[Delete All Experiment Jobs]</a><br>";
-echo "<a href=\"manage_samples.php?experiment_id=$experiment_id&delete_censored_jobs=1\">[Delete All Censored Jobs]</a><br>";
+//echo "<a href=\"manage_samples.php?experiment_id=$experiment_id&delete_censored_jobs=1\">[Delete All Censored Jobs]</a><br>";
 echo "<a href=\"manage_samples.php?experiment_id=$experiment_id&delete_problem_images=1\">[Delete problematic processed images]</a><br>";
-echo "<a href=\"manage_samples.php?experiment_id=$experiment_id&pause_jobs=1\">[Pause]</a> / <a href=\"manage_samples.php?experiment_id=$experiment_id&pause_jobs=0\">[Resume]</a> Image Analysis";
+echo "<br><a href=\"manage_samples.php?experiment_id=$experiment_id&pause_jobs=1\">[Pause]</a> / <a href=\"manage_samples.php?experiment_id=$experiment_id&pause_jobs=0\">[Resume]</a> Image Analysis";
 ?>
 <br><br>
 <b>Sample Jobs</b>
 <br>
- <a href="view_processing_job.php?job_id=0&experiment_id=<?php echo $experiment_id?>&sample_id=all&all_new=1&include_censored=1">[New Job For All Samples]</a>
-<a href="view_processing_job.php?job_id=0&experiment_id=<?php echo $experiment_id?>&sample_id=all&include_censored=1">[Edit Jobs for All Samples]</a><br>
-<a href="view_processing_job.php?job_id=0&experiment_id=<?php echo $experiment_id?>&sample_id=all&all_new=1&include_censored=0">[New Job For Only Uncensored Samples ]</a>
+ <!--<a href="view_processing_job.php?job_id=0&experiment_id=<?php echo $experiment_id?>&sample_id=all&all_new=1&include_censored=1">[New Job For All Samples]</a>-->
+
+<a href="view_processing_job.php?job_id=0&experiment_id=<?php echo $experiment_id?>&sample_id=all&all_new=1&include_censored=0">[New Job For all Samples ]</a>
 <br>
-<a href="view_processing_job.php?job_id=0&experiment_id=<?php echo $experiment_id?>&sample_id=all&all_new=1&include_censored=2">[New Job For Censored Samples]</a>
-<font size="-1"><?php echo "<br><br>" . $storyboard_info?></font>
+<a href="view_processing_job.php?job_id=0&experiment_id=<?php echo $experiment_id?>&sample_id=all&include_censored=0">[Edit Jobs for All Samples]</a><br>
+<!--<a href="view_processing_job.php?job_id=0&experiment_id=<?php echo $experiment_id?>&sample_id=all&all_new=1&include_censored=2">[New Job For Censored Samples]</a>-->
+
 </td><td bgcolor="<?php echo  $table_colors[0][0] ?>" valign="top">
 <b>Region Jobs</b><br>
-<a href="view_processing_job.php?job_id=0&experiment_id=<?php echo $experiment_id?>&sample_id=all&region_id=all&all_new=1">[New Job for All Regions]</a>
+<a href="view_processing_job.php?job_id=0&experiment_id=<?php echo $experiment_id?>&sample_id=all&region_id=all&all_new=1">[New Job for All Regions]</a><br>
 <a href="view_processing_job.php?job_id=0&experiment_id=<?php echo $experiment_id?>&sample_id=all&region_id=all">[Edit Jobs for All Regions]</a><br>
+<!--
 <a href="view_processing_job.php?job_id=0&experiment_id=<?php echo $experiment_id?>&sample_id=all&region_id=all&include_censored=1">[Edit Jobs for All Regions included censored]</a><br>
 <a href="view_processing_job.php?job_id=0&experiment_id=<?php echo $experiment_id?>&sample_id=all&region_id=all&all_new=1&include_censored=1">[New Job for All Regions including Censored]</a><br>
-<a href="view_processing_job.php?job_id=0&experiment_id=<?php echo $experiment_id?>&sample_id=all&region_id=all&all_new=1&include_censored=2">[New Job for Censored Regions]</a><br>
+<a href="view_processing_job.php?job_id=0&experiment_id=<?php echo $experiment_id?>&sample_id=all&region_id=all&all_new=1&include_censored=2">[New Job for Censored Regions]</a><br>-->
 </td>
 <td valign="top" bgcolor="<?php echo  $table_colors[1][0] ?>">
 <b>Jobs for Specific Animal Types</b><br>

@@ -141,14 +141,22 @@ try{
   $experiment->get_sample_information($sql);
   
   $regions = array();
-
+  
   $sample_list='';
+  $query = "SELECT v from constants WHERE k='mask_time=$experiment_id'";
+  $sql->get_row($query,$res);
+  
+  $mask_time = 0;
+  if (sizeof($res) > 0)
+    $mask_time = $res[0][0];
+  //die($mask_time);
 
   for ($i = $start_position; $i < ($start_position + $count) && $i< sizeof($experiment->samples); $i++){
     
     $sample_list .= $experiment->samples[$i]->id() . "o";
-
+  
     $query = "SELECT id,name,details,censored,reason_censored,strain,$video_column, time_at_which_animals_had_zero_age, time_of_last_valid_sample,strain_condition_1,strain_condition_2 FROM sample_region_image_info WHERE sample_id = " . $experiment->samples[$i]->id() . " ORDER BY name";
+
     $region_info_data_column_size = 11;
     $reg =&  $regions[$experiment->samples[$i]->id()];
     $sql->get_row($query,$reg);
@@ -163,6 +171,9 @@ try{
 	//die($query);
 	if ($reg[$j][8] != 0)
 		$query1 .= " AND capture_time <= " .$reg[$j][8];
+	else if ($mask_time != 0)
+	  $query1 .= "AND capture_time <= " . $mask_time;
+       
  	$query1 .= " ORDER BY capture_time DESC LIMIT $d";
 
 	//die($query);

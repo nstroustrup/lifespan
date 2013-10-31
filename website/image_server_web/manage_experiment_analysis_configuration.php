@@ -40,7 +40,8 @@ if ($_POST['detail_level']){
     	$end_month = $_POST['end_month'];
     	$end_year = $_POST['end_year'];
   $mask_date = mktime($end_hour, $end_minute, 0, $end_month, $end_day, $end_year);
-   $maximum_number_of_worms = $_POST['maximum_number_of_worms'];
+ # die(".".date(DATE_ATOM,$mask_date));
+$maximum_number_of_worms = $_POST['maximum_number_of_worms'];
    //   if (!($number_of_stationary_images==='')){
      $query = "UPDATE sample_region_image_info as r, capture_samples as s SET r.time_series_denoising_flag = '$denoising_flag',r.number_of_frames_used_to_mask_stationary_objects='$number_of_stationary_images',r.maximum_number_of_worms_per_plate='$maximum_number_of_worms' WHERE r.sample_id = s.id AND s.experiment_id = " . $experiment_id;
      //    die($query);
@@ -60,7 +61,11 @@ $query = "UPDATE experiments SET delete_captured_images_after_mask=" . ($delete_
    // die($query);
    $sql->send_query($query);
    if ($mask_date != 0){
-     $query = "INSERT INTO constants SET k='mask_time=" .$experiment_id. "', v='$mask_date'";
+     $query = "DELETE FROM constants WHERE k='mask_time=" . $experiment_id."'";
+     $sql->send_query($query);
+     // die($query);
+     $query =   "INSERT INTO constants SET k='mask_time=" .$experiment_id. "', v='$mask_date'";
+     // die($query);
      $sql->send_query($query);
    }
    header("Location: manage_experiment_analysis_configuration.php?$query_parameters\n\n");  

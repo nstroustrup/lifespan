@@ -27,9 +27,6 @@
     <ClCompile Include="..\ns_image_server\image_base\ns_vector.cpp">
       <Filter>image_base</Filter>
     </ClCompile>
-    <ClCompile Include="..\external_compile_libraries\libdmtx-0.5.2\dmtx.c">
-      <Filter>dmtx</Filter>
-    </ClCompile>
     <ClCompile Include="..\external_compile_libraries\jpeg-8d\jaricom.c">
       <Filter>image_format_lib\jpeg</Filter>
     </ClCompile>
@@ -420,6 +417,10 @@
     <ClCompile Include="..\ns_image_server\system_base\ns_thread.cpp" />
     <ClCompile Include="..\ns_image_server\image_acquisition\ns_barcode.cpp">
       <Filter>image_base</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ns_image_server_utilities\ns_image_server_barcodes_main.cpp" />
+    <ClCompile Include="..\external_compile_libraries\libdmtx-0.7.4\dmtx.c">
+      <Filter>dmtx</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

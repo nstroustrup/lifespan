@@ -239,8 +239,8 @@ void ns_experiment_storyboard_timepoint::load_images(bool use_color,ns_sql & sql
 				}
 				else{
 					current_worm = worms[j];	
-					if (sorted_events[i].e->annotation_whose_image_should_be_used.inferred_animal_location)
-						cerr << "Found interpolated worm image.\n";
+				//	if (sorted_events[i].e->annotation_whose_image_should_be_used.inferred_animal_location)
+				//		cerr << "Found interpolated worm image.\n";
 
 					if (sorted_events[i].e->image.properties().width > sorted_events[i].e->image_image_size().x ||
 						sorted_events[i].e->image.properties().height > sorted_events[i].e->image_image_size().y)
@@ -255,18 +255,21 @@ void ns_experiment_storyboard_timepoint::load_images(bool use_color,ns_sql & sql
 			}
 		}
 		if (current_worm == 0){
-			throw ns_ex("Could not find image for ") << (sorted_events[i].e->annotation_whose_image_should_be_used.inferred_animal_location?"interpolated":"non-interpolated") << " worm.";
+			ns_ex ex("Could not find the image corresponding to the ");
+			ex << (sorted_events[i].e->annotation_whose_image_should_be_used.inferred_animal_location?"interpolated":"non-interpolated") << " worm #" <<
+				sorted_events[i].e->annotation_whose_image_should_be_used.stationary_path_id.group_id 
+				<< "There were " << actual_worms.size() << " actual and " << interpolated_worms.size() << " interpolated worms identified at this timepoint. ";
 			sql << "select s.name, r.name,r.sample_id from sample_region_image_info as r, capture_samples as s "
 					"WHERE r.id = " << sorted_events[i].e->annotation_whose_image_should_be_used.region_info_id << " AND s.id = r.sample_id";
 			ns_sql_result res;
 			sql.get_rows(res);
 			
-			 ns_ex ex("");
 			if (res.size() == 0)
-				ex << "Could not find subject for region info id " << sorted_events[i].e->annotation_whose_image_should_be_used.region_info_id << "::";
+				ex << "Additionally, metadata for the region info id " << sorted_events[i].e->annotation_whose_image_should_be_used.region_info_id << " could not be found.";
 			else 
-				ex << "Could not find storyboard-specified worm detected worm info: " << res[0][0] << "::" << res[0][1] << "::";
+				ex << "The worm was located on: " << res[0][0] << "::" << res[0][1] << "::";
 			ex << sorted_events[i].e->annotation_whose_image_should_be_used.description();
+
 			throw ex;
 		}
 
@@ -1138,10 +1141,11 @@ void ns_experiment_storyboard::draw(const unsigned long sub_image_id,ns_image_st
 			catch(ns_ex & ex){
 					
 					ns_experiment_storyboard_timepoint_element e(divisions[i].events[j]);
-					throw ns_ex(ex.text()) << "for worm " << e.event_annotation.stationary_path_id.group_id << " in region " << 
+					throw ns_ex(ex.text()) << " for worm #" << e.event_annotation.stationary_path_id.group_id << " in region " << 
 					e.event_annotation.region_info_id << " at time (" <<
 					e.annotation_whose_image_should_be_used.time.period_start << "," <<
-					e.annotation_whose_image_should_be_used.time.period_end << ")";
+					e.annotation_whose_image_should_be_used.time.period_end << ").  Details: " 
+						<< e.annotation_whose_image_should_be_used.description();
 			}
 		}
 		divisions[i].clear_images();

@@ -14,6 +14,30 @@ struct ns_image_server_time_path_inferred_worm_aggregator_image_info{
 				  spatial_id,
 				  threshold_id,
 				  region_interpolated_id;
+	//the lifespan machine can occasionally duplicate a time point.
+	//we need to keep those up to date as well so they remain identical
+	//and don't cause book keeping problems.
+
+	//the duplication appears to occur by a sample image being masked twice simulaneously
+	//by two image processing servers.  This should be fixable--probably a race condition
+	//in the job processing code.
+	std::vector<ns_image_server_time_path_inferred_worm_aggregator_image_info> duplicates_of_this_time_point;
+
+	void remove_inferred_element_from_db(ns_sql & sql){
+		if (region_interpolated_id != 0){
+			ns_image_server_image im;
+			im.load_from_db(region_interpolated_id,&sql);
+			image_server.image_storage.delete_from_storage(im,ns_delete_long_term,&sql);
+			sql << "UPDATE sample_region_images SET "
+				<< ns_processing_step_db_column_name(ns_process_region_interpolation_vis)
+				<< " = 0, worm_interpolation_results_id = 0 WHERE id = " << id;
+			sql.send_query();
+		}
+		else{
+			sql << "UPDATE sample_region_images SET worm_interpolation_results_id = 0 WHERE id = " << id;
+			sql.send_query();
+		}
+	}
 };
 class ns_image_server_time_path_inferred_worm_aggregator{
 public:
@@ -42,7 +66,16 @@ public:
 				in.spatial_id = ns_atoi64(res[i][3].c_str());
 				in.threshold_id = ns_atoi64(res[i][4].c_str());
 				in.region_interpolated_id = ns_atoi64(res[i][5].c_str());
-				region_images_by_time[in.time] = in;
+				std::map<unsigned long,ns_image_server_time_path_inferred_worm_aggregator_image_info>::iterator p;
+				p = region_images_by_time.find(in.time);
+				if (p == region_images_by_time.end())
+					region_images_by_time[in.time] = in;
+				else{
+					if (in.id == p->second.id)
+						throw ns_ex("A duplicate sample_region_image **with the same region_id** was found!");
+					//there's a duplicate sample_region_image at this time point.
+					p->second.duplicates_of_this_time_point.push_back(in);
+				}
 			}
 		}
 		
@@ -64,36 +97,26 @@ public:
 			for (unsigned int i = 0; i < s.timepoints[t].elements.size(); i++)
 				if (s.timepoints[t].elements[i].inferred_animal_location)
 					inferred_elements.push_back(&s.timepoints[t].elements[i]);
+			
+			std::map<unsigned long,ns_image_server_time_path_inferred_worm_aggregator_image_info>::iterator current_region_image(region_images_by_time.find(s.timepoints[t].time));
+				
+			if (current_region_image == region_images_by_time.end())
+				throw ns_ex("Could not find timepoint ") << s.timepoints[t].time << " in the database";
+
 			if (inferred_elements.empty()){
-				std::map<unsigned long,ns_image_server_time_path_inferred_worm_aggregator_image_info>::iterator p(region_images_by_time.find(s.timepoints[t].time));
-				if (p == region_images_by_time.end())
-					throw ns_ex("Could not find timepoint ") << s.timepoints[t].time << " in the database";
-				if (p->second.region_interpolated_id != 0){
-					ns_image_server_image im;
-					im.load_from_db(p->second.region_interpolated_id,&sql);
-					image_server.image_storage.delete_from_storage(im,ns_delete_long_term,&sql);
-					sql << "UPDATE sample_region_images SET "
-						<< ns_processing_step_db_column_name(ns_process_region_interpolation_vis)
-						<< " = 0, worm_interpolation_results_id = 0 WHERE id = " << p->second.id;
-					sql.send_query();
-				}
-				else{
-					sql << "UPDATE sample_region_images SET worm_interpolation_results_id = 0 WHERE id = " << p->second.id;
-					sql.send_query();
-				}
+				current_region_image->second.remove_inferred_element_from_db(sql);
+				for (unsigned int i = 0; i < current_region_image->second.duplicates_of_this_time_point.size(); i++)
+					current_region_image->second.remove_inferred_element_from_db(sql);
 				continue;
 			}
-			std::map<unsigned long,ns_image_server_time_path_inferred_worm_aggregator_image_info>::iterator p(region_images_by_time.find(s.timepoints[t].time));
-			if (p == region_images_by_time.end())
-				throw ns_ex("Could not find timepoint ") << s.timepoints[t].time << " in the database";
 
 			//load images
 			ns_image_server_image im;
-			im.load_from_db(p->second.raw_image_id,&sql);
+			im.load_from_db(current_region_image->second.raw_image_id,&sql);
 			image_server.image_storage.request_from_storage(im,&sql).input_stream().pump(&unprocessed_image,1024);
-			im.load_from_db(p->second.spatial_id,&sql);
+			im.load_from_db(current_region_image->second.spatial_id,&sql);
 			image_server.image_storage.request_from_storage(im,&sql).input_stream().pump(&spatial_image,1024);
-			im.load_from_db(p->second.threshold_id,&sql);
+			im.load_from_db(current_region_image->second.threshold_id,&sql);
 			image_server.image_storage.request_from_storage(im,&sql).input_stream().pump(&thresholded_image,1024);
 			ns_image_worm_detection_results results;
 			results.id = 0;
@@ -126,16 +149,16 @@ public:
 						worm.bitmap()[y][x] = thresholded_image[y+worm.region_position_in_source_image.y][x+worm.region_position_in_source_image.x]; 
 			}
 			results.replace_actual_worms();
-			ns_image_server_captured_image_region reg_im;
-			reg_im.load_from_db(p->second.id,&sql);
-
 			const ns_image_standard & worm_collage(results.generate_region_collage(unprocessed_image,spatial_image,thresholded_image));
+
 			std::vector<ns_vector_2i> positions;
 			results.worm_collage.info().image_locations_in_collage((unsigned long)worms.size(),positions);
 			for (unsigned int i = 0; i < positions.size(); i++){
 				inferred_elements[i]->context_image_position_in_region_vis_image = positions[i];
 			}
 			
+			ns_image_server_captured_image_region reg_im;
+			reg_im.load_from_db(current_region_image->second.id,&sql);
 			reg_im.register_worm_detection(&results,true,sql);
 
 			bool had_to_use_volatile_storage;
@@ -147,7 +170,18 @@ public:
 													false,
 													false);
 			worm_collage.pump(region_bitmap_o.output_stream(),1024);
-			
+
+			for (unsigned int i = 0; i < current_region_image->second.duplicates_of_this_time_point.size(); i++){
+				ns_image_server_captured_image_region reg_im2;
+				reg_im2.load_from_db(current_region_image->second.duplicates_of_this_time_point[i].id,&sql);
+				reg_im2.register_worm_detection(&results,true,sql);
+
+				sql << "UPDATE " << ns_processing_step_db_table_name(ns_process_region_interpolation_vis) << " SET " 
+								 << ns_processing_step_db_column_name(ns_process_region_interpolation_vis)
+								 << " = " << region_bitmap.id << " WHERE id = " << reg_im2.region_images_id;
+				sql.send_query();
+
+			}
 		}
 	}
 

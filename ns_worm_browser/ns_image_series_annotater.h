@@ -294,6 +294,23 @@ public:
 			throw;
 		}
 	}
+	void clear_cached_images(){
+		image_buffer_access_lock.wait_to_acquire(__FILE__,__LINE__);
+		try{
+			for (unsigned int i = 0; i < next_images.size(); i++){
+				next_images[i].loaded = false;
+				next_images[i].im->clear();
+			}
+			for (unsigned int i = 0; i < previous_images.size(); i++){
+				previous_images[i].loaded = false;
+				previous_images[i].im->clear();
+			}
+			image_buffer_access_lock.release();
+		}
+		catch(...){
+			image_buffer_access_lock.release();
+		}
+	}
 	virtual void display_current_frame()=0;
 	
 	typedef enum {ns_cycle_state,ns_censor,ns_annotate_extra_worm, ns_censor_all,ns_load_worm_details, ns_cycle_flags,ns_output_images} ns_click_request;

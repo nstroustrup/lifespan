@@ -611,6 +611,7 @@ public:
 		//load images for the worm.
 			
 		//data_cache.load_images_for_worm(properties_for_all_animals.stationary_path_id,current_timepoint_id+10,sql);
+		current_region_data->clear_images_for_worm(properties_for_all_animals.stationary_path_id);
 		current_region_data->load_images_for_worm(properties_for_all_animals.stationary_path_id,current_timepoint_id+10,sql());
 
 
@@ -840,6 +841,7 @@ public:
 				unsigned long requested_time = current_machine_timing_data->animals[0].get_time_from_movement_diagram_position(image_position.x,bottom_margin_bottom,
 												ns_vector_2i(current_worm->element(current_element_id()).image().properties().width,0),
 												observation_limit);
+				clear_cached_images();
 				set_current_timepoint(requested_time,false);
 			
 			

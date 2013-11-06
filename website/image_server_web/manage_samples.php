@@ -583,7 +583,7 @@ echo "<br><a href=\"manage_samples.php?experiment_id=$experiment_id&pause_jobs=1
 		echo "New Job for Strain:<br><font size=\"-1\">";
 		$k = 0;
 		foreach($strains as $s){
-			echo "<a href=\"view_processing_job.php?job_id=0&experiment_id= $experiment_id&sample_id=all&region_id=all&all_new=1&strain=".urlencode($s)."&include_censored=1\">[$s]</a> ";
+			echo "<a href=\"view_processing_job.php?job_id=0&experiment_id= $experiment_id&sample_id=all&region_id=all&all_new=1&strain=".urlencode($s)."\">[$s]</a> ";
 			$k++;
 			if ($k == $per_line){echo "<br>";$k = 0;}
 		}
@@ -594,7 +594,7 @@ echo "<br><a href=\"manage_samples.php?experiment_id=$experiment_id&pause_jobs=1
 		echo "New Job for Culturing Temperature:<br><font size=\"-1\">";
 		$k = 0;
 		foreach($culturing_temperature_values as $s){
-			echo "<a href=\"view_processing_job.php?job_id=0&experiment_id= $experiment_id&sample_id=all&region_id=all&all_new=1&culturing_temperature=".urlencode($s)."&include_censored=1\">[$s]</a> ";
+			echo "<a href=\"view_processing_job.php?job_id=0&experiment_id= $experiment_id&sample_id=all&region_id=all&all_new=1&culturing_temperature=".urlencode($s)."\">[$s]</a> ";
 			$k++;
 			if ($k == $per_line){echo "<br>";$k = 0;}
 		}
@@ -605,7 +605,7 @@ echo "<br><a href=\"manage_samples.php?experiment_id=$experiment_id&pause_jobs=1
 		echo "New Job for Experiment Temperature:<br><font size=\"-1\">";
 		$k = 0;
 		foreach($experiment_temperature_values as $s){
-			echo "<a href=\"view_processing_job.php?job_id=0&experiment_id= $experiment_id&sample_id=all&region_id=all&all_new=1&experiment_temperature=".urlencode($s)."&include_censored=1\">[$s]</a> ";
+			echo "<a href=\"view_processing_job.php?job_id=0&experiment_id= $experiment_id&sample_id=all&region_id=all&all_new=1&experiment_temperature=".urlencode($s)."\">[$s]</a> ";
 			$k++;
 			if ($k == $per_line){echo "<br>";$k = 0;}
 		}
@@ -616,7 +616,7 @@ echo "<br><a href=\"manage_samples.php?experiment_id=$experiment_id&pause_jobs=1
 		echo "New Job for Food Source Values:<br><font size=\"-1\">";
 		$k = 0;
 		foreach($food_source_values as $s){
-			echo "<a href=\"view_processing_job.php?job_id=0&experiment_id= $experiment_id&sample_id=all&region_id=all&all_new=1&food_source=".urlencode($s)."&include_censored=1\">[$s]</a> ";
+			echo "<a href=\"view_processing_job.php?job_id=0&experiment_id= $experiment_id&sample_id=all&region_id=all&all_new=1&food_source=".urlencode($s)."\">[$s]</a> ";
 			$k++;
 			if ($k == $per_line){echo "<br>";$k = 0;}
 		}
@@ -626,7 +626,7 @@ echo "<br><a href=\"manage_samples.php?experiment_id=$experiment_id&pause_jobs=1
 		echo "New Job for Experiment Condition:<br><font size=\"-1\">";
 		$k = 0;
 		foreach($environment_condition_values as $s){
-			echo "<a href=\"view_processing_job.php?job_id=0&experiment_id= $experiment_id&sample_id=all&region_id=all&all_new=1&environment_conditions=".urlencode($s)."&include_censored=1\">[$s]</a> ";
+			echo "<a href=\"view_processing_job.php?job_id=0&experiment_id= $experiment_id&sample_id=all&region_id=all&all_new=1&environment_conditions=".urlencode($s)."\">[$s]</a> ";
 			$k++;
 			if ($k == $per_line){echo "<br>";$k = 0;}
 		}
@@ -636,7 +636,7 @@ echo "<br><a href=\"manage_samples.php?experiment_id=$experiment_id&pause_jobs=1
 		echo "New Job for Condition 1:<br><font size=\"-1\">";
 		$k = 0;
 		foreach($condition_1_values as $s){
-			echo "<a href=\"view_processing_job.php?job_id=0&experiment_id= $experiment_id&sample_id=all&region_id=all&all_new=1&condition_1=".urlencode($s)."&include_censored=1\">[$s]</a> ";
+			echo "<a href=\"view_processing_job.php?job_id=0&experiment_id= $experiment_id&sample_id=all&region_id=all&all_new=1&condition_1=".urlencode($s)."\">[$s]</a> ";
 			$k++;
 			if ($k == $per_line){echo "<br>";$k = 0;};
 		}
@@ -647,7 +647,7 @@ echo "<br><a href=\"manage_samples.php?experiment_id=$experiment_id&pause_jobs=1
 		echo "New Job for Condition 2:<br><font size=\"-1\">";
 		$k = 0;
 		foreach($condition_2_values as $s){
-			echo "<a href=\"view_processing_job.php?job_id=0&experiment_id= $experiment_id&sample_id=all&region_id=all&all_new=1&condition_2=".urlencode($s)."&include_censored=1\">[$s]</a> ";
+			echo "<a href=\"view_processing_job.php?job_id=0&experiment_id= $experiment_id&sample_id=all&region_id=all&all_new=1&condition_2=".urlencode($s)."\">[$s]</a> ";
 			$k++;
 			if ($k == $per_line){echo "<br>";$k = 0;}
 		}
@@ -657,7 +657,7 @@ echo "<br><a href=\"manage_samples.php?experiment_id=$experiment_id&pause_jobs=1
 		echo "New Job for Condition 3:<br><font size=\"-1\">";
 		$k = 0;
 		foreach($condition_3_values as $s){
-			echo "<a href=\"view_processing_job.php?job_id=0&experiment_id= $experiment_id&sample_id=all&region_id=all&all_new=1&condition_3=".urlencode($s)."&include_censored=1\">[$s]</a> ";
+			echo "<a href=\"view_processing_job.php?job_id=0&experiment_id= $experiment_id&sample_id=all&region_id=all&all_new=1&condition_3=".urlencode($s)."\">[$s]</a> ";
 			$k++;
 			if ($k == $per_line){echo "<br>";$k = 0;}
 		}
@@ -667,7 +667,7 @@ if (sizeof($all_animal_type_values) > 1){
 	echo "New Job by Animal Type:<br><font size=\"-1\">";
 		$k = 0;
 		foreach($all_animal_type_values as $v=>$s){
-		  echo "<a href=\"view_processing_job.php?job_id=0&experiment_id= $experiment_id&sample_id=all&region_id=all&all_new=1&strain=".$s[0]."&condition_1=".$s[1]. "&condition_2=".urlencode($s[2])."&condition_3=".urlencode($s[3])."&culturing_temperature=".urlencode($s[4])./*"&experiment_temperature=".urlencode($s[5]).*/"&food_source=".urlencode($s[6])."&environment_conditions=".urlencode($s[7])."&include_censored=1\">[$v]</a> ";
+		  echo "<a href=\"view_processing_job.php?job_id=0&experiment_id= $experiment_id&sample_id=all&region_id=all&all_new=1&strain=".$s[0]."&condition_1=".$s[1]. "&condition_2=".urlencode($s[2])."&condition_3=".urlencode($s[3])."&culturing_temperature=".urlencode($s[4])./*"&experiment_temperature=".urlencode($s[5]).*/"&food_source=".urlencode($s[6])."&environment_conditions=".urlencode($s[7])."\">[$v]</a> ";
 			$k++;
 			if ($k == $per_line){echo "<br>";$k = 0;}
 		}
@@ -677,7 +677,7 @@ if (sizeof($all_animal_type_values) > 1){
 		echo "<br>New Job for Device:<br><font size=\"-1\">";
 		$k = 0;
 		foreach($devices_used as $s){
-			echo "<a href=\"view_processing_job.php?job_id=0&experiment_id= $experiment_id&sample_id=all&region_id=all&all_new=1&device=".urlencode($s)."&include_censored=0\">[$s]</a> ";
+			echo "<a href=\"view_processing_job.php?job_id=0&experiment_id= $experiment_id&sample_id=all&region_id=all&all_new=1&device=".urlencode($s)."\">[$s]</a> ";
 			$k++;
 			if ($k == $per_line*2){echo "<br>";$k = 0;}
 		}
@@ -819,10 +819,10 @@ if (sizeof($all_animal_type_values) > 1){
 }
   echo "<a href=\"view_processing_job.php?job_id=0&experiment_id=$experiment_id&sample_id=".$experiment->samples[$i]->id()."&region_id=all&all_new=1\"><font size=\"-1\">[Create]</font>";
 		  echo "<a href=\"view_processing_job.php?job_id=0&experiment_id=$experiment_id&sample_id=".$experiment->samples[$i]->id()."&region_id=all\"><font size=\"-1\">[Edit]</font></a><font size=\"-1\"> a Job for all Sample Regions</font><br>"	;
-		  echo "<a href=\"view_processing_job.php?job_id=0&experiment_id=$experiment_id&sample_id=".$experiment->samples[$i]->id()."&region_id=all&all_new=1&include_censored=1\"><font size=\"-1\">[Create]</font></a><font size=\"-1\"> a job for all Sample Regions including censored";
+		  //		  echo "<a href=\"view_processing_job.php?job_id=0&experiment_id=$experiment_id&sample_id=".$experiment->samples[$i]->id()."&region_id=all&all_new=1&include_censored=1\"><font size=\"-1\">[Create]</font></a><font size=\"-1\"> a job for all Sample Regions including censored";
 		}
 		else{
-		  echo "<table width=\"100%\" cellspacing=\"10\" cellpadding=\"0\"><tr><td>";
+		  echo "<table width=\"100%\" cellspacing=\"10\" cellpadding=\"0\"><tr><td valign=\"top\">";
 		echo "<input name=\"sample_id\" type=\"hidden\" value=\"$cur_id\">\n";
 		echo "<input name=\"save\" type=\"submit\" value=\"Save\"><br>\n";
 		echo "<input name=\"cancel\" type=\"submit\" value=\"Cancel\">\n";
@@ -971,7 +971,7 @@ echo "</table>";
 			
 			echo "</td></tr></table>";
 			echo "</td>";
-			echo "<td bgcolor=\"{$clrs[0]}\" align=\"right\" nowrap>";
+			echo "<td bgcolor=\"{$clrs[0]}\" align=\"right\" nowrap valign=\"top\">";
 			echo "<a href=\"manage_samples.php?experiment_id=$experiment_id&edit_region_id=".$cur_region[0]."$region_job_query_string#{$experiment->samples[$i]->id()}\"><font size=\"-1\">[Edit]</font><a> ";
 			echo "<a href=\"manage_samples.php?experiment_id=$experiment_id&region_id=".$cur_region[0]."&region_action=remove_problems&$region_job_query_string#{$experiment->samples[$i]->id()}\"><font size=\"-1\">[Problem]</font></a> ";
                         echo "<a href=\"manage_samples.php?experiment_id=$experiment_id&region_id=".$cur_region[0]."&region_action=remove_busy&$region_job_query_string#{$experiment->samples[$i]->id()}\"><font size=\"-1\">[Busy]</font></a> ";

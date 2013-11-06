@@ -1173,17 +1173,21 @@ else display_worm_page_header($page_title);
 
 <span class="style1">Job Target(s):</span><br><?php echo $target_text?> 
 <?php 
-if ($query_string["include_censored"] == 1){
-  echo "<a href=\"view_processing_job.php?" . $query_parameters_without_censored."&include_censored=2\">[Include Only Censored]</a>";
+if ($job_type != $IS_EXPERIMENT){
+  if ($job_type == $IS_SAMPLE)
+    $sub = "Samples";
+  else $sub = "Regions";
+  if ($query_string["include_censored"] == 1){
+    echo "<a href=\"view_processing_job.php?" . $query_parameters_without_censored."&include_censored=2\">[Include Only Censored $sub]</a>";
+  }
+  else if ($query_string["include_censored"] == 2){
+    echo "<a href=\"view_processing_job.php?" . $query_parameters_without_censored."&include_censored=0\">[Exclude Censored $sub]</a>";
+  }
+  else{
+    echo "<a href=\"view_processing_job.php?" . $query_parameters_without_censored."&include_censored=1\">[Include Censored $sub]</a>";
+    
+  }
 }
- else if ($query_string["include_censored"] == 2){
-  echo "<a href=\"view_processing_job.php?" . $query_parameters_without_censored."&include_censored=0\">[Exclude Censored]</a>";
-}
- else{
-  echo "<a href=\"view_processing_job.php?" . $query_parameters_without_censored."&include_censored=1\">[Include Censored]</a>";
-
- }
-
 			       //<?php if ($condition_3 == 'Nash') echo "<br>follow the white rabbit neo..."?>
 
 <br><br>

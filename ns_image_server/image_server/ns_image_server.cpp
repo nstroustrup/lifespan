@@ -23,6 +23,7 @@ using namespace std;
 #include "ns_capture_schedule.h"
 //#include "ns_processing_job_push_scheduler.h"
 
+#include "zlib.h"
 #include "ns_image_server_automated_job_scheduler.h"
 //#include "ns_capture_device_manager.h"
 
@@ -810,6 +811,345 @@ void ns_image_server::set_sql_database(const std::string & database_name,const b
 		image_server.register_devices();
 	}
 }
+
+bool ns_open_db_table_file(const ns_sql_result & columns, ns_sql_result & data, const std::string & filename, const std::string & directory, std::ofstream & ff){
+	std::string f(directory + DIR_CHAR_STR + filename);
+	ff.open(f.c_str());
+	if(ff.fail())
+		throw ns_ex("ns_write_db_table()::Could not open file for writing: ") << f;
+	if (columns.size() == 0)
+		throw ns_ex("ns_write_db_table()::No columns were provided for ") << f;
+	if(data.size() > 0 && columns.size() != data[0].size())
+		throw ns_ex("ns_write_db_table()::Column and data dimensions do not match: ") << filename;
+	return true;
+}
+std::string ns_preserve_quotes(const std::string & s){
+	std::string r;
+	r.reserve(s.size());
+	for (unsigned int i = 0; i < s.size(); i++){
+		if (s[i] == '"')
+			r+="\\\"";
+		else r+=s[i];
+	}
+	return r;
+}
+bool ns_write_db_table(const ns_sql_result & columns, ns_sql_result & data, const std::string & filename, const std::string & directory){
+	
+	ofstream ff;
+	if (!ns_open_db_table_file(columns,data,filename,directory,ff))
+		return false;
+	if (data.size() == 0)
+		return false;
+	ff << "\"" << ns_preserve_quotes(columns[0][0]) << "\"";
+	for (unsigned int i = 1; i < columns.size(); i++){
+		ff << ",\"" << ns_preserve_quotes(columns[i][0]) << "\"";
+	}
+	ff << "\n";
+	for (unsigned int i = 0; i < data.size(); i++){
+		ff << "\"" << ns_preserve_quotes(data[i][0]) << "\"";
+		for (unsigned int j = 1; j < data[i].size(); j++)
+			ff << ",\"" << ns_preserve_quotes(data[i][j]) << "\"";
+		ff << "\n";
+	}
+	ff.close();
+	return true;
+};
+
+void ns_concatenate_results(const ns_sql_result & male, ns_sql_result & female){
+	unsigned long s(female.size());
+	female.resize(male.size()+female.size());
+	for (unsigned int i = 0; i < male.size(); i++)
+		female[s+i].insert(female[s+i].end(),male[i].begin(),male[i].end());
+}
+void ns_gzip_file(std::string & f1, std::string f2){
+	ifstream in(f1.c_str());
+	gzFile gf;
+	gf = gzopen(f2.c_str(),"wb9");
+	const unsigned long chunk_size(1024*1024*8);
+	char * buf = new char[chunk_size];
+	try{
+		//gzbuffer(gzFile,chunk_size);
+		while(true){
+			in.read(buf,chunk_size);
+			unsigned long s(in.gcount());	
+			if (!gzwrite(gf,buf,s))
+				throw ns_ex("Could not write to gzip file");
+			if (in.fail())
+				break;
+		
+		}
+	}
+	catch(...){
+		delete[] buf;
+	}
+	in.close();
+	if(gzclose(gf) != Z_OK)
+		throw ns_ex("Could not close zip file");
+}
+
+void ns_zip_file(FILE * source, FILE * dest){
+
+	const unsigned long chunk_size(8*1024*1024);
+	
+	unsigned char * in = new unsigned char[chunk_size];
+	unsigned char * out = new unsigned char[chunk_size];
+	try{
+		int ret, flush;
+		unsigned have;
+		z_stream strm;
+			/* allocate deflate state */
+		strm.zalloc = Z_NULL;
+		strm.zfree = Z_NULL;
+		strm.opaque = Z_NULL;
+		ret = deflateInit(&strm, Z_BEST_COMPRESSION);
+		if (ret != Z_OK)
+			throw ns_ex("Could not initialize zlib");
+		do {
+			strm.avail_in = fread(in, 1, chunk_size, source);
+			if (ferror(source)) {
+				(void)deflateEnd(&strm);
+				throw ns_ex("Could not read from source");
+			}
+			flush = feof(source) ? Z_FINISH : Z_NO_FLUSH;
+			strm.next_in = in;
+		
+		/* run deflate() on input until output buffer not full, finish
+			compression if all of source has been read in */
+			do {
+				strm.avail_out = chunk_size;
+				strm.next_out = out;
+				ret = deflate(&strm, flush);    /* no bad return value */
+				if (ret == Z_STREAM_ERROR)
+					throw ns_ex("Error in deflate");/* state not clobbered */
+				have = chunk_size - strm.avail_out;
+				if (fwrite(out, 1, have, dest) != have || ferror(dest)) {
+					(void)deflateEnd(&strm);
+					throw ns_ex("Could not write to file");
+				}
+			} while (strm.avail_out == 0);
+			if (strm.avail_in != 0)
+				throw ns_ex("Data left over");
+				/* done when last data in file processed */
+		} while (flush != Z_FINISH);
+		if (ret != Z_STREAM_END)
+				throw ns_ex("Stream not ended!");
+			/* clean up and return */
+		(void)deflateEnd(&strm);	
+		delete [] in;
+		delete [] out;
+	}
+	catch(...){
+		delete [] in;
+		delete [] out;
+	}
+}
+
+void ns_zip_experimental_data(const std::string & output_directory,bool delete_original){
+	ns_dir dir;
+	std::vector<std::string> files;
+	dir.load_masked(output_directory,"csv",files);
+	 
+
+	for (unsigned int i = 0; i < files.size(); i++){
+		/*FILE * source(fopen((output_directory + DIR_CHAR_STR + files[i]).c_str(),"rb"));
+		if (source == NULL)
+			throw ns_ex("Could not open file ") << output_directory + DIR_CHAR_STR + files[i];
+
+		FILE * sink(fopen((output_directory + DIR_CHAR_STR + files[i] + ".gz" ).c_str(),"wb"));
+		if (sink == NULL)
+			throw ns_ex("Could not open file ") << output_directory + DIR_CHAR_STR + files[i] + ".gz";
+		ns_gzip_file(source,sink);
+
+		fclose(source);
+		fclose(sink);*/
+		if (ns_dir::extract_extension(files[i]) == "gz")
+			continue;
+		std::string source(output_directory + DIR_CHAR_STR + files[i]);
+		std::string sink(source + ".gz" );
+		ns_gzip_file(source,sink);
+	}
+	if (delete_original){
+		for (unsigned int i = 0; i < files.size(); i++){
+			std::string source(output_directory + DIR_CHAR_STR + files[i]);
+			ns_dir::delete_file(source);
+		}
+	}
+
+}
+void ns_write_experimental_data_in_database_to_file(const unsigned long experiment_id, const std::string & output_directory,ns_sql & sql){
+
+	ns_dir::create_directory_recursive(output_directory);
+	cout << "Selecting experiment data...";
+	sql << "SHOW COLUMNS IN experiments";
+	ns_sql_result experiment_columns;
+	sql.get_rows(experiment_columns);
+	sql << "SELECT * from experiments WHERE id = " << experiment_id;
+	ns_sql_result experiment_data;
+	sql.get_rows(experiment_data);
+	ns_write_db_table(experiment_columns,experiment_data,"experiment.csv",output_directory);
+
+	sql << "SHOW COLUMNS IN capture_samples";
+	ns_sql_result sample_columns;
+	sql.get_rows(sample_columns);
+	sql << "SELECT * from capture_samples WHERE experiment_id = " << experiment_id;
+	ns_sql_result sample_data;
+	sql.get_rows(sample_data);
+	ns_write_db_table(sample_columns,sample_data,"capture_samples.csv",output_directory);
+
+	sql << "SHOW COLUMNS IN capture_schedule";
+	ns_sql_result capture_schedule_columns,
+			capture_schedule_data;
+	sql.get_rows(capture_schedule_columns);
+	sql << "SELECT * from capture_schedule WHERE experiment_id = " << experiment_id;
+	sql.get_rows(capture_schedule_data);
+	ns_write_db_table(capture_schedule_columns,capture_schedule_data,"capture_schedule.csv",output_directory);
+	
+	ns_sql_result sample_region_image_info_columns,
+				 sample_region_image_info_data;
+	sql << "SHOW COLUMNS IN sample_region_image_info";
+	sql.get_rows(sample_region_image_info_columns);
+	sql << "SELECT i.* FROM sample_region_image_info as i, capture_samples as s "
+		"WHERE i.sample_id = s.id AND s.experiment_id = " << experiment_id;
+	sql.get_rows(sample_region_image_info_data);
+	ns_write_db_table(sample_region_image_info_columns,sample_region_image_info_data,"sample_region_image_info.csv",output_directory);
+
+	ns_sql_result sample_region_images_columns,
+			  sample_region_images_data;
+	sql << "SHOW COLUMNS IN sample_region_images";
+	sql.get_rows(sample_region_images_columns);
+	sql << "SELECT m.* FROM sample_region_images as m, sample_region_image_info as i, capture_samples as s "
+		"WHERE m.region_info_id = i.id AND i.sample_id = s.id AND s.experiment_id = " << experiment_id;
+	sql.get_rows(sample_region_images_data);
+	ns_write_db_table(sample_region_image_info_columns,sample_region_image_info_data,"sample_region_images.csv",output_directory);
+
+	/*ns_sql_result aligned_path_columns,
+			aligned_path_data;
+	sql << "SHOW COLUMNS IN sample_region_image_aligned_path_images";
+	sql.get_rows(aligned_path_columns);
+	sql << "SELECT m.* FROM sample_region_image_aligned_path_images as m, sample_region_image_info as i, capture_samples as s "
+		"WHERE m.region_info_id = i.id AND i.sample_id = s.id AND s.experiment_id = " << experiment_id;
+	sql.get_rows(aligned_path_data);
+	ns_write_db_table(aligned_path_columns,aligned_path_data,"sample_region_image_aligned_path_images.csv",output_directory);
+	*/
+
+	ns_sql_result worm_detection_results_columns,
+			  worm_detection_results_data;
+	sql << "SHOW COLUMNS IN worm_detection_results";
+	sql.get_rows(worm_detection_results_columns);
+	sql << "SELECT d.* FROM worm_detection_results as d, sample_region_images as m, sample_region_image_info as i, capture_samples as s "
+		"WHERE (d.id = m.worm_detection_results_id OR d.id = m.worm_interpolation_results_id) AND m.region_info_id = i.id AND i.sample_id = s.id AND s.experiment_id = " << experiment_id;
+	sql.get_rows(worm_detection_results_data);
+	ns_write_db_table(worm_detection_results_columns,worm_detection_results_data,"worm_detection_results.csv",output_directory);
+
+	ns_sql_result captured_images_columns,
+			  captured_images_data;
+	sql << "SHOW COLUMNS IN captured_images";
+	sql.get_rows(captured_images_columns);
+	sql << "SELECT i.* from captured_images as i, capture_samples as s "
+		"WHERE i.sample_id = s.id AND s.experiment_id = " << experiment_id;
+	sql.get_rows(captured_images_data);
+	ns_write_db_table(captured_images_columns,captured_images_data,"captured_images.csv",output_directory);
+
+	ns_sql_result path_data_columns,
+			  path_data_data;
+	sql << "SHOW COLUMNS IN path_data";
+	sql.get_rows(path_data_columns);
+	sql << "SELECT p.* from path_data as p, sample_region_image_info as r, capture_samples as s "
+		"WHERE p.region_id = r.id AND r.sample_id = s.id AND s.experiment_id = " << experiment_id;
+	sql.get_rows(path_data_data);
+	ns_write_db_table(path_data_columns,path_data_data,"path_data.csv",output_directory);
+
+	ns_sql_result mask_columns,
+			 mask_data;
+	sql << "SHOW COLUMNS IN image_masks";
+	sql.get_rows(mask_columns);
+	sql << "SELECT m.* FROM image_masks as m, sample_region_image_info as i, capture_samples as s "
+		"WHERE m.id = i.mask_id AND i.sample_id = s.id AND s.experiment_id = " << experiment_id;
+	sql.get_rows(mask_data);
+	ns_write_db_table(mask_columns,mask_data,"image_masks.csv",output_directory);
+
+
+	vector<ns_processing_task> processing_tasks;
+	processing_tasks.push_back(ns_unprocessed);
+	processing_tasks.push_back(ns_process_spatial);
+	processing_tasks.push_back(ns_process_threshold);
+	processing_tasks.push_back(ns_process_worm_detection);
+	processing_tasks.push_back(ns_process_worm_detection_labels);
+	processing_tasks.push_back(ns_process_interpolated_vis);
+
+	ns_sql_result image_ids;
+	sql << "SELECT ";
+	sql << "m." << ns_processing_step_db_column_name(processing_tasks[0]);
+	for (unsigned int i = 1; i < processing_tasks.size(); i++)
+		sql << ",m." << ns_processing_step_db_column_name(processing_tasks[i]);
+	sql << " FROM sample_region_images as m, sample_region_image_info as i, capture_samples as s "
+		"WHERE m.region_info_id = i.id AND i.sample_id = s.id AND s.experiment_id = " << experiment_id;
+	sql.get_rows(image_ids);
+
+	ns_sql_result image_ids2;
+	sql << "SELECT d.data_storage_on_disk_id FROM worm_detection_results as d, sample_region_images as m, sample_region_image_info as i, capture_samples as s "
+		"WHERE d.id = m.worm_detection_results_id AND m.region_info_id = i.id AND i.sample_id = s.id AND s.experiment_id = " << experiment_id;
+	sql.get_rows(image_ids2);
+	ns_concatenate_results(image_ids2,image_ids);
+
+	sql << "SELECT i.image_id,i.small_image_id from captured_images as i, capture_samples as s "
+		"WHERE i.sample_id = s.id AND s.experiment_id = " << experiment_id;
+	sql.get_rows(image_ids2);
+	ns_concatenate_results(image_ids2,image_ids);
+
+/*	sql << "SELECT m.image_id FROM sample_region_image_aligned_path_images as m, sample_region_image_info as i, capture_samples as s "
+	"WHERE m.region_info_id = i.id AND i.sample_id = s.id AND s.experiment_id = " << experiment_id;
+	sql.get_rows(image_ids2);
+	ns_concatenate_results(image_ids2,image_ids);
+	*/
+
+	sql << "SELECT i.time_path_solution_id, i.movement_image_analysis_quantification_id FROM sample_region_image_info as i, capture_samples as s "
+		"WHERE i.sample_id = s.id AND s.experiment_id = " << experiment_id;
+	sql.get_rows(image_ids2);
+	ns_concatenate_results(image_ids2,image_ids);
+
+	sql << "SELECT p.image_id from path_data as p, sample_region_image_info as r, capture_samples as s "
+		"WHERE p.region_id = r.id AND r.sample_id = s.id AND s.experiment_id = " << experiment_id;
+	sql.get_rows(image_ids2);
+	ns_concatenate_results(image_ids2,image_ids);
+
+	sql << "SELECT m.image_id FROM image_masks as m, sample_region_image_info as i, capture_samples as s "
+		"WHERE m.id = i.mask_id AND i.sample_id = s.id AND s.experiment_id = " << experiment_id;
+	sql.get_rows(image_ids2);
+	ns_concatenate_results(image_ids2,image_ids);
+
+
+	ns_sql_result images_columns,
+			images_data;
+	sql << "SHOW COLUMNS IN images";
+	sql.get_rows(images_columns);
+
+	ofstream ff;
+	ns_open_db_table_file(images_columns,images_data,"images.csv",output_directory,ff);
+	ff << "\"" << ns_preserve_quotes(images_columns[0][0]) << "\"";
+	for (unsigned int i = 1; i < images_columns.size(); i++)
+		ff << ",\"" << ns_preserve_quotes(images_columns[i][0]) << "\"";
+	ff << "\n";
+
+	cout << "\nSelecting image table...";
+	for (unsigned int i = 0; i < image_ids.size(); i++){
+		if (i%1000 == 0)
+			cout << (100*i)/image_ids.size() << "%...";
+		sql << "SELECT * from images WHERE ";
+		sql << "id = " << image_ids[i][0];
+		for (unsigned int j = 1; j < image_ids[i].size(); j++)
+			sql << " OR id = " << image_ids[i][j];
+		sql.get_rows(images_data);
+		for (unsigned int j = 0; j < images_data.size(); j++){
+			ff << "\"" << ns_preserve_quotes(images_data[j][0]) << "\"";
+			for (unsigned int k = 1; k< images_data[j].size(); k++)
+				ff << ",\"" << ns_preserve_quotes(images_data[j][k]) << "\"";
+			ff << "\n";
+		}
+	}
+	cout << "\n";
+}
+
 ns_sql * ns_image_server::new_sql_connection(const std::string & source_file, const unsigned int source_line, const unsigned int retry_count){
 	//if there's a problem with the sql server, handle it.  Don't just cycle through errors!
 	ns_acquire_lock_for_scope lock(sql_lock,source_file.c_str(),source_line);
@@ -1195,7 +1535,7 @@ void ns_image_server::load_constants(const ns_image_server::ns_image_server_exec
 	
 
 	constants.start_specification_group(ns_ini_specification_group("Other Settings","These settings control the behavior of image acquisition and image processing servers"));
-	constants.add_field("verbose_debug_output","false","Set to true to generate verbose debug output");
+	constants.add_field("verbose_debug_output","false","If this option is set to true, the image server and worm browser will generate detailed debug information while running various steps of image acquisition and image processing.  An file containing this output will be written to the volatile_storage directory.");
 	constants.add_field("dispatcher_refresh_interval","6000","How often should image acquisition servers check for pending scans?  (in seconds).  Also specifies how often analysis servers will check for new jobs.");
 	constants.add_field("mail_path", "/usr/bin/mail","Each copy of the image server running on the cluster occasionally checks for errors occurring in other nodes, for example missed scans or low disk space.  If problems are discovered, the image server can send users an email notifying them of the problem.  To activate this feature, set mail_path to the POSIX mail program on the local system.");
 	constants.add_field("ethernet_interface","","This field should be left blank if you want the server to access the network through the default network interface.  If you have multiple network interfaces and want to use a specific one, specify it here.");
@@ -1210,9 +1550,9 @@ void ns_image_server::load_constants(const ns_image_server::ns_image_server_exec
 	terminal_constants.add_field("max_width","1024","The maximum width of the worm browser window");
 	terminal_constants.add_field("max_height","768","The maximum height of the worm browser window");
 	terminal_constants.add_field("hand_annotation_resize_factor","3","How many times should images of worms be shrunk before being displayed when looking at storyboards?  Larger values result in smaller worms during by hand annotation of worms");
-	terminal_constants.add_field("mask_upload_database","image_server","The SQL database in which image masks should be stored.");
-	terminal_constants.add_field("mask_upload_hostname","myhost","The host name (e.g bob or lab_desktop_1) of the server where sample region masks should be uploaded");
-	terminal_constants.add_field("verbose_debug_output","false","Set to true to generate verbose debug output");
+	terminal_constants.add_field("mask_upload_database","image_server","The SQL database in which image masks should be stored.  This is usually set to the value specified for the central_sql_databases option in the ns_image_server.ini file");
+	terminal_constants.add_field("mask_upload_hostname","myhost","The host name (e.g bob or lab_desktop_1) of the server where sample region masks should be uploaded. This is usually set to the value of the host_name option set the acquisition server’s ns_image_server.ini file");
+	terminal_constants.add_field("verbose_debug_output","false","If this option is set to true, the image server and worm browser will generate detailed debug information while running various steps of image acquisition and image processing.  An file containing this output will be written to the volatile_storage directory.");
 	string ini_directory,ini_filename;
 	try{
 		//look for the ini file in the current directory

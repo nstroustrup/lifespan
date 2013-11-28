@@ -22,6 +22,7 @@ void ns_capture_scan_statistics::set_as_zero(){
 	time_during_transfer_to_long_term_storage	=	0;
 	time_during_deletion_from_local_storage		=	0;
 	total_time_spent_during_programmed_delay = 0;
+	registration_offset = ns_vector_2i(0,0);
 }
 void ns_capture_scan_statistics::operator +=(const ns_capture_scan_statistics & r){
 	date_of_first_sample_scan +=							r.date_of_first_sample_scan;
@@ -44,6 +45,7 @@ void ns_capture_scan_statistics::operator +=(const ns_capture_scan_statistics & 
 	time_during_transfer_to_long_term_storage	+=			r.time_during_transfer_to_long_term_storage;
 	time_during_deletion_from_local_storage		+=			r.time_during_deletion_from_local_storage;
 	total_time_spent_during_programmed_delay +=		r.total_time_spent_during_programmed_delay;
+	registration_offset += r.registration_offset;
 }
 void ns_capture_scan_statistics::operator /=(const double & r){
 	date_of_first_sample_scan = (long)date_of_first_sample_scan/r;	
@@ -66,6 +68,7 @@ void ns_capture_scan_statistics::operator /=(const double & r){
 	time_during_transfer_to_long_term_storage = (time_during_transfer_to_long_term_storage/r);	
 	time_during_deletion_from_local_storage =(time_during_deletion_from_local_storage/r);	
 	total_time_spent_during_programmed_delay = (total_time_spent_during_programmed_delay/r);
+	registration_offset = (registration_offset/r);
 }
 
 float ns_capture_scan_statistics::scan_rate_inches_per_second() const{if (scanning_duration() == 0.0) return 0; return (float)(scan_size.y/scanning_duration());}
@@ -115,7 +118,8 @@ void ns_capture_scan_statistics::out_jmp_header(std::ostream & o, const std::str
 		"Time after transfer spent writing data to Long Term Storage (s),"
 		"Time after transfer spent deleting data from local disk (s),"
 		"Transfer Efficiency, Sample Image Position X (inches), Sample Image Position Y (inches), Sample Image Width (inches), Sample Image Height (inches),"
-		"Sample Image Intensity Average,Sample Image Intensity Standard Deviation,Sample Image Intensity Entropy,Sample Image Intensity Bottom Percentile,Sample Image Intensity Top Percentile"
+		"Sample Image Intensity Average,Sample Image Intensity Standard Deviation,Sample Image Intensity Entropy,Sample Image Intensity Bottom Percentile,Sample Image Intensity Top Percentile,"
+		"Image Registration X offset,Image Registration Y offset"
 		<< delimeter;
 }
 	
@@ -158,7 +162,9 @@ void ns_capture_scan_statistics::output_jmp_format(std::ostream & o, const ns_ve
 		<< image_stats.image_statistics.variance<< ","
 		<< image_stats.image_statistics.entropy<< ","
 		<< image_stats.image_statistics.bottom_percentile_average<< "," 
-		<< image_stats.image_statistics.top_percentile_average
+		<< image_stats.image_statistics.top_percentile_average << ","
+		<< registration_offset.x << ","
+		<< registration_offset.y
 		<< delimeter;
 	}
 }
@@ -191,7 +197,8 @@ void ns_capture_sample_image_statistics::load_from_db(unsigned long id,ns_sql & 
 		 "s.total_time_during_read,s.time_during_transfer_to_long_term_storage,"
 		 "s.time_during_deletion_from_local_storage, "
 		 "s.total_time_spent_during_programmed_delay,"
-		 "t.intensity_average,t.intensity_std,t.intensity_entropy, t.intensity_top_percentile,t.intensity_bottom_percentile "
+		 "t.intensity_average,t.intensity_std,t.intensity_entropy, t.intensity_top_percentile,t.intensity_bottom_percentile, "
+		 "i.registration_vertical_offset,i.registration_horizontal_offset "
 		 "FROM (capture_schedule as s LEFT OUTER JOIN captured_images as i ON i.id = s.captured_image_id) "
 		 "LEFT OUTER JOIN image_statistics as t ON  i.image_statistics_id = t.id "
 		 "WHERE s.sample_id=" << sample_id << " AND s.scheduled_time < UNIX_TIMESTAMP(NOW()) ORDER BY s.scheduled_time ASC";
@@ -214,7 +221,9 @@ void ns_capture_sample_image_statistics::load_from_db(unsigned long id,ns_sql & 
 		scans[i].total_time_spent_during_programmed_delay = ns_atoi64(res[i][11].c_str())/1000.0/60.0;
 
 		scans[i].time_during_transfer_to_long_term_storage = ns_atoi64(res[i][9].c_str())/1000.0/1000.0;
-		scans[i].time_during_deletion_from_local_storage = ns_atoi64(res[i][10].c_str())/1000.0/1000.0;;
+		scans[i].time_during_deletion_from_local_storage = ns_atoi64(res[i][10].c_str())/1000.0/1000.0;
+		scans[i].registration_offset.y = atol(res[i][17].c_str());
+		scans[i].registration_offset.x = atol(res[i][18].c_str());
 		if (res[i][10] != "NULL"){
 			scans[i].image_stats.image_statistics.mean = atof(res[i][12].c_str());
 			scans[i].image_stats.image_statistics.variance = atof(res[i][13].c_str());

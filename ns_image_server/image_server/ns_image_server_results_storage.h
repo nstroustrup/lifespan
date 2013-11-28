@@ -97,7 +97,6 @@ class ns_image_server_results_storage{
 	static std::string time_path_image_analysis_quantification(){return "time_path_image_analysis_quantification";}
 public:
 	void set_results_directory(const std::string & dir){results_directory = dir;}
-	
 
 	ns_image_server_results_file capture_sample_image_statistics(ns_image_server_results_subject & spec, ns_sql & sql,bool multi_experiment=false){
 		spec.get_names(sql);
@@ -106,6 +105,11 @@ public:
 		
 		return ns_image_server_results_file(results_directory + DIR_CHAR_STR + spec.experiment_name + DIR_CHAR_STR +image_statistics_folder(), 
 											spec.experiment_filename() + "capture_sample_image_statistics.csv");
+	}
+
+	std::string db_export_directory(ns_image_server_results_subject & spec,ns_sql & sql){
+		spec.get_names(sql);
+		return results_directory + DIR_CHAR_STR + spec.experiment_name + DIR_CHAR_STR + spec.experiment_name + "=db_export";
 	}
 
 	ns_image_server_results_file capture_region_image_statistics(ns_image_server_results_subject & spec,ns_sql & sql,bool multi_experiment=false){

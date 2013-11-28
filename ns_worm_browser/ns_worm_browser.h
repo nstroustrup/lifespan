@@ -605,6 +605,8 @@ public:
 	void output_region_statistics(const unsigned long experiment_id,const unsigned long experiment_group_id);
 	void create_feature_time_series(const std::string & directory);
 	
+	void export_experiment_data(const unsigned long experiment_id);
+	
 	typedef enum{ns_lifespan,ns_thermotolerance,ns_quiecent} ns_parameter_set_range;
 
 	void output_movement_analysis_optimization_data(const ns_parameter_set_range & range);

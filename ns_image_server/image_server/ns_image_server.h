@@ -77,6 +77,9 @@ struct ns_multiprocess_control_options{
 	void to_parameters(std::vector<std::string> & parameters);
 };
 
+void ns_write_experimental_data_in_database_to_file(const unsigned long experiment_id, const std::string & output_directory,ns_sql & sql);
+void ns_zip_experimental_data(const std::string & output_directory,bool delete_original=false);
+
 ///ns_image_server is the portal through which all aspects of an image server node communicates and coordinate with each other
 ///It provides access to all filesystem i/o and SQL connections, as well as managing image-capture devices and logging any errors encountered
 class ns_image_server{

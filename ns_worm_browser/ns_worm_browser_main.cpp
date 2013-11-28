@@ -830,6 +830,9 @@ class ns_worm_terminal_main_menu_organizer : public ns_menu_organizer{
 	static void generate_region_stats(const std::string & value){
 		worm_learner.output_region_statistics(worm_learner.data_selector.current_experiment_id(),0);
 	}
+	static void export_experiment_data(const std::string & value){
+		worm_learner.export_experiment_data(worm_learner.data_selector.current_experiment_id());
+	}
 	static void generate_region_stats_for_all_regions_in_group(const std::string & value){
 		ns_experiment_region_selector_experiment_info info;
 		worm_learner.data_selector.get_experiment_info(worm_learner.data_selector.current_experiment_id(),info);
@@ -1058,30 +1061,26 @@ public:
 		add(st_an2);
 		add(ns_menu_item_spec(stop_posture_annotation,"Annotation/Stop Annotation"));
 
-		add(ns_menu_item_spec(generate_survival_curves,"&Data Files/Death Times/Generate Death Times for Current Experiment"));
-		add(ns_menu_item_spec(generate_survival_curves_for_experiment_group,"Data Files/Death Times/Generate Death Times for Each Experiment in Experiment Group"));			 
+		add(ns_menu_item_spec(generate_survival_curves,"&Data Files/_Death Times/Generate Death Times for Current Experiment"));
+		add(ns_menu_item_spec(generate_survival_curves_for_experiment_group,"Data Files/Death Times/Generate Death Times for all Experiment in Experiment Group"));			 
 
 		add(ns_menu_item_spec(generate_area_movement,"Data Files/Movement Data/_Generate Movement State Time Series"));
 		//add(ns_menu_item_spec(generate_experiment_summary_movement_image_quantification_analysis_data,"Data/Movement/Generate Summary Time Path Image Analysis Quantification Data"));
 		add(ns_menu_item_spec(generate_experiment_detailed_movement_image_quantification_analysis_data,"Data Files/Movement Data/Posture Analysis Data/Machine Event Times"));
 		add(ns_menu_item_spec(generate_experiment_detailed_w_by_hand_movement_image_quantification_analysis_data,"Data Files/Movement Data/Posture Analysis Data/_By Hand Event Times"));
 		add(ns_menu_item_spec(generate_experiment_abbreviated_movement_image_quantification_analysis_data,"Data Files/Movement Data/Posture Analysis Data/Abbreviated"));
-	/*	ns_menu_item_spec st3(simulate_multiple_worm_clusters,"Data/Movement Analysis/Generate multi-worm cluster simulation");
-		 
-		st3.options.push_back(ns_menu_item_options(slow_moving_name()));
-		st3.options.push_back(ns_menu_item_options("Grouop entirely at random"));
-		add(st3);
-		*/
+	
 		ns_menu_item_spec st2(generate_single_frame_posture_image_pixel_data,"Data Files/Movement Data/Generate Single Frame Posture Image Data");
 		st2.options.push_back(ns_menu_item_options("Experiment"));
 		st2.options.push_back(ns_menu_item_options("Single Plate"));
 		add(st2);
-		add(ns_menu_item_spec(generate_timing_data,"Data Files/Other Statistics/Generate Scanner Timing Data for Current Experiment"));
+		add(ns_menu_item_spec(generate_timing_data,"Data Files/_Other Statistics/Generate Scanner Timing Data for Current Experiment"));
 		add(ns_menu_item_spec(generate_timing_data_all_exp,"Data Files/Other Statistics/_Generate Scanner Timing Data for All Experiments in Group"));
 		add(ns_menu_item_spec(generate_region_stats,"Data Files/Other Statistics/Generate Image Statistics for all regions in current Experiment"));
 		add(ns_menu_item_spec(generate_region_stats_for_all_regions_in_group,"Data Files/Other Statistics/_Generate Image Statistics for all Regions in current Experiment Group"));
 	//	add(ns_menu_item_spec(generate_detailed_animal_data_file,"Data/Statistics/_Generate Detailed Animal Statistics for current experiment"));
-		
+		add(ns_menu_item_spec(export_experiment_data,"Data Files/Transfer and Backup/Export Database Contents for Current Experiment"));
+	
 		//add(ns_menu_item_spec(generate_survival_curve_from_hand_annotations,"&Calibration/Generate Survival Curves from by hand annotations"));
 		add(ns_menu_item_spec(compare_machine_and_by_hand_annotations,"&Calibration/Compare by-hand annotations to Machine"));
 		ns_menu_item_spec st4(generate_movement_image_analysis_optimization_data,"Calibration/Generate Threshold Posture Model Parameter Optimization File from By Hand Annotations");
@@ -2250,7 +2249,6 @@ int main() {
 			ns_worm_browser_output_debug(__LINE__,__FILE__,"Getting flags from db");
 			ns_acquire_for_scope<ns_sql> sql(image_server.new_sql_connection(__FILE__,__LINE__));
 			ns_death_time_annotation_flag::get_flags_from_db(sql());
-			
 
 	//		ns_align_to_reference(5582,sql());
 			

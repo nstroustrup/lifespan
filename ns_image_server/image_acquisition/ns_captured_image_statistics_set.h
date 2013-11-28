@@ -40,6 +40,8 @@ struct ns_capture_scan_statistics{
 		smoothed_scanning_duration,
 		scanning_duration_variation;
 
+	ns_vector_2i registration_offset;
+
 	void set_as_zero();
 
 	void operator +=(const ns_capture_scan_statistics & r);

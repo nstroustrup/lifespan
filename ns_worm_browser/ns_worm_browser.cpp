@@ -584,7 +584,18 @@ void ns_worm_learner::generate_scanner_report(unsigned long first_experiment_tim
 }
 
 
-
+void ns_worm_learner::export_experiment_data(const unsigned long experiment_id){
+	
+	ns_acquire_for_scope<ns_sql> sql(image_server.new_sql_connection(__FILE__,__LINE__));
+	ns_image_server_results_subject sub;
+	sub.experiment_id = experiment_id;
+	std::string dir(image_server.results_storage.db_export_directory(sub,sql()));
+	cout << "Writing experiment metadata to " << dir << "\n";
+	ns_write_experimental_data_in_database_to_file(experiment_id,image_server.results_storage.db_export_directory(sub,sql()),sql());
+	cout << "Compressing data...";
+	ns_zip_experimental_data(dir,true);
+	cout << "\nDone.\n";
+}
 void ns_worm_learner::output_region_statistics(const unsigned long experiment_id, const unsigned long experiment_group_id){
 
 	ns_acquire_for_scope<ns_sql> sql(image_server.new_sql_connection(__FILE__,__LINE__));

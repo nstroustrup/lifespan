@@ -123,8 +123,9 @@ void ns_bulk_experiment_mask_manager::produce_mask_file(const unsigned int exper
 				ns_sql_result im_id;
 				sql->get_rows(im_id);
 				if (im_id.size() < 2){	
-					ns_ex ex("Could not find enough good images for sample ");
+					ns_ex ex("Could not find a sufficient number of captured images for sample ");
 					ex << (*p)[0] << "(" << (*p)[1]  << ").";
+					if (mask_time != 0)
 					ex << "Note that the experiment has a mask time specified: " << ns_format_time_string_for_human(mask_time);
 					throw ex;
 				}
@@ -222,7 +223,7 @@ void ns_bulk_experiment_mask_manager::produce_mask_file(const unsigned int exper
 		ns_font & font(font_server.default_font());
 			
 		font.set_height(label_margin_buffer/3);
-		cerr << "Font Size = " << label_margin_buffer/3 << "\n";
+		//cerr << "Font Size = " << label_margin_buffer/3 << "\n";
 		ns_image_standard label_im;
 		label_im.init(label_prop);	
 

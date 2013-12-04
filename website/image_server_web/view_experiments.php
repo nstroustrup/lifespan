@@ -5,7 +5,6 @@ require_once('ns_processing_job.php');
 
 try{
 
- ns_load_experiment_groups($experiment_groups,$group_order,$sql);
 
   $db_name_set = @$_POST['db_name_set'];
   if ($db_name_set==1){
@@ -20,6 +19,7 @@ try{
     header("Location: $forward\n\n");
     die("");
   }
+ ns_load_experiment_groups($experiment_groups,$group_order,$sql);
 	$show_hidden_experiments = @$query_string['show_hidden_experiments'] === '1';
 	$show_disk_usage = @$query_string['show_disk_usage']==='1';
 	$show_plate_stats = @$query_string['show_plate_stats']==='1';
@@ -189,13 +189,13 @@ $sql->send_query($query);
 	if (!$show_hidden_experiments) $query .= "WHERE hidden = 0 ";
 	$query .="ORDER BY group_id,priority DESC, first_time_point DESC";
 	$sql->get_row($query,$experiments);
-$experiments_by_group = array();
+	$experiments_by_group = array();
 	for($i = 0; $i < sizeof($group_order); $i++){
 		$experiments_by_group[$group_order[$i]] = array();
 	}
 	foreach($experiments as &$r){
 
-		array_push($experiments_by_group[$r[16]], $r);
+	  		array_push($experiments_by_group[$r[16]], $r);
 	}
 //var_dump($experiments_by_group);
 	//	$query = "SELECT id, name, description, num_time_points, first_time_point, last_time_point FROM experiments WHERE hidden = '1'";

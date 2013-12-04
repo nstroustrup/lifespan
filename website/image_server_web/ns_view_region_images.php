@@ -13,12 +13,13 @@ try{
   $sort_forwards = @$query_string['sort_forwards']==1;
   
   if ($region_image_id != ''){
-    $query = "SELECT r.region_info_id, s.experiment_id FROM sample_region_images as r, sample_region_image_info as i, capture_samples as s WHERE r.id = $region_image_id AND i.id = r.region_info_id AND i.sample_id = s.id";
+    $query = "SELECT r.region_info_id, s.experiment_id, s.name FROM sample_region_images as r, sample_region_image_info as i, capture_samples as s WHERE r.id = $region_image_id AND i.id = r.region_info_id AND i.sample_id = s.id";
     $sql->get_row($query,$res);
     if (sizeof($res) == 0)
       throw new ns_exception("Could not load specified capture sample region image.");
     $region_id = $res[0][0];
     $experiment_id = $res[0][1];
+    $sample_name = $res[0][2];
   }
   if ($region_id == 0 || $region_id == '')
     throw new ns_exception("No Region Specified.");
@@ -26,8 +27,15 @@ try{
     $query = "SELECT name FROM experiments WHERE id=$experiment_id";
     $sql->get_value($query,$experiment_name);
   }
-  $query = "SELECT name FROM sample_region_image_info WHERE id=$region_id";
-  $sql->get_value($query,$region_name);
+  $query = "SELECT name, sample_id FROM sample_region_image_info WHERE id=$region_id";
+  $sql->get_row($query,$res2);
+  //var_dump($res2);
+  $region_name = $res2[0][0];
+  $sample_id = $res2[0][1];
+  //die($sample_id);
+  $query = "SELECT name FROM capture_samples WHERE id=$sample_id";
+  $sql->get_value($query,$sample_name);
+  
   $query = "SELECT id, capture_time, image_id, problem, currently_under_processing, censored";
   for ($i = 2; $i <= $NS_LAST_PROCESSING_JOB; $i++)
     $query .= ", op{$i}_image_id";
@@ -42,7 +50,7 @@ try{
   else $query .= " ORDER BY capture_time DESC";
   $sql->get_row($query,$region_images);
   $job_offset = 5;
-  $page_title = $experiment_name . "::" .$region_name;
+  $page_title = $experiment_name . "::" .$sample_name . "::" . $region_name;
 }
 catch (ns_exception $ex){
   die ($ex->text);

@@ -11,7 +11,8 @@
 			$this->link = @mysql_connect($this->server, $this->name, $this->pwd);
     			if ($this->link === FALSE) 
 				throw new ns_exception("Could not connect : " . mysql_error());
-			mysql_select_db($this->db) or die("Could not select database");
+			if($sql_db != "")
+			  mysql_select_db($this->db) or die("Could not select database");
 		
 		}
 

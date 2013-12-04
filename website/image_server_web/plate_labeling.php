@@ -21,7 +21,7 @@ try{
 	$sql->get_value($query,$experiment_name );
 
 
-	$query = "SELECT DISTINCT device_name, incubator_location FROM capture_samples as s WHERE s.experiment_id = $experiment_id ORDER BY device_name";
+	$query = "SELECT DISTINCT device_name, incubator_location, incubator_name FROM capture_samples as s WHERE s.experiment_id = $experiment_id ORDER BY incubator_name,incubator_location,device_name";
     	$sql->get_row($query,$devices);
 	$query = "SELECT r.name, RIGHT(s.name,1) FROM sample_region_image_info as r, capture_samples as s WHERE r.sample_id = s.id AND s.experiment_id = $experiment_id AND s.censored = 0
 	ORDER BY RIGHT(s.name,1) DESC";
@@ -250,7 +250,7 @@ foreach($devices as $d){
 echo "<option value=\"{$d[0]}\"";
 
 if ($load_from_device_name==$d[0]) echo " selected";
-echo ">{$d[0]} ({$d[1]})</option>\n";
+echo ">{$d[0]} ({$d[2]} {$d[1]})</option>\n";
 }
 ?>
 </select>
@@ -331,7 +331,7 @@ if (!$only_strain && !$only_experiment_conditions){
 foreach($devices as $d){
 echo "<option value=\"{$d[0]}\"";
 if ($load_from_device_name==$d[0]) echo " selected";
-	echo ">{$d[0]} ({$d[1]})</option>\n";
+	echo ">{$d[0]} ({$d[2]} {$d[1]})</option>\n";
 }
 ?>
 </select><br><br>

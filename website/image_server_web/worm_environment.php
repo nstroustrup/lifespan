@@ -8,7 +8,6 @@ define("NS_TEMPORAL_NORM", 2);
 define("NS_BROWSE", 3);
 define("NS_JPG", 3);
 
-// $db_name_options = array(0=>'image_server',1=>'image_server_archive');
 
 function ns_load_experiment_groups(&$experiment_groups,&$group_order,&$sql){
 	$query = "SELECT group_id, group_name, hidden, group_order FROM experiment_groups ORDER BY group_order ASC";
@@ -44,9 +43,9 @@ function ns_attempt_to_retry_transfer_to_long_term_storage($sample_id,$device,$e
 
 }
 function ns_check_db_name($name){
-    global $db_name_options;
+    global $database_choices;
     $db_found = 0;
-    foreach($db_name_options as $d){
+    foreach($database_choices as $d){
       if ($d == $name){
 	$db_found = 1;
 	break;
@@ -67,21 +66,43 @@ function ns_set_database_name($name){
   
 try{
 
-
- 
-  if (!isset($_COOKIE['ns_image_server_db_name'])){
-    ns_set_database_name($db_name_options[0]);
+  require_once('ns_sql.php');
+  $sql = new ns_sql;
+  $sql->connect($central_sql_hostname,$central_sql_username,$central_sql_password,"");
+  $query = "SHOW DATABASES";
+  $sql->get_row($query,$dbs);
+  $database_choices = array();
+  if(!isset($database_blacklist)){
+    $database_blacklist = array();
   }
-  else $db_name = $_COOKIE['ns_image_server_db_name'];
- 
+  $database_blacklist["mysql"] = 1;
+  $database_blacklist["test"] = 1;
+  $database_blacklist["information_schema"] = 1;
+  $database_blacklist["image_server_buffer"] = 1;
+  for ($i=0; $i < sizeof($dbs);$i++){
+    if (isset($database_blacklist[$dbs[$i][0]]))
+	continue;
+	array_push($database_choices,$dbs[$i][0]);
+  }
+
+  //var_dump($dbs);
+  //var_dump($database_choices);
+  //die();
+  if (!isset($_COOKIE['ns_image_server_db_name']))
+    ns_set_database_name($database_choices[0]);
+  else
+    $db_name = $_COOKIE['ns_image_server_db_name'];
+  
+  $query = "USE " . $db_name;
+  $sql->send_query($query);
+
   parse_str($_SERVER['QUERY_STRING'], $query_string );
  
   if (isset($query_string['db_name']))
-      $db_name = $query_string['db_name'];
+      $database_choices = $query_string['db_name'];
  
-  require_once('ns_sql.php');
-  $sql = new ns_sql;
-  $sql->connect($central_sql_hostname,$central_sql_username,$central_sql_password,$db_name);
+
+
 }
 catch(ns_exception $e){
 	die($e->text);
@@ -232,8 +253,8 @@ function ns_output_database_selector($name,$db_choice,$submit_immediately=TRUE){
 	echo " onchange='this.form.submit()'";
 	echo ">";
 	
-	global $db_name_options;;
-	foreach($db_name_options as $o ){
+	global $database_choices;
+	foreach($database_choices as $o ){
 	echo "<option value=\"$o\"";
 	if ($o == $db_choice) echo " selected=\"yes\"";
 	echo ">$o</option>\n";

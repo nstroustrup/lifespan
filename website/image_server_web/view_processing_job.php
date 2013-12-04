@@ -17,6 +17,7 @@ $region_processing_jobs_to_display = array($ns_processing_tasks['ns_process_spat
 $ns_processing_tasks['ns_process_threshold'],
 $ns_processing_tasks['ns_process_worm_detection'],
 $ns_processing_tasks['ns_process_worm_detection_labels'],
+					   $ns_processing_tasks['ns_process_add_to_training_set'],
 $ns_processing_tasks['ns_process_movement_paths_visualization'],
 				$ns_processing_tasks['ns_process_movement_paths_visualization_with_mortality_overlay']);
 try{

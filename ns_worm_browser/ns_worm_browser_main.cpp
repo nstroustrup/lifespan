@@ -1,17 +1,14 @@
 #include <sys/timeb.h>
 #include "ns_worm_browser.h"
 #include "ns_time_path_image_analyzer.h"
-#include "FL/Fl_Output.H"
 #ifndef WIN32
 #include <sys/time.h>
 #endif
 #include <Intrin.h>
 #include "resource.h"
-#include "FL/Fl_Button.H"
-#include "FL/Fl_Pack.H"
-#include "FL/Fl_Message.H"
 #include "ns_high_precision_timer.h"
 #include "ns_experiment_storyboard.h"
+#include "ns_fl_modal_dialogs.h"
 
 
 bool output_debug_messages = false;
@@ -530,6 +527,36 @@ public:
 };
 
 
+HANDLE ns_main_thread_id(0);
+
+
+std::string ns_get_input_string(const std::string title,const std::string default_value){
+	ns_text_dialog td;
+	td.grid_text.push_back("WHA");
+	td.grid_text.push_back("BAH");
+	td.title = "Warning";
+	ns_run_in_main_thread_custom_wait<ns_text_dialog> n(&td);
+
+	
+	ns_choice_dialog c;
+	c.title = "What do you want to do with this experiment schedule?";
+	c.option_1 = "Generate a Summary File";
+	c.option_2 = "Run it!";
+	c.option_3 = "Cancel";
+	ns_run_in_main_thread<ns_choice_dialog> b(&c);
+
+	ns_file_chooser d;
+	d.dialog_type = Fl_Native_File_Chooser::BROWSE_DIRECTORY;
+	d.title = "Choose the desired experiment's backup directory";
+	d.default_filename = "";
+	ns_run_in_main_thread<ns_file_chooser> g(&d);
+	
+	ns_input_dialog is;
+	is.title = "GAR";
+	is.default_value = "ROR";
+	ns_run_in_main_thread<ns_input_dialog> a(&is);
+	return is.result;
+}
 
 class ns_worm_terminal_main_menu_organizer : public ns_menu_organizer{
 
@@ -833,6 +860,34 @@ class ns_worm_terminal_main_menu_organizer : public ns_menu_organizer{
 	static void export_experiment_data(const std::string & value){
 		worm_learner.export_experiment_data(worm_learner.data_selector.current_experiment_id());
 	}
+	static void import_experiment_data(const std::string & value){
+		ns_file_chooser d;
+		d.dialog_type = Fl_Native_File_Chooser::BROWSE_DIRECTORY;
+		d.title = "Locate the experiment's backup directory";
+		d.default_filename = "";
+		ns_run_in_main_thread<ns_file_chooser> g(&d);
+		if (!d.chosen)
+			return;
+		ns_input_dialog is;
+		is.title = "Enter in the new name of the new database to hold the experiment";
+		is.default_value = "import_db";
+		ns_run_in_main_thread<ns_input_dialog> a(&is);
+		if (is.result.empty())
+			return;
+		if (!worm_learner.import_experiment_data(is.result,d.result,false)){
+			string message("The database ");
+			message += is.result;
+			message += " already exists on the cluster.  Using it could currupt existing data, and probably won't work.  Are you sure you want to do this?";
+			int ret = MessageBox(
+			0,message.c_str(),"Database exists",
+			MB_TASKMODAL | MB_YESNOCANCEL | MB_ICONQUESTION | MB_DEFBUTTON1 | MB_TOPMOST);
+			if (ret == IDCANCEL)
+				return;
+			if (ret == IDYES){
+				worm_learner.import_experiment_data(is.result,d.result,true);
+			}
+		}
+	}
 	static void generate_region_stats_for_all_regions_in_group(const std::string & value){
 		ns_experiment_region_selector_experiment_info info;
 		worm_learner.data_selector.get_experiment_info(worm_learner.data_selector.current_experiment_id(),info);
@@ -938,13 +993,14 @@ class ns_worm_terminal_main_menu_organizer : public ns_menu_organizer{
 	/*****************************
 	File Tasks
 	*****************************/
-
+	
 	static void set_database(const std::string & data){
 		image_server.set_sql_database(data,false);
 		cerr << "Switching to database " << data << "\n";
 		get_menu_handler()->update_experiment_choice(*get_menu_bar());
 	}
 	static void file_open(const std::string & data){
+		cout << ns_get_input_string("TITLE","GOBER");
 		std::vector<dialog_file_type> foo;
 		foo.push_back(dialog_file_type("TIF (*.tif)","tif"));
 		foo.push_back(dialog_file_type("JPEG (*.jpg)","jpg"));
@@ -1080,6 +1136,7 @@ public:
 		add(ns_menu_item_spec(generate_region_stats_for_all_regions_in_group,"Data Files/Other Statistics/_Generate Image Statistics for all Regions in current Experiment Group"));
 	//	add(ns_menu_item_spec(generate_detailed_animal_data_file,"Data/Statistics/_Generate Detailed Animal Statistics for current experiment"));
 		add(ns_menu_item_spec(export_experiment_data,"Data Files/Transfer and Backup/Export Database Contents for Current Experiment"));
+		add(ns_menu_item_spec(import_experiment_data,"Data Files/Transfer and Backup/Import Experiment from Backup"));
 	
 		//add(ns_menu_item_spec(generate_survival_curve_from_hand_annotations,"&Calibration/Generate Survival Curves from by hand annotations"));
 		add(ns_menu_item_spec(compare_machine_and_by_hand_annotations,"&Calibration/Compare by-hand annotations to Machine"));
@@ -1942,53 +1999,60 @@ void idle_main_window_update_callback(void *){
 	//double last_time = c_time;
 	//c_time =  GetTime() - init_time;
 	//cerr << "FPS = " << 1.0/(time-last_time) << "\n";
-	ns_vector_2d cur_size(current_window->w(),current_window->h());
-//	worm_learner.main_window.ideal_window_size = worm_learner.main_window.ideal_image_size;
-	//worm_learner.main_window.ideal_window_size.y+=ns_worm_terminal_main_window::menu_height()+ns_worm_terminal_main_window::info_bar_height();
-	//worm_learner.main_window.ideal_window_size.x+= ns_worm_terminal_main_window::border_width();
-	if ( abs((int)(worm_learner.main_window.ideal_window_size.x - cur_size.x)) > 3 || abs((int)(worm_learner.main_window.ideal_window_size.y- cur_size.y)) > 3){
-		//current_window->size(current_window->size(worm_learner.main_window.ideal_window_size.x, worm_learner.ideal_current_window_height);
-		current_window->size(worm_learner.main_window.ideal_window_size.x, worm_learner.main_window.ideal_window_size.y);
-	//	current_window->gl_window->size(worm_learner.main_window.ideal_image_size.x, worm_learner.main_window.ideal_image_size.y);
-	//	cerr << "Redrawing screen from " << cur_size << " to ideal " << worm_learner.main_window.ideal_window_size << "\n";
+	Fl::lock();
+	try{
+		ns_vector_2d cur_size(current_window->w(),current_window->h());
+	//	worm_learner.main_window.ideal_window_size = worm_learner.main_window.ideal_image_size;
+		//worm_learner.main_window.ideal_window_size.y+=ns_worm_terminal_main_window::menu_height()+ns_worm_terminal_main_window::info_bar_height();
+		//worm_learner.main_window.ideal_window_size.x+= ns_worm_terminal_main_window::border_width();
+		if ( abs((int)(worm_learner.main_window.ideal_window_size.x - cur_size.x)) > 3 || abs((int)(worm_learner.main_window.ideal_window_size.y- cur_size.y)) > 3){
+			//current_window->size(current_window->size(worm_learner.main_window.ideal_window_size.x, worm_learner.ideal_current_window_height);
+			current_window->size(worm_learner.main_window.ideal_window_size.x, worm_learner.main_window.ideal_window_size.y);
+		//	current_window->gl_window->size(worm_learner.main_window.ideal_image_size.x, worm_learner.main_window.ideal_image_size.y);
+		//	cerr << "Redrawing screen from " << cur_size << " to ideal " << worm_learner.main_window.ideal_window_size << "\n";
+		}
+		ns_handle_menu_bar_activity_request();
+		if (worm_learner.current_annotater->refresh_requested()){
+			worm_learner.current_annotater->display_current_frame();
+		}
+		if (worm_learner.main_window.redraw_requested){
+			redraw_main_window(worm_learner.main_window.ideal_window_size.x,worm_learner.main_window.ideal_window_size.y,true);
+		}
+		ns_image_series_annotater::ns_image_series_annotater_action a(worm_learner.current_annotater->fast_movement_requested());
+		if (a == ns_image_series_annotater::ns_fast_forward){
+			worm_learner.current_annotater->step_forward(ns_show_worm_display_error);
+			worm_learner.current_annotater->display_current_frame();
+		}
+		else if (a==ns_image_series_annotater::ns_fast_back){
+			worm_learner.current_annotater->step_back(ns_show_worm_display_error);
+			worm_learner.current_annotater->display_current_frame();
+		}
+		//draw busy animation if requested
+		if (current_window->draw_animation){
+			worm_learner.draw_animation(GetTime() - init_time);
+		//	cerr << GetTime() << "\n";
+			current_window->last_draw_animation = true;
+		}
+		//clear animation when finished
+		if (!current_window->draw_animation && current_window->last_draw_animation){
+			current_window->last_draw_animation = false;
+			worm_learner.draw();
+	//		redraw_screen();
+		}
+		if (show_worm_window){
+			show_worm_window = false;
+			worm_window->size(worm_learner.worm_window.ideal_window_size.x,worm_learner.worm_window.ideal_window_size.y);
+			worm_window->show();
+			ns_set_menu_bar_activity(true);	
+		}
+		if (hide_worm_window){
+			hide_worm_window = false;
+			worm_window->hide();
+		}
+		Fl::unlock();
 	}
-	ns_handle_menu_bar_activity_request();
-	if (worm_learner.current_annotater->refresh_requested()){
-		worm_learner.current_annotater->display_current_frame();
-	}
-	if (worm_learner.main_window.redraw_requested){
-		redraw_main_window(worm_learner.main_window.ideal_window_size.x,worm_learner.main_window.ideal_window_size.y,true);
-	}
-	ns_image_series_annotater::ns_image_series_annotater_action a(worm_learner.current_annotater->fast_movement_requested());
-	if (a == ns_image_series_annotater::ns_fast_forward){
-		worm_learner.current_annotater->step_forward(ns_show_worm_display_error);
-		worm_learner.current_annotater->display_current_frame();
-	}
-	else if (a==ns_image_series_annotater::ns_fast_back){
-		worm_learner.current_annotater->step_back(ns_show_worm_display_error);
-		worm_learner.current_annotater->display_current_frame();
-	}
-	//draw busy animation if requested
-	if (current_window->draw_animation){
-		worm_learner.draw_animation(GetTime() - init_time);
-	//	cerr << GetTime() << "\n";
-		current_window->last_draw_animation = true;
-	}
-	//clear animation when finished
-	if (!current_window->draw_animation && current_window->last_draw_animation){
-		current_window->last_draw_animation = false;
-		worm_learner.draw();
-//		redraw_screen();
-	}
-	if (show_worm_window){
-		show_worm_window = false;
-		worm_window->size(worm_learner.worm_window.ideal_window_size.x,worm_learner.worm_window.ideal_window_size.y);
-		worm_window->show();
-		ns_set_menu_bar_activity(true);	
-	}
-	if (hide_worm_window){
-		hide_worm_window = false;
-		worm_window->hide();
+	catch(...){
+		Fl::unlock();
 	}
 }
 void ns_hide_worm_window(){
@@ -1999,28 +2063,35 @@ void idle_worm_window_update_callback(void *){
 	//double last_time = c_time;
 	//c_time =  GetTime() - init_time;
 	//cerr << "FPS = " << 1.0/(time-last_time) << "\n";
-	ns_vector_2d cur_size(worm_window->w(),worm_window->h());
-	/*worm_learner.worm_window.ideal_window_size = worm_learner.worm_window.ideal_window_size;
-	worm_learner.worm_window.ideal_window_size.x+=ns_worm_terminal_worm_window::border_width();
-	worm_learner.worm_window.ideal_window_size.y+=ns_worm_terminal_worm_window::info_bar_height();*/
-	if ( abs((int)(worm_learner.worm_window.ideal_window_size.x - cur_size.x)) > 3 || abs((int)(worm_learner.worm_window.ideal_window_size.y - cur_size.y)) > 3){
-		worm_window->size(worm_learner.worm_window.ideal_window_size.x, worm_learner.worm_window.ideal_window_size.y);
-		//xxxx
+	Fl::lock();
+	try{
+		ns_vector_2d cur_size(worm_window->w(),worm_window->h());
+		/*worm_learner.worm_window.ideal_window_size = worm_learner.worm_window.ideal_window_size;
+		worm_learner.worm_window.ideal_window_size.x+=ns_worm_terminal_worm_window::border_width();
+		worm_learner.worm_window.ideal_window_size.y+=ns_worm_terminal_worm_window::info_bar_height();*/
+		if ( abs((int)(worm_learner.worm_window.ideal_window_size.x - cur_size.x)) > 3 || abs((int)(worm_learner.worm_window.ideal_window_size.y - cur_size.y)) > 3){
+			worm_window->size(worm_learner.worm_window.ideal_window_size.x, worm_learner.worm_window.ideal_window_size.y);
+			//xxxx
+		}
+		if (worm_learner.death_time_solo_annotater.refresh_requested()){
+			worm_learner.death_time_solo_annotater.display_current_frame();
+		}
+		if (worm_learner.worm_window.redraw_requested){
+			redraw_worm_window(worm_learner.worm_window.ideal_window_size.x,worm_learner.worm_window.ideal_window_size.y,true);
+		}
+		ns_image_series_annotater::ns_image_series_annotater_action a(worm_learner.death_time_solo_annotater.fast_movement_requested());
+		if (a == ns_image_series_annotater::ns_fast_forward){
+			worm_learner.death_time_solo_annotater.step_forward(ns_hide_worm_window);
+			worm_learner.death_time_solo_annotater.display_current_frame();
+		}
+		else if (a==ns_image_series_annotater::ns_fast_back){
+			worm_learner.death_time_solo_annotater.step_back(ns_hide_worm_window);
+			worm_learner.death_time_solo_annotater.display_current_frame();
+		}
+		Fl::unlock();
 	}
-	if (worm_learner.death_time_solo_annotater.refresh_requested()){
-		worm_learner.death_time_solo_annotater.display_current_frame();
-	}
-	if (worm_learner.worm_window.redraw_requested){
-		redraw_worm_window(worm_learner.worm_window.ideal_window_size.x,worm_learner.worm_window.ideal_window_size.y,true);
-	}
-	ns_image_series_annotater::ns_image_series_annotater_action a(worm_learner.death_time_solo_annotater.fast_movement_requested());
-	if (a == ns_image_series_annotater::ns_fast_forward){
-		worm_learner.death_time_solo_annotater.step_forward(ns_hide_worm_window);
-		worm_learner.death_time_solo_annotater.display_current_frame();
-	}
-	else if (a==ns_image_series_annotater::ns_fast_back){
-		worm_learner.death_time_solo_annotater.step_back(ns_hide_worm_window);
-		worm_learner.death_time_solo_annotater.display_current_frame();
+	catch(...){
+		Fl::lock();
 	}
 }
 
@@ -2212,12 +2283,16 @@ void ns_update_sample_info(ns_sql & sql){
 void refresh_main_window(){
 	current_window->redraw();
 }
-
+#include <FL/Fl_File_Icon.H>
 // MAIN
 int main() {
 	ns_worm_browser_output_debug(__LINE__,__FILE__,"Launching worm browser");
 	init_time = GetTime();
 	Fl::lock();
+	Fl_File_Icon::load_system_icons();
+	Fl::scheme("none");
+	
+	ns_main_thread_id = GetCurrentThread();
 	try{
 	
 		ns_multiprocess_control_options mp_options;
@@ -2250,8 +2325,7 @@ int main() {
 			ns_acquire_for_scope<ns_sql> sql(image_server.new_sql_connection(__FILE__,__LINE__));
 			ns_death_time_annotation_flag::get_flags_from_db(sql());
 
-	//		ns_align_to_reference(5582,sql());
-			
+	
 			ns_worm_browser_output_debug(__LINE__,__FILE__,"Refreshing partition cache");
 			image_server.image_storage.refresh_experiment_partition_cache(&sql());
 			
@@ -2330,6 +2404,9 @@ int main() {
 		
 		ns_worm_browser_output_debug(__LINE__,__FILE__,"Entering idle loop");
 		return(Fl::run());
+	/*	while( Fl::wait() > 0)
+			SleepEx(0,TRUE);
+			*/
 	}
 	catch(ns_ex & ex){
 		MessageBox(
@@ -2484,7 +2561,17 @@ void ns_set_menu_bar_activity(bool activate){
 }
 
 void ask_if_schedule_should_be_submitted_to_db(bool & write_to_disk, bool & write_to_db){
-	
+	ns_choice_dialog c;
+	c.title = "What do you want to do with this experiment schedule?";
+	c.option_1 = "Generate a Summary File";
+	c.option_2 = "Run it!";
+	c.option_3 = "Cancel";
+	ns_run_in_main_thread<ns_choice_dialog> b(&c);
+	write_to_disk = c.result == 1;
+	write_to_db = c.result == 2;
+	return;
+
+	//old behavior
 	write_to_disk = false;
 	write_to_db = false;
 

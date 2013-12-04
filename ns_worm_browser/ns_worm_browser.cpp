@@ -11,6 +11,7 @@
 #include "ns_time_path_image_analyzer.h"
 #include "ns_hidden_markov_model_posture_analyzer.h"
 #include "resource.h"
+#include "ns_fl_modal_dialogs.h"
 using namespace std;
 
 void ns_to_lower(std::string & s){
@@ -596,6 +597,13 @@ void ns_worm_learner::export_experiment_data(const unsigned long experiment_id){
 	ns_zip_experimental_data(dir,true);
 	cout << "\nDone.\n";
 }
+
+bool ns_worm_learner::import_experiment_data(const std::string & database_name,const std::string & directory, const bool reuse_database){
+	ns_acquire_for_scope<ns_sql> sql(image_server.new_sql_connection(__FILE__,__LINE__));
+	return ns_update_db_using_experimental_data_from_file(database_name,reuse_database,directory,sql());
+}
+
+
 void ns_worm_learner::output_region_statistics(const unsigned long experiment_id, const unsigned long experiment_group_id){
 
 	ns_acquire_for_scope<ns_sql> sql(image_server.new_sql_connection(__FILE__,__LINE__));
@@ -3002,8 +3010,23 @@ void ns_worm_learner::handle_file_request(const string & fname){
 		if (write_to_db && image_server.current_sql_database() != image_server.mask_upload_database)
 				throw ns_ex("To upload experiment schedules to the cluster, the terminal must be set to access the database ") << image_server.mask_upload_database;
 		
-		if (write_to_disk || write_to_db)
-			ns_image_server::process_experiment_capture_schedule_specification(filename,overwrite_submitted_capture_specification,write_to_db,debug_filename);
+		if (write_to_disk || write_to_db){
+			vector<std::string> warnings;
+			try{
+				ns_image_server::process_experiment_capture_schedule_specification(filename,warnings,overwrite_submitted_capture_specification,write_to_db,debug_filename);
+			}
+			catch(ns_ex & ex){
+				warnings.push_back(ex.text());
+			}
+			if (warnings.size() > 0){
+				ns_text_dialog td;
+				td.grid_text.push_back("The following issues were identified in the schedule you supplied:");
+				td.grid_text.insert(td.grid_text.end(),warnings.begin(),warnings.end());
+				td.title = "Capture Schedule Information";
+				ns_run_in_main_thread<ns_text_dialog> b(&td);
+
+			}
+		}
 	}
 	
 	else throw ns_ex("Unknown file type:") << ext;

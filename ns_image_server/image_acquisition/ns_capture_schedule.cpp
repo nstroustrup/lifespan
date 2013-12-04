@@ -6,9 +6,10 @@ using namespace std;
 
 
 
-std::string ns_experiment_capture_specification::submit_schedule_to_db(ns_sql & sql,bool actually_write,bool overwrite_previous){
+std::string ns_experiment_capture_specification::submit_schedule_to_db(std::vector<std::string> & warnings,ns_sql & sql,bool actually_write,bool overwrite_previous){
 	string debug;
-	if (!device_schedule_produced) throw ns_ex("ns_experiment_capture_specification::submit_schedule_to_db()::The device schedule has not yet been compiled");
+	if (!device_schedule_produced) 
+		throw ns_ex("ns_experiment_capture_specification::submit_schedule_to_db()::The device schedule has not yet been compiled");
 
 	ns_sql_result res;
 	//check that all devices requested exist
@@ -20,9 +21,32 @@ std::string ns_experiment_capture_specification::submit_schedule_to_db(ns_sql & 
 			if (res.size() == 0)
 				throw ns_ex("ns_experiment_capture_specification::submit_schedule_to_db()::Could not find device ") << p->second.device_name << " attached to cluster";
 			for (ns_device_capture_schedule::ns_sample_group_list::iterator q = p->second.sample_groups.begin(); q!= p->second.sample_groups.end(); ++q){
-				if (q->second.samples.size() > 4){
-					debug+="WARNING: Device ";
-					debug+=p->second.device_name + " has " + ns_to_string(q->second.samples.size()) + " samples scheduled on a single device.\n\n";
+				if (q->second.samples.size() != 4 && q->second.samples.size() != 6){
+					string warning;
+					warning+="Device ";
+					warning+=p->second.device_name + " has " + ns_to_string(q->second.samples.size()) + " samples scheduled on a single device";
+					warnings.push_back(warning);
+					debug += "WARNING: ";
+					debug += warning + ".\n\n";
+				}
+				for (unsigned int k = 0; k < q->second.samples.size(); k++){
+					if (q->second.samples[k]->width < .75 || q->second.samples[k]->height < .75 || 
+						q->second.samples[k]->width > 2.5 || q->second.samples[k]->height > 10){
+						string warning;
+						warning+="Sample ";
+						warning+=q->second.samples[i]->sample_name + " has unusual dimensions: " + ns_to_string(q->second.samples[i]->width) + "x" + ns_to_string(q->second.samples[i]->height);
+						warnings.push_back(warning);
+						debug += "WARNING: ";
+						debug += warning + ".\n\n";
+					}
+				}
+				if (q->second.schedule->device_capture_period < 10*60 || q->second.schedule->device_capture_period > 20*60){
+						string warning;
+						warning+="The schedule contains an unusual device capture period: ";
+						warning+=ns_to_string(q->second.schedule->device_capture_period/60);
+						warnings.push_back(warning);
+						debug += "WARNING: ";
+						debug += warning + ".\n\n";
 				}
 			}
 		}

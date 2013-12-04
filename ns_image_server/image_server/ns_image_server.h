@@ -79,6 +79,7 @@ struct ns_multiprocess_control_options{
 
 void ns_write_experimental_data_in_database_to_file(const unsigned long experiment_id, const std::string & output_directory,ns_sql & sql);
 void ns_zip_experimental_data(const std::string & output_directory,bool delete_original=false);
+bool ns_update_db_using_experimental_data_from_file(const std::string new_database,bool use_existing_database, const std::string & output_directory,ns_sql & sql);
 
 ///ns_image_server is the portal through which all aspects of an image server node communicates and coordinate with each other
 ///It provides access to all filesystem i/o and SQL connections, as well as managing image-capture devices and logging any errors encountered
@@ -380,7 +381,7 @@ public:
 	
 	#ifndef NS_MINIMAL_SERVER_BUILD
 		void perform_experiment_maintenance(ns_sql & sql);
-		static void process_experiment_capture_schedule_specification(const std::string & input_file,const bool overwrite_previous_experiment=false,const bool submit_to_db=false,const std::string & summary_output_file="",const bool output_to_stdout = false);
+		static void process_experiment_capture_schedule_specification(const std::string & input_file,std::vector<std::string> & warnings,const bool overwrite_previous_experiment=false,const bool submit_to_db=false,const std::string & summary_output_file="",const bool output_to_stdout = false);
 
 	void start_autoscans_for_device(const std::string & device_name,ns_sql & sql);	
 	#endif

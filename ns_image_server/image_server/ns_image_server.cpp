@@ -486,13 +486,13 @@ void ns_image_server::register_alerts_as_handled(){
 	alert_handler_thread.report_as_finished();
 }
 #ifndef NS_MINIMAL_SERVER_BUILD
-void ns_image_server::process_experiment_capture_schedule_specification(const std::string & input_file,const bool overwrite_previous_experiment, const bool submit_to_db, const std::string & summary_output_file, const bool output_to_stdout){
-
+void ns_image_server::process_experiment_capture_schedule_specification(const std::string & input_file,std::vector<std::string> & warnings, const bool overwrite_previous_experiment, const bool submit_to_db, const std::string & summary_output_file, const bool output_to_stdout){
+	warnings.resize(0);
 	ns_experiment_capture_specification spec;
 	spec.load_from_xml_file(input_file);
 	ns_acquire_for_scope<ns_sql> sql(image_server.new_sql_connection(__FILE__,__LINE__));
 	
-	string summary(spec.submit_schedule_to_db(sql(),submit_to_db,overwrite_previous_experiment));
+	string summary(spec.submit_schedule_to_db(warnings,sql(),submit_to_db,overwrite_previous_experiment));
 	if (output_to_stdout && !submit_to_db){
 		cout << summary;
 	}
@@ -794,18 +794,35 @@ void ns_image_server::set_sql_database(const std::string & database_name,const b
 		sql_database_choice = possible_sql_databases.begin();
 		return;
 	}
-	std::vector<std::string>::const_iterator p = std::find(possible_sql_databases.begin(),possible_sql_databases.end(),database_name);
-	if (p == possible_sql_databases.end()){
-		throw ns_ex("ns_image_server::set_sql_database()::Requested database name '") << database_name << "' was not found in list of ini-specified possibilities";
+	
+	ns_acquire_for_scope<ns_sql> sql(new_sql_connection(__FILE__,__LINE__));
+	sql() << "SHOW DATABASES";
+	ns_sql_result database;
+	sql().get_rows(database);
+	bool found(false);
+	for (unsigned int i = 0; i < database.size(); i++){
+		if (database_name == database[i][0]){
+			found = true;
+			break;
+		}
 	}
+	if (!found){
+		throw ns_ex("ns_image_server::set_sql_database()::Requested database name '") << database_name << "' could not be found";
+	}
+
 	if (report_to_db){
-		ns_acquire_for_scope<ns_sql> sql(new_sql_connection(__FILE__,__LINE__));
-		register_server_event(ns_image_server_event("Switching to database ") << *p,&sql());
-		sql() << "UPDATE hosts SET database_used='" << *p << "' WHERE id = " << host_id();
+		register_server_event(ns_image_server_event("Switching to database ") << database_name,&sql());
+		sql() << "UPDATE hosts SET database_used='" << database_name << "' WHERE id = " << host_id();
 		sql().send_query();
 		image_server.unregister_host();	
 	}
+	std::vector<std::string>::const_iterator p = std::find(possible_sql_databases.begin(),possible_sql_databases.end(),database_name);
+	image_server.sql_lock.wait_to_acquire(__FILE__,__LINE__);
+	if (p == possible_sql_databases.end()){
+		p = possible_sql_databases.insert(possible_sql_databases.end(),database_name);
+	}
 	sql_database_choice = p;
+	image_server.sql_lock.release();
 	if (report_to_db){
 		image_server.register_host();
 		image_server.register_devices();
@@ -863,8 +880,12 @@ void ns_concatenate_results(const ns_sql_result & male, ns_sql_result & female){
 }
 void ns_gzip_file(std::string & f1, std::string f2){
 	ifstream in(f1.c_str());
+	if (in.fail())
+		throw ns_ex("ns_gzip_file()::Could not open ") << f1;
 	gzFile gf;
 	gf = gzopen(f2.c_str(),"wb9");
+	if (gf == Z_NULL)
+		throw ns_ex("Could not open ") << f2;
 	const unsigned long chunk_size(1024*1024*8);
 	char * buf = new char[chunk_size];
 	try{
@@ -873,7 +894,7 @@ void ns_gzip_file(std::string & f1, std::string f2){
 			in.read(buf,chunk_size);
 			unsigned long s(in.gcount());	
 			if (!gzwrite(gf,buf,s))
-				throw ns_ex("Could not write to gzip file");
+				throw ns_ex("ns_gzip_file()::Could not write to gzip file");
 			if (in.fail())
 				break;
 		
@@ -886,7 +907,7 @@ void ns_gzip_file(std::string & f1, std::string f2){
 	if(gzclose(gf) != Z_OK)
 		throw ns_ex("Could not close zip file");
 }
-
+/*
 void ns_zip_file(FILE * source, FILE * dest){
 
 	const unsigned long chunk_size(8*1024*1024);
@@ -897,7 +918,7 @@ void ns_zip_file(FILE * source, FILE * dest){
 		int ret, flush;
 		unsigned have;
 		z_stream strm;
-			/* allocate deflate state */
+			// allocate deflate state 
 		strm.zalloc = Z_NULL;
 		strm.zfree = Z_NULL;
 		strm.opaque = Z_NULL;
@@ -913,14 +934,14 @@ void ns_zip_file(FILE * source, FILE * dest){
 			flush = feof(source) ? Z_FINISH : Z_NO_FLUSH;
 			strm.next_in = in;
 		
-		/* run deflate() on input until output buffer not full, finish
-			compression if all of source has been read in */
+		// run deflate() on input until output buffer not full, finish
+		//	compression if all of source has been read in 
 			do {
 				strm.avail_out = chunk_size;
 				strm.next_out = out;
-				ret = deflate(&strm, flush);    /* no bad return value */
+				ret = deflate(&strm, flush);   // no bad return value 
 				if (ret == Z_STREAM_ERROR)
-					throw ns_ex("Error in deflate");/* state not clobbered */
+					throw ns_ex("Error in deflate");//state not clobbered 
 				have = chunk_size - strm.avail_out;
 				if (fwrite(out, 1, have, dest) != have || ferror(dest)) {
 					(void)deflateEnd(&strm);
@@ -929,11 +950,11 @@ void ns_zip_file(FILE * source, FILE * dest){
 			} while (strm.avail_out == 0);
 			if (strm.avail_in != 0)
 				throw ns_ex("Data left over");
-				/* done when last data in file processed */
+				// done when last data in file processed 
 		} while (flush != Z_FINISH);
 		if (ret != Z_STREAM_END)
 				throw ns_ex("Stream not ended!");
-			/* clean up and return */
+			// clean up and return 
 		(void)deflateEnd(&strm);	
 		delete [] in;
 		delete [] out;
@@ -943,7 +964,7 @@ void ns_zip_file(FILE * source, FILE * dest){
 		delete [] out;
 	}
 }
-
+*/
 void ns_zip_experimental_data(const std::string & output_directory,bool delete_original){
 	ns_dir dir;
 	std::vector<std::string> files;
@@ -951,17 +972,6 @@ void ns_zip_experimental_data(const std::string & output_directory,bool delete_o
 	 
 
 	for (unsigned int i = 0; i < files.size(); i++){
-		/*FILE * source(fopen((output_directory + DIR_CHAR_STR + files[i]).c_str(),"rb"));
-		if (source == NULL)
-			throw ns_ex("Could not open file ") << output_directory + DIR_CHAR_STR + files[i];
-
-		FILE * sink(fopen((output_directory + DIR_CHAR_STR + files[i] + ".gz" ).c_str(),"wb"));
-		if (sink == NULL)
-			throw ns_ex("Could not open file ") << output_directory + DIR_CHAR_STR + files[i] + ".gz";
-		ns_gzip_file(source,sink);
-
-		fclose(source);
-		fclose(sink);*/
 		if (ns_dir::extract_extension(files[i]) == "gz")
 			continue;
 		std::string source(output_directory + DIR_CHAR_STR + files[i]);
@@ -970,12 +980,226 @@ void ns_zip_experimental_data(const std::string & output_directory,bool delete_o
 	}
 	if (delete_original){
 		for (unsigned int i = 0; i < files.size(); i++){
+			if (ns_dir::extract_extension(files[i]) == "gz")
+				continue;
 			std::string source(output_directory + DIR_CHAR_STR + files[i]);
 			ns_dir::delete_file(source);
 		}
 	}
 
 }
+
+class ns_zipped_file_input{
+	char * buff;
+	std::string line,line_ret;
+	unsigned long buff_size,buff_pos,buff_max_size;
+	gzFile gf;
+	public:
+	ns_zipped_file_input(const unsigned long buff_max_size_)
+		:buff(new char[buff_max_size_]),
+		 buff_size(0),buff_pos(0),buff_max_size(buff_max_size_){}
+
+	void open(const std::string & file){
+		gf = gzopen(file.c_str(),"rb");
+		if (gf == Z_NULL)
+			throw ns_ex("Could not open ") << file;
+	}
+	~ns_zipped_file_input(){close();}
+	void close(){
+		if (gf != 0)
+			gzclose(gf);
+		gf = 0;
+	}
+	bool eof() const{
+		return gzeof(gf) && buff_pos >= buff_size;
+	}
+
+	const std::string & read_line(){
+		while(true){
+			if (!eof()){
+				if (buff_pos == buff_size){
+					buff_size = gzread(gf,buff,buff_max_size);
+					buff_pos = 0;
+				}
+			}
+			else{
+				if (buff_pos >= buff_size)
+					throw ns_ex("Reading past end of file!");
+			}
+			if (buff[buff_pos] == '\n' || buff_pos == buff_size){
+				buff_pos++;
+				line_ret = line;
+				line.resize(0);
+				return line_ret;
+			}
+			else{
+				line+=buff[buff_pos];
+				buff_pos++;
+			}
+		}
+	}
+
+};
+
+void ns_ungzip_file(std::string & f1, std::string f2){
+	ns_zipped_file_input input(1024*1024);
+	input.open(f1);
+	ofstream out(f2.c_str());
+	while (!input.eof())
+		out << input.read_line() << "\n";
+	input.close();
+	out.close();
+}
+
+void ns_parse_quoted_csv_line(const std::string & line, std::vector<std::string> & data){
+	data.resize(0);
+	if(line.size() == 0)
+		return;
+	data.resize(1);
+	bool in_quotes(false);
+	for(unsigned int i = 0; i < line.size(); i++){
+		//handle backslashed quotation marks
+		if (line[i] == '\\' && (i+1 < line.size()) && line[i+1] == '"'){
+			data.rbegin()->push_back('"');
+			i++;
+			continue;
+		}
+		if (line[i] == '"'){
+			in_quotes = !in_quotes;
+			continue;
+		}
+		if (!in_quotes && line[i] == ','){
+			data.resize(data.size()+1);
+			continue;
+		}
+		data.rbegin()->push_back(line[i]);
+	}
+}
+void ns_add_data_to_db_from_file(const std::string table_name,const std::string file_name,ns_sql & sql){
+	ns_zipped_file_input input(1024*1024);
+	input.open(file_name);
+	std::vector<std::string> column_names;
+	ns_parse_quoted_csv_line(input.read_line(),column_names);
+	if(input.eof())
+		throw ns_ex("ns_add_data_to_db_from_file()::Could not read first line from file ") << table_name;
+	if (column_names.size() == 0)
+		throw ns_ex("ns_add_data_to_db_from_file()::No columns provided for ") << table_name;
+	for (unsigned int i = 0; i < column_names.size(); i++)
+		if (column_names[i].size() == 0)
+			throw ns_ex("ns_add_data_to_db_from_file()::Empty column name specified for table ") << table_name;
+	std::vector<std::string> data;
+	unsigned long line_number(1);
+	sql.set_autocommit(false);
+	try{
+		sql.send_query("BEGIN");
+		while(!input.eof()){
+			ns_parse_quoted_csv_line(input.read_line(),data);
+			if (data.size() != column_names.size())
+					throw ns_ex("Invalid number of columns on line number ") << line_number;
+			sql << "INSERT INTO " << table_name << " SET ";
+			for (unsigned int i = 0; i < column_names.size(); i++){
+				sql <<column_names[i] << "=\"" << sql.escape_string(data[i]) << "\"";
+					if (i+1 != column_names.size())
+						sql << ",";
+			}
+			//cout << sql.query() << "\n";
+			sql.send_query();
+		}
+		sql.send_query("COMMIT");
+		sql.set_autocommit(true);
+	}
+	catch(...){
+		sql.clear_query();
+		sql.send_query("ROLLBACK");
+		sql.set_autocommit(false);
+		throw;
+	}
+	input.close();
+
+}
+bool ns_update_db_using_experimental_data_from_file(const std::string new_database,bool use_existing_database, const std::string & output_directory,ns_sql & sql){
+
+	std::string current_database;
+	current_database = sql.get_value("SELECT DATABASE()");
+
+	sql << "SHOW DATABASES";
+	ns_sql_result databases;
+	sql.get_rows(databases);
+	bool database_exists(false);
+	for (unsigned int i = 0; i < databases.size();i++){
+		if (databases[i][0] == new_database){
+			database_exists = true;
+			break;
+		}
+	}
+	if (database_exists && !use_existing_database)
+		return false;
+	
+	ns_dir dir;
+	std::vector<std::string> files;
+	dir.load_masked(output_directory,"csv.gz",files);
+	if (files.size() == 0)
+		throw ns_ex("No data files could be found in the directory") << output_directory;
+
+	if (!database_exists){
+		cout << "Creating a new database, \"" << new_database << "\", to hold the data...\n";
+		sql << "SHOW TABLES";
+		ns_sql_result tables;
+		sql.get_rows(tables);
+		vector<std::string> create_commands(tables.size());
+		for (unsigned int i = 0; i < tables.size(); i++)
+				ns_get_table_create(tables[i][0],create_commands[i],sql);
+		
+		sql << "CREATE DATABASE " << new_database;
+		sql.send_query();
+		sql << "USE " << new_database;
+		sql.send_query();
+		try{
+			for (unsigned int i = 0; i < create_commands.size(); i++){
+				sql << create_commands[i];
+				sql.send_query();
+			}
+			sql << "USE " << current_database;
+			sql.send_query();
+		}
+		catch(...){
+			sql.clear_query();
+			sql << "USE " << current_database;
+			sql.send_query();
+			throw;
+		}
+
+	}
+
+
+
+	for (unsigned int i = 0; i < files.size(); i++){
+		if (ns_dir::extract_extension(files[i]) != "gz")
+			continue;
+		std::string source(output_directory + DIR_CHAR_STR + files[i]);
+		std::string table_name = ns_dir::extract_filename(source);
+		std::string::size_type t(table_name.find_first_of("."));
+		if (t == table_name.npos)
+			continue;
+		table_name = table_name.substr(0,t);
+		sql << "USE " << new_database;
+		sql.send_query();
+		try{
+			cout << "Adding data for table " << table_name << "...\n";
+			ns_add_data_to_db_from_file(table_name,source,sql);
+			sql << "USE " << current_database;
+			sql.send_query();
+		}
+		catch(...){
+			sql.clear_query();
+			sql << "USE " << current_database;
+			sql.send_query();
+			throw;
+		}
+	}
+	return true;
+};
+
 void ns_write_experimental_data_in_database_to_file(const unsigned long experiment_id, const std::string & output_directory,ns_sql & sql){
 
 	ns_dir::create_directory_recursive(output_directory);
@@ -986,7 +1210,15 @@ void ns_write_experimental_data_in_database_to_file(const unsigned long experime
 	sql << "SELECT * from experiments WHERE id = " << experiment_id;
 	ns_sql_result experiment_data;
 	sql.get_rows(experiment_data);
-	ns_write_db_table(experiment_columns,experiment_data,"experiment.csv",output_directory);
+	ns_write_db_table(experiment_columns,experiment_data,"experiments.csv",output_directory);
+
+	sql << "SHOW COLUMNS IN experiment_groups";
+	ns_sql_result experiment_group_columns;
+	sql.get_rows(experiment_group_columns);
+	sql << "SELECT g.* from experiment_groups as g, experiments as e WHERE g.group_id = e.group_id AND e.id = " << experiment_id;
+	ns_sql_result experiment_group_data;
+	sql.get_rows(experiment_group_data);
+	ns_write_db_table(experiment_group_columns,experiment_group_data,"experiment_groups.csv",output_directory);
 
 	sql << "SHOW COLUMNS IN capture_samples";
 	ns_sql_result sample_columns;
@@ -1020,17 +1252,7 @@ void ns_write_experimental_data_in_database_to_file(const unsigned long experime
 	sql << "SELECT m.* FROM sample_region_images as m, sample_region_image_info as i, capture_samples as s "
 		"WHERE m.region_info_id = i.id AND i.sample_id = s.id AND s.experiment_id = " << experiment_id;
 	sql.get_rows(sample_region_images_data);
-	ns_write_db_table(sample_region_image_info_columns,sample_region_image_info_data,"sample_region_images.csv",output_directory);
-
-	/*ns_sql_result aligned_path_columns,
-			aligned_path_data;
-	sql << "SHOW COLUMNS IN sample_region_image_aligned_path_images";
-	sql.get_rows(aligned_path_columns);
-	sql << "SELECT m.* FROM sample_region_image_aligned_path_images as m, sample_region_image_info as i, capture_samples as s "
-		"WHERE m.region_info_id = i.id AND i.sample_id = s.id AND s.experiment_id = " << experiment_id;
-	sql.get_rows(aligned_path_data);
-	ns_write_db_table(aligned_path_columns,aligned_path_data,"sample_region_image_aligned_path_images.csv",output_directory);
-	*/
+	ns_write_db_table(sample_region_images_columns,sample_region_images_data,"sample_region_images.csv",output_directory);
 
 	ns_sql_result worm_detection_results_columns,
 			  worm_detection_results_data;
@@ -1063,7 +1285,7 @@ void ns_write_experimental_data_in_database_to_file(const unsigned long experime
 			 mask_data;
 	sql << "SHOW COLUMNS IN image_masks";
 	sql.get_rows(mask_columns);
-	sql << "SELECT m.* FROM image_masks as m, sample_region_image_info as i, capture_samples as s "
+	sql << "SELECT DISTINCT m.* FROM image_masks as m, sample_region_image_info as i, capture_samples as s "
 		"WHERE m.id = i.mask_id AND i.sample_id = s.id AND s.experiment_id = " << experiment_id;
 	sql.get_rows(mask_data);
 	ns_write_db_table(mask_columns,mask_data,"image_masks.csv",output_directory);
@@ -1113,7 +1335,7 @@ void ns_write_experimental_data_in_database_to_file(const unsigned long experime
 	sql.get_rows(image_ids2);
 	ns_concatenate_results(image_ids2,image_ids);
 
-	sql << "SELECT m.image_id FROM image_masks as m, sample_region_image_info as i, capture_samples as s "
+	sql << "SELECT DISTINCT m.image_id FROM image_masks as m, sample_region_image_info as i, capture_samples as s "
 		"WHERE m.id = i.mask_id AND i.sample_id = s.id AND s.experiment_id = " << experiment_id;
 	sql.get_rows(image_ids2);
 	ns_concatenate_results(image_ids2,image_ids);

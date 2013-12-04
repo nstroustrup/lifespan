@@ -123,7 +123,7 @@ public:
 	
 	static void confirm_valid_name(const std::string & name);
 	
-	std::string submit_schedule_to_db(ns_sql & sql,bool actually_write=false,bool overwrite_previous=false);
+	std::string submit_schedule_to_db(std::vector<std::string> & warnings,ns_sql & sql,bool actually_write=false,bool overwrite_previous=false);
 	void produce_device_schedule();
 	void check_samples_and_fill_in_defaults();
 

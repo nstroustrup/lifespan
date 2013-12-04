@@ -606,6 +606,7 @@ public:
 	void create_feature_time_series(const std::string & directory);
 	
 	void export_experiment_data(const unsigned long experiment_id);
+	bool import_experiment_data(const std::string & database_name,const std::string & directory, const bool reuse_database);
 	
 	typedef enum{ns_lifespan,ns_thermotolerance,ns_quiecent} ns_parameter_set_range;
 

@@ -12,6 +12,8 @@
 #include "ns_ini.h"
 #include <time.h>
 #include "ns_dir.h"
+#include <vector>
+#include <string>
 
 
 #ifdef _WIN32 
@@ -938,7 +940,9 @@ int main(int argc, char * argv[]){
 				break;
 			}
 			case ns_submit_experiment:{
+				std::vector<std::string> warnings;
 				ns_image_server::process_experiment_capture_schedule_specification(input_filename,
+					warnings,
 					overwrite_existing_experiments,
 					upload_experiment_spec_to_db,
 					ns_dir::extract_filename_without_extension(input_filename) + "=summary.txt",

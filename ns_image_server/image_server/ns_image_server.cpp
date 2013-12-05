@@ -1293,11 +1293,15 @@ void ns_write_experimental_data_in_database_to_file(const unsigned long experime
 
 	vector<ns_processing_task> processing_tasks;
 	processing_tasks.push_back(ns_unprocessed);
+	processing_tasks.push_back(ns_process_thumbnail);
+	processing_tasks.push_back(ns_process_lossy_stretch);
 	processing_tasks.push_back(ns_process_spatial);
 	processing_tasks.push_back(ns_process_threshold);
 	processing_tasks.push_back(ns_process_worm_detection);
 	processing_tasks.push_back(ns_process_worm_detection_labels);
 	processing_tasks.push_back(ns_process_interpolated_vis);
+	processing_tasks.push_back(ns_process_region_vis);
+	processing_tasks.push_back(ns_process_region_interpolation_vis);
 
 	ns_sql_result image_ids;
 	sql << "SELECT ";

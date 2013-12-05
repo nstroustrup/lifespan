@@ -1215,8 +1215,8 @@ public:
 		add(ns_menu_item_spec(set_database,string("Config/_Nicholas Stroustrup, Harvard Systems Biology"),0,FL_MENU_INACTIVE));
 		//add(ns_menu_item_spec(set_database,string("Config/_ "),0,FL_MENU_INACTIVE));
 		ns_menu_item_spec db_spec(set_database,"&Config/_Set Database");
-		for (unsigned int i = 0; i < image_server.allowed_sql_databases().size(); i++)
-			db_spec.options.push_back(image_server.allowed_sql_databases()[i]);
+		for (unsigned int i = 0; i < worm_learner.databases_available.size(); i++)
+			db_spec.options.push_back(worm_learner.databases_available[i]);
 		add(db_spec);
 
 		add(ns_menu_item_spec(do_not_overwrite_schedules,"Config/Set Behavior/Do not overwrite existing Experiment Specifications"));
@@ -2335,6 +2335,8 @@ int main() {
 			
 			ns_worm_browser_output_debug(__LINE__,__FILE__,"Loading experient names");
 			worm_learner.data_selector.load_experiment_names(sql());
+
+			worm_learner.load_databases(sql());
 			try{
 					
 				ns_worm_browser_output_debug(__LINE__,__FILE__,"Setting current experiment");

@@ -544,7 +544,20 @@ public:
 	}
 
 	~ns_worm_learner();
-	
+	std::vector<std::string> databases_available;
+	void load_databases(ns_sql & sql){
+		sql << "SHOW DATABASES";
+		ns_sql_result database;
+		sql.get_rows(database);
+		for (unsigned int i = 0; i < database.size(); i++){
+			if (database[i][0] == "test" ||
+				database[i][0] == "information_schema" ||
+				database[i][0] == "image_server_buffer" ||
+				database[i][0] == "mysql")
+				continue;
+			databases_available.push_back(database[i][0]);
+		}
+	}
 	void calculate_image_statistics_for_experiment_sample(unsigned long experiment_id,ns_sql & sql,bool overwrite_false=false);
 	void generate_scanner_lifespan_statistics(bool use_by_hand_censoring,const std::vector<unsigned long> & experiment_ids, const std::string & output_filname);
 

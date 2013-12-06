@@ -162,8 +162,9 @@ public:
 	}
 	static void on_click(Fl_Widget * w){
 		ns_close_button * b = (ns_close_button *)(w);
+		bool * wait_for_it = b->main_window->wait_for_it;
 		b->main_window->hide();
-		*(b->main_window->wait_for_it) = false;
+		*wait_for_it = false;
 	}
 };
 class ns_text_dialog{
@@ -210,7 +211,9 @@ public:
 		data = t;
 		t->wait_for_it = true;
 		Fl::awake(ns_run_in_main_thread<typename T>::main_thread_call,(void *)(this));
-		while(t->wait_for_it)ns_thread::sleep(1);
+		while(t->wait_for_it)
+			ns_thread::sleep(1);
+		cout << "WHA";
 	}
 	static void main_thread_call(void * t){
 		ns_run_in_main_thread<typename T> * tt = (ns_run_in_main_thread<typename T> *)(t);

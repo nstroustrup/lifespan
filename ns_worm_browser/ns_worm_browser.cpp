@@ -3023,7 +3023,7 @@ void ns_worm_learner::handle_file_request(const string & fname){
 				td.grid_text.push_back("The following issues were identified in the schedule you supplied:");
 				td.grid_text.insert(td.grid_text.end(),warnings.begin(),warnings.end());
 				td.title = "Capture Schedule Information";
-				ns_run_in_main_thread<ns_text_dialog> b(&td);
+				ns_run_in_main_thread_custom_wait<ns_text_dialog> b(&td);
 
 			}
 		}

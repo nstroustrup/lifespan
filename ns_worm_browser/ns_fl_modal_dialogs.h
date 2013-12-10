@@ -33,7 +33,7 @@ struct ns_file_chooser_file_type{
 
 class ns_file_chooser{
 	public:
-	ns_file_chooser():dialog_type(Fl_Native_File_Chooser::BROWSE_FILE){}
+	ns_file_chooser():dialog_type(Fl_Native_File_Chooser::BROWSE_FILE),title("Open"){}
 	
 	string title,default_directory,default_filename,result;
 	Fl_Native_File_Chooser::Type dialog_type;
@@ -41,6 +41,15 @@ class ns_file_chooser{
 	
 	bool chosen;
 	string error;
+	void choose_directory(){
+		dialog_type = Fl_Native_File_Chooser::BROWSE_DIRECTORY;
+		title = "Choose a Directory";
+	}
+	void save_file(){
+		dialog_type = Fl_Native_File_Chooser::BROWSE_SAVE_FILE;
+		title = "Save";
+	}
+
 	void act(){
 		
 		 Fl_Native_File_Chooser fnfc;
@@ -68,37 +77,38 @@ class ns_file_chooser{
 		//char * filter_text;
 		unsigned long size = 0;
 		if (filters.size() == 0){
-			filter_text = "All\0*.*\0";
+			filter_text = "All\t*.*";
 			size = 8;
 		}
 		else{
+			std::string value;
+		
 			for (unsigned int i = 0; i < filters.size(); i++){
-				size += static_cast<unsigned long>(filters[i].name.size());
-				size += static_cast<unsigned long>(filters[i].extension.size());
-				size+= 4;
+				value += filters[i].name;
+				value += "\t*.";
+				value += filters[i].extension;
+				if (i+1 != filters.size())
+					value+='\n';
 			}
-			filter_text = new char[size+1];
+			filter_text = new char[value.size()+1];
 			should_delete = true;
 			unsigned int cur_pos=0;
-			for (unsigned int i = 0; i < filters.size(); i++){
-				for (unsigned int j = 0; j < filters[i].name.size(); j++)
-					filter_text[cur_pos+j] = filters[i].name[j];
-
-				cur_pos+=static_cast<unsigned long>(filters[i].name.size());
-				filter_text[cur_pos] = '\0';
-				filter_text[cur_pos+1] = '*';
-				filter_text[cur_pos+2] = '.';
-				cur_pos+=3;	
-
-				for (unsigned int j = 0; j < filters[i].extension.size(); j++)
-					filter_text[cur_pos+j] = filters[i].extension[j];
-				cur_pos+=static_cast<unsigned long>(filters[i].extension.size());
-				filter_text[cur_pos] = '\0';
-				cur_pos++;
+			for (unsigned int i = 0; i < value.size(); i++){
+				filter_text[i] = value[i];
 			}
-			filter_text[cur_pos] = '\0';
+			filter_text[value.size()] = 0;
 		}
 		return should_delete;
+	}
+};
+
+class ns_image_file_chooser : public ns_file_chooser{
+public:
+	ns_image_file_chooser():ns_file_chooser(){
+		filters.push_back(ns_file_chooser_file_type("TIF","tif"));
+		filters.push_back(ns_file_chooser_file_type("JPEG","jpg"));
+		filters.push_back(ns_file_chooser_file_type("JPEG2000","jp2"));
+		title = "Choose an Image";
 	}
 };
 
@@ -167,6 +177,24 @@ public:
 		*wait_for_it = false;
 	}
 };
+
+class ns_alert_dialog{
+public:
+	std::string text;
+	void act(){
+	#ifdef WIN32
+			MessageBox(
+			0,
+			text.c_str(),
+			"Worm Browser",
+			MB_TASKMODAL | MB_ICONEXCLAMATION| MB_DEFBUTTON1 | MB_TOPMOST);
+			
+	#else
+			fl_alert(text.c_str());
+	#endif
+	}
+};
+
 class ns_text_dialog{
 public:
 	std::string text,title;

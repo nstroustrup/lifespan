@@ -40,7 +40,7 @@
 #include "ns_capture_schedule.h"
 #include "ns_buffered_random_access_image.h"
 #include "ns_mask_management.h"
-#include "ns_windows_file_dialog.h"
+//#include "ns_windows_file_dialog.h"
 #include "ns_lifespan_statistics.h"
 #include "ns_machine_analysis_data_loader.h"
 //#include "ns_worm_tracker.h"

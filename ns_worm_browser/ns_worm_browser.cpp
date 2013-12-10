@@ -4569,18 +4569,19 @@ bool ns_worm_learner::prompt_to_save_death_time_annotations(){
 		std::cout << "No Save Required.\n";
 		return true;
 	}
-	int ret;
-	ret = MessageBox(
-	0,
-	"Do you want to save the annotations you have made?",
-	"Schedule Submission",
-	MB_TASKMODAL | MB_YESNOCANCEL | MB_ICONQUESTION | MB_DEFBUTTON1 | MB_TOPMOST);
-	if (ret == IDCANCEL)
-		return false;
-	if (ret == IDNO)
+	ns_choice_dialog dialog;
+	dialog.title = "There are unsaved annotations in your storyboard.  What should be done?";
+	dialog.option_1 = "Save";
+	dialog.option_2 = "Discard Unsaved";
+	dialog.option_3 = "Cancel";
+	ns_run_in_main_thread<ns_choice_dialog> b(&dialog);
+	if (dialog.result == 1){
+		save_death_time_annotations();
 		return true;
-	save_death_time_annotations();
-	return true;
+	}
+	if (dialog.result == 2)
+		return true;
+	return false;
 }
 void ns_worm_learner::save_death_time_annotations(){
 	

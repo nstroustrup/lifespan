@@ -516,12 +516,16 @@ public:
 		}
 		catch(ns_ex & ex){
 			cerr << "Error: " << ex.text();
-			MessageBox(
+			ns_alert_dialog d;
+			d.text = ex.text();
+			d.act();
+			/*MessageBox(
 				0,
 				ex.text().c_str(),
 				"Worm Browser",
 				MB_TASKMODAL | MB_ICONEXCLAMATION| MB_DEFBUTTON1 | MB_TOPMOST);
-			}
+			}*/
+		}
 	} 
 
 };
@@ -558,6 +562,7 @@ std::string ns_get_input_string(const std::string title,const std::string defaul
 	return is.result;
 }
 
+void ns_quit();
 class ns_worm_terminal_main_menu_organizer : public ns_menu_organizer{
 
 	/*static void run_animation_trial(const std::string & value){
@@ -588,13 +593,15 @@ class ns_worm_terminal_main_menu_organizer : public ns_menu_organizer{
 	static void view_reject_spine_collage_stats(const std::string & value){worm_learner.make_reject_spine_collage_with_stats(worm_learner.output_svg_spines,worm_learner.worm_visualization_directory());}
 	static void output_feature_distributions(const std::string & value){worm_learner.output_distributions_of_detected_objects();}
 	static void calculate_slow_movement(const std::string & value){
-		std::vector<dialog_file_type> foo;
+		ns_image_file_chooser im_cc;
+		ns_run_in_main_thread<ns_image_file_chooser> run_mt(&im_cc);
+		/*std::vector<dialog_file_type> foo;
 		foo.push_back(dialog_file_type("TIF (*.tif)","tif"));
 		foo.push_back(dialog_file_type("JPEG (*.jpg)","jpg"));
 		foo.push_back(dialog_file_type("JPEG2000 (*.jp2)","jp2"));
-		std::string filename = open_file_dialog("Load Image",foo);
-		if (filename != ""){
-			worm_learner.characterize_movement(filename);
+		std::string filename = open_file_dialog("Load Image",foo);*/
+		if (im_cc.chosen){
+			worm_learner.characterize_movement(im_cc.result);
 		}
 	}
 	/*****************************
@@ -646,43 +653,59 @@ class ns_worm_terminal_main_menu_organizer : public ns_menu_organizer{
 	}
 
 	static void output_learning_set(const std::string & value){
-		std::vector<dialog_file_type> foo;
-		foo.push_back(dialog_file_type("(*.*)","*"));
-		std::string filename = open_file_dialog("Load Image",foo);
-		if (filename != "") worm_learner.output_learning_set(filename);		
+		ns_image_file_chooser im_cc;
+		ns_run_in_main_thread<ns_image_file_chooser> run_mt(&im_cc);
+		if (im_cc.chosen) worm_learner.output_learning_set(im_cc.result);		
 	}
 	static void auto_output_learning_set(const std::string & value){worm_learner.output_learning_set("c:\\worm_detection\\training_set\\a",true);}
 	static void rethreshold_image_set(const std::string & value){
-		std::vector<dialog_file_type> foo;
+		/*std::vector<dialog_file_type> foo;
 		foo.push_back(dialog_file_type("(*.*)","*"));
 		std::string filename = open_file_dialog("Load File",foo);
-		if (filename != "") worm_learner.training_file_generator.re_threshold_training_set(filename,worm_learner.get_svm_model_specification());
+		if (filename != "") */
+		ns_image_file_chooser im_cc;
+		ns_run_in_main_thread<ns_image_file_chooser> run_mt(&im_cc);
+		if (im_cc.chosen)
+			worm_learner.training_file_generator.re_threshold_training_set(im_cc.result,worm_learner.get_svm_model_specification());
 	}
 	static void generate_training_set(const std::string & value){worm_learner.generate_training_set_image();}
 	static void process_training_set(const std::string & value){worm_learner.process_training_set_image();}
 	static void generate_SVM_training_data(const std::string & value){
-		std::vector<dialog_file_type> foo;
-		foo.push_back(dialog_file_type("(*.*)","*"));
-		std::string * filename = new std::string(open_file_dialog("Load File",foo));
-		worm_learner.train_from_data(*filename);
+		/*std::vector<dialog_file_type> foo;
+		foo.push_back(dialog_file_type("(*.*)","*"));*/
+		ns_image_file_chooser im_cc;
+		ns_run_in_main_thread<ns_image_file_chooser> run_mt(&im_cc);
+		std::string * filename = new std::string(im_cc.result);
+		if (im_cc.chosen)
+			worm_learner.train_from_data(*filename);
+		else delete filename;
 	}
 	static void split_results(const std::string & value){
-		std::vector<dialog_file_type> foo;
-		foo.push_back(dialog_file_type("(*.tif)","*"));
-		std::string filename = open_file_dialog("Load Directory",foo);
-		worm_learner.training_file_generator.split_training_set_into_different_regions(filename);
+		ns_file_chooser im_cc;
+		im_cc.title = "Choose Result File";
+		ns_run_in_main_thread<ns_file_chooser> run_mt(&im_cc);
+		if (im_cc.chosen)
+			worm_learner.training_file_generator.split_training_set_into_different_regions(im_cc.result);
 	}
 	static void fix_headers_for_svm_training_set_images(const std::string & value){
-		std::vector<dialog_file_type> foo;
-		foo.push_back(dialog_file_type("(*.*)","*"));
-		std::string  problem_directory = open_file_dialog("Directory to Fix",foo);
-		if (problem_directory == "")
-			return;
-		std::string  reference_directory = open_file_dialog("Reference Directory",foo);
-		if (reference_directory == "")
-			return;
-		problem_directory = ns_dir::extract_path(problem_directory);
-		reference_directory = ns_dir::extract_path(reference_directory);
+		
+		std::string problem_directory,reference_directory;
+		{
+			ns_file_chooser im_cc;
+			im_cc.title = "Choose Directory to Fix";
+			ns_run_in_main_thread<ns_file_chooser> run_mt(&im_cc);
+			problem_directory  = im_cc.result;
+			if (!im_cc.chosen)
+				return;
+		}
+		{
+			ns_file_chooser im_cc;
+			im_cc.title = "Choose Reference Directory";
+			ns_run_in_main_thread<ns_file_chooser> run_mt(&im_cc);
+			reference_directory  = im_cc.result;
+			if (!im_cc.chosen)
+				return;
+		}
 		string output_directory = problem_directory + DIR_CHAR_STR + "fixed_images";
 		ns_dir::create_directory_recursive(output_directory);
 		ns_training_file_generator gen;
@@ -690,42 +713,44 @@ class ns_worm_terminal_main_menu_organizer : public ns_menu_organizer{
 
 	}
 	static void analyze_svm_results(const std::string & value){
-		std::vector<dialog_file_type> foo;
-		foo.push_back(dialog_file_type("(*.*)","*"));
-		std::string * filename = new std::string(open_file_dialog("Load Results File",foo));
+		ns_file_chooser im_cc;
+		im_cc.title = "Choose Result File";
+		ns_run_in_main_thread<ns_file_chooser> run_mt(&im_cc);
+		std::string * filename = new std::string(im_cc.result);
 		ns_thread t;
-		if (*filename != "") worm_learner.training_file_generator.plot_errors_on_freq(*filename);
+		if (im_cc.chosen) worm_learner.training_file_generator.plot_errors_on_freq(*filename);
+		else delete filename;
 	}
 //	static void run_temporal_inference(const std::string & value){worm_learner.run_temporal_inference();}
 	static void remove_duplicates_from_training_set(const std::string & value){
-		std::vector<dialog_file_type> foo;
-		foo.push_back(dialog_file_type("(*.tif)","*"));
-		std::string filename = open_file_dialog("Load Directory",foo);
-		worm_learner.training_file_generator.mark_duplicates_in_training_set(filename);
+		ns_file_chooser im_cc;
+		im_cc.title = "Load Directory";
+		ns_run_in_main_thread<ns_file_chooser> run_mt(&im_cc);
+		worm_learner.training_file_generator.mark_duplicates_in_training_set(im_cc.result);
 	}
 	static void generate_region_subset_time_series(const std::string & value){
-		std::vector<dialog_file_type> foo;
-		foo.push_back(dialog_file_type("(*.txt)","*"));
-		std::string filename = open_file_dialog("Load Directory",foo);
-		worm_learner.output_subregion_as_test_set(filename);
+		ns_file_chooser im_cc;
+		im_cc.title = "Load Directory";
+		ns_run_in_main_thread<ns_file_chooser> run_mt(&im_cc);
+		worm_learner.output_subregion_as_test_set(im_cc.result);
 	}
 	static void load_region_as_new_experiment(const std::string & value){
-		std::vector<dialog_file_type> foo;
-		foo.push_back(dialog_file_type("(*.txt)","*"));
-		std::string filename = open_file_dialog("Load Directory",foo);
-		worm_learner.input_subregion_as_new_experiment(filename);
+		ns_file_chooser im_cc;
+		im_cc.title = "Load Directory";
+		ns_run_in_main_thread<ns_file_chooser> run_mt(&im_cc);
+		worm_learner.input_subregion_as_new_experiment(im_cc.result);
 	}
 	static void create_decimated_subset(const std::string & value){
-		std::vector<dialog_file_type> foo;
-		foo.push_back(dialog_file_type("(*.tif)","*"));
-		std::string filename = open_file_dialog("Load Directory",foo);
-		worm_learner.decimate_folder(filename);
+	ns_file_chooser im_cc;
+		im_cc.title = "Load Directory";
+		ns_run_in_main_thread<ns_file_chooser> run_mt(&im_cc);
+		worm_learner.decimate_folder(im_cc.result);
 	}
 	static void translate_fscore(const std::string & value){
-		std::vector<dialog_file_type> foo;
-		foo.push_back(dialog_file_type("(*.tif)","*"));
-		std::string filename = open_file_dialog("Load Directory",foo);
-		worm_learner.translate_f_score_file(filename);
+		ns_file_chooser im_cc;
+		im_cc.title = "Load Directory";
+		ns_run_in_main_thread<ns_file_chooser> run_mt(&im_cc);
+		worm_learner.translate_f_score_file(im_cc.result);
 	}
 	/*****************************
 	Copy and Paste
@@ -739,34 +764,40 @@ class ns_worm_terminal_main_menu_organizer : public ns_menu_organizer{
 	Mask Management
 	*****************************/
 	static void masks_generate_composite(const std::string & value){
-		std::vector<dialog_file_type> foo;
-		foo.push_back(dialog_file_type("TIF (*.tif)","tif"));
-		std::string filename = save_file_dialog("Save Image",foo,"*.tif",worm_learner.data_selector.current_experiment_name() + "_mask.tif");
-		if (filename != "")
-			worm_learner.produce_experiment_mask_file(filename);
+		ns_file_chooser im_cc;
+		im_cc.save_file();
+		im_cc.title = "Save Image Mask";
+		im_cc.filters.push_back(ns_file_chooser_file_type("TIF","tif"));
+		im_cc.default_filename = worm_learner.data_selector.current_experiment_name() + "_mask.tif";
+		ns_run_in_main_thread<ns_file_chooser> run_mt(&im_cc);
+		if (im_cc.chosen)
+			worm_learner.produce_experiment_mask_file(im_cc.result);
 	}
 	static void masks_process_composite(const std::string & value){
-		std::vector<dialog_file_type> foo;
+		/*std::vector<dialog_file_type> foo;
 		foo.push_back(dialog_file_type("TIF (*.tif)","tif"));
-		std::string filename = open_file_dialog("Save Image",foo);
-		if (filename != "") worm_learner.decode_experiment_mask_file(filename);
+		std::string filename = open_file_dialog("Save Image",foo);*/
+		ns_file_chooser im_cc;
+		//im_cc.save_file();
+		im_cc.title = "Load Image Mask";
+		im_cc.filters.push_back(ns_file_chooser_file_type("TIF","tif"));
+		ns_run_in_main_thread<ns_file_chooser> run_mt(&im_cc);
+		if (im_cc.chosen) worm_learner.decode_experiment_mask_file(im_cc.result);
 	}
 	static void masks_submit_composite(const std::string & value){worm_learner.submit_experiment_mask_file_to_cluster();}
 
 	static void open_individual_mask(const std::string & value){
-		std::vector<dialog_file_type> foo;
-		foo.push_back(dialog_file_type("TIF (*.tif)","tif"));
-		std::string filename = open_file_dialog("Load Mask",foo);
-		if (filename != "") worm_learner.load_mask(filename);
+		ns_file_chooser im_cc;
+		im_cc.title = "Load Image Mask";
+		im_cc.filters.push_back(ns_file_chooser_file_type("TIF","tif"));
+		ns_run_in_main_thread<ns_file_chooser> run_mt(&im_cc);
+		if (im_cc.chosen)
+			worm_learner.load_mask(im_cc.result);
 	}
 	static void view_current_mask(const std::string & value){worm_learner.view_current_mask();}
 
 	static void apply_mask_on_current(const std::string & value){
-		std::vector<dialog_file_type> foo;
-		foo.push_back(dialog_file_type("TIF (*.tif)","tif"));
-		foo.push_back(dialog_file_type("JPEG (*.jpg)","jpg"));
-		std::string filename = open_file_dialog("Load Image",foo);
-		if (filename != "") worm_learner.apply_mask_on_current_image();
+		worm_learner.apply_mask_on_current_image();
 	}
 
 	static void submit_individual_mask_to_server(const std::string & value){
@@ -878,14 +909,24 @@ class ns_worm_terminal_main_menu_organizer : public ns_menu_organizer{
 			string message("The database ");
 			message += is.result;
 			message += " already exists on the cluster.  Using it could currupt existing data, and probably won't work.  Are you sure you want to do this?";
-			int ret = MessageBox(
-			0,message.c_str(),"Database exists",
-			MB_TASKMODAL | MB_YESNOCANCEL | MB_ICONQUESTION | MB_DEFBUTTON1 | MB_TOPMOST);
-			if (ret == IDCANCEL)
-				return;
-			if (ret == IDYES){
+			class ns_choice_dialog dialog;
+			dialog.title = message;
+			dialog.option_1 = "Overwrite Existing Data";
+			dialog.option_2 = "Cancel";
+
+			ns_run_in_main_thread<ns_choice_dialog> b(&dialog);
+			//
+			//int ret = MessageBox(
+			////0,message.c_str(),"Database exists",
+			//MB_TASKMODAL | MB_YESNOCANCEL | MB_ICONQUESTION | MB_DEFBUTTON1 | MB_TOPMOST);
+			//if (ret == IDCANCEL)
+			//	return;
+			//if (ret == IDYES){
+			//	worm_learner.import_experiment_data(is.result,d.result,true);
+			//}
+			if (dialog.result == 1)
 				worm_learner.import_experiment_data(is.result,d.result,true);
-			}
+			
 		}
 	}
 	static void generate_region_stats_for_all_regions_in_group(const std::string & value){
@@ -936,18 +977,14 @@ class ns_worm_terminal_main_menu_organizer : public ns_menu_organizer{
 	static void difference_threshold(const std::string & value){worm_learner.difference_threshold();}
 	static void adaptive_threshold(const std::string & value){worm_learner.apply_threshold();}
 	static void movement_threshold(const std::string & value){
-		std::vector<dialog_file_type> foo;
-			foo.push_back(dialog_file_type("TIF (*.tif)","tif"));
-			foo.push_back(dialog_file_type("JPEG (*.jpg)","jpg"));
-			std::string filename = open_file_dialog("Load Image",foo);
-			if (filename != "") worm_learner.calculate_movement_threshold(filename);
+		ns_image_file_chooser im_cc;
+		ns_run_in_main_thread<ns_file_chooser> run_mt(&im_cc);
+		if (im_cc.chosen) worm_learner.calculate_movement_threshold(im_cc.result);
 	}
 	static void movement_threshold_vis(const std::string & value){
-		std::vector<dialog_file_type> foo;
-		foo.push_back(dialog_file_type("TIF (*.tif)","tif"));
-		foo.push_back(dialog_file_type("JPEG (*.jpg)","jpg"));
-		std::string filename = open_file_dialog("Load Image",foo);
-		if (filename != "")worm_learner.calculate_movement_threshold(filename,true);
+		ns_image_file_chooser im_cc;
+		ns_run_in_main_thread<ns_file_chooser> run_mt(&im_cc);
+		if (im_cc.chosen)worm_learner.calculate_movement_threshold(im_cc.result,true);
 	}
 	static void two_stage_threshold(const std::string & value){worm_learner.two_stage_threshold();}
 	static void two_stage_threshold_vis(const std::string & value){worm_learner.two_stage_threshold(true);}
@@ -959,11 +996,9 @@ class ns_worm_terminal_main_menu_organizer : public ns_menu_organizer{
 	static void compress_dark(const std::string & value){worm_learner.compress_dark_noise();}
 	static void grayscale_from_blue(const std::string & value){worm_learner.grayscale_from_blue();}
 	static void vertical_offset(const std::string & value){
-		std::vector<dialog_file_type> foo;
-		foo.push_back(dialog_file_type("TIF (*.tif)","tif"));
-		foo.push_back(dialog_file_type("JPEG (*.jpg)","jpg"));
-		std::string filename = open_file_dialog("Load Image",foo);
-		if (filename != "")worm_learner.calculate_vertical_offset(filename);
+		ns_image_file_chooser im_cc;
+		ns_run_in_main_thread<ns_file_chooser> run_mt(&im_cc);
+		if (im_cc.chosen)worm_learner.calculate_vertical_offset(im_cc.result);
 	}
 	static void heat_map_overlay(const std::string & value){worm_learner.calculate_heatmap_overlay();}
 	static void test_resample(const std::string & value){worm_learner.resize_image();}
@@ -1000,49 +1035,69 @@ class ns_worm_terminal_main_menu_organizer : public ns_menu_organizer{
 		get_menu_handler()->update_experiment_choice(*get_menu_bar());
 	}
 	static void file_open(const std::string & data){
-		cout << ns_get_input_string("TITLE","GOBER");
-		std::vector<dialog_file_type> foo;
+		//cout << ns_get_input_string("TITLE","GOBER");
+		/*std::vector<dialog_file_type> foo;
 		foo.push_back(dialog_file_type("TIF (*.tif)","tif"));
 		foo.push_back(dialog_file_type("JPEG (*.jpg)","jpg"));
 		std::string filename = open_file_dialog("Load Image",foo);
 		if (filename != ""){
 			worm_learner.load_file(filename);
 			worm_learner.draw();
+		}*/
+		ns_image_file_chooser im_cc;
+		ns_run_in_main_thread<ns_image_file_chooser> run_mt(&im_cc);
+		if (im_cc.chosen){
+			worm_learner.load_file(im_cc.result);
+			worm_learner.draw();
 		}
 	}
 	static void file_save(const std::string & data){
-		std::vector<dialog_file_type> foo;
+		/*std::vector<dialog_file_type> foo;
 		foo.push_back(dialog_file_type("TIF (*.tif)","tif"));
 		foo.push_back(dialog_file_type("JPEG (*.jpg)","jpg"));
 		std::string filename = save_file_dialog("Save Image",foo,"tif");		
 		if (filename != "")
 			worm_learner.save_current_image(filename);
+			*/
+		ns_image_file_chooser im_cc;
+		im_cc.save_file();
+		ns_run_in_main_thread<ns_image_file_chooser> run_mt(&im_cc);
+		if (im_cc.chosen)
+			worm_learner.save_current_image(im_cc.result);
 	}
 	static void file_open_16_bit_dark(const std::string & data){
-		std::vector<dialog_file_type> foo;
+		/*std::vector<dialog_file_type> foo;
 		foo.push_back(dialog_file_type("TIF (*.tif)","tif"));
 		foo.push_back(dialog_file_type("JPEG (*.jpg)","jpg"));
 		std::string filename = open_file_dialog("Load 16-bit Image",foo);
-		if (filename != "")
-			worm_learner.load_16_bit<ns_features_are_dark>(filename);
+		if (filename != "")*/
+		ns_image_file_chooser im_cc;
+		ns_run_in_main_thread<ns_image_file_chooser> run_mt(&im_cc);
+		if (im_cc.chosen)
+			worm_learner.load_16_bit<ns_features_are_dark>(im_cc.result);
 	}
 	static void file_open_16_bit_light(const std::string & data){
-		std::vector<dialog_file_type> foo;
-		foo.push_back(dialog_file_type("TIF (*.tif)","tif"));
-		foo.push_back(dialog_file_type("JPEG (*.jpg)","jpg"));
-		std::string filename = open_file_dialog("Load 16-bit Image",foo);
-		if (filename != "")
-			worm_learner.load_16_bit<ns_features_are_light>(filename);
+		ns_image_file_chooser im_cc;
+		ns_run_in_main_thread<ns_image_file_chooser> run_mt(&im_cc);
+		if (im_cc.chosen)
+			worm_learner.load_16_bit<ns_features_are_light>(im_cc.result);
 	}
 	static void file_quit(const std::string & data){
-		exit(0);
+		ns_quit();
 	}
 
 	static void upload_strain_metadata(const std::string & data){
-		std::vector<dialog_file_type> foo;
+		/*std::vector<dialog_file_type> foo;
 		foo.push_back(dialog_file_type("comma-separated value file (*.csv)","csv"));
 		std::string filename = open_file_dialog("Load Strain Metadata File",foo);
 		worm_learner.load_strain_metadata_into_database(filename);
+		*/
+		ns_file_chooser im_cc;
+		im_cc.filters.push_back(ns_file_chooser_file_type("comma-separated value file (*.csv)","csv"));
+		ns_run_in_main_thread<ns_file_chooser> run_mt(&im_cc);
+		if (im_cc.chosen)
+			worm_learner.load_strain_metadata_into_database(im_cc.result);
+		
 	}
 
 public:
@@ -2308,13 +2363,10 @@ int main() {
 		
 		//ns_update_sample_info(sql());
 		ns_worm_browser_output_debug(__LINE__,__FILE__,"Checking for new release");
-		if (image_server.new_software_release_available()){
-			MessageBox(
-				0,
-				"This version of the Worm Browser is outdated.  Please update it.",
-				"Worm Browser",
-				MB_TASKMODAL | MB_ICONEXCLAMATION| MB_DEFBUTTON1 | MB_TOPMOST);
-		}
+		ns_alert_dialog d;
+		d.text = "This version of the Worm Browser is outdated.  Please update it.";
+		if (image_server.new_software_release_available())
+			d.act();
 		
 		ns_worm_browser_output_debug(__LINE__,__FILE__,"Loading detection models");
 		image_server.load_all_worm_detection_models(worm_learner.model_specifications);
@@ -2411,11 +2463,15 @@ int main() {
 			*/
 	}
 	catch(ns_ex & ex){
+		ns_alert_dialog d;
+		d.text = ex.text();
+		d.act();
+		/*
 		MessageBox(
 		0,
 		ex.text().c_str(),
 		"Worm Browser",
-		MB_TASKMODAL | MB_ICONEXCLAMATION| MB_DEFBUTTON1 | MB_TOPMOST);
+		MB_TASKMODAL | MB_ICONEXCLAMATION| MB_DEFBUTTON1 | MB_TOPMOST);*/
 	/*
 	  	cerr << ex.text() << "\n";
 		for (unsigned int i = 0; i < 5; i ++){
@@ -2572,7 +2628,7 @@ void ask_if_schedule_should_be_submitted_to_db(bool & write_to_disk, bool & writ
 	write_to_disk = c.result == 1;
 	write_to_db = c.result == 2;
 	return;
-
+	/*
 	//old behavior
 	write_to_disk = false;
 	write_to_db = false;
@@ -2607,9 +2663,8 @@ void ask_if_schedule_should_be_submitted_to_db(bool & write_to_disk, bool & writ
 		write_to_db = true;
 		return;
 	}
-	return;
+	return;*/
 }
-
 
  void ns_experiment_storyboard_annotater_timepoint::load_image(const unsigned long bottom_height,ns_annotater_image_buffer_entry & im,ns_sql & sql,ns_image_standard & temp_buffer,const unsigned long resize_factor_){
 	this->blacked_out_non_subject_animals = false;
@@ -2657,3 +2712,8 @@ void ask_if_schedule_should_be_submitted_to_db(bool & write_to_disk, bool & writ
 
 
 ns_death_time_posture_solo_annotater_data_cache ns_death_time_solo_posture_annotater::data_cache;
+
+void ns_quit(){
+	ns_acquire_lock_for_scope lock(worm_learner.main_window.display_lock,__FILE__,__LINE__);
+	exit(0);
+}

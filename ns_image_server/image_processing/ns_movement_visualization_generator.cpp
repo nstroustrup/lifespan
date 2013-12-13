@@ -30,6 +30,10 @@ void ns_movement_visualization_generator::create_survival_curve_for_capture_time
 		if (strain.data.number_of_animals_at_risk[i] == 0)
 			break;
 	}
+	
+	if (plate_time.size() == 0)
+		throw ns_ex("ns_movement_visualization_generator::create_survival_curve_for_capture_time()::The supplied plate time vector is empty");
+
 	unsigned long latest_time(plate_time[plate_last_death]);
 	if (latest_time < strain_time[strain_last_death])
 		latest_time = strain_time[strain_last_death];

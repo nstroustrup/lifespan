@@ -326,8 +326,13 @@ ns_os_signal_handler_return_type exit_signal_handler(ns_os_signal_handler_signal
 ns_os_signal_handler_return_type exit_signal_handler(ns_os_signal_handler_signal signal,siginfo_t *info, void * context){
 #endif
 	if (image_server.exit_requested == false){
+		try{
 		ns_shutdown_dispatcher();
 		image_server.os_signal_handler.set_signal_handler(ns_interrupt,exit_signal_handler);
+		}
+		catch(ns_ex & ex){
+			cerr << ex.text() << "\n";
+		}
 		return ns_os_signal_handler_return_value;
 	}
 	else{
@@ -662,7 +667,7 @@ ns_multiprocess_control_options ns_spawn_new_nodes(	const unsigned int & count,
 typedef enum {ns_none,ns_start, ns_stop, ns_help, ns_restart, ns_status, ns_hotplug,
 			  ns_reset_devices,ns_reload_models,ns_submit_experiment,ns_test_email,ns_test_alert, ns_test_rate_limited_alert,ns_wrap_m4v,
 			  ns_restarting_after_a_crash,ns_trigger_segfault_in_main_thread,ns_trigger_segfault_in_dispatcher_thread, ns_run_pending_image_transfers,
-	      ns_clear_local_db_buffer_cleanly,ns_clear_local_db_buffer_dangerously,ns_simulate_central_db_connection_error,ns_fix_orphaned_captured_images} ns_cl_command;
+	      ns_clear_local_db_buffer_cleanly,ns_clear_local_db_buffer_dangerously,ns_simulate_central_db_connection_error,ns_fix_orphaned_captured_images,ns_update_sql} ns_cl_command;
 
 ns_image_server_sql * ns_connect_to_available_sql_server(){
 		try{
@@ -734,6 +739,7 @@ int main(int argc, char * argv[]){
 	commands["clear_local_db_buffer_dangerously"] = ns_clear_local_db_buffer_dangerously;
 	commands["simulate_central_db_connection_error"] = ns_simulate_central_db_connection_error;
 	commands["fix_orphaned_captured_images"] = ns_fix_orphaned_captured_images;	
+	commands["update_sql"] = ns_update_sql;
 	bool is_master_node(false);
 	try{
 		
@@ -815,7 +821,8 @@ int main(int argc, char * argv[]){
 						<< "clear_local_db_buffer_cleanly: Clear all information from the local database after synchronizing it with the central db.\n"
 						<< "clear_local_db_buffer_dangerously: Clear all information from the local database without synchronizing.\n"
 						<< "simulate_central_db_connection_error: Simulate a broken connection to the central database.\n"
-						<< "fix_orphaned_captured_images: Go through the volatile storage and fix database records for images orphaned by a previous bug in the lifespan machine software\n";
+						<< "fix_orphaned_captured_images: Go through the volatile storage and fix database records for images orphaned by a previous bug in the lifespan machine software\n"
+						<< "upgrade_sql: upgrade the sql database schema to match the most recent version. No changes are made if the schema is already up-to-data.\n";
 					#ifndef WIN32
 					ex << "daemon: run as a background process\n";
 					#endif
@@ -894,13 +901,8 @@ int main(int argc, char * argv[]){
 					if (!image_server.send_message_to_running_server(NS_SIMULATE_CENTRL_DB_CONNECTION_ERROR))
 					cerr << "No image server found running at " << image_server.dispatcher_ip() << ":" << image_server.dispatcher_port() << ".";
 				return 0;
-														 }
-		case ns_fix_orphaned_captured_images:{
-		  	ns_acquire_for_scope<ns_sql> sql(image_server.new_sql_connection(__FILE__,__LINE__));
-			image_server.image_storage.fix_orphaned_captured_images(&sql());
-			sql.release();
-		  return 0;
-		}
+			}
+	
 			case ns_restart:{
 			  
 				if (!image_server.send_message_to_running_server(NS_QUIT))
@@ -949,74 +951,13 @@ int main(int argc, char * argv[]){
 					(default_output_filename.size() == 0));
 				return 0;
 			}
-			case ns_test_email:{
-				std::string text("Image server node ");
-				text += image_server.host_name_out();
-				text += " has succesfully sent an email.";
-				ns_acquire_for_scope<ns_sql> sql(image_server.new_sql_connection(__FILE__,__LINE__));
-				image_server.alert_handler.initialize(sql());
-				image_server.alert_handler.submit_desperate_alert(text);
-				sql.release();
-				return 0;
-			}
-			case ns_test_alert:{
-				std::string text("At ");
-				text += ns_format_time_string_for_human (ns_current_time()) + " a cluster node submitted a test alert.";
-				ns_acquire_for_scope<ns_sql> sql(image_server.new_sql_connection(__FILE__,__LINE__));
-				image_server.alert_handler.initialize(sql());
-				ns_alert alert(text,
-					text + "  If you are recieving this message, it has been handled successfully.",
-					ns_alert::ns_test_alert
-					,ns_alert::get_notification_type(ns_alert::ns_test_alert,false),
-					ns_alert::ns_not_rate_limited
-					);
-
-				image_server.alert_handler.submit_alert(alert,sql());
-				sql.release();
-				return 0;
-			}
+			
 			case ns_wrap_m4v:{
 				if (!image_server.send_message_to_running_server(NS_WRAP_M4V,argv[2])){
 					std::string output_basename = ns_dir::extract_filename_without_extension(input_filename);
 					ns_wrap_m4v_stream(input_filename,output_basename);
 				}
 				return 0;
-			}
-			case ns_test_rate_limited_alert:{
-				ns_acquire_for_scope<ns_sql> sql(image_server.new_sql_connection(__FILE__,__LINE__));
-					image_server.alert_handler.initialize(sql());		
-					std::string text("At ");
-					text += ns_format_time_string_for_human (ns_current_time()) + " a cluster node submitted a rate limited test alert.";
-					ns_alert alert(text,
-						text + "  If you are recieving this message, it has been handled successfully.",
-						ns_alert::ns_test_alert
-						,ns_alert::get_notification_type(ns_alert::ns_test_alert,false),
-						ns_alert::ns_rate_limited
-						);
-
-					image_server.alert_handler.submit_alert(alert,sql());
-					sql.release();
-					return 0;
-			}
-				
-			case ns_restarting_after_a_crash:{
-				std::string text("The image server node ");
-				text += image_server.host_name_out() + " restarted after a fatal error at ";
-				text += ns_format_time_string_for_human(ns_current_time());
-				ns_acquire_for_scope<ns_sql> sql(image_server.new_sql_connection(__FILE__,__LINE__));
-				image_server.alert_handler.initialize(sql());
-
-					ns_alert alert(text,
-						text,
-						ns_alert::ns_server_crash,
-						ns_alert::get_notification_type(ns_alert::ns_server_crash,true),
-						ns_alert::ns_rate_limited
-						);
-
-				image_server.alert_handler.submit_alert(alert,sql());
-				sql.release();
-				restarting_after_crash = true;
-				break;
 			}
 			case ns_trigger_segfault_in_main_thread:{
 				post_dispatcher_init_command = ns_trigger_segfault_in_main_thread;
@@ -1034,6 +975,16 @@ int main(int argc, char * argv[]){
 				if (!image_server.send_message_to_running_server(NS_CLEAR_DB_BUF_DIRTY))
 					throw ns_ex("No image server found running at ") << image_server.dispatcher_ip() << ":" << image_server.dispatcher_port() << ".";	
 				return 0;
+
+			//all of these require access to the sql database and will be handled
+			//a little later in the startup process
+			case ns_fix_orphaned_captured_images:
+			case ns_update_sql:
+			case ns_test_email:
+			case ns_test_alert:
+			case ns_test_rate_limited_alert:
+			case ns_restarting_after_a_crash:
+				break;
 			default:
 				throw ns_ex("Unhandled command:") << (int)command;
 		}
@@ -1048,7 +999,7 @@ int main(int argc, char * argv[]){
 		cout << " ==                                   ==\n";
 		cout << " ==        Nicholas Stroustrup        ==\n";
 		cout << " ==            Fontana Lab            ==\n";
-		cout << " ==      Harvard University 2011      ==\n";
+		cout << " ==      Harvard University 2014      ==\n";
 		cout << " ==                                   ==\n";
 		cout << " =======================================\n";
 
@@ -1174,7 +1125,84 @@ int main(int argc, char * argv[]){
 				throw ns_ex("Updated software detected on the cluster.");
 			}
 		}
-		
+
+		//handle requested commandline commands that requre a database
+		switch(command){
+			case ns_fix_orphaned_captured_images:{
+		  		ns_acquire_for_scope<ns_sql> sql(image_server.new_sql_connection(__FILE__,__LINE__));
+				image_server.image_storage.fix_orphaned_captured_images(&sql());
+				sql.release();
+				return 0;
+			}
+			case ns_update_sql:{
+				ns_acquire_for_scope<ns_sql> sql(image_server.new_sql_connection(__FILE__,__LINE__));
+				image_server.upgrade_tables(sql(),false);
+				sql.release();
+				return 0;
+			}
+			case ns_test_email:{
+				std::string text("Image server node ");
+				text += image_server.host_name_out();
+				text += " has succesfully sent an email.";
+				ns_acquire_for_scope<ns_sql> sql(image_server.new_sql_connection(__FILE__,__LINE__));
+				image_server.alert_handler.initialize(sql());
+				image_server.alert_handler.submit_desperate_alert(text);
+				sql.release();
+				return 0;
+			}
+			case ns_test_alert:{
+				std::string text("At ");
+				text += ns_format_time_string_for_human (ns_current_time()) + " a cluster node submitted a test alert.";
+				ns_acquire_for_scope<ns_sql> sql(image_server.new_sql_connection(__FILE__,__LINE__));
+				image_server.alert_handler.initialize(sql());
+				ns_alert alert(text,
+					text + "  If you are recieving this message, it has been handled successfully.",
+					ns_alert::ns_test_alert
+					,ns_alert::get_notification_type(ns_alert::ns_test_alert,false),
+					ns_alert::ns_not_rate_limited
+					);
+
+				image_server.alert_handler.submit_alert(alert,sql());
+				sql.release();
+				return 0;
+			}
+			case ns_test_rate_limited_alert:{
+				ns_acquire_for_scope<ns_sql> sql(image_server.new_sql_connection(__FILE__,__LINE__));
+					image_server.alert_handler.initialize(sql());		
+					std::string text("At ");
+					text += ns_format_time_string_for_human (ns_current_time()) + " a cluster node submitted a rate limited test alert.";
+					ns_alert alert(text,
+						text + "  If you are recieving this message, it has been handled successfully.",
+						ns_alert::ns_test_alert
+						,ns_alert::get_notification_type(ns_alert::ns_test_alert,false),
+						ns_alert::ns_rate_limited
+						);
+
+					image_server.alert_handler.submit_alert(alert,sql());
+					sql.release();
+					return 0;
+			}
+				
+			case ns_restarting_after_a_crash:{
+				std::string text("The image server node ");
+				text += image_server.host_name_out() + " restarted after a fatal error at ";
+				text += ns_format_time_string_for_human(ns_current_time());
+				ns_acquire_for_scope<ns_sql> sql(image_server.new_sql_connection(__FILE__,__LINE__));
+				image_server.alert_handler.initialize(sql());
+
+					ns_alert alert(text,
+						text,
+						ns_alert::ns_server_crash,
+						ns_alert::get_notification_type(ns_alert::ns_server_crash,true),
+						ns_alert::ns_rate_limited
+						);
+
+				image_server.alert_handler.submit_alert(alert,sql());
+				sql.release();
+				restarting_after_crash = true;
+				break;
+			}
+		}
 
 		image_server.register_server_event(ns_image_server_event("Clearing local image cache"),&sql());
 		image_server.image_storage.clear_local_cache();
@@ -1225,6 +1253,13 @@ int main(int argc, char * argv[]){
 		}
 		if (post_dispatcher_init_command == ns_trigger_segfault_in_dispatcher_thread)
 			dispatch.trigger_segfault_on_next_timer();
+
+		
+		ns_acquire_for_scope<ns_sql> sql_2(image_server.new_sql_connection(__FILE__,__LINE__));
+		if (image_server.upgrade_tables(sql_2(),true)){
+			throw ns_ex("The current database schema is out of date.  Please run the command: ns_image_server update_sql");
+		}
+		sql_2.release();
 
 		//search for devices
 		if (image_server.act_as_an_image_capture_server()){

@@ -24,6 +24,7 @@ typedef enum{ns_maintenance_no_task,
 			 ns_maintenance_generate_animal_storyboard,
 			 ns_maintenance_generate_animal_storyboard_subimage,
 			 ns_maintenance_compress_stored_images,
+			 ns_maintenance_generate_subregion_mask,
 			 ns_maintenance_last_task
 		} ns_maintenance_task;
 

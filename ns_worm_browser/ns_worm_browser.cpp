@@ -1,6 +1,7 @@
 #include "ns_worm_browser.h"
 #include "ns_worm_training_set_image.h"
 #include "ns_time_path_image_analyzer.h"
+#include "ns_time_path_solver.h"
 #include "ns_hand_annotation_loader.h"
 #include "ns_machine_analysis_data_loader.h"
 #include "ns_captured_image_statistics_set.h"
@@ -603,6 +604,38 @@ bool ns_worm_learner::import_experiment_data(const std::string & database_name,c
 	return ns_update_db_using_experimental_data_from_file(database_name,reuse_database,directory,sql());
 }
 
+void ns_worm_learner::analyze_time_path(const unsigned long region_id){
+	ns_acquire_for_scope<ns_sql> sql(image_server.new_sql_connection(__FILE__,__LINE__));
+
+	ns_time_path_solver_parameters solver_parameters(ns_time_path_solver_parameters::default_parameters(region_id,sql(),true));
+	ns_time_path_solution time_path_solution;
+	ns_time_path_solver tp_solver;
+	tp_solver.load(region_id,sql());
+	tp_solver.solve(solver_parameters,time_path_solution);
+	time_path_solution.fill_gaps_and_add_path_prefixes(ns_time_path_solution::default_length_of_fast_moving_prefix());
+	time_path_solution.save_to_db(region_id,sql());
+				
+	ns_image_server_results_subject results_subject;
+	results_subject.region_id = region_id;
+			
+
+	ns_acquire_for_scope<ostream> position_3d_file_output(
+	image_server.results_storage.animal_position_timeseries_3d(
+		results_subject,sql(),ns_image_server_results_storage::ns_3d_plot
+	).output()
+	);
+	time_path_solution.output_visualization_csv(position_3d_file_output());
+	position_3d_file_output.release();
+	sql.release();
+
+	cout << time_path_solution.paths.size() << " stationary animals detected.\n";
+	cout << "Path lengths:\n";
+	for (unsigned int i = 0; i < time_path_solution.paths.size(); i++){
+		cout << time_path_solution.paths[i].stationary_elements.size() << ", ";
+	}
+	cout << "\n";
+
+}
 
 void ns_worm_learner::output_region_statistics(const unsigned long experiment_id, const unsigned long experiment_group_id){
 
@@ -695,7 +728,7 @@ void ns_worm_learner::output_device_timing_data(const unsigned long experiment_i
 }
 
 
-void ns_worm_learner::analyze_time_path(const unsigned long region_id){
+//void ns_worm_learner::analyze_time_path(const unsigned long region_id){
 	/*
 	ns_sql * sql = image_server.new_sql_connection(__FILE__,__LINE__);
 	try{
@@ -777,7 +810,7 @@ void ns_worm_learner::analyze_time_path(const unsigned long region_id){
 		throw;
 	}
 	*/
-}
+//}
 
 void ns_worm_learner::generate_survival_curve_from_hand_annotations(){
 	if (!data_selector.experiment_selected())
@@ -1927,6 +1960,52 @@ void ns_worm_learner::generate_experiment_movement_image_quantification_analysis
 	sql.release();
 }
 
+
+void ns_worm_learner::test_time_path_analysis_parameters(unsigned long region_id){
+	ns_acquire_for_scope<ns_sql> sql(image_server.new_sql_connection(__FILE__,__LINE__));
+	ns_time_path_solver tp_solver;
+	tp_solver.load(region_id,sql());
+	ns_time_path_solver_parameters default_parameters(ns_time_path_solver_parameters::default_parameters(region_id,sql()));
+	vector<ns_time_path_solver_parameters> parameters;
+
+	unsigned long fragment_duration_in_hours[] = {0,1,2,4,8,16,};
+	unsigned long stationary_path_duration_in_hours[] = {0,1,2,4,8,16,};
+
+	for (unsigned int i = 0; i < 8; i++){
+		ns_time_path_solver_parameters p(default_parameters);
+	
+		p.min_stationary_object_path_fragment_duration_in_seconds = fragment_duration_in_hours[i]*60*60;
+		for (unsigned int j = 0; j < 8; j++){
+			p.min_final_stationary_path_duration_in_minutes = stationary_path_duration_in_hours[j]*60;
+			parameters.push_back(p);
+		}
+	}
+	
+	for (unsigned int i = 0; i < parameters.size(); i++){
+		ns_time_path_solver tp(tp_solver);
+		ns_time_path_solution s;
+		tp.solve(parameters[i],s);
+		ns_image_server_results_subject sub;
+		sub.region_id = region_id;
+		std::string type = "OPFD=" + ns_to_string(parameters[i].min_stationary_object_path_fragment_duration_in_seconds) + "&"
+						   "SPD=" + ns_to_string(parameters[i].min_final_stationary_path_duration_in_minutes);
+		 
+		ns_acquire_for_scope<ostream> position_3d_file_output(
+		image_server.results_storage.animal_position_timeseries_3d(
+			sub,sql(),ns_image_server_results_storage::ns_3d_plot,type
+		).output()
+		);
+		s.output_visualization_csv(position_3d_file_output());
+		position_3d_file_output.release();
+
+		image_server.results_storage.write_animal_position_timeseries_3d_launcher(sub,ns_image_server_results_storage::ns_3d_plot,sql(),type);
+			
+		//keep the results for the next round!
+		s.unlink_detection_results();
+	}
+
+}
+
 void ns_worm_learner::load_strain_metadata_into_database(const std::string filename){
 	ns_acquire_for_scope<ns_sql> sql(image_server.new_sql_connection(__FILE__,__LINE__));
 	ifstream i(filename.c_str());
@@ -2980,6 +3059,20 @@ void ns_worm_learner::calculate_image_statistics_for_experiment_sample(unsigned 
 	}
 };
 
+void ns_worm_learner::upgrade_tables(){
+	
+	ns_acquire_for_scope<ns_sql> sql(image_server.new_sql_connection(__FILE__,__LINE__));
+	ns_alert_dialog d;
+	if (image_server.upgrade_tables(sql(),false))
+		d.text = "Schema update completed.";
+	else
+		d.text = "No update was needed.";
+		
+	sql.release();
+		
+	d.act();
+
+}
 void ns_worm_learner::handle_file_request(const string & fname){
 	string filename(fname);
 	if (filename.substr(0,8)=="file:///")

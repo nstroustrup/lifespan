@@ -3,7 +3,7 @@
 #include <ostream>
 #include "ns_detected_worm_info.h"
 #include "ns_vector_bitmap_interface.h"
-
+#include "ns_time_path_solver_parameters.h"
 
 struct ns_time_path_limits{
 	ns_time_path_limits(){}
@@ -17,30 +17,6 @@ struct ns_time_path_limits{
 											 interval_after_last_observation,
 											 first_obsevation_of_plate,
 											 last_obsevation_of_plate;
-};
-struct ns_time_path_solver_parameters{
-	unsigned long short_capture_interval_in_seconds,number_of_consecutive_sample_captures,number_of_samples_per_device;
-	double maximum_object_detection_density_in_events_per_hour() const{return 1.0/(short_capture_interval_in_seconds/60.0/60.0*(double)number_of_samples_per_device);}
-
-	unsigned long min_stationary_object_path_fragment_duration_in_seconds;
-	unsigned long stationary_object_path_fragment_window_length_in_seconds;
-	unsigned long stationary_object_path_fragment_max_movement_distance;
-	unsigned long maximum_time_gap_between_joined_path_fragments;
-	unsigned long maximum_time_overlap_between_joined_path_fragments;
-	unsigned long maximum_distance_betweeen_joined_path_fragments;
-	unsigned long min_final_stationary_path_duration_in_minutes;
-	double maximum_fraction_duplicated_points_between_joined_path_fragments,
-			 maximum_path_fragment_displacement_per_hour,
-		   max_average_final_path_average_timepoint_displacement,
-		   maximum_fraction_of_points_allowed_to_be_missing_in_path_fragment,
-		   maximum_fraction_of_median_gap_allowed_in_low_density_paths;
-
-	static ns_time_path_solver_parameters default_parameters(const unsigned long experiment_length_in_seconds,
-															const unsigned long short_capture_interval_in_seconds_,
-															const unsigned long number_of_consecutive_sample_captures_,
-															const unsigned long number_of_samples_per_device_);
-
-	static ns_time_path_solver_parameters default_parameters(const unsigned long sample_region_image_info_id, ns_sql & sql);
 };
 
 struct ns_worm_detection_results_set{
@@ -56,7 +32,6 @@ struct ns_time_element_link{
 struct ns_time_path_element{
 	ns_time_path_element():slowly_moving(false),inferred_animal_location(false),low_temporal_resolution(false),
 			element_before_fast_movement_cessation(false),part_of_a_multiple_worm_disambiguation_cluster(false),worm_(0),number_of_extra_worms_identified_at_location(false){}
-	
 	
 	ns_time_path_element(const ns_detected_worm_info * w):
 		region_position(w->region_position_in_source_image),region_size(w->region_size),
@@ -152,6 +127,9 @@ public:
 		unassigned_points.stationary_elements.resize(0);
 		unassigned_points.center = ns_vector_2i(0,0);
 		worms_loaded = false;
+	}
+	void unlink_detection_results(){
+		detection_results = 0;
 	}
 	ns_time_path unassigned_points;
 

@@ -15,6 +15,8 @@
 #include "ns_managed_pointer.h"
 
 
+std::string ns_shorten_filename(std::string name, const unsigned long limit=40);
+
 #pragma warning(disable: 4355) //our use of this in constructor is valid, so we suppress the error message
 //Generalized Image Recieving
 template<class ns_component>

@@ -131,9 +131,7 @@
     <ClCompile Include="..\external_compile_libraries\jpeg-8d\wrppm.c" />
     <ClCompile Include="..\external_compile_libraries\jpeg-8d\wrrle.c" />
     <ClCompile Include="..\external_compile_libraries\jpeg-8d\wrtarga.c" />
-    <ClCompile Include="..\external_compile_libraries\libdmtx-0.7.4\dmtx.c">
-      <CompileAs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">CompileAsC</CompileAs>
-    </ClCompile>
+    <ClCompile Include="..\external_compile_libraries\libdmtx-0.7.4\dmtx.c" />
     <ClCompile Include="..\external_compile_libraries\openjpeg-1.5.0\libopenjpeg\bio.c" />
     <ClCompile Include="..\external_compile_libraries\openjpeg-1.5.0\libopenjpeg\cidx_manager.c" />
     <ClCompile Include="..\external_compile_libraries\openjpeg-1.5.0\libopenjpeg\cio.c" />
@@ -204,7 +202,7 @@
     <ClCompile Include="..\external_libraries\tiff-3.8.2\libtiff\tif_warning.c" />
     <ClCompile Include="..\external_libraries\tiff-3.8.2\libtiff\tif_write.c" />
     <ClCompile Include="..\external_libraries\tiff-3.8.2\libtiff\tif_zip.c" />
-    <ClCompile Include="..\ns_image_server\image_acquisition\ns_barcode.cpp" />
+    <ClCompile Include="..\ns_image_server\image_acquisition\ns_barcode_new_dmtx_version.cpp" />
     <ClCompile Include="..\ns_image_server\image_base\ns_font.cpp" />
     <ClCompile Include="..\ns_image_server\image_base\ns_image.cpp" />
     <ClCompile Include="..\ns_image_server\image_base\ns_jpeg.cpp" />

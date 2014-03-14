@@ -10,7 +10,8 @@ std::string ns_experiment_capture_specification::submit_schedule_to_db(std::vect
 	string debug;
 	if (!device_schedule_produced) 
 		throw ns_ex("ns_experiment_capture_specification::submit_schedule_to_db()::The device schedule has not yet been compiled");
-
+	if (name.length() > 40)
+			throw ns_ex("To avoid lengthy filenames, experiment names must contain 40 characters or less.");
 	ns_sql_result res;
 	//check that all devices requested exist
 	for (unsigned long i = 0; i < capture_schedules.size(); i++){

@@ -2,6 +2,7 @@
 #include "ns_image_server.h"
 #include "hungarian.h"
 #include "ns_linear_regression_model.h"
+#include "ns_ini.h"
 using namespace std;
 
 
@@ -11,7 +12,6 @@ ns_time_path_solver_parameters ns_time_path_solver_parameters::default_parameter
 														const unsigned long short_capture_interval_in_seconds_,
 														const unsigned long number_of_consecutive_sample_captures_,
 														const unsigned long number_of_samples_per_device_){
-
 					
 	ns_time_path_solver_parameters param;
 	param.short_capture_interval_in_seconds = short_capture_interval_in_seconds_;
@@ -19,15 +19,16 @@ ns_time_path_solver_parameters ns_time_path_solver_parameters::default_parameter
 	param.number_of_samples_per_device = number_of_samples_per_device_;
 
 	const bool short_experiment(experiment_length_in_seconds <  4.5*24*60*60);
-	param.maximum_fraction_of_points_allowed_to_be_missing_in_path_fragment = .5;  //allow 25% of points to be missing
-	param.stationary_object_path_fragment_window_length_in_seconds = 8.0*60.0*60.0/param.maximum_object_detection_density_in_events_per_hour();  // enough time to capture 8 events
 	param.min_stationary_object_path_fragment_duration_in_seconds = short_experiment?(3*60*60):(6*60*60);  
-	param.stationary_object_path_fragment_max_movement_distance = 20; //pixels
 	param.maximum_time_gap_between_joined_path_fragments = short_experiment?3*24*60*60:12*60*60; 
 	param.maximum_time_overlap_between_joined_path_fragments = short_experiment?1*60*60:2*60*60; 
+	param.min_final_stationary_path_duration_in_minutes = short_experiment?1.5*60.0:9*60;
+	
+	param.maximum_fraction_of_points_allowed_to_be_missing_in_path_fragment = .5;  //allow 25% of points to be missing
+	param.stationary_object_path_fragment_window_length_in_seconds = 8.0*60.0*60.0/param.maximum_object_detection_density_in_events_per_hour();  // enough time to capture 8 events
+	param.stationary_object_path_fragment_max_movement_distance = 20; //pixels
 	param.maximum_fraction_duplicated_points_between_joined_path_fragments = .5;
 	param.maximum_distance_betweeen_joined_path_fragments = 50;
-	param.min_final_stationary_path_duration_in_minutes = short_experiment?1.5*60.0:9*60;
 	param.maximum_path_fragment_displacement_per_hour = .9;
 	param.max_average_final_path_average_timepoint_displacement = 5;
 	param.maximum_fraction_of_median_gap_allowed_in_low_density_paths = 10; //600% lager than median gap.
@@ -35,12 +36,23 @@ ns_time_path_solver_parameters ns_time_path_solver_parameters::default_parameter
 }
 
 
-ns_time_path_solver_parameters ns_time_path_solver_parameters::default_parameters(const unsigned long sample_region_image_info_id, ns_sql & sql){
-	sql << "SELECT s.id, s.device_name, s.experiment_id, s.device_capture_period_in_seconds,s.number_of_consecutive_captures_per_sample FROM capture_samples as s, sample_region_image_info as r WHERE r.id =" << sample_region_image_info_id << " AND r.sample_id = s.id";
+ns_time_path_solver_parameters ns_time_path_solver_parameters::default_parameters(const ns_64_bit sample_region_image_info_id, ns_sql & sql,bool create_default_parameter_file_if_needed,bool load_from_file_if_possible){
 	ns_sql_result res;
+	if (load_from_file_if_possible){
+		//Look to see if specific parameter set has been specified
+		sql << "SELECT position_analysis_model FROM sample_region_image_info WHERE id="<<sample_region_image_info_id;
+		
+		sql.get_rows(res);	
+		if (res.empty() || res[0].empty())
+			throw ns_ex("ns_time_path_solver_parameters::default_paramers()::Could not find region id") << sample_region_image_info_id << " in the database!";
+		if (res[0][0].size() > 0)
+			return image_server.get_position_analysis_model(res[0][0],create_default_parameter_file_if_needed,sample_region_image_info_id,&sql);
+	}
+	sql << "SELECT s.id, s.device_name, s.experiment_id, s.device_capture_period_in_seconds,s.number_of_consecutive_captures_per_sample FROM capture_samples as s, sample_region_image_info as r WHERE r.id =" << sample_region_image_info_id << " AND r.sample_id = s.id";
 	sql.get_rows(res);
 	if (res.empty())
 		throw ns_ex("ns_time_path_solver_parameters::default_paramers()::Could not find region id") << sample_region_image_info_id << " in the database!";
+	
 	const unsigned long device_capture_period_in_seconds(atol(res[0][3].c_str()));
 	const unsigned long number_of_consecutive_captures_per_sample(atol(res[0][4].c_str()));
 
@@ -1897,7 +1909,7 @@ void ns_time_path_solver::load_detection_results(unsigned long region_id,ns_sql 
 	timepoints.reserve(time_point_result.size());
 	set<long> times;
 	set<long> detection_ids;
-	detection_results->results.resize(time_point_result.size());\
+	detection_results->results.resize(time_point_result.size());
 	unsigned long current_timepoint_i(0);
 	cout << "Loading Worm Detection Results Metadata...\n";
 	for (unsigned int i = 0; i < time_point_result.size();i++){

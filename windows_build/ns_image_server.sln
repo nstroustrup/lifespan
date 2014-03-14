@@ -13,6 +13,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ns_image_server_update", "n
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ns_image_server_barcodes", "ns_image_server_barcodes.vcxproj", "{CE96BC79-0218-4C95-B749-C4BBD4810026}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "temperature_probe_parser", "temperature_probe_parser.vcxproj", "{3B1934AE-B2B3-450D-A82C-AB2EFEAC4022}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
@@ -63,6 +65,14 @@ Global
 		{CE96BC79-0218-4C95-B749-C4BBD4810026}.Release|Win32.ActiveCfg = Release|Win32
 		{CE96BC79-0218-4C95-B749-C4BBD4810026}.Release|Win32.Build.0 = Release|Win32
 		{CE96BC79-0218-4C95-B749-C4BBD4810026}.Release|x64.ActiveCfg = Release|Win32
+		{3B1934AE-B2B3-450D-A82C-AB2EFEAC4022}.Debug|Win32.ActiveCfg = Debug|Win32
+		{3B1934AE-B2B3-450D-A82C-AB2EFEAC4022}.Debug|Win32.Build.0 = Debug|Win32
+		{3B1934AE-B2B3-450D-A82C-AB2EFEAC4022}.Debug|x64.ActiveCfg = Debug|x64
+		{3B1934AE-B2B3-450D-A82C-AB2EFEAC4022}.Debug|x64.Build.0 = Debug|x64
+		{3B1934AE-B2B3-450D-A82C-AB2EFEAC4022}.Release|Win32.ActiveCfg = Release|Win32
+		{3B1934AE-B2B3-450D-A82C-AB2EFEAC4022}.Release|Win32.Build.0 = Release|Win32
+		{3B1934AE-B2B3-450D-A82C-AB2EFEAC4022}.Release|x64.ActiveCfg = Release|x64
+		{3B1934AE-B2B3-450D-A82C-AB2EFEAC4022}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

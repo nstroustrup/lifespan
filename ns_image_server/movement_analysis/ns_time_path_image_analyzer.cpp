@@ -452,9 +452,20 @@ void ns_time_path_image_movement_analyzer::process_raw_images(const ns_64_bit re
 				+
 				1 //intermediate buffers used during saves
 				);
+
+			ns_64_bit max_mem_per_node = (((ns_64_bit)image_server.maximum_memory_allocation_in_mb())*1024*1024)/
+												image_server.number_of_node_processes_per_machine();
+			ns_64_bit max_mem_on_32_bit = (((ns_64_bit)1)<<28)*7;  //1.75GB
+
+			//32 bit systems become unreliable if you allocate > 1.75 GB.
+			//Yes you can set flags to get access to 3GB but this is finniky in practice
+			//and we err on the side of stability.
+			if (!system_is_64_bit && max_mem_per_node > max_mem_on_32_bit)
+				max_mem_on_32_bit = max_mem_on_32_bit;
+
 			const int number_of_repeats_required(
 				calculate_division_size_that_fits_in_specified_memory_size(
-				system_is_64_bit?((((ns_64_bit)1)<<33)*3):((((ns_64_bit)1)<<28)*7),
+				max_mem_per_node, 
 				number_of_images_stored_in_memory_per_group));
 
 			if (number_of_repeats_required > number_of_paths_to_consider)

@@ -668,6 +668,10 @@ class ns_worm_terminal_main_menu_organizer : public ns_menu_organizer{
 		if (im_cc.chosen)
 			worm_learner.training_file_generator.re_threshold_training_set(im_cc.result,worm_learner.get_svm_model_specification());
 	}
+
+	static void analyze_worm_position(const std::string & value){
+		worm_learner.analyze_time_path(worm_learner.data_selector.current_region().region_id);
+	}
 	static void generate_training_set(const std::string & value){worm_learner.generate_training_set_image();}
 	static void process_training_set(const std::string & value){worm_learner.process_training_set_image();}
 	static void generate_SVM_training_data(const std::string & value){
@@ -946,6 +950,9 @@ class ns_worm_terminal_main_menu_organizer : public ns_menu_organizer{
 	
 	static void generate_experiment_summary_movement_image_quantification_analysis_data(const std::string & value){worm_learner.generate_experiment_movement_image_quantification_analysis_data(ns_worm_learner::ns_quantification_summary);	}
 	
+	static void test_time_path_analysis_parameters(const std::string & value){
+		worm_learner.test_time_path_analysis_parameters(worm_learner.data_selector.current_region().region_id);
+	}
 	static void generate_movement_image_analysis_optimization_data(const std::string & value){
 	
 		if (value.find("Quiecent") != value.npos)
@@ -969,6 +976,7 @@ class ns_worm_terminal_main_menu_organizer : public ns_menu_organizer{
 	static void overwrite_existing_masks(const std::string & value){worm_learner.overwrite_existing_masks(true);}
 	static void generate_mp4(const std::string & value){worm_learner.generate_mp4(true);}
 	static void generate_wmv(const std::string & value){worm_learner.generate_mp4(false);}
+	static void update_sql_schema(const std::string & value){worm_learner.upgrade_tables();}
 
 	/*****************************
 	Image Processing Tasks
@@ -1203,7 +1211,7 @@ public:
 		add(st4);
 		
 		add(ns_menu_item_spec(generate_worm_markov_posture_model_from_by_hand_annotations,"Calibration/Build Hidden Markov Posture Model From By Hand Annotations"));
-		
+		add(ns_menu_item_spec(test_time_path_analysis_parameters,"Calibration/Run time path solution parameter sweep"));
 	
 
 		
@@ -1261,11 +1269,11 @@ public:
 		add(ns_menu_item_spec(translate_fscore,"Testing/Machine Learning/_translate f-score file"));
 		add(ns_menu_item_spec(generate_training_set_from_by_hand_annotations,"Testing/Machine Learning/Generate Training Set from By Hand Movement Annotations"));
 		
-
+		add(ns_menu_item_spec(analyze_worm_position,"Testing/Movement Analysis/Analyze worm positions for current region"));
 	//	add(ns_menu_item_spec(compile_schedule_to_disk,"Config/Compile Submitted Capture Schedules to Disk"));
 	//	add(ns_menu_item_spec(submit_schedule_to_db,"Config/_Submit Capture Schedules to Database"));	
 		string version("Worm Browser v");
-		version = version + ns_to_string(image_server.software_version_major()) + "." + ns_to_string(image_server.software_version_minor()) + "." + ns_to_string(image_server.software_version_compile()) + " (2013)";
+		version = version + ns_to_string(image_server.software_version_major()) + "." + ns_to_string(image_server.software_version_minor()) + "." + ns_to_string(image_server.software_version_compile()) + " (2014)";
 		add(ns_menu_item_spec(set_database,string("&Config/") + version,0,FL_MENU_INACTIVE));
 		add(ns_menu_item_spec(set_database,string("Config/_Nicholas Stroustrup, Harvard Systems Biology"),0,FL_MENU_INACTIVE));
 		//add(ns_menu_item_spec(set_database,string("Config/_ "),0,FL_MENU_INACTIVE));
@@ -1281,8 +1289,9 @@ public:
 		
 		add(ns_menu_item_spec(generate_mp4,"Config/Set Behavior/Generate Mp4 Videos"));
 		add(ns_menu_item_spec(generate_wmv,"Config/Set Behavior/_Generate WMV Videos"));
-		add(ns_menu_item_spec(upload_strain_metadata,"Config/Set Behavior/Upload Strain Metadata to the Database"));
-	}
+		add(ns_menu_item_spec(upload_strain_metadata,"Config/_Set Behavior/Upload Strain Metadata to the Database"));
+		add(ns_menu_item_spec(update_sql_schema,"Config/Update database schema"));
+}
 
 	
 
@@ -1450,10 +1459,49 @@ public:
 		bar.activate();
 		ns_menu_item_spec spec(pick_region,worm_learner.data_selector.current_region().display_name);
 		string sep;
+
+		//identify devices with no regions that match the strain selection, so we can gray them out.
+		map<string,int> devices_with_valid_regions;
+		if (worm_learner.data_selector.strain_selected()){
+			for (unsigned int i = 0; i < worm_learner.data_selector.samples.size(); i++){
+				for (unsigned int j = 0; j < worm_learner.data_selector.samples[i].regions.size(); j++){
+					if (worm_learner.data_selector.samples[i].regions[j].region_metadata==&worm_learner.data_selector.current_strain()){
+						devices_with_valid_regions[worm_learner.data_selector.samples[i].device] = 0;
+						break;
+					}
+				}
+			}
+		}
+
 		for (unsigned int i = 0; i < worm_learner.data_selector.samples.size(); i++){
+			
+			if (worm_learner.data_selector.strain_selected() ){
+
+				map<string,int>::const_iterator p =  devices_with_valid_regions.find(worm_learner.data_selector.samples[i].device);
+
+				if (p == devices_with_valid_regions.end()){
+					devices_with_valid_regions[worm_learner.data_selector.samples[i].device] = 1;	
+					spec.options.push_back(ns_menu_item_options(worm_learner.data_selector.samples[i].device,true));
+					continue;
+				}
+				if (p->second == 1)
+					continue;
+				
+				bool valid_regions_exist(false);
+				for (unsigned int j = 0; j < worm_learner.data_selector.samples[i].regions.size(); j++){
+					if (worm_learner.data_selector.samples[i].regions[j].region_metadata==&worm_learner.data_selector.current_strain()){
+						valid_regions_exist = true;
+						break;
+					}
+				}
+				if (!valid_regions_exist){
+					spec.options.push_back(ns_menu_item_options(worm_learner.data_selector.samples[i].device + "/" + worm_learner.data_selector.samples[i].sample_name,true));
+					continue;
+				}
+			}
+
 			for (unsigned int j = 0; j < worm_learner.data_selector.samples[i].regions.size(); j++){
-			//	if (j == worm_learner.data_selector.samples[i].regions.size() -1) sep = "_";
-			//	else sep = "";
+
 				if (worm_learner.data_selector.samples[i].regions[j].region_id == worm_learner.data_selector.current_region().region_id)
 					continue;
 				const bool unselected_strain(worm_learner.data_selector.strain_selected() && worm_learner.data_selector.samples[i].regions[j].region_metadata!=&worm_learner.data_selector.current_strain());

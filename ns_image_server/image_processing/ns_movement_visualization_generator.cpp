@@ -35,6 +35,7 @@ void ns_movement_visualization_generator::create_survival_curve_for_capture_time
 		throw ns_ex("ns_movement_visualization_generator::create_survival_curve_for_capture_time()::The supplied plate time vector is empty");
 
 	unsigned long latest_time(plate_time[plate_last_death]);
+	if (!strain_time.empty())
 	if (latest_time < strain_time[strain_last_death])
 		latest_time = strain_time[strain_last_death];
 
@@ -56,8 +57,11 @@ void ns_movement_visualization_generator::create_survival_curve_for_capture_time
 	//plate_marker.x.resize(plate_time.size()+1,-1);
 	//strain_marker.y.resize(strain_time.size()+1,-1);
 	//strain_marker.x.resize(strain_time.size()+1,-1);
-	censored_markers.y.resize(strain_last_death+1+1,-1);
-	censored_markers.x.resize(strain_last_death+1+1,-1);
+	unsigned long censored_size = plate_last_death;
+	if (censored_size < strain_last_death)
+		censored_size = strain_last_death;
+	censored_markers.y.resize(censored_size+1+1,-1);
+	censored_markers.x.resize(censored_size+1+1,-1);
 	plate_marker.y.resize(1,-1);
 	plate_marker.x.resize(1,-1);
 	strain_marker.y.resize(1,-1);
@@ -95,7 +99,7 @@ void ns_movement_visualization_generator::create_survival_curve_for_capture_time
 			strain_fraction_surviving((strain_marker_index<strain_time.size())?strain.data.probability_of_surviving_up_to_interval[strain_marker_index]:0);
 	unsigned long number_of_strain_censored(0),
 				  number_of_plate_censored(0);
-	if (strain_marker_index<= strain_last_death){
+	if (strain_marker_index<= strain_last_death && !strain_time.empty()){
 		for (unsigned int i = 0; i <= strain_marker_index; i++)
 			number_of_strain_censored+=strain.data.number_of_censoring_events[i];
 	}
@@ -118,6 +122,7 @@ void ns_movement_visualization_generator::create_survival_curve_for_capture_time
 		if (i == plate_marker_index)
 			plate_marker.y[0] = plate.data.probability_of_surviving_up_to_interval[i];
 	}
+	if (!strain_time.empty())
 	for (unsigned int i = 0; i < strain_survival.y.size()-1; i++){
 		strain_survival.y[i+1] = strain.data.probability_of_surviving_up_to_interval[i];
 		if (i >= 0 && strain_survival.y[i] <= 0)
@@ -216,8 +221,10 @@ void ns_movement_visualization_generator::create_survival_curve_for_capture_time
 
 //	graph.contents.push_back(graph_x_axis);
 	graph.contents.push_back(censored_markers);
-	graph.contents.push_back(strain_survival);
-	graph.contents.push_back(strain_marker);
+	if (!strain_time.empty()){
+		graph.contents.push_back(strain_survival);
+		graph.contents.push_back(strain_marker);
+	}
 	graph.contents.push_back(plate_survival);
 	graph.contents.push_back(plate_marker);
 
@@ -261,10 +268,11 @@ void ns_movement_visualization_generator::create_survival_curve_for_capture_time
 		text += ns_to_string( total_strain_censored);
 		font.draw_color(8,line_num*image.properties().height/(number_of_lines-1),ns_color_8(255,255,255),text,image);
 		line_num++;
-
-		text = "Strain Survival: ";
-		text += ns_to_string_short(strain_fraction_surviving,2);
-		font.draw_color(8,line_num*image.properties().height/(number_of_lines-1),ns_color_8(255,255,255),text,image);
+		if (!strain_time.empty()){
+			text = "Strain Survival: ";
+			text += ns_to_string_short(strain_fraction_surviving,2);
+			font.draw_color(8,line_num*image.properties().height/(number_of_lines-1),ns_color_8(255,255,255),text,image);
+		}
 	}
 
 }

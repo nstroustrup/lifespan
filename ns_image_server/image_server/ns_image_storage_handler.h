@@ -221,7 +221,7 @@ public:
 		}
 		*sql << "UPDATE  " << sql->table_prefix() << "images SET problem=1 WHERE id = " << image.id;
 		sql->send_query();
-		throw ns_ex("ns_image_storage_handler::request_from_storage_n_bis()::file ") << image.filename << " could not be opened for reading: File does not exist in " << file_location_string(location) << ns_file_io;
+		throw ns_ex("ns_image_storage_handler::request_from_storage_n_bis()::file ") << image.filename << " could not be opened for reading: File does not exist in " << file_location_string(location) << ":" << image.path << ns_file_io;
 	}
 	
 	///Cache frequently used masks in memory so they aren't reloaded each time over the network.

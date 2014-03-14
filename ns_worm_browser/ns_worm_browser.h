@@ -602,6 +602,8 @@ public:
 	void simulate_multiple_worm_clumps(const bool use_waiting_time_cropping,const bool require_nearly_slow_moving);
 	void calculate_heatmap_overlay();
 	void calculate_movement_threshold(const std::string & filename, const bool & visulization=false);
+	void test_time_path_analysis_parameters(unsigned long region_id);
+
 	//void run_temporal_inference();
 	void calculate_vertical_offset(const std::string & filename);
 	void characterize_movement(const std::string & filename, const std::string & filename_2="");
@@ -617,6 +619,10 @@ public:
 	void output_device_timing_data(const unsigned long experiment_id,const unsigned long experiment_group_id);
 	void output_region_statistics(const unsigned long experiment_id,const unsigned long experiment_group_id);
 	void create_feature_time_series(const std::string & directory);
+
+	
+	//void analyze_image_path(const unsigned long region_id);
+
 	
 	void export_experiment_data(const unsigned long experiment_id);
 	bool import_experiment_data(const std::string & database_name,const std::string & directory, const bool reuse_database);
@@ -746,6 +752,7 @@ public:
 	void save_death_time_annotations();
 	bool prompt_to_save_death_time_annotations();
 	void ns_worm_learner::load_strain_metadata_into_database(const std::string filename);
+	void upgrade_tables();
 	template<class whole_image>
 	void load_file(const std::string & filename, whole_image & image){
 		std::string extension = ns_dir::extract_extension(filename);

@@ -359,6 +359,8 @@ void ns_image_server_dispatcher::clear_for_termination(){
 	ns_acquire_lock_for_scope lock(processing_lock,__FILE__,__LINE__);
 	if (processing_thread.is_running())
 		processing_thread.block_on_finish();
+	if (schedule_error_check_thread.is_running())
+		schedule_error_check_thread.block_on_finish();
 	lock.release();
 	//ns_safe_delete(processing_thread);
 	ns_safe_delete(delayed_exception);
@@ -382,6 +384,8 @@ void ns_image_server_dispatcher::wait_for_local_jobs(){
 		processing_thread.block_on_finish();
 	}
 	lock.release();
+	if(schedule_error_check_thread.is_running())
+		schedule_error_check_thread.block_on_finish();
 	image_server.wait_for_pending_threads();
 	image_server.device_manager.wait_for_all_scans_to_complete();
 	buffered_capture_scheduler.image_capture_data_manager.wait_for_transfer_finish();
@@ -411,10 +415,10 @@ void ns_image_server_dispatcher::start_looking_for_new_work(){
 }
 
 void ns_image_server_dispatcher::handle_central_connection_error(ns_ex & ex){
-	if (!currently_unable_to_connect_to_the_central_db){
+	if (!currently_unable_to_connect_to_the_central_db){	
+		image_server.register_server_event_no_db(ns_image_server_event("ns_image_server_dispatcher::Lost connection to the central SQL database.  (") << ex.text() << ") Waiting for the connection to be re-established...");
 		image_server.alert_handler.buffer_all_alerts_locally(false);
 		currently_unable_to_connect_to_the_central_db = true;
-		throw ns_ex("ns_image_server_dispatcher::Could not connect to central database: ") << ex.text();
 	}
 	else{
 		cout << "~";
@@ -470,17 +474,24 @@ void ns_image_server_dispatcher::on_timer(){
 			}
 			image_server.register_host();
 		}
-		try{
-			timer_sql_connection->clear_query();
-			timer_sql_connection->check_connection();
-			image_server.check_for_sql_database_access(timer_sql_connection);
-			currently_unable_to_connect_to_the_central_db = false;
+
+		bool try_to_reestablish_connection = false;
+
+		if (currently_unable_to_connect_to_the_central_db)
+			try_to_reestablish_connection = true;
+		else{
+			try{
+				timer_sql_connection->clear_query();
+				timer_sql_connection->check_connection();
+				image_server.check_for_sql_database_access(timer_sql_connection);
+			}
+			catch(ns_ex ex){
+				handle_central_connection_error(ex);
+				try_to_reestablish_connection = true;
+			}
 		}
-		catch(ns_ex & ex){
-			ex;
-			ns_image_server_event ev;
-			ev << "Lost connection to MySQL server.  Attempting to reconnect." << ns_ts_sql_error;
-			image_server.register_server_event_no_db(ev);
+
+		if (try_to_reestablish_connection ){
 			try{
 				//if we've lost the connection, try to reconnect via conventional means
 				image_server.reconnect_sql_connection(timer_sql_connection);
@@ -489,11 +500,12 @@ void ns_image_server_dispatcher::on_timer(){
 				image_server.register_server_event(ns_image_server_event("Recovered from a lost MySQL connection."),timer_sql_connection);
 				image_server.register_host();
 				image_server.alert_handler.buffer_all_alerts_locally(false);
+				currently_unable_to_connect_to_the_central_db = true;
 				return;
 			}
 			catch(ns_ex & ex){
-				ns_safe_delete(timer_sql_connection);
-				handle_central_connection_error(ex);
+				//ns_safe_delete(timer_sql_connection);
+				//handle_central_connection_error(ex);
 				timer_sql_lock.release();
 				return;
 			}
@@ -1109,7 +1121,124 @@ ns_thread_return_type ns_image_server_dispatcher::thread_start_look_for_work(voi
 		return 0;
 	}
 }
+ns_thread_return_type ns_scan_for_problems(void * d){
+
+	ns_image_server_dispatcher * dispatcher(static_cast<ns_image_server_dispatcher *>(d));
+	ns_acquire_for_scope<ns_sql> sql;
+
+	bool can_connect_to_central_db(true);
+	try{
+		sql.attach(image_server.new_sql_connection(__FILE__,__LINE__,0));
+	}
+	catch(...){
+		can_connect_to_central_db = false;
+		dispatcher->schedule_error_check_thread.report_as_finished();
+		return 0;
+	}
+
+	try{		
+			unsigned long current_time = ns_current_time();
+			image_server.register_server_event(ns_image_server::ns_register_in_central_db_with_fallback,ns_image_server_event("Checking for missed scans on cluster."));
+			
+			std::vector<std::string> devices_to_suppress,
+							 experiments_to_suppress;
+
+			image_server.get_alert_suppression_lists(devices_to_suppress,experiments_to_suppress,&sql());
+
+			string conditions_for_missed;
+			conditions_for_missed = 
+					"c.censored = 0 AND c.time_at_finish = 0 AND c.time_at_start = 0 "
+					"AND c.problem = 0 AND c.missed = 0 AND "
+					"c.scheduled_time < ";
+			conditions_for_missed += ns_to_string(current_time - 60*image_server.maximum_allowed_remote_scan_delay());
+
+			sql() << "SELECT c.id, c.scheduled_time, s.device_name, e.name FROM capture_schedule as c, capture_samples as s, experiments as e WHERE " 
+				<< conditions_for_missed << " AND c.sample_id = s.id AND s.experiment_id = e.id "
+				"AND c.scheduled_time > " << dispatcher->time_of_last_scan_for_problems << " ORDER BY c.scheduled_time";
+			ns_sql_result missed_schedule_events;
+			sql().get_rows(missed_schedule_events);
+
+			if (missed_schedule_events.size() > 0){
+		
+				//if there are missed scans, update them as missed
+
+				string summary_text("Scheduled image captures are being missed.");
+				string detailed_text("Scheduled image captures are being missed:\n");
+				bool found_reportable_miss(false);
+				string unsuppressed_text;
+				for (unsigned int i = 0; i < missed_schedule_events.size(); i++){
+					string tmp(ns_format_time_string_for_human(
+						atol(missed_schedule_events[i][1].c_str())) 
+						+ " " + missed_schedule_events[i][2] + " " + missed_schedule_events[i][3]);
+					unsuppressed_text += tmp;
+
+					bool suppressed_by_device(false);
+					bool suppressed_by_experiment(false);
+					for (unsigned int j = 0; j < devices_to_suppress.size(); j++){
+						if (missed_schedule_events[i][2] == devices_to_suppress[j]){
+							suppressed_by_device = true;
+							break;
+						}
+					}		
+				
+					for (unsigned int j = 0; j < experiments_to_suppress.size(); j++){
+								if (missed_schedule_events[0][3] == experiments_to_suppress[j]){
+									suppressed_by_experiment = true;
+									break;
+								}
+					}
+				
+					if (suppressed_by_device)
+						unsuppressed_text += "(Suppressed by device request)";
+					if (suppressed_by_experiment)
+						unsuppressed_text += "(Suppressed by experiment request)";
+					unsuppressed_text +="\n";
+
+					if (suppressed_by_device || suppressed_by_experiment)
+						continue;
+					found_reportable_miss = true;
+
+					detailed_text += tmp + "\n";
+				}
+
+				ns_image_server_event ev;
+				if (missed_schedule_events.size() == 1) ev << "The image cluster has missed a scheduled image capture:";
+				else ev << "The image cluster has missed " << (unsigned long)missed_schedule_events.size() << " scheduled image captures";
+				ev << unsuppressed_text; 
+				image_server.register_server_event(ns_image_server::ns_register_in_central_db,ev);
+
+				sql() << "UPDATE capture_schedule as c SET missed = 1 WHERE " << conditions_for_missed;
+				sql().send_query();
+				sql().send_query("COMMIT");
+				if (found_reportable_miss){
+					try{
+						ns_alert alert(summary_text,
+							detailed_text,
+							ns_alert::ns_missed_capture,
+							ns_alert::get_notification_type(ns_alert::ns_missed_capture,image_server.act_as_an_image_capture_server()),
+							ns_alert::ns_rate_limited);
+						image_server.alert_handler.submit_alert(alert,sql());
+					
+					}
+					catch(ns_ex & ex){
+						cerr << "Could not submit alert: " << summary_text << " : " << ex.text();
+					}
+				}
+			}
+			sql.release();
+			dispatcher->schedule_error_check_thread.report_as_finished();
+		}
+	catch(ns_ex & ex){
+		image_server.register_server_event(ns_image_server::ns_register_in_central_db_with_fallback,ex);
+	}
+	catch(...){
+		image_server.register_server_event(ns_image_server::ns_register_in_central_db_with_fallback,ns_ex("Unknown exception in check_for_problems thread"));
+		dispatcher->schedule_error_check_thread.report_as_finished();
+	}
+	return 0;
+}
 void ns_image_server_dispatcher::scan_for_problems(ns_sql & sql){
+
 	std::vector<std::string> devices_to_suppress,
 							 experiments_to_suppress;
 
@@ -1125,96 +1254,24 @@ void ns_image_server_dispatcher::scan_for_problems(ns_sql & sql){
 	if (image_server.maximum_allowed_remote_scan_delay() == 0)
 		image_server.update_scan_delays_from_db(&sql);
 
-
 	if (image_server.maximum_allowed_remote_scan_delay() != 0){
+		if (!schedule_error_check_thread.is_running()){
+			//In large databases, these querries require significant resources to process
+			//Coordinate to avoid running them frequently.
+	
+			const unsigned long last_missed_scan_check_time = atol(image_server.get_cluster_constant_value_locked("last_missed_scan_check_time","0",&sql).c_str());
 
-
-		string conditions_for_missed;
-		conditions_for_missed = 
-				"c.censored = 0 AND c.time_at_finish = 0 AND c.time_at_start = 0 "
-				"AND c.problem = 0 AND c.missed = 0 AND "
-				"c.scheduled_time < ";
-		conditions_for_missed += ns_to_string(current_time - 60*image_server.maximum_allowed_remote_scan_delay());
-
-		sql << "SELECT c.id, c.scheduled_time, s.device_name, e.name FROM capture_schedule as c, capture_samples as s, experiments as e WHERE " 
-			<< conditions_for_missed << " AND c.sample_id = s.id AND s.experiment_id = e.id ORDER BY c.scheduled_time";
-		ns_sql_result missed_schedule_events;
-		sql.get_rows(missed_schedule_events);
-		//missed_schedule_events.resize(1,ns_sql_result_row(4));
-	/*	missed_schedule_events[0][0] = "0";
-		missed_schedule_events[0][1] = "1322861884";
-		missed_schedule_events[0][2] = "HARRY";
-		missed_schedule_events[0][3] = "FESTIVUS";
-		*/
-
-		if (missed_schedule_events.size() > 0){
-		
-			//if there are missed scans, update them as missed
-
-
-			string summary_text("Scheduled image captures are being missed.");
-			string detailed_text("Scheduled image captures are being missed:\n");
-			bool found_reportable_miss(false);
-			string unsuppressed_text;
-			for (unsigned int i = 0; i < missed_schedule_events.size(); i++){
-				string tmp(ns_format_time_string_for_human(
-					atol(missed_schedule_events[i][1].c_str())) 
-					+ " " + missed_schedule_events[i][2] + " " + missed_schedule_events[i][3]);
-				unsuppressed_text += tmp;
-
-				bool suppressed_by_device(false);
-				bool suppressed_by_experiment(false);
-				for (unsigned int j = 0; j < devices_to_suppress.size(); j++){
-					if (missed_schedule_events[i][2] == devices_to_suppress[j]){
-						suppressed_by_device = true;
-						break;
-					}
-				}		
-				
-				for (unsigned int j = 0; j < experiments_to_suppress.size(); j++){
-							if (missed_schedule_events[0][3] == experiments_to_suppress[j]){
-								suppressed_by_experiment = true;
-								break;
-							}
-				}
-				
-				if (suppressed_by_device)
-					unsuppressed_text += "(Suppressed by device request)";
-				if (suppressed_by_experiment)
-					unsuppressed_text += "(Suppressed by experiment request)";
-				unsuppressed_text +="\n";
-
-				if (suppressed_by_device || suppressed_by_experiment)
-					continue;
-				found_reportable_miss = true;
-
-				detailed_text += tmp + "\n";
+			if (last_missed_scan_check_time + 60*2 > ns_current_time()){
+				image_server.release_cluster_constant_lock(&sql);
 			}
-
-			ns_image_server_event ev;
-			if (missed_schedule_events.size() == 1) ev << "The image cluster has missed a scheduled image capture:";
-			else ev << "The image cluster has missed " << (unsigned long)missed_schedule_events.size() << " scheduled image captures";
-			ev << unsuppressed_text; 
-			image_server.register_server_event(ns_image_server::ns_register_in_central_db,ev);
-
-			sql << "UPDATE capture_schedule as c SET missed = 1 WHERE " << conditions_for_missed;
-			sql.send_query();
-			sql.send_query("COMMIT");
-			if (found_reportable_miss){
-				try{
-					ns_alert alert(summary_text,
-						detailed_text,
-						ns_alert::ns_missed_capture,
-						ns_alert::get_notification_type(ns_alert::ns_missed_capture,image_server.act_as_an_image_capture_server()),
-						ns_alert::ns_rate_limited);
-					image_server.alert_handler.submit_alert(alert,sql);
-				
-				}
-				catch(ns_ex & ex){
-					cerr << "Could not submit alert: " << summary_text << " : " << ex.text();
-				}
+			else{
+				image_server.set_cluster_constant_value("last_missed_scan_check_time",ns_to_string(ns_current_time()),&sql);
+				image_server.release_cluster_constant_lock(&sql);
+				time_of_last_scan_for_problems = last_missed_scan_check_time;
+				schedule_error_check_thread.run(ns_scan_for_problems,this);
 			}
 		}
+
 	}
 }
 

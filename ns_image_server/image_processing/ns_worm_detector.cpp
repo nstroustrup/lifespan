@@ -58,7 +58,7 @@ void ns_detected_object_manager::remove_objects_found_in_static_mask(const ns_im
 	try{
 
 		for (unsigned int i = 0; i < objects_to_sort.size(); i++){
-			unsigned int mask_overlay(0),
+			unsigned long mask_overlay(0),
 						 total_area(0);
 
 			if (objects_to_sort[i]->size.x > objects_to_sort[i]->bitmap().properties().width
@@ -75,9 +75,10 @@ void ns_detected_object_manager::remove_objects_found_in_static_mask(const ns_im
 
 			for (unsigned int y = 0; y < objects_to_sort[i]->size.y; y++){
 				for (unsigned int x = 0; x < objects_to_sort[i]->size.x; x++){
-					total_area+=objects_to_sort[i]->bitmap()[y][x];
-					mask_overlay+= static_mask[y+objects_to_sort[i]->offset_in_source_image.y][x+objects_to_sort[i]->offset_in_source_image.x] 
-									&& objects_to_sort[i]->bitmap()[y][x];
+					if(objects_to_sort[i]->bitmap()[y][x]){
+						total_area++;
+						mask_overlay+= (static_mask[y+objects_to_sort[i]->offset_in_source_image.y][x+objects_to_sort[i]->offset_in_source_image.x]>0)?1:0;
+					}
 				}
 			}
 			if (10*mask_overlay > 5*total_area){

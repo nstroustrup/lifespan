@@ -5,21 +5,6 @@
 #include "ns_image_server.h"
 #include "ns_sql.h"
 
-/*class ns_worm_interpolation_timepoint;
-
-struct ns_reverse_worm_lookup{
-	ns_reverse_worm_lookup():interpolated(false){}
-	ns_reverse_worm_lookup(const ns_vector_2d & p,const ns_detected_worm_info & w, ns_worm_interpolation_timepoint * l, const bool i):pos(p),worm(&w),info(l),interpolated(i){}
-	ns_vector_2d pos;
-	//true if the worm is an interpolated worm (rather than a SVM-detected worm)
-	bool interpolated;
-
-	const ns_detected_worm_info * worm;
-	ns_worm_interpolation_timepoint * info;
-};*/
-
-
-
 class ns_worm_interpolation_timepoint{
 	public:
 	ns_worm_interpolation_timepoint():threshold_loaded(false){}

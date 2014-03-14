@@ -1354,6 +1354,25 @@ std::string ns_image_storage_handler::get_partition_for_experiment_int(const ns_
 	}
 }
 
+std::string ns_shorten_filename(std::string name, const unsigned long limit){
+		if(name.length() <= limit){
+		return name;
+	}
+	else{
+		std::string n;
+		for (unsigned int i = 0; i < name.size(); i++){
+			if (name[i] != 'a' &&
+				name[i] != 'e' &&
+				name[i] != 'i' &&
+				name[i] != 'o' &&
+				name[i] != 'u')
+				n+=name[i];
+		}
+		if (n.length() > limit)
+			n.resize(limit);
+		return n;
+	}
+}
 
 ns_socket_connection ns_image_storage_handler::connect_to_fileserver_node(ns_sql & sql){
 	//get a list of all hosts able to recieve files and save them to long-term storage.

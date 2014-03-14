@@ -359,7 +359,15 @@ void ns_buffered_capture_scheduler::update_local_buffer_from_central_server(ns_i
 			    << " AND sched.time_at_start = 0 "
 			    << " AND sched.sample_id = samp.id "
 				<< " AND sched.time_at_finish = 0 "
-				<< " AND sched.scheduled_time > " << (time_of_last_update_from_central_db.remote_time-image_server.maximum_allowed_local_scan_delay())  //only get events in the future
+				//here, we could bring the entire local database completely up to date
+				//but only scans in the future will make any difference, so we only download
+				//those who are still scheduled for the future
+				//this old command would fully update the database, as time_of_last_update_from_central_db
+				//would be set to 0
+				//<< " AND sched.scheduled_time > " << (time_of_last_update_from_central_db.remote_time-image_server.maximum_allowed_local_scan_delay())  //only get events in the future
+				//however, now we only grab the future, relevant scans.
+				<< " AND sched.scheduled_time > " << (update_start_time.remote_time-image_server.maximum_allowed_local_scan_delay())  //only get events in the future
+				
 				<< " AND sched.time_stamp > FROM_UNIXTIME(" << time_of_last_update_from_central_db.remote_time <<") "
 				<< " AND sched.time_stamp <= FROM_UNIXTIME(" << update_start_time.remote_time << ") "
 				<< " ORDER BY sched.scheduled_time ASC";

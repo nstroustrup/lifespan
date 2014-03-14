@@ -415,10 +415,10 @@
       <Filter>image_format_lib\tiff</Filter>
     </ClCompile>
     <ClCompile Include="..\ns_image_server\system_base\ns_thread.cpp" />
-    <ClCompile Include="..\ns_image_server\image_acquisition\ns_barcode.cpp">
+    <ClCompile Include="..\ns_image_server_utilities\ns_image_server_barcodes_main.cpp" />
+    <ClCompile Include="..\ns_image_server\image_acquisition\ns_barcode_new_dmtx_version.cpp">
       <Filter>image_base</Filter>
     </ClCompile>
-    <ClCompile Include="..\ns_image_server_utilities\ns_image_server_barcodes_main.cpp" />
     <ClCompile Include="..\external_compile_libraries\libdmtx-0.7.4\dmtx.c">
       <Filter>dmtx</Filter>
     </ClCompile>
@@ -639,6 +639,12 @@
     </Filter>
     <Filter Include="image_format_lib\tiff">
       <UniqueIdentifier>{8d0cddec-6a5c-41e5-a9a2-fef30a69ac33}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="image_base\image_format_lib">
+      <UniqueIdentifier>{9d599208-d5dc-4bb2-8ca8-36a560230b5b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="image_base\image_format_lib\jpeg">
+      <UniqueIdentifier>{db3985f5-d7e5-4a43-8beb-8c22c820a16b}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>

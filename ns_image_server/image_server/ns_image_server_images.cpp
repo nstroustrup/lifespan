@@ -276,13 +276,14 @@ std::string ns_format_base_image_filename(const ns_64_bit experiment_id,const st
 										  const ns_64_bit sample_id, const std::string & sample_name,
 										  const unsigned long capture_time, const ns_64_bit captured_images_id, 
 										  const ns_64_bit capture_images_image_id){
-	return std::string(experiment_name + "=" + ns_to_string(experiment_id) + "=" + sample_name + "=" 
+
+	return ns_shorten_filename(experiment_name) + std::string("=" + ns_to_string(experiment_id) + "=" + sample_name + "=" 
 			 + ns_to_string(sample_id) + "=" +ns_to_string(capture_time) + "=" + ns_format_time_string(capture_time) + "="
 			 + ns_to_string(captured_images_id)  + "=" + ns_to_string(capture_images_image_id));
 }
 std::string ns_image_server_captured_image::get_filename(ns_image_server_sql * sql,const bool small_image, bool do_not_load_data){
 	if (!do_not_load_data && captured_images_id == 0)
-		throw ns_ex("ns_image_server_captured_image::Could not create filename with unspecified sample id.");
+		throw ns_ex("ns_image_server_captured_image::Could not create filename with unspecified captured_images_id.");
 	//if not specified, collect information needed to create filename.
 	if (!do_not_load_data && 
 		(sample_id == 0 || experiment_id == 0 || capture_time == 0 || capture_images_image_id == 0 ||

@@ -16,7 +16,7 @@
 #ifndef NS_MINIMAL_SERVER_BUILD
 #include "ns_posture_analysis_models.h"
 #include "ns_image_server_automated_job_scheduler.h"
-
+#include "ns_time_path_solver_parameters.h"
 #include "ns_capture_device_manager.h"
 #endif
 
@@ -210,6 +210,7 @@ public:
 	//static unsigned long maximum_image_cache_disk_usage() {return 1024*800; }//8000 megabytes uncompressed ~= 400 megabytes compressed 
 
 	///Returns the ini-specified name of the subdirectory in which SVM model files are stored
+	static inline std::string position_analysis_model_directory() { return "models" DIR_CHAR_STR "position_analysis_models";}
 	static inline std::string worm_detection_model_directory() { return "models" DIR_CHAR_STR "worm_detection_models";}
 	static inline std::string posture_analysis_model_directory() { return "models" DIR_CHAR_STR "posture_analysis_models";}
 
@@ -348,8 +349,9 @@ public:
 	const ns_svm_model_specification & get_worm_detection_model(const std::string & name);
 	
 	#ifndef NS_MINIMAL_SERVER_BUILD
-	const ns_posture_analysis_model & get_posture_analysis_model_for_region(const unsigned long & region_info_id, ns_sql & sql);
+	const ns_posture_analysis_model & get_posture_analysis_model_for_region(const ns_64_bit region_info_id, ns_sql & sql);
 	const ns_posture_analysis_model & get_posture_analysis_model(const ns_posture_analysis_model::ns_posture_analysis_method & m,const std::string & name);
+	ns_time_path_solver_parameters get_position_analysis_model(const std::string & model_name,bool create_default_if_does_not_exist=false,const ns_64_bit region_info_id_for_default=0, ns_sql * sql_for_default=0);
 	#endif
 	///Clear all SVM machine learning models from the model cache so they are
 	///reloaded from the disk
@@ -386,6 +388,7 @@ public:
 	void start_autoscans_for_device(const std::string & device_name,ns_sql & sql);	
 	#endif
 
+	bool upgrade_tables(ns_sql & sql,const bool just_test_if_needed);
 	std::ofstream * write_device_configuration_file() const;
 	std::ifstream * read_device_configuration_file() const;
 
@@ -430,6 +433,8 @@ public:
 	unsigned long local_buffer_commit_frequency_in_seconds(){return 10;}
 
 	bool verbose_debug_output() const {return _verbose_debug_output;}
+	
+	const unsigned long & maximum_memory_allocation_in_mb(){return  _maximum_memory_allocation_in_mb;}
 private:
 	ns_multiprocess_control_options multiprocess_control_options;
 	unsigned long number_of_node_processes_per_machine_;
@@ -469,6 +474,8 @@ private:
 		_mail_path,
 		_ethernet_interface,
 		_cache_subdirectory;
+
+	unsigned long _maximum_memory_allocation_in_mb; 
 
 	unsigned long next_scan_for_problems_time;
 	unsigned int _dispatcher_port;

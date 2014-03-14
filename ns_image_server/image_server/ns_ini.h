@@ -27,6 +27,7 @@ public:
 	void add_field(const std::string & field, const std::string & default_value="", const std::string & comment="");
 	void start_specification_group(const ns_ini_specification_group & group);
 	void load(const std::string & fname);
+	void load(std::istream & in);
 	void save(const std::string & fname);
 
 	const std::string & operator[](const std::string & field);

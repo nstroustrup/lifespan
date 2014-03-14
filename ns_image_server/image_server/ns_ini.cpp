@@ -133,13 +133,16 @@ void ns_ini::load(const string & fname){
 		throw ns_ex("Could not find the ") << fname << " configuration file.  A blank template has been created to fill in.";
 	}
 	try{
-		while (get_field(in));
+		load(in);
 		in.close();
 	}
 	catch(...){
 		in.close();
 		throw;
 	}
+}
+void ns_ini::load(std::istream & in){
+	while (get_field(in));
 }
 void output_comment_wrapped(const std::string & txt,std::ostream & o,const std::string & sep = "# ",const int width=75){
 	long cur_pos = 0;

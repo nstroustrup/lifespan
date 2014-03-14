@@ -42,7 +42,7 @@ public:
 	  allow_processing(_allow_processing),delayed_exception(0),
 		  job_scheduler(image_server),processing_lock("ns_isd::processing"),first_device_capture_run(true),
 		  message_handling_lock("ns_isd::message"),memory_allocation_error_count(0),clean_clear_local_db_requested(false),
-		  hotplug_lock("ns_isd::hotplug"),device_capture_management_lock("ns_dml"),hotplug_running(false),work_sql_connection(0),currently_unable_to_connect_to_the_central_db(false),timer_sql_connection(0),work_sql_management_lock("ns_isd::work_sql"),timer_sql_management_lock("ns_isd::timer_sql"),trigger_segfault(false){}
+		  hotplug_lock("ns_isd::hotplug"),device_capture_management_lock("ns_dml"),time_of_last_scan_for_problems(0),hotplug_running(false),work_sql_connection(0),currently_unable_to_connect_to_the_central_db(false),timer_sql_connection(0),work_sql_management_lock("ns_isd::work_sql"),timer_sql_management_lock("ns_isd::timer_sql"),trigger_segfault(false){}
 
 	void init(const unsigned int port,const unsigned int socket_queue_length);
 	void register_device(const ns_device_name &device);
@@ -91,6 +91,10 @@ public:
 	void trigger_segfault_on_next_timer(){
 		trigger_segfault = true;
 	}
+	
+	ns_single_thread_coordinator schedule_error_check_thread;
+	unsigned long time_of_last_scan_for_problems;
+
 private:
 	bool trigger_segfault;
 	void handle_central_connection_error(ns_ex & ex);	
@@ -105,6 +109,7 @@ private:
 
 	ns_single_thread_coordinator processing_thread;
 	ns_single_thread_coordinator message_handling_thread;
+
 	ns_lock message_handling_lock;
 	ns_lock device_capture_management_lock;
 

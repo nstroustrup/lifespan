@@ -761,6 +761,7 @@ void ns_image_processing_pipeline::process_region(const ns_image_server_captured
 				const ns_image_standard * static_mask(0);
 				ns_image_server_image static_mask_image( region_image.request_processed_image(ns_process_static_mask,sql));
 				if (static_mask_image.id != 0){
+					cout << "Using a static mask.\n";
 					static_mask = &image_server.image_storage.cache.get_for_read(static_mask_image,sql);
 				}
 
@@ -1222,8 +1223,10 @@ void ns_image_processing_pipeline::clear_heap(){
 	dynamic_stretch.clear();
 }
 
+
+//this is almost always done elsewhere, as part of a movement analysis job!
 void ns_image_processing_pipeline::calculate_static_mask_and_heat_map(const vector<char> operations, ns_image_server_captured_image_region & region_image, ns_sql & sql){
-	
+	throw ns_ex("Not implemented: run as a movement analysis job");
 	region_image.load_from_db(region_image.region_images_id,&sql);
 
 	ns_worm_multi_frame_interpolation mfi;

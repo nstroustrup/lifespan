@@ -74,7 +74,7 @@ long ns_parse_date(const string & s,const unsigned long start_p,struct tm &tm){
 
 unsigned long ns_parse_time(const string & s, const unsigned long start_p, struct tm & tm){
 	std::string as,bs,cs;
-	long p(ns_parse_triplet(s,':','.',start_p,as,bs,cs));
+	long p(ns_parse_triplet(s,':',0,start_p,as,bs,cs));
 	if (p == -1)
 		throw ns_ex("Could not parse time: \"") << s << "\"[" << start_p << "," << s.size() << "]";
 	if (as.empty() || bs.empty())

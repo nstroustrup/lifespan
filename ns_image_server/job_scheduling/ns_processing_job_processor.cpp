@@ -4,6 +4,7 @@
 #include "ns_time_path_image_analyzer.h"
 #include "ns_hidden_markov_model_posture_analyzer.h"
 #include "ns_hand_annotation_loader.h"
+#include "ns_heat_map_interpolation.h"
 //#include "ns_worm_tracker.h"
 #include <map>
 #include <vector>
@@ -821,6 +822,7 @@ bool ns_processing_job_maintenance_processor:: run_job(ns_sql & sql){
 			ns_death_time_annotation_compiler compiler;
 			compiler.add(set);
 			compiler.add(by_hand_region_annotations.annotations);
+			vector<ns_ex> censoring_file_io_problems;
 			ns_ex censoring_problem;
 			try{
 				ns_death_time_annotation_set censoring_set;
@@ -841,7 +843,7 @@ bool ns_processing_job_maintenance_processor:: run_job(ns_sql & sql){
 																	compiler,ns_include_unchanged);
 			
 							summary_series.generate_censoring_annotations(metadata,censoring_set);
-						{
+						try{
 							ns_image_server_results_file movement_timeseries(image_server->results_storage.movement_timeseries_data(by_hand_annotation_integration_strategy[bhais],
 								(ns_death_time_annotation::ns_multiworm_censoring_strategy)censoring_strategy,
 								ns_death_time_annotation::ns_censoring_minimize_missing_times,
@@ -851,6 +853,8 @@ bool ns_processing_job_maintenance_processor:: run_job(ns_sql & sql){
 							ns_worm_movement_measurement_summary::out_header(movement_out());
 							summary_series.to_file(metadata,movement_out());
 							movement_out.release();
+						}catch(ns_ex & ex){
+							censoring_file_io_problems.push_back(ex);
 						}
 						if (censoring_strategy == ns_death_time_annotation::ns_merge_multiple_worm_clusters_and_missing_and_censor){
 							summary_series.from_death_time_annotations(by_hand_annotation_integration_strategy[bhais],
@@ -858,7 +862,7 @@ bool ns_processing_job_maintenance_processor:: run_job(ns_sql & sql){
 																  ns_death_time_annotation::ns_censoring_assume_uniform_distribution_of_missing_times,
 																	compiler,ns_include_unchanged);
 							summary_series.generate_censoring_annotations(metadata,censoring_set);
-							{
+							try{
 								ns_image_server_results_file movement_timeseries(image_server->results_storage.movement_timeseries_data(
 									by_hand_annotation_integration_strategy[bhais],
 									(ns_death_time_annotation::ns_multiworm_censoring_strategy)censoring_strategy,
@@ -869,6 +873,8 @@ bool ns_processing_job_maintenance_processor:: run_job(ns_sql & sql){
 								ns_worm_movement_measurement_summary::out_header(movement_out());
 								summary_series.to_file(metadata,movement_out());
 								movement_out.release();
+							}catch(ns_ex & ex){
+								censoring_file_io_problems.push_back(ex);
 							}
 							summary_series.from_death_time_annotations(by_hand_annotation_integration_strategy[bhais],
 																  (ns_death_time_annotation::ns_multiworm_censoring_strategy)censoring_strategy,
@@ -916,15 +922,20 @@ bool ns_processing_job_maintenance_processor:: run_job(ns_sql & sql){
 
 			ns_image_server_results_subject sub;
 			sub.region_id = job.region_id;	
-			
-			ns_acquire_for_scope<ostream> o(image_server->results_storage.time_path_image_analysis_quantification(sub,"detailed",false,sql).output());
-			if (time_path_image_analyzer.size() > 0){
-				time_path_image_analyzer.group(0).paths[0].write_detailed_movement_quantification_analysis_header(o());
-				time_path_image_analyzer.write_detailed_movement_quantification_analysis_data(metadata,o(),false);
+			try{
+				ns_acquire_for_scope<ostream> o(image_server->results_storage.time_path_image_analysis_quantification(sub,"detailed",false,sql).output());
+				if (time_path_image_analyzer.size() > 0){
+					time_path_image_analyzer.group(0).paths[0].write_detailed_movement_quantification_analysis_header(o());
+					time_path_image_analyzer.write_detailed_movement_quantification_analysis_data(metadata,o(),false);
+				}
+				else o() << "(No Paths in Solution)\n";
+		
+				o() << "\n";
+				o.release();
 			}
-			else o() << "(No Paths in Solution)\n";
-			o() << "\n";
-			o.release();
+			catch(ns_ex & ex){
+				image_server->register_server_event(ex,&sql);
+			}
 
 			if (0){
 				//generate optimization training set 
@@ -951,6 +962,12 @@ bool ns_processing_job_maintenance_processor:: run_job(ns_sql & sql){
 				<< "number_of_timepoints_in_latest_movement_rebuild = " << time_path_image_analyzer.number_of_timepoints_in_analysis()
 				<< " WHERE id = " << job.region_id;
 			sql.send_query();
+			if (!censoring_file_io_problems.empty()){
+				ns_ex ex("One or more file i/o issues encountered during analysis:");
+				for (unsigned long i = 0; i < censoring_file_io_problems.size(); i++)
+					ex << "(1)" << censoring_file_io_problems[i].text();
+				image_server->register_server_event(ex,&sql);
+			}
 			if (!censoring_problem.text().empty())
 				throw ns_ex("A problem occurred when trying to generate censoring information: ") << censoring_problem.text() << ". Deaths were estimated but no censoring data written";
 			
@@ -1268,6 +1285,73 @@ bool ns_processing_job_maintenance_processor:: run_job(ns_sql & sql){
 		case ns_maintenance_delete_images_from_database:
 			ns_handle_image_metadata_delete_action(job,sql);
 			break;
+		case ns_maintenance_generate_subregion_mask:{
+			
+			ns_image_server_captured_image_region region_image;
+			region_image.region_info_id = job.region_id;
+			sql << "SELECT e.id, r.name, e.name,s.name,s.device_name,s.id FROM experiments as e, capture_samples as s, sample_region_image_info as r "
+				   "WHERE e.id = s.experiment_id AND s.id = r.sample_id AND r.id = " << job.region_id;
+			ns_sql_result res;
+			sql.get_rows(res);
+			if (res.empty())
+				throw ns_ex("Could not find region in db:")<< job.region_id;
+			region_image.experiment_id = atol(res[0][0].c_str());
+			region_image.region_name = res[0][1];
+			region_image.experiment_name = res[0][2];
+			region_image.sample_name = res[0][3];
+			region_image.device_name = res[0][4];
+			region_image.sample_id = atol(res[0][5].c_str());
+			region_image.region_images_id = 1;
+			region_image.captured_images_id = 1;
+			region_image.capture_time = 1;
+			region_image.capture_images_image_id  = 1;
+	//		cout << region_image.filename(&sql);
+
+
+			ns_worm_multi_frame_interpolation mfi;
+
+			ns_image_standard heat_map, static_mask;
+		
+			bool had_to_use_local_storage;
+		
+			//calculate heat map
+			sql << "SELECT number_of_frames_used_to_mask_stationary_objects FROM sample_region_image_info WHERE id = " << region_image.region_info_id;
+			//ns_sql_result res;
+			sql.get_rows(res);
+			if (res.size() == 0)
+				throw ns_ex("ns_image_processing_pipeline::calculate_static_mask_and_heat_map::Could not load region information for region ") << region_image.region_info_id;
+			const unsigned long number_of_frames_used_to_mask_stationary_objects(atol(res[0][0].c_str()));
+
+			mfi.load_all_region_worms(region_image.region_info_id,sql,false);
+			mfi.generate_heat_map(heat_map,number_of_frames_used_to_mask_stationary_objects,sql);
+			//save the heat map to disk
+			ns_image_server_image a_vis = region_image.create_storage_for_processed_image(ns_process_heat_map,ns_tiff,&sql);
+			ns_image_storage_reciever_handle<ns_8_bit> a_vis_o = image_server->image_storage.request_storage(
+														a_vis,
+														ns_tiff, 1024,&sql,had_to_use_local_storage,false,false);
+			heat_map.pump(a_vis_o.output_stream(),1024);
+			a_vis.mark_as_finished_processing(&sql);
+	
+			
+			
+			ns_worm_multi_frame_interpolation::generate_static_mask_from_heatmap(heat_map,static_mask);
+
+			//save the static mask to disk
+			ns_image_server_image b_vis = region_image.create_storage_for_processed_image(ns_process_static_mask,ns_tiff,&sql);
+			ns_image_storage_reciever_handle<ns_8_bit> b_vis_o = image_server->image_storage.request_storage(
+													b_vis,
+													ns_tiff, 1024,&sql,had_to_use_local_storage,false,false);
+			static_mask.pump(b_vis_o.output_stream(),1024);
+			b_vis.mark_as_finished_processing(&sql);
+
+			sql << "UPDATE sample_region_images SET currently_under_processing=0 WHERE region_info_id = " << region_image.region_info_id;
+			sql.send_query();
+			sql << "UPDATE worm_movement SET problem=0,calculated=0 WHERE region_info_id = " << region_image.region_info_id;
+			sql.send_query();
+			sql.send_query("COMMIT");
+
+			break;
+		}
 		default: throw ns_ex("ns_processing_job_scheduler::Unknown maintenance task");
 	}
 	return true;

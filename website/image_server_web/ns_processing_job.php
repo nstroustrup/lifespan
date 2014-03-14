@@ -28,7 +28,8 @@ $ns_processing_tasks =  array(	'ns_unprocessed'=>0,
 				'ns_process_movement_paths_visualization'=>25,
 				'ns_process_movement_paths_visualization_with_mortality_overlay'=>26,
 				'ns_process_movement_posture_visualization'=>27,
-				'ns_process_movement_posture_aligned_visualization'=>28);
+				'ns_process_movement_posture_aligned_visualization'=>28
+);
 
 $ns_processing_task_labels = array(0 =>'Unprocessed', 
 				   1 =>'Apply Mask',  
@@ -82,7 +83,8 @@ $ns_maintenance_tasks = array('ns_maintenance_no_task'=>0,
 			      'ns_maintenance_determine_disk_usage'=>15,
 			      'ns_maintenance_generate_animal_storyboard'=>16,
 			      'ns_maintenance_generate_animal_storyboard_subimage'=>17,
-			      'ns_maintenance_compress_stored_images'=>18
+			      'ns_maintenance_compress_stored_images'=>18,
+			      'ns_maintenance_generate_subregion_mask'=>19
 			      );
 
 $ns_denoising_option_labels = array(
@@ -105,6 +107,7 @@ function ns_maintenance_task_order($is_region,$is_sample,$is_experiment){
     array_push($r,$ns_maintenance_tasks['ns_maintenance_check_for_file_errors']);
     array_push($r,$ns_maintenance_tasks['ns_maintenance_rebuild_movement_from_stored_images']);
     array_push($r,$ns_maintenance_tasks['ns_maintenance_rebuild_movement_from_stored_image_quantification']);
+    array_push($r,$ns_maintenance_tasks['ns_maintenance_generate_subregion_mask']);
     return $r;
   }
   if ($is_sample || $is_experiment){
@@ -135,7 +138,8 @@ $ns_maintenance_task_labels = array(0=>'No Task',
 				    15=>'Determine disk usage for files',
 				    16=>'Generate Animal Storyboard',
 				    17=>'Generate Animal Storyboard Subimage',
-				    18=>'Compress Stored Images'
+				    18=>'Compress Stored Images',
+				    19=>'Generate Subregion Mask'
 			      );
 $NS_LAST_MAINTENANCE_TASK = 18;
 
@@ -630,7 +634,7 @@ class ns_processing_job{
 	   $res .='<font size="-1">(When Ready)</font>';
 
 	  if ($this->currently_under_processing)
-	    $res .= '<a href="view_hosts_and_devices.php?show_host_nodes=1&highlight_host_id='.$this->processor_id.'"><font size="-1">(Processing...)</font></a>';
+	    $res .= '<a href="view_hosts_log.php?host_id='.$this->processor_id.'&limit=50"><font size="-1">(Processing...)</font></a>';
 	$res .="</div></td></tr></table>\n";
 	//End processer job header table
 	$res.="</td></tr>\n";

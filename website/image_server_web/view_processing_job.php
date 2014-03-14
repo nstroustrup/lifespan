@@ -191,8 +191,10 @@ if ($specified_experiment_list){
     	//echo $i;
 	if ($include_censored==0)  $censored_string = "censored=0 AND ";
 	if (!$specified_all_regions && $include_censored == 2) $censored_string="censored=1 AND ";
+	if ($device != "")
+		$censored_string .= "device_name = '$device' AND";
 	$query = "SELECT id FROM capture_samples WHERE $censored_string experiment_id = " . $experiments_to_process[$i];
-	//	  die($query);
+		  //die($query);
 	$sql->get_row($query,$res);
 	for ($j = 0; $j < sizeof($res); $j++)
 		array_push($samples_to_process,$res[$j][0]);
@@ -677,10 +679,12 @@ $region_strain_condition_2 = array();
     header("Location: $back_url\n\n");
     die("");
   }
+//	die($_POST['cancel_captures']);
   if ($_POST['cancel_captures']){
     $sample_ids = array();
     $device_names = array();
-    for ($i = 0; $i < sizeof($jobs); $i++){
+    
+for ($i = 0; $i < sizeof($jobs); $i++){
       $e_id = $jobs[$i]->experiment_id;
       if ($e_id == 0)
 	throw ns_exception("No experiment id specified for job!");
@@ -698,6 +702,7 @@ $region_strain_condition_2 = array();
       if ($jobs[$i]->sample_id != 0){
 	$query = "SELECT device_name FROM capture_samples WHERE id = " . $jobs[$i]->sample_id;
 	$sql->get_row($query,$res);
+	
 	if (sizeof($res)==0)
 	  throw ns_exception("Could not find sample id " . $jobs[$i]->sample_id);
 	$sample_ids[$jobs[$i]->sample_id] = 1;
@@ -877,7 +882,7 @@ $region_strain_condition_2 = array();
       for ($i = 0; $i < sizeof($samples_to_process); $i++){
 	$query = "UPDATE captured_images SET problem = 0, mask_applied=0 WHERE sample_id = " . $samples_to_process[$i];
 	//echo $query . "<BR>";
-	$sql->send_query($query,TRUE);
+	$sql->send_query($query);
       }
     }
  
@@ -1185,12 +1190,11 @@ if ($job_type != $IS_EXPERIMENT){
     echo "<a href=\"view_processing_job.php?" . $query_parameters_without_censored."&include_censored=0\">[Exclude Censored $sub]</a>";
   }
   else{
-    echo "<a href=\"view_processing_job.php?" . $query_parameters_without_censored."&include_censored=1\">[Include Censored $sub]</a>";
-    
+    echo "<a href=\"view_processing_job.php?" . $query_parameters_without_censored."&include_censored=1\">[Include Censored $sub]</a>"; 
   }
+  if ($region_id == "all" && $device != "") echo "<a href=\"view_processing_job.php?job_id=0&experiment_id=$experiment_id&sample_id=all&device=$device\">[Include all samples on device]</a>";
 }
-			       //<?php if ($condition_3 == 'Nash') echo "<br>follow the white rabbit neo..."?>
-
+?>			      
 <br><br>
  
 <table width="100%"><tr><td valign="top">
@@ -1470,9 +1474,12 @@ Schedule Database/File Storage Job Begin
 </table>
 
 <br>
+</form>
 <?php
-  }
+  }}
  	if ($live_dangerously){	  ?>
+<form action="view_processing_job.php?<?php echo $query_parameters?>" method="post">
+
 <table align="center" border="0" cellpadding="0" cellspacing="1" bgcolor="#000000" width="50%"><tr><td>
 <table border="0" cellpadding="4" cellspacing="0" width="100%">
 <tr <?php echo $table_header_color?> ><td colspan=2><b>Update capture schedule</b></td></tr>
@@ -1485,8 +1492,7 @@ Schedule Database/File Storage Job Begin
 </table>
 <?php }?>
 </form>
-					<?php } ?>
-
+				
 
 <!--********************************
 Set Control Strain Info

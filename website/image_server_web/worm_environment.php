@@ -86,10 +86,22 @@ try{
   }
 
   //var_dump($dbs);
-  //var_dump($database_choices);
+ // var_dump($database_choices);
   //die();
-  if (!isset($_COOKIE['ns_image_server_db_name']))
-    ns_set_database_name($database_choices[0]);
+  if (!isset($_COOKIE['ns_image_server_db_name'])){
+	$db_name = $database_choices[0];
+	foreach ($database_choices as $c){
+		//echo $c;
+		if ($default_database == $c){
+		  $db_name = $c;
+		 
+		 // die("Found $db_name");
+		  break;
+		}
+	}
+   //die("$db_name");
+    ns_set_database_name($db_name);
+}
   else
     $db_name = $_COOKIE['ns_image_server_db_name'];
   

@@ -380,9 +380,20 @@ Handle Requests to delete a sample
   $regions = array();
   $region_jobs = array();
   $devices_used = array();
+  $all_animal_type_values = array();
+  $all_animal_type_values=array();
+ $environment_condition_values=array();
+$strains = array();
+$condition_1_values=array();
+$condition_2_values=array();
+$condition_3_values=array();
+$culturing_temperature_values=array();
+$experiment_temperature_values=array();
+
+ $food_source_values=array();
   for ($i = 0; $i < sizeof($experiment->samples); $i++){
     $devices_used[$experiment->samples[$i]->device_name()] = $experiment->samples[$i]->device_name();
-    $query = "SELECT id, name, details, censored,strain,excluded_from_analysis, reason_censored,strain_condition_1,strain_condition_2,strain_condition_3,culturing_temperature,experiment_temperature,food_source,environmental_conditions,censored FROM sample_region_image_info WHERE sample_id=" . $experiment->samples[$i]->id();
+    $query = "SELECT id, name, details, censored,strain,excluded_from_analysis, reason_censored,strain_condition_1,strain_condition_2,strain_condition_3,culturing_temperature,experiment_temperature,food_source,environmental_conditions,censored, op22_image_id FROM sample_region_image_info WHERE sample_id=" . $experiment->samples[$i]->id();
     if ($hide_censored)
 	$query.=" AND censored = 0 ";
     $query .= " ORDER BY name";
@@ -402,6 +413,7 @@ Handle Requests to delete a sample
 	$experiment_temperature_values[strtolower($cur_region[11])] = $cur_region[11];
 	$food_source_values[strtolower($cur_region[12])] = $cur_region[12];
 	$environment_condition_values[strtolower($cur_region[13])] = $cur_region[13];
+       
 	$cstr = strtolower($cur_region[4]);
 	if($cur_region[7] != '')
 	  $cstr .= "::" . strtolower($cur_region[7]);
@@ -424,6 +436,7 @@ Handle Requests to delete a sample
 		$cur_region[7],
 		$cur_region[8],$cur_region[9],$cur_region[10],$cur_region[11],$cur_region[12],$cur_region[13],);
       }
+    
       $region_jobs[$cur_region[0]] = array();
       if ($show_region_jobs){
 	$query = $job->provide_query_stub();
@@ -442,6 +455,15 @@ Handle Requests to delete a sample
       }
     }
   }
+  ksort($all_animal_type_values);
+  ksort($environment_condition_values);
+  ksort($strains);
+  ksort($condition_1_values);
+  ksort($condition_2_values);
+  ksort($condition_3_values);
+  ksort($culturing_temperature_values);
+  ksort($experiment_temperature_values);
+  ksort($food_source_values);
   //  var_dump($regions);
 
   /*****************************
@@ -913,7 +935,9 @@ if (sizeof($all_animal_type_values) > 1){
 			if ($cur_region[5] != "0"){
 			  echo "<tr><td colspan=2><font size=\"-1\"><b>(excluded)</b></font></td></tr>";
 
-}
+}	
+			//echo ($cur_region[15]);
+if ($cur_region[15] > 0) echo "<tr><td colspan=2><font size=\"-1\"><a href=\"ns_view_image.php?image_id=" . $cur_region[15] . "\">Subregion Mask Specified</a></font></td></tr>";
 if (strlen($cur_region[10]) > 0 || $edit_region){
 echo "<tr><td><font size=\"-1\">Culturing T:</font></td><td><font size=\"-1\">";
 			output_editable_field('region_culturing_temperature',$cur_region[10],$edit_region,10);
@@ -947,6 +971,7 @@ echo "</font></td></tr>";
 if (strlen($cur_region[9]) > 0 || $edit_region){
 echo "<tr><td><font size=\"-1\">Condition 3:</font></td><td><font size=\"-1\">";
 			output_editable_field('region_condition_3',$cur_region[9],$edit_region,10);
+		
 echo "</font></td></tr>";
 }
 if (strlen($cur_region[2]) > 0 || $edit_region){

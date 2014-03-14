@@ -13,7 +13,7 @@ static void ns_tiff_error_handler(thandle_t client_data,const char * module, con
 	char buf[1024];	
 	if (module != NULL){
 		#ifdef _WIN32 
-		_snprintf(buf, 1024,"%s", module);
+		_snprintf_s(buf, 1024,"%s", module);
 		#else
 		snprintf(buf, 1024,"%s", module);
 		#endif
@@ -34,7 +34,7 @@ static void ns_tiff_warning_handler(const char* module, const char* fmt, va_list
 	char buf[1024];	
 	if (module != NULL){
 		#ifdef _WIN32 
-		_snprintf(buf, 1024,"%s", module);
+		_snprintf_s(buf, 1024,"%s", module);
 		#else
 		snprintf(buf, 1024,"%s", module);
 		#endif

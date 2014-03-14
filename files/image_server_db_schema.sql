@@ -2,7 +2,7 @@
 --
 -- Host: localhost    Database: image_server
 -- ------------------------------------------------------
--- Server version	5.0.95-log
+-- Server version	5.0.95
 
 /*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
 /*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
@@ -34,7 +34,7 @@ CREATE TABLE `alerts` (
   `detailed_text` text NOT NULL,
   `detailed_recipients` text,
   PRIMARY KEY  (`id`)
-) ENGINE=MyISAM AUTO_INCREMENT=1185 DEFAULT CHARSET=latin1;
+) ENGINE=MyISAM AUTO_INCREMENT=5927 DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -61,7 +61,7 @@ CREATE TABLE `animal_storyboard` (
   `image_delay_time_after_event` int(10) unsigned NOT NULL default '0',
   PRIMARY KEY  (`id`),
   KEY `subject` (`region_id`,`sample_id`,`experiment_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=139152 DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB AUTO_INCREMENT=233204 DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -115,7 +115,7 @@ CREATE TABLE `autoscan_schedule` (
   `scan_interval` int(10) unsigned NOT NULL default '0',
   PRIMARY KEY  (`id`),
   KEY `lookup` (`device_name`,`autoscan_completed_time`,`autoscan_start_time`)
-) ENGINE=MyISAM AUTO_INCREMENT=3095 DEFAULT CHARSET=latin1;
+) ENGINE=MyISAM AUTO_INCREMENT=4158 DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -167,7 +167,7 @@ CREATE TABLE `capture_samples` (
   PRIMARY KEY  (`id`),
   KEY `text_find` (`parameters`(400)),
   KEY `device_lookup` (`id`,`device_name`)
-) ENGINE=InnoDB AUTO_INCREMENT=14688 DEFAULT CHARSET=latin1 ROW_FORMAT=DYNAMIC COMMENT='different samples imaged on the scanner with different param';
+) ENGINE=InnoDB AUTO_INCREMENT=18864 DEFAULT CHARSET=latin1 ROW_FORMAT=DYNAMIC COMMENT='different samples imaged on the scanner with different param';
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -212,7 +212,7 @@ CREATE TABLE `capture_schedule` (
   KEY `image_reverse_lookup` (`captured_image_id`),
   KEY `shed` (`scheduled_time`,`sample_id`),
   KEY `device_lookup` USING BTREE (`scheduled_time`,`time_at_start`,`sample_id`,`experiment_id`,`missed`,`problem`,`time_at_finish`,`censored`)
-) ENGINE=InnoDB AUTO_INCREMENT=4954461 DEFAULT CHARSET=latin1 COMMENT='InnoDB free: 121856 kB';
+) ENGINE=InnoDB AUTO_INCREMENT=6730801 DEFAULT CHARSET=latin1 COMMENT='InnoDB free: 121856 kB';
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -244,7 +244,7 @@ CREATE TABLE `captured_images` (
   KEY `image_id_reverse_lookup` (`image_id`),
   KEY `time` (`sample_id`,`capture_time`),
   KEY `job_search` USING BTREE (`sample_id`,`currently_being_processed`,`mask_applied`,`problem`,`small_image_id`,`censored`,`image_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=2524423 DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB AUTO_INCREMENT=3319763 DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -260,7 +260,7 @@ CREATE TABLE `constants` (
   `id` int(10) unsigned NOT NULL auto_increment,
   `time_stamp` timestamp NOT NULL default CURRENT_TIMESTAMP on update CURRENT_TIMESTAMP,
   PRIMARY KEY  (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=76 DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB AUTO_INCREMENT=131 DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -362,7 +362,7 @@ CREATE TABLE `experiment_groups` (
   `hidden` tinyint(3) unsigned NOT NULL,
   `group_order` int(10) unsigned NOT NULL,
   PRIMARY KEY  (`group_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=10 DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB AUTO_INCREMENT=14 DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -398,7 +398,7 @@ CREATE TABLE `experiments` (
   `latest_storyboard_build_timestamp` bigint(20) unsigned NOT NULL default '0',
   `number_of_regions_in_latest_storyboard_build` bigint(20) unsigned NOT NULL default '0',
   PRIMARY KEY  (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=561 DEFAULT CHARSET=latin1 ROW_FORMAT=DYNAMIC;
+) ENGINE=InnoDB AUTO_INCREMENT=665 DEFAULT CHARSET=latin1 ROW_FORMAT=DYNAMIC;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -431,7 +431,7 @@ CREATE TABLE `host_event_log` (
   KEY `host_index` (`host_id`,`time`),
   KEY `sub_events` (`parent_event_id`,`time`),
   KEY `duration` (`processing_duration`)
-) ENGINE=MyISAM AUTO_INCREMENT=24188795 DEFAULT CHARSET=latin1 COMMENT='InnoDB free: 204800 kB';
+) ENGINE=MyISAM AUTO_INCREMENT=44382985 DEFAULT CHARSET=latin1 COMMENT='InnoDB free: 204800 kB';
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -461,7 +461,7 @@ CREATE TABLE `hosts` (
   `available_space_in_volatile_storage_in_mb` bigint(20) unsigned NOT NULL default '0',
   `time_of_last_successful_long_term_storage_write` bigint(20) unsigned NOT NULL,
   PRIMARY KEY  (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=293 DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB AUTO_INCREMENT=329 DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -484,7 +484,7 @@ CREATE TABLE `image_mask_regions` (
   `id` int(10) unsigned NOT NULL auto_increment,
   PRIMARY KEY  (`id`),
   KEY `mask` (`mask_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=24572 DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB AUTO_INCREMENT=32246 DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -501,7 +501,7 @@ CREATE TABLE `image_masks` (
   `visualization_image_id` int(10) unsigned NOT NULL default '0',
   `resize_factor` int(10) unsigned NOT NULL default '1',
   PRIMARY KEY  (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=7082 DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB AUTO_INCREMENT=9053 DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -536,7 +536,7 @@ CREATE TABLE `image_statistics` (
   `non_worm_object_intensity_mean` float NOT NULL default '0',
   `non_worm_object_intensity_variance` float NOT NULL default '0',
   PRIMARY KEY  (`id`)
-) ENGINE=MyISAM AUTO_INCREMENT=11241763 DEFAULT CHARSET=latin1 ROW_FORMAT=DYNAMIC;
+) ENGINE=MyISAM AUTO_INCREMENT=15371288 DEFAULT CHARSET=latin1 ROW_FORMAT=DYNAMIC;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -557,7 +557,7 @@ CREATE TABLE `images` (
   `partition` text NOT NULL,
   PRIMARY KEY  (`id`),
   KEY `host_lookup` (`host_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=74752289 DEFAULT CHARSET=latin1 ROW_FORMAT=DYNAMIC;
+) ENGINE=InnoDB AUTO_INCREMENT=97532313 DEFAULT CHARSET=latin1 ROW_FORMAT=DYNAMIC;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -575,7 +575,7 @@ CREATE TABLE `path_data` (
   `id` int(10) unsigned NOT NULL auto_increment,
   PRIMARY KEY  (`id`),
   KEY `reg_id` USING BTREE (`region_id`,`group_id`,`path_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=1034612 DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB AUTO_INCREMENT=1307316 DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -643,7 +643,7 @@ CREATE TABLE `processing_job_queue` (
   `paused` int(10) unsigned NOT NULL default '0',
   PRIMARY KEY  (`id`),
   KEY `priority_index` USING BTREE (`priority`,`problem`,`job_class`,`processor_id`)
-) ENGINE=MyISAM AUTO_INCREMENT=5909596 DEFAULT CHARSET=latin1;
+) ENGINE=MyISAM AUTO_INCREMENT=9659081 DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -712,7 +712,7 @@ CREATE TABLE `processing_jobs` (
   `paused` int(10) unsigned NOT NULL default '0',
   `pending_another_jobs_completion` int(11) NOT NULL default '0',
   PRIMARY KEY  (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=177568 DEFAULT CHARSET=latin1 ROW_FORMAT=DYNAMIC COMMENT='InnoDB free: 92160 kB; InnoDB free: 309248 kB';
+) ENGINE=InnoDB AUTO_INCREMENT=281013 DEFAULT CHARSET=latin1 ROW_FORMAT=DYNAMIC COMMENT='InnoDB free: 92160 kB; InnoDB free: 309248 kB';
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -799,9 +799,10 @@ CREATE TABLE `sample_region_image_info` (
   `worm_detection_model` text NOT NULL,
   `measured_temperature` double NOT NULL default '0',
   `time_series_denoising_flag` int(10) unsigned NOT NULL default '1',
+  `position_analysis_model` text NOT NULL,
   PRIMARY KEY  (`id`),
   KEY `experiment` (`mask_region_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=25113 DEFAULT CHARSET=latin1 ROW_FORMAT=DYNAMIC COMMENT='InnoDB free: 6144 kB';
+) ENGINE=InnoDB AUTO_INCREMENT=32787 DEFAULT CHARSET=latin1 ROW_FORMAT=DYNAMIC COMMENT='InnoDB free: 6144 kB';
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -860,7 +861,7 @@ CREATE TABLE `sample_region_images` (
   PRIMARY KEY  (`id`),
   KEY `job_lookup` (`region_info_id`,`problem`,`currently_under_processing`),
   KEY `movement_index` (`region_info_id`,`worm_movement_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=7440885 DEFAULT CHARSET=latin1 ROW_FORMAT=DYNAMIC;
+) ENGINE=InnoDB AUTO_INCREMENT=10115725 DEFAULT CHARSET=latin1 ROW_FORMAT=DYNAMIC;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -928,7 +929,7 @@ CREATE TABLE `worm_detection_results` (
   `data_storage_on_disk_id` bigint(20) unsigned NOT NULL COMMENT 'Worm segment info can be stored in this db, or alternatively saved to disk with filename information provided by the image table row number worm_segment_information_id ',
   PRIMARY KEY  (`id`),
   KEY `reverse_sample_lookup` (`capture_sample_id`)
-) ENGINE=MyISAM AUTO_INCREMENT=7204049 DEFAULT CHARSET=latin1 CHECKSUM=1 COMMENT='myISAM';
+) ENGINE=MyISAM AUTO_INCREMENT=10996106 DEFAULT CHARSET=latin1 CHECKSUM=1 COMMENT='myISAM';
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -975,4 +976,4 @@ CREATE TABLE `worm_movement` (
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2013-05-26 20:29:19
+-- Dump completed on 2014-03-14 12:05:43

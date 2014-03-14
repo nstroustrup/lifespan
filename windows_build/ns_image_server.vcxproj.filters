@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
     <Filter Include="Resource Files">
@@ -1026,9 +1026,6 @@
     <ClCompile Include="..\external_libraries\libhungarian\hungarian.c">
       <Filter>misc_lib\hungarian</Filter>
     </ClCompile>
-    <ClCompile Include="..\external_compile_libraries\libdmtx-0.5.2\dmtx.c">
-      <Filter>misc_lib\dmtx</Filter>
-    </ClCompile>
     <ClCompile Include="..\external_libraries\wm4_bspline\Wm4BSplineBasis.cpp">
       <Filter>misc_lib\wm4_bspline</Filter>
     </ClCompile>
@@ -1284,6 +1281,9 @@
     </ClCompile>
     <ClCompile Include="..\external_libraries\tiff-3.8.2\libtiff\tif_zip.c">
       <Filter>image_format_lib\tiff</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_compile_libraries\libdmtx-0.7.4\dmtx.c">
+      <Filter>misc_lib\dmtx</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

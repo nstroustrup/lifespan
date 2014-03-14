@@ -7,26 +7,25 @@
 using namespace std;
 
 string run_dmtx_decode(DmtxImage *image){
-DmtxDecode decode;
+	DmtxDecode * decode;
 
 	//SetOptionDefaults(&options);
-	decode = dmtxDecodeStructInit(image);
+	decode = dmtxDecodeCreate(image,1);
 
-    DmtxRegion region;
-	region = dmtxDecodeFindNextRegion(&decode, NULL);
-    if(region.found == DMTX_REGION_EOF)
-	return "";//throw ns_ex("No barcode found");
+    DmtxRegion * region(dmtxRegionFindNext(decode, NULL));
+    if(region == NULL)
+		return "";//throw ns_ex("No barcode found");
 
-	DmtxMessage *message;
-	message = dmtxDecodeMatrixRegion(image, &region, 1);
+	DmtxMessage *message(dmtxDecodeMatrixRegion(decode, region, 1));
 	if (message == 0)
 		return "";//throw ns_ex("Barcode did not encode any information");
 	string res;
 	for (unsigned int i = 0; message->output[i] != 0; i++)
 		res.push_back(message->output[i]);
 
-	dmtxMessageFree(&message);
-	dmtxDecodeStructDeInit(&decode);
+	dmtxMessageDestroy(&message);
+	dmtxRegionDestroy(&region);  
+	dmtxDecodeDestroy(&decode);
 	return res;
 }
 string ns_barcode_decode_done(const ns_image_standard & im, const string & debug_image_filename){
@@ -35,25 +34,47 @@ string ns_barcode_decode_done(const ns_image_standard & im, const string & debug
 	unsigned long w(im.properties().width);
 	unsigned long h(im.properties().height);
 
-	DmtxImage *image(dmtxImageMalloc(im.properties().width, im.properties().height));
+	unsigned char * pxl = new unsigned char[im.properties().width * im.properties().height * c];
+
+	
 	try{
+	
+
+		if (c == 3)
+		for (unsigned int y = 0; y < h; y++){
+			for (unsigned int x = 0; x < w; x++){
+				pxl[3*(y*w+x)+0] = im[y][3*x];
+				pxl[3*(y*w+x)+1] = im[y][3*x+1];
+				pxl[3*(y*w+x)+2] = im[y][3*x+2];
+			}
+		}
+		if (c == 1)
+			for (unsigned int y = 0; y < h; y++){
+				for (unsigned int x = 0; x < w; x++){
+					pxl[y*w+x] = im[y][x];
+				}
+			}
+		
+		int pack(DmtxPack24bppRGB);
+		if (c == 1)	
+			pack = DmtxPack8bppK;
+		DmtxImage *image(dmtxImageCreate(pxl,im.properties().width, im.properties().height,pack));	
+
 		if (image == NULL)
 			throw ns_ex("Could not persuade dmtxlib to allocate an image of dimentions ") << im.properties().width <<"x" << im.properties().height;
-		if (image->height != im.properties().height || image->width != im.properties().width){
+		if (image->height != im.properties().height || image->width != im.properties().width)
 			throw ns_ex("Requested an image of dimentions ") << im.properties().width <<"x" << im.properties().height << "; dmtx produced an image of dimentions "
 				<< image->width  << "x" << image->height;
 
-		}
-		for (unsigned int y = 0; y < h; y++)
-			for (unsigned int x = 0; x < w; x++){
-				image->pxl[y*w+x][0] = im[y][c*x];
-				image->pxl[y*w+x][1] = im[y][c*x];
-				image->pxl[y*w+x][2] = im[y][c*x];
-			}
 		string ret =  run_dmtx_decode(image);
-		if (ret.size() != 0)
+		dmtxImageDestroy(&image);
+		delete[] pxl;
+
+		//if (ret.size() != 0)
 			return ret;
+
 		//if we can't find a barcode, check to see if there has been a mirror-image reflection.
+		/*if (c == 3)
 		for (unsigned int y = 0; y < h; y++)
 			for (unsigned int x = 0; x < w; x++){
 				image->pxl[y*w+x][0] = im[y][c*(w-x-1)];
@@ -61,11 +82,13 @@ string ns_barcode_decode_done(const ns_image_standard & im, const string & debug
 				image->pxl[y*w+x][2] = im[y][c*(w-x-1)];
 			}
 		string name(run_dmtx_decode(image));
-		delete image;
-		return name;
+		*/
+
+		//delete image;
+		//return name;
 	}
 	catch(...){
-		delete image;
+		delete[] pxl;
 		throw;
 	}
 }
@@ -114,7 +137,7 @@ string ns_barcode_decode(const ns_image_standard & image, const string & debug_i
 
 #ifndef NS_USE_2D_SCANNER_BARCODES
 string ns_barcode_decode(const ns_image_standard & image, const string & debug_image_filename){
-	unsigned char  c = image.properties().components;
+	unsigned char  c = image.properties().components;	
 	ns_image_properties p(image.properties());
 
 	/*ns_histogram<unsigned long,ns_8_bit> hist;
@@ -123,7 +146,7 @@ string ns_barcode_decode(const ns_image_standard & image, const string & debug_i
 			hist[ image[y][x] ]++;
 		}
 	}
-
+	
 	unsigned int max,min;
 	for (min = 0; min < hist.size(); min++)
 		if (hist[min] != 0)break;
@@ -138,11 +161,11 @@ string ns_barcode_decode(const ns_image_standard & image, const string & debug_i
 	for (unsigned int y = 0; y < p.height; y++)
 		for (unsigned int x = 0; x < c*p.width; x+=c)
 			profile[y]+=image[y][x] >= thresh;
-
+	
 	vector<unsigned int> profile_smoothed(p.height,0);
 	ns_smooth_series<unsigned int, 48>(profile,profile_smoothed,0);
-
-	int bottom(0),
+	
+	int bottom(0), 
 		top((int)profile_smoothed.size()-1);
 
 	for (int i = (int)profile_smoothed.size()/2; i >=0; i--){
@@ -194,7 +217,7 @@ string ns_barcode_decode(const ns_image_standard & image, const string & debug_i
 			l_old = x;
 			break;
 		}
-		if (l_old != 0)
+		if (l_old != 0) 
 			break;
 	}
 
@@ -235,21 +258,21 @@ string ns_barcode_decode(const ns_image_standard & image, const string & debug_i
 	for (int x = start; x < stop; x++){
 		unsigned int vertical_mean(0);
 		unsigned int vertical_varience(0);
-
+		
 			for (unsigned int y = bottom; y < top; y++)
 				vertical_mean+=image[y][x+window];
 		vertical_mean/=((2*window+1)*(top-bottom));
-
+	
 
 	}*/
 
-
+	
 	unsigned int left = (11*l_old)/10,
 	//			 right = r_old - ((11*(p.width-r_old))/10);
 		right = r_old + (p.width-r_old)/25;
 	if (left >= right)
 		throw ns_ex("ns_barcode_decode::Could not register barcode (horizontal)");
-
+	
 	string dbg2_filename;
 	if (debug_image_filename.size() != 0){
 		ns_image_standard im;
@@ -264,10 +287,10 @@ string ns_barcode_decode(const ns_image_standard & image, const string & debug_i
 		}
 		/*
 		ns_image_storage_reciever_handle<ns_8_bit> processing_out(image_server.image_storage.request_volatile_storage(debug_image_filename,1024,false));
-		im.pump(processing_out.output_stream(),1024);
+		im.pump(processing_out.output_stream(),1024);	
 		dbg2_filename = ns_dir::extract_filename_without_extension(debug_image_filename) + "2." + ns_dir::extract_extension(debug_image_filename);*/
 	}
-
+	
 
 
 	ns_image_bitmap bmp;
@@ -303,11 +326,11 @@ string ns_barcode_decode(const ns_image_standard & image, const string & debug_i
 }
 
 string ns_barcode_decode(const ns_image_bitmap & image, const string & debug_image_filename){
-
+	
 	vector<unsigned int> bar_widths;
 	char state = 0;
 	unsigned int bar_start_pos = 0;
-
+	
 	int max_dark = 0;
 	int h = 0;
 	for (unsigned int y = 0; y < image.properties().height; y++){
@@ -376,7 +399,7 @@ string ns_barcode_decode(const ns_image_bitmap & image, const string & debug_ima
 			for (unsigned int x = 0; x < im.properties().width; x++)
 				im[y][x] = 255-128*im[y][x];
 		for (unsigned int x = 0; x < im.properties().width; x++)
-			im[h][x] = 0;
+			im[h][x] = 0;		
 /*		ns_image_storage_reciever_handle<ns_8_bit> processing_out(image_server.image_storage.request_volatile_storage(debug_image_filename,1024,false));
 		im.pump(processing_out.output_stream(),1024);*/
 	}
@@ -402,36 +425,55 @@ void ns_barcode_encoder::encode(const string & filename, const vector<string> & 
 
 void ns_barcode_encoder::encode(const string & str, ns_image_standard & image, const unsigned int margin_size){
 	#ifdef NS_USE_2D_SCANNER_BARCODES
-		DmtxEncode encode;
-		encode = dmtxEncodeStructInit();
+		DmtxEncode * encode;
+		encode = dmtxEncodeCreate();
 		unsigned char * a(new unsigned char[str.size()+1]);
 		try{
 			for (unsigned int i = 0; i < str.size(); i++)
 				a[i] = str[i];
 			a[str.size()] = 0;
 			cerr << "Encoding " << a << "\n";
-			dmtxEncodeDataMatrix(&encode, (int)str.size(), a, DMTX_SYMBOL_SQUARE_AUTO);
-			image.prepare_to_recieve_image(ns_image_properties(encode.image->height+2*margin_size,
-															 encode.image->width+2*margin_size,
-															 1,150));
-			for (unsigned int y = 0; y < image.properties().height; y++)
-				for (unsigned int x = 0; x < image.properties().width; x++)
-					image[y][x] = 255;
+			dmtxEncodeDataMatrix(encode, (int)str.size(), a);
+			int width(dmtxImageGetProp(encode->image, DmtxPropWidth)),
+				height(dmtxImageGetProp(encode->image, DmtxPropHeight)),
+				c = dmtxImageGetProp(encode->image, DmtxPropBytesPerPixel);
 
-			for (unsigned int y = margin_size; y < image.properties().height-margin_size; y++)
-				for (unsigned int x = margin_size; x < image.properties().width-margin_size; x++)
-					image[y][x] = encode.image->pxl[encode.image->width*(y-margin_size) + (x-margin_size)][0];
+			image.prepare_to_recieve_image(ns_image_properties(height+2*margin_size,
+															 width+2*margin_size,
+															 c,150));
+			if (c == 1){
+				for (unsigned int y = 0; y < image.properties().height; y++)
+					for (unsigned int x = 0; x < image.properties().width; x++)
+						image[y][x] = 255;
+
+				for (unsigned int y = margin_size; y < image.properties().height-margin_size; y++)
+					for (unsigned int x = margin_size; x < image.properties().width-margin_size; x++)
+						image[y][x] = encode->image->pxl[encode->image->width*(y-margin_size) + (x-margin_size)];
+			}
+			if (c == 3){
+				for (unsigned int y = 0; y < image.properties().height; y++)
+					for (unsigned int x = 0; x < image.properties().width; x++)
+						for (unsigned int c = 0; c < 3; c++)
+						image[y][3*x+c] = 255;
+
+				for (unsigned int y = margin_size; y < image.properties().height-margin_size; y++)
+					for (unsigned int x = margin_size; x < image.properties().width-margin_size; x++){
+						image[y][x] = encode->image->pxl[3*encode->image->width*(y-margin_size) + 3*(x-margin_size)];
+						image[y][x] = encode->image->pxl[3*encode->image->width*(y-margin_size) + 3*(x-margin_size)+1];
+						image[y][x] = encode->image->pxl[3*encode->image->width*(y-margin_size) + 3*(x-margin_size)+2];
+					}
+			}
 
 			ns_font & font(font_server.default_font());
-			font.draw(margin_size+10,margin_size + encode.image->height + 10,ns_color_8(125,125,125),str,image);
+			font.draw(margin_size+10,margin_size + encode->image->height + 10,ns_color_8(125,125,125),str,image);
 
-
-			dmtxEncodeStructDeInit(&encode);
+			
+			dmtxEncodeDestroy(&encode);
 			delete[] a;
 		}
 		catch(...){
-
-			dmtxEncodeStructDeInit(&encode);
+			
+			dmtxEncodeDestroy(&encode);
 			delete[] a;
 			throw;
 		}

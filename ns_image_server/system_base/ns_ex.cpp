@@ -14,7 +14,7 @@ using namespace std;
 #define NS_SNPRINTF_BUFFER_SIZE 256
 
 #ifdef _WIN32 
-#define snprintf _snprintf
+#define snprintf _snprintf_s
 #endif
 
 #ifndef NS_SINGLE_THREAD

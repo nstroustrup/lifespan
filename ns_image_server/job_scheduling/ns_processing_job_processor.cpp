@@ -1215,6 +1215,7 @@ bool ns_processing_job_maintenance_processor:: run_job(ns_sql & sql){
 					}
 					throw ns_ex("The storyboard could not be generated as no dead or potentially dead worms were identified");
 				}
+				std::vector<ns_ex> errors;
 				//if this is a job for a specific region or sample, just do the work
 				if (job.region_id != 0 || job.sample_id != 0){
 					for (unsigned int j = 0; j < specs.size(); j++){
@@ -1226,8 +1227,13 @@ bool ns_processing_job_maintenance_processor:: run_job(ns_sql & sql){
 						man.load_metadata_from_db(specs[j],s,sql);
 						ns_image_standard ima;
 							for (unsigned int i = 0; i < man.number_of_sub_images(); i++){
-								s.draw(i,ima,true,sql);
-								man.save_image_to_db(i,specs[j],ima,sql);
+								try{
+									s.draw(i,ima,true,sql);
+									man.save_image_to_db(i,specs[j],ima,sql);
+								}
+								catch(ns_ex & ex){
+									errors.push_back(ex);
+								}
 							}
 					}
 				}
@@ -1241,8 +1247,20 @@ bool ns_processing_job_maintenance_processor:: run_job(ns_sql & sql){
 					for (unsigned int i = 0; i < man.number_of_sub_images(); i+=5){
 						j.id = 0;
 						j.image_id = i;
-						j.save_to_db(sql);
+						try{
+							j.save_to_db(sql);
+						}
+						catch(ns_ex & ex){
+							errors.push_back(ex);
+						}
 					}
+				}
+				if (errors.size() > 0){
+					//register all the errors but only throw the first one
+					for (unsigned long i = 1; i < errors.size(); i++){
+						image_server->register_server_event(ns_image_server::ns_register_in_central_db,errors[i]);
+					}
+					throw errors[0];
 				}
 				//update db stats
 				sql << "UPDATE experiments SET "

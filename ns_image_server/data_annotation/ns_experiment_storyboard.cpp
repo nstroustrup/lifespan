@@ -1107,7 +1107,7 @@ void ns_experiment_storyboard::draw(const unsigned long sub_image_id,ns_image_st
 					divisions[i].events[j].image.properties().height
 				
 				){
-					throw ns_ex("There is a disagrement between the annotation (") 
+					throw ns_ex("There is a disagreement between the annotation (") 
 						<< divisions[i].events[j].image_image_size().x << ","
 						<< divisions[i].events[j].image_image_size().y
 						<< ") and the actual size of the region image "
@@ -1139,13 +1139,23 @@ void ns_experiment_storyboard::draw(const unsigned long sub_image_id,ns_image_st
 				}
 			}
 			catch(ns_ex & ex){
-					
 					ns_experiment_storyboard_timepoint_element e(divisions[i].events[j]);
-					throw ns_ex(ex.text()) << " for worm #" << e.event_annotation.stationary_path_id.group_id << " in region " << 
-					e.event_annotation.region_info_id << " at time (" <<
-					e.annotation_whose_image_should_be_used.time.period_start << "," <<
-					e.annotation_whose_image_should_be_used.time.period_end << ").  Details: " 
-						<< e.annotation_whose_image_should_be_used.description();
+					sql << "SELECT s.name,r.name FROM capture_samples as s, sample_region_image_info as r WHERE r.id = "
+							<< e.event_annotation.region_info_id << 
+							" AND s.id=r.sample_id";
+					ns_sql_result res;
+					sql.get_rows(res);
+					std::string region_name;
+					if (res.size() > 0){
+						region_name = res[0][0] + "::" + res[0][1];
+					}
+
+					throw ns_ex("A problem occurred involving worm #") << e.event_annotation.stationary_path_id.group_id << " in region " <<
+						region_name << "(" << 
+						e.event_annotation.region_info_id << ") at time (" <<
+						e.annotation_whose_image_should_be_used.time.period_start << "," <<
+						e.annotation_whose_image_should_be_used.time.period_end << ").  Details: " 
+						<< e.annotation_whose_image_should_be_used.description() << ": " << ex.text();
 			}
 		}
 		divisions[i].clear_images();

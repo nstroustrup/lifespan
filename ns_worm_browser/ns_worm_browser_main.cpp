@@ -1114,14 +1114,23 @@ public:
 	Menu Specification
 	*****************************/
 
-	void update_experiment_choice(Fl_Menu_Bar & bar){		
+	void update_experiment_choice(Fl_Menu_Bar & bar){
+		ns_acquire_for_scope<ns_sql> sql(image_server.new_sql_connection(__FILE__,__LINE__));
+		ns_acquire_lock_for_scope lock(menu_bar_processing_lock,__FILE__,__LINE__);
 		bar.menu(NULL);
 		clear();
-		ns_acquire_for_scope<ns_sql> sql(image_server.new_sql_connection(__FILE__,__LINE__));
+		
+		
 		worm_learner.data_selector.load_experiment_names(sql());
+		worm_learner.data_selector.set_current_experiment(-1,sql());
 		add_menus();
+
 		build_menus(bar);
 		bar.redraw();
+		
+		::update_region_choice_menu();
+		lock.release();
+
 	}
 
 	ns_worm_terminal_main_menu_organizer(){

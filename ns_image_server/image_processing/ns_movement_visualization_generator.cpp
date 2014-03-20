@@ -589,6 +589,8 @@ void ns_movement_visualization_generator::create_scatter_proportion_graph_for_ca
 	
 void ns_movement_visualization_generator::create_time_path_analysis_visualization(const ns_image_server_captured_image_region & region_image, const ns_death_time_annotation_compiler_region & compiler_region,const ns_image_standard & grayscale, ns_image_standard & out,ns_sql & sql){
 	unsigned long thickness = 4;
+	
+	const ns_color_8 excluded_color = ns_color_8(50,50,255);
 
 	ns_image_properties prop(grayscale.properties());
 	prop.components = 3;
@@ -649,7 +651,10 @@ void ns_movement_visualization_generator::create_time_path_analysis_visualizatio
 		}
 	}
 
-	
+	//for debugging
+	std::vector<char> locations_matched(representative_state_event_for_location.size(),0);
+	unsigned long locations_with_matches(0);
+	//for real use
 	std::vector<ns_death_time_annotation_compiler_region::ns_location_list::const_iterator> location_matches(detected_worms.size(),compiler_region.locations.end());
 	unsigned long unmatched_detected_worms(0);
 	for (unsigned long w = 0; w < detected_worms.size(); w++){
@@ -662,6 +667,10 @@ void ns_movement_visualization_generator::create_time_path_analysis_visualizatio
 						cerr << "Found multiple locations that match detected worm!\n";
 					}
 					else{
+						//for debugging
+						locations_matched[i] = 1;
+						locations_with_matches++;
+						//for real use
 						location_matches[w] = compiler_region.locations.begin()+i;
 					}
 			}
@@ -680,19 +689,18 @@ void ns_movement_visualization_generator::create_time_path_analysis_visualizatio
 		if (fast_animal_match == 0 && location== compiler_region.locations.end()){
 			const ns_color_8 color(255,255,255);
 			ns_vector_2i size = detected_worms[w]->region_size;
-			out.draw_line_color(pos,pos+ns_vector_2i(size.x,0),color,3);
-			out.draw_line_color(pos,pos+ns_vector_2i(0,size.y),color,3);
-			out.draw_line_color(pos+ns_vector_2i(0,size.y),pos+size,color,3);
-			out.draw_line_color(pos+ns_vector_2i(size.x,0),pos+size,color,3);
+			out.draw_line_color_thick(pos,pos+ns_vector_2i(size.x,0),color,3);
+			out.draw_line_color_thick(pos,pos+ns_vector_2i(0,size.y),color,3);
+			out.draw_line_color_thick(pos+ns_vector_2i(0,size.y),pos+size,color,3);
+			out.draw_line_color_thick(pos+ns_vector_2i(size.x,0),pos+size,color,3);
 			
 			continue;
 		}
-
 		ns_color_8  color;
 		if (location != compiler_region.locations.end()){
 			color = (ns_movement_colors::color(ns_movement_event_state(representative_state_event_for_location[location-compiler_region.locations.begin()]->type)));
 			if (location->properties.is_excluded())
-			color = ns_color_8(50,50,255);
+			color = excluded_color;
 		}
 		else color = ns_movement_colors::color(ns_movement_fast);
 
@@ -737,6 +745,22 @@ void ns_movement_visualization_generator::create_time_path_analysis_visualizatio
 					}
 				}
 			}
-		}		
+
+		}	
+	}
+	for (unsigned int i = 0; i < compiler_region.locations.size(); i++){
+		if (representative_state_event_for_location[i] == 0 || locations_matched[i])
+			continue;
+		const ns_death_time_annotation & a(*representative_state_event_for_location[i]);
+		if (compiler_region.locations[i].properties.inferred_animal_location){
+			ns_color_8 color = ns_movement_colors::color(ns_movement_event_state(a.type));
+			if (compiler_region.locations[i].properties.is_excluded())
+				color = excluded_color;
+			unsigned long thickness = 4;
+			out.draw_line_color_thick(a.position,a.position + ns_vector_2i(a.size.x,0),color,thickness,.8);
+			out.draw_line_color_thick(a.position,a.position + ns_vector_2i(0,a.size.y),color,thickness,.8);
+			out.draw_line_color_thick(a.position+ns_vector_2i(a.size.x,0),a.position + ns_vector_2i(a.size.x,a.size.y),color,thickness,.6);
+			out.draw_line_color_thick(a.position+ns_vector_2i(0,a.size.y),a.position + ns_vector_2i(a.size.x,a.size.y),color,thickness,.6);
+		}
 	}
 }

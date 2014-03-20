@@ -91,10 +91,10 @@ private:
 	ns_experiment_storyboard storyboard;
 	
 	static void draw_box(const ns_vector_2i & p, const ns_vector_2i & s, const ns_color_8 & c,ns_image_standard & im, const unsigned long thickness){
-		im.draw_line_color(p,p+ns_vector_2i(s.x,0),c,thickness);
-		im.draw_line_color(p,p+ns_vector_2i(0,s.y),c,thickness);
-		im.draw_line_color(p+s,p+ns_vector_2i(s.x,0),c,thickness);
-		im.draw_line_color(p+s,p+ns_vector_2i(0,s.y),c,thickness);
+		im.draw_line_color_thick(p,p+ns_vector_2i(s.x,0),c,thickness);
+		im.draw_line_color_thick(p,p+ns_vector_2i(0,s.y),c,thickness);
+		im.draw_line_color_thick(p+s,p+ns_vector_2i(s.x,0),c,thickness);
+		im.draw_line_color_thick(p+s,p+ns_vector_2i(0,s.y),c,thickness);
 	}
 	
 	
@@ -176,7 +176,7 @@ private:
 					box_size((tp->division->events[i].image_image_size()/resize_factor));
 
 			if (!has_movement_events)
-				im.draw_line_color(box_pos,ns_vector_2i(box_pos.x+box_size.x/3,box_pos.y),ns_color_8(0,0,0),2);
+				im.draw_line_color_thick(box_pos,ns_vector_2i(box_pos.x+box_size.x/3,box_pos.y),ns_color_8(0,0,0),2);
 			
 		
 			draw_box(box_pos,box_size,color,im,thickness);

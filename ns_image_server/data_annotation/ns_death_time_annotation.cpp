@@ -712,6 +712,8 @@ void ns_death_time_annotation::transfer_sticky_properties(ns_death_time_annotati
 		a.disambiguation_type = disambiguation_type;
 	if (flag.specified())
 		a.flag = flag;
+	if (inferred_animal_location)
+		a.inferred_animal_location = true;
 	if (a.number_of_worms_at_location_marked_by_hand < number_of_worms_at_location_marked_by_hand)
 		a.number_of_worms_at_location_marked_by_hand = number_of_worms_at_location_marked_by_hand;
 	if (a.number_of_worms_at_location_marked_by_machine < number_of_worms_at_location_marked_by_machine)
@@ -976,6 +978,8 @@ void ns_death_time_annotation_compiler_region::add(const ns_death_time_annotatio
 	//if (e.stationary_path_id.group_id == 28)
 	//	cerr << "AH";
 	//fast moving worms aren't linked to any specific location.
+	//if (e.inferred_animal_location)
+	//		cerr << "WHA";
 	if (e.type == ns_fast_moving_worm_observed ){
 		fast_moving_animals.push_back(e);
 		return;
@@ -991,6 +995,10 @@ void ns_death_time_annotation_compiler_region::add(const ns_death_time_annotatio
 		ns_location_list::iterator assigned_position_match(locations.end());
 		
 		for(ns_location_list::iterator p = locations.begin(); p != locations.end(); p++){
+	
+	//		for (unsigned long k = 0; k < p->annotations.size(); k++)
+	//			if (p->annotations[k].inferred_animal_location)
+	//				cerr << "BA";
 			if (p->properties.stationary_path_id == e.stationary_path_id){
 					assigned_position_match = p;
 					break;
@@ -1000,6 +1008,16 @@ void ns_death_time_annotation_compiler_region::add(const ns_death_time_annotatio
 				&& p->location_matches(match_distance_squared,e.position))
 				unassigned_position_match = p;
 		}
+//		if (assigned_position_match != locations.end() && assigned_position_match->properties.inferred_animal_location){
+				//cerr << "WHA";
+//				if (e.is_excluded())
+//					cerr << ";";
+//			}
+//		if (unassigned_position_match != locations.end() && unassigned_position_match->properties.inferred_animal_location){
+//				//cerr << "WHA";
+//				if (e.is_excluded())
+//					cerr << ";";
+//			}
 	
 		if (assigned_position_match != locations.end())
 			assigned_position_match->add_event(e);
@@ -1045,6 +1063,7 @@ void ns_death_time_annotation_compiler_location::merge(const ns_death_time_annot
 void ns_death_time_annotation_compiler_region::merge(const ns_death_time_annotation_compiler_region & region, const bool create_new_location){
 	//it's a little faster to add all the specified points first and then add the unspecified poitns afterwards
 	for (ns_death_time_annotation_compiler_region::ns_location_list::const_iterator p = region.locations.begin(); p != region.locations.end(); p++){
+	
 		if (p->properties.stationary_path_id.specified()){
 			for (unsigned int i = 0; i < p->annotations.size(); i++)
 				this->add(p->annotations[i],create_new_location);
@@ -1987,6 +2006,11 @@ void ns_death_time_annotation_compiler_region::generate_survival_curve(ns_surviv
 
 		ns_death_time_event_compiler_time_aggregator aggregator(metadata);
 		for (ns_death_time_annotation_compiler_region::ns_location_list::const_iterator q = locations.begin(); q != locations.end(); ++q){
+			
+			
+			//if (q->properties.number_of_worms() == 3)
+				//cerr << "WHA";
+			
 			ns_dying_animal_description_const death(q->generate_dying_animal_description_const(warn_on_movement_problems));
 			if (death.machine.death_annotation != 0 && //only generate fancy censoring strategies for actual deaths
 				q->properties.number_of_worms() > 1 && //and only for multiple-worm clusters

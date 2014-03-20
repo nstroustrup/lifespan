@@ -1991,11 +1991,11 @@ void ns_analyzed_image_time_path::detect_death_times_and_generate_annotations_fr
 													elements[end_index].absolute_time),
 			elements[end_index].region_offset_in_source_image(),
 			elements[end_index].worm_region_size(),
-			ns_death_time_annotation::ns_machine_excluded,
+			ns_death_time_annotation::ns_not_excluded,			//filling in the gaps of these things work really well! Let the user exclude them in the worm browser
 			ns_death_time_annotation_event_count(1+elements[end_index].number_of_extra_worms_observed_at_position,0),
 			current_time,ns_death_time_annotation::ns_lifespan_machine,
 			(elements[end_index].part_of_a_multiple_worm_disambiguation_group)?ns_death_time_annotation::ns_part_of_a_mutliple_worm_disambiguation_cluster:ns_death_time_annotation::ns_single_worm,
-			path_id,true,elements[end_index].inferred_animal_location));
+			path_id,true,elements[end_index].inferred_animal_location,"low_density"));
 	}
 	ns_time_path_posture_movement_solution movement_state_solution(movement_death_time_estimator->operator()(this,true));
 	const double loglikelihood_of_solution(movement_state_solution.loglikelihood_of_solution);
@@ -4766,10 +4766,10 @@ void ns_time_path_image_movement_analyzer::generate_death_aligned_movement_postu
 
 
 		//	const ns_vector_2i s (series.metadata_positions_on_visualization_grid[g]+ns_vector_2i(graph_prop.width+thickness,graph_prop.height));
-			output_image.draw_line_color(pos+ns_vector_2i(-thickness,-thickness),pos+ns_vector_2i(s.x,-thickness),c,thickness);
-			output_image.draw_line_color(pos+ns_vector_2i(-thickness,-thickness),pos+ns_vector_2i(-thickness,s.y),c,thickness);
-			output_image.draw_line_color(pos+s,pos+ns_vector_2i(s.x,-thickness),c,thickness);
-			output_image.draw_line_color(pos+s,pos+ns_vector_2i(-thickness,s.y),c,thickness);
+			output_image.draw_line_color_thick(pos+ns_vector_2i(-thickness,-thickness),pos+ns_vector_2i(s.x,-thickness),c,thickness);
+			output_image.draw_line_color_thick(pos+ns_vector_2i(-thickness,-thickness),pos+ns_vector_2i(-thickness,s.y),c,thickness);
+			output_image.draw_line_color_thick(pos+s,pos+ns_vector_2i(s.x,-thickness),c,thickness);
+			output_image.draw_line_color_thick(pos+s,pos+ns_vector_2i(-thickness,s.y),c,thickness);
 			
 			if (i >= 0){
 				const unsigned long time(path.elements[i].absolute_time);
@@ -5015,10 +5015,10 @@ void ns_time_path_image_movement_analyzer::generate_movement_posture_visualizati
 			//draw colored line around worm
 			const ns_vector_2i & p (vis_summary.worms[ps].path_in_visualization.position);
 			const ns_vector_2i & s (vis_summary.worms[ps].path_in_visualization.size);
-			output_image.draw_line_color(p,p+ns_vector_2i(s.x,0),c,thickness);
-			output_image.draw_line_color(p,p+ns_vector_2i(0,s.y),c,thickness);
-			output_image.draw_line_color(p+s,p+ns_vector_2i(s.x,0),c,thickness);
-			output_image.draw_line_color(p+s,p+ns_vector_2i(0,s.y),c,thickness);
+			output_image.draw_line_color_thick(p,p+ns_vector_2i(s.x,0),c,thickness);
+			output_image.draw_line_color_thick(p,p+ns_vector_2i(0,s.y),c,thickness);
+			output_image.draw_line_color_thick(p+s,p+ns_vector_2i(s.x,0),c,thickness);
+			output_image.draw_line_color_thick(p+s,p+ns_vector_2i(0,s.y),c,thickness);
 		}
 		string metadata;
 		vis_summary.to_xml(metadata);

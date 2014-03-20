@@ -588,9 +588,9 @@ void ns_graph::plot_object(const ns_graph_object & y, const ns_graph_object & x,
 							throw ns_ex("ns_graph::Could not draw line due to x1");
 						if (y0 < 0 || y0 >= (int)h)throw ns_ex("ns_graph::Could not draw line due to y0");
 						if (y1 < 0 || y1 >= (int)h)throw ns_ex("ns_graph::Could not draw line due to y1");
-						image.draw_line_color(ns_vector_2i(x0,y0),ns_vector_2i(x1,y1),y.properties.line.color,y.properties.line.width);
+						image.draw_line_color_thick(ns_vector_2i(x0,y0),ns_vector_2i(x1,y1),y.properties.line.color,y.properties.line.width);
 						if (y.properties.draw_vertical_lines == ns_graph_properties::ns_full_line)
-							image.draw_line_color(ns_vector_2i(x0,spec.x_axis_pos),ns_vector_2i(x0,y0),y.properties.line.color,y.properties.line.width);
+							image.draw_line_color_thick(ns_vector_2i(x0,spec.x_axis_pos),ns_vector_2i(x0,y0),y.properties.line.color,y.properties.line.width);
 					}
 					break;
 				}
@@ -608,13 +608,13 @@ void ns_graph::plot_object(const ns_graph_object & y, const ns_graph_object & x,
 							throw ns_ex("ns_graph::Could not draw line due to x1");
 						if (y0 < 0 || y0 >= (int)h)throw ns_ex("ns_graph::Could not draw line due to y0");
 						if (y1 < 0 || y1 >= (int)h)throw ns_ex("ns_graph::Could not draw line due to y1");
-						image.draw_line_color(ns_vector_2i(x0,y0),ns_vector_2i(x1,y0),y.properties.line.color,y.properties.line.width);
+						image.draw_line_color_thick(ns_vector_2i(x0,y0),ns_vector_2i(x1,y0),y.properties.line.color,y.properties.line.width);
 						if (y.properties.draw_vertical_lines == ns_graph_properties::ns_full_line){
-							image.draw_line_color(ns_vector_2i(x0,spec.x_axis_pos),ns_vector_2i(x0,y0),y.properties.line.color,y.properties.line.width);
-							image.draw_line_color(ns_vector_2i(x1,spec.x_axis_pos),ns_vector_2i(x1,y0),y.properties.line.color,y.properties.line.width);
+							image.draw_line_color_thick(ns_vector_2i(x0,spec.x_axis_pos),ns_vector_2i(x0,y0),y.properties.line.color,y.properties.line.width);
+							image.draw_line_color_thick(ns_vector_2i(x1,spec.x_axis_pos),ns_vector_2i(x1,y0),y.properties.line.color,y.properties.line.width);
 						}
 						if (y.properties.draw_vertical_lines == ns_graph_properties::ns_outline){
-							image.draw_line_color(ns_vector_2i(x1,y0),ns_vector_2i(x1,y1),y.properties.line.color,y.properties.line.width);
+							image.draw_line_color_thick(ns_vector_2i(x1,y0),ns_vector_2i(x1,y1),y.properties.line.color,y.properties.line.width);
 						}
 					}
 					break;
@@ -635,10 +635,10 @@ void ns_graph::plot_object(const ns_graph_object & y, const ns_graph_object & x,
 						if (x1 < 0 || x1 >= (int)w)
 							throw ns_ex("ns_graph::Could not draw line due to x1");
 						if (y0 < 0 || y0 >= (int)h)throw ns_ex("ns_graph::Could not draw line due to y0");
-						image.draw_line_color(ns_vector_2i(x0,y0),ns_vector_2i(x1,y0),y.properties.line.color,y.properties.line.width);
+						image.draw_line_color_thick(ns_vector_2i(x0,y0),ns_vector_2i(x1,y0),y.properties.line.color,y.properties.line.width);
 						if (y.properties.draw_vertical_lines){
-							image.draw_line_color(ns_vector_2i(x0,spec.x_axis_pos),ns_vector_2i(x0,y0),y.properties.line.color,y.properties.line.width);
-							image.draw_line_color(ns_vector_2i(x1,spec.x_axis_pos),ns_vector_2i(x1,y0),y.properties.line.color,y.properties.line.width);
+							image.draw_line_color_thick(ns_vector_2i(x0,spec.x_axis_pos),ns_vector_2i(x0,y0),y.properties.line.color,y.properties.line.width);
+							image.draw_line_color_thick(ns_vector_2i(x1,spec.x_axis_pos),ns_vector_2i(x1,y0),y.properties.line.color,y.properties.line.width);
 						}
 					}
 					break;

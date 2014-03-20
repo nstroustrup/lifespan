@@ -13,6 +13,8 @@
 #include "ns_hidden_markov_model_posture_analyzer.h"
 #include "resource.h"
 #include "ns_fl_modal_dialogs.h"
+
+#include "hungarian.h"
 using namespace std;
 
 void ns_to_lower(std::string & s){
@@ -1960,49 +1962,224 @@ void ns_worm_learner::generate_experiment_movement_image_quantification_analysis
 	sql.release();
 }
 
+void ns_find_new_paths(const ns_time_path_solution & baseline, const ns_time_path_solution & target, vector<char> & target_path_is_new_this_round){
+	
+	target_path_is_new_this_round.resize(0);
+	target_path_is_new_this_round.resize(target.paths.size(),0);
+	
+	hungarian_problem_t matching_problem;
+	int ** cost_matrix = new int *[baseline.paths.size()];
+	for (unsigned int i = 0; i < baseline.paths.size(); i++)
+		cost_matrix[i] = new int[target.paths.size()];
+	try{
+		for (unsigned int i = 0; i < baseline.paths.size(); i++){
+			for (unsigned int j = 0; j < target.paths.size(); j++){
+				const unsigned long d((baseline.paths[i].center/baseline.paths[i].stationary_elements.size()-target.paths[j].center/target.paths[j].stationary_elements.size()).squared());
+					cost_matrix[i][j] = d;
+			}
+		}
+
+		hungarian_init(&matching_problem,cost_matrix,
+			baseline.paths.size(),//rows
+			target.paths.size(),	//columns
+			HUNGARIAN_MODE_MINIMIZE_COST);
+
+		hungarian_solve(&matching_problem);
+		
+		int k = 0;
+		for (unsigned int j = 0; j < target.paths.size(); j++){
+			bool found(false);
+			for (unsigned int i = 0; i < baseline.paths.size(); i++){
+				if (matching_problem.assignment[i][j] != HUNGARIAN_ASSIGNED)
+					continue;
+				found = true;
+				break;
+			}
+			if (!found){
+				target_path_is_new_this_round[j] = 1;
+			}
+			k++;
+		}
+		hungarian_free(&matching_problem);
+		for (unsigned int i = 0; i < baseline.paths.size(); i++)
+			delete[] cost_matrix[i];
+		delete[] cost_matrix;
+	}
+	catch(...){
+		for (unsigned int i = 0; i < baseline.paths.size(); i++)
+			delete[] cost_matrix[i];
+		delete[] cost_matrix;
+		throw;
+	}
+}
+const unsigned long ns_location_not_matched(99999);
+void ns_match_locations(const std::vector<ns_vector_2i> baseline, const std::vector<ns_vector_2i> & target, vector<unsigned long> & target_match){
+	
+	target_match.resize(0);
+	target_match.resize(target.size(),ns_location_not_matched);
+	
+	hungarian_problem_t matching_problem;
+	int ** cost_matrix = new int *[baseline.size()];
+	for (unsigned int i = 0; i < baseline.size(); i++)
+		cost_matrix[i] = new int[target.size()];
+	try{
+		for (unsigned int i = 0; i < baseline.size(); i++){
+			for (unsigned int j = 0; j < target.size(); j++){
+					cost_matrix[i][j] = (baseline[i]-target[j]).squared();
+			}
+		}
+
+		hungarian_init(&matching_problem,cost_matrix,
+			baseline.size(),//rows
+			target.size(),	//columns
+			HUNGARIAN_MODE_MINIMIZE_COST);
+
+		hungarian_solve(&matching_problem);
+		
+		int k = 0;
+		for (unsigned int j = 0; j < target.size(); j++){
+			bool found(false);
+			for (unsigned int i = 0; i < baseline.size(); i++){
+				if (matching_problem.assignment[i][j] != HUNGARIAN_ASSIGNED)
+					continue;
+				found = true;
+				target_match[j] = i;
+				break;
+			}
+			if (!found)
+				target_match[j] = ns_location_not_matched;
+			k++;
+		}
+		hungarian_free(&matching_problem);
+		for (unsigned int i = 0; i < baseline.size(); i++)
+			delete[] cost_matrix[i];
+		delete[] cost_matrix;
+	}
+	catch(...){
+		for (unsigned int i = 0; i < baseline.size(); i++)
+			delete[] cost_matrix[i];
+		delete[] cost_matrix;
+		throw;
+	}
+}
 
 void ns_worm_learner::test_time_path_analysis_parameters(unsigned long region_id){
 	ns_acquire_for_scope<ns_sql> sql(image_server.new_sql_connection(__FILE__,__LINE__));
 	ns_time_path_solver tp_solver;
 	tp_solver.load(region_id,sql());
 	ns_time_path_solver_parameters default_parameters(ns_time_path_solver_parameters::default_parameters(region_id,sql()));
-	vector<ns_time_path_solver_parameters> parameters;
+	vector<vector<ns_time_path_solver_parameters> > parameters;
 
-	unsigned long fragment_duration_in_hours[] = {0,1,2,4,8,16,};
-	unsigned long stationary_path_duration_in_hours[] = {0,1,2,4,8,16,};
+	unsigned long fragment_duration_in_hours[] = {4,3,2,1,0};
+	unsigned long stationary_path_duration_in_hours[] = {4,3,2,1,0};
 
-	for (unsigned int i = 0; i < 8; i++){
+	ns_hand_annotation_loader by_hand_region_annotations;
+	by_hand_region_annotations.load_region_annotations(
+			ns_death_time_annotation_set::ns_censoring_and_movement_transitions,region_id,sql());					
+
+	parameters.resize(5);
+	for (unsigned int i = 0; i < 5; i++){
 		ns_time_path_solver_parameters p(default_parameters);
-	
 		p.min_stationary_object_path_fragment_duration_in_seconds = fragment_duration_in_hours[i]*60*60;
-		for (unsigned int j = 0; j < 8; j++){
+		parameters[i].resize(5);
+		for (unsigned int j = 0; j < 5; j++){
 			p.min_final_stationary_path_duration_in_minutes = stationary_path_duration_in_hours[j]*60;
-			parameters.push_back(p);
+			parameters[i][j] = p;
 		}
 	}
-	
-	for (unsigned int i = 0; i < parameters.size(); i++){
-		ns_time_path_solver tp(tp_solver);
-		ns_time_path_solution s;
-		tp.solve(parameters[i],s);
-		ns_image_server_results_subject sub;
-		sub.region_id = region_id;
-		std::string type = "OPFD=" + ns_to_string(parameters[i].min_stationary_object_path_fragment_duration_in_seconds) + "&"
-						   "SPD=" + ns_to_string(parameters[i].min_final_stationary_path_duration_in_minutes);
-		 
-		ns_acquire_for_scope<ostream> position_3d_file_output(
-		image_server.results_storage.animal_position_timeseries_3d(
-			sub,sql(),ns_image_server_results_storage::ns_3d_plot,type
-		).output()
-		);
-		s.output_visualization_csv(position_3d_file_output());
-		position_3d_file_output.release();
 
-		image_server.results_storage.write_animal_position_timeseries_3d_launcher(sub,ns_image_server_results_storage::ns_3d_plot,sql(),type);
+	ns_image_server_results_subject sub2;
+	sub2.region_id = region_id;
+	ns_acquire_for_scope<std::ostream> quant(image_server.results_storage.animal_position_timeseries_3d(
+		sub2,sql(),ns_image_server_results_storage::ns_3d_plot,"path_quantification").output());
+
+	quant() << "Min Stationary object path fragment duration (hours),Min Final stationary path duration (hours),"
+				"Total objects detected,Number of actual worms, Number of non-worm objects, Number of low-density_paths, Path ID,Center X, Center Y,Start Time,End Time,Duration (hours),Number of Observations in path,Low Density Path,Minimum distance to censored location, Likely censored, New This Round\n";
+	vector<vector<ns_time_path_solution> > solutions(parameters.size());
+	for (unsigned int i = 0; i < parameters.size(); i++){
+		solutions[i].resize( parameters[i].size());
+		for (unsigned int j = 0; j < parameters[i].size(); j++){
+			//get the solution
+			ns_time_path_solver tp(tp_solver);
+			tp.solve(parameters[i][j],solutions[i][j]);
+	
+			//find which paths are new relative to the refence
+			vector<char> path_is_new_this_round(solutions[i][j].paths.size(),0);
+			if (j > 0)
+				ns_find_new_paths(solutions[i][0],solutions[i][j],path_is_new_this_round);
+
+			//output the solutions to disk
+			ns_image_server_results_subject sub;
+			sub.region_id = region_id;
+			std::string type = "OPFD=" + ns_to_string(parameters[i][j].min_stationary_object_path_fragment_duration_in_seconds) + "&"
+								"SPD=" + ns_to_string(parameters[i][j].min_final_stationary_path_duration_in_minutes);
+		 
+			ns_acquire_for_scope<ostream> position_3d_file_output(
+			image_server.results_storage.animal_position_timeseries_3d(
+				sub,sql(),ns_image_server_results_storage::ns_3d_plot,type
+			).output()
+			);
+			solutions[i][j].output_visualization_csv(position_3d_file_output());
+			position_3d_file_output.release();
+
+			image_server.results_storage.write_animal_position_timeseries_3d_launcher(sub,ns_image_server_results_storage::ns_3d_plot,sql(),type);
 			
-		//keep the results for the next round!
-		s.unlink_detection_results();
+			//find which elements are censored
+			ns_time_path_solution & s(solutions[i][j]);
+			vector<char> censored(s.path_groups.size(),0);
+			vector<double> min_distances(s.path_groups.size(),10000);
+			unsigned long num_censored(0), num_low_density(0),not_annotated(0);
+			std::vector<ns_vector_2i> location_centers(s.path_groups.size());
+			std::vector<ns_vector_2i> excluded_object_positions(by_hand_region_annotations.annotations.regions[region_id].locations.size());
+			
+			for (unsigned int k = 0; k < s.path_groups.size(); k++)
+				location_centers[k] = s.paths[s.path_groups[k].path_ids[0]].center / s.paths[s.path_groups[k].path_ids[0]].stationary_elements.size();
+			for (unsigned int k = 0; k < by_hand_region_annotations.annotations.regions[region_id].locations.size(); k++)
+				excluded_object_positions[k] = by_hand_region_annotations.annotations.regions[region_id].locations[k].properties.position;
+		
+			std::vector<unsigned long> matched;
+			ns_match_locations(excluded_object_positions,location_centers,matched);
+
+			
+			for (unsigned int k = 0; k <s.path_groups.size(); k++){
+				if (matched[k] != ns_location_not_matched){
+
+					min_distances[k]  = (excluded_object_positions[matched[k]] -location_centers[k]).mag();
+					if (min_distances[k] < 1000){
+						censored[k] = 1;
+						num_censored++;
+					}
+				}
+				 if (s.paths[s.path_groups[k].path_ids[0]].is_low_density_path)
+						num_low_density++;
+			}
+			
+			//output metadata for each path in this solution
+			for (unsigned int k = 0; k < s.path_groups.size(); k++){
+				ns_vector_2i center(s.paths[s.path_groups[k].path_ids[0]].center / s.paths[s.path_groups[k].path_ids[0]].stationary_elements.size());
+				quant()  << parameters[i][j].min_stationary_object_path_fragment_duration_in_seconds/(60.0*60.0) << ","
+						<< parameters[i][j].min_final_stationary_path_duration_in_minutes/60.0 << ","
+						<< s.path_groups.size() << ","
+						<< s.path_groups.size()-num_censored << ","
+						<< num_censored << ","
+						<< num_low_density << ","
+						<< j << ","
+						<< center.x << ","
+						<< center.y << ","
+						<< s.time(*s.paths[s.path_groups[k].path_ids[0]].stationary_elements.begin()) << ","
+						<< s.time(*s.paths[s.path_groups[k].path_ids[0]].stationary_elements.rbegin()) << ","
+						<< (s.time(*s.paths[s.path_groups[k].path_ids[0]].stationary_elements.begin()) - 
+							s.time(*s.paths[s.path_groups[k].path_ids[0]].stationary_elements.rbegin()))/(60.0*60.0) << ","
+						<< s.paths[s.path_groups[k].path_ids[0]].stationary_elements.size() << ","
+						<< (s.paths[s.path_groups[k].path_ids[0]].is_low_density_path?"1":"0") << ","
+						<< min_distances[k] << ","
+						<< (censored[k]?"1":"0") << ","
+						<< (path_is_new_this_round[k]?"1":"0") << "\n";
+			}
+			s.unlink_detection_results();
+		}
 	}
+	quant.release();
 
 }
 

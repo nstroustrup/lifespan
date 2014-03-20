@@ -197,9 +197,9 @@ void ns_spine_drawer::draw_spine(const ns_image_standard & img, const ns_segment
 			vertex[1].x = (int)(worm.nodes[i].x * resize_factor);
 			vertex[1].y = (int)(worm.nodes[i].y * resize_factor);
 			if (i == 1 || i == worm.nodes.size() -1)
-				output.draw_line_color(vertex[0],vertex[1], ns_color_8::safe_subtraction(color,end_color_offset),1); //draw endpoints a different color to allow loop disambiguation
+				output.draw_line_color_thick(vertex[0],vertex[1], ns_color_8::safe_subtraction(color,end_color_offset),1); //draw endpoints a different color to allow loop disambiguation
 			else 
-				output.draw_line_color(vertex[0], vertex[1],color,1);
+				output.draw_line_color_thick(vertex[0], vertex[1],color,1);
 			vertex[0] = vertex[1];	
 		}
 	}

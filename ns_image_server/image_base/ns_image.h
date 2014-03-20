@@ -1007,6 +1007,12 @@ public:
 		image_buffer[y][3*x    ] = color.x;
 		image_buffer[y][3*x + 1] = color.y;
 		image_buffer[y][3*x + 2] = color.z;
+	}	
+	template<class color_t>
+	inline void set_color(const unsigned int & y, const unsigned int & x, const color_t & color,float opacity){
+		image_buffer[y][3*x    ] = (ns_8_bit)(opacity*color.x+(1-opacity)*image_buffer[y][3*x    ]);
+		image_buffer[y][3*x + 1] = (ns_8_bit)(opacity*color.y+(1-opacity)*image_buffer[y][3*x + 1]);
+		image_buffer[y][3*x + 2] = (ns_8_bit)(opacity*color.z+(1-opacity)*image_buffer[y][3*x + 2]);
 	}
 
 	///A bound-checked set_color.  Slow but safe.
@@ -1023,7 +1029,7 @@ public:
 	///as described at http://en.wikipedia.org/wiki/Bresenham's_line_algorithm
 	///Will segfault if called on a grayscale image
 	template<class color_t>
-	void draw_line_color(const ns_vector_2i & _start, const ns_vector_2i & _stop, const color_t & color){
+	void draw_line_color(const ns_vector_2i & _start, const ns_vector_2i & _stop, const color_t & color,const float opacity=1){
 		if (_start.x < 0 || (unsigned int)_start.x >= properties().width || (unsigned int)_start.y < 0 || (unsigned int)_start.y >= properties().height ||
 			_stop.x < 0 || (unsigned int)_stop.x >= properties().width || (unsigned int)_stop.y < 0 || (unsigned int)_stop.y >= properties().height)
 			return;
@@ -1049,7 +1055,7 @@ public:
 
 		if (start.y < stop.y) ystep = 1; else ystep = -1;
 		for (int x = start.x; x <= stop.x; x++){
-			if (steep) set_color(x,y,color); else set_color(y,x,color);
+			if (steep) set_color(x,y,color,opacity); else set_color(y,x,color,opacity);
 			error += deltay;
 			if (2*error >= deltax){
 				y += ystep;
@@ -1061,7 +1067,7 @@ public:
 	///as described at http://en.wikipedia.org/wiki/Bresenham's_line_algorithm
 	///Will segfault if called on a grayscale image
 	template<class ns_component2>
-	void draw_line_grayscale(const ns_vector_2i & _start, const ns_vector_2i & _stop, const ns_component2 & color){
+	void draw_line_grayscale(const ns_vector_2i & _start, const ns_vector_2i & _stop, const ns_component2 & color,const float & opacity){
 		if (_start.x < 0 || (unsigned int)_start.x >= properties().width || (unsigned int)_start.y < 0 || (unsigned int)_start.y >= properties().height ||
 			_stop.x < 0 || (unsigned int)_stop.x >= properties().width || (unsigned int)_stop.y < 0 || (unsigned int)_stop.y >= properties().height)
 			return;
@@ -1086,19 +1092,34 @@ public:
 			y = start.y;
 
 		if (start.y < stop.y) ystep = 1; else ystep = -1;
-		for (int x = start.x; x <= stop.x; x++){
-			if (steep) image_buffer[x][y] = (ns_component)color; else image_buffer[y][x] = (ns_component)color;
-			error += deltay;
-			if (2*error >= deltax){
-				y += ystep;
-				error -= deltax;
+
+		if (opacity == 1){
+			for (int x = start.x; x <= stop.x; x++){
+				if (steep) image_buffer[x][y] = (ns_component)color; else image_buffer[y][x] = (ns_component)color;
+				error += deltay;
+				if (2*error >= deltax){
+					y += ystep;
+					error -= deltax;
+				}
 			}
+		}
+		else{
+			for (int x = start.x; x <= stop.x; x++){
+				if (steep) image_buffer[x][y] = (ns_component)(color*opacity + (1-opacity)*image_buffer[x][y]); 
+					 else image_buffer[y][x] =  (ns_component)(color*opacity + (1-opacity)*image_buffer[y][x]); 
+				error += deltay;
+				if (2*error >= deltax){
+					y += ystep;
+					error -= deltax;
+				}
+			}
+
 		}
 	}
 
 	///A very simple thick-line drawing routine.
 	template<class color_t>
-	void draw_line_color(const ns_vector_2i & _start, const ns_vector_2i & _stop, const color_t & color, const unsigned int thickness){
+	void draw_line_color_thick(const ns_vector_2i & _start, const ns_vector_2i & _stop, const color_t & color, const unsigned int thickness,const float opacity=1){
 		const ns_vector_2i d(_stop - _start);
 		const ns_vector_2i d_rot(int(cos(ns_pi/4)*d.x - sin(ns_pi/4)*d.y), int(cos(ns_pi/4)*d.x + sin(ns_pi/4)*d.y));
 		const char half_t(thickness/2);
@@ -1108,10 +1129,10 @@ public:
 			p_offset = ns_vector_2i(0,1);
 		else p_offset = ns_vector_2i(1,0);
 		for (int i = -half_t; i <= half_t+offset; i++)
-			draw_line_color(_start+p_offset*i,_stop+p_offset*i,color);
+			draw_line_color(_start+p_offset*i,_stop+p_offset*i,color,opacity);
 	}
 	template<class ns_component2>
-	void draw_line_grayscale(const ns_vector_2i & _start, const ns_vector_2i & _stop, const ns_component2 & color, const unsigned int thickness){
+	void draw_line_grayscale_thick(const ns_vector_2i & _start, const ns_vector_2i & _stop, const ns_component2 & color, const unsigned int thickness){
 		const ns_vector_2i d(_stop - _start);
 		const ns_vector_2i d_rot(int(cos(ns_pi/4)*d.x - sin(ns_pi/4)*d.y), int(cos(ns_pi/4)*d.x + sin(ns_pi/4)*d.y));
 		const char half_t(thickness/2);

@@ -197,7 +197,8 @@ void ns_time_path_solver::remove_short_and_moving_paths(const ns_time_path_solve
 	std::vector<double> deltas;
 	//remove paths that move too much.
 	for (std::vector<ns_time_path_solver_path>::iterator p = paths.begin(); p != paths.end();){
-		
+		if(p->elements.size() == 1)
+			continue;
 		deltas.resize(p->elements.size()-1);
 
 		for (unsigned int i = 1; i < p->elements.size(); i++)
@@ -403,7 +404,7 @@ void ns_time_path_solver::solve(const ns_time_path_solver_parameters &param, ns_
 	}*/
 	ns_global_debug(ns_text_stream_t("ns_time_path_solver::solve()::Number of paths after short and moving paths were removed:") << paths.size());
 
-	find_low_density_stationary_paths(param.min_final_stationary_path_duration_in_minutes,
+	find_low_density_stationary_paths(param.min_final_stationary_path_duration_in_minutes*60,
 				   param.stationary_object_path_fragment_max_movement_distance/2);
 
 	handle_low_density_stationary_paths_and_stray_points(param.maximum_distance_betweeen_joined_path_fragments,param.min_final_stationary_path_duration_in_minutes);
@@ -843,6 +844,8 @@ inline void ns_is_interesting_point(const ns_vector_2i &p){
 //			cerr << "Whee";
 };
 //does not include in the minimization problem any elements with "element_assigned" tag set to true.
+
+
 void ns_time_path_solver::assign_timepoint_elements_to_paths(std::vector<ns_time_path_solver_element> & elements, const unsigned long max_dist_sq, std::vector<ns_time_path_solver_path_builder> & opaths){
 	hungarian_problem_t matching_problem;
 	int unassigned_count(0);
@@ -1767,12 +1770,11 @@ void ns_time_path_solver::find_low_density_stationary_paths(const unsigned long 
 			}
 		}
 	}
-	//close any remaining open paths
+	//close any remaining open paths that meet the required criterea
 	for (unsigned int i = 0; i < open_paths.size(); i++){
 		if (open_paths[i].elements.size() > 3 && 
 			open_paths[i].elements.begin()->time-open_paths[i].elements.rbegin()->time >= min_path_duration_in_seconds)
 			low_density_paths.push_back(open_paths[i]);
-		
 	}
 	for (unsigned int i = 0; i < low_density_paths.size(); i++){
 		low_density_paths[i].is_low_density_path = true;

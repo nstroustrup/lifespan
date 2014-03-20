@@ -2501,7 +2501,8 @@ void ns_image_processing_pipeline::analyze_operations(const ns_image_server_capt
 	
 	for (unsigned int i = (unsigned int)ns_process_spatial; i < (unsigned int)ns_process_last_task_marker; i++){
 		if (i == ns_process_add_to_training_set ||
-			i == ns_process_region_vis)
+			i == ns_process_region_vis ||
+			i == ns_process_thumbnail)
 			continue;
 		precomputed_images.specify_image_id((ns_processing_task)i,atol(res[0][i-2].c_str()),sql);
 	}

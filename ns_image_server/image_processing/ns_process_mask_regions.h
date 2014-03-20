@@ -407,13 +407,13 @@ public:
 				avg = avg/resize_factor;
 
 
-				mask_visualization_output->draw_line_color(ns_vector_2i(avg.x+30,avg.y+30), ns_vector_2i(avg.x-30,avg.y-30),ns_color_8(255,255,255),line_width);
-				mask_visualization_output->draw_line_color(ns_vector_2i(avg.x-30,avg.y+30), ns_vector_2i(avg.x+30,avg.y-30),ns_color_8(255,255,255),line_width);
+				mask_visualization_output->draw_line_color_thick(ns_vector_2i(avg.x+30,avg.y+30), ns_vector_2i(avg.x-30,avg.y-30),ns_color_8(255,255,255),line_width);
+				mask_visualization_output->draw_line_color_thick(ns_vector_2i(avg.x-30,avg.y+30), ns_vector_2i(avg.x+30,avg.y-30),ns_color_8(255,255,255),line_width);
 				
-				mask_visualization_output->draw_line_color(ns_vector_2i(mmin.x,mmin.y),ns_vector_2i(mmin.x,mmax.y),vis_mapping[i]*.9,line_width);
-				mask_visualization_output->draw_line_color(ns_vector_2i(mmin.x,mmax.y),ns_vector_2i(mmax.x,mmax.y),vis_mapping[i]*.9,line_width);
-				mask_visualization_output->draw_line_color(ns_vector_2i(mmax.x,mmax.y),ns_vector_2i(mmax.x,mmin.y),vis_mapping[i]*.9,line_width);
-				mask_visualization_output->draw_line_color(ns_vector_2i(mmax.x,mmin.y),ns_vector_2i(mmin.x,mmin.y),vis_mapping[i]*.9,line_width);
+				mask_visualization_output->draw_line_color_thick(ns_vector_2i(mmin.x,mmin.y),ns_vector_2i(mmin.x,mmax.y),vis_mapping[i]*.9,line_width);
+				mask_visualization_output->draw_line_color_thick(ns_vector_2i(mmin.x,mmax.y),ns_vector_2i(mmax.x,mmax.y),vis_mapping[i]*.9,line_width);
+				mask_visualization_output->draw_line_color_thick(ns_vector_2i(mmax.x,mmax.y),ns_vector_2i(mmax.x,mmin.y),vis_mapping[i]*.9,line_width);
+				mask_visualization_output->draw_line_color_thick(ns_vector_2i(mmax.x,mmin.y),ns_vector_2i(mmin.x,mmin.y),vis_mapping[i]*.9,line_width);
 			}
 			
 			#ifdef NS_INCLUDE_FONT

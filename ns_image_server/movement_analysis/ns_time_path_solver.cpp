@@ -197,8 +197,10 @@ void ns_time_path_solver::remove_short_and_moving_paths(const ns_time_path_solve
 	std::vector<double> deltas;
 	//remove paths that move too much.
 	for (std::vector<ns_time_path_solver_path>::iterator p = paths.begin(); p != paths.end();){
-		if(p->elements.size() == 1)
+		if(p->elements.size() == 1){
+			p++;
 			continue;
+		}
 		deltas.resize(p->elements.size()-1);
 
 		for (unsigned int i = 1; i < p->elements.size(); i++)

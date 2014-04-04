@@ -662,11 +662,14 @@ bool ns_experiment_storyboard::load_events_from_annotation_compiler(const ns_loa
 			switch(subject_specification.event_to_mark){
 				
 				case ns_movement_cessation:
+							
 					if (d.machine.death_annotation != 0){
-						event_to_place_on_storyboard = *d.machine.death_annotation;
-						state_to_search = ns_stationary_worm_observed;
-						found_storyboard_event = true;
-						break;
+						if (!d.machine.death_annotation->is_censored()){
+							event_to_place_on_storyboard = *d.machine.death_annotation;
+							state_to_search = ns_stationary_worm_observed;
+							found_storyboard_event = true;
+							break;
+						}
 						//NOTE The synatx here means that we will try to add a translation cessation event
 						//if a movement cessation isn't present.
 						
@@ -1268,7 +1271,7 @@ bool ns_experiment_storyboard::create_storyboard_metadata_from_machine_annotatio
 			death_times.reserve(number_of_events);	
 			for (ns_death_time_annotation_compiler::ns_region_list::const_iterator r = all_events.regions.begin(); r != all_events.regions.end();r++){
 				for (ns_death_time_annotation_compiler_region::ns_location_list::const_iterator q = r->second.locations.begin(); q !=  r->second.locations.end();q++){		
-					if (q->properties.is_excluded())
+					if (q->properties.is_excluded() | q->properties.is_censored())
 						continue;
 					ns_dying_animal_description_const d(q->generate_dying_animal_description_const(false));
 						if (d.machine.death_annotation != 0)

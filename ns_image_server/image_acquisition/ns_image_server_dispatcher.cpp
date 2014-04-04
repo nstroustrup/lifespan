@@ -1138,7 +1138,7 @@ ns_thread_return_type ns_scan_for_problems(void * d){
 
 	try{		
 			unsigned long current_time = ns_current_time();
-			image_server.register_server_event(ns_image_server::ns_register_in_central_db_with_fallback,ns_image_server_event("Checking for missed scans on cluster."));
+			//image_server.register_server_event(ns_image_server::ns_register_in_central_db_with_fallback,ns_image_server_event("Checking for missed scans on cluster."));
 			
 			std::vector<std::string> devices_to_suppress,
 							 experiments_to_suppress;

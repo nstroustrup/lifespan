@@ -673,7 +673,7 @@ private:
 	void add_by_hand_annotations(const ns_death_time_annotation_set & e);
 	void add_by_hand_annotations(const ns_death_time_annotation_compiler_location & l);
 
-	void detect_death_times_and_generate_annotations_from_movement_quantification(const ns_stationary_path_id & path_id,const ns_analyzed_image_time_path_death_time_estimator * e,  ns_death_time_annotation_set & set);
+	void detect_death_times_and_generate_annotations_from_movement_quantification(const ns_stationary_path_id & path_id,const ns_analyzed_image_time_path_death_time_estimator * e,  ns_death_time_annotation_set & set, const unsigned long last_timepoint_in_analysis);
 	//ns_64_bit stationary_histogram[256];
 	//ns_64_bit movement_histogram[256];
 
@@ -681,7 +681,7 @@ private:
 	void calculate_image_registration(const ns_analyzed_time_image_chunk & chunk,ns_alignment_state & state, const ns_analyzed_time_image_chunk & first_chunk_to_register);
 	void generate_movement_images(const ns_analyzed_time_image_chunk & chunk);
 
-	void analyze_movement(const ns_analyzed_image_time_path_death_time_estimator * movement_death_time_estimator,const ns_stationary_path_id & path_id);
+	void analyze_movement(const ns_analyzed_image_time_path_death_time_estimator * movement_death_time_estimator,const ns_stationary_path_id & path_id,const unsigned long last_timepoint_in_analysis);
 
 	ns_image_storage_reciever_handle<ns_8_bit> * output_reciever;
 	ns_death_time_annotation_set death_time_annotation_set;

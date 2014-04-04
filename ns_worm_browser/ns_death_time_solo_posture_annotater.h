@@ -649,11 +649,11 @@ public:
 			}
 			metadata = current_region_data->metadata;
 			if (worm.detection_set_id != 0 && current_region_data->movement_analyzer.db_analysis_id() != worm.detection_set_id)
-				throw ns_ex("Out of data movement detection used to build storyboard");
+				throw ns_ex("This storyboard was built using an out-of-date movement analysis result.  Please rebuild the storyboard, so that it will reflect the most recent analysis.");
 			if (current_region_data->movement_analyzer.size() <= worm.group_id)
-				throw ns_ex("Movement data does not have specified group!");
+				throw ns_ex("Looking at the movement analysis result for this region, this worm's ID appears to be invalid.");
 			if (worm.path_id != 0)
-				throw ns_ex("Specified group has multiple paths!");
+				throw ns_ex("The specified group has multiple paths! This should be impossible");
 			current_worm = &current_region_data->movement_analyzer[worm.group_id].paths[worm.path_id];
 			current_animal_id = 0;
 

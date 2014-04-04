@@ -257,7 +257,10 @@ public:
 					im[y+pos.y][3*(x+pos.x)+1] = c.y;
 					im[y+pos.y][3*(x+pos.x)+2] = c.z;
 				}
-				c = ns_movement_colors::color(ns_movement_stationary)*scaling;
+				c = ns_movement_colors::color(ns_movement_stationary)*scaling;			
+				if (movement_cessation.excluded == ns_death_time_annotation::ns_censored_at_end_of_experiment)
+					c = ns_movement_colors::color(ns_movement_machine_excluded)*scaling;
+	
 			}
 			if (death_posture_relaxation_termination.time.period_end != 0 && death_posture_relaxation_termination.time.period_end >= path_start_time){
 				if (death_posture_relaxation_termination.time.period_end > last_path_frame_time)
@@ -271,6 +274,7 @@ public:
 					im[y+pos.y][3*(x+pos.x)+1] = c.y;
 					im[y+pos.y][3*(x+pos.x)+2] = c.z;
 				}
+				
 				c = ns_movement_colors::color(ns_movement_stationary)*scaling;
 			}
 			for (x; x < size.x; x++){

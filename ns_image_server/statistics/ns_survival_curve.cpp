@@ -939,13 +939,19 @@ void ns_lifespan_experiment_set::out_simple_JMP_event_data(const ns_time_handing
 		//of the interval during which the animal dies
 		if (properties.is_censored() && time_handling_behavior == ns_output_event_intervals)
 			a.time.period_end_was_not_observed = true;
-
+	//if (a.type == ns_movement_cessation && a.excluded == ns_death_time_annotation::ns_censored_at_end_of_experiment)
+	//	cerr << "WHA";
 	//	const bool is_estimated_multiple_worm_death_event(a.is_censored() && a.type != ns_moving_worm_disappearance);
 	//	if (a.event_observation_type == ns_death_time_annotation::ns_induced_multiple_worm_death)
 	//		cerr << "RA";
 		if (!
 				(
 					(!a.is_censored() && a.multiworm_censoring_strategy == ns_death_time_annotation::ns_not_applicable) 
+					|| 
+					
+					//animals that were stationary but alive at the end of an experiment
+					a.type == ns_movement_cessation && a.excluded == ns_death_time_annotation::ns_censored_at_end_of_experiment
+
 					||
 					a.multiworm_censoring_strategy == ns_death_time_annotation::ns_by_hand_censoring 
 					||
@@ -962,7 +968,8 @@ void ns_lifespan_experiment_set::out_simple_JMP_event_data(const ns_time_handing
 			)
 			continue;
 
-		if (a.excluded == ns_death_time_annotation::ns_censored_at_end_of_experiment)
+		//don't include censoring events for fast moving worms that go missing.
+		if (a.type != ns_movement_cessation && a.excluded == ns_death_time_annotation::ns_censored_at_end_of_experiment)
 			continue;
 		if (time_handling_behavior == ns_output_single_event_times){
 			if (a.time.period_start_was_not_observed){	

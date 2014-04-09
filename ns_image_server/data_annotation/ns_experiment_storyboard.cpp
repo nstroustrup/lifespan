@@ -658,7 +658,7 @@ bool ns_experiment_storyboard::load_events_from_annotation_compiler(const ns_loa
 			
 
 			ns_movement_event state_to_search(ns_stationary_worm_observed);
-
+			bool animal_moving_after_last_observation(false);
 			switch(subject_specification.event_to_mark){
 				
 				case ns_movement_cessation:
@@ -670,6 +670,8 @@ bool ns_experiment_storyboard::load_events_from_annotation_compiler(const ns_loa
 							found_storyboard_event = true;
 							break;
 						}
+						else 
+							animal_moving_after_last_observation = true;
 						//NOTE The synatx here means that we will try to add a translation cessation event
 						//if a movement cessation isn't present.
 						
@@ -752,50 +754,69 @@ bool ns_experiment_storyboard::load_events_from_annotation_compiler(const ns_loa
 						region_state_events_loaded = true;
 					}
 				}
-
-				unsigned long ideal_time_for_image;
-				if (subject_specification.choose_images_from_time_of_last_death){
-					if (time_of_last_death == 0)
-						throw ns_ex("ns_experiment_storyboard::load_events_from_annotation_compiler()::time of death was not calculated");
-					ideal_time_for_image = time_of_last_death;
-				}
-				else if (subject_specification.delay_time_after_event > 0){
-					if (event_to_place_on_storyboard.time.period_end_was_not_observed)
-						ideal_time_for_image  = event_to_place_on_storyboard.time.period_start + subject_specification.delay_time_after_event;
-					else ideal_time_for_image = event_to_place_on_storyboard.time.period_end   + subject_specification.delay_time_after_event;
-				}
-				else throw ns_ex("Code flow error");
-
-				bool found_match(false);
-				unsigned long lowest_diff(UINT_MAX);
-				//if we're creating a storyboard for the first time,
-				// we look for the state observation nearest to the desired time
-				for (vector<ns_death_time_annotation>::const_iterator p = q->annotations.begin(); p != q->annotations.end();p++){
-					if (p->time.fully_unbounded()){
-						cerr << "Found fully unbounded event: " << p->description() << "\n";
-						continue;
-					}
-					if (p->type != state_to_search){
-						continue;
-					}
-					unsigned long diff;
-					unsigned long event_time;
-					if(p->time.period_end_was_not_observed)
-						event_time = p->time.period_start;
-					else event_time = p->time.period_end;
-					if ( event_time >= ideal_time_for_image)
-						diff = event_time - ideal_time_for_image;
-					else diff = ideal_time_for_image - event_time;
-
-					if ( diff < lowest_diff){
-						found_match = true;
-						lowest_diff = diff;
-						event_whose_image_should_be_used = (*p);
-					}
-				}
 				
+				bool found_match(false);
+
+				//find last event
+				if (event_to_place_on_storyboard.type == ns_translation_cessation ||
+					event_to_place_on_storyboard.type == ns_fast_movement_cessation){
+					unsigned long latest_time(0);
+					for (vector<ns_death_time_annotation>::const_iterator p = q->annotations.begin(); p != q->annotations.end();p++){
+						if (p->type != state_to_search)
+							continue;
+						if (p->time.best_estimate_event_time_for_possible_partially_unbounded_interval() > latest_time){
+							latest_time = p->time.best_estimate_event_time_for_possible_partially_unbounded_interval();
+							event_whose_image_should_be_used = (*p);
+							found_match = true;
+						}
+					}
+				}
+				else{
+					//find event closest in time to the desired
+					unsigned long ideal_time_for_image;
+					if (subject_specification.choose_images_from_time_of_last_death){
+						if (time_of_last_death == 0)
+							throw ns_ex("ns_experiment_storyboard::load_events_from_annotation_compiler()::time of death was not calculated");
+						ideal_time_for_image = time_of_last_death;
+					}
+					else if (subject_specification.delay_time_after_event > 0){
+						if (event_to_place_on_storyboard.time.period_end_was_not_observed)
+							ideal_time_for_image  = event_to_place_on_storyboard.time.period_start + subject_specification.delay_time_after_event;
+						else ideal_time_for_image = event_to_place_on_storyboard.time.period_end   + subject_specification.delay_time_after_event;
+					}
+					else throw ns_ex("Code flow error");
+
+					unsigned long lowest_diff(UINT_MAX);
+					//if we're creating a storyboard for the first time,
+					// we look for the state observation nearest to the desired time
+					for (vector<ns_death_time_annotation>::const_iterator p = q->annotations.begin(); p != q->annotations.end();p++){
+						if (p->time.fully_unbounded()){
+							cerr << "Found fully unbounded event: " << p->description() << "\n";
+							continue;
+						}
+						if (p->type != state_to_search){
+							continue;
+						}
+						unsigned long diff;
+						unsigned long event_time;
+						if(p->time.period_end_was_not_observed)
+							event_time = p->time.period_start;
+						else event_time = p->time.period_end;
+						if ( event_time >= ideal_time_for_image)
+							diff = event_time - ideal_time_for_image;
+						else diff = ideal_time_for_image - event_time;
+
+						if ( diff < lowest_diff){
+							found_match = true;
+							lowest_diff = diff;
+							event_whose_image_should_be_used = (*p);
+						}
+					}
+				
+				}
 				if (!found_match)
 					throw ns_ex("Could not find any state events for animal in ") << r->second.metadata.plate_name() << " (" <<  r->second.metadata.region_id << ")";
+			
 			}
 
 			ns_experiment_storyboard_timepoint_element * annotation_subject(0);
@@ -821,14 +842,20 @@ bool ns_experiment_storyboard::load_events_from_annotation_compiler(const ns_loa
 						annotation_subject->by_hand_movement_annotations_for_element.push_back(ns_by_hand_movement_annotation(*p,true));
 					}
 			}
+			ns_death_time_annotation * annotation_to_use_for_time(&event_to_place_on_storyboard);
+			//we want to put animals who never stop moving all at the end of the storyboard.
+			if (event_to_place_on_storyboard.type == ns_translation_cessation ||
+					event_to_place_on_storyboard.type == ns_fast_movement_cessation)
+				annotation_to_use_for_time = &event_whose_image_should_be_used;
+			
 			annotation_subject->event_annotation.clear_sticky_properties();
-			if (event_to_place_on_storyboard.time.period_end_was_not_observed){
-				annotation_subject->storyboard_absolute_time = event_to_place_on_storyboard.time.period_start;
-				annotation_subject->storyboard_time = event_to_place_on_storyboard.time.period_start - (use_absolute_time?0:(r->second.metadata.time_at_which_animals_had_zero_age));
+			if (annotation_to_use_for_time->time.period_end_was_not_observed){
+				annotation_subject->storyboard_absolute_time = annotation_to_use_for_time->time.period_start;
+				annotation_subject->storyboard_time = annotation_to_use_for_time->time.period_start - (use_absolute_time?0:(r->second.metadata.time_at_which_animals_had_zero_age));
 			}
 			else{
-				annotation_subject->storyboard_absolute_time = event_to_place_on_storyboard.time.period_end;
-				annotation_subject->storyboard_time = event_to_place_on_storyboard.time.period_end - (use_absolute_time?0:(r->second.metadata.time_at_which_animals_had_zero_age));
+				annotation_subject->storyboard_absolute_time = annotation_to_use_for_time->time.period_end;
+				annotation_subject->storyboard_time = annotation_to_use_for_time->time.period_end - (use_absolute_time?0:(r->second.metadata.time_at_which_animals_had_zero_age));
 			}
 			
 			annotation_subject->simplify_and_condense_by_hand_movement_annotations();
@@ -1271,7 +1298,7 @@ bool ns_experiment_storyboard::create_storyboard_metadata_from_machine_annotatio
 			death_times.reserve(number_of_events);	
 			for (ns_death_time_annotation_compiler::ns_region_list::const_iterator r = all_events.regions.begin(); r != all_events.regions.end();r++){
 				for (ns_death_time_annotation_compiler_region::ns_location_list::const_iterator q = r->second.locations.begin(); q !=  r->second.locations.end();q++){		
-					if (q->properties.is_excluded() | q->properties.is_censored())
+					if (q->properties.is_excluded() || q->properties.is_censored())
 						continue;
 					ns_dying_animal_description_const d(q->generate_dying_animal_description_const(false));
 						if (d.machine.death_annotation != 0)

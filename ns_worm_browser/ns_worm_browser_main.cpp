@@ -978,6 +978,16 @@ class ns_worm_terminal_main_menu_organizer : public ns_menu_organizer{
 	static void generate_wmv(const std::string & value){worm_learner.generate_mp4(false);}
 	static void update_sql_schema(const std::string & value){worm_learner.upgrade_tables();}
 
+	static void rebuild_db_from_filenames(const std::string & value){
+		ns_choice_dialog c;
+		c.title = "Rebuilding experiment metadata from disk may corrupt the existing data for this experiment.  You should back up the database prior to attempting this.";
+		c.option_1 = "Rebuild Experiment Metadata";
+		c.option_2 = "Cancel";
+		ns_run_in_main_thread<ns_choice_dialog> b(&c);
+		if (c.result != 1)
+			return;
+		worm_learner.rebuild_experiment_from_disk(worm_learner.data_selector.current_experiment_id());
+	}
 	/*****************************
 	Image Processing Tasks
 	*****************************/
@@ -1248,6 +1258,7 @@ public:
 		add(ns_menu_item_spec(test_resample,"Testing/Image Processing/Test Resample"));
 		add(ns_menu_item_spec(sharpen,"Testing/Image Processing/Sharpen"));
 		add(ns_menu_item_spec(calculate_erosion_gradient,"Testing/Image Processing/Calculate Erosion Gradient"));
+		add(ns_menu_item_spec(rebuild_db_from_filenames,"Testing/Database Repair/Rebuild Experimental Metadata from Filenames"));
 
 		add(ns_menu_item_spec(show_objects,"Testing/Worm Detection/Show objects in image"));
 		add(ns_menu_item_spec(detect_worms,"Testing/Worm Detection/Detect Worms" ));
@@ -2514,6 +2525,9 @@ int main() {
 	//	ns_start_death_time_annotation(ns_worm_learner::ns_annotate_storyboard_experiment);
 		
 		ns_worm_browser_output_debug(__LINE__,__FILE__,"Entering idle loop");
+
+		//worm_learner.rebuild_experiment_from_disk(638);
+
 		return(Fl::run());
 	/*	while( Fl::wait() > 0)
 			SleepEx(0,TRUE);

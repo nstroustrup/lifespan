@@ -287,7 +287,7 @@ std::string ns_image_server_captured_image::get_filename(ns_image_server_sql * s
 	//if not specified, collect information needed to create filename.
 	if (!do_not_load_data && 
 		(sample_id == 0 || experiment_id == 0 || capture_time == 0 || capture_images_image_id == 0 ||
-		sample_name == "" || device_name == "" || experiment_name == ""))
+		sample_name == "" || experiment_name == ""))
 			if (!ns_image_server_captured_image::load_from_db(captured_images_id,sql))
 				throw ns_ex("ns_image_server_captured_image: During filename creation, experiment and sample information was not specified at runtime or in the db.");
 	std::string temp(ns_format_base_image_filename(experiment_id,experiment_name,sample_id,sample_name,capture_time,captured_images_id, capture_images_image_id));

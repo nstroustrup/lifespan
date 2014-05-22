@@ -1234,8 +1234,14 @@ bool ns_update_db_using_experimental_data_from_file(const std::string new_databa
 			bool allow_empty_file = false;
 			if (table_name == "experiment_groups" ||
 				table_name == "path_data" ||
-				table_name == "worm_detection_results")
+				table_name == "worm_detection_results" ||
+				table_name == "sample_region_image_info" ||
+				table_name == "sample_region_images" || 
+				table_name == "image_masks"
+
+				)
 				allow_empty_file = true;
+			//tabn
 			ns_add_data_to_db_from_file(table_name,source,sql,allow_empty_file);
 			sql << "USE " << current_database;
 			sql.send_query();

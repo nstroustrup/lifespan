@@ -656,6 +656,7 @@ public:
 	
 	void output_lots_of_worms(const std::string & path);
 	void test_image_metatadata();
+	void rebuild_experiment_from_disk(unsigned long experiment_id);
 
 	//machine learning
 	void grayscale_from_blue();

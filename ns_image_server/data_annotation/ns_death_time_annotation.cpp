@@ -2070,16 +2070,22 @@ void ns_death_time_annotation_compiler_region::generate_survival_curve(ns_surviv
 					}
 					//add a by hand annotation, and if one doesn't exist, add a machine annotation
 					else if (!by_hand && (death_times_to_use == ns_death_time_annotation::ns_machine_annotations_if_no_by_hand)){
-						if (death.by_hand.death_annotation != 0){
+						
+						if (death.by_hand.death_annotation != 0)
 							a[0] = death.by_hand.death_annotation;
-							a[1] = death.by_hand.last_slow_movement_annotation;
-							a[2] = death.by_hand.last_fast_movement_annotation;
-						}
-						else{
+						else 
 							a[0] = death.machine.death_annotation;
+						
+						if (death.by_hand.last_slow_movement_annotation != 0)
+							a[1] = death.by_hand.last_slow_movement_annotation;
+						else 
 							a[1] = death.machine.last_slow_movement_annotation;
+						
+						if (death.by_hand.last_fast_movement_annotation != 0)
+							a[2] = death.by_hand.last_fast_movement_annotation;
+						else
 							a[2] = death.machine.last_fast_movement_annotation;
-						}
+						
 					}
 					else continue;
 

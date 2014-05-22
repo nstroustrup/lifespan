@@ -31,6 +31,7 @@ private:
 		else return partition + DIR_CHAR_STR;
 	}
 	friend class ns_image_storage_handler;
+	friend class ns_worm_learner;
 };
 
 

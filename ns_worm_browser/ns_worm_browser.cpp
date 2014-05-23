@@ -2133,6 +2133,7 @@ void ns_worm_learner::rebuild_experiment_from_disk(unsigned long experiment_id){
 			image.path = relative_path;
 			image.save_to_db(0,&sql(),false);
 			im.capture_images_image_id = image.id;
+			im.specified_16_bit = false;
 			im.captured_images_id = 0;
 			im.experiment_name = experiment_name;
 			im.experiment_id = experiment_id;

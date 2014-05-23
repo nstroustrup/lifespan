@@ -500,7 +500,7 @@ void ns_image_server_dispatcher::on_timer(){
 				image_server.register_server_event(ns_image_server_event("Recovered from a lost MySQL connection."),timer_sql_connection);
 				image_server.register_host();
 				image_server.alert_handler.buffer_all_alerts_locally(false);
-				currently_unable_to_connect_to_the_central_db = true;
+				currently_unable_to_connect_to_the_central_db = false;
 				return;
 			}
 			catch(ns_ex & ex){

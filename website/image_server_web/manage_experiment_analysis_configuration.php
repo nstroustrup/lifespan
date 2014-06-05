@@ -178,6 +178,7 @@ $posture_analysis_method = '';
 
  if (isset($_POST['is_single_posture_model']) && $_POST['is_single_posture_model']=="0"){
    $is_single_posture_model = false;
+   // die("WHA");
  }
  else{
    $is_single_posture_model = true;
@@ -190,6 +191,7 @@ $posture_analysis_method = '';
        break;
      }
    }
+   //die("" . $is_single_posture_model);
  }
  if (isset($_POST['is_single_position_model']) && $_POST['is_single_position_model']=="0"){
    $is_single_position_model = false;
@@ -482,10 +484,10 @@ catch(ns_exception $ex){
       <tr><td bgcolor="<?php echo $table_colors[0][0] ?>">All Plate Model:</td><TD bgcolor="<?php echo $table_colors[0][1] ?>">
 	<?php output_editable_field("single_posture_model_name",$single_posture_model_name,$number_of_regions>0,30);?>
 							     </td></tr>
-																							   <?} else{?>			    
+																	   <?php } else{?>			    
 
 <tr><td bgcolor="<?php echo $table_colors[1][0] ?>">Strain Grouping</td><td bgcolor="<?php echo $table_colors[1][1] ?>">
-
+BLA
 <select name="detail_level" onchange='this.form.submit()'>
 <option value="s" <?php if ($detail_level == 's') echo "selected"?> >Just Strain</option>
 <option value="s1"<?php if ($detail_level == 's1') echo "selected"?> >Strain And Condition 1</option>
@@ -493,6 +495,7 @@ catch(ns_exception $ex){
 <option value = "s123"<?php if ($detail_level == 's123' || $detail_level == '') echo "selected"?> >Strain And Conditions 1,2,and 3</option></select></td></tr>  
 <?php
 	$c = 0;
+     # var_dump($experiment_strains);
     foreach($experiment_strains as $strain => $region_id){
 	echo 
 	"<tr><td bgcolor=\"".$table_colors[$c][0] . "\">$strain</td>" .
@@ -524,7 +527,7 @@ catch(ns_exception $ex){
       <tr><td bgcolor="<?php echo $table_colors[0][0] ?>">All Plate Model:</td><TD bgcolor="<?php echo $table_colors[0][1] ?>">
 	<?php output_editable_field("single_detection_model_name",$single_detection_model_name,$number_of_regions>0,30);?>
 							     </td></tr>
-																							   <?} else{?>			    
+																							   <?php } else{?>			    
 
 <tr><td bgcolor="<?php echo $table_colors[1][0] ?>">Strain Grouping</td><td bgcolor="<?php echo $table_colors[1][1] ?>">
 
@@ -568,7 +571,7 @@ catch(ns_exception $ex){
       <tr><td bgcolor="<?php echo $table_colors[0][0] ?>">All Plate Model:</td><TD bgcolor="<?php echo $table_colors[0][1] ?>">
 	<?php output_editable_field("single_position_model_name",$single_position_model_name,$number_of_regions>0,30);?>
 							     </td></tr>
-																							   <?} else{?>			    
+																							   <?php } else{?>			    
 
 <tr><td bgcolor="<?php echo $table_colors[1][0] ?>">Strain Grouping</td><td bgcolor="<?php echo $table_colors[1][1] ?>">
 

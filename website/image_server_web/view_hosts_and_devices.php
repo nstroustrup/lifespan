@@ -564,7 +564,7 @@ echo " Reflective : <input type=\"checkbox\" name=\"reflective_preview\">)";
 
 echo "<input name=\"pause_captures\" type=\"submit\" value=\"Pause Captures\">";
 echo "<BR><BR>";
-echo "Interval: <input name=\"autoscan_interval\" size=3 type=\"text\" value=\"20\">min ";
+echo "Interval: <input name=\"autoscan_interval\" size=3 type=\"text\" value=\"15\">min ";
 echo "<input name=\"set_autoscan_interval\" type=\"submit\" value=\"Start Autoscans\"> ";
 echo "<input name=\"cancel_autoscan_interval\" type=\"submit\" value=\"Cancel Autoscans\">";
 echo "<BR><BR>";

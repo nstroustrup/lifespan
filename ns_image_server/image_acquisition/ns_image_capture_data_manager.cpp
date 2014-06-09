@@ -164,6 +164,8 @@ bool ns_image_capture_data_manager::transfer_data_to_long_term_storage(ns_image_
 			}
 			sql.send_query("COMMIT");
 
+
+
 			
 			if (had_to_use_local_storage_2 != had_to_use_local_storage){
 				image_server.register_server_event(
@@ -226,9 +228,11 @@ bool ns_image_capture_data_manager::transfer_data_to_long_term_storage(ns_image_
 void ns_image_capture_data_manager::transfer_image_to_long_term_storage(const std::string & device_name,ns_64_bit capture_schedule_entry_id, ns_image_server_captured_image & image, ns_sql & sql){
 	ns_acquire_lock_for_scope device_lock(device_transfer_state_lock,__FILE__,__LINE__);
 	if (device_transfer_in_progress(device_name)){
+		transfer_status_debugger.set_status(device_name,ns_transfer_status("Device was busy"));
 		device_lock.release();
 		return;
 	}
+	transfer_status_debugger.set_status(image.device_name,ns_transfer_status("Starting to transfer"));
 	set_device_transfer_state(true,device_name);
 	device_lock.release();
 	try{
@@ -237,7 +241,15 @@ void ns_image_capture_data_manager::transfer_image_to_long_term_storage(const st
 		set_device_transfer_state(false,device_name);
 		device_lock.release();
 	}
+	catch (ns_ex & ex){
+		device_lock.get(__FILE__,__LINE__);
+		set_device_transfer_state(false,device_name);
+		device_lock.release();
+		transfer_status_debugger.set_status(device_name,ns_transfer_status(std::string("Error:") + ex.text()));
+		throw;
+	}
 	catch(...){
+
 		device_lock.get(__FILE__,__LINE__);
 		set_device_transfer_state(false,device_name);
 		device_lock.release();
@@ -272,13 +284,16 @@ void ns_image_capture_data_manager::transfer_image_to_long_term_storage_locked(n
 	
 	ns_64_bit time_during_transfer_to_long_term_storage;
 	ns_64_bit time_during_deletion_from_local_storage;
-//cerr << "Transferring image...\n";
+
 	bool had_to_use_local_storage;
 	had_to_use_local_storage = transfer_data_to_long_term_storage(image,time_during_transfer_to_long_term_storage,time_during_deletion_from_local_storage,sql);
 	
 	transfer_status = ns_transferred_to_long_term_storage;
 	if (had_to_use_local_storage)
 		transfer_status = ns_on_local_server_in_8bit;
+	else
+		transfer_status_debugger.set_status(image.device_name,ns_transfer_status("Successfully transferred image to long term storage"));
+	
 
 	sql << "UPDATE capture_schedule SET transferred_to_long_term_storage = " << (int)transfer_status;
 	if (!had_to_use_local_storage){
@@ -354,6 +369,8 @@ ns_thread_return_type ns_image_capture_data_manager::thread_start_handle_pending
 				ns_acquire_lock_for_scope device_lock(arg->capture_data_manager->device_transfer_state_lock,__FILE__,__LINE__);
 				if (arg->capture_data_manager->device_transfer_in_progress(arg->device_names[i])){
 					device_lock.release();
+					
+					arg->capture_data_manager->transfer_status_debugger.set_status(arg->device_names[i],ns_transfer_status("Transfer already in progress"));
 					continue;
 				}
 				arg->capture_data_manager->set_device_transfer_state(true,arg->device_names[i]);

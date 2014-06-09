@@ -170,7 +170,10 @@ void ns_image_server_dispatcher::handle_remote_requests(){
 						image_server.toggle_central_mysql_server_connection_error_simulation();
 						break;
 																}
-
+					case NS_OUTPUT_IMAGE_BUFFER_INFO:{
+						this->buffered_capture_scheduler.image_capture_data_manager.transfer_status_debugger.print_status();
+						break;
+					}
 					case NS_IMAGE_SEND:
 						//a remote host is sending an image; save it.
 						this->recieve_image(message,socket_connection);

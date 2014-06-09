@@ -4,6 +4,37 @@
 #include "ns_capture_device.h"
 #include "ns_single_thread_coordinator.h"
 
+struct ns_transfer_status{
+	ns_transfer_status():time(0){}
+	ns_transfer_status(const std::string & s):time(ns_current_time()),status(s){}
+	std::string status;
+	unsigned long time;
+};
+struct ns_transfer_status_debugger{
+	ns_transfer_status_debugger():lock("tsd_lock"){}
+	void set_status(const std::string & device,const ns_transfer_status & s){
+		lock.wait_to_acquire(__FILE__,__LINE__);
+		status[device][s.status] = s;
+		lock.release();
+	}
+	void print_status(){
+		lock.wait_to_acquire(__FILE__,__LINE__);
+		std::cout << "Local Image Buffer Status:\n";
+		for (ns_status_list::const_iterator p = status.begin(); p!=status.end(); p++){
+			std::cout << p->first << ":";
+			for (ns_status_type_list::const_iterator q = p->second.begin(); q != p->second.end();  q++)
+				std:: cout << "\t" << ns_format_time_string(q->second.time) << " : " << q->second.status << "\n";
+		}
+		lock.release();
+	}
+private:
+	ns_lock lock;
+	typedef std::map<std::string,ns_transfer_status> ns_status_type_list;
+	typedef std::map<std::string,ns_status_type_list> ns_status_list;
+	ns_status_list status;
+};
+
+
 class ns_image_capture_data_manager{
 public:
 	typedef enum{ns_not_finished,ns_on_local_server_in_16bit,ns_on_local_server_in_8bit,ns_transferred_to_long_term_storage} ns_capture_image_status;
@@ -22,6 +53,7 @@ public:
 
 	void wait_for_transfer_finish();
 	~ns_image_capture_data_manager();
+	ns_transfer_status_debugger transfer_status_debugger;
 private:
 
 	ns_sql * check_sql;

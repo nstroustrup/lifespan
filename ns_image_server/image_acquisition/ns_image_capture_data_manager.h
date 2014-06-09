@@ -19,13 +19,20 @@ struct ns_transfer_status_debugger{
 	}
 	void print_status(){
 		lock.wait_to_acquire(__FILE__,__LINE__);
-		std::cout << "Local Image Buffer Status:\n";
+		std::string res;
+		res = "Local Image Buffer Status:\n";
 		for (ns_status_list::const_iterator p = status.begin(); p!=status.end(); p++){
-			std::cout << p->first << ":";
+			res = res + p->first + ":" + "\n";
 			for (ns_status_type_list::const_iterator q = p->second.begin(); q != p->second.end();  q++)
-				std:: cout << "\t" << ns_format_time_string(q->second.time) << " : " << q->second.status << "\n";
+				res = res + "\t" + ns_format_time_string(q->second.time) + " : " + q->second.status + "\n";
 		}
 		lock.release();
+		try{
+			ns_image_handler_register_server_event_to_central_db(ns_ex(res));
+		}
+		catch(...){
+			std::cout << res;
+		}
 	}
 private:
 	ns_lock lock;

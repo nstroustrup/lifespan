@@ -232,7 +232,7 @@ void ns_image_capture_data_manager::transfer_image_to_long_term_storage(const st
 		device_lock.release();
 		return;
 	}
-	transfer_status_debugger.set_status(image.device_name,ns_transfer_status("Starting to transfer"));
+	transfer_status_debugger.set_status(device_name,ns_transfer_status("Starting transfer attempt"));
 	set_device_transfer_state(true,device_name);
 	device_lock.release();
 	try{

@@ -117,18 +117,18 @@ void ns_image_handler_submit_alert_to_central_db(const ns_alert::ns_alert_type &
 		sql.release();
 }
 
-void ns_image_handler_register_server_event(ns_image_server_event & ev,ns_image_server_sql * sql){
+void ns_image_handler_register_server_event(const ns_image_server_event & ev,ns_image_server_sql * sql){
 	image_server.register_server_event(ev, sql);
 }
-void ns_image_handler_register_server_event(ns_ex & ev, ns_image_server_sql * sql){
+void ns_image_handler_register_server_event(const ns_ex & ev, ns_image_server_sql * sql){
 	image_server.register_server_event(ev, sql);
 }
 
 
-void ns_image_handler_register_server_event_to_central_db(ns_ex & ev){
+void ns_image_handler_register_server_event_to_central_db(const ns_ex & ev){
 	image_server.register_server_event(ns_image_server::ns_register_in_central_db, ev);
 }
-void ns_image_handler_register_server_event_to_central_db(ns_image_server_event & ev){
+void ns_image_handler_register_server_event_to_central_db(const ns_image_server_event & ev){
 	image_server.register_server_event(ns_image_server::ns_register_in_central_db, ev);
 }
 

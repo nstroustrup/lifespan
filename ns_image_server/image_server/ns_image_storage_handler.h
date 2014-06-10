@@ -19,12 +19,12 @@ void ns_image_handler_submit_alert_to_central_db(const ns_alert::ns_alert_type &
 //void ns_image_handler_submit_buffered_alert(const ns_alert_handler::alert_type & alert, const std::string & text);
 
 
-void ns_image_handler_register_server_event_to_central_db(ns_ex & ev);
-void ns_image_handler_register_server_event_to_central_db(ns_image_server_event & ev);
+void ns_image_handler_register_server_event_to_central_db(const ns_ex & ev);
+void ns_image_handler_register_server_event_to_central_db(const ns_image_server_event & ev);
 
 
-void ns_image_handler_register_server_event(ns_image_server_event & ev,ns_image_server_sql * sql);
-void ns_image_handler_register_server_event(ns_ex & ev, ns_image_server_sql * sql);
+void ns_image_handler_register_server_event(const ns_image_server_event & ev,ns_image_server_sql * sql);
+void ns_image_handler_register_server_event(const ns_ex & ev, ns_image_server_sql * sql);
 
 
 

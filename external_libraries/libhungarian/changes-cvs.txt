@@ -1,0 +1,34 @@
+----------------------------
+revision 1.7
+date: 2004/09/09 08:47:16;  author: stachnis;  state: Exp;  lines: +9 -0
+closed some memory leaks (thanks to Tomas S. Grigera)
+----------------------------
+revision 1.6
+date: 2004/04/29 09:39:20;  author: stachnis;  state: Exp;  lines: +3 -2
+corrected an error using wrong numer of ros and cols
+----------------------------
+revision 1.5
+date: 2004/04/28 16:07:38;  author: stachnis;  state: Exp;  lines: +40 -15
+added the disclaimer
+----------------------------
+revision 1.4
+date: 2004/04/26 08:16:50;  author: stachnis;  state: Exp;  lines: +3 -4
+small corrections...
+----------------------------
+revision 1.3
+date: 2004/04/26 08:14:41;  author: stachnis;  state: Exp;  lines: +25 -2
+added the minimize_cost or maximize_util option
+----------------------------
+revision 1.2
+date: 2004/04/23 17:45:07;  author: stachnis;  state: Exp;  lines: +10 -4
+creates now a real AxA wit A = max(n,m) matrix
+----------------------------
+revision 1.1
+date: 2004/04/23 14:17:06;  author: stachnis;  state: Exp;
+branches:  1.1.1;
+Initial revision
+----------------------------
+revision 1.1.1.1
+date: 2004/04/23 14:17:06;  author: stachnis;  state: Exp;  lines: +0 -0
+initial checkin
+=============================================================================

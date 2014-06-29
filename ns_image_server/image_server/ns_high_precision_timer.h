@@ -4,15 +4,27 @@
 
 #ifdef _WIN32 
 #include <sys/timeb.h>
+#elif defined __MACH__
+#include <mach/mach.h>
+#include <mach/mach_time.h>
+#include <unistd.h>
 #endif
 class ns_high_precision_timer{
 public:
 	void start(){
 		#ifdef _WIN32 
+		// TODO: Should really use QueryPerformanceFrequency instead of 
+		// system time which is not guaranteed to be monotonic.
+		// See. e.g. https://github.com/awreece/monotonic_timer/blob/master/monotonic_timer.c
 		if (_ftime64_s(&start_time)!=0)
 			throw ns_ex("ns_high_precision_timer::start():Could not start timer");
+		#elif defined __MACH__
+		// OS X: https://developer.apple.com/library/mac/qa/qa1398/_index.html
+		start_time = mach_absolute_time();
 		#else
-		if (clock_gettime(CLOCK_REALTIME,&start_time)!= 0)
+		// should use monotonic clock for calculating time diffs.
+		// CLOCK_REALTIME can jump back and forth with NTP updates.
+		if (clock_gettime(CLOCK_MONOTONIC,&start_time)!= 0)
 			throw ns_ex("ns_high_precision_timer::start():Could not start timer");
 		#endif
 	}
@@ -29,6 +41,10 @@ public:
 			d.time = start_time.time - d.time;
 			d.millitm = start_time.millitm - d.millitm;
 		}
+		#elif defined __MACH__
+		uint64_t d(start_time);
+		start();
+		d -= start_time;
 		#else
 		timespec d(start_time);
 		start();
@@ -53,6 +69,21 @@ private:
 		return 1000*1000*(ns_64_bit)s.time+1000*(ns_64_bit)s.millitm;
 	}
 	__timeb64 start_time;
+	#elif defined __MACH__
+	static ns_64_bit to_microsecond(const uint64_t & s){
+		static double numer = 0;
+		static double denom = 0;
+		// If this is the first time we've run, get the timebase.
+	    if ( numer == 0 ) {
+			mach_timebase_info_data_t sTimebaseInfo;
+			mach_timebase_info(&sTimebaseInfo);
+			numer = (double) sTimebaseInfo.numer;
+			denom = (double) sTimebaseInfo.denom;
+	    }
+	    double elapsedNano =  (double) s * numer / denom;
+		return (ns_64_bit) elapsedNano / 1000;
+	}
+	uint64_t start_time;
 	#else
 	static ns_64_bit to_microsecond(const timespec & s){
 		return  1000*1000*(ns_64_bit)s.tv_sec + (ns_64_bit)s.tv_nsec/1000;

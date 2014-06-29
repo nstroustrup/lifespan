@@ -305,7 +305,7 @@ public:
 	  
 	 template<class recieving_t>
 	 void prepare_to_recieve_image(const ns_image_properties & properties, recieving_t & reciever){
-		default_prepare_to_recieve_image(properties,reciever);
+		this->default_prepare_to_recieve_image(properties,reciever);
 	 }
 	
    

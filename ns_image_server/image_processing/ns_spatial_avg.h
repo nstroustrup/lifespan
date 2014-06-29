@@ -72,7 +72,7 @@ public:
 	#pragma warning(default: 4355)
 	  template<class reciever_t>
 	  inline void prepare_to_recieve_image(const ns_image_properties & properties, reciever_t & reciever){
-			default_prepare_to_recieve_image(properties,reciever);
+			this->default_prepare_to_recieve_image(properties,reciever);
 	  }
 
 	 bool init(const ns_image_properties & properties){

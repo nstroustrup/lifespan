@@ -754,7 +754,7 @@ public:
 
 		if (alignment_type == ns_time_aligned_images){
 			//load timepoint data
-			sql() << "SELECT i.id,i.partition, i.path, i.filename,r.id, r.capture_time FROM images as i, sample_region_images as r WHERE "
+			sql() << "SELECT i.id,i.`partition`, i.path, i.filename,r.id, r.capture_time FROM images as i, sample_region_images as r WHERE "
 				<< "r.region_info_id = " << region_info_id
 				<< " AND r.problem = 0 "
 				<< " AND r.censored = 0 "
@@ -789,7 +789,7 @@ public:
 			}
 		}
 		else if (alignment_type == ns_death_aligned_images){
-			sql() << "SELECT i.id,i.partition,i.path,i.filename,r.id FROM images as i, sample_region_image_aligned_path_images as r WHERE "
+			sql() << "SELECT i.id,i.`partition`,i.path,i.filename,r.id FROM images as i, sample_region_image_aligned_path_images as r WHERE "
 				    "r.region_info_id = " << region_info_id << " AND r.image_id = i.id";
 			ns_sql_result res;
 			sql().get_rows(res);

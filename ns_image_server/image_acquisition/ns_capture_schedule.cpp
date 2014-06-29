@@ -69,7 +69,7 @@ std::string ns_experiment_capture_specification::submit_schedule_to_db(std::vect
 	sql << "SELECT id FROM experiments WHERE name='" << sql.escape_string(name) << "'";
 	sql.get_rows(res);
 	if(res.size() == 0){
-		sql << "INSERT INTO experiments SET name='" << sql.escape_string(name) << "',description='',partition='', time_stamp=0";
+		sql << "INSERT INTO experiments SET name='" << sql.escape_string(name) << "',description='',`partition`='', time_stamp=0";
 		if (!actually_write){
 			experiment_id = 0;
 			debug+="Creating a new experiment named "; 

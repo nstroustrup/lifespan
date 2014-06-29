@@ -493,7 +493,7 @@ unsigned long ns_image_capture_data_manager::handle_pending_transfers(const stri
 				catch(...){
 					cerr << "Error!\n";
 					ns_64_bit problem_id(image_server.register_server_event(ns_ex("ns_image_capture_data_manager::handle_pending_transfers()::Unknown Transfer Problem"),&sql()));
-					if(problem_id = 0)
+					if(problem_id == 0)
 						problem_id = 1;
 					sql() << "UPDATE capture_schedule SET problem = " << problem_id << " WHERE id = " << capture_schedule_id;
 					sql().send_query();	

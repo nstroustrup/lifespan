@@ -431,7 +431,7 @@ public:
 			ns_zero_death_interval(movement_cessation.time);
 			ns_zero_death_interval(death_posture_relaxation_termination.time);
 		}
-		else if (death_posture_relaxation_termination.time.period_end = 0 && 
+		else if (death_posture_relaxation_termination.time.period_end == 0 && 
 			e.event_time.period_end != death_posture_relaxation_termination.time.period_end){
 			apply_step_specification(death_posture_relaxation_termination,e,ns_worm_death_posture_relaxation_termination);
 		}

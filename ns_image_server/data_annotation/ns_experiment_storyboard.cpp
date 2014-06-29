@@ -1967,7 +1967,7 @@ void ns_experiment_storyboard_manager::create_records_and_storage_for_subimages(
 		if (sub_images[i].id == 0){
 			if (!create_if_missing) throw ns_ex("Information for sub_image " ) << i << " was not loaded.";
 			sub_images[i].save_to_db(0,&sql);
-			sql << "INSERT animal_storyboard SET region_id = " << spec.region_id
+			sql << "INSERT INTO animal_storyboard SET region_id = " << spec.region_id
 				<< ",sample_id = " << spec.sample_id << ", experiment_id = " << spec.experiment_id
 				<< ",using_by_hand_annotations = " << (spec.use_by_hand_annotations?"1":"0") 
 				<< ",movement_event_used=" << (long)spec.event_to_mark 

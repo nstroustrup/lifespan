@@ -1299,7 +1299,7 @@ ns_file_location_specification ns_image_storage_handler::compile_absolute_paths_
 }
 	
 void ns_image_storage_handler::refresh_experiment_partition_cache_int(ns_image_server_sql * sql,const bool get_lock) const{
-	*sql << "SELECT id,partition FROM " << sql->table_prefix() << "experiments";
+	*sql << "SELECT id,`partition` FROM " << sql->table_prefix() << "experiments";
 	ns_sql_result res;
 	sql->get_rows(res);
 
@@ -1397,7 +1397,7 @@ ns_socket_connection ns_image_storage_handler::connect_to_fileserver_node(ns_sql
 		try{
 			return socket.connect(hosts[ order[i] ][0], atol(hosts[ order[i] ][1].c_str()));
 		}
-		catch(ns_ex & ex){ex;}
+		catch(ns_ex & ex){/*do nothing */}
 	}
 
 	throw ns_ex("ns_image_storage_handler::All ") << (unsigned int)hosts.size() << " long-term storage hosts failed to respond.";	

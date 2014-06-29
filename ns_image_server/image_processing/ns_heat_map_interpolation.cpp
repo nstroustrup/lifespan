@@ -381,7 +381,8 @@ inline char ns_get_division_from_frame_number(const unsigned int i,const unsigne
 		else{
 			if (i < number_of_frames_used_to_find_stationary_objects)
 				return 0;
-			else (char)((2*(long)i)/(total-number_of_frames_used_to_find_stationary_objects+1));
+			else
+				return (char)((2*(long)i)/(total-number_of_frames_used_to_find_stationary_objects+1)); // TODO: Verify this is the correct return value in this case
 		}
 	}
 

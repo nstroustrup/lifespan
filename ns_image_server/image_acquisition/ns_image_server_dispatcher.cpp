@@ -1020,7 +1020,6 @@ bool ns_image_server_dispatcher::look_for_work(){
 		work_sql_connection->check_connection();
 	}
 	catch(ns_ex & ex){
-		ex;
 		ns_image_server_event ev;
 		ev << "Lost connection to mySQL server.  Reconnecting..." << ns_ts_sql_error;
 		image_server.register_server_event_no_db(ev);

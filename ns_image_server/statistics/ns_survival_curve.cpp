@@ -2410,7 +2410,7 @@ void ns_lifespan_experiment_set::compute_device_normalization_regression(const n
 					strain_is_control[device_strain->first];
 			}
 			ns_aggregate_statistics(device_strain->second,regression_stats_device_strain->second.device_strain_mean);
-			regression_stats_device_strain->second.control_mean_fix_point;
+			regression_stats_device_strain->second.control_mean_fix_point; // TODO: Should this be set to something?
 			
 			regression_stats_device_strain->second.grand_strain_mean = regression_statistics_set.grand_strain_mean[device_strain->first];
 			regression_stats_device_strain->second.strain_info = strain_metadata[device_strain->first];

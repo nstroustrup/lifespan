@@ -66,7 +66,7 @@ bool ns_machine_analysis_region_data::load_from_db(const ns_death_time_annotatio
 			else{
 				//events that straddle the externally specified last observation become unbounded
 				if (!p->time.period_end > metadata.time_of_last_valid_sample){
-					p->time.period_end_was_not_observed;
+					p->time.period_end_was_not_observed; // TODO: Should this be set to true here??
 				}
 				p++;
 

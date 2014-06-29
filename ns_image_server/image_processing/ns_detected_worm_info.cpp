@@ -2908,7 +2908,7 @@ void ns_image_worm_detection_results::clear(){
 	 source_image_id = 0;
 	 capture_sample_id = 0;
 	 capture_time = 0;
-	 data_storage_on_disk;
+	 data_storage_on_disk; // TODO: should this be set to something here??
 	 id = 0;
 	 mutually_exclusive_worm_groups.clear();
 	 interpolated_worm_areas.clear();

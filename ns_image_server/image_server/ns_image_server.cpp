@@ -1870,7 +1870,7 @@ void ns_image_server::load_constants(const ns_image_server::ns_image_server_exec
 
 		if (exec_type == ns_worm_terminal_type){
 			ini_filename = ini_directory + DIR_CHAR_STR + "ns_worm_browser.ini";
-			terminal_constants.load(ini_directory + DIR_CHAR_STR + "ns_worm_browser.ini");
+			terminal_constants.load(ini_filename);
 			max_terminal_window_size.x = atol(terminal_constants["max_width"].c_str());
 			max_terminal_window_size.y = atol(terminal_constants["max_height"].c_str());
 			terminal_hand_annotation_resize_factor = atol(terminal_constants["hand_annotation_resize_factor"].c_str());

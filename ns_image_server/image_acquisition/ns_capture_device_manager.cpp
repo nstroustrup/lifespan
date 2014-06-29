@@ -1077,7 +1077,6 @@ public:
 			recovered_device_name = ns_barcode_decode(bar_image,parse_filename);
 		}
 		catch(ns_ex & ex){
-			ex;
 			//if the visualization cannot be made, try again to parse without it
 			cerr << "Could not make barcode visualization, trying to decode without it...";
 			recovered_device_name = ns_barcode_decode(bar_image);

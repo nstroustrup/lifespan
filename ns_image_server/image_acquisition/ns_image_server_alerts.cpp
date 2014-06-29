@@ -232,11 +232,6 @@ void ns_alert_handler::submit_alert(const ns_alert &alert, ns_sql & sql){
 }
 
 ns_alert::ns_notification_type ns_alert::get_notification_type(ns_alert::ns_alert_type t, bool submitted_by_image_capture_server){
-	
-			ns_low_urgency;
-		ns_medium_urgency;
-		ns_high_urgency;
-
 	switch(t){
 		case ns_device_error: return ns_low_urgency;
 		case ns_missed_capture: return ns_high_urgency;

@@ -3924,14 +3924,14 @@ ns_analyzed_image_time_path_group::ns_analyzed_image_time_path_group(unsigned lo
 					 br(path.elements[0].context_position_in_source_image+path.elements[0].worm_context_size_);
 		
 		ofstream * debug(0);
-		if (0 && group_id_==42){
+/*		if (0 && group_id_==42){
 			string fname("c:\\path_foo_");
 			srand(ns_current_time());
 			fname += ns_to_string(rand());
 			fname += ".tif";
 			debug = new ofstream(fname.c_str());
 			*debug << "TLx,TLy,BRx,BRy,|,POSx,POSY,POS+SIZEX,POS+SIZEY\n";
-		}
+		}*/
 		for (unsigned int j = 1; j < path.elements.size(); j++){
 			const ns_analyzed_image_time_path_element & e(path.elements[j]);
 			const ns_vector_2i & pos(e.context_position_in_source_image);
@@ -4257,7 +4257,7 @@ void ns_time_path_image_movement_analyzer::load_images_for_group(const unsigned 
 		return;
 	const unsigned long number_of_images_loaded(groups[group_id].paths[0].number_of_images_loaded);
 	if (number_of_images_loaded == 0){
-		(region_info_id,sql);
+		(region_info_id,sql); // TODO: LOLWHUT? Is this supposed to do something?
 		if (group_id >= size())
 			throw ns_ex("ns_time_path_image_movement_analyzer::load_images_for_group()::Invalid group: ") << group_id;
 	}

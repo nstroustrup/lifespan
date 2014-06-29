@@ -277,7 +277,7 @@ public:
 				
 				c = ns_movement_colors::color(ns_movement_stationary)*scaling;
 			}
-			for (x; x < size.x; x++){
+			for (; x < size.x; x++){
 				
 					if(y+pos.y >= im.properties().height || x+pos.x >= im.properties().width || im.properties().components != 3)
 						throw ns_ex("Yikes! 5");

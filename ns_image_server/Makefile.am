@@ -5,7 +5,6 @@ src_base = image_server/ns_file_location_specification.h \
 		image_server/ns_image_storage_handler.cpp \
 		image_server/ns_image_storage_handler.h \
 		image_server/ns_single_thread_coordinator.h \
-		image_server/ns_image_server_main.cpp \
 		image_server/ns_progress_reporter.h \
 		image_server/ns_simple_image_cache.h \
 		image_server/ns_image_stream_buffers.h \
@@ -177,6 +176,9 @@ src_system_base = system_base/ns_dir.cpp \
 	   system_base/ns_lock.h \
 	   system_base/ns_os_signal_handler.h \
 	   system_base/ns_socket.cpp
+src_image_server = image_server/ns_image_server_main.cpp
+src_worm_browser = ../ns_worm_browser/ns_worm_browser_main.cpp \
+	   ../ns_worm_browser/ns_worm_browser.cpp
 src_external = ../external_libraries/libsvm/svm.cpp \
 	       ../external_libraries/libsvm/svm.h \
 	       ../external_libraries/ctmf/ctmf.h \
@@ -249,13 +251,38 @@ include_dir_external = -I../external_libraries/libsvm \
 	       -I../external_libraries/wm4_bspline \
 	       -I../external_libraries/tinyxml \
 	       -I../external_libraries/tiff-3.8.2/libtiff
-DEF_FONT = $(sysconfdir)/default_font.ttf
+
+DEF_FONT = $(pkgdatadir)/default_font.ttf
 INI_PATH = $(sysconfdir)/ns_image_server.ini
 
 PRE_DEF = -DTRILIBRARY -DNO_TIMER -DANSI_DECLARATORS -DNS_DEFAULT_FONT="\"$(DEF_FONT)\"" -DNS_INI_PATH="\"$(INI_PATH)\""
 bin_PROGRAMS = ns_image_server
 #serverdir = @datarootdir@
-dist_sysconf_DATA = ../files/default_font.ttf
+dist_pkgdata_DATA = ../files/default_font.ttf
+
+if BUILD_BROWSER
+bin_PROGRAMS += ns_worm_browser
+dist_pkgdata_DATA += ../windows_build/occupied_image.tif ../windows_build/start.tif
+PRE_DEF += -DNS_DATA_PATH="\"$(pkgdatadir)/\""
+if TARGET_OSX
+all-local: ns_worm_browser.app
+_ns_worm_browser: ns_worm_browser$(EXEEXT)
+	cp ns_worm_browser$(EXEEXT) _ns_worm_browser
+_ns_worm_browser.app: _ns_worm_browser
+	$(FLTK_CONFIG) --post _ns_worm_browser
+ns_worm_browser.app: _ns_worm_browser.app clear_browser_app
+	mv _ns_worm_browser.app ns_worm_browser.app
+	rm _ns_worm_browser
+clear_browser_app:
+	rm -rf ns_worm_browser.app
+clean-local:  clear_browser_app
+# TODO: this .app bundle can only be used on the system it's built on:
+# there are resource files and non-standard libraries in /usr/local. 
+# A proper fix would be to bundle these in the .app.
+# TODO: Figure out how best to distribute ns_image_server for the mac?
+endif
+endif
+
 AM_CPPFLAGS = -Iimage_server -Istatistics -Isystem_base \
 			   -Imovement_analysis -Ijob_scheduling \
 			   -Iimage_processing -Iimage_base \
@@ -267,12 +294,18 @@ AM_CPPFLAGS = -Iimage_server -Istatistics -Isystem_base \
 			   -I/usr/include/freetype2 -I/usr/local/include/freetype2 -I/usr/freetype2 \
 			   $(PRE_DEF) \
 			   $(DEPS_CFLAGS) 
-AM_CXXFLAGS = -g	
+AM_CXXFLAGS = -g $(NS_CXXFLAGS)	
 AM_CFLAGS = -O3 -pthread
 
-AM_LDFLAGS=$(MYSQL_LDFLAGS) $(DEPS_LIBS) -lpthread -Wl,-rpath=/usr/local/lib
+AM_LDFLAGS=$(MYSQL_LDFLAGS) $(DEPS_LIBS) -lpthread $(NS_LDFLAGS)
 
-ns_image_server_SOURCES = $(src_base) $(src_data_annotation) $(src_image_acquisition) \
+src_common = $(src_base) $(src_data_annotation) $(src_image_acquisition) \
 	   $(src_image_base) $(src_image_processing) $(src_job_scheduling) \
 	   $(src_movement_analysis) $(src_statistics) $(src_system_base) \
 	   $(src_external)
+
+ns_image_server_SOURCES = $(src_common) $(src_image_server)
+
+ns_worm_browser_SOURCES = $(src_common) $(src_worm_browser)
+ns_worm_browser_LDFLAGS = $(AM_LDFLAGS) $(FLTK_LDFLAGS)
+ns_worm_browser_CPPFLAGS = $(AM_CPPFLAGS) -I$(FLTK_INCLUDEDIR)

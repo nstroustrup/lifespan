@@ -4,8 +4,10 @@
 #ifndef WIN32
 #include <sys/time.h>
 #endif
-#include <Intrin.h>
+#ifdef _WIN32
 #include "resource.h"
+#include <Intrin.h>
+#endif
 #include "ns_high_precision_timer.h"
 #include "ns_experiment_storyboard.h"
 #include "ns_fl_modal_dialogs.h"
@@ -451,7 +453,12 @@ protected:
 		catch(ns_ex & ex){
 			delete r;
 			cerr << "Error in asynchronous thread: " << ex.text();
+#ifdef _WIN32
 			return 1;
+#else
+			// return type is void *: no simple/clean way to report errors
+			return 0;
+#endif
 		}
 		return 0;
 	}
@@ -530,8 +537,8 @@ public:
 
 };
 
-
-HANDLE ns_main_thread_id(0);
+//never used?
+//HANDLE ns_main_thread_id(0); 
 
 
 std::string ns_get_input_string(const std::string title,const std::string default_value){
@@ -657,7 +664,15 @@ class ns_worm_terminal_main_menu_organizer : public ns_menu_organizer{
 		ns_run_in_main_thread<ns_image_file_chooser> run_mt(&im_cc);
 		if (im_cc.chosen) worm_learner.output_learning_set(im_cc.result);		
 	}
-	static void auto_output_learning_set(const std::string & value){worm_learner.output_learning_set("c:\\worm_detection\\training_set\\a",true);}
+	static void auto_output_learning_set(const std::string & value){
+		// Again, there must be a better place to put these than the root dir
+		#ifdef _WIN32
+		std::string path = "c:\\worm_detection\\training_set\\a";
+		#else
+		std::string path = "/worm_detection/training_set/a";		
+		#endif
+		worm_learner.output_learning_set(path,true);
+		}
 	static void rethreshold_image_set(const std::string & value){
 		/*std::vector<dialog_file_type> foo;
 		foo.push_back(dialog_file_type("(*.*)","*"));
@@ -1424,7 +1439,7 @@ struct ns_asynch_region_picker{
 		std::string * region_name(static_cast<std::string *>(l));
 		launcher.launch(*region_name);
 		delete region_name;
-		return true;
+		return 0;
 	}
 	void launch(const std::string & region_name){
 		try{
@@ -2015,7 +2030,7 @@ struct ns_asynch_annotation_saver{
 	static ns_thread_return_type run_asynch(void * l){
 		ns_asynch_annotation_saver launcher;
 		launcher.launch();
-		return true;
+		return 0;
 	}
 	void launch(){
 		try{
@@ -2272,8 +2287,8 @@ void ns_transfer_annotations_directory(const std::string & annotation_source_dir
 	}
 }
 
-
-void ns_align_to_reference(const unsigned long region_info_id,ns_sql & sql){
+// The below code isn't called anywhere... 
+/*void ns_align_to_reference(const unsigned long region_info_id,ns_sql & sql){
 	ns_sql_result res;
 	sql << "SELECT " << ns_processing_step_db_column_name(ns_unprocessed) << ", " 
 		<< ns_processing_step_db_column_name(ns_process_spatial) << ", "
@@ -2352,7 +2367,7 @@ void ns_align_to_reference(const unsigned long region_info_id,ns_sql & sql){
 			cerr << ex.text() << "\n";
 		}
 	}
-}
+}*/
 
 void ns_update_sample_info(ns_sql & sql){
 	sql << "SELECT id, device_name, experiment_id FROM capture_samples WHERE device_capture_period_in_seconds = 0 || number_of_consecutive_captures_per_sample > 10";
@@ -2415,7 +2430,8 @@ int main() {
 	Fl_File_Icon::load_system_icons();
 	Fl::scheme("none");
 	
-	ns_main_thread_id = GetCurrentThread();
+	//never used?
+	//ns_main_thread_id = GetCurrentThread();
 	try{
 	
 		ns_multiprocess_control_options mp_options;
@@ -2493,10 +2509,15 @@ int main() {
 		
 		
 		ns_worm_browser_output_debug(__LINE__,__FILE__,"Loading occupied animation");
+		#ifdef _WIN32
 		std::string tmp_filename = "occupied_animation.tif";
 		ns_load_image_from_resource(IDR_BIN2,tmp_filename);
 		ns_load_image(tmp_filename,worm_learner.animation);
 		ns_dir::delete_file(tmp_filename);
+		#else
+		// note: using implicit string-literal concatenation after preprocessor substitution of NS_DATA_PATH
+		ns_load_image(NS_DATA_PATH "occupied_image.tif",worm_learner.animation);
+		#endif
 		//win.draw_animation = true;
 		
 		//worm_learner.compare_machine_and_by_hand_annotations();
@@ -2574,7 +2595,7 @@ struct ns_asynch_worm_launcher{
 		ns_asynch_worm_launcher * launcher(static_cast<ns_asynch_worm_launcher *>(l));
 		launcher->launch();
 		delete launcher;
-		return true;
+		return 0;
 	}
 	void launch(){
 		try{

@@ -109,7 +109,13 @@ protected:
 			cerr << "Error: " << ex.text() << "\n";
 			if (spec.fatal_error_handler != 0)
 				(*spec.fatal_error_handler)();
-			return 1;
+#ifdef _WIN32
+			// return type is integer-like on windows
+			return 1; 
+#else
+			// return type is void*; no simple/clean way to signal error 
+			return 0;
+#endif
 		}
 		spec.annotater->draw_metadata(spec.timepoint,*spec.image->im);
 		if (spec.swap_1 != 0 && spec.swap_2 != 0){

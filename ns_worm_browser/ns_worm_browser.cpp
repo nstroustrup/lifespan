@@ -11,7 +11,6 @@
 #include "ns_movement_visualization_generator.h"
 #include "ns_time_path_image_analyzer.h"
 #include "ns_hidden_markov_model_posture_analyzer.h"
-#include "resource.h"
 #include "ns_fl_modal_dialogs.h"
 
 #include "hungarian.h"
@@ -1948,7 +1947,12 @@ void ns_worm_learner::generate_experiment_movement_image_quantification_analysis
 		}
 	}	
 	if (detail_level == ns_build_worm_markov_posture_model_from_by_hand_annotations){
+		//TODO: Surely there's a better place to write these files?
+		#ifdef _WIN32
 		std::string base_path("c:\\");
+		#else
+		std::string base_path("/");
+		#endif
 		base_path+=experiment_name;
 		for (std::map<string,ns_emperical_posture_quantification_value_estimator>::iterator p = value_estimators.begin(); p!=value_estimators.end(); p++){
 			if (!p->second.raw_moving_cdf.samples().empty() &&
@@ -3397,6 +3401,9 @@ void ns_worm_learner::handle_file_request(const string & fname){
 
 }
 void ns_worm_learner::paste_from_clipboard(){
+#ifndef _WIN32
+	throw ns_ex("Clipboard currently only supported on Windows");
+#else
 	if (OpenClipboard(NULL) == 0)
 		throw ns_ex("Could not open clipboard");
 	try{
@@ -3535,6 +3542,7 @@ void ns_worm_learner::paste_from_clipboard(){
 		CloseClipboard();
 		throw;
 	}
+#endif // _WIN32
 }
 
 void ns_worm_learner::run_binary_morpholgical_manipulations(){
@@ -3543,6 +3551,9 @@ void ns_worm_learner::run_binary_morpholgical_manipulations(){
 }
 
 void ns_worm_learner::copy_to_clipboard(){
+#ifndef _WIN32
+	throw ns_ex("Clipboard currently only supported on Windows");
+#else
 	if (OpenClipboard(NULL) == 0)
 		throw ns_ex("Could not open clipboard");
 	EmptyClipboard();
@@ -3571,6 +3582,7 @@ void ns_worm_learner::copy_to_clipboard(){
 		cerr << "Unknown Exception";
 		CloseClipboard();
 	}
+#endif // _WIN32
 }
 struct ns_subregion_source_info{
 	unsigned long region_id,x,y,w,h;
@@ -4208,13 +4220,15 @@ void ns_worm_learner::process_contiguous_regions(){
 	if (worm_detection_results != 0)
 		delete worm_detection_results;	
 	unsigned long start_time = ns_current_time();
+	// std::string debug_file("c:\\segment_debug\\deb_");
+	std::string debug_file("");		
 	worm_detection_results = worm_detector.run(0,0,current_image,detection_brightfield,
 		detection_spatial_median,
 		static_mask,
 		ns_worm_detection_constants::get(ns_worm_detection_constant::minimum_worm_region_area,current_image.properties().resolution),
 		ns_worm_detection_constants::get(ns_worm_detection_constant::maximum_worm_region_area,current_image.properties().resolution),
 		ns_worm_detection_constants::get(ns_worm_detection_constant::maximum_region_diagonal,current_image.properties().resolution),
-		*model_specification,ns_worm_detection_constants::get(ns_worm_detection_constant::maximum_number_of_actual_worms_per_image),"c:\\segment_debug\\deb_",ns_detected_worm_info::ns_vis_both);
+		*model_specification,ns_worm_detection_constants::get(ns_worm_detection_constant::maximum_number_of_actual_worms_per_image),debug_file,ns_detected_worm_info::ns_vis_both);
 	unsigned long stop_time = ns_current_time();
 	cerr << "\nComputation time: " << stop_time - start_time << "\n";
 	detection_spatial_median.pump(current_image,128);
@@ -5695,6 +5709,7 @@ bool ns_worm_learner::start_death_time_annotation(const ns_behavior_mode m,const
 	return true;
 }
 
+#ifdef _WIN32
 bool ns_load_image_from_resource(int resource_id,const std::string &filename){
 	HRSRC hResource = ::FindResource(0, MAKEINTRESOURCE(resource_id), "BIN");
 	if (!hResource){
@@ -5729,14 +5744,19 @@ bool ns_load_image_from_resource(int resource_id,const std::string &filename){
 	out.close();
 	return true;
 }
-
+#endif
 
 void ns_worm_learner::display_splash_image(){
+	#ifdef _WIN32
 	string tmp_filename("start_background.tif");
 	ns_image_standard im;
 	ns_load_image_from_resource(IDR_BIN1,tmp_filename);
 	load_file(tmp_filename);
 	ns_dir::delete_file(tmp_filename);
+	#else
+	// note: using implicit string-literal concatenation after preprocessor substitution of NS_DATA_PATH
+	load_file(NS_DATA_PATH "start.tif");
+	#endif
 }
 void ns_worm_learner::stop_death_time_annotation(){
 	if (behavior_mode == ns_worm_learner::ns_draw_boxes)
@@ -5876,11 +5896,15 @@ void ns_worm_learner::output_distributions_of_detected_objects(){
 	//for (unsigned int i = 0; i < non_worm_list.size(); i++)
 	//	non_worm_stats[i] = non_worm_list[i]->generate_stats();
     
-
+	// Surely there's a better place to put these 
+	#ifdef _WIN32
 	std::string dir = "c:\\tt\\freq";
+	#else
+	std::string dir = "/tt/freq";
+	#endif
 	ns_dir::create_directory_recursive(dir);
 
-	ns_detected_worm_stats::draw_feature_frequency_distributions(std::vector<ns_detected_worm_stats>(), all_objects,"c:\\tt\\freq");
+	ns_detected_worm_stats::draw_feature_frequency_distributions(std::vector<ns_detected_worm_stats>(), all_objects,dir);
 }
 
 

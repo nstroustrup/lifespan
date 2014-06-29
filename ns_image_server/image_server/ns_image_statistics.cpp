@@ -91,6 +91,7 @@ void ns_image_statistics::submit_to_db(ns_64_bit & id,ns_sql & sql,bool include_
 			<< "non_worm_object_count='"<<non_worm_statistics.count<<"',"
 			<< "non_worm_object_area_mean='"<<non_worm_statistics.area_mean<<"',non_worm_object_area_variance='"<<non_worm_statistics.area_variance<<"',"
 			<< "non_worm_object_intensity_mean='"<<non_worm_statistics.absolute_intensity.mean<<"',non_worm_object_intensity_variance='"<<non_worm_statistics.absolute_intensity.variance<<"' ";
+		if (!include_image_stats) sql << ", histogram=''"; // histogram is a NOT NULL column with no default value so we have to provide an empty one.
 	}
 	if (id == 0)
 		db_id = id = sql.send_query_get_id();

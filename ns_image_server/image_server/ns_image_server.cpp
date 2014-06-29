@@ -1680,9 +1680,10 @@ void ns_image_server::register_host(bool overwrite_current_entry){
 
 	if (h.size() == 0){
 		sql()<< "INSERT INTO hosts SET name='" << host_name << "', base_host_name='" << base_host_name << "', ip='" << host_ip << "', port='" << _dispatcher_port 
-			<< "', long_term_storage_enabled='" << long_term_storage_ << "',"
+			<< "', long_term_storage_enabled='" << long_term_storage_ << "', comments='', "
 			<< "software_version_major=" << software_version_major() << ", software_version_minor=" << software_version_minor()
-			<< ", software_version_compile=" << software_version_compile()<< ",database_used='" << *sql_database_choice << "'";
+			<< ", software_version_compile=" << software_version_compile()<< ",database_used='" << *sql_database_choice 
+			<< "', time_of_last_successful_long_term_storage_write=0";
 		_host_id = sql().send_query_get_id();
 	}
 	else if (h.size() != 1)

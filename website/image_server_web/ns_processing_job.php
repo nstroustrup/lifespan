@@ -699,7 +699,7 @@ function ns_update_job_queue($sql){
   $sql->send_query($query);
   $query = "LOCK TABLES processing_job_queue WRITE";
   $sql->send_query($query);
-  $query = "INSERT INTO processing_job_queue SET job_id=" . $job->id . ", priority=50 ";
+  $query = "INSERT INTO processing_job_queue SET job_id=" . $job->id . ", job_name='', priority=50 ";
   $sql->send_query($query);
   $query = "COMMIT";
   $sql->send_query($query);

@@ -597,7 +597,7 @@ CREATE TABLE `performance_statistics` (
 --
 -- Table structure for table `processing_job_log`
 --
-
+-- TODO: hey, is this table even used??
 DROP TABLE IF EXISTS `processing_job_log`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;

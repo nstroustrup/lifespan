@@ -134,7 +134,7 @@ if ($_POST['add_to_device_inventory'] != ''){
 		if (sizeof($res) > 0)
 			echo "Device " . $name . " is already in the device inventory<br>";
 		else{
-			$query = "INSERT INTO device_inventory SET device_name='$name'";
+			$query = "INSERT INTO device_inventory SET device_name='$name', incubator_name='', incubator_location=''";
 			$sql->send_query($query);
 		}
 	}

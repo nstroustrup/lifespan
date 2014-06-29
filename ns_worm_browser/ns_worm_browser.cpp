@@ -4515,7 +4515,7 @@ void ns_worm_learner::send_mask_to_server(const std::string & ip_address,const u
 	cerr << "\nUpdating database....";
 	ns_sql * sql = image_server.new_sql_connection(__FILE__,__LINE__);
 	*sql << "INSERT INTO images SET filename = '" << current_mask_filename << "', creation_time = '" << ns_current_time() << "', "
-		<< "path = '" << ns_image_server::unclaimed_masks_directory() << "', currently_under_processing=0 ";
+		<< "path = '" << ns_image_server::unclaimed_masks_directory() << "', currently_under_processing=0, partition=''";
 	unsigned long image_id = sql->send_query_get_id();
 	*sql << "INSERT INTO image_masks SET image_id = " << image_id << ", processed='0'";
 	sql->send_query();

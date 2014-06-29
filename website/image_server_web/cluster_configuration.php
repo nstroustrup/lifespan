@@ -122,7 +122,7 @@ if ($_POST['save_label']){
     if (strlen($label_short) > 15)
       die("The specified flag ($label_short) is too long.  Please limit flags to 15 characters or less");
     $query = "INSERT INTO annotation_flags SET label_short='$label_short',label='$label',".
-      "next_flag_name_in_order=''";
+      "next_flag_name_in_order='', exclude=0";
     $query2 = "UPDATE annotation_flags SET next_flag_name_in_order = '$label_short' WHERE label_short='$tail'";
     //die($query . "<BR>" . $query2);
     $sql->send_query($query);

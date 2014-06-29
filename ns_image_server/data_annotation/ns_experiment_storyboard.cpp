@@ -1976,6 +1976,7 @@ void ns_experiment_storyboard_manager::create_records_and_storage_for_subimages(
 				<< ", image_delay_time_after_event = " << spec.delay_time_after_event
 				<< ", image_id = " << sub_images[i].id
 				<< ", metadata_id = " << metadata.id
+				<< ", strain = ''"
 				<< ", storyboard_sub_image_number = " << i
 				<< ", number_of_sub_images = " << sub_images.size();
 			sql.send_query();

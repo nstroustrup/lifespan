@@ -1076,7 +1076,8 @@ void ns_genotype_fetcher::add_information_to_database(const std::vector<ns_genot
 	for (unsigned int i = 0; i < info.size(); i++){
 		ns_genotype_list::iterator p = genotypes.find(info[i].strain);
 		if (p == genotypes.end()){
-			*sql << "INSERT INTO strain_aliases SET strain='" << sql->escape_string(info[i].strain) << "', genotype='" << sql->escape_string(info[i].genotype) << "'";
+			*sql << "INSERT INTO strain_aliases SET strain='" << sql->escape_string(info[i].strain) 
+			     << "', genotype='" << sql->escape_string(info[i].genotype) << "' conditions=''";
 			//cout << sql->query() << "\n";
 			sql->send_query();
 		}

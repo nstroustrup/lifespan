@@ -114,7 +114,7 @@ void ns_movement_visualization_generator::create_survival_curve_for_capture_time
 
 	for (unsigned int i = 0; i < plate_survival.y.size()-1; i++){
 		plate_survival.y[i+1] = plate.data.probability_of_surviving_up_to_interval[i];
-		if (i >= 0 && plate_survival.y[i] <= 0)
+		if (plate_survival.y[i] <= 0)
 			plate_survival.y[i+1] = -1;
 		plate_survival.x[i+1] = (plate_time[i]-metadata.time_at_which_animals_had_zero_age)/60.0/60.0/24.0;
 		plate_marker.x[0] = (marker_time-metadata.time_at_which_animals_had_zero_age)/60.0/60.0/24.0;
@@ -125,7 +125,7 @@ void ns_movement_visualization_generator::create_survival_curve_for_capture_time
 	if (!strain_time.empty())
 	for (unsigned int i = 0; i < strain_survival.y.size()-1; i++){
 		strain_survival.y[i+1] = strain.data.probability_of_surviving_up_to_interval[i];
-		if (i >= 0 && strain_survival.y[i] <= 0)
+		if (strain_survival.y[i] <= 0)
 			strain_survival.y[i+1] = -1;
 		strain_survival.x[i+1] = (strain_time[i]-metadata.time_at_which_animals_had_zero_age)/60.0/60.0/24.0;
 		strain_marker.x[0] = (marker_time-metadata.time_at_which_animals_had_zero_age)/60.0/60.0/24.0;

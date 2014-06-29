@@ -295,7 +295,7 @@ void ns_graph::draw(ns_image_standard & image){
 	if (x_axis_properties.draw_tick_marks){
 		//x axis
 		for (unsigned int i = 0; i <= spec.number_of_x_minor_ticks; i++){
-			unsigned int x = border.x+(int)(spec.dx*(spec.minor_x_tick*i+spec.axes.axis_offset(0)));
+			int x = border.x+(int)(spec.dx*(spec.minor_x_tick*i+spec.axes.axis_offset(0)));
 			if (x < 0 || x >= w)
 				throw ns_ex("ns_graph::Error drawing x axis minor ticks");
 			image.draw_line_color(ns_vector_2i(x,h-border.y-MINOR_TICK_HEIGHT),ns_vector_2i(x,h-border.y+MINOR_TICK_HEIGHT),x_axis_properties.line.color);
@@ -304,7 +304,7 @@ void ns_graph::draw(ns_image_standard & image){
 	if (y_axis_properties.draw_tick_marks){
 		//y axis
 		for (unsigned int i = 0; i<= spec.number_of_y_minor_ticks;i++){
-			unsigned int y = h - border.y -(int)(spec.dy*(spec.minor_y_tick*i + spec.axes.axis_offset(1)));		
+			int y = h - border.y -(int)(spec.dy*(spec.minor_y_tick*i + spec.axes.axis_offset(1)));		
 			if (y < 0 || y >= h)
 				throw ns_ex("ns_graph::Error drawing y axis minor ticks");
 			image.draw_line_color(ns_vector_2i(border.x-MINOR_TICK_HEIGHT,y),ns_vector_2i(border.x+MINOR_TICK_HEIGHT,y),y_axis_properties.line.color);
@@ -507,7 +507,7 @@ void ns_graph::plot_object(const ns_graph_object & y, const ns_graph_object & x,
 			for (int _x = l; _x < r; _x++){
 				double cur_x = _x/dx+axes.boundary(0);
 
-				unsigned int index = (unsigned int)x.x.size()-1;
+				int index = (unsigned int)x.x.size()-1; // if index < 0 is an error condition below it should be signed
 				switch(y.properties.line_hold_order){
 					case ns_graph_properties::ns_first:
 					case ns_graph_properties::ns_zeroth_centered:{
@@ -541,7 +541,7 @@ void ns_graph::plot_object(const ns_graph_object & y, const ns_graph_object & x,
 				if (h-border.y < dy*(y.y[index]-axes.boundary(2)))
 					throw ns_ex("Something went wrong in graph logic.  Graph height: ") << h << ", border: " << border.y <<
 					", dy: " << dy << ", boundary(2): " << axes.boundary(2) << " y.y[" << index << "]: " << y.y[index];
-				unsigned int bottom(spec.x_axis_pos+(unsigned int)(spec.dy*spec.axes.axis_offset(1)));
+				int bottom(spec.x_axis_pos+(unsigned int)(spec.dy*spec.axes.axis_offset(1))); // Again if it could be < 0 (below) it needs to be signed.
 				if (top > bottom){
 					unsigned int tmp = bottom;
 					bottom = top;
@@ -961,7 +961,7 @@ ns_graph_axes ns_graph::add_frequency_distribution(const std::vector<const ns_gr
 			continue;
 		for (unsigned int i = 0; i < in[j]->y.size(); i++){
 			if (crop_outliers && in[j]->y[i] >= outlier_cutoff) continue;
-			unsigned int cl = (unsigned int)floor((in[j]->y[i]-y_min)/dx);
+			int cl = (unsigned int)floor((in[j]->y[i]-y_min)/dx); // if cl < 0 is an error condition, cl must be signed
 			if (cl < 0 || cl > cur.y.size())
 				throw ns_ex("ns_graph::Could not plot data on frequency distribution: ") << in[j]->y[i];
 			cur.y[cl]++;

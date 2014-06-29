@@ -1030,8 +1030,8 @@ public:
 	///Will segfault if called on a grayscale image
 	template<class color_t>
 	void draw_line_color(const ns_vector_2i & _start, const ns_vector_2i & _stop, const color_t & color,const float opacity=1){
-		if (_start.x < 0 || (unsigned int)_start.x >= properties().width || (unsigned int)_start.y < 0 || (unsigned int)_start.y >= properties().height ||
-			_stop.x < 0 || (unsigned int)_stop.x >= properties().width || (unsigned int)_stop.y < 0 || (unsigned int)_stop.y >= properties().height)
+		if (_start.x < 0 || (unsigned int)_start.x >= properties().width || _start.y < 0 || (unsigned int)_start.y >= properties().height ||
+			_stop.x < 0 || (unsigned int)_stop.x >= properties().width || _stop.y < 0 || (unsigned int)_stop.y >= properties().height)
 			return;
 		ns_vector_2i start = _start,
 					 stop = _stop;
@@ -1068,8 +1068,8 @@ public:
 	///Will segfault if called on a grayscale image
 	template<class ns_component2>
 	void draw_line_grayscale(const ns_vector_2i & _start, const ns_vector_2i & _stop, const ns_component2 & color,const float & opacity){
-		if (_start.x < 0 || (unsigned int)_start.x >= properties().width || (unsigned int)_start.y < 0 || (unsigned int)_start.y >= properties().height ||
-			_stop.x < 0 || (unsigned int)_stop.x >= properties().width || (unsigned int)_stop.y < 0 || (unsigned int)_stop.y >= properties().height)
+		if (_start.x < 0 || (unsigned int)_start.x >= properties().width || _start.y < 0 || (unsigned int)_start.y >= properties().height ||
+			_stop.x < 0 || (unsigned int)_stop.x >= properties().width || _stop.y < 0 || (unsigned int)_stop.y >= properties().height)
 			return;
 		ns_vector_2i start = _start,
 					 stop = _stop;

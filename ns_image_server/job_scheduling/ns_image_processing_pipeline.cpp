@@ -1946,9 +1946,9 @@ void ns_image_processing_pipeline::apply_mask(ns_image_server_captured_image & c
 		vector<ns_image_server_image> output_images;
 		unsigned long mask_info_size = mask_splitter.mask_info()->size();
 		for (unsigned int i = 0; i < res.size(); i++){
-			unsigned int	mask_region_info_id =	atol(res[i][0].c_str()),
-							mask_region_id =		atol(res[i][2].c_str()),
-							mask_region_value =		atol(res[i][3].c_str());
+			unsigned int	mask_region_info_id =	atol(res[i][0].c_str());
+			unsigned int 	mask_region_id =		atol(res[i][2].c_str());
+			int				mask_region_value =		atol(res[i][3].c_str()); // if it could accidentally be < 0 (see below) it ought to be an int
 			string			mask_region_name = res[i][1];
 
 			if (mask_region_value < 0 || mask_region_value > mask_info_size)
@@ -2403,8 +2403,8 @@ void ns_image_processing_pipeline::overlay_graph(const unsigned long region_id,n
 				double sh = 1;
 				if (v == ns_color_8(0,0,0))
 					sh = .75;
-				unsigned int _x = dw-w+x,
-							 _y = dh-h+y;
+				int _x = dw-w+x, // if these could accidentally be < 0 (see below) they should be signed
+					_y = dh-h+y;
 				if (_x < 0 || _x >= image.properties().width)
 					throw ns_ex("ns_image_processing_pipeline::Graph overlay problem (X)");
 				if (_y < 0 || _y >= image.properties().height)
@@ -2421,8 +2421,8 @@ void ns_image_processing_pipeline::overlay_graph(const unsigned long region_id,n
 			double sh = 1;
 			if (v == ns_color_8(0,0,0))
 				sh = .75;
-			unsigned int _x = dw-metadata_overlay.properties().width-w+x,
-							_y = dh-metadata_overlay.properties().height+y;
+			int _x = dw-metadata_overlay.properties().width-w+x, // if these could accidentally be < 0 (see below) they should be signed
+				_y = dh-metadata_overlay.properties().height+y;
 			if (_x < 0 || _x >= image.properties().width)
 				throw ns_ex("ns_image_processing_pipeline::Graph overlay problem (X)");
 			if (_y < 0 || _y >= image.properties().height)

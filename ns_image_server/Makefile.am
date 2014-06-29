@@ -250,7 +250,7 @@ include_dir_external = -I../external_libraries/libsvm \
 	       -I../external_libraries/libhungarian \
 	       -I../external_libraries/wm4_bspline \
 	       -I../external_libraries/tinyxml \
-	       -I../external_libraries/tiff-3.8.2/libtiff
+	       -I../external_libraries/libtiff-proc
 
 DEF_FONT = $(pkgdatadir)/default_font.ttf
 INI_PATH = $(sysconfdir)/ns_image_server.ini

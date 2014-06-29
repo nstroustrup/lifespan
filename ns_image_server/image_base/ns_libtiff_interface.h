@@ -6,11 +6,7 @@
 
 
 struct ns_tiff_client_data{
-	#ifdef _WIN32 
-		void * file_descriptor;
-	#else 
-		int file_descriptor;
-	#endif
+	thandle_t file_descriptor;
 
 	void * error_storage;
 	int store_errors;

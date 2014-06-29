@@ -1,5 +1,4 @@
 #include "ns_libtiff_interface.h"
-#include "tiffiop.h"
 #include <fcntl.h>
 
 //apologies for pulling in the OS-dependant tiff files as includes.
@@ -10,9 +9,9 @@
 //Because all of the _tiff functions are declared as static we pull them in as includes.
 #ifdef _WIN32 
 #include <Windows.h>
-#include "tif_win32.c"
+#include "tif_win32_proconly.c"
 #else
-#include "tif_unix.c"
+#include "tif_unix_proconly.c"
 #endif
 
 static tsize_t ns_tiffReadProc(thandle_t fd, tdata_t buf, tsize_t size){
@@ -68,7 +67,7 @@ TIFF* ns_tiff_fd_open(struct ns_tiff_client_data * client_data, const char* name
 
 	#endif
 	if (tif)
-		tif->tif_fd = (int)client_data->file_descriptor;
+		TIFFSetFileno(tif, (int)client_data->file_descriptor);
 	return (tif);
 }
 

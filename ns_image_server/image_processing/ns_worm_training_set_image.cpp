@@ -423,9 +423,9 @@ public:
 	std::vector<ns_worm_context_image> images;
 	std::vector<ns_image_standard> images_with_boxes;
 	void from_string(const std::string & s, const bool allow_malformed_metadata=false){
-		ofstream foo("c:\\str.txt");
-		foo << s;
-		foo.close();
+		// ofstream foo("c:\\str.txt");
+		// foo << s;
+		// foo.close();
 		ns_xml_simple_object_reader reader;
 		reader.from_string(s);
 		ns_whole_image_statistic_specification all_object_spec;

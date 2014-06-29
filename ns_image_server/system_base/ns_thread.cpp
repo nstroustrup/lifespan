@@ -2,6 +2,7 @@
 #include "ns_ex.h"
 #ifndef WIN32
 #include <sys/wait.h>
+#include <signal.h>
 #include <unistd.h>
 #endif
 #include <cerrno>

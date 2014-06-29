@@ -8,7 +8,7 @@
 #include "ns_death_time_posture_annotater.h"
 #include "ns_hidden_markov_model_posture_analyzer.h"
 
-#include "ns_windows_file_dialog.h"
+#include "ns_fl_modal_dialogs.h"
 void ns_hide_worm_window();
 
 void ns_specifiy_worm_details(const unsigned long region_info_id,const ns_stationary_path_id & worm, const ns_death_time_annotation & sticky_properties, std::vector<ns_death_time_annotation> & event_times);
@@ -99,7 +99,7 @@ public:
 			
 			//delete animals that are older than 5 minutes.
 			const unsigned long cutoff_time(current_time-5*60);
-			for (ns_loading_time_cache::iterator p = image_loading_times_for_groups.begin(); p != image_loading_times_for_groups.end(); p){
+			for (ns_loading_time_cache::iterator p = image_loading_times_for_groups.begin(); p != image_loading_times_for_groups.end(); ){
 				if (p->second < cutoff_time){
 					movement_analyzer.clear_images_for_group(p->first);
 					image_loading_times_for_groups.erase(p++);
@@ -528,6 +528,7 @@ public:
 		current_region_data = 0;
 		properties_for_all_animals = ns_death_time_annotation();
 	}
+/* // output_movement_quantification is never called anywhere...
 	void output_movement_quantification(){
 		throw ns_ex("DDData not loaded");
 		string filename(save_file_dialog("Save Movement Quantification",vector<dialog_file_type>(1,dialog_file_type("CSV","csv")),"csv","movement_quantification.csv"));
@@ -539,7 +540,7 @@ public:
 		current_worm->write_detailed_movement_quantification_analysis_header(o);
 		current_worm->write_detailed_movement_quantification_analysis_data(current_region_data->metadata,properties_for_all_animals.stationary_path_id.group_id,properties_for_all_animals.stationary_path_id.path_id,o,false);
 		o.close();
-	}
+	}/*
 
 	/*bool step_forward(bool asynch=false){
 		const bool ret(ns_image_series_annotater::step_forward(asynch));
@@ -919,14 +920,17 @@ public:
 						in_char = false;
 					}
 					const string filename(this->current_region_data->metadata.experiment_name + "=" + plate_name  + "=" + ns_to_string(this->current_animal_id));
-						string base_directory(save_file_dialog("Save Movement Quantification",
-							vector<dialog_file_type>(1,dialog_file_type("csv","csv")),"csv",plate_name + ".csv"));
-						if (filename == "")
-							break;
-						//if (sql.is_null())
-						//	sql.attach(image_server.new_sql_connection(__FILE__,__LINE__));
-						output_worm_frames(base_directory,filename,sql());
+					if (filename == "")
 						break;
+					
+					ns_file_chooser d;
+					d.dialog_type = Fl_Native_File_Chooser::BROWSE_DIRECTORY;
+					d.default_filename = "";
+					d.title = "Choose Movement Quantification Output Directory";
+					ns_run_in_main_thread<ns_file_chooser> run_mt(&d);
+					if (d.chosen)
+						output_worm_frames(d.result,filename,sql());
+					break;
 									  }
 				default: throw ns_ex("ns_death_time_posture_annotater::Unknown click type");
 			}

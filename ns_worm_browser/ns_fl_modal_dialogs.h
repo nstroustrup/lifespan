@@ -240,7 +240,7 @@ public:
 		Fl::awake(ns_run_in_main_thread<T>::main_thread_call,(void *)(this));
 		while(t->wait_for_it)
 			ns_thread::sleep(1);
-		cout << "WHA";
+		//cout << "WHA";
 	}
 	static void main_thread_call(void * t){
 		ns_run_in_main_thread<T> * tt = (ns_run_in_main_thread<T> *)(t);

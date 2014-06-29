@@ -40,15 +40,16 @@
 #include "ns_capture_schedule.h"
 #include "ns_buffered_random_access_image.h"
 #include "ns_mask_management.h"
-//#include "ns_windows_file_dialog.h"
+#include "ns_fl_modal_dialogs.h"
 #include "ns_lifespan_statistics.h"
 #include "ns_machine_analysis_data_loader.h"
 //#include "ns_worm_tracker.h"
 using namespace std;
 
 #include "ns_death_time_posture_annotater.h"
+#ifdef _WIN32
 #include "resource.h"
-
+#endif
 #include "ns_experiment_storyboard_annotater.h"
 #include "ns_death_time_solo_posture_annotater.h"
 
@@ -642,15 +643,15 @@ public:
 
 	//etc
 	void generate_mp4(const bool & g){
-		cout << g?"Generating MP4 Videos":"Generating WMV Videos";
+		cout << (g?"Generating MP4 Videos":"Generating WMV Videos");
 		generate_mp4_ = g;
 	}
 	void overwrite_submitted_specification(const bool & g){
-		cout << g?"Existing experiments will be overwritten if necessary.":"Existing experiments will never be overwritten.";
+		cout << (g?"Existing experiments will be overwritten if necessary.":"Existing experiments will never be overwritten.");
 		overwrite_submitted_capture_specification = g;
 	}
 	void overwrite_existing_masks(const bool & g){
-		cout << g?"Existing masks will be overwritten if necessary.":"Existing masks will not be overwritten.";
+		cout << (g?"Existing masks will be overwritten if necessary.":"Existing masks will not be overwritten.");
 		overwrite_existing_mask_when_submitting = g;
 	}
 	
@@ -794,12 +795,15 @@ public:
 
 	void save_current_area_selections(){
 		string device_name = ns_extract_scanner_name_from_filename(get_current_clipboard_filename());
-		string default_filename = ns_format_time_string(ns_current_time()) + "=" + device_name + "=sample_regions.txt";
 
-		std::vector<dialog_file_type> foo;
-		foo.push_back(dialog_file_type("Text (*.txt)","txt"));
-		std::string filename = save_file_dialog("Save Area Information",foo,"txt",default_filename);		
-		output_area_info(filename);
+		ns_file_chooser s;
+		s.dialog_type = Fl_Native_File_Chooser::BROWSE_SAVE_FILE;
+		s.default_filename = ns_format_time_string(ns_current_time()) + "=" + device_name + "=sample_regions.txt";
+		s.title = "Save Area Information";
+		s.filters.push_back(ns_file_chooser_file_type("Text","txt"));
+		ns_run_in_main_thread<ns_file_chooser> run_mt(&s);
+		if (s.chosen)
+			output_area_info(s.result);
 	}
 
 	

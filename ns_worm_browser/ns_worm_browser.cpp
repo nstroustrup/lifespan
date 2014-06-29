@@ -917,20 +917,20 @@ public:
 template<class T, class metadata_t>
 class ns_draw_element_group{
 public:
-	typedef std::vector<ns_draw_element<typename T> > ns_element_list;
+	typedef std::vector<ns_draw_element<T> > ns_element_list;
 	ns_element_list elements;
 	unsigned long unexcluded_count;
 	metadata_t metadata;
 };
 template<class T, class metadata_t>
 struct ns_death_time_compiler_random_picker{
-	typedef std::vector<ns_draw_element_group<typename T, typename metadata_t> > ns_element_group_list;
+	typedef std::vector<ns_draw_element_group<T, metadata_t> > ns_element_group_list;
 	typedef std::pair<T,metadata_t> return_type;
 	ns_element_group_list element_groups;
 		
 	const return_type get_random_event_with_replacement(){
-		ns_element_group_list::iterator element_group;
-		ns_draw_element_group<T,metadata_t>::ns_element_list::iterator element;
+		typename ns_element_group_list::iterator element_group;
+		typename ns_draw_element_group<T,metadata_t>::ns_element_list::iterator element;
 
 		get_random_region_and_location(element_group,element);
 		//region_sizes[&region->second]--;
@@ -940,8 +940,8 @@ struct ns_death_time_compiler_random_picker{
 	}
 
 	const return_type get_random_event_without_replacement(){
-		ns_element_group_list::iterator element_group;
-		ns_draw_element_group<T,metadata_t>::ns_element_list::iterator element;
+		typename ns_element_group_list::iterator element_group;
+		typename ns_draw_element_group<T,metadata_t>::ns_element_list::iterator element;
 		get_random_region_and_location(element_group,element);
 		element_group->unexcluded_count--;
 		element->excluded = true;
@@ -951,9 +951,9 @@ struct ns_death_time_compiler_random_picker{
 
 	void initialize_for_picking(){
 		total_count = 0;
-		for (ns_element_group_list::iterator p = element_groups.begin(); p != element_groups.end(); p++){
+		for (typename ns_element_group_list::iterator p = element_groups.begin(); p != element_groups.end(); p++){
 			
-		for (ns_draw_element_group<T,metadata_t>::ns_element_list::iterator q = p->elements.begin(); q != p->elements.end(); q++){
+		for (typename ns_draw_element_group<T,metadata_t>::ns_element_list::iterator q = p->elements.begin(); q != p->elements.end(); q++){
 				q->excluded = false;
 			}
 			p->unexcluded_count = p->elements.size();
@@ -968,7 +968,7 @@ struct ns_death_time_compiler_random_picker{
 		element_groups[group_id].metadata = m;
 	}
 private:
-	void get_random_region_and_location(typename ns_element_group_list::iterator & group,typename ns_draw_element_group<typename T, typename metadata_t>::ns_element_list::iterator & element){
+	void get_random_region_and_location(typename ns_element_group_list::iterator & group,typename ns_draw_element_group<T, metadata_t>::ns_element_list::iterator & element){
 		if (total_count == 0)
 			throw ns_ex("No annotations in set!");
 		unsigned long r((unsigned long)((rand()/(double)RAND_MAX)*(total_count-1)));
@@ -1737,13 +1737,13 @@ void ns_worm_learner::output_movement_analysis_optimization_data(const ns_parame
 
 void ns_write_emperical_posture_model(const std::string & path_and_base_filename, const std::string &experiment_name,const std::string & strain,ns_emperical_posture_quantification_value_estimator & e){
 	
-	ofstream sample_file(path_and_base_filename + "="+strain+"=samples.csv");
+	ofstream sample_file((path_and_base_filename + "="+strain+"=samples.csv").c_str());
 	e.write_samples(sample_file,experiment_name);
 	sample_file.close();
 	e.generate_estimators_from_samples();
-	ofstream moving_file(path_and_base_filename + "="+strain+ "=model_moving.csv");
-	ofstream dead_file(path_and_base_filename + "="+strain+ "=model_dead.csv");
-	ofstream visualization_file(path_and_base_filename + "="+strain+ "=model_visualization.csv");
+	ofstream moving_file((path_and_base_filename + "="+strain+ "=model_moving.csv").c_str());
+	ofstream dead_file((path_and_base_filename + "="+strain+ "=model_dead.csv").c_str());
+	ofstream visualization_file((path_and_base_filename + "="+strain+ "=model_visualization.csv").c_str());
 	e.write(moving_file,dead_file, &visualization_file,experiment_name);
 	moving_file.close();
 	dead_file.close();
@@ -3625,7 +3625,7 @@ void ns_worm_learner::output_subregion_as_test_set(const std::string & old_info)
 
 			ns_image_server_image im;
 			im.load_from_db(image_id,sql);
-			ns_image_storage_source_handle<ns_8_bit> & handle(image_server.image_storage.request_from_storage(im,sql));
+			ns_image_storage_source_handle<ns_8_bit> handle = image_server.image_storage.request_from_storage(im,sql);
 			handle.input_stream().pump(temp,1024);
 			if (si.x + si.w >= temp.properties().width || si.y + si.h >= temp.properties().height)
 				throw ns_ex("Invalid subregion (x,y,w,h)=") << si.x << "(" << si.y << "," << si.w <<"," << si.h << ")" << " in image with dimensions " << temp.properties().width << "," << temp.properties().height;
@@ -3841,7 +3841,7 @@ void ns_worm_learner::to_bw(){
 	if (current_image.properties().components != 1){
 		//current_image->color_converter(b&w)->current_image_indirect->current_image
 		ns_image_standard_indirect current_indirect(current_image);
-		ns_image_stream_color_converter<ns_8_bit, typename ns_image_standard::storage_type>color_converter(128);
+		ns_image_stream_color_converter<ns_8_bit, ns_image_standard::storage_type>color_converter(128);
 		color_converter.set_output_components(1);
 		ns_image_stream_binding<ns_image_stream_color_converter<ns_8_bit, ns_image_standard::storage_type>,
 								ns_image_standard_indirect > to_black_and_white(color_converter,current_indirect,128);

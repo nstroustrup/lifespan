@@ -102,7 +102,7 @@ public:
 			for (ns_loading_time_cache::iterator p = image_loading_times_for_groups.begin(); p != image_loading_times_for_groups.end(); p){
 				if (p->second < cutoff_time){
 					movement_analyzer.clear_images_for_group(p->first);
-					p =	image_loading_times_for_groups.erase(p);
+					image_loading_times_for_groups.erase(p++);
 				}
 				else p++;
 			}
@@ -166,8 +166,10 @@ public:
 		ns_machine_analysis_data_loader machine_annotations;
 		machine_annotations.load(ns_death_time_annotation_set::ns_censoring_and_movement_transitions,metadata.region_id,0,0,sql,true);
 		if (machine_annotations.samples.size() != 0 && machine_annotations.samples.begin()->regions.size() != 0){
+			std::vector<ns_death_time_annotation> _unused_orphaned_events;
+			std::string _unused_error_message;
 			matcher.load_timing_data_from_set(machine_annotations.samples.begin()->regions.begin()->death_time_annotation_set,true,
-				machine_timing_data,vector<ns_death_time_annotation>(),std::string());
+				machine_timing_data,_unused_orphaned_events,_unused_error_message);
 			
 			return true;
 		}
@@ -242,7 +244,7 @@ public:
 			}
 			for (ns_movement_data_list::iterator q = region_movement_data.begin();  q != region_movement_data.end();){
 				if (q->second.loading_time <= cutoff_time){
-					q = region_movement_data.erase(q);
+					region_movement_data.erase(q++);
 					cleared++;
 				}
 				else q++;
@@ -367,7 +369,7 @@ private:
 			default: return std::string("Unknown:") + ns_to_string((int)cur_state);
 		}
 	}
-	typedef enum{bottom_offset=5};
+	enum{bottom_offset=5};
 	ns_vector_2i bottom_margin_position(){
 		if (!current_worm->element(current_element_id()).registered_image_is_loaded()){
 			cerr << "No image is loaded for current element;";
@@ -736,8 +738,8 @@ public:
 			this->sql.attach(&sql);
 
 			set_current_timepoint(current_time,true,true);
-			
-			timepoints[current_timepoint_id].load_image(1024,current_image,sql,ns_image_standard(),1);
+			ns_image_standard temp_buffer;
+			timepoints[current_timepoint_id].load_image(1024,current_image,sql,temp_buffer,1);
 			draw_metadata(&timepoints[current_timepoint_id],*current_image.im);
 			
 			request_refresh();
@@ -783,7 +785,8 @@ public:
 		for (unsigned int i = 0; i < timepoints.size(); i++){
 				timepoints[i].path_timepoint_element = &current_worm->element(i);
 		}
-		ofstream o(base_directory + DIR_CHAR_STR + filename + "_movement_quantification.csv");
+		const std::string outfile(base_directory + DIR_CHAR_STR + filename + "_movement_quantification.csv");
+		ofstream o(outfile.c_str());
 		current_region_data->movement_analyzer.group(properties_for_all_animals.stationary_path_id.group_id).paths.begin()->write_detailed_movement_quantification_analysis_header(o);
 		o << "\n";
 		current_region_data->movement_analyzer.write_detailed_movement_quantification_analysis_data(current_region_data->metadata,o,false,properties_for_all_animals.stationary_path_id.group_id);
@@ -844,8 +847,8 @@ public:
 				clear_cached_images();
 				set_current_timepoint(requested_time,false);
 			
-			
-				timepoints[current_timepoint_id].load_image(1024,current_image,sql(),ns_image_standard(),1);
+				ns_image_standard temp_buffer;
+				timepoints[current_timepoint_id].load_image(1024,current_image,sql(),temp_buffer,1);
 				change_made = true;
 
 				click_handled_by_hand_bar_choice = true;

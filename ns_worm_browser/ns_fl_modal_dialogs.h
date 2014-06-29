@@ -5,11 +5,11 @@
 #include "FL/Fl_Output.H"
 #include "FL/Fl_Button.H"
 #include "FL/Fl_Pack.H"
-#include "FL/Fl_Message.H"
+#include "FL/fl_message.H"
 
 class ns_input_dialog{
 public:
-	string title,default_value, result;
+	std::string title,default_value, result;
 	bool canceled;
 	void act(){
 		Fl_Widget* f(fl_message_icon());
@@ -35,12 +35,12 @@ class ns_file_chooser{
 	public:
 	ns_file_chooser():dialog_type(Fl_Native_File_Chooser::BROWSE_FILE),title("Open"){}
 	
-	string title,default_directory,default_filename,result;
+	std::string title,default_directory,default_filename,result;
 	Fl_Native_File_Chooser::Type dialog_type;
 	std::vector<ns_file_chooser_file_type> filters;
 	
 	bool chosen;
-	string error;
+	std::string error;
 	void choose_directory(){
 		dialog_type = Fl_Native_File_Chooser::BROWSE_DIRECTORY;
 		title = "Choose a Directory";
@@ -114,7 +114,7 @@ public:
 
 class ns_choice_dialog{
 public:
-	string title, option_1,option_2,option_3;
+	std::string title, option_1,option_2,option_3;
 	int result;
 	void act(){
 		Fl_Widget* f(fl_message_icon());
@@ -127,8 +127,7 @@ public:
 
 
 
-#include <FL\Fl_Text_Display.H>
-#include "FL\Fl_Button.h"
+#include <FL/Fl_Text_Display.H>
 class ns_text_display_window;
 class ns_close_button : public Fl_Button{
 public:
@@ -219,11 +218,11 @@ public:
 	ns_run_in_main_thread(T * t){
 		data = t;
 		wait_for_it = true;
-		Fl::awake(ns_run_in_main_thread<typename T>::main_thread_call,(void *)(this));
+		Fl::awake(ns_run_in_main_thread<T>::main_thread_call,(void *)(this));
 		while(wait_for_it)ns_thread::sleep(1);
 	}
 	static void main_thread_call(void * t){
-		ns_run_in_main_thread<typename T> * tt = (ns_run_in_main_thread<typename T> *)(t);
+		ns_run_in_main_thread<T> * tt = (ns_run_in_main_thread<T> *)(t);
 		tt->data->act();
 		tt->wait_for_it = false;
 	}
@@ -238,13 +237,13 @@ public:
 	ns_run_in_main_thread_custom_wait(T * t){
 		data = t;
 		t->wait_for_it = true;
-		Fl::awake(ns_run_in_main_thread<typename T>::main_thread_call,(void *)(this));
+		Fl::awake(ns_run_in_main_thread<T>::main_thread_call,(void *)(this));
 		while(t->wait_for_it)
 			ns_thread::sleep(1);
 		cout << "WHA";
 	}
 	static void main_thread_call(void * t){
-		ns_run_in_main_thread<typename T> * tt = (ns_run_in_main_thread<typename T> *)(t);
+		ns_run_in_main_thread<T> * tt = (ns_run_in_main_thread<T> *)(t);
 		tt->data->act();
 	}
 private:

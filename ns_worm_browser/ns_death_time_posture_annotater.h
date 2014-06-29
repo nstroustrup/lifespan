@@ -467,7 +467,7 @@ public:
 			if (!p->properties.stationary_path_id.specified())
 				continue;
 			//find the correct entry in the timing data structure for the current location
-			std::map<unsigned long,typename timing_data_container::value_type::ns_animal_list *>::iterator q = group_lookup.find(p->properties.stationary_path_id.group_id);
+			typename std::map<unsigned long,typename timing_data_container::value_type::ns_animal_list *>::iterator q = group_lookup.find(p->properties.stationary_path_id.group_id);
 			if (q == group_lookup.end())
 				continue;
 
@@ -547,7 +547,7 @@ public:
 		unsigned long current_time(ns_current_time());
 		if (set.size() > 20)
 			cout << "Many annotations specified!\n";
-		for (timing_data_container::const_iterator p =timing_data.begin() ; p != timing_data.end(); ++p){
+		for (typename timing_data_container::const_iterator p = timing_data.begin() ; p != timing_data.end(); ++p){
 			if (p->specified == false)
 				continue;
 			if (p->translation_cessation.time.period_end != 0)

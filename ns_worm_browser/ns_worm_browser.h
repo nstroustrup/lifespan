@@ -187,13 +187,13 @@ public:
 
 	void register_size_change(ns_image_properties & prop){
 		bool detete_current_unfinished(false);
-		for (std::vector<ns_area_box>::const_iterator p = boxes.begin(); p != boxes.end(); ){
+		for (std::vector<ns_area_box>::iterator p = boxes.begin(); p != boxes.end(); ){
 			if ((!(p->image_coords.bottom_right == ns_vector_2i(-1,-1) &&
 				(p->image_coords.bottom_right.x >=  prop.width || p->image_coords.bottom_right.y >=  prop.height))||
 				p->image_coords.top_left.x >=  prop.width || p->image_coords.top_left.y >=  prop.height)){
 				if (unfinished_box_exists && current_unfinished_box == p)
 					detete_current_unfinished = true;
-				p = boxes.erase(p);
+				boxes.erase(p++);
 			}
 			else ++p;
 		}
@@ -752,7 +752,7 @@ public:
 	void navigate_solo_worm_annotation(ns_death_time_solo_posture_annotater::ns_image_series_annotater_action action, bool asynch=false);
 	void save_death_time_annotations();
 	bool prompt_to_save_death_time_annotations();
-	void ns_worm_learner::load_strain_metadata_into_database(const std::string filename);
+	void load_strain_metadata_into_database(const std::string filename);
 	void upgrade_tables();
 	template<class whole_image>
 	void load_file(const std::string & filename, whole_image & image){

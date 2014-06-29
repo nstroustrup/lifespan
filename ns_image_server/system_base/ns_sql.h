@@ -13,7 +13,16 @@ namespace ns_mysql_header{
 #include <mysql.h>
 #else
 #include <stdlib.h>
+// ns_dir.h must be included before ns_sql.h because ns_mysql_namespace shenanigans
+// break sys/stat.h. Better would be to fix ns_mysql_namespace, but this works.
+#include "ns_dir.h"
 namespace ns_mysql_header{
+// This is a rather dangerous thing do to: ANY system headers included by
+// mysql.h or its includes, which have not already been included previously,
+// will then be placed in the ns_mysql_header namespace.
+// Thanks to standard #include guards, subsequent attempts to include the same 
+// in the global namespace will do nothing. On OS X, this in particular breaks
+// sys/stat.h which is included by both mysql/my_dir.h and ns_dir.h
 #include "mysql.h"
 #endif
 }

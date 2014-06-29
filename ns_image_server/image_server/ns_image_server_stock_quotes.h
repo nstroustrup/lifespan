@@ -15,8 +15,6 @@ public:
 						 "Albert Einstein"));
 		quotes.push_back(ns_quote("The most beautiful thing we can experience is the mysterious. It is the source of all true art and all science. He to whom this emotion is a stranger, who can no longer pause to wonder and stand rapt in awe, is as good as dead: his eyes are closed.",
 						 "Albert Einstein"));
-		quotes.push_back(ns_quote("A biophysicist talks physics to the biologists and biology to the physicists, but then he meets another biophysicist, they just discuss women.",
-						 "Anon"));
 		quotes.push_back(ns_quote("Nature composes some of her loveliest poems for the microscope and the telescope.",
 						"Theodore Roszak"));
 		quotes.push_back(ns_quote("Research is what I'm doing when I don't know what I'm doing.",

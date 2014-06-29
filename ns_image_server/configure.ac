@@ -28,8 +28,6 @@ AC_CANONICAL_HOST
 case $host_os in
   darwin* )
         # no need to look for clock_gettime -- we use the mach kernel's timer
-        # need carbon framework for wm4system.cpp
-        NS_LDFLAGS="$NS_LDFLAGS -framework Carbon"
         target_osx=yes
         ;;
     *)

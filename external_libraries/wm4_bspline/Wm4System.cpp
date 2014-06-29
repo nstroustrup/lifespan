@@ -32,10 +32,12 @@ static long gs_lInitialUSec = 0;
 static bool gs_bInitializedTime = false;
 #endif
 
+/* patch for lifespan-machine: remove unneeded requirement for carbon framework
 // support for locating the application directory
 #ifdef __APPLE__
 #include <Carbon/Carbon.h>
 #endif
+*/
 
 char System::ms_acPath[SYSTEM_MAX_PATH];
 char System::ms_acEnvVar[SYSTEM_MAX_ENVVAR];
@@ -568,6 +570,9 @@ int System::Write8be (FILE* pkFile, int iQuantity, const void* pvData)
 const char* System::GetPath (const char* acDirectory, const char* acFilename)
 {
 #ifdef __APPLE__
+	return 0; // patch for lifespan-machine
+/* patch for lifespan-machine: remove unneeded requirement for carbon framework
+
     // An application-relative path is needed for the applications to be able
     // to find the input data sets.  Unfortunately, there is no exact way to
     // predict which directory the application is run from, since this depends
@@ -598,7 +603,7 @@ const char* System::GetPath (const char* acDirectory, const char* acFilename)
     eError = FSGetCatalogInfo(&kBuildRef,0,0,0,0,&kAppRef);
     eError = FSRefMakePath(&kAppRef,(UInt8*)ms_acPath,SYSTEM_MAX_PATH);
     eError = chdir(ms_acPath);
-
+*/
 #if 0
     // If you really must use Xcode version 1.x, then the path searching
     // code must be the following.

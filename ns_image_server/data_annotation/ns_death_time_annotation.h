@@ -63,7 +63,8 @@ struct ns_death_time_annotation_time_interval{
 		return a;
 	}
 	int interval_bound_code() const{
-		return period_start_was_not_observed?1:0 + period_end_was_not_observed?2:0;
+		// NB: ternary operator precedence is lower than addition; parens needed.
+		return (period_start_was_not_observed?1:0) + (period_end_was_not_observed?2:0);
 	}
 	void from_interval_bound_code(int code){
 		period_start_was_not_observed=(code%2==1);

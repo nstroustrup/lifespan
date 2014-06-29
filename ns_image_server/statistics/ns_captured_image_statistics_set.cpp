@@ -484,9 +484,9 @@ void ns_capture_sample_region_data::output_region_data_in_jmp_format(std::ostrea
 	for (unsigned int i = 0; i < timepoints.size(); ++i){
 		metadata.out_JMP_plate_identity_data(o);
 		o << ",";
-		o << censored?"1":"0";
+		o << (censored?"1":"0");
 		o << ",";
-		o << excluded?"1":"0";
+		o << (excluded?"1":"0");
 		o << ",";
 //		timepoints[i].sample_statistics.output_jmp_format(o,timepoints[0].time,ns_vector_2d(0,0),ns_vector_2d(0,0),",");
 		timepoints[i].output_jmp_data(o,timepoints[0].time,timepoints[i].timepoint_is_censored,timepoints[i].timepoint_has_a_problem,delimeter);

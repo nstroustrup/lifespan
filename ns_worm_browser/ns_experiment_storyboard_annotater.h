@@ -166,7 +166,7 @@ private:
 
 			bool has_movement_events(false);
 			for (unsigned int j = 0; j < tp->division->events[i].by_hand_movement_annotations_for_element.size(); j++){
-				if (tp->division->events[i].by_hand_movement_annotations_for_element[j].annotation.type != ns_none){
+				if (tp->division->events[i].by_hand_movement_annotations_for_element[j].annotation.type != ns_no_movement_event){
 					has_movement_events = true;
 					break;
 				}

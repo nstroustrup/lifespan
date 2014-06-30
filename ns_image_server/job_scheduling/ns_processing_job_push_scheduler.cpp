@@ -238,7 +238,7 @@ bool ns_image_server_push_job_scheduler::try_to_process_a_job_pending_anothers_c
 		}
 		//while experiments have regions with unanalyzed movements, don't run the job
 		else if (job.experiment_id != 0 && job.sample_id == 0){
-			if (job.maintenance_flag != ns_maintenance_generate_animal_storyboard)
+			if (job.maintenance_task != ns_maintenance_generate_animal_storyboard)
 				throw ns_ex("Only storyboards and movement analysis can be scheduled pending the completion of other jobs.");
 			sql << "SELECT movement_image_analysis_quantification_id FROM sample_region_image_info WHERE id = " << job.experiment_id << " AND excluded_from_analysis = 0 AND censored = 0";
 			ns_sql_result res;

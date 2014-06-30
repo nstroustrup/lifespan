@@ -16,20 +16,16 @@ for Windows, Linux, and OSX machines.
 #else
 	#include <sys/socket.h>
 	#include <sys/types.h>
-	#include <netinet/in.h>
 	#include <netdb.h>
 	#include <dirent.h>
 	#include <errno.h>
 	#include <unistd.h>
-	#include <arpa/inet.h> 
+	#include <ifaddrs.h>
 
 
 	#include <stdio.h>
 	#include <stdlib.h>
 	#include <unistd.h>
-	#include <sys/ioctl.h>
-	#include <net/if_arp.h>
-	#include <net/if.h>
 	#include <arpa/inet.h>
 
 
@@ -464,51 +460,21 @@ void ns_socket::build_interface_list(std::vector<ns_interface_info> & interfaces
 		}
 		//gethostname_lock.release();
 	#else
-		//this code was taken from an online message board somewhere.
-		#define inaddrr(x) (*(struct in_addr *) &ifr->x[sizeof sa.sin_port])
-		#define IFRSIZE   ((int)(size * sizeof (struct ifreq)))
-		  int                sockfd, size  = 1;
-		  struct ifreq       *ifr;
-		  struct ifconf      ifc;
-		  struct sockaddr_in sa;
+		// from http://stackoverflow.com/questions/4139405/how-to-know-ip-address-for-interfaces-in-c
+		// works on linux and OS X
+		struct ifaddrs *ifap, *ifa;
+		struct sockaddr_in *sa;
 
-		  if (0 > (sockfd = socket(AF_INET, SOCK_DGRAM, IPPROTO_IP))) {
-			  throw ns_ex("ns_socket::gethostname()::Cannot open socket.");
-		  }
+		getifaddrs(&ifap);
+		for (ifa = ifap; ifa != NULL; ifa = ifa->ifa_next) {
+			if (ifa->ifa_addr->sa_family==AF_INET) {
+				sa = (struct sockaddr_in *) ifa->ifa_addr;
+				interfaces.push_back(ns_interface_info(ifa->ifa_name,inet_ntoa(sa->sin_addr)));
 
-		  ifc.ifc_len = IFRSIZE;
-		  ifc.ifc_req = NULL;
+			}
+		}
 
-		  do {
-		    ++size;
-		    /* realloc buffer size until no overflow occurs  */
-		    if (NULL == (ifc.ifc_req = (ifreq*)realloc(ifc.ifc_req, IFRSIZE))) {
-		      throw ns_ex("ns_socket::gethostname()::Out of memory.");
-		    }
-		    ifc.ifc_len = IFRSIZE;
-		    if (ioctl(sockfd, SIOCGIFCONF, &ifc)) {
-		      throw ns_ex("ns_socket::gethostname()::ioctl SIOCFIFCONF");
-		    }
-		  } while  (IFRSIZE <= ifc.ifc_len);
-
-		  ifr = ifc.ifc_req;
-		  for (;(char *) ifr < (char *) ifc.ifc_req + ifc.ifc_len; ++ifr) {
-
-		    if (ifr->ifr_addr.sa_data == (ifr+1)->ifr_addr.sa_data) 
-		      continue;  //duplicate, skip it
-
-		    if (ioctl(sockfd, SIOCGIFFLAGS, ifr)) 
-		      continue;  //failed to get flags, skip it
-
-		    if (! ifr->ifr_flags & IFF_UP) 
-		      continue; //interface not up, skip it
-
-		    
-		    interfaces.push_back(ns_interface_info(ifr->ifr_name,inet_ntoa(inaddrr(ifr_addr.sa_data))));
-		  }
-
-		  close(sockfd);
-		  free(ifc.ifc_req);
+	    freeifaddrs(ifap);
 	#endif
 }
 

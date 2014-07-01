@@ -1084,6 +1084,13 @@ class ns_worm_terminal_main_menu_organizer : public ns_menu_organizer{
 			worm_learner.draw();
 		}
 	}
+	static void file_open_xml(const std::string & data){
+		ns_file_chooser x;
+		x.title = "Load XML Experiment Specification";
+		x.filters.push_back(ns_file_chooser_file_type("XML","xml"));
+		ns_run_in_main_thread<ns_file_chooser> run_mt(&x);
+		if (x.chosen) worm_learner.handle_file_request(x.result);
+	}
 	static void file_save(const std::string & data){
 		/*std::vector<dialog_file_type> foo;
 		foo.push_back(dialog_file_type("TIF (*.tif)","tif"));
@@ -1182,6 +1189,7 @@ public:
 		
 	//	add(ns_menu_item_spec(run_animation_trial,"File/_Run Animation Trial"));
 		add(ns_menu_item_spec(file_open,"File/Open Image",FL_CTRL+'o'));
+		add(ns_menu_item_spec(file_open_xml,"File/Submit XML Experiment Specification"));
 		//add(ns_menu_item_spec(file_open_16_bit_dark,"File/Open 16-bit Image (dark)"));
 		//add(ns_menu_item_spec(file_open_16_bit_light,"File/_Open 16-bit Image (light)"));
 		add(ns_menu_item_spec(file_save,"File/_Save Image",FL_CTRL+'s'));

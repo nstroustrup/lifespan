@@ -64,20 +64,45 @@ void ns_initialize_libtiff(){
 }
 
 //we can store image description info in two places
-//1)The baseline ASCII TIFF tags
+//1)The baseline ASCII TIFF tags (ImageDescription, Make, Model, Artist, and Copyright)
 //2)The Adobe XMP tag
 //
 //Using baseline TIFF tags is very simple and portable, as they are built into libtiff and all clients must support baseline tags.
 //Unfortunately adobe photoshop appears to crop tiff tag values at 2000 characters upon re-saving images.  If we want to store
 //lots of metadata, then we can't use baseline TIFF tags.
+//Also, ImageJ inserts its own ImageDescription tag on save and strips other ASCII baseline tags that are used to store the metadata,
+//so metadata isn't reliably propagated with that program. 
+//The GIMP is better in that it can keep an ImageDescription tag, but data in other baseline tags are similarly removed.
 //
 //The XMP tag is an XML based format adobe developed to store image metadata. It is a specific XML schema written as a text std::string
 //to the TIFFTAG_XMLPACKET tag.  Using this to store metadata has the disadvantage of having to create / parse the verbose XML gobbledook.
 //Not all clients will support this field, however photoshop does and the XMP tag allows us to escape the 2000 character limit on individual baseline tiff tags.
+//Downsides of using the XMP tag are that the GIMP/ImageJ and other editors that don't know about the tag strip it from files. This is
+//standard-compliant behavior: http://gimp.1065349.n5.nabble.com/GIMP-throwing-away-TIFF-tags-tp5232p5233.html
+//Specifically, the TIFF spec section 7 has:
+// "It is unnecessary—and possibly dangerous—for an editor to copy fields 
+// it does not understand because the editor might alter the file in a way 
+// that is incompatible with the unknown fields."
+//Another odd downside is that Photoshop, which ostensibly supports XMP,
+//erroneously XML-escapes entities inside CDATA sections. (Probably because CDATA is discouraged by the XMP spec:
+// http://www.adobe.com/content/dam/Adobe/en/devnet/xmp/pdfs/XMPSpecificationPart1.pdf .)
+// This necessitates the un-escaping code in ns_xmp_encoder::read.
+//
+//So, there are basically no reliable ways of saving arbitrary image metadata in TIFFs in a way that will persist
+//through various common image editors. As above, this is basically by design of the TIFF spec. 
+//The best option would be to only store 2000 characters of metadata in the ImageDescription tag and then 
+//only use Photoshop or the GIMP. Sorry, ImageJ.
+//
+//Alternately, relevant metadata could be stored in the image databaase and keyed to an ID embedded in the filename.
+//Sad that in this day and age filenames are STILL the only reliable place to put short file metadata, but this is
+//the truth. This seems like a good option except that there would be no way to purge the metadata store of
+//data from old images.
+
+
 
 //Choose just one!
-//#define NS_STORE_METATADATA_IN_TIFFTAGS
-#define NS_STORE_METADATA_IN_XMP
+#define NS_STORE_METATADATA_IN_TIFFTAGS
+//#define NS_STORE_METADATA_IN_XMP
 
 ns_tiff_compression_type ns_get_tiff_compression_type(const ns_image_type & type){
 	switch(type){

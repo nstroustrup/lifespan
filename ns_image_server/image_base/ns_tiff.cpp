@@ -90,19 +90,15 @@ void ns_initialize_libtiff(){
 //
 //So, there are basically no reliable ways of saving arbitrary image metadata in TIFFs in a way that will persist
 //through various common image editors. As above, this is basically by design of the TIFF spec. 
-//The best option would be to only store 2000 characters of metadata in the ImageDescription tag and then 
+//The best option for short metadata would be to only store 2000 characters of metadata in the ImageDescription tag and then 
 //only use Photoshop or the GIMP. Sorry, ImageJ.
-//
-//Alternately, relevant metadata could be stored in the image databaase and keyed to an ID embedded in the filename.
-//Sad that in this day and age filenames are STILL the only reliable place to put short file metadata, but this is
-//the truth. This seems like a good option except that there would be no way to purge the metadata store of
-//data from old images.
+// If large metadata must be stored, then XMP it is. Sorry GIMP.
+// And it turns out that the software can generate some very large image metadata, so 
+// it seems that XMP is the way to go. No go GIMP, no go ImageJ.
 
-
-
-//Choose just one!
-#define NS_STORE_METATADATA_IN_TIFFTAGS
-//#define NS_STORE_METADATA_IN_XMP
+//Choose just one! And don't choose NS_STORE_METATADATA_IN_TIFFTAGS.
+//#define NS_STORE_METATADATA_IN_TIFFTAGS
+#define NS_STORE_METADATA_IN_XMP
 
 ns_tiff_compression_type ns_get_tiff_compression_type(const ns_image_type & type){
 	switch(type){

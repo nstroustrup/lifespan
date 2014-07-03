@@ -12,6 +12,7 @@
 #include "ns_experiment_storyboard.h"
 #include "ns_fl_modal_dialogs.h"
 
+#define IDLE_THROTTLE_FPS 20
 
 bool output_debug_messages = false;
 bool output_debug_file_opened = false;
@@ -132,7 +133,7 @@ class ns_worm_terminal_gl_window : public Fl_Gl_Window {
         if (!valid()) { 
 			valid(1); 
 			fix_viewport(x(),y(),w(), h()); 
-			Fl::add_idle(idle_main_window_update_callback); 
+			Fl::add_timeout(1.0/IDLE_THROTTLE_FPS, idle_main_window_update_callback); 
 			glClearColor(1, 1, 1, 1); 
 			 glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); // clear buffer
 			 //glLoadIdentity ();             /* clear the matrix */
@@ -274,7 +275,7 @@ class ns_worm_gl_window : public Fl_Gl_Window {
         if (!valid()) { 
 			valid(1); 
 			fix_viewport(w(), h()); 
-			Fl::add_idle(idle_worm_window_update_callback); 
+			Fl::add_timeout(1.0/IDLE_THROTTLE_FPS, idle_worm_window_update_callback); 
 			glClearColor(1, 1, 1, 1); 
 			 glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); // clear buffer
 			 glLoadIdentity ();             /* clear the matrix */
@@ -2144,9 +2145,9 @@ void ns_show_worm_display_error(){
 
 void ns_handle_menu_bar_activity_request();
 void idle_main_window_update_callback(void *){
-	//double last_time = c_time;
-	//c_time =  GetTime() - init_time;
-	//cerr << "FPS = " << 1.0/(time-last_time) << "\n";
+	// double last_time = c_time;
+	// c_time =  GetTime() - init_time;
+	// cerr << "FPS = " << 1.0/(time-last_time) << "\n";
 	Fl::lock();
 	try{
 		ns_vector_2d cur_size(current_window->w(),current_window->h());
@@ -2202,6 +2203,7 @@ void idle_main_window_update_callback(void *){
 	catch(...){
 		Fl::unlock();
 	}
+	Fl::repeat_timeout(1/20., idle_main_window_update_callback);
 }
 void ns_hide_worm_window(){
 	hide_worm_window = true;
@@ -2241,6 +2243,7 @@ void idle_worm_window_update_callback(void *){
 	catch(...){
 		Fl::lock();
 	}
+	Fl::repeat_timeout(1/20., idle_worm_window_update_callback);
 }
 
 

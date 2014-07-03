@@ -525,7 +525,9 @@ public:
 			cerr << "Error: " << ex.text();
 			ns_alert_dialog d;
 			d.text = ex.text();
-			d.act();
+			// d.act();
+			ns_run_in_main_thread<ns_alert_dialog> dd(&d);
+			
 			/*MessageBox(
 				0,
 				ex.text().c_str(),

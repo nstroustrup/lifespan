@@ -3345,7 +3345,8 @@ void ns_worm_learner::upgrade_tables(){
 		
 	sql.release();
 		
-	d.act();
+	//d.act();
+	ns_run_in_main_thread<ns_alert_dialog> dd(&d);
 
 }
 void ns_worm_learner::handle_file_request(const string & fname){

@@ -457,11 +457,10 @@ void ns_barcode_encoder::encode(const string & str, ns_image_standard & image, c
 						image[y][3*x+c] = 255;
 
 				for (unsigned int y = margin_size; y < image.properties().height-margin_size; y++)
-					for (unsigned int x = margin_size; x < image.properties().width-margin_size; x++){
-						image[y][x] = encode->image->pxl[3*encode->image->width*(y-margin_size) + 3*(x-margin_size)];
-						image[y][x] = encode->image->pxl[3*encode->image->width*(y-margin_size) + 3*(x-margin_size)+1];
-						image[y][x] = encode->image->pxl[3*encode->image->width*(y-margin_size) + 3*(x-margin_size)+2];
-					}
+					for (unsigned int x = margin_size; x < image.properties().width-margin_size; x++)
+						for (unsigned int c = 0; c < 3; c++)
+							image[y][3*x+c] = encode->image->pxl[3*encode->image->width*(y-margin_size) + 3*(x-margin_size)+c];
+						
 			}
 
 			ns_font & font(font_server.default_font());

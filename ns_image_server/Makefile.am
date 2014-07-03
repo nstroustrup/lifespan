@@ -306,6 +306,11 @@ src_common = $(src_base) $(src_data_annotation) $(src_image_acquisition) \
 
 ns_image_server_SOURCES = $(src_common) $(src_image_server)
 
+if BUILD_BROWSER
 ns_worm_browser_SOURCES = $(src_common) $(src_worm_browser)
 ns_worm_browser_LDFLAGS = $(AM_LDFLAGS) $(FLTK_LDFLAGS)
-ns_worm_browser_CPPFLAGS = $(AM_CPPFLAGS) -I$(FLTK_INCLUDEDIR)
+# If ns_image_server_CPPFLAGS doesn't match the ns_worm_browser_CPPFLAGS,
+# automake will build all the .o files in $(src_common) separately for each.
+# So just set the CPPFLAGS for all.
+AM_CPPFLAGS += -I$(FLTK_INCLUDEDIR) 
+endif

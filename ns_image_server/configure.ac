@@ -62,7 +62,7 @@ AC_DEFINE(NS_USB_1,1,[Use usb-1.0 library instead of usb-0.1])
 fi
 
 # worm browser build and fltk path 
-AC_ARG_ENABLE([browser],[AS_HELP_STRING([--enable-browser], [build worm browser (requires FLTK libraries)])], [], [enable_browser=no])
+AC_ARG_ENABLE([browser],[AS_HELP_STRING([--enable-browser[=path-to-fltk]], [build worm browser (requires FLTK libraries, which path can be optionally specified if nonstandard)])], [], [enable_browser=no])
 
 case "_$enable_browser" in
 	_no)

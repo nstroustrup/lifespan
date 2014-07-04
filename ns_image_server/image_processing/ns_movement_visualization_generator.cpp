@@ -724,8 +724,9 @@ void ns_movement_visualization_generator::create_time_path_analysis_visualizatio
 		//		ns_to_string(location->properties.number_of_worms_at_location_marked_by_hand),out);
 			edge_color = ns_color_8(255,180,120);
 			const int edge_width(3);
-			for (unsigned int y = 0; y < detected_worms[w]->edge_bitmap().properties().height; y++){
-				for (unsigned int x = 0; x < detected_worms[w]->edge_bitmap().properties().width; x++){
+			// use signed ints for x and y so that "x + dx" type expressions are also properly signed.
+			for (int y = 0; y < detected_worms[w]->edge_bitmap().properties().height; y++){
+				for (int x = 0; x < detected_worms[w]->edge_bitmap().properties().width; x++){
 					if (detected_worms[w]->edge_bitmap()[y][x]){
 						for (int dx = -edge_width; dx <= edge_width; dx++)
 							for (int dy = -edge_width; dy <= edge_width; dy++){

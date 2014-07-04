@@ -4,7 +4,7 @@
 
 #ifdef _WIN32 
 #include <sys/timeb.h>
-#elif defined __MACH__
+#elif defined __APPLE__
 #include <mach/mach.h>
 #include <mach/mach_time.h>
 #include <unistd.h>
@@ -18,7 +18,7 @@ public:
 		// See. e.g. https://github.com/awreece/monotonic_timer/blob/master/monotonic_timer.c
 		if (_ftime64_s(&start_time)!=0)
 			throw ns_ex("ns_high_precision_timer::start():Could not start timer");
-		#elif defined __MACH__
+		#elif defined __APPLE__
 		// OS X: https://developer.apple.com/library/mac/qa/qa1398/_index.html
 		start_time = mach_absolute_time();
 		#else
@@ -41,7 +41,7 @@ public:
 			d.time = start_time.time - d.time;
 			d.millitm = start_time.millitm - d.millitm;
 		}
-		#elif defined __MACH__
+		#elif defined __APPLE__
 		uint64_t d(start_time);
 		start();
 		d -= start_time;
@@ -69,7 +69,7 @@ private:
 		return 1000*1000*(ns_64_bit)s.time+1000*(ns_64_bit)s.millitm;
 	}
 	__timeb64 start_time;
-	#elif defined __MACH__
+	#elif defined __APPLE__
 	static ns_64_bit to_microsecond(const uint64_t & s){
 		static double numer = 0;
 		static double denom = 0;

@@ -1101,7 +1101,7 @@ typedef map<unsigned long,vector<ns_time_path_solution_stationary_drift_estimato
 
 bool ns_time_path_solver::merge_estimator_groups(const unsigned long max_dist_sq, std::vector<ns_time_path_solution_stationary_drift_estimator_group> & e) const{
 	bool changes_made(false);
-	const unsigned long max_fraction_points_overlap = .2;
+	const double max_fraction_points_overlap = 0.2;
 
 	//we want to make a list of estimators sorted by time
 	//these are then merged toward later points, starting at the last point

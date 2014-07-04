@@ -71,6 +71,31 @@ TIFF* ns_tiff_fd_open(struct ns_tiff_client_data * client_data, const char* name
 	return (tif);
 }
 
+
+int ns_TIFFgetMode(const char* mode, const char* module)
+{
+	int m = -1;
+
+	switch (mode[0]) {
+	case 'r':
+		m = O_RDONLY;
+		if (mode[1] == '+')
+			m = O_RDWR;
+		break;
+	case 'w':
+	case 'a':
+		m = O_RDWR|O_CREAT;
+		if (mode[0] == 'w')
+			m |= O_TRUNC;
+		break;
+	default:
+		TIFFErrorExt(0, module, "\"%s\": Bad mode", mode);
+		break;
+	}
+	return (m);
+}
+
+
 TIFF* ns_tiff_open(const char* name, struct ns_tiff_client_data * client_data,const char* mode){
 #ifdef _WIN32 
 	static const char module[] = "TIFFOpen";
@@ -79,7 +104,7 @@ TIFF* ns_tiff_open(const char* name, struct ns_tiff_client_data * client_data,co
 	DWORD dwMode;
 	TIFF* tif;
 
-	m = _TIFFgetMode(mode, module);
+	m = ns_TIFFgetMode(mode, module);
 
 	switch(m)
 	{
@@ -119,7 +144,7 @@ TIFF* ns_tiff_open(const char* name, struct ns_tiff_client_data * client_data,co
 	int m;
         TIFF* tif;
 
-	m = _TIFFgetMode(mode, module);
+	m = ns_TIFFgetMode(mode, module);
 	if (m == -1)
 		return ((TIFF*)0);
 

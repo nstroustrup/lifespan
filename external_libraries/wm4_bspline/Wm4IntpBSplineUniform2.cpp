@@ -74,8 +74,8 @@ Real IntpBSplineUniform2<Real>::operator() (Real fX, Real fY)
         }
     }
 
-    SetPolynomial(0,fX-m_aiBase[0],m_aafPoly[0]);
-    SetPolynomial(0,fY-m_aiBase[1],m_aafPoly[1]);
+    this->SetPolynomial(0,fX-m_aiBase[0],m_aafPoly[0]);
+    this->SetPolynomial(0,fY-m_aiBase[1],m_aafPoly[1]);
 
     int aiI[2] = { 0, 0 };
     Real fResult = (Real)0.0;
@@ -123,8 +123,8 @@ Real IntpBSplineUniform2<Real>::operator() (int iDx, int iDy, Real fX,
         }
     }
 
-    SetPolynomial(iDx,fX-m_aiBase[0],m_aafPoly[0]);
-    SetPolynomial(iDy,fY-m_aiBase[1],m_aafPoly[1]);
+    this->SetPolynomial(iDx,fX-m_aiBase[0],m_aafPoly[0]);
+    this->SetPolynomial(iDy,fY-m_aiBase[1],m_aafPoly[1]);
 
     int aiI[2] = { iDx, iDy };
     int iIncr1 = iDx;

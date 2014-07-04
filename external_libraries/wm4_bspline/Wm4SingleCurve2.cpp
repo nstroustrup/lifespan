@@ -71,7 +71,7 @@ Real SingleCurve2<Real>::GetTime (Real fLength, int iIterations,
             return fTime;
         }
 
-        fTime -= fDifference/GetSpeed(fTime);
+        fTime -= fDifference/this->GetSpeed(fTime);
     }
 
     // Newton's method failed.  You might want to increase iterations or

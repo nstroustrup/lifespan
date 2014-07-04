@@ -30,14 +30,20 @@ int main(int argc, char ** argv){
 			ns_load_image(argv[1],bar_image);
 			cout <<"Decoded Message: " << ns_barcode_decode(bar_image, argv[1]) << "\n";
 		}
+		#ifdef _WIN32
+		cout << "Press enter to continue.\n";
 		char a;
 		cin >> a;
+		#endif
 		return 0;
 	}
 	catch(ns_ex & ex){
 		cerr << ex.text() << "\n";			
+		#ifdef _WIN32
+		cout << "Press enter to continue.\n";
 		char a;
 		cin >> a;
+		#endif
 		return 1;
 	}	
 }

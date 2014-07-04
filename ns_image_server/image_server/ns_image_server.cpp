@@ -1835,7 +1835,7 @@ void ns_image_server::load_constants(const ns_image_server::ns_image_server_exec
 	terminal_constants.add_field("max_height","768","The maximum height of the worm browser window");
 	terminal_constants.add_field("hand_annotation_resize_factor","3","How many times should images of worms be shrunk before being displayed when looking at storyboards?  Larger values result in smaller worms during by hand annotation of worms");
 	terminal_constants.add_field("mask_upload_database","image_server","The SQL database in which image masks should be stored.  This is usually set to the value specified for the central_sql_databases option in the ns_image_server.ini file");
-	terminal_constants.add_field("mask_upload_hostname","myhost","The host name (e.g bob or lab_desktop_1) of the server where sample region masks should be uploaded. This is usually set to the value of the host_name option set the acquisition server’s ns_image_server.ini file");
+	terminal_constants.add_field("mask_upload_hostname","myhost","The host name (e.g bob or lab_desktop_1) of the server where sample region masks should be uploaded. This is usually set to the value of the host_name option set the acquisition server's ns_image_server.ini file");
 	terminal_constants.add_field("verbose_debug_output","false","If this option is set to true, the image server and worm browser will generate detailed debug information while running various steps of image acquisition and image processing.  An file containing this output will be written to the volatile_storage directory.");
 	string ini_directory,ini_filename;
 	try{

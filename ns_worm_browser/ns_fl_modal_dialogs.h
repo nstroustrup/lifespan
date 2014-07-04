@@ -181,7 +181,7 @@ class ns_alert_dialog{
 public:
 	std::string text;
 	void act(){
-	#ifdef WIN32
+	#ifdef _WIN32
 			MessageBox(
 			0,
 			text.c_str(),

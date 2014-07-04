@@ -1,7 +1,7 @@
 #ifndef NS_OS_SIGNAL_HANDLER
 #define NS_OS_SIGNAL_HANDLER
 
-#ifndef WIN32
+#ifndef _WIN32
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <string.h>
@@ -34,7 +34,7 @@
 
 class ns_os_signal_handler{
 public:
-#ifndef WIN32
+#ifndef _WIN32
 	static int get_os_signal(const ns_os_signal_type & t){
 		switch(t){
 			case ns_interrupt: return SIGINT;
@@ -61,7 +61,7 @@ public:
 		#endif
 	}
 private:
-	#ifndef WIN32
+	#ifndef _WIN32
 		struct sigaction actions[ns_number_of_os_signal_types];
 	#endif
 };

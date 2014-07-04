@@ -340,7 +340,7 @@ ns_os_signal_handler_return_type exit_signal_handler(ns_os_signal_handler_signal
 		exit(1);
 	}
 }
-#ifndef WIN32
+#ifndef _WIN32
 class ns_image_server_crash_daemon{
 public:
   typedef enum{ns_ok,ns_crash_daemon_triggered_a_restart} ns_crash_daemon_result;
@@ -795,7 +795,7 @@ int main(int argc, char * argv[]){
 						ex << "Unknown command line argument: " << command_str << "\n";
 				
 					ex	<< "Usage: " << argv[0] << " [start] [status] [stop] [restart] [hotplug] [reset_devices] [reload_models] [wrap_m4v] [submit_experiment [f,u] filename] [single_process] [help]";
-					#ifndef WIN32
+					#ifndef _WIN32
 					ex << " [daemon]";
 					#endif
 					ex	<< "\nOptions:\n"
@@ -824,7 +824,7 @@ int main(int argc, char * argv[]){
 						<< "fix_orphaned_captured_images: Go through the volatile storage and fix database records for images orphaned by a previous bug in the lifespan machine software\n"
 						<< "output_image_buffer_info: Output information about the state of each scanner's locally buffered images.\n"
 						<< "upgrade_sql: upgrade the sql database schema to match the most recent version. No changes are made if the schema is already up-to-data.\n";
-					#ifndef WIN32
+					#ifndef _WIN32
 					ex << "daemon: run as a background process\n";
 					#endif
 					throw ex;
@@ -1021,7 +1021,7 @@ int main(int argc, char * argv[]){
 		image_server.os_signal_handler.set_signal_handler(ns_interrupt,exit_signal_handler);
 		
 		
-		#ifndef WIN32
+		#ifndef _WIN32
 			//start a crash daemon to handle server crashes
 			ns_image_server_crash_daemon crash_daemon;
 		       
@@ -1105,7 +1105,7 @@ int main(int argc, char * argv[]){
 		
 		#endif
 
-		#ifndef WIN32
+		#ifndef _WIN32
 			
 			int res =  umask(S_IWOTH);//S_IRUSR|S_IWUSR|S_IRGRP|S_IWGRP|S_IROTH|S_IWOTH);
 			cout.setf(ios::oct);
@@ -1355,7 +1355,7 @@ int main(int argc, char * argv[]){
 		
 		//cerr << "Clearing dispatcher\n";
 		dispatch.clear_for_termination();
-		#ifndef WIN32
+		#ifndef _WIN32
 		ns_socket::global_clean();
 		#endif
 		
@@ -1363,7 +1363,7 @@ int main(int argc, char * argv[]){
 			cerr << "Waiting for external processes...\n";
 			ns_request_shutdown_of_all_spawned_nodes(child_processes);
 			ns_wait_for_all_spawned_nodes(child_processes);
-			#ifndef WIN32
+			#ifndef _WIN32
 			ns_image_server_crash_daemon::request_daemon_shutdown();
 			#endif
 		}

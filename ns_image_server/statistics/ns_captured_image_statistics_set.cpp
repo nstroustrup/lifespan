@@ -170,7 +170,7 @@ void ns_capture_scan_statistics::output_jmp_format(std::ostream & o, const ns_ve
 }
 /*
 ns_64_bit ns_atoi64(const char * s){
-  #ifdef WIN32
+  #ifdef _WIN32
   return _atoi64(s);
 #else
   return atoll(s);

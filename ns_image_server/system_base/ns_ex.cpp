@@ -207,7 +207,7 @@ unsigned long ns_current_time(){
 }
 
 ns_64_bit ns_atoi64(const char * s){
-	#ifdef WIN32
+	#ifdef _WIN32
 	  return _atoi64(s);
 	#else
 	  return atoll(s);

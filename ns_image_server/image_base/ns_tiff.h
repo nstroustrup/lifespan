@@ -23,7 +23,7 @@ struct ns_tiff_info{
 
 
 void ns_throw_exception(const ns_ex & ex) 
-#ifndef WIN32
+#ifndef _WIN32
 	__attribute__((noinline));
 #else
 	;

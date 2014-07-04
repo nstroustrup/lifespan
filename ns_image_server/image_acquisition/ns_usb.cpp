@@ -5,7 +5,7 @@
 #define USE_NEW_USB
 #endif
 
-#ifndef WIN32
+#ifndef _WIN32
 #ifdef USE_NEW_USB
 #include <libusb-1.0/libusb.h>
 #else 
@@ -15,7 +15,7 @@
 
 ns_usb_context ns_usb_control::usb_context;
 void * ns_usb_context::get_context(){
-	#ifndef WIN32
+	#ifndef _WIN32
 #ifdef USE_NEW_USB
   if (context == 0){
     libusb_context * c;
@@ -34,7 +34,7 @@ void * ns_usb_context::get_context(){
   return context;
 };
 void ns_usb_context::release_context(){
-	#ifndef WIN32
+	#ifndef _WIN32
   if (context == 0)
     return;
 #ifdef USE_NEW_USB

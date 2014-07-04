@@ -1,7 +1,7 @@
 #include <sys/timeb.h>
 #include "ns_worm_browser.h"
 #include "ns_time_path_image_analyzer.h"
-#ifndef WIN32
+#ifndef _WIN32
 #include <sys/time.h>
 #endif
 #ifdef _WIN32

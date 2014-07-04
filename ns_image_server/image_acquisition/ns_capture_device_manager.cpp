@@ -701,7 +701,7 @@ void ns_image_server_device_manager::run_capture_on_device(ns_capture_thread_arg
 }
 
 void ns_image_server_device_manager::run_capture_on_device_asynch(ns_capture_thread_arguments & arguments){
-	//#ifndef WIN32
+	//#ifndef _WIN32
     //    umask(0x01FC);
 	//#endif
 
@@ -1066,7 +1066,7 @@ bool ns_image_server_device_manager::hotplug_new_devices(const bool rescan_bad_b
 			image_server.register_server_event(ns_image_server::ns_register_in_local_db,ns_image_server_event("Looking for hardware changes (hotplug)..."));
 		lock.get(__FILE__,__LINE__);
 		//create a list of the hardware addresses of scanners attached to the system
-		#ifndef WIN32
+		#ifndef _WIN32
 		ns_get_scanner_hardware_address_list(all_hardware);
 		#endif
 

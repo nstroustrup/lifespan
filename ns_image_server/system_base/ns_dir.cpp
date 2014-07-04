@@ -8,7 +8,7 @@
 #include "shellapi.h"
 #endif
 using namespace std;
-#ifndef WIN32
+#ifndef _WIN32
 	#ifdef __APPLE__
 		#include <sys/statvfs.h>
 	#else

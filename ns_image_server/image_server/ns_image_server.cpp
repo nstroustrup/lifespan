@@ -2003,7 +2003,7 @@ void ns_image_server::load_constants(const ns_image_server::ns_image_server_exec
 				throw ns_ex ("ns_image_server::Specified video complier filename (") << _video_compiler_filename << ") cannot be executed.";
 			}
 		}
-		#ifndef WIN32
+		#ifndef _WIN32
 			//omp_set_num_threads(_number_of_simultaneous_threads);
 			//omp_set_dynamic(_number_of_simultaneous_threads);
 		#endif

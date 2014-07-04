@@ -14,7 +14,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
-#ifndef WIN32
+#ifndef _WIN32
 #include <sys/time.h>
 #else
 //#include <winsock2.h>
@@ -123,7 +123,7 @@ void load_file(const string & filename, whole_image & image){
 
 /* Return time elapsed time in miliseconds since the program started */
 static double  msecond() {
-#ifndef WIN32
+#ifndef _WIN32
 	struct timeval tv;
 
 	gettimeofday(&tv, 0);

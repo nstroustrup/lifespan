@@ -1,7 +1,7 @@
 #ifndef NS_EX
 #define NS_EX    
 
-#ifdef WIN32
+#ifdef _WIN32
 	#ifdef INCLUDE_STDAFX
 		#include "stdafx.h"
 	#endif
@@ -13,7 +13,7 @@
 	#endif
 #endif
 
-#ifdef WIN32
+#ifdef _WIN32
 	#include <winsock2.h>
 //	#include <windows.h>
 	//#include <omp.h>
@@ -27,7 +27,7 @@
 typedef unsigned char ns_8_bit;
 typedef unsigned short ns_16_bit;
 typedef unsigned long ns_32_bit;
-#ifdef WIN32
+#ifdef _WIN32
 	typedef unsigned __int64 ns_64_bit;
 	typedef __int64 ns_s64_bit;
 #else
@@ -153,7 +153,7 @@ public:
 		err_text[s] = 0;
 		return err_text;
 	}
-	#ifdef WIN32
+	#ifdef _WIN32
 	void append_windows_error();
 	#endif
 	

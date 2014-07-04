@@ -130,7 +130,7 @@ struct ns_external_execute_options{
 		discard_stderr(false),
 		discard_stdin(false),
 		binary(false){
-			#ifndef WIN32
+			#ifndef _WIN32
 			only_fork = false;
 			#endif
 		}
@@ -142,14 +142,14 @@ struct ns_external_execute_options{
 		discard_stderr,
 		discard_stdin,
 		binary;
-	#ifndef WIN32
+	#ifndef _WIN32
 	bool only_fork;
 	#endif
 };
 
 class ns_external_execute{
 public:	
-	#ifndef WIN32
+	#ifndef _WIN32
 	ns_external_execute():child_pid(-1){c_stdout[0] = c_stdout[1] = c_stderr[0] = c_stderr[1] = c_stdin[0] = c_stdin[1] =  -1;}
 	#else
 		ns_external_execute():closed(true){}

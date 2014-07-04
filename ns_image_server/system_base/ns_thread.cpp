@@ -1,6 +1,6 @@
 #include "ns_thread.h"
 #include "ns_ex.h"
-#ifndef WIN32
+#ifndef _WIN32
 #include <sys/wait.h>
 #include <signal.h>
 #include <unistd.h>
@@ -95,7 +95,7 @@ void ns_simple_execute(const std::string & command,const std::vector<std::string
 }
 
 unsigned long ns_thread::ns_get_process_id(){
-	#ifdef WIN32
+	#ifdef _WIN32
 		return GetCurrentProcessId();
 	#else
 		return getpid();

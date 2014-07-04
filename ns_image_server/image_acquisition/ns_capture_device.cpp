@@ -66,7 +66,7 @@ public:
 		//	cerr << "finishing stdout read";
 			delete[] buf;
 			buf = 0;
-			#ifdef WIN32
+			#ifdef _WIN32
 			//THE NEXT FOUR LINES ARE A HACK
 			exec.finished_reading_from_stdout();
 			if (total_bytes_read != 0){
@@ -254,7 +254,7 @@ void ns_capture_device::capture(ns_image_capture_specification & c){
 	}
 	string parameters;
 	//specifiy scanimage hardware name
-	#ifdef WIN32
+	#ifdef _WIN32
 	parameters += "-d \"";
 	parameters += hardware_alias + "\"";
 	#else
@@ -355,7 +355,7 @@ void ns_capture_device::capture(ns_image_capture_specification & c){
 		
 		cerr << "\n" << std::fixed << std::setprecision(2) << (float)total_bytes_read/(float)(1024*1024) << "MB read from [" << this->name << "]\n";
 		//THE NEXT FOUR LINES ARE A HACK
-		#ifdef WIN32
+		#ifdef _WIN32
 		if (total_bytes_read != 0){
 			ns_thread::sleep(1);
 			exec.finished_reading_from_stderr();

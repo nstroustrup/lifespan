@@ -1,7 +1,7 @@
 #ifndef NS_SQL
 #define NS_SQL
 #include "ns_ex.h"
-#ifdef WIN32
+#ifdef _WIN32
 //#include <winsock2.h>
 #include <sys/locking.h>
 #include <winsock2.h>

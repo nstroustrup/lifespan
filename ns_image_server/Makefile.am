@@ -179,6 +179,19 @@ src_system_base = system_base/ns_dir.cpp \
 src_image_server = image_server/ns_image_server_main.cpp
 src_worm_browser = ../ns_worm_browser/ns_worm_browser_main.cpp \
 	   ../ns_worm_browser/ns_worm_browser.cpp
+src_barcodes = ../ns_image_server_utilities/ns_image_server_barcodes_main.cpp \
+               image_acquisition/ns_barcode.cpp \
+               image_base/ns_font.cpp \
+               image_base/ns_image.cpp \
+               image_base/ns_jpeg.cpp \
+               image_base/ns_libtiff_interface.c \
+               image_base/ns_ojp2k.cpp \
+               image_base/ns_svg.cpp \
+               image_base/ns_tiff.cpp \
+               image_base/ns_vector.cpp \
+               system_base/ns_dir.cpp \
+               system_base/ns_ex.cpp \
+               system_base/ns_thread.cpp
 src_external = ../external_libraries/libsvm/svm.cpp \
 	       ../external_libraries/libsvm/svm.h \
 	       ../external_libraries/ctmf/ctmf.h \
@@ -256,7 +269,7 @@ DEF_FONT = $(pkgdatadir)/default_font.ttf
 INI_PATH = $(sysconfdir)/ns_image_server.ini
 
 PRE_DEF = -DTRILIBRARY -DNO_TIMER -DANSI_DECLARATORS -DNS_DEFAULT_FONT="\"$(DEF_FONT)\"" -DNS_INI_PATH="\"$(INI_PATH)\""
-bin_PROGRAMS = ns_image_server
+bin_PROGRAMS = ns_image_server_barcodes ns_image_server
 #serverdir = @datarootdir@
 dist_pkgdata_DATA = ../files/default_font.ttf
 
@@ -305,6 +318,7 @@ src_common = $(src_base) $(src_data_annotation) $(src_image_acquisition) \
 	   $(src_external)
 
 ns_image_server_SOURCES = $(src_common) $(src_image_server)
+ns_image_server_barcodes_SOURCES = $(src_barcodes)
 
 if BUILD_BROWSER
 ns_worm_browser_SOURCES = $(src_common) $(src_worm_browser)

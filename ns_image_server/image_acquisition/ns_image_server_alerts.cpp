@@ -66,10 +66,11 @@ void ns_alert_handler::submit_not_rate_limited_alert(const ns_alert & alert, ns_
 		   detailed_recipients;
 	ns_acquire_lock_for_scope recip_lock(recipient_lock,__FILE__,__LINE__);
 	for (unsigned int i = 0; i < recipients.size(); i++){
-		if (recipients[i].matches(alert.notification_type))
+		if (recipients[i].matches(alert.notification_type)) {
 			if (recipients[i].type==ns_alert::ns_medium_urgency)
 				summary_recipients+=recipients[i].email + ";";
 			else detailed_recipients+=recipients[i].email + ";";
+		}
 	}
 	recip_lock.release();
 	

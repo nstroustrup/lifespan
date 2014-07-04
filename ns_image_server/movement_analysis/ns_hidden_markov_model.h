@@ -93,11 +93,14 @@ class ns_sequential_hidden_markov_state_estimator{
 		if (debug_output){
 			if (debug_output) *debug_output << "Generating next round solutions for\n";
 			for (int j = 0; j < s.number_of_states(); j++){
-					if (s.state_was_skipped(j))
+				// without braces around these ifs, this doesn't parse how one might think it would...
+					if (s.state_was_skipped(j)) {
 						if (debug_output) *debug_output << "s ";
-					else if (!s.state_was_calculated(j))
+					} else if (!s.state_was_calculated(j)) {
 						if (debug_output) *debug_output << ". ";
-					else if (debug_output) *debug_output << s.state_start_indices[j] << " ";
+					} else if (debug_output) {
+						*debug_output << s.state_start_indices[j] << " ";
+					}
 				}
 		}
 		//create a solution that skips all the way to the end of the experiment

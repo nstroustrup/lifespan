@@ -7,6 +7,7 @@ class ns_processing_job_processor{
 public:
 	ns_processing_job_processor(const ns_processing_job & job_, ns_image_server & image_server_, ns_image_processing_pipeline & pipeline_):job(job_),image_server(&image_server_),pipeline(&pipeline_){}
 	ns_processing_job_processor(const ns_processing_job & job_,ns_image_server & image_server_):job(job_),image_server(&image_server_),pipeline(0){}
+	virtual ~ns_processing_job_processor() {};// derived classes produced by factory function will be cast as this base class, thus base needs a virtual delete function
 	virtual bool job_is_still_relevant(ns_sql & sql, std::string & reason_not_relevant)=0;
 	virtual void mark_subject_as_busy(const bool busy,ns_sql & sql)=0;
 	virtual void mark_subject_as_problem(const ns_64_bit problem_id,ns_sql & sql)=0;

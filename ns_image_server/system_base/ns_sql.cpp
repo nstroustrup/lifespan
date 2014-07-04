@@ -74,15 +74,15 @@ void ns_sql_connection::select_db(const std::string & db_name){
 }
 
 void ns_sql_connection::set_autocommit(const bool & commit_){
-
-	ns_mysql_header::my_bool res = ns_mysql_header::mysql_autocommit(&mysql, (ns_mysql_header::my_bool)commit);
+	// TODO: why are we both calling mysql_autocommit and then sending a SET AUTOCOMMIT query??
+	ns_mysql_header::my_bool res = ns_mysql_header::mysql_autocommit(&mysql, (ns_mysql_header::my_bool)commit_);
 	
 	simulate_errors_if_requested();
-	if (!commit)
+	if (!commit_)
 		this->send_query("SET AUTOCOMMIT = 0");
 	else
 		this->send_query("SET AUTOCOMMIT = 1");
-	commit = commit;
+	commit = commit_;
 	if (res != 0)
 		throw ns_ex("ns_sql_connection::Could not set autocommit state.") << ns_sql_fatal;
 

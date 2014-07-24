@@ -120,7 +120,7 @@ dist_pkgdata_DATA = ../files/default_font.ttf
 
 if BUILD_BROWSER
 bin_PROGRAMS += ns_worm_browser
-dist_pkgdata_DATA += ../windows_build/occupied_image.tif ../windows_build/start.tif
+dist_pkgdata_DATA += ../files/occupied_image.tif ../files/start.tif
 PRE_DEF += -DNS_DATA_PATH="\"$(pkgdatadir)/\""
 if TARGET_OSX
 all-local: ns_worm_browser.app

@@ -595,40 +595,7 @@
     <ClInclude Include="..\external_compile_libraries\openjpeg-1.5.0\libopenjpeg\tgt.h">
       <Filter>image_format_lib\ojpeg</Filter>
     </ClInclude>
-    <ClInclude Include="..\external_libraries\tiff-3.8.2\libtiff\t4.h">
-      <Filter>image_format_lib\tiff</Filter>
-    </ClInclude>
-    <ClInclude Include="..\external_libraries\tiff-3.8.2\libtiff\tif_config.h">
-      <Filter>image_format_lib\tiff</Filter>
-    </ClInclude>
-    <ClInclude Include="..\external_libraries\tiff-3.8.2\libtiff\tif_dir.h">
-      <Filter>image_format_lib\tiff</Filter>
-    </ClInclude>
-    <ClInclude Include="..\external_libraries\tiff-3.8.2\libtiff\tif_fax3.h">
-      <Filter>image_format_lib\tiff</Filter>
-    </ClInclude>
-    <ClInclude Include="..\external_libraries\tiff-3.8.2\libtiff\tif_predict.h">
-      <Filter>image_format_lib\tiff</Filter>
-    </ClInclude>
-    <ClInclude Include="..\external_libraries\tiff-3.8.2\libtiff\tiff.h">
-      <Filter>image_format_lib\tiff</Filter>
-    </ClInclude>
-    <ClInclude Include="..\external_libraries\tiff-3.8.2\libtiff\tiffconf.h">
-      <Filter>image_format_lib\tiff</Filter>
-    </ClInclude>
-    <ClInclude Include="..\external_libraries\tiff-3.8.2\libtiff\tiffio.h">
-      <Filter>image_format_lib\tiff</Filter>
-    </ClInclude>
-    <ClInclude Include="..\external_libraries\tiff-3.8.2\libtiff\tiffio.hxx">
-      <Filter>image_format_lib\tiff</Filter>
-    </ClInclude>
-    <ClInclude Include="..\external_libraries\tiff-3.8.2\libtiff\tiffiop.h">
-      <Filter>image_format_lib\tiff</Filter>
-    </ClInclude>
-    <ClInclude Include="..\external_libraries\tiff-3.8.2\libtiff\tiffvers.h">
-      <Filter>image_format_lib\tiff</Filter>
-    </ClInclude>
-    <ClInclude Include="..\external_libraries\tiff-3.8.2\libtiff\uvcode.h">
+    <ClInclude Include="..\external_compile_libraries\tiff-3.8.2\libtiff\tif_predict.h">
       <Filter>image_format_lib\tiff</Filter>
     </ClInclude>
   </ItemGroup>
@@ -1177,113 +1144,116 @@
       <Filter>image_format_lib\zlib</Filter>
     </ClCompile>
     <ClCompile Include="..\ns_image_server\image_server\ns_image_server_main.cpp" />
-    <ClCompile Include="..\external_libraries\tiff-3.8.2\libtiff\tif_aux.c">
-      <Filter>image_format_lib\tiff</Filter>
-    </ClCompile>
-    <ClCompile Include="..\external_libraries\tiff-3.8.2\libtiff\tif_close.c">
-      <Filter>image_format_lib\tiff</Filter>
-    </ClCompile>
-    <ClCompile Include="..\external_libraries\tiff-3.8.2\libtiff\tif_codec.c">
-      <Filter>image_format_lib\tiff</Filter>
-    </ClCompile>
-    <ClCompile Include="..\external_libraries\tiff-3.8.2\libtiff\tif_color.c">
-      <Filter>image_format_lib\tiff</Filter>
-    </ClCompile>
-    <ClCompile Include="..\external_libraries\tiff-3.8.2\libtiff\tif_compress.c">
-      <Filter>image_format_lib\tiff</Filter>
-    </ClCompile>
-    <ClCompile Include="..\external_libraries\tiff-3.8.2\libtiff\tif_dir.c">
-      <Filter>image_format_lib\tiff</Filter>
-    </ClCompile>
-    <ClCompile Include="..\external_libraries\tiff-3.8.2\libtiff\tif_dirinfo.c">
-      <Filter>image_format_lib\tiff</Filter>
-    </ClCompile>
-    <ClCompile Include="..\external_libraries\tiff-3.8.2\libtiff\tif_dirread.c">
-      <Filter>image_format_lib\tiff</Filter>
-    </ClCompile>
-    <ClCompile Include="..\external_libraries\tiff-3.8.2\libtiff\tif_dirwrite.c">
-      <Filter>image_format_lib\tiff</Filter>
-    </ClCompile>
-    <ClCompile Include="..\external_libraries\tiff-3.8.2\libtiff\tif_dumpmode.c">
-      <Filter>image_format_lib\tiff</Filter>
-    </ClCompile>
-    <ClCompile Include="..\external_libraries\tiff-3.8.2\libtiff\tif_error.c">
-      <Filter>image_format_lib\tiff</Filter>
-    </ClCompile>
-    <ClCompile Include="..\external_libraries\tiff-3.8.2\libtiff\tif_extension.c">
-      <Filter>image_format_lib\tiff</Filter>
-    </ClCompile>
-    <ClCompile Include="..\external_libraries\tiff-3.8.2\libtiff\tif_fax3.c">
-      <Filter>image_format_lib\tiff</Filter>
-    </ClCompile>
-    <ClCompile Include="..\external_libraries\tiff-3.8.2\libtiff\tif_fax3sm.c">
-      <Filter>image_format_lib\tiff</Filter>
-    </ClCompile>
-    <ClCompile Include="..\external_libraries\tiff-3.8.2\libtiff\tif_flush.c">
-      <Filter>image_format_lib\tiff</Filter>
-    </ClCompile>
-    <ClCompile Include="..\external_libraries\tiff-3.8.2\libtiff\tif_getimage.c">
-      <Filter>image_format_lib\tiff</Filter>
-    </ClCompile>
-    <ClCompile Include="..\external_libraries\tiff-3.8.2\libtiff\tif_jpeg.c">
-      <Filter>image_format_lib\tiff</Filter>
-    </ClCompile>
-    <ClCompile Include="..\external_libraries\tiff-3.8.2\libtiff\tif_luv.c">
-      <Filter>image_format_lib\tiff</Filter>
-    </ClCompile>
-    <ClCompile Include="..\external_libraries\tiff-3.8.2\libtiff\tif_lzw.c">
-      <Filter>image_format_lib\tiff</Filter>
-    </ClCompile>
-    <ClCompile Include="..\external_libraries\tiff-3.8.2\libtiff\tif_next.c">
-      <Filter>image_format_lib\tiff</Filter>
-    </ClCompile>
-    <ClCompile Include="..\external_libraries\tiff-3.8.2\libtiff\tif_ojpeg.c">
-      <Filter>image_format_lib\tiff</Filter>
-    </ClCompile>
-    <ClCompile Include="..\external_libraries\tiff-3.8.2\libtiff\tif_open.c">
-      <Filter>image_format_lib\tiff</Filter>
-    </ClCompile>
-    <ClCompile Include="..\external_libraries\tiff-3.8.2\libtiff\tif_packbits.c">
-      <Filter>image_format_lib\tiff</Filter>
-    </ClCompile>
-    <ClCompile Include="..\external_libraries\tiff-3.8.2\libtiff\tif_pixarlog.c">
-      <Filter>image_format_lib\tiff</Filter>
-    </ClCompile>
-    <ClCompile Include="..\external_libraries\tiff-3.8.2\libtiff\tif_predict.c">
-      <Filter>image_format_lib\tiff</Filter>
-    </ClCompile>
-    <ClCompile Include="..\external_libraries\tiff-3.8.2\libtiff\tif_print.c">
-      <Filter>image_format_lib\tiff</Filter>
-    </ClCompile>
-    <ClCompile Include="..\external_libraries\tiff-3.8.2\libtiff\tif_read.c">
-      <Filter>image_format_lib\tiff</Filter>
-    </ClCompile>
-    <ClCompile Include="..\external_libraries\tiff-3.8.2\libtiff\tif_strip.c">
-      <Filter>image_format_lib\tiff</Filter>
-    </ClCompile>
-    <ClCompile Include="..\external_libraries\tiff-3.8.2\libtiff\tif_swab.c">
-      <Filter>image_format_lib\tiff</Filter>
-    </ClCompile>
-    <ClCompile Include="..\external_libraries\tiff-3.8.2\libtiff\tif_thunder.c">
-      <Filter>image_format_lib\tiff</Filter>
-    </ClCompile>
-    <ClCompile Include="..\external_libraries\tiff-3.8.2\libtiff\tif_tile.c">
-      <Filter>image_format_lib\tiff</Filter>
-    </ClCompile>
-    <ClCompile Include="..\external_libraries\tiff-3.8.2\libtiff\tif_version.c">
-      <Filter>image_format_lib\tiff</Filter>
-    </ClCompile>
-    <ClCompile Include="..\external_libraries\tiff-3.8.2\libtiff\tif_warning.c">
-      <Filter>image_format_lib\tiff</Filter>
-    </ClCompile>
-    <ClCompile Include="..\external_libraries\tiff-3.8.2\libtiff\tif_write.c">
-      <Filter>image_format_lib\tiff</Filter>
-    </ClCompile>
-    <ClCompile Include="..\external_libraries\tiff-3.8.2\libtiff\tif_zip.c">
-      <Filter>image_format_lib\tiff</Filter>
-    </ClCompile>
     <ClCompile Include="..\external_compile_libraries\libdmtx-0.7.4\dmtx.c">
       <Filter>misc_lib\dmtx</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_compile_libraries\tiff-3.8.2\libtiff\tif_aux.c">
+      <Filter>image_format_lib\tiff</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_compile_libraries\tiff-3.8.2\libtiff\tif_close.c">
+      <Filter>image_format_lib\tiff</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_compile_libraries\tiff-3.8.2\libtiff\tif_codec.c">
+      <Filter>image_format_lib\tiff</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_compile_libraries\tiff-3.8.2\libtiff\tif_color.c">
+      <Filter>image_format_lib\tiff</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_compile_libraries\tiff-3.8.2\libtiff\tif_compress.c">
+      <Filter>image_format_lib\tiff</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_compile_libraries\tiff-3.8.2\libtiff\tif_dir.c">
+      <Filter>image_format_lib\tiff</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_compile_libraries\tiff-3.8.2\libtiff\tif_dirinfo.c">
+      <Filter>image_format_lib\tiff</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_compile_libraries\tiff-3.8.2\libtiff\tif_dirread.c">
+      <Filter>image_format_lib\tiff</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_compile_libraries\tiff-3.8.2\libtiff\tif_dirwrite.c">
+      <Filter>image_format_lib\tiff</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_compile_libraries\tiff-3.8.2\libtiff\tif_dumpmode.c">
+      <Filter>image_format_lib\tiff</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_compile_libraries\tiff-3.8.2\libtiff\tif_error.c">
+      <Filter>image_format_lib\tiff</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_compile_libraries\tiff-3.8.2\libtiff\tif_extension.c">
+      <Filter>image_format_lib\tiff</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_compile_libraries\tiff-3.8.2\libtiff\tif_flush.c">
+      <Filter>image_format_lib\tiff</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_compile_libraries\tiff-3.8.2\libtiff\tif_getimage.c">
+      <Filter>image_format_lib\tiff</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_compile_libraries\tiff-3.8.2\libtiff\tif_jpeg.c">
+      <Filter>image_format_lib\tiff</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_compile_libraries\tiff-3.8.2\libtiff\tif_luv.c">
+      <Filter>image_format_lib\tiff</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_compile_libraries\tiff-3.8.2\libtiff\tif_lzw.c">
+      <Filter>image_format_lib\tiff</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_compile_libraries\tiff-3.8.2\libtiff\tif_next.c">
+      <Filter>image_format_lib\tiff</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_compile_libraries\tiff-3.8.2\libtiff\tif_ojpeg.c">
+      <Filter>image_format_lib\tiff</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_compile_libraries\tiff-3.8.2\libtiff\tif_open.c">
+      <Filter>image_format_lib\tiff</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_compile_libraries\tiff-3.8.2\libtiff\tif_packbits.c">
+      <Filter>image_format_lib\tiff</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_compile_libraries\tiff-3.8.2\libtiff\tif_pixarlog.c">
+      <Filter>image_format_lib\tiff</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_compile_libraries\tiff-3.8.2\libtiff\tif_predict.c">
+      <Filter>image_format_lib\tiff</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_compile_libraries\tiff-3.8.2\libtiff\tif_print.c">
+      <Filter>image_format_lib\tiff</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_compile_libraries\tiff-3.8.2\libtiff\tif_read.c">
+      <Filter>image_format_lib\tiff</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_compile_libraries\tiff-3.8.2\libtiff\tif_strip.c">
+      <Filter>image_format_lib\tiff</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_compile_libraries\tiff-3.8.2\libtiff\tif_swab.c">
+      <Filter>image_format_lib\tiff</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_compile_libraries\tiff-3.8.2\libtiff\tif_thunder.c">
+      <Filter>image_format_lib\tiff</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_compile_libraries\tiff-3.8.2\libtiff\tif_tile.c">
+      <Filter>image_format_lib\tiff</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_compile_libraries\tiff-3.8.2\libtiff\tif_version.c">
+      <Filter>image_format_lib\tiff</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_compile_libraries\tiff-3.8.2\libtiff\tif_warning.c">
+      <Filter>image_format_lib\tiff</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_compile_libraries\tiff-3.8.2\libtiff\tif_write.c">
+      <Filter>image_format_lib\tiff</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_compile_libraries\tiff-3.8.2\libtiff\tif_zip.c">
+      <Filter>image_format_lib\tiff</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_compile_libraries\tiff-3.8.2\libtiff\tif_win32.c">
+      <Filter>image_format_lib\tiff</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_compile_libraries\tiff-3.8.2\libtiff\tif_fax3.c">
+      <Filter>image_format_lib\tiff</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_compile_libraries\tiff-3.8.2\libtiff\tif_fax3sm.c">
+      <Filter>image_format_lib\tiff</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -1337,15 +1307,6 @@
     </None>
     <None Include="..\external_compile_libraries\openjpeg-1.5.0\libopenjpeg\Makefile.in">
       <Filter>image_format_lib\ojpeg</Filter>
-    </None>
-    <None Include="..\external_libraries\tiff-3.8.2\libtiff\tif_config.h.in">
-      <Filter>image_format_lib\tiff</Filter>
-    </None>
-    <None Include="..\external_libraries\tiff-3.8.2\libtiff\tif_config.h.vc">
-      <Filter>image_format_lib\tiff</Filter>
-    </None>
-    <None Include="..\external_libraries\tiff-3.8.2\libtiff\tiffconf.h.vc">
-      <Filter>image_format_lib\tiff</Filter>
     </None>
   </ItemGroup>
   <ItemGroup>

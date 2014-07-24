@@ -81,7 +81,7 @@ protected:
 	ns_annotater_image_buffer_entry current_image;
 	std::vector<ns_annotater_image_buffer_entry> previous_images;
 	std::vector<ns_annotater_image_buffer_entry> next_images;
-	ns_image_series_annotater(const unsigned long resize_factor_, const unsigned long bottom_border_size):image_buffer_access_lock("ns_da_ib"),resize_factor(resize_factor_),image_bottom_border_size(bottom_border_size){}
+	ns_image_series_annotater(const unsigned long resize_factor_, const unsigned long bottom_border_size):image_buffer_access_lock("ns_da_ib"),resize_factor(resize_factor_),image_bottom_border_size(bottom_border_size),dynamic_range_rescale_factor(1){}
 	
 	virtual void draw_metadata(ns_annotater_timepoint * tp,ns_image_standard & im)=0;
 	
@@ -152,6 +152,8 @@ protected:
 	ns_acquire_for_scope<ns_sql> sql;
 public:
 	
+	
+	float dynamic_range_rescale_factor;
 
 	typedef enum {ns_none,ns_forward, ns_back, ns_fast_forward, ns_fast_back,ns_stop,ns_save,ns_rewind_to_zero,ns_number_of_annotater_actions} ns_image_series_annotater_action;
 
@@ -319,7 +321,7 @@ public:
 	}
 	virtual void display_current_frame()=0;
 	
-	typedef enum {ns_cycle_state,ns_censor,ns_annotate_extra_worm, ns_censor_all,ns_load_worm_details, ns_cycle_flags,ns_output_images} ns_click_request;
+	typedef enum {ns_cycle_state,ns_censor,ns_annotate_extra_worm, ns_censor_all,ns_load_worm_details, ns_cycle_flags,ns_output_images,ns_increase_contrast,ns_decrease_contrast} ns_click_request;
 	virtual void register_click(const ns_vector_2i & image_position,const ns_click_request & action)=0;
 
 	virtual bool data_saved() const=0;

@@ -433,7 +433,6 @@ private:
 	ns_event_display_spec_list display_events_from_region;
 	std::map<unsigned long,bool> excluded_regions;
 public:
-	
 	void set_resize_factor(const unsigned long resize_factor_){
 		resize_factor = resize_factor_;
 	}
@@ -622,6 +621,13 @@ public:
 				}
 			}
 		}
+		if( action == ns_increase_contrast)
+			dynamic_range_rescale_factor+=.1;
+		else if (action == ns_decrease_contrast){
+			dynamic_range_rescale_factor -= .1;
+			if (dynamic_range_rescale_factor < .1)
+				dynamic_range_rescale_factor = .1;
+		}
 		else{
 			ns_experiment_storyboard_timepoint_element * worm(divisions[current_timepoint_id].get_worm_at_visualization_position(image_position));
 			if (worm==0) return;
@@ -669,6 +675,7 @@ public:
 							worms[i]->event_annotation.number_of_worms_at_location_marked_by_hand = 0;  //skip an explicit 1 worm
 						else worms[i]->event_annotation.number_of_worms_at_location_marked_by_hand++;
 						break;
+					
 					default: throw ns_ex("ns_death_time_posture_annotater::Unknown click type");
 				}
 			}

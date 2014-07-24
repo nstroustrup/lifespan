@@ -335,7 +335,6 @@ class ns_death_time_solo_posture_annotater : public ns_image_series_annotater{
 private:
 
 	std::vector<ns_death_time_solo_posture_annotater_timepoint> timepoints;
-
 	static ns_death_time_posture_solo_annotater_data_cache data_cache;
 	ns_death_time_posture_solo_annotater_region_data * current_region_data;
 	ns_analyzed_image_time_path * current_worm;
@@ -905,6 +904,18 @@ public:
 					change_made = true;
 					break;
 				}
+				case ns_increase_contrast:
+					dynamic_range_rescale_factor+=.1; 
+					change_made = true; 
+					break;
+				case ns_decrease_contrast:{
+					dynamic_range_rescale_factor-=.1; 
+					if (dynamic_range_rescale_factor < .1)
+						dynamic_range_rescale_factor = .1;
+					change_made = true; 
+					break;
+					}
+
 				case ns_output_images:{
 					bool in_char(false);
 					const string pn(current_region_data->metadata.plate_name());

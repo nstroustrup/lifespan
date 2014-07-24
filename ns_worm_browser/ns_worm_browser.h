@@ -704,14 +704,14 @@ public:
 	std::vector<ns_svm_model_specification* > model_specifications;
 	ns_svm_model_specification & get_svm_model_specification();
 
-	void draw_image(const double x, const double y, ns_image_standard & image);
+	void draw_image(const double x, const double y, ns_image_standard & image, const float & dynamic_stretch_factor=1.0);
 	void draw_line_on_overlay(const ns_vector_2i & a, const ns_vector_2i & b);
 	void update_main_window_display(unsigned int window_width, unsigned int window_height);
 	void draw();
 	void touch_main_window_pixel(const ns_button_press & press);
 	bool register_main_window_key_press(int key, const bool shift_key_held,const bool control_key_held,const bool alt_key_held);
 	
-	void draw_worm_window_image(const double x, const double y, ns_image_standard & image);
+	void draw_worm_window_image(const double x, const double y, ns_image_standard & image,const float & dynamic_stretch_factor);
 	void update_worm_window_display(unsigned int window_width, unsigned int window_height);
 	void touch_worm_window_pixel(const ns_button_press & press);
 	bool register_worm_window_key_press(int key, const bool shift_key_held,const bool control_key_held,const bool alt_key_held);

@@ -80,7 +80,7 @@ void ns_initialize_libtiff(){
 //Downsides of using the XMP tag are that the GIMP/ImageJ and other editors that don't know about the tag strip it from files. This is
 //standard-compliant behavior: http://gimp.1065349.n5.nabble.com/GIMP-throwing-away-TIFF-tags-tp5232p5233.html
 //Specifically, the TIFF spec section 7 has:
-// "It is unnecessary—and possibly dangerous—for an editor to copy fields 
+// "It is unnecessary, and possibly dangerous, for an editor to copy fields 
 // it does not understand because the editor might alter the file in a way 
 // that is incompatible with the unknown fields."
 //Another odd downside is that Photoshop, which ostensibly supports XMP,

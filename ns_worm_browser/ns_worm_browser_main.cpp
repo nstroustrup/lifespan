@@ -10,7 +10,6 @@
 #endif
 #include "ns_high_precision_timer.h"
 #include "ns_experiment_storyboard.h"
-#include "ns_fl_modal_dialogs.h"
 
 #define IDLE_THROTTLE_FPS 20
 
@@ -1192,13 +1191,13 @@ public:
 		
 	//	add(ns_menu_item_spec(run_animation_trial,"File/_Run Animation Trial"));
 		add(ns_menu_item_spec(file_open,"File/Open Image",FL_CTRL+'o'));
-		add(ns_menu_item_spec(file_open_xml,"File/Submit XML Experiment Specification"));
 		//add(ns_menu_item_spec(file_open_16_bit_dark,"File/Open 16-bit Image (dark)"));
 		//add(ns_menu_item_spec(file_open_16_bit_light,"File/_Open 16-bit Image (light)"));
 		add(ns_menu_item_spec(file_save,"File/_Save Image",FL_CTRL+'s'));
 		add(ns_menu_item_spec(file_quit,"File/Quit",FL_CTRL+'q'));
 		
-		add(ns_menu_item_spec(save_current_areas,"&Plate Locations/Define Scan Areas/(Open Preview Capture Image and Draw Scan Areas)",0,FL_MENU_INACTIVE));
+		add(ns_menu_item_spec(file_open_xml,"&Plate Locations/_Submit Experiment Schedule"));
+		add(ns_menu_item_spec(save_current_areas,"Plate Locations/Define Scan Areas/(Open Preview Capture Image and Draw Scan Areas)",0,FL_MENU_INACTIVE));
 		add(ns_menu_item_spec(save_current_areas,"Plate Locations/Define Scan Areas/_Save Selected Scan Areas to Disk"));
 		add(ns_menu_item_spec(clear_current_areas,"Plate Locations/Define Scan Areas/Clear Selected Scan Areas"));
 

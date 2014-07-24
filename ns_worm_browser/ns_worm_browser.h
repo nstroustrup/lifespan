@@ -1,18 +1,22 @@
 #ifndef NS_WORM_TERMINAL
-#include "ns_image.h"
 #define NS_WORM_TERMINAL
-#include "ns_image_server.h"
-#include "ns_image_processing_pipeline.h"
-#include "ns_jpeg.h"
-#include "ns_tiff.h"
+
+#include "ns_ex.h"
 
 #include <FL/Fl.H>
 #include <FL/Fl_Window.H>
 #include <FL/Fl_Gl_Window.H>
 #include <FL/Fl_Menu_.H>
 #include <FL/Fl_Menu_Bar.H>
-
 #include <FL/gl.h>
+
+#include "ns_fl_modal_dialogs.h"
+#include "ns_image.h"
+#include "ns_image_server.h"
+#include "ns_image_processing_pipeline.h"
+#include "ns_jpeg.h"
+#include "ns_tiff.h"
+
 
 #include "ns_image_stream_buffers.h"
 #include "ns_spatial_avg.h"
@@ -40,7 +44,6 @@
 #include "ns_capture_schedule.h"
 #include "ns_buffered_random_access_image.h"
 #include "ns_mask_management.h"
-#include "ns_fl_modal_dialogs.h"
 #include "ns_lifespan_statistics.h"
 #include "ns_machine_analysis_data_loader.h"
 //#include "ns_worm_tracker.h"
@@ -194,7 +197,7 @@ public:
 				p->image_coords.top_left.x >=  prop.width || p->image_coords.top_left.y >=  prop.height)){
 				if (unfinished_box_exists && current_unfinished_box == p)
 					detete_current_unfinished = true;
-				boxes.erase(p++);
+				p = boxes.erase(p);
 			}
 			else ++p;
 		}
@@ -793,18 +796,7 @@ public:
 	ns_image_series_annotater * current_annotater;
 	ns_death_time_solo_posture_annotater death_time_solo_annotater;
 
-	void save_current_area_selections(){
-		string device_name = ns_extract_scanner_name_from_filename(get_current_clipboard_filename());
-
-		ns_file_chooser s;
-		s.dialog_type = Fl_Native_File_Chooser::BROWSE_SAVE_FILE;
-		s.default_filename = ns_format_time_string(ns_current_time()) + "=" + device_name + "=sample_regions.txt";
-		s.title = "Save Area Information";
-		s.filters.push_back(ns_file_chooser_file_type("Text","txt"));
-		ns_run_in_main_thread<ns_file_chooser> run_mt(&s);
-		if (s.chosen)
-			output_area_info(s.result);
-	}
+	void save_current_area_selections();
 
 	
 	ns_image_standard animation;

@@ -2067,6 +2067,21 @@ void ns_match_locations(const std::vector<ns_vector_2i> baseline, const std::vec
 	}
 }
 
+void ns_worm_learner::save_current_area_selections(){
+		string device_name = ns_extract_scanner_name_from_filename(get_current_clipboard_filename());
+		string default_filename = ns_format_time_string(ns_current_time()) + "=" + device_name + "=sample_regions.txt";
+		
+		ns_image_file_chooser im_cc;
+		im_cc.save_file();
+		im_cc.default_filename = default_filename;
+		ns_file_chooser_file_type t;
+		im_cc.filters.clear();
+		im_cc.filters.push_back(ns_file_chooser_file_type("Text","txt"));
+		ns_run_in_main_thread<ns_image_file_chooser> run_mt(&im_cc);
+		if (im_cc.chosen)
+			output_area_info(im_cc.result);
+	}
+
 struct ns_capture_image_d{
 	ns_capture_image_d(const ns_64_bit & c, const ns_64_bit & i):captured_image_id(c),image_id(i){}
 	ns_capture_image_d():captured_image_id(0),image_id(0){}
@@ -4860,8 +4875,8 @@ void ns_worm_learner::output_area_info(const std::string & filename){
 
 		out << "====Specification in Inches====\n";
 		area_handler.output_boxes(out,device_name,image_resolution,"in");
-		out << "\n====Specification in Source Image Pixels====\n";
-		area_handler.output_boxes(out,device_name,1,"pix");
+		//out << "\n====Specification in Source Image Pixels====\n";
+		//area_handler.output_boxes(out,device_name,1,"pix");
 	}
 }
 
@@ -5436,7 +5451,7 @@ public:
 	ns_thermometer_image_processor processor;
 	vector<ns_thermometer_measurement> measurements;
 };
-
+/*
 void ns_run_first_thermometer_experiment(){
 
 	vector<ns_thermometer_experiment> scanners(10);
@@ -5514,7 +5529,7 @@ void ns_run_first_thermometer_experiment(){
 	}
 	output.close();
 };
-
+*/
 void ns_worm_learner::draw_animation(const double &t){
 	unsigned long offset(10);
 //	cerr << t << "\n";

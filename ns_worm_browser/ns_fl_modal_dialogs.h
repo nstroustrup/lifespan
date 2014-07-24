@@ -1,11 +1,18 @@
 #ifndef NS_FL_MODAL_DIALOGS
 #define NS_FL_MODAL_DIALOGS
 
-#include "ns_worm_browser.h"
+//#include "ns_worm_browser.h"
 #include "FL/Fl_Output.H"
 #include "FL/Fl_Button.H"
 #include "FL/Fl_Pack.H"
 #include "FL/fl_message.H"
+#include "FL/Fl_Text_Display.H"
+#include "ns_ex.h"
+#include "ns_thread.h"
+#include "ns_worm_browser.h"
+#include <vector>
+#include <string>
+#include <iostream>
 
 class ns_input_dialog{
 public:
@@ -34,8 +41,8 @@ struct ns_file_chooser_file_type{
 class ns_file_chooser{
 	public:
 	ns_file_chooser():dialog_type(Fl_Native_File_Chooser::BROWSE_FILE),title("Open"){}
-	
 	std::string title,default_directory,default_filename,result;
+	
 	Fl_Native_File_Chooser::Type dialog_type;
 	std::vector<ns_file_chooser_file_type> filters;
 	
@@ -71,7 +78,7 @@ class ns_file_chooser{
 		 if (delete_filter_string)
 			 delete[] filter_string;
 	}
-
+private:
 	bool set_filter_string(char *& filter_text){
 		bool should_delete(false);
 		//char * filter_text;
@@ -126,8 +133,6 @@ public:
 
 
 
-
-#include <FL/Fl_Text_Display.H>
 class ns_text_display_window;
 class ns_close_button : public Fl_Button{
 public:

@@ -739,8 +739,10 @@ public:
 			this->sql.attach(&sql);
 
 			set_current_timepoint(current_time,true,true);
-			ns_image_standard temp_buffer;
-			timepoints[current_timepoint_id].load_image(1024,current_image,sql,temp_buffer,1);
+			{
+				ns_image_standard temp_buffer;
+				timepoints[current_timepoint_id].load_image(1024,current_image,sql,temp_buffer,1);
+			}
 			draw_metadata(&timepoints[current_timepoint_id],*current_image.im);
 			
 			request_refresh();
@@ -847,9 +849,10 @@ public:
 												observation_limit);
 				clear_cached_images();
 				set_current_timepoint(requested_time,false);
-			
-				ns_image_standard temp_buffer;
-				timepoints[current_timepoint_id].load_image(1024,current_image,sql(),temp_buffer,1);
+				{
+					ns_image_standard temp_buffer;
+					timepoints[current_timepoint_id].load_image(1024,current_image,sql(),temp_buffer,1);
+				}
 				change_made = true;
 
 				click_handled_by_hand_bar_choice = true;

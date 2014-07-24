@@ -362,7 +362,6 @@
     <ClCompile Include="..\external_compile_libraries\jpeg-8d\wrppm.c" />
     <ClCompile Include="..\external_compile_libraries\jpeg-8d\wrrle.c" />
     <ClCompile Include="..\external_compile_libraries\jpeg-8d\wrtarga.c" />
-    <ClCompile Include="..\ns_worm_browser\ns_windows_file_dialog.cpp" />
     <ClCompile Include="..\ns_worm_browser\ns_worm_browser.cpp" />
     <ClCompile Include="..\ns_worm_browser\ns_worm_browser_main.cpp" />
   </ItemGroup>
@@ -545,7 +544,6 @@
     <ClInclude Include="..\ns_worm_browser\ns_death_time_solo_posture_annotater.h" />
     <ClInclude Include="..\ns_worm_browser\ns_experiment_storyboard_annotater.h" />
     <ClInclude Include="..\ns_worm_browser\ns_image_series_annotater.h" />
-    <ClInclude Include="..\ns_worm_browser\ns_windows_file_dialog.h" />
     <ClInclude Include="..\ns_worm_browser\ns_worm_browser.h" />
     <ClInclude Include="resource.h" />
   </ItemGroup>

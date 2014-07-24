@@ -547,9 +547,6 @@
     <ClCompile Include="..\external_compile_libraries\zlib\zutil.c">
       <Filter>image_format_lib\zlib</Filter>
     </ClCompile>
-    <ClCompile Include="..\ns_worm_browser\ns_windows_file_dialog.cpp">
-      <Filter>worm_browser</Filter>
-    </ClCompile>
     <ClCompile Include="..\ns_worm_browser\ns_worm_browser.cpp">
       <Filter>worm_browser</Filter>
     </ClCompile>
@@ -1192,9 +1189,6 @@
       <Filter>worm_browser</Filter>
     </ClInclude>
     <ClInclude Include="..\ns_worm_browser\ns_image_series_annotater.h">
-      <Filter>worm_browser</Filter>
-    </ClInclude>
-    <ClInclude Include="..\ns_worm_browser\ns_windows_file_dialog.h">
       <Filter>worm_browser</Filter>
     </ClInclude>
     <ClInclude Include="..\ns_worm_browser\ns_worm_browser.h">

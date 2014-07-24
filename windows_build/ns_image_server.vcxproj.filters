@@ -1249,10 +1249,10 @@
     <ClCompile Include="..\external_compile_libraries\tiff-3.8.2\libtiff\tif_win32.c">
       <Filter>image_format_lib\tiff</Filter>
     </ClCompile>
-    <ClCompile Include="..\external_compile_libraries\tiff-3.8.2\libtiff\tif_fax3.c">
+    <ClCompile Include="..\external_compile_libraries\tiff-3.8.2\libtiff\tif_fax3sm.c">
       <Filter>image_format_lib\tiff</Filter>
     </ClCompile>
-    <ClCompile Include="..\external_compile_libraries\tiff-3.8.2\libtiff\tif_fax3sm.c">
+    <ClCompile Include="..\external_compile_libraries\tiff-3.8.2\libtiff\tif_fax3.c">
       <Filter>image_format_lib\tiff</Filter>
     </ClCompile>
   </ItemGroup>

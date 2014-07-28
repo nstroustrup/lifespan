@@ -4958,9 +4958,11 @@ bool ns_worm_learner::register_main_window_key_press(int key, const bool shift_k
 				save_death_time_annotations();
 		}else if (shift_key_held && key == '=' || key == '+'){
 			current_annotater->register_click(ns_vector_2i(0,0),ns_death_time_solo_posture_annotater::ns_increase_contrast);
+			return true;
 		}
 		else if (key == '-'){
 			current_annotater->register_click(ns_vector_2i(0,0),ns_death_time_solo_posture_annotater::ns_decrease_contrast);
+			return true;
 		}
 		}
 	}

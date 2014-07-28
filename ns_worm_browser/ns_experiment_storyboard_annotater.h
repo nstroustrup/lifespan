@@ -621,7 +621,7 @@ public:
 				}
 			}
 		}
-		if( action == ns_increase_contrast)
+		else if( action == ns_increase_contrast)
 			dynamic_range_rescale_factor+=.1;
 		else if (action == ns_decrease_contrast){
 			dynamic_range_rescale_factor -= .1;

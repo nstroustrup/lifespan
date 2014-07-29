@@ -322,7 +322,7 @@ foreach ($base_hosts as $base_host_name => $host){
 		echo "<a href=\"view_hosts_log.php?host_id={$host[$i][0]}&limit=50\">[log]</a></td>";
 		echo "<td bgcolor=\"$clrs[1]\">{$host[$i][7]}.{$host[$i][8]}.{$host[$i][9]}</td>";
 		echo "<td bgcolor=\"$clrs[0]\">";
-		echo $host[$i][2] . ":" . $host[$i][6];
+		echo $host[$i][2] ;//. ":" . $host[$i][6];
 		echo "</td><td bgcolor=\"$clrs[1]\">";
 		echo format_time($host[$i][3]);
 		echo "</td><td bgcolor=\"$clrs[0]\" nowrap>";
@@ -401,20 +401,23 @@ foreach ($base_hosts as $base_host_name => $host){
 			  foreach ($inc as $dev){
 			
 				$edit_device = ($device_name == $dev[1]);
+				  echo "<div id=\"popup\">";
 				echo "<a href=\"view_scanner_schedule.php?device_name=".$dev[1]."\">" . $dev[1] . "</a>";
-				//echo "</td><td bgcolor=\"$clrs[0]\">";
-				if ($dev[3] != ""){
-				echo "<b>Error ";
-				if ($dev[4] == "1")
-				echo "(Recognized)";
-				else echo "(Unrecognized)";
-				echo "</b>:";
-				echo $dev[3];
-				if ($dev[8] != "0")
-					echo "Scanning for " . number_format((-$devs[$j][9] + $current_time /60),1) . "min)";
 				
+				if ($dev[3] != ""){
+				  echo "<a href=\"view_scanner_schedule.php?device_name=".$dev[1]."\"><font color=\"#FF0000\"> (error)</font>";
+				  echo "";
+				  echo "<span>";
+				  if ($dev[4] == "1")
+				    echo "(Recognized)";
+				  else echo "(Unrecognized)";
+				  echo $dev[3];
+				  if ($dev[8] != "0")
+				    echo "Scanning for " . number_format((-$devs[$j][9] + $current_time /60),1) . "min)";
+				  echo "</span></a>";
+				  echo "</div>";
 				}
-				echo $dev[3];
+				//echo $dev[3];
 				//echo "<a href=\"view_hosts_and_devices.php?device_name=" . $devs[$j][1] . "\">[Edit]</a>";
 				if ($j != 0 && ($j+1)%3 == 0){
 					$clrs = $table_colors[$l%2];

@@ -303,6 +303,27 @@ body {
 	font-family: Arial, Helvetica, sans-serif;
 	font-size: 12px
 }
+#popup { 
+  position:relative; 
+  }
+
+#popup a span {
+	display: none; color: #FFFFFF;
+}
+
+#popup a span {
+	display: none;
+}
+
+#popup a:hover span { 
+  display: block; position: absolute; width: 400px; left: 100px; top: -10px; 
+color: #000000; 
+background: #FFFFFF;
+background-color=#FFFFFF;
+padding: 0 5px; 
+}
+
+
 -->
 </style>
 <script>

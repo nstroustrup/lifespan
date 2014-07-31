@@ -1254,6 +1254,14 @@ bool ns_processing_job_maintenance_processor:: run_job(ns_sql & sql){
 							errors.push_back(ex);
 						}
 					}
+					//update db stats
+					sql << "UPDATE experiments SET "
+						<< "latest_storyboard_build_timestamp = UNIX_TIMESTAMP(NOW()),"
+						<< "last_timepoint_in_latest_storyboard_build = " << s.last_timepoint_in_storyboard << ","
+						<< "number_of_regions_in_latest_storyboard_build = " << s.number_of_regions_in_storyboard
+						<< " WHERE id = " << job.experiment_id;
+						sql.send_query();
+					ns_image_server_push_job_scheduler::request_job_queue_discovery(sql);
 				}
 				if (errors.size() > 0){
 					//register all the errors but only throw the first one
@@ -1262,14 +1270,7 @@ bool ns_processing_job_maintenance_processor:: run_job(ns_sql & sql){
 					}
 					throw errors[0];
 				}
-				//update db stats
-				sql << "UPDATE experiments SET "
-					<< "latest_storyboard_build_timestamp = UNIX_TIMESTAMP(NOW()),"
-					<< "last_timepoint_in_latest_storyboard_build = " << s.last_timepoint_in_storyboard << ","
-					<< "number_of_regions_in_latest_storyboard_build = " << s.number_of_regions_in_storyboard
-					<< " WHERE id = " << job.experiment_id;
-					sql.send_query();
-				ns_image_server_push_job_scheduler::request_job_queue_discovery(sql);
+				
 				break;
 		}
 		case ns_maintenance_generate_animal_storyboard_subimage:{

@@ -994,16 +994,48 @@ class ns_worm_terminal_main_menu_organizer : public ns_menu_organizer{
 	static void generate_mp4(const std::string & value){worm_learner.generate_mp4(true);}
 	static void generate_wmv(const std::string & value){worm_learner.generate_mp4(false);}
 	static void update_sql_schema(const std::string & value){worm_learner.upgrade_tables();}
-
-	static void rebuild_db_from_filenames(const std::string & value){
+	
+	static void create_experiment_from_filenames(const std::string & value){
 		ns_choice_dialog c;
-		c.title = "Rebuilding experiment metadata from disk may corrupt the existing data for this experiment.  You should back up the database prior to attempting this.";
-		c.option_1 = "Rebuild Experiment Metadata";
+		c.title = "Rebuilding experiment metadata from disk may corrupt any existing database contents for this experiment.\nYou should back up the database prior to attempting this.";
+		c.option_1 = "Continue";
 		c.option_2 = "Cancel";
 		ns_run_in_main_thread<ns_choice_dialog> b(&c);
 		if (c.result != 1)
 			return;
-		worm_learner.rebuild_experiment_from_disk(worm_learner.data_selector.current_experiment_id());
+		ns_file_chooser cc;
+		cc.choose_directory();
+		cc.title = "Choose the directory that holds experiment data";
+		cc.default_directory = image_server.long_term_storage_directory;
+		ns_run_in_main_thread<ns_file_chooser> e(&cc);
+		if (!cc.chosen)
+			return;
+		if (cc.result.empty())
+			return;
+		ns_64_bit new_experiment_id = worm_learner.create_experiment_from_directory_structure(cc.result);
+		worm_learner.rebuild_experiment_samples_from_disk(new_experiment_id);
+		worm_learner.rebuild_experiment_regions_from_disk(new_experiment_id);
+	}
+
+	static void rebuild_db_sample_data_from_filenames(const std::string & value){
+		ns_choice_dialog c;
+		c.title = "Rebuilding experiment metadata from disk may corrupt any existing database contents for this experiment.\nYou should back up the database prior to attempting this.";
+		c.option_1 = "Continue";
+		c.option_2 = "Cancel";
+		ns_run_in_main_thread<ns_choice_dialog> b(&c);
+		if (c.result != 1)
+			return;
+		worm_learner.rebuild_experiment_samples_from_disk(worm_learner.data_selector.current_experiment_id());
+	}
+	static void rebuild_db_region_data_from_filenames(const std::string & value){
+		ns_choice_dialog c;
+		c.title = "Rebuilding experiment metadata from disk may corrupt any existing database contents for this experiment.\nYou should back up the database prior to attempting this.";
+		c.option_1 = "Continue";
+		c.option_2 = "Cancel";
+		ns_run_in_main_thread<ns_choice_dialog> b(&c);
+		if (c.result != 1)
+			return;
+		worm_learner.rebuild_experiment_regions_from_disk(worm_learner.data_selector.current_experiment_id());
 	}
 	/*****************************
 	Image Processing Tasks
@@ -1243,8 +1275,11 @@ public:
 		add(ns_menu_item_spec(generate_region_stats_for_all_regions_in_group,"Data Files/Other Statistics/_Generate Image Statistics for all Regions in current Experiment Group"));
 	//	add(ns_menu_item_spec(generate_detailed_animal_data_file,"Data/Statistics/_Generate Detailed Animal Statistics for current experiment"));
 		add(ns_menu_item_spec(export_experiment_data,"Data Files/Transfer and Backup/Export Database Contents for Current Experiment"));
-		add(ns_menu_item_spec(import_experiment_data,"Data Files/Transfer and Backup/Import Experiment from Backup"));
-	
+		add(ns_menu_item_spec(import_experiment_data,"Data Files/Transfer and Backup/_Import Experiment from Backup"));
+		add(ns_menu_item_spec(create_experiment_from_filenames,"Data Files/Transfer and Backup/Database Repair/_Create a new experiment in the database from images on disk"));
+		add(ns_menu_item_spec(rebuild_db_sample_data_from_filenames,"Data Files/Transfer and Backup/Database Repair/Add missing sample images on disk into current experiment"));
+		add(ns_menu_item_spec(rebuild_db_region_data_from_filenames,"Data Files/Transfer and Backup/Database Repair/Add missing region images on disk into current experiment"));
+
 		//add(ns_menu_item_spec(generate_survival_curve_from_hand_annotations,"&Calibration/Generate Survival Curves from by hand annotations"));
 		add(ns_menu_item_spec(compare_machine_and_by_hand_annotations,"&Calibration/Compare by-hand annotations to Machine"));
 		ns_menu_item_spec st4(generate_movement_image_analysis_optimization_data,"Calibration/Generate Threshold Posture Model Parameter Optimization File from By Hand Annotations");
@@ -1283,8 +1318,7 @@ public:
 		add(ns_menu_item_spec(test_resample,"Testing/Image Processing/Test Resample"));
 		add(ns_menu_item_spec(sharpen,"Testing/Image Processing/Sharpen"));
 		add(ns_menu_item_spec(calculate_erosion_gradient,"Testing/Image Processing/Calculate Erosion Gradient"));
-		add(ns_menu_item_spec(rebuild_db_from_filenames,"Testing/Database Repair/Rebuild Experimental Metadata from Filenames"));
-
+		
 		add(ns_menu_item_spec(show_objects,"Testing/Worm Detection/Show objects in image"));
 		add(ns_menu_item_spec(detect_worms,"Testing/Worm Detection/Detect Worms" ));
 		add(ns_menu_item_spec(show_region_edges,"Testing/Worm Detection/Show Region Edges" ));

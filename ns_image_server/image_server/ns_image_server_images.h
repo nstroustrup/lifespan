@@ -310,7 +310,8 @@ struct ns_image_server_captured_image_region : public ns_image_server_captured_i
 	void create_storage_for_worm_results(ns_image_server_image & worm_results, const bool interpolated, ns_sql & sql);
 	
 	bool inline store_intermediates(){return true;}	
-
+	
+	void update_all_processed_image_records(ns_sql & sql);
 	//returns the index in the images table for existing processed image
 	const ns_image_server_image request_processed_image(const ns_processing_task & task, ns_sql & sql);
 

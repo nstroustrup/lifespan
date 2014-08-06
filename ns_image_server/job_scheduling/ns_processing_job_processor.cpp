@@ -834,28 +834,10 @@ bool ns_processing_job_maintenance_processor:: run_job(ns_sql & sql){
 					for (unsigned int censoring_strategy = 0; censoring_strategy < (int)ns_death_time_annotation::ns_number_of_multiworm_censoring_strategies; censoring_strategy++){
 						if (censoring_strategy == (int)ns_death_time_annotation::ns_by_hand_censoring)
 							continue;
-						//if (censoring_strategy == (int)ns_death_time_annotation::ns_interval_censor_multiple_worm_clusters)
-						//	cerr << "WHA";
-						ns_worm_movement_summary_series summary_series;
-							summary_series.from_death_time_annotations(by_hand_annotation_integration_strategy[bhais],
-																	  (ns_death_time_annotation::ns_multiworm_censoring_strategy)censoring_strategy,
-																		ns_death_time_annotation::default_missing_return_strategy(),
-																	compiler,ns_include_unchanged);
+						
+							ns_worm_movement_summary_series summary_series;
 			
-							summary_series.generate_censoring_annotations(metadata,censoring_set);
-						try{
-							ns_image_server_results_file movement_timeseries(image_server->results_storage.movement_timeseries_data(by_hand_annotation_integration_strategy[bhais],
-								(ns_death_time_annotation::ns_multiworm_censoring_strategy)censoring_strategy,
-								ns_death_time_annotation::ns_censoring_minimize_missing_times,
-								ns_include_unchanged,
-								results_subject,"single_region","movement_timeseries",sql));
-							ns_acquire_for_scope<std::ostream> movement_out(movement_timeseries.output());
-							ns_worm_movement_measurement_summary::out_header(movement_out());
-							summary_series.to_file(metadata,movement_out());
-							movement_out.release();
-						}catch(ns_ex & ex){
-							censoring_file_io_problems.push_back(ex);
-						}
+	
 						if (censoring_strategy == ns_death_time_annotation::ns_merge_multiple_worm_clusters_and_missing_and_censor){
 							summary_series.from_death_time_annotations(by_hand_annotation_integration_strategy[bhais],
 																 (ns_death_time_annotation::ns_multiworm_censoring_strategy)censoring_strategy,
@@ -876,11 +858,29 @@ bool ns_processing_job_maintenance_processor:: run_job(ns_sql & sql){
 							}catch(ns_ex & ex){
 								censoring_file_io_problems.push_back(ex);
 							}
+
+						}
+						else{
 							summary_series.from_death_time_annotations(by_hand_annotation_integration_strategy[bhais],
-																  (ns_death_time_annotation::ns_multiworm_censoring_strategy)censoring_strategy,
-																  ns_death_time_annotation::ns_censoring_assume_uniform_distribution_of_only_large_missing_times,
+																		(ns_death_time_annotation::ns_multiworm_censoring_strategy)censoring_strategy,
+																		ns_death_time_annotation::default_missing_return_strategy(),
 																	compiler,ns_include_unchanged);
 							summary_series.generate_censoring_annotations(metadata,censoring_set);
+					
+							try{
+								ns_image_server_results_file movement_timeseries(image_server->results_storage.movement_timeseries_data(by_hand_annotation_integration_strategy[bhais],
+									(ns_death_time_annotation::ns_multiworm_censoring_strategy)censoring_strategy,
+									ns_death_time_annotation::ns_censoring_minimize_missing_times,
+									ns_include_unchanged,
+									results_subject,"single_region","movement_timeseries",sql));
+								ns_acquire_for_scope<std::ostream> movement_out(movement_timeseries.output());
+								ns_worm_movement_measurement_summary::out_header(movement_out());
+								summary_series.to_file(metadata,movement_out());
+								movement_out.release();
+							}catch(ns_ex & ex){
+								censoring_file_io_problems.push_back(ex);
+							}
+
 
 						}
 					}

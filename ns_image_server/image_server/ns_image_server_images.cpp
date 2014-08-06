@@ -286,7 +286,7 @@ std::string ns_image_server_captured_image::get_filename(ns_image_server_sql * s
 		throw ns_ex("ns_image_server_captured_image::Could not create filename with unspecified captured_images_id.");
 	//if not specified, collect information needed to create filename.
 	if (!do_not_load_data && 
-		(sample_id == 0 || experiment_id == 0 || capture_time == 0 || capture_images_image_id == 0 ||
+		(sample_id == 0 || experiment_id == 0 || capture_time == 0 || //capture_images_image_id == 0 ||
 		sample_name == "" || experiment_name == ""))
 			if (!ns_image_server_captured_image::load_from_db(captured_images_id,sql))
 				throw ns_ex("ns_image_server_captured_image: During filename creation, experiment and sample information was not specified at runtime or in the db.");
@@ -425,7 +425,7 @@ std::string ns_image_server_captured_image_region::filename(ns_image_server_sql 
 	if (region_images_id == 0)
 		throw ns_ex("ns_image_server_captured_image_region::Region id not specified when trying to acquire filename.");
 
-	if (experiment_id == 0 || region_name == "" || experiment_name == "" || sample_name == "" || device_name == "")
+	if (experiment_id == 0 || region_name == "" || experiment_name == "" || sample_name == "")// || device_name == "")
 		if (!load_from_db(region_images_id, sql))
 			throw ns_ex("ns_image_server_captured_image_region::Filename information not specified and not present in database.");
 	return ns_image_server_captured_image::filename(sql) + "=" + region_name + "=" + ns_to_string(region_images_id);
@@ -756,6 +756,24 @@ const ns_image_server_image ns_image_server_captured_image_region::create_storag
 	}
 	sql->send_query("COMMIT");
 	return im;
+}
+
+void ns_image_server_captured_image_region::update_all_processed_image_records(ns_sql & sql){
+	sql << "UPDATE sample_region_images SET ";
+	for (unsigned long i = 0; i < op_images_.size(); i++){
+		if (i == ns_unprocessed)
+			continue;
+		ns_processing_task task = (ns_processing_task)i;
+
+		if (ns_processing_step_db_table_name(task) !=  "sample_region_images")
+			continue;
+
+		sql << ns_processing_step_db_column_name(task) << "=" << op_images_[i];
+		if (i != op_images_.size()-1)
+			sql << ",";
+	}
+	sql << " WHERE id = " << region_images_id;
+	sql.send_query();
 }
 
 ns_image_server_captured_image_region ns_image_server_captured_image_region::get_next_long_time_point(ns_sql & sql) const{

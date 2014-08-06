@@ -660,7 +660,11 @@ public:
 	
 	void output_lots_of_worms(const std::string & path);
 	void test_image_metatadata();
-	void rebuild_experiment_from_disk(unsigned long experiment_id);
+	
+	ns_64_bit create_experiment_from_directory_structure(const std::string & directory_name);
+	void rebuild_experiment_samples_from_disk(unsigned long experiment_id);
+	void rebuild_experiment_regions_from_disk(unsigned long experiment_id);
+
 
 	//machine learning
 	void grayscale_from_blue();

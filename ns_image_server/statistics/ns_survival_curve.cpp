@@ -621,8 +621,8 @@ ns_survival_timepoint_event & ns_get_correct_event(const unsigned long i, ns_sur
 double ns_lifespan_device_normalization_statistics::calculate_additive_device_regression_residual(const double measurement) const{
 	//if (this->external_fix_point_specified())
 	//	return measurement - additive_device_regression_coefficient - grand_strain_mean + control_mean_external_fix_point;
-	if (measurement < additive_device_regression_coefficient)
-		cerr << "WHA";
+	//if (measurement < additive_device_regression_coefficient)
+	//	cerr << "WHA";
 	return measurement - (double)additive_device_regression_coefficient;
 }
 double ns_lifespan_device_normalization_statistics::calculate_multiplicative_device_regression_residual(const double measurement) const{

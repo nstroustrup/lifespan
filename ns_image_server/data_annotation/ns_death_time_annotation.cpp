@@ -1194,7 +1194,12 @@ class ns_death_time_event_compiler_time_aggregator{
 public:
 	ns_death_time_event_compiler_time_aggregator(const ns_region_metadata & metadata_):metadata(metadata_){}
 	void add(const ns_death_time_annotation & e,bool use_by_hand_data){
-	
+	/*	if (e.type == ns_movement_cessation &&
+			e.excluded == ns_death_time_annotation::ns_censored_at_end_of_experiment){
+				if (e.annotation_source == ns_death_time_annotation::ns_lifespan_machine)
+					cerr << "JA";
+			else cerr << "WHA";
+		}*/
 		if (e.type == ns_no_movement_event) return;
 		if (!ns_movement_event_is_a_state_transition_event(e.type))
 			return;
@@ -2080,19 +2085,40 @@ void ns_death_time_annotation_compiler_region::generate_survival_curve(ns_surviv
 							a[1] = death.by_hand.last_slow_movement_annotation;
 						else 
 							a[1] = death.machine.last_slow_movement_annotation;
-						
+
 						if (death.by_hand.last_fast_movement_annotation != 0)
 							a[2] = death.by_hand.last_fast_movement_annotation;
 						else
 							a[2] = death.machine.last_fast_movement_annotation;
-						
+					/*	if (death.by_hand.death_annotation != 0 && death.machine.death_annotation == 0){
+							if (a[0] != 0 && a[0]->excluded == ns_death_time_annotation::ns_censored_at_end_of_experiment)
+								cerr << "WHA";
+							if (a[1] != 0 && a[1]->excluded == ns_death_time_annotation::ns_censored_at_end_of_experiment)
+								cerr << "WHA";
+							if (a[2] != 0 && a[2]->excluded == ns_death_time_annotation::ns_censored_at_end_of_experiment)
+								cerr << "WHA";
+
+						}*/
 					}
 					else continue;
 
 					for (unsigned int i = 0; i < 3; i++){
 						if (a[i]!=0){
 							ns_death_time_annotation b(*a[i]);
-							q->properties.transfer_sticky_properties(b);
+							ns_death_time_annotation properties_to_transfer(q->properties);
+
+							//A special case occurs when
+							//1) the lifespan machine notices a worm that is slow moving or changing posture 
+							//   at the end of an experiment, and generates a censoring event for it
+							//2) A human annotates the animal as dying using the storyboard or other means.
+							//In this case, the original lifespan machine censoring event needs to be excluded
+							//and this is the only location this case can be observed and handled!
+							if (b.type == ns_movement_cessation &&
+								b.annotation_source != ns_death_time_annotation::ns_lifespan_machine &&
+								properties_to_transfer.excluded == ns_death_time_annotation::ns_censored_at_end_of_experiment)
+								properties_to_transfer.excluded = ns_death_time_annotation::ns_not_excluded;
+
+							properties_to_transfer.transfer_sticky_properties(b);
 						
 							//we use this as debugging info in output file
 							if (a[2] != 0 && a[0] != 0)
@@ -2117,9 +2143,13 @@ void ns_death_time_annotation_compiler_region::generate_survival_curve(ns_surviv
 			}
 		}
 		for (unsigned int i = 0; i < non_location_events.size(); i++){
-			//www
+			
 			//std::cerr << "Adding censoring event\n";
 			ns_death_time_annotation b(non_location_events[i]);
+
+	//		if (b.excluded == ns_death_time_annotation::ns_censored_at_end_of_experiment)
+	//							cerr << "WHA";
+							
 			b.volatile_matches_machine_detected_death = true;
 			aggregator.add(b,use_by_hand_worm_cluster_annotations);
 		}

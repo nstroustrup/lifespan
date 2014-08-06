@@ -12,6 +12,7 @@
 #include "ns_time_path_image_analyzer.h"
 #include "ns_hidden_markov_model_posture_analyzer.h"
 #include "ns_fl_modal_dialogs.h"
+#include <set>
 
 #include "hungarian.h"
 using namespace std;
@@ -2082,13 +2083,207 @@ void ns_worm_learner::save_current_area_selections(){
 			output_area_info(im_cc.result);
 	}
 
+
+
+struct ns_deduced_sample{
+	ns_deduced_sample():sample_width_in_pixels(0),id(0),mask_image_id(0),mask_width_in_pixels(0),device_capture_period_in_seconds(0),number_of_consecutive_captures_per_sample(0){}
+	std::string name,
+			    device,
+				incubator_name,
+				incubator_location,
+				region_mask_filename;
+	unsigned long device_capture_period_in_seconds,
+				number_of_consecutive_captures_per_sample,
+				sample_width_in_pixels,
+				mask_width_in_pixels;
+	ns_64_bit id,
+			  mask_image_id;
+	void get_device_info(ns_sql & sql){
+		if (name.empty())
+			throw ns_ex("No name specified");
+		std::string::size_type pos = name.find_last_of("_");
+		if (pos == name.npos|| pos != name.size()-2)
+			throw ns_ex("Sample name") << name << " doesn't have an underscore in the correct place.";
+		device = name.substr(0,name.size()-2);
+		sql << "SELECT incubator_name, incubator_location FROM device_inventory WHERE device_name = \"" << device << "\"";
+		ns_sql_result res;
+		sql.get_rows(res);
+		if (res.size() == 0)
+			return;
+		incubator_name = res[0][0];
+		incubator_location = res[0][1];
+	}
+	void resubmit_mask_for_processing(ns_sql & sql){
+		ns_64_bit image_id = image_server.make_record_for_new_sample_mask(id,sql);
+
+		sql << "INSERT INTO image_masks SET image_id = " << mask_image_id << ", processed='0',resize_factor=" << (sample_width_in_pixels/mask_width_in_pixels);
+		ns_64_bit mask_id = sql.send_query_get_id();
+		
+		sql << "UPDATE capture_samples SET mask_id=" << mask_id << " WHERE id=" << id;
+		sql.send_query();
+		sql << "INSERT INTO processing_jobs SET image_id=" << image_id << ", mask_id=" << mask_id << ", "
+				<< "op" << (unsigned int)ns_process_analyze_mask<< " = 1, time_submitted=" << ns_current_time() << ", urgent=1";
+		sql.send_query();
+		sql.send_query("COMMIT");
+	}
+};
+
+
+void ns_explode_slist(const std::string & s, vector<std::string> & vals){
+	string cur;
+	for (unsigned int i = 0; i < s.size(); i++){
+			if (s[i] == DIR_CHAR){
+				vals.push_back(cur);
+				cur.resize(0);
+			}
+			else cur+=s[i];
+		}
+		if (cur.size() != 0)
+			vals.push_back(cur);
+};
+
 struct ns_capture_image_d{
 	ns_capture_image_d(const ns_64_bit & c, const ns_64_bit & i):captured_image_id(c),image_id(i){}
 	ns_capture_image_d():captured_image_id(0),image_id(0){}
 	ns_64_bit captured_image_id, image_id;
 };
 
-void ns_worm_learner::rebuild_experiment_from_disk(unsigned long experiment_id){
+ns_64_bit ns_worm_learner::create_experiment_from_directory_structure(const std::string & directory_name){
+	std::string dname(directory_name),lname(image_server.long_term_storage_directory);
+	ns_to_lower(dname);
+	ns_to_lower(lname);
+
+	std::string::size_type pos = dname.find_first_of(lname);
+
+	if (pos == dname.npos)
+		throw ns_ex("The specified directory does not seem to be a subdirectory of the long term storage directory");
+	
+	std::string experiment_name = directory_name.substr(image_server.long_term_storage_directory.size()+1);
+	if (experiment_name.size() == 0)
+		throw ns_ex("The specified directory does not seem to be a subdirectory of the long term storage directory");
+			
+	std::vector<std::string> name_split;
+	ns_explode_slist(experiment_name,name_split);
+	
+	std::string experiment_partition;
+
+	if (name_split.size() > 2){
+		throw ns_ex("The specified directory does not seem to be at the right depth in the directory tree");
+	}
+	else if (name_split.size() == 2){
+		experiment_partition = name_split[0];
+		experiment_name = name_split[1];
+	}
+	else experiment_name = name_split[0];
+
+	std::string experiment_base_path(image_server.long_term_storage_directory);
+	if (experiment_partition.size() > 0){
+		 experiment_base_path += DIR_CHAR_STR;
+		 experiment_base_path += experiment_partition;
+	}
+	std::string experiment_path = experiment_base_path + DIR_CHAR_STR +  experiment_name;
+
+	ns_dir dir(experiment_path);
+	std::vector<ns_deduced_sample> samples;
+
+	ns_acquire_for_scope<ns_sql> sql(image_server.new_sql_connection(__FILE__,__LINE__));
+	std::sort(dir.dirs.begin(),dir.dirs.end());
+	for (unsigned long i = 0; i < dir.dirs.size(); i++){
+		if (dir.dirs[i] != "." &&
+			dir.dirs[i] != ".." &&
+			dir.dirs[i] != "video" &&
+			dir.dirs[i] != "animal_storyboard" &&
+			dir.dirs[i] != "region_masks"){
+			samples.resize(samples.size()+1);
+			samples.rbegin()->name = dir.dirs[i];
+			samples.rbegin()->get_device_info(sql());
+		}
+
+	}
+
+	if (samples.empty())
+		throw ns_ex("The specified directory does not seem to have any valid sample subdirectories");
+
+	sql() << "SELECT id FROM experiments WHERE name = \"" <<experiment_name << "\"";
+	ns_sql_result res;
+	sql().get_rows(res);
+	if(res.size() != 0)
+		throw ns_ex("An experiment with the name ") << experiment_name << " already exists!";
+
+	sql() << "INSERT INTO experiments SET name='" << sql().escape_string(experiment_name) << "',description='',`partition`='" 
+		  << sql().escape_string(experiment_partition) << "', time_stamp=0";
+
+	const ns_64_bit experiment_id = sql().send_query_get_id();
+
+	for (unsigned long i = 0; i < samples.size(); i++){
+		cerr << "Creating record for sample " << samples[i].name << "\n";
+		sql() << "INSERT INTO capture_samples SET experiment_id = " << ns_to_string(experiment_id) << ",name='" << sql().escape_string(samples[i].name) << "'"
+				<< ",device_name='" << sql().escape_string(samples[i].device) << "',parameters=''"
+				<< ",position_x=0 ,position_y=0"
+				<< ",size_x=0,size_y=0"
+				<< ",incubator_name='" << sql().escape_string(samples[i].incubator_name) 
+				<< "',incubator_location='" <<  sql().escape_string(samples[i].incubator_location)
+				<< "',desired_capture_duration_in_seconds=0"
+				<< ",description='',model_filename='',reason_censored='',image_resolution_dpi='3200'"
+				<< ",device_capture_period_in_seconds=0"
+				<< ",number_of_consecutive_captures_per_sample=0"
+				<< ", time_stamp=0";
+		samples[i].id = sql().send_query_get_id();
+	}
+	
+	for (unsigned long i = 0; i < samples.size(); i++){
+		cerr << "Obtaining image width and processing mask for sample " << samples[i].name << "\n";
+		//get image size
+		std::string unprocessed_image_directory(experiment_base_path + DIR_CHAR_STR + experiment_name + DIR_CHAR_STR + samples[i].name + DIR_CHAR_STR + "captured_images");
+		ns_dir dir;
+		std::vector<std::string> files;
+		dir.load_masked(unprocessed_image_directory,"tif",files);
+		if (files.empty())
+			continue;
+		std::sort(files.rbegin(),files.rend());
+		
+		for (unsigned long j =0; j < files.size(); j++){
+			try{
+				ns_tiff_image_input_file<ns_8_bit> tiff_in;
+				tiff_in.open_file(unprocessed_image_directory+DIR_CHAR_STR + files[j]);
+				samples[i].sample_width_in_pixels = tiff_in.properties().width;
+				tiff_in.close();
+				break;
+			}
+			catch(ns_ex & ex){
+				cerr << ex.text() << "\n";
+			}
+		}
+		if (samples[i].sample_width_in_pixels==0){
+			cerr << "Couldn't find a good captured image file for the sample\n";
+			continue;
+		}
+		std::string mask_filename = "mask_" + samples[i].name + ".tif";
+		std::string mask_relative_path = experiment_name + DIR_CHAR_STR + "region_masks";
+		std::string mask_path(experiment_base_path + DIR_CHAR_STR + mask_relative_path + DIR_CHAR_STR + mask_filename);
+		
+		if (!ns_dir::file_exists(mask_path)){
+			cerr << "The mask file didn't seem to exist\n";
+			continue;
+		}
+		ns_tiff_image_input_file<ns_8_bit> tiff_in;
+		tiff_in.open_file(mask_path);
+		samples[i].mask_width_in_pixels = tiff_in.properties().width;
+		ns_image_server_image im;
+		im.filename = mask_filename;
+		im.path = mask_relative_path;
+		im.partition = experiment_partition;
+		im.save_to_db(0,&sql());
+		samples[i].mask_image_id = im.id;
+		samples[i].resubmit_mask_for_processing(sql());
+	
+	}
+	ns_image_server_push_job_scheduler::request_job_queue_discovery(sql());
+	return experiment_id;
+}
+
+
+void ns_worm_learner::rebuild_experiment_samples_from_disk(unsigned long experiment_id){
 	ns_acquire_for_scope<ns_sql> sql(image_server.new_sql_connection(__FILE__,__LINE__));
 
 	sql() << "SELECT name FROM experiments WHERE id = " << experiment_id;
@@ -2176,6 +2371,189 @@ void ns_worm_learner::rebuild_experiment_from_disk(unsigned long experiment_id){
 	sql.release();
 }
 
+struct ns_region_processed_image_disk_info{
+	ns_image_server_captured_image_region reg_im;
+	ns_image_server_image im;
+};
+void ns_worm_learner::rebuild_experiment_regions_from_disk(unsigned long experiment_id){
+	ns_acquire_for_scope<ns_sql> sql(image_server.new_sql_connection(__FILE__,__LINE__));
+
+	sql() << "SELECT name FROM experiments WHERE id = " << experiment_id;
+	std::string experiment_name = sql().get_value();
+
+	sql() << "SELECT id,name FROM capture_samples WHERE experiment_id = " << experiment_id;
+	ns_sql_result sample_res;
+	sql().get_rows(sample_res);
+	
+	std::vector<ns_processing_task> additional_tasks_to_load;
+	//additional_tasks_to_load.push_back(ns_unprocessed);
+	additional_tasks_to_load.push_back(ns_process_spatial);
+	additional_tasks_to_load.push_back(ns_process_lossy_stretch);
+	additional_tasks_to_load.push_back(ns_process_threshold);
+	additional_tasks_to_load.push_back(ns_process_thumbnail);
+	std::vector<std::map<ns_64_bit,ns_region_processed_image_disk_info> > existing_processed_task_images;
+	std::string partition(image_server.image_storage.get_partition_for_experiment(experiment_id,&sql(),true));
+
+	for (unsigned long i = 0; i < sample_res.size(); i++){
+		unsigned long number_of_additions(0);
+		cout << "Considering sample " << sample_res[i][1] << "\n";
+		const ns_64_bit sample_id = ns_atoi64(sample_res[i][0].c_str());
+		const std::string sample_name = sample_res[i][1];
+		const std::string device_name = sample_name.substr(0,sample_name.size()-2);
+		sql() << "SELECT id,name FROM sample_region_image_info WHERE sample_id = "<< sample_id;
+		ns_sql_result region_res;
+		sql().get_rows(region_res);
+		for (unsigned long k = 0; k < region_res.size(); k++){
+			existing_processed_task_images.clear();
+			existing_processed_task_images.resize(additional_tasks_to_load.size());
+
+			const ns_64_bit region_info_id = ns_atoi64(region_res[k][0].c_str());
+
+			//we need to build a list of all processed images to link them to the main image if they exist
+			for (unsigned long j = 0; j < additional_tasks_to_load.size(); j++){
+				ns_file_location_specification path2(image_server.image_storage.get_path_for_region(region_info_id,&sql(),additional_tasks_to_load[j]));
+				std::string absolute_path(path2.absolute_long_term_filename());
+				if (!ns_dir::file_exists(absolute_path))
+					continue;
+				ns_dir dir;
+				std::vector<std::string> filenames;
+				if (additional_tasks_to_load[j] == ns_process_thumbnail)
+					dir.load_masked(absolute_path,"jpg",filenames);
+				else dir.load_masked(absolute_path,"tif",filenames);
+				std::string::size_type pos = absolute_path.find(partition);
+				if (pos==absolute_path.npos)
+					throw ns_ex("Incorrect path identified: Images are not in a partition of the long term storage directory");
+				std::string relative_path = absolute_path.substr(pos+partition.size()+1);
+				relative_path.resize(relative_path.size()-1);
+
+				for (unsigned long l = 0; l < filenames.size(); l++){
+					if (filenames[l] == "" ||
+						filenames[l] == "." ||
+						filenames[l] == "..")
+						continue;
+					ns_image_server_captured_image_region reg;
+					try{
+						reg.from_filename(filenames[l]);
+						ns_region_processed_image_disk_info dim;
+						dim.reg_im = reg;
+						dim.im.capture_time = reg.capture_time;
+						dim.im.partition = partition;
+						dim.im.filename = filenames[l];
+						dim.im.path = relative_path;
+
+						existing_processed_task_images[j][reg.region_images_id] = dim;
+					}
+					catch(...){
+
+					}
+				}
+			}
+
+			
+			ns_file_location_specification path(image_server.image_storage.get_path_for_region(region_info_id,&sql()));
+			std::string absolute_path = path.absolute_long_term_filename();
+
+			if (!ns_dir::file_is_writeable(absolute_path + DIR_CHAR_STR + "temp.tif"))
+				throw ns_ex("The path ") << absolute_path << " is not writeable.  This is required to update database and rename image filenames accordingly.";
+			std::string::size_type pos = absolute_path.find(partition);
+			if (pos==absolute_path.npos)
+				throw ns_ex("Incorrect path identified: Images are not in a partition of the long term storage directory");
+			std::string relative_path = absolute_path.substr(pos+partition.size()+1);
+			relative_path.resize(relative_path.size()-1);
+			//find all region images based on the existance of an unproccessed (masked) image
+			ns_dir dir;
+			std:: vector<std::string> filenames;
+			dir.load_masked(absolute_path,".tif",filenames);
+			sql() << "SELECT id FROM sample_region_images WHERE region_info_id = " << region_info_id;
+			ns_sql_result res2;
+			sql().get_rows(res2);
+			std::set<ns_64_bit> existing_region_images;
+
+			for (unsigned long j = 0; j < res2.size(); j++)
+				existing_region_images.insert(existing_region_images.end(),ns_atoi64(res2[j][0].c_str()));
+		
+			sql() << "SELECT id FROM captured_images WHERE sample_id = " << sample_id;
+			sql().get_rows(res2);
+			std::set<ns_64_bit> exiting_captured_images;
+			for (unsigned long j = 0; j < res2.size(); j++)
+				exiting_captured_images.insert(exiting_captured_images.end(),ns_atoi64(res2[j][0].c_str()));
+		
+
+			for (unsigned long j = 0; j < filenames.size(); j++){
+				ns_image_server_captured_image_region region_image;
+				region_image.from_filename(filenames[j]);
+				region_image.region_info_id = region_info_id;
+				region_image.device_name = device_name;
+
+				std::set<ns_64_bit>::const_iterator p = existing_region_images.find(region_image.region_images_id);
+				if (p != existing_region_images.end())
+					continue;
+				
+				number_of_additions++;
+				cout << filenames[j] << " appears to be missing a database entry.  A new record will be created.\n";
+
+				ns_image_server_captured_image cap_im(region_image);
+				std::set<ns_64_bit>::const_iterator p2 = exiting_captured_images.find(cap_im.captured_images_id);
+				if (p2 != exiting_captured_images.end()){
+					cout << "Creating a capture sample image record for the region image.\n";
+					ns_64_bit old_im(cap_im.captured_images_id);
+					cap_im.captured_images_id = 0;
+					cap_im.save(&sql());
+					exiting_captured_images.insert(exiting_captured_images.begin(),old_im);
+				}
+				
+				ns_image_server_image unprocessed_image;
+				unprocessed_image.capture_time = region_image.capture_time;
+				unprocessed_image.partition = partition;
+				unprocessed_image.filename = filenames[j];;
+				unprocessed_image.path = relative_path;
+				unprocessed_image.save_to_db(0,&sql(),false);
+				region_image.region_images_image_id = unprocessed_image.id;
+				
+
+				for (unsigned long j=0; j < additional_tasks_to_load.size(); j++){
+
+					std::map<ns_64_bit,ns_region_processed_image_disk_info>::iterator p = 
+						existing_processed_task_images[j].find(region_image.region_images_id);
+
+					if (p == existing_processed_task_images[j].end())
+						continue;
+					//create a new database record for existing file and link it to the region image record
+					p->second.im.id = 0;
+					p->second.im.save_to_db(0,&sql());
+					region_image.op_images_[additional_tasks_to_load[j]] = p->second.im.id;
+				}
+				
+				region_image.captured_images_id = cap_im.captured_images_id;
+				
+				region_image.specified_16_bit = false;
+				region_image.experiment_name = experiment_name;
+				region_image.experiment_id = experiment_id;
+				region_image.sample_id = sample_id;
+				region_image.sample_name = sample_name;
+				//create a new record
+				region_image.mask_color = 0;
+				region_image.detected_worm_state = ns_detected_worm_unsorted;
+				region_image.region_images_id = 0;
+				region_image.save(&sql());
+				region_image.update_all_processed_image_records(sql());
+
+				/*std::string new_filename = im.filename(&sql()) + "." + ns_dir::extract_extension(image.filename);
+				std::string old_filename = image.filename;
+				bool success(ns_dir::move_file(path_str + DIR_CHAR_STR + old_filename,path_str + DIR_CHAR_STR + new_filename));
+				if (!success){
+					cerr << "Could not rename " << old_filename << " to " << new_filename << ".  If you run metadata repair on this experiment again, you will get duplicate entries.\n";
+					continue;
+				}
+				image.filename = new_filename;
+				image.save_to_db(image.id,&sql());*/
+			}
+			if (number_of_additions == 0)
+				cout << "No database entries were identified as missing.\n";
+		}
+	}
+	sql.release();
+}
 void ns_worm_learner::test_time_path_analysis_parameters(unsigned long region_id){
 	ns_acquire_for_scope<ns_sql> sql(image_server.new_sql_connection(__FILE__,__LINE__));
 	ns_time_path_solver tp_solver;

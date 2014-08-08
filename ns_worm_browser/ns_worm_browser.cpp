@@ -2148,6 +2148,16 @@ struct ns_capture_image_d{
 	ns_64_bit captured_image_id, image_id;
 };
 
+struct ns_interval_histogram{
+	ns_interval_histogram(long i,unsigned c):interval(i),count(c){}
+	ns_interval_histogram():interval(0),count(0){}
+	long interval;
+	unsigned long count;
+};
+bool ns_interval_histogram_less(const ns_interval_histogram & a, const ns_interval_histogram & b){
+	return a.count < b.count;
+}
+
 ns_64_bit ns_worm_learner::create_experiment_from_directory_structure(const std::string & directory_name){
 	std::string dname(directory_name),lname(image_server.long_term_storage_directory);
 	ns_to_lower(dname);
@@ -2238,6 +2248,55 @@ ns_64_bit ns_worm_learner::create_experiment_from_directory_structure(const std:
 		ns_dir dir;
 		std::vector<std::string> files;
 		dir.load_masked(unprocessed_image_directory,"tif",files);
+		std::vector<unsigned long> sample_times;
+		sample_times.reserve(files.size());
+		for (unsigned long j = 0; j < files.size(); j++){
+			ns_image_server_captured_image im;
+			int offset(0);
+			try{
+				im.from_filename(files[j],offset);
+				sample_times.push_back(im.capture_time);
+			}catch(...){}
+		}
+		std::sort(sample_times.begin(),sample_times.end());
+		std::map<long,ns_interval_histogram> intervals;
+		for (unsigned long j = 1; j < sample_times.size(); j++){
+			const long diff = sample_times[j]-sample_times[j-1];
+			std::map<long,ns_interval_histogram>::iterator p = intervals.find(diff);
+			if (p == intervals.end())
+				intervals[diff] = ns_interval_histogram(diff,0);
+			else intervals[diff].count++;
+		}
+		std::vector<ns_interval_histogram> sorted_intervals;
+		for (std::map<long,ns_interval_histogram>::const_iterator p = intervals.begin(); p != intervals.end(); p++)
+			sorted_intervals.push_back(p->second);
+		std::sort(sorted_intervals.rbegin(),sorted_intervals.rend(),ns_interval_histogram_less);
+		if (sorted_intervals.size() == 0)
+			throw ns_ex("Not enough intervals to deduce spacing");
+		unsigned long sample_interval, number_of_consecutive_sample_captures;
+		if (sorted_intervals.size() == 1 || sorted_intervals[0].count > (8*sample_times.size())/10){
+			sample_interval = sorted_intervals[0].interval;
+			number_of_consecutive_sample_captures = 1;
+		}
+		else{
+			unsigned long largest(sorted_intervals[0].interval),
+				smallest(sorted_intervals[1].interval);
+			ns_swap<unsigned long> s;
+			if (smallest > largest)
+				swap(smallest,largest);
+			number_of_consecutive_sample_captures = largest/smallest;
+			sample_interval=smallest;
+		}
+		if (number_of_consecutive_sample_captures > 2)
+			cerr << ("Unusual number of consecutive samples: ") << number_of_consecutive_sample_captures << "\n";
+		else if (sample_interval > 30*60*60)
+			cerr <<("Unusual sample interval: ")<< sample_interval << "\n";
+		else{
+			sql() << "UPDATE capture_samples SET number_of_consecutive_captures_per_sample = " << number_of_consecutive_sample_captures 
+				  << ", device_capture_period_in_seconds= " << sample_interval
+				  << " WHERE id = " << samples[i].id;
+			sql().send_query();
+		}
 		if (files.empty())
 			continue;
 		std::sort(files.rbegin(),files.rend());

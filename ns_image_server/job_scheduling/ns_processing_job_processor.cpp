@@ -736,8 +736,22 @@ bool ns_processing_job_maintenance_processor:: run_job(ns_sql & sql){
 			//ns_analyzed_image_time_path::write_detailed_movement_quantification_analysis_header(o());
 		//	o() << "\n";
 			
+			const bool skip_inferred_worm_analysis(image_server->get_cluster_constant_value("skip_inferred_worm_analysis","false",&sql) != "false");
+
 			ns_time_path_solution time_path_solution;
-			if( job.maintenance_task == ns_maintenance_rebuild_movement_from_stored_images || 
+			if (skip_inferred_worm_analysis){
+				try{
+					time_path_solution.load_from_db(job.region_id,sql); 
+				}
+				catch(ns_ex & ex){
+					ns_time_path_solver tp_solver;
+					tp_solver.load(job.region_id,sql);
+					ns_time_path_solver_parameters solver_parameters(ns_time_path_solver_parameters::default_parameters(job.region_id,sql));
+					tp_solver.solve(solver_parameters,time_path_solution);
+					time_path_solution.save_to_db(job.region_id,sql);
+				}
+			}
+			else if( job.maintenance_task == ns_maintenance_rebuild_movement_from_stored_images || 
 				job.maintenance_task == ns_maintenance_rebuild_movement_from_stored_image_quantification){
 				image_server->register_server_event(ns_image_server_event("Loading point cloud solution from disk."),&sql);
 				time_path_solution.load_from_db(job.region_id,sql); 

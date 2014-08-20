@@ -2531,11 +2531,13 @@ void ns_worm_learner::rebuild_experiment_regions_from_disk(unsigned long experim
 			for (unsigned long j = 0; j < res2.size(); j++)
 				existing_region_images.insert(existing_region_images.end(),ns_atoi64(res2[j][0].c_str()));
 		
-			sql() << "SELECT id FROM captured_images WHERE sample_id = " << sample_id;
+			sql() << "SELECT id, capture_time FROM captured_images WHERE sample_id = " << sample_id;
 			sql().get_rows(res2);
-			std::set<ns_64_bit> exiting_captured_images;
-			for (unsigned long j = 0; j < res2.size(); j++)
-				exiting_captured_images.insert(exiting_captured_images.end(),ns_atoi64(res2[j][0].c_str()));
+			std::map<unsigned long,ns_64_bit> existing_captured_images;
+			for (unsigned long j = 0; j < res2.size(); j++){
+				const ns_64_bit id(ns_atoi64(res2[j][0].c_str()));
+				existing_captured_images[atol(res2[j][1].c_str())] = id;
+			}
 		
 
 			for (unsigned long j = 0; j < filenames.size(); j++){
@@ -2552,14 +2554,16 @@ void ns_worm_learner::rebuild_experiment_regions_from_disk(unsigned long experim
 				cout << filenames[j] << " appears to be missing a database entry.  A new record will be created.\n";
 
 				ns_image_server_captured_image cap_im(region_image);
-				std::set<ns_64_bit>::const_iterator p2 = exiting_captured_images.find(cap_im.captured_images_id);
-				if (p2 != exiting_captured_images.end()){
+				std::map<unsigned long,ns_64_bit>::const_iterator p2 = existing_captured_images.find(cap_im.capture_time);
+				if (p2 == existing_captured_images.end()){
 					cout << "Creating a capture sample image record for the region image.\n";
-					ns_64_bit old_im(cap_im.captured_images_id);
+					ns_64_bit old_im_id(cap_im.captured_images_id);
 					cap_im.captured_images_id = 0;
 					cap_im.save(&sql());
-					exiting_captured_images.insert(exiting_captured_images.begin(),old_im);
+					region_image.captured_images_id = cap_im.captured_images_id;
+					existing_captured_images[cap_im.capture_time] = cap_im.captured_images_id;
 				}
+				else region_image.captured_images_id = p2->second;
 				
 				ns_image_server_image unprocessed_image;
 				unprocessed_image.capture_time = region_image.capture_time;
@@ -4585,12 +4589,12 @@ void ns_worm_learner::apply_mask_on_current_image(){
 	//image->stream_splitter->current_image
 	//                      ->mask_splitter
 
-	ns_image_stream_mask_splitter<ns_8_bit, ns_image_stream_file_sink<ns_8_bit> > region_splitter(128);
+	ns_image_stream_mask_splitter<ns_8_bit, ns_image_stream_file_sink<ns_8_bit> > region_splitter(4096);
 
 	*region_splitter.mask_info() = mask_analyzer.mask_info();
 	region_splitter.specify_mask(current_mask);
 	
-	current_image.pump(region_splitter,128);
+	current_image.pump(region_splitter,4096);
 
 }
 
@@ -4956,8 +4960,8 @@ void ns_worm_learner::get_ip_and_port_for_mask_upload(std::string & ip_address,u
 	port = atol(res[0][1].c_str());
 }
 
-void ns_worm_learner::send_mask_to_server(const std::string & ip_address,const unsigned long port){
-	
+ns_mask_info ns_worm_learner::send_mask_to_server(const std::string & ip_address,const unsigned long port){
+	ns_mask_info mask_info;
 	if (!mask_loaded())
 		throw ns_ex("No mask is currently loaded.");
 	//Connecting to image server
@@ -4969,20 +4973,21 @@ void ns_worm_learner::send_mask_to_server(const std::string & ip_address,const u
 	ns_sql * sql = image_server.new_sql_connection(__FILE__,__LINE__);
 	*sql << "INSERT INTO images SET filename = '" << current_mask_filename << "', creation_time = '" << ns_current_time() << "', "
 		<< "path = '" << ns_image_server::unclaimed_masks_directory() << "', currently_under_processing=0, partition=''";
-	unsigned long image_id = sql->send_query_get_id();
-	*sql << "INSERT INTO image_masks SET image_id = " << image_id << ", processed='0'";
-	sql->send_query();
+	mask_info.image_id = sql->send_query_get_id();
+	*sql << "INSERT INTO image_masks SET image_id = " << mask_info.image_id << ", processed='0'";
+	mask_info.mask_id = sql->send_query_get_id();
 	sql->disconnect();
 	delete sql;
 	cerr << "\nSending image......";
 	ns_image_server_message m(c);
 	m.send_message_header(NS_IMAGE_SEND,0);
-	c.write(image_id); //image_id
+	c.write(mask_info.image_id); //image_id
 	c.write((unsigned long)8);  //bits in image
-	ns_image_socket_sender<ns_8_bit>sender(128);
+	ns_image_socket_sender<ns_8_bit>sender(512);
 	sender.bind_socket(c);
-	current_mask.pump(sender,128);
+	current_mask.pump(sender,512);
 	c.close();
+	return mask_info;
 	cerr << "\nDone.\n";
 }
 
@@ -5154,6 +5159,14 @@ void ns_worm_learner::load_mask(const std::string & filename,bool draw_to_screen
 	if (extension != "tiff" && extension != "tif")
 		throw ns_ex("Invalid file type.");
 	current_mask_filename = ns_dir::extract_filename(filename);
+	ns_image_server_captured_image im;
+	try{
+		int offset;
+		im.from_filename(current_mask_filename,offset);
+	}
+	catch(ns_ex & ex){
+		cout << "Could not guess what sample this comes from.\n";
+	}
 	ns_tiff_image_input_file<ns_8_bit> tiff_in;
 	tiff_in.open_file(filename);
 
@@ -5166,21 +5179,11 @@ void ns_worm_learner::load_mask(const std::string & filename,bool draw_to_screen
 			ns_image_stream_static_offset_buffer<ns_8_bit>,
 			ns_image_standard,
 			ns_image_mask_analyzer<ns_8_bit > >
-		splitter(128);
+		splitter(4096);
 	
 	splitter.bind(current_mask, mask_analyzer);
 
-	file_source.pump(splitter,128);/*
-(	char num = 'a';
-	for (unsigned int i = 0; i < mask_analyzer.mask_info().size(); i++){
-		if (mask_analyzer.mask_info()[i].stats.pixel_count!= 0){
-			mask_analyzer.mask_info()[i].output_filename+=num;
-			mask_analyzer.mask_info()[i].output_filename+=".tif";
-			num++;
-		}
-	}*/
-//	if (draw_to_screen)
-//		draw();
+	file_source.pump(splitter,4096);
 }
 
 

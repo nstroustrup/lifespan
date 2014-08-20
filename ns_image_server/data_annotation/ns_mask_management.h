@@ -54,7 +54,7 @@ public:
 
 class ns_bulk_experiment_mask_manager{
 public:
-	ns_bulk_experiment_mask_manager():mask_analyzer(512),resize_factor(10){}
+	ns_bulk_experiment_mask_manager():mask_analyzer(4096),resize_factor(10){}
 
 	void set_resize_factor(const unsigned int i){
 		resize_factor=i;

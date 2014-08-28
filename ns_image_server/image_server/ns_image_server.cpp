@@ -823,6 +823,8 @@ void ns_image_server::set_sql_database(const std::string & database_name,const b
 		p = possible_sql_databases.insert(possible_sql_databases.end(),database_name);
 	}
 	sql_database_choice = p;
+	sql().select_db(database_name);
+	ns_death_time_annotation_flag::get_flags_from_db(sql());
 	image_server.sql_lock.release();
 	if (report_to_db){
 		image_server.register_host();

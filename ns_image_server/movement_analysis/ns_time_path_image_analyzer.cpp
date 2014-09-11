@@ -3961,12 +3961,19 @@ ns_analyzed_image_time_path_group::ns_analyzed_image_time_path_group(unsigned lo
 													 - solution_.element(source_path.stationary_elements[ordered_time[0].index]).context_image_position;
 		path.path_region_size = path.path_context_size + solution_.element(source_path.stationary_elements[ordered_time[0].index]).region_size
 												 - solution_.element(source_path.stationary_elements[ordered_time[0].index]).context_image_size;
-
+		if (path.path_region_position==ns_vector_2i(2579,300))
+				cerr << "WHA";
 	//	path.worm_size = path.region_size;
 
-		for(unsigned int j = 0; j < path.elements.size(); j++)
+		for(unsigned int j = 0; j < path.elements.size(); j++){
 			path.elements[j].offset_from_path = path.elements[j].context_position_in_source_image - path.path_context_position;
-
+				if (path.elements[j].region_offset_in_source_image()==ns_vector_2i(2579,300))
+				cerr << "WHA";
+				if (path.elements[j].region_offset_in_source_image()==ns_vector_2i(2579,301))
+				cerr << "WHA";
+				if (path.elements[j].region_offset_in_source_image()==ns_vector_2i(2579,301) && path.elements[j].absolute_time == 1408897604)
+				cerr << "WHA";
+		}
 		current_path_id++;
 	}
 }

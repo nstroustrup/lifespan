@@ -1,0 +1,171 @@
+Changes for libdmtx
+-----------------------------------------------------------------
+
+version 0.7.4 [June 2011]
+  library: Relicensed to use Simplified BSD with waiver option
+  library: Added new error codes and messages in dmtxencode.c
+  library: Added DmtxByteList struct and supporting functions
+  library: Changed file header with updated text
+  library: Fixed ECC bug for 144x144 case (thanks Huver!)
+  library: New Reed Solomon implementation
+  library: New repository structure: libdmtx, dmtx-utils, and dmtx-wrappers
+  testing: Added test in compare_generated.sh to create directory if needed
+  testing: Fix compare_generated.sh to prevent false negatives
+  encoder: Review CHK macro strategy
+  encoder: New encoding implementation
+  encoder: Added Base 256 "encode to end of symbol" single byte header
+  encoder: Check ProcessEndOfSymbolTriplet() for same problem fixed in Edifact
+  encoder: Clean up PushCTXValues() passFail handling
+  encoder: Fixed all encoding bugs reported by compare_generated.sh
+  encoder: Fixed encoding bug affecting certain end-of-symbol conditions
+  encoder: Replaced "twothirdsbits" encoder concept (major source of headaches)
+  encoder: Track intermediate states in "optimize best" to handle all possibilities
+  decoder: Use new Edifact decode function that doesn't assume full triplet
+
+version 0.7.2 [September 2009]
+  Added initial macro decoding support (thanks Marlon!)
+  Fast quad fill for dmtxDecodeMatrixRegion() (thanks Mackenzie!)
+  Fixed capacity bug with rectangle requests
+  New Vala wrapper (thanks Evan!)
+  Wrapper integration in build system (thanks Evan!)
+  Add libdmtx-X.X.X.zip as source package option
+  Add libdmtx-win32-X.X.X.zip as binary package option
+  Add "project" directory to EXTRA_DIST in Makefile.am
+
+version 0.7.0 [March 2009]
+  New Java wrapper (thanks Pete and Dikran!)
+  New .NET wrapper (thanks Vali and Joe!)
+  Added solution and project files for MS Visual Studio 9.0
+  Reader support for FNC1 and upper shift (thanks Robin!)
+  Support for byte-padded rows through dmtxImageSetProp()
+  New no-copy image handling with configurable pixel packing
+  Moved image scaling factors to DmtxDecode
+  Moved scan cache from DmtxImage to DmtxDecode
+  Eliminate types DmtxRgb, DmtxColor3, and DmtxGradient
+  API updates for consistent naming and conventions
+  Added dmtxEncodeSetProp() and dmtxEncodeGetProp()
+  Option to print extended ASCII as UTF-8 (thanks Robin!)
+  Fixed diagnostic image output
+  Fixed misrepresented capacity in verbose mode
+  True vector SVG output bypassing ImageMagick (thanks Richard!)
+  Use ImageMagick to write images in major raster formats
+  Fixed several bugs and compiler warnings
+
+version 0.6.0 [November 2008]
+  dmtxread now scans all major image formats [Olivier]
+  New encoding/decoding Ruby wrapper [Romain]
+  Reduced memory footprint
+  Will scan multiple barcodes per image
+  Various platform-specific improvements
+  Initial work preparing for custom pixel packing in future
+  Begin static analysis cleanup with splint
+  New --disable-dmtxread and --disable-dmtxwrite [Romain]
+  Ability to specify max/min expected barcode sizes
+  New edge neighbor tracking (Hough + 2 way edge cache)
+  Info cache to track scan progress and avoid rescanning pixels
+  Major reduction in floating point operations
+  New informative return codes (found, not found, error)
+  Read input from STDIN
+  Diagnostic images display trail left by scanning logic
+  Option to write output to STDOUT [Olivier]
+  PHP wrapper now compiles with recent libdmtx
+  Dedicated README.xxx instructions for specific platforms
+
+version 0.5.2 [September 2008]
+  Move SetRangeLimit and SetScanRegion into library
+  Replace DMTXUTIL_SUCCESS/ERROR with DMTX_SUCCESS/FAILURE
+  Add edge threshold filtering
+  Add encoding support for 144x144 barcodes
+  Fixed encoding case when message starts with two digits
+  Fixed bug in range limit option
+  Add dynamic image shrinking (pixel skipping)
+  Add step-by-step diagnostic image dump (debug build)
+  Fixed bug in minimum scan gap setting
+  Removed y-flip from internal pixel storage
+  Added strict border tests to eliminate false positives
+  Added squareness deviation filter
+  Implement simplified Hough transform for locating first edge
+  Several behind-the-scenes performance enhancements
+  Python wrapper update; 15x faster (thanks Jonathan!)
+  New PHP wrapper code added
+  Various improvements when building for OS X and FreeBSD
+
+version 0.5.1 [July 2008]
+  Fixed Extended ASCII encoding bug
+  Fixed error correction bug related to multiple interleaved blocks
+  Added timeout condition for region detection
+  Allow partial and complete disabling of error correction
+  Replaced DmtxPixel struct with DmtxRgb for safe pixel copies
+  Tighter integration with libfec
+  Conditional build logic for libtiff
+  Added placeholder for new utility, dmtxquery
+  Added unit test program for testing libdmtx internals
+  Include local copies of getopt1.c, getopt.c, and getopt.h
+  Various things to help compiling in MS VC++
+  Lots of holes filled in comments (Doxygen)
+  Fixed experimental Data Mosaic decoding
+  New Cocoa/iPhone wrapper (thanks Stefan!)
+
+version 0.5 [April 2008]
+  Error correction using libfec (thanks Florian!)
+  Rework encoding and decoding API for consistency and intuitiveness
+  Handle region detection and region decoding as separate tasks
+  Pass found regions back to calling app before attempting decode
+  Image mask approach (for performance and multi-barcode scans)
+  Fix TestForEndOfSymbolEdifact() to handle special cases correctly
+  Roll scan pattern into core library (inward breadth-first cross)
+  Replace dmtxScanLine() with dmtxScanPixel()
+  Implement 4-direction weighted module decisions (eliminates thresholds)
+  Add ability to scan portion of image
+  Add --diagnose option that dumps image with embedded scan infomation
+  Added Z rotation angle (in degrees) to verbose output
+  Move ASCII and codeword output to separate --preview option
+  Added -R option for setting image print resolution in dpi (PNG only)
+  Remove gltest and simpletest from default build target
+  Update Subversion to be keyword friendly ($Id$)
+  Updated documentation to reflect API and option changes
+
+version 0.4 [December 2007]
+  Remove arbitrary sz scaling (100.0) since it doesn't matter anyway
+  Fix 4 bottom-right modules in sizes where they are not used (thanks Matthias R.!)
+  Replace callback references with preprocessor macros
+  Implement remaining encodation schemes for encoding (X12, Base 256, etc...)
+  Implement remaining encodation schemes for decoding (X12, Base 256, etc...)
+  Implement --auto-best option for best possible encoding efficiency
+  Implement multi-region symbols
+  Read and write rectangle barcodes
+  Use GNU autotools (autoconf, automake, libtool)
+  New region detection overhaul
+  Include initial version of Python bindings from pydmtx project (thanks Dan!)
+  Add decoding functionality through Python
+  Add marathon images to project (thanks john@sportcam.net!)
+  Fix dmtxread crash when same barcode is found more than 16 times
+  Verbose messages describing traits of detected barcodes
+  --codewords option to print codewords instead of decoded message
+  --newline option to insert newline character at end of output
+  Additional output formats (PNG, ASCII, codewords)
+  'make test' executes regression tests for encodation
+
+version 0.3 [October 2006]
+  Several high-level changes: build process, naming consistency, file layout
+  Added new automatic style checks in script directory ("make style")
+  Implemented remaining encodation schemes for decode (X12, Base 256, etc...)
+  Fixed instability/regressions that were introduced in v0.2 release
+  Color sampling now averaged from multiple pixel locations
+  Size calibration accuracy improved with new approach
+  dmtxread: increased default scanline count, added multi-page TIFF format
+  dmtxwrite: bug fixes, implemented -o option
+  Improved documentation: deps listed in INSTALL, new man page for dmtxwrite
+
+version 0.2 [June 2006]
+  Cleaned up program structure surrounding decoding process
+  Improved API for real-world use (no longer just dumping results to STDOUT)
+  Added "dmtxread" command line utility
+  Added "dmtxwrite" command line utility
+  Implemented Reed-Solomon error detection
+  Created "simpletest.c" for full circle processing test
+  Now using libpng(3) in library to read Data Matrix images
+  Improved documentation (somewhat)
+
+version 0.1 [April 2006]
+  Initial release

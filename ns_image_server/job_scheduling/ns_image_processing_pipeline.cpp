@@ -17,7 +17,61 @@ void ns_check_for_file_errors(ns_processing_job & job, ns_sql & sql){
 		}
 	}
 	else if (job.region_id != 0){
-		throw ns_ex("Checking for region file errors has not been implemented yet");
+		sql << "SELECT id FROM sample_region_images WHERE region_info_id = " << job.region_id;
+		ns_sql_result res;
+		sql.get_rows(res);
+		unsigned long step(res.size()/10);
+		for (unsigned long i = 0; i < res.size(); i++){
+			if (i%step==0)
+				cerr << 10*(i/step) << "%...";
+			ns_image_server_captured_image_region reg;
+			try{
+				reg.load_from_db(ns_atoi64(res[i][0].c_str()),&sql);
+				if (reg.region_detection_results_id != 0){
+					ns_image_worm_detection_results results;
+					results.id = reg.region_detection_results_id;
+					try{
+						results.load_from_db(false,false,sql,true);
+					}
+					catch(ns_ex & ex){
+						cerr << ex.text() << "\n";
+					}
+				}
+				if (reg.region_interpolation_results_id != 0){
+					ns_image_worm_detection_results results;
+					results.id = reg.region_interpolation_results_id;
+					try{
+						results.load_from_db(false,true,sql,true);
+					}
+					catch(ns_ex & ex){
+						cerr << ex.text() << "\n";
+					}
+				}
+				for (unsigned long j = 0; j < reg.op_images_.size(); j++){
+					bool changed = false;
+					if (reg.op_images_[j]!=0){
+						ns_image_server_image im;
+						try{
+							im.load_from_db(reg.op_images_[j],&sql);
+							ns_image_storage_source_handle<ns_8_bit> h(image_server.image_storage.request_from_storage(im,&sql));
+							h.clear();
+						}
+						catch(ns_ex & ex){
+							reg.op_images_[j] = 0;
+							changed = true;
+						}
+					}
+					if (changed)
+						reg.update_all_processed_image_records(sql);
+				}
+			}
+			catch(ns_ex & ex){
+				cerr << ex.text() << "\n";
+				continue;
+			}
+
+		}
+		//throw ns_ex("Checking for region file errors has not been implemented yet");
 	}
 	else if (job.sample_id != 0){
 		sql << "SELECT name,experiment_id FROM capture_samples WHERE id = " << job.sample_id;

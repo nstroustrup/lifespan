@@ -1,0 +1,602 @@
+******  Release of sane-backends 1.0.24. End of code freeze ******
+
+2013-09-30 m. allan noah <kitno455 at gmail dot com>
+	* po/nl.po: updated translation from Martin Kho.
+
+2013-09-30 Rolf Bensch <rolf at bensch hyphen online dot de>
+	* backend/pixma_mp810.c: fix button support for Canon CS8800F.
+
+2013-09-24 Rolf Bensch <rolf at bensch hyphen online dot de>
+	* backend/pixma_imageclass.c, doc/descriptions/pixma.desc,
+	doc/sane-pixma.man: New scanner Canon imageCLASS MF4770n
+	reported by Ralph Little.
+
+2013-09-18 Alex Belkin <abc at telekom.ru>
+	* backend/xerox_mfp.conf.in doc/descriptions/xerox_mfp.desc: usb id
+	for dell 1235cn, reported by Jean-Francois Labrousse.
+
+2013-09-17 m. allan noah <kitno455 at gmail dot com>
+	* sanei/sanei_init_debug.c: do our own upcasing to allow backend
+	debugging in Turkish. Revert prior set_locale() patch.
+	* po/uk.po: updated by Yuri Chornoivan
+	* backend/microtek.c: add missing break (#314408)
+
+2013-09-16 Gerhard Jaeger <gerhard@gjaeger.de>
+	* backend/plustek-usbdevs.c: Tweaked motor settings for CanoScan N650U
+	* backend/plustek.c: Bumped build number
+
+2013-09-13 Rolf Bensch <rolf at bensch hyphen online dot de>
+	* backend/pixma_mp150.c, doc/descriptions/pixma.desc, doc/sane-pixma.man:
+	New scanners Canon Pixma MG2400, MG2500, MG3500, MG5500, MG64000, MG6500
+	and MG7100. All scanners need further testing.
+	* backend/pixma_imageclass.c, doc/descriptions/pixma.desc,
+	doc/sane-pixma.man: New scanners Canon imageCLASS MF4570dw and
+	imageRUNNER 1133. All scanners need further testing.
+	* backend/pixma.h, doc/descriptions/pixma.desc: Pixma backend version 0.17.4
+
+2013-09-08 paul newall
+	* kodakaio.desc: Added hero 4.1 model, marked some scanners as staus basic
+
+2013-08-27 m. allan noah <kitno455 at gmail dot com>
+	* acinclude.m4, configure: enable pthread on Linux by default
+	* sanei/sanei_init_debug.c: use C locale when building debug
+	env vars, to allow backend debugging in Turkish. Patch from
+	Olaf Meeuwissen.
+
+2013-08-26 Chris Bagwell <chris@cnpbagwell.com>
+	* sanei/sanei_usb.c: Treat errno of EACCES as access denied.
+	This is what libusb is return on my Linux box. This will help
+	give more helpful error messages to user during debugging.
+	* testsuite/sanie/sanie_usb_test.c: Do not treat open failures
+	because of permission errors or already opened by other processes
+	as test failures since this is expected in some cases (such as
+	network devices that use vendor specific class).
+
+2013-08-16 Chris Bagwell <chris@cnpbagwell.com>
+	* testsuite/sanei/Makefile.am: Add missing data files to distribution.
+	Pass in $srcdir to sanei_config_test so it knows were data files are
+	regardless of were ran from.
+	* testsuite/sanei/sanei_config_test.c: Use full path for config
+	file.  This allows "make distcheck" to work for this testcase
+	since it uses a different build directory then source directory
+	and also runs it from build directory.
+	* testsuite/sanei/sanei_usb_test.c: add a fake name string
+	when creating MAX_DEVICE fake devices so that strcmp() won't
+	crash.
+	* testsuite/tools/Makefile.am: Add missing data files to distribution.
+	Make use of $srcdir so test case can base when build directory
+	is not same as source directory.
+
+2013-08-15 Chris Bagwell <chris@cnpbagwell.com>
+	* sanei/sanei_thread.c: Add support for winpthreads used by
+	mingw64 in addition to preexisting support for pthread-win32 used
+	by mingw32.  Based on work from Michael Cronenworth for
+	Fedora's mingw64 sane-backends package.
+
+2013-08-15 Chris Bagwell <chris@cnpbagwell.com>
+	* configure.in: Make snmp detection work better when cross conmpiling;
+	such as mingw builds on Fedora host. Most likely, net-snmp-config
+	values are for local host so ignore them if matching library isn't
+	also found. Required updated all autofoo's generated files to newer
+	version by running 'autoreconf -i -f' and repatching ltmain.sh.
+	* test-driver: Added missing test-driver that automake installs.
+	Its expected to exist by the Makefile.in that we also checkin.
+
+2013-08-11 Stéphane Voltz <stef.dev@free.fr>
+	* backend/genesys_low.[ch] backend/genesys_conv.c backend/genesys.c
+	 backend/genesys_gl841.c backend/genesys_gl646.c: make use of hardware
+	 gamma tables to implement constrast and brightness correction.
+
+2013-08-07 Stéphane Voltz <stef.dev@free.fr>
+	* backend/genesys.[ch] backend/genesys_conv.c doc/sane-genesys.man
+	po/fr.po: add digital brightness and contrast options.
+	Add an option to set calibration cache file name. 
+
+2013-08-07 Stéphane Voltz <stef.dev@free.fr>
+	* frontend/tstbackend.c: add argument to get verbose messages during
+	checks.
+
+2013-08-04 Stéphane Voltz <stef.dev@free.fr>
+	* sanei/sanei_constrain_value.c
+	testsuite/sanei/sanei_constrain_test.c: fixed the case where the
+	rounding in sanei_constrain_value computes a value higher than the
+	range maximum, spotted and proposed by viresh_shirol@yahoo.co.uk .
+	Added testcase for the bug in testsuite.
+
+2013-08-02 Stéphane Voltz <stef.dev@free.fr>
+	* configure configure.in testsuite/Makefile.* testsuite/tools/*: add
+	a testsuite for sane-desc, then merge hwdb support for sane-desc by 
+	Tom Gundersen <teg@jklm.no> .
+
+2013-07-31 m. allan noah <kitno455 at gmail dot com>
+	* backend/canon_dr*: backend version 41
+	- initial P-208 and P-215 support
+	- bug fix for calibration of scanners with duplex_offset
+	- allow duplex_offset to be controlled from config file
+
+2013-07-30 Stéphane Voltz <stef.dev@free.fr>
+	* backend/genesys.c: fixed typo when defining OPT_SWDEROTATE cap
+	(#314339).
+
+2013-07-19 Rolf Bensch <rolf at bensch hyphen online dot de>
+	* backend/pixma_mp150.c: Canon Pixma MX920 has duplex ADF and supports
+	max. 600 dpi @ ADF.
+
+2013-07-18 Rolf Bensch <rolf at bensch hyphen online dot de>
+	* backend/pixma_mp810.c, doc/descriptions/pixma.desc, doc/sane-pixma.man:
+	Canon PIXMA MG8200 is working now.
+	* backend/pixma.[ch], backend/pixma_mp150.c, backend/pixma_mp810.c,
+	backend/pixma_sane_options.[ch], doc/sane-pixma.man, po/de.po:
+	- New button option --scan-resolution. Scan resolution is provided from
+	  some multi function devices.
+	- Add some detailed button option description to the pixma man page.
+	* backend/pixma.h, doc/descriptions/pixma.desc: Pixma backend version 0.17.3
+
+2013-06-26 Stéphane Voltz <stef.dev@free.fr>
+	* backend/genesys.[ch] backend/genesys_devices.c backend/genesys_gl124.[ch]
+	backend/genesys_low.[ch]: improve scanning speed and quality for GL124
+	based scanner by implementing half ccd mode below 600 dpi,
+	thanks for an hardware donation from Dany Qumsiyeh.
+
+2013-07-03 Rolf Bensch <rolf at bensch hyphen online dot de>
+	* doc/descriptions/pixma.desc, doc/sane-pixma.man:
+	Canon PIXMA MG5200 Series support reported by Dimitri Fellous.
+	* .gitignore: ignore all .* files
+
+2013-06-27 Rolf Bensch <rolf at bensch hyphen online dot de>
+	* backend/pixma.c: fix mode list for infrared scans
+
+2013-06-27 m. allan noah <kitno455 at gmail dot com>
+	* backend/fujitsu*: backend v117
+	- default buffer-mode to off
+	- improved error handling in sane_start
+	- image width must be multiple of 8 when swcrop is used before binarization (iX500)
+	- check hopper sensor before calling object_position(load) on iX500
+	* .gitignore: ignore .deps directories
+
+2013-06-26 Stéphane Voltz <stef.dev@free.fr>
+	* backend/genesys.c backend/genesys.conf.in backend/genesys_devices.c
+	backend/genesys_gl846.c backend/genesys_gl846.h backend/genesys_low.c
+	backend/genesys_low.h: add experimental description and code for the
+	GL845 based Opticbook 3800.
+
+2013-06-22 Alex Belkin <abc at telekom.ru>
+	* backend/xerox_mfp.conf.in doc/descriptions/xerox_mfp.desc: multiple
+	usb ids	for Samsung models, reported by Mikhail Elhimov.
+
+2013-06-21 Rolf Bensch <rolf at bensch hyphen online dot de>
+	* doc/descriptions/pixma.desc: Canon PIXMA MG3100 Series WLAN support
+	reported by Torben Nielsen.
+
+2013-06-19 Stéphane Voltz <stef.dev@free.fr>
+	* frontend/scanimage.c: protect for group option with incorrect
+	capabilites.
+	* frontend/tstbackend.c: add test to check is group option are
+	settable. Fix test_getdevices() function.
+
+2013-06-18 Stéphane Voltz <stef.dev@free.fr>
+	* backend/genesys.c: add missing cap to 2 option group tp fix long
+	argument option bug in scanimage.
+
+2013-06-15 Rolf Bensch <rolf at bensch hyphen online dot de>
+	* backend/pixma_mp810.c: fix test mode
+
+2013-06-10 Stéphane Voltz <stef.dev@free.fr>
+	* tools/check-usb-chip.c: add genesys GL128, GT-68xx usb chip
+	detection.
+
+2013-06-10 Rolf Bensch <rolf at bensch hyphen online dot de>
+	* backend/pixma_mp810.c, doc/descriptions/pixma.desc, doc/sane-pixma.man:
+	New scanner Canon CanoScan 9000F Mark II.
+	* backend/pixma_mp810.c: Disable TPU negatives scan for CS8800F and CS9000F.
+	Negatives scan has no benefit for the user and disabling avoids confusion.
+
+2013-06-03 Stéphane Voltz <stef.dev@free.fr>
+	* tools/sane-find-scanner.c tools/check-usb-chip.c: add genesys usb
+	chip detection when compiled for libusb-1.0 .
+
+2013-06-03 Stéphane Voltz <stef.dev@free.fr>
+	* backend/genesys_gl646.c: #314293 fix
+
+2013-05-29 Rolf Bensch <rolf at bensch hyphen online dot de>
+	* doc/sane-pixma.man:
+	- HTML parseable name section (bug #314283)
+	- typo in device names
+
+2013-05-27 Stéphane Voltz <stef.dev@free.fr>
+	* backend/genesys_gl646.c: #314261 fix
+
+2013-05-11 Rolf Bensch <rolf at bensch hyphen online dot de>
+	* README.linux: some distros need libusb-1_0-devel.
+
+2013-05-11 Jonathan Bravo Lopez <jkdsoft@gmail.com>
+	* backend/hp3900_rts8822.c: fix compilation warnings.
+
+2013-04-26 Rolf Bensch <rolf at bensch hyphen online dot de>
+	* backend/pixma.[ch], backend/pixma_common.[ch], backend/pixma_imageclass.c,
+	backend/pixma_io_sanei.c, backend/pixma_mp150.c, backend/pixma_mp7[35]0.c,
+	backend/pixma_mp810.c: update copyright.
+
+2013-04-24 Rolf Bensch <rolf at bensch hyphen online dot de>
+	* backend/pixma_mp150.c, doc/descriptions/pixma.desc, doc/sane-pixma.man:
+	New scanners Canon Pixma E510, E610 and MX720. All scanners need further
+	testing.
+
+2013-04-19 Rolf Bensch <rolf at bensch hyphen online dot de>
+	* backend/pixma_imageclass.c, doc/descriptions/pixma.desc,
+	doc/sane-pixma.man: New scanner Canon i-SENSYS MF3010 reported by
+	Nathan Stewart.
+
+2013-04-11 Rolf Bensch <rolf at bensch hyphen online dot de>
+	* backend/pixma_mp150.c, doc/descriptions/pixma.desc, doc/sane-pixma.man:
+	New scanners Canon Pixma MG2200, MG3200, MG5400, MX390, MX450, MX520 and
+	MX920. All scanners need further testing.
+
+2012-04-03 Alex Belkin <abc at telekom.ru>
+	* doc/descriptions/xerox_mfp.desc: add Samsung SCX-4835FD networked
+	support, reported by Dave Lewis. USB mode doesn't work.
+
+2013-04-02 Stéphane Voltz <stef.dev@free.fr>
+	* backend/lexmark.c backend/lexmark.h: fix device detection to
+	handle hotplugging and unplugging of USB devices. USe
+	sanei_usb_exit().
+
+2013-03-29 Stéphane Voltz <stef.dev@free.fr>
+	* backend/gt68xx.c backend/gt68xx_low.h: fix device detection to
+	handle hotplugging and unplugging of USB devices.
+	* frontend/tstbackend.c: a test to loop over snae_get_devices to
+	check if a backend handle hotplugging correctly
+
+2013-03-27 Stéphane Voltz <stef.dev@free.fr>
+	* backend/genesys.c backend/genesys_low.h backend/genesys_gl846.c:
+	warning fixes, SANE option correctness fixes.
+
+2013-03-25 Rolf Bensch <rolf at bensch hyphen online dot de>
+	* backend/pixma_mp150.c: fix button support for Canon Pixma MG6300.
+
+2013-03-24 Stéphane Voltz <stef.dev@free.fr>
+	* sanei/test_wire.c, testsuite/sanei/sanei_*test.c: move test program
+	to testsuite/sanei. Add unit test programs for sanei_check_*,
+	sanei_constrain_*, sanei_config_* and sanei_usb_* functions.
+
+2013-03-24 Stéphane Voltz <stef.dev@free.fr>
+	* backend/genesys.c: make use of the new sanei_usb_scan_devices function
+	in sane_get_devices.
+
+2013-03-24 Stéphane Voltz <stef.dev@free.fr>
+	* sanei/sanei_usb.c include/sane/sanei_usb.h:
+	separate device search logic from usb init by creating a
+	sanei_usb_scan_devices. Add a sanei_usb_exit function to free
+	allocated resources by sanei_usb_init.
+
+2013-03-21 Rolf Bensch <rolf at bensch hyphen online dot de>
+	* backend/pixma_mp150.c, doc/descriptions/pixma.desc, doc/sane-pixma.man:
+	New scanner Canon Pixma MP230 reported by Petar Dodev.
+
+2013-03-18 Stéphane Voltz <stef.dev@free.fr>
+	* backend/hp5590.c backend/nec.c backend/sharp.c backend/stv680:
+	apply use after free fixes, bugs #314035, #314036, #314037 and
+	#314038
+	* backend/hp4200.c: fix a potential division by O, bug #314042
+	All five patches for these bugs were provided by Nickolai Zeldovich
+	<nickolai@csail.mit.edu>
+
+2013-03-15 Rolf Bensch <rolf at bensch hyphen online dot de>
+	* backend/pixma_mp150.c, doc/descriptions/pixma.desc, doc/sane-pixma.man:
+	New scanner Canon Pixma MG6300 reported by Theo van Rijn.
+
+2013-02-28 Stéphane Voltz <stef.dev@free.fr>
+	* configure.in configure: restored HAVE_USBCALLS like initially
+	committed for OS/2 support
+
+2013-03-04 Oliver Schwartz <oliverschwartz@users.sf.net>
+	* backend/snapscan-options.c backend/snapscan-scsi.c backend/snapscan.c
+	  backend/snapscan-sources.c backend/snapscan.h 
+	  doc/descriptions/snapscan.desc: Added support for Acer Scanwit 2720S
+	  implemented by Andrew Goddbody.
+
+2013-02-28 Stéphane Voltz <stef.dev@free.fr>
+	* sanei/sanei_usb.c: only free devanme when reusing a device slot in
+	device list
+
+2013-02-28 Rolf Bensch <rolf at bensch hyphen online dot de>
+	* README.linux: ease installation procedure.
+
+2013-02-27 Stéphane Voltz <stef.dev@free.fr>
+	* doc/descriptions/genesys.desc: update G2410 status to basic
+
+2013-02-27 Stéphane Voltz <stef.dev@free.fr>
+	* backend/rts8891.c backend/rts88xx_lib.c backend/lexmark.c
+	backend/lexmark_low.c backend/rts8891_low.c: cppcheck errors and
+	warnings fixes
+
+2013-02-27 Rolf Bensch <rolf at bensch hyphen online dot de>
+	* README.linux: fix installation path for libsane.la.
+
+2013-02-22 Gerhard Jaeger <gerhard@gjaeger.de>
+	* tools/sane-find-scanner.c: Fix another bug in the libusb1
+	  part of function check_libusb_device() that prevents sanner
+	  detection for certain devices.
+
+2013-02-20 Gerhard Jaeger <gerhard@gjaeger.de>
+	* tools/sane-find-scanner.c: Setup libusb1 debugging after
+	  initialization otherwise a segfault appears in triple -v mode
+	* sanei/sanei_usb.c: Free heap memory, acquired via strdup for
+	  devname, in sanei_usb_close()
+	* po/de.po: Fixed typo
+
+2013-02-18 Rolf Bensch <rolf at bensch hyphen online dot de>
+	* backend/pixma.[ch], backend/pixma_common.[ch], backend/pixma_imageclass.c,
+	backend/pixma_mp150.c, backend/pixma_mp7[35]0.c, backend/pixma_mp810.c,
+	doc/descriptions/pixma.desc, doc/sane-pixma.man, po/de.po:
+	- add infrared scan support for Canon Canoscan 9000F
+	- Pixma backend version 0.17.2
+
+2013-02-13 Stéphane Voltz <stef.dev@free.fr>
+	* backend/genesys*.[ch]: cppcheck errors fixes
+
+2013-02-13 Gerhard Jaeger <gerhard@gjaeger.de>
+	* backend/plustek_pp.c: Bumped build number
+	* backend/plustek-pp*: Fixed kernel module build for recent kernels
+	  Defined internal "ULong" types to be in fact 32 bit wide,
+	  this should fix issues on 64 bit machines.
+	* doc/plustek/Plustek-PARPORT.changes: Update
+
+2013-02-13 Gerhard Jaeger <gerhard@gjaeger.de>
+	* backend/plustek.c: Bumped build number
+	* backend/plustek-usbscan.c backend/plustek-usbshading.c: Cleanup
+	* backend/plustek-usb.h backend/plustek-usbdevs.c backend/plustek-usbhw.c:
+	  Added support for Q-Scan A6 portable scanner
+	* doc/descriptions/plustek.desc: Added entry for Q-Scan A6
+	  Q-Scan A6 Patch submitted and tested by Hiroshi Miura. Bug #312073.
+	* doc/sane-plustek.man doc/plustek/Plustek-USB.changes: Update
+
+2013-02-11 Rolf Bensch <rolf at bensch hyphen online dot de>
+	* backend/pixma_common.c, backend/pixma_imageclass.c,
+	doc/descriptions/pixma.desc: fixed adf paper empty for Canon i-SENSYS
+	MF4550d. Bug #313674.
+
+2013-02-11 Stéphane Voltz <stef.dev@free.fr>
+	* tools/sane-desc.c: fix minor memleaks and whitespace at end of line.
+
+2013-02-09 Rolf Bensch <rolf at bensch hyphen online dot de>
+	* backend/pixma.c, backend/pixma_mp750.c, backend/pixma_mp810.c,
+	backend/pixma_sane_options.c: fixed compiler warnings.
+	* backend/pixma.c, backend/pixma_io_sanei.c, backend/pixma_mp150.c,
+	backend/pixma_mp7[35]0.c, backend/pixma_mp810.c: fixed cppcheck warnings.
+
+2013-02-06 Rolf Bensch <rolf at bensch hyphen online dot de>
+	* backend/pixma_mp150.c: fixed button support for Canon Pixma MG6200
+	by Matthias Thon.
+
+2013-02-01 Stéphane Voltz <stef.dev@free.fr>
+	* backend/genesys_low.c backend/genesys_gl843.c
+	backend/genesys_gl846.c: minor usb firmware setup changes
+
+2013-01-31 Stéphane Voltz <stef.dev@free.fr>
+	* backend/genesys.[ch] backend/genesys_devices.c
+	backend/genesys_gl124.c backend/genesys_low.h: add support for LIDE
+	210 fifth button.
+
+2013-01-29 Stéphane Voltz <stef.dev@free.fr>
+	* backend/genesys*.[ch] : ASIC init refactor. Groundwork for GL846
+	support.
+
+2013-01-24 Rolf Bensch <rolf at bensch hyphen online dot de>
+	* backend/pixma_mp150.c: fixed 1200 dpi scan for Canon Pixma MG2100.
+	* backend/pixma_mp150.c, doc/descriptions/pixma.desc, doc/sane-pixma.man:
+	Canon Pixma MG2100 support reported by David Durgee.
+	* backend/pixma_imageclass.c: fixed usb checksums for MF4100.
+
+2013-01-19 Paul Newall <quandry@ntlworld.com>
+	* backends/kodakaio.c:
+	Hero 4.1 added.
+
+2013-01-18 Rolf Bensch <rolf at bensch hyphen online dot de>
+	* backend/pixma.c, backend/pixma_mp810.c: fixed button support for Canon
+	Canoscan CS9000F.
+	* doc/sane-pixma-man: additional description for button support.
+
+2013-01-16 Paul Newall <quandry@ntlworld.com>
+	* doc/descriptions/kodakaio.desc:
+	Desc file updated.
+
+2013-01-14 Rolf Bensch <rolf at bensch hyphen online dot de>
+	* backend/pixma_imageclass.c, doc/descriptions/pixma.desc,
+	doc/sane-pixma.man:
+	- new scanner Canon i-SENSYS MF4550d. Bug #313674.
+	- new scanner Canon i-SENSYS MF5880dn. Bug #313613.
+	- new scanner Canon i-SENSYS MF6680dn. Bug #313922.
+
+2013-01-11 Rolf Bensch <rolf at bensch hyphen online dot de>
+	* backend/pixma_mp810.c:
+	- formatted white space
+	- Canon Pixma MP970 & MP990: fix for broken post_process_image_data.
+	* doc/descriptions/pixma.desc, doc/sane-pixma.man:
+	Canon Pixma MG5100 support reported by Patrick Viola.
+
+2013-01-10 Louis Lagendijk <louis dot lagendijk at gmail dot com>
+	* Changed the pixma_bjnp.c implementation to use its own debug environment
+	variable (SANE_DEBUG_BJNP) so debugging for the bjnp protocol and the
+	backend proper can be controlled independently.
+	Updated manpage for sane-pixma to document the above changes as well
+	as the changed scannner buttjn options and the fact the bjnp protocol
+	has added support for IPv6
+
+2013-01-10 Louis Lagendijk <louis dot lagendijk at gmail dot com>
+	* Added optional support in sanedi.c for systemd socket activation. This 
+	will allow for using backend debugging using SANE_DEBUG_xxx to be used 
+	for saned controlled scanning when using socket activation. When only the 
+	socket is received we use the existing code path.
+
+2013-01-08 Rolf Bensch <rolf at bensch hyphen online dot de>
+	* backend/pixma_mp810.c: fix for broken tpu scan.
+
+2013-01-03 Paul Newall <quandry@ntlworld.com>
+	* backend/kodakaio.c kodakaio.h:
+	Detecting end of paper when using adf is now an option.
+	Alternatively the image is padded with the background colour to make up
+	the specified image size.
+
+2012-12-31 Paul Newall <quandry@ntlworld.com>
+	* backend/kodakaio.c kodakaio.h kodakaio.conf kodakaio.conf.in:
+	better fix for bug where adf could not scan more than 1 page with net connection
+	end of paper now detected with adf, if it is less than the selected size
+	ESP 2170 and Hero 9.1 can now do 1200dpi
+
+2012-12-31 Rolf Bensch <rolf at bensch hyphen online dot de>
+	* backend/pixma_mp150.c, doc/descriptions/pixma.desc, doc/sane-pixma.man:
+	New scanner Canon Pixma MG4200 reported by nuxer.
+
+2012-12-28 Alex Belkin <abc at telekom.ru>
+	* backend/xerox_mfp.conf.in doc/descriptions/xerox_mfp.desc: usb id
+	for Samsung CLX-3300 Series, reported by Jarkko A-L.
+
+2012-12-23 Paul Newall <quandry@ntlworld.com>
+	* backend/kodakaio.c:
+	fix bug where adf could not scan more than 1 page with net connection
+
+2012-12-13 Rolf Bensch <rolf at bensch hyphen online dot de>
+	* README.linux: Installation description moved to top and some editing.
+
+2012-12-09 Paul Newall <quandry@ntlworld.com>
+	* backend/kodakaio.c:
+	add adf to ESP2170. Reduce the default adf y length to 11.3 inch
+
+2012-12-09 Stéphane Voltz <stef.dev@free.fr>
+	* backend/genesys*.c backend/genesys_low.h: reworked gamma table
+	handling. Compute gamma table outside send_gamma_table so default
+	gamma table use device specific gamma values defined in device
+	description.
+
+2012-12-07 Rolf Bensch <rolf at bensch hyphen online dot de>
+	* backend/pixma.h: Pixma backend version 0.17.1
+	* backend/pixma_mp150.c, doc/descriptions/pixma.desc, doc/sane-pixma.man:
+	- Canon Pixma MG3100 support reported by Madis Lõhmus.
+	- Canon Pixma MG6200 support reported by Matthias Thon.
+	- Canon Pixma MX890 support reported by Henry Ptasinski.
+	* backend/pixma_imageclass.c, doc/descriptions/pixma.desc,
+	doc/sane-pixma.man:
+	- Canon imageCLASS MF4430 support reported by Michael Mik. This device is
+	  a MF4410 with ADF.
+
+2012-12-05 Stéphane Voltz <stef.dev@free.fr>
+	* backend/genesys.c backend/genesys_gl124.c: add binary data logging
+	for gl124 based scanners. Issue park command as early as possible to
+	speed up batch scans
+
+2012-11-28 Paul Newall <quandry@ntlworld.com>
+	* backend/kodakaio.c backend/kodakaio.h  backend/kodakaio.conf.in 
+	backend/Makefile.am backend/Makefile.in docs/descriptions/kodakaio.desc:
+	Use avahi instead of cups for network autodetection
+
+2012-11-24 Stéphane Voltz <stef.dev@free.fr>
+	* backend/rts9918.c backend/rts8891_low.c  backend/rts8891_low.h:
+	fix batch scan by adding asynchronous head parking. Fix 600 and 1200
+	dpi scan mode for sensor type 1
+
+2012-11-11 Stéphane Voltz <stef.dev@free.fr>
+	* backend/genesys.c backend/genesys_gl124.c: improve calibration for
+	gl124 based scanners. Fix head parking issue at 1200 dpi.
+
+2012-11-02 Stéphane Voltz <stef.dev@free.fr>
+	* doc/descriptions/unsupported.desc: add USB ID 0x07b3, 0x0802
+
+2012-11-02 Stéphane Voltz <stef.dev@free.fr>
+	* configure configure.in doc/Makefile.am doc/Makefile.in: add optional
+	doxygen documentation generation for genesys backend.
+
+2012-10-31 Louis Lagendijk <louis.lagendijk at gmail dot com>
+	* backend/scripts/pixma_gen_options.py
+	  Updated formatting of produced files to match pixma.c formatting
+	  without need for manual editing
+	* pixma.[ch] pixma_mp810.c pixma_mp150.c
+	  Rewrite of button option handling. Button options can now be read
+	  without triggering through the button-update option. Buton-update 
+	  options is left for ease of use with xsane
+	  Options are cached so that only when an option is read again all
+	  options are re-read.
+
+2012-10-29 Alex Belkin <abc at telekom.ru>
+	* backend/xerox_mfp.conf.in doc/descriptions/xerox_mfp.desc: usb id
+	for Samsung SCX-4833FD, reported by Frank Pennycook; description for
+	SCX-3405W working in networking mode, reported by Patrick Mackinlay.
+
+2012-10-24 Stéphane Voltz <stef.dev@free.fr>
+	* backend/genesys_*.[ch]: Lide 35 improvements, doxygen fixes,
+	experimental 100 dpi support for Canoscan 4400F and 8400F
+
+2012-10-24 Mattias Ellert <mattias.ellert@fysast.uu.se>
+	* configure.in, configure: Unset VERSION during the SCSI header check
+	  (Check fails on MacOS X if VERSION is defined)
+
+2012-10-22 Mattias Ellert <mattias.ellert@fysast.uu.se>
+	* po/sv.po: Updated Swedish translation
+	* backend/pixma_bjnp.c: Fix arguments to IPv6 macros
+
+2012-10-18 m. allan noah <kitno455 at gmail dot com>
+	* backend/canon*: IX-4015 support by Ondrej Zary
+
+2012-10-17 Alex Belkin <abc at telekom.ru>
+	* backend/xerox_mfp.conf.in doc/descriptions/xerox_mfp.desc: usb id
+	for Samsung SCX-4100, reported by Antonello Lobianco.
+
+2012-09-18 Alex Belkin <abc at telekom.ru>
+	* backend/xerox_mfp.conf.in doc/descriptions/xerox_mfp.desc: usb id
+	for Samsung SCX-4729FD, reported by wom balton.
+
+2012-09-12 Rolf Bensch <rolf at bensch hyphen online dot de>
+	* doc/descriptions/pixma.desc, doc/sane-pixma.man:
+	Canon imageCLASS MF5730 support reported by Ondrej Zary.
+
+2012-09-10 Rolf Bensch <rolf at bensch hyphen online dot de>
+	* doc/descriptions/unsupported.desc: Removed Canon Multipass 390 from
+	unsupported device list.
+
+2012-09-08 Louis Lagendijk <louis.lagendijk at gmail dot com>
+         * backend/pixma_bjnp.c, backend/pixma_bjnp_private.h
+	 bulk reading rewritten and solved the case where the scanner returns
+	 a 0 length payload.
+	 Use MDL string instead of DES as it is mre fool proof when matching
+	 the model string from the backend
+
+2012-09-06 Stéphane Voltz <stef.dev@free.fr>
+	* backend/genesys_gl646.c backend/genesys.c: enable hardware lineart
+	for Strobe XP200
+
+2012-09-05 Rolf Bensch <rolf at bensch hyphen online dot de>
+	* backend/pixma_imageclass.c, doc/descriptions/pixma.desc,
+	doc/sane-pixma.man: New scanner reported by Eric Schwartz. Bug #313761.
+	* backend/pixma_mp150.c: 14" (ADF) / A4 (Flatbed) exception for Pixma MX420
+	reported by D.Möller. Same exception also added for Pixma MX410.
+
+2012-09-04 Rolf Bensch <rolf at bensch hyphen online dot de>
+	* backend/pixma_mp150.c, doc/descriptions/pixma.desc, doc/sane-pixma.man:
+	Pixma MG5300 support reported by Gernot Hassenpflug.
+
+2012-09-03 Rolf Bensch <rolf at bensch hyphen online dot de>
+	* README.linux: Installation description updated for sane-backends
+	1.0.24git.
+	* doc/descriptions/pixma.desc, doc/sane-pixma.man:
+	Canon imageRunner 1020/1024/1025 support reported by Yuri Kirin.
+	Bug #313203.
+	* backend/pixma_mp150.c: Use xdpi to check for 14" / A4 scan.
+	* backend/pixma_mp150.c, doc/descriptions/pixma.desc, doc/sane-pixma.man:
+	Pixma MX370 support reported by Daniel Lehmann. Bug #313750.
+	* backend/pixma_mp150.c: PIXMA_CAP_EXPERIMENT removed from new scanners.
+
+2012-08-27  Louis Lagendijk <louis.lagendijk at gmail dot com>
+	* pixma_bjnp.c pixma_bjnp_private.h
+	Added working scan-button support
+	Added IPv6 support
+	Some clean up and refactoring
+
+2012-08-27 Rolf Bensch <rolf at bensch hyphen online dot de>
+	* backend/pixma_mp150.c, doc/descriptions/pixma.desc, doc/sane-pixma.man:
+	Pixma MG6100 support reported by Yann Bonnamy. Bug #313471.
+
+2012-08-26 m. allan noah <kitno455 at gmail dot com>
+	* ChangeLog*, configure*, Makefile.in, doc/desc/{kodakaio,kvs40xx}.desc:
+	Various updates related to starting 1.0.24git 
+
+Older entries can be found in ChangeLog-1.0.23.

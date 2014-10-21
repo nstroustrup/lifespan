@@ -1921,7 +1921,7 @@ void ns_image_worm_detection_results::save_data_to_disk(ns_image_server_captured
 	out.release();
 }
 
-void ns_image_worm_detection_results::load_from_db(const bool load_worm_postures,const bool images_comes_from_interpolated_annotations,ns_sql & sql){
+void ns_image_worm_detection_results::load_from_db(const bool load_worm_postures,const bool images_comes_from_interpolated_annotations,ns_sql & sql,const bool delete_from_db_on_error){
 	if (id == 0)
 		throw ns_ex("ns_image_worm_detection_results::Attempting to load from db with id=0.");
 	sql << "SELECT source_image_id, capture_sample_id, bitmap_tiles_per_row, bitmap_tile_width, bitmap_tile_height, "
@@ -1955,10 +1955,17 @@ void ns_image_worm_detection_results::load_from_db(const bool load_worm_postures
 			in.attach(image_server.image_storage.request_metadata_from_disk(data_storage_on_disk,true,&sql));
 		}
 		catch(...){
-			sql << "UPDATE sample_region_images SET worm_detection_results_id = 0 WHERE id = " << source_image_id;
-			sql.send_query();
-			sql << "DELETE FROM worm_detection_results WHERE id = " << id;
-			sql.send_query();
+			if (delete_from_db_on_error){
+				sql << "UPDATE sample_region_images SET " << ns_processing_step_db_column_name(	ns_process_worm_detection) << "=0,"
+					<< ns_processing_step_db_column_name(ns_process_worm_detection_labels) << "=0,"
+					<< ns_processing_step_db_column_name(ns_process_worm_detection_with_graph) << "=0,"
+					<< ns_processing_step_db_column_name(ns_process_region_vis) << "=0,"
+					<< ns_processing_step_db_column_name(ns_process_region_interpolation_vis) << "=0,"
+					<< "worm_detection_results_id = 0 WHERE id = " << source_image_id;
+				sql.send_query();
+				sql << "DELETE FROM worm_detection_results WHERE id = " << id;
+				sql.send_query();
+			}
 			throw;
 		}
 		//this->capture_time = data_storage_on_disk.capture_time;

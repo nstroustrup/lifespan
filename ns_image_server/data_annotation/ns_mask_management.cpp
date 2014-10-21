@@ -63,7 +63,7 @@ void ns_bulk_experiment_mask_manager::process_mask_file(ns_image_standard & mask
 	//	cerr << "Registering vis output\n";
 		mask_analyzer.register_visualization_output(tmp);
 	//	cerr << "Analyzing mask.\n";
-		in.input_stream().pump(mask_analyzer,512);
+		in.input_stream().pump(mask_analyzer,4096);
 		cerr << "Sample " << i << " has " << mask_analyzer.mask_info().number_of_regions() << " regions.\n";
 		if ( mask_analyzer.mask_info().number_of_regions() > 4)
 			problems.push_back(string( "Sample ") + ns_to_string(i) + " has " + ns_to_string( mask_analyzer.mask_info().number_of_regions()) + " regions.");

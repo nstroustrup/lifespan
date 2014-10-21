@@ -1,0 +1,116 @@
+﻿Build started 1/2/2014 11:51:22 AM.
+     1>Project "C:\server\ns_lifespan_machine_source\external_compile_libraries\xvidcore\build\win32\libxvidcore.vcxproj" on node 2 (build target(s)).
+     1>InitializeBuildStatus:
+         Creating ".\Release\libxvidcore.unsuccessfulbuild" because "AlwaysCreate" was specified.
+       CustomBuild:
+         Assembling C:\server\ns_lifespan_machine_source\external_compile_libraries\xvidcore\src\bitstream\x86_asm\cbp_mmx.asm
+         'nasm' is not recognized as an internal or external command,
+         operable program or batch file.
+         Assembling C:\server\ns_lifespan_machine_source\external_compile_libraries\xvidcore\src\bitstream\x86_asm\cbp_sse2.asm
+         'nasm' is not recognized as an internal or external command,
+         operable program or batch file.
+         Assembling C:\server\ns_lifespan_machine_source\external_compile_libraries\xvidcore\src\dct\x86_asm\fdct_mmx_ffmpeg.asm
+         'nasm' is not recognized as an internal or external command,
+         operable program or batch file.
+         Assembling C:\server\ns_lifespan_machine_source\external_compile_libraries\xvidcore\src\dct\x86_asm\fdct_mmx_skal.asm
+         'nasm' is not recognized as an internal or external command,
+         operable program or batch file.
+         Assembling C:\server\ns_lifespan_machine_source\external_compile_libraries\xvidcore\src\dct\x86_asm\fdct_sse2_skal.asm
+         'nasm' is not recognized as an internal or external command,
+         operable program or batch file.
+         Assembling C:\server\ns_lifespan_machine_source\external_compile_libraries\xvidcore\src\dct\x86_asm\idct_3dne.asm
+         'nasm' is not recognized as an internal or external command,
+         operable program or batch file.
+         Assembling C:\server\ns_lifespan_machine_source\external_compile_libraries\xvidcore\src\dct\x86_asm\idct_mmx.asm
+         'nasm' is not recognized as an internal or external command,
+         operable program or batch file.
+         Assembling C:\server\ns_lifespan_machine_source\external_compile_libraries\xvidcore\src\dct\x86_asm\idct_sse2_dmitry.asm
+         'nasm' is not recognized as an internal or external command,
+         operable program or batch file.
+         Assembling C:\server\ns_lifespan_machine_source\external_compile_libraries\xvidcore\src\image\x86_asm\colorspace_rgb_mmx.asm
+         'nasm' is not recognized as an internal or external command,
+         operable program or batch file.
+         Assembling C:\server\ns_lifespan_machine_source\external_compile_libraries\xvidcore\src\image\x86_asm\colorspace_yuv_mmx.asm
+         'nasm' is not recognized as an internal or external command,
+         operable program or batch file.
+         Assembling C:\server\ns_lifespan_machine_source\external_compile_libraries\xvidcore\src\image\x86_asm\colorspace_yuyv_mmx.asm
+         'nasm' is not recognized as an internal or external command,
+         operable program or batch file.
+         Assembling C:\server\ns_lifespan_machine_source\external_compile_libraries\xvidcore\src\image\x86_asm\deintl_sse.asm
+         'nasm' is not recognized as an internal or external command,
+         operable program or batch file.
+         Assembling C:\server\ns_lifespan_machine_source\external_compile_libraries\xvidcore\src\image\x86_asm\gmc_mmx.asm
+         'nasm' is not recognized as an internal or external command,
+         operable program or batch file.
+         Assembling C:\server\ns_lifespan_machine_source\external_compile_libraries\xvidcore\src\image\x86_asm\interpolate8x8_3dn.asm
+         'nasm' is not recognized as an internal or external command,
+         operable program or batch file.
+         Assembling C:\server\ns_lifespan_machine_source\external_compile_libraries\xvidcore\src\image\x86_asm\interpolate8x8_3dne.asm
+         'nasm' is not recognized as an internal or external command,
+         operable program or batch file.
+         Assembling C:\server\ns_lifespan_machine_source\external_compile_libraries\xvidcore\src\image\x86_asm\interpolate8x8_mmx.asm
+         'nasm' is not recognized as an internal or external command,
+         operable program or batch file.
+         Assembling C:\server\ns_lifespan_machine_source\external_compile_libraries\xvidcore\src\image\x86_asm\interpolate8x8_xmm.asm
+         'nasm' is not recognized as an internal or external command,
+         operable program or batch file.
+         Assembling C:\server\ns_lifespan_machine_source\external_compile_libraries\xvidcore\src\image\x86_asm\postprocessing_mmx.asm
+         'nasm' is not recognized as an internal or external command,
+         operable program or batch file.
+         Assembling C:\server\ns_lifespan_machine_source\external_compile_libraries\xvidcore\src\image\x86_asm\postprocessing_sse2.asm
+         'nasm' is not recognized as an internal or external command,
+         operable program or batch file.
+         Assembling C:\server\ns_lifespan_machine_source\external_compile_libraries\xvidcore\src\image\x86_asm\qpel_mmx.asm
+         'nasm' is not recognized as an internal or external command,
+         operable program or batch file.
+         Assembling C:\server\ns_lifespan_machine_source\external_compile_libraries\xvidcore\src\image\x86_asm\reduced_mmx.asm
+         'nasm' is not recognized as an internal or external command,
+         operable program or batch file.
+         Assembling C:\server\ns_lifespan_machine_source\external_compile_libraries\xvidcore\src\motion\x86_asm\sad_3dn.asm
+         'nasm' is not recognized as an internal or external command,
+         operable program or batch file.
+         Assembling C:\server\ns_lifespan_machine_source\external_compile_libraries\xvidcore\src\motion\x86_asm\sad_3dne.asm
+         'nasm' is not recognized as an internal or external command,
+         operable program or batch file.
+         Assembling C:\server\ns_lifespan_machine_source\external_compile_libraries\xvidcore\src\motion\x86_asm\sad_mmx.asm
+         'nasm' is not recognized as an internal or external command,
+         operable program or batch file.
+         Assembling C:\server\ns_lifespan_machine_source\external_compile_libraries\xvidcore\src\motion\x86_asm\sad_sse2.asm
+         'nasm' is not recognized as an internal or external command,
+         operable program or batch file.
+         Assembling C:\server\ns_lifespan_machine_source\external_compile_libraries\xvidcore\src\motion\x86_asm\sad_xmm.asm
+         'nasm' is not recognized as an internal or external command,
+         operable program or batch file.
+         Assembling C:\server\ns_lifespan_machine_source\external_compile_libraries\xvidcore\src\quant\x86_asm\quantize_h263_3dne.asm
+         'nasm' is not recognized as an internal or external command,
+         operable program or batch file.
+         Assembling C:\server\ns_lifespan_machine_source\external_compile_libraries\xvidcore\src\quant\x86_asm\quantize_h263_mmx.asm
+         'nasm' is not recognized as an internal or external command,
+         operable program or batch file.
+         Assembling C:\server\ns_lifespan_machine_source\external_compile_libraries\xvidcore\src\quant\x86_asm\quantize_mpeg_mmx.asm
+         'nasm' is not recognized as an internal or external command,
+         operable program or batch file.
+         Assembling C:\server\ns_lifespan_machine_source\external_compile_libraries\xvidcore\src\quant\x86_asm\quantize_mpeg_xmm.asm
+         'nasm' is not recognized as an internal or external command,
+         operable program or batch file.
+         Assembling C:\server\ns_lifespan_machine_source\external_compile_libraries\xvidcore\src\utils\x86_asm\cpuid.asm
+         'nasm' is not recognized as an internal or external command,
+         operable program or batch file.
+         Assembling C:\server\ns_lifespan_machine_source\external_compile_libraries\xvidcore\src\utils\x86_asm\interlacing_mmx.asm
+         'nasm' is not recognized as an internal or external command,
+         operable program or batch file.
+         Assembling C:\server\ns_lifespan_machine_source\external_compile_libraries\xvidcore\src\utils\x86_asm\mem_transfer_3dne.asm
+         'nasm' is not recognized as an internal or external command,
+         operable program or batch file.
+         Assembling C:\server\ns_lifespan_machine_source\external_compile_libraries\xvidcore\src\utils\x86_asm\mem_transfer_mmx.asm
+         'nasm' is not recognized as an internal or external command,
+         operable program or batch file.
+         Assembling C:\server\ns_lifespan_machine_source\external_compile_libraries\xvidcore\src\plugins\x86_asm\plugin_ssim-a.asm
+         'nasm' is not recognized as an internal or external command,
+         operable program or batch file.
+     1>C:\Program Files (x86)\MSBuild\Microsoft.Cpp\v4.0\Microsoft.CppCommon.targets(151,5): error MSB6006: "cmd.exe" exited with code 9009.
+     1>Done Building Project "C:\server\ns_lifespan_machine_source\external_compile_libraries\xvidcore\build\win32\libxvidcore.vcxproj" (build target(s)) -- FAILED.
+
+Build FAILED.
+
+Time Elapsed 00:00:00.21

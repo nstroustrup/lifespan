@@ -514,6 +514,9 @@ public:
 bool ns_set_animation_state(bool state);
 ns_thread_return_type ns_asynch_handle_file_request(void * fname);
 
+struct ns_mask_info{
+	ns_64_bit image_id,mask_id;
+};
 class ns_worm_learner{
 public:
 	typedef enum{ns_draw_boxes,
@@ -537,7 +540,7 @@ public:
 	ns_behavior_mode current_behavior_mode(){
 		return behavior_mode;
 	}
-	ns_worm_learner():behavior_mode(ns_draw_boxes),mask_analyzer(128), process_mask_menu_displayed(false),
+	ns_worm_learner():behavior_mode(ns_draw_boxes),mask_analyzer(4096), process_mask_menu_displayed(false),
 		worm_detection_results(0),model_specification(&default_model),last_annotation_type_loaded(ns_death_time_annotation_set::ns_no_annotations),
 		current_image_lock("ns_worm_learner::current_image"),
 		movement_data_is_strictly_decreasing_(false),overwrite_existing_mask_when_submitting(false),output_svg_spines(false),static_mask(0),generate_mp4_(false),
@@ -572,7 +575,7 @@ public:
 	void submit_experiment_mask_file_to_cluster();
 	void view_current_mask();
 	void apply_mask_on_current_image();
-	void send_mask_to_server(const std::string & ip_address,const unsigned long port);
+	ns_mask_info send_mask_to_server(const std::string & ip_address,const unsigned long port);
 	void load_mask(const std::string & filename,bool draw_to_screen=true);
 	bool mask_loaded();
 	void generate_scanner_report(unsigned long first_experiment_time, unsigned long last_experiment_time);
@@ -813,6 +816,7 @@ public:
 
 	ns_experiment_storyboard_spec::ns_storyboard_flavor current_storyboard_flavor;
 	ns_svm_model_specification default_model;	
+	std::string current_mask_filename;
 private:
 	ns_image_standard animation_temp;
 	ns_death_time_annotation_set::ns_annotation_type_to_load last_annotation_type_loaded;
@@ -830,7 +834,6 @@ private:
 	ns_image_standard current_image;
 	ns_image_standard detection_spatial_median;
 	ns_image_standard detection_brightfield;
-	std::string current_mask_filename;
 	ns_image_standard current_mask;
 	ns_image_standard thresholded_image;
 

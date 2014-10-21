@@ -374,6 +374,13 @@ void ns_time_path_solver::solve(const ns_time_path_solver_parameters &param, ns_
 			if (p->elements[i-1].t_id < p->elements[i].t_id)
 				throw ns_ex("Out of order paths were produced!");
 		}
+	/*	for (unsigned int i = 0; i < p->elements.size(); i++){
+			if (this->timepoints[p->elements[i].t_id].elements[p->elements[i].index].e.region_position ==
+					ns_vector_2i(2579,301) )//||
+					//this->timepoints[p->elements[i].t_id].time == 1408897604)
+				cerr << p->path_id << " ";
+		}*/
+		
 	}
 	//then we merge all appropriate path centers together
 	//(which, for example, means that if we don't measure a plate for a day
@@ -397,9 +404,15 @@ void ns_time_path_solver::solve(const ns_time_path_solver_parameters &param, ns_
 			if (p->elements[i-1].t_id < p->elements[i].t_id)
 				throw ns_ex("Out of order paths were produced!");
 		}
+		/*for (unsigned int i = 0; i < p->elements.size(); i++){
+			if (this->timepoints[p->elements[i].t_id].elements[p->elements[i].index].e.region_position ==
+					ns_vector_2i(2579,301) )//||
+					//this->timepoints[p->elements[i].t_id].time == 1408897604)
+				cerr << p->path_id << " ";
+		}*/
+		
 	}
-	
-	remove_short_and_moving_paths(param);
+		remove_short_and_moving_paths(param);
 	/*for (unsigned int i = 0; i < paths.size(); i++){
 		for (unsigned int j = 0; j < paths[i].elements.size(); j++)
 			dbg << "4," << i << "," << paths[i].elements[j].t_id <<  "," <<timepoints[paths[i].elements[j].t_id].time << "\n";
@@ -2288,21 +2301,27 @@ bool ns_time_path_solver::is_ok_to_merge_overlap(const ns_time_path_solver_path 
 		throw ns_ex("YIKES");
 //	cerr << "Comparing " << later << " and " << earlier << " ";
 	
-	if (earlier.min_time >= later.min_time || earlier.max_time == later.max_time ){
-	//	cerr << "Within.\n";
-		return false;
-	}
-	
-	 //too far apart
-	if (earlier.max_time + max_time_gap < later.min_time){
-//		cerr << "Too large gap\n";
+	bool one_within_another = later.min_time <= earlier.min_time &&
+							  later.max_time >= later.max_time ||
+							  earlier.min_time <= later.min_time &&
+							  earlier.max_time >= later.max_time;
+	if (!one_within_another){
+		if (earlier.min_time >= later.min_time || earlier.max_time == later.max_time ){
+		//	cerr << "Within.\n";
 			return false;
-	}
-	//too large an overlap
-	if (earlier.max_time >= later.min_time &&
-		earlier.max_time - later.min_time > max_time_overlap){
-	//		cerr << "Too large overlap\n";
-		return false;
+		}
+	
+		 //too far apart
+		if (earlier.max_time + max_time_gap < later.min_time){
+	//		cerr << "Too large gap\n";
+				return false;
+		}
+		//too large an overlap
+		if (earlier.max_time >= later.min_time &&
+			earlier.max_time - later.min_time > max_time_overlap){
+		//		cerr << "Too large overlap\n";
+			return false;
+		}
 	}
 	const unsigned long late_min_t_index(later.elements.rbegin()->t_id),
 		early_max_t_index(earlier.elements.begin()->t_id);
@@ -2369,12 +2388,16 @@ void ns_time_path_solver::merge_overlapping_path_fragments(const unsigned long m
 				//	continue;
 				//paths_ordered_by_max_time[p->max_time].push_back(q);
 				paths_ordered_by_min_time[q->max_time].push_back(q);
+				
 			}
 		}
 		merge_performed = false;
-		for (ns_time_path_solver_path_orderer::iterator q =paths_ordered_by_min_time.begin();
+		for (ns_time_path_solver_path_orderer::iterator q =paths_ordered_by_min_time.begin();	
 				q != paths_ordered_by_min_time.end() && !merge_performed; q++){
 			for (ns_time_path_solver_path_orderer_list::iterator earlier = q->second.begin(); earlier != q->second.end();earlier++){
+			//	if ((later->path_id == 24 || later->path_id == 2 ) &&
+				//	((*earlier)->path_id == 24 || (*earlier)->path_id == 2))
+					//cerr << "WHA";
 				if (later == *earlier)
 					continue;
 				if (later->max_time <= (*earlier)->max_time)
@@ -2396,6 +2419,9 @@ void ns_time_path_solver::merge_overlapping_path_fragments(const unsigned long m
 						//not close enough
 						continue;
 					}
+			//		if (((*earlier)->path_id == 24 || (*earlier)->path_id == 32 || (*earlier)->path_id ==  74) ||
+				//		(later->path_id == 24 || later->path_id == 32 || later->path_id ==  74))
+					//	cerr << "Merging " << (*earlier)->path_id << " with " << later->path_id << "\n";
 					bool overlap(false);
 					if (later->elements.rbegin()->t_id < (*earlier)->elements.begin()->t_id)
 						overlap = true;

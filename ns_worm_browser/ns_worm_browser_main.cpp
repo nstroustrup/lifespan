@@ -822,11 +822,29 @@ class ns_worm_terminal_main_menu_organizer : public ns_menu_organizer{
 	}
 
 	static void submit_individual_mask_to_server(const std::string & value){
+		ns_image_server_captured_image im;
+		try{
+			int offset;
+			im.from_filename(worm_learner.current_mask_filename,offset);
+		}
+		catch(...){
+			cout << "Could not guess what sample this comes from.\n";
+		}
+
 		string ip_address;
 		unsigned long port;
 		worm_learner.get_ip_and_port_for_mask_upload(ip_address,port);
-		worm_learner.send_mask_to_server(ip_address,port);
-	
+		ns_mask_info mask_info(worm_learner.send_mask_to_server(ip_address,port));
+		ns_acquire_for_scope<ns_sql> sql(image_server.new_sql_connection(__FILE__,__LINE__));
+		sql() << "UPDATE capture_samples SET mask_id=" << mask_info.mask_id << " WHERE id=" << im.sample_id;
+		sql().send_query();
+		sql() << "INSERT INTO processing_jobs SET image_id=" << mask_info.image_id << ", mask_id=" << mask_info.mask_id << ", "
+				<< "op" << (unsigned int)ns_process_analyze_mask<< " = 1, time_submitted=" << ns_current_time() << ", urgent=1";
+		sql().send_query();
+		sql().send_query("COMMIT");
+
+		ns_image_server_push_job_scheduler::request_job_queue_discovery(sql());
+		sql.release();
 	}
 	/*****************************
 	Samle Region Selection
@@ -1240,8 +1258,8 @@ public:
 		add(ns_menu_item_spec(masks_generate_composite,"Plate Locations/Define Sample Masks/(Draw Plate Locations on Mask using Photoshop)",0,FL_MENU_INACTIVE));
 		add(ns_menu_item_spec(masks_process_composite,"Plate Locations/Define Sample Masks/Analyze Plate Locations Drawn on Experiment Mask Composite"));
 		add(ns_menu_item_spec(masks_submit_composite,"Plate Locations/Define Sample Masks/_Submit Analyzed Experiment Mask Composite to Cluster"));
-		add(ns_menu_item_spec(open_individual_mask,"Plate Locations/Define Sample Masks/Individual Sample Masks/Open Mask"));
-		add(ns_menu_item_spec(view_current_mask,"Plate Locations/Define Sample Masks/Individual Sample Masks/View Current Mask"));
+		add(ns_menu_item_spec(open_individual_mask,"Plate Locations/Define Sample Masks/Individual Sample Masks/Analyze Mask"));
+	//	add(ns_menu_item_spec(view_current_mask,"Plate Locations/Define Sample Masks/Individual Sample Masks/View Current Mask"));
 	//	add(ns_menu_item_spec(apply_mask_on_current,"Masks/Mask Analysis/Individual Masks/Apply Mask on Current Image"));
 		add(ns_menu_item_spec(submit_individual_mask_to_server,"Plate Locations/Define Sample Masks/Individual Sample Masks/Submit Analyzed Mask to Cluster"));
 		

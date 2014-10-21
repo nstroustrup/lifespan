@@ -158,7 +158,7 @@ void ns_experiment_storyboard_timepoint::load_images(bool use_color,ns_sql & sql
 			results.id = sorted_events[i].results_id;
 			if (results.id == 0)
 				throw ns_ex("Found an unspecified results id for region ID ") << sorted_events[i].e->event_annotation.region_info_id << " (Image #" << sorted_events[i].region_id << ")";
-			results.load_from_db(false,false,sql);
+			results.load_from_db(false,false,sql,false);
 			ns_image_server_captured_image_region reg;
 			reg.load_from_db(sorted_events[i].region_id,&sql);
 			if (!use_color || output_worm_disambiguation_colors == 0)
@@ -185,7 +185,7 @@ void ns_experiment_storyboard_timepoint::load_images(bool use_color,ns_sql & sql
 			interpolated_results.id = sorted_events[i].interpolated_results_id;
 			if (interpolated_results.id != 0){
 				try{
-				interpolated_results.load_from_db(false,true,sql);
+				interpolated_results.load_from_db(false,true,sql,false);
 				ns_image_server_captured_image_region reg;
 				reg.load_from_db(sorted_events[i].region_id,&sql);
 				if (!use_color || !output_worm_disambiguation_colors)
@@ -241,15 +241,17 @@ void ns_experiment_storyboard_timepoint::load_images(bool use_color,ns_sql & sql
 					current_worm = worms[j];	
 				//	if (sorted_events[i].e->annotation_whose_image_should_be_used.inferred_animal_location)
 				//		cerr << "Found interpolated worm image.\n";
-
-					if (sorted_events[i].e->image.properties().width > sorted_events[i].e->image_image_size().x ||
-						sorted_events[i].e->image.properties().height > sorted_events[i].e->image_image_size().y)
-						throw ns_ex("An unusual context image size was encountered: ") << sorted_events[i].e->image.properties().width << "," 
-																						<< sorted_events[i].e->image.properties().height
-																						 << " vs an expected " <<  
-																						 sorted_events[i].e->image_image_size().x << 
-																						 "," <<
-																					  sorted_events[i].e->image_image_size().y;
+		//			if (sorted_events[i].e->event_annotation.position == ns_vector_2i(2579,300))
+	//					cerr << "WHA";
+					//images aren't loaded yet--this check does nothing
+					//if (sorted_events[i].e->image.properties().width > sorted_events[i].e->image_image_size().x ||
+					//	sorted_events[i].e->image.properties().height > sorted_events[i].e->image_image_size().y)
+					//	throw ns_ex("An unusual context image size was encountered: ") << sorted_events[i].e->image.properties().width << "," 
+					//																	<< sorted_events[i].e->image.properties().height
+					//																	 << " vs an expected " <<  
+					//																	 sorted_events[i].e->image_image_size().x << 
+					//																	 "," <<
+					//																  sorted_events[i].e->image_image_size().y;
 					break;
 				}
 			}

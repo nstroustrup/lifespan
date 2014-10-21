@@ -130,7 +130,7 @@ $query = "UPDATE experiments SET delete_captured_images_after_mask=" . ($delete_
  //die("Control Regions" . implode(".",$control_regions));
  $query = "SELECT r.id,r.strain, r.strain_condition_1,r.strain_condition_2,r.strain_condition_3, r.posture_analysis_model, r.posture_analysis_method, r.worm_detection_model, r.position_analysis_model,r.time_series_denoising_flag, r.maximum_number_of_worms_per_plate,r.number_of_frames_used_to_mask_stationary_objects"
    ." FROM sample_region_image_info as r, capture_samples as s "
-   ."WHERE r.sample_id = s.id AND s.experiment_id = " . $experiment_id;
+   ."WHERE r.sample_id = s.id AND s.experiment_id = " . $experiment_id . " AND r.censored = 0";
  $sql->get_row($query,$exps);
  $number_of_regions = sizeof($exps);
  //die($exps[0][8]);
@@ -141,7 +141,10 @@ $query = "UPDATE experiments SET delete_captured_images_after_mask=" . ($delete_
 $posture_analysis_method = '';
  $experiment_strains = array();
  for ($i = 0; $i < sizeof($exps); $i++){
-   $strain = $exps[$i][1];
+   /*  for ($j=0;$j < sizeof($exps[$i]); $j++)
+     echo $exps[$i][$j] . " ";
+   echo "<BR>";*/
+$strain = $exps[$i][1];
    //echo $detail_level;
    if ($detail_level != 's'){
      if ($exps[$i][2] != '')
@@ -487,7 +490,7 @@ catch(ns_exception $ex){
 																	   <?php } else{?>			    
 
 <tr><td bgcolor="<?php echo $table_colors[1][0] ?>">Strain Grouping</td><td bgcolor="<?php echo $table_colors[1][1] ?>">
-BLA
+
 <select name="detail_level" onchange='this.form.submit()'>
 <option value="s" <?php if ($detail_level == 's') echo "selected"?> >Just Strain</option>
 <option value="s1"<?php if ($detail_level == 's1') echo "selected"?> >Strain And Condition 1</option>

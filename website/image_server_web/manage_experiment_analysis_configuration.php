@@ -249,6 +249,7 @@ $strain = $exps[$i][1];
      $sql->send_query($query);
    }
    else{
+     $posture_analysis_method = $_POST['posture_analysis_method'];
      foreach($_POST as $k => $v){
        if (substr($k,0,14) == "posture_model_"){
 	 $region_id = substr($k,14);

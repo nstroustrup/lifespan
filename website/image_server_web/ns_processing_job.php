@@ -99,14 +99,14 @@ function ns_maintenance_task_order($is_region,$is_sample,$is_experiment){
   global $ns_maintenance_tasks;
   if ($is_region){
     array_push($r,$ns_maintenance_tasks['ns_maintenance_rebuild_movement_data']);
-    array_push($r,$ns_maintenance_tasks['ns_maintenance_generate_animal_storyboard']);
+    array_push($r,$ns_maintenance_tasks['ns_maintenance_generate_animal_storyboard']);   
+    array_push($r,$ns_maintenance_tasks['ns_maintenance_rebuild_movement_from_stored_image_quantification']);
     array_push($r,$ns_maintenance_tasks['ns_maintenance_generate_movement_posture_visualization']);
     array_push($r,$ns_maintenance_tasks['ns_maintenance_generate_movement_posture_aligned_visualization']);
     array_push($r,$ns_maintenance_tasks['ns_maintenance_determine_disk_usage']);
     array_push($r,$ns_maintenance_tasks['ns_maintenance_compress_stored_images']);
     array_push($r,$ns_maintenance_tasks['ns_maintenance_check_for_file_errors']);
     array_push($r,$ns_maintenance_tasks['ns_maintenance_rebuild_movement_from_stored_images']);
-    array_push($r,$ns_maintenance_tasks['ns_maintenance_rebuild_movement_from_stored_image_quantification']);
     array_push($r,$ns_maintenance_tasks['ns_maintenance_generate_subregion_mask']);
     return $r;
   }
@@ -129,7 +129,7 @@ $ns_maintenance_task_labels = array(0=>'No Task',
 				    5=>'Execute File Deletion',
 				    6=>'Analyze Worm Movement',
 				    7=>'Analyze Worm Movement Using Cached Images',
-				    8=>'Analyze Worm Movement Using Cached Image Quantification',
+				    8=>'Re-calculate Censoring and Death Times',
 				    9=>'Recalculate Censoring',
 				    10=>'Generate Time-Aligned Posture Visualization',
 				    11=>'Generate Death-Aligned Visualization',

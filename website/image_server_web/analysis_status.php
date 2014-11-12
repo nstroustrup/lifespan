@@ -11,7 +11,40 @@ $sql->get_value($query,$experiment_name);
 display_worm_page_header($experiment_name . " Image Analysis Status");
 ?>
 <span class="style1">Mask Application:</span><br>
+<?php
 
+  $query = "SELECT a.name, s.sample_id, COUNT(DISTINCT s.id),COUNT(DISTINCT s.image_id), SUM(s.censored>0), SUM(s.problem>0), SUM(s.currently_being_processed>0),SUM(s.mask_applied) FROM captured_images as s, capture_samples as a WHERE s.sample_id = a.id AND a.experiment_id = $experiment_id GROUP BY s.sample_id ORDER BY a.name";
+$sql->get_row($query,$sample_info);
+$res = array();
+$empty = array();
+$done = array();
+foreach ($sample_info as $d){
+  if ($d[3]!=0){
+    $p = $d[7]/$d[2];
+    if ( $p < .95)
+      array_push($res,array($d[0],floor($p*100)));
+    else array_push($done,$d[0]);
+  }
+  else
+    arrayy_push($empty,$d[0]);
+}
+if (sizeof($res) == 0)
+  echo "All samples have a mask applied to more than 95% of captured images.<br>";
+else{
+  echo '<table border="0" cellpadding="0" width="500" cellspacing="1" bgcolor="#000000"><tr><td>';
+  echo "<table cellspacing=0 cellpadding=3><tr><td $table_header_color>Samples that need to have a mask applied</td><td $table_header_color >Samples with a mask applied</td></tr>";
+  echo "<tr><td bgcolor=\"".$table_colors[0][1]."\" valign=\"top\">";
+  foreach ($res as $d){
+    echo "<span title=\"$d[1]%\">" .$d[0]. "</span> ";
+  }
+
+  echo "</td><td bgcolor=\"".$table_colors[0][0] ."\" valign=\"top\">";
+   foreach ($done as $d){
+    echo $d[0]. " ";
+  }
+  echo "</td></tr></table></td></tr></table>";
+}
+?>
 <span class="style1">Plate Image Analysis:</span><br>
 <?php 
 try{

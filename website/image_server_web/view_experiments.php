@@ -533,7 +533,9 @@ echo "<a name=\"" . $experiment[1] . "\">";
 	echo "</font></td>";
 if (!$show_plate_stats){
 	echo "<td bgcolor=\"$clrs[1]\"  valign='top' nowrap><center>";
-	echo "<a href=\"manage_samples.php?experiment_id=".$experiment_id . "&hide_region_jobs=1&hide_sample_jobs=1\"> [Image Analysis] </a>";
+	echo "<a href=\"manage_samples.php?experiment_id=".$experiment_id . "&hide_region_jobs=1&hide_sample_jobs=1\"> [Run Analysis] </a><br>";
+   
+	echo "<a href=\"analysis_status.php?experiment_id=".$experiment_id ."\"> [Analysis Status] </a>";
 	echo "</center></td>";
 	echo "<td nowrap=\"nowrap\" bgcolor=\"$clrs[0]\"  valign='top'><center>";
 	echo "<a href=\"view_scanner_schedule.php?experiment_id=".$experiment_id . "&show_past=1\">[View Schedule]</a><br>";

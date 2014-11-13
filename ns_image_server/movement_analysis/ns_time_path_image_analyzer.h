@@ -747,7 +747,7 @@ public:
 	void add_by_hand_annotations(const ns_death_time_annotation_compiler & annotations);
 
 	//three ways to populate the movement quantification data
-	void process_raw_images(const ns_64_bit region_id,const ns_time_path_solution & solution_,const ns_time_series_denoising_parameters &,const ns_analyzed_image_time_path_death_time_estimator * e,ns_sql & sql, const long group_number=-1);
+	void process_raw_images(const ns_64_bit region_id,const ns_time_path_solution & solution_,const ns_time_series_denoising_parameters &,const ns_analyzed_image_time_path_death_time_estimator * e,ns_sql & sql, const long group_number=-1,const bool write_status_to_db=false);
 	void reanalyze_stored_aligned_images(const ns_64_bit region_id,const ns_time_path_solution & solution_,const ns_time_series_denoising_parameters &,const ns_analyzed_image_time_path_death_time_estimator * e,ns_sql & sql,const bool load_images_after_last_valid_sample);
 	void load_completed_analysis(const ns_64_bit region_id,const ns_time_path_solution & solution_, const ns_time_series_denoising_parameters &,const ns_analyzed_image_time_path_death_time_estimator * e,ns_sql & sql, bool exclude_movement_quantification=false);
 	

@@ -763,11 +763,14 @@ bool ns_processing_job_maintenance_processor:: run_job(ns_sql & sql){
 				ns_time_path_solver tp_solver;
 				tp_solver.load(job.region_id,sql);
 				tp_solver.solve(solver_parameters,time_path_solution);
+				
+				image_server->register_server_event(ns_image_server_event("Filling gaps and adding path prefixes."),&sql);
 				time_path_solution.fill_gaps_and_add_path_prefixes(ns_time_path_solution::default_length_of_fast_moving_prefix());
 				
 				//unnecissary save, done for debug
 			//	time_path_solution.save_to_db(job.region_id,sql);
-
+				
+				image_server->register_server_event(ns_image_server_event("Caching image data for inferred worm positions."),&sql);
 				ns_image_server_time_path_inferred_worm_aggregator ag;
 				ag.create_images_for_solution(job.region_id,time_path_solution,sql);
 				
@@ -799,7 +802,7 @@ bool ns_processing_job_maintenance_processor:: run_job(ns_sql & sql){
 				//load in worm images and analyze them for non-translating animals for posture changes
 				image_server->register_server_event(ns_image_server_event("Analyzing images for animal posture changes."),&sql);
 
-				time_path_image_analyzer.process_raw_images(job.region_id,time_path_solution,time_series_denoising_parameters,&death_time_estimator(),sql);
+				time_path_image_analyzer.process_raw_images(job.region_id,time_path_solution,time_series_denoising_parameters,&death_time_estimator(),sql,-1,true);
 				time_path_image_analyzer.save_movement_data_to_db(job.region_id,sql);
 			}
 			else if (job.maintenance_task==ns_maintenance_rebuild_movement_from_stored_images){

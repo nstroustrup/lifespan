@@ -395,7 +395,7 @@ void ns_time_path_image_movement_analyzer::calculate_memory_pool_maximum_image_s
 #ifdef NS_OUTPUT_ALGINMENT_DEBUG
 string debug_path_name;
 #endif
-void ns_time_path_image_movement_analyzer::process_raw_images(const ns_64_bit region_id,const ns_time_path_solution & solution_, const ns_time_series_denoising_parameters & times_series_denoising_parameters,const ns_analyzed_image_time_path_death_time_estimator * e,ns_sql & sql, const long group_number){
+void ns_time_path_image_movement_analyzer::process_raw_images(const ns_64_bit region_id,const ns_time_path_solution & solution_, const ns_time_series_denoising_parameters & times_series_denoising_parameters,const ns_analyzed_image_time_path_death_time_estimator * e,ns_sql & sql, const long group_number,const bool write_status_to_db){
 	analysis_id = ns_current_time();
 	region_info_id = region_id;
 	const unsigned long clear_lag((ns_analyzed_image_time_path::movement_time_kernel_width > ns_analyzed_image_time_path::alignment_time_kernel_width )?
@@ -442,6 +442,9 @@ void ns_time_path_image_movement_analyzer::process_raw_images(const ns_64_bit re
 		if (number_of_paths_to_consider == 0)
 			image_server.register_server_event(ns_image_server_event("No dead animals, or potentially dead animals, were identified in this region."),&sql);
 		else{
+			if (write_status_to_db)
+				image_server.register_server_event(ns_image_server_event("Registering and Analyzing ") << number_of_paths_to_consider << " objects; discarding " << number_of_paths_to_ignore << " as noise.",&sql);
+			else
 			std::cout << "Registering and Analyzing " << number_of_paths_to_consider << " objects; discarding " << number_of_paths_to_ignore << " as noise.\n";
 			
 			const bool system_is_64_bit(sizeof(void *)==8);
@@ -472,8 +475,12 @@ void ns_time_path_image_movement_analyzer::process_raw_images(const ns_64_bit re
 				throw ns_ex("The specified worms are so big that they cannot be processed in memory");
 			//const int ((int)(ceil(number_of_paths_to_consider/(float)maximum_number_of_worms_to_process_simultaneously)));
 			const int number_of_worms_per_repeat((int)(ceil(number_of_paths_to_consider/(float)number_of_repeats_required)));
-			if (number_of_repeats_required > 1)
-				std::cout << "To fit everything into memory, we're doing this in " << number_of_repeats_required << " rounds\n";
+			if (number_of_repeats_required > 1){
+				if (write_status_to_db)
+					image_server.register_server_event(ns_image_server_event( "To fit everything into memory, we're doing this in ") << number_of_repeats_required << " rounds",&sql);
+				else
+					std::cout << "To fit everything into memory, we're doing this in " << number_of_repeats_required << " rounds\n";
+			}
 			int current_round(0);
 			for (unsigned int g = 0; g < groups.size(); ){
 			
@@ -499,8 +506,12 @@ void ns_time_path_image_movement_analyzer::process_raw_images(const ns_64_bit re
 				if (start_group == stop_group)
 					break;
 				//cerr << "Running group " << start_group << "," << stop_group << "\n";
-				if (number_of_repeats_required > 1)
-					std::cout << "\nStarting Round " <<  (current_round+1) << "\n";
+				if (number_of_repeats_required > 1){
+					if (write_status_to_db)
+						image_server.register_server_event(ns_image_server_event("Starting Round ") <<  (current_round+1) << "\n",&sql);
+					else
+						std::cout << "\nStarting Round " <<  (current_round+1) << "\n";
+				}
 				calculate_memory_pool_maximum_image_size(start_group,stop_group);
 				#ifdef NS_OUTPUT_ALGINMENT_DEBUG
 				ofstream oout("c:\\tst_quant.csv");
@@ -519,6 +530,9 @@ void ns_time_path_image_movement_analyzer::process_raw_images(const ns_64_bit re
 						chunk_generators[i][j].setup_first_chuck_for_backwards_registration();
 					}
 				}
+				if (write_status_to_db)
+						image_server.register_server_event(ns_image_server_event("Running backwards..."),&sql);
+				else
 				cerr << "Running Backwards...";
 				for (long t = (long)region_image_specifications.size()-1;t>=0;t--){
 					if(debug_output_skip==number_of_repeats_required || t == 0 && current_round == 0){
@@ -638,6 +652,8 @@ void ns_time_path_image_movement_analyzer::process_raw_images(const ns_64_bit re
 						chunk_generators[i][j].setup_first_chuck_for_forwards_registration();
 					}
 				}
+				if (write_status_to_db)
+						image_server.register_server_event(ns_image_server_event("Running forwards..."),&sql);
 				std::cout << "\nRunning Forwards...";
 				for (unsigned int t = 0; t < region_image_specifications.size(); t+=chunk_size){
 					if(debug_output_skip==number_of_repeats_required || t == 0 && current_round == 0){
@@ -775,6 +791,9 @@ void ns_time_path_image_movement_analyzer::process_raw_images(const ns_64_bit re
 		delete_from_db(region_id,sql);
 		throw;
 	}
+	if (write_status_to_db)
+			image_server.register_server_event(ns_image_server_event("Done."),&sql);
+	else cerr << "Done.\n";
 }
 
 unsigned long ns_analyzed_image_time_path::number_of_elements_not_processed_correctly() const{

@@ -86,7 +86,7 @@ public:
 		spatial_image.use_more_memory_to_avoid_reallocations();
 		thresholded_image.use_more_memory_to_avoid_reallocations();
 		double counter(0);
-		std::cerr << "Caching images for path gaps and prefixes...";
+		//std::cerr << "Caching images for path gaps and prefixes...";
 		for (unsigned int t = 0; t < s.timepoints.size(); t++){
 			if (s.timepoints.size()/20 < counter){
 				counter = 0;

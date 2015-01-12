@@ -569,7 +569,9 @@ void ns_wait_for_all_spawned_nodes(std::vector<ns_child_process_information> &ch
 		try{
 			cerr << "Waiting for node on port " << child_processes[i].options.port(image_server.dispatcher_port()) << "...\n";
 			for (unsigned int i = 0; i < child_processes.size(); i++){
-				child_processes[i].execute.wait_for_termination();
+				try{child_processes[i].execute.wait_for_termination();
+				}
+				catch(...){}
 			}
 		}
 		catch(ns_ex & ex){
@@ -601,13 +603,13 @@ ns_multiprocess_control_options ns_spawn_new_nodes(	const unsigned int & count,
 	unsigned long next_port_offset(1);
 
 	//if we're the parent process, spawn off a bunch of child processes.
-	child_processes.resize(count-1);
-	for (int i = 1; i < count; i++){
-		child_processes[i-1].options = command_line_options;
-		child_processes[i-1].options.compile_videos = false;
-		child_processes[i-1].options.handle_software_updates = false;
-		child_processes[i-1].options.manage_capture_devices = false;
-		child_processes[i-1].options.process_id = i;
+	child_processes.resize(count);
+	for (int i = 0; i < count; i++){
+		child_processes[i].options = command_line_options;
+		child_processes[i].options.compile_videos = false;
+		child_processes[i].options.handle_software_updates = false;
+		child_processes[i].options.manage_capture_devices = false;
+		child_processes[i].options.process_id = i+1;
 		ns_socket s;
 		bool good_port(false);
 		if (!allow_duplicate_port_assigments){

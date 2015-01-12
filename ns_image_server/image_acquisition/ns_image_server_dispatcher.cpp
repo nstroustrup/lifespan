@@ -349,7 +349,7 @@ void ns_image_server_dispatcher::run(){
 		ns_ex ex(e);
 		image_server.register_server_event(ns_image_server::ns_register_in_central_db_with_fallback,ex);
 	}		
-	cerr << "Exiting Dispatcher Thread.";
+//	cerr << "Exiting Dispatcher Thread.";
 }
 
 void ns_image_server_dispatcher::handle_delayed_exception(){

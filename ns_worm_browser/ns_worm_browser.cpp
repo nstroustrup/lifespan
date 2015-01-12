@@ -1609,20 +1609,24 @@ void ns_worm_learner::output_movement_analysis_optimization_data(const ns_parame
 	ns_acquire_for_scope<ns_sql> sql(image_server.new_sql_connection(__FILE__,__LINE__));
 	unsigned int experiment_id = data_selector.current_experiment_id();
 
+	const double min_thresh(.0005);
+	const double max_thresh(.5);
+	const long number_of_thresholds(60);
+	const double log_dt(((log(max_thresh)-log(min_thresh))/number_of_thresholds));
+	std::vector<double> thresholds(number_of_thresholds);
+	
+	double cur=min_thresh;
+	for (unsigned long i = 0; i < number_of_thresholds; i++){
+		thresholds[i]=exp(log(min_thresh)+log_dt*i);
+	}
+
+	
 	//generate optimization training set 
 	const unsigned long near_zero(30);
 	const unsigned long thresh_num(20);
-	vector<double> thresholds;
 	bool by_hand_range(false);
 	vector<double> hold_times;
 	if (range == ns_thermotolerance){
-		
-		for (unsigned int i = 0; i < near_zero; i++){
-			thresholds.push_back(i*.005+.01);
-		}
-		for (unsigned int i = 0; i < thresh_num; i++){
-			thresholds.push_back((0.5*i)/(double)thresh_num+near_zero*.005+.01);
-		}
 		
 		hold_times.resize(16);
 		hold_times[0] = 0;
@@ -1630,20 +1634,7 @@ void ns_worm_learner::output_movement_analysis_optimization_data(const ns_parame
 			hold_times[i+1] = i*45*60;
 	}
 	else if (range ==  ns_quiecent){
-		for (unsigned int i = 0; i < thresh_num; i++){
-			thresholds.push_back((-0.5*i)/(double)thresh_num+near_zero*.002);
-		}
-		
-		for (unsigned int i = 0; i < near_zero; i++){
-			thresholds.push_back(i*-.002);
-		}
-		for (unsigned int i = 0; i < near_zero; i++){
-			thresholds.push_back(i*.002);
-		}
-		for (unsigned int i = 0; i < thresh_num; i++){
-			thresholds.push_back((0.5*i)/(double)thresh_num+near_zero*.002);
-		}
-		
+
 		hold_times.resize(21);
 		for (unsigned int i = 0; i < 6; i++)
 			hold_times[i] = (i)*2*60*60;
@@ -1651,17 +1642,7 @@ void ns_worm_learner::output_movement_analysis_optimization_data(const ns_parame
 			hold_times[i] = hold_times[5]+(i-6)*6*60*60;
 	}
 	else{
-		for (unsigned int i = 0; i < near_zero; i++){
-			thresholds.push_back(i*.0005);
-		}
-		for (unsigned int i = 0; i < thresh_num; i++){
-			thresholds.push_back((0.5*i)/(double)thresh_num+near_zero*.0005);
-		}
-		//for (unsigned int i = 0; i < thresh_num; i++)
-		//	thresholds[i+thresh_num] = -pow(10,-.3-(3.0*i/thresh_num));
-	
-		//for (unsigned int i = 0; i < thresh_num; i++)
-		//	thresholds[i] = 1*i;
+		
 		
 		hold_times.resize(21);
 		hold_times[0] = 0;

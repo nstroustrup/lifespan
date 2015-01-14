@@ -1552,7 +1552,7 @@ void ns_analyzed_image_time_path::write_detailed_movement_quantification_analysi
 		 "Total Worm Area, Normalized Total Worm Area,Total Worm Intensity, Total Region Area, Total Region Intensity,"
 		 "Normalized Worm Area, Normalized Worm Intensity, Normalized Change in Worm Intensity,"
 		 "Total Alternate Worm Area,Total Alternate Worm Intensity,Saturated Registration, Local Region Maximum Movement Sum, Local Region Stationary Sum,"
-		 "Local Region Position X, Local Region Position Y, Local Region Width, Local Region Height";
+		 "Local Region Position X, Local Region Position Y, Local Region Width, Local Region Height, Machine Error (days)";
 	for (unsigned int i = 0; i < this->posture_quantification_extra_debug_field_names.size(); i++){
 		o << "," << posture_quantification_extra_debug_field_names[i];
 	}
@@ -1656,7 +1656,13 @@ void ns_analyzed_image_time_path::write_detailed_movement_quantification_analysi
 			<< elements[k].measurements.local_maximum_position.x << ","
 			<< elements[k].measurements.local_maximum_position.y << ","
 			<< elements[k].measurements.local_maximum_area.x << ","
-			<< elements[k].measurements.local_maximum_area.y;
+			<< elements[k].measurements.local_maximum_area.y << ",";
+		if ( state_intervals[(int)ns_movement_stationary].skipped)
+			 o << "";
+		else o << ns_output_interval_difference(this->state_entrance_interval_time(state_intervals[(int)ns_movement_stationary]).
+													best_estimate_event_time_for_possible_partially_unbounded_interval(),
+													by_hand_annotation_event_times[(int)ns_movement_cessation]);
+
 		for (unsigned int i = 0; i < elements[k].measurements.posture_quantification_extra_debug_fields.size(); i++){
 			o << "," << elements[k].measurements.posture_quantification_extra_debug_fields[i];
 		}
@@ -2897,7 +2903,10 @@ public:
 					offset_range_l.x -= 2*local_offset.x-1;
 				//	l=true;
 				}
-				else if ( top_saturated && found_new_minimum_this_round && (abs(best_offset.y -range_l.y) < nearness_to_edge_that_triggers_recalculation )){
+				//A previous bug here (the omission of the ! in front of !top_saturated ) caused
+				//movement registration to fail in situations where images were moving up and down a lot,
+				//causing animal's lifespan to be overestimated.
+				else if ( !top_saturated && found_new_minimum_this_round && (abs(best_offset.y -range_l.y) < nearness_to_edge_that_triggers_recalculation )){
 					offset_range_h.y = offset_range_l.y-1;
 					offset_range_l.y -= 2*local_offset.y-1;
 			//		t=true;
@@ -3651,8 +3660,7 @@ ns_analyzed_time_image_chunk ns_analyzed_image_time_path::initiate_image_registr
 	const ns_vector_2i top_offset(maximum_alignment_offset());
 
 	ns_calc_best_alignment align(NS_SUBPIXEL_REGISTRATION_CORSE,NS_SUBPIXEL_REGISTRATION_FINE,maximum_alignment_offset(),maximum_local_alignment_offset(),bottom_offset,top_offset);
-
-
+	
 	//load first consensus kernal
 	
 	const ns_vector_2i d(maximum_alignment_offset());	

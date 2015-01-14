@@ -611,7 +611,7 @@ ns_multiprocess_control_options ns_spawn_new_nodes(	const unsigned int & count,
 		child_processes[i].options.manage_capture_devices = false;
 		child_processes[i].options.process_id = i+1;
 		ns_socket s;
-		bool good_port(false);
+		bool good_bport(false);
 		if (!allow_duplicate_port_assigments){
 			//find the next good port
 			while(1){
@@ -624,12 +624,12 @@ ns_multiprocess_control_options ns_spawn_new_nodes(	const unsigned int & count,
 				next_port_offset++;
 			}
 		}
-		child_processes[i-1].options.dispatcher_port_offset = next_port_offset;
+		child_processes[i].options.dispatcher_port_offset = next_port_offset;
 		next_port_offset++;
 		#ifdef _WIN32 
 			//on windows, launch a new process passing instructions via the commandline
 			vector<string> args;
-			child_processes[i-1].options.to_parameters(args);
+			child_processes[i].options.to_parameters(args);
 			string parameters;
 			for (int j = 0; j < args.size(); j++){
 				parameters+= args[j];
@@ -644,8 +644,8 @@ ns_multiprocess_control_options ns_spawn_new_nodes(	const unsigned int & count,
 			
 			char full_command_line[512];
 			GetModuleFileName(NULL,full_command_line,512);
-			child_processes[i-1].execute.run(full_command_line,parameters, opts);
-			child_processes[i-1].execute.release_io();
+			child_processes[i].execute.run(full_command_line,parameters, opts);
+			child_processes[i].execute.release_io();
 
 
 		#else
@@ -1009,11 +1009,11 @@ int main(int argc, char * argv[]){
 		cout << " ==                                   ==\n";
 		cout << " ==        Nicholas Stroustrup        ==\n";
 		cout << " ==            Fontana Lab            ==\n";
-		cout << " ==      Harvard University 2014      ==\n";
+		cout << " ==      Harvard University 2015      ==\n";
 		cout << " ==                                   ==\n";
 		cout << " =======================================\n";
 
-
+		cout << "Compilation date " << __DATE__ << "\n";
 
 		std::vector<std::pair<std::string,std::string> > quotes;
 	

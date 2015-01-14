@@ -73,7 +73,7 @@ public:
 
 struct ns_animal_list_at_position{
 	ns_stationary_path_id stationary_path_id;
-	typedef std::vector<ns_death_timing_data> ns_animal_list;
+	typedef std::vector<ns_death_timing_data> ns_animal_list;  //positions can hold multiple animals
 	ns_animal_list animals;
 };
 
@@ -773,16 +773,28 @@ public:
 		
 	}
 	void output_worm_frames(const string &base_dir,const std::string & filename, ns_sql & sql){
-		const string bd(ns_dir::extract_path(base_dir));
+		const string bd(base_dir);
 		const string base_directory(bd + DIR_CHAR_STR + filename);
 		ns_dir::create_directory_recursive(base_directory);
 		const string gray_directory(base_directory + DIR_CHAR_STR + "gray");
 		const string movement_directory(base_directory + DIR_CHAR_STR + "movement");
 		ns_dir::create_directory_recursive(gray_directory);
 		ns_dir::create_directory_recursive(movement_directory);
-
+	
 		current_region_data->load_movement_analysis(current_region_data->metadata.region_id,sql,true);
 		current_worm = &current_region_data->movement_analyzer[properties_for_all_animals.stationary_path_id.group_id].paths[properties_for_all_animals.stationary_path_id.path_id];
+		
+		//add in by hand annotations so they are outputted correctly.
+		std::vector<ns_death_time_annotation> by_hand_annotations;
+		for (unsigned long i = 0; i < current_region_data->by_hand_timing_data.size(); i++){
+				current_region_data->by_hand_timing_data[i].animals.begin()->generate_event_timing_data(by_hand_annotations);
+				ns_death_time_annotation_compiler c;
+				for (unsigned int j = 0; j < by_hand_annotations.size(); j++)
+					c.add(by_hand_annotations[j],current_region_data->metadata);
+				current_region_data->movement_analyzer.add_by_hand_annotations(c);
+		}
+		
+		
 		//we're reallocating all the elements so we need to link them in.
 		for (unsigned int i = 0; i < timepoints.size(); i++){
 				timepoints[i].path_timepoint_element = &current_worm->element(i);
@@ -941,7 +953,8 @@ public:
 					d.dialog_type = Fl_Native_File_Chooser::BROWSE_DIRECTORY;
 					d.default_filename = "";
 					d.title = "Choose Movement Quantification Output Directory";
-					ns_run_in_main_thread<ns_file_chooser> run_mt(&d);
+					d.act();
+				//	ns_run_in_main_thread<ns_file_chooser> run_mt(&d);
 					if (d.chosen)
 						output_worm_frames(d.result,filename,sql());
 					break;

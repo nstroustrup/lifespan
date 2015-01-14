@@ -2587,7 +2587,7 @@ int main() {
 		//worm_learner.compare_machine_and_by_hand_annotations();
 
 		//current_window->resizable(win);
-		
+		cout << "Compilation date: " << __DATE__ << "\n";
 		ns_worm_browser_output_debug(__LINE__,__FILE__,"Showing window");
 		current_window->show();
 		worm_window = new ns_worm_terminal_worm_window(100,100,"Inspect Worm");

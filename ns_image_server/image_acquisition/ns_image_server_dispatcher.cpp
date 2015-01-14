@@ -238,6 +238,7 @@ void ns_image_server_dispatcher::handle_remote_requests(){
 void ns_image_server_dispatcher::run(){
 	try{
 		image_server.register_server_event(ns_image_server::ns_register_in_central_db_with_fallback,ns_image_server_event("Dispatcher refresh interval set to ",false) << image_server.dispatcher_refresh_interval() << " seconds.");
+		image_server.register_server_event(ns_image_server::ns_register_in_central_db_with_fallback,ns_image_server_event("Software Compilation Date: ") << __DATE__);
 		image_server.register_server_event(ns_image_server::ns_register_in_central_db_with_fallback,ns_image_server_event("Dispatcher started.",false));
 		while(!image_server.exit_requested){
 			ns_socket_connection socket_connection;

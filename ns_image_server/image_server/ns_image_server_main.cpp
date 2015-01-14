@@ -1013,8 +1013,6 @@ int main(int argc, char * argv[]){
 		cout << " ==                                   ==\n";
 		cout << " =======================================\n";
 
-		cout << "Compilation date " << __DATE__ << "\n";
-
 		std::vector<std::pair<std::string,std::string> > quotes;
 	
 		

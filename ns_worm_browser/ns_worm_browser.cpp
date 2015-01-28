@@ -4450,7 +4450,7 @@ void ns_worm_learner::make_reject_spine_collage_with_stats(const bool svg,const 
 void ns_worm_learner::calculate_vertical_offset(const std::string & filename){
 	ns_image_standard second;
 	load_file(filename, second);
-	ns_vector_2i diff = ns_image_registration<128,ns_8_bit>::register_images(current_image,second);
+	ns_vector_2i diff = ns_image_registration<128,ns_8_bit>::register_images(current_image,second,ns_compound_registration);
 	cerr << "Offset = " << diff << "\n";
 	ns_image_standard im;
 	ns_image_properties prop = second.properties();

@@ -840,6 +840,34 @@ bool ns_sql_column_exists(const std::string & table, const std::string & column,
 }
 bool ns_image_server::upgrade_tables(ns_sql & sql,const bool just_test_if_needed){
 	bool changes_made = false;
+
+	sql << "SELECT COLUMN_TYPE FROM INFORMATION_SCHEMA.COLUMNS "
+			"WHERE table_name = 'captured_images' AND COLUMN_NAME = 'registration_horizontal_offset'"
+			"AND TABLE_SCHEMA = 'image_server'";
+	ns_sql_result res;
+	sql.get_rows(res);
+	if (res.size() > 0 && res[0][0].find("unsigned") != res[0][0].npos){
+		if (just_test_if_needed)
+			return true;
+		sql << "ALTER TABLE image_server.captured_images CHANGE COLUMN `registration_horizontal_offset` " 
+				"`registration_horizontal_offset` INT(10) NOT NULL DEFAULT '0' ";
+		sql.send_query();
+		changes_made = true;
+	}
+
+	sql << "SELECT COLUMN_TYPE FROM INFORMATION_SCHEMA.COLUMNS "
+		"WHERE table_name = 'buffered_captured_images' AND COLUMN_NAME = 'registration_horizontal_offset'"
+		"AND TABLE_SCHEMA = 'image_server_buffer'";
+	sql.get_rows(res);
+	if (res.size() > 0 && res[0][0].find("unsigned") != res[0][0].npos){
+		if (just_test_if_needed)
+			return true;
+		sql << "ALTER TABLE image_server_buffer.buffered_captured_images CHANGE COLUMN `registration_horizontal_offset` " 
+				"`registration_horizontal_offset` INT(10) NOT NULL DEFAULT '0' ";
+		sql.send_query();
+		changes_made = true;
+	}
+
 	if (!ns_sql_column_exists("sample_region_image_info","position_analysis_model",sql)){
 		if(just_test_if_needed)
 			return true;

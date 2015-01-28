@@ -687,6 +687,7 @@ ns_image_server_sql * ns_connect_to_available_sql_server(){
 		}
 }
 #include "ns_ojp2k.h"
+#include "ns_image_registration.h"
 #ifdef _WIN32 
 int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow){
 	int argc;
@@ -718,7 +719,39 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLi
 #else
 int main(int argc, char * argv[]){
 #endif
-	
+	/*
+	//Image registration code test
+	if(1){
+	try{
+	ns_image_registration<127,ns_8_bit> registration;
+	ns_image_standard im1, im2;
+	std::string dir("Y:\\image_server_storage\\partition_000\\2014_12_21_compound_scaling\\rise_d\\captured_images\\");
+	ns_load_image(dir+"2014_12_21_compound_scaling=1035=rise_d=29839=1419150907=2014-12-21=03-35=5395566=235850499.tif",im1);
+	ns_load_image(dir+"2014_12_21_compound_scaling=1035=rise_d=29839=1422236107=2015-01-25=20-35=5582815=238599372.tif",im2);
+	ns_high_precision_timer t;
+	t.start();
+	ns_vector_2i diff (registration.register_images(im1,im2,ns_full_registration,ns_vector_2i(150,150)));
+	ns_64_bit diff_time(t.stop());
+	t.start();
+	//ns_vector_2i diff2 (registration.register_images(im1,im2,ns_sum_registration,ns_vector_2i(50,50)));
+	ns_vector_2i diff3 (registration.register_images(im1,im2,ns_threshold_registration,ns_vector_2i(150,150)));
+	ns_64_bit diff3_time(t.stop());
+	ofstream foo ("c:\\server\\out.txt");
+	foo << diff.x << "," << diff.y << "\n";
+	foo << diff_time << "\n";
+	//foo << diff2.x << "," << diff2.y << "\n";
+	foo << diff3.x << "," << diff3.y << "\n";
+	foo << diff3_time << "\n";
+	foo.close();
+	cerr << "WHA";
+	}
+	catch(ns_ex & ex){
+		cerr << ex.text() << "\n";
+		cerr << "\n";
+	}
+	return 0;
+	}
+	*/
 	std::map<std::string,ns_cl_command> commands;
 	commands["start"] = ns_start;
 	commands["stop"] = ns_stop;

@@ -234,7 +234,7 @@ CREATE TABLE `captured_images` (
   `mask_applied` tinyint(3) unsigned NOT NULL default '0',
   `problem` int(10) unsigned NOT NULL default '0',
   `registration_vertical_offset` int(11) NOT NULL default '0',
-  `registration_horizontal_offset` int(10) unsigned NOT NULL default '0',
+  `registration_horizontal_offset` int(10) NOT NULL default '0',
   `registration_offset_calculated` tinyint(3) unsigned NOT NULL default '0',
   `censored` tinyint(1) NOT NULL default '0',
   `image_statistics_id` bigint(20) unsigned NOT NULL default '0',

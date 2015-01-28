@@ -1,5 +1,5 @@
 #ifndef NS_EX
-#define NS_EX    
+#define NS_EX
 
 #ifdef _WIN32
 	#ifdef INCLUDE_STDAFX
@@ -30,9 +30,12 @@ typedef unsigned long ns_32_bit;
 #ifdef _WIN32
 	typedef unsigned __int64 ns_64_bit;
 	typedef __int64 ns_s64_bit;
+	#define ns_64_bit_abs _abs64
+
 #else
 	typedef unsigned long long ns_64_bit;
 	typedef long long ns_s64_bit;
+	#define ns_64_bit_abs abs
 #endif
 typedef bool ns_bit;
 
@@ -93,7 +96,7 @@ public:
 	derived_t & operator<<(const ns_s64_bit val){append(val);return *d_this();}
 	derived_t & operator<<(const unsigned long int val){append(val);return *d_this();}
 	derived_t & operator<<(const double val){append(val);return *d_this();}
-	
+
 	derived_t & operator << (const stream_type_t & ex){ stream_type = ex; return *d_this();}
 
 	//virtual ~ns_text_stream() throw (){}
@@ -138,13 +141,13 @@ public:
 
 
 	ns_ex(const std::string & str):ns_text_stream<ns_ex,  ns_ex_type>(*this, ns_standard){append(str);}
-	
+
 	const char * what() const throw() {
 		std::string wha = ns_text_stream<ns_ex,ns_ex_type>::text();
 		wha+=";";
 		wha+=ns_ex_type_string(this->type());
 		std::string::size_type s = wha.size();
-		
+
 		//Not sure when the pointer returned by text.c_str() goes sour, so we copy the error to a safe location.
 		if (s > 1023)
 			s = 1023;
@@ -156,7 +159,7 @@ public:
 	#ifdef _WIN32
 	void append_windows_error();
 	#endif
-	
+
 private:
 	mutable char err_text[1024];
 	/*
@@ -197,7 +200,7 @@ public:
 		return *p;
 	}
 	inline bool is_null()const{return p==0;}
-	
+
 	~ns_acquire_for_scope(){ns_safe_delete(p);}
 private:
 	T * p;

@@ -1229,7 +1229,7 @@ public:
 	}
 
 	///Resize the image using bilinear interpolation
-	void resample(const ns_image_properties & new_dimentions, ns_image_whole<ns_component> & out){
+	void resample(const ns_image_properties & new_dimentions, ns_image_whole<ns_component> & out) const{
 
 		if (new_dimentions == properties()){
 			this->pump(out,512);

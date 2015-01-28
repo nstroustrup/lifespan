@@ -5,6 +5,7 @@
 #include "ns_heat_map_interpolation.h"
 #include "ns_movement_visualization_generator.h"
 #include "ns_hand_annotation_loader.h"
+#include "ns_image_registration.h"
 using namespace std;
 
 void ns_check_for_file_errors(ns_processing_job & job, ns_sql & sql){
@@ -2641,7 +2642,8 @@ ns_vector_2i ns_image_processing_pipeline::run_vertical_registration(const ns_im
 
 				//create the profile
 				ns_image_registration_profile profile;
-				ns_image_registration<127,ns_8_bit>::generate_profiles(im,profile);
+				//XXXX
+				ns_image_registration<127,ns_8_bit>::generate_profiles(im,profile,ns_full_registration);
 				image_server.image_registration_profile_cache.insert(base_image.id,profile);
 
 				//save it to the cache
@@ -2674,8 +2676,9 @@ ns_vector_2i ns_image_processing_pipeline::run_vertical_registration(const ns_im
 			throw ns_ex("ns_image_processing_pipeline::run_vertical_registration()::Could not perform registration because all of the first few raw images could not be loaded for sample ") << captured_image.experiment_name << "::" << captured_image.sample_name;
 	}
 	ns_image_registration_profile image_profile;
-	ns_image_registration<127,ns_8_bit>::generate_profiles(image,image_profile);
-	ns_vector_2i offset(ns_image_registration<127,ns_8_bit>::register_profiles(*base,image_profile));
+	//XXXX
+	ns_image_registration<127,ns_8_bit>::generate_profiles(image,image_profile,ns_full_registration,base->downsampling_factor);
+	ns_vector_2i offset(ns_image_registration<127,ns_8_bit>::register_profiles(*base,image_profile,ns_vector_2i(150,150)));
 
 	sql << "UPDATE captured_images SET registration_horizontal_offset='" << offset.x << "', registration_vertical_offset='" << offset.y << "', registration_offset_calculated=1 WHERE id = " << captured_image.captured_images_id;
 	//cerr << sql.query() << "\n";

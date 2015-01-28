@@ -14,7 +14,7 @@
 #include "ns_xvid.h"
 #endif
 #include "ns_image_cache.h"
-#include "ns_image_registration.h"
+#include "ns_image_registration_cache.h"
 #include "ns_processing_job_push_scheduler.h"
 #include "ns_worm_training_set_image.h"
 

@@ -20,7 +20,7 @@
 #include "ns_capture_device_manager.h"
 #endif
 
-#include "ns_image_registration.h"
+#include "ns_image_registration_cache.h"
 
 #include <iostream>
 #include <fstream>

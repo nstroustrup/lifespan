@@ -118,8 +118,8 @@ public:
 	ns_image_storage_reciever_handle<ns_component> request_local_cache_storage(const std::string & filename, const unsigned long max_line_length, const bool report_to_db = true);
 	unsigned long request_local_cache_file_size(const std::string & filename);
 	
-	ns_image_storage_source_handle<ns_component> request_from_local_cache(const std::string & filename);
-	ns_image_storage_source_handle<ns_component> request_from_volatile_storage(const std::string & filename);
+	ns_image_storage_source_handle<ns_component> request_from_local_cache(const std::string & filename,const bool report_to_db=true);
+	ns_image_storage_source_handle<ns_component> request_from_volatile_storage(const std::string & filename,const bool report_to_db=true);
 	bool delete_from_volatile_storage(const std::string & filename);
 
 	bool delete_from_local_cache(const std::string & filename);

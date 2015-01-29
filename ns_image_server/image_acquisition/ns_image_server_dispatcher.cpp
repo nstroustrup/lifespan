@@ -1092,6 +1092,8 @@ ns_thread_return_type ns_image_server_dispatcher::thread_start_look_for_work(voi
 	bool found_work(false);
 	try{
 		try{
+			ns_thread current_thread (ns_thread::get_current_thread());
+			current_thread.set_priority(NS_THREAD_LOW);
 			found_work = d->look_for_work();
 		}
 		catch(std::exception & exception){

@@ -138,7 +138,7 @@ class ns_death_time_annotation_compiler{
 
 public:	
 	typedef enum {ns_create_all,ns_do_not_create_regions,ns_do_not_create_regions_or_locations} ns_creation_type;
-	typedef std::map<unsigned long,ns_death_time_annotation_compiler_region> ns_region_list;
+	typedef std::map<ns_64_bit,ns_death_time_annotation_compiler_region> ns_region_list;
 	void clear(){regions.clear();}
 	ns_region_list regions;
 	

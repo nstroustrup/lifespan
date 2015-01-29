@@ -309,6 +309,8 @@ public:
 		if(cleared)
 			return;
 		image_storage.cache.clear_cache();
+		image_registration_profile_cache.cleanup(&image_storage);
+		image_registration_profile_cache.clear();
 		image_registration_profile_cache.clear();
 		#ifndef NS_MINIMAL_SERVER_BUILD
 		device_manager.clear();
@@ -403,7 +405,7 @@ public:
 	unsigned handle_software_updates()const{return multiprocess_control_options.handle_software_updates;}
 
 	
-	ns_image_registration_profile_cache image_registration_profile_cache;
+	ns_image_registration_profile_cache<ns_disk_buffered_image_registration_profile> image_registration_profile_cache;
 	
 	ns_vector_2i max_terminal_window_size;
 	unsigned long terminal_hand_annotation_resize_factor;
@@ -435,6 +437,8 @@ public:
 	bool verbose_debug_output() const {return _verbose_debug_output;}
 	
 	const unsigned long & maximum_memory_allocation_in_mb(){return  _maximum_memory_allocation_in_mb;}
+
+	ns_process_priority process_priority;
 private:
 	ns_multiprocess_control_options multiprocess_control_options;
 	unsigned long number_of_node_processes_per_machine_;

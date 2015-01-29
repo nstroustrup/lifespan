@@ -775,7 +775,7 @@ ns_image_storage_reciever_handle<ns_image_storage_handler::ns_component> ns_imag
 
 		throw ns_ex("ns_image_storage_handler::request_local_cache_storage()::Volitile storage location is not writeable: ") << output_filename << ns_file_io;
 	}
-	if (verbosity >= ns_standard){
+	if (verbosity >= ns_standard && report_to_db){
 		ns_image_server_event ev("ns_image_storage_handler::Opening ");
 		ev << output_filename << " for output.";
 		ev.log = report_to_db;
@@ -785,7 +785,7 @@ ns_image_storage_reciever_handle<ns_image_storage_handler::ns_component> ns_imag
 }
 
 	
-ns_image_storage_source_handle<ns_image_storage_handler::ns_component> ns_image_storage_handler::request_from_local_cache(const std::string & filename){
+ns_image_storage_source_handle<ns_image_storage_handler::ns_component> ns_image_storage_handler::request_from_local_cache(const std::string & filename, const bool report_to_db){
 	if (!ns_dir::file_exists(volatile_storage_directory))
 			ns_image_handler_submit_alert_to_central_db(ns_alert::ns_volatile_storage_error,
 			"Could not access volatile storage",
@@ -796,7 +796,7 @@ ns_image_storage_source_handle<ns_image_storage_handler::ns_component> ns_image_
 	ns_dir::convert_slashes(input_filename);
 
 	if (ns_dir::file_exists(input_filename)){
-		if (verbosity >= ns_standard)
+		if (verbosity >= ns_standard && report_to_db)
 			ns_image_handler_register_server_event_to_central_db(ns_image_server_event("ns_image_storage_handler::Opening ",false) << input_filename << " for input." << ns_ts_minor_event);
 		return ns_image_storage_source_handle<ns_image_storage_handler::ns_component>(new ns_image_storage_source_from_disk<ns_image_storage_handler::ns_component>(input_filename,&image_server.performance_statistics,true));
 
@@ -805,7 +805,7 @@ ns_image_storage_source_handle<ns_image_storage_handler::ns_component> ns_image_
 }
 
 
-ns_image_storage_source_handle<ns_image_storage_handler::ns_component> ns_image_storage_handler::request_from_volatile_storage(const std::string & filename){
+ns_image_storage_source_handle<ns_image_storage_handler::ns_component> ns_image_storage_handler::request_from_volatile_storage(const std::string & filename, const bool report_in_db){
 	if (!ns_dir::file_exists(volatile_storage_directory))
 		ns_image_handler_submit_alert_to_central_db(ns_alert::ns_volatile_storage_error,
 			"Could not access volatile storage",
@@ -816,7 +816,7 @@ ns_image_storage_source_handle<ns_image_storage_handler::ns_component> ns_image_
 	ns_dir::convert_slashes(input_filename);
 
 	if (ns_dir::file_exists(input_filename)){
-		if (verbosity >= ns_standard)
+		if (verbosity >= ns_standard && report_in_db)
 			ns_image_handler_register_server_event_to_central_db(ns_image_server_event("ns_image_storage_handler::Opening VT ") << input_filename << " for input." << ns_ts_minor_event);
 		return ns_image_storage_source_handle<ns_image_storage_handler::ns_component>(new ns_image_storage_source_from_disk<ns_image_storage_handler::ns_component>(input_filename,&image_server.performance_statistics,true));
 

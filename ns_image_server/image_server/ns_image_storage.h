@@ -155,11 +155,11 @@ class ns_image_storage_source : public ns_image_stream_sender<ns_component,ns_im
 public:
 	ns_image_storage_source(const ns_image_properties & properties):
 		ns_image_stream_sender<ns_component,ns_image_storage_source<ns_component> >(properties,this){}
-
 	virtual void send_lines(ns_image_stream_static_buffer<ns_component> & lines, unsigned int count)=0;
 	virtual void send_lines(ns_image_stream_static_offset_buffer<ns_component> & lines, unsigned int count)=0;
 	virtual void send_lines(ns_image_stream_sliding_offset_buffer<ns_component> & lines, unsigned int count)=0;
 	virtual void send_lines(ns_image_stream_safe_sliding_offset_buffer<ns_component> & lines, unsigned int count)=0;
+	virtual void seek_to_beginning()=0;
 	virtual ~ns_image_storage_source(){}
 
 private:
@@ -188,6 +188,7 @@ public:
 	void send_lines(ns_image_stream_static_offset_buffer<ns_component> & lines, unsigned int count){mark_pa_started();_source.send_lines(lines,count);mark_pa_finished();	}
 	void send_lines(ns_image_stream_sliding_offset_buffer<ns_component> & lines, unsigned int count){mark_pa_started();_source.send_lines(lines,count);mark_pa_finished();	}
 	void send_lines(ns_image_stream_safe_sliding_offset_buffer<ns_component> & lines, unsigned int count){mark_pa_started();_source.send_lines(lines,count);mark_pa_finished();	}
+	void seek_to_beginning(){target->seek_to_beginning();}
 protected:
 	void finish_send(){
 		_source.finish_send();
@@ -203,7 +204,6 @@ private:
 	ns_ojp2k_image_input_file<ns_component> jp2k_in;
 	ns_image_stream_file_source<ns_component> _source;
 	ns_image_input_file<ns_component> * target;
-
 	inline void mark_pa_started(){ 
 		if (pa==0) return; 
 		tp.start();
@@ -229,7 +229,7 @@ public:
 	void send_lines(ns_image_stream_static_offset_buffer<ns_component> & lines, unsigned int count){reciever.send_lines(lines,count);	};
 	void send_lines(ns_image_stream_sliding_offset_buffer<ns_component> & lines, unsigned int count){reciever.send_lines(lines,count);	}
 	void send_lines(ns_image_stream_safe_sliding_offset_buffer<ns_component> & lines, unsigned int count){reciever.send_lines(lines,count);	}
-
+	void seek_to_beginning(){throw ns_ex("Not implemented");}
 
 	~ns_image_storage_source_from_net(){
 		try{

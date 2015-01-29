@@ -230,6 +230,15 @@ private:
 	ns_thread_handle handle;
 };
 
+class ns_process_priority{
+public:
+	
+	typedef enum{ns_above_normal,ns_below_normal,ns_high,ns_idle,ns_normal,ns_background,ns_realtime} ns_priority;
+	ns_process_priority():current_priority(ns_normal){}
+	bool set_priority(const ns_priority priority);
 
+private:
+	ns_priority current_priority;
+};
 
 #endif

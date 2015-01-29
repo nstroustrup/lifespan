@@ -32,8 +32,9 @@ void ns_image_server_global_debug_handler(const ns_text_stream_t & t);
 
 ns_image_server::ns_image_server():event_log_open(false),exit_requested(false),update_software(false), 
 	sql_lock("ns_is::sql"),server_event_lock("ns_is::server_event"),simulator_scan_lock("ns_is::sim_scan"),local_buffer_sql_lock("ns_is::lb"),
-	_act_as_processing_node(true),/*alert_handler_lock("ns_is::alert"),alert_handler_running(false),*/cleared(false),current_sql_server_address_id(0),
-	image_registration_profile_cache(32),_verbose_debug_output(false),_cache_subdirectory("cache"),sql_database_choice(possible_sql_databases.end()),next_scan_for_problems_time(0){
+	_act_as_processing_node(true),cleared(false),current_sql_server_address_id(0),
+	image_registration_profile_cache(1024*4), //allocate 4 gigabytes of disk space in which to store reference images for capture sample registration
+	_verbose_debug_output(false),_cache_subdirectory("cache"),sql_database_choice(possible_sql_databases.end()),next_scan_for_problems_time(0){
 
 	ns_socket::global_init();
 	ns_worm_detection_constants::init();

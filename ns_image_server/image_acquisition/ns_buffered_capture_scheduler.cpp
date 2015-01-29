@@ -623,7 +623,7 @@ bool ns_buffered_capture_scheduler::run_pending_scans(const std::string & device
 			//cerr << "Leaving " << d.name << " search.\n";
 			return ret;
 		}
-
+		
 		//cancel any pending autoscans on this device
 		if (image_server.device_manager.set_autoscan_interval(device_name, 0)){
 			image_server.device_manager.register_autoscan_clash(device_name);

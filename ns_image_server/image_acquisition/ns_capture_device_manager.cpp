@@ -535,7 +535,9 @@ ns_thread_return_type ns_image_server_device_manager::run_capture_on_device_inte
 
 	std::string capture_device_name(arg->capture_arguments->device_name);
 	try{
+
 		arg->manager->run_capture_on_device_asynch(*(arg->capture_arguments));
+
 	}
 	catch(std::exception & exception){
 		cerr << "d2";
@@ -589,7 +591,7 @@ ns_thread_return_type ns_image_server_device_manager::run_capture_on_device_inte
 	ns_safe_delete(arg->capture_arguments->capture_specification.volatile_storage);
 
 	try{
-		cerr << "d5";
+		//cerr << "d5";
 		image_server.device_manager.mark_device_as_finished_scanning(arg->capture_arguments->device_name);
 	}
 	catch(ns_ex & ex){
@@ -742,7 +744,7 @@ void ns_image_server_device_manager::run_capture_on_device_asynch(ns_capture_thr
 			
 			try{
 				device->device.send_hardware_reset();
-				ns_thread::sleep(1); //keep usb chatter sane
+				ns_thread::sleep(2); //keep usb chatter sane
 			}
 			catch(ns_ex & ex){
 				image_server.register_server_event(ex,&sql());

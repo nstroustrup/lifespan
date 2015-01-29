@@ -264,7 +264,11 @@ void ns_capture_device::capture(ns_image_capture_specification & c){
 	//specify scan parameters
 	parameters += c.capture_parameters;
 
+
 	
+	ns_thread current_thread(ns_thread::get_current_thread());
+	current_thread.set_priority(NS_THREAD_HIGH);
+
 	ns_external_execute exec;
 
 	ns_asynchronous_read_info<ns_capture_device> read_info;
@@ -357,14 +361,14 @@ void ns_capture_device::capture(ns_image_capture_specification & c){
 		//THE NEXT FOUR LINES ARE A HACK
 		#ifdef _WIN32
 		if (total_bytes_read != 0){
-			ns_thread::sleep(1);
+			ns_thread::sleep(10);
 			exec.finished_reading_from_stderr();
 		}
 		#endif
 		//For some reason the asynchronous read doesn't stop even once the child process
-		//terminates.  So we assume that one second after the child has finished writing to cout,
+		//terminates.  So we assume that ten seconds after the child has finished writing to cout,
 		//it's not going to write to stderr and so we kill it.
-
+		current_thread.set_priority(NS_THREAD_NORMAL);
 	}
 	catch(std::exception & exception){
 		ns_ex ex2(exception);

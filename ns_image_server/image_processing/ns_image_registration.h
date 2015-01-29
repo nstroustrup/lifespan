@@ -2,31 +2,13 @@
 #define NS_IMAGE_REGISTRATION
 #include "ns_image.h"
 #include "ns_image_registration_cache.h"
-
-
 template<int thresh, class ns_component>
 class ns_image_registration{
 public:
-	
-	static void generate_profiles(const ns_image_whole<ns_component> & r, ns_image_registration_profile & profile,const ns_registration_method & method,const unsigned long downsampling_factor=0){
+	template<class profile_type>
+	static void generate_profiles(const ns_image_whole<ns_component> & r, ns_image_registration_profile<profile_type> & profile,const ns_registration_method & method,const unsigned long downsampling_factor=0){
 		profile.registration_method = method;
 		if (method == ns_full_registration){
-			r.pump(profile.whole_image,1024*1024);
-			if (downsampling_factor == 0){
-				profile.downsampling_factor= sqrt((double)((r.properties().width*(ns_64_bit)r.properties().height)/(500*500)));
-				if (profile.downsampling_factor > 8)
-					profile.downsampling_factor = 8;
-			}
-			else profile.downsampling_factor=downsampling_factor;
-			ns_image_properties prop(r.properties());
-			prop.width=prop.width/profile.downsampling_factor;
-			prop.height=prop.height/profile.downsampling_factor;
-			r.resample(prop,profile.downsampled_image);
-			if (profile.downsampling_factor > 4){
-				prop.width=r.properties().width/4;
-				prop.height=r.properties().height/4;
-				r.resample(prop,profile.downsampled_image_2);
-			}
 			return;
 		}
 		profile.horizontal_profile.resize(0);
@@ -62,62 +44,49 @@ public:
 		else throw ns_ex("Unknown registration method");
 	}
 
-
-	static ns_vector_2i register_images(const ns_image_whole<ns_component> & r, const ns_image_whole<ns_component> & a, const ns_registration_method & registration_method,const ns_vector_2i max_offset = ns_vector_2i(0,0)){
-		
-		
-		ns_image_registration_profile profiles[2];
-
-		generate_profiles(r,profiles[0],registration_method);
-		generate_profiles(a,profiles[1],registration_method,profiles[0].downsampling_factor);
-
-		if(registration_method == ns_full_registration)
-			return register_full_images(profiles[0],profiles[1],max_offset);
-
-		//ofstream out1(std::string("c:\\server\\horizontal_profiles_") + ns_registration_method_string(registration_method) + "_.csv");
-		//out1 << "name,direction,position,value,value_normalized\n";
-		//write_profile("r",profiles[0],out1);
-		//write_profile("a",profiles[1],out1);
-		//out1.close();
-
-		if (registration_method == ns_threshold_registration || registration_method == ns_sum_registration)
-			return register_profiles(profiles[0],profiles[1],max_offset,ns_registration_method_string(registration_method));
-
-		if (registration_method == ns_compound_registration){
-			ns_vector_2i approximate_registration(register_profiles(profiles[0],profiles[1],max_offset,ns_registration_method_string(registration_method)+"_first_step"));
-			ns_vector_2i local_registration(7,7);
-			return register_whole_images(profiles[0].whole_image,profiles[1].whole_image,
-					approximate_registration-local_registration,
-					approximate_registration+local_registration);
-		}
-		throw ns_ex("Unknown registration method");
-	}
-
-	static ns_vector_2i register_full_images(const ns_image_registration_profile & r , const ns_image_registration_profile & a,  ns_vector_2i max_offset = ns_vector_2i(0,0), const std::string & debug_name=""){
+	template<class T1>
+	static ns_vector_2i register_full_images(ns_image_registration_profile<T1> & r , ns_image_registration_profile<T1> & a,  ns_vector_2i max_offset = ns_vector_2i(0,0), const std::string & debug_name=""){
 		if (r.downsampling_factor != a.downsampling_factor)
 			throw ns_ex("Downsampling factor mismatch");
 		if (max_offset == ns_vector_2i(0,0))
 			max_offset = ns_vector_2i(r.whole_image.properties().width/5,r.whole_image.properties().height/5);
+		
 		ns_vector_2i downsampled_max_offset(max_offset/r.downsampling_factor);
 
-		ns_vector_2i downsampled_shift(register_whole_images(r.downsampled_image,a.downsampled_image,downsampled_max_offset*-1,downsampled_max_offset));
+		ns_high_precision_timer t;
+		t.start();
+		cerr << "Running course alignment at low resolution...";
+		ns_vector_2i downsampled_shift(register_whole_images<ns_image_standard,1>(r.downsampled_image,a.downsampled_image,downsampled_max_offset*-1,downsampled_max_offset));
 		
 		downsampled_shift = downsampled_shift*r.downsampling_factor;
+	
 		ns_vector_2i downsample_v(r.downsampling_factor,r.downsampling_factor);
-
-		if (r.downsampling_factor > 4){
+		//cerr << "low_res: " << t.stop()/1000.0/1000.0 << "\n";
+		if (r.downsampling_factor > NS_SECONDARY_DOWNSAMPLE_FACTOR){
+			r.downsampled_image_2.seek_to_beginning();
+			a.downsampled_image_2.seek_to_beginning();
+			t.start();
+			cerr << "Running finer alignment at medium resolution...";
 			ns_vector_2i downsampled_shift_2(
-					register_whole_images(r.downsampled_image_2,a.downsampled_image_2,
-						(downsampled_shift-downsample_v)/4,(downsampled_shift+downsample_v)/4));
-
-			downsampled_shift_2 = downsampled_shift*4;
-			ns_vector_2i downsample_v(4,4);
-			return register_whole_images(r.whole_image,a.whole_image,downsampled_shift_2-downsample_v,downsampled_shift_2+downsample_v);
+					register_whole_images<T1,3>(r.downsampled_image_2,a.downsampled_image_2,
+						(downsampled_shift-downsample_v)/NS_SECONDARY_DOWNSAMPLE_FACTOR,(downsampled_shift+downsample_v)/NS_SECONDARY_DOWNSAMPLE_FACTOR));
+			
+			//cerr << "med_res: " << t.stop()/1000.0/1000.0 << "\n";
+			downsampled_shift_2 = downsampled_shift*NS_SECONDARY_DOWNSAMPLE_FACTOR;
+			ns_vector_2i downsample_v(NS_SECONDARY_DOWNSAMPLE_FACTOR,NS_SECONDARY_DOWNSAMPLE_FACTOR);
+			r.whole_image.seek_to_beginning();
+			a.whole_image.seek_to_beginning();
+			
+			t.start();
+			cerr << "\nRunning fine alignment at full resolution...";
+			return register_whole_images<T1,5>(r.whole_image,a.whole_image,downsampled_shift_2-downsample_v,downsampled_shift_2+downsample_v);
+			//cerr << "high_res: " << t.stop()/1000.0/1000.0 << "\n";
 		}
-		return register_whole_images(r.whole_image,a.whole_image,downsampled_shift-downsample_v,downsampled_shift+downsample_v);
+		return register_whole_images<T1,4>(r.whole_image,a.whole_image,downsampled_shift-downsample_v,downsampled_shift+downsample_v);
 
 	}
-	static ns_vector_2i register_whole_images(const ns_image_whole<ns_component> & r, const ns_image_whole<ns_component> & a, const ns_vector_2i offset_minimums,const ns_vector_2i offset_maximums){
+	template <class random_access_image_type,int pixel_skip>
+	static ns_vector_2i register_whole_images(random_access_image_type & r, random_access_image_type & a, const ns_vector_2i offset_minimums,const ns_vector_2i offset_maximums){
 		
 		unsigned long h(r.properties().height);
 		if (h > a.properties().height)
@@ -126,30 +95,52 @@ public:
 		if (w > a.properties().width)
 			w = a.properties().width;
 
-		ns_vector_2i minimum_offset(0,0);
-		ns_64_bit minimum_offset_difference((ns_64_bit)-1);
+		//we calculate the difference for each offset simultaneously
+		//to minimize the total amount of image data loaded in memory at any point
+		//and thereby mimimize paging.
+		std::vector<std::vector<ns_64_bit> > differences;
+		differences.resize(offset_maximums.y - offset_minimums.y);
+		for (unsigned int i = 0; i < differences.size(); i++)
+			differences[i].resize(offset_maximums.x - offset_minimums.x,0);
 
 		int x_distance_from_edge(max(abs(offset_minimums.x),abs(offset_maximums.x)));
 		int y_distance_from_edge(max(abs(offset_minimums.y),abs(offset_maximums.y)));
-
-		for (int dy = offset_minimums.y; dy < offset_maximums.y; dy++){
-			for (int dx = offset_minimums.x; dx < offset_maximums.x; dx++){
-				ns_64_bit diff = 0;
-				for (unsigned int y = y_distance_from_edge; y < h-y_distance_from_edge; y++){
-					for (unsigned int x = x_distance_from_edge; x < w-x_distance_from_edge; x++){
-						diff+=(ns_64_bit)abs((int)r[y][x]-(int)a[y+dy][x+dx]);
+		if (offset_maximums.y - offset_minimums.y > NS_MAX_CAPTURED_IMAGE_REGISTRATION_VERTICAL_OFFSET)
+			throw ns_ex("Requested image alignment distance exceeds hard-coded maximum");
+		unsigned long ten_percent((h-2*y_distance_from_edge)/(pixel_skip*10));
+		unsigned long count(0);
+		for (unsigned int y = y_distance_from_edge; y < h-y_distance_from_edge; y+=pixel_skip){
+			if (count == 0 || count >= ten_percent){
+				cerr << (100*y)/(h-2*y_distance_from_edge) << "%...";
+				count = 0;
+			}
+			count++;
+			r.make_line_available(y);
+			a.make_line_available(y+offset_maximums.y);
+			for (int dy = offset_minimums.y; dy < offset_maximums.y; dy++){
+				for (unsigned int x = x_distance_from_edge; x < w-x_distance_from_edge; x+=pixel_skip){
+					for (int dx = offset_minimums.x; dx < offset_maximums.x; dx++){
+						differences[dy-offset_minimums.y][dx-offset_minimums.x]+=(ns_64_bit)abs((int)r[y][x]-(int)a[y+dy][x+dx]);
 					}
 				}
-				if (minimum_offset_difference > diff){
-					minimum_offset_difference = diff;
-					minimum_offset = ns_vector_2i(dx,dy);
-				}
+			}
+		}
+
+		ns_vector_2i minimum_offset(0,0);
+		ns_64_bit minimum_offset_difference((ns_64_bit)-1);
+
+		for (int dy = offset_minimums.y; dy < offset_maximums.y; dy++){
+				for (int dx = offset_minimums.x; dx < offset_maximums.x; dx++){
+					if (minimum_offset_difference > differences[dy-offset_minimums.x][dx-offset_minimums.x]){
+						minimum_offset_difference = differences[dy-offset_minimums.x][dx-offset_minimums.x];
+						minimum_offset = ns_vector_2i(dx,dy);
+					}
 			}
 		}
 		return minimum_offset;
 	}
-	
-	static ns_vector_2i register_profiles(const ns_image_registration_profile & r , const ns_image_registration_profile & a,  const ns_vector_2i max_offset = ns_vector_2i(0,0), const std::string & debug_name=""){
+	template<class profile_storage_type_1,class profile_storage_type_2>
+	static ns_vector_2i register_profiles(const ns_image_registration_profile<profile_storage_type_1> & r , const ns_image_registration_profile<profile_storage_type_2> & a,  const ns_vector_2i max_offset = ns_vector_2i(0,0), const std::string & debug_name=""){
 		if (r.registration_method == ns_full_registration){
 			return register_full_images(r,a,max_offset);
 		}
@@ -242,8 +233,8 @@ public:
 		return minimum_offset;
 	}
 
-
-	static void write_profile(const std::string & name, const ns_image_registration_profile & profile, std::ostream & out){
+	template<class profile_storage_type>
+	static void write_profile(const std::string & name, const ns_image_registration_profile<profile_storage_type> & profile, std::ostream & out){
 		for (unsigned long i = 0; i < profile.horizontal_profile.size();i++)
 			out << name << ",horiz," << i << "," << profile.horizontal_profile[i] << "," << profile.horizontal_profile[i]/(double)profile.average << "\n";
 		for (unsigned long i = 0; i < profile.vertical_profile.size();i++)

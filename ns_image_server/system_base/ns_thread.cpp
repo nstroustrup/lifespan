@@ -4,6 +4,8 @@
 #include <sys/wait.h>
 #include <signal.h>
 #include <unistd.h>
+#include <sys/time.h>
+#include <sys/resource.h>
 #endif
 #include <cerrno>
 #include <string.h>
@@ -1029,3 +1031,43 @@ ns_acquire_lock_for_scope::ns_acquire_lock_for_scope(ns_lock & lock_,const char 
 }
 	
 
+
+bool ns_process_priority::set_priority(const ns_process_priority::ns_priority priority){
+
+	#ifdef _WIN32 
+		BOOL ret;
+		if (priority != ns_background && current_priority == ns_background) 
+			SetPriorityClass(GetCurrentProcess(),PROCESS_MODE_BACKGROUND_END);
+		 switch(priority){
+			 case ns_above_normal: ret=SetPriorityClass(GetCurrentProcess(),ABOVE_NORMAL_PRIORITY_CLASS); break;
+			 case ns_below_normal: ret=SetPriorityClass(GetCurrentProcess(),BELOW_NORMAL_PRIORITY_CLASS); break;
+			 case ns_high: ret=SetPriorityClass(GetCurrentProcess(),HIGH_PRIORITY_CLASS); break;
+			 case ns_idle: ret=SetPriorityClass(GetCurrentProcess(),IDLE_PRIORITY_CLASS); break;
+			 case ns_normal: ret=SetPriorityClass(GetCurrentProcess(),NORMAL_PRIORITY_CLASS); break;
+			 case ns_background: ret=SetPriorityClass(GetCurrentProcess(),PROCESS_MODE_BACKGROUND_BEGIN); break;
+			 case ns_realtime: ret=SetPriorityClass(GetCurrentProcess(),REALTIME_PRIORITY_CLASS); break;
+			 default: throw ns_ex("ns_process_priority::set_priority()::Unknown priority requested");
+		 }
+		 return ret!=0;
+	#else
+		
+		int priority;
+
+		switch(priority){
+			 case ns_idle: priority=20; break;
+			 case ns_background: priority=15; break;
+			 case ns_below_normal: priority=10; break;
+			 case ns_normal: priority=0; break;
+			 case ns_above_normal: priority=-10; break;
+			 case ns_high: priority=-15; break;
+			 case ns_realtime: priority=-20; break;
+			 default: throw ns_ex("ns_process_priority::set_priority()::Unknown priority requested");
+		 }
+
+		int which = PRIO_PROCESS;
+		id_t pid;
+		pid = getpid();
+		int ret = setpriority(which, pid, priority);
+		return ret==0;
+	#endif
+}

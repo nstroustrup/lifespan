@@ -183,4 +183,118 @@ private:
 
 };
 
+template<class ns_component,class sender_t>
+class ns_image_buffered_multi_line_random_access_input_image{
+public:
+
+	typedef ns_component component_type;
+	typedef ns_image_stream_static_offset_buffer<ns_component> storage_type;
+
+	//initialize as an empty image
+	ns_image_buffered_multi_line_random_access_input_image():buffer_bottom(0),total_buffer_height(0),previous_lines_required(0),sender(0),lines_recieved(0){}
+
+
+	inline void resize(const ns_image_properties & properties){init(properties);}
+
+	inline void seek_to_beginning(){
+		buffer_bottom = 0;
+		lines_recieved = 0;
+		sender->seek_to_beginning(); 
+		assign_buffer_source(*sender,previous_lines_required,total_buffer_height);
+	}
+
+	const inline ns_image_properties & properties() const{
+			return _properties;
+	}
+
+	void assign_buffer_source(sender_t & sender_,const unsigned int previous_lines_required_,const unsigned int total_buffer_height_){
+		previous_lines_required = previous_lines_required_;
+		total_buffer_height = total_buffer_height_;
+
+		sender =&sender_;
+		init(sender_.properties());
+	}
+
+	///random pixel access
+	inline ns_component * operator[](const unsigned long y){
+		//make_line_available(y);
+		//subtracting -buffer_bottom implicit in offset_buffer setting
+		return image_buffer[y];
+	}	
+	inline ns_component * safe_access(const unsigned long y){
+		make_line_available(y);
+		return image_buffer[y];
+	}
+
+	void clear(){
+		sender = 0;
+		resize(ns_image_properties(0,0,1,0));
+	}
+
+	void make_line_available(const unsigned long line_num){
+		if (line_num < lines_recieved)
+			return;
+		//calculate how much buffer we'll need to retain
+		long new_bottom = (long)line_num - (long)previous_lines_required;
+		if (new_bottom < 0) new_bottom = 0;
+
+		long lines_to_copy((long)lines_recieved - new_bottom);
+		if (lines_to_copy < 0) lines_to_copy = 0;
+		//copy the new bottom of the buffer over--we may need to retain a certain number of lines
+		image_buffer.set_offset(0);
+		for (long y = 0; y < lines_to_copy; y++){
+			for (unsigned long x = 0; x < image_buffer.properties().width; x++){
+				image_buffer[y][x] = image_buffer[y+new_bottom-buffer_bottom][x];
+			}
+		}
+
+		//now obtain new lines and place them in buffer at desired offset
+		image_buffer.set_offset(lines_to_copy);
+		//fill up the buffer
+		long lines_to_load = (long)total_buffer_height - lines_to_copy; 
+		if (lines_to_load <= 0)
+			throw ns_ex("Invalid line access requested: ") << line_num;
+		if (lines_to_load+lines_recieved > _properties.height)
+			lines_to_load = _properties.height - lines_recieved;
+		
+		sender->send_lines(image_buffer, lines_to_load);
+		buffer_bottom = new_bottom;
+		lines_recieved+=lines_to_load;
+		
+		image_buffer.set_offset(-(long)buffer_bottom);
+	}
+private:
+	storage_type image_buffer;
+	//the maximum number of lines previous to the one most recently requested that the buffer will retain
+	unsigned long previous_lines_required;
+	//the total height of the buffer allocated
+	unsigned long total_buffer_height;
+	//current position (relative to the sender) of the local buffer
+	unsigned long buffer_bottom;
+	//the total number of lines read from the sender
+	unsigned long lines_recieved;
+	sender_t * sender;
+	//total size of the image being read from the sender
+	ns_image_properties _properties;
+
+	
+
+	void init(const ns_image_properties & properties){
+		ns_image_stream_buffer_properties prop;
+		prop.height = total_buffer_height;
+		if (properties.width == 0)
+			prop.height = 0;
+		prop.width = properties.width*properties.components;
+
+		//cerr << "Resizing buffer to " << prop.width << "," << prop.height << "\n";
+		if ( !(image_buffer.properties() == prop)){
+			image_buffer.resize(prop);
+			_properties =  properties;
+		}
+		buffer_bottom = 0;
+		lines_recieved = 0;
+	}
+
+};
+
 #endif

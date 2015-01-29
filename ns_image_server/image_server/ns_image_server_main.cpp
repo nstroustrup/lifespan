@@ -719,9 +719,9 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLi
 #else
 int main(int argc, char * argv[]){
 #endif
-	/*
+	
 	//Image registration code test
-	if(1){
+	/*if(0){
 	try{
 	ns_image_registration<127,ns_8_bit> registration;
 	ns_image_standard im1, im2;
@@ -1340,6 +1340,21 @@ int main(int argc, char * argv[]){
 		//	image_server.image_storage.set_verbosity(ns_image_storage_handler::ns_verbose);
 		}
 
+		//play nice on multi-use machine.
+		//the latest capture sample registration code can fully utilize a computer's resources and reduce GUI responsiveness.
+		if (image_server.act_as_processing_node()){
+			image_server.process_priority.set_priority(ns_process_priority::ns_background);
+		}
+		if (image_server.act_as_an_image_capture_server()){
+			bool success(image_server.process_priority.set_priority(ns_process_priority::ns_high));
+			if (!success){
+				image_server.register_server_event(ns_image_server_event(std::string("The server could not increase its scheduling priority.  "  
+					"Consider running ns_image_server with administrative privileges, or manually increasing priority to -10 using the command\n"
+					"renice -15 -p ") +  ns_to_string(ns_thread::ns_get_process_id())),&sql());
+			}
+			ns_thread current_thread(ns_thread::get_current_thread());
+			current_thread.set_priority(NS_THREAD_LOW);
+		}
 
 		//connect the timer sql connection
 		//otherwise we will re-register the host upon the timer thread noticing it isn't connected

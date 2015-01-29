@@ -359,6 +359,9 @@ void ns_image_capture_data_manager::wait_for_transfer_finish(){
 }
 
 ns_thread_return_type ns_image_capture_data_manager::thread_start_handle_pending_transfers_to_long_term_storage(void * thread_arguments){
+
+	ns_thread current_thread(ns_thread::get_current_thread());
+	current_thread.set_priority(NS_THREAD_LOW);
 	ns_hptlts_arguments * arg(static_cast<ns_hptlts_arguments *>(thread_arguments));
 	ns_thread_return_type ret = 0;
 	

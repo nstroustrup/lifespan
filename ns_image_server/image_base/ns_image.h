@@ -1277,6 +1277,12 @@ public:
 	void use_more_memory_to_avoid_reallocations(const bool r=true){
 		avoid_memory_reallocations = r;
 	}
+
+	//mimic interface of ns_buffered_random_access_image.h
+	inline void seek_to_beginning(){}
+	inline void make_line_available(unsigned long i){}
+
+
 private:
 	bool avoid_memory_reallocations;
 	ns_image_stream_static_offset_buffer<ns_component> image_buffer;

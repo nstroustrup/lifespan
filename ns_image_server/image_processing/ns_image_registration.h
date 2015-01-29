@@ -2,6 +2,7 @@
 #define NS_IMAGE_REGISTRATION
 #include "ns_image.h"
 #include "ns_image_registration_cache.h"
+#include <iostream>
 template<int thresh, class ns_component>
 class ns_image_registration{
 public:
@@ -55,7 +56,7 @@ public:
 
 		ns_high_precision_timer t;
 		t.start();
-		cerr << "Running course alignment at low resolution...";
+		std::cerr << "Running course alignment at low resolution...";
 		ns_vector_2i downsampled_shift(register_whole_images<ns_image_standard,1>(r.downsampled_image,a.downsampled_image,downsampled_max_offset*-1,downsampled_max_offset));
 		
 		downsampled_shift = downsampled_shift*r.downsampling_factor;
@@ -66,7 +67,7 @@ public:
 			r.downsampled_image_2.seek_to_beginning();
 			a.downsampled_image_2.seek_to_beginning();
 			t.start();
-			cerr << "Running finer alignment at medium resolution...";
+			std::cerr << "Running finer alignment at medium resolution...";
 			ns_vector_2i downsampled_shift_2(
 					register_whole_images<T1,3>(r.downsampled_image_2,a.downsampled_image_2,
 						(downsampled_shift-downsample_v)/NS_SECONDARY_DOWNSAMPLE_FACTOR,(downsampled_shift+downsample_v)/NS_SECONDARY_DOWNSAMPLE_FACTOR));
@@ -78,7 +79,7 @@ public:
 			a.whole_image.seek_to_beginning();
 			
 			t.start();
-			cerr << "\nRunning fine alignment at full resolution...";
+			std::cerr << "\nRunning fine alignment at full resolution...";
 			return register_whole_images<T1,5>(r.whole_image,a.whole_image,downsampled_shift_2-downsample_v,downsampled_shift_2+downsample_v);
 			//cerr << "high_res: " << t.stop()/1000.0/1000.0 << "\n";
 		}
@@ -103,15 +104,20 @@ public:
 		for (unsigned int i = 0; i < differences.size(); i++)
 			differences[i].resize(offset_maximums.x - offset_minimums.x,0);
 
-		int x_distance_from_edge(max(abs(offset_minimums.x),abs(offset_maximums.x)));
-		int y_distance_from_edge(max(abs(offset_minimums.y),abs(offset_maximums.y)));
+		int x_distance_from_edge(abs(offset_minimums.x));
+		if (x_distance_from_edge < abs(offset_maximums.x))
+		  x_distance_from_edge = abs(offset_maximums.x);
+		int y_distance_from_edge(abs(offset_minimums.y));
+		if (y_distance_from_edge < abs(offset_maximums.y))
+		  y_distance_from_edge = abs(offset_maximums.y);
+
 		if (offset_maximums.y - offset_minimums.y > NS_MAX_CAPTURED_IMAGE_REGISTRATION_VERTICAL_OFFSET)
 			throw ns_ex("Requested image alignment distance exceeds hard-coded maximum");
 		unsigned long ten_percent((h-2*y_distance_from_edge)/(pixel_skip*10));
 		unsigned long count(0);
 		for (unsigned int y = y_distance_from_edge; y < h-y_distance_from_edge; y+=pixel_skip){
 			if (count == 0 || count >= ten_percent){
-				cerr << (100*y)/(h-2*y_distance_from_edge) << "%...";
+			  std::cerr << (100*y)/(h-2*y_distance_from_edge) << "%...";
 				count = 0;
 			}
 			count++;

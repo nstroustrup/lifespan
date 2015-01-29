@@ -1032,13 +1032,13 @@ ns_acquire_lock_for_scope::ns_acquire_lock_for_scope(ns_lock & lock_,const char 
 	
 
 
-bool ns_process_priority::set_priority(const ns_process_priority::ns_priority priority){
+bool ns_process_priority::set_priority(const ns_process_priority::ns_priority requested_priority){
 
 	#ifdef _WIN32 
 		BOOL ret;
-		if (priority != ns_background && current_priority == ns_background) 
+		if (requested_priority != ns_background && current_priority == ns_background) 
 			SetPriorityClass(GetCurrentProcess(),PROCESS_MODE_BACKGROUND_END);
-		 switch(priority){
+		 switch(requested_priority){
 			 case ns_above_normal: ret=SetPriorityClass(GetCurrentProcess(),ABOVE_NORMAL_PRIORITY_CLASS); break;
 			 case ns_below_normal: ret=SetPriorityClass(GetCurrentProcess(),BELOW_NORMAL_PRIORITY_CLASS); break;
 			 case ns_high: ret=SetPriorityClass(GetCurrentProcess(),HIGH_PRIORITY_CLASS); break;
@@ -1053,7 +1053,7 @@ bool ns_process_priority::set_priority(const ns_process_priority::ns_priority pr
 		
 		int priority;
 
-		switch(priority){
+		switch(requested_priority){
 			 case ns_idle: priority=20; break;
 			 case ns_background: priority=15; break;
 			 case ns_below_normal: priority=10; break;

@@ -3,6 +3,7 @@
 #include "ns_image.h"
 #include "ns_buffered_random_access_image.h"
 #include "ns_image_storage_handler.h"
+
 #define NS_MAX_CAPTURED_IMAGE_REGISTRATION_VERTICAL_OFFSET 200
 
 #define NS_SECONDARY_DOWNSAMPLE_FACTOR 4
@@ -131,7 +132,7 @@ class ns_image_registration_profile_cache{
 public:
 	ns_image_registration_profile_cache(const ns_64_bit max_size_in_mb ):cache_size(0),max_size_in_megabytes(max_size_in_mb){}
 	profile_type * get(const ns_64_bit & id){
-		cache_type::iterator p(cache.find(id));
+	  typename cache_type::iterator p(cache.find(id));
 		if (p != cache.end()){
 			p->second->last_accessed_timestamp = ns_current_time();
 			return p->second;
@@ -140,13 +141,17 @@ public:
 	}
 	void remove_old_images(unsigned long max_age_in_seconds,ns_image_storage_handler * image_storage){
 		const unsigned long cur_time(ns_current_time());
-		for (cache_type::iterator p = cache.begin(); p!=cache.end();){
+		std::vector<typename cache_type::iterator> to_delete;
+		to_delete.reserve(5);
+		for (typename cache_type::iterator p = cache.begin(); p!=cache.end();p++){
 			if (cur_time - p->second->last_accessed_timestamp > max_age_in_seconds){
 				p->second->cleanup(image_storage);
-				p = cache.erase(p);
+				to_delete.push_back(p);
 			}
-			else p++;
 		}
+		for (unsigned long i = 0; i < to_delete.size(); i++)
+		  cache.erase(to_delete[i]);
+		
 	}
 	void insert(const ns_64_bit id,profile_type * profile,ns_image_storage_handler * image_storage){
 		ns_64_bit profile_size;
@@ -157,13 +162,13 @@ public:
 		cache[id] = profile;
 	}
 	void cleanup(ns_image_storage_handler * image_storage){
-		std::cerr << "Cleaning out local image registration cache...\n";
-		for (cache_type::iterator p = cache.begin(); p!=cache.end();p++){
+	  //std::cerr << "Cleaning out local image registration cache...\n";
+		for (typename cache_type::iterator p = cache.begin(); p!=cache.end();p++){
 			p->second->cleanup(image_storage);
 		}
 	}
 	void clear(){
-		for (cache_type::iterator p = cache.begin(); p!=cache.end();p++)
+		for (typename cache_type::iterator p = cache.begin(); p!=cache.end();p++)
 			delete p->second;
 		
 		cache.clear();
@@ -171,7 +176,7 @@ public:
 	}
 	~ns_image_registration_profile_cache(){clear();}
 private:
-	typedef std::map<ns_64_bit,typename profile_type *> cache_type;
+	typedef std::map<ns_64_bit,profile_type *> cache_type;
 	cache_type cache;
 	ns_64_bit cache_size,
 		max_size_in_megabytes;

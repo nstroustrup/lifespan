@@ -642,7 +642,8 @@ void ns_image_server_device_manager::run_pending_autoscans(ns_image_server_dispa
 			sql.send_query();
 			p->second->autoscan_schedule_clash_detected = false;
 		}
-		if (p->second->device.paused || p->second->autoscan_interval == 0) continue;
+		if (p->second->device.paused || p->second->autoscan_interval == 0 || p->second->currently_scanning) continue;
+	
 		if (p->second->next_autoscan_time <= t){
 			p->second->last_autoscan_time = t;
 			p->second->next_autoscan_time = t + p->second->autoscan_interval;

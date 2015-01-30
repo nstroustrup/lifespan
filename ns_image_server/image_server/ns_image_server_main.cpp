@@ -1041,8 +1041,7 @@ int main(int argc, char * argv[]){
 			 << "               ==\n";
 		cout << " ==                                   ==\n";
 		cout << " ==        Nicholas Stroustrup        ==\n";
-		cout << " ==            Fontana Lab            ==\n";
-		cout << " ==      Harvard University 2015      ==\n";
+		cout << " ==    Harvard Medical School 2015    ==\n";
 		cout << " ==                                   ==\n";
 		cout << " =======================================\n";
 

@@ -430,8 +430,8 @@ void ns_image_server_device_manager::clear(){
 void ns_image_server_device_manager::reset_all_devices(){
 		for (ns_device_list::iterator p = devices.begin(); p != devices.end(); ++p){
 			try{
+				pause_to_keep_usb_sane();
 				p->second->device.send_hardware_reset();
-				ns_thread::sleep(1); //keep usb chatter sane
 			}
 			catch(ns_ex & ex){
 				cerr << "Could not reset " << p->second->device.name << ": " << ex.text() << "\n";
@@ -439,8 +439,8 @@ void ns_image_server_device_manager::reset_all_devices(){
 		}
 		for (std::vector<ns_image_server_device_manager_device *>::iterator p = devices_pending_deletion.begin(); p != devices_pending_deletion.end();++p){
 			try{
+				pause_to_keep_usb_sane();
 				(*p)->device.send_hardware_reset();
-				ns_thread::sleep(1); //keep usb chatter sane
 			}
 			catch(ns_ex & ex){
 				cerr << "Could not reset " << (*p)->device.name << ": " << ex.text() << "\n";
@@ -665,7 +665,6 @@ void ns_image_server_device_manager::run_pending_autoscans(ns_image_server_dispa
 		
 		image_server.register_server_event(ns_image_server_event("Starting autoscan capture on ") << devices_to_start[i] << "...",&sql);
 		run_capture_on_device(arg);
-		ns_thread::sleep(3);
 	}
 //	sql.release();
 }
@@ -703,6 +702,14 @@ void ns_image_server_device_manager::run_capture_on_device(ns_capture_thread_arg
 	}
 }
 
+
+void ns_image_server_device_manager::pause_to_keep_usb_sane(){
+	usb_access_lock.wait_to_acquire(__FILE__,__LINE__);
+	ns_thread::sleep(2);
+	usb_access_lock.release();
+}
+
+
 void ns_image_server_device_manager::run_capture_on_device_asynch(ns_capture_thread_arguments & arguments){
 	//#ifndef _WIN32
     //    umask(0x01FC);
@@ -730,6 +737,7 @@ void ns_image_server_device_manager::run_capture_on_device_asynch(ns_capture_thr
 	ns_acquire_for_scope<ns_local_buffer_connection> sql(image_server.new_local_buffer_connection(__FILE__,__LINE__));
 	//attempt to run the capture
 	try{
+		pause_to_keep_usb_sane();
 		device->device.capture(arguments.capture_specification);
 		//indicate that the last scan completed successfully
 		device->device.last_capture_failure_text.resize(0);
@@ -744,8 +752,8 @@ void ns_image_server_device_manager::run_capture_on_device_asynch(ns_capture_thr
 			}
 			
 			try{
+				pause_to_keep_usb_sane();
 				device->device.send_hardware_reset();
-				ns_thread::sleep(2); //keep usb chatter sane
 			}
 			catch(ns_ex & ex){
 				image_server.register_server_event(ex,&sql());
@@ -1067,6 +1075,7 @@ bool ns_image_server_device_manager::hotplug_new_devices(const bool rescan_bad_b
 		std::vector<std::string> all_hardware;
 		if(verbose)
 			image_server.register_server_event(ns_image_server::ns_register_in_local_db,ns_image_server_event("Looking for hardware changes (hotplug)..."));
+		pause_to_keep_usb_sane();
 		lock.get(__FILE__,__LINE__);
 		//create a list of the hardware addresses of scanners attached to the system
 		#ifndef _WIN32
@@ -1228,13 +1237,13 @@ void ns_image_server_device_manager::identify_new_devices(std::vector<ns_image_s
 	std::vector<ns_scanner_ider> scanner_identifiers(unidentified_devices.size());
 
 	ns_acquire_lock_for_scope lock(device_list_access_lock,__FILE__,__LINE__);
-	ns_thread::sleep(1);
+	
 	//request barcode from scanner
 	for (unsigned int i = 0; i < scanner_identifiers.size(); i++){
 		try{
 			try{
+				pause_to_keep_usb_sane();
 				unidentified_devices[i]->device.send_hardware_reset();
-				ns_thread::sleep(1); //keep usb chatter sane
 			}
 			catch(ns_ex & ex){
 				cerr << ex.text() << "\n";
@@ -1243,9 +1252,8 @@ void ns_image_server_device_manager::identify_new_devices(std::vector<ns_image_s
 		catch(ns_ex & ex){
 			image_server.register_server_event(ns_image_server::ns_register_in_local_db,ex);
 		}
+		pause_to_keep_usb_sane();
 		scanner_identifiers[i].read_barcode(*unidentified_devices[i]);
-		//keep USB sane
-		ns_thread::sleep(1);
 	}
 	lock.release();
 	

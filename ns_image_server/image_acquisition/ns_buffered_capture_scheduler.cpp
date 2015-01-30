@@ -729,7 +729,7 @@ void ns_buffered_capture_scheduler::run_pending_scans(const ns_image_server_devi
 				continue;
 				
 			if (run_pending_scans(devices[i].name,sql))
-				ns_thread::sleep(3);//wait three seconds in between requesting scans to keep USB chatter sane.
+				ns_thread::sleep(5);//wait three seconds in between requesting scans to keep USB chatter sane.
 		}
 	}
 	catch(ns_ex & ex){

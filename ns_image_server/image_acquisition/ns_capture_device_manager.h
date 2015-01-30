@@ -41,7 +41,7 @@ public:
 
 
 
-	ns_image_server_device_manager():device_list_access_lock("ns_isdm::device"),hotplug_running(false){}
+	ns_image_server_device_manager():device_list_access_lock("ns_isdm::device"),usb_access_lock("ns_isdm::usb"),hotplug_running(false){}
 	void clear();
 	void wait_for_all_scans_to_complete();
 	bool device_is_currently_scanning(const std::string & name) const;
@@ -98,6 +98,9 @@ public:
 	~ns_image_server_device_manager();
 	
 	typedef std::map<std::string,ns_image_server_device_manager_device *> ns_device_list;
+
+	
+	void pause_to_keep_usb_sane();
 private: 
 	void add_device(const std::string & name, const std::string & hardware_address, const ns_capture_device::ns_device_flag device=ns_capture_device::ns_none);
 	void remove_device(const std::string & name);
@@ -107,6 +110,7 @@ private:
 
 	//to allow hot-swapping, all reads or writes to the list of devices attached must first acquire the device_list_access_lock.
 	mutable ns_lock device_list_access_lock;
+	mutable ns_lock usb_access_lock;
 
 	bool hotplug_running;
 

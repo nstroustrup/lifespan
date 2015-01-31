@@ -137,8 +137,8 @@ public:
 
 		for (int dy = offset_minimums.y; dy < offset_maximums.y; dy++){
 				for (int dx = offset_minimums.x; dx < offset_maximums.x; dx++){
-					if (minimum_offset_difference > differences[dy-offset_minimums.x][dx-offset_minimums.x]){
-						minimum_offset_difference = differences[dy-offset_minimums.x][dx-offset_minimums.x];
+					if (minimum_offset_difference > differences[dy-offset_minimums.y][dx-offset_minimums.x]){
+						minimum_offset_difference = differences[dy-offset_minimums.y][dx-offset_minimums.x];
 						minimum_offset = ns_vector_2i(dx,dy);
 					}
 			}

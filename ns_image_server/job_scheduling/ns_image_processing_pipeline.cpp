@@ -1499,8 +1499,13 @@ void ns_image_processing_pipeline::compile_video(ns_image_server_captured_image_
 						ns_image_whole<ns_component> source_im;
 						ns_image_server_image source_image;
 						source_image.id = atol(res[i][5].c_str());
-						ns_disk_buffered_image_registration_profile profile;
-						registration_offsets[i] = get_vertical_registration(captured_image, source_image, sql,profile)*-1;
+						ns_disk_buffered_image_registration_profile * profile;
+						bool delete_after_use;
+						registration_offsets[i] = get_vertical_registration(captured_image, source_image, sql,&profile,delete_after_use)*-1;
+						if (delete_after_use){
+								profile->cleanup(&image_server.image_storage);
+								delete profile;
+						}
 					}
 				}
 			}
@@ -1974,18 +1979,22 @@ void ns_image_processing_pipeline::apply_mask(ns_image_server_captured_image & c
 
 		
 		ns_vector_2i offset = ns_vector_2i(0,0);
-		ns_disk_buffered_image_registration_profile profile;
+		ns_disk_buffered_image_registration_profile *profile;
+		bool delete_after_use;
 		if (apply_vertical_image_registration){
-			offset = get_vertical_registration(captured_image,source_image,sql,profile);
+			offset = get_vertical_registration(captured_image,source_image,sql,&profile,delete_after_use);
 
 			//we don't need to load the image again from long term storage--we have a cached version here!
-			profile.whole_image.seek_to_beginning();
-			source_im.init(profile.whole_image.properties());
+			profile->whole_image.seek_to_beginning();
+			source_im.init(profile->whole_image.properties());
 			for (unsigned long y = 0; y < source_im.properties().height; y++)
 				for (unsigned long x = 0; x < source_im.properties().width; x++){
-					source_im[y][x] = profile.whole_image.safe_access(y)[x];
+					source_im[y][x] = profile->whole_image.safe_access(y)[x];
 				}
-			profile.cleanup(&image_server.image_storage);
+			if (delete_after_use){
+				profile->cleanup(&image_server.image_storage);
+				delete profile;
+			}
 		}
 		else{
 			ns_image_storage_source_handle<ns_component> source(image_server.image_storage.request_from_storage(source_image,&sql));		
@@ -2600,7 +2609,7 @@ bool ns_image_processing_pipeline::check_for_precalculated_registration(const ns
 	return false;
 }
 
-ns_vector_2i ns_image_processing_pipeline::get_vertical_registration(const ns_image_server_captured_image & captured_image, ns_image_server_image & source, ns_sql & sql,ns_disk_buffered_image_registration_profile & requested_image){
+ns_vector_2i ns_image_processing_pipeline::get_vertical_registration(const ns_image_server_captured_image & captured_image, ns_image_server_image & source, ns_sql & sql,ns_disk_buffered_image_registration_profile ** requested_image,bool & delete_profile_after_use){
 	ns_vector_2i registration_offset;
 	if (check_for_precalculated_registration(captured_image,registration_offset,sql)){
 	//	cerr << "Using existing vertical registration\n";
@@ -2656,12 +2665,19 @@ ns_vector_2i ns_image_processing_pipeline::get_vertical_registration(const ns_im
 			<< "Only images that are flagged in captured_images as problem=0, censored=0, never_delete=1 can be used as references for image registration";
 
 	t.start();
-	requested_image.prepare_images(source,500,sql,&image_server.image_storage,reference_image_profile->downsampling_factor);
-	//cerr << "cache subject: " << t.stop()/1000.0/1000.0 << "\n";
+	*requested_image = image_server.image_registration_profile_cache.get(source.id);
+	if (*requested_image != 0)
+		delete_profile_after_use = false;
+	else{
+		delete_profile_after_use = true;
+		*requested_image = new ns_disk_buffered_image_registration_profile;
+		(*requested_image)->prepare_images(source,500,sql,&image_server.image_storage,reference_image_profile->downsampling_factor);
+	}
+//cerr << "cache subject: " << t.stop()/1000.0/1000.0 << "\n";
 	
 	image_server.register_server_event(ns_image_server::ns_register_in_central_db,ns_image_server_event("Aligning sample image to reference image."));
 	t.start();
-	ns_vector_2i offset(ns_image_registration<127,ns_8_bit>::register_full_images(*reference_image_profile,requested_image,ns_vector_2i(400,400)));
+	ns_vector_2i offset(ns_image_registration<127,ns_8_bit>::register_full_images(*reference_image_profile,**requested_image,ns_vector_2i(400,400)));
 	cerr << "Total Registration time: " << t.stop()/1000.0/1000.0 << "\n";
 	
 	//cerr << "Alignment: " << offset.x << "," << offset.y << "\n";

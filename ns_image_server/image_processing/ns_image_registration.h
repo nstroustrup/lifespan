@@ -57,7 +57,7 @@ public:
 		ns_high_precision_timer t;
 		t.start();
 		std::cerr << "Running course alignment at low resolution...";
-		ns_vector_2i downsampled_shift(register_whole_images<ns_image_standard,1>(r.downsampled_image,a.downsampled_image,downsampled_max_offset*-1,downsampled_max_offset));
+		ns_vector_2i downsampled_shift(register_whole_images<ns_image_standard,1>(r.downsampled_image,a.downsampled_image,downsampled_max_offset*-1,downsampled_max_offset,"c:\\server\\distances_low_res.csv"));
 		
 		downsampled_shift = downsampled_shift*r.downsampling_factor;
 	
@@ -70,24 +70,24 @@ public:
 			std::cerr << "Running finer alignment at medium resolution...";
 			ns_vector_2i downsampled_shift_2(
 					register_whole_images<T1,3>(r.downsampled_image_2,a.downsampled_image_2,
-						(downsampled_shift-downsample_v)/NS_SECONDARY_DOWNSAMPLE_FACTOR,(downsampled_shift+downsample_v)/NS_SECONDARY_DOWNSAMPLE_FACTOR));
+						(downsampled_shift-downsample_v)/NS_SECONDARY_DOWNSAMPLE_FACTOR,(downsampled_shift+downsample_v)/NS_SECONDARY_DOWNSAMPLE_FACTOR,"c:\\server\\distances_med_res.csv"));
 			
 			//cerr << "med_res: " << t.stop()/1000.0/1000.0 << "\n";
-			downsampled_shift_2 = downsampled_shift*NS_SECONDARY_DOWNSAMPLE_FACTOR;
+			downsampled_shift_2 = downsampled_shift_2*NS_SECONDARY_DOWNSAMPLE_FACTOR;
 			ns_vector_2i downsample_v(NS_SECONDARY_DOWNSAMPLE_FACTOR,NS_SECONDARY_DOWNSAMPLE_FACTOR);
 			r.whole_image.seek_to_beginning();
 			a.whole_image.seek_to_beginning();
 			
 			t.start();
 			std::cerr << "\nRunning fine alignment at full resolution...";
-			return register_whole_images<T1,5>(r.whole_image,a.whole_image,downsampled_shift_2-downsample_v,downsampled_shift_2+downsample_v);
+			return register_whole_images<T1,3>(r.whole_image,a.whole_image,downsampled_shift_2-downsample_v,downsampled_shift_2+downsample_v,"c:\\server\\distances_full_res.csv");
 			//cerr << "high_res: " << t.stop()/1000.0/1000.0 << "\n";
 		}
 		return register_whole_images<T1,4>(r.whole_image,a.whole_image,downsampled_shift-downsample_v,downsampled_shift+downsample_v);
 
 	}
 	template <class random_access_image_type,int pixel_skip>
-	static ns_vector_2i register_whole_images(random_access_image_type & r, random_access_image_type & a, const ns_vector_2i offset_minimums,const ns_vector_2i offset_maximums){
+	static ns_vector_2i register_whole_images(random_access_image_type & r, random_access_image_type & a, const ns_vector_2i offset_minimums,const ns_vector_2i offset_maximums,const std::string & debug=""){
 		
 		unsigned long h(r.properties().height);
 		if (h > a.properties().height)
@@ -113,11 +113,11 @@ public:
 
 		if (offset_maximums.y - offset_minimums.y > NS_MAX_CAPTURED_IMAGE_REGISTRATION_VERTICAL_OFFSET)
 			throw ns_ex("Requested image alignment distance exceeds hard-coded maximum");
-		unsigned long ten_percent((h-2*y_distance_from_edge)/(pixel_skip*10));
+		unsigned long ten_percent((h-2*y_distance_from_edge)/(pixel_skip*20));
 		unsigned long count(0);
 		for (unsigned int y = y_distance_from_edge; y < h-y_distance_from_edge; y+=pixel_skip){
 			if (count == 0 || count >= ten_percent){
-			  std::cerr << (100*y)/(h-2*y_distance_from_edge) << "%...";
+			  std::cerr << (100*(y-y_distance_from_edge))/(h-2*y_distance_from_edge) << "%...";
 				count = 0;
 			}
 			count++;
@@ -134,15 +134,18 @@ public:
 
 		ns_vector_2i minimum_offset(0,0);
 		ns_64_bit minimum_offset_difference((ns_64_bit)-1);
-
+	//	ofstream o(debug.c_str());
+		//o << "dx,dy,distance\n";
 		for (int dy = offset_minimums.y; dy < offset_maximums.y; dy++){
 				for (int dx = offset_minimums.x; dx < offset_maximums.x; dx++){
+			//		o << dx << "," << dy<< "," << differences[dy-offset_minimums.y][dx-offset_minimums.x] << "\n";
 					if (minimum_offset_difference > differences[dy-offset_minimums.y][dx-offset_minimums.x]){
 						minimum_offset_difference = differences[dy-offset_minimums.y][dx-offset_minimums.x];
 						minimum_offset = ns_vector_2i(dx,dy);
 					}
 			}
 		}
+	//	o.close();
 		return minimum_offset;
 	}
 	template<class profile_storage_type_1,class profile_storage_type_2>

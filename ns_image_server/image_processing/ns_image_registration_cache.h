@@ -39,8 +39,8 @@ struct ns_image_registration_profile{
 
 		if (spec_downsample_factor == 0){
 			s.downsample_factor= sqrt((double)((whole_image_properties.width*(ns_64_bit)whole_image_properties.height)/(max_average_dimention*max_average_dimention)));
-			if (s.downsample_factor > 15)
-				s.downsample_factor = 15;
+			if (s.downsample_factor > 20)
+				s.downsample_factor = 20;
 		}
 		else s.downsample_factor=spec_downsample_factor;
 			
@@ -90,7 +90,7 @@ public:
 				ns_image_storage_reciever_handle<ns_8_bit> out(image_storage->request_local_cache_storage(downsampled_filename,buffer_height,false));
 				downsampled_2.pump(out.output_stream(),buffer_height);
 				out.clear();
-				downsampled_image_2_source = image_storage->request_from_local_cache(whole_filename,false);
+				downsampled_image_2_source = image_storage->request_from_local_cache(downsampled_filename,false);
 				downsampled_image_2.assign_buffer_source(downsampled_image_2_source.input_stream(),NS_MAX_CAPTURED_IMAGE_REGISTRATION_VERTICAL_OFFSET,buffer_height);
 			}
 	}

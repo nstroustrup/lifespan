@@ -2679,7 +2679,7 @@ ns_vector_2i ns_image_processing_pipeline::get_vertical_registration(const ns_im
 	t.start();
 	ns_vector_2i offset(ns_image_registration<127,ns_8_bit>::register_full_images(*reference_image_profile,**requested_image,ns_vector_2i(400,400)));
 	cerr << "Total Registration time: " << t.stop()/1000.0/1000.0 << "\n";
-	
+	exit(0);
 	//cerr << "Alignment: " << offset.x << "," << offset.y << "\n";
 	sql << "UPDATE captured_images SET registration_horizontal_offset='" << offset.x << "', registration_vertical_offset='" << offset.y << "', registration_offset_calculated=1 WHERE id = " << captured_image.captured_images_id;
 	//cerr << sql.query() << "\n";

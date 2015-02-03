@@ -113,11 +113,11 @@ public:
 
 		if (offset_maximums.y - offset_minimums.y > NS_MAX_CAPTURED_IMAGE_REGISTRATION_VERTICAL_OFFSET)
 			throw ns_ex("Requested image alignment distance exceeds hard-coded maximum");
-		unsigned long ten_percent((h-2*y_distance_from_edge)/(pixel_skip*20));
+		unsigned long ten_percent((h-2*y_distance_from_edge)/(pixel_skip*5));
 		unsigned long count(0);
 		for (unsigned int y = y_distance_from_edge; y < h-y_distance_from_edge; y+=pixel_skip){
 			if (count == 0 || count >= ten_percent){
-			  std::cerr << (100*(y-y_distance_from_edge))/(h-2*y_distance_from_edge) << "%...";
+			  std::cerr << (100*(y-y_distance_from_edge+1))/(h-2*y_distance_from_edge) << "%...";
 				count = 0;
 			}
 			count++;

@@ -13,7 +13,7 @@
 #include "ns_hidden_markov_model_posture_analyzer.h"
 #include "ns_fl_modal_dialogs.h"
 #include <set>
-
+#include "ns_processing_job_processor.h"
 #include "hungarian.h"
 using namespace std;
 
@@ -2078,7 +2078,9 @@ struct ns_deduced_sample{
 				sample_width_in_pixels,
 				mask_width_in_pixels;
 	ns_64_bit id,
-			  mask_image_id;
+			  mask_image_id,
+			  mask_image_record_id,
+			  mask_id;
 	void get_device_info(ns_sql & sql){
 		if (name.empty())
 			throw ns_ex("No name specified");
@@ -2094,17 +2096,19 @@ struct ns_deduced_sample{
 		incubator_name = res[0][0];
 		incubator_location = res[0][1];
 	}
-	void resubmit_mask_for_processing(ns_sql & sql){
-		ns_64_bit image_id = image_server.make_record_for_new_sample_mask(id,sql);
+	void resubmit_mask_for_processing(bool schedule_job,ns_sql & sql){
+		mask_image_record_id = image_server.make_record_for_new_sample_mask(id,sql);
 
 		sql << "INSERT INTO image_masks SET image_id = " << mask_image_id << ", processed='0',resize_factor=" << (sample_width_in_pixels/mask_width_in_pixels);
-		ns_64_bit mask_id = sql.send_query_get_id();
+		mask_id = sql.send_query_get_id();
 		
 		sql << "UPDATE capture_samples SET mask_id=" << mask_id << " WHERE id=" << id;
 		sql.send_query();
-		sql << "INSERT INTO processing_jobs SET image_id=" << image_id << ", mask_id=" << mask_id << ", "
-				<< "op" << (unsigned int)ns_process_analyze_mask<< " = 1, time_submitted=" << ns_current_time() << ", urgent=1";
-		sql.send_query();
+		if (schedule_job){
+			sql << "INSERT INTO processing_jobs SET image_id=" << mask_image_record_id << ", mask_id=" << mask_id << ", "
+					<< "op" << (unsigned int)ns_process_analyze_mask<< " = 1, time_submitted=" << ns_current_time() << ", urgent=1";
+			sql.send_query();
+		}
 		sql.send_query("COMMIT");
 	}
 };
@@ -2139,7 +2143,7 @@ bool ns_interval_histogram_less(const ns_interval_histogram & a, const ns_interv
 	return a.count < b.count;
 }
 
-ns_64_bit ns_worm_learner::create_experiment_from_directory_structure(const std::string & directory_name){
+ns_64_bit ns_worm_learner::create_experiment_from_directory_structure(const std::string & directory_name, const bool process_masks_locally){
 	std::string dname(directory_name),lname(image_server.long_term_storage_directory);
 	ns_to_lower(dname);
 	ns_to_lower(lname);
@@ -2315,10 +2319,18 @@ ns_64_bit ns_worm_learner::create_experiment_from_directory_structure(const std:
 		im.partition = experiment_partition;
 		im.save_to_db(0,&sql());
 		samples[i].mask_image_id = im.id;
-		samples[i].resubmit_mask_for_processing(sql());
-	
+		samples[i].resubmit_mask_for_processing(!process_masks_locally,sql());
 	}
-	ns_image_server_push_job_scheduler::request_job_queue_discovery(sql());
+	ns_image_processing_pipeline pipeline(1024);
+	if (process_masks_locally){
+		for (unsigned int i = 0; i < samples.size(); i++){
+			ns_processing_job job;
+			job.image_id = samples[i].mask_image_record_id;
+			job.mask_id = samples[i].mask_id;
+			ns_processing_job_image_processor processor(job,image_server,pipeline);
+			processor.run_job(sql());
+		}
+	}
 	return experiment_id;
 }
 
@@ -2415,6 +2427,43 @@ struct ns_region_processed_image_disk_info{
 	ns_image_server_captured_image_region reg_im;
 	ns_image_server_image im;
 };
+
+void repair_missing_captured_images(const ns_64_bit experiment_id){
+	
+	ns_acquire_for_scope<ns_sql> sql(image_server.new_sql_connection(__FILE__,__LINE__));
+	sql() << "SELECT r.id, r.capture_time,ri.id,s.id, r.capture_sample_image_id,s.device_name, s.name,s.experiment_id FROM sample_region_images as r, sample_region_image_info as ri, capture_samples as s WHERE "
+			" r.region_info_id = ri.id AND ri.sample_id = s.id AND s.experiment_id = " << experiment_id;
+	ns_sql_result res;
+	sql().get_rows(res);
+	ofstream of("c:\\server\\file_errors.csv");
+	of << "region_image_id,time,region_info_id,sample_id,capture_image_id,status\n";
+//	vector<ns_image_server_captured_image_region> problem, good;
+	for (unsigned long i = 0; i < res.size(); i++){
+
+		ns_image_server_captured_image_region r;
+		bool good (r.load_from_db(ns_atoi64(res[i][0].c_str()),&sql()));
+		of << res[i][0] << "," << res[i][1] << "," << res[i][2] << "," << res[i][3] << "," << res[i][4] << "," << (good?"good":"bad") << "\n";
+		if (!good){
+			ns_image_server_captured_image cp(r);
+			cp.capture_time = atol(res[i][1].c_str());
+			cp.captured_images_id = 0;
+			cp.capture_images_image_id = 0;
+			cp.device_name = res[i][5];
+			cp.experiment_id = atol(res[i][7].c_str());
+			cp.capture_images_small_image_id = 0;
+			cp.sample_id = atol(res[i][3].c_str());
+			cp.sample_name = res[i][6];
+			cp.specified_16_bit=false;
+			cp.save(&sql());
+			r.captured_images_id = cp.captured_images_id;
+			r.save(&sql());
+		}
+	}
+	of.close();
+	sql.release();
+}
+		
+
 void ns_worm_learner::rebuild_experiment_regions_from_disk(unsigned long experiment_id){
 	ns_acquire_for_scope<ns_sql> sql(image_server.new_sql_connection(__FILE__,__LINE__));
 
@@ -2568,7 +2617,7 @@ void ns_worm_learner::rebuild_experiment_regions_from_disk(unsigned long experim
 					region_image.op_images_[additional_tasks_to_load[j]] = p->second.im.id;
 				}
 				
-				region_image.captured_images_id = cap_im.captured_images_id;
+	//			region_image.captured_images_id = cap_im.captured_images_id;
 				
 				region_image.specified_16_bit = false;
 				region_image.experiment_name = experiment_name;

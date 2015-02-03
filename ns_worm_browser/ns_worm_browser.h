@@ -308,18 +308,19 @@ public:
 					break;
 				}
 			}
-			if (experiment_id_ == 0){
-				throw ns_ex("Default experiment requested while no experiments exist in database.");
-			}
+			//if (experiment_id_ == 0){
+				//throw ns_ex("Default experiment requested while no experiments exist in database.");
+			//}
 		}
 		else{
 			string experiment_name;
 			if (!get_experiment_name(experiment_id_,experiment_name))
 				throw ns_ex("Could not find experiment in cached experiment information.");
 		}
-				
-		load(experiment_id_,sql);
-		experiment_id = experiment_id_;
+		if (experiment_id_ != 0){
+			load(experiment_id_,sql);
+			experiment_id = experiment_id_;
+		}
 	}
 
 	bool select_default_sample_and_region(){
@@ -342,6 +343,8 @@ public:
 	}
 
 	void select_region(const string & sample_region_name){
+		if (experiment_id == 0)
+			return;
 		string sample_name,region_name;
 		std::string::size_type p(sample_region_name.find("::"));
 		if (p == std::string::npos)
@@ -363,6 +366,9 @@ public:
 		throw ns_ex("Could not identify sample named ") << sample_name;
 	}
 	void select_strain(const string & strain_name){
+		if (experiment_id == 0)
+			return;
+
 		if (strain_name == "All Strains"){
 			cur_strain = 0;
 			return;
@@ -374,6 +380,8 @@ public:
 
 	const unsigned long & current_experiment_id(){return experiment_id;}
 	const std::string current_experiment_name(){
+		if (experiment_id == 0)
+			return "";
 		std::string ret; 
 		get_experiment_name(current_experiment_id(),ret);
 		return ret;
@@ -388,6 +396,8 @@ public:
 	const ns_experiment_region_chooser_region & current_region(){if (cur_region==0)throw ns_ex("No region selected!"); else return *cur_region;}
 
 	void load(const unsigned long experiment_id,ns_sql & sql){
+		if (experiment_id == 0)
+			return;
 		ns_worm_browser_output_debug(__LINE__,__FILE__,std::string("Loading experiment data for " + ns_to_string(experiment_id)));
 		
 		sql << "SELECT id,name,device_name FROM capture_samples WHERE experiment_id=" << experiment_id << " AND problem=0 AND censored=0 ORDER BY name ASC";
@@ -664,7 +674,7 @@ public:
 	void output_lots_of_worms(const std::string & path);
 	void test_image_metatadata();
 	
-	ns_64_bit create_experiment_from_directory_structure(const std::string & directory_name);
+	ns_64_bit create_experiment_from_directory_structure(const std::string & directory_name,const bool process_masks_locally);
 	void rebuild_experiment_samples_from_disk(unsigned long experiment_id);
 	void rebuild_experiment_regions_from_disk(unsigned long experiment_id);
 

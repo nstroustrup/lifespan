@@ -1030,7 +1030,7 @@ class ns_worm_terminal_main_menu_organizer : public ns_menu_organizer{
 			return;
 		if (cc.result.empty())
 			return;
-		ns_64_bit new_experiment_id = worm_learner.create_experiment_from_directory_structure(cc.result);
+		ns_64_bit new_experiment_id = worm_learner.create_experiment_from_directory_structure(cc.result,true);
 		worm_learner.rebuild_experiment_samples_from_disk(new_experiment_id);
 		worm_learner.rebuild_experiment_regions_from_disk(new_experiment_id);
 	}
@@ -2547,8 +2547,7 @@ int main() {
 		
 				cerr << ex.text() << "\n";
 			}
-	//		worm_learner.data_selector.select_region("ben_d::1");
-	//		worm_learner.generate_training_set_from_by_hand_annotation();
+	
 			sql.release();
 		}
 		
@@ -2611,8 +2610,8 @@ int main() {
 		
 		ns_worm_browser_output_debug(__LINE__,__FILE__,"Entering idle loop");
 
-		//worm_learner.rebuild_experiment_from_disk(638);
 
+	
 		return(Fl::run());
 	/*	while( Fl::wait() > 0)
 			SleepEx(0,TRUE);

@@ -60,11 +60,11 @@ std::string ns_maintenance_task_to_string(const ns_maintenance_task & task){
 bool ns_processing_job_scheduler::run_a_job(ns_sql & sql,bool first_in_first_out_job_queue){
 	
 	//XXX
-	ns_image_server_captured_image im;
+	/*ns_image_server_captured_image im;
 	im.captured_images_id =  5595918;
 	std::vector<ns_image_server_captured_image_region> reg_im;
 	pipeline->pipeline.apply_mask(im,reg_im,sql);
-	exit(0);
+	exit(0);*/
 	//XXXX
 
 	//if we can't talk to the long term storage we're bound to fail, so don't try.

@@ -427,7 +427,7 @@ std::string ns_image_server_captured_image_region::filename(ns_image_server_sql 
 
 	if (experiment_id == 0 || region_name == "" || experiment_name == "" || sample_name == "")// || device_name == "")
 		if (!load_from_db(region_images_id, sql))
-			throw ns_ex("ns_image_server_captured_image_region::Filename information not specified and not present in database.");
+			throw ns_ex("ns_image_server_captured_image_region::Filename information for image id ") << region_images_id << " not specified and not present in database.";
 	return ns_image_server_captured_image::filename(sql) + "=" + region_name + "=" + ns_to_string(region_images_id);
 }
 

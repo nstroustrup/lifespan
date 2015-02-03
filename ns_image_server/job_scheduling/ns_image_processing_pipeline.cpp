@@ -1436,12 +1436,7 @@ void ns_image_processing_pipeline::compile_video(ns_image_server_captured_image_
 		}
 
 		try{
-			//get the filename for each file in the region
-			if (apply_vertical_registration)
-				sql << "SELECT images.path, images.filename, sample_region_images.capture_time, sample_region_images.vertical_image_registration_applied, captured_images.id, captured_images.image_id FROM images, sample_region_images, captured_images WHERE "
-					<< "captured_images.sample_id = " << region_image.sample_id << " AND captured_images.capture_time = sample_region_images.capture_time AND images.id = sample_region_images.";
-			else 	
-				sql << "SELECT images.path, images.filename  FROM images, sample_region_images WHERE images.id = sample_region_images.";
+			sql << "SELECT images.path, images.filename, sample_region_images.capture_time  FROM images, sample_region_images WHERE images.id = sample_region_images.";
 			sql << ns_processing_step_db_column_name(i);
 			sql << " AND sample_region_images.region_info_id = " << region_image.region_info_id;
 			if(region_spec.start_time != 0)
@@ -1479,40 +1474,12 @@ void ns_image_processing_pipeline::compile_video(ns_image_server_captured_image_
 			unsigned long event_id = image_server.register_server_event(ev,&sql);
 
 
-			//calculate registration information if required
-			vector<ns_vector_2i> registration_offsets;
-			bool calculating_reg = false;
-			if (apply_vertical_registration){
-				registration_offsets.resize(res.size(),ns_vector_2i(0,0));
-				for (unsigned int i = 0; i < res.size(); i++){
-					if (res[i][2] == "0"){
-						if (!calculating_reg){
-							calculating_reg = true;
-							ns_image_server_event ev("ns_image_processing_pipeline::Vertical image registration must be performed...this might take a while.");
-						}
-						//calculate vertical registration if it has not already been calculated
-						ns_image_server_captured_image captured_image;
-						captured_image.captured_images_id = atol(res[i][4].c_str());
-						captured_image.sample_id = region_image.sample_id;
-						captured_image.capture_time = region_image.capture_time;
-
-						ns_image_whole<ns_component> source_im;
-						ns_image_server_image source_image;
-						source_image.id = atol(res[i][5].c_str());
-						ns_disk_buffered_image_registration_profile * profile;
-						bool delete_after_use;
-						registration_offsets[i] = get_vertical_registration(captured_image, source_image, sql,&profile,delete_after_use)*-1;
-						if (delete_after_use){
-								profile->cleanup(&image_server.image_storage);
-								delete profile;
-						}
-					}
-				}
-			}
 			ns_video_region_specification reg(region_spec);
 			//labels already provided
 			if ((i == (int)ns_process_worm_detection || i == (int)ns_process_worm_detection_labels) && reg.timestamp_type == ns_video_region_specification::ns_date_timestamp)
 				reg.timestamp_type = ns_video_region_specification::ns_no_timestamp;
+			std::vector<ns_vector_2i> registration_offsets;
+			//registration_offsets.resize(1,ns_vector_2i(0,0));
 			ns_image_processing_pipeline::make_video(region_image.experiment_id,res,reg,registration_offsets,output_basename,sql);
 			
 				
@@ -2679,7 +2646,7 @@ ns_vector_2i ns_image_processing_pipeline::get_vertical_registration(const ns_im
 	t.start();
 	ns_vector_2i offset(ns_image_registration<127,ns_8_bit>::register_full_images(*reference_image_profile,**requested_image,ns_vector_2i(400,400)));
 	cerr << "Total Registration time: " << t.stop()/1000.0/1000.0 << "\n";
-	exit(0);
+	//exit(0);
 	//cerr << "Alignment: " << offset.x << "," << offset.y << "\n";
 	sql << "UPDATE captured_images SET registration_horizontal_offset='" << offset.x << "', registration_vertical_offset='" << offset.y << "', registration_offset_calculated=1 WHERE id = " << captured_image.captured_images_id;
 	//cerr << sql.query() << "\n";

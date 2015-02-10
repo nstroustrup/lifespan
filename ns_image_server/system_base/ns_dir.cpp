@@ -9,7 +9,7 @@
 #endif
 using namespace std;
 #ifndef _WIN32
-	#ifdef __APPLE__
+	#if defined(__APPLE__) || defined(__FreeBSD__)
 		#include <sys/statvfs.h>
 	#else
 		#include <sys/statfs.h>
@@ -352,7 +352,7 @@ unsigned long ns_dir::get_free_disk_space(const string & path){
 			throw ns_ex("ns_dir::get_free_disk_space::Could not call GetDiskFreeSpaceEx");
 		return size_from_64_bit(total_number_of_free_bytes.QuadPart);
 	#else
-		#ifdef __APPLE__
+		#if defined(__APPLE__) || defined(__FreeBSD__)
 			struct statvfs fs;
 			if (statvfs(path.c_str(),&fs) != 0)
 				throw ns_ex("ns_dir::get_free_disk_space::Could not call fstatvfs()");

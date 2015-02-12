@@ -4,6 +4,11 @@
 
 using namespace std;
 
+#ifdef __FreeBSD__
+	#include <netinet/in.h>
+#endif
+
+
 /*******************************************
 ns_socket: a multi-platform socket library
 This library provides compatible socket support

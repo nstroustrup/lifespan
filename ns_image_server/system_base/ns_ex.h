@@ -35,7 +35,8 @@ typedef unsigned long ns_32_bit;
 #else
 	typedef unsigned long long ns_64_bit;
 	typedef long long ns_s64_bit;
-	#define ns_64_bit_abs abs
+//	#define ns_64_bit_abs abs
+	#define ns_64_bit_abs(a) ((a<0) ? (-a) : (a))
 #endif
 typedef bool ns_bit;
 

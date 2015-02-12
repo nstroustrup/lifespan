@@ -1,6 +1,7 @@
 #ifndef NS_IMAGE_REGISTRATION
 #define NS_IMAGE_REGISTRATION
 #include "ns_image.h"
+#include "ns_ex.h"
 #include "ns_image_registration_cache.h"
 #include <iostream>
 template<int thresh, class ns_component>

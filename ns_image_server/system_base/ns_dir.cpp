@@ -14,6 +14,8 @@ using namespace std;
 	#else
 		#include <sys/statfs.h>
 		#include <stdlib.h>
+                #include <unistd.h>
+
 	#endif
 #endif
 

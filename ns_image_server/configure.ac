@@ -42,7 +42,7 @@ AM_CONDITIONAL([TARGET_OSX],[test $target_osx = yes])
 
 
 AC_SEARCH_LIBS(cos,m, [],AC_MSG_ERROR(Could not locate package m.  Is it installed?),"-lm")
-AC_SEARCH_LIBS([dmtxDecodeCreate],[dmtx], [],AC_MSG_ERROR(Could not locate package dmtx.  Is it installed?))
+AC_SEARCH_LIBS(dmtxDecodeCreate,dmtx, [],AC_MSG_ERROR(Could not locate package dmtx.  Is it installed?))
 AC_SEARCH_LIBS(TIFFOpen,tiff,[],[AC_MSG_ERROR(Could not locate package libtiff.  Is it installed?,[1])] )
 AC_SEARCH_LIBS(jpeg_destroy_decompress, jpeg, [], [AC_MSG_ERROR(Could not locate package libjpeg.  Is it installed?,[1])])
 AC_SEARCH_LIBS([FT_Load_Glyph], [freetype], [], AC_MSG_ERROR([Could not locate package FreeType.  Is it installed?],[1]))

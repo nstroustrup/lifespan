@@ -468,10 +468,10 @@ dmtxDecodeCreateDiagnostic(DmtxDecode *dec, int *totalBytes, int *headerBytes, i
    if(pnm == NULL)
       return NULL;
 
-#ifdef WIN32
+#ifdef _VISUALC_
    count = sprintf_s((char *)pnm, *headerBytes + 1, "P6\n%d %d\n255\n", width, height);
 #else
-   count = _snprintf_s((char *)pnm, *headerBytes + 1, "P6\n%d %d\n255\n", width, height);
+   count = snprintf((char *)pnm, *headerBytes + 1, "P6\n%d %d\n255\n", width, height);
 #endif
 
    if(count != *headerBytes) {

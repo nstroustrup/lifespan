@@ -59,7 +59,7 @@ if($all_running_experiments == 1)
 else if ($experiment_id != 0)
 	$back = "<a href=\"manage_samples.php?experiment_id=$experiment_id\">[Back to Experiment Samples]</a>";
 else if (sizeof($images)!= 0)
-	$back = "<a href=\"manage_samples.php?experiment_id=" . $images[0][12] . "\">[Back to Experiment Samples]</a>";
+	$back = "<a href=\"manage_samples.php?experiment_id=" . $images[0][13] . "\">[Back to Experiment Samples]</a>";
 else $back = "";
 
 display_worm_page_header($page_title, $back);

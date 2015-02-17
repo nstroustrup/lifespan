@@ -2573,7 +2573,7 @@ int main() {
 
 			
 			cerr << "Loading the experiment list...";
-		//	worm_learner.data_selector.load_experiment_names(sql());
+			worm_learner.data_selector.load_experiment_names(sql());
 			worm_learner.load_databases(sql());
 			try{
 					

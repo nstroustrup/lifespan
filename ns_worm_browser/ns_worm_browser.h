@@ -86,7 +86,7 @@ void ask_if_schedule_should_be_submitted_to_db(bool & write_to_disk, bool & writ
 typedef enum {ns_movement_area_plot,ns_movement_scatter_proportion_plot,ns_movement_3d_path_plot,ns_movement_3d_movement_plot,ns_survival_curve} ns_region_visualization;
 
 struct ns_box{
-	typedef enum {ns_none,ns_top_left,ns_top_right,ns_bottom_left,ns_bottom_right} ns_box_location;
+	typedef enum {ns_none,ns_top_left,ns_top_right,ns_bottom_left,ns_bottom_right,ns_whole_box} ns_box_location;
 	ns_vector_2i top_left,
 				 bottom_right;
 	ns_box_location corner_contact(const ns_vector_2i & v) const{
@@ -180,11 +180,9 @@ struct ns_area_box{
 class ns_area_handler{
 public:
 	ns_area_handler():unfinished_box_exists(false),selected_box_exists(false),moved_since_last_click(false),created_new_box_in_current_click(false){current_unfinished_box = boxes.end(); selected_box = boxes.end();}
-	typedef enum {ns_select_handle,ns_move_handle,ns_deselect_handle} ns_handle_action;
+	typedef enum {ns_select_handle,ns_move_handle,ns_deselect_handle,ns_move_all_boxes} ns_handle_action;
 
-	void click(const ns_handle_action & action,const unsigned int image_x, const unsigned int image_y, const unsigned int screen_x, const unsigned int screen_y, ns_8_bit * screen_buffer, const ns_image_standard & background,const unsigned long scaling, const double pixel_scaling)
-	{click(action,ns_vector_2i(image_x,image_y),ns_vector_2i(screen_x,screen_y),screen_buffer,background,scaling,pixel_scaling);}
-	void click(const ns_handle_action & action,const ns_vector_2i & image_pos, const ns_vector_2i & screen_pos, ns_8_bit * screen_buffer, const ns_image_standard & background,const unsigned long scaling, const double pixel_scaling);
+	void click(const ns_handle_action & action,const ns_vector_2i & image_pos, const ns_vector_2i & screen_pos,ns_8_bit * screen_buffer, const ns_image_standard & background,const unsigned long scaling, const double pixel_scaling);
 	void output_boxes(std::ostream & out, const std::string & device_name,const float & resolution,const std::string & units);
 	void clear_boxes();
 	void draw_boxes(ns_8_bit * screen_buffer,const ns_image_properties & buffer_size,const unsigned long image_scaling, const double pixel_scaling) const;
@@ -496,20 +494,21 @@ struct ns_button_press{
 		 shift_key_held,
 		 control_key_held;
 	ns_vector_2i screen_position,
-				 image_position;
+				 image_position,
+				 screen_distance_from_click_location,
+				 image_distance_from_click_location;
 };
 
 class ns_gl_window_data{
 public:
-	ns_gl_window_data(const string & window_name):gl_buffer(0),display_lock(string("ns_lock::display_") + window_name),redraw_requested(false){}
-	//ns_vector_2i ideal_image_size;
-	ns_vector_2i ideal_window_size;
-	ns_vector_2i specified_gl_image_size;
+	ns_gl_window_data(const string & window_name):gl_buffer(0),display_lock(string("ns_lock::display_") + window_name),redraw_requested(false),display_rescale_factor(0){}
+	ns_vector_2i image_size;
 	float image_zoom;
 	unsigned int pre_gl_downsample;
 	ns_8_bit * gl_buffer;
 	ns_image_properties gl_buffer_properties;
 	ns_lock display_lock;
+	float display_rescale_factor;
 
 	bool redraw_requested;
 	void redraw_screen(){
@@ -556,7 +555,7 @@ public:
 		movement_data_is_strictly_decreasing_(false),overwrite_existing_mask_when_submitting(false),output_svg_spines(false),static_mask(0),generate_mp4_(false),
 		/*submit_capture_specification_to_db_when_recieved(false),*/overwrite_submitted_capture_specification(false),maximum_window_size(1024,768),
 		current_annotater(&death_time_annotater),storyboard_annotater(2),main_window("Main Window"),
-				worm_window("Worm Window"){
+				worm_window("Worm Window"),dynamic_range_rescale(1){
 		storyboard_annotater.set_resize_factor(2);
 	}
 
@@ -708,7 +707,6 @@ public:
 	void make_reject_spine_collage(const bool svg=false,const std::string & svg_directory="");
 	void make_reject_spine_collage_with_stats(const bool svg=false,const std::string & svg_directory="");
 
-
 	void process_contiguous_regions();
 	void output_distributions_of_detected_objects();
 
@@ -721,15 +719,15 @@ public:
 	std::vector<ns_svm_model_specification* > model_specifications;
 	ns_svm_model_specification & get_svm_model_specification();
 
-	void draw_image(const double x, const double y, ns_image_standard & image, const float & dynamic_stretch_factor=1.0);
+	void draw_image(const double x, const double y, ns_image_standard & image, float dynamic_stretch_factor=0);
 	void draw_line_on_overlay(const ns_vector_2i & a, const ns_vector_2i & b);
-	void update_main_window_display(unsigned int window_width, unsigned int window_height);
+	void update_main_window_display();
 	void draw();
 	void touch_main_window_pixel(const ns_button_press & press);
 	bool register_main_window_key_press(int key, const bool shift_key_held,const bool control_key_held,const bool alt_key_held);
 	
 	void draw_worm_window_image(const double x, const double y, ns_image_standard & image,const float & dynamic_stretch_factor);
-	void update_worm_window_display(unsigned int window_width, unsigned int window_height);
+	void update_worm_window_display();
 	void touch_worm_window_pixel(const ns_button_press & press);
 	bool register_worm_window_key_press(int key, const bool shift_key_held,const bool control_key_held,const bool alt_key_held);
 
@@ -827,6 +825,7 @@ public:
 	ns_experiment_storyboard_spec::ns_storyboard_flavor current_storyboard_flavor;
 	ns_svm_model_specification default_model;	
 	std::string current_mask_filename;
+	float dynamic_range_rescale;
 private:
 	ns_image_standard animation_temp;
 	ns_death_time_annotation_set::ns_annotation_type_to_load last_annotation_type_loaded;

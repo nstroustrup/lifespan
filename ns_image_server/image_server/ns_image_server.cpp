@@ -34,7 +34,8 @@ ns_image_server::ns_image_server():event_log_open(false),exit_requested(false),u
 	sql_lock("ns_is::sql"),server_event_lock("ns_is::server_event"),simulator_scan_lock("ns_is::sim_scan"),local_buffer_sql_lock("ns_is::lb"),
 	_act_as_processing_node(true),cleared(false),current_sql_server_address_id(0),
 	image_registration_profile_cache(1024*4), //allocate 4 gigabytes of disk space in which to store reference images for capture sample registration
-	_verbose_debug_output(false),_cache_subdirectory("cache"),sql_database_choice(possible_sql_databases.end()),next_scan_for_problems_time(0){
+	_verbose_debug_output(false),_cache_subdirectory("cache"),sql_database_choice(possible_sql_databases.end()),next_scan_for_problems_time(0),
+_terminal_window_scale_factor(1){
 
 	ns_socket::global_init();
 	ns_worm_detection_constants::init();
@@ -1864,10 +1865,11 @@ void ns_image_server::load_constants(const ns_image_server::ns_image_server_exec
 	terminal_constants.start_specification_group(ns_ini_specification_group("*** Worm Browser Configuration File ***","This file allows you to specify various configuration options that will determine the behavior of the worm browser software run on this machine.  It's behavior is also influenced by the settings in the ns_image_server configuration file."));
 	terminal_constants.add_field("max_width","1024","The maximum width of the worm browser window");
 	terminal_constants.add_field("max_height","768","The maximum height of the worm browser window");
-	terminal_constants.add_field("hand_annotation_resize_factor","3","How many times should images of worms be shrunk before being displayed when looking at storyboards?  Larger values result in smaller worms during by hand annotation of worms");
+	terminal_constants.add_field("hand_annotation_resize_factor","2","How many times should images of worms be shrunk before being displayed when looking at storyboards?  Larger values result in smaller worms during by hand annotation of worms");
 	terminal_constants.add_field("mask_upload_database","image_server","The SQL database in which image masks should be stored.  This is usually set to the value specified for the central_sql_databases option in the ns_image_server.ini file");
 	terminal_constants.add_field("mask_upload_hostname","myhost","The host name (e.g bob or lab_desktop_1) of the server where sample region masks should be uploaded. This is usually set to the value of the host_name option set the acquisition server's ns_image_server.ini file");
 	terminal_constants.add_field("verbose_debug_output","false","If this option is set to true, the image server and worm browser will generate detailed debug information while running various steps of image acquisition and image processing.  An file containing this output will be written to the volatile_storage directory.");
+	terminal_constants.add_field("window_scale_factor","1","On high resolution screens, set this to a value greater than one to rescale all imagery.");
 	string ini_directory,ini_filename;
 	try{
 		//look for the ini file in the current directory
@@ -1910,6 +1912,9 @@ void ns_image_server::load_constants(const ns_image_server::ns_image_server_exec
 			mask_upload_hostname = terminal_constants["mask_upload_hostname"];	
 			if (terminal_constants.field_specified("verbose_debug_output") && terminal_constants["verbose_debug_output"] == "true" ){
 				_verbose_debug_output = true;
+			}		
+			if (terminal_constants.field_specified("window_scale_factor")){
+				_terminal_window_scale_factor = atof(terminal_constants["window_scale_factor"].c_str());
 			}
 		}
 		else{

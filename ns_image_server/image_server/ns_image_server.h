@@ -430,13 +430,13 @@ public:
 	ns_64_bit register_server_event(const ns_register_type type,const ns_ex & ex);
 
 	ns_os_signal_handler os_signal_handler;
-	long server_crash_daemon_port() const{return _server_crash_daemon_port;}
+	inline long server_crash_daemon_port() const{return _server_crash_daemon_port;}
 
 	unsigned long local_buffer_commit_frequency_in_seconds(){return 10;}
 
-	bool verbose_debug_output() const {return _verbose_debug_output;}
-	
-	const unsigned long & maximum_memory_allocation_in_mb(){return  _maximum_memory_allocation_in_mb;}
+	inline bool verbose_debug_output() const {return _verbose_debug_output;}
+	inline double & terminal_window_scale_factor() {return _terminal_window_scale_factor;}
+	inline const unsigned long & maximum_memory_allocation_in_mb(){return  _maximum_memory_allocation_in_mb;}
 
 	ns_process_priority process_priority;
 private:
@@ -464,6 +464,7 @@ private:
 				local_buffer_db;
 
 	bool _verbose_debug_output;
+	double _terminal_window_scale_factor;
 
 	std::string _capture_command,  ///path of the command used to initiate image capture.
 

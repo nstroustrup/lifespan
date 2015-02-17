@@ -18,6 +18,11 @@
 extern "C" {
 #endif
 
+#ifdef _WIN32
+#include <stdio.h>
+#define snprintf _snprintf
+#endif
+
 /* Time headers required for DmtxTime struct below */
 #include <time.h>
 #ifdef HAVE_SYS_TIME_H

@@ -144,7 +144,9 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\external_compile_libraries\libdmtx-0.7.4\dmtx.c" />
+    <ClCompile Include="..\external_compile_libraries\libdmtx-0.7.4\dmtx.c">
+      <CompileAs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Default</CompileAs>
+    </ClCompile>
     <ClCompile Include="..\external_compile_libraries\tiff-3.8.2\libtiff\tif_aux.c" />
     <ClCompile Include="..\external_compile_libraries\tiff-3.8.2\libtiff\tif_close.c" />
     <ClCompile Include="..\external_compile_libraries\tiff-3.8.2\libtiff\tif_codec.c" />

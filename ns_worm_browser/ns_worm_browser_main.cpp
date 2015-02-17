@@ -12,6 +12,7 @@
 #include "ns_experiment_storyboard.h"
 
 #define IDLE_THROTTLE_FPS 20
+#define SCALE_FONTS_WITH_WINDOW_SIZE 0
 
 bool output_debug_messages = false;
 bool output_debug_file_opened = false;
@@ -142,7 +143,7 @@ class ns_worm_terminal_gl_window : public Fl_Gl_Window {
 		}      
 
 		  try{
-				worm_learner.update_main_window_display(worm_learner.main_window.specified_gl_image_size.x, worm_learner.main_window.specified_gl_image_size.y);	 
+				worm_learner.update_main_window_display();	 
 		  }
 		  catch(std::exception & exception){
 			ns_ex ex(exception);
@@ -151,7 +152,7 @@ class ns_worm_terminal_gl_window : public Fl_Gl_Window {
 			}
     }    
 	int handle(int state){
-		
+		//cerr << "s: " << state;
 		switch(state){
 			case FL_FOCUS:
 				have_focus = true;
@@ -172,8 +173,9 @@ class ns_worm_terminal_gl_window : public Fl_Gl_Window {
 
 		try{
 			int button(Fl::event_button());
-			if(button == FL_LEFT_MOUSE || button == FL_RIGHT_MOUSE){
-			
+		//	cerr << "B:" << button;
+			if(button == FL_LEFT_MOUSE || button == FL_RIGHT_MOUSE || mouse_is_down){
+		//	cerr << "!";
 			
 			ns_button_press press;
 			press.right_button = false;
@@ -183,6 +185,9 @@ class ns_worm_terminal_gl_window : public Fl_Gl_Window {
 			press.shift_key_held = Fl::event_key(FL_Shift_L) || Fl::event_key(FL_Shift_R);
 			press.control_key_held = Fl::event_key(FL_Control_L) || Fl::event_key(FL_Control_R);
 			press.screen_position = ns_vector_2i(Fl::event_x(),Fl::event_y());
+			if (mouse_is_down)
+				press.screen_distance_from_click_location = press.screen_position - mouse_click_location;
+			else press.screen_distance_from_click_location = ns_vector_2i(0,0);
 
 				switch(state){
 			
@@ -265,9 +270,9 @@ class ns_worm_gl_window : public Fl_Gl_Window {
 		//remember the current window values
 		//set the current window values as ideal.  The algorithm may disagree later.
 	//	cerr << "GL: Setting ideal width and height to " << width << "x" << height << "\n";
-		//worm_learner.worm_window.ideal_window_size.y = height ;
-		//worm_learner.worm_window.ideal_window_size.x = width;
-		//worm_learner.worm_window.ideal_window_size = worm_learner.worm_window.ideal_image_size-worm_image_window_size_difference();
+		//worm_learner.worm_window.image_size.y = height ;
+		//worm_learner.worm_window.image_size.x = width;
+		//worm_learner.worm_window.image_size = worm_learner.worm_window.ideal_image_size-worm_image_window_size_difference();
     }
     // DRAW METHOD
     void draw() {
@@ -284,7 +289,7 @@ class ns_worm_gl_window : public Fl_Gl_Window {
 		}      
 
 		  try{
-				worm_learner.update_worm_window_display(w(), h());	 
+				worm_learner.update_worm_window_display();
 		  }
 		  catch(std::exception & exception){
 			ns_ex ex(exception);
@@ -324,7 +329,7 @@ class ns_worm_gl_window : public Fl_Gl_Window {
 
 			press.shift_key_held = Fl::event_key(FL_Shift_L) || Fl::event_key(FL_Shift_R);
 			press.control_key_held = Fl::event_key(FL_Control_L) || Fl::event_key(FL_Control_R);
-			press.screen_position = ns_vector_2i(Fl::event_x(),Fl::event_y());
+			press.screen_position = ns_vector_2i(Fl::event_x(),Fl::event_y())/worm_learner.worm_window.display_rescale_factor;
 
 				switch(state){
 			
@@ -852,7 +857,8 @@ class ns_worm_terminal_main_menu_organizer : public ns_menu_organizer{
 	static void save_current_areas(const std::string & value){
 		worm_learner.save_current_area_selections();
 	}
-	static void clear_current_areas(const std::string & value){worm_learner.clear_areas();}
+	static void clear_current_areas(const std::string & value){worm_learner.clear_areas();
+																worm_learner.main_window.redraw_screen();}
 	/*****************************
 	Movement Detection Tasks
 	*****************************/
@@ -1248,7 +1254,7 @@ public:
 		
 		add(ns_menu_item_spec(file_open_xml,"&Plate Locations/_Submit Experiment Schedule"));
 		add(ns_menu_item_spec(save_current_areas,"Plate Locations/Define Scan Areas/(Open Preview Capture Image and Draw Scan Areas)",0,FL_MENU_INACTIVE));
-		add(ns_menu_item_spec(save_current_areas,"Plate Locations/Define Scan Areas/_Save Selected Scan Areas to Disk"));
+		add(ns_menu_item_spec(save_current_areas,"Plate Locations/Define Scan Areas/Save Selected Scan Areas to Disk"));
 		add(ns_menu_item_spec(clear_current_areas,"Plate Locations/Define Scan Areas/Clear Selected Scan Areas"));
 
 		//add(ns_menu_item_spec(clipboard_copy,"Clipboard/Copy",FL_CTRL+'c'));
@@ -1815,14 +1821,20 @@ public:
 		region_menu = new Fl_Menu_Bar(experiment_bar_width(),H-info_bar_height(),region_name_bar_width(),info_bar_height());
 		strain_menu = new Fl_Menu_Bar(experiment_bar_width()+region_name_bar_width(),H-info_bar_height(),strain_bar_width(),info_bar_height());
 		exclusion_menu = new Fl_Menu_Bar(experiment_bar_width() + region_name_bar_width() + strain_bar_width(),H-info_bar_height(),exclusion_bar_width(),info_bar_height());
-		
-		main_menu->textsize(main_menu->textsize()-2);
+	
+		float d(worm_learner.main_window.display_rescale_factor);
+		float menu_d(worm_learner.main_window.display_rescale_factor);
+		//do not scale fonts
+		if (!SCALE_FONTS_WITH_WINDOW_SIZE)
+			menu_d = 1;
+
+		main_menu->textsize((main_menu->textsize()-2)*menu_d);
 		main_menu->textfont(FL_HELVETICA);
-		region_menu->textsize(region_menu->textsize()-4);
+		region_menu->textsize((region_menu->textsize()-4)*menu_d);
 		region_menu->textfont(FL_HELVETICA);
-		strain_menu->textsize(region_menu->textsize());
+		strain_menu->textsize(region_menu->textsize()*menu_d);
 		strain_menu->textfont(FL_HELVETICA);
-		exclusion_menu->textsize(region_menu->textsize());
+		exclusion_menu->textsize(region_menu->textsize()*menu_d);
 		exclusion_menu->textfont(FL_HELVETICA);
 		
 		main_menu_handler = new ns_worm_terminal_main_menu_organizer();
@@ -1841,25 +1853,25 @@ public:
 		exclusion_menu_handler->update_exclusion_choice(*exclusion_menu);
 
 		experiment_name_bar = new Fl_Output(0,
-											h()-info_bar_height(),
-											experiment_bar_width(),
-											info_bar_height());
-		experiment_name_bar->textsize(experiment_name_bar->textsize()-4);
+											h()*d-info_bar_height()*menu_d,
+											(experiment_bar_width())*d,
+											info_bar_height()*menu_d);
+		experiment_name_bar->textsize((experiment_name_bar->textsize()-4)*menu_d);
 		experiment_name_bar->textfont(FL_HELVETICA);
 
-		info_bar = new Fl_Output(			experiment_bar_width()+region_name_bar_width() + strain_bar_width() + exclusion_bar_width(),
-											h()-info_bar_height(),
-											W-experiment_bar_width()-region_name_bar_width()-strain_bar_width() - ns_death_event_annotation_group::window_width,
-											info_bar_height());
+		info_bar = new Fl_Output(			(experiment_bar_width()+region_name_bar_width() + strain_bar_width() + exclusion_bar_width())*d,
+											h()*d-info_bar_height()*menu_d,
+											(W-experiment_bar_width()-region_name_bar_width()-strain_bar_width() - ns_death_event_annotation_group::window_width)*d,
+											info_bar_height()*menu_d);
 		
-		info_bar->textsize(info_bar->textsize()-4);
+		info_bar->textsize((info_bar->textsize()-4)*menu_d);
 		info_bar->textfont(FL_HELVETICA);
 	
 
-		annotation_group = new ns_death_event_annotation_group(W-ns_death_event_annotation_group::window_width,
-															  H - ns_death_event_annotation_group::window_height,
-															  ns_death_event_annotation_group::window_width,
-															  ns_death_event_annotation_group::window_height,true);
+		annotation_group = new ns_death_event_annotation_group((W-ns_death_event_annotation_group::window_width)*d,
+															  H*d - ns_death_event_annotation_group::window_height*menu_d,
+															  (ns_death_event_annotation_group::window_width)*d,
+															  (ns_death_event_annotation_group::window_height)*menu_d,true);
 
 		annotation_group->deactivate();
 		experiment_name_bar->box(FL_EMBOSSED_BOX);
@@ -1880,47 +1892,55 @@ public:
     }
 
 	static ns_vector_2i image_window_size_difference(){
-		return ns_vector_2i(-(int)border_width(),-(int)menu_height()-(int)info_bar_height());
+		return ns_vector_2i(0,(int)menu_height()+(int)info_bar_height());
 	}
-	void resize(int x, int y, int w_, int h_){
+	void resize(int x, int y, int w__, int h__){
+		const int w_(worm_learner.main_window.image_size.x),
+				  h_(worm_learner.main_window.image_size.y);
+		const float d(worm_learner.main_window.display_rescale_factor);
+		float menu_d(worm_learner.main_window.display_rescale_factor);
+		if (!SCALE_FONTS_WITH_WINDOW_SIZE)
+			menu_d = 1;
 		ns_acquire_lock_for_scope lock(worm_learner.main_window.display_lock,__FILE__,__LINE__);
-		worm_learner.main_window.ideal_window_size = ns_vector_2d(w_,h_);
-		worm_learner.main_window.specified_gl_image_size = worm_learner.main_window.ideal_window_size+image_window_size_difference();
+	//	worm_learner.main_window.image_size = ns_vector_2d(w_,h_);
+	//	worm_learner.main_window.specified_gl_image_size = (worm_learner.main_window.image_size+
+	//			image_window_size_difference());
 		lock.release();
-		Fl_Window::resize(x,y,w_,h_);
+		Fl_Window::resize(x,y,w_*d+image_window_size_difference().x*menu_d,h_*d+image_window_size_difference().y*menu_d);
+		
+		gl_window->resize(0,menu_height()*menu_d,
+			worm_learner.main_window.image_size.x*d,
+			worm_learner.main_window.image_size.y*d);
 	
-		gl_window->resize(0,menu_height(),worm_learner.main_window.specified_gl_image_size.x,
-			worm_learner.main_window.specified_gl_image_size.y);
-	
-		main_menu->resize(0,0,w_,menu_height());
+		main_menu->resize(0,0,w_*d,menu_height()*menu_d);
 
+		int bottom_bar_height(h_*d+menu_height()*menu_d);
 		experiment_name_bar->resize(		0,
-											h_-info_bar_height(),
-											experiment_bar_width(),
-											info_bar_height());
-		region_menu->resize(experiment_bar_width(),
-											h_-info_bar_height(),
-											region_name_bar_width(),
+											bottom_bar_height,
+											experiment_bar_width()*d,
+											info_bar_height()*menu_d);
+		region_menu->resize(experiment_bar_width()*d,
+											bottom_bar_height,
+											region_name_bar_width()*d,
 										
-	info_bar_height());
-		strain_menu->resize(experiment_bar_width()+region_name_bar_width(),
-											h_-info_bar_height(),
-											strain_bar_width(),
-											info_bar_height());
-		exclusion_menu->resize(experiment_bar_width()+region_name_bar_width()+strain_bar_width(),
-											h_-info_bar_height(),
-											exclusion_bar_width(),
-											info_bar_height());
-		info_bar->resize(experiment_bar_width()+region_name_bar_width()+strain_bar_width()+
-						 exclusion_bar_width(),
-											h_-info_bar_height(),
-											w_-experiment_bar_width()-region_name_bar_width()-strain_bar_width()-ns_death_event_annotation_group::window_width,
-											info_bar_height());
+											info_bar_height()*menu_d);
+		strain_menu->resize((experiment_bar_width()+region_name_bar_width())*d,
+											bottom_bar_height,
+											strain_bar_width()*d,
+											info_bar_height()*menu_d);
+		exclusion_menu->resize((experiment_bar_width()+region_name_bar_width()+strain_bar_width())*d,
+											bottom_bar_height,
+											exclusion_bar_width()*d,
+											info_bar_height()*menu_d);
+		info_bar->resize((experiment_bar_width()+region_name_bar_width()+strain_bar_width()+exclusion_bar_width())*d,
+											bottom_bar_height,
+											w_-(experiment_bar_width()-region_name_bar_width()-strain_bar_width()-ns_death_event_annotation_group::window_width)*d,
+											info_bar_height()*menu_d);
 
-		annotation_group->resize(w_-ns_death_event_annotation_group::window_width,
-								 h_ - ns_death_event_annotation_group::window_height,
-								 ns_death_event_annotation_group::window_width,
-								 ns_death_event_annotation_group::window_height);
+		annotation_group->resize((w_-ns_death_event_annotation_group::window_width)*d,
+								bottom_bar_height,
+								 ns_death_event_annotation_group::window_width*d,
+								 ns_death_event_annotation_group::window_height*menu_d);
 		
 	}
 	 
@@ -2007,11 +2027,12 @@ public:
     ns_worm_terminal_worm_window (int W,int H,const char*L=0) : Fl_Window(W,H,L), have_focus(false){
         // OpenGL window
 		begin();
-        gl_window = new  ns_worm_gl_window(30, 0, w()+image_window_size_difference().x, h()+image_window_size_difference().y);
+		
+        gl_window = new  ns_worm_gl_window(30, 0, worm_learner.worm_window.image_size.x, worm_learner.worm_window.image_size.y);
 
 		
 		annotation_group = new ns_death_event_solo_annotation_group(0,
-															  H - ns_death_event_solo_annotation_group::button_height,
+															  worm_learner.worm_window.image_size.y,
 															  ns_death_event_solo_annotation_group::all_buttons_width,
 															  ns_death_event_solo_annotation_group::button_height,
 															  false);
@@ -2026,22 +2047,27 @@ public:
     }
 	
 	static ns_vector_2i image_window_size_difference(){
-		return ns_vector_2i(-(long)border_width(),-(long)ns_death_event_solo_annotation_group::button_height);
+		return ns_vector_2i(0,(long)ns_death_event_solo_annotation_group::button_height);
 	}
-	void resize(int x, int y, int w_, int h_){
-		Fl_Window::resize(x,y,w_,h_);
-//		cerr << "worm window responding to resize request of " << w_ << "x" << h_ << "\n";
-	//	cerr << "Resizing to " << w_+image_window_size_difference().x << "x" << h_+image_window_size_difference().y << "\n";
+	void resize(int x, int y, int w__, int h__){
+		const int w_(worm_learner.worm_window.image_size.x),
+				h_(worm_learner.worm_window.image_size.y);
+		float menu_d(worm_learner.worm_window.display_rescale_factor);
+		if (!SCALE_FONTS_WITH_WINDOW_SIZE)
+			menu_d = 1;
+		float d(worm_learner.worm_window.display_rescale_factor);
+		Fl_Window::resize(x,y,w_*d+image_window_size_difference().x*menu_d,h_*d+image_window_size_difference().y*menu_d);
 
-		gl_window->resize(0,0,w_+image_window_size_difference().x,h_+image_window_size_difference().y);
+
+		gl_window->resize(0,0,w_*d,h_*d);
 		//xxxx
 	//	gl_window->redraw();
 		
 		annotation_group->resize(0,
-								 h_ - ns_death_event_solo_annotation_group::button_height,
-								 ns_death_event_solo_annotation_group::all_buttons_width,
-								 ns_death_event_solo_annotation_group::button_height);
-		redraw();
+								 h_,
+								 ns_death_event_solo_annotation_group::all_buttons_width*d,
+								 ns_death_event_solo_annotation_group::button_height*menu_d);
+		//redraw();
 	}
 	private:
 		
@@ -2199,24 +2225,29 @@ void idle_main_window_update_callback(void *){
 	// double last_time = c_time;
 	// c_time =  GetTime() - init_time;
 	// cerr << "FPS = " << 1.0/(time-last_time) << "\n";
+	float menu_d(worm_learner.main_window.display_rescale_factor);
+	if (!SCALE_FONTS_WITH_WINDOW_SIZE)
+			menu_d = 1;
 	Fl::lock();
 	try{
 		ns_vector_2d cur_size(current_window->w(),current_window->h());
-	//	worm_learner.main_window.ideal_window_size = worm_learner.main_window.ideal_image_size;
-		//worm_learner.main_window.ideal_window_size.y+=ns_worm_terminal_main_window::menu_height()+ns_worm_terminal_main_window::info_bar_height();
-		//worm_learner.main_window.ideal_window_size.x+= ns_worm_terminal_main_window::border_width();
-		if ( abs((int)(worm_learner.main_window.ideal_window_size.x - cur_size.x)) > 3 || abs((int)(worm_learner.main_window.ideal_window_size.y- cur_size.y)) > 3){
-			//current_window->size(current_window->size(worm_learner.main_window.ideal_window_size.x, worm_learner.ideal_current_window_height);
-			current_window->size(worm_learner.main_window.ideal_window_size.x, worm_learner.main_window.ideal_window_size.y);
+		cur_size = cur_size - ns_vector_2i(0,(current_window->menu_height()+current_window->info_bar_height())*menu_d);
+		cur_size = cur_size/worm_learner.main_window.display_rescale_factor;
+	//	worm_learner.main_window.image_size = worm_learner.main_window.ideal_image_size;
+		//worm_learner.main_window.image_size.y+=ns_worm_terminal_main_window::menu_height()+ns_worm_terminal_main_window::info_bar_height();
+		//worm_learner.main_window.image_size.x+= ns_worm_terminal_main_window::border_width();
+		if ( abs((int)(worm_learner.main_window.image_size.x - cur_size.x)) > 0 && abs((int)(worm_learner.main_window.image_size.y- cur_size.y)) > 0){
+			//current_window->size(current_window->size(worm_learner.main_window.image_size.x, worm_learner.ideal_current_window_height);
+			current_window->size(worm_learner.main_window.image_size.x, worm_learner.main_window.image_size.y);
 		//	current_window->gl_window->size(worm_learner.main_window.ideal_image_size.x, worm_learner.main_window.ideal_image_size.y);
-		//	cerr << "Redrawing screen from " << cur_size << " to ideal " << worm_learner.main_window.ideal_window_size << "\n";
+		//	cerr << "Redrawing screen from " << cur_size << " to ideal " << worm_learner.main_window.image_size << "\n";
 		}
 		ns_handle_menu_bar_activity_request();
 		if (worm_learner.current_annotater->refresh_requested()){
 			worm_learner.current_annotater->display_current_frame();
 		}
 		if (worm_learner.main_window.redraw_requested){
-			redraw_main_window(worm_learner.main_window.ideal_window_size.x,worm_learner.main_window.ideal_window_size.y,true);
+			redraw_main_window(worm_learner.main_window.image_size.x,worm_learner.main_window.image_size.y,true);
 		}
 		ns_image_series_annotater::ns_image_series_annotater_action a(worm_learner.current_annotater->fast_movement_requested());
 		if (a == ns_image_series_annotater::ns_fast_forward){
@@ -2241,7 +2272,8 @@ void idle_main_window_update_callback(void *){
 		}
 		if (show_worm_window){
 			show_worm_window = false;
-			worm_window->size(worm_learner.worm_window.ideal_window_size.x,worm_learner.worm_window.ideal_window_size.y);
+			worm_window->size(worm_learner.worm_window.image_size.x,
+							  worm_learner.worm_window.image_size.y);
 			worm_window->show();
 			ns_set_menu_bar_activity(true);	
 		}
@@ -2254,7 +2286,7 @@ void idle_main_window_update_callback(void *){
 	catch(...){
 		Fl::unlock();
 	}
-	Fl::repeat_timeout(1/20., idle_main_window_update_callback);
+	Fl::repeat_timeout(1/IDLE_THROTTLE_FPS, idle_main_window_update_callback);
 }
 void ns_hide_worm_window(){
 	hide_worm_window = true;
@@ -2267,18 +2299,23 @@ void idle_worm_window_update_callback(void *){
 	Fl::lock();
 	try{
 		ns_vector_2d cur_size(worm_window->w(),worm_window->h());
-		/*worm_learner.worm_window.ideal_window_size = worm_learner.worm_window.ideal_window_size;
-		worm_learner.worm_window.ideal_window_size.x+=ns_worm_terminal_worm_window::border_width();
-		worm_learner.worm_window.ideal_window_size.y+=ns_worm_terminal_worm_window::info_bar_height();*/
-		if ( abs((int)(worm_learner.worm_window.ideal_window_size.x - cur_size.x)) > 3 || abs((int)(worm_learner.worm_window.ideal_window_size.y - cur_size.y)) > 3){
-			worm_window->size(worm_learner.worm_window.ideal_window_size.x, worm_learner.worm_window.ideal_window_size.y);
+		float menu_d(worm_learner.worm_window.display_rescale_factor);
+		if (!SCALE_FONTS_WITH_WINDOW_SIZE)
+			menu_d = 1;
+		cur_size = cur_size -worm_image_window_size_difference()*menu_d;
+		cur_size = cur_size/worm_learner.worm_window.display_rescale_factor;
+		/*worm_learner.worm_window.image_size = worm_learner.worm_window.image_size;
+		worm_learner.worm_window.image_size.x+=ns_worm_terminal_worm_window::border_width();
+		worm_learner.worm_window.image_size.y+=ns_worm_terminal_worm_window::info_bar_height();*/
+		if ( abs((int)(worm_learner.worm_window.image_size.x - cur_size.x)) > 0 && abs((int)(worm_learner.worm_window.image_size.y - cur_size.y)) > 0){
+			worm_window->size(worm_learner.worm_window.image_size.x, worm_learner.worm_window.image_size.y);
 			//xxxx
 		}
 		if (worm_learner.death_time_solo_annotater.refresh_requested()){
 			worm_learner.death_time_solo_annotater.display_current_frame();
 		}
 		if (worm_learner.worm_window.redraw_requested){
-			redraw_worm_window(worm_learner.worm_window.ideal_window_size.x,worm_learner.worm_window.ideal_window_size.y,true);
+			redraw_worm_window(worm_learner.worm_window.image_size.x,worm_learner.worm_window.image_size.y,true);
 		}
 		ns_image_series_annotater::ns_image_series_annotater_action a(worm_learner.death_time_solo_annotater.fast_movement_requested());
 		if (a == ns_image_series_annotater::ns_fast_forward){
@@ -2508,7 +2545,9 @@ int main() {
 
 		worm_learner.maximum_window_size = image_server.max_terminal_window_size;
 		worm_learner.death_time_annotater.set_resize_factor(image_server.terminal_hand_annotation_resize_factor);
-		
+		worm_learner.main_window.display_rescale_factor = 
+			worm_learner.worm_window.display_rescale_factor = image_server.terminal_window_scale_factor();
+
 		//ns_update_sample_info(sql());
 		ns_worm_browser_output_debug(__LINE__,__FILE__,"Checking for new release");
 		ns_alert_dialog d;
@@ -2533,9 +2572,8 @@ int main() {
 			ns_death_time_annotation_flag::get_flags_from_db(sql());
 
 			
-			ns_worm_browser_output_debug(__LINE__,__FILE__,"Loading experient names");
-			worm_learner.data_selector.load_experiment_names(sql());
-
+			cerr << "Loading the experiment list...";
+		//	worm_learner.data_selector.load_experiment_names(sql());
 			worm_learner.load_databases(sql());
 			try{
 					
@@ -2547,6 +2585,7 @@ int main() {
 		
 				cerr << ex.text() << "\n";
 			}
+			cerr << "Done.\n";
 	
 			sql.release();
 		}
@@ -2670,7 +2709,7 @@ struct ns_asynch_worm_launcher{
 			/*Fl::awake();
 			Fl::lock();
 			worm_window->show();
-			worm_window->resize(0,0,worm_learner.worm_window.ideal_window_size.x,worm_learner.worm_window.ideal_window_size.y);
+			worm_window->resize(0,0,worm_learner.worm_window.image_size.x,worm_learner.worm_window.image_size.y);
 			worm_window->redraw();
 			Fl::unlock();*/
 		}

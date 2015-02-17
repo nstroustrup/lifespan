@@ -5351,13 +5351,13 @@ void ns_worm_learner::output_area_info(const std::string & filename){
 	}
 }
 
-void ns_worm_learner::clear_areas(){	
+void ns_worm_learner::clear_areas(){
 	area_handler.clear_boxes();
 }
 
 void ns_worm_learner::touch_worm_window_pixel(const ns_button_press & press){
 	if (press.screen_position.x < 4|| press.screen_position.y < 4 ||
-		press.screen_position.x+4 >= worm_window.ideal_window_size.x|| press.screen_position.y+4 >= worm_window.ideal_window_size.y)
+		press.screen_position.x+4 >= worm_window.image_size.x|| press.screen_position.y+4 >= worm_window.image_size.y)
 		return;
 	float z = ((float)worm_window.pre_gl_downsample)/worm_window.image_zoom;
 	ns_button_press p(press);
@@ -5366,8 +5366,18 @@ void ns_worm_learner::touch_worm_window_pixel(const ns_button_press & press){
 }
 
 bool ns_worm_learner::register_worm_window_key_press(int key, const bool shift_key_held,const bool control_key_held,const bool alt_key_held){
-																			
-	if (key == FL_Left || key== 'a'){
+	if (key == ']'){
+		worm_window.display_rescale_factor+=.1;
+		return true;
+	}
+	else if (key == '['){
+		worm_window.display_rescale_factor-=.1;
+		if (worm_window.display_rescale_factor <= 0)
+			worm_window.display_rescale_factor = .1;
+		return true;
+	}
+																
+	else if (key == FL_Left || key== 'a'){
 		ns_worm_learner::navigate_solo_worm_annotation(ns_death_time_solo_posture_annotater::ns_back,true);
 		return true;
 	}
@@ -5381,9 +5391,11 @@ bool ns_worm_learner::register_worm_window_key_press(int key, const bool shift_k
 	}
 	else if (shift_key_held && key == '=' || key == '+'){
 		death_time_solo_annotater.register_click(ns_vector_2i(0,0),ns_death_time_solo_posture_annotater::ns_increase_contrast);
+		return true;
 	}
 	else if (key == '-'){
 		death_time_solo_annotater.register_click(ns_vector_2i(0,0),ns_death_time_solo_posture_annotater::ns_decrease_contrast);
+		return true;
 	}
 	return false;
 }
@@ -5391,11 +5403,12 @@ bool ns_worm_learner::register_worm_window_key_press(int key, const bool shift_k
 
 void ns_worm_learner::touch_main_window_pixel(const ns_button_press & press){
 	if (press.screen_position.x < 4|| press.screen_position.y < 4 ||
-		press.screen_position.x+4 >= main_window.ideal_window_size.x|| press.screen_position.y+4 >= main_window.ideal_window_size.y)
+		press.screen_position.x+4 >= main_window.image_size.x|| press.screen_position.y+4 >= main_window.image_size.y)
 		return;
-	float z = ((float)main_window.pre_gl_downsample)/main_window.image_zoom;
+	float z = ((float)main_window.pre_gl_downsample)/(float)main_window.image_zoom/main_window.display_rescale_factor;
 	ns_button_press p(press);
 	p.image_position = p.screen_position*z;
+	p.image_distance_from_click_location= p.screen_distance_from_click_location*z;
 	//cerr << "Touching Raw " << p.screen_position << "\n";
 	//cerr << "Zoom is " << z << "\n";dr
 	//cerr << "Translating to " << p.image_position << "\n";
@@ -5403,6 +5416,32 @@ void ns_worm_learner::touch_main_window_pixel(const ns_button_press & press){
 }
 
 bool ns_worm_learner::register_main_window_key_press(int key, const bool shift_key_held,const bool control_key_held,const bool alt_key_held){
+
+	if (shift_key_held && key == '=' || key == '+'){
+		dynamic_range_rescale+=.1;
+		main_window.redraw_screen();
+		return true;
+	}
+	else if (key == '-'){
+		dynamic_range_rescale-=.1;
+		if(dynamic_range_rescale<=0)
+			dynamic_range_rescale=.1;
+		main_window.redraw_screen();
+		return true;
+	}
+	else if (key == ']'){
+		main_window.display_rescale_factor+=.1;
+		main_window.redraw_screen();
+		return true;
+	}
+	else if (key == '['){
+		main_window.display_rescale_factor-=.1;
+		if (main_window.display_rescale_factor <= 0)
+			main_window.display_rescale_factor = .1;
+		main_window.redraw_screen();
+		return true;
+	}
+
 	switch(behavior_mode){
 		case ns_worm_learner::ns_draw_boxes:{
 			if (key == 's' && control_key_held){
@@ -5427,14 +5466,7 @@ bool ns_worm_learner::register_main_window_key_press(int key, const bool shift_k
 			}
 			else if (key == 'S' || key == '.'){
 				save_death_time_annotations();
-		}else if (shift_key_held && key == '=' || key == '+'){
-			current_annotater->register_click(ns_vector_2i(0,0),ns_death_time_solo_posture_annotater::ns_increase_contrast);
-			return true;
-		}
-		else if (key == '-'){
-			current_annotater->register_click(ns_vector_2i(0,0),ns_death_time_solo_posture_annotater::ns_decrease_contrast);
-			return true;
-		}
+			}
 		}
 	}
 	return false;
@@ -5490,21 +5522,31 @@ void ns_worm_learner::touch_main_window_pixel_internal(const ns_button_press & p
 			const unsigned int h(current_image.properties().height);
 			const unsigned int w(current_image.properties().width);
 			const char c(current_image.properties().components);
-			//Handle out of bounds locations
 			if (press.image_position.x < (unsigned int)c || press.image_position.x + (unsigned int)c >= w) return;
 			if (press.image_position.y < (unsigned int)c || press.image_position.y +(unsigned int)c>= h) return;
-			switch(press.click_type){
-			case ns_button_press::ns_up:
-					area_handler.click(ns_area_handler::ns_deselect_handle,press.image_position.x,press.image_position.y,press.screen_position.x,press.screen_position.y,main_window.gl_buffer ,current_image,main_window.pre_gl_downsample,main_window.image_zoom); break;
-				case ns_button_press::ns_down:
-					area_handler.click(ns_area_handler::ns_select_handle,press.image_position.x,press.image_position.y,press.screen_position.x,press.screen_position.y,main_window.gl_buffer ,current_image,main_window.pre_gl_downsample,main_window.image_zoom); break;
-				case ns_button_press::ns_drag:
-					area_handler.click(ns_area_handler::ns_move_handle,press.image_position.x,press.image_position.y,press.screen_position.x,press.screen_position.y,main_window.gl_buffer ,current_image,main_window.pre_gl_downsample,main_window.image_zoom); break;
+			if (press.control_key_held)
+						area_handler.click(ns_area_handler::ns_move_all_boxes,
+						press.image_distance_from_click_location,
+						press.screen_distance_from_click_location,
+						main_window.gl_buffer ,current_image,main_window.pre_gl_downsample,main_window.image_zoom);
+			else{
+				//Handle out of bounds locations
+				if (press.image_position.x < (unsigned int)c || press.image_position.x + (unsigned int)c >= w) return;
+				if (press.image_position.y < (unsigned int)c || press.image_position.y +(unsigned int)c>= h) return;
+			
+				switch(press.click_type){
+					case ns_button_press::ns_up:
+							area_handler.click(ns_area_handler::ns_deselect_handle,press.image_position,press.screen_position,main_window.gl_buffer ,current_image,main_window.pre_gl_downsample,main_window.image_zoom); break;
+						case ns_button_press::ns_down:
+							area_handler.click(ns_area_handler::ns_select_handle,press.image_position,press.screen_position,main_window.gl_buffer ,current_image,main_window.pre_gl_downsample,main_window.image_zoom); break;
+						case ns_button_press::ns_drag:
+							area_handler.click(ns_area_handler::ns_move_handle,press.image_position,press.screen_position,main_window.gl_buffer ,current_image,main_window.pre_gl_downsample,main_window.image_zoom); break;
+						break;
 				}
-				break;
 			}
 			main_window.redraw_screen();
 			break;
+		}
 		case ns_worm_learner::ns_annotate_storyboard_region:
 		case ns_worm_learner::ns_annotate_storyboard_sample:
 		case ns_worm_learner::ns_annotate_storyboard_experiment:{
@@ -5562,8 +5604,9 @@ inline ns_8_bit ns_rescale(const ns_8_bit & val,const float & f){
 	return (ns_8_bit)g;
 }
 
-void ns_worm_learner::draw_image(const double x, const double y, ns_image_standard & image, const float & dynamic_stretch_factor){
-
+void ns_worm_learner::draw_image(const double x, const double y, ns_image_standard & image,  float dynamic_stretch_factor){
+	if (dynamic_stretch_factor==0)
+		dynamic_stretch_factor = this->dynamic_range_rescale;
 	ns_acquire_lock_for_scope lock(main_window.display_lock,__FILE__,__LINE__);
 	
 	ns_image_properties new_prop = image.properties();
@@ -5591,9 +5634,8 @@ void ns_worm_learner::draw_image(const double x, const double y, ns_image_standa
 		if (r < gl_resize)
 			gl_resize = r;
 	}
-	main_window.specified_gl_image_size.y= (unsigned int)floor(new_prop.height*gl_resize);
-	main_window.specified_gl_image_size.x = (unsigned int)floor(new_prop.width*gl_resize);
-	main_window.ideal_window_size = main_window.specified_gl_image_size - main_image_window_size_difference();
+	main_window.image_size.y= (unsigned int)floor(new_prop.height*gl_resize);
+	main_window.image_size.x = (unsigned int)floor(new_prop.width*gl_resize);
 
 	if (main_window.gl_buffer_properties.width != new_prop.width || main_window.gl_buffer_properties.height != new_prop.height || main_window.gl_buffer_properties.components != new_prop.components){
 		
@@ -5629,12 +5671,15 @@ void ns_worm_learner::draw_image(const double x, const double y, ns_image_standa
 	}
 	area_handler.draw_boxes(main_window.gl_buffer ,image.properties(),main_window.pre_gl_downsample,main_window.image_zoom);
 
-	//image_x = x;
-//	image_y = y;
-	//main_window.current_image_size.x = new_prop.width;
-	//main_window.current_image_size.y = new_prop.height;
-	//image_scale_width = new_prop.width;
-//	image_scale_height = new_prop.height;	
+	//now we handle the gl scaling
+	if (main_window.image_size.x*main_window.display_rescale_factor > this->maximum_window_size.x ||
+		main_window.image_size.y*main_window.display_rescale_factor > this->maximum_window_size.y){
+		cerr << "Cannot resize, as the current window has hit the maximum size specified in the ns_worm_browser.ini file\n";
+		main_window.display_rescale_factor = floor(min(maximum_window_size.x/(double)main_window.image_size.x,
+												maximum_window_size.y/(double)main_window.image_size.y)*10)/10;
+	
+	}
+
 	lock.release();
 	main_window.redraw_screen();
 }
@@ -5668,11 +5713,10 @@ void ns_worm_learner::draw_worm_window_image(const double x, const double y, ns_
 		if (r < gl_resize)
 			gl_resize = r;
 	}
-	worm_window.ideal_window_size = ns_vector_2i((unsigned int)floor(new_prop.width*gl_resize),
-												(unsigned int)floor(new_prop.height*gl_resize))
-												- worm_image_window_size_difference();
+	worm_window.image_size = ns_vector_2i((unsigned int)floor(new_prop.width*gl_resize),
+												(unsigned int)floor(new_prop.height*gl_resize));
 
-	//cerr << "Draw requests a worm window size of " << worm_window.ideal_window_size << "\n";
+	//cerr << "Draw requests a worm window size of " << worm_window.image_size << "\n";
 
 	if (worm_window.gl_buffer_properties.width != new_prop.width || worm_window.gl_buffer_properties.height != new_prop.height 
 		|| worm_window.gl_buffer_properties.components != new_prop.components){
@@ -5712,6 +5756,15 @@ void ns_worm_learner::draw_worm_window_image(const double x, const double y, ns_
 	//area_handler.draw_boxes(main_window.gl_buffer ,image.properties(),worm_window.pre_gl_downsample);
 
 	
+	//now we handle the gl scaling
+	if (worm_window.image_size.x*worm_window.display_rescale_factor > this->maximum_window_size.x ||
+		worm_window.image_size.y*worm_window.display_rescale_factor > this->maximum_window_size.y){
+		cerr << "Cannot resize, as the current window has hit the maximum size specified in the ns_worm_browser.ini file\n";
+		worm_window.display_rescale_factor = floor(min(maximum_window_size.x/(double)worm_window.image_size.x,
+											           maximum_window_size.y/(double)worm_window.image_size.y)*10)/10;
+	}
+
+
 	lock.release();
 	worm_window.redraw_screen();
 }
@@ -6063,37 +6116,34 @@ void ns_worm_learner::draw_animation(const double &t){
 	main_window.redraw_screen();
 }
 
-void ns_worm_learner::update_main_window_display(unsigned int new_gl_image_pane_width=10000000, unsigned int new_gl_image_pane_height=10000000){
-	ns_acquire_lock_for_scope lock(main_window.display_lock,__FILE__,__LINE__);
+void ns_worm_learner::update_main_window_display(){
 
-	const ns_vector_2i im_dif(main_image_window_size_difference());
-
-	if (new_gl_image_pane_width == 10000000 || new_gl_image_pane_height == 10000000){
-		new_gl_image_pane_width = main_window.ideal_window_size.x + im_dif.x;
-		new_gl_image_pane_height =  main_window.ideal_window_size.y + im_dif.y;
-	}
+	unsigned long	new_gl_image_pane_width = (main_window.image_size.x );
+	unsigned long	new_gl_image_pane_height =  (main_window.image_size.y);
 
 	if (new_gl_image_pane_width == 0)
-		new_gl_image_pane_width = 10;
+		new_gl_image_pane_width = 100;
 	if (new_gl_image_pane_height == 0)
-		new_gl_image_pane_width = 10;
+		new_gl_image_pane_width = 100;
+
 //	cerr << "worm_learner has recieved a request for a gl_window of size " << new_gl_image_pane_width << "x" << new_gl_image_pane_height << "\n";
-	float zoom_x =(float)((float)new_gl_image_pane_width)/main_window.gl_buffer_properties.width;//*(float)image_scale_width;
-	float zoom_y = (float)((float)new_gl_image_pane_height)/main_window.gl_buffer_properties.height;//*(float)image_scale_height;
+	float zoom_x =(float)((float)new_gl_image_pane_width)/main_window.gl_buffer_properties.width;
+	float zoom_y = (float)((float)new_gl_image_pane_height)/main_window.gl_buffer_properties.height;
 	if (zoom_x < .01)
 		zoom_x = .01;
-
+	
+	
+	ns_acquire_lock_for_scope lock(main_window.display_lock,__FILE__,__LINE__);
 	//if (zoom_x < zoom_y)
 	main_window.image_zoom = zoom_x;
 	//else main_window.image_zoom = zoom_y;
 		
-	main_window.specified_gl_image_size.x = (unsigned int)(main_window.gl_buffer_properties.width * main_window.image_zoom);
-	main_window.specified_gl_image_size.y = (unsigned int)(main_window.gl_buffer_properties.height * main_window.image_zoom);
-	main_window.ideal_window_size = main_window.specified_gl_image_size - im_dif;
-	
-	//cerr << "To fit the new dimensions, the ideal window is changed to " << main_window.ideal_window_size.x << "x" << main_window.ideal_window_size.y<< "\n";
 
-	glPixelZoom(main_window.image_zoom,main_window.image_zoom);
+	main_window.image_size.x = (unsigned int)(main_window.gl_buffer_properties.width * main_window.image_zoom);
+	main_window.image_size.y = (unsigned int)(main_window.gl_buffer_properties.height * main_window.image_zoom);
+	
+	//cerr << "To fit the new dimensions, the ideal window is changed to " << main_window.image_size.x << "x" << main_window.image_size.y<< "\n";
+	glPixelZoom(main_window.image_zoom*main_window.display_rescale_factor,main_window.image_zoom*main_window.display_rescale_factor);
 	glRasterPos2i((GLint)-1 ,(GLint)-1 );
 	glPixelStorei(GL_PACK_ALIGNMENT,1);
 	glPixelStorei(GL_UNPACK_ALIGNMENT,1);
@@ -6103,40 +6153,37 @@ void ns_worm_learner::update_main_window_display(unsigned int new_gl_image_pane_
 }
 
 
-void ns_worm_learner::update_worm_window_display(unsigned int new_gl_image_pane_width=10000000, unsigned int new_gl_image_pane_height=10000000){
-	ns_acquire_lock_for_scope lock(worm_window.display_lock,__FILE__,__LINE__);
+void ns_worm_learner::update_worm_window_display(){
 
-	const ns_vector_2i im_dif(worm_image_window_size_difference());
-	if (new_gl_image_pane_width == 10000000 || new_gl_image_pane_height ==10000000){
-		new_gl_image_pane_width = worm_window.ideal_window_size.x + im_dif.x;
-		new_gl_image_pane_height =  worm_window.ideal_window_size.y + im_dif.y;
-	}
+	unsigned long new_gl_image_pane_width = (worm_window.image_size.x);
+	unsigned long new_gl_image_pane_height =  (worm_window.image_size.y);
 
 	if (new_gl_image_pane_width == 0)
-		new_gl_image_pane_width = 10;
+		new_gl_image_pane_width = 100;
 	if (new_gl_image_pane_height == 0)
-		new_gl_image_pane_height = 10;
+		new_gl_image_pane_height = 100;
 //	cerr << "worm_learner has recieved a request for " << window_width << "x" << window_height << "\n";
-	float zoom_x = floor(100*(float)((float)new_gl_image_pane_width)/worm_window.gl_buffer_properties.width)/100.0;//*(float)image_scale_width;
-	float zoom_y = floor(100*(float)((float)new_gl_image_pane_height)/worm_window.gl_buffer_properties.height)/100.0;//*(float)image_scale_height;
-
-
+	float zoom_x =(float)((float)new_gl_image_pane_width)/worm_window.gl_buffer_properties.width;
+	float zoom_y = (float)((float)new_gl_image_pane_height)/worm_window.gl_buffer_properties.height;
+	if (zoom_x < .01)
+		zoom_x = .01;
+	
+	ns_acquire_lock_for_scope lock(worm_window.display_lock,__FILE__,__LINE__);
 	//if (zoom_x < zoom_y)
 		worm_window.image_zoom = zoom_x;
 	//else worm_window.image_zoom = zoom_y;
-
-	worm_window.ideal_window_size.y= (unsigned int)(worm_window.gl_buffer_properties.height * worm_window.image_zoom) - im_dif.y;
-	worm_window.ideal_window_size.x = (unsigned int)(worm_window.gl_buffer_properties.width * worm_window.image_zoom) - im_dif.x;
+		
+	worm_window.image_size.x = (unsigned int)((worm_window.gl_buffer_properties.width * worm_window.image_zoom));
+	worm_window.image_size.y= (unsigned int)((worm_window.gl_buffer_properties.height * worm_window.image_zoom));
 	
-//	cerr << "update display needs to resize the worm image to " << worm_window.ideal_window_size << "\n";
+//	cerr << "update display needs to resize the worm image to " << worm_window.image_size << "\n";
 	//xxxx
-	glPixelZoom(worm_window.image_zoom,worm_window.image_zoom);
+	glPixelZoom(worm_window.image_zoom*worm_window.display_rescale_factor,worm_window.image_zoom*worm_window.display_rescale_factor);
 	glRasterPos2i((GLint)-1 ,(GLint)-1 );
 	glPixelStorei(GL_PACK_ALIGNMENT,1);
 	glPixelStorei(GL_UNPACK_ALIGNMENT,1);
 	glDrawPixels(worm_window.gl_buffer_properties.width, worm_window.gl_buffer_properties.height,GL_RGB,GL_UNSIGNED_BYTE,worm_window.gl_buffer );
 	lock.release();
-	
 }
 
 
@@ -6252,15 +6299,17 @@ bool ns_load_image_from_resource(int resource_id,const std::string &filename){
 #endif
 
 void ns_worm_learner::display_splash_image(){
+	ns_image_standard im;
 	#ifdef _WIN32
 	string tmp_filename("start_background.tif");
-	ns_image_standard im;
 	ns_load_image_from_resource(IDR_BIN1,tmp_filename);
-	load_file(tmp_filename);
+	ns_load_image(tmp_filename,im);
+	im.resample(ns_image_properties(600,800,3),current_image);
 	ns_dir::delete_file(tmp_filename);
 	#else
 	// note: using implicit string-literal concatenation after preprocessor substitution of NS_DATA_PATH
-	load_file(NS_DATA_PATH "start.tif");
+	ns_load_image(NS_DATA_PATH "start.tif",im);
+	im.resample(ns_image_properties(800,600,3),current_image);
 	#endif
 }
 void ns_worm_learner::stop_death_time_annotation(){
@@ -6417,6 +6466,9 @@ bool ns_worm_learner::mask_loaded(){
 	return current_mask.properties().components != 0;
 }
 
+bool ns_a_is_above_or_left_of_b(const ns_vector_2i &a,const ns_vector_2i & b,int extra_buffer){
+	return a.x-extra_buffer < b.x || a.y-extra_buffer < b.y;
+}
 
 ns_worm_learner::~ns_worm_learner(){
 	ns_safe_delete(main_window.gl_buffer);
@@ -6436,7 +6488,7 @@ ns_svm_model_specification & ns_worm_learner::get_svm_model_specification(){
 
 extern ns_worm_learner worm_learner;
 
-void ns_area_handler::click(const ns_handle_action & action,const ns_vector_2i & image_pos,const ns_vector_2i & screen_pos, ns_8_bit * screen_buffer, const ns_image_standard & background,const unsigned long image_scaling, const double pixel_scaling){
+void ns_area_handler::click(const ns_handle_action & action,const ns_vector_2i & image_pos,const ns_vector_2i & screen_pos,ns_8_bit * screen_buffer, const ns_image_standard & background,const unsigned long image_scaling, const double pixel_scaling){
 	switch(action){
 		case ns_deselect_handle:{
 		//	cerr << "DESELECTING\n";
@@ -6552,11 +6604,31 @@ void ns_area_handler::click(const ns_handle_action & action,const ns_vector_2i &
 			if (!selected_box_exists) return;
 			moved_since_last_click = true;
 			remove_box_from_screen_buffer(selected_box,screen_buffer,background,image_scaling,pixel_scaling);
-
 			selected_box->assign_and_correct_inversions(cur_box_handle,screen_pos,image_pos);
 		
 			draw_boxes(screen_buffer,background.properties(),image_scaling,pixel_scaling);
 			
+			worm_learner.main_window.redraw_screen();
+			break;
+		}
+		case ns_move_all_boxes:{
+			selected_box = boxes.end();
+			for (std::vector<ns_area_box>::iterator b = boxes.begin(); b != boxes.end();b++){
+				remove_box_from_screen_buffer(b,screen_buffer,background,image_scaling,pixel_scaling);
+				if(ns_a_is_above_or_left_of_b(b->image_coords.bottom_right+image_pos,ns_vector_2i(0,0),4) ||
+					ns_a_is_above_or_left_of_b(ns_vector_2i(background.properties().width,background.properties().height),
+						b->image_coords.top_left+image_pos,4))
+					continue;
+
+		    	moved_since_last_click = true;
+				b->image_coords.bottom_right+=image_pos;
+				b->image_coords.top_left+=image_pos;
+				b->screen_coords.bottom_right+=screen_pos;
+				b->screen_coords.top_left+=screen_pos;
+						
+			}	
+			
+			draw_boxes(screen_buffer,background.properties(),image_scaling,pixel_scaling);
 			worm_learner.main_window.redraw_screen();
 			break;
 		}

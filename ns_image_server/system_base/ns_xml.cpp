@@ -26,11 +26,17 @@ void convert_to_simple_objects( TiXmlNode* pParent,  std::vector<ns_xml_simple_o
 			for (TiXmlNode* pChild = pParent->FirstChild(); pChild != 0; pChild = pChild->NextSibling()) 
 				convert_to_simple_objects( pChild,  objs,0,0,level+1 );
 		break;
-
+		
 	case TiXmlNode::ELEMENT:
 		//printf( "Element [%s]\n", pParent->Value() );
 		switch(level){
 			case 1:{
+				//ignore lifespan machine wrapper tag
+				if (pParent->Value()==std::string("lifespan_machine")){
+					convert_to_simple_objects(pParent->FirstChild(),objs,0,0,1);
+					break;
+				}
+
 				std::vector<ns_xml_simple_object>::size_type s = objs.size();
 				objs.resize(s+1);
 				objs[s].name = pParent->Value();
@@ -38,13 +44,17 @@ void convert_to_simple_objects( TiXmlNode* pParent,  std::vector<ns_xml_simple_o
 					convert_to_simple_objects(pChild,objs,&objs[s],0,level+1);
 				break;
 			}
-			case 2:
+			case 2:{
 				if (obj == 0)
-					throw ns_ex("Could not parse XML file; obj == 0(ELEMENT on level ") << level << " = " << pParent->Value() << ")";
-				for (TiXmlNode* pChild = pParent->FirstChild(); pChild != 0; pChild = pChild->NextSibling()) 
+					throw ns_ex("An error was identified in the supplied XML file: An empty object was passed to the parser at level ") << level << " in tag " << pParent->Value() << ")";
+				
+				for (TiXmlNode* pChild = pParent->FirstChild(); pChild != 0; pChild = pChild->NextSibling()){
 					convert_to_simple_objects(pChild,objs,obj,&obj->tags[pParent->Value()],level+1);
+				}
 				break;
-			default: throw ns_ex("Could not parse XML file (ELEMENT on level ") << level << " = " << pParent->Value() << ")";
+				   }
+			default: 
+				throw ns_ex("An error was identified in the supplied XML file: a tag was found, ") << pParent->Value() << " that was too deeply nested (" << level << ")";
 		}
 
 		//obj.name = pParent->Value();
@@ -66,11 +76,11 @@ void convert_to_simple_objects( TiXmlNode* pParent,  std::vector<ns_xml_simple_o
 				break;
 			case 3:
 				if (tag_value == 0)
-					throw ns_ex("Could not parse XML file; obj == 0(ELEMENT on level ") << level << " = " << pParent->Value() << ")";
+					throw ns_ex("An error was identified in the supplied XML file: An empty object was passed to the parser at level ") << level << " in tag " << pParent->Value() << ")";
 				*tag_value = pParent->Value();
 				break;
 			default:
-				throw ns_ex("Could not parse XML file (TEXT on level ") << level << " = " << pParent->Value() << ")";
+				throw ns_ex("An error was identified in the supplied XML file: A TEXT field was provided, ") << pParent->Value() << ", on level " << level;
 		}
 
 	case TiXmlNode::DECLARATION:
@@ -229,9 +239,11 @@ bool ns_is_only_whitespace(const string & s){
 			return false;
 	return true;
 }
+//ask whether the specified tag is a closing tag.
 bool ns_is_closing_tag(const std::string & tag){
 	return !(tag.size() == 0 || tag[0] != '/');
 }
+//ask whether specified tag is the closing tag for start_tag
 bool ns_is_closing_tag(const std::string & tag, const std::string & start_tag){
 	if (!ns_is_closing_tag(tag))
 		return false;
@@ -258,7 +270,8 @@ const std::string & ns_xml_object::tag(const std::string & key) const {
 void ns_xml_simple_object_reader::from_stream(istream & in){
 	string text_before_next_tag,
 		   next_tag;
-
+	bool in_lifespan_machine_tag(false);
+	const std::string lifespan_machine_tag("lifespan_machine");
 	unsigned long state(0);
 	ns_xml_simple_object current_object;
 	ns_xml_simple_object::ns_tag_list::iterator current_tag(current_object.tags.end());
@@ -267,7 +280,7 @@ void ns_xml_simple_object_reader::from_stream(istream & in){
 			break;
 		switch(state){
 			case 0:
-				if (next_tag != "?xml version=\"1.0\"" && next_tag != "xml")
+				if (next_tag.size() < 4 || next_tag.substr(0,4) != "?xml")
 					throw ns_ex("Could not find opening xml tag");
 				state++;
 				break;
@@ -280,8 +293,17 @@ void ns_xml_simple_object_reader::from_stream(istream & in){
 					state--;
 					break;
 				}
+			
+				if (!in_lifespan_machine_tag && next_tag == lifespan_machine_tag){
+					in_lifespan_machine_tag = true;
+					break;
+				}
+				if (in_lifespan_machine_tag && ns_is_closing_tag(next_tag,lifespan_machine_tag)){
+					in_lifespan_machine_tag = false;
+					break;
+				}
 				if (ns_is_closing_tag(next_tag))
-					throw ns_ex("Improper closing tag at root:") << next_tag;		
+								throw ns_ex("Improper closing tag at root:") << next_tag;	
 				 current_object.name = next_tag;
 				 state++;
 				 break;
@@ -330,6 +352,8 @@ void ns_xml_simple_object_reader::from_stream(istream & in){
 				throw ns_ex("Entered an unknown parsing state:") << state;
 		}
 	}
+	if (in_lifespan_machine_tag)
+		throw ns_ex("Could not find closing tag for <") << lifespan_machine_tag << ">";
 	if (state>1){
 		switch(state){
 		case 2: throw ns_ex("Could not find closing tag for <") << current_object.name << ">";

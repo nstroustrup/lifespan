@@ -330,9 +330,8 @@ void ns_xml_simple_object_reader::from_stream(istream & in){
 				throw ns_ex("Entered an unknown parsing state:") << state;
 		}
 	}
-	if (state!=0){
+	if (state>1){
 		switch(state){
-		case 1: throw ns_ex("Could not find closing </xml>");
 		case 2: throw ns_ex("Could not find closing tag for <") << current_object.name << ">";
 		case 3: throw ns_ex("Could not find clossing for <") << current_object.name << "><" << current_tag->first << ">";
 		default: ns_ex("Hit end of file in a bizzare state!") << state;

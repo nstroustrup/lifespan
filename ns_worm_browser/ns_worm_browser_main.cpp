@@ -120,13 +120,6 @@ class ns_worm_terminal_gl_window : public Fl_Gl_Window {
 	    glMatrixMode (GL_MODELVIEW);  /* back to modelview matrix */
 	    glViewport (0,0, width,height);      /* define the viewport */
 
-	  //glViewport(0, 0, width, height); // set viewport
-	  //ProjectionMatrix();              // set projection matrix
-		//remember the current window values
-		//set the current window values as ideal.  The algorithm may disagree later.
-	//	cerr << "GL: Setting ideal width and height to " << width << "x" << height << "\n";
-//		worm_learner.main_window.ideal_image_size.y= height;
-	//	worm_learner.main_window.ideal_image_size.x = width;
     }
     // DRAW METHOD
     void draw() {

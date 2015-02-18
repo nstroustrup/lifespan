@@ -5403,7 +5403,7 @@ bool ns_worm_learner::register_worm_window_key_press(int key, const bool shift_k
 
 void ns_worm_learner::touch_main_window_pixel(const ns_button_press & press){
 	if (press.screen_position.x < 4|| press.screen_position.y < 4 ||
-		press.screen_position.x+4 >= main_window.image_size.x|| press.screen_position.y+4 >= main_window.image_size.y)
+		press.screen_position.x+4 >= main_window.image_size.x*main_window.display_rescale_factor|| press.screen_position.y+4 >= main_window.image_size.y*main_window.display_rescale_factor)
 		return;
 	float z = ((float)main_window.pre_gl_downsample)/(float)main_window.image_zoom/main_window.display_rescale_factor;
 	ns_button_press p(press);

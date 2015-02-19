@@ -1,6 +1,16 @@
 <?php
 require_once("worm_environment.php");
 
+
+function ns_clean_up_for_tooltip($str){
+  $out = "";
+  for ($i = 0; $i < strlen($str); $i++){
+    if ($str[$i] != '"')
+      $out .= $str[$i];
+    else $out .= "'";
+  }
+  return $out;
+}
 $current_device_cutoff = 60*3;
 
 $host_id = $query_string['host_id'];
@@ -134,7 +144,7 @@ if ($_POST['add_to_device_inventory'] != ''){
 		if (sizeof($res) > 0)
 			echo "Device " . $name . " is already in the device inventory<br>";
 		else{
-			$query = "INSERT INTO device_inventory SET device_name='$name', incubator_name='', incubator_location=''";
+			$query = "INSERT INTO device_inventory SET device_name='$name'";
 			$sql->send_query($query);
 		}
 	}
@@ -322,7 +332,7 @@ foreach ($base_hosts as $base_host_name => $host){
 		echo "<a href=\"view_hosts_log.php?host_id={$host[$i][0]}&limit=50\">[log]</a></td>";
 		echo "<td bgcolor=\"$clrs[1]\">{$host[$i][7]}.{$host[$i][8]}.{$host[$i][9]}</td>";
 		echo "<td bgcolor=\"$clrs[0]\">";
-		echo $host[$i][2] ;//. ":" . $host[$i][6];
+		echo $host[$i][2] . ":" . $host[$i][6];
 		echo "</td><td bgcolor=\"$clrs[1]\">";
 		echo format_time($host[$i][3]);
 		echo "</td><td bgcolor=\"$clrs[0]\" nowrap>";
@@ -401,21 +411,22 @@ foreach ($base_hosts as $base_host_name => $host){
 			  foreach ($inc as $dev){
 			
 				$edit_device = ($device_name == $dev[1]);
-				  echo "<div id=\"popup\">";
 				echo "<a href=\"view_scanner_schedule.php?device_name=".$dev[1]."\">" . $dev[1] . "</a>";
-				
+				//echo "</td><td bgcolor=\"$clrs[0]\">";
 				if ($dev[3] != ""){
-				  echo "<a href=\"view_scanner_schedule.php?device_name=".$dev[1]."\"><font color=\"#FF0000\"> (error)</font>";
-				  echo "";
-				  echo "<span>";
-				  if ($dev[4] == "1")
-				    echo "(Recognized)";
-				  else echo "(Unrecognized)";
-				  echo $dev[3];
-				  if ($dev[8] != "0")
-				    echo "Scanning for " . number_format((-$devs[$j][9] + $current_time /60),1) . "min)";
-				  echo "</span></a>";
-				  echo "</div>";
+				  
+				  echo " <span title=\"" . ns_clean_up_for_tooltip($dev[3]) . "\">";
+				  
+				echo "<font color=\"red\">(Error)";
+				//	if ($dev[4] == "1")
+				//echo "(Recognized)";
+				//else echo "(Unrecognized)";
+				//echo "</b>:";
+				echo "</font>";
+				//echo $dev[3];
+				//if ($dev[8] != "0")
+				//	echo "Scanning for " . number_format((-$devs[$j][9] + $current_time /60),1) . "min)";
+				echo "</span>";
 				}
 				//echo $dev[3];
 				//echo "<a href=\"view_hosts_and_devices.php?device_name=" . $devs[$j][1] . "\">[Edit]</a>";
@@ -451,10 +462,10 @@ foreach ($base_hosts as $base_host_name => $host){
 <table bgcolor="#555555" cellspacing='0' cellpadding='1'><tr><td><table cellspacing='0' cellpadding='3'>
 <tr <?php echo $table_header_color?>>
 <td>Device Name</td>
-<td>Scanning?</td>
+<td>Scanning Duration</td>
 <td>Incubator Name</td>
 <td>Location</td>
-<td>Autoscan Interval</td>
+<td>Current Status</td>
 <td>&nbsp;</td>
 </tr>
 <?php
@@ -481,14 +492,6 @@ foreach ($device_inventory as $incubator => $devices){
 				echo "<i>".number_format((-$dev[9] +$current_time)/60,1)  . " min</i>";
 			if ($dev[7]==1)
 				echo "(Paused!)";
-			if ($dev[3] != ""){
-				echo "<b>Error ";
-				if ($dev[4] == "1")
-				echo "(Recognized)";
-				else echo "(Unrecognized)";
-				echo "</b>:";
-				echo $dev[3];
-			}
 			if ((int) $dev[11]>0)
 				echo "(Preview Requested)";
 		};
@@ -500,8 +503,20 @@ foreach ($device_inventory as $incubator => $devices){
 		echo output_editable_field("device_locations[$device[0]]",$device[1],TRUE,'4',FALSE);
 		echo "</td>\n";
 		echo "\t<td bgcolor=\"$clrs[1]\">";
+	if ($dev[3] != ""){
+			  echo "<span title=\"" . ns_clean_up_for_tooltip($dev[3]) . "\">";
+			  echo "<font color=\"red\">(Error)</font>";
+			  echo "</span>";
+			  //echo "<b>Error ";
+			  //if ($dev[4] == "1")
+			  //	echo "(Recognized)";
+			  //	else echo "(Unrecognized)";
+			  //	echo "</b>:";
+			  //b	echo $dev[3];
+			}
+		
 		if ($device[2] != 1){
-			echo "<font size=\"-1\"><B>Device is missing!</B></font>";
+			echo "<font size=\"-1\">(Missing)</font>";
 		}
 		else{
 			//if ($dev[8]!=1)

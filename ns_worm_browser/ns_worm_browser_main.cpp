@@ -2181,14 +2181,14 @@ void ns_update_information_bar(const std::string & status){
 
 void redraw_main_window(const unsigned long w, const unsigned long h,const bool resize){
 	worm_learner.main_window.redraw_requested = false;
-	Fl::awake();
+	//Fl::awake();
 	Fl::lock();
 	if (resize){
 		current_window->size(w,h);	
 	}
 	current_window->gl_window->damage(1);
 	current_window->gl_window->redraw();
-	Fl::check();
+	//Fl::check();
 	Fl::unlock();
 }
 
@@ -2196,14 +2196,14 @@ void redraw_main_window(const unsigned long w, const unsigned long h,const bool 
 void redraw_worm_window(const unsigned long w, const unsigned long h,const bool resize){
 	worm_learner.worm_window.redraw_requested = false;
 	//ns_vector_2i n(ns_worm_terminal_main_window::border_width(),ns_worm_terminal_worm_window::info_bar_height());
-	Fl::awake();
+	//Fl::awake();
 	Fl::lock();
 	if (resize){
 		worm_window->size(w,h);	
 	}
 	worm_window->gl_window->damage(1);
 	worm_window->gl_window->redraw();
-	Fl::check();
+	//Fl::check();
 	Fl::unlock();
 }
 

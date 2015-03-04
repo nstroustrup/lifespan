@@ -5357,7 +5357,7 @@ void ns_worm_learner::clear_areas(){
 
 void ns_worm_learner::touch_worm_window_pixel(const ns_button_press & press){
 	if (press.screen_position.x < 4|| press.screen_position.y < 4 ||
-		press.screen_position.x+4 >= worm_window.image_size.x|| press.screen_position.y+4 >= worm_window.image_size.y)
+		press.screen_position.x+4 >= worm_window.image_size.x*worm_window.display_rescale_factor|| press.screen_position.y+4 >= worm_window.image_size.y*worm_window.display_rescale_factor)
 		return;
 	float z = ((float)worm_window.pre_gl_downsample)/worm_window.image_zoom;
 	ns_button_press p(press);

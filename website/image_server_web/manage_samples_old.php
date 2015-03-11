@@ -390,101 +390,71 @@ $condition_3_values=array();
 $culturing_temperature_values=array();
 $experiment_temperature_values=array();
 
-$food_source_values=array();
-
-for ($i = 0; $i < sizeof($experiment->samples); $i++){
+ $food_source_values=array();
+  for ($i = 0; $i < sizeof($experiment->samples); $i++){
     $devices_used[$experiment->samples[$i]->device_name()] = $experiment->samples[$i]->device_name();
-}
-
-$query = "SELECT r.id, r.name, r.details, r.censored,r.strain,r.excluded_from_analysis, r.reason_censored,r.strain_condition_1,r.strain_condition_2,r.strain_condition_3,r.culturing_temperature,r.experiment_temperature,r.food_source,r.environmental_conditions,r.censored, r.op22_image_id,s.id FROM sample_region_image_info as r, capture_samples as s WHERE r.sample_id= s.id AND s.experiment_id = " . $experiment_id;
-if ($hide_censored)
-  $query.=" AND r.censored = 0 ";
-$query .= " ORDER BY s.id,r.name";
-$sql->get_row($query,$all_results);
-$all_region_job_results = array();
-if ($show_region_jobs){
-  $query = $job->provide_query_stub();
-  $query .= "FROM processing_jobs, sample_region_image_info as r, capture_samples as s WHERE processing_jobs.image_id = 0 AND processing_jobs.region_id = r.id AND r.sample_id = s.id AND s.experiment_id = " . $experiment_id . " ORDER BY s.id,r.name";
-  //	die($query);
-  $sjobs = array();
-  $sql->get_row($query,$all_region_job_results);
-}
-$current_region_job_index = 0;
-    $start_range = 0;
-    $cur_sample_id = $all_results[0][16];
-    for ($i = 0; $i < sizeof($all_results); $i++){
-      #echo $cur_sample_id . ": ";
-      if ($all_results[$i][16] != $cur_sample_id || $i+1 == sizeof($all_results)){
-	$rrr =&$regions[ $cur_sample_id ];
-	$stop = $i-1;
-	if ($i+1 == sizeof($all_results))
-	  $stop = $i;
-	$rrr = array_slice($all_results,$start_range,$stop-$start_range+1);
-	$cur_sample_id = $all_results[$i][16];
-	$start_range = $i;
-	//get jobs that apply to individual samples
-	for ($k = 0; $k < sizeof( $rrr ); $k++){
-	  $cur_region =& $rrr[$k];
-	  $censored = $cur_region[14]!="0";
-	  if (!$censored){
-	    $strains[strtoupper($cur_region[4])] = $cur_region[4]; 
-	    $condition_1_values[strtolower($cur_region[7])] = $cur_region[7];
-	    $condition_2_values[strtolower($cur_region[8])] = $cur_region[8];
-	    $condition_3_values[strtolower($cur_region[9])] = $cur_region[9];
-	    $culturing_temperature_values[strtolower($cur_region[10])] = $cur_region[10];
-	    $experiment_temperature_values[strtolower($cur_region[11])] = $cur_region[11];
-	    $food_source_values[strtolower($cur_region[12])] = $cur_region[12];
-	    $environment_condition_values[strtolower($cur_region[13])] = $cur_region[13];
-	    
-	    $cstr = strtolower($cur_region[4]);
-	    if($cur_region[7] != '')
-	      $cstr .= "::" . strtolower($cur_region[7]);
-	    if($cur_region[8] != '')
-	      $cstr .= "::" . strtolower($cur_region[8]);
-	    
-	    if($cur_region[9] != '')
-	      $cstr .= "::" . strtolower($cur_region[9]);
-	    if($cur_region[10] != '')
-	      $cstr .= "::" . strtolower($cur_region[10]);
-	    //if($cur_region[11] != '')
-	    //  $cstr .= "::" . strtolower($cur_region[11]);
-	    if($cur_region[12] != '')
-	      $cstr .= "::" . strtolower($cur_region[12]);
-	    if($cur_region[13] != '')
-	      $cstr .= "::" . strtolower($cur_region[13]);
-	    
-	    $all_animal_type_values[$cstr] = 
-	      array($cur_region[4],
-		    $cur_region[7],
-		    $cur_region[8],$cur_region[9],$cur_region[10],$cur_region[11],$cur_region[12],$cur_region[13],);
-	  }
-	  
-	  $region_jobs[$cur_region[0]] = array();
-	  if ($show_region_jobs){
-	    $jid=0;
-	    #print($all_region_job_results[$current_region_job_index][3] ." ". $cur_region[0] . ";");
-	  
-	    while($all_region_job_results[$current_region_job_index][3] == $cur_region[0]){
-	      #print($jid. " ");
-	      //#$query = $job->provide_query_stub();
-	      //#$query .= "FROM processing_jobs WHERE region_id = {$cur_region[0]} AND ( image_id = 0)";
-	      //	die($query);
-	      //#$sjobs = array();
-	      //#$sql->get_row($query,$sjobs);
-	      
-	      
-	      $region_jobs[$cur_region[0]][$jid] = new ns_processing_job;
-	     
-	      $region_jobs[$cur_region[0]][$jid]->load_from_result($all_region_job_results[$current_region_job_index]);
-	      
-	      $current_region_job_index++;
-	      $jid++;
-	    }
-	  }
+    $query = "SELECT id, name, details, censored,strain,excluded_from_analysis, reason_censored,strain_condition_1,strain_condition_2,strain_condition_3,culturing_temperature,experiment_temperature,food_source,environmental_conditions,censored, op22_image_id FROM sample_region_image_info WHERE sample_id=" . $experiment->samples[$i]->id();
+    if ($hide_censored)
+	$query.=" AND censored = 0 ";
+    $query .= " ORDER BY name";
+	$rrr =&$regions[ $experiment->samples[$i]->id() ];
+    $sql->get_row($query, $rrr );
+    
+    //get jobs that apply to individual samples
+    for ($k = 0; $k < sizeof( $rrr ); $k++){
+      $cur_region =& $rrr[$k];
+      $censored = $cur_region[14]!="0";
+      if (!$censored){
+	$strains[strtoupper($cur_region[4])] = $cur_region[4]; 
+	$condition_1_values[strtolower($cur_region[7])] = $cur_region[7];
+	$condition_2_values[strtolower($cur_region[8])] = $cur_region[8];
+	$condition_3_values[strtolower($cur_region[9])] = $cur_region[9];
+	$culturing_temperature_values[strtolower($cur_region[10])] = $cur_region[10];
+	$experiment_temperature_values[strtolower($cur_region[11])] = $cur_region[11];
+	$food_source_values[strtolower($cur_region[12])] = $cur_region[12];
+	$environment_condition_values[strtolower($cur_region[13])] = $cur_region[13];
+       
+	$cstr = strtolower($cur_region[4]);
+	if($cur_region[7] != '')
+	  $cstr .= "::" . strtolower($cur_region[7]);
+	if($cur_region[8] != '')
+	  $cstr .= "::" . strtolower($cur_region[8]);
+	
+	if($cur_region[9] != '')
+	  $cstr .= "::" . strtolower($cur_region[9]);
+	if($cur_region[10] != '')
+	  $cstr .= "::" . strtolower($cur_region[10]);
+	//if($cur_region[11] != '')
+	//  $cstr .= "::" . strtolower($cur_region[11]);
+	if($cur_region[12] != '')
+	  $cstr .= "::" . strtolower($cur_region[12]);
+	if($cur_region[13] != '')
+	  $cstr .= "::" . strtolower($cur_region[13]);
+	
+	$all_animal_type_values[$cstr] = 
+	  array($cur_region[4],
+		$cur_region[7],
+		$cur_region[8],$cur_region[9],$cur_region[10],$cur_region[11],$cur_region[12],$cur_region[13],);
+      }
+    
+      $region_jobs[$cur_region[0]] = array();
+      if ($show_region_jobs){
+	$query = $job->provide_query_stub();
+	$query .= "FROM processing_jobs WHERE region_id = {$cur_region[0]} AND ( image_id = 0)";
+	//	die($query);
+	$sjobs = array();
+	$sql->get_row($query,$sjobs);
+	//	echo (sizeof($sjobs));
+	//flush();;
+	//ob_flush();
+	$region_jobs[$cur_region[0]] = array();
+	for($j = 0; $j < sizeof($sjobs); $j++){
+	  $region_jobs[$cur_region[0]][$j] = new ns_processing_job;
+	  $region_jobs[$cur_region[0]][$j]->load_from_result($sjobs[$j]);
 	}
       }
     }
-    //var_dump($region_jobs);
+  }
   ksort($all_animal_type_values);
   ksort($environment_condition_values);
   ksort($strains);
@@ -1052,8 +1022,7 @@ echo "</table>";
 			  echo '<br><br>'; echo "<table cellspacing=0 cellpadding=0 align = \"right\"><tr><td valign=\"top\">";
 			  for ($m = 0; $m < sizeof($region_jobs[ $cur_region[0] ]); $m++){
 			    $clrs = $table_colors[$row_color];
-			    $cur_job =&  $region_jobs[ $cur_region[0] ][$m];
-			    
+			    $cur_job =  $region_jobs[ $cur_region[0] ][$m];
 			    echo $cur_job->get_job_description($sql);
 			    echo  "</font>\n";
 			    //$row_color = !$row_color;

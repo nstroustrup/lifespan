@@ -127,18 +127,18 @@ if ($save){
 	    throw new ns_exception("Incomplete information found for " . $column_name . "_" . $row_name . ": " . $vv);
 	  }
 	  
-	  
-	  $query = "UPDATE sample_region_image_info as r, capture_samples as s SET r.strain='" . $props['strain'] 
-	    . "' WHERE " .
-	    "r.name = '" . $row_name . "' AND RIGHT(s.name,1) = '" . $column_name . "' " .
-	    "AND r.sample_id = s.id AND s.experiment_id = $experiment_id AND (s.device_name = '" . $devices_to_save[0] ."'";
-	  
-	  for($i = 1; $i < sizeof($devices_to_save); $i++){
-	    $query .= " || s.device_name = '" . $devices_to_save[$i] . "'";
-	  }
+	  $query = "SELECT id FROM capture_samples WHERE experiment_id = $experiment_id AND RIGHT(name,1) = '$column_name' AND (device_name = '" .$devices_to_save[0] ."'";
+
+	  for($i = 1; $i < sizeof($devices_to_save); $i++)
+	    $query .= " || device_name = '" . $devices_to_save[$i] . "'";
 	  $query .=")";
-	  $sql->send_query($query);
+	  $sql->get_row($query,$sample_ids);
+	  for ($i = 0; $i < sizeof($sample_ids); $i++){
 	  
+	    $query = "UPDATE sample_region_image_info as r SET r.strain='" . $props['strain'] 
+	      . "' WHERE r.name = '" . $row_name . "' AND r.sample_id = ".$sample_ids[$i][0];
+	    $sql->send_query($query);
+	  }
 	}
       }
     }

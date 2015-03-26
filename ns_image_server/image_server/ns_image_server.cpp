@@ -226,6 +226,7 @@ void ns_image_server::calculate_experiment_disk_usage(const unsigned long experi
 			r.processed_region_images += image_storage.get_region_images_size_on_disk(region_id,ns_process_movement_paths_visualition_with_mortality_overlay,sql);
 			r.processed_region_images += image_storage.get_region_images_size_on_disk(region_id,ns_process_movement_posture_visualization,sql);
 			r.processed_region_images += image_storage.get_region_images_size_on_disk(region_id,ns_process_movement_posture_aligned_visualization,sql);
+			r.processed_region_images += image_storage.get_region_images_size_on_disk(region_id,ns_process_unprocessed_backup,sql);
 			s = s + r;
 			//cerr << r.unprocessed_region_images + r.processed_region_images + r.metadata << "] ";
 		}

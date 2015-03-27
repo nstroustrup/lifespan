@@ -642,7 +642,8 @@ void ns_worm_learner::analyze_time_path(const unsigned long region_id){
 void ns_worm_learner::output_region_statistics(const unsigned long experiment_id, const unsigned long experiment_group_id){
 
 	ns_acquire_for_scope<ns_sql> sql(image_server.new_sql_connection(__FILE__,__LINE__));
-	vector<unsigned long> experiment_ids;
+	vector<ns_64_bit> experiment_ids;
+	vector<string> experiment_names;
 	const bool multi_experiment(experiment_id == 0);
 	if (!multi_experiment){
 		experiment_ids.push_back(experiment_id);
@@ -651,12 +652,14 @@ void ns_worm_learner::output_region_statistics(const unsigned long experiment_id
 		if (experiment_group_id == 0)
 			throw ns_ex("ns_worm_learner::output_region_statistics()::No experiment group id provided!");
 		
-		sql() << "SELECT id FROM experiments WHERE group_id = " << experiment_group_id << " AND hidden = 0 ";
+		sql() << "SELECT id,name FROM experiments WHERE group_id = " << experiment_group_id << " AND hidden = 0 ";
 		ns_sql_result res;
 		sql().get_rows(res);
 		experiment_ids.resize(res.size());
+		experiment_names.resize(res.size());
 		for (unsigned int i = 0; i < res.size(); i++){
-			experiment_ids[i] = atol(res[i][0].c_str());
+			experiment_ids[i] = ns_atoi64(res[i][0].c_str());
+			experiment_names[i] = res[i][1];
 		}
 	}
 	
@@ -668,10 +671,11 @@ void ns_worm_learner::output_region_statistics(const unsigned long experiment_id
 	ns_capture_sample_region_data::output_region_data_in_jmp_format_header("",o());
 	
 	for (unsigned int i = 0; i < experiment_ids.size(); i++){
+		if (experiment_names.size() > 0)
+			cout << "Processing " << experiment_names[i] << "...\n";
 		ns_capture_sample_region_statistics_set set;
 		set.load_whole_experiment(experiment_ids[i],sql());
 
-	
 		for (unsigned int j = 0; j < set.regions.size(); j++)
 			set.regions[j].output_region_data_in_jmp_format(o());
 

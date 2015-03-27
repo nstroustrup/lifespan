@@ -5,6 +5,7 @@
 #include "ns_hidden_markov_model_posture_analyzer.h"
 #include "ns_hand_annotation_loader.h"
 #include "ns_heat_map_interpolation.h"
+#include "ns_captured_image_statistics_set.h"
 //#include "ns_worm_tracker.h"
 #include <map>
 #include <vector>
@@ -687,6 +688,7 @@ void ns_processing_job_maintenance_processor::flag_job_as_being_processed(ns_sql
 	ns_processing_job_processor::flag_job_as_being_processed(sql);
 }
 
+
 bool ns_processing_job_maintenance_processor:: run_job(ns_sql & sql){
 	delete_job_ = true;
 
@@ -714,6 +716,43 @@ bool ns_processing_job_maintenance_processor:: run_job(ns_sql & sql){
 			ns_image_processing_pipeline::generate_sample_regions_from_mask(job.sample_id,atof(res[0][0].c_str()),sql);
 			break;
 		}
+	case ns_maintenance_recalc_image_stats:{
+
+		ns_image_server_results_subject sub;
+		if (job.region_id != 0){
+			sub.region_id = job.region_id;
+			ns_region_metadata metadata;
+			metadata.load_from_db(job.region_id,"",sql);
+			ns_capture_sample_region_data data;
+			//this will recalculate image statistics for all timepoints and save them to db.
+			data.load_from_db(job.region_id,metadata,false,false,sql,true);
+		
+			//ns_image_server_results_file f(image_server->results_storage.capture_region_image_statistics(sub,sql,false));
+			//ns_acquire_for_scope<ostream> o(f.output());
+			//ns_capture_sample_region_data::output_region_data_in_jmp_format_header("",o());
+			//data.output_region_data_in_jmp_format(o());
+			//o.release();
+		}else{
+			//whole experiment
+			ns_image_server_results_subject sub;
+			sub.experiment_id = job.experiment_id;
+			ns_image_server_results_file f(image_server->results_storage.capture_region_image_statistics(sub,sql,false));
+	
+			ns_capture_sample_region_statistics_set set;
+			set.load_whole_experiment(job.experiment_id,sql,true);
+
+			ns_acquire_for_scope<ostream> o(f.output());
+			ns_capture_sample_region_data::output_region_data_in_jmp_format_header("",o());
+
+			for (unsigned int j = 0; j < set.regions.size(); j++)
+				set.regions[j].output_region_data_in_jmp_format(o());
+
+			o.release();
+
+		}
+	
+	break;
+										   }
 	case ns_maintenance_rerun_image_registration:{
 		if (job.region_id == 0)
 				throw ns_ex("No region specified for re-registration");

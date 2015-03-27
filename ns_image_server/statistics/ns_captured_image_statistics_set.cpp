@@ -1,4 +1,5 @@
 #include "ns_captured_image_statistics_set.h"
+#include "ns_worm_detector.h"
 #include <set>
 
 void ns_capture_scan_statistics::set_as_zero(){
@@ -426,11 +427,12 @@ void ns_capture_sample_region_data::generate_summary_info(ns_capture_sample_regi
 	mean_timepoint/=timepoints.size();
 }
 
+
 void ns_capture_sample_region_data::load_from_db(const unsigned long region_id_, 
 					const ns_region_metadata & metadata_,
 					const bool region_is_censored,
 					const bool region_is_excluded,
-					ns_sql & sql){
+					ns_sql & sql,bool recalculate_raw_image_statistics){
 	metadata = metadata_;
 	metadata.region_id = region_id_;
 	censored = region_is_censored;
@@ -441,13 +443,67 @@ void ns_capture_sample_region_data::load_from_db(const unsigned long region_id_,
 						<< " AND sample_region_images.image_statistics_id!=0 AND sample_region_images.image_statistics_id = image_statistics.id ORDER BY sample_region_images.capture_time ASC";
 	ns_sql_result res;
 	sql.get_rows(res);
-	timepoints.resize(res.size());
-	for (unsigned int i = 0; i < res.size(); i++){
-		timepoints[i].statistics.from_sql_result(res[i]);
-		timepoints[i].timepoint_is_censored = atol(res[i][ns_image_statistics::sql_query_stub_field_count()].c_str())!=0;
-		timepoints[i].timepoint_has_a_problem = atol(res[i][ns_image_statistics::sql_query_stub_field_count()+1].c_str())!=0;
-		timepoints[i].time = atol(res[i][ns_image_statistics::sql_query_stub_field_count()+2].c_str());
+	//try to load cached data
+	if (res.size() > 0){
+		timepoints.resize(res.size());
+		for (unsigned int i = 0; i < res.size(); i++){
+			timepoints[i].statistics.from_sql_result(res[i]);
+			timepoints[i].timepoint_is_censored = atol(res[i][ns_image_statistics::sql_query_stub_field_count()].c_str())!=0;
+			timepoints[i].timepoint_has_a_problem = atol(res[i][ns_image_statistics::sql_query_stub_field_count()+1].c_str())!=0;
+			timepoints[i].time = atol(res[i][ns_image_statistics::sql_query_stub_field_count()+2].c_str());
+		}
 	}
+	//regenerate some data if all is missing
+	else{
+		std::cout << "No cached whole image statistics could be found.  Reloading just the cached worm statistics...\n";
+		sql << "SELECT id, censored, problem, capture_time, worm_detection_results_id,"
+			<< ns_processing_step_db_column_name(ns_unprocessed) << "," 
+			<< ns_processing_step_db_column_name(ns_process_spatial) << ",image_statistics_id FROM sample_region_images WHERE region_info_id=" << metadata.region_id
+			<< " AND worm_detection_results_id != 0 ORDER BY capture_time ASC";
+		ns_sql_result res;
+		sql.get_rows(res);
+		if (res.size() == 0){
+			std::cout << "No worm detection appears to have been performed in this region.\n";
+			return;
+		}
+		timepoints.resize(res.size());
+		unsigned int pos=0;
+		ns_image_standard image_buffer;
+		for (unsigned int i = 0; i < res.size(); i++){
+			std::cout << (100*i/res.size()) << "%...";
+			ns_image_server_captured_image_region im;
+			im.region_info_id = metadata.region_id;
+			im.region_images_id = ns_atoi64(res[i][0].c_str());
+			ns_image_worm_detection_results results;
+			results.id =  ns_atoi64(res[i][4].c_str());
+			try{
+				//load,calculate.and save worm stats
+				results.load_from_db(true,false,sql,false);
+				results.load_images_from_db(im,sql);
+				im.summarize_stats(&results,&timepoints[pos].statistics,false);
+				if (recalculate_raw_image_statistics){
+					ns_image_server_image unpr_im;
+					unpr_im.id = ns_atoi64(res[i][5].c_str());
+					timepoints[pos].statistics.calculate_statistics_from_image(unpr_im,sql);
+				}
+				ns_64_bit stats_db_id = ns_atoi64(res[i][7].c_str());
+				timepoints[pos].statistics.submit_to_db(stats_db_id,sql,false,true);
+
+				timepoints[pos].timepoint_is_censored = atol(res[i][1].c_str())!=0;
+				timepoints[pos].timepoint_has_a_problem = atol(res[i][2].c_str())!=0;
+				timepoints[pos].time = atol(res[i][3].c_str());
+				
+				pos++;
+
+			}
+			catch(ns_ex & ex){
+				ex;
+			}
+			std::cout << "\n";
+		}
+		timepoints.resize(pos);
+	}
+	
 }
 	
 void ns_capture_sample_region_data::set_sample_info(const ns_capture_sample_image_statistics & sample_stats){
@@ -627,7 +683,7 @@ void ns_capture_sample_region_statistics_set::output_plate_statistics_with_morta
 
 }
 	*/
-void ns_capture_sample_region_statistics_set::load_whole_experiment(const unsigned long experiment_id,ns_sql & sql){
+void ns_capture_sample_region_statistics_set::load_whole_experiment(const unsigned long experiment_id,ns_sql & sql,bool process_raw_image_stats){
 		
 	std::string experiment_name;
 	sql << "SELECT name FROM experiments WHERE id = " << experiment_id;
@@ -682,7 +738,7 @@ void ns_capture_sample_region_statistics_set::load_whole_experiment(const unsign
 //				}
 				//std::cerr << "EX";
 				
-			regions[plate_index+k].load_from_db(region_id,metadata,sample_censored || region_censored,sample_excluded || region_excluded,sql);
+			regions[plate_index+k].load_from_db(region_id,metadata,sample_censored || region_censored,sample_excluded || region_excluded,sql,process_raw_image_stats);
 			if (sample_details.size() > 0) 
 				regions[plate_index+k].metadata.details += sample_details;
 		}

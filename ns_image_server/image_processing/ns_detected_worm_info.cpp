@@ -2047,13 +2047,24 @@ void ns_image_worm_detection_results::load_from_db(const bool load_worm_postures
 				total_node_length+=worm_segment_node_counts[i];
 			}
 		}
-		
+
+		//output code generates spurious comma
+		in().get();
 		if (total_node_length != 0){
 		
 			for (unsigned int i = 0; i < number_of_worms; i++){
 				putative_worms[i].worm_shape.read_from_csv(in(),worm_segment_node_counts[i]);
+				//output code generates spurious comma
+				in().get();
 				if (putative_worms[i].worm_shape.nodes.size() == 0)
 					cerr << "Yikes";
+				for (unsigned int j = 0; j < putative_worms[i].worm_shape.nodes.size(); j++){
+					if (putative_worms[i].worm_shape.nodes[j].x >= putative_worms[i].region_size.x)
+						cerr << "Out of bound node";
+					if (putative_worms[i].worm_shape.nodes[j].y >= putative_worms[i].region_size.y)
+						cerr << "Out of bound node";
+
+				}
 			}
 		}
 		if (in().fail())

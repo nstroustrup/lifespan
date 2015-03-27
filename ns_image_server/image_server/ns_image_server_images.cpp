@@ -5,126 +5,80 @@
 using namespace std;
 
 #ifndef NS_MINIMAL_SERVER_BUILD
+
+void ns_summarize_stats(const std::vector<const ns_detected_worm_info *> & worms,ns_image_object_statistics & stats){
+	
+	ns_detected_worm_stats w_stats;
+	stats.count = worms.size();
+	for (unsigned int i = 0; i < worms.size(); i++){
+			w_stats = worms[i]->generate_stats();
+			stats.area_mean			+=w_stats[ns_stat_pixel_area];
+			stats.length_mean			+=w_stats[ns_stat_spine_length];
+			stats.width_mean			+=w_stats[ns_stat_average_width];
+
+			stats.absolute_intensity.mean		+=w_stats[ns_stat_absolute_intensity_average];	
+			stats.absolute_intensity.variance	+=w_stats[ns_stat_absolute_intensity_variance];
+			stats.absolute_intensity.bottom_percentile_average	+=w_stats[ns_stat_absolute_intensity_dark_pixel_average];
+			stats.absolute_intensity.entropy	+=w_stats[ns_stat_absolute_intensity_roughness_1];
+			stats.absolute_intensity.top_percentile_average =0;
+
+			stats.relative_intensity.mean		+=w_stats[ns_stat_relative_intensity_average];	
+			stats.relative_intensity.variance	+=w_stats[ns_stat_relative_intensity_variance];
+			stats.relative_intensity.bottom_percentile_average	+=w_stats[ns_stat_relative_intensity_dark_pixel_average];
+			stats.relative_intensity.entropy	+=w_stats[ns_stat_relative_intensity_roughness_1];
+			stats.relative_intensity.top_percentile_average =0;
+
+			stats.area_variance			+=w_stats[ns_stat_pixel_area]*w_stats[ns_stat_pixel_area];
+			stats.length_variance		+=w_stats[ns_stat_spine_length]*w_stats[ns_stat_spine_length];
+			stats.width_variance		+=w_stats[ns_stat_average_width]*w_stats[ns_stat_average_width];
+		}
+	
+		if (stats.count > 0){
+			stats.area_variance		/=stats.count;
+			stats.length_variance		/=stats.count;
+			stats.width_variance		/=stats.count;
+			stats.absolute_intensity.variance /=stats.count;
+			stats.relative_intensity.variance /=stats.count;
+		
+			stats.area_mean			/=stats.count;
+			stats.length_mean			/=stats.count;
+			stats.width_mean			/=stats.count;
+			stats.absolute_intensity.mean		/=stats.count;
+			stats.relative_intensity.mean /=stats.count;
+
+			// E[x^2]-E[x]^2
+			stats.area_variance		-= stats.area_mean*stats.area_mean;
+			stats.length_variance		-= stats.length_mean*stats.length_mean;
+			stats.width_variance		-= stats.width_mean*stats.width_mean;
+			stats.absolute_intensity.variance	-= stats.absolute_intensity.mean*stats.absolute_intensity.mean;
+			stats.relative_intensity.variance	-= stats.relative_intensity.mean*stats.relative_intensity.mean;
+
+			stats.area_variance		= sqrt(stats.area_variance);
+			stats.length_variance		= sqrt(stats.length_variance);
+			stats.width_variance		= sqrt(stats.width_variance);
+			stats.absolute_intensity.variance = sqrt(stats.absolute_intensity.variance);
+			stats.relative_intensity.variance = sqrt(stats.relative_intensity.variance);	
+	}
+}
+void ns_image_server_captured_image_region::summarize_stats(ns_image_worm_detection_results * wi,ns_image_statistics * stats,bool calculate_non_worm){
+	ns_summarize_stats(wi->actual_worm_list(),stats->worm_statistics);
+	if(calculate_non_worm)
+	ns_summarize_stats(wi->non_worm_list(),stats->non_worm_statistics);
+}
+
 void ns_image_server_captured_image_region::register_worm_detection(ns_image_worm_detection_results * wi, const bool interpolated,ns_sql & sql,const bool calculate_stats){
 		
 	ns_image_statistics stats;
-	ns_detected_worm_stats w_stats;
 	if (calculate_stats){
 		//save a summary of the current image to the image_statistics table
-		const std::vector<const ns_detected_worm_info *> & actual_worms(wi->actual_worm_list());
+		summarize_stats(wi,&stats);
 
-		stats.worm_statistics.count = actual_worms.size();
-		for (unsigned int i = 0; i < actual_worms.size(); i++){
-			w_stats = actual_worms[i]->generate_stats();
-			stats.worm_statistics.area_mean			+=w_stats[ns_stat_pixel_area];
-			stats.worm_statistics.length_mean			+=w_stats[ns_stat_spine_length];
-			stats.worm_statistics.width_mean			+=w_stats[ns_stat_average_width];
-
-			stats.worm_statistics.absolute_intensity.mean		+=w_stats[ns_stat_absolute_intensity_average];	
-			stats.worm_statistics.absolute_intensity.variance	+=w_stats[ns_stat_absolute_intensity_variance];
-			stats.worm_statistics.absolute_intensity.bottom_percentile_average	+=w_stats[ns_stat_absolute_intensity_dark_pixel_average];
-			stats.worm_statistics.absolute_intensity.entropy	+=w_stats[ns_stat_absolute_intensity_roughness_1];
-			stats.worm_statistics.absolute_intensity.top_percentile_average =0;
-
-			stats.worm_statistics.relative_intensity.mean		+=w_stats[ns_stat_relative_intensity_average];	
-			stats.worm_statistics.relative_intensity.variance	+=w_stats[ns_stat_relative_intensity_variance];
-			stats.worm_statistics.relative_intensity.bottom_percentile_average	+=w_stats[ns_stat_relative_intensity_dark_pixel_average];
-			stats.worm_statistics.relative_intensity.entropy	+=w_stats[ns_stat_relative_intensity_roughness_1];
-			stats.worm_statistics.relative_intensity.top_percentile_average =0;
-
-
-			stats.worm_statistics.area_variance			+=w_stats[ns_stat_pixel_area]*w_stats[ns_stat_pixel_area];
-			stats.worm_statistics.length_variance		+=w_stats[ns_stat_spine_length]*w_stats[ns_stat_spine_length];
-			stats.worm_statistics.width_variance		+=w_stats[ns_stat_average_width]*w_stats[ns_stat_average_width];
-		}	
-
-		const std::vector<const ns_detected_worm_info *> & not_worms(wi->non_worm_list());
-		stats.non_worm_statistics.count = not_worms.size();
-
-		for (unsigned int i = 0 ; i < not_worms.size(); i++){
-			w_stats = not_worms[i]->generate_stats();
-			stats.non_worm_statistics.area_mean			+=w_stats[ns_stat_pixel_area];
-			stats.non_worm_statistics.length_mean			+=w_stats[ns_stat_spine_length];
-			stats.non_worm_statistics.width_mean			+=w_stats[ns_stat_average_width];
-
-			stats.non_worm_statistics.absolute_intensity.mean		+=w_stats[ns_stat_absolute_intensity_average];	
-			stats.non_worm_statistics.absolute_intensity.variance	+=w_stats[ns_stat_absolute_intensity_variance];
-			stats.non_worm_statistics.absolute_intensity.bottom_percentile_average	+=w_stats[ns_stat_absolute_intensity_dark_pixel_average];
-			stats.non_worm_statistics.absolute_intensity.entropy	+=w_stats[ns_stat_absolute_intensity_roughness_1];
-			stats.non_worm_statistics.absolute_intensity.top_percentile_average =0;
-
-			stats.non_worm_statistics.relative_intensity.mean		+=w_stats[ns_stat_relative_intensity_average];	
-			stats.non_worm_statistics.relative_intensity.variance	+=w_stats[ns_stat_relative_intensity_variance];
-			stats.non_worm_statistics.relative_intensity.bottom_percentile_average	+=w_stats[ns_stat_relative_intensity_dark_pixel_average];
-			stats.non_worm_statistics.relative_intensity.entropy	+=w_stats[ns_stat_relative_intensity_roughness_1];
-			stats.non_worm_statistics.relative_intensity.top_percentile_average =0;
-
-
-			stats.non_worm_statistics.area_variance			+=w_stats[ns_stat_pixel_area]*w_stats[ns_stat_pixel_area];
-			stats.non_worm_statistics.length_variance		+=w_stats[ns_stat_spine_length]*w_stats[ns_stat_spine_length];
-			stats.non_worm_statistics.width_variance		+=w_stats[ns_stat_average_width]*w_stats[ns_stat_average_width];
-		}
-
-		if (stats.worm_statistics.count > 0){
-			stats.worm_statistics.area_variance		/=stats.worm_statistics.count;
-			stats.worm_statistics.length_variance		/=stats.worm_statistics.count;
-			stats.worm_statistics.width_variance		/=stats.worm_statistics.count;
-			stats.worm_statistics.absolute_intensity.variance /=stats.worm_statistics.count;
-			stats.worm_statistics.relative_intensity.variance /=stats.worm_statistics.count;
-		
-			stats.worm_statistics.area_mean			/=stats.worm_statistics.count;
-			stats.worm_statistics.length_mean			/=stats.worm_statistics.count;
-			stats.worm_statistics.width_mean			/=stats.worm_statistics.count;
-			stats.worm_statistics.absolute_intensity.mean		/=stats.worm_statistics.count;
-			stats.worm_statistics.relative_intensity.mean /=stats.worm_statistics.count;
-
-			// E[x^2]-E[x]^2
-			stats.worm_statistics.area_variance		-= stats.worm_statistics.area_mean*stats.worm_statistics.area_mean;
-			stats.worm_statistics.length_variance		-= stats.worm_statistics.length_mean*stats.worm_statistics.length_mean;
-			stats.worm_statistics.width_variance		-= stats.worm_statistics.width_mean*stats.worm_statistics.width_mean;
-			stats.worm_statistics.absolute_intensity.variance	-= stats.worm_statistics.absolute_intensity.mean*stats.worm_statistics.absolute_intensity.mean;
-			stats.worm_statistics.relative_intensity.variance	-= stats.worm_statistics.relative_intensity.mean*stats.worm_statistics.relative_intensity.mean;
-
-			stats.worm_statistics.area_variance		= sqrt(stats.worm_statistics.area_variance);
-			stats.worm_statistics.length_variance		= sqrt(stats.worm_statistics.length_variance);
-			stats.worm_statistics.width_variance		= sqrt(stats.worm_statistics.width_variance);
-			stats.worm_statistics.absolute_intensity.variance = sqrt(stats.worm_statistics.absolute_intensity.variance);
-			stats.worm_statistics.relative_intensity.variance = sqrt(stats.worm_statistics.relative_intensity.variance);
-		}
-
-		if (stats.non_worm_statistics.count > 0){
-			stats.non_worm_statistics.area_variance		/=stats.non_worm_statistics.count;
-			stats.non_worm_statistics.length_variance		/=stats.non_worm_statistics.count;
-			stats.non_worm_statistics.width_variance		/=stats.non_worm_statistics.count;
-			stats.non_worm_statistics.absolute_intensity.variance /=stats.non_worm_statistics.count;
-			stats.non_worm_statistics.relative_intensity.variance /=stats.non_worm_statistics.count;
-		
-			stats.non_worm_statistics.area_mean			/=stats.non_worm_statistics.count;
-			stats.non_worm_statistics.length_mean			/=stats.non_worm_statistics.count;
-			stats.non_worm_statistics.width_mean			/=stats.non_worm_statistics.count;
-			stats.non_worm_statistics.absolute_intensity.mean		/=stats.non_worm_statistics.count;
-			stats.non_worm_statistics.relative_intensity.mean		/=stats.non_worm_statistics.count;
-
-			// E[x^2]-E[x]^2
-			stats.non_worm_statistics.area_variance		-= stats.non_worm_statistics.area_mean*stats.non_worm_statistics.area_mean;
-			stats.non_worm_statistics.length_variance		-= stats.non_worm_statistics.length_mean*stats.non_worm_statistics.length_mean;
-			stats.non_worm_statistics.width_variance		-= stats.non_worm_statistics.width_mean*stats.non_worm_statistics.width_mean;
-			stats.non_worm_statistics.absolute_intensity.variance	-= stats.non_worm_statistics.absolute_intensity.mean*stats.non_worm_statistics.absolute_intensity.mean;
-			stats.non_worm_statistics.relative_intensity.variance	-= stats.non_worm_statistics.relative_intensity.mean*stats.non_worm_statistics.relative_intensity.mean;
-
-			stats.non_worm_statistics.area_variance		/=stats.non_worm_statistics.count;
-			stats.non_worm_statistics.length_variance		/=stats.non_worm_statistics.count;
-			stats.non_worm_statistics.width_variance		/=stats.non_worm_statistics.count;
-			stats.non_worm_statistics.absolute_intensity.variance /=stats.non_worm_statistics.count;
-			stats.non_worm_statistics.relative_intensity.variance /=stats.non_worm_statistics.count;
-		}
-	
 		sql << "SELECT image_statistics_id FROM sample_region_images WHERE id= " << region_images_id;
 		ns_sql_result res;
 		sql.get_rows(res);
 		if (res.size() == 0)
 			stats.db_id = 0;
-		else stats.db_id = atol(res[0][0].c_str());
+		else stats.db_id = ns_atoi64(res[0][0].c_str());
 		stats.submit_to_db(stats.db_id,sql,false,true);
 	}
 	

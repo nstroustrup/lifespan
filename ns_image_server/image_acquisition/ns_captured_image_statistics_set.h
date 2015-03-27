@@ -141,7 +141,8 @@ public:
 					  const ns_region_metadata & metadata_,
 					  const bool region_is_censored,
 					  const bool region_is_excluded,
-					  ns_sql & sql);
+					  ns_sql & sql,
+					  bool recalculate_raw_image_statistics=false);
 #endif
 	
 	void set_sample_info(const ns_capture_sample_image_statistics & sample_stats);
@@ -192,7 +193,7 @@ public:
 //	void output_plate_statistics_with_mortality_data(const ns_survival_data_summary_aggregator & survival_data, std::ostream & o);
 	
 #ifndef NS_NO_SQL
-	void load_whole_experiment(const unsigned long experiment_id,ns_sql & sql);
+	void load_whole_experiment(const unsigned long experiment_id,ns_sql & sql,bool process_raw_image_stats);
 #endif
 
 };

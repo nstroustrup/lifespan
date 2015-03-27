@@ -53,6 +53,8 @@ std::string ns_maintenance_task_to_string(const ns_maintenance_task & task){
 			return "Generate Subregion Mask";
 		case ns_maintenance_rerun_image_registration:
 			return "Re-Run Image Registration";
+		case ns_maintenance_recalc_image_stats:
+			return "Recalculate Image Statistics";
 		case ns_maintenance_last_task: throw ns_ex("ns_maintenance_task_to_string::last_task does not have a std::string representation");
 		default: 
 			throw ns_ex("ns_maintenance_task_to_string::Unknown Maintenance task");

@@ -245,6 +245,7 @@ struct ns_image_server_captured_image{
 
 
 class ns_image_worm_detection_results;
+class ns_image_statistics;
 
 //contains information about a single region (extracted by masking) of image captured from an imaging device
 struct ns_image_server_captured_image_region : public ns_image_server_captured_image{
@@ -347,6 +348,8 @@ struct ns_image_server_captured_image_region : public ns_image_server_captured_i
 	}
 	#ifndef NS_MINIMAL_SERVER_BUILD
 	void register_worm_detection(ns_image_worm_detection_results * wi, const bool interpolated,ns_sql & sql,const bool calculate_stats=true);
+	
+	void summarize_stats(ns_image_worm_detection_results * wi,ns_image_statistics * stats,bool calculate_non_worm=true);
 	#endif
 
 	//sometimes, regions are used to house a single object.  In this case, the object can either be a worm, not a worm, or unsorted.

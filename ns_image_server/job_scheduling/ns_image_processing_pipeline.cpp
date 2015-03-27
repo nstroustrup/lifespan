@@ -2658,9 +2658,64 @@ ns_vector_2i ns_image_processing_pipeline::get_vertical_registration(const ns_im
 	return offset;
 }
 
+void ns_shift_image_by_offset(ns_image_standard & image, ns_vector_2i offset){
+		offset = offset*-1;
+		ns_vector_2i image_size(image.properties().width,image.properties().height);
+		ns_vector_2i new_topleft(offset), 
+						new_bottomright(image_size + offset);
+		if (offset.x < 0){
+			new_topleft.x = 0;
+		}
+		if (offset.y < 0){
+			new_topleft.y = 0;
+		}
+		if (new_bottomright.x >= image_size.x)
+			new_bottomright.x = image_size.x;
+		if (new_bottomright.y >= image_size.y)
+			new_bottomright.y = image_size.y;
+		new_bottomright = new_bottomright + ns_vector_2i(-1,-1);
+		//copy pixels over to new location
+		long y_bounds[3] = { new_topleft.y,new_bottomright.y,1};
+		long x_bounds[3] = { new_topleft.x,new_bottomright.x,1};
+		ns_swap<long> swap;
+		if (offset.y > 0){
+			swap(y_bounds[0],y_bounds[1]);
+			y_bounds[2]=-1;
+		}
+		if (offset.x > 0){
+			swap(x_bounds[0],x_bounds[1]);
+			x_bounds[2]=-1;
+		}
+			
+		y_bounds[1]+=y_bounds[2];
+		x_bounds[1]+=x_bounds[2];
+		for (long y = y_bounds[0]; y != y_bounds[1]; y+=y_bounds[2]){
+			for (long x = x_bounds[0]; x != x_bounds[1]; x+=x_bounds[2]){
+				image[y][x] = image[y-offset.y][x-offset.x];
+			}
+		}
+		//zero out all the border
+		for (long y = 0; y < new_topleft.y; y++)
+			for (long x = 0; x < image_size.x; x++)
+				image[y][x] = 0;
+			
+		for (int y = new_topleft.y; y < new_bottomright.y; y++){
+			for (long x = 0; x < new_topleft.x; x++)
+				image[y][x] = 0;
+			for (long x = new_bottomright.x+1; x < image_size.x; x++)
+				image[y][x] = 0;
+		}
+		for (long y = new_bottomright.y+1; y < image_size.y; y++)
+			for (long x = 0; x < image_size.x; x++)
+				image[y][x] = 0;
+	}
+
 
 void ns_rerun_image_registration(const ns_64_bit region_id, ns_sql & sql){
-	sql << "SELECT id, image_id, " << ns_processing_step_db_column_name(ns_process_unprocessed_backup) << ", capture_time "
+	sql << "SELECT id, image_id, " << ns_processing_step_db_column_name(ns_process_unprocessed_backup) << ", capture_time,"
+		 << ns_processing_step_db_column_name(ns_process_spatial) << ","
+		 << ns_processing_step_db_column_name(ns_process_lossy_stretch) << ","
+		 <<  ns_processing_step_db_column_name(ns_process_threshold) << " "
 		"FROM sample_region_images WHERE region_info_id = " << region_id << " AND censored=0 ORDER BY capture_time ASC";
 	ns_sql_result res;
 	sql.get_rows(res);
@@ -2700,12 +2755,12 @@ void ns_rerun_image_registration(const ns_64_bit region_id, ns_sql & sql){
 			subject_profile.prepare_images(source_im,500,sql,&image_server.image_storage);
 			ns_vector_2i offset(ns_image_registration<127,ns_8_bit>::register_full_images(ref_profile,subject_profile,ns_vector_2i(400,400)));
 			//ns_vector_2i offset(-500,500);
-			cout << (100*i)/res.size() << "%: " << ns_format_time_string_for_human(capture_time) << ": offset: " << offset.x << "," << offset.y << "\n";
+			cout << (100*i)/res.size() << "%: " << ns_format_time_string_for_human(capture_time) << "\n";
 			
 			//if registration is required and a backup does not already exist, create a backup.
 			if (offset.squared() <= 1)
 				continue;
-				
+			cout << "Fixing offset: " << offset.x << "," << offset.y << "..." << ns_processing_task_to_string(ns_unprocessed)<< "...";
 			if (backup_unprocessed_id == 0){
 				//cerr << "Creating backup...";
 				ns_image_server_image backup_image = region_image.create_storage_for_processed_image(ns_process_unprocessed_backup,ns_tiff,&sql);
@@ -2714,63 +2769,36 @@ void ns_rerun_image_registration(const ns_64_bit region_id, ns_sql & sql){
 				subject_profile.whole_image.pump(out_im.output_stream(),1024);
 				out_im.clear();
 			}
-			
-			offset = offset*-1;
-			ns_vector_2i image_size(subject_profile.whole_image.properties().width,subject_profile.whole_image.properties().height);
-			ns_vector_2i new_topleft(offset), 
-						 new_bottomright(image_size + offset);
-			if (offset.x < 0){
-				new_topleft.x = 0;
-			}
-			if (offset.y < 0){
-				new_topleft.y = 0;
-			}
-			if (new_bottomright.x >= image_size.x)
-				new_bottomright.x = image_size.x;
-			if (new_bottomright.y >= image_size.y)
-				new_bottomright.y = image_size.y;
-			new_bottomright = new_bottomright + ns_vector_2i(-1,-1);
-			//copy pixels over to new location
-			long y_bounds[3] = { new_topleft.y,new_bottomright.y,1};
-			long x_bounds[3] = { new_topleft.x,new_bottomright.x,1};
-			ns_swap<long> swap;
-			if (offset.y > 0){
-				swap(y_bounds[0],y_bounds[1]);
-				y_bounds[2]=-1;
-			}
-			if (offset.x > 0){
-				swap(x_bounds[0],x_bounds[1]);
-				x_bounds[2]=-1;
-			}
-			
-			y_bounds[1]+=y_bounds[2];
-			x_bounds[1]+=x_bounds[2];
-			for (long y = y_bounds[0]; y != y_bounds[1]; y+=y_bounds[2]){
-				for (long x = x_bounds[0]; x != x_bounds[1]; x+=x_bounds[2]){
-					subject_profile.whole_image[y][x] = subject_profile.whole_image[y-offset.y][x-offset.x];
-				}
-			}
-			//zero out all the border
-			for (long y = 0; y < new_topleft.y; y++)
-				for (long x = 0; x < image_size.x; x++)
-					subject_profile.whole_image[y][x] = 0;
-			
-			for (int y = new_topleft.y; y < new_bottomright.y; y++){
-				for (long x = 0; x < new_topleft.x; x++)
-					subject_profile.whole_image[y][x] = 0;
-				for (long x = new_bottomright.x+1; x < image_size.x; x++)
-					subject_profile.whole_image[y][x] = 0;
-			}
-			for (long y = new_bottomright.y+1; y < image_size.y; y++)
-				for (long x = 0; x < image_size.x; x++)
-					subject_profile.whole_image[y][x] = 0;
-
+			ns_shift_image_by_offset(subject_profile.whole_image,offset);
 			ns_image_server_image dest_im;
 			dest_im.id = unprocessed_id;
 			bool had_to_use_volatile_storage;
 			ns_image_storage_reciever_handle<ns_8_bit> out_im(image_server.image_storage.request_storage(dest_im,ns_tiff,1024,&sql,had_to_use_volatile_storage,false,false));
+			//now fix the registration of all derived images.
 			subject_profile.whole_image.pump(out_im.output_stream(),1024);
 			out_im.clear();
+			ns_processing_task tasks[3] = { ns_process_spatial, ns_process_lossy_stretch,ns_process_threshold};
+			for (unsigned int j = 0; j < 3; j++){
+				try{
+					ns_image_server_image task_image;
+					task_image.id = ns_atoi64(res[i][4+j].c_str());
+					if (task_image.id == 0)
+						continue;
+					cout << ns_processing_task_to_string(tasks[j]) << "...";
+					ns_image_storage_source_handle<ns_8_bit> source(image_server.image_storage.request_from_storage(task_image,&sql));
+					source.input_stream().pump(subject_profile.whole_image,1024);
+					source.clear();
+					ns_shift_image_by_offset(subject_profile.whole_image,offset);
+					ns_image_type type = ns_tiff;
+					if (tasks[j] == ns_process_lossy_stretch)
+						type = ns_jpeg;
+					ns_image_storage_reciever_handle<ns_8_bit> out_im(image_server.image_storage.request_storage(task_image,type,1024,&sql,had_to_use_volatile_storage,false,false));
+					subject_profile.whole_image.pump(out_im.output_stream(),1024);
+				}
+				catch(ns_ex & ex){
+					cout << ex.text() << "\n";}
+			}
+
 		}
 		catch(ns_ex & ex){
 			cout << ex.text() << "\n";

@@ -84,7 +84,8 @@ $ns_maintenance_tasks = array('ns_maintenance_no_task'=>0,
 			      'ns_maintenance_generate_animal_storyboard'=>16,
 			      'ns_maintenance_generate_animal_storyboard_subimage'=>17,
 			      'ns_maintenance_compress_stored_images'=>18,
-			      'ns_maintenance_generate_subregion_mask'=>19
+			      'ns_maintenance_generate_subregion_mask'=>19,
+			      'ns_maintenance_rerun_image_registration'=>20
 			      );
 
 $ns_denoising_option_labels = array(
@@ -105,6 +106,7 @@ function ns_maintenance_task_order($is_region,$is_sample,$is_experiment){
     array_push($r,$ns_maintenance_tasks['ns_maintenance_generate_movement_posture_aligned_visualization']);
     array_push($r,$ns_maintenance_tasks['ns_maintenance_determine_disk_usage']);
     array_push($r,$ns_maintenance_tasks['ns_maintenance_compress_stored_images']);
+    array_push($r,$ns_maintenance_tasks['ns_maintenance_rerun_image_registration']);
     array_push($r,$ns_maintenance_tasks['ns_maintenance_check_for_file_errors']);
     array_push($r,$ns_maintenance_tasks['ns_maintenance_rebuild_movement_from_stored_images']);
     array_push($r,$ns_maintenance_tasks['ns_maintenance_generate_subregion_mask']);
@@ -140,7 +142,8 @@ $ns_maintenance_task_labels = array(0=>'No Task',
 				    16=>'Generate Animal Storyboard',
 				    17=>'Generate Animal Storyboard Subimage',
 				    18=>'Compress Stored Images',
-				    19=>'Generate Subregion Mask'
+				    19=>'Generate Subregion Mask',
+				    20=>'Re-Run Image Registration'
 			      );
 $NS_LAST_MAINTENANCE_TASK = 18;
 
@@ -252,7 +255,7 @@ class ns_processing_job{
  				. 'processing_jobs.op7, processing_jobs.op8, processing_jobs.op9, processing_jobs.op10, processing_jobs.op11, processing_jobs.op12, processing_jobs.op13,'
 		  . 'processing_jobs.op14, processing_jobs.op15, processing_jobs.op16, processing_jobs.op17, processing_jobs.op18, processing_jobs.op19, processing_jobs.op20, processing_jobs.op21, processing_jobs.op22, processing_jobs.op23, processing_jobs.op24, processing_jobs.op25,processing_jobs.op26, processing_jobs.op27 ';
 	}
-	function load_from_result($res){
+	function load_from_result(&$res){
 	  global $NS_LAST_PROCESSING_JOB;
 	//die("");
 	  $this->id = (int)$res[0];

@@ -46,8 +46,8 @@ public:
 		else throw ns_ex("Unknown registration method");
 	}
 
-	template<class T1>
-	static ns_vector_2i register_full_images(ns_image_registration_profile<T1> & r , ns_image_registration_profile<T1> & a,  ns_vector_2i max_offset = ns_vector_2i(0,0), const std::string & debug_name=""){
+	template<class T1, class T2>
+	static ns_vector_2i register_full_images(ns_image_registration_profile<T1> & r , ns_image_registration_profile<T2> & a,  ns_vector_2i max_offset = ns_vector_2i(0,0), const std::string & debug_name=""){
 		if (r.downsampling_factor != a.downsampling_factor)
 			throw ns_ex("Downsampling factor mismatch");
 		if (max_offset == ns_vector_2i(0,0))
@@ -57,8 +57,8 @@ public:
 
 		ns_high_precision_timer t;
 		t.start();
-		std::cerr << "Running course alignment at low resolution...";
-		ns_vector_2i downsampled_shift(register_whole_images<ns_image_standard,1>(r.downsampled_image,a.downsampled_image,downsampled_max_offset*-1,downsampled_max_offset,"c:\\server\\distances_low_res.csv"));
+		std::cerr << "Running course alignment...  ";
+		ns_vector_2i downsampled_shift(register_whole_images<ns_image_standard,ns_image_standard,1>(r.downsampled_image,a.downsampled_image,downsampled_max_offset*-1,downsampled_max_offset));
 		
 		downsampled_shift = downsampled_shift*r.downsampling_factor;
 	
@@ -68,10 +68,10 @@ public:
 			r.downsampled_image_2.seek_to_beginning();
 			a.downsampled_image_2.seek_to_beginning();
 			t.start();
-			std::cerr << "Running finer alignment at medium resolution...";
+			std::cerr << "Running finer alignment...  ";
 			ns_vector_2i downsampled_shift_2(
-					register_whole_images<T1,3>(r.downsampled_image_2,a.downsampled_image_2,
-						(downsampled_shift-downsample_v)/NS_SECONDARY_DOWNSAMPLE_FACTOR,(downsampled_shift+downsample_v)/NS_SECONDARY_DOWNSAMPLE_FACTOR,"c:\\server\\distances_med_res.csv"));
+					register_whole_images<T1,T2,3>(r.downsampled_image_2,a.downsampled_image_2,
+						(downsampled_shift-downsample_v)/NS_SECONDARY_DOWNSAMPLE_FACTOR,(downsampled_shift+downsample_v)/NS_SECONDARY_DOWNSAMPLE_FACTOR));
 			
 			//cerr << "med_res: " << t.stop()/1000.0/1000.0 << "\n";
 			downsampled_shift_2 = downsampled_shift_2*NS_SECONDARY_DOWNSAMPLE_FACTOR;
@@ -79,16 +79,16 @@ public:
 			r.whole_image.seek_to_beginning();
 			a.whole_image.seek_to_beginning();
 			
-			t.start();
-			std::cerr << "\nRunning fine alignment at full resolution...";
-			return register_whole_images<T1,3>(r.whole_image,a.whole_image,downsampled_shift_2-downsample_v,downsampled_shift_2+downsample_v,"c:\\server\\distances_full_res.csv");
+			//t.start();
+			std::cerr << "Running full alignment...";
+			return register_whole_images<T1,T2,3>(r.whole_image,a.whole_image,downsampled_shift_2-downsample_v,downsampled_shift_2+downsample_v);
 			//cerr << "high_res: " << t.stop()/1000.0/1000.0 << "\n";
 		}
-		return register_whole_images<T1,4>(r.whole_image,a.whole_image,downsampled_shift-downsample_v,downsampled_shift+downsample_v);
+		return register_whole_images<T1,T2,4>(r.whole_image,a.whole_image,downsampled_shift-downsample_v,downsampled_shift+downsample_v);
 
 	}
-	template <class random_access_image_type,int pixel_skip>
-	static ns_vector_2i register_whole_images(random_access_image_type & r, random_access_image_type & a, const ns_vector_2i offset_minimums,const ns_vector_2i offset_maximums,const std::string & debug=""){
+	template <class random_access_image_type_1,class random_access_image_type_2, int pixel_skip>
+	static ns_vector_2i register_whole_images(random_access_image_type_1 & r, random_access_image_type_2 & a, const ns_vector_2i offset_minimums,const ns_vector_2i offset_maximums,const std::string & debug=""){
 		
 		unsigned long h(r.properties().height);
 		if (h > a.properties().height)
@@ -146,7 +146,7 @@ public:
 					}
 			}
 		}
-	//	o.close();
+		std::cerr << "\n";
 		return minimum_offset;
 	}
 	template<class profile_storage_type_1,class profile_storage_type_2>

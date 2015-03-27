@@ -359,7 +359,7 @@ private:
 	static void reason_through_precomputed_dependencies(std::vector<char> & operations,ns_precomputed_processing_step_images & precomputed_images);
 
 };
-
+void ns_rerun_image_registration(const ns_64_bit region_id, ns_sql & sql);
 
 #endif
 

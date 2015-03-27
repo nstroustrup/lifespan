@@ -857,6 +857,7 @@ std::string ns_processing_step_directory_d(const ns_processing_task & task){
 		case ns_process_movement_paths_visualition_with_mortality_overlay: return "movement_path_vis_with_mortality";
 		case ns_process_movement_posture_visualization:return "movement_posture_vis";
 		case ns_process_movement_posture_aligned_visualization: return "movement_posture_aligned_vis";
+		case ns_process_unprocessed_backup: return("unprocessed_backup");
 		case ns_process_analyze_mask:				throw ns_ex("ns_processing_step_directory::There is no standard directory name for the result of mask analysis");
 		
 		default:									throw ns_ex("ns_processing_step_directory::Cannot find default directory for task:")  << ns_processing_task_to_string(task);
@@ -930,6 +931,7 @@ std::string ns_processing_task_to_string(const ns_processing_task & t){
 		case ns_process_movement_paths_visualition_with_mortality_overlay:	return "Movement Path Visualization with Mortality Overlay";
 		case ns_process_movement_posture_visualization:	return "Movement Animal Posture Visualization";
 		case ns_process_movement_posture_aligned_visualization: return "Aligned Movement Animal Posture Visualization";
+		case ns_process_unprocessed_backup:				return "Unprocessed Image Backup";
 		default:										return "Unknown Task" + ns_to_string((int)t);
 	}
 }

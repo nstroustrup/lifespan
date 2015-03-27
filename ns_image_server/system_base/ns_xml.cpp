@@ -33,7 +33,8 @@ void convert_to_simple_objects( TiXmlNode* pParent,  std::vector<ns_xml_simple_o
 			case 1:{
 				//ignore lifespan machine wrapper tag
 				if (pParent->Value()==std::string("lifespan_machine")){
-					convert_to_simple_objects(pParent->FirstChild(),objs,0,0,1);
+					for (TiXmlNode* pChild = pParent->FirstChild(); pChild != 0; pChild = pChild->NextSibling()) 
+						convert_to_simple_objects(pChild,objs,0,0,1);
 					break;
 				}
 

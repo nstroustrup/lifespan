@@ -714,6 +714,12 @@ bool ns_processing_job_maintenance_processor:: run_job(ns_sql & sql){
 			ns_image_processing_pipeline::generate_sample_regions_from_mask(job.sample_id,atof(res[0][0].c_str()),sql);
 			break;
 		}
+	case ns_maintenance_rerun_image_registration:{
+		if (job.region_id == 0)
+				throw ns_ex("No region specified for re-registration");
+			ns_rerun_image_registration(job.region_id,sql);
+			break;
+		}
 		
 		case ns_maintenance_rebuild_movement_data:{
 		case ns_maintenance_rebuild_movement_from_stored_images:

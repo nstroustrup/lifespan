@@ -111,19 +111,19 @@ private:
 };
 
 class ns_memory_image_registration_profile : public ns_image_registration_profile< ns_image_standard >{
+public:
 	void prepare_images(ns_image_server_image & im,const unsigned long max_average_dimention,ns_sql & sql,ns_image_storage_handler * image_storage,const unsigned long downsample_factor=0){
 
 			ns_image_storage_source_handle<ns_8_bit> source(image_storage->request_from_storage(im,&sql));
 			const ns_downsampling_sizes downsampling_sizes(calculate_downsampled_sizes(source.input_stream().properties(),max_average_dimention,downsample_factor));
 			this->downsampling_factor = downsampling_sizes.downsample_factor;
 
-			ns_image_standard whole_image_source;
 			source.input_stream().pump(whole_image,1024);
 
 			whole_image.resample(downsampling_sizes.downsampled,downsampled_image);
 			whole_image.resample(downsampling_sizes.downsampled_2,downsampled_image_2);
 	}
-	void cleanup(ns_image_storage_handler * image_storage){}
+	void cleanup(ns_image_storage_handler * image_storage){whole_image.clear();downsampled_image.clear();downsampled_image_2.clear();}
 };
 
 

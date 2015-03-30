@@ -71,10 +71,23 @@ void ns_image_statistics::calculate_statistics_from_histogram(){
 	image_statistics.top_percentile_average = c_sum/(double)percentile;
 }
 
-void ns_image_statistics::submit_to_db(ns_64_bit & id,ns_sql & sql,bool include_image_stats,bool include_worm_stats){
-	if (id == 0)
+bool ns_image_statistics::submit_to_db(ns_64_bit & id,ns_sql & sql,bool include_image_stats,bool include_worm_stats){
+	bool made_new_db_entry=false;
+	if (id != 0){
+		//check to see that the record does exist.  If not, we'll make a new one.
+		sql << "SELECT id FROM image_statistics WHERE id = " << id;
+		ns_sql_result res;
+		sql.get_rows(res);
+		if (res.size() == 0)
+			id = 0;
+	}
+	if (id == 0){
 		sql << "INSERT INTO image_statistics SET ";
-	else sql << "UPDATE image_statistics SET ";
+		made_new_db_entry = true;
+	}
+	else{
+		sql << "UPDATE image_statistics SET ";
+	}
 	if (include_image_stats){
 		sql << "size_x='"<<size.x << "',size_y='" << size.y << "',intensity_average='" << image_statistics.mean << "', intensity_entropy='" << image_statistics.entropy << "', intensity_std='"<<sqrt(image_statistics.variance) << "',"
 			<< "intensity_top_percentile='" << image_statistics.top_percentile_average << "', intensity_bottom_percentile='" << image_statistics.bottom_percentile_average << "', "
@@ -100,6 +113,7 @@ void ns_image_statistics::submit_to_db(ns_64_bit & id,ns_sql & sql,bool include_
 		sql.send_query();
 		db_id = id;
 	}
+	return made_new_db_entry;
 }
 
 void ns_image_statistics::calculate_statistics_from_image(ns_image_server_image & im,ns_sql & sql){

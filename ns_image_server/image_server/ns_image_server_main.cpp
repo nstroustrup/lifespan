@@ -642,8 +642,8 @@ ns_multiprocess_control_options ns_spawn_new_nodes(	const unsigned int & count,
 			opts.take_stdin_handle = false;
 			opts.take_stdout_handle = false;
 			
-			char full_command_line[512];
-			GetModuleFileName(NULL,full_command_line,512);
+			char full_command_line[1024];
+			GetModuleFileName(NULL,full_command_line,1024);
 			child_processes[i].execute.run(full_command_line,parameters, opts);
 			child_processes[i].execute.release_io();
 
@@ -655,9 +655,9 @@ ns_multiprocess_control_options ns_spawn_new_nodes(	const unsigned int & count,
 			opts.take_stdin_handle = false;
 			opts.take_stdout_handle = false;
 			opts.only_fork = true;
-			bool is_parent_thread(child_processes[i-1].execute.run("","",opts));
+			bool is_parent_thread(child_processes[i].execute.run("","",opts));
 			if (!is_parent_thread){
-				ns_multiprocess_control_options opt(child_processes[i-1].options);
+				ns_multiprocess_control_options opt(child_processes[i].options);
 				child_processes.clear();
 				return opt;
 			}

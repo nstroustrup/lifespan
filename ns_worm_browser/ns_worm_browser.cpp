@@ -674,7 +674,7 @@ void ns_worm_learner::output_region_statistics(const unsigned long experiment_id
 		if (experiment_names.size() > 0)
 			cout << "Processing " << experiment_names[i] << "...\n";
 		ns_capture_sample_region_statistics_set set;
-		set.load_whole_experiment(experiment_ids[i],sql());
+		set.load_whole_experiment(experiment_ids[i],sql(),false);
 
 		for (unsigned int j = 0; j < set.regions.size(); j++)
 			set.regions[j].output_region_data_in_jmp_format(o());

@@ -51,9 +51,9 @@ void ns_table_format_processor::sql_get_column_names(const std::string & table_n
 
 
 void ns_get_all_column_data_from_table(const std::string & table_name, const std::vector<std::string> & column_names, const std::string & where_clause, ns_sql_result & data, ns_image_server_sql * sql){
-	*sql << "SELECT " << column_names[0];
+	*sql << "SELECT `" << column_names[0] << "`";
 		for (unsigned int i = 1; i < column_names.size(); i++)
-			*sql << ", " << column_names[i];
+			*sql << ", `" << column_names[i] << "`";
 		*sql << " FROM " << table_name <<" " << where_clause;
 		sql->get_rows(data);
 }
@@ -215,7 +215,7 @@ void ns_buffered_capture_scheduler::commit_all_local_schedule_changes_to_central
 				|| j == buffered_capture_schedule.image_id_column || 
 				j == buffered_capture_schedule.problem_column || j == 
 				buffered_capture_schedule.timestamp_column) continue;
-			central_db  << buffered_capture_schedule.table_format.column_names[j] << "='" << central_db.escape_string(updated_data[i][j]) << "',";
+			central_db  << "`" << buffered_capture_schedule.table_format.column_names[j] << "`='" << central_db.escape_string(updated_data[i][j]) << "',";
 		}
 		central_db << "captured_image_id = " << mappings[i].captured_image.captured_images_id 
 				   << ", problem = " << mappings[i].problem_id;
@@ -278,7 +278,7 @@ void ns_buffered_capture_scheduler::commit_all_local_schedule_changes_to_central
 		for (unsigned int j = 2; j < capture_samples.column_names.size(); ++j){
 			if (j == capture_samples.time_stamp_column_id)
 				continue;
-			else central_db  << "'," << capture_samples.column_names[j] << "='" << central_db.escape_string(updated_data[i][j]);
+			else central_db  << "',`" << capture_samples.column_names[j] << "`='" << central_db.escape_string(updated_data[i][j]);
 		}
 		central_db << "',time_stamp=FROM_UNIXTIME(" << new_timestamp << ") ";
 		central_db << "WHERE id = " << updated_data[i][0];
@@ -347,7 +347,7 @@ void ns_buffered_capture_scheduler::update_local_buffer_from_central_server(ns_i
 	central_db << "SELECT sched.id, samp.id, samp.experiment_id, UNIX_TIMESTAMP(sched.time_stamp),UNIX_TIMESTAMP(samp.time_stamp)";
 
 	for (unsigned int i = 0; i < capture_schedule.table_format.column_names.size(); i++)
-		central_db << ",sched." << capture_schedule.table_format.column_names[i] ;
+		central_db << ",`sched`.`" << capture_schedule.table_format.column_names[i] << "`";
 		
 	central_db << " FROM capture_schedule as sched, capture_samples as samp "
 			   << "WHERE (samp.device_name='" << connected_devices[0].name << "'";

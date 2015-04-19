@@ -85,7 +85,8 @@ $ns_maintenance_tasks = array('ns_maintenance_no_task'=>0,
 			      'ns_maintenance_generate_animal_storyboard_subimage'=>17,
 			      'ns_maintenance_compress_stored_images'=>18,
 			      'ns_maintenance_generate_subregion_mask'=>19,
-			      'ns_maintenance_rerun_image_registration'=>20
+			      'ns_maintenance_rerun_image_registration'=>20,
+			      'ns_maintenance_recalc_image_stats'=>21
 			      );
 
 $ns_denoising_option_labels = array(
@@ -110,6 +111,7 @@ function ns_maintenance_task_order($is_region,$is_sample,$is_experiment){
     array_push($r,$ns_maintenance_tasks['ns_maintenance_check_for_file_errors']);
     array_push($r,$ns_maintenance_tasks['ns_maintenance_rebuild_movement_from_stored_images']);
     array_push($r,$ns_maintenance_tasks['ns_maintenance_generate_subregion_mask']);
+    array_push($r,$ns_maintenance_tasks['ns_maintenance_recalc_image_stats']);
     return $r;
   }
   if ($is_sample || $is_experiment){
@@ -143,7 +145,8 @@ $ns_maintenance_task_labels = array(0=>'No Task',
 				    17=>'Generate Animal Storyboard Subimage',
 				    18=>'Compress Stored Images',
 				    19=>'Generate Subregion Mask',
-				    20=>'Re-Run Image Registration'
+				    20=>'Re-Run Image Registration',
+				    21=>'Re-Calculate Image Statistics'
 			      );
 $NS_LAST_MAINTENANCE_TASK = 18;
 
@@ -299,11 +302,11 @@ class ns_processing_job{
 			$query = "INSERT INTO ";
 		else $query = "UPDATE ";
 		$query .= "processing_jobs SET experiment_id = {$this->experiment_id}, sample_id = {$this->sample_id}, region_id = {$this->region_id}, "
-			   . "image_id = {$this->image_id}, urgent={$this->urgent}, paused='{$this->paused}', processor_id='{$this->processor_id}', time_submitted={$this->time_submitted}, mask_id ='{$this->mask_id}', maintenance_task='{$this->maintenance_task}',"
-		  . "subregion_position_x='".$this->subregion_position_x."',subregion_position_y='".$this->subregion_position_y."',subregion_width='".$this->subregion_width."',subregion_height='".$this->subregion_height . "',subregion_start_time='".$this->subregion_start_time ."',subregion_stop_time='".$this->subregion_stop_time
-		  ."',maintenance_flag='".$this->maintenance_flag."'";
+		  . "image_id = {$this->image_id}, urgent={$this->urgent}, paused=".(string)((int)$this->paused).", processor_id=".(string)((int)$this->processor_id).", time_submitted={$this->time_submitted}, mask_id ='{$this->mask_id}', maintenance_task='{$this->maintenance_task}',"
+		  . "subregion_position_x=".(string)((int)$this->subregion_position_x).",subregion_position_y=".(string)((int)$this->subregion_position_y).",subregion_width=".(string)((int)$this->subregion_width).",subregion_height=".(string)((int)$this->subregion_height) . ",subregion_start_time=".(string)((int)$this->subregion_start_time) .",subregion_stop_time=".(string)((int)$this->subregion_stop_time)
+		  .",maintenance_flag=".(string)((int)$this->maintenance_flag)."";
 		for ($i = 0; $i <= $NS_LAST_PROCESSING_JOB; $i++)
-		  $query .= ", op$i='{$this->operations[$i]}'";
+		  $query .= ", op$i=".(string)((int)$this->operations[$i]);
 		//echo $query;
 		$query .= ", job_name='{$this->job_name}'";
 		$query .= ", processed_by_push_scheduler=";
@@ -703,7 +706,7 @@ function ns_update_job_queue($sql){
   $sql->send_query($query);
   $query = "LOCK TABLES processing_job_queue WRITE";
   $sql->send_query($query);
-  $query = "INSERT INTO processing_job_queue SET job_id=" . $job->id . ", priority=50 ";
+  $query = "INSERT INTO processing_job_queue SET job_id=" . $job->id . ", priority=50,job_name=''";
   $sql->send_query($query);
   $query = "COMMIT";
   $sql->send_query($query);

@@ -301,8 +301,8 @@ class ns_processing_job{
 		if ($this->id == 0 || $this->id == '')
 			$query = "INSERT INTO ";
 		else $query = "UPDATE ";
-		$query .= "processing_jobs SET experiment_id = {$this->experiment_id}, sample_id = {$this->sample_id}, region_id = {$this->region_id}, "
-		  . "image_id = {$this->image_id}, urgent={$this->urgent}, paused=".(string)((int)$this->paused).", processor_id=".(string)((int)$this->processor_id).", time_submitted={$this->time_submitted}, mask_id ='{$this->mask_id}', maintenance_task='{$this->maintenance_task}',"
+		$query .= "processing_jobs SET experiment_id = ".(string)((int)$this->experiment_id).", sample_id = ".(string)((int)$this->sample_id).", region_id = ".(string)((int)$this->region_id).", "
+		  . "image_id = ".(string)((int)$this->image_id).", urgent=".(string)((int)$this->urgent)."., paused=".(string)((int)$this->paused).", processor_id=".(string)((int)$this->processor_id).", time_submitted=".(string)((int)$this->time_submitted).", mask_id =".(string)((int)$this->mask_id).", maintenance_task=".(string)((int)$this->maintenance_task).","
 		  . "subregion_position_x=".(string)((int)$this->subregion_position_x).",subregion_position_y=".(string)((int)$this->subregion_position_y).",subregion_width=".(string)((int)$this->subregion_width).",subregion_height=".(string)((int)$this->subregion_height) . ",subregion_start_time=".(string)((int)$this->subregion_start_time) .",subregion_stop_time=".(string)((int)$this->subregion_stop_time)
 		  .",maintenance_flag=".(string)((int)$this->maintenance_flag)."";
 		for ($i = 0; $i <= $NS_LAST_PROCESSING_JOB; $i++)

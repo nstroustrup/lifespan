@@ -43,7 +43,7 @@ if ($_POST['detail_level']){
  # die(".".date(DATE_ATOM,$mask_date));
 $maximum_number_of_worms = $_POST['maximum_number_of_worms'];
    //   if (!($number_of_stationary_images==='')){
-     $query = "UPDATE sample_region_image_info as r, capture_samples as s SET r.time_series_denoising_flag = '$denoising_flag',r.number_of_frames_used_to_mask_stationary_objects='$number_of_stationary_images',r.maximum_number_of_worms_per_plate='$maximum_number_of_worms' WHERE r.sample_id = s.id AND s.experiment_id = " . $experiment_id;
+$query = "UPDATE sample_region_image_info as r, capture_samples as s SET r.time_series_denoising_flag = '$denoising_flag',r.number_of_frames_used_to_mask_stationary_objects=".(string)((int)$number_of_stationary_images).",r.maximum_number_of_worms_per_plate=".(string)((int)$maximum_number_of_worms)." WHERE r.sample_id = s.id AND s.experiment_id = " . $experiment_id;
      //    die($query);
      $sql->send_query($query);
      //  }

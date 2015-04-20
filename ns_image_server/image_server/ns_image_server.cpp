@@ -685,7 +685,7 @@ ns_local_buffer_connection * ns_image_server::new_local_buffer_connection(const 
 }
 
 void ns_get_table_create(const std::string & table_name, std::string & result, ns_sql & sql){
-	sql << "SHOW CREATE TABLE " << table_name;
+	sql << "SHOW CREATE TABLE `" << table_name << "`";
 	ns_sql_result res;
 	sql.get_rows(res);
 	if (res.size() == 0)
@@ -1158,9 +1158,9 @@ void ns_add_data_to_db_from_file(const std::string table_name,const std::string 
 			ns_parse_quoted_csv_line(input.read_line(),data);
 			if (data.size() != column_names.size())
 					throw ns_ex("Invalid number of columns on line number ") << line_number;
-			sql << "INSERT INTO " << table_name << " SET ";
+			sql << "INSERT INTO `" << table_name << "` SET ";
 			for (unsigned int i = 0; i < column_names.size(); i++){
-				sql <<column_names[i] << "=\"" << sql.escape_string(data[i]) << "\"";
+				sql << "`" << column_names[i] << "`=\"" << sql.escape_string(data[i]) << "\"";
 					if (i+1 != column_names.size())
 						sql << ",";
 			}

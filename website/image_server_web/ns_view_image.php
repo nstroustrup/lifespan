@@ -67,7 +67,7 @@ if ($video_image_id != 0){
 		$video_problem = "this client does not support h.264 video";
 	}
 	else{
-		$query = "SELECT filename,path,partition FROM images WHERE id=$video_image_id";
+		$query = "SELECT `filename`,`path`,`partition` FROM images WHERE id=$video_image_id";
 		$sql->get_row($query,$data);
 		if (sizeof($data) ==0){
 			$video_problem = "the video's database record could not be located";
@@ -85,7 +85,7 @@ if ($video_image_id != 0){
 //die($video_image_id);
 if ($image_id != 0){
 
-	$query = "SELECT filename,path,partition FROM images WHERE id=$image_id";
+	$query = "SELECT `filename`,`path`,`partition` FROM images WHERE id=$image_id";
 	$sql->get_row($query,$data);
 
 	if (sizeof($data) ==0){

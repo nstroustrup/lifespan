@@ -200,10 +200,10 @@ void ns_image_server_dispatcher::handle_remote_requests(){
 						break;
 					}
 					case NS_STOP_CHECKING_CENTRAL_DB:
-						actively_avoid_connecting_to_central_db = false;
+						actively_avoid_connecting_to_central_db = true;
 						break;							
 					case NS_START_CHECKING_CENTRAL_DB:
-						actively_avoid_connecting_to_central_db = true;
+						actively_avoid_connecting_to_central_db = false;
 						break;
 					case NS_QUIT:
 						throw ns_ex("Error: Quit Command should have been caught by dispatcher!");

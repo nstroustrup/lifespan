@@ -669,7 +669,7 @@ ns_multiprocess_control_options ns_spawn_new_nodes(	const unsigned int & count,
 typedef enum {ns_none,ns_start, ns_stop, ns_help, ns_restart, ns_status, ns_hotplug,
 			  ns_reset_devices,ns_reload_models,ns_submit_experiment,ns_test_email,ns_test_alert, ns_test_rate_limited_alert,ns_wrap_m4v,
 			  ns_restarting_after_a_crash,ns_trigger_segfault_in_main_thread,ns_trigger_segfault_in_dispatcher_thread, ns_run_pending_image_transfers,
-	      ns_clear_local_db_buffer_cleanly,ns_clear_local_db_buffer_dangerously,ns_simulate_central_db_connection_error,ns_fix_orphaned_captured_images,ns_update_sql,ns_output_image_buffer_info} ns_cl_command;
+	      ns_clear_local_db_buffer_cleanly,ns_clear_local_db_buffer_dangerously,ns_simulate_central_db_connection_error,ns_fix_orphaned_captured_images,ns_update_sql,ns_output_image_buffer_info,ns_stop_checking_central_db,ns_start_checking_central_db} ns_cl_command;
 
 ns_image_server_sql * ns_connect_to_available_sql_server(){
 		try{
@@ -775,6 +775,8 @@ int main(int argc, char * argv[]){
 	commands["simulate_central_db_connection_error"] = ns_simulate_central_db_connection_error;
 	commands["fix_orphaned_captured_images"] = ns_fix_orphaned_captured_images;	
 	commands["output_image_buffer_info"] = ns_output_image_buffer_info;
+	commands["start_checking_central_db"] = ns_start_checking_central_db;
+	commands["stop_checking_central_db"] = ns_stop_checking_central_db;
 	commands["update_sql"] = ns_update_sql;
 	bool is_master_node(false);
 	try{
@@ -858,6 +860,8 @@ int main(int argc, char * argv[]){
 						<< "simulate_central_db_connection_error: Simulate a broken connection to the central database.\n"
 						<< "fix_orphaned_captured_images: Go through the volatile storage and fix database records for images orphaned by a previous bug in the lifespan machine software\n"
 						<< "output_image_buffer_info: Output information about the state of each scanner's locally buffered images.\n"
+						<< "stop_checking_central_db: Cease attempting to connect to the central db.\n"
+						<< "start_checking_central_db: Restart attempts to connect to the central db.\n"
 						<< "upgrade_sql: upgrade the sql database schema to match the most recent version. No changes are made if the schema is already up-to-data.\n";
 					#ifndef _WIN32
 					ex << "daemon: run as a background process\n";
@@ -946,6 +950,16 @@ int main(int argc, char * argv[]){
 					cerr << "No image server found running at " << image_server.dispatcher_ip() << ":" << image_server.dispatcher_port() << ".";
 				return 0;
 			}
+			case ns_stop_checking_central_db:{
+					if (!image_server.send_message_to_running_server(NS_STOP_CHECKING_CENTRAL_DB))
+					cerr << "No image server found running at " << image_server.dispatcher_ip() << ":" << image_server.dispatcher_port() << ".";
+				return 0;
+			}
+			case ns_start_checking_central_db:{
+					if (!image_server.send_message_to_running_server(NS_START_CHECKING_CENTRAL_DB))
+					cerr << "No image server found running at " << image_server.dispatcher_ip() << ":" << image_server.dispatcher_port() << ".";
+				return 0;
+			}				
 			case ns_restart:{
 			  
 				if (!image_server.send_message_to_running_server(NS_QUIT))

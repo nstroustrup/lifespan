@@ -199,6 +199,12 @@ void ns_image_server_dispatcher::handle_remote_requests(){
 						ns_wrap_m4v_stream(input_filename,output_basename);
 						break;
 					}
+					case NS_STOP_CHECKING_CENTRAL_DB:
+						actively_avoid_connecting_to_central_db = false;
+						break;							
+					case NS_START_CHECKING_CENTRAL_DB:
+						actively_avoid_connecting_to_central_db = true;
+						break;
 					case NS_QUIT:
 						throw ns_ex("Error: Quit Command should have been caught by dispatcher!");
 					default:
@@ -457,70 +463,80 @@ void ns_image_server_dispatcher::on_timer(){
 	}
 
 
-	//we want to buffer all alerts locally and only submit them all at once after all
-	//tasks are completed.  This is because submitting alerts requires acquiring 
-	//the cluster-wide alert table lock, and there is a possibility of this taking a long time.
-	//We don't want to delay any of the on_timer() operations, especially those involved
-	//in data acquisition.
-
-	image_server.alert_handler.buffer_all_alerts_locally(true);
-	ns_try_to_acquire_lock_for_scope timer_sql_lock(timer_sql_management_lock);
-	if (!timer_sql_lock.try_to_get(__FILE__,__LINE__))
-		return; //if we can't get the lock, it's because the another thread is already trying to reconnect.  Just give up and let the other thread deal with it.
-	try{
-		if (timer_sql_connection == 0){
-			try{
-				timer_sql_connection = image_server.new_sql_connection(__FILE__,__LINE__,0);
-			}
-			catch(ns_ex & ex){
-				handle_central_connection_error(ex);
-				timer_sql_lock.release();
-				return;
-			}
-			image_server.register_host();
-		}
-
-		bool try_to_reestablish_connection = false;
-
-		if (currently_unable_to_connect_to_the_central_db)
-			try_to_reestablish_connection = true;
-		else{
-			try{
-				timer_sql_connection->clear_query();
-				timer_sql_connection->check_connection();
-				image_server.check_for_sql_database_access(timer_sql_connection);
-			}
-			catch(ns_ex ex){
-				handle_central_connection_error(ex);
-				try_to_reestablish_connection = true;
-			}
-		}
-
-		if (try_to_reestablish_connection ){
-			try{
-				//if we've lost the connection, try to reconnect via conventional means
-				image_server.reconnect_sql_connection(timer_sql_connection);
-				timer_sql_connection->check_connection();	
-				timer_sql_lock.release();
-				image_server.register_server_event(ns_image_server_event("Recovered from a lost MySQL connection."),timer_sql_connection);
+	
+	if (actively_avoid_connecting_to_central_db){
+		currently_unable_to_connect_to_the_central_db = true;
+		return;
+	}
+	else{
+		//we want to buffer all alerts locally and only submit them all at once after all
+		//tasks are completed.  This is because submitting alerts requires acquiring 
+		//the cluster-wide alert table lock, and there is a possibility of this taking a long time.
+		//We don't want to delay any of the on_timer() operations, especially those involved
+		//in data acquisition.
+		image_server.alert_handler.buffer_all_alerts_locally(true);
+		ns_try_to_acquire_lock_for_scope timer_sql_lock(timer_sql_management_lock);
+		if (!timer_sql_lock.try_to_get(__FILE__,__LINE__))
+			return; //if we can't get the lock, it's because the another thread is already trying to reconnect.  Just give up and let the other thread deal with it.
+		try{
+			if (timer_sql_connection == 0){
+				try{
+					timer_sql_connection = image_server.new_sql_connection(__FILE__,__LINE__,0);
+				}
+				catch(ns_ex & ex){
+					handle_central_connection_error(ex);
+					timer_sql_lock.release();
+					return;
+				}
 				image_server.register_host();
-				image_server.alert_handler.buffer_all_alerts_locally(false);
-				currently_unable_to_connect_to_the_central_db = false;
-				return;
 			}
-			catch(ns_ex & ex){
-				//ns_safe_delete(timer_sql_connection);
-				//handle_central_connection_error(ex);
+
+			bool try_to_reestablish_connection = false;
+	
+
+				if (currently_unable_to_connect_to_the_central_db){
+			
+			
+					try_to_reestablish_connection = true;
+				}
+				else{
+					try{
+						timer_sql_connection->clear_query();
+						timer_sql_connection->check_connection();
+						image_server.check_for_sql_database_access(timer_sql_connection);
+					}
+					catch(ns_ex ex){
+						handle_central_connection_error(ex);
+						try_to_reestablish_connection = true;
+					}
+				}
+
+				if (try_to_reestablish_connection ){
+					try{
+						//if we've lost the connection, try to reconnect via conventional means
+						image_server.reconnect_sql_connection(timer_sql_connection);
+						timer_sql_connection->check_connection();	
+						timer_sql_lock.release();
+						image_server.register_server_event(ns_image_server_event("Recovered from a lost MySQL connection."),timer_sql_connection);
+						image_server.register_host();
+						image_server.alert_handler.buffer_all_alerts_locally(false);
+						currently_unable_to_connect_to_the_central_db = false;
+						return;
+					}
+					catch(ns_ex & ex){
+						//ns_safe_delete(timer_sql_connection);
+						//handle_central_connection_error(ex);
+						timer_sql_lock.release();
+						return;
+					}
+				}
 				timer_sql_lock.release();
-				return;
 			}
-		}
-		timer_sql_lock.release();
-	}
-	catch(...){
-		timer_sql_lock.release();
-		throw;
-	}
+			catch(...){
+				timer_sql_lock.release();
+				throw;
+			}
+			}
 
 
 	try{

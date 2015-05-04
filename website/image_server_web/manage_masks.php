@@ -107,10 +107,7 @@ if (0){
 			//if no pre-existing regions are found, make new ones.
 			if (sizeof($old_records) == 0){
 			  $iid = $i+1;
-				$query = "INSERT INTO sample_region_image_info SET mask_region_id = {$mask_regions[$i][0]}, mask_id = $mask_id, sample_id=$sample_id,name='$iid', "
-				         . "details='', reason_censored = '', strain_condition_1 = '', strain_condition_2 = '', strain_condition_3 = '', culturing_temperature = '', "
-				         . "experiment_temperature = '', food_source = '', environmental_conditions = '', posture_analysis_model = '', posture_analysis_method = '', "
-				         . "worm_detection_model = '', position_analysis_model = ''";
+				$query = "INSERT INTO sample_region_image_info SET mask_region_id = {$mask_regions[$i][0]}, mask_id = $mask_id, sample_id=$sample_id,name='$iid', details=''";
 				//	echo $query;
 				$sql->send_query($query);
 			}
@@ -175,7 +172,7 @@ if (0){
 			}
 		}
 		else{
-			$query = "SELECT path, partition,filename, id FROM images WHERE images.id = {$mask_visualization_image_id}";
+			$query = "SELECT `path`, `partition`,`filename`, `id` FROM images WHERE images.id = {$mask_visualization_image_id}";
 		       
 			$sql->get_row($query,$v);
 			//	var_dump($v);

@@ -1964,7 +1964,6 @@ bool ns_experiment_storyboard_manager::load_subimages_from_db(const ns_experimen
 }
 void ns_experiment_storyboard_manager::create_records_and_storage_for_subimages(const unsigned long number_of_subimages,const ns_experiment_storyboard_spec & spec,ns_sql & sql, const bool create_if_missing){
 	sub_images.resize(number_of_subimages);
-
 	for (unsigned int i = 0; i < sub_images.size(); i++){
 		if (sub_images[i].id == 0){
 			if (!create_if_missing) throw ns_ex("Information for sub_image " ) << i << " was not loaded.";

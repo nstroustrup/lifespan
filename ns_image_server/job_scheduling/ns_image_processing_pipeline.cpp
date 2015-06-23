@@ -48,22 +48,35 @@ void ns_check_for_file_errors(ns_processing_job & job, ns_sql & sql){
 						cerr << ex.text() << "\n";
 					}
 				}
+				ns_image_stream_static_offset_buffer<ns_8_bit> buf(ns_image_stream_buffer_properties(10000,1));
 				for (unsigned long j = 0; j < reg.op_images_.size(); j++){
 					bool changed = false;
 					if (reg.op_images_[j]!=0){
 						ns_image_server_image im;
 						try{
 							im.load_from_db(reg.op_images_[j],&sql);
+					
 							ns_image_storage_source_handle<ns_8_bit> h(image_server.image_storage.request_from_storage(im,&sql));
-							h.clear();
+							long w(h.input_stream().properties().width*h.input_stream().properties().components);
+							if (w > buf.properties().width)
+								buf.resize(ns_image_stream_buffer_properties(w,1));
+							h.input_stream().send_lines(buf,1);
+							try{
+								h.clear();
+							}catch(...){}
 						}
 						catch(ns_ex & ex){
 							reg.op_images_[j] = 0;
 							changed = true;
 						}
 					}
-					if (changed)
+					if (changed){
 						reg.update_all_processed_image_records(sql);
+						if (reg.op_images_[0] == 0){
+							sql << "UPDATE sample_region_images SET problem=1 WHERE id = " << reg.region_images_id;
+							sql.send_query();
+						}
+					}
 				}
 			}
 			catch(ns_ex & ex){

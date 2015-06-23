@@ -647,6 +647,51 @@ public:
 	}
 };
 
+void ns_time_path_solution::remove_inferred_animal_locations(const unsigned long timepoint_index){
+	if (timepoint_index >= timepoints.size())
+		throw ns_ex("Invalid timepoint index!");
+	ns_time_path_timepoint & point(timepoints[timepoint_index]);
+	if (point.elements.empty())
+		return;
+	//build up a list of the elements being removed (marked with a -1) and the new position of the remaining elements after removal.
+	vector<ns_64_bit> new_index_mapping(point.elements.size(),0);
+	unsigned int cur_i = 0;
+	unsigned int new_i = 0;
+	for (std::vector<ns_time_path_element>::iterator p = point.elements.begin(); p != point.elements.end();){
+		if (p->inferred_animal_location){
+			p = point.elements.erase(p);
+			new_index_mapping[cur_i] = -1;
+		}else{
+			new_index_mapping[cur_i] = new_i;
+			p++;
+			new_i++;
+		}
+		cur_i++;
+	}
+
+	//go through and fix all the path assignments
+	for (unsigned int g = 0; g < this->path_groups.size(); g++){
+		for (unsigned int p = 0; p < path_groups[g].path_ids.size(); p++){
+			const unsigned long path_id = path_groups[g].path_ids[p];
+			if (paths[path_id].stationary_elements.size() == 0)
+				continue;
+			for (std::vector<ns_time_element_link>::iterator p = paths[path_id].stationary_elements.begin(); p != paths[path_id].stationary_elements.end();){
+				if (p->t_id == timepoint_index){
+					if (new_index_mapping[p->index] == -1)
+						p = paths[path_id].stationary_elements.erase(p);
+					else{
+						if (p->index > new_index_mapping.size())
+							throw ns_ex("Invalid index");
+						p->index = new_index_mapping[p->index];
+						p++;
+					}
+				}
+			}
+		}
+	}
+}
+
+
 void ns_time_path_solution::fill_gaps_and_add_path_prefixes(const unsigned long prefix_length){
 	std::vector<unsigned long> skipped_time_indices,
 							   prefixes;

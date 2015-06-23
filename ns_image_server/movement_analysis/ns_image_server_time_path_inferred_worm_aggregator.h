@@ -14,6 +14,7 @@ struct ns_image_server_time_path_inferred_worm_aggregator_image_info{
 				  spatial_id,
 				  threshold_id,
 				  region_interpolated_id;
+	bool problem,censored;
 	//the lifespan machine can occasionally duplicate a time point.
 	//we need to keep those up to date as well so they remain identical
 	//and don't cause book keeping problems.
@@ -38,6 +39,7 @@ struct ns_image_server_time_path_inferred_worm_aggregator_image_info{
 			sql.send_query();
 		}
 	}
+	ns_image_server_time_path_inferred_worm_aggregator_image_info():problem(false),censored(false){}
 };
 class ns_image_server_time_path_inferred_worm_aggregator{
 public:
@@ -53,7 +55,7 @@ public:
 				<< ns_processing_step_db_column_name(ns_process_spatial) << ","
 				<< ns_processing_step_db_column_name(ns_process_threshold) << ","
 				<< ns_processing_step_db_column_name(ns_process_region_interpolation_vis)
-				<< " FROM sample_region_images WHERE region_info_id = " 
+				<< ", problem, censored FROM sample_region_images WHERE region_info_id = " 
 				<< region_info_id;
 
 			ns_sql_result res;
@@ -66,6 +68,8 @@ public:
 				in.spatial_id = ns_atoi64(res[i][3].c_str());
 				in.threshold_id = ns_atoi64(res[i][4].c_str());
 				in.region_interpolated_id = ns_atoi64(res[i][5].c_str());
+				in.problem = ns_atoi64(res[i][6].c_str()) > 0;
+				in.censored = ns_atoi64(res[i][7].c_str()) > 0;
 				std::map<unsigned long,ns_image_server_time_path_inferred_worm_aggregator_image_info>::iterator p;
 				p = region_images_by_time.find(in.time);
 				if (p == region_images_by_time.end())
@@ -112,12 +116,45 @@ public:
 
 			//load images
 			ns_image_server_image im;
-			im.load_from_db(current_region_image->second.raw_image_id,&sql);
-			image_server.image_storage.request_from_storage(im,&sql).input_stream().pump(&unprocessed_image,1024);
-			im.load_from_db(current_region_image->second.spatial_id,&sql);
-			image_server.image_storage.request_from_storage(im,&sql).input_stream().pump(&spatial_image,1024);
-			im.load_from_db(current_region_image->second.threshold_id,&sql);
-			image_server.image_storage.request_from_storage(im,&sql).input_stream().pump(&thresholded_image,1024);
+			ns_ex ex;
+			int problem_image = 0;
+			try{
+				im.load_from_db(current_region_image->second.raw_image_id,&sql);
+
+				image_server.image_storage.request_from_storage(im,&sql).input_stream().pump(&unprocessed_image,1024);
+			}
+			catch(ns_ex & ex_){
+				ex = ex_;
+				problem_image = 1;
+			}
+			try{
+				im.load_from_db(current_region_image->second.spatial_id,&sql);
+				image_server.image_storage.request_from_storage(im,&sql).input_stream().pump(&spatial_image,1024);
+				im.load_from_db(current_region_image->second.threshold_id,&sql);
+				image_server.image_storage.request_from_storage(im,&sql).input_stream().pump(&thresholded_image,1024);
+				
+			}
+			catch(ns_ex & ex_){
+				problem_image = 2;
+				ex = ex_;
+			}
+			//if there's an error, flag it, remove the problematic inferred animals from the solution, and remove any existing data from the db.
+			if (problem_image > 0){
+				ns_64_bit error_id = image_server.register_server_event(ns_image_server::ns_register_in_central_db,ns_ex("Skipping and flagging a corrupt or missing image:") << ex.text());
+				if (problem_image == 1){
+					sql << "UPDATE captured_images SET problem=" << error_id << " WHERE id = " << current_region_image->second.id;
+					sql.send_query();
+				}
+				if (!s.timepoints[t].elements.empty()){
+					s.remove_inferred_animal_locations(t);
+
+				current_region_image->second.remove_inferred_element_from_db(sql);
+				for (unsigned int i = 0; i < current_region_image->second.duplicates_of_this_time_point.size(); i++)
+					current_region_image->second.remove_inferred_element_from_db(sql);
+				}
+				continue;
+
+			}
 			ns_image_worm_detection_results results;
 			results.id = 0;
 			

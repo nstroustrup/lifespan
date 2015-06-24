@@ -647,7 +647,7 @@ public:
 	}
 };
 
-void ns_time_path_solution::remove_inferred_animal_locations(const unsigned long timepoint_index){
+void ns_time_path_solution::remove_inferred_animal_locations(const unsigned long timepoint_index, bool delete_uninferred_animals_also){
 	if (timepoint_index >= timepoints.size())
 		throw ns_ex("Invalid timepoint index!");
 	ns_time_path_timepoint & point(timepoints[timepoint_index]);
@@ -658,7 +658,7 @@ void ns_time_path_solution::remove_inferred_animal_locations(const unsigned long
 	unsigned int cur_i = 0;
 	unsigned int new_i = 0;
 	for (std::vector<ns_time_path_element>::iterator p = point.elements.begin(); p != point.elements.end();){
-		if (p->inferred_animal_location){
+		if (p->inferred_animal_location || delete_uninferred_animals_also){
 			p = point.elements.erase(p);
 			new_index_mapping[cur_i] = -1;
 		}else{
@@ -675,17 +675,18 @@ void ns_time_path_solution::remove_inferred_animal_locations(const unsigned long
 			const unsigned long path_id = path_groups[g].path_ids[p];
 			if (paths[path_id].stationary_elements.size() == 0)
 				continue;
-			for (std::vector<ns_time_element_link>::iterator p = paths[path_id].stationary_elements.begin(); p != paths[path_id].stationary_elements.end();){
-				if (p->t_id == timepoint_index){
-					if (new_index_mapping[p->index] == -1)
-						p = paths[path_id].stationary_elements.erase(p);
+			for (std::vector<ns_time_element_link>::iterator q = paths[path_id].stationary_elements.begin(); q != paths[path_id].stationary_elements.end();){
+				if (q->t_id == timepoint_index){
+					if (new_index_mapping[q->index] == -1)
+						q = paths[path_id].stationary_elements.erase(q);
 					else{
-						if (p->index > new_index_mapping.size())
+						if (q->index > new_index_mapping.size())
 							throw ns_ex("Invalid index");
-						p->index = new_index_mapping[p->index];
-						p++;
+						q->index = new_index_mapping[q->index];
+						q++;
 					}
 				}
+				else q++;
 			}
 		}
 	}
@@ -2015,6 +2016,7 @@ void ns_time_path_solver::load(unsigned long region_id, ns_sql & sql){
 	long last_c(-2);
 	cerr << "Compiling Detection Point Cloud...";
 	unsigned long debug_max_points_per_timepoint(0);
+	bool problem = false;
 	for (unsigned int i = 0; i < timepoints.size(); i++){
 		
 		if ((long)((i*100)/timepoints.size()) >= last_c+5){
@@ -2023,11 +2025,25 @@ void ns_time_path_solver::load(unsigned long region_id, ns_sql & sql){
 		}
 	//	if (timepoints[i].time == 1321821542)
 	//		cerr << "WHA";
-		timepoints[i].load(timepoints[i].worm_results_id,detection_results->results[i],sql);
+		try{
+			timepoints[i].load(timepoints[i].worm_results_id,detection_results->results[i],sql);
+		}
+		catch(ns_ex & ex){
+			image_server.register_server_event(ns_image_server::ns_register_in_central_db,ex);
+			sql << "UPDATE sample_region_images SET " 
+				<< ns_processing_step_db_column_name(ns_process_worm_detection) << " = 0,"
+				<< "worm_detection_results_id = 0"
+				<< " WHERE id = " << timepoints[i].sample_region_image_id;
+			sql.send_query();
+			problem = true;
+			continue;
+		}
 		if (timepoints[i].elements.size() > debug_max_points_per_timepoint)
 			debug_max_points_per_timepoint = timepoints[i].elements.size();
 	}
 	cerr << "\n";
+	if (problem)
+		throw ns_ex("One or more timepoints did not load correctly.  The problematic images have had their worm detection results deleted; recompute these and try again.");
 	ns_global_debug(ns_text_stream_t("ns_time_path_solver::load()::Max number of elements per timepoint:") << debug_max_points_per_timepoint);
 	
 	unsigned long debug_combined_elements(0);

@@ -802,22 +802,34 @@ bool ns_processing_job_maintenance_processor:: run_job(ns_sql & sql){
 				time_path_solution.load_from_db(job.region_id,sql); 
 			}
 			else{
-				image_server->register_server_event(ns_image_server_event("Solving (x,y,t) point cloud."),&sql);
-				ns_time_path_solver_parameters solver_parameters(ns_time_path_solver_parameters::default_parameters(job.region_id,sql));
+				unsigned long count(0);
+				while(true){
+					image_server->register_server_event(ns_image_server_event("Solving (x,y,t) point cloud."),&sql);
+					ns_time_path_solver_parameters solver_parameters(ns_time_path_solver_parameters::default_parameters(job.region_id,sql));
 			
-				ns_time_path_solver tp_solver;
-				tp_solver.load(job.region_id,sql);
-				tp_solver.solve(solver_parameters,time_path_solution);
+					ns_time_path_solver tp_solver;
+					tp_solver.load(job.region_id,sql);
+					tp_solver.solve(solver_parameters,time_path_solution);
 				
-				image_server->register_server_event(ns_image_server_event("Filling gaps and adding path prefixes."),&sql);
-				time_path_solution.fill_gaps_and_add_path_prefixes(ns_time_path_solution::default_length_of_fast_moving_prefix());
+					image_server->register_server_event(ns_image_server_event("Filling gaps and adding path prefixes."),&sql);
+					time_path_solution.fill_gaps_and_add_path_prefixes(ns_time_path_solution::default_length_of_fast_moving_prefix());
 				
-				//unnecissary save, done for debug
-			//	time_path_solution.save_to_db(job.region_id,sql);
+					//unnecissary save, done for debug
+				//	time_path_solution.save_to_db(job.region_id,sql);
 				
-				image_server->register_server_event(ns_image_server_event("Caching image data for inferred worm positions."),&sql);
-				ns_image_server_time_path_inferred_worm_aggregator ag;
-				ag.create_images_for_solution(job.region_id,time_path_solution,sql);
+					image_server->register_server_event(ns_image_server_event("Caching image data for inferred worm positions."),&sql);
+					ns_image_server_time_path_inferred_worm_aggregator ag;
+					bool solution_needs_to_be_rebuilt(ag.create_images_for_solution(job.region_id,time_path_solution,sql));
+					//corrupt images are marked as problematic in the db and have their worm detection deleted. Thus, we need to rebuild the 
+					//solution in order to account for these deletions.
+					if (solution_needs_to_be_rebuilt){
+						if (count > 2)
+							throw ns_ex("Multiple attempts at analysis turned up corrupt images.  They all should have been caught in the first round, so we're giving up.");
+						image_server->register_server_event(ns_image_server_event("Corrupt images were found and excluded.  Attempting to re-run analysis.."),&sql);
+						count++;
+					}
+					else break;
+				}
 				
 				//ns_worm_tracking_model_parameters tracking_parameters(ns_worm_tracking_model_parameters::default_parameters());
 				//ns_worm_tracker worm_tracker;

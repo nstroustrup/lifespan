@@ -114,7 +114,7 @@ public:
 	unsigned long & time(const ns_time_element_link & e){return timepoints[e.t_id].time;}
 
 	void fill_gaps_and_add_path_prefixes(const unsigned long prefix_length);
-	void remove_inferred_animal_locations(const unsigned long timepoint_index);
+	void remove_inferred_animal_locations(const unsigned long timepoint_index, bool delete_uninferred_animals_also);
 	std::vector<ns_time_path_timepoint> timepoints;
 	std::vector<ns_time_path> paths;
 	std::vector<ns_time_path_group> path_groups;

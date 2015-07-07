@@ -2636,6 +2636,7 @@ ns_vector_2i ns_image_processing_pipeline::get_vertical_registration(const ns_im
 		//while(true){
 			try{
 				reference_image_profile = image_server.image_registration_profile_cache.get(reference_image_db_record.id);
+			
 				if (reference_image_profile != 0){
 					reference_image_loaded = true;
 					break;

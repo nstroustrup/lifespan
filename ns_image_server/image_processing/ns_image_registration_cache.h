@@ -12,11 +12,13 @@ typedef std::vector<ns_64_bit> ns_image_registation_profile_dimension;
 typedef enum {ns_no_registration,ns_threshold_registration,ns_sum_registration,ns_full_registration,ns_compound_registration} ns_registration_method;
 	 
 struct ns_downsampling_sizes{
-	unsigned long downsample_factor;
+	unsigned long downsample_factor,
+			      downsample_factor_2;
 	ns_image_properties downsampled,
 						downsampled_2;
 };
 
+#include"ns_image_easy_io.h"
 template<class image_type>
 struct ns_image_registration_profile{
 	 ns_image_registration_profile():registration_method(ns_no_registration),average(0),downsampling_factor(0),last_accessed_timestamp(0){}
@@ -36,23 +38,43 @@ struct ns_image_registration_profile{
 
 	 static ns_downsampling_sizes calculate_downsampled_sizes(const ns_image_properties & whole_image_properties,const unsigned long max_average_dimention,const unsigned long spec_downsample_factor=0){
 		ns_downsampling_sizes s;
-
+		s.downsampled = s.downsampled_2 = whole_image_properties;
 		if (spec_downsample_factor == 0){
 			s.downsample_factor= sqrt((double)((whole_image_properties.width*(ns_64_bit)whole_image_properties.height)/(max_average_dimention*max_average_dimention)));
 			if (s.downsample_factor > 20)
 				s.downsample_factor = 20;
 		}
 		else s.downsample_factor=spec_downsample_factor;
-			
-		s.downsampled.width=whole_image_properties.width/s.downsample_factor;
-		s.downsampled.height=whole_image_properties.height/s.downsample_factor;
 
-		s.downsampled_2.width=whole_image_properties.width/NS_SECONDARY_DOWNSAMPLE_FACTOR;
-		s.downsampled_2.height=whole_image_properties.height/NS_SECONDARY_DOWNSAMPLE_FACTOR;
+		s.downsample_factor_2 = NS_SECONDARY_DOWNSAMPLE_FACTOR;
+			
+		s.downsampled.width=ceil(whole_image_properties.width/(float)s.downsample_factor);
+		s.downsampled.height=ceil(whole_image_properties.height/(float)s.downsample_factor);
+
+		s.downsampled_2.width=ceil(whole_image_properties.width/(float)NS_SECONDARY_DOWNSAMPLE_FACTOR);
+		s.downsampled_2.height=ceil(whole_image_properties.height/(float)NS_SECONDARY_DOWNSAMPLE_FACTOR);
 		return s;
 
 	 }
+
+	 
+	static void ns_fast_downsample(const ns_image_standard & source,ns_image_standard & downsample_1, ns_image_standard & downsample_2, const unsigned long max_average_dimention, const unsigned long spec_downsample_factor=0){
+		ns_downsampling_sizes sizes(ns_image_registration_profile<ns_8_bit>::calculate_downsampled_sizes(source.properties(),max_average_dimention,spec_downsample_factor));
+		downsample_1.init(sizes.downsampled);
+		downsample_2.init(sizes.downsampled_2);
+		for (long y = 0; y < source.properties().height; y++){
+			if (y%sizes.downsample_factor == 0){
+				for (long x = 0; x < source.properties().width; x+=sizes.downsample_factor)
+					downsample_1[y/sizes.downsample_factor][x/sizes.downsample_factor] = source[y][x];
+			}
+			if (y%sizes.downsample_factor_2 == 0){
+				for (long x = 0; x < source.properties().width; x+=sizes.downsample_factor_2)
+					downsample_2[y/sizes.downsample_factor_2][x/sizes.downsample_factor_2] = source[y][x];
+			}
+		}
+	}
 };
+
 
 typedef ns_image_buffered_multi_line_random_access_input_image<ns_8_bit,ns_image_storage_source<ns_8_bit> > ns_registration_disk_buffer;
 class ns_disk_buffered_image_registration_profile : public ns_image_registration_profile<ns_registration_disk_buffer>{
@@ -67,13 +89,16 @@ public:
 			source.input_stream().pump(image,1024);
 			const ns_downsampling_sizes downsampling_sizes(calculate_downsampled_sizes(image.properties(),max_average_dimention,downsample_factor));
 			this->downsampling_factor = downsampling_sizes.downsample_factor;
-
-			image.resample(downsampling_sizes.downsampled,downsampled_image);
-
+			
 			ns_image_standard downsampled_2;
-			image.resample(downsampling_sizes.downsampled_2,downsampled_2);
-		
+			//no need to do linear interpolation.  Nobody sees these images and any aliasing will be handled by comparrison between the less downsampled copies
+			ns_fast_downsample(image,downsampled_image,downsampled_2,max_average_dimention,downsample_factor);
+		//	ns_save_image("c:\\server\\downsample_1.tif",downsampled_image);
+			//ns_save_image("c:\\server\\downsample_2.tif",downsampled_2);
 
+			//image.resample(downsampling_sizes.downsampled,downsampled_image);
+			//image.resample(downsampling_sizes.downsampled_2,downsampled_2);
+	//		throw ns_ex("SHA");
 			whole_filename = std::string("registration_cache_")+ns_to_string(im.id);
 			downsampled_filename = whole_filename + "_downsampled.tif";
 			whole_filename += ".tif";

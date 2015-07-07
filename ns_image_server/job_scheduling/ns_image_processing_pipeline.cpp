@@ -2644,7 +2644,9 @@ ns_vector_2i ns_image_processing_pipeline::get_vertical_registration(const ns_im
 				reference_image_profile = new ns_disk_buffered_image_registration_profile;
 				//if we can't pre-load the profile, load the source image from disk
 				t.start();
+				cerr << "Downsampling reference image...";
 				reference_image_profile->prepare_images(reference_image_db_record,500,sql,&image_server.image_storage);
+				cerr << "\n";
 				//cerr << "cache reference: " << t.stop()/1000.0/1000.0 << "\n";
 				image_server.image_registration_profile_cache.insert(reference_image_db_record.id,reference_image_profile,&image_server.image_storage);
 
@@ -2667,7 +2669,9 @@ ns_vector_2i ns_image_processing_pipeline::get_vertical_registration(const ns_im
 		delete_profile_after_use = false;
 	else{
 		delete_profile_after_use = true;
+		cerr << "Downsampling image...";
 		*requested_image = new ns_disk_buffered_image_registration_profile;
+		cerr << "\n";
 		(*requested_image)->prepare_images(source,500,sql,&image_server.image_storage,reference_image_profile->downsampling_factor);
 	}
 //cerr << "cache subject: " << t.stop()/1000.0/1000.0 << "\n";

@@ -1865,10 +1865,10 @@ void ns_image_processing_pipeline::resize_sample_image(ns_image_server_captured_
 
 void ns_image_processing_pipeline::resize_region_image(ns_image_server_captured_image_region & region_image,ns_sql & sql){
 	region_image.load_from_db(region_image.region_images_id,&sql);
-	ns_image_server_event ev("ns_image_processing_pipeline::Creating resized region image ");
+	//ns_image_server_event ev("ns_image_processing_pipeline::Creating resized region image ");
 
-	ev << region_image.experiment_name << "::" << region_image.sample_name << "::" << region_image.region_name << ":: " << region_image.capture_time;
-	image_server.register_server_event(ev,&sql);
+	//ev << region_image.experiment_name << "::" << region_image.sample_name << "::" << region_image.region_name << ":: " << region_image.capture_time;
+	//image_server.register_server_event(ev,&sql);
 
 	ns_image_server_image small_image(region_image.create_storage_for_processed_image(ns_process_thumbnail,ns_jpeg,&sql));
 	
@@ -1967,33 +1967,33 @@ void ns_image_processing_pipeline::apply_mask(ns_image_server_captured_image & c
 		
 
 		//load captured image that will be masked
-		ns_image_whole<ns_component> source_im;
+		//ns_image_whole<ns_component> source_im;
+		ns_registration_disk_buffer * source_im(0);
+		ns_acquire_for_scope<ns_registration_disk_buffer> new_image_buffer;
 		ns_image_server_image source_image;
 		source_image.id = captured_image.capture_images_image_id;
 		
 
 		
 		ns_vector_2i offset = ns_vector_2i(0,0);
-		ns_disk_buffered_image_registration_profile *profile;
-		bool delete_after_use;
+		ns_disk_buffered_image_registration_profile *profile(0);
+		bool delete_registration_profile_after_use;
 		if (apply_vertical_image_registration){
-			offset = get_vertical_registration(captured_image,source_image,sql,&profile,delete_after_use);
+			offset = get_vertical_registration(captured_image,source_image,sql,&profile,delete_registration_profile_after_use);
 
 			//we don't need to load the image again from long term storage--we have a cached version here!
-			profile->whole_image.seek_to_beginning();
-			source_im.init(profile->whole_image.properties());
+			//profile->whole_image.seek_to_beginning();
+			source_im = &profile->whole_image;
+			/*source_im.init(profile->whole_image.properties());
 			for (unsigned long y = 0; y < source_im.properties().height; y++)
 				for (unsigned long x = 0; x < source_im.properties().width; x++){
 					source_im[y][x] = profile->whole_image.safe_access(y)[x];
-				}
-			if (delete_after_use){
-				profile->cleanup(&image_server.image_storage);
-				delete profile;
-			}
+				}*/
 		}
 		else{
-			ns_image_storage_source_handle<ns_component> source(image_server.image_storage.request_from_storage(source_image,&sql));		
-			source.input_stream().pump(source_im,_image_chunk_size);
+			new_image_buffer.attach(new ns_registration_disk_buffer);
+			new_image_buffer().assign_buffer_source(image_server.image_storage.request_from_storage(source_image,&sql).input_stream(),0,_image_chunk_size);
+			source_im = &new_image_buffer();
 		}
 		
 		mask_splitter.mask_info()->load_from_db(mask_id,sql);
@@ -2101,7 +2101,7 @@ void ns_image_processing_pipeline::apply_mask(ns_image_server_captured_image & c
 		mask_splitter.specificy_sample_image_statistics(sample_image_statistics);
 
 		try{
-			source_im.pump(mask_splitter,_image_chunk_size);
+			source_im->pump(&mask_splitter,_image_chunk_size);
 
 			//mark all regions as processed.
 			for (unsigned int i = 0; i < output_regions.size(); i++){
@@ -2111,7 +2111,10 @@ void ns_image_processing_pipeline::apply_mask(ns_image_server_captured_image & c
 				sql << "UPDATE sample_region_images SET currently_under_processing=0, image_statistics_id=" << image_stats_db_id << " WHERE id= " << output_regions[i].region_images_id ;
 				sql.send_query();
 			}
-			
+			if (delete_registration_profile_after_use){
+				profile->cleanup(&image_server.image_storage);
+				delete profile;
+			}
 			//update movement records to include the new regions
 			//ns_movement_database_maintainer m;
 			//m.create_movement_tables_for_masked_region_images(captured_image,output_regions,sql);
@@ -2126,6 +2129,12 @@ void ns_image_processing_pipeline::apply_mask(ns_image_server_captured_image & c
 
 		}
 		catch (ns_ex & ex){
+
+			
+			if (delete_registration_profile_after_use){
+				profile->cleanup(&image_server.image_storage);
+				delete profile;
+			}
 			sql.clear_query();
 			//if the image doesn't exist or is corrupted, mark the record as "problem".
 			if (ex.type() == ns_file_io){
@@ -2669,7 +2678,7 @@ ns_vector_2i ns_image_processing_pipeline::get_vertical_registration(const ns_im
 		delete_profile_after_use = false;
 	else{
 		delete_profile_after_use = true;
-		cerr << "Downsampling image...";
+		cerr << "Downsampling subject image...";
 		*requested_image = new ns_disk_buffered_image_registration_profile;
 		cerr << "\n";
 		(*requested_image)->prepare_images(source,500,sql,&image_server.image_storage,reference_image_profile->downsampling_factor);

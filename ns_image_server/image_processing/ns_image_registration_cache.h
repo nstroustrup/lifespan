@@ -18,7 +18,7 @@ struct ns_downsampling_sizes{
 						downsampled_2;
 };
 
-#include"ns_image_easy_io.h"
+//#include"ns_image_easy_io.h"
 
 
 typedef ns_image_buffered_multi_line_random_access_input_image<ns_8_bit,ns_image_storage_source<ns_8_bit> > ns_registration_disk_buffer;

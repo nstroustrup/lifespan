@@ -118,7 +118,7 @@ public:
 
 	inline void resize(const ns_image_properties & properties){init(properties);}
 
-	inline void seek_to_beginning(){image_ssource->seek_to_beginning(); assign_buffer_source(*image_source);}
+	inline void seek_to_beginning(){image_source->seek_to_beginning(); assign_buffer_source(*image_source);}
 
 	const inline ns_image_properties & properties() const{
 			return _properties;

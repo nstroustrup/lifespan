@@ -59,7 +59,7 @@ public:
 		t.start();
 		std::cerr << "Running course alignment...  ";
 		ns_vector_2i downsampled_shift(register_whole_images<ns_image_standard,ns_image_standard,1>(r.downsampled_image,a.downsampled_image,downsampled_max_offset*-1,downsampled_max_offset));
-		cerr << downsampled_shift.x << "," << downsampled_shift.y << " ";
+		std::cerr << downsampled_shift.x << "," << downsampled_shift.y << " ";
 		downsampled_shift = downsampled_shift*r.downsampling_factor;
 	
 		ns_vector_2i downsample_v(r.downsampling_factor,r.downsampling_factor);
@@ -72,7 +72,7 @@ public:
 			ns_vector_2i downsampled_shift_2(
 					register_whole_images<T1,T2,3>(r.downsampled_image_2,a.downsampled_image_2,
 						(downsampled_shift-downsample_v)/NS_SECONDARY_DOWNSAMPLE_FACTOR,(downsampled_shift+downsample_v)/NS_SECONDARY_DOWNSAMPLE_FACTOR));
-			cerr << downsampled_shift_2.x << "," << downsampled_shift_2.y << " ";
+			std::cerr << downsampled_shift_2.x << "," << downsampled_shift_2.y << " ";
 			//cerr << "med_res: " << t.stop()/1000.0/1000.0 << "\n";
 			downsampled_shift_2 = downsampled_shift_2*NS_SECONDARY_DOWNSAMPLE_FACTOR;
 			ns_vector_2i downsample_v(NS_SECONDARY_DOWNSAMPLE_FACTOR,NS_SECONDARY_DOWNSAMPLE_FACTOR);
@@ -82,7 +82,7 @@ public:
 			//t.start();
 			std::cerr << "Running full alignment...";
 			ns_vector_2i full(register_whole_images<T1,T2,3>(r.whole_image,a.whole_image,downsampled_shift_2-downsample_v,downsampled_shift_2+downsample_v));
-			cerr << full.x << "," << full.y << "\n";
+			std::cerr << full.x << "," << full.y << "\n";
 			return full;
 			//cerr << "high_res: " << t.stop()/1000.0/1000.0 << "\n";
 		}

@@ -376,15 +376,28 @@ void ns_image_server_automated_job_scheduler::handle_when_completed_priority_job
 		}
 	}
 }
-void ns_image_server_automated_job_scheduler::identify_experiments_needing_captured_image_protection(ns_sql & sql){
+void ns_image_server_automated_job_scheduler::identify_experiments_needing_captured_image_protection(ns_sql & sql,const ns_64_bit specific_sample_id){
 	const long number_of_images_to_protect(5);
-	sql << "SELECT s.id,s.name, e.name FROM capture_samples as s, experiments as e WHERE e.id = s.experiment_id "
-			"AND s.first_frames_are_protected=0 AND e.hidden = 0";
+	std::vector<ns_64_bit> sample_ids;
 	ns_sql_result samples;
-	sql.get_rows(samples);
+	if (specific_sample_id == 0){
+		sql << "SELECT s.id,s.name, e.name FROM capture_samples as s, experiments as e WHERE e.id = s.experiment_id "
+				"AND s.first_frames_are_protected=0 AND e.hidden = 0";
+		sql.get_rows(samples);
+		sample_ids.resize(samples.size());
+		for (unsigned int i = 0; i < samples.size(); i++){
+			sample_ids[i] = ns_atoi64(samples[i][0].c_str());
+		}
+	}else{
+		sample_ids.push_back(specific_sample_id);
+		sql << "SELECT s.id,s.name, e.name FROM capture_samples as s, experiments as e WHERE s.id = " << specific_sample_id << " AND e.id = s.experiment_id ";
+		sql.get_rows(samples);
+		if (samples.size() == 0)
+			throw ns_ex("Could not find sample ") << specific_sample_id << " in the db";
+	}
 	
-	for (unsigned int i = 0; i < samples.size(); i++){
-		const unsigned long sample_id(atol(samples[i][0].c_str()));
+	for (unsigned int i = 0; i < sample_ids.size(); i++){
+		const ns_64_bit sample_id(sample_ids[i]);
 		sql << "SELECT id, never_delete_image FROM captured_images WHERE image_id != 0 AND problem = 0 "
 			    "AND currently_being_processed = 0 AND sample_id = " << sample_id
 			<< " ORDER BY capture_time ASC LIMIT " << number_of_images_to_protect;

@@ -103,7 +103,7 @@ void ns_check_for_file_errors(ns_processing_job & job, ns_sql & sql){
 
 		sql << "SELECT id,capture_time, image_id, small_image_id FROM captured_images WHERE problem = 0 AND currently_being_processed=0 AND sample_id = " << job.sample_id;
 		sql.get_rows(res);
-
+		bool found_problem(false);
 		for (unsigned int i = 0; i < res.size(); i++){
 			bool problem(false);
 			bool large_image_exists(false);
@@ -113,6 +113,7 @@ void ns_check_for_file_errors(ns_processing_job & job, ns_sql & sql){
 				im.load_from_db(im.id,&sql);
 				if (!image_server.image_storage.image_exists(im,&sql,true)){
 					problem = true;
+					found_problem = true;
 					const ns_64_bit event_id(image_server.register_server_event(ns_image_server_event("Large capture image cannot be found on disk:") << experiment_name << "::" << sample_name << "::" << ns_format_time_string(atol(res[i][1].c_str())),&sql));
 					im.mark_as_problem(&sql,event_id);
 				}
@@ -133,13 +134,16 @@ void ns_check_for_file_errors(ns_processing_job & job, ns_sql & sql){
 					}
 					problem = true;
 				}
-				if (problem){
-					sql << "UPDATE captured_images SET problem = 1 WHERE id = " << res[i][0];
-					sql.send_query();
-				}
+			}
+			if (problem){
+				sql << "UPDATE captured_images SET problem = 1 WHERE id = " << res[i][0];
+				sql.send_query();
 			}
 		}
 		sql.send_query("COMMIT");
+			
+		if (found_problem)
+			ns_image_server_automated_job_scheduler::identify_experiments_needing_captured_image_protection(sql,job.sample_id);
 	}
 	else throw ns_ex("ns_check_for_file_errors()::No subject specified for file checking");
 }

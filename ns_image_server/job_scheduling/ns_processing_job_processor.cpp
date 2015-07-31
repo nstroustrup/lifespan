@@ -437,7 +437,7 @@ bool ns_processing_job_whole_sample_processor::identify_subjects_of_job_specific
 bool ns_processing_job_maintenance_processor::identify_subjects_of_job_specification(std::vector<ns_processing_job_queue_item> & subjects,ns_sql & sql){
 	ns_processing_job_queue_item item;
 	item.experiment_id = job.experiment_id;
-	item.experiment_id = job.sample_id;
+	item.sample_id = job.sample_id;
 	item.sample_region_info_id = job.region_id;
 	item.job_id = job.id;
 	if (job.urgent) item.priority = ns_image_server_push_job_scheduler::ns_job_queue_urgent_priority;

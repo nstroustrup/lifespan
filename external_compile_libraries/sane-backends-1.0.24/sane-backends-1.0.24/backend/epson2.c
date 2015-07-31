@@ -979,7 +979,7 @@ init_options(Epson_Scanner *s)
 	s->val[OPT_MODE].w = 0;	/* Binary */
 
 	/* disable infrared on unsupported scanners */
-	if (!e2_model(s, "GT-X800") && !e2_model(s, "GT-X700") && !e2_model(s, "GT-X900"))
+	if (!e2_model(s, "GT-X800") && !e2_model(s, "GT-X700") && !e2_model(s, "GT-X900") && !e2_model(s, "GT-X980"))
 		mode_list[MODE_INFRARED] = NULL;
 
 	/* bit depth */

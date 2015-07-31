@@ -713,7 +713,7 @@ e2_discover_capabilities(Epson_Scanner *s)
 		}
 
                 /* TPU2 */
-		if (e2_model(s, "GT-X800") || e2_model(s, "GT-X900")) {
+		if (e2_model(s, "GT-X800") || e2_model(s, "GT-X900") || e2_model(s, "GT-X980")) {
 			if (le32atoh(&buf[68]) > 0 ) {
 				e2_set_tpu2_area(s,
 					  	 le32atoh(&buf[68]),

@@ -1031,8 +1031,13 @@ void ns_image_server_dispatcher::recieve_image_thread(ns_image_server_message & 
 bool ns_image_server_dispatcher::look_for_work(){
 	bool action_performed(false);
 	ns_acquire_lock_for_scope sql_lock(work_sql_management_lock,__FILE__,__LINE__);
-	if (work_sql_connection == 0)
+	if (work_sql_connection == 0){
 		work_sql_connection = image_server.new_sql_connection(__FILE__,__LINE__);
+	}else{
+		//clear any dangling transactions
+		work_sql_connection->set_autocommit(true);
+		work_sql_connection->send_query("ROLLBACK");
+	}
 	try{
 		work_sql_connection->clear_query();
 		work_sql_connection->check_connection();

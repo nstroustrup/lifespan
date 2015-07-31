@@ -37,7 +37,7 @@ struct ns_worm_movement_measurement_summary_timepoint_data{
 		number_permanantly_lost_before_end_of_experiment(0){}
 
 	static void out_header(const std::string & name, std::ostream & o, const char separator);
-	void out_data(std::ostream & o, const char & separator) const;
+	void out_data(const unsigned long max_total_observed_alive,std::ostream & o, const char & separator) const;
 	
 	unsigned long
 		number_moving_fast,
@@ -194,7 +194,7 @@ struct ns_worm_movement_measurement_summary{
 	}
 
 	static void out_header(std::ostream & o);
-	void to_file(const ns_region_metadata & metadata,std::ostream & o) const;
+	void to_file(const ns_region_metadata & metadata,const unsigned long total_number_of_worms,std::ostream & o) const;
 //	bool from_file(std::istream & o);
 };
 

@@ -636,8 +636,14 @@ void ns_worm_movement_summary_series::calculate_maximums(){
 }
 
 void ns_worm_movement_summary_series::to_file(const ns_region_metadata & metadata,std::ostream & o) const{
+	unsigned long total_number_of_worms(0);
 	for (unsigned int i = 0; i < measurements.size(); i++){
-		measurements[i].to_file(metadata,o);
+		unsigned long s(measurements[i].all_measurement_types_total.number_cumulative_deaths()+measurements[i].all_measurement_types_total.number_permanantly_lost);
+		if (s>total_number_of_worms)
+			total_number_of_worms=s;
+	}
+	for (unsigned int i = 0; i < measurements.size(); i++){
+		measurements[i].to_file(metadata,total_number_of_worms,o);
 	}
 }
 /*
@@ -664,7 +670,7 @@ void ns_worm_movement_measurement_summary::out_header(std::ostream & o){
 	ns_worm_movement_measurement_summary_timepoint_data::out_header("Excluded",o,',');
 	ns_worm_movement_censoring_data::out_header(o,'\n');
 }
-void ns_worm_movement_measurement_summary::to_file(const ns_region_metadata & metadata,ostream & o) const{
+void ns_worm_movement_measurement_summary::to_file(const ns_region_metadata & metadata,const unsigned long total_number_of_worms,ostream & o) const{
 	o << metadata.strain << "," << metadata.genotype << ","
 	<< metadata.strain_condition_1 << "," << metadata.strain_condition_2 << "," 
 	<<((metadata.genotype.size()>0)?metadata.genotype:metadata.strain) 
@@ -676,10 +682,11 @@ void ns_worm_movement_measurement_summary::to_file(const ns_region_metadata & me
 	<< "," << time/(60.0*60*24) << ",";
 	o << all_measurement_types_total.number_alive() + all_measurement_types_total.number_cumulative_deaths() 
 		+ censoring_data.cumulative_number_censored_from_multiworm_clusters << ",";
-	all_measurement_types_total.out_data(o,',');
+	
+	all_measurement_types_total.out_data(total_number_of_worms,o,',');
 
 	o << all_measurement_types_excluded_total.number_alive() + all_measurement_types_excluded_total.number_cumulative_deaths() << ",";
-	all_measurement_types_excluded_total.out_data(o,',');
+	all_measurement_types_excluded_total.out_data(total_number_of_worms,o,',');
 	censoring_data.out_data(o,'\n');
 }
 //bool ns_worm_movement_measurement_summary::from_file(istream & i){
@@ -744,10 +751,17 @@ void ns_worm_movement_measurement_summary_timepoint_data::out_header(const std::
 			<< name << " Number of Missing Animals,"
 			<< name << " Number of Missing Animals (Smoothed),"
 			<< name << " Cumulative Number Permanantly Lost,"
-			<< name << " Cumulative Number Permanantly Lost Before The Experiment Ended"
+			<< name << " Cumulative Number Permanantly Lost Before The Experiment Ended,"
+			<< name << " Max Total Observed Alive,"
+			<< name << " Fraction Cumulative Dead,"
+			<< name << " Fraction Moving Fast,"
+			<< name << " Fraction Moving Slow,"
+			<< name << " Fraction Changing Posture,"
+			<< name << " Fraction Stationary,"
+			<< name << " Fraction Cumulative Permamantly Lost"
 			<< separator;
 }
-void ns_worm_movement_measurement_summary_timepoint_data::out_data(std::ostream & o, const char & separator) const{
+void ns_worm_movement_measurement_summary_timepoint_data::out_data(const unsigned long max_total_observed,std::ostream & o, const char & separator) const{
 	o << number_alive() << ","
 		<< number_moving_fast << ","
 		<< number_moving_slow << ","
@@ -762,8 +776,18 @@ void ns_worm_movement_measurement_summary_timepoint_data::out_data(std::ostream 
 		<< number_of_missing_animals << ","
 		<< number_of_missing_animals_smoothed << ","
 		<< number_permanantly_lost << ","
-		<< number_permanantly_lost_before_end_of_experiment
-		<< separator;
+		<< number_permanantly_lost_before_end_of_experiment << ","
+		<< max_total_observed << ",";
+	if (max_total_observed == 0)
+		o << ",,,,,";
+	else
+		o << floor(100*number_cumulative_deaths()/(float)max_total_observed)/100 << ","
+		<< floor(100*number_moving_fast/(float)max_total_observed)/100<<","
+		<< floor(100*number_moving_slow/(float)max_total_observed)/100<<","
+		<< floor(100*number_stationary/(float)max_total_observed)/100<<","
+		<< floor(100*number_moving_slow/(float)max_total_observed)/100<<","
+		<< floor(100*number_permanantly_lost/(float)max_total_observed)/100;
+	o << separator;
 }
 void ns_worm_movement_measurement_summary_timepoint_data::add(const ns_worm_movement_measurement_summary_timepoint_data & s){
 						

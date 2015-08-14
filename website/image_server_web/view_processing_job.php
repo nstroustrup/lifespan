@@ -880,7 +880,7 @@ for ($i = 0; $i < sizeof($jobs); $i++){
     $sql->send_query($unlock_tables_query);
     if (!($clear_region=='')){
       for ($i = 0; $i < sizeof($samples_to_process); $i++){
-	$query = "UPDATE captured_images SET problem = 0, mask_applied=0 WHERE sample_id = " . $samples_to_process[$i];
+	$query = "UPDATE captured_images SET problem = 0, mask_applied=0,registration_offset_calculated=0,registration_horizontal_offset=0,registration_vertical_offset=0 WHERE sample_id = " . $samples_to_process[$i];
 	//echo $query . "<BR>";
 	$sql->send_query($query);
       }

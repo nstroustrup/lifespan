@@ -101,7 +101,7 @@ double inline ns_truncate_negatives(const double & d){
 #include <fstream>
 void ns_posture_change_markov_likelihood_estimator::calculate_cumulative_loglikelihoods(const std::vector<double> & movement, const std::vector<double> & tm) const{
 	if (movement.size() == 0)
-		throw ns_ex("ns_posture_change_markov_likelihood_estimator::calculate_cumulative_loglikelihoods()::Empty time series recieved");
+		throw ns_ex("ns_posture_change_markov_likelihood_estimator::calculate_cumulative_loglikelihoods()::Empty time series received");
 
 	moving_cumulative_loglikelihood.resize(movement.size());
 	reverse_cumulative_dead_loglikelihood.resize(movement.size());

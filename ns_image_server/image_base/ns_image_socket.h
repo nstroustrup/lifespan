@@ -126,15 +126,15 @@ public:
 		bprop.height = 512;
 		bprop.width = ns_image_stream_sender< ns_component, ns_image_socket_reciever< ns_component > >::_properties.width*ns_image_stream_sender< ns_component, ns_image_socket_reciever< ns_component > >::_properties.components;
 		buffer.resize(bprop);
-		my_lines_recieved = 0;
+		my_lines_received = 0;
 
 	}
 	template<class write_buffer>
 	 void send_lines(write_buffer & lines, unsigned int count){
 		//recieve in chunks of 512 lines
-		unsigned long lines_recieved_so_far = 0;
-		while (lines_recieved_so_far < count){
-			unsigned long lines_to_recieve = count - lines_recieved_so_far;
+		unsigned long lines_received_so_far = 0;
+		while (lines_received_so_far < count){
+			unsigned long lines_to_recieve = count - lines_received_so_far;
 			if (lines_to_recieve > 512)
 				lines_to_recieve = 512;
 
@@ -142,19 +142,19 @@ public:
 			for (unsigned int i = 0; i < lines_to_recieve; i++){
 				buf = reinterpret_cast<char *>(lines[i]);
 				//cerr << "Recieving " << buffer.properties().width*byte_resize_factor << " bytes.\n";
-				socket_connection->read(&buf[lines_recieved_so_far],buffer.properties().width*byte_resize_factor);
+				socket_connection->read(&buf[lines_received_so_far],buffer.properties().width*byte_resize_factor);
 			}
-			lines_recieved_so_far += lines_to_recieve;
+			lines_received_so_far += lines_to_recieve;
 		}
-		my_lines_recieved += count;
-		//std::cerr << "Recieved " << my_lines_recieved << " lines.\n";
+		my_lines_received += count;
+		//std::cerr << "received " << my_lines_received << " lines.\n";
 		//XXX
 	}
 
 	ns_image_stream_static_buffer<ns_component> buffer;
 	ns_socket_connection * socket_connection;
 	char byte_resize_factor;
-	unsigned long my_lines_recieved;
+	unsigned long my_lines_received;
 };
 
 //specialization for bitmaps

@@ -322,7 +322,7 @@ void ns_capture_device::capture(ns_image_capture_specification & c){
 				else
 					c.time_spent_reading_from_device += read_clock.stop();
 				
-				c.speed_regulator.register_data_as_recieved(i);
+				c.speed_regulator.register_data_as_received(i);
 				total_bytes_read += i;
 				if (i == 0){
 					c.total_time_during_read = 	total_clock.stop();
@@ -487,19 +487,19 @@ void ns_image_capture_device_speed_regulator::initialize_for_capture(const unsig
 	total_number_of_expected_bytes = total_number_of_expected_bytes_;
 	desired_scan_duration = desired_scan_duration_;
 	warnings.clear();
-//	cerr << "Speed regulator has recieved a request for an image of " << total_number_of_expected_bytes/1000 << " kb to take "
+//	cerr << "Speed regulator has received a request for an image of " << total_number_of_expected_bytes/1000 << " kb to take "
 //		 << desired_scan_duration << " seconds.\n";
 }
 
-void ns_image_capture_device_speed_regulator::register_data_as_recieved(unsigned long bytes){
+void ns_image_capture_device_speed_regulator::register_data_as_received(unsigned long bytes){
 	
 
 	bytes_read_so_far+=bytes;
-	packets_recieved++;
+	packets_received++;
 	//if we had a bad estimate of the total number of expected bytes, then we've overshot
 	//the timing and don't want to inject any more delay.
 	if (total_number_of_expected_bytes <= bytes_read_so_far ||
-		bytes_read_so_far == 0 || packets_recieved < 10){
+		bytes_read_so_far == 0 || packets_received < 10){
 		pending_delay = 0;
 		return;
 	}
@@ -555,7 +555,7 @@ void ns_image_capture_device_speed_regulator::register_start(){
 	pending_delay = 0;
 	decile_times.resize(0);
 	decile_times.resize(10,0);
-	packets_recieved = 0;
+	packets_received = 0;
 	previous_pending_delay = 0;
 	warnings.clear();
 }

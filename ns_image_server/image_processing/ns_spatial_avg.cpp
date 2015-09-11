@@ -132,8 +132,8 @@ public:
 	  kernal_height(_kernal_height),
 	  kernal_half_height(_kernal_height/2),
 	  in_buf(max_line_block_height + _kernal_height -1),  //the largest possible buffer size occurs when reading the first line,
-													   //when _kernal_height - 1 lines have previously been recieved (necissitating their buffering
-													   //and then max_line_block_height is recieved.
+													   //when _kernal_height - 1 lines have previously been received (necissitating their buffering
+													   //and then max_line_block_height is received.
 	  ns_image_stream_processor(properties, max_line_block_height){
 		  if (kernal_height % 2 != 1) throw ns_ex("only odd Kernal sizes may be specified.");
 
@@ -152,12 +152,12 @@ public:
 
 	}
 	void recieve_lines(ns_image_stream_lines<ns_component> & lines){
-		lines_recieved += lines.height;
+		lines_received += lines.height;
 		//we're reading in the first few lines
 		if (lines_processed < kernal_height){
 			//if we don't have enough lines to start processing, do nothing.
 			//Otherwise, process and send the top edge.
-			if (lines_recieved >= kernal_height){				
+			if (lines_received >= kernal_height){				
 				//get output buffer from reciever
 				ns_image_stream_lines<ns_component> output_lines;
 				output_lines.height = kernal_height/2;
@@ -186,7 +186,7 @@ public:
 		else{
 			//We need to keep kernal_height/2 lines above the current line in our buffer at all times
 			//these lines are necissary to fill the kernal for the current line!
-			long lines_to_process =  recieved_lines - processed_lines - kernal_half_height;
+			long lines_to_process =  received_lines - processed_lines - kernal_half_height;
 
 			//detect if we're hitting the end of the file
 			if (_properties.height - kernal_height < lines_to_process + lines_processed)
@@ -212,7 +212,7 @@ public:
 		}
 	}
 	void init(const ns_image_properties & properties){
-		lines_recieved = 0;
+		lines_received = 0;
 		lines_processed = 0;
 	}
     
@@ -220,7 +220,7 @@ private:
 	const unsigned long kernal_height,
 					    kernal_half_height;
 	unsigned long input_buffer_height;
-	unsigned long lines_recieved,
+	unsigned long lines_received,
 			 long lines_processed;
 
 	//used to store initial lines as kernal_height lines must be read in before processing can start.

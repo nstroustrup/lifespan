@@ -26,7 +26,7 @@ public:
 	ns_image_capture_device_speed_regulator():decile_times(10,0){}
 	void initialize_for_capture(const unsigned long total_number_of_expected_bytes_, 
 								const unsigned long desired_scan_duration_);  //in seconds
-	void register_data_as_recieved(unsigned long bytes);
+	void register_data_as_received(unsigned long bytes);
 	void register_start();
 	void register_stop();
 	ns_64_bit run_delay_if_necessary();  //returns the delay time in milliseconds
@@ -51,7 +51,7 @@ private:
 	
 	ns_high_precision_timer scan_duration;
 
-	unsigned long packets_recieved;
+	unsigned long packets_received;
 };
 
 struct ns_image_capture_specification{

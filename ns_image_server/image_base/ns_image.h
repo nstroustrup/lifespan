@@ -132,7 +132,7 @@ public:
 
 	storage_buffer * output_buffer;
 protected:
-	//should implement any code needed to prepare for a new file being recieved
+	//should implement any code needed to prepare for a new file being received
 	virtual bool init(const ns_image_properties & properties)=0;
 	ns_image_properties _properties;
 	unsigned long _max_line_block_height;
@@ -719,11 +719,11 @@ public:
 	//initialize as an empty image
 	ns_image_whole():avoid_memory_reallocations(false),ns_image_stream_reciever<ns_image_stream_static_offset_buffer<ns_component> >(0,this),
 							ns_image_stream_sender<ns_component,ns_image_whole<ns_component> >(ns_image_properties(0,0,0),this),
-							lines_recieved(0),lines_sent(0){}
+							lines_received(0),lines_sent(0){}
 
 	ns_image_whole<ns_component>(const ns_image_whole<ns_component> & w):ns_image_stream_reciever<ns_image_stream_static_offset_buffer<ns_component> >(0,this),
 							ns_image_stream_sender<ns_component,ns_image_whole<ns_component> >(ns_image_properties(0,0,0),this),avoid_memory_reallocations(false),
-							lines_recieved(0),lines_sent(0){
+							lines_received(0),lines_sent(0){
 		w.pump(*this,1024);
 	}
 
@@ -754,7 +754,7 @@ public:
 		///XXX Removing template specifications does not generate an error here
 		//NS_SR_PROPS_SENDER =
 		ns_image_stream_sender<ns_component, ns_image_whole<ns_component> >::_properties = properties;
-		lines_recieved = 0;
+		lines_received = 0;
 		image_buffer.set_offset(0);
 		return resized;
 	}
@@ -762,14 +762,14 @@ public:
 	inline bool resize(const ns_image_properties & properties){return init(properties);}
 
 	ns_image_stream_static_offset_buffer<ns_component> * provide_buffer(const ns_image_stream_buffer_properties & buffer_properties){
-		image_buffer.set_offset(lines_recieved);
+		image_buffer.set_offset(lines_received);
 		return &image_buffer;
 	}
 
 
 	//after the data is written to the provide_buffer() buffer, recieve_lines() is called.
 	void recieve_lines(const ns_image_stream_static_offset_buffer<ns_component> & lines, const unsigned long height){
-		lines_recieved+=height;
+		lines_received+=height;
 	}
 	void init_send(){lines_sent = 0;}
 	void init_send_const() const {lines_sent = 0;}
@@ -958,7 +958,7 @@ public:
 		n.NS_SR_PROPS = NS_SR_PROPS;
 		n.NS_SR_PROPS_SENDER = NS_SR_PROPS_SENDER;
 		n.lines_sent = lines_sent;
-		n.lines_recieved = lines_recieved;
+		n.lines_received = lines_received;
 
 		init(ns_image_properties(0,0,0));
 	}
@@ -1286,7 +1286,7 @@ public:
 private:
 	bool avoid_memory_reallocations;
 	ns_image_stream_static_offset_buffer<ns_component> image_buffer;
-	unsigned long lines_recieved;
+	unsigned long lines_received;
 	mutable unsigned long lines_sent;
 
 	///if the specified std::vector lies outside the image,

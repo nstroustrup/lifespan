@@ -212,7 +212,7 @@ unsigned int ns_socket_connection::read(char * buf, const unsigned long size){
 	       
 		if (recieve_result == -1)
 			throw ns_ex("Error during send!");
-		//cerr << "Recieved " << recieve_result << "\n";
+		//cerr << "received " << recieve_result << "\n";
 		bytes_read+=recieve_result;
 	}
 	#endif
@@ -292,7 +292,7 @@ unsigned long ns_socket_connection::read_uint(){
         unsigned long i=0;
 	//	cerr << "Reading" << (unsigned long)(sizeof(unsigned long)/sizeof(char)) << " bytes.\n";
 	this->read(reinterpret_cast<char *>(&i),(unsigned long)(sizeof(unsigned long)/sizeof(char)));
-	//cerr << "recieved " << is.size() << " characters: " <<uint_from_str(is)<< "(";
+	//cerr << "received " << is.size() << " characters: " <<uint_from_str(is)<< "(";
 	//out_char_string(is);
 	//cerr << ")\n";
 	return i;
@@ -308,7 +308,7 @@ ns_64_bit ns_socket_connection::read_64bit_uint(){
         unsigned long i=0;
 	//	cerr << "Reading" << (unsigned long)(sizeof(unsigned long)/sizeof(char)) << " bytes.\n";
 	this->read(reinterpret_cast<char *>(&i),(ns_64_bit)(sizeof(ns_64_bit)/sizeof(char)));
-	//cerr << "recieved " << is.size() << " characters: " <<uint_from_str(is)<< "(";
+	//cerr << "received " << is.size() << " characters: " <<uint_from_str(is)<< "(";
 	//out_char_string(is);
 	//cerr << ")\n";
 	return i;

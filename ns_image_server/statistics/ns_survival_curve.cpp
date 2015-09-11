@@ -2151,7 +2151,7 @@ void ns_survival_data::generate_risk_timeseries(const ns_movement_event & event_
 		cumulative_deaths+=event_count;
 	}
 	if (risk_timeseries.data_excluding_tails.total_number_of_deaths != cumulative_deaths - number_of_deaths_up_to_start)
-		throw ns_ex("Summing error:") << risk_timeseries.data_excluding_tails.total_number_of_deaths << " expected; " << cumulative_deaths - number_of_deaths_up_to_start << " recieved.";
+		throw ns_ex("Summing error:") << risk_timeseries.data_excluding_tails.total_number_of_deaths << " expected; " << cumulative_deaths - number_of_deaths_up_to_start << " received.";
 	risk_timeseries.data_excluding_tails.total_number_of_censoring_events = cumulative_censored - number_of_censoring_up_to_start;
 
 

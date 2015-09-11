@@ -258,7 +258,7 @@ class ns_tiff_image_output_file : public ns_image_output_file<ns_component>{
 public:
 	ns_tiff_image_output_file(const ns_tiff_compression_type ctype=ns_tiff_compression_lzw):
 	  	output_buffer_height(0),current_output_strip(0),output_buf(0),image(0),
-		  lines_recieved(0),rows_per_strip(NS_DEFAULT_TIFF_LINES_PER_STRIP),
+		  lines_received(0),rows_per_strip(NS_DEFAULT_TIFF_LINES_PER_STRIP),
 		  compression_type(ctype){ns_initialize_libtiff();}
 
 	~ns_tiff_image_output_file(){
@@ -353,7 +353,7 @@ public:
 			output_buf[output_buffer_height*NS_TIFF_WIDTH + i] = buffer[i];
 		//memcpy(&(output_buf[output_buffer_height*NS_TIFF_WIDTH]),buffer,sizeof(ns_component)*NS_TIFF_WIDTH);
 		output_buffer_height++;
-		lines_recieved++;
+		lines_received++;
 		if (output_buffer_height == rows_per_strip){
 		//	cerr << "Writing out strip " << current_output_strip << "\n";
 			long ret = TIFFWriteEncodedStrip(image,current_output_strip,output_buf,sizeof(ns_component)*NS_TIFF_WIDTH*output_buffer_height);
@@ -386,7 +386,7 @@ public:
 	ns_component * output_buf;
 	unsigned int output_buffer_height;
 	unsigned int current_output_strip;
-	unsigned int lines_recieved;
+	unsigned int lines_received;
 };
 
 

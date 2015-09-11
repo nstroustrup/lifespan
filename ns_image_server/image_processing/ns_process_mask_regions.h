@@ -282,7 +282,7 @@ public:
 	///Region information is saved to disk and annotated in the database
 	void finish_recieving_image(){
 		if (y != ns_image_stream_reciever<ns_image_stream_static_buffer<ns_component> >::_properties.height)
-			throw ns_ex("ns_image_mask_analyzer::finish_recieving_image() called before all lines recieved.");
+			throw ns_ex("ns_image_mask_analyzer::finish_recieving_image() called before all lines received.");
 
 		//we have collected all the raw data, but we do need to calculate the averages now it is all finished.
 		for (unsigned int i = 0; i < _mask_info.size(); i++){
@@ -454,7 +454,7 @@ public:
 	void recieve_lines(const ns_image_stream_static_buffer<ns_component> & lines, const unsigned long height){
 		ns_image_properties & im_properties(ns_image_stream_reciever<ns_image_stream_static_buffer<ns_component> >::_properties);
 		if (height + y > im_properties.height)
-			throw ns_ex("ns_image_mask_region_info:: To many lines recieved!");
+			throw ns_ex("ns_image_mask_region_info:: To many lines received!");
 
 		for (unsigned int _y = 0; _y < height; _y++){
 			for (unsigned int x = 0; x < im_properties.width; x++){
@@ -510,7 +510,7 @@ private:
 	unsigned int y;
 	///information about mask regions
 	ns_image_mask_info<ns_component> _mask_info;
-	//holds recieved image information as it is processed.
+	//holds received image information as it is processed.
 	ns_image_stream_static_buffer<ns_component> buffer;  
 	//the database id of the current mask
 	unsigned long mask_id;	

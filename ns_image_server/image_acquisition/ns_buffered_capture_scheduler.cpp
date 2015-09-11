@@ -44,7 +44,7 @@ void ns_table_format_processor::sql_get_column_names(const std::string & table_n
 		column_names[i] = res[i][0];
 
 	if (column_names.size() == 0)
-		throw ns_ex("No column names recieved for table ") << table_name << "!";
+		throw ns_ex("No column names received for table ") << table_name << "!";
 }
 
 

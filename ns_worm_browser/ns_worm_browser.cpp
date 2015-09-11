@@ -3848,7 +3848,7 @@ void ns_worm_learner::handle_file_request(const string & fname){
 
 	current_clipboard_filename = filename;
 
-	cerr << "Recieved " << filename << "(" << ext << ")\n";
+	cerr << "received " << filename << "(" << ext << ")\n";
 	if (ext == "m4v"){
 		std::string output_basename = ns_dir::extract_filename_without_extension(filename);
 		cerr << "Processing video " << filename << ": ";
@@ -6130,7 +6130,7 @@ void ns_worm_learner::update_main_window_display(){
 	if (new_gl_image_pane_height == 0)
 		new_gl_image_pane_width = 100;
 
-//	cerr << "worm_learner has recieved a request for a gl_window of size " << new_gl_image_pane_width << "x" << new_gl_image_pane_height << "\n";
+//	cerr << "worm_learner has received a request for a gl_window of size " << new_gl_image_pane_width << "x" << new_gl_image_pane_height << "\n";
 	float zoom_x =(float)((float)new_gl_image_pane_width)/main_window.gl_buffer_properties.width;
 	float zoom_y = (float)((float)new_gl_image_pane_height)/main_window.gl_buffer_properties.height;
 	if (zoom_x < .01)
@@ -6166,7 +6166,7 @@ void ns_worm_learner::update_worm_window_display(){
 		new_gl_image_pane_width = 100;
 	if (new_gl_image_pane_height == 0)
 		new_gl_image_pane_height = 100;
-//	cerr << "worm_learner has recieved a request for " << window_width << "x" << window_height << "\n";
+//	cerr << "worm_learner has received a request for " << window_width << "x" << window_height << "\n";
 	float zoom_x =(float)((float)new_gl_image_pane_width)/worm_window.gl_buffer_properties.width;
 	float zoom_y = (float)((float)new_gl_image_pane_height)/worm_window.gl_buffer_properties.height;
 	if (zoom_x < .01)

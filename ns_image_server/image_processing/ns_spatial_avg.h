@@ -61,8 +61,8 @@ public:
 	  kernal_height(2*(kernal_height_/2)+1),
 	  kernal_radius(kernal_height_/2),
 													   //the largest possible buffer size occurs when reading the first line,
-													   //when _kernal_height - 1 lines have previously been recieved (necissitating their buffering
-													   //and then max_line_block_height is recieved.
+													   //when _kernal_height - 1 lines have previously been received (necissitating their buffering
+													   //and then max_line_block_height is received.
 		ns_image_stream_processor<ns_spatial_median_calculator<ns_component,calculate_difference> >(max_line_block_height, this){
 	  	
 		 if (kernal_radius <= 0)
@@ -85,7 +85,7 @@ public:
 				 			<< properties.height << " vs. kernal height " << kernal_height;
 		 }
 		input_buffer_height = 0;
-		lines_recieved = 0;
+		lines_received = 0;
 		lines_processed = 0;
 		image.prepare_to_recieve_image(properties);
 
@@ -197,7 +197,7 @@ private:
 	const long kernal_height,
 					    kernal_radius;
 	unsigned long input_buffer_height;
-	unsigned long lines_recieved,
+	unsigned long lines_received,
 				  lines_processed;
 
 	#ifdef NS_SPATIAL_AVG_TRACK_TIME
@@ -226,8 +226,8 @@ public:
 	  kernal_height(2*(kernal_height_/2)+1),
 	  kernal_radius(kernal_height_/2),
 													   //the largest possible buffer size occurs when reading the first line,
-													   //when _kernal_height - 1 lines have previously been recieved (necissitating their buffering
-													   //and then max_line_block_height is recieved.
+													   //when _kernal_height - 1 lines have previously been received (necissitating their buffering
+													   //and then max_line_block_height is received.
 		ns_image_stream_processor<ns_spatial_median_calculator<ns_component,calculate_difference> >(max_line_block_height, this){}
 
 	#pragma warning(default: 4355)
@@ -239,7 +239,7 @@ public:
 	 bool init(const ns_image_properties & properties){
 		input_buffer_height = 0;
 		rep.set_max(properties.height);
-		lines_recieved = 0;
+		lines_received = 0;
 		lines_processed = 0;
 		ns_image_stream_buffer_properties bufp;
 		bufp.width = properties.width*properties.components;
@@ -287,33 +287,33 @@ public:
 		round_start_time = ns_current_time();
 		#endif
 
-		std::cerr << (lines_recieved*100)/im_properties.height << "%...";
+		std::cerr << (lines_received*100)/im_properties.height << "%...";
 
-		lines_recieved += height;
+		lines_received += height;
 		input_buffer_height+= height;
 			//XXX
 
 		in_buffer.set_offset(0);
 		//std::cerr << "Buffer = " << (unsigned long)(in_buffer[0]) << " " << hex << (unsigned long)(in_buffer[0]) << "\n";
 
-		//if (lines_recieved < kernal_half_height)
+		//if (lines_received < kernal_half_height)
 		//	return;
 
 
 
-		long lines_to_process =  (long)lines_recieved - (long)lines_processed-kernal_radius-1;
-		//if we haven't recieved enough lines to start
-		//if (lines_recieved <= (unsigned long)kernal_radius)
+		long lines_to_process =  (long)lines_received - (long)lines_processed-kernal_radius-1;
+		//if we haven't received enough lines to start
+		//if (lines_received <= (unsigned long)kernal_radius)
 		//	return;
 
 		//flush out the end of the buffer
-		if (lines_recieved == im_properties.height)
-			lines_to_process = lines_recieved - lines_processed;
+		if (lines_received == im_properties.height)
+			lines_to_process = lines_received - lines_processed;
 
 
 		//std::cerr << "Asked to process " << height << " lines\n";
 		//std::cerr << "input buffer height: " << input_buffer_height << "\n";
-		//std::cerr << "lines recieved: " << lines_recieved << "\n";
+		//std::cerr << "lines received: " << lines_received << "\n";
 		//std::cerr << "lines processed: " << lines_processed << "\n";
 
 		//we might need to wait to recieve more data.
@@ -459,7 +459,7 @@ private:
 	const long kernal_height,
 					    kernal_radius;
 	unsigned long input_buffer_height;
-	unsigned long lines_recieved,
+	unsigned long lines_received,
 				  lines_processed;
 
 	//used to store initial lines as kernal_height lines must be read in before processing can start.

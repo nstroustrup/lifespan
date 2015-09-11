@@ -617,7 +617,7 @@ void ns_divvy_up_bitmap_among_solutions_alt(const ns_image_bitmap & bmp, std::ve
 	unsigned long t(ids.properties().height - 1);
 	unsigned long r(ids.properties().width - 1);
 	if (ids.properties().height == 0 || ids.properties().width == 0)
-		throw ns_ex("ns_divvy_up_bitmap_among_solutions_alt::Empty bitmap recieved!");
+		throw ns_ex("ns_divvy_up_bitmap_among_solutions_alt::Empty bitmap received!");
 
 	for (unsigned int i = 0; i < worms.size(); i++){
 		for (unsigned int j = 0; j < worms[i]->worm_shape.nodes.size(); j++){

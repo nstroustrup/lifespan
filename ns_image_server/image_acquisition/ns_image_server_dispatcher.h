@@ -52,10 +52,10 @@ public:
 
 	void connect_timer_sql_connection();
 
-	//the server is regularly poked; when a NS_CHECK_FOR_NEW_WORK command is recieved this function is run (on_timer()) is called also
+	//the server is regularly poked; when a NS_CHECK_FOR_NEW_WORK command is received this function is run (on_timer()) is called also
 	void start_looking_for_new_work();
 
-	//The server is regularly poked; each time a NS_TIMER command is recieved on_timer() is run
+	//The server is regularly poked; each time a NS_TIMER command is received on_timer() is run
 	void on_timer();
 
 	void run_device_capture_management();

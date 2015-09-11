@@ -105,8 +105,8 @@ void ns_image_server_dispatcher::handle_remote_requests(){
 		//	return;
 				if (message.request() != NS_TIMER && message.request() != NS_CHECK_FOR_WORK && message.request() != NS_LOCAL_CHECK_FOR_WORK) {
 					if (currently_unable_to_connect_to_the_central_db)
-						image_server.register_server_event(ns_image_server::ns_register_in_local_db,ns_image_server_event("Recieved the message: ") << ns_message_request_to_string(message.request()));
-					else image_server.register_server_event(ns_image_server::ns_register_in_central_db,ns_image_server_event("Recieved the message: ") << ns_message_request_to_string(message.request()));
+						image_server.register_server_event(ns_image_server::ns_register_in_local_db,ns_image_server_event("received the message: ") << ns_message_request_to_string(message.request()));
+					else image_server.register_server_event(ns_image_server::ns_register_in_central_db,ns_image_server_event("received the message: ") << ns_message_request_to_string(message.request()));
 				}
 				//if (message.request() == NS_CHECK_FOR_WORK) cerr<< ".";
 
@@ -439,7 +439,7 @@ void ns_image_server_dispatcher::handle_central_connection_error(ns_ex & ex){
 }
 
 
-//The server is regularly poked; each time a NS_TIMER command is recieved on_timer() is run
+//The server is regularly poked; each time a NS_TIMER command is received on_timer() is run
 void ns_image_server_dispatcher::on_timer(){
 
 	if (trigger_segfault){
@@ -948,7 +948,7 @@ bool ns_image_server_dispatcher::run_pending_captures_on_device(const std::strin
 void ns_image_server_dispatcher::process_image_request(const unsigned int image_id, const string & host_ip, const int host_port){
 	//send a file to the remote host that requests it
 }
-//saves a recieved image according to the filename and path information
+//saves a received image according to the filename and path information
 //specified in its record in "images".
 ns_thread_return_type ns_image_server_dispatcher::thread_start_recieving_image(void * recieve_image_spec){
 	ns_image_reciever_spec * s(static_cast<ns_image_reciever_spec *>(recieve_image_spec));
@@ -989,7 +989,7 @@ void ns_image_server_dispatcher::recieve_image_thread(ns_image_server_message & 
 
 	ns_acquire_for_scope<ns_sql> sql(image_server.new_sql_connection(__FILE__,__LINE__));
 
-	//look to see if a record exists specifying information about the recieved image
+	//look to see if a record exists specifying information about the received image
 	ns_image_server_image image;
 	bool image_found = image.load_from_db(image_id,&sql());
 	if (!image_found){

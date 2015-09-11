@@ -11,7 +11,7 @@ public:
 
 	//initialize as an empty image
 	ns_image_buffered_random_access_output_image(unsigned int max_height):ns_image_stream_reciever<ns_image_stream_sliding_offset_buffer<ns_component> >(0,this),
-							lines_recieved(0),max_buffer_height(max_height),lines_flushed(0){}
+							lines_received(0),max_buffer_height(max_height),lines_flushed(0){}
 
 	//deconstruction of buffer handled by buffer class
 
@@ -31,7 +31,7 @@ public:
 			}
 			ns_image_stream_reciever<ns_image_stream_sliding_offset_buffer<ns_component> >::_properties =  properties;
 		}
-		lines_recieved = 0;
+		lines_received = 0;
 		image_buffer.set_offset(0);
 		return resized;
 	}
@@ -39,14 +39,14 @@ public:
 	inline void resize(const ns_image_properties & properties){init(properties);}
 
 	ns_image_stream_sliding_offset_buffer<ns_component> * provide_buffer(const ns_image_stream_buffer_properties & buffer_properties){
-		image_buffer.set_offset(lines_recieved-lines_flushed);
+		image_buffer.set_offset(lines_received-lines_flushed);
 		return &image_buffer;
 	}
 
 
 	//after the data is written to the provide_buffer() buffer, recieve_lines() is called.
 	void recieve_lines(const ns_image_stream_sliding_offset_buffer<ns_component> & lines, const unsigned long height){
-		lines_recieved+=height;
+		lines_received+=height;
 	}
 
 	//when entire image is loaded, there is nothing to do.
@@ -99,7 +99,7 @@ public:
 private:
 	ns_image_stream_sliding_offset_buffer<ns_component> image_buffer;
 	long lines_flushed;
-	unsigned long lines_recieved;
+	unsigned long lines_received;
 	unsigned long max_buffer_height;
 
 };
@@ -191,14 +191,14 @@ public:
 	typedef ns_image_stream_static_offset_buffer<ns_component> storage_type;
 
 	//initialize as an empty image
-	ns_image_buffered_multi_line_random_access_input_image():buffer_bottom(0),total_buffer_height(0),previous_lines_required(0),image_source(0),lines_recieved(0),ns_image_stream_sender<ns_component,ns_image_buffered_multi_line_random_access_input_image<ns_component, image_source_t> >(ns_image_properties(0,0,0),this){}
+	ns_image_buffered_multi_line_random_access_input_image():buffer_bottom(0),total_buffer_height(0),previous_lines_required(0),image_source(0),lines_received(0),ns_image_stream_sender<ns_component,ns_image_buffered_multi_line_random_access_input_image<ns_component, image_source_t> >(ns_image_properties(0,0,0),this){}
 
 
 	inline void resize(const ns_image_properties & properties){init(properties);}
 
 	inline void seek_to_beginning(){
 		buffer_bottom = 0;
-		lines_recieved = 0;
+		lines_received = 0;
 		image_source->seek_to_beginning(); 
 		assign_buffer_source(*image_source,previous_lines_required,total_buffer_height);
 	}
@@ -232,13 +232,13 @@ public:
 	}
 
 	 void make_line_available(const unsigned long line_num) const{
-		if (line_num < lines_recieved)
+		if (line_num < lines_received)
 			return;
 		//calculate how much buffer we'll need to retain
 		long new_bottom = (long)line_num - (long)previous_lines_required;
 		if (new_bottom < 0) new_bottom = 0;
 
-		long lines_to_copy((long)lines_recieved - new_bottom);
+		long lines_to_copy((long)lines_received - new_bottom);
 		if (lines_to_copy < 0) lines_to_copy = 0;
 		//copy the new bottom of the buffer over--we may need to retain a certain number of lines
 		image_buffer.set_offset(0);
@@ -254,12 +254,12 @@ public:
 		long lines_to_load = (long)total_buffer_height - lines_to_copy; 
 		if (lines_to_load <= 0)
 			throw ns_ex("Invalid line access requested: ") << line_num;
-		if (lines_to_load+lines_recieved > _properties.height)
-			lines_to_load = _properties.height - lines_recieved;
+		if (lines_to_load+lines_received > _properties.height)
+			lines_to_load = _properties.height - lines_received;
 		
 		image_source->send_lines(image_buffer, lines_to_load);
 		buffer_bottom = new_bottom;
-		lines_recieved+=lines_to_load;
+		lines_received+=lines_to_load;
 		
 		image_buffer.set_offset(-(long)buffer_bottom);
 	}
@@ -341,7 +341,7 @@ private:
 	//current position (relative to the sender) of the local buffer
 	mutable unsigned long buffer_bottom;
 	//the total number of lines read from the sender
-	mutable unsigned long lines_recieved;
+	mutable unsigned long lines_received;
 	image_source_t * image_source;
 	//total size of the image being read from the sender
 	ns_image_properties _properties;
@@ -362,7 +362,7 @@ private:
 			_properties =  properties;
 		}
 		buffer_bottom = 0;
-		lines_recieved = 0;
+		lines_received = 0;
 		
 		ns_image_stream_sender<ns_component,ns_image_buffered_multi_line_random_access_input_image<ns_component, image_source_t> >::_properties = properties;
 	}

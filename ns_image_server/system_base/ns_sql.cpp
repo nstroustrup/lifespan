@@ -119,7 +119,7 @@ void ns_sql_connection::check_connection(){
 	*this << "SELECT NOW()";
 	get_rows(res);
 	if (res.size() != 1)
-		throw ns_ex("ns_sql_connection::check_connection()::recieved an unexpected reply size from the server: ") << res.size();
+		throw ns_ex("ns_sql_connection::check_connection()::received an unexpected reply size from the server: ") << res.size();
 }
 
 
@@ -371,7 +371,7 @@ std::string ns_sql_connection::get_value(const std::string & query){
 	std::vector<std::string> res;
 	get_single_row(query,res);
 	if (res.size() != 1)
-		throw ns_ex("ns_sql_connection::") << static_cast<unsigned long>(res.size()) << " values recieved by get_value()";
+		throw ns_ex("ns_sql_connection::") << static_cast<unsigned long>(res.size()) << " values received by get_value()";
 	current_query.clear();
 	return res[0];
 }

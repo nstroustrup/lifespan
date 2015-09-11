@@ -382,7 +382,7 @@ public:
 			ns_image_server_message message(socket_connection);
 			message.get();
 			ns_message_request req(message.request());
-			image_server.register_server_event(ns_image_server::ns_register_in_central_db_with_fallback,ns_image_server_event("Crash Daemon recieved the following request:") << ns_message_request_to_string(req));
+			image_server.register_server_event(ns_image_server::ns_register_in_central_db_with_fallback,ns_image_server_event("Crash Daemon received the following request:") << ns_message_request_to_string(req));
 			switch(req){
 				case NS_QUIT:{
 					stop_daemon = true;

@@ -87,7 +87,7 @@ public:
 	void recieve_and_send_lines(const ns_image_stream_sliding_offset_buffer<ns_component> & lines, const unsigned long height, reciever_t & output_reciever){
 		ns_image_properties & input_properties(ns_image_stream_processor<ns_resampler<ns_component> >::_properties);
 
-		//std::cerr << (lines_recieved*100)/im_properties.height << "%...";
+		//std::cerr << (lines_received*100)/im_properties.height << "%...";
 
 		input_buffer_height+= height;
 		current_top_of_buffer_in_input_y_coordinates+=height;
@@ -95,7 +95,7 @@ public:
 		const long greatest_output_y_we_can_produce((long)(floor((resize_factor.y*current_top_of_buffer_in_input_y_coordinates)-0.5)));
 		const long output_lines_to_produce(greatest_output_y_we_can_produce - current_output_y_coordinate);
 		
-		//std::cerr << "\t\tRecieved   " << height << " (" << current_top_of_buffer_in_input_y_coordinates<< "/" << input_properties.height << ")\n";
+		//std::cerr << "\t\treceived   " << height << " (" << current_top_of_buffer_in_input_y_coordinates<< "/" << input_properties.height << ")\n";
 		if (output_lines_to_produce <= 0) return;
 
 	//	std::cerr << "\t\t\t\tOutputting " << output_lines_to_produce << " (" <<  current_output_y_coordinate << "/" << output_properties.height << ")\n";

@@ -708,7 +708,7 @@ public:
 	void make_reject_spine_collage_with_stats(const bool svg=false,const std::string & svg_directory="");
 
 	void process_contiguous_regions();
-	void output_distributions_of_detected_objects();
+	void output_distributions_of_detected_objects(const std::string &directory);
 
 	//Region area identification
 	void output_area_info(const std::string & filename);
@@ -775,6 +775,9 @@ public:
 	void upgrade_tables();
 	template<class whole_image>
 	void load_file(const std::string & filename, whole_image & image){
+		thresholded_image.clear();
+		detection_spatial_median.clear();
+		detection_brightfield.clear();
 		std::string extension = ns_dir::extract_extension(filename);
 		//open jpeg
 		if (extension == "jpg"){

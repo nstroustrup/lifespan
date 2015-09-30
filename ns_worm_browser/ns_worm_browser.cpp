@@ -123,6 +123,7 @@ void ns_worm_learner::two_stage_threshold(const bool & make_vis){
 	ns_image_standard out;
 	ns_two_stage_difference_thresholder::run(current_image,out,ns_two_stage_difference_parameters(),make_vis);
 		out.pump(current_image,512);
+		 out.pump(thresholded_image,512);
 	//if (!make_vis)
 	//	stretch_levels();
 	
@@ -4635,8 +4636,10 @@ void ns_worm_learner::apply_mask_on_current_image(){
 
 void ns_worm_learner::apply_spatial_average(){
 	to_bw();
+	//store for worm detection
+	current_image.pump(detection_brightfield,512);
 
-	ns_spatial_median_calculator<ns_8_bit,true> spatial_averager(1024,24);
+	ns_spatial_median_calculator<ns_8_bit,true> spatial_averager(1024,ns_image_processing_pipeline_spatial_average_kernal_width);
 
 	ns_image_standard_indirect current_indirect(current_image);
 
@@ -4646,6 +4649,10 @@ void ns_worm_learner::apply_spatial_average(){
 		spatial_averager_bound(spatial_averager, current_indirect,1024);
 
 	current_image.pump(spatial_averager_bound,1024);
+	
+	ns_crop_lower_intensity<ns_8_bit>(current_image,(ns_8_bit)ns_worm_detection_constants::get(ns_worm_detection_constant::tiff_compression_intensity_crop_value,current_image.properties().resolution));
+	//store for worm detection
+	current_image.pump(detection_spatial_median,512);
 
 	draw_image(-1,-1,current_image);
 
@@ -4712,22 +4719,42 @@ void ns_worm_learner::process_contiguous_regions(){
 	if (worm_detection_results != 0)
 		delete worm_detection_results;	
 	unsigned long start_time = ns_current_time();
-	// std::string debug_file("c:\\segment_debug\\deb_");
+
+	if (detection_brightfield.properties().height == 0)
+		apply_spatial_average();
+	if (thresholded_image.properties().height == 0)
+		two_stage_threshold();
+
 	std::string debug_file("");		
-	worm_detection_results = worm_detector.run(0,0,current_image,detection_brightfield,
+	worm_detection_results = worm_detector.run(0,0,detection_brightfield,thresholded_image,
 		detection_spatial_median,
 		static_mask,
 		ns_worm_detection_constants::get(ns_worm_detection_constant::minimum_worm_region_area,current_image.properties().resolution),
 		ns_worm_detection_constants::get(ns_worm_detection_constant::maximum_worm_region_area,current_image.properties().resolution),
 		ns_worm_detection_constants::get(ns_worm_detection_constant::maximum_region_diagonal,current_image.properties().resolution),
-		*model_specification,ns_worm_detection_constants::get(ns_worm_detection_constant::maximum_number_of_actual_worms_per_image),debug_file,ns_detected_worm_info::ns_vis_both);
+		*model_specification,1000,debug_file,ns_detected_worm_info::ns_vis_both);
+
+	cerr << "min object size: " << 
+	ns_worm_detection_constants::get(ns_worm_detection_constant::minimum_worm_region_area,current_image.properties().resolution) << "; max object size: " << 
+		ns_worm_detection_constants::get(ns_worm_detection_constant::maximum_worm_region_area,current_image.properties().resolution)<< "; max object diagonal: " << 
+		ns_worm_detection_constants::get(ns_worm_detection_constant::maximum_region_diagonal,current_image.properties().resolution) << " model file: " << model_specification->model_name << "\n";
+
+
+	cout << worm_detection_results->actual_worm_list().size() << " out of " << worm_detection_results->number_of_putative_worms() << " potential objects were identified as worms.\n";
+
+	cout << "Reasons for rejection: \n";
+	std::map<std::string,unsigned long> reasons = worm_detection_results->give_worm_rejection_reasons();
+	cout << "Reason : # of worms rejected for that reason\n";
+	for (std::map<std::string,unsigned long>::iterator p = reasons.begin(); p != reasons.end(); p++){
+		cout << p->first << ": " << p->second << "\n";
+	}
 	unsigned long stop_time = ns_current_time();
 	cerr << "\nComputation time: " << stop_time - start_time << "\n";
 	detection_spatial_median.pump(current_image,128);
 	to_color();
 	cerr << "Creating Visualization.\n";
 	
-	worm_detection_results->create_visualization(30,3,current_image,"Nicholas Stroustrup 2008", true);
+	worm_detection_results->create_visualization(30,3,current_image,"", true);
 	cerr << "Drawing Image.\n";
 	draw_image(-1,-1,current_image);
 }
@@ -5232,7 +5259,6 @@ void ns_worm_learner::load_file(const std::string & filename){
 	catch(...){
 		current_image_lock.release();
 	}
-	current_image.pump(detection_spatial_median,512);
 }
 void ns_worm_learner::save_current_image(const std::string & filename){		
 
@@ -6430,39 +6456,27 @@ void ns_worm_learner::navigate_death_time_annotation(ns_image_series_annotater::
 	}
 }
 
-void ns_worm_learner::output_distributions_of_detected_objects(){
+void ns_worm_learner::output_distributions_of_detected_objects(const std::string &directory){
 	if (worm_detection_results == 0)
 		throw ns_ex("No results have been calculated");
 	
 
 	
-	 std::vector<ns_detected_worm_stats> all_objects(worm_detection_results->number_of_putative_worms());
-	 for (unsigned int i = 0; i < all_objects.size(); i++)
-		 all_objects[i] = worm_detection_results->get_putative_worm_stats(i);
 
-	 //const std::vector<ns_detected_worm_info *> actual_worm_list = worm_detection_results->actual_worm_list();
-	 //const std::vector<ns_detected_worm_info *> non_worm_list = worm_detection_results->non_worm_list();
+	 const std::vector<const ns_detected_worm_info *> &worms(worm_detection_results->actual_worm_list());
 
-	//std::vector<ns_detected_worm_stats> worm_stats(actual_worm_list.size() + non_worm_list.size())
-	//std::vector<ns_detected_worm_stats> worm_stats(actual_worm_list.size()),
-	//						   non_worm_stats(non_worm_list.size());
+	 const std::vector<const ns_detected_worm_info *> &non_worms(worm_detection_results->non_worm_list());
 
+	 
+	 std::vector<ns_detected_worm_stats> worm_stats(worms.size());
+	 std::vector<ns_detected_worm_stats> non_worm_stats(non_worms.size());
 
-	//for (unsigned int i = 0; i < actual_worm_list.size(); i++)
-	//	worm_stats[i] = actual_worm_list[i]->generate_stats();
-
-	//for (unsigned int i = 0; i < non_worm_list.size(); i++)
-	//	non_worm_stats[i] = non_worm_list[i]->generate_stats();
-    
-	// Surely there's a better place to put these 
-	#ifdef _WIN32
-	std::string dir = "c:\\tt\\freq";
-	#else
-	std::string dir = "/tt/freq";
-	#endif
-	ns_dir::create_directory_recursive(dir);
-
-	ns_detected_worm_stats::draw_feature_frequency_distributions(std::vector<ns_detected_worm_stats>(), all_objects,dir);
+	for (unsigned int i = 0; i < worms.size(); i++)
+		worm_stats[i] = worms[i]->generate_stats();
+	for (unsigned int i = 0; i < non_worms.size(); i++)
+		non_worm_stats[i] = non_worms[i]->generate_stats();
+	
+	ns_detected_worm_stats::draw_feature_frequency_distributions(worm_stats, non_worm_stats,current_filename,directory);
 }
 
 

@@ -598,7 +598,17 @@ class ns_worm_terminal_main_menu_organizer : public ns_menu_organizer{
 	static void view_spine_collage_stats(const std::string & value){worm_learner.make_spine_collage_with_stats(worm_learner.output_svg_spines);}
 	static void view_reject_spine_collage(const std::string & value){worm_learner.make_reject_spine_collage(worm_learner.output_svg_spines);}
 	static void view_reject_spine_collage_stats(const std::string & value){worm_learner.make_reject_spine_collage_with_stats(worm_learner.output_svg_spines,worm_learner.worm_visualization_directory());}
-	static void output_feature_distributions(const std::string & value){worm_learner.output_distributions_of_detected_objects();}
+	static void output_feature_distributions(const std::string & value){
+
+		ns_image_file_chooser im_cc;
+		im_cc.choose_directory();
+		im_cc.title = "Which directory should distributions be written?";
+		ns_run_in_main_thread<ns_image_file_chooser> run_mt(&im_cc);
+
+
+		worm_learner.output_distributions_of_detected_objects(im_cc.result);
+	
+	}
 	static void calculate_slow_movement(const std::string & value){
 		ns_image_file_chooser im_cc;
 		ns_run_in_main_thread<ns_image_file_chooser> run_mt(&im_cc);
@@ -1317,10 +1327,10 @@ public:
 	
 		add(model_spec);
 		add(ns_menu_item_spec(spatial_median,"Testing/Image Processing/Spatial Median Filter"));
-		add(ns_menu_item_spec(difference_threshold,"Testing/Image Processing/Difference Threshold"));
-		add(ns_menu_item_spec(adaptive_threshold,"Testing/Image Processing/Adaptive Threshold"));
-		add(ns_menu_item_spec(movement_threshold,"Testing/Image Processing/Movement Threshold"));
-		add(ns_menu_item_spec(movement_threshold_vis,"Testing/Image Processing/Movement Threshold (vis)"));
+		//add(ns_menu_item_spec(difference_threshold,"Testing/Image Processing/Difference Threshold"));
+		//add(ns_menu_item_spec(adaptive_threshold,"Testing/Image Processing/Adaptive Threshold"));
+		//add(ns_menu_item_spec(movement_threshold,"Testing/Image Processing/Movement Threshold"));
+		//add(ns_menu_item_spec(movement_threshold_vis,"Testing/Image Processing/Movement Threshold (vis)"));
 		add(ns_menu_item_spec(two_stage_threshold,"Testing/Image Processing/Two Stage Threshold"));
 		add(ns_menu_item_spec(two_stage_threshold_vis,"Testing/Image Processing/_Two Stage Threshold (vis)"));
 		add(ns_menu_item_spec(remove_large_objects,"Testing/Image Processing/Remove Large Objects"));

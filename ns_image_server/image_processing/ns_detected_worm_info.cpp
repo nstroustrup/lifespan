@@ -1278,6 +1278,7 @@ bool ns_detected_worm_info::is_a_worm(const ns_svm_model_specification & model){
 		if (must_not_be_a_worm){
 			is_a_worm_ = false;
 			is_a_worm_set = true;
+			failure_reason << "Manual Override";
 			return false;
 		}
 
@@ -1292,6 +1293,8 @@ bool ns_detected_worm_info::is_a_worm(const ns_svm_model_specification & model){
 			stats.delete_vector(node);
 			//cerr << val << "\n";
 			is_a_worm_ = (val > 0);
+			if (!is_a_worm_)
+				failure_reason << "Failed SVM";
 		#endif
 			is_a_worm_set = true;
 			return is_a_worm_;
@@ -2353,9 +2356,31 @@ void ns_image_worm_detection_results::output_feature_statistics(ostream & o){
 		o << "\n";
 	}
 }
-void ns_detected_worm_stats::draw_feature_frequency_distributions(const std::vector<ns_detected_worm_stats> & worm_stats, const std::vector<ns_detected_worm_stats> & non_worm_stats,const std::string &output_directory){
+void ns_detected_worm_stats::draw_feature_frequency_distributions(const std::vector<ns_detected_worm_stats> & worm_stats, const std::vector<ns_detected_worm_stats> & non_worm_stats,const std::string & label,const std::string &output_directory){
 	std::string freq_base_dir = output_directory;
 	ns_dir::create_directory_recursive(freq_base_dir);
+	ofstream raw_stats(freq_base_dir + DIR_CHAR_STR + "stats.csv");
+	
+	raw_stats << "Worm ID,Label,Classification";
+	for (unsigned int s = 0; s < (unsigned int) ns_stat_number_of_stats; s++){
+		raw_stats << "," << ns_classifier_label((ns_detected_worm_classifier)s);
+	}
+	raw_stats << "\n";
+	for (unsigned int i = 0; i < worm_stats.size(); i++){		
+		raw_stats << i << "," << label << ",Accepted";
+		for (unsigned int s = 0; s < (unsigned int) ns_stat_number_of_stats; s++)
+			raw_stats << "," << worm_stats[i][(ns_detected_worm_classifier)s];
+		
+		raw_stats << "\n";
+	}
+	for (unsigned int i = 0; i < non_worm_stats.size(); i++){		
+		raw_stats << i << "," << label <<",Rejected";
+		for (unsigned int s = 0; s < (unsigned int) ns_stat_number_of_stats; s++)
+			raw_stats << "," << non_worm_stats[i][(ns_detected_worm_classifier)s];
+		
+		raw_stats << "\n";
+	}
+	raw_stats.close();
 
 	if (worm_stats.size() != 0){
 		std::vector<ns_detected_worm_stats> merged(worm_stats.size() + non_worm_stats.size());
@@ -2365,7 +2390,7 @@ void ns_detected_worm_stats::draw_feature_frequency_distributions(const std::vec
 			merged[worm_stats.size() + i] = non_worm_stats[i];
 		std::string new_dir = output_directory + DIR_CHAR_STR + "merged";
 		ns_dir::create_directory_recursive(new_dir);
-		draw_feature_frequency_distributions(std::vector<ns_detected_worm_stats>(),merged,new_dir);
+		draw_feature_frequency_distributions(std::vector<ns_detected_worm_stats>(),merged,label,new_dir);
 	}
 	std::vector<ns_graph_object> worm_distributions, non_worm_distributions;
 	
@@ -2375,6 +2400,7 @@ void ns_detected_worm_stats::draw_feature_frequency_distributions(const std::vec
 	non_worm_distributions.resize((unsigned int)ns_stat_number_of_stats,ns_graph_object::ns_graph_dependant_variable);
 
 	for (unsigned int s = 0; s < (unsigned int) ns_stat_number_of_stats; s++){
+
 		try{
 			ns_graph graph;
 			ns_graph_object &worm_dat = worm_distributions[(unsigned int)s];
@@ -2839,7 +2865,16 @@ void ns_image_worm_detection_results::calculate_image_region_stats(){
 		putative_worms[i].whole_image_stats.worm_region_specific_region_stats = overall_stats;
 }
 
-
+std::map<std::string,unsigned long> ns_image_worm_detection_results:: give_worm_rejection_reasons() const{
+	std::map<std::string,unsigned long> reasons;
+	for (unsigned long i = 0; i < this->not_worms.size(); i++){
+		std::map<std::string,unsigned long>::iterator p = reasons.find(not_worms[i]->failure_reason.text());
+		if (p == reasons.end())
+			reasons[not_worms[i]->failure_reason.text()] = 1;
+		else (p->second)++;
+	}
+	return reasons;
+}
 void ns_image_worm_detection_results::sort_putative_worms(const ns_svm_model_specification & model){
 	actual_worms.reserve(putative_worms.size());
 	not_worms.reserve(putative_worms.size());	

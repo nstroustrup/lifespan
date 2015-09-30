@@ -101,7 +101,7 @@ public:
 	bool not_a_worm;
 
 	
-	static void draw_feature_frequency_distributions(const std::vector<ns_detected_worm_stats> & worm_stats, const std::vector<ns_detected_worm_stats> & non_worm_stats,const std::string &output_directory);
+	static void draw_feature_frequency_distributions(const std::vector<ns_detected_worm_stats> & worm_stats, const std::vector<ns_detected_worm_stats> & non_worm_stats,const std::string & label,const std::string &output_directory);
 
 	///returns the number of features calculated for each worm
 	unsigned int size() const {return ns_stat_number_of_stats;} 
@@ -480,6 +480,8 @@ public:
 
 	///clears all detection results
 	void clear();
+
+	std::map<std::string,unsigned long> give_worm_rejection_reasons() const;
 	
 	///process_regions() takes a set of contiguous regions (each of which may contain multiple worms)
 	///and loads them into ns_image_worm_detection_results structures in preparation for classification 

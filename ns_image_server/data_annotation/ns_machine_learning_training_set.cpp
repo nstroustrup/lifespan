@@ -700,7 +700,7 @@ void ns_training_file_generator::generate_from_curated_set(const std::string & d
 	if(worm_stats.size() == 0 || non_worm_stats.size() == 0)
 		throw ns_ex("Lacking data for one class of objects: ") << (unsigned long)worm_stats.size() << " worms, " << (unsigned long)non_worm_stats.size() << " non worms.";
 	cerr << "Drawing feature distributions...\n";
-	ns_detected_worm_stats::draw_feature_frequency_distributions(worm_stats, non_worm_stats,analysis_dir + "\\freq");
+	ns_detected_worm_stats::draw_feature_frequency_distributions(worm_stats, non_worm_stats,"training_set",analysis_dir + "\\freq");
 	cerr << "Outputting matlab data set\n";
 
 	//output data sets for matlab

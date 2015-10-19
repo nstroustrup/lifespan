@@ -2160,6 +2160,68 @@ void ns_death_time_annotation_compiler_region::generate_survival_curve(ns_surviv
 		}
 			
 }
+struct ns_death_diagnostic{
+	double machine_death_time,
+			machine_stationary_time,
+			machine_longest_gap,
+		   by_hand_death_time;
+	bool by_hand_excluded;
+	static void out_header(std::ostream & o){
+		o << "Machine Death Time (days),Machine Last Moving Time (days), Machine Longest gap (days), By Hand Specified,By Hand Death Time (days), By Hand Excluded";
+	}
+	void out(std::ostream & o, const unsigned long time_zero) const{
+		o << (machine_death_time - time_zero)/(60*60*24)<< ","
+		  << (machine_stationary_time - time_zero)/(60*60*24) << ","
+		  << (machine_longest_gap)/(60*60*24) << ",";
+		if (by_hand_death_time != 0)
+			o << "1," << (by_hand_death_time - time_zero)/(60*60*24) << ",";
+		else o << "0,,";
+		if (by_hand_excluded)
+			o << "1";
+		else o<< "0";
+	}
+};
+
+void ns_death_time_annotation_compiler::generate_validation_information(std::ostream & o) const{
+	ns_region_metadata::out_JMP_plate_identity_header(o);
+	o << ",";
+	ns_death_diagnostic::out_header(o);
+	o << "\n";
+	for(ns_region_list::const_iterator p = regions.begin(); p!= regions.end(); ++p){
+		const unsigned long tz = p->second.metadata.time_at_which_animals_had_zero_age;
+		for (ns_death_time_annotation_compiler_region::ns_location_list::const_iterator q = p->second.locations.begin(); q != p->second.locations.end(); q++){
+			const ns_dying_animal_description_const d(q->generate_dying_animal_description_const(false));
+			if (d.machine.death_annotation == 0)
+				continue;
+			
+			p->second.metadata.out_JMP_plate_identity_data(o);
+
+			o << ",";
+			ns_death_diagnostic data;
+			data.machine_death_time = d.machine.death_annotation->time.best_estimate_event_time_for_possible_partially_unbounded_interval();
+			data.machine_longest_gap = d.machine.death_annotation->longest_gap_without_observation;
+			if (d.machine.last_slow_movement_annotation != 0)
+				data.machine_stationary_time = d.machine.last_slow_movement_annotation->time.best_estimate_event_time_for_possible_partially_unbounded_interval();
+			else if (d.machine.last_fast_movement_annotation != 0)
+				data.machine_stationary_time = d.machine.last_fast_movement_annotation->time.best_estimate_event_time_for_possible_partially_unbounded_interval();
+			else data.machine_stationary_time = 0;
+			if (d.by_hand.death_annotation != 0){
+				data.by_hand_death_time = d.by_hand.death_annotation->time.best_estimate_event_time_for_possible_partially_unbounded_interval();
+				data.by_hand_excluded = d.by_hand.death_annotation->is_excluded();
+				
+			}
+			else{
+				data.by_hand_death_time = 0;
+				data.by_hand_excluded = d.machine.death_annotation->is_excluded();
+				
+			}
+			if (q->properties.is_excluded())
+				data.by_hand_excluded = true;
+			data.out(o,tz);
+			o << "\n";
+		}
+	}
+}
 void ns_death_time_annotation_compiler::generate_survival_curve_set(ns_lifespan_experiment_set & survival_curves, const ns_death_time_annotation::ns_by_hand_annotation_integration_strategy & death_times_to_use,const bool use_by_hand_worm_cluster_annotations,const bool warn_on_movement_problems) const{
 	survival_curves.curves.reserve(regions.size());
 	for(ns_region_list::const_iterator p = regions.begin(); p != regions.end(); ++p){

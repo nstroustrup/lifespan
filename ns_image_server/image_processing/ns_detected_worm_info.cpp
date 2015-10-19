@@ -2359,7 +2359,7 @@ void ns_image_worm_detection_results::output_feature_statistics(ostream & o){
 void ns_detected_worm_stats::draw_feature_frequency_distributions(const std::vector<ns_detected_worm_stats> & worm_stats, const std::vector<ns_detected_worm_stats> & non_worm_stats,const std::string & label,const std::string &output_directory){
 	std::string freq_base_dir = output_directory;
 	ns_dir::create_directory_recursive(freq_base_dir);
-	ofstream raw_stats(freq_base_dir + DIR_CHAR_STR + "stats.csv");
+	ofstream raw_stats((freq_base_dir + DIR_CHAR_STR + "stats.csv").c_str());
 	
 	raw_stats << "Worm ID,Label,Classification";
 	for (unsigned int s = 0; s < (unsigned int) ns_stat_number_of_stats; s++){

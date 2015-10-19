@@ -1092,6 +1092,8 @@ void ns_genotype_fetcher::add_information_to_database(const std::vector<ns_genot
 	}
 
 }
+
+
 void ns_lifespan_experiment_set::output_JMP_file(const ns_death_time_annotation::ns_by_hand_annotation_integration_strategy & by_hand_strategy,const ns_lifespan_experiment_set::ns_time_handing_behavior & time_handling_behavior,const ns_time_units & time_units,std::ostream & o,const ns_output_file_type& detail, const bool output_header) const{
 	std::string time_unit_string;
 	double time_scaling_factor;

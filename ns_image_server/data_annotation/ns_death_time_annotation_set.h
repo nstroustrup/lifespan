@@ -159,6 +159,9 @@ public:
 	void add(const ns_death_time_annotation & e,const ns_region_metadata & metadata);
 	
 
+	void generate_validation_information(std::ostream & o) const;
+
+
 	void specifiy_region_metadata(const ns_64_bit region_id,const ns_region_metadata & metadata);
 
 	void normalize_times_to_zero_age();

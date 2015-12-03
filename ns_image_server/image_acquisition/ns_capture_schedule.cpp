@@ -561,7 +561,7 @@ std::string ns_capture_schedule::time_string(unsigned long s){
 }
 void ns_experiment_capture_specification::load_from_xml_file(const string & filename){
 	ifstream i(filename.c_str());
-	if (i.fail()) throw ns_ex("ns_experiment_capture_specification::load_from_xml_file()::Cannot open file ") << filename;
+	if (i.fail()) throw ns_ex("ns_experiment_capture_specification::load_from_xml_file()::Cannot open file ") << filename <<" .  This can be caused by unclosed XML tags or quotation marks, or by whitespace after the (optional) final </xml> tag";
 	string os;
 	//os.reserve(500);
 	while(true){

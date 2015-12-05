@@ -356,6 +356,7 @@ Handle Requests to delete a sample
     $experiment_jobs[$i]->load_from_result($ejobs[$i]);
   }
   
+
   /*****************************
    Load Sample Jobs
   ****************************/
@@ -535,40 +536,68 @@ $current_region_job_index = 0;
   if ($save_data != 0){    
     $sample_id = 0;
   }
+  
+  $strain_info = array();
+  foreach ($strains as $s){
+    $query = "SELECT genotype,conditions FROM strain_aliases WHERE strain='$s'";
+    $sql->get_row($query,$r);
+    if( sizeof($r)>0)
+      $strain_info[$s]=$r[0];
+  }
+  $query = "SELECT latest_storyboard_build_timestamp, last_timepoint_in_latest_storyboard_build FROM experiments WHERE id = " . $experiment_id;
+  $sql->get_row($query,$res);
+  if (sizeof($res) == 0)
+    throw new ns_exception("Could not find experiment");
+  //	var_dump($res);
+  //die($res);
+  $storyboard_build_timestamp = $res[0][0];
+  $storyboard_last_timepoint = $res[0][1];
+  $query = "SELECT max(i.latest_movement_rebuild_timestamp) FROM sample_region_image_info as i, capture_samples as s WHERE i.sample_id = s.id AND s.experiment_id = " . $experiment_id;
+  $sql->get_row($query, $res);
+  //	var_dump($res);
+  //	die("");
+  $latest_rebuild = $res[0][0]
+    ;
+  if ($storyboard_build_timestamp == 0){
+    $storyboard_info = "No storyboard built";
+  }
+  else {
+    $storyboard_info = "<table><tr><td>Storyboard built on </td><td>" . format_time($storyboard_build_timestamp) . "</td></tr>";
+    if ($latest_rebuild > $storyboard_build_timestamp)
+      $storyboard_info.="<tr><td></td><td><b>(Out of date!)</b></td></tr>";
+    $storyboard_info .="<tr><td>Up to time </td><td>" . format_time($storyboard_last_timepoint) . "</td></tr>";
+    
+    $storyboard_info .= "</table>";
+    //	  $storyboard_info .= $latest_rebuild;
+  }
 
-	$strain_info = array();
-	foreach ($strains as $s){
-		$query = "SELECT genotype,conditions FROM strain_aliases WHERE strain='$s'";
-		$sql->get_row($query,$r);
-		if( sizeof($r)>0)
-			$strain_info[$s]=$r[0];
-	}
-	$query = "SELECT latest_storyboard_build_timestamp, last_timepoint_in_latest_storyboard_build FROM experiments WHERE id = " . $experiment_id;
-	$sql->get_row($query,$res);
-	if (sizeof($res) == 0)
-	  throw new ns_exception("Could not find experiment");
-	//	var_dump($res);
-	//die($res);
-	    $storyboard_build_timestamp = $res[0][0];
-	$storyboard_last_timepoint = $res[0][1];
-	$query = "SELECT max(i.latest_movement_rebuild_timestamp) FROM sample_region_image_info as i, capture_samples as s WHERE i.sample_id = s.id AND s.experiment_id = " . $experiment_id;
-	$sql->get_row($query, $res);
-	//	var_dump($res);
-	//	die("");
-	$latest_rebuild = $res[0][0]
-	  ;
-	if ($storyboard_build_timestamp == 0){
-	  $storyboard_info = "No storyboard built";
-	}
-	else {
-	  $storyboard_info = "<table><tr><td>Storyboard built on </td><td>" . format_time($storyboard_build_timestamp) . "</td></tr>";
-	  if ($latest_rebuild > $storyboard_build_timestamp)
-	    $storyboard_info.="<tr><td></td><td><b>(Out of date!)</b></td></tr>";
-	  $storyboard_info .="<tr><td>Up to time </td><td>" . format_time($storyboard_last_timepoint) . "</td></tr>";
 
-	  $storyboard_info .= "</table>";
-	  //	  $storyboard_info .= $latest_rebuild;
-}
+
+
+
+
+
+
+
+
+  /*******************/
+  //load plate storyboard information
+  $query = "SELECT region_id FROM animal_storyboard WHERE experiment_id = 0";
+  $sql->get_row($query,$story_res);
+
+  $storyboard_exists_for_region = array();
+  foreach($regions as $id=>&$val){
+    for($i=0; $i < sizeof($val); $i++)
+    $storyboard_exists_for_region[$val[$i][0]] = false;
+  }
+  for ($i = 0; $i < sizeof($story_res);$i++){
+    //print((int)$story_res[$i][0] . " ");
+    if (array_key_exists((int)$story_res[$i][0],$storyboard_exists_for_region)){
+      $storyboard_exists_for_region[(int)$story_res[$i][0]] = true;
+      //print($story_res[$i][0] . " ");
+    }
+  }
+  //  var_dump($storyboard_exists_for_region);
 }
 catch (ns_exception $e){
   die($e->text);
@@ -894,6 +923,7 @@ if (sizeof($all_animal_type_values) > 1){
 		$job = new ns_processing_job;
 				$job->sample_id = $experiment->samples[$i]->id();
 				echo $job->get_processing_state_description(TRUE,$sql);
+		    
 				echo "</td></tr></table>";
 		    
 
@@ -1020,6 +1050,14 @@ echo "</table>";
 			  $job->region_id = $cur_region[0];
 			  $v = $job->get_processing_state_description(FALSE,$sql);
 			  echo $v;
+			  //	die($cur_region_id);
+				$storyboard_exists = $storyboard_exists_for_region[$cur_region[0]];
+
+				  echo "<font face=\"Arial\" size=\"-2\">Storyboard Generated:</font><font size=\"-2\">";
+				if ($storyboard_exists)
+				  echo "Yes";
+				else echo "No";
+				echo "</font><br>";
 			  if (strlen($v) > 0)
 			    echo "<a href=\"view_processing_job.php?job_id=0&experiment_id=$experiment_id&region_id=".$cur_region[0]."&all_new=1&delete_file_taskbar=1\"><font size=\"-1\">[Delete Images]</font></a> ";
 			}

@@ -52,7 +52,7 @@ class ns_capture_sample{
 
 		$sql->get_row($query,$res);
 		if (sizeof($res) == 0){
-			$query = "UPDATE capture_samples SET name='". addslashes($name) . "' WHERE experiment_id=" . $this->experiment_id_p;
+			$query = "INSERT INTO capture_samples SET name='". addslashes($name) . "', experiment_id=" . $this->experiment_id_p;
 			
 			$this->id_p = $sql->send_query_get_id($query);
 		}

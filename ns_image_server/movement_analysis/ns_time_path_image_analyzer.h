@@ -749,7 +749,7 @@ public:
 	//three ways to populate the movement quantification data
 	void process_raw_images(const ns_64_bit region_id,const ns_time_path_solution & solution_,const ns_time_series_denoising_parameters &,const ns_analyzed_image_time_path_death_time_estimator * e,ns_sql & sql, const long group_number=-1,const bool write_status_to_db=false);
 	void reanalyze_stored_aligned_images(const ns_64_bit region_id,const ns_time_path_solution & solution_,const ns_time_series_denoising_parameters &,const ns_analyzed_image_time_path_death_time_estimator * e,ns_sql & sql,const bool load_images_after_last_valid_sample);
-	void load_completed_analysis(const ns_64_bit region_id,const ns_time_path_solution & solution_, const ns_time_series_denoising_parameters &,const ns_analyzed_image_time_path_death_time_estimator * e,ns_sql & sql, bool exclude_movement_quantification=false);
+	bool load_completed_analysis(const ns_64_bit region_id,const ns_time_path_solution & solution_, const ns_time_series_denoising_parameters &,const ns_analyzed_image_time_path_death_time_estimator * e,ns_sql & sql, bool exclude_movement_quantification=false);
 	
 	void reanalyze_with_different_movement_estimator(const ns_time_series_denoising_parameters &,const ns_analyzed_image_time_path_death_time_estimator * e);
 
@@ -826,7 +826,7 @@ private:
 	void load_region_visualization_images(const unsigned long start_i, const unsigned long stop_i,const unsigned int start_group, const unsigned int stop_group,ns_sql & sql, bool just_do_a_consistancy_check);
 	void acquire_region_image_specifications(const unsigned long region_id,ns_sql & sql);
 	void get_output_image_storage_locations(const unsigned long region_id,ns_sql & sql);
-	void load_movement_image_db_info(const unsigned long region_id,ns_sql & sql);
+	bool load_movement_image_db_info(const unsigned long region_id,ns_sql & sql);
 	void generate_images_from_region_visualization();
 	bool paths_loaded_from_solution;
 	std::vector<ns_analyzed_image_time_path_group> groups;

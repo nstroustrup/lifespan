@@ -1683,7 +1683,7 @@ void ns_worm_learner::output_movement_analysis_optimization_data(const ns_parame
 				for (unsigned int k = 0; k < 3; k++){
 					const unsigned long region_id(data_selector.samples[i].regions[j].region_id);
 					ns_time_path_solution time_path_solution;
-					time_path_solution.load_from_db(region_id,sql());
+					time_path_solution.load_from_db(region_id,sql(),true);
 
 					ns_time_series_denoising_parameters denoising_parameters(ns_time_series_denoising_parameters::load_from_db(region_id,sql()));
 					denoising_parameters.movement_score_normalization = norm_type[k];
@@ -1865,7 +1865,7 @@ void ns_worm_learner::generate_experiment_movement_image_quantification_analysis
 					if (!found_hand_movement_annotation)
 						continue;
 				}
-				movement_results.samples[i].regions[j].time_path_solution.load_from_db(movement_results.samples[i].regions[j].metadata.region_id,sql());
+				movement_results.samples[i].regions[j].time_path_solution.load_from_db(movement_results.samples[i].regions[j].metadata.region_id,sql(),true);
 				ns_posture_analysis_model dummy_model(ns_posture_analysis_model::dummy());
 				const ns_posture_analysis_model * posture_analysis_model(&dummy_model);
 				if (detail_level != ns_build_worm_markov_posture_model_from_by_hand_annotations){
@@ -2958,7 +2958,7 @@ void ns_worm_learner::generate_single_frame_posture_image_pixel_data(const bool 
 			if (single_region && region_id != data_selector.current_region().region_id)
 				continue;
 			try{
-				movement_results.samples[i].regions[j].time_path_solution.load_from_db(region_id,sql());
+				movement_results.samples[i].regions[j].time_path_solution.load_from_db(region_id,sql(),true);
 				movement_results.samples[i].regions[j].time_path_image_analyzer.load_completed_analysis(region_id,movement_results.samples[i].regions[j].time_path_solution,time_series_denoising_parameters,0,sql(),true);
 				movement_results.samples[i].regions[j].time_path_image_analyzer.add_by_hand_annotations(by_hand_annotations.annotations);
 				for (unsigned int w = 0; w < movement_results.samples[i].regions[j].time_path_image_analyzer.size(); w++){

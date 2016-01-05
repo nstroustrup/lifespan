@@ -1007,13 +1007,15 @@ void ns_time_path_image_movement_analyzer::reanalyze_with_different_movement_est
 			groups[g].paths[p].calculate_movement_quantification_summary();
 		}
 }
-void ns_time_path_image_movement_analyzer::load_completed_analysis(const ns_64_bit region_id,const ns_time_path_solution & solution_,  const ns_time_series_denoising_parameters & times_series_denoising_parameters, const ns_analyzed_image_time_path_death_time_estimator * e,ns_sql & sql, bool exclude_movement_quantification){
+bool ns_time_path_image_movement_analyzer::load_completed_analysis(const ns_64_bit region_id,const ns_time_path_solution & solution_,  const ns_time_series_denoising_parameters & times_series_denoising_parameters, const ns_analyzed_image_time_path_death_time_estimator * e,ns_sql & sql, bool exclude_movement_quantification){
 	region_info_id = region_id;
 	externally_specified_plate_observation_interval = get_externally_specified_last_measurement(region_id,sql);
 	load_from_solution(solution_);
 	crop_path_observation_times(externally_specified_plate_observation_interval);
-	load_movement_image_db_info(region_info_id,sql);
+	bool found_path_info_in_db = load_movement_image_db_info(region_info_id,sql);
 
+
+	
 	for (unsigned long g = 0; g < groups.size(); g++){
 		for (unsigned long p = 0; p < groups[g].paths.size(); p++)
 			for (unsigned int i = 0; i < groups[g].paths[p].death_time_annotations().events.size(); i++){
@@ -1024,7 +1026,7 @@ void ns_time_path_image_movement_analyzer::load_completed_analysis(const ns_64_b
 
 	populate_movement_quantification_from_file(sql);
 	if (exclude_movement_quantification)
-		return;
+		return found_path_info_in_db;
 	
 	for (unsigned long g = 0; g < groups.size(); g++)
 		for (unsigned long p = 0; p < groups[g].paths.size(); p++){
@@ -1072,6 +1074,7 @@ void ns_time_path_image_movement_analyzer::load_completed_analysis(const ns_64_b
 
 	//generate_movement_description_series();
 	movement_analyzed = true;
+	return found_path_info_in_db;
 }
 void ns_time_path_image_movement_analyzer::save_movement_data_to_db(const unsigned long region_id, ns_sql & sql){
 
@@ -4258,12 +4261,16 @@ void ns_analyzed_image_time_path::load_movement_images(const ns_analyzed_time_im
 	}
 }
 
-void ns_time_path_image_movement_analyzer::load_movement_image_db_info(const unsigned long region_id,ns_sql & sql){
+bool ns_time_path_image_movement_analyzer::load_movement_image_db_info(const unsigned long region_id,ns_sql & sql){
 	if (image_db_info_loaded)
-		return;
+		return true;
 	sql << "SELECT group_id,path_id,image_id, id FROM path_data WHERE region_id = " << region_id;
 	ns_sql_result res;
 	sql.get_rows(res);
+	if (res.size() == 0){
+			image_db_info_loaded = false;
+			return false;
+	}
 	for (unsigned int i = 0; i < res.size(); i++){
 		unsigned long group_id(atol(res[i][0].c_str())),
 					  path_id(atol(res[i][1].c_str())),
@@ -4283,7 +4290,7 @@ void ns_time_path_image_movement_analyzer::load_movement_image_db_info(const uns
 		
 	}
 	image_db_info_loaded = true;
-	
+	return true;
 }
 
 void ns_time_path_image_movement_analyzer::load_images_for_group(const unsigned long group_id, unsigned long number_of_images_to_load,ns_sql & sql, const bool load_images_after_last_valid_sample){

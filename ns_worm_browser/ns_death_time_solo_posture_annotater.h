@@ -79,16 +79,16 @@ struct ns_animal_list_at_position{
 
 class ns_death_time_posture_solo_annotater_region_data{
 public:
-	ns_death_time_posture_solo_annotater_region_data():movement_data_loaded(false),annotation_file("",""),loading_time(0){}
-	
+	ns_death_time_posture_solo_annotater_region_data():movement_data_loaded(false),annotation_file("",""),loading_time(0),loaded_path_data_successfully(false){}
+	bool loaded_path_data_successfully;
 	void load_movement_analysis(const unsigned long region_id_,ns_sql & sql, const bool load_movement_quantification = false){
-		solution.load_from_db(region_id_,sql);
+		solution.load_from_db(region_id_,sql,true);
 		const ns_time_series_denoising_parameters time_series_denoising_parameters(ns_time_series_denoising_parameters::load_from_db(region_id_,sql));
 
 		ns_acquire_for_scope<ns_analyzed_image_time_path_death_time_estimator> death_time_estimator(
 				ns_get_death_time_estimator_from_posture_analysis_model(
 				image_server.get_posture_analysis_model_for_region(region_id_,sql)));
-		movement_analyzer.load_completed_analysis(region_id_,solution,time_series_denoising_parameters,&death_time_estimator(),sql,!load_movement_quantification);
+		loaded_path_data_successfully = movement_analyzer.load_completed_analysis(region_id_,solution,time_series_denoising_parameters,&death_time_estimator(),sql,!load_movement_quantification);
 		death_time_estimator.release();
 	}
 	void load_images_for_worm(const ns_stationary_path_id & path_id,const unsigned long number_of_images_to_load,ns_sql & sql){
@@ -258,7 +258,10 @@ public:
 				sub.region_id = region_id;
 				p->second.loading_time = current_time;
 				p->second.annotation_file = image_server.results_storage.hand_curated_death_times(sub,sql);
+				//this will work even if no path data can be loaded, but 
+				//p->loaded_path_data_successfully will be set to false
 				p->second.load_movement_analysis(region_id,sql);
+				
 				p->second.by_hand_timing_data.resize(p->second.movement_analyzer.size());
 				p->second.machine_timing_data.resize(p->second.movement_analyzer.size());
 				for (unsigned int i = 0; i < p->second.movement_analyzer.size(); i++){
@@ -581,7 +584,9 @@ public:
 		ns_update_information_bar(string("Annotations saved at ") + ns_format_time_string_for_human(ns_current_time()));
 		saved_=true;
 	};
-
+	bool current_region_path_data_loaded(){
+		return current_region_data->loaded_path_data_successfully;
+	}
 	void close_worm(){
 		properties_for_all_animals = ns_death_time_annotation();
 		properties_for_all_animals.region_info_id = 0;
@@ -614,6 +619,7 @@ public:
 			
 		//data_cache.load_images_for_worm(properties_for_all_animals.stationary_path_id,current_timepoint_id+10,sql);
 		current_region_data->clear_images_for_worm(properties_for_all_animals.stationary_path_id);
+
 		current_region_data->load_images_for_worm(properties_for_all_animals.stationary_path_id,current_timepoint_id+10,sql());
 
 
@@ -649,6 +655,8 @@ public:
 				metadata.load_from_db(region_info_id_,"",sql);
 				throw;
 			}
+			if (!current_region_data->loaded_path_data_successfully)
+					throw ns_ex("The movement anaylsis data required to inspect this worm is no longer in the database.  You might need to re-analyze movement for this region.");
 			metadata = current_region_data->metadata;
 			if (worm.detection_set_id != 0 && current_region_data->movement_analyzer.db_analysis_id() != worm.detection_set_id)
 				throw ns_ex("This storyboard was built using an out-of-date movement analysis result.  Please rebuild the storyboard, so that it will reflect the most recent analysis.");
@@ -746,6 +754,7 @@ public:
 			
 			request_refresh();
 			lock.release();
+
 		}
 		catch(ns_ex & ex){
 			close_worm();

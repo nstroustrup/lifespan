@@ -2707,6 +2707,8 @@ struct ns_asynch_worm_launcher{
 			//if (worm_window_sql == 0)
 			ns_sql *	worm_window_sql = image_server.new_sql_connection(__FILE__,__LINE__);
 			worm_learner.death_time_solo_annotater.load_worm(region_id,worm,current_time,storyboard,&worm_learner,*worm_window_sql);
+			
+
 			worm_learner.death_time_solo_annotater.display_current_frame();
 			show_worm_window = true;
 			/*Fl::awake();
@@ -2721,6 +2723,9 @@ struct ns_asynch_worm_launcher{
 			worm_learner.death_time_solo_annotater.close_worm();
 			show_worm_window = false;
 			ns_set_menu_bar_activity(true);
+			ns_alert_dialog d;
+			d.text =  ex.text();
+			d.act();
 		}
 	}
 };

@@ -786,7 +786,7 @@ bool ns_processing_job_maintenance_processor:: run_job(ns_sql & sql){
 			ns_time_path_solution time_path_solution;
 			if (skip_inferred_worm_analysis){
 				try{
-					time_path_solution.load_from_db(job.region_id,sql); 
+					time_path_solution.load_from_db(job.region_id,sql,false); 
 				}
 				catch(ns_ex & ex){
 					ns_time_path_solver tp_solver;
@@ -799,7 +799,7 @@ bool ns_processing_job_maintenance_processor:: run_job(ns_sql & sql){
 			else if( job.maintenance_task == ns_maintenance_rebuild_movement_from_stored_images || 
 				job.maintenance_task == ns_maintenance_rebuild_movement_from_stored_image_quantification){
 				image_server->register_server_event(ns_image_server_event("Loading point cloud solution from disk."),&sql);
-				time_path_solution.load_from_db(job.region_id,sql); 
+				time_path_solution.load_from_db(job.region_id,sql,false); 
 			}
 			else{
 				unsigned long count(0);
@@ -1052,7 +1052,7 @@ bool ns_processing_job_maintenance_processor:: run_job(ns_sql & sql){
 			ns_high_precision_timer tm;
 			tm.start();
 			ns_time_path_solution solution;
-			solution.load_from_db(job.region_id,sql);
+			solution.load_from_db(job.region_id,sql,true);
 			ns_time_path_image_movement_analyzer analyzer;
 			const ns_time_series_denoising_parameters time_series_denoising_parameters(ns_time_series_denoising_parameters::load_from_db(job.region_id,sql));
 
@@ -1069,7 +1069,7 @@ bool ns_processing_job_maintenance_processor:: run_job(ns_sql & sql){
 			ns_high_precision_timer tm;
 			tm.start();
 			ns_time_path_solution solution;
-			solution.load_from_db(job.region_id,sql);
+			solution.load_from_db(job.region_id,sql,true);
 			const ns_time_series_denoising_parameters time_series_denoising_parameters(ns_time_series_denoising_parameters::load_from_db(job.region_id,sql));
 
 			ns_time_path_image_movement_analyzer analyzer;

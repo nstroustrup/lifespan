@@ -2002,8 +2002,23 @@ void ns_multiple_worm_cluster_death_annotation_handler::generate_correct_annotat
 		set[i].multiworm_censoring_strategy = censoring_strategy;
 }
 
+ns_death_time_annotation_time_interval ns_death_time_annotation_compiler_region::latest_interval() const{
+	ns_death_time_annotation_time_interval latest_interval(0,0);
+	for (ns_death_time_annotation_compiler_region::ns_location_list::const_iterator p = locations.begin(); p != locations.end(); p++){
+		for (ns_death_time_annotation_set::const_iterator q = p->annotations.begin(); q != p->annotations.end(); q++){
+			if (!q->time.period_start_was_not_observed && q->time.period_start > latest_interval.period_start)
+				latest_interval.period_start = q->time.period_start;
+			if (!q->time.period_end_was_not_observed && q->time.period_end > latest_interval.period_end)
+				latest_interval.period_end = q->time.period_end;
+		}
+	}
+	return latest_interval;
+}
 void ns_death_time_annotation_compiler_region::generate_survival_curve(ns_survival_data & curve, const ns_death_time_annotation::ns_by_hand_annotation_integration_strategy & death_times_to_use,const bool use_by_hand_worm_cluster_annotations, const bool warn_on_movement_problems) const{
-		unsigned long multiple_event_count(0);
+		
+	const ns_death_time_annotation_time_interval latest_interval(ns_death_time_annotation_compiler_region::latest_interval());
+	
+	unsigned long multiple_event_count(0);
 		//Note that the censoring code will generate censoring events for multi-worm clusters.
 		//The machine also records death events
 		//Both censoring events and death events will be propigated so it is very important
@@ -2118,6 +2133,23 @@ void ns_death_time_annotation_compiler_region::generate_survival_curve(ns_surviv
 								properties_to_transfer.excluded == ns_death_time_annotation::ns_censored_at_end_of_experiment)
 								properties_to_transfer.excluded = ns_death_time_annotation::ns_not_excluded;
 
+							//another special case occurs when
+							//1) the lifespan machine delcares a worm as dead
+							//2) the user flags the worms as still alive at the end of the experiment with the STILL_ALIVE flag
+							//Then we need to register the animal as being a censoring event at the end of the experiment.
+							//ideally, we would to this at the final measurement time for the plate
+							//but this data is not available at this point in the code, so we do the second best thing and
+							//put it at the time of the latest interval of any annotation (machine or by hand) registered for the plate.
+						
+							if (b.type == ns_movement_cessation &&
+								properties_to_transfer.flag.specified()){
+								if (properties_to_transfer.flag.label_short == "STILL_ALIVE"){
+									b.time = latest_interval;
+									properties_to_transfer.excluded = ns_death_time_annotation::ns_censored_at_end_of_experiment;
+									b.annotation_source = ns_death_time_annotation::ns_storyboard;
+									b.annotation_source_details = "Marked as alive by hand";
+								}
+							}
 							properties_to_transfer.transfer_sticky_properties(b);
 						
 							//we use this as debugging info in output file
@@ -2338,6 +2370,8 @@ void ns_death_time_annotation_flag::generate_default_flags(std::vector<ns_death_
 		"Movement Registration Error",true,"2ND_WORM_ERR","FF8080"));
 	flags.push_back(ns_death_time_annotation_flag("2ND_WORM_ERR",
 		"Additional Worm Confuses Analysis",true,"","80FF80"));
+	flags.push_back(ns_death_time_annotation_flag("STILL_ALIVE",
+		"Worm is still alive at the end of the experiment",false,"","CCCCCC"));
 }
 
 std::string ns_death_time_annotation_flag::label() const{

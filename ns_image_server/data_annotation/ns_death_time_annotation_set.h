@@ -128,6 +128,8 @@ public:
 	ns_death_time_annotation_set fast_moving_animals;
 	void add(const ns_death_time_annotation & e, const bool create_new_location);
 	ns_region_metadata metadata;
+
+	ns_death_time_annotation_time_interval latest_interval() const;
 	
 	void generate_survival_curve(ns_survival_data & curve, const ns_death_time_annotation::ns_by_hand_annotation_integration_strategy & death_times_to_use,const bool use_by_hand_worm_cluster_annotations,const bool warn_on_movement_problems) const;
 	void output_summary(std::ostream & o) const;

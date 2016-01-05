@@ -517,24 +517,42 @@ void ns_time_path_solution::save_to_db(const unsigned long region_id, ns_sql & s
 	}
 
 }
-void ns_time_path_solution::load_from_db(const ns_64_bit region_id, ns_sql & sql){
+void ns_time_path_solution::load_from_db(const ns_64_bit region_id, ns_sql & sql, bool load_directly_from_disk_without_db){
 	sql << "SELECT time_path_solution_id FROM sample_region_image_info WHERE id = " << region_id;
 	ns_sql_result res;
 	sql.get_rows(res);
 	if (res.size() == 0)
 		throw ns_ex("ns_time_path_solution::load_from_db():Could not load info from db");
-	ns_image_server_image im;
-	im.id = atol(res[0][0].c_str());
-	if (im.id == 0)
-		throw ns_ex("Solution data has not been stored in db");
-	ifstream * i(image_server.image_storage.request_metadata_from_disk(im,false,&sql));
+
+	ns_acquire_for_scope<ifstream> input_file(0);
+
+	if (load_directly_from_disk_without_db){
+		
+		ns_image_server_image im;
+		im = image_server.image_storage.get_region_movement_metadata_info(region_id,"time_path_solution_data",sql);
+		im.filename += ".csv";
+		try{
+			input_file.attach(image_server.image_storage.request_metadata_from_disk(im,false,&sql));
+		}catch(ns_ex & ex){
+			throw ns_ex("Solution data could not be found on disk");
+		}
+	}else{
+		ns_image_server_image im;
+		im.id = atol(res[0][0].c_str());
+		if (im.id == 0)
+			throw ns_ex("Solution data has not been stored in db");
+		input_file.attach(image_server.image_storage.request_metadata_from_disk(im,false,&sql));
+	}
+
+
+	
 
 	try{
-		load_from_disk(*i);
-		delete i;
+		load_from_disk(input_file());
+		input_file.release();
 	}
 	catch(...){
-		delete i;
+		input_file.release();
 		throw;
 	}
 }

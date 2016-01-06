@@ -1,7 +1,7 @@
 act_as_image_capture_server = yes
 act_as_processing_node = no
 central_sql_databases = image_server;image_server_archive
-central_sql_hostname = 10.0.105.12
+central_sql_hostname = 10.0.0.0
 central_sql_password = password123
 central_sql_username = image_server
 local_buffer_sql_username = image_server

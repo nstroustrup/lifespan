@@ -1730,7 +1730,7 @@ public:
 		forward_button 		= new Fl_Button(5*button_width,0,button_width,button_height,".");
 		forward_button->callback(ns_handle_death_time_solo_annotation_button,
 			new ns_death_time_solo_posture_annotater::ns_image_series_annotater_action(ns_death_time_solo_posture_annotater::ns_forward));
-		save_button = new Fl_Button(8*button_width,0,3*button_width,button_height,"Save");
+		save_button = new Fl_Button(8*button_width,0,3*button_width,button_height,"Export Images");
 		save_button->  callback(ns_handle_death_time_solo_annotation_button,
 			new ns_death_time_solo_posture_annotater::ns_image_series_annotater_action(ns_death_time_solo_posture_annotater::ns_write_quantification_to_disk));
 

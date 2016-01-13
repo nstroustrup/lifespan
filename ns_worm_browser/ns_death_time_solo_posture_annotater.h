@@ -914,7 +914,7 @@ public:
 										  ns_death_timing_data_step_event_specification(
 										  current_time_interval(),current_worm->element(current_element_id()),
 										  properties_for_all_animals.region_info_id,properties_for_all_animals.stationary_path_id,new_animal_id));
-						current_animal_id = new_animal_id;
+						this->current_animal_id = new_animal_id;
 						unsigned long new_sticky_label =current_by_hand_timing_data().animals.size();
 						if (current_annotated_worm_count > new_sticky_label)
 							new_sticky_label = current_annotated_worm_count;
@@ -954,7 +954,7 @@ public:
 						plate_name+= pn[i];
 						in_char = false;
 					}
-					const string filename(this->current_region_data->metadata.experiment_name + "=" + plate_name  + "=" + ns_to_string(this->current_animal_id));
+					const string filename(this->current_region_data->metadata.experiment_name + "=" + plate_name  + "=" + ns_to_string(properties_for_all_animals.stationary_path_id.group_id));
 					if (filename == "")
 						break;
 					

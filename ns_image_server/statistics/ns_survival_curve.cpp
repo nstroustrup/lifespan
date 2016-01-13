@@ -910,7 +910,8 @@ void ns_lifespan_experiment_set::out_simple_JMP_header(const ns_time_handing_beh
 		o << 
 		 "Age at Death (" << time_units << ") Raw,"
 		 "Duration Not Fast Moving (" << time_units << "),"
-		 "Longest Gap in Measurement (" << time_units << "),";
+		 "Longest Gap in Measurement (" << time_units << "),"
+		 "Duration before death contraction end (" << time_units << "),";
 	//	 "Age at Death (" << time_units << ") Additive Regression Model Residuals,"
 	//	 "Age at Death (" << time_units << ") Multiplicative Regression Model Residuals,";
 	}
@@ -919,7 +920,8 @@ void ns_lifespan_experiment_set::out_simple_JMP_header(const ns_time_handing_beh
 		 "Age at Death (" << time_units << ") Raw Start,"
 		 "Age at Death (" << time_units << ") Raw End,"
 		 "Duration Not Fast Moving (" << time_units << "),"
-		 "Longest Gap in Measurement (" << time_units << "),";
+		 "Longest Gap in Measurement (" << time_units << "),"
+		 "Duration before death contraction end (" << time_units << "),";
 	}
 		// "Age at Death (" << time_units << ") Multiplicative + Additive offset Regression Model Residuals,"
 	o << "Censored,Censored Reason,Event Observation Type,Annotation Source,Technique,Analysis Type";
@@ -998,6 +1000,7 @@ void ns_lifespan_experiment_set::out_simple_JMP_event_data(const ns_time_handing
 		o << ",";
 		o << a.volatile_duration_of_time_not_fast_moving/time_scaling_factor << ",";
 		o << a.longest_gap_without_observation/time_scaling_factor << ",";
+		o << a.volatile_time_spent_before_end_of_death_time_contraction/time_scaling_factor << ",";
 		//event_time/time_scaling_factor << ",";
 	
 	/*	if (output_raw_data_as_regression){

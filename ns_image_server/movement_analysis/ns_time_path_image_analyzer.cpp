@@ -1550,7 +1550,7 @@ void ns_analyzed_image_time_path::write_detailed_movement_quantification_analysi
 		 "Machine-Annotated Movement State,By Hand Annotated Movement State,"
 		 "Machine Death Relative Time, Machine Slow Movement Cessation Relative Time, Machine Fast Movement Cessation Relative Time,"
 		 "By Hand Death Relative Time, By Hand Slow Movement Cessation Relative Time, By Hand Fast Movement Cessation Relative Time,"
-		 "By Hand Death Posture Relaxation Time,"
+		 "By Hand Death-Associated Contraction Time,"
 		 "Unnormalized Movement Sum, Unnormalized Movement Sum Scaled by Worm Size, Movement Score, Denoised Movement Score,Movement Alternate Worm Sum, Change in Total Pixel Intensity Between Frames,Change in Average Normalized Pixel Intensity Between Frames, Movement Ratio,"
 		 "Total Worm Area, Normalized Total Worm Area,Total Worm Intensity, Total Region Area, Total Region Intensity,"
 		 "Normalized Worm Area, Normalized Worm Intensity, Normalized Change in Worm Intensity,"

@@ -254,7 +254,7 @@ std::string ns_movement_state_to_string(const ns_movement_state & s){
 			case ns_movement_fast:  return "Moving Quickly";
 			case ns_movement_by_hand_excluded: return "By Hand Excluded";
 			case ns_movement_machine_excluded: return "Machine Excluded";
-			case ns_movement_death_posture_relaxation: return "Death Posture Relaxation";
+			case ns_movement_death_posture_relaxation: return "Death-Associated Contraction";
 			case ns_movement_total: return "Total";
 			case ns_movement_not_calculated: return "Not calculated";
 			case ns_movement_number_of_states: throw ns_ex("ns_movement_state_to_string()::Invalid movement state: ") << (int)s;
@@ -2069,8 +2069,8 @@ void ns_death_time_annotation_compiler_region::generate_survival_curve(ns_surviv
 				//by_hand == 1: add by_hand annotations
 				for (int by_hand = 0; by_hand < 2; by_hand++){
 
-					//add fast movement cessation, slow movement cessation, and death events
-					const ns_death_time_annotation *a[3] = {0,0,0};
+					//add 1) death 2) slow movement cessation, 3) fast movement cessation and 3) death time contraction termination
+					const ns_death_time_annotation *a[4] = {0,0,0,0};
 
 					bool matches_machine_detected_death(death.machine.death_annotation != 0);
 
@@ -2081,20 +2081,24 @@ void ns_death_time_annotation_compiler_region::generate_survival_curve(ns_surviv
 						a[1] = death.machine.last_slow_movement_annotation;
 						a[2] = death.machine.last_fast_movement_annotation;
 					}
-					//add a by hand annotation, if requested
+					//add a by hand annotation, if required
 					else if (by_hand && (death_times_to_use == ns_death_time_annotation::ns_only_by_hand_annotations || 
 								death_times_to_use  == ns_death_time_annotation::ns_machine_and_by_hand_annotations)){
 						a[0] = death.by_hand.death_annotation;
 						a[1] = death.by_hand.last_slow_movement_annotation;
 						a[2] = death.by_hand.last_fast_movement_annotation;
+						a[3] = death.by_hand.death_posture_relaxation_termination;
 					}
 					//add a by hand annotation, and if one doesn't exist, add a machine annotation
 					else if (!by_hand && (death_times_to_use == ns_death_time_annotation::ns_machine_annotations_if_no_by_hand)){
 						
-						if (death.by_hand.death_annotation != 0)
+						if (death.by_hand.death_annotation != 0){
 							a[0] = death.by_hand.death_annotation;
-						else 
+							a[3] = death.by_hand.death_posture_relaxation_termination;
+						}
+						else {
 							a[0] = death.machine.death_annotation;
+						}
 						
 						if (death.by_hand.last_slow_movement_annotation != 0)
 							a[1] = death.by_hand.last_slow_movement_annotation;
@@ -2157,6 +2161,12 @@ void ns_death_time_annotation_compiler_region::generate_survival_curve(ns_surviv
 								b.volatile_duration_of_time_not_fast_moving = 
 								a[0]->time.best_estimate_event_time_for_possible_partially_unbounded_interval() - 
 								a[2]->time.best_estimate_event_time_for_possible_partially_unbounded_interval();
+
+							//we use this as debugging info in output file
+							if (a[3] != 0 && a[0] != 0)
+								b.volatile_time_spent_before_end_of_death_time_contraction = 
+								a[3]->time.best_estimate_event_time_for_possible_partially_unbounded_interval() - 
+								a[0]->time.best_estimate_event_time_for_possible_partially_unbounded_interval();
 
 							//regions can be re-analyzed. In this case,
 							//some locations can dissapear (as they no longer exist in the new analysis)

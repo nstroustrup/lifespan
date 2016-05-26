@@ -781,6 +781,16 @@ public:
 		sticky_properties.flag.step_event();
 		
 	}
+	static std::string pad_zeros(std::string & str, int len){
+		int add = len-(int)str.size();
+		if (add <= 0)
+			return str;
+		std::string ret;
+		for (int i = 0; i < add; i++){
+			ret+='0';
+		}
+		return ret+str;
+	}
 	void output_worm_frames(const string &base_dir,const std::string & filename, ns_sql & sql){
 		const string bd(base_dir);
 		const string base_directory(bd + DIR_CHAR_STR + filename);
@@ -819,6 +829,7 @@ public:
 	//	string base_filename(base_directory + DIR_CHAR_STR + filename);
 		ns_image_standard mvt_tmp;
 		current_region_data->load_images_for_worm(properties_for_all_animals.stationary_path_id,current_element_id()+1,sql);
+		unsigned long num_dig = ceil(log10((double)this->current_element_id()));
 
 		for (unsigned int i = 0; i <= this->current_element_id(); i++){
 			if (timepoints[i].path_timepoint_element->excluded)
@@ -827,10 +838,10 @@ public:
 			if (im == 0)
 				continue;
 			//ns_image_properties prop(im.properties());
-			ns_save_image(gray_directory + DIR_CHAR_STR + filename + "_grayscale_" + ns_to_string(i) + ".tif",*im);
+			ns_save_image(gray_directory + DIR_CHAR_STR + filename + "_grayscale_" + pad_zeros(ns_to_string(i+1),num_dig) + ".tif",*im);
 			current_region_data->movement_analyzer.group(properties_for_all_animals.stationary_path_id.group_id).paths[properties_for_all_animals.stationary_path_id.path_id].element(i).generate_movement_visualization(mvt_tmp);
 			//ns_image_properties prop(im.properties()
-			ns_save_image(movement_directory + + DIR_CHAR_STR + filename + ns_to_string(i) + ".tif",mvt_tmp);
+			ns_save_image(movement_directory + DIR_CHAR_STR + filename +  "_" + pad_zeros(ns_to_string(i+1),num_dig) + ".tif",mvt_tmp);
 		}
 		
 		

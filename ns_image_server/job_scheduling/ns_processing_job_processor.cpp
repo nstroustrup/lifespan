@@ -812,7 +812,12 @@ bool ns_processing_job_maintenance_processor:: run_job(ns_sql & sql){
 					tp_solver.solve(solver_parameters,time_path_solution);
 				
 					image_server->register_server_event(ns_image_server_event("Filling gaps and adding path prefixes."),&sql);
-					time_path_solution.fill_gaps_and_add_path_prefixes(ns_time_path_solution::default_length_of_fast_moving_prefix());
+					std::string prefix_length_str= image_server->get_cluster_constant_value("path_prefix_length_in_frames",ns_to_string(ns_time_path_solution::default_length_of_fast_moving_prefix()),&sql);
+					unsigned long prefix_length(ns_time_path_solution::default_length_of_fast_moving_prefix());
+					if (prefix_length_str.length() > 0){
+						prefix_length = atol(prefix_length_str.c_str());
+					}
+					time_path_solution.fill_gaps_and_add_path_prefixes(prefix_length);
 				
 					//unnecissary save, done for debug
 				//	time_path_solution.save_to_db(job.region_id,sql);

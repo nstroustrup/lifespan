@@ -26,13 +26,13 @@ if ($reload){
   die("");
  }
 
-$query = "SELECT label_short,label,exclude,next_flag_name_in_order, hidden, color FROM annotation_flags";
+$query = "SELECT label_short,label,exclude,next_flag_name_in_order, hidden, color, id, next_flag_id_in_order FROM annotation_flags";
 $sql->get_row($query,$flags);
 $root_flag_index = 0;
 $tail = "";
 $number_of_tails = 0;
 $first_not_root_id = -1;
-
+$sorted_flags = array();
 for ($i = 0; $i < sizeof($flags); $i++){
   $references_to_flags[$flags[$i][3]] = array();
   $sorted_flags[$flags[$i][0]] = $flags[$i];
@@ -42,31 +42,46 @@ for ($i = 0; $i < sizeof($flags); $i++){
     $first_not_root_id = $i;
   if (strlen($flags[$i][3]) == 0){
     $tail = $flags[$i][0];
+    //echo "$i tail: " . $tail . "<BR>";
     $number_of_tails++;
   }
 }
-if($number_of_tails != 1){//|| TRUE){
-  
-  //  die("YIKES: Number of Tails" . $number_of_tails);
-  //$query = "UPDATE annotation_flags
+//var_dump($flags);
+if($number_of_tails != 1 || $query_string["fix_flags"] == "1"){//|| TRUE){
+  #echo("Number of tails: " . $number_of_tails . "<BR>");
+  #die("WHA");
   for ($i = 0; $i < sizeof($flags); $i++){
-    echo $flags[$i][0] . "<BR>";
+    //  echo $i . " ". $flags[$i][0] . "<BR>";
     if ($flags[$i][0] == "MULTI_ERR"){
-      $next = $flags[$first_not_root_id][0];
-      //   die($next);
-      }
-    else if ($i+1 ==sizeof($flags) || $i+2 == sizeof($flags) && $flags[sizeof($flags)-1][0]="MULTI_ERR"){
-      $next='';
+      $next_index = 0;
+      if ($i == 0)
+	$next_index = 1;
+      $next = $flags[$next_index][0];
+      $next_id = $flags[$next_index][6];
+     
     }
-    else $next = $flags[$i+1][0];
-    $query = "UPDATE annotation_flags SET next_flag_name_in_order='" . $next ."' WHERE label_short='".
+    else if ($i+1 ==sizeof($flags) || $i+2 == sizeof($flags) && $flags[sizeof($flags)-1][0]=="MULTI_ERR"){
+      $next='';
+      $next_id = sizeof($flags)+1;
+    }
+    else{
+      $next_index = $i+1;
+      if ($flags[$next_index][0] == "MULTI_ERR")
+	$next_index++;
+      $next = $flags[$next_index][0];
+      $next_id = $flags[$next_index][6];
+    }
+    $query = "UPDATE annotation_flags SET next_flag_name_in_order='" . $next ."', next_flag_id_in_order ='".$next_id ."' WHERE label_short='".
       $flags[$i][0] . "'";
     //  echo $query . "<BR>";
     // die($query);
     $sql->send_query($query);
+    //echo $query . "<BR>";
   }
+  $q = "commit";
+  $sql->send_query($q);
   //die("SDF");
-  header("Location: cluster_configuration.php\n\n");
+  header("Location: cluster_configuration.php?already_set_tails=1\n\n");
  }
 
 for ($i = 0; $i < sizeof($flags); $i++){
@@ -199,8 +214,19 @@ $flags[$root_flag_index][3] . "' WHERE label_short = '$name'";
  }
 
 $ordered_flags = array();
+$numflags = sizeof($flags);
+$j = 0;
+$str = "";
 for ($i = $flags[$root_flag_index][0];  isset($sorted_flags[$i]); $i = $sorted_flags[$i][3]){
+  if ($j >= $numflags){
+    $str .= "<BR>";
+    echo $str;
+    var_dump($flags);
+    die("<BR>A loop was detected in the flag ordering: $j");
+  }
+  $str .= $sorted_flags[$i][0] . "<BR>";
   array_push($ordered_flags,$sorted_flags[$i]);
+  $j++;
  }
 /*echo "FIRST: ". $flags[$root_flag_index][0] . "<BR>";
 var_dump($sorted_flags);
@@ -262,7 +288,7 @@ for ($i = 0; $i < sizeof($constants); $i++){
 <table cellspacing=0 cellpadding=0 width="100%"><tr <?php echo $table_header_color ?>><td width=200>Short name</td><td width=400>Flag Label</td><td width=8>Color</td><td width=100><center>Exclude Animals<br>With Flag</center></td><td width=100><center>Hide Flag</center></td><td>&nbsp;</td></tr>
 </table>
 <?php
-										       
+
 for ($i = 0; $i < sizeof($ordered_flags); $i++){
   echo "<tr><td>";
   
@@ -310,7 +336,10 @@ echo "<input type=\"checkbox\" name=\"hide\" value=\"1\"";
    </form>
 </td></tr>
 </table>
+</tr></td>
 </table>
+  <a href="cluster_configuration.php?fix_flags=1">[Reset Flag order]</a>
+
 <?php
 display_worm_page_footer();
 ?>

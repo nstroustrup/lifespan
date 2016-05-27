@@ -306,8 +306,10 @@ public:
 
 					//by default specify the beginnnig of the path as the translation cessation time.
 					p->second.by_hand_timing_data[i].animals[0].step_event(
-						ns_death_timing_data_step_event_specification(p->second.movement_analyzer[i].paths[0].cessation_of_fast_movement_interval(),
-									p->second.movement_analyzer[i].paths[0].element(p->second.movement_analyzer[i].paths[0].first_stationary_timepoint()),region_id, p->second.by_hand_timing_data[i].animals[0].position_data.stationary_path_id,0));
+						ns_death_timing_data_step_event_specification(
+									p->second.movement_analyzer[i].paths[0].cessation_of_fast_movement_interval(),
+									p->second.movement_analyzer[i].paths[0].element(p->second.movement_analyzer[i].paths[0].first_stationary_timepoint()),region_id,
+									p->second.by_hand_timing_data[i].animals[0].position_data.stationary_path_id,0),p->second.movement_analyzer[i].paths[0].observation_limits());
 				}
 				p->second.load_annotations(sql,false);
 			}
@@ -894,7 +896,7 @@ public:
 				case ns_cycle_state:  current_by_hand_timing_data().animals[current_animal_id].step_event(
 										  ns_death_timing_data_step_event_specification(
 										  current_time_interval(),current_worm->element(current_element_id()),
-										  properties_for_all_animals.region_info_id,properties_for_all_animals.stationary_path_id,current_animal_id));
+										  properties_for_all_animals.region_info_id,properties_for_all_animals.stationary_path_id,current_animal_id),current_worm->observation_limits());
 					change_made = true;
 					break;
 				case ns_cycle_flags: 
@@ -924,7 +926,7 @@ public:
 						current_by_hand_timing_data().animals.rbegin()->step_event(
 										  ns_death_timing_data_step_event_specification(
 										  current_time_interval(),current_worm->element(current_element_id()),
-										  properties_for_all_animals.region_info_id,properties_for_all_animals.stationary_path_id,new_animal_id));
+										  properties_for_all_animals.region_info_id,properties_for_all_animals.stationary_path_id,new_animal_id),current_worm->observation_limits());
 						this->current_animal_id = new_animal_id;
 						unsigned long new_sticky_label =current_by_hand_timing_data().animals.size();
 						if (current_annotated_worm_count > new_sticky_label)

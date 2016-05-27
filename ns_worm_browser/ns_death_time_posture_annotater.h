@@ -388,7 +388,7 @@ public:
 	}
 	
 		//given the user has selected the specified time path element, update the annotations apropriately
-	void step_event(const ns_death_timing_data_step_event_specification & e){
+	void step_event(const ns_death_timing_data_step_event_specification & e,const ns_time_path_limits & observation_limits){
 		//cerr << "V-------------------V\n";
 		//output_event_times(cerr);
 		if (e.event_time.period_end < fast_movement_cessation.time.period_end){
@@ -400,6 +400,8 @@ public:
 			if (movement_cessation.time.period_end == fast_movement_cessation.time.period_end){
 				ns_zero_death_interval(movement_cessation.time);
 				ns_zero_death_interval(translation_cessation.time);
+				this->fast_movement_cessation.time = observation_limits.last_obsevation_of_plate;
+
 			}
 			//indicate the first timepoint is stationary
 			else if (translation_cessation.time.period_end == fast_movement_cessation.time.period_end){

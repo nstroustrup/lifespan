@@ -71,6 +71,9 @@
     <Filter Include="image_format_lib\tiff">
       <UniqueIdentifier>{e1ae590f-1f64-4bee-ba15-98864e01afaf}</UniqueIdentifier>
     </Filter>
+    <Filter Include="misc_lib\OpticalFlow">
+      <UniqueIdentifier>{75530df9-46dc-4e9a-b8d0-11f12ff4e36f}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\ns_image_server\data_annotation\ns_death_time_annotation.h">
@@ -597,6 +600,36 @@
     </ClInclude>
     <ClInclude Include="..\external_compile_libraries\tiff-3.8.2\libtiff\tif_predict.h">
       <Filter>image_format_lib\tiff</Filter>
+    </ClInclude>
+    <ClInclude Include="..\external_libraries\OpticalFlow\mex\GaussianPyramid.h">
+      <Filter>misc_lib\OpticalFlow</Filter>
+    </ClInclude>
+    <ClInclude Include="..\external_libraries\OpticalFlow\mex\Image.h">
+      <Filter>misc_lib\OpticalFlow</Filter>
+    </ClInclude>
+    <ClInclude Include="..\external_libraries\OpticalFlow\mex\ImageIO.h">
+      <Filter>misc_lib\OpticalFlow</Filter>
+    </ClInclude>
+    <ClInclude Include="..\external_libraries\OpticalFlow\mex\ImageProcessing.h">
+      <Filter>misc_lib\OpticalFlow</Filter>
+    </ClInclude>
+    <ClInclude Include="..\external_libraries\OpticalFlow\mex\Matrix.h">
+      <Filter>misc_lib\OpticalFlow</Filter>
+    </ClInclude>
+    <ClInclude Include="..\external_libraries\OpticalFlow\mex\NoiseModel.h">
+      <Filter>misc_lib\OpticalFlow</Filter>
+    </ClInclude>
+    <ClInclude Include="..\external_libraries\OpticalFlow\mex\OpticalFlow.h">
+      <Filter>misc_lib\OpticalFlow</Filter>
+    </ClInclude>
+    <ClInclude Include="..\external_libraries\OpticalFlow\mex\Stochastic.h">
+      <Filter>misc_lib\OpticalFlow</Filter>
+    </ClInclude>
+    <ClInclude Include="..\external_libraries\OpticalFlow\mex\Vector.h">
+      <Filter>misc_lib\OpticalFlow</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ns_image_server\image_processing\ns_optical_flow.h">
+      <Filter>image_processing</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -1254,6 +1287,15 @@
     </ClCompile>
     <ClCompile Include="..\external_compile_libraries\tiff-3.8.2\libtiff\tif_fax3.c">
       <Filter>image_format_lib\tiff</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_libraries\OpticalFlow\mex\OpticalFlow.cpp">
+      <Filter>misc_lib\OpticalFlow</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_libraries\OpticalFlow\mex\Stochastic.cpp">
+      <Filter>misc_lib\OpticalFlow</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_libraries\OpticalFlow\mex\GaussianPyramid.cpp">
+      <Filter>misc_lib\OpticalFlow</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

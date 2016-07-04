@@ -289,11 +289,15 @@ struct ns_registered_image_set{
 		worm_region_threshold.use_more_memory_to_avoid_reallocations();	
 		//region_threshold.use_more_memory_to_avoid_reallocations();	
 		movement_image_.use_more_memory_to_avoid_reallocations();
+		flow_image_dx.use_more_memory_to_avoid_reallocations();
+		flow_image_dy.use_more_memory_to_avoid_reallocations();
 		image.init(p);
 		//worm_threshold_.init(p);
 		worm_region_threshold.init(p);
 		//region_threshold.init(p);
 		movement_image_.init(p);
+		flow_image_dx.init(p);
+		flow_image_dy.init(p);
 	}
 	enum{region_mask=1,worm_mask=2,worm_neighborhood_mask=4};
 	bool get_region_threshold(const int y, const int x){ return (worm_region_threshold[y][x]&region_mask)!=0;}
@@ -309,6 +313,8 @@ struct ns_registered_image_set{
 		//region_threshold.resize(p);
 		worm_region_threshold.resize(p);
 		movement_image_.resize(p);
+		flow_image_dx.resize(p);
+		flow_image_dy.resize(p);
 	}
 	ns_image_standard image;
 	//ns_image_bitmap   worm_threshold_;
@@ -316,6 +322,8 @@ struct ns_registered_image_set{
 	//ns_image_bitmap   region_threshold;
 	ns_image_standard worm_region_threshold;
 	ns_image_standard_signed movement_image_;
+	ns_image_whole<ns_16_bit> flow_image_dx;
+	ns_image_whole<ns_16_bit> flow_image_dy;
 };
 typedef ns_image_pool<ns_path_aligned_image_set,ns_overallocation_resizer> ns_path_aligned_image_pool;
 typedef ns_image_pool<ns_registered_image_set,ns_overallocation_resizer> ns_registered_image_pool;
@@ -534,7 +542,11 @@ struct ns_time_path_image_movement_analysis_memory_pool{
 
 class ns_analyzed_image_time_path{
 public:
-	ns_analyzed_image_time_path(ns_time_path_image_movement_analysis_memory_pool & memory_pool_):memory_pool(&memory_pool_),volatile_backwards_path_data_written(false),first_stationary_timepoint_(0),entirely_excluded(false),image_analysis_temp1(0),image_analysis_temp2(0),images_preallocated(false),low_density_path(false),output_reciever(0),path_db_id(0),region_info_id(0),movement_image_storage(0),number_of_images_loaded(0){by_hand_annotation_event_times.resize((int)ns_number_of_movement_event_types,ns_death_time_annotation_time_interval::unobserved_interval()); state_intervals.resize((int)ns_movement_number_of_states);
+	ns_analyzed_image_time_path(ns_time_path_image_movement_analysis_memory_pool & memory_pool_):
+	  memory_pool(&memory_pool_),volatile_backwards_path_data_written(false),first_stationary_timepoint_(0),
+		  entirely_excluded(false),image_analysis_temp1(0),image_analysis_temp2(0),images_preallocated(false),
+		  low_density_path(false),output_reciever(0),path_db_id(0),region_info_id(0),movement_image_storage(0),flow_movement_image_storage(0),
+		  number_of_images_loaded(0){by_hand_annotation_event_times.resize((int)ns_number_of_movement_event_types,ns_death_time_annotation_time_interval::unobserved_interval()); state_intervals.resize((int)ns_movement_number_of_states);
 }
 	~ns_analyzed_image_time_path(){
 		ns_safe_delete(output_reciever); 
@@ -595,8 +607,9 @@ public:
 	//	if (this->registered_image_pool.number_checked_out() > 0 || this->aligned_image_pool.number_checked_out() > 0)
 	//		std::cerr << "Leaking Images!";
 	}
-	void load_movement_images(const ns_analyzed_time_image_chunk & chunk, ns_image_storage_source_handle<ns_8_bit> & in);
-	void save_movement_images(const ns_analyzed_time_image_chunk & chunk, ns_image_storage_reciever_handle<ns_8_bit> & out);
+	void load_movement_images(const ns_analyzed_time_image_chunk & chunk, ns_image_storage_source_handle<ns_8_bit> & in,ns_image_storage_source_handle<ns_16_bit> & flow_in);
+	void load_movement_images_no_flow(const ns_analyzed_time_image_chunk & chunk, ns_image_storage_source_handle<ns_8_bit> & in);
+	void save_movement_images(const ns_analyzed_time_image_chunk & chunk, ns_image_storage_reciever_handle<ns_8_bit> & out, ns_image_storage_reciever_handle<ns_16_bit> & flow_out);
 	void save_movement_images(const ns_analyzed_time_image_chunk & chunk,ns_sql & sql);
 
 	static ns_vector_2d maximum_alignment_offset(){return ns_vector_2d(60,20);}
@@ -652,6 +665,7 @@ private:
 
 	unsigned long number_of_images_loaded;
 	ns_image_storage_source_handle<ns_8_bit> movement_image_storage;
+	ns_image_storage_source_handle<ns_16_bit> flow_movement_image_storage;
 		
 	ns_analyzed_time_path_quantification_summary quantification_summary;
 
@@ -684,6 +698,7 @@ private:
 	void analyze_movement(const ns_analyzed_image_time_path_death_time_estimator * movement_death_time_estimator,const ns_stationary_path_id & path_id,const unsigned long last_timepoint_in_analysis);
 
 	ns_image_storage_reciever_handle<ns_8_bit> * output_reciever;
+	ns_image_storage_reciever_handle<ns_16_bit> * flow_output_reciever;
 	ns_death_time_annotation_set death_time_annotation_set;
 
 	bool low_density_path;
@@ -691,6 +706,7 @@ private:
 
 
 	ns_image_server_image output_image;
+	ns_image_server_image flow_output_image;
 	unsigned long path_db_id;
 
 	unsigned long find_minimum_first_chunk_time() const{
@@ -704,10 +720,12 @@ private:
 	unsigned long path_id,group_id;
 	const ns_time_path_solution * solution;
 
-	void initialize_movement_image_loading(ns_image_storage_source_handle<ns_8_bit> & in);
-	void end_movement_image_loading(ns_image_storage_source_handle<ns_8_bit> & in);
+	void initialize_movement_image_loading(ns_image_storage_source_handle<ns_8_bit> & in,ns_image_storage_source_handle<ns_16_bit> & flow_in);
+	void initialize_movement_image_loading_no_flow(ns_image_storage_source_handle<ns_8_bit> & in);
+	void end_movement_image_loading();
 	ns_movement_image_collage_info movement_loading_collage_info;
 	ns_image_stream_static_buffer<ns_8_bit> movement_loading_buffer;
+	ns_image_stream_static_buffer<ns_16_bit> flow_movement_loading_buffer;
 	unsigned long region_info_id;
 
 	friend struct ns_analyzed_image_time_path_group;
@@ -719,7 +737,7 @@ private:
 	//we keep a pool to cut down on the time spent calling malloc()
 	ns_time_path_image_movement_analysis_memory_pool * memory_pool;
 	ns_image_stream_static_buffer<ns_8_bit> save_image_buffer;
-
+	ns_image_stream_static_buffer<ns_16_bit> save_flow_image_buffer;
 };
 
 struct ns_analyzed_image_time_path_group{
@@ -825,7 +843,7 @@ private:
 	void load_from_solution(const ns_time_path_solution & solution, const long group_number=-1);
 	void load_region_visualization_images(const unsigned long start_i, const unsigned long stop_i,const unsigned int start_group, const unsigned int stop_group,ns_sql & sql, bool just_do_a_consistancy_check);
 	void acquire_region_image_specifications(const unsigned long region_id,ns_sql & sql);
-	void get_output_image_storage_locations(const unsigned long region_id,ns_sql & sql);
+	void get_output_image_storage_locations(const unsigned long region_id,ns_sql & sql,const bool create_only_flow);
 	bool load_movement_image_db_info(const unsigned long region_id,ns_sql & sql);
 	void generate_images_from_region_visualization();
 	bool paths_loaded_from_solution;

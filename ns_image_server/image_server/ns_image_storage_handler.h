@@ -60,7 +60,10 @@ public:
 	void set_directories(const std::string & _volatile_storage_directory, const std::string & _long_term_storage_directory);
 
 	ns_image_storage_reciever_handle<ns_component> request_storage(ns_image_server_captured_image_region & captured_image_region, const ns_image_type & image_type, const unsigned long max_line_length, ns_image_server_sql * sql, const bool allow_volatile_storage);
-	ns_image_storage_reciever_handle<ns_component> request_storage_ci(ns_image_server_captured_image & captured_image, const ns_image_type & image_type, const unsigned long max_line_length, ns_image_server_sql * sql, bool & had_to_use_local_storage, const bool allow_volatile_storage);
+		ns_image_storage_reciever_handle<ns_component> request_storage_ci(ns_image_server_captured_image & captured_image, const ns_image_type & image_type, const unsigned long max_line_length, ns_image_server_sql * sql, bool & had_to_use_local_storage, const bool allow_volatile_storage);
+	ns_image_storage_reciever_handle<ns_component> request_storage(ns_image_server_image & image, const ns_image_type & image_type, const unsigned long max_line_length, ns_image_server_sql * sql, bool & had_to_use_volatile_storage, const bool report_to_db, const bool allow_volatile_storage);
+	ns_image_storage_reciever_handle<ns_16_bit> request_storage_16_bit(ns_image_server_image & image, const ns_image_type & image_type, const unsigned long max_line_length, ns_image_server_sql * sql, bool & had_to_use_volatile_storage, const bool report_to_db, const bool allow_volatile_storage);
+
 
 	bool long_term_storage_was_recently_writeable(const unsigned long time_cutoff_in_seconds = 0) const;
 	unsigned long time_of_last_successful_long_term_storage_write()const {return time_of_last_successful_write_check;}
@@ -76,7 +79,6 @@ public:
 	std::ofstream * request_metadata_output(ns_image_server_image & image, const std::string & extension, const bool binary,ns_image_server_sql * sql);
 
 		
-	ns_image_storage_reciever_handle<ns_component> request_storage(ns_image_server_image & image, const ns_image_type & image_type, const unsigned long max_line_length, ns_image_server_sql * sql, bool & had_to_use_volatile_storage, const bool report_to_db, const bool allow_volatile_storage);
 	
 	double get_experiment_video_size_on_disk(const unsigned long experiment_id,ns_sql & sql) const;
 	double get_region_metadata_size_on_disk(const unsigned long region_id,ns_sql & sql) const;
@@ -232,7 +234,7 @@ public:
 	}
 
 	ns_image_server_image get_storage_for_path(const ns_file_location_specification & region_spec, const unsigned long path_id, const unsigned long path_group_id,
-			const unsigned long region_info_id, const std::string & region_name, const std::string & experiment_name, const std::string & sample_name);
+			const unsigned long region_info_id, const std::string & region_name, const std::string & experiment_name, const std::string & sample_name,const bool flow);
 
 
 

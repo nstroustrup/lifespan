@@ -523,24 +523,6 @@ ns_image_storage_reciever_handle<ns_image_storage_handler::ns_component> ns_imag
 		}
 	}
 	
-
-	//try to send over the network to long-term storage
-	/*if (network_lock.try_to_acquire(__FILE__,__LINE__)){
-		ns_socket_connection con;
-		try{
-			con = connect_to_fileserver_node(sql);
-			ns_image_server_event ev("ns_image_storage_handler::Uploading ");
-			ev << image.filename << ns_ts_minor_event;
-			ev.log = report_to_db;
-			ns_image_handler_register_server_event(ev);
-			return ns_image_storage_reciever_handle<ns_image_storage_handler::ns_component>(new ns_image_storage_reciever_to_net<ns_8_bit>(max_line_length, con, network_lock));
-		}
-		catch(ns_ex & ex){
-			network_lock.release();
-			stored_error[1] = ex;
-		}
-	}*/
-
 	//if all else fails, store the data in volatile storage
 	if (!allow_volatile_storage)
 		throw ns_ex("ns_image_storage_handler::request_storage()::Could not access long term storage and volatile storage was forbidden") << ns_network_io;
@@ -589,6 +571,88 @@ ns_image_storage_reciever_handle<ns_image_storage_handler::ns_component> ns_imag
 		throw stored_error[1];
 	else throw stored_error[0];
 	}
+
+
+ns_image_storage_reciever_handle<ns_16_bit> ns_image_storage_handler::request_storage_16_bit(ns_image_server_image & image, const ns_image_type & image_type, const unsigned long max_line_length, ns_image_server_sql * sql, bool & had_to_use_local_storage, const bool report_to_db, const bool allow_volatile_storage){
+	ns_ex stored_error[3];
+	ns_file_location_specification file_location(look_up_image_location(image,sql,image_type));
+
+	//try to store image in long-term storage
+	if (long_term_storage_directory.size() != 0 && long_term_storage_is_accessible(file_location,__FILE__,__LINE__)){
+		try{
+			//make sure location is writeable
+			ns_dir::create_directory_recursive(file_location.absolute_long_term_directory());
+			if (!ns_dir::file_is_writeable(file_location.absolute_long_term_filename())){
+				ns_image_handler_submit_alert(ns_alert::ns_long_term_storage_error,"Could not access long term storage.",
+					std::string("ns_image_storage_handler::request_storag::Could not access long term storage when attempting to write ") + file_location.relative_directory + DIR_CHAR_STR + file_location.filename,
+					sql);
+				throw ns_ex("ns_image_storage_handler:: request_storage(ns_image_server_image)::Long term storage location is not writeable: ") << file_location.absolute_long_term_filename() << ns_network_io;
+			}
+			
+			if (verbosity >= ns_verbose){
+				ns_image_server_event ev("ns_image_storage_handler::Opening LT ");
+				ev << file_location.absolute_long_term_filename()<< " for output." << ns_ts_minor_event;
+				ev.log = report_to_db;
+				ns_image_handler_register_server_event(ev,sql);
+			}
+			had_to_use_local_storage = false;
+			return ns_image_storage_reciever_handle<ns_16_bit>(new ns_image_storage_reciever_to_disk<ns_16_bit>(max_line_length, file_location.absolute_long_term_filename(),image_type,&image_server.performance_statistics,false));
+		}
+		catch (ns_ex & ex){
+			ns_image_handler_register_server_event(ex,sql);
+			stored_error[0] = ex;
+		}
+	}
+	
+	//if all else fails, store the data in volatile storage
+	if (!allow_volatile_storage)
+		throw ns_ex("ns_image_storage_handler::request_storage()::Could not access long term storage and volatile storage was forbidden") << ns_network_io;
+	
+	if (volatile_storage_directory.size() != 0 && ns_dir::file_exists(file_location.volatile_directory)){	
+	
+		try{
+			//make sure location is writeable
+			ns_dir::create_directory_recursive(file_location.absolute_volatile_directory());
+			if (!ns_dir::file_is_writeable(file_location.absolute_volatile_filename())){
+				ns_image_handler_submit_alert(ns_alert::ns_volatile_storage_error,
+					"Could not access volatile storage.", 
+					std::string("ns_image_storage_handler::request_storage(1)::Could not access volatile storage when attempting to write ") + file_location.relative_directory + DIR_CHAR_STR + file_location.filename,
+					sql);
+
+				throw ns_ex("ns_image_storage_handler::request_storage(ns_image_server_image)::Volatile storage location is not writeable: ") << file_location.absolute_volatile_filename() << ns_file_io;
+			}
+			if (verbosity >= ns_standard){
+				ns_image_server_event ev("ns_image_storage_handler::Forced to open VT ");
+				ev << file_location.absolute_volatile_filename() << " for output.";
+				ev.log = report_to_db;
+				ns_image_handler_register_server_event(ev,sql);
+			}
+			had_to_use_local_storage = true;
+			return ns_image_storage_reciever_handle<ns_16_bit>(new ns_image_storage_reciever_to_disk<ns_16_bit>(max_line_length, file_location.absolute_volatile_filename(),image_type,&image_server.performance_statistics,true));
+		}
+		catch (ns_ex & ex){
+			stored_error[2] = ex;
+		}
+	}
+	
+	ns_image_handler_submit_alert(ns_alert::ns_volatile_storage_error,
+				"Could not access volatile storage.", 
+				std::string("ns_image_storage_handler::request_storage(2)::Could not access volatile storage when attempting to write ") + file_location.relative_directory + DIR_CHAR_STR + file_location.filename,
+				sql);
+		
+	//take note of any problems that occured accessing network long term storage
+	for (unsigned int i = 0; i < 2; i++)
+		if (stored_error[i].text().size() != 0)
+			ns_image_handler_register_server_event(stored_error[i],sql);
+
+	//we couldn't store the file anywhere!  Throw the volatile storage -inaccessible error.
+	if (stored_error[2].text() != "")
+		throw stored_error[2];
+	else if (stored_error[1].text() != "")
+		throw stored_error[1];
+	else throw stored_error[0];
+	}
+
 
 ns_image_server_image ns_image_storage_handler::create_image_db_record_for_captured_image(ns_image_server_captured_image & image,ns_image_server_sql * sql, const ns_image_type & image_type){
 	
@@ -1099,7 +1163,7 @@ ns_file_location_specification  ns_image_storage_handler::get_file_specification
 
 ns_image_server_image ns_image_storage_handler::get_storage_for_path(const ns_file_location_specification & region_spec, 
 			const unsigned long path_id, const unsigned long path_group_id,
-			const unsigned long region_info_id, const std::string & region_name, const std::string & experiment_name, const std::string & sample_name){
+			const unsigned long region_info_id, const std::string & region_name, const std::string & experiment_name, const std::string & sample_name,bool flow){
 
 	ns_file_location_specification spec(region_spec);
 	ns_file_location_specification dir_spec(get_file_specification_for_path_data(region_spec));
@@ -1109,6 +1173,8 @@ ns_image_server_image ns_image_storage_handler::get_storage_for_path(const ns_fi
 	im.path = dir_spec.relative_directory;
 	im.filename = experiment_name + "=" + sample_name +"=" + region_name + "=" + ns_to_string(region_info_id) + "=" 
 			+ ns_to_string(path_group_id) + "=" + ns_to_string(path_id);
+	if (flow)
+		im.filename += "=flow";
 	return im;
 }
 

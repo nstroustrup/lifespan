@@ -854,18 +854,18 @@ bool ns_sql_column_exists(const std::string & table, const std::string & column,
 	sql.get_rows(res);
 	return !res.empty();
 }
-bool ns_image_server::upgrade_tables(ns_sql & sql,const bool just_test_if_needed){
+bool ns_image_server::upgrade_tables(ns_sql & sql,const bool just_test_if_needed,const std::string & schema_name){
 	bool changes_made = false;
 
 	sql << "SELECT COLUMN_TYPE FROM INFORMATION_SCHEMA.COLUMNS "
 			"WHERE table_name = 'captured_images' AND COLUMN_NAME = 'registration_horizontal_offset'"
-			"AND TABLE_SCHEMA = 'image_server'";
+			"AND TABLE_SCHEMA = '" << schema_name << "'";
 	ns_sql_result res;
 	sql.get_rows(res);
 	if (res.size() > 0 && res[0][0].find("unsigned") != res[0][0].npos){
 		if (just_test_if_needed)
 			return true;
-		sql << "ALTER TABLE image_server.captured_images CHANGE COLUMN `registration_horizontal_offset` " 
+		sql << "ALTER TABLE " << schema_name << ".captured_images CHANGE COLUMN `registration_horizontal_offset` " 
 				"`registration_horizontal_offset` INT(10) NOT NULL DEFAULT '0' ";
 		sql.send_query();
 		changes_made = true;
@@ -883,7 +883,8 @@ bool ns_image_server::upgrade_tables(ns_sql & sql,const bool just_test_if_needed
 		sql.send_query();
 		changes_made = true;
 	}
-
+	sql << "use " << schema_name;
+	sql.send_query();
 	if (!ns_sql_column_exists("sample_region_image_info","position_analysis_model",sql)){
 		if(just_test_if_needed)
 			return true;
@@ -894,6 +895,34 @@ bool ns_image_server::upgrade_tables(ns_sql & sql,const bool just_test_if_needed
 
 		changes_made = true;
 	}
+
+	//check to see if path_data has wrong bit depth
+	sql << "SELECT COLUMN_TYPE FROM INFORMATION_SCHEMA.COLUMNS "
+			"WHERE table_name = 'path_data' AND COLUMN_NAME = 'region_id'"
+			"AND TABLE_SCHEMA = '"<<schema_name<<"'";
+	sql.get_rows(res);
+	if (res.size() > 0 && res[0][0].find("bigint") == res[0][0].npos){
+		if (just_test_if_needed)
+			return true;
+		cout << "Fixing path id bit depths in path_data";
+		sql << "ALTER TABLE `path_data`"
+				"CHANGE COLUMN `region_id` `region_id` BIGINT UNSIGNED NOT NULL FIRST,"
+				"CHANGE COLUMN `image_id` `image_id` BIGINT UNSIGNED NOT NULL AFTER `path_id`,"
+				"CHANGE COLUMN `id` `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT AFTER `image_id`";
+		sql.send_query();
+		changes_made = true;
+	}
+
+	if (!ns_sql_column_exists("path_data","flow_image_id",sql)){
+		if(just_test_if_needed)
+			return true;
+		cout << "Adding flow record in path data";
+		sql << " ALTER TABLE `path_data` ADD COLUMN `flow_image_id` BIGINT UNSIGNED NOT NULL DEFAULT '0' AFTER `id`";
+		sql.send_query();
+
+		changes_made = true;
+	}
+
 	if (!changes_made && !just_test_if_needed){
 		cout << "The database appears up-to-date; no changes were made.\n";
 	}

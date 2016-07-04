@@ -779,6 +779,7 @@ int main(int argc, char * argv[]){
 	commands["stop_checking_central_db"] = ns_stop_checking_central_db;
 	commands["update_sql"] = ns_update_sql;
 	bool is_master_node(false);
+	std::string schema_name;
 	try{
 		
 		ns_sql::load_sql_library();
@@ -862,7 +863,7 @@ int main(int argc, char * argv[]){
 						<< "output_image_buffer_info: Output information about the state of each scanner's locally buffered images.\n"
 						<< "stop_checking_central_db: Cease attempting to connect to the central db.\n"
 						<< "start_checking_central_db: Restart attempts to connect to the central db.\n"
-						<< "upgrade_sql: upgrade the sql database schema to match the most recent version. No changes are made if the schema is already up-to-data.\n";
+						<< "upgrade_sql: upgrade the sql database schema to match the most recent version. No changes are made if the schema is already up-to-data.  Schema can be specified \n";
 					#ifndef _WIN32
 					ex << "daemon: run as a background process\n";
 					#endif
@@ -873,6 +874,15 @@ int main(int argc, char * argv[]){
 			if (p->second == ns_wrap_m4v){
 				if (i+1>= argc) throw ns_ex("M4v filename must be specified");
 				input_filename = argv[i+1];
+			}
+			if (p->second == ns_update_sql){
+				if (i+1 == argc)  //default
+					schema_name = "image_server";
+				else {
+					schema_name = argv[i+1];
+					i++; // "consume" the next argument so it doesn't get interpreted as a command-string.
+				}
+
 			}
 			if (p->second == ns_submit_experiment){
 				
@@ -1190,7 +1200,7 @@ int main(int argc, char * argv[]){
 			}
 			case ns_update_sql:{
 				ns_acquire_for_scope<ns_sql> sql(image_server.new_sql_connection(__FILE__,__LINE__));
-				image_server.upgrade_tables(sql(),false);
+				image_server.upgrade_tables(sql(),false,schema_name);
 				sql.release();
 				return 0;
 			}
@@ -1310,7 +1320,7 @@ int main(int argc, char * argv[]){
 
 		
 		ns_acquire_for_scope<ns_sql> sql_2(image_server.new_sql_connection(__FILE__,__LINE__));
-		if (image_server.upgrade_tables(sql_2(),true)){
+		if (image_server.upgrade_tables(sql_2(),true,schema_name)){
 			throw ns_ex("The current database schema is out of date.  Please run the command: ns_image_server update_sql");
 		}
 		sql_2.release();

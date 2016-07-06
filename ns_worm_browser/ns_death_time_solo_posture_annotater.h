@@ -7,7 +7,7 @@
 #include "ns_time_path_image_analyzer.h"
 #include "ns_death_time_posture_annotater.h"
 #include "ns_hidden_markov_model_posture_analyzer.h"
-
+#include <functional> 
 #include "ns_fl_modal_dialogs.h"
 void ns_hide_worm_window();
 

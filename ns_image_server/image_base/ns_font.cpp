@@ -11,15 +11,18 @@ ns_font_server font_server;
 FT_Library &ns_get_ft_library(){
 	return ns_font_server::ft_lib;
 }
-
+#ifdef _WIN32
+//fix old freetype reference
+extern "C" { FILE __iob_func[3] = { *stdin,*stdout,*stderr }; }
+#endif
 ns_font & ns_font_server::default_font(){
 	if (lib_instances == 0){
 		if (FT_Init_FreeType( &ft_lib))
 			throw ns_ex("ns_font:: Could not initialize freetype library.");
-
+		#ifdef _WIN32 
 		//include strstr just to make sure it gets linked, so that freetype.lib finds it
 		strstr("foo", "foobar");
-
+		#endif
 		lib_instances++;
 	}
 

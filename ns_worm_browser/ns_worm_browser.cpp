@@ -3786,7 +3786,7 @@ void ns_worm_learner::upgrade_tables(){
 	
 	ns_acquire_for_scope<ns_sql> sql(image_server.new_sql_connection(__FILE__,__LINE__));
 	ns_alert_dialog d;
-	if (image_server.upgrade_tables(sql(),false))
+	if (image_server.upgrade_tables(sql(),false,image_server.current_sql_database()))
 		d.text = "Schema update completed.";
 	else
 		d.text = "No update was needed.";

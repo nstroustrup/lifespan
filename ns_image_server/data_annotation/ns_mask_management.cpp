@@ -328,7 +328,7 @@ void ns_bulk_experiment_mask_manager::produce_mask_file(const unsigned int exper
 	delete sql;
 }
 
-void ns_bulk_experiment_mask_manager::submit_masks_to_cluster(const std::string & ip_address,const unsigned long port,bool balk_on_overwrite){
+void ns_bulk_experiment_mask_manager::submit_masks_to_cluster(bool balk_on_overwrite){
 	bool ex_not_ok = false;
 	ns_acquire_for_scope<ns_sql> sql(image_server.new_sql_connection(__FILE__,__LINE__));
 	for (unsigned int i = 0; i < collage_info_manager.collage_info.size(); i++){
@@ -359,7 +359,7 @@ void ns_bulk_experiment_mask_manager::submit_masks_to_cluster(const std::string 
 				}
 			}
 			//Connecting to image server
-			cerr << "Connecting to image server...";
+		/*	cerr << "Connecting to image server...";
 			ns_socket socket;
 			ns_socket_connection c;
 			try{
@@ -368,12 +368,17 @@ void ns_bulk_experiment_mask_manager::submit_masks_to_cluster(const std::string 
 			catch(...){
 				ex_not_ok = true;
 				throw;
-			}
+			}*/
 			//Updating database
 			//cerr << "\nUpdating database....";
 			ns_64_bit image_id = image_server.make_record_for_new_sample_mask(collage_info_manager.collage_info[i].sample_id,sql());
 			sql() << "INSERT INTO image_masks SET image_id = " << image_id << ", processed='0',resize_factor=" << resize_factor;
 			ns_64_bit mask_id = sql().send_query_get_id();
+			ns_image_server_image image;
+			image.load_from_db(image_id,&sql());
+			bool had_to_use_local_storage;
+			ns_image_storage_reciever_handle<ns_8_bit> image_storage = image_server.image_storage.request_storage(image,ns_tiff,512,&sql(),had_to_use_local_storage,false,false);
+			/*
 			cerr << "\nSending image " << i << "/" << collage_info_manager.collage_info.size();
 			ns_image_server_message m(c);
 			m.send_message_header(NS_IMAGE_SEND,0);
@@ -381,12 +386,12 @@ void ns_bulk_experiment_mask_manager::submit_masks_to_cluster(const std::string 
 			c.write((unsigned long)8);  //bits in image
 			ns_image_socket_sender<ns_8_bit>sender(512);
 			sender.bind_socket(c);
-
-			ns_image_standard decoded_image;
+			*/
+			//ns_image_standard decoded_image;
 			ns_image_storage_source_handle<ns_8_bit> in(image_server.image_storage.request_from_local_cache(scratch_filenames[i]));
-			in.input_stream().pump(decoded_image,512);
-			decoded_image.pump(sender,512);
-			c.close();
+			in.input_stream().pump(image_storage.output_stream(),512);
+			//decoded_image.pump(sender,512);
+			//c.close();
 
 
 			sql() << "UPDATE capture_samples SET mask_id=" << mask_id << " WHERE id=" << collage_info_manager.collage_info[i].sample_id;

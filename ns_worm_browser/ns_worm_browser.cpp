@@ -67,10 +67,10 @@ void ns_worm_learner::decode_experiment_mask_file(const std::string & filename, 
 //	draw();
 }
 void ns_worm_learner::submit_experiment_mask_file_to_cluster(){
-	string ip_address;
-	unsigned long port;
-	get_ip_and_port_for_mask_upload(ip_address,port);
-	mask_manager.submit_masks_to_cluster(ip_address,port,!overwrite_existing_mask_when_submitting);
+	//string ip_address;
+	//unsigned long port;
+	//get_ip_and_port_for_mask_upload(ip_address,port);
+	mask_manager.submit_masks_to_cluster(!overwrite_existing_mask_when_submitting);
 }
 
 

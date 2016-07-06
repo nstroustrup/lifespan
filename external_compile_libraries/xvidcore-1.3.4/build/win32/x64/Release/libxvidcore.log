@@ -1,0 +1,89 @@
+﻿  Assembling C:\server\ns_lifespan_machine_source\external_compile_libraries\xvidcore-1.3.4\xvidcore\src\bitstream\x86_asm\cbp_mmx.asm
+  Assembling C:\server\ns_lifespan_machine_source\external_compile_libraries\xvidcore-1.3.4\xvidcore\src\bitstream\x86_asm\cbp_sse2.asm
+  Assembling C:\server\ns_lifespan_machine_source\external_compile_libraries\xvidcore-1.3.4\xvidcore\src\dct\x86_asm\fdct_mmx_ffmpeg.asm
+  Assembling C:\server\ns_lifespan_machine_source\external_compile_libraries\xvidcore-1.3.4\xvidcore\src\dct\x86_asm\fdct_mmx_skal.asm
+  Assembling C:\server\ns_lifespan_machine_source\external_compile_libraries\xvidcore-1.3.4\xvidcore\src\dct\x86_asm\fdct_sse2_skal.asm
+  Assembling C:\server\ns_lifespan_machine_source\external_compile_libraries\xvidcore-1.3.4\xvidcore\src\dct\x86_asm\idct_3dne.asm
+  Assembling C:\server\ns_lifespan_machine_source\external_compile_libraries\xvidcore-1.3.4\xvidcore\src\dct\x86_asm\idct_mmx.asm
+  Assembling C:\server\ns_lifespan_machine_source\external_compile_libraries\xvidcore-1.3.4\xvidcore\src\dct\x86_asm\idct_sse2_dmitry.asm
+  Assembling C:\server\ns_lifespan_machine_source\external_compile_libraries\xvidcore-1.3.4\xvidcore\src\image\x86_asm\colorspace_rgb_mmx.asm
+  Assembling C:\server\ns_lifespan_machine_source\external_compile_libraries\xvidcore-1.3.4\xvidcore\src\image\x86_asm\colorspace_yuv_mmx.asm
+  Assembling C:\server\ns_lifespan_machine_source\external_compile_libraries\xvidcore-1.3.4\xvidcore\src\image\x86_asm\colorspace_yuyv_mmx.asm
+  Assembling C:\server\ns_lifespan_machine_source\external_compile_libraries\xvidcore-1.3.4\xvidcore\src\image\x86_asm\deintl_sse.asm
+  Assembling C:\server\ns_lifespan_machine_source\external_compile_libraries\xvidcore-1.3.4\xvidcore\src\image\x86_asm\gmc_mmx.asm
+  Assembling C:\server\ns_lifespan_machine_source\external_compile_libraries\xvidcore-1.3.4\xvidcore\src\image\x86_asm\interpolate8x8_3dn.asm
+  Assembling C:\server\ns_lifespan_machine_source\external_compile_libraries\xvidcore-1.3.4\xvidcore\src\image\x86_asm\interpolate8x8_3dne.asm
+  Assembling C:\server\ns_lifespan_machine_source\external_compile_libraries\xvidcore-1.3.4\xvidcore\src\image\x86_asm\interpolate8x8_mmx.asm
+  Assembling C:\server\ns_lifespan_machine_source\external_compile_libraries\xvidcore-1.3.4\xvidcore\src\image\x86_asm\interpolate8x8_xmm.asm
+  Assembling C:\server\ns_lifespan_machine_source\external_compile_libraries\xvidcore-1.3.4\xvidcore\src\image\x86_asm\postprocessing_mmx.asm
+  Assembling C:\server\ns_lifespan_machine_source\external_compile_libraries\xvidcore-1.3.4\xvidcore\src\image\x86_asm\postprocessing_sse2.asm
+  Assembling C:\server\ns_lifespan_machine_source\external_compile_libraries\xvidcore-1.3.4\xvidcore\src\image\x86_asm\qpel_mmx.asm
+  Assembling C:\server\ns_lifespan_machine_source\external_compile_libraries\xvidcore-1.3.4\xvidcore\src\image\x86_asm\reduced_mmx.asm
+  Assembling C:\server\ns_lifespan_machine_source\external_compile_libraries\xvidcore-1.3.4\xvidcore\src\motion\x86_asm\sad_3dn.asm
+  Assembling C:\server\ns_lifespan_machine_source\external_compile_libraries\xvidcore-1.3.4\xvidcore\src\motion\x86_asm\sad_3dne.asm
+  Assembling C:\server\ns_lifespan_machine_source\external_compile_libraries\xvidcore-1.3.4\xvidcore\src\motion\x86_asm\sad_mmx.asm
+  Assembling C:\server\ns_lifespan_machine_source\external_compile_libraries\xvidcore-1.3.4\xvidcore\src\motion\x86_asm\sad_sse2.asm
+  Assembling C:\server\ns_lifespan_machine_source\external_compile_libraries\xvidcore-1.3.4\xvidcore\src\motion\x86_asm\sad_xmm.asm
+  Assembling C:\server\ns_lifespan_machine_source\external_compile_libraries\xvidcore-1.3.4\xvidcore\src\plugins\x86_asm\plugin_ssim-a.asm
+  Assembling C:\server\ns_lifespan_machine_source\external_compile_libraries\xvidcore-1.3.4\xvidcore\src\quant\x86_asm\quantize_h263_3dne.asm
+  Assembling C:\server\ns_lifespan_machine_source\external_compile_libraries\xvidcore-1.3.4\xvidcore\src\quant\x86_asm\quantize_h263_mmx.asm
+  Assembling C:\server\ns_lifespan_machine_source\external_compile_libraries\xvidcore-1.3.4\xvidcore\src\quant\x86_asm\quantize_mpeg_mmx.asm
+  Assembling C:\server\ns_lifespan_machine_source\external_compile_libraries\xvidcore-1.3.4\xvidcore\src\quant\x86_asm\quantize_mpeg_xmm.asm
+  Assembling C:\server\ns_lifespan_machine_source\external_compile_libraries\xvidcore-1.3.4\xvidcore\src\utils\x86_asm\cpuid.asm
+  Assembling C:\server\ns_lifespan_machine_source\external_compile_libraries\xvidcore-1.3.4\xvidcore\src\utils\x86_asm\interlacing_mmx.asm
+  Assembling C:\server\ns_lifespan_machine_source\external_compile_libraries\xvidcore-1.3.4\xvidcore\src\utils\x86_asm\mem_transfer_3dne.asm
+  Assembling C:\server\ns_lifespan_machine_source\external_compile_libraries\xvidcore-1.3.4\xvidcore\src\utils\x86_asm\mem_transfer_mmx.asm
+cl : Command line warning D9002: ignoring unknown option '/Qipo'
+  bitstream.c
+  cbp.c
+  mbcoding.c
+  fdct.c
+  idct.c
+  simple_idct.c
+  decoder.c
+  encoder.c
+  colorspace.c
+  font.c
+  image.c
+  interpolate8x8.c
+  postprocessing.c
+  qpel.c
+  reduced.c
+  estimation_bvop.c
+  estimation_common.c
+  estimation_gmc.c
+  estimation_pvop.c
+  estimation_rd_based.c
+  Generating Code...
+  Compiling...
+  estimation_rd_based_bvop.c
+  gmc.c
+  motion_comp.c
+  sad.c
+  vop_type_decision.c
+  plugin_2pass1.c
+  plugin_2pass2.c
+  plugin_dump.c
+  plugin_lumimasking.c
+  plugin_psnr.c
+  plugin_psnrhvsm.c
+  plugin_single.c
+  plugin_ssim.c
+  mbprediction.c
+  quant_h263.c
+  quant_matrix.c
+  quant_mpeg.c
+  emms.c
+  mbtransquant.c
+  mem_align.c
+  Generating Code...
+  Compiling...
+  mem_transfer.c
+  timer.c
+  xvid.c
+  Generating Code...
+C:\Program Files (x86)\MSBuild\Microsoft.Cpp\v4.0\V140\Microsoft.CppBuild.targets(1189,5): warning MSB8012: TargetPath(C:\server\ns_lifespan_machine_source\external_compile_libraries\xvidcore-1.3.4\xvidcore\build\win32\x64\Release\libxvidcore.dll) does not match the Linker's OutputFile property value (C:\server\ns_lifespan_machine_source\external_compile_libraries\xvidcore-1.3.4\xvidcore\build\win32\bin\x64\xvidcore.dll). This may cause your project to build incorrectly. To correct this, please make sure that $(OutDir), $(TargetName) and $(TargetExt) property values match the value specified in %(Link.OutputFile).
+C:\Program Files (x86)\MSBuild\Microsoft.Cpp\v4.0\V140\Microsoft.CppBuild.targets(1191,5): warning MSB8012: TargetName(libxvidcore) does not match the Linker's OutputFile property value (xvidcore). This may cause your project to build incorrectly. To correct this, please make sure that $(OutDir), $(TargetName) and $(TargetExt) property values match the value specified in %(Link.OutputFile).
+     Creating library bin\x64\xvidcore.dll.a and object bin\x64\xvidcore.dll.exp
+  libxvidcore.vcxproj -> C:\server\ns_lifespan_machine_source\external_compile_libraries\xvidcore-1.3.4\xvidcore\build\win32\x64\Release\libxvidcore.dll
+  libxvidcore.vcxproj -> x64\Release\xvidcore.pdb (Full PDB)

@@ -1075,6 +1075,7 @@ int main(int argc, char * argv[]){
 		std::vector<std::pair<std::string,std::string> > quotes;
 	
 		
+		
 		ns_acquire_for_scope<ns_image_server_sql> sql;
 		
 		image_server.os_signal_handler.set_signal_handler(ns_interrupt,exit_signal_handler);

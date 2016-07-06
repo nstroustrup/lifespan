@@ -1,0 +1,68 @@
+﻿cl : Command line warning D9002: ignoring unknown option '/arch:SSE2'
+cl : Command line warning D9002: ignoring unknown option '/arch:SSE2'
+  autofit.c
+cl : Command line warning D9002: ignoring unknown option '/arch:SSE2'
+  ftbitmap.c
+cl : Command line warning D9002: ignoring unknown option '/arch:SSE2'
+  ftfstype.c
+cl : Command line warning D9002: ignoring unknown option '/arch:SSE2'
+  ftgasp.c
+  ftstroke.c
+  ftbbox.c
+  ftfntfmt.c
+  ftpfr.c
+  ftsynth.c
+  fttype1.c
+  ftwinfnt.c
+  ftlcdfil.c
+  ftgxval.c
+  ftotval.c
+  ftpatent.c
+cl : Command line warning D9002: ignoring unknown option '/arch:SSE2'
+cl : Command line warning D9002: ignoring unknown option '/arch:SSE2'
+  bdf.c
+cl : Command line warning D9002: ignoring unknown option '/arch:SSE2'
+cl : Command line warning D9002: ignoring unknown option '/arch:SSE2'
+  cff.c
+  ftbase.c
+cl : Command line warning D9002: ignoring unknown option '/arch:SSE2'
+  ftcache.c
+  ftglyph.c
+c:\server\ns_lifespan_machine_source\external_compile_libraries\freetype-2.6\src\base\ftobjs.c(4670): warning C4702: unreachable code
+c:\server\ns_lifespan_machine_source\external_compile_libraries\freetype-2.6\src\base\ftobjs.c(4671): warning C4702: unreachable code
+  ftgzip.c
+  ftinit.c
+  ftlzw.c
+  ftsystem.c
+  smooth.c
+  ftmm.c
+  pcf.c
+  pfr.c
+  psaux.c
+  pshinter.c
+  psmodule.c
+  raster.c
+  sfnt.c
+  truetype.c
+  type1.c
+c:\server\ns_lifespan_machine_source\external_compile_libraries\freetype-2.6\src\truetype\ttgload.c(1697): warning C4244: '=': conversion from 'FT_UInt' to 'short', possible loss of data (compiling source file ..\..\..\src\truetype\truetype.c)
+c:\server\ns_lifespan_machine_source\external_compile_libraries\freetype-2.6\src\truetype\ttgload.c(1715): warning C4244: '=': conversion from 'FT_UInt' to 'short', possible loss of data (compiling source file ..\..\..\src\truetype\truetype.c)
+c:\server\ns_lifespan_machine_source\external_compile_libraries\freetype-2.6\src\truetype\ttgload.c(1721): warning C4244: '=': conversion from 'FT_UInt' to 'short', possible loss of data (compiling source file ..\..\..\src\truetype\truetype.c)
+c:\server\ns_lifespan_machine_source\external_compile_libraries\freetype-2.6\src\truetype\ttgload.c(1727): warning C4244: '=': conversion from 'FT_UInt' to 'short', possible loss of data (compiling source file ..\..\..\src\truetype\truetype.c)
+c:\server\ns_lifespan_machine_source\external_compile_libraries\freetype-2.6\src\truetype\ttgload.c(1733): warning C4244: '=': conversion from 'FT_UInt' to 'short', possible loss of data (compiling source file ..\..\..\src\truetype\truetype.c)
+c:\server\ns_lifespan_machine_source\external_compile_libraries\freetype-2.6\src\truetype\ttgload.c(1739): warning C4244: '=': conversion from 'FT_UInt' to 'short', possible loss of data (compiling source file ..\..\..\src\truetype\truetype.c)
+  type1cid.c
+c:\server\ns_lifespan_machine_source\external_compile_libraries\freetype-2.6\src\type1\t1driver.c(263): warning C4267: '=': conversion from 'size_t' to 'FT_ULong', possible loss of data (compiling source file ..\..\..\src\type1\type1.c)
+c:\server\ns_lifespan_machine_source\external_compile_libraries\freetype-2.6\src\type1\t1driver.c(283): warning C4267: '=': conversion from 'size_t' to 'FT_ULong', possible loss of data (compiling source file ..\..\..\src\type1\type1.c)
+c:\server\ns_lifespan_machine_source\external_compile_libraries\freetype-2.6\src\type1\t1driver.c(315): warning C4267: '=': conversion from 'size_t' to 'FT_ULong', possible loss of data (compiling source file ..\..\..\src\type1\type1.c)
+c:\server\ns_lifespan_machine_source\external_compile_libraries\freetype-2.6\src\type1\t1driver.c(528): warning C4267: '=': conversion from 'size_t' to 'FT_ULong', possible loss of data (compiling source file ..\..\..\src\type1\type1.c)
+c:\server\ns_lifespan_machine_source\external_compile_libraries\freetype-2.6\src\type1\t1driver.c(534): warning C4267: '=': conversion from 'size_t' to 'FT_ULong', possible loss of data (compiling source file ..\..\..\src\type1\type1.c)
+c:\server\ns_lifespan_machine_source\external_compile_libraries\freetype-2.6\src\type1\t1driver.c(540): warning C4267: '=': conversion from 'size_t' to 'FT_ULong', possible loss of data (compiling source file ..\..\..\src\type1\type1.c)
+c:\server\ns_lifespan_machine_source\external_compile_libraries\freetype-2.6\src\type1\t1driver.c(546): warning C4267: '=': conversion from 'size_t' to 'FT_ULong', possible loss of data (compiling source file ..\..\..\src\type1\type1.c)
+c:\server\ns_lifespan_machine_source\external_compile_libraries\freetype-2.6\src\type1\t1driver.c(552): warning C4267: '=': conversion from 'size_t' to 'FT_ULong', possible loss of data (compiling source file ..\..\..\src\type1\type1.c)
+  type42.c
+  winfnt.c
+c:\server\ns_lifespan_machine_source\external_compile_libraries\freetype-2.6\src\truetype\ttgload.c(1776): warning C4701: potentially uninitialized local variable 'outline' used
+cl : Command line warning D9002: ignoring unknown option '/arch:SSE2'
+  ftdebug.c
+  freetype.vcxproj -> C:\server\ns_lifespan_machine_source\external_compile_libraries\freetype-2.6\builds\windows\vc2010\.\..\..\..\objs\vc2010\x64\freetype26.lib

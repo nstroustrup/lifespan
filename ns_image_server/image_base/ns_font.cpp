@@ -16,6 +16,10 @@ ns_font & ns_font_server::default_font(){
 	if (lib_instances == 0){
 		if (FT_Init_FreeType( &ft_lib))
 			throw ns_ex("ns_font:: Could not initialize freetype library.");
+
+		//include strstr just to make sure it gets linked, so that freetype.lib finds it
+		strstr("foo", "foobar");
+
 		lib_instances++;
 	}
 

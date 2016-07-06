@@ -219,7 +219,9 @@ void ns_set_default_tiff_parameters(const ns_image_properties & p,const ns_tiff_
 
 
 	ns_set_tiff_field(image, TIFFTAG_ROWSPERSTRIP, rows_per_strip);
-
+	if (bits_per_sample>8 && t != ns_tiff_compression_none){
+		throw ns_ex("ns_libtiff::compressed 16 bit tif images do not work propertly!");
+	}
 	switch(t){
 		case ns_tiff_compression_none:		ns_set_tiff_field(image, TIFFTAG_COMPRESSION, COMPRESSION_NONE); break;
 		case ns_tiff_compression_lzw:		ns_set_tiff_field(image, TIFFTAG_COMPRESSION, COMPRESSION_LZW);  break;
@@ -228,8 +230,8 @@ void ns_set_default_tiff_parameters(const ns_image_properties & p,const ns_tiff_
 		case ns_tiff_compression_jp2000:	ns_set_tiff_field(image, TIFFTAG_COMPRESSION, COMPRESSION_JP2000); break;
 		default: ns_throw_exception(ns_ex("ns_tiff_image_output_file::Unknown compression format requested!"));
 	}
-	
-	ns_set_tiff_field(image, TIFFTAG_PREDICTOR, PREDICTOR_HORIZONTAL);
+	if (t != ns_tiff_compression_none)
+		ns_set_tiff_field(image, TIFFTAG_PREDICTOR, PREDICTOR_HORIZONTAL);
 	switch(p.components){
 		case 1: ns_set_tiff_field(image, TIFFTAG_PHOTOMETRIC, PHOTOMETRIC_MINISBLACK);
 			break;
@@ -238,10 +240,10 @@ void ns_set_default_tiff_parameters(const ns_image_properties & p,const ns_tiff_
 		default: ns_throw_exception(ns_ex("ns_tiff_image_output_file::Could not create a tiff file with ") << ns_file_io << p.components << " components.");
 	}
 	//ns_set_tiff_field(image, TIFFTAG_FILLORDER, FILLORDER_MSB2LSB);
-	ns_set_tiff_field(image, TIFFTAG_ORIENTATION, ORIENTATION_TOPLEFT);
+	//ns_set_tiff_field(image, TIFFTAG_ORIENTATION, ORIENTATION_TOPLEFT);
 	ns_set_tiff_field(image, TIFFTAG_PLANARCONFIG, PLANARCONFIG_CONTIG);
 	ns_set_tiff_field(image, TIFFTAG_ORIENTATION,ORIENTATION_TOPLEFT);
-	ns_set_tiff_field(image, TIFFTAG_SOFTWARE, "ns_image_server (Nicholas Stroustrup 2009)");
+	ns_set_tiff_field(image, TIFFTAG_SOFTWARE, "ns_image_server (Nicholas Stroustrup 2016)");
 	
 	if (p.description.size() != 0){
 		#ifdef NS_STORE_METATADATA_IN_TIFFTAGS

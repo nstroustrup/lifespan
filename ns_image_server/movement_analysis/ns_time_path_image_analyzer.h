@@ -539,26 +539,16 @@ struct ns_time_path_image_movement_analysis_memory_pool{
 	}
 	std::vector<ns_image_standard> temporary_images;
 };
-
+class ns_optical_flow_processor;
 class ns_analyzed_image_time_path{
 public:
 	ns_analyzed_image_time_path(ns_time_path_image_movement_analysis_memory_pool & memory_pool_):
 	  memory_pool(&memory_pool_),volatile_backwards_path_data_written(false),first_stationary_timepoint_(0),
 		  entirely_excluded(false),image_analysis_temp1(0),image_analysis_temp2(0),images_preallocated(false),
 		  low_density_path(false),output_reciever(0),path_db_id(0),region_info_id(0),movement_image_storage(0),flow_movement_image_storage(0),
-		  number_of_images_loaded(0){by_hand_annotation_event_times.resize((int)ns_number_of_movement_event_types,ns_death_time_annotation_time_interval::unobserved_interval()); state_intervals.resize((int)ns_movement_number_of_states);
+		  number_of_images_loaded(0),flow(0){by_hand_annotation_event_times.resize((int)ns_number_of_movement_event_types,ns_death_time_annotation_time_interval::unobserved_interval()); state_intervals.resize((int)ns_movement_number_of_states);
 }
-	~ns_analyzed_image_time_path(){
-		ns_safe_delete(output_reciever); 
-		for (unsigned int i = 0; i < elements.size(); i++){
-			elements[i].clear_movement_images();
-			elements[i].clear_path_aligned_images();
-		}
-		delete[] image_analysis_temp1; 
-		image_analysis_temp1 = 0;
-		delete[] image_analysis_temp2;
-		image_analysis_temp2 = 0;
-	}
+	~ns_analyzed_image_time_path();
 	unsigned long number_of_elements_not_processed_correctly() const;
 	void denoise_movement_series(const ns_time_series_denoising_parameters &);
 
@@ -738,6 +728,9 @@ private:
 	ns_time_path_image_movement_analysis_memory_pool * memory_pool;
 	ns_image_stream_static_buffer<ns_8_bit> save_image_buffer;
 	ns_image_stream_static_buffer<ns_16_bit> save_flow_image_buffer;
+
+	
+	ns_optical_flow_processor * flow;
 };
 
 struct ns_analyzed_image_time_path_group{

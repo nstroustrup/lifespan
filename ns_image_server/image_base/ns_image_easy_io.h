@@ -55,8 +55,8 @@ void ns_save_image(const std::string & filename, const ns_image_whole<ns_compone
 		return;
 	}
 	if (extension == "jp2" || extension=="jpk"){
-		ns_ojp2k_image_output_file<ns_8_bit> jp2k_out;
-		ns_image_stream_file_sink<ns_8_bit> file_sink(filename,jp2k_out,1024);
+		ns_ojp2k_image_output_file<ns_component> jp2k_out;
+		ns_image_stream_file_sink<ns_component> file_sink(filename,jp2k_out,1024);
 		image.pump(file_sink,1024);
 		return;
 	}

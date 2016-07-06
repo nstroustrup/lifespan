@@ -883,8 +883,7 @@ bool ns_image_server::upgrade_tables(ns_sql & sql,const bool just_test_if_needed
 		sql.send_query();
 		changes_made = true;
 	}
-	sql << "use " << schema_name;
-	sql.send_query();
+	sql.select_db(schema_name);
 	if (!ns_sql_column_exists("sample_region_image_info","position_analysis_model",sql)){
 		if(just_test_if_needed)
 			return true;

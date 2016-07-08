@@ -322,8 +322,8 @@ struct ns_registered_image_set{
 	//ns_image_bitmap   region_threshold;
 	ns_image_standard worm_region_threshold;
 	ns_image_standard_signed movement_image_;
-	ns_image_whole<ns_16_bit> flow_image_dx;
-	ns_image_whole<ns_16_bit> flow_image_dy;
+	ns_image_whole<float> flow_image_dx;
+	ns_image_whole<float> flow_image_dy;
 };
 typedef ns_image_pool<ns_path_aligned_image_set,ns_overallocation_resizer> ns_path_aligned_image_pool;
 typedef ns_image_pool<ns_registered_image_set,ns_overallocation_resizer> ns_registered_image_pool;
@@ -599,7 +599,7 @@ public:
 	}
 	void load_movement_images(const ns_analyzed_time_image_chunk & chunk, ns_image_storage_source_handle<ns_8_bit> & in,ns_image_storage_source_handle<ns_16_bit> & flow_in);
 	void load_movement_images_no_flow(const ns_analyzed_time_image_chunk & chunk, ns_image_storage_source_handle<ns_8_bit> & in);
-	void save_movement_images(const ns_analyzed_time_image_chunk & chunk, ns_image_storage_reciever_handle<ns_8_bit> & out, ns_image_storage_reciever_handle<ns_16_bit> & flow_out);
+	void save_movement_images(const ns_analyzed_time_image_chunk & chunk, ns_image_storage_reciever_handle<ns_8_bit> & out, ns_image_storage_reciever_handle<float> & flow_out);
 	void save_movement_images(const ns_analyzed_time_image_chunk & chunk,ns_sql & sql);
 
 	static ns_vector_2d maximum_alignment_offset(){return ns_vector_2d(60,20);}
@@ -688,7 +688,7 @@ private:
 	void analyze_movement(const ns_analyzed_image_time_path_death_time_estimator * movement_death_time_estimator,const ns_stationary_path_id & path_id,const unsigned long last_timepoint_in_analysis);
 
 	ns_image_storage_reciever_handle<ns_8_bit> * output_reciever;
-	ns_image_storage_reciever_handle<ns_16_bit> * flow_output_reciever;
+	ns_image_storage_reciever_handle<float> * flow_output_reciever;
 	ns_death_time_annotation_set death_time_annotation_set;
 
 	bool low_density_path;
@@ -727,7 +727,7 @@ private:
 	//we keep a pool to cut down on the time spent calling malloc()
 	ns_time_path_image_movement_analysis_memory_pool * memory_pool;
 	ns_image_stream_static_buffer<ns_8_bit> save_image_buffer;
-	ns_image_stream_static_buffer<ns_16_bit> save_flow_image_buffer;
+	ns_image_stream_static_buffer<float> save_flow_image_buffer;
 
 	
 	ns_optical_flow_processor * flow;

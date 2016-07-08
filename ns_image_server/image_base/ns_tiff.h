@@ -22,7 +22,7 @@ struct ns_tiff_info{
 };
 
 
-void ns_throw_exception(const ns_ex & ex) 
+void ns_throw_tiff_exception(const ns_ex & ex)
 #ifndef _WIN32
 	__attribute__((noinline));
 #else
@@ -85,23 +85,23 @@ public:
 			image = ns_tiff_open(filename.c_str(),&client_data.data,"r");
 			if (client_data.exception_thrown()){
 				std::cerr << "1";
-				ns_throw_exception(client_data.ex());
+				ns_throw_tiff_exception(client_data.ex());
 			}
 			//turn off error storage to renable exception throws in the error handler.
 
 			if (image == NULL)
-				ns_throw_exception(ns_ex("TIFFOpen returned NULL"));
+				ns_throw_tiff_exception(ns_ex("TIFFOpen returned NULL"));
 
 			ns_get_default_tiff_parameters(sizeof(ns_component),ns_image_input_file<ns_component>::_properties,tiff_info,image);
 			if (client_data.exception_thrown()){
 				std::cerr << "2";
-				ns_throw_exception(client_data.ex());
+				ns_throw_tiff_exception(client_data.ex());
 			}
 
 			if (ns_image_input_file<ns_component>::_properties.width == 0 ||
 				ns_image_input_file<ns_component>::_properties.height == 0 ||
 				ns_image_input_file<ns_component>::_properties.components == 0){
-					ns_throw_exception(ns_ex("ns_tiff_image_input_stream::open_file()::Specified file has no pixels: (")
+					ns_throw_tiff_exception(ns_ex("ns_tiff_image_input_stream::open_file()::Specified file has no pixels: (")
 						<< ns_image_input_file<ns_component>::_properties.width << ","
 						<< ns_image_input_file<ns_component>::_properties.height << ","
 						<< ns_image_input_file<ns_component>::_properties.components << ")");
@@ -111,17 +111,17 @@ public:
 			
 			if (client_data.exception_thrown()){
 				std::cerr << "4";
-				ns_throw_exception(client_data.ex());
+				ns_throw_tiff_exception(client_data.ex());
 			}
 			opened_filename = filename;
 			lines_read = 0;
 		}
 		catch(ns_ex & ex){
-			ns_throw_exception(ns_ex("ns_tiff_image_input_stream::open_file()::") << ex.text() << "::" << " \"" << ns_file_io << filename << "\"");
+			ns_throw_tiff_exception(ns_ex("ns_tiff_image_input_stream::open_file()::") << ex.text() << "::" << " \"" << ns_file_io << filename << "\"");
 		}
 	}
 	void open_mem(const void *){
-		ns_throw_exception(ns_ex("ns_tiff_image_input_file::Opening from memory is not supported.")<< ns_file_io);
+		ns_throw_tiff_exception(ns_ex("ns_tiff_image_input_file::Opening from memory is not supported.")<< ns_file_io);
 	}
 	void close(){
 		try{
@@ -144,7 +144,7 @@ public:
 	bool read_line(ns_component * buffer){
 		try{
 			if (lines_read == ns_image_input_file<ns_component>::_properties.height)
-				ns_throw_exception(ns_ex("ns_tiff::read_line()::Attempting to read too many lines from file: Requested line ") << (lines_read+1) << " from an image with height " << ns_image_input_file<ns_component>::_properties.height);
+				ns_throw_tiff_exception(ns_ex("ns_tiff::read_line()::Attempting to read too many lines from file: Requested line ") << (lines_read+1) << " from an image with height " << ns_image_input_file<ns_component>::_properties.height);
 			
 			unsigned int bytes_read;
 			//read in another strip when strip buffer is empty
@@ -157,7 +157,7 @@ public:
 			
 			if (client_data.exception_thrown()){
 				std::cerr << "5";
-				ns_throw_exception(client_data.ex());
+				ns_throw_tiff_exception(client_data.ex());
 			}
 
 		//	std::cerr << "Outputting line " << tiff_info.rows_read_from_current_strip << " from buffered strip " << tiff_info.current_strip << "\n";
@@ -177,7 +177,7 @@ public:
 				std::cerr << "An error occurred freeing the strip buffer.\n";
 			}
 			strip_buffer = 0;
-			ns_throw_exception(ex);
+			ns_throw_tiff_exception(ex);
 		}
 		catch(...){
 			try{
@@ -275,18 +275,18 @@ public:
 			//image = TIFFOpen(filename.c_str(),&client_data, "r");
 			if (client_data.exception_thrown()){
 				std::cerr << "6";
-				ns_throw_exception(client_data.ex());
+				ns_throw_tiff_exception(client_data.ex());
 			}
 
 			if (image == NULL)
-				ns_throw_exception(ns_ex("TIFFOpen returned NULL"));
+				ns_throw_tiff_exception(ns_ex("TIFFOpen returned NULL"));
 			ns_image_output_file<ns_component>::_properties = properties;
 			if (properties.height == 0)
-				ns_throw_exception(ns_ex("Cannot create an image with 0 height!"));
+				ns_throw_tiff_exception(ns_ex("Cannot create an image with 0 height!"));
 			if (properties.width == 0)
-				ns_throw_exception(ns_ex("Cannot create an image with 0 width!"));
+				ns_throw_tiff_exception(ns_ex("Cannot create an image with 0 width!"));
 			if (properties.components == 0)
-				ns_throw_exception(ns_ex("Cannot create an image with 0 pixel components!"));
+				ns_throw_tiff_exception(ns_ex("Cannot create an image with 0 pixel components!"));
 			rows_per_strip = 512*1024/(sizeof(ns_component)*NS_TIFF_WIDTH);
 			if (rows_per_strip == 0)
 				rows_per_strip = 1;

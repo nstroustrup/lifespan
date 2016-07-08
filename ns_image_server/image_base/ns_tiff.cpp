@@ -1,9 +1,8 @@
 #include "ns_tiff.h"
 #include <fstream>
-
 #include "ns_xmp_encoder.h"
 
-void ns_throw_exception(const ns_ex & ex){
+void ns_throw_tiff_exception(const ns_ex & ex){
 	throw ns_ex(ex.text());
 }
 using namespace std;
@@ -24,7 +23,7 @@ static void ns_tiff_error_handler(thandle_t client_data,const char * module, con
 	ex << buf << ns_file_io;
 	//if no client data is provided or error storage is not requested, immediately throw the exception
 	if (cd == 0 || !cd->store_errors)
-		ns_throw_exception(ex);
+		ns_throw_tiff_exception(ex);
 	//if the client data requests an exception be stored rather than thrown, do so.
 	cd->error_storage = new ns_ex(ex);
 }
@@ -102,9 +101,10 @@ void ns_initialize_libtiff(){
 
 ns_tiff_compression_type ns_get_tiff_compression_type(const ns_image_type & type){
 	switch(type){
-		case ns_tiff:return ns_tiff_compression_lzw; //I pose that there is never a good reason to save uncompressed tiffs.  
+		case ns_tiff:return ns_tiff_compression_lzw;   
 		case ns_tiff_lzw: return ns_tiff_compression_lzw;
 		case ns_tiff_zip: return ns_tiff_compression_zip;
+		case ns_tiff_uncompressed: return ns_tiff_compression_none;
 		default: return ns_tiff_compression_lzw;
 	}
 	//we'll never get here but not returning anything produces compiler warnings
@@ -117,26 +117,26 @@ unsigned int ns_tiff_image_input_file<ns_8_bit>::readEncodedStrip(TIFF * image, 
 	unsigned int r(TIFFReadEncodedStrip(image,current_strip,comp_buf,length));
 	if (client_data.exception_thrown()){
 		cerr << "12";
-			ns_throw_exception(client_data.ex());
+		ns_throw_tiff_exception(client_data.ex());
 	}
 	return r;
 }
 template<class T>
 void ns_set_tiff_field(TIFF * im,const long field,T val){
 	if (TIFFSetField(im,field,val) != 1)
-		ns_throw_exception(ns_ex("ns_set_tiff_field()::Could not set field: ") << field << " to " << val);
+		ns_throw_tiff_exception(ns_ex("ns_set_tiff_field()::Could not set field: ") << field << " to " << val);
 }
 template<class T>
 void ns_set_tiff_field(TIFF * im,const long field,const unsigned long size,T val){
 	if (TIFFSetField(im,field,size,val) != 1)
-		ns_throw_exception(ns_ex("ns_set_tiff_field()::Could not set field: ") << field << " to " << val);
+		ns_throw_tiff_exception(ns_ex("ns_set_tiff_field()::Could not set field: ") << field << " to " << val);
 }
 class ns_long_string_tifftag_encoder{
 public:
 
 	void write(const std::string & s, TIFF * image){
 		if ((unsigned long)s.length() > (unsigned long)2000*tag_series_size)
-			ns_throw_exception(ns_ex("ns_long_string_tiff_encoder::Image Description is too long for storage: ") << (unsigned long)s.length() << " (Max = " << 2000*tag_series_size << ")");
+			ns_throw_tiff_exception(ns_ex("ns_long_string_tiff_encoder::Image Description is too long for storage: ") << (unsigned long)s.length() << " (Max = " << 2000*tag_series_size << ")");
 		std::string tmp;	
 		bool halt(false);
 		for (unsigned int i = 0; i < tag_series_size && !halt; i++){
@@ -220,7 +220,7 @@ void ns_set_default_tiff_parameters(const ns_image_properties & p,const ns_tiff_
 
 	ns_set_tiff_field(image, TIFFTAG_ROWSPERSTRIP, rows_per_strip);
 	if (bits_per_sample>8 && t != ns_tiff_compression_none){
-		throw ns_ex("ns_libtiff::compressed 16 bit tif images do not work propertly!");
+		throw ns_ex("ns_libtiff::compressed 16 or 32 bit tif images do not work propertly!");
 	}
 	switch(t){
 		case ns_tiff_compression_none:		ns_set_tiff_field(image, TIFFTAG_COMPRESSION, COMPRESSION_NONE); break;
@@ -228,7 +228,7 @@ void ns_set_default_tiff_parameters(const ns_image_properties & p,const ns_tiff_
 		case ns_tiff_compression_zip:		ns_set_tiff_field(image, TIFFTAG_COMPRESSION, COMPRESSION_ADOBE_DEFLATE); 
 											/*ns_set_tiff_field(image, TIFFTAG_ZIPQUALITY , 9);*/break;
 		case ns_tiff_compression_jp2000:	ns_set_tiff_field(image, TIFFTAG_COMPRESSION, COMPRESSION_JP2000); break;
-		default: ns_throw_exception(ns_ex("ns_tiff_image_output_file::Unknown compression format requested!"));
+		default: ns_throw_tiff_exception(ns_ex("ns_tiff_image_output_file::Unknown compression format requested!"));
 	}
 	if (t != ns_tiff_compression_none)
 		ns_set_tiff_field(image, TIFFTAG_PREDICTOR, PREDICTOR_HORIZONTAL);
@@ -237,13 +237,16 @@ void ns_set_default_tiff_parameters(const ns_image_properties & p,const ns_tiff_
 			break;
 		case 3: ns_set_tiff_field(image, TIFFTAG_PHOTOMETRIC, PHOTOMETRIC_RGB);
 			break;
-		default: ns_throw_exception(ns_ex("ns_tiff_image_output_file::Could not create a tiff file with ") << ns_file_io << p.components << " components.");
+		default: ns_throw_tiff_exception(ns_ex("ns_tiff_image_output_file::Could not create a tiff file with ") << ns_file_io << p.components << " components.");
 	}
 	//ns_set_tiff_field(image, TIFFTAG_FILLORDER, FILLORDER_MSB2LSB);
 	//ns_set_tiff_field(image, TIFFTAG_ORIENTATION, ORIENTATION_TOPLEFT);
 	ns_set_tiff_field(image, TIFFTAG_PLANARCONFIG, PLANARCONFIG_CONTIG);
 	ns_set_tiff_field(image, TIFFTAG_ORIENTATION,ORIENTATION_TOPLEFT);
 	ns_set_tiff_field(image, TIFFTAG_SOFTWARE, "ns_image_server (Nicholas Stroustrup 2016)");
+	
+	if (bits_per_sample==32)
+		ns_set_tiff_field(image, TIFFTAG_SAMPLEFORMAT, SAMPLEFORMAT_IEEEFP);
 	
 	if (p.description.size() != 0){
 		#ifdef NS_STORE_METATADATA_IN_TIFFTAGS
@@ -266,11 +269,11 @@ void ns_get_default_tiff_parameters(const unsigned char component_size, ns_image
 
 	short bitsize=0;
 	if (TIFFGetField(image, TIFFTAG_BITSPERSAMPLE, &bitsize) == 0)
-		ns_throw_exception(ns_ex("ns_tiff_image_input_stream::Image did not specify its bitsize.")<< ns_file_io);
+		ns_throw_tiff_exception(ns_ex("ns_tiff_image_input_stream::Image did not specify its bitsize.")<< ns_file_io);
 	if (bitsize == 0)
-		ns_throw_exception(ns_ex("ns_tiff_image_input_stream::Bitsize specified as zero"));
+		ns_throw_tiff_exception(ns_ex("ns_tiff_image_input_stream::Bitsize specified as zero"));
 	if (bitsize != 8*component_size)
-		ns_throw_exception(ns_ex("ns_tiff_image_input_stream::pixel depth mismatch: Loading a ") << ns_file_io << bitsize << " bit image into a " << 8*component_size << " ns_image object.");
+		ns_throw_tiff_exception(ns_ex("ns_tiff_image_input_stream::pixel depth mismatch: Loading a ") << ns_file_io << bitsize << " bit image into a " << 8*component_size << " ns_image object.");
 		
 	tiff_info.strip_pos = 0;
 	tiff_info.strip_length = 0;
@@ -281,9 +284,9 @@ void ns_get_default_tiff_parameters(const unsigned char component_size, ns_image
 	properties.resolution=0;
 
 	if (TIFFGetField(image, TIFFTAG_IMAGEWIDTH, &properties.width) == 0)
-		ns_throw_exception(ns_ex("ns_tiff_image_input_stream::Image does not specify its width.")<< ns_file_io);
+		ns_throw_tiff_exception(ns_ex("ns_tiff_image_input_stream::Image does not specify its width.")<< ns_file_io);
 	if (TIFFGetField(image, TIFFTAG_IMAGELENGTH, &properties.height) == 0)
-		ns_throw_exception(ns_ex("ns_tiff_image_input_stream::Image does not specify its height.")<< ns_file_io);
+		ns_throw_tiff_exception(ns_ex("ns_tiff_image_input_stream::Image does not specify its height.")<< ns_file_io);
 
 	//get resolution information
 	float xres,yres;
@@ -309,10 +312,10 @@ void ns_get_default_tiff_parameters(const unsigned char component_size, ns_image
 
 	short photometric=0;
 	if (TIFFGetField(image, TIFFTAG_PHOTOMETRIC, &photometric) == 0)
-		ns_throw_exception(ns_ex("ns_tiff_image_input_stream::Image does not specify it's photometric.")<< ns_file_io);
+		ns_throw_tiff_exception(ns_ex("ns_tiff_image_input_stream::Image does not specify it's photometric.")<< ns_file_io);
 
 	if (TIFFGetField(image, TIFFTAG_ROWSPERSTRIP, &tiff_info.rows_per_strip) == 0)
-		ns_throw_exception(ns_ex("ns_tiff_image_input_stream::Image does not specify the number of rows per strip.")<< ns_file_io);
+		ns_throw_tiff_exception(ns_ex("ns_tiff_image_input_stream::Image does not specify the number of rows per strip.")<< ns_file_io);
 	//else cerr << "Rows per strip: " << tiff_info.rows_per_strip << "\n";
 
 	//char * desc;
@@ -332,18 +335,18 @@ void ns_get_default_tiff_parameters(const unsigned char component_size, ns_image
 	unsigned long tiles = 0;
 	
     if (TIFFGetField(image, TIFFTAG_TILEWIDTH, &tiles) != 0 && tiles != 0)
-		ns_throw_exception(ns_ex("ns_tiff_image_input_stream::Image is stored as tiles.")<< ns_file_io);
+		ns_throw_tiff_exception(ns_ex("ns_tiff_image_input_stream::Image is stored as tiles.")<< ns_file_io);
 
 	switch(photometric){
 		case PHOTOMETRIC_RGB: properties.components = 3; break;
 		case PHOTOMETRIC_MINISWHITE: properties.components = 1; break;
 		case PHOTOMETRIC_MINISBLACK: properties.components = 1; break;
-		default:ns_throw_exception(ns_ex("ns_tiff_image_input_stream::Image posesses unknown photometric.")<< ns_file_io);
+		default:ns_throw_tiff_exception(ns_ex("ns_tiff_image_input_stream::Image posesses unknown photometric.")<< ns_file_io);
 	}	
 	if (tiff_info.stripsize < properties.width*properties.components*component_size)
-		ns_throw_exception(ns_ex("Strip size is smaller than a single line!")<< ns_file_io);
+		ns_throw_tiff_exception(ns_ex("Strip size is smaller than a single line!")<< ns_file_io);
 	if (tiff_info.stripsize % (properties.width*properties.components*component_size) != 0)
-		ns_throw_exception(ns_ex("Strip size does not line up evently with rows.")<< ns_file_io);
+		ns_throw_tiff_exception(ns_ex("Strip size does not line up evently with rows.")<< ns_file_io);
 	//load buffer on first read.
 	tiff_info.rows_read_from_current_strip = tiff_info.rows_per_strip;
 }

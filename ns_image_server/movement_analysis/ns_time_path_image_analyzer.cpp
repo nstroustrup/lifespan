@@ -4,9 +4,7 @@
 #include "ns_image_tools.h"
 #include "ctmf.h"
 #include "ns_optical_flow.h"
-#include "OpticalFlow.h"
 class ns_optical_flow_processor : public ns_optical_flow{};
-class ns_external_image{ public: DImage im; };
 
 using namespace std;
 
@@ -3584,8 +3582,11 @@ void ns_analyzed_image_time_path::generate_movement_images(const ns_analyzed_tim
 				region_threshold[y][x] = NS_MARGIN_BACKGROUND;
 			}
 		}
-		flow->set_Dim_properties(elements[i].registered_images->movement_image_.properties(),flow->Dim1);
-		flow->set_Dim_properties(elements[i].registered_images->movement_image_.properties(),flow->Dim2);
+		flow->Dim1.init(elements[i].registered_images->movement_image_.properties());
+		flow->Dim2.init(elements[i].registered_images->movement_image_.properties());
+		float * d1(flow->Dim1.buffer());
+		float * d2(flow->Dim1.buffer());
+
 		unsigned long flow_w = elements[i].registered_images->movement_image_.properties().width;
 
 		//now we generate the movement image
@@ -3595,16 +3596,16 @@ void ns_analyzed_image_time_path::generate_movement_images(const ns_analyzed_tim
 		for (long y = 0; y < tl.y+n; y++){
 			for (long x = 0; x < prop.width; x++){
 				elements[i].registered_images->movement_image_	[y][x] = NS_MARGIN_BACKGROUND;
-				flow->Dim1->im.data()[flow_w*y + x] = NS_MARGIN_BACKGROUND;
-				flow->Dim2->im.data()[flow_w*y + x] = NS_MARGIN_BACKGROUND;
+				d1[flow_w*y + x] = NS_MARGIN_BACKGROUND;
+				d2[flow_w*y + x] = NS_MARGIN_BACKGROUND;
 			}
 		}	
 		for (long y = tl.y+n; y < br.y-n; y++){
 			//fill in left gap
 			for (long x = 0; x < (tl.x+n); x++){
 				elements[i].registered_images->movement_image_	[y][x] = NS_MARGIN_BACKGROUND;	
-				flow->Dim1->im.data()[flow_w*y + x] = NS_MARGIN_BACKGROUND;
-				flow->Dim2->im.data()[flow_w*y + x] = NS_MARGIN_BACKGROUND;
+				d1[flow_w*y + x] = NS_MARGIN_BACKGROUND;
+				d2[flow_w*y + x] = NS_MARGIN_BACKGROUND;
 			}
 			
 			//fill in center
@@ -3621,8 +3622,8 @@ void ns_analyzed_image_time_path::generate_movement_images(const ns_analyzed_tim
 				//if we're at the beginning there is no previous frames to use, so we just assume all pixels are moving
 				//and output the worm image as the movement image
 				if (first_frames){
-					flow->Dim1->im.data()[flow_w*y+x] = NS_MARGIN_BACKGROUND/(double)255;
-					flow->Dim2->im.data()[flow_w*y+x] = elements[i]. path_aligned_images->image.sample_f(y-(v0.y),x-(v0.x))/(double)255;
+					d1[flow_w*y+x] = NS_MARGIN_BACKGROUND/(double)255;
+					d2[flow_w*y+x] = elements[i]. path_aligned_images->image.sample_f(y-(v0.y),x-(v0.x))/(double)255;
 
 					for (long dy=-n; dy <= n; dy++){
 						for (long dx=-n; dx <= n; dx++){
@@ -3639,8 +3640,8 @@ void ns_analyzed_image_time_path::generate_movement_images(const ns_analyzed_tim
 					}
 				}
 				else{
-					flow->Dim1->im.data()[flow_w*y+x] = elements[i-step*dt].path_aligned_images->image.sample_f(y-(v1.y),x-(v1.x))/(double)255;
-					flow->Dim2->im.data()[flow_w*y+x] = elements[i]. path_aligned_images->image.sample_f(y-(v0.y),x-(v0.x))/(double)255;
+					d1[flow_w*y+x] = elements[i-step*dt].path_aligned_images->image.sample_f(y-(v1.y),x-(v1.x))/(double)255;
+					d2[flow_w*y+x] = elements[i]. path_aligned_images->image.sample_f(y-(v0.y),x-(v0.x))/(double)255;
 
 					for (long dy=-n; dy <= n; dy++){
 						for (long dx=-n; dx <= n; dx++){
@@ -3673,8 +3674,8 @@ void ns_analyzed_image_time_path::generate_movement_images(const ns_analyzed_tim
 			//fill in right gap
 			for (long x = (br.x-n); x < prop.width; x++){
 				elements[i].registered_images->movement_image_[y][x] = NS_MARGIN_BACKGROUND;
-				flow->Dim1->im.data()[flow_w*y + x ] = 	 NS_MARGIN_BACKGROUND/(double)255;
-				flow->Dim2->im.data()[flow_w*y + x] = NS_MARGIN_BACKGROUND/(double)255;
+				d1[flow_w*y + x ] = NS_MARGIN_BACKGROUND/(double)255;
+				d2[flow_w*y + x] = NS_MARGIN_BACKGROUND/(double)255;
 
 			}
 		}
@@ -3682,8 +3683,8 @@ void ns_analyzed_image_time_path::generate_movement_images(const ns_analyzed_tim
 		for (long y = br.y-n; y < prop.height; y++){
 			for (long x = 0; x < prop.width; x++){
 				elements[i].registered_images->movement_image_[y][x] = NS_MARGIN_BACKGROUND;
-				flow->Dim1->im.data()[flow_w*y + x ] = 	 NS_MARGIN_BACKGROUND/(double)255;
-				flow->Dim2->im.data()[flow_w*y + x] = NS_MARGIN_BACKGROUND/(double)255;
+				d1[flow_w*y + x ] = 	 NS_MARGIN_BACKGROUND/(double)255;
+				d2[flow_w*y + x] = NS_MARGIN_BACKGROUND/(double)255;
 			}
 		}
 		ns_dilate<16,ns_image_standard,ns_image_standard>(worm_threshold,worm_neighborhood_threshold);
@@ -3694,24 +3695,23 @@ void ns_analyzed_image_time_path::generate_movement_images(const ns_analyzed_tim
 		cerr << "{";
 		ns_high_precision_timer p;
 		p.start();
-		flow->calculate(1,.5,1,3,1,20);
+		flow->calculate();
 		total_flow_time += p.stop();
 		cerr << "}";
-		flow->image_from_DImage(flow->vx,elements[i].registered_images->flow_image_dx);
-		flow->image_from_DImage(flow->vy,elements[i].registered_images->flow_image_dy);
+		flow->get_movement(elements[i].registered_images->flow_image_dx, elements[i].registered_images->flow_image_dy);
 		
 		///xxx remove
-		string filename = "y:\\debug\\im_";
+		/*string filename = "y:\\debug\\im_";
 		filename += ns_to_string(this->group_id) + "_" + ns_to_string(i);
 		for (unsigned long y = 0; y < prop.height; y++)
 			for (unsigned long x = 0; x < prop.width; x++){
-				temp_im[y][3*x+0]=flow->Dim1->im.data()[flow_w*y + x ]*255;
-				temp_im[y][3*x+1]=flow->Dim2->im.data()[flow_w*y + x ]*255;
+				temp_im[y][3*x+0]=d1[flow_w*y + x ];
+				temp_im[y][3*x+1]=d2[flow_w*y + x ];
 				temp_im[y][3*x+2] = 0;
 			}
 		ns_save_image(filename + "df.tif",temp_im);
 		ns_save_image(filename + "dx_mov.tif",elements[i].registered_images->flow_image_dx);
-		ns_save_image(filename + "dy_mov.tif",elements[i].registered_images->flow_image_dy);
+		ns_save_image(filename + "dy_mov.tif",elements[i].registered_images->flow_image_dy);*/
 	}
 
 }
@@ -4135,8 +4135,7 @@ void ns_movement_image_collage_info::from_path(const ns_analyzed_image_time_path
 
 void ns_analyzed_image_time_path::save_movement_images(const ns_analyzed_time_image_chunk & chunk,ns_sql & sql){
 	//handle small or non-existant images
-	ns_movement_image_collage_info d(this
-		/*,chunk.stop_i-chunk.start_i*/);
+	ns_movement_image_collage_info d(this/*,chunk.stop_i-chunk.start_i*/);
 	if(d.prop.width == 0 || d.prop.height == 0){
 		if (chunk.start_i > 0)
 			return;
@@ -4150,17 +4149,17 @@ void ns_analyzed_image_time_path::save_movement_images(const ns_analyzed_time_im
 		for (unsigned int c = 0; c < p.components; c++)
 			im[0][c] = 0;	
 		bool had_to_use_volatile_storage;
-		output_reciever = new ns_image_storage_reciever_handle<ns_8_bit>(image_server.image_storage.request_storage(output_image,ns_tiff,1024,&sql,had_to_use_volatile_storage,false,false));	
+		output_reciever = new ns_image_storage_reciever_handle<ns_8_bit>(image_server.image_storage.request_storage(output_image, ns_tiff_lzw , 1024, &sql, had_to_use_volatile_storage, false, false));
 		im.pump(output_reciever->output_stream(),1024);
-		flow_output_reciever = new ns_image_storage_reciever_handle<ns_16_bit>(image_server.image_storage.request_storage_16_bit(flow_output_image,ns_tiff,1024,&sql,had_to_use_volatile_storage,false,false));	
+		flow_output_reciever = new ns_image_storage_reciever_handle<float>(image_server.image_storage.request_storage_float(flow_output_image, ns_tiff_uncompressed,1024,&sql,had_to_use_volatile_storage,false,false));
 		im.pump(flow_output_reciever->output_stream(),1024);
 		return;
 	}
 
 	if (chunk.start_i == 0){
 		bool had_to_use_volatile_storage;
-		output_reciever = new ns_image_storage_reciever_handle<ns_8_bit>(image_server.image_storage.request_storage(output_image,ns_tiff,1024,&sql,had_to_use_volatile_storage,false,false));
-		flow_output_reciever = new ns_image_storage_reciever_handle<ns_16_bit>(image_server.image_storage.request_storage_16_bit(flow_output_image,ns_tiff,1024,&sql,had_to_use_volatile_storage,false,false));		
+		output_reciever = new ns_image_storage_reciever_handle<ns_8_bit>(image_server.image_storage.request_storage(output_image, ns_tiff_lzw,1024,&sql,had_to_use_volatile_storage,false,false));
+		flow_output_reciever = new ns_image_storage_reciever_handle<float>(image_server.image_storage.request_storage_float(flow_output_image, ns_tiff_uncompressed,1024,&sql,had_to_use_volatile_storage,false,false));
 		output_reciever->output_stream().init(d.prop);
 		flow_output_reciever->output_stream().init(d.prop);
 	}
@@ -4185,7 +4184,7 @@ void ns_analyzed_image_time_path::save_movement_images(const ns_analyzed_time_im
 	//**/	exit(0);
 	}
 }
-void ns_analyzed_image_time_path::save_movement_images(const ns_analyzed_time_image_chunk & chunk,ns_image_storage_reciever_handle<ns_8_bit> & out,ns_image_storage_reciever_handle<ns_16_bit> & flow_out){
+void ns_analyzed_image_time_path::save_movement_images(const ns_analyzed_time_image_chunk & chunk,ns_image_storage_reciever_handle<ns_8_bit> & out,ns_image_storage_reciever_handle<float> & flow_out){
 	
 	if (elements.size() == 0) return;
 
@@ -4260,7 +4259,7 @@ void ns_analyzed_image_time_path::save_movement_images(const ns_analyzed_time_im
 															 (((ns_8_bit)(e.registered_images->get_region_threshold(y_im_offset,x-l_x)?1:0))<<5);
 												;		
 
-							save_flow_image_buffer[dy][3*x] =  e.registered_images->image[y_im_offset][x-l_x]*(USHRT_MAX/255);
+							save_flow_image_buffer[dy][3 * x] = e.registered_images->image[y_im_offset][x - l_x];
 							save_flow_image_buffer[dy][3*x+1] =  e.registered_images->flow_image_dx[y_im_offset][x-l_x];
 							save_flow_image_buffer[dy][3*x+2] =  e.registered_images->flow_image_dy[y_im_offset][x-l_x];
 						}

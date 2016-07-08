@@ -63,6 +63,7 @@ public:
 		ns_image_storage_reciever_handle<ns_component> request_storage_ci(ns_image_server_captured_image & captured_image, const ns_image_type & image_type, const unsigned long max_line_length, ns_image_server_sql * sql, bool & had_to_use_local_storage, const bool allow_volatile_storage);
 	ns_image_storage_reciever_handle<ns_component> request_storage(ns_image_server_image & image, const ns_image_type & image_type, const unsigned long max_line_length, ns_image_server_sql * sql, bool & had_to_use_volatile_storage, const bool report_to_db, const bool allow_volatile_storage);
 	ns_image_storage_reciever_handle<ns_16_bit> request_storage_16_bit(ns_image_server_image & image, const ns_image_type & image_type, const unsigned long max_line_length, ns_image_server_sql * sql, bool & had_to_use_volatile_storage, const bool report_to_db, const bool allow_volatile_storage);
+	ns_image_storage_reciever_handle<float> request_storage_float(ns_image_server_image & image, const ns_image_type & image_type, const unsigned long max_line_length, ns_image_server_sql * sql, bool & had_to_use_volatile_storage, const bool report_to_db, const bool allow_volatile_storage);
 
 
 	bool long_term_storage_was_recently_writeable(const unsigned long time_cutoff_in_seconds = 0) const;
@@ -286,6 +287,7 @@ public:
 	}
 	std::string movement_file_directory(ns_64_bit region_info_id,ns_image_server_sql * sql,bool abs) const;
 private:
+	std::string get_storage_to_open(ns_image_server_image & image, const ns_image_type & image_type, const unsigned long max_line_length, ns_image_server_sql * sql, bool & had_to_use_local_storage, const bool report_to_db, const bool allow_volatile_storage);
 	
 	ns_file_location_specification get_file_specification_for_path_data(const ns_file_location_specification & region_spec) const;
 	ns_file_location_specification get_file_specification_for_movement_data(unsigned long region_info_id, const std::string & data,ns_image_server_sql * sql) const;

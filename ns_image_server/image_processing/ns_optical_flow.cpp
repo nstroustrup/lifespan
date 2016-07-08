@@ -1,29 +1,94 @@
 
-#include "OpticalFlow.h"
+
+#include "itkImageRegionIterator.h"
+#include "itkLevelSetMotionRegistrationFilter.h"
+#include "itkHistogramMatchingImageFilter.h"
+#include "itkCastImageFilter.h"
+#include "itkWarpImageFilter.h"
+
+
 #include "ns_optical_flow.h"
 #include "ns_image_easy_io.h"
 
-class ns_external_image{ public: Image<double> im; };
+class ns_external_image_t {
+public:
+	typedef itk::Image< float, 2 >  ns_itk_image;
+	ns_itk_image::Pointer image;
+	ns_image_properties properties;
+
+};
+float * ns_external_image ::buffer() {
+	return image->image->GetBufferPointer();
+}
+const float * ns_external_image::buffer() const {
+	return image->image->GetBufferPointer();
+}
+
+
+class ns_flow_processor_storage_t {
+public:
+	typedef itk::Vector< float, 2 >                VectorPixelType;
+	typedef itk::Image<  VectorPixelType, 2 >      DisplacementFieldType;
+	typedef itk::LevelSetMotionRegistrationFilter<
+		ns_external_image_t::ns_itk_image,
+		ns_external_image_t::ns_itk_image,
+		DisplacementFieldType> RegistrationFilterType;
+	RegistrationFilterType::Pointer filter;
+
+
+	typedef itk::HistogramMatchingImageFilter<
+		ns_external_image_t::ns_itk_image,
+		ns_external_image_t::ns_itk_image >   MatchingFilterType;
+	MatchingFilterType::Pointer matcher;
+};
+ns_external_image::ns_external_image() {
+	image = new ns_external_image_t();
+}
+ns_external_image::~ns_external_image() { delete image;}
+
+
+
+void ns_external_image::init(const ns_image_properties & p) {
+	ns_external_image_t::ns_itk_image::RegionType region;
+	ns_external_image_t::ns_itk_image::IndexType start;
+	start[0] = 0;
+	start[1] = 0;
+	ns_external_image_t::ns_itk_image::SizeType size;
+	image->properties = p;
+	size[0] = p.width;
+	size[1] = p.height;
+	region.SetSize(size);
+	region.SetIndex(start);
+	image->image = ns_external_image_t::ns_itk_image::New();
+	image->image->SetRegions(region);
+	image->image->Allocate();
+}
+
+void ns_external_image::from(const ns_image_standard & i) {
+	init(i.properties());
+	for (unsigned int y = 0; y < image->properties.height; y++){
+		for (unsigned int x = 0; x < image->properties.width; x++){
+			ns_external_image_t::ns_itk_image::IndexType pixelIndex;
+			pixelIndex[0] = x;
+			pixelIndex[1] = y;
+			image->image->SetPixel(pixelIndex, i[y][x]);
+		}
+	}
+}
 
 
 ns_optical_flow::ns_optical_flow(){
-	vx = new ns_external_image;
-	vy = new ns_external_image;
-	warpI2 = new ns_external_image;
-	Dim1 = new ns_external_image;
-	Dim2 = new ns_external_image;
-	
+	flow_processor = new ns_flow_processor_storage_t;
+	flow_processor->filter = ns_flow_processor_storage_t::RegistrationFilterType::New();
+	flow_processor->matcher = ns_flow_processor_storage_t::MatchingFilterType::New();
 }
-ns_optical_flow::~ns_optical_flow(){
-	delete vx;
-	delete vy;
-	delete warpI2;
-	delete Dim1;
-	delete Dim2;
+ns_optical_flow::~ns_optical_flow() {
+	delete flow_processor;
 }
+
 void ns_optical_flow::test(){
-	int n(8);
-	vector<ns_image_standard> im(n);
+	const int n(8);
+	std::vector<ns_image_standard> im(n);
 	std::string dir("y:\\debug\\select\\");
 	std::string fn("im_7_");
 	std::string fn2("df.tif");
@@ -44,30 +109,35 @@ void ns_optical_flow::test(){
 	}
 
 
-
-
 	ns_image_properties p2(p);
 	p2.height = p.height*(n-1);
-	p2.width = p.width*4;
+	p2.width = p.width*3;
 	p2.components = 3;
 	ns_optical_flow flow;
-	ns_image_whole<ns_16_bit> out,dx,dy,mag,warp;
+	ns_image_whole<ns_16_bit> out,mag;
+	ns_image_whole<float>  vx[n], vy[n];
 	out.prepare_to_recieve_image(p2);
-	for (unsigned int i = 1; i < n; i++){
-		//copy image diff
-		/*for (unsigned long y = 0; y < p.height;y++){
-			for (unsigned long x = 0; x < p.width;x++){
-				out[y+p.height*(i-1)][3*x] = 0;
-				out[y+p.height*(i-1)][3*x+1] = 0;//im[i][y][x]*(USHRT_MAX/255);
-				out[y+p.height*(i-1)][3*x+2] = 0;
+	float maxm(0);
+	float minm(0);
+	for (unsigned int i = 1; i < n; i++) {
+		flow.Dim1.from(im[i - 1]);
+		flow.Dim2.from(im[i]);
+		flow.calculate(20, 2);
+		flow.get_movement(vx[i - 1], vy[i - 1]);
+		for (unsigned long y = 0; y < p.height; y++) {
+			for (unsigned long x = 0; x < p.width; x++) {
+				if (vx[i - 1][y][x] > maxm)
+					maxm = vx[i - 1][y][x];
+				if (vy[i - 1][y][x] > maxm)
+					maxm = vy[i - 1][y][x];
+				if (vx[i - 1][y][x] < minm)
+					minm = vx[i - 1][y][x];
+				if (vy[i - 1][y][x] < minm)
+					minm = vy[i - 1][y][x];
 			}
 		}
-		for (unsigned long y = 0; y < p.height;y++){
-				out[y+p.height*(i-1)][3*y] = USHRT_MAX;
-				out[y+p.height*(i-1)][3*y+1] = 0;//im[i][y][x]*(USHRT_MAX/255);
-				out[y+p.height*(i-1)][3*y+2] = 0;
-			}
-		*/
+	}
+	for (unsigned int i = 1; i < n; i++) {
 		for (unsigned long y = 0; y < p.height;y++){
 			for (unsigned long x = 0; x < p.width;x++){
 				out[y+p.height*(i-1)][3*x] = (ns_16_bit)(im[i-1][y][x])*(ns_16_bit)(USHRT_MAX/255);
@@ -76,22 +146,17 @@ void ns_optical_flow::test(){
 			}
 		}
 		
-		flow.image_to_DImage(im[i-1],flow.Dim1);
-		flow.image_to_DImage(im[i],flow.Dim2);
-		flow.calculate(1,.6,8,5,2,10);
-		flow.image_from_DImage(flow.vx,dx);
-		flow.image_from_DImage(flow.vy,dy);
 		for (unsigned long y = 0; y < p.height;y++){
 			for (unsigned long x = 0; x < p.width;x++){
-				out[y+p.height*(i-1)][3*(p.width+x)] = fabs(10*flow.vx->im.data()[p.width*y+x]*USHRT_MAX);
-				out[y+p.height*(i-1)][3*(p.width+x)+1] = fabs(10*flow.vy->im.data()[p.width*y+x]*USHRT_MAX);
+				out[y+p.height*(i-1)][3*(p.width+x)] = ((vx[i - 1][y][x]-minm)/(maxm-minm)*USHRT_MAX);
+				out[y+p.height*(i-1)][3*(p.width+x)+1] = ((vy[i - 1][y][x]-minm) / (maxm - minm)*USHRT_MAX);
 				out[y+p.height*(i-1)][3*(p.width+x)+2] = 0;
 			}
 		}
 		mag.prepare_to_recieve_image(p);
 		for (unsigned long y = 0; y < p.height;y++){
 			for (unsigned long x = 0; x < p.width;x++){
-				mag[y][x] = floor(10*sqrt(pow(flow.vx->im.data()[p.width*y+x],2)+pow(flow.vy->im.data()[p.width*y+x],2))*USHRT_MAX);
+				mag[y][x] = (sqrt(pow(vx[i - 1][y][x],2)+pow(vy[i - 1][y][x],2)) - minm) / (maxm - minm)*(USHRT_MAX/2);
 			}
 		}
 		for (unsigned long y = 0; y < p.height;y++){
@@ -101,13 +166,6 @@ void ns_optical_flow::test(){
 				out[y+p.height*(i-1)][3*(2*p.width+x)+2] = mag[y][x];
 			}
 		}
-		for (unsigned long y = 0; y < p.height;y++){
-			for (unsigned long x = 0; x < p.width;x++){
-				out[y+p.height*(i-1)][3*(3*p.width+x)] = flow.warpI2->im.data()[1*(p.width*y+x)]*USHRT_MAX;
-				out[y+p.height*(i-1)][3*(3*p.width+x)+1] =flow.warpI2->im.data()[1*(p.width*y+x)+1]*USHRT_MAX;
-				out[y+p.height*(i-1)][3*(3*p.width+x)+2] = flow.warpI2->im.data()[1*(p.width*y+x)+2]*USHRT_MAX;
-			}
-		}
 	}
 	ns_tiff_image_output_file<ns_16_bit> tiff_out(ns_tiff_compression_none);
 	ns_image_stream_file_sink<ns_16_bit> file_sink(dir + "out2.tif",tiff_out,1024);
@@ -115,104 +173,34 @@ void ns_optical_flow::test(){
 	exit(0);
 }
 
+void ns_optical_flow::calculate(const int num_it, float gaussian_stdev) {
 
-void ns_optical_flow::set_Dim_properties(const ns_image_properties & p,ns_external_image * dim){
-	if (dim->im.width() != p.width || dim->im.height() != p.height || dim->im.nchannels() != p.components)
-		dim->im.allocate(p.width,p.height,p.components);
+
+	flow_processor->matcher->SetInput(Dim2.image->image.GetPointer());
+	flow_processor->matcher->SetReferenceImage(Dim1.image->image.GetPointer());
+	flow_processor->matcher->SetNumberOfHistogramLevels(1024);
+	flow_processor->matcher->SetNumberOfMatchPoints(14);
+	flow_processor->matcher->ThresholdAtMeanIntensityOn();
+
+
+	flow_processor->filter->SetFixedImage(Dim1.image->image.GetPointer());
+	flow_processor->filter->SetMovingImage(flow_processor->matcher->GetOutput());
+
+	flow_processor->filter->SetNumberOfIterations(num_it);
+	flow_processor->filter->SetGradientSmoothingStandardDeviations(gaussian_stdev);
+	flow_processor->filter->Update();
 }
-void ns_optical_flow::image_to_DImage(const ns_image_standard & im, ns_external_image * dim){
-	const ns_image_properties p(im.properties());
-	set_Dim_properties(p,dim);
-	if (p.components == 1){
-		for (unsigned long y = 0; y < p.height; y++)
-			for (unsigned long x = 0; x < p.width; x++){
-				dim->im.data()[x+p.width*y] = im[y][x]/(double)255;
-			}
-	}else{
-		for (unsigned long y = 0; y < p.height; y++)
-			for (unsigned long x = 0; x < 3*p.width; x++){
-				dim->im.data()[x+3*p.width*y] = im[y][x]/(double)255;
-			}
-	}
-};
 
-void ns_optical_flow::image_from_DImage(const ns_external_image * dim, ns_image_standard & im){
-	ns_image_properties p;
-	p.width = dim->im.width();
-	p.height = dim->im.height();
-	p.components = dim->im.nchannels();
-	im.init(p);
-	if (p.components == 1){
-		for (unsigned long y = 0; y < p.height; y++)
-			for (unsigned long x = 0; x < p.width; x++){
-				im[y][x] = (ns_8_bit)(255*dim->im.data()[x+p.width*y]);
-			}
-	}else{
-		for (unsigned long y = 0; y < p.height; y++)
-			for (unsigned long x = 0; x < 3*p.width; x++){
-				im[y][x] = (ns_8_bit)(255*dim->im.data()[x+3*p.width*y]);
-			}
-	}
-};
-void ns_optical_flow::image_from_DImage(const ns_external_image * dim, ns_image_whole<ns_16_bit> & im){
-	ns_image_properties p;
-	p.width = dim->im.width();
-	p.height = dim->im.height();
-	p.components = dim->im.nchannels();
-	im.init(p);
-	if (p.components == 1){
-		for (unsigned long y = 0; y < p.height; y++)
-			for (unsigned long x = 0; x < p.width; x++){
-				im[y][x] = (ns_16_bit)floor(dim->im.data()[x+p.width*y]*USHRT_MAX);
-			}
-	}else{
-		for (unsigned long y = 0; y < p.height; y++)
-			for (unsigned long x = 0; x < 3*p.width; x++){
-				im[y][x] = (ns_16_bit)floor(dim->im.data()[x+3*p.width*y]*USHRT_MAX);
-			}
-	}
-};
+void ns_optical_flow::get_movement(ns_image_whole<float> & vx, ns_image_whole<float> & vy){
+	//this is the displacement field!
+	const ns_flow_processor_storage_t::DisplacementFieldType * displacement_field = flow_processor->filter->GetOutput();
+	const ns_flow_processor_storage_t::VectorPixelType * fbuf = displacement_field->GetBufferPointer();
+	vx.init(Dim1.image->properties);
+	vy.init(Dim1.image->properties);
 
-void ns_optical_flow::image_from_DImage(const ns_external_image * dim, ns_image_whole<double> & im){
-	ns_image_properties p;
-	p.width = dim->im.width();
-	p.height = dim->im.height();
-	p.components = dim->im.nchannels();
-	im.init(p);
-	if (p.components == 1){
-		for (unsigned long y = 0; y < p.height; y++)
-			for (unsigned long x = 0; x < p.width; x++){
-				im[y][x] = dim->im.data()[x+p.width*y];
-			}
-	}else{
-		for (unsigned long y = 0; y < p.height; y++)
-			for (unsigned long x = 0; x < p.width; x++){
-				im[y][x] = dim->im.data()[x+3*p.width*y];
-				im[y][x+1] = dim->im.data()[x+1+3*p.width*y] ;
-				im[y][x+2] = dim->im.data()[x+2+3*p.width*y];
-			}
-	}
-};
-
-void ns_optical_flow::calculate(const ns_image_standard & im1, 
-				const ns_image_standard & im2,
-				double alpha,
-				double ratio,
-				int minWidth,
-				int nOuterFPIterations,
-				int nInnerFPIterations,
-				int nSORIterations){
-	OpticalFlow::IsDisplay = false;
-	image_to_DImage(im1,Dim1);
-	image_to_DImage(im2,Dim2);
-	OpticalFlow::Coarse2FineFlow(vx->im,vy->im,warpI2->im,Dim1->im,Dim2->im,alpha,ratio,minWidth,nOuterFPIterations,nInnerFPIterations,nSORIterations);
-}
-void ns_optical_flow::calculate(double alpha,
-				double ratio,
-				int minWidth,
-				int nOuterFPIterations,
-				int nInnerFPIterations,
-				int nSORIterations){
-	OpticalFlow::IsDisplay = false;
-	OpticalFlow::Coarse2FineFlow(vx->im,vy->im,warpI2->im,Dim1->im,Dim2->im,alpha,ratio,minWidth,nOuterFPIterations,nInnerFPIterations,nSORIterations);
+	for (unsigned long y = 0; y < Dim1.image->properties.height; y++)
+		for (unsigned long x = 0; x < Dim1.image->properties.width; x++) {
+			vx[y][x] = fbuf[y*Dim1.image->properties.width + x][0];
+			vy[y][x] = fbuf[y*Dim1.image->properties.width + x][1];
+		}
 }

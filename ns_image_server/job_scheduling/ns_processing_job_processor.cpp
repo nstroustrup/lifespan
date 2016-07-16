@@ -1005,6 +1005,7 @@ bool ns_processing_job_maintenance_processor:: run_job(ns_sql & sql){
 				ns_acquire_for_scope<ostream> o(image_server->results_storage.time_path_image_analysis_quantification(sub,"detailed",false,sql).output());
 				if (time_path_image_analyzer.size() > 0){
 					time_path_image_analyzer.group(0).paths[0].write_detailed_movement_quantification_analysis_header(o());
+					o() << "\n";
 					time_path_image_analyzer.write_detailed_movement_quantification_analysis_data(metadata,o(),false);
 				}
 				else o() << "(No Paths in Solution)\n";

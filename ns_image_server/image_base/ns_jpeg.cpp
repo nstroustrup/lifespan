@@ -30,3 +30,8 @@ bool ns_jpeg_image_input_file<ns_16_bit> ::read_line(ns_16_bit * buffer){
 	throw ns_ex("ns_jpeg_image_input_file::16-bit jpeg not supported.");
 }
 
+template<>
+bool ns_jpeg_image_input_file<float> ::read_line(float * buffer) {
+	throw ns_ex("ns_jpeg_image_input_file::floating point jpeg not supported.");
+
+}

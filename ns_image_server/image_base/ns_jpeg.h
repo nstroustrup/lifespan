@@ -146,6 +146,9 @@ bool ns_jpeg_image_input_file<ns_component> ::read_line(ns_component * buffer){
 template<>
 bool ns_jpeg_image_input_file<ns_16_bit> ::read_line(ns_16_bit * buffer);
 
+template<>
+bool ns_jpeg_image_input_file<float> ::read_line(float * buffer);
+
 template<class ns_component>
 const unsigned int  ns_jpeg_image_input_file<ns_component> ::read_lines(ns_component ** buffer, const unsigned int n){
 	unsigned int lines_read = 0;

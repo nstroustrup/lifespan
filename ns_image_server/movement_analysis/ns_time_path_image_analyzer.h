@@ -4,6 +4,7 @@
 #include "ns_movement_measurement.h"
 #include "ns_survival_curve.h"
 #include "ns_time_path_posture_movement_solution.h"
+#include "ns_optical_flow_quantification.h"
 
 ns_analyzed_image_time_path_death_time_estimator * ns_get_death_time_estimator_from_posture_analysis_model(const ns_posture_analysis_model & m);
 
@@ -42,6 +43,11 @@ struct ns_analyzed_image_time_path_element_measurements{
 		   normalized_total_intensity,
 		   normalized_worm_area,
 		   denoised_change_in_average_normalized_worm_intensity;
+
+	ns_optical_flow_quantification scaled_flow_magnitude,
+								raw_flow_magnitude,
+								scaled_flow_dx, scaled_flow_dy,
+								raw_flow_dx, raw_flow_dy;
 
 	double movement_score,
 		   denoised_movement_score;
@@ -300,10 +306,11 @@ struct ns_registered_image_set{
 		flow_image_dy.init(p);
 	}
 	enum{region_mask=1,worm_mask=2,worm_neighborhood_mask=4};
-	bool get_region_threshold(const int y, const int x){ return (worm_region_threshold[y][x]&region_mask)!=0;}
-	bool get_worm_neighborhood_threshold(const int y, const int x){ return (worm_region_threshold[y][x]&worm_neighborhood_mask)!=0;}
-	bool get_worm_threshold(const int y, const int x){ return (worm_region_threshold[y][x]&worm_mask)!=0;}
-	void set_thresholds(const int y, const int x, const bool region,const bool worm, const bool worm_neighborhood){ 
+	bool get_region_threshold(const int y, const int x) const { return (worm_region_threshold[y][x]&region_mask)!=0;}
+	bool get_worm_neighborhood_threshold(const int y, const int x) const { return (worm_region_threshold[y][x]&worm_neighborhood_mask)!=0;}
+	bool mask(const int y, const int x) const { return get_worm_neighborhood_threshold(y, x); }
+	bool get_worm_threshold(const int y, const int x)const { return (worm_region_threshold[y][x]&worm_mask)!=0;}
+	void set_thresholds(const int y, const int x, const bool region,const bool worm, const bool worm_neighborhood) {
 		worm_region_threshold[y][x] = ((ns_8_bit)region) | ((ns_8_bit)worm<<1) | ((ns_8_bit)worm_neighborhood<<2);
 	}
 	void resize(const ns_image_properties & p){
@@ -449,7 +456,7 @@ struct ns_analyzed_image_specification{
 	ns_analyzed_image_specification():region_vis_required(false),interpolated_region_vis_required(false){}
 	ns_image_server_image region_vis_image,
 						  interpolated_region_vis_image;
-	unsigned long sample_region_image_id;
+	ns_64_bit sample_region_image_id;
 	unsigned long time;
 	bool region_vis_required,
 		  interpolated_region_vis_required;
@@ -471,7 +478,7 @@ struct ns_time_series_denoising_parameters{
 	ns_time_series_denoising_parameters():movement_score_normalization(ns_none){}
 	typedef enum{ns_none=0,ns_subtract_out_plate_median=1,ns_subtract_out_median=2,ns_subtract_out_median_of_end=3,ns_subtract_out_device_median=4} ns_movement_score_normalization_type;
 	ns_movement_score_normalization_type movement_score_normalization;
-	static ns_time_series_denoising_parameters load_from_db(const unsigned long region_id, ns_sql & sql);
+	static ns_time_series_denoising_parameters load_from_db(const ns_64_bit region_id, ns_sql & sql);
 	std::string to_string() const{ 
 		switch(movement_score_normalization){
 			case ns_none: return "None";
@@ -597,7 +604,7 @@ public:
 	//	if (this->registered_image_pool.number_checked_out() > 0 || this->aligned_image_pool.number_checked_out() > 0)
 	//		std::cerr << "Leaking Images!";
 	}
-	void load_movement_images(const ns_analyzed_time_image_chunk & chunk, ns_image_storage_source_handle<ns_8_bit> & in,ns_image_storage_source_handle<ns_16_bit> & flow_in);
+	void load_movement_images(const ns_analyzed_time_image_chunk & chunk, ns_image_storage_source_handle<ns_8_bit> & in,ns_image_storage_source_handle<float> & flow_in);
 	void load_movement_images_no_flow(const ns_analyzed_time_image_chunk & chunk, ns_image_storage_source_handle<ns_8_bit> & in);
 	void save_movement_images(const ns_analyzed_time_image_chunk & chunk, ns_image_storage_reciever_handle<ns_8_bit> & out, ns_image_storage_reciever_handle<float> & flow_out);
 	void save_movement_images(const ns_analyzed_time_image_chunk & chunk,ns_sql & sql);
@@ -655,7 +662,7 @@ private:
 
 	unsigned long number_of_images_loaded;
 	ns_image_storage_source_handle<ns_8_bit> movement_image_storage;
-	ns_image_storage_source_handle<ns_16_bit> flow_movement_image_storage;
+	ns_image_storage_source_handle<float> flow_movement_image_storage;
 		
 	ns_analyzed_time_path_quantification_summary quantification_summary;
 
@@ -697,7 +704,7 @@ private:
 
 	ns_image_server_image output_image;
 	ns_image_server_image flow_output_image;
-	unsigned long path_db_id;
+	ns_64_bit path_db_id;
 
 	unsigned long find_minimum_first_chunk_time() const{
 		if (elements.size() < alignment_time_kernel_width)
@@ -710,13 +717,13 @@ private:
 	unsigned long path_id,group_id;
 	const ns_time_path_solution * solution;
 
-	void initialize_movement_image_loading(ns_image_storage_source_handle<ns_8_bit> & in,ns_image_storage_source_handle<ns_16_bit> & flow_in);
+	void initialize_movement_image_loading(ns_image_storage_source_handle<ns_8_bit> & in,ns_image_storage_source_handle<float> & flow_in);
 	void initialize_movement_image_loading_no_flow(ns_image_storage_source_handle<ns_8_bit> & in);
 	void end_movement_image_loading();
 	ns_movement_image_collage_info movement_loading_collage_info;
 	ns_image_stream_static_buffer<ns_8_bit> movement_loading_buffer;
-	ns_image_stream_static_buffer<ns_16_bit> flow_movement_loading_buffer;
-	unsigned long region_info_id;
+	ns_image_stream_static_buffer<float> flow_movement_loading_buffer;
+	ns_64_bit region_info_id;
 
 	friend struct ns_analyzed_image_time_path_group;
 	friend class  ns_time_path_image_movement_analyzer;
@@ -734,7 +741,7 @@ private:
 };
 
 struct ns_analyzed_image_time_path_group{
-	ns_analyzed_image_time_path_group(unsigned long group_id_, const unsigned long region_info_id,const ns_time_path_solution & solution_, const ns_death_time_annotation_time_interval & observation_interval, ns_death_time_annotation_set & rejected_annotations,ns_time_path_image_movement_analysis_memory_pool & memory_pool_);
+	ns_analyzed_image_time_path_group(const unsigned long group_id_, const ns_64_bit region_info_id,const ns_time_path_solution & solution_, const ns_death_time_annotation_time_interval & observation_interval, ns_death_time_annotation_set & rejected_annotations,ns_time_path_image_movement_analysis_memory_pool & memory_pool_);
 	std::vector<ns_analyzed_image_time_path> paths;
 	void clear_images();
 };
@@ -778,8 +785,8 @@ public:
 		}
 			
 	}
-	void save_movement_data_to_db(const unsigned long region_id, ns_sql & sql);
-	void delete_from_db(const unsigned long region_id,ns_sql & sql);
+	void save_movement_data_to_db(const ns_64_bit region_id, ns_sql & sql);
+	void delete_from_db(const ns_64_bit region_id,ns_sql & sql);
 	
 	
 	void write_summary_movement_quantification_analysis_data(const ns_region_metadata & m, std::ostream & o)const;
@@ -797,9 +804,9 @@ public:
 		return description_series;
 	}
 	
-	void generate_movement_posture_visualizations(const bool include_motion_graphs,const unsigned long region_id,const ns_time_path_solution & solution,ns_sql & sql);
+	void generate_movement_posture_visualizations(const bool include_motion_graphs,const ns_64_bit region_id,const ns_time_path_solution & solution,ns_sql & sql);
 
-	void generate_death_aligned_movement_posture_visualizations(const bool include_motion_graphs,const unsigned long region_id,const ns_movement_event & event_to_align, const ns_time_path_solution & solution,ns_sql & sql);
+	void generate_death_aligned_movement_posture_visualizations(const bool include_motion_graphs,const ns_64_bit region_id,const ns_movement_event & event_to_align, const ns_time_path_solution & solution,ns_sql & sql);
 
 	inline const ns_analyzed_image_time_path_group & operator[] (const unsigned long & l)const{return groups[l];}
 	inline const ns_analyzed_image_time_path_group & group(const unsigned long & l) const {return groups[l];}
@@ -811,17 +818,17 @@ public:
 	
 	void divide_job_into_chunks(std::vector<ns_analyzed_time_image_chunk> & chunks);
 
-	void mark_path_images_as_cached_in_db(const unsigned long region_id, ns_sql & sql);
+	void mark_path_images_as_cached_in_db(const ns_64_bit region_id, ns_sql & sql);
 	unsigned long last_timepoint_in_analysis()const {return last_timepoint_in_analysis_;}
 	unsigned long number_of_timepoints_in_analysis()const { return number_of_timepoints_in_analysis_;}
-	unsigned long db_analysis_id() const{return analysis_id;}
+	ns_64_bit db_analysis_id() const{return analysis_id;}
 private:
 	ns_stationary_path_id generate_stationary_path_id(const unsigned long group_id, const unsigned long path_id) const{
 		return ns_stationary_path_id(group_id,path_id,analysis_id);
 	}
 	void populate_movement_quantification_from_file(ns_sql & sql);
 	
-	static ns_death_time_annotation_time_interval get_externally_specified_last_measurement(const unsigned long region_id, ns_sql & sql);
+	static ns_death_time_annotation_time_interval get_externally_specified_last_measurement(const ns_64_bit region_id, ns_sql & sql);
 	void crop_path_observation_times(const ns_death_time_annotation_time_interval & observation_interval);
 	bool image_db_info_loaded;
 	unsigned long last_timepoint_in_analysis_,
@@ -829,15 +836,15 @@ private:
 	void load_movement_data_from_disk(std::istream & i,bool skip_movement_data=false);
 	void save_movement_data_to_disk(std::ostream & o) const;
 
-	unsigned long analysis_id;
+	ns_64_bit analysis_id;
 	void get_processing_stats_from_solution(const ns_time_path_solution & solution_);
 	unsigned long calculate_division_size_that_fits_in_specified_memory_size(const ns_64_bit & mem, const int multiplicity_of_images) const;
 
 	void load_from_solution(const ns_time_path_solution & solution, const long group_number=-1);
 	void load_region_visualization_images(const unsigned long start_i, const unsigned long stop_i,const unsigned int start_group, const unsigned int stop_group,ns_sql & sql, bool just_do_a_consistancy_check);
-	void acquire_region_image_specifications(const unsigned long region_id,ns_sql & sql);
-	void get_output_image_storage_locations(const unsigned long region_id,ns_sql & sql,const bool create_only_flow);
-	bool load_movement_image_db_info(const unsigned long region_id,ns_sql & sql);
+	void acquire_region_image_specifications(const ns_64_bit region_id,ns_sql & sql);
+	void get_output_image_storage_locations(const ns_64_bit region_id,ns_sql & sql,const bool create_only_flow);
+	bool load_movement_image_db_info(const ns_64_bit region_id,ns_sql & sql);
 	void generate_images_from_region_visualization();
 	bool paths_loaded_from_solution;
 	std::vector<ns_analyzed_image_time_path_group> groups;
@@ -854,7 +861,7 @@ private:
 	
 	ns_image_standard image_loading_temp,image_loading_temp2;
 	bool movement_analyzed;
-	unsigned long region_info_id;
+	ns_64_bit region_info_id;
 
 	ns_time_path_image_movement_analysis_memory_pool memory_pool;
 
@@ -881,7 +888,7 @@ struct ns_movement_visualization_summary_entry{
 
 class ns_movement_posture_visualization_summary{
 public:
-	unsigned long region_id;
+	ns_64_bit region_id;
 	unsigned long frame_number;
 	unsigned long alignment_frame_number;
 	std::vector<ns_movement_visualization_summary_entry> worms;

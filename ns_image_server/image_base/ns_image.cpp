@@ -35,8 +35,9 @@ void ns_add_image_suffix(string & str, const ns_image_type & type){
 		case ns_tiff: str+=".tif"; return;
 		case ns_tiff_lzw: str+=".tif"; return;
 		case ns_tiff_zip: str+=".tif"; return;
+		case ns_tiff_uncompressed: str += ".tif"; return;
 		case ns_jp2k: str+=".jp2"; return;
-		default: throw ns_ex("ns_add_iamge_suffix: Unknown image type: ") << (unsigned int)type;
+		default: throw ns_ex("ns_add_image_suffix: Unknown image type: ") << (unsigned int)type;
 	}
 }
 

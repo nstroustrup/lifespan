@@ -59,9 +59,6 @@
     <Filter Include="image_format_lib\zlib">
       <UniqueIdentifier>{062e321a-7c26-45cc-a7c1-20378464b414}</UniqueIdentifier>
     </Filter>
-    <Filter Include="image_format_lib\ojpeg">
-      <UniqueIdentifier>{f080d816-b29a-4444-8a10-be017ffb7077}</UniqueIdentifier>
-    </Filter>
     <Filter Include="misc_lib\hungarian">
       <UniqueIdentifier>{ba220325-281f-4249-9ede-e40b2a99ac70}</UniqueIdentifier>
     </Filter>
@@ -375,75 +372,6 @@
     </ClCompile>
     <ClCompile Include="..\ns_worm_browser\ns_worm_browser.cpp">
       <Filter>worm_browser</Filter>
-    </ClCompile>
-    <ClCompile Include="..\external_compile_libraries\openjpeg-1.5.0\libopenjpeg\bio.c">
-      <Filter>image_format_lib\ojpeg</Filter>
-    </ClCompile>
-    <ClCompile Include="..\external_compile_libraries\openjpeg-1.5.0\libopenjpeg\tpix_manager.c">
-      <Filter>image_format_lib\ojpeg</Filter>
-    </ClCompile>
-    <ClCompile Include="..\external_compile_libraries\openjpeg-1.5.0\libopenjpeg\cidx_manager.c">
-      <Filter>image_format_lib\ojpeg</Filter>
-    </ClCompile>
-    <ClCompile Include="..\external_compile_libraries\openjpeg-1.5.0\libopenjpeg\cio.c">
-      <Filter>image_format_lib\ojpeg</Filter>
-    </ClCompile>
-    <ClCompile Include="..\external_compile_libraries\openjpeg-1.5.0\libopenjpeg\dwt.c">
-      <Filter>image_format_lib\ojpeg</Filter>
-    </ClCompile>
-    <ClCompile Include="..\external_compile_libraries\openjpeg-1.5.0\libopenjpeg\event.c">
-      <Filter>image_format_lib\ojpeg</Filter>
-    </ClCompile>
-    <ClCompile Include="..\external_compile_libraries\openjpeg-1.5.0\libopenjpeg\image.c">
-      <Filter>image_format_lib\ojpeg</Filter>
-    </ClCompile>
-    <ClCompile Include="..\external_compile_libraries\openjpeg-1.5.0\libopenjpeg\j2k.c">
-      <Filter>image_format_lib\ojpeg</Filter>
-    </ClCompile>
-    <ClCompile Include="..\external_compile_libraries\openjpeg-1.5.0\libopenjpeg\j2k_lib.c">
-      <Filter>image_format_lib\ojpeg</Filter>
-    </ClCompile>
-    <ClCompile Include="..\external_compile_libraries\openjpeg-1.5.0\libopenjpeg\jp2.c">
-      <Filter>image_format_lib\ojpeg</Filter>
-    </ClCompile>
-    <ClCompile Include="..\external_compile_libraries\openjpeg-1.5.0\libopenjpeg\jpt.c">
-      <Filter>image_format_lib\ojpeg</Filter>
-    </ClCompile>
-    <ClCompile Include="..\external_compile_libraries\openjpeg-1.5.0\libopenjpeg\mct.c">
-      <Filter>image_format_lib\ojpeg</Filter>
-    </ClCompile>
-    <ClCompile Include="..\external_compile_libraries\openjpeg-1.5.0\libopenjpeg\mqc.c">
-      <Filter>image_format_lib\ojpeg</Filter>
-    </ClCompile>
-    <ClCompile Include="..\external_compile_libraries\openjpeg-1.5.0\libopenjpeg\openjpeg.c">
-      <Filter>image_format_lib\ojpeg</Filter>
-    </ClCompile>
-    <ClCompile Include="..\external_compile_libraries\openjpeg-1.5.0\libopenjpeg\phix_manager.c">
-      <Filter>image_format_lib\ojpeg</Filter>
-    </ClCompile>
-    <ClCompile Include="..\external_compile_libraries\openjpeg-1.5.0\libopenjpeg\pi.c">
-      <Filter>image_format_lib\ojpeg</Filter>
-    </ClCompile>
-    <ClCompile Include="..\external_compile_libraries\openjpeg-1.5.0\libopenjpeg\ppix_manager.c">
-      <Filter>image_format_lib\ojpeg</Filter>
-    </ClCompile>
-    <ClCompile Include="..\external_compile_libraries\openjpeg-1.5.0\libopenjpeg\raw.c">
-      <Filter>image_format_lib\ojpeg</Filter>
-    </ClCompile>
-    <ClCompile Include="..\external_compile_libraries\openjpeg-1.5.0\libopenjpeg\t1.c">
-      <Filter>image_format_lib\ojpeg</Filter>
-    </ClCompile>
-    <ClCompile Include="..\external_compile_libraries\openjpeg-1.5.0\libopenjpeg\t2.c">
-      <Filter>image_format_lib\ojpeg</Filter>
-    </ClCompile>
-    <ClCompile Include="..\external_compile_libraries\openjpeg-1.5.0\libopenjpeg\tcd.c">
-      <Filter>image_format_lib\ojpeg</Filter>
-    </ClCompile>
-    <ClCompile Include="..\external_compile_libraries\openjpeg-1.5.0\libopenjpeg\tgt.c">
-      <Filter>image_format_lib\ojpeg</Filter>
-    </ClCompile>
-    <ClCompile Include="..\external_compile_libraries\openjpeg-1.5.0\libopenjpeg\thix_manager.c">
-      <Filter>image_format_lib\ojpeg</Filter>
     </ClCompile>
     <ClCompile Include="..\ns_worm_browser\ns_worm_browser_main.cpp">
       <Filter>worm_browser</Filter>
@@ -1179,84 +1107,6 @@
     <ClInclude Include="resource.h">
       <Filter>Resource Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\external_compile_libraries\openjpeg-1.5.0\libopenjpeg\bio.h">
-      <Filter>image_format_lib\ojpeg</Filter>
-    </ClInclude>
-    <ClInclude Include="..\external_compile_libraries\openjpeg-1.5.0\libopenjpeg\cidx_manager.h">
-      <Filter>image_format_lib\ojpeg</Filter>
-    </ClInclude>
-    <ClInclude Include="..\external_compile_libraries\openjpeg-1.5.0\libopenjpeg\cio.h">
-      <Filter>image_format_lib\ojpeg</Filter>
-    </ClInclude>
-    <ClInclude Include="..\external_compile_libraries\openjpeg-1.5.0\libopenjpeg\dwt.h">
-      <Filter>image_format_lib\ojpeg</Filter>
-    </ClInclude>
-    <ClInclude Include="..\external_compile_libraries\openjpeg-1.5.0\libopenjpeg\event.h">
-      <Filter>image_format_lib\ojpeg</Filter>
-    </ClInclude>
-    <ClInclude Include="..\external_compile_libraries\openjpeg-1.5.0\libopenjpeg\fix.h">
-      <Filter>image_format_lib\ojpeg</Filter>
-    </ClInclude>
-    <ClInclude Include="..\external_compile_libraries\openjpeg-1.5.0\libopenjpeg\image.h">
-      <Filter>image_format_lib\ojpeg</Filter>
-    </ClInclude>
-    <ClInclude Include="..\external_compile_libraries\openjpeg-1.5.0\libopenjpeg\indexbox_manager.h">
-      <Filter>image_format_lib\ojpeg</Filter>
-    </ClInclude>
-    <ClInclude Include="..\external_compile_libraries\openjpeg-1.5.0\libopenjpeg\int.h">
-      <Filter>image_format_lib\ojpeg</Filter>
-    </ClInclude>
-    <ClInclude Include="..\external_compile_libraries\openjpeg-1.5.0\libopenjpeg\j2k.h">
-      <Filter>image_format_lib\ojpeg</Filter>
-    </ClInclude>
-    <ClInclude Include="..\external_compile_libraries\openjpeg-1.5.0\libopenjpeg\j2k_lib.h">
-      <Filter>image_format_lib\ojpeg</Filter>
-    </ClInclude>
-    <ClInclude Include="..\external_compile_libraries\openjpeg-1.5.0\libopenjpeg\jp2.h">
-      <Filter>image_format_lib\ojpeg</Filter>
-    </ClInclude>
-    <ClInclude Include="..\external_compile_libraries\openjpeg-1.5.0\libopenjpeg\jpt.h">
-      <Filter>image_format_lib\ojpeg</Filter>
-    </ClInclude>
-    <ClInclude Include="..\external_compile_libraries\openjpeg-1.5.0\libopenjpeg\mct.h">
-      <Filter>image_format_lib\ojpeg</Filter>
-    </ClInclude>
-    <ClInclude Include="..\external_compile_libraries\openjpeg-1.5.0\libopenjpeg\mqc.h">
-      <Filter>image_format_lib\ojpeg</Filter>
-    </ClInclude>
-    <ClInclude Include="..\external_compile_libraries\openjpeg-1.5.0\libopenjpeg\openjpeg.h">
-      <Filter>image_format_lib\ojpeg</Filter>
-    </ClInclude>
-    <ClInclude Include="..\external_compile_libraries\openjpeg-1.5.0\libopenjpeg\opj_config.h">
-      <Filter>image_format_lib\ojpeg</Filter>
-    </ClInclude>
-    <ClInclude Include="..\external_compile_libraries\openjpeg-1.5.0\libopenjpeg\opj_includes.h">
-      <Filter>image_format_lib\ojpeg</Filter>
-    </ClInclude>
-    <ClInclude Include="..\external_compile_libraries\openjpeg-1.5.0\libopenjpeg\opj_malloc.h">
-      <Filter>image_format_lib\ojpeg</Filter>
-    </ClInclude>
-    <ClInclude Include="..\external_compile_libraries\openjpeg-1.5.0\libopenjpeg\pi.h">
-      <Filter>image_format_lib\ojpeg</Filter>
-    </ClInclude>
-    <ClInclude Include="..\external_compile_libraries\openjpeg-1.5.0\libopenjpeg\raw.h">
-      <Filter>image_format_lib\ojpeg</Filter>
-    </ClInclude>
-    <ClInclude Include="..\external_compile_libraries\openjpeg-1.5.0\libopenjpeg\t1.h">
-      <Filter>image_format_lib\ojpeg</Filter>
-    </ClInclude>
-    <ClInclude Include="..\external_compile_libraries\openjpeg-1.5.0\libopenjpeg\t1_luts.h">
-      <Filter>image_format_lib\ojpeg</Filter>
-    </ClInclude>
-    <ClInclude Include="..\external_compile_libraries\openjpeg-1.5.0\libopenjpeg\t2.h">
-      <Filter>image_format_lib\ojpeg</Filter>
-    </ClInclude>
-    <ClInclude Include="..\external_compile_libraries\openjpeg-1.5.0\libopenjpeg\tcd.h">
-      <Filter>image_format_lib\ojpeg</Filter>
-    </ClInclude>
-    <ClInclude Include="..\external_compile_libraries\openjpeg-1.5.0\libopenjpeg\tgt.h">
-      <Filter>image_format_lib\ojpeg</Filter>
-    </ClInclude>
     <ClInclude Include="..\external_compile_libraries\tiff-3.8.2\libtiff\tif_predict.h">
       <Filter>image_format_lib\tiff</Filter>
     </ClInclude>
@@ -1366,15 +1216,6 @@
     </None>
     <None Include="..\external_libraries\wm4_bspline\Wm4Vector2.inl">
       <Filter>misc_lib\wm4_bspline</Filter>
-    </None>
-    <None Include="..\external_compile_libraries\openjpeg-1.5.0\libopenjpeg\CMakeLists.txt">
-      <Filter>image_format_lib\ojpeg</Filter>
-    </None>
-    <None Include="..\external_compile_libraries\openjpeg-1.5.0\libopenjpeg\Makefile.am">
-      <Filter>image_format_lib\ojpeg</Filter>
-    </None>
-    <None Include="..\external_compile_libraries\openjpeg-1.5.0\libopenjpeg\Makefile.in">
-      <Filter>image_format_lib\ojpeg</Filter>
     </None>
   </ItemGroup>
   <ItemGroup>

@@ -6,7 +6,7 @@
 #include <vector>
 #include <algorithm>
 
-//#define __SSE2__
+
 
 //#define NS_SPATIAL_AVG_TRACK_TIME
 
@@ -45,6 +45,7 @@ public:
 
 #ifdef NS_OPTIMIZE_SPEED_OVER_MEMORY
 
+#define __SSE2__
 #include "ctmf.h"
 
 ///Calculates the spatial median filter output of an image

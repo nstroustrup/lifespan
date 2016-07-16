@@ -273,7 +273,7 @@ void ns_machine_analysis_data_loader::set_up_spec_to_load(const ns_64_bit & regi
 }
 
 
-ns_time_series_denoising_parameters ns_time_series_denoising_parameters::load_from_db(const unsigned long region_id, ns_sql & sql){
+ns_time_series_denoising_parameters ns_time_series_denoising_parameters::load_from_db(const ns_64_bit region_id, ns_sql & sql){
 	sql << "SELECT time_series_denoising_flag FROM sample_region_image_info WHERE id = " << region_id;
 	ns_sql_result res;
 	sql.get_rows(res);

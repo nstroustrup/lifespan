@@ -50,6 +50,7 @@ image_t & ns_choose_image_source(const ns_image_type & type, image_t & jpeg, ima
 		case ns_tiff:
 		case ns_tiff_lzw:
 		case ns_tiff_zip:
+		case ns_tiff_uncompressed:
 			return tif;
 		case ns_jp2k:
 			return jp2k;

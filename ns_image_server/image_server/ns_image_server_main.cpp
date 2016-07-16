@@ -489,7 +489,7 @@ ns_os_signal_handler_return_type floating_point_error_signal_handler(ns_os_signa
 }
 #endif
 bool ns_multiprocess_control_options::from_parameter(const std::string & param){
-	if (param == "--single_process"){
+	if (param == "single_process"){
 		only_run_single_process = true; 
 		return 1;
 	}
@@ -532,6 +532,10 @@ HWND ns_make_windows_console_window(){
 	*stdout = *stdout_fp;
 	*stdin = *stdin_fp;
 	*stderr = *stderr_fp;
+
+	freopen("CONOUT$", "w", stdout);
+	freopen("CONOUT$", "w", stderr);
+	freopen("CONIN$", "r", stdin);
 	ios::sync_with_stdio();
 
 	HWND console_hwnd = GetConsoleHwnd();
@@ -720,8 +724,7 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLi
 #else
 int main(int argc, char * argv[]){
 #endif
-	ns_optical_flow flow;
-	flow.test();
+
 
 	//Image registration code test
 	/*if(0){
@@ -1080,7 +1083,8 @@ int main(int argc, char * argv[]){
 		
 		image_server.os_signal_handler.set_signal_handler(ns_interrupt,exit_signal_handler);
 		
-		
+		//ns_optical_flow flow;
+		//flow.test();
 		#ifndef _WIN32
 			//start a crash daemon to handle server crashes
 			ns_image_server_crash_daemon crash_daemon;

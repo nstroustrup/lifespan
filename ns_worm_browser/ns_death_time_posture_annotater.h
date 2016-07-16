@@ -773,11 +773,11 @@ public:
 				unsigned long s(timepoints.size());
 				try{
 					timepoints.resize(s+1);
-					timepoints[s].vis_image.id = atol(res[i][0].c_str());
+					timepoints[s].vis_image.id = ns_atoi64(res[i][0].c_str());
 					timepoints[s].vis_image.partition = res[i][1];
 					timepoints[s].vis_image.path = res[i][2];
 					timepoints[s].vis_image.filename = res[i][3];
-					timepoints[s].region_id = atol(res[i][4].c_str());
+					timepoints[s].region_id = ns_atoi64(res[i][4].c_str());
 					timepoints[s].region_info_id = region_info_id;
 				//	timepoints[s].absolute_time = atol(res[i][5].c_str());
 					timepoints[s].frame_id=s;
@@ -802,13 +802,13 @@ public:
 				unsigned long s(timepoints.size());
 				try{
 					timepoints.resize(s+1);
-					timepoints[s].vis_image.id = atol(res[i][0].c_str());
+					timepoints[s].vis_image.id = ns_atoi64(res[i][0].c_str());
 					timepoints[s].vis_image.partition = res[i][1];
 					timepoints[s].vis_image.path = res[i][2];
 					timepoints[s].vis_image.filename = res[i][3];
 					timepoints[s].region_id = 0;
 					timepoints[s].region_info_id = region_info_id;
-				//	timepoints[s].absolute_time = atol(res[i][5].c_str());
+				//	timepoints[s].absolute_time = ns_atoi64(res[i][5].c_str());
 					timepoints[s].frame_id = s;
 					timepoints[s].output_absolute_times =false;
 					timepoints[s].load_metadata(sql());

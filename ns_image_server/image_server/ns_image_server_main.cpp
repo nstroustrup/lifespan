@@ -725,7 +725,14 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLi
 int main(int argc, char * argv[]){
 #endif
 
-
+	/*try {
+		ns_opengl_test("c:\\server\\");
+	}
+	catch (ns_ex & ex) {
+		std::cerr << ex.text() << "\n";
+		char a;
+		std::cin >> a;
+	}*/
 	//Image registration code test
 	/*if(0){
 	try{
@@ -758,6 +765,10 @@ int main(int argc, char * argv[]){
 	return 0;
 	}
 	*/
+
+	
+
+
 	std::map<std::string,ns_cl_command> commands;
 	commands["start"] = ns_start;
 	commands["stop"] = ns_stop;
@@ -831,6 +842,8 @@ int main(int argc, char * argv[]){
 				continue;
 				#endif
 			}
+
+
 
 			std::map<std::string,ns_cl_command>::iterator p = commands.find(command_str);
 			if (p == commands.end() || p->second == ns_help){

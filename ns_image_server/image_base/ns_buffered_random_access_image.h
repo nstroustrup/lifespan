@@ -96,6 +96,14 @@ public:
 	void clear(){
 		resize(ns_image_properties(0,0,1,0));
 	}
+	void reset_max_buffer_height(const unsigned long height) {
+		ns_image_stream_buffer_properties p(image_buffer.properties());
+		p.height = height;
+		image_buffer.resize(p);
+		lines_flushed = 0;
+		lines_recieved = 0;
+		max_buffer_height = height;
+	}
 private:
 	ns_image_stream_sliding_offset_buffer<ns_component> image_buffer;
 	long lines_flushed;

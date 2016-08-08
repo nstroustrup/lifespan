@@ -40,7 +40,7 @@ _terminal_window_scale_factor(1){
 	ns_socket::global_init();
 	ns_worm_detection_constants::init();
 	ns_set_global_debug_output_handler(ns_image_server_global_debug_handler);
-	_software_version_compile = 6;
+	_software_version_compile = 1;
 	image_storage.cache.set_memory_allocation_limit(maximum_image_cache_memory_size());
 
 }

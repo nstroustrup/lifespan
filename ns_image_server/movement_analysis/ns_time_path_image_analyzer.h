@@ -606,8 +606,10 @@ public:
 	}
 	void load_movement_images(const ns_analyzed_time_image_chunk & chunk, ns_image_storage_source_handle<ns_8_bit> & in,ns_image_storage_source_handle<float> & flow_in);
 	void load_movement_images_no_flow(const ns_analyzed_time_image_chunk & chunk, ns_image_storage_source_handle<ns_8_bit> & in);
-	void save_movement_images(const ns_analyzed_time_image_chunk & chunk, ns_image_storage_reciever_handle<ns_8_bit> & out, ns_image_storage_reciever_handle<float> & flow_out);
-	void save_movement_images(const ns_analyzed_time_image_chunk & chunk,ns_sql & sql);
+	void save_movement_image(const ns_analyzed_time_image_chunk & chunk, ns_image_storage_reciever_handle<ns_8_bit> & out);
+	void save_movement_flow_image(const ns_analyzed_time_image_chunk & chunk, ns_image_storage_reciever_handle<float> & flow_out);
+	void save_movement_images(const ns_analyzed_time_image_chunk & chunk,ns_sql & sql, const bool save_image, const bool save_flow_image);
+	void calc_flow_images_from_registered_images(const ns_analyzed_time_image_chunk & chunk);
 
 	static ns_vector_2d maximum_alignment_offset(){return ns_vector_2d(60,20);}
 	static ns_vector_2d maximum_local_alignment_offset(){return ns_vector_2d(4,4);}
@@ -648,6 +650,8 @@ public:
 			return time_path_limits.interval_before_first_observation;
 		return ns_death_time_annotation_time_interval(elements[first_stationary_timepoint_-1].absolute_time,elements[first_stationary_timepoint_].absolute_time);
 	}
+
+
 private:
 		
 	ns_time_path_limits time_path_limits;
@@ -736,7 +740,9 @@ private:
 	ns_image_stream_static_buffer<ns_8_bit> save_image_buffer;
 	ns_image_stream_static_buffer<float> save_flow_image_buffer;
 
-	
+	//after the flow object has been set up, this function is called to calculate
+	//the flow and save it to the data specified by element_index
+	void calculate_flow(const unsigned long element_index);
 	ns_optical_flow_processor * flow;
 };
 
@@ -766,7 +772,7 @@ public:
 
 	//three ways to populate the movement quantification data
 	void process_raw_images(const ns_64_bit region_id,const ns_time_path_solution & solution_,const ns_time_series_denoising_parameters &,const ns_analyzed_image_time_path_death_time_estimator * e,ns_sql & sql, const long group_number=-1,const bool write_status_to_db=false);
-	void reanalyze_stored_aligned_images(const ns_64_bit region_id,const ns_time_path_solution & solution_,const ns_time_series_denoising_parameters &,const ns_analyzed_image_time_path_death_time_estimator * e,ns_sql & sql,const bool load_images_after_last_valid_sample);
+	void reanalyze_stored_aligned_images(const ns_64_bit region_id,const ns_time_path_solution & solution_,const ns_time_series_denoising_parameters &,const ns_analyzed_image_time_path_death_time_estimator * e,ns_sql & sql,const bool load_images_after_last_valid_sample, const bool recalculate_flow_images);
 	bool load_completed_analysis(const ns_64_bit region_id,const ns_time_path_solution & solution_, const ns_time_series_denoising_parameters &,const ns_analyzed_image_time_path_death_time_estimator * e,ns_sql & sql, bool exclude_movement_quantification=false);
 	
 	void reanalyze_with_different_movement_estimator(const ns_time_series_denoising_parameters &,const ns_analyzed_image_time_path_death_time_estimator * e);

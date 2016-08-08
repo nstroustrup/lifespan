@@ -98,7 +98,7 @@ public:
 	unsigned int software_version_major(){return 1;}
 	///image server nodes check the cluster to see if they are running the latest version of the software,
 	///which is specified by (major).(minor).(software_version_compile).
-	unsigned int software_version_minor(){return 8;}
+	unsigned int software_version_minor(){return 9;}
 	///image server nodes check the cluster to see if they are running the latest version of the software,
 	///which is specified by (major).(minor).(software_version_compile).
 	unsigned int software_version_compile(){return _software_version_compile;}
@@ -206,9 +206,8 @@ public:
 
 	///Image caches can quickly exceed Windows default virtual memory limits, so we
 	///specify the maximum amount of memory to be allocated before swapping out to disk
-	static unsigned long maximum_image_cache_memory_size() {return 1024*32; }//32 megabytes
-	//static unsigned long maximum_image_cache_disk_usage() {return 1024*800; }//8000 megabytes uncompressed ~= 400 megabytes compressed 
-
+	static unsigned long maximum_image_cache_memory_size() {return 1024*128; }//128 megabytes
+	
 	///Returns the ini-specified name of the subdirectory in which SVM model files are stored
 	static inline std::string position_analysis_model_directory() { return "models" DIR_CHAR_STR "position_analysis_models";}
 	static inline std::string worm_detection_model_directory() { return "models" DIR_CHAR_STR "worm_detection_models";}

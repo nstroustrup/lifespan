@@ -6,7 +6,7 @@
 #include <fstream>
 
 
-void ns_ojp2k_setup_output(const ns_image_properties & properties,const std::string & filename, const unsigned long rows_per_strip , ns_jp2k_output_data * data) {
+void ns_ojp2k_setup_output(const ns_image_properties & properties,const std::string & filename, const unsigned long rows_per_strip , ns_jp2k_output_data * data,const char bit_depth) {
 
 	if (properties.height == 0)
 		throw (ns_ex("Cannot create an image with 0 height!"));
@@ -14,37 +14,77 @@ void ns_ojp2k_setup_output(const ns_image_properties & properties,const std::str
 		throw (ns_ex("Cannot create an image with 0 width!"));
 	if (properties.components == 0)
 		throw (ns_ex("Cannot create an image with 0 pixel components!"));
-
+	opj_set_default_encoder_parameters(&data->parameters);
 	
-
 	if (properties.compression == 1)
 		data->parameters.irreversible = 0;
 	else data->parameters.irreversible = 1;
 	data->parameters.cblockw_init = 64;
 	data->parameters.cblockh_init = 64;
-
+	
 	data->parameters.cp_tx0 = 0;
 	data->parameters.cp_ty0 = 0;
+	unsigned long tile_height;
+	if (properties.height < rows_per_strip)
+		throw ns_ex("Too many rows per strip!");
 	data->parameters.tile_size_on = OPJ_TRUE;
+	data->using_tiles = true;
 	data->parameters.cp_tdx = properties.width;
 	data->parameters.cp_tdy = rows_per_strip;
-
+	tile_height = rows_per_strip;
+	
+	/*
+	if (properties.width >= 2048)	data->parameters.cp_tdx = 2048;
+	else	data->parameters.cp_tdx = pow(2, floor(log2(properties.width)));
+	if (properties.height >= 2048)	data->parameters.cp_tdy = 2048;
+	else	data->parameters.cp_tdy = pow(2, floor(log2(properties.height)));
+	*/
+	
+	
 	data->parameters.tcp_numlayers = 1;
+	if (properties.compression == 0)
+		data->parameters.tcp_rates[0] = 0;
+	else
 	data->parameters.tcp_rates[0] = 1.0 / properties.compression;
-
+	data->parameters.tcp_rates[1] = 0;
+	
+	data->parameters.roi_compno = -1;
+	data->parameters.roi_shift = 0;
+	data->parameters.res_spec = 0;
+	data->parameters.index_on = NULL;
+	data->parameters.image_offset_x0 = 0;
+	data->parameters.image_offset_y0 = 0;
+	data->parameters.subsampling_dx = 0;
+	data->parameters.subsampling_dy = 0;
+	
 	data->parameters.cp_disto_alloc = 1;
-
-	opj_image_comptparm prm;
-	prm.dx = prm.dy = 1;
-	prm.w = properties.width;
-	prm.h = properties.height;
-	prm.x0 = prm.y0 = 0;
-	prm.prec = 8;
-	prm.bpp = 8;
-	prm.sgnd = 0;
-
+	data->parameters.cp_fixed_alloc = 0;
+	data->parameters.cp_fixed_quality = 0;
+	data->parameters.cp_matrice = 0;
+	data->parameters.prog_order = OPJ_LRCP;
+	data->parameters.numpocs = 0;
+	data->parameters.numresolution = 1;
+	data->parameters.cod_format = 1;//jp2
+	data->parameters.cp_comment = 0;
+	data->parameters.csty = 0;
+	data->parameters.mode = 0;
+	data->parameters.max_comp_size = 0;
+	
+	opj_image_comptparm prm[3];
+	for (unsigned int i = 0; i < properties.components; i++) {
+		prm[i].dx = prm[i].dy = 1;
+		prm[i].w = properties.width;
+		prm[i].h = properties.height;
+		prm[i].x0 = prm[i].y0 = 0;
+		prm[i].prec = 8 * bit_depth;
+		prm[i].bpp = 8 * bit_depth;
+		prm[i].sgnd = 0;
+	}
+	
 	OPJ_COLOR_SPACE color_space((properties.components == 3) ? OPJ_CLRSPC_SRGB : OPJ_CLRSPC_GRAY);
-	data->image = opj_image_create(properties.components, &prm, color_space);
+	data->image = opj_image_tile_create(properties.components, prm, color_space);
+	data->image->x1 = properties.width;
+	data->image->y1 = properties.height;
 	if (data->image == 0)
 		throw ns_ex("openjpeg::Could not create image!");
 
@@ -60,7 +100,7 @@ void ns_ojp2k_setup_output(const ns_image_properties & properties,const std::str
 
 
 	/* setup the encoder parameters using the current image and using user parameters */
-	if (!opj_setup_encoder(data->codec, &data->parameters, data->image))
+	if (!opj_setup_encoder(data->codec, &(data->parameters), data->image))
 		throw ns_ex("openjpeg::Could not set up encoder.");
 
 	/* open a byte stream for writing */
@@ -72,8 +112,6 @@ void ns_ojp2k_setup_output(const ns_image_properties & properties,const std::str
 
 	if (!opj_start_compress(data->codec, data->image, data->stream))
 		throw ns_ex("openjpeg: could not start compression");
-
-
 
 	ns_xmp_tiff_data xmp_tiff_data;
 	xmp_tiff_data.orientation = 1;
@@ -129,4 +167,46 @@ void ns_jp2k_out_error_callback(const char *msg, void *client_data){
 	ns_jp2k_output_data * c = (ns_jp2k_output_data *)client_data;
 	c->ex = new ns_ex("ns_jp2k::Error: ");
 	*c->ex << msg;
+}
+
+
+
+void ns_opengl_test(const std::string & pathname) {
+	try {
+		ns_image_whole<ns_16_bit> im;
+		ns_image_properties prop;
+		prop.width = 2000;
+		prop.height = 2000;
+		prop.components = 1;
+		prop.compression = .25;
+		im.init(prop);
+		for (unsigned int y = 0; y < prop.height; y++)
+			for (unsigned int x = 0; x < prop.width; x++) {
+				im[y][x] = ((x*y) / (double)(prop.height*prop.width))*USHRT_MAX;
+				if (x*y % 500 > 450)
+					im[y][x] = 0;
+			}
+
+		ns_ojp2k_image_output_file<ns_16_bit> file_out;
+		ns_image_stream_file_sink<ns_16_bit> file_sink(pathname + "test.jp2", file_out, 1024);
+		im.pump(file_sink, 1024);
+
+		ns_image_whole<ns_16_bit> in2;
+		ns_ojp2k_image_input_file<ns_16_bit> file_in;
+		file_in.open_file(pathname + "test.jp2");
+		ns_image_stream_file_source<ns_16_bit> file_source(file_in);
+		file_source.pump(in2, 1024);		
+
+		ns_ojp2k_image_output_file<ns_16_bit> file_out2;
+		ns_image_stream_file_sink<ns_16_bit> file_sink2(pathname + "test_2.jp2", file_out2, 1024);
+		in2.pump(file_sink2, 1024);
+		
+
+		exit(1);
+	}
+	catch (ns_ex & ex) {
+		std::cerr << ex.text();
+		char a;
+		std::cin >> a;
+	}
 }

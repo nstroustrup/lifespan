@@ -872,7 +872,7 @@ bool ns_processing_job_maintenance_processor:: run_job(ns_sql & sql){
 				//This is good, for example, if changes have been made to the movement quantification analyzer
 				//and it needs to be rerun though the actual images don't need to be requantified.
 				image_server->register_server_event(ns_image_server_event("Quantifying stored animal posture images"),&sql);
-				time_path_image_analyzer.reanalyze_stored_aligned_images(job.region_id,time_path_solution,time_series_denoising_parameters,&death_time_estimator(),sql,true);
+				time_path_image_analyzer.reanalyze_stored_aligned_images(job.region_id,time_path_solution,time_series_denoising_parameters,&death_time_estimator(),sql,true,true);
 				time_path_image_analyzer.save_movement_data_to_db(job.region_id,sql);
 			}
 			else{

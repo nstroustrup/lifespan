@@ -71,6 +71,8 @@ ns_external_image::~ns_external_image() { delete image;}
 
 
 void ns_external_image::init(const ns_image_properties & p) {
+	if (image->properties == p)
+		return;
 	ns_external_image_t::ns_itk_image::RegionType region;
 	ns_external_image_t::ns_itk_image::IndexType start;
 	start[0] = 0;

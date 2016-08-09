@@ -95,7 +95,7 @@ void ns_external_image::from(const ns_image_standard & i) {
 			ns_external_image_t::ns_itk_image::IndexType pixelIndex;
 			pixelIndex[0] = x;
 			pixelIndex[1] = y;
-			image->image->SetPixel(pixelIndex, i[y][x]);
+			image->image->SetPixel(pixelIndex, i[y][x]/255.0f);
 		}
 	}
 }
@@ -164,25 +164,42 @@ void ns_optical_flow::test(){
 		std::string dir("C:\\server\\debug\\");
 		ns_dir dir_list;
 		dir_list.load(dir);
+		int specific_worm = 13;
+
 		std::vector<int> number_of_images(n, 0);
-		for (unsigned int i = 0; i < n; i++) {
+		if (specific_worm != -1) {
+			number_of_images.resize(1);
 			std::string val("im_");
-			val += ns_to_string(i + 1);
+			val += ns_to_string(specific_worm + 1);
 			val += "_";
 			for (unsigned int j = 0; j < dir_list.files.size(); j++) {
-				if (dir_list.files[j].substr(0, val.size()) == val) 
-			//		std::cerr << dir_list.files[j] << " contains " << dir_list.files[j].substr(0, val.size()) << "\n";
-					number_of_images[i]++;
+				if (dir_list.files[j].substr(0, val.size()) == val)
+					//		std::cerr << dir_list.files[j] << " contains " << dir_list.files[j].substr(0, val.size()) << "\n";
+					number_of_images[0]++;
+			}
+		}
+		else {
+			for (unsigned int i = 0; i < n; i++) {
+				std::string val("im_");
+				val += ns_to_string(i + 1);
+				val += "_";
+				for (unsigned int j = 0; j < dir_list.files.size(); j++) {
+					if (dir_list.files[j].substr(0, val.size()) == val)
+						//		std::cerr << dir_list.files[j] << " contains " << dir_list.files[j].substr(0, val.size()) << "\n";
+						number_of_images[i]++;
+				}
 			}
 		}
 		ns_image_standard tmp;
-		std::vector<std::vector<ns_image_standard> > images(n);
-		for (unsigned int i = 0; i < n; i++) {
+		std::vector<std::vector<ns_image_standard> > images(number_of_images.size());
+		for (unsigned int i = 0; i < images.size(); i++) {
 			images[i].resize(number_of_images[i]);
 			std::cout << "Image " << i << " has " << number_of_images[i] << " images\n";
 			std::cout.flush();
 			for (unsigned int j = 0; j < number_of_images[i]; j++) {
-				ns_load_image(dir + "im_" + ns_to_string(i + 1) + "_" + ns_to_string(j) + "df.tif", tmp);
+				if (specific_worm != -1)
+					ns_load_image(dir + "im_" + ns_to_string(specific_worm + 1) + "_" + ns_to_string(j) + "df.tif", tmp);
+				else ns_load_image(dir + "im_" + ns_to_string(i + 1) + "_" + ns_to_string(j) + "df.tif", tmp);
 				ns_image_properties p(tmp.properties());
 				p.components = 1;
 				images[i][j].init(p);
@@ -197,7 +214,8 @@ void ns_optical_flow::test(){
 		out_quant << "worm_id,timepoint,";
 		ns_optical_flow_quantifications::write_header(out_quant);
 		out_quant << "\n";
-		for (unsigned int k = 0; k < n; k++) {
+		ns_image_standard im;
+		for (unsigned int k = 0; k < images.size(); k++) {
 			std::cerr << "processing " << k << " of " << n << "\n";
 			if (number_of_images[k] <2)
 				continue;
@@ -208,7 +226,7 @@ void ns_optical_flow::test(){
 			p2.width = (p.width - 2 * border) * 3;
 			p2.components = 3;
 			ns_optical_flow flow;
-			ns_image_whole<ns_16_bit> out;
+			ns_image_whole<float> out;
 		
 			std::vector<ns_image_whole<float> >  vx(number_of_images[k] - 1), vy(number_of_images[k] - 1);
 			out.prepare_to_recieve_image(p2);
@@ -220,43 +238,9 @@ void ns_optical_flow::test(){
 				std::cerr << (i - 2) << "...";
 				flow.Dim1.from(images[k][i - 1]);
 				flow.Dim2.from(images[k][i]);
-				flow.calculate(15, .001);
+				flow.calculate(15, .1);
 
 				flow.get_movement(vx[i - 1], vy[i - 1]);
-
-
-				if (i == 3) {
-					ns_image_whole<float> im;
-					ns_image_properties p3(p);
-					p3.components = 3;
-					im.init(p3);
-					for (unsigned long y = 0; y < p3.height; y++) {
-						for (unsigned long x = 0; x < p3.width; x++) {
-							im[y][3 * x] = vx[i - 1][y][x];
-							im[y][3 * x+1] = vy[i - 1][y][x];
-							im[y][3 * x + 2] = 0;
-						}
-					}
-					ns_tiff_image_output_file<float> tiff_out(ns_tiff_compression_none);
-					ns_image_stream_file_sink<float> file_sink(dir + "out\\fworm_" + ns_to_string(k) + ".tif", tiff_out, 1024);
-					im.pump(file_sink, 1024);
-					file_sink.finish_recieving_image();
-					tiff_out.close();
-					ns_tiff_image_input_file<float> tiff_in;
-					tiff_in.open_file(dir + "out\\fworm_" + ns_to_string(k) + ".tif");
-					ns_image_stream_file_source<float> file_source(tiff_in);
-					ns_image_whole<float> im2;
-					file_source.pump(im2, 1024);
-					for (unsigned long y = 0; y < p3.height; y++) {
-						for (unsigned long x = 0; x < p3.width; x++) {
-							if (im[y][x] != im2[y][x])
-								std::cerr << "Yikes!";
-						}
-					}
-
-				}
-
-
 
 				quantifications[i - 1].calculate(images[k][i - 1], images[k][i], vx[i - 1], vy[i - 1]);
 				out_quant << k << "," << i - 1 << ",";
@@ -335,7 +319,9 @@ void ns_optical_flow::test(){
 	exit(0);
 }
 
-void ns_optical_flow::calculate(const int num_it, float gaussian_stdev) {
+
+
+void ns_optical_flow::calculate(const int num_it, const float gaussian_stdev, const float min_intensity_difference ) {
 
 
 	//flow_processor->curvature_registrator = ns_flow_processor_storage_t::RegistrationType::New();
@@ -358,12 +344,35 @@ void ns_optical_flow::calculate(const int num_it, float gaussian_stdev) {
 	flow_processor->curvature_registrator->SetTimeStep(1);
 	flow_processor->curvature_registrator->SetConstraintWeight(.001);
 	flow_processor->curvature_registrator->Update();
-	*/
-	
+	*//*
+	float diff(0),mmin(100), mmax(-100);
+	unsigned long w(Dim1.image->image.GetPointer()->GetLargestPossibleRegion().GetSize()[0]),
+		h(Dim1.image->image.GetPointer()->GetLargestPossibleRegion().GetSize()[1]);
+	float * buf1(Dim1.image->image.GetPointer()->GetBufferPointer());
+	float * buf2(Dim2.image->image.GetPointer()->GetBufferPointer());
+
+	for (unsigned int y = 0; y < h; y++) {
+		for (unsigned int x = 0; x < w; x++) {
+			diff += abs(buf1[y*w + x] - buf2[y*w + x]);
+			if (buf1[y*w+x] < mmin)
+				mmin = buf1[y*w + x];
+			if (buf1[y*w + x] > mmax)
+				mmax = buf1[y*w + x];
+			if (buf2[y*w + x] < mmin)
+				mmin = buf2[y*w + x];
+			if (buf2[y*w + x] > mmax)
+				mmax = buf2[y*w + x];
+		}
+	}
+	std::cerr << "m(" << diff << "," << mmax << "," << mmin << ")";*/
+
+
+
+	flow_processor->matcher->Modified();
 	flow_processor->matcher->SetInput(Dim2.image->image.GetPointer());
 	flow_processor->matcher->SetReferenceImage(Dim1.image->image.GetPointer());
-	flow_processor->matcher->SetNumberOfHistogramLevels(1024);
-	flow_processor->matcher->SetNumberOfMatchPoints(14);
+	flow_processor->matcher->SetNumberOfHistogramLevels(256);
+	flow_processor->matcher->SetNumberOfMatchPoints(64);
 	flow_processor->matcher->ThresholdAtMeanIntensityOn();
 
 
@@ -373,8 +382,14 @@ void ns_optical_flow::calculate(const int num_it, float gaussian_stdev) {
 
 	flow_processor->filter->SetNumberOfIterations(num_it);
 	flow_processor->filter->SetGradientSmoothingStandardDeviations(gaussian_stdev);
+	flow_processor->filter->SetIntensityDifferenceThreshold(min_intensity_difference);
+	flow_processor->filter->SetAlpha(1 / 255.0f / 20.0f);
+
+	//CommandIterationUpdate::Pointer observer = CommandIterationUpdate::New();
+	//flow_processor->filter->AddObserver(itk::IterationEvent(), observer);
+
+
 	flow_processor->filter->Update();
-	
 }
 
 void median_fill(const ns_image_properties & p,const const ns_flow_processor_storage_t::VectorPixelType * fbuf, const int channel,ns_image_whole<float> & v) {
@@ -425,7 +440,13 @@ void ns_optical_flow::get_movement(ns_image_whole<float> & vx, ns_image_whole<fl
 	const ns_flow_processor_storage_t::VectorPixelType * fbuf(flow_processor->filter->GetOutput()->GetBufferPointer());
 	//const ns_flow_processor_storage_t::VectorPixelType * fbuf(this->flow_processor->curvature_registrator->GetOutput()->GetBufferPointer());
 
-
+	/*for (unsigned int y = 0; y < Dim1.image->properties.height; y++)
+		for (unsigned int x = 0; x < Dim1.image->properties.width; x++) {
+			if (fbuf[Dim1.image->properties.width*(y)+x][0] != 0)
+				std::cerr << ".";
+			if (fbuf[Dim1.image->properties.width*(y)+x][1] != 0)
+				std::cerr << ".";
+		}*/
 	median_fill(Dim1.image->properties, fbuf, 0, vx);
 	median_fill(Dim1.image->properties, fbuf, 1, vy);
 	

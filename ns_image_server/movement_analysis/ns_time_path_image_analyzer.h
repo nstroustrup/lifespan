@@ -778,7 +778,7 @@ public:
 	void reanalyze_with_different_movement_estimator(const ns_time_series_denoising_parameters &,const ns_analyzed_image_time_path_death_time_estimator * e);
 
 	//provide access to group images
-	void load_images_for_group(const unsigned long group_id, const unsigned long number_of_images_to_load,ns_sql & sql,const bool load_images_after_last_valid_sample);
+	void load_images_for_group(const unsigned long group_id, const unsigned long number_of_images_to_load,ns_sql & sql,const bool load_images_after_last_valid_sample,const bool load_flow_images);
 	void clear_images_for_group(const unsigned long group_id);
 
 	void clear(){
@@ -832,7 +832,7 @@ private:
 	ns_stationary_path_id generate_stationary_path_id(const unsigned long group_id, const unsigned long path_id) const{
 		return ns_stationary_path_id(group_id,path_id,analysis_id);
 	}
-	void populate_movement_quantification_from_file(ns_sql & sql);
+	void populate_movement_quantification_from_file(ns_sql & sql, const bool skip_movement_data);
 	
 	static ns_death_time_annotation_time_interval get_externally_specified_last_measurement(const ns_64_bit region_id, ns_sql & sql);
 	void crop_path_observation_times(const ns_death_time_annotation_time_interval & observation_interval);

@@ -2521,18 +2521,23 @@ void ns_update_sample_info(ns_sql & sql){
 	}
 
 };
-
+#include "ns_optical_flow.h"
 void refresh_main_window(){
 	current_window->redraw();
 }
 #include <FL/Fl_File_Icon.H>
 // MAIN
 int main() {
+
+	//ns_optical_flow::test();
+
+
 	ns_worm_browser_output_debug(__LINE__,__FILE__,"Launching worm browser");
 	init_time = GetTime();
 	Fl::lock();
 	Fl_File_Icon::load_system_icons();
 	Fl::scheme("none");
+
 	
 	//never used?
 	//ns_main_thread_id = GetCurrentThread();

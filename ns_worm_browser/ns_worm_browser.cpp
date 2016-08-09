@@ -2976,7 +2976,7 @@ void ns_worm_learner::generate_single_frame_posture_image_pixel_data(const bool 
 						number_of_images--;
 					}
 
-					movement_results.samples[i].regions[j].time_path_image_analyzer.load_images_for_group(w,start_i+number_of_images,sql(),true);
+					movement_results.samples[i].regions[j].time_path_image_analyzer.load_images_for_group(w,start_i+number_of_images,sql(),true,false);
 					double avg_prev(0), stdev_prev(0);
 					ns_image_standard equalized,equalized_prev;
 					for (unsigned int k = start_i; k < start_i + number_of_images; k++){

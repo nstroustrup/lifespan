@@ -287,7 +287,7 @@ public:
 				ns_throw_tiff_exception(ns_ex("Cannot create an image with 0 width!"));
 			if (properties.components == 0)
 				ns_throw_tiff_exception(ns_ex("Cannot create an image with 0 pixel components!"));
-			rows_per_strip = 512*1024/(sizeof(ns_component)*NS_TIFF_WIDTH);
+			rows_per_strip = 2*1024*1024/(sizeof(ns_component)*NS_TIFF_WIDTH);
 			if (rows_per_strip == 0)
 				rows_per_strip = 1;
 			if (rows_per_strip > properties.height)

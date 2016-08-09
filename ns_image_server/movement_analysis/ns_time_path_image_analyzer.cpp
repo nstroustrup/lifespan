@@ -971,6 +971,7 @@ void ns_time_path_image_movement_analyzer::get_output_image_storage_locations(co
 		}
 		if (res.size() > 0) {
 			sql << "DELETE FROM path_data WHERE region_id = " << region_id << " AND group_id >= " << groups.size();
+			cout << "Deleting extra paths...\n";
 			sql.send_query();
 		}
 	}
@@ -1059,7 +1060,7 @@ void ns_time_path_image_movement_analyzer::crop_path_observation_times(const ns_
 	}
 }
 
-void ns_time_path_image_movement_analyzer::populate_movement_quantification_from_file(ns_sql & sql){
+void ns_time_path_image_movement_analyzer::populate_movement_quantification_from_file(ns_sql & sql,const bool skip_movement_data){
 	
 	sql << "SELECT movement_image_analysis_quantification_id FROM sample_region_image_info WHERE id = " << this->region_info_id;
 	ns_sql_result res;
@@ -1073,7 +1074,7 @@ void ns_time_path_image_movement_analyzer::populate_movement_quantification_from
 	ifstream * i(image_server.image_storage.request_metadata_from_disk(im,false,&sql));
 
 	try{
-		load_movement_data_from_disk(*i,false);
+		load_movement_data_from_disk(*i, skip_movement_data);
 		delete i;
 	}
 	catch(...){
@@ -1110,8 +1111,8 @@ bool ns_time_path_image_movement_analyzer::load_completed_analysis(const ns_64_b
 				groups[g].paths[p].death_time_annotation_set.events[i].region_info_id = region_info_id;
 			}
 	}
-
-	populate_movement_quantification_from_file(sql);
+	//XXX
+	populate_movement_quantification_from_file(sql, exclude_movement_quantification);
 	if (exclude_movement_quantification)
 		return found_path_info_in_db;
 	
@@ -1322,7 +1323,7 @@ void ns_time_path_image_movement_analyzer::load_movement_data_from_disk(istream 
 	//		std::cerr << "E" << i << "'" << tmp << "' ";
 				if(in.fail()) throw ns_ex("Invalid Specification");
 		}
-		std::cerr << "\n";
+	//	std::cerr << "\n";
 
 	}
 	//check all data is loaded
@@ -2027,7 +2028,7 @@ ns_death_time_annotation_time_interval ns_analyzed_image_time_path::state_entran
 
 	if (e.entrance_interval.period_start_index < 0 || e.entrance_interval.period_start_index >= elements.size() ||
 		e.entrance_interval.period_end_index < 0 || e.entrance_interval.period_end_index >= elements.size())
-		throw ns_ex("ns_analyzed_image_time_path::state_entrance_interval_time()::Invalid time: ") << e.entrance_interval.period_start_index << " out of a path with " << elements.size() << " elements";
+		throw ns_ex("ns_analyzed_image_time_path::state_entrance_interval_time()::Invalid time: ") << e.entrance_interval.period_start_index << " a path with " << elements.size() << " elements";
 		
 	return ns_death_time_annotation_time_interval(elements[e.entrance_interval.period_start_index].absolute_time,
 		elements[e.entrance_interval.period_end_index].absolute_time);
@@ -3704,10 +3705,6 @@ void ns_analyzed_image_time_path::generate_movement_images(const ns_analyzed_tim
 				region_threshold[y][x] = NS_MARGIN_BACKGROUND;
 			}
 		}
-		flow->Dim1.init(elements[i].registered_images->movement_image_.properties());
-		flow->Dim2.init(elements[i].registered_images->movement_image_.properties());
-		float * dd1(flow->Dim1.buffer());
-		float * dd2(flow->Dim2.buffer());
 
 
 		bool first_frames(chunk.forward() ? (i < movement_start_i) : (i > movement_start_i));
@@ -3834,8 +3831,24 @@ void ns_analyzed_image_time_path::calculate_flow(const unsigned long element_ind
 	p.start();
 	flow->calculate();
 	total_flow_time += p.stop();
-	//cerr << "}";
 	flow->get_movement(elements[element_index].registered_images->flow_image_dx, elements[element_index].registered_images->flow_image_dy);
+
+	//cerr << "}";
+	/*
+	float mmin(100), mmax(-100);
+	for (unsigned int y = 0; y < elements[element_index].registered_images->flow_image_dx.properties().height; y++)
+		for (unsigned int x = 0; x < elements[element_index].registered_images->flow_image_dx.properties().width; x++) {
+			if (elements[element_index].registered_images->flow_image_dx[y][x] < mmin)
+				mmin = elements[element_index].registered_images->flow_image_dx[y][x];
+			if (elements[element_index].registered_images->flow_image_dx[y][x] > mmax)
+				mmax = elements[element_index].registered_images->flow_image_dx[y][x];	
+			if (elements[element_index].registered_images->flow_image_dy[y][x] < mmin)
+				mmin = elements[element_index].registered_images->flow_image_dy[y][x];
+			if (elements[element_index].registered_images->flow_image_dy[y][x] > mmax)
+				mmax = elements[element_index].registered_images->flow_image_dy[y][x];
+		}
+	
+	cout << "f(" << mmin << "," << mmax << ") ";*/
 }
 ns_analyzed_time_image_chunk ns_analyzed_image_time_path::initiate_image_registration(const ns_analyzed_time_image_chunk & chunk,ns_alignment_state & state){
 	const unsigned long time_kernel(alignment_time_kernel_width);
@@ -4276,7 +4289,7 @@ void ns_analyzed_image_time_path::save_movement_images(const ns_analyzed_time_im
 			im.pump(output_reciever->output_stream(), 1024);
 		}
 		if (save_flow_image) {
-			flow_output_reciever = new ns_image_storage_reciever_handle<float>(image_server.image_storage.request_storage_float(flow_output_image, ns_tiff_uncompressed, 1024, &sql, had_to_use_volatile_storage, false, false));
+			flow_output_reciever = new ns_image_storage_reciever_handle<float>(image_server.image_storage.request_storage_float(flow_output_image, ns_tiff_zip, 1024, &sql, had_to_use_volatile_storage, false, false));
 			im.pump(flow_output_reciever->output_stream(), 1024);
 		}
 		return;
@@ -4289,7 +4302,7 @@ void ns_analyzed_image_time_path::save_movement_images(const ns_analyzed_time_im
 			output_reciever->output_stream().init(d.prop);
 		}
 		if (save_flow_image) {
-			flow_output_reciever = new ns_image_storage_reciever_handle<float>(image_server.image_storage.request_storage_float(flow_output_image, ns_tiff_uncompressed, 1024, &sql, had_to_use_volatile_storage, false, false));
+			flow_output_reciever = new ns_image_storage_reciever_handle<float>(image_server.image_storage.request_storage_float(flow_output_image, ns_tiff_zip, 1024, &sql, had_to_use_volatile_storage, false, false));
 			flow_output_reciever->output_stream().init(d.prop);
 		}
 	}
@@ -4298,16 +4311,16 @@ void ns_analyzed_image_time_path::save_movement_images(const ns_analyzed_time_im
 	if (save_flow_image)
 		save_movement_flow_image(chunk, *flow_output_reciever);
 
-	if (
-		///**/	true || 
-		chunk.stop_i == elements.size()) {
-		output_reciever->output_stream().finish_recieving_image();
-		flow_output_reciever->output_stream().finish_recieving_image();
-		delete output_reciever;
-		output_reciever = 0;
-		delete flow_output_reciever;
-		flow_output_reciever = 0;
-		//**/	exit(0);
+	if (chunk.stop_i == elements.size()) {
+		if (save_image) {
+			output_reciever->output_stream().finish_recieving_image();
+			ns_safe_delete(output_reciever);
+		}
+
+		if (save_flow_image) {
+			flow_output_reciever->output_stream().finish_recieving_image();
+			ns_safe_delete(flow_output_reciever);
+		}
 	}
 }
 void ns_analyzed_image_time_path::save_movement_image(const ns_analyzed_time_image_chunk & chunk, ns_image_storage_reciever_handle<ns_8_bit> & out) {
@@ -4585,7 +4598,9 @@ void ns_analyzed_image_time_path::calc_flow_images_from_registered_images(const 
 	const long dt(movement_time_kernel_width);
 	const unsigned long movement_start_i(chunk.forward() ? ((chunk.start_i>dt) ? chunk.start_i : dt)
 		: ((chunk.start_i - dt)));
-
+	//ns_safe_delete(flow);
+	if (flow == 0)
+		flow = new ns_optical_flow_processor();
 	for (unsigned int i = chunk.start_i; i < chunk.stop_i; i++) {
 		bool first_frames(chunk.forward() ? (i < movement_start_i) : (i > movement_start_i));
 		if (first_frames) {
@@ -4593,8 +4608,37 @@ void ns_analyzed_image_time_path::calc_flow_images_from_registered_images(const 
 			flow->Dim2.from(elements[i].registered_images->image);
 		}
 		else {
+		//	cerr << i - step*dt << "vs" << i << ":";
 			flow->Dim1.from(elements[i - step*dt].registered_images->image);
 			flow->Dim2.from(elements[i].registered_images->image);
+			/*ns_image_standard im;
+			ns_image_properties p(elements[i - step*dt].registered_images->image.properties());
+			p.components = 3;
+			im.init(p);
+			for (unsigned int y = 0; y < p.height; y++)
+				for (unsigned int x = 0; x < p.width; x++) {
+					im[y][3 * x + 0] = elements[i - step*dt].registered_images->image[y][x];
+					im[y][3 * x + 1] = elements[i].registered_images->image[y][x];
+					im[y][3 * x + 2] = abs(elements[i - step*dt].registered_images->image[y][x] - elements[i].registered_images->image[y][x]);
+				}
+			ns_save_image("c:\\server\\debug2\\path" + ns_to_string(this->group_id) + "_" + ns_to_string(i) + ".tif",im);
+			*/
+			/*long diff(0), mmax(0), mmin(255);
+			for (unsigned int y = 0; y < elements[i - step*dt].registered_images->image.properties().height; y++) {
+				for (unsigned int x = 0; x < elements[i - step*dt].registered_images->image.properties().width; x++) {
+					diff += abs(elements[i].registered_images->image[y][x] - elements[i - step*dt].registered_images->image[y][x]);
+					if (elements[i].registered_images->image[y][x] < mmin)
+						mmin = elements[i].registered_images->image[y][x];
+					if (elements[i].registered_images->image[y][x] > mmax)
+						mmax = elements[i].registered_images->image[y][x];
+					if (elements[i - step*dt].registered_images->image[y][x] < mmin)
+						mmin = elements[i - step*dt].registered_images->image[y][x];
+					if (elements[i - step*dt].registered_images->image[y][x] > mmax)
+						mmax = elements[i - step*dt].registered_images->image[y][x];
+				}
+			}
+			cout << "d(" << diff << "," << mmin << "," << mmax << ")";*/
+
 		}
 		this->calculate_flow(i);
 	}
@@ -4687,7 +4731,7 @@ bool ns_time_path_image_movement_analyzer::load_movement_image_db_info(const ns_
 	return true;
 }
 
-void ns_time_path_image_movement_analyzer::load_images_for_group(const unsigned long group_id, unsigned long number_of_images_to_load,ns_sql & sql, const bool load_images_after_last_valid_sample){
+void ns_time_path_image_movement_analyzer::load_images_for_group(const unsigned long group_id, unsigned long number_of_images_to_load,ns_sql & sql, const bool load_images_after_last_valid_sample, const bool load_flow_images){
 	if (groups[group_id].paths.size() == 0)
 		return;
 	const unsigned long number_of_images_loaded(groups[group_id].paths[0].number_of_images_loaded);
@@ -4719,9 +4763,14 @@ void ns_time_path_image_movement_analyzer::load_images_for_group(const unsigned 
 			}
 			groups[group_id].paths[j].output_image.load_from_db(groups[group_id].paths[j].output_image.id,&sql);
 			groups[group_id].paths[j].movement_image_storage = image_server.image_storage.request_from_storage(groups[group_id].paths[j].output_image,&sql);
-			///XXX NES put check here.
-			groups[group_id].paths[j].flow_movement_image_storage = image_server.image_storage.request_from_storage_n_bits<float>(groups[group_id].paths[j].flow_output_image,&sql,ns_image_storage_handler::ns_long_term_storage);
-			groups[group_id].paths[j].initialize_movement_image_loading(groups[group_id].paths[j].movement_image_storage,groups[group_id].paths[j].flow_movement_image_storage);
+			if (load_flow_images) {
+				groups[group_id].paths[j].flow_movement_image_storage = image_server.image_storage.request_from_storage_n_bits<float>(groups[group_id].paths[j].flow_output_image, &sql, ns_image_storage_handler::ns_long_term_storage);
+				groups[group_id].paths[j].initialize_movement_image_loading(groups[group_id].paths[j].movement_image_storage, groups[group_id].paths[j].flow_movement_image_storage);
+			}
+			else {
+				groups[group_id].paths[j].initialize_movement_image_loading_no_flow(groups[group_id].paths[j].movement_image_storage);
+			}
+
 		}
 
 		
@@ -4741,8 +4790,10 @@ void ns_time_path_image_movement_analyzer::load_images_for_group(const unsigned 
 			chunk.start_i+=number_of_images_loaded;
 			chunk.stop_i+=number_of_images_loaded;
 
-					
-			groups[group_id].paths[j].load_movement_images(chunk,groups[group_id].paths[j].movement_image_storage,groups[group_id].paths[j].flow_movement_image_storage);
+			if (!load_flow_images)
+				groups[group_id].paths[j].load_movement_images_no_flow(chunk, groups[group_id].paths[j].movement_image_storage);
+			else
+				groups[group_id].paths[j].load_movement_images(chunk,groups[group_id].paths[j].movement_image_storage,groups[group_id].paths[j].flow_movement_image_storage);
 //				groups[i].paths[j].save_movement_images(chunk,dbg_im);
 		//	groups[i].paths[j].quantify_movement(chunk);
 		//	for (long l = chunk.start_i; l < (long)chunk.stop_i; l++)
@@ -4796,6 +4847,8 @@ void ns_time_path_image_movement_analyzer::reanalyze_stored_aligned_images(const
 					number_flow_uncalculated++;
 			}
 		const bool calculate_flow_images(number_flow_uncalculated > 0);
+		image_server.register_server_event(ns_image_server_event("Some new movement quantification analyses is missing. It will be performed.",true),&sql);
+		
 		if (calculate_flow_images) 
 			get_output_image_storage_locations(region_id, sql, true); 
 		
@@ -4804,7 +4857,7 @@ void ns_time_path_image_movement_analyzer::reanalyze_stored_aligned_images(const
 
 		//we need to load in the movement quantification file because it holds the registration offsets used to generate
 		//the registered movement images, and these values need to be written to the new movement quantification file.
-		populate_movement_quantification_from_file(sql);
+		populate_movement_quantification_from_file(sql,false);
 
 		for (unsigned int i = 0; i < groups.size(); i++){
 			cout << (100*i)/groups.size() << "%...";
@@ -4816,11 +4869,11 @@ void ns_time_path_image_movement_analyzer::reanalyze_stored_aligned_images(const
 				
 				ns_image_storage_source_handle<float> flow_storage(0);
 				if (calculate_flow_images) {
-							bool had_to_use_volatile_storage;
-							groups[i].paths[j].flow_output_reciever = new ns_image_storage_reciever_handle<float>(image_server.image_storage.request_storage_float(groups[i].paths[j].flow_output_image, ns_tiff_uncompressed, 1024, &sql, had_to_use_volatile_storage, false, false));
+						/*	bool had_to_use_volatile_storage;
+							groups[i].paths[j].flow_output_reciever = new ns_image_storage_reciever_handle<float>(image_server.image_storage.request_storage_float(groups[i].paths[j].flow_output_image, ns_tiff_zip, 1024, &sql, had_to_use_volatile_storage, false, false));
 							ns_image_properties prop(storage.input_stream().properties());
 							prop.components = 3;
-							groups[i].paths[j].flow_output_reciever->output_stream().init(prop);
+							groups[i].paths[j].flow_output_reciever->output_stream().init(prop);*/
 							groups[i].paths[j].initialize_movement_image_loading_no_flow(storage);
 				}
 				else {

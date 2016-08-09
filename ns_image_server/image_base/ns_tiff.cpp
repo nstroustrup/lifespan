@@ -219,19 +219,26 @@ void ns_set_default_tiff_parameters(const ns_image_properties & p,const ns_tiff_
 
 
 	ns_set_tiff_field(image, TIFFTAG_ROWSPERSTRIP, rows_per_strip);
-	if (bits_per_sample>8 && t != ns_tiff_compression_none){
-		throw ns_ex("ns_libtiff::compressed 16 or 32 bit tif images do not work propertly!");
+	if (bits_per_sample>8 && t == ns_tiff_compression_lzw){
+		throw ns_ex("ns_libtiff::LZW compression for 16 or 32 bit tiff images does not work correctly.");
 	}
 	switch(t){
 		case ns_tiff_compression_none:		ns_set_tiff_field(image, TIFFTAG_COMPRESSION, COMPRESSION_NONE); break;
 		case ns_tiff_compression_lzw:		ns_set_tiff_field(image, TIFFTAG_COMPRESSION, COMPRESSION_LZW);  break;
 		case ns_tiff_compression_zip:		ns_set_tiff_field(image, TIFFTAG_COMPRESSION, COMPRESSION_ADOBE_DEFLATE); 
-											/*ns_set_tiff_field(image, TIFFTAG_ZIPQUALITY , 9);*/break;
+											ns_set_tiff_field(image, TIFFTAG_ZIPQUALITY , 6);break;
 		case ns_tiff_compression_jp2000:	ns_set_tiff_field(image, TIFFTAG_COMPRESSION, COMPRESSION_JP2000); break;
 		default: ns_throw_tiff_exception(ns_ex("ns_tiff_image_output_file::Unknown compression format requested!"));
 	}
-	if (t != ns_tiff_compression_none)
-		ns_set_tiff_field(image, TIFFTAG_PREDICTOR, PREDICTOR_HORIZONTAL);
+	if (t != ns_tiff_compression_none) {
+		if (bits_per_sample != 32) {
+			ns_set_tiff_field(image, TIFFTAG_PREDICTOR, PREDICTOR_HORIZONTAL);
+		}
+		//else
+			//		ns_set_tiff_field(image, TIFFTAG_PREDICTOR, PREDICTOR_FLOATINGPOINT);
+		//this tag did not work as expected.
+	}
+	
 	switch(p.components){
 		case 1: ns_set_tiff_field(image, TIFFTAG_PHOTOMETRIC, PHOTOMETRIC_MINISBLACK);
 			break;

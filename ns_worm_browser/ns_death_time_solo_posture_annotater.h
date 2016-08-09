@@ -38,7 +38,7 @@ public:
 		throw ns_ex("N/A");
 	}
 	void load_image(const unsigned long buffer_height,ns_annotater_image_buffer_entry & im,ns_sql & sql,ns_image_standard & temp_buffer,const unsigned long resize_factor_=1){
-		movement_analyzer->load_images_for_group(group_id,element_id+10,sql,false);
+		movement_analyzer->load_images_for_group(group_id,element_id+10,sql,false,false);
 	//	ns_annotater_timepoint::load_image(buffer_height,im,sql,temp_buffer,resize_factor_);
 		if (!path_timepoint_element->registered_image_is_loaded()){
 			cerr << "No image is loaded for current frame";
@@ -117,7 +117,7 @@ public:
 				image_loading_times_for_groups.erase(youngest);
 			}
 		}
-		movement_analyzer.load_images_for_group(path_id.group_id,number_of_images_to_load,sql,false);
+		movement_analyzer.load_images_for_group(path_id.group_id,number_of_images_to_load,sql,false,false);
 		image_loading_times_for_groups[path_id.group_id] = current_time;
 	}	
 	void clear_images_for_worm(const ns_stationary_path_id & path_id){

@@ -39,11 +39,11 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <IncludePath>C:\server\ns_lifespan_machine_source\external_compile_libraries\zlib;C:\server\ns_lifespan_machine_source\external_compile_libraries\libdmtx-0.7.4;C:\server\ns_lifespan_machine_source\ns_image_server\image_server;C:\server\ns_lifespan_machine_source\external_libraries\libsvm;C:\server\ns_lifespan_machine_source\ns_image_server\image_acquisition;C:\server\ns_lifespan_machine_source\ns_image_server\image_processing;C:\server\ns_lifespan_machine_source\external_compile_libraries\freetype-2.4.10\include;C:\server\ns_lifespan_machine_source\ns_image_server\image_base;C:\server\ns_lifespan_machine_source\ns_image_server\movement_analysis;C:\server\ns_lifespan_machine_source\external_libraries\tinyxml;C:\server\ns_lifespan_machine_source\ns_image_server\statistics;C:\server\ns_lifespan_machine_source\ns_image_server\system_base;C:\server\ns_lifespan_machine_source\ns_image_server;C:\Program Files %28x86%29\MySQL\MySQL Connector C 6.0.2\include;C:\server\ns_lifespan_machine_source\ns_image_server\data_annotation;C:\server\ns_lifespan_machine_source\external_compile_libraries\jpeg-8d;C:\server\ns_lifespan_machine_source\external_libraries\tiff-3.8.2\libtiff;C:\server\ns_lifespan_machine_source\external_compile_libraries\openjpeg-1.5.0\libopenjpeg;C:\server\ns_lifespan_machine_source\external_libraries;C:\server\ns_lifespan_machine_source\external_libraries\triangle;C:\server\ns_lifespan_machine_source\ns_image_server\job_scheduling;$(IncludePath)</IncludePath>
+    <IncludePath>C:\server\ns_lifespan_machine_source\external_compile_libraries\zlib;C:\server\ns_lifespan_machine_source\external_compile_libraries\libdmtx-0.7.4;C:\server\ns_lifespan_machine_source\ns_image_server\image_server;C:\server\ns_lifespan_machine_source\external_libraries\libsvm;C:\server\ns_lifespan_machine_source\ns_image_server\image_acquisition;C:\server\ns_lifespan_machine_source\ns_image_server\image_processing;C:\server\ns_lifespan_machine_source\external_compile_libraries\freetype-2.4.10\include;C:\server\ns_lifespan_machine_source\ns_image_server\image_base;C:\server\ns_lifespan_machine_source\ns_image_server\movement_analysis;C:\server\ns_lifespan_machine_source\external_libraries\tinyxml;C:\server\ns_lifespan_machine_source\ns_image_server\statistics;C:\server\ns_lifespan_machine_source\ns_image_server\system_base;C:\server\ns_lifespan_machine_source\ns_image_server;C:\Program Files %28x86%29\MySQL\MySQL Connector C 6.0.2\include;C:\server\ns_lifespan_machine_source\ns_image_server\data_annotation;C:\server\ns_lifespan_machine_source\external_compile_libraries\jpeg-8d;C:\server\ns_lifespan_machine_source\external_compile_libraries\tiff-3.8.2\libtiff;C:\server\ns_lifespan_machine_source\external_compile_libraries\openjpeg-1.5.0\libopenjpeg;C:\server\ns_lifespan_machine_source\external_libraries;C:\server\ns_lifespan_machine_source\external_libraries\triangle;C:\server\ns_lifespan_machine_source\ns_image_server\job_scheduling;$(IncludePath)</IncludePath>
     <LibraryPath>C:\Program Files %28x86%29\MySQL\MySQL Connector C 6.0.2\lib\opt;C:\server\ns_lifespan_machine_source\external_compile_libraries\freetype-2.4.10\objs\win32\vc2010;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <IncludePath>C:\server\ns_lifespan_machine_source\external_compile_libraries\zlib;C:\server\ns_lifespan_machine_source\external_compile_libraries\libdmtx-0.5.2;C:\server\ns_lifespan_machine_source\ns_image_server\image_server;C:\server\ns_lifespan_machine_source\external_libraries\libsvm;C:\server\ns_lifespan_machine_source\ns_image_server\image_acquisition;C:\server\ns_lifespan_machine_source\ns_image_server\image_processing;C:\server\ns_lifespan_machine_source\external_compile_libraries\freetype-2.4.10\include;C:\server\ns_lifespan_machine_source\ns_image_server\image_base;C:\server\ns_lifespan_machine_source\ns_image_server\movement_analysis;C:\server\ns_lifespan_machine_source\external_libraries\tinyxml;C:\server\ns_lifespan_machine_source\ns_image_server\statistics;C:\server\ns_lifespan_machine_source\ns_image_server\system_base;C:\server\ns_lifespan_machine_source\ns_image_server;C:\Program Files %28x86%29\MySQL\MySQL Connector C 6.0.2\include;C:\server\ns_lifespan_machine_source\ns_image_server\data_annotation;C:\server\ns_lifespan_machine_source\external_compile_libraries\jpeg-8d;C:\server\ns_lifespan_machine_source\external_libraries\tiff-3.8.2\libtiff;C:\server\ns_lifespan_machine_source\external_compile_libraries\openjpeg-1.5.0\libopenjpeg;C:\server\ns_lifespan_machine_source\external_libraries;C:\server\ns_lifespan_machine_source\external_libraries\triangle;C:\server\ns_lifespan_machine_source\ns_image_server\job_scheduling;$(IncludePath)</IncludePath>
+    <IncludePath>C:\server\ns_lifespan_machine_source\external_compile_libraries\zlib;C:\server\ns_lifespan_machine_source\external_compile_libraries\libdmtx-0.5.2;C:\server\ns_lifespan_machine_source\ns_image_server\image_server;C:\server\ns_lifespan_machine_source\external_libraries\libsvm;C:\server\ns_lifespan_machine_source\ns_image_server\image_acquisition;C:\server\ns_lifespan_machine_source\ns_image_server\image_processing;C:\server\ns_lifespan_machine_source\external_compile_libraries\freetype-2.4.10\include;C:\server\ns_lifespan_machine_source\ns_image_server\image_base;C:\server\ns_lifespan_machine_source\ns_image_server\movement_analysis;C:\server\ns_lifespan_machine_source\external_libraries\tinyxml;C:\server\ns_lifespan_machine_source\ns_image_server\statistics;C:\server\ns_lifespan_machine_source\ns_image_server\system_base;C:\server\ns_lifespan_machine_source\ns_image_server;C:\Program Files %28x86%29\MySQL\MySQL Connector C 6.0.2\include;C:\server\ns_lifespan_machine_source\ns_image_server\data_annotation;C:\server\ns_lifespan_machine_source\external_compile_libraries\jpeg-8d;C:\server\ns_lifespan_machine_source\external_compile_libraries\tiff-3.8.2\libtiff;C:\server\ns_lifespan_machine_source\external_compile_libraries\openjpeg-1.5.0\libopenjpeg;C:\server\ns_lifespan_machine_source\external_libraries;C:\server\ns_lifespan_machine_source\external_libraries\triangle;C:\server\ns_lifespan_machine_source\ns_image_server\job_scheduling;$(IncludePath)</IncludePath>
     <LibraryPath>C:\Program Files %28x86%29\MySQL\MySQL Connector C 6.0.2\lib\opt;C:\server\ns_lifespan_machine_source\external_compile_libraries\freetype-2.4.10\objs\win32\vc2010;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
@@ -134,29 +134,45 @@
     <ClCompile Include="..\external_compile_libraries\jpeg-8d\wrrle.c" />
     <ClCompile Include="..\external_compile_libraries\jpeg-8d\wrtarga.c" />
     <ClCompile Include="..\external_compile_libraries\libdmtx-0.7.4\dmtx.c" />
-    <ClCompile Include="..\external_compile_libraries\openjpeg-1.5.0\libopenjpeg\bio.c" />
-    <ClCompile Include="..\external_compile_libraries\openjpeg-1.5.0\libopenjpeg\cidx_manager.c" />
-    <ClCompile Include="..\external_compile_libraries\openjpeg-1.5.0\libopenjpeg\cio.c" />
-    <ClCompile Include="..\external_compile_libraries\openjpeg-1.5.0\libopenjpeg\dwt.c" />
-    <ClCompile Include="..\external_compile_libraries\openjpeg-1.5.0\libopenjpeg\event.c" />
-    <ClCompile Include="..\external_compile_libraries\openjpeg-1.5.0\libopenjpeg\image.c" />
-    <ClCompile Include="..\external_compile_libraries\openjpeg-1.5.0\libopenjpeg\j2k.c" />
-    <ClCompile Include="..\external_compile_libraries\openjpeg-1.5.0\libopenjpeg\j2k_lib.c" />
-    <ClCompile Include="..\external_compile_libraries\openjpeg-1.5.0\libopenjpeg\jp2.c" />
-    <ClCompile Include="..\external_compile_libraries\openjpeg-1.5.0\libopenjpeg\jpt.c" />
-    <ClCompile Include="..\external_compile_libraries\openjpeg-1.5.0\libopenjpeg\mct.c" />
-    <ClCompile Include="..\external_compile_libraries\openjpeg-1.5.0\libopenjpeg\mqc.c" />
-    <ClCompile Include="..\external_compile_libraries\openjpeg-1.5.0\libopenjpeg\openjpeg.c" />
-    <ClCompile Include="..\external_compile_libraries\openjpeg-1.5.0\libopenjpeg\phix_manager.c" />
-    <ClCompile Include="..\external_compile_libraries\openjpeg-1.5.0\libopenjpeg\pi.c" />
-    <ClCompile Include="..\external_compile_libraries\openjpeg-1.5.0\libopenjpeg\ppix_manager.c" />
-    <ClCompile Include="..\external_compile_libraries\openjpeg-1.5.0\libopenjpeg\raw.c" />
-    <ClCompile Include="..\external_compile_libraries\openjpeg-1.5.0\libopenjpeg\t1.c" />
-    <ClCompile Include="..\external_compile_libraries\openjpeg-1.5.0\libopenjpeg\t2.c" />
-    <ClCompile Include="..\external_compile_libraries\openjpeg-1.5.0\libopenjpeg\tcd.c" />
-    <ClCompile Include="..\external_compile_libraries\openjpeg-1.5.0\libopenjpeg\tgt.c" />
-    <ClCompile Include="..\external_compile_libraries\openjpeg-1.5.0\libopenjpeg\thix_manager.c" />
-    <ClCompile Include="..\external_compile_libraries\openjpeg-1.5.0\libopenjpeg\tpix_manager.c" />
+    <ClCompile Include="..\external_compile_libraries\tiff-3.8.2\libtiff\tif_aux.c" />
+    <ClCompile Include="..\external_compile_libraries\tiff-3.8.2\libtiff\tif_close.c" />
+    <ClCompile Include="..\external_compile_libraries\tiff-3.8.2\libtiff\tif_codec.c" />
+    <ClCompile Include="..\external_compile_libraries\tiff-3.8.2\libtiff\tif_color.c" />
+    <ClCompile Include="..\external_compile_libraries\tiff-3.8.2\libtiff\tif_compress.c" />
+    <ClCompile Include="..\external_compile_libraries\tiff-3.8.2\libtiff\tif_dir.c" />
+    <ClCompile Include="..\external_compile_libraries\tiff-3.8.2\libtiff\tif_dirinfo.c" />
+    <ClCompile Include="..\external_compile_libraries\tiff-3.8.2\libtiff\tif_dirread.c" />
+    <ClCompile Include="..\external_compile_libraries\tiff-3.8.2\libtiff\tif_dirwrite.c" />
+    <ClCompile Include="..\external_compile_libraries\tiff-3.8.2\libtiff\tif_dumpmode.c" />
+    <ClCompile Include="..\external_compile_libraries\tiff-3.8.2\libtiff\tif_error.c" />
+    <ClCompile Include="..\external_compile_libraries\tiff-3.8.2\libtiff\tif_extension.c" />
+    <ClCompile Include="..\external_compile_libraries\tiff-3.8.2\libtiff\tif_fax3.c" />
+    <ClCompile Include="..\external_compile_libraries\tiff-3.8.2\libtiff\tif_fax3sm.c" />
+    <ClCompile Include="..\external_compile_libraries\tiff-3.8.2\libtiff\tif_flush.c" />
+    <ClCompile Include="..\external_compile_libraries\tiff-3.8.2\libtiff\tif_getimage.c" />
+    <ClCompile Include="..\external_compile_libraries\tiff-3.8.2\libtiff\tif_jpeg.c" />
+    <ClCompile Include="..\external_compile_libraries\tiff-3.8.2\libtiff\tif_luv.c" />
+    <ClCompile Include="..\external_compile_libraries\tiff-3.8.2\libtiff\tif_lzw.c" />
+    <ClCompile Include="..\external_compile_libraries\tiff-3.8.2\libtiff\tif_next.c" />
+    <ClCompile Include="..\external_compile_libraries\tiff-3.8.2\libtiff\tif_ojpeg.c" />
+    <ClCompile Include="..\external_compile_libraries\tiff-3.8.2\libtiff\tif_open.c" />
+    <ClCompile Include="..\external_compile_libraries\tiff-3.8.2\libtiff\tif_packbits.c" />
+    <ClCompile Include="..\external_compile_libraries\tiff-3.8.2\libtiff\tif_pixarlog.c" />
+    <ClCompile Include="..\external_compile_libraries\tiff-3.8.2\libtiff\tif_predict.c" />
+    <ClCompile Include="..\external_compile_libraries\tiff-3.8.2\libtiff\tif_print.c" />
+    <ClCompile Include="..\external_compile_libraries\tiff-3.8.2\libtiff\tif_read.c" />
+    <ClCompile Include="..\external_compile_libraries\tiff-3.8.2\libtiff\tif_strip.c" />
+    <ClCompile Include="..\external_compile_libraries\tiff-3.8.2\libtiff\tif_swab.c" />
+    <ClCompile Include="..\external_compile_libraries\tiff-3.8.2\libtiff\tif_thunder.c" />
+    <ClCompile Include="..\external_compile_libraries\tiff-3.8.2\libtiff\tif_tile.c" />
+    <ClCompile Include="..\external_compile_libraries\tiff-3.8.2\libtiff\tif_version.c" />
+    <ClCompile Include="..\external_compile_libraries\tiff-3.8.2\libtiff\tif_warning.c" />
+    <ClCompile Include="..\external_compile_libraries\tiff-3.8.2\libtiff\tif_win32.c">
+      <CompileAs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Default</CompileAs>
+      <CompileAs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Default</CompileAs>
+    </ClCompile>
+    <ClCompile Include="..\external_compile_libraries\tiff-3.8.2\libtiff\tif_write.c" />
+    <ClCompile Include="..\external_compile_libraries\tiff-3.8.2\libtiff\tif_zip.c" />
     <ClCompile Include="..\external_compile_libraries\zlib\adler32.c" />
     <ClCompile Include="..\external_compile_libraries\zlib\compress.c" />
     <ClCompile Include="..\external_compile_libraries\zlib\crc32.c" />
@@ -169,41 +185,6 @@
     <ClCompile Include="..\external_compile_libraries\zlib\trees.c" />
     <ClCompile Include="..\external_compile_libraries\zlib\uncompr.c" />
     <ClCompile Include="..\external_compile_libraries\zlib\zutil.c" />
-    <ClCompile Include="..\external_libraries\tiff-3.8.2\libtiff\tif_aux.c" />
-    <ClCompile Include="..\external_libraries\tiff-3.8.2\libtiff\tif_close.c" />
-    <ClCompile Include="..\external_libraries\tiff-3.8.2\libtiff\tif_codec.c" />
-    <ClCompile Include="..\external_libraries\tiff-3.8.2\libtiff\tif_color.c" />
-    <ClCompile Include="..\external_libraries\tiff-3.8.2\libtiff\tif_compress.c" />
-    <ClCompile Include="..\external_libraries\tiff-3.8.2\libtiff\tif_dir.c" />
-    <ClCompile Include="..\external_libraries\tiff-3.8.2\libtiff\tif_dirinfo.c" />
-    <ClCompile Include="..\external_libraries\tiff-3.8.2\libtiff\tif_dirread.c" />
-    <ClCompile Include="..\external_libraries\tiff-3.8.2\libtiff\tif_dirwrite.c" />
-    <ClCompile Include="..\external_libraries\tiff-3.8.2\libtiff\tif_dumpmode.c" />
-    <ClCompile Include="..\external_libraries\tiff-3.8.2\libtiff\tif_error.c" />
-    <ClCompile Include="..\external_libraries\tiff-3.8.2\libtiff\tif_extension.c" />
-    <ClCompile Include="..\external_libraries\tiff-3.8.2\libtiff\tif_fax3.c" />
-    <ClCompile Include="..\external_libraries\tiff-3.8.2\libtiff\tif_fax3sm.c" />
-    <ClCompile Include="..\external_libraries\tiff-3.8.2\libtiff\tif_flush.c" />
-    <ClCompile Include="..\external_libraries\tiff-3.8.2\libtiff\tif_getimage.c" />
-    <ClCompile Include="..\external_libraries\tiff-3.8.2\libtiff\tif_jpeg.c" />
-    <ClCompile Include="..\external_libraries\tiff-3.8.2\libtiff\tif_luv.c" />
-    <ClCompile Include="..\external_libraries\tiff-3.8.2\libtiff\tif_lzw.c" />
-    <ClCompile Include="..\external_libraries\tiff-3.8.2\libtiff\tif_next.c" />
-    <ClCompile Include="..\external_libraries\tiff-3.8.2\libtiff\tif_ojpeg.c" />
-    <ClCompile Include="..\external_libraries\tiff-3.8.2\libtiff\tif_open.c" />
-    <ClCompile Include="..\external_libraries\tiff-3.8.2\libtiff\tif_packbits.c" />
-    <ClCompile Include="..\external_libraries\tiff-3.8.2\libtiff\tif_pixarlog.c" />
-    <ClCompile Include="..\external_libraries\tiff-3.8.2\libtiff\tif_predict.c" />
-    <ClCompile Include="..\external_libraries\tiff-3.8.2\libtiff\tif_print.c" />
-    <ClCompile Include="..\external_libraries\tiff-3.8.2\libtiff\tif_read.c" />
-    <ClCompile Include="..\external_libraries\tiff-3.8.2\libtiff\tif_strip.c" />
-    <ClCompile Include="..\external_libraries\tiff-3.8.2\libtiff\tif_swab.c" />
-    <ClCompile Include="..\external_libraries\tiff-3.8.2\libtiff\tif_thunder.c" />
-    <ClCompile Include="..\external_libraries\tiff-3.8.2\libtiff\tif_tile.c" />
-    <ClCompile Include="..\external_libraries\tiff-3.8.2\libtiff\tif_version.c" />
-    <ClCompile Include="..\external_libraries\tiff-3.8.2\libtiff\tif_warning.c" />
-    <ClCompile Include="..\external_libraries\tiff-3.8.2\libtiff\tif_write.c" />
-    <ClCompile Include="..\external_libraries\tiff-3.8.2\libtiff\tif_zip.c" />
     <ClCompile Include="..\ns_image_server\image_acquisition\ns_barcode_new_dmtx_version.cpp" />
     <ClCompile Include="..\ns_image_server\image_base\ns_font.cpp" />
     <ClCompile Include="..\ns_image_server\image_base\ns_image.cpp" />
@@ -230,44 +211,7 @@
     <ClInclude Include="..\external_compile_libraries\jpeg-8d\jpeglib.h" />
     <ClInclude Include="..\external_compile_libraries\jpeg-8d\jversion.h" />
     <ClInclude Include="..\external_compile_libraries\jpeg-8d\transupp.h" />
-    <ClInclude Include="..\external_compile_libraries\openjpeg-1.5.0\libopenjpeg\bio.h" />
-    <ClInclude Include="..\external_compile_libraries\openjpeg-1.5.0\libopenjpeg\cidx_manager.h" />
-    <ClInclude Include="..\external_compile_libraries\openjpeg-1.5.0\libopenjpeg\cio.h" />
-    <ClInclude Include="..\external_compile_libraries\openjpeg-1.5.0\libopenjpeg\dwt.h" />
-    <ClInclude Include="..\external_compile_libraries\openjpeg-1.5.0\libopenjpeg\event.h" />
-    <ClInclude Include="..\external_compile_libraries\openjpeg-1.5.0\libopenjpeg\fix.h" />
-    <ClInclude Include="..\external_compile_libraries\openjpeg-1.5.0\libopenjpeg\image.h" />
-    <ClInclude Include="..\external_compile_libraries\openjpeg-1.5.0\libopenjpeg\indexbox_manager.h" />
-    <ClInclude Include="..\external_compile_libraries\openjpeg-1.5.0\libopenjpeg\int.h" />
-    <ClInclude Include="..\external_compile_libraries\openjpeg-1.5.0\libopenjpeg\j2k.h" />
-    <ClInclude Include="..\external_compile_libraries\openjpeg-1.5.0\libopenjpeg\j2k_lib.h" />
-    <ClInclude Include="..\external_compile_libraries\openjpeg-1.5.0\libopenjpeg\jp2.h" />
-    <ClInclude Include="..\external_compile_libraries\openjpeg-1.5.0\libopenjpeg\jpt.h" />
-    <ClInclude Include="..\external_compile_libraries\openjpeg-1.5.0\libopenjpeg\mct.h" />
-    <ClInclude Include="..\external_compile_libraries\openjpeg-1.5.0\libopenjpeg\mqc.h" />
-    <ClInclude Include="..\external_compile_libraries\openjpeg-1.5.0\libopenjpeg\openjpeg.h" />
-    <ClInclude Include="..\external_compile_libraries\openjpeg-1.5.0\libopenjpeg\opj_config.h" />
-    <ClInclude Include="..\external_compile_libraries\openjpeg-1.5.0\libopenjpeg\opj_includes.h" />
-    <ClInclude Include="..\external_compile_libraries\openjpeg-1.5.0\libopenjpeg\opj_malloc.h" />
-    <ClInclude Include="..\external_compile_libraries\openjpeg-1.5.0\libopenjpeg\pi.h" />
-    <ClInclude Include="..\external_compile_libraries\openjpeg-1.5.0\libopenjpeg\raw.h" />
-    <ClInclude Include="..\external_compile_libraries\openjpeg-1.5.0\libopenjpeg\t1.h" />
-    <ClInclude Include="..\external_compile_libraries\openjpeg-1.5.0\libopenjpeg\t1_luts.h" />
-    <ClInclude Include="..\external_compile_libraries\openjpeg-1.5.0\libopenjpeg\t2.h" />
-    <ClInclude Include="..\external_compile_libraries\openjpeg-1.5.0\libopenjpeg\tcd.h" />
-    <ClInclude Include="..\external_compile_libraries\openjpeg-1.5.0\libopenjpeg\tgt.h" />
-    <ClInclude Include="..\external_libraries\tiff-3.8.2\libtiff\t4.h" />
-    <ClInclude Include="..\external_libraries\tiff-3.8.2\libtiff\tiff.h" />
-    <ClInclude Include="..\external_libraries\tiff-3.8.2\libtiff\tiffconf.h" />
-    <ClInclude Include="..\external_libraries\tiff-3.8.2\libtiff\tiffio.h" />
-    <ClInclude Include="..\external_libraries\tiff-3.8.2\libtiff\tiffio.hxx" />
-    <ClInclude Include="..\external_libraries\tiff-3.8.2\libtiff\tiffiop.h" />
-    <ClInclude Include="..\external_libraries\tiff-3.8.2\libtiff\tiffvers.h" />
-    <ClInclude Include="..\external_libraries\tiff-3.8.2\libtiff\tif_config.h" />
-    <ClInclude Include="..\external_libraries\tiff-3.8.2\libtiff\tif_dir.h" />
-    <ClInclude Include="..\external_libraries\tiff-3.8.2\libtiff\tif_fax3.h" />
-    <ClInclude Include="..\external_libraries\tiff-3.8.2\libtiff\tif_predict.h" />
-    <ClInclude Include="..\external_libraries\tiff-3.8.2\libtiff\uvcode.h" />
+    <ClInclude Include="..\external_compile_libraries\tiff-3.8.2\libtiff\tif_predict.h" />
     <ClInclude Include="..\ns_image_server\image_base\ns_buffered_random_access_image.h" />
     <ClInclude Include="..\ns_image_server\image_base\ns_font.h" />
     <ClInclude Include="..\ns_image_server\image_base\ns_image.h" />
@@ -285,24 +229,6 @@
     <ClInclude Include="..\ns_image_server\system_base\ns_ex.h" />
     <ClInclude Include="..\ns_image_server\system_base\ns_managed_pointer.h" />
     <ClInclude Include="..\ns_image_server\system_base\ns_thread.h" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="..\external_compile_libraries\openjpeg-1.5.0\libopenjpeg\CMakeLists.txt" />
-    <None Include="..\external_compile_libraries\openjpeg-1.5.0\libopenjpeg\Makefile.am">
-      <FileType>Document</FileType>
-    </None>
-    <None Include="..\external_compile_libraries\openjpeg-1.5.0\libopenjpeg\Makefile.in">
-      <FileType>Document</FileType>
-    </None>
-    <None Include="..\external_libraries\tiff-3.8.2\libtiff\tiffconf.h.vc">
-      <FileType>Document</FileType>
-    </None>
-    <None Include="..\external_libraries\tiff-3.8.2\libtiff\tif_config.h.in">
-      <FileType>Document</FileType>
-    </None>
-    <None Include="..\external_libraries\tiff-3.8.2\libtiff\tif_config.h.vc">
-      <FileType>Document</FileType>
-    </None>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

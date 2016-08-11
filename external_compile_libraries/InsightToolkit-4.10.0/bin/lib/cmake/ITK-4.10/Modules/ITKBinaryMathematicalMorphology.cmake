@@ -1,0 +1,12 @@
+set(ITKBinaryMathematicalMorphology_LOADED 1)
+set(ITKBinaryMathematicalMorphology_ENABLE_SHARED "0")
+set(ITKBinaryMathematicalMorphology_DEPENDS "ITKLabelMap;ITKMathematicalMorphology")
+set(ITKBinaryMathematicalMorphology_PUBLIC_DEPENDS "")
+set(ITKBinaryMathematicalMorphology_TRANSITIVE_DEPENDS "ITKLabelMap;ITKMathematicalMorphology")
+set(ITKBinaryMathematicalMorphology_PRIVATE_DEPENDS "")
+set(ITKBinaryMathematicalMorphology_LIBRARIES "ITKLabelMap;ITKCommon;ITKStatistics;ITKTransform;ITKSpatialObjects;ITKPath")
+set(ITKBinaryMathematicalMorphology_INCLUDE_DIRS "C:/server/InsightToolkit-4.10.0/Modules/Filtering/BinaryMathematicalMorphology/include")
+set(ITKBinaryMathematicalMorphology_LIBRARY_DIRS "")
+set(ITKBinaryMathematicalMorphology_RUNTIME_LIBRARY_DIRS "C:/server/InsightToolkit-4.10.0/bin/bin")
+set(ITKBinaryMathematicalMorphology_TARGETS_FILE "")
+

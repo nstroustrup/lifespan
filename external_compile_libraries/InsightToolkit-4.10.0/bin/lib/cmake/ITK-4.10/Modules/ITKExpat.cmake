@@ -1,0 +1,12 @@
+set(ITKExpat_LOADED 1)
+set(ITKExpat_ENABLE_SHARED "0")
+set(ITKExpat_DEPENDS "")
+set(ITKExpat_PUBLIC_DEPENDS "")
+set(ITKExpat_TRANSITIVE_DEPENDS "")
+set(ITKExpat_PRIVATE_DEPENDS "")
+set(ITKExpat_LIBRARIES "ITKEXPAT")
+set(ITKExpat_INCLUDE_DIRS "C:/server/InsightToolkit-4.10.0/bin/Modules/ThirdParty/Expat/src/expat;C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/Expat/src/expat")
+set(ITKExpat_LIBRARY_DIRS "")
+set(ITKExpat_RUNTIME_LIBRARY_DIRS "C:/server/InsightToolkit-4.10.0/bin/bin")
+set(ITKExpat_TARGETS_FILE "")
+

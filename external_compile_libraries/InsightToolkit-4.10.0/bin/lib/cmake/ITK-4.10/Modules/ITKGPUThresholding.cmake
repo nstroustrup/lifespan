@@ -1,0 +1,12 @@
+set(ITKGPUThresholding_LOADED 1)
+set(ITKGPUThresholding_ENABLE_SHARED "0")
+set(ITKGPUThresholding_DEPENDS "ITKCommon;ITKGPUCommon;ITKThresholding")
+set(ITKGPUThresholding_PUBLIC_DEPENDS "ITKCommon;ITKGPUCommon")
+set(ITKGPUThresholding_TRANSITIVE_DEPENDS "ITKCommon;ITKGPUCommon;ITKThresholding")
+set(ITKGPUThresholding_PRIVATE_DEPENDS "")
+set(ITKGPUThresholding_LIBRARIES "ITKCommon;ITKStatistics;ITKTransform;ITKSpatialObjects;ITKPath")
+set(ITKGPUThresholding_INCLUDE_DIRS "C:/server/InsightToolkit-4.10.0/Modules/Filtering/GPUThresholding/include")
+set(ITKGPUThresholding_LIBRARY_DIRS "")
+set(ITKGPUThresholding_RUNTIME_LIBRARY_DIRS "C:/server/InsightToolkit-4.10.0/bin/bin")
+set(ITKGPUThresholding_TARGETS_FILE "")
+

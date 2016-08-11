@@ -1,0 +1,12 @@
+set(ITKKLMRegionGrowing_LOADED 1)
+set(ITKKLMRegionGrowing_ENABLE_SHARED "1")
+set(ITKKLMRegionGrowing_DEPENDS "ITKCommon")
+set(ITKKLMRegionGrowing_PUBLIC_DEPENDS "ITKCommon")
+set(ITKKLMRegionGrowing_TRANSITIVE_DEPENDS "ITKCommon")
+set(ITKKLMRegionGrowing_PRIVATE_DEPENDS "")
+set(ITKKLMRegionGrowing_LIBRARIES "ITKKLMRegionGrowing")
+set(ITKKLMRegionGrowing_INCLUDE_DIRS "C:/server/InsightToolkit-4.10.0/Modules/Segmentation/KLMRegionGrowing/include")
+set(ITKKLMRegionGrowing_LIBRARY_DIRS "")
+set(ITKKLMRegionGrowing_RUNTIME_LIBRARY_DIRS "C:/server/InsightToolkit-4.10.0/bin/bin")
+set(ITKKLMRegionGrowing_TARGETS_FILE "")
+

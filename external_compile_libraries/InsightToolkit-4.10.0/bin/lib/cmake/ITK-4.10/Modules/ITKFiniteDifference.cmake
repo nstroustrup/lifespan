@@ -1,0 +1,12 @@
+set(ITKFiniteDifference_LOADED 1)
+set(ITKFiniteDifference_ENABLE_SHARED "0")
+set(ITKFiniteDifference_DEPENDS "ITKCommon")
+set(ITKFiniteDifference_PUBLIC_DEPENDS "")
+set(ITKFiniteDifference_TRANSITIVE_DEPENDS "ITKCommon")
+set(ITKFiniteDifference_PRIVATE_DEPENDS "")
+set(ITKFiniteDifference_LIBRARIES "ITKCommon")
+set(ITKFiniteDifference_INCLUDE_DIRS "C:/server/InsightToolkit-4.10.0/Modules/Core/FiniteDifference/include")
+set(ITKFiniteDifference_LIBRARY_DIRS "")
+set(ITKFiniteDifference_RUNTIME_LIBRARY_DIRS "C:/server/InsightToolkit-4.10.0/bin/bin")
+set(ITKFiniteDifference_TARGETS_FILE "")
+

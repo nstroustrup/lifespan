@@ -1,0 +1,12 @@
+set(ITKClassifiers_LOADED 1)
+set(ITKClassifiers_ENABLE_SHARED "0")
+set(ITKClassifiers_DEPENDS "ITKConnectedComponents;ITKImageGrid;ITKStatistics")
+set(ITKClassifiers_PUBLIC_DEPENDS "ITKConnectedComponents;ITKImageGrid;ITKStatistics")
+set(ITKClassifiers_TRANSITIVE_DEPENDS "ITKConnectedComponents;ITKImageGrid;ITKStatistics")
+set(ITKClassifiers_PRIVATE_DEPENDS "")
+set(ITKClassifiers_LIBRARIES "ITKCommon;ITKStatistics;ITKTransform;ITKSpatialObjects;ITKPath")
+set(ITKClassifiers_INCLUDE_DIRS "C:/server/InsightToolkit-4.10.0/Modules/Segmentation/Classifiers/include")
+set(ITKClassifiers_LIBRARY_DIRS "")
+set(ITKClassifiers_RUNTIME_LIBRARY_DIRS "C:/server/InsightToolkit-4.10.0/bin/bin")
+set(ITKClassifiers_TARGETS_FILE "")
+

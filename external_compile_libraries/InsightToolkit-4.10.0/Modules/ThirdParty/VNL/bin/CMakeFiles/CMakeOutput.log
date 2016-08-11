@@ -1,0 +1,247 @@
+The system is: Windows - 6.2 - AMD64
+Compiling the C compiler identification source file "CMakeCCompilerId.c" succeeded.
+Compiler:  
+Build flags: 
+Id flags: 
+
+The output was:
+0
+Microsoft (R) Build Engine version 14.0.25420.1
+Copyright (C) Microsoft Corporation. All rights reserved.
+
+Build started 7/6/2016 5:44:25 PM.
+Project "C:\server\ns_lifespan_machine_source\external_compile_libraries\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\bin\CMakeFiles\3.0.20140918\CompilerIdC\CompilerIdC.vcxproj" on node 1 (default targets).
+PrepareForBuild:
+  Creating directory "Debug\".
+  Creating directory "Debug\CompilerIdC.tlog\".
+InitializeBuildStatus:
+  Creating "Debug\CompilerIdC.tlog\unsuccessfulbuild" because "AlwaysCreate" was specified.
+ClCompile:
+  C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\bin\CL.exe /c /nologo /W0 /WX- /Od /Oy- /D _MBCS /Gm- /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /Fo"Debug\\" /Fd"Debug\vc140.pdb" /Gd /TC /analyze- /errorReport:queue CMakeCCompilerId.c
+  CMakeCCompilerId.c
+Link:
+  C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\bin\link.exe /ERRORREPORT:QUEUE /OUT:".\CompilerIdC.exe" /INCREMENTAL:NO /NOLOGO kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /PDB:".\CompilerIdC.pdb" /SUBSYSTEM:CONSOLE /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:".\CompilerIdC.lib" /MACHINE:X86 /SAFESEH Debug\CMakeCCompilerId.obj
+  CompilerIdC.vcxproj -> C:\server\ns_lifespan_machine_source\external_compile_libraries\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\bin\CMakeFiles\3.0.20140918\CompilerIdC\.\CompilerIdC.exe
+PostBuildEvent:
+  for %%i in (cl.exe) do @echo CMAKE_C_COMPILER=%%~$PATH:i
+  :VCEnd
+  CMAKE_C_COMPILER=C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\bin\cl.exe
+FinalizeBuildStatus:
+  Deleting file "Debug\CompilerIdC.tlog\unsuccessfulbuild".
+  Touching "Debug\CompilerIdC.tlog\CompilerIdC.lastbuildstate".
+Done Building Project "C:\server\ns_lifespan_machine_source\external_compile_libraries\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\bin\CMakeFiles\3.0.20140918\CompilerIdC\CompilerIdC.vcxproj" (default targets).
+
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:01.30
+
+
+Compilation of the C compiler identification source "CMakeCCompilerId.c" produced "CompilerIdC.exe"
+
+Compilation of the C compiler identification source "CMakeCCompilerId.c" produced "CompilerIdC.vcxproj"
+
+The C compiler identification is MSVC, found in "C:/server/ns_lifespan_machine_source/external_compile_libraries/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/bin/CMakeFiles/3.0.20140918/CompilerIdC/CompilerIdC.exe"
+
+Compiling the CXX compiler identification source file "CMakeCXXCompilerId.cpp" succeeded.
+Compiler:  
+Build flags: 
+Id flags: 
+
+The output was:
+0
+Microsoft (R) Build Engine version 14.0.25420.1
+Copyright (C) Microsoft Corporation. All rights reserved.
+
+Build started 7/6/2016 5:44:27 PM.
+Project "C:\server\ns_lifespan_machine_source\external_compile_libraries\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\bin\CMakeFiles\3.0.20140918\CompilerIdCXX\CompilerIdCXX.vcxproj" on node 1 (default targets).
+PrepareForBuild:
+  Creating directory "Debug\".
+  Creating directory "Debug\CompilerIdCXX.tlog\".
+InitializeBuildStatus:
+  Creating "Debug\CompilerIdCXX.tlog\unsuccessfulbuild" because "AlwaysCreate" was specified.
+ClCompile:
+  C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\bin\CL.exe /c /nologo /W0 /WX- /Od /Oy- /D _MBCS /Gm- /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /Fo"Debug\\" /Fd"Debug\vc140.pdb" /Gd /TP /analyze- /errorReport:queue CMakeCXXCompilerId.cpp
+  CMakeCXXCompilerId.cpp
+Link:
+  C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\bin\link.exe /ERRORREPORT:QUEUE /OUT:".\CompilerIdCXX.exe" /INCREMENTAL:NO /NOLOGO kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /PDB:".\CompilerIdCXX.pdb" /SUBSYSTEM:CONSOLE /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:".\CompilerIdCXX.lib" /MACHINE:X86 /SAFESEH Debug\CMakeCXXCompilerId.obj
+  CompilerIdCXX.vcxproj -> C:\server\ns_lifespan_machine_source\external_compile_libraries\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\bin\CMakeFiles\3.0.20140918\CompilerIdCXX\.\CompilerIdCXX.exe
+PostBuildEvent:
+  for %%i in (cl.exe) do @echo CMAKE_CXX_COMPILER=%%~$PATH:i
+  :VCEnd
+  CMAKE_CXX_COMPILER=C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\bin\cl.exe
+FinalizeBuildStatus:
+  Deleting file "Debug\CompilerIdCXX.tlog\unsuccessfulbuild".
+  Touching "Debug\CompilerIdCXX.tlog\CompilerIdCXX.lastbuildstate".
+Done Building Project "C:\server\ns_lifespan_machine_source\external_compile_libraries\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\bin\CMakeFiles\3.0.20140918\CompilerIdCXX\CompilerIdCXX.vcxproj" (default targets).
+
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:01.24
+
+
+Compilation of the CXX compiler identification source "CMakeCXXCompilerId.cpp" produced "CompilerIdCXX.exe"
+
+Compilation of the CXX compiler identification source "CMakeCXXCompilerId.cpp" produced "CompilerIdCXX.vcxproj"
+
+The CXX compiler identification is MSVC, found in "C:/server/ns_lifespan_machine_source/external_compile_libraries/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/bin/CMakeFiles/3.0.20140918/CompilerIdCXX/CompilerIdCXX.exe"
+
+Determining if the C compiler works passed with the following output:
+Change Dir: C:/server/ns_lifespan_machine_source/external_compile_libraries/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/bin/CMakeFiles/CMakeTmp
+
+Run Build Command:"C:/Program Files (x86)/MSBuild/14.0/bin/MSBuild.exe" "cmTryCompileExec3243165721.vcxproj" "/p:Configuration=Debug" "/p:VisualStudioVersion=14.0"
+Microsoft (R) Build Engine version 14.0.25420.1
+Copyright (C) Microsoft Corporation. All rights reserved.
+
+Build started 7/6/2016 5:44:28 PM.
+Project "C:\server\ns_lifespan_machine_source\external_compile_libraries\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\bin\CMakeFiles\CMakeTmp\cmTryCompileExec3243165721.vcxproj" on node 1 (default targets).
+PrepareForBuild:
+  Creating directory "cmTryCompileExec3243165721.dir\Debug\".
+  Creating directory "C:\server\ns_lifespan_machine_source\external_compile_libraries\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\bin\CMakeFiles\CMakeTmp\Debug\".
+  Creating directory "cmTryCompileExec3243165721.dir\Debug\cmTryCom.58436744.tlog\".
+InitializeBuildStatus:
+  Creating "cmTryCompileExec3243165721.dir\Debug\cmTryCom.58436744.tlog\unsuccessfulbuild" because "AlwaysCreate" was specified.
+ClCompile:
+  C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\bin\CL.exe /c /Zi /W3 /WX- /Od /Ob0 /Oy- /D WIN32 /D _WINDOWS /D _DEBUG /D "CMAKE_INTDIR=\"Debug\"" /D _MBCS /Gm- /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /Fo"cmTryCompileExec3243165721.dir\Debug\\" /Fd"cmTryCompileExec3243165721.dir\Debug\vc140.pdb" /Gd /TC /analyze- /errorReport:queue "C:\server\ns_lifespan_machine_source\external_compile_libraries\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\bin\CMakeFiles\CMakeTmp\testCCompiler.c"
+  Microsoft (R) C/C++ Optimizing Compiler Version 19.00.24210 for x86
+  Copyright (C) Microsoft Corporation.  All rights reserved.
+  
+  testCCompiler.c
+  cl /c /Zi /W3 /WX- /Od /Ob0 /Oy- /D WIN32 /D _WINDOWS /D _DEBUG /D "CMAKE_INTDIR=\"Debug\"" /D _MBCS /Gm- /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /Fo"cmTryCompileExec3243165721.dir\Debug\\" /Fd"cmTryCompileExec3243165721.dir\Debug\vc140.pdb" /Gd /TC /analyze- /errorReport:queue "C:\server\ns_lifespan_machine_source\external_compile_libraries\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\bin\CMakeFiles\CMakeTmp\testCCompiler.c"
+  
+Link:
+  C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\bin\link.exe /ERRORREPORT:QUEUE /OUT:"C:\server\ns_lifespan_machine_source\external_compile_libraries\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\bin\CMakeFiles\CMakeTmp\Debug\cmTryCompileExec3243165721.exe" /INCREMENTAL /NOLOGO kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /DEBUG /PDB:"C:/server/ns_lifespan_machine_source/external_compile_libraries/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/bin/CMakeFiles/CMakeTmp/Debug/cmTryCompileExec3243165721.pdb" /SUBSYSTEM:CONSOLE /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"C:/server/ns_lifespan_machine_source/external_compile_libraries/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/bin/CMakeFiles/CMakeTmp/Debug/cmTryCompileExec3243165721.lib" /MACHINE:X86 /SAFESEH  /machine:X86 /debug cmTryCompileExec3243165721.dir\Debug\testCCompiler.obj
+  cmTryCompileExec3243165721.vcxproj -> C:\server\ns_lifespan_machine_source\external_compile_libraries\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\bin\CMakeFiles\CMakeTmp\Debug\cmTryCompileExec3243165721.exe
+  cmTryCompileExec3243165721.vcxproj -> C:/server/ns_lifespan_machine_source/external_compile_libraries/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/bin/CMakeFiles/CMakeTmp/Debug/cmTryCompileExec3243165721.pdb (Full PDB)
+FinalizeBuildStatus:
+  Deleting file "cmTryCompileExec3243165721.dir\Debug\cmTryCom.58436744.tlog\unsuccessfulbuild".
+  Touching "cmTryCompileExec3243165721.dir\Debug\cmTryCom.58436744.tlog\cmTryCompileExec3243165721.lastbuildstate".
+Done Building Project "C:\server\ns_lifespan_machine_source\external_compile_libraries\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\bin\CMakeFiles\CMakeTmp\cmTryCompileExec3243165721.vcxproj" (default targets).
+
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:01.17
+
+
+Detecting C compiler ABI info compiled with the following output:
+Change Dir: C:/server/ns_lifespan_machine_source/external_compile_libraries/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/bin/CMakeFiles/CMakeTmp
+
+Run Build Command:"C:/Program Files (x86)/MSBuild/14.0/bin/MSBuild.exe" "cmTryCompileExec2737046985.vcxproj" "/p:Configuration=Debug" "/p:VisualStudioVersion=14.0"
+Microsoft (R) Build Engine version 14.0.25420.1
+Copyright (C) Microsoft Corporation. All rights reserved.
+
+Build started 7/6/2016 5:44:30 PM.
+Project "C:\server\ns_lifespan_machine_source\external_compile_libraries\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\bin\CMakeFiles\CMakeTmp\cmTryCompileExec2737046985.vcxproj" on node 1 (default targets).
+PrepareForBuild:
+  Creating directory "cmTryCompileExec2737046985.dir\Debug\".
+  Creating directory "C:\server\ns_lifespan_machine_source\external_compile_libraries\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\bin\CMakeFiles\CMakeTmp\Debug\".
+  Creating directory "cmTryCompileExec2737046985.dir\Debug\cmTryCom.A7A0D2F4.tlog\".
+InitializeBuildStatus:
+  Creating "cmTryCompileExec2737046985.dir\Debug\cmTryCom.A7A0D2F4.tlog\unsuccessfulbuild" because "AlwaysCreate" was specified.
+ClCompile:
+  C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\bin\CL.exe /c /Zi /W3 /WX- /Od /Ob0 /Oy- /D WIN32 /D _WINDOWS /D _DEBUG /D "CMAKE_INTDIR=\"Debug\"" /D _MBCS /Gm- /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /Fo"cmTryCompileExec2737046985.dir\Debug\\" /Fd"cmTryCompileExec2737046985.dir\Debug\vc140.pdb" /Gd /TC /analyze- /errorReport:queue "c:\Program Files (x86)\CMakeMS\share\cmake-3.0\Modules\CMakeCCompilerABI.c"
+  Microsoft (R) C/C++ Optimizing Compiler Version 19.00.24210 for x86
+  Copyright (C) Microsoft Corporation.  All rights reserved.
+  
+  CMakeCCompilerABI.c
+  cl /c /Zi /W3 /WX- /Od /Ob0 /Oy- /D WIN32 /D _WINDOWS /D _DEBUG /D "CMAKE_INTDIR=\"Debug\"" /D _MBCS /Gm- /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /Fo"cmTryCompileExec2737046985.dir\Debug\\" /Fd"cmTryCompileExec2737046985.dir\Debug\vc140.pdb" /Gd /TC /analyze- /errorReport:queue "c:\Program Files (x86)\CMakeMS\share\cmake-3.0\Modules\CMakeCCompilerABI.c"
+  
+Link:
+  C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\bin\link.exe /ERRORREPORT:QUEUE /OUT:"C:\server\ns_lifespan_machine_source\external_compile_libraries\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\bin\CMakeFiles\CMakeTmp\Debug\cmTryCompileExec2737046985.exe" /INCREMENTAL /NOLOGO kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /DEBUG /PDB:"C:/server/ns_lifespan_machine_source/external_compile_libraries/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/bin/CMakeFiles/CMakeTmp/Debug/cmTryCompileExec2737046985.pdb" /SUBSYSTEM:CONSOLE /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"C:/server/ns_lifespan_machine_source/external_compile_libraries/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/bin/CMakeFiles/CMakeTmp/Debug/cmTryCompileExec2737046985.lib" /MACHINE:X86 /SAFESEH  /machine:X86 /debug cmTryCompileExec2737046985.dir\Debug\CMakeCCompilerABI.obj
+  cmTryCompileExec2737046985.vcxproj -> C:\server\ns_lifespan_machine_source\external_compile_libraries\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\bin\CMakeFiles\CMakeTmp\Debug\cmTryCompileExec2737046985.exe
+  cmTryCompileExec2737046985.vcxproj -> C:/server/ns_lifespan_machine_source/external_compile_libraries/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/bin/CMakeFiles/CMakeTmp/Debug/cmTryCompileExec2737046985.pdb (Full PDB)
+FinalizeBuildStatus:
+  Deleting file "cmTryCompileExec2737046985.dir\Debug\cmTryCom.A7A0D2F4.tlog\unsuccessfulbuild".
+  Touching "cmTryCompileExec2737046985.dir\Debug\cmTryCom.A7A0D2F4.tlog\cmTryCompileExec2737046985.lastbuildstate".
+Done Building Project "C:\server\ns_lifespan_machine_source\external_compile_libraries\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\bin\CMakeFiles\CMakeTmp\cmTryCompileExec2737046985.vcxproj" (default targets).
+
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:01.23
+
+
+Determining if the CXX compiler works passed with the following output:
+Change Dir: C:/server/ns_lifespan_machine_source/external_compile_libraries/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/bin/CMakeFiles/CMakeTmp
+
+Run Build Command:"C:/Program Files (x86)/MSBuild/14.0/bin/MSBuild.exe" "cmTryCompileExec2632441894.vcxproj" "/p:Configuration=Debug" "/p:VisualStudioVersion=14.0"
+Microsoft (R) Build Engine version 14.0.25420.1
+Copyright (C) Microsoft Corporation. All rights reserved.
+
+Build started 7/6/2016 5:44:31 PM.
+Project "C:\server\ns_lifespan_machine_source\external_compile_libraries\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\bin\CMakeFiles\CMakeTmp\cmTryCompileExec2632441894.vcxproj" on node 1 (default targets).
+PrepareForBuild:
+  Creating directory "cmTryCompileExec2632441894.dir\Debug\".
+  Creating directory "C:\server\ns_lifespan_machine_source\external_compile_libraries\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\bin\CMakeFiles\CMakeTmp\Debug\".
+  Creating directory "cmTryCompileExec2632441894.dir\Debug\cmTryCom.0D236C50.tlog\".
+InitializeBuildStatus:
+  Creating "cmTryCompileExec2632441894.dir\Debug\cmTryCom.0D236C50.tlog\unsuccessfulbuild" because "AlwaysCreate" was specified.
+ClCompile:
+  C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\bin\CL.exe /c /Zi /W3 /WX- /Od /Ob0 /Oy- /D WIN32 /D _WINDOWS /D _DEBUG /D "CMAKE_INTDIR=\"Debug\"" /D _MBCS /Gm- /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /GR /Fo"cmTryCompileExec2632441894.dir\Debug\\" /Fd"cmTryCompileExec2632441894.dir\Debug\vc140.pdb" /Gd /TP /analyze- /errorReport:queue "C:\server\ns_lifespan_machine_source\external_compile_libraries\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\bin\CMakeFiles\CMakeTmp\testCXXCompiler.cxx"
+  Microsoft (R) C/C++ Optimizing Compiler Version 19.00.24210 for x86
+  Copyright (C) Microsoft Corporation.  All rights reserved.
+  
+  testCXXCompiler.cxx
+  cl /c /Zi /W3 /WX- /Od /Ob0 /Oy- /D WIN32 /D _WINDOWS /D _DEBUG /D "CMAKE_INTDIR=\"Debug\"" /D _MBCS /Gm- /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /GR /Fo"cmTryCompileExec2632441894.dir\Debug\\" /Fd"cmTryCompileExec2632441894.dir\Debug\vc140.pdb" /Gd /TP /analyze- /errorReport:queue "C:\server\ns_lifespan_machine_source\external_compile_libraries\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\bin\CMakeFiles\CMakeTmp\testCXXCompiler.cxx"
+  
+Link:
+  C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\bin\link.exe /ERRORREPORT:QUEUE /OUT:"C:\server\ns_lifespan_machine_source\external_compile_libraries\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\bin\CMakeFiles\CMakeTmp\Debug\cmTryCompileExec2632441894.exe" /INCREMENTAL /NOLOGO kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /DEBUG /PDB:"C:/server/ns_lifespan_machine_source/external_compile_libraries/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/bin/CMakeFiles/CMakeTmp/Debug/cmTryCompileExec2632441894.pdb" /SUBSYSTEM:CONSOLE /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"C:/server/ns_lifespan_machine_source/external_compile_libraries/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/bin/CMakeFiles/CMakeTmp/Debug/cmTryCompileExec2632441894.lib" /MACHINE:X86 /SAFESEH  /machine:X86 /debug cmTryCompileExec2632441894.dir\Debug\testCXXCompiler.obj
+  cmTryCompileExec2632441894.vcxproj -> C:\server\ns_lifespan_machine_source\external_compile_libraries\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\bin\CMakeFiles\CMakeTmp\Debug\cmTryCompileExec2632441894.exe
+  cmTryCompileExec2632441894.vcxproj -> C:/server/ns_lifespan_machine_source/external_compile_libraries/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/bin/CMakeFiles/CMakeTmp/Debug/cmTryCompileExec2632441894.pdb (Full PDB)
+FinalizeBuildStatus:
+  Deleting file "cmTryCompileExec2632441894.dir\Debug\cmTryCom.0D236C50.tlog\unsuccessfulbuild".
+  Touching "cmTryCompileExec2632441894.dir\Debug\cmTryCom.0D236C50.tlog\cmTryCompileExec2632441894.lastbuildstate".
+Done Building Project "C:\server\ns_lifespan_machine_source\external_compile_libraries\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\bin\CMakeFiles\CMakeTmp\cmTryCompileExec2632441894.vcxproj" (default targets).
+
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:01.28
+
+
+Detecting CXX compiler ABI info compiled with the following output:
+Change Dir: C:/server/ns_lifespan_machine_source/external_compile_libraries/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/bin/CMakeFiles/CMakeTmp
+
+Run Build Command:"C:/Program Files (x86)/MSBuild/14.0/bin/MSBuild.exe" "cmTryCompileExec436310460.vcxproj" "/p:Configuration=Debug" "/p:VisualStudioVersion=14.0"
+Microsoft (R) Build Engine version 14.0.25420.1
+Copyright (C) Microsoft Corporation. All rights reserved.
+
+Build started 7/6/2016 5:44:33 PM.
+Project "C:\server\ns_lifespan_machine_source\external_compile_libraries\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\bin\CMakeFiles\CMakeTmp\cmTryCompileExec436310460.vcxproj" on node 1 (default targets).
+PrepareForBuild:
+  Creating directory "cmTryCompileExec436310460.dir\Debug\".
+  Creating directory "C:\server\ns_lifespan_machine_source\external_compile_libraries\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\bin\CMakeFiles\CMakeTmp\Debug\".
+  Creating directory "cmTryCompileExec436310460.dir\Debug\cmTryCom.08E7A4FF.tlog\".
+InitializeBuildStatus:
+  Creating "cmTryCompileExec436310460.dir\Debug\cmTryCom.08E7A4FF.tlog\unsuccessfulbuild" because "AlwaysCreate" was specified.
+ClCompile:
+  C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\bin\CL.exe /c /Zi /W3 /WX- /Od /Ob0 /Oy- /D WIN32 /D _WINDOWS /D _DEBUG /D "CMAKE_INTDIR=\"Debug\"" /D _MBCS /Gm- /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /GR /Fo"cmTryCompileExec436310460.dir\Debug\\" /Fd"cmTryCompileExec436310460.dir\Debug\vc140.pdb" /Gd /TP /analyze- /errorReport:queue "c:\Program Files (x86)\CMakeMS\share\cmake-3.0\Modules\CMakeCXXCompilerABI.cpp"
+  Microsoft (R) C/C++ Optimizing Compiler Version 19.00.24210 for x86
+  Copyright (C) Microsoft Corporation.  All rights reserved.
+  
+  CMakeCXXCompilerABI.cpp
+  cl /c /Zi /W3 /WX- /Od /Ob0 /Oy- /D WIN32 /D _WINDOWS /D _DEBUG /D "CMAKE_INTDIR=\"Debug\"" /D _MBCS /Gm- /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /GR /Fo"cmTryCompileExec436310460.dir\Debug\\" /Fd"cmTryCompileExec436310460.dir\Debug\vc140.pdb" /Gd /TP /analyze- /errorReport:queue "c:\Program Files (x86)\CMakeMS\share\cmake-3.0\Modules\CMakeCXXCompilerABI.cpp"
+  
+Link:
+  C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\bin\link.exe /ERRORREPORT:QUEUE /OUT:"C:\server\ns_lifespan_machine_source\external_compile_libraries\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\bin\CMakeFiles\CMakeTmp\Debug\cmTryCompileExec436310460.exe" /INCREMENTAL /NOLOGO kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /DEBUG /PDB:"C:/server/ns_lifespan_machine_source/external_compile_libraries/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/bin/CMakeFiles/CMakeTmp/Debug/cmTryCompileExec436310460.pdb" /SUBSYSTEM:CONSOLE /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"C:/server/ns_lifespan_machine_source/external_compile_libraries/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/bin/CMakeFiles/CMakeTmp/Debug/cmTryCompileExec436310460.lib" /MACHINE:X86 /SAFESEH  /machine:X86 /debug cmTryCompileExec436310460.dir\Debug\CMakeCXXCompilerABI.obj
+  cmTryCompileExec436310460.vcxproj -> C:\server\ns_lifespan_machine_source\external_compile_libraries\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\bin\CMakeFiles\CMakeTmp\Debug\cmTryCompileExec436310460.exe
+  cmTryCompileExec436310460.vcxproj -> C:/server/ns_lifespan_machine_source/external_compile_libraries/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/bin/CMakeFiles/CMakeTmp/Debug/cmTryCompileExec436310460.pdb (Full PDB)
+FinalizeBuildStatus:
+  Deleting file "cmTryCompileExec436310460.dir\Debug\cmTryCom.08E7A4FF.tlog\unsuccessfulbuild".
+  Touching "cmTryCompileExec436310460.dir\Debug\cmTryCom.08E7A4FF.tlog\cmTryCompileExec436310460.lastbuildstate".
+Done Building Project "C:\server\ns_lifespan_machine_source\external_compile_libraries\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\bin\CMakeFiles\CMakeTmp\cmTryCompileExec436310460.vcxproj" (default targets).
+
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:01.19
+
+

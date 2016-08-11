@@ -1,0 +1,12 @@
+set(ITKGPUFiniteDifference_LOADED 1)
+set(ITKGPUFiniteDifference_ENABLE_SHARED "0")
+set(ITKGPUFiniteDifference_DEPENDS "ITKCommon;ITKFiniteDifference;ITKGPUCommon")
+set(ITKGPUFiniteDifference_PUBLIC_DEPENDS "ITKCommon;ITKGPUCommon")
+set(ITKGPUFiniteDifference_TRANSITIVE_DEPENDS "ITKCommon;ITKFiniteDifference;ITKGPUCommon")
+set(ITKGPUFiniteDifference_PRIVATE_DEPENDS "")
+set(ITKGPUFiniteDifference_LIBRARIES "ITKCommon")
+set(ITKGPUFiniteDifference_INCLUDE_DIRS "C:/server/InsightToolkit-4.10.0/Modules/Core/GPUFiniteDifference/include")
+set(ITKGPUFiniteDifference_LIBRARY_DIRS "")
+set(ITKGPUFiniteDifference_RUNTIME_LIBRARY_DIRS "C:/server/InsightToolkit-4.10.0/bin/bin")
+set(ITKGPUFiniteDifference_TARGETS_FILE "")
+

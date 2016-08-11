@@ -1,0 +1,12 @@
+set(ITKDiffusionTensorImage_LOADED 1)
+set(ITKDiffusionTensorImage_ENABLE_SHARED "0")
+set(ITKDiffusionTensorImage_DEPENDS "ITKSpatialObjects")
+set(ITKDiffusionTensorImage_PUBLIC_DEPENDS "")
+set(ITKDiffusionTensorImage_TRANSITIVE_DEPENDS "ITKSpatialObjects")
+set(ITKDiffusionTensorImage_PRIVATE_DEPENDS "")
+set(ITKDiffusionTensorImage_LIBRARIES "ITKSpatialObjects")
+set(ITKDiffusionTensorImage_INCLUDE_DIRS "C:/server/InsightToolkit-4.10.0/Modules/Filtering/DiffusionTensorImage/include")
+set(ITKDiffusionTensorImage_LIBRARY_DIRS "")
+set(ITKDiffusionTensorImage_RUNTIME_LIBRARY_DIRS "C:/server/InsightToolkit-4.10.0/bin/bin")
+set(ITKDiffusionTensorImage_TARGETS_FILE "")
+

@@ -1,0 +1,308 @@
+<?xml version="1.0" encoding="us-ascii"?>
+<Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="MinSizeRel|x64">
+      <Configuration>MinSizeRel</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="MinSizeRel|Win32">
+      <Configuration>MinSizeRel</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="RelWithDebInfo|Win32">
+      <Configuration>RelWithDebInfo</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="RelWithDebInfo|x64">
+      <Configuration>RelWithDebInfo</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGUID>{BC323297-5BA3-4ADC-A2C2-B8E58B3FFCC6}</ProjectGUID>
+    <Keyword>Win32Proj</Keyword>
+    <Platform>Win32</Platform>
+    <ProjectName>ALL_BUILD</ProjectName>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>Utility</ConfigurationType>
+    <UseOfMfc>false</UseOfMfc>
+    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v140</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>Utility</ConfigurationType>
+    <UseOfMfc>false</UseOfMfc>
+    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v140</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>Utility</ConfigurationType>
+    <UseOfMfc>false</UseOfMfc>
+    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v140</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>Utility</ConfigurationType>
+    <UseOfMfc>false</UseOfMfc>
+    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v140</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|Win32'" Label="Configuration">
+    <ConfigurationType>Utility</ConfigurationType>
+    <UseOfMfc>false</UseOfMfc>
+    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v140</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'" Label="Configuration">
+    <ConfigurationType>Utility</ConfigurationType>
+    <UseOfMfc>false</UseOfMfc>
+    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v140</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'" Label="Configuration">
+    <ConfigurationType>Utility</ConfigurationType>
+    <UseOfMfc>false</UseOfMfc>
+    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v140</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'" Label="Configuration">
+    <ConfigurationType>Utility</ConfigurationType>
+    <UseOfMfc>false</UseOfMfc>
+    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v140</PlatformToolset>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup>
+    <_ProjectFileVersion>10.0.20506.1</_ProjectFileVersion>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(Platform)\$(Configuration)\$(ProjectName)\</IntDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(Platform)\$(Configuration)\$(ProjectName)\</IntDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(Platform)\$(Configuration)\$(ProjectName)\</IntDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(Platform)\$(Configuration)\$(ProjectName)\</IntDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|Win32'">$(Platform)\$(Configuration)\$(ProjectName)\</IntDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">$(Platform)\$(Configuration)\$(ProjectName)\</IntDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">$(Platform)\$(Configuration)\$(ProjectName)\</IntDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">$(Platform)\$(Configuration)\$(ProjectName)\</IntDir>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <Midl>
+      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <OutputDirectory>$(IntDir)</OutputDirectory>
+      <HeaderFileName>%(Filename).h</HeaderFileName>
+      <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
+      <InterfaceIdentifierFileName>%(Filename)_i.c</InterfaceIdentifierFileName>
+      <ProxyFileName>%(Filename)_p.c</ProxyFileName>
+    </Midl>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <Midl>
+      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <OutputDirectory>$(IntDir)</OutputDirectory>
+      <HeaderFileName>%(Filename).h</HeaderFileName>
+      <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
+      <InterfaceIdentifierFileName>%(Filename)_i.c</InterfaceIdentifierFileName>
+      <ProxyFileName>%(Filename)_p.c</ProxyFileName>
+    </Midl>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <Midl>
+      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <OutputDirectory>$(IntDir)</OutputDirectory>
+      <HeaderFileName>%(Filename).h</HeaderFileName>
+      <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
+      <InterfaceIdentifierFileName>%(Filename)_i.c</InterfaceIdentifierFileName>
+      <ProxyFileName>%(Filename)_p.c</ProxyFileName>
+    </Midl>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <Midl>
+      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <OutputDirectory>$(IntDir)</OutputDirectory>
+      <HeaderFileName>%(Filename).h</HeaderFileName>
+      <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
+      <InterfaceIdentifierFileName>%(Filename)_i.c</InterfaceIdentifierFileName>
+      <ProxyFileName>%(Filename)_p.c</ProxyFileName>
+    </Midl>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|Win32'">
+    <Midl>
+      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <OutputDirectory>$(IntDir)</OutputDirectory>
+      <HeaderFileName>%(Filename).h</HeaderFileName>
+      <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
+      <InterfaceIdentifierFileName>%(Filename)_i.c</InterfaceIdentifierFileName>
+      <ProxyFileName>%(Filename)_p.c</ProxyFileName>
+    </Midl>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">
+    <Midl>
+      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <OutputDirectory>$(IntDir)</OutputDirectory>
+      <HeaderFileName>%(Filename).h</HeaderFileName>
+      <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
+      <InterfaceIdentifierFileName>%(Filename)_i.c</InterfaceIdentifierFileName>
+      <ProxyFileName>%(Filename)_p.c</ProxyFileName>
+    </Midl>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">
+    <Midl>
+      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <OutputDirectory>$(IntDir)</OutputDirectory>
+      <HeaderFileName>%(Filename).h</HeaderFileName>
+      <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
+      <InterfaceIdentifierFileName>%(Filename)_i.c</InterfaceIdentifierFileName>
+      <ProxyFileName>%(Filename)_p.c</ProxyFileName>
+    </Midl>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">
+    <Midl>
+      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <OutputDirectory>$(IntDir)</OutputDirectory>
+      <HeaderFileName>%(Filename).h</HeaderFileName>
+      <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
+      <InterfaceIdentifierFileName>%(Filename)_i.c</InterfaceIdentifierFileName>
+      <ProxyFileName>%(Filename)_p.c</ProxyFileName>
+    </Midl>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <CustomBuild Include="C:\server\ns_lifespan_machine_source\external_compile_libraries\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\CMakeLists.txt">
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Building Custom Rule C:/server/ns_lifespan_machine_source/external_compile_libraries/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/CMakeLists.txt</Message>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Building Custom Rule C:/server/ns_lifespan_machine_source/external_compile_libraries/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/CMakeLists.txt</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">setlocal
+"c:\Program Files (x86)\CMakeMS\bin\cmake.exe" -HC:/server/ns_lifespan_machine_source/external_compile_libraries/InsightToolkit-4.10.0/Modules/ThirdParty/VNL -BC:/server/ns_lifespan_machine_source/external_compile_libraries/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/bin --check-stamp-file C:\server\ns_lifespan_machine_source\external_compile_libraries\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\bin\CMakeFiles\generate.stamp
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">setlocal
+"c:\Program Files (x86)\CMakeMS\bin\cmake.exe" -HC:/server/ns_lifespan_machine_source/external_compile_libraries/InsightToolkit-4.10.0/Modules/ThirdParty/VNL -BC:/server/ns_lifespan_machine_source/external_compile_libraries/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/bin --check-stamp-file C:\server\ns_lifespan_machine_source\external_compile_libraries\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\bin\CMakeFiles\generate.stamp
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">C:/server/ns_lifespan_machine_source/external_compile_libraries/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/CMakeLists.txt;C:\server\ns_lifespan_machine_source\external_compile_libraries\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\CMakeLists.txt;C:\server\ns_lifespan_machine_source\external_compile_libraries\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\bin\CMakeFiles\3.0.20140918\CMakeSystem.cmake;c:\Program Files (x86)\CMakeMS\share\cmake-3.0\Modules\CMakeSystemSpecificInitialize.cmake;C:\server\ns_lifespan_machine_source\external_compile_libraries\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\bin\CMakeFiles\3.0.20140918\CMakeCCompiler.cmake;C:\server\ns_lifespan_machine_source\external_compile_libraries\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\bin\CMakeFiles\3.0.20140918\CMakeCXXCompiler.cmake;c:\Program Files (x86)\CMakeMS\share\cmake-3.0\Modules\CMakeSystemSpecificInformation.cmake;c:\Program Files (x86)\CMakeMS\share\cmake-3.0\Modules\CMakeGenericSystem.cmake;c:\Program Files (x86)\CMakeMS\share\cmake-3.0\Modules\Platform\Windows.cmake;c:\Program Files (x86)\CMakeMS\share\cmake-3.0\Modules\Platform\WindowsPaths.cmake;c:\Program Files (x86)\CMakeMS\share\cmake-3.0\Modules\CMakeCInformation.cmake;c:\Program Files (x86)\CMakeMS\share\cmake-3.0\Modules\Platform\Windows-MSVC-C.cmake;c:\Program Files (x86)\CMakeMS\share\cmake-3.0\Modules\Platform\Windows-MSVC.cmake;C:\server\ns_lifespan_machine_source\external_compile_libraries\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\bin\CMakeFiles\3.0.20140918\CMakeRCCompiler.cmake;c:\Program Files (x86)\CMakeMS\share\cmake-3.0\Modules\CMakeRCInformation.cmake;c:\Program Files (x86)\CMakeMS\share\cmake-3.0\Modules\CMakeCommonLanguageInclude.cmake;c:\Program Files (x86)\CMakeMS\share\cmake-3.0\Modules\CMakeCXXInformation.cmake;c:\Program Files (x86)\CMakeMS\share\cmake-3.0\Modules\Platform\Windows-MSVC-CXX.cmake;c:\Program Files (x86)\CMakeMS\share\cmake-3.0\Modules\Platform\Windows-MSVC.cmake;c:\Program Files (x86)\CMakeMS\share\cmake-3.0\Modules\CMakeCommonLanguageInclude.cmake;C:\server\ns_lifespan_machine_source\external_compile_libraries\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\CMakeLists.txt;%(AdditionalInputs)</AdditionalInputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">C:/server/ns_lifespan_machine_source/external_compile_libraries/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/CMakeLists.txt;C:\server\ns_lifespan_machine_source\external_compile_libraries\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\CMakeLists.txt;C:\server\ns_lifespan_machine_source\external_compile_libraries\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\bin\CMakeFiles\3.0.20140918\CMakeSystem.cmake;c:\Program Files (x86)\CMakeMS\share\cmake-3.0\Modules\CMakeSystemSpecificInitialize.cmake;C:\server\ns_lifespan_machine_source\external_compile_libraries\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\bin\CMakeFiles\3.0.20140918\CMakeCCompiler.cmake;C:\server\ns_lifespan_machine_source\external_compile_libraries\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\bin\CMakeFiles\3.0.20140918\CMakeCXXCompiler.cmake;c:\Program Files (x86)\CMakeMS\share\cmake-3.0\Modules\CMakeSystemSpecificInformation.cmake;c:\Program Files (x86)\CMakeMS\share\cmake-3.0\Modules\CMakeGenericSystem.cmake;c:\Program Files (x86)\CMakeMS\share\cmake-3.0\Modules\Platform\Windows.cmake;c:\Program Files (x86)\CMakeMS\share\cmake-3.0\Modules\Platform\WindowsPaths.cmake;c:\Program Files (x86)\CMakeMS\share\cmake-3.0\Modules\CMakeCInformation.cmake;c:\Program Files (x86)\CMakeMS\share\cmake-3.0\Modules\Platform\Windows-MSVC-C.cmake;c:\Program Files (x86)\CMakeMS\share\cmake-3.0\Modules\Platform\Windows-MSVC.cmake;C:\server\ns_lifespan_machine_source\external_compile_libraries\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\bin\CMakeFiles\3.0.20140918\CMakeRCCompiler.cmake;c:\Program Files (x86)\CMakeMS\share\cmake-3.0\Modules\CMakeRCInformation.cmake;c:\Program Files (x86)\CMakeMS\share\cmake-3.0\Modules\CMakeCommonLanguageInclude.cmake;c:\Program Files (x86)\CMakeMS\share\cmake-3.0\Modules\CMakeCXXInformation.cmake;c:\Program Files (x86)\CMakeMS\share\cmake-3.0\Modules\Platform\Windows-MSVC-CXX.cmake;c:\Program Files (x86)\CMakeMS\share\cmake-3.0\Modules\Platform\Windows-MSVC.cmake;c:\Program Files (x86)\CMakeMS\share\cmake-3.0\Modules\CMakeCommonLanguageInclude.cmake;C:\server\ns_lifespan_machine_source\external_compile_libraries\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\CMakeLists.txt;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">C:\server\ns_lifespan_machine_source\external_compile_libraries\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\bin\CMakeFiles\generate.stamp</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">C:\server\ns_lifespan_machine_source\external_compile_libraries\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\bin\CMakeFiles\generate.stamp</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">false</LinkObjects>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Building Custom Rule C:/server/ns_lifespan_machine_source/external_compile_libraries/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/CMakeLists.txt</Message>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Building Custom Rule C:/server/ns_lifespan_machine_source/external_compile_libraries/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/CMakeLists.txt</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">setlocal
+"c:\Program Files (x86)\CMakeMS\bin\cmake.exe" -HC:/server/ns_lifespan_machine_source/external_compile_libraries/InsightToolkit-4.10.0/Modules/ThirdParty/VNL -BC:/server/ns_lifespan_machine_source/external_compile_libraries/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/bin --check-stamp-file C:\server\ns_lifespan_machine_source\external_compile_libraries\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\bin\CMakeFiles\generate.stamp
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">setlocal
+"c:\Program Files (x86)\CMakeMS\bin\cmake.exe" -HC:/server/ns_lifespan_machine_source/external_compile_libraries/InsightToolkit-4.10.0/Modules/ThirdParty/VNL -BC:/server/ns_lifespan_machine_source/external_compile_libraries/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/bin --check-stamp-file C:\server\ns_lifespan_machine_source\external_compile_libraries\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\bin\CMakeFiles\generate.stamp
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">C:/server/ns_lifespan_machine_source/external_compile_libraries/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/CMakeLists.txt;C:\server\ns_lifespan_machine_source\external_compile_libraries\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\CMakeLists.txt;C:\server\ns_lifespan_machine_source\external_compile_libraries\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\bin\CMakeFiles\3.0.20140918\CMakeSystem.cmake;c:\Program Files (x86)\CMakeMS\share\cmake-3.0\Modules\CMakeSystemSpecificInitialize.cmake;C:\server\ns_lifespan_machine_source\external_compile_libraries\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\bin\CMakeFiles\3.0.20140918\CMakeCCompiler.cmake;C:\server\ns_lifespan_machine_source\external_compile_libraries\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\bin\CMakeFiles\3.0.20140918\CMakeCXXCompiler.cmake;c:\Program Files (x86)\CMakeMS\share\cmake-3.0\Modules\CMakeSystemSpecificInformation.cmake;c:\Program Files (x86)\CMakeMS\share\cmake-3.0\Modules\CMakeGenericSystem.cmake;c:\Program Files (x86)\CMakeMS\share\cmake-3.0\Modules\Platform\Windows.cmake;c:\Program Files (x86)\CMakeMS\share\cmake-3.0\Modules\Platform\WindowsPaths.cmake;c:\Program Files (x86)\CMakeMS\share\cmake-3.0\Modules\CMakeCInformation.cmake;c:\Program Files (x86)\CMakeMS\share\cmake-3.0\Modules\Platform\Windows-MSVC-C.cmake;c:\Program Files (x86)\CMakeMS\share\cmake-3.0\Modules\Platform\Windows-MSVC.cmake;C:\server\ns_lifespan_machine_source\external_compile_libraries\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\bin\CMakeFiles\3.0.20140918\CMakeRCCompiler.cmake;c:\Program Files (x86)\CMakeMS\share\cmake-3.0\Modules\CMakeRCInformation.cmake;c:\Program Files (x86)\CMakeMS\share\cmake-3.0\Modules\CMakeCommonLanguageInclude.cmake;c:\Program Files (x86)\CMakeMS\share\cmake-3.0\Modules\CMakeCXXInformation.cmake;c:\Program Files (x86)\CMakeMS\share\cmake-3.0\Modules\Platform\Windows-MSVC-CXX.cmake;c:\Program Files (x86)\CMakeMS\share\cmake-3.0\Modules\Platform\Windows-MSVC.cmake;c:\Program Files (x86)\CMakeMS\share\cmake-3.0\Modules\CMakeCommonLanguageInclude.cmake;C:\server\ns_lifespan_machine_source\external_compile_libraries\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\CMakeLists.txt;%(AdditionalInputs)</AdditionalInputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">C:/server/ns_lifespan_machine_source/external_compile_libraries/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/CMakeLists.txt;C:\server\ns_lifespan_machine_source\external_compile_libraries\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\CMakeLists.txt;C:\server\ns_lifespan_machine_source\external_compile_libraries\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\bin\CMakeFiles\3.0.20140918\CMakeSystem.cmake;c:\Program Files (x86)\CMakeMS\share\cmake-3.0\Modules\CMakeSystemSpecificInitialize.cmake;C:\server\ns_lifespan_machine_source\external_compile_libraries\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\bin\CMakeFiles\3.0.20140918\CMakeCCompiler.cmake;C:\server\ns_lifespan_machine_source\external_compile_libraries\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\bin\CMakeFiles\3.0.20140918\CMakeCXXCompiler.cmake;c:\Program Files (x86)\CMakeMS\share\cmake-3.0\Modules\CMakeSystemSpecificInformation.cmake;c:\Program Files (x86)\CMakeMS\share\cmake-3.0\Modules\CMakeGenericSystem.cmake;c:\Program Files (x86)\CMakeMS\share\cmake-3.0\Modules\Platform\Windows.cmake;c:\Program Files (x86)\CMakeMS\share\cmake-3.0\Modules\Platform\WindowsPaths.cmake;c:\Program Files (x86)\CMakeMS\share\cmake-3.0\Modules\CMakeCInformation.cmake;c:\Program Files (x86)\CMakeMS\share\cmake-3.0\Modules\Platform\Windows-MSVC-C.cmake;c:\Program Files (x86)\CMakeMS\share\cmake-3.0\Modules\Platform\Windows-MSVC.cmake;C:\server\ns_lifespan_machine_source\external_compile_libraries\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\bin\CMakeFiles\3.0.20140918\CMakeRCCompiler.cmake;c:\Program Files (x86)\CMakeMS\share\cmake-3.0\Modules\CMakeRCInformation.cmake;c:\Program Files (x86)\CMakeMS\share\cmake-3.0\Modules\CMakeCommonLanguageInclude.cmake;c:\Program Files (x86)\CMakeMS\share\cmake-3.0\Modules\CMakeCXXInformation.cmake;c:\Program Files (x86)\CMakeMS\share\cmake-3.0\Modules\Platform\Windows-MSVC-CXX.cmake;c:\Program Files (x86)\CMakeMS\share\cmake-3.0\Modules\Platform\Windows-MSVC.cmake;c:\Program Files (x86)\CMakeMS\share\cmake-3.0\Modules\CMakeCommonLanguageInclude.cmake;C:\server\ns_lifespan_machine_source\external_compile_libraries\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\CMakeLists.txt;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">C:\server\ns_lifespan_machine_source\external_compile_libraries\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\bin\CMakeFiles\generate.stamp</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">C:\server\ns_lifespan_machine_source\external_compile_libraries\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\bin\CMakeFiles\generate.stamp</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">false</LinkObjects>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|Win32'">Building Custom Rule C:/server/ns_lifespan_machine_source/external_compile_libraries/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/CMakeLists.txt</Message>
+      <Message Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">Building Custom Rule C:/server/ns_lifespan_machine_source/external_compile_libraries/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/CMakeLists.txt</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|Win32'">setlocal
+"c:\Program Files (x86)\CMakeMS\bin\cmake.exe" -HC:/server/ns_lifespan_machine_source/external_compile_libraries/InsightToolkit-4.10.0/Modules/ThirdParty/VNL -BC:/server/ns_lifespan_machine_source/external_compile_libraries/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/bin --check-stamp-file C:\server\ns_lifespan_machine_source\external_compile_libraries\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\bin\CMakeFiles\generate.stamp
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">setlocal
+"c:\Program Files (x86)\CMakeMS\bin\cmake.exe" -HC:/server/ns_lifespan_machine_source/external_compile_libraries/InsightToolkit-4.10.0/Modules/ThirdParty/VNL -BC:/server/ns_lifespan_machine_source/external_compile_libraries/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/bin --check-stamp-file C:\server\ns_lifespan_machine_source\external_compile_libraries\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\bin\CMakeFiles\generate.stamp
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|Win32'">C:/server/ns_lifespan_machine_source/external_compile_libraries/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/CMakeLists.txt;C:\server\ns_lifespan_machine_source\external_compile_libraries\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\CMakeLists.txt;C:\server\ns_lifespan_machine_source\external_compile_libraries\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\bin\CMakeFiles\3.0.20140918\CMakeSystem.cmake;c:\Program Files (x86)\CMakeMS\share\cmake-3.0\Modules\CMakeSystemSpecificInitialize.cmake;C:\server\ns_lifespan_machine_source\external_compile_libraries\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\bin\CMakeFiles\3.0.20140918\CMakeCCompiler.cmake;C:\server\ns_lifespan_machine_source\external_compile_libraries\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\bin\CMakeFiles\3.0.20140918\CMakeCXXCompiler.cmake;c:\Program Files (x86)\CMakeMS\share\cmake-3.0\Modules\CMakeSystemSpecificInformation.cmake;c:\Program Files (x86)\CMakeMS\share\cmake-3.0\Modules\CMakeGenericSystem.cmake;c:\Program Files (x86)\CMakeMS\share\cmake-3.0\Modules\Platform\Windows.cmake;c:\Program Files (x86)\CMakeMS\share\cmake-3.0\Modules\Platform\WindowsPaths.cmake;c:\Program Files (x86)\CMakeMS\share\cmake-3.0\Modules\CMakeCInformation.cmake;c:\Program Files (x86)\CMakeMS\share\cmake-3.0\Modules\Platform\Windows-MSVC-C.cmake;c:\Program Files (x86)\CMakeMS\share\cmake-3.0\Modules\Platform\Windows-MSVC.cmake;C:\server\ns_lifespan_machine_source\external_compile_libraries\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\bin\CMakeFiles\3.0.20140918\CMakeRCCompiler.cmake;c:\Program Files (x86)\CMakeMS\share\cmake-3.0\Modules\CMakeRCInformation.cmake;c:\Program Files (x86)\CMakeMS\share\cmake-3.0\Modules\CMakeCommonLanguageInclude.cmake;c:\Program Files (x86)\CMakeMS\share\cmake-3.0\Modules\CMakeCXXInformation.cmake;c:\Program Files (x86)\CMakeMS\share\cmake-3.0\Modules\Platform\Windows-MSVC-CXX.cmake;c:\Program Files (x86)\CMakeMS\share\cmake-3.0\Modules\Platform\Windows-MSVC.cmake;c:\Program Files (x86)\CMakeMS\share\cmake-3.0\Modules\CMakeCommonLanguageInclude.cmake;C:\server\ns_lifespan_machine_source\external_compile_libraries\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\CMakeLists.txt;%(AdditionalInputs)</AdditionalInputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">C:/server/ns_lifespan_machine_source/external_compile_libraries/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/CMakeLists.txt;C:\server\ns_lifespan_machine_source\external_compile_libraries\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\CMakeLists.txt;C:\server\ns_lifespan_machine_source\external_compile_libraries\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\bin\CMakeFiles\3.0.20140918\CMakeSystem.cmake;c:\Program Files (x86)\CMakeMS\share\cmake-3.0\Modules\CMakeSystemSpecificInitialize.cmake;C:\server\ns_lifespan_machine_source\external_compile_libraries\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\bin\CMakeFiles\3.0.20140918\CMakeCCompiler.cmake;C:\server\ns_lifespan_machine_source\external_compile_libraries\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\bin\CMakeFiles\3.0.20140918\CMakeCXXCompiler.cmake;c:\Program Files (x86)\CMakeMS\share\cmake-3.0\Modules\CMakeSystemSpecificInformation.cmake;c:\Program Files (x86)\CMakeMS\share\cmake-3.0\Modules\CMakeGenericSystem.cmake;c:\Program Files (x86)\CMakeMS\share\cmake-3.0\Modules\Platform\Windows.cmake;c:\Program Files (x86)\CMakeMS\share\cmake-3.0\Modules\Platform\WindowsPaths.cmake;c:\Program Files (x86)\CMakeMS\share\cmake-3.0\Modules\CMakeCInformation.cmake;c:\Program Files (x86)\CMakeMS\share\cmake-3.0\Modules\Platform\Windows-MSVC-C.cmake;c:\Program Files (x86)\CMakeMS\share\cmake-3.0\Modules\Platform\Windows-MSVC.cmake;C:\server\ns_lifespan_machine_source\external_compile_libraries\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\bin\CMakeFiles\3.0.20140918\CMakeRCCompiler.cmake;c:\Program Files (x86)\CMakeMS\share\cmake-3.0\Modules\CMakeRCInformation.cmake;c:\Program Files (x86)\CMakeMS\share\cmake-3.0\Modules\CMakeCommonLanguageInclude.cmake;c:\Program Files (x86)\CMakeMS\share\cmake-3.0\Modules\CMakeCXXInformation.cmake;c:\Program Files (x86)\CMakeMS\share\cmake-3.0\Modules\Platform\Windows-MSVC-CXX.cmake;c:\Program Files (x86)\CMakeMS\share\cmake-3.0\Modules\Platform\Windows-MSVC.cmake;c:\Program Files (x86)\CMakeMS\share\cmake-3.0\Modules\CMakeCommonLanguageInclude.cmake;C:\server\ns_lifespan_machine_source\external_compile_libraries\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\CMakeLists.txt;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|Win32'">C:\server\ns_lifespan_machine_source\external_compile_libraries\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\bin\CMakeFiles\generate.stamp</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">C:\server\ns_lifespan_machine_source\external_compile_libraries\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\bin\CMakeFiles\generate.stamp</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|Win32'">false</LinkObjects>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">Building Custom Rule C:/server/ns_lifespan_machine_source/external_compile_libraries/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/CMakeLists.txt</Message>
+      <Message Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">Building Custom Rule C:/server/ns_lifespan_machine_source/external_compile_libraries/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/CMakeLists.txt</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">setlocal
+"c:\Program Files (x86)\CMakeMS\bin\cmake.exe" -HC:/server/ns_lifespan_machine_source/external_compile_libraries/InsightToolkit-4.10.0/Modules/ThirdParty/VNL -BC:/server/ns_lifespan_machine_source/external_compile_libraries/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/bin --check-stamp-file C:\server\ns_lifespan_machine_source\external_compile_libraries\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\bin\CMakeFiles\generate.stamp
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">setlocal
+"c:\Program Files (x86)\CMakeMS\bin\cmake.exe" -HC:/server/ns_lifespan_machine_source/external_compile_libraries/InsightToolkit-4.10.0/Modules/ThirdParty/VNL -BC:/server/ns_lifespan_machine_source/external_compile_libraries/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/bin --check-stamp-file C:\server\ns_lifespan_machine_source\external_compile_libraries\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\bin\CMakeFiles\generate.stamp
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">C:/server/ns_lifespan_machine_source/external_compile_libraries/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/CMakeLists.txt;C:\server\ns_lifespan_machine_source\external_compile_libraries\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\CMakeLists.txt;C:\server\ns_lifespan_machine_source\external_compile_libraries\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\bin\CMakeFiles\3.0.20140918\CMakeSystem.cmake;c:\Program Files (x86)\CMakeMS\share\cmake-3.0\Modules\CMakeSystemSpecificInitialize.cmake;C:\server\ns_lifespan_machine_source\external_compile_libraries\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\bin\CMakeFiles\3.0.20140918\CMakeCCompiler.cmake;C:\server\ns_lifespan_machine_source\external_compile_libraries\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\bin\CMakeFiles\3.0.20140918\CMakeCXXCompiler.cmake;c:\Program Files (x86)\CMakeMS\share\cmake-3.0\Modules\CMakeSystemSpecificInformation.cmake;c:\Program Files (x86)\CMakeMS\share\cmake-3.0\Modules\CMakeGenericSystem.cmake;c:\Program Files (x86)\CMakeMS\share\cmake-3.0\Modules\Platform\Windows.cmake;c:\Program Files (x86)\CMakeMS\share\cmake-3.0\Modules\Platform\WindowsPaths.cmake;c:\Program Files (x86)\CMakeMS\share\cmake-3.0\Modules\CMakeCInformation.cmake;c:\Program Files (x86)\CMakeMS\share\cmake-3.0\Modules\Platform\Windows-MSVC-C.cmake;c:\Program Files (x86)\CMakeMS\share\cmake-3.0\Modules\Platform\Windows-MSVC.cmake;C:\server\ns_lifespan_machine_source\external_compile_libraries\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\bin\CMakeFiles\3.0.20140918\CMakeRCCompiler.cmake;c:\Program Files (x86)\CMakeMS\share\cmake-3.0\Modules\CMakeRCInformation.cmake;c:\Program Files (x86)\CMakeMS\share\cmake-3.0\Modules\CMakeCommonLanguageInclude.cmake;c:\Program Files (x86)\CMakeMS\share\cmake-3.0\Modules\CMakeCXXInformation.cmake;c:\Program Files (x86)\CMakeMS\share\cmake-3.0\Modules\Platform\Windows-MSVC-CXX.cmake;c:\Program Files (x86)\CMakeMS\share\cmake-3.0\Modules\Platform\Windows-MSVC.cmake;c:\Program Files (x86)\CMakeMS\share\cmake-3.0\Modules\CMakeCommonLanguageInclude.cmake;C:\server\ns_lifespan_machine_source\external_compile_libraries\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\CMakeLists.txt;%(AdditionalInputs)</AdditionalInputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">C:/server/ns_lifespan_machine_source/external_compile_libraries/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/CMakeLists.txt;C:\server\ns_lifespan_machine_source\external_compile_libraries\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\CMakeLists.txt;C:\server\ns_lifespan_machine_source\external_compile_libraries\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\bin\CMakeFiles\3.0.20140918\CMakeSystem.cmake;c:\Program Files (x86)\CMakeMS\share\cmake-3.0\Modules\CMakeSystemSpecificInitialize.cmake;C:\server\ns_lifespan_machine_source\external_compile_libraries\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\bin\CMakeFiles\3.0.20140918\CMakeCCompiler.cmake;C:\server\ns_lifespan_machine_source\external_compile_libraries\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\bin\CMakeFiles\3.0.20140918\CMakeCXXCompiler.cmake;c:\Program Files (x86)\CMakeMS\share\cmake-3.0\Modules\CMakeSystemSpecificInformation.cmake;c:\Program Files (x86)\CMakeMS\share\cmake-3.0\Modules\CMakeGenericSystem.cmake;c:\Program Files (x86)\CMakeMS\share\cmake-3.0\Modules\Platform\Windows.cmake;c:\Program Files (x86)\CMakeMS\share\cmake-3.0\Modules\Platform\WindowsPaths.cmake;c:\Program Files (x86)\CMakeMS\share\cmake-3.0\Modules\CMakeCInformation.cmake;c:\Program Files (x86)\CMakeMS\share\cmake-3.0\Modules\Platform\Windows-MSVC-C.cmake;c:\Program Files (x86)\CMakeMS\share\cmake-3.0\Modules\Platform\Windows-MSVC.cmake;C:\server\ns_lifespan_machine_source\external_compile_libraries\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\bin\CMakeFiles\3.0.20140918\CMakeRCCompiler.cmake;c:\Program Files (x86)\CMakeMS\share\cmake-3.0\Modules\CMakeRCInformation.cmake;c:\Program Files (x86)\CMakeMS\share\cmake-3.0\Modules\CMakeCommonLanguageInclude.cmake;c:\Program Files (x86)\CMakeMS\share\cmake-3.0\Modules\CMakeCXXInformation.cmake;c:\Program Files (x86)\CMakeMS\share\cmake-3.0\Modules\Platform\Windows-MSVC-CXX.cmake;c:\Program Files (x86)\CMakeMS\share\cmake-3.0\Modules\Platform\Windows-MSVC.cmake;c:\Program Files (x86)\CMakeMS\share\cmake-3.0\Modules\CMakeCommonLanguageInclude.cmake;C:\server\ns_lifespan_machine_source\external_compile_libraries\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\CMakeLists.txt;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">C:\server\ns_lifespan_machine_source\external_compile_libraries\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\bin\CMakeFiles\generate.stamp</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">C:\server\ns_lifespan_machine_source\external_compile_libraries\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\bin\CMakeFiles\generate.stamp</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">false</LinkObjects>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">false</LinkObjects>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="C:/server/ns_lifespan_machine_source/external_compile_libraries/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/bin/ZERO_CHECK.vcxproj">
+      <Project>44234D09-95A7-4907-A582-8434A15CDEE7</Project>
+    </ProjectReference>
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

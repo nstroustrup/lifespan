@@ -1,0 +1,12 @@
+set(ITKImageLabel_LOADED 1)
+set(ITKImageLabel_ENABLE_SHARED "0")
+set(ITKImageLabel_DEPENDS "ITKImageIntensity")
+set(ITKImageLabel_PUBLIC_DEPENDS "")
+set(ITKImageLabel_TRANSITIVE_DEPENDS "ITKImageIntensity")
+set(ITKImageLabel_PRIVATE_DEPENDS "")
+set(ITKImageLabel_LIBRARIES "ITKCommon;ITKStatistics;ITKTransform;ITKSpatialObjects;ITKPath")
+set(ITKImageLabel_INCLUDE_DIRS "C:/server/InsightToolkit-4.10.0/Modules/Filtering/ImageLabel/include")
+set(ITKImageLabel_LIBRARY_DIRS "")
+set(ITKImageLabel_RUNTIME_LIBRARY_DIRS "C:/server/InsightToolkit-4.10.0/bin/bin")
+set(ITKImageLabel_TARGETS_FILE "")
+

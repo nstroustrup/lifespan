@@ -1,0 +1,12 @@
+set(ITKGDCM_LOADED 1)
+set(ITKGDCM_ENABLE_SHARED "0")
+set(ITKGDCM_DEPENDS "ITKExpat;ITKZLIB")
+set(ITKGDCM_PUBLIC_DEPENDS "ITKExpat;ITKZLIB")
+set(ITKGDCM_TRANSITIVE_DEPENDS "ITKExpat;ITKZLIB")
+set(ITKGDCM_PRIVATE_DEPENDS "")
+set(ITKGDCM_LIBRARIES "gdcmDICT;gdcmMSFF")
+set(ITKGDCM_INCLUDE_DIRS "C:/server/InsightToolkit-4.10.0/bin/Modules/ThirdParty/GDCM;C:/server/InsightToolkit-4.10.0/bin/Modules/ThirdParty/GDCM/src/gdcm/Source/Common;C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/GDCM/src/gdcm/Source/MediaStorageAndFileFormat;C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/GDCM/src/gdcm/Source/DataDictionary;C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/GDCM/src/gdcm/Source/Common;C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/GDCM/src/gdcm/Source/InformationObjectDefinition;C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/GDCM/src/gdcm/Source/MessageExchangeDefinition;C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/GDCM/src/gdcm/Source/DataStructureAndEncodingDefinition")
+set(ITKGDCM_LIBRARY_DIRS "")
+set(ITKGDCM_RUNTIME_LIBRARY_DIRS "C:/server/InsightToolkit-4.10.0/bin/bin")
+set(ITKGDCM_TARGETS_FILE "")
+

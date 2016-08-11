@@ -1,0 +1,12 @@
+set(ITKCommon_LOADED 1)
+set(ITKCommon_ENABLE_SHARED "1")
+set(ITKCommon_DEPENDS "ITKDoubleConversion;ITKKWIML;ITKKWSys;ITKVNLInstantiation")
+set(ITKCommon_PUBLIC_DEPENDS "ITKKWIML")
+set(ITKCommon_TRANSITIVE_DEPENDS "ITKKWIML;ITKKWSys;ITKVNLInstantiation")
+set(ITKCommon_PRIVATE_DEPENDS "ITKDoubleConversion")
+set(ITKCommon_LIBRARIES "ITKCommon")
+set(ITKCommon_INCLUDE_DIRS "C:/server/InsightToolkit-4.10.0/bin/Modules/Core/Common;C:/server/InsightToolkit-4.10.0/Modules/Core/Common/include")
+set(ITKCommon_LIBRARY_DIRS "")
+set(ITKCommon_RUNTIME_LIBRARY_DIRS "C:/server/InsightToolkit-4.10.0/bin/bin")
+set(ITKCommon_TARGETS_FILE "")
+

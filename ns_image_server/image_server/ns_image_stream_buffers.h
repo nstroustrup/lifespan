@@ -2,7 +2,7 @@
 #define NS_IMAGE_STREAM_BUFFERS
 
 #include <vector>
-
+#include "ns_ex.h"
 //#define NS_TRACK_PERFORMANCE_STATISTICS
 #ifdef NS_TRACK_PERFORMANCE_STATISTICS
 #include "ns_performance_statistics.h"

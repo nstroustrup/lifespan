@@ -51,6 +51,9 @@ AC_SEARCH_LIBS([FT_Load_Glyph], [freetype], [], AC_MSG_ERROR([Could not locate p
 AC_SEARCH_LIBS(opj_create_compress, [openjp2], [],AC_MSG_ERROR([Could not locate package openjpeg.  Is it installed?],[1]))
 AC_SEARCH_LIBS(xvid_encore,xvidcore, [],AC_MSG_ERROR([Could not locate package xvid.  Is it installed?],[1]))
 AC_SEARCH_LIBS([zlibVersion], [z], [],AC_MSG_ERROR([Could not locate package zlib.  Is it installed?],[1]))
+AC_SEARCH_LIBS([jinit_compress_master], [itkjpeg-4.11], [],AC_MSG_ERROR([Could not locate package ITK.  Is it installed?],[1]))
+
+AC_SEARCH_LIBS([fftw_malloc], [fftw3], [],AC_MSG_ERROR([Could not locate package fftw.  Is it installed?],[1]))
 
 AC_SEARCH_LIBS(libusb_init,[usb-1.0], NS_USB_1=1,NS_USB_1=0)
 if test "$NS_USB_1" = "0"

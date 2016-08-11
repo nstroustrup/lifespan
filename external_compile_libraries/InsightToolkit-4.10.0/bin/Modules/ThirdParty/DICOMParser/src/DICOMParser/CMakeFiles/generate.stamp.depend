@@ -1,0 +1,5 @@
+# CMake generation dependency list for this directory.
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/DICOMParser/src/DICOMParser/CMakeLists.txt
+C:/Program Files/CMake/share/cmake-3.6/Modules/TestForSTDNamespace.cmake
+c:/Program Files/CMake/share/cmake-3.6/Modules/TestForSTDNamespace.cxx
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/DICOMParser/src/DICOMParser/DICOMCMakeConfig.h.in

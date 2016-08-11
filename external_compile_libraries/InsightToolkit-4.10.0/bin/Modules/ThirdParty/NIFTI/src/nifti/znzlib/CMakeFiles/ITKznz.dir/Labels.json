@@ -1,0 +1,19 @@
+
+{
+	"sources" : 
+	[
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/NIFTI/src/nifti/znzlib/znzlib.c"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/NIFTI/src/nifti/znzlib/CMakeLists.txt"
+		}
+	],
+	"target" : 
+	{
+		"labels" : [ "ITKNIFTI" ],
+		"name" : "ITKznz"
+	}
+}

@@ -1,0 +1,10 @@
+# Target labels
+ ITKVNL
+# Source files and their labels
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/src/vxl/core/testlib/testlib_test.h
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/src/vxl/core/testlib/testlib_test.cxx
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/src/vxl/core/testlib/testlib_register.h
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/src/vxl/core/testlib/testlib_main.cxx
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/src/vxl/core/testlib/testlib_root_dir.h
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/src/vxl/core/testlib/testlib_root_dir.cxx
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/src/vxl/core/testlib/CMakeLists.txt

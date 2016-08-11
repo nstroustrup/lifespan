@@ -1,0 +1,10 @@
+# Target labels
+ ITKIOXML
+# Source files and their labels
+C:/server/InsightToolkit-4.10.0/Modules/IO/XML/src/itkXMLFile.cxx
+C:/server/InsightToolkit-4.10.0/Modules/IO/XML/src/itkDOMNode.cxx
+C:/server/InsightToolkit-4.10.0/Modules/IO/XML/src/itkDOMNodeXMLReader.cxx
+C:/server/InsightToolkit-4.10.0/Modules/IO/XML/src/itkDOMNodeXMLWriter.cxx
+C:/server/InsightToolkit-4.10.0/Modules/IO/XML/src/itkStringTools.cxx
+C:/server/InsightToolkit-4.10.0/Modules/IO/XML/src/itkFancyString.cxx
+C:/server/InsightToolkit-4.10.0/Modules/IO/XML/src/CMakeLists.txt

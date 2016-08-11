@@ -1,0 +1,196 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<Project ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Utilities\gdcmjpeg\jmemnobs.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Utilities\gdcmjpeg\jcomapi.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Utilities\gdcmjpeg\jutils.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Utilities\gdcmjpeg\jerror.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Utilities\gdcmjpeg\jmemmgr.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Utilities\gdcmjpeg\jcapimin.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Utilities\gdcmjpeg\jcapistd.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Utilities\gdcmjpeg\jctrans.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Utilities\gdcmjpeg\jcparam.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Utilities\gdcmjpeg\jcinit.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Utilities\gdcmjpeg\jcmaster.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Utilities\gdcmjpeg\jcmarker.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Utilities\gdcmjpeg\jcmainct.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Utilities\gdcmjpeg\jcprepct.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Utilities\gdcmjpeg\jccoefct.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Utilities\gdcmjpeg\jccolor.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Utilities\gdcmjpeg\jcsample.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Utilities\gdcmjpeg\jchuff.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Utilities\gdcmjpeg\jcphuff.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Utilities\gdcmjpeg\jcdctmgr.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Utilities\gdcmjpeg\jfdctfst.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Utilities\gdcmjpeg\jfdctflt.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Utilities\gdcmjpeg\jdatadst.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Utilities\gdcmjpeg\jdapimin.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Utilities\gdcmjpeg\jdapistd.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Utilities\gdcmjpeg\jdtrans.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Utilities\gdcmjpeg\jdmaster.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Utilities\gdcmjpeg\jdinput.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Utilities\gdcmjpeg\jdmarker.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Utilities\gdcmjpeg\jdhuff.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Utilities\gdcmjpeg\jdphuff.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Utilities\gdcmjpeg\jdmainct.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Utilities\gdcmjpeg\jdcoefct.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Utilities\gdcmjpeg\jdpostct.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Utilities\gdcmjpeg\jddctmgr.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Utilities\gdcmjpeg\jidctfst.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Utilities\gdcmjpeg\jidctflt.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Utilities\gdcmjpeg\jidctint.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Utilities\gdcmjpeg\jidctred.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Utilities\gdcmjpeg\jdsample.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Utilities\gdcmjpeg\jdcolor.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Utilities\gdcmjpeg\jquant1.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Utilities\gdcmjpeg\jquant2.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Utilities\gdcmjpeg\jdmerge.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Utilities\gdcmjpeg\jdatasrc.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Utilities\gdcmjpeg\jfdctint.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Utilities\gdcmjpeg\jclossy.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Utilities\gdcmjpeg\jclossls.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Utilities\gdcmjpeg\jcodec.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Utilities\gdcmjpeg\jcscale.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Utilities\gdcmjpeg\jcshuff.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Utilities\gdcmjpeg\jclhuff.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Utilities\gdcmjpeg\jcpred.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Utilities\gdcmjpeg\jcdiffct.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Utilities\gdcmjpeg\jdlossls.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Utilities\gdcmjpeg\jdlossy.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Utilities\gdcmjpeg\jdlhuff.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Utilities\gdcmjpeg\jddiffct.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Utilities\gdcmjpeg\jdpred.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Utilities\gdcmjpeg\jdscale.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Utilities\gdcmjpeg\jdshuff.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Utilities\gdcmjpeg\8\CMakeLists.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{3D8AD831-5BA8-339E-9CE0-67BCE07365DA}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

@@ -1,0 +1,151 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<Project ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\JPEG\src\itkjpeg\jmemnobs.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\JPEG\src\itkjpeg\jcomapi.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\JPEG\src\itkjpeg\jutils.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\JPEG\src\itkjpeg\jerror.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\JPEG\src\itkjpeg\jmemmgr.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\JPEG\src\itkjpeg\jaricom.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\JPEG\src\itkjpeg\jcapimin.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\JPEG\src\itkjpeg\jcapistd.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\JPEG\src\itkjpeg\jctrans.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\JPEG\src\itkjpeg\jcparam.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\JPEG\src\itkjpeg\jdatadst.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\JPEG\src\itkjpeg\jcinit.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\JPEG\src\itkjpeg\jcmaster.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\JPEG\src\itkjpeg\jcmarker.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\JPEG\src\itkjpeg\jcmainct.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\JPEG\src\itkjpeg\jcprepct.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\JPEG\src\itkjpeg\jccoefct.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\JPEG\src\itkjpeg\jccolor.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\JPEG\src\itkjpeg\jcsample.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\JPEG\src\itkjpeg\jchuff.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\JPEG\src\itkjpeg\jcdctmgr.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\JPEG\src\itkjpeg\jfdctfst.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\JPEG\src\itkjpeg\jfdctflt.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\JPEG\src\itkjpeg\jfdctint.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\JPEG\src\itkjpeg\jcarith.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\JPEG\src\itkjpeg\jdapimin.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\JPEG\src\itkjpeg\jdapistd.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\JPEG\src\itkjpeg\jdtrans.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\JPEG\src\itkjpeg\jdatasrc.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\JPEG\src\itkjpeg\jdmaster.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\JPEG\src\itkjpeg\jdinput.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\JPEG\src\itkjpeg\jdmarker.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\JPEG\src\itkjpeg\jdhuff.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\JPEG\src\itkjpeg\jdmainct.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\JPEG\src\itkjpeg\jdcoefct.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\JPEG\src\itkjpeg\jdpostct.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\JPEG\src\itkjpeg\jddctmgr.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\JPEG\src\itkjpeg\jidctfst.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\JPEG\src\itkjpeg\jidctflt.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\JPEG\src\itkjpeg\jidctint.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\JPEG\src\itkjpeg\jdsample.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\JPEG\src\itkjpeg\jdcolor.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\JPEG\src\itkjpeg\jquant1.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\JPEG\src\itkjpeg\jquant2.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\JPEG\src\itkjpeg\jdmerge.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\JPEG\src\itkjpeg\jdarith.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\JPEG\src\itkjpeg\CMakeLists.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{3D8AD831-5BA8-339E-9CE0-67BCE07365DA}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

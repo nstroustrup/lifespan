@@ -1,0 +1,9 @@
+# Target labels
+ ITKBioCell
+# Source files and their labels
+C:/server/InsightToolkit-4.10.0/Modules/Segmentation/BioCell/src/itkBioGenome.cxx
+C:/server/InsightToolkit-4.10.0/Modules/Segmentation/BioCell/src/itkBioGene.cxx
+C:/server/InsightToolkit-4.10.0/Modules/Segmentation/BioCell/src/itkBioGeneNetwork.cxx
+C:/server/InsightToolkit-4.10.0/Modules/Segmentation/BioCell/src/itkBioCellBase.cxx
+C:/server/InsightToolkit-4.10.0/Modules/Segmentation/BioCell/src/itkBioCellularAggregateBase.cxx
+C:/server/InsightToolkit-4.10.0/Modules/Segmentation/BioCell/src/CMakeLists.txt

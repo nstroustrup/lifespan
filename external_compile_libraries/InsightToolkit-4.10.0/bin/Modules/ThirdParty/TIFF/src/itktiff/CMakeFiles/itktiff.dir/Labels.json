@@ -1,0 +1,155 @@
+
+{
+	"sources" : 
+	[
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/TIFF/src/itktiff/tif_aux.c"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/TIFF/src/itktiff/tif_close.c"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/TIFF/src/itktiff/tif_codec.c"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/TIFF/src/itktiff/tif_compress.c"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/TIFF/src/itktiff/tif_color.c"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/TIFF/src/itktiff/tif_dir.c"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/TIFF/src/itktiff/tif_dirinfo.c"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/TIFF/src/itktiff/tif_dirread.c"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/TIFF/src/itktiff/tif_dirwrite.c"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/TIFF/src/itktiff/tif_dumpmode.c"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/TIFF/src/itktiff/tif_error.c"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/TIFF/src/itktiff/tif_extension.c"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/TIFF/src/itktiff/tif_fax3.c"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/TIFF/src/itktiff/tif_flush.c"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/TIFF/src/itktiff/tif_getimage.c"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/TIFF/src/itktiff/tif_luv.c"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/TIFF/src/itktiff/tif_lzw.c"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/TIFF/src/itktiff/tif_next.c"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/TIFF/src/itktiff/tif_open.c"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/TIFF/src/itktiff/tif_packbits.c"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/TIFF/src/itktiff/tif_pixarlog.c"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/TIFF/src/itktiff/tif_predict.c"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/TIFF/src/itktiff/tif_print.c"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/TIFF/src/itktiff/tif_read.c"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/TIFF/src/itktiff/tif_strip.c"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/TIFF/src/itktiff/tif_swab.c"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/TIFF/src/itktiff/tif_tile.c"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/TIFF/src/itktiff/tif_thunder.c"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/TIFF/src/itktiff/tif_version.c"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/TIFF/src/itktiff/tif_warning.c"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/TIFF/src/itktiff/tif_write.c"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/TIFF/src/itktiff/tif_zip.c"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/TIFF/src/itktiff/tif_jpeg.c"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/TIFF/src/itktiff/tif_win32.c"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/TIFF/src/itktiff/tif_fax3sm.c"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/TIFF/src/itktiff/CMakeLists.txt"
+		}
+	],
+	"target" : 
+	{
+		"labels" : [ "ITKTIFF" ],
+		"name" : "itktiff"
+	}
+}

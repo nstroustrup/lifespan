@@ -1,0 +1,5 @@
+# Target labels
+ ITKTestKernel
+# Source files and their labels
+C:/server/InsightToolkit-4.10.0/Modules/Core/TestKernel/src/itkTestDriver.cxx
+C:/server/InsightToolkit-4.10.0/Modules/Core/TestKernel/src/CMakeLists.txt

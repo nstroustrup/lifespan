@@ -1,0 +1,23 @@
+
+{
+	"sources" : 
+	[
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/IO/NIFTI/src/itkNiftiImageIOFactory.cxx"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/IO/NIFTI/src/itkNiftiImageIO.cxx"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/IO/NIFTI/src/CMakeLists.txt"
+		}
+	],
+	"target" : 
+	{
+		"labels" : [ "ITKIONIFTI" ],
+		"name" : "ITKIONIFTI"
+	}
+}

@@ -1,0 +1,1824 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<Project ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\v3p_netlib_init.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\libf2c\f77_aloc.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\libf2c\exit_.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\libf2c\c_abs.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\libf2c\c_div.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\libf2c\c_sqrt.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\libf2c\cabs.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\libf2c\d_cnjg.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\libf2c\d_imag.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\libf2c\d_lg10.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\libf2c\d_sign.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\libf2c\i_dnnt.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\libf2c\pow_dd.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\libf2c\pow_di.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\libf2c\pow_ii.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\libf2c\pow_ri.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\libf2c\pow_zi.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\libf2c\r_cnjg.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\libf2c\r_imag.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\libf2c\r_sign.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\libf2c\s_cat.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\libf2c\s_cmp.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\libf2c\s_copy.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\libf2c\sig_die.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\libf2c\z_abs.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\libf2c\z_div.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\libf2c\z_sqrt.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\blas\caxpy.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\blas\ccopy.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\blas\cdotc.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\blas\cscal.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\blas\csrot.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\blas\cswap.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\blas\dasum.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\blas\daxpy.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\blas\dcabs1.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\blas\dcopy.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\blas\ddot.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\blas\dgemm.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\blas\dgemv.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\blas\dger.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\blas\dlamch.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\blas\dnrm2.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\blas\drot.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\blas\drotg.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\blas\dscal.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\blas\dswap.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\blas\dtrmm.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\blas\dtrmv.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\blas\dtrsv.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\blas\dzasum.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\blas\dznrm2.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\blas\idamax.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\blas\isamax.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\blas\izamax.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\blas\saxpy.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\blas\scnrm2.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\blas\scopy.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\blas\sdot.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\blas\sgemv.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\blas\sger.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\blas\slamch.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\blas\snrm2.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\blas\srot.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\blas\srotg.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\blas\sscal.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\blas\sswap.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\blas\xerbla.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\blas\zaxpy.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\blas\zcopy.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\blas\zdotc.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\blas\zdotu.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\blas\zdrot.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\blas\zdscal.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\blas\zgemm.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\blas\zgemv.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\blas\zgerc.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\blas\zgeru.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\blas\zscal.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\blas\zswap.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\blas\ztrmm.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\blas\ztrmv.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\blas\ztrsv.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\arpack\dgetv0.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\arpack\dsaitr.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\arpack\dsapps.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\arpack\dsaup2.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\arpack\dsaupd.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\arpack\dsconv.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\arpack\dseigt.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\arpack\dsesrt.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\arpack\dseupd.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\arpack\dsgets.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\arpack\dsortr.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\arpack\dstqrb.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\linpack\sqrdc.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\linpack\dqrdc.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\linpack\cqrdc.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\linpack\zqrdc.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\linpack\sqrsl.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\linpack\dqrsl.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\linpack\cqrsl.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\linpack\zqrsl.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\linpack\csvdc.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\linpack\dsvdc.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\linpack\ssvdc.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\linpack\zsvdc.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\linpack\dpoco.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\linpack\dpodi.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\linpack\dpofa.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\linpack\dposl.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\temperton\dgpfa.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\temperton\dgpfa2f.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\temperton\dgpfa3f.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\temperton\dgpfa5f.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\temperton\gpfa.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\temperton\gpfa2f.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\temperton\gpfa3f.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\temperton\gpfa5f.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\temperton\setdgpfa.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\temperton\setgpfa.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\eispack\balanc.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\eispack\balbak.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\eispack\cdiv.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\eispack\elmhes.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\eispack\eltran.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\eispack\epslon.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\eispack\hqr.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\eispack\hqr2.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\eispack\otqlrat.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\eispack\pythag.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\eispack\rebak.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\eispack\reduc.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\eispack\rg.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\eispack\rs.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\eispack\rsg.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\eispack\tql1.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\eispack\tql2.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\eispack\tred1.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\eispack\tred2.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\laso\dlabax.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\laso\dlabcm.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\laso\dlabfc.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\laso\dlaeig.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\laso\dlager.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\laso\dlaran.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\laso\dmvpc.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\laso\dnlaso.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\laso\dnppla.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\laso\dortqr.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\laso\dvsort.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\laso\urand.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\complex16\zgebak.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\complex16\zgebal.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\complex16\zgeev.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\complex16\zgehd2.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\complex16\zgehrd.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\complex16\zhseqr.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\complex16\zlacgv.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\complex16\zlacpy.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\complex16\zladiv.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\complex16\zlahqr.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\complex16\zlahrd.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\complex16\zlange.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\complex16\zlanhs.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\complex16\zlarf.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\complex16\zlarfb.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\complex16\zlarfg.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\complex16\zlarft.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\complex16\zlarfx.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\complex16\zlascl.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\complex16\zlaset.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\complex16\zlassq.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\complex16\zlatrs.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\complex16\ztrevc.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\complex16\zung2r.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\complex16\zunghr.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\complex16\zungqr.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\complex16\ztgsyl.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\complex16\zrot.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\complex16\zlatdf.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\complex16\zlacn2.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\complex16\ztgsy2.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\complex16\ztgexc.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\complex16\zggbak.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\complex16\zgetc2.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\complex16\zhgeqz.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\complex16\zgges.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\complex16\zlaswp.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\complex16\zdrscl.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\complex16\zlartg.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\complex16\zggbal.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\complex16\zgeqr2.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\complex16\zgecon.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\complex16\zunmqr.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\complex16\zunm2r.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\complex16\zgeqrf.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\complex16\ztgex2.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\complex16\zgesc2.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\complex16\ztgsen.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\complex16\zgghrd.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\complex16\zgees.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\complex16\ztrexc.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\complex16\ztrsen.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\complex16\ztrsyl.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\double\dgecon.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\double\dgeqr2.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\double\dgeqrf.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\double\dgerq2.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\double\dgesc2.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\double\dgetc2.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\double\dggbak.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\double\dggbal.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\double\dgges.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\double\dgghrd.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\double\dhgeqz.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\double\dlabad.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\double\dlacon.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\double\dlacpy.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\double\dladiv.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\double\dlaev2.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\double\dlag2.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\double\dlagv2.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\double\dlange.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\double\dlanhs.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\double\dlapy2.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\double\dlapy3.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\double\dlarf.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\double\dlarfb.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\double\dlarfg.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\double\dlarft.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\double\dlartg.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\double\dlascl.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\double\dlaset.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\double\dlassq.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\double\dlasv2.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\double\dlaswp.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\double\dlatdf.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\double\dlatrs.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\double\dorg2r.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\double\dorgqr.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\double\dorgr2.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\double\dorm2r.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\double\dormqr.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\double\dormr2.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\double\drscl.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\double\dsptrf.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\double\dsptrs.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\double\dspr.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\double\dtgex2.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\double\dtgexc.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\double\dtgsen.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\double\dtgsy2.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\double\dtgsyl.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\double\dlae2.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\double\dlanst.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\double\dlarnv.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\double\dlaruv.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\double\dlasr.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\double\dlasrt.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\double\dsteqr.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\double\dzsum1.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\single\sgeqpf.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\single\sgeqr2.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\single\sgerq2.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\single\sggsvd.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\single\sggsvp.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\single\slacpy.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\single\slags2.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\single\slange.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\single\slapll.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\single\slapmt.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\single\slapy2.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\single\slarf.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\single\slarfg.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\single\slartg.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\single\slas2.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\single\slaset.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\single\slassq.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\single\slasv2.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\single\sorg2r.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\single\sorm2r.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\single\sormr2.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\single\stgsja.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\util\ieeeck.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\util\ilaenv.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\util\izmax1.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\util\lsame.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\napack\cg.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\minpack\dpmpar.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\minpack\enorm.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\minpack\fdjac2.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\minpack\lmder.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\minpack\lmder1.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\minpack\lmdif.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\minpack\lmpar.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\minpack\qrfac.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\minpack\qrsolv.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\opt\lbfgs.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\opt\lbfgsb.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\linalg\lsqr.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\toms\rpoly.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\datapac\camsun.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\mathews\simpson.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\mathews\trapezod.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\mathews\adaquad.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\sparse\spAllocate.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\sparse\spBuild.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\sparse\spFactor.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\sparse\spSolve.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\sparse\spUtils.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\sparse\spOutput.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\v3p_f2c.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\v3p_f2c_mangle.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\v3p_f2c_original.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\v3p_f2c_unmangle.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\v3p_netlib.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\v3p_netlib_mangle.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\v3p_netlib_prototypes.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\v3p_netlib_unmangle.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\blas\caxpy.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\blas\ccopy.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\blas\cdotc.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\blas\cscal.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\blas\csrot.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\blas\cswap.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\blas\dasum.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\blas\daxpy.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\blas\dcabs1.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\blas\dcopy.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\blas\ddot.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\blas\dgemm.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\blas\dgemv.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\blas\dger.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\blas\dlamch.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\blas\dnrm2.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\blas\drot.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\blas\drotg.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\blas\dscal.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\blas\dswap.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\blas\dtrmm.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\blas\dtrmv.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\blas\dtrsv.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\blas\dzasum.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\blas\dznrm2.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\blas\idamax.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\blas\isamax.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\blas\izamax.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\blas\saxpy.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\blas\scnrm2.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\blas\scopy.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\blas\sdot.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\blas\sgemv.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\blas\sger.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\blas\slamch.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\blas\snrm2.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\blas\srot.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\blas\srotg.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\blas\sscal.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\blas\sswap.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\blas\xerbla.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\blas\zaxpy.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\blas\zcopy.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\blas\zdotc.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\blas\zdotu.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\blas\zdrot.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\blas\zdscal.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\blas\zgemm.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\blas\zgemv.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\blas\zgerc.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\blas\zgeru.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\blas\zscal.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\blas\zswap.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\blas\ztrmm.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\blas\ztrmv.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\blas\ztrsv.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\arpack\dgetv0.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\arpack\dsaitr.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\arpack\dsapps.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\arpack\dsaup2.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\arpack\dsaupd.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\arpack\dsconv.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\arpack\dseigt.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\arpack\dsesrt.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\arpack\dseupd.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\arpack\dsgets.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\arpack\dsortr.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\arpack\dstqrb.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\linpack\sqrdc.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\linpack\dqrdc.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\linpack\cqrdc.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\linpack\zqrdc.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\linpack\sqrsl.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\linpack\dqrsl.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\linpack\cqrsl.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\linpack\zqrsl.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\linpack\csvdc.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\linpack\dsvdc.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\linpack\ssvdc.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\linpack\zsvdc.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\linpack\dpoco.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\linpack\dpodi.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\linpack\dpofa.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\linpack\dposl.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\temperton\dgpfa.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\temperton\dgpfa2f.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\temperton\dgpfa3f.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\temperton\dgpfa5f.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\temperton\gpfa.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\temperton\gpfa2f.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\temperton\gpfa3f.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\temperton\gpfa5f.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\temperton\setdgpfa.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\temperton\setgpfa.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\eispack\balanc.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\eispack\balbak.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\eispack\cdiv.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\eispack\elmhes.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\eispack\eltran.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\eispack\epslon.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\eispack\hqr.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\eispack\hqr2.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\eispack\otqlrat.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\eispack\pythag.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\eispack\rebak.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\eispack\reduc.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\eispack\rg.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\eispack\rs.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\eispack\rsg.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\eispack\tql1.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\eispack\tql2.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\eispack\tred1.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\eispack\tred2.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\laso\dlabax.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\laso\dlabcm.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\laso\dlabfc.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\laso\dlaeig.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\laso\dlager.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\laso\dlaran.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\laso\dmvpc.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\laso\dnlaso.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\laso\dnppla.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\laso\dortqr.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\laso\dvsort.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\laso\urand.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\complex16\zgebak.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\complex16\zgebal.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\complex16\zgeev.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\complex16\zgehd2.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\complex16\zgehrd.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\complex16\zhseqr.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\complex16\zlacgv.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\complex16\zlacpy.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\complex16\zladiv.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\complex16\zlahqr.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\complex16\zlahrd.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\complex16\zlange.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\complex16\zlanhs.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\complex16\zlarf.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\complex16\zlarfb.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\complex16\zlarfg.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\complex16\zlarft.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\complex16\zlarfx.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\complex16\zlascl.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\complex16\zlaset.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\complex16\zlassq.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\complex16\zlatrs.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\complex16\ztrevc.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\complex16\zung2r.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\complex16\zunghr.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\complex16\zungqr.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\complex16\ztgsyl.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\complex16\zrot.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\complex16\zlatdf.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\complex16\zlacn2.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\complex16\ztgsy2.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\complex16\ztgexc.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\complex16\zggbak.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\complex16\zgetc2.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\complex16\zhgeqz.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\complex16\zgges.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\complex16\zlaswp.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\complex16\zdrscl.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\complex16\zlartg.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\complex16\zggbal.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\complex16\zgeqr2.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\complex16\zgecon.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\complex16\zunmqr.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\complex16\zunm2r.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\complex16\zgeqrf.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\complex16\ztgex2.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\complex16\zgesc2.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\complex16\ztgsen.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\complex16\zgghrd.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\complex16\zgees.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\complex16\ztrexc.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\complex16\ztrsen.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\complex16\ztrsyl.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\double\dgecon.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\double\dgeqr2.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\double\dgeqrf.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\double\dgerq2.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\double\dgesc2.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\double\dgetc2.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\double\dggbak.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\double\dggbal.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\double\dgges.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\double\dgghrd.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\double\dhgeqz.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\double\dlabad.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\double\dlacon.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\double\dlacpy.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\double\dladiv.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\double\dlaev2.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\double\dlag2.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\double\dlagv2.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\double\dlange.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\double\dlanhs.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\double\dlapy2.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\double\dlapy3.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\double\dlarf.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\double\dlarfb.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\double\dlarfg.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\double\dlarft.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\double\dlartg.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\double\dlascl.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\double\dlaset.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\double\dlassq.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\double\dlasv2.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\double\dlaswp.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\double\dlatdf.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\double\dlatrs.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\double\dorg2r.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\double\dorgqr.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\double\dorgr2.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\double\dorm2r.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\double\dormqr.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\double\dormr2.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\double\drscl.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\double\dsptrf.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\double\dsptrs.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\double\dspr.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\double\dtgex2.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\double\dtgexc.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\double\dtgsen.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\double\dtgsy2.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\double\dtgsyl.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\double\dlae2.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\double\dlanst.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\double\dlarnv.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\double\dlaruv.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\double\dlasr.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\double\dlasrt.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\double\dsteqr.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\double\dzsum1.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\single\sgeqpf.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\single\sgeqr2.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\single\sgerq2.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\single\sggsvd.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\single\sggsvp.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\single\slacpy.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\single\slags2.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\single\slange.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\single\slapll.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\single\slapmt.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\single\slapy2.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\single\slarf.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\single\slarfg.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\single\slartg.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\single\slas2.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\single\slaset.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\single\slassq.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\single\slasv2.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\single\sorg2r.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\single\sorm2r.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\single\sormr2.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\single\stgsja.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\util\ieeeck.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\util\ilaenv.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\util\izmax1.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\lapack\util\lsame.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\napack\cg.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\minpack\dpmpar.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\minpack\enorm.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\minpack\fdjac2.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\minpack\lmder.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\minpack\lmder1.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\minpack\lmdif.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\minpack\lmpar.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\minpack\qrfac.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\minpack\qrsolv.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\opt\lbfgs.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\opt\lbfgsb.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\linalg\lsqr.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\toms\rpoly.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\datapac\camsun.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\mathews\simpson.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\mathews\trapezod.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\mathews\adaquad.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\sparse\spConfig.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\sparse\spDefs.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\sparse\spMatrix.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\CMakeLists.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{3D8AD831-5BA8-339E-9CE0-67BCE07365DA}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{6A46AC98-972C-30DB-8733-3AE0BF365110}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

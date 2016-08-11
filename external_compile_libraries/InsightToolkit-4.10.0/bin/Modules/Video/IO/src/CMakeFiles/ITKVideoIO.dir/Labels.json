@@ -1,0 +1,31 @@
+
+{
+	"sources" : 
+	[
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/Video/IO/src/itkFileListVideoIO.cxx"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/Video/IO/src/itkFileListVideoIOFactory.cxx"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/Video/IO/src/itkVideoIOBase.cxx"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/Video/IO/src/itkVideoIOFactory.cxx"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/Video/IO/src/CMakeLists.txt"
+		}
+	],
+	"target" : 
+	{
+		"labels" : [ "ITKVideoIO" ],
+		"name" : "ITKVideoIO"
+	}
+}

@@ -1,0 +1,213 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<Project ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\vcl\vcl_deprecated.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\vcl\vcl_compiler.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\vcl\vcl_deprecated.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\vcl\vcl_cmath.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\vcl\vcl_cassert.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\vcl\vcl_cstdlib.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\vcl\vcl_algorithm.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\vcl\vcl_bitset.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\vcl\vcl_cctype.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\vcl\vcl_cerrno.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\vcl\vcl_cfloat.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\vcl\vcl_ciso646.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\vcl\vcl_climits.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\vcl\vcl_clocale.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\vcl\vcl_complex.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\vcl\vcl_csetjmp.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\vcl\vcl_csignal.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\vcl\vcl_cstdarg.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\vcl\vcl_cstddef.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\vcl\vcl_cstdio.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\vcl\vcl_cstring.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\vcl\vcl_ctime.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\vcl\vcl_cwchar.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\vcl\vcl_cwctype.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\vcl\vcl_deprecated_header.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\vcl\vcl_deque.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\vcl\vcl_exception.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\vcl\vcl_fstream.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\vcl\vcl_functional.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\vcl\vcl_iomanip.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\vcl\vcl_ios.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\vcl\vcl_iosfwd.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\vcl\vcl_iostream.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\vcl\vcl_istream.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\vcl\vcl_iterator.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\vcl\vcl_limits.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\vcl\vcl_list.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\vcl\vcl_locale.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\vcl\vcl_map.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\vcl\vcl_memory.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\vcl\vcl_new.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\vcl\vcl_numeric.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\vcl\vcl_ostream.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\vcl\vcl_queue.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\vcl\vcl_set.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\vcl\vcl_sstream.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\vcl\vcl_stack.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\vcl\vcl_stdexcept.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\vcl\vcl_stlfwd.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\vcl\vcl_streambuf.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\vcl\vcl_string.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\vcl\vcl_typeinfo.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\vcl\vcl_utility.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\vcl\vcl_valarray.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\vcl\vcl_vector.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\vcl\vcl_sys\time.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\vcl\vcl_sys\types.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\vcl\vcl_atomic_count.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\vcl\internal\vcl_atomic_count_gcc.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\vcl\internal\vcl_atomic_count_gcc_x86.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\vcl\internal\vcl_atomic_count_pthreads.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\vcl\internal\vcl_atomic_count_solaris.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\vcl\internal\vcl_atomic_count_sync.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\vcl\internal\vcl_atomic_count_win32.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\vcl\internal\vcl_interlocked.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\vcl\CMakeLists.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{3D8AD831-5BA8-339E-9CE0-67BCE07365DA}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{6A46AC98-972C-30DB-8733-3AE0BF365110}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

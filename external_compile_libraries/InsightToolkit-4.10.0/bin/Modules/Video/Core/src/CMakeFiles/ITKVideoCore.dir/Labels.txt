@@ -1,0 +1,7 @@
+# Target labels
+ ITKVideoCore
+# Source files and their labels
+C:/server/InsightToolkit-4.10.0/Modules/Video/Core/src/itkTemporalRegion.cxx
+C:/server/InsightToolkit-4.10.0/Modules/Video/Core/src/itkTemporalDataObject.cxx
+C:/server/InsightToolkit-4.10.0/Modules/Video/Core/src/itkTemporalProcessObject.cxx
+C:/server/InsightToolkit-4.10.0/Modules/Video/Core/src/CMakeLists.txt

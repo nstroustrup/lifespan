@@ -1,0 +1,139 @@
+
+{
+	"sources" : 
+	[
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/Numerics/Optimizers/src/itkNonLinearOptimizer.cxx"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/Numerics/Optimizers/src/itkMultipleValuedCostFunction.cxx"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/Numerics/Optimizers/src/itkSingleValuedCostFunction.cxx"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/Numerics/Optimizers/src/itkConjugateGradientOptimizer.cxx"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/Numerics/Optimizers/src/itkRegularStepGradientDescentOptimizer.cxx"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/Numerics/Optimizers/src/itkLBFGSOptimizer.cxx"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/Numerics/Optimizers/src/itkExhaustiveOptimizer.cxx"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/Numerics/Optimizers/src/itkLevenbergMarquardtOptimizer.cxx"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/Numerics/Optimizers/src/itkSingleValuedNonLinearVnlOptimizer.cxx"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/Numerics/Optimizers/src/itkQuaternionRigidTransformGradientDescentOptimizer.cxx"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/Numerics/Optimizers/src/itkSPSAOptimizer.cxx"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/Numerics/Optimizers/src/itkSingleValuedVnlCostFunctionAdaptor.cxx"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/Numerics/Optimizers/src/itkMultipleValuedNonLinearVnlOptimizer.cxx"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/Numerics/Optimizers/src/itkPowellOptimizer.cxx"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/Numerics/Optimizers/src/itkVersorRigid3DTransformOptimizer.cxx"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/Numerics/Optimizers/src/itkVersorTransformOptimizer.cxx"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/Numerics/Optimizers/src/itkOnePlusOneEvolutionaryOptimizer.cxx"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/Numerics/Optimizers/src/itkMultipleValuedNonLinearOptimizer.cxx"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/Numerics/Optimizers/src/itkLBFGSBOptimizer.cxx"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/Numerics/Optimizers/src/itkCumulativeGaussianOptimizer.cxx"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/Numerics/Optimizers/src/itkAmoebaOptimizer.cxx"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/Numerics/Optimizers/src/itkCumulativeGaussianCostFunction.cxx"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/Numerics/Optimizers/src/itkOptimizer.cxx"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/Numerics/Optimizers/src/itkFRPROptimizer.cxx"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/Numerics/Optimizers/src/itkGradientDescentOptimizer.cxx"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/Numerics/Optimizers/src/itkSingleValuedNonLinearOptimizer.cxx"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/Numerics/Optimizers/src/itkRegularStepGradientDescentBaseOptimizer.cxx"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/Numerics/Optimizers/src/itkMultipleValuedVnlCostFunctionAdaptor.cxx"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/Numerics/Optimizers/src/itkParticleSwarmOptimizerBase.cxx"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/Numerics/Optimizers/src/itkParticleSwarmOptimizer.cxx"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/Numerics/Optimizers/src/itkInitializationBiasedParticleSwarmOptimizer.cxx"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/Numerics/Optimizers/src/CMakeLists.txt"
+		}
+	],
+	"target" : 
+	{
+		"labels" : [ "ITKOptimizers" ],
+		"name" : "ITKOptimizers"
+	}
+}

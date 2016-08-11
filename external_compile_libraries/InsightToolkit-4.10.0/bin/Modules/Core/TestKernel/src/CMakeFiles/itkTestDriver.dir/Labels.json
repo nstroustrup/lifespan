@@ -1,0 +1,19 @@
+
+{
+	"sources" : 
+	[
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/Core/TestKernel/src/itkTestDriver.cxx"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/Core/TestKernel/src/CMakeLists.txt"
+		}
+	],
+	"target" : 
+	{
+		"labels" : [ "ITKTestKernel" ],
+		"name" : "itkTestDriver"
+	}
+}

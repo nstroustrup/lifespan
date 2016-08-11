@@ -1,0 +1,35 @@
+﻿  gdcmASN1.cxx
+  gdcmBase64.cxx
+  gdcmBoxRegion.cxx
+  gdcmByteSwap.cxx
+  gdcmCAPICryptoFactory.cxx
+  gdcmCAPICryptographicMessageSyntax.cxx
+  gdcmCommand.cxx
+  gdcmCryptoFactory.cxx
+  gdcmCryptographicMessageSyntax.cxx
+  gdcmDataEvent.cxx
+  gdcmDeflateStream.cxx
+  gdcmDirectory.cxx
+  gdcmDummyValueGenerator.cxx
+  gdcmEvent.cxx
+  gdcmException.cxx
+  gdcmFileNameEvent.cxx
+  gdcmFilename.cxx
+  gdcmFilenameGenerator.cxx
+  gdcmMD5.cxx
+  gdcmObject.cxx
+  Generating Code...
+  Compiling...
+  gdcmProgressEvent.cxx
+  gdcmRegion.cxx
+  gdcmSHA1.cxx
+  gdcmString.cxx
+  gdcmSubject.cxx
+  gdcmSwapCode.cxx
+  gdcmSystem.cxx
+  gdcmTerminal.cxx
+  gdcmTrace.cxx
+  gdcmUnpacker12Bits.cxx
+  gdcmVersion.cxx
+  Generating Code...
+  gdcmCommon.vcxproj -> C:\server\InsightToolkit-4.10.0\bin\lib\Release\itkgdcmCommon-4.10.lib

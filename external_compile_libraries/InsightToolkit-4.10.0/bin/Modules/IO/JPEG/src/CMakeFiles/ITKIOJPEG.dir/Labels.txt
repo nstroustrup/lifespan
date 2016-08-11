@@ -1,0 +1,6 @@
+# Target labels
+ ITKIOJPEG
+# Source files and their labels
+C:/server/InsightToolkit-4.10.0/Modules/IO/JPEG/src/itkJPEGImageIOFactory.cxx
+C:/server/InsightToolkit-4.10.0/Modules/IO/JPEG/src/itkJPEGImageIO.cxx
+C:/server/InsightToolkit-4.10.0/Modules/IO/JPEG/src/CMakeLists.txt

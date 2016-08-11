@@ -1,0 +1,4 @@
+# CMake generation dependency list for this directory.
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/DoubleConversion/src/double-conversion/CMakeLists.txt
+C:/server/InsightToolkit-4.10.0/bin/Modules/ThirdParty/DoubleConversion/src/double-conversion/CMakeFiles/double-correction-needed.cc
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/DoubleConversion/src/double-conversion/double-conversion-configure.h.in

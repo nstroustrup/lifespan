@@ -1,0 +1,31 @@
+
+{
+	"sources" : 
+	[
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/Core/SpatialObjects/src/itkMetaEvent.cxx"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/Core/SpatialObjects/src/itkCylinderSpatialObject.cxx"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/Core/SpatialObjects/src/itkSpatialObjectFactoryBase.cxx"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/Core/SpatialObjects/src/itkArrowSpatialObject.cxx"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/Core/SpatialObjects/src/CMakeLists.txt"
+		}
+	],
+	"target" : 
+	{
+		"labels" : [ "ITKSpatialObjects" ],
+		"name" : "ITKSpatialObjects"
+	}
+}

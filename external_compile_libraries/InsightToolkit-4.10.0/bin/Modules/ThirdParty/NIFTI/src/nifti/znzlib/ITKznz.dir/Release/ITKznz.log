@@ -1,0 +1,4 @@
+﻿  Building Custom Rule C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/NIFTI/src/nifti/znzlib/CMakeLists.txt
+  CMake does not need to re-run because C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\NIFTI\src\nifti\znzlib\CMakeFiles\generate.stamp is up-to-date.
+  znzlib.c
+  ITKznz.vcxproj -> C:\server\InsightToolkit-4.10.0\bin\lib\Release\ITKznz-4.10.lib

@@ -1,0 +1,47 @@
+
+{
+	"sources" : 
+	[
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/IO/TransformBase/src/itkCompositeTransformIOHelper.cxx"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/IO/TransformBase/src/itkTransformFactoryBase.cxx"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/IO/TransformBase/src/itkTransformFactoryBaseRegisterFloatParameters.cxx"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/IO/TransformBase/src/itkTransformFactoryBaseRegisterDoubleParameters.cxx"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/IO/TransformBase/src/itkTransformFileReader.cxx"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/IO/TransformBase/src/itkTransformFileWriterSpecializations.cxx"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/IO/TransformBase/src/itkTransformIOBase.cxx"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/IO/TransformBase/src/itkTransformIOFactory.cxx"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/IO/TransformBase/src/CMakeLists.txt"
+		}
+	],
+	"target" : 
+	{
+		"labels" : [ "ITKIOTransformBase" ],
+		"name" : "ITKIOTransformBase"
+	}
+}

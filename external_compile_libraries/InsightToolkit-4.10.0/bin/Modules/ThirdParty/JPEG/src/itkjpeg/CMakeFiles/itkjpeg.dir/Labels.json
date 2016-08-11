@@ -1,0 +1,199 @@
+
+{
+	"sources" : 
+	[
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/JPEG/src/itkjpeg/jmemnobs.c"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/JPEG/src/itkjpeg/jcomapi.c"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/JPEG/src/itkjpeg/jutils.c"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/JPEG/src/itkjpeg/jerror.c"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/JPEG/src/itkjpeg/jmemmgr.c"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/JPEG/src/itkjpeg/jaricom.c"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/JPEG/src/itkjpeg/jcapimin.c"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/JPEG/src/itkjpeg/jcapistd.c"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/JPEG/src/itkjpeg/jctrans.c"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/JPEG/src/itkjpeg/jcparam.c"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/JPEG/src/itkjpeg/jdatadst.c"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/JPEG/src/itkjpeg/jcinit.c"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/JPEG/src/itkjpeg/jcmaster.c"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/JPEG/src/itkjpeg/jcmarker.c"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/JPEG/src/itkjpeg/jcmainct.c"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/JPEG/src/itkjpeg/jcprepct.c"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/JPEG/src/itkjpeg/jccoefct.c"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/JPEG/src/itkjpeg/jccolor.c"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/JPEG/src/itkjpeg/jcsample.c"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/JPEG/src/itkjpeg/jchuff.c"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/JPEG/src/itkjpeg/jcdctmgr.c"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/JPEG/src/itkjpeg/jfdctfst.c"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/JPEG/src/itkjpeg/jfdctflt.c"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/JPEG/src/itkjpeg/jfdctint.c"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/JPEG/src/itkjpeg/jcarith.c"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/JPEG/src/itkjpeg/jdapimin.c"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/JPEG/src/itkjpeg/jdapistd.c"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/JPEG/src/itkjpeg/jdtrans.c"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/JPEG/src/itkjpeg/jdatasrc.c"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/JPEG/src/itkjpeg/jdmaster.c"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/JPEG/src/itkjpeg/jdinput.c"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/JPEG/src/itkjpeg/jdmarker.c"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/JPEG/src/itkjpeg/jdhuff.c"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/JPEG/src/itkjpeg/jdmainct.c"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/JPEG/src/itkjpeg/jdcoefct.c"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/JPEG/src/itkjpeg/jdpostct.c"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/JPEG/src/itkjpeg/jddctmgr.c"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/JPEG/src/itkjpeg/jidctfst.c"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/JPEG/src/itkjpeg/jidctflt.c"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/JPEG/src/itkjpeg/jidctint.c"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/JPEG/src/itkjpeg/jdsample.c"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/JPEG/src/itkjpeg/jdcolor.c"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/JPEG/src/itkjpeg/jquant1.c"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/JPEG/src/itkjpeg/jquant2.c"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/JPEG/src/itkjpeg/jdmerge.c"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/JPEG/src/itkjpeg/jdarith.c"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/JPEG/src/itkjpeg/CMakeLists.txt"
+		}
+	],
+	"target" : 
+	{
+		"labels" : [ "ITKJPEG" ],
+		"name" : "itkjpeg"
+	}
+}

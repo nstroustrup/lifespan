@@ -1,0 +1,46 @@
+﻿  Building Custom Rule C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/GDCM/src/gdcm/Source/Common/CMakeLists.txt
+  CMake does not need to re-run because C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\GDCM\src\gdcm\Source\Common\CMakeFiles\generate.stamp is up-to-date.
+  gdcmVersion.cxx
+  gdcmRegion.cxx
+  gdcmBoxRegion.cxx
+  gdcmEvent.cxx
+  gdcmDataEvent.cxx
+  gdcmProgressEvent.cxx
+  gdcmFileNameEvent.cxx
+  gdcmCommand.cxx
+  gdcmMD5.cxx
+  gdcmBase64.cxx
+  gdcmSHA1.cxx
+  gdcmDummyValueGenerator.cxx
+  gdcmCryptographicMessageSyntax.cxx
+  gdcmCryptoFactory.cxx
+  gdcmASN1.cxx
+  gdcmObject.cxx
+  gdcmSubject.cxx
+  gdcmDirectory.cxx
+  gdcmTerminal.cxx
+  gdcmString.cxx
+  Generating Code...
+  Compiling...
+  gdcmFilename.cxx
+  gdcmFilenameGenerator.cxx
+  gdcmSwapCode.cxx
+  gdcmSystem.cxx
+  gdcmTrace.cxx
+  gdcmException.cxx
+  gdcmDeflateStream.cxx
+  gdcmByteSwap.cxx
+  gdcmUnpacker12Bits.cxx
+  gdcmCAPICryptographicMessageSyntax.cxx
+  gdcmCAPICryptoFactory.cxx
+  Generating Code...
+gdcmByteSwap.obj : warning LNK4221: This object file does not define any previously undefined public symbols, so it will not be used by any link operation that consumes this library
+gdcmDeflateStream.obj : warning LNK4221: This object file does not define any previously undefined public symbols, so it will not be used by any link operation that consumes this library
+gdcmException.obj : warning LNK4221: This object file does not define any previously undefined public symbols, so it will not be used by any link operation that consumes this library
+gdcmString.obj : warning LNK4221: This object file does not define any previously undefined public symbols, so it will not be used by any link operation that consumes this library
+gdcmObject.obj : warning LNK4221: This object file does not define any previously undefined public symbols, so it will not be used by any link operation that consumes this library
+gdcmCryptographicMessageSyntax.obj : warning LNK4221: This object file does not define any previously undefined public symbols, so it will not be used by any link operation that consumes this library
+gdcmFileNameEvent.obj : warning LNK4221: This object file does not define any previously undefined public symbols, so it will not be used by any link operation that consumes this library
+gdcmProgressEvent.obj : warning LNK4221: This object file does not define any previously undefined public symbols, so it will not be used by any link operation that consumes this library
+gdcmDataEvent.obj : warning LNK4221: This object file does not define any previously undefined public symbols, so it will not be used by any link operation that consumes this library
+  gdcmCommon.vcxproj -> C:\server\InsightToolkit-4.10.0\bin\lib\Debug\itkgdcmCommon-4.10.lib

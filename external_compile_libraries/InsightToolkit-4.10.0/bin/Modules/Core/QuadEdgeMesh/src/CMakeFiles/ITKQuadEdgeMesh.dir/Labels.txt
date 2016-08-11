@@ -1,0 +1,5 @@
+# Target labels
+ ITKQuadEdgeMesh
+# Source files and their labels
+C:/server/InsightToolkit-4.10.0/Modules/Core/QuadEdgeMesh/src/itkQuadEdge.cxx
+C:/server/InsightToolkit-4.10.0/Modules/Core/QuadEdgeMesh/src/CMakeLists.txt

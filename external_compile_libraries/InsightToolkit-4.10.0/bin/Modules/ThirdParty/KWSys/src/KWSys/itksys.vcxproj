@@ -1,0 +1,359 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="MinSizeRel|x64">
+      <Configuration>MinSizeRel</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="RelWithDebInfo|x64">
+      <Configuration>RelWithDebInfo</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGUID>{E0326A3D-D0F4-3ACF-BC7F-38A98DA5BC6A}</ProjectGUID>
+    <Keyword>Win32Proj</Keyword>
+    <Platform>x64</Platform>
+    <ProjectName>itksys</ProjectName>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <UseOfMfc>false</UseOfMfc>
+    <CharacterSet>Unicode</CharacterSet>
+    <PlatformToolset>v140</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <UseOfMfc>false</UseOfMfc>
+    <CharacterSet>Unicode</CharacterSet>
+    <PlatformToolset>v140</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <UseOfMfc>false</UseOfMfc>
+    <CharacterSet>Unicode</CharacterSet>
+    <PlatformToolset>v140</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <UseOfMfc>false</UseOfMfc>
+    <CharacterSet>Unicode</CharacterSet>
+    <PlatformToolset>v140</PlatformToolset>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup>
+    <_ProjectFileVersion>10.0.20506.1</_ProjectFileVersion>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">C:\server\InsightToolkit-4.10.0\bin\lib\Debug\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">itksys.dir\Debug\</IntDir>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">itksys-4.10</TargetName>
+    <TargetExt Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">.lib</TargetExt>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Release|x64'">C:\server\InsightToolkit-4.10.0\bin\lib\Release\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Release|x64'">itksys.dir\Release\</IntDir>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">itksys-4.10</TargetName>
+    <TargetExt Condition="'$(Configuration)|$(Platform)'=='Release|x64'">.lib</TargetExt>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">C:\server\InsightToolkit-4.10.0\bin\lib\MinSizeRel\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">itksys.dir\MinSizeRel\</IntDir>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">itksys-4.10</TargetName>
+    <TargetExt Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">.lib</TargetExt>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">C:\server\InsightToolkit-4.10.0\bin\lib\RelWithDebInfo\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">itksys.dir\RelWithDebInfo\</IntDir>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">itksys-4.10</TargetName>
+    <TargetExt Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">.lib</TargetExt>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <AdditionalOptions> /bigobj %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalIncludeDirectories>C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\KWSys\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AssemblerListingLocation>Debug/</AssemblerListingLocation>
+      <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
+      <CompileAs>CompileAsCpp</CompileAs>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <ExceptionHandling>Sync</ExceptionHandling>
+      <InlineFunctionExpansion>Disabled</InlineFunctionExpansion>
+      <Optimization>Disabled</Optimization>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <RuntimeTypeInfo>true</RuntimeTypeInfo>
+      <WarningLevel>TurnOffAllWarnings</WarningLevel>
+      <PreprocessorDefinitions>WIN32;_WINDOWS;_DEBUG;_CRT_FAR_MAPPINGS_NO_DEPRECATE;_CRT_IS_WCTYPE_NO_DEPRECATE;_CRT_MANAGED_FP_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;_CRT_SECURE_NO_DEPRECATE;_CRT_SECURE_NO_DEPRECATE_GLOBALS;_CRT_SETERRORMODE_BEEP_SLEEP_NO_DEPRECATE;_CRT_TIME_FUNCTIONS_NO_DEPRECATE;_CRT_VCCLRIT_NO_DEPRECATE;_SCL_SECURE_NO_DEPRECATE;KWSYS_NAMESPACE=itksys;_CRT_SECURE_NO_WARNINGS;UNICODE;_UNICODE;CMAKE_INTDIR="Debug";%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ObjectFileName>$(IntDir)</ObjectFileName>
+    </ClCompile>
+    <ResourceCompile>
+      <PreprocessorDefinitions>WIN32;_WINDOWS;_DEBUG;_CRT_FAR_MAPPINGS_NO_DEPRECATE;_CRT_IS_WCTYPE_NO_DEPRECATE;_CRT_MANAGED_FP_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;_CRT_SECURE_NO_DEPRECATE;_CRT_SECURE_NO_DEPRECATE_GLOBALS;_CRT_SETERRORMODE_BEEP_SLEEP_NO_DEPRECATE;_CRT_TIME_FUNCTIONS_NO_DEPRECATE;_CRT_VCCLRIT_NO_DEPRECATE;_SCL_SECURE_NO_DEPRECATE;KWSYS_NAMESPACE=itksys;_CRT_SECURE_NO_WARNINGS;UNICODE;_UNICODE;CMAKE_INTDIR=\"Debug\";%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\KWSys\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ResourceCompile>
+    <Midl>
+      <AdditionalIncludeDirectories>C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\KWSys\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
+      <HeaderFileName>%(Filename).h</HeaderFileName>
+      <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
+      <InterfaceIdentifierFileName>%(Filename)_i.c</InterfaceIdentifierFileName>
+      <ProxyFileName>%(Filename)_p.c</ProxyFileName>
+    </Midl>
+    <Lib>
+      <AdditionalOptions> /machine:x64 %(AdditionalOptions)</AdditionalOptions>
+    </Lib>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <AdditionalOptions> /bigobj %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalIncludeDirectories>C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\KWSys\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AssemblerListingLocation>Release/</AssemblerListingLocation>
+      <CompileAs>CompileAsCpp</CompileAs>
+      <ExceptionHandling>Sync</ExceptionHandling>
+      <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
+      <Optimization>MaxSpeed</Optimization>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <RuntimeTypeInfo>true</RuntimeTypeInfo>
+      <WarningLevel>TurnOffAllWarnings</WarningLevel>
+      <PreprocessorDefinitions>WIN32;_WINDOWS;NDEBUG;_CRT_FAR_MAPPINGS_NO_DEPRECATE;_CRT_IS_WCTYPE_NO_DEPRECATE;_CRT_MANAGED_FP_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;_CRT_SECURE_NO_DEPRECATE;_CRT_SECURE_NO_DEPRECATE_GLOBALS;_CRT_SETERRORMODE_BEEP_SLEEP_NO_DEPRECATE;_CRT_TIME_FUNCTIONS_NO_DEPRECATE;_CRT_VCCLRIT_NO_DEPRECATE;_SCL_SECURE_NO_DEPRECATE;KWSYS_NAMESPACE=itksys;_CRT_SECURE_NO_WARNINGS;UNICODE;_UNICODE;CMAKE_INTDIR="Release";%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ObjectFileName>$(IntDir)</ObjectFileName>
+      <DebugInformationFormat>
+      </DebugInformationFormat>
+    </ClCompile>
+    <ResourceCompile>
+      <PreprocessorDefinitions>WIN32;_WINDOWS;NDEBUG;_CRT_FAR_MAPPINGS_NO_DEPRECATE;_CRT_IS_WCTYPE_NO_DEPRECATE;_CRT_MANAGED_FP_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;_CRT_SECURE_NO_DEPRECATE;_CRT_SECURE_NO_DEPRECATE_GLOBALS;_CRT_SETERRORMODE_BEEP_SLEEP_NO_DEPRECATE;_CRT_TIME_FUNCTIONS_NO_DEPRECATE;_CRT_VCCLRIT_NO_DEPRECATE;_SCL_SECURE_NO_DEPRECATE;KWSYS_NAMESPACE=itksys;_CRT_SECURE_NO_WARNINGS;UNICODE;_UNICODE;CMAKE_INTDIR=\"Release\";%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\KWSys\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ResourceCompile>
+    <Midl>
+      <AdditionalIncludeDirectories>C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\KWSys\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
+      <HeaderFileName>%(Filename).h</HeaderFileName>
+      <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
+      <InterfaceIdentifierFileName>%(Filename)_i.c</InterfaceIdentifierFileName>
+      <ProxyFileName>%(Filename)_p.c</ProxyFileName>
+    </Midl>
+    <Lib>
+      <AdditionalOptions> /machine:x64 %(AdditionalOptions)</AdditionalOptions>
+    </Lib>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">
+    <ClCompile>
+      <AdditionalOptions> /bigobj %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalIncludeDirectories>C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\KWSys\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AssemblerListingLocation>MinSizeRel/</AssemblerListingLocation>
+      <CompileAs>CompileAsCpp</CompileAs>
+      <ExceptionHandling>Sync</ExceptionHandling>
+      <InlineFunctionExpansion>OnlyExplicitInline</InlineFunctionExpansion>
+      <Optimization>MinSpace</Optimization>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <RuntimeTypeInfo>true</RuntimeTypeInfo>
+      <WarningLevel>TurnOffAllWarnings</WarningLevel>
+      <PreprocessorDefinitions>WIN32;_WINDOWS;NDEBUG;_CRT_FAR_MAPPINGS_NO_DEPRECATE;_CRT_IS_WCTYPE_NO_DEPRECATE;_CRT_MANAGED_FP_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;_CRT_SECURE_NO_DEPRECATE;_CRT_SECURE_NO_DEPRECATE_GLOBALS;_CRT_SETERRORMODE_BEEP_SLEEP_NO_DEPRECATE;_CRT_TIME_FUNCTIONS_NO_DEPRECATE;_CRT_VCCLRIT_NO_DEPRECATE;_SCL_SECURE_NO_DEPRECATE;KWSYS_NAMESPACE=itksys;_CRT_SECURE_NO_WARNINGS;UNICODE;_UNICODE;CMAKE_INTDIR="MinSizeRel";%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ObjectFileName>$(IntDir)</ObjectFileName>
+      <DebugInformationFormat>
+      </DebugInformationFormat>
+    </ClCompile>
+    <ResourceCompile>
+      <PreprocessorDefinitions>WIN32;_WINDOWS;NDEBUG;_CRT_FAR_MAPPINGS_NO_DEPRECATE;_CRT_IS_WCTYPE_NO_DEPRECATE;_CRT_MANAGED_FP_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;_CRT_SECURE_NO_DEPRECATE;_CRT_SECURE_NO_DEPRECATE_GLOBALS;_CRT_SETERRORMODE_BEEP_SLEEP_NO_DEPRECATE;_CRT_TIME_FUNCTIONS_NO_DEPRECATE;_CRT_VCCLRIT_NO_DEPRECATE;_SCL_SECURE_NO_DEPRECATE;KWSYS_NAMESPACE=itksys;_CRT_SECURE_NO_WARNINGS;UNICODE;_UNICODE;CMAKE_INTDIR=\"MinSizeRel\";%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\KWSys\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ResourceCompile>
+    <Midl>
+      <AdditionalIncludeDirectories>C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\KWSys\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
+      <HeaderFileName>%(Filename).h</HeaderFileName>
+      <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
+      <InterfaceIdentifierFileName>%(Filename)_i.c</InterfaceIdentifierFileName>
+      <ProxyFileName>%(Filename)_p.c</ProxyFileName>
+    </Midl>
+    <Lib>
+      <AdditionalOptions> /machine:x64 %(AdditionalOptions)</AdditionalOptions>
+    </Lib>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">
+    <ClCompile>
+      <AdditionalOptions> /bigobj %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalIncludeDirectories>C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\KWSys\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AssemblerListingLocation>RelWithDebInfo/</AssemblerListingLocation>
+      <CompileAs>CompileAsCpp</CompileAs>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <ExceptionHandling>Sync</ExceptionHandling>
+      <InlineFunctionExpansion>OnlyExplicitInline</InlineFunctionExpansion>
+      <Optimization>MaxSpeed</Optimization>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <RuntimeTypeInfo>true</RuntimeTypeInfo>
+      <WarningLevel>TurnOffAllWarnings</WarningLevel>
+      <PreprocessorDefinitions>WIN32;_WINDOWS;NDEBUG;_CRT_FAR_MAPPINGS_NO_DEPRECATE;_CRT_IS_WCTYPE_NO_DEPRECATE;_CRT_MANAGED_FP_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;_CRT_SECURE_NO_DEPRECATE;_CRT_SECURE_NO_DEPRECATE_GLOBALS;_CRT_SETERRORMODE_BEEP_SLEEP_NO_DEPRECATE;_CRT_TIME_FUNCTIONS_NO_DEPRECATE;_CRT_VCCLRIT_NO_DEPRECATE;_SCL_SECURE_NO_DEPRECATE;KWSYS_NAMESPACE=itksys;_CRT_SECURE_NO_WARNINGS;UNICODE;_UNICODE;CMAKE_INTDIR="RelWithDebInfo";%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ObjectFileName>$(IntDir)</ObjectFileName>
+    </ClCompile>
+    <ResourceCompile>
+      <PreprocessorDefinitions>WIN32;_WINDOWS;NDEBUG;_CRT_FAR_MAPPINGS_NO_DEPRECATE;_CRT_IS_WCTYPE_NO_DEPRECATE;_CRT_MANAGED_FP_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;_CRT_SECURE_NO_DEPRECATE;_CRT_SECURE_NO_DEPRECATE_GLOBALS;_CRT_SETERRORMODE_BEEP_SLEEP_NO_DEPRECATE;_CRT_TIME_FUNCTIONS_NO_DEPRECATE;_CRT_VCCLRIT_NO_DEPRECATE;_SCL_SECURE_NO_DEPRECATE;KWSYS_NAMESPACE=itksys;_CRT_SECURE_NO_WARNINGS;UNICODE;_UNICODE;CMAKE_INTDIR=\"RelWithDebInfo\";%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\KWSys\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ResourceCompile>
+    <Midl>
+      <AdditionalIncludeDirectories>C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\KWSys\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
+      <HeaderFileName>%(Filename).h</HeaderFileName>
+      <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
+      <InterfaceIdentifierFileName>%(Filename)_i.c</InterfaceIdentifierFileName>
+      <ProxyFileName>%(Filename)_p.c</ProxyFileName>
+    </Midl>
+    <Lib>
+      <AdditionalOptions> /machine:x64 %(AdditionalOptions)</AdditionalOptions>
+    </Lib>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <CustomBuild Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\KWSys\src\KWSys\CMakeLists.txt">
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Building Custom Rule C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/KWSys/src/KWSys/CMakeLists.txt</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">setlocal
+"c:\Program Files\CMake\bin\cmake.exe" -HC:/server/InsightToolkit-4.10.0 -BC:/server/InsightToolkit-4.10.0/bin --check-stamp-file C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\KWSys\src\KWSys\CMakeFiles\generate.stamp
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/KWSys/src/KWSys/CMakeLists.txt;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\KWSys\src\KWSys\CMakeLists.txt;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\KWSys\src\KWSys\kwsysPlatformTests.cmake;C:\Program Files\CMake\share\cmake-3.6\Modules\CheckTypeSize.cmake;C:\Program Files\CMake\share\cmake-3.6\Modules\CheckIncludeFile.cmake;C:\Program Files\CMake\share\cmake-3.6\Modules\CheckIncludeFileCXX.cmake;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\KWSys\src\KWSys\kwsysPrivate.h;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\KWSys\src\KWSys\kwsysPlatformTestsCXX.cxx;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\KWSys\src\KWSys\kwsysPlatformTestsCXX.cxx;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\KWSys\src\KWSys\kwsysPlatformTestsCXX.cxx;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\KWSys\src\KWSys\kwsysPlatformTestsCXX.cxx;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\KWSys\src\KWSys\kwsysPlatformTestsCXX.cxx;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\KWSys\src\KWSys\kwsysPlatformTestsCXX.cxx;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\KWSys\src\KWSys\kwsysPlatformTestsCXX.cxx;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\KWSys\src\KWSys\kwsysPlatformTestsC.c;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\KWSys\src\KWSys\kwsysPlatformTestsC.c;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\KWSys\src\KWSys\kwsysPlatformTestsCXX.cxx;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\KWSys\src\KWSys\kwsysPlatformTestsCXX.cxx;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\KWSys\src\KWSys\kwsysPlatformTestsCXX.cxx;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\KWSys\src\KWSys\kwsysPlatformTestsCXX.cxx;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\KWSys\src\KWSys\kwsysPlatformTestsCXX.cxx;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\KWSys\src\KWSys\kwsysPlatformTestsCXX.cxx;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\KWSys\src\KWSys\kwsysPlatformTestsCXX.cxx;C:\Program Files\CMake\share\cmake-3.6\Modules\CheckIncludeFiles.cmake;C:\Program Files\CMake\share\cmake-3.6\Modules\CMakeConfigurableFile.in;C:\Program Files\CMake\share\cmake-3.6\Modules\CheckSymbolExists.cmake;C:\Program Files\CMake\share\cmake-3.6\Modules\CMakeConfigurableFile.in;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\KWSys\src\KWSys\kwsysPlatformTestsCXX.cxx;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\KWSys\src\KWSys\kwsysPlatformTestsCXX.cxx;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\KWSys\src\KWSys\kwsysPlatformTestsCXX.cxx;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\KWSys\src\KWSys\kwsysPlatformTestsCXX.cxx;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\KWSys\src\KWSys\Directory.hxx.in;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\KWSys\src\KWSys\DynamicLoader.hxx.in;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\KWSys\src\KWSys\Encoding.hxx.in;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\KWSys\src\KWSys\Glob.hxx.in;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\KWSys\src\KWSys\RegularExpression.hxx.in;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\KWSys\src\KWSys\SystemTools.hxx.in;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\KWSys\src\KWSys\CommandLineArguments.hxx.in;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\KWSys\src\KWSys\FStream.hxx.in;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\KWSys\src\KWSys\SystemInformation.hxx.in;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\KWSys\src\KWSys\Configure.h.in;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\KWSys\src\KWSys\SharedForward.h.in;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\KWSys\src\KWSys\Process.h.in;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\KWSys\src\KWSys\Base64.h.in;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\KWSys\src\KWSys\Encoding.h.in;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\KWSys\src\KWSys\MD5.h.in;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\KWSys\src\KWSys\System.h.in;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\KWSys\src\KWSys\Configure.hxx.in;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\KWSys\src\KWSys\String.hxx.in;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\KWSys\src\KWSys\hashtable.hxx.in;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\KWSys\src\KWSys\hash_fun.hxx.in;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\KWSys\src\KWSys\hash_map.hxx.in;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\KWSys\src\KWSys\hash_set.hxx.in;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\KWSys\src\KWSys\auto_ptr.hxx.in;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\KWSys\src\KWSys\CMakeLists.txt;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\KWSys\src\KWSys\CMakeFiles\generate.stamp</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Building Custom Rule C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/KWSys/src/KWSys/CMakeLists.txt</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">setlocal
+"c:\Program Files\CMake\bin\cmake.exe" -HC:/server/InsightToolkit-4.10.0 -BC:/server/InsightToolkit-4.10.0/bin --check-stamp-file C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\KWSys\src\KWSys\CMakeFiles\generate.stamp
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/KWSys/src/KWSys/CMakeLists.txt;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\KWSys\src\KWSys\CMakeLists.txt;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\KWSys\src\KWSys\kwsysPlatformTests.cmake;C:\Program Files\CMake\share\cmake-3.6\Modules\CheckTypeSize.cmake;C:\Program Files\CMake\share\cmake-3.6\Modules\CheckIncludeFile.cmake;C:\Program Files\CMake\share\cmake-3.6\Modules\CheckIncludeFileCXX.cmake;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\KWSys\src\KWSys\kwsysPrivate.h;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\KWSys\src\KWSys\kwsysPlatformTestsCXX.cxx;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\KWSys\src\KWSys\kwsysPlatformTestsCXX.cxx;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\KWSys\src\KWSys\kwsysPlatformTestsCXX.cxx;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\KWSys\src\KWSys\kwsysPlatformTestsCXX.cxx;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\KWSys\src\KWSys\kwsysPlatformTestsCXX.cxx;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\KWSys\src\KWSys\kwsysPlatformTestsCXX.cxx;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\KWSys\src\KWSys\kwsysPlatformTestsCXX.cxx;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\KWSys\src\KWSys\kwsysPlatformTestsC.c;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\KWSys\src\KWSys\kwsysPlatformTestsC.c;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\KWSys\src\KWSys\kwsysPlatformTestsCXX.cxx;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\KWSys\src\KWSys\kwsysPlatformTestsCXX.cxx;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\KWSys\src\KWSys\kwsysPlatformTestsCXX.cxx;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\KWSys\src\KWSys\kwsysPlatformTestsCXX.cxx;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\KWSys\src\KWSys\kwsysPlatformTestsCXX.cxx;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\KWSys\src\KWSys\kwsysPlatformTestsCXX.cxx;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\KWSys\src\KWSys\kwsysPlatformTestsCXX.cxx;C:\Program Files\CMake\share\cmake-3.6\Modules\CheckIncludeFiles.cmake;C:\Program Files\CMake\share\cmake-3.6\Modules\CMakeConfigurableFile.in;C:\Program Files\CMake\share\cmake-3.6\Modules\CheckSymbolExists.cmake;C:\Program Files\CMake\share\cmake-3.6\Modules\CMakeConfigurableFile.in;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\KWSys\src\KWSys\kwsysPlatformTestsCXX.cxx;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\KWSys\src\KWSys\kwsysPlatformTestsCXX.cxx;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\KWSys\src\KWSys\kwsysPlatformTestsCXX.cxx;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\KWSys\src\KWSys\kwsysPlatformTestsCXX.cxx;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\KWSys\src\KWSys\Directory.hxx.in;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\KWSys\src\KWSys\DynamicLoader.hxx.in;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\KWSys\src\KWSys\Encoding.hxx.in;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\KWSys\src\KWSys\Glob.hxx.in;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\KWSys\src\KWSys\RegularExpression.hxx.in;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\KWSys\src\KWSys\SystemTools.hxx.in;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\KWSys\src\KWSys\CommandLineArguments.hxx.in;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\KWSys\src\KWSys\FStream.hxx.in;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\KWSys\src\KWSys\SystemInformation.hxx.in;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\KWSys\src\KWSys\Configure.h.in;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\KWSys\src\KWSys\SharedForward.h.in;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\KWSys\src\KWSys\Process.h.in;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\KWSys\src\KWSys\Base64.h.in;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\KWSys\src\KWSys\Encoding.h.in;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\KWSys\src\KWSys\MD5.h.in;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\KWSys\src\KWSys\System.h.in;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\KWSys\src\KWSys\Configure.hxx.in;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\KWSys\src\KWSys\String.hxx.in;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\KWSys\src\KWSys\hashtable.hxx.in;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\KWSys\src\KWSys\hash_fun.hxx.in;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\KWSys\src\KWSys\hash_map.hxx.in;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\KWSys\src\KWSys\hash_set.hxx.in;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\KWSys\src\KWSys\auto_ptr.hxx.in;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\KWSys\src\KWSys\CMakeLists.txt;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\KWSys\src\KWSys\CMakeFiles\generate.stamp</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">Building Custom Rule C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/KWSys/src/KWSys/CMakeLists.txt</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">setlocal
+"c:\Program Files\CMake\bin\cmake.exe" -HC:/server/InsightToolkit-4.10.0 -BC:/server/InsightToolkit-4.10.0/bin --check-stamp-file C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\KWSys\src\KWSys\CMakeFiles\generate.stamp
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/KWSys/src/KWSys/CMakeLists.txt;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\KWSys\src\KWSys\CMakeLists.txt;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\KWSys\src\KWSys\kwsysPlatformTests.cmake;C:\Program Files\CMake\share\cmake-3.6\Modules\CheckTypeSize.cmake;C:\Program Files\CMake\share\cmake-3.6\Modules\CheckIncludeFile.cmake;C:\Program Files\CMake\share\cmake-3.6\Modules\CheckIncludeFileCXX.cmake;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\KWSys\src\KWSys\kwsysPrivate.h;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\KWSys\src\KWSys\kwsysPlatformTestsCXX.cxx;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\KWSys\src\KWSys\kwsysPlatformTestsCXX.cxx;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\KWSys\src\KWSys\kwsysPlatformTestsCXX.cxx;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\KWSys\src\KWSys\kwsysPlatformTestsCXX.cxx;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\KWSys\src\KWSys\kwsysPlatformTestsCXX.cxx;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\KWSys\src\KWSys\kwsysPlatformTestsCXX.cxx;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\KWSys\src\KWSys\kwsysPlatformTestsCXX.cxx;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\KWSys\src\KWSys\kwsysPlatformTestsC.c;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\KWSys\src\KWSys\kwsysPlatformTestsC.c;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\KWSys\src\KWSys\kwsysPlatformTestsCXX.cxx;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\KWSys\src\KWSys\kwsysPlatformTestsCXX.cxx;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\KWSys\src\KWSys\kwsysPlatformTestsCXX.cxx;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\KWSys\src\KWSys\kwsysPlatformTestsCXX.cxx;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\KWSys\src\KWSys\kwsysPlatformTestsCXX.cxx;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\KWSys\src\KWSys\kwsysPlatformTestsCXX.cxx;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\KWSys\src\KWSys\kwsysPlatformTestsCXX.cxx;C:\Program Files\CMake\share\cmake-3.6\Modules\CheckIncludeFiles.cmake;C:\Program Files\CMake\share\cmake-3.6\Modules\CMakeConfigurableFile.in;C:\Program Files\CMake\share\cmake-3.6\Modules\CheckSymbolExists.cmake;C:\Program Files\CMake\share\cmake-3.6\Modules\CMakeConfigurableFile.in;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\KWSys\src\KWSys\kwsysPlatformTestsCXX.cxx;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\KWSys\src\KWSys\kwsysPlatformTestsCXX.cxx;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\KWSys\src\KWSys\kwsysPlatformTestsCXX.cxx;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\KWSys\src\KWSys\kwsysPlatformTestsCXX.cxx;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\KWSys\src\KWSys\Directory.hxx.in;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\KWSys\src\KWSys\DynamicLoader.hxx.in;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\KWSys\src\KWSys\Encoding.hxx.in;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\KWSys\src\KWSys\Glob.hxx.in;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\KWSys\src\KWSys\RegularExpression.hxx.in;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\KWSys\src\KWSys\SystemTools.hxx.in;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\KWSys\src\KWSys\CommandLineArguments.hxx.in;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\KWSys\src\KWSys\FStream.hxx.in;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\KWSys\src\KWSys\SystemInformation.hxx.in;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\KWSys\src\KWSys\Configure.h.in;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\KWSys\src\KWSys\SharedForward.h.in;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\KWSys\src\KWSys\Process.h.in;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\KWSys\src\KWSys\Base64.h.in;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\KWSys\src\KWSys\Encoding.h.in;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\KWSys\src\KWSys\MD5.h.in;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\KWSys\src\KWSys\System.h.in;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\KWSys\src\KWSys\Configure.hxx.in;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\KWSys\src\KWSys\String.hxx.in;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\KWSys\src\KWSys\hashtable.hxx.in;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\KWSys\src\KWSys\hash_fun.hxx.in;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\KWSys\src\KWSys\hash_map.hxx.in;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\KWSys\src\KWSys\hash_set.hxx.in;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\KWSys\src\KWSys\auto_ptr.hxx.in;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\KWSys\src\KWSys\CMakeLists.txt;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\KWSys\src\KWSys\CMakeFiles\generate.stamp</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">Building Custom Rule C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/KWSys/src/KWSys/CMakeLists.txt</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">setlocal
+"c:\Program Files\CMake\bin\cmake.exe" -HC:/server/InsightToolkit-4.10.0 -BC:/server/InsightToolkit-4.10.0/bin --check-stamp-file C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\KWSys\src\KWSys\CMakeFiles\generate.stamp
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/KWSys/src/KWSys/CMakeLists.txt;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\KWSys\src\KWSys\CMakeLists.txt;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\KWSys\src\KWSys\kwsysPlatformTests.cmake;C:\Program Files\CMake\share\cmake-3.6\Modules\CheckTypeSize.cmake;C:\Program Files\CMake\share\cmake-3.6\Modules\CheckIncludeFile.cmake;C:\Program Files\CMake\share\cmake-3.6\Modules\CheckIncludeFileCXX.cmake;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\KWSys\src\KWSys\kwsysPrivate.h;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\KWSys\src\KWSys\kwsysPlatformTestsCXX.cxx;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\KWSys\src\KWSys\kwsysPlatformTestsCXX.cxx;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\KWSys\src\KWSys\kwsysPlatformTestsCXX.cxx;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\KWSys\src\KWSys\kwsysPlatformTestsCXX.cxx;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\KWSys\src\KWSys\kwsysPlatformTestsCXX.cxx;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\KWSys\src\KWSys\kwsysPlatformTestsCXX.cxx;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\KWSys\src\KWSys\kwsysPlatformTestsCXX.cxx;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\KWSys\src\KWSys\kwsysPlatformTestsC.c;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\KWSys\src\KWSys\kwsysPlatformTestsC.c;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\KWSys\src\KWSys\kwsysPlatformTestsCXX.cxx;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\KWSys\src\KWSys\kwsysPlatformTestsCXX.cxx;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\KWSys\src\KWSys\kwsysPlatformTestsCXX.cxx;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\KWSys\src\KWSys\kwsysPlatformTestsCXX.cxx;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\KWSys\src\KWSys\kwsysPlatformTestsCXX.cxx;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\KWSys\src\KWSys\kwsysPlatformTestsCXX.cxx;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\KWSys\src\KWSys\kwsysPlatformTestsCXX.cxx;C:\Program Files\CMake\share\cmake-3.6\Modules\CheckIncludeFiles.cmake;C:\Program Files\CMake\share\cmake-3.6\Modules\CMakeConfigurableFile.in;C:\Program Files\CMake\share\cmake-3.6\Modules\CheckSymbolExists.cmake;C:\Program Files\CMake\share\cmake-3.6\Modules\CMakeConfigurableFile.in;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\KWSys\src\KWSys\kwsysPlatformTestsCXX.cxx;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\KWSys\src\KWSys\kwsysPlatformTestsCXX.cxx;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\KWSys\src\KWSys\kwsysPlatformTestsCXX.cxx;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\KWSys\src\KWSys\kwsysPlatformTestsCXX.cxx;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\KWSys\src\KWSys\Directory.hxx.in;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\KWSys\src\KWSys\DynamicLoader.hxx.in;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\KWSys\src\KWSys\Encoding.hxx.in;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\KWSys\src\KWSys\Glob.hxx.in;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\KWSys\src\KWSys\RegularExpression.hxx.in;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\KWSys\src\KWSys\SystemTools.hxx.in;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\KWSys\src\KWSys\CommandLineArguments.hxx.in;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\KWSys\src\KWSys\FStream.hxx.in;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\KWSys\src\KWSys\SystemInformation.hxx.in;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\KWSys\src\KWSys\Configure.h.in;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\KWSys\src\KWSys\SharedForward.h.in;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\KWSys\src\KWSys\Process.h.in;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\KWSys\src\KWSys\Base64.h.in;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\KWSys\src\KWSys\Encoding.h.in;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\KWSys\src\KWSys\MD5.h.in;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\KWSys\src\KWSys\System.h.in;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\KWSys\src\KWSys\Configure.hxx.in;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\KWSys\src\KWSys\String.hxx.in;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\KWSys\src\KWSys\hashtable.hxx.in;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\KWSys\src\KWSys\hash_fun.hxx.in;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\KWSys\src\KWSys\hash_map.hxx.in;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\KWSys\src\KWSys\hash_set.hxx.in;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\KWSys\src\KWSys\auto_ptr.hxx.in;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\KWSys\src\KWSys\CMakeLists.txt;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\KWSys\src\KWSys\CMakeFiles\generate.stamp</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">false</LinkObjects>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\KWSys\src\itksys\Configure.h" />
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\KWSys\src\itksys\SharedForward.h" />
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\KWSys\src\itksys\Process.h" />
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\KWSys\src\itksys\Base64.h" />
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\KWSys\src\itksys\Encoding.h" />
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\KWSys\src\itksys\MD5.h" />
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\KWSys\src\itksys\System.h" />
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\KWSys\src\itksys\Directory.hxx" />
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\KWSys\src\itksys\DynamicLoader.hxx" />
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\KWSys\src\itksys\Encoding.hxx" />
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\KWSys\src\itksys\Glob.hxx" />
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\KWSys\src\itksys\RegularExpression.hxx" />
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\KWSys\src\itksys\SystemTools.hxx" />
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\KWSys\src\itksys\CommandLineArguments.hxx" />
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\KWSys\src\itksys\FStream.hxx" />
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\KWSys\src\itksys\SystemInformation.hxx" />
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\KWSys\src\itksys\Configure.hxx" />
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\KWSys\src\itksys\String.hxx" />
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\KWSys\src\itksys\hashtable.hxx" />
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\KWSys\src\itksys\hash_fun.hxx" />
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\KWSys\src\itksys\hash_map.hxx" />
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\KWSys\src\itksys\hash_set.hxx" />
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\KWSys\src\itksys\auto_ptr.hxx" />
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\KWSys\src\KWSys\ProcessWin32.c">
+      <CompileAs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">CompileAsC</CompileAs>
+      <CompileAs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">CompileAsC</CompileAs>
+      <CompileAs Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">CompileAsC</CompileAs>
+      <CompileAs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">CompileAsC</CompileAs>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\KWSys\src\KWSys\Base64.c">
+      <CompileAs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">CompileAsC</CompileAs>
+      <CompileAs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">CompileAsC</CompileAs>
+      <CompileAs Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">CompileAsC</CompileAs>
+      <CompileAs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">CompileAsC</CompileAs>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\KWSys\src\KWSys\EncodingC.c">
+      <CompileAs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">CompileAsC</CompileAs>
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">KWSYS_ENCODING_DEFAULT_CODEPAGE=CP_ACP;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <CompileAs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">CompileAsC</CompileAs>
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|x64'">KWSYS_ENCODING_DEFAULT_CODEPAGE=CP_ACP;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <CompileAs Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">CompileAsC</CompileAs>
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">KWSYS_ENCODING_DEFAULT_CODEPAGE=CP_ACP;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <CompileAs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">CompileAsC</CompileAs>
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">KWSYS_ENCODING_DEFAULT_CODEPAGE=CP_ACP;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\KWSys\src\KWSys\MD5.c">
+      <CompileAs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">CompileAsC</CompileAs>
+      <CompileAs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">CompileAsC</CompileAs>
+      <CompileAs Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">CompileAsC</CompileAs>
+      <CompileAs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">CompileAsC</CompileAs>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\KWSys\src\KWSys\System.c">
+      <CompileAs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">CompileAsC</CompileAs>
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">KWSYS_C_HAS_PTRDIFF_T=1;KWSYS_C_HAS_SSIZE_T=0;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <CompileAs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">CompileAsC</CompileAs>
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|x64'">KWSYS_C_HAS_PTRDIFF_T=1;KWSYS_C_HAS_SSIZE_T=0;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <CompileAs Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">CompileAsC</CompileAs>
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">KWSYS_C_HAS_PTRDIFF_T=1;KWSYS_C_HAS_SSIZE_T=0;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <CompileAs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">CompileAsC</CompileAs>
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">KWSYS_C_HAS_PTRDIFF_T=1;KWSYS_C_HAS_SSIZE_T=0;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\KWSys\src\KWSys\Directory.cxx" />
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\KWSys\src\KWSys\DynamicLoader.cxx" />
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\KWSys\src\KWSys\EncodingCXX.cxx" />
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\KWSys\src\KWSys\Glob.cxx" />
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\KWSys\src\KWSys\RegularExpression.cxx" />
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\KWSys\src\KWSys\SystemTools.cxx">
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">KWSYS_CXX_HAS_SETENV=0;KWSYS_CXX_HAS_UNSETENV=0;KWSYS_CXX_HAS_ENVIRON_IN_STDLIB_H=1;KWSYS_CXX_HAS_UTIMES=0;KWSYS_CXX_HAS_UTIMENSAT=0;KWSYS_CXX_STAT_HAS_ST_MTIM=0;KWSYS_CXX_STAT_HAS_ST_MTIMESPEC=0;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|x64'">KWSYS_CXX_HAS_SETENV=0;KWSYS_CXX_HAS_UNSETENV=0;KWSYS_CXX_HAS_ENVIRON_IN_STDLIB_H=1;KWSYS_CXX_HAS_UTIMES=0;KWSYS_CXX_HAS_UTIMENSAT=0;KWSYS_CXX_STAT_HAS_ST_MTIM=0;KWSYS_CXX_STAT_HAS_ST_MTIMESPEC=0;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">KWSYS_CXX_HAS_SETENV=0;KWSYS_CXX_HAS_UNSETENV=0;KWSYS_CXX_HAS_ENVIRON_IN_STDLIB_H=1;KWSYS_CXX_HAS_UTIMES=0;KWSYS_CXX_HAS_UTIMENSAT=0;KWSYS_CXX_STAT_HAS_ST_MTIM=0;KWSYS_CXX_STAT_HAS_ST_MTIMESPEC=0;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">KWSYS_CXX_HAS_SETENV=0;KWSYS_CXX_HAS_UNSETENV=0;KWSYS_CXX_HAS_ENVIRON_IN_STDLIB_H=1;KWSYS_CXX_HAS_UTIMES=0;KWSYS_CXX_HAS_UTIMENSAT=0;KWSYS_CXX_STAT_HAS_ST_MTIM=0;KWSYS_CXX_STAT_HAS_ST_MTIMESPEC=0;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\KWSys\src\KWSys\CommandLineArguments.cxx" />
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\KWSys\src\KWSys\FStream.cxx" />
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\KWSys\src\KWSys\SystemInformation.cxx">
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">SIZEOF_VOID_P=8;KWSYS_SYS_HAS_PSAPI=1;KWSYS_CXX_HAS_ATOL=1;KWSYS_CXX_HAS_ATOLL=1;KWSYS_CXX_HAS__ATOI64=1;KWSYS_USE_LONG_LONG=1;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|x64'">SIZEOF_VOID_P=8;KWSYS_SYS_HAS_PSAPI=1;KWSYS_CXX_HAS_ATOL=1;KWSYS_CXX_HAS_ATOLL=1;KWSYS_CXX_HAS__ATOI64=1;KWSYS_USE_LONG_LONG=1;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">SIZEOF_VOID_P=8;KWSYS_SYS_HAS_PSAPI=1;KWSYS_CXX_HAS_ATOL=1;KWSYS_CXX_HAS_ATOLL=1;KWSYS_CXX_HAS__ATOI64=1;KWSYS_USE_LONG_LONG=1;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">SIZEOF_VOID_P=8;KWSYS_SYS_HAS_PSAPI=1;KWSYS_CXX_HAS_ATOL=1;KWSYS_CXX_HAS_ATOLL=1;KWSYS_CXX_HAS__ATOI64=1;KWSYS_USE_LONG_LONG=1;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="C:/server/InsightToolkit-4.10.0/bin/ZERO_CHECK.vcxproj">
+      <Project>8424D74C-2D7E-3861-92BD-E31A437C2341</Project>
+    </ProjectReference>
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

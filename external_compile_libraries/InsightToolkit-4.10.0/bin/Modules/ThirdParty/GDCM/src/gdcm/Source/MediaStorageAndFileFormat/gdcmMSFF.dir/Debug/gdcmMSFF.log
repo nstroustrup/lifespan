@@ -1,0 +1,116 @@
+﻿  Building Custom Rule C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/GDCM/src/gdcm/Source/MediaStorageAndFileFormat/CMakeLists.txt
+  CMake does not need to re-run because C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\GDCM\src\gdcm\Source\MediaStorageAndFileFormat\CMakeFiles\generate.stamp is up-to-date.
+  gdcmFileStreamer.cxx
+  gdcmJSON.cxx
+  gdcmFileChangeTransferSyntax.cxx
+  gdcmAnonymizer.cxx
+  gdcmFileAnonymizer.cxx
+  gdcmIconImageFilter.cxx
+  gdcmIconImageGenerator.cxx
+  gdcmDICOMDIRGenerator.cxx
+  gdcmSpacing.cxx
+  gdcmFileExplicitFilter.cxx
+  gdcmFileDerivation.cxx
+  gdcmImageFragmentSplitter.cxx
+  gdcmTagPath.cxx
+  gdcmSimpleSubjectWatcher.cxx
+  gdcmAnonymizeEvent.cxx
+  gdcmPixmap.cxx
+  gdcmBitmap.cxx
+  gdcmRescaler.cxx
+  gdcmImageToImageFilter.cxx
+  gdcmBitmapToBitmapFilter.cxx
+  Generating Code...
+  Compiling...
+  gdcmPixmapToPixmapFilter.cxx
+  gdcmImageChangeTransferSyntax.cxx
+  gdcmImageApplyLookupTable.cxx
+  gdcmFileDecompressLookupTable.cxx
+  gdcmOrientation.cxx
+  gdcmDataSetHelper.cxx
+  gdcmImageChangePlanarConfiguration.cxx
+  gdcmImageChangePhotometricInterpretation.cxx
+  gdcmDirectionCosines.cxx
+  gdcmSorter.cxx
+  gdcmSerieHelper.cxx
+  gdcmIPPSorter.cxx
+  gdcmApplicationEntity.cxx
+  gdcmDICOMDIR.cxx
+  gdcmSpectroscopy.cxx
+  gdcmEncapsulatedDocument.cxx
+  gdcmSplitMosaicFilter.cxx
+  gdcmFiducials.cxx
+  gdcmWaveform.cxx
+  gdcmPersonName.cxx
+  Generating Code...
+  Compiling...
+  gdcmIconImage.cxx
+  gdcmUIDGenerator.cxx
+  gdcmUUIDGenerator.cxx
+  gdcmPrinter.cxx
+  gdcmDictPrinter.cxx
+  gdcmXMLPrinter.cxx
+  gdcmScanner.cxx
+  gdcmStrictScanner.cxx
+  gdcmPixmapReader.cxx
+  gdcmImageReader.cxx
+  gdcmPixmapWriter.cxx
+  gdcmImageWriter.cxx
+  gdcmStringFilter.cxx
+  gdcmImageHelper.cxx
+  gdcmValidate.cxx
+  gdcmDumper.cxx
+  gdcmImage.cxx
+  gdcmImageConverter.cxx
+  gdcmImageCodec.cxx
+  gdcmJPEG12Codec.cxx
+  Generating Code...
+  Compiling...
+  gdcmRLECodec.cxx
+  gdcmPDFCodec.cxx
+  gdcmAudioCodec.cxx
+  gdcmJPEG16Codec.cxx
+  gdcmJPEGLSCodec.cxx
+  gdcmJPEG8Codec.cxx
+  gdcmJPEGCodec.cxx
+  gdcmPVRGCodec.cxx
+  gdcmKAKADUCodec.cxx
+  gdcmPNMCodec.cxx
+  gdcmPGXCodec.cxx
+  gdcmRAWCodec.cxx
+  gdcmLookupTable.cxx
+  gdcmOverlay.cxx
+  gdcmCurve.cxx
+  gdcmPhotometricInterpretation.cxx
+  gdcmPixelFormat.cxx
+  gdcmSegmentedPaletteColorLookupTable.cxx
+  gdcmStreamImageReader.cxx
+  gdcmImageRegionReader.cxx
+  Generating Code...
+  Compiling...
+  gdcmDirectoryHelper.cxx
+  gdcmSegment.cxx
+  gdcmSurface.cxx
+  gdcmMeshPrimitive.cxx
+  gdcmSegmentWriter.cxx
+  gdcmSurfaceWriter.cxx
+  gdcmSegmentReader.cxx
+  gdcmSurfaceReader.cxx
+  gdcmSurfaceHelper.cxx
+  gdcmSegmentHelper.cxx
+  rle.cxx
+  info.cxx
+  io.cxx
+  Generating Code...
+  gdcmJPEG2000Codec.cxx
+gdcmDumper.obj : warning LNK4221: This object file does not define any previously undefined public symbols, so it will not be used by any link operation that consumes this library
+gdcmIconImage.obj : warning LNK4221: This object file does not define any previously undefined public symbols, so it will not be used by any link operation that consumes this library
+gdcmPersonName.obj : warning LNK4221: This object file does not define any previously undefined public symbols, so it will not be used by any link operation that consumes this library
+gdcmWaveform.obj : warning LNK4221: This object file does not define any previously undefined public symbols, so it will not be used by any link operation that consumes this library
+gdcmFiducials.obj : warning LNK4221: This object file does not define any previously undefined public symbols, so it will not be used by any link operation that consumes this library
+gdcmEncapsulatedDocument.obj : warning LNK4221: This object file does not define any previously undefined public symbols, so it will not be used by any link operation that consumes this library
+gdcmSpectroscopy.obj : warning LNK4221: This object file does not define any previously undefined public symbols, so it will not be used by any link operation that consumes this library
+gdcmDICOMDIR.obj : warning LNK4221: This object file does not define any previously undefined public symbols, so it will not be used by any link operation that consumes this library
+gdcmApplicationEntity.obj : warning LNK4221: This object file does not define any previously undefined public symbols, so it will not be used by any link operation that consumes this library
+gdcmAnonymizeEvent.obj : warning LNK4221: This object file does not define any previously undefined public symbols, so it will not be used by any link operation that consumes this library
+  gdcmMSFF.vcxproj -> C:\server\InsightToolkit-4.10.0\bin\lib\Debug\itkgdcmMSFF-4.10.lib

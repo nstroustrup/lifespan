@@ -1,0 +1,5 @@
+# CMake generation dependency list for this directory.
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/GDCM/src/gdcm/Utilities/socketxx/socket++/CMakeLists.txt
+C:/Program Files/CMake/share/cmake-3.6/Modules/CheckFunctionExists.cmake
+c:/Program Files/CMake/share/cmake-3.6/Modules/CheckFunctionExists.c
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/GDCM/src/gdcm/Utilities/socketxx/socket++/config.h.in

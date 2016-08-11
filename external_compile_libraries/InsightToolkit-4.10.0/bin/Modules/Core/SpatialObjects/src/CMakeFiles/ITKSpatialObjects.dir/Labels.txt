@@ -1,0 +1,8 @@
+# Target labels
+ ITKSpatialObjects
+# Source files and their labels
+C:/server/InsightToolkit-4.10.0/Modules/Core/SpatialObjects/src/itkMetaEvent.cxx
+C:/server/InsightToolkit-4.10.0/Modules/Core/SpatialObjects/src/itkCylinderSpatialObject.cxx
+C:/server/InsightToolkit-4.10.0/Modules/Core/SpatialObjects/src/itkSpatialObjectFactoryBase.cxx
+C:/server/InsightToolkit-4.10.0/Modules/Core/SpatialObjects/src/itkArrowSpatialObject.cxx
+C:/server/InsightToolkit-4.10.0/Modules/Core/SpatialObjects/src/CMakeLists.txt

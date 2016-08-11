@@ -1,0 +1,6 @@
+# Target labels
+ ITKIONIFTI
+# Source files and their labels
+C:/server/InsightToolkit-4.10.0/Modules/IO/NIFTI/src/itkNiftiImageIOFactory.cxx
+C:/server/InsightToolkit-4.10.0/Modules/IO/NIFTI/src/itkNiftiImageIO.cxx
+C:/server/InsightToolkit-4.10.0/Modules/IO/NIFTI/src/CMakeLists.txt

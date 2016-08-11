@@ -1,0 +1,6 @@
+# CMake generation dependency list for this directory.
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/src/vxl/vcl/CMakeLists.txt
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/src/vxl/vcl/vcl_config_compiler.h.in
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/src/vxl/vcl/vcl_config_headers.h.in
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/src/vxl/vcl/vcl_config_manual.h.in
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/src/vxl/vcl/vcl_where_root_dir.h.in

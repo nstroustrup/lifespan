@@ -1,0 +1,214 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<Project ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\MessageExchangeDefinition\gdcmAAbortPDU.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\MessageExchangeDefinition\gdcmAAssociateACPDU.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\MessageExchangeDefinition\gdcmAAssociateRJPDU.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\MessageExchangeDefinition\gdcmAAssociateRQPDU.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\MessageExchangeDefinition\gdcmAbstractSyntax.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\MessageExchangeDefinition\gdcmApplicationContext.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\MessageExchangeDefinition\gdcmAReleaseRPPDU.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\MessageExchangeDefinition\gdcmAReleaseRQPDU.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\MessageExchangeDefinition\gdcmARTIMTimer.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\MessageExchangeDefinition\gdcmAsynchronousOperationsWindowSub.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\MessageExchangeDefinition\gdcmBaseQuery.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\MessageExchangeDefinition\gdcmBaseRootQuery.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\MessageExchangeDefinition\gdcmCEchoMessages.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\MessageExchangeDefinition\gdcmCFindMessages.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\MessageExchangeDefinition\gdcmCMoveMessages.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\MessageExchangeDefinition\gdcmCommandDataSet.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\MessageExchangeDefinition\gdcmCompositeMessageFactory.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\MessageExchangeDefinition\gdcmCompositeNetworkFunctions.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\MessageExchangeDefinition\gdcmCStoreMessages.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\MessageExchangeDefinition\gdcmFindPatientRootQuery.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\MessageExchangeDefinition\gdcmFindStudyRootQuery.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\MessageExchangeDefinition\gdcmImplementationClassUIDSub.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\MessageExchangeDefinition\gdcmImplementationUIDSub.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\MessageExchangeDefinition\gdcmImplementationVersionNameSub.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\MessageExchangeDefinition\gdcmMaximumLengthSub.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\MessageExchangeDefinition\gdcmModalityPerformedProcedureStepCreateQuery.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\MessageExchangeDefinition\gdcmModalityPerformedProcedureStepSetQuery.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\MessageExchangeDefinition\gdcmMovePatientRootQuery.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\MessageExchangeDefinition\gdcmMoveStudyRootQuery.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\MessageExchangeDefinition\gdcmNActionMessages.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\MessageExchangeDefinition\gdcmNCreateMessages.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\MessageExchangeDefinition\gdcmNDeleteMessages.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\MessageExchangeDefinition\gdcmNEventReportMessages.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\MessageExchangeDefinition\gdcmNGetMessages.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\MessageExchangeDefinition\gdcmNormalizedMessageFactory.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\MessageExchangeDefinition\gdcmNormalizedNetworkFunctions.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\MessageExchangeDefinition\gdcmNSetMessages.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\MessageExchangeDefinition\gdcmPDataTFPDU.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\MessageExchangeDefinition\gdcmPDUFactory.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\MessageExchangeDefinition\gdcmPresentationContext.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\MessageExchangeDefinition\gdcmPresentationContextAC.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\MessageExchangeDefinition\gdcmPresentationContextGenerator.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\MessageExchangeDefinition\gdcmPresentationContextRQ.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\MessageExchangeDefinition\gdcmPresentationDataValue.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\MessageExchangeDefinition\gdcmQueryBase.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\MessageExchangeDefinition\gdcmQueryFactory.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\MessageExchangeDefinition\gdcmQueryImage.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\MessageExchangeDefinition\gdcmQueryPatient.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\MessageExchangeDefinition\gdcmQuerySeries.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\MessageExchangeDefinition\gdcmQueryStudy.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\MessageExchangeDefinition\gdcmRoleSelectionSub.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\MessageExchangeDefinition\gdcmServiceClassApplicationInformation.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\MessageExchangeDefinition\gdcmServiceClassUser.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\MessageExchangeDefinition\gdcmSOPClassExtendedNegociationSub.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\MessageExchangeDefinition\gdcmTransferSyntaxSub.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\MessageExchangeDefinition\gdcmULActionAA.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\MessageExchangeDefinition\gdcmULActionAE.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\MessageExchangeDefinition\gdcmULActionAR.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\MessageExchangeDefinition\gdcmULActionDT.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\MessageExchangeDefinition\gdcmULBasicCallback.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\MessageExchangeDefinition\gdcmULConnection.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\MessageExchangeDefinition\gdcmULConnectionInfo.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\MessageExchangeDefinition\gdcmULConnectionManager.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\MessageExchangeDefinition\gdcmULTransitionTable.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\MessageExchangeDefinition\gdcmULWritingCallback.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\MessageExchangeDefinition\gdcmUserInformation.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\MessageExchangeDefinition\gdcmWLMFindQuery.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\MessageExchangeDefinition\CMakeLists.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{3D8AD831-5BA8-339E-9CE0-67BCE07365DA}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

@@ -1,0 +1,438 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="MinSizeRel|x64">
+      <Configuration>MinSizeRel</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="RelWithDebInfo|x64">
+      <Configuration>RelWithDebInfo</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGUID>{C93C7740-1FBF-32B2-8C09-4F00DA81F842}</ProjectGUID>
+    <Keyword>Win32Proj</Keyword>
+    <Platform>x64</Platform>
+    <ProjectName>itkvnl_algo</ProjectName>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <UseOfMfc>false</UseOfMfc>
+    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v140</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <UseOfMfc>false</UseOfMfc>
+    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v140</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <UseOfMfc>false</UseOfMfc>
+    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v140</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <UseOfMfc>false</UseOfMfc>
+    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v140</PlatformToolset>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup>
+    <_ProjectFileVersion>10.0.20506.1</_ProjectFileVersion>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">C:\server\InsightToolkit-4.10.0\bin\lib\Debug\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">itkvnl_algo.dir\Debug\</IntDir>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">itkvnl_algo-4.10</TargetName>
+    <TargetExt Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">.lib</TargetExt>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Release|x64'">C:\server\InsightToolkit-4.10.0\bin\lib\Release\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Release|x64'">itkvnl_algo.dir\Release\</IntDir>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">itkvnl_algo-4.10</TargetName>
+    <TargetExt Condition="'$(Configuration)|$(Platform)'=='Release|x64'">.lib</TargetExt>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">C:\server\InsightToolkit-4.10.0\bin\lib\MinSizeRel\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">itkvnl_algo.dir\MinSizeRel\</IntDir>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">itkvnl_algo-4.10</TargetName>
+    <TargetExt Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">.lib</TargetExt>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">C:\server\InsightToolkit-4.10.0\bin\lib\RelWithDebInfo\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">itkvnl_algo.dir\RelWithDebInfo\</IntDir>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">itkvnl_algo-4.10</TargetName>
+    <TargetExt Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">.lib</TargetExt>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <AdditionalOptions> /bigobj %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalIncludeDirectories>C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\vcl;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core;C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\VNL\src\vxl\v3p\netlib;C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\VNL\src\vxl\vcl;C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\VNL\src\vxl\core;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\algo;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AssemblerListingLocation>Debug/</AssemblerListingLocation>
+      <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
+      <CompileAs>CompileAsCpp</CompileAs>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <ExceptionHandling>Sync</ExceptionHandling>
+      <InlineFunctionExpansion>Disabled</InlineFunctionExpansion>
+      <Optimization>Disabled</Optimization>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <RuntimeTypeInfo>true</RuntimeTypeInfo>
+      <WarningLevel>TurnOffAllWarnings</WarningLevel>
+      <PreprocessorDefinitions>WIN32;_WINDOWS;_DEBUG;_CRT_FAR_MAPPINGS_NO_DEPRECATE;_CRT_IS_WCTYPE_NO_DEPRECATE;_CRT_MANAGED_FP_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;_CRT_SECURE_NO_DEPRECATE;_CRT_SECURE_NO_DEPRECATE_GLOBALS;_CRT_SETERRORMODE_BEEP_SLEEP_NO_DEPRECATE;_CRT_TIME_FUNCTIONS_NO_DEPRECATE;_CRT_VCCLRIT_NO_DEPRECATE;_SCL_SECURE_NO_DEPRECATE;VXL_WARN_DEPRECATED;VXL_WARN_DEPRECATED_ONCE;VXL_LEGACY_ERROR_REPORTING;CMAKE_INTDIR="Debug";%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ObjectFileName>$(IntDir)</ObjectFileName>
+    </ClCompile>
+    <ResourceCompile>
+      <PreprocessorDefinitions>WIN32;_WINDOWS;_DEBUG;_CRT_FAR_MAPPINGS_NO_DEPRECATE;_CRT_IS_WCTYPE_NO_DEPRECATE;_CRT_MANAGED_FP_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;_CRT_SECURE_NO_DEPRECATE;_CRT_SECURE_NO_DEPRECATE_GLOBALS;_CRT_SETERRORMODE_BEEP_SLEEP_NO_DEPRECATE;_CRT_TIME_FUNCTIONS_NO_DEPRECATE;_CRT_VCCLRIT_NO_DEPRECATE;_SCL_SECURE_NO_DEPRECATE;VXL_WARN_DEPRECATED;VXL_WARN_DEPRECATED_ONCE;VXL_LEGACY_ERROR_REPORTING;CMAKE_INTDIR=\"Debug\";%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\vcl;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core;C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\VNL\src\vxl\v3p\netlib;C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\VNL\src\vxl\vcl;C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\VNL\src\vxl\core;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\algo;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ResourceCompile>
+    <Midl>
+      <AdditionalIncludeDirectories>C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\vcl;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core;C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\VNL\src\vxl\v3p\netlib;C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\VNL\src\vxl\vcl;C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\VNL\src\vxl\core;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\algo;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
+      <HeaderFileName>%(Filename).h</HeaderFileName>
+      <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
+      <InterfaceIdentifierFileName>%(Filename)_i.c</InterfaceIdentifierFileName>
+      <ProxyFileName>%(Filename)_p.c</ProxyFileName>
+    </Midl>
+    <Lib>
+      <AdditionalOptions> /machine:x64 %(AdditionalOptions)</AdditionalOptions>
+    </Lib>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <AdditionalOptions> /bigobj %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalIncludeDirectories>C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\vcl;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core;C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\VNL\src\vxl\v3p\netlib;C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\VNL\src\vxl\vcl;C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\VNL\src\vxl\core;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\algo;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AssemblerListingLocation>Release/</AssemblerListingLocation>
+      <CompileAs>CompileAsCpp</CompileAs>
+      <ExceptionHandling>Sync</ExceptionHandling>
+      <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
+      <Optimization>MaxSpeed</Optimization>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <RuntimeTypeInfo>true</RuntimeTypeInfo>
+      <WarningLevel>TurnOffAllWarnings</WarningLevel>
+      <PreprocessorDefinitions>WIN32;_WINDOWS;NDEBUG;_CRT_FAR_MAPPINGS_NO_DEPRECATE;_CRT_IS_WCTYPE_NO_DEPRECATE;_CRT_MANAGED_FP_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;_CRT_SECURE_NO_DEPRECATE;_CRT_SECURE_NO_DEPRECATE_GLOBALS;_CRT_SETERRORMODE_BEEP_SLEEP_NO_DEPRECATE;_CRT_TIME_FUNCTIONS_NO_DEPRECATE;_CRT_VCCLRIT_NO_DEPRECATE;_SCL_SECURE_NO_DEPRECATE;VXL_WARN_DEPRECATED;VXL_WARN_DEPRECATED_ONCE;VXL_LEGACY_ERROR_REPORTING;CMAKE_INTDIR="Release";%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ObjectFileName>$(IntDir)</ObjectFileName>
+      <DebugInformationFormat>
+      </DebugInformationFormat>
+    </ClCompile>
+    <ResourceCompile>
+      <PreprocessorDefinitions>WIN32;_WINDOWS;NDEBUG;_CRT_FAR_MAPPINGS_NO_DEPRECATE;_CRT_IS_WCTYPE_NO_DEPRECATE;_CRT_MANAGED_FP_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;_CRT_SECURE_NO_DEPRECATE;_CRT_SECURE_NO_DEPRECATE_GLOBALS;_CRT_SETERRORMODE_BEEP_SLEEP_NO_DEPRECATE;_CRT_TIME_FUNCTIONS_NO_DEPRECATE;_CRT_VCCLRIT_NO_DEPRECATE;_SCL_SECURE_NO_DEPRECATE;VXL_WARN_DEPRECATED;VXL_WARN_DEPRECATED_ONCE;VXL_LEGACY_ERROR_REPORTING;CMAKE_INTDIR=\"Release\";%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\vcl;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core;C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\VNL\src\vxl\v3p\netlib;C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\VNL\src\vxl\vcl;C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\VNL\src\vxl\core;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\algo;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ResourceCompile>
+    <Midl>
+      <AdditionalIncludeDirectories>C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\vcl;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core;C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\VNL\src\vxl\v3p\netlib;C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\VNL\src\vxl\vcl;C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\VNL\src\vxl\core;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\algo;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
+      <HeaderFileName>%(Filename).h</HeaderFileName>
+      <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
+      <InterfaceIdentifierFileName>%(Filename)_i.c</InterfaceIdentifierFileName>
+      <ProxyFileName>%(Filename)_p.c</ProxyFileName>
+    </Midl>
+    <Lib>
+      <AdditionalOptions> /machine:x64 %(AdditionalOptions)</AdditionalOptions>
+    </Lib>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">
+    <ClCompile>
+      <AdditionalOptions> /bigobj %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalIncludeDirectories>C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\vcl;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core;C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\VNL\src\vxl\v3p\netlib;C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\VNL\src\vxl\vcl;C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\VNL\src\vxl\core;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\algo;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AssemblerListingLocation>MinSizeRel/</AssemblerListingLocation>
+      <CompileAs>CompileAsCpp</CompileAs>
+      <ExceptionHandling>Sync</ExceptionHandling>
+      <InlineFunctionExpansion>OnlyExplicitInline</InlineFunctionExpansion>
+      <Optimization>MinSpace</Optimization>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <RuntimeTypeInfo>true</RuntimeTypeInfo>
+      <WarningLevel>TurnOffAllWarnings</WarningLevel>
+      <PreprocessorDefinitions>WIN32;_WINDOWS;NDEBUG;_CRT_FAR_MAPPINGS_NO_DEPRECATE;_CRT_IS_WCTYPE_NO_DEPRECATE;_CRT_MANAGED_FP_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;_CRT_SECURE_NO_DEPRECATE;_CRT_SECURE_NO_DEPRECATE_GLOBALS;_CRT_SETERRORMODE_BEEP_SLEEP_NO_DEPRECATE;_CRT_TIME_FUNCTIONS_NO_DEPRECATE;_CRT_VCCLRIT_NO_DEPRECATE;_SCL_SECURE_NO_DEPRECATE;VXL_WARN_DEPRECATED;VXL_WARN_DEPRECATED_ONCE;VXL_LEGACY_ERROR_REPORTING;CMAKE_INTDIR="MinSizeRel";%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ObjectFileName>$(IntDir)</ObjectFileName>
+      <DebugInformationFormat>
+      </DebugInformationFormat>
+    </ClCompile>
+    <ResourceCompile>
+      <PreprocessorDefinitions>WIN32;_WINDOWS;NDEBUG;_CRT_FAR_MAPPINGS_NO_DEPRECATE;_CRT_IS_WCTYPE_NO_DEPRECATE;_CRT_MANAGED_FP_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;_CRT_SECURE_NO_DEPRECATE;_CRT_SECURE_NO_DEPRECATE_GLOBALS;_CRT_SETERRORMODE_BEEP_SLEEP_NO_DEPRECATE;_CRT_TIME_FUNCTIONS_NO_DEPRECATE;_CRT_VCCLRIT_NO_DEPRECATE;_SCL_SECURE_NO_DEPRECATE;VXL_WARN_DEPRECATED;VXL_WARN_DEPRECATED_ONCE;VXL_LEGACY_ERROR_REPORTING;CMAKE_INTDIR=\"MinSizeRel\";%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\vcl;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core;C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\VNL\src\vxl\v3p\netlib;C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\VNL\src\vxl\vcl;C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\VNL\src\vxl\core;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\algo;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ResourceCompile>
+    <Midl>
+      <AdditionalIncludeDirectories>C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\vcl;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core;C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\VNL\src\vxl\v3p\netlib;C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\VNL\src\vxl\vcl;C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\VNL\src\vxl\core;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\algo;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
+      <HeaderFileName>%(Filename).h</HeaderFileName>
+      <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
+      <InterfaceIdentifierFileName>%(Filename)_i.c</InterfaceIdentifierFileName>
+      <ProxyFileName>%(Filename)_p.c</ProxyFileName>
+    </Midl>
+    <Lib>
+      <AdditionalOptions> /machine:x64 %(AdditionalOptions)</AdditionalOptions>
+    </Lib>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">
+    <ClCompile>
+      <AdditionalOptions> /bigobj %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalIncludeDirectories>C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\vcl;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core;C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\VNL\src\vxl\v3p\netlib;C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\VNL\src\vxl\vcl;C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\VNL\src\vxl\core;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\algo;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AssemblerListingLocation>RelWithDebInfo/</AssemblerListingLocation>
+      <CompileAs>CompileAsCpp</CompileAs>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <ExceptionHandling>Sync</ExceptionHandling>
+      <InlineFunctionExpansion>OnlyExplicitInline</InlineFunctionExpansion>
+      <Optimization>MaxSpeed</Optimization>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <RuntimeTypeInfo>true</RuntimeTypeInfo>
+      <WarningLevel>TurnOffAllWarnings</WarningLevel>
+      <PreprocessorDefinitions>WIN32;_WINDOWS;NDEBUG;_CRT_FAR_MAPPINGS_NO_DEPRECATE;_CRT_IS_WCTYPE_NO_DEPRECATE;_CRT_MANAGED_FP_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;_CRT_SECURE_NO_DEPRECATE;_CRT_SECURE_NO_DEPRECATE_GLOBALS;_CRT_SETERRORMODE_BEEP_SLEEP_NO_DEPRECATE;_CRT_TIME_FUNCTIONS_NO_DEPRECATE;_CRT_VCCLRIT_NO_DEPRECATE;_SCL_SECURE_NO_DEPRECATE;VXL_WARN_DEPRECATED;VXL_WARN_DEPRECATED_ONCE;VXL_LEGACY_ERROR_REPORTING;CMAKE_INTDIR="RelWithDebInfo";%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ObjectFileName>$(IntDir)</ObjectFileName>
+    </ClCompile>
+    <ResourceCompile>
+      <PreprocessorDefinitions>WIN32;_WINDOWS;NDEBUG;_CRT_FAR_MAPPINGS_NO_DEPRECATE;_CRT_IS_WCTYPE_NO_DEPRECATE;_CRT_MANAGED_FP_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;_CRT_SECURE_NO_DEPRECATE;_CRT_SECURE_NO_DEPRECATE_GLOBALS;_CRT_SETERRORMODE_BEEP_SLEEP_NO_DEPRECATE;_CRT_TIME_FUNCTIONS_NO_DEPRECATE;_CRT_VCCLRIT_NO_DEPRECATE;_SCL_SECURE_NO_DEPRECATE;VXL_WARN_DEPRECATED;VXL_WARN_DEPRECATED_ONCE;VXL_LEGACY_ERROR_REPORTING;CMAKE_INTDIR=\"RelWithDebInfo\";%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\vcl;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core;C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\VNL\src\vxl\v3p\netlib;C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\VNL\src\vxl\vcl;C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\VNL\src\vxl\core;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\algo;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ResourceCompile>
+    <Midl>
+      <AdditionalIncludeDirectories>C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\vcl;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core;C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\VNL\src\vxl\v3p\netlib;C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\VNL\src\vxl\vcl;C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\VNL\src\vxl\core;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\algo;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
+      <HeaderFileName>%(Filename).h</HeaderFileName>
+      <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
+      <InterfaceIdentifierFileName>%(Filename)_i.c</InterfaceIdentifierFileName>
+      <ProxyFileName>%(Filename)_p.c</ProxyFileName>
+    </Midl>
+    <Lib>
+      <AdditionalOptions> /machine:x64 %(AdditionalOptions)</AdditionalOptions>
+    </Lib>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <CustomBuild Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\algo\CMakeLists.txt">
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Building Custom Rule C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/src/vxl/core/vnl/algo/CMakeLists.txt</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">setlocal
+"c:\Program Files\CMake\bin\cmake.exe" -HC:/server/InsightToolkit-4.10.0 -BC:/server/InsightToolkit-4.10.0/bin --check-stamp-file C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\VNL\src\vxl\core\vnl\algo\CMakeFiles\generate.stamp
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/src/vxl/core/vnl/algo/CMakeLists.txt;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\algo\CMakeLists.txt;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\config\cmake\Modules\FindNetlib.cmake;C:\server\InsightToolkit-4.10.0\CMake\GenerateExportHeader.cmake;C:\Program Files\CMake\share\cmake-3.6\Modules\CMakeParseArguments.cmake;C:\Program Files\CMake\share\cmake-3.6\Modules\CheckCXXCompilerFlag.cmake;C:\Program Files\CMake\share\cmake-3.6\Modules\CheckCXXSourceCompiles.cmake;C:\Program Files\CMake\share\cmake-3.6\Modules\CMakeCheckCompilerFlagCommonPatterns.cmake;C:\server\InsightToolkit-4.10.0\CMake\exportheader.cmake.in;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\algo\CMakeLists.txt;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\VNL\src\vxl\core\vnl\algo\CMakeFiles\generate.stamp</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Building Custom Rule C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/src/vxl/core/vnl/algo/CMakeLists.txt</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">setlocal
+"c:\Program Files\CMake\bin\cmake.exe" -HC:/server/InsightToolkit-4.10.0 -BC:/server/InsightToolkit-4.10.0/bin --check-stamp-file C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\VNL\src\vxl\core\vnl\algo\CMakeFiles\generate.stamp
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/src/vxl/core/vnl/algo/CMakeLists.txt;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\algo\CMakeLists.txt;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\config\cmake\Modules\FindNetlib.cmake;C:\server\InsightToolkit-4.10.0\CMake\GenerateExportHeader.cmake;C:\Program Files\CMake\share\cmake-3.6\Modules\CMakeParseArguments.cmake;C:\Program Files\CMake\share\cmake-3.6\Modules\CheckCXXCompilerFlag.cmake;C:\Program Files\CMake\share\cmake-3.6\Modules\CheckCXXSourceCompiles.cmake;C:\Program Files\CMake\share\cmake-3.6\Modules\CMakeCheckCompilerFlagCommonPatterns.cmake;C:\server\InsightToolkit-4.10.0\CMake\exportheader.cmake.in;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\algo\CMakeLists.txt;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\VNL\src\vxl\core\vnl\algo\CMakeFiles\generate.stamp</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">Building Custom Rule C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/src/vxl/core/vnl/algo/CMakeLists.txt</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">setlocal
+"c:\Program Files\CMake\bin\cmake.exe" -HC:/server/InsightToolkit-4.10.0 -BC:/server/InsightToolkit-4.10.0/bin --check-stamp-file C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\VNL\src\vxl\core\vnl\algo\CMakeFiles\generate.stamp
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/src/vxl/core/vnl/algo/CMakeLists.txt;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\algo\CMakeLists.txt;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\config\cmake\Modules\FindNetlib.cmake;C:\server\InsightToolkit-4.10.0\CMake\GenerateExportHeader.cmake;C:\Program Files\CMake\share\cmake-3.6\Modules\CMakeParseArguments.cmake;C:\Program Files\CMake\share\cmake-3.6\Modules\CheckCXXCompilerFlag.cmake;C:\Program Files\CMake\share\cmake-3.6\Modules\CheckCXXSourceCompiles.cmake;C:\Program Files\CMake\share\cmake-3.6\Modules\CMakeCheckCompilerFlagCommonPatterns.cmake;C:\server\InsightToolkit-4.10.0\CMake\exportheader.cmake.in;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\algo\CMakeLists.txt;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\VNL\src\vxl\core\vnl\algo\CMakeFiles\generate.stamp</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">Building Custom Rule C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/src/vxl/core/vnl/algo/CMakeLists.txt</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">setlocal
+"c:\Program Files\CMake\bin\cmake.exe" -HC:/server/InsightToolkit-4.10.0 -BC:/server/InsightToolkit-4.10.0/bin --check-stamp-file C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\VNL\src\vxl\core\vnl\algo\CMakeFiles\generate.stamp
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/src/vxl/core/vnl/algo/CMakeLists.txt;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\algo\CMakeLists.txt;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\config\cmake\Modules\FindNetlib.cmake;C:\server\InsightToolkit-4.10.0\CMake\GenerateExportHeader.cmake;C:\Program Files\CMake\share\cmake-3.6\Modules\CMakeParseArguments.cmake;C:\Program Files\CMake\share\cmake-3.6\Modules\CheckCXXCompilerFlag.cmake;C:\Program Files\CMake\share\cmake-3.6\Modules\CheckCXXSourceCompiles.cmake;C:\Program Files\CMake\share\cmake-3.6\Modules\CMakeCheckCompilerFlagCommonPatterns.cmake;C:\server\InsightToolkit-4.10.0\CMake\exportheader.cmake.in;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\algo\CMakeLists.txt;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\VNL\src\vxl\core\vnl\algo\CMakeFiles\generate.stamp</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">false</LinkObjects>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\algo\vnl_algo_fwd.h" />
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\algo\vnl_netlib.h" />
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\algo\vnl_svd.hxx" />
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\algo\vnl_svd.h" />
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\algo\vnl_svd_economy.hxx" />
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\algo\vnl_svd_economy.h" />
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\algo\vnl_svd_fixed.hxx" />
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\algo\vnl_svd_fixed.h" />
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\algo\vnl_matrix_inverse.hxx" />
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\algo\vnl_matrix_inverse.h" />
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\algo\vnl_qr.hxx" />
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\algo\vnl_qr.h" />
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\algo\vnl_scatter_3x3.hxx" />
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\algo\vnl_scatter_3x3.h" />
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\algo\vnl_cholesky.h" />
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\algo\vnl_ldl_cholesky.h" />
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\algo\vnl_sparse_lu.h" />
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\algo\vnl_real_eigensystem.h" />
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\algo\vnl_complex_eigensystem.h" />
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\algo\vnl_symmetric_eigensystem.hxx" />
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\algo\vnl_symmetric_eigensystem.h" />
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\algo\vnl_generalized_eigensystem.h" />
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\algo\vnl_sparse_symmetric_eigensystem.h" />
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\algo\vnl_generalized_schur.h" />
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\algo\vnl_complex_generalized_schur.h" />
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\algo\vnl_discrete_diff.h" />
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\algo\vnl_levenberg_marquardt.h" />
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\algo\vnl_sparse_lm.h" />
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\algo\vnl_conjugate_gradient.h" />
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\algo\vnl_lbfgs.h" />
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\algo\vnl_lbfgsb.h" />
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\algo\vnl_amoeba.h" />
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\algo\vnl_powell.h" />
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\algo\vnl_brent.h" />
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\algo\vnl_lsqr.h" />
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\algo\vnl_solve_qp.h" />
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\algo\vnl_bracket_minimum.h" />
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\algo\vnl_brent_minimizer.h" />
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\algo\vnl_rpoly_roots.h" />
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\algo\vnl_cpoly_roots.h" />
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\algo\vnl_rnpoly_solve.h" />
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\algo\vnl_fit_parabola.h" />
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\algo\vnl_fft.h" />
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\algo\vnl_fft_base.hxx" />
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\algo\vnl_fft_base.h" />
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\algo\vnl_fft_1d.hxx" />
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\algo\vnl_fft_1d.h" />
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\algo\vnl_fft_2d.hxx" />
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\algo\vnl_fft_2d.h" />
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\algo\vnl_fft_prime_factors.hxx" />
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\algo\vnl_fft_prime_factors.h" />
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\algo\vnl_convolve.hxx" />
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\algo\vnl_convolve.h" />
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\algo\vnl_determinant.hxx" />
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\algo\vnl_determinant.h" />
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\algo\vnl_chi_squared.hxx" />
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\algo\vnl_chi_squared.h" />
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\algo\vnl_gaussian_kernel_1d.h" />
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\algo\vnl_adjugate.hxx" />
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\algo\vnl_adjugate.h" />
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\algo\vnl_orthogonal_complement.hxx" />
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\algo\vnl_orthogonal_complement.h" />
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\algo\vnl_matrix_update.h" />
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\algo\vnl_simpson_integral.h" />
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\algo\vnl_adaptsimpson_integral.h" />
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\algo\vnl_cholesky.cxx" />
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\algo\vnl_ldl_cholesky.cxx" />
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\algo\vnl_sparse_lu.cxx" />
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\algo\vnl_real_eigensystem.cxx" />
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\algo\vnl_complex_eigensystem.cxx" />
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\algo\vnl_generalized_eigensystem.cxx" />
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\algo\vnl_sparse_symmetric_eigensystem.cxx" />
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\algo\vnl_generalized_schur.cxx" />
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\algo\vnl_complex_generalized_schur.cxx" />
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\algo\vnl_discrete_diff.cxx" />
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\algo\vnl_levenberg_marquardt.cxx" />
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\algo\vnl_sparse_lm.cxx" />
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\algo\vnl_conjugate_gradient.cxx" />
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\algo\vnl_lbfgs.cxx" />
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\algo\vnl_lbfgsb.cxx" />
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\algo\vnl_amoeba.cxx" />
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\algo\vnl_powell.cxx" />
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\algo\vnl_brent.cxx" />
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\algo\vnl_lsqr.cxx" />
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\algo\vnl_solve_qp.cxx" />
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\algo\vnl_bracket_minimum.cxx" />
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\algo\vnl_brent_minimizer.cxx" />
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\algo\vnl_rpoly_roots.cxx" />
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\algo\vnl_cpoly_roots.cxx" />
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\algo\vnl_rnpoly_solve.cxx" />
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\algo\vnl_fft.cxx" />
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\algo\vnl_determinant.cxx" />
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\algo\vnl_gaussian_kernel_1d.cxx" />
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\algo\vnl_simpson_integral.cxx" />
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\algo\vnl_adaptsimpson_integral.cxx" />
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\algo\Templates\vnl_adjugate+double-.cxx" />
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\algo\Templates\vnl_adjugate+float-.cxx" />
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\algo\Templates\vnl_adjugate+int-.cxx" />
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\algo\Templates\vnl_chi_squared+double-.cxx" />
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\algo\Templates\vnl_chi_squared+float-.cxx" />
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\algo\Templates\vnl_chi_squared+int-.cxx" />
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\algo\Templates\vnl_convolve+double.double-.cxx" />
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\algo\Templates\vnl_convolve+float.float-.cxx" />
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\algo\Templates\vnl_convolve+int.double-.cxx" />
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\algo\Templates\vnl_convolve+int.float-.cxx" />
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\algo\Templates\vnl_convolve+int.int-.cxx" />
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\algo\Templates\vnl_determinant+double-.cxx" />
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\algo\Templates\vnl_determinant+float-.cxx" />
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\algo\Templates\vnl_determinant+int-.cxx" />
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\algo\Templates\vnl_determinant+vcl_complex+double--.cxx" />
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\algo\Templates\vnl_determinant+vcl_complex+float--.cxx" />
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\algo\Templates\vnl_fft_1d+double-.cxx" />
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\algo\Templates\vnl_fft_1d+float-.cxx" />
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\algo\Templates\vnl_fft_2d+double-.cxx" />
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\algo\Templates\vnl_fft_2d+float-.cxx" />
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\algo\Templates\vnl_fft_base+1.double-.cxx" />
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\algo\Templates\vnl_fft_base+1.float-.cxx" />
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\algo\Templates\vnl_fft_base+2.double-.cxx" />
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\algo\Templates\vnl_fft_base+2.float-.cxx" />
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\algo\Templates\vnl_fft_prime_factors+double-.cxx" />
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\algo\Templates\vnl_fft_prime_factors+float-.cxx" />
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\algo\Templates\vnl_matrix_inverse+double-.cxx" />
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\algo\Templates\vnl_matrix_inverse+float-.cxx" />
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\algo\Templates\vnl_orthogonal_complement+double-.cxx" />
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\algo\Templates\vnl_orthogonal_complement+float-.cxx" />
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\algo\Templates\vnl_orthogonal_complement+vcl_complex+double--.cxx" />
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\algo\Templates\vnl_orthogonal_complement+vcl_complex+float--.cxx" />
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\algo\Templates\vnl_qr+double-.cxx" />
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\algo\Templates\vnl_qr+float-.cxx" />
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\algo\Templates\vnl_qr+vcl_complex+double--.cxx" />
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\algo\Templates\vnl_qr+vcl_complex+float--.cxx" />
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\algo\Templates\vnl_scatter_3x3+double-.cxx" />
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\algo\Templates\vnl_scatter_3x3+float-.cxx" />
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\algo\Templates\vnl_svd+double-.cxx" />
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\algo\Templates\vnl_svd+float-.cxx" />
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\algo\Templates\vnl_svd+vcl_complex+double--.cxx" />
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\algo\Templates\vnl_svd+vcl_complex+float--.cxx" />
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\algo\Templates\vnl_svd_economy+double-.cxx" />
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\algo\Templates\vnl_svd_economy+float-.cxx" />
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\algo\Templates\vnl_svd_economy+vcl_complex+double--.cxx" />
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\algo\Templates\vnl_svd_economy+vcl_complex+float--.cxx" />
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\algo\Templates\vnl_svd_fixed+double.3.3-.cxx" />
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\algo\Templates\vnl_svd_fixed+double.3.4-.cxx" />
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\algo\Templates\vnl_svd_fixed+float.3.3-.cxx" />
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\algo\Templates\vnl_svd_fixed+float.3.4-.cxx" />
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\algo\Templates\vnl_symmetric_eigensystem+double-.cxx" />
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\algo\Templates\vnl_symmetric_eigensystem+float-.cxx" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="C:/server/InsightToolkit-4.10.0/bin/ZERO_CHECK.vcxproj">
+      <Project>8424D74C-2D7E-3861-92BD-E31A437C2341</Project>
+    </ProjectReference>
+    <ProjectReference Include="C:/server/InsightToolkit-4.10.0/bin/Modules/ThirdParty/VNL/src/vxl/v3p/netlib/itknetlib.vcxproj">
+      <Project>277D647B-1E41-31F0-96B0-3F984DB4955E</Project>
+    </ProjectReference>
+    <ProjectReference Include="C:/server/InsightToolkit-4.10.0/bin/Modules/ThirdParty/VNL/src/vxl/v3p/netlib/itkv3p_netlib.vcxproj">
+      <Project>40106ADF-4D92-34DA-A6C8-CD24FA798C25</Project>
+    </ProjectReference>
+    <ProjectReference Include="C:/server/InsightToolkit-4.10.0/bin/Modules/ThirdParty/VNL/src/vxl/vcl/itkvcl.vcxproj">
+      <Project>8FE2E4BB-4B54-392C-815E-387EC4C349E8</Project>
+    </ProjectReference>
+    <ProjectReference Include="C:/server/InsightToolkit-4.10.0/bin/Modules/ThirdParty/VNL/src/vxl/core/vnl/itkvnl.vcxproj">
+      <Project>7EC7B8CC-290A-3921-AE05-011896489F5F</Project>
+    </ProjectReference>
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

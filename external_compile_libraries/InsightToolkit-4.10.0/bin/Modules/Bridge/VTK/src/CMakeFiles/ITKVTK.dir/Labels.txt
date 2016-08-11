@@ -1,0 +1,5 @@
+# Target labels
+ ITKVTK
+# Source files and their labels
+C:/server/InsightToolkit-4.10.0/Modules/Bridge/VTK/src/itkVTKImageExportBase.cxx
+C:/server/InsightToolkit-4.10.0/Modules/Bridge/VTK/src/CMakeLists.txt

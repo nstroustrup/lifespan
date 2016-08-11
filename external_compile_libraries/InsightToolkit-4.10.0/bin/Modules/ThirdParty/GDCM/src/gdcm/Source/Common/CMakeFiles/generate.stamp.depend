@@ -1,0 +1,21 @@
+# CMake generation dependency list for this directory.
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/GDCM/src/gdcm/Source/Common/CMakeLists.txt
+c:/Program Files/CMake/share/cmake-3.6/Modules/CMakeConfigurableFile.in
+c:/Program Files/CMake/share/cmake-3.6/Modules/CMakeConfigurableFile.in
+c:/Program Files/CMake/share/cmake-3.6/Modules/CMakeConfigurableFile.in
+c:/Program Files/CMake/share/cmake-3.6/Modules/CheckIncludeFile.c.in
+c:/Program Files/CMake/share/cmake-3.6/Modules/CheckIncludeFile.c.in
+C:/Program Files/CMake/share/cmake-3.6/Modules/CheckFunctionExists.cmake
+C:/Program Files/CMake/share/cmake-3.6/Modules/CheckSymbolExists.cmake
+c:/Program Files/CMake/share/cmake-3.6/Modules/CMakeConfigurableFile.in
+c:/Program Files/CMake/share/cmake-3.6/Modules/CMakeConfigurableFile.in
+c:/Program Files/CMake/share/cmake-3.6/Modules/CMakeConfigurableFile.in
+c:/Program Files/CMake/share/cmake-3.6/Modules/CMakeConfigurableFile.in
+c:/Program Files/CMake/share/cmake-3.6/Modules/CheckFunctionExists.c
+c:/Program Files/CMake/share/cmake-3.6/Modules/CheckFunctionExists.c
+c:/Program Files/CMake/share/cmake-3.6/Modules/CheckFunctionExists.c
+c:/Program Files/CMake/share/cmake-3.6/Modules/CheckFunctionExists.c
+c:/Program Files/CMake/share/cmake-3.6/Modules/CheckFunctionExists.c
+c:/Program Files/CMake/share/cmake-3.6/Modules/CheckFunctionExists.c
+C:/Program Files/CMake/share/cmake-3.6/Modules/CheckCXXSourceCompiles.cmake
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/GDCM/src/gdcm/Source/Common/gdcmConfigure.h.in

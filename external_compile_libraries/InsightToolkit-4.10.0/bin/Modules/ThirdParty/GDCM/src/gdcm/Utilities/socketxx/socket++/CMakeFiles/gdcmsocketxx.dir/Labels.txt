@@ -1,0 +1,14 @@
+# Target labels
+ ITKGDCM
+# Source files and their labels
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/GDCM/src/gdcm/Utilities/socketxx/socket++/sockstream.cpp
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/GDCM/src/gdcm/Utilities/socketxx/socket++/sockstream.h
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/GDCM/src/gdcm/Utilities/socketxx/socket++/sockinet.cpp
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/GDCM/src/gdcm/Utilities/socketxx/socket++/sockinet.h
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/GDCM/src/gdcm/Utilities/socketxx/socket++/fork.cpp
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/GDCM/src/gdcm/Utilities/socketxx/socket++/fork.h
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/GDCM/src/gdcm/Utilities/socketxx/socket++/protocol.cpp
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/GDCM/src/gdcm/Utilities/socketxx/socket++/protocol.h
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/GDCM/src/gdcm/Utilities/socketxx/socket++/echo.cpp
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/GDCM/src/gdcm/Utilities/socketxx/socket++/echo.h
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/GDCM/src/gdcm/Utilities/socketxx/socket++/CMakeLists.txt

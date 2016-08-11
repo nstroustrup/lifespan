@@ -1,0 +1,41 @@
+# Target labels
+ ITKKWSys
+# Source files and their labels
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/KWSys/src/KWSys/ProcessWin32.c
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/KWSys/src/KWSys/Base64.c
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/KWSys/src/KWSys/EncodingC.c
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/KWSys/src/KWSys/MD5.c
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/KWSys/src/KWSys/System.c
+C:/server/InsightToolkit-4.10.0/bin/Modules/ThirdParty/KWSys/src/itksys/Configure.h
+C:/server/InsightToolkit-4.10.0/bin/Modules/ThirdParty/KWSys/src/itksys/SharedForward.h
+C:/server/InsightToolkit-4.10.0/bin/Modules/ThirdParty/KWSys/src/itksys/Process.h
+C:/server/InsightToolkit-4.10.0/bin/Modules/ThirdParty/KWSys/src/itksys/Base64.h
+C:/server/InsightToolkit-4.10.0/bin/Modules/ThirdParty/KWSys/src/itksys/Encoding.h
+C:/server/InsightToolkit-4.10.0/bin/Modules/ThirdParty/KWSys/src/itksys/MD5.h
+C:/server/InsightToolkit-4.10.0/bin/Modules/ThirdParty/KWSys/src/itksys/System.h
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/KWSys/src/KWSys/Directory.cxx
+C:/server/InsightToolkit-4.10.0/bin/Modules/ThirdParty/KWSys/src/itksys/Directory.hxx
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/KWSys/src/KWSys/DynamicLoader.cxx
+C:/server/InsightToolkit-4.10.0/bin/Modules/ThirdParty/KWSys/src/itksys/DynamicLoader.hxx
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/KWSys/src/KWSys/EncodingCXX.cxx
+C:/server/InsightToolkit-4.10.0/bin/Modules/ThirdParty/KWSys/src/itksys/Encoding.hxx
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/KWSys/src/KWSys/Glob.cxx
+C:/server/InsightToolkit-4.10.0/bin/Modules/ThirdParty/KWSys/src/itksys/Glob.hxx
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/KWSys/src/KWSys/RegularExpression.cxx
+C:/server/InsightToolkit-4.10.0/bin/Modules/ThirdParty/KWSys/src/itksys/RegularExpression.hxx
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/KWSys/src/KWSys/SystemTools.cxx
+C:/server/InsightToolkit-4.10.0/bin/Modules/ThirdParty/KWSys/src/itksys/SystemTools.hxx
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/KWSys/src/KWSys/CommandLineArguments.cxx
+C:/server/InsightToolkit-4.10.0/bin/Modules/ThirdParty/KWSys/src/itksys/CommandLineArguments.hxx
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/KWSys/src/KWSys/FStream.cxx
+C:/server/InsightToolkit-4.10.0/bin/Modules/ThirdParty/KWSys/src/itksys/FStream.hxx
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/KWSys/src/KWSys/SystemInformation.cxx
+C:/server/InsightToolkit-4.10.0/bin/Modules/ThirdParty/KWSys/src/itksys/SystemInformation.hxx
+C:/server/InsightToolkit-4.10.0/bin/Modules/ThirdParty/KWSys/src/itksys/Configure.hxx
+C:/server/InsightToolkit-4.10.0/bin/Modules/ThirdParty/KWSys/src/itksys/String.hxx
+C:/server/InsightToolkit-4.10.0/bin/Modules/ThirdParty/KWSys/src/itksys/hashtable.hxx
+C:/server/InsightToolkit-4.10.0/bin/Modules/ThirdParty/KWSys/src/itksys/hash_fun.hxx
+C:/server/InsightToolkit-4.10.0/bin/Modules/ThirdParty/KWSys/src/itksys/hash_map.hxx
+C:/server/InsightToolkit-4.10.0/bin/Modules/ThirdParty/KWSys/src/itksys/hash_set.hxx
+C:/server/InsightToolkit-4.10.0/bin/Modules/ThirdParty/KWSys/src/itksys/auto_ptr.hxx
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/KWSys/src/KWSys/CMakeLists.txt

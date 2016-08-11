@@ -1,0 +1,30 @@
+﻿  Building Custom Rule C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/GDCM/src/gdcm/Source/InformationObjectDefinition/CMakeLists.txt
+  CMake does not need to re-run because C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\GDCM\src\gdcm\Source\InformationObjectDefinition\CMakeFiles\generate.stamp is up-to-date.
+  gdcmModule.cxx
+  gdcmMacro.cxx
+  gdcmModules.cxx
+  gdcmMacros.cxx
+  gdcmNestedModuleEntries.cxx
+  gdcmIODEntry.cxx
+  gdcmTable.cxx
+  gdcmSeries.cxx
+  gdcmDefs.cxx
+  gdcmDefinedTerms.cxx
+  gdcmEnumeratedValues.cxx
+  gdcmStudy.cxx
+  gdcmPatient.cxx
+  gdcmType.cxx
+  gdcmUsage.cxx
+  gdcmIOD.cxx
+  Generating Code...
+  gdcmTableReader.cxx
+gdcmPatient.obj : warning LNK4221: This object file does not define any previously undefined public symbols, so it will not be used by any link operation that consumes this library
+gdcmStudy.obj : warning LNK4221: This object file does not define any previously undefined public symbols, so it will not be used by any link operation that consumes this library
+gdcmEnumeratedValues.obj : warning LNK4221: This object file does not define any previously undefined public symbols, so it will not be used by any link operation that consumes this library
+gdcmDefinedTerms.obj : warning LNK4221: This object file does not define any previously undefined public symbols, so it will not be used by any link operation that consumes this library
+gdcmSeries.obj : warning LNK4221: This object file does not define any previously undefined public symbols, so it will not be used by any link operation that consumes this library
+gdcmTable.obj : warning LNK4221: This object file does not define any previously undefined public symbols, so it will not be used by any link operation that consumes this library
+gdcmNestedModuleEntries.obj : warning LNK4221: This object file does not define any previously undefined public symbols, so it will not be used by any link operation that consumes this library
+gdcmMacros.obj : warning LNK4221: This object file does not define any previously undefined public symbols, so it will not be used by any link operation that consumes this library
+gdcmModules.obj : warning LNK4221: This object file does not define any previously undefined public symbols, so it will not be used by any link operation that consumes this library
+  gdcmIOD.vcxproj -> C:\server\InsightToolkit-4.10.0\bin\lib\Debug\itkgdcmIOD-4.10.lib

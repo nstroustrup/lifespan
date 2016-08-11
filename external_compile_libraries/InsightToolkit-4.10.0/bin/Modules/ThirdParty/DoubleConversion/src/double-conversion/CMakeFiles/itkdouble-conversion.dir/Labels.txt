@@ -1,0 +1,22 @@
+# Target labels
+ ITKDoubleConversion
+# Source files and their labels
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/DoubleConversion/src/double-conversion/bignum.cc
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/DoubleConversion/src/double-conversion/bignum-dtoa.cc
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/DoubleConversion/src/double-conversion/cached-powers.cc
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/DoubleConversion/src/double-conversion/diy-fp.cc
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/DoubleConversion/src/double-conversion/double-conversion.cc
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/DoubleConversion/src/double-conversion/fast-dtoa.cc
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/DoubleConversion/src/double-conversion/fixed-dtoa.cc
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/DoubleConversion/src/double-conversion/strtod.cc
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/DoubleConversion/src/double-conversion/bignum.h
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/DoubleConversion/src/double-conversion/cached-powers.h
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/DoubleConversion/src/double-conversion/diy-fp.h
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/DoubleConversion/src/double-conversion/double-conversion.h
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/DoubleConversion/src/double-conversion/fast-dtoa.h
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/DoubleConversion/src/double-conversion/fixed-dtoa.h
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/DoubleConversion/src/double-conversion/ieee.h
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/DoubleConversion/src/double-conversion/strtod.h
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/DoubleConversion/src/double-conversion/utils.h
+C:/server/InsightToolkit-4.10.0/bin/Modules/ThirdParty/DoubleConversion/src/double-conversion/double-conversion-configure.h
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/DoubleConversion/src/double-conversion/CMakeLists.txt

@@ -1,0 +1,208 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="MinSizeRel|x64">
+      <Configuration>MinSizeRel</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="RelWithDebInfo|x64">
+      <Configuration>RelWithDebInfo</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGUID>{68D5973C-0CD1-366B-81F4-107C5B07BB6D}</ProjectGUID>
+    <Keyword>Win32Proj</Keyword>
+    <Platform>x64</Platform>
+    <ProjectName>ALL_BUILD</ProjectName>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>Utility</ConfigurationType>
+    <UseOfMfc>false</UseOfMfc>
+    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v140</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>Utility</ConfigurationType>
+    <UseOfMfc>false</UseOfMfc>
+    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v140</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'" Label="Configuration">
+    <ConfigurationType>Utility</ConfigurationType>
+    <UseOfMfc>false</UseOfMfc>
+    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v140</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'" Label="Configuration">
+    <ConfigurationType>Utility</ConfigurationType>
+    <UseOfMfc>false</UseOfMfc>
+    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v140</PlatformToolset>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+    <PropertyGroup>
+      <_ProjectFileVersion>10.0.20506.1</_ProjectFileVersion>
+      <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(Platform)\$(Configuration)\$(ProjectName)\</IntDir>
+      <IntDir Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(Platform)\$(Configuration)\$(ProjectName)\</IntDir>
+      <IntDir Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">$(Platform)\$(Configuration)\$(ProjectName)\</IntDir>
+      <IntDir Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">$(Platform)\$(Configuration)\$(ProjectName)\</IntDir>
+    </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <Midl>
+      <AdditionalIncludeDirectories>C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\Expat\src\expat;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\Expat\src\expat;C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\ZLIB\src;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\ZLIB\src;C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\GDCM;C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\GDCM\src\gdcm\Source\Common;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\MediaStorageAndFileFormat;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\DataDictionary;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\Common;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\InformationObjectDefinition;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\MessageExchangeDefinition;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\DataStructureAndEncodingDefinition;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
+      <HeaderFileName>%(Filename).h</HeaderFileName>
+      <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
+      <InterfaceIdentifierFileName>%(Filename)_i.c</InterfaceIdentifierFileName>
+      <ProxyFileName>%(Filename)_p.c</ProxyFileName>
+    </Midl>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <Midl>
+      <AdditionalIncludeDirectories>C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\Expat\src\expat;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\Expat\src\expat;C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\ZLIB\src;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\ZLIB\src;C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\GDCM;C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\GDCM\src\gdcm\Source\Common;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\MediaStorageAndFileFormat;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\DataDictionary;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\Common;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\InformationObjectDefinition;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\MessageExchangeDefinition;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\DataStructureAndEncodingDefinition;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
+      <HeaderFileName>%(Filename).h</HeaderFileName>
+      <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
+      <InterfaceIdentifierFileName>%(Filename)_i.c</InterfaceIdentifierFileName>
+      <ProxyFileName>%(Filename)_p.c</ProxyFileName>
+    </Midl>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">
+    <Midl>
+      <AdditionalIncludeDirectories>C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\Expat\src\expat;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\Expat\src\expat;C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\ZLIB\src;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\ZLIB\src;C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\GDCM;C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\GDCM\src\gdcm\Source\Common;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\MediaStorageAndFileFormat;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\DataDictionary;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\Common;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\InformationObjectDefinition;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\MessageExchangeDefinition;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\DataStructureAndEncodingDefinition;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
+      <HeaderFileName>%(Filename).h</HeaderFileName>
+      <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
+      <InterfaceIdentifierFileName>%(Filename)_i.c</InterfaceIdentifierFileName>
+      <ProxyFileName>%(Filename)_p.c</ProxyFileName>
+    </Midl>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">
+    <Midl>
+      <AdditionalIncludeDirectories>C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\Expat\src\expat;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\Expat\src\expat;C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\ZLIB\src;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\ZLIB\src;C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\GDCM;C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\GDCM\src\gdcm\Source\Common;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\MediaStorageAndFileFormat;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\DataDictionary;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\Common;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\InformationObjectDefinition;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\MessageExchangeDefinition;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\DataStructureAndEncodingDefinition;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
+      <HeaderFileName>%(Filename).h</HeaderFileName>
+      <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
+      <InterfaceIdentifierFileName>%(Filename)_i.c</InterfaceIdentifierFileName>
+      <ProxyFileName>%(Filename)_p.c</ProxyFileName>
+    </Midl>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <CustomBuild Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\CMakeLists.txt">
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Building Custom Rule C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/GDCM/src/gdcm/CMakeLists.txt</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">setlocal
+"c:\Program Files\CMake\bin\cmake.exe" -HC:/server/InsightToolkit-4.10.0 -BC:/server/InsightToolkit-4.10.0/bin --check-stamp-file C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\GDCM\src\gdcm\CMakeFiles\generate.stamp
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/GDCM/src/gdcm/CMakeLists.txt;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\CMakeLists.txt;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\CMake\InstallMacros.cmake;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\CMake\UseCopyright.cmake;C:\Program Files\CMake\share\cmake-3.6\Modules\CheckIncludeFile.cmake;C:\Program Files\CMake\share\cmake-3.6\Modules\CheckIncludeFiles.cmake;C:\Program Files\CMake\share\cmake-3.6\Modules\FindZLIB.cmake;C:\Program Files\CMake\share\cmake-3.6\Modules\FindPackageHandleStandardArgs.cmake;C:\Program Files\CMake\share\cmake-3.6\Modules\FindPackageMessage.cmake;C:\Program Files\CMake\share\cmake-3.6\Modules\CMakeParseArguments.cmake;C:\Program Files\CMake\share\cmake-3.6\Modules\FindEXPAT.cmake;C:\Program Files\CMake\share\cmake-3.6\Modules\FindPackageHandleStandardArgs.cmake;C:\Program Files\CMake\share\cmake-3.6\Modules\FindPackageMessage.cmake;C:\Program Files\CMake\share\cmake-3.6\Modules\CMakeParseArguments.cmake;C:\Program Files\CMake\share\cmake-3.6\Modules\CheckIncludeFile.c.in;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\CMakeLists.txt;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\GDCM\src\gdcm\CMakeFiles\generate.stamp</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Building Custom Rule C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/GDCM/src/gdcm/CMakeLists.txt</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">setlocal
+"c:\Program Files\CMake\bin\cmake.exe" -HC:/server/InsightToolkit-4.10.0 -BC:/server/InsightToolkit-4.10.0/bin --check-stamp-file C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\GDCM\src\gdcm\CMakeFiles\generate.stamp
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/GDCM/src/gdcm/CMakeLists.txt;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\CMakeLists.txt;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\CMake\InstallMacros.cmake;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\CMake\UseCopyright.cmake;C:\Program Files\CMake\share\cmake-3.6\Modules\CheckIncludeFile.cmake;C:\Program Files\CMake\share\cmake-3.6\Modules\CheckIncludeFiles.cmake;C:\Program Files\CMake\share\cmake-3.6\Modules\FindZLIB.cmake;C:\Program Files\CMake\share\cmake-3.6\Modules\FindPackageHandleStandardArgs.cmake;C:\Program Files\CMake\share\cmake-3.6\Modules\FindPackageMessage.cmake;C:\Program Files\CMake\share\cmake-3.6\Modules\CMakeParseArguments.cmake;C:\Program Files\CMake\share\cmake-3.6\Modules\FindEXPAT.cmake;C:\Program Files\CMake\share\cmake-3.6\Modules\FindPackageHandleStandardArgs.cmake;C:\Program Files\CMake\share\cmake-3.6\Modules\FindPackageMessage.cmake;C:\Program Files\CMake\share\cmake-3.6\Modules\CMakeParseArguments.cmake;C:\Program Files\CMake\share\cmake-3.6\Modules\CheckIncludeFile.c.in;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\CMakeLists.txt;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\GDCM\src\gdcm\CMakeFiles\generate.stamp</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">Building Custom Rule C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/GDCM/src/gdcm/CMakeLists.txt</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">setlocal
+"c:\Program Files\CMake\bin\cmake.exe" -HC:/server/InsightToolkit-4.10.0 -BC:/server/InsightToolkit-4.10.0/bin --check-stamp-file C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\GDCM\src\gdcm\CMakeFiles\generate.stamp
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/GDCM/src/gdcm/CMakeLists.txt;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\CMakeLists.txt;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\CMake\InstallMacros.cmake;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\CMake\UseCopyright.cmake;C:\Program Files\CMake\share\cmake-3.6\Modules\CheckIncludeFile.cmake;C:\Program Files\CMake\share\cmake-3.6\Modules\CheckIncludeFiles.cmake;C:\Program Files\CMake\share\cmake-3.6\Modules\FindZLIB.cmake;C:\Program Files\CMake\share\cmake-3.6\Modules\FindPackageHandleStandardArgs.cmake;C:\Program Files\CMake\share\cmake-3.6\Modules\FindPackageMessage.cmake;C:\Program Files\CMake\share\cmake-3.6\Modules\CMakeParseArguments.cmake;C:\Program Files\CMake\share\cmake-3.6\Modules\FindEXPAT.cmake;C:\Program Files\CMake\share\cmake-3.6\Modules\FindPackageHandleStandardArgs.cmake;C:\Program Files\CMake\share\cmake-3.6\Modules\FindPackageMessage.cmake;C:\Program Files\CMake\share\cmake-3.6\Modules\CMakeParseArguments.cmake;C:\Program Files\CMake\share\cmake-3.6\Modules\CheckIncludeFile.c.in;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\CMakeLists.txt;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\GDCM\src\gdcm\CMakeFiles\generate.stamp</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">Building Custom Rule C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/GDCM/src/gdcm/CMakeLists.txt</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">setlocal
+"c:\Program Files\CMake\bin\cmake.exe" -HC:/server/InsightToolkit-4.10.0 -BC:/server/InsightToolkit-4.10.0/bin --check-stamp-file C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\GDCM\src\gdcm\CMakeFiles\generate.stamp
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/GDCM/src/gdcm/CMakeLists.txt;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\CMakeLists.txt;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\CMake\InstallMacros.cmake;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\CMake\UseCopyright.cmake;C:\Program Files\CMake\share\cmake-3.6\Modules\CheckIncludeFile.cmake;C:\Program Files\CMake\share\cmake-3.6\Modules\CheckIncludeFiles.cmake;C:\Program Files\CMake\share\cmake-3.6\Modules\FindZLIB.cmake;C:\Program Files\CMake\share\cmake-3.6\Modules\FindPackageHandleStandardArgs.cmake;C:\Program Files\CMake\share\cmake-3.6\Modules\FindPackageMessage.cmake;C:\Program Files\CMake\share\cmake-3.6\Modules\CMakeParseArguments.cmake;C:\Program Files\CMake\share\cmake-3.6\Modules\FindEXPAT.cmake;C:\Program Files\CMake\share\cmake-3.6\Modules\FindPackageHandleStandardArgs.cmake;C:\Program Files\CMake\share\cmake-3.6\Modules\FindPackageMessage.cmake;C:\Program Files\CMake\share\cmake-3.6\Modules\CMakeParseArguments.cmake;C:\Program Files\CMake\share\cmake-3.6\Modules\CheckIncludeFile.c.in;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\CMakeLists.txt;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\GDCM\src\gdcm\CMakeFiles\generate.stamp</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">false</LinkObjects>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="C:/server/InsightToolkit-4.10.0/bin/ZERO_CHECK.vcxproj">
+      <Project>8424D74C-2D7E-3861-92BD-E31A437C2341</Project>
+    </ProjectReference>
+    <ProjectReference Include="C:/server/InsightToolkit-4.10.0/bin/Modules/ThirdParty/GDCM/src/gdcm/Source/Common/gdcmCommon.vcxproj">
+      <Project>D0C8B869-682E-3127-B35C-11B9D0176031</Project>
+    </ProjectReference>
+    <ProjectReference Include="C:/server/InsightToolkit-4.10.0/bin/Modules/ThirdParty/GDCM/src/gdcm/Source/DataDictionary/gdcmDICT.vcxproj">
+      <Project>1BD6F60F-31FB-3C1B-8D12-BD7DBAEEAA4C</Project>
+    </ProjectReference>
+    <ProjectReference Include="C:/server/InsightToolkit-4.10.0/bin/Modules/ThirdParty/GDCM/src/gdcm/Source/DataStructureAndEncodingDefinition/gdcmDSED.vcxproj">
+      <Project>C9506DA5-9127-3A5E-AEBC-DDF6D9786D65</Project>
+    </ProjectReference>
+    <ProjectReference Include="C:/server/InsightToolkit-4.10.0/bin/Modules/ThirdParty/GDCM/src/gdcm/Source/InformationObjectDefinition/gdcmIOD.vcxproj">
+      <Project>E72D6470-BD2C-3C5B-84CB-0676CA7F579B</Project>
+    </ProjectReference>
+    <ProjectReference Include="C:/server/InsightToolkit-4.10.0/bin/Modules/ThirdParty/GDCM/src/gdcm/Source/MessageExchangeDefinition/gdcmMEXD.vcxproj">
+      <Project>08117F1B-C2C0-3319-B7F0-CB7D8CA12E4B</Project>
+    </ProjectReference>
+    <ProjectReference Include="C:/server/InsightToolkit-4.10.0/bin/Modules/ThirdParty/GDCM/src/gdcm/Source/MediaStorageAndFileFormat/gdcmMSFF.vcxproj">
+      <Project>0C803B6D-5455-3913-9EAA-83F100033396</Project>
+    </ProjectReference>
+    <ProjectReference Include="C:/server/InsightToolkit-4.10.0/bin/Modules/ThirdParty/GDCM/src/gdcm/Utilities/gdcmcharls/gdcmcharls.vcxproj">
+      <Project>B20CE639-CFBA-3AF9-B39C-9384337DB3F6</Project>
+    </ProjectReference>
+    <ProjectReference Include="C:/server/InsightToolkit-4.10.0/bin/Modules/ThirdParty/GDCM/src/gdcm/Utilities/gdcmjpeg/12/gdcmjpeg12.vcxproj">
+      <Project>6C5108A3-5B4D-3712-899C-4B58763D4DBA</Project>
+    </ProjectReference>
+    <ProjectReference Include="C:/server/InsightToolkit-4.10.0/bin/Modules/ThirdParty/GDCM/src/gdcm/Utilities/gdcmjpeg/16/gdcmjpeg16.vcxproj">
+      <Project>E03CF072-9482-3BE3-8F30-85684E14D54F</Project>
+    </ProjectReference>
+    <ProjectReference Include="C:/server/InsightToolkit-4.10.0/bin/Modules/ThirdParty/GDCM/src/gdcm/Utilities/gdcmjpeg/8/gdcmjpeg8.vcxproj">
+      <Project>7859207E-D1D7-3E1C-BB25-63E9B26999BA</Project>
+    </ProjectReference>
+    <ProjectReference Include="C:/server/InsightToolkit-4.10.0/bin/Modules/ThirdParty/GDCM/src/gdcm/Utilities/gdcmopenjpeg-v2/libopenjpeg/gdcmopenjpeg.vcxproj">
+      <Project>CC7A64BF-6511-340F-904A-5CC281220BD4</Project>
+    </ProjectReference>
+    <ProjectReference Include="C:/server/InsightToolkit-4.10.0/bin/Modules/ThirdParty/GDCM/src/gdcm/Utilities/socketxx/socket++/gdcmsocketxx.vcxproj">
+      <Project>AF16F9CB-4DBD-3B25-ADC3-9313A7A24053</Project>
+    </ProjectReference>
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

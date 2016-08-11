@@ -1,0 +1,27 @@
+# CMake generation dependency list for this directory.
+C:/server/InsightToolkit-4.10.0/Modules/Core/TestKernel/CMakeLists.txt
+C:/server/InsightToolkit-4.10.0/Modules/Core/TestKernel/itk-module.cmake
+C:/server/InsightToolkit-4.10.0/bin/lib/cmake/ITK-4.10/Modules/ITKCommon.cmake
+C:/server/InsightToolkit-4.10.0/bin/lib/cmake/ITK-4.10/Modules/ITKKWIML.cmake
+C:/server/InsightToolkit-4.10.0/bin/lib/cmake/ITK-4.10/Modules/ITKKWSys.cmake
+C:/server/InsightToolkit-4.10.0/bin/lib/cmake/ITK-4.10/Modules/ITKVNLInstantiation.cmake
+C:/server/InsightToolkit-4.10.0/bin/lib/cmake/ITK-4.10/Modules/ITKVNL.cmake
+C:/server/InsightToolkit-4.10.0/bin/lib/cmake/ITK-4.10/Modules/ITKDoubleConversion.cmake
+C:/server/InsightToolkit-4.10.0/bin/lib/cmake/ITK-4.10/Modules/ITKIOBMP.cmake
+C:/server/InsightToolkit-4.10.0/bin/lib/cmake/ITK-4.10/Modules/ITKIOGDCM.cmake
+C:/server/InsightToolkit-4.10.0/bin/lib/cmake/ITK-4.10/Modules/ITKGDCM.cmake
+C:/server/InsightToolkit-4.10.0/bin/lib/cmake/ITK-4.10/Modules/ITKExpat.cmake
+C:/server/InsightToolkit-4.10.0/bin/lib/cmake/ITK-4.10/Modules/ITKZLIB.cmake
+C:/server/InsightToolkit-4.10.0/bin/lib/cmake/ITK-4.10/Modules/ITKIOGIPL.cmake
+C:/server/InsightToolkit-4.10.0/bin/lib/cmake/ITK-4.10/Modules/ITKIOImageBase.cmake
+C:/server/InsightToolkit-4.10.0/bin/lib/cmake/ITK-4.10/Modules/ITKIOJPEG.cmake
+C:/server/InsightToolkit-4.10.0/bin/lib/cmake/ITK-4.10/Modules/ITKIOMeta.cmake
+C:/server/InsightToolkit-4.10.0/bin/lib/cmake/ITK-4.10/Modules/ITKMetaIO.cmake
+C:/server/InsightToolkit-4.10.0/bin/lib/cmake/ITK-4.10/Modules/ITKIONIFTI.cmake
+C:/server/InsightToolkit-4.10.0/bin/lib/cmake/ITK-4.10/Modules/ITKIONRRD.cmake
+C:/server/InsightToolkit-4.10.0/bin/lib/cmake/ITK-4.10/Modules/ITKIOPNG.cmake
+C:/server/InsightToolkit-4.10.0/bin/lib/cmake/ITK-4.10/Modules/ITKIOTIFF.cmake
+C:/server/InsightToolkit-4.10.0/bin/lib/cmake/ITK-4.10/Modules/ITKIOVTK.cmake
+C:/server/InsightToolkit-4.10.0/CMake/ITKModuleInfo.cmake.in
+C:/server/InsightToolkit-4.10.0/CMake/ITKModuleInfo.cmake.in
+C:/server/InsightToolkit-4.10.0/Utilities/Doxygen/Module.dox.in

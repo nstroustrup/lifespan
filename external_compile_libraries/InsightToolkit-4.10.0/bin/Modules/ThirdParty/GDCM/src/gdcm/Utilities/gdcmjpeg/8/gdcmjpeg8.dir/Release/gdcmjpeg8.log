@@ -1,0 +1,71 @@
+﻿  Building Custom Rule C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/GDCM/src/gdcm/Utilities/gdcmjpeg/8/CMakeLists.txt
+  CMake does not need to re-run because C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\GDCM\src\gdcm\Utilities\gdcmjpeg\8\CMakeFiles\generate.stamp is up-to-date.
+  jmemnobs.c
+  jcomapi.c
+  jutils.c
+  jerror.c
+  jmemmgr.c
+  jcapimin.c
+  jcapistd.c
+  jctrans.c
+  jcparam.c
+  jcinit.c
+  jcmaster.c
+  jcmarker.c
+  jcmainct.c
+  jcprepct.c
+  jccoefct.c
+  jccolor.c
+  jcsample.c
+  jchuff.c
+  jcphuff.c
+  jcdctmgr.c
+  Generating Code...
+  Compiling...
+  jfdctfst.c
+  jfdctflt.c
+  jdatadst.c
+  jdapimin.c
+  jdapistd.c
+  jdtrans.c
+  jdmaster.c
+  jdinput.c
+  jdmarker.c
+  jdhuff.c
+  jdphuff.c
+  jdmainct.c
+  jdcoefct.c
+  jdpostct.c
+  jddctmgr.c
+  jidctfst.c
+  jidctflt.c
+  jidctint.c
+  jidctred.c
+  jdsample.c
+  Generating Code...
+  Compiling...
+  jdcolor.c
+  jquant1.c
+  jquant2.c
+  jdmerge.c
+  jdatasrc.c
+  jfdctint.c
+  jclossy.c
+  jclossls.c
+  jcodec.c
+  jcscale.c
+  jcshuff.c
+  jclhuff.c
+  jcpred.c
+  jcdiffct.c
+  jdlossls.c
+  jdlossy.c
+  jdlhuff.c
+  jddiffct.c
+  jdpred.c
+  jdscale.c
+  Generating Code...
+  Compiling...
+  jdshuff.c
+  Generating Code...
+  gdcmjpeg8.vcxproj -> C:\server\InsightToolkit-4.10.0\bin\lib\Release\itkgdcmjpeg8-4.10.lib

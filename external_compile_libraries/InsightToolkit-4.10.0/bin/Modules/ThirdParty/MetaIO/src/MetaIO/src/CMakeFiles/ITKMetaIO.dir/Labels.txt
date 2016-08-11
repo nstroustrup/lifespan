@@ -1,0 +1,37 @@
+# Target labels
+ ITKMetaIO
+# Source files and their labels
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/MetaIO/src/MetaIO/src/metaTypes.h
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/MetaIO/src/MetaIO/src/metaUtils.cxx
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/MetaIO/src/MetaIO/src/metaArrow.cxx
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/MetaIO/src/MetaIO/src/metaBlob.cxx
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/MetaIO/src/MetaIO/src/metaCommand.h
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/MetaIO/src/MetaIO/src/metaCommand.cxx
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/MetaIO/src/MetaIO/src/metaContour.h
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/MetaIO/src/MetaIO/src/metaContour.cxx
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/MetaIO/src/MetaIO/src/metaDTITube.cxx
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/MetaIO/src/MetaIO/src/metaEllipse.cxx
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/MetaIO/src/MetaIO/src/metaGroup.cxx
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/MetaIO/src/MetaIO/src/metaGaussian.cxx
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/MetaIO/src/MetaIO/src/metaImage.cxx
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/MetaIO/src/MetaIO/src/metaImageUtils.cxx
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/MetaIO/src/MetaIO/src/metaLandmark.cxx
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/MetaIO/src/MetaIO/src/metaLine.cxx
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/MetaIO/src/MetaIO/src/metaMesh.cxx
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/MetaIO/src/MetaIO/src/metaMesh.h
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/MetaIO/src/MetaIO/src/metaObject.cxx
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/MetaIO/src/MetaIO/src/metaOutput.h
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/MetaIO/src/MetaIO/src/metaOutput.cxx
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/MetaIO/src/MetaIO/src/metaScene.cxx
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/MetaIO/src/MetaIO/src/metaSurface.cxx
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/MetaIO/src/MetaIO/src/metaTube.cxx
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/MetaIO/src/MetaIO/src/metaVesselTube.cxx
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/MetaIO/src/MetaIO/src/metaTransform.cxx
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/MetaIO/src/MetaIO/src/metaTubeGraph.cxx
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/MetaIO/src/MetaIO/src/metaForm.h
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/MetaIO/src/MetaIO/src/metaForm.cxx
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/MetaIO/src/MetaIO/src/metaArray.h
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/MetaIO/src/MetaIO/src/metaArray.cxx
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/MetaIO/src/MetaIO/src/metaFEMObject.h
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/MetaIO/src/MetaIO/src/metaFEMObject.cxx
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/MetaIO/src/MetaIO/src/CMakeLists.txt

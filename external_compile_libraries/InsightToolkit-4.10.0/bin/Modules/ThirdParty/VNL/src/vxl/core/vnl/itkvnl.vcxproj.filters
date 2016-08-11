@@ -1,0 +1,1260 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<Project ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\vnl_alloc.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\vnl_block.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\vnl_math.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\vnl_na.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\vnl_copy.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\vnl_error.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\vnl_matlab_print_format.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\vnl_matlab_print_scalar.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\vnl_matlab_write.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\vnl_matlab_read.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\vnl_matlab_filewrite.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\vnl_matops.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\vnl_real_polynomial.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\vnl_real_npolynomial.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\vnl_rational.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\vnl_bignum.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\vnl_decnum.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\vnl_fastops.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\vnl_numeric_traits.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\vnl_bignum_traits.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\vnl_decnum_traits.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\vnl_rational_traits.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\vnl_int_matrix.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\vnl_cost_function.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\vnl_least_squares_function.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\vnl_least_squares_cost_function.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\vnl_sparse_lst_sqr_function.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\vnl_nonlinear_minimizer.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\vnl_linear_system.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\vnl_sparse_matrix_linear_system.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\vnl_rotation_matrix.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\vnl_crs_index.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\vnl_bessel.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\vnl_gamma.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\vnl_erf.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\vnl_sample.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\vnl_random.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\vnl_definite_integral.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\Templates\vnl_complex_ops+double-.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\Templates\vnl_complex_ops+float-.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\Templates\vnl_complex_ops+long_double-.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\Templates\vnl_c_na_vector+double-.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\Templates\vnl_c_na_vector+float-.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\Templates\vnl_c_vector+double-.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\Templates\vnl_c_vector+double_complex-.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\Templates\vnl_c_vector+float-.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\Templates\vnl_c_vector+float_complex-.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\Templates\vnl_c_vector+int-.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\Templates\vnl_c_vector+long-.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\Templates\vnl_c_vector+longlong-.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\Templates\vnl_c_vector+long_double-.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\Templates\vnl_c_vector+long_double_complex-.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\Templates\vnl_c_vector+schar-.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\Templates\vnl_c_vector+uchar-.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\Templates\vnl_c_vector+uint-.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\Templates\vnl_c_vector+ulong-.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\Templates\vnl_c_vector+ulonglong-.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\Templates\vnl_c_vector+ushort-.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\Templates\vnl_c_vector+vnl_bignum-.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\Templates\vnl_c_vector+vnl_rational-.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\Templates\vnl_det+double-.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\Templates\vnl_det+float-.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\Templates\vnl_det+long_double-.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\Templates\vnl_det+vcl_complex+double--.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\Templates\vnl_det+vcl_complex+float--.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\Templates\vnl_det+vcl_complex+long_double--.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\Templates\vnl_det+vnl_bignum-.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\Templates\vnl_det+vnl_rational-.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\Templates\vnl_diag_matrix+double-.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\Templates\vnl_diag_matrix+float-.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\Templates\vnl_diag_matrix+int-.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\Templates\vnl_diag_matrix+long_double-.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\Templates\vnl_diag_matrix+vcl_complex+double--.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\Templates\vnl_diag_matrix+vcl_complex+float--.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\Templates\vnl_diag_matrix+vnl_bignum-.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\Templates\vnl_diag_matrix+vnl_rational-.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\Templates\vnl_diag_matrix_fixed+double.3-.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\Templates\vnl_diag_matrix_fixed+double.4-.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\Templates\vnl_diag_matrix_fixed+float.3-.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\Templates\vnl_diag_matrix_fixed+float.4-.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\Templates\vnl_file_matrix+double-.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\Templates\vnl_file_matrix+float-.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\Templates\vnl_file_matrix+long_double-.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\Templates\vnl_file_matrix+vnl_rational-.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\Templates\vnl_file_vector+double-.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\Templates\vnl_fortran_copy+double-.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\Templates\vnl_fortran_copy+float-.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\Templates\vnl_fortran_copy+long_double-.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\Templates\vnl_fortran_copy+vcl_complex+double--.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\Templates\vnl_fortran_copy+vcl_complex+float--.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\Templates\vnl_fortran_copy+vcl_complex+long_double--.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\Templates\vnl_fortran_copy_fixed+double.3.3-.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\Templates\vnl_fortran_copy_fixed+double.3.4-.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\Templates\vnl_fortran_copy_fixed+float.3.3-.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\Templates\vnl_fortran_copy_fixed+float.3.4-.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\Templates\vnl_hungarian_algorithm+double-.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\Templates\vnl_hungarian_algorithm+int-.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\Templates\vnl_identity+int-.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\Templates\vnl_matlab_print+double-.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\Templates\vnl_matlab_print+float-.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\Templates\vnl_matlab_print+int-.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\Templates\vnl_matlab_print+long_double-.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\Templates\vnl_matlab_print+uint-.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\Templates\vnl_matlab_print+vcl_complex+double--.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\Templates\vnl_matlab_print+vcl_complex+float--.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\Templates\vnl_matlab_print+vcl_complex+long_double--.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\Templates\vnl_matlab_print2+vnl_matrix+double--.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\Templates\vnl_matlab_print2+vnl_matrix+float--.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\Templates\vnl_matlab_print2+vnl_matrix+vcl_complex+double---.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\Templates\vnl_matlab_print2+vnl_vector+double--.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\Templates\vnl_matlab_print2+vnl_vector+float--.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\Templates\vnl_matlab_print2+vnl_vector+vcl_complex+double---.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\Templates\vnl_matrix+double-.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\Templates\vnl_matrix+float-.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\Templates\vnl_matrix+int-.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\Templates\vnl_matrix+long-.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\Templates\vnl_matrix+longlong-.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\Templates\vnl_matrix+long_double-.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\Templates\vnl_matrix+schar-.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\Templates\vnl_matrix+uchar-.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\Templates\vnl_matrix+uint-.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\Templates\vnl_matrix+ulong-.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\Templates\vnl_matrix+ulonglong-.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\Templates\vnl_matrix+ushort-.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\Templates\vnl_matrix+vcl_complex+double--.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\Templates\vnl_matrix+vcl_complex+float--.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\Templates\vnl_matrix+vcl_complex+long_double--.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\Templates\vnl_matrix+vnl_bignum-.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\Templates\vnl_matrix+vnl_rational-.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\Templates\vnl_matrix_exp+vnl_matrix+double--.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\Templates\vnl_matrix_exp+vnl_matrix_fixed+double.1.1--.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\Templates\vnl_matrix_exp+vnl_matrix_fixed+double.2.2--.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\Templates\vnl_matrix_exp+vnl_matrix_fixed+double.3.3--.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\Templates\vnl_matrix_exp+vnl_matrix_fixed+double.4.4--.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\Templates\vnl_matrix_fixed+double.1.1-.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\Templates\vnl_matrix_fixed+double.1.2-.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\Templates\vnl_matrix_fixed+double.1.3-.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\Templates\vnl_matrix_fixed+double.1.6-.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\Templates\vnl_matrix_fixed+double.2.1-.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\Templates\vnl_matrix_fixed+double.2.11-.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\Templates\vnl_matrix_fixed+double.2.2-.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\Templates\vnl_matrix_fixed+double.2.3-.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\Templates\vnl_matrix_fixed+double.2.4-.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\Templates\vnl_matrix_fixed+double.2.6-.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\Templates\vnl_matrix_fixed+double.2.8-.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\Templates\vnl_matrix_fixed+double.2.9-.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\Templates\vnl_matrix_fixed+double.3.1-.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\Templates\vnl_matrix_fixed+double.3.2-.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\Templates\vnl_matrix_fixed+double.3.3-.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\Templates\vnl_matrix_fixed+double.3.4-.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\Templates\vnl_matrix_fixed+double.3.6-.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\Templates\vnl_matrix_fixed+double.3.9-.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\Templates\vnl_matrix_fixed+double.4.1-.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\Templates\vnl_matrix_fixed+double.4.2-.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\Templates\vnl_matrix_fixed+double.4.20-.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\Templates\vnl_matrix_fixed+double.4.3-.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\Templates\vnl_matrix_fixed+double.4.4-.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\Templates\vnl_matrix_fixed+double.6.1-.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\Templates\vnl_matrix_fixed+double.6.2-.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\Templates\vnl_matrix_fixed+double.6.3-.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\Templates\vnl_matrix_fixed+double.6.6-.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\Templates\vnl_matrix_fixed+float.1.1-.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\Templates\vnl_matrix_fixed+float.1.2-.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\Templates\vnl_matrix_fixed+float.1.3-.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\Templates\vnl_matrix_fixed+float.2.1-.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\Templates\vnl_matrix_fixed+float.2.2-.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\Templates\vnl_matrix_fixed+float.2.3-.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\Templates\vnl_matrix_fixed+float.2.4-.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\Templates\vnl_matrix_fixed+float.3.1-.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\Templates\vnl_matrix_fixed+float.3.3-.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\Templates\vnl_matrix_fixed+float.3.4-.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\Templates\vnl_matrix_fixed+float.3.5-.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\Templates\vnl_matrix_fixed+float.4.20-.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\Templates\vnl_matrix_fixed+float.4.3-.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\Templates\vnl_matrix_fixed+float.4.4-.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\Templates\vnl_matrix_fixed+float.5.5-.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\Templates\vnl_matrix_fixed+float.6.6-.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\Templates\vnl_matrix_fixed+int.1.1-.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\Templates\vnl_matrix_fixed+int.2.2-.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\Templates\vnl_matrix_fixed+int.3.4-.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\Templates\vnl_matrix_fixed+vnl_bignum.3.3-.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\Templates\vnl_matrix_fixed+vnl_rational.3.3-.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\Templates\vnl_matrix_fixed+vnl_rational.4.4-.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\Templates\vnl_matrix_fixed_ref+double.3.3-.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\Templates\vnl_matrix_fixed_ref+double.3.4-.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\Templates\vnl_matrix_fixed_ref+float.3.3-.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\Templates\vnl_matrix_fixed_ref+float.3.4-.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\Templates\vnl_matrix_ref+double-.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\Templates\vnl_matrix_ref+float-.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\Templates\vnl_matrix_ref+vnl_bignum-.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\Templates\vnl_matrix_ref+vnl_rational-.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\Templates\vnl_polynomial+double-.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\Templates\vnl_polynomial+long-.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\Templates\vnl_polynomial+vnl_decnum-.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\Templates\vnl_polynomial+vnl_rational-.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\Templates\vnl_quaternion+double-.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\Templates\vnl_quaternion+float-.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\Templates\vnl_quaternion+vnl_rational-.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\Templates\vnl_rank+double-.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\Templates\vnl_rank+int-.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\Templates\vnl_sparse_matrix+double-.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\Templates\vnl_sparse_matrix+float-.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\Templates\vnl_sparse_matrix+int-.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\Templates\vnl_sparse_matrix+vcl_complex+double--.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\Templates\vnl_sparse_matrix+vcl_complex+float--.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\Templates\vnl_sparse_matrix+vnl_bignum-.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\Templates\vnl_sparse_matrix+vnl_rational-.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\Templates\vnl_sym_matrix+double-.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\Templates\vnl_sym_matrix+float-.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\Templates\vnl_sym_matrix+int-.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\Templates\vnl_sym_matrix+vcl_complex+double--.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\Templates\vnl_sym_matrix+vcl_complex+float--.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\Templates\vnl_sym_matrix+vcl_complex+long_double--.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\Templates\vnl_unary_function+double.vnl_vector+double--.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\Templates\vnl_unary_function+int.int-.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\Templates\vnl_vector+double-.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\Templates\vnl_vector+float-.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\Templates\vnl_vector+int-.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\Templates\vnl_vector+long-.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\Templates\vnl_vector+longlong-.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\Templates\vnl_vector+long_double-.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\Templates\vnl_vector+schar-.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\Templates\vnl_vector+uchar-.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\Templates\vnl_vector+uint-.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\Templates\vnl_vector+ulong-.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\Templates\vnl_vector+ulonglong-.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\Templates\vnl_vector+ushort-.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\Templates\vnl_vector+vcl_complex+double--.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\Templates\vnl_vector+vcl_complex+float--.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\Templates\vnl_vector+vcl_complex+long_double--.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\Templates\vnl_vector+vnl_bignum-.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\Templates\vnl_vector+vnl_rational-.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\Templates\vnl_vector_fixed+double.1-.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\Templates\vnl_vector_fixed+double.10-.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\Templates\vnl_vector_fixed+double.2-.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\Templates\vnl_vector_fixed+double.20-.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\Templates\vnl_vector_fixed+double.3-.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\Templates\vnl_vector_fixed+double.4-.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\Templates\vnl_vector_fixed+double.5-.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\Templates\vnl_vector_fixed+double.6-.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\Templates\vnl_vector_fixed+double.9-.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\Templates\vnl_vector_fixed+float.1-.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\Templates\vnl_vector_fixed+float.10-.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\Templates\vnl_vector_fixed+float.16-.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\Templates\vnl_vector_fixed+float.2-.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\Templates\vnl_vector_fixed+float.3-.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\Templates\vnl_vector_fixed+float.4-.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\Templates\vnl_vector_fixed+float.5-.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\Templates\vnl_vector_fixed+float.9-.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\Templates\vnl_vector_fixed+int.1-.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\Templates\vnl_vector_fixed+int.2-.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\Templates\vnl_vector_fixed+int.3-.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\Templates\vnl_vector_fixed+int.4-.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\Templates\vnl_vector_fixed+uchar.16-.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\Templates\vnl_vector_fixed+ushort.2-.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\Templates\vnl_vector_fixed+vnl_bignum.1-.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\Templates\vnl_vector_fixed+vnl_bignum.2-.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\Templates\vnl_vector_fixed+vnl_bignum.3-.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\Templates\vnl_vector_fixed+vnl_rational.1-.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\Templates\vnl_vector_fixed+vnl_rational.2-.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\Templates\vnl_vector_fixed+vnl_rational.3-.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\Templates\vnl_vector_fixed+vnl_rational.4-.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\Templates\vnl_vector_fixed_ref+double.3-.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\Templates\vnl_vector_fixed_ref+double.4-.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\Templates\vnl_vector_fixed_ref+float.3-.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\dll.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\vnl_fwd.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\vnl_tag.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\vnl_c_vector.hxx">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\vnl_c_vector.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\vnl_vector.hxx">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\vnl_vector.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\vnl_vector_ref.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\vnl_vector_fixed.hxx">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\vnl_vector_fixed.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\vnl_vector_fixed_ref.hxx">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\vnl_vector_fixed_ref.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\vnl_file_vector.hxx">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\vnl_file_vector.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\vnl_matrix.hxx">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\vnl_matrix.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\vnl_matrix_ref.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\vnl_matrix_fixed.hxx">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\vnl_matrix_fixed.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\vnl_matrix_fixed_ref.hxx">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\vnl_matrix_fixed_ref.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\vnl_diag_matrix.hxx">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\vnl_diag_matrix.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\vnl_diag_matrix_fixed.hxx">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\vnl_diag_matrix_fixed.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\vnl_sparse_matrix.hxx">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\vnl_sparse_matrix.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\vnl_matrix_exp.hxx">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\vnl_matrix_exp.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\vnl_file_matrix.hxx">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\vnl_file_matrix.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\vnl_sym_matrix.hxx">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\vnl_sym_matrix.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\vnl_fortran_copy.hxx">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\vnl_fortran_copy.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\vnl_det.hxx">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\vnl_det.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\vnl_transpose.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\vnl_inverse.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\vnl_power.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\vnl_trace.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\vnl_rank.hxx">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\vnl_rank.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\vnl_scalar_join_iterator.hxx">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\vnl_scalar_join_iterator.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\vnl_alloc.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\vnl_block.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\vnl_math.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\vnl_na.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\vnl_c_na_vector.hxx">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\vnl_c_na_vector.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\vnl_copy.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\vnl_complex.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\vnl_error.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\vnl_matlab_print.hxx">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\vnl_matlab_print.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\vnl_matlab_print_format.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\vnl_matlab_print_scalar.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\vnl_matlab_print2.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\vnl_matlab_header.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\vnl_matlab_write.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\vnl_matlab_read.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\vnl_matlab_filewrite.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\vnl_matops.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\vnl_polynomial.hxx">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\vnl_polynomial.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\vnl_real_polynomial.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\vnl_real_npolynomial.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\vnl_quaternion.hxx">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\vnl_quaternion.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\vnl_rational.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\vnl_bignum.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\vnl_decnum.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\vnl_finite.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\vnl_fastops.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\vnl_operators.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\vnl_linear_operators_3.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\vnl_complex_ops.hxx">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\vnl_complexify.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\vnl_real.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\vnl_imag.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\vnl_numeric_traits.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\vnl_complex_traits.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\vnl_bignum_traits.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\vnl_decnum_traits.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\vnl_rational_traits.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\vnl_int_matrix.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\vnl_T_n.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\vnl_int_2.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\vnl_int_3.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\vnl_int_4.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\vnl_float_2.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\vnl_float_3.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\vnl_float_4.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\vnl_double_2.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\vnl_double_3.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\vnl_double_4.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\vnl_int_1x1.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\vnl_int_2x2.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\vnl_float_1x1.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\vnl_float_1x2.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\vnl_float_2x1.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\vnl_float_2x2.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\vnl_float_1x3.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\vnl_float_3x1.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\vnl_float_3x3.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\vnl_float_3x4.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\vnl_float_4x3.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\vnl_float_4x4.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\vnl_double_1x1.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\vnl_double_1x2.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\vnl_double_2x1.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\vnl_double_2x2.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\vnl_double_1x3.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\vnl_double_3x1.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\vnl_double_2x3.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\vnl_double_3x2.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\vnl_double_3x3.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\vnl_double_3x4.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\vnl_double_4x3.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\vnl_double_4x4.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\vnl_cost_function.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\vnl_least_squares_function.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\vnl_least_squares_cost_function.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\vnl_sparse_lst_sqr_function.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\vnl_nonlinear_minimizer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\vnl_hungarian_algorithm.hxx">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\vnl_hungarian_algorithm.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\vnl_linear_system.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\vnl_sparse_matrix_linear_system.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\vnl_rotation_matrix.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\vnl_cross_product_matrix.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\vnl_identity_3x3.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\vnl_crs_index.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\vnl_bessel.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\vnl_cross.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\vnl_gamma.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\vnl_beta.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\vnl_erf.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\vnl_sample.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\vnl_unary_function.hxx">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\vnl_unary_function.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\vnl_identity.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\vnl_random.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\vnl_index_sort.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\vnl_integrant_fnct.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\vnl_analytic_integrant.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\vnl_definite_integral.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\vnl_sse.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\vnl\CMakeLists.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{3D8AD831-5BA8-339E-9CE0-67BCE07365DA}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{6A46AC98-972C-30DB-8733-3AE0BF365110}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

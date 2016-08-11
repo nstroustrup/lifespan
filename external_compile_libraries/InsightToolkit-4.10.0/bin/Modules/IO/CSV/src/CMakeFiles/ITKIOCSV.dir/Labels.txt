@@ -1,0 +1,5 @@
+# Target labels
+ ITKIOCSV
+# Source files and their labels
+C:/server/InsightToolkit-4.10.0/Modules/IO/CSV/src/itkCSVFileReaderBase.cxx
+C:/server/InsightToolkit-4.10.0/Modules/IO/CSV/src/CMakeLists.txt

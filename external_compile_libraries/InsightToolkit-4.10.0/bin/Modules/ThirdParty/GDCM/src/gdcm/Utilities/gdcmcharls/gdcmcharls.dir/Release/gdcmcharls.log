@@ -1,0 +1,8 @@
+﻿  Building Custom Rule C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/GDCM/src/gdcm/Utilities/gdcmcharls/CMakeLists.txt
+  CMake does not need to re-run because C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\GDCM\src\gdcm\Utilities\gdcmcharls\CMakeFiles\generate.stamp is up-to-date.
+  header.cpp
+  interface.cpp
+  jpegls.cpp
+  stdafx.cpp
+  Generating Code...
+  gdcmcharls.vcxproj -> C:\server\InsightToolkit-4.10.0\bin\lib\Release\itkgdcmcharls-4.10.lib

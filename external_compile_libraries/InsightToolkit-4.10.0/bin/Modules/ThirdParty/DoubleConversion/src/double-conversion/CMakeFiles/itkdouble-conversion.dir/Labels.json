@@ -1,0 +1,87 @@
+
+{
+	"sources" : 
+	[
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/DoubleConversion/src/double-conversion/bignum.cc"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/DoubleConversion/src/double-conversion/bignum-dtoa.cc"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/DoubleConversion/src/double-conversion/cached-powers.cc"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/DoubleConversion/src/double-conversion/diy-fp.cc"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/DoubleConversion/src/double-conversion/double-conversion.cc"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/DoubleConversion/src/double-conversion/fast-dtoa.cc"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/DoubleConversion/src/double-conversion/fixed-dtoa.cc"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/DoubleConversion/src/double-conversion/strtod.cc"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/DoubleConversion/src/double-conversion/bignum.h"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/DoubleConversion/src/double-conversion/cached-powers.h"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/DoubleConversion/src/double-conversion/diy-fp.h"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/DoubleConversion/src/double-conversion/double-conversion.h"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/DoubleConversion/src/double-conversion/fast-dtoa.h"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/DoubleConversion/src/double-conversion/fixed-dtoa.h"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/DoubleConversion/src/double-conversion/ieee.h"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/DoubleConversion/src/double-conversion/strtod.h"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/DoubleConversion/src/double-conversion/utils.h"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/bin/Modules/ThirdParty/DoubleConversion/src/double-conversion/double-conversion-configure.h"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/DoubleConversion/src/double-conversion/CMakeLists.txt"
+		}
+	],
+	"target" : 
+	{
+		"labels" : [ "ITKDoubleConversion" ],
+		"name" : "itkdouble-conversion"
+	}
+}

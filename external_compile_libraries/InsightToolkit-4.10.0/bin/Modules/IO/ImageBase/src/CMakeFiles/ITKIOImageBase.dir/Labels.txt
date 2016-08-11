@@ -1,0 +1,14 @@
+# Target labels
+ ITKIOImageBase
+# Source files and their labels
+C:/server/InsightToolkit-4.10.0/Modules/IO/ImageBase/src/itkImageSeriesWriter.cxx
+C:/server/InsightToolkit-4.10.0/Modules/IO/ImageBase/src/itkImageFileReaderException.cxx
+C:/server/InsightToolkit-4.10.0/Modules/IO/ImageBase/src/itkImageFileWriter.cxx
+C:/server/InsightToolkit-4.10.0/Modules/IO/ImageBase/src/itkArchetypeSeriesFileNames.cxx
+C:/server/InsightToolkit-4.10.0/Modules/IO/ImageBase/src/itkImageIOFactory.cxx
+C:/server/InsightToolkit-4.10.0/Modules/IO/ImageBase/src/itkIOCommon.cxx
+C:/server/InsightToolkit-4.10.0/Modules/IO/ImageBase/src/itkNumericSeriesFileNames.cxx
+C:/server/InsightToolkit-4.10.0/Modules/IO/ImageBase/src/itkImageIOBase.cxx
+C:/server/InsightToolkit-4.10.0/Modules/IO/ImageBase/src/itkRegularExpressionSeriesFileNames.cxx
+C:/server/InsightToolkit-4.10.0/Modules/IO/ImageBase/src/itkStreamingImageIOBase.cxx
+C:/server/InsightToolkit-4.10.0/Modules/IO/ImageBase/src/CMakeLists.txt

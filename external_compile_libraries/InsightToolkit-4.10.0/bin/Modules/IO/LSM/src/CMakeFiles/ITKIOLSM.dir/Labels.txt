@@ -1,0 +1,6 @@
+# Target labels
+ ITKIOLSM
+# Source files and their labels
+C:/server/InsightToolkit-4.10.0/Modules/IO/LSM/src/itkLSMImageIOFactory.cxx
+C:/server/InsightToolkit-4.10.0/Modules/IO/LSM/src/itkLSMImageIO.cxx
+C:/server/InsightToolkit-4.10.0/Modules/IO/LSM/src/CMakeLists.txt

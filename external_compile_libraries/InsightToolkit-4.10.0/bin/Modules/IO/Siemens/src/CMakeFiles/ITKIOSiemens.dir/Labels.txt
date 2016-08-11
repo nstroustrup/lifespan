@@ -1,0 +1,6 @@
+# Target labels
+ ITKIOSiemens
+# Source files and their labels
+C:/server/InsightToolkit-4.10.0/Modules/IO/Siemens/src/itkSiemensVisionImageIOFactory.cxx
+C:/server/InsightToolkit-4.10.0/Modules/IO/Siemens/src/itkSiemensVisionImageIO.cxx
+C:/server/InsightToolkit-4.10.0/Modules/IO/Siemens/src/CMakeLists.txt

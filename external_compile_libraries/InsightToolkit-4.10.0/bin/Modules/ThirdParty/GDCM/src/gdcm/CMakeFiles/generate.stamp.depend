@@ -1,0 +1,15 @@
+# CMake generation dependency list for this directory.
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/GDCM/src/gdcm/CMakeLists.txt
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/GDCM/src/gdcm/CMake/InstallMacros.cmake
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/GDCM/src/gdcm/CMake/UseCopyright.cmake
+C:/Program Files/CMake/share/cmake-3.6/Modules/CheckIncludeFile.cmake
+C:/Program Files/CMake/share/cmake-3.6/Modules/CheckIncludeFiles.cmake
+C:/Program Files/CMake/share/cmake-3.6/Modules/FindZLIB.cmake
+C:/Program Files/CMake/share/cmake-3.6/Modules/FindPackageHandleStandardArgs.cmake
+C:/Program Files/CMake/share/cmake-3.6/Modules/FindPackageMessage.cmake
+C:/Program Files/CMake/share/cmake-3.6/Modules/CMakeParseArguments.cmake
+C:/Program Files/CMake/share/cmake-3.6/Modules/FindEXPAT.cmake
+C:/Program Files/CMake/share/cmake-3.6/Modules/FindPackageHandleStandardArgs.cmake
+C:/Program Files/CMake/share/cmake-3.6/Modules/FindPackageMessage.cmake
+C:/Program Files/CMake/share/cmake-3.6/Modules/CMakeParseArguments.cmake
+c:/Program Files/CMake/share/cmake-3.6/Modules/CheckIncludeFile.c.in

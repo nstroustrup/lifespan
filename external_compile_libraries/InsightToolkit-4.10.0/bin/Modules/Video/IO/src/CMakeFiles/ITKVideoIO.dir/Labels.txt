@@ -1,0 +1,8 @@
+# Target labels
+ ITKVideoIO
+# Source files and their labels
+C:/server/InsightToolkit-4.10.0/Modules/Video/IO/src/itkFileListVideoIO.cxx
+C:/server/InsightToolkit-4.10.0/Modules/Video/IO/src/itkFileListVideoIOFactory.cxx
+C:/server/InsightToolkit-4.10.0/Modules/Video/IO/src/itkVideoIOBase.cxx
+C:/server/InsightToolkit-4.10.0/Modules/Video/IO/src/itkVideoIOFactory.cxx
+C:/server/InsightToolkit-4.10.0/Modules/Video/IO/src/CMakeLists.txt

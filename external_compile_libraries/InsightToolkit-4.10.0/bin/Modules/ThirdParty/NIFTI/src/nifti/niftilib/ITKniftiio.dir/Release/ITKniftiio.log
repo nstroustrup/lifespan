@@ -1,0 +1,4 @@
+﻿  Building Custom Rule C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/NIFTI/src/nifti/niftilib/CMakeLists.txt
+  CMake does not need to re-run because C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\NIFTI\src\nifti\niftilib\CMakeFiles\generate.stamp is up-to-date.
+  nifti1_io.c
+  ITKniftiio.vcxproj -> C:\server\InsightToolkit-4.10.0\bin\lib\Release\ITKniftiio-4.10.lib

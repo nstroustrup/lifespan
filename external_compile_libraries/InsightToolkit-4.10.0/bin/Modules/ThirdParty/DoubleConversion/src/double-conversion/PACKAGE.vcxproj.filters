@@ -1,0 +1,13 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<Project ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <CustomBuild Include="C:\server\InsightToolkit-4.10.0\bin\CMakeFiles\75ab2183ea2ab1bafecbce5a6a2d673e\PACKAGE_force.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="CMake Rules">
+      <UniqueIdentifier>{2AD25919-1720-34B7-A27C-342F6823C3EF}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

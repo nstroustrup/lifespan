@@ -1,0 +1,9 @@
+# CMake generation dependency list for this directory.
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/src/vxl/core/vnl/CMakeLists.txt
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/src/vxl/core/vnl/vnl_config.h.in
+C:/server/InsightToolkit-4.10.0/CMake/GenerateExportHeader.cmake
+C:/Program Files/CMake/share/cmake-3.6/Modules/CMakeParseArguments.cmake
+C:/Program Files/CMake/share/cmake-3.6/Modules/CheckCXXCompilerFlag.cmake
+C:/Program Files/CMake/share/cmake-3.6/Modules/CheckCXXSourceCompiles.cmake
+C:/Program Files/CMake/share/cmake-3.6/Modules/CMakeCheckCompilerFlagCommonPatterns.cmake
+C:/server/InsightToolkit-4.10.0/CMake/exportheader.cmake.in

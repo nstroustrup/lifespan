@@ -1,0 +1,21 @@
+# Target labels
+ ITKIOMesh
+# Source files and their labels
+C:/server/InsightToolkit-4.10.0/Modules/IO/Mesh/src/itkMeshFileReaderException.cxx
+C:/server/InsightToolkit-4.10.0/Modules/IO/Mesh/src/itkBYUMeshIO.cxx
+C:/server/InsightToolkit-4.10.0/Modules/IO/Mesh/src/itkBYUMeshIOFactory.cxx
+C:/server/InsightToolkit-4.10.0/Modules/IO/Mesh/src/itkFreeSurferAsciiMeshIO.cxx
+C:/server/InsightToolkit-4.10.0/Modules/IO/Mesh/src/itkFreeSurferAsciiMeshIOFactory.cxx
+C:/server/InsightToolkit-4.10.0/Modules/IO/Mesh/src/itkFreeSurferBinaryMeshIO.cxx
+C:/server/InsightToolkit-4.10.0/Modules/IO/Mesh/src/itkFreeSurferBinaryMeshIOFactory.cxx
+C:/server/InsightToolkit-4.10.0/Modules/IO/Mesh/src/itkGiftiMeshIO.cxx
+C:/server/InsightToolkit-4.10.0/Modules/IO/Mesh/src/itkGiftiMeshIOFactory.cxx
+C:/server/InsightToolkit-4.10.0/Modules/IO/Mesh/src/itkMeshIOBase.cxx
+C:/server/InsightToolkit-4.10.0/Modules/IO/Mesh/src/itkMeshIOFactory.cxx
+C:/server/InsightToolkit-4.10.0/Modules/IO/Mesh/src/itkOBJMeshIO.cxx
+C:/server/InsightToolkit-4.10.0/Modules/IO/Mesh/src/itkOBJMeshIOFactory.cxx
+C:/server/InsightToolkit-4.10.0/Modules/IO/Mesh/src/itkOFFMeshIO.cxx
+C:/server/InsightToolkit-4.10.0/Modules/IO/Mesh/src/itkOFFMeshIOFactory.cxx
+C:/server/InsightToolkit-4.10.0/Modules/IO/Mesh/src/itkVTKPolyDataMeshIO.cxx
+C:/server/InsightToolkit-4.10.0/Modules/IO/Mesh/src/itkVTKPolyDataMeshIOFactory.cxx
+C:/server/InsightToolkit-4.10.0/Modules/IO/Mesh/src/CMakeLists.txt

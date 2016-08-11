@@ -1,0 +1,147 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<Project ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Utilities\gdcmopenjpeg-v2\libopenjpeg\tcd.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Utilities\gdcmopenjpeg-v2\libopenjpeg\bio.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Utilities\gdcmopenjpeg-v2\libopenjpeg\cio.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Utilities\gdcmopenjpeg-v2\libopenjpeg\dwt.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Utilities\gdcmopenjpeg-v2\libopenjpeg\event.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Utilities\gdcmopenjpeg-v2\libopenjpeg\image.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Utilities\gdcmopenjpeg-v2\libopenjpeg\j2k.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Utilities\gdcmopenjpeg-v2\libopenjpeg\j2k_lib.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Utilities\gdcmopenjpeg-v2\libopenjpeg\jp2.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Utilities\gdcmopenjpeg-v2\libopenjpeg\jpt.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Utilities\gdcmopenjpeg-v2\libopenjpeg\mct.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Utilities\gdcmopenjpeg-v2\libopenjpeg\mqc.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Utilities\gdcmopenjpeg-v2\libopenjpeg\openjpeg.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Utilities\gdcmopenjpeg-v2\libopenjpeg\pi.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Utilities\gdcmopenjpeg-v2\libopenjpeg\raw.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Utilities\gdcmopenjpeg-v2\libopenjpeg\t1.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Utilities\gdcmopenjpeg-v2\libopenjpeg\tgt.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Utilities\gdcmopenjpeg-v2\libopenjpeg\profile.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Utilities\gdcmopenjpeg-v2\libopenjpeg\invert.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Utilities\gdcmopenjpeg-v2\libopenjpeg\function_list.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Utilities\gdcmopenjpeg-v2\libopenjpeg\t2.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Utilities\gdcmopenjpeg-v2\libopenjpeg\bio.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Utilities\gdcmopenjpeg-v2\libopenjpeg\cio.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Utilities\gdcmopenjpeg-v2\libopenjpeg\dwt.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Utilities\gdcmopenjpeg-v2\libopenjpeg\event.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Utilities\gdcmopenjpeg-v2\libopenjpeg\image.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Utilities\gdcmopenjpeg-v2\libopenjpeg\j2k.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Utilities\gdcmopenjpeg-v2\libopenjpeg\j2k_lib.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Utilities\gdcmopenjpeg-v2\libopenjpeg\jp2.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Utilities\gdcmopenjpeg-v2\libopenjpeg\jpt.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Utilities\gdcmopenjpeg-v2\libopenjpeg\mct.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Utilities\gdcmopenjpeg-v2\libopenjpeg\mqc.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Utilities\gdcmopenjpeg-v2\libopenjpeg\openjpeg.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Utilities\gdcmopenjpeg-v2\libopenjpeg\pi.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Utilities\gdcmopenjpeg-v2\libopenjpeg\int.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Utilities\gdcmopenjpeg-v2\libopenjpeg\raw.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Utilities\gdcmopenjpeg-v2\libopenjpeg\t1.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Utilities\gdcmopenjpeg-v2\libopenjpeg\t2.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Utilities\gdcmopenjpeg-v2\libopenjpeg\tcd.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Utilities\gdcmopenjpeg-v2\libopenjpeg\tgt.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Utilities\gdcmopenjpeg-v2\libopenjpeg\profile.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Utilities\gdcmopenjpeg-v2\libopenjpeg\invert.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Utilities\gdcmopenjpeg-v2\libopenjpeg\function_list.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Utilities\gdcmopenjpeg-v2\libopenjpeg\CMakeLists.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{3D8AD831-5BA8-339E-9CE0-67BCE07365DA}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{6A46AC98-972C-30DB-8733-3AE0BF365110}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

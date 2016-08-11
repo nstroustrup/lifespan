@@ -48,7 +48,7 @@ AC_SEARCH_LIBS(jpeg_destroy_decompress, jpeg, [], [AC_MSG_ERROR(Could not locate
 AC_SEARCH_LIBS([FT_Load_Glyph], [freetype], [], AC_MSG_ERROR([Could not locate package FreeType.  Is it installed?],[1]))
 #AX_PTHREAD([],AC_MSG_ERROR([Could not locate package pthread.  Is it installed?] ))
 #AC_SEARCH_LIBS([pthread_create], [pthread], AC_MSG_ERROR([Could not locate package pthread.  Is it installed?],[1]))
-AC_SEARCH_LIBS(opj_setup_decoder, [openjpeg], [],AC_MSG_ERROR([Could not locate package openjpeg.  Is it installed?],[1]))
+AC_SEARCH_LIBS(opj_create_compress, [openjp2], [],AC_MSG_ERROR([Could not locate package openjpeg.  Is it installed?],[1]))
 AC_SEARCH_LIBS(xvid_encore,xvidcore, [],AC_MSG_ERROR([Could not locate package xvid.  Is it installed?],[1]))
 AC_SEARCH_LIBS([zlibVersion], [z], [],AC_MSG_ERROR([Could not locate package zlib.  Is it installed?],[1]))
 

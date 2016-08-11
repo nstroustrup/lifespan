@@ -44,7 +44,8 @@ src_image_processing = image_processing/ns_worm_detector.cpp \
 		       image_processing/ns_node_topology.cpp \
 		       image_processing/ns_identify_contiguous_bitmap_regions.cpp \
 		       image_processing/ns_spine_drawer.cpp \
-		       image_processing/ns_complex_segment_cluster_solver.cpp 
+		       image_processing/ns_complex_segment_cluster_solver.cpp \
+			image_processing/ns_optical_flow.cpp 
 src_job_scheduling =   job_scheduling/ns_processing_job_scheduler.cpp \
 		       job_scheduling/ns_image_processing_pipeline.cpp \
 		       job_scheduling/ns_processing_job_processor.cpp \
@@ -108,8 +109,8 @@ include_dir_external = -I../external_libraries/libsvm \
 	       -I../external_libraries/libhungarian \
 	       -I../external_libraries/wm4_bspline \
 	       -I../external_libraries/tinyxml \
-	       -I../external_libraries/libtiff-proc
-
+	       -I../external_libraries/libtiff-proc \
+		-I$(prefix)/openjpeg-2.1
 DEF_FONT = $(pkgdatadir)/default_font.ttf
 INI_PATH = $(sysconfdir)/ns_image_server.ini
 

@@ -2,7 +2,7 @@
 #define NS_OJP2K
 #include "ns_image.h"
 #define OPJ_STATIC
-#include "openjpeg.h"
+#include "openjpeg-2.1/openjpeg.h"
 
 struct ns_ojp2k_initialization{
 	static void init();

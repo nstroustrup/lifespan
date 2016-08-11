@@ -35,7 +35,7 @@ public:
 
 class ns_optical_flow_accessor_scaled_movement {
 public:
-	class ns_optical_flow_accessor_scaled_movement(const ns_image_whole<float>  &dx_, const ns_image_whole<float>  &dy_,
+	 ns_optical_flow_accessor_scaled_movement(const ns_image_whole<float>  &dx_, const ns_image_whole<float>  &dy_,
 		const ns_image_whole<ns_8_bit>  &im1_, const ns_image_whole<ns_8_bit>  &im2_) :dx(&dx_), dy(&dy_), im1(&im1_), im2(&im2_) {}
 	const float val(unsigned long x, unsigned long y)const {
 		return (((*im1)[y][x]>((*im2)[y][x]) ? (*im1)[y][x] : (*im2)[y][x]))

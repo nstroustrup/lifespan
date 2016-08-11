@@ -1,7 +1,9 @@
 #ifndef NS_OJP2K
 #define NS_OJP2K
 #include "ns_image.h"
+#ifdef _WIN32
 #define OPJ_STATIC
+#endif
 #include "openjpeg-2.1/openjpeg.h"
 
 struct ns_ojp2k_initialization{

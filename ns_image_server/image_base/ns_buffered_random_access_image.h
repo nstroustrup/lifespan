@@ -101,7 +101,7 @@ public:
 		p.height = height;
 		image_buffer.resize(p);
 		lines_flushed = 0;
-		lines_recieved = 0;
+		lines_received = 0;
 		max_buffer_height = height;
 	}
 private:

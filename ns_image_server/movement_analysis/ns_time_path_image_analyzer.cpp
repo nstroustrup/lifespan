@@ -777,13 +777,9 @@ void ns_time_path_image_movement_analyzer::process_raw_images(const ns_64_bit re
 							#endif
 							groups[i].paths[j].quantify_movement(chunk);
 							groups[i].paths[j].save_movement_images(chunk,sql,true,true);
-						//	return;;
-						//	cerr << "Clearing path aligned images up to " << (long)chunk.stop_i << ")\n";
-							for (long k = 0; k < (long)chunk.stop_i; k++){
+
+							for (long k = 0; k < (long)chunk.stop_i-(long)clear_lag; k++){
 								groups[i].paths[j].elements[k].clear_movement_images();
-							}
-							//const unsigned long ss((chunk.start_i > clear_lag)?(chunk.start_i - clear_lag):0);
-							for (long k = 0; k < ((long)chunk.stop_i-(long)clear_lag); k++){
 								groups[i].paths[j].elements[k].clear_path_aligned_images();
 							}
 						}
@@ -3708,12 +3704,13 @@ void ns_analyzed_image_time_path::generate_movement_images(const ns_analyzed_tim
 
 
 		bool first_frames(chunk.forward() ? (i < movement_start_i) : (i > movement_start_i));
-
 		if (first_frames) {
 			flow->Dim1.from(elements[i].registered_images->image);
 			flow->Dim2.from(elements[i].registered_images->image);
 		}
 		else {
+			if (elements[i - step*dt].registered_images == 0)
+				throw ns_ex("Improperly deallocated registered image encountered on element i=") << i;
 			flow->Dim1.from(elements[i - step*dt].registered_images->image);
 			flow->Dim2.from(elements[i].registered_images->image);
 		}
@@ -4912,13 +4909,13 @@ void ns_time_path_image_movement_analyzer::reanalyze_stored_aligned_images(const
 
 					groups[i].paths[j].quantify_movement(chunk);
 					unsigned long start(chunk.start_i);
-					if (chunk.start_i >= ns_analyzed_image_time_path::movement_time_kernel_width)
-						start -= chunk.start_i;
+					
 					long stop(chunk.stop_i - ns_analyzed_image_time_path::movement_time_kernel_width);
-					if (stop == number_of_valid_elements)
+					if (stop < 0)
+						stop = 0;
+					if (chunk.stop_i == number_of_valid_elements)
 						stop = chunk.stop_i;
-
-					for (long l = start; l < stop; l++)
+					for (long l = 0; l < stop; l++)
 						groups[i].paths[j].elements[l].clear_movement_images();
 				}
 				groups[i].paths[j].end_movement_image_loading();

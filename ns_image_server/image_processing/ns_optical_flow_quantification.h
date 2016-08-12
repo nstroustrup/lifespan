@@ -1,7 +1,8 @@
 #ifndef NS_OPTICAL_FLOW_QUANTIFICATION
 #define NS_OPTICAL_FLOW_QUANTIFICATION
 #include "ns_image.h"
-
+#include <limits.h>
+#include <float.h>
 template<class ns_component>
 class ns_optical_flow_accessor_val {
 public:

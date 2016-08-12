@@ -157,7 +157,7 @@ AM_CPPFLAGS = -Iimage_server -Istatistics -Isystem_base \
 AM_CXXFLAGS = -g $(NS_CXXFLAGS)	
 AM_CFLAGS = -O3 -pthread
 
-AM_LDFLAGS=$(MYSQL_LDFLAGS) $(DEPS_LIBS) -lpthread -lITKFEM-4.11 -lITKCommon-4.11 -lITKCommon-4.11 -lITKIOImageBase-4.11 -litkvnl-4.11 -litkvcl-4.11 -lITKStatistics-4.11 -litksys-4.11 -litknetlib-4.11 -litkv3p_netlib-4.11 -lITKVTK-4.11 -litkvnl_algo-4.11 -lITKVNLInstantiation -lITKIOTIFF-4.11 -litktiff-4.11 -lITKIOVTK-4.11 -lfftw $(NS_LDFLAGS)
+AM_LDFLAGS=$(MYSQL_LDFLAGS) $(DEPS_LIBS) -lpthread -lITKFEM-4.11 -lITKCommon-4.11 -lITKCommon-4.11 -lITKIOImageBase-4.11 -litkvnl-4.11 -litkvcl-4.11 -lITKStatistics-4.11 -litksys-4.11 -litknetlib-4.11 -litkv3p_netlib-4.11 -lITKVTK-4.11 -litkvnl_algo-4.11 -lITKVNLInstantiation-4.11 -lITKIOTIFF-4.11 -litktiff-4.11 -lITKIOVTK-4.11  $(NS_LDFLAGS)
 
 src_common = $(src_base) $(src_data_annotation) $(src_image_acquisition) \
 	   $(src_image_base) $(src_image_processing) $(src_job_scheduling) \

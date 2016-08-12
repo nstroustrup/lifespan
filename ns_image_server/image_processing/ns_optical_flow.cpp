@@ -392,7 +392,7 @@ void ns_optical_flow::calculate(const int num_it, const float gaussian_stdev, co
 	flow_processor->filter->Update();
 }
 
-void median_fill(const ns_image_properties & p,const const ns_flow_processor_storage_t::VectorPixelType * fbuf, const int channel,ns_image_whole<float> & v) {
+void median_fill(const ns_image_properties & p,const ns_flow_processor_storage_t::VectorPixelType * fbuf, const int channel,ns_image_whole<float> & v) {
 	
 	const long bsize(5);
 	const long bsize2((bsize-1)*2+1);

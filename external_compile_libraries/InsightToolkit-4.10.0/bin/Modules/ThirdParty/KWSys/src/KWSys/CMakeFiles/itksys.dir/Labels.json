@@ -1,0 +1,163 @@
+
+{
+	"sources" : 
+	[
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/KWSys/src/KWSys/ProcessWin32.c"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/KWSys/src/KWSys/Base64.c"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/KWSys/src/KWSys/EncodingC.c"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/KWSys/src/KWSys/MD5.c"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/KWSys/src/KWSys/System.c"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/bin/Modules/ThirdParty/KWSys/src/itksys/Configure.h"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/bin/Modules/ThirdParty/KWSys/src/itksys/SharedForward.h"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/bin/Modules/ThirdParty/KWSys/src/itksys/Process.h"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/bin/Modules/ThirdParty/KWSys/src/itksys/Base64.h"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/bin/Modules/ThirdParty/KWSys/src/itksys/Encoding.h"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/bin/Modules/ThirdParty/KWSys/src/itksys/MD5.h"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/bin/Modules/ThirdParty/KWSys/src/itksys/System.h"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/KWSys/src/KWSys/Directory.cxx"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/bin/Modules/ThirdParty/KWSys/src/itksys/Directory.hxx"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/KWSys/src/KWSys/DynamicLoader.cxx"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/bin/Modules/ThirdParty/KWSys/src/itksys/DynamicLoader.hxx"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/KWSys/src/KWSys/EncodingCXX.cxx"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/bin/Modules/ThirdParty/KWSys/src/itksys/Encoding.hxx"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/KWSys/src/KWSys/Glob.cxx"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/bin/Modules/ThirdParty/KWSys/src/itksys/Glob.hxx"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/KWSys/src/KWSys/RegularExpression.cxx"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/bin/Modules/ThirdParty/KWSys/src/itksys/RegularExpression.hxx"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/KWSys/src/KWSys/SystemTools.cxx"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/bin/Modules/ThirdParty/KWSys/src/itksys/SystemTools.hxx"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/KWSys/src/KWSys/CommandLineArguments.cxx"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/bin/Modules/ThirdParty/KWSys/src/itksys/CommandLineArguments.hxx"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/KWSys/src/KWSys/FStream.cxx"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/bin/Modules/ThirdParty/KWSys/src/itksys/FStream.hxx"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/KWSys/src/KWSys/SystemInformation.cxx"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/bin/Modules/ThirdParty/KWSys/src/itksys/SystemInformation.hxx"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/bin/Modules/ThirdParty/KWSys/src/itksys/Configure.hxx"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/bin/Modules/ThirdParty/KWSys/src/itksys/String.hxx"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/bin/Modules/ThirdParty/KWSys/src/itksys/hashtable.hxx"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/bin/Modules/ThirdParty/KWSys/src/itksys/hash_fun.hxx"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/bin/Modules/ThirdParty/KWSys/src/itksys/hash_map.hxx"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/bin/Modules/ThirdParty/KWSys/src/itksys/hash_set.hxx"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/bin/Modules/ThirdParty/KWSys/src/itksys/auto_ptr.hxx"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/KWSys/src/KWSys/CMakeLists.txt"
+		}
+	],
+	"target" : 
+	{
+		"labels" : [ "ITKKWSys" ],
+		"name" : "itksys"
+	}
+}

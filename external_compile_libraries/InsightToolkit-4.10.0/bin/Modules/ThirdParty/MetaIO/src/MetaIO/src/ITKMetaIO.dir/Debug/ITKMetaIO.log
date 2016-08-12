@@ -1,0 +1,31 @@
+﻿  Building Custom Rule C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/MetaIO/src/MetaIO/src/CMakeLists.txt
+  CMake does not need to re-run because C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\MetaIO\src\MetaIO\src\CMakeFiles\generate.stamp is up-to-date.
+  metaUtils.cxx
+  metaArrow.cxx
+  metaBlob.cxx
+  metaCommand.cxx
+  metaContour.cxx
+  metaDTITube.cxx
+  metaEllipse.cxx
+  metaGroup.cxx
+  metaGaussian.cxx
+  metaImage.cxx
+  metaImageUtils.cxx
+  metaLandmark.cxx
+  metaLine.cxx
+  metaMesh.cxx
+  metaObject.cxx
+  metaOutput.cxx
+  metaScene.cxx
+  metaSurface.cxx
+  metaTube.cxx
+  metaVesselTube.cxx
+  Generating Code...
+  Compiling...
+  metaTransform.cxx
+  metaTubeGraph.cxx
+  metaForm.cxx
+  metaArray.cxx
+  metaFEMObject.cxx
+  Generating Code...
+  ITKMetaIO.vcxproj -> C:\server\InsightToolkit-4.10.0\bin\lib\Debug\ITKMetaIO-4.10.lib

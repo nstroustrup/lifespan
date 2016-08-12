@@ -1,0 +1,1965 @@
+Performing Test VCL_HAS_EXPORT failed with the following output:
+Change Dir: C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/src/vxl/bin/CMakeFiles/CMakeTmp
+
+Run Build Command:"C:/Program Files (x86)/MSBuild/14.0/bin/MSBuild.exe" "cmTC_d3848.vcxproj" "/p:Configuration=Debug" "/p:VisualStudioVersion=14.0"
+Microsoft (R) Build Engine version 14.0.25420.1
+Copyright (C) Microsoft Corporation. All rights reserved.
+
+Build started 7/6/2016 6:27:37 PM.
+Project "C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\cmTC_d3848.vcxproj" on node 1 (default targets).
+PrepareForBuild:
+  Creating directory "cmTC_d3848.dir\Debug\".
+  Creating directory "C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\Debug\".
+  Creating directory "cmTC_d3848.dir\Debug\cmTC_d3848.tlog\".
+InitializeBuildStatus:
+  Creating "cmTC_d3848.dir\Debug\cmTC_d3848.tlog\unsuccessfulbuild" because "AlwaysCreate" was specified.
+ClCompile:
+  C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\bin\x86_amd64\CL.exe /c /Zi /W3 /WX- /Od /Ob0 /D WIN32 /D _WINDOWS /D _DEBUG /D VCL_HAS_EXPORT /D "CMAKE_INTDIR=\"Debug\"" /D _MBCS /Gm- /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /GR /Fo"cmTC_d3848.dir\Debug\\" /Fd"cmTC_d3848.dir\Debug\vc140.pdb" /Gd /TP /errorReport:queue "C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\config\cmake\config\vxl_platform_tests.cxx"
+  Microsoft (R) C/C++ Optimizing Compiler Version 19.00.24210 for x64
+  Copyright (C) Microsoft Corporation.  All rights reserved.
+  
+  cl /c /Zi /W3 /WX- /Od /Ob0 /D WIN32 /D _WINDOWS /D _DEBUG /D VCL_HAS_EXPORT /D "CMAKE_INTDIR=\"Debug\"" /D _MBCS /Gm- /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /GR /Fo"cmTC_d3848.dir\Debug\\" /Fd"cmTC_d3848.dir\Debug\vc140.pdb" /Gd /TP /errorReport:queue "C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\config\cmake\config\vxl_platform_tests.cxx"
+  
+  vxl_platform_tests.cxx
+C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\config\cmake\config\vxl_platform_tests.cxx(45): error C3348: exported templates are not part of the current C++ standards [C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\cmTC_d3848.vcxproj]
+Done Building Project "C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\cmTC_d3848.vcxproj" (default targets) -- FAILED.
+
+Build FAILED.
+
+"C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\cmTC_d3848.vcxproj" (default target) (1) ->
+(ClCompile target) -> 
+  C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\config\cmake\config\vxl_platform_tests.cxx(45): error C3348: exported templates are not part of the current C++ standards [C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\cmTC_d3848.vcxproj]
+
+    0 Warning(s)
+    1 Error(s)
+
+Time Elapsed 00:00:02.59
+
+Performing Test VCL_STATIC_CONST_INIT_FLOAT failed with the following output:
+Change Dir: C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/src/vxl/bin/CMakeFiles/CMakeTmp
+
+Run Build Command:"C:/Program Files (x86)/MSBuild/14.0/bin/MSBuild.exe" "cmTC_dd7bb.vcxproj" "/p:Configuration=Debug" "/p:VisualStudioVersion=14.0"
+Microsoft (R) Build Engine version 14.0.25420.1
+Copyright (C) Microsoft Corporation. All rights reserved.
+
+Build started 7/6/2016 6:28:47 PM.
+Project "C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\cmTC_dd7bb.vcxproj" on node 1 (default targets).
+PrepareForBuild:
+  Creating directory "cmTC_dd7bb.dir\Debug\".
+  Creating directory "C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\Debug\".
+  Creating directory "cmTC_dd7bb.dir\Debug\cmTC_dd7bb.tlog\".
+InitializeBuildStatus:
+  Creating "cmTC_dd7bb.dir\Debug\cmTC_dd7bb.tlog\unsuccessfulbuild" because "AlwaysCreate" was specified.
+ClCompile:
+  C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\bin\x86_amd64\CL.exe /c /Zi /W3 /WX- /Od /Ob0 /D WIN32 /D _WINDOWS /D _DEBUG /D VCL_STATIC_CONST_INIT_FLOAT /D "CMAKE_INTDIR=\"Debug\"" /D _MBCS /Gm- /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /GR /Fo"cmTC_dd7bb.dir\Debug\\" /Fd"cmTC_dd7bb.dir\Debug\vc140.pdb" /Gd /TP /errorReport:queue "C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\config\cmake\config\vxl_platform_tests.cxx"
+  Microsoft (R) C/C++ Optimizing Compiler Version 19.00.24210 for x64
+  Copyright (C) Microsoft Corporation.  All rights reserved.
+  
+  cl /c /Zi /W3 /WX- /Od /Ob0 /D WIN32 /D _WINDOWS /D _DEBUG /D VCL_STATIC_CONST_INIT_FLOAT /D "CMAKE_INTDIR=\"Debug\"" /D _MBCS /Gm- /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /GR /Fo"cmTC_dd7bb.dir\Debug\\" /Fd"cmTC_dd7bb.dir\Debug\vc140.pdb" /Gd /TP /errorReport:queue "C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\config\cmake\config\vxl_platform_tests.cxx"
+  
+  vxl_platform_tests.cxx
+C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\config\cmake\config\vxl_platform_tests.cxx(293): fatal error C1189: #error:  "VCL_STATIC_CONST_INIT_FLOAT only supported on gcc compilers (and c++0x)." [C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\cmTC_dd7bb.vcxproj]
+Done Building Project "C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\cmTC_dd7bb.vcxproj" (default targets) -- FAILED.
+
+Build FAILED.
+
+"C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\cmTC_dd7bb.vcxproj" (default target) (1) ->
+(ClCompile target) -> 
+  C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\config\cmake\config\vxl_platform_tests.cxx(293): fatal error C1189: #error:  "VCL_STATIC_CONST_INIT_FLOAT only supported on gcc compilers (and c++0x)." [C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\cmTC_dd7bb.vcxproj]
+
+    0 Warning(s)
+    1 Error(s)
+
+Time Elapsed 00:00:02.24
+
+Performing Test VCL_NULL_TMPL_ARGS failed with the following output:
+Change Dir: C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/src/vxl/bin/CMakeFiles/CMakeTmp
+
+Run Build Command:"C:/Program Files (x86)/MSBuild/14.0/bin/MSBuild.exe" "cmTC_5bfcb.vcxproj" "/p:Configuration=Debug" "/p:VisualStudioVersion=14.0"
+Microsoft (R) Build Engine version 14.0.25420.1
+Copyright (C) Microsoft Corporation. All rights reserved.
+
+Build started 7/6/2016 6:29:08 PM.
+Project "C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\cmTC_5bfcb.vcxproj" on node 1 (default targets).
+PrepareForBuild:
+  Creating directory "cmTC_5bfcb.dir\Debug\".
+  Creating directory "C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\Debug\".
+  Creating directory "cmTC_5bfcb.dir\Debug\cmTC_5bfcb.tlog\".
+InitializeBuildStatus:
+  Creating "cmTC_5bfcb.dir\Debug\cmTC_5bfcb.tlog\unsuccessfulbuild" because "AlwaysCreate" was specified.
+ClCompile:
+  C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\bin\x86_amd64\CL.exe /c /Zi /W3 /WX- /Od /Ob0 /D WIN32 /D _WINDOWS /D _DEBUG /D VCL_NULL_TMPL_ARGS /D "CMAKE_INTDIR=\"Debug\"" /D _MBCS /Gm- /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /GR /Fo"cmTC_5bfcb.dir\Debug\\" /Fd"cmTC_5bfcb.dir\Debug\vc140.pdb" /Gd /TP /errorReport:queue "C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\config\cmake\config\vxl_platform_tests.cxx"
+  Microsoft (R) C/C++ Optimizing Compiler Version 19.00.24210 for x64
+  Copyright (C) Microsoft Corporation.  All rights reserved.
+  
+  cl /c /Zi /W3 /WX- /Od /Ob0 /D WIN32 /D _WINDOWS /D _DEBUG /D VCL_NULL_TMPL_ARGS /D "CMAKE_INTDIR=\"Debug\"" /D _MBCS /Gm- /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /GR /Fo"cmTC_5bfcb.dir\Debug\\" /Fd"cmTC_5bfcb.dir\Debug\vc140.pdb" /Gd /TP /errorReport:queue "C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\config\cmake\config\vxl_platform_tests.cxx"
+  
+  vxl_platform_tests.cxx
+C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\config\cmake\config\vxl_platform_tests.cxx(442): error C2248: 'victor<double>::data': cannot access private member declared in class 'victor<double>' [C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\cmTC_5bfcb.vcxproj]
+  C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\config\cmake\config\vxl_platform_tests.cxx(436): note: see declaration of 'victor<double>::data'
+  C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\config\cmake\config\vxl_platform_tests.cxx(447): note: see declaration of 'victor<double>'
+  C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\config\cmake\config\vxl_platform_tests.cxx(447): note: see reference to function template instantiation 'double dot<double>(const victor<double> &,const victor<double> &)' being compiled
+C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\config\cmake\config\vxl_platform_tests.cxx(443): error C2248: 'victor<double>::data': cannot access private member declared in class 'victor<double>' [C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\cmTC_5bfcb.vcxproj]
+  C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\config\cmake\config\vxl_platform_tests.cxx(436): note: see declaration of 'victor<double>::data'
+  C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\config\cmake\config\vxl_platform_tests.cxx(447): note: see declaration of 'victor<double>'
+C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\config\cmake\config\vxl_platform_tests.cxx(444): error C2248: 'victor<double>::data': cannot access private member declared in class 'victor<double>' [C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\cmTC_5bfcb.vcxproj]
+  C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\config\cmake\config\vxl_platform_tests.cxx(436): note: see declaration of 'victor<double>::data'
+  C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\config\cmake\config\vxl_platform_tests.cxx(447): note: see declaration of 'victor<double>'
+Done Building Project "C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\cmTC_5bfcb.vcxproj" (default targets) -- FAILED.
+
+Build FAILED.
+
+"C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\cmTC_5bfcb.vcxproj" (default target) (1) ->
+(ClCompile target) -> 
+  C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\config\cmake\config\vxl_platform_tests.cxx(442): error C2248: 'victor<double>::data': cannot access private member declared in class 'victor<double>' [C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\cmTC_5bfcb.vcxproj]
+  C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\config\cmake\config\vxl_platform_tests.cxx(443): error C2248: 'victor<double>::data': cannot access private member declared in class 'victor<double>' [C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\cmTC_5bfcb.vcxproj]
+  C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\config\cmake\config\vxl_platform_tests.cxx(444): error C2248: 'victor<double>::data': cannot access private member declared in class 'victor<double>' [C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\cmTC_5bfcb.vcxproj]
+
+    0 Warning(s)
+    3 Error(s)
+
+Time Elapsed 00:00:02.82
+
+Performing Try-Run Test VCL_HAS_TEMPLATE_SYMBOLS failed to compile with the following output:
+Change Dir: C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/src/vxl/bin/CMakeFiles/CMakeTmp
+
+Run Build Command:"C:/Program Files (x86)/MSBuild/14.0/bin/MSBuild.exe" "cmTC_c39d7.vcxproj" "/p:Configuration=Debug" "/p:VisualStudioVersion=14.0"
+Microsoft (R) Build Engine version 14.0.25420.1
+Copyright (C) Microsoft Corporation. All rights reserved.
+
+Build started 7/6/2016 6:29:16 PM.
+Project "C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\cmTC_c39d7.vcxproj" on node 1 (default targets).
+PrepareForBuild:
+  Creating directory "cmTC_c39d7.dir\Debug\".
+  Creating directory "C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\Debug\".
+  Creating directory "cmTC_c39d7.dir\Debug\cmTC_c39d7.tlog\".
+InitializeBuildStatus:
+  Creating "cmTC_c39d7.dir\Debug\cmTC_c39d7.tlog\unsuccessfulbuild" because "AlwaysCreate" was specified.
+ClCompile:
+  C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\bin\x86_amd64\CL.exe /c /Zi /W3 /WX- /Od /Ob0 /D WIN32 /D _WINDOWS /D VCL_HAS_TEMPLATE_SYMBOLS /D _DEBUG /D "CMAKE_INTDIR=\"Debug\"" /D _MBCS /Gm- /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /GR /Fo"cmTC_c39d7.dir\Debug\\" /Fd"cmTC_c39d7.dir\Debug\vc140.pdb" /Gd /TP /errorReport:queue "C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\config\cmake\config\vxl_platform_tests.cxx"
+  Microsoft (R) C/C++ Optimizing Compiler Version 19.00.24210 for x64
+  Copyright (C) Microsoft Corporation.  All rights reserved.
+  
+  cl /c /Zi /W3 /WX- /Od /Ob0 /D WIN32 /D _WINDOWS /D VCL_HAS_TEMPLATE_SYMBOLS /D _DEBUG /D "CMAKE_INTDIR=\"Debug\"" /D _MBCS /Gm- /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /GR /Fo"cmTC_c39d7.dir\Debug\\" /Fd"cmTC_c39d7.dir\Debug\vc140.pdb" /Gd /TP /errorReport:queue "C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\config\cmake\config\vxl_platform_tests.cxx"
+  
+  vxl_platform_tests.cxx
+Link:
+  C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\bin\x86_amd64\link.exe /ERRORREPORT:QUEUE /OUT:"C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\Debug\cmTC_c39d7.exe" /INCREMENTAL /NOLOGO kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /DEBUG /PDB:"C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/src/vxl/bin/CMakeFiles/CMakeTmp/Debug/cmTC_c39d7.pdb" /SUBSYSTEM:CONSOLE /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/src/vxl/bin/CMakeFiles/CMakeTmp/Debug/cmTC_c39d7.lib" /MACHINE:X64  /machine:x64 cmTC_c39d7.dir\Debug\vxl_platform_tests.obj
+vxl_platform_tests.obj : error LNK2019: unresolved external symbol "void __cdecl function<double>(double *,int)" (??$function@N@@YAXPEANH@Z) referenced in function "int __cdecl caller(void)" (?caller@@YAHXZ) [C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\cmTC_c39d7.vcxproj]
+C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\Debug\cmTC_c39d7.exe : fatal error LNK1120: 1 unresolved externals [C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\cmTC_c39d7.vcxproj]
+Done Building Project "C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\cmTC_c39d7.vcxproj" (default targets) -- FAILED.
+
+Build FAILED.
+
+"C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\cmTC_c39d7.vcxproj" (default target) (1) ->
+(Link target) -> 
+  vxl_platform_tests.obj : error LNK2019: unresolved external symbol "void __cdecl function<double>(double *,int)" (??$function@N@@YAXPEANH@Z) referenced in function "int __cdecl caller(void)" (?caller@@YAHXZ) [C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\cmTC_c39d7.vcxproj]
+  C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\Debug\cmTC_c39d7.exe : fatal error LNK1120: 1 unresolved externals [C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\cmTC_c39d7.vcxproj]
+
+    0 Warning(s)
+    2 Error(s)
+
+Time Elapsed 00:00:02.14
+
+Performing Test VCL_HAS_NAMESPACES failed with the following output:
+Change Dir: C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/src/vxl/bin/CMakeFiles/CMakeTmp
+
+Run Build Command:"C:/Program Files (x86)/MSBuild/14.0/bin/MSBuild.exe" "cmTC_b01d7.vcxproj" "/p:Configuration=Debug" "/p:VisualStudioVersion=14.0"
+Microsoft (R) Build Engine version 14.0.25420.1
+Copyright (C) Microsoft Corporation. All rights reserved.
+
+Build started 7/6/2016 6:29:31 PM.
+Project "C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\cmTC_b01d7.vcxproj" on node 1 (default targets).
+PrepareForBuild:
+  Creating directory "cmTC_b01d7.dir\Debug\".
+  Creating directory "C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\Debug\".
+  Creating directory "cmTC_b01d7.dir\Debug\cmTC_b01d7.tlog\".
+InitializeBuildStatus:
+  Creating "cmTC_b01d7.dir\Debug\cmTC_b01d7.tlog\unsuccessfulbuild" because "AlwaysCreate" was specified.
+ClCompile:
+  C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\bin\x86_amd64\CL.exe /c /Zi /W3 /WX- /Od /Ob0 /D WIN32 /D _WINDOWS /D _DEBUG /D VCL_HAS_NAMESPACES /D "CMAKE_INTDIR=\"Debug\"" /D _MBCS /Gm- /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /GR /Fo"cmTC_b01d7.dir\Debug\\" /Fd"cmTC_b01d7.dir\Debug\vc140.pdb" /Gd /TP /errorReport:queue "C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\config\cmake\config\vxl_platform_tests.cxx"
+  Microsoft (R) C/C++ Optimizing Compiler Version 19.00.24210 for x64
+  Copyright (C) Microsoft Corporation.  All rights reserved.
+  
+  vxl_platform_tests.cxx
+  cl /c /Zi /W3 /WX- /Od /Ob0 /D WIN32 /D _WINDOWS /D _DEBUG /D VCL_HAS_NAMESPACES /D "CMAKE_INTDIR=\"Debug\"" /D _MBCS /Gm- /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /GR /Fo"cmTC_b01d7.dir\Debug\\" /Fd"cmTC_b01d7.dir\Debug\vc140.pdb" /Gd /TP /errorReport:queue "C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\config\cmake\config\vxl_platform_tests.cxx"
+  
+Link:
+  C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\bin\x86_amd64\link.exe /ERRORREPORT:QUEUE /OUT:"C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\Debug\cmTC_b01d7.exe" /INCREMENTAL /NOLOGO kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /DEBUG /PDB:"C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/src/vxl/bin/CMakeFiles/CMakeTmp/Debug/cmTC_b01d7.pdb" /SUBSYSTEM:CONSOLE /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/src/vxl/bin/CMakeFiles/CMakeTmp/Debug/cmTC_b01d7.lib" /MACHINE:X64  /machine:x64 cmTC_b01d7.dir\Debug\vxl_platform_tests.obj
+vxl_platform_tests.obj : error LNK2019: unresolved external symbol printf referenced in function "void __cdecl flegg(void)" (?flegg@@YAXXZ) [C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\cmTC_b01d7.vcxproj]
+C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\Debug\cmTC_b01d7.exe : fatal error LNK1120: 1 unresolved externals [C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\cmTC_b01d7.vcxproj]
+Done Building Project "C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\cmTC_b01d7.vcxproj" (default targets) -- FAILED.
+
+Build FAILED.
+
+"C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\cmTC_b01d7.vcxproj" (default target) (1) ->
+(Link target) -> 
+  vxl_platform_tests.obj : error LNK2019: unresolved external symbol printf referenced in function "void __cdecl flegg(void)" (?flegg@@YAXXZ) [C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\cmTC_b01d7.vcxproj]
+  C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\Debug\cmTC_b01d7.exe : fatal error LNK1120: 1 unresolved externals [C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\cmTC_b01d7.vcxproj]
+
+    0 Warning(s)
+    2 Error(s)
+
+Time Elapsed 00:00:01.72
+
+Performing Test VCL_NEEDS_NAMESPACE_STD failed with the following output:
+Change Dir: C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/src/vxl/bin/CMakeFiles/CMakeTmp
+
+Run Build Command:"C:/Program Files (x86)/MSBuild/14.0/bin/MSBuild.exe" "cmTC_21866.vcxproj" "/p:Configuration=Debug" "/p:VisualStudioVersion=14.0"
+Microsoft (R) Build Engine version 14.0.25420.1
+Copyright (C) Microsoft Corporation. All rights reserved.
+
+Build started 7/6/2016 6:29:37 PM.
+Project "C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\cmTC_21866.vcxproj" on node 1 (default targets).
+PrepareForBuild:
+  Creating directory "cmTC_21866.dir\Debug\".
+  Creating directory "C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\Debug\".
+  Creating directory "cmTC_21866.dir\Debug\cmTC_21866.tlog\".
+InitializeBuildStatus:
+  Creating "cmTC_21866.dir\Debug\cmTC_21866.tlog\unsuccessfulbuild" because "AlwaysCreate" was specified.
+ClCompile:
+  C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\bin\x86_amd64\CL.exe /c /Zi /W3 /WX- /Od /Ob0 /D WIN32 /D _WINDOWS /D _DEBUG /D VCL_NEEDS_NAMESPACE_STD /D "CMAKE_INTDIR=\"Debug\"" /D _MBCS /Gm- /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /GR /Fo"cmTC_21866.dir\Debug\\" /Fd"cmTC_21866.dir\Debug\vc140.pdb" /Gd /TP /errorReport:queue "C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\config\cmake\config\vxl_platform_tests.cxx"
+  Microsoft (R) C/C++ Optimizing Compiler Version 19.00.24210 for x64
+  Copyright (C) Microsoft Corporation.  All rights reserved.
+  
+  vxl_platform_tests.cxx
+  cl /c /Zi /W3 /WX- /Od /Ob0 /D WIN32 /D _WINDOWS /D _DEBUG /D VCL_NEEDS_NAMESPACE_STD /D "CMAKE_INTDIR=\"Debug\"" /D _MBCS /Gm- /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /GR /Fo"cmTC_21866.dir\Debug\\" /Fd"cmTC_21866.dir\Debug\vc140.pdb" /Gd /TP /errorReport:queue "C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\config\cmake\config\vxl_platform_tests.cxx"
+  
+C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\config\cmake\config\vxl_platform_tests.cxx(800): error C2065: 'vector': undeclared identifier [C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\cmTC_21866.vcxproj]
+C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\config\cmake\config\vxl_platform_tests.cxx(800): error C2062: type 'double' unexpected [C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\cmTC_21866.vcxproj]
+C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\config\cmake\config\vxl_platform_tests.cxx(801): error C2065: 'flaz': undeclared identifier [C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\cmTC_21866.vcxproj]
+C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\config\cmake\config\vxl_platform_tests.cxx(801): error C2228: left of '.push_back' must have class/struct/union [C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\cmTC_21866.vcxproj]
+  C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\config\cmake\config\vxl_platform_tests.cxx(801): note: type is 'unknown-type'
+C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\config\cmake\config\vxl_platform_tests.cxx(802): error C2065: 'flaz': undeclared identifier [C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\cmTC_21866.vcxproj]
+C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\config\cmake\config\vxl_platform_tests.cxx(802): error C2228: left of '.push_back' must have class/struct/union [C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\cmTC_21866.vcxproj]
+  C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\config\cmake\config\vxl_platform_tests.cxx(802): note: type is 'unknown-type'
+Done Building Project "C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\cmTC_21866.vcxproj" (default targets) -- FAILED.
+
+Build FAILED.
+
+"C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\cmTC_21866.vcxproj" (default target) (1) ->
+(ClCompile target) -> 
+  C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\config\cmake\config\vxl_platform_tests.cxx(800): error C2065: 'vector': undeclared identifier [C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\cmTC_21866.vcxproj]
+  C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\config\cmake\config\vxl_platform_tests.cxx(800): error C2062: type 'double' unexpected [C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\cmTC_21866.vcxproj]
+  C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\config\cmake\config\vxl_platform_tests.cxx(801): error C2065: 'flaz': undeclared identifier [C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\cmTC_21866.vcxproj]
+  C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\config\cmake\config\vxl_platform_tests.cxx(801): error C2228: left of '.push_back' must have class/struct/union [C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\cmTC_21866.vcxproj]
+  C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\config\cmake\config\vxl_platform_tests.cxx(802): error C2065: 'flaz': undeclared identifier [C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\cmTC_21866.vcxproj]
+  C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\config\cmake\config\vxl_platform_tests.cxx(802): error C2228: left of '.push_back' must have class/struct/union [C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\cmTC_21866.vcxproj]
+
+    0 Warning(s)
+    6 Error(s)
+
+Time Elapsed 00:00:01.82
+
+Performing Test VCL_HAS_SLICED_DESTRUCTOR_BUG succeeded with the following output:
+Change Dir: C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/src/vxl/bin/CMakeFiles/CMakeTmp
+
+Run Build Command:"C:/Program Files (x86)/MSBuild/14.0/bin/MSBuild.exe" "cmTC_90cb4.vcxproj" "/p:Configuration=Debug" "/p:VisualStudioVersion=14.0"
+Microsoft (R) Build Engine version 14.0.25420.1
+Copyright (C) Microsoft Corporation. All rights reserved.
+
+Build started 7/6/2016 6:29:39 PM.
+Project "C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\cmTC_90cb4.vcxproj" on node 1 (default targets).
+PrepareForBuild:
+  Creating directory "cmTC_90cb4.dir\Debug\".
+  Creating directory "C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\Debug\".
+  Creating directory "cmTC_90cb4.dir\Debug\cmTC_90cb4.tlog\".
+InitializeBuildStatus:
+  Creating "cmTC_90cb4.dir\Debug\cmTC_90cb4.tlog\unsuccessfulbuild" because "AlwaysCreate" was specified.
+ClCompile:
+  C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\bin\x86_amd64\CL.exe /c /Zi /W3 /WX- /Od /Ob0 /D WIN32 /D _WINDOWS /D VCL_HAS_SLICED_DESTRUCTOR_BUG /D _DEBUG /D "CMAKE_INTDIR=\"Debug\"" /D _MBCS /Gm- /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /GR /Fo"cmTC_90cb4.dir\Debug\\" /Fd"cmTC_90cb4.dir\Debug\vc140.pdb" /Gd /TP /errorReport:queue "C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\config\cmake\config\vxl_platform_tests.cxx"
+  Microsoft (R) C/C++ Optimizing Compiler Version 19.00.24210 for x64
+  Copyright (C) Microsoft Corporation.  All rights reserved.
+  
+  cl /c /Zi /W3 /WX- /Od /Ob0 /D WIN32 /D _WINDOWS /D VCL_HAS_SLICED_DESTRUCTOR_BUG /D _DEBUG /D "CMAKE_INTDIR=\"Debug\"" /D _MBCS /Gm- /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /GR /Fo"cmTC_90cb4.dir\Debug\\" /Fd"cmTC_90cb4.dir\Debug\vc140.pdb" /Gd /TP /errorReport:queue "C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\config\cmake\config\vxl_platform_tests.cxx"
+  
+  vxl_platform_tests.cxx
+Link:
+  C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\bin\x86_amd64\link.exe /ERRORREPORT:QUEUE /OUT:"C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\Debug\cmTC_90cb4.exe" /INCREMENTAL /NOLOGO kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /DEBUG /PDB:"C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/src/vxl/bin/CMakeFiles/CMakeTmp/Debug/cmTC_90cb4.pdb" /SUBSYSTEM:CONSOLE /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/src/vxl/bin/CMakeFiles/CMakeTmp/Debug/cmTC_90cb4.lib" /MACHINE:X64  /machine:x64 cmTC_90cb4.dir\Debug\vxl_platform_tests.obj
+  cmTC_90cb4.vcxproj -> C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\Debug\cmTC_90cb4.exe
+FinalizeBuildStatus:
+  Deleting file "cmTC_90cb4.dir\Debug\cmTC_90cb4.tlog\unsuccessfulbuild".
+  Touching "cmTC_90cb4.dir\Debug\cmTC_90cb4.tlog\cmTC_90cb4.lastbuildstate".
+Done Building Project "C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\cmTC_90cb4.vcxproj" (default targets).
+
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:02.18
+
+Performing Test VCL_HAS_WORKING_STRINGSTREAM succeeded with the following output:
+Change Dir: C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/src/vxl/bin/CMakeFiles/CMakeTmp
+
+Run Build Command:"C:/Program Files (x86)/MSBuild/14.0/bin/MSBuild.exe" "cmTC_7d677.vcxproj" "/p:Configuration=Debug" "/p:VisualStudioVersion=14.0"
+Microsoft (R) Build Engine version 14.0.25420.1
+Copyright (C) Microsoft Corporation. All rights reserved.
+
+Build started 7/6/2016 6:29:42 PM.
+Project "C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\cmTC_7d677.vcxproj" on node 1 (default targets).
+PrepareForBuild:
+  Creating directory "cmTC_7d677.dir\Debug\".
+  Creating directory "C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\Debug\".
+  Creating directory "cmTC_7d677.dir\Debug\cmTC_7d677.tlog\".
+InitializeBuildStatus:
+  Creating "cmTC_7d677.dir\Debug\cmTC_7d677.tlog\unsuccessfulbuild" because "AlwaysCreate" was specified.
+ClCompile:
+  C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\bin\x86_amd64\CL.exe /c /Zi /W3 /WX- /Od /Ob0 /D WIN32 /D _WINDOWS /D VCL_HAS_WORKING_STRINGSTREAM /D _DEBUG /D "CMAKE_INTDIR=\"Debug\"" /D _MBCS /Gm- /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /GR /Fo"cmTC_7d677.dir\Debug\\" /Fd"cmTC_7d677.dir\Debug\vc140.pdb" /Gd /TP /errorReport:queue "C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\config\cmake\config\vxl_platform_tests.cxx"
+  Microsoft (R) C/C++ Optimizing Compiler Version 19.00.24210 for x64
+  Copyright (C) Microsoft Corporation.  All rights reserved.
+  
+  cl /c /Zi /W3 /WX- /Od /Ob0 /D WIN32 /D _WINDOWS /D VCL_HAS_WORKING_STRINGSTREAM /D _DEBUG /D "CMAKE_INTDIR=\"Debug\"" /D _MBCS /Gm- /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /GR /Fo"cmTC_7d677.dir\Debug\\" /Fd"cmTC_7d677.dir\Debug\vc140.pdb" /Gd /TP /errorReport:queue "C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\config\cmake\config\vxl_platform_tests.cxx"
+  vxl_platform_tests.cxx
+  
+Link:
+  C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\bin\x86_amd64\link.exe /ERRORREPORT:QUEUE /OUT:"C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\Debug\cmTC_7d677.exe" /INCREMENTAL /NOLOGO kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /DEBUG /PDB:"C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/src/vxl/bin/CMakeFiles/CMakeTmp/Debug/cmTC_7d677.pdb" /SUBSYSTEM:CONSOLE /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/src/vxl/bin/CMakeFiles/CMakeTmp/Debug/cmTC_7d677.lib" /MACHINE:X64  /machine:x64 cmTC_7d677.dir\Debug\vxl_platform_tests.obj
+  cmTC_7d677.vcxproj -> C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\Debug\cmTC_7d677.exe
+FinalizeBuildStatus:
+  Deleting file "cmTC_7d677.dir\Debug\cmTC_7d677.tlog\unsuccessfulbuild".
+  Touching "cmTC_7d677.dir\Debug\cmTC_7d677.tlog\cmTC_7d677.lastbuildstate".
+Done Building Project "C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\cmTC_7d677.vcxproj" (default targets).
+
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:03.24
+
+Performing Test VXL_UNISTD_USLEEP_IS_VOID failed with the following output:
+Change Dir: C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/src/vxl/bin/CMakeFiles/CMakeTmp
+
+Run Build Command:"C:/Program Files (x86)/MSBuild/14.0/bin/MSBuild.exe" "cmTC_b6ca2.vcxproj" "/p:Configuration=Debug" "/p:VisualStudioVersion=14.0"
+Microsoft (R) Build Engine version 14.0.25420.1
+Copyright (C) Microsoft Corporation. All rights reserved.
+
+Build started 7/6/2016 6:29:46 PM.
+Project "C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\cmTC_b6ca2.vcxproj" on node 1 (default targets).
+PrepareForBuild:
+  Creating directory "cmTC_b6ca2.dir\Debug\".
+  Creating directory "C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\Debug\".
+  Creating directory "cmTC_b6ca2.dir\Debug\cmTC_b6ca2.tlog\".
+InitializeBuildStatus:
+  Creating "cmTC_b6ca2.dir\Debug\cmTC_b6ca2.tlog\unsuccessfulbuild" because "AlwaysCreate" was specified.
+ClCompile:
+  C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\bin\x86_amd64\CL.exe /c /Zi /W3 /WX- /Od /Ob0 /D WIN32 /D _WINDOWS /D _DEBUG /D VXL_UNISTD_USLEEP_IS_VOID /D "CMAKE_INTDIR=\"Debug\"" /D _MBCS /Gm- /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /GR /Fo"cmTC_b6ca2.dir\Debug\\" /Fd"cmTC_b6ca2.dir\Debug\vc140.pdb" /Gd /TP /errorReport:queue "C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\config\cmake\config\vxl_platform_tests.cxx"
+  Microsoft (R) C/C++ Optimizing Compiler Version 19.00.24210 for x64
+  Copyright (C) Microsoft Corporation.  All rights reserved.
+  
+  vxl_platform_tests.cxx
+  cl /c /Zi /W3 /WX- /Od /Ob0 /D WIN32 /D _WINDOWS /D _DEBUG /D VXL_UNISTD_USLEEP_IS_VOID /D "CMAKE_INTDIR=\"Debug\"" /D _MBCS /Gm- /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /GR /Fo"cmTC_b6ca2.dir\Debug\\" /Fd"cmTC_b6ca2.dir\Debug\vc140.pdb" /Gd /TP /errorReport:queue "C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\config\cmake\config\vxl_platform_tests.cxx"
+  
+C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\config\cmake\config\vxl_platform_tests.cxx(813): fatal error C1083: Cannot open include file: 'unistd.h': No such file or directory [C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\cmTC_b6ca2.vcxproj]
+Done Building Project "C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\cmTC_b6ca2.vcxproj" (default targets) -- FAILED.
+
+Build FAILED.
+
+"C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\cmTC_b6ca2.vcxproj" (default target) (1) ->
+(ClCompile target) -> 
+  C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\config\cmake\config\vxl_platform_tests.cxx(813): fatal error C1083: Cannot open include file: 'unistd.h': No such file or directory [C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\cmTC_b6ca2.vcxproj]
+
+    0 Warning(s)
+    1 Error(s)
+
+Time Elapsed 00:00:01.59
+
+Performing Test VCL_HAS_LFS succeeded with the following output:
+Change Dir: C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/src/vxl/bin/CMakeFiles/CMakeTmp
+
+Run Build Command:"C:/Program Files (x86)/MSBuild/14.0/bin/MSBuild.exe" "cmTC_6e2c8.vcxproj" "/p:Configuration=Debug" "/p:VisualStudioVersion=14.0"
+Microsoft (R) Build Engine version 14.0.25420.1
+Copyright (C) Microsoft Corporation. All rights reserved.
+
+Build started 7/6/2016 6:29:53 PM.
+Project "C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\cmTC_6e2c8.vcxproj" on node 1 (default targets).
+PrepareForBuild:
+  Creating directory "cmTC_6e2c8.dir\Debug\".
+  Creating directory "C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\Debug\".
+  Creating directory "cmTC_6e2c8.dir\Debug\cmTC_6e2c8.tlog\".
+InitializeBuildStatus:
+  Creating "cmTC_6e2c8.dir\Debug\cmTC_6e2c8.tlog\unsuccessfulbuild" because "AlwaysCreate" was specified.
+ClCompile:
+  C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\bin\x86_amd64\CL.exe /c /Zi /W3 /WX- /Od /Ob0 /D WIN32 /D _WINDOWS /D VCL_HAS_LFS /D _DEBUG /D "CMAKE_INTDIR=\"Debug\"" /D _MBCS /Gm- /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /GR /Fo"cmTC_6e2c8.dir\Debug\\" /Fd"cmTC_6e2c8.dir\Debug\vc140.pdb" /Gd /TP /errorReport:queue "C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\config\cmake\config\vxl_platform_tests.cxx"
+  Microsoft (R) C/C++ Optimizing Compiler Version 19.00.24210 for x64
+  Copyright (C) Microsoft Corporation.  All rights reserved.
+  
+  vxl_platform_tests.cxx
+  cl /c /Zi /W3 /WX- /Od /Ob0 /D WIN32 /D _WINDOWS /D VCL_HAS_LFS /D _DEBUG /D "CMAKE_INTDIR=\"Debug\"" /D _MBCS /Gm- /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /GR /Fo"cmTC_6e2c8.dir\Debug\\" /Fd"cmTC_6e2c8.dir\Debug\vc140.pdb" /Gd /TP /errorReport:queue "C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\config\cmake\config\vxl_platform_tests.cxx"
+  
+Link:
+  C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\bin\x86_amd64\link.exe /ERRORREPORT:QUEUE /OUT:"C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\Debug\cmTC_6e2c8.exe" /INCREMENTAL /NOLOGO kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /DEBUG /PDB:"C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/src/vxl/bin/CMakeFiles/CMakeTmp/Debug/cmTC_6e2c8.pdb" /SUBSYSTEM:CONSOLE /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/src/vxl/bin/CMakeFiles/CMakeTmp/Debug/cmTC_6e2c8.lib" /MACHINE:X64  /machine:x64 cmTC_6e2c8.dir\Debug\vxl_platform_tests.obj
+  cmTC_6e2c8.vcxproj -> C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\Debug\cmTC_6e2c8.exe
+FinalizeBuildStatus:
+  Deleting file "cmTC_6e2c8.dir\Debug\cmTC_6e2c8.tlog\unsuccessfulbuild".
+  Touching "cmTC_6e2c8.dir\Debug\cmTC_6e2c8.tlog\cmTC_6e2c8.lastbuildstate".
+Done Building Project "C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\cmTC_6e2c8.vcxproj" (default targets).
+
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:02.67
+
+Determining if files pthread.h exist failed with the following output:
+Change Dir: C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/src/vxl/bin/CMakeFiles/CMakeTmp
+
+Run Build Command:"C:/Program Files (x86)/MSBuild/14.0/bin/MSBuild.exe" "cmTC_c8a6b.vcxproj" "/p:Configuration=Debug" "/p:VisualStudioVersion=14.0"
+Microsoft (R) Build Engine version 14.0.25420.1
+Copyright (C) Microsoft Corporation. All rights reserved.
+
+Build started 7/6/2016 6:32:40 PM.
+Project "C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\cmTC_c8a6b.vcxproj" on node 1 (default targets).
+PrepareForBuild:
+  Creating directory "cmTC_c8a6b.dir\Debug\".
+  Creating directory "C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\Debug\".
+  Creating directory "cmTC_c8a6b.dir\Debug\cmTC_c8a6b.tlog\".
+InitializeBuildStatus:
+  Creating "cmTC_c8a6b.dir\Debug\cmTC_c8a6b.tlog\unsuccessfulbuild" because "AlwaysCreate" was specified.
+ClCompile:
+  C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\bin\x86_amd64\CL.exe /c /Zi /W3 /WX- /Od /Ob0 /D WIN32 /D _WINDOWS /D _DEBUG /D "CMAKE_INTDIR=\"Debug\"" /D _MBCS /Gm- /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /Fo"cmTC_c8a6b.dir\Debug\\" /Fd"cmTC_c8a6b.dir\Debug\vc140.pdb" /Gd /TC /errorReport:queue "C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\CheckIncludeFiles.c"
+  Microsoft (R) C/C++ Optimizing Compiler Version 19.00.24210 for x64
+  Copyright (C) Microsoft Corporation.  All rights reserved.
+  
+  cl /c /Zi /W3 /WX- /Od /Ob0 /D WIN32 /D _WINDOWS /D _DEBUG /D "CMAKE_INTDIR=\"Debug\"" /D _MBCS /Gm- /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /Fo"cmTC_c8a6b.dir\Debug\\" /Fd"cmTC_c8a6b.dir\Debug\vc140.pdb" /Gd /TC /errorReport:queue "C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\CheckIncludeFiles.c"
+  
+  CheckIncludeFiles.c
+C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\CheckIncludeFiles.c(2): fatal error C1083: Cannot open include file: 'pthread.h': No such file or directory [C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\cmTC_c8a6b.vcxproj]
+Done Building Project "C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\cmTC_c8a6b.vcxproj" (default targets) -- FAILED.
+
+Build FAILED.
+
+"C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\cmTC_c8a6b.vcxproj" (default target) (1) ->
+(ClCompile target) -> 
+  C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\CheckIncludeFiles.c(2): fatal error C1083: Cannot open include file: 'pthread.h': No such file or directory [C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\cmTC_c8a6b.vcxproj]
+
+    0 Warning(s)
+    1 Error(s)
+
+Time Elapsed 00:00:01.45
+
+Source:
+/* */
+#include <pthread.h>
+
+
+int main(void){return 0;}
+
+Determining if files semaphore.h exist failed with the following output:
+Change Dir: C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/src/vxl/bin/CMakeFiles/CMakeTmp
+
+Run Build Command:"C:/Program Files (x86)/MSBuild/14.0/bin/MSBuild.exe" "cmTC_ffd66.vcxproj" "/p:Configuration=Debug" "/p:VisualStudioVersion=14.0"
+Microsoft (R) Build Engine version 14.0.25420.1
+Copyright (C) Microsoft Corporation. All rights reserved.
+
+Build started 7/6/2016 6:32:42 PM.
+Project "C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\cmTC_ffd66.vcxproj" on node 1 (default targets).
+PrepareForBuild:
+  Creating directory "cmTC_ffd66.dir\Debug\".
+  Creating directory "C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\Debug\".
+  Creating directory "cmTC_ffd66.dir\Debug\cmTC_ffd66.tlog\".
+InitializeBuildStatus:
+  Creating "cmTC_ffd66.dir\Debug\cmTC_ffd66.tlog\unsuccessfulbuild" because "AlwaysCreate" was specified.
+ClCompile:
+  C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\bin\x86_amd64\CL.exe /c /Zi /W3 /WX- /Od /Ob0 /D WIN32 /D _WINDOWS /D _DEBUG /D "CMAKE_INTDIR=\"Debug\"" /D _MBCS /Gm- /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /Fo"cmTC_ffd66.dir\Debug\\" /Fd"cmTC_ffd66.dir\Debug\vc140.pdb" /Gd /TC /errorReport:queue "C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\CheckIncludeFiles.c"
+  Microsoft (R) C/C++ Optimizing Compiler Version 19.00.24210 for x64
+  Copyright (C) Microsoft Corporation.  All rights reserved.
+  
+  cl /c /Zi /W3 /WX- /Od /Ob0 /D WIN32 /D _WINDOWS /D _DEBUG /D "CMAKE_INTDIR=\"Debug\"" /D _MBCS /Gm- /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /Fo"cmTC_ffd66.dir\Debug\\" /Fd"cmTC_ffd66.dir\Debug\vc140.pdb" /Gd /TC /errorReport:queue "C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\CheckIncludeFiles.c"
+  
+  CheckIncludeFiles.c
+C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\CheckIncludeFiles.c(2): fatal error C1083: Cannot open include file: 'semaphore.h': No such file or directory [C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\cmTC_ffd66.vcxproj]
+Done Building Project "C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\cmTC_ffd66.vcxproj" (default targets) -- FAILED.
+
+Build FAILED.
+
+"C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\cmTC_ffd66.vcxproj" (default target) (1) ->
+(ClCompile target) -> 
+  C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\CheckIncludeFiles.c(2): fatal error C1083: Cannot open include file: 'semaphore.h': No such file or directory [C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\cmTC_ffd66.vcxproj]
+
+    0 Warning(s)
+    1 Error(s)
+
+Time Elapsed 00:00:01.48
+
+Source:
+/* */
+#include <semaphore.h>
+
+
+int main(void){return 0;}
+
+Determining if files dlfcn.h exist failed with the following output:
+Change Dir: C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/src/vxl/bin/CMakeFiles/CMakeTmp
+
+Run Build Command:"C:/Program Files (x86)/MSBuild/14.0/bin/MSBuild.exe" "cmTC_561c5.vcxproj" "/p:Configuration=Debug" "/p:VisualStudioVersion=14.0"
+Microsoft (R) Build Engine version 14.0.25420.1
+Copyright (C) Microsoft Corporation. All rights reserved.
+
+Build started 7/6/2016 6:32:44 PM.
+Project "C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\cmTC_561c5.vcxproj" on node 1 (default targets).
+PrepareForBuild:
+  Creating directory "cmTC_561c5.dir\Debug\".
+  Creating directory "C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\Debug\".
+  Creating directory "cmTC_561c5.dir\Debug\cmTC_561c5.tlog\".
+InitializeBuildStatus:
+  Creating "cmTC_561c5.dir\Debug\cmTC_561c5.tlog\unsuccessfulbuild" because "AlwaysCreate" was specified.
+ClCompile:
+  C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\bin\x86_amd64\CL.exe /c /Zi /W3 /WX- /Od /Ob0 /D WIN32 /D _WINDOWS /D _DEBUG /D "CMAKE_INTDIR=\"Debug\"" /D _MBCS /Gm- /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /Fo"cmTC_561c5.dir\Debug\\" /Fd"cmTC_561c5.dir\Debug\vc140.pdb" /Gd /TC /errorReport:queue "C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\CheckIncludeFiles.c"
+  Microsoft (R) C/C++ Optimizing Compiler Version 19.00.24210 for x64
+  Copyright (C) Microsoft Corporation.  All rights reserved.
+  
+  cl /c /Zi /W3 /WX- /Od /Ob0 /D WIN32 /D _WINDOWS /D _DEBUG /D "CMAKE_INTDIR=\"Debug\"" /D _MBCS /Gm- /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /Fo"cmTC_561c5.dir\Debug\\" /Fd"cmTC_561c5.dir\Debug\vc140.pdb" /Gd /TC /errorReport:queue "C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\CheckIncludeFiles.c"
+  
+  CheckIncludeFiles.c
+C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\CheckIncludeFiles.c(2): fatal error C1083: Cannot open include file: 'dlfcn.h': No such file or directory [C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\cmTC_561c5.vcxproj]
+Done Building Project "C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\cmTC_561c5.vcxproj" (default targets) -- FAILED.
+
+Build FAILED.
+
+"C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\cmTC_561c5.vcxproj" (default target) (1) ->
+(ClCompile target) -> 
+  C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\CheckIncludeFiles.c(2): fatal error C1083: Cannot open include file: 'dlfcn.h': No such file or directory [C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\cmTC_561c5.vcxproj]
+
+    0 Warning(s)
+    1 Error(s)
+
+Time Elapsed 00:00:01.72
+
+Source:
+/* */
+#include <dlfcn.h>
+
+
+int main(void){return 0;}
+
+Determining if files strings.h exist failed with the following output:
+Change Dir: C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/src/vxl/bin/CMakeFiles/CMakeTmp
+
+Run Build Command:"C:/Program Files (x86)/MSBuild/14.0/bin/MSBuild.exe" "cmTC_7b390.vcxproj" "/p:Configuration=Debug" "/p:VisualStudioVersion=14.0"
+Microsoft (R) Build Engine version 14.0.25420.1
+Copyright (C) Microsoft Corporation. All rights reserved.
+
+Build started 7/6/2016 6:33:03 PM.
+Project "C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\cmTC_7b390.vcxproj" on node 1 (default targets).
+PrepareForBuild:
+  Creating directory "cmTC_7b390.dir\Debug\".
+  Creating directory "C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\Debug\".
+  Creating directory "cmTC_7b390.dir\Debug\cmTC_7b390.tlog\".
+InitializeBuildStatus:
+  Creating "cmTC_7b390.dir\Debug\cmTC_7b390.tlog\unsuccessfulbuild" because "AlwaysCreate" was specified.
+ClCompile:
+  C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\bin\x86_amd64\CL.exe /c /Zi /W3 /WX- /Od /Ob0 /D WIN32 /D _WINDOWS /D _DEBUG /D "CMAKE_INTDIR=\"Debug\"" /D _MBCS /Gm- /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /Fo"cmTC_7b390.dir\Debug\\" /Fd"cmTC_7b390.dir\Debug\vc140.pdb" /Gd /TC /errorReport:queue "C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\CheckIncludeFiles.c"
+  Microsoft (R) C/C++ Optimizing Compiler Version 19.00.24210 for x64
+  Copyright (C) Microsoft Corporation.  All rights reserved.
+  
+  CheckIncludeFiles.c
+  cl /c /Zi /W3 /WX- /Od /Ob0 /D WIN32 /D _WINDOWS /D _DEBUG /D "CMAKE_INTDIR=\"Debug\"" /D _MBCS /Gm- /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /Fo"cmTC_7b390.dir\Debug\\" /Fd"cmTC_7b390.dir\Debug\vc140.pdb" /Gd /TC /errorReport:queue "C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\CheckIncludeFiles.c"
+  
+C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\CheckIncludeFiles.c(2): fatal error C1083: Cannot open include file: 'strings.h': No such file or directory [C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\cmTC_7b390.vcxproj]
+Done Building Project "C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\cmTC_7b390.vcxproj" (default targets) -- FAILED.
+
+Build FAILED.
+
+"C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\cmTC_7b390.vcxproj" (default target) (1) ->
+(ClCompile target) -> 
+  C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\CheckIncludeFiles.c(2): fatal error C1083: Cannot open include file: 'strings.h': No such file or directory [C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\cmTC_7b390.vcxproj]
+
+    0 Warning(s)
+    1 Error(s)
+
+Time Elapsed 00:00:01.11
+
+Source:
+/* */
+#include <strings.h>
+
+
+int main(void){return 0;}
+
+Determining if files sys/times.h exist failed with the following output:
+Change Dir: C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/src/vxl/bin/CMakeFiles/CMakeTmp
+
+Run Build Command:"C:/Program Files (x86)/MSBuild/14.0/bin/MSBuild.exe" "cmTC_41087.vcxproj" "/p:Configuration=Debug" "/p:VisualStudioVersion=14.0"
+Microsoft (R) Build Engine version 14.0.25420.1
+Copyright (C) Microsoft Corporation. All rights reserved.
+
+Build started 7/6/2016 6:33:11 PM.
+Project "C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\cmTC_41087.vcxproj" on node 1 (default targets).
+PrepareForBuild:
+  Creating directory "cmTC_41087.dir\Debug\".
+  Creating directory "C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\Debug\".
+  Creating directory "cmTC_41087.dir\Debug\cmTC_41087.tlog\".
+InitializeBuildStatus:
+  Creating "cmTC_41087.dir\Debug\cmTC_41087.tlog\unsuccessfulbuild" because "AlwaysCreate" was specified.
+ClCompile:
+  C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\bin\x86_amd64\CL.exe /c /Zi /W3 /WX- /Od /Ob0 /D WIN32 /D _WINDOWS /D _DEBUG /D "CMAKE_INTDIR=\"Debug\"" /D _MBCS /Gm- /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /Fo"cmTC_41087.dir\Debug\\" /Fd"cmTC_41087.dir\Debug\vc140.pdb" /Gd /TC /errorReport:queue "C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\CheckIncludeFiles.c"
+  Microsoft (R) C/C++ Optimizing Compiler Version 19.00.24210 for x64
+  Copyright (C) Microsoft Corporation.  All rights reserved.
+  
+  cl /c /Zi /W3 /WX- /Od /Ob0 /D WIN32 /D _WINDOWS /D _DEBUG /D "CMAKE_INTDIR=\"Debug\"" /D _MBCS /Gm- /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /Fo"cmTC_41087.dir\Debug\\" /Fd"cmTC_41087.dir\Debug\vc140.pdb" /Gd /TC /errorReport:queue "C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\CheckIncludeFiles.c"
+  
+  CheckIncludeFiles.c
+C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\CheckIncludeFiles.c(2): fatal error C1083: Cannot open include file: 'sys/times.h': No such file or directory [C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\cmTC_41087.vcxproj]
+Done Building Project "C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\cmTC_41087.vcxproj" (default targets) -- FAILED.
+
+Build FAILED.
+
+"C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\cmTC_41087.vcxproj" (default target) (1) ->
+(ClCompile target) -> 
+  C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\CheckIncludeFiles.c(2): fatal error C1083: Cannot open include file: 'sys/times.h': No such file or directory [C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\cmTC_41087.vcxproj]
+
+    0 Warning(s)
+    1 Error(s)
+
+Time Elapsed 00:00:02.77
+
+Source:
+/* */
+#include <sys/times.h>
+
+
+int main(void){return 0;}
+
+Determining if files unistd.h exist failed with the following output:
+Change Dir: C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/src/vxl/bin/CMakeFiles/CMakeTmp
+
+Run Build Command:"C:/Program Files (x86)/MSBuild/14.0/bin/MSBuild.exe" "cmTC_13031.vcxproj" "/p:Configuration=Debug" "/p:VisualStudioVersion=14.0"
+Microsoft (R) Build Engine version 14.0.25420.1
+Copyright (C) Microsoft Corporation. All rights reserved.
+
+Build started 7/6/2016 6:33:21 PM.
+Project "C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\cmTC_13031.vcxproj" on node 1 (default targets).
+PrepareForBuild:
+  Creating directory "cmTC_13031.dir\Debug\".
+  Creating directory "C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\Debug\".
+  Creating directory "cmTC_13031.dir\Debug\cmTC_13031.tlog\".
+InitializeBuildStatus:
+  Creating "cmTC_13031.dir\Debug\cmTC_13031.tlog\unsuccessfulbuild" because "AlwaysCreate" was specified.
+ClCompile:
+  C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\bin\x86_amd64\CL.exe /c /Zi /W3 /WX- /Od /Ob0 /D WIN32 /D _WINDOWS /D _DEBUG /D "CMAKE_INTDIR=\"Debug\"" /D _MBCS /Gm- /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /Fo"cmTC_13031.dir\Debug\\" /Fd"cmTC_13031.dir\Debug\vc140.pdb" /Gd /TC /errorReport:queue "C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\CheckIncludeFiles.c"
+  Microsoft (R) C/C++ Optimizing Compiler Version 19.00.24210 for x64
+  Copyright (C) Microsoft Corporation.  All rights reserved.
+  
+  cl /c /Zi /W3 /WX- /Od /Ob0 /D WIN32 /D _WINDOWS /D _DEBUG /D "CMAKE_INTDIR=\"Debug\"" /D _MBCS /Gm- /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /Fo"cmTC_13031.dir\Debug\\" /Fd"cmTC_13031.dir\Debug\vc140.pdb" /Gd /TC /errorReport:queue "C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\CheckIncludeFiles.c"
+  
+  CheckIncludeFiles.c
+C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\CheckIncludeFiles.c(2): fatal error C1083: Cannot open include file: 'unistd.h': No such file or directory [C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\cmTC_13031.vcxproj]
+Done Building Project "C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\cmTC_13031.vcxproj" (default targets) -- FAILED.
+
+Build FAILED.
+
+"C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\cmTC_13031.vcxproj" (default target) (1) ->
+(ClCompile target) -> 
+  C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\CheckIncludeFiles.c(2): fatal error C1083: Cannot open include file: 'unistd.h': No such file or directory [C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\cmTC_13031.vcxproj]
+
+    0 Warning(s)
+    1 Error(s)
+
+Time Elapsed 00:00:03.08
+
+Source:
+/* */
+#include <unistd.h>
+
+
+int main(void){return 0;}
+
+Determining if the include file tr1/memory exists failed with the following output:
+Change Dir: C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/src/vxl/bin/CMakeFiles/CMakeTmp
+
+Run Build Command:"C:/Program Files (x86)/MSBuild/14.0/bin/MSBuild.exe" "cmTC_3a876.vcxproj" "/p:Configuration=Debug" "/p:VisualStudioVersion=14.0"
+Microsoft (R) Build Engine version 14.0.25420.1
+Copyright (C) Microsoft Corporation. All rights reserved.
+
+Build started 7/6/2016 6:33:27 PM.
+Project "C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\cmTC_3a876.vcxproj" on node 1 (default targets).
+PrepareForBuild:
+  Creating directory "cmTC_3a876.dir\Debug\".
+  Creating directory "C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\Debug\".
+  Creating directory "cmTC_3a876.dir\Debug\cmTC_3a876.tlog\".
+InitializeBuildStatus:
+  Creating "cmTC_3a876.dir\Debug\cmTC_3a876.tlog\unsuccessfulbuild" because "AlwaysCreate" was specified.
+ClCompile:
+  C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\bin\x86_amd64\CL.exe /c /Zi /W3 /WX- /Od /Ob0 /D WIN32 /D _WINDOWS /D _DEBUG /D "CMAKE_INTDIR=\"Debug\"" /D _MBCS /Gm- /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /GR /Fo"cmTC_3a876.dir\Debug\\" /Fd"cmTC_3a876.dir\Debug\vc140.pdb" /Gd /TP /errorReport:queue "C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\CheckIncludeFile.cxx"
+  Microsoft (R) C/C++ Optimizing Compiler Version 19.00.24210 for x64
+  Copyright (C) Microsoft Corporation.  All rights reserved.
+  
+  cl /c /Zi /W3 /WX- /Od /Ob0 /D WIN32 /D _WINDOWS /D _DEBUG /D "CMAKE_INTDIR=\"Debug\"" /D _MBCS /Gm- /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /GR /Fo"cmTC_3a876.dir\Debug\\" /Fd"cmTC_3a876.dir\Debug\vc140.pdb" /Gd /TP /errorReport:queue "C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\CheckIncludeFile.cxx"
+  
+  CheckIncludeFile.cxx
+C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\CheckIncludeFile.cxx(1): fatal error C1083: Cannot open include file: 'tr1/memory': No such file or directory [C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\cmTC_3a876.vcxproj]
+Done Building Project "C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\cmTC_3a876.vcxproj" (default targets) -- FAILED.
+
+Build FAILED.
+
+"C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\cmTC_3a876.vcxproj" (default target) (1) ->
+(ClCompile target) -> 
+  C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\CheckIncludeFile.cxx(1): fatal error C1083: Cannot open include file: 'tr1/memory': No such file or directory [C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\cmTC_3a876.vcxproj]
+
+    0 Warning(s)
+    1 Error(s)
+
+Time Elapsed 00:00:02.30
+
+
+Determining if the std::tr1::shared_ptr<void> exist failed with the following output:
+Change Dir: C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/src/vxl/bin/CMakeFiles/CMakeTmp
+
+Run Build Command:"C:/Program Files (x86)/MSBuild/14.0/bin/MSBuild.exe" "cmTC_2bff8.vcxproj" "/p:Configuration=Debug" "/p:VisualStudioVersion=14.0"
+Microsoft (R) Build Engine version 14.0.25420.1
+Copyright (C) Microsoft Corporation. All rights reserved.
+
+Build started 7/6/2016 6:33:39 PM.
+Project "C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\cmTC_2bff8.vcxproj" on node 1 (default targets).
+PrepareForBuild:
+  Creating directory "cmTC_2bff8.dir\Debug\".
+  Creating directory "C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\Debug\".
+  Creating directory "cmTC_2bff8.dir\Debug\cmTC_2bff8.tlog\".
+InitializeBuildStatus:
+  Creating "cmTC_2bff8.dir\Debug\cmTC_2bff8.tlog\unsuccessfulbuild" because "AlwaysCreate" was specified.
+ClCompile:
+  C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\bin\x86_amd64\CL.exe /c /Zi /W3 /WX- /Od /Ob0 /D WIN32 /D _WINDOWS /D _DEBUG /D "CMAKE_INTDIR=\"Debug\"" /D _MBCS /Gm- /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /GR /Fo"cmTC_2bff8.dir\Debug\\" /Fd"cmTC_2bff8.dir\Debug\vc140.pdb" /Gd /TP /errorReport:queue "C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeTmp\CheckTypeExists.cxx"
+  Microsoft (R) C/C++ Optimizing Compiler Version 19.00.24210 for x64
+  Copyright (C) Microsoft Corporation.  All rights reserved.
+  
+  cl /c /Zi /W3 /WX- /Od /Ob0 /D WIN32 /D _WINDOWS /D _DEBUG /D "CMAKE_INTDIR=\"Debug\"" /D _MBCS /Gm- /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /GR /Fo"cmTC_2bff8.dir\Debug\\" /Fd"cmTC_2bff8.dir\Debug\vc140.pdb" /Gd /TP /errorReport:queue "C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeTmp\CheckTypeExists.cxx"
+  
+  CheckTypeExists.cxx
+C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeTmp\CheckTypeExists.cxx(2): fatal error C1083: Cannot open include file: 'tr1/memory': No such file or directory [C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\cmTC_2bff8.vcxproj]
+Done Building Project "C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\cmTC_2bff8.vcxproj" (default targets) -- FAILED.
+
+Build FAILED.
+
+"C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\cmTC_2bff8.vcxproj" (default target) (1) ->
+(ClCompile target) -> 
+  C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeTmp\CheckTypeExists.cxx(2): fatal error C1083: Cannot open include file: 'tr1/memory': No such file or directory [C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\cmTC_2bff8.vcxproj]
+
+    0 Warning(s)
+    1 Error(s)
+
+Time Elapsed 00:00:02.11
+
+File C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/src/vxl/bin/CMakeTmp/CheckTypeExists.c:
+/* */
+#include <tr1/memory>
+
+void cmakeRequireSymbol(std::tr1::shared_ptr<void> dummy){(void)dummy;}
+int main()
+{return 0;
+}
+
+Performing Test VXL_HAS_SSE2_HARDWARE_SUPPORT succeeded with the following output:
+Change Dir: C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/src/vxl/bin/CMakeFiles/CMakeTmp
+
+Run Build Command:"C:/Program Files (x86)/MSBuild/14.0/bin/MSBuild.exe" "cmTC_b132d.vcxproj" "/p:Configuration=Debug" "/p:VisualStudioVersion=14.0"
+Microsoft (R) Build Engine version 14.0.25420.1
+Copyright (C) Microsoft Corporation. All rights reserved.
+
+Build started 7/6/2016 6:33:41 PM.
+Project "C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\cmTC_b132d.vcxproj" on node 1 (default targets).
+PrepareForBuild:
+  Creating directory "cmTC_b132d.dir\Debug\".
+  Creating directory "C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\Debug\".
+  Creating directory "cmTC_b132d.dir\Debug\cmTC_b132d.tlog\".
+InitializeBuildStatus:
+  Creating "cmTC_b132d.dir\Debug\cmTC_b132d.tlog\unsuccessfulbuild" because "AlwaysCreate" was specified.
+ClCompile:
+  C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\bin\x86_amd64\CL.exe /c /Zi /W3 /WX- /Od /Ob0 /D WIN32 /D _WINDOWS /D VXL_HAS_SSE2_HARDWARE_SUPPORT /D _DEBUG /D "CMAKE_INTDIR=\"Debug\"" /D _MBCS /Gm- /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /GR /Fo"cmTC_b132d.dir\Debug\\" /Fd"cmTC_b132d.dir\Debug\vc140.pdb" /Gd /TP /errorReport:queue "C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\config\cmake\config\vxl_platform_tests.cxx"
+  Microsoft (R) C/C++ Optimizing Compiler Version 19.00.24210 for x64
+  Copyright (C) Microsoft Corporation.  All rights reserved.
+  
+  cl /c /Zi /W3 /WX- /Od /Ob0 /D WIN32 /D _WINDOWS /D VXL_HAS_SSE2_HARDWARE_SUPPORT /D _DEBUG /D "CMAKE_INTDIR=\"Debug\"" /D _MBCS /Gm- /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /GR /Fo"cmTC_b132d.dir\Debug\\" /Fd"cmTC_b132d.dir\Debug\vc140.pdb" /Gd /TP /errorReport:queue "C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\config\cmake\config\vxl_platform_tests.cxx"
+  
+  vxl_platform_tests.cxx
+Link:
+  C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\bin\x86_amd64\link.exe /ERRORREPORT:QUEUE /OUT:"C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\Debug\cmTC_b132d.exe" /INCREMENTAL /NOLOGO kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /DEBUG /PDB:"C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/src/vxl/bin/CMakeFiles/CMakeTmp/Debug/cmTC_b132d.pdb" /SUBSYSTEM:CONSOLE /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/src/vxl/bin/CMakeFiles/CMakeTmp/Debug/cmTC_b132d.lib" /MACHINE:X64  /machine:x64 cmTC_b132d.dir\Debug\vxl_platform_tests.obj
+  cmTC_b132d.vcxproj -> C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\Debug\cmTC_b132d.exe
+FinalizeBuildStatus:
+  Deleting file "cmTC_b132d.dir\Debug\cmTC_b132d.tlog\unsuccessfulbuild".
+  Touching "cmTC_b132d.dir\Debug\cmTC_b132d.tlog\cmTC_b132d.lastbuildstate".
+Done Building Project "C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\cmTC_b132d.vcxproj" (default targets).
+
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:04.23
+
+Performing Test VXL_HAS_MINGW_ALIGNED_MALLOC failed with the following output:
+Change Dir: C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/src/vxl/bin/CMakeFiles/CMakeTmp
+
+Run Build Command:"C:/Program Files (x86)/MSBuild/14.0/bin/MSBuild.exe" "cmTC_113d5.vcxproj" "/p:Configuration=Debug" "/p:VisualStudioVersion=14.0"
+Microsoft (R) Build Engine version 14.0.25420.1
+Copyright (C) Microsoft Corporation. All rights reserved.
+
+Build started 7/6/2016 6:33:52 PM.
+Project "C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\cmTC_113d5.vcxproj" on node 1 (default targets).
+PrepareForBuild:
+  Creating directory "cmTC_113d5.dir\Debug\".
+  Creating directory "C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\Debug\".
+  Creating directory "cmTC_113d5.dir\Debug\cmTC_113d5.tlog\".
+InitializeBuildStatus:
+  Creating "cmTC_113d5.dir\Debug\cmTC_113d5.tlog\unsuccessfulbuild" because "AlwaysCreate" was specified.
+ClCompile:
+  C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\bin\x86_amd64\CL.exe /c /Zi /W3 /WX- /Od /Ob0 /D WIN32 /D _WINDOWS /D _DEBUG /D VXL_HAS_MINGW_ALIGNED_MALLOC /D "CMAKE_INTDIR=\"Debug\"" /D _MBCS /Gm- /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /GR /Fo"cmTC_113d5.dir\Debug\\" /Fd"cmTC_113d5.dir\Debug\vc140.pdb" /Gd /TP /errorReport:queue "C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\config\cmake\config\vxl_platform_tests.cxx"
+  Microsoft (R) C/C++ Optimizing Compiler Version 19.00.24210 for x64
+  Copyright (C) Microsoft Corporation.  All rights reserved.
+  
+  cl /c /Zi /W3 /WX- /Od /Ob0 /D WIN32 /D _WINDOWS /D _DEBUG /D VXL_HAS_MINGW_ALIGNED_MALLOC /D "CMAKE_INTDIR=\"Debug\"" /D _MBCS /Gm- /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /GR /Fo"cmTC_113d5.dir\Debug\\" /Fd"cmTC_113d5.dir\Debug\vc140.pdb" /Gd /TP /errorReport:queue "C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\config\cmake\config\vxl_platform_tests.cxx"
+  
+  vxl_platform_tests.cxx
+C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\config\cmake\config\vxl_platform_tests.cxx(1149): error C3861: '__mingw_aligned_malloc': identifier not found [C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\cmTC_113d5.vcxproj]
+C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\config\cmake\config\vxl_platform_tests.cxx(1150): error C3861: '__mingw_aligned_free': identifier not found [C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\cmTC_113d5.vcxproj]
+Done Building Project "C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\cmTC_113d5.vcxproj" (default targets) -- FAILED.
+
+Build FAILED.
+
+"C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\cmTC_113d5.vcxproj" (default target) (1) ->
+(ClCompile target) -> 
+  C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\config\cmake\config\vxl_platform_tests.cxx(1149): error C3861: '__mingw_aligned_malloc': identifier not found [C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\cmTC_113d5.vcxproj]
+  C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\config\cmake\config\vxl_platform_tests.cxx(1150): error C3861: '__mingw_aligned_free': identifier not found [C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\cmTC_113d5.vcxproj]
+
+    0 Warning(s)
+    2 Error(s)
+
+Time Elapsed 00:00:01.62
+
+Performing Test VXL_HAS_POSIX_MEMALIGN failed with the following output:
+Change Dir: C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/src/vxl/bin/CMakeFiles/CMakeTmp
+
+Run Build Command:"C:/Program Files (x86)/MSBuild/14.0/bin/MSBuild.exe" "cmTC_c7081.vcxproj" "/p:Configuration=Debug" "/p:VisualStudioVersion=14.0"
+Microsoft (R) Build Engine version 14.0.25420.1
+Copyright (C) Microsoft Corporation. All rights reserved.
+
+Build started 7/6/2016 6:33:54 PM.
+Project "C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\cmTC_c7081.vcxproj" on node 1 (default targets).
+PrepareForBuild:
+  Creating directory "cmTC_c7081.dir\Debug\".
+  Creating directory "C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\Debug\".
+  Creating directory "cmTC_c7081.dir\Debug\cmTC_c7081.tlog\".
+InitializeBuildStatus:
+  Creating "cmTC_c7081.dir\Debug\cmTC_c7081.tlog\unsuccessfulbuild" because "AlwaysCreate" was specified.
+ClCompile:
+  C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\bin\x86_amd64\CL.exe /c /Zi /W3 /WX- /Od /Ob0 /D WIN32 /D _WINDOWS /D _DEBUG /D VXL_HAS_POSIX_MEMALIGN /D "CMAKE_INTDIR=\"Debug\"" /D _MBCS /Gm- /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /GR /Fo"cmTC_c7081.dir\Debug\\" /Fd"cmTC_c7081.dir\Debug\vc140.pdb" /Gd /TP /errorReport:queue "C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\config\cmake\config\vxl_platform_tests.cxx"
+  Microsoft (R) C/C++ Optimizing Compiler Version 19.00.24210 for x64
+  Copyright (C) Microsoft Corporation.  All rights reserved.
+  
+  vxl_platform_tests.cxx
+  cl /c /Zi /W3 /WX- /Od /Ob0 /D WIN32 /D _WINDOWS /D _DEBUG /D VXL_HAS_POSIX_MEMALIGN /D "CMAKE_INTDIR=\"Debug\"" /D _MBCS /Gm- /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /GR /Fo"cmTC_c7081.dir\Debug\\" /Fd"cmTC_c7081.dir\Debug\vc140.pdb" /Gd /TP /errorReport:queue "C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\config\cmake\config\vxl_platform_tests.cxx"
+  
+C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\config\cmake\config\vxl_platform_tests.cxx(1161): error C3861: 'memalign': identifier not found [C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\cmTC_c7081.vcxproj]
+Done Building Project "C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\cmTC_c7081.vcxproj" (default targets) -- FAILED.
+
+Build FAILED.
+
+"C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\cmTC_c7081.vcxproj" (default target) (1) ->
+(ClCompile target) -> 
+  C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\config\cmake\config\vxl_platform_tests.cxx(1161): error C3861: 'memalign': identifier not found [C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\cmTC_c7081.vcxproj]
+
+    0 Warning(s)
+    1 Error(s)
+
+Time Elapsed 00:00:01.59
+
+Performing Test VCL_COMPLEX_POW_WORKS succeeded with the following output:
+Change Dir: C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/src/vxl/bin/CMakeFiles/CMakeTmp
+
+Run Build Command:"C:/Program Files (x86)/MSBuild/14.0/bin/MSBuild.exe" "cmTC_d873c.vcxproj" "/p:Configuration=Debug" "/p:VisualStudioVersion=14.0"
+Microsoft (R) Build Engine version 14.0.25420.1
+Copyright (C) Microsoft Corporation. All rights reserved.
+
+Build started 7/6/2016 6:33:56 PM.
+Project "C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\cmTC_d873c.vcxproj" on node 1 (default targets).
+PrepareForBuild:
+  Creating directory "cmTC_d873c.dir\Debug\".
+  Creating directory "C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\Debug\".
+  Creating directory "cmTC_d873c.dir\Debug\cmTC_d873c.tlog\".
+InitializeBuildStatus:
+  Creating "cmTC_d873c.dir\Debug\cmTC_d873c.tlog\unsuccessfulbuild" because "AlwaysCreate" was specified.
+ClCompile:
+  C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\bin\x86_amd64\CL.exe /c /Zi /W3 /WX- /Od /Ob0 /D WIN32 /D _WINDOWS /D VCL_COMPLEX_POW_WORKS /D _DEBUG /D "CMAKE_INTDIR=\"Debug\"" /D _MBCS /Gm- /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /GR /Fo"cmTC_d873c.dir\Debug\\" /Fd"cmTC_d873c.dir\Debug\vc140.pdb" /Gd /TP /errorReport:queue "C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\config\cmake\config\vxl_platform_tests.cxx"
+  Microsoft (R) C/C++ Optimizing Compiler Version 19.00.24210 for x64
+  Copyright (C) Microsoft Corporation.  All rights reserved.
+  
+  vxl_platform_tests.cxx
+  cl /c /Zi /W3 /WX- /Od /Ob0 /D WIN32 /D _WINDOWS /D VCL_COMPLEX_POW_WORKS /D _DEBUG /D "CMAKE_INTDIR=\"Debug\"" /D _MBCS /Gm- /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /GR /Fo"cmTC_d873c.dir\Debug\\" /Fd"cmTC_d873c.dir\Debug\vc140.pdb" /Gd /TP /errorReport:queue "C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\config\cmake\config\vxl_platform_tests.cxx"
+  
+Link:
+  C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\bin\x86_amd64\link.exe /ERRORREPORT:QUEUE /OUT:"C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\Debug\cmTC_d873c.exe" /INCREMENTAL /NOLOGO kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /DEBUG /PDB:"C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/src/vxl/bin/CMakeFiles/CMakeTmp/Debug/cmTC_d873c.pdb" /SUBSYSTEM:CONSOLE /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/src/vxl/bin/CMakeFiles/CMakeTmp/Debug/cmTC_d873c.lib" /MACHINE:X64  /machine:x64 cmTC_d873c.dir\Debug\vxl_platform_tests.obj
+  cmTC_d873c.vcxproj -> C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\Debug\cmTC_d873c.exe
+FinalizeBuildStatus:
+  Deleting file "cmTC_d873c.dir\Debug\cmTC_d873c.tlog\unsuccessfulbuild".
+  Touching "cmTC_d873c.dir\Debug\cmTC_d873c.tlog\cmTC_d873c.lastbuildstate".
+Done Building Project "C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\cmTC_d873c.vcxproj" (default targets).
+
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:02.85
+
+Determining if the finite exist failed with the following output:
+Change Dir: C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/src/vxl/bin/CMakeFiles/CMakeTmp
+
+Run Build Command:"C:/Program Files (x86)/MSBuild/14.0/bin/MSBuild.exe" "cmTC_5a030.vcxproj" "/p:Configuration=Debug" "/p:VisualStudioVersion=14.0"
+Microsoft (R) Build Engine version 14.0.25420.1
+Copyright (C) Microsoft Corporation. All rights reserved.
+
+Build started 7/6/2016 6:34:21 PM.
+Project "C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\cmTC_5a030.vcxproj" on node 1 (default targets).
+PrepareForBuild:
+  Creating directory "cmTC_5a030.dir\Debug\".
+  Creating directory "C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\Debug\".
+  Creating directory "cmTC_5a030.dir\Debug\cmTC_5a030.tlog\".
+InitializeBuildStatus:
+  Creating "cmTC_5a030.dir\Debug\cmTC_5a030.tlog\unsuccessfulbuild" because "AlwaysCreate" was specified.
+ClCompile:
+  C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\bin\x86_amd64\CL.exe /c /Zi /W3 /WX- /Od /Ob0 /D WIN32 /D _WINDOWS /D _DEBUG /D "CMAKE_INTDIR=\"Debug\"" /D _MBCS /Gm- /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /GR /Fo"cmTC_5a030.dir\Debug\\" /Fd"cmTC_5a030.dir\Debug\vc140.pdb" /Gd /TP /errorReport:queue "C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\CheckSymbolExists.cxx"
+  Microsoft (R) C/C++ Optimizing Compiler Version 19.00.24210 for x64
+  Copyright (C) Microsoft Corporation.  All rights reserved.
+  
+  cl /c /Zi /W3 /WX- /Od /Ob0 /D WIN32 /D _WINDOWS /D _DEBUG /D "CMAKE_INTDIR=\"Debug\"" /D _MBCS /Gm- /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /GR /Fo"cmTC_5a030.dir\Debug\\" /Fd"cmTC_5a030.dir\Debug\vc140.pdb" /Gd /TP /errorReport:queue "C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\CheckSymbolExists.cxx"
+  
+  CheckSymbolExists.cxx
+C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\CheckSymbolExists.cxx(8): error C2065: 'finite': undeclared identifier [C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\cmTC_5a030.vcxproj]
+Done Building Project "C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\cmTC_5a030.vcxproj" (default targets) -- FAILED.
+
+Build FAILED.
+
+"C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\cmTC_5a030.vcxproj" (default target) (1) ->
+(ClCompile target) -> 
+  C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\CheckSymbolExists.cxx(8): error C2065: 'finite': undeclared identifier [C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\cmTC_5a030.vcxproj]
+
+    0 Warning(s)
+    1 Error(s)
+
+Time Elapsed 00:00:02.32
+
+File C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/src/vxl/bin/CMakeFiles/CMakeTmp/CheckSymbolExists.cxx:
+/* */
+#include <math.h>
+
+int main(int argc, char** argv)
+{
+  (void)argv;
+#ifndef finite
+  return ((int*)(&finite))[argc];
+#else
+  (void)argc;
+  return 0;
+#endif
+}
+
+Determining if the finitef exist failed with the following output:
+Change Dir: C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/src/vxl/bin/CMakeFiles/CMakeTmp
+
+Run Build Command:"C:/Program Files (x86)/MSBuild/14.0/bin/MSBuild.exe" "cmTC_50a4f.vcxproj" "/p:Configuration=Debug" "/p:VisualStudioVersion=14.0"
+Microsoft (R) Build Engine version 14.0.25420.1
+Copyright (C) Microsoft Corporation. All rights reserved.
+
+Build started 7/6/2016 6:34:26 PM.
+Project "C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\cmTC_50a4f.vcxproj" on node 1 (default targets).
+PrepareForBuild:
+  Creating directory "cmTC_50a4f.dir\Debug\".
+  Creating directory "C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\Debug\".
+  Creating directory "cmTC_50a4f.dir\Debug\cmTC_50a4f.tlog\".
+InitializeBuildStatus:
+  Creating "cmTC_50a4f.dir\Debug\cmTC_50a4f.tlog\unsuccessfulbuild" because "AlwaysCreate" was specified.
+ClCompile:
+  C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\bin\x86_amd64\CL.exe /c /Zi /W3 /WX- /Od /Ob0 /D WIN32 /D _WINDOWS /D _DEBUG /D "CMAKE_INTDIR=\"Debug\"" /D _MBCS /Gm- /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /GR /Fo"cmTC_50a4f.dir\Debug\\" /Fd"cmTC_50a4f.dir\Debug\vc140.pdb" /Gd /TP /errorReport:queue "C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\CheckSymbolExists.cxx"
+  Microsoft (R) C/C++ Optimizing Compiler Version 19.00.24210 for x64
+  Copyright (C) Microsoft Corporation.  All rights reserved.
+  
+  cl /c /Zi /W3 /WX- /Od /Ob0 /D WIN32 /D _WINDOWS /D _DEBUG /D "CMAKE_INTDIR=\"Debug\"" /D _MBCS /Gm- /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /GR /Fo"cmTC_50a4f.dir\Debug\\" /Fd"cmTC_50a4f.dir\Debug\vc140.pdb" /Gd /TP /errorReport:queue "C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\CheckSymbolExists.cxx"
+  
+  CheckSymbolExists.cxx
+C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\CheckSymbolExists.cxx(8): error C2065: 'finitef': undeclared identifier [C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\cmTC_50a4f.vcxproj]
+Done Building Project "C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\cmTC_50a4f.vcxproj" (default targets) -- FAILED.
+
+Build FAILED.
+
+"C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\cmTC_50a4f.vcxproj" (default target) (1) ->
+(ClCompile target) -> 
+  C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\CheckSymbolExists.cxx(8): error C2065: 'finitef': undeclared identifier [C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\cmTC_50a4f.vcxproj]
+
+    0 Warning(s)
+    1 Error(s)
+
+Time Elapsed 00:00:02.42
+
+File C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/src/vxl/bin/CMakeFiles/CMakeTmp/CheckSymbolExists.cxx:
+/* */
+#include <math.h>
+
+int main(int argc, char** argv)
+{
+  (void)argv;
+#ifndef finitef
+  return ((int*)(&finitef))[argc];
+#else
+  (void)argc;
+  return 0;
+#endif
+}
+
+Determining if the finitel exist failed with the following output:
+Change Dir: C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/src/vxl/bin/CMakeFiles/CMakeTmp
+
+Run Build Command:"C:/Program Files (x86)/MSBuild/14.0/bin/MSBuild.exe" "cmTC_dac52.vcxproj" "/p:Configuration=Debug" "/p:VisualStudioVersion=14.0"
+Microsoft (R) Build Engine version 14.0.25420.1
+Copyright (C) Microsoft Corporation. All rights reserved.
+
+Build started 7/6/2016 6:34:29 PM.
+Project "C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\cmTC_dac52.vcxproj" on node 1 (default targets).
+PrepareForBuild:
+  Creating directory "cmTC_dac52.dir\Debug\".
+  Creating directory "C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\Debug\".
+  Creating directory "cmTC_dac52.dir\Debug\cmTC_dac52.tlog\".
+InitializeBuildStatus:
+  Creating "cmTC_dac52.dir\Debug\cmTC_dac52.tlog\unsuccessfulbuild" because "AlwaysCreate" was specified.
+ClCompile:
+  C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\bin\x86_amd64\CL.exe /c /Zi /W3 /WX- /Od /Ob0 /D WIN32 /D _WINDOWS /D _DEBUG /D "CMAKE_INTDIR=\"Debug\"" /D _MBCS /Gm- /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /GR /Fo"cmTC_dac52.dir\Debug\\" /Fd"cmTC_dac52.dir\Debug\vc140.pdb" /Gd /TP /errorReport:queue "C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\CheckSymbolExists.cxx"
+  Microsoft (R) C/C++ Optimizing Compiler Version 19.00.24210 for x64
+  Copyright (C) Microsoft Corporation.  All rights reserved.
+  
+  cl /c /Zi /W3 /WX- /Od /Ob0 /D WIN32 /D _WINDOWS /D _DEBUG /D "CMAKE_INTDIR=\"Debug\"" /D _MBCS /Gm- /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /GR /Fo"cmTC_dac52.dir\Debug\\" /Fd"cmTC_dac52.dir\Debug\vc140.pdb" /Gd /TP /errorReport:queue "C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\CheckSymbolExists.cxx"
+  
+  CheckSymbolExists.cxx
+C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\CheckSymbolExists.cxx(8): error C2065: 'finitel': undeclared identifier [C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\cmTC_dac52.vcxproj]
+Done Building Project "C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\cmTC_dac52.vcxproj" (default targets) -- FAILED.
+
+Build FAILED.
+
+"C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\cmTC_dac52.vcxproj" (default target) (1) ->
+(ClCompile target) -> 
+  C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\CheckSymbolExists.cxx(8): error C2065: 'finitel': undeclared identifier [C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\cmTC_dac52.vcxproj]
+
+    0 Warning(s)
+    1 Error(s)
+
+Time Elapsed 00:00:01.88
+
+File C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/src/vxl/bin/CMakeFiles/CMakeTmp/CheckSymbolExists.cxx:
+/* */
+#include <math.h>
+
+int main(int argc, char** argv)
+{
+  (void)argv;
+#ifndef finitel
+  return ((int*)(&finitel))[argc];
+#else
+  (void)argc;
+  return 0;
+#endif
+}
+
+Determining if the finite exist failed with the following output:
+Change Dir: C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/src/vxl/bin/CMakeFiles/CMakeTmp
+
+Run Build Command:"C:/Program Files (x86)/MSBuild/14.0/bin/MSBuild.exe" "cmTC_4e7e2.vcxproj" "/p:Configuration=Debug" "/p:VisualStudioVersion=14.0"
+Microsoft (R) Build Engine version 14.0.25420.1
+Copyright (C) Microsoft Corporation. All rights reserved.
+
+Build started 7/6/2016 6:34:31 PM.
+Project "C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\cmTC_4e7e2.vcxproj" on node 1 (default targets).
+PrepareForBuild:
+  Creating directory "cmTC_4e7e2.dir\Debug\".
+  Creating directory "C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\Debug\".
+  Creating directory "cmTC_4e7e2.dir\Debug\cmTC_4e7e2.tlog\".
+InitializeBuildStatus:
+  Creating "cmTC_4e7e2.dir\Debug\cmTC_4e7e2.tlog\unsuccessfulbuild" because "AlwaysCreate" was specified.
+ClCompile:
+  C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\bin\x86_amd64\CL.exe /c /Zi /W3 /WX- /Od /Ob0 /D WIN32 /D _WINDOWS /D _DEBUG /D "CMAKE_INTDIR=\"Debug\"" /D _MBCS /Gm- /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /GR /Fo"cmTC_4e7e2.dir\Debug\\" /Fd"cmTC_4e7e2.dir\Debug\vc140.pdb" /Gd /TP /errorReport:queue "C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\CheckSymbolExists.cxx"
+  Microsoft (R) C/C++ Optimizing Compiler Version 19.00.24210 for x64
+  Copyright (C) Microsoft Corporation.  All rights reserved.
+  
+  cl /c /Zi /W3 /WX- /Od /Ob0 /D WIN32 /D _WINDOWS /D _DEBUG /D "CMAKE_INTDIR=\"Debug\"" /D _MBCS /Gm- /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /GR /Fo"cmTC_4e7e2.dir\Debug\\" /Fd"cmTC_4e7e2.dir\Debug\vc140.pdb" /Gd /TP /errorReport:queue "C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\CheckSymbolExists.cxx"
+  
+  CheckSymbolExists.cxx
+C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\CheckSymbolExists.cxx(2): fatal error C1083: Cannot open include file: 'ieeefp.h': No such file or directory [C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\cmTC_4e7e2.vcxproj]
+Done Building Project "C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\cmTC_4e7e2.vcxproj" (default targets) -- FAILED.
+
+Build FAILED.
+
+"C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\cmTC_4e7e2.vcxproj" (default target) (1) ->
+(ClCompile target) -> 
+  C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\CheckSymbolExists.cxx(2): fatal error C1083: Cannot open include file: 'ieeefp.h': No such file or directory [C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\cmTC_4e7e2.vcxproj]
+
+    0 Warning(s)
+    1 Error(s)
+
+Time Elapsed 00:00:02.31
+
+File C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/src/vxl/bin/CMakeFiles/CMakeTmp/CheckSymbolExists.cxx:
+/* */
+#include <ieeefp.h>
+
+int main(int argc, char** argv)
+{
+  (void)argv;
+#ifndef finite
+  return ((int*)(&finite))[argc];
+#else
+  (void)argc;
+  return 0;
+#endif
+}
+
+Determining if the lrand48 exist failed with the following output:
+Change Dir: C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/src/vxl/bin/CMakeFiles/CMakeTmp
+
+Run Build Command:"C:/Program Files (x86)/MSBuild/14.0/bin/MSBuild.exe" "cmTC_98454.vcxproj" "/p:Configuration=Debug" "/p:VisualStudioVersion=14.0"
+Microsoft (R) Build Engine version 14.0.25420.1
+Copyright (C) Microsoft Corporation. All rights reserved.
+
+Build started 7/6/2016 6:34:35 PM.
+Project "C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\cmTC_98454.vcxproj" on node 1 (default targets).
+PrepareForBuild:
+  Creating directory "cmTC_98454.dir\Debug\".
+  Creating directory "C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\Debug\".
+  Creating directory "cmTC_98454.dir\Debug\cmTC_98454.tlog\".
+InitializeBuildStatus:
+  Creating "cmTC_98454.dir\Debug\cmTC_98454.tlog\unsuccessfulbuild" because "AlwaysCreate" was specified.
+ClCompile:
+  C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\bin\x86_amd64\CL.exe /c /Zi /W3 /WX- /Od /Ob0 /D WIN32 /D _WINDOWS /D _DEBUG /D "CMAKE_INTDIR=\"Debug\"" /D _MBCS /Gm- /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /GR /Fo"cmTC_98454.dir\Debug\\" /Fd"cmTC_98454.dir\Debug\vc140.pdb" /Gd /TP /errorReport:queue "C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\CheckSymbolExists.cxx"
+  Microsoft (R) C/C++ Optimizing Compiler Version 19.00.24210 for x64
+  Copyright (C) Microsoft Corporation.  All rights reserved.
+  
+  cl /c /Zi /W3 /WX- /Od /Ob0 /D WIN32 /D _WINDOWS /D _DEBUG /D "CMAKE_INTDIR=\"Debug\"" /D _MBCS /Gm- /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /GR /Fo"cmTC_98454.dir\Debug\\" /Fd"cmTC_98454.dir\Debug\vc140.pdb" /Gd /TP /errorReport:queue "C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\CheckSymbolExists.cxx"
+  
+  CheckSymbolExists.cxx
+C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\CheckSymbolExists.cxx(8): error C2065: 'lrand48': undeclared identifier [C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\cmTC_98454.vcxproj]
+Done Building Project "C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\cmTC_98454.vcxproj" (default targets) -- FAILED.
+
+Build FAILED.
+
+"C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\cmTC_98454.vcxproj" (default target) (1) ->
+(ClCompile target) -> 
+  C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\CheckSymbolExists.cxx(8): error C2065: 'lrand48': undeclared identifier [C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\cmTC_98454.vcxproj]
+
+    0 Warning(s)
+    1 Error(s)
+
+Time Elapsed 00:00:03.01
+
+File C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/src/vxl/bin/CMakeFiles/CMakeTmp/CheckSymbolExists.cxx:
+/* */
+#include <stdlib.h>
+
+int main(int argc, char** argv)
+{
+  (void)argv;
+#ifndef lrand48
+  return ((int*)(&lrand48))[argc];
+#else
+  (void)argc;
+  return 0;
+#endif
+}
+
+Determining if the drand48 exist failed with the following output:
+Change Dir: C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/src/vxl/bin/CMakeFiles/CMakeTmp
+
+Run Build Command:"C:/Program Files (x86)/MSBuild/14.0/bin/MSBuild.exe" "cmTC_eb22d.vcxproj" "/p:Configuration=Debug" "/p:VisualStudioVersion=14.0"
+Microsoft (R) Build Engine version 14.0.25420.1
+Copyright (C) Microsoft Corporation. All rights reserved.
+
+Build started 7/6/2016 6:34:38 PM.
+Project "C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\cmTC_eb22d.vcxproj" on node 1 (default targets).
+PrepareForBuild:
+  Creating directory "cmTC_eb22d.dir\Debug\".
+  Creating directory "C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\Debug\".
+  Creating directory "cmTC_eb22d.dir\Debug\cmTC_eb22d.tlog\".
+InitializeBuildStatus:
+  Creating "cmTC_eb22d.dir\Debug\cmTC_eb22d.tlog\unsuccessfulbuild" because "AlwaysCreate" was specified.
+ClCompile:
+  C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\bin\x86_amd64\CL.exe /c /Zi /W3 /WX- /Od /Ob0 /D WIN32 /D _WINDOWS /D _DEBUG /D "CMAKE_INTDIR=\"Debug\"" /D _MBCS /Gm- /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /GR /Fo"cmTC_eb22d.dir\Debug\\" /Fd"cmTC_eb22d.dir\Debug\vc140.pdb" /Gd /TP /errorReport:queue "C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\CheckSymbolExists.cxx"
+  Microsoft (R) C/C++ Optimizing Compiler Version 19.00.24210 for x64
+  Copyright (C) Microsoft Corporation.  All rights reserved.
+  
+  cl /c /Zi /W3 /WX- /Od /Ob0 /D WIN32 /D _WINDOWS /D _DEBUG /D "CMAKE_INTDIR=\"Debug\"" /D _MBCS /Gm- /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /GR /Fo"cmTC_eb22d.dir\Debug\\" /Fd"cmTC_eb22d.dir\Debug\vc140.pdb" /Gd /TP /errorReport:queue "C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\CheckSymbolExists.cxx"
+  
+  CheckSymbolExists.cxx
+C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\CheckSymbolExists.cxx(8): error C2065: 'drand48': undeclared identifier [C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\cmTC_eb22d.vcxproj]
+Done Building Project "C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\cmTC_eb22d.vcxproj" (default targets) -- FAILED.
+
+Build FAILED.
+
+"C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\cmTC_eb22d.vcxproj" (default target) (1) ->
+(ClCompile target) -> 
+  C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\CheckSymbolExists.cxx(8): error C2065: 'drand48': undeclared identifier [C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\cmTC_eb22d.vcxproj]
+
+    0 Warning(s)
+    1 Error(s)
+
+Time Elapsed 00:00:03.03
+
+File C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/src/vxl/bin/CMakeFiles/CMakeTmp/CheckSymbolExists.cxx:
+/* */
+#include <stdlib.h>
+
+int main(int argc, char** argv)
+{
+  (void)argv;
+#ifndef drand48
+  return ((int*)(&drand48))[argc];
+#else
+  (void)argc;
+  return 0;
+#endif
+}
+
+Determining if the srand48 exist failed with the following output:
+Change Dir: C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/src/vxl/bin/CMakeFiles/CMakeTmp
+
+Run Build Command:"C:/Program Files (x86)/MSBuild/14.0/bin/MSBuild.exe" "cmTC_87ade.vcxproj" "/p:Configuration=Debug" "/p:VisualStudioVersion=14.0"
+Microsoft (R) Build Engine version 14.0.25420.1
+Copyright (C) Microsoft Corporation. All rights reserved.
+
+Build started 7/6/2016 6:34:42 PM.
+Project "C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\cmTC_87ade.vcxproj" on node 1 (default targets).
+PrepareForBuild:
+  Creating directory "cmTC_87ade.dir\Debug\".
+  Creating directory "C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\Debug\".
+  Creating directory "cmTC_87ade.dir\Debug\cmTC_87ade.tlog\".
+InitializeBuildStatus:
+  Creating "cmTC_87ade.dir\Debug\cmTC_87ade.tlog\unsuccessfulbuild" because "AlwaysCreate" was specified.
+ClCompile:
+  C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\bin\x86_amd64\CL.exe /c /Zi /W3 /WX- /Od /Ob0 /D WIN32 /D _WINDOWS /D _DEBUG /D "CMAKE_INTDIR=\"Debug\"" /D _MBCS /Gm- /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /GR /Fo"cmTC_87ade.dir\Debug\\" /Fd"cmTC_87ade.dir\Debug\vc140.pdb" /Gd /TP /errorReport:queue "C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\CheckSymbolExists.cxx"
+  Microsoft (R) C/C++ Optimizing Compiler Version 19.00.24210 for x64
+  Copyright (C) Microsoft Corporation.  All rights reserved.
+  
+  cl /c /Zi /W3 /WX- /Od /Ob0 /D WIN32 /D _WINDOWS /D _DEBUG /D "CMAKE_INTDIR=\"Debug\"" /D _MBCS /Gm- /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /GR /Fo"cmTC_87ade.dir\Debug\\" /Fd"cmTC_87ade.dir\Debug\vc140.pdb" /Gd /TP /errorReport:queue "C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\CheckSymbolExists.cxx"
+  
+  CheckSymbolExists.cxx
+C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\CheckSymbolExists.cxx(8): error C2065: 'srand48': undeclared identifier [C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\cmTC_87ade.vcxproj]
+Done Building Project "C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\cmTC_87ade.vcxproj" (default targets) -- FAILED.
+
+Build FAILED.
+
+"C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\cmTC_87ade.vcxproj" (default target) (1) ->
+(ClCompile target) -> 
+  C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\CheckSymbolExists.cxx(8): error C2065: 'srand48': undeclared identifier [C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\cmTC_87ade.vcxproj]
+
+    0 Warning(s)
+    1 Error(s)
+
+Time Elapsed 00:00:02.50
+
+File C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/src/vxl/bin/CMakeFiles/CMakeTmp/CheckSymbolExists.cxx:
+/* */
+#include <stdlib.h>
+
+int main(int argc, char** argv)
+{
+  (void)argv;
+#ifndef srand48
+  return ((int*)(&srand48))[argc];
+#else
+  (void)argc;
+  return 0;
+#endif
+}
+
+Performing Test VCL_CHAR_IS_SIGNED succeeded with the following output:
+Change Dir: C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/src/vxl/bin/CMakeFiles/CMakeTmp
+
+Run Build Command:"C:/Program Files (x86)/MSBuild/14.0/bin/MSBuild.exe" "cmTC_5e447.vcxproj" "/p:Configuration=Debug" "/p:VisualStudioVersion=14.0"
+Microsoft (R) Build Engine version 14.0.25420.1
+Copyright (C) Microsoft Corporation. All rights reserved.
+
+Build started 7/6/2016 6:35:13 PM.
+Project "C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\cmTC_5e447.vcxproj" on node 1 (default targets).
+PrepareForBuild:
+  Creating directory "cmTC_5e447.dir\Debug\".
+  Creating directory "C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\Debug\".
+  Creating directory "cmTC_5e447.dir\Debug\cmTC_5e447.tlog\".
+InitializeBuildStatus:
+  Creating "cmTC_5e447.dir\Debug\cmTC_5e447.tlog\unsuccessfulbuild" because "AlwaysCreate" was specified.
+ClCompile:
+  C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\bin\x86_amd64\CL.exe /c /Zi /W3 /WX- /Od /Ob0 /D WIN32 /D _WINDOWS /D VCL_CHAR_IS_SIGNED /D _DEBUG /D "CMAKE_INTDIR=\"Debug\"" /D _MBCS /Gm- /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /GR /Fo"cmTC_5e447.dir\Debug\\" /Fd"cmTC_5e447.dir\Debug\vc140.pdb" /Gd /TP /errorReport:queue "C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\config\cmake\config\vxl_platform_tests.cxx"
+  Microsoft (R) C/C++ Optimizing Compiler Version 19.00.24210 for x64
+  Copyright (C) Microsoft Corporation.  All rights reserved.
+  
+  cl /c /Zi /W3 /WX- /Od /Ob0 /D WIN32 /D _WINDOWS /D VCL_CHAR_IS_SIGNED /D _DEBUG /D "CMAKE_INTDIR=\"Debug\"" /D _MBCS /Gm- /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /GR /Fo"cmTC_5e447.dir\Debug\\" /Fd"cmTC_5e447.dir\Debug\vc140.pdb" /Gd /TP /errorReport:queue "C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\config\cmake\config\vxl_platform_tests.cxx"
+  
+  vxl_platform_tests.cxx
+Link:
+  C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\bin\x86_amd64\link.exe /ERRORREPORT:QUEUE /OUT:"C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\Debug\cmTC_5e447.exe" /INCREMENTAL /NOLOGO kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /DEBUG /PDB:"C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/src/vxl/bin/CMakeFiles/CMakeTmp/Debug/cmTC_5e447.pdb" /SUBSYSTEM:CONSOLE /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/src/vxl/bin/CMakeFiles/CMakeTmp/Debug/cmTC_5e447.lib" /MACHINE:X64  /machine:x64 cmTC_5e447.dir\Debug\vxl_platform_tests.obj
+  cmTC_5e447.vcxproj -> C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\Debug\cmTC_5e447.exe
+FinalizeBuildStatus:
+  Deleting file "cmTC_5e447.dir\Debug\cmTC_5e447.tlog\unsuccessfulbuild".
+  Touching "cmTC_5e447.dir\Debug\cmTC_5e447.tlog\cmTC_5e447.lastbuildstate".
+Done Building Project "C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\cmTC_5e447.vcxproj" (default targets).
+
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:04.24
+
+Looking for 8-bit int. Failed to compile with the following output:
+(FLAGS=-DVXL_HAS_TYPE_OF_SIZE)
+Change Dir: C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/src/vxl/bin/CMakeFiles/CMakeTmp
+
+Run Build Command:"C:/Program Files (x86)/MSBuild/14.0/bin/MSBuild.exe" "cmTC_25969.vcxproj" "/p:Configuration=Debug" "/p:VisualStudioVersion=14.0"
+Microsoft (R) Build Engine version 14.0.25420.1
+Copyright (C) Microsoft Corporation. All rights reserved.
+
+Build started 7/6/2016 6:35:21 PM.
+Project "C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\cmTC_25969.vcxproj" on node 1 (default targets).
+PrepareForBuild:
+  Creating directory "cmTC_25969.dir\Debug\".
+  Creating directory "C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\Debug\".
+  Creating directory "cmTC_25969.dir\Debug\cmTC_25969.tlog\".
+InitializeBuildStatus:
+  Creating "cmTC_25969.dir\Debug\cmTC_25969.tlog\unsuccessfulbuild" because "AlwaysCreate" was specified.
+ClCompile:
+  C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\bin\x86_amd64\CL.exe /c /I"C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeTmp" /Zi /W3 /WX- /Od /Ob0 /D WIN32 /D _WINDOWS /D VXL_HAS_TYPE_OF_SIZE /D _DEBUG /D "CMAKE_INTDIR=\"Debug\"" /D _MBCS /Gm- /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /GR /Fo"cmTC_25969.dir\Debug\\" /Fd"cmTC_25969.dir\Debug\vc140.pdb" /Gd /TP /errorReport:queue "C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\config\cmake\config\vxl_platform_tests.cxx"
+  Microsoft (R) C/C++ Optimizing Compiler Version 19.00.24210 for x64
+  Copyright (C) Microsoft Corporation.  All rights reserved.
+  
+  cl /c /I"C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeTmp" /Zi /W3 /WX- /Od /Ob0 /D WIN32 /D _WINDOWS /D VXL_HAS_TYPE_OF_SIZE /D _DEBUG /D "CMAKE_INTDIR=\"Debug\"" /D _MBCS /Gm- /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /GR /Fo"cmTC_25969.dir\Debug\\" /Fd"cmTC_25969.dir\Debug\vc140.pdb" /Gd /TP /errorReport:queue "C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\config\cmake\config\vxl_platform_tests.cxx"
+  
+  vxl_platform_tests.cxx
+C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\config\cmake\config\vxl_platform_tests.cxx(1034): error C2369: 'verify_size': redefinition; different subscripts [C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\cmTC_25969.vcxproj]
+  C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\config\cmake\config\vxl_platform_tests.cxx(1033): note: see declaration of 'verify_size'
+Done Building Project "C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\cmTC_25969.vcxproj" (default targets) -- FAILED.
+
+Build FAILED.
+
+"C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\cmTC_25969.vcxproj" (default target) (1) ->
+(ClCompile target) -> 
+  C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\config\cmake\config\vxl_platform_tests.cxx(1034): error C2369: 'verify_size': redefinition; different subscripts [C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\cmTC_25969.vcxproj]
+
+    0 Warning(s)
+    1 Error(s)
+
+Time Elapsed 00:00:01.94
+
+Looking for 16-bit int. Failed to compile with the following output:
+(FLAGS=-DVXL_HAS_TYPE_OF_SIZE)
+Change Dir: C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/src/vxl/bin/CMakeFiles/CMakeTmp
+
+Run Build Command:"C:/Program Files (x86)/MSBuild/14.0/bin/MSBuild.exe" "cmTC_667f3.vcxproj" "/p:Configuration=Debug" "/p:VisualStudioVersion=14.0"
+Microsoft (R) Build Engine version 14.0.25420.1
+Copyright (C) Microsoft Corporation. All rights reserved.
+
+Build started 7/6/2016 6:35:27 PM.
+Project "C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\cmTC_667f3.vcxproj" on node 1 (default targets).
+PrepareForBuild:
+  Creating directory "cmTC_667f3.dir\Debug\".
+  Creating directory "C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\Debug\".
+  Creating directory "cmTC_667f3.dir\Debug\cmTC_667f3.tlog\".
+InitializeBuildStatus:
+  Creating "cmTC_667f3.dir\Debug\cmTC_667f3.tlog\unsuccessfulbuild" because "AlwaysCreate" was specified.
+ClCompile:
+  C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\bin\x86_amd64\CL.exe /c /I"C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeTmp" /Zi /W3 /WX- /Od /Ob0 /D WIN32 /D _WINDOWS /D VXL_HAS_TYPE_OF_SIZE /D _DEBUG /D "CMAKE_INTDIR=\"Debug\"" /D _MBCS /Gm- /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /GR /Fo"cmTC_667f3.dir\Debug\\" /Fd"cmTC_667f3.dir\Debug\vc140.pdb" /Gd /TP /errorReport:queue "C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\config\cmake\config\vxl_platform_tests.cxx"
+  Microsoft (R) C/C++ Optimizing Compiler Version 19.00.24210 for x64
+  Copyright (C) Microsoft Corporation.  All rights reserved.
+  
+  cl /c /I"C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeTmp" /Zi /W3 /WX- /Od /Ob0 /D WIN32 /D _WINDOWS /D VXL_HAS_TYPE_OF_SIZE /D _DEBUG /D "CMAKE_INTDIR=\"Debug\"" /D _MBCS /Gm- /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /GR /Fo"cmTC_667f3.dir\Debug\\" /Fd"cmTC_667f3.dir\Debug\vc140.pdb" /Gd /TP /errorReport:queue "C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\config\cmake\config\vxl_platform_tests.cxx"
+  
+  vxl_platform_tests.cxx
+C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\config\cmake\config\vxl_platform_tests.cxx(1034): error C2369: 'verify_size': redefinition; different subscripts [C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\cmTC_667f3.vcxproj]
+  C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\config\cmake\config\vxl_platform_tests.cxx(1033): note: see declaration of 'verify_size'
+Done Building Project "C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\cmTC_667f3.vcxproj" (default targets) -- FAILED.
+
+Build FAILED.
+
+"C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\cmTC_667f3.vcxproj" (default target) (1) ->
+(ClCompile target) -> 
+  C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\config\cmake\config\vxl_platform_tests.cxx(1034): error C2369: 'verify_size': redefinition; different subscripts [C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\cmTC_667f3.vcxproj]
+
+    0 Warning(s)
+    1 Error(s)
+
+Time Elapsed 00:00:02.32
+
+Looking for 16-bit int. Failed to compile with the following output:
+(FLAGS=-DVXL_HAS_TYPE_OF_SIZE)
+Change Dir: C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/src/vxl/bin/CMakeFiles/CMakeTmp
+
+Run Build Command:"C:/Program Files (x86)/MSBuild/14.0/bin/MSBuild.exe" "cmTC_7582e.vcxproj" "/p:Configuration=Debug" "/p:VisualStudioVersion=14.0"
+Microsoft (R) Build Engine version 14.0.25420.1
+Copyright (C) Microsoft Corporation. All rights reserved.
+
+Build started 7/6/2016 6:35:30 PM.
+Project "C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\cmTC_7582e.vcxproj" on node 1 (default targets).
+PrepareForBuild:
+  Creating directory "cmTC_7582e.dir\Debug\".
+  Creating directory "C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\Debug\".
+  Creating directory "cmTC_7582e.dir\Debug\cmTC_7582e.tlog\".
+InitializeBuildStatus:
+  Creating "cmTC_7582e.dir\Debug\cmTC_7582e.tlog\unsuccessfulbuild" because "AlwaysCreate" was specified.
+ClCompile:
+  C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\bin\x86_amd64\CL.exe /c /I"C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeTmp" /Zi /W3 /WX- /Od /Ob0 /D WIN32 /D _WINDOWS /D VXL_HAS_TYPE_OF_SIZE /D _DEBUG /D "CMAKE_INTDIR=\"Debug\"" /D _MBCS /Gm- /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /GR /Fo"cmTC_7582e.dir\Debug\\" /Fd"cmTC_7582e.dir\Debug\vc140.pdb" /Gd /TP /errorReport:queue "C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\config\cmake\config\vxl_platform_tests.cxx"
+  Microsoft (R) C/C++ Optimizing Compiler Version 19.00.24210 for x64
+  Copyright (C) Microsoft Corporation.  All rights reserved.
+  
+  cl /c /I"C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeTmp" /Zi /W3 /WX- /Od /Ob0 /D WIN32 /D _WINDOWS /D VXL_HAS_TYPE_OF_SIZE /D _DEBUG /D "CMAKE_INTDIR=\"Debug\"" /D _MBCS /Gm- /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /GR /Fo"cmTC_7582e.dir\Debug\\" /Fd"cmTC_7582e.dir\Debug\vc140.pdb" /Gd /TP /errorReport:queue "C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\config\cmake\config\vxl_platform_tests.cxx"
+  
+  vxl_platform_tests.cxx
+C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\config\cmake\config\vxl_platform_tests.cxx(1034): error C2369: 'verify_size': redefinition; different subscripts [C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\cmTC_7582e.vcxproj]
+  C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\config\cmake\config\vxl_platform_tests.cxx(1033): note: see declaration of 'verify_size'
+Done Building Project "C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\cmTC_7582e.vcxproj" (default targets) -- FAILED.
+
+Build FAILED.
+
+"C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\cmTC_7582e.vcxproj" (default target) (1) ->
+(ClCompile target) -> 
+  C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\config\cmake\config\vxl_platform_tests.cxx(1034): error C2369: 'verify_size': redefinition; different subscripts [C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\cmTC_7582e.vcxproj]
+
+    0 Warning(s)
+    1 Error(s)
+
+Time Elapsed 00:00:03.43
+
+Looking for 32-bit int. Failed to compile with the following output:
+(FLAGS=-DVXL_HAS_TYPE_OF_SIZE)
+Change Dir: C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/src/vxl/bin/CMakeFiles/CMakeTmp
+
+Run Build Command:"C:/Program Files (x86)/MSBuild/14.0/bin/MSBuild.exe" "cmTC_071ab.vcxproj" "/p:Configuration=Debug" "/p:VisualStudioVersion=14.0"
+Microsoft (R) Build Engine version 14.0.25420.1
+Copyright (C) Microsoft Corporation. All rights reserved.
+
+Build started 7/6/2016 6:35:40 PM.
+Project "C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\cmTC_071ab.vcxproj" on node 1 (default targets).
+PrepareForBuild:
+  Creating directory "cmTC_071ab.dir\Debug\".
+  Creating directory "C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\Debug\".
+  Creating directory "cmTC_071ab.dir\Debug\cmTC_071ab.tlog\".
+InitializeBuildStatus:
+  Creating "cmTC_071ab.dir\Debug\cmTC_071ab.tlog\unsuccessfulbuild" because "AlwaysCreate" was specified.
+ClCompile:
+  C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\bin\x86_amd64\CL.exe /c /I"C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeTmp" /Zi /W3 /WX- /Od /Ob0 /D WIN32 /D _WINDOWS /D VXL_HAS_TYPE_OF_SIZE /D _DEBUG /D "CMAKE_INTDIR=\"Debug\"" /D _MBCS /Gm- /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /GR /Fo"cmTC_071ab.dir\Debug\\" /Fd"cmTC_071ab.dir\Debug\vc140.pdb" /Gd /TP /errorReport:queue "C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\config\cmake\config\vxl_platform_tests.cxx"
+  Microsoft (R) C/C++ Optimizing Compiler Version 19.00.24210 for x64
+  Copyright (C) Microsoft Corporation.  All rights reserved.
+  
+  cl /c /I"C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeTmp" /Zi /W3 /WX- /Od /Ob0 /D WIN32 /D _WINDOWS /D VXL_HAS_TYPE_OF_SIZE /D _DEBUG /D "CMAKE_INTDIR=\"Debug\"" /D _MBCS /Gm- /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /GR /Fo"cmTC_071ab.dir\Debug\\" /Fd"cmTC_071ab.dir\Debug\vc140.pdb" /Gd /TP /errorReport:queue "C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\config\cmake\config\vxl_platform_tests.cxx"
+  
+  vxl_platform_tests.cxx
+C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\config\cmake\config\vxl_platform_tests.cxx(1034): error C2369: 'verify_size': redefinition; different subscripts [C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\cmTC_071ab.vcxproj]
+  C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\config\cmake\config\vxl_platform_tests.cxx(1033): note: see declaration of 'verify_size'
+Done Building Project "C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\cmTC_071ab.vcxproj" (default targets) -- FAILED.
+
+Build FAILED.
+
+"C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\cmTC_071ab.vcxproj" (default target) (1) ->
+(ClCompile target) -> 
+  C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\config\cmake\config\vxl_platform_tests.cxx(1034): error C2369: 'verify_size': redefinition; different subscripts [C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\cmTC_071ab.vcxproj]
+
+    0 Warning(s)
+    1 Error(s)
+
+Time Elapsed 00:00:02.47
+
+Looking for 64-bit int. Failed to compile with the following output:
+(FLAGS=-DVXL_HAS_TYPE_OF_SIZE)
+Change Dir: C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/src/vxl/bin/CMakeFiles/CMakeTmp
+
+Run Build Command:"C:/Program Files (x86)/MSBuild/14.0/bin/MSBuild.exe" "cmTC_c62c9.vcxproj" "/p:Configuration=Debug" "/p:VisualStudioVersion=14.0"
+Microsoft (R) Build Engine version 14.0.25420.1
+Copyright (C) Microsoft Corporation. All rights reserved.
+
+Build started 7/6/2016 6:35:53 PM.
+Project "C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\cmTC_c62c9.vcxproj" on node 1 (default targets).
+PrepareForBuild:
+  Creating directory "cmTC_c62c9.dir\Debug\".
+  Creating directory "C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\Debug\".
+  Creating directory "cmTC_c62c9.dir\Debug\cmTC_c62c9.tlog\".
+InitializeBuildStatus:
+  Creating "cmTC_c62c9.dir\Debug\cmTC_c62c9.tlog\unsuccessfulbuild" because "AlwaysCreate" was specified.
+ClCompile:
+  C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\bin\x86_amd64\CL.exe /c /I"C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeTmp" /Zi /W3 /WX- /Od /Ob0 /D WIN32 /D _WINDOWS /D VXL_HAS_TYPE_OF_SIZE /D _DEBUG /D "CMAKE_INTDIR=\"Debug\"" /D _MBCS /Gm- /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /GR /Fo"cmTC_c62c9.dir\Debug\\" /Fd"cmTC_c62c9.dir\Debug\vc140.pdb" /Gd /TP /errorReport:queue "C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\config\cmake\config\vxl_platform_tests.cxx"
+  Microsoft (R) C/C++ Optimizing Compiler Version 19.00.24210 for x64
+  Copyright (C) Microsoft Corporation.  All rights reserved.
+  
+  cl /c /I"C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeTmp" /Zi /W3 /WX- /Od /Ob0 /D WIN32 /D _WINDOWS /D VXL_HAS_TYPE_OF_SIZE /D _DEBUG /D "CMAKE_INTDIR=\"Debug\"" /D _MBCS /Gm- /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /GR /Fo"cmTC_c62c9.dir\Debug\\" /Fd"cmTC_c62c9.dir\Debug\vc140.pdb" /Gd /TP /errorReport:queue "C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\config\cmake\config\vxl_platform_tests.cxx"
+  
+  vxl_platform_tests.cxx
+C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\config\cmake\config\vxl_platform_tests.cxx(1034): error C2369: 'verify_size': redefinition; different subscripts [C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\cmTC_c62c9.vcxproj]
+  C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\config\cmake\config\vxl_platform_tests.cxx(1033): note: see declaration of 'verify_size'
+Done Building Project "C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\cmTC_c62c9.vcxproj" (default targets) -- FAILED.
+
+Build FAILED.
+
+"C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\cmTC_c62c9.vcxproj" (default target) (1) ->
+(ClCompile target) -> 
+  C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\config\cmake\config\vxl_platform_tests.cxx(1034): error C2369: 'verify_size': redefinition; different subscripts [C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\cmTC_c62c9.vcxproj]
+
+    0 Warning(s)
+    1 Error(s)
+
+Time Elapsed 00:00:01.37
+
+Looking for 32-bit float. Failed to compile with the following output:
+(FLAGS=-DVXL_HAS_TYPE_OF_SIZE)
+Change Dir: C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/src/vxl/bin/CMakeFiles/CMakeTmp
+
+Run Build Command:"C:/Program Files (x86)/MSBuild/14.0/bin/MSBuild.exe" "cmTC_0f0de.vcxproj" "/p:Configuration=Debug" "/p:VisualStudioVersion=14.0"
+Microsoft (R) Build Engine version 14.0.25420.1
+Copyright (C) Microsoft Corporation. All rights reserved.
+
+Build started 7/6/2016 6:35:55 PM.
+Project "C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\cmTC_0f0de.vcxproj" on node 1 (default targets).
+PrepareForBuild:
+  Creating directory "cmTC_0f0de.dir\Debug\".
+  Creating directory "C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\Debug\".
+  Creating directory "cmTC_0f0de.dir\Debug\cmTC_0f0de.tlog\".
+InitializeBuildStatus:
+  Creating "cmTC_0f0de.dir\Debug\cmTC_0f0de.tlog\unsuccessfulbuild" because "AlwaysCreate" was specified.
+ClCompile:
+  C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\bin\x86_amd64\CL.exe /c /I"C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeTmp" /Zi /W3 /WX- /Od /Ob0 /D WIN32 /D _WINDOWS /D VXL_HAS_TYPE_OF_SIZE /D _DEBUG /D "CMAKE_INTDIR=\"Debug\"" /D _MBCS /Gm- /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /GR /Fo"cmTC_0f0de.dir\Debug\\" /Fd"cmTC_0f0de.dir\Debug\vc140.pdb" /Gd /TP /errorReport:queue "C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\config\cmake\config\vxl_platform_tests.cxx"
+  Microsoft (R) C/C++ Optimizing Compiler Version 19.00.24210 for x64
+  Copyright (C) Microsoft Corporation.  All rights reserved.
+  
+  vxl_platform_tests.cxx
+  cl /c /I"C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeTmp" /Zi /W3 /WX- /Od /Ob0 /D WIN32 /D _WINDOWS /D VXL_HAS_TYPE_OF_SIZE /D _DEBUG /D "CMAKE_INTDIR=\"Debug\"" /D _MBCS /Gm- /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /GR /Fo"cmTC_0f0de.dir\Debug\\" /Fd"cmTC_0f0de.dir\Debug\vc140.pdb" /Gd /TP /errorReport:queue "C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\config\cmake\config\vxl_platform_tests.cxx"
+  
+C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\config\cmake\config\vxl_platform_tests.cxx(1034): error C2369: 'verify_size': redefinition; different subscripts [C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\cmTC_0f0de.vcxproj]
+  C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\config\cmake\config\vxl_platform_tests.cxx(1033): note: see declaration of 'verify_size'
+Done Building Project "C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\cmTC_0f0de.vcxproj" (default targets) -- FAILED.
+
+Build FAILED.
+
+"C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\cmTC_0f0de.vcxproj" (default target) (1) ->
+(ClCompile target) -> 
+  C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\config\cmake\config\vxl_platform_tests.cxx(1034): error C2369: 'verify_size': redefinition; different subscripts [C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\cmTC_0f0de.vcxproj]
+
+    0 Warning(s)
+    1 Error(s)
+
+Time Elapsed 00:00:01.20
+
+Looking for 32-bit float. Failed to compile with the following output:
+(FLAGS=-DVXL_HAS_TYPE_OF_SIZE)
+Change Dir: C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/src/vxl/bin/CMakeFiles/CMakeTmp
+
+Run Build Command:"C:/Program Files (x86)/MSBuild/14.0/bin/MSBuild.exe" "cmTC_d7181.vcxproj" "/p:Configuration=Debug" "/p:VisualStudioVersion=14.0"
+Microsoft (R) Build Engine version 14.0.25420.1
+Copyright (C) Microsoft Corporation. All rights reserved.
+
+Build started 7/6/2016 6:35:57 PM.
+Project "C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\cmTC_d7181.vcxproj" on node 1 (default targets).
+PrepareForBuild:
+  Creating directory "cmTC_d7181.dir\Debug\".
+  Creating directory "C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\Debug\".
+  Creating directory "cmTC_d7181.dir\Debug\cmTC_d7181.tlog\".
+InitializeBuildStatus:
+  Creating "cmTC_d7181.dir\Debug\cmTC_d7181.tlog\unsuccessfulbuild" because "AlwaysCreate" was specified.
+ClCompile:
+  C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\bin\x86_amd64\CL.exe /c /I"C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeTmp" /Zi /W3 /WX- /Od /Ob0 /D WIN32 /D _WINDOWS /D VXL_HAS_TYPE_OF_SIZE /D _DEBUG /D "CMAKE_INTDIR=\"Debug\"" /D _MBCS /Gm- /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /GR /Fo"cmTC_d7181.dir\Debug\\" /Fd"cmTC_d7181.dir\Debug\vc140.pdb" /Gd /TP /errorReport:queue "C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\config\cmake\config\vxl_platform_tests.cxx"
+  Microsoft (R) C/C++ Optimizing Compiler Version 19.00.24210 for x64
+  Copyright (C) Microsoft Corporation.  All rights reserved.
+  
+  vxl_platform_tests.cxx
+  cl /c /I"C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeTmp" /Zi /W3 /WX- /Od /Ob0 /D WIN32 /D _WINDOWS /D VXL_HAS_TYPE_OF_SIZE /D _DEBUG /D "CMAKE_INTDIR=\"Debug\"" /D _MBCS /Gm- /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /GR /Fo"cmTC_d7181.dir\Debug\\" /Fd"cmTC_d7181.dir\Debug\vc140.pdb" /Gd /TP /errorReport:queue "C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\config\cmake\config\vxl_platform_tests.cxx"
+  
+C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\config\cmake\config\vxl_platform_tests.cxx(1034): error C2369: 'verify_size': redefinition; different subscripts [C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\cmTC_d7181.vcxproj]
+  C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\config\cmake\config\vxl_platform_tests.cxx(1033): note: see declaration of 'verify_size'
+Done Building Project "C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\cmTC_d7181.vcxproj" (default targets) -- FAILED.
+
+Build FAILED.
+
+"C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\cmTC_d7181.vcxproj" (default target) (1) ->
+(ClCompile target) -> 
+  C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\config\cmake\config\vxl_platform_tests.cxx(1034): error C2369: 'verify_size': redefinition; different subscripts [C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\cmTC_d7181.vcxproj]
+
+    0 Warning(s)
+    1 Error(s)
+
+Time Elapsed 00:00:01.25
+
+Looking for 64-bit float. Failed to compile with the following output:
+(FLAGS=-DVXL_HAS_TYPE_OF_SIZE)
+Change Dir: C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/src/vxl/bin/CMakeFiles/CMakeTmp
+
+Run Build Command:"C:/Program Files (x86)/MSBuild/14.0/bin/MSBuild.exe" "cmTC_fed03.vcxproj" "/p:Configuration=Debug" "/p:VisualStudioVersion=14.0"
+Microsoft (R) Build Engine version 14.0.25420.1
+Copyright (C) Microsoft Corporation. All rights reserved.
+
+Build started 7/6/2016 6:36:00 PM.
+Project "C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\cmTC_fed03.vcxproj" on node 1 (default targets).
+PrepareForBuild:
+  Creating directory "cmTC_fed03.dir\Debug\".
+  Creating directory "C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\Debug\".
+  Creating directory "cmTC_fed03.dir\Debug\cmTC_fed03.tlog\".
+InitializeBuildStatus:
+  Creating "cmTC_fed03.dir\Debug\cmTC_fed03.tlog\unsuccessfulbuild" because "AlwaysCreate" was specified.
+ClCompile:
+  C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\bin\x86_amd64\CL.exe /c /I"C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeTmp" /Zi /W3 /WX- /Od /Ob0 /D WIN32 /D _WINDOWS /D VXL_HAS_TYPE_OF_SIZE /D _DEBUG /D "CMAKE_INTDIR=\"Debug\"" /D _MBCS /Gm- /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /GR /Fo"cmTC_fed03.dir\Debug\\" /Fd"cmTC_fed03.dir\Debug\vc140.pdb" /Gd /TP /errorReport:queue "C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\config\cmake\config\vxl_platform_tests.cxx"
+  Microsoft (R) C/C++ Optimizing Compiler Version 19.00.24210 for x64
+  Copyright (C) Microsoft Corporation.  All rights reserved.
+  
+  vxl_platform_tests.cxx
+  cl /c /I"C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeTmp" /Zi /W3 /WX- /Od /Ob0 /D WIN32 /D _WINDOWS /D VXL_HAS_TYPE_OF_SIZE /D _DEBUG /D "CMAKE_INTDIR=\"Debug\"" /D _MBCS /Gm- /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /GR /Fo"cmTC_fed03.dir\Debug\\" /Fd"cmTC_fed03.dir\Debug\vc140.pdb" /Gd /TP /errorReport:queue "C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\config\cmake\config\vxl_platform_tests.cxx"
+  
+C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\config\cmake\config\vxl_platform_tests.cxx(1034): error C2369: 'verify_size': redefinition; different subscripts [C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\cmTC_fed03.vcxproj]
+  C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\config\cmake\config\vxl_platform_tests.cxx(1033): note: see declaration of 'verify_size'
+Done Building Project "C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\cmTC_fed03.vcxproj" (default targets) -- FAILED.
+
+Build FAILED.
+
+"C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\cmTC_fed03.vcxproj" (default target) (1) ->
+(ClCompile target) -> 
+  C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\config\cmake\config\vxl_platform_tests.cxx(1034): error C2369: 'verify_size': redefinition; different subscripts [C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\cmTC_fed03.vcxproj]
+
+    0 Warning(s)
+    1 Error(s)
+
+Time Elapsed 00:00:01.23
+
+Looking for 96-bit float. Failed to compile with the following output:
+(FLAGS=-DVXL_HAS_TYPE_OF_SIZE)
+Change Dir: C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/src/vxl/bin/CMakeFiles/CMakeTmp
+
+Run Build Command:"C:/Program Files (x86)/MSBuild/14.0/bin/MSBuild.exe" "cmTC_6a4c7.vcxproj" "/p:Configuration=Debug" "/p:VisualStudioVersion=14.0"
+Microsoft (R) Build Engine version 14.0.25420.1
+Copyright (C) Microsoft Corporation. All rights reserved.
+
+Build started 7/6/2016 6:36:06 PM.
+Project "C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\cmTC_6a4c7.vcxproj" on node 1 (default targets).
+PrepareForBuild:
+  Creating directory "cmTC_6a4c7.dir\Debug\".
+  Creating directory "C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\Debug\".
+  Creating directory "cmTC_6a4c7.dir\Debug\cmTC_6a4c7.tlog\".
+InitializeBuildStatus:
+  Creating "cmTC_6a4c7.dir\Debug\cmTC_6a4c7.tlog\unsuccessfulbuild" because "AlwaysCreate" was specified.
+ClCompile:
+  C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\bin\x86_amd64\CL.exe /c /I"C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeTmp" /Zi /W3 /WX- /Od /Ob0 /D WIN32 /D _WINDOWS /D VXL_HAS_TYPE_OF_SIZE /D _DEBUG /D "CMAKE_INTDIR=\"Debug\"" /D _MBCS /Gm- /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /GR /Fo"cmTC_6a4c7.dir\Debug\\" /Fd"cmTC_6a4c7.dir\Debug\vc140.pdb" /Gd /TP /errorReport:queue "C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\config\cmake\config\vxl_platform_tests.cxx"
+  Microsoft (R) C/C++ Optimizing Compiler Version 19.00.24210 for x64
+  Copyright (C) Microsoft Corporation.  All rights reserved.
+  
+  vxl_platform_tests.cxx
+  cl /c /I"C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeTmp" /Zi /W3 /WX- /Od /Ob0 /D WIN32 /D _WINDOWS /D VXL_HAS_TYPE_OF_SIZE /D _DEBUG /D "CMAKE_INTDIR=\"Debug\"" /D _MBCS /Gm- /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /GR /Fo"cmTC_6a4c7.dir\Debug\\" /Fd"cmTC_6a4c7.dir\Debug\vc140.pdb" /Gd /TP /errorReport:queue "C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\config\cmake\config\vxl_platform_tests.cxx"
+  
+C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\config\cmake\config\vxl_platform_tests.cxx(1034): error C2369: 'verify_size': redefinition; different subscripts [C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\cmTC_6a4c7.vcxproj]
+  C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\config\cmake\config\vxl_platform_tests.cxx(1033): note: see declaration of 'verify_size'
+Done Building Project "C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\cmTC_6a4c7.vcxproj" (default targets) -- FAILED.
+
+Build FAILED.
+
+"C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\cmTC_6a4c7.vcxproj" (default target) (1) ->
+(ClCompile target) -> 
+  C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\config\cmake\config\vxl_platform_tests.cxx(1034): error C2369: 'verify_size': redefinition; different subscripts [C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\cmTC_6a4c7.vcxproj]
+
+    0 Warning(s)
+    1 Error(s)
+
+Time Elapsed 00:00:01.12
+
+Looking for 96-bit float. Failed to compile with the following output:
+(FLAGS=-DVXL_HAS_TYPE_OF_SIZE)
+Change Dir: C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/src/vxl/bin/CMakeFiles/CMakeTmp
+
+Run Build Command:"C:/Program Files (x86)/MSBuild/14.0/bin/MSBuild.exe" "cmTC_bce3b.vcxproj" "/p:Configuration=Debug" "/p:VisualStudioVersion=14.0"
+Microsoft (R) Build Engine version 14.0.25420.1
+Copyright (C) Microsoft Corporation. All rights reserved.
+
+Build started 7/6/2016 6:36:08 PM.
+Project "C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\cmTC_bce3b.vcxproj" on node 1 (default targets).
+PrepareForBuild:
+  Creating directory "cmTC_bce3b.dir\Debug\".
+  Creating directory "C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\Debug\".
+  Creating directory "cmTC_bce3b.dir\Debug\cmTC_bce3b.tlog\".
+InitializeBuildStatus:
+  Creating "cmTC_bce3b.dir\Debug\cmTC_bce3b.tlog\unsuccessfulbuild" because "AlwaysCreate" was specified.
+ClCompile:
+  C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\bin\x86_amd64\CL.exe /c /I"C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeTmp" /Zi /W3 /WX- /Od /Ob0 /D WIN32 /D _WINDOWS /D VXL_HAS_TYPE_OF_SIZE /D _DEBUG /D "CMAKE_INTDIR=\"Debug\"" /D _MBCS /Gm- /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /GR /Fo"cmTC_bce3b.dir\Debug\\" /Fd"cmTC_bce3b.dir\Debug\vc140.pdb" /Gd /TP /errorReport:queue "C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\config\cmake\config\vxl_platform_tests.cxx"
+  Microsoft (R) C/C++ Optimizing Compiler Version 19.00.24210 for x64
+  Copyright (C) Microsoft Corporation.  All rights reserved.
+  
+  vxl_platform_tests.cxx
+  cl /c /I"C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeTmp" /Zi /W3 /WX- /Od /Ob0 /D WIN32 /D _WINDOWS /D VXL_HAS_TYPE_OF_SIZE /D _DEBUG /D "CMAKE_INTDIR=\"Debug\"" /D _MBCS /Gm- /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /GR /Fo"cmTC_bce3b.dir\Debug\\" /Fd"cmTC_bce3b.dir\Debug\vc140.pdb" /Gd /TP /errorReport:queue "C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\config\cmake\config\vxl_platform_tests.cxx"
+  
+C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\config\cmake\config\vxl_platform_tests.cxx(1034): error C2369: 'verify_size': redefinition; different subscripts [C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\cmTC_bce3b.vcxproj]
+  C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\config\cmake\config\vxl_platform_tests.cxx(1033): note: see declaration of 'verify_size'
+Done Building Project "C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\cmTC_bce3b.vcxproj" (default targets) -- FAILED.
+
+Build FAILED.
+
+"C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\cmTC_bce3b.vcxproj" (default target) (1) ->
+(ClCompile target) -> 
+  C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\config\cmake\config\vxl_platform_tests.cxx(1034): error C2369: 'verify_size': redefinition; different subscripts [C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\cmTC_bce3b.vcxproj]
+
+    0 Warning(s)
+    1 Error(s)
+
+Time Elapsed 00:00:01.15
+
+Looking for 96-bit float. Failed to compile with the following output:
+(FLAGS=-DVXL_HAS_TYPE_OF_SIZE)
+Change Dir: C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/src/vxl/bin/CMakeFiles/CMakeTmp
+
+Run Build Command:"C:/Program Files (x86)/MSBuild/14.0/bin/MSBuild.exe" "cmTC_72909.vcxproj" "/p:Configuration=Debug" "/p:VisualStudioVersion=14.0"
+Microsoft (R) Build Engine version 14.0.25420.1
+Copyright (C) Microsoft Corporation. All rights reserved.
+
+Build started 7/6/2016 6:36:09 PM.
+Project "C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\cmTC_72909.vcxproj" on node 1 (default targets).
+PrepareForBuild:
+  Creating directory "cmTC_72909.dir\Debug\".
+  Creating directory "C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\Debug\".
+  Creating directory "cmTC_72909.dir\Debug\cmTC_72909.tlog\".
+InitializeBuildStatus:
+  Creating "cmTC_72909.dir\Debug\cmTC_72909.tlog\unsuccessfulbuild" because "AlwaysCreate" was specified.
+ClCompile:
+  C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\bin\x86_amd64\CL.exe /c /I"C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeTmp" /Zi /W3 /WX- /Od /Ob0 /D WIN32 /D _WINDOWS /D VXL_HAS_TYPE_OF_SIZE /D _DEBUG /D "CMAKE_INTDIR=\"Debug\"" /D _MBCS /Gm- /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /GR /Fo"cmTC_72909.dir\Debug\\" /Fd"cmTC_72909.dir\Debug\vc140.pdb" /Gd /TP /errorReport:queue "C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\config\cmake\config\vxl_platform_tests.cxx"
+  Microsoft (R) C/C++ Optimizing Compiler Version 19.00.24210 for x64
+  Copyright (C) Microsoft Corporation.  All rights reserved.
+  
+  cl /c /I"C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeTmp" /Zi /W3 /WX- /Od /Ob0 /D WIN32 /D _WINDOWS /D VXL_HAS_TYPE_OF_SIZE /D _DEBUG /D "CMAKE_INTDIR=\"Debug\"" /D _MBCS /Gm- /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /GR /Fo"cmTC_72909.dir\Debug\\" /Fd"cmTC_72909.dir\Debug\vc140.pdb" /Gd /TP /errorReport:queue "C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\config\cmake\config\vxl_platform_tests.cxx"
+  vxl_platform_tests.cxx
+  
+C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\config\cmake\config\vxl_platform_tests.cxx(1034): error C2369: 'verify_size': redefinition; different subscripts [C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\cmTC_72909.vcxproj]
+  C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\config\cmake\config\vxl_platform_tests.cxx(1033): note: see declaration of 'verify_size'
+Done Building Project "C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\cmTC_72909.vcxproj" (default targets) -- FAILED.
+
+Build FAILED.
+
+"C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\cmTC_72909.vcxproj" (default target) (1) ->
+(ClCompile target) -> 
+  C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\config\cmake\config\vxl_platform_tests.cxx(1034): error C2369: 'verify_size': redefinition; different subscripts [C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\cmTC_72909.vcxproj]
+
+    0 Warning(s)
+    1 Error(s)
+
+Time Elapsed 00:00:01.27
+
+Looking for 128-bit float. Failed to compile with the following output:
+(FLAGS=-DVXL_HAS_TYPE_OF_SIZE)
+Change Dir: C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/src/vxl/bin/CMakeFiles/CMakeTmp
+
+Run Build Command:"C:/Program Files (x86)/MSBuild/14.0/bin/MSBuild.exe" "cmTC_708a1.vcxproj" "/p:Configuration=Debug" "/p:VisualStudioVersion=14.0"
+Microsoft (R) Build Engine version 14.0.25420.1
+Copyright (C) Microsoft Corporation. All rights reserved.
+
+Build started 7/6/2016 6:36:11 PM.
+Project "C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\cmTC_708a1.vcxproj" on node 1 (default targets).
+PrepareForBuild:
+  Creating directory "cmTC_708a1.dir\Debug\".
+  Creating directory "C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\Debug\".
+  Creating directory "cmTC_708a1.dir\Debug\cmTC_708a1.tlog\".
+InitializeBuildStatus:
+  Creating "cmTC_708a1.dir\Debug\cmTC_708a1.tlog\unsuccessfulbuild" because "AlwaysCreate" was specified.
+ClCompile:
+  C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\bin\x86_amd64\CL.exe /c /I"C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeTmp" /Zi /W3 /WX- /Od /Ob0 /D WIN32 /D _WINDOWS /D VXL_HAS_TYPE_OF_SIZE /D _DEBUG /D "CMAKE_INTDIR=\"Debug\"" /D _MBCS /Gm- /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /GR /Fo"cmTC_708a1.dir\Debug\\" /Fd"cmTC_708a1.dir\Debug\vc140.pdb" /Gd /TP /errorReport:queue "C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\config\cmake\config\vxl_platform_tests.cxx"
+  Microsoft (R) C/C++ Optimizing Compiler Version 19.00.24210 for x64
+  Copyright (C) Microsoft Corporation.  All rights reserved.
+  
+  cl /c /I"C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeTmp" /Zi /W3 /WX- /Od /Ob0 /D WIN32 /D _WINDOWS /D VXL_HAS_TYPE_OF_SIZE /D _DEBUG /D "CMAKE_INTDIR=\"Debug\"" /D _MBCS /Gm- /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /GR /Fo"cmTC_708a1.dir\Debug\\" /Fd"cmTC_708a1.dir\Debug\vc140.pdb" /Gd /TP /errorReport:queue "C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\config\cmake\config\vxl_platform_tests.cxx"
+  vxl_platform_tests.cxx
+  
+C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\config\cmake\config\vxl_platform_tests.cxx(1034): error C2369: 'verify_size': redefinition; different subscripts [C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\cmTC_708a1.vcxproj]
+  C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\config\cmake\config\vxl_platform_tests.cxx(1033): note: see declaration of 'verify_size'
+Done Building Project "C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\cmTC_708a1.vcxproj" (default targets) -- FAILED.
+
+Build FAILED.
+
+"C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\cmTC_708a1.vcxproj" (default target) (1) ->
+(ClCompile target) -> 
+  C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\config\cmake\config\vxl_platform_tests.cxx(1034): error C2369: 'verify_size': redefinition; different subscripts [C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\cmTC_708a1.vcxproj]
+
+    0 Warning(s)
+    1 Error(s)
+
+Time Elapsed 00:00:01.21
+
+Looking for 128-bit float. Failed to compile with the following output:
+(FLAGS=-DVXL_HAS_TYPE_OF_SIZE)
+Change Dir: C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/src/vxl/bin/CMakeFiles/CMakeTmp
+
+Run Build Command:"C:/Program Files (x86)/MSBuild/14.0/bin/MSBuild.exe" "cmTC_9729c.vcxproj" "/p:Configuration=Debug" "/p:VisualStudioVersion=14.0"
+Microsoft (R) Build Engine version 14.0.25420.1
+Copyright (C) Microsoft Corporation. All rights reserved.
+
+Build started 7/6/2016 6:36:13 PM.
+Project "C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\cmTC_9729c.vcxproj" on node 1 (default targets).
+PrepareForBuild:
+  Creating directory "cmTC_9729c.dir\Debug\".
+  Creating directory "C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\Debug\".
+  Creating directory "cmTC_9729c.dir\Debug\cmTC_9729c.tlog\".
+InitializeBuildStatus:
+  Creating "cmTC_9729c.dir\Debug\cmTC_9729c.tlog\unsuccessfulbuild" because "AlwaysCreate" was specified.
+ClCompile:
+  C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\bin\x86_amd64\CL.exe /c /I"C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeTmp" /Zi /W3 /WX- /Od /Ob0 /D WIN32 /D _WINDOWS /D VXL_HAS_TYPE_OF_SIZE /D _DEBUG /D "CMAKE_INTDIR=\"Debug\"" /D _MBCS /Gm- /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /GR /Fo"cmTC_9729c.dir\Debug\\" /Fd"cmTC_9729c.dir\Debug\vc140.pdb" /Gd /TP /errorReport:queue "C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\config\cmake\config\vxl_platform_tests.cxx"
+  Microsoft (R) C/C++ Optimizing Compiler Version 19.00.24210 for x64
+  Copyright (C) Microsoft Corporation.  All rights reserved.
+  
+  cl /c /I"C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeTmp" /Zi /W3 /WX- /Od /Ob0 /D WIN32 /D _WINDOWS /D VXL_HAS_TYPE_OF_SIZE /D _DEBUG /D "CMAKE_INTDIR=\"Debug\"" /D _MBCS /Gm- /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /GR /Fo"cmTC_9729c.dir\Debug\\" /Fd"cmTC_9729c.dir\Debug\vc140.pdb" /Gd /TP /errorReport:queue "C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\config\cmake\config\vxl_platform_tests.cxx"
+  
+  vxl_platform_tests.cxx
+C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\config\cmake\config\vxl_platform_tests.cxx(1034): error C2369: 'verify_size': redefinition; different subscripts [C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\cmTC_9729c.vcxproj]
+  C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\config\cmake\config\vxl_platform_tests.cxx(1033): note: see declaration of 'verify_size'
+Done Building Project "C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\cmTC_9729c.vcxproj" (default targets) -- FAILED.
+
+Build FAILED.
+
+"C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\cmTC_9729c.vcxproj" (default target) (1) ->
+(ClCompile target) -> 
+  C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\config\cmake\config\vxl_platform_tests.cxx(1034): error C2369: 'verify_size': redefinition; different subscripts [C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\cmTC_9729c.vcxproj]
+
+    0 Warning(s)
+    1 Error(s)
+
+Time Elapsed 00:00:01.48
+
+Looking for 128-bit float. Failed to compile with the following output:
+(FLAGS=-DVXL_HAS_TYPE_OF_SIZE)
+Change Dir: C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/src/vxl/bin/CMakeFiles/CMakeTmp
+
+Run Build Command:"C:/Program Files (x86)/MSBuild/14.0/bin/MSBuild.exe" "cmTC_763ca.vcxproj" "/p:Configuration=Debug" "/p:VisualStudioVersion=14.0"
+Microsoft (R) Build Engine version 14.0.25420.1
+Copyright (C) Microsoft Corporation. All rights reserved.
+
+Build started 7/6/2016 6:36:15 PM.
+Project "C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\cmTC_763ca.vcxproj" on node 1 (default targets).
+PrepareForBuild:
+  Creating directory "cmTC_763ca.dir\Debug\".
+  Creating directory "C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\Debug\".
+  Creating directory "cmTC_763ca.dir\Debug\cmTC_763ca.tlog\".
+InitializeBuildStatus:
+  Creating "cmTC_763ca.dir\Debug\cmTC_763ca.tlog\unsuccessfulbuild" because "AlwaysCreate" was specified.
+ClCompile:
+  C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\bin\x86_amd64\CL.exe /c /I"C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeTmp" /Zi /W3 /WX- /Od /Ob0 /D WIN32 /D _WINDOWS /D VXL_HAS_TYPE_OF_SIZE /D _DEBUG /D "CMAKE_INTDIR=\"Debug\"" /D _MBCS /Gm- /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /GR /Fo"cmTC_763ca.dir\Debug\\" /Fd"cmTC_763ca.dir\Debug\vc140.pdb" /Gd /TP /errorReport:queue "C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\config\cmake\config\vxl_platform_tests.cxx"
+  Microsoft (R) C/C++ Optimizing Compiler Version 19.00.24210 for x64
+  Copyright (C) Microsoft Corporation.  All rights reserved.
+  
+  cl /c /I"C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeTmp" /Zi /W3 /WX- /Od /Ob0 /D WIN32 /D _WINDOWS /D VXL_HAS_TYPE_OF_SIZE /D _DEBUG /D "CMAKE_INTDIR=\"Debug\"" /D _MBCS /Gm- /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /GR /Fo"cmTC_763ca.dir\Debug\\" /Fd"cmTC_763ca.dir\Debug\vc140.pdb" /Gd /TP /errorReport:queue "C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\config\cmake\config\vxl_platform_tests.cxx"
+  
+  vxl_platform_tests.cxx
+C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\config\cmake\config\vxl_platform_tests.cxx(1034): error C2369: 'verify_size': redefinition; different subscripts [C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\cmTC_763ca.vcxproj]
+  C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\config\cmake\config\vxl_platform_tests.cxx(1033): note: see declaration of 'verify_size'
+Done Building Project "C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\cmTC_763ca.vcxproj" (default targets) -- FAILED.
+
+Build FAILED.
+
+"C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\cmTC_763ca.vcxproj" (default target) (1) ->
+(ClCompile target) -> 
+  C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\config\cmake\config\vxl_platform_tests.cxx(1034): error C2369: 'verify_size': redefinition; different subscripts [C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\cmTC_763ca.vcxproj]
+
+    0 Warning(s)
+    1 Error(s)
+
+Time Elapsed 00:00:01.16
+
+Determining if the include file unistd.h exists failed with the following output:
+Change Dir: C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/src/vxl/bin/CMakeFiles/CMakeTmp
+
+Run Build Command:"C:/Program Files (x86)/MSBuild/14.0/bin/MSBuild.exe" "cmTC_10042.vcxproj" "/p:Configuration=Debug" "/p:VisualStudioVersion=14.0"
+Microsoft (R) Build Engine version 14.0.25420.1
+Copyright (C) Microsoft Corporation. All rights reserved.
+
+Build started 7/6/2016 6:36:16 PM.
+Project "C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\cmTC_10042.vcxproj" on node 1 (default targets).
+PrepareForBuild:
+  Creating directory "cmTC_10042.dir\Debug\".
+  Creating directory "C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\Debug\".
+  Creating directory "cmTC_10042.dir\Debug\cmTC_10042.tlog\".
+InitializeBuildStatus:
+  Creating "cmTC_10042.dir\Debug\cmTC_10042.tlog\unsuccessfulbuild" because "AlwaysCreate" was specified.
+ClCompile:
+  C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\bin\x86_amd64\CL.exe /c /Zi /W3 /WX- /Od /Ob0 /D WIN32 /D _WINDOWS /D _DEBUG /D "CMAKE_INTDIR=\"Debug\"" /D _MBCS /Gm- /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /GR /Fo"cmTC_10042.dir\Debug\\" /Fd"cmTC_10042.dir\Debug\vc140.pdb" /Gd /TP /errorReport:queue "C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\CheckIncludeFile.cxx"
+  Microsoft (R) C/C++ Optimizing Compiler Version 19.00.24210 for x64
+  Copyright (C) Microsoft Corporation.  All rights reserved.
+  
+  CheckIncludeFile.cxx
+  cl /c /Zi /W3 /WX- /Od /Ob0 /D WIN32 /D _WINDOWS /D _DEBUG /D "CMAKE_INTDIR=\"Debug\"" /D _MBCS /Gm- /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /GR /Fo"cmTC_10042.dir\Debug\\" /Fd"cmTC_10042.dir\Debug\vc140.pdb" /Gd /TP /errorReport:queue "C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\CheckIncludeFile.cxx"
+  
+C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\CheckIncludeFile.cxx(1): fatal error C1083: Cannot open include file: 'unistd.h': No such file or directory [C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\cmTC_10042.vcxproj]
+Done Building Project "C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\cmTC_10042.vcxproj" (default targets) -- FAILED.
+
+Build FAILED.
+
+"C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\cmTC_10042.vcxproj" (default target) (1) ->
+(ClCompile target) -> 
+  C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\CheckIncludeFile.cxx(1): fatal error C1083: Cannot open include file: 'unistd.h': No such file or directory [C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\cmTC_10042.vcxproj]
+
+    0 Warning(s)
+    1 Error(s)
+
+Time Elapsed 00:00:01.53
+
+
+Performing Test VCL_NUMERIC_LIMITS_HAS_INFINITY succeeded with the following output:
+Change Dir: C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/src/vxl/bin/CMakeFiles/CMakeTmp
+
+Run Build Command:"C:/Program Files (x86)/MSBuild/14.0/bin/MSBuild.exe" "cmTC_8c2c2.vcxproj" "/p:Configuration=Debug" "/p:VisualStudioVersion=14.0"
+Microsoft (R) Build Engine version 14.0.25420.1
+Copyright (C) Microsoft Corporation. All rights reserved.
+
+Build started 7/6/2016 6:36:21 PM.
+Project "C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\cmTC_8c2c2.vcxproj" on node 1 (default targets).
+PrepareForBuild:
+  Creating directory "cmTC_8c2c2.dir\Debug\".
+  Creating directory "C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\Debug\".
+  Creating directory "cmTC_8c2c2.dir\Debug\cmTC_8c2c2.tlog\".
+InitializeBuildStatus:
+  Creating "cmTC_8c2c2.dir\Debug\cmTC_8c2c2.tlog\unsuccessfulbuild" because "AlwaysCreate" was specified.
+ClCompile:
+  C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\bin\x86_amd64\CL.exe /c /Zi /W3 /WX- /Od /Ob0 /D WIN32 /D _WINDOWS /D VCL_NUMERIC_LIMITS_HAS_INFINITY /D _DEBUG /D "CMAKE_INTDIR=\"Debug\"" /D _MBCS /Gm- /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /GR /Fo"cmTC_8c2c2.dir\Debug\\" /Fd"cmTC_8c2c2.dir\Debug\vc140.pdb" /Gd /TP /errorReport:queue "C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\config\cmake\config\vxl_platform_tests.cxx"
+  Microsoft (R) C/C++ Optimizing Compiler Version 19.00.24210 for x64
+  Copyright (C) Microsoft Corporation.  All rights reserved.
+  
+  cl /c /Zi /W3 /WX- /Od /Ob0 /D WIN32 /D _WINDOWS /D VCL_NUMERIC_LIMITS_HAS_INFINITY /D _DEBUG /D "CMAKE_INTDIR=\"Debug\"" /D _MBCS /Gm- /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /GR /Fo"cmTC_8c2c2.dir\Debug\\" /Fd"cmTC_8c2c2.dir\Debug\vc140.pdb" /Gd /TP /errorReport:queue "C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\config\cmake\config\vxl_platform_tests.cxx"
+  
+  vxl_platform_tests.cxx
+Link:
+  C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\bin\x86_amd64\link.exe /ERRORREPORT:QUEUE /OUT:"C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\Debug\cmTC_8c2c2.exe" /INCREMENTAL /NOLOGO kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /DEBUG /PDB:"C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/src/vxl/bin/CMakeFiles/CMakeTmp/Debug/cmTC_8c2c2.pdb" /SUBSYSTEM:CONSOLE /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/src/vxl/bin/CMakeFiles/CMakeTmp/Debug/cmTC_8c2c2.lib" /MACHINE:X64  /machine:x64 cmTC_8c2c2.dir\Debug\vxl_platform_tests.obj
+  cmTC_8c2c2.vcxproj -> C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\Debug\cmTC_8c2c2.exe
+FinalizeBuildStatus:
+  Deleting file "cmTC_8c2c2.dir\Debug\cmTC_8c2c2.tlog\unsuccessfulbuild".
+  Touching "cmTC_8c2c2.dir\Debug\cmTC_8c2c2.tlog\cmTC_8c2c2.lastbuildstate".
+Done Building Project "C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\cmTC_8c2c2.vcxproj" (default targets).
+
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:01.75
+
+Performing C++ SOURCE FILE Test COMPILER_HAS_DEPRECATED_ATTR failed with the following output:
+Change Dir: C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/src/vxl/bin/CMakeFiles/CMakeTmp
+
+Run Build Command:"C:/Program Files (x86)/MSBuild/14.0/bin/MSBuild.exe" "cmTC_4bf28.vcxproj" "/p:Configuration=Debug" "/p:VisualStudioVersion=14.0"
+Microsoft (R) Build Engine version 14.0.25420.1
+Copyright (C) Microsoft Corporation. All rights reserved.
+
+Build started 7/6/2016 6:36:30 PM.
+Project "C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\cmTC_4bf28.vcxproj" on node 1 (default targets).
+PrepareForBuild:
+  Creating directory "cmTC_4bf28.dir\Debug\".
+  Creating directory "C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\Debug\".
+  Creating directory "cmTC_4bf28.dir\Debug\cmTC_4bf28.tlog\".
+InitializeBuildStatus:
+  Creating "cmTC_4bf28.dir\Debug\cmTC_4bf28.tlog\unsuccessfulbuild" because "AlwaysCreate" was specified.
+ClCompile:
+  C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\bin\x86_amd64\CL.exe /c /Zi /W3 /WX- /Od /Ob0 /D WIN32 /D _WINDOWS /D COMPILER_HAS_DEPRECATED_ATTR /D _DEBUG /D "CMAKE_INTDIR=\"Debug\"" /D _MBCS /Gm- /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /GR /Fo"cmTC_4bf28.dir\Debug\\" /Fd"cmTC_4bf28.dir\Debug\vc140.pdb" /Gd /TP /errorReport:queue "C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\src.cxx"
+  Microsoft (R) C/C++ Optimizing Compiler Version 19.00.24210 for x64
+  Copyright (C) Microsoft Corporation.  All rights reserved.
+  
+  src.cxx
+  cl /c /Zi /W3 /WX- /Od /Ob0 /D WIN32 /D _WINDOWS /D COMPILER_HAS_DEPRECATED_ATTR /D _DEBUG /D "CMAKE_INTDIR=\"Debug\"" /D _MBCS /Gm- /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /GR /Fo"cmTC_4bf28.dir\Debug\\" /Fd"cmTC_4bf28.dir\Debug\vc140.pdb" /Gd /TP /errorReport:queue "C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\src.cxx"
+  
+C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\src.cxx(1): error C2065: '__deprecated__': undeclared identifier [C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\cmTC_4bf28.vcxproj]
+C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\src.cxx(1): error C4430: missing type specifier - int assumed. Note: C++ does not support default-int [C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\cmTC_4bf28.vcxproj]
+C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\src.cxx(1): error C2448: '__attribute__': function-style initializer appears to be a function definition [C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\cmTC_4bf28.vcxproj]
+Done Building Project "C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\cmTC_4bf28.vcxproj" (default targets) -- FAILED.
+
+Build FAILED.
+
+"C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\cmTC_4bf28.vcxproj" (default target) (1) ->
+(ClCompile target) -> 
+  C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\src.cxx(1): error C2065: '__deprecated__': undeclared identifier [C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\cmTC_4bf28.vcxproj]
+  C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\src.cxx(1): error C4430: missing type specifier - int assumed. Note: C++ does not support default-int [C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\cmTC_4bf28.vcxproj]
+  C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\src.cxx(1): error C2448: '__attribute__': function-style initializer appears to be a function definition [C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\bin\CMakeFiles\CMakeTmp\cmTC_4bf28.vcxproj]
+
+    0 Warning(s)
+    3 Error(s)
+
+Time Elapsed 00:00:01.31
+
+Source file was:
+__attribute__((__deprecated__)) int somefunc() { return 0; }
+    int main() { return somefunc();}

@@ -1,0 +1,3 @@
+# CMake generation dependency list for this directory.
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/GDCM/src/gdcm/Source/InformationObjectDefinition/CMakeLists.txt
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/GDCM/src/gdcm/Source/InformationObjectDefinition/gdcmTables.h.in

@@ -1,0 +1,334 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="MinSizeRel|x64">
+      <Configuration>MinSizeRel</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="RelWithDebInfo|x64">
+      <Configuration>RelWithDebInfo</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGUID>{E03CF072-9482-3BE3-8F30-85684E14D54F}</ProjectGUID>
+    <Keyword>Win32Proj</Keyword>
+    <Platform>x64</Platform>
+    <ProjectName>gdcmjpeg16</ProjectName>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <UseOfMfc>false</UseOfMfc>
+    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v140</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <UseOfMfc>false</UseOfMfc>
+    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v140</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <UseOfMfc>false</UseOfMfc>
+    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v140</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <UseOfMfc>false</UseOfMfc>
+    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v140</PlatformToolset>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+    <PropertyGroup>
+      <_ProjectFileVersion>10.0.20506.1</_ProjectFileVersion>
+      <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">C:\server\InsightToolkit-4.10.0\bin\lib\Debug\</OutDir>
+      <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">gdcmjpeg16.dir\Debug\</IntDir>
+      <TargetName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">itkgdcmjpeg16-4.10</TargetName>
+      <TargetExt Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">.lib</TargetExt>
+      <OutDir Condition="'$(Configuration)|$(Platform)'=='Release|x64'">C:\server\InsightToolkit-4.10.0\bin\lib\Release\</OutDir>
+      <IntDir Condition="'$(Configuration)|$(Platform)'=='Release|x64'">gdcmjpeg16.dir\Release\</IntDir>
+      <TargetName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">itkgdcmjpeg16-4.10</TargetName>
+      <TargetExt Condition="'$(Configuration)|$(Platform)'=='Release|x64'">.lib</TargetExt>
+      <OutDir Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">C:\server\InsightToolkit-4.10.0\bin\lib\MinSizeRel\</OutDir>
+      <IntDir Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">gdcmjpeg16.dir\MinSizeRel\</IntDir>
+      <TargetName Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">itkgdcmjpeg16-4.10</TargetName>
+      <TargetExt Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">.lib</TargetExt>
+      <OutDir Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">C:\server\InsightToolkit-4.10.0\bin\lib\RelWithDebInfo\</OutDir>
+      <IntDir Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">gdcmjpeg16.dir\RelWithDebInfo\</IntDir>
+      <TargetName Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">itkgdcmjpeg16-4.10</TargetName>
+      <TargetExt Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">.lib</TargetExt>
+    </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\JPEG;C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\GDCM\src\gdcm\Utilities\gdcmjpeg\16;C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\Expat\src\expat;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\Expat\src\expat;C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\ZLIB\src;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\ZLIB\src;C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\GDCM;C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\GDCM\src\gdcm\Source\Common;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\MediaStorageAndFileFormat;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\DataDictionary;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\Common;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\InformationObjectDefinition;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\MessageExchangeDefinition;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\DataStructureAndEncodingDefinition;C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\GDCM\src\gdcm\Utilities\gdcmjpeg;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AssemblerListingLocation>Debug/</AssemblerListingLocation>
+      <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
+      <CompileAs>CompileAsC</CompileAs>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <ExceptionHandling>
+      </ExceptionHandling>
+      <InlineFunctionExpansion>Disabled</InlineFunctionExpansion>
+      <Optimization>Disabled</Optimization>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
+      <WarningLevel>TurnOffAllWarnings</WarningLevel>
+      <PreprocessorDefinitions>WIN32;_WINDOWS;_DEBUG;_CRT_FAR_MAPPINGS_NO_DEPRECATE;_CRT_IS_WCTYPE_NO_DEPRECATE;_CRT_MANAGED_FP_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;_CRT_SECURE_NO_DEPRECATE;_CRT_SECURE_NO_DEPRECATE_GLOBALS;_CRT_SETERRORMODE_BEEP_SLEEP_NO_DEPRECATE;_CRT_TIME_FUNCTIONS_NO_DEPRECATE;_CRT_VCCLRIT_NO_DEPRECATE;_SCL_SECURE_NO_DEPRECATE;_CRT_SECURE_NO_WARNINGS;_SCL_SECURE_NO_WARNINGS;CMAKE_INTDIR="Debug";%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ObjectFileName>$(IntDir)</ObjectFileName>
+    </ClCompile>
+    <ResourceCompile>
+      <PreprocessorDefinitions>WIN32;_WINDOWS;_DEBUG;_CRT_FAR_MAPPINGS_NO_DEPRECATE;_CRT_IS_WCTYPE_NO_DEPRECATE;_CRT_MANAGED_FP_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;_CRT_SECURE_NO_DEPRECATE;_CRT_SECURE_NO_DEPRECATE_GLOBALS;_CRT_SETERRORMODE_BEEP_SLEEP_NO_DEPRECATE;_CRT_TIME_FUNCTIONS_NO_DEPRECATE;_CRT_VCCLRIT_NO_DEPRECATE;_SCL_SECURE_NO_DEPRECATE;_CRT_SECURE_NO_WARNINGS;_SCL_SECURE_NO_WARNINGS;CMAKE_INTDIR=\"Debug\";%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\JPEG;C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\GDCM\src\gdcm\Utilities\gdcmjpeg\16;C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\Expat\src\expat;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\Expat\src\expat;C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\ZLIB\src;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\ZLIB\src;C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\GDCM;C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\GDCM\src\gdcm\Source\Common;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\MediaStorageAndFileFormat;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\DataDictionary;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\Common;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\InformationObjectDefinition;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\MessageExchangeDefinition;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\DataStructureAndEncodingDefinition;C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\GDCM\src\gdcm\Utilities\gdcmjpeg;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ResourceCompile>
+    <Midl>
+      <AdditionalIncludeDirectories>C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\JPEG;C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\GDCM\src\gdcm\Utilities\gdcmjpeg\16;C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\Expat\src\expat;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\Expat\src\expat;C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\ZLIB\src;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\ZLIB\src;C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\GDCM;C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\GDCM\src\gdcm\Source\Common;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\MediaStorageAndFileFormat;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\DataDictionary;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\Common;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\InformationObjectDefinition;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\MessageExchangeDefinition;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\DataStructureAndEncodingDefinition;C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\GDCM\src\gdcm\Utilities\gdcmjpeg;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
+      <HeaderFileName>%(Filename).h</HeaderFileName>
+      <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
+      <InterfaceIdentifierFileName>%(Filename)_i.c</InterfaceIdentifierFileName>
+      <ProxyFileName>%(Filename)_p.c</ProxyFileName>
+    </Midl>
+    <Lib>
+      <AdditionalOptions> /machine:x64 %(AdditionalOptions)</AdditionalOptions>
+    </Lib>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\JPEG;C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\GDCM\src\gdcm\Utilities\gdcmjpeg\16;C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\Expat\src\expat;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\Expat\src\expat;C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\ZLIB\src;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\ZLIB\src;C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\GDCM;C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\GDCM\src\gdcm\Source\Common;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\MediaStorageAndFileFormat;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\DataDictionary;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\Common;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\InformationObjectDefinition;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\MessageExchangeDefinition;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\DataStructureAndEncodingDefinition;C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\GDCM\src\gdcm\Utilities\gdcmjpeg;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AssemblerListingLocation>Release/</AssemblerListingLocation>
+      <CompileAs>CompileAsC</CompileAs>
+      <ExceptionHandling>
+      </ExceptionHandling>
+      <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
+      <Optimization>MaxSpeed</Optimization>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <WarningLevel>TurnOffAllWarnings</WarningLevel>
+      <PreprocessorDefinitions>WIN32;_WINDOWS;NDEBUG;_CRT_FAR_MAPPINGS_NO_DEPRECATE;_CRT_IS_WCTYPE_NO_DEPRECATE;_CRT_MANAGED_FP_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;_CRT_SECURE_NO_DEPRECATE;_CRT_SECURE_NO_DEPRECATE_GLOBALS;_CRT_SETERRORMODE_BEEP_SLEEP_NO_DEPRECATE;_CRT_TIME_FUNCTIONS_NO_DEPRECATE;_CRT_VCCLRIT_NO_DEPRECATE;_SCL_SECURE_NO_DEPRECATE;_CRT_SECURE_NO_WARNINGS;_SCL_SECURE_NO_WARNINGS;CMAKE_INTDIR="Release";%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ObjectFileName>$(IntDir)</ObjectFileName>
+      <DebugInformationFormat></DebugInformationFormat>
+    </ClCompile>
+    <ResourceCompile>
+      <PreprocessorDefinitions>WIN32;_WINDOWS;NDEBUG;_CRT_FAR_MAPPINGS_NO_DEPRECATE;_CRT_IS_WCTYPE_NO_DEPRECATE;_CRT_MANAGED_FP_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;_CRT_SECURE_NO_DEPRECATE;_CRT_SECURE_NO_DEPRECATE_GLOBALS;_CRT_SETERRORMODE_BEEP_SLEEP_NO_DEPRECATE;_CRT_TIME_FUNCTIONS_NO_DEPRECATE;_CRT_VCCLRIT_NO_DEPRECATE;_SCL_SECURE_NO_DEPRECATE;_CRT_SECURE_NO_WARNINGS;_SCL_SECURE_NO_WARNINGS;CMAKE_INTDIR=\"Release\";%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\JPEG;C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\GDCM\src\gdcm\Utilities\gdcmjpeg\16;C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\Expat\src\expat;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\Expat\src\expat;C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\ZLIB\src;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\ZLIB\src;C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\GDCM;C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\GDCM\src\gdcm\Source\Common;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\MediaStorageAndFileFormat;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\DataDictionary;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\Common;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\InformationObjectDefinition;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\MessageExchangeDefinition;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\DataStructureAndEncodingDefinition;C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\GDCM\src\gdcm\Utilities\gdcmjpeg;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ResourceCompile>
+    <Midl>
+      <AdditionalIncludeDirectories>C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\JPEG;C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\GDCM\src\gdcm\Utilities\gdcmjpeg\16;C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\Expat\src\expat;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\Expat\src\expat;C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\ZLIB\src;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\ZLIB\src;C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\GDCM;C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\GDCM\src\gdcm\Source\Common;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\MediaStorageAndFileFormat;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\DataDictionary;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\Common;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\InformationObjectDefinition;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\MessageExchangeDefinition;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\DataStructureAndEncodingDefinition;C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\GDCM\src\gdcm\Utilities\gdcmjpeg;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
+      <HeaderFileName>%(Filename).h</HeaderFileName>
+      <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
+      <InterfaceIdentifierFileName>%(Filename)_i.c</InterfaceIdentifierFileName>
+      <ProxyFileName>%(Filename)_p.c</ProxyFileName>
+    </Midl>
+    <Lib>
+      <AdditionalOptions> /machine:x64 %(AdditionalOptions)</AdditionalOptions>
+    </Lib>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\JPEG;C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\GDCM\src\gdcm\Utilities\gdcmjpeg\16;C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\Expat\src\expat;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\Expat\src\expat;C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\ZLIB\src;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\ZLIB\src;C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\GDCM;C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\GDCM\src\gdcm\Source\Common;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\MediaStorageAndFileFormat;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\DataDictionary;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\Common;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\InformationObjectDefinition;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\MessageExchangeDefinition;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\DataStructureAndEncodingDefinition;C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\GDCM\src\gdcm\Utilities\gdcmjpeg;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AssemblerListingLocation>MinSizeRel/</AssemblerListingLocation>
+      <CompileAs>CompileAsC</CompileAs>
+      <ExceptionHandling>
+      </ExceptionHandling>
+      <InlineFunctionExpansion>OnlyExplicitInline</InlineFunctionExpansion>
+      <Optimization>MinSpace</Optimization>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <WarningLevel>TurnOffAllWarnings</WarningLevel>
+      <PreprocessorDefinitions>WIN32;_WINDOWS;NDEBUG;_CRT_FAR_MAPPINGS_NO_DEPRECATE;_CRT_IS_WCTYPE_NO_DEPRECATE;_CRT_MANAGED_FP_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;_CRT_SECURE_NO_DEPRECATE;_CRT_SECURE_NO_DEPRECATE_GLOBALS;_CRT_SETERRORMODE_BEEP_SLEEP_NO_DEPRECATE;_CRT_TIME_FUNCTIONS_NO_DEPRECATE;_CRT_VCCLRIT_NO_DEPRECATE;_SCL_SECURE_NO_DEPRECATE;_CRT_SECURE_NO_WARNINGS;_SCL_SECURE_NO_WARNINGS;CMAKE_INTDIR="MinSizeRel";%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ObjectFileName>$(IntDir)</ObjectFileName>
+      <DebugInformationFormat></DebugInformationFormat>
+    </ClCompile>
+    <ResourceCompile>
+      <PreprocessorDefinitions>WIN32;_WINDOWS;NDEBUG;_CRT_FAR_MAPPINGS_NO_DEPRECATE;_CRT_IS_WCTYPE_NO_DEPRECATE;_CRT_MANAGED_FP_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;_CRT_SECURE_NO_DEPRECATE;_CRT_SECURE_NO_DEPRECATE_GLOBALS;_CRT_SETERRORMODE_BEEP_SLEEP_NO_DEPRECATE;_CRT_TIME_FUNCTIONS_NO_DEPRECATE;_CRT_VCCLRIT_NO_DEPRECATE;_SCL_SECURE_NO_DEPRECATE;_CRT_SECURE_NO_WARNINGS;_SCL_SECURE_NO_WARNINGS;CMAKE_INTDIR=\"MinSizeRel\";%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\JPEG;C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\GDCM\src\gdcm\Utilities\gdcmjpeg\16;C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\Expat\src\expat;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\Expat\src\expat;C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\ZLIB\src;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\ZLIB\src;C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\GDCM;C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\GDCM\src\gdcm\Source\Common;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\MediaStorageAndFileFormat;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\DataDictionary;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\Common;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\InformationObjectDefinition;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\MessageExchangeDefinition;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\DataStructureAndEncodingDefinition;C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\GDCM\src\gdcm\Utilities\gdcmjpeg;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ResourceCompile>
+    <Midl>
+      <AdditionalIncludeDirectories>C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\JPEG;C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\GDCM\src\gdcm\Utilities\gdcmjpeg\16;C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\Expat\src\expat;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\Expat\src\expat;C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\ZLIB\src;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\ZLIB\src;C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\GDCM;C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\GDCM\src\gdcm\Source\Common;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\MediaStorageAndFileFormat;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\DataDictionary;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\Common;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\InformationObjectDefinition;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\MessageExchangeDefinition;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\DataStructureAndEncodingDefinition;C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\GDCM\src\gdcm\Utilities\gdcmjpeg;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
+      <HeaderFileName>%(Filename).h</HeaderFileName>
+      <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
+      <InterfaceIdentifierFileName>%(Filename)_i.c</InterfaceIdentifierFileName>
+      <ProxyFileName>%(Filename)_p.c</ProxyFileName>
+    </Midl>
+    <Lib>
+      <AdditionalOptions> /machine:x64 %(AdditionalOptions)</AdditionalOptions>
+    </Lib>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\JPEG;C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\GDCM\src\gdcm\Utilities\gdcmjpeg\16;C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\Expat\src\expat;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\Expat\src\expat;C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\ZLIB\src;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\ZLIB\src;C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\GDCM;C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\GDCM\src\gdcm\Source\Common;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\MediaStorageAndFileFormat;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\DataDictionary;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\Common;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\InformationObjectDefinition;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\MessageExchangeDefinition;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\DataStructureAndEncodingDefinition;C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\GDCM\src\gdcm\Utilities\gdcmjpeg;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AssemblerListingLocation>RelWithDebInfo/</AssemblerListingLocation>
+      <CompileAs>CompileAsC</CompileAs>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <ExceptionHandling>
+      </ExceptionHandling>
+      <InlineFunctionExpansion>OnlyExplicitInline</InlineFunctionExpansion>
+      <Optimization>MaxSpeed</Optimization>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <WarningLevel>TurnOffAllWarnings</WarningLevel>
+      <PreprocessorDefinitions>WIN32;_WINDOWS;NDEBUG;_CRT_FAR_MAPPINGS_NO_DEPRECATE;_CRT_IS_WCTYPE_NO_DEPRECATE;_CRT_MANAGED_FP_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;_CRT_SECURE_NO_DEPRECATE;_CRT_SECURE_NO_DEPRECATE_GLOBALS;_CRT_SETERRORMODE_BEEP_SLEEP_NO_DEPRECATE;_CRT_TIME_FUNCTIONS_NO_DEPRECATE;_CRT_VCCLRIT_NO_DEPRECATE;_SCL_SECURE_NO_DEPRECATE;_CRT_SECURE_NO_WARNINGS;_SCL_SECURE_NO_WARNINGS;CMAKE_INTDIR="RelWithDebInfo";%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ObjectFileName>$(IntDir)</ObjectFileName>
+    </ClCompile>
+    <ResourceCompile>
+      <PreprocessorDefinitions>WIN32;_WINDOWS;NDEBUG;_CRT_FAR_MAPPINGS_NO_DEPRECATE;_CRT_IS_WCTYPE_NO_DEPRECATE;_CRT_MANAGED_FP_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;_CRT_SECURE_NO_DEPRECATE;_CRT_SECURE_NO_DEPRECATE_GLOBALS;_CRT_SETERRORMODE_BEEP_SLEEP_NO_DEPRECATE;_CRT_TIME_FUNCTIONS_NO_DEPRECATE;_CRT_VCCLRIT_NO_DEPRECATE;_SCL_SECURE_NO_DEPRECATE;_CRT_SECURE_NO_WARNINGS;_SCL_SECURE_NO_WARNINGS;CMAKE_INTDIR=\"RelWithDebInfo\";%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\JPEG;C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\GDCM\src\gdcm\Utilities\gdcmjpeg\16;C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\Expat\src\expat;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\Expat\src\expat;C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\ZLIB\src;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\ZLIB\src;C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\GDCM;C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\GDCM\src\gdcm\Source\Common;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\MediaStorageAndFileFormat;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\DataDictionary;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\Common;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\InformationObjectDefinition;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\MessageExchangeDefinition;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\DataStructureAndEncodingDefinition;C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\GDCM\src\gdcm\Utilities\gdcmjpeg;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ResourceCompile>
+    <Midl>
+      <AdditionalIncludeDirectories>C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\JPEG;C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\GDCM\src\gdcm\Utilities\gdcmjpeg\16;C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\Expat\src\expat;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\Expat\src\expat;C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\ZLIB\src;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\ZLIB\src;C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\GDCM;C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\GDCM\src\gdcm\Source\Common;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\MediaStorageAndFileFormat;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\DataDictionary;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\Common;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\InformationObjectDefinition;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\MessageExchangeDefinition;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\DataStructureAndEncodingDefinition;C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\GDCM\src\gdcm\Utilities\gdcmjpeg;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
+      <HeaderFileName>%(Filename).h</HeaderFileName>
+      <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
+      <InterfaceIdentifierFileName>%(Filename)_i.c</InterfaceIdentifierFileName>
+      <ProxyFileName>%(Filename)_p.c</ProxyFileName>
+    </Midl>
+    <Lib>
+      <AdditionalOptions> /machine:x64 %(AdditionalOptions)</AdditionalOptions>
+    </Lib>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <CustomBuild Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Utilities\gdcmjpeg\16\CMakeLists.txt">
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Building Custom Rule C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/GDCM/src/gdcm/Utilities/gdcmjpeg/16/CMakeLists.txt</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">setlocal
+"c:\Program Files\CMake\bin\cmake.exe" -HC:/server/InsightToolkit-4.10.0 -BC:/server/InsightToolkit-4.10.0/bin --check-stamp-file C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\GDCM\src\gdcm\Utilities\gdcmjpeg\16\CMakeFiles\generate.stamp
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/GDCM/src/gdcm/Utilities/gdcmjpeg/16/CMakeLists.txt;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Utilities\gdcmjpeg\16\CMakeLists.txt;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Utilities\gdcmjpeg\16\CMakeLists.txt;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\GDCM\src\gdcm\Utilities\gdcmjpeg\16\CMakeFiles\generate.stamp</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Building Custom Rule C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/GDCM/src/gdcm/Utilities/gdcmjpeg/16/CMakeLists.txt</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">setlocal
+"c:\Program Files\CMake\bin\cmake.exe" -HC:/server/InsightToolkit-4.10.0 -BC:/server/InsightToolkit-4.10.0/bin --check-stamp-file C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\GDCM\src\gdcm\Utilities\gdcmjpeg\16\CMakeFiles\generate.stamp
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/GDCM/src/gdcm/Utilities/gdcmjpeg/16/CMakeLists.txt;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Utilities\gdcmjpeg\16\CMakeLists.txt;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Utilities\gdcmjpeg\16\CMakeLists.txt;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\GDCM\src\gdcm\Utilities\gdcmjpeg\16\CMakeFiles\generate.stamp</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">Building Custom Rule C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/GDCM/src/gdcm/Utilities/gdcmjpeg/16/CMakeLists.txt</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">setlocal
+"c:\Program Files\CMake\bin\cmake.exe" -HC:/server/InsightToolkit-4.10.0 -BC:/server/InsightToolkit-4.10.0/bin --check-stamp-file C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\GDCM\src\gdcm\Utilities\gdcmjpeg\16\CMakeFiles\generate.stamp
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/GDCM/src/gdcm/Utilities/gdcmjpeg/16/CMakeLists.txt;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Utilities\gdcmjpeg\16\CMakeLists.txt;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Utilities\gdcmjpeg\16\CMakeLists.txt;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\GDCM\src\gdcm\Utilities\gdcmjpeg\16\CMakeFiles\generate.stamp</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">Building Custom Rule C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/GDCM/src/gdcm/Utilities/gdcmjpeg/16/CMakeLists.txt</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">setlocal
+"c:\Program Files\CMake\bin\cmake.exe" -HC:/server/InsightToolkit-4.10.0 -BC:/server/InsightToolkit-4.10.0/bin --check-stamp-file C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\GDCM\src\gdcm\Utilities\gdcmjpeg\16\CMakeFiles\generate.stamp
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/GDCM/src/gdcm/Utilities/gdcmjpeg/16/CMakeLists.txt;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Utilities\gdcmjpeg\16\CMakeLists.txt;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Utilities\gdcmjpeg\16\CMakeLists.txt;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\GDCM\src\gdcm\Utilities\gdcmjpeg\16\CMakeFiles\generate.stamp</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">false</LinkObjects>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Utilities\gdcmjpeg\jmemnobs.c"  />
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Utilities\gdcmjpeg\jcomapi.c"  />
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Utilities\gdcmjpeg\jutils.c"  />
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Utilities\gdcmjpeg\jerror.c"  />
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Utilities\gdcmjpeg\jmemmgr.c"  />
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Utilities\gdcmjpeg\jcapimin.c"  />
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Utilities\gdcmjpeg\jcapistd.c"  />
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Utilities\gdcmjpeg\jctrans.c"  />
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Utilities\gdcmjpeg\jcparam.c"  />
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Utilities\gdcmjpeg\jcinit.c"  />
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Utilities\gdcmjpeg\jcmaster.c"  />
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Utilities\gdcmjpeg\jcmarker.c"  />
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Utilities\gdcmjpeg\jcmainct.c"  />
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Utilities\gdcmjpeg\jcprepct.c"  />
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Utilities\gdcmjpeg\jccoefct.c"  />
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Utilities\gdcmjpeg\jccolor.c"  />
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Utilities\gdcmjpeg\jcsample.c"  />
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Utilities\gdcmjpeg\jchuff.c"  />
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Utilities\gdcmjpeg\jcphuff.c"  />
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Utilities\gdcmjpeg\jcdctmgr.c"  />
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Utilities\gdcmjpeg\jfdctfst.c"  />
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Utilities\gdcmjpeg\jfdctflt.c"  />
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Utilities\gdcmjpeg\jdatadst.c"  />
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Utilities\gdcmjpeg\jdapimin.c"  />
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Utilities\gdcmjpeg\jdapistd.c"  />
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Utilities\gdcmjpeg\jdtrans.c"  />
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Utilities\gdcmjpeg\jdmaster.c"  />
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Utilities\gdcmjpeg\jdinput.c"  />
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Utilities\gdcmjpeg\jdmarker.c"  />
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Utilities\gdcmjpeg\jdhuff.c"  />
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Utilities\gdcmjpeg\jdphuff.c"  />
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Utilities\gdcmjpeg\jdmainct.c"  />
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Utilities\gdcmjpeg\jdcoefct.c"  />
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Utilities\gdcmjpeg\jdpostct.c"  />
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Utilities\gdcmjpeg\jddctmgr.c"  />
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Utilities\gdcmjpeg\jidctfst.c"  />
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Utilities\gdcmjpeg\jidctflt.c"  />
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Utilities\gdcmjpeg\jidctint.c"  />
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Utilities\gdcmjpeg\jidctred.c"  />
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Utilities\gdcmjpeg\jdsample.c"  />
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Utilities\gdcmjpeg\jdcolor.c"  />
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Utilities\gdcmjpeg\jquant1.c"  />
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Utilities\gdcmjpeg\jquant2.c"  />
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Utilities\gdcmjpeg\jdmerge.c"  />
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Utilities\gdcmjpeg\jdatasrc.c"  />
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Utilities\gdcmjpeg\jfdctint.c"  />
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Utilities\gdcmjpeg\jclossy.c"  />
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Utilities\gdcmjpeg\jclossls.c"  />
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Utilities\gdcmjpeg\jcodec.c"  />
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Utilities\gdcmjpeg\jcscale.c"  />
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Utilities\gdcmjpeg\jcshuff.c"  />
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Utilities\gdcmjpeg\jclhuff.c"  />
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Utilities\gdcmjpeg\jcpred.c"  />
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Utilities\gdcmjpeg\jcdiffct.c"  />
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Utilities\gdcmjpeg\jdlossls.c"  />
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Utilities\gdcmjpeg\jdlossy.c"  />
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Utilities\gdcmjpeg\jdlhuff.c"  />
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Utilities\gdcmjpeg\jddiffct.c"  />
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Utilities\gdcmjpeg\jdpred.c"  />
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Utilities\gdcmjpeg\jdscale.c"  />
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Utilities\gdcmjpeg\jdshuff.c"  />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="C:/server/InsightToolkit-4.10.0/bin/ZERO_CHECK.vcxproj">
+      <Project>8424D74C-2D7E-3861-92BD-E31A437C2341</Project>
+    </ProjectReference>
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

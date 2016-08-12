@@ -1,0 +1,24 @@
+﻿  Checking Build System
+  CMake Error at CMakeLists.txt:69 (itk_module_impl):
+    Unknown CMake command "itk_module_impl".
+  
+  CMake is re-running because C:/server/ns_lifespan_machine_source/external_compile_libraries/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/bin/CMakeFiles/generate.stamp is out-of-date.
+    the file 'C:/server/ns_lifespan_machine_source/external_compile_libraries/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/CMakeLists.txt'
+    is newer than 'C:/server/ns_lifespan_machine_source/external_compile_libraries/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/bin/CMakeFiles/generate.stamp.depend'
+    result='-1'
+  -- Building for: Visual Studio 14
+  
+  CMake Warning (dev) in CMakeLists.txt:
+    No cmake_minimum_required command is present.  A line of code such as
+  
+      cmake_minimum_required(VERSION 3.0)
+  
+    should be added at the top of the file.  The version specified may be lower
+    if you wish to support older CMake versions for this project.  For more
+    information run "cmake --help-policy CMP0000".
+  This warning is for project developers.  Use -Wno-dev to suppress it.
+  
+  -- Configuring incomplete, errors occurred!
+  See also "C:/server/ns_lifespan_machine_source/external_compile_libraries/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/bin/CMakeFiles/CMakeOutput.log".
+  CMake Configure step failed.  Build files cannot be regenerated correctly.  Attempting to stop IDE build.
+C:\Program Files (x86)\MSBuild\Microsoft.Cpp\v4.0\V140\Microsoft.CppCommon.targets(171,5): error MSB6006: "cmd.exe" exited with code 1.

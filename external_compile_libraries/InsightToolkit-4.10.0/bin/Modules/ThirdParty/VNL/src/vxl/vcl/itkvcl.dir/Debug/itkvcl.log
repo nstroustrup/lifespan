@@ -1,0 +1,4 @@
+﻿  Building Custom Rule C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/src/vxl/vcl/CMakeLists.txt
+  CMake does not need to re-run because C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\VNL\src\vxl\vcl\CMakeFiles\generate.stamp is up-to-date.
+  vcl_deprecated.cxx
+  itkvcl.vcxproj -> C:\server\InsightToolkit-4.10.0\bin\lib\Debug\itkvcl-4.10.lib

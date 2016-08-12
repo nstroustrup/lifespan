@@ -1,0 +1,2 @@
+C:/server/ns_lifespan_machine_source/external_compile_libraries/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/bin/CMakeFiles/ALL_BUILD.dir
+C:/server/ns_lifespan_machine_source/external_compile_libraries/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/bin/CMakeFiles/ZERO_CHECK.dir

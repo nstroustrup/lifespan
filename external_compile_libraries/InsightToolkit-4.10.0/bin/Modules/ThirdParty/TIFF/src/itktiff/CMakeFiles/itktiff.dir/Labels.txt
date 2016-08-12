@@ -1,0 +1,39 @@
+# Target labels
+ ITKTIFF
+# Source files and their labels
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/TIFF/src/itktiff/tif_aux.c
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/TIFF/src/itktiff/tif_close.c
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/TIFF/src/itktiff/tif_codec.c
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/TIFF/src/itktiff/tif_compress.c
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/TIFF/src/itktiff/tif_color.c
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/TIFF/src/itktiff/tif_dir.c
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/TIFF/src/itktiff/tif_dirinfo.c
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/TIFF/src/itktiff/tif_dirread.c
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/TIFF/src/itktiff/tif_dirwrite.c
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/TIFF/src/itktiff/tif_dumpmode.c
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/TIFF/src/itktiff/tif_error.c
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/TIFF/src/itktiff/tif_extension.c
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/TIFF/src/itktiff/tif_fax3.c
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/TIFF/src/itktiff/tif_flush.c
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/TIFF/src/itktiff/tif_getimage.c
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/TIFF/src/itktiff/tif_luv.c
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/TIFF/src/itktiff/tif_lzw.c
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/TIFF/src/itktiff/tif_next.c
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/TIFF/src/itktiff/tif_open.c
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/TIFF/src/itktiff/tif_packbits.c
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/TIFF/src/itktiff/tif_pixarlog.c
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/TIFF/src/itktiff/tif_predict.c
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/TIFF/src/itktiff/tif_print.c
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/TIFF/src/itktiff/tif_read.c
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/TIFF/src/itktiff/tif_strip.c
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/TIFF/src/itktiff/tif_swab.c
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/TIFF/src/itktiff/tif_tile.c
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/TIFF/src/itktiff/tif_thunder.c
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/TIFF/src/itktiff/tif_version.c
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/TIFF/src/itktiff/tif_warning.c
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/TIFF/src/itktiff/tif_write.c
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/TIFF/src/itktiff/tif_zip.c
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/TIFF/src/itktiff/tif_jpeg.c
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/TIFF/src/itktiff/tif_win32.c
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/TIFF/src/itktiff/tif_fax3sm.c
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/TIFF/src/itktiff/CMakeLists.txt

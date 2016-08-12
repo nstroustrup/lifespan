@@ -1,0 +1,54 @@
+# CMake generation dependency list for this directory.
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/KWSys/src/KWSys/CMakeLists.txt
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/KWSys/src/KWSys/kwsysPlatformTests.cmake
+C:/Program Files/CMake/share/cmake-3.6/Modules/CheckTypeSize.cmake
+C:/Program Files/CMake/share/cmake-3.6/Modules/CheckIncludeFile.cmake
+C:/Program Files/CMake/share/cmake-3.6/Modules/CheckIncludeFileCXX.cmake
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/KWSys/src/KWSys/kwsysPrivate.h
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/KWSys/src/KWSys/kwsysPlatformTestsCXX.cxx
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/KWSys/src/KWSys/kwsysPlatformTestsCXX.cxx
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/KWSys/src/KWSys/kwsysPlatformTestsCXX.cxx
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/KWSys/src/KWSys/kwsysPlatformTestsCXX.cxx
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/KWSys/src/KWSys/kwsysPlatformTestsCXX.cxx
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/KWSys/src/KWSys/kwsysPlatformTestsCXX.cxx
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/KWSys/src/KWSys/kwsysPlatformTestsCXX.cxx
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/KWSys/src/KWSys/kwsysPlatformTestsC.c
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/KWSys/src/KWSys/kwsysPlatformTestsC.c
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/KWSys/src/KWSys/kwsysPlatformTestsCXX.cxx
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/KWSys/src/KWSys/kwsysPlatformTestsCXX.cxx
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/KWSys/src/KWSys/kwsysPlatformTestsCXX.cxx
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/KWSys/src/KWSys/kwsysPlatformTestsCXX.cxx
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/KWSys/src/KWSys/kwsysPlatformTestsCXX.cxx
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/KWSys/src/KWSys/kwsysPlatformTestsCXX.cxx
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/KWSys/src/KWSys/kwsysPlatformTestsCXX.cxx
+C:/Program Files/CMake/share/cmake-3.6/Modules/CheckIncludeFiles.cmake
+c:/Program Files/CMake/share/cmake-3.6/Modules/CMakeConfigurableFile.in
+C:/Program Files/CMake/share/cmake-3.6/Modules/CheckSymbolExists.cmake
+c:/Program Files/CMake/share/cmake-3.6/Modules/CMakeConfigurableFile.in
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/KWSys/src/KWSys/kwsysPlatformTestsCXX.cxx
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/KWSys/src/KWSys/kwsysPlatformTestsCXX.cxx
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/KWSys/src/KWSys/kwsysPlatformTestsCXX.cxx
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/KWSys/src/KWSys/kwsysPlatformTestsCXX.cxx
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/KWSys/src/KWSys/Directory.hxx.in
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/KWSys/src/KWSys/DynamicLoader.hxx.in
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/KWSys/src/KWSys/Encoding.hxx.in
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/KWSys/src/KWSys/Glob.hxx.in
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/KWSys/src/KWSys/RegularExpression.hxx.in
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/KWSys/src/KWSys/SystemTools.hxx.in
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/KWSys/src/KWSys/CommandLineArguments.hxx.in
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/KWSys/src/KWSys/FStream.hxx.in
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/KWSys/src/KWSys/SystemInformation.hxx.in
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/KWSys/src/KWSys/Configure.h.in
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/KWSys/src/KWSys/SharedForward.h.in
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/KWSys/src/KWSys/Process.h.in
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/KWSys/src/KWSys/Base64.h.in
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/KWSys/src/KWSys/Encoding.h.in
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/KWSys/src/KWSys/MD5.h.in
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/KWSys/src/KWSys/System.h.in
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/KWSys/src/KWSys/Configure.hxx.in
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/KWSys/src/KWSys/String.hxx.in
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/KWSys/src/KWSys/hashtable.hxx.in
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/KWSys/src/KWSys/hash_fun.hxx.in
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/KWSys/src/KWSys/hash_map.hxx.in
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/KWSys/src/KWSys/hash_set.hxx.in
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/KWSys/src/KWSys/auto_ptr.hxx.in

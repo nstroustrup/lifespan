@@ -1,0 +1,6 @@
+# Target labels
+ ITKIOPNG
+# Source files and their labels
+C:/server/InsightToolkit-4.10.0/Modules/IO/PNG/src/itkPNGImageIOFactory.cxx
+C:/server/InsightToolkit-4.10.0/Modules/IO/PNG/src/itkPNGImageIO.cxx
+C:/server/InsightToolkit-4.10.0/Modules/IO/PNG/src/CMakeLists.txt

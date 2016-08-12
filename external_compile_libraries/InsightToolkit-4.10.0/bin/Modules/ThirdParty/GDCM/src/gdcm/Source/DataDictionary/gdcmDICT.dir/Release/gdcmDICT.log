@@ -1,0 +1,14 @@
+﻿  Building Custom Rule C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/GDCM/src/gdcm/Source/DataDictionary/CMakeLists.txt
+  CMake does not need to re-run because C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\GDCM\src\gdcm\Source\DataDictionary\CMakeFiles\generate.stamp is up-to-date.
+  gdcmDicts.cxx
+  gdcmDictEntry.cxx
+  gdcmDefaultDicts.cxx
+  gdcmPrivateDefaultDicts.cxx
+  gdcmGlobal.cxx
+  gdcmGroupDict.cxx
+  gdcmDefaultGroupNames.cxx
+  gdcmUIDs.cxx
+  gdcmSOPClassUIDToIOD.cxx
+  gdcmCSAHeaderDefaultDicts.cxx
+  Generating Code...
+  gdcmDICT.vcxproj -> C:\server\InsightToolkit-4.10.0\bin\lib\Release\itkgdcmDICT-4.10.lib

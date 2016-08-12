@@ -1,0 +1,12 @@
+set(ITKKWIML_LOADED 1)
+set(ITKKWIML_ENABLE_SHARED "0")
+set(ITKKWIML_DEPENDS "")
+set(ITKKWIML_PUBLIC_DEPENDS "")
+set(ITKKWIML_TRANSITIVE_DEPENDS "")
+set(ITKKWIML_PRIVATE_DEPENDS "")
+set(ITKKWIML_LIBRARIES "")
+set(ITKKWIML_INCLUDE_DIRS "C:/server/InsightToolkit-4.10.0/bin/Modules/ThirdParty/KWIML/src;C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/KWIML/src")
+set(ITKKWIML_LIBRARY_DIRS "")
+set(ITKKWIML_RUNTIME_LIBRARY_DIRS "C:/server/InsightToolkit-4.10.0/bin/bin")
+set(ITKKWIML_TARGETS_FILE "")
+

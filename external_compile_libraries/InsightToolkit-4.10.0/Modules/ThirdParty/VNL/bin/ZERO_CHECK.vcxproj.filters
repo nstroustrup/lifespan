@@ -1,0 +1,13 @@
+﻿<?xml version="1.0" encoding="Windows-1252"?>
+<Project ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <CustomBuild Include="C:\server\ns_lifespan_machine_source\external_compile_libraries\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\bin\CMakeFiles\81213fa26ce913a2721d17d97167c485\generate.stamp.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="CMake Rules">
+      <UniqueIdentifier>{7ACB56D4-5678-4F39-871D-4024B8204DF0}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

@@ -1,0 +1,12 @@
+set(ITKNrrdIO_LOADED 1)
+set(ITKNrrdIO_ENABLE_SHARED "0")
+set(ITKNrrdIO_DEPENDS "ITKZLIB")
+set(ITKNrrdIO_PUBLIC_DEPENDS "ITKZLIB")
+set(ITKNrrdIO_TRANSITIVE_DEPENDS "ITKZLIB")
+set(ITKNrrdIO_PRIVATE_DEPENDS "")
+set(ITKNrrdIO_LIBRARIES "ITKNrrdIO")
+set(ITKNrrdIO_INCLUDE_DIRS "C:/server/InsightToolkit-4.10.0/bin/Modules/ThirdParty/NrrdIO/src/NrrdIO;C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/NrrdIO/src/NrrdIO")
+set(ITKNrrdIO_LIBRARY_DIRS "")
+set(ITKNrrdIO_RUNTIME_LIBRARY_DIRS "C:/server/InsightToolkit-4.10.0/bin/bin")
+set(ITKNrrdIO_TARGETS_FILE "")
+

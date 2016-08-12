@@ -1,0 +1,29 @@
+# Target labels
+ ITKVNLInstantiation
+# Source files and their labels
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNLInstantiation/src/vnl_vector+ulonglong-.cxx
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNLInstantiation/src/vnl_fft_base+float.3-.cxx
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNLInstantiation/src/vnl_fft_base+float.4-.cxx
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNLInstantiation/src/vnl_matrix_fixed_ref+double.2.2-.cxx
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNLInstantiation/src/vnl_matrix_fixed_ref+double.2.3-.cxx
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNLInstantiation/src/vnl_fft_base+double.3-.cxx
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNLInstantiation/src/vnl_fft_base+double.4-.cxx
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNLInstantiation/src/vnl_c_vector+ushort-.cxx
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNLInstantiation/src/vnl_vector+ushort-.cxx
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNLInstantiation/src/vnl_matrix_fixed+double.3.12-.cxx
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNLInstantiation/src/vnl_c_vector+char-.cxx
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNLInstantiation/src/vnl_c_vector+short-.cxx
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNLInstantiation/src/vnl_matrix+short-.cxx
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNLInstantiation/src/vnl_matrix_fixed_ref+double.3.12-.cxx
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNLInstantiation/src/vnl_matrix_fixed_ref+double.4.4-.cxx
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNLInstantiation/src/vnl_matrix+char-.cxx
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNLInstantiation/src/vnl_vector+char-.cxx
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNLInstantiation/src/vnl_matrix+longlong-.cxx
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNLInstantiation/src/vnl_c_vector+ulonglong-.cxx
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNLInstantiation/src/vnl_matrix_fixed_ref+double.4.3-.cxx
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNLInstantiation/src/vnl_vector+longlong-.cxx
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNLInstantiation/src/vnl_matrix+ulonglong-.cxx
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNLInstantiation/src/vnl_c_vector+longlong-.cxx
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNLInstantiation/src/vnl_vector+short-.cxx
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNLInstantiation/src/vnl_matrix+ushort-.cxx
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNLInstantiation/src/CMakeLists.txt

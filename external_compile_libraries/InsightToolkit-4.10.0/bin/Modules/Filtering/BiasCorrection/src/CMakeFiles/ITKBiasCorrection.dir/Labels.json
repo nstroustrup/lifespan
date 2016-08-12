@@ -1,0 +1,23 @@
+
+{
+	"sources" : 
+	[
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/Filtering/BiasCorrection/src/itkCompositeValleyFunction.cxx"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/Filtering/BiasCorrection/src/itkCacheableScalarFunction.cxx"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/Filtering/BiasCorrection/src/CMakeLists.txt"
+		}
+	],
+	"target" : 
+	{
+		"labels" : [ "ITKBiasCorrection" ],
+		"name" : "ITKBiasCorrection"
+	}
+}

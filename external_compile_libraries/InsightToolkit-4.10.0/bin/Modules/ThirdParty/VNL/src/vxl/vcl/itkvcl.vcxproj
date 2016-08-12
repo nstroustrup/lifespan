@@ -1,0 +1,344 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="MinSizeRel|x64">
+      <Configuration>MinSizeRel</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="RelWithDebInfo|x64">
+      <Configuration>RelWithDebInfo</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGUID>{8FE2E4BB-4B54-392C-815E-387EC4C349E8}</ProjectGUID>
+    <Keyword>Win32Proj</Keyword>
+    <Platform>x64</Platform>
+    <ProjectName>itkvcl</ProjectName>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <UseOfMfc>false</UseOfMfc>
+    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v140</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <UseOfMfc>false</UseOfMfc>
+    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v140</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <UseOfMfc>false</UseOfMfc>
+    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v140</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <UseOfMfc>false</UseOfMfc>
+    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v140</PlatformToolset>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup>
+    <_ProjectFileVersion>10.0.20506.1</_ProjectFileVersion>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">C:\server\InsightToolkit-4.10.0\bin\lib\Debug\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">itkvcl.dir\Debug\</IntDir>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">itkvcl-4.10</TargetName>
+    <TargetExt Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">.lib</TargetExt>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Release|x64'">C:\server\InsightToolkit-4.10.0\bin\lib\Release\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Release|x64'">itkvcl.dir\Release\</IntDir>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">itkvcl-4.10</TargetName>
+    <TargetExt Condition="'$(Configuration)|$(Platform)'=='Release|x64'">.lib</TargetExt>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">C:\server\InsightToolkit-4.10.0\bin\lib\MinSizeRel\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">itkvcl.dir\MinSizeRel\</IntDir>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">itkvcl-4.10</TargetName>
+    <TargetExt Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">.lib</TargetExt>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">C:\server\InsightToolkit-4.10.0\bin\lib\RelWithDebInfo\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">itkvcl.dir\RelWithDebInfo\</IntDir>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">itkvcl-4.10</TargetName>
+    <TargetExt Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">.lib</TargetExt>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <AdditionalOptions> /bigobj %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalIncludeDirectories>C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\vcl;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core;C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\VNL\src\vxl\v3p\netlib;C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\VNL\src\vxl\vcl;C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\VNL\src\vxl\core;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AssemblerListingLocation>Debug/</AssemblerListingLocation>
+      <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
+      <CompileAs>CompileAsCpp</CompileAs>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <ExceptionHandling>Sync</ExceptionHandling>
+      <InlineFunctionExpansion>Disabled</InlineFunctionExpansion>
+      <Optimization>Disabled</Optimization>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <RuntimeTypeInfo>true</RuntimeTypeInfo>
+      <WarningLevel>TurnOffAllWarnings</WarningLevel>
+      <PreprocessorDefinitions>WIN32;_WINDOWS;_DEBUG;_CRT_FAR_MAPPINGS_NO_DEPRECATE;_CRT_IS_WCTYPE_NO_DEPRECATE;_CRT_MANAGED_FP_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;_CRT_SECURE_NO_DEPRECATE;_CRT_SECURE_NO_DEPRECATE_GLOBALS;_CRT_SETERRORMODE_BEEP_SLEEP_NO_DEPRECATE;_CRT_TIME_FUNCTIONS_NO_DEPRECATE;_CRT_VCCLRIT_NO_DEPRECATE;_SCL_SECURE_NO_DEPRECATE;VXL_WARN_DEPRECATED;VXL_WARN_DEPRECATED_ONCE;VXL_LEGACY_ERROR_REPORTING;CMAKE_INTDIR="Debug";%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ObjectFileName>$(IntDir)</ObjectFileName>
+    </ClCompile>
+    <ResourceCompile>
+      <PreprocessorDefinitions>WIN32;_WINDOWS;_DEBUG;_CRT_FAR_MAPPINGS_NO_DEPRECATE;_CRT_IS_WCTYPE_NO_DEPRECATE;_CRT_MANAGED_FP_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;_CRT_SECURE_NO_DEPRECATE;_CRT_SECURE_NO_DEPRECATE_GLOBALS;_CRT_SETERRORMODE_BEEP_SLEEP_NO_DEPRECATE;_CRT_TIME_FUNCTIONS_NO_DEPRECATE;_CRT_VCCLRIT_NO_DEPRECATE;_SCL_SECURE_NO_DEPRECATE;VXL_WARN_DEPRECATED;VXL_WARN_DEPRECATED_ONCE;VXL_LEGACY_ERROR_REPORTING;CMAKE_INTDIR=\"Debug\";%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\vcl;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core;C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\VNL\src\vxl\v3p\netlib;C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\VNL\src\vxl\vcl;C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\VNL\src\vxl\core;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ResourceCompile>
+    <Midl>
+      <AdditionalIncludeDirectories>C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\vcl;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core;C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\VNL\src\vxl\v3p\netlib;C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\VNL\src\vxl\vcl;C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\VNL\src\vxl\core;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
+      <HeaderFileName>%(Filename).h</HeaderFileName>
+      <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
+      <InterfaceIdentifierFileName>%(Filename)_i.c</InterfaceIdentifierFileName>
+      <ProxyFileName>%(Filename)_p.c</ProxyFileName>
+    </Midl>
+    <Lib>
+      <AdditionalOptions> /machine:x64 %(AdditionalOptions)</AdditionalOptions>
+    </Lib>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <AdditionalOptions> /bigobj %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalIncludeDirectories>C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\vcl;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core;C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\VNL\src\vxl\v3p\netlib;C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\VNL\src\vxl\vcl;C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\VNL\src\vxl\core;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AssemblerListingLocation>Release/</AssemblerListingLocation>
+      <CompileAs>CompileAsCpp</CompileAs>
+      <ExceptionHandling>Sync</ExceptionHandling>
+      <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
+      <Optimization>MaxSpeed</Optimization>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <RuntimeTypeInfo>true</RuntimeTypeInfo>
+      <WarningLevel>TurnOffAllWarnings</WarningLevel>
+      <PreprocessorDefinitions>WIN32;_WINDOWS;NDEBUG;_CRT_FAR_MAPPINGS_NO_DEPRECATE;_CRT_IS_WCTYPE_NO_DEPRECATE;_CRT_MANAGED_FP_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;_CRT_SECURE_NO_DEPRECATE;_CRT_SECURE_NO_DEPRECATE_GLOBALS;_CRT_SETERRORMODE_BEEP_SLEEP_NO_DEPRECATE;_CRT_TIME_FUNCTIONS_NO_DEPRECATE;_CRT_VCCLRIT_NO_DEPRECATE;_SCL_SECURE_NO_DEPRECATE;VXL_WARN_DEPRECATED;VXL_WARN_DEPRECATED_ONCE;VXL_LEGACY_ERROR_REPORTING;CMAKE_INTDIR="Release";%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ObjectFileName>$(IntDir)</ObjectFileName>
+      <DebugInformationFormat>
+      </DebugInformationFormat>
+    </ClCompile>
+    <ResourceCompile>
+      <PreprocessorDefinitions>WIN32;_WINDOWS;NDEBUG;_CRT_FAR_MAPPINGS_NO_DEPRECATE;_CRT_IS_WCTYPE_NO_DEPRECATE;_CRT_MANAGED_FP_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;_CRT_SECURE_NO_DEPRECATE;_CRT_SECURE_NO_DEPRECATE_GLOBALS;_CRT_SETERRORMODE_BEEP_SLEEP_NO_DEPRECATE;_CRT_TIME_FUNCTIONS_NO_DEPRECATE;_CRT_VCCLRIT_NO_DEPRECATE;_SCL_SECURE_NO_DEPRECATE;VXL_WARN_DEPRECATED;VXL_WARN_DEPRECATED_ONCE;VXL_LEGACY_ERROR_REPORTING;CMAKE_INTDIR=\"Release\";%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\vcl;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core;C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\VNL\src\vxl\v3p\netlib;C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\VNL\src\vxl\vcl;C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\VNL\src\vxl\core;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ResourceCompile>
+    <Midl>
+      <AdditionalIncludeDirectories>C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\vcl;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core;C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\VNL\src\vxl\v3p\netlib;C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\VNL\src\vxl\vcl;C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\VNL\src\vxl\core;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
+      <HeaderFileName>%(Filename).h</HeaderFileName>
+      <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
+      <InterfaceIdentifierFileName>%(Filename)_i.c</InterfaceIdentifierFileName>
+      <ProxyFileName>%(Filename)_p.c</ProxyFileName>
+    </Midl>
+    <Lib>
+      <AdditionalOptions> /machine:x64 %(AdditionalOptions)</AdditionalOptions>
+    </Lib>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">
+    <ClCompile>
+      <AdditionalOptions> /bigobj %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalIncludeDirectories>C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\vcl;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core;C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\VNL\src\vxl\v3p\netlib;C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\VNL\src\vxl\vcl;C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\VNL\src\vxl\core;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AssemblerListingLocation>MinSizeRel/</AssemblerListingLocation>
+      <CompileAs>CompileAsCpp</CompileAs>
+      <ExceptionHandling>Sync</ExceptionHandling>
+      <InlineFunctionExpansion>OnlyExplicitInline</InlineFunctionExpansion>
+      <Optimization>MinSpace</Optimization>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <RuntimeTypeInfo>true</RuntimeTypeInfo>
+      <WarningLevel>TurnOffAllWarnings</WarningLevel>
+      <PreprocessorDefinitions>WIN32;_WINDOWS;NDEBUG;_CRT_FAR_MAPPINGS_NO_DEPRECATE;_CRT_IS_WCTYPE_NO_DEPRECATE;_CRT_MANAGED_FP_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;_CRT_SECURE_NO_DEPRECATE;_CRT_SECURE_NO_DEPRECATE_GLOBALS;_CRT_SETERRORMODE_BEEP_SLEEP_NO_DEPRECATE;_CRT_TIME_FUNCTIONS_NO_DEPRECATE;_CRT_VCCLRIT_NO_DEPRECATE;_SCL_SECURE_NO_DEPRECATE;VXL_WARN_DEPRECATED;VXL_WARN_DEPRECATED_ONCE;VXL_LEGACY_ERROR_REPORTING;CMAKE_INTDIR="MinSizeRel";%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ObjectFileName>$(IntDir)</ObjectFileName>
+      <DebugInformationFormat>
+      </DebugInformationFormat>
+    </ClCompile>
+    <ResourceCompile>
+      <PreprocessorDefinitions>WIN32;_WINDOWS;NDEBUG;_CRT_FAR_MAPPINGS_NO_DEPRECATE;_CRT_IS_WCTYPE_NO_DEPRECATE;_CRT_MANAGED_FP_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;_CRT_SECURE_NO_DEPRECATE;_CRT_SECURE_NO_DEPRECATE_GLOBALS;_CRT_SETERRORMODE_BEEP_SLEEP_NO_DEPRECATE;_CRT_TIME_FUNCTIONS_NO_DEPRECATE;_CRT_VCCLRIT_NO_DEPRECATE;_SCL_SECURE_NO_DEPRECATE;VXL_WARN_DEPRECATED;VXL_WARN_DEPRECATED_ONCE;VXL_LEGACY_ERROR_REPORTING;CMAKE_INTDIR=\"MinSizeRel\";%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\vcl;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core;C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\VNL\src\vxl\v3p\netlib;C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\VNL\src\vxl\vcl;C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\VNL\src\vxl\core;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ResourceCompile>
+    <Midl>
+      <AdditionalIncludeDirectories>C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\vcl;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core;C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\VNL\src\vxl\v3p\netlib;C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\VNL\src\vxl\vcl;C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\VNL\src\vxl\core;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
+      <HeaderFileName>%(Filename).h</HeaderFileName>
+      <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
+      <InterfaceIdentifierFileName>%(Filename)_i.c</InterfaceIdentifierFileName>
+      <ProxyFileName>%(Filename)_p.c</ProxyFileName>
+    </Midl>
+    <Lib>
+      <AdditionalOptions> /machine:x64 %(AdditionalOptions)</AdditionalOptions>
+    </Lib>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">
+    <ClCompile>
+      <AdditionalOptions> /bigobj %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalIncludeDirectories>C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\vcl;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core;C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\VNL\src\vxl\v3p\netlib;C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\VNL\src\vxl\vcl;C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\VNL\src\vxl\core;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AssemblerListingLocation>RelWithDebInfo/</AssemblerListingLocation>
+      <CompileAs>CompileAsCpp</CompileAs>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <ExceptionHandling>Sync</ExceptionHandling>
+      <InlineFunctionExpansion>OnlyExplicitInline</InlineFunctionExpansion>
+      <Optimization>MaxSpeed</Optimization>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <RuntimeTypeInfo>true</RuntimeTypeInfo>
+      <WarningLevel>TurnOffAllWarnings</WarningLevel>
+      <PreprocessorDefinitions>WIN32;_WINDOWS;NDEBUG;_CRT_FAR_MAPPINGS_NO_DEPRECATE;_CRT_IS_WCTYPE_NO_DEPRECATE;_CRT_MANAGED_FP_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;_CRT_SECURE_NO_DEPRECATE;_CRT_SECURE_NO_DEPRECATE_GLOBALS;_CRT_SETERRORMODE_BEEP_SLEEP_NO_DEPRECATE;_CRT_TIME_FUNCTIONS_NO_DEPRECATE;_CRT_VCCLRIT_NO_DEPRECATE;_SCL_SECURE_NO_DEPRECATE;VXL_WARN_DEPRECATED;VXL_WARN_DEPRECATED_ONCE;VXL_LEGACY_ERROR_REPORTING;CMAKE_INTDIR="RelWithDebInfo";%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ObjectFileName>$(IntDir)</ObjectFileName>
+    </ClCompile>
+    <ResourceCompile>
+      <PreprocessorDefinitions>WIN32;_WINDOWS;NDEBUG;_CRT_FAR_MAPPINGS_NO_DEPRECATE;_CRT_IS_WCTYPE_NO_DEPRECATE;_CRT_MANAGED_FP_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;_CRT_SECURE_NO_DEPRECATE;_CRT_SECURE_NO_DEPRECATE_GLOBALS;_CRT_SETERRORMODE_BEEP_SLEEP_NO_DEPRECATE;_CRT_TIME_FUNCTIONS_NO_DEPRECATE;_CRT_VCCLRIT_NO_DEPRECATE;_SCL_SECURE_NO_DEPRECATE;VXL_WARN_DEPRECATED;VXL_WARN_DEPRECATED_ONCE;VXL_LEGACY_ERROR_REPORTING;CMAKE_INTDIR=\"RelWithDebInfo\";%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\vcl;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core;C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\VNL\src\vxl\v3p\netlib;C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\VNL\src\vxl\vcl;C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\VNL\src\vxl\core;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ResourceCompile>
+    <Midl>
+      <AdditionalIncludeDirectories>C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\v3p\netlib;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\vcl;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core;C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\VNL\src\vxl\v3p\netlib;C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\VNL\src\vxl\vcl;C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\VNL\src\vxl\core;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
+      <HeaderFileName>%(Filename).h</HeaderFileName>
+      <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
+      <InterfaceIdentifierFileName>%(Filename)_i.c</InterfaceIdentifierFileName>
+      <ProxyFileName>%(Filename)_p.c</ProxyFileName>
+    </Midl>
+    <Lib>
+      <AdditionalOptions> /machine:x64 %(AdditionalOptions)</AdditionalOptions>
+    </Lib>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <CustomBuild Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\vcl\CMakeLists.txt">
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Building Custom Rule C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/src/vxl/vcl/CMakeLists.txt</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">setlocal
+"c:\Program Files\CMake\bin\cmake.exe" -HC:/server/InsightToolkit-4.10.0 -BC:/server/InsightToolkit-4.10.0/bin --check-stamp-file C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\VNL\src\vxl\vcl\CMakeFiles\generate.stamp
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/src/vxl/vcl/CMakeLists.txt;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\vcl\CMakeLists.txt;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\vcl\vcl_config_compiler.h.in;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\vcl\vcl_config_headers.h.in;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\vcl\vcl_config_manual.h.in;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\vcl\vcl_where_root_dir.h.in;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\vcl\CMakeLists.txt;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\VNL\src\vxl\vcl\CMakeFiles\generate.stamp</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Building Custom Rule C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/src/vxl/vcl/CMakeLists.txt</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">setlocal
+"c:\Program Files\CMake\bin\cmake.exe" -HC:/server/InsightToolkit-4.10.0 -BC:/server/InsightToolkit-4.10.0/bin --check-stamp-file C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\VNL\src\vxl\vcl\CMakeFiles\generate.stamp
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/src/vxl/vcl/CMakeLists.txt;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\vcl\CMakeLists.txt;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\vcl\vcl_config_compiler.h.in;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\vcl\vcl_config_headers.h.in;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\vcl\vcl_config_manual.h.in;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\vcl\vcl_where_root_dir.h.in;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\vcl\CMakeLists.txt;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\VNL\src\vxl\vcl\CMakeFiles\generate.stamp</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">Building Custom Rule C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/src/vxl/vcl/CMakeLists.txt</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">setlocal
+"c:\Program Files\CMake\bin\cmake.exe" -HC:/server/InsightToolkit-4.10.0 -BC:/server/InsightToolkit-4.10.0/bin --check-stamp-file C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\VNL\src\vxl\vcl\CMakeFiles\generate.stamp
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/src/vxl/vcl/CMakeLists.txt;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\vcl\CMakeLists.txt;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\vcl\vcl_config_compiler.h.in;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\vcl\vcl_config_headers.h.in;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\vcl\vcl_config_manual.h.in;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\vcl\vcl_where_root_dir.h.in;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\vcl\CMakeLists.txt;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\VNL\src\vxl\vcl\CMakeFiles\generate.stamp</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">Building Custom Rule C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/src/vxl/vcl/CMakeLists.txt</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">setlocal
+"c:\Program Files\CMake\bin\cmake.exe" -HC:/server/InsightToolkit-4.10.0 -BC:/server/InsightToolkit-4.10.0/bin --check-stamp-file C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\VNL\src\vxl\vcl\CMakeFiles\generate.stamp
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/src/vxl/vcl/CMakeLists.txt;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\vcl\CMakeLists.txt;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\vcl\vcl_config_compiler.h.in;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\vcl\vcl_config_headers.h.in;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\vcl\vcl_config_manual.h.in;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\vcl\vcl_where_root_dir.h.in;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\vcl\CMakeLists.txt;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\VNL\src\vxl\vcl\CMakeFiles\generate.stamp</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">false</LinkObjects>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\vcl\vcl_compiler.h" />
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\vcl\vcl_deprecated.h" />
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\vcl\vcl_cmath.h" />
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\vcl\vcl_cassert.h" />
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\vcl\vcl_cstdlib.h" />
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\vcl\vcl_algorithm.h" />
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\vcl\vcl_bitset.h" />
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\vcl\vcl_cctype.h" />
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\vcl\vcl_cerrno.h" />
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\vcl\vcl_cfloat.h" />
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\vcl\vcl_ciso646.h" />
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\vcl\vcl_climits.h" />
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\vcl\vcl_clocale.h" />
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\vcl\vcl_complex.h" />
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\vcl\vcl_csetjmp.h" />
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\vcl\vcl_csignal.h" />
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\vcl\vcl_cstdarg.h" />
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\vcl\vcl_cstddef.h" />
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\vcl\vcl_cstdio.h" />
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\vcl\vcl_cstring.h" />
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\vcl\vcl_ctime.h" />
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\vcl\vcl_cwchar.h" />
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\vcl\vcl_cwctype.h" />
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\vcl\vcl_deprecated_header.h" />
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\vcl\vcl_deque.h" />
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\vcl\vcl_exception.h" />
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\vcl\vcl_fstream.h" />
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\vcl\vcl_functional.h" />
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\vcl\vcl_iomanip.h" />
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\vcl\vcl_ios.h" />
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\vcl\vcl_iosfwd.h" />
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\vcl\vcl_iostream.h" />
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\vcl\vcl_istream.h" />
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\vcl\vcl_iterator.h" />
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\vcl\vcl_limits.h" />
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\vcl\vcl_list.h" />
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\vcl\vcl_locale.h" />
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\vcl\vcl_map.h" />
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\vcl\vcl_memory.h" />
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\vcl\vcl_new.h" />
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\vcl\vcl_numeric.h" />
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\vcl\vcl_ostream.h" />
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\vcl\vcl_queue.h" />
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\vcl\vcl_set.h" />
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\vcl\vcl_sstream.h" />
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\vcl\vcl_stack.h" />
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\vcl\vcl_stdexcept.h" />
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\vcl\vcl_stlfwd.h" />
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\vcl\vcl_streambuf.h" />
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\vcl\vcl_string.h" />
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\vcl\vcl_typeinfo.h" />
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\vcl\vcl_utility.h" />
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\vcl\vcl_valarray.h" />
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\vcl\vcl_vector.h" />
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\vcl\vcl_sys\time.h" />
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\vcl\vcl_sys\types.h" />
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\vcl\vcl_atomic_count.h" />
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\vcl\internal\vcl_atomic_count_gcc.h" />
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\vcl\internal\vcl_atomic_count_gcc_x86.h" />
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\vcl\internal\vcl_atomic_count_pthreads.h" />
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\vcl\internal\vcl_atomic_count_solaris.h" />
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\vcl\internal\vcl_atomic_count_sync.h" />
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\vcl\internal\vcl_atomic_count_win32.h" />
+    <ClInclude Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\vcl\internal\vcl_interlocked.h" />
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\vcl\vcl_deprecated.cxx" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="C:/server/InsightToolkit-4.10.0/bin/ZERO_CHECK.vcxproj">
+      <Project>8424D74C-2D7E-3861-92BD-E31A437C2341</Project>
+    </ProjectReference>
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

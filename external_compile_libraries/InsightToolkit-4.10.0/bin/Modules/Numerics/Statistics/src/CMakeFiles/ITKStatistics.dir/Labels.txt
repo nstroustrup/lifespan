@@ -1,0 +1,15 @@
+# Target labels
+ ITKStatistics
+# Source files and their labels
+C:/server/InsightToolkit-4.10.0/Modules/Numerics/Statistics/src/itkProbabilityDistribution.cxx
+C:/server/InsightToolkit-4.10.0/Modules/Numerics/Statistics/src/itkDenseFrequencyContainer2.cxx
+C:/server/InsightToolkit-4.10.0/Modules/Numerics/Statistics/src/itkSparseFrequencyContainer2.cxx
+C:/server/InsightToolkit-4.10.0/Modules/Numerics/Statistics/src/itkChiSquareDistribution.cxx
+C:/server/InsightToolkit-4.10.0/Modules/Numerics/Statistics/src/itkGaussianDistribution.cxx
+C:/server/InsightToolkit-4.10.0/Modules/Numerics/Statistics/src/itkTDistribution.cxx
+C:/server/InsightToolkit-4.10.0/Modules/Numerics/Statistics/src/itkNormalVariateGenerator.cxx
+C:/server/InsightToolkit-4.10.0/Modules/Numerics/Statistics/src/itkDecisionRule.cxx
+C:/server/InsightToolkit-4.10.0/Modules/Numerics/Statistics/src/itkMaximumDecisionRule.cxx
+C:/server/InsightToolkit-4.10.0/Modules/Numerics/Statistics/src/itkMaximumRatioDecisionRule.cxx
+C:/server/InsightToolkit-4.10.0/Modules/Numerics/Statistics/src/itkMinimumDecisionRule.cxx
+C:/server/InsightToolkit-4.10.0/Modules/Numerics/Statistics/src/CMakeLists.txt

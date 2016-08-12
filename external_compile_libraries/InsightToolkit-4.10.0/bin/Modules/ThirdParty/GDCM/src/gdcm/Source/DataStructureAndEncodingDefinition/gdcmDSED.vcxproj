@@ -1,0 +1,407 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="MinSizeRel|x64">
+      <Configuration>MinSizeRel</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="RelWithDebInfo|x64">
+      <Configuration>RelWithDebInfo</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGUID>{C9506DA5-9127-3A5E-AEBC-DDF6D9786D65}</ProjectGUID>
+    <Keyword>Win32Proj</Keyword>
+    <Platform>x64</Platform>
+    <ProjectName>gdcmDSED</ProjectName>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <UseOfMfc>false</UseOfMfc>
+    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v140</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <UseOfMfc>false</UseOfMfc>
+    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v140</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <UseOfMfc>false</UseOfMfc>
+    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v140</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <UseOfMfc>false</UseOfMfc>
+    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v140</PlatformToolset>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+    <PropertyGroup>
+      <_ProjectFileVersion>10.0.20506.1</_ProjectFileVersion>
+      <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">C:\server\InsightToolkit-4.10.0\bin\lib\Debug\</OutDir>
+      <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">gdcmDSED.dir\Debug\</IntDir>
+      <TargetName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">itkgdcmDSED-4.10</TargetName>
+      <TargetExt Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">.lib</TargetExt>
+      <OutDir Condition="'$(Configuration)|$(Platform)'=='Release|x64'">C:\server\InsightToolkit-4.10.0\bin\lib\Release\</OutDir>
+      <IntDir Condition="'$(Configuration)|$(Platform)'=='Release|x64'">gdcmDSED.dir\Release\</IntDir>
+      <TargetName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">itkgdcmDSED-4.10</TargetName>
+      <TargetExt Condition="'$(Configuration)|$(Platform)'=='Release|x64'">.lib</TargetExt>
+      <OutDir Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">C:\server\InsightToolkit-4.10.0\bin\lib\MinSizeRel\</OutDir>
+      <IntDir Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">gdcmDSED.dir\MinSizeRel\</IntDir>
+      <TargetName Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">itkgdcmDSED-4.10</TargetName>
+      <TargetExt Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">.lib</TargetExt>
+      <OutDir Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">C:\server\InsightToolkit-4.10.0\bin\lib\RelWithDebInfo\</OutDir>
+      <IntDir Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">gdcmDSED.dir\RelWithDebInfo\</IntDir>
+      <TargetName Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">itkgdcmDSED-4.10</TargetName>
+      <TargetExt Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">.lib</TargetExt>
+    </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <AdditionalOptions> /bigobj %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalIncludeDirectories>C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\Expat\src\expat;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\Expat\src\expat;C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\ZLIB\src;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\ZLIB\src;C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\GDCM;C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\GDCM\src\gdcm\Source\Common;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\MediaStorageAndFileFormat;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\DataDictionary;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\Common;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\InformationObjectDefinition;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\MessageExchangeDefinition;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\DataStructureAndEncodingDefinition;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Utilities;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AssemblerListingLocation>Debug/</AssemblerListingLocation>
+      <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
+      <CompileAs>CompileAsCpp</CompileAs>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <ExceptionHandling>Sync</ExceptionHandling>
+      <InlineFunctionExpansion>Disabled</InlineFunctionExpansion>
+      <Optimization>Disabled</Optimization>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
+      <RuntimeTypeInfo>true</RuntimeTypeInfo>
+      <WarningLevel>TurnOffAllWarnings</WarningLevel>
+      <PreprocessorDefinitions>WIN32;_WINDOWS;NDEBUG;_DEBUG;_CRT_FAR_MAPPINGS_NO_DEPRECATE;_CRT_IS_WCTYPE_NO_DEPRECATE;_CRT_MANAGED_FP_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;_CRT_SECURE_NO_DEPRECATE;_CRT_SECURE_NO_DEPRECATE_GLOBALS;_CRT_SETERRORMODE_BEEP_SLEEP_NO_DEPRECATE;_CRT_TIME_FUNCTIONS_NO_DEPRECATE;_CRT_VCCLRIT_NO_DEPRECATE;_SCL_SECURE_NO_DEPRECATE;_CRT_SECURE_NO_WARNINGS;_SCL_SECURE_NO_WARNINGS;CMAKE_INTDIR="Debug";%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ObjectFileName>$(IntDir)</ObjectFileName>
+    </ClCompile>
+    <ResourceCompile>
+      <PreprocessorDefinitions>WIN32;_WINDOWS;NDEBUG;_DEBUG;_CRT_FAR_MAPPINGS_NO_DEPRECATE;_CRT_IS_WCTYPE_NO_DEPRECATE;_CRT_MANAGED_FP_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;_CRT_SECURE_NO_DEPRECATE;_CRT_SECURE_NO_DEPRECATE_GLOBALS;_CRT_SETERRORMODE_BEEP_SLEEP_NO_DEPRECATE;_CRT_TIME_FUNCTIONS_NO_DEPRECATE;_CRT_VCCLRIT_NO_DEPRECATE;_SCL_SECURE_NO_DEPRECATE;_CRT_SECURE_NO_WARNINGS;_SCL_SECURE_NO_WARNINGS;CMAKE_INTDIR=\"Debug\";%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\Expat\src\expat;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\Expat\src\expat;C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\ZLIB\src;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\ZLIB\src;C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\GDCM;C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\GDCM\src\gdcm\Source\Common;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\MediaStorageAndFileFormat;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\DataDictionary;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\Common;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\InformationObjectDefinition;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\MessageExchangeDefinition;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\DataStructureAndEncodingDefinition;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Utilities;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ResourceCompile>
+    <Midl>
+      <AdditionalIncludeDirectories>C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\Expat\src\expat;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\Expat\src\expat;C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\ZLIB\src;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\ZLIB\src;C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\GDCM;C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\GDCM\src\gdcm\Source\Common;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\MediaStorageAndFileFormat;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\DataDictionary;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\Common;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\InformationObjectDefinition;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\MessageExchangeDefinition;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\DataStructureAndEncodingDefinition;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Utilities;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
+      <HeaderFileName>%(Filename).h</HeaderFileName>
+      <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
+      <InterfaceIdentifierFileName>%(Filename)_i.c</InterfaceIdentifierFileName>
+      <ProxyFileName>%(Filename)_p.c</ProxyFileName>
+    </Midl>
+    <Lib>
+      <AdditionalOptions> /machine:x64 %(AdditionalOptions)</AdditionalOptions>
+    </Lib>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <AdditionalOptions> /bigobj %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalIncludeDirectories>C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\Expat\src\expat;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\Expat\src\expat;C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\ZLIB\src;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\ZLIB\src;C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\GDCM;C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\GDCM\src\gdcm\Source\Common;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\MediaStorageAndFileFormat;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\DataDictionary;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\Common;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\InformationObjectDefinition;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\MessageExchangeDefinition;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\DataStructureAndEncodingDefinition;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Utilities;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AssemblerListingLocation>Release/</AssemblerListingLocation>
+      <CompileAs>CompileAsCpp</CompileAs>
+      <ExceptionHandling>Sync</ExceptionHandling>
+      <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
+      <Optimization>MaxSpeed</Optimization>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <RuntimeTypeInfo>true</RuntimeTypeInfo>
+      <WarningLevel>TurnOffAllWarnings</WarningLevel>
+      <PreprocessorDefinitions>WIN32;_WINDOWS;NDEBUG;NDEBUG;_CRT_FAR_MAPPINGS_NO_DEPRECATE;_CRT_IS_WCTYPE_NO_DEPRECATE;_CRT_MANAGED_FP_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;_CRT_SECURE_NO_DEPRECATE;_CRT_SECURE_NO_DEPRECATE_GLOBALS;_CRT_SETERRORMODE_BEEP_SLEEP_NO_DEPRECATE;_CRT_TIME_FUNCTIONS_NO_DEPRECATE;_CRT_VCCLRIT_NO_DEPRECATE;_SCL_SECURE_NO_DEPRECATE;_CRT_SECURE_NO_WARNINGS;_SCL_SECURE_NO_WARNINGS;CMAKE_INTDIR="Release";%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ObjectFileName>$(IntDir)</ObjectFileName>
+      <DebugInformationFormat></DebugInformationFormat>
+    </ClCompile>
+    <ResourceCompile>
+      <PreprocessorDefinitions>WIN32;_WINDOWS;NDEBUG;NDEBUG;_CRT_FAR_MAPPINGS_NO_DEPRECATE;_CRT_IS_WCTYPE_NO_DEPRECATE;_CRT_MANAGED_FP_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;_CRT_SECURE_NO_DEPRECATE;_CRT_SECURE_NO_DEPRECATE_GLOBALS;_CRT_SETERRORMODE_BEEP_SLEEP_NO_DEPRECATE;_CRT_TIME_FUNCTIONS_NO_DEPRECATE;_CRT_VCCLRIT_NO_DEPRECATE;_SCL_SECURE_NO_DEPRECATE;_CRT_SECURE_NO_WARNINGS;_SCL_SECURE_NO_WARNINGS;CMAKE_INTDIR=\"Release\";%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\Expat\src\expat;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\Expat\src\expat;C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\ZLIB\src;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\ZLIB\src;C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\GDCM;C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\GDCM\src\gdcm\Source\Common;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\MediaStorageAndFileFormat;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\DataDictionary;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\Common;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\InformationObjectDefinition;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\MessageExchangeDefinition;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\DataStructureAndEncodingDefinition;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Utilities;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ResourceCompile>
+    <Midl>
+      <AdditionalIncludeDirectories>C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\Expat\src\expat;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\Expat\src\expat;C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\ZLIB\src;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\ZLIB\src;C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\GDCM;C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\GDCM\src\gdcm\Source\Common;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\MediaStorageAndFileFormat;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\DataDictionary;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\Common;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\InformationObjectDefinition;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\MessageExchangeDefinition;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\DataStructureAndEncodingDefinition;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Utilities;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
+      <HeaderFileName>%(Filename).h</HeaderFileName>
+      <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
+      <InterfaceIdentifierFileName>%(Filename)_i.c</InterfaceIdentifierFileName>
+      <ProxyFileName>%(Filename)_p.c</ProxyFileName>
+    </Midl>
+    <Lib>
+      <AdditionalOptions> /machine:x64 %(AdditionalOptions)</AdditionalOptions>
+    </Lib>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">
+    <ClCompile>
+      <AdditionalOptions> /bigobj %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalIncludeDirectories>C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\Expat\src\expat;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\Expat\src\expat;C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\ZLIB\src;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\ZLIB\src;C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\GDCM;C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\GDCM\src\gdcm\Source\Common;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\MediaStorageAndFileFormat;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\DataDictionary;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\Common;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\InformationObjectDefinition;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\MessageExchangeDefinition;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\DataStructureAndEncodingDefinition;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Utilities;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AssemblerListingLocation>MinSizeRel/</AssemblerListingLocation>
+      <CompileAs>CompileAsCpp</CompileAs>
+      <ExceptionHandling>Sync</ExceptionHandling>
+      <InlineFunctionExpansion>OnlyExplicitInline</InlineFunctionExpansion>
+      <Optimization>MinSpace</Optimization>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <RuntimeTypeInfo>true</RuntimeTypeInfo>
+      <WarningLevel>TurnOffAllWarnings</WarningLevel>
+      <PreprocessorDefinitions>WIN32;_WINDOWS;NDEBUG;NDEBUG;_CRT_FAR_MAPPINGS_NO_DEPRECATE;_CRT_IS_WCTYPE_NO_DEPRECATE;_CRT_MANAGED_FP_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;_CRT_SECURE_NO_DEPRECATE;_CRT_SECURE_NO_DEPRECATE_GLOBALS;_CRT_SETERRORMODE_BEEP_SLEEP_NO_DEPRECATE;_CRT_TIME_FUNCTIONS_NO_DEPRECATE;_CRT_VCCLRIT_NO_DEPRECATE;_SCL_SECURE_NO_DEPRECATE;_CRT_SECURE_NO_WARNINGS;_SCL_SECURE_NO_WARNINGS;CMAKE_INTDIR="MinSizeRel";%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ObjectFileName>$(IntDir)</ObjectFileName>
+      <DebugInformationFormat></DebugInformationFormat>
+    </ClCompile>
+    <ResourceCompile>
+      <PreprocessorDefinitions>WIN32;_WINDOWS;NDEBUG;NDEBUG;_CRT_FAR_MAPPINGS_NO_DEPRECATE;_CRT_IS_WCTYPE_NO_DEPRECATE;_CRT_MANAGED_FP_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;_CRT_SECURE_NO_DEPRECATE;_CRT_SECURE_NO_DEPRECATE_GLOBALS;_CRT_SETERRORMODE_BEEP_SLEEP_NO_DEPRECATE;_CRT_TIME_FUNCTIONS_NO_DEPRECATE;_CRT_VCCLRIT_NO_DEPRECATE;_SCL_SECURE_NO_DEPRECATE;_CRT_SECURE_NO_WARNINGS;_SCL_SECURE_NO_WARNINGS;CMAKE_INTDIR=\"MinSizeRel\";%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\Expat\src\expat;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\Expat\src\expat;C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\ZLIB\src;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\ZLIB\src;C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\GDCM;C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\GDCM\src\gdcm\Source\Common;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\MediaStorageAndFileFormat;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\DataDictionary;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\Common;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\InformationObjectDefinition;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\MessageExchangeDefinition;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\DataStructureAndEncodingDefinition;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Utilities;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ResourceCompile>
+    <Midl>
+      <AdditionalIncludeDirectories>C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\Expat\src\expat;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\Expat\src\expat;C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\ZLIB\src;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\ZLIB\src;C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\GDCM;C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\GDCM\src\gdcm\Source\Common;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\MediaStorageAndFileFormat;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\DataDictionary;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\Common;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\InformationObjectDefinition;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\MessageExchangeDefinition;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\DataStructureAndEncodingDefinition;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Utilities;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
+      <HeaderFileName>%(Filename).h</HeaderFileName>
+      <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
+      <InterfaceIdentifierFileName>%(Filename)_i.c</InterfaceIdentifierFileName>
+      <ProxyFileName>%(Filename)_p.c</ProxyFileName>
+    </Midl>
+    <Lib>
+      <AdditionalOptions> /machine:x64 %(AdditionalOptions)</AdditionalOptions>
+    </Lib>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">
+    <ClCompile>
+      <AdditionalOptions> /bigobj %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalIncludeDirectories>C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\Expat\src\expat;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\Expat\src\expat;C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\ZLIB\src;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\ZLIB\src;C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\GDCM;C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\GDCM\src\gdcm\Source\Common;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\MediaStorageAndFileFormat;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\DataDictionary;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\Common;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\InformationObjectDefinition;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\MessageExchangeDefinition;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\DataStructureAndEncodingDefinition;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Utilities;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AssemblerListingLocation>RelWithDebInfo/</AssemblerListingLocation>
+      <CompileAs>CompileAsCpp</CompileAs>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <ExceptionHandling>Sync</ExceptionHandling>
+      <InlineFunctionExpansion>OnlyExplicitInline</InlineFunctionExpansion>
+      <Optimization>MaxSpeed</Optimization>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <RuntimeTypeInfo>true</RuntimeTypeInfo>
+      <WarningLevel>TurnOffAllWarnings</WarningLevel>
+      <PreprocessorDefinitions>WIN32;_WINDOWS;NDEBUG;NDEBUG;_CRT_FAR_MAPPINGS_NO_DEPRECATE;_CRT_IS_WCTYPE_NO_DEPRECATE;_CRT_MANAGED_FP_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;_CRT_SECURE_NO_DEPRECATE;_CRT_SECURE_NO_DEPRECATE_GLOBALS;_CRT_SETERRORMODE_BEEP_SLEEP_NO_DEPRECATE;_CRT_TIME_FUNCTIONS_NO_DEPRECATE;_CRT_VCCLRIT_NO_DEPRECATE;_SCL_SECURE_NO_DEPRECATE;_CRT_SECURE_NO_WARNINGS;_SCL_SECURE_NO_WARNINGS;CMAKE_INTDIR="RelWithDebInfo";%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ObjectFileName>$(IntDir)</ObjectFileName>
+    </ClCompile>
+    <ResourceCompile>
+      <PreprocessorDefinitions>WIN32;_WINDOWS;NDEBUG;NDEBUG;_CRT_FAR_MAPPINGS_NO_DEPRECATE;_CRT_IS_WCTYPE_NO_DEPRECATE;_CRT_MANAGED_FP_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;_CRT_SECURE_NO_DEPRECATE;_CRT_SECURE_NO_DEPRECATE_GLOBALS;_CRT_SETERRORMODE_BEEP_SLEEP_NO_DEPRECATE;_CRT_TIME_FUNCTIONS_NO_DEPRECATE;_CRT_VCCLRIT_NO_DEPRECATE;_SCL_SECURE_NO_DEPRECATE;_CRT_SECURE_NO_WARNINGS;_SCL_SECURE_NO_WARNINGS;CMAKE_INTDIR=\"RelWithDebInfo\";%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\Expat\src\expat;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\Expat\src\expat;C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\ZLIB\src;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\ZLIB\src;C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\GDCM;C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\GDCM\src\gdcm\Source\Common;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\MediaStorageAndFileFormat;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\DataDictionary;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\Common;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\InformationObjectDefinition;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\MessageExchangeDefinition;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\DataStructureAndEncodingDefinition;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Utilities;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ResourceCompile>
+    <Midl>
+      <AdditionalIncludeDirectories>C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\Expat\src\expat;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\Expat\src\expat;C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\ZLIB\src;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\ZLIB\src;C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\GDCM;C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\GDCM\src\gdcm\Source\Common;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\MediaStorageAndFileFormat;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\DataDictionary;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\Common;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\InformationObjectDefinition;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\MessageExchangeDefinition;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\DataStructureAndEncodingDefinition;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Utilities;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
+      <HeaderFileName>%(Filename).h</HeaderFileName>
+      <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
+      <InterfaceIdentifierFileName>%(Filename)_i.c</InterfaceIdentifierFileName>
+      <ProxyFileName>%(Filename)_p.c</ProxyFileName>
+    </Midl>
+    <Lib>
+      <AdditionalOptions> /machine:x64 %(AdditionalOptions)</AdditionalOptions>
+    </Lib>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <CustomBuild Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\DataStructureAndEncodingDefinition\CMakeLists.txt">
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Building Custom Rule C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/GDCM/src/gdcm/Source/DataStructureAndEncodingDefinition/CMakeLists.txt</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">setlocal
+"c:\Program Files\CMake\bin\cmake.exe" -HC:/server/InsightToolkit-4.10.0 -BC:/server/InsightToolkit-4.10.0/bin --check-stamp-file C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\GDCM\src\gdcm\Source\DataStructureAndEncodingDefinition\CMakeFiles\generate.stamp
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/GDCM/src/gdcm/Source/DataStructureAndEncodingDefinition/CMakeLists.txt;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\DataStructureAndEncodingDefinition\CMakeLists.txt;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\DataStructureAndEncodingDefinition\gdcmByteValue.cxx;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\DataStructureAndEncodingDefinition\gdcmDataElement.cxx;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\DataStructureAndEncodingDefinition\gdcmDataSet.cxx;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\DataStructureAndEncodingDefinition\gdcmExplicitDataElement.cxx;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\DataStructureAndEncodingDefinition\gdcmFile.cxx;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\DataStructureAndEncodingDefinition\gdcmFileMetaInformation.cxx;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\DataStructureAndEncodingDefinition\gdcmFragment.cxx;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\DataStructureAndEncodingDefinition\gdcmImplicitDataElement.cxx;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\DataStructureAndEncodingDefinition\gdcmItem.cxx;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\DataStructureAndEncodingDefinition\gdcmMediaStorage.cxx;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\DataStructureAndEncodingDefinition\gdcmPrivateTag.cxx;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\DataStructureAndEncodingDefinition\gdcmReader.cxx;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\DataStructureAndEncodingDefinition\gdcmSequenceOfFragments.cxx;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\DataStructureAndEncodingDefinition\gdcmSequenceOfItems.cxx;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\DataStructureAndEncodingDefinition\gdcmValue.cxx;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\DataStructureAndEncodingDefinition\CMakeLists.txt;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\GDCM\src\gdcm\Source\DataStructureAndEncodingDefinition\CMakeFiles\generate.stamp</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Building Custom Rule C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/GDCM/src/gdcm/Source/DataStructureAndEncodingDefinition/CMakeLists.txt</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">setlocal
+"c:\Program Files\CMake\bin\cmake.exe" -HC:/server/InsightToolkit-4.10.0 -BC:/server/InsightToolkit-4.10.0/bin --check-stamp-file C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\GDCM\src\gdcm\Source\DataStructureAndEncodingDefinition\CMakeFiles\generate.stamp
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/GDCM/src/gdcm/Source/DataStructureAndEncodingDefinition/CMakeLists.txt;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\DataStructureAndEncodingDefinition\CMakeLists.txt;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\DataStructureAndEncodingDefinition\gdcmByteValue.cxx;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\DataStructureAndEncodingDefinition\gdcmDataElement.cxx;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\DataStructureAndEncodingDefinition\gdcmDataSet.cxx;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\DataStructureAndEncodingDefinition\gdcmExplicitDataElement.cxx;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\DataStructureAndEncodingDefinition\gdcmFile.cxx;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\DataStructureAndEncodingDefinition\gdcmFileMetaInformation.cxx;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\DataStructureAndEncodingDefinition\gdcmFragment.cxx;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\DataStructureAndEncodingDefinition\gdcmImplicitDataElement.cxx;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\DataStructureAndEncodingDefinition\gdcmItem.cxx;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\DataStructureAndEncodingDefinition\gdcmMediaStorage.cxx;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\DataStructureAndEncodingDefinition\gdcmPrivateTag.cxx;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\DataStructureAndEncodingDefinition\gdcmReader.cxx;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\DataStructureAndEncodingDefinition\gdcmSequenceOfFragments.cxx;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\DataStructureAndEncodingDefinition\gdcmSequenceOfItems.cxx;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\DataStructureAndEncodingDefinition\gdcmValue.cxx;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\DataStructureAndEncodingDefinition\CMakeLists.txt;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\GDCM\src\gdcm\Source\DataStructureAndEncodingDefinition\CMakeFiles\generate.stamp</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">Building Custom Rule C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/GDCM/src/gdcm/Source/DataStructureAndEncodingDefinition/CMakeLists.txt</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">setlocal
+"c:\Program Files\CMake\bin\cmake.exe" -HC:/server/InsightToolkit-4.10.0 -BC:/server/InsightToolkit-4.10.0/bin --check-stamp-file C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\GDCM\src\gdcm\Source\DataStructureAndEncodingDefinition\CMakeFiles\generate.stamp
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/GDCM/src/gdcm/Source/DataStructureAndEncodingDefinition/CMakeLists.txt;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\DataStructureAndEncodingDefinition\CMakeLists.txt;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\DataStructureAndEncodingDefinition\gdcmByteValue.cxx;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\DataStructureAndEncodingDefinition\gdcmDataElement.cxx;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\DataStructureAndEncodingDefinition\gdcmDataSet.cxx;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\DataStructureAndEncodingDefinition\gdcmExplicitDataElement.cxx;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\DataStructureAndEncodingDefinition\gdcmFile.cxx;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\DataStructureAndEncodingDefinition\gdcmFileMetaInformation.cxx;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\DataStructureAndEncodingDefinition\gdcmFragment.cxx;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\DataStructureAndEncodingDefinition\gdcmImplicitDataElement.cxx;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\DataStructureAndEncodingDefinition\gdcmItem.cxx;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\DataStructureAndEncodingDefinition\gdcmMediaStorage.cxx;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\DataStructureAndEncodingDefinition\gdcmPrivateTag.cxx;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\DataStructureAndEncodingDefinition\gdcmReader.cxx;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\DataStructureAndEncodingDefinition\gdcmSequenceOfFragments.cxx;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\DataStructureAndEncodingDefinition\gdcmSequenceOfItems.cxx;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\DataStructureAndEncodingDefinition\gdcmValue.cxx;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\DataStructureAndEncodingDefinition\CMakeLists.txt;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\GDCM\src\gdcm\Source\DataStructureAndEncodingDefinition\CMakeFiles\generate.stamp</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">Building Custom Rule C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/GDCM/src/gdcm/Source/DataStructureAndEncodingDefinition/CMakeLists.txt</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">setlocal
+"c:\Program Files\CMake\bin\cmake.exe" -HC:/server/InsightToolkit-4.10.0 -BC:/server/InsightToolkit-4.10.0/bin --check-stamp-file C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\GDCM\src\gdcm\Source\DataStructureAndEncodingDefinition\CMakeFiles\generate.stamp
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/GDCM/src/gdcm/Source/DataStructureAndEncodingDefinition/CMakeLists.txt;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\DataStructureAndEncodingDefinition\CMakeLists.txt;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\DataStructureAndEncodingDefinition\gdcmByteValue.cxx;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\DataStructureAndEncodingDefinition\gdcmDataElement.cxx;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\DataStructureAndEncodingDefinition\gdcmDataSet.cxx;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\DataStructureAndEncodingDefinition\gdcmExplicitDataElement.cxx;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\DataStructureAndEncodingDefinition\gdcmFile.cxx;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\DataStructureAndEncodingDefinition\gdcmFileMetaInformation.cxx;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\DataStructureAndEncodingDefinition\gdcmFragment.cxx;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\DataStructureAndEncodingDefinition\gdcmImplicitDataElement.cxx;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\DataStructureAndEncodingDefinition\gdcmItem.cxx;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\DataStructureAndEncodingDefinition\gdcmMediaStorage.cxx;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\DataStructureAndEncodingDefinition\gdcmPrivateTag.cxx;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\DataStructureAndEncodingDefinition\gdcmReader.cxx;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\DataStructureAndEncodingDefinition\gdcmSequenceOfFragments.cxx;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\DataStructureAndEncodingDefinition\gdcmSequenceOfItems.cxx;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\DataStructureAndEncodingDefinition\gdcmValue.cxx;C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\DataStructureAndEncodingDefinition\CMakeLists.txt;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\GDCM\src\gdcm\Source\DataStructureAndEncodingDefinition\CMakeFiles\generate.stamp</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">false</LinkObjects>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\DataStructureAndEncodingDefinition\gdcmByteValue.cxx"  />
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\DataStructureAndEncodingDefinition\gdcmDataElement.cxx"  />
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\DataStructureAndEncodingDefinition\gdcmDataSet.cxx"  />
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\DataStructureAndEncodingDefinition\gdcmExplicitDataElement.cxx"  />
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\DataStructureAndEncodingDefinition\gdcmFile.cxx"  />
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\DataStructureAndEncodingDefinition\gdcmFileMetaInformation.cxx"  />
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\DataStructureAndEncodingDefinition\gdcmFragment.cxx"  />
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\DataStructureAndEncodingDefinition\gdcmImplicitDataElement.cxx"  />
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\DataStructureAndEncodingDefinition\gdcmItem.cxx"  />
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\DataStructureAndEncodingDefinition\gdcmMediaStorage.cxx"  />
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\DataStructureAndEncodingDefinition\gdcmPrivateTag.cxx"  />
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\DataStructureAndEncodingDefinition\gdcmReader.cxx"  />
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\DataStructureAndEncodingDefinition\gdcmSequenceOfFragments.cxx"  />
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\DataStructureAndEncodingDefinition\gdcmSequenceOfItems.cxx"  />
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\DataStructureAndEncodingDefinition\gdcmValue.cxx"  />
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\DataStructureAndEncodingDefinition\gdcmReader.strict.cxx"  />
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\DataStructureAndEncodingDefinition\gdcmTag.cxx"  />
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\DataStructureAndEncodingDefinition\gdcmTagToVR.cxx"  />
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\DataStructureAndEncodingDefinition\gdcmCodeString.cxx"  />
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\DataStructureAndEncodingDefinition\gdcmFileSet.cxx"  />
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\DataStructureAndEncodingDefinition\gdcmByteSwapFilter.cxx"  />
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\DataStructureAndEncodingDefinition\gdcmUNExplicitImplicitDataElement.cxx"  />
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\DataStructureAndEncodingDefinition\gdcmWriter.cxx"  />
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\DataStructureAndEncodingDefinition\gdcmCSAHeader.cxx"  />
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\DataStructureAndEncodingDefinition\gdcmPDBHeader.cxx"  />
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\DataStructureAndEncodingDefinition\gdcmTransferSyntax.cxx"  />
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\DataStructureAndEncodingDefinition\gdcmVM.cxx"  />
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\DataStructureAndEncodingDefinition\gdcmVR.cxx"  />
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\DataStructureAndEncodingDefinition\gdcmPreamble.cxx"  />
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\DataStructureAndEncodingDefinition\gdcmParseException.cxx"  />
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\DataStructureAndEncodingDefinition\gdcmUNExplicitDataElement.cxx"  />
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\DataStructureAndEncodingDefinition\gdcmCP246ExplicitDataElement.cxx"  />
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\DataStructureAndEncodingDefinition\gdcmExplicitImplicitDataElement.cxx"  />
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\Modules\ThirdParty\GDCM\src\gdcm\Source\DataStructureAndEncodingDefinition\gdcmVR16ExplicitDataElement.cxx"  />
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\GDCM\src\gdcm\Source\DataStructureAndEncodingDefinition\strict_gdcmByteValue.cxx" >
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">GDCM_OVERRIDE_BROKEN_IMPLEMENTATION;gdcm_ns=gdcmstrict;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|x64'">GDCM_OVERRIDE_BROKEN_IMPLEMENTATION;gdcm_ns=gdcmstrict;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">GDCM_OVERRIDE_BROKEN_IMPLEMENTATION;gdcm_ns=gdcmstrict;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">GDCM_OVERRIDE_BROKEN_IMPLEMENTATION;gdcm_ns=gdcmstrict;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\GDCM\src\gdcm\Source\DataStructureAndEncodingDefinition\strict_gdcmDataElement.cxx" >
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">GDCM_OVERRIDE_BROKEN_IMPLEMENTATION;gdcm_ns=gdcmstrict;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|x64'">GDCM_OVERRIDE_BROKEN_IMPLEMENTATION;gdcm_ns=gdcmstrict;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">GDCM_OVERRIDE_BROKEN_IMPLEMENTATION;gdcm_ns=gdcmstrict;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">GDCM_OVERRIDE_BROKEN_IMPLEMENTATION;gdcm_ns=gdcmstrict;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\GDCM\src\gdcm\Source\DataStructureAndEncodingDefinition\strict_gdcmDataSet.cxx" >
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">GDCM_OVERRIDE_BROKEN_IMPLEMENTATION;gdcm_ns=gdcmstrict;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|x64'">GDCM_OVERRIDE_BROKEN_IMPLEMENTATION;gdcm_ns=gdcmstrict;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">GDCM_OVERRIDE_BROKEN_IMPLEMENTATION;gdcm_ns=gdcmstrict;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">GDCM_OVERRIDE_BROKEN_IMPLEMENTATION;gdcm_ns=gdcmstrict;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\GDCM\src\gdcm\Source\DataStructureAndEncodingDefinition\strict_gdcmExplicitDataElement.cxx" >
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">GDCM_OVERRIDE_BROKEN_IMPLEMENTATION;gdcm_ns=gdcmstrict;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|x64'">GDCM_OVERRIDE_BROKEN_IMPLEMENTATION;gdcm_ns=gdcmstrict;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">GDCM_OVERRIDE_BROKEN_IMPLEMENTATION;gdcm_ns=gdcmstrict;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">GDCM_OVERRIDE_BROKEN_IMPLEMENTATION;gdcm_ns=gdcmstrict;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\GDCM\src\gdcm\Source\DataStructureAndEncodingDefinition\strict_gdcmFile.cxx" >
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">GDCM_OVERRIDE_BROKEN_IMPLEMENTATION;gdcm_ns=gdcmstrict;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|x64'">GDCM_OVERRIDE_BROKEN_IMPLEMENTATION;gdcm_ns=gdcmstrict;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">GDCM_OVERRIDE_BROKEN_IMPLEMENTATION;gdcm_ns=gdcmstrict;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">GDCM_OVERRIDE_BROKEN_IMPLEMENTATION;gdcm_ns=gdcmstrict;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\GDCM\src\gdcm\Source\DataStructureAndEncodingDefinition\strict_gdcmFileMetaInformation.cxx" >
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">GDCM_OVERRIDE_BROKEN_IMPLEMENTATION;gdcm_ns=gdcmstrict;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|x64'">GDCM_OVERRIDE_BROKEN_IMPLEMENTATION;gdcm_ns=gdcmstrict;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">GDCM_OVERRIDE_BROKEN_IMPLEMENTATION;gdcm_ns=gdcmstrict;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">GDCM_OVERRIDE_BROKEN_IMPLEMENTATION;gdcm_ns=gdcmstrict;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\GDCM\src\gdcm\Source\DataStructureAndEncodingDefinition\strict_gdcmFragment.cxx" >
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">GDCM_OVERRIDE_BROKEN_IMPLEMENTATION;gdcm_ns=gdcmstrict;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|x64'">GDCM_OVERRIDE_BROKEN_IMPLEMENTATION;gdcm_ns=gdcmstrict;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">GDCM_OVERRIDE_BROKEN_IMPLEMENTATION;gdcm_ns=gdcmstrict;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">GDCM_OVERRIDE_BROKEN_IMPLEMENTATION;gdcm_ns=gdcmstrict;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\GDCM\src\gdcm\Source\DataStructureAndEncodingDefinition\strict_gdcmImplicitDataElement.cxx" >
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">GDCM_OVERRIDE_BROKEN_IMPLEMENTATION;gdcm_ns=gdcmstrict;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|x64'">GDCM_OVERRIDE_BROKEN_IMPLEMENTATION;gdcm_ns=gdcmstrict;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">GDCM_OVERRIDE_BROKEN_IMPLEMENTATION;gdcm_ns=gdcmstrict;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">GDCM_OVERRIDE_BROKEN_IMPLEMENTATION;gdcm_ns=gdcmstrict;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\GDCM\src\gdcm\Source\DataStructureAndEncodingDefinition\strict_gdcmItem.cxx" >
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">GDCM_OVERRIDE_BROKEN_IMPLEMENTATION;gdcm_ns=gdcmstrict;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|x64'">GDCM_OVERRIDE_BROKEN_IMPLEMENTATION;gdcm_ns=gdcmstrict;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">GDCM_OVERRIDE_BROKEN_IMPLEMENTATION;gdcm_ns=gdcmstrict;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">GDCM_OVERRIDE_BROKEN_IMPLEMENTATION;gdcm_ns=gdcmstrict;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\GDCM\src\gdcm\Source\DataStructureAndEncodingDefinition\strict_gdcmMediaStorage.cxx" >
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">GDCM_OVERRIDE_BROKEN_IMPLEMENTATION;gdcm_ns=gdcmstrict;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|x64'">GDCM_OVERRIDE_BROKEN_IMPLEMENTATION;gdcm_ns=gdcmstrict;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">GDCM_OVERRIDE_BROKEN_IMPLEMENTATION;gdcm_ns=gdcmstrict;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">GDCM_OVERRIDE_BROKEN_IMPLEMENTATION;gdcm_ns=gdcmstrict;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\GDCM\src\gdcm\Source\DataStructureAndEncodingDefinition\strict_gdcmPrivateTag.cxx" >
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">GDCM_OVERRIDE_BROKEN_IMPLEMENTATION;gdcm_ns=gdcmstrict;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|x64'">GDCM_OVERRIDE_BROKEN_IMPLEMENTATION;gdcm_ns=gdcmstrict;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">GDCM_OVERRIDE_BROKEN_IMPLEMENTATION;gdcm_ns=gdcmstrict;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">GDCM_OVERRIDE_BROKEN_IMPLEMENTATION;gdcm_ns=gdcmstrict;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\GDCM\src\gdcm\Source\DataStructureAndEncodingDefinition\strict_gdcmReader.cxx" >
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">GDCM_OVERRIDE_BROKEN_IMPLEMENTATION;gdcm_ns=gdcmstrict;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|x64'">GDCM_OVERRIDE_BROKEN_IMPLEMENTATION;gdcm_ns=gdcmstrict;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">GDCM_OVERRIDE_BROKEN_IMPLEMENTATION;gdcm_ns=gdcmstrict;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">GDCM_OVERRIDE_BROKEN_IMPLEMENTATION;gdcm_ns=gdcmstrict;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\GDCM\src\gdcm\Source\DataStructureAndEncodingDefinition\strict_gdcmSequenceOfFragments.cxx" >
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">GDCM_OVERRIDE_BROKEN_IMPLEMENTATION;gdcm_ns=gdcmstrict;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|x64'">GDCM_OVERRIDE_BROKEN_IMPLEMENTATION;gdcm_ns=gdcmstrict;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">GDCM_OVERRIDE_BROKEN_IMPLEMENTATION;gdcm_ns=gdcmstrict;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">GDCM_OVERRIDE_BROKEN_IMPLEMENTATION;gdcm_ns=gdcmstrict;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\GDCM\src\gdcm\Source\DataStructureAndEncodingDefinition\strict_gdcmSequenceOfItems.cxx" >
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">GDCM_OVERRIDE_BROKEN_IMPLEMENTATION;gdcm_ns=gdcmstrict;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|x64'">GDCM_OVERRIDE_BROKEN_IMPLEMENTATION;gdcm_ns=gdcmstrict;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">GDCM_OVERRIDE_BROKEN_IMPLEMENTATION;gdcm_ns=gdcmstrict;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">GDCM_OVERRIDE_BROKEN_IMPLEMENTATION;gdcm_ns=gdcmstrict;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
+    <ClCompile Include="C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\GDCM\src\gdcm\Source\DataStructureAndEncodingDefinition\strict_gdcmValue.cxx" >
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">GDCM_OVERRIDE_BROKEN_IMPLEMENTATION;gdcm_ns=gdcmstrict;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|x64'">GDCM_OVERRIDE_BROKEN_IMPLEMENTATION;gdcm_ns=gdcmstrict;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">GDCM_OVERRIDE_BROKEN_IMPLEMENTATION;gdcm_ns=gdcmstrict;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">GDCM_OVERRIDE_BROKEN_IMPLEMENTATION;gdcm_ns=gdcmstrict;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="C:/server/InsightToolkit-4.10.0/bin/ZERO_CHECK.vcxproj">
+      <Project>8424D74C-2D7E-3861-92BD-E31A437C2341</Project>
+    </ProjectReference>
+    <ProjectReference Include="C:/server/InsightToolkit-4.10.0/bin/Modules/ThirdParty/GDCM/src/gdcm/Source/Common/gdcmCommon.vcxproj">
+      <Project>D0C8B869-682E-3127-B35C-11B9D0176031</Project>
+    </ProjectReference>
+    <ProjectReference Include="C:/server/InsightToolkit-4.10.0/bin/Modules/ThirdParty/ZLIB/src/itkzlib/itkzlib.vcxproj">
+      <Project>7947A814-0811-30C2-820A-EFBD16D326C1</Project>
+    </ProjectReference>
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

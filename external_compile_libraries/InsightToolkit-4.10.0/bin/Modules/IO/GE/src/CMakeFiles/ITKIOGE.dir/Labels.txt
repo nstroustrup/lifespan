@@ -1,0 +1,10 @@
+# Target labels
+ ITKIOGE
+# Source files and their labels
+C:/server/InsightToolkit-4.10.0/Modules/IO/GE/src/itkGE5ImageIOFactory.cxx
+C:/server/InsightToolkit-4.10.0/Modules/IO/GE/src/itkGEAdwImageIO.cxx
+C:/server/InsightToolkit-4.10.0/Modules/IO/GE/src/itkGE4ImageIO.cxx
+C:/server/InsightToolkit-4.10.0/Modules/IO/GE/src/itkGEAdwImageIOFactory.cxx
+C:/server/InsightToolkit-4.10.0/Modules/IO/GE/src/itkGE5ImageIO.cxx
+C:/server/InsightToolkit-4.10.0/Modules/IO/GE/src/itkGE4ImageIOFactory.cxx
+C:/server/InsightToolkit-4.10.0/Modules/IO/GE/src/CMakeLists.txt

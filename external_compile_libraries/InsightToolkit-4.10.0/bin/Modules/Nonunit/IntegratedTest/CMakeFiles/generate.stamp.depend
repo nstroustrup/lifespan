@@ -1,0 +1,6 @@
+# CMake generation dependency list for this directory.
+C:/server/InsightToolkit-4.10.0/Modules/Nonunit/IntegratedTest/CMakeLists.txt
+C:/server/InsightToolkit-4.10.0/Modules/Nonunit/IntegratedTest/itk-module.cmake
+C:/server/InsightToolkit-4.10.0/CMake/ITKModuleInfo.cmake.in
+C:/server/InsightToolkit-4.10.0/CMake/ITKModuleInfo.cmake.in
+C:/server/InsightToolkit-4.10.0/Utilities/Doxygen/Module.dox.in

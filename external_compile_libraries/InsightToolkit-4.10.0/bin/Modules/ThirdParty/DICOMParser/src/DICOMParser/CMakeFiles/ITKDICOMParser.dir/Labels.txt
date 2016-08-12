@@ -1,0 +1,9 @@
+# Target labels
+ ITKDICOMParser
+# Source files and their labels
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/DICOMParser/src/DICOMParser/DICOMSource.cxx
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/DICOMParser/src/DICOMParser/DICOMBuffer.cxx
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/DICOMParser/src/DICOMParser/DICOMFile.cxx
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/DICOMParser/src/DICOMParser/DICOMParser.cxx
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/DICOMParser/src/DICOMParser/DICOMAppHelper.cxx
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/DICOMParser/src/DICOMParser/CMakeLists.txt

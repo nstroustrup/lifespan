@@ -1,0 +1,59 @@
+﻿  Building Custom Rule C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/GDCM/src/gdcm/Source/DataStructureAndEncodingDefinition/CMakeLists.txt
+  CMake does not need to re-run because C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\GDCM\src\gdcm\Source\DataStructureAndEncodingDefinition\CMakeFiles\generate.stamp is up-to-date.
+  gdcmByteValue.cxx
+  gdcmDataElement.cxx
+  gdcmDataSet.cxx
+  gdcmExplicitDataElement.cxx
+  gdcmFile.cxx
+  gdcmFileMetaInformation.cxx
+  gdcmFragment.cxx
+  gdcmImplicitDataElement.cxx
+  gdcmItem.cxx
+  gdcmMediaStorage.cxx
+  gdcmPrivateTag.cxx
+  gdcmReader.cxx
+  gdcmSequenceOfFragments.cxx
+  gdcmSequenceOfItems.cxx
+  gdcmValue.cxx
+  gdcmReader.strict.cxx
+  gdcmTag.cxx
+  gdcmTagToVR.cxx
+  gdcmCodeString.cxx
+  gdcmFileSet.cxx
+  Generating Code...
+  Compiling...
+  gdcmByteSwapFilter.cxx
+  gdcmUNExplicitImplicitDataElement.cxx
+  gdcmWriter.cxx
+  gdcmCSAHeader.cxx
+  gdcmPDBHeader.cxx
+  gdcmTransferSyntax.cxx
+  gdcmVM.cxx
+  gdcmVR.cxx
+  gdcmPreamble.cxx
+  gdcmParseException.cxx
+  gdcmUNExplicitDataElement.cxx
+  gdcmCP246ExplicitDataElement.cxx
+  gdcmExplicitImplicitDataElement.cxx
+  gdcmVR16ExplicitDataElement.cxx
+  Generating Code...
+  strict_gdcmByteValue.cxx
+  strict_gdcmDataElement.cxx
+  strict_gdcmDataSet.cxx
+  strict_gdcmExplicitDataElement.cxx
+  strict_gdcmFile.cxx
+  strict_gdcmFileMetaInformation.cxx
+  strict_gdcmFragment.cxx
+  strict_gdcmImplicitDataElement.cxx
+  strict_gdcmItem.cxx
+  strict_gdcmMediaStorage.cxx
+  strict_gdcmPrivateTag.cxx
+  strict_gdcmReader.cxx
+  strict_gdcmSequenceOfFragments.cxx
+  strict_gdcmSequenceOfItems.cxx
+  strict_gdcmValue.cxx
+  Generating Code...
+strict_gdcmItem.obj : warning LNK4221: This object file does not define any previously undefined public symbols, so it will not be used by any link operation that consumes this library
+gdcmParseException.obj : warning LNK4221: This object file does not define any previously undefined public symbols, so it will not be used by any link operation that consumes this library
+gdcmItem.obj : warning LNK4221: This object file does not define any previously undefined public symbols, so it will not be used by any link operation that consumes this library
+  gdcmDSED.vcxproj -> C:\server\InsightToolkit-4.10.0\bin\lib\Debug\itkgdcmDSED-4.10.lib

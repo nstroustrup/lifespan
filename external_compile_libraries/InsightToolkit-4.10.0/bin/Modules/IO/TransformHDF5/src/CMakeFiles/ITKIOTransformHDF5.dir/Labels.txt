@@ -1,0 +1,6 @@
+# Target labels
+ ITKIOTransformHDF5
+# Source files and their labels
+C:/server/InsightToolkit-4.10.0/Modules/IO/TransformHDF5/src/itkHDF5TransformIO.cxx
+C:/server/InsightToolkit-4.10.0/Modules/IO/TransformHDF5/src/itkHDF5TransformIOFactory.cxx
+C:/server/InsightToolkit-4.10.0/Modules/IO/TransformHDF5/src/CMakeLists.txt

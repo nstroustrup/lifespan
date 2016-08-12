@@ -1,0 +1,7 @@
+# Target labels
+ ITKIOTIFF
+# Source files and their labels
+C:/server/InsightToolkit-4.10.0/Modules/IO/TIFF/src/itkTIFFImageIO.cxx
+C:/server/InsightToolkit-4.10.0/Modules/IO/TIFF/src/itkTIFFReaderInternal.cxx
+C:/server/InsightToolkit-4.10.0/Modules/IO/TIFF/src/itkTIFFImageIOFactory.cxx
+C:/server/InsightToolkit-4.10.0/Modules/IO/TIFF/src/CMakeLists.txt

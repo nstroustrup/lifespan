@@ -1,0 +1,9 @@
+﻿  Building Custom Rule C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/GDCM/src/gdcm/Utilities/socketxx/socket++/CMakeLists.txt
+  CMake does not need to re-run because C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\GDCM\src\gdcm\Utilities\socketxx\socket++\CMakeFiles\generate.stamp is up-to-date.
+  sockstream.cpp
+  sockinet.cpp
+  fork.cpp
+  protocol.cpp
+  echo.cpp
+  Generating Code...
+  gdcmsocketxx.vcxproj -> C:\server\InsightToolkit-4.10.0\bin\lib\Debug\itkgdcmsocketxx-4.10.lib

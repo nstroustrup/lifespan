@@ -1,0 +1,6 @@
+# Target labels
+ ITKIOGIPL
+# Source files and their labels
+C:/server/InsightToolkit-4.10.0/Modules/IO/GIPL/src/itkGiplImageIOFactory.cxx
+C:/server/InsightToolkit-4.10.0/Modules/IO/GIPL/src/itkGiplImageIO.cxx
+C:/server/InsightToolkit-4.10.0/Modules/IO/GIPL/src/CMakeLists.txt

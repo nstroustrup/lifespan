@@ -1,0 +1,21 @@
+﻿  Building Custom Rule C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/GDCM/src/gdcm/Source/InformationObjectDefinition/CMakeLists.txt
+  CMake does not need to re-run because C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\GDCM\src\gdcm\Source\InformationObjectDefinition\CMakeFiles\generate.stamp is up-to-date.
+  gdcmModule.cxx
+  gdcmMacro.cxx
+  gdcmModules.cxx
+  gdcmMacros.cxx
+  gdcmNestedModuleEntries.cxx
+  gdcmIODEntry.cxx
+  gdcmTable.cxx
+  gdcmSeries.cxx
+  gdcmDefs.cxx
+  gdcmDefinedTerms.cxx
+  gdcmEnumeratedValues.cxx
+  gdcmStudy.cxx
+  gdcmPatient.cxx
+  gdcmType.cxx
+  gdcmUsage.cxx
+  gdcmIOD.cxx
+  Generating Code...
+  gdcmTableReader.cxx
+  gdcmIOD.vcxproj -> C:\server\InsightToolkit-4.10.0\bin\lib\Release\itkgdcmIOD-4.10.lib

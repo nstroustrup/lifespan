@@ -1,0 +1,45 @@
+# Target labels
+ ITKNrrdIO
+# Source files and their labels
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/NrrdIO/src/NrrdIO/754.c
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/NrrdIO/src/NrrdIO/mop.c
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/NrrdIO/src/NrrdIO/array.c
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/NrrdIO/src/NrrdIO/parseAir.c
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/NrrdIO/src/NrrdIO/dio.c
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/NrrdIO/src/NrrdIO/sane.c
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/NrrdIO/src/NrrdIO/endianAir.c
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/NrrdIO/src/NrrdIO/string.c
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/NrrdIO/src/NrrdIO/enum.c
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/NrrdIO/src/NrrdIO/miscAir.c
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/NrrdIO/src/NrrdIO/biffbiff.c
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/NrrdIO/src/NrrdIO/biffmsg.c
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/NrrdIO/src/NrrdIO/accessors.c
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/NrrdIO/src/NrrdIO/defaultsNrrd.c
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/NrrdIO/src/NrrdIO/enumsNrrd.c
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/NrrdIO/src/NrrdIO/arraysNrrd.c
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/NrrdIO/src/NrrdIO/methodsNrrd.c
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/NrrdIO/src/NrrdIO/reorder.c
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/NrrdIO/src/NrrdIO/axis.c
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/NrrdIO/src/NrrdIO/simple.c
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/NrrdIO/src/NrrdIO/comment.c
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/NrrdIO/src/NrrdIO/keyvalue.c
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/NrrdIO/src/NrrdIO/endianNrrd.c
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/NrrdIO/src/NrrdIO/parseNrrd.c
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/NrrdIO/src/NrrdIO/gzio.c
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/NrrdIO/src/NrrdIO/read.c
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/NrrdIO/src/NrrdIO/write.c
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/NrrdIO/src/NrrdIO/format.c
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/NrrdIO/src/NrrdIO/formatNRRD.c
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/NrrdIO/src/NrrdIO/encoding.c
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/NrrdIO/src/NrrdIO/encodingRaw.c
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/NrrdIO/src/NrrdIO/encodingAscii.c
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/NrrdIO/src/NrrdIO/encodingHex.c
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/NrrdIO/src/NrrdIO/encodingGzip.c
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/NrrdIO/src/NrrdIO/subset.c
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/NrrdIO/src/NrrdIO/encodingBzip2.c
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/NrrdIO/src/NrrdIO/formatEPS.c
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/NrrdIO/src/NrrdIO/formatPNG.c
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/NrrdIO/src/NrrdIO/formatPNM.c
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/NrrdIO/src/NrrdIO/formatText.c
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/NrrdIO/src/NrrdIO/formatVTK.c
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/NrrdIO/src/NrrdIO/CMakeLists.txt

@@ -1,0 +1,59 @@
+
+{
+	"sources" : 
+	[
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/Numerics/Statistics/src/itkProbabilityDistribution.cxx"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/Numerics/Statistics/src/itkDenseFrequencyContainer2.cxx"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/Numerics/Statistics/src/itkSparseFrequencyContainer2.cxx"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/Numerics/Statistics/src/itkChiSquareDistribution.cxx"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/Numerics/Statistics/src/itkGaussianDistribution.cxx"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/Numerics/Statistics/src/itkTDistribution.cxx"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/Numerics/Statistics/src/itkNormalVariateGenerator.cxx"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/Numerics/Statistics/src/itkDecisionRule.cxx"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/Numerics/Statistics/src/itkMaximumDecisionRule.cxx"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/Numerics/Statistics/src/itkMaximumRatioDecisionRule.cxx"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/Numerics/Statistics/src/itkMinimumDecisionRule.cxx"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/Numerics/Statistics/src/CMakeLists.txt"
+		}
+	],
+	"target" : 
+	{
+		"labels" : [ "ITKStatistics" ],
+		"name" : "ITKStatistics"
+	}
+}

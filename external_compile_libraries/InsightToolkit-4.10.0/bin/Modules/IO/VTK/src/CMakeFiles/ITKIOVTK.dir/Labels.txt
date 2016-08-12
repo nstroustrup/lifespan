@@ -1,0 +1,6 @@
+# Target labels
+ ITKIOVTK
+# Source files and their labels
+C:/server/InsightToolkit-4.10.0/Modules/IO/VTK/src/itkVTKImageIOFactory.cxx
+C:/server/InsightToolkit-4.10.0/Modules/IO/VTK/src/itkVTKImageIO.cxx
+C:/server/InsightToolkit-4.10.0/Modules/IO/VTK/src/CMakeLists.txt

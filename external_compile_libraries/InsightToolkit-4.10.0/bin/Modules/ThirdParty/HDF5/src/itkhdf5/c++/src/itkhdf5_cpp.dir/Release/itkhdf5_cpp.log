@@ -1,0 +1,32 @@
+﻿  Building Custom Rule C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/HDF5/src/itkhdf5/c++/src/CMakeLists.txt
+  CMake does not need to re-run because C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\HDF5\src\itkhdf5\c++\src\CMakeFiles\generate.stamp is up-to-date.
+  H5AbstractDs.cpp
+  H5ArrayType.cpp
+  H5AtomType.cpp
+  H5Attribute.cpp
+  H5CommonFG.cpp
+  H5CompType.cpp
+  H5DataSet.cpp
+  H5DataSpace.cpp
+  H5DataType.cpp
+  H5DcreatProp.cpp
+  H5DxferProp.cpp
+  H5EnumType.cpp
+  H5Exception.cpp
+  H5FaccProp.cpp
+  H5FcreatProp.cpp
+  H5File.cpp
+  H5FloatType.cpp
+  H5Group.cpp
+  H5IdComponent.cpp
+  H5IntType.cpp
+  Generating Code...
+  Compiling...
+  H5Library.cpp
+  H5Object.cpp
+  H5PredType.cpp
+  H5PropList.cpp
+  H5StrType.cpp
+  H5VarLenType.cpp
+  Generating Code...
+  itkhdf5_cpp.vcxproj -> C:\server\InsightToolkit-4.10.0\bin\lib\Release\itkhdf5_cpp-4.10.lib

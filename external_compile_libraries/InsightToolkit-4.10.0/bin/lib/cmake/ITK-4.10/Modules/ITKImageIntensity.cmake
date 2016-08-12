@@ -1,0 +1,12 @@
+set(ITKImageIntensity_LOADED 1)
+set(ITKImageIntensity_ENABLE_SHARED "0")
+set(ITKImageIntensity_DEPENDS "ITKImageAdaptors;ITKImageGrid;ITKImageStatistics;ITKPath")
+set(ITKImageIntensity_PUBLIC_DEPENDS "")
+set(ITKImageIntensity_TRANSITIVE_DEPENDS "ITKImageAdaptors;ITKImageGrid;ITKImageStatistics;ITKPath")
+set(ITKImageIntensity_PRIVATE_DEPENDS "")
+set(ITKImageIntensity_LIBRARIES "ITKCommon;ITKStatistics;ITKTransform;ITKSpatialObjects;ITKPath")
+set(ITKImageIntensity_INCLUDE_DIRS "C:/server/InsightToolkit-4.10.0/Modules/Filtering/ImageIntensity/include")
+set(ITKImageIntensity_LIBRARY_DIRS "")
+set(ITKImageIntensity_RUNTIME_LIBRARY_DIRS "C:/server/InsightToolkit-4.10.0/bin/bin")
+set(ITKImageIntensity_TARGETS_FILE "")
+

@@ -1,0 +1,12 @@
+set(ITKDICOMParser_LOADED 1)
+set(ITKDICOMParser_ENABLE_SHARED "0")
+set(ITKDICOMParser_DEPENDS "")
+set(ITKDICOMParser_PUBLIC_DEPENDS "")
+set(ITKDICOMParser_TRANSITIVE_DEPENDS "")
+set(ITKDICOMParser_PRIVATE_DEPENDS "")
+set(ITKDICOMParser_LIBRARIES "ITKDICOMParser")
+set(ITKDICOMParser_INCLUDE_DIRS "C:/server/InsightToolkit-4.10.0/bin/Modules/ThirdParty/DICOMParser/src/DICOMParser;C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/DICOMParser/src/DICOMParser")
+set(ITKDICOMParser_LIBRARY_DIRS "")
+set(ITKDICOMParser_RUNTIME_LIBRARY_DIRS "C:/server/InsightToolkit-4.10.0/bin/bin")
+set(ITKDICOMParser_TARGETS_FILE "")
+

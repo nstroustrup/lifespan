@@ -1,0 +1,46 @@
+# CMake generation dependency list for this directory.
+C:/server/InsightToolkit-4.10.0/Modules/Core/Common/CMakeLists.txt
+C:/Program Files/CMake/share/cmake-3.6/Modules/TestBigEndian.cmake
+C:/Program Files/CMake/share/cmake-3.6/Modules/CheckTypeSize.cmake
+C:/Program Files/CMake/share/cmake-3.6/Modules/CheckIncludeFile.cmake
+C:/Program Files/CMake/share/cmake-3.6/Modules/CheckIncludeFileCXX.cmake
+c:/Program Files/CMake/share/cmake-3.6/Modules/TestEndianess.c.in
+C:/Program Files/CMake/share/cmake-3.6/Modules/FindThreads.cmake
+C:/Program Files/CMake/share/cmake-3.6/Modules/CheckLibraryExists.cmake
+C:/Program Files/CMake/share/cmake-3.6/Modules/CheckSymbolExists.cmake
+C:/Program Files/CMake/share/cmake-3.6/Modules/CheckIncludeFile.cmake
+c:/Program Files/CMake/share/cmake-3.6/Modules/CheckIncludeFile.c.in
+C:/Program Files/CMake/share/cmake-3.6/Modules/FindPackageHandleStandardArgs.cmake
+C:/Program Files/CMake/share/cmake-3.6/Modules/FindPackageMessage.cmake
+C:/Program Files/CMake/share/cmake-3.6/Modules/CMakeParseArguments.cmake
+C:/server/InsightToolkit-4.10.0/Modules/Core/Common/CMake/CheckCPPDirective.cmake
+C:/server/InsightToolkit-4.10.0/Modules/Core/Common/CMake/CheckCPPDirectiveExists.cxx.in
+C:/Program Files/CMake/share/cmake-3.6/Modules/CheckIncludeFiles.cmake
+c:/Program Files/CMake/share/cmake-3.6/Modules/CMakeConfigurableFile.in
+C:/server/InsightToolkit-4.10.0/Modules/Core/Common/CMake/CheckSupportForSSERounding.cmake
+C:/Program Files/CMake/share/cmake-3.6/Modules/CheckCXXSourceCompiles.cmake
+C:/Program Files/CMake/share/cmake-3.6/Modules/CheckIncludeFiles.cmake
+c:/Program Files/CMake/share/cmake-3.6/Modules/CMakeConfigurableFile.in
+C:/server/InsightToolkit-4.10.0/Modules/Core/Common/CMake/itkCheckBuiltins.cmake
+C:/Program Files/CMake/share/cmake-3.6/Modules/CheckSymbolExists.cmake
+c:/Program Files/CMake/share/cmake-3.6/Modules/CMakeConfigurableFile.in
+C:/server/InsightToolkit-4.10.0/Modules/Core/Common/CMake/itkCheckHasCPP11Alignas.cxx
+C:/server/InsightToolkit-4.10.0/Modules/Core/Common/CMake/itkGetCXXCompilerVersion.cxx
+C:/server/InsightToolkit-4.10.0/Modules/Core/Common/CMake/itkGetCXXCompilerVersion.cxx
+C:/server/InsightToolkit-4.10.0/Modules/Core/Common/CMake/itkGetCXXCompilerVersion.cxx
+C:/Program Files/CMake/share/cmake-3.6/Modules/CheckIncludeFileCXX.cmake
+c:/Program Files/CMake/share/cmake-3.6/Modules/CheckIncludeFile.cxx.in
+c:/Program Files/CMake/share/cmake-3.6/Modules/CheckIncludeFile.cxx.in
+C:/server/InsightToolkit-4.10.0/Modules/Core/Common/CMake/itkCheckCxx11StlTypeTraits.cxx
+C:/server/InsightToolkit-4.10.0/Modules/Core/Common/CMake/itkCheckHasGNUAttributeAligned.cxx
+C:/server/InsightToolkit-4.10.0/Modules/Core/Common/src/itkConfigure.h.in
+C:/server/InsightToolkit-4.10.0/Modules/Core/Common/itk-module.cmake
+C:/server/InsightToolkit-4.10.0/bin/lib/cmake/ITK-4.10/Modules/ITKDoubleConversion.cmake
+C:/server/InsightToolkit-4.10.0/bin/lib/cmake/ITK-4.10/Modules/ITKKWIML.cmake
+C:/server/InsightToolkit-4.10.0/bin/lib/cmake/ITK-4.10/Modules/ITKKWSys.cmake
+C:/server/InsightToolkit-4.10.0/bin/lib/cmake/ITK-4.10/Modules/ITKVNLInstantiation.cmake
+C:/server/InsightToolkit-4.10.0/bin/lib/cmake/ITK-4.10/Modules/ITKVNL.cmake
+C:/server/InsightToolkit-4.10.0/CMake/exportheader.cmake.in
+C:/server/InsightToolkit-4.10.0/CMake/ITKModuleInfo.cmake.in
+C:/server/InsightToolkit-4.10.0/CMake/ITKModuleInfo.cmake.in
+C:/server/InsightToolkit-4.10.0/Utilities/Doxygen/Module.dox.in

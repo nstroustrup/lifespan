@@ -1,0 +1,4 @@
+# CMake generation dependency list for this directory.
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/Expat/src/expat/CMakeLists.txt
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/Expat/src/expat/expatConfig.h.in
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/Expat/src/expat/expatDllConfig.h.in

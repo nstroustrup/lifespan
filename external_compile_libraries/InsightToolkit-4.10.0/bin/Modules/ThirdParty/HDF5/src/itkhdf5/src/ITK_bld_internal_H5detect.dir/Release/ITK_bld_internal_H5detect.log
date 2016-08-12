@@ -1,0 +1,4 @@
+﻿  Building Custom Rule C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/HDF5/src/itkhdf5/src/CMakeLists.txt
+  CMake does not need to re-run because C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\HDF5\src\itkhdf5\src\CMakeFiles\generate.stamp is up-to-date.
+  H5detect.c
+  ITK_bld_internal_H5detect.vcxproj -> C:\server\InsightToolkit-4.10.0\bin\bin\Release\ITK_bld_internal_H5detect.exe

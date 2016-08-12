@@ -1,0 +1,19 @@
+
+{
+	"sources" : 
+	[
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/IO/SpatialObjects/src/itkPolygonGroupSpatialObjectXMLFile.cxx"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/IO/SpatialObjects/src/CMakeLists.txt"
+		}
+	],
+	"target" : 
+	{
+		"labels" : [ "ITKIOSpatialObjects" ],
+		"name" : "ITKIOSpatialObjects"
+	}
+}

@@ -1,0 +1,5 @@
+# Target labels
+ ITKNIFTI
+# Source files and their labels
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/NIFTI/src/nifti/znzlib/znzlib.c
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/NIFTI/src/nifti/znzlib/CMakeLists.txt

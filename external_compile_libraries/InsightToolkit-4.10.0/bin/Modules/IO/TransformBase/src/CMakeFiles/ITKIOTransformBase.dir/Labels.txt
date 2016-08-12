@@ -1,0 +1,12 @@
+# Target labels
+ ITKIOTransformBase
+# Source files and their labels
+C:/server/InsightToolkit-4.10.0/Modules/IO/TransformBase/src/itkCompositeTransformIOHelper.cxx
+C:/server/InsightToolkit-4.10.0/Modules/IO/TransformBase/src/itkTransformFactoryBase.cxx
+C:/server/InsightToolkit-4.10.0/Modules/IO/TransformBase/src/itkTransformFactoryBaseRegisterFloatParameters.cxx
+C:/server/InsightToolkit-4.10.0/Modules/IO/TransformBase/src/itkTransformFactoryBaseRegisterDoubleParameters.cxx
+C:/server/InsightToolkit-4.10.0/Modules/IO/TransformBase/src/itkTransformFileReader.cxx
+C:/server/InsightToolkit-4.10.0/Modules/IO/TransformBase/src/itkTransformFileWriterSpecializations.cxx
+C:/server/InsightToolkit-4.10.0/Modules/IO/TransformBase/src/itkTransformIOBase.cxx
+C:/server/InsightToolkit-4.10.0/Modules/IO/TransformBase/src/itkTransformIOFactory.cxx
+C:/server/InsightToolkit-4.10.0/Modules/IO/TransformBase/src/CMakeLists.txt

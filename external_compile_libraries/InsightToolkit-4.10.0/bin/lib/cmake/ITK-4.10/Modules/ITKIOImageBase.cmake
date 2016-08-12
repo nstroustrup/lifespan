@@ -1,0 +1,12 @@
+set(ITKIOImageBase_LOADED 1)
+set(ITKIOImageBase_ENABLE_SHARED "1")
+set(ITKIOImageBase_DEPENDS "ITKCommon")
+set(ITKIOImageBase_PUBLIC_DEPENDS "ITKCommon")
+set(ITKIOImageBase_TRANSITIVE_DEPENDS "ITKCommon")
+set(ITKIOImageBase_PRIVATE_DEPENDS "")
+set(ITKIOImageBase_LIBRARIES "ITKIOImageBase")
+set(ITKIOImageBase_INCLUDE_DIRS "C:/server/InsightToolkit-4.10.0/bin/Modules/IO/ImageBase;C:/server/InsightToolkit-4.10.0/Modules/IO/ImageBase/include")
+set(ITKIOImageBase_LIBRARY_DIRS "")
+set(ITKIOImageBase_RUNTIME_LIBRARY_DIRS "C:/server/InsightToolkit-4.10.0/bin/bin")
+set(ITKIOImageBase_TARGETS_FILE "")
+

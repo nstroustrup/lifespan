@@ -1,0 +1,12 @@
+set(ITKConvolution_LOADED 1)
+set(ITKConvolution_ENABLE_SHARED "0")
+set(ITKConvolution_DEPENDS "ITKFFT;ITKImageIntensity;ITKThresholding")
+set(ITKConvolution_PUBLIC_DEPENDS "")
+set(ITKConvolution_TRANSITIVE_DEPENDS "ITKFFT;ITKImageIntensity;ITKThresholding")
+set(ITKConvolution_PRIVATE_DEPENDS "")
+set(ITKConvolution_LIBRARIES "ITKCommon;ITKStatistics;ITKTransform;ITKSpatialObjects;ITKPath")
+set(ITKConvolution_INCLUDE_DIRS "C:/server/InsightToolkit-4.10.0/Modules/Filtering/Convolution/include")
+set(ITKConvolution_LIBRARY_DIRS "")
+set(ITKConvolution_RUNTIME_LIBRARY_DIRS "C:/server/InsightToolkit-4.10.0/bin/bin")
+set(ITKConvolution_TARGETS_FILE "")
+

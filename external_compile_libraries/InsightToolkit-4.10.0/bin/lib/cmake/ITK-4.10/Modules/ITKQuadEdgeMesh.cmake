@@ -1,0 +1,12 @@
+set(ITKQuadEdgeMesh_LOADED 1)
+set(ITKQuadEdgeMesh_ENABLE_SHARED "1")
+set(ITKQuadEdgeMesh_DEPENDS "ITKCommon;ITKMesh")
+set(ITKQuadEdgeMesh_PUBLIC_DEPENDS "")
+set(ITKQuadEdgeMesh_TRANSITIVE_DEPENDS "ITKCommon")
+set(ITKQuadEdgeMesh_PRIVATE_DEPENDS "ITKMesh")
+set(ITKQuadEdgeMesh_LIBRARIES "ITKQuadEdgeMesh")
+set(ITKQuadEdgeMesh_INCLUDE_DIRS "C:/server/InsightToolkit-4.10.0/Modules/Core/QuadEdgeMesh/include")
+set(ITKQuadEdgeMesh_LIBRARY_DIRS "")
+set(ITKQuadEdgeMesh_RUNTIME_LIBRARY_DIRS "C:/server/InsightToolkit-4.10.0/bin/bin")
+set(ITKQuadEdgeMesh_TARGETS_FILE "")
+

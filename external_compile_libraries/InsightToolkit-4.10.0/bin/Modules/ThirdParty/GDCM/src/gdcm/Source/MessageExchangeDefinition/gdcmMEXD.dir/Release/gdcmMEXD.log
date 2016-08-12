@@ -1,0 +1,77 @@
+﻿  Building Custom Rule C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/GDCM/src/gdcm/Source/MessageExchangeDefinition/CMakeLists.txt
+  CMake does not need to re-run because C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\GDCM\src\gdcm\Source\MessageExchangeDefinition\CMakeFiles\generate.stamp is up-to-date.
+  gdcmAAbortPDU.cxx
+  gdcmAAssociateACPDU.cxx
+  gdcmAAssociateRJPDU.cxx
+  gdcmAAssociateRQPDU.cxx
+  gdcmAbstractSyntax.cxx
+  gdcmApplicationContext.cxx
+  gdcmAReleaseRPPDU.cxx
+  gdcmAReleaseRQPDU.cxx
+  gdcmARTIMTimer.cxx
+  gdcmAsynchronousOperationsWindowSub.cxx
+  gdcmBaseQuery.cxx
+  gdcmBaseRootQuery.cxx
+  gdcmCEchoMessages.cxx
+  gdcmCFindMessages.cxx
+  gdcmCMoveMessages.cxx
+  gdcmCommandDataSet.cxx
+  gdcmCompositeMessageFactory.cxx
+  gdcmCompositeNetworkFunctions.cxx
+  gdcmCStoreMessages.cxx
+  gdcmFindPatientRootQuery.cxx
+  Generating Code...
+  Compiling...
+  gdcmFindStudyRootQuery.cxx
+  gdcmImplementationClassUIDSub.cxx
+  gdcmImplementationUIDSub.cxx
+  gdcmImplementationVersionNameSub.cxx
+  gdcmMaximumLengthSub.cxx
+  gdcmModalityPerformedProcedureStepCreateQuery.cxx
+  gdcmModalityPerformedProcedureStepSetQuery.cxx
+  gdcmMovePatientRootQuery.cxx
+  gdcmMoveStudyRootQuery.cxx
+  gdcmNActionMessages.cxx
+  gdcmNCreateMessages.cxx
+  gdcmNDeleteMessages.cxx
+  gdcmNEventReportMessages.cxx
+  gdcmNGetMessages.cxx
+  gdcmNormalizedMessageFactory.cxx
+  gdcmNormalizedNetworkFunctions.cxx
+  gdcmNSetMessages.cxx
+  gdcmPDataTFPDU.cxx
+  gdcmPDUFactory.cxx
+  gdcmPresentationContext.cxx
+  Generating Code...
+  Compiling...
+  gdcmPresentationContextAC.cxx
+  gdcmPresentationContextGenerator.cxx
+  gdcmPresentationContextRQ.cxx
+  gdcmPresentationDataValue.cxx
+  gdcmQueryBase.cxx
+  gdcmQueryFactory.cxx
+  gdcmQueryImage.cxx
+  gdcmQueryPatient.cxx
+  gdcmQuerySeries.cxx
+  gdcmQueryStudy.cxx
+  gdcmRoleSelectionSub.cxx
+  gdcmServiceClassApplicationInformation.cxx
+  gdcmServiceClassUser.cxx
+  gdcmSOPClassExtendedNegociationSub.cxx
+  gdcmTransferSyntaxSub.cxx
+  gdcmULActionAA.cxx
+  gdcmULActionAE.cxx
+  gdcmULActionAR.cxx
+  gdcmULActionDT.cxx
+  gdcmULBasicCallback.cxx
+  Generating Code...
+  Compiling...
+  gdcmULConnection.cxx
+  gdcmULConnectionInfo.cxx
+  gdcmULConnectionManager.cxx
+  gdcmULTransitionTable.cxx
+  gdcmULWritingCallback.cxx
+  gdcmUserInformation.cxx
+  gdcmWLMFindQuery.cxx
+  Generating Code...
+  gdcmMEXD.vcxproj -> C:\server\InsightToolkit-4.10.0\bin\lib\Release\itkgdcmMEXD-4.10.lib

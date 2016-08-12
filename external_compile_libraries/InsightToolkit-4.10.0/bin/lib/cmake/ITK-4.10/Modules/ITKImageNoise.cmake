@@ -1,0 +1,12 @@
+set(ITKImageNoise_LOADED 1)
+set(ITKImageNoise_ENABLE_SHARED "0")
+set(ITKImageNoise_DEPENDS "ITKStatistics")
+set(ITKImageNoise_PUBLIC_DEPENDS "")
+set(ITKImageNoise_TRANSITIVE_DEPENDS "ITKStatistics")
+set(ITKImageNoise_PRIVATE_DEPENDS "")
+set(ITKImageNoise_LIBRARIES "ITKStatistics")
+set(ITKImageNoise_INCLUDE_DIRS "C:/server/InsightToolkit-4.10.0/Modules/Filtering/ImageNoise/include")
+set(ITKImageNoise_LIBRARY_DIRS "")
+set(ITKImageNoise_RUNTIME_LIBRARY_DIRS "C:/server/InsightToolkit-4.10.0/bin/bin")
+set(ITKImageNoise_TARGETS_FILE "")
+

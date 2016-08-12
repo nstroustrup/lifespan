@@ -1,0 +1,19 @@
+# Target labels
+ ITKPNG
+# Source files and their labels
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/PNG/src/itkpng/pngget.c
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/PNG/src/itkpng/pngrio.c
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/PNG/src/itkpng/pngwrite.c
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/PNG/src/itkpng/png.c
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/PNG/src/itkpng/pngmem.c
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/PNG/src/itkpng/pngrtran.c
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/PNG/src/itkpng/pngtrans.c
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/PNG/src/itkpng/pngwtran.c
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/PNG/src/itkpng/pngerror.c
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/PNG/src/itkpng/pngpread.c
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/PNG/src/itkpng/pngrutil.c
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/PNG/src/itkpng/pngwutil.c
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/PNG/src/itkpng/pngread.c
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/PNG/src/itkpng/pngset.c
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/PNG/src/itkpng/pngwio.c
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/PNG/src/itkpng/CMakeLists.txt

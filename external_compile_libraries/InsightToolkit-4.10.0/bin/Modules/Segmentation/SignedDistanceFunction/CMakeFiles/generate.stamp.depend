@@ -1,0 +1,17 @@
+# CMake generation dependency list for this directory.
+C:/server/InsightToolkit-4.10.0/Modules/Segmentation/SignedDistanceFunction/CMakeLists.txt
+C:/server/InsightToolkit-4.10.0/Modules/Segmentation/SignedDistanceFunction/itk-module.cmake
+C:/server/InsightToolkit-4.10.0/bin/lib/cmake/ITK-4.10/Modules/ITKImageFunction.cmake
+C:/server/InsightToolkit-4.10.0/bin/lib/cmake/ITK-4.10/Modules/ITKImageAdaptors.cmake
+C:/server/InsightToolkit-4.10.0/bin/lib/cmake/ITK-4.10/Modules/ITKStatistics.cmake
+C:/server/InsightToolkit-4.10.0/bin/lib/cmake/ITK-4.10/Modules/ITKCommon.cmake
+C:/server/InsightToolkit-4.10.0/bin/lib/cmake/ITK-4.10/Modules/ITKKWIML.cmake
+C:/server/InsightToolkit-4.10.0/bin/lib/cmake/ITK-4.10/Modules/ITKKWSys.cmake
+C:/server/InsightToolkit-4.10.0/bin/lib/cmake/ITK-4.10/Modules/ITKVNLInstantiation.cmake
+C:/server/InsightToolkit-4.10.0/bin/lib/cmake/ITK-4.10/Modules/ITKVNL.cmake
+C:/server/InsightToolkit-4.10.0/bin/lib/cmake/ITK-4.10/Modules/ITKNetlib.cmake
+C:/server/InsightToolkit-4.10.0/bin/lib/cmake/ITK-4.10/Modules/ITKTransform.cmake
+C:/server/InsightToolkit-4.10.0/bin/lib/cmake/ITK-4.10/Modules/ITKImageFilterBase.cmake
+C:/server/InsightToolkit-4.10.0/CMake/ITKModuleInfo.cmake.in
+C:/server/InsightToolkit-4.10.0/CMake/ITKModuleInfo.cmake.in
+C:/server/InsightToolkit-4.10.0/Utilities/Doxygen/Module.dox.in

@@ -1,0 +1,15 @@
+# Target labels
+ ITKZLIB
+# Source files and their labels
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/ZLIB/src/itkzlib/adler32.c
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/ZLIB/src/itkzlib/compress.c
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/ZLIB/src/itkzlib/crc32.c
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/ZLIB/src/itkzlib/deflate.c
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/ZLIB/src/itkzlib/gzio.c
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/ZLIB/src/itkzlib/inffast.c
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/ZLIB/src/itkzlib/inflate.c
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/ZLIB/src/itkzlib/inftrees.c
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/ZLIB/src/itkzlib/trees.c
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/ZLIB/src/itkzlib/uncompr.c
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/ZLIB/src/itkzlib/zutil.c
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/ZLIB/src/itkzlib/CMakeLists.txt

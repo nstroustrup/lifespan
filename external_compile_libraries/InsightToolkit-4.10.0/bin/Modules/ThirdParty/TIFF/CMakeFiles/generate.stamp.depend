@@ -1,0 +1,10 @@
+# CMake generation dependency list for this directory.
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/TIFF/CMakeLists.txt
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/TIFF/src/itk_tiff.h.in
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/TIFF/itk-module.cmake
+C:/server/InsightToolkit-4.10.0/bin/lib/cmake/ITK-4.10/Modules/ITKJPEG.cmake
+C:/server/InsightToolkit-4.10.0/bin/lib/cmake/ITK-4.10/Modules/ITKKWIML.cmake
+C:/server/InsightToolkit-4.10.0/bin/lib/cmake/ITK-4.10/Modules/ITKZLIB.cmake
+C:/server/InsightToolkit-4.10.0/CMake/ITKModuleInfo.cmake.in
+C:/server/InsightToolkit-4.10.0/CMake/ITKModuleInfo.cmake.in
+C:/server/InsightToolkit-4.10.0/Utilities/Doxygen/Module.dox.in

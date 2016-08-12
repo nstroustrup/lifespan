@@ -1,0 +1,9 @@
+# Target labels
+ ITKOptimizersv4
+# Source files and their labels
+C:/server/InsightToolkit-4.10.0/Modules/Numerics/Optimizersv4/src/itkSingleValuedNonLinearVnlOptimizerv4.cxx
+C:/server/InsightToolkit-4.10.0/Modules/Numerics/Optimizersv4/src/itkSingleValuedVnlCostFunctionAdaptorv4.cxx
+C:/server/InsightToolkit-4.10.0/Modules/Numerics/Optimizersv4/src/itkLBFGSOptimizerv4.cxx
+C:/server/InsightToolkit-4.10.0/Modules/Numerics/Optimizersv4/src/itkLBFGSBOptimizerv4.cxx
+C:/server/InsightToolkit-4.10.0/Modules/Numerics/Optimizersv4/src/itkAmoebaOptimizerv4.cxx
+C:/server/InsightToolkit-4.10.0/Modules/Numerics/Optimizersv4/src/CMakeLists.txt

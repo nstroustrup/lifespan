@@ -1,0 +1,5 @@
+# CMake generation dependency list for this directory.
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/NrrdIO/src/NrrdIO/CMakeLists.txt
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/NrrdIO/src/NrrdIO/NrrdIO.h.in
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/NrrdIO/src/NrrdIO/CMake/TestQnanhibit.cmake
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/NrrdIO/src/NrrdIO/CMake/TestQnanhibit.c

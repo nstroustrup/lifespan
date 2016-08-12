@@ -1,0 +1,12 @@
+set(ITKHDF5_LOADED 1)
+set(ITKHDF5_ENABLE_SHARED "0")
+set(ITKHDF5_DEPENDS "ITKZLIB")
+set(ITKHDF5_PUBLIC_DEPENDS "ITKZLIB")
+set(ITKHDF5_TRANSITIVE_DEPENDS "ITKZLIB")
+set(ITKHDF5_PRIVATE_DEPENDS "")
+set(ITKHDF5_LIBRARIES "itkhdf5_cpp;itkhdf5")
+set(ITKHDF5_INCLUDE_DIRS "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/HDF5/src;C:/server/InsightToolkit-4.10.0/bin/Modules/ThirdParty/HDF5/src")
+set(ITKHDF5_LIBRARY_DIRS "")
+set(ITKHDF5_RUNTIME_LIBRARY_DIRS "C:/server/InsightToolkit-4.10.0/bin/bin")
+set(ITKHDF5_TARGETS_FILE "")
+

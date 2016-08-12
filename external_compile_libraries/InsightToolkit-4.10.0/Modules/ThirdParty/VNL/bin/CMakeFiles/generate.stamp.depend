@@ -1,0 +1,20 @@
+# CMake generation dependency list for this directory.
+C:/server/ns_lifespan_machine_source/external_compile_libraries/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/CMakeLists.txt
+C:/server/ns_lifespan_machine_source/external_compile_libraries/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/bin/CMakeFiles/3.0.20140918/CMakeSystem.cmake
+c:/Program Files (x86)/CMakeMS/share/cmake-3.0/Modules/CMakeSystemSpecificInitialize.cmake
+C:/server/ns_lifespan_machine_source/external_compile_libraries/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/bin/CMakeFiles/3.0.20140918/CMakeCCompiler.cmake
+C:/server/ns_lifespan_machine_source/external_compile_libraries/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/bin/CMakeFiles/3.0.20140918/CMakeCXXCompiler.cmake
+c:/Program Files (x86)/CMakeMS/share/cmake-3.0/Modules/CMakeSystemSpecificInformation.cmake
+c:/Program Files (x86)/CMakeMS/share/cmake-3.0/Modules/CMakeGenericSystem.cmake
+c:/Program Files (x86)/CMakeMS/share/cmake-3.0/Modules/Platform/Windows.cmake
+c:/Program Files (x86)/CMakeMS/share/cmake-3.0/Modules/Platform/WindowsPaths.cmake
+c:/Program Files (x86)/CMakeMS/share/cmake-3.0/Modules/CMakeCInformation.cmake
+c:/Program Files (x86)/CMakeMS/share/cmake-3.0/Modules/Platform/Windows-MSVC-C.cmake
+c:/Program Files (x86)/CMakeMS/share/cmake-3.0/Modules/Platform/Windows-MSVC.cmake
+C:/server/ns_lifespan_machine_source/external_compile_libraries/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/bin/CMakeFiles/3.0.20140918/CMakeRCCompiler.cmake
+c:/Program Files (x86)/CMakeMS/share/cmake-3.0/Modules/CMakeRCInformation.cmake
+c:/Program Files (x86)/CMakeMS/share/cmake-3.0/Modules/CMakeCommonLanguageInclude.cmake
+c:/Program Files (x86)/CMakeMS/share/cmake-3.0/Modules/CMakeCXXInformation.cmake
+c:/Program Files (x86)/CMakeMS/share/cmake-3.0/Modules/Platform/Windows-MSVC-CXX.cmake
+c:/Program Files (x86)/CMakeMS/share/cmake-3.0/Modules/Platform/Windows-MSVC.cmake
+c:/Program Files (x86)/CMakeMS/share/cmake-3.0/Modules/CMakeCommonLanguageInclude.cmake

@@ -1,0 +1,27 @@
+﻿  Building Custom Rule C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/GDCM/src/gdcm/Utilities/gdcmopenjpeg-v2/libopenjpeg/CMakeLists.txt
+  CMake does not need to re-run because C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\GDCM\src\gdcm\Utilities\gdcmopenjpeg-v2\libopenjpeg\CMakeFiles\generate.stamp is up-to-date.
+  tcd.c
+  bio.c
+  cio.c
+  dwt.c
+  event.c
+  image.c
+  j2k.c
+  j2k_lib.c
+  jp2.c
+  jpt.c
+  mct.c
+  mqc.c
+  openjpeg.c
+  pi.c
+  raw.c
+  t1.c
+  tgt.c
+  profile.c
+  invert.c
+  function_list.c
+  Generating Code...
+  Compiling...
+  t2.c
+  Generating Code...
+  gdcmopenjpeg.vcxproj -> C:\server\InsightToolkit-4.10.0\bin\lib\Debug\itkgdcmopenjpeg-4.10.lib

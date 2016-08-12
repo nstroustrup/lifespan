@@ -1,0 +1,19 @@
+
+{
+	"sources" : 
+	[
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/Core/QuadEdgeMesh/src/itkQuadEdge.cxx"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/Core/QuadEdgeMesh/src/CMakeLists.txt"
+		}
+	],
+	"target" : 
+	{
+		"labels" : [ "ITKQuadEdgeMesh" ],
+		"name" : "ITKQuadEdgeMesh"
+	}
+}

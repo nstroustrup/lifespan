@@ -1,0 +1,7 @@
+﻿  Building Custom Rule C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/src/vxl/core/testlib/CMakeLists.txt
+  CMake does not need to re-run because C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\VNL\src\vxl\core\testlib\CMakeFiles\generate.stamp is up-to-date.
+  testlib_test.cxx
+  testlib_main.cxx
+  testlib_root_dir.cxx
+  Generating Code...
+  itktestlib.vcxproj -> C:\server\InsightToolkit-4.10.0\bin\lib\Release\itktestlib-4.10.lib

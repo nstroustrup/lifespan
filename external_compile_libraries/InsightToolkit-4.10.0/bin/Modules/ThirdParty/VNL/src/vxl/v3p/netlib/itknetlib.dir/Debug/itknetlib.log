@@ -1,0 +1,4 @@
+﻿  Building Custom Rule C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/src/vxl/v3p/netlib/CMakeLists.txt
+  CMake does not need to re-run because C:\server\InsightToolkit-4.10.0\bin\Modules\ThirdParty\VNL\src\vxl\v3p\netlib\CMakeFiles\generate.stamp is up-to-date.
+  triangle.c
+  itknetlib.vcxproj -> C:\server\InsightToolkit-4.10.0\bin\lib\Debug\itknetlib-4.10.lib

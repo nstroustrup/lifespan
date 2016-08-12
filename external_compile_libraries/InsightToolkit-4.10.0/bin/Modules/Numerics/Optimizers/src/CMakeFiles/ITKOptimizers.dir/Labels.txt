@@ -1,0 +1,35 @@
+# Target labels
+ ITKOptimizers
+# Source files and their labels
+C:/server/InsightToolkit-4.10.0/Modules/Numerics/Optimizers/src/itkNonLinearOptimizer.cxx
+C:/server/InsightToolkit-4.10.0/Modules/Numerics/Optimizers/src/itkMultipleValuedCostFunction.cxx
+C:/server/InsightToolkit-4.10.0/Modules/Numerics/Optimizers/src/itkSingleValuedCostFunction.cxx
+C:/server/InsightToolkit-4.10.0/Modules/Numerics/Optimizers/src/itkConjugateGradientOptimizer.cxx
+C:/server/InsightToolkit-4.10.0/Modules/Numerics/Optimizers/src/itkRegularStepGradientDescentOptimizer.cxx
+C:/server/InsightToolkit-4.10.0/Modules/Numerics/Optimizers/src/itkLBFGSOptimizer.cxx
+C:/server/InsightToolkit-4.10.0/Modules/Numerics/Optimizers/src/itkExhaustiveOptimizer.cxx
+C:/server/InsightToolkit-4.10.0/Modules/Numerics/Optimizers/src/itkLevenbergMarquardtOptimizer.cxx
+C:/server/InsightToolkit-4.10.0/Modules/Numerics/Optimizers/src/itkSingleValuedNonLinearVnlOptimizer.cxx
+C:/server/InsightToolkit-4.10.0/Modules/Numerics/Optimizers/src/itkQuaternionRigidTransformGradientDescentOptimizer.cxx
+C:/server/InsightToolkit-4.10.0/Modules/Numerics/Optimizers/src/itkSPSAOptimizer.cxx
+C:/server/InsightToolkit-4.10.0/Modules/Numerics/Optimizers/src/itkSingleValuedVnlCostFunctionAdaptor.cxx
+C:/server/InsightToolkit-4.10.0/Modules/Numerics/Optimizers/src/itkMultipleValuedNonLinearVnlOptimizer.cxx
+C:/server/InsightToolkit-4.10.0/Modules/Numerics/Optimizers/src/itkPowellOptimizer.cxx
+C:/server/InsightToolkit-4.10.0/Modules/Numerics/Optimizers/src/itkVersorRigid3DTransformOptimizer.cxx
+C:/server/InsightToolkit-4.10.0/Modules/Numerics/Optimizers/src/itkVersorTransformOptimizer.cxx
+C:/server/InsightToolkit-4.10.0/Modules/Numerics/Optimizers/src/itkOnePlusOneEvolutionaryOptimizer.cxx
+C:/server/InsightToolkit-4.10.0/Modules/Numerics/Optimizers/src/itkMultipleValuedNonLinearOptimizer.cxx
+C:/server/InsightToolkit-4.10.0/Modules/Numerics/Optimizers/src/itkLBFGSBOptimizer.cxx
+C:/server/InsightToolkit-4.10.0/Modules/Numerics/Optimizers/src/itkCumulativeGaussianOptimizer.cxx
+C:/server/InsightToolkit-4.10.0/Modules/Numerics/Optimizers/src/itkAmoebaOptimizer.cxx
+C:/server/InsightToolkit-4.10.0/Modules/Numerics/Optimizers/src/itkCumulativeGaussianCostFunction.cxx
+C:/server/InsightToolkit-4.10.0/Modules/Numerics/Optimizers/src/itkOptimizer.cxx
+C:/server/InsightToolkit-4.10.0/Modules/Numerics/Optimizers/src/itkFRPROptimizer.cxx
+C:/server/InsightToolkit-4.10.0/Modules/Numerics/Optimizers/src/itkGradientDescentOptimizer.cxx
+C:/server/InsightToolkit-4.10.0/Modules/Numerics/Optimizers/src/itkSingleValuedNonLinearOptimizer.cxx
+C:/server/InsightToolkit-4.10.0/Modules/Numerics/Optimizers/src/itkRegularStepGradientDescentBaseOptimizer.cxx
+C:/server/InsightToolkit-4.10.0/Modules/Numerics/Optimizers/src/itkMultipleValuedVnlCostFunctionAdaptor.cxx
+C:/server/InsightToolkit-4.10.0/Modules/Numerics/Optimizers/src/itkParticleSwarmOptimizerBase.cxx
+C:/server/InsightToolkit-4.10.0/Modules/Numerics/Optimizers/src/itkParticleSwarmOptimizer.cxx
+C:/server/InsightToolkit-4.10.0/Modules/Numerics/Optimizers/src/itkInitializationBiasedParticleSwarmOptimizer.cxx
+C:/server/InsightToolkit-4.10.0/Modules/Numerics/Optimizers/src/CMakeLists.txt

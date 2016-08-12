@@ -1,0 +1,12 @@
+set(ITKFEMRegistration_LOADED 1)
+set(ITKFEMRegistration_ENABLE_SHARED "0")
+set(ITKFEMRegistration_DEPENDS "ITKFEM;ITKImageFeature;ITKImageStatistics;ITKPDEDeformableRegistration;ITKSpatialObjects")
+set(ITKFEMRegistration_PUBLIC_DEPENDS "ITKFEM;ITKImageFeature;ITKImageStatistics;ITKPDEDeformableRegistration;ITKSpatialObjects")
+set(ITKFEMRegistration_TRANSITIVE_DEPENDS "ITKFEM;ITKImageFeature;ITKImageStatistics;ITKPDEDeformableRegistration;ITKSpatialObjects")
+set(ITKFEMRegistration_PRIVATE_DEPENDS "")
+set(ITKFEMRegistration_LIBRARIES "ITKFEM;ITKCommon;ITKStatistics;ITKTransform;ITKSpatialObjects;ITKPath;ITKMesh;ITKOptimizers")
+set(ITKFEMRegistration_INCLUDE_DIRS "C:/server/InsightToolkit-4.10.0/Modules/Registration/FEM/include")
+set(ITKFEMRegistration_LIBRARY_DIRS "")
+set(ITKFEMRegistration_RUNTIME_LIBRARY_DIRS "C:/server/InsightToolkit-4.10.0/bin/bin")
+set(ITKFEMRegistration_TARGETS_FILE "")
+

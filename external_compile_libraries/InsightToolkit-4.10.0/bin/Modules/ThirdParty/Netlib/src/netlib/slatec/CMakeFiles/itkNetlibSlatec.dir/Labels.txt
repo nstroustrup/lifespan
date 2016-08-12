@@ -1,0 +1,24 @@
+# Target labels
+ ITKNetlib
+# Source files and their labels
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/Netlib/src/netlib/slatec/d1mach.c
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/Netlib/src/netlib/slatec/d9lgmc.c
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/Netlib/src/netlib/slatec/d9gmit.c
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/Netlib/src/netlib/slatec/d9lgic.c
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/Netlib/src/netlib/slatec/d9lgit.c
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/Netlib/src/netlib/slatec/dbetai.c
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/Netlib/src/netlib/slatec/dcsevl.c
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/Netlib/src/netlib/slatec/dgami.c
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/Netlib/src/netlib/slatec/dgamit.c
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/Netlib/src/netlib/slatec/dgamlm.c
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/Netlib/src/netlib/slatec/dgamma.c
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/Netlib/src/netlib/slatec/dgamr.c
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/Netlib/src/netlib/slatec/dlbeta.c
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/Netlib/src/netlib/slatec/dlgams.c
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/Netlib/src/netlib/slatec/dlngam.c
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/Netlib/src/netlib/slatec/dlnrel.c
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/Netlib/src/netlib/slatec/initds.c
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/Netlib/src/netlib/slatec/xermsg.c
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/Netlib/src/netlib/slatec/d_int.c
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/Netlib/src/netlib/slatec/d_mod.c
+C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/Netlib/src/netlib/slatec/CMakeLists.txt

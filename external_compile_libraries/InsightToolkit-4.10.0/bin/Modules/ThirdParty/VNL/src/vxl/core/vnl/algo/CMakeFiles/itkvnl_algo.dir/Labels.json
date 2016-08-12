@@ -1,0 +1,603 @@
+
+{
+	"sources" : 
+	[
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/src/vxl/core/vnl/algo/vnl_algo_fwd.h"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/src/vxl/core/vnl/algo/vnl_netlib.h"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/src/vxl/core/vnl/algo/vnl_svd.hxx"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/src/vxl/core/vnl/algo/vnl_svd.h"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/src/vxl/core/vnl/algo/vnl_svd_economy.hxx"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/src/vxl/core/vnl/algo/vnl_svd_economy.h"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/src/vxl/core/vnl/algo/vnl_svd_fixed.hxx"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/src/vxl/core/vnl/algo/vnl_svd_fixed.h"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/src/vxl/core/vnl/algo/vnl_matrix_inverse.hxx"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/src/vxl/core/vnl/algo/vnl_matrix_inverse.h"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/src/vxl/core/vnl/algo/vnl_qr.hxx"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/src/vxl/core/vnl/algo/vnl_qr.h"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/src/vxl/core/vnl/algo/vnl_scatter_3x3.hxx"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/src/vxl/core/vnl/algo/vnl_scatter_3x3.h"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/src/vxl/core/vnl/algo/vnl_cholesky.cxx"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/src/vxl/core/vnl/algo/vnl_cholesky.h"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/src/vxl/core/vnl/algo/vnl_ldl_cholesky.cxx"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/src/vxl/core/vnl/algo/vnl_ldl_cholesky.h"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/src/vxl/core/vnl/algo/vnl_sparse_lu.cxx"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/src/vxl/core/vnl/algo/vnl_sparse_lu.h"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/src/vxl/core/vnl/algo/vnl_real_eigensystem.cxx"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/src/vxl/core/vnl/algo/vnl_real_eigensystem.h"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/src/vxl/core/vnl/algo/vnl_complex_eigensystem.cxx"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/src/vxl/core/vnl/algo/vnl_complex_eigensystem.h"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/src/vxl/core/vnl/algo/vnl_symmetric_eigensystem.hxx"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/src/vxl/core/vnl/algo/vnl_symmetric_eigensystem.h"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/src/vxl/core/vnl/algo/vnl_generalized_eigensystem.cxx"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/src/vxl/core/vnl/algo/vnl_generalized_eigensystem.h"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/src/vxl/core/vnl/algo/vnl_sparse_symmetric_eigensystem.cxx"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/src/vxl/core/vnl/algo/vnl_sparse_symmetric_eigensystem.h"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/src/vxl/core/vnl/algo/vnl_generalized_schur.cxx"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/src/vxl/core/vnl/algo/vnl_generalized_schur.h"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/src/vxl/core/vnl/algo/vnl_complex_generalized_schur.cxx"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/src/vxl/core/vnl/algo/vnl_complex_generalized_schur.h"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/src/vxl/core/vnl/algo/vnl_discrete_diff.cxx"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/src/vxl/core/vnl/algo/vnl_discrete_diff.h"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/src/vxl/core/vnl/algo/vnl_levenberg_marquardt.cxx"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/src/vxl/core/vnl/algo/vnl_levenberg_marquardt.h"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/src/vxl/core/vnl/algo/vnl_sparse_lm.cxx"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/src/vxl/core/vnl/algo/vnl_sparse_lm.h"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/src/vxl/core/vnl/algo/vnl_conjugate_gradient.cxx"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/src/vxl/core/vnl/algo/vnl_conjugate_gradient.h"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/src/vxl/core/vnl/algo/vnl_lbfgs.cxx"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/src/vxl/core/vnl/algo/vnl_lbfgs.h"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/src/vxl/core/vnl/algo/vnl_lbfgsb.cxx"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/src/vxl/core/vnl/algo/vnl_lbfgsb.h"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/src/vxl/core/vnl/algo/vnl_amoeba.cxx"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/src/vxl/core/vnl/algo/vnl_amoeba.h"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/src/vxl/core/vnl/algo/vnl_powell.cxx"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/src/vxl/core/vnl/algo/vnl_powell.h"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/src/vxl/core/vnl/algo/vnl_brent.cxx"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/src/vxl/core/vnl/algo/vnl_brent.h"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/src/vxl/core/vnl/algo/vnl_lsqr.cxx"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/src/vxl/core/vnl/algo/vnl_lsqr.h"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/src/vxl/core/vnl/algo/vnl_solve_qp.cxx"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/src/vxl/core/vnl/algo/vnl_solve_qp.h"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/src/vxl/core/vnl/algo/vnl_bracket_minimum.cxx"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/src/vxl/core/vnl/algo/vnl_bracket_minimum.h"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/src/vxl/core/vnl/algo/vnl_brent_minimizer.cxx"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/src/vxl/core/vnl/algo/vnl_brent_minimizer.h"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/src/vxl/core/vnl/algo/vnl_rpoly_roots.cxx"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/src/vxl/core/vnl/algo/vnl_rpoly_roots.h"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/src/vxl/core/vnl/algo/vnl_cpoly_roots.cxx"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/src/vxl/core/vnl/algo/vnl_cpoly_roots.h"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/src/vxl/core/vnl/algo/vnl_rnpoly_solve.cxx"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/src/vxl/core/vnl/algo/vnl_rnpoly_solve.h"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/src/vxl/core/vnl/algo/vnl_fit_parabola.h"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/src/vxl/core/vnl/algo/vnl_fft.cxx"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/src/vxl/core/vnl/algo/vnl_fft.h"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/src/vxl/core/vnl/algo/vnl_fft_base.hxx"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/src/vxl/core/vnl/algo/vnl_fft_base.h"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/src/vxl/core/vnl/algo/vnl_fft_1d.hxx"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/src/vxl/core/vnl/algo/vnl_fft_1d.h"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/src/vxl/core/vnl/algo/vnl_fft_2d.hxx"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/src/vxl/core/vnl/algo/vnl_fft_2d.h"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/src/vxl/core/vnl/algo/vnl_fft_prime_factors.hxx"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/src/vxl/core/vnl/algo/vnl_fft_prime_factors.h"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/src/vxl/core/vnl/algo/vnl_convolve.hxx"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/src/vxl/core/vnl/algo/vnl_convolve.h"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/src/vxl/core/vnl/algo/vnl_determinant.cxx"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/src/vxl/core/vnl/algo/vnl_determinant.hxx"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/src/vxl/core/vnl/algo/vnl_determinant.h"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/src/vxl/core/vnl/algo/vnl_chi_squared.hxx"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/src/vxl/core/vnl/algo/vnl_chi_squared.h"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/src/vxl/core/vnl/algo/vnl_gaussian_kernel_1d.cxx"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/src/vxl/core/vnl/algo/vnl_gaussian_kernel_1d.h"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/src/vxl/core/vnl/algo/vnl_adjugate.hxx"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/src/vxl/core/vnl/algo/vnl_adjugate.h"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/src/vxl/core/vnl/algo/vnl_orthogonal_complement.hxx"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/src/vxl/core/vnl/algo/vnl_orthogonal_complement.h"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/src/vxl/core/vnl/algo/vnl_matrix_update.h"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/src/vxl/core/vnl/algo/vnl_simpson_integral.cxx"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/src/vxl/core/vnl/algo/vnl_simpson_integral.h"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/src/vxl/core/vnl/algo/vnl_adaptsimpson_integral.cxx"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/src/vxl/core/vnl/algo/vnl_adaptsimpson_integral.h"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/src/vxl/core/vnl/algo/Templates/vnl_adjugate+double-.cxx"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/src/vxl/core/vnl/algo/Templates/vnl_adjugate+float-.cxx"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/src/vxl/core/vnl/algo/Templates/vnl_adjugate+int-.cxx"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/src/vxl/core/vnl/algo/Templates/vnl_chi_squared+double-.cxx"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/src/vxl/core/vnl/algo/Templates/vnl_chi_squared+float-.cxx"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/src/vxl/core/vnl/algo/Templates/vnl_chi_squared+int-.cxx"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/src/vxl/core/vnl/algo/Templates/vnl_convolve+double.double-.cxx"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/src/vxl/core/vnl/algo/Templates/vnl_convolve+float.float-.cxx"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/src/vxl/core/vnl/algo/Templates/vnl_convolve+int.double-.cxx"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/src/vxl/core/vnl/algo/Templates/vnl_convolve+int.float-.cxx"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/src/vxl/core/vnl/algo/Templates/vnl_convolve+int.int-.cxx"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/src/vxl/core/vnl/algo/Templates/vnl_determinant+double-.cxx"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/src/vxl/core/vnl/algo/Templates/vnl_determinant+float-.cxx"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/src/vxl/core/vnl/algo/Templates/vnl_determinant+int-.cxx"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/src/vxl/core/vnl/algo/Templates/vnl_determinant+vcl_complex+double--.cxx"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/src/vxl/core/vnl/algo/Templates/vnl_determinant+vcl_complex+float--.cxx"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/src/vxl/core/vnl/algo/Templates/vnl_fft_1d+double-.cxx"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/src/vxl/core/vnl/algo/Templates/vnl_fft_1d+float-.cxx"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/src/vxl/core/vnl/algo/Templates/vnl_fft_2d+double-.cxx"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/src/vxl/core/vnl/algo/Templates/vnl_fft_2d+float-.cxx"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/src/vxl/core/vnl/algo/Templates/vnl_fft_base+1.double-.cxx"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/src/vxl/core/vnl/algo/Templates/vnl_fft_base+1.float-.cxx"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/src/vxl/core/vnl/algo/Templates/vnl_fft_base+2.double-.cxx"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/src/vxl/core/vnl/algo/Templates/vnl_fft_base+2.float-.cxx"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/src/vxl/core/vnl/algo/Templates/vnl_fft_prime_factors+double-.cxx"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/src/vxl/core/vnl/algo/Templates/vnl_fft_prime_factors+float-.cxx"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/src/vxl/core/vnl/algo/Templates/vnl_matrix_inverse+double-.cxx"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/src/vxl/core/vnl/algo/Templates/vnl_matrix_inverse+float-.cxx"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/src/vxl/core/vnl/algo/Templates/vnl_orthogonal_complement+double-.cxx"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/src/vxl/core/vnl/algo/Templates/vnl_orthogonal_complement+float-.cxx"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/src/vxl/core/vnl/algo/Templates/vnl_orthogonal_complement+vcl_complex+double--.cxx"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/src/vxl/core/vnl/algo/Templates/vnl_orthogonal_complement+vcl_complex+float--.cxx"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/src/vxl/core/vnl/algo/Templates/vnl_qr+double-.cxx"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/src/vxl/core/vnl/algo/Templates/vnl_qr+float-.cxx"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/src/vxl/core/vnl/algo/Templates/vnl_qr+vcl_complex+double--.cxx"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/src/vxl/core/vnl/algo/Templates/vnl_qr+vcl_complex+float--.cxx"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/src/vxl/core/vnl/algo/Templates/vnl_scatter_3x3+double-.cxx"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/src/vxl/core/vnl/algo/Templates/vnl_scatter_3x3+float-.cxx"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/src/vxl/core/vnl/algo/Templates/vnl_svd+double-.cxx"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/src/vxl/core/vnl/algo/Templates/vnl_svd+float-.cxx"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/src/vxl/core/vnl/algo/Templates/vnl_svd+vcl_complex+double--.cxx"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/src/vxl/core/vnl/algo/Templates/vnl_svd+vcl_complex+float--.cxx"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/src/vxl/core/vnl/algo/Templates/vnl_svd_economy+double-.cxx"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/src/vxl/core/vnl/algo/Templates/vnl_svd_economy+float-.cxx"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/src/vxl/core/vnl/algo/Templates/vnl_svd_economy+vcl_complex+double--.cxx"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/src/vxl/core/vnl/algo/Templates/vnl_svd_economy+vcl_complex+float--.cxx"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/src/vxl/core/vnl/algo/Templates/vnl_svd_fixed+double.3.3-.cxx"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/src/vxl/core/vnl/algo/Templates/vnl_svd_fixed+double.3.4-.cxx"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/src/vxl/core/vnl/algo/Templates/vnl_svd_fixed+float.3.3-.cxx"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/src/vxl/core/vnl/algo/Templates/vnl_svd_fixed+float.3.4-.cxx"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/src/vxl/core/vnl/algo/Templates/vnl_symmetric_eigensystem+double-.cxx"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/src/vxl/core/vnl/algo/Templates/vnl_symmetric_eigensystem+float-.cxx"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/ThirdParty/VNL/src/vxl/core/vnl/algo/CMakeLists.txt"
+		}
+	],
+	"target" : 
+	{
+		"labels" : [ "ITKVNL" ],
+		"name" : "itkvnl_algo"
+	}
+}

@@ -1,0 +1,6 @@
+# Target labels
+ ITKIOStimulate
+# Source files and their labels
+C:/server/InsightToolkit-4.10.0/Modules/IO/Stimulate/src/itkStimulateImageIO.cxx
+C:/server/InsightToolkit-4.10.0/Modules/IO/Stimulate/src/itkStimulateImageIOFactory.cxx
+C:/server/InsightToolkit-4.10.0/Modules/IO/Stimulate/src/CMakeLists.txt

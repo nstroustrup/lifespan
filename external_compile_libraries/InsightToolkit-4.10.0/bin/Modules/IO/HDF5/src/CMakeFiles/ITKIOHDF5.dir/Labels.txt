@@ -1,0 +1,6 @@
+# Target labels
+ ITKIOHDF5
+# Source files and their labels
+C:/server/InsightToolkit-4.10.0/Modules/IO/HDF5/src/itkHDF5ImageIOFactory.cxx
+C:/server/InsightToolkit-4.10.0/Modules/IO/HDF5/src/itkHDF5ImageIO.cxx
+C:/server/InsightToolkit-4.10.0/Modules/IO/HDF5/src/CMakeLists.txt

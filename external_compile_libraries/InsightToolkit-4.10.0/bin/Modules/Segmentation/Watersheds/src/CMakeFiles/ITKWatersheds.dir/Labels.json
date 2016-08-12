@@ -1,0 +1,23 @@
+
+{
+	"sources" : 
+	[
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/Segmentation/Watersheds/src/itkWatershedMiniPipelineProgressCommand.cxx"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/Segmentation/Watersheds/src/itkOneWayEquivalencyTable.cxx"
+		},
+		
+		{
+			"file" : "C:/server/InsightToolkit-4.10.0/Modules/Segmentation/Watersheds/src/CMakeLists.txt"
+		}
+	],
+	"target" : 
+	{
+		"labels" : [ "ITKWatersheds" ],
+		"name" : "ITKWatersheds"
+	}
+}

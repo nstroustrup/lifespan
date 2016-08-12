@@ -35,7 +35,7 @@ ns_image_server::ns_image_server():event_log_open(false),exit_requested(false),u
 	_act_as_processing_node(true),cleared(false),current_sql_server_address_id(0),
 	image_registration_profile_cache(1024*4), //allocate 4 gigabytes of disk space in which to store reference images for capture sample registration
 	_verbose_debug_output(false),_cache_subdirectory("cache"),sql_database_choice(possible_sql_databases.end()),next_scan_for_problems_time(0),
-_terminal_window_scale_factor(1){
+_terminal_window_scale_factor(1),sql_table_lock_manager(this){
 
 	ns_socket::global_init();
 	ns_worm_detection_constants::init();
@@ -259,26 +259,28 @@ private:
 
 	void release_lock(ns_sql & sql){
 		if (!lock_held) return;
-		ns_sql_full_table_lock lock(sql,"automated_job_scheduling_data");
+		//ns_sql_full_table_lock lock(sql,"automated_job_scheduling_data");
+		ns_sql_table_lock lock (image_server.sql_table_lock_manager.obtain_table_lock("automated_job_scheduling_data", &sql, true,__FILE__,__LINE__));
+
 		sql << "SELECT currently_running_host_id FROM automated_job_scheduling_data";
 		ns_sql_result res;
 		sql.get_rows(res);
 
 		if (res.size() == 0){
-			lock.unlock();
+			lock.release(__FILE__,__LINE__);
 			image_server.register_server_event(ns_image_server_event("This client's lock on the automation process was deleted!"),&sql);
 			return;
 		}
 
 		if (atol(res[0][0].c_str()) != image_server.host_id()){
-			lock.unlock();
+			lock.release(__FILE__, __LINE__);
 			image_server.register_server_event(ns_image_server_event("This client's lock on the automation process was usurped!"),&sql);
 			return;
 		}
 
 		sql << "UPDATE automated_job_scheduling_data SET currently_running_host_id = 0";
 		sql.send_query();
-		lock.unlock();
+		lock.release(__FILE__, __LINE__);
 		lock_held = false;
 	}
 	void wait_for_lock(const unsigned long second_delay_until_next_run, ns_sql & sql){
@@ -286,8 +288,9 @@ private:
 			throw ns_ex("Attempting to take a automation lock that is already held!");
 		//unsigned long counter(0);
 		//while (true){
-			ns_sql_full_table_lock lock(sql,"automated_job_scheduling_data");
-			sql << "SELECT currently_running_host_id, acquisition_time, next_run_time,UNIX_TIMESTAMP() FROM automated_job_scheduling_data";
+		ns_sql_table_lock lock(image_server.sql_table_lock_manager.obtain_table_lock("automated_job_scheduling_data", &sql, true, __FILE__, __LINE__));
+		
+		sql << "SELECT currently_running_host_id, acquisition_time, next_run_time,UNIX_TIMESTAMP() FROM automated_job_scheduling_data";
 			ns_sql_result res;
 			sql.get_rows(res);
 			
@@ -295,7 +298,7 @@ private:
 				sql << "INSERT INTO automated_job_scheduling_data SET currently_running_host_id = 0";
 				sql.send_query();
 				get_ownership(second_delay_until_next_run,sql);
-				lock.unlock();
+				lock.release(__FILE__, __LINE__);
 				return;
 			}
 			if (res.size() > 1)
@@ -308,21 +311,21 @@ private:
 			//if no event has been registered as having been run, prepare to run it immediately
 			if (next_run_time == 0){
 				get_ownership(second_delay_until_next_run,sql);
-				lock.unlock();
+				lock.release(__FILE__, __LINE__);
 				return; 
 			}
 			if (current_running_id != 0 && cur_time - acquisition_time >= image_server.automated_job_timeout_in_seconds()){
 				get_ownership(second_delay_until_next_run,sql);
-				lock.unlock();
+				lock.release(__FILE__, __LINE__);
 				image_server.register_server_event(ns_image_server_event("ns_get_automated_job_scheduler_lock_for_scope()::Claiming abandoned lock."),&sql);
 				return;
 			}
 			if (cur_time > next_run_time){
 				get_ownership(second_delay_until_next_run,sql);
-				lock.unlock();
+				lock.release(__FILE__, __LINE__);
 				return;
 			}
-			lock.unlock();
+			lock.release(__FILE__, __LINE__);
 			
 		//	ns_thread::sleep(2);
 		//	counter++;
@@ -540,27 +543,6 @@ ifstream * ns_image_server::read_device_configuration_file() const{
 	return new ifstream(filename.c_str());
 }
 
-void ns_image_server::get_cluster_constant_lock(ns_image_server_sql * sql){
-	*sql << "LOCK TABLES "<< sql->table_prefix() <<"constants WRITE";
-	sql->send_query();
-}
-
-std::string ns_image_server::get_cluster_constant_value_locked(const std::string & key, const std::string & default_value,ns_image_server_sql * sql){
-	*sql << "LOCK TABLES " << sql->table_prefix()<< "constants WRITE";
-	sql->send_query();
-	
-	try{
-		return get_cluster_constant_value(key,default_value,sql);
-	}
-	catch(...){
-		sql->clear_query();
-		release_cluster_constant_lock(sql);
-		throw;
-	}
-}
-void ns_image_server::release_cluster_constant_lock(ns_image_server_sql * sql){
-	sql->send_query("UNLOCK TABLES");
-};
 string ns_image_server::get_cluster_constant_value(const string & key, const string & default_value, ns_image_server_sql * sql){
 	unsigned long value(0);
 	ns_sql_result res;

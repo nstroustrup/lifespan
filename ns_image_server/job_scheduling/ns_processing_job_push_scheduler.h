@@ -36,7 +36,7 @@ public:
 				  movement_record_id,
 				  job_class; //certain jobs cannot be performed by certain types of hosts (ie movie compilation on linux hosts).  Job classes warn incapable clients off of inappropriate jobs
 
-	void save_to_db(ns_sql & sql);
+	void save_to_db(ns_sql & sql,const bool lock);
 	static std::string provide_stub();
 	void from_result(std::vector<std::string> & result);
 

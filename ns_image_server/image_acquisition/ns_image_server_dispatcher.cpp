@@ -1059,7 +1059,8 @@ bool ns_image_server_dispatcher::look_for_work(){
 		if (action_performed)
 			register_succesful_operation();
 		work_sql_connection->send_query("COMMIT");
-		work_sql_connection->send_query("UNLOCK TABLES");
+		image_server.sql_table_lock_manager.unlock_all_tables(work_sql_connection, __FILE__, __LINE__);
+	
 		//if we're running as a screen saver, don't hog memory when
 		//the user is on the computer
 		if (!image_server.run_autonomously())
@@ -1285,15 +1286,17 @@ void ns_image_server_dispatcher::scan_for_problems(ns_sql & sql){
 		if (!schedule_error_check_thread.is_running()){
 			//In large databases, these querries require significant resources to process
 			//Coordinate to avoid running them frequently.
-	
-			const unsigned long last_missed_scan_check_time = atol(image_server.get_cluster_constant_value_locked("last_missed_scan_check_time","0",&sql).c_str());
+
+			ns_sql_table_lock lock(image_server.sql_table_lock_manager.obtain_table_lock("constants", &sql, true, __FILE__, __LINE__));
+
+			const unsigned long last_missed_scan_check_time = atol(image_server.get_cluster_constant_value("last_missed_scan_check_time","0",&sql).c_str());
 
 			if (last_missed_scan_check_time + 60*2 > ns_current_time()){
-				image_server.release_cluster_constant_lock(&sql);
+				lock.release(__FILE__, __LINE__);
 			}
 			else{
 				image_server.set_cluster_constant_value("last_missed_scan_check_time",ns_to_string(ns_current_time()),&sql);
-				image_server.release_cluster_constant_lock(&sql);
+				lock.release(__FILE__, __LINE__);
 				time_of_last_scan_for_problems = last_missed_scan_check_time;
 				schedule_error_check_thread.run(ns_scan_for_problems,this);
 			}

@@ -85,7 +85,9 @@ public:
 	}
 	void submit_quotes(ns_sql & sql){
 		//prevent the race condition of two nodes simultaneously submitting quotes
-		sql.send_query("LOCK TABLE daily_quotes WRITE");
+
+		ns_sql_table_lock lock(image_server.sql_table_lock_manager.obtain_table_lock("daily_quotes", &sql, true, __FILE__, __LINE__));
+
 		try{
 			unsigned long val = sql.get_integer_value("SELECT count(quote) FROM daily_quotes WHERE stock = 1");
 			if (val != quotes.size()){
@@ -95,12 +97,11 @@ public:
 					sql.send_query();
 				}
 			}
-			sql.send_query("COMMIT");
-			sql.send_query("UNLOCK TABLES");
+			lock.release(__FILE__, __LINE__);
 		}
 		catch(...){
 			sql.clear_query();
-			sql.send_query("UNLOCK TABLES");
+			lock.release(__FILE__, __LINE__);
 			throw;
 		}
 

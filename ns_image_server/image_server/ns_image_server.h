@@ -12,6 +12,7 @@
 #include "ns_image_server_alerts.h"
 #include "ns_svm_model_specification.h"
 #include "ns_movement_state.h"
+#include "ns_sql_table_lock_manager.h"
 
 #ifndef NS_MINIMAL_SERVER_BUILD
 #include "ns_posture_analysis_models.h"
@@ -136,6 +137,8 @@ public:
 	///Provides a live sql connection to the central database.
 	ns_sql * new_sql_connection(const std::string & source_file, const unsigned int source_line, const unsigned int retry_count=10);
 	ns_sql *new_sql_connection_no_lock_or_retry(const std::string & source_file, const unsigned int source_line);
+
+	ns_sql_table_lock_manager sql_table_lock_manager;
 
 	ns_local_buffer_connection * new_local_buffer_connection(const std::string & source_file, const unsigned int source_line);
 	ns_local_buffer_connection * new_local_buffer_connection_no_lock_or_retry(const std::string & source_file, const unsigned int source_line);
@@ -377,10 +380,7 @@ public:
 	std::string video_compilation_parameters(const std::string & input_file, const std::string & output_file, const unsigned long number_of_frames, const std::string& fps, ns_sql & sql);
 
 	std::string get_cluster_constant_value(const std::string & key, const std::string & default_value, ns_image_server_sql * sql);
-	std::string get_cluster_constant_value_locked(const std::string & key, const std::string & default_value,ns_image_server_sql * sql);
 	void set_cluster_constant_value(const std::string & key, const std::string & value, ns_image_server_sql * sql, const int time_stamp=-1);
-	void get_cluster_constant_lock(ns_image_server_sql * sql);
-	void release_cluster_constant_lock(ns_image_server_sql * sql);
 	
 	#ifndef NS_MINIMAL_SERVER_BUILD
 		void perform_experiment_maintenance(ns_sql & sql);

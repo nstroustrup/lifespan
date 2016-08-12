@@ -3,6 +3,7 @@
 #include "ns_sql.h"
 #include "ns_thread.h"
 #include "ns_image_server_sql.h"
+#include "ns_sql_table_lock_manager.h"
 
 struct ns_alert{	
 
@@ -108,7 +109,7 @@ public:
 
 	static void last_action_time_key_name(const ns_alert::ns_alert_type a,std::string & key);
 	
-	void get_locked_submission_information_for_alert(const ns_alert::ns_alert_type a, unsigned long & duration_until_next_submission, unsigned long & time_of_last_submission, ns_sql & sql);
+	void get_locked_submission_information_for_alert(const ns_alert::ns_alert_type a, unsigned long & duration_until_next_submission, unsigned long & time_of_last_submission, ns_sql & sql,ns_sql_table_lock & lock);
 
 	void email_alert(const std::string & text, std::vector<std::string> & recipients, const bool report_to_db);
 	std::vector<ns_alert_recipient> recipients;

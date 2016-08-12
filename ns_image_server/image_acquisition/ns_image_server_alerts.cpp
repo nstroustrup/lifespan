@@ -74,14 +74,15 @@ void ns_alert_handler::submit_not_rate_limited_alert(const ns_alert & alert, ns_
 	}
 	recip_lock.release();
 	
-	ns_sql_full_table_lock alert_lock(sql,"alerts",true);
+	ns_sql_table_lock lock(image_server.sql_table_lock_manager.obtain_table_lock("alerts", &sql, true, __FILE__, __LINE__));
+
 	sql << "INSERT INTO alerts SET time=" << ns_current_time() << ",host_id=" << image_server.host_id() << 
 		",text='"<< image_server.host_name_out() << ":" << sql.escape_string(alert.summary_text)<<"',detailed_text='"<<sql.escape_string(alert.detailed_text)<<"'"
 		<< ",recipients='" << summary_recipients << "',detailed_recipients='"<<detailed_recipients<<"'";
 
 	sql.send_query();
 	
-	alert_lock.unlock();
+	lock.release(__FILE__, __LINE__);
 
 	image_server.register_server_event(ns_image_server_event("Submitting Alert: ") << alert.detailed_text,&sql);
 }
@@ -147,9 +148,10 @@ void ns_alert_handler::reset_all_alert_time_limits(ns_sql & sql){
 }
 
 void ns_alert_handler::reset_alert_time_limit(const ns_alert::ns_alert_type a,ns_sql & sql){
+	ns_sql_table_lock lock(image_server.sql_table_lock_manager.obtain_table_lock("constants", &sql, true, __FILE__, __LINE__));
 	try{
-		image_server.get_cluster_constant_lock(&sql);
-				
+
+	
 		string duration_key;
 		duration_key_name(a,duration_key);
 		string last_time_key;
@@ -157,12 +159,11 @@ void ns_alert_handler::reset_alert_time_limit(const ns_alert::ns_alert_type a,ns
 
 		image_server.set_cluster_constant_value(duration_key,ns_to_string(initial_alert_delays[(unsigned long)a]),&sql);
 		image_server.set_cluster_constant_value(last_time_key,"0",&sql);
-		sql.send_query("COMMIT");
-		image_server.release_cluster_constant_lock(&sql);
+		lock.release(__FILE__, __LINE__);
 	}
 	catch(...){
 		sql.clear_query();
-		image_server.release_cluster_constant_lock(&sql);
+		lock.release(__FILE__, __LINE__);
 		throw;
 	}
 }
@@ -179,14 +180,17 @@ void ns_alert_handler::last_action_time_key_name(const ns_alert::ns_alert_type a
 	key += "_alert_submission";
 }
 
-void ns_alert_handler::get_locked_submission_information_for_alert(const ns_alert::ns_alert_type a, unsigned long & duration_until_next_submission, unsigned long & time_of_last_submission, ns_sql & sql){
+void ns_alert_handler::get_locked_submission_information_for_alert(const ns_alert::ns_alert_type a, unsigned long & duration_until_next_submission, unsigned long & time_of_last_submission, ns_sql & sql,ns_sql_table_lock & lock){
 	
 	string duration_key;
 	duration_key_name(a,duration_key);
 	string last_time_key;
 	last_action_time_key_name(a,last_time_key);
 
-	duration_until_next_submission = atol(image_server.get_cluster_constant_value_locked(duration_key,ns_to_string(initial_alert_delays[(unsigned long)a]),&sql).c_str());
+
+	lock = image_server.sql_table_lock_manager.obtain_table_lock("constants", &sql, true, __FILE__, __LINE__);
+
+	duration_until_next_submission = atol(image_server.get_cluster_constant_value(duration_key,ns_to_string(initial_alert_delays[(unsigned long)a]),&sql).c_str());
 	try{
 		time_of_last_submission = atol(image_server.get_cluster_constant_value(last_time_key,"0",&sql).c_str());
 
@@ -195,10 +199,11 @@ void ns_alert_handler::get_locked_submission_information_for_alert(const ns_aler
 			duration_until_next_submission = initial_alert_delays[(unsigned long)a];
 			image_server.set_cluster_constant_value(duration_key,ns_to_string(duration_until_next_submission),&sql);
 		}
+		lock.release(__FILE__, __LINE__);
 	}
 	catch(...){
 		sql.clear_query();
-		image_server.release_cluster_constant_lock(&sql);
+		lock.release(__FILE__, __LINE__);
 		throw;
 	}
 	
@@ -262,8 +267,8 @@ void ns_alert_handler::submit_rate_limited_alert(const ns_alert & alert,ns_sql &
 
 	unsigned long duration_until_next_submission,
 				  time_of_last_submission;
-	
-	get_locked_submission_information_for_alert(alert.alert_type,duration_until_next_submission,time_of_last_submission,sql);
+	ns_sql_table_lock lock(std::string(""), std::string(""), 0, 0);
+	get_locked_submission_information_for_alert(alert.alert_type,duration_until_next_submission,time_of_last_submission,sql,lock);
 	try{
 		const unsigned long expiration_time(time_of_last_submission+60*duration_until_next_submission);
 
@@ -271,7 +276,7 @@ void ns_alert_handler::submit_rate_limited_alert(const ns_alert & alert,ns_sql &
 		const bool duration_very_expired (current_time > expiration_time + 60*initial_alert_delays[(int)alert.alert_type]);
 
 		if (!duration_expired){
-			image_server.release_cluster_constant_lock(&sql);
+			lock.release(__FILE__, __LINE__);
 			return;
 		}
 		
@@ -285,13 +290,13 @@ void ns_alert_handler::submit_rate_limited_alert(const ns_alert & alert,ns_sql &
 
 		image_server.set_cluster_constant_value(last_time_key,ns_to_string(current_time),&sql);
 		image_server.set_cluster_constant_value(duration_key,ns_to_string(next_duration),&sql);
-		image_server.release_cluster_constant_lock(&sql);
+		lock.release(__FILE__, __LINE__);
 		image_server.alert_handler.submit_not_rate_limited_alert(alert,sql);
 
 	}
 	catch(...){
 		sql.clear_query();
-		image_server.release_cluster_constant_lock(&sql);
+		lock.release(__FILE__,__LINE__);
 		throw;
 	}
 }
@@ -315,15 +320,16 @@ void ns_alert_handler::handle_alerts(ns_sql & sql){
 		return;
 	bool autocommit_state(sql.autocommit_state());
 	//grab a bunch of alerts
-	sql.set_autocommit(false);
-	ns_sql_full_table_lock alerts_lock(sql,"alerts");
+	sql.set_autocommit(false);	
+	ns_sql_table_lock lock(image_server.sql_table_lock_manager.obtain_table_lock("alerts", &sql, true, __FILE__, __LINE__));
+
 	ns_sql_result res;
 	try{
 		sql << "SELECT text,detailed_text, recipients,detailed_recipients, id, time FROM alerts WHERE email_sender_host_id = 0 AND acknowledged=0";
 		sql.get_rows(res);
 	}
 	catch(...){
-		alerts_lock.unlock();
+		lock.release(__FILE__,__LINE__);
 		sql.set_autocommit(autocommit_state);
 		throw;
 	}
@@ -335,7 +341,7 @@ void ns_alert_handler::handle_alerts(ns_sql & sql){
 		sql << "UPDATE alerts SET email_sender_host_id=" << email_sender_host_id << " WHERE id = " << res[a][4];
 		sql.send_query();
 	}
-	alerts_lock.unlock();
+	lock.release(__FILE__, __LINE__);
 	sql.send_query("COMMIT");
 
 	//process alerts
@@ -357,12 +363,13 @@ void ns_alert_handler::handle_alerts(ns_sql & sql){
 		catch(...){
 			//if the alerts fail, return them to be processed elsewhere
 			number_of_alert_sending_failures++;
-			alerts_lock.lock("alerts",true);
+
+			ns_sql_table_lock lock(image_server.sql_table_lock_manager.obtain_table_lock("alerts", &sql, true, __FILE__, __LINE__));
 			for (unsigned int b = a; b < res.size(); b++){
 				sql << "UPDATE alerts SET email_sender_host_id=0 WHERE id = " << res[b][4];
 				sql.send_query();
 			}
-			alerts_lock.unlock();
+			lock.release(__FILE__, __LINE__);
 			sql.set_autocommit(autocommit_state);
 			throw;
 		}

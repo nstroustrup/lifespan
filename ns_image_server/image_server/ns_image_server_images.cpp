@@ -533,24 +533,31 @@ const ns_image_server_image ns_image_server_captured_image_region::request_proce
 
 void ns_image_server_captured_image_region::wait_for_finished_processing_and_take_ownership(ns_sql & sql){
 	sql.set_autocommit(false);
-	for (unsigned int i = 0; i < 20; i++){
-		sql.send_query("BEGIN");
-		sql << "SELECT currently_under_processing FROM sample_region_images WHERE id = " << region_images_id << " FOR UPDATE";
-		ns_sql_result res;
-		sql.get_rows(res);
-		if (res.size() == 0){
-			sql.send_query("COMMIT");
-			sql.set_autocommit(true);
-			throw ns_ex("ns_image_server_captured_image_region::Could not wait for finished processing on non-existant image");
+	try {
+		for (unsigned int i = 0; i < 20; i++) {
+			sql.send_query("BEGIN");
+			sql << "SELECT currently_under_processing FROM sample_region_images WHERE id = " << region_images_id << " FOR UPDATE";
+			ns_sql_result res;
+			sql.get_rows(res);
+			if (res.size() == 0) {
+				sql.send_query("COMMIT");
+				sql.set_autocommit(true);
+				throw ns_ex("ns_image_server_captured_image_region::Could not wait for finished processing on non-existant image");
+			}
+			if (res[0][0] == "0") {
+				sql << "UPDATE sample_region_images SET currently_under_processing = 1 WHERE id=" << region_images_id;
+				sql.send_query();
+				sql.send_query("COMMIT");
+				sql.set_autocommit(true);
+				return;
+			}
+			ns_thread::sleep(10);
 		}
-		if (res[0][0] == "0"){		
-			sql << "UPDATE sample_region_images SET currently_under_processing = 1 WHERE id=" << region_images_id;
-			sql.send_query();
-			sql.send_query("COMMIT");
-			sql.set_autocommit(true);
-			return;
-		}
-		ns_thread::sleep(10);
+	}
+	catch (...) {
+		sql.clear_query();
+		sql.send_query("ROLLBACK");
+		throw;
 	}
 	sql.send_query("COMMIT");
 	sql.set_autocommit(true);

@@ -2,7 +2,6 @@
 #include <stdio.h>
 #include <limits.h>
 #include "ns_xmp_encoder.h"
-#include "openjpeg.h"
 #include <fstream>
 
 

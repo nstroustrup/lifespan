@@ -17,6 +17,29 @@ class ns_sql_table_lock_manager;
 struct ns_sql_table_lock {
 	typedef enum { ns_scream_if_released, ns_scream_if_unreleased } ns_error_type;
 	ns_sql_table_lock(const std::string & tab, const std::string &lock_p, const long t, ns_sql_table_lock_manager * man);
+	ns_sql_table_lock() :time(0), manager(0) {}
+
+	ns_sql_table_lock& operator=(ns_sql_table_lock&& c) {
+		manager = c.manager;
+		table = c.table;
+		time = c.time;
+		lock_point = c.lock_point;
+		c.time = 0;
+		c.manager = 0;
+		c.lock_point.erase();
+		c.table.erase();
+	}
+	//c++11 move constructor!
+	ns_sql_table_lock(ns_sql_table_lock && c){
+		manager = c.manager;
+		table = c.table;
+		time = c.time;
+		lock_point = c.lock_point;
+		c.time = 0; 
+		c.manager = 0; 
+		c.lock_point.erase();
+		c.table.erase();
+	}
 	void release(const std::string & source, const unsigned long line, const ns_error_type & error_type= ns_scream_if_released);
 	~ns_sql_table_lock();
 private:
@@ -29,7 +52,7 @@ private:
 
 class ns_image_server;
 class ns_sql_table_lock_manager {
-	friend class ns_sql_table_lock;
+	friend struct ns_sql_table_lock;
 	ns_lock lock_table_lock;
 	typedef std::map<std::string, ns_sql_table_lock_info> ns_lock_table;
 	ns_lock_table locks;

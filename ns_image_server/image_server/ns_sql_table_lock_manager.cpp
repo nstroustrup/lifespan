@@ -5,6 +5,8 @@
 
 
 void ns_sql_table_lock::release(const std::string & source, unsigned long line, const ns_error_type & error_type){
+	if (manager == 0)
+		throw ns_ex("Attempting to release an unspecified sql table lock at ") << source << "::" << line;
 	manager->lock_table_lock.wait_to_acquire(source.c_str(), line);
 	typename ns_sql_table_lock_manager::ns_lock_table::iterator p;
 	try {
@@ -31,6 +33,7 @@ void ns_sql_table_lock::release(const std::string & source, unsigned long line, 
 			throw ns_ex("Attempting to unlock table ") << table << " acquired at " << lock_point << " but it was already unlocked at " << lock_info.unlock_point;
 		if (error_type == ns_scream_if_unreleased && lock_info.time != 0)
 			throw ns_ex("Table ") << table << " lock acquired at " << lock_point << " was never unlocked!";
+		manager = 0;
 	}
 }
 ns_sql_table_lock::ns_sql_table_lock(const std::string & tab, const std::string &lock_p, const long t, ns_sql_table_lock_manager * man) {
@@ -96,8 +99,8 @@ ns_sql_table_lock ns_sql_table_lock_manager::obtain_table_lock(const std::string
 		}
 	}
 	lock_table_lock.release();
-	ns_sql_table_lock l(table,lock_point, current_time, this);
-	return l;
+	ns_sql_table_lock lock(table, lock_point, current_time, this);
+	return lock;
 }
 
 ns_sql_table_lock_manager::ns_lock_table::iterator ns_sql_table_lock_manager::inspect_table_lock(const std::string & table, const std::string & source, const unsigned long & line) {
@@ -106,12 +109,8 @@ ns_sql_table_lock_manager::ns_lock_table::iterator ns_sql_table_lock_manager::in
 	std::string lock_point(source + "::" + ns_to_string(line));
 	if (p == locks.end())
 		throw ns_ex("Attempting to release a lock for table ") << table << " that was never obtained, at " << lock_point;
+	return p;
 
-	else {
-		if (p->second.time == 0)
-			throw ns_ex("Attempting to release a lock for table ") << table << " that was previously released at " << lock_point;
-		return p;
-	}
 }
 void ns_sql_table_lock_manager::unlock_all_tables(ns_sql_connection * sql, const std::string & source, const unsigned long line) {
 	lock_table_lock.wait_to_acquire(source.c_str(), line);

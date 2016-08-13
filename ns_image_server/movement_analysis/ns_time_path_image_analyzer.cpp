@@ -395,35 +395,25 @@ ns_64_bit ns_largest_delta_subdivision(const std::vector<ns_64_bit> & v,const in
 }
 unsigned long ns_time_path_image_movement_analyzer::calculate_division_size_that_fits_in_specified_memory_size(const ns_64_bit & mem_size, const int multiplicity_of_images)const{
 //	std::vector<ns_64_bit> image_size(groups.size());
-	bool largest_found(false);
+	
 	//generate the cumulative memory allocation needed to run the entire set;
-	ns_image_properties largest_image_in_set(0,0,0,0);
-	int count(0);
+	ns_64_bit total_area(0);
 	for (unsigned int i = 0; i < groups.size(); i++){
 		for (unsigned int j = 0; j < groups[i].paths.size(); j++){
 			if (ns_skip_low_density_paths && groups[i].paths[j].is_low_density_path()){	
 				continue;
 			}
-			count++;
 			ns_image_properties p;
 			groups[i].paths[j].set_path_alignment_image_dimensions(p);
-			if (!largest_found){
-				largest_image_in_set = p;
-				largest_found = true;
-			}
-			else if (largest_image_in_set.width < p.width)
-				largest_image_in_set.width  = p.width;
-			else if (largest_image_in_set.height < p.height)
-				largest_image_in_set.height  = p.height;
-			//cumulative_size[i]=largest_image_in_set.width*(ns_64_bit)largest_image_in_set.height;
+			total_area += p.width*p.height;
 		}
 	}
-	
-	const ns_64_bit total_mem_required((largest_image_in_set.width*(ns_64_bit)largest_image_in_set.height)*count);
-	const ns_64_bit ret_i((total_mem_required*(ns_64_bit)multiplicity_of_images)/mem_size);
-	if (ret_i*total_mem_required==mem_size)
-		return ret_i;
-	return ret_i+1;
+	//divide by two here because its unlikely all paths are simultaneously allocated
+	const ns_64_bit total_mem_required_per_chunk(total_area/2);
+	const ns_64_bit final_round_id((total_mem_required_per_chunk*(ns_64_bit)multiplicity_of_images)/mem_size);
+	if (final_round_id*total_mem_required_per_chunk ==mem_size)
+		return final_round_id;
+	return final_round_id +1;
 }
 void ns_time_path_image_movement_analyzer::calculate_memory_pool_maximum_image_size(const unsigned int start_group,const unsigned int stop_group){
 	
@@ -472,7 +462,7 @@ void ns_time_path_image_movement_analyzer::process_raw_images(const ns_64_bit re
 		
 
 		//initiate chunk generator and alignment states
-		const unsigned long chunk_size(10);
+		const unsigned long chunk_size(ns_analyzed_image_time_path::alignment_time_kernel_width);
 		
 		//if we try to run too many worms simultaneously, we run out of memory on 32bit systems.
 		//Most plates have fewer worms than this so usually the processing is done in one step.
@@ -506,7 +496,7 @@ void ns_time_path_image_movement_analyzer::process_raw_images(const ns_64_bit re
 			
 			const bool system_is_64_bit(sizeof(void *)==8);
 			const int number_of_images_stored_in_memory_per_group(
-				3*chunk_size //the registered images
+				6*chunk_size //the registered images
 				+
 				3*(2*chunk_size)
 				+
@@ -521,7 +511,7 @@ void ns_time_path_image_movement_analyzer::process_raw_images(const ns_64_bit re
 			//Yes you can set flags to get access to 3GB but this is finniky in practice
 			//and we err on the side of stability.
 			if (!system_is_64_bit && max_mem_per_node > max_mem_on_32_bit)
-				max_mem_on_32_bit = max_mem_on_32_bit;
+				max_mem_per_node = max_mem_on_32_bit;
 
 			const int number_of_repeats_required(
 				calculate_division_size_that_fits_in_specified_memory_size(
@@ -5646,14 +5636,14 @@ void ns_time_path_image_movement_analyzer::load_region_visualization_images(cons
 				
 				ns_image_storage_source_handle<ns_8_bit> in(image_server.image_storage.request_from_storage(region_image_specifications[i].region_vis_image,&sql));
 				image_loading_temp.use_more_memory_to_avoid_reallocations();
-				in.input_stream().pump(image_loading_temp,1024);
+				in.input_stream().pump(image_loading_temp,4096);
 			}
 			else image_loading_temp.prepare_to_recieve_image(ns_image_properties(0,0,0,0));
 
 			if (region_image_specifications[i].interpolated_region_vis_image.id != 0){
 				image_loading_temp2.use_more_memory_to_avoid_reallocations();
 				ns_image_storage_source_handle<ns_8_bit> in2(image_server.image_storage.request_from_storage(region_image_specifications[i].interpolated_region_vis_image,&sql));
-				in2.input_stream().pump(image_loading_temp2,1024);
+				in2.input_stream().pump(image_loading_temp2,4096);
 			}
 			else image_loading_temp2.prepare_to_recieve_image(ns_image_properties(0,0,0,0));
 

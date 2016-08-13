@@ -109,7 +109,7 @@ public:
 
 	static void last_action_time_key_name(const ns_alert::ns_alert_type a,std::string & key);
 	
-	void get_locked_submission_information_for_alert(const ns_alert::ns_alert_type a, unsigned long & duration_until_next_submission, unsigned long & time_of_last_submission, ns_sql & sql,ns_sql_table_lock & lock);
+	ns_sql_table_lock get_locked_submission_information_for_alert(const ns_alert::ns_alert_type a, unsigned long & duration_until_next_submission, unsigned long & time_of_last_submission, ns_sql & sql);
 
 	void email_alert(const std::string & text, std::vector<std::string> & recipients, const bool report_to_db);
 	std::vector<ns_alert_recipient> recipients;

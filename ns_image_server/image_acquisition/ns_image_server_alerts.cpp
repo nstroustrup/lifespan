@@ -148,7 +148,7 @@ void ns_alert_handler::reset_all_alert_time_limits(ns_sql & sql){
 }
 
 void ns_alert_handler::reset_alert_time_limit(const ns_alert::ns_alert_type a,ns_sql & sql){
-	ns_sql_table_lock lock(image_server.sql_table_lock_manager.obtain_table_lock("constants", &sql, true, __FILE__, __LINE__));
+	ns_sql_table_lock lock = image_server.sql_table_lock_manager.obtain_table_lock("constants", &sql, true, __FILE__, __LINE__);
 	try{
 
 	
@@ -180,7 +180,7 @@ void ns_alert_handler::last_action_time_key_name(const ns_alert::ns_alert_type a
 	key += "_alert_submission";
 }
 
-void ns_alert_handler::get_locked_submission_information_for_alert(const ns_alert::ns_alert_type a, unsigned long & duration_until_next_submission, unsigned long & time_of_last_submission, ns_sql & sql,ns_sql_table_lock & lock){
+ns_sql_table_lock ns_alert_handler::get_locked_submission_information_for_alert(const ns_alert::ns_alert_type a, unsigned long & duration_until_next_submission, unsigned long & time_of_last_submission, ns_sql & sql){
 	
 	string duration_key;
 	duration_key_name(a,duration_key);
@@ -188,7 +188,7 @@ void ns_alert_handler::get_locked_submission_information_for_alert(const ns_aler
 	last_action_time_key_name(a,last_time_key);
 
 
-	lock = image_server.sql_table_lock_manager.obtain_table_lock("constants", &sql, true, __FILE__, __LINE__);
+	ns_sql_table_lock lock(image_server.sql_table_lock_manager.obtain_table_lock("constants", &sql, true, __FILE__, __LINE__));
 
 	duration_until_next_submission = atol(image_server.get_cluster_constant_value(duration_key,ns_to_string(initial_alert_delays[(unsigned long)a]),&sql).c_str());
 	try{
@@ -199,14 +199,13 @@ void ns_alert_handler::get_locked_submission_information_for_alert(const ns_aler
 			duration_until_next_submission = initial_alert_delays[(unsigned long)a];
 			image_server.set_cluster_constant_value(duration_key,ns_to_string(duration_until_next_submission),&sql);
 		}
-		lock.release(__FILE__, __LINE__);
 	}
 	catch(...){
 		sql.clear_query();
 		lock.release(__FILE__, __LINE__);
 		throw;
 	}
-	
+	return lock;
 }
 
 void ns_alert_handler::submit_locally_buffered_alert(const ns_alert & alert){
@@ -267,8 +266,7 @@ void ns_alert_handler::submit_rate_limited_alert(const ns_alert & alert,ns_sql &
 
 	unsigned long duration_until_next_submission,
 				  time_of_last_submission;
-	ns_sql_table_lock lock(std::string(""), std::string(""), 0, 0);
-	get_locked_submission_information_for_alert(alert.alert_type,duration_until_next_submission,time_of_last_submission,sql,lock);
+	ns_sql_table_lock lock(get_locked_submission_information_for_alert(alert.alert_type,duration_until_next_submission,time_of_last_submission,sql));
 	try{
 		const unsigned long expiration_time(time_of_last_submission+60*duration_until_next_submission);
 
@@ -321,7 +319,7 @@ void ns_alert_handler::handle_alerts(ns_sql & sql){
 	bool autocommit_state(sql.autocommit_state());
 	//grab a bunch of alerts
 	sql.set_autocommit(false);	
-	ns_sql_table_lock lock(image_server.sql_table_lock_manager.obtain_table_lock("alerts", &sql, true, __FILE__, __LINE__));
+	ns_sql_table_lock lock = image_server.sql_table_lock_manager.obtain_table_lock("alerts", &sql, true, __FILE__, __LINE__);
 
 	ns_sql_result res;
 	try{

@@ -187,9 +187,9 @@ ns_image_storage_source_handle<ns_8_bit> ns_storage_request_from_storage(ns_imag
 }
 
 ns_image_storage_reciever_handle<ns_8_bit> ns_storage_request_local_cache_storage(ns_image_storage_handler * image_storage, 
-																				  const std::string & filename, const unsigned long max_line_length, 
+																				  const std::string & filename, const ns_image_type & type,const unsigned long max_line_length, 
 																				  const bool report_to_db){
-	return image_storage->request_local_cache_storage(filename,max_line_length,report_to_db);
+	return image_storage->request_local_cache_storage(filename,type,max_line_length,report_to_db);
 }
 
 double ns_image_storage_handler::get_region_images_size_on_disk(const unsigned long region_id,const ns_processing_task t,ns_sql & sql) const{
@@ -756,7 +756,7 @@ ifstream * ns_image_storage_handler::request_from_volatile_storage_raw(const std
 	throw ns_ex("ns_image_storage_handler::request_volatile_storage_raw()::Could not load file from scratch: ") << input_filename << ns_file_io;
 }
 
-ns_image_storage_reciever_handle<ns_image_storage_handler::ns_component> ns_image_storage_handler::request_local_cache_storage(const std::string & filename, const unsigned long max_line_length, const bool report_to_db){
+ns_image_storage_reciever_handle<ns_image_storage_handler::ns_component> ns_image_storage_handler::request_local_cache_storage(const std::string & filename,const ns_image_type & image_type, const unsigned long max_line_length, const bool report_to_db){
 
 	std::string output_dir = volatile_storage_directory + DIR_CHAR_STR + ns_image_server_cache_directory(),
 		   output_filename = output_dir + DIR_CHAR_STR + filename;
@@ -777,7 +777,31 @@ ns_image_storage_reciever_handle<ns_image_storage_handler::ns_component> ns_imag
 		ev.log = report_to_db;
 		ns_image_handler_register_server_event_to_central_db(ev);
 	}
-	return ns_image_storage_reciever_handle<ns_image_storage_handler::ns_component>(new ns_image_storage_reciever_to_disk<ns_image_storage_handler::ns_component>(max_line_length, output_filename,ns_get_image_type(output_filename),&image_server.performance_statistics,true));
+	return ns_image_storage_reciever_handle<ns_image_storage_handler::ns_component>(new ns_image_storage_reciever_to_disk<ns_image_storage_handler::ns_component>(max_line_length, output_filename, image_type ,&image_server.performance_statistics,true));
+}
+
+ns_image_storage_reciever_handle<float> ns_image_storage_handler::request_local_cache_storage_float(const std::string & filename, const ns_image_type & image_type, const unsigned long max_line_length, const bool report_to_db) {
+
+	std::string output_dir = volatile_storage_directory + DIR_CHAR_STR + ns_image_server_cache_directory(),
+		output_filename = output_dir + DIR_CHAR_STR + filename;
+	ns_dir::convert_slashes(output_filename);
+	ns_dir::convert_slashes(output_dir);
+	//make sure location is writeable
+	ns_dir::create_directory_recursive(output_dir);
+	if (!ns_dir::file_is_writeable(output_filename)) {
+		ns_image_handler_submit_alert_to_central_db(ns_alert::ns_volatile_storage_error,
+			"Could not access volatile storage",
+			std::string("ns_image_storage_handler::request_local_cache_storage::Could not access volatile storage when attempting to write ") + filename);
+
+		throw ns_ex("ns_image_storage_handler::request_local_cache_storage()::Volitile storage location is not writeable: ") << output_filename << ns_file_io;
+	}
+	if (verbosity >= ns_standard && report_to_db) {
+		ns_image_server_event ev("ns_image_storage_handler::Opening ");
+		ev << output_filename << " for output.";
+		ev.log = report_to_db;
+		ns_image_handler_register_server_event_to_central_db(ev);
+	}
+	return ns_image_storage_reciever_handle<float>(new ns_image_storage_reciever_to_disk<float>(max_line_length, output_filename, image_type, &image_server.performance_statistics, true));
 }
 
 	
@@ -795,6 +819,25 @@ ns_image_storage_source_handle<ns_image_storage_handler::ns_component> ns_image_
 		if (verbosity >= ns_standard && report_to_db)
 			ns_image_handler_register_server_event_to_central_db(ns_image_server_event("ns_image_storage_handler::Opening ",false) << input_filename << " for input." << ns_ts_minor_event);
 		return ns_image_storage_source_handle<ns_image_storage_handler::ns_component>(new ns_image_storage_source_from_disk<ns_image_storage_handler::ns_component>(input_filename,&image_server.performance_statistics,true));
+
+	}
+	throw ns_ex("ns_image_storage_handler::request_local_cache_storage()::Could not load file from cache: ") << filename << ns_file_io;
+}
+
+ns_image_storage_source_handle<float> ns_image_storage_handler::request_from_local_cache_float(const std::string & filename, const bool report_to_db) {
+	if (!ns_dir::file_exists(volatile_storage_directory))
+		ns_image_handler_submit_alert_to_central_db(ns_alert::ns_volatile_storage_error,
+			"Could not access volatile storage",
+			std::string("ns_image_storage_handler::request_from_local_cache::Could not access volatile storage when attempting to read ") + filename);
+
+	std::string dir = volatile_storage_directory + DIR_CHAR_STR + ns_image_server_cache_directory();
+	std::string input_filename = dir + DIR_CHAR_STR + filename;
+	ns_dir::convert_slashes(input_filename);
+
+	if (ns_dir::file_exists(input_filename)) {
+		if (verbosity >= ns_standard && report_to_db)
+			ns_image_handler_register_server_event_to_central_db(ns_image_server_event("ns_image_storage_handler::Opening ", false) << input_filename << " for input." << ns_ts_minor_event);
+		return ns_image_storage_source_handle<float>(new ns_image_storage_source_from_disk<float>(input_filename, &image_server.performance_statistics, true));
 
 	}
 	throw ns_ex("ns_image_storage_handler::request_local_cache_storage()::Could not load file from cache: ") << filename << ns_file_io;

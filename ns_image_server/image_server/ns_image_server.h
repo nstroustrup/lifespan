@@ -433,6 +433,9 @@ public:
 
 	unsigned long local_buffer_commit_frequency_in_seconds(){return 10;}
 
+	unsigned long processing_node_id() const {
+		return processing_node_id_;
+	}
 	inline bool verbose_debug_output() const {return _verbose_debug_output;}
 	inline double & terminal_window_scale_factor() {return _terminal_window_scale_factor;}
 	inline const unsigned long & maximum_memory_allocation_in_mb(){return  _maximum_memory_allocation_in_mb;}
@@ -456,7 +459,8 @@ private:
 		host_ip, ///ip address of the current host
 		sql_user, ///username with which to connect to the sql server
 		sql_pwd;  ///password with which to connect to the sql server
-
+	//number of this processing node
+	unsigned long processing_node_id_;
 	std::string local_buffer_ip, ///ip address of the current host
 				local_buffer_user, ///username with which to connect to the sql server
 				local_buffer_pwd,  ///password with which to connect to the sql server

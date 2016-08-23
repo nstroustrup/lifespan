@@ -2000,6 +2000,8 @@ void ns_image_server::load_constants(const ns_image_server::ns_image_server_exec
 			throw ns_ex("Host names must be 15 characters or less.  \"") << host_name << "\" is " << host_name.size() << " characters.";
 		base_host_name			= constants["host_name"];
 		host_name				= opt.host_name(base_host_name);
+		processing_node_id_ = opt.process_id;
+
 		number_of_node_processes_per_machine_ = atol(constants["nodes_per_machine"].c_str());
 		volatile_storage_directory	= opt.volatile_storage(ns_dir::format_path(constants["volatile_storage_directory"]));
 		_dispatcher_port		= opt.port(atoi(constants["dispatcher_port"].c_str()));

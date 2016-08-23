@@ -141,8 +141,8 @@ public:
 			downsampled_filename = whole_filename + "_downsampled.tif";
 			whole_filename += ".tif";
 			{
-				ns_image_storage_reciever_handle<ns_8_bit> whole_image_out(image_storage->request_local_cache_storage(whole_filename,256,false));
-				ns_image_storage_reciever_handle<ns_8_bit> downsample_2_out(image_storage->request_local_cache_storage(downsampled_filename,1024,false));
+				ns_image_storage_reciever_handle<ns_8_bit> whole_image_out(image_storage->request_local_cache_storage(whole_filename,ns_tiff_lzw,256,false));
+				ns_image_storage_reciever_handle<ns_8_bit> downsample_2_out(image_storage->request_local_cache_storage(downsampled_filename, ns_tiff_lzw, 1024,false));
 				//no need to do linear interpolation.  Nobody sees these images and any aliasing will be handled by comparrison between the less downsampled copies
 				ns_fast_downsample(whole_image_long_term_storage,downsampled_image,downsample_2_out,whole_image_out,max_average_dimention,downsample_factor);
 				//ns_save_image("c:\\server\\downsample_1.tif",downsampled_image);

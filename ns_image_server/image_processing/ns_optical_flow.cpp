@@ -1,18 +1,26 @@
 
 #define ITK_USE_FFTWD
-//#include "itkCurvatureRegistrationFilter.h"
 
-//#include "itkFastSymmetricForcesDemonsRegistrationFunction.h"
-//#include "itkNearestNeighborInterpolateImageFunction.h"
+//set somewhere  if you want posture analysis to run partially on the GPU
+//#define NS_USE_ITK_GPU
+#undef NS_USE_ITK_GPU
 
-#include "itkImageRegionIterator.h"
-#include "itkLevelSetMotionRegistrationFilter.h"
+#undef NS_USE_LEVEL_SET_REGISTRATION
+
 #include "itkHistogramMatchingImageFilter.h"
-#include "itkDiscreteGaussianImageFilter.h"
-#include "itkCastImageFilter.h"
-#include "itkWarpImageFilter.h"
 
-#include "itkCurvatureRegistrationFilter.h"
+#ifndef NS_USE_ITK_GPU
+	#ifndef  NS_USE_LEVEL_SET_REGISTRATION
+		#include <itkDemonsRegistrationFilter.h>
+	#else
+		#include "itkLevelSetMotionRegistrationFilter.h"
+	#endif
+#else
+	#include "itkGPUDemonsRegistrationFilter.h"
+	#include "itkGPUImage.h"
+	#include "itkGPUKernelManager.h"
+	#include "itkGPUContextManager.h"
+#endif
 
 #include "ns_spatial_avg.h"
 #include "ns_get_double.h"
@@ -25,11 +33,67 @@
 
 class ns_external_image_t {
 public:
+	#ifndef NS_USE_ITK_GPU
 	typedef itk::Image< float, 2 >  ns_itk_image;
+	#else
+	typedef itk::GPUImage<float, 2> ns_itk_image;
+	#endif
 	ns_itk_image::Pointer image;
 	ns_image_properties properties;
 
 };
+/*
+template<class T>
+class ns_itk_image_wrapper : itk::Image<T, 2 > {
+
+	//imagebase class functions
+	virtual void Allocate(bool initialize = false) {
+		const OffsetValueType* tb(this->GetOffsetTable()[2]);
+		ns_image_properties p;
+		p.width = tb[1];
+		p.height = tb[2] / tb[1];
+		p.components = 1;
+		image->resize(p);
+	}
+	virtual void Initialize() {
+		Superclass::Initialize();
+		image->clear();
+	}
+	virtual void Graft(const DataObject *data) {
+		Superclass::Graft(data);
+		if (data){
+			// Attempt to cast data to an Image
+			const ns_itk_image_wrapper<T> * const imgData = dynamic_cast< const ns_itk_image_wrapper<T> * >(data);
+
+			if (imgData != ITK_NULLPTR)
+				image = imgData->image;
+			else{
+				// pointer could not be cast back down
+				itkExceptionMacro(<< "itk::Image::Graft() cannot cast "
+					<< typeid(data).name() << " to "
+					<< typeid(const Self *).name());
+			}
+		}
+	}
+	//image functions
+	void FillBuffer(const TPixel & value);
+	void SetPixel(const IndexType & index, const TPixel & value);
+	const TPixel & GetPixel(const IndexType & index) const;
+	TPixel & GetPixel(const IndexType & index);
+	virtual TPixel * GetBufferPointer()
+	{
+		return m_Buffer ? m_Buffer->GetBufferPointer() : ITK_NULLPTR;
+	}
+	virtual const TPixel * GetBufferPointer() const
+	{
+		return m_Buffer ? m_Buffer->GetBufferPointer() : ITK_NULLPTR;
+	}
+
+	virtual unsigned int GetNumberOfComponentsPerPixel() const ITK_OVERRIDE;
+private:
+	ns_image_whole<T> *image;
+};*/
+
 float * ns_external_image ::buffer() {
 	return image->image->GetBufferPointer();
 }
@@ -41,27 +105,37 @@ const float * ns_external_image::buffer() const {
 class ns_flow_processor_storage_t {
 public:
 	typedef itk::Vector< float, 2 >                VectorPixelType;
+#ifndef NS_USE_ITK_GPU
 	typedef itk::Image<  VectorPixelType, 2 >      DisplacementFieldType;
+
+	#ifndef NS_USE_LEVEL_SET_REGISTRATION
+
+	typedef itk::DemonsRegistrationFilter<
+		ns_external_image_t::ns_itk_image,
+		ns_external_image_t::ns_itk_image,
+		DisplacementFieldType> RegistrationFilterType;
+		RegistrationFilterType::Pointer filter;
+	#else
 	typedef itk::LevelSetMotionRegistrationFilter<
 		ns_external_image_t::ns_itk_image,
 		ns_external_image_t::ns_itk_image,
 		DisplacementFieldType> RegistrationFilterType;
 	RegistrationFilterType::Pointer filter;
-
+	#endif
+#else
+	typedef itk::GPUImage<VectorPixelType, 2> DisplacementFieldType;
+	typedef itk::GPUDemonsRegistrationFilter<
+		ns_external_image_t::ns_itk_image,
+		ns_external_image_t::ns_itk_image,
+		DisplacementFieldType> RegistrationFilterType;
+	RegistrationFilterType::Pointer filter;
+#endif
 
 	typedef itk::HistogramMatchingImageFilter<
 		ns_external_image_t::ns_itk_image,
 		ns_external_image_t::ns_itk_image >   MatchingFilterType;
 	MatchingFilterType::Pointer matcher;
 
-	//for curvature registration
-	//typedef itk::FastSymmetricForcesDemonsRegistrationFunction<ns_external_image_t::ns_itk_image, 
-		//														ns_external_image_t::ns_itk_image,
-			//													DisplacementFieldType> ForcesType;
-	//typedef itk::CurvatureRegistrationFilter<ns_external_image_t::ns_itk_image, ns_external_image_t::ns_itk_image, DisplacementFieldType, ForcesType>
-		//RegistrationType;
-	//typedef itk::WarpImageFilter<ns_external_image_t::ns_itk_image, ns_external_image_t::ns_itk_image, DisplacementFieldType> WarperType;
-	//RegistrationType::Pointer curvature_registrator;
 };
 ns_external_image::ns_external_image() {
 	image = new ns_external_image_t();
@@ -219,6 +293,10 @@ void ns_optical_flow::test(){
 			std::cerr << "processing " << k << " of " << n << "\n";
 			if (number_of_images[k] <2)
 				continue;
+
+			//
+			number_of_images[k] = 3;
+
 			const long border(10);
 			ns_image_properties p(images[k][0].properties());
 			ns_image_properties p2(p);
@@ -238,7 +316,7 @@ void ns_optical_flow::test(){
 				std::cerr << (i - 2) << "...";
 				flow.Dim1.from(images[k][i - 1]);
 				flow.Dim2.from(images[k][i]);
-				flow.calculate(15, .1);
+				flow.calculate(30, 0);
 
 				flow.get_movement(vx[i - 1], vy[i - 1]);
 
@@ -324,48 +402,6 @@ void ns_optical_flow::test(){
 void ns_optical_flow::calculate(const int num_it, const float gaussian_stdev, const float min_intensity_difference ) {
 
 
-	//flow_processor->curvature_registrator = ns_flow_processor_storage_t::RegistrationType::New();
-	
-	//registrator->SetInitialDisplacementField(initField);
-
-	/*typedef itk::DiscreteGaussianImageFilter<ns_external_image_t::ns_itk_image, ns_external_image_t::ns_itk_image> gfilter;
-
-	gfilter::Pointer g1(gfilter::New()),g2(gfilter::New());
-	g1->SetInput(Dim1.image->image.GetPointer());
-	g2->SetInput(Dim2.image->image.GetPointer());
-	g1->SetFilterDimensionality(2);
-	g2->SetFilterDimensionality(2);
-	g1->SetVariance(1);
-	g2->SetVariance(1);
-	
-	flow_processor->curvature_registrator->SetMovingImage(g2->GetOutput());
-	flow_processor->curvature_registrator->SetFixedImage(g1->GetOutput());
-	flow_processor->curvature_registrator->SetNumberOfIterations(50);
-	flow_processor->curvature_registrator->SetTimeStep(1);
-	flow_processor->curvature_registrator->SetConstraintWeight(.001);
-	flow_processor->curvature_registrator->Update();
-	*//*
-	float diff(0),mmin(100), mmax(-100);
-	unsigned long w(Dim1.image->image.GetPointer()->GetLargestPossibleRegion().GetSize()[0]),
-		h(Dim1.image->image.GetPointer()->GetLargestPossibleRegion().GetSize()[1]);
-	float * buf1(Dim1.image->image.GetPointer()->GetBufferPointer());
-	float * buf2(Dim2.image->image.GetPointer()->GetBufferPointer());
-
-	for (unsigned int y = 0; y < h; y++) {
-		for (unsigned int x = 0; x < w; x++) {
-			diff += abs(buf1[y*w + x] - buf2[y*w + x]);
-			if (buf1[y*w+x] < mmin)
-				mmin = buf1[y*w + x];
-			if (buf1[y*w + x] > mmax)
-				mmax = buf1[y*w + x];
-			if (buf2[y*w + x] < mmin)
-				mmin = buf2[y*w + x];
-			if (buf2[y*w + x] > mmax)
-				mmax = buf2[y*w + x];
-		}
-	}
-	std::cerr << "m(" << diff << "," << mmax << "," << mmin << ")";*/
-
 
 
 	flow_processor->matcher->Modified();
@@ -381,13 +417,18 @@ void ns_optical_flow::calculate(const int num_it, const float gaussian_stdev, co
 	flow_processor->filter->SetMovingImage(flow_processor->matcher->GetOutput());
 
 	flow_processor->filter->SetNumberOfIterations(num_it);
-	flow_processor->filter->SetGradientSmoothingStandardDeviations(gaussian_stdev);
 	flow_processor->filter->SetIntensityDifferenceThreshold(min_intensity_difference);
-	flow_processor->filter->SetAlpha(1 / 255.0f / 20.0f);
 
-	//CommandIterationUpdate::Pointer observer = CommandIterationUpdate::New();
-	//flow_processor->filter->AddObserver(itk::IterationEvent(), observer);
+#if !defined NS_USE_ITK_GPU && defined NS_USE_LEVEL_SET_REGISTRATION
 
+		flow_processor->filter->SetGradientSmoothingStandardDeviations(gaussian_stdev);
+		flow_processor->filter->SetAlpha(1 / 255.0f / 20.0f);
+#else
+	flow_processor->filter->SetStandardDeviations(gaussian_stdev);
+	flow_processor->filter->SetUpdateFieldStandardDeviations(.1);
+	flow_processor->filter->SetSmoothUpdateField(0);
+	flow_processor->filter->SetNumberOfThreads(1);
+#endif
 
 	flow_processor->filter->Update();
 }

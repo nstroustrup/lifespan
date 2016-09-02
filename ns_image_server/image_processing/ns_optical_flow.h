@@ -20,7 +20,7 @@ public:
 	~ns_optical_flow();
 
 	static void test();
-	void calculate(const int num_it = 15, const float gaussian_stdev = 0.1, const float min_intensity_difference = 2/255.0f);
+	void calculate(const int num_it = 30, const float gaussian_stdev = 0, const float min_intensity_difference = 2/255.0f);
 	void get_movement(ns_image_whole<float> & vx, ns_image_whole<float> & vy);
 	void get_movement(ns_image_whole<ns_16_bit> & vx, ns_image_whole<ns_16_bit> & vy);
 	ns_external_image Dim1,Dim2;

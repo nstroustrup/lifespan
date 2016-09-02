@@ -4,6 +4,7 @@
 #include "ns_image_tools.h"
 #include "ctmf.h"
 #include "ns_optical_flow.h"
+
 class ns_optical_flow_processor : public ns_optical_flow{};
 
 using namespace std;
@@ -739,13 +740,6 @@ void ns_time_path_image_movement_analyzer::process_raw_images(const ns_64_bit re
 					}
 				//	cerr << "\n";
 				}
-				/*for (unsigned int i = 0; i < groups.size(); i++) {
-					cerr << i << ":" << path_reset[i];
-					if (path_reset[i] == 0)
-						cerr << "!";
-					cerr << ",";
-				}
-				cerr << "\n";*/
 
 				//reload everything back in, reverse the order so that the earliest frame is first, and write it all out.
 				if (write_status_to_db)
@@ -802,7 +796,7 @@ void ns_time_path_image_movement_analyzer::process_raw_images(const ns_64_bit re
 				
 				//now we go ahead and work forwards
 
-
+				
 			for (unsigned int i = 0; i < groups.size(); i++) 
 				path_reset[i] = 0;
 
@@ -889,8 +883,6 @@ void ns_time_path_image_movement_analyzer::process_raw_images(const ns_64_bit re
 								groups[i].paths[j].elements[k].clear_movement_images();
 
 							if (chunk_generators[i][j].no_more_chunks_forward()) {
-								//cerr << "FCp" << i << "(0-" << groups[i].paths[j].elements.size() << ")";
-								//cerr << "FCr" << i << "(0-" << groups[i].paths[j].elements.size() << ")";
 
 								for (long k = 0; k < groups[i].paths[j].elements.size(); k++) {
 									groups[i].paths[j].elements[k].clear_path_aligned_images();
@@ -923,8 +915,6 @@ void ns_time_path_image_movement_analyzer::process_raw_images(const ns_64_bit re
 								continue;
 						
 						groups[i].paths[j].denoise_movement_series(times_series_denoising_parameters);
-						//groups[i].paths[j].analyze_movement(e,ns_stationary_path_id(i,j,analysis_id));
-						//groups[i].paths[j].calculate_movement_quantification_summary();
 					}
 				}
 				memory_pool.clear();
@@ -2895,11 +2885,7 @@ bool ns_analyzed_image_time_path::populate_images_from_region_visualization(cons
 
 				}
 			}
-			ns_font * font (&font_server.default_font());
-			font->set_height(10);
-			font->draw_grayscale(path_aligned_image_image_properties.width / 3, path_aligned_image_image_properties.height/ 3, 200, ns_to_string(time), e.path_aligned_images->image);
-			font->draw_grayscale(2*path_aligned_image_image_properties.width / 3, path_aligned_image_image_properties.height / 2, 200, ns_to_string(time), e.path_aligned_images->image);
-
+		
 			if (just_do_a_consistancy_check && !was_previously_loaded){
 				e.release_path_aligned_images(memory_pool->aligned_image_pool);
 			}
@@ -3064,200 +3050,604 @@ void ns_time_path_image_movement_analyzer::output_visualization(const string & b
 		}
 	}
 }
+//cholesky matrix inversion from http://www.sci.utah.edu/~wallstedt/LU.htm
+// Crout uses unit diagonals for the upper triangle
 
-class ns_calc_best_alignment{
-#ifndef NS_USE_INTEGER_SUMS
-	typedef float ns_difference_type;
-	#define ns_abs(x) fabs((x))
-#else
-	typedef long ns_difference_type;
-	#define ns_abs(x) abs((x))
-
-#endif
-public:
-	ns_calc_best_alignment(const ns_vector_2d & corse_step_,const ns_vector_2d & fine_step_, const ns_vector_2i & max_offset_, const ns_vector_2i &local_offset_,const ns_vector_2i &bottom_offset_,const ns_vector_2i &size_offset_):
-		max_offset(max_offset_),local_offset(local_offset_),bottom_offset(bottom_offset_),size_offset(size_offset_),corse_step(corse_step_),fine_step(fine_step_){}
-
-	ns_vector_2d operator()(ns_alignment_state & state,const ns_image_standard & image, bool & saturated_offset) {
-		#ifdef NS_OUTPUT_ALGINMENT_DEBUG
-		ofstream o("c:\\tst.txt");
-		o << "step,dx,dy,sum,lowest sum\n";
-		#endif
-		ns_difference_type min_diff(std::numeric_limits<ns_difference_type>::max());
-		ns_vector_2<float> best_offset(0,0);
-		//xxx
-		//return best_offset;
-		state.current_round_consensus.init(state.consensus.properties());
-		for (unsigned int y = 0; y < state.consensus.properties().height; y++)
-			for (unsigned int x = 0; x < state.consensus.properties().width; x++)
-				state.current_round_consensus[y][x] = (state.consensus_count[y][x]!=0)?(state.consensus[y][x]/(ns_difference_type)state.consensus_count[y][x]):0;
-
-	//	const ns_vector_2i br_s(image.properties().width-size_offset.x,image.properties().height-size_offset.y);
-		
-		//double area_2(((br.y-tl.y+1)/2)*((br.x-tl.x+1)/2));	
-		const ns_vector_2i tl(bottom_offset),
-				br((long)image.properties().width-size_offset.x,
-				(long)image.properties().height-size_offset.y);
-		ns_difference_type area((br.y-tl.y)*(br.x-tl.x));
-		{
-			ns_vector_2<float> offset_range_l(state.registration_offset_average()-local_offset),
-						 offset_range_h(state.registration_offset_average()+local_offset);
-			bool last_triggered_left_search(false),
-				last_triggered_right_search(false),
-				last_triggered_bottom_search(false),
-				last_triggered_top_search(false);
-			while(true){
-
-				saturated_offset=false;
-				bool left_saturated(false),top_saturated(false),right_saturated(false),bottom_saturated(false);
-				
-				if (offset_range_l.x-1+fine_step.x < -max_offset.x){
-					offset_range_l.x = -max_offset.x+1-fine_step.x;
-					saturated_offset = true;
-					left_saturated = true;
-				}
-				if (offset_range_l.y-1+fine_step.y < -max_offset.y){
-					offset_range_l.y = -max_offset.y+1-fine_step.y;
-					saturated_offset = true;
-					top_saturated = true;
-				}
-				if (offset_range_h.x+1-fine_step.x > max_offset.x){
-					offset_range_h.x = max_offset.x-1+fine_step.x;
-					saturated_offset = true;
-					right_saturated = true;
-				}
-				if (offset_range_h.y+1-fine_step.y > max_offset.y){
-					offset_range_h.y = max_offset.y-1+fine_step.y;
-					saturated_offset = true;
-					bottom_saturated = true;
-				}
-				//if (saturated_offset)
-					//cerr << "Saturated Offset!\n";
-
-			
-				bool found_new_minimum_this_round(false);
-				//very corse first search	
-				const ns_vector_2i range_l(offset_range_l.x,offset_range_l.y),
-								   range_h(offset_range_h.x,offset_range_h.y);
-			
-				for (int dy = range_l.y; dy <= range_h.y; dy++){
-					for (int dx = range_l.x; dx <= range_h.x; dx++){
-						ns_difference_type sum(0);
-						for (long y = tl.y; y < br.y; y++){
-							for (long x = tl.x; x < br.x; x++){
-								sum+=ns_abs(state.current_round_consensus[y+dy][x+dx] - image[y][x]);
-							}
-						}
-						sum/=(area);
-						if (min_diff > sum){
-							found_new_minimum_this_round = true;
-							min_diff = sum;
-							best_offset.y = dy;
-							best_offset.x = dx;
-						}
-						#ifdef NS_OUTPUT_ALGINMENT_DEBUG
-						o << "coarse," << dx << "," << dy << "," << sum << "," << min_diff << "\n";
-						#endif
-					}
-				}
-				const double nearness_to_edge_that_triggers_recalculation(2);
-			//	bool l(false),r(false),t(false),b(false);
-				if ( !left_saturated && found_new_minimum_this_round && (abs(best_offset.x -range_l.x) < nearness_to_edge_that_triggers_recalculation )){
-					offset_range_h.x = offset_range_l.x-1;
-					offset_range_l.x -= 2*local_offset.x-1;
-				//	l=true;
-				}
-				//A previous bug here (the omission of the ! in front of !top_saturated ) caused
-				//movement registration to fail in situations where images were moving up and down a lot,
-				//causing animal's lifespan to be overestimated.
-				else if ( !top_saturated && found_new_minimum_this_round && (abs(best_offset.y -range_l.y) < nearness_to_edge_that_triggers_recalculation )){
-					offset_range_h.y = offset_range_l.y-1;
-					offset_range_l.y -= 2*local_offset.y-1;
-			//		t=true;
-				}
-				else if ( !right_saturated && found_new_minimum_this_round && (abs(best_offset.x -range_h.x) < nearness_to_edge_that_triggers_recalculation)){
-					offset_range_l.x = offset_range_h.x+1;
-					offset_range_h.x +=2*local_offset.x+1;
-			//		r=true;
-				}
-				else if ( !bottom_saturated && found_new_minimum_this_round && (abs(best_offset.y -range_h.y) < nearness_to_edge_that_triggers_recalculation)){
-					offset_range_l.y = offset_range_h.y+1;
-					offset_range_h.y +=2*local_offset.y+1;
-				//	b = true;
-				}
-				else 
-					break;
-			/*	last_triggered_left_search=l;
-				last_triggered_right_search=r;
-				last_triggered_bottom_search=b;
-				last_triggered_top_search=t;*/
-			}
+// Cholesky requires the matrix to be symmetric positive-definite
+void ns_Cholesky(int d, double*S, double*D) {
+	for (int k = 0; k<d; ++k) {
+		double sum = 0.;
+		for (int p = 0; p<k; ++p)sum += D[k*d + p] * D[k*d + p];
+		D[k*d + k] = sqrt(S[k*d + k] - sum);
+		for (int i = k + 1; i<d; ++i) {
+			double sum = 0.;
+			for (int p = 0; p<k; ++p)sum += D[i*d + p] * D[k*d + p];
+			D[i*d + k] = (S[i*d + k] - sum) / D[k*d + k];
 		}
-		#ifdef NS_DO_SUBPIXEL_REGISTRATION
-		//subpixel search
-		const ns_vector_2<float> center = best_offset;
-		
-		for (ns_difference_type dy = center.y-1+corse_step.y; dy < center.y+1; dy+=corse_step.y){
-			for (ns_difference_type dx = center.x-1+corse_step.x; dx < center.x+1; dx+=corse_step.x){
-				ns_difference_type sum(0);
-				for (long y = tl.y; y < br.y; y++){
-					for (long x = tl.x; x < br.x; x++){
-						//the value of the consensus image is it's mean: consensus[y][x]/consensus_count[y][x]
-						sum+=ns_abs(
-							state.current_round_consensus.sample_f(y+dy,x+dx)
-							/*state.consensus.weighted_sample(y+dy,x+dx,
-							state.consensus_count[y + (long)dy  ][x + (long)dx ],
-							state.consensus_count[y + (long)dy  ][x+ (long)dx+1],
-							state.consensus_count[y + (long)dy+1][x+ (long)dx  ],
-							state.consensus_count[y + (long)dy+1][x+ (long)dx+1]
-							)*/
-							- (ns_difference_type)image[y][x]);
-					}
-				}
-				sum/=area;
-				#ifdef NS_OUTPUT_ALGINMENT_DEBUG
-				o << "fine," << dx << "," << dy << "," << sum << "," << min_diff << "\n";
-				#endif
-				if (min_diff > sum){
-					min_diff = sum;
-					best_offset.y = dy;
-					best_offset.x = dx;
-				}
-			}
-		}
-
-		const ns_vector_2<float> center_2 = best_offset;
-		for (ns_difference_type dy = center_2.y-corse_step.y+fine_step.y; dy < center_2.y+corse_step.y; dy+=fine_step.y){
-			for (ns_difference_type dx = center_2.x-corse_step.x+fine_step.x; dx < center_2.x+corse_step.x; dx+=fine_step.x){
-				ns_difference_type sum(0);
-				for (long y = tl.y; y < br.y; y++){
-					for (long x = tl.x; x < br.x; x++){	//the value of the consensus image is it's mean: consensus[y][x]/consensus_count[y][x]
-						sum+=ns_abs(
-							state.current_round_consensus.sample_f(y+dy,x+dx)-(ns_difference_type)image[y][x])
-							;
-					}
-				}
-				sum/=area;
-				#ifdef NS_OUTPUT_ALGINMENT_DEBUG
-				o << "very fine," << dx << "," << dy << "," << sum << "," << min_diff << "\n";
-				#endif
-				if (min_diff > sum){
-					min_diff = sum;
-					best_offset.y = dy;
-					best_offset.x = dx;
-				}
-			}
-		}
-		#endif
-		return best_offset;
 	}
+}
+void ns_solveCholesky(int d, double*LU, double*b, double*x,double *y) {
+	for (int i = 0; i<d; ++i) {
+		double sum = 0.;
+		for (int k = 0; k<i; ++k)sum += LU[i*d + k] * y[k];
+		y[i] = (b[i] - sum) / LU[i*d + i];
+	}
+	for (int i = d - 1; i >= 0; --i) {
+		double sum = 0.;
+		for (int k = i + 1; k<d; ++k)sum += LU[k*d + i] * x[k];
+		x[i] = (y[i] - sum) / LU[i*d + i];
+	}
+}
+
+
+void ns_Cholesky(int d, double*S, double*D);
+void ns_solveCholesky(int d, double*LU, double*b, double*x, double *y);
+
+class ns_gradient_shift {
+public:
+	ns_gradient_shift();
+	void clear();
+	//we need to correctly handle initial offset
+	template<class T1, class T2>
+	//estimate the shift between the images given that s2 is shifted initial_offset over from s1
+	ns_vector_2d calc_gradient_shift(const T1 & im1, const T2 & im2,
+		const ns_vector_2d &tl_, const ns_vector_2d & br_, const ns_vector_2d & initial_offset) {
+
+		//bounds check the additional shift.
+		ns_vector_2d tl(tl_), br(br_);
+		//tl += initial_offset;
+		//br -= initial_offset;
+		if (tl.x < initial_offset.x) tl.x = initial_offset.x;
+		if (tl.y < initial_offset.y) tl.y = initial_offset.y;
+		if (initial_offset.x >= im1.properties().width || initial_offset.y >= im1.properties().height ||
+			initial_offset.x >= im2.properties().width || initial_offset.y >= im2.properties().height)
+			throw ns_ex("Invalid shift during gradient registration: ") << initial_offset;
+
+		if (br.x > im2.properties().width-initial_offset.x) br.x = im2.properties().width - initial_offset.x;
+		if (br.y > im2.properties().height-initial_offset.y) br.y = im2.properties().height -initial_offset.y;
+
+		if (br.y < tl.y + 2 || br.x < tl.x + 2)
+			throw ns_ex("Attempting to make a too-small gradient estimate!");
+		ns_image_properties p(br.y - tl.y - 2, br.x - tl.x - 2,1);
+		//calculate gradients;
+		grad_x.resize(p);
+		grad_y.resize(p);
+		diff.resize(p);
+		for (int y = 0; y < p.height; y++) {
+			for (int x = 0; x < p.width; x++) {
+	//	for (int y = tl.y + 1; y < br.y - 1; y++) {
+	//		for (int x = tl.x + 1; x < br.x - 1; x++) {
+				//we want to apply the offset to im2, so we pull pixels offset in the opposite direction of the desired shift
+				const double x_(x - initial_offset.x + tl.x), 
+							y_(y - initial_offset.y + tl.y);
+				grad_x[y][x] = .5*(im2.sample_d(y_, x_ + 1) - im2.sample_d(y_, x_ - 1));
+				grad_y[y][x] = .5*(im2.sample_d(y_+1,x_) - im2.sample_d(y_-1, x_));
+
+				diff[y][x] = im2.sample_d(y_,x_) - im1.sample_d(y + tl.y, x + tl.x);
+			}
+		}
+
+		return calc_shifts_from_grad(p);
+	}
+	ns_vector_2d calc_shifts_from_grad(const ns_image_properties &p) const;
+//xxx
 private:
-	const ns_vector_2<float> corse_step, fine_step;
-	const ns_vector_2<float> max_offset,local_offset,bottom_offset,size_offset;
-	
-	#undef ns_abs
+	ns_image_whole<double> grad_x, grad_y, diff;
 };
 
+
+ns_gradient_shift::ns_gradient_shift() {
+	diff.use_more_memory_to_avoid_reallocations();
+	grad_x.use_more_memory_to_avoid_reallocations();
+	grad_y.use_more_memory_to_avoid_reallocations();
+}
+void ns_gradient_shift::clear() {
+	diff.clear();
+	grad_x.clear();
+	grad_y.clear();
+}
+
+ns_vector_2d ns_gradient_shift::calc_shifts_from_grad(const ns_image_properties &p) const {
+	double A[4] = { 0,0,0,0 }; //2x2 matrix
+	double b[2] = { 0,0 };  //2x1 vector
+	for (unsigned long y = 0; y < p.height; y++)
+		for (unsigned long x = 0; x < p.width; x++) {
+			A[0] += grad_x[y][x] * grad_x[y][x];
+			A[1] += grad_x[y][x] * grad_y[y][x];
+			A[3] += grad_y[y][x] * grad_y[y][x];
+			b[0] -= grad_x[y][x] * diff[y][x];
+			b[1] -= grad_y[y][x] * diff[y][x];
+		}
+	A[2] = A[1];
+	//	double I[2] = { 1,1 };//identity matrix
+	double LU[4];//Cholesky decomposition
+	double tmp[2];
+
+	ns_Cholesky(2, A, LU);
+
+	//solve LU*C = b for C.
+	double C[2];
+	ns_solveCholesky(2, LU, b, C, tmp);
+
+	return ns_vector_2d(-C[0], -C[1]);
+}
+#define USE_INTEL_IPP
+#ifdef USE_INTEL_IPP
+#include "ipp.h"
+#ifdef _MSC_VER
+#define finline                     __forceinline
+#else
+#define finline						__attribute__((always_inline))
+#endif
+
+template<class T>
+void ns_intel_safe_delete(T * & pointer) {
+	if (pointer == 0) return;
+	T * tmp(pointer);
+	pointer = 0;
+	ippiFree(tmp);
+}
+class ns_intel_image_32f {
+public:
+	ns_intel_image_32f() :buffer(0) {}
+	~ns_intel_image_32f() {
+		clear();
+	}
+	finline Ipp32f &  val(const int & y, const int & x) { return buffer[y*line_step_in_pixels + x]; }
+	finline const Ipp32f & val(const int & y, const int & x) const { return buffer[y*line_step_in_pixels + x]; }
+
+	const double finline sample_d(const double y, const double x) const {
+
+		const int p0x(xs_float::xs_FloorToInt(x)),
+			p0y(xs_float::xs_FloorToInt(y));
+		const int p1x(p0x + 1),
+			p1y(p0y + 1);
+		const double dx(x - (double)p0x),
+			dy(y - (double)p0y);
+		const double d1x(1.0 - dx),
+			d1y(1.0 - dy);
+
+#ifdef NS_DEBUG_IMAGE_ACCESS
+		if (p0y >= NS_SR_PROPS.height || p1y >= NS_SR_PROPS.height ||
+			p0x >= NS_SR_PROPS.width || p1x >= NS_SR_PROPS.width)
+			throw ns_ex("Out of bound access!");
+#endif
+		return	val(p0y, p0x) * (d1y)*(d1x)+
+			val(p0y, p1x) * (d1y)*(dx)+
+			val(p1y, p0x) * (dy)*(d1x)+
+			val(p1y, p1x) * (dy)*(dx);
+	}
+
+
+	int  init(const ns_image_properties & prop) {
+		return init(prop.width, prop.height);
+	}
+	void clear() { ns_intel_safe_delete(buffer); }
+	int init(const int width, const int height){
+		buffer = ippiMalloc_32f_C1(width, height, &line_step_in_bytes);
+		line_step_in_pixels = line_step_in_bytes / sizeof(Ipp32f);
+		properties_.width = width;
+		properties_.height = height;
+		properties_.components = 1;
+		return line_step_in_bytes;
+	}
+	void convert(ns_image_whole<float> & im) {
+		im.init(properties_);
+		for (unsigned int y = 0; y < properties_.height; y++)
+			for (unsigned int x = 0; x < properties_.height; x++)
+				im[y][x] = val(y, x);
+	}
+	const ns_image_properties & properties() const {
+		return properties_;
+	}
+	Ipp32f  * buffer;
+	int line_step_in_bytes;
+	int line_step_in_pixels;
+private:
+	ns_image_properties properties_;
+};
+
+
+class ns_gaussian_pyramid {
+public:
+	ns_gaussian_pyramid() :image_size(0, 0, 0),
+		pyrLStateSize(0), pyrLBufferSize(0), max_pyrLStateSize(0), max_pyrLBufferSize(0), pPyrLStateBuf(), pPyrLBuffer(),
+		pPyrStruct(0), pPyrBuffer(0), pPyrStrBuffer(0), max_pyrBufferSize(0), max_pyrStructSize(0), pyrBufferSize(0), pyrStructSize(0) {}
+	void clear() {
+		for (unsigned int i = 0; i < ns_calc_best_alignment_fast::ns_max_pyramid_size; i++)
+			image_scaled[i].clear();
+		image_size.width = image_size.height = 0;
+		ns_intel_safe_delete(pPyrLStateBuf);
+		ns_intel_safe_delete(pPyrStruct);
+		ns_intel_safe_delete(pPyrBuffer);
+		ns_intel_safe_delete(pPyrStrBuffer);
+	}
+	~ns_gaussian_pyramid() {clear();}
+
+	template<class T>
+	void calculate(const ns_image_whole<T> & im) {
+		ns_image_properties p(im.properties());
+		allocate(p);
+
+		//copy over raw image to first layer of pyramid
+		for (unsigned int y = 0; y < p.height; y++)
+			for (unsigned int x = 0; x < p.width; x++)
+				image_scaled[0].val(y,x) = im[y][x]/255.f;
+
+		/* Perform downsampling of the image with 5x5 Gaussian kernel */
+		for (int i = 1; i < num_current_pyramid_levels; i++){
+			int status = ippiPyramidLayerDown_32f_C1R(image_scaled[i - 1].buffer, pPyrStruct->pStep[i - 1], pPyrStruct->pRoi[i - 1],
+				image_scaled[i].buffer, pPyrStruct->pStep[i], pPyrStruct->pRoi[i], (IppiPyramidDownState_32f_C1R*)pPyrStruct->pState);
+			if (status != ippStsNoErr)
+				throw ns_ex("Could not calculate pyramid layer ") << i;
+		}
+	}
+
+
+	//contains some temporary image data buffers that are kept to avoid reallocating memory each time
+	ns_intel_image_32f image_scaled[ns_calc_best_alignment_fast::ns_max_pyramid_size];
+	ns_image_properties image_size;
+	int num_current_pyramid_levels;
+
+
+private:
+
+	void allocate(const ns_image_properties & image) {
+
+		long min_d(image.width < image.height ? image.width : image.height);
+		num_current_pyramid_levels = log2(min_d) - 2; 
+
+		/* Computes the temporary work buffer size */
+		IppiSize    roiSize = { image.width,image.height };
+		float rate(2);
+		const int kernel_size = 5;
+		Ipp32f kernel[kernel_size] = { 1.f, 4.f, 6.f,4.f,1.f };
+
+		int status = ippiPyramidGetSize(&pyrStructSize, &pyrBufferSize, num_current_pyramid_levels-1, roiSize, rate);
+		if (status != ippStsNoErr)
+			throw ns_ex("Could not estimate intel pyramid size");
+		if (pyrStructSize > max_pyrStructSize || pyrBufferSize > max_pyrBufferSize) {
+			max_pyrStructSize = pyrStructSize;
+			max_pyrBufferSize = pyrBufferSize;
+			ns_intel_safe_delete(pPyrBuffer);
+			ns_intel_safe_delete(pPyrStrBuffer);
+			pPyrBuffer = ippsMalloc_8u(pyrBufferSize);
+			pPyrStrBuffer = ippsMalloc_8u(pyrStructSize);
+		}
+		/* Initializes Gaussian structure for pyramids */
+		status = ippiPyramidInit(&pPyrStruct, num_current_pyramid_levels -1, roiSize, rate, pPyrStrBuffer, pPyrBuffer);
+		if (status != ippStsNoErr)
+			throw ns_ex("Could not make intel pyramid");
+		/* Correct maximum scale level */
+		/* Allocate structures to calculate pyramid layers */
+		status = ippiPyramidLayerDownGetSize_32f_C1R(roiSize, rate, kernel_size, &pyrLStateSize, &pyrLBufferSize);
+		if (status != ippStsNoErr)
+			throw ns_ex("Could not estimate pyramid layer down size");
+		if (pyrLStateSize > max_pyrLStateSize || pyrLBufferSize > max_pyrLBufferSize) {
+			max_pyrLStateSize = pyrLStateSize;
+			max_pyrLBufferSize = pyrLBufferSize;
+			ns_intel_safe_delete(pPyrLStateBuf);
+			ns_intel_safe_delete(pPyrLBuffer);
+			pPyrLStateBuf = ippsMalloc_8u(pyrLStateSize);
+			pPyrLBuffer = ippsMalloc_8u(pyrLBufferSize);
+		}
+		/* Initialize the structure for creating a lower pyramid layer */
+		status = ippiPyramidLayerDownInit_32f_C1R((IppiPyramidDownState_32f_C1R**)&pPyrStruct->pState, roiSize, rate,
+			kernel, kernel_size, IPPI_INTER_LINEAR, pPyrLStateBuf, pPyrLBuffer);
+		if (status != ippStsNoErr)
+			throw ns_ex("Could not init pyramid layers");
+		/* Allocate pyramid layers */
+		if (image_size != image) {
+			image_size = image;
+			for (int i = 0; i < num_current_pyramid_levels; i++) 
+				pPyrStruct->pStep[i] = image_scaled[i].init(pPyrStruct->pRoi[i].width, pPyrStruct->pRoi[i].height);
+		}
+		else 
+			for (int i = 0; i < num_current_pyramid_levels; i++)
+				pPyrStruct->pStep[i] = image_scaled[i].line_step_in_bytes;
+	}
+
+	//intel specific pyramid info
+	int pyrBufferSize, max_pyrBufferSize,
+		pyrStructSize, max_pyrStructSize;
+	IppiPyramid *pPyrStruct;
+	Ipp8u       *pPyrBuffer;
+	Ipp8u       *pPyrStrBuffer;
+	int      pyrLStateSize, max_pyrLStateSize;
+	int      pyrLBufferSize, max_pyrLBufferSize;
+	Ipp8u   *pPyrLStateBuf;
+	Ipp8u   *pPyrLBuffer;
+};
+
+
+ns_calc_best_alignment_fast::ns_calc_best_alignment_fast(const ns_vector_2i & max_offset_, const ns_vector_2i &local_offset_, const ns_vector_2i &bottom_offset_, const ns_vector_2i &size_offset_) :
+	max_offset(max_offset_), local_offset(local_offset_), image_pyramid(0), state_pyramid(0), bottom_offset(bottom_offset_), size_offset(size_offset_) {
+	state_pyramid = new ns_gaussian_pyramid();
+	image_pyramid = new ns_gaussian_pyramid();
+	gradient_shift = new ns_gradient_shift;
+}
+ns_calc_best_alignment_fast::~ns_calc_best_alignment_fast() {
+	ns_safe_delete(state_pyramid);
+	ns_safe_delete(image_pyramid);
+	ns_safe_delete(gradient_shift);
+}
+
+void ns_calc_best_alignment_fast::clear() {
+	state_pyramid->clear();
+	image_pyramid->clear();
+	gradient_shift->clear();
+}
+
+
+ns_vector_2d ns_calc_best_alignment_fast::operator()(ns_alignment_state & state, const ns_image_standard & image, bool & saturated_offset) {
+
+	ns_vector_2<float> best_offset(0, 0);
+	saturated_offset = false;
+	state.current_round_consensus.init(state.consensus.properties());
+	for (unsigned int y = 0; y < state.consensus.properties().height; y++)
+		for (unsigned int x = 0; x < state.consensus.properties().width; x++)
+			state.current_round_consensus[y][x] = (state.consensus_count[y][x] != 0) ? (state.consensus[y][x] / (ns_difference_type)state.consensus_count[y][x]) : 0;
+	
+	state_pyramid->calculate(state.current_round_consensus);
+	image_pyramid->calculate(image);
+	
+	//xxx
+	/*
+	ns_image_properties prop(0, 0, 1);
+	for (unsigned int i = 0; i < state_pyramid->num_current_pyramid_levels; i++) {
+		unsigned long w(state_pyramid->image_scaled[i].properties().width + image_pyramid->image_scaled[i].properties().width);
+		unsigned long h(state_pyramid->image_scaled[i].properties().height);
+		if (h < image_pyramid->image_scaled[i].properties().height)
+			h = image_pyramid->image_scaled[i].properties().height;
+		if (prop.width < w)
+			prop.width = w;
+		prop.height += h;
+	}
+	ns_image_whole<float> dbg;
+	dbg.init(prop);
+	for (unsigned int y = 0; y < prop.height; y++)
+		for (unsigned int x = 0; x < prop.width; x++)
+			dbg[y][x] = 0;
+	unsigned long h(0);
+	for (unsigned int i = 0; i < state_pyramid->num_current_pyramid_levels; i++) {
+		for (unsigned int y = 0; y < image_pyramid->image_scaled[i].properties().height; y++)
+			for (unsigned int x = 0; x < image_pyramid->image_scaled[i].properties().width; x++)
+				dbg[h+y][x] = image_pyramid->image_scaled[i].val(y, x);
+		unsigned long w(image_pyramid->image_scaled[i].properties().width);
+		for (unsigned int y = 0; y < state_pyramid->image_scaled[i].properties().height; y++)
+			for (unsigned int x = 0; x < state_pyramid->image_scaled[i].properties().width; x++)
+				dbg[h+y][x + w] = state_pyramid->image_scaled[i].val(y, x);
+		unsigned long dh(state_pyramid->image_scaled[i].properties().height);
+		if (dh < image_pyramid->image_scaled[i].properties().height)
+			dh = image_pyramid->image_scaled[i].properties().height;
+		h += dh;
+	}
+	ns_save_image("c:\\server\\pyramid.tif", dbg);
+	//endxxx
+	*/
+
+	const ns_vector_2d tl(bottom_offset),
+		br((long)image.properties().width - size_offset.x,
+		(long)image.properties().height - size_offset.y);
+	//build an image pyramid
+	ns_vector_2d shift[ns_max_pyramid_size];
+
+	//walk down the image pyrmaid.  reg updates as the most accurate registration at the next level of the pyramid, based on the levels above.
+	ns_vector_2d reg(0, 0);
+	unsigned long number_of_levels((state_pyramid->num_current_pyramid_levels < image_pyramid->num_current_pyramid_levels) ? state_pyramid->num_current_pyramid_levels : image_pyramid->num_current_pyramid_levels);
+	for (int i = number_of_levels-1; i >= 0; i--) {
+		int fold = pow(2, i);
+		reg = reg * 2;
+
+		shift[i] = gradient_shift->calc_gradient_shift(state_pyramid->image_scaled[i], 
+														image_pyramid->image_scaled[i],
+													tl / fold, br / fold, reg);
+		/*gradient_shift->grad_x.pump(grad_x[i], 1024);
+		gradient_shift->grad_y.pump(grad_y[i], 1024);
+		gradient_shift->diff.pump(diff[i], 1024);*/
+		reg += shift[i];
+	}
+	/*
+	//xxx
+	prop.height = 0;
+	prop.width = 3*grad_x[0].properties().width;
+	for (unsigned int i = 0; i < state_pyramid->num_current_pyramid_levels; i++) {
+		prop.height += grad_x[i].properties().height;
+	}
+	dbg.init(prop);
+	for (unsigned int y = 0; y < prop.height; y++)
+		for (unsigned int x = 0; x < prop.width; x++)
+			dbg[y][x] = 0;
+	h = 0;
+	for (unsigned int i = 0; i < state_pyramid->num_current_pyramid_levels; i++) {
+		unsigned long w(grad_x[i].properties().width);
+		for (unsigned int y = 0; y < grad_x[i].properties().height; y++)
+			for (unsigned int x = 0; x < grad_x[i].properties().width; x++) {
+				dbg[h + y][x] = grad_x[i][y][x];
+				dbg[h + y][x+w] = grad_y[i][y][x]; 
+				dbg[h + y][x+2*w] = diff[i][y][x];
+			}
+		h += grad_x[i].properties().height;
+	}
+	ns_save_image("c:\\server\\pyramid_grad.tif", dbg);
+	*/
+	return reg;
+}
+#endif
+
+ns_vector_2d ns_calc_best_alignment::operator()(ns_alignment_state & state,const ns_image_standard & image, bool & saturated_offset) {
+	#ifdef NS_OUTPUT_ALGINMENT_DEBUG
+	ofstream o("c:\\tst.txt");
+	o << "step,dx,dy,sum,lowest sum\n";
+	#endif
+	ns_difference_type min_diff(std::numeric_limits<ns_difference_type>::max());
+	ns_vector_2<float> best_offset(0,0);
+	//xxx
+	//return best_offset;
+	state.current_round_consensus.init(state.consensus.properties());
+	for (unsigned int y = 0; y < state.consensus.properties().height; y++)
+		for (unsigned int x = 0; x < state.consensus.properties().width; x++)
+			state.current_round_consensus[y][x] = (state.consensus_count[y][x]!=0)?(state.consensus[y][x]/(ns_difference_type)state.consensus_count[y][x]):0;
+
+//	const ns_vector_2i br_s(image.properties().width-size_offset.x,image.properties().height-size_offset.y);
+		
+	//double area_2(((br.y-tl.y+1)/2)*((br.x-tl.x+1)/2));	
+	const ns_vector_2i tl(bottom_offset),
+			br((long)image.properties().width-size_offset.x,
+			(long)image.properties().height-size_offset.y);
+	ns_difference_type area((br.y-tl.y)*(br.x-tl.x));
+	{
+		ns_vector_2d offset_range_l(state.registration_offset_average()-local_offset),
+						offset_range_h(state.registration_offset_average()+local_offset);
+		bool last_triggered_left_search(false),
+			last_triggered_right_search(false),
+			last_triggered_bottom_search(false),
+			last_triggered_top_search(false);
+		while(true){
+
+			saturated_offset=false;
+			bool left_saturated(false),top_saturated(false),right_saturated(false),bottom_saturated(false);
+				
+			if (offset_range_l.x-1+fine_step.x < -max_offset.x){
+				offset_range_l.x = -max_offset.x+1-fine_step.x;
+				saturated_offset = true;
+				left_saturated = true;
+			}
+			if (offset_range_l.y-1+fine_step.y < -max_offset.y){
+				offset_range_l.y = -max_offset.y+1-fine_step.y;
+				saturated_offset = true;
+				top_saturated = true;
+			}
+			if (offset_range_h.x+1-fine_step.x > max_offset.x){
+				offset_range_h.x = max_offset.x-1+fine_step.x;
+				saturated_offset = true;
+				right_saturated = true;
+			}
+			if (offset_range_h.y+1-fine_step.y > max_offset.y){
+				offset_range_h.y = max_offset.y-1+fine_step.y;
+				saturated_offset = true;
+				bottom_saturated = true;
+			}
+			//if (saturated_offset)
+				//cerr << "Saturated Offset!\n";
+
+			
+			bool found_new_minimum_this_round(false);
+			//very corse first search	
+			const ns_vector_2i range_l(offset_range_l.x,offset_range_l.y),
+								range_h(offset_range_h.x,offset_range_h.y);
+			
+			for (int dy = range_l.y; dy <= range_h.y; dy++){
+				for (int dx = range_l.x; dx <= range_h.x; dx++){
+					ns_difference_type sum(0);
+					for (long y = tl.y; y < br.y; y++){
+						for (long x = tl.x; x < br.x; x++){
+							sum+=fabs(state.current_round_consensus[y+dy][x+dx] - image[y][x]);
+						}
+					}
+					sum/=(area);
+					if (min_diff > sum){
+						found_new_minimum_this_round = true;
+						min_diff = sum;
+						best_offset.y = dy;
+						best_offset.x = dx;
+					}
+					#ifdef NS_OUTPUT_ALGINMENT_DEBUG
+					o << "coarse," << dx << "," << dy << "," << sum << "," << min_diff << "\n";
+					#endif
+				}
+			}
+			const double nearness_to_edge_that_triggers_recalculation(2);
+		//	bool l(false),r(false),t(false),b(false);
+			if ( !left_saturated && found_new_minimum_this_round && (abs(best_offset.x -range_l.x) < nearness_to_edge_that_triggers_recalculation )){
+				offset_range_h.x = offset_range_l.x-1;
+				offset_range_l.x -= 2*local_offset.x-1;
+			//	l=true;
+			}
+			//A previous bug here (the omission of the ! in front of !top_saturated ) caused
+			//movement registration to fail in situations where images were moving up and down a lot,
+			//causing animal's lifespan to be overestimated.
+			else if ( !top_saturated && found_new_minimum_this_round && (abs(best_offset.y -range_l.y) < nearness_to_edge_that_triggers_recalculation )){
+				offset_range_h.y = offset_range_l.y-1;
+				offset_range_l.y -= 2*local_offset.y-1;
+		//		t=true;
+			}
+			else if ( !right_saturated && found_new_minimum_this_round && (abs(best_offset.x -range_h.x) < nearness_to_edge_that_triggers_recalculation)){
+				offset_range_l.x = offset_range_h.x+1;
+				offset_range_h.x +=2*local_offset.x+1;
+		//		r=true;
+			}
+			else if ( !bottom_saturated && found_new_minimum_this_round && (abs(best_offset.y -range_h.y) < nearness_to_edge_that_triggers_recalculation)){
+				offset_range_l.y = offset_range_h.y+1;
+				offset_range_h.y +=2*local_offset.y+1;
+			//	b = true;
+			}
+			else 
+				break;
+		/*	last_triggered_left_search=l;
+			last_triggered_right_search=r;
+			last_triggered_bottom_search=b;
+			last_triggered_top_search=t;*/
+		}
+	}
+	#ifdef NS_DO_SUBPIXEL_REGISTRATION
+	//subpixel search
+	const ns_vector_2<float> center = best_offset;
+		
+	for (ns_difference_type dy = center.y-1+corse_step.y; dy < center.y+1; dy+=corse_step.y){
+		for (ns_difference_type dx = center.x-1+corse_step.x; dx < center.x+1; dx+=corse_step.x){
+			ns_difference_type sum(0);
+			for (long y = tl.y; y < br.y; y++){
+				for (long x = tl.x; x < br.x; x++){
+					//the value of the consensus image is it's mean: consensus[y][x]/consensus_count[y][x]
+					sum+=fabs(
+						state.current_round_consensus.sample_f(y+dy,x+dx)
+						/*state.consensus.weighted_sample(y+dy,x+dx,
+						state.consensus_count[y + (long)dy  ][x + (long)dx ],
+						state.consensus_count[y + (long)dy  ][x+ (long)dx+1],
+						state.consensus_count[y + (long)dy+1][x+ (long)dx  ],
+						state.consensus_count[y + (long)dy+1][x+ (long)dx+1]
+						)*/
+						- (ns_difference_type)image[y][x]);
+				}
+			}
+			sum/=area;
+			#ifdef NS_OUTPUT_ALGINMENT_DEBUG
+			o << "fine," << dx << "," << dy << "," << sum << "," << min_diff << "\n";
+			#endif
+			if (min_diff > sum){
+				min_diff = sum;
+				best_offset.y = dy;
+				best_offset.x = dx;
+			}
+		}
+	}
+
+	const ns_vector_2<float> center_2 = best_offset;
+	for (ns_difference_type dy = center_2.y-corse_step.y+fine_step.y; dy < center_2.y+corse_step.y; dy+=fine_step.y){
+		for (ns_difference_type dx = center_2.x-corse_step.x+fine_step.x; dx < center_2.x+corse_step.x; dx+=fine_step.x){
+			ns_difference_type sum(0);
+			for (long y = tl.y; y < br.y; y++){
+				for (long x = tl.x; x < br.x; x++){	//the value of the consensus image is it's mean: consensus[y][x]/consensus_count[y][x]
+					sum+=fabs(
+						state.current_round_consensus.sample_f(y+dy,x+dx)-(ns_difference_type)image[y][x])
+						;
+				}
+			}
+			sum/=area;
+			#ifdef NS_OUTPUT_ALGINMENT_DEBUG
+			o << "very fine," << dx << "," << dy << "," << sum << "," << min_diff << "\n";
+			#endif
+			if (min_diff > sum){
+				min_diff = sum;
+				best_offset.y = dy;
+				best_offset.x = dx;
+			}
+		}
+	}
+	#endif
+	return best_offset;
+}
 
 void ns_analyzed_image_time_path_element::generate_movement_visualization(ns_image_standard & out) const{
 	ns_image_properties p(registered_images->movement_image_.properties());
@@ -3705,6 +4095,8 @@ void ns_analyzed_image_time_path::quantify_movement(const ns_analyzed_time_image
 		}
 	}
 }
+//xxx 
+ofstream * tmp_cmp = 0;
 void ns_analyzed_image_time_path::copy_aligned_path_to_registered_image(const ns_analyzed_time_image_chunk & chunk) {
 	
 	const unsigned long C(256);
@@ -3762,64 +4154,94 @@ void ns_analyzed_image_time_path::copy_aligned_path_to_registered_image(const ns
 		//to registered_images->image, registered_images->region_threshold, and registered_images->worm_threshold
 		//but for the registered_movement_image we only output the minimal overlap which is
 		// [maximum_alignment_offset()
-		const ns_vector_2<float> v0(elements[i].registration_offset);
+		//xxx
+		double diffs[2];
+		for (unsigned int ro = 0; ro < 2; ro++) {
+			const ns_vector_2<float> v0(ro == 0 ? elements[i].registration_offset : elements[i].registration_offset_fast);
 
-		ns_vector_2i tl(maximum_alignment_offset() + elements[i].offset_from_path);
-		ns_vector_2i br(tl + elements[i].worm_context_size());
-		if (br.x > prop.width - maximum_alignment_offset().x)
-			br.x = prop.width - maximum_alignment_offset().x;
-		if (br.y > prop.width - maximum_alignment_offset().y)
-			br.y = prop.width - maximum_alignment_offset().y;
+			ns_vector_2i tl(maximum_alignment_offset() + elements[i].offset_from_path);
+			ns_vector_2i br(tl + elements[i].worm_context_size());
+			if (br.x > prop.width - maximum_alignment_offset().x)
+				br.x = prop.width - maximum_alignment_offset().x;
+			if (br.y > prop.width - maximum_alignment_offset().y)
+				br.y = prop.width - maximum_alignment_offset().y;
 
-		//here we crop 2i
-		//so the registered image rage may be slightly smaller than it could be
-		//as we miss the left or right fraction of a pixel
-		ns_vector_2i tl_registered(maximum_alignment_offset() + ns_vector_2i(v0.x, v0.y) + elements[i].offset_from_path);
-		ns_vector_2i br_registered(tl_registered + elements[i].worm_context_size());
-		//ns_vector_2i br(ns_vector_2i(elements[0].path_aligned_images->image.properties().width,elements[0].path_aligned_images->image.properties().height)-maximum_alignment_offset());
+			//here we crop 2i
+			//so the registered image rage may be slightly smaller than it could be
+			//as we miss the left or right fraction of a pixel
+			ns_vector_2i tl_registered(maximum_alignment_offset() + ns_vector_2i(v0.x, v0.y) + elements[i].offset_from_path);
+			ns_vector_2i br_registered(tl_registered + elements[i].worm_context_size());
+			//ns_vector_2i br(ns_vector_2i(elements[0].path_aligned_images->image.properties().width,elements[0].path_aligned_images->image.properties().height)-maximum_alignment_offset());
 
-		//fill bottom
-		for (long y = 0; y < tl_registered.y; y++) {
-			for (long x = 0; x < prop.width; x++) {
-				elements[i].registered_images->image[y][x] = NS_MARGIN_BACKGROUND;
+			//fill bottom
+			for (long y = 0; y < tl_registered.y; y++) {
+				for (long x = 0; x < prop.width; x++) {
+					elements[i].registered_images->image[y][x] = NS_MARGIN_BACKGROUND;
 
-				region_threshold[y][x] = NS_MARGIN_BACKGROUND;
-				worm_threshold[y][x] = NS_MARGIN_BACKGROUND;
+					region_threshold[y][x] = NS_MARGIN_BACKGROUND;
+					worm_threshold[y][x] = NS_MARGIN_BACKGROUND;
+				}
+			}
+
+			for (long y = tl_registered.y; y < br_registered.y; y++) {
+				//fill in left gap
+				for (long x = 0; x < (tl_registered.x); x++) {
+					elements[i].registered_images->image[y][x] = NS_MARGIN_BACKGROUND;
+					region_threshold[y][x] = NS_MARGIN_BACKGROUND;
+					worm_threshold[y][x] = NS_MARGIN_BACKGROUND;
+				}
+				//fill in center
+				for (long x = tl_registered.x; x < br_registered.x; x++) {
+					elements[i].registered_images->image[y][x] = elements[i].path_aligned_images->image.sample_f(y - v0.y, x - v0.x);
+					elements[i].path_aligned_images->sample_thresholds<ns_8_bit>(y - v0.y, x - v0.x, region_threshold[y][x], worm_threshold[y][x]);
+				}
+				//fill in right gap
+				for (long x = (br_registered.x); x < prop.width; x++) {
+					elements[i].registered_images->image[y][x] = NS_MARGIN_BACKGROUND;
+					region_threshold[y][x] = NS_MARGIN_BACKGROUND;
+					worm_threshold[y][x] = NS_MARGIN_BACKGROUND;
+				}
+			}
+			//fill in top
+			for (long y = br_registered.y; y < prop.height; y++) {
+				for (long x = 0; x < prop.width; x++) {
+					elements[i].registered_images->image[y][x] = NS_MARGIN_BACKGROUND;
+					worm_threshold[y][x] = NS_MARGIN_BACKGROUND;
+					region_threshold[y][x] = NS_MARGIN_BACKGROUND;
+				}
+			}
+			ns_dilate<16, ns_image_standard, ns_image_standard>(worm_threshold, worm_neighborhood_threshold);
+			for (unsigned int y = 0; y < worm_threshold.properties().height; y++)
+				for (unsigned int x = 0; x < worm_threshold.properties().width; x++)
+					elements[i].registered_images->set_thresholds(y, x, region_threshold[y][x], worm_threshold[y][x], worm_neighborhood_threshold[y][x]);
+
+			//xxx
+			if (i - istep > 0 && elements[i - istep].registered_image_is_loaded()) {
+				ns_64_bit sum(0);
+				for (unsigned int y = 0; y < worm_threshold.properties().height; y++)
+					for (unsigned int x = 0; x < worm_threshold.properties().width; x++)
+						sum += abs(elements[i].registered_images->image[y][x] - (long)elements[i - istep].registered_images->image[y][x]);
+
+
+				diffs[ro] = sum / ((double)worm_threshold.properties().height*worm_threshold.properties().width);
 			}
 		}
 
-		for (long y = tl_registered.y; y < br_registered.y; y++) {
-			//fill in left gap
-			for (long x = 0; x < (tl_registered.x); x++) {
-				elements[i].registered_images->image[y][x] = NS_MARGIN_BACKGROUND;
-				region_threshold[y][x] = NS_MARGIN_BACKGROUND;
-				worm_threshold[y][x] = NS_MARGIN_BACKGROUND;
-			}
-			//fill in center
-			for (long x = tl_registered.x; x < br_registered.x; x++) {
-				elements[i].registered_images->image[y][x] = elements[i].path_aligned_images->image.sample_f(y - v0.y, x - v0.x);
-				elements[i].path_aligned_images->sample_thresholds<ns_8_bit>(y - v0.y, x - v0.x, region_threshold[y][x], worm_threshold[y][x]);
-			}
-			//fill in right gap
-			for (long x = (br_registered.x); x < prop.width; x++) {
-				elements[i].registered_images->image[y][x] = NS_MARGIN_BACKGROUND;
-				region_threshold[y][x] = NS_MARGIN_BACKGROUND;
-				worm_threshold[y][x] = NS_MARGIN_BACKGROUND;
-			}
+		if (fabs(diffs[0] - diffs[1]) > .001)
+			cerr << "STDIF = " << diffs[0] << "; FDIF = " << diffs[1] << "\n";
+		if (tmp_cmp == 0) {
+			tmp_cmp = new ofstream("c:\\server\\alignment_debug.csv");
+			(*tmp_cmp) << "Synx,Syny,Sx,Sy,Stime,Simage_err,Sregistration_error,Fx,Fy,Ftime,Fimage_err,Fregistration_error\n";
 		}
-		//fill in top
-		for (long y = br_registered.y; y < prop.height; y++) {
-			for (long x = 0; x < prop.width; x++) {
-				elements[i].registered_images->image[y][x] = NS_MARGIN_BACKGROUND;
-				worm_threshold[y][x] = NS_MARGIN_BACKGROUND;
-				region_threshold[y][x] = NS_MARGIN_BACKGROUND;
-			}
-		}
-		ns_dilate<16, ns_image_standard, ns_image_standard>(worm_threshold, worm_neighborhood_threshold);
-		for (unsigned int y = 0; y < worm_threshold.properties().height; y++)
-			for (unsigned int x = 0; x < worm_threshold.properties().width; x++)
-				elements[i].registered_images->set_thresholds(y, x, region_threshold[y][x], worm_threshold[y][x], worm_neighborhood_threshold[y][x]);
+		(*tmp_cmp) << elements[i].synthetic_offset.x << "," << elements[i].synthetic_offset.y << ",";
+
+		(*tmp_cmp) << elements[i].registration_offset.x << "," << elements[i].registration_offset.y << ","
+			<< elements[i].alignment_times[0] << "," << diffs[0] << "," << (elements[i].synthetic_offset - elements[i].registration_offset).mag() << ",";
+		(*tmp_cmp) << elements[i].registration_offset_fast.x << "," << elements[i].registration_offset_fast.y << ","
+			<< elements[i].alignment_times[1] << "," << diffs[1] << "," << (elements[i].synthetic_offset - elements[i].registration_offset_fast).mag() << "\n";
+		tmp_cmp->flush();
 	}
+	
 }
 
 void ns_analyzed_image_time_path::calculate_movement_images(const ns_analyzed_time_image_chunk & chunk) {
@@ -3927,10 +4349,11 @@ void ns_analyzed_image_time_path::calculate_movement_images(const ns_analyzed_ti
 }
 void ns_analyzed_image_time_path::calculate_flow(const unsigned long element_index) {
 	//cerr << "{";
+	//XXX
+	return;
 	ns_high_precision_timer p;
 	p.start();
-	//XXX
-	flow->calculate();
+	flow->calculate(30,0,2/255.0f);
 	total_flow_time += p.stop();
 	flow->get_movement(elements[element_index].registered_images->flow_image_dx, elements[element_index].registered_images->flow_image_dy);
 
@@ -3951,14 +4374,14 @@ void ns_analyzed_image_time_path::calculate_flow(const unsigned long element_ind
 	
 	cout << "f(" << mmin << "," << mmax << ") ";*/
 }
+
+
+
 ns_analyzed_time_image_chunk ns_analyzed_image_time_path::initiate_image_registration(const ns_analyzed_time_image_chunk & chunk,ns_alignment_state & state){
 	const unsigned long time_kernel(alignment_time_kernel_width);
 	//if (abs(chunk.stop_i - chunk.start_i) < time_kernel)
 		//throw ns_ex("ns_analyzed_image_time_path::initiate_image_registration()::First chunk must be >= time kernel width!");
 	ns_analyzed_time_image_chunk remaining(chunk);
-	if (chunk.forward())
-	remaining.start_i += time_kernel;
-	else remaining.start_i -=time_kernel;
 
 	const unsigned long first_index(chunk.start_i);
 	ns_image_properties prop(elements[first_index].path_aligned_images->image.properties());
@@ -3990,6 +4413,8 @@ ns_analyzed_time_image_chunk ns_analyzed_image_time_path::initiate_image_registr
 										  state.consensus.properties().height)
 										  -d);
 
+	int step(chunk.forward() ? 1 : -1);
+
 	if (first_frame) {
 		for (unsigned long y = 0; y < prop.height; y++) {
 			for (unsigned long x = 0; x < prop.width; x++) {
@@ -4011,17 +4436,23 @@ ns_analyzed_time_image_chunk ns_analyzed_image_time_path::initiate_image_registr
 		out("c:\\movement", debug_path_name + "0.tif", alignment_time_kernel_width, state.consensus, state.consensus_count, elements[0].path_aligned_images->image);
 		#endif
 		elements[first_index].registration_offset = ns_vector_2i(0, 0);
+		remaining.start_i+= step;
 	}
 	//ns_vector_2i test_alignment = align(state,elements[0].path_aligned_images->image);
 	//cerr << "TAlignment: " << test_alignment << "\n";
-	int step(chunk.forward() ? 1 : -1);
-	for (long i = chunk.start_i + step; i != chunk.stop_i; i+=step){
+	for (long i = remaining.start_i; i != remaining.stop_i; i+=step){
 		if ( elements[i].path_aligned_images->image.properties().height == 0)
 			throw ns_ex("ns_analyzed_image_time_path::calculate_vertical_registration()::Element ")  << i << " was not assigned!";
 		
+		//if we have filled up the state variable and can stop the inialization.
+		//we break and return remaining, which is should contain the remainder 
+		//of the current chunk.
+		if (state.registration_offset_count >= time_kernel) {
+			remaining.start_i = i;
+			break;
+		}
 		elements[i].registration_offset = align(state,elements[i].path_aligned_images->image,elements[i].saturated_offset);
-	//	cerr << "Alignment: " << elements[i].registration_offset << "\n";
-		
+	
 		state.registration_offset_sum += elements[i].registration_offset;
 		state.registration_offset_count++;
 
@@ -4038,43 +4469,49 @@ ns_analyzed_time_image_chunk ns_analyzed_image_time_path::initiate_image_registr
 		out("c:\\movement",debug_path_name + ns_to_string(i) + ".tif",alignment_time_kernel_width,state.consensus,state.consensus_count,elements[i].path_aligned_images->image);
 		#endif
 		} 
-
+	//we've consumed the entire chunk, so there's nothing remaining.
+	remaining.start_i = chunk.stop_i;
 	return remaining;
 }
 
-void ns_analyzed_image_time_path::calculate_image_registration(const ns_analyzed_time_image_chunk & chunk_,ns_alignment_state & state,const ns_analyzed_time_image_chunk & first_chunk){
+void ns_analyzed_image_time_path::calculate_image_registration(const ns_analyzed_time_image_chunk & chunk_, ns_alignment_state & state, const ns_analyzed_time_image_chunk & first_chunk) {
 	ns_analyzed_time_image_chunk chunk(chunk_);
 	//if the registration needs to be initialized, do so.
-	if (state.registration_offset_count <= alignment_time_kernel_width)
-		chunk = initiate_image_registration(chunk_,state);
-	
+	if (state.registration_offset_count < alignment_time_kernel_width) {
+		chunk = initiate_image_registration(chunk_, state);
+		//we've consumed the whole chunk initializing image registration.  We're done!
+		if (chunk.start_i == chunk.stop_i)
+			return;
+	}
 
 	//make alignment object
 		//image is offset by maximum_alignment offset in each direction
 	//but we the largest vertical alignment in either direction is actually half that,
 	//because two consecutive frames can be off by -max and max, producing a overal differential of 2*max offset between the two images
 
-	ns_vector_2i max_alignment_offset(maximum_alignment_offset().x/2-movement_detection_kernal_half_width,
-											maximum_alignment_offset().y/2-movement_detection_kernal_half_width);
+	ns_vector_2i max_alignment_offset(maximum_alignment_offset().x / 2 - movement_detection_kernal_half_width,
+		maximum_alignment_offset().y / 2 - movement_detection_kernal_half_width);
 	if (max_alignment_offset.x < 0) max_alignment_offset.x = 0;
 	if (max_alignment_offset.y < 0) max_alignment_offset.y = 0;
 
 	const ns_vector_2i bottom_offset(maximum_alignment_offset());
 	const ns_vector_2i top_offset(maximum_alignment_offset());
+
+	ns_calc_best_alignment align(NS_SUBPIXEL_REGISTRATION_CORSE, NS_SUBPIXEL_REGISTRATION_FINE, maximum_alignment_offset(), maximum_local_alignment_offset(), bottom_offset, top_offset);
 	
-	ns_calc_best_alignment align(NS_SUBPIXEL_REGISTRATION_CORSE,NS_SUBPIXEL_REGISTRATION_FINE,maximum_alignment_offset(),maximum_local_alignment_offset(),bottom_offset,top_offset);
+	//ns_calc_best_alignment_fast align2(maximum_alignment_offset(), maximum_local_alignment_offset(), bottom_offset, top_offset);
 
 	const long time_kernal(alignment_time_kernel_width);
 
 	//define some constants
 	ns_image_properties prop;
 	set_path_alignment_image_dimensions(prop);
-	ns_vector_2i d(maximum_alignment_offset());	
+	ns_vector_2i d(maximum_alignment_offset());
 	const ns_vector_2i h_sub(ns_vector_2i(state.consensus.properties().width,
-										  state.consensus.properties().height)
-										  -d);
-	long step(chunk.forward()?1:-1);
-	for (long i = chunk.start_i; ; i+=step){
+		state.consensus.properties().height)
+		- d);
+	long step(chunk.forward() ? 1 : -1);
+	for (long i = chunk.start_i; ; i += step) {
 		if (chunk.forward() && i >= chunk.stop_i)
 			break;
 		if (!chunk.forward() && i <= chunk.stop_i)
@@ -4082,19 +4519,47 @@ void ns_analyzed_image_time_path::calculate_image_registration(const ns_analyzed
 
 		if (elements[i].excluded) continue;
 
-		if (!elements[i-step*time_kernal].path_aligned_image_is_loaded()){
+		if (!elements[i - step*time_kernal].path_aligned_image_is_loaded()) {
 			throw ns_ex("Image for ") << i - step*time_kernal << " isn't loaded. (step - " << step << "\n";
 		}
-		#ifdef NS_OUTPUT_ALGINMENT_DEBUG
+#ifdef NS_OUTPUT_ALGINMENT_DEBUG
 		if (i == 34)
 			std::cerr << "WHA";
-		#endif
+#endif
+		//xxx add synthetic shift to a random amount up and left.
+		elements[i].synthetic_offset = ns_vector_2d(0, 0);// ns_vector_2d((rand() % 50) / 10.0, (rand() % 50) / 10.0);
+	/*	for (unsigned int y = 0; y < elements[i].path_aligned_images->image.properties().height - ceil(elements[i].synthetic_offset.y)-1; y++){
+			for (unsigned int x = 0; x < elements[i].path_aligned_images->image.properties().width - ceil(elements[i].synthetic_offset.x)-1; x++) {
+				elements[i].path_aligned_images->image[y][x] = elements[i].path_aligned_images->image.sample_d(y + elements[i].synthetic_offset.y, x + elements[i].synthetic_offset.x);
+			}
+			for (unsigned int x = elements[i].path_aligned_images->image.properties().width - ceil(elements[i].synthetic_offset.x)-1; x < elements[i].path_aligned_images->image.properties().width; x++)
+				elements[i].path_aligned_images->image[y][x] = 0;
+		}
+		for (unsigned int y = elements[i].path_aligned_images->image.properties().height - ceil(elements[i].synthetic_offset.y)-1; y < elements[i].path_aligned_images->image.properties().height; y++) {
+			for (unsigned int x = 0; x < elements[i].path_aligned_images->image.properties().width; x++)
+				elements[i].path_aligned_images->image[y][x] = 0;
+		}
+		cout << "Synthetic:" << elements[i].synthetic_offset << "\n";
+		*/
+		ns_high_precision_timer t;
+		t.start();
+	//	for (unsigned int kk = 0; kk < 3; kk++)
 		elements[i].registration_offset = align(state,elements[i].path_aligned_images->image,elements[i].saturated_offset);
+		elements[i].alignment_times[0] = t.stop() ;
 		#ifdef NS_OUTPUT_ALGINMENT_DEBUG
 		cerr << "Alignment: " << elements[i].registration_offset << "\n";
 		#endif
-		state.registration_offset_sum += (elements[i].registration_offset - elements[i-step*time_kernal].registration_offset);
+		t.start();
+		//for (unsigned int kk = 0; kk < 3; kk++)
+		elements[i].registration_offset_fast = fast_alignment(state, elements[i].path_aligned_images->image, elements[i].saturated_offset);
+		elements[i].alignment_times[1] = t.stop();
+		cerr << "\nSlow     :" << elements[i].registration_offset  << " (" << (elements[i].alignment_times[0] / 100) / 10.0 << ")\n";
+		cerr << "Fast     :" << elements[i].registration_offset_fast << " (" << (elements[i].alignment_times[1] / 100) / 10.0 << ")\n";
 
+
+	//	t.start();
+		state.registration_offset_sum += (elements[i].registration_offset - elements[i-step*time_kernal].registration_offset);
+		//elements[i].alignment_times[1] = t.stop();
 		for (long y = d.y; y < h_sub.y; y++){
 			for (long x = d.x; x < h_sub.x; x++){
 				state.consensus		 [y][x]+= elements[i            ].path_aligned_images->image.sample_f(y-elements[i].registration_offset.y,x-elements[i].registration_offset.x);
@@ -4119,6 +4584,12 @@ struct ns_index_orderer{
 	unsigned long index;
 	const T * data;
 };
+
+ns_calc_best_alignment_fast ns_analyzed_image_time_path::fast_alignment(ns_analyzed_image_time_path::maximum_alignment_offset(), 
+													ns_analyzed_image_time_path::maximum_local_alignment_offset(), 
+													ns_analyzed_image_time_path::maximum_alignment_offset(), 
+													ns_analyzed_image_time_path::maximum_alignment_offset());
+
 
 ns_analyzed_image_time_path_group::ns_analyzed_image_time_path_group(const unsigned long group_id_, const ns_64_bit region_info_id,const ns_time_path_solution & solution_, const ns_death_time_annotation_time_interval & observation_time_interval,ns_death_time_annotation_set & rejected_annotations,ns_time_path_image_movement_analysis_memory_pool & memory_pool){
 	

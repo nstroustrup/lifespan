@@ -1229,7 +1229,8 @@ public:
 	}
 
 	///Resize the image using bilinear interpolation
-	void resample(const ns_image_properties & new_dimentions, ns_image_whole<ns_component> & out) const{
+	template<class ns_component2>
+	void resample(const ns_image_properties & new_dimentions, ns_image_whole<ns_component2> & out) const{
 
 		if (new_dimentions == properties()){
 			this->pump(out,512);
@@ -1253,7 +1254,7 @@ public:
 		//if one dimention is expanded while the other shrunk,
 		//first expand in the larger direction, then shrink in the smaller.
 		if (sx < 1 && sy > 1){
-			ns_image_whole<ns_component> temp;
+			ns_image_whole<ns_component2> temp;
 			ns_image_properties t = d;
 			t.width = properties().width;
 			temp.init(t);
@@ -1261,7 +1262,7 @@ public:
 			temp.resample(d,out);
 		}
 		if (sx > 1 && sy < 1){
-			ns_image_whole<ns_component> temp;
+			ns_image_whole<ns_component2> temp;
 			ns_image_properties t = d;
 			t.height = properties().height;
 			temp.init(t);

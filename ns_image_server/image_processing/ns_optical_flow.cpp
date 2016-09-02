@@ -3,10 +3,10 @@
 
 //set somewhere  if you want posture analysis to run partially on the GPU
 //#define NS_USE_ITK_GPU
-#undef NS_USE_ITK_GPU
+//#undef NS_USE_ITK_GPU
 
 #undef NS_USE_LEVEL_SET_REGISTRATION
-
+#undef NS_USE_ITK_GPU
 #include "itkHistogramMatchingImageFilter.h"
 
 #ifndef NS_USE_ITK_GPU
@@ -232,13 +232,15 @@ struct ns_optical_flow_quantifications {
 	}
 	ns_optical_flow_quantification dx, dy, dmag, t1, t2, diff, sc_mag;
 };
+
+#include "ns_high_precision_timer.h"
 void ns_optical_flow::test(){
 	try {
 		const int n(36);
 		std::string dir("C:\\server\\debug\\");
 		ns_dir dir_list;
 		dir_list.load(dir);
-		int specific_worm = 13;
+		int specific_worm = -1;// 13;
 
 		std::vector<int> number_of_images(n, 0);
 		if (specific_worm != -1) {
@@ -283,19 +285,24 @@ void ns_optical_flow::test(){
 					}
 			}
 		}
+
+
 		std::vector<ns_optical_flow_quantifications> quantifications(n - 1);
 		std::ofstream out_quant((dir + "out\\quantification.csv").c_str());
 		out_quant << "worm_id,timepoint,";
 		ns_optical_flow_quantifications::write_header(out_quant);
 		out_quant << "\n";
 		ns_image_standard im;
+
+		ns_64_bit sum(0), N(0);
+		double mk(0), sk(0), NN(0);
+
 		for (unsigned int k = 0; k < images.size(); k++) {
 			std::cerr << "processing " << k << " of " << n << "\n";
 			if (number_of_images[k] <2)
 				continue;
 
 			//
-			number_of_images[k] = 3;
 
 			const long border(10);
 			ns_image_properties p(images[k][0].properties());
@@ -316,7 +323,20 @@ void ns_optical_flow::test(){
 				std::cerr << (i - 2) << "...";
 				flow.Dim1.from(images[k][i - 1]);
 				flow.Dim2.from(images[k][i]);
-				flow.calculate(30, 0);
+				ns_high_precision_timer timer;
+				timer.start();
+				flow.calculate(30, 0,3/255.0f);
+				const ns_64_bit v(timer.stop());
+				sum += v;
+				//running variance
+				if (NN > 0) {
+					const double mk_1(mk);
+					mk = mk + (v - mk) / NN;
+					sk = sk + (v - mk_1)*(v - mk);
+				}
+				else mk = v;
+				NN++;
+				std::cout << round(sum / NN / pow(10.0,4))/100 << "+-" << round(sqrt(sk / (NN - 1))/pow(10.0, 4))/100 << "\n";
 
 				flow.get_movement(vx[i - 1], vy[i - 1]);
 
@@ -420,14 +440,18 @@ void ns_optical_flow::calculate(const int num_it, const float gaussian_stdev, co
 	flow_processor->filter->SetIntensityDifferenceThreshold(min_intensity_difference);
 
 #if !defined NS_USE_ITK_GPU && defined NS_USE_LEVEL_SET_REGISTRATION
-
-		flow_processor->filter->SetGradientSmoothingStandardDeviations(gaussian_stdev);
+	double g(gaussian_stdev);
+	if (g == 0)
+		g = .1;
+		flow_processor->filter->SetGradientSmoothingStandardDeviations(g);
 		flow_processor->filter->SetAlpha(1 / 255.0f / 20.0f);
-#else
+	#else
+	#ifndef NS_USE_ITK_GPU
+		flow_processor->filter->SetNumberOfThreads(1);
+	#endif
 	flow_processor->filter->SetStandardDeviations(gaussian_stdev);
 	flow_processor->filter->SetUpdateFieldStandardDeviations(.1);
 	flow_processor->filter->SetSmoothUpdateField(0);
-	flow_processor->filter->SetNumberOfThreads(1);
 #endif
 
 	flow_processor->filter->Update();

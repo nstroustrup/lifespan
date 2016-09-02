@@ -49,7 +49,10 @@ void ns_save_image(const std::string & filename, const ns_image_whole<ns_compone
 	}
 	//save tiff
 	if (extension == "tif" || extension == "tiff"){
-		ns_tiff_image_output_file<ns_component> tiff_out(ns_tiff_compression_lzw);
+		ns_tiff_compression_type t(ns_tiff_compression_zip);
+		if (sizeof(ns_component) == 1)
+			t = ns_tiff_compression_lzw;
+		ns_tiff_image_output_file<ns_component> tiff_out(t);
 		ns_image_stream_file_sink<ns_component> file_sink(filename,tiff_out,1024);
 		image.pump(file_sink,1024);
 		return;

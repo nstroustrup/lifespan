@@ -1096,8 +1096,8 @@ int main(int argc, char * argv[]){
 		
 		image_server.os_signal_handler.set_signal_handler(ns_interrupt,exit_signal_handler);
 		
-		ns_optical_flow flow;
-		flow.test();
+		//ns_optical_flow flow;
+		//flow.test();
 		#ifndef _WIN32
 			//start a crash daemon to handle server crashes
 			ns_image_server_crash_daemon crash_daemon;

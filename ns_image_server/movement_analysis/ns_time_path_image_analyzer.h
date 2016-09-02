@@ -5,6 +5,7 @@
 #include "ns_survival_curve.h"
 #include "ns_time_path_posture_movement_solution.h"
 #include "ns_optical_flow_quantification.h"
+#include "ns_subpixel_image_alignment.h"
 
 ns_analyzed_image_time_path_death_time_estimator * ns_get_death_time_estimator_from_posture_analysis_model(const ns_posture_analysis_model & m);
 
@@ -416,7 +417,12 @@ private:
 	
 	//this is the offset of the worm in the movement registered image
 	//i.e how far the worm is moved by the registration algorithm from it's position in the path_aligned images.
-	ns_vector_2d registration_offset;
+	ns_vector_2d registration_offset,
+				 registration_offset_fast;
+
+	//xxx
+	ns_64_bit alignment_times[2];
+	ns_vector_2d synthetic_offset;
 
 //	const ns_detected_worm_info * worm_;
 	ns_vector_2i context_position_in_region_vis_image;
@@ -494,16 +500,6 @@ struct ns_time_series_denoising_parameters{
 			default: throw ns_ex("Unknown normalization technique:") << (unsigned long)movement_score_normalization;
 		}
 	}
-};
-
-struct ns_alignment_state{
-	void clear();
-	ns_image_whole<double> consensus;
-	ns_image_whole<ns_16_bit> consensus_count;
-	ns_image_whole<float> current_round_consensus;
-	ns_vector_2d registration_offset_sum;
-	unsigned long registration_offset_count;
-	inline ns_vector_2d registration_offset_average(){return registration_offset_sum/(double)registration_offset_count;}
 };
 
 	
@@ -664,6 +660,9 @@ public:
 
 
 private:
+
+	static ns_calc_best_alignment_fast fast_alignment;
+
 		
 	ns_time_path_limits time_path_limits;
 

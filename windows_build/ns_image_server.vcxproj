@@ -106,7 +106,8 @@
       <Optimization>Disabled</Optimization>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
       <BufferSecurityCheck>true</BufferSecurityCheck>
-      <PreprocessorDefinitions>_CRT_SECURE_NO_DEPRECATE;WIN32;NTDDI_VERSION=NTDDI_WINXPSP2;_WIN32_WINNT=0x501;WINVER=0x0501;TRILIBRARY;CPU86;NO_TIMER;ANSI_DECLARATORS;NS_DEFAULT_FONT="c:/windows/fonts/ARIAL.TTF";NS_INI_PATH="c:\\server\\ns_image_server.ini";ARCH_IS_LITTLE_ENDIAN;INCLUDE_STDAFX;NS_USE_ITK_GPU;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_CRT_SECURE_NO_DEPRECATE;WIN32;NTDDI_VERSION=NTDDI_WINXPSP2;_WIN32_WINNT=0x501;WINVER=0x0501;TRILIBRARY;CPU86;NO_TIMER;ANSI_DECLARATORS;NS_DEFAULT_FONT="c:/windows/fonts/ARIAL.TTF";NS_INI_PATH="c:\\server\\ns_image_server.ini";ARCH_IS_LITTLE_ENDIAN;INCLUDE_STDAFX;NS_USE_ITK_GPU;NS_USE_INTEL_IPP;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <EnableEnhancedInstructionSet>AdvancedVectorExtensions2</EnableEnhancedInstructionSet>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -142,7 +143,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <BufferSecurityCheck>false</BufferSecurityCheck>
-      <PreprocessorDefinitions>_CRT_SECURE_NO_DEPRECATE;WIN32;NTDDI_VERSION=NTDDI_WINXPSP2;_WIN32_WINNT=0x501;WINVER=0x0501;TRILIBRARY;CPU86;NO_TIMER;ANSI_DECLARATORS;NS_DEFAULT_FONT="c:/windows/fonts/ARIAL.TTF";NS_INI_PATH="c:\\server\\ns_image_server.ini";ARCH_IS_LITTLE_ENDIAN;INCLUDE_STDAFX;NS_USE_ITK_GPU;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_CRT_SECURE_NO_DEPRECATE;WIN32;NTDDI_VERSION=NTDDI_WINXPSP2;_WIN32_WINNT=0x501;WINVER=0x0501;TRILIBRARY;CPU86;NO_TIMER;ANSI_DECLARATORS;NS_DEFAULT_FONT="c:/windows/fonts/ARIAL.TTF";NS_INI_PATH="c:\\server\\ns_image_server.ini";ARCH_IS_LITTLE_ENDIAN;INCLUDE_STDAFX;NS_USE_ITK_GPU;NS_USE_INTEL_IPP;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <StringPooling>true</StringPooling>
       <EnableEnhancedInstructionSet>AdvancedVectorExtensions2</EnableEnhancedInstructionSet>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>

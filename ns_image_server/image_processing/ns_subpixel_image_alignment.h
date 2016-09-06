@@ -25,7 +25,7 @@ public:
 	enum { ns_max_pyramid_size = 30 };
 	ns_calc_best_alignment_fast(const ns_vector_2i & max_offset_, const ns_vector_2i &local_offset_, const ns_vector_2i &bottom_offset_, const ns_vector_2i &size_offset_);
 	~ns_calc_best_alignment_fast();
-	ns_vector_2d operator()(ns_alignment_state & state, const ns_image_standard & image, bool & saturated_offset);
+	ns_vector_2d operator()(const ns_vector_2d & max_alignment, ns_alignment_state & state, const ns_image_standard & image, bool & saturated_offset);
 
 	void clear();
 
@@ -33,6 +33,10 @@ public:
 	/*ns_image_whole<float> grad_x[ns_max_pyramid_size];
 	ns_image_whole<float> grad_y[ns_max_pyramid_size];
 	ns_image_whole<float> diff[ns_max_pyramid_size];*/
+
+
+	//xxx
+	ns_vector_2d debug_gold_standard_shift;
 
 private:
 	const ns_vector_2<float> max_offset, local_offset, bottom_offset, size_offset;

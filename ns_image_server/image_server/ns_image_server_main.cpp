@@ -690,6 +690,10 @@ ns_image_server_sql * ns_connect_to_available_sql_server(){
 			return sql;
 		}
 }
+#ifdef NS_USE_INTEL_IPP
+#include "ipp.h"
+#endif
+
 #include "ns_ojp2k.h"
 #include "ns_image_registration.h"
 #include "ns_optical_flow.h"
@@ -724,7 +728,12 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLi
 #else
 int main(int argc, char * argv[]){
 #endif
+
+	#ifdef NS_USE_INTEL_IPP
+	ippInit();
+	#endif
 	/*
+
 	try {
 		ns_opengl_test("c:\\server\\");
 	}
@@ -1141,6 +1150,8 @@ int main(int argc, char * argv[]){
 			  ns_thread::sleep(1);
 			}
 		#endif
+
+
 		//don't act as an image capture server if we just want to copy over images.
 		if (post_dispatcher_init_command == ns_run_pending_image_transfers){
 			image_server.override_ini_specified_image_capture_server_behavior(false);

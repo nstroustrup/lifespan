@@ -3095,20 +3095,24 @@ public:
 
 		//bounds check the additional shift.
 		ns_vector_2d tl(tl_), br(br_);
-		//tl += initial_offset;
-		//br -= initial_offset;
-		if (tl.x < initial_offset.x) tl.x = initial_offset.x;
-		if (tl.y < initial_offset.y) tl.y = initial_offset.y;
-		if (initial_offset.x >= im1.properties().width || initial_offset.y >= im1.properties().height ||
-			initial_offset.x >= im2.properties().width || initial_offset.y >= im2.properties().height)
-			throw ns_ex("Invalid shift during gradient registration: ") << initial_offset;
+		if (tl.x - initial_offset.x < 0) tl.x = initial_offset.x;
+		if (tl.y - initial_offset.y < 0) tl.y = initial_offset.y;
 
-		if (br.x > im2.properties().width-initial_offset.x) br.x = im2.properties().width - initial_offset.x;
-		if (br.y > im2.properties().height-initial_offset.y) br.y = im2.properties().height -initial_offset.y;
+		if (br.x - initial_offset.x > im2.properties().width) br.x = im2.properties().width + initial_offset.x;
+		if (br.y - initial_offset.y > im2.properties().height) br.y = im2.properties().height + initial_offset.y;
+		if (br.x - initial_offset.x > im1.properties().width) br.x = im1.properties().width + initial_offset.x;
+		if (br.y - initial_offset.y > im1.properties().height) br.y = im1.properties().height + initial_offset.y;
+		if (br.x <= tl.x + 2 || br.y <= tl.y + 2) { //the plus 2s reflect the fact we're running a 3 width kernel and ignoring the 1 pixel-wide boundaries
+			//cerr <<	"Invalid shift during gradient registration: (" << initial_offset.x << "," << initial_offset.y << ") {" << tl_ << ";" << br_ << "} [" << im1.properties().width << ", " << im1.properties().height << "]";
 
-		if (br.y < tl.y + 2 || br.x < tl.x + 2)
-			throw ns_ex("Attempting to make a too-small gradient estimate!");
-		ns_image_properties p(br.y - tl.y - 2, br.x - tl.x - 2,1);
+			throw ns_ex("Invalid shift during gradient registration: (") << initial_offset.x << "," << initial_offset.y << ") {" << tl_ << ";" << br_ << "} [" << im1.properties().width << ", " << im1.properties().height << "]";
+		}
+		ns_image_properties p(floor(br.y) - ceil(tl.y) - 2, floor(br.x) - ceil(tl.x) - 2,1);
+
+		//cerr << "{" << tl_ << ";" << br_ << "}->{" << tl << ";" << br << "} (" << initial_offset.x << "," << initial_offset.y << ")"
+			//	"[" << im1.properties().width << ", " << im1.properties().height << "]->[" << p.width << "," << p.height << "]\n";
+
+
 		//calculate gradients;
 		grad_x.resize(p);
 		grad_y.resize(p);
@@ -3118,21 +3122,26 @@ public:
 	//	for (int y = tl.y + 1; y < br.y - 1; y++) {
 	//		for (int x = tl.x + 1; x < br.x - 1; x++) {
 				//we want to apply the offset to im2, so we pull pixels offset in the opposite direction of the desired shift
-				const double x_(x - initial_offset.x + tl.x), 
-							y_(y - initial_offset.y + tl.y);
+				const double x_(x - initial_offset.x + tl.x+1),  //the plus one is because the grad_x is 2 smaller than im2, because we ignore the boundaries of the kernel
+							y_(y - initial_offset.y + tl.y+1);
 				grad_x[y][x] = .5*(im2.sample_d(y_, x_ + 1) - im2.sample_d(y_, x_ - 1));
 				grad_y[y][x] = .5*(im2.sample_d(y_+1,x_) - im2.sample_d(y_-1, x_));
 
-				diff[y][x] = im2.sample_d(y_,x_) - im1.sample_d(y + tl.y, x + tl.x);
+				diff[y][x] = im2.sample_d(y_,x_) - im1.sample_d(y + tl.y+1, x + tl.x+1);
 			}
 		}
 
 		return calc_shifts_from_grad(p);
 	}
-	ns_vector_2d calc_shifts_from_grad(const ns_image_properties &p) const;
+	ns_vector_2d calc_shifts_from_grad(const ns_image_properties &p) ;
 //xxx
-private:
+//private:
 	ns_image_whole<double> grad_x, grad_y, diff;
+	double A[4]; //2x2 matrix
+	double b[2];//2x1 vector
+	double LU[4];//2x2 matrix (Cholesky decomposition of A)
+
+	
 };
 
 
@@ -3147,9 +3156,9 @@ void ns_gradient_shift::clear() {
 	grad_y.clear();
 }
 
-ns_vector_2d ns_gradient_shift::calc_shifts_from_grad(const ns_image_properties &p) const {
-	double A[4] = { 0,0,0,0 }; //2x2 matrix
-	double b[2] = { 0,0 };  //2x1 vector
+ns_vector_2d ns_gradient_shift::calc_shifts_from_grad(const ns_image_properties &p)  {
+	A[0] = A[1] = A[2] = A[3] = b[0] = b[1] = 0;
+	
 	for (unsigned long y = 0; y < p.height; y++)
 		for (unsigned long x = 0; x < p.width; x++) {
 			A[0] += grad_x[y][x] * grad_x[y][x];
@@ -3159,8 +3168,12 @@ ns_vector_2d ns_gradient_shift::calc_shifts_from_grad(const ns_image_properties 
 			b[1] -= grad_y[y][x] * diff[y][x];
 		}
 	A[2] = A[1];
-	//	double I[2] = { 1,1 };//identity matrix
-	double LU[4];//Cholesky decomposition
+
+	//calculate the determinant to test that matrix is singular
+	//if it is, give up.
+	if (A[0] * A[3] - A[1] * A[2] ==0)
+		return ns_vector_2d(0, 0);
+
 	double tmp[2];
 
 	ns_Cholesky(2, A, LU);
@@ -3171,8 +3184,7 @@ ns_vector_2d ns_gradient_shift::calc_shifts_from_grad(const ns_image_properties 
 
 	return ns_vector_2d(-C[0], -C[1]);
 }
-#define USE_INTEL_IPP
-#ifdef USE_INTEL_IPP
+#ifdef NS_USE_INTEL_IPP
 #include "ipp.h"
 #ifdef _MSC_VER
 #define finline                     __forceinline
@@ -3181,12 +3193,22 @@ ns_vector_2d ns_gradient_shift::calc_shifts_from_grad(const ns_image_properties 
 #endif
 
 template<class T>
-void ns_intel_safe_delete(T * & pointer) {
+void ns_ippi_safe_delete(T * & pointer) {
 	if (pointer == 0) return;
 	T * tmp(pointer);
 	pointer = 0;
 	ippiFree(tmp);
 }
+template<class T>
+void ns_ipps_safe_delete(T * & pointer) {
+	if (pointer == 0) return;
+	T * tmp(pointer);
+	pointer = 0;
+	ippsFree(tmp);
+}
+
+
+//#define NS_DEBUG_IMAGE_ACCESS
 class ns_intel_image_32f {
 public:
 	ns_intel_image_32f() :buffer(0) {}
@@ -3196,21 +3218,30 @@ public:
 	finline Ipp32f &  val(const int & y, const int & x) { return buffer[y*line_step_in_pixels + x]; }
 	finline const Ipp32f & val(const int & y, const int & x) const { return buffer[y*line_step_in_pixels + x]; }
 
-	const double finline sample_d(const double y, const double x) const {
+	const Ipp32f
+		//xxx
+#ifndef NS_DEBUG_IMAGE_ACCESS
+		finline
+#endif
+		sample_d(const float y, const float x) const {
 
 		const int p0x(xs_float::xs_FloorToInt(x)),
 			p0y(xs_float::xs_FloorToInt(y));
 		const int p1x(p0x + 1),
 			p1y(p0y + 1);
-		const double dx(x - (double)p0x),
-			dy(y - (double)p0y);
-		const double d1x(1.0 - dx),
+		const float dx(x - (float)p0x),
+			dy(y - (float)p0y);
+		const float d1x(1.0 - dx),
 			d1y(1.0 - dy);
 
 #ifdef NS_DEBUG_IMAGE_ACCESS
-		if (p0y >= NS_SR_PROPS.height || p1y >= NS_SR_PROPS.height ||
-			p0x >= NS_SR_PROPS.width || p1x >= NS_SR_PROPS.width)
-			throw ns_ex("Out of bound access!");
+		if (p0y < 0 || p1y < 0 ||
+			p0x < 0 || p1x < 0 ||
+			p0y >= properties_.height || p1y >= properties_.height ||
+			p0x >= properties_.width || p1x >= properties_.width) {
+			cerr << "ns_intel_image_32f::Out of bound access: (" << x << "," << y << ") [" << properties_.width << "," << properties_.height << "]: (" << p0x << "," << p0y << ")-(" << p1x << "," << p1y << ")\n";
+			throw ns_ex("ns_intel_image_32f::Out of bound access: (") << x << "," << y << "): (" << p0x << "," << p0y << ")-(" << p1x << "," << p1y << ")";
+		}
 #endif
 		return	val(p0y, p0x) * (d1y)*(d1x)+
 			val(p0y, p1x) * (d1y)*(dx)+
@@ -3222,9 +3253,23 @@ public:
 	int  init(const ns_image_properties & prop) {
 		return init(prop.width, prop.height);
 	}
-	void clear() { ns_intel_safe_delete(buffer); }
+	void clear() { 
+		properties_.width = 0; 
+		properties_.height = 0;
+		line_step_in_bytes = 0; 
+		line_step_in_pixels = 0; 
+		ns_ippi_safe_delete(buffer);
+	}
 	int init(const int width, const int height){
+		if (properties_.width == width && properties_.height == height)
+			return line_step_in_bytes;
+
+		clear();
 		buffer = ippiMalloc_32f_C1(width, height, &line_step_in_bytes);
+		if (buffer == NULL) {
+			ippiFree(buffer);
+			throw ns_ex("ns_intel_image_32f::Could not allocate buffer ") << width << "," << height;
+		}
 		line_step_in_pixels = line_step_in_bytes / sizeof(Ipp32f);
 		properties_.width = width;
 		properties_.height = height;
@@ -3257,10 +3302,10 @@ public:
 		for (unsigned int i = 0; i < ns_calc_best_alignment_fast::ns_max_pyramid_size; i++)
 			image_scaled[i].clear();
 		image_size.width = image_size.height = 0;
-		ns_intel_safe_delete(pPyrLStateBuf);
-		ns_intel_safe_delete(pPyrStruct);
-		ns_intel_safe_delete(pPyrBuffer);
-		ns_intel_safe_delete(pPyrStrBuffer);
+		ns_ipps_safe_delete(pPyrLStateBuf);
+		ns_ipps_safe_delete(pPyrStruct);
+		ns_ipps_safe_delete(pPyrBuffer);
+		ns_ipps_safe_delete(pPyrStrBuffer);
 	}
 	~ns_gaussian_pyramid() {clear();}
 
@@ -3295,7 +3340,9 @@ private:
 	void allocate(const ns_image_properties & image) {
 
 		long min_d(image.width < image.height ? image.width : image.height);
-		num_current_pyramid_levels = log2(min_d) - 2; 
+		//if we go resample to images smaller than 16x16 pixels, our gradient calculations
+		//we lose the important features we want to align.
+		num_current_pyramid_levels = log2(min_d) - 4;
 
 		/* Computes the temporary work buffer size */
 		IppiSize    roiSize = { image.width,image.height };
@@ -3303,19 +3350,19 @@ private:
 		const int kernel_size = 5;
 		Ipp32f kernel[kernel_size] = { 1.f, 4.f, 6.f,4.f,1.f };
 
-		int status = ippiPyramidGetSize(&pyrStructSize, &pyrBufferSize, num_current_pyramid_levels-1, roiSize, rate);
+		int status = ippiPyramidGetSize(&pyrStructSize, &pyrBufferSize, num_current_pyramid_levels - 1, roiSize, rate);
 		if (status != ippStsNoErr)
 			throw ns_ex("Could not estimate intel pyramid size");
 		if (pyrStructSize > max_pyrStructSize || pyrBufferSize > max_pyrBufferSize) {
 			max_pyrStructSize = pyrStructSize;
 			max_pyrBufferSize = pyrBufferSize;
-			ns_intel_safe_delete(pPyrBuffer);
-			ns_intel_safe_delete(pPyrStrBuffer);
+			ns_ipps_safe_delete(pPyrBuffer);
+			ns_ipps_safe_delete(pPyrStrBuffer);
 			pPyrBuffer = ippsMalloc_8u(pyrBufferSize);
 			pPyrStrBuffer = ippsMalloc_8u(pyrStructSize);
 		}
 		/* Initializes Gaussian structure for pyramids */
-		status = ippiPyramidInit(&pPyrStruct, num_current_pyramid_levels -1, roiSize, rate, pPyrStrBuffer, pPyrBuffer);
+		status = ippiPyramidInit(&pPyrStruct, num_current_pyramid_levels - 1, roiSize, rate, pPyrStrBuffer, pPyrBuffer);
 		if (status != ippStsNoErr)
 			throw ns_ex("Could not make intel pyramid");
 		/* Correct maximum scale level */
@@ -3326,8 +3373,8 @@ private:
 		if (pyrLStateSize > max_pyrLStateSize || pyrLBufferSize > max_pyrLBufferSize) {
 			max_pyrLStateSize = pyrLStateSize;
 			max_pyrLBufferSize = pyrLBufferSize;
-			ns_intel_safe_delete(pPyrLStateBuf);
-			ns_intel_safe_delete(pPyrLBuffer);
+			ns_ipps_safe_delete(pPyrLStateBuf);
+			ns_ipps_safe_delete(pPyrLBuffer);
 			pPyrLStateBuf = ippsMalloc_8u(pyrLStateSize);
 			pPyrLBuffer = ippsMalloc_8u(pyrLBufferSize);
 		}
@@ -3337,14 +3384,17 @@ private:
 		if (status != ippStsNoErr)
 			throw ns_ex("Could not init pyramid layers");
 		/* Allocate pyramid layers */
-		if (image_size != image) {
-			image_size = image;
-			for (int i = 0; i < num_current_pyramid_levels; i++) 
+
+		image_size = image;
+		for (int i = 0; i < num_current_pyramid_levels; i++) {
+			if (image_scaled[i].properties().width != pPyrStruct->pRoi[i].width ||
+				image_scaled[i].properties().height != pPyrStruct->pRoi[i].height)
 				pPyrStruct->pStep[i] = image_scaled[i].init(pPyrStruct->pRoi[i].width, pPyrStruct->pRoi[i].height);
-		}
-		else 
-			for (int i = 0; i < num_current_pyramid_levels; i++)
+			else
 				pPyrStruct->pStep[i] = image_scaled[i].line_step_in_bytes;
+		}
+		for (int i = num_current_pyramid_levels; i < ns_calc_best_alignment_fast::ns_max_pyramid_size; i++)
+			image_scaled[i].clear();
 	}
 
 	//intel specific pyramid info
@@ -3378,8 +3428,13 @@ void ns_calc_best_alignment_fast::clear() {
 	gradient_shift->clear();
 }
 
+int fast_alignment_debug_id = 0;
 
-ns_vector_2d ns_calc_best_alignment_fast::operator()(ns_alignment_state & state, const ns_image_standard & image, bool & saturated_offset) {
+float ns_pos_part(float a) {return a > 0 ? a : 0;}
+float ns_neg_part(float a) { return a < 0 ? -a : 0; }
+
+//ofstream  * pyramid_buffer = 0;
+ns_vector_2d ns_calc_best_alignment_fast::operator()(const ns_vector_2d & max_alignment,ns_alignment_state & state, const ns_image_standard & image, bool & saturated_offset) {
 
 	ns_vector_2<float> best_offset(0, 0);
 	saturated_offset = false;
@@ -3391,86 +3446,173 @@ ns_vector_2d ns_calc_best_alignment_fast::operator()(ns_alignment_state & state,
 	state_pyramid->calculate(state.current_round_consensus);
 	image_pyramid->calculate(image);
 	
-	//xxx
-	/*
-	ns_image_properties prop(0, 0, 1);
-	for (unsigned int i = 0; i < state_pyramid->num_current_pyramid_levels; i++) {
-		unsigned long w(state_pyramid->image_scaled[i].properties().width + image_pyramid->image_scaled[i].properties().width);
-		unsigned long h(state_pyramid->image_scaled[i].properties().height);
-		if (h < image_pyramid->image_scaled[i].properties().height)
-			h = image_pyramid->image_scaled[i].properties().height;
-		if (prop.width < w)
-			prop.width = w;
-		prop.height += h;
-	}
-	ns_image_whole<float> dbg;
-	dbg.init(prop);
-	for (unsigned int y = 0; y < prop.height; y++)
-		for (unsigned int x = 0; x < prop.width; x++)
-			dbg[y][x] = 0;
-	unsigned long h(0);
-	for (unsigned int i = 0; i < state_pyramid->num_current_pyramid_levels; i++) {
-		for (unsigned int y = 0; y < image_pyramid->image_scaled[i].properties().height; y++)
-			for (unsigned int x = 0; x < image_pyramid->image_scaled[i].properties().width; x++)
-				dbg[h+y][x] = image_pyramid->image_scaled[i].val(y, x);
-		unsigned long w(image_pyramid->image_scaled[i].properties().width);
-		for (unsigned int y = 0; y < state_pyramid->image_scaled[i].properties().height; y++)
-			for (unsigned int x = 0; x < state_pyramid->image_scaled[i].properties().width; x++)
-				dbg[h+y][x + w] = state_pyramid->image_scaled[i].val(y, x);
-		unsigned long dh(state_pyramid->image_scaled[i].properties().height);
-		if (dh < image_pyramid->image_scaled[i].properties().height)
-			dh = image_pyramid->image_scaled[i].properties().height;
-		h += dh;
-	}
-	ns_save_image("c:\\server\\pyramid.tif", dbg);
-	//endxxx
-	*/
+
 
 	const ns_vector_2d tl(bottom_offset),
 		br((long)image.properties().width - size_offset.x,
 		(long)image.properties().height - size_offset.y);
 	//build an image pyramid
 	ns_vector_2d shift[ns_max_pyramid_size];
-
 	//walk down the image pyrmaid.  reg updates as the most accurate registration at the next level of the pyramid, based on the levels above.
 	ns_vector_2d reg(0, 0);
+	
+	///xxx
+	/*vector<ns_image_whole<float > > grad_x(state_pyramid->num_current_pyramid_levels),
+								grad_y(state_pyramid->num_current_pyramid_levels),
+								diff(state_pyramid->num_current_pyramid_levels);
+	if (pyramid_buffer == 0) {
+		pyramid_buffer = new ofstream("c:\\server\\pyramid_data.csv");
+		*pyramid_buffer << "id,downsample factor,iteration,lowest_resolution_level,A0,A1,A2,A3,B0,B1,L0,L1,L2,L3,C1 cur it,C2 cur it, C1 cumulative, C2 cumulative,Rx,Ry,Sx,Sy,diff\n";
+	}*/
 	unsigned long number_of_levels((state_pyramid->num_current_pyramid_levels < image_pyramid->num_current_pyramid_levels) ? state_pyramid->num_current_pyramid_levels : image_pyramid->num_current_pyramid_levels);
-	for (int i = number_of_levels-1; i >= 0; i--) {
+	unsigned long debug_number_of_levels_processed(0);
+	bool lowest_resolution_level(true);
+	for (int i = number_of_levels - 1; i >= 0; i--) {
 		int fold = pow(2, i);
 		reg = reg * 2;
+		try {
+			shift[i].x = shift[i].y = 0;
+			bool err(false);
+			//search around three times at the lowest resolution to iterate towards the best shift.
+			//this lets us identify larger shifts.
+			const int num_iterations_this_round( (lowest_resolution_level) ? 4 : 1);
+			for (unsigned int j = 0; j < num_iterations_this_round; j++) {
+				ns_vector_2d sh = gradient_shift->calc_gradient_shift(state_pyramid->image_scaled[i],
+					image_pyramid->image_scaled[i],
+					tl / fold, br / fold, reg + shift[i]);
 
-		shift[i] = gradient_shift->calc_gradient_shift(state_pyramid->image_scaled[i], 
-														image_pyramid->image_scaled[i],
-													tl / fold, br / fold, reg);
-		/*gradient_shift->grad_x.pump(grad_x[i], 1024);
-		gradient_shift->grad_y.pump(grad_y[i], 1024);
-		gradient_shift->diff.pump(diff[i], 1024);*/
-		reg += shift[i];
-	}
-	/*
-	//xxx
-	prop.height = 0;
-	prop.width = 3*grad_x[0].properties().width;
-	for (unsigned int i = 0; i < state_pyramid->num_current_pyramid_levels; i++) {
-		prop.height += grad_x[i].properties().height;
-	}
-	dbg.init(prop);
-	for (unsigned int y = 0; y < prop.height; y++)
-		for (unsigned int x = 0; x < prop.width; x++)
-			dbg[y][x] = 0;
-	h = 0;
-	for (unsigned int i = 0; i < state_pyramid->num_current_pyramid_levels; i++) {
-		unsigned long w(grad_x[i].properties().width);
-		for (unsigned int y = 0; y < grad_x[i].properties().height; y++)
-			for (unsigned int x = 0; x < grad_x[i].properties().width; x++) {
-				dbg[h + y][x] = grad_x[i][y][x];
-				dbg[h + y][x+w] = grad_y[i][y][x]; 
-				dbg[h + y][x+2*w] = diff[i][y][x];
+				//reject too-large shifts; 
+				//gradient registration only works well for small
+				//deviations around the set point.
+				if (fabs(sh.x) > 2 ||
+					fabs(sh.y) > 2) {
+					err = true;
+					break;
+				}
+
+				shift[i] += sh;
+/*
+				*pyramid_buffer << fast_alignment_debug_id << "," << fold << "," << j << "," << (lowest_resolution_level?"lowest":"not_lowest") << "," <<
+				gradient_shift->A[0] << "," <<
+				gradient_shift->A[1] << "," <<
+				gradient_shift->A[2] << "," <<
+				gradient_shift->A[3] << ",";
+
+				*pyramid_buffer <<
+				gradient_shift->b[0] << "," <<
+				gradient_shift->b[1] << ",";
+
+				*pyramid_buffer <<
+				gradient_shift->LU[0] << "," <<
+				gradient_shift->LU[1] << "," <<
+				gradient_shift->LU[2] << "," <<
+				gradient_shift->LU[3] << ",";
+
+				*pyramid_buffer <<
+				-sh.x << "," <<
+				-sh.y << "," <<
+				-shift[i].x << "," <<
+				-shift[i].y << "," << (err ? "ERR" : "") << ",";
+				*pyramid_buffer << reg.x*fold << "," << reg.y*fold << ",";
+
+				*pyramid_buffer << debug_gold_standard_shift.x<< "," << debug_gold_standard_shift.y << "," << (reg - debug_gold_standard_shift / fold).mag() << "\n";
+
+				pyramid_buffer->flush();
+				*/
+			//	cerr << shift[i] << "\n";
 			}
-		h += grad_x[i].properties().height;
+			lowest_resolution_level = false;
+			reg += shift[i];
+
+			/*gradient_shift->grad_x.pump(grad_x[i], 1024);
+			gradient_shift->grad_y.pump(grad_y[i], 1024);
+			gradient_shift->diff.pump(diff[i], 1024);*/
+
+			debug_number_of_levels_processed++;
+
+		
+			if (std::isnan(shift[i].x) || std::isnan(shift[i].y))
+				throw ns_ex("Registration produced a nan!");
+		//	if (i == 0 && reg.x < 10 && reg.y < 10 && (reg - debug_gold_standard_shift / fold).mag() > 40)
+			//	throw ns_ex("Bad registration!");
+
+		}
+		catch (ns_ex & ex) {
+
+		//	cerr << ex.text() << "\n";
+
+			/*
+			ns_image_properties prop(0, 0, 1);
+			for (unsigned int i = 0; i < state_pyramid->num_current_pyramid_levels; i++) {
+				unsigned long w(state_pyramid->image_scaled[i].properties().width + image_pyramid->image_scaled[i].properties().width);
+				unsigned long h(state_pyramid->image_scaled[i].properties().height);
+				if (h < image_pyramid->image_scaled[i].properties().height)
+					h = image_pyramid->image_scaled[i].properties().height;
+				if (prop.width < w)
+					prop.width = w;
+				prop.height += h;
+			}
+			ns_image_whole<float> dbg;
+			dbg.init(prop);
+			for (unsigned int y = 0; y < prop.height; y++)
+				for (unsigned int x = 0; x < prop.width; x++)
+					dbg[y][x] = 0;
+			unsigned long h(0);
+			for (unsigned int i = 0; i < state_pyramid->num_current_pyramid_levels; i++) {
+				for (unsigned int y = 0; y < image_pyramid->image_scaled[i].properties().height; y++)
+					for (unsigned int x = 0; x < image_pyramid->image_scaled[i].properties().width; x++)
+						dbg[h + y][x] = image_pyramid->image_scaled[i].val(y, x);
+				unsigned long w(image_pyramid->image_scaled[i].properties().width);
+				for (unsigned int y = 0; y < state_pyramid->image_scaled[i].properties().height; y++)
+					for (unsigned int x = 0; x < state_pyramid->image_scaled[i].properties().width; x++)
+						dbg[h + y][x + w] = state_pyramid->image_scaled[i].val(y, x);
+				unsigned long dh(state_pyramid->image_scaled[i].properties().height);
+				if (dh < image_pyramid->image_scaled[i].properties().height)
+					dh = image_pyramid->image_scaled[i].properties().height;
+				h += dh;
+			}
+
+			ns_save_image("c:\\server\\pyramid_" + ns_to_string(fast_alignment_debug_id) + ".tif", dbg);
+
+			if (debug_number_of_levels_processed > 0) {
+				prop.height = 0;
+				prop.width = 3 * (grad_x[number_of_levels - debug_number_of_levels_processed].properties().width+50);
+				prop.components = 3;
+				for (int i = 0; i < debug_number_of_levels_processed; i++) {
+					prop.height += grad_x[number_of_levels - 1 - i].properties().height+50;
+				}
+				dbg.init(prop);
+				for (unsigned int y = 0; y < prop.height; y++)
+					for (unsigned int x = 0; x < 3*prop.width; x++)
+						dbg[y][x] = 0;
+				h = 0;
+				for (int ii = 0; ii < debug_number_of_levels_processed; ii++) {
+					int i = number_of_levels - 1 - ii;
+					unsigned long w(grad_x[i].properties().width+50);
+					for (unsigned int y = 0; y < grad_x[i].properties().height; y++)
+						for (unsigned int x = 0; x < grad_x[i].properties().width; x++) {
+							dbg[h + y][3*x] = 255*ns_pos_part(grad_x[i][y][x]);
+							dbg[h + y][3 * x+1] = 255 * ns_neg_part(grad_x[i][y][x]);
+
+							dbg[h + y][3*(x + w)] = 255 * ns_pos_part(grad_y[i][y][x]);
+							dbg[h + y][3 * (x + w)+1] = 255 * ns_neg_part(grad_y[i][y][x]);
+
+							dbg[h + y][3*(x + 2 * w)] = 255* ns_pos_part(diff[i][y][x]);
+							dbg[h + y][3*(x + 2 * w)+1] = 255 * ns_neg_part(diff[i][y][x]);
+
+						}
+					h += grad_x[i].properties().height + 50;
+				}
+				ns_save_image("c:\\server\\pyramid_grad_" + ns_to_string(fast_alignment_debug_id) + ".tif", dbg);
+			}*/
+			return ns_vector_2d(0, 0);
+		}
 	}
-	ns_save_image("c:\\server\\pyramid_grad.tif", dbg);
-	*/
+	fast_alignment_debug_id++;
+	if (reg.x < -max_alignment.x) { reg.x = -max_alignment.x; saturated_offset = true; }
+	if (reg.y < -max_alignment.y) { reg.y = -max_alignment.y; saturated_offset = true; }
+	if (reg.x > max_alignment.x) { reg.x = max_alignment.x; saturated_offset = true; }
+	if (reg.y > max_alignment.y) { reg.y = max_alignment.y; saturated_offset = true; }
 	return reg;
 }
 #endif
@@ -4231,8 +4373,9 @@ void ns_analyzed_image_time_path::copy_aligned_path_to_registered_image(const ns
 			cerr << "STDIF = " << diffs[0] << "; FDIF = " << diffs[1] << "\n";
 		if (tmp_cmp == 0) {
 			tmp_cmp = new ofstream("c:\\server\\alignment_debug.csv");
-			(*tmp_cmp) << "Synx,Syny,Sx,Sy,Stime,Simage_err,Sregistration_error,Fx,Fy,Ftime,Fimage_err,Fregistration_error\n";
+			(*tmp_cmp) << "direction,Synx,Syny,Sx,Sy,Stime,Simage_err,Sregistration_error,Fx,Fy,Ftime,Fimage_err,Fregistration_error\n";
 		}
+		(*tmp_cmp) << (chunk.forward()?"forward":"backward") << ",";
 		(*tmp_cmp) << elements[i].synthetic_offset.x << "," << elements[i].synthetic_offset.y << ",";
 
 		(*tmp_cmp) << elements[i].registration_offset.x << "," << elements[i].registration_offset.y << ","
@@ -4499,8 +4642,6 @@ void ns_analyzed_image_time_path::calculate_image_registration(const ns_analyzed
 
 	ns_calc_best_alignment align(NS_SUBPIXEL_REGISTRATION_CORSE, NS_SUBPIXEL_REGISTRATION_FINE, maximum_alignment_offset(), maximum_local_alignment_offset(), bottom_offset, top_offset);
 	
-	//ns_calc_best_alignment_fast align2(maximum_alignment_offset(), maximum_local_alignment_offset(), bottom_offset, top_offset);
-
 	const long time_kernal(alignment_time_kernel_width);
 
 	//define some constants
@@ -4550,8 +4691,10 @@ void ns_analyzed_image_time_path::calculate_image_registration(const ns_analyzed
 		cerr << "Alignment: " << elements[i].registration_offset << "\n";
 		#endif
 		t.start();
-		//for (unsigned int kk = 0; kk < 3; kk++)
-		elements[i].registration_offset_fast = fast_alignment(state, elements[i].path_aligned_images->image, elements[i].saturated_offset);
+		//xxx
+		fast_alignment.debug_gold_standard_shift = elements[i].registration_offset;
+		elements[i].registration_offset_fast = fast_alignment(maximum_alignment_offset(), state, elements[i].path_aligned_images->image, elements[i].saturated_offset);
+		//elements[i].registration_offset = elements[i].registration_offset_fast;
 		elements[i].alignment_times[1] = t.stop();
 		cerr << "\nSlow     :" << elements[i].registration_offset  << " (" << (elements[i].alignment_times[0] / 100) / 10.0 << ")\n";
 		cerr << "Fast     :" << elements[i].registration_offset_fast << " (" << (elements[i].alignment_times[1] / 100) / 10.0 << ")\n";

@@ -3,9 +3,15 @@
 #include "ns_xml.h"
 #include "ns_image_tools.h"
 #include "ctmf.h"
+
+#ifdef NS_CALCULATE_OPTICAL_FLOW
 #include "ns_optical_flow.h"
 
 class ns_optical_flow_processor : public ns_optical_flow{};
+
+#endif
+
+#undef NS_DEBUG_FAST_IMAGE_REGISTRATION
 
 using namespace std;
 
@@ -30,7 +36,9 @@ ns_analyzed_image_time_path::~ns_analyzed_image_time_path(){
 		image_analysis_temp1 = 0;
 		delete[] image_analysis_temp2;
 		image_analysis_temp2 = 0;
+		#ifdef NS_CALCULATE_OPTICAL_FLOW
 		ns_safe_delete(flow);
+		#endif
 	}
 
 
@@ -627,7 +635,7 @@ void ns_time_path_image_movement_analyzer::process_raw_images(const ns_64_bit re
 					//output_allocation_state("bk",region_image_specifications.size() - 1 - t, debug_out);
 
 					if (debug_output_skip == number_of_repeats_required || t == 0 && current_round == 0) {
-						std::cout << (100 * (region_image_specifications.size() + 1 - t + region_image_specifications.size()*current_round)) / (region_image_specifications.size()*number_of_repeats_required) << "%...";
+						std::cout << (100 * (region_image_specifications.size() - 1 - t + region_image_specifications.size()*current_round)) / (region_image_specifications.size()*number_of_repeats_required) << "%...";
 						debug_output_skip = 0;
 					}
 					else debug_output_skip++;
@@ -697,7 +705,11 @@ void ns_time_path_image_movement_analyzer::process_raw_images(const ns_64_bit re
 							if (registration_chunk.start_i <= groups[i].paths[j].first_stationary_timepoint() - 1) {
 							//	cerr << "M" << i << "(" << registration_chunk.start_i << "-" << registration_chunk.stop_i << ")";
 								groups[i].paths[j].calculate_movement_images(registration_chunk);
+								#ifdef NS_CALCULATE_OPTICAL_FLOW
 								groups[i].paths[j].save_movement_images(registration_chunk, sql, ns_analyzed_image_time_path::ns_save_both, true);
+								#else
+								groups[i].paths[j].save_movement_images(registration_chunk, sql, ns_analyzed_image_time_path::ns_save_simple, true);
+								#endif
 							}
 							//cerr << "Cp" << i << "(" << chunk.start_i + path_aligned_image_clear_lag << "-" << groups[i].paths[j].elements.size() << ")";
 
@@ -716,11 +728,12 @@ void ns_time_path_image_movement_analyzer::process_raw_images(const ns_64_bit re
 								registration_chunk.start_i = 0;
 								registration_chunk.stop_i = -1;
 								groups[i].paths[j].calculate_movement_images(registration_chunk);
+								#ifdef NS_CALCULATE_OPTICAL_FLOW
 								groups[i].paths[j].save_movement_images(registration_chunk, sql, ns_analyzed_image_time_path::ns_save_both, true);
-
-
-
 								ns_safe_delete(groups[i].paths[j].flow);
+								#else
+								groups[i].paths[j].save_movement_images(registration_chunk, sql, ns_analyzed_image_time_path::ns_save_simple, true);
+								#endif
 							
 							//	cerr << "FCp" << i << "(0-" << groups[i].paths[j].elements.size() << ")";
 								for (long k = 0; k < groups[i].paths[j].elements.size(); k++) {
@@ -761,14 +774,22 @@ void ns_time_path_image_movement_analyzer::process_raw_images(const ns_64_bit re
 							continue;
 
 						ns_image_storage_source_handle<ns_8_bit> storage(image_server.image_storage.request_from_local_cache(groups[i].paths[j].volatile_storage_name(false),false));
+						#ifdef NS_CALCULATE_OPTICAL_FLOW
 						ns_image_storage_source_handle<float> flow_storage(image_server.image_storage.request_from_local_cache_float(groups[i].paths[j].volatile_storage_name(true), false));
 						groups[i].paths[j].initialize_movement_image_loading(storage, flow_storage,true);
+						#else
+									groups[i].paths[j].initialize_movement_image_loading_no_flow(storage, true);
+						#endif
 
 						ns_analyzed_time_image_chunk chunk;
 						chunk.direction = ns_analyzed_time_image_chunk::ns_forward;
 						chunk.start_i = 0;
 						chunk.stop_i = groups[i].paths[j].first_stationary_timepoint();
+						#ifdef NS_CALCULATE_OPTICAL_FLOW
 						groups[i].paths[j].load_movement_images(chunk, storage, flow_storage);
+						#else
+						groups[i].paths[j].load_movement_images_no_flow(chunk, storage);
+						#endif
 						groups[i].paths[j].end_movement_image_loading();
 						image_server.image_storage.delete_from_local_cache(groups[i].paths[j].volatile_storage_name(true));
 						image_server.image_storage.delete_from_local_cache(groups[i].paths[j].volatile_storage_name(false));
@@ -782,7 +803,11 @@ void ns_time_path_image_movement_analyzer::process_raw_images(const ns_64_bit re
 							groups[i].paths[j].elements[groups[i].paths[j].first_stationary_timepoint() - k - 1].registered_images = tmp;
 						}
 						groups[i].paths[j].quantify_movement(chunk);
+						#ifdef NS_CALCULATE_OPTICAL_FLOW
 						groups[i].paths[j].save_movement_images(chunk, sql, ns_analyzed_image_time_path::ns_save_both, false);
+						#else
+						groups[i].paths[j].save_movement_images(chunk, sql, ns_analyzed_image_time_path::ns_save_simple, false);
+						#endif
 						//we leave the image saving buffers open as we'll continue writing to them while moving forward.
 	//					groups[i].paths[j].reset_movement_image_saving();
 
@@ -873,7 +898,11 @@ void ns_time_path_image_movement_analyzer::process_raw_images(const ns_64_bit re
 							oout.flush();
 #endif
 							groups[i].paths[j].quantify_movement(chunk);
+							#ifdef NS_CALCULATE_OPTICAL_FLOW
 							groups[i].paths[j].save_movement_images(chunk, sql, ns_analyzed_image_time_path::ns_save_both, false);
+							#else
+							groups[i].paths[j].save_movement_images(chunk, sql, ns_analyzed_image_time_path::ns_save_simple, false);
+							#endif
 							//cerr << "Cp" << i << "(0-" << chunk.start_i - (long)path_aligned_image_clear_lag+1 << ")";
 							//cerr << "Cr" << i << "(0-" << chunk.start_i - (long)registered_image_clear_lag+1 << ")";
 
@@ -1056,7 +1085,10 @@ void ns_time_path_image_movement_analyzer::get_output_image_storage_locations(co
 	ns_64_bit sample_id,experiment_id;
 	ns_region_info_lookup::get_region_info(region_id,&sql,region_name,sample_name,sample_id, experiment_name, experiment_id);
 	ns_file_location_specification region_info(image_server.image_storage.get_base_path_for_region(region_id, &sql));
-
+	#ifndef NS_CALCULATE_OPTICAL_FLOW
+	if (create_only_flow)
+		throw ns_ex("Attempting to create flow image storage location in db with NS_CALCULATE_OPTICAL_FLOW set to false");
+	#endif
 	if (!create_only_flow) {
 		//delete any path data that's no longer included in this analysis...eg a reanalysis that has less groups (worms).
 		sql << "SELECT id, image_id, flow_image_id FROM path_data WHERE region_id = " << region_id << " AND group_id >= " << groups.size();
@@ -1085,8 +1117,7 @@ void ns_time_path_image_movement_analyzer::get_output_image_storage_locations(co
 			if (ns_skip_low_density_paths && groups[i].paths[j].is_low_density_path())
 				continue;
 			ns_image_server_image & im(groups[i].paths[j].output_image);
-			ns_image_server_image & im_flow(groups[i].paths[j].flow_output_image);
-	
+
 			
 			if (im.id == 0 && !create_only_flow){
 				im = image_server.image_storage.get_storage_for_path(region_info, j, i,
@@ -1095,6 +1126,9 @@ void ns_time_path_image_movement_analyzer::get_output_image_storage_locations(co
 				if (im.id == 0)
 					throw ns_ex("ns_time_path_image_movement_analyzer::get_output_image_storage_locations()::Could not generate a new path id image id.");
 			}
+			#ifdef NS_CALCULATE_OPTICAL_FLOW
+			ns_image_server_image & im_flow(groups[i].paths[j].flow_output_image);
+
 			if (im_flow.id == 0){
 				im_flow = image_server.image_storage.get_storage_for_path(region_info, j, i,
 																region_id, region_name,experiment_name, sample_name,true);
@@ -1102,7 +1136,10 @@ void ns_time_path_image_movement_analyzer::get_output_image_storage_locations(co
 				if (im_flow.id == 0)
 					throw ns_ex("ns_time_path_image_movement_analyzer::get_output_image_storage_locations()::Could not generate a new path id flow image id.");
 			}
-
+			#else
+			ns_image_server_image  im_flow;
+			im_flow.id = 0;
+			#endif
 			if (groups[i].paths[j].path_db_id == 0){
 				if (create_only_flow)
 					throw ns_ex("ns_time_path_image_movement_analyzer::get_output_image_storage_locations()::Attempting to create only a flow image even though the standard movement image doesn't exist");
@@ -3117,6 +3154,13 @@ public:
 		grad_x.resize(p);
 		grad_y.resize(p);
 		diff.resize(p);
+
+		//todo: alculation of the image gradient can likely be accelerated using the following intel IPP functions
+		//WarpBilinear
+		//GradientVectorScharr
+		//ippiSub_8u
+
+
 		for (int y = 0; y < p.height; y++) {
 			for (int x = 0; x < p.width; x++) {
 	//	for (int y = tl.y + 1; y < br.y - 1; y++) {
@@ -3296,7 +3340,7 @@ private:
 class ns_gaussian_pyramid {
 public:
 	ns_gaussian_pyramid() :image_size(0, 0, 0),
-		pyrLStateSize(0), pyrLBufferSize(0), max_pyrLStateSize(0), max_pyrLBufferSize(0), pPyrLStateBuf(), pPyrLBuffer(),
+		pyrLStateSize(0), pyrLBufferSize(0), max_pyrLStateSize(0), max_pyrLBufferSize(0), pPyrLStateBuf(0), pPyrLBuffer(0),
 		pPyrStruct(0), pPyrBuffer(0), pPyrStrBuffer(0), max_pyrBufferSize(0), max_pyrStructSize(0), pyrBufferSize(0), pyrStructSize(0) {}
 	void clear() {
 		for (unsigned int i = 0; i < ns_calc_best_alignment_fast::ns_max_pyramid_size; i++)
@@ -3411,7 +3455,7 @@ private:
 
 
 ns_calc_best_alignment_fast::ns_calc_best_alignment_fast(const ns_vector_2i & max_offset_, const ns_vector_2i &local_offset_, const ns_vector_2i &bottom_offset_, const ns_vector_2i &size_offset_) :
-	max_offset(max_offset_), local_offset(local_offset_), image_pyramid(0), state_pyramid(0), bottom_offset(bottom_offset_), size_offset(size_offset_) {
+	max_offset(max_offset_), local_offset(local_offset_), image_pyramid(0), state_pyramid(0), gradient_shift(0),bottom_offset(bottom_offset_), size_offset(size_offset_) {
 	state_pyramid = new ns_gaussian_pyramid();
 	image_pyramid = new ns_gaussian_pyramid();
 	gradient_shift = new ns_gradient_shift;
@@ -3433,7 +3477,16 @@ int fast_alignment_debug_id = 0;
 float ns_pos_part(float a) {return a > 0 ? a : 0;}
 float ns_neg_part(float a) { return a < 0 ? -a : 0; }
 
-//ofstream  * pyramid_buffer = 0;
+#ifdef NS_DEBUG_FAST_IMAGE_REGISTRATION
+ofstream  * pyramid_buffer = 0;
+
+struct ns_path_debug_info {
+	unsigned long path_id;
+	unsigned long group_id;
+	unsigned long time;
+};
+ns_path_debug_info global_path_debug_info;
+#endif
 ns_vector_2d ns_calc_best_alignment_fast::operator()(const ns_vector_2d & max_alignment,ns_alignment_state & state, const ns_image_standard & image, bool & saturated_offset) {
 
 	ns_vector_2<float> best_offset(0, 0);
@@ -3457,13 +3510,15 @@ ns_vector_2d ns_calc_best_alignment_fast::operator()(const ns_vector_2d & max_al
 	ns_vector_2d reg(0, 0);
 	
 	///xxx
-	/*vector<ns_image_whole<float > > grad_x(state_pyramid->num_current_pyramid_levels),
+#ifdef NS_DEBUG_FAST_IMAGE_REGISTRATION
+	vector<ns_image_whole<float > > grad_x(state_pyramid->num_current_pyramid_levels),
 								grad_y(state_pyramid->num_current_pyramid_levels),
 								diff(state_pyramid->num_current_pyramid_levels);
 	if (pyramid_buffer == 0) {
 		pyramid_buffer = new ofstream("c:\\server\\pyramid_data.csv");
-		*pyramid_buffer << "id,downsample factor,iteration,lowest_resolution_level,A0,A1,A2,A3,B0,B1,L0,L1,L2,L3,C1 cur it,C2 cur it, C1 cumulative, C2 cumulative,Rx,Ry,Sx,Sy,diff\n";
-	}*/
+		*pyramid_buffer << "group_id,path_id,time,human_time,id,downsample factor,iteration,lowest_resolution_level,A0,A1,A2,A3,B0,B1,L0,L1,L2,L3,C1 cur it,C2 cur it, C1 cumulative, C2 cumulative,Rx,Ry,Sx,Sy,diff\n";
+	}
+#endif
 	unsigned long number_of_levels((state_pyramid->num_current_pyramid_levels < image_pyramid->num_current_pyramid_levels) ? state_pyramid->num_current_pyramid_levels : image_pyramid->num_current_pyramid_levels);
 	unsigned long debug_number_of_levels_processed(0);
 	bool lowest_resolution_level(true);
@@ -3486,13 +3541,22 @@ ns_vector_2d ns_calc_best_alignment_fast::operator()(const ns_vector_2d & max_al
 				//deviations around the set point.
 				if (fabs(sh.x) > 2 ||
 					fabs(sh.y) > 2) {
+					if (lowest_resolution_level)
+						saturated_offset = true;
 					err = true;
 					break;
 				}
 
 				shift[i] += sh;
-/*
-				*pyramid_buffer << fast_alignment_debug_id << "," << fold << "," << j << "," << (lowest_resolution_level?"lowest":"not_lowest") << "," <<
+				#ifdef NS_DEBUG_FAST_IMAGE_REGISTRATION
+				*pyramid_buffer << global_path_debug_info.group_id << "," <<
+					global_path_debug_info.path_id << "," << 
+					global_path_debug_info.time << "," <<
+					ns_format_time_string(global_path_debug_info .time) << "," <<
+					fast_alignment_debug_id << "," << 
+					fold << "," << j << 
+					"," << (lowest_resolution_level?"lowest":"not_lowest") << "," <<
+
 				gradient_shift->A[0] << "," <<
 				gradient_shift->A[1] << "," <<
 				gradient_shift->A[2] << "," <<
@@ -3516,9 +3580,8 @@ ns_vector_2d ns_calc_best_alignment_fast::operator()(const ns_vector_2d & max_al
 				*pyramid_buffer << reg.x*fold << "," << reg.y*fold << ",";
 
 				*pyramid_buffer << debug_gold_standard_shift.x<< "," << debug_gold_standard_shift.y << "," << (reg - debug_gold_standard_shift / fold).mag() << "\n";
-
-				pyramid_buffer->flush();
-				*/
+				#endif
+				
 			//	cerr << shift[i] << "\n";
 			}
 			lowest_resolution_level = false;
@@ -3541,7 +3604,7 @@ ns_vector_2d ns_calc_best_alignment_fast::operator()(const ns_vector_2d & max_al
 
 		//	cerr << ex.text() << "\n";
 
-			/*
+			#ifdef NS_DEBUG_FAST_IMAGE_REGISTRATION
 			ns_image_properties prop(0, 0, 1);
 			for (unsigned int i = 0; i < state_pyramid->num_current_pyramid_levels; i++) {
 				unsigned long w(state_pyramid->image_scaled[i].properties().width + image_pyramid->image_scaled[i].properties().width);
@@ -3604,10 +3667,14 @@ ns_vector_2d ns_calc_best_alignment_fast::operator()(const ns_vector_2d & max_al
 					h += grad_x[i].properties().height + 50;
 				}
 				ns_save_image("c:\\server\\pyramid_grad_" + ns_to_string(fast_alignment_debug_id) + ".tif", dbg);
-			}*/
+			}
+			#endif
 			return ns_vector_2d(0, 0);
 		}
 	}
+	#ifdef NS_DEBUG_FAST_IMAGE_REGISTRATION
+	pyramid_buffer->flush();
+	#endif
 	fast_alignment_debug_id++;
 	if (reg.x < -max_alignment.x) { reg.x = -max_alignment.x; saturated_offset = true; }
 	if (reg.y < -max_alignment.y) { reg.y = -max_alignment.y; saturated_offset = true; }
@@ -4105,7 +4172,7 @@ void ns_analyzed_image_time_path::quantify_movement(const ns_analyzed_time_image
 				}
 		}
 		const unsigned long border(0);
-
+		#ifdef NS_CALCULATE_OPTICAL_FLOW
 		//note we provide image1 twice as we don't have access to image2.
 		elements[i].measurements.scaled_flow_magnitude.calculate(prop, 
 					ns_optical_flow_accessor_scaled_movement(elements[i].registered_images->flow_image_dx,
@@ -4140,7 +4207,7 @@ void ns_analyzed_image_time_path::quantify_movement(const ns_analyzed_time_image
 					ns_optical_flow_accessor_val<float>(elements[i].registered_images->flow_image_dy),
 					border,
 					*elements[i].registered_images);
-
+		#endif
 
 		double movement_sum(0),
 			   alternate_movement_sum(0);
@@ -4296,93 +4363,89 @@ void ns_analyzed_image_time_path::copy_aligned_path_to_registered_image(const ns
 		//to registered_images->image, registered_images->region_threshold, and registered_images->worm_threshold
 		//but for the registered_movement_image we only output the minimal overlap which is
 		// [maximum_alignment_offset()
-		//xxx
-		double diffs[2];
-		for (unsigned int ro = 0; ro < 2; ro++) {
-			const ns_vector_2<float> v0(ro == 0 ? elements[i].registration_offset : elements[i].registration_offset_fast);
 
-			ns_vector_2i tl(maximum_alignment_offset() + elements[i].offset_from_path);
-			ns_vector_2i br(tl + elements[i].worm_context_size());
-			if (br.x > prop.width - maximum_alignment_offset().x)
-				br.x = prop.width - maximum_alignment_offset().x;
-			if (br.y > prop.width - maximum_alignment_offset().y)
-				br.y = prop.width - maximum_alignment_offset().y;
+		const ns_vector_2<float> v0(elements[i].registration_offset);
 
-			//here we crop 2i
-			//so the registered image rage may be slightly smaller than it could be
-			//as we miss the left or right fraction of a pixel
-			ns_vector_2i tl_registered(maximum_alignment_offset() + ns_vector_2i(v0.x, v0.y) + elements[i].offset_from_path);
-			ns_vector_2i br_registered(tl_registered + elements[i].worm_context_size());
-			//ns_vector_2i br(ns_vector_2i(elements[0].path_aligned_images->image.properties().width,elements[0].path_aligned_images->image.properties().height)-maximum_alignment_offset());
+		ns_vector_2i tl(maximum_alignment_offset() + elements[i].offset_from_path);
+		ns_vector_2i br(tl + elements[i].worm_context_size());
+		if (br.x > prop.width - maximum_alignment_offset().x)
+			br.x = prop.width - maximum_alignment_offset().x;
+		if (br.y > prop.width - maximum_alignment_offset().y)
+			br.y = prop.width - maximum_alignment_offset().y;
 
-			//fill bottom
-			for (long y = 0; y < tl_registered.y; y++) {
-				for (long x = 0; x < prop.width; x++) {
-					elements[i].registered_images->image[y][x] = NS_MARGIN_BACKGROUND;
+		//here we crop 2i
+		//so the registered image rage may be slightly smaller than it could be
+		//as we miss the left or right fraction of a pixel
+		ns_vector_2i tl_registered(maximum_alignment_offset() + ns_vector_2i(v0.x, v0.y) + elements[i].offset_from_path);
+		ns_vector_2i br_registered(tl_registered + elements[i].worm_context_size());
+		//ns_vector_2i br(ns_vector_2i(elements[0].path_aligned_images->image.properties().width,elements[0].path_aligned_images->image.properties().height)-maximum_alignment_offset());
 
-					region_threshold[y][x] = NS_MARGIN_BACKGROUND;
-					worm_threshold[y][x] = NS_MARGIN_BACKGROUND;
-				}
-			}
+		//fill bottom
+		for (long y = 0; y < tl_registered.y; y++) {
+			for (long x = 0; x < prop.width; x++) {
+				elements[i].registered_images->image[y][x] = NS_MARGIN_BACKGROUND;
 
-			for (long y = tl_registered.y; y < br_registered.y; y++) {
-				//fill in left gap
-				for (long x = 0; x < (tl_registered.x); x++) {
-					elements[i].registered_images->image[y][x] = NS_MARGIN_BACKGROUND;
-					region_threshold[y][x] = NS_MARGIN_BACKGROUND;
-					worm_threshold[y][x] = NS_MARGIN_BACKGROUND;
-				}
-				//fill in center
-				for (long x = tl_registered.x; x < br_registered.x; x++) {
-					elements[i].registered_images->image[y][x] = elements[i].path_aligned_images->image.sample_f(y - v0.y, x - v0.x);
-					elements[i].path_aligned_images->sample_thresholds<ns_8_bit>(y - v0.y, x - v0.x, region_threshold[y][x], worm_threshold[y][x]);
-				}
-				//fill in right gap
-				for (long x = (br_registered.x); x < prop.width; x++) {
-					elements[i].registered_images->image[y][x] = NS_MARGIN_BACKGROUND;
-					region_threshold[y][x] = NS_MARGIN_BACKGROUND;
-					worm_threshold[y][x] = NS_MARGIN_BACKGROUND;
-				}
-			}
-			//fill in top
-			for (long y = br_registered.y; y < prop.height; y++) {
-				for (long x = 0; x < prop.width; x++) {
-					elements[i].registered_images->image[y][x] = NS_MARGIN_BACKGROUND;
-					worm_threshold[y][x] = NS_MARGIN_BACKGROUND;
-					region_threshold[y][x] = NS_MARGIN_BACKGROUND;
-				}
-			}
-			ns_dilate<16, ns_image_standard, ns_image_standard>(worm_threshold, worm_neighborhood_threshold);
-			for (unsigned int y = 0; y < worm_threshold.properties().height; y++)
-				for (unsigned int x = 0; x < worm_threshold.properties().width; x++)
-					elements[i].registered_images->set_thresholds(y, x, region_threshold[y][x], worm_threshold[y][x], worm_neighborhood_threshold[y][x]);
-
-			//xxx
-			if (i - istep > 0 && elements[i - istep].registered_image_is_loaded()) {
-				ns_64_bit sum(0);
-				for (unsigned int y = 0; y < worm_threshold.properties().height; y++)
-					for (unsigned int x = 0; x < worm_threshold.properties().width; x++)
-						sum += abs(elements[i].registered_images->image[y][x] - (long)elements[i - istep].registered_images->image[y][x]);
-
-
-				diffs[ro] = sum / ((double)worm_threshold.properties().height*worm_threshold.properties().width);
+				region_threshold[y][x] = NS_MARGIN_BACKGROUND;
+				worm_threshold[y][x] = NS_MARGIN_BACKGROUND;
 			}
 		}
 
-		if (fabs(diffs[0] - diffs[1]) > .001)
-			cerr << "STDIF = " << diffs[0] << "; FDIF = " << diffs[1] << "\n";
+		for (long y = tl_registered.y; y < br_registered.y; y++) {
+			//fill in left gap
+			for (long x = 0; x < (tl_registered.x); x++) {
+				elements[i].registered_images->image[y][x] = NS_MARGIN_BACKGROUND;
+				region_threshold[y][x] = NS_MARGIN_BACKGROUND;
+				worm_threshold[y][x] = NS_MARGIN_BACKGROUND;
+			}
+			//fill in center
+			for (long x = tl_registered.x; x < br_registered.x; x++) {
+				elements[i].registered_images->image[y][x] = elements[i].path_aligned_images->image.sample_f(y - v0.y, x - v0.x);
+				elements[i].path_aligned_images->sample_thresholds<ns_8_bit>(y - v0.y, x - v0.x, region_threshold[y][x], worm_threshold[y][x]);
+			}
+			//fill in right gap
+			for (long x = (br_registered.x); x < prop.width; x++) {
+				elements[i].registered_images->image[y][x] = NS_MARGIN_BACKGROUND;
+				region_threshold[y][x] = NS_MARGIN_BACKGROUND;
+				worm_threshold[y][x] = NS_MARGIN_BACKGROUND;
+			}
+		}
+		//fill in top
+		for (long y = br_registered.y; y < prop.height; y++) {
+			for (long x = 0; x < prop.width; x++) {
+				elements[i].registered_images->image[y][x] = NS_MARGIN_BACKGROUND;
+				worm_threshold[y][x] = NS_MARGIN_BACKGROUND;
+				region_threshold[y][x] = NS_MARGIN_BACKGROUND;
+			}
+		}
+		ns_dilate<16, ns_image_standard, ns_image_standard>(worm_threshold, worm_neighborhood_threshold);
+		for (unsigned int y = 0; y < worm_threshold.properties().height; y++)
+			for (unsigned int x = 0; x < worm_threshold.properties().width; x++)
+				elements[i].registered_images->set_thresholds(y, x, region_threshold[y][x], worm_threshold[y][x], worm_neighborhood_threshold[y][x]);
+
+		//xxx
+		if (i - istep > 0 && elements[i - istep].registered_image_is_loaded()) {
+			ns_64_bit sum(0);
+			for (unsigned int y = 0; y < worm_threshold.properties().height; y++)
+				for (unsigned int x = 0; x < worm_threshold.properties().width; x++)
+					sum += abs(elements[i].registered_images->image[y][x] - (long)elements[i - istep].registered_images->image[y][x]);
+
+
+		}
+
+		#ifdef NS_CALCULATE_SLOW_IMAGE_REGISTRATION
 		if (tmp_cmp == 0) {
 			tmp_cmp = new ofstream("c:\\server\\alignment_debug.csv");
-			(*tmp_cmp) << "direction,Synx,Syny,Sx,Sy,Stime,Simage_err,Sregistration_error,Fx,Fy,Ftime,Fimage_err,Fregistration_error\n";
+			(*tmp_cmp) << "direction,Synx,Syny,Sx,Sy,Stime,Sregistration_error,Fx,Fy,Ftime,Fregistration_error\n";
 		}
 		(*tmp_cmp) << (chunk.forward()?"forward":"backward") << ",";
 		(*tmp_cmp) << elements[i].synthetic_offset.x << "," << elements[i].synthetic_offset.y << ",";
 
 		(*tmp_cmp) << elements[i].registration_offset.x << "," << elements[i].registration_offset.y << ","
-			<< elements[i].alignment_times[0] << "," << diffs[0] << "," << (elements[i].synthetic_offset - elements[i].registration_offset).mag() << ",";
-		(*tmp_cmp) << elements[i].registration_offset_fast.x << "," << elements[i].registration_offset_fast.y << ","
-			<< elements[i].alignment_times[1] << "," << diffs[1] << "," << (elements[i].synthetic_offset - elements[i].registration_offset_fast).mag() << "\n";
+			<< elements[i].alignment_times[0] << "," << (elements[i].synthetic_offset - elements[i].registration_offset).mag() << ",";
+		(*tmp_cmp) << elements[i].registration_offset_slow.x << "," << elements[i].registration_offset_slow.y << ","
+			<< elements[i].alignment_times[1] << "," << (elements[i].synthetic_offset - elements[i].registration_offset_slow).mag() << "\n";
 		tmp_cmp->flush();
+	#endif
 	}
 	
 }
@@ -4395,10 +4458,10 @@ void ns_analyzed_image_time_path::calculate_movement_images(const ns_analyzed_ti
 	const long dt(movement_time_kernel_width);
 	const unsigned long movement_start_i(chunk.forward() ? (first_stationary_timepoint() + dt) : dt);
 	
-
+	#ifdef NS_CALCULATE_OPTICAL_FLOW
 	if (flow == 0)
 		flow = new ns_optical_flow_processor();
-
+	#endif
 	for (long i = chunk.start_i; ; i += istep) {
 		if (chunk.forward() && i >= chunk.stop_i)
 			break;
@@ -4406,12 +4469,13 @@ void ns_analyzed_image_time_path::calculate_movement_images(const ns_analyzed_ti
 			break;
 
 		if (elements[i].excluded) {
-			//		cerr << "Skipping Excluded\n";
 			continue;
 		}
 		elements[i].element_was_processed = true;
 
 		bool first_frames(chunk.forward() ? (i < movement_start_i) : (i < movement_start_i));
+
+		#ifdef NS_CALCULATE_OPTICAL_FLOW
 		if (first_frames) {
 			flow->Dim1.from(elements[i].registered_images->image);
 			flow->Dim2.from(elements[i].registered_images->image);
@@ -4424,7 +4488,7 @@ void ns_analyzed_image_time_path::calculate_movement_images(const ns_analyzed_ti
 			flow->Dim2.from(elements[i].registered_images->image);
 		}
 		calculate_flow(i);
-
+		#endif
 
 		//now we generate the movement image
 		const ns_vector_2d v1(first_frames ? ns_vector_2d(0, 0) : elements[i - dt].registration_offset);
@@ -4491,15 +4555,15 @@ void ns_analyzed_image_time_path::calculate_movement_images(const ns_analyzed_ti
 
 }
 void ns_analyzed_image_time_path::calculate_flow(const unsigned long element_index) {
-	//cerr << "{";
-	//XXX
-	return;
+	#ifdef NS_CALCULATE_OPTICAL_FLOW
 	ns_high_precision_timer p;
 	p.start();
 	flow->calculate(30,0,2/255.0f);
 	total_flow_time += p.stop();
 	flow->get_movement(elements[element_index].registered_images->flow_image_dx, elements[element_index].registered_images->flow_image_dy);
-
+#else
+	throw ns_ex("Atempting to calculate flow with NS_CALCULATE_OPTICAL_FLOW set to false");
+#endif
 	//cerr << "}";
 	/*
 	float mmin(100), mmax(-100);
@@ -4517,7 +4581,6 @@ void ns_analyzed_image_time_path::calculate_flow(const unsigned long element_ind
 	
 	cout << "f(" << mmin << "," << mmax << ") ";*/
 }
-
 
 
 ns_analyzed_time_image_chunk ns_analyzed_image_time_path::initiate_image_registration(const ns_analyzed_time_image_chunk & chunk,ns_alignment_state & state){
@@ -4547,13 +4610,14 @@ ns_analyzed_time_image_chunk ns_analyzed_image_time_path::initiate_image_registr
 	const ns_vector_2i bottom_offset(maximum_alignment_offset());
 	const ns_vector_2i top_offset(maximum_alignment_offset());
 
-	ns_calc_best_alignment align(NS_SUBPIXEL_REGISTRATION_CORSE,NS_SUBPIXEL_REGISTRATION_FINE,maximum_alignment_offset(),maximum_local_alignment_offset(),bottom_offset,top_offset);
-	
+
 	//load first consensus kernal
 	
 	const ns_vector_2i d(maximum_alignment_offset());	
-	const ns_vector_2i h_sub(ns_vector_2i(state.consensus.properties().width,
-										  state.consensus.properties().height)
+	//an extra minus one because we have floating point offsets
+	//and the furthest right  pixel is (width-1), i.e we can't interpolate pixels left of width-1.
+	const ns_vector_2i h_sub(ns_vector_2i(state.consensus.properties().width-1,
+										  state.consensus.properties().height-1)
 										  -d);
 
 	int step(chunk.forward() ? 1 : -1);
@@ -4581,6 +4645,7 @@ ns_analyzed_time_image_chunk ns_analyzed_image_time_path::initiate_image_registr
 		elements[first_index].registration_offset = ns_vector_2i(0, 0);
 		remaining.start_i+= step;
 	}
+
 	//ns_vector_2i test_alignment = align(state,elements[0].path_aligned_images->image);
 	//cerr << "TAlignment: " << test_alignment << "\n";
 	for (long i = remaining.start_i; i != remaining.stop_i; i+=step){
@@ -4594,13 +4659,32 @@ ns_analyzed_time_image_chunk ns_analyzed_image_time_path::initiate_image_registr
 			remaining.start_i = i;
 			break;
 		}
-		elements[i].registration_offset = align(state,elements[i].path_aligned_images->image,elements[i].saturated_offset);
-	
+#ifdef NS_DEBUG_FAST_IMAGE_REGISTRATION
+		global_path_debug_info.group_id = group_id;
+		global_path_debug_info.path_id = path_id;
+		global_path_debug_info.time = elements[i].absolute_time;
+#endif
+		#ifdef NS_USE_FAST_IMAGE_REGISTRATION
+			elements[i].registration_offset = fast_alignment(maximum_alignment_offset(), state, elements[i].path_aligned_images->image, elements[i].saturated_offset);
+			cerr << elements[i].registration_offset;
+	#endif
+		#ifdef NS_CALCULATE_SLOW_IMAGE_REGISTRATION
+			ns_calc_best_alignment align(NS_SUBPIXEL_REGISTRATION_CORSE, NS_SUBPIXEL_REGISTRATION_FINE, maximum_alignment_offset(), maximum_local_alignment_offset(), bottom_offset, top_offset);
+			elements[i].registration_offset_slow = align(state,elements[i].path_aligned_images->image,elements[i].saturated_offset);
+		#endif
+
 		state.registration_offset_sum += elements[i].registration_offset;
 		state.registration_offset_count++;
 
 	//	cerr << "O:" << elements[i].vertical_registration << "\n";
 		//cerr << i << ":" << (unsigned long)consensus[10][21] << "<-" << (unsigned long)elements[i].path_aligned_images->image[10-maximum_alignment_offset()-elements[i].vertical_registration][21] << "\n";
+		if (d.y < elements[i].registration_offset.y ||
+			d.x < elements[i].registration_offset.x ||
+			h_sub.y - elements[i].registration_offset.y >= state.consensus.properties().height ||
+			h_sub.x - elements[i].registration_offset.x >= state.consensus.properties().width) {
+			cerr << "invalid registration: " << elements[i].registration_offset << ";" << d << ";" << h_sub << "\n";
+			throw ns_ex("invalid registration: ") << elements[i].registration_offset << ";" << d << ";" << h_sub;
+		}
 		for (long y = d.y; y < h_sub.y; y++){
 			for (long x = d.x; x < h_sub.x; x++){
 				state.consensus[y][x] += elements[i].path_aligned_images->image.sample_f(y-elements[i].registration_offset.y,
@@ -4615,6 +4699,14 @@ ns_analyzed_time_image_chunk ns_analyzed_image_time_path::initiate_image_registr
 	//we've consumed the entire chunk, so there's nothing remaining.
 	remaining.start_i = chunk.stop_i;
 	return remaining;
+}
+
+ns_vector_2i ns_analyzed_image_time_path::max_step_alignment_offset() {
+	ns_vector_2i max_alignment_offset(maximum_alignment_offset().x / 2 - movement_detection_kernal_half_width,
+		maximum_alignment_offset().y / 2 - movement_detection_kernal_half_width);
+	if (max_alignment_offset.x < 0) max_alignment_offset.x = 0;
+	if (max_alignment_offset.y < 0) max_alignment_offset.y = 0;
+	return max_alignment_offset;
 }
 
 void ns_analyzed_image_time_path::calculate_image_registration(const ns_analyzed_time_image_chunk & chunk_, ns_alignment_state & state, const ns_analyzed_time_image_chunk & first_chunk) {
@@ -4632,24 +4724,20 @@ void ns_analyzed_image_time_path::calculate_image_registration(const ns_analyzed
 	//but we the largest vertical alignment in either direction is actually half that,
 	//because two consecutive frames can be off by -max and max, producing a overal differential of 2*max offset between the two images
 
-	ns_vector_2i max_alignment_offset(maximum_alignment_offset().x / 2 - movement_detection_kernal_half_width,
-		maximum_alignment_offset().y / 2 - movement_detection_kernal_half_width);
-	if (max_alignment_offset.x < 0) max_alignment_offset.x = 0;
-	if (max_alignment_offset.y < 0) max_alignment_offset.y = 0;
-
 	const ns_vector_2i bottom_offset(maximum_alignment_offset());
 	const ns_vector_2i top_offset(maximum_alignment_offset());
-
+	#ifdef NS_CALCULATE_SLOW_IMAGE_REGISTRATION
 	ns_calc_best_alignment align(NS_SUBPIXEL_REGISTRATION_CORSE, NS_SUBPIXEL_REGISTRATION_FINE, maximum_alignment_offset(), maximum_local_alignment_offset(), bottom_offset, top_offset);
-	
+	#endif
 	const long time_kernal(alignment_time_kernel_width);
 
 	//define some constants
 	ns_image_properties prop;
 	set_path_alignment_image_dimensions(prop);
 	ns_vector_2i d(maximum_alignment_offset());
-	const ns_vector_2i h_sub(ns_vector_2i(state.consensus.properties().width,
-		state.consensus.properties().height)
+
+	const ns_vector_2i h_sub(ns_vector_2i(state.consensus.properties().width - 1,
+		state.consensus.properties().height - 1)
 		- d);
 	long step(chunk.forward() ? 1 : -1);
 	for (long i = chunk.start_i; ; i += step) {
@@ -4683,22 +4771,34 @@ void ns_analyzed_image_time_path::calculate_image_registration(const ns_analyzed
 		cout << "Synthetic:" << elements[i].synthetic_offset << "\n";
 		*/
 		ns_high_precision_timer t;
-		t.start();
 	//	for (unsigned int kk = 0; kk < 3; kk++)
-		elements[i].registration_offset = align(state,elements[i].path_aligned_images->image,elements[i].saturated_offset);
+		#ifdef NS_CALCULATE_SLOW_IMAGE_REGISTRATION
+		t.start();
+		elements[i].registration_offset_slow = align(state,elements[i].path_aligned_images->image,elements[i].saturated_offset);
 		elements[i].alignment_times[0] = t.stop() ;
+
+		//copy over to help debug fast image alignment
+		fast_alignment.debug_gold_standard_shift = elements[i].registration_offset_slow;
 		#ifdef NS_OUTPUT_ALGINMENT_DEBUG
 		cerr << "Alignment: " << elements[i].registration_offset << "\n";
 		#endif
-		t.start();
 		//xxx
+	#endif
+	#ifdef	NS_DEBUG_FAST_IMAGE_REGISTRATION
+	global_path_debug_info.group_id = group_id;
+	global_path_debug_info.path_id = path_id;
+	global_path_debug_info.time = elements[i].absolute_time;
+	#endif
+	#ifdef NS_USE_FAST_IMAGE_REGISTRATION
 		fast_alignment.debug_gold_standard_shift = elements[i].registration_offset;
-		elements[i].registration_offset_fast = fast_alignment(maximum_alignment_offset(), state, elements[i].path_aligned_images->image, elements[i].saturated_offset);
-		//elements[i].registration_offset = elements[i].registration_offset_fast;
+		t.start();
+		elements[i].registration_offset = 
+			fast_alignment(maximum_alignment_offset(), state, elements[i].path_aligned_images->image, elements[i].saturated_offset);
 		elements[i].alignment_times[1] = t.stop();
-		cerr << "\nSlow     :" << elements[i].registration_offset  << " (" << (elements[i].alignment_times[0] / 100) / 10.0 << ")\n";
-		cerr << "Fast     :" << elements[i].registration_offset_fast << " (" << (elements[i].alignment_times[1] / 100) / 10.0 << ")\n";
-
+	#endif
+	//	cerr << "\nSlow     :" << elements[i].registration_offset  << " (" << (elements[i].alignment_times[0] / 100) / 10.0 << ")\n";
+	//	cerr << "Fast     :" << elements[i].registration_offset_fast << " (" << (elements[i].alignment_times[1] / 100) / 10.0 << ")\n";
+		
 
 	//	t.start();
 		state.registration_offset_sum += (elements[i].registration_offset - elements[i-step*time_kernal].registration_offset);
@@ -5001,7 +5101,10 @@ void ns_analyzed_image_time_path::reset_movement_image_saving() {
 void ns_analyzed_image_time_path::save_movement_images(const ns_analyzed_time_image_chunk & chunk, ns_sql & sql, const ns_images_to_save & images_to_save, const bool only_write_backwards_frames) {
 	const bool save_image(images_to_save == ns_save_simple || images_to_save == ns_save_both),
 			   save_flow_image(images_to_save == ns_save_flow || images_to_save == ns_save_both);
-	
+	#ifndef NS_CALCULATE_OPTICAL_FLOW
+	if (save_flow_image)
+		throw ns_ex("Attempting to save flow movement images with NS_CALCULATE_OPTICAL_FLOW set to false");
+	#endif
 	//handle small or non-existant images
 	unsigned long number_of_frames_to_write(0);
 	if (only_write_backwards_frames)
@@ -5161,7 +5264,7 @@ void ns_analyzed_image_time_path::save_movement_image(const ns_analyzed_time_ima
 
 }
 void ns_analyzed_image_time_path::save_movement_flow_image(const ns_analyzed_time_image_chunk & chunk, ns_image_storage_reciever_handle<float> & flow_out,const bool only_write_backwards_frames){
-	
+	#ifdef NS_CALCULATE_OPTICAL_FLOW
 
 	if (elements.size() == 0) return;
 
@@ -5246,14 +5349,20 @@ void ns_analyzed_image_time_path::save_movement_flow_image(const ns_analyzed_tim
 			}
 		}
 		flow_out.output_stream().recieve_lines(save_flow_image_buffer,dh);
+
 	}
-		
+#else
+	throw ns_ex("Coiuld not save flow image with NS_CALCULATE_OPTICAL_FLOW undefined");
+#endif
 }
 
 
-void ns_analyzed_image_time_path::initialize_movement_image_loading_no_flow(ns_image_storage_source_handle<ns_8_bit> & in){
+void ns_analyzed_image_time_path::initialize_movement_image_loading_no_flow(ns_image_storage_source_handle<ns_8_bit> & in, const bool read_only_backwards_frames){
 	if (elements.size() == 0) return;
-	movement_loading_collage_info.from_path(this);
+	unsigned long number_of_frames_to_write(0);
+	if (read_only_backwards_frames)
+		number_of_frames_to_write = this->first_stationary_timepoint();
+	movement_loading_collage_info.from_path(this, number_of_frames_to_write);
 
 
 	if (in.input_stream().properties().width != movement_loading_collage_info.prop.width ||
@@ -5333,8 +5442,9 @@ void ns_analyzed_image_time_path::load_movement_images(const ns_analyzed_time_im
 		unsigned long dh(h);	
 		if(h + y > stop_y) dh = stop_y-y;
 		in.input_stream().send_lines(movement_loading_buffer,dh);
+		#ifdef NS_CALCULATE_OPTICAL_FLOW
 		flow_in.input_stream().send_lines(flow_movement_loading_buffer,dh);
-
+		#endif
 		for (unsigned long dy = 0; dy < dh; dy++){
 			const unsigned long cy(y+dy);
 			const unsigned long i_offset = movement_loading_collage_info.grid_dimensions.x*(cy/movement_loading_collage_info.frame_dimensions.y);
@@ -5359,9 +5469,10 @@ void ns_analyzed_image_time_path::load_movement_images(const ns_analyzed_time_im
 					 /*e.registered_images->worm_threshold_[y_im_offset][x-l_x] =  */ ((movement_loading_buffer[dy][3*x+2])&(((ns_8_bit)1)<<4))>0,
 						
 					/* e.registered_images->worm_neighborhood_threshold[][] =*/   ((movement_loading_buffer[dy][3*x+2])&(((ns_8_bit)1)<<3))>0);
-
+					#ifdef NS_CALCULATE_OPTICAL_FLOW
 					  e.registered_images->flow_image_dx[y_im_offset][x-l_x] = flow_movement_loading_buffer[dy][3*x+1];
 					 e.registered_images->flow_image_dy[y_im_offset][x-l_x] =  flow_movement_loading_buffer[dy][3*x+2];
+					 #endif
 					}
 			}
 		}
@@ -5371,13 +5482,13 @@ void ns_analyzed_image_time_path::load_movement_images(const ns_analyzed_time_im
 
 
 void ns_analyzed_image_time_path::calc_flow_images_from_registered_images(const ns_analyzed_time_image_chunk & chunk) {
+
+	#ifdef NS_CALCULATE_OPTICAL_FLOW
 	//flow image storage locations have already been initilaized by load_movement_images_no_flow()
 	long step(chunk.forward() ? 1 : -1);
 	const long dt(movement_time_kernel_width);
 	const unsigned long movement_start_i(chunk.forward() ? (first_stationary_timepoint() + dt) :
 		((first_stationary_timepoint() - dt)));
-
-	//ns_safe_delete(flow);
 	if (flow == 0)
 		flow = new ns_optical_flow_processor();
 	for (unsigned int i = chunk.start_i; i < chunk.stop_i; i++) {
@@ -5422,6 +5533,9 @@ void ns_analyzed_image_time_path::calc_flow_images_from_registered_images(const 
 		//XXX
 		this->calculate_flow(i);
 	}
+	#else 
+		throw ns_ex("Attempting to calculate flow with NS_CALCULATE_OPTICAL_FLOW set to false. (2)");
+	#endif
 }
 void ns_analyzed_image_time_path::load_movement_images_no_flow(const ns_analyzed_time_image_chunk & chunk,ns_image_storage_source_handle<ns_8_bit> & in){
 	
@@ -5512,6 +5626,10 @@ bool ns_time_path_image_movement_analyzer::load_movement_image_db_info(const ns_
 }
 
 void ns_time_path_image_movement_analyzer::load_images_for_group(const unsigned long group_id, unsigned long number_of_images_to_load,ns_sql & sql, const bool load_images_after_last_valid_sample, const bool load_flow_images){
+	#ifdef NS_CALCULATE_OPTICAL_FLOW
+	if (load_flow_images)
+		throw ns_ex("Attempting to load flow images with NS_CALCULATE_OPTICAL_FLOW set to false");
+	#endif
 	if (groups[group_id].paths.size() == 0)
 		return;
 	const unsigned long number_of_images_loaded(groups[group_id].paths[0].number_of_images_loaded);
@@ -5548,7 +5666,7 @@ void ns_time_path_image_movement_analyzer::load_images_for_group(const unsigned 
 				groups[group_id].paths[j].initialize_movement_image_loading(groups[group_id].paths[j].movement_image_storage, groups[group_id].paths[j].flow_movement_image_storage,false);
 			}
 			else {
-				groups[group_id].paths[j].initialize_movement_image_loading_no_flow(groups[group_id].paths[j].movement_image_storage);
+				groups[group_id].paths[j].initialize_movement_image_loading_no_flow(groups[group_id].paths[j].movement_image_storage,false);
 			}
 
 		}
@@ -5574,10 +5692,7 @@ void ns_time_path_image_movement_analyzer::load_images_for_group(const unsigned 
 				groups[group_id].paths[j].load_movement_images_no_flow(chunk, groups[group_id].paths[j].movement_image_storage);
 			else
 				groups[group_id].paths[j].load_movement_images(chunk,groups[group_id].paths[j].movement_image_storage,groups[group_id].paths[j].flow_movement_image_storage);
-//				groups[i].paths[j].save_movement_images(chunk,dbg_im);
-		//	groups[i].paths[j].quantify_movement(chunk);
-		//	for (long l = chunk.start_i; l < (long)chunk.stop_i; l++)
-		//		groups[i].paths[j].elements[l].clear_movement_images();
+//			
 		}
 		if (number_of_images_to_load == number_of_valid_elements){
 			groups[group_id].paths[j].end_movement_image_loading();
@@ -5605,6 +5720,10 @@ void ns_time_path_image_movement_analyzer::clear_images_for_group(const unsigned
 
 
 void ns_time_path_image_movement_analyzer::reanalyze_stored_aligned_images(const ns_64_bit region_id,const ns_time_path_solution & solution_,const ns_time_series_denoising_parameters & times_series_denoising_parameters,const ns_analyzed_image_time_path_death_time_estimator * e,ns_sql & sql,const bool load_images_after_last_valid_sample,const bool recalculate_flow_images){
+	#ifndef NS_CALCULATE_OPTICAL_FLOW
+	if (recalculate_flow_images)
+		throw ns_ex("Attempting to reanalyze flow images with NS_CALCULATE_OPTICAL_FLOW set to false");
+	#endif
 	const unsigned long chunk_size(10);
 	analysis_id = ns_current_time();
 	try{
@@ -5615,7 +5734,7 @@ void ns_time_path_image_movement_analyzer::reanalyze_stored_aligned_images(const
 		crop_path_observation_times(externally_specified_plate_observation_interval);
 
 		load_movement_image_db_info(region_id,sql);
-
+		#ifdef NS_CALCULATE_OPTICAL_FLOW
 		unsigned long number_flow_uncalculated(0);
 		for (unsigned int i = 0; i < groups.size(); i++)
 			for (unsigned int j = 0; j < groups[i].paths.size(); j++){
@@ -5631,7 +5750,9 @@ void ns_time_path_image_movement_analyzer::reanalyze_stored_aligned_images(const
 		
 		if (calculate_flow_images) 
 			get_output_image_storage_locations(region_id, sql, true); 
-		
+		#else
+		const bool calculate_flow_images(false);
+		#endif
 
 		calculate_memory_pool_maximum_image_size(0,groups.size());
 
@@ -5654,7 +5775,7 @@ void ns_time_path_image_movement_analyzer::reanalyze_stored_aligned_images(const
 							ns_image_properties prop(storage.input_stream().properties());
 							prop.components = 3;
 							groups[i].paths[j].flow_output_reciever->output_stream().init(prop);*/
-							groups[i].paths[j].initialize_movement_image_loading_no_flow(storage);
+							groups[i].paths[j].initialize_movement_image_loading_no_flow(storage,false);
 				}
 				else {
 					flow_storage = image_server.image_storage.request_from_storage_n_bits<float>(groups[i].paths[j].flow_output_image, &sql, ns_image_storage_handler::ns_long_term_storage);
@@ -6024,7 +6145,7 @@ void ns_time_path_image_movement_analyzer::generate_death_aligned_movement_postu
 		}
 		groups[i].paths[0].output_image.load_from_db(groups[i].paths[0].output_image.id,&sql);
 		path_image_source.push_back(image_server.image_storage.request_from_storage(groups[i].paths[0].output_image,&sql));
-		groups[i].paths[0].initialize_movement_image_loading_no_flow(path_image_source[i]);
+		groups[i].paths[0].initialize_movement_image_loading_no_flow(path_image_source[i],false);
 	}
 
 	//make movement graphs
@@ -6239,7 +6360,7 @@ void ns_time_path_image_movement_analyzer::generate_movement_posture_visualizati
 		}
 		groups[i].paths[0].output_image.load_from_db(groups[i].paths[0].output_image.id,&sql);
 		path_image_source.push_back(image_server.image_storage.request_from_storage(groups[i].paths[0].output_image,&sql));
-		groups[i].paths[0].initialize_movement_image_loading_no_flow(path_image_source[i]);
+		groups[i].paths[0].initialize_movement_image_loading_no_flow(path_image_source[i],false);
 	}
 
 	//make movement 

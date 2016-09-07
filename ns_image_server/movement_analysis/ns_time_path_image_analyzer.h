@@ -7,6 +7,12 @@
 #include "ns_optical_flow_quantification.h"
 #include "ns_subpixel_image_alignment.h"
 
+
+#undef NS_CALCULATE_OPTICAL_FLOW
+#define NS_USE_FAST_IMAGE_REGISTRATION
+#undef NS_CALCULATE_SLOW_IMAGE_REGISTRATION
+
+
 ns_analyzed_image_time_path_death_time_estimator * ns_get_death_time_estimator_from_posture_analysis_model(const ns_posture_analysis_model & m);
 
 struct ns_analyzed_image_time_path_element_measurements{
@@ -297,15 +303,19 @@ struct ns_registered_image_set{
 		worm_region_threshold.use_more_memory_to_avoid_reallocations();	
 		//region_threshold.use_more_memory_to_avoid_reallocations();	
 		movement_image_.use_more_memory_to_avoid_reallocations();
+		#ifdef NS_CALCULATE_OPTICAL_FLOW
 		flow_image_dx.use_more_memory_to_avoid_reallocations();
 		flow_image_dy.use_more_memory_to_avoid_reallocations();
+		#endif
 		image.init(p);
 		//worm_threshold_.init(p);
 		worm_region_threshold.init(p);
 		//region_threshold.init(p);
 		movement_image_.init(p);
+		#ifdef NS_CALCULATE_OPTICAL_FLOW
 		flow_image_dx.init(p);
 		flow_image_dy.init(p);
+		#endif
 	}
 	enum{region_mask=1,worm_mask=2,worm_neighborhood_mask=4};
 	bool get_region_threshold(const int y, const int x) const { return (worm_region_threshold[y][x]&region_mask)!=0;}
@@ -322,8 +332,10 @@ struct ns_registered_image_set{
 		//region_threshold.resize(p);
 		worm_region_threshold.resize(p);
 		movement_image_.resize(p);
+		#ifdef NS_CALCULATE_OPTICAL_FLOW
 		flow_image_dx.resize(p);
 		flow_image_dy.resize(p);
+		#endif
 	}
 	ns_image_standard image;
 	//ns_image_bitmap   worm_threshold_;
@@ -331,8 +343,10 @@ struct ns_registered_image_set{
 	//ns_image_bitmap   region_threshold;
 	ns_image_standard worm_region_threshold;
 	ns_image_standard_signed movement_image_;
+	#ifdef NS_CALCULATE_OPTICAL_FLOW
 	ns_image_whole<float> flow_image_dx;
 	ns_image_whole<float> flow_image_dy;
+	#endif
 };
 typedef ns_image_pool<ns_path_aligned_image_set,ns_overallocation_resizer> ns_path_aligned_image_pool;
 typedef ns_image_pool<ns_registered_image_set,ns_overallocation_resizer> ns_registered_image_pool;
@@ -418,7 +432,7 @@ private:
 	//this is the offset of the worm in the movement registered image
 	//i.e how far the worm is moved by the registration algorithm from it's position in the path_aligned images.
 	ns_vector_2d registration_offset,
-				 registration_offset_fast;
+				 registration_offset_slow;
 
 	//xxx
 	ns_64_bit alignment_times[2];
@@ -548,6 +562,7 @@ struct ns_time_path_image_movement_analysis_memory_pool{
 	}
 	std::vector<ns_image_standard> temporary_images;
 };
+
 class ns_optical_flow_processor;
 class ns_analyzed_image_time_path {
 public:
@@ -618,7 +633,7 @@ public:
 	std::string volatile_storage_name(const bool flow) const;
 	void calc_flow_images_from_registered_images(const ns_analyzed_time_image_chunk & chunk);
 
-	static ns_vector_2d maximum_alignment_offset(){return ns_vector_2d(60,20);}
+	static ns_vector_2d maximum_alignment_offset(){return ns_vector_2d(60,60);}
 	static ns_vector_2d maximum_local_alignment_offset(){return ns_vector_2d(4,4);}
 	enum {movement_detection_kernal_half_width=2,sobel_operator_width=1,alignment_time_kernel_width=5,movement_time_kernel_width=1,save_output_buffer_height=16};
 
@@ -628,6 +643,7 @@ public:
 	void write_detailed_movement_quantification_analysis_data(const ns_region_metadata & m, const unsigned long group_id, const unsigned long path_id, std::ostream & o,const bool output_only_elements_with_hand,const bool abbreviated_time_series=false) const;
 	void write_summary_movement_quantification_analysis_data(const ns_region_metadata & m, const unsigned long group_id, const unsigned long path_id, std::ostream & o) const;
 	void calculate_movement_quantification_summary();
+	static ns_vector_2i max_step_alignment_offset();
 
 	void set_path_alignment_image_dimensions(ns_image_properties & prop) const{
 		prop.width = path_context_size.x + (long)(2*ns_analyzed_image_time_path::maximum_alignment_offset().x);
@@ -734,7 +750,7 @@ private:
 	const ns_time_path_solution * solution;
 
 	void initialize_movement_image_loading(ns_image_storage_source_handle<ns_8_bit> & in,ns_image_storage_source_handle<float> & flow_in,const bool read_only_backwards_frames);
-	void initialize_movement_image_loading_no_flow(ns_image_storage_source_handle<ns_8_bit> & in);
+	void initialize_movement_image_loading_no_flow(ns_image_storage_source_handle<ns_8_bit> & in, const bool read_only_backwards_frames);
 	void end_movement_image_loading();
 	
 	ns_movement_image_collage_info movement_loading_collage_info;

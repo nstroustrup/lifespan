@@ -89,7 +89,7 @@ public:
 			prop.height = collage_info_manager.collage_info[i].dimentions.y;
 			decoded_image.prepare_to_recieve_image(prop);
 			scratch_filenames[i] = std::string("mask_processing_temp_") + ns_to_string(i) + ".tif";
-			ns_image_storage_reciever_handle<ns_8_bit> out(image_server.image_storage.request_local_cache_storage(scratch_filenames[i],1024,false));
+			ns_image_storage_reciever_handle<ns_8_bit> out(image_server.image_storage.request_local_cache_storage(scratch_filenames[i],ns_tiff,1024,false));
 			decoded_image.init_flush_recipient(out.output_stream());
 			for (int y = 0; y < collage_info_manager.collage_info[i].dimentions.y;){
 				unsigned int lines_to_send = collage_info_manager.collage_info[i].dimentions.y - y;

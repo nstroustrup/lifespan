@@ -2,14 +2,17 @@
 #define ns_subpixel_image_alignment
 #include "ns_image.h"
 #include "ns_vector.h"
+#include <queue>
 
 struct ns_alignment_state {
+	ns_alignment_state() :consensus_internal_offset(0, 0),registration_offset_count(0),registration_offset_sum(0,0) {}
 	void clear();
 	ns_image_whole<double> consensus;
 	ns_image_whole<ns_16_bit> consensus_count;
 	ns_image_whole<float> current_round_consensus;
 	ns_vector_2d registration_offset_sum;
 	unsigned long registration_offset_count;
+	const ns_vector_2i consensus_internal_offset;
 	inline ns_vector_2d registration_offset_average() { return registration_offset_sum / (double)registration_offset_count; }
 };
 
@@ -25,7 +28,7 @@ public:
 	enum { ns_max_pyramid_size = 30 };
 	ns_calc_best_alignment_fast(const ns_vector_2i & max_offset_, const ns_vector_2i &local_offset_, const ns_vector_2i &bottom_offset_, const ns_vector_2i &size_offset_);
 	~ns_calc_best_alignment_fast();
-	ns_vector_2d operator()(const ns_vector_2d & max_alignment, ns_alignment_state & state, const ns_image_standard & image, bool & saturated_offset);
+	ns_vector_2d operator()(const ns_vector_2d & initial_alignment,const ns_vector_2d & max_alignment, ns_alignment_state & state, const ns_image_standard & image, bool & saturated_offset);
 
 	void clear();
 

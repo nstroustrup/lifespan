@@ -112,6 +112,25 @@ ns_sql_table_lock_manager::ns_lock_table::iterator ns_sql_table_lock_manager::in
 	return p;
 
 }
+void ns_sql_table_lock_manager::output_current_locks(std::string & out) {
+	unsigned long current_time(ns_current_time());
+	for (ns_lock_table::iterator p = locks.begin(); p != locks.end(); p++) {
+		out += p->first + ":" + p->second.lock_point;
+		if (!p->second.unlock_point.empty())
+			out += "->" + p->second.unlock_point;
+		out += " proc_id: "  + ns_to_string(p->second.sql_process_id) + " " + ns_format_time_string_for_human(p->second.time) + " (" + ns_to_string( p->second.time) +  ";" + ns_to_string( current_time - p->second.time) + ")\n";
+	}
+}
+void ns_sql_table_lock_manager::output_current_locks(std::ostream & out) {
+	unsigned long current_time(ns_current_time());
+	for (ns_lock_table::iterator p = locks.begin(); p != locks.end(); p++) {
+		out << p->first << ":" << p->second.lock_point;
+		if (!p->second.unlock_point.empty())
+			out << "->" << p->second.unlock_point;
+		out << " proc_id: " << p->second.sql_process_id << " " << ns_format_time_string_for_human(p->second.time) << " (" << p->second.time << ";" << current_time - p->second.time << ")\n";
+	}
+}
+
 void ns_sql_table_lock_manager::unlock_all_tables(ns_sql_connection * sql, const std::string & source, const unsigned long line) {
 	lock_table_lock.wait_to_acquire(source.c_str(), line);
 	unlock_all_tables_no_lock(sql, source, line);

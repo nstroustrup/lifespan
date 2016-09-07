@@ -179,7 +179,12 @@ void ns_image_server_dispatcher::handle_remote_requests(){
 						//a remote host is sending an image; save it.
 						this->recieve_image(message,socket_connection);
 						break;
-
+					case NS_OUTPUT_SQL_LOCK_INFORMATION: {
+						std::string out;
+						image_server.sql_table_lock_manager.output_current_locks(out);
+						image_server.register_server_event(ns_image_server::ns_register_in_central_db_with_fallback, ns_image_server_event(out));
+						break;
+					}
 					case NS_STATUS_REQUEST:
 						//send information to remote host.
 						break;

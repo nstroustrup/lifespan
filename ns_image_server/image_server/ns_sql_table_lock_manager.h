@@ -2,6 +2,7 @@
 #define NS_SQL_TABLE_LOCK_MANAGER
 #include "ns_lock.h"
 #include "ns_sql.h"
+#include <ostream>
 #include <map>
 
 struct ns_sql_table_lock_info {
@@ -63,6 +64,8 @@ public:
 	ns_sql_table_lock obtain_table_lock(const std::string & table, ns_sql_connection * sql, bool write, const std::string & source, const unsigned long line);
 
 	ns_lock_table::iterator inspect_table_lock(const std::string & table, const std::string & source, const unsigned long & line);
+	void output_current_locks(std::ostream & o);	
+	void output_current_locks(std::string & o);
 
 	void unlock_all_tables(ns_sql_connection * sql, const std::string & source, const unsigned long line);
 	

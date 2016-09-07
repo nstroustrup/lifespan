@@ -462,6 +462,8 @@ void ns_alignment_state::clear() {
 	for (unsigned int y = 0; y < current_round_consensus.properties().height; y++)
 		for (unsigned int x = 0; x < current_round_consensus.properties().width; x++)
 			current_round_consensus[y][x] = 0;
+	//xxx
+	//consensus_internal_offset = ns_vector_2i(0, 0);
 	registration_offset_sum = ns_vector_2d(0, 0);
 	registration_offset_count = 0;
 }
@@ -3487,9 +3489,8 @@ struct ns_path_debug_info {
 };
 ns_path_debug_info global_path_debug_info;
 #endif
-ns_vector_2d ns_calc_best_alignment_fast::operator()(const ns_vector_2d & max_alignment,ns_alignment_state & state, const ns_image_standard & image, bool & saturated_offset) {
+ns_vector_2d ns_calc_best_alignment_fast::operator()(const ns_vector_2d & initial_alignment,const ns_vector_2d & max_alignment,ns_alignment_state & state, const ns_image_standard & image, bool & saturated_offset) {
 
-	ns_vector_2<float> best_offset(0, 0);
 	saturated_offset = false;
 	state.current_round_consensus.init(state.consensus.properties());
 	for (unsigned int y = 0; y < state.consensus.properties().height; y++)
@@ -3507,7 +3508,7 @@ ns_vector_2d ns_calc_best_alignment_fast::operator()(const ns_vector_2d & max_al
 	//build an image pyramid
 	ns_vector_2d shift[ns_max_pyramid_size];
 	//walk down the image pyrmaid.  reg updates as the most accurate registration at the next level of the pyramid, based on the levels above.
-	ns_vector_2d reg(0, 0);
+	ns_vector_2d reg;
 	
 	///xxx
 #ifdef NS_DEBUG_FAST_IMAGE_REGISTRATION
@@ -3524,7 +3525,11 @@ ns_vector_2d ns_calc_best_alignment_fast::operator()(const ns_vector_2d & max_al
 	bool lowest_resolution_level(true);
 	for (int i = number_of_levels - 1; i >= 0; i--) {
 		int fold = pow(2, i);
-		reg = reg * 2;
+		if (lowest_resolution_level)
+			reg = initial_alignment / fold; //start at best guess
+		else
+			reg = reg * 2;
+
 		try {
 			shift[i].x = shift[i].y = 0;
 			bool err(false);
@@ -4638,6 +4643,9 @@ ns_analyzed_time_image_chunk ns_analyzed_image_time_path::initiate_image_registr
 		state.registration_offset_sum = ns_vector_2i(0, 0);
 		state.registration_offset_count = 1;
 
+		//xxx
+		//state.consensus_internal_offset = ns_vector_2i(0, 0);
+
 		#ifdef NS_OUTPUT_ALGINMENT_DEBUG
 		ns_debug_image_out out;
 		out("c:\\movement", debug_path_name + "0.tif", alignment_time_kernel_width, state.consensus, state.consensus_count, elements[0].path_aligned_images->image);
@@ -4665,7 +4673,7 @@ ns_analyzed_time_image_chunk ns_analyzed_image_time_path::initiate_image_registr
 		global_path_debug_info.time = elements[i].absolute_time;
 #endif
 		#ifdef NS_USE_FAST_IMAGE_REGISTRATION
-			elements[i].registration_offset = fast_alignment(maximum_alignment_offset(), state, elements[i].path_aligned_images->image, elements[i].saturated_offset);
+			elements[i].registration_offset = fast_alignment(state.registration_offset_average(),maximum_alignment_offset(), state, elements[i].path_aligned_images->image, elements[i].saturated_offset);
 			cerr << elements[i].registration_offset;
 	#endif
 		#ifdef NS_CALCULATE_SLOW_IMAGE_REGISTRATION
@@ -4692,6 +4700,7 @@ ns_analyzed_time_image_chunk ns_analyzed_image_time_path::initiate_image_registr
 				state.consensus_count[y][x]++;
 			}
 		}
+
 		#ifdef NS_OUTPUT_ALGINMENT_DEBUG
 		out("c:\\movement",debug_path_name + ns_to_string(i) + ".tif",alignment_time_kernel_width,state.consensus,state.consensus_count,elements[i].path_aligned_images->image);
 		#endif
@@ -4792,27 +4801,72 @@ void ns_analyzed_image_time_path::calculate_image_registration(const ns_analyzed
 	#ifdef NS_USE_FAST_IMAGE_REGISTRATION
 		fast_alignment.debug_gold_standard_shift = elements[i].registration_offset;
 		t.start();
-		elements[i].registration_offset = 
-			fast_alignment(maximum_alignment_offset(), state, elements[i].path_aligned_images->image, elements[i].saturated_offset);
+		elements[i].registration_offset =
+			fast_alignment(state.registration_offset_average() - state.consensus_internal_offset,maximum_alignment_offset(), state, elements[i].path_aligned_images->image, elements[i].saturated_offset)
+			+ //every once in a while we recenter the state if the offsets are getting close to saturating. 
+			state.consensus_internal_offset;
+		
 		elements[i].alignment_times[1] = t.stop();
 	#endif
-	//	cerr << "\nSlow     :" << elements[i].registration_offset  << " (" << (elements[i].alignment_times[0] / 100) / 10.0 << ")\n";
-	//	cerr << "Fast     :" << elements[i].registration_offset_fast << " (" << (elements[i].alignment_times[1] / 100) / 10.0 << ")\n";
-		
-
-	//	t.start();
+	
 		state.registration_offset_sum += (elements[i].registration_offset - elements[i-step*time_kernal].registration_offset);
 		//elements[i].alignment_times[1] = t.stop();
 		for (long y = d.y; y < h_sub.y; y++){
 			for (long x = d.x; x < h_sub.x; x++){
-				state.consensus		 [y][x]+= elements[i            ].path_aligned_images->image.sample_f(y-elements[i].registration_offset.y,x-elements[i].registration_offset.x);
+				state.consensus		 [y][x]+= elements[i            ].path_aligned_images->image.sample_f(y-elements[i].registration_offset.y + state.consensus_internal_offset.y,x-elements[i].registration_offset.x + state.consensus_internal_offset.x);
 				//state.consensus_count[y][x]++;
 
-				state.consensus		 [y][x]-= elements[i-step*time_kernal].path_aligned_images->image.sample_f(y-elements[i-step*time_kernal].registration_offset.y,x-elements[i-step*time_kernal].registration_offset.x);
+				state.consensus		 [y][x]-= elements[i-step*time_kernal].path_aligned_images->image.sample_f(y-elements[i-step*time_kernal].registration_offset.y + state.consensus_internal_offset.y,x-elements[i-step*time_kernal].registration_offset.x+ +state.consensus_internal_offset.x);
 				//state.consensus_count[y][x]--;
 			
 			}
 		}
+		
+		//xxx todo: this code should alow images to be registered at arbitrary distances over time
+		//by recentering the state when it drifts too far from its initial state.
+		//however, the way path_aligned_images are written to disk would have to be rejigged,
+		//as each image would need to be cropped at the boundaries of maximum_alignment_offset
+		//doable, but not now.
+		/*
+		if (abs(state.registration_offset_average().x) > maximum_alignment_offset().x / 2 ||
+			abs(state.registration_offset_average().y) > maximum_alignment_offset().y / 2) {
+			ns_vector_2i new_consensus_offset(state.consensus_internal_offset);
+			if (new_consensus_offset.x > maximum_alignment_offset().x / 2)
+				new_consensus_offset.x += maximum_alignment_offset().x/2;
+			if (new_consensus_offset.y > maximum_alignment_offset().y / 2)
+				new_consensus_offset.y += maximum_alignment_offset().y/2;
+
+			//since we are offset the entire buffer by new_consensus_offset
+			//we need to shift its contents in the opposite direction
+			ns_vector_2i d = state.consensus_internal_offset - new_consensus_offset;
+
+			int start_x(0), stop_x(state.consensus_count.properties().width), start_y(0), stop_y(state.consensus_count.properties().height), dx(0), dy(0);
+			if (d.x < 0) {
+				start_x = state.consensus_count.properties().width-1;
+				stop_x = -1;
+				dx = -1;
+			}if (d.y < 0) {
+				start_y = state.consensus_count.properties().height-1;
+				stop_y = -1;
+				dy = -1;
+			}
+			for (unsigned int y = start_y; y != start_y + d.y; y += dy) {
+				for (unsigned int x = start_x; x < stop_x; x += dx) {
+					state.consensus_count[y][x] = 0;
+					state.consensus[y][x] = 0;
+				}
+			}
+			for (unsigned int y = start_y + d.y; y != stop_y; y += dy) {
+				for (unsigned int x = start_x; x < stop_x + d.x; x += dx)
+					state.consensus_count[y][x] = 0;
+				for (unsigned int x = start_x + d.x; x < stop_x; x += dx) {
+					state.consensus_count[y][x] = state.consensus_count[y - d.y][x - d.x];
+					state.consensus[y][x] = state.consensus[y - d.y][x - d.x];
+				}
+			}
+			state.consensus_internal_offset = new_consensus_offset;
+		}
+		*/
 		#ifdef NS_OUTPUT_ALGINMENT_DEBUG
 		ns_debug_image_out out;
 		out("c:\\movement\\",debug_path_name + ns_to_string(i) + ".tif",alignment_time_kernel_width,state.consensus,state.consensus_count,elements[i].path_aligned_images->image);

@@ -25,6 +25,7 @@ ns_message_request  ns_message_request_from_string(const string & str){
 	if (str == "NS_IM_BUF_INFO....") return NS_OUTPUT_IMAGE_BUFFER_INFO;
 	if (str == "NS_NO_CENTRAL_DB..") return NS_STOP_CHECKING_CENTRAL_DB;
 	if (str == "NS_USE_CENTRAL_DB.") return NS_START_CHECKING_CENTRAL_DB;
+	if (str == "NS_OUTPUT_SQL_LOCK") return NS_OUTPUT_SQL_LOCK_INFORMATION;
 	throw ns_ex("Unknown message request: ") << str;
 }
 
@@ -51,6 +52,7 @@ string  ns_message_request_to_string(const ns_message_request & req){
 		case NS_OUTPUT_IMAGE_BUFFER_INFO:			return "NS_IM_BUF_INFO....";
 		case NS_STOP_CHECKING_CENTRAL_DB:			return "NS_NO_CENTRAL_DB..";
 		case NS_START_CHECKING_CENTRAL_DB:			return "NS_USE_CENTRAL_DB.";
+		case NS_OUTPUT_SQL_LOCK_INFORMATION:		return "NS_OUTPUT_SQL_LOCK";
 		case NS_NULL:			
 		default:						return "NS_NULL...........";
 	}

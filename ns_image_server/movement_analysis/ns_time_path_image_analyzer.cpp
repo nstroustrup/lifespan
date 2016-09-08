@@ -408,7 +408,7 @@ ns_64_bit ns_largest_delta_subdivision(const std::vector<ns_64_bit> & v,const in
 	}
 	return largest_delta;
 }
-unsigned long ns_time_path_image_movement_analyzer::calculate_division_size_that_fits_in_specified_memory_size(const ns_64_bit & mem_size, const int multiplicity_of_images)const{
+ns_64_bit ns_time_path_image_movement_analyzer::calculate_division_size_that_fits_in_specified_memory_size(const ns_64_bit & mem_size, const int multiplicity_of_images)const{
 //	std::vector<ns_64_bit> image_size(groups.size());
 	
 	//generate the cumulative memory allocation needed to run the entire set;

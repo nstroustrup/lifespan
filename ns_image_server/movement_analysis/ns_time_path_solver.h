@@ -348,7 +348,7 @@ private:
 class ns_time_path_solver{
 public:
 	//aggregates the set of worm positions from saved individual frames
-	void load(unsigned long region_id, ns_sql & sql);
+	void load(ns_64_bit region_id, ns_sql & sql);
 	//identifies staitonary objects in the 3d point cloud of worm positions
 	void solve(const ns_time_path_solver_parameters &parameters, ns_time_path_solution & solution);
 	

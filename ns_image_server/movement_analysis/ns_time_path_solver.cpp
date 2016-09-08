@@ -485,7 +485,7 @@ void ns_time_path_solver::handle_paths_with_ambiguous_points(){
 	}
 }
 
-void ns_time_path_solution::save_to_db(const unsigned long region_id, ns_sql & sql) const{
+void ns_time_path_solution::save_to_db(const ns_64_bit region_id, ns_sql & sql) const{
 	sql << "SELECT time_path_solution_id FROM sample_region_image_info WHERE id = " << region_id;
 	ns_sql_result res;
 	sql.get_rows(res);
@@ -2027,7 +2027,7 @@ void ns_time_path_solver::load_detection_results(unsigned long region_id,ns_sql 
 	
 	ns_global_debug(ns_text_stream_t("ns_time_path_solver::load_detection_results()::Found ") << timepoints.size() << " valid timepoints.");
 }
-void ns_time_path_solver::load(unsigned long region_id, ns_sql & sql){
+void ns_time_path_solver::load(ns_64_bit region_id, ns_sql & sql){
 	
 	load_detection_results(region_id,sql);
 

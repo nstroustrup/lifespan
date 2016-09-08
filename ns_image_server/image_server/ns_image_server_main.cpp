@@ -1398,7 +1398,7 @@ int main(int argc, char * argv[]){
 		//play nice on multi-use machine.
 		//the latest capture sample registration code can fully utilize a computer's resources and reduce GUI responsiveness.
 		if (image_server.act_as_processing_node()){
-			image_server.process_priority.set_priority(ns_process_priority::ns_background);
+			image_server.process_priority.set_priority(ns_process_priority::ns_below_normal);
 		}
 		if (image_server.act_as_an_image_capture_server()){
 			bool success(image_server.process_priority.set_priority(ns_process_priority::ns_high));

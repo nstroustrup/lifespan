@@ -789,6 +789,7 @@ bool ns_processing_job_maintenance_processor:: run_job(ns_sql & sql){
 					time_path_solution.load_from_db(job.region_id,sql,false); 
 				}
 				catch(ns_ex & ex){
+
 					ns_time_path_solver tp_solver;
 					tp_solver.load(job.region_id,sql);
 					ns_time_path_solver_parameters solver_parameters(ns_time_path_solver_parameters::default_parameters(job.region_id,sql));
@@ -1125,7 +1126,7 @@ bool ns_processing_job_maintenance_processor:: run_job(ns_sql & sql){
 			image_columns_to_convert.push_back(ns_processing_step_db_column_name(ns_process_worm_detection)); 
 			const unsigned long number_of_images_to_run_per_batch(10);
 			//translate experiment-wide or sample-wide jobs into a bunch of region jobs
-			vector<unsigned long> region_ids_to_spawn;
+			vector<ns_64_bit> region_ids_to_spawn;
 			if (job.image_id == 0){
 				if (job.region_id == 0 && job.sample_id == 0){
 					if (job.experiment_id == 0)
@@ -1177,7 +1178,7 @@ bool ns_processing_job_maintenance_processor:: run_job(ns_sql & sql){
 				break;
 			}
 			else{
-				unsigned int column_to_process = job.image_id-1;
+				ns_64_bit column_to_process = job.image_id-1;
 				if (column_to_process >= image_columns_to_convert.size())
 					throw ns_ex("Invalid image column specification");
 

@@ -642,7 +642,7 @@ void ns_capture_sample_region_statistics_set::build_id_mapping(){
 
 void ns_capture_sample_region_statistics_set::set_sample_data(const ns_capture_sample_statistics_set & samples){
 	for (unsigned int i = 0; i < regions.size(); i++){
-		std::map<unsigned long,ns_capture_sample_image_statistics *>::const_iterator p = samples.samples_sorted_by_id.find(regions[i].metadata.sample_id);
+		std::map<ns_64_bit,ns_capture_sample_image_statistics *>::const_iterator p = samples.samples_sorted_by_id.find(regions[i].metadata.sample_id);
 		if (p==samples.samples_sorted_by_id.end())
 			throw ns_ex("Could not find sample statistics for sample id ") << regions[i].metadata.sample_id << "(" << regions[i].metadata.sample_name << ")" << "\n";
 		regions[i].set_sample_info(*p->second);

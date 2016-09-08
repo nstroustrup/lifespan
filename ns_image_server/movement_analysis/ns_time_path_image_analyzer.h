@@ -875,7 +875,7 @@ private:
 
 	ns_64_bit analysis_id;
 	void get_processing_stats_from_solution(const ns_time_path_solution & solution_);
-	unsigned long calculate_division_size_that_fits_in_specified_memory_size(const ns_64_bit & mem, const int multiplicity_of_images) const;
+	ns_64_bit calculate_division_size_that_fits_in_specified_memory_size(const ns_64_bit & mem, const int multiplicity_of_images) const;
 
 	void load_from_solution(const ns_time_path_solution & solution, const long group_number=-1);
 	void load_region_visualization_images(const unsigned long start_i, const unsigned long stop_i,const unsigned int start_group, const unsigned int stop_group,ns_sql & sql, bool just_do_a_consistancy_check,bool running_backwards);

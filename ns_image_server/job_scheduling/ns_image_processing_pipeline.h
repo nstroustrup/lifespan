@@ -340,7 +340,7 @@ private:
 	///_image_chunk_size specifies the number of image lines that are sent in a single step.
 	unsigned long _image_chunk_size;
 
-	void overlay_graph(const unsigned long region_id,ns_image_whole<ns_component> & image, unsigned long start_time, const ns_region_metadata & m, const ns_lifespan_curve_cache_entry & lifespan_data,ns_sql & sql);
+	void overlay_graph(const ns_64_bit region_id,ns_image_whole<ns_component> & image, unsigned long start_time, const ns_region_metadata & m, const ns_lifespan_curve_cache_entry & lifespan_data,ns_sql & sql);
 
 	///Confirms that the requetsed operations are self consistant.
 	void analyze_operations(const std::vector<char> & operations);

@@ -5921,7 +5921,7 @@ void ns_time_path_image_movement_analyzer::acquire_region_image_specifications(c
 	region_image_specifications.resize(res.size());
 	for (unsigned long i = 0; i < res.size(); i++){
 		//load image
-		region_image_specifications[i].time = ns_atoi64(res[i][2].c_str());
+		region_image_specifications[i].time = atol(res[i][2].c_str());
 		region_image_specifications[i].sample_region_image_id = ns_atoi64(res[i][5].c_str());
 		region_image_specifications[i].region_vis_image.load_from_db(ns_atoi64(res[i][0].c_str()),&sql);
 		ns_64_bit id(ns_atoi64(res[i][1].c_str()));

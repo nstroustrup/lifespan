@@ -44,21 +44,21 @@ private:
 class ns_machine_analysis_sample_data{
 public:
 	void load(const ns_death_time_annotation_set::ns_annotation_type_to_load & annotation_types_to_load,
-		const unsigned long sample_id, const ns_region_metadata & sample_metadata, ns_sql & sql,
-		const unsigned long specific_region_id=0, const bool include_excluded_regions=false,
+		const ns_64_bit sample_id, const ns_region_metadata & sample_metadata, ns_sql & sql,
+		const ns_64_bit specific_region_id=0, const bool include_excluded_regions=false,
 		const ns_machine_analysis_region_data::ns_loading_details & loading_details=ns_machine_analysis_region_data::ns_load_all);
 	ns_machine_analysis_sample_data(){}
-	ns_machine_analysis_sample_data(const unsigned long id):sample_id_(id){}
+	ns_machine_analysis_sample_data(const ns_64_bit id):sample_id_(id){}
 	std::vector<ns_machine_analysis_region_data> regions;
-	unsigned long id() const {return sample_id_;}
+	ns_64_bit id() const {return sample_id_;}
 	const std::string & name() const {return sample_name_;}
 	const std::string & device_name() const {return device_name_;}
-	void set_id(const unsigned long id){sample_id_ =id;}
+	void set_id(const ns_64_bit id){sample_id_ =id;}
 	void clear(){sample_id_ = 0; device_name_.clear(); sample_name_.clear(); regions.clear();}
 private:
 	std::string device_name_;
 	std::string sample_name_;
-	unsigned long sample_id_;
+	ns_64_bit sample_id_;
 };
 
 class ns_machine_analysis_data_loader{

@@ -15,8 +15,8 @@
 struct ns_stationary_path_id{
 
 	ns_stationary_path_id():group_id(-1),path_id(-1),detection_set_id(0){}
-	ns_stationary_path_id(const long g,const long p, const unsigned long t):group_id(g),path_id(p),detection_set_id(t){}
-	unsigned long detection_set_id;
+	ns_stationary_path_id(const long g,const long p, const ns_64_bit t):group_id(g),path_id(p),detection_set_id(t){}
+	ns_64_bit detection_set_id;
 	long group_id,
 		 path_id;
 	bool specified()const{return group_id!=-1 && path_id !=-1 && detection_set_id != 0;}
@@ -181,7 +181,7 @@ struct ns_death_time_annotation{
 		missing_worm_return_strategy(ns_not_specified),volatile_matches_machine_detected_death(false),event_observation_type(ns_standard),
 		by_hand_annotation_integration_strategy(ns_only_machine_annotations),inferred_animal_location(false){}
 
-	ns_death_time_annotation(const ns_movement_event type_, const unsigned long region_id_, const unsigned long region_info_id_,
+	ns_death_time_annotation(const ns_movement_event type_, const ns_64_bit region_id_, const ns_64_bit region_info_id_,
 		const ns_death_time_annotation_time_interval time_, const ns_vector_2i & pos, const ns_vector_2i & size_,const ns_exclusion_type excluded_,
 		const ns_death_time_annotation_event_count & event_counts, const unsigned long annotation_time_, const ns_annotation_source_type source_type,
 		const ns_disambiguation_type & d, const ns_stationary_path_id & s_id,const bool animal_is_part_of_a_complete_trace_,const bool inferred_animal_location_, const std::string & annotation_details_="",
@@ -272,8 +272,8 @@ struct ns_death_time_annotation{
 	std::string annotation_source_details;
 	unsigned long annotation_time;
 	ns_death_time_annotation_time_interval time;
-	unsigned long region_info_id;
-	unsigned long region_id;
+	ns_64_bit region_info_id;
+	ns_64_bit region_id;
 	//the center of the object
 	unsigned long animal_id_at_position; //0 for the first worm in the stationary path; //1 for the second, etc
 	ns_vector_2i position;

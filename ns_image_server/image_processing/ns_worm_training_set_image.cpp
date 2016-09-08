@@ -292,7 +292,7 @@ public:
 			}
 		}
 	}
-	void load_from_mutually_exclusive_worm_groups(const unsigned long region_info_id, const unsigned long time,const std::vector< std::vector< std::vector<ns_detected_worm_info *> > > & groups){
+	void load_from_mutually_exclusive_worm_groups(const ns_64_bit region_info_id, const unsigned long time,const std::vector< std::vector< std::vector<ns_detected_worm_info *> > > & groups){
 		std::vector<ns_detected_worm_info *>::size_type s(0);
 		//multiple worm clusters can expand to produce a *ton* of animals.
 		//to prevent this we only output a small number of disambiguation solutions.

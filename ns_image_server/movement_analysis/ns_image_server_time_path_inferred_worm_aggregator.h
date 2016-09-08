@@ -53,7 +53,7 @@ public:
 	//of each inferred element in the solution.
 
 	//returns false if corrupt images were found and the time path solution needs to be rebuilt
-	bool create_images_for_solution(const unsigned long region_info_id,ns_time_path_solution & s,ns_sql & sql){
+	bool create_images_for_solution(const ns_64_bit region_info_id,ns_time_path_solution & s,ns_sql & sql){
 		std::vector<ns_time_path_element *> inferred_elements;
 		std::map<unsigned long,ns_image_server_time_path_inferred_worm_aggregator_image_info> region_images_by_time;
 		{

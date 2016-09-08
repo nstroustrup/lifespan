@@ -324,7 +324,7 @@ struct ns_image_server_captured_image_region : public ns_image_server_captured_i
 		sql->send_query();
 	}
 
-	void mark_as_under_processing(const unsigned long host_id,ns_image_server_sql * sql){
+	void mark_as_under_processing(const ns_64_bit host_id,ns_image_server_sql * sql){
 		*sql << "UPDATE " << sql->table_prefix() << "sample_region_images SET currently_under_processing = " << host_id << " WHERE id=" << region_images_id;
 		sql->send_query();
 	}

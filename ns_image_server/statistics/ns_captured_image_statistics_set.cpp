@@ -428,7 +428,7 @@ void ns_capture_sample_region_data::generate_summary_info(ns_capture_sample_regi
 }
 
 
-void ns_capture_sample_region_data::load_from_db(const unsigned long region_id_, 
+void ns_capture_sample_region_data::load_from_db(const ns_64_bit region_id_, 
 					const ns_region_metadata & metadata_,
 					const bool region_is_censored,
 					const bool region_is_excluded,
@@ -687,7 +687,7 @@ void ns_capture_sample_region_statistics_set::output_plate_statistics_with_morta
 
 }
 	*/
-void ns_capture_sample_region_statistics_set::load_whole_experiment(const unsigned long experiment_id,ns_sql & sql,bool process_raw_image_stats){
+void ns_capture_sample_region_statistics_set::load_whole_experiment(const ns_64_bit experiment_id,ns_sql & sql,bool process_raw_image_stats){
 		
 	std::string experiment_name;
 	sql << "SELECT name FROM experiments WHERE id = " << experiment_id;

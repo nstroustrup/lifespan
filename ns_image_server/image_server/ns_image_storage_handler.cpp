@@ -1104,7 +1104,7 @@ std::string ns_image_storage_handler::movement_file_directory(ns_64_bit region_i
 		return long_term_storage_directory + DIR_CHAR_STR + get_partition_for_experiment_int(experiment_id,sql) + DIR_CHAR_STR + dir;
 	return dir;
 }
-ns_file_location_specification ns_image_storage_handler::get_file_specification_for_movement_data(unsigned long region_info_id, const std::string & data_source,ns_image_server_sql * sql) const{
+ns_file_location_specification ns_image_storage_handler::get_file_specification_for_movement_data(ns_64_bit region_info_id, const std::string & data_source,ns_image_server_sql * sql) const{
 	ns_file_location_specification spec;
 	spec.relative_directory = movement_file_directory(region_info_id,sql,false);
 	

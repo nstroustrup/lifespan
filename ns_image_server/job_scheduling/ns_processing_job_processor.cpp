@@ -789,7 +789,7 @@ bool ns_processing_job_maintenance_processor:: run_job(ns_sql & sql){
 					time_path_solution.load_from_db(job.region_id,sql,false); 
 				}
 				catch(ns_ex & ex){
-
+					image_server->register_server_event(ex,&sql);
 					ns_time_path_solver tp_solver;
 					tp_solver.load(job.region_id,sql);
 					ns_time_path_solver_parameters solver_parameters(ns_time_path_solver_parameters::default_parameters(job.region_id,sql));

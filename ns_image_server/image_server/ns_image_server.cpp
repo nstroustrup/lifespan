@@ -160,7 +160,7 @@ ns_image_data_disk_size operator+(const ns_image_data_disk_size & a, const ns_im
 }
 
 
-void ns_image_server::calculate_experiment_disk_usage(const unsigned long experiment_id,ns_sql & sql) const{
+void ns_image_server::calculate_experiment_disk_usage(const ns_64_bit experiment_id,ns_sql & sql) const{
 	sql << "SELECT name FROM experiments WHERE id = " << experiment_id;
 	ns_sql_result experiment;
 	sql.get_rows(experiment);

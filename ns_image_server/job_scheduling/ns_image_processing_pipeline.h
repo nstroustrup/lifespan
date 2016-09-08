@@ -248,7 +248,7 @@ public:
 	///color.  analyze_mask calculates the number of regions specified in the mask, calculates their statistics (center of mass, etc)
 	///and makes a visualzation of the regions to allow easy verification of mask correctness
 	//returns the mask resolution
-	float analyze_mask(ns_image_server_image & image, const unsigned int resize_factor, const unsigned long mask_id, ns_sql & sql);
+	float analyze_mask(ns_image_server_image & image, const unsigned int resize_factor, const ns_64_bit mask_id, ns_sql & sql);
 	
 	
 	static void generate_sample_regions_from_mask(ns_64_bit sample_id, const float capture_sample_image_resolution_in_dpi,ns_sql & sql);

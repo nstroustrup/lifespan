@@ -137,7 +137,7 @@ public:
 	void generate_summary_info(ns_capture_sample_region_data_timepoint & mean_timepoint,ns_capture_sample_region_data_timepoint & first_timepoint,ns_capture_sample_region_data_timepoint & last_timepoint);
 	
 #ifndef NS_NO_SQL
-	void load_from_db(const unsigned long region_id_, 
+	void load_from_db(const ns_64_bit region_id_, 
 					  const ns_region_metadata & metadata_,
 					  const bool region_is_censored,
 					  const bool region_is_excluded,
@@ -166,7 +166,7 @@ class ns_capture_sample_statistics_set{
 public:
 	std::vector<ns_capture_sample_image_statistics> samples;
 	
-	std::map<unsigned long,ns_capture_sample_image_statistics *> samples_sorted_by_id;
+	std::map<ns_64_bit,ns_capture_sample_image_statistics *> samples_sorted_by_id;
 
 	ns_whole_device_activity_aggregator_list device_list;
 	
@@ -193,7 +193,7 @@ public:
 //	void output_plate_statistics_with_mortality_data(const ns_survival_data_summary_aggregator & survival_data, std::ostream & o);
 	
 #ifndef NS_NO_SQL
-	void load_whole_experiment(const unsigned long experiment_id,ns_sql & sql,bool process_raw_image_stats);
+	void load_whole_experiment(const ns_64_bit experiment_id,ns_sql & sql,bool process_raw_image_stats);
 #endif
 
 };

@@ -402,7 +402,7 @@ struct ns_control_group_strain_assignment{
 };
 
 struct ns_control_group_plate_assignment{
-	unsigned long plate_id;
+	ns_64_bit plate_id;
 	typedef std::set<unsigned long> ns_control_group_membership_list;
 	ns_control_group_membership_list control_group_memberships;
 };
@@ -421,7 +421,7 @@ struct ns_lifespan_device_normalization_statistics_set{
 	typedef std::vector<ns_control_group_strain_assignment> ns_control_group_strain_list;
 	ns_control_group_strain_list control_group_strain_list;
 
-	typedef std::map<unsigned long, ns_control_group_plate_assignment> ns_control_group_plate_list;
+	typedef std::map<ns_64_bit, ns_control_group_plate_assignment> ns_control_group_plate_list;
 	ns_control_group_plate_list control_group_plate_list;
 
 

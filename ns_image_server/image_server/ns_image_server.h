@@ -258,7 +258,7 @@ public:
 	void toggle_central_mysql_server_connection_error_simulation()const;
 	
 
-	void calculate_experiment_disk_usage(const unsigned long experiment_id,ns_sql & sql) const;
+	void calculate_experiment_disk_usage(const ns_64_bit experiment_id,ns_sql & sql) const;
 	void clear_old_server_events(ns_sql & sql);
 
 	///returns true if the ini specified that the server automatically look for

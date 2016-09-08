@@ -294,7 +294,7 @@ private:
 	std::string get_storage_to_open(ns_image_server_image & image, const ns_image_type & image_type, const unsigned long max_line_length, ns_image_server_sql * sql, bool & had_to_use_local_storage, const bool report_to_db, const bool allow_volatile_storage);
 	
 	ns_file_location_specification get_file_specification_for_path_data(const ns_file_location_specification & region_spec) const;
-	ns_file_location_specification get_file_specification_for_movement_data(unsigned long region_info_id, const std::string & data,ns_image_server_sql * sql) const;
+	ns_file_location_specification get_file_specification_for_movement_data(ns_64_bit region_info_id, const std::string & data,ns_image_server_sql * sql) const;
 
 	ns_file_location_specification look_up_image_location(ns_image_server_image & image,ns_image_server_sql * sql,const ns_image_type & image_type = ns_tiff_lzw) const;
 	ns_file_location_specification compile_absolute_paths_from_relative(const std::string & rel_path, const std::string & partition, const std::string & filename) const ;

@@ -551,7 +551,7 @@ struct ns_time_series_region_data{
 };
 
 struct ns_time_series_for_each_region{
-	typedef std::map<unsigned long,ns_time_series_region_data> ns_time_series;
+	typedef std::map<ns_64_bit,ns_time_series_region_data> ns_time_series;
 	ns_time_series time_series;
 	void calculate_totals_and_cumulatives(const ns_death_time_annotation::ns_multiworm_censoring_strategy & multiworm_censoring_strategy,
 										  const ns_death_time_annotation::ns_missing_worm_return_strategy & missing_worm_return_strategy){

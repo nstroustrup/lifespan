@@ -117,8 +117,8 @@ bool ns_machine_analysis_region_data::recalculate_from_saved_movement_quantifica
 	return true;
 }
 
-void ns_machine_analysis_sample_data::load(const ns_death_time_annotation_set::ns_annotation_type_to_load & annotation_type_to_load,const unsigned long sample_id, const ns_region_metadata & sample_metadata,ns_sql & sql, 
-	const unsigned long specific_region_id, const bool include_excluded_regions, const  ns_machine_analysis_region_data::ns_loading_details & loading_details){
+void ns_machine_analysis_sample_data::load(const ns_death_time_annotation_set::ns_annotation_type_to_load & annotation_type_to_load,const ns_64_bit sample_id, const ns_region_metadata & sample_metadata,ns_sql & sql, 
+	const ns_64_bit specific_region_id, const bool include_excluded_regions, const  ns_machine_analysis_region_data::ns_loading_details & loading_details){
 	bool calculate_missing_data = false;
 	device_name_ = sample_metadata.device;
 	ns_sql_result reg;
@@ -137,7 +137,7 @@ void ns_machine_analysis_sample_data::load(const ns_death_time_annotation_set::n
 		try{
 			unsigned int s = regions.size();
 			regions.resize(s+1);
-			unsigned long region_id = atol(reg[i][0].c_str());
+			ns_64_bit region_id = ns_atoi64(reg[i][0].c_str());
 			regions[s].metadata = sample_metadata;
 			regions[s].metadata.load_only_region_info_from_db(region_id,"",sql);
 			regions[s].metadata.technique = "Lifespan Machine";

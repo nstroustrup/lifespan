@@ -1245,7 +1245,7 @@ void ns_image_processing_pipeline::generate_sample_regions_from_mask(ns_64_bit s
 	///analyze_mask assumes the specified image is a mask containing region information.  Each region is represented by a different
 	///color.  analyze_mask calculates the number of regions specified in the mask, calculates their statistics (center of mass, etc)
 	///and makes a visualzation of the regions to allow easy verification of mask correctness
-float ns_image_processing_pipeline::analyze_mask(ns_image_server_image & image, const unsigned int resize_factor, const unsigned long mask_id, ns_sql & sql){
+float ns_image_processing_pipeline::analyze_mask(ns_image_server_image & image, const unsigned int resize_factor, const ns_64_bit mask_id, ns_sql & sql){
 
 	image.load_from_db(image.id,&sql);
 	image_server.register_server_event(ns_image_server_event("ns_image_processing_pipeline::Analyzing Mask ") << image.filename,&sql);
@@ -1503,7 +1503,7 @@ void ns_image_processing_pipeline::compile_video(ns_image_server_captured_image_
 				<< "(" << (unsigned int)res.size() << " Frames)::"<< output_basename;
 			ev.specifiy_event_subject(region_image);
 			ev.specify_processing_job_operation(ns_process_compile_video);
-			unsigned long event_id = image_server.register_server_event(ev,&sql);
+			ns_64_bit event_id = image_server.register_server_event(ev,&sql);
 
 
 			ns_video_region_specification reg(region_spec);
@@ -1905,7 +1905,7 @@ void ns_image_processing_pipeline::apply_mask(ns_image_server_captured_image & c
 		ev << " on " << captured_image.filename(&sql);
 		ev.specifiy_event_subject(captured_image);
 		ev.specify_processing_job_operation(ns_process_apply_mask);
-		unsigned long event_id = image_server.register_server_event(ev,&sql);
+		ns_64_bit event_id = image_server.register_server_event(ev,&sql);
 			
 		captured_image.load_from_db(captured_image.captured_images_id,&sql);
 		bool delete_captured_image(false);
@@ -2142,7 +2142,7 @@ void ns_image_processing_pipeline::apply_mask(ns_image_server_captured_image & c
 			sql.clear_query();
 			//if the image doesn't exist or is corrupted, mark the record as "problem".
 			if (ex.type() == ns_file_io){
-				unsigned long event_id = image_server.register_server_event(ex,&sql);
+				ns_64_bit event_id = image_server.register_server_event(ex,&sql);
 				captured_image.mark_as_problem(&sql,event_id);
 				for (unsigned int i = 0; i < output_regions.size(); i++){
 					sql << "DELETE images FROM images, sample_region_images WHERE sample_region_images.id= " << output_regions[i].region_images_id << " AND sample_region_images.image_id = images.id";
@@ -2162,7 +2162,7 @@ void ns_image_processing_pipeline::apply_mask(ns_image_server_captured_image & c
 				resize_region_image(output_regions[i],sql);
 			}
 			catch(ns_ex & ex){
-				unsigned long ev(image_server.register_server_event(ex,&sql));
+				ns_64_bit ev(image_server.register_server_event(ex,&sql));
 				output_regions[i].mark_as_problem(&sql,ev);
 			}
 		}
@@ -2423,7 +2423,7 @@ const ns_lifespan_curve_cache_entry & ns_lifespan_curve_cache::get_experiment_da
 }
 
 
-void ns_image_processing_pipeline::overlay_graph(const unsigned long region_id,ns_image_whole<ns_component> & image, unsigned long start_time, 
+void ns_image_processing_pipeline::overlay_graph(const ns_64_bit region_id,ns_image_whole<ns_component> & image, unsigned long start_time, 
 	const ns_region_metadata & m, const ns_lifespan_curve_cache_entry & lifespan_curve, ns_sql & sql){
 
 	ns_image_properties lifespan_curve_image_prop,metadata_overlay_prop;

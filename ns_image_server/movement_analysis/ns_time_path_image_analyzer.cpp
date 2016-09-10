@@ -687,8 +687,6 @@ void ns_time_path_image_movement_analyzer::process_raw_images(const ns_64_bit re
 							groups[i].paths[j].calculate_image_registration(chunk, alignment_states[i][j], chunk_generators[i][j].first_chunk());
 							//cerr << "(";
 
-
-
 							//in several case we need frames that occur after the onset of stationarity
 							//to fill the alignment buffer.  We don't want to output these; we only want
 							//to output those that occur /before/ the onset of stationarity.
@@ -4674,7 +4672,7 @@ ns_analyzed_time_image_chunk ns_analyzed_image_time_path::initiate_image_registr
 #endif
 		#ifdef NS_USE_FAST_IMAGE_REGISTRATION
 			elements[i].registration_offset = fast_alignment(state.registration_offset_average(),maximum_alignment_offset(), state, elements[i].path_aligned_images->image, elements[i].saturated_offset);
-			cerr << elements[i].registration_offset;
+			//cerr << elements[i].registration_offset;
 	#endif
 		#ifdef NS_CALCULATE_SLOW_IMAGE_REGISTRATION
 			ns_calc_best_alignment align(NS_SUBPIXEL_REGISTRATION_CORSE, NS_SUBPIXEL_REGISTRATION_FINE, maximum_alignment_offset(), maximum_local_alignment_offset(), bottom_offset, top_offset);

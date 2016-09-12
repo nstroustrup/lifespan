@@ -673,7 +673,7 @@ ns_multiprocess_control_options ns_spawn_new_nodes(	const unsigned int & count,
 typedef enum {ns_none,ns_start, ns_stop, ns_help, ns_restart, ns_status, ns_hotplug,
 			  ns_reset_devices,ns_reload_models,ns_submit_experiment,ns_test_email,ns_test_alert, ns_test_rate_limited_alert,ns_wrap_m4v,
 			  ns_restarting_after_a_crash,ns_trigger_segfault_in_main_thread,ns_trigger_segfault_in_dispatcher_thread, ns_run_pending_image_transfers,
-	      ns_clear_local_db_buffer_cleanly,ns_clear_local_db_buffer_dangerously,ns_simulate_central_db_connection_error,ns_fix_orphaned_captured_images,ns_update_sql,ns_output_image_buffer_info,ns_stop_checking_central_db,ns_start_checking_central_db} ns_cl_command;
+	      ns_clear_local_db_buffer_cleanly,ns_clear_local_db_buffer_dangerously,ns_simulate_central_db_connection_error,ns_fix_orphaned_captured_images,ns_update_sql,ns_output_image_buffer_info,ns_stop_checking_central_db,ns_start_checking_central_db,ns_output_sql_debug} ns_cl_command;
 
 ns_image_server_sql * ns_connect_to_available_sql_server(){
 		try{
@@ -804,6 +804,7 @@ int main(int argc, char * argv[]){
 	commands["start_checking_central_db"] = ns_start_checking_central_db;
 	commands["stop_checking_central_db"] = ns_stop_checking_central_db;
 	commands["update_sql"] = ns_update_sql;
+	commands["output_sql_debug"] = ns_output_sql_debug;
 	bool is_master_node(false);
 	std::string schema_name;
 	try{
@@ -864,7 +865,7 @@ int main(int argc, char * argv[]){
 					#ifndef _WIN32
 					ex << " [daemon]";
 					#endif
-					ex	<< "\nOptions:\n"
+					ex << "\nOptions:\n"
 						<< "start : start an instance of the image server on the local machine (default)\n"
 						<< "status : check to see if an instance of the image server is running on the local machine\n"
 						<< "stop : request that the currently running local instance of the image server terminate\n"
@@ -891,7 +892,8 @@ int main(int argc, char * argv[]){
 						<< "output_image_buffer_info: Output information about the state of each scanner's locally buffered images.\n"
 						<< "stop_checking_central_db: Cease attempting to connect to the central db.\n"
 						<< "start_checking_central_db: Restart attempts to connect to the central db.\n"
-						<< "update_sql: upgrade the sql database schema to match the most recent version. No changes are made if the schema is already up-to-data.  Schema can be specified \n";
+						<< "update_sql: upgrade the sql database schema to match the most recent version. No changes are made if the schema is already up-to-data.  Schema can be specified \n"
+						<< "output_sql_debug: request that a running server output its sql debug information\n";
 					#ifndef _WIN32
 					ex << "daemon: run as a background process\n";
 					#endif
@@ -960,6 +962,11 @@ int main(int argc, char * argv[]){
 		switch(command){
 			case ns_start: break;
 			case ns_help: break;
+			case ns_output_sql_debug: 	
+				if (!image_server.send_message_to_running_server(NS_OUTPUT_SQL_LOCK_INFORMATION))
+				cerr << "No image server found running at " << image_server.dispatcher_ip() << ":" << image_server.dispatcher_port() << ".";
+				return 0; break;
+
 			case ns_status:{
 				if (image_server.server_currently_running())
 						std::cout << "The image server is running\n";

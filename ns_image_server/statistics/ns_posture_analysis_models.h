@@ -47,14 +47,14 @@ public:
 		if (p == ntiles.end()-1) //value is larger than the largest_quantile
 			return 1.0;
 
-		const unsigned long greater_ntile(p-ntiles.begin());
+		const ns_64_bit greater_ntile(p-ntiles.begin());
 		if (greater_ntile == 0)
 			return 0.0;
 		/*
 		if (d == ntile[greater_ntile])
 			return greater_ntile/(double)ntiles.size();
 			*/
-		const unsigned long lesser_ntile(greater_ntile-1);//lesser_equality_map[greater_ntile-1]);
+		const ns_64_bit lesser_ntile(greater_ntile-1);//lesser_equality_map[greater_ntile-1]);
 
 		//calculate the fraction of the distance between neighboring ntiles
 		const double f((d-ntiles[lesser_ntile])/(ntiles[greater_ntile]-ntiles[lesser_ntile]));

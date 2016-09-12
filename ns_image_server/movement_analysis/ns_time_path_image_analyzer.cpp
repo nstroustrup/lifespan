@@ -231,8 +231,8 @@ public:
 		}
 		else {
 			current_chunk.start_i = current_chunk.stop_i = this->path->first_stationary_timepoint() + ns_analyzed_image_time_path::alignment_time_kernel_width;
-			if (current_chunk.start_i > path->element_count())
-				current_chunk.start_i = current_chunk.stop_i = path->element_count();
+			if (current_chunk.start_i >= path->element_count())
+				current_chunk.start_i = current_chunk.stop_i = path->element_count()-1;
 		}
 		//long chunk_length = current_chunk.start_i - current_chunk.stop_i;
 		//if there isn't enough data to support the registration,
@@ -3175,11 +3175,10 @@ public:
 			}
 		}
 
-		return calc_shifts_from_grad(p);
+		return calc_shifts_from_grad();
 	}
-	ns_vector_2d calc_shifts_from_grad(const ns_image_properties &p) ;
-//xxx
-//private:
+private:
+	ns_vector_2d calc_shifts_from_grad();
 	ns_image_whole<double> grad_x, grad_y, diff;
 	double A[4]; //2x2 matrix
 	double b[2];//2x1 vector
@@ -3200,11 +3199,10 @@ void ns_gradient_shift::clear() {
 	grad_y.clear();
 }
 
-ns_vector_2d ns_gradient_shift::calc_shifts_from_grad(const ns_image_properties &p)  {
+ns_vector_2d ns_gradient_shift::calc_shifts_from_grad()  {
 	A[0] = A[1] = A[2] = A[3] = b[0] = b[1] = 0;
-	
-	for (unsigned long y = 0; y < p.height; y++)
-		for (unsigned long x = 0; x < p.width; x++) {
+	for (unsigned long y = 0; y < grad_x.properties().height; y++)
+		for (unsigned long x = 0; x < grad_x.properties().width; x++) {
 			A[0] += grad_x[y][x] * grad_x[y][x];
 			A[1] += grad_x[y][x] * grad_y[y][x];
 			A[3] += grad_y[y][x] * grad_y[y][x];
@@ -3218,7 +3216,7 @@ ns_vector_2d ns_gradient_shift::calc_shifts_from_grad(const ns_image_properties 
 	if (A[0] * A[3] - A[1] * A[2] ==0)
 		return ns_vector_2d(0, 0);
 
-	double tmp[2];
+	double tmp[4];//should only need two doubles but upped while hunting for a memory corruption bug.
 
 	ns_Cholesky(2, A, LU);
 
@@ -3311,7 +3309,7 @@ public:
 		clear();
 		buffer = ippiMalloc_32f_C1(width, height, &line_step_in_bytes);
 		if (buffer == NULL) {
-			ippiFree(buffer);
+			//ippiFree(buffer);
 			throw ns_ex("ns_intel_image_32f::Could not allocate buffer ") << width << "," << height;
 		}
 		line_step_in_pixels = line_step_in_bytes / sizeof(Ipp32f);
@@ -3605,7 +3603,7 @@ ns_vector_2d ns_calc_best_alignment_fast::operator()(const ns_vector_2d & initia
 		}
 		catch (ns_ex & ex) {
 
-		//	cerr << ex.text() << "\n";
+			cerr << ex.text() << "\n";
 
 			#ifdef NS_DEBUG_FAST_IMAGE_REGISTRATION
 			ns_image_properties prop(0, 0, 1);
@@ -5202,7 +5200,6 @@ void ns_analyzed_image_time_path::save_movement_images(const ns_analyzed_time_im
 	}
 	
 	if (first_write) {
-		bool had_to_use_volatile_storage;
 		if (save_image)	output_reciever->output_stream().init(d.prop);
 		if (save_flow_image)	flow_output_reciever->output_stream().init(d.prop);
 	}

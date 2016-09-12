@@ -227,14 +227,25 @@ public:
 
 			bool had_to_use_volatile_storage;
 			ns_image_server_image region_bitmap = reg_im.create_storage_for_processed_image(ns_process_region_interpolation_vis,ns_tiff,&sql);
-			ns_image_storage_reciever_handle<ns_8_bit> region_bitmap_o = image_server.image_storage.request_storage(
-														region_bitmap,
-														ns_tiff, 1024,&sql,
-													had_to_use_volatile_storage,
-													false,
-													false);
-			worm_collage.pump(region_bitmap_o.output_stream(),1024);
-
+			unsigned long write_attempts = 0;
+			while (true) {
+				try {
+					ns_image_storage_reciever_handle<ns_8_bit> region_bitmap_o = image_server.image_storage.request_storage(
+						region_bitmap,
+						ns_tiff, 1024, &sql,
+						had_to_use_volatile_storage,
+						false,
+						false);
+					worm_collage.pump(region_bitmap_o.output_stream(), 1024);
+					break;
+				}
+				catch (ns_ex & ex) {
+					image_server.register_server_event(ex, &sql);
+					if (write_attempts == 4)
+						throw ex;
+					write_attempts++;
+				}
+			}
 			for (unsigned int i = 0; i < current_region_image->second.duplicates_of_this_time_point.size(); i++){
 				ns_image_server_captured_image_region reg_im2;
 				reg_im2.load_from_db(current_region_image->second.duplicates_of_this_time_point[i].id,&sql);

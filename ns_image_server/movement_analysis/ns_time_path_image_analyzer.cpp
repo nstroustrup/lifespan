@@ -3285,6 +3285,8 @@ public:
 			throw ns_ex("ns_intel_image_32f::Out of bound access: (") << x << "," << y << "): (" << p0x << "," << p0y << ")-(" << p1x << "," << p1y << ")";
 		}
 #endif
+		//note that accessing val[height-1][width-1]  only works because we allocate an extra 1 pixel right and bottom buffer
+		//(see the function init()
 		return	val(p0y, p0x) * (d1y)*(d1x)+
 			val(p0y, p1x) * (d1y)*(dx)+
 			val(p1y, p0x) * (dy)*(d1x)+
@@ -3307,7 +3309,14 @@ public:
 			return line_step_in_bytes;
 
 		clear();
-		buffer = ippiMalloc_32f_C1(width, height, &line_step_in_bytes);
+		//SUBTLE THING: We add a one pixel righthand boundary around images
+		//to allow subsampling to handle boundaries correctly.
+		//calling sample_d[height-1][width-1] will produce the code
+		// sample_d[height-1][width-1]*1 + 0*sample_d[height-1][width]+0*sample_d[height][width-1].
+		// by allocating that 1 pixel boundary, we prevent accessing unallocated memory
+		// while also we never propigating the uninitialized values at sample_d[height][..] or sample_d[..][width]
+		// which are multiplied by zero in every case.
+		buffer = ippiMalloc_32f_C1(width+1, height+1, &line_step_in_bytes);
 		if (buffer == NULL) {
 			//ippiFree(buffer);
 			throw ns_ex("ns_intel_image_32f::Could not allocate buffer ") << width << "," << height;

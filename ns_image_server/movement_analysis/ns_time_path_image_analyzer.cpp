@@ -43,6 +43,7 @@ ns_analyzed_image_time_path::~ns_analyzed_image_time_path(){
 
 
 ns_64_bit total_flow_time = 0;
+unsigned long total_flow_calc = 0;
 
 ns_analyzed_image_time_path_element_measurements operator+(const ns_analyzed_image_time_path_element_measurements & a,const ns_analyzed_image_time_path_element_measurements & b){
 	ns_analyzed_image_time_path_element_measurements s(a);
@@ -488,12 +489,386 @@ void ns_time_path_image_movement_analyzer::output_allocation_state_header(std::o
 	out << "stage,timepoint,group,path,element,absolute time,path aligned image loaded, registered image loaded\n";
 }
 
+
+struct ns_movement_analysis_shared_state {
+	ns_movement_analysis_shared_state():open_object_count(0),sql_lock("ssl"), deallocated_aligned_count(0),
+		registered_image_clear_lag(ns_analyzed_image_time_path::movement_time_kernel_width), 
+		sql(0),
+		path_aligned_image_clear_lag((ns_analyzed_image_time_path::movement_time_kernel_width > ns_analyzed_image_time_path::alignment_time_kernel_width) ?
+			ns_analyzed_image_time_path::movement_time_kernel_width : ns_analyzed_image_time_path::alignment_time_kernel_width){}
+
+	vector<vector<ns_chunk_generator> > chunk_generators;
+	vector<vector<ns_alignment_state> > alignment_states;
+
+	std::vector<int> path_reset;
+
+	unsigned long open_object_count;
+	unsigned long deallocated_aligned_count;
+
+	ns_sql * sql;
+	ns_lock sql_lock;
+
+	const  long path_aligned_image_clear_lag;
+	const  long registered_image_clear_lag;
+};
+
+void ns_time_path_image_movement_analyzer::run_group_for_current_backwards_round(unsigned int group_id, unsigned int path_id, ns_movement_analysis_shared_state * shared_state) {
+	const unsigned int & i(group_id), &j(path_id);
+	ns_analyzed_time_image_chunk chunk;
+
+	if (!shared_state->chunk_generators[i][j].backwards_update_and_check_for_new_chunk(chunk))
+		return;
+
+	shared_state->open_object_count++;
+	if (abs(chunk.start_i - chunk.stop_i) != 1)
+		throw ns_ex("Running backwards, the chunk size has to be 1, otherwise reversing the order gets complicated!");
+	//cerr << "R" << i << "(" << chunk.start_i << "-" << chunk.stop_i << ")";
+	groups[i].paths[j].calculate_image_registration(chunk, shared_state->alignment_states[i][j], shared_state->chunk_generators[i][j].first_chunk());
+	//cerr << "(";
+
+	//in several case we need frames that occur after the onset of stationarity
+	//to fill the alignment buffer.  We don't want to output these; we only want
+	//to output those that occur /before/ the onset of stationarity.
+	//we make that chunk here.
+	if (chunk.start_i < groups[i].paths[j].first_stationary_timepoint()) {
+		//	cerr << "T" << i << "(" << chunk.start_i << "-" << chunk.stop_i << ")";
+		groups[i].paths[j].copy_aligned_path_to_registered_image(chunk);
+	}
+
+	//also, we /register/ backwards but calculate movement /forwards/
+	//so we need to be one behind in the movement calculation at all times.
+	ns_analyzed_time_image_chunk registration_chunk(chunk);
+	registration_chunk.start_i += shared_state->registered_image_clear_lag;
+	registration_chunk.stop_i += shared_state->registered_image_clear_lag;
+
+	if (registration_chunk.start_i <= groups[i].paths[j].first_stationary_timepoint() - 1) {
+		//	cerr << "M" << i << "(" << registration_chunk.start_i << "-" << registration_chunk.stop_i << ")";
+		groups[i].paths[j].calculate_movement_images(registration_chunk);
+		ns_acquire_lock_for_scope sql_lock(shared_state->sql_lock, __FILE__, __LINE__);
+#ifdef NS_CALCULATE_OPTICAL_FLOW
+		groups[i].paths[j].save_movement_images(registration_chunk, *shared_state->sql, ns_analyzed_image_time_path::ns_save_both, true);
+
+#else
+		groups[i].paths[j].save_movement_images(registration_chunk, *shared_state->sql, ns_analyzed_image_time_path::ns_save_simple, true);
+#endif
+		sql_lock.release();
+	}
+	//cerr << "Cp" << i << "(" << chunk.start_i + path_aligned_image_clear_lag << "-" << groups[i].paths[j].elements.size() << ")";
+
+	for (long k = chunk.start_i + shared_state->path_aligned_image_clear_lag; k < groups[i].paths[j].elements.size(); k++) {
+		if (groups[i].paths[j].elements[k].clear_path_aligned_images())
+			shared_state->deallocated_aligned_count++;
+	}
+	//cerr << "Cr" << i << "(" << chunk.start_i + registered_image_clear_lag << "-" << groups[i].paths[j].elements.size() << ")";
+	for (long k = chunk.start_i + shared_state->registered_image_clear_lag; k < groups[i].paths[j].elements.size(); k++)
+		groups[i].paths[j].elements[k].clear_movement_images();
+
+	if (shared_state->chunk_generators[i][j].no_more_chunks_backward()) {
+		//output the last (e.g first)
+		ns_analyzed_time_image_chunk registration_chunk;
+		registration_chunk.processing_direction = ns_analyzed_time_image_chunk::ns_backward;
+		registration_chunk.start_i = 0;
+		registration_chunk.stop_i = -1;
+		groups[i].paths[j].calculate_movement_images(registration_chunk);
+		ns_acquire_lock_for_scope sql_lock(shared_state->sql_lock, __FILE__, __LINE__);
+#ifdef NS_CALCULATE_OPTICAL_FLOW
+		groups[i].paths[j].save_movement_images(registration_chunk, *shared_state->sql, ns_analyzed_image_time_path::ns_save_both, true);
+		ns_safe_delete(groups[i].paths[j].flow);
+#else
+		groups[i].paths[j].save_movement_images(registration_chunk, *shared_state->sql, ns_analyzed_image_time_path::ns_save_simple, true);
+#endif
+		sql_lock.release();
+
+		//	cerr << "FCp" << i << "(0-" << groups[i].paths[j].elements.size() << ")";
+		for (long k = 0; k < groups[i].paths[j].elements.size(); k++) {
+			if (groups[i].paths[j].elements[k].clear_path_aligned_images())
+				shared_state->deallocated_aligned_count++;
+		}
+		//cerr << "FCr" << i << "(0-" << groups[i].paths[j].elements.size() << ")";
+		for (long k = 0; k < groups[i].paths[j].elements.size(); k++)
+			groups[i].paths[j].elements[k].clear_movement_images();
+
+		groups[i].paths[j].reset_movement_image_saving();
+		shared_state->path_reset[i]++;
+		if (shared_state->path_reset[i] > 1)
+			cerr << "YIKES!";
+	}
+}
+
+typedef void (ns_time_path_image_movement_analyzer::*ns_time_path_image_analysis_thread_job_pointer)(unsigned int group_id, unsigned int path_id, ns_movement_analysis_shared_state *);
+class ns_time_path_image_analysis_thread_pool;
+struct ns_time_path_image_analysis_thread_pool_data{
+	ns_time_path_image_analysis_thread_pool * pool;
+	unsigned long thread_id;
+	ns_time_path_image_movement_analyzer * ma;
+};
+class ns_time_path_image_analysis_thread_pool {
+public:
+	ns_time_path_image_analysis_thread_pool() :job_access_lock("ns_tpiatp"), error_access_lock("ns_tpierr"),shutdown_(false){}
+	static ofstream debug;
+	~ns_time_path_image_analysis_thread_pool() { shutdown(); }
+	typedef std::pair<unsigned int, unsigned int> ns_tpiatp_job;
+	std::queue<ns_tpiatp_job> jobs;
+	ns_lock job_access_lock;
+	ns_time_path_image_analysis_thread_job_pointer current_job;
+
+	void throw_errors() {
+		if (errors.empty())
+			return;
+		ns_ex ex(errors.front());
+		errors.pop();
+		while (!errors.empty()) {
+			image_server.register_server_event(ns_image_server::ns_register_in_central_db_with_fallback, errors.front());
+			errors.pop();
+		}
+		throw ex;
+	}
+
+	void set_number_of_threads(unsigned long i) {
+		threads.clear();
+		threads.resize(i);
+		thread_idle_locks.clear();
+		thread_idle_locks.reserve(i);
+		for (unsigned int j = 0; j < i; j++)
+			thread_idle_locks.push_back(ns_lock(std::string("ns-tpi-")+ns_to_string(j)));
+	}
+
+	std::queue<ns_ex> errors;
+	ns_lock error_access_lock;
+
+	//important!  This /keeps/ the job_access_lock for the current thread.
+	void wait_for_jobs_to_finish(){ 
+		while (true) {
+			//wait until whichever thread has the running lock gives it up
+			//now grab control of everything
+
+			bool try_again(false);
+			debug << "(main waits for job lock)";
+			job_access_lock.wait_to_acquire(__FILE__, __LINE__);
+			cerr << "mw ";
+			if (!jobs.empty()) {
+				debug << "(main gets job lock but finds jobs)";
+				job_access_lock.release();
+				continue;
+			}
+			for (unsigned int i = 0; i < thread_idle_locks.size(); i++) {
+				debug << "(main waits for thread lock " << i<< ")";
+				if (!thread_idle_locks[i].try_to_acquire(__FILE__, __LINE__)) {
+					debug << "(main finds " << i<< " running and releases job and idle threads)";
+					//someone is still working.  give up until they are done.
+					for (unsigned int j = 0; j <= i; j++)
+						thread_idle_locks[j].release();
+				}
+				//we happened to grab the one_thread_is_running_lock but a worker thread will soon grab it, we give it up and wait.
+
+				debug << "(main gets t" << i << " idle lock)";
+				if (!jobs.empty()) {
+					debug << "(main finds jobs and releases job and idle threads)";
+					//oops! someone has added a job.  we must give up waiting for idle threads until someone handles it.
+					for (unsigned int j = 0; j <= i; j++)
+						thread_idle_locks[j].release();
+					job_access_lock.release();
+					try_again = true;
+					break;
+				}
+				job_access_lock.release();
+			}
+			if (try_again)
+				continue;
+			debug << "(main gets all idle locks)";
+			//ok! we have all the idle locks (all threads are idle)
+			//and there are no jobs left in the queue
+			for (unsigned int i = 0; i < thread_idle_locks.size(); i++) 
+				thread_idle_locks[i].release();
+			//job_access_lock.release();
+			return;
+		}
+	}
+	void shutdown() { 
+		shutdown_ = true;
+		for (unsigned int i = 0; i < threads.size(); i++) {
+			threads[i].block_on_finish();
+		}
+		threads.resize(0);
+		thread_idle_locks.resize(0);
+		shutdown_ = false;
+	}
+
+	void launch_pool(ns_time_path_image_movement_analyzer * ma,ns_movement_analysis_shared_state * ss) {
+		if (threads.size() == 0)
+			throw ns_ex("No threads!");
+		shared_state = ss;
+		for (unsigned int i = 0; i < threads.size(); i++) {
+			//put this on the heap so the thread can access it whenever it pleases.
+			ns_time_path_image_analysis_thread_pool_data * data = new ns_time_path_image_analysis_thread_pool_data;;
+			data->pool = this;
+			data->thread_id = i;
+			data->ma = ma;
+			threads[i].run(this->run, data);
+		}
+	}
+	static ns_thread_return_type run(void * pool_data) {
+
+		//copy this from the heap to the stack, and free up the heap.
+		ns_time_path_image_analysis_thread_pool_data * pp = (ns_time_path_image_analysis_thread_pool_data *)pool_data;
+		ns_time_path_image_analysis_thread_pool_data p = *pp;
+		delete pp;
+
+		bool this_thread_is_idle(false);
+		p.pool->thread_idle_locks[p.thread_id].wait_to_acquire(__FILE__, __LINE__);
+		while (true) {
+			//a shutdown is signalled!  Exit.
+			if (p.pool->shutdown_) {
+				debug << "(t" << p.thread_id << " shutsdown)";
+				if (!this_thread_is_idle)
+					p.pool->thread_idle_locks[p.thread_id].release();
+				return true;
+			}
+			ns_tpiatp_job job;
+			debug << "(t" << p.thread_id << " requests job lock)";
+			p.pool->job_access_lock.wait_to_acquire(__FILE__, __LINE__);
+
+			debug << "(t" << p.thread_id << " gets job lock)";
+			try {
+				//a shutdown is signalled!  Exit.
+				if (p.pool->shutdown_) {
+					debug << "(t" << p.thread_id << " shutsdown)";
+					if (!this_thread_is_idle)
+						p.pool->thread_idle_locks[p.thread_id].release();
+					p.pool->job_access_lock.release();
+					return true;
+				}
+				//if the pool of jobs is empty, the thread goes idle and wait on the job access lock until something happens.
+				//if some other thread is waiting for all jobs to be done, it will grab this job access lock,
+				//so this thread will not poll the jobs queue unneccisarily
+				if (p.pool->jobs.empty()) {
+					if (!this_thread_is_idle) {
+						debug << "(t" << p.thread_id << " goes idle)";
+						this_thread_is_idle = true;
+						p.pool->thread_idle_locks[p.thread_id].release();
+					}
+					debug << "(t" << p.thread_id << " finds no jobs and releases lock)";
+					p.pool->job_access_lock.release();
+				}
+				else {
+					//if we were idle, stop being idle, and grab the lock that will allow
+					//other threads to block until this thread goes idle.
+					if (this_thread_is_idle) {
+						debug << "(t" << p.thread_id << " waits for its idle lock)";
+						p.pool->thread_idle_locks[p.thread_id].wait_to_acquire(__FILE__, __LINE__);
+						debug << "(t" << p.thread_id << " gets its idle lock)";
+						this_thread_is_idle = false;
+					}
+					//grab the job
+					debug << "(t" << p.thread_id << " finds a job and releases lock)";
+					job = p.pool->jobs.front();
+					p.pool->jobs.pop();
+					p.pool->job_access_lock.release();
+				}
+			}
+			catch (...) {
+				p.pool->job_access_lock.release();
+				if (!this_thread_is_idle)
+					p.pool->thread_idle_locks[p.thread_id].release();
+				throw;
+			}
+
+			//run the job!
+			try {
+				ns_time_path_image_analysis_thread_job_pointer fun = p.pool->current_job;
+				(p.ma->*fun)(job.first, job.second, p.pool->shared_state);
+			}
+			catch (ns_ex & ex) {
+				cerr << "(t" << p.thread_id << " encounters an error " << ex.text() << ")";
+				p.pool->error_access_lock.wait_to_acquire(__FILE__, __LINE__);
+				p.pool->errors.push(ex);
+				p.pool->error_access_lock.release();
+			}
+			catch (...) {
+				p.pool->error_access_lock.wait_to_acquire(__FILE__, __LINE__);
+				p.pool->errors.push(ns_ex("Unknown error"));
+				p.pool->error_access_lock.release();
+			}
+		}
+		return true;
+	}
+	private:
+
+	std::vector<ns_lock> thread_idle_locks;
+	bool shutdown_;
+	vector<ns_thread> threads;
+	ns_movement_analysis_shared_state * shared_state;
+};
+
+ofstream ns_time_path_image_analysis_thread_pool::debug("c:\\server\\thread_debug.txt");
+
+void ns_time_path_image_movement_analyzer::run_group_for_current_forwards_round(unsigned int group_id, unsigned int path_id, ns_movement_analysis_shared_state * shared_state) {
+	const unsigned int &i(group_id), &j(path_id);
+#ifdef NS_OUTPUT_ALGINMENT_DEBUG
+	if (i != 1)	//xxx
+		continue;
+#endif
+
+	ns_analyzed_time_image_chunk chunk;
+	if (!shared_state->chunk_generators[i][j].update_and_check_for_new_chunk(chunk))
+		return;
+
+	//			cerr << "Processing path " << i <<"." << j << ":(" << chunk.start_i << "-" << chunk.stop_i << ")\n";
+#ifdef NS_OUTPUT_ALGINMENT_DEBUG
+	cerr << "PATH " << i << "," << j << "\n";
+	debug_path_name = string("path") + ns_to_string(i) + "_" + ns_to_string(j);
+#endif			
+	//cerr << "R" << i << "(" << chunk.start_i << "-" << chunk.stop_i << ")";
+	groups[i].paths[j].calculate_image_registration(chunk, shared_state->alignment_states[i][j], shared_state->chunk_generators[i][j].first_chunk());
+	groups[i].paths[j].copy_aligned_path_to_registered_image(chunk);
+	groups[i].paths[j].calculate_movement_images(chunk);
+
+	///	cerr << total_flow_time / 1000;
+	//	cerr << ")";
+#ifdef NS_OUTPUT_ALGINMENT_DEBUG
+	for (unsigned int k = chunk.start_i; k < chunk.stop_i; k++) {
+		oout << k << "," << groups[i].paths[j].element(k).registration_offset.x << "," <<
+			groups[i].paths[j].element(k).registration_offset.y << "," <<
+			groups[i].paths[j].element(k).registration_offset.mag() << "\n";
+	}
+	oout.flush();
+#endif
+	groups[i].paths[j].quantify_movement(chunk);
+	{
+		ns_acquire_lock_for_scope sql_lock(shared_state->sql_lock, __FILE__, __LINE__);
+#ifdef NS_CALCULATE_OPTICAL_FLOW
+		groups[i].paths[j].save_movement_images(chunk, *shared_state->sql, ns_analyzed_image_time_path::ns_save_both, false);
+#else
+		groups[i].paths[j].save_movement_images(chunk, *shared_state->sql, ns_analyzed_image_time_path::ns_save_simple, false);
+#endif
+		sql_lock.release();
+	}
+	//cerr << "Cp" << i << "(0-" << chunk.start_i - (long)path_aligned_image_clear_lag+1 << ")";
+	//cerr << "Cr" << i << "(0-" << chunk.start_i - (long)registered_image_clear_lag+1 << ")";
+
+	for (long k = 0; k < (long)chunk.start_i - (long)shared_state->path_aligned_image_clear_lag + 1; k++)
+		groups[i].paths[j].elements[k].clear_path_aligned_images();
+	for (long k = 0; k < (long)chunk.start_i - (long)shared_state->registered_image_clear_lag + 1; k++)
+		groups[i].paths[j].elements[k].clear_movement_images();
+
+	if (shared_state->chunk_generators[i][j].no_more_chunks_forward()) {
+
+		for (long k = 0; k < groups[i].paths[j].elements.size(); k++) {
+			groups[i].paths[j].elements[k].clear_path_aligned_images();
+			groups[i].paths[j].elements[k].clear_movement_images();
+		}
+		groups[i].paths[j].reset_movement_image_saving();
+		shared_state->path_reset[i]++;
+		if (shared_state->path_reset[i] > 1)
+			cerr << "YIKES!";
+	}
+}
+
+
 void ns_time_path_image_movement_analyzer::process_raw_images(const ns_64_bit region_id,const ns_time_path_solution & solution_, const ns_time_series_denoising_parameters & times_series_denoising_parameters,const ns_analyzed_image_time_path_death_time_estimator * e,ns_sql & sql, const long group_number,const bool write_status_to_db){
 	analysis_id = ns_current_time();
 	region_info_id = region_id;
-	const  long path_aligned_image_clear_lag((ns_analyzed_image_time_path::movement_time_kernel_width > ns_analyzed_image_time_path::alignment_time_kernel_width )?
-									ns_analyzed_image_time_path::movement_time_kernel_width:ns_analyzed_image_time_path::alignment_time_kernel_width);
-	const  long registered_image_clear_lag(ns_analyzed_image_time_path::movement_time_kernel_width);
+	
 	try{
 		//std::ofstream debug_out("c:\\server\\path_alignment_debug.csv");
 		//output_allocation_state_header(debug_out);
@@ -508,8 +883,18 @@ void ns_time_path_image_movement_analyzer::process_raw_images(const ns_64_bit re
 		unsigned long p(0);
 	//	image_server.register_server_event(ns_image_server_event("Calculating Movement",false),&sql);
 		
+		ns_movement_analysis_shared_state shared_state;
+		shared_state.sql = &sql;
+
+		ns_time_path_image_analysis_thread_pool thread_pool;
+		thread_pool.set_number_of_threads(12);
+		thread_pool.job_access_lock.wait_to_acquire(__FILE__, __LINE__);
+		thread_pool.current_job = &ns_time_path_image_movement_analyzer::run_group_for_current_backwards_round;
+		thread_pool.launch_pool(this,&shared_state);
+
+
 		//xxx
-		std::vector<int> path_reset(groups.size(), 0);
+		shared_state.path_reset.resize(groups.size(), 0);
 
 		//initiate chunk generator and alignment states
 		const unsigned long chunk_size(1);//minimize memory use
@@ -519,43 +904,41 @@ void ns_time_path_image_movement_analyzer::process_raw_images(const ns_64_bit re
 		//But in situations with lots of worms we run through the region data files multiple times. 
 		//This of course takes a lot longer.
 		const unsigned long minimum_chunk_size(ns_analyzed_image_time_path::alignment_time_kernel_width);
-		vector<vector<ns_chunk_generator> > chunk_generators;
-		vector<vector<ns_alignment_state> > alignment_states;
-		chunk_generators.resize(groups.size());
-		alignment_states.resize(groups.size());
+		shared_state.chunk_generators.resize(groups.size());
+		shared_state.alignment_states.resize(groups.size());
 		total_flow_time = 0;
 		long number_of_paths_to_consider(0),
 				number_of_paths_to_ignore(0);
 		for (unsigned int i = 0; i < groups.size(); i++){
-			alignment_states[i].resize(groups[i].paths.size());
-			chunk_generators[i].reserve(groups[i].paths.size());
+			shared_state.alignment_states[i].resize(groups[i].paths.size());
+			shared_state.chunk_generators[i].reserve(groups[i].paths.size());
 			for (unsigned int j = 0; j < groups[i].paths.size(); j++){
 				if (!ns_skip_low_density_paths || !groups[i].paths[j].is_low_density_path())
 					number_of_paths_to_consider++;
 				else number_of_paths_to_ignore++;
-				chunk_generators[i].push_back(ns_chunk_generator(chunk_size,groups[i].paths[j]));
+				shared_state.chunk_generators[i].push_back(ns_chunk_generator(chunk_size,groups[i].paths[j]));
 			}
 		}
 		if (number_of_paths_to_consider == 0)
 			image_server.register_server_event(ns_image_server_event("No dead animals, or potentially dead animals, were identified in this region."),&sql);
-		else{
+		else {
 			if (write_status_to_db)
-				image_server.register_server_event(ns_image_server_event("Registering and Analyzing ") << number_of_paths_to_consider << " objects; discarding " << number_of_paths_to_ignore << " as noise.",&sql);
+				image_server.register_server_event(ns_image_server_event("Registering and Analyzing ") << number_of_paths_to_consider << " objects; discarding " << number_of_paths_to_ignore << " as noise.", &sql);
 			else
-			std::cout << "Registering and Analyzing " << number_of_paths_to_consider << " objects; discarding " << number_of_paths_to_ignore << " as noise.\n";
-			
-			const bool system_is_64_bit(sizeof(void *)==8);
+				std::cout << "Registering and Analyzing " << number_of_paths_to_consider << " objects; discarding " << number_of_paths_to_ignore << " as noise.\n";
+
+			const bool system_is_64_bit(sizeof(void *) == 8);
 			const int number_of_images_stored_in_memory_per_group(
-				(1+1+2+4+4)*registered_image_clear_lag //the registered images; two 8 bt images one 16 and two 32bit
+				(1 + 1 + 2 + 4 + 4)*shared_state.registered_image_clear_lag //the registered images; two 8 bt images one 16 and two 32bit
 				+
-				3*(2* path_aligned_image_clear_lag) //three chanels of two 8bit images
+				3 * (2 * shared_state.path_aligned_image_clear_lag) //three chanels of two 8bit images
 				+
 				1 //intermediate buffers used during saves
-				);
+			);
 
-			ns_64_bit max_mem_per_node = (((ns_64_bit)image_server.maximum_memory_allocation_in_mb())*1024*1024)/
-												image_server.number_of_node_processes_per_machine();
-			ns_64_bit max_mem_on_32_bit = (((ns_64_bit)1)<<28)*7;  //1.75GB
+			ns_64_bit max_mem_per_node = (((ns_64_bit)image_server.maximum_memory_allocation_in_mb()) * 1024 * 1024) /
+				image_server.number_of_node_processes_per_machine();
+			ns_64_bit max_mem_on_32_bit = (((ns_64_bit)1) << 28) * 7;  //1.75GB
 
 			//32 bit systems become unreliable if you allocate > 1.75 GB.
 			//Yes you can set flags to get access to 3GB but this is finniky in practice
@@ -565,37 +948,37 @@ void ns_time_path_image_movement_analyzer::process_raw_images(const ns_64_bit re
 
 			const int number_of_repeats_required(
 				calculate_division_size_that_fits_in_specified_memory_size(
-				max_mem_per_node, 
-				number_of_images_stored_in_memory_per_group));
+					max_mem_per_node,
+					number_of_images_stored_in_memory_per_group));
 
 			if (number_of_repeats_required > number_of_paths_to_consider)
 				throw ns_ex("The specified worms are so big that they cannot be processed in memory");
 			//const int ((int)(ceil(number_of_paths_to_consider/(float)maximum_number_of_worms_to_process_simultaneously)));
-			const int number_of_worms_per_repeat((int)(ceil(number_of_paths_to_consider/(float)number_of_repeats_required)));
-			if (number_of_repeats_required > 1){
+			const int number_of_worms_per_repeat((int)(ceil(number_of_paths_to_consider / (float)number_of_repeats_required)));
+			if (number_of_repeats_required > 1) {
 				if (write_status_to_db)
-					image_server.register_server_event(ns_image_server_event( "To fit everything into memory, we're doing this in ") << number_of_repeats_required << " rounds",&sql);
+					image_server.register_server_event(ns_image_server_event("To fit everything into memory, we're doing this in ") << number_of_repeats_required << " rounds", &sql);
 				else
 					std::cout << "To fit everything into memory, we're doing this in " << number_of_repeats_required << " rounds\n";
 			}
 			int current_round(0);
-			for (unsigned int g = 0; g < groups.size(); ){
-			
+			for (unsigned int g = 0; g < groups.size(); ) {
+
 				const unsigned long start_group(g);
 				unsigned long stop_group;
 				{
 					int number_to_do_this_round(0);
 					bool found_enough(false);
 					//find the last worm that 
-					for (stop_group = start_group; stop_group < groups.size() &&!found_enough; stop_group++){
-						for (unsigned int j = 0; j < groups[stop_group].paths.size(); j++){
-							if (!ns_skip_low_density_paths || !groups[stop_group].paths[j].is_low_density_path()){
-								if (number_to_do_this_round == number_of_worms_per_repeat){
+					for (stop_group = start_group; stop_group < groups.size() && !found_enough; stop_group++) {
+						for (unsigned int j = 0; j < groups[stop_group].paths.size(); j++) {
+							if (!ns_skip_low_density_paths || !groups[stop_group].paths[j].is_low_density_path()) {
+								if (number_to_do_this_round == number_of_worms_per_repeat) {
 									found_enough = true;
 									stop_group--; //we've gone one too far
 									break;
 								}
-								number_to_do_this_round++;	
+								number_to_do_this_round++;
 							}
 						}
 					}
@@ -603,35 +986,39 @@ void ns_time_path_image_movement_analyzer::process_raw_images(const ns_64_bit re
 				if (start_group == stop_group)
 					break;
 				//cerr << "Running group " << start_group << "," << stop_group << "\n";
-				if (number_of_repeats_required > 1){
+				if (number_of_repeats_required > 1) {
 					if (write_status_to_db)
-						image_server.register_server_event(ns_image_server_event("Starting Round ") <<  (current_round+1) << "\n",&sql);
+						image_server.register_server_event(ns_image_server_event("Starting Round ") << (current_round + 1) << "\n", &sql);
 					else
-						std::cout << "\nStarting Round " <<  (current_round+1) << "\n";
-				}
-				calculate_memory_pool_maximum_image_size(start_group,stop_group);
-				#ifdef NS_OUTPUT_ALGINMENT_DEBUG
+						std::cout << "\nStarting Round " << (current_round + 1) << "\n";
+			}
+				calculate_memory_pool_maximum_image_size(start_group, stop_group);
+#ifdef NS_OUTPUT_ALGINMENT_DEBUG
 				ofstream oout("c:\\tst_quant.csv");
 				oout << "Frame,Offset X,Offset Y, Offset Magnitude\n";
 				oout.flush();
-				#endif
-				
+#endif
+
 				unsigned long debug_output_skip(0);
-				
+
 				//first, we register backwards from onset of stationarity
-				for (unsigned int i = start_group; i < stop_group; i++){
-					for (unsigned int j = 0; j < groups[i].paths.size(); j++){
+				for (unsigned int i = start_group; i < stop_group; i++) {
+					for (unsigned int j = 0; j < groups[i].paths.size(); j++) {
 						groups[i].paths[j].find_first_labeled_stationary_timepoint();
-					//	if (i == 24)
-					//		cerr <<"SHA";
-						chunk_generators[i][j].setup_first_chuck_for_backwards_registration();
+						//	if (i == 24)
+						//		cerr <<"SHA";
+						shared_state.chunk_generators[i][j].setup_first_chuck_for_backwards_registration();
 					}
 				}
-				
+
+
+
+
+
 				if (write_status_to_db)
-						image_server.register_server_event(ns_image_server_event("Running backwards..."),&sql);
+					image_server.register_server_event(ns_image_server_event("Running backwards..."), &sql);
 				else
-				cerr << "Running Backwards...";
+					cerr << "Running Backwards...";
 				for (long t = (long)region_image_specifications.size() - 1; t >= 0; t--) {
 
 					//output_allocation_state("bk",region_image_specifications.size() - 1 - t, debug_out);
@@ -657,7 +1044,7 @@ void ns_time_path_image_movement_analyzer::process_raw_images(const ns_64_bit re
 						ns_ex ex_f(ex);
 						image_server.register_server_event(ns_image_server::ns_register_in_central_db, ns_image_server_event("Found an error; doing a consistancy check on all images in the region: ") << ex.text());
 						try {
-							load_region_visualization_images(0, region_image_specifications.size(), 0, groups.size(), sql, true,true);
+							load_region_visualization_images(0, region_image_specifications.size(), 0, groups.size(), sql, true, true);
 						}
 						catch (ns_ex & ex2) {
 							ex_f << ";" << ex2.text();
@@ -665,8 +1052,6 @@ void ns_time_path_image_movement_analyzer::process_raw_images(const ns_64_bit re
 						throw ex_f;
 					}
 
-					unsigned long open_object_count(0);
-					unsigned long deallocated_aligned_count(0);
 
 					//	cerr << "\n";
 						//run chunks for all paths whose images have been loaded in the previous step
@@ -675,93 +1060,30 @@ void ns_time_path_image_movement_analyzer::process_raw_images(const ns_64_bit re
 							if (ns_skip_low_density_paths && groups[i].paths[j].is_low_density_path())
 								continue;
 
-							ns_analyzed_time_image_chunk chunk;
+							thread_pool.jobs.push(ns_time_path_image_analysis_thread_pool::ns_tpiatp_job(i, j));
 
-							if (!chunk_generators[i][j].backwards_update_and_check_for_new_chunk(chunk))
-								continue;
+							//	run_group_for_current_backwards_round(i, j, &shared_state);
 
-							open_object_count++;
-							if (abs(chunk.start_i - chunk.stop_i) != 1)
-								throw ns_ex("Running backwards, the chunk size has to be 1, otherwise reversing the order gets complicated!");
-							//cerr << "R" << i << "(" << chunk.start_i << "-" << chunk.stop_i << ")";
-							groups[i].paths[j].calculate_image_registration(chunk, alignment_states[i][j], chunk_generators[i][j].first_chunk());
-							//cerr << "(";
 
-							//in several case we need frames that occur after the onset of stationarity
-							//to fill the alignment buffer.  We don't want to output these; we only want
-							//to output those that occur /before/ the onset of stationarity.
-							//we make that chunk here.
-							if (chunk.start_i < groups[i].paths[j].first_stationary_timepoint()) {
-							//	cerr << "T" << i << "(" << chunk.start_i << "-" << chunk.stop_i << ")";
-								groups[i].paths[j].copy_aligned_path_to_registered_image(chunk);
-							}
-
-							//also, we /register/ backwards but calculate movement /forwards/
-							//so we need to be one behind in the movement calculation at all times.
-							ns_analyzed_time_image_chunk registration_chunk(chunk);
-							registration_chunk.start_i += registered_image_clear_lag;
-							registration_chunk.stop_i += registered_image_clear_lag;
-
-							if (registration_chunk.start_i <= groups[i].paths[j].first_stationary_timepoint() - 1) {
-							//	cerr << "M" << i << "(" << registration_chunk.start_i << "-" << registration_chunk.stop_i << ")";
-								groups[i].paths[j].calculate_movement_images(registration_chunk);
-								#ifdef NS_CALCULATE_OPTICAL_FLOW
-								groups[i].paths[j].save_movement_images(registration_chunk, sql, ns_analyzed_image_time_path::ns_save_both, true);
-								#else
-								groups[i].paths[j].save_movement_images(registration_chunk, sql, ns_analyzed_image_time_path::ns_save_simple, true);
-								#endif
-							}
-							//cerr << "Cp" << i << "(" << chunk.start_i + path_aligned_image_clear_lag << "-" << groups[i].paths[j].elements.size() << ")";
-
-							for (long k = chunk.start_i + path_aligned_image_clear_lag; k < groups[i].paths[j].elements.size(); k++) {
-								if (groups[i].paths[j].elements[k].clear_path_aligned_images())
-									deallocated_aligned_count++;
-							}
-							//cerr << "Cr" << i << "(" << chunk.start_i + registered_image_clear_lag << "-" << groups[i].paths[j].elements.size() << ")";
-							for (long k = chunk.start_i + registered_image_clear_lag; k < groups[i].paths[j].elements.size(); k++)
-								groups[i].paths[j].elements[k].clear_movement_images();
-
-							if (chunk_generators[i][j].no_more_chunks_backward()) {
-								//output the last (e.g first)
-								ns_analyzed_time_image_chunk registration_chunk;
-								registration_chunk.processing_direction = ns_analyzed_time_image_chunk::ns_backward;
-								registration_chunk.start_i = 0;
-								registration_chunk.stop_i = -1;
-								groups[i].paths[j].calculate_movement_images(registration_chunk);
-								#ifdef NS_CALCULATE_OPTICAL_FLOW
-								groups[i].paths[j].save_movement_images(registration_chunk, sql, ns_analyzed_image_time_path::ns_save_both, true);
-								ns_safe_delete(groups[i].paths[j].flow);
-								#else
-								groups[i].paths[j].save_movement_images(registration_chunk, sql, ns_analyzed_image_time_path::ns_save_simple, true);
-								#endif
-							
-							//	cerr << "FCp" << i << "(0-" << groups[i].paths[j].elements.size() << ")";
-								for (long k = 0; k < groups[i].paths[j].elements.size(); k++) {
-									if (groups[i].paths[j].elements[k].clear_path_aligned_images())
-										deallocated_aligned_count++;
-								}
-								//cerr << "FCr" << i << "(0-" << groups[i].paths[j].elements.size() << ")";
-								for (long k = 0; k < groups[i].paths[j].elements.size(); k++) 
-									groups[i].paths[j].elements[k].clear_movement_images();
-
-								groups[i].paths[j].reset_movement_image_saving();
-								path_reset[i]++;
-								if (path_reset[i] > 1)
-									cerr << "YIKES!";
-							}
 						}
+						//	cerr << "\n";
 					}
-				//	cerr << "\n";
+					thread_pool.job_access_lock.release();
+					//ok!  here all the worker threads start handling all the schedule tasks.
+					//this main thread blocks until the worker threads are all done
+					thread_pool.wait_for_jobs_to_finish();
+					//now that all the worker threads are done, this thread holds the thread pool job lock again
+					//and we keep it until we need to run more jobs, below.
+					thread_pool.throw_errors();
 				}
-
 				//reload everything back in, reverse the order so that the earliest frame is first, and write it all out.
 				if (write_status_to_db)
-				image_server.register_server_event(ns_image_server_event("Transfering current results to long term storage..."), &sql);
+					image_server.register_server_event(ns_image_server_event("Transfering current results to long term storage..."), &sql);
 				else std::cout << "Transfering current results to long term storage...\n";
 				unsigned long debug_count(0);
 				for (unsigned int i = start_group; i < stop_group; i++) {
 					for (unsigned int j = 0; j < groups[i].paths.size(); j++) {
-						if (i%5==0)
+						if (i % 5 == 0)
 							cerr << (100 * i) / (stop_group - start_group) << "%...";
 						//output_allocation_state("rev", debug_count, debug_out);
 						debug_count++;
@@ -773,41 +1095,41 @@ void ns_time_path_image_movement_analyzer::process_raw_images(const ns_64_bit re
 						if (groups[i].paths[j].first_stationary_timepoint() == 0)
 							continue;
 
-						ns_image_storage_source_handle<ns_8_bit> storage(image_server.image_storage.request_from_local_cache(groups[i].paths[j].volatile_storage_name(false),false));
-						#ifdef NS_CALCULATE_OPTICAL_FLOW
+						ns_image_storage_source_handle<ns_8_bit> storage(image_server.image_storage.request_from_local_cache(groups[i].paths[j].volatile_storage_name(false), false));
+#ifdef NS_CALCULATE_OPTICAL_FLOW
 						ns_image_storage_source_handle<float> flow_storage(image_server.image_storage.request_from_local_cache_float(groups[i].paths[j].volatile_storage_name(true), false));
-						groups[i].paths[j].initialize_movement_image_loading(storage, flow_storage,true);
-						#else
-									groups[i].paths[j].initialize_movement_image_loading_no_flow(storage, true);
-						#endif
+						groups[i].paths[j].initialize_movement_image_loading(storage, flow_storage, true);
+#else
+						groups[i].paths[j].initialize_movement_image_loading_no_flow(storage, true);
+#endif
 
 						ns_analyzed_time_image_chunk chunk;
 						chunk.direction = ns_analyzed_time_image_chunk::ns_forward;
 						chunk.start_i = 0;
 						chunk.stop_i = groups[i].paths[j].first_stationary_timepoint();
-						#ifdef NS_CALCULATE_OPTICAL_FLOW
+#ifdef NS_CALCULATE_OPTICAL_FLOW
 						groups[i].paths[j].load_movement_images(chunk, storage, flow_storage);
-						#else
+#else
 						groups[i].paths[j].load_movement_images_no_flow(chunk, storage);
-						#endif
+#endif
 						groups[i].paths[j].end_movement_image_loading();
 						image_server.image_storage.delete_from_local_cache(groups[i].paths[j].volatile_storage_name(true));
 						image_server.image_storage.delete_from_local_cache(groups[i].paths[j].volatile_storage_name(false));
 
 						//reverse order;
 						ns_registered_image_set * tmp;
-						for (unsigned int k = 0; k < groups[i].paths[j].first_stationary_timepoint()/2; k++) {
+						for (unsigned int k = 0; k < groups[i].paths[j].first_stationary_timepoint() / 2; k++) {
 							tmp = groups[i].paths[j].elements[k].registered_images;
-							groups[i].paths[j].elements[k].registered_images = 
+							groups[i].paths[j].elements[k].registered_images =
 								groups[i].paths[j].elements[groups[i].paths[j].first_stationary_timepoint() - k - 1].registered_images;
 							groups[i].paths[j].elements[groups[i].paths[j].first_stationary_timepoint() - k - 1].registered_images = tmp;
 						}
 						groups[i].paths[j].quantify_movement(chunk);
-						#ifdef NS_CALCULATE_OPTICAL_FLOW
+#ifdef NS_CALCULATE_OPTICAL_FLOW
 						groups[i].paths[j].save_movement_images(chunk, sql, ns_analyzed_image_time_path::ns_save_both, false);
-						#else
+#else
 						groups[i].paths[j].save_movement_images(chunk, sql, ns_analyzed_image_time_path::ns_save_simple, false);
-						#endif
+#endif
 						//we leave the image saving buffers open as we'll continue writing to them while moving forward.
 	//					groups[i].paths[j].reset_movement_image_saving();
 
@@ -817,23 +1139,29 @@ void ns_time_path_image_movement_analyzer::process_raw_images(const ns_64_bit re
 						}
 					}
 				}
+
+					
 				debug_output_skip = 0;
-				
+
 				//now we go ahead and work forwards
 
-				
-			for (unsigned int i = 0; i < groups.size(); i++) 
-				path_reset[i] = 0;
 
-				for (unsigned int i = start_group; i < stop_group; i++){
-					for (unsigned int j = 0; j < groups[i].paths.size(); j++){
-						alignment_states[i][j].clear();
-						chunk_generators[i][j].setup_first_chuck_for_forwards_registration();
+				for (unsigned int i = 0; i < groups.size(); i++)
+					shared_state.path_reset[i] = 0;
+
+				for (unsigned int i = start_group; i < stop_group; i++) {
+					for (unsigned int j = 0; j < groups[i].paths.size(); j++) {
+						shared_state.alignment_states[i][j].clear();
+						shared_state.chunk_generators[i][j].setup_first_chuck_for_forwards_registration();
 					}
 				}
 				if (write_status_to_db)
-						image_server.register_server_event(ns_image_server_event("Running forwards..."),&sql);
+					image_server.register_server_event(ns_image_server_event("Running forwards..."), &sql);
 				else std::cout << "\nRunning Forwards...";
+
+
+				thread_pool.current_job = &ns_time_path_image_movement_analyzer::run_group_for_current_forwards_round;
+
 				for (unsigned int t = 0; t < region_image_specifications.size(); t += chunk_size) {
 					if (debug_output_skip == number_of_repeats_required || t == 0 && current_round == 0) {
 						std::cout << (100 * (t + region_image_specifications.size()*current_round)) / (region_image_specifications.size()*number_of_repeats_required) << "%...";
@@ -841,22 +1169,22 @@ void ns_time_path_image_movement_analyzer::process_raw_images(const ns_64_bit re
 					}
 					else debug_output_skip++;
 
-				//	output_allocation_state("fw", t, debug_out);
+					//	output_allocation_state("fw", t, debug_out);
 
 
-					//load a chunk of images
+						//load a chunk of images
 					unsigned long stop_t = t + chunk_size;
 					if (stop_t > region_image_specifications.size())
 						stop_t = region_image_specifications.size();
 					//	cerr << "Loading images " << t << "-" << stop_t << "\n";
 					try {
-						load_region_visualization_images(t, stop_t, start_group, stop_group, sql, false,false);
+						load_region_visualization_images(t, stop_t, start_group, stop_group, sql, false, false);
 					}
 					catch (ns_ex & ex) {
 						ns_ex ex_f(ex);
 						image_server.register_server_event(ns_image_server::ns_register_in_central_db, ns_image_server_event("Found an error; doing a consistancy check on all images in the region: ") << ex.text());
 						try {
-							load_region_visualization_images(0, region_image_specifications.size(), 0, groups.size(), sql, true,false);
+							load_region_visualization_images(0, region_image_specifications.size(), 0, groups.size(), sql, true, false);
 						}
 						catch (ns_ex & ex2) {
 							ex_f << ";" << ex2.text();
@@ -867,66 +1195,18 @@ void ns_time_path_image_movement_analyzer::process_raw_images(const ns_64_bit re
 						for (unsigned int j = 0; j < groups[i].paths.size(); j++) {
 							if (ns_skip_low_density_paths && groups[i].paths[j].is_low_density_path())
 								continue;
-
-#ifdef NS_OUTPUT_ALGINMENT_DEBUG
-							if (i != 1)	//xxx
-								continue;
-#endif
-
-							ns_analyzed_time_image_chunk chunk;
-							if (!chunk_generators[i][j].update_and_check_for_new_chunk(chunk))
-								continue;
-
-							//			cerr << "Processing path " << i <<"." << j << ":(" << chunk.start_i << "-" << chunk.stop_i << ")\n";
-#ifdef NS_OUTPUT_ALGINMENT_DEBUG
-							cerr << "PATH " << i << "," << j << "\n";
-							debug_path_name = string("path") + ns_to_string(i) + "_" + ns_to_string(j);
-#endif			
-							//cerr << "R" << i << "(" << chunk.start_i << "-" << chunk.stop_i << ")";
-							groups[i].paths[j].calculate_image_registration(chunk, alignment_states[i][j], chunk_generators[i][j].first_chunk());
-							groups[i].paths[j].copy_aligned_path_to_registered_image(chunk);
-							groups[i].paths[j].calculate_movement_images(chunk);
-
-						///	cerr << total_flow_time / 1000;
-						//	cerr << ")";
-#ifdef NS_OUTPUT_ALGINMENT_DEBUG
-							for (unsigned int k = chunk.start_i; k < chunk.stop_i; k++) {
-								oout << k << "," << groups[i].paths[j].element(k).registration_offset.x << "," <<
-									groups[i].paths[j].element(k).registration_offset.y << "," <<
-									groups[i].paths[j].element(k).registration_offset.mag() << "\n";
-							}
-							oout.flush();
-#endif
-							groups[i].paths[j].quantify_movement(chunk);
-							#ifdef NS_CALCULATE_OPTICAL_FLOW
-							groups[i].paths[j].save_movement_images(chunk, sql, ns_analyzed_image_time_path::ns_save_both, false);
-							#else
-							groups[i].paths[j].save_movement_images(chunk, sql, ns_analyzed_image_time_path::ns_save_simple, false);
-							#endif
-							//cerr << "Cp" << i << "(0-" << chunk.start_i - (long)path_aligned_image_clear_lag+1 << ")";
-							//cerr << "Cr" << i << "(0-" << chunk.start_i - (long)registered_image_clear_lag+1 << ")";
-
-							for (long k = 0; k < (long)chunk.start_i - (long)path_aligned_image_clear_lag+1; k++)
-								groups[i].paths[j].elements[k].clear_path_aligned_images();
-							for (long k = 0; k < (long)chunk.start_i - (long)registered_image_clear_lag+1; k++)
-								groups[i].paths[j].elements[k].clear_movement_images();
-
-							if (chunk_generators[i][j].no_more_chunks_forward()) {
-
-								for (long k = 0; k < groups[i].paths[j].elements.size(); k++) {
-									groups[i].paths[j].elements[k].clear_path_aligned_images();
-									groups[i].paths[j].elements[k].clear_movement_images();
-								}
-								groups[i].paths[j].reset_movement_image_saving();
-								path_reset[i]++;
-								if (path_reset[i] > 1)
-									cerr << "YIKES!";
-							}
-
+							thread_pool.jobs.push(ns_time_path_image_analysis_thread_pool::ns_tpiatp_job(i, j));
+							//run_group_for_current_backwards_round(i, j, &shared_state);
 						}
 					}
-					//cerr << "\n";
 
+					thread_pool.job_access_lock.release();
+					//ok!  here all the worker threads start handling all the schedule tasks.
+					//this main thread blocks until the worker threads are all done
+					thread_pool.wait_for_jobs_to_finish();
+					//now that all the worker threads are done, this thread holds the thread pool job lock again
+					//and we keep it until we need to run more jobs, below.
+					thread_pool.throw_errors();
 				}
 				//for (unsigned int i = 0; i < groups.size(); i++) {
 					//cerr << i << ":" << path_reset[i];
@@ -934,23 +1214,25 @@ void ns_time_path_image_movement_analyzer::process_raw_images(const ns_64_bit re
 					//		cerr << "!";
 					//	cerr << ",";
 					//}
-			
+
+				//ok! We've finished all the image registration and image analysis. 
 				image_loading_temp.use_more_memory_to_avoid_reallocations(false);
 				image_loading_temp.clear();
-		
-				for (unsigned int i = start_group; i < stop_group; i++){
-					for (unsigned int j = 0; j < groups[i].paths.size(); j++){	
+
+				for (unsigned int i = start_group; i < stop_group; i++) {
+					for (unsigned int j = 0; j < groups[i].paths.size(); j++) {
 						if (ns_skip_low_density_paths && groups[i].paths[j].is_low_density_path())
-								continue;
-						
+							continue;
+
 						groups[i].paths[j].denoise_movement_series(times_series_denoising_parameters);
 					}
 				}
 				memory_pool.clear();
-				g=stop_group;
+				g = stop_group;
 				current_round++;
-			}
+				}
 		}
+		thread_pool.shutdown();
 		///xxx
 		normalize_movement_scores_over_all_paths(times_series_denoising_parameters);
 		for (unsigned int i = 0; i < groups.size(); i++){
@@ -4567,9 +4849,16 @@ void ns_analyzed_image_time_path::calculate_movement_images(const ns_analyzed_ti
 void ns_analyzed_image_time_path::calculate_flow(const unsigned long element_index) {
 	#ifdef NS_CALCULATE_OPTICAL_FLOW
 	ns_high_precision_timer p;
+	
 	p.start();
 	flow->calculate(30,0,2/255.0f);
-	total_flow_time += p.stop();
+	const ns_64_bit cur_t(p.stop());
+
+	total_flow_time += cur_t;
+	total_flow_calc++;
+	cerr << cur_t / 1000.0f << " (" << total_flow_time / total_flow_calc / 1000.0f << ")\n";
+
+
 	flow->get_movement(elements[element_index].registered_images->flow_image_dx, elements[element_index].registered_images->flow_image_dy);
 #else
 	throw ns_ex("Atempting to calculate flow with NS_CALCULATE_OPTICAL_FLOW set to false");

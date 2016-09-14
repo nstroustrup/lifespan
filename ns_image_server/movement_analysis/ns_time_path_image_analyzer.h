@@ -780,6 +780,7 @@ struct ns_analyzed_image_time_path_group{
 	std::vector<ns_analyzed_image_time_path> paths;
 	void clear_images();
 };
+struct ns_movement_analysis_shared_state;
 class ns_time_path_image_movement_analyzer {
 public:
 	ns_time_path_image_movement_analyzer():paths_loaded_from_solution(false),
@@ -860,6 +861,10 @@ public:
 	unsigned long number_of_timepoints_in_analysis()const { return number_of_timepoints_in_analysis_;}
 	ns_64_bit db_analysis_id() const{return analysis_id;}
 private:
+
+	void run_group_for_current_backwards_round(unsigned int group_id, const unsigned int path_id, ns_movement_analysis_shared_state * shared_state);
+	void run_group_for_current_forwards_round(unsigned int group_id, unsigned int path_id, ns_movement_analysis_shared_state * shared_state);
+	
 	ns_stationary_path_id generate_stationary_path_id(const unsigned long group_id, const unsigned long path_id) const{
 		return ns_stationary_path_id(group_id,path_id,analysis_id);
 	}

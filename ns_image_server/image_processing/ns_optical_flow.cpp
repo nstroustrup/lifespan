@@ -6,7 +6,7 @@
 //#undef NS_USE_ITK_GPU
 
 #undef NS_USE_LEVEL_SET_REGISTRATION
-#undef NS_USE_ITK_GPU
+#define NS_USE_ITK_GPU
 #include "itkHistogramMatchingImageFilter.h"
 
 #ifndef NS_USE_ITK_GPU

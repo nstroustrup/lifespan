@@ -677,8 +677,6 @@ public:
 
 private:
 
-	static ns_calc_best_alignment_fast fast_alignment;
-
 		
 	ns_time_path_limits time_path_limits;
 
@@ -718,8 +716,8 @@ private:
 	//ns_64_bit stationary_histogram[256];
 	//ns_64_bit movement_histogram[256];
 
-	ns_analyzed_time_image_chunk initiate_image_registration(const ns_analyzed_time_image_chunk & chunk,ns_alignment_state & state);
-	void calculate_image_registration(const ns_analyzed_time_image_chunk & chunk,ns_alignment_state & state, const ns_analyzed_time_image_chunk & first_chunk_to_register);
+	ns_analyzed_time_image_chunk initiate_image_registration(const ns_analyzed_time_image_chunk & chunk,ns_alignment_state & state, ns_calc_best_alignment_fast & align);
+	void calculate_image_registration(const ns_analyzed_time_image_chunk & chunk,ns_alignment_state & state, const ns_analyzed_time_image_chunk & first_chunk_to_register, ns_calc_best_alignment_fast & align);
 	void calculate_movement_images(const ns_analyzed_time_image_chunk & chunk);
 	void copy_aligned_path_to_registered_image(const ns_analyzed_time_image_chunk & chunk);
 
@@ -862,8 +860,8 @@ public:
 	ns_64_bit db_analysis_id() const{return analysis_id;}
 private:
 
-	void run_group_for_current_backwards_round(unsigned int group_id, const unsigned int path_id, ns_movement_analysis_shared_state * shared_state);
-	void run_group_for_current_forwards_round(unsigned int group_id, unsigned int path_id, ns_movement_analysis_shared_state * shared_state);
+	void run_group_for_current_backwards_round(unsigned int group_id, const unsigned int path_id, ns_calc_best_alignment_fast *,ns_movement_analysis_shared_state * shared_state);
+	void run_group_for_current_forwards_round(unsigned int group_id, unsigned int path_id, ns_calc_best_alignment_fast *,ns_movement_analysis_shared_state * shared_state);
 	
 	ns_stationary_path_id generate_stationary_path_id(const unsigned long group_id, const unsigned long path_id) const{
 		return ns_stationary_path_id(group_id,path_id,analysis_id);

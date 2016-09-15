@@ -513,7 +513,7 @@ struct ns_movement_analysis_shared_state {
 	const  long registered_image_clear_lag;
 };
 
-void ns_time_path_image_movement_analyzer::run_group_for_current_backwards_round(unsigned int group_id, unsigned int path_id, ns_movement_analysis_shared_state * shared_state) {
+void ns_time_path_image_movement_analyzer::run_group_for_current_backwards_round(unsigned int group_id, unsigned int path_id, ns_calc_best_alignment_fast * alignment_fast,ns_movement_analysis_shared_state * shared_state) {
 	const unsigned int & i(group_id), &j(path_id);
 	ns_analyzed_time_image_chunk chunk;
 
@@ -524,7 +524,7 @@ void ns_time_path_image_movement_analyzer::run_group_for_current_backwards_round
 	if (abs(chunk.start_i - chunk.stop_i) != 1)
 		throw ns_ex("Running backwards, the chunk size has to be 1, otherwise reversing the order gets complicated!");
 	//cerr << "R" << i << "(" << chunk.start_i << "-" << chunk.stop_i << ")";
-	groups[i].paths[j].calculate_image_registration(chunk, shared_state->alignment_states[i][j], shared_state->chunk_generators[i][j].first_chunk());
+	groups[i].paths[j].calculate_image_registration(chunk, shared_state->alignment_states[i][j], shared_state->chunk_generators[i][j].first_chunk(),*alignment_fast);
 	//cerr << "(";
 
 	//in several case we need frames that occur after the onset of stationarity
@@ -597,7 +597,16 @@ void ns_time_path_image_movement_analyzer::run_group_for_current_backwards_round
 }
 
 
-typedef void (ns_time_path_image_movement_analyzer::*ns_time_path_image_analysis_thread_job_pointer)(unsigned int group_id, unsigned int path_id, ns_movement_analysis_shared_state *);
+struct ns_time_path_image_movement_analyzer_thread_pool_persistant_data {
+	ns_time_path_image_movement_analyzer_thread_pool_persistant_data():
+		fast_aligner(ns_analyzed_image_time_path::maximum_alignment_offset(),
+		ns_analyzed_image_time_path::maximum_local_alignment_offset(),
+		ns_analyzed_image_time_path::maximum_alignment_offset(),
+		ns_analyzed_image_time_path::maximum_alignment_offset()){}
+	ns_calc_best_alignment_fast fast_aligner;
+};
+
+typedef void (ns_time_path_image_movement_analyzer::*ns_time_path_image_analysis_thread_job_pointer)(unsigned int group_id, unsigned int path_id, ns_calc_best_alignment_fast *,ns_movement_analysis_shared_state *);
 
 struct ns_time_path_image_movement_analyzer_thread_pool_job {
 	ns_time_path_image_movement_analyzer_thread_pool_job() {}
@@ -611,15 +620,15 @@ struct ns_time_path_image_movement_analyzer_thread_pool_job {
 	ns_time_path_image_movement_analyzer * ma;
 	ns_movement_analysis_shared_state * shared_state;
 
-	void operator()(){
-		(ma->*function_to_call)(group_id, path_id, shared_state);
+	void operator()(ns_time_path_image_movement_analyzer_thread_pool_persistant_data & fast_aligner){
+		(ma->*function_to_call)(group_id, path_id, &fast_aligner.fast_aligner,shared_state);
 	}
 };
 
 typedef std::pair<unsigned int, unsigned int> ns_tpiatp_job;
 
 
-void ns_time_path_image_movement_analyzer::run_group_for_current_forwards_round(unsigned int group_id, unsigned int path_id, ns_movement_analysis_shared_state * shared_state) {
+void ns_time_path_image_movement_analyzer::run_group_for_current_forwards_round(unsigned int group_id, unsigned int path_id, ns_calc_best_alignment_fast * alignment,ns_movement_analysis_shared_state * shared_state) {
 	const unsigned int &i(group_id), &j(path_id);
 #ifdef NS_OUTPUT_ALGINMENT_DEBUG
 	if (i != 1)	//xxx
@@ -636,7 +645,7 @@ void ns_time_path_image_movement_analyzer::run_group_for_current_forwards_round(
 	debug_path_name = string("path") + ns_to_string(i) + "_" + ns_to_string(j);
 #endif			
 	//cerr << "R" << i << "(" << chunk.start_i << "-" << chunk.stop_i << ")";
-	groups[i].paths[j].calculate_image_registration(chunk, shared_state->alignment_states[i][j], shared_state->chunk_generators[i][j].first_chunk());
+	groups[i].paths[j].calculate_image_registration(chunk, shared_state->alignment_states[i][j], shared_state->chunk_generators[i][j].first_chunk(),*alignment);
 	groups[i].paths[j].copy_aligned_path_to_registered_image(chunk);
 	groups[i].paths[j].calculate_movement_images(chunk);
 
@@ -703,7 +712,8 @@ void ns_time_path_image_movement_analyzer::process_raw_images(const ns_64_bit re
 		ns_movement_analysis_shared_state shared_state;
 		shared_state.sql = &sql;
 
-		ns_thread_pool<ns_time_path_image_movement_analyzer_thread_pool_job> thread_pool;
+		ns_thread_pool<ns_time_path_image_movement_analyzer_thread_pool_job, 
+					   ns_time_path_image_movement_analyzer_thread_pool_persistant_data> thread_pool;
 		thread_pool.set_number_of_threads(12);
 		thread_pool.prepare_pool_to_run();
 
@@ -4701,7 +4711,7 @@ void ns_analyzed_image_time_path::calculate_flow(const unsigned long element_ind
 }
 
 
-ns_analyzed_time_image_chunk ns_analyzed_image_time_path::initiate_image_registration(const ns_analyzed_time_image_chunk & chunk,ns_alignment_state & state){
+ns_analyzed_time_image_chunk ns_analyzed_image_time_path::initiate_image_registration(const ns_analyzed_time_image_chunk & chunk,ns_alignment_state & state, ns_calc_best_alignment_fast & align){
 	const unsigned long time_kernel(alignment_time_kernel_width);
 	//if (abs(chunk.stop_i - chunk.start_i) < time_kernel)
 		//throw ns_ex("ns_analyzed_image_time_path::initiate_image_registration()::First chunk must be >= time kernel width!");
@@ -4786,7 +4796,7 @@ ns_analyzed_time_image_chunk ns_analyzed_image_time_path::initiate_image_registr
 		global_path_debug_info.time = elements[i].absolute_time;
 #endif
 		#ifdef NS_USE_FAST_IMAGE_REGISTRATION
-			elements[i].registration_offset = fast_alignment(state.registration_offset_average(),maximum_alignment_offset(), state, elements[i].path_aligned_images->image, elements[i].saturated_offset);
+			elements[i].registration_offset = align(state.registration_offset_average(),maximum_alignment_offset(), state, elements[i].path_aligned_images->image, elements[i].saturated_offset);
 			//cerr << elements[i].registration_offset;
 	#endif
 		#ifdef NS_CALCULATE_SLOW_IMAGE_REGISTRATION
@@ -4831,11 +4841,11 @@ ns_vector_2i ns_analyzed_image_time_path::max_step_alignment_offset() {
 	return max_alignment_offset;
 }
 
-void ns_analyzed_image_time_path::calculate_image_registration(const ns_analyzed_time_image_chunk & chunk_, ns_alignment_state & state, const ns_analyzed_time_image_chunk & first_chunk) {
+void ns_analyzed_image_time_path::calculate_image_registration(const ns_analyzed_time_image_chunk & chunk_, ns_alignment_state & state, const ns_analyzed_time_image_chunk & first_chunk, ns_calc_best_alignment_fast & align) {
 	ns_analyzed_time_image_chunk chunk(chunk_);
 	//if the registration needs to be initialized, do so.
 	if (state.registration_offset_count < alignment_time_kernel_width) {
-		chunk = initiate_image_registration(chunk_, state);
+		chunk = initiate_image_registration(chunk_, state,align);
 		//we've consumed the whole chunk initializing image registration.  We're done!
 		if (chunk.start_i == chunk.stop_i)
 			return;
@@ -4912,10 +4922,10 @@ void ns_analyzed_image_time_path::calculate_image_registration(const ns_analyzed
 	global_path_debug_info.time = elements[i].absolute_time;
 	#endif
 	#ifdef NS_USE_FAST_IMAGE_REGISTRATION
-		fast_alignment.debug_gold_standard_shift = elements[i].registration_offset;
+		align.debug_gold_standard_shift = elements[i].registration_offset;
 		t.start();
 		elements[i].registration_offset =
-			fast_alignment(state.registration_offset_average() - state.consensus_internal_offset,maximum_alignment_offset(), state, elements[i].path_aligned_images->image, elements[i].saturated_offset)
+			align(state.registration_offset_average() - state.consensus_internal_offset,maximum_alignment_offset(), state, elements[i].path_aligned_images->image, elements[i].saturated_offset)
 			+ //every once in a while we recenter the state if the offsets are getting close to saturating. 
 			state.consensus_internal_offset;
 		
@@ -4994,13 +5004,6 @@ struct ns_index_orderer{
 	unsigned long index;
 	const T * data;
 };
-
-ns_calc_best_alignment_fast ns_analyzed_image_time_path::fast_alignment(ns_analyzed_image_time_path::maximum_alignment_offset(), 
-													ns_analyzed_image_time_path::maximum_local_alignment_offset(), 
-													ns_analyzed_image_time_path::maximum_alignment_offset(), 
-													ns_analyzed_image_time_path::maximum_alignment_offset());
-
-
 ns_analyzed_image_time_path_group::ns_analyzed_image_time_path_group(const unsigned long group_id_, const ns_64_bit region_info_id,const ns_time_path_solution & solution_, const ns_death_time_annotation_time_interval & observation_time_interval,ns_death_time_annotation_set & rejected_annotations,ns_time_path_image_movement_analysis_memory_pool & memory_pool){
 	
 	paths.reserve(solution_.path_groups[group_id_].path_ids.size());

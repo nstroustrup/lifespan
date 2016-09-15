@@ -15,12 +15,12 @@
 #define NS_TPDBG( x )
 #endif
 
-template<class job_specification_t>
+template<class job_specification_t, class thread_persistant_data_t>
 class ns_thread_pool;
 
-template<class job_specification_t>
+template<class job_specification_t, class thread_persistant_data_t>
 struct ns_thread_pool_thread_init_data {
-	ns_thread_pool<typename job_specification_t> * pool;
+	ns_thread_pool<typename job_specification_t, typename thread_persistant_data_t> * pool;
 	unsigned long thread_id;
 
 	#ifdef NS_THREAD_POOL_DEBUG
@@ -28,7 +28,7 @@ struct ns_thread_pool_thread_init_data {
 	#endif
 };
 
-template<class job_specification_t>
+template<class job_specification_t,class thread_persistant_data_t>
 class ns_thread_pool {
 public:
 	ns_thread_pool() :job_access_lock("ns_tpiatp"), wait_after_jobs_finish("ns_tpw"), thread_init_lock("ns_tic"), error_access_lock("ns_tpierr"), shutdown_(false) {}
@@ -142,7 +142,7 @@ public:
 			//we grab these locks as a precodition to running run_pool() which releases them
 			thread_idle_locks[i].wait_to_acquire(__FILE__, __LINE__);
 			//put this on the heap so the thread can access it whenever it pleases.
-			ns_thread_pool_thread_init_data<typename job_specification_t> * data = new ns_thread_pool_thread_init_data<typename job_specification_t>;
+			ns_thread_pool_thread_init_data<typename job_specification_t,typename thread_persistant_data_t> * data = new ns_thread_pool_thread_init_data<typename job_specification_t, typename thread_persistant_data_t>;
 			data->pool = this;
 			data->thread_id = i;
 #ifdef NS_THREAD_POOL_DEBUG
@@ -188,11 +188,15 @@ public:
 		job_access_lock.release();
 	}
 	static ns_thread_return_type run(void * pool_data) {
-
 		//copy this from the heap to the stack, and free up the heap.
-		ns_thread_pool_thread_init_data<typename job_specification_t> * pp = (ns_thread_pool_thread_init_data<typename job_specification_t> *)pool_data;
-		ns_thread_pool_thread_init_data<typename job_specification_t> p = *pp;
+		ns_thread_pool_thread_init_data<typename job_specification_t, typename thread_persistant_data_t> * pp = (ns_thread_pool_thread_init_data<typename job_specification_t, typename thread_persistant_data_t> *)pool_data;
+		ns_thread_pool_thread_init_data<typename job_specification_t, typename thread_persistant_data_t> p = *pp;
 		delete pp;
+
+
+		typename thread_persistant_data_t persistant_data;
+
+
 		bool thread_has_been_idle = true;
 		ns_acquire_lock_for_scope thread_idle_lock(p.pool->thread_idle_locks[p.thread_id], __FILE__, __LINE__, false);
 		while (true) {
@@ -255,7 +259,7 @@ public:
 
 			//run the job!
 			try {
-				job();
+				job(persistant_data);
 			}
 			catch (ns_ex & ex) {
 				NS_TPDBG(*p.debug << "(t" << p.thread_id << " encounters an error " << ex.text() << ")");

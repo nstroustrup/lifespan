@@ -3,6 +3,7 @@
 #include "ns_xml.h"
 #include "ns_image_tools.h"
 #include "ctmf.h"
+#include "ns_thread_pool.h"
 
 #ifdef NS_CALCULATE_OPTICAL_FLOW
 #include "ns_optical_flow.h"
@@ -595,212 +596,28 @@ void ns_time_path_image_movement_analyzer::run_group_for_current_backwards_round
 	}
 }
 
+
 typedef void (ns_time_path_image_movement_analyzer::*ns_time_path_image_analysis_thread_job_pointer)(unsigned int group_id, unsigned int path_id, ns_movement_analysis_shared_state *);
-class ns_time_path_image_analysis_thread_pool;
-struct ns_time_path_image_analysis_thread_pool_data{
-	ns_time_path_image_analysis_thread_pool * pool;
-	unsigned long thread_id;
+
+struct ns_time_path_image_movement_analyzer_thread_pool_job {
+	ns_time_path_image_movement_analyzer_thread_pool_job() {}
+	ns_time_path_image_movement_analyzer_thread_pool_job(unsigned long g_id,
+		unsigned long p_id,
+		ns_time_path_image_analysis_thread_job_pointer f,
+		ns_time_path_image_movement_analyzer * m,
+		ns_movement_analysis_shared_state * ss) :group_id(g_id), path_id(p_id), function_to_call(f), ma(m), shared_state(ss) {}
+	unsigned long group_id, path_id;
+	ns_time_path_image_analysis_thread_job_pointer function_to_call;
 	ns_time_path_image_movement_analyzer * ma;
-};
-class ns_time_path_image_analysis_thread_pool {
-public:
-	ns_time_path_image_analysis_thread_pool() :job_access_lock("ns_tpiatp"), error_access_lock("ns_tpierr"),shutdown_(false){}
-	static ofstream debug;
-	~ns_time_path_image_analysis_thread_pool() { shutdown(); }
-	typedef std::pair<unsigned int, unsigned int> ns_tpiatp_job;
-	std::queue<ns_tpiatp_job> jobs;
-	ns_lock job_access_lock;
-	ns_time_path_image_analysis_thread_job_pointer current_job;
-
-	void throw_errors() {
-		if (errors.empty())
-			return;
-		ns_ex ex(errors.front());
-		errors.pop();
-		while (!errors.empty()) {
-			image_server.register_server_event(ns_image_server::ns_register_in_central_db_with_fallback, errors.front());
-			errors.pop();
-		}
-		throw ex;
-	}
-
-	void set_number_of_threads(unsigned long i) {
-		threads.clear();
-		threads.resize(i);
-		thread_idle_locks.clear();
-		thread_idle_locks.reserve(i);
-		for (unsigned int j = 0; j < i; j++)
-			thread_idle_locks.push_back(ns_lock(std::string("ns-tpi-")+ns_to_string(j)));
-	}
-
-	std::queue<ns_ex> errors;
-	ns_lock error_access_lock;
-
-	//important!  This /keeps/ the job_access_lock for the current thread.
-	void wait_for_jobs_to_finish(){ 
-		while (true) {
-			//wait until whichever thread has the running lock gives it up
-			//now grab control of everything
-
-			bool try_again(false);
-			debug << "(main waits for job lock)";
-			job_access_lock.wait_to_acquire(__FILE__, __LINE__);
-			cerr << "mw ";
-			if (!jobs.empty()) {
-				debug << "(main gets job lock but finds jobs)";
-				job_access_lock.release();
-				continue;
-			}
-			for (unsigned int i = 0; i < thread_idle_locks.size(); i++) {
-				debug << "(main waits for thread lock " << i<< ")";
-				if (!thread_idle_locks[i].try_to_acquire(__FILE__, __LINE__)) {
-					debug << "(main finds " << i<< " running and releases job and idle threads)";
-					//someone is still working.  give up until they are done.
-					for (unsigned int j = 0; j <= i; j++)
-						thread_idle_locks[j].release();
-				}
-				//we happened to grab the one_thread_is_running_lock but a worker thread will soon grab it, we give it up and wait.
-
-				debug << "(main gets t" << i << " idle lock)";
-				if (!jobs.empty()) {
-					debug << "(main finds jobs and releases job and idle threads)";
-					//oops! someone has added a job.  we must give up waiting for idle threads until someone handles it.
-					for (unsigned int j = 0; j <= i; j++)
-						thread_idle_locks[j].release();
-					job_access_lock.release();
-					try_again = true;
-					break;
-				}
-				job_access_lock.release();
-			}
-			if (try_again)
-				continue;
-			debug << "(main gets all idle locks)";
-			//ok! we have all the idle locks (all threads are idle)
-			//and there are no jobs left in the queue
-			for (unsigned int i = 0; i < thread_idle_locks.size(); i++) 
-				thread_idle_locks[i].release();
-			//job_access_lock.release();
-			return;
-		}
-	}
-	void shutdown() { 
-		shutdown_ = true;
-		for (unsigned int i = 0; i < threads.size(); i++) {
-			threads[i].block_on_finish();
-		}
-		threads.resize(0);
-		thread_idle_locks.resize(0);
-		shutdown_ = false;
-	}
-
-	void launch_pool(ns_time_path_image_movement_analyzer * ma,ns_movement_analysis_shared_state * ss) {
-		if (threads.size() == 0)
-			throw ns_ex("No threads!");
-		shared_state = ss;
-		for (unsigned int i = 0; i < threads.size(); i++) {
-			//put this on the heap so the thread can access it whenever it pleases.
-			ns_time_path_image_analysis_thread_pool_data * data = new ns_time_path_image_analysis_thread_pool_data;;
-			data->pool = this;
-			data->thread_id = i;
-			data->ma = ma;
-			threads[i].run(this->run, data);
-		}
-	}
-	static ns_thread_return_type run(void * pool_data) {
-
-		//copy this from the heap to the stack, and free up the heap.
-		ns_time_path_image_analysis_thread_pool_data * pp = (ns_time_path_image_analysis_thread_pool_data *)pool_data;
-		ns_time_path_image_analysis_thread_pool_data p = *pp;
-		delete pp;
-
-		bool this_thread_is_idle(false);
-		p.pool->thread_idle_locks[p.thread_id].wait_to_acquire(__FILE__, __LINE__);
-		while (true) {
-			//a shutdown is signalled!  Exit.
-			if (p.pool->shutdown_) {
-				debug << "(t" << p.thread_id << " shutsdown)";
-				if (!this_thread_is_idle)
-					p.pool->thread_idle_locks[p.thread_id].release();
-				return true;
-			}
-			ns_tpiatp_job job;
-			debug << "(t" << p.thread_id << " requests job lock)";
-			p.pool->job_access_lock.wait_to_acquire(__FILE__, __LINE__);
-
-			debug << "(t" << p.thread_id << " gets job lock)";
-			try {
-				//a shutdown is signalled!  Exit.
-				if (p.pool->shutdown_) {
-					debug << "(t" << p.thread_id << " shutsdown)";
-					if (!this_thread_is_idle)
-						p.pool->thread_idle_locks[p.thread_id].release();
-					p.pool->job_access_lock.release();
-					return true;
-				}
-				//if the pool of jobs is empty, the thread goes idle and wait on the job access lock until something happens.
-				//if some other thread is waiting for all jobs to be done, it will grab this job access lock,
-				//so this thread will not poll the jobs queue unneccisarily
-				if (p.pool->jobs.empty()) {
-					if (!this_thread_is_idle) {
-						debug << "(t" << p.thread_id << " goes idle)";
-						this_thread_is_idle = true;
-						p.pool->thread_idle_locks[p.thread_id].release();
-					}
-					debug << "(t" << p.thread_id << " finds no jobs and releases lock)";
-					p.pool->job_access_lock.release();
-				}
-				else {
-					//if we were idle, stop being idle, and grab the lock that will allow
-					//other threads to block until this thread goes idle.
-					if (this_thread_is_idle) {
-						debug << "(t" << p.thread_id << " waits for its idle lock)";
-						p.pool->thread_idle_locks[p.thread_id].wait_to_acquire(__FILE__, __LINE__);
-						debug << "(t" << p.thread_id << " gets its idle lock)";
-						this_thread_is_idle = false;
-					}
-					//grab the job
-					debug << "(t" << p.thread_id << " finds a job and releases lock)";
-					job = p.pool->jobs.front();
-					p.pool->jobs.pop();
-					p.pool->job_access_lock.release();
-				}
-			}
-			catch (...) {
-				p.pool->job_access_lock.release();
-				if (!this_thread_is_idle)
-					p.pool->thread_idle_locks[p.thread_id].release();
-				throw;
-			}
-
-			//run the job!
-			try {
-				ns_time_path_image_analysis_thread_job_pointer fun = p.pool->current_job;
-				(p.ma->*fun)(job.first, job.second, p.pool->shared_state);
-			}
-			catch (ns_ex & ex) {
-				cerr << "(t" << p.thread_id << " encounters an error " << ex.text() << ")";
-				p.pool->error_access_lock.wait_to_acquire(__FILE__, __LINE__);
-				p.pool->errors.push(ex);
-				p.pool->error_access_lock.release();
-			}
-			catch (...) {
-				p.pool->error_access_lock.wait_to_acquire(__FILE__, __LINE__);
-				p.pool->errors.push(ns_ex("Unknown error"));
-				p.pool->error_access_lock.release();
-			}
-		}
-		return true;
-	}
-	private:
-
-	std::vector<ns_lock> thread_idle_locks;
-	bool shutdown_;
-	vector<ns_thread> threads;
 	ns_movement_analysis_shared_state * shared_state;
+
+	void operator()(){
+		(ma->*function_to_call)(group_id, path_id, shared_state);
+	}
 };
 
-ofstream ns_time_path_image_analysis_thread_pool::debug("c:\\server\\thread_debug.txt");
+typedef std::pair<unsigned int, unsigned int> ns_tpiatp_job;
+
 
 void ns_time_path_image_movement_analyzer::run_group_for_current_forwards_round(unsigned int group_id, unsigned int path_id, ns_movement_analysis_shared_state * shared_state) {
 	const unsigned int &i(group_id), &j(path_id);
@@ -886,12 +703,9 @@ void ns_time_path_image_movement_analyzer::process_raw_images(const ns_64_bit re
 		ns_movement_analysis_shared_state shared_state;
 		shared_state.sql = &sql;
 
-		ns_time_path_image_analysis_thread_pool thread_pool;
+		ns_thread_pool<ns_time_path_image_movement_analyzer_thread_pool_job> thread_pool;
 		thread_pool.set_number_of_threads(12);
-		thread_pool.job_access_lock.wait_to_acquire(__FILE__, __LINE__);
-		thread_pool.current_job = &ns_time_path_image_movement_analyzer::run_group_for_current_backwards_round;
-		thread_pool.launch_pool(this,&shared_state);
-
+		thread_pool.prepare_pool_to_run();
 
 		//xxx
 		shared_state.path_reset.resize(groups.size(), 0);
@@ -1060,7 +874,10 @@ void ns_time_path_image_movement_analyzer::process_raw_images(const ns_64_bit re
 							if (ns_skip_low_density_paths && groups[i].paths[j].is_low_density_path())
 								continue;
 
-							thread_pool.jobs.push(ns_time_path_image_analysis_thread_pool::ns_tpiatp_job(i, j));
+							thread_pool.add_job_while_pool_is_not_running(
+								ns_time_path_image_movement_analyzer_thread_pool_job(i,j,
+								&ns_time_path_image_movement_analyzer::run_group_for_current_backwards_round,
+								this,&shared_state));
 
 							//	run_group_for_current_backwards_round(i, j, &shared_state);
 
@@ -1068,7 +885,7 @@ void ns_time_path_image_movement_analyzer::process_raw_images(const ns_64_bit re
 						}
 						//	cerr << "\n";
 					}
-					thread_pool.job_access_lock.release();
+					thread_pool.run_pool();
 					//ok!  here all the worker threads start handling all the schedule tasks.
 					//this main thread blocks until the worker threads are all done
 					thread_pool.wait_for_jobs_to_finish();
@@ -1160,8 +977,6 @@ void ns_time_path_image_movement_analyzer::process_raw_images(const ns_64_bit re
 				else std::cout << "\nRunning Forwards...";
 
 
-				thread_pool.current_job = &ns_time_path_image_movement_analyzer::run_group_for_current_forwards_round;
-
 				for (unsigned int t = 0; t < region_image_specifications.size(); t += chunk_size) {
 					if (debug_output_skip == number_of_repeats_required || t == 0 && current_round == 0) {
 						std::cout << (100 * (t + region_image_specifications.size()*current_round)) / (region_image_specifications.size()*number_of_repeats_required) << "%...";
@@ -1195,12 +1010,16 @@ void ns_time_path_image_movement_analyzer::process_raw_images(const ns_64_bit re
 						for (unsigned int j = 0; j < groups[i].paths.size(); j++) {
 							if (ns_skip_low_density_paths && groups[i].paths[j].is_low_density_path())
 								continue;
-							thread_pool.jobs.push(ns_time_path_image_analysis_thread_pool::ns_tpiatp_job(i, j));
+
+							thread_pool.add_job_while_pool_is_not_running(
+								ns_time_path_image_movement_analyzer_thread_pool_job(i, j,
+									&ns_time_path_image_movement_analyzer::run_group_for_current_forwards_round,
+									this, &shared_state));
 							//run_group_for_current_backwards_round(i, j, &shared_state);
 						}
 					}
 
-					thread_pool.job_access_lock.release();
+					thread_pool.run_pool();
 					//ok!  here all the worker threads start handling all the schedule tasks.
 					//this main thread blocks until the worker threads are all done
 					thread_pool.wait_for_jobs_to_finish();

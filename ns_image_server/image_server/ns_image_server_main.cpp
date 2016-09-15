@@ -14,6 +14,7 @@
 #include "ns_dir.h"
 #include <vector>
 #include <string>
+#include "ns_thread_pool.h"
 
 
 #ifdef _WIN32 
@@ -694,6 +695,15 @@ ns_image_server_sql * ns_connect_to_available_sql_server(){
 #include "ipp.h"
 #endif
 
+
+struct ns_thread_pool_tester {
+	void operator()() {
+		ns_thread::sleep_microseconds(rand() % 7);
+	}
+};
+
+
+
 #include "ns_ojp2k.h"
 #include "ns_image_registration.h"
 #include "ns_optical_flow.h"
@@ -732,6 +742,8 @@ int main(int argc, char * argv[]){
 	#ifdef NS_USE_INTEL_IPP
 	ippInit();
 	#endif
+
+
 	/*
 
 	try {
@@ -808,6 +820,8 @@ int main(int argc, char * argv[]){
 	bool is_master_node(false);
 	std::string schema_name;
 	try{
+
+
 		
 		ns_sql::load_sql_library();
 
@@ -852,6 +866,7 @@ int main(int argc, char * argv[]){
 				continue;
 				#endif
 			}
+
 
 
 
@@ -957,6 +972,29 @@ int main(int argc, char * argv[]){
 		HWND console_hwnd(ns_make_windows_console_window());
 		console_window_created = true;
 		#endif
+
+
+
+
+
+		/*
+		ns_thread_pool<ns_thread_pool_tester> pool;
+		//pool.debug.open("c:\\server\\thread_debug.txt");
+		pool.set_number_of_threads(6);
+		pool.prepare_pool_to_run();
+		for (unsigned int j = 0; j < 1000; j++) {
+			int num(rand() % 500);
+			cerr << "Running a round with " << num << " jobs\n";
+			for (unsigned int i = 0; i < num; i++)
+				pool.add_job_while_pool_is_not_running(ns_thread_pool_tester());
+			pool.run_pool();
+			pool.wait_for_jobs_to_finish();
+			//pool.debug.flush();
+			cerr << "Done\n";
+		}
+		cerr << "Done";
+		*/
+
 		bool restarting_after_crash(false);
 		//execute any commands requested at the command line\n";
 		switch(command){

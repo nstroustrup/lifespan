@@ -712,12 +712,16 @@ void ns_time_path_image_movement_analyzer::process_raw_images(const ns_64_bit re
 		ns_movement_analysis_shared_state shared_state;
 		shared_state.sql = &sql;
 
+		//we distribute the registration and image analysis tasks across multiple processors
+		//to speed movement analysis up.  Doing it this way (within a process) is important because
+		//rather than running multiple processes each with their own region to analyze
+		//we can limit memory usage to just one region (and miminize paging and disk thrashing)
 		ns_thread_pool<ns_time_path_image_movement_analyzer_thread_pool_job, 
 					   ns_time_path_image_movement_analyzer_thread_pool_persistant_data> thread_pool;
 		thread_pool.set_number_of_threads(12);
 		thread_pool.prepare_pool_to_run();
 
-		//xxx
+		//xxx debug only
 		shared_state.path_reset.resize(groups.size(), 0);
 
 		//initiate chunk generator and alignment states
@@ -858,8 +862,8 @@ void ns_time_path_image_movement_analyzer::process_raw_images(const ns_64_bit re
 
 					unsigned long allocated_count(this->memory_pool.aligned_image_pool.number_of_items_checked_out());
 					try {
-						//only load images that are needed,
-						//e.g those located between (t-chunk_size,t)
+						//we obtain all the image data from disk that required to run the image analysis for the current chunk.
+						//it is loaded into the groups[i].paths[j] data structures.
 						for (long t1 = stop_t + 1; t1 < t + 1; t1++) {
 							load_region_visualization_images(t1, t1 + 1, start_group, stop_group, sql, false, true);
 						}
@@ -877,13 +881,19 @@ void ns_time_path_image_movement_analyzer::process_raw_images(const ns_64_bit re
 					}
 
 
-					//	cerr << "\n";
-						//run chunks for all paths whose images have been loaded in the previous step
+				
+					//now we have all the relevant image data loaded into path data structures for
+					//the time points specified in the current chunk.
+					//So, we can run image registration and analysis for all these images.
+
+					//Note that each path is individually asked to figure out which data has been loaded and is ready
+					//to analyze; we don't have to explicitly specify the job.
 					for (unsigned int i = start_group; i < stop_group; i++) {
 						for (unsigned int j = 0; j < groups[i].paths.size(); j++) {
 							if (ns_skip_low_density_paths && groups[i].paths[j].is_low_density_path())
 								continue;
-
+							//this is a very paralellizeable step; we schedule each path to be analyzed individually and run them 
+							//on all cores.
 							thread_pool.add_job_while_pool_is_not_running(
 								ns_time_path_image_movement_analyzer_thread_pool_job(i,j,
 								&ns_time_path_image_movement_analyzer::run_group_for_current_backwards_round,
@@ -895,15 +905,19 @@ void ns_time_path_image_movement_analyzer::process_raw_images(const ns_64_bit re
 						}
 						//	cerr << "\n";
 					}
+
 					thread_pool.run_pool();
 					//ok!  here all the worker threads start handling all the schedule tasks.
 					//this main thread blocks until the worker threads are all done
 					thread_pool.wait_for_jobs_to_finish();
-					//now that all the worker threads are done, this thread holds the thread pool job lock again
-					//and we keep it until we need to run more jobs, below.
+					//now that all the worker threads are done, this thread holds the thread pool job lock again.
+					//we keep it until we need to run more jobs in the next round.
 					thread_pool.throw_errors();
 				}
-				//reload everything back in, reverse the order so that the earliest frame is first, and write it all out.
+
+				//since we have been registered images backwards in time, we've been writing everything in reverse order to the local disk.
+				//So, now we need to reload everything back in, reverse the order so that the earliest frame is first, and then 
+				//write it all out to long term storage. 
 				if (write_status_to_db)
 					image_server.register_server_event(ns_image_server_event("Transfering current results to long term storage..."), &sql);
 				else std::cout << "Transfering current results to long term storage...\n";
@@ -916,8 +930,6 @@ void ns_time_path_image_movement_analyzer::process_raw_images(const ns_64_bit re
 						debug_count++;
 						if (ns_skip_low_density_paths && groups[i].paths[j].is_low_density_path())
 							continue;
-						//if (groups[i].paths[j].volatile_backwards_path_data_written)
-							//continue;
 						//no backwards points to load!
 						if (groups[i].paths[j].first_stationary_timepoint() == 0)
 							continue;
@@ -951,6 +963,7 @@ void ns_time_path_image_movement_analyzer::process_raw_images(const ns_64_bit re
 								groups[i].paths[j].elements[groups[i].paths[j].first_stationary_timepoint() - k - 1].registered_images;
 							groups[i].paths[j].elements[groups[i].paths[j].first_stationary_timepoint() - k - 1].registered_images = tmp;
 						}
+						//it shouldn't matter where this is done; we might want to paralellize it if if ever gets expensive.
 						groups[i].paths[j].quantify_movement(chunk);
 #ifdef NS_CALCULATE_OPTICAL_FLOW
 						groups[i].paths[j].save_movement_images(chunk, sql, ns_analyzed_image_time_path::ns_save_both, false);
@@ -970,8 +983,11 @@ void ns_time_path_image_movement_analyzer::process_raw_images(const ns_64_bit re
 					
 				debug_output_skip = 0;
 
-				//now we go ahead and work forwards
-
+				//OK; we've finished the backwards registration.
+				//Now we go ahead and work forwards.
+				//Running forwards is done essentially in the same way as running backwards,
+				//the only difference being we don't need to cache locally to disk and can
+				//write straight out to long term storage.
 
 				for (unsigned int i = 0; i < groups.size(); i++)
 					shared_state.path_reset[i] = 0;
@@ -994,15 +1010,14 @@ void ns_time_path_image_movement_analyzer::process_raw_images(const ns_64_bit re
 					}
 					else debug_output_skip++;
 
-					//	output_allocation_state("fw", t, debug_out);
 
-
-						//load a chunk of images
+					//load a chunk of images
 					unsigned long stop_t = t + chunk_size;
 					if (stop_t > region_image_specifications.size())
 						stop_t = region_image_specifications.size();
 					//	cerr << "Loading images " << t << "-" << stop_t << "\n";
 					try {
+						//load in image data for the current chunk
 						load_region_visualization_images(t, stop_t, start_group, stop_group, sql, false, false);
 					}
 					catch (ns_ex & ex) {
@@ -1016,6 +1031,8 @@ void ns_time_path_image_movement_analyzer::process_raw_images(const ns_64_bit re
 						}
 						throw ex_f;
 					}
+
+					//distribute the image registration and analysis across multiple cores
 					for (unsigned int i = start_group; i < stop_group; i++) {
 						for (unsigned int j = 0; j < groups[i].paths.size(); j++) {
 							if (ns_skip_low_density_paths && groups[i].paths[j].is_low_density_path())
@@ -1044,7 +1061,8 @@ void ns_time_path_image_movement_analyzer::process_raw_images(const ns_64_bit re
 					//	cerr << ",";
 					//}
 
-				//ok! We've finished all the image registration and image analysis. 
+				//ok! We've finished all the computationally expensive image registration and image analysis. 
+				//Now we calculate some statistics and then we're done.
 				image_loading_temp.use_more_memory_to_avoid_reallocations(false);
 				image_loading_temp.clear();
 
@@ -1063,7 +1081,9 @@ void ns_time_path_image_movement_analyzer::process_raw_images(const ns_64_bit re
 		}
 		thread_pool.shutdown();
 		///xxx
+	
 		normalize_movement_scores_over_all_paths(times_series_denoising_parameters);
+		//xxx this could be paraellelized if it was worth it.
 		for (unsigned int i = 0; i < groups.size(); i++){
 			for (unsigned int j = 0; j < groups[i].paths.size(); j++){
 						if (ns_skip_low_density_paths && groups[i].paths[j].is_low_density_path())

@@ -513,7 +513,20 @@ struct ns_movement_analysis_shared_state {
 	const  long registered_image_clear_lag;
 };
 
-void ns_time_path_image_movement_analyzer::run_group_for_current_backwards_round(unsigned int group_id, unsigned int path_id, ns_calc_best_alignment_fast * alignment_fast,ns_movement_analysis_shared_state * shared_state) {
+
+
+struct ns_time_path_image_movement_analyzer_thread_pool_persistant_data {
+	ns_time_path_image_movement_analyzer_thread_pool_persistant_data() :
+		fast_aligner(ns_analyzed_image_time_path::maximum_alignment_offset(),
+			ns_analyzed_image_time_path::maximum_local_alignment_offset(),
+			ns_analyzed_image_time_path::maximum_alignment_offset(),
+			ns_analyzed_image_time_path::maximum_alignment_offset()) {}
+	ns_calc_best_alignment_fast fast_aligner;
+
+	std::vector<ns_image_standard> temporary_image;
+};
+
+void ns_time_path_image_movement_analyzer::run_group_for_current_backwards_round(unsigned int group_id, unsigned int path_id, ns_time_path_image_movement_analyzer_thread_pool_persistant_data * persistant_data,ns_movement_analysis_shared_state * shared_state) {
 	const unsigned int & i(group_id), &j(path_id);
 	ns_analyzed_time_image_chunk chunk;
 
@@ -524,7 +537,7 @@ void ns_time_path_image_movement_analyzer::run_group_for_current_backwards_round
 	if (abs(chunk.start_i - chunk.stop_i) != 1)
 		throw ns_ex("Running backwards, the chunk size has to be 1, otherwise reversing the order gets complicated!");
 	//cerr << "R" << i << "(" << chunk.start_i << "-" << chunk.stop_i << ")";
-	groups[i].paths[j].calculate_image_registration(chunk, shared_state->alignment_states[i][j], shared_state->chunk_generators[i][j].first_chunk(),*alignment_fast);
+	groups[i].paths[j].calculate_image_registration(chunk, shared_state->alignment_states[i][j], shared_state->chunk_generators[i][j].first_chunk(), persistant_data->fast_aligner);
 	//cerr << "(";
 
 	//in several case we need frames that occur after the onset of stationarity
@@ -533,7 +546,7 @@ void ns_time_path_image_movement_analyzer::run_group_for_current_backwards_round
 	//we make that chunk here.
 	if (chunk.start_i < groups[i].paths[j].first_stationary_timepoint()) {
 		//	cerr << "T" << i << "(" << chunk.start_i << "-" << chunk.stop_i << ")";
-		groups[i].paths[j].copy_aligned_path_to_registered_image(chunk);
+		groups[i].paths[j].copy_aligned_path_to_registered_image(chunk, persistant_data->temporary_image);
 	}
 
 	//also, we /register/ backwards but calculate movement /forwards/
@@ -597,16 +610,7 @@ void ns_time_path_image_movement_analyzer::run_group_for_current_backwards_round
 }
 
 
-struct ns_time_path_image_movement_analyzer_thread_pool_persistant_data {
-	ns_time_path_image_movement_analyzer_thread_pool_persistant_data():
-		fast_aligner(ns_analyzed_image_time_path::maximum_alignment_offset(),
-		ns_analyzed_image_time_path::maximum_local_alignment_offset(),
-		ns_analyzed_image_time_path::maximum_alignment_offset(),
-		ns_analyzed_image_time_path::maximum_alignment_offset()){}
-	ns_calc_best_alignment_fast fast_aligner;
-};
-
-typedef void (ns_time_path_image_movement_analyzer::*ns_time_path_image_analysis_thread_job_pointer)(unsigned int group_id, unsigned int path_id, ns_calc_best_alignment_fast *,ns_movement_analysis_shared_state *);
+typedef void (ns_time_path_image_movement_analyzer::*ns_time_path_image_analysis_thread_job_pointer)(unsigned int group_id, unsigned int path_id, ns_time_path_image_movement_analyzer_thread_pool_persistant_data *,ns_movement_analysis_shared_state *);
 
 struct ns_time_path_image_movement_analyzer_thread_pool_job {
 	ns_time_path_image_movement_analyzer_thread_pool_job() {}
@@ -620,15 +624,15 @@ struct ns_time_path_image_movement_analyzer_thread_pool_job {
 	ns_time_path_image_movement_analyzer * ma;
 	ns_movement_analysis_shared_state * shared_state;
 
-	void operator()(ns_time_path_image_movement_analyzer_thread_pool_persistant_data & fast_aligner){
-		(ma->*function_to_call)(group_id, path_id, &fast_aligner.fast_aligner,shared_state);
+	void operator()(ns_time_path_image_movement_analyzer_thread_pool_persistant_data & persistant_data){
+		(ma->*function_to_call)(group_id, path_id, &persistant_data,shared_state);
 	}
 };
 
 typedef std::pair<unsigned int, unsigned int> ns_tpiatp_job;
 
 
-void ns_time_path_image_movement_analyzer::run_group_for_current_forwards_round(unsigned int group_id, unsigned int path_id, ns_calc_best_alignment_fast * alignment,ns_movement_analysis_shared_state * shared_state) {
+void ns_time_path_image_movement_analyzer::run_group_for_current_forwards_round(unsigned int group_id, unsigned int path_id, ns_time_path_image_movement_analyzer_thread_pool_persistant_data * persistant_data,ns_movement_analysis_shared_state * shared_state) {
 	const unsigned int &i(group_id), &j(path_id);
 #ifdef NS_OUTPUT_ALGINMENT_DEBUG
 	if (i != 1)	//xxx
@@ -645,8 +649,8 @@ void ns_time_path_image_movement_analyzer::run_group_for_current_forwards_round(
 	debug_path_name = string("path") + ns_to_string(i) + "_" + ns_to_string(j);
 #endif			
 	//cerr << "R" << i << "(" << chunk.start_i << "-" << chunk.stop_i << ")";
-	groups[i].paths[j].calculate_image_registration(chunk, shared_state->alignment_states[i][j], shared_state->chunk_generators[i][j].first_chunk(),*alignment);
-	groups[i].paths[j].copy_aligned_path_to_registered_image(chunk);
+	groups[i].paths[j].calculate_image_registration(chunk, shared_state->alignment_states[i][j], shared_state->chunk_generators[i][j].first_chunk(), persistant_data->fast_aligner);
+	groups[i].paths[j].copy_aligned_path_to_registered_image(chunk, persistant_data->temporary_image);
 	groups[i].paths[j].calculate_movement_images(chunk);
 
 	///	cerr << total_flow_time / 1000;
@@ -4427,7 +4431,7 @@ void ns_analyzed_image_time_path::quantify_movement(const ns_analyzed_time_image
 }
 //xxx 
 ofstream * tmp_cmp = 0;
-void ns_analyzed_image_time_path::copy_aligned_path_to_registered_image(const ns_analyzed_time_image_chunk & chunk) {
+void ns_analyzed_image_time_path::copy_aligned_path_to_registered_image(const ns_analyzed_time_image_chunk & chunk, std::vector < ns_image_standard> & temporary_images) {
 	
 	const unsigned long C(256);
 	const unsigned long C_sqrt(16);
@@ -4442,10 +4446,11 @@ void ns_analyzed_image_time_path::copy_aligned_path_to_registered_image(const ns
 	float m_min(FLT_MAX), m_max(0);
 
 
-	memory_pool->set_temporary_image_size(3);
-	ns_image_standard & worm_threshold(memory_pool->temporary_images[0]),
-		&region_threshold(memory_pool->temporary_images[1]),
-		&worm_neighborhood_threshold(memory_pool->temporary_images[2]);
+	if (temporary_images.size() < 3)
+		temporary_images.resize(3);
+	ns_image_standard & worm_threshold(temporary_images[0]),
+		&region_threshold(temporary_images[1]),
+		&worm_neighborhood_threshold(temporary_images[2]);
 	worm_threshold.prepare_to_recieve_image(registered_image_properties);
 	region_threshold.prepare_to_recieve_image(registered_image_properties);
 	worm_neighborhood_threshold.prepare_to_recieve_image(registered_image_properties);

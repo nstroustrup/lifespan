@@ -126,7 +126,7 @@ public:
 			image_scaled[i].clear();
 		image_size.width = image_size.height = 0;
 		ns_ipps_safe_delete(pPyrLStateBuf);
-	//S	ns_ipps_safe_delete(pPyrStruct);
+		ns_ipps_safe_delete(pPyrLBuffer);
 		ns_ipps_safe_delete(pPyrStrBuffer);
 		ns_ipps_safe_delete(pPyrBuffer);
 	}

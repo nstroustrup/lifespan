@@ -978,7 +978,7 @@ int main(int argc, char * argv[]){
 			for ( int i = 200; i < 500; i++)
 				for ( int j = 200; j < 500; j++)
 				{
-					ns_image_properties p(200 + rand() % 10 - 5, 200 + rand() % 10 - 5, 1);
+					ns_image_properties p(200 ,200, 1);
 					cerr << p.width << "," << p.height << "\n";
 					im.init(p);
 					ns_gaussian_pyramid py;

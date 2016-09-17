@@ -695,14 +695,6 @@ ns_image_server_sql * ns_connect_to_available_sql_server(){
 #include "ipp.h"
 #endif
 
-#include "ns_gaussian_pyramid.h"
-
-struct ns_thread_pool_tester {
-	void operator()() {
-		ns_thread::sleep_microseconds(rand() % 7);
-	}
-};
-
 
 
 #include "ns_ojp2k.h"
@@ -973,6 +965,8 @@ int main(int argc, char * argv[]){
 		HWND console_hwnd(ns_make_windows_console_window());
 		console_window_created = true;
 		#endif
+
+		/*
 		try{
 			ns_image_whole<float> im;
 			for ( int i = 200; i < 500; i++)
@@ -993,7 +987,7 @@ int main(int argc, char * argv[]){
 			cerr << ex.text();
 		}
 		cerr << "WHA";
-
+		*/
 
 		/*
 		ns_thread_pool<ns_thread_pool_tester> pool;

@@ -695,6 +695,7 @@ ns_image_server_sql * ns_connect_to_available_sql_server(){
 #include "ipp.h"
 #endif
 
+#include "ns_gaussian_pyramid.h"
 
 struct ns_thread_pool_tester {
 	void operator()() {
@@ -972,9 +973,26 @@ int main(int argc, char * argv[]){
 		HWND console_hwnd(ns_make_windows_console_window());
 		console_window_created = true;
 		#endif
+		try{
+			ns_image_whole<float> im;
+			for ( int i = 200; i < 500; i++)
+				for ( int j = 200; j < 500; j++)
+				{
+					ns_image_properties p(200 + rand() % 10 - 5, 200 + rand() % 10 - 5, 1);
+					cerr << p.width << "," << p.height << "\n";
+					im.init(p);
+					ns_gaussian_pyramid py;
+					py.calculate(im);
 
-
-
+				}
+		
+		
+		
+			}
+		catch (ns_ex & ex) {
+			cerr << ex.text();
+		}
+		cerr << "WHA";
 
 
 		/*

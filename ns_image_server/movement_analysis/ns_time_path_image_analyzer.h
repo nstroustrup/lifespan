@@ -98,43 +98,52 @@ private:
 };
 
 //#define NS_DEBUG_POOL
-template<class T, class dT = ns_default_resizer>
+template<class T, class dT = ns_default_resizer, bool is_locking=true>
 class ns_image_pool{
 public:
-	ns_image_pool():number_checked_out(0),pre_allocated(0),min_stack_size_in_history(0){
+	ns_image_pool():number_checked_out(0),pre_allocated(0),min_stack_size_in_history(0),access_lock("al"){
 		clear_history();
 	}
-	ns_image_pool(const unsigned long i):number_checked_out(0),pre_allocated(0),min_stack_size_in_history(0){
+	ns_image_pool(const unsigned long i):number_checked_out(0),pre_allocated(0),min_stack_size_in_history(0), access_lock("al") {
 		clear_history();pre_allocate(i);
 	}
 	~ns_image_pool(){
 		clear();
 	}
 	void pre_allocate(const unsigned long s){
+		if (is_locking) access_lock.wait_to_acquire(__FILE__, __LINE__);
 		for (unsigned int i = 0; i < s; i++)
 			pool.push(new T);
+
+		if (is_locking) access_lock.release();
 	}
 	template<class M>
 	void pre_allocate(const unsigned long s, const M & m){
+		if (is_locking) access_lock.wait_to_acquire(__FILE__, __LINE__);
 		pre_allocated+=s;
 		for (unsigned int i = 0; i < s; i++){
 			pool.push(new T(resizer.parse_initialization(m)));
 			resizer.resize_after_initialization(m,pool.top());
 		}
+		if (is_locking) access_lock.release();
 	}
 	T * get(){
+		if (is_locking) access_lock.wait_to_acquire(__FILE__, __LINE__);
 		number_checked_out++;
 		if (pool.empty()){	
 			T * a(new T);
 			check_out(a);
+			if (is_locking)access_lock.release();
 			return a;
 		}
 		T * a(pool.top());
 		pool.pop();
+		if (is_locking)access_lock.release;
 		return a;
 	}
 	unsigned long number_of_items_checked_out() const { return number_checked_out; }
 	void clear(){
+		//empty pool handles its own locking
 		empty_pool();
 		#ifdef NS_DEBUG_POOL
 			if (checked_out.size() > 0){
@@ -144,6 +153,7 @@ public:
 	}
 	template<class M>
 	T * get(const M & m){
+		if (is_locking) access_lock.wait_to_acquire(__FILE__, __LINE__);
 		number_checked_out++;
 		#ifdef NS_DEBUG_POOL
 		std::cerr << "Number Checked out: " << number_checked_out << "\n";
@@ -153,9 +163,12 @@ public:
 				T * a(new T(resizer.parse_initialization(m)));
 				resizer.resize_after_initialization(m,*a);
 				check_out(a);
+				if (is_locking) access_lock.release();
 				return a;
 			}
 			catch(std::bad_alloc){
+				if (is_locking) access_lock.release();
+				//empty pool does its own locking
 				empty_pool();
 				throw ns_ex("ns_pool_allocator(): Ran out of memory with ") << number_checked_out << " checked out objects\n";
 			}
@@ -164,36 +177,46 @@ public:
 		pool.pop();
 		resizer.resize_after_initialization(m,*a);
 		check_out(a);
+		if (is_locking) access_lock.release();
 		return a;
 	}
 	void release(T *p){
 		if (p==0)
 			throw ns_ex("Checking in null pointer!");
+		if (is_locking) access_lock.wait_to_acquire(__FILE__, __LINE__);
 		number_checked_out--;
 		//delete p;
 		check_in(p);
 		pool.push(p);
+		if (is_locking) access_lock.release();
 	}
 	void mark_stack_size_waypoint_and_trim(){
+		if (is_locking) access_lock.wait_to_acquire(__FILE__, __LINE__);
 		update_stack_size_history();
 	//	if (min_stack_size_in_history != 0){
 	//		std::cout << "ns_image_pool()::Freeing " << min_stack_size_in_history << " out of " << pool.size() << " pooled objects, with " << number_checked_out << " checked out\n";
 	//	}
 		trim_stack();
+		if (is_locking) access_lock.release();
 	}
 	void empty_pool(){
+		if (is_locking) access_lock.wait_to_acquire(__FILE__, __LINE__);
 		while(!pool.empty()){	
 			T * t(pool.top());
 			delete t;
 			pool.pop();
 		}
+		if (is_locking) access_lock.release();
 	}
 
 	void set_resizer(const dT & resizer_){
+		if (is_locking) access_lock.wait_to_acquire(__FILE__, __LINE__);
 		resizer = resizer_;
+		if (is_locking) access_lock.release();
 	}
 	//const unsigned long & number_checked_out(){return checked_out;}
 private:
+	ns_lock access_lock;
 	enum{ns_stack_history_size=10};
 	unsigned long number_checked_out;
 	unsigned long pre_allocated;
@@ -348,8 +371,8 @@ struct ns_registered_image_set{
 	ns_image_whole<float> flow_image_dy;
 	#endif
 };
-typedef ns_image_pool<ns_path_aligned_image_set,ns_overallocation_resizer> ns_path_aligned_image_pool;
-typedef ns_image_pool<ns_registered_image_set,ns_overallocation_resizer> ns_registered_image_pool;
+typedef ns_image_pool<ns_path_aligned_image_set,ns_overallocation_resizer,true> ns_path_aligned_image_pool;
+typedef ns_image_pool<ns_registered_image_set,ns_overallocation_resizer,true> ns_registered_image_pool;
 
 class ns_analyzed_image_time_path_element{
 public:
@@ -551,16 +574,16 @@ struct ns_time_path_image_movement_analysis_memory_pool{
 	void clear(){
 		aligned_image_pool.clear();
 		registered_image_pool.clear();
-		temporary_images.clear();
+	//	temporary_images.clear();
 	}
-	void set_temporary_image_size(unsigned long i){
+	/*void set_temporary_image_size(unsigned long i){
 		if (i <= temporary_images.size())
 			return;
 		temporary_images.resize(i);
 		for (unsigned int i = 0; i < temporary_images.size(); i++)
 			temporary_images[i].use_more_memory_to_avoid_reallocations();
 	}
-	std::vector<ns_image_standard> temporary_images;
+	std::vector<ns_image_standard> temporary_images;*/
 };
 
 class ns_optical_flow_processor;

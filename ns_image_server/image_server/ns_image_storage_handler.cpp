@@ -52,7 +52,7 @@ bool ns_fix_image(const std::string & filename, ns_image_server_sql * sql){
   }
   return true;
 }
-void ns_image_storage_handler::fix_orphaned_captured_images(ns_image_server_sql * sql){
+void ns_image_storage_handler::fix_orphaned_captured_images(ns_image_server_sql * sql) const{
   //vector<string> d;
   vector<string> directories_to_process;
   directories_to_process.push_back(volatile_storage_directory);
@@ -92,18 +92,15 @@ void ns_image_storage_handler::fix_orphaned_captured_images(ns_image_server_sql 
     
 }
 
-ns_performance_statistics_analyzer & performance_statistics(){
-	return image_server.performance_statistics;
-}
 
 
 void ns_image_handler_submit_alert(const ns_alert::ns_alert_type & alert_type, const std::string & text, const std::string & detailed_text, ns_image_server_sql * sql){
-	ns_alert a(text,detailed_text,alert_type,ns_alert::get_notification_type(alert_type,image_server.act_as_an_image_capture_server()),ns_alert::ns_rate_limited);
+	ns_alert a(text,detailed_text,alert_type,ns_alert::get_notification_type(alert_type,image_server_const.act_as_an_image_capture_server()),ns_alert::ns_rate_limited);
 
 	if (!sql->connected_to_central_database())
-		image_server.alert_handler.submit_locally_buffered_alert(a);
+		image_server_const.alert_handler.submit_locally_buffered_alert(a);
 	else
-		image_server.alert_handler.submit_alert(a, *static_cast<ns_sql *>(sql));
+		image_server_const.alert_handler.submit_alert(a, *static_cast<ns_sql *>(sql));
 }
 
 
@@ -111,50 +108,50 @@ void ns_image_handler_submit_alert(const ns_alert::ns_alert_type & alert_type, c
 void ns_image_handler_submit_alert_to_central_db(const ns_alert::ns_alert_type & alert_type, const std::string & text, const std::string & detailed_text){
 		ns_acquire_for_scope<ns_sql> sql(image_server.new_sql_connection(__FILE__,__LINE__));
 	
-		ns_alert a(text,detailed_text,alert_type,ns_alert::get_notification_type(alert_type,image_server.act_as_an_image_capture_server()),ns_alert::ns_rate_limited);
+		ns_alert a(text,detailed_text,alert_type,ns_alert::get_notification_type(alert_type,image_server_const.act_as_an_image_capture_server()),ns_alert::ns_rate_limited);
 
 		image_server.alert_handler.submit_alert(a,sql());
 		sql.release();
 }
 
 void ns_image_handler_register_server_event(const ns_image_server_event & ev,ns_image_server_sql * sql){
-	image_server.register_server_event(ev, sql);
+	image_server_const.register_server_event(ev, sql);
 }
 void ns_image_handler_register_server_event(const ns_ex & ev, ns_image_server_sql * sql){
-	image_server.register_server_event(ev, sql);
+	image_server_const.register_server_event(ev, sql);
 }
 
 
 void ns_image_handler_register_server_event_to_central_db(const ns_ex & ev){
-	image_server.register_server_event(ns_image_server::ns_register_in_central_db, ev);
+	image_server_const.register_server_event(ns_image_server::ns_register_in_central_db, ev);
 }
 void ns_image_handler_register_server_event_to_central_db(const ns_image_server_event & ev){
-	image_server.register_server_event(ns_image_server::ns_register_in_central_db, ev);
+	image_server_const.register_server_event(ns_image_server::ns_register_in_central_db, ev);
 }
 
 
 ns_64_bit ns_image_storage_handler_host_id(){
-	return image_server.host_id();
+	return image_server_const.host_id();
 }
 long ns_image_storage_handler_server_timeout_interval(){
-	return image_server.server_timeout_interval();
+	return image_server_const.server_timeout_interval();
 }
 
 std::string ns_image_server_scratch_directory(){
-	return image_server.scratch_directory();
+	return image_server_const.scratch_directory();
 }
 
 std::string ns_image_server_miscellaneous_directory(){
-	return image_server.miscellaneous_directory();
+	return image_server_const.miscellaneous_directory();
 }
 
 std::string ns_image_server_cache_directory(){
-	return image_server.cache_directory();
+	return image_server_const.cache_directory();
 }
 
 void ns_full_drive_cache_panic(const ns_ex & ex,ns_image_server_sql * sql){
-	image_server.register_server_event(ns_image_server_event("Cache cannot read from volatile storage and is pausing the current host:") << ex.text(),sql);
-	image_server.pause_host();
+	image_server_const.register_server_event(ns_image_server_event("Cache cannot read from volatile storage and is pausing the current host:") << ex.text(),sql);
+	image_server_const.pause_host();
 }
 
 unsigned long ns_storage_request_local_cache_file_size(ns_image_storage_handler * image_storage,const std::string & filename){
@@ -166,14 +163,14 @@ bool ns_storage_delete_from_local_cache(ns_image_storage_handler * image_storage
 }
 
 ns_sql * ns_get_sql_connection(){
-	return image_server.new_sql_connection(__FILE__,__LINE__);
+	return image_server_const.new_sql_connection(__FILE__,__LINE__);
 }
 
 ns_local_buffer_connection * ns_get_local_buffer_connection(){
-	return image_server.new_local_buffer_connection(__FILE__,__LINE__);
+	return image_server_const.new_local_buffer_connection(__FILE__,__LINE__);
 }
 std::string ns_get_default_partition(){
-	return image_server.default_partition();
+	return image_server_const.default_partition();
 }
 
 
@@ -205,8 +202,8 @@ double ns_image_storage_handler::get_region_images_size_on_disk(const unsigned l
 	return ns_dir::get_directory_size(loc.absolute_long_term_directory(),du_path + suffix);
 }
 double ns_image_storage_handler::get_experiment_video_size_on_disk(const unsigned long experiment_id,ns_sql & sql) const{
-	ns_file_location_specification spec(image_server.image_storage.get_path_for_experiment(experiment_id,&sql));
-	return ns_dir::get_directory_size(image_server.image_storage.get_absolute_path_for_video(spec,false,true),du_path);
+	ns_file_location_specification spec(image_server_const.image_storage.get_path_for_experiment(experiment_id,&sql));
+	return ns_dir::get_directory_size(image_server_const.image_storage.get_absolute_path_for_video(spec,false,true),du_path);
 }
 	
 
@@ -214,7 +211,7 @@ double ns_image_storage_handler::get_region_metadata_size_on_disk(const unsigned
 	ns_file_location_specification loc(get_file_specification_for_movement_data(region_id,"",&sql));
 	double s(ns_dir::get_directory_size(loc.absolute_long_term_directory(),du_path));
 	
-	ns_file_location_specification region_info(image_server.image_storage.get_base_path_for_region(region_id,&sql));
+	ns_file_location_specification region_info(image_server_const.image_storage.get_base_path_for_region(region_id,&sql));
 	ns_file_location_specification region_path_info(get_file_specification_for_path_data(region_info));
 	s += ns_dir::get_directory_size(region_path_info.absolute_long_term_directory(),du_path);
 	return s;
@@ -305,7 +302,7 @@ void ns_image_storage_handler::set_directories(const std::string & _volatile_sto
 		throw ns_ex("ns_image_storage_handler::Volatile storage must exist!") << ns_file_io;
 }
 
-ns_image_storage_reciever_handle<ns_image_storage_handler::ns_component> ns_image_storage_handler::request_storage(ns_image_server_captured_image_region & captured_image_region, const ns_image_type & image_type, const unsigned long max_line_length, ns_image_server_sql * sql, const bool allow_volatile_storage){
+ns_image_storage_reciever_handle<ns_image_storage_handler::ns_component> ns_image_storage_handler::request_storage(ns_image_server_captured_image_region & captured_image_region, const ns_image_type & image_type, const unsigned long max_line_length, ns_image_server_sql * sql, const bool allow_volatile_storage) const{
 	ns_image_server_image image;
 	image.filename = captured_image_region.filename(sql);
 	image.path = captured_image_region.directory(sql);
@@ -314,7 +311,7 @@ ns_image_storage_reciever_handle<ns_image_storage_handler::ns_component> ns_imag
 	return request_storage(image, image_type, max_line_length, sql,had_to_use_volatile_storage,false,allow_volatile_storage);
 }
 
-ns_image_storage_reciever_handle<ns_image_storage_handler::ns_component> ns_image_storage_handler::request_storage_ci(ns_image_server_captured_image & captured_image, const ns_image_type & image_type, const unsigned long max_line_length, ns_image_server_sql * sql, bool & had_to_use_local_storage, const bool allow_volatile_storage){
+ns_image_storage_reciever_handle<ns_image_storage_handler::ns_component> ns_image_storage_handler::request_storage_ci(ns_image_server_captured_image & captured_image, const ns_image_type & image_type, const unsigned long max_line_length, ns_image_server_sql * sql, bool & had_to_use_local_storage, const bool allow_volatile_storage) const{
 	ns_image_server_image image;
 	image.filename = captured_image.filename(sql);
 	image.path = captured_image.directory(sql);
@@ -334,7 +331,7 @@ bool ns_image_storage_handler::test_connection_to_long_term_storage(const bool t
 		return false;
 	}
 	if (test_for_write_access){
-		string fname(image_server.host_name_out() + "_write_test");
+		string fname(image_server_const.host_name_out() + "_write_test");
 		//clear out invalid characters
 		for (unsigned int i = 0; i < fname.size(); i++){
 			if (!( (fname[i] >= 'a' && fname[i] <= 'z') || 
@@ -354,7 +351,7 @@ bool ns_image_storage_handler::test_connection_to_long_term_storage(const bool t
 	return ns_dir::file_exists(long_term_storage_directory);
 }
 
-bool ns_image_storage_handler::image_exists(ns_image_server_image & image, ns_image_server_sql * sql, bool only_long_term_storage){
+bool ns_image_storage_handler::image_exists(ns_image_server_image & image, ns_image_server_sql * sql, bool only_long_term_storage) const{
 	if (image.id == 0)
 		throw ns_ex("ns_image_storage_handler::No id specified when querying image existance.");
 	if (image.filename.size() == 0 || image.path.size() == 0) image.load_from_db(image.id,sql);
@@ -370,7 +367,7 @@ bool ns_image_storage_handler::image_exists(ns_image_server_image & image, ns_im
 	return ns_dir::file_exists(lt) || (!only_long_term_storage && ns_dir::file_exists(v));
 }
 
-bool ns_image_storage_handler::assign_unique_filename(ns_image_server_image & image, ns_image_server_sql * sql){
+bool ns_image_storage_handler::assign_unique_filename(ns_image_server_image & image, ns_image_server_sql * sql) const{
 	if (image.id == 0)
 		throw ns_ex("ns_image_storage_handler::No id specified when requesting unique filename");
 	if (image.filename.size() == 0 || image.path.size() == 0) image.load_from_db(image.id,sql);
@@ -422,7 +419,7 @@ bool ns_image_storage_handler::assign_unique_filename(ns_image_server_image & im
 	return true;
 }
 
-ifstream * ns_image_storage_handler::request_metadata_from_disk(ns_image_server_image & image,const bool binary,ns_image_server_sql * sql){
+ifstream * ns_image_storage_handler::request_metadata_from_disk(ns_image_server_image & image,const bool binary,ns_image_server_sql * sql) const{
 	if (image.filename.size() == 0 || image.path.size() == 0 || image.partition.size() == 0) image.load_from_db(image.id,sql);
 	
 	ns_file_location_specification spec(look_up_image_location(image,sql));
@@ -447,7 +444,7 @@ ifstream * ns_image_storage_handler::request_metadata_from_disk(ns_image_server_
 	return i;
 }
 
-ofstream * ns_image_storage_handler::request_metadata_output(ns_image_server_image & image, const std::string & extension, const bool binary,ns_image_server_sql * sql){
+ofstream * ns_image_storage_handler::request_metadata_output(ns_image_server_image & image, const std::string & extension, const bool binary,ns_image_server_sql * sql) const{
 
 	if (image.filename.size() == 0 || image.path.size() == 0 || image.partition.size() == 0) image.load_from_db(image.id,sql);
 	//std::string existing_filename_extension(ns_dir::extract_extension(image.filename));
@@ -492,20 +489,20 @@ ofstream * ns_image_storage_handler::request_metadata_output(ns_image_server_ima
 
 
 
-ns_image_storage_reciever_handle<ns_image_storage_handler::ns_component> ns_image_storage_handler::request_storage(ns_image_server_image & image, const ns_image_type & image_type, const unsigned long max_line_length, ns_image_server_sql * sql, bool & had_to_use_local_storage, const bool report_to_db, const bool allow_volatile_storage) {
+ns_image_storage_reciever_handle<ns_image_storage_handler::ns_component> ns_image_storage_handler::request_storage(ns_image_server_image & image, const ns_image_type & image_type, const unsigned long max_line_length, ns_image_server_sql * sql, bool & had_to_use_local_storage, const bool report_to_db, const bool allow_volatile_storage) const{
 	std::string fname = get_storage_to_open(image, image_type, max_line_length, sql, had_to_use_local_storage, report_to_db, allow_volatile_storage);
-	return ns_image_storage_reciever_handle<ns_image_storage_handler::ns_component>(new ns_image_storage_reciever_to_disk<ns_image_storage_handler::ns_component>(max_line_length, fname, image_type, &image_server.performance_statistics, had_to_use_local_storage));
+	return ns_image_storage_reciever_handle<ns_image_storage_handler::ns_component>(new ns_image_storage_reciever_to_disk<ns_image_storage_handler::ns_component>(max_line_length, fname, image_type, 0, had_to_use_local_storage));
 }
-ns_image_storage_reciever_handle<ns_16_bit> ns_image_storage_handler::request_storage_16_bit(ns_image_server_image & image, const ns_image_type & image_type, const unsigned long max_line_length, ns_image_server_sql * sql, bool & had_to_use_local_storage, const bool report_to_db, const bool allow_volatile_storage) {
+ns_image_storage_reciever_handle<ns_16_bit> ns_image_storage_handler::request_storage_16_bit(ns_image_server_image & image, const ns_image_type & image_type, const unsigned long max_line_length, ns_image_server_sql * sql, bool & had_to_use_local_storage, const bool report_to_db, const bool allow_volatile_storage) const{
 	std::string fname = get_storage_to_open(image, image_type, max_line_length, sql, had_to_use_local_storage, report_to_db, allow_volatile_storage);
-	return ns_image_storage_reciever_handle<ns_16_bit>(new ns_image_storage_reciever_to_disk<ns_16_bit>(max_line_length, fname, image_type, &image_server.performance_statistics, had_to_use_local_storage));
+	return ns_image_storage_reciever_handle<ns_16_bit>(new ns_image_storage_reciever_to_disk<ns_16_bit>(max_line_length, fname, image_type, 0, had_to_use_local_storage));
 }
-ns_image_storage_reciever_handle<float> ns_image_storage_handler::request_storage_float(ns_image_server_image & image, const ns_image_type & image_type, const unsigned long max_line_length, ns_image_server_sql * sql, bool & had_to_use_local_storage, const bool report_to_db, const bool allow_volatile_storage) {
+ns_image_storage_reciever_handle<float> ns_image_storage_handler::request_storage_float(ns_image_server_image & image, const ns_image_type & image_type, const unsigned long max_line_length, ns_image_server_sql * sql, bool & had_to_use_local_storage, const bool report_to_db, const bool allow_volatile_storage) const{
 	std::string fname = get_storage_to_open(image, image_type, max_line_length, sql, had_to_use_local_storage, report_to_db, allow_volatile_storage);
-	return ns_image_storage_reciever_handle<float>(new ns_image_storage_reciever_to_disk<float>(max_line_length, fname, image_type, &image_server.performance_statistics, had_to_use_local_storage));
+	return ns_image_storage_reciever_handle<float>(new ns_image_storage_reciever_to_disk<float>(max_line_length, fname, image_type, 0, had_to_use_local_storage));
 }
 
-std::string ns_image_storage_handler::get_storage_to_open(ns_image_server_image & image, const ns_image_type & image_type, const unsigned long max_line_length, ns_image_server_sql * sql, bool & had_to_use_local_storage, const bool report_to_db, const bool allow_volatile_storage) {
+std::string ns_image_storage_handler::get_storage_to_open(ns_image_server_image & image, const ns_image_type & image_type, const unsigned long max_line_length, ns_image_server_sql * sql, bool & had_to_use_local_storage, const bool report_to_db, const bool allow_volatile_storage) const{
 
 	ns_ex stored_error[3];
 	ns_file_location_specification file_location(look_up_image_location(image,sql,image_type));
@@ -586,7 +583,7 @@ std::string ns_image_storage_handler::get_storage_to_open(ns_image_server_image 
 	else throw stored_error[0];
 	}
 
-ns_image_server_image ns_image_storage_handler::create_image_db_record_for_captured_image(ns_image_server_captured_image & image,ns_image_server_sql * sql, const ns_image_type & image_type){
+ns_image_server_image ns_image_storage_handler::create_image_db_record_for_captured_image(ns_image_server_captured_image & image,ns_image_server_sql * sql, const ns_image_type & image_type) const{
 	
 	std::string dir(image.directory(sql,ns_unprocessed,true));
 
@@ -622,7 +619,7 @@ ns_image_server_image ns_image_storage_handler::create_image_db_record_for_captu
 
 //this function creates a file in the volatile storage (or long term storage) and creates an image db record for it and saves it 
 //to the image.capture_images_image_id field
-ofstream * ns_image_storage_handler::request_binary_output_for_captured_image(const ns_image_server_captured_image & captured_image, const ns_image_server_image & image, bool volatile_storage,ns_image_server_sql * sql){
+ofstream * ns_image_storage_handler::request_binary_output_for_captured_image(const ns_image_server_captured_image & captured_image, const ns_image_server_image & image, bool volatile_storage,ns_image_server_sql * sql)const{
 
 		string dir,partition;
 
@@ -732,7 +729,7 @@ ofstream * ns_image_storage_handler::request_volatile_binary_output(const std::s
 	return output;
 }
 
-ifstream * ns_image_storage_handler::request_from_volatile_storage_raw(const std::string & filename){
+ifstream * ns_image_storage_handler::request_from_volatile_storage_raw(const std::string & filename) const{
 	std::string dir = volatile_storage_directory + DIR_CHAR_STR + ns_image_server_scratch_directory();
 	std::string input_filename = dir + DIR_CHAR_STR + filename;
 	ns_dir::convert_slashes(input_filename);
@@ -756,7 +753,7 @@ ifstream * ns_image_storage_handler::request_from_volatile_storage_raw(const std
 	throw ns_ex("ns_image_storage_handler::request_volatile_storage_raw()::Could not load file from scratch: ") << input_filename << ns_file_io;
 }
 
-ns_image_storage_reciever_handle<ns_image_storage_handler::ns_component> ns_image_storage_handler::request_local_cache_storage(const std::string & filename,const ns_image_type & image_type, const unsigned long max_line_length, const bool report_to_db){
+ns_image_storage_reciever_handle<ns_image_storage_handler::ns_component> ns_image_storage_handler::request_local_cache_storage(const std::string & filename,const ns_image_type & image_type, const unsigned long max_line_length, const bool report_to_db) const{
 
 	std::string output_dir = volatile_storage_directory + DIR_CHAR_STR + ns_image_server_cache_directory(),
 		   output_filename = output_dir + DIR_CHAR_STR + filename;
@@ -777,10 +774,10 @@ ns_image_storage_reciever_handle<ns_image_storage_handler::ns_component> ns_imag
 		ev.log = report_to_db;
 		ns_image_handler_register_server_event_to_central_db(ev);
 	}
-	return ns_image_storage_reciever_handle<ns_image_storage_handler::ns_component>(new ns_image_storage_reciever_to_disk<ns_image_storage_handler::ns_component>(max_line_length, output_filename, image_type ,&image_server.performance_statistics,true));
+	return ns_image_storage_reciever_handle<ns_image_storage_handler::ns_component>(new ns_image_storage_reciever_to_disk<ns_image_storage_handler::ns_component>(max_line_length, output_filename, image_type ,&image_server_const.performance_statistics,true));
 }
 
-ns_image_storage_reciever_handle<float> ns_image_storage_handler::request_local_cache_storage_float(const std::string & filename, const ns_image_type & image_type, const unsigned long max_line_length, const bool report_to_db) {
+ns_image_storage_reciever_handle<float> ns_image_storage_handler::request_local_cache_storage_float(const std::string & filename, const ns_image_type & image_type, const unsigned long max_line_length, const bool report_to_db) const{
 
 	std::string output_dir = volatile_storage_directory + DIR_CHAR_STR + ns_image_server_cache_directory(),
 		output_filename = output_dir + DIR_CHAR_STR + filename;
@@ -801,11 +798,11 @@ ns_image_storage_reciever_handle<float> ns_image_storage_handler::request_local_
 		ev.log = report_to_db;
 		ns_image_handler_register_server_event_to_central_db(ev);
 	}
-	return ns_image_storage_reciever_handle<float>(new ns_image_storage_reciever_to_disk<float>(max_line_length, output_filename, image_type, &image_server.performance_statistics, true));
+	return ns_image_storage_reciever_handle<float>(new ns_image_storage_reciever_to_disk<float>(max_line_length, output_filename, image_type, &image_server_const.performance_statistics, true));
 }
 
 	
-ns_image_storage_source_handle<ns_image_storage_handler::ns_component> ns_image_storage_handler::request_from_local_cache(const std::string & filename, const bool report_to_db){
+ns_image_storage_source_handle<ns_image_storage_handler::ns_component> ns_image_storage_handler::request_from_local_cache(const std::string & filename, const bool report_to_db) const{
 	if (!ns_dir::file_exists(volatile_storage_directory))
 			ns_image_handler_submit_alert_to_central_db(ns_alert::ns_volatile_storage_error,
 			"Could not access volatile storage",
@@ -818,13 +815,13 @@ ns_image_storage_source_handle<ns_image_storage_handler::ns_component> ns_image_
 	if (ns_dir::file_exists(input_filename)){
 		if (verbosity >= ns_standard && report_to_db)
 			ns_image_handler_register_server_event_to_central_db(ns_image_server_event("ns_image_storage_handler::Opening ",false) << input_filename << " for input." << ns_ts_minor_event);
-		return ns_image_storage_source_handle<ns_image_storage_handler::ns_component>(new ns_image_storage_source_from_disk<ns_image_storage_handler::ns_component>(input_filename,&image_server.performance_statistics,true));
+		return ns_image_storage_source_handle<ns_image_storage_handler::ns_component>(new ns_image_storage_source_from_disk<ns_image_storage_handler::ns_component>(input_filename,&image_server_const.performance_statistics,true));
 
 	}
 	throw ns_ex("ns_image_storage_handler::request_local_cache_storage()::Could not load file from cache: ") << filename << ns_file_io;
 }
 
-ns_image_storage_source_handle<float> ns_image_storage_handler::request_from_local_cache_float(const std::string & filename, const bool report_to_db) {
+ns_image_storage_source_handle<float> ns_image_storage_handler::request_from_local_cache_float(const std::string & filename, const bool report_to_db) const{
 	if (!ns_dir::file_exists(volatile_storage_directory))
 		ns_image_handler_submit_alert_to_central_db(ns_alert::ns_volatile_storage_error,
 			"Could not access volatile storage",
@@ -837,14 +834,14 @@ ns_image_storage_source_handle<float> ns_image_storage_handler::request_from_loc
 	if (ns_dir::file_exists(input_filename)) {
 		if (verbosity >= ns_standard && report_to_db)
 			ns_image_handler_register_server_event_to_central_db(ns_image_server_event("ns_image_storage_handler::Opening ", false) << input_filename << " for input." << ns_ts_minor_event);
-		return ns_image_storage_source_handle<float>(new ns_image_storage_source_from_disk<float>(input_filename, &image_server.performance_statistics, true));
+		return ns_image_storage_source_handle<float>(new ns_image_storage_source_from_disk<float>(input_filename, &image_server_const.performance_statistics, true));
 
 	}
 	throw ns_ex("ns_image_storage_handler::request_local_cache_storage()::Could not load file from cache: ") << filename << ns_file_io;
 }
 
 
-ns_image_storage_source_handle<ns_image_storage_handler::ns_component> ns_image_storage_handler::request_from_volatile_storage(const std::string & filename, const bool report_in_db){
+ns_image_storage_source_handle<ns_image_storage_handler::ns_component> ns_image_storage_handler::request_from_volatile_storage(const std::string & filename, const bool report_in_db) const{
 	if (!ns_dir::file_exists(volatile_storage_directory))
 		ns_image_handler_submit_alert_to_central_db(ns_alert::ns_volatile_storage_error,
 			"Could not access volatile storage",
@@ -857,14 +854,14 @@ ns_image_storage_source_handle<ns_image_storage_handler::ns_component> ns_image_
 	if (ns_dir::file_exists(input_filename)){
 		if (verbosity >= ns_standard && report_in_db)
 			ns_image_handler_register_server_event_to_central_db(ns_image_server_event("ns_image_storage_handler::Opening VT ") << input_filename << " for input." << ns_ts_minor_event);
-		return ns_image_storage_source_handle<ns_image_storage_handler::ns_component>(new ns_image_storage_source_from_disk<ns_image_storage_handler::ns_component>(input_filename,&image_server.performance_statistics,true));
+		return ns_image_storage_source_handle<ns_image_storage_handler::ns_component>(new ns_image_storage_source_from_disk<ns_image_storage_handler::ns_component>(input_filename,&image_server_const.performance_statistics,true));
 
 	}
 	throw ns_ex("ns_image_storage_handler::request_from_volatile_storage()::Could not load file from scratch: ") << input_filename << ns_file_io;
 }
 
 
-bool ns_image_storage_handler::delete_from_volatile_storage(const std::string & filename){
+bool ns_image_storage_handler::delete_from_volatile_storage(const std::string & filename)const{
 	if (!ns_dir::file_exists(volatile_storage_directory))
 			ns_image_handler_submit_alert_to_central_db(ns_alert::ns_volatile_storage_error,
 			"Could not access volatile storage",
@@ -881,7 +878,7 @@ bool ns_image_storage_handler::delete_from_volatile_storage(const std::string & 
 
 	return ns_dir::delete_file(input_filename);
 }
-unsigned long ns_image_storage_handler::request_local_cache_file_size(const std::string & filename){
+unsigned long ns_image_storage_handler::request_local_cache_file_size(const std::string & filename)const{
 	if (!ns_dir::file_exists(volatile_storage_directory))	
 		ns_image_handler_submit_alert_to_central_db(ns_alert::ns_volatile_storage_error,
 			"Could not access volatile storage",
@@ -892,7 +889,7 @@ unsigned long ns_image_storage_handler::request_local_cache_file_size(const std:
 	ns_dir::convert_slashes(input_filename);	
 	throw ns_ex("ns_image_storage_handler::request_local_cache_file_size::File size calculation not implemented!");
 }
-bool ns_image_storage_handler::delete_from_local_cache(const std::string & filename){	
+bool ns_image_storage_handler::delete_from_local_cache(const std::string & filename)const{	
 	if (!ns_dir::file_exists(volatile_storage_directory))	
 		ns_image_handler_submit_alert_to_central_db(ns_alert::ns_volatile_storage_error,
 			"Could not access volatile storage",
@@ -902,12 +899,12 @@ bool ns_image_storage_handler::delete_from_local_cache(const std::string & filen
 	std::string input_filename = dir + DIR_CHAR_STR + filename;
 	ns_dir::convert_slashes(input_filename);	
 	if (verbosity >= ns_deletion_events)
-		image_server.register_server_event_no_db(ns_image_server_event("Deleting from cache ") << input_filename);
+		image_server_const.register_server_event_no_db(ns_image_server_event("Deleting from cache ") << input_filename);
 	ns_dir::delete_file(input_filename);
 	return true;
 }
 
-void ns_image_storage_handler::clear_local_cache(){
+void ns_image_storage_handler::clear_local_cache()const{
 	if (!ns_dir::file_exists(volatile_storage_directory))
 		ns_image_handler_submit_alert_to_central_db(ns_alert::ns_volatile_storage_error,
 			"Could not access volatile storage",
@@ -919,13 +916,13 @@ void ns_image_storage_handler::clear_local_cache(){
 	ns_dir dir;
 	dir.load(path);
 	if (verbosity >= ns_deletion_events)
-		image_server.register_server_event_no_db(ns_image_server_event("Clearing Local cache ") << path);
+		image_server_const.register_server_event_no_db(ns_image_server_event("Clearing Local cache ") << path);
 	for (unsigned long i = 0; i < (unsigned long)dir.files.size(); i++)
 		ns_dir::delete_file(path + DIR_CHAR + dir.files[i]);
 }
 
 
-bool ns_image_storage_handler::delete_from_storage(ns_image_server_captured_image & image,const ns_file_deletion_type & type,ns_image_server_sql * sql){
+bool ns_image_storage_handler::delete_from_storage(ns_image_server_captured_image & image,const ns_file_deletion_type & type,ns_image_server_sql * sql)const{
 	if (image.captured_images_id == 0)
 		throw ns_ex("ns_image_storage_handler::delete_from_storage()::No id specified.");
 	if (image.capture_images_image_id== 0) 
@@ -937,7 +934,7 @@ bool ns_image_storage_handler::delete_from_storage(ns_image_server_captured_imag
 	return true;
 }
 
-void ns_image_storage_handler::delete_file_specification(const ns_file_location_specification & spec,const ns_file_deletion_type & type){
+void ns_image_storage_handler::delete_file_specification(const ns_file_location_specification & spec,const ns_file_deletion_type & type)const{
 	if (spec.long_term_directory != long_term_storage_directory)
 		throw ns_ex("ns_image_storage_handler::delete_directory()::Attempting to delete ouside of long term storage directory: ") << spec.absolute_long_term_directory();
 	if (spec.volatile_directory!= volatile_storage_directory)
@@ -977,17 +974,17 @@ void ns_image_storage_handler::delete_file_specification(const ns_file_location_
 }
 
 
-bool ns_image_storage_handler::delete_from_storage(ns_image_server_image & image,const ns_file_deletion_type & type,ns_image_server_sql * sql){
+bool ns_image_storage_handler::delete_from_storage(ns_image_server_image & image,const ns_file_deletion_type & type,ns_image_server_sql * sql)const{
 
 	bool successfully_deleted(false);
 	ns_file_location_specification file_location(look_up_image_location(image,sql));
 	if (type == ns_delete_volatile || type == ns_delete_both_volatile_and_long_term){
 		if (verbosity >= ns_deletion_events)
-			image_server.register_server_event(ns_image_server_event("ns_image_storage_handler::delete_from_storage(ns_image_server_image & image)::Deleting ") << file_location.absolute_volatile_filename(),sql);
+			image_server_const.register_server_event(ns_image_server_event("ns_image_storage_handler::delete_from_storage(ns_image_server_image & image)::Deleting ") << file_location.absolute_volatile_filename(),sql);
 
 		successfully_deleted = ns_dir::delete_file(file_location.absolute_volatile_filename());
 		if (type == ns_delete_volatile && !successfully_deleted)
-			image_server.register_server_event(ns_image_server_event("Could not delete ") << file_location.absolute_volatile_filename(),sql);
+			image_server_const.register_server_event(ns_image_server_event("Could not delete ") << file_location.absolute_volatile_filename(),sql);
 		if (type != ns_delete_long_term && type != ns_delete_both_volatile_and_long_term)
 			return false;
 	}
@@ -996,11 +993,11 @@ bool ns_image_storage_handler::delete_from_storage(ns_image_server_image & image
 		long_term_storage_directory.size() != 0 && ns_dir::file_exists(file_location.long_term_directory)){
 		
 		if (verbosity >= ns_deletion_events)
-			image_server.register_server_event(ns_image_server_event("ns_image_storage_handler::delete_from_storage(ns_image_server_image & image)::Deleting ") << file_location.absolute_long_term_filename(),sql);
+			image_server_const.register_server_event(ns_image_server_event("ns_image_storage_handler::delete_from_storage(ns_image_server_image & image)::Deleting ") << file_location.absolute_long_term_filename(),sql);
 
 		successfully_deleted = successfully_deleted || ns_dir::delete_file(file_location.absolute_long_term_filename());
 		if (!successfully_deleted){
-			image_server.register_server_event(ns_image_server_event("Could not delete ") << file_location.absolute_long_term_filename(),sql);
+			image_server_const.register_server_event(ns_image_server_event("Could not delete ") << file_location.absolute_long_term_filename(),sql);
 			return false;
 		}
 		//ns_image_handler_register_server_event(ns_image_server_event("ns_image_storage_handler::Deleting (LT) ") << image.filename << ns_ts_minor_event);
@@ -1026,14 +1023,14 @@ bool ns_image_storage_handler::delete_from_storage(ns_image_server_image & image
 	return false;
 }
 
-ns_image_storage_source_handle<ns_image_storage_handler::ns_component> ns_image_storage_handler::request_from_storage(ns_image_server_captured_image_region & region_image, ns_image_server_sql * sql){
+ns_image_storage_source_handle<ns_image_storage_handler::ns_component> ns_image_storage_handler::request_from_storage(ns_image_server_captured_image_region & region_image, ns_image_server_sql * sql)const{
 	ns_image_server_image im;
 	if (region_image.region_images_image_id == 0)
 		region_image.load_from_db(region_image.region_images_id,sql);
 	im.load_from_db(region_image.region_images_image_id,sql);
 	return request_from_storage(im,sql);
 }
-ns_image_storage_source_handle<ns_image_storage_handler::ns_component> ns_image_storage_handler::request_from_storage(ns_image_server_captured_image_region & region_image, const ns_processing_task & task, ns_image_server_sql * sql){
+ns_image_storage_source_handle<ns_image_storage_handler::ns_component> ns_image_storage_handler::request_from_storage(ns_image_server_captured_image_region & region_image, const ns_processing_task & task, ns_image_server_sql * sql)const{
 	ns_image_server_image im;
 	if (!sql->connected_to_central_database())
 		throw ns_ex("ns_image_storage_handler::request_from_storage(ns_image_server_captured_image_region)::Not connected to central db!");
@@ -1041,15 +1038,15 @@ ns_image_storage_source_handle<ns_image_storage_handler::ns_component> ns_image_
 //	im.load_from_db(region_image.region_images_image_id,sql);
 	return request_from_storage(im,sql);
 }
-ns_image_storage_source_handle<ns_image_storage_handler::ns_component> ns_image_storage_handler::request_from_storage(ns_image_server_image & image, const ns_processing_task & task, ns_image_server_sql * sql){
+ns_image_storage_source_handle<ns_image_storage_handler::ns_component> ns_image_storage_handler::request_from_storage(ns_image_server_image & image, const ns_processing_task & task, ns_image_server_sql * sql)const{
 	throw ns_ex("ns_image_storage_handler::request_from_storage(ns_image_server_image)::Cannot produce task from image.");
 }
 
-ns_image_storage_source_handle<ns_image_storage_handler::ns_component> ns_image_storage_handler::request_from_storage(ns_image_server_image & image, ns_image_server_sql * sql){
+ns_image_storage_source_handle<ns_image_storage_handler::ns_component> ns_image_storage_handler::request_from_storage(ns_image_server_image & image, ns_image_server_sql * sql)const{
 	return request_from_storage_n_bits<ns_image_storage_handler::ns_component>(image, sql,ns_volatile_and_long_term_storage);
 }
 
-ns_image_storage_source_handle<ns_image_storage_handler::ns_component> ns_image_storage_handler::request_from_storage(ns_image_server_captured_image & captured_image, ns_image_server_sql * sql){
+ns_image_storage_source_handle<ns_image_storage_handler::ns_component> ns_image_storage_handler::request_from_storage(ns_image_server_captured_image & captured_image, ns_image_server_sql * sql)const{
 	ns_image_server_image im;
 	im.id = captured_image.capture_images_image_id;
 	//cerr << "loading image info...";
@@ -1138,13 +1135,13 @@ ns_file_location_specification  ns_image_storage_handler::get_file_specification
 
 ns_image_server_image ns_image_storage_handler::get_storage_for_path(const ns_file_location_specification & region_spec, 
 			const unsigned long path_id, const unsigned long path_group_id,
-			const unsigned long region_info_id, const std::string & region_name, const std::string & experiment_name, const std::string & sample_name,bool flow){
+			const unsigned long region_info_id, const std::string & region_name, const std::string & experiment_name, const std::string & sample_name,bool flow) const{
 
 	ns_file_location_specification spec(region_spec);
 	ns_file_location_specification dir_spec(get_file_specification_for_path_data(region_spec));
 	ns_image_server_image im;
 	im.partition = spec.partition;
-	im.host_id = image_server.host_id();
+	im.host_id = image_server_const.host_id();
 	im.path = dir_spec.relative_directory;
 	im.filename = experiment_name + "=" + sample_name +"=" + region_name + "=" + ns_to_string(region_info_id) + "=" 
 			+ ns_to_string(path_group_id) + "=" + ns_to_string(path_id);
@@ -1224,24 +1221,24 @@ ns_file_location_specification ns_image_storage_handler::get_path_for_experiment
 	return compile_absolute_paths_from_relative(relative_path,partition,"");
 }
 
-ns_64_bit ns_image_storage_handler::create_file_deletion_job(const ns_64_bit parent_processing_job_id, ns_sql & sql){
+ns_64_bit ns_image_storage_handler::create_file_deletion_job(const ns_64_bit parent_processing_job_id, ns_sql & sql)const{
 	sql << "INSERT INTO delete_file_jobs SET parent_job_id = " << parent_processing_job_id<< ", confirmed=0";
 	return sql.send_query_get_id();
 }
-void ns_image_storage_handler::delete_file_deletion_job(const ns_64_bit deletion_job_id, ns_sql & sql){
+void ns_image_storage_handler::delete_file_deletion_job(const ns_64_bit deletion_job_id, ns_sql & sql)const{
 	sql << "DELETE FROM delete_file_specifications WHERE delete_job_id = " << deletion_job_id;
 	sql.send_query();
 	sql << "DELETE FROM delete_file_jobs WHERE id = " << deletion_job_id;
 	sql.send_query();
 }
-void ns_image_storage_handler::submit_file_deletion_request(const ns_64_bit deletion_job_id,const ns_file_location_specification & spec, ns_sql & sql){
+void ns_image_storage_handler::submit_file_deletion_request(const ns_64_bit deletion_job_id,const ns_file_location_specification & spec, ns_sql & sql)const{
 	sql << "INSERT INTO delete_file_specifications SET delete_job_id = " << deletion_job_id << ","
 		<< "relative_directory = '" << sql.escape_string(spec.relative_directory) << "', filename = '" << sql.escape_string(spec.filename) << "'"
 		<< ",`partition`='" << sql.escape_string(spec.partition) << "'";
 	sql.send_query();
 	sql.send_query("COMMIT");
 }
-void ns_image_storage_handler::get_file_deletion_requests(const ns_64_bit deletion_job_id, ns_64_bit & parent_job_id,std::vector<ns_file_location_specification> & specs, ns_sql & sql){
+void ns_image_storage_handler::get_file_deletion_requests(const ns_64_bit deletion_job_id, ns_64_bit & parent_job_id,std::vector<ns_file_location_specification> & specs, ns_sql & sql)const{
 	sql << "SELECT parent_job_id,confirmed FROM delete_file_jobs WHERE id = " << deletion_job_id;
 	ns_sql_result res;
 	sql.get_rows(res);
@@ -1275,13 +1272,13 @@ std::string ns_get_video_path_specifics(const bool for_sample_video, const bool 
 	else r+= "regions";
 	return r;
 }
-std::string ns_image_storage_handler::get_relative_path_for_video(const ns_file_location_specification & spec, const bool for_sample_video, const bool only_base){
+std::string ns_image_storage_handler::get_relative_path_for_video(const ns_file_location_specification & spec, const bool for_sample_video, const bool only_base)const{
 	return spec.relative_directory + DIR_CHAR_STR + ns_get_video_path_specifics(for_sample_video,only_base);
 }
-std::string ns_image_storage_handler::get_absolute_path_for_video(const ns_file_location_specification & spec, const bool for_sample_video, const bool only_base){
+std::string ns_image_storage_handler::get_absolute_path_for_video(const ns_file_location_specification & spec, const bool for_sample_video, const bool only_base)const{
 	return spec.absolute_long_term_directory() + DIR_CHAR_STR + ns_get_video_path_specifics(for_sample_video,only_base);
 } 
-std::string ns_image_storage_handler::get_absolute_path_for_video_image(const ns_64_bit experiment_id, const std::string & rel_path, const std::string & filename,ns_sql & sql){
+std::string ns_image_storage_handler::get_absolute_path_for_video_image(const ns_64_bit experiment_id, const std::string & rel_path, const std::string & filename,ns_sql & sql)const{
 	std::string partition(get_partition_for_experiment_int(experiment_id,&sql));
 	ns_file_location_specification spec(compile_absolute_paths_from_relative(rel_path,partition,filename));
 	return spec.absolute_long_term_directory() + DIR_CHAR_STR + filename;

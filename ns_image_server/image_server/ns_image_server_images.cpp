@@ -159,7 +159,7 @@ ns_image_server_image ns_image_server_captured_image::make_small_image_storage(n
 	ns_image_server_image image;
 	image.filename = small_image_filename(sql);
 	image.path = small_image_directory(sql);
-	image.partition = image_server.image_storage.get_partition_for_experiment(experiment_id,sql);
+	image.partition = image_server_const.image_storage.get_partition_for_experiment(experiment_id,sql);
 	return image;
 }
 
@@ -564,7 +564,7 @@ void ns_image_server_captured_image_region::wait_for_finished_processing_and_tak
 	throw ns_ex("ns_image_server_captured_image_region::Timed out on waiting for image to be finished processing.");
 }
 void ns_image_server_captured_image_region::create_storage_for_worm_results(ns_image_server_image & im, const bool interpolated,ns_sql & sql){
-	im.host_id = image_server.host_id();
+	im.host_id = image_server_const.host_id();
 	im.capture_time = ns_current_time();
 	if (experiment_name.size() == 0 || experiment_id == 0 || sample_name.size() == 0)
 		load_from_db(region_images_id,&sql);
@@ -574,7 +574,7 @@ void ns_image_server_captured_image_region::create_storage_for_worm_results(ns_i
 	im.filename = filename(&sql);
 	if (interpolated) im.filename += "_i";
 	im.filename += ".wrm";
-	im.partition = image_server.image_storage.get_partition_for_experiment(experiment_id,&sql);
+	im.partition = image_server_const.image_storage.get_partition_for_experiment(experiment_id,&sql);
 
 	sql.send_query("BEGIN");
 
@@ -614,7 +614,7 @@ void ns_image_server_captured_image_region::delete_processed_image(const ns_proc
 	}
 	//delete the old file if it exists
 	if (im.id != 0){
-		image_server.image_storage.delete_from_storage(im,type,sql);
+		image_server_const.image_storage.delete_from_storage(im,type,sql);
 		*sql << "DELETE FROM "<< sql->table_prefix() << "images WHERE id=" << im.id << "\n";
 		sql->send_query();
 	}
@@ -639,9 +639,9 @@ const ns_image_server_image ns_image_server_captured_image_region::create_storag
 	
 	//delete the old file if it exists
 	if (im.id != 0)
-		image_server.image_storage.delete_from_storage(im,ns_delete_both_volatile_and_long_term,&sql);
+		image_server_const.image_storage.delete_from_storage(im,ns_delete_both_volatile_and_long_term,&sql);
 
-	im.host_id = image_server.host_id();
+	im.host_id = image_server_const.host_id();
 	im.capture_time = ns_current_time();
 	im.path = directory(&sql,ns_process_movement_posture_aligned_visualization);
 	if (experiment_id == 0 || experiment_name.size() == 0 || sample_id == 0 || sample_name.size() == 0 || region_name.size() == 0){
@@ -660,7 +660,7 @@ const ns_image_server_image ns_image_server_captured_image_region::create_storag
 					+ "=" + region_name + "=" + ns_to_string(region_info_id)
 					+ "=" + ns_to_string(alignment_type) + "=" + filename_suffix + "=" + ns_to_string(frame_index);
 
-	im.partition = image_server.image_storage.get_partition_for_experiment(experiment_id,&sql);
+	im.partition = image_server_const.image_storage.get_partition_for_experiment(experiment_id,&sql);
 	ns_add_image_suffix(im.filename,image_type);
 
 	
@@ -697,14 +697,14 @@ const ns_image_server_image ns_image_server_captured_image_region::create_storag
 
 	//delete the old file if it exists
 //	if (im.id != 0)
-//		image_server.image_storage.delete_from_storage(im,sql);
+//		image_server_const.image_storage.delete_from_storage(im,sql);
 
 
-	im.host_id = image_server.host_id();
+	im.host_id = image_server_const.host_id();
 	im.capture_time = ns_current_time();
 	im.path = directory(sql,task);
 	im.filename = filename(sql) + filename_suffix;
-	im.partition = image_server.image_storage.get_partition_for_experiment(experiment_id,sql);
+	im.partition = image_server_const.image_storage.get_partition_for_experiment(experiment_id,sql);
 	ns_add_image_suffix(im.filename,image_type);
 
 	sql->send_query("BEGIN");
@@ -755,9 +755,9 @@ const ns_image_server_image & ns_image_server_image::create_storage_for_processe
 	processed_output_storage->load_from_db(processed_output_storage->id,sql);
 	//delete the file if it already exists
 	/*if (processed_output_storage->id != 0)
-		image_server.image_storage.delete_from_storage(*processed_output_storage,sql);
+		image_server_const.image_storage.delete_from_storage(*processed_output_storage,sql);
 	else{*/
-		processed_output_storage->host_id = image_server.host_id();
+		processed_output_storage->host_id = image_server_const.host_id();
 		processed_output_storage->capture_time = ns_current_time();
 		*sql << "UPDATE " << sql->table_prefix() << "images SET host_id = " << processed_output_storage->host_id  << ", creation_time=" << processed_output_storage->capture_time << ", currently_under_processing=1,"
 			<< "`partition` = '" << processed_output_storage->partition << "' WHERE id = " << processed_output_storage->id;

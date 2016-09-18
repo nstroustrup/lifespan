@@ -1,65 +1,41 @@
-#ifndef NS_SIMPLE_IMAGE_CACHE
-#define NS_SIMPLE_IMAGE_CACHE
-#include "ns_image_server.h"
+#ifndef NS_IMAGE_SIMPLE_CACHE
+#define NS_IMAGE_SIMPLE_CACHE
+#include "ns_image.h"
+#include "ns_simple_cache.h"
+#include "ns_sql.h"
 
-class ns_simple_image_cache_element{
-public:
-	bool is_swapped_to_disk(){return filename_on_disk.size()!=0;}
-	ns_image_standard image;
-	std::string filename_on_disk;
-	unsigned long size_in_memory;
-	unsigned long last_access_time; //UNIX_TIME in seconds
-	ns_cache_reference reference;
+class ns_image_storage_handler;
+
+struct ns_image_cache_data_source {
+	ns_sql * sql;
+	ns_image_storage_handler * handler;
 };
 
-typedef unsigned long ns_image_cache_reference;
 
-class ns_simple_image_cache{
+ns_image_storage_source_handle<ns_8_bit> ns_storage_request_from_storage(ns_image_storage_handler * image_storage, ns_image_server_image & im, ns_sql & sql);
+
+template<class ns_component>
+class ns_image_cache_data : public ns_simple_cache_data<ns_image_server_image, ns_image_cache_data_source> {
 public:
-	ns_simple_image_cache(const unsigned long max_cache_size_):max_cache_reference(0),max_cache_size(max_cache_size_),current_cache_size(0){}
-	ns_image_standard & request_new_cache_entry(const ns_image_properties &prop, ns_cache_reference & reference){
-		ns_simple_image_cache_element & e(cache[max_cache_reference]);
-		e.reference = 
-			reference = max_cache_reference;
-		max_cache_reference++;
-		e.size_in_memory=prop.width*prop.height*prop.components;
-		last_access_time = ns_current_time();
-		current_cache_size+=e.size_in_memory;
-		if(current_cache_size > max_cache_size)
-			shrink_cache();
-		return e.image;
+	ns_image_whole<ns_component> image;
+	ns_image_server_image image_record;
+
+	ns_64_bit size_in_memory_in_kbytes() const {
+		return (image.properties().width*
+			image.properties().height*
+			image.properties().components *
+			sizeof(ns_component)) / 1024;
 	}
-	ns_image_standard & get_image(const ns_cache_reference & reference){
-		ns_simple_image_cache_element & e(cache[reference]);
-		if (e.is_swapped_to_disk())
-			swap_from_disk(e);
-		return e.image;
+	void load_from_external_source(const ns_image_server_image & im, ns_image_cache_data_source & source) {
+		image_record = im;
+		ns_image_storage_source_handle<ns_component> s(ns_storage_request_from_storage(source.handler, image_record, *source.sql));
+		s.input_stream().pump(image, 1024);
 	}
 
-private:
-	std::map<ns_cache_reference,ns_simple_image_cache_element> cache;
-	void swap_to_disk(ns_simple_image_cache_element & e){
-		e.filename_on_disk = "im_" + reference + ".tif";
-		ns_image_storage_reciever_handle<ns_8_bit> & out (image_storage->request_local_cache_storage(e.filename_on_disk,1024));
-		e.image.pump(out.input_stream(),1024);
-		e.image.clear();
-	}
-	void swap_from_disk(ns_simple_image_cache_element & e){
-		ns_image_storage_source_handle<ns_8_bit> & in(image_storage->request_from_local_cache_storage(e.filename_on_disk,1024));
-		e.last_access_time = ns_current_time();
-		current_cache_size+=e.size_in_memory;
-		if(current_cache_size > max_cache_size)
-			shrink_cache();
-		in.output_stream().pump(e.image,1024);
-		e.filename_on_disk.resize(0);
-	}
-	void shrink_cache(){
-		unsigned long current_cache_size
-
-	}
-	unsigned long max_cache_reference;
-	unsigned long current_cache_size;
-	const unsigned long max_cache_size;
+	ns_64_bit id() const { return image_record.id; }
+	ns_64_bit to_id(const ns_image_server_image & im) const { return im.id; }
 };
+
+typedef  ns_simple_cache < ns_image_cache_data<ns_8_bit>, true> ns_simple_image_cache;
 
 #endif

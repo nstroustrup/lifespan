@@ -375,11 +375,10 @@ public:
 	ns_64_bit make_record_for_new_sample_mask(const ns_64_bit sample_id, ns_sql & sql);
 
 	std::string capture_preview_parameters(const ns_capture_device::ns_device_preview_type & type,ns_sql & sql);
-	ns_performance_statistics_analyzer performance_statistics;
 
-	std::string video_compilation_parameters(const std::string & input_file, const std::string & output_file, const unsigned long number_of_frames, const std::string& fps, ns_sql & sql);
+	std::string video_compilation_parameters(const std::string & input_file, const std::string & output_file, const unsigned long number_of_frames, const std::string& fps, ns_sql & sql)const;
 
-	std::string get_cluster_constant_value(const std::string & key, const std::string & default_value, ns_image_server_sql * sql);
+	std::string get_cluster_constant_value(const std::string & key, const std::string & default_value, ns_image_server_sql * sql)const;
 	void set_cluster_constant_value(const std::string & key, const std::string & value, ns_image_server_sql * sql, const int time_stamp=-1);
 	
 	#ifndef NS_MINIMAL_SERVER_BUILD
@@ -405,7 +404,7 @@ public:
 
 	
 	ns_image_registration_profile_cache<ns_disk_buffered_image_registration_profile> image_registration_profile_cache;
-	
+	ns_lock registration_cache_lock;
 	ns_vector_2i max_terminal_window_size;
 	unsigned long terminal_hand_annotation_resize_factor;
 	std::string mask_upload_database;
@@ -419,9 +418,9 @@ public:
 	}
 
 	///updates the database with the specified server event.
-	ns_64_bit register_server_event(const ns_image_server_event & s_event, ns_image_server_sql * sql,const bool no_display=false);
-	ns_64_bit register_server_event(const ns_ex & s_event, ns_image_server_sql * sql);
-	void register_server_event_no_db(const ns_image_server_event & s_event,bool no_double_endline=false);
+	ns_64_bit register_server_event(const ns_image_server_event & s_event, ns_image_server_sql * sql,const bool no_display=false)const;
+	ns_64_bit register_server_event(const ns_ex & s_event, ns_image_server_sql * sql)const;
+	void register_server_event_no_db(const ns_image_server_event & s_event,bool no_double_endline=false)const;
 	
 	typedef enum{ns_register_in_local_db, ns_register_in_central_db, ns_register_in_central_db_with_fallback} ns_register_type;
 
@@ -438,10 +437,32 @@ public:
 	}
 	inline bool verbose_debug_output() const {return _verbose_debug_output;}
 	inline double & terminal_window_scale_factor() {return _terminal_window_scale_factor;}
-	inline const unsigned long & maximum_memory_allocation_in_mb(){return  _maximum_memory_allocation_in_mb;}
+	inline const unsigned long & maximum_memory_allocation_in_mb()const{return  _maximum_memory_allocation_in_mb;}
 
 	ns_process_priority process_priority;
+
+	void register_job_duration(const ns_processing_task action, const ns_64_bit microseconds){
+		ns_acquire_lock_for_scope lock(performance_stats_lock,__FILE__,__LINE__);
+		performance_statistics.register_job_duration(action, microseconds); 
+		lock.release();
+	}
+	void register_job_duration(const ns_performance_statistics_analyzer::ns_operation_state state, const ns_64_bit microseconds){
+		ns_acquire_lock_for_scope lock(performance_stats_lock, __FILE__, __LINE__); 
+		performance_statistics.register_job_duration(state, microseconds);
+		lock.release();
+	}
+	void update_performance_statistics_to_db(ns_sql & sql) {
+		ns_acquire_lock_for_scope lock(performance_stats_lock, __FILE__, __LINE__);
+		performance_statistics.update_db(host_id(), sql);
+		lock.release();
+	}
+
 private:
+
+
+	ns_performance_statistics_analyzer performance_statistics;
+	ns_lock performance_stats_lock;
+
 	ns_multiprocess_control_options multiprocess_control_options;
 	unsigned long number_of_node_processes_per_machine_;
 	bool alert_handler_running;
@@ -450,7 +471,7 @@ private:
 	
 	std::string host_name_suffix;
 	std::vector<std::string> sql_server_addresses;
-	unsigned long current_sql_server_address_id;
+	mutable unsigned long current_sql_server_address_id;
 	std::vector<std::string> possible_sql_databases;
 	std::vector<std::string>::const_iterator sql_database_choice;  ///the name of the database to use on the mysql server
 
@@ -508,7 +529,7 @@ private:
 
 
 	///std::ostream used to write to the event log
-	std::ofstream event_log;
+	mutable std::ofstream event_log;
 	///true if the event log std::ofstream is open, false if it is unitialized or closed
 	bool event_log_open;
 	std::string _font_file;
@@ -525,11 +546,11 @@ private:
 
 
 	///used to prevent multiple threads from simultaneously registering server events in the mysql database
-	ns_lock server_event_lock;
+	mutable ns_lock server_event_lock;
 	///used to coordinate multiple threads' communication with the database.
-	ns_lock sql_lock;
+	mutable ns_lock sql_lock;
 
-	ns_lock local_buffer_sql_lock;
+	mutable ns_lock local_buffer_sql_lock;
 
 	///used to coordinate the simulator scan (to run test scans without accessing hardware) disk access
 	ns_lock simulator_scan_lock;
@@ -550,6 +571,7 @@ private:
 ///All behavior is coordinated through a global instance of the image server.
 ///This object needs to be defined somewhere in the execution unit.
 extern ns_image_server image_server;
+extern const ns_image_server & image_server_const;
 
 
 ///void ns_image_server_delete_image(const unsigned long image_id, ns_sql & sql);

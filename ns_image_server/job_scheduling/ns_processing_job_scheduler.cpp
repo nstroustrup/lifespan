@@ -110,7 +110,7 @@ bool ns_processing_job_scheduler::run_a_job(ns_sql & sql,bool first_in_first_out
 			return true;
 		}
 		if(idle_timer_running)
-			image_server.performance_statistics.register_job_duration(ns_performance_statistics_analyzer::ns_idle,idle_timer.stop());
+			image_server.register_job_duration(ns_performance_statistics_analyzer::ns_idle,idle_timer.stop());
 		idle_timer_running = false;
 		ns_high_precision_timer tp;
 		tp.start();
@@ -137,8 +137,12 @@ bool ns_processing_job_scheduler::run_a_job(ns_sql & sql,bool first_in_first_out
 		sql.send_query("COMMIT");
 
 		processor.release();
-		image_server.performance_statistics.register_job_duration(ns_performance_statistics_analyzer::ns_running_a_job,tp.stop());
+		image_server.register_job_duration(ns_performance_statistics_analyzer::ns_running_a_job,tp.stop());
 		
+
+		//don't let old, unused data accumulate.
+		image_server.image_registration_profile_cache.remove_old_images(10 * 60, &image_server.image_storage);
+
 		idle_timer_running = true;
 		idle_timer.start();
 
@@ -167,7 +171,7 @@ bool ns_processing_job_scheduler::run_a_job(ns_sql & sql,bool first_in_first_out
 			ex.type() != ns_cache)
 			processor().mark_subject_as_problem(error_id,sql);
 
-		image_server.performance_statistics.cancel_outstanding_jobs();
+		//image_server.performance_statistics.cancel_outstanding_jobs();
 		if (ex.type() == ns_memory_allocation)
 			throw;	//memory allocation errors can cause big, long-term problems, thus we need to pass
 					//them downwards to be handled.
@@ -189,7 +193,7 @@ bool ns_processing_job_scheduler::run_a_job(ns_sql & sql,bool first_in_first_out
 		
 		processor().mark_subject_as_problem(error_id,sql);
 
-		image_server.performance_statistics.cancel_outstanding_jobs();
+	//	image_server.performance_statistics.cancel_outstanding_jobs();
 		
 		processor.release();
 		if (ex.type() == ns_memory_allocation)

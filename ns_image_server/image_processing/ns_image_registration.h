@@ -8,7 +8,7 @@ template<int thresh, class ns_component>
 class ns_image_registration{
 public:
 	template<class profile_type>
-	static void generate_profiles(const ns_image_whole<ns_component> & r, ns_image_registration_profile<profile_type> & profile,const ns_registration_method & method,const unsigned long downsampling_factor=0){
+	static void generate_profiles(const ns_image_whole<ns_component> & r, const ns_image_registration_profile<profile_type> & profile,const ns_registration_method & method,const unsigned long downsampling_factor=0){
 		profile.registration_method = method;
 		if (method == ns_full_registration){
 			return;
@@ -47,7 +47,7 @@ public:
 	}
 
 	template<class T1, class T2>
-	static ns_vector_2i register_full_images(ns_image_registration_profile<T1> & r , ns_image_registration_profile<T2> & a,  ns_vector_2i max_offset = ns_vector_2i(0,0), const std::string & debug_name=""){
+	static ns_vector_2i register_full_images(const ns_image_registration_profile<T1> & r , const ns_image_registration_profile<T2> & a,  ns_vector_2i max_offset = ns_vector_2i(0,0), const std::string & debug_name=""){
 		if (r.downsampling_factor != a.downsampling_factor)
 			throw ns_ex("Downsampling factor mismatch");
 		if (max_offset == ns_vector_2i(0,0))

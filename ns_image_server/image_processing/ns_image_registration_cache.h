@@ -122,7 +122,7 @@ class ns_disk_buffered_image_registration_profile : public ns_image_registration
 public:
 	ns_disk_buffered_image_registration_profile():whole_image_source(0),
 													downsampled_image_2_source(0){}
-	void prepare_images(ns_image_server_image & im,const unsigned long max_average_dimention,ns_sql & sql,ns_image_storage_handler * image_storage,const unsigned long downsample_factor=0){
+	void prepare_images(ns_image_server_image & im,const unsigned long max_average_dimention,ns_sql & sql,const ns_image_storage_handler * image_storage,const unsigned long downsample_factor=0){
 
 			ns_image_storage_source_handle<ns_8_bit> source(image_storage->request_from_storage(im,&sql));
 			ns_registration_disk_buffer whole_image_long_term_storage;
@@ -157,7 +157,7 @@ public:
 			downsampled_image_2_source = image_storage->request_from_local_cache(downsampled_filename,false);
 			downsampled_image_2.assign_buffer_source(downsampled_image_2_source.input_stream(),NS_MAX_CAPTURED_IMAGE_REGISTRATION_VERTICAL_OFFSET,1024);
 	}
-	void cleanup(ns_image_storage_handler * image_storage){
+	void cleanup(const ns_image_storage_handler * image_storage){
 		downsampled_image.clear();
 		downsampled_image_2.clear();
 		downsampled_image_2_source.clear();
@@ -175,7 +175,7 @@ private:
 
 class ns_memory_image_registration_profile : public ns_image_registration_profile< ns_image_standard >{
 public:
-	void prepare_images(ns_image_server_image & im,const unsigned long max_average_dimention,ns_sql & sql,ns_image_storage_handler * image_storage,const unsigned long downsample_factor=0){
+	void prepare_images(ns_image_server_image & im,const unsigned long max_average_dimention,ns_sql & sql,const ns_image_storage_handler * image_storage,const unsigned long downsample_factor=0){
 
 			ns_image_storage_source_handle<ns_8_bit> source(image_storage->request_from_storage(im,&sql));
 			const ns_downsampling_sizes downsampling_sizes(calculate_downsampled_sizes(source.input_stream().properties(),max_average_dimention,downsample_factor));
@@ -194,7 +194,7 @@ template<class profile_type>
 class ns_image_registration_profile_cache{
 public:
 	ns_image_registration_profile_cache(const ns_64_bit max_size_in_mb ):cache_size(0),max_size_in_megabytes(max_size_in_mb){}
-	profile_type * get(const ns_64_bit & id){
+	const profile_type * get(const ns_64_bit & id) const{
 	  typename cache_type::iterator p(cache.find(id));
 		if (p != cache.end()){
 			p->second->last_accessed_timestamp = ns_current_time();
@@ -216,7 +216,7 @@ public:
 		  cache.erase(to_delete[i]);
 		
 	}
-	void insert(const ns_64_bit id,profile_type * profile,ns_image_storage_handler * image_storage){
+	void insert(const ns_64_bit id,profile_type * profile,const ns_image_storage_handler * image_storage){
 		ns_64_bit profile_size;
 		
 		profile->last_accessed_timestamp = ns_current_time();

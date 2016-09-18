@@ -348,7 +348,7 @@ private:
 	//Confirmst that the specified operations are possible to calculate, and locates any steps that can be loaded from disk rather than re-computed.
 	void analyze_operations(const ns_image_server_captured_image_region & region_image, std::vector<char> & operations, ns_precomputed_processing_step_images & precomputed_images, ns_sql & sql);
 
-	ns_vector_2i get_vertical_registration(const ns_image_server_captured_image & captured_image, ns_image_server_image & source, ns_sql & sql,ns_disk_buffered_image_registration_profile ** requested_image,bool & delete_profile_after_use);
+	ns_vector_2i get_vertical_registration(const ns_image_server_captured_image & captured_image, ns_image_server_image & source, ns_sql & sql, const ns_disk_buffered_image_registration_profile ** requested_image,bool & delete_profile_after_use);
 	//ns_vector_2i get_vertical_registration(const ns_image_server_captured_image & captured_image, const ns_image_whole<ns_component> & image, ns_sql & sql);
 	bool check_for_precalculated_registration(const ns_image_server_captured_image & captured_image, ns_vector_2i & registration_offset, ns_sql & sql);
 	//ns_vector_2i run_vertical_registration(const ns_image_server_captured_image & captured_image, const ns_image_whole<ns_component> & image, ns_sql & sql);

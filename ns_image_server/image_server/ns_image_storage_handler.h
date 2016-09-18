@@ -5,7 +5,7 @@
 #include <algorithm>
 #include <map>
 #include <fstream>
-#include "ns_image_simple_cache.h"
+#include "ns_simple_image_cache.h"
 #include "ns_image_server_alerts.h"
 #include "ns_file_location_specification.h"
 
@@ -54,30 +54,30 @@ public:
 	ns_image_storage_handler():network_lock("ns_ish::network"),
 		request_storage_lock("ns_ish::storage"),
 		experiment_partition_cache_lock("ns_ish::partition"),
-		cache(this,512*1024),experiment_partition_cache_update_period(5*60),last_check_showed_write_access_to_long_term_storage(false),time_of_last_successful_write_check(0),
+		cache(512*1024),experiment_partition_cache_update_period(5*60),last_check_showed_write_access_to_long_term_storage(false),time_of_last_successful_write_check(0),
 		experiment_partition_cache_last_update_time(0),verbosity(ns_standard){}
 
 	void set_directories(const std::string & _volatile_storage_directory, const std::string & _long_term_storage_directory);
 
-	ns_image_storage_reciever_handle<ns_component> request_storage(ns_image_server_captured_image_region & captured_image_region, const ns_image_type & image_type, const unsigned long max_line_length, ns_image_server_sql * sql, const bool allow_volatile_storage);
-		ns_image_storage_reciever_handle<ns_component> request_storage_ci(ns_image_server_captured_image & captured_image, const ns_image_type & image_type, const unsigned long max_line_length, ns_image_server_sql * sql, bool & had_to_use_local_storage, const bool allow_volatile_storage);
-	ns_image_storage_reciever_handle<ns_component> request_storage(ns_image_server_image & image, const ns_image_type & image_type, const unsigned long max_line_length, ns_image_server_sql * sql, bool & had_to_use_volatile_storage, const bool report_to_db, const bool allow_volatile_storage);
-	ns_image_storage_reciever_handle<ns_16_bit> request_storage_16_bit(ns_image_server_image & image, const ns_image_type & image_type, const unsigned long max_line_length, ns_image_server_sql * sql, bool & had_to_use_volatile_storage, const bool report_to_db, const bool allow_volatile_storage);
-	ns_image_storage_reciever_handle<float> request_storage_float(ns_image_server_image & image, const ns_image_type & image_type, const unsigned long max_line_length, ns_image_server_sql * sql, bool & had_to_use_volatile_storage, const bool report_to_db, const bool allow_volatile_storage);
+	ns_image_storage_reciever_handle<ns_component> request_storage(ns_image_server_captured_image_region & captured_image_region, const ns_image_type & image_type, const unsigned long max_line_length, ns_image_server_sql * sql, const bool allow_volatile_storage) const;
+		ns_image_storage_reciever_handle<ns_component> request_storage_ci(ns_image_server_captured_image & captured_image, const ns_image_type & image_type, const unsigned long max_line_length, ns_image_server_sql * sql, bool & had_to_use_local_storage, const bool allow_volatile_storage) const;
+	ns_image_storage_reciever_handle<ns_component> request_storage(ns_image_server_image & image, const ns_image_type & image_type, const unsigned long max_line_length, ns_image_server_sql * sql, bool & had_to_use_volatile_storage, const bool report_to_db, const bool allow_volatile_storage) const;
+	ns_image_storage_reciever_handle<ns_16_bit> request_storage_16_bit(ns_image_server_image & image, const ns_image_type & image_type, const unsigned long max_line_length, ns_image_server_sql * sql, bool & had_to_use_volatile_storage, const bool report_to_db, const bool allow_volatile_storage) const;
+	ns_image_storage_reciever_handle<float> request_storage_float(ns_image_server_image & image, const ns_image_type & image_type, const unsigned long max_line_length, ns_image_server_sql * sql, bool & had_to_use_volatile_storage, const bool report_to_db, const bool allow_volatile_storage) const;
 
 
 	bool long_term_storage_was_recently_writeable(const unsigned long time_cutoff_in_seconds = 0) const;
 	unsigned long time_of_last_successful_long_term_storage_write()const {return time_of_last_successful_write_check;}
 	bool test_connection_to_long_term_storage(const bool test_for_write_access);
 
-	bool image_exists(ns_image_server_image & image, ns_image_server_sql * sql, bool only_long_term_storage=false);
+	bool image_exists(ns_image_server_image & image, ns_image_server_sql * sql, bool only_long_term_storage=false) const;
 
-	bool assign_unique_filename(ns_image_server_image & image, ns_image_server_sql * sql);
-	std::ifstream * request_metadata_from_disk(ns_image_server_image & image,const bool binary,ns_image_server_sql * sql);
+	bool assign_unique_filename(ns_image_server_image & image, ns_image_server_sql * sql) const;
+	std::ifstream * request_metadata_from_disk(ns_image_server_image & image,const bool binary,ns_image_server_sql * sql)const;
 
-	void fix_orphaned_captured_images(ns_image_server_sql * sql);
+	void fix_orphaned_captured_images(ns_image_server_sql * sql)const;
 
-	std::ofstream * request_metadata_output(ns_image_server_image & image, const std::string & extension, const bool binary,ns_image_server_sql * sql);
+	std::ofstream * request_metadata_output(ns_image_server_image & image, const std::string & extension, const bool binary,ns_image_server_sql * sql) const;
 
 		
 	
@@ -88,15 +88,15 @@ public:
 
 
 	
-	std::ofstream * request_binary_output_for_captured_image(const ns_image_server_captured_image & captured_image, const ns_image_server_image & image, bool volatile_storage,ns_image_server_sql * sql);
-	ns_image_server_image create_image_db_record_for_captured_image(ns_image_server_captured_image & image, ns_image_server_sql * sql, const ns_image_type & image_type = ns_tiff);
+	std::ofstream * request_binary_output_for_captured_image(const ns_image_server_captured_image & captured_image, const ns_image_server_image & image, bool volatile_storage,ns_image_server_sql * sql) const;
+	ns_image_server_image create_image_db_record_for_captured_image(ns_image_server_captured_image & image, ns_image_server_sql * sql, const ns_image_type & image_type = ns_tiff) const;
 
 	std::ofstream * request_miscellaneous_storage(const std::string & filename);
 
 	std::ofstream * request_volatile_binary_output(const std::string & filename);
 
 	template<class ns_bit_depth>
-	ns_image_storage_reciever_handle<ns_bit_depth>  request_volatile_storage(const std::string & filename, const unsigned long max_line_length, const bool report_to_db = true){
+	ns_image_storage_reciever_handle<ns_bit_depth>  request_volatile_storage(const std::string & filename, const unsigned long max_line_length, const bool report_to_db = true) const{
 		std::string dir = volatile_storage_directory + DIR_CHAR_STR + ns_image_server_scratch_directory();
 
 		std::string fname = dir + DIR_CHAR_STR + filename;
@@ -116,42 +116,42 @@ public:
 
 	
 
-	std::ifstream * request_from_volatile_storage_raw(const std::string & filename);
+	std::ifstream * request_from_volatile_storage_raw(const std::string & filename) const;
 
-	ns_image_storage_reciever_handle<ns_component> request_local_cache_storage(const std::string & filename, const ns_image_type & image_type, const unsigned long max_line_length, const bool report_to_db = true);
-	ns_image_storage_reciever_handle<float> request_local_cache_storage_float(const std::string & filename, const ns_image_type & image_type, const unsigned long max_line_length, const bool report_to_db = true);
+	ns_image_storage_reciever_handle<ns_component> request_local_cache_storage(const std::string & filename, const ns_image_type & image_type, const unsigned long max_line_length, const bool report_to_db = true) const;
+	ns_image_storage_reciever_handle<float> request_local_cache_storage_float(const std::string & filename, const ns_image_type & image_type, const unsigned long max_line_length, const bool report_to_db = true) const;
 
-	unsigned long request_local_cache_file_size(const std::string & filename);
+	unsigned long request_local_cache_file_size(const std::string & filename) const;
 	
-	ns_image_storage_source_handle<ns_component> request_from_local_cache(const std::string & filename, const bool report_to_db=true);
-	ns_image_storage_source_handle<float> request_from_local_cache_float(const std::string & filename, const bool report_to_db = true);
+	ns_image_storage_source_handle<ns_component> request_from_local_cache(const std::string & filename, const bool report_to_db=true)const;
+	ns_image_storage_source_handle<float> request_from_local_cache_float(const std::string & filename, const bool report_to_db = true)const;
 
-	ns_image_storage_source_handle<ns_component> request_from_volatile_storage(const std::string & filename,const bool report_to_db=true);
-	bool delete_from_volatile_storage(const std::string & filename);
+	ns_image_storage_source_handle<ns_component> request_from_volatile_storage(const std::string & filename,const bool report_to_db=true)const;
+	bool delete_from_volatile_storage(const std::string & filename)const;
 
-	bool delete_from_local_cache(const std::string & filename);
+	bool delete_from_local_cache(const std::string & filename)const;
 
-	void clear_local_cache();
+	void clear_local_cache()const;
 	
 
-	bool delete_from_storage(ns_image_server_captured_image & image,const ns_file_deletion_type & type, ns_image_server_sql * sql);
-	bool delete_from_storage(ns_image_server_image & image,const ns_file_deletion_type & type,ns_image_server_sql * sql);
+	bool delete_from_storage(ns_image_server_captured_image & image,const ns_file_deletion_type & type, ns_image_server_sql * sql)const;
+	bool delete_from_storage(ns_image_server_image & image,const ns_file_deletion_type & type,ns_image_server_sql * sql)const;
 
-	void delete_file_specification(const ns_file_location_specification & spec,const ns_file_deletion_type & type);
+	void delete_file_specification(const ns_file_location_specification & spec,const ns_file_deletion_type & type)const;
 
 
-	ns_image_storage_source_handle<ns_component> request_from_storage(ns_image_server_captured_image_region & region_image, ns_image_server_sql * sql);
-	ns_image_storage_source_handle<ns_component> request_from_storage(ns_image_server_captured_image_region & region_image, const ns_processing_task & task, ns_image_server_sql * sql);
-	ns_image_storage_source_handle<ns_component> request_from_storage(ns_image_server_image & image, const ns_processing_task & task, ns_image_server_sql * sql);
+	ns_image_storage_source_handle<ns_component> request_from_storage(ns_image_server_captured_image_region & region_image, ns_image_server_sql * sql)const;
+	ns_image_storage_source_handle<ns_component> request_from_storage(ns_image_server_captured_image_region & region_image, const ns_processing_task & task, ns_image_server_sql * sql)const;
+	ns_image_storage_source_handle<ns_component> request_from_storage(ns_image_server_image & image, const ns_processing_task & task, ns_image_server_sql * sql)const;
 
-	ns_image_storage_source_handle<ns_component> request_from_storage(ns_image_server_image & image, ns_image_server_sql * sql);
+	ns_image_storage_source_handle<ns_component> request_from_storage(ns_image_server_image & image, ns_image_server_sql * sql)const;
 
-	ns_image_storage_source_handle<ns_component> request_from_storage(ns_image_server_captured_image & captured_image, ns_image_server_sql * sql);
+	ns_image_storage_source_handle<ns_component> request_from_storage(ns_image_server_captured_image & captured_image, ns_image_server_sql * sql)const;
 	
 	typedef enum {ns_volatile_storage,ns_long_term_storage,ns_volatile_and_long_term_storage} ns_storage_location;
 
 	template<class ns_comp>
-	ns_image_storage_source_handle<ns_comp> request_from_storage_n_bits(ns_image_server_captured_image & captured_image, ns_image_server_sql * sql,const ns_storage_location &location){
+	ns_image_storage_source_handle<ns_comp> request_from_storage_n_bits(ns_image_server_captured_image & captured_image, ns_image_server_sql * sql,const ns_storage_location &location)const{
 		ns_image_server_image im;
 		im.id = captured_image.capture_images_image_id;
 		//cerr << "loading image info...";
@@ -164,7 +164,7 @@ public:
 	unsigned long free_space_in_volatile_storage_in_mb() const{
 		return ns_dir::get_free_disk_space(volatile_storage_directory);
 	}
-	bool long_term_storage_is_accessible(ns_file_location_specification file_location, const char * file, const unsigned long line){
+	bool long_term_storage_is_accessible(ns_file_location_specification file_location, const char * file, const unsigned long line) const{
 		if (!ns_dir::file_exists(file_location.long_term_directory)){
 			ns_thread::sleep(10);
 			if (!ns_dir::file_exists(file_location.long_term_directory)){
@@ -179,7 +179,7 @@ public:
 	}
 
 	template<class ns_comp>
-	ns_image_storage_source_handle<ns_comp> request_from_storage_n_bits(ns_image_server_image & image, ns_image_server_sql * sql,const ns_storage_location & location){
+	ns_image_storage_source_handle<ns_comp> request_from_storage_n_bits(ns_image_server_image & image, ns_image_server_sql * sql,const ns_storage_location & location) const{
 		ns_ex stored_error[3];
 	
 		ns_file_location_specification file_location(look_up_image_location(image,sql,ns_tiff_lzw));
@@ -232,14 +232,15 @@ public:
 	}
 	
 	///Cache frequently used masks in memory so they aren't reloaded each time over the network.
-	ns_image_simple_cache<ns_component> cache;
+	//locked so we can access it from multiple threads simultaneously
+	ns_simple_image_cache cache;
 
-	inline std::string get_partition_for_experiment(const ns_64_bit experiment_id,ns_image_server_sql * sql,bool request_from_db_on_miss=true){
+	inline std::string get_partition_for_experiment(const ns_64_bit experiment_id,ns_image_server_sql * sql,bool request_from_db_on_miss=true) const{
 		return get_partition_for_experiment_int(experiment_id,sql,request_from_db_on_miss,true);
 	}
 
 	ns_image_server_image get_storage_for_path(const ns_file_location_specification & region_spec, const unsigned long path_id, const unsigned long path_group_id,
-			const unsigned long region_info_id, const std::string & region_name, const std::string & experiment_name, const std::string & sample_name,const bool flow);
+			const unsigned long region_info_id, const std::string & region_name, const std::string & experiment_name, const std::string & sample_name,const bool flow) const;
 
 
 
@@ -264,14 +265,14 @@ public:
 	ns_file_location_specification get_path_for_experiment(ns_64_bit experiment_id, ns_image_server_sql * sql) const;
 	ns_file_location_specification get_path_for_video_storage(ns_64_bit experiment_id, ns_image_server_sql * sql) const;
 
-	ns_64_bit create_file_deletion_job(const ns_64_bit parent_processing_job_id,ns_sql & sql);
-	void delete_file_deletion_job(const ns_64_bit deletion_job_id, ns_sql & sql);
-	void submit_file_deletion_request(const ns_64_bit deletion_job_id,const ns_file_location_specification & spec, ns_sql & sql);
-	void get_file_deletion_requests(const ns_64_bit deletion_job_id, ns_64_bit & parent_job_id, std::vector<ns_file_location_specification> & specs, ns_sql & sql);
+	ns_64_bit create_file_deletion_job(const ns_64_bit parent_processing_job_id,ns_sql & sql)const;
+	void delete_file_deletion_job(const ns_64_bit deletion_job_id, ns_sql & sql)const;
+	void submit_file_deletion_request(const ns_64_bit deletion_job_id,const ns_file_location_specification & spec, ns_sql & sql)const;
+	void get_file_deletion_requests(const ns_64_bit deletion_job_id, ns_64_bit & parent_job_id, std::vector<ns_file_location_specification> & specs, ns_sql & sql)const;
 	
-	std::string get_relative_path_for_video(const ns_file_location_specification & spec, const bool for_sample_video, const bool only_base=false);
-	std::string get_absolute_path_for_video(const ns_file_location_specification & spec, const bool for_sample_video, const bool only_base=false);
-	std::string get_absolute_path_for_video_image(const ns_64_bit experiment_id, const std::string & rel_path, const std::string & filename,ns_sql & sql);
+	std::string get_relative_path_for_video(const ns_file_location_specification & spec, const bool for_sample_video, const bool only_base=false)const;
+	std::string get_absolute_path_for_video(const ns_file_location_specification & spec, const bool for_sample_video, const bool only_base=false)const;
+	std::string get_absolute_path_for_video_image(const ns_64_bit experiment_id, const std::string & rel_path, const std::string & filename,ns_sql & sql)const;
 	
 	typedef enum{ns_quiet=0,ns_standard=2,ns_deletion_events=4,ns_verbose=6} ns_verbosity_level;
 
@@ -291,7 +292,7 @@ public:
 	}
 	std::string movement_file_directory(ns_64_bit region_info_id,ns_image_server_sql * sql,bool abs) const;
 private:
-	std::string get_storage_to_open(ns_image_server_image & image, const ns_image_type & image_type, const unsigned long max_line_length, ns_image_server_sql * sql, bool & had_to_use_local_storage, const bool report_to_db, const bool allow_volatile_storage);
+	std::string get_storage_to_open(ns_image_server_image & image, const ns_image_type & image_type, const unsigned long max_line_length, ns_image_server_sql * sql, bool & had_to_use_local_storage, const bool report_to_db, const bool allow_volatile_storage) const;
 	
 	ns_file_location_specification get_file_specification_for_path_data(const ns_file_location_specification & region_spec) const;
 	ns_file_location_specification get_file_specification_for_movement_data(ns_64_bit region_info_id, const std::string & data,ns_image_server_sql * sql) const;
@@ -306,11 +307,11 @@ private:
 	mutable std::map<unsigned long,std::string> experiment_partition_cache;
 	unsigned long experiment_partition_cache_update_period;
 	mutable unsigned long experiment_partition_cache_last_update_time;
+	mutable ns_lock experiment_partition_cache_lock;
 
 	ns_socket_connection connect_to_fileserver_node(ns_sql & sql);
 
 	ns_lock request_storage_lock;
-	mutable ns_lock experiment_partition_cache_lock;
 
 	ns_lock network_lock;
 	ns_socket socket;

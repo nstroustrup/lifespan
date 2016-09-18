@@ -31,7 +31,7 @@ using namespace std;
 void ns_image_server_global_debug_handler(const ns_text_stream_t & t);
 
 ns_image_server::ns_image_server():event_log_open(false),exit_requested(false),update_software(false), 
-	sql_lock("ns_is::sql"),server_event_lock("ns_is::server_event"),simulator_scan_lock("ns_is::sim_scan"),local_buffer_sql_lock("ns_is::lb"),
+	sql_lock("ns_is::sql"),server_event_lock("ns_is::server_event"), performance_stats_lock("ns_pfl"), registration_cache_lock("ns_rcl"),simulator_scan_lock("ns_is::sim_scan"),local_buffer_sql_lock("ns_is::lb"),
 	_act_as_processing_node(true),cleared(false),current_sql_server_address_id(0),
 	image_registration_profile_cache(1024*4), //allocate 4 gigabytes of disk space in which to store reference images for capture sample registration
 	_verbose_debug_output(false),_cache_subdirectory("cache"),sql_database_choice(possible_sql_databases.end()),next_scan_for_problems_time(0),
@@ -66,7 +66,7 @@ void ns_image_server::toggle_central_mysql_server_connection_error_simulation()c
 	else ns_sql_connection::simulate_unreachable_mysql_server(sql_server_addresses[current_sql_server_address_id],false);
 }
 
-std::string  ns_image_server::video_compilation_parameters(const std::string & input_file, const std::string & output_file, const unsigned long number_of_frames, const std::string & fps, ns_sql & sql){
+std::string  ns_image_server::video_compilation_parameters(const std::string & input_file, const std::string & output_file, const unsigned long number_of_frames, const std::string & fps, ns_sql & sql)const{
 	//for x264	
 	string p(get_cluster_constant_value("video_compilation_parameters","--crf=10",&sql));
 	unsigned long distance_between_keyframes(250);
@@ -543,7 +543,7 @@ ifstream * ns_image_server::read_device_configuration_file() const{
 	return new ifstream(filename.c_str());
 }
 
-string ns_image_server::get_cluster_constant_value(const string & key, const string & default_value, ns_image_server_sql * sql){
+string ns_image_server::get_cluster_constant_value(const string & key, const string & default_value, ns_image_server_sql * sql)const{
 	unsigned long value(0);
 	ns_sql_result res;
 	*sql << "SELECT v FROM "<< sql->table_prefix() << "constants WHERE k = '" << key << "'";
@@ -2401,7 +2401,7 @@ ns_64_bit ns_image_server::register_server_event(const ns_register_type type,con
 
 
 
-void ns_image_server::register_server_event_no_db(const ns_image_server_event & s_event,bool no_double_endline){
+void ns_image_server::register_server_event_no_db(const ns_image_server_event & s_event,bool no_double_endline)const{
 	ns_acquire_lock_for_scope lock(server_event_lock,__FILE__,__LINE__);
 	if (s_event.text().size() != 0){	
 		if (!no_double_endline)
@@ -2417,7 +2417,7 @@ void ns_image_server::register_server_event_no_db(const ns_image_server_event & 
 }
 
 
-ns_64_bit ns_image_server::register_server_event(const ns_ex & ex, ns_image_server_sql * sql){
+ns_64_bit ns_image_server::register_server_event(const ns_ex & ex, ns_image_server_sql * sql)const{
 	ns_image_server_event s_event(ex.text());
 	if (ex.type() == ns_sql_fatal) s_event << ns_ts_sql_error;
 	else s_event << ns_ts_error;
@@ -2425,7 +2425,7 @@ ns_64_bit ns_image_server::register_server_event(const ns_ex & ex, ns_image_serv
 
 }
 
-ns_64_bit ns_image_server::register_server_event(const ns_image_server_event & s_event, ns_image_server_sql * sql,const bool no_display){
+ns_64_bit ns_image_server::register_server_event(const ns_image_server_event & s_event, ns_image_server_sql * sql,const bool no_display) const{
 	try{
 		if (!no_display){
 			ns_acquire_lock_for_scope lock(server_event_lock,__FILE__,__LINE__);
@@ -2819,6 +2819,8 @@ ns_image_server_results_file ns_image_server_results_storage::time_path_image_an
 
 //global server object
 ns_image_server image_server;
+const ns_image_server & image_server_const(image_server);
+
 
 
 void ns_image_server_global_debug_handler(const ns_text_stream_t & t){

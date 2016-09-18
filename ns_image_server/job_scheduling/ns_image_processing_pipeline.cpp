@@ -6,14 +6,15 @@
 #include "ns_movement_visualization_generator.h"
 #include "ns_hand_annotation_loader.h"
 #include "ns_image_registration.h"
+#include "ns_simple_cache.h"
 using namespace std;
 
 void ns_check_for_file_errors(ns_processing_job & job, ns_sql & sql){
 	if (job.image_id != 0){
 		ns_image_server_image im;
 		im.load_from_db(job.image_id,&sql);
-		if (!image_server.image_storage.image_exists(im,&sql,true)){
-			const ns_64_bit event_id(image_server.register_server_event(ns_image_server_event("Image cannot be found on disk:") << im.path << DIR_CHAR_STR << im.filename,&sql));
+		if (!image_server_const.image_storage.image_exists(im,&sql,true)){
+			const ns_64_bit event_id(image_server_const.register_server_event(ns_image_server_event("Image cannot be found on disk:") << im.path << DIR_CHAR_STR << im.filename,&sql));
 			im.mark_as_problem(&sql,event_id);
 		}
 	}
@@ -56,7 +57,7 @@ void ns_check_for_file_errors(ns_processing_job & job, ns_sql & sql){
 						try{
 							im.load_from_db(reg.op_images_[j],&sql);
 					
-							ns_image_storage_source_handle<ns_8_bit> h(image_server.image_storage.request_from_storage(im,&sql));
+							ns_image_storage_source_handle<ns_8_bit> h(image_server_const.image_storage.request_from_storage(im,&sql));
 							long w(h.input_stream().properties().width*h.input_stream().properties().components);
 							if (w > buf.properties().width)
 								buf.resize(ns_image_stream_buffer_properties(w,1));
@@ -111,10 +112,10 @@ void ns_check_for_file_errors(ns_processing_job & job, ns_sql & sql){
 			im.id = atol(res[i][2].c_str());
 			if (im.id != 0){
 				im.load_from_db(im.id,&sql);
-				if (!image_server.image_storage.image_exists(im,&sql,true)){
+				if (!image_server_const.image_storage.image_exists(im,&sql,true)){
 					problem = true;
 					found_problem = true;
-					const ns_64_bit event_id(image_server.register_server_event(ns_image_server_event("Large capture image cannot be found on disk:") << experiment_name << "::" << sample_name << "::" << ns_format_time_string(atol(res[i][1].c_str())),&sql));
+					const ns_64_bit event_id(image_server_const.register_server_event(ns_image_server_event("Large capture image cannot be found on disk:") << experiment_name << "::" << sample_name << "::" << ns_format_time_string(atol(res[i][1].c_str())),&sql));
 					im.mark_as_problem(&sql,event_id);
 				}
 				else large_image_exists = true;
@@ -122,9 +123,9 @@ void ns_check_for_file_errors(ns_processing_job & job, ns_sql & sql){
 			im.id = atol(res[i][3].c_str());
 			bool clear_small_image(false);
 			if (im.id != 0){
-				if (!image_server.image_storage.image_exists(im,&sql,true)){
+				if (!image_server_const.image_storage.image_exists(im,&sql,true)){
 					if (!large_image_exists){
-						const ns_64_bit event_id(image_server.register_server_event(ns_image_server_event("Small capture image cannot be found on disk:") << experiment_name << "::" << sample_name << "::" << ns_format_time_string(atol(res[i][1].c_str())),&sql));
+						const ns_64_bit event_id(image_server_const.register_server_event(ns_image_server_event("Small capture image cannot be found on disk:") << experiment_name << "::" << sample_name << "::" << ns_format_time_string(atol(res[i][1].c_str())),&sql));
 						im.mark_as_problem(&sql,event_id);
 					}
 					else{
@@ -172,7 +173,7 @@ void ns_handle_file_delete_request(ns_processing_job & job, ns_sql & sql){
 	if (job.image_id != 0){
 		ns_image_server_image im;
 		im.load_from_db(job.image_id,&sql);
-		files.push_back(image_server.image_storage.get_file_specification_for_image(im,&sql));
+		files.push_back(image_server_const.image_storage.get_file_specification_for_image(im,&sql));
 	}
 	else if (job.region_id != 0){
 		bool specific_job_specified(false);
@@ -188,19 +189,19 @@ void ns_handle_file_delete_request(ns_processing_job & job, ns_sql & sql){
 				for (unsigned int i = 0; i < res.size(); i++){
 					ns_image_server_image im;
 					im.id = atol(res[i][0].c_str());
-					files.push_back(image_server.image_storage.get_file_specification_for_image(im,sql));
+					files.push_back(image_server_const.image_storage.get_file_specification_for_image(im,sql));
 				}*/
 		}
 		else{
 			//if we are deleting the raw data, delete the entire region including all processed images
 			if (!specific_job_specified){
-				files.push_back(image_server.image_storage.get_path_for_region(job.region_id,&sql,ns_unprocessed));
+				files.push_back(image_server_const.image_storage.get_path_for_region(job.region_id,&sql,ns_unprocessed));
 			}
 			else{
 				//if we're deleting only certain image processing tasks, just do that.
 				for (unsigned long i = 0; i < (unsigned long)job.operations.size(); i++){
 					if (job.operations[i]){
-						files.push_back(image_server.image_storage.get_path_for_region(job.region_id,&sql,(ns_processing_task)i));
+						files.push_back(image_server_const.image_storage.get_path_for_region(job.region_id,&sql,(ns_processing_task)i));
 					}
 				}
 		
@@ -219,7 +220,7 @@ void ns_handle_file_delete_request(ns_processing_job & job, ns_sql & sql){
 				for (unsigned int i = 0; i < res.size(); i++){
 					ns_image_server_image im;
 					im.id = atol(res[i][0].c_str());
-					files.push_back(image_server.image_storage.get_file_specification_for_image(im,&sql));
+					files.push_back(image_server_const.image_storage.get_file_specification_for_image(im,&sql));
 				}
 			}
 			else if (job.maintenance_flag == ns_processing_job::ns_delete_censored_images){
@@ -230,7 +231,7 @@ void ns_handle_file_delete_request(ns_processing_job & job, ns_sql & sql){
 				for (unsigned int i = 0; i < res.size(); i++){
 					ns_image_server_image im;
 					im.id = atol(res[i][0].c_str());
-					files.push_back(image_server.image_storage.get_file_specification_for_image(im,&sql));
+					files.push_back(image_server_const.image_storage.get_file_specification_for_image(im,&sql));
 				}
 			}
 			else if (job.operations[ns_process_thumbnail]){
@@ -241,20 +242,20 @@ void ns_handle_file_delete_request(ns_processing_job & job, ns_sql & sql){
 				for (unsigned int i = 0; i < res.size(); i++){
 					ns_image_server_image im;
 					im.id = atol(res[i][0].c_str());
-					files.push_back(image_server.image_storage.get_file_specification_for_image(im,&sql));
+					files.push_back(image_server_const.image_storage.get_file_specification_for_image(im,&sql));
 				}
 			}
 			else throw ns_ex("Requesting to delete unprocessed sample images with no flag specified");
 		}
 		//we want to delete the entire sample
 		else
-			files.push_back(image_server.image_storage.get_path_for_sample(job.sample_id,&sql));	
+			files.push_back(image_server_const.image_storage.get_path_for_sample(job.sample_id,&sql));	
 	}
 	else if (job.experiment_id != 0)
-		files.push_back(image_server.image_storage.get_path_for_experiment(job.experiment_id,&sql));	
+		files.push_back(image_server_const.image_storage.get_path_for_experiment(job.experiment_id,&sql));	
 	else throw ns_ex("ns_handle_file_delete_request()::Unknown delete job type");
 	if (files.size() == 0){
-		image_server.register_server_event(
+		image_server_const.register_server_event(
 			ns_image_server_event("ns_handle_file_delete_request()::Deletion job request specification produced no files or "
 								  "directories to be deleted."),&sql);
 			sql << "DELETE FROM processing_jobs WHERE id = " << job.id;
@@ -262,9 +263,9 @@ void ns_handle_file_delete_request(ns_processing_job & job, ns_sql & sql){
 			
 		return;
 	}
-	unsigned long job_id = image_server.image_storage.create_file_deletion_job(job.id,sql);
+	unsigned long job_id = image_server_const.image_storage.create_file_deletion_job(job.id,sql);
 	for (unsigned int i = 0; i < files.size(); i++)
-		image_server.image_storage.submit_file_deletion_request(job_id,files[i],sql);
+		image_server_const.image_storage.submit_file_deletion_request(job_id,files[i],sql);
 }
 
 
@@ -272,7 +273,7 @@ ns_processing_job ns_handle_file_delete_action(ns_processing_job & job, ns_sql &
 
 	vector<ns_file_location_specification> specs;
 	ns_64_bit parent_job_id(0);
-	image_server.image_storage.get_file_deletion_requests(job.delete_file_job_id,parent_job_id,specs,sql);
+	image_server_const.image_storage.get_file_deletion_requests(job.delete_file_job_id,parent_job_id,specs,sql);
 
 	//after handling the request, we will want to delete the metadata of deleted images.  Load this from the parent job.
 	ns_processing_job parent_job;
@@ -283,7 +284,7 @@ ns_processing_job ns_handle_file_delete_action(ns_processing_job & job, ns_sql &
 		throw ns_ex("ns_handle_file_delete_action::Could not load parent job from database");
 	parent_job.load_from_result(res[0]);
 	try{
-		sql << "UPDATE processing_jobs SET currently_under_processing=" << image_server.host_id() << "  WHERE id=" << parent_job.id;
+		sql << "UPDATE processing_jobs SET currently_under_processing=" << image_server_const.host_id() << "  WHERE id=" << parent_job.id;
 		sql.send_query();
 
 		ns_image_server_event ev("ns_image_processing_pipeline::Processing file deletion job for ");
@@ -295,19 +296,19 @@ ns_processing_job ns_handle_file_delete_action(ns_processing_job & job, ns_sql &
 		if(parent_job.image_id != 0){
 			ev << "::Image id " << parent_job.image_id;
 		}
-		image_server.register_server_event(ev,&sql);
+		image_server_const.register_server_event(ev,&sql);
 
 		for (unsigned int i = 0; i < specs.size(); i++)
-			image_server.image_storage.delete_file_specification(specs[i],ns_delete_both_volatile_and_long_term);
+			image_server_const.image_storage.delete_file_specification(specs[i],ns_delete_both_volatile_and_long_term);
 		ns_handle_image_metadata_delete_action(parent_job,sql);
-		image_server.image_storage.delete_file_deletion_job(job.delete_file_job_id,sql);
+		image_server_const.image_storage.delete_file_deletion_job(job.delete_file_job_id,sql);
 		sql << "DELETE from processing_jobs WHERE id=" << job.id;
 		sql.send_query();
 		sql << "DELETE from processing_jobs WHERE id=" << parent_job.id;
 		sql.send_query();
 	}
 	catch(ns_ex & ex){
-		unsigned long event_id = image_server.register_server_event(ex,&sql);
+		unsigned long event_id = image_server_const.register_server_event(ex,&sql);
 		sql << "UPDATE processing_jobs SET currently_under_processing=0,problem=" << event_id << " WHERE id=" << parent_job.id;
 		sql.send_query();	
 		sql << "DELETE from processing_jobs WHERE id=" << job.id;
@@ -515,8 +516,8 @@ bool ns_precomputed_processing_step_images::specify_image_id(const ns_processing
 	
 	images[i].id = id;
 
-	if (!image_server.image_storage.image_exists(images[i],&sql)){
-		image_server.register_server_event(ns_image_server_event("ns_precomputed_processing_step_images::") << ns_processing_task_to_string(i) << " ("<< images[i].filename << ") could not be loaded from disk.",&sql);
+	if (!image_server_const.image_storage.image_exists(images[i],&sql)){
+		image_server_const.register_server_event(ns_image_server_event("ns_precomputed_processing_step_images::") << ns_processing_task_to_string(i) << " ("<< images[i].filename << ") could not be loaded from disk.",&sql);
 		images[i].id = 0;
 		exists[i] = 0;
 		return false;
@@ -548,7 +549,7 @@ bool attempt_to_preload(const ns_processing_task & task,ns_precomputed_processin
 	}
 	catch(ns_ex & ex){
 		//if we wanted to load a precomputed image from disk, but failed, we need to recalculate it.
-		image_server.register_server_event(ex,&sql);
+		image_server_const.register_server_event(ex,&sql);
 
 		//we also need to precompute any images that depend on it.
 		precomputed_images.remove_preprocessed_image(task);
@@ -582,7 +583,7 @@ void ns_image_processing_pipeline::process_region(const ns_image_server_captured
 	ns_image_server_event parent_event("ns_image_processing_pipeline::Processing image region ");
 	parent_event << source_image.filename(&sql) << "\nActions: " << ns_create_operation_summary(operations);
 	parent_event.specifiy_event_subject(region_image);
-	parent_event.specify_parent_server_event(image_server.register_server_event(parent_event,&sql));
+	parent_event.specify_parent_server_event(image_server_const.register_server_event(parent_event,&sql));
 	parent_event.clear_text();
 
 	//Check the databse to see if any of the image steps have been precomputed.
@@ -655,7 +656,7 @@ void ns_image_processing_pipeline::process_region(const ns_image_server_captured
 				if (!attempt_to_preload(ns_process_spatial,precomputed_images,operations,spatial_average,sql)){
 				
 					ns_image_server_image unprocessed_image(region_image.request_processed_image(ns_unprocessed,sql));
-					ns_image_storage_source_handle<ns_8_bit> unprocessed_image_file(image_server.image_storage.request_from_storage(unprocessed_image,&sql));
+					ns_image_storage_source_handle<ns_8_bit> unprocessed_image_file(image_server_const.image_storage.request_from_storage(unprocessed_image,&sql));
 				
 					register_event(ns_process_spatial,unprocessed_image_file.input_stream().properties(),parent_event,false,sql);
 				
@@ -675,7 +676,7 @@ void ns_image_processing_pipeline::process_region(const ns_image_server_captured
 
 					//output an uncompressed spatially averaged copy to disk.
 					ns_image_server_image output_image = region_image.create_storage_for_processed_image(ns_process_spatial,ns_tiff,&sql);
-					ns_image_storage_reciever_handle<ns_component> r = image_server.image_storage.request_storage(
+					ns_image_storage_reciever_handle<ns_component> r = image_server_const.image_storage.request_storage(
 																output_image,
 																ns_tiff, _image_chunk_size,&sql,
 																had_to_use_volatile_storage,
@@ -687,12 +688,12 @@ void ns_image_processing_pipeline::process_region(const ns_image_server_captured
 				
 					output_image.mark_as_finished_processing(&sql);
 
-					image_server.performance_statistics.register_job_duration(ns_process_spatial,tm.stop());
+					image_server.register_job_duration(ns_process_spatial,tm.stop());
 				}
 			}
 			if (!unprocessed_loaded && precomputed_images.worm_detection_needs_to_be_performed){
 					ns_image_server_image unprocessed_image(region_image.request_processed_image(ns_unprocessed,sql));
-					ns_image_storage_source_handle<ns_8_bit> unprocessed_image_file(image_server.image_storage.request_from_storage(unprocessed_image,&sql));
+					ns_image_storage_source_handle<ns_8_bit> unprocessed_image_file(image_server_const.image_storage.request_from_storage(unprocessed_image,&sql));
 					unprocessed_image_file.input_stream().pump(unprocessed,_image_chunk_size);
 					unprocessed_loaded = true;
 			}
@@ -714,7 +715,7 @@ void ns_image_processing_pipeline::process_region(const ns_image_server_captured
 		
 					//output a small, compressed copy for visualization			
 					ns_image_server_image output_image =  region_image.create_storage_for_processed_image(ns_process_lossy_stretch,ns_jpeg,&sql);
-					ns_image_storage_reciever_handle<ns_component> r = image_server.image_storage.request_storage(
+					ns_image_storage_reciever_handle<ns_component> r = image_server_const.image_storage.request_storage(
 																output_image,
 																ns_jpeg, _image_chunk_size,&sql,
 																had_to_use_volatile_storage,
@@ -723,7 +724,7 @@ void ns_image_processing_pipeline::process_region(const ns_image_server_captured
 					dynamic_stretch.pump(r.output_stream(),_image_chunk_size);
 					output_image.mark_as_finished_processing(&sql);
 
-					image_server.performance_statistics.register_job_duration(ns_process_lossy_stretch,tm.stop());
+					image_server.register_job_duration(ns_process_lossy_stretch,tm.stop());
 				}
 			}
 			ns_image_standard paths_visualization;
@@ -748,7 +749,7 @@ void ns_image_processing_pipeline::process_region(const ns_image_server_captured
 					gen.create_time_path_analysis_visualization(region_image, p->second,dynamic_stretch, paths_visualization,sql);
 	
 					ns_image_server_image out_im(region_image.create_storage_for_processed_image(ns_process_movement_paths_visualization,ns_tiff,&sql));
-					ns_image_storage_reciever_handle<ns_8_bit> out_im_f(image_server.image_storage.request_storage(
+					ns_image_storage_reciever_handle<ns_8_bit> out_im_f(image_server_const.image_storage.request_storage(
 														out_im,
 														ns_tiff, 1024,&sql,
 																	had_to_use_volatile_storage,
@@ -766,7 +767,7 @@ void ns_image_processing_pipeline::process_region(const ns_image_server_captured
 				register_event(ns_process_movement_paths_visualition_with_mortality_overlay,dynamic_stretch.properties(),parent_event,false,sql);
 		/*
 				ns_image_server_image vis_image(region_image.request_processed_image(ns_process_movement_paths_visualization,sql));
-				ns_image_storage_source_handle<ns_8_bit> image_file(image_server.image_storage.request_from_storage(vis_image,&sql));
+				ns_image_storage_source_handle<ns_8_bit> image_file(image_server_const.image_storage.request_from_storage(vis_image,&sql));
 
 				image_file.input_stream().pump(underlay,_image_chunk_size);*/
 				ns_region_metadata metadata;
@@ -775,7 +776,7 @@ void ns_image_processing_pipeline::process_region(const ns_image_server_captured
 
 
 				ns_image_server_image out_im(region_image.create_storage_for_processed_image(ns_process_movement_paths_visualition_with_mortality_overlay,ns_jpeg,&sql));
-				ns_image_storage_reciever_handle<ns_8_bit> out_im_f(image_server.image_storage.request_storage(
+				ns_image_storage_reciever_handle<ns_8_bit> out_im_f(image_server_const.image_storage.request_storage(
 													out_im,
 													ns_jpeg, 1024,&sql,
 													had_to_use_volatile_storage,
@@ -802,7 +803,7 @@ void ns_image_processing_pipeline::process_region(const ns_image_server_captured
 				threshold_manager.run( region_image,spatial_average,thresholded,sql,_image_chunk_size);
 			
 				ns_image_server_image output_image =  region_image.create_storage_for_processed_image(ns_process_threshold,ns_tiff,&sql);
-				ns_image_storage_reciever_handle<ns_component> r = image_server.image_storage.request_storage(
+				ns_image_storage_reciever_handle<ns_component> r = image_server_const.image_storage.request_storage(
 															output_image,
 															ns_tiff, _image_chunk_size,&sql,
 																had_to_use_volatile_storage,
@@ -811,7 +812,7 @@ void ns_image_processing_pipeline::process_region(const ns_image_server_captured
 				thresholded.pump(r.output_stream(),_image_chunk_size);
 				output_image.mark_as_finished_processing(&sql);
 			
-				image_server.performance_statistics.register_job_duration(ns_process_threshold,tm.stop());
+				image_server.register_job_duration(ns_process_threshold,tm.stop());
 				}
 			}
 
@@ -825,18 +826,12 @@ void ns_image_processing_pipeline::process_region(const ns_image_server_captured
 			if (precomputed_images.worm_detection_needs_to_be_performed){	
 			
 				register_event(ns_process_worm_detection,spatial_average.properties(),parent_event,false,sql);
-				image_server.register_server_event(ns_image_server_event("ns_image_processing_pipeline::Detecting Worms...") << ns_ts_minor_event,&sql);
+				image_server_const.register_server_event(ns_image_server_event("ns_image_processing_pipeline::Detecting Worms...") << ns_ts_minor_event,&sql);
 			
 			
 				tm.start();
 			
-				const ns_image_standard * static_mask(0);
-				ns_image_server_image static_mask_image( region_image.request_processed_image(ns_process_static_mask,sql));
-				if (static_mask_image.id != 0){
-					cout << "Using a static mask.\n";
-					static_mask = &image_server.image_storage.cache.get_for_read(static_mask_image,sql);
-				}
-
+		
 				ns_worm_detector<ns_image_standard> worm_detector;
 	
 				ns_detected_worm_info::ns_visualization_type vis_type = (operations[ns_process_accept_vis] || operations[ns_process_reject_vis]) ? ns_detected_worm_info::ns_vis_raster : ns_detected_worm_info::ns_vis_none;
@@ -852,23 +847,37 @@ void ns_image_processing_pipeline::process_region(const ns_image_server_captured
 				sql.get_rows(res);
 				if (res.size() == 0)
 					throw ns_ex("Could not load worm count maximum from database!");
-				const unsigned long worm_count_max(atol(res[0][0].c_str()));
-				ns_acquire_for_scope<ns_image_worm_detection_results> detected_worms(worm_detector.run(region_image.region_info_id,region_image.capture_time,
-					unprocessed,
-					thresholded,
-					spatial_average,
-					static_mask,
-					ns_worm_detection_constants::get(ns_worm_detection_constant::minimum_worm_region_area,spatial_average.properties().resolution),
-					ns_worm_detection_constants::get(ns_worm_detection_constant::maximum_worm_region_area,spatial_average.properties().resolution),
-					ns_worm_detection_constants::get(ns_worm_detection_constant::maximum_region_diagonal,spatial_average.properties().resolution),
-					model,
-					worm_count_max,
-					"",
-					vis_type,
-					image_stats
-					));
 
-				image_server.performance_statistics.register_job_duration(ns_process_worm_detection,tm.stop());
+				//get potentially cached static image mask.  this caching was built to be threadsafe
+				ns_image_server_image static_mask_image(region_image.request_processed_image(ns_process_static_mask, sql));
+				ns_acquire_for_scope<ns_image_worm_detection_results> detected_worms;
+				{
+					ns_image_storage_handler::cache_t::handle_t static_mask;
+					if (static_mask_image.id != 0) {
+						cout << "Using a static mask.\n";
+						image_server.image_storage.cache.get_for_read(static_mask_image, &static_mask(), sql);
+					}
+
+
+
+					const unsigned long worm_count_max(atol(res[0][0].c_str()));
+					detected_worms.attach(worm_detector.run(region_image.region_info_id, region_image.capture_time,
+						unprocessed,
+						thresholded,
+						spatial_average,
+						static_mask.image,
+						ns_worm_detection_constants::get(ns_worm_detection_constant::minimum_worm_region_area, spatial_average.properties().resolution),
+						ns_worm_detection_constants::get(ns_worm_detection_constant::maximum_worm_region_area, spatial_average.properties().resolution),
+						ns_worm_detection_constants::get(ns_worm_detection_constant::maximum_region_diagonal, spatial_average.properties().resolution),
+						model,
+						worm_count_max,
+						"",
+						vis_type,
+						image_stats
+					));
+				}//implicitly release static mask back to cache.
+
+				image_server.register_job_duration(ns_process_worm_detection,tm.stop());
 				//save worm information
 				region_image.register_worm_detection(&detected_worms(),false,sql);
 				ns_image_stream_color_converter<ns_component, ns_image_stream_static_offset_buffer<ns_component> >color_converter(_image_chunk_size);
@@ -885,7 +894,7 @@ void ns_image_processing_pipeline::process_region(const ns_image_server_captured
 					
 
 					ns_image_server_image output_image = region_image.create_storage_for_processed_image(ns_process_worm_detection,ns_jpeg,&sql);
-					ns_image_storage_reciever_handle<ns_component>  r = image_server.image_storage.request_storage(
+					ns_image_storage_reciever_handle<ns_component>  r = image_server_const.image_storage.request_storage(
 																output_image,
 																ns_jpeg, _image_chunk_size,&sql,
 															had_to_use_volatile_storage,
@@ -901,7 +910,7 @@ void ns_image_processing_pipeline::process_region(const ns_image_server_captured
 					detected_worms().create_visualization(spatial_average.properties().height/75,6,temporary_image,region_image.display_label(),true,true,true);	
 			
 					ns_image_server_image d_vis = region_image.create_storage_for_processed_image(ns_process_worm_detection_labels,ns_jpeg,&sql);
-					ns_image_storage_reciever_handle<ns_component> d_vis_o = image_server.image_storage.request_storage(
+					ns_image_storage_reciever_handle<ns_component> d_vis_o = image_server_const.image_storage.request_storage(
 																d_vis,
 																ns_jpeg, _image_chunk_size,&sql,
 															had_to_use_volatile_storage,
@@ -920,7 +929,7 @@ void ns_image_processing_pipeline::process_region(const ns_image_server_captured
 					const ns_image_standard & worm_collage(detected_worms().generate_region_collage(unprocessed,spatial_average,thresholded));
 				
 					ns_image_server_image region_bitmap = region_image.create_storage_for_processed_image(ns_process_region_vis,ns_tiff,&sql);
-					ns_image_storage_reciever_handle<ns_component> region_bitmap_o = image_server.image_storage.request_storage(
+					ns_image_storage_reciever_handle<ns_component> region_bitmap_o = image_server_const.image_storage.request_storage(
 																region_bitmap,
 																ns_tiff, _image_chunk_size,&sql,
 															had_to_use_volatile_storage,
@@ -937,7 +946,7 @@ void ns_image_processing_pipeline::process_region(const ns_image_server_captured
 					detected_worms().create_spine_visualizations(comp_out);
 				
 					ns_image_server_image a_vis = region_image.create_storage_for_processed_image(ns_process_accept_vis,ns_tiff,&sql);
-					ns_image_storage_reciever_handle<ns_component> a_vis_o = image_server.image_storage.request_storage(
+					ns_image_storage_reciever_handle<ns_component> a_vis_o = image_server_const.image_storage.request_storage(
 																a_vis,
 																ns_tiff, _image_chunk_size,&sql,
 															had_to_use_volatile_storage,
@@ -955,7 +964,7 @@ void ns_image_processing_pipeline::process_region(const ns_image_server_captured
 					detected_worms().create_reject_spine_visualizations(comp_out);
 					
 					ns_image_server_image r_vis = region_image.create_storage_for_processed_image(ns_process_reject_vis,ns_tiff,&sql);
-					ns_image_storage_reciever_handle<ns_component> r_vis_o = image_server.image_storage.request_storage(
+					ns_image_storage_reciever_handle<ns_component> r_vis_o = image_server_const.image_storage.request_storage(
 																r_vis,
 																ns_tiff, _image_chunk_size,&sql,
 															had_to_use_volatile_storage,
@@ -977,12 +986,12 @@ void ns_image_processing_pipeline::process_region(const ns_image_server_captured
 							sql.send_query();
 							unsigned long spec_max = ns_worm_detection_constants::get(ns_worm_detection_constant::maximum_number_of_objects_per_image);
 							if (detected_worms().number_of_putative_worms() > spec_max)
-								image_server.register_server_event(ns_image_server_event("ns_image_processing_pipeline::Training set image object count (") << detected_worms().number_of_putative_worms() << ") exceeds specified maximum (" << spec_max << ")",&sql);
+								image_server_const.register_server_event(ns_image_server_event("ns_image_processing_pipeline::Training set image object count (") << detected_worms().number_of_putative_worms() << ") exceeds specified maximum (" << spec_max << ")",&sql);
 							else{
 								ns_image_standard ti;
 								ns_worm_training_set_image::generate(detected_worms(),ti);
 								ns_image_server_image a_worm_im = region_image.create_storage_for_processed_image(ns_process_add_to_training_set,ns_tiff,&sql);
-									ns_image_storage_reciever_handle<ns_component> a_worm = image_server.image_storage.request_storage(
+									ns_image_storage_reciever_handle<ns_component> a_worm = image_server_const.image_storage.request_storage(
 																		a_worm_im,
 																		ns_tiff, _image_chunk_size,&sql,
 																	had_to_use_volatile_storage,
@@ -991,7 +1000,7 @@ void ns_image_processing_pipeline::process_region(const ns_image_server_captured
 							
 								ti.pump(a_worm.output_stream(),_image_chunk_size);
 
-								ofstream * metadata_out(image_server.image_storage.request_metadata_output(a_worm_im,"csv",false,&sql));
+								ofstream * metadata_out(image_server_const.image_storage.request_metadata_output(a_worm_im,"csv",false,&sql));
 								try{
 									detected_worms().output_feature_statistics(*metadata_out);
 									metadata_out->close();
@@ -1015,7 +1024,7 @@ void ns_image_processing_pipeline::process_region(const ns_image_server_captured
 					catch(ns_ex & ex){
 						ns_ex ex2;
 						ex2 << "Could not create training set: " << ex.text();
-						image_server.register_server_event(ex2,&sql);
+						image_server_const.register_server_event(ex2,&sql);
 					}
 				}
 				detected_worms.release();
@@ -1034,7 +1043,7 @@ void ns_image_processing_pipeline::process_region(const ns_image_server_captured
 				ns_image_server_image output_image;
 
 				output_image = region_image.create_storage_for_processed_image(ns_process_worm_detection_with_graph,ns_jpeg,&sql);
-				ns_image_storage_reciever_handle<ns_component>  r = image_server.image_storage.request_storage(
+				ns_image_storage_reciever_handle<ns_component>  r = image_server_const.image_storage.request_storage(
 																output_image,
 																ns_jpeg, _image_chunk_size,&sql,
 																had_to_use_volatile_storage,
@@ -1054,7 +1063,7 @@ void ns_image_processing_pipeline::process_region(const ns_image_server_captured
 				
 				ns_image_server_image output_image;
 				output_image = region_image.create_storage_for_processed_image(ns_process_movement_coloring_with_graph,ns_jpeg,&sql);
-				ns_image_storage_reciever_handle<ns_component>  r = image_server.image_storage.request_storage(
+				ns_image_storage_reciever_handle<ns_component>  r = image_server_const.image_storage.request_storage(
 																output_image,
 																ns_jpeg, _image_chunk_size,&sql,
 																had_to_use_volatile_storage,
@@ -1077,7 +1086,7 @@ void ns_image_processing_pipeline::process_region(const ns_image_server_captured
 	
 				ns_image_server_image output_image;
 				output_image = region_image.create_storage_for_processed_image(ns_process_movement_coloring_with_survival,ns_jpeg,&sql);
-				ns_image_storage_reciever_handle<ns_component>  r = image_server.image_storage.request_storage(
+				ns_image_storage_reciever_handle<ns_component>  r = image_server_const.image_storage.request_storage(
 																output_image,
 																ns_jpeg, _image_chunk_size,&sql,
 																had_to_use_volatile_storage,
@@ -1092,7 +1101,7 @@ void ns_image_processing_pipeline::process_region(const ns_image_server_captured
 				throw ns_ex("ns_image_processing_pipeline::Attempting to pump off the end of the pipeline!");
 		}
 		catch(ns_ex & ex){
-			image_server.performance_statistics.cancel_outstanding_jobs();
+		//	image_server_const.performance_statistics.cancel_outstanding_jobs();
 			throw ex;
 		}
 	}
@@ -1105,7 +1114,7 @@ void ns_image_processing_pipeline::process_region(const ns_image_server_captured
 }
 float ns_image_processing_pipeline::process_mask(ns_image_server_image & source_image, const ns_64_bit mask_id, ns_sql & sql){	
 	
-	image_server.register_server_event(ns_image_server_event("ns_image_processing_pipeline::Processing Mask for image_id ") << source_image.id,&sql);
+	image_server_const.register_server_event(ns_image_server_event("ns_image_processing_pipeline::Processing Mask for image_id ") << source_image.id,&sql);
 	source_image.load_from_db(source_image.id,&sql);
 	string new_filename = ns_dir::extract_filename_without_extension(source_image.filename);
 	new_filename += "_processed.jpg";
@@ -1120,7 +1129,7 @@ float ns_image_processing_pipeline::process_mask(ns_image_server_image & source_
 	ns_image_server_image visualization_image;
 	//create new image for visualization if necissary
 	if (res[0][0] == "0"){
-		sql << "INSERT INTO images SET filename = '" << sql.escape_string(new_filename) << "', path='" << sql.escape_string(source_image.path) << "', `partition`='" << source_image.partition << "', host_id= " << image_server.host_id() << ", creation_time = " << ns_current_time();
+		sql << "INSERT INTO images SET filename = '" << sql.escape_string(new_filename) << "', path='" << sql.escape_string(source_image.path) << "', `partition`='" << source_image.partition << "', host_id= " << image_server_const.host_id() << ", creation_time = " << ns_current_time();
 		//cerr << sql.query() << "\n";
 		visualization_image.id = sql.send_query_get_id();
 		sql << "UPDATE image_masks SET visualization_image_id='" << visualization_image.id << "' WHERE id='" << mask_id << "'";
@@ -1128,12 +1137,12 @@ float ns_image_processing_pipeline::process_mask(ns_image_server_image & source_
 	}
 	else{
 		visualization_image.id = atol(res[0][0].c_str());
-		sql << "UPDATE images SET filename = '" << sql.escape_string(new_filename) << "', path='" << sql.escape_string(source_image.path) << "', `partition`='" << source_image.partition << "', host_id= " << image_server.host_id() << ", creation_time = " << ns_current_time()
+		sql << "UPDATE images SET filename = '" << sql.escape_string(new_filename) << "', path='" << sql.escape_string(source_image.path) << "', `partition`='" << source_image.partition << "', host_id= " << image_server_const.host_id() << ", creation_time = " << ns_current_time()
 				<< " WHERE id=" << 	visualization_image.id;
 	//	cerr << sql.query() << "\n";
 		sql.send_query();
 		//delete old copy of the file
-		image_server.image_storage.delete_from_storage(visualization_image,ns_delete_both_volatile_and_long_term,&sql);
+		image_server_const.image_storage.delete_from_storage(visualization_image,ns_delete_both_volatile_and_long_term,&sql);
 	}
 	sql.send_query("COMMIT");
 	source_image.processed_output_storage = &visualization_image;
@@ -1155,7 +1164,7 @@ struct ns_mask_region_sorter_element{
 };
 void ns_image_processing_pipeline::generate_sample_regions_from_mask(ns_64_bit sample_id, const float capture_sample_image_resolution_in_dpi,ns_sql & sql){
 	
-	image_server.register_server_event(ns_image_server_event("ns_image_processing_pipeline::Analyzing Regions for sample ") << sample_id,&sql);
+	image_server_const.register_server_event(ns_image_server_event("ns_image_processing_pipeline::Analyzing Regions for sample ") << sample_id,&sql);
 	sql << "SELECT mask_id, image_resolution_dpi FROM capture_samples WHERE id = " << sample_id;
 	ns_sql_result res;
 	sql.get_rows(res);
@@ -1248,10 +1257,10 @@ void ns_image_processing_pipeline::generate_sample_regions_from_mask(ns_64_bit s
 float ns_image_processing_pipeline::analyze_mask(ns_image_server_image & image, const unsigned int resize_factor, const ns_64_bit mask_id, ns_sql & sql){
 
 	image.load_from_db(image.id,&sql);
-	image_server.register_server_event(ns_image_server_event("ns_image_processing_pipeline::Analyzing Mask ") << image.filename,&sql);
+	image_server_const.register_server_event(ns_image_server_event("ns_image_processing_pipeline::Analyzing Mask ") << image.filename,&sql);
 	//cerr << "requesting mask";
 	//acquire the image
-	ns_image_storage_source_handle<ns_component> mask = image_server.image_storage.request_from_storage(image,&sql);
+	ns_image_storage_source_handle<ns_component> mask = image_server_const.image_storage.request_from_storage(image,&sql);
 	//cerr << "done.";
 	mask_analyzer.set_resize_factor(resize_factor);
 	const float mask_resolution(mask.input_stream().properties().resolution);
@@ -1277,7 +1286,7 @@ float ns_image_processing_pipeline::analyze_mask(ns_image_server_image & image, 
 
 		ns_image_server_image output_image = image.create_storage_for_processed_image(ns_process_analyze_mask,ns_tiff,&sql);
 		bool had_to_use_local_storage;
-		ns_image_storage_reciever_handle<ns_component> visualization_output = image_server.image_storage.request_storage(
+		ns_image_storage_reciever_handle<ns_component> visualization_output = image_server_const.image_storage.request_storage(
 																output_image,
 																ns_jpeg, _image_chunk_size,&sql,
 																had_to_use_local_storage,
@@ -1340,7 +1349,7 @@ void ns_image_processing_pipeline::calculate_static_mask_and_heat_map(const vect
 			try{
 				ns_image_server_image heat_map_im(region_image.request_processed_image(ns_process_heat_map,sql));
 				
-				ns_image_storage_source_handle<ns_component> heat_map_source(image_server.image_storage.request_from_storage(heat_map_im,&sql));
+				ns_image_storage_source_handle<ns_component> heat_map_source(image_server_const.image_storage.request_from_storage(heat_map_im,&sql));
 				heat_map_source.input_stream().pump(heat_map,512);
 			}
 			//if loading from disk fails, make sure to calculate the heat map from scratch.
@@ -1367,12 +1376,12 @@ void ns_image_processing_pipeline::calculate_static_mask_and_heat_map(const vect
 		mfi.generate_heat_map(heat_map,number_of_frames_used_to_mask_stationary_objects,sql);
 		//save the heat map to disk
 		ns_image_server_image a_vis = region_image.create_storage_for_processed_image(ns_process_heat_map,ns_tiff,&sql);
-		ns_image_storage_reciever_handle<ns_component> a_vis_o = image_server.image_storage.request_storage(
+		ns_image_storage_reciever_handle<ns_component> a_vis_o = image_server_const.image_storage.request_storage(
 													a_vis,
 													ns_tiff, _image_chunk_size,&sql,had_to_use_local_storage,false,false);
 		heat_map.pump(a_vis_o.output_stream(),_image_chunk_size);
 		a_vis.mark_as_finished_processing(&sql);
-		image_server.performance_statistics.register_job_duration(ns_process_heat_map,tm.stop());
+		image_server.register_job_duration(ns_process_heat_map,tm.stop());
 	
 	}
 	if (generate_static_mask){
@@ -1383,12 +1392,12 @@ void ns_image_processing_pipeline::calculate_static_mask_and_heat_map(const vect
 
 		//save the static mask to disk
 		ns_image_server_image b_vis = region_image.create_storage_for_processed_image(ns_process_static_mask,ns_tiff,&sql);
-		ns_image_storage_reciever_handle<ns_component> b_vis_o = image_server.image_storage.request_storage(
+		ns_image_storage_reciever_handle<ns_component> b_vis_o = image_server_const.image_storage.request_storage(
 												b_vis,
 												ns_tiff, _image_chunk_size,&sql,had_to_use_local_storage,false,false);
 		static_mask.pump(b_vis_o.output_stream(),_image_chunk_size);
 		b_vis.mark_as_finished_processing(&sql);
-		image_server.performance_statistics.register_job_duration(ns_process_static_mask,tm.stop());
+		image_server.register_job_duration(ns_process_static_mask,tm.stop());
 
 	}
 	sql << "UPDATE sample_region_images SET currently_under_processing=0 WHERE region_info_id = " << region_image.region_info_id;
@@ -1412,7 +1421,7 @@ void ns_image_processing_pipeline::calculate_static_mask_and_heat_map(const vect
 	ns_image_standard heat_map;
 	mfi.load_all_region_worms(region_image.region_info_id,sql,true);
 	mfi.run_analysis(0,sql);
-	sql << "UPDATE sample_region_image_info SET temporal_interpolation_performed = " << image_server.host_id() << " WHERE id = " << region_image.region_info_id;
+	sql << "UPDATE sample_region_image_info SET temporal_interpolation_performed = " << image_server_const.host_id() << " WHERE id = " << region_image.region_info_id;
 	sql.send_query();
 	sql << "UPDATE sample_region_images SET currently_under_processing=0 WHERE region_info_id = " << region_image.region_info_id;
 	sql.send_query();
@@ -1430,10 +1439,10 @@ void ns_image_processing_pipeline::compile_video(ns_image_server_captured_image_
 	
 
 	//create a sample image to get output path information
-	ns_file_location_specification spec(image_server.image_storage.get_path_for_experiment(region_image.experiment_id,&sql));
-	string output_path = image_server.image_storage.get_absolute_path_for_video(spec,false);
+	ns_file_location_specification spec(image_server_const.image_storage.get_path_for_experiment(region_image.experiment_id,&sql));
+	string output_path = image_server_const.image_storage.get_absolute_path_for_video(spec,false);
 	
-	string relative_path(image_server.image_storage.get_relative_path_for_video(spec,false));
+	string relative_path(image_server_const.image_storage.get_relative_path_for_video(spec,false));
 
 	ns_dir::create_directory_recursive(output_path);
 	sql << "SELECT apply_vertical_image_registration FROM capture_samples WHERE id=" << region_image.sample_id;
@@ -1481,7 +1490,7 @@ void ns_image_processing_pipeline::compile_video(ns_image_server_captured_image_
 			sql.get_rows(res);
 
 			if (res.size() == 0){
-				image_server.register_server_event(ns_image_server_event("ns_image_processing_pipeline::Processing step ") << ns_processing_task_to_string((ns_processing_task)i) << " yielded no images.",&sql);
+				image_server_const.register_server_event(ns_image_server_event("ns_image_processing_pipeline::Processing step ") << ns_processing_task_to_string((ns_processing_task)i) << " yielded no images.",&sql);
 				continue;
 			}
 			vector<string> filenames;
@@ -1503,7 +1512,7 @@ void ns_image_processing_pipeline::compile_video(ns_image_server_captured_image_
 				<< "(" << (unsigned int)res.size() << " Frames)::"<< output_basename;
 			ev.specifiy_event_subject(region_image);
 			ev.specify_processing_job_operation(ns_process_compile_video);
-			ns_64_bit event_id = image_server.register_server_event(ev,&sql);
+			ns_64_bit event_id = image_server_const.register_server_event(ev,&sql);
 
 
 			ns_video_region_specification reg(region_spec);
@@ -1517,8 +1526,8 @@ void ns_image_processing_pipeline::compile_video(ns_image_server_captured_image_
 				
 			ns_image_server_image video_info;
 			video_info.path = relative_path_f;
-			video_info.partition = image_server.image_storage.get_partition_for_experiment(region_image.experiment_id,&sql,true);
-			video_info.host_id = image_server.host_id();
+			video_info.partition = image_server_const.image_storage.get_partition_for_experiment(region_image.experiment_id,&sql,true);
+			video_info.host_id = image_server_const.host_id();
 			video_info.filename = o_filename;
 
 			video_info.save_to_db(0,&sql);
@@ -1526,7 +1535,7 @@ void ns_image_processing_pipeline::compile_video(ns_image_server_captured_image_
 			sql.send_query();
 		}
 		catch(ns_ex & ex){
-			image_server.register_server_event(ns_image_server_event("ns_image_processing_pipeline::compile_video()::") << ex.text(),&sql);
+			image_server_const.register_server_event(ns_image_server_event("ns_image_processing_pipeline::compile_video()::") << ex.text(),&sql);
 		}
 	}
 }
@@ -1538,9 +1547,9 @@ void ns_image_processing_pipeline::compile_video(ns_image_server_captured_image 
 	//load the region image to get region information
 	sample_image.load_from_db(sample_image.captured_images_id,&sql);
 
-	ns_file_location_specification spec(image_server.image_storage.get_path_for_experiment(sample_image.experiment_id,&sql));
-	string output_path = image_server.image_storage.get_absolute_path_for_video(spec,true);
-	string relative_path = image_server.image_storage.get_relative_path_for_video(spec,true);
+	ns_file_location_specification spec(image_server_const.image_storage.get_path_for_experiment(sample_image.experiment_id,&sql));
+	string output_path = image_server_const.image_storage.get_absolute_path_for_video(spec,true);
+	string relative_path = image_server_const.image_storage.get_relative_path_for_video(spec,true);
 	ns_dir::create_directory_recursive(output_path);
 
 	//go through and create all requested movies
@@ -1593,7 +1602,7 @@ void ns_image_processing_pipeline::compile_video(ns_image_server_captured_image 
 			files_to_compile.resize(height);
 
 			if (files_to_compile.size() == 0){
-				image_server.register_server_event(ns_image_server_event("ns_image_processing_pipeline::Sample yielded no images."),&sql);
+				image_server_const.register_server_event(ns_image_server_event("ns_image_processing_pipeline::Sample yielded no images."),&sql);
 				continue;
 			}
 			
@@ -1617,7 +1626,7 @@ void ns_image_processing_pipeline::compile_video(ns_image_server_captured_image 
 			ev.specifiy_event_subject(sample_image);
 			ev.specify_processing_job_operation(ns_process_compile_video);
 
-			unsigned long event_id = image_server.register_server_event(ev,&sql);
+			unsigned long event_id = image_server_const.register_server_event(ev,&sql);
 
 
 			//calculate registration information if required
@@ -1626,8 +1635,8 @@ void ns_image_processing_pipeline::compile_video(ns_image_server_captured_image 
 			
 			ns_image_server_image video_info;
 			video_info.path = relative_path;
-			video_info.partition = image_server.image_storage.get_partition_for_experiment(sample_image.experiment_id,&sql,true);
-			video_info.host_id = image_server.host_id();
+			video_info.partition = image_server_const.image_storage.get_partition_for_experiment(sample_image.experiment_id,&sql,true);
+			video_info.host_id = image_server_const.host_id();
 			video_info.filename = o_filename;
 
 			video_info.save_to_db(0,&sql);
@@ -1635,7 +1644,7 @@ void ns_image_processing_pipeline::compile_video(ns_image_server_captured_image 
 			sql.send_query();
 		}
 		catch(ns_ex & ex){
-			image_server.register_server_event(ns_image_server_event("ns_image_processing_pipeline::compile_video()::") << ns_processing_task_to_string((ns_processing_task)i) << "::" << ex.text(),&sql);
+			image_server_const.register_server_event(ns_image_server_event("ns_image_processing_pipeline::compile_video()::") << ns_processing_task_to_string((ns_processing_task)i) << "::" << ex.text(),&sql);
 		}
 	}
 }
@@ -1668,22 +1677,22 @@ void ns_image_processing_pipeline::wrap_m4v_stream(const string & m4v_filename, 
 		ns_dir::delete_file(vid_filename);
 		string param;
 		//if (!for_ppt)
-		param = image_server.video_compilation_parameters(m4v_filename,vid_filename,number_of_frames,fps,sql);
+		param = image_server_const.video_compilation_parameters(m4v_filename,vid_filename,number_of_frames,fps,sql);
 		//else param = "-i " + m4v_filename + " -vcodec wmv2 -sameq -r " + fps + " " + vid_filename;
 		ns_external_execute exec;
 		//if (!for_ppt)	
-		//cerr << "Running " << image_server.video_compiler_filename() + " " + param << "\n";
+		//cerr << "Running " << image_server_const.video_compiler_filename() + " " + param << "\n";
 		ns_external_execute_options opt;
 		opt.binary = true;
-		exec.run(image_server.video_compiler_filename(), param, opt);
-		//else exec.run(image_server.video_ppt_compiler_filename(), param, false,true);
+		exec.run(image_server_const.video_compiler_filename(), param, opt);
+		//else exec.run(image_server_const.video_ppt_compiler_filename(), param, false,true);
 	
 		exec.release_io();
 		exec.wait_for_termination();
 
 		#ifdef _WIN32 
 		//x264 likes to mess with the console window title, so we have to set it back
-		image_server.set_console_window_title();
+		image_server_const.set_console_window_title();
 		#endif
 	}
 	cout << "\n";
@@ -1700,11 +1709,11 @@ void ns_image_processing_pipeline::make_video(const unsigned long experiment_id,
 		throw ns_ex("ns_image_processing_pipeline::make_vide()::Timestamp requested, but no capture times provided.");
 
 	for (unsigned int j = 0; j < path_and_filenames.size(); j++){
-		string fn = image_server.image_storage.get_absolute_path_for_video_image(experiment_id,path_and_filenames[j][0],path_and_filenames[j][1],sql); 
+		string fn = image_server_const.image_storage.get_absolute_path_for_video_image(experiment_id,path_and_filenames[j][0],path_and_filenames[j][1],sql); 
 		ns_dir::convert_slashes(fn);
 		if (ns_dir::file_exists(fn))
 			filenames.push_back(fn);
-		else image_server.register_server_event(ns_image_server_event("ns_xvid::Could not load frame from ") << fn,&sql);
+		else image_server_const.register_server_event(ns_image_server_event("ns_xvid::Could not load frame from ") << fn,&sql);
 		switch(region_spec.timestamp_type){
 			case ns_video_region_specification::ns_no_timestamp: break;
 			case ns_video_region_specification::ns_date_timestamp:
@@ -1717,7 +1726,7 @@ void ns_image_processing_pipeline::make_video(const unsigned long experiment_id,
 	}
 
 	if (filenames.size() == 0){
-		image_server.register_server_event(ns_image_server_event("ns_image_processing_pipeline::Processing step yielded images, but none could be opened."),&sql);
+		image_server_const.register_server_event(ns_image_server_event("ns_image_processing_pipeline::Processing step yielded images, but none could be opened."),&sql);
 	}
 
 	ns_xvid_parameters param = ns_xvid_encoder::default_parameters();
@@ -1733,97 +1742,7 @@ void ns_image_processing_pipeline::make_video(const unsigned long experiment_id,
 		
 }
 #endif
-	/*
-void ns_image_processing_pipeline::characterize_movement(ns_worm_movement_measurement_set & record, const vector<char> & operations, ns_sql & sql){
-	record.load_from_db(sql);		
-
-	ns_worm_movement_measurement_analysis_set movement_analysis;
-	movement_analysis.load_results( record.region_short_1,record.region_short_2,record.region_long,sql);
-
-
-	ns_image_server_event ev("ns_image_processing_pipeline::Characterizing Movement ");
-	ev << record.region_short_1.experiment_name << "::" << record.region_short_1.sample_name <<"::" <<record.region_short_1.region_name << "::"  << ns_format_time_string(record.region_short_1.capture_time);
-	ev.specify_processing_job_operation(ns_process_movement_coloring);
-
-	unsigned long event_id = image_server.register_server_event(ev,&sql);
-	unsigned long start_time = ns_current_time();
-	image_server.performance_statistics.starting_job(ns_process_movement_coloring);
-	bool had_to_use_volatile_storage;
-	try{
-		//calculate movement between three frames and, if necissary, the worm-posture-comparision diagram.
-		if (operations[ns_process_posture_vis]){
-			movement_analysis.analyze_movement(true);
-			ns_image_server_image output_image = record.region_short_1.create_storage_for_processed_image(ns_process_posture_vis,ns_tiff,&sql);
-			ns_image_storage_reciever_handle<ns_component> go = image_server.image_storage.request_storage(
-															output_image,
-															ns_tiff, _image_chunk_size,&sql,had_to_use_volatile_storage,false,false);
-			movement_analysis.posture_visualization.pump(go.output_stream(),_image_chunk_size);
-		}
-		else
-			movement_analysis.analyze_movement(false);
-
-		//find source images for frame-movement visualization
-		vector< ns_image_storage_source_handle<ns_component> > sources;
-		sources.reserve(3);
-		sources.resize(sources.size()+1,image_server.image_storage.request_from_storage(record.region_short_1,ns_process_lossy_stretch,&sql));
-		if (operations[ns_process_movement_mapping]){
-			sources.resize(sources.size()+1,image_server.image_storage.request_from_storage(record.region_short_2,ns_process_lossy_stretch,&sql));
-			sources.resize(sources.size()+1,image_server.image_storage.request_from_storage(record.region_long,ns_process_lossy_stretch,&sql));
-		}
-		//load source images from disk
-		vector<ns_image_standard> images(sources.size());
-		for (unsigned int i = 0; i < sources.size(); i++){
-			sources[i].input_stream().pump(images[i],_image_chunk_size);
-			//invert to make white animals on a black background
-			for (unsigned int y = 0; y < images[i].properties().height; y++)
-				for (unsigned int x = 0; x < images[i].properties().width; x++)
-					images[i][y][x] = 255 - images[i][y][x];
-		}
-
-
-		//generate mapping diagram
-		if (operations[ns_process_movement_mapping]){
-			movement_analysis.classifier.draw_movement_map(images[0],images[1],images[2],temporary_image);
-			
-			ns_image_whole<ns_component> small_im;
-			temporary_image.resample(get_small_dimensions(temporary_image.properties()),small_im);
-			ns_image_server_image a_vis = record.region_short_1.create_storage_for_processed_image(ns_process_movement_mapping,ns_tiff,&sql);
-			ns_image_storage_reciever_handle<ns_component> a_vis_o = image_server.image_storage.request_storage(
-														a_vis,
-														ns_tiff, _image_chunk_size,&sql,had_to_use_volatile_storage,false,false);
-			small_im.pump(a_vis_o.output_stream(),_image_chunk_size);
-			a_vis.mark_as_finished_processing(&sql);
-		}
-
-		movement_analysis.classifier.draw_movement_shading(images[0],temporary_image,record.region_short_1.display_label(),true);	
-		//ns_image_whole<ns_component> small_im;
-		//temporary_image.resample(get_small_dimensions(temporary_image.properties()),small_im);
-		ns_image_server_image a_vis = record.region_short_1.create_storage_for_processed_image(ns_process_movement_coloring,ns_tiff,&sql);
-		ns_image_storage_reciever_handle<ns_component> a_vis_o = image_server.image_storage.request_storage(
-													a_vis,
-													ns_tiff, _image_chunk_size,&sql,had_to_use_volatile_storage,false,false);
-
-		temporary_image.pump(a_vis_o.output_stream(),_image_chunk_size);
-		a_vis.mark_as_finished_processing(&sql);
-
-		record.region_info_id	= record.region_short_1.region_info_id;
-		record.calculated		= true;
-		movement_analysis.classifier.summarize_movement(record);
-		record.save_to_db(sql);
-
-		
-
-		unsigned long stop_time = ns_current_time();
-	//	ev.specify_processing_duration(stop_time - start_time);
-	//	image_server.update_registered_server_event(event_id,ev);
-		image_server.performance_statistics.finished_job(ns_process_movement_coloring);
-	}
-	catch(...){
-		image_server.performance_statistics.cancel_outstanding_jobs();
-		throw;
-	}
-}*/
-
+	
 ///Takes the image and applies the appropriate mask to make a series of region images.  The resulting images are saved to disk
 ///and annotated in the database.
 
@@ -1831,15 +1750,16 @@ void ns_image_processing_pipeline::resize_sample_image(ns_image_server_captured_
 	captured_image.load_from_db(captured_image.captured_images_id,&sql);
 	ns_image_server_event ev("ns_image_processing_pipeline::Creating resized capture image ");
 	ev << captured_image.experiment_name << "::" << captured_image.sample_name << "::" << captured_image.capture_time;
-	image_server.register_server_event(ev,&sql);
-
-	image_server.performance_statistics.starting_job(ns_process_thumbnail);
+	image_server_const.register_server_event(ev,&sql);
+	ns_high_precision_timer timer;
+	timer.start();
+//	image_server_const.performance_statistics.starting_job(ns_process_thumbnail);
 	try{
 		captured_image.load_from_db(captured_image.captured_images_id,&sql);
 
 		ns_image_server_image small_image(captured_image.make_small_image_storage(&sql));
 		bool had_to_use_volatile_storage;
-		ns_image_storage_reciever_handle<ns_8_bit> small_image_output(image_server.image_storage.request_storage(small_image,ns_jpeg,1024,&sql,had_to_use_volatile_storage,false,false));
+		ns_image_storage_reciever_handle<ns_8_bit> small_image_output(image_server_const.image_storage.request_storage(small_image,ns_jpeg,1024,&sql,had_to_use_volatile_storage,false,false));
 		
 
 		ns_resampler<ns_8_bit> resampler(_image_chunk_size);
@@ -1850,7 +1770,7 @@ void ns_image_processing_pipeline::resize_sample_image(ns_image_server_captured_
 		
 		ns_image_server_image source_image;
 		source_image.id = captured_image.capture_images_image_id;
-		ns_image_storage_source_handle<ns_component> source(image_server.image_storage.request_from_storage(source_image,&sql));
+		ns_image_storage_source_handle<ns_component> source(image_server_const.image_storage.request_from_storage(source_image,&sql));
 		source.input_stream().pump(resampler_binding,_image_chunk_size);
 
 		
@@ -1858,10 +1778,10 @@ void ns_image_processing_pipeline::resize_sample_image(ns_image_server_captured_
 		sql << "UPDATE captured_images SET small_image_id = " << small_image.id << " WHERE id = " << captured_image.captured_images_id;
 		sql.send_query();
 
-		image_server.performance_statistics.finished_job(ns_process_thumbnail);
+		image_server.register_job_duration(ns_process_thumbnail, timer.stop());
 	}
 	catch(...){
-		image_server.performance_statistics.cancel_outstanding_jobs();
+		//image_server_const.performance_statistics.cancel_outstanding_jobs();
 		throw;
 	}
 }
@@ -1872,12 +1792,12 @@ void ns_image_processing_pipeline::resize_region_image(ns_image_server_captured_
 	//ns_image_server_event ev("ns_image_processing_pipeline::Creating resized region image ");
 
 	//ev << region_image.experiment_name << "::" << region_image.sample_name << "::" << region_image.region_name << ":: " << region_image.capture_time;
-	//image_server.register_server_event(ev,&sql);
+	//image_server_const.register_server_event(ev,&sql);
 
 	ns_image_server_image small_image(region_image.create_storage_for_processed_image(ns_process_thumbnail,ns_jpeg,&sql));
 	
 	bool had_to_use_volatile_storage;
-	ns_image_storage_reciever_handle<ns_8_bit> small_image_output(image_server.image_storage.request_storage(small_image,ns_jpeg,1024,&sql,had_to_use_volatile_storage,false,false));
+	ns_image_storage_reciever_handle<ns_8_bit> small_image_output(image_server_const.image_storage.request_storage(small_image,ns_jpeg,1024,&sql,had_to_use_volatile_storage,false,false));
 	
 
 	ns_resampler<ns_8_bit> resampler(_image_chunk_size);
@@ -1888,7 +1808,7 @@ void ns_image_processing_pipeline::resize_region_image(ns_image_server_captured_
 	
 	ns_image_server_image source_image;
 	source_image.id = region_image.region_images_image_id;
-	ns_image_storage_source_handle<ns_component> source(image_server.image_storage.request_from_storage(source_image,&sql));
+	ns_image_storage_source_handle<ns_component> source(image_server_const.image_storage.request_from_storage(source_image,&sql));
 	source.input_stream().pump(resampler_binding,_image_chunk_size);
 
 	small_image.mark_as_finished_processing(&sql);
@@ -1897,15 +1817,16 @@ void ns_image_processing_pipeline::resize_region_image(ns_image_server_captured_
 void ns_image_processing_pipeline::apply_mask(ns_image_server_captured_image & captured_image, 
 		vector<ns_image_server_captured_image_region> & output_regions, ns_sql & sql){
 
-	output_regions.resize(0);
-	image_server.performance_statistics.starting_job(ns_process_apply_mask);
+	output_regions.resize(0);	
+	ns_high_precision_timer timer;
+	timer.start();
 	
 	try{
 		ns_image_server_event ev("ns_image_processing_pipeline::Applying Mask");
 		ev << " on " << captured_image.filename(&sql);
 		ev.specifiy_event_subject(captured_image);
 		ev.specify_processing_job_operation(ns_process_apply_mask);
-		ns_64_bit event_id = image_server.register_server_event(ev,&sql);
+		ns_64_bit event_id = image_server_const.register_server_event(ev,&sql);
 			
 		captured_image.load_from_db(captured_image.captured_images_id,&sql);
 		bool delete_captured_image(false);
@@ -1925,10 +1846,10 @@ void ns_image_processing_pipeline::apply_mask(ns_image_server_captured_image & c
 				
 				if (res[0][0] == "0"){
 					delete_captured_image = false;
-					image_server.register_server_event(ns_image_server_event("ns_image_processing_pipeline::apply_mask()::Since no images in this sample have been protected from deletion, this capture image will not be deleted."),&sql);
+					image_server_const.register_server_event(ns_image_server_event("ns_image_processing_pipeline::apply_mask()::Since no images in this sample have been protected from deletion, this capture image will not be deleted."),&sql);
 				}
 				if (delete_captured_image && captured_image.capture_images_small_image_id == 0){
-					image_server.register_server_event(ns_image_server_event("ns_image_processing_pipeline::apply_mask()::Attempting to create a small resized copy of the image before masking"),&sql);
+					image_server_const.register_server_event(ns_image_server_event("ns_image_processing_pipeline::apply_mask()::Attempting to create a small resized copy of the image before masking"),&sql);
 					try{
 						resize_sample_image(captured_image,sql);
 					}
@@ -1943,7 +1864,7 @@ void ns_image_processing_pipeline::apply_mask(ns_image_server_captured_image & c
 				}
 				if (captured_image.never_delete_image){
 					delete_captured_image = false;
-					image_server.register_server_event(ns_image_server_event("ns_image_processing_pipeline::apply_mask()::Because this capture image is marked \"Never Delete\", it will not be deleted."),&sql);
+					image_server_const.register_server_event(ns_image_server_event("ns_image_processing_pipeline::apply_mask()::Because this capture image is marked \"Never Delete\", it will not be deleted."),&sql);
 				}
 			}
 		}
@@ -1972,7 +1893,7 @@ void ns_image_processing_pipeline::apply_mask(ns_image_server_captured_image & c
 
 		//load captured image that will be masked
 		//ns_image_whole<ns_component> source_im;
-		ns_registration_disk_buffer * source_im(0);
+		const ns_registration_disk_buffer * source_im(0);
 		ns_acquire_for_scope<ns_registration_disk_buffer> new_image_buffer;
 		ns_image_server_image source_image;
 		source_image.id = captured_image.capture_images_image_id;
@@ -1980,10 +1901,10 @@ void ns_image_processing_pipeline::apply_mask(ns_image_server_captured_image & c
 
 		
 		ns_vector_2i offset = ns_vector_2i(0,0);
-		ns_disk_buffered_image_registration_profile *profile(0);
+		ns_disk_buffered_image_registration_profile * profile;
 		bool delete_registration_profile_after_use;
 		if (apply_vertical_image_registration){
-			offset = get_vertical_registration(captured_image,source_image,sql,&profile,delete_registration_profile_after_use);
+			offset = get_vertical_registration(captured_image,source_image,sql,,delete_registration_profile_after_use);
 
 			//we don't need to load the image again from long term storage--we have a cached version here!
 			//profile->whole_image.seek_to_beginning();
@@ -1996,7 +1917,7 @@ void ns_image_processing_pipeline::apply_mask(ns_image_server_captured_image & c
 		}
 		else{
 			new_image_buffer.attach(new ns_registration_disk_buffer);
-			new_image_buffer().assign_buffer_source(image_server.image_storage.request_from_storage(source_image,&sql).input_stream(),0,_image_chunk_size);
+			new_image_buffer().assign_buffer_source(image_server_const.image_storage.request_from_storage(source_image,&sql).input_stream(),0,_image_chunk_size);
 			source_im = &new_image_buffer();
 		}
 		
@@ -2006,8 +1927,8 @@ void ns_image_processing_pipeline::apply_mask(ns_image_server_captured_image & c
 		if (!mask_image_info.load_from_db(mask_image_id,&sql))
 			throw ns_ex("ns_image_processing_pipeline::Mask ") << mask_id << " has no image specified when applying mask.";
 
-	
-		const ns_image_whole<ns_component> &mask_image(image_server.image_storage.cache.get_for_read(mask_image_info,sql));
+		ns_simple_cache_image<ns_8_bit, const ns_image_standard,true> mask_image;
+		image_server.image_storage.cache.get_for_read(mask_image_info,mask_image,sql);
 	
 		//obtain output streams for split regions.
 		sql << "SELECT sample_region_image_info.id, sample_region_image_info.name, image_mask_regions.id, image_mask_regions.mask_value FROM image_mask_regions, sample_region_image_info WHERE sample_region_image_info.mask_region_id = image_mask_regions.id AND image_mask_regions.mask_id= '" << mask_id << "'";
@@ -2040,7 +1961,7 @@ void ns_image_processing_pipeline::apply_mask(ns_image_server_captured_image & c
 				//delete the previous file
 				output_image.id = atol(out[0][1].c_str());
 			//	if (output_image.id != 0)
-			//			image_server.image_storage.delete_from_storage(output_image,sql);
+			//			image_server_const.image_storage.delete_from_storage(output_image,sql);
 				//we can use the old image; its filename must be correct.
 				//we can also use the existing region_image record.
 				new_region_image.region_images_id = atol(out[0][0].c_str());
@@ -2078,11 +1999,11 @@ void ns_image_processing_pipeline::apply_mask(ns_image_server_captured_image & c
 			//if a record in the images table hasn't been made, make it.
 			if (output_image.id == 0){
 				//create a new image for the region_image image
-				output_image.partition = image_server.image_storage.get_partition_for_experiment(new_region_image.experiment_id,&sql);
+				output_image.partition = image_server_const.image_storage.get_partition_for_experiment(new_region_image.experiment_id,&sql);
 				output_image.path = new_region_image.directory(&sql);
 				output_image.filename = new_region_image.filename(&sql) + ".tif";
 				sql << "INSERT INTO images SET filename = '" << sql.escape_string(output_image.filename) << "', path = '" << sql.escape_string(output_image.path) 
-					<< "', creation_time=" << captured_image.capture_time << ", host_id = " << image_server.host_id() << ", `partition` = '" << output_image.partition << "' ";
+					<< "', creation_time=" << captured_image.capture_time << ", host_id = " << image_server_const.host_id() << ", `partition` = '" << output_image.partition << "' ";
 				output_image.id = sql.send_query_get_id();
 				new_region_image.region_images_image_id = output_image.id;
 				sql << "UPDATE sample_region_images SET image_id = " << output_image.id << " WHERE id= " << new_region_image.region_images_id ;
@@ -2091,12 +2012,12 @@ void ns_image_processing_pipeline::apply_mask(ns_image_server_captured_image & c
 			}
 			//get storage for the output image.
 			bool had_to_use_volatile_storage;
-			(*mask_splitter.mask_info())[mask_region_value]->reciever = image_server.image_storage.request_storage(output_image,ns_tiff,_image_chunk_size,&sql,had_to_use_volatile_storage,false,false);
+			(*mask_splitter.mask_info())[mask_region_value]->reciever = image_server_const.image_storage.request_storage(output_image,ns_tiff,_image_chunk_size,&sql,had_to_use_volatile_storage,false,false);
 			(*mask_splitter.mask_info())[mask_region_value]->reciever_provided = true;
 			output_images.push_back(output_image);
 		}
 		sql.send_query("COMMIT");
-		mask_splitter.specify_mask(mask_image);
+		mask_splitter.specify_mask(*mask_image.image);
 		//if the whole image is shifted down in relation to the reference image
 		//we need to shift the mask up to compensate!
 		mask_splitter.specify_registration_offset(offset*-1);
@@ -2116,7 +2037,7 @@ void ns_image_processing_pipeline::apply_mask(ns_image_server_captured_image & c
 				sql.send_query();
 			}
 			if (delete_registration_profile_after_use){
-				profile->cleanup(&image_server.image_storage);
+				profile->cleanup(&image_server_const.image_storage);
 				delete profile;
 			}
 			//update movement records to include the new regions
@@ -2124,7 +2045,7 @@ void ns_image_processing_pipeline::apply_mask(ns_image_server_captured_image & c
 			//m.create_movement_tables_for_masked_region_images(captured_image,output_regions,sql);
 
 			if (delete_captured_image){
-				image_server.image_storage.delete_from_storage(captured_image,ns_delete_long_term,&sql);
+				image_server_const.image_storage.delete_from_storage(captured_image,ns_delete_long_term,&sql);
 				sql << "UPDATE captured_images SET image_id = 0 WHERE id = " << captured_image.captured_images_id;
 				sql.send_query();
 				sql << "DELETE FROM images WHERE id = " << captured_image.capture_images_image_id;
@@ -2133,16 +2054,14 @@ void ns_image_processing_pipeline::apply_mask(ns_image_server_captured_image & c
 
 		}
 		catch (ns_ex & ex){
-
-			
 			if (delete_registration_profile_after_use){
-				profile->cleanup(&image_server.image_storage);
+				profile->cleanup(&image_server_const.image_storage);
 				delete profile;
 			}
 			sql.clear_query();
 			//if the image doesn't exist or is corrupted, mark the record as "problem".
 			if (ex.type() == ns_file_io){
-				ns_64_bit event_id = image_server.register_server_event(ex,&sql);
+				ns_64_bit event_id = image_server_const.register_server_event(ex,&sql);
 				captured_image.mark_as_problem(&sql,event_id);
 				for (unsigned int i = 0; i < output_regions.size(); i++){
 					sql << "DELETE images FROM images, sample_region_images WHERE sample_region_images.id= " << output_regions[i].region_images_id << " AND sample_region_images.image_id = images.id";
@@ -2162,7 +2081,7 @@ void ns_image_processing_pipeline::apply_mask(ns_image_server_captured_image & c
 				resize_region_image(output_regions[i],sql);
 			}
 			catch(ns_ex & ex){
-				ns_64_bit ev(image_server.register_server_event(ex,&sql));
+				ns_64_bit ev(image_server_const.register_server_event(ex,&sql));
 				output_regions[i].mark_as_problem(&sql,ev);
 			}
 		}
@@ -2181,11 +2100,10 @@ void ns_image_processing_pipeline::apply_mask(ns_image_server_captured_image & c
 		
 		unsigned long stop_time = ns_current_time();
 		ev.specify_processing_duration(stop_time - start_time);
-//		image_server.update_registered_server_event(event_id,ev);
-		image_server.performance_statistics.finished_job(ns_process_apply_mask);
+//		image_server_const.update_registered_server_event(event_id,ev);
+		image_server.register_job_duration(ns_process_apply_mask,timer.stop());
 	}
 	catch(...){
-		image_server.performance_statistics.cancel_outstanding_jobs();
 		throw;
 	}
 }
@@ -2203,12 +2121,12 @@ void ns_image_processing_pipeline::register_event(const ns_processing_task & tas
 	else output << "Computing ";
 	output << ns_processing_task_to_string(task) << ns_ts_minor_event;
 	output.log = false;
-	image_server.register_server_event(output,&sql);
+	image_server_const.register_server_event(output,&sql);
 
 	ns_image_server_event log_to_db = source_event;
 	log_to_db.specify_processing_job_operation(task);
 	log_to_db << ns_ts_minor_event;
-	image_server.register_server_event(log_to_db,&sql);
+	image_server_const.register_server_event(log_to_db,&sql);
 }
 
 bool ns_image_processing_pipeline::detection_calculation_required(const ns_processing_task & s){
@@ -2595,15 +2513,6 @@ void ns_image_processing_pipeline::analyze_operations(const ns_image_server_capt
 }
 
 
-/*ns_vector_2i ns_image_processing_pipeline::get_vertical_registration(const ns_image_server_captured_image & captured_image, const ns_image_whole<ns_component> & image, ns_sql & sql){
-	ns_vector_2i registration_offset;
-	if (check_for_precalculated_registration(captured_image, registration_offset,sql)){
-//		cerr << "Using existing vertical registration\n";
-		return registration_offset;
-	}
-//	cerr << "Calculating vertical registration...\n";
-	return run_vertical_registration(captured_image,image,sql);
-}*/
 bool ns_image_processing_pipeline::check_for_precalculated_registration(const ns_image_server_captured_image & captured_image, ns_vector_2i & registration_offset, ns_sql & sql){
 	sql << "SELECT registration_offset_calculated, registration_vertical_offset, registration_horizontal_offset FROM captured_images WHERE id = " << captured_image.captured_images_id;
 	ns_sql_result res;
@@ -2618,18 +2527,19 @@ bool ns_image_processing_pipeline::check_for_precalculated_registration(const ns
 	return false;
 }
 
-ns_vector_2i ns_image_processing_pipeline::get_vertical_registration(const ns_image_server_captured_image & captured_image, ns_image_server_image & source, ns_sql & sql,ns_disk_buffered_image_registration_profile ** requested_image,bool & delete_profile_after_use){
+ns_vector_2i ns_image_processing_pipeline::get_vertical_registration(const ns_image_server_captured_image & captured_image, ns_image_server_image & source, ns_sql & sql, const ns_disk_buffered_image_registration_profile ** requested_image,bool & delete_profile_after_use){
 	ns_vector_2i registration_offset;
-	if (check_for_precalculated_registration(captured_image,registration_offset,sql)){
+	//delete_profile_after_use = false;
+	/*if (check_for_precalculated_registration(captured_image,registration_offset,sql)){
 	//	cerr << "Using existing vertical registration\n";
 		return registration_offset;
-	}
+	}*/
 
 	//load the reference image to which the masked image must be vertically registered
 	bool registration_image_loaded = false;
 	unsigned long attempts = 0;
 	ns_image_server_image reference_image_db_record;	
-	ns_disk_buffered_image_registration_profile * reference_image_profile(0);
+	const ns_disk_buffered_image_registration_profile * reference_image_profile(0);
 	
 	sql << "SELECT image_id, id, never_delete_image FROM captured_images WHERE sample_id = " << captured_image.sample_id << " AND never_delete_image = 1 AND problem = 0 AND censored = 0 ORDER BY capture_time ASC LIMIT 5";
 	ns_sql_result res;
@@ -2648,26 +2558,32 @@ ns_vector_2i ns_image_processing_pipeline::get_vertical_registration(const ns_im
 	//	bool running_retry(false);
 		//while(true){
 			try{
+				//all threads will block 
+				ns_acquire_lock_for_scope cache_lock(image_server.registration_cache_lock, __FILE__, __LINE__);
 				reference_image_profile = image_server.image_registration_profile_cache.get(reference_image_db_record.id);
-			
+				cache_lock.release();
+
 				if (reference_image_profile != 0){
+					cache_lock.release();
 					reference_image_loaded = true;
 					break;
 				}
-				reference_image_profile = new ns_disk_buffered_image_registration_profile;
+				ns_disk_buffered_image_registration_profile * new_reference_image_profile = new ns_disk_buffered_image_registration_profile;
 				//if we can't pre-load the profile, load the source image from disk
 				t.start();
 				cerr << "Downsampling reference image...";
-				reference_image_profile->prepare_images(reference_image_db_record,500,sql,&image_server.image_storage);
+				new_reference_image_profile->prepare_images(reference_image_db_record,500,sql,&image_server_const.image_storage);
 				cerr << "\n";
 				//cerr << "cache reference: " << t.stop()/1000.0/1000.0 << "\n";
-				image_server.image_registration_profile_cache.insert(reference_image_db_record.id,reference_image_profile,&image_server.image_storage);
 
+				image_server.image_registration_profile_cache.insert(reference_image_db_record.id, new_reference_image_profile,&image_server_const.image_storage);
+				cache_lock.release();
+				reference_image_profile = new_reference_image_profile;
 				reference_image_loaded = true;
 				break;
 				}
 			catch(ns_ex & ex){
-				image_server.register_server_event(ex,&sql);
+				image_server_const.register_server_event(ex,&sql);
 				//could do something here to allow more reference images to be used, but this is potentially
 				//troublesome and will be avoided for now
 			}
@@ -2677,19 +2593,22 @@ ns_vector_2i ns_image_processing_pipeline::get_vertical_registration(const ns_im
 			<< "Only images that are flagged in captured_images as problem=0, censored=0, never_delete=1 can be used as references for image registration";
 
 	t.start();
-	*requested_image = image_server.image_registration_profile_cache.get(source.id);
+	*requested_image = image_server_const.image_registration_profile_cache.get(source.id);
 	if (*requested_image != 0)
 		delete_profile_after_use = false;
 	else{
 		delete_profile_after_use = true;
 		cerr << "Downsampling subject image...";
-		*requested_image = new ns_disk_buffered_image_registration_profile;
+		ns_disk_buffered_image_registration_profile * p = new ns_disk_buffered_image_registration_profile;
+
 		cerr << "\n";
-		(*requested_image)->prepare_images(source,500,sql,&image_server.image_storage,reference_image_profile->downsampling_factor);
+
+		p->prepare_images(source,500,sql,&image_server_const.image_storage,reference_image_profile->downsampling_factor);
+		*requested_image = p;
 	}
 //cerr << "cache subject: " << t.stop()/1000.0/1000.0 << "\n";
 	
-	image_server.register_server_event(ns_image_server::ns_register_in_central_db,ns_image_server_event("Aligning sample image to reference image."));
+	image_server_const.register_server_event(ns_image_server::ns_register_in_central_db,ns_image_server_event("Aligning sample image to reference image."));
 	t.start();
 	ns_vector_2i offset(ns_image_registration<127,ns_8_bit>::register_full_images(*reference_image_profile,**requested_image,ns_vector_2i(400,400)));
 	//cerr << "Total Registration time: " << t.stop()/1000.0/1000.0 << "\n";
@@ -2699,8 +2618,6 @@ ns_vector_2i ns_image_processing_pipeline::get_vertical_registration(const ns_im
 	//cerr << sql.query() << "\n";
 	sql.send_query();
 
-	//don't let old, unused data accumulate.
-	image_server.image_registration_profile_cache.remove_old_images(10*60,&image_server.image_storage);
 	return offset;
 }
 
@@ -2777,7 +2694,7 @@ void ns_rerun_image_registration(const ns_64_bit region_id, ns_sql & sql){
 		try{
 			ns_image_server_image im;
 			im.id = ns_atoi64(res[i][1].c_str());
-			ref_profile.prepare_images(im,500,sql,&image_server.image_storage);
+			ref_profile.prepare_images(im,500,sql,&image_server_const.image_storage);
 			ref_image_id = im.id;
 		}catch(...){}
 		i++;
@@ -2798,7 +2715,7 @@ void ns_rerun_image_registration(const ns_64_bit region_id, ns_sql & sql){
 				source_im.id = backup_unprocessed_id;
 			}else source_im.id = unprocessed_id;
 
-			subject_profile.prepare_images(source_im,500,sql,&image_server.image_storage);
+			subject_profile.prepare_images(source_im,500,sql,&image_server_const.image_storage);
 			ns_vector_2i offset(ns_image_registration<127,ns_8_bit>::register_full_images(ref_profile,subject_profile,ns_vector_2i(400,400)));
 			//ns_vector_2i offset(-500,500);
 			cout << (100*i)/res.size() << "%: " << ns_format_time_string_for_human(capture_time) << "\n";
@@ -2811,7 +2728,7 @@ void ns_rerun_image_registration(const ns_64_bit region_id, ns_sql & sql){
 				//cerr << "Creating backup...";
 				ns_image_server_image backup_image = region_image.create_storage_for_processed_image(ns_process_unprocessed_backup,ns_tiff,&sql);
 				bool had_to_use_volatile_storage;
-				ns_image_storage_reciever_handle<ns_8_bit> out_im(image_server.image_storage.request_storage(backup_image,ns_tiff,1024,&sql,had_to_use_volatile_storage,false,false));
+				ns_image_storage_reciever_handle<ns_8_bit> out_im(image_server_const.image_storage.request_storage(backup_image,ns_tiff,1024,&sql,had_to_use_volatile_storage,false,false));
 				subject_profile.whole_image.pump(out_im.output_stream(),1024);
 				out_im.clear();
 			}
@@ -2819,7 +2736,7 @@ void ns_rerun_image_registration(const ns_64_bit region_id, ns_sql & sql){
 			ns_image_server_image dest_im;
 			dest_im.id = unprocessed_id;
 			bool had_to_use_volatile_storage;
-			ns_image_storage_reciever_handle<ns_8_bit> out_im(image_server.image_storage.request_storage(dest_im,ns_tiff,1024,&sql,had_to_use_volatile_storage,false,false));
+			ns_image_storage_reciever_handle<ns_8_bit> out_im(image_server_const.image_storage.request_storage(dest_im,ns_tiff,1024,&sql,had_to_use_volatile_storage,false,false));
 			//now fix the registration of all derived images.
 			subject_profile.whole_image.pump(out_im.output_stream(),1024);
 			out_im.clear();
@@ -2831,14 +2748,14 @@ void ns_rerun_image_registration(const ns_64_bit region_id, ns_sql & sql){
 					if (task_image.id == 0)
 						continue;
 					cout << ns_processing_task_to_string(tasks[j]) << "...";
-					ns_image_storage_source_handle<ns_8_bit> source(image_server.image_storage.request_from_storage(task_image,&sql));
+					ns_image_storage_source_handle<ns_8_bit> source(image_server_const.image_storage.request_from_storage(task_image,&sql));
 					source.input_stream().pump(subject_profile.whole_image,1024);
 					source.clear();
 					ns_shift_image_by_offset(subject_profile.whole_image,offset);
 					ns_image_type type = ns_tiff;
 					if (tasks[j] == ns_process_lossy_stretch)
 						type = ns_jpeg;
-					ns_image_storage_reciever_handle<ns_8_bit> out_im(image_server.image_storage.request_storage(task_image,type,1024,&sql,had_to_use_volatile_storage,false,false));
+					ns_image_storage_reciever_handle<ns_8_bit> out_im(image_server_const.image_storage.request_storage(task_image,type,1024,&sql,had_to_use_volatile_storage,false,false));
 					subject_profile.whole_image.pump(out_im.output_stream(),1024);
 				}
 				catch(ns_ex & ex){

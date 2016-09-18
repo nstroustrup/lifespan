@@ -1073,7 +1073,7 @@ bool ns_processing_job_maintenance_processor:: run_job(ns_sql & sql){
 			analyzer.load_completed_analysis(job.region_id,solution, time_series_denoising_parameters,&death_time_estimator(),sql);
 			death_time_estimator.release();
 			analyzer.generate_movement_posture_visualizations(false,job.region_id,solution,sql);
-			image_server->performance_statistics.register_job_duration(ns_process_movement_posture_visualization,tm.stop());
+			image_server->register_job_duration(ns_process_movement_posture_visualization,tm.stop());
 			break;
 		}		
 		case ns_maintenance_generate_movement_posture_aligned_visualization:{
@@ -1090,7 +1090,7 @@ bool ns_processing_job_maintenance_processor:: run_job(ns_sql & sql){
 			analyzer.load_completed_analysis(job.region_id,solution,time_series_denoising_parameters,&death_time_estimator(),sql);
 			death_time_estimator.release();
 			analyzer.generate_death_aligned_movement_posture_visualizations(false,job.region_id,ns_movement_cessation,solution,sql);
-			image_server->performance_statistics.register_job_duration(ns_process_movement_posture_aligned_visualization,tm.stop());
+			image_server->register_job_duration(ns_process_movement_posture_aligned_visualization,tm.stop());
 			break;
 		}
 	

@@ -191,24 +191,25 @@ private:
 
 };
 
-template<class ns_component,class image_source_t>
-class ns_image_buffered_multi_line_random_access_input_image : public ns_image_stream_sender<ns_component, ns_image_buffered_multi_line_random_access_input_image<ns_component, image_source_t> >{
+template<class ns_component, class image_source_t>
+class ns_image_buffered_multi_line_random_access_input_image : public ns_image_stream_sender<ns_component, ns_image_buffered_multi_line_random_access_input_image<ns_component, image_source_t>, unsigned long >{
 public:
 
 	typedef ns_component component_type;
 	typedef ns_image_stream_static_offset_buffer<ns_component> storage_type;
 
 	//initialize as an empty image
-	ns_image_buffered_multi_line_random_access_input_image():buffer_bottom(0),total_buffer_height(0),previous_lines_required(0),image_source(0),lines_received(0),ns_image_stream_sender<ns_component,ns_image_buffered_multi_line_random_access_input_image<ns_component, image_source_t> >(ns_image_properties(0,0,0),this){}
-
+	ns_image_buffered_multi_line_random_access_input_image():buffer_bottom(0),total_buffer_height(0),previous_lines_required(0),image_source(0),lines_received(0),ns_image_stream_sender<ns_component,ns_image_buffered_multi_line_random_access_input_image<ns_component, image_source_t>, unsigned long >(ns_image_properties(0,0,0),this){}
+	
 
 	inline void resize(const ns_image_properties & properties){init(properties);}
 
-	inline void seek_to_beginning(){
+	internal_state_t seek_to_beginning(){
 		buffer_bottom = 0;
 		lines_received = 0;
-		image_source->seek_to_beginning(); 
+		sender_internal_state = image_source->seek_to_beginning(); 
 		assign_buffer_source(*image_source,previous_lines_required,total_buffer_height);
+		return 0;
 	}
 
 	const inline ns_image_properties & properties() const{
@@ -239,7 +240,7 @@ public:
 		resize(ns_image_properties(0,0,1,0));
 	}
 
-	 void make_line_available(const unsigned long line_num) const{
+	 void make_line_available(const unsigned long line_num){  //this can't be const, as we modify not just the internal buffer but the state of the file handle for the disk buffer.
 		if (line_num < lines_received)
 			return;
 		//calculate how much buffer we'll need to retain
@@ -265,65 +266,28 @@ public:
 		if (lines_to_load+lines_received > _properties.height)
 			lines_to_load = _properties.height - lines_received;
 		
-		image_source->send_lines(image_buffer, lines_to_load);
+		image_source->send_lines(image_buffer, lines_to_load, sender_internal_state);
 		buffer_bottom = new_bottom;
 		lines_received+=lines_to_load;
 		
 		image_buffer.set_offset(-(long)buffer_bottom);
 	}
 
-	/*///This command takes all of the current buffer and pumps it into the reciever
-	template<class reciever_t>
-	void pump(reciever_t * reciever, const unsigned int block_height){
-		seek_to_beginning();
-		init_send();
-		reciever->prepare_to_recieve_image(_properties);
-		ns_image_stream_buffer_properties buf_prop;
-
-		buf_prop.width = _properties.width*_properties.components;
-
-		for (unsigned long lines_sent = 0; lines_sent < _properties.height;){
-			unsigned long lines_to_send = _properties.height - lines_sent;
-			if (lines_to_send > block_height)
-				lines_to_send = block_height;
-
-			buf_prop.height = lines_to_send;
-			//get the reciever's buffer into which data will be written.
-			reciever->output_buffer = reciever->provide_buffer(buf_prop);
-			//write data to the buffer
-			//downcast this class into its derived class and call the send_lines.
-			//Note, this is actually safe, because we've already checked that the function
-			//exists in check_constraints.
-			//If a derived class lies about its type (passes an incorect type in as reciever_t,
-			//bad things will happen.
-			sender_t * this_down = static_cast<sender_t*>(this);
-			this_down->send_lines(*(reciever->output_buffer),lines_to_send);
-			//inform the reciever that the data has been written.
-			reciever->recieve_lines(*reciever->output_buffer,lines_to_send);
-			lines_sent+=lines_to_send;
-		}
-		reciever->finish_recieving_image();
-		finish_send();
-	}*/
-
 	//sender functions
-	void init_send(){
+	internal_state_t init_send(){
 		lines_sent = 0;
-		seek_to_beginning();
+		sender_internal_state = seek_to_beginning();
+		return 0;
 	}
-	void init_send_const() const {
-		lines_sent = 0;
-		seek_to_beginning();
+	internal_state_t init_send_const() const {
+		throw ns_ex("Invalid use of const");
 	}
 
 	template<class write_buffer>
-	void send_lines(write_buffer & lines, const unsigned int count){ send_lines_const(lines,count);}
-
-	template<class write_buffer>
-	void send_lines_const(write_buffer & lines, const unsigned int count) const{
+	void send_lines(write_buffer & lines, const unsigned int count,internal_state_t & unused_state){
 		unsigned long to_send = count;
-		if (count + lines_sent > ns_image_stream_sender<ns_component,ns_image_buffered_multi_line_random_access_input_image<ns_component,image_source_t> >::_properties.height)
-			to_send = ns_image_stream_sender<ns_component,ns_image_buffered_multi_line_random_access_input_image<ns_component, image_source_t> >::_properties.height - lines_sent;
+		if (count + lines_sent > ns_image_stream_sender<ns_component,ns_image_buffered_multi_line_random_access_input_image<ns_component,image_source_t>, internal_state_t>::_properties.height)
+			to_send = ns_image_stream_sender<ns_component,ns_image_buffered_multi_line_random_access_input_image<ns_component, image_source_t>,internal_state_t >::_properties.height - lines_sent;
 
 		for (unsigned long y = 0; y < to_send; y++){
 			this->make_line_available(y+lines_sent);
@@ -340,16 +304,18 @@ public:
 
 
 private:
-	mutable unsigned long lines_sent;
-	mutable storage_type image_buffer;
+	internal_state_t sender_internal_state;
+
+	unsigned long lines_sent;
+	storage_type image_buffer;
 	//the maximum number of lines previous to the one most recently requested that the buffer will retain
 	unsigned long previous_lines_required;
 	//the total height of the buffer allocated
 	unsigned long total_buffer_height;
 	//current position (relative to the sender) of the local buffer
-	mutable unsigned long buffer_bottom;
+	unsigned long buffer_bottom;
 	//the total number of lines read from the sender
-	mutable unsigned long lines_received;
+	unsigned long lines_received;
 	image_source_t * image_source;
 	//total size of the image being read from the sender
 	ns_image_properties _properties;
@@ -372,7 +338,7 @@ private:
 		buffer_bottom = 0;
 		lines_received = 0;
 		
-		ns_image_stream_sender<ns_component,ns_image_buffered_multi_line_random_access_input_image<ns_component, image_source_t> >::_properties = properties;
+		ns_image_stream_sender<ns_component,ns_image_buffered_multi_line_random_access_input_image<ns_component, image_source_t>, internal_state_t>::_properties = properties;
 	}
 
 

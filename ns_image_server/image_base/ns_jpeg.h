@@ -34,7 +34,7 @@ public:
 	void open_mem(const void *);
 	void close();
 
-	void seek_to_beginning(){close_file(); open_file(open_filename);}
+	unsigned long seek_to_beginning() { close_file(); open_file(open_filename); return 0; }
 
 	//read in a single line
 	bool read_line(ns_component * buffer);

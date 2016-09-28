@@ -233,6 +233,7 @@ public:
 	
 	///Cache frequently used masks in memory so they aren't reloaded each time over the network.
 	//locked so we can access it from multiple threads simultaneously
+	typedef ns_simple_image_cache cache_t;
 	ns_simple_image_cache cache;
 
 	inline std::string get_partition_for_experiment(const ns_64_bit experiment_id,ns_image_server_sql * sql,bool request_from_db_on_miss=true) const{

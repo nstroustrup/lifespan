@@ -152,26 +152,26 @@ private:
 #pragma warning(disable: 4355) //our use of this in constructor is valid, so we suppress the error message
 //generalized Image Sources
 template<class ns_component>
-class ns_image_storage_source : public ns_image_stream_sender<ns_component,ns_image_storage_source<ns_component> >{
+class ns_image_storage_source : public ns_image_stream_sender<ns_component,ns_image_storage_source<ns_component>,unsigned long>{
 public:
+	typedef unsigned long internal_state_t;
 	ns_image_storage_source(const ns_image_properties & properties):
-		ns_image_stream_sender<ns_component,ns_image_storage_source<ns_component> >(properties,this){}
-	virtual void send_lines(ns_image_stream_static_buffer<ns_component> & lines, unsigned int count)=0;
-	virtual void send_lines(ns_image_stream_static_offset_buffer<ns_component> & lines, unsigned int count)=0;
-	virtual void send_lines(ns_image_stream_sliding_offset_buffer<ns_component> & lines, unsigned int count)=0;
-	virtual void send_lines(ns_image_stream_safe_sliding_offset_buffer<ns_component> & lines, unsigned int count)=0;
-	virtual void seek_to_beginning()=0;
+		ns_image_stream_sender<ns_component,ns_image_storage_source<ns_component>, internal_state_t>(properties,this){}
+	virtual void send_lines(ns_image_stream_static_buffer<ns_component>				 & lines, unsigned int count, internal_state_t & state)=0;
+	virtual void send_lines(ns_image_stream_static_offset_buffer<ns_component>		 & lines, unsigned int count, internal_state_t & state)=0;
+	virtual void send_lines(ns_image_stream_sliding_offset_buffer<ns_component>		 & lines, unsigned int count, internal_state_t & state)=0;
+	virtual void send_lines(ns_image_stream_safe_sliding_offset_buffer<ns_component> & lines, unsigned int count, internal_state_t & state)=0;
 	virtual ~ns_image_storage_source(){}
 
-private:
-	virtual void init_send(){}
-	virtual void finish_send(){}
+	virtual internal_state_t init_send() { return internal_state_t(); }
+	internal_state_t init_send_const() const { throw ns_ex("Invalid const function!"); }
 };
 #pragma warning(default: 4355)
 
 template<class ns_component>
 class ns_image_storage_source_from_disk : public ns_image_storage_source<ns_component>{
 public:
+
 	ns_image_storage_source_from_disk(const std::string & filename,ns_performance_statistics_analyzer * performance_analyzer_,const bool volatile_file_=false):
 	  pa(performance_analyzer_),volatile_file(volatile_file_),total(0),
 		_source( ns_choose_image_source<ns_image_input_file<ns_component> >(ns_get_image_type(filename),jpeg_in,tiff_in,jp2k_in) ),
@@ -185,11 +185,12 @@ public:
 	//closing of files handled by their destructors
 	~ns_image_storage_source_from_disk(){}
 
-	void send_lines(ns_image_stream_static_buffer<ns_component> & lines, unsigned int count){mark_pa_started();_source.send_lines(lines,count);mark_pa_finished();	}
-	void send_lines(ns_image_stream_static_offset_buffer<ns_component> & lines, unsigned int count){mark_pa_started();_source.send_lines(lines,count);mark_pa_finished();	}
-	void send_lines(ns_image_stream_sliding_offset_buffer<ns_component> & lines, unsigned int count){mark_pa_started();_source.send_lines(lines,count);mark_pa_finished();	}
-	void send_lines(ns_image_stream_safe_sliding_offset_buffer<ns_component> & lines, unsigned int count){mark_pa_started();_source.send_lines(lines,count);mark_pa_finished();	}
-	void seek_to_beginning(){target->seek_to_beginning();}
+	//none of these are const, because the disk state is changed upon sending.
+	void send_lines(ns_image_stream_static_buffer<ns_component> & lines, const unsigned int count,internal_state_t & state){mark_pa_started();_source.send_lines(lines,count,state);mark_pa_finished();	}
+	void send_lines(ns_image_stream_static_offset_buffer<ns_component> & lines, const unsigned int count, internal_state_t & state){mark_pa_started();_source.send_lines(lines,count, state);mark_pa_finished();	}
+	void send_lines(ns_image_stream_sliding_offset_buffer<ns_component> & lines, const unsigned int count, internal_state_t & state){mark_pa_started();_source.send_lines(lines,count, state);mark_pa_finished();	}
+	void send_lines(ns_image_stream_safe_sliding_offset_buffer<ns_component> & lines, const unsigned int count, internal_state_t & state){mark_pa_started();_source.send_lines(lines,count, state);mark_pa_finished();	}
+	internal_state_t seek_to_beginning(){return target->seek_to_beginning();}
 protected:
 	void finish_send(){
 		_source.finish_send();
@@ -198,7 +199,7 @@ protected:
 			ns_performance_statistics_analyzer::ns_volatile_io_read:
 			ns_performance_statistics_analyzer::ns_long_term_io_read,total);
 	}
-	void init_send(){_source.init_send();}
+	internal_state_t init_send(){return _source.init_send();}
 private:
 	ns_jpeg_image_input_file<ns_component> jpeg_in;
 	ns_tiff_image_input_file<ns_component> tiff_in;
@@ -226,10 +227,10 @@ public:
 		reciever.bind_socket(_connection);
 	}
 
-	void send_lines(ns_image_stream_static_buffer<ns_component> & lines, unsigned int count){reciever.send_lines(lines,count);}
-	void send_lines(ns_image_stream_static_offset_buffer<ns_component> & lines, unsigned int count){reciever.send_lines(lines,count);	};
-	void send_lines(ns_image_stream_sliding_offset_buffer<ns_component> & lines, unsigned int count){reciever.send_lines(lines,count);	}
-	void send_lines(ns_image_stream_safe_sliding_offset_buffer<ns_component> & lines, unsigned int count){reciever.send_lines(lines,count);	}
+	void send_lines(ns_image_stream_static_buffer<ns_component> & lines, unsigned int count, internal_state_t & state){reciever.send_lines(lines,count,state);}
+	void send_lines(ns_image_stream_static_offset_buffer<ns_component> & lines, unsigned int count, internal_state_t & state){reciever.send_lines(lines,count, state);	};
+	void send_lines(ns_image_stream_sliding_offset_buffer<ns_component> & lines, unsigned int count, internal_state_t & state){reciever.send_lines(lines,count,state);	}
+	void send_lines(ns_image_stream_safe_sliding_offset_buffer<ns_component> & lines, unsigned int count, internal_state_t & state){reciever.send_lines(lines,count,state);	}
 	void seek_to_beginning(){throw ns_ex("Not implemented");}
 
 	~ns_image_storage_source_from_net(){

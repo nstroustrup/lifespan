@@ -65,7 +65,7 @@ public:
 	//read in multiple lines
 	const unsigned int read_lines(ns_component ** buffer,const unsigned int n);
 
-	virtual void seek_to_beginning()=0;
+	virtual unsigned long seek_to_beginning()=0;
 
 	const long image_line_buffer_length() const {return _properties.width*_properties.components;}
 
@@ -148,35 +148,93 @@ private:
 ///line_block_height represents the number of lines it sends at a time.
 ///setting line_block_height = -1 signifies that the object can send any number of lines at once
 ///
-template <class ns_component, class sender_t>
+template <class ns_component, class sender_t, class sender_internal_state_t>
 class ns_image_stream_sender{
 public:
+
+
 	ns_image_stream_sender(const ns_image_properties & properties, const sender_t * sender):_properties(properties){verify_constraints(sender);}
 	typedef ns_component component_type;
+	typedef sender_internal_state_t internal_state_t;
 	///stream senders need to be able to "send" image lines, ie write
 	///them to a supplied buffer.  This function checks to see that
 	///derived types can instantiate this behavior for at least one buffer type.
 
 	void verify_constraints(const sender_t * sender){
-		void (sender_t::*send_lines)(ns_image_stream_static_buffer<ns_component> &, const unsigned int) = &sender_t::send_lines;
+		void (sender_t::*send_lines)(ns_image_stream_static_buffer<ns_component> &, const unsigned int, internal_state_t &) = &sender_t::send_lines;
 	}
 
-	virtual void seek_to_beginning(){}
+	virtual internal_state_t seek_to_beginning() = 0;
 
 	///ns_image_stream_sender needs to be fill the specified buffer upon request.
 	///n is a recommendation; less lines may be returned.
 	///void send_lines(write_buffer & lines, unsigned int count)=0;
 
-	///This command takes all of the current buffer and pumps it into the reciever
 	template<class reciever_t>
-	void pump(reciever_t * reciever, const unsigned int block_height){
-		init_send();
+	void pump(reciever_t & reciever, const unsigned int block_height) const{
+		internal_state_t state = init_send_const();
+		pump(&reciever, block_height,state);
+		finish_send_const();
+	}
+	template<class reciever_t>
+	void pump(reciever_t & reciever, const unsigned int block_height){
+		internal_state_t state = init_send();
+		pump(&reciever, block_height, state);
+		finish_send();
+	}
+
+	const unsigned int image_line_buffer_length() const {return _properties.width*_properties.components;}
+
+	inline ns_image_properties & properties() {return _properties;}
+	inline const ns_image_properties & properties() const {return _properties;}
+	//should implement any code needed to prepare for a new file being sent
+	virtual internal_state_t  init_send() = 0;
+	virtual void finish_send(){}
+	virtual internal_state_t init_send_const()const = 0;
+	virtual void finish_send_const()const {}
+protected:
+
+	ns_image_properties _properties;
+	unsigned long _max_line_block_height;
+private:
+	template<class reciever_t>
+	void pump(reciever_t * reciever, const unsigned int block_height, typename sender_t::internal_state_t & state)const {
 		reciever->prepare_to_recieve_image(_properties);
 		ns_image_stream_buffer_properties buf_prop;
 
 		buf_prop.width = _properties.width*_properties.components;
 
-		for (unsigned long lines_sent = 0; lines_sent < _properties.height;){
+		for (unsigned long lines_sent = 0; lines_sent < _properties.height;) {
+			unsigned long lines_to_send = _properties.height - lines_sent;
+			if (lines_to_send > block_height)
+				lines_to_send = block_height;
+
+			buf_prop.height = lines_to_send;
+			//get the reciever's buffer into which data will be written.
+			reciever->output_buffer = reciever->provide_buffer(buf_prop);
+			//write data to the buffer
+			//downcast this class into its derived class and call the send_lines.
+			//Note, this is actually safe, because we've already checked that the function
+			//exists in check_constraints.
+			//If a derived class lies about its type (passes an incorect type in as reciever_t,
+			//bad things will happen.
+			const sender_t * this_down = static_cast<const sender_t*>(this);
+			this_down->send_lines(*(reciever->output_buffer), lines_to_send,state);
+			//inform the reciever that the data has been written.
+			reciever->recieve_lines(*reciever->output_buffer, lines_to_send);
+			lines_sent += lines_to_send;
+		}
+		reciever->finish_recieving_image();
+	}
+
+	template<class reciever_t>
+	void pump(reciever_t * reciever, const unsigned int block_height, typename sender_t::internal_state_t & state) {
+		reciever->prepare_to_recieve_image(_properties);
+		ns_image_stream_buffer_properties buf_prop;
+
+		buf_prop.width = _properties.width*_properties.components;
+
+		for (unsigned long lines_sent = 0; lines_sent < _properties.height;) {
 			unsigned long lines_to_send = _properties.height - lines_sent;
 			if (lines_to_send > block_height)
 				lines_to_send = block_height;
@@ -191,40 +249,16 @@ public:
 			//If a derived class lies about its type (passes an incorect type in as reciever_t,
 			//bad things will happen.
 			sender_t * this_down = static_cast<sender_t*>(this);
-			this_down->send_lines(*(reciever->output_buffer),lines_to_send);
+			this_down->send_lines(*(reciever->output_buffer), lines_to_send, state);
 			//inform the reciever that the data has been written.
-			reciever->recieve_lines(*reciever->output_buffer,lines_to_send);
-			lines_sent+=lines_to_send;
+			reciever->recieve_lines(*reciever->output_buffer, lines_to_send);
+			lines_sent += lines_to_send;
 		}
 		reciever->finish_recieving_image();
-		finish_send();
 	}
 
-	template<class reciever_t>
-	void inline pump(reciever_t & reciever, const unsigned int block_height){
-		pump(&reciever,block_height);
-	}
-
-	template<class reciever_t>
-	void pump(reciever_t & reciever, const unsigned int block_height) const{
-		throw ns_ex("Undeclared constant pump function called.");
-	}
-
-	const unsigned int image_line_buffer_length() const {return _properties.width*_properties.components;}
-
-	inline ns_image_properties & properties() {return _properties;}
-	inline const ns_image_properties & properties() const {return _properties;}
-
-	//should implement any code needed to prepare for a new file being sent
-	virtual void init_send(){}
-	virtual void finish_send(){}
-protected:
-
-	ns_image_properties _properties;
-	unsigned long _max_line_block_height;
-private:
 	//dissalow default copy constructor (causes no end of problems if derived classes aren't particularly careful about the initialization order of _properties)
-	ns_image_stream_sender(const ns_image_stream_sender<ns_component, sender_t> & sender);
+	ns_image_stream_sender(const ns_image_stream_sender<ns_component, sender_t, internal_state_t> & sender);
 };
 
 ///
@@ -232,29 +266,29 @@ private:
 ///image_stream_sender.
 ///
 template<class ns_component>
-class ns_image_stream_file_source : public ns_image_stream_sender<ns_component, ns_image_stream_file_source<ns_component> > {
+class ns_image_stream_file_source : public ns_image_stream_sender<ns_component, ns_image_stream_file_source<ns_component>, unsigned long> {
 public:
-	ns_image_stream_file_source(ns_image_input_file<ns_component> & input_file):/*lines_sent(0),*/ns_image_stream_sender<ns_component, ns_image_stream_file_source<ns_component> >(input_file.properties(),this)
+	ns_image_stream_file_source(ns_image_input_file<ns_component> & input_file):/*lines_sent(0),*/ns_image_stream_sender<ns_component, ns_image_stream_file_source<ns_component>,unsigned long >(input_file.properties(),this)
 		{file = &input_file;}
 	typedef ns_image_stream_static_buffer<ns_component> storage_type;
 	typedef ns_component component_type;
-
+	
 	//ns_image_stream_sender needs to be able to produce a block of lines upon request.
 	//n is a recommendation; less lines may be returned.
 	 template<class write_buffer>
-	 void send_lines(write_buffer & lines, unsigned int count){
+	 void send_lines(write_buffer & lines, const unsigned int count, internal_state_t & state){
 		for (unsigned int i = 0; i < count; i++)
 			file->read_line(lines[i]);
-	//	lines_sent+=count;
-	//	cerr << "\nns_image_stream_file_source::Lines sent: " << lines_sent << "\n";
 	}
-
+	 internal_state_t init_send() { return 0; }
+	 internal_state_t init_send_const()const{ return 0; }
 	void finish_send(){
 		file->close();
 	}
-	void seek_to_beginning(){
-		file->seek_to_beginning();
+	internal_state_t seek_to_beginning(){
+		return file->seek_to_beginning();
 	}
+
 protected:
 //	unsigned long lines_sent;
 	ns_image_input_file<ns_component> * file;
@@ -579,119 +613,6 @@ private:
 	unsigned long N;
 	unsigned long length;
 };
-/*
-template<class storage_type, class ns_component>
-class ns_histogram{
-public:
-	ns_histogram():dead(false),hist(max_pixel_depth,0){
-		//s = 2^(8*sizeof(ns_component))
-		unsigned int s = 1;
-		for (unsigned i = 0; i < 8*sizeof(ns_component); i++)
-			s*= 2;
-		length = s;
-		if (length >= max_pixel_depth)
-			throw ns_ex("ns_histogram::Pixel depth is larger than memory allocated--increase allocation.");
-		//hist.resize(s);
-		//cerr << "Histogram has " << s << " elements!";
-	}
-	void clear(){
-		///XXX
-//		if (max_pixel_depth > hist.size())
-//			throw ns_ex("YIKES");
-		for (unsigned int i = 0; i < max_pixel_depth; i++)
-			hist[i] = 0;
-	}
-	inline const ns_component median_from_histogram(){
-		cur_rank = 0;
-		for (unsigned int i = 0; i < length; i++){
-			cur_rank+=hist[i];
-			if ((unsigned long)cur_rank > half_N){
-				last_median = i;
-				return i;
-			}
-		}
-		throw ns_ex("ns_histogram::Not enough pixels!");
-	}
-	inline const ns_component median_from_histogram_ignore_zero(){
-		cur_rank = 0;
-		long rank_of_median((N-hist[0])/2);
-		for (int i = length; i >= 0 ; i--){
-			cur_rank+=hist[i];
-			if (cur_rank > rank_of_median){
-				last_median = i;
-				cur_rank-=hist[i];
-				return i;
-			}
-		}
-		throw ns_ex("ns_histogram::median_from_histogram_ignore_zero::Not enough pixels!");
-	}
-	inline const ns_component average_of_percentile(const unsigned long percentile){
-
-		}
-	inline const ns_component median_from_histogram_ignore_zero_using_rank(){
-		unsigned long rank_of_median((N-hist[0])/2);
-		int distance_to_next_rank = rank_of_median - cur_rank;
-		if (distance_to_next_rank > 0){
-			for (unsigned int i = last_median; i < length; i++){
-				distance_to_next_rank-=hist[i];
-				cur_rank+=hist[i];
-				if (distance_to_next_rank <= 0){
-					last_median = i;
-					cur_rank-=hist[i];
-					return i;
-				}
-			}
-			throw ns_ex("ns_histogram::ns_component median_from_histogram_ignore_zero_using_rank::1::Not enough pixels! (") << rank_of_median << "," << cur_rank <<")";
-		}
-		else if (distance_to_next_rank < 0){
-			for (int i = last_median-1; i > 0; i--){
-				distance_to_next_rank+=hist[i];
-				cur_rank-=hist[i];
-				if (distance_to_next_rank >= 0){
-					last_median = i;
-					return i;
-				}
-			}
-			throw ns_ex("ns_histogram:ns_component median_from_histogram_ignore_zero_using_rank::-1::Not enough pixels! (")<< rank_of_median << "," << cur_rank <<")";
-		}
-		else return last_median;
-	}
-
-	inline void set_number_of_pixels(const unsigned long pix){
-		N = pix;
-		half_N = pix/2;
-	}
-	inline storage_type & operator[](const unsigned long i){
-		return hist[i];
-	}
-	inline const storage_type & operator[](const unsigned long i) const{
-		return hist[i];
-	}
-
-	inline void increment(const unsigned long i){
-		if ((long)i < last_median && (long)i != 0) cur_rank++;
-		hist[i]++;
-	}
-	inline void decrement(const unsigned long i){
-		if ((long)i < last_median && (long)i != 0) cur_rank--;
-		hist[i]--;
-	}
-	inline const unsigned long & size() const{
-		return length;
-	}
-	inline const unsigned long & number_of_pixels() const { return N;}
-private:
-	enum {max_pixel_depth = 256*256};
-	std::vector<storage_type> hist;
-	unsigned long N;
-	unsigned long half_N;
-	unsigned long length;
-	bool dead;
-
-	ns_component last_median;
-	long cur_rank;
-};
-*/
 
 #define NS_SR_PROPS ns_image_stream_reciever<ns_image_stream_static_offset_buffer<ns_component> >::_properties
 #define NS_SR_PROPS_SENDER ns_image_stream_sender<ns_component, ns_image_whole<ns_component> >::_properties
@@ -710,19 +631,20 @@ private:
 ///
 template<class ns_component>
 class ns_image_whole: public ns_image_stream_reciever<ns_image_stream_static_offset_buffer<ns_component> >,
-					  public ns_image_stream_sender<ns_component, ns_image_whole<ns_component> > {
+					  public ns_image_stream_sender<ns_component, ns_image_whole<ns_component>, unsigned long> {
 public:
 
 	typedef ns_component component_type;
 	typedef ns_image_stream_static_offset_buffer<ns_component> storage_type;
 
+
 	//initialize as an empty image
 	ns_image_whole():avoid_memory_reallocations(false),ns_image_stream_reciever<ns_image_stream_static_offset_buffer<ns_component> >(0,this),
-							ns_image_stream_sender<ns_component,ns_image_whole<ns_component> >(ns_image_properties(0,0,0),this),
+							ns_image_stream_sender<ns_component,ns_image_whole<ns_component>, internal_state_t >(ns_image_properties(0,0,0),this),
 							lines_received(0),lines_sent(0){}
 
 	ns_image_whole<ns_component>(const ns_image_whole<ns_component> & w):ns_image_stream_reciever<ns_image_stream_static_offset_buffer<ns_component> >(0,this),
-							ns_image_stream_sender<ns_component,ns_image_whole<ns_component> >(ns_image_properties(0,0,0),this),avoid_memory_reallocations(false),
+							ns_image_stream_sender<ns_component,ns_image_whole<ns_component>,internal_state_t >(ns_image_properties(0,0,0),this),avoid_memory_reallocations(false),
 							lines_received(0),lines_sent(0){
 		w.pump(*this,1024);
 	}
@@ -753,7 +675,7 @@ public:
 		}
 		///XXX Removing template specifications does not generate an error here
 		//NS_SR_PROPS_SENDER =
-		ns_image_stream_sender<ns_component, ns_image_whole<ns_component> >::_properties = properties;
+		ns_image_stream_sender<ns_component, ns_image_whole<ns_component>,internal_state_t >::_properties = properties;
 		lines_received = 0;
 		image_buffer.set_offset(0);
 		return resized;
@@ -771,46 +693,9 @@ public:
 	void recieve_lines(const ns_image_stream_static_offset_buffer<ns_component> & lines, const unsigned long height){
 		lines_received+=height;
 	}
-	void init_send(){lines_sent = 0;}
-	void init_send_const() const {lines_sent = 0;}
+	internal_state_t init_send() { return 0; }
+	internal_state_t init_send_const() const { return 0; }
 
-	template<class reciever_t>
-	inline void pump(reciever_t & reciever, const unsigned int block_height) const{
-		pump(&reciever,block_height);
-	}
-
-	///ns_image_whole objects, unlike other image senders, has a const pump function
-	///that allows const objects to ouput their contents to a recieving stream.
-	template<class reciever_t>
-	void pump(reciever_t * reciever, const unsigned int block_height) const{
-			init_send_const();
-			reciever->prepare_to_recieve_image(NS_SR_PROPS);
-			ns_image_stream_buffer_properties buf_prop;
-
-			buf_prop.width = NS_SR_PROPS.width*NS_SR_PROPS.components;
-
-			for (unsigned long lines_sent = 0; lines_sent < NS_SR_PROPS.height;){
-				unsigned long lines_to_send = NS_SR_PROPS.height - lines_sent;
-				if (lines_to_send > block_height)
-					lines_to_send = block_height;
-
-				buf_prop.height = lines_to_send;
-				//get the reciever's buffer into which data will be written.
-				reciever->output_buffer = reciever->provide_buffer(buf_prop);
-				//write data to the buffer
-				//downcast this class into its derived class and call the send_lines.
-				//Note, this is actually safe, because we've already checked that the function
-				//exists in check_constraints.
-				//If a derived class lies about its type (passes an incorect type in as reciever_t,
-				//bad things will happen.
-				this->send_lines_const(*(reciever->output_buffer),lines_to_send);
-				//inform the reciever that the data has been written.
-				reciever->recieve_lines(*reciever->output_buffer,lines_to_send);
-				lines_sent+=lines_to_send;
-			}
-			reciever->finish_recieving_image();
-			//finish_send();
-	}
 	///increases the canvas size of the image (ie doesn't change the current image but addes a margin around it)
 	void inline increase_size(const ns_image_properties & prop){
 		if (prop == this->properties())
@@ -833,26 +718,27 @@ public:
 	//STREAM_SENDER ABILITIES
 
 	template<class write_buffer>
-	void send_lines(write_buffer & lines, const unsigned int count){ send_lines_const(lines,count);}
+	void send_lines(write_buffer & lines, const unsigned int count, internal_state_t & lines_sent) {
+		send_lines_internal(lines, count, lines_sent);
+	}
+	template<class write_buffer>
+	void send_lines(write_buffer & lines, const unsigned int count, internal_state_t & lines_sent) const {
+		send_lines_internal(lines, count, lines_sent);
+	}
 
 	template<class write_buffer>
-	void send_lines_const(write_buffer & lines, const unsigned int count) const{
+	void send_lines_internal(write_buffer & lines, const unsigned int count, internal_state_t & lines_sent) const {
 		image_buffer.set_offset(0);
 		unsigned long to_send = count;
 		if (count + lines_sent > NS_SR_PROPS.height)
 			to_send = NS_SR_PROPS.height - lines_sent;
 
-		for (unsigned long y = 0; y < to_send; y++){
-
-			//memcpy(lines[y],image_buffer[y+lines_sent],sizeof(ns_component)*lines.properties().width);
-			for (unsigned int x = 0; x < lines.properties().width; x++){
-				lines[y][x] = image_buffer[y+lines_sent][x];
-				//cout << x << " ";
+		for (unsigned long y = 0; y < to_send; y++) {
+			for (unsigned int x = 0; x < lines.properties().width; x++) {
+				lines[y][x] = image_buffer[y + lines_sent][x];
 			}
-			//cout << y+lines_sent << ":\n";
 		}
-
-		lines_sent+=count;
+		lines_sent += count;
 	}
 	//when entire image is loaded, there is nothing to do.
 	void finish_recieving_image(){image_buffer.set_offset(0);}
@@ -929,15 +815,6 @@ public:
 				((p01_weight!=0)?((image_buffer[p1y][p0x]/p01_weight)*(d1y)*(dx)):0) + 
 				((p11_weight!=0)?((image_buffer[p1y][p1x]/p11_weight)*(d1y)*(d1x)):0);
 	}
-	/*const float inline sample_color(const float y, const float x) const{
-		ns_vector_2i p0((int)x,(int)y);
-		ns_vector_2<float> d(x-floor(x),y-floor(y));
-		ns_vector_2i p1(((int)ceil(d))*3+p0.x,ceil(y));
-		return	image_buffer[p0.y][p0.x]*(1-d.y)*(1-d.x) +
-				image_buffer[p0.y][p1.x]*(1-d.y)*(d.x) + 
-				image_buffer[p1.y][p0.x]*(d.y)*(1-d.x) + 
-				image_buffer[p1.y][p1.x]*(d.y)*(d.x);
-	}*/
 
 	///random pixel access
 	const inline ns_component * operator[](const unsigned long y)const{
@@ -1280,7 +1157,7 @@ public:
 	}
 
 	//mimic interface of ns_buffered_random_access_image.h
-	inline void seek_to_beginning(){}
+	inline internal_state_t seek_to_beginning() { internal_state_t t; return t; }
 	inline void make_line_available(unsigned long i){}
 
 
@@ -1288,7 +1165,7 @@ private:
 	bool avoid_memory_reallocations;
 	ns_image_stream_static_offset_buffer<ns_component> image_buffer;
 	unsigned long lines_received;
-	mutable unsigned long lines_sent;
+	unsigned long lines_sent;
 
 	///if the specified std::vector lies outside the image,
 	///it is moved to the closest edge of the image.

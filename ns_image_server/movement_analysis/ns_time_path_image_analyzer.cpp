@@ -5405,7 +5405,7 @@ void ns_analyzed_image_time_path::load_movement_images(const ns_analyzed_time_im
 		
 		unsigned long dh(h);	
 		if(h + y > stop_y) dh = stop_y-y;
-		in.input_stream().send_lines(movement_loading_buffer,dh);
+		in.input_stream().send_lines(movement_loading_buffer,dh, movement_image_storage_internal_state);
 		#ifdef NS_CALCULATE_OPTICAL_FLOW
 		flow_in.input_stream().send_lines(flow_movement_loading_buffer,dh);
 		#endif
@@ -5520,7 +5520,7 @@ void ns_analyzed_image_time_path::load_movement_images_no_flow(const ns_analyzed
 		
 		unsigned long dh(h);	
 		if(h + y > stop_y) dh = stop_y-y;
-		in.input_stream().send_lines(movement_loading_buffer,dh);
+		in.input_stream().send_lines(movement_loading_buffer,dh, movement_image_storage_internal_state);
 
 		for (unsigned long dy = 0; dy < dh; dy++){
 			const unsigned long cy(y+dy);
@@ -5625,8 +5625,11 @@ void ns_time_path_image_movement_analyzer::load_images_for_group(const unsigned 
 			}
 			groups[group_id].paths[j].output_image.load_from_db(groups[group_id].paths[j].output_image.id,&sql);
 			groups[group_id].paths[j].movement_image_storage = image_server.image_storage.request_from_storage(groups[group_id].paths[j].output_image,&sql);
+			groups[group_id].paths[j].movement_image_storage_internal_state = groups[group_id].paths[j].movement_image_storage.input_stream().init_send();
 			if (load_flow_images) {
 				groups[group_id].paths[j].flow_movement_image_storage = image_server.image_storage.request_from_storage_n_bits<float>(groups[group_id].paths[j].flow_output_image, &sql, ns_image_storage_handler::ns_long_term_storage);
+				groups[group_id].paths[j].flow_movement_image_storage_internal_state = groups[group_id].paths[j].flow_movement_image_storage.input_stream().init_send();
+
 				groups[group_id].paths[j].initialize_movement_image_loading(groups[group_id].paths[j].movement_image_storage, groups[group_id].paths[j].flow_movement_image_storage,false);
 			}
 			else {

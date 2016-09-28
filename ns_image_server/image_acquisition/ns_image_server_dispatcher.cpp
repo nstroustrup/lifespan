@@ -1068,8 +1068,11 @@ bool ns_image_server_dispatcher::look_for_work(){
 	
 		//if we're running as a screen saver, don't hog memory when
 		//the user is on the computer
+		ns_image_cache_data_source cache_source;
+		cache_source.handler = &image_server.image_storage;
+		cache_source.sql = work_sql_connection;
 		if (!image_server.run_autonomously())
-			image_server.image_storage.cache.clear_memory_cache();
+			image_server.image_storage.cache.clear_cache(&cache_source);
 		job_scheduler.clear_heap();
 
 		//ns_thread::sleep(4*1000 + 39);
@@ -1086,7 +1089,7 @@ bool ns_image_server_dispatcher::look_for_work(){
 			//con = 0;
 		}
 		if (!image_server.run_autonomously())
-			image_server.image_storage.cache.clear_memory_cache();
+			image_server.image_storage.cache.clear_cache(0);
 		throw;
 	}
 	return action_performed;
@@ -1098,7 +1101,7 @@ void ns_image_server_dispatcher::register_succesful_operation(){
 }
 void ns_image_server_dispatcher::handle_memory_allocation_error(){
 	memory_allocation_error_count++;
-	image_server.image_storage.cache.clear_memory_cache();
+	image_server.image_storage.cache.clear_memory_cache(0);
 	if (memory_allocation_error_count > 5){
 		image_server.pause_host();	
 		ns_ex ex("The host has recently encountered too many memory errors.  The host will pause until futher notice.");
@@ -1144,7 +1147,7 @@ ns_thread_return_type ns_image_server_dispatcher::thread_start_look_for_work(voi
 		//self.detach();
         ex << ex.text() << "(Error in processing_thread)";
 			if (ex.type() == ns_memory_allocation)
-				image_server.image_storage.cache.clear_memory_cache();
+				image_server.image_storage.cache.clear_cache(0);
 		
 		image_server.register_server_event(ns_image_server::ns_register_in_central_db_with_fallback,ex);
 		image_server.ns_image_server::shut_down_host();

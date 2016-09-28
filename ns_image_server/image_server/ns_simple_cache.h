@@ -2,6 +2,7 @@
 #define NS_SIMPLE_CACHE
 
 #include "ns_ex.h"
+#include "ns_thread.h"
 #include <map>
 
 //#define NS_VERBOSE_IMAGE_CACHE
@@ -26,8 +27,9 @@ public:
 	virtual void load_from_external_source(const id_t & id, external_source_t & external_source) = 0;
 
 	virtual ns_64_bit to_id(const id_t & id) const = 0;
-
 	virtual ns_64_bit id() const =0 ;
+
+	virtual void clean_up(typename external_source_t & external_source) = 0;
 
 	typedef id_t id_type;
 	typedef external_source_t external_source_type;
@@ -83,28 +85,23 @@ public:
 	typedef ns_simple_cache_data_handle<const typename data_t, locked> const_handle_t;
 	typedef ns_simple_cache_data_handle<typename data_t, locked> handle_t;
 
+	typedef typename data_t::external_source_type external_source_type;
+
 	ns_simple_cache(const unsigned long & max_memory_usage_) :
 		disk_cached_cleared(false), max_memory_usage_in_kb(max_memory_usage_), current_memory_usage_in_kb(0),lock("clock") {}
 
 	void set_memory_allocation_limit_in_kb(const unsigned long & max) {//in kilobytes
 		max_memory_usage = max;
 	}
-	void clear_memory_cache() {
-		ns_image_server_image im;
-		im.id = 0;
-		if (locked)lock.wait_to_acquire(__FILE__, __LINE__);
-		make_room_in_memory_for_new_image(im, max_memory_usage);
-		if (locked)lock.release();
-	}
 	void get_for_read(const typename data_t::id_type & id, const_handle_t & cache_object, typename data_t::external_source_type & external_source) {
 		get_image(id, cache_object, external_source, true);
 	}
 
-	void get_for_write(ns_image_server_image & image, handle_t & cache_object, typename data_t::external_source_type & external_source) {
-		get_image(image, sql, cache_object, external_source, false);
+	void get_for_write(const typename data_t::id_type & id, handle_t & cache_object, typename data_t::external_source_type & external_source) {
+		get_image(id, sql, cache_object, external_source, false);
 	}
 
-	void clear_cache() {
+	void clear_cache(typename data_t::external_source_type * external_source) {
 		//clear memory cache and all records
 
 		if (locked)lock.wait_to_acquire(__FILE__, __LINE__);
@@ -113,10 +110,36 @@ public:
 		//is it really that simple? 
 		for (cache_t::iterator p = data_cache.begin(); p != data_cache.end(); p++) {
 			p->second.object_write_lock.wait_to_acquire(__FILE__, __LINE__);
+			if (external_source != 0)
+				p->second.image.clean_up(*external_source);
 			p->second.object_write_lock.release();
 		}
 		this->current_memory_usage_in_kb = 0;
 		data_cache.clear();
+		if (locked)lock.release();
+	}
+
+	//issue:this will lock all threads
+	void remove_old_images(unsigned long age_in_seconds, typename data_t::external_source_type & external_source) {
+		//clear memory cache and all records
+
+		if (locked)lock.wait_to_acquire(__FILE__, __LINE__);
+		const unsigned long current_time(ns_current_time());
+		//get all write locks!
+		//is it really that simple? 
+		for (cache_t::iterator p = data_cache.begin(); p != data_cache.end();) {
+			p->second.object_write_lock.wait_to_acquire(__FILE__, __LINE__);
+			if (p->second.last_access + age_in_seconds < current_time) {
+				current_memory_usage_in_kb -= p->second.image.size_in_memory_in_kbytes();
+				p->second.image.clean_up(external_source);
+				p->second.object_write_lock.release();
+				p = data_cache.erase(p);
+			}
+			else {
+				p->second.object_write_lock.release();
+				p++;
+			}
+		}
 		if (locked)lock.release();
 	}
 
@@ -254,8 +277,7 @@ private:
 	}
 
 
-
-	void make_room_in_memory_for_new_image(const ns_image_server_image & im, const unsigned long new_image_memory_req_in_kb) {
+	void make_room_in_memory(const unsigned long new_image_memory_req_in_kb, typename data_t::external_source_type & external_source) {
 #ifdef NS_VERBOSE_IMAGE_CACHE
 		if (current_memory_usage + new_image_memory_req > max_memory_usage) {
 			std::cerr << "Memory cache " << current_memory_usage / 1024 << "/" << max_memory_usage / 1024 << " cannot fit new entry (" << new_image_memory_req << ").  Deleting oldest entries.\n";
@@ -315,6 +337,7 @@ private:
 			std::cerr << "Deleting image of size " << oldest_in_memory->second.size_in_memory / 1024 << " dated " << ns_format_time_string(oldest_in_memory->second.last_access) << "\n";
 #endif
 			current_memory_usage -= oldest_in_memory->second.data.size_in_memory_in_kb();
+			oldest_in_memory().clean_up(external_source);
 			data_cache.erase(oldest_in_memory);
 		}
 		lock.release();
@@ -361,4 +384,9 @@ inline ns_simple_cache_data_handle<data_t, locked>::~ns_simple_cache_data_handle
 		return;
 	check_in();
 }
+
+
+void ns_test_simple_cache(const char * debug_output);
+
+
 #endif

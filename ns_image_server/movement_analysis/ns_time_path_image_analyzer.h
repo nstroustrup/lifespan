@@ -678,11 +678,7 @@ public:
 
 	typedef std::vector<ns_analyzed_image_time_path_element> ns_element_list;
 	bool by_hand_data_specified() const;
-	/*void set_image_pools(	ns_path_aligned_image_pool &aligned_image_pool_,
-							ns_registered_image_pool &registered_image_pool_){
-		aligned_image_pool = &aligned_image_pool_;
-		registered_image_pool = & registered_image_pool_;
-	}*/
+
 	ns_death_time_annotation::ns_exclusion_type excluded() const{
 		return censoring_and_flag_details.excluded;
 	}
@@ -715,7 +711,9 @@ private:
 
 	unsigned long number_of_images_loaded;
 	ns_image_storage_source_handle<ns_8_bit> movement_image_storage;
+	unsigned long movement_image_storage_internal_state;
 	ns_image_storage_source_handle<float> flow_movement_image_storage;
+	unsigned long flow_movement_image_storage_internal_state;
 		
 	ns_analyzed_time_path_quantification_summary quantification_summary;
 

@@ -494,6 +494,7 @@
     <ClCompile Include="..\ns_image_server\image_server\ns_image_statistics.cpp" />
     <ClCompile Include="..\ns_image_server\image_server\ns_image_storage_handler.cpp" />
     <ClCompile Include="..\ns_image_server\image_server\ns_ini.cpp" />
+    <ClCompile Include="..\ns_image_server\image_server\ns_simple_cache.cpp" />
     <ClCompile Include="..\ns_image_server\image_server\ns_sql_table_lock_manager.cpp" />
     <ClCompile Include="..\ns_image_server\job_scheduling\ns_image_processing_pipeline.cpp" />
     <ClCompile Include="..\ns_image_server\job_scheduling\ns_processing_job_processor.cpp" />

@@ -58,10 +58,11 @@ void ns_check_for_file_errors(ns_processing_job & job, ns_sql & sql){
 							im.load_from_db(reg.op_images_[j],&sql);
 					
 							ns_image_storage_source_handle<ns_8_bit> h(image_server_const.image_storage.request_from_storage(im,&sql));
+							unsigned long internal_state;
 							long w(h.input_stream().properties().width*h.input_stream().properties().components);
 							if (w > buf.properties().width)
 								buf.resize(ns_image_stream_buffer_properties(w,1));
-							h.input_stream().send_lines(buf,1);
+							h.input_stream().send_lines(buf,1,internal_state);
 							try{
 								h.clear();
 							}catch(...){}
@@ -852,10 +853,10 @@ void ns_image_processing_pipeline::process_region(const ns_image_server_captured
 				ns_image_server_image static_mask_image(region_image.request_processed_image(ns_process_static_mask, sql));
 				ns_acquire_for_scope<ns_image_worm_detection_results> detected_worms;
 				{
-					ns_image_storage_handler::cache_t::handle_t static_mask;
+					ns_image_storage_handler::cache_t::const_handle_t static_mask;
 					if (static_mask_image.id != 0) {
 						cout << "Using a static mask.\n";
-						image_server.image_storage.cache.get_for_read(static_mask_image, &static_mask(), sql);
+						image_server.image_storage.cache.get_for_read(static_mask_image, static_mask, ns_image_cache_data_source(&image_server.image_storage,&sql));
 					}
 
 
@@ -865,7 +866,7 @@ void ns_image_processing_pipeline::process_region(const ns_image_server_captured
 						unprocessed,
 						thresholded,
 						spatial_average,
-						static_mask.image,
+						((static_mask_image.id != 0)?&(static_mask().image):0),
 						ns_worm_detection_constants::get(ns_worm_detection_constant::minimum_worm_region_area, spatial_average.properties().resolution),
 						ns_worm_detection_constants::get(ns_worm_detection_constant::maximum_worm_region_area, spatial_average.properties().resolution),
 						ns_worm_detection_constants::get(ns_worm_detection_constant::maximum_region_diagonal, spatial_average.properties().resolution),
@@ -1821,55 +1822,55 @@ void ns_image_processing_pipeline::apply_mask(ns_image_server_captured_image & c
 	ns_high_precision_timer timer;
 	timer.start();
 	
-	try{
+	try {
 		ns_image_server_event ev("ns_image_processing_pipeline::Applying Mask");
 		ev << " on " << captured_image.filename(&sql);
 		ev.specifiy_event_subject(captured_image);
 		ev.specify_processing_job_operation(ns_process_apply_mask);
-		ns_64_bit event_id = image_server_const.register_server_event(ev,&sql);
-			
-		captured_image.load_from_db(captured_image.captured_images_id,&sql);
+		ns_64_bit event_id = image_server_const.register_server_event(ev, &sql);
+
+		captured_image.load_from_db(captured_image.captured_images_id, &sql);
 		bool delete_captured_image(false);
 		{
 			sql << "SELECT delete_captured_images_after_mask FROM experiments WHERE id = " << captured_image.experiment_id;
 			ns_sql_result res;
 			sql.get_rows(res);
-			if(res.size() != 1)
-				throw ns_ex("ns_image_processing_pipeline::apply_mask()::Could not load experiment data from db (") <<  captured_image.experiment_id << ")";
+			if (res.size() != 1)
+				throw ns_ex("ns_image_processing_pipeline::apply_mask()::Could not load experiment data from db (") << captured_image.experiment_id << ")";
 			delete_captured_image = res[0][0] != "0";
-			if (delete_captured_image){
+			if (delete_captured_image) {
 				sql << "SELECT first_frames_are_protected FROM capture_samples WHERE id=" << captured_image.sample_id;
 				sql.get_rows(res);
 
 				if (res.size() == 0)
 					throw ns_ex("ns_image_processing_pipeline::apply_mask()::Could not find sample for specified captured image!") << captured_image.sample_id;
-				
-				if (res[0][0] == "0"){
+
+				if (res[0][0] == "0") {
 					delete_captured_image = false;
-					image_server_const.register_server_event(ns_image_server_event("ns_image_processing_pipeline::apply_mask()::Since no images in this sample have been protected from deletion, this capture image will not be deleted."),&sql);
+					image_server_const.register_server_event(ns_image_server_event("ns_image_processing_pipeline::apply_mask()::Since no images in this sample have been protected from deletion, this capture image will not be deleted."), &sql);
 				}
-				if (delete_captured_image && captured_image.capture_images_small_image_id == 0){
-					image_server_const.register_server_event(ns_image_server_event("ns_image_processing_pipeline::apply_mask()::Attempting to create a small resized copy of the image before masking"),&sql);
-					try{
-						resize_sample_image(captured_image,sql);
+				if (delete_captured_image && captured_image.capture_images_small_image_id == 0) {
+					image_server_const.register_server_event(ns_image_server_event("ns_image_processing_pipeline::apply_mask()::Attempting to create a small resized copy of the image before masking"), &sql);
+					try {
+						resize_sample_image(captured_image, sql);
 					}
-					catch(ns_ex & ex_){
+					catch (ns_ex & ex_) {
 						delete_captured_image = false;
 						throw ns_ex("While masking::") << ex_.text() << ex_.type();
 					}
-					catch(...){
+					catch (...) {
 						delete_captured_image = false;
 						throw;
 					}
 				}
-				if (captured_image.never_delete_image){
+				if (captured_image.never_delete_image) {
 					delete_captured_image = false;
-					image_server_const.register_server_event(ns_image_server_event("ns_image_processing_pipeline::apply_mask()::Because this capture image is marked \"Never Delete\", it will not be deleted."),&sql);
+					image_server_const.register_server_event(ns_image_server_event("ns_image_processing_pipeline::apply_mask()::Because this capture image is marked \"Never Delete\", it will not be deleted."), &sql);
 				}
 			}
 		}
 
-		
+
 		unsigned long start_time = ns_current_time();
 		//get mask info from db
 		sql << "SELECT capture_samples.mask_id, image_masks.image_id, capture_samples.apply_vertical_image_registration,image_masks.resize_factor FROM capture_samples, image_masks WHERE image_masks.id = capture_samples.mask_id AND capture_samples.id = " << captured_image.sample_id;
@@ -1880,56 +1881,53 @@ void ns_image_processing_pipeline::apply_mask(ns_image_server_captured_image & c
 		if (res[0][0] == "" || res[0][0] == "0")
 			throw ns_ex("ns_image_processing_pipeline::Specified sample '") << captured_image.sample_name << "'(" << captured_image.sample_id << ") does have mask set.";
 		unsigned long mask_id = atol(res[0][0].c_str()),
-					  mask_image_id = atol(res[0][1].c_str()),
-					  apply_vertical_image_registration = atol(res[0][2].c_str());
-	//	if (apply_vertical_image_registration)
-	//		cerr << "Vertical registration requested\n";
-	//	else "Vertical registration not requested\n";
+			mask_image_id = atol(res[0][1].c_str()),
+			apply_vertical_image_registration = atol(res[0][2].c_str());
+		//	if (apply_vertical_image_registration)
+		//		cerr << "Vertical registration requested\n";
+		//	else "Vertical registration not requested\n";
 		unsigned long resize_factor = atol(res[0][3].c_str());
 
 		//cerr << "Using Resize Factor " << resize_factor << "\n";
 		mask_splitter.set_resize_factor(resize_factor);
-		
+
 
 		//load captured image that will be masked
 		//ns_image_whole<ns_component> source_im;
-		const ns_registration_disk_buffer * source_im(0);
 		ns_acquire_for_scope<ns_registration_disk_buffer> new_image_buffer;
 		ns_image_server_image source_image;
 		source_image.id = captured_image.capture_images_image_id;
-		
 
-		
-		ns_vector_2i offset = ns_vector_2i(0,0);
-		ns_disk_buffered_image_registration_profile * profile;
+
+
+		ns_vector_2i offset = ns_vector_2i(0, 0);
+		ns_image_registration_profile_cache::handle_t profile;
+		ns_image_registration_profile_data_source profile_data_source;
+		profile_data_source.sql = &sql;
+		profile_data_source.image_storage = &image_server.image_storage;
+		profile_data_source.max_average_dimention = 500;
+
 		bool delete_registration_profile_after_use;
-		if (apply_vertical_image_registration){
-			offset = get_vertical_registration(captured_image,source_image,sql,,delete_registration_profile_after_use);
+		if (apply_vertical_image_registration)
+			offset = get_vertical_registration(captured_image, source_image, profile, profile_data_source);
+		else {
+			ns_image_server_image im;
+			im.id = captured_image.capture_images_image_id;
+			image_server.image_registration_profile_cache.get_for_write(im, profile, profile_data_source);
+		}
 
-			//we don't need to load the image again from long term storage--we have a cached version here!
-			//profile->whole_image.seek_to_beginning();
-			source_im = &profile->whole_image;
-			/*source_im.init(profile->whole_image.properties());
-			for (unsigned long y = 0; y < source_im.properties().height; y++)
-				for (unsigned long x = 0; x < source_im.properties().width; x++){
-					source_im[y][x] = profile->whole_image.safe_access(y)[x];
-				}*/
-		}
-		else{
-			new_image_buffer.attach(new ns_registration_disk_buffer);
-			new_image_buffer().assign_buffer_source(image_server_const.image_storage.request_from_storage(source_image,&sql).input_stream(),0,_image_chunk_size);
-			source_im = &new_image_buffer();
-		}
-		
-		mask_splitter.mask_info()->load_from_db(mask_id,sql);
-		
+		mask_splitter.mask_info()->load_from_db(mask_id, sql);
+
 		ns_image_server_image mask_image_info;
-		if (!mask_image_info.load_from_db(mask_image_id,&sql))
+		if (!mask_image_info.load_from_db(mask_image_id, &sql))
 			throw ns_ex("ns_image_processing_pipeline::Mask ") << mask_id << " has no image specified when applying mask.";
 
-		ns_simple_cache_image<ns_8_bit, const ns_image_standard,true> mask_image;
-		image_server.image_storage.cache.get_for_read(mask_image_info,mask_image,sql);
-	
+		ns_simple_image_cache::const_handle_t mask_image;
+		ns_image_cache_data_source data_source;
+		data_source.handler = &image_server_const.image_storage;
+		data_source.sql = &sql;
+		image_server.image_storage.cache.get_for_read(mask_image_info, mask_image, data_source);
+
 		//obtain output streams for split regions.
 		sql << "SELECT sample_region_image_info.id, sample_region_image_info.name, image_mask_regions.id, image_mask_regions.mask_value FROM image_mask_regions, sample_region_image_info WHERE sample_region_image_info.mask_region_id = image_mask_regions.id AND image_mask_regions.mask_id= '" << mask_id << "'";
 		sql.get_rows(res);
@@ -1938,16 +1936,16 @@ void ns_image_processing_pipeline::apply_mask(ns_image_server_captured_image & c
 		//the record in the images table for each masked region
 		vector<ns_image_server_image> output_images;
 		unsigned long mask_info_size = mask_splitter.mask_info()->size();
-		for (unsigned int i = 0; i < res.size(); i++){
-			unsigned int	mask_region_info_id =	atol(res[i][0].c_str());
-			unsigned int 	mask_region_id =		atol(res[i][2].c_str());
-			int				mask_region_value =		atol(res[i][3].c_str()); // if it could accidentally be < 0 (see below) it ought to be an int
+		for (unsigned int i = 0; i < res.size(); i++) {
+			unsigned int	mask_region_info_id = atol(res[i][0].c_str());
+			unsigned int 	mask_region_id = atol(res[i][2].c_str());
+			int				mask_region_value = atol(res[i][3].c_str()); // if it could accidentally be < 0 (see below) it ought to be an int
 			string			mask_region_name = res[i][1];
 
 			if (mask_region_value < 0 || mask_region_value > mask_info_size)
 				throw ns_ex("ns_image_processing_pipeline::Invalid mask value specified in mask.");
-			output_regions.resize(output_regions.size()+1);
-			ns_image_server_captured_image_region & new_region_image(output_regions[output_regions.size()-1]);
+			output_regions.resize(output_regions.size() + 1);
+			ns_image_server_captured_image_region & new_region_image(output_regions[output_regions.size() - 1]);
 
 			sql.send_query("BEGIN");
 			//see if the region has already been created;
@@ -1957,29 +1955,29 @@ void ns_image_processing_pipeline::apply_mask(ns_image_server_captured_image & c
 			ns_image_server_image output_image;
 			output_image.id = 0;
 			//if a record in the sample_region_images table exists, and if so, whether a record in the images table exists as well.
-			if (out.size() != 0){
+			if (out.size() != 0) {
 				//delete the previous file
 				output_image.id = atol(out[0][1].c_str());
-			//	if (output_image.id != 0)
-			//			image_server_const.image_storage.delete_from_storage(output_image,sql);
-				//we can use the old image; its filename must be correct.
-				//we can also use the existing region_image record.
+				//	if (output_image.id != 0)
+				//			image_server_const.image_storage.delete_from_storage(output_image,sql);
+					//we can use the old image; its filename must be correct.
+					//we can also use the existing region_image record.
 				new_region_image.region_images_id = atol(out[0][0].c_str());
 				new_region_image.region_images_image_id = output_image.id;
 				new_region_image.region_info_id = mask_region_info_id;
 				new_region_image.capture_time = captured_image.capture_time;
 				new_region_image.mask_color = mask_region_value;
-				sql << "UPDATE sample_region_images SET last_modified=" << ns_current_time() << 
+				sql << "UPDATE sample_region_images SET last_modified=" << ns_current_time() <<
 					", capture_sample_image_id = " << captured_image.captured_images_id << ", currently_under_processing=1, vertical_image_registration_applied = " << apply_vertical_image_registration << " WHERE id=" << new_region_image.region_images_id;
 				sql.send_query();
 				//XXX NOTE: Here we might want to delete all previously calculated processing jobs from the record
-				
+
 			}
 			//create new record in the sample region images table
-			else{
-				
-				sql << "INSERT INTO sample_region_images SET region_info_id = '" << mask_region_info_id << 
-					"', capture_time = '" << captured_image.capture_time << "', last_modified=" << ns_current_time() <<", " <<
+			else {
+
+				sql << "INSERT INTO sample_region_images SET region_info_id = '" << mask_region_info_id <<
+					"', capture_time = '" << captured_image.capture_time << "', last_modified=" << ns_current_time() << ", " <<
 					" capture_sample_image_id = " << captured_image.captured_images_id << ", currently_under_processing=1, vertical_image_registration_applied = " << apply_vertical_image_registration << " ";
 
 				new_region_image.region_images_id = sql.send_query_get_id();
@@ -1997,27 +1995,27 @@ void ns_image_processing_pipeline::apply_mask(ns_image_server_captured_image & c
 			new_region_image.mask_color = mask_region_value;
 
 			//if a record in the images table hasn't been made, make it.
-			if (output_image.id == 0){
+			if (output_image.id == 0) {
 				//create a new image for the region_image image
-				output_image.partition = image_server_const.image_storage.get_partition_for_experiment(new_region_image.experiment_id,&sql);
+				output_image.partition = image_server_const.image_storage.get_partition_for_experiment(new_region_image.experiment_id, &sql);
 				output_image.path = new_region_image.directory(&sql);
 				output_image.filename = new_region_image.filename(&sql) + ".tif";
-				sql << "INSERT INTO images SET filename = '" << sql.escape_string(output_image.filename) << "', path = '" << sql.escape_string(output_image.path) 
+				sql << "INSERT INTO images SET filename = '" << sql.escape_string(output_image.filename) << "', path = '" << sql.escape_string(output_image.path)
 					<< "', creation_time=" << captured_image.capture_time << ", host_id = " << image_server_const.host_id() << ", `partition` = '" << output_image.partition << "' ";
 				output_image.id = sql.send_query_get_id();
 				new_region_image.region_images_image_id = output_image.id;
-				sql << "UPDATE sample_region_images SET image_id = " << output_image.id << " WHERE id= " << new_region_image.region_images_id ;
+				sql << "UPDATE sample_region_images SET image_id = " << output_image.id << " WHERE id= " << new_region_image.region_images_id;
 				sql.send_query();
 				sql.send_query("COMMIT");
 			}
 			//get storage for the output image.
 			bool had_to_use_volatile_storage;
-			(*mask_splitter.mask_info())[mask_region_value]->reciever = image_server_const.image_storage.request_storage(output_image,ns_tiff,_image_chunk_size,&sql,had_to_use_volatile_storage,false,false);
+			(*mask_splitter.mask_info())[mask_region_value]->reciever = image_server_const.image_storage.request_storage(output_image, ns_tiff, _image_chunk_size, &sql, had_to_use_volatile_storage, false, false);
 			(*mask_splitter.mask_info())[mask_region_value]->reciever_provided = true;
 			output_images.push_back(output_image);
 		}
 		sql.send_query("COMMIT");
-		mask_splitter.specify_mask(*mask_image.image);
+		mask_splitter.specify_mask(mask_image().image);
 		//if the whole image is shifted down in relation to the reference image
 		//we need to shift the mask up to compensate!
 		mask_splitter.specify_registration_offset(offset*-1);
@@ -2025,27 +2023,21 @@ void ns_image_processing_pipeline::apply_mask(ns_image_server_captured_image & c
 		ns_image_statistics sample_image_statistics;
 		mask_splitter.specificy_sample_image_statistics(sample_image_statistics);
 
-		try{
-			source_im->pump(&mask_splitter,_image_chunk_size);
+		try {
+			profile().whole_image.pump(mask_splitter, _image_chunk_size);
 
 			//mark all regions as processed.
-			for (unsigned int i = 0; i < output_regions.size(); i++){
+			for (unsigned int i = 0; i < output_regions.size(); i++) {
 				(*mask_splitter.mask_info())[output_regions[i].mask_color]->image_stats.calculate_statistics_from_histogram();
 				ns_64_bit image_stats_db_id(0);
-				(*mask_splitter.mask_info())[output_regions[i].mask_color]->image_stats.submit_to_db(image_stats_db_id,sql,true,false);
-				sql << "UPDATE sample_region_images SET currently_under_processing=0, image_statistics_id=" << image_stats_db_id << " WHERE id= " << output_regions[i].region_images_id ;
+				(*mask_splitter.mask_info())[output_regions[i].mask_color]->image_stats.submit_to_db(image_stats_db_id, sql, true, false);
+				sql << "UPDATE sample_region_images SET currently_under_processing=0, image_statistics_id=" << image_stats_db_id << " WHERE id= " << output_regions[i].region_images_id;
 				sql.send_query();
 			}
-			if (delete_registration_profile_after_use){
-				profile->cleanup(&image_server_const.image_storage);
-				delete profile;
-			}
-			//update movement records to include the new regions
-			//ns_movement_database_maintainer m;
-			//m.create_movement_tables_for_masked_region_images(captured_image,output_regions,sql);
 
-			if (delete_captured_image){
-				image_server_const.image_storage.delete_from_storage(captured_image,ns_delete_long_term,&sql);
+
+			if (delete_captured_image) {
+				image_server_const.image_storage.delete_from_storage(captured_image, ns_delete_long_term, &sql);
 				sql << "UPDATE captured_images SET image_id = 0 WHERE id = " << captured_image.captured_images_id;
 				sql.send_query();
 				sql << "DELETE FROM images WHERE id = " << captured_image.capture_images_image_id;
@@ -2053,20 +2045,16 @@ void ns_image_processing_pipeline::apply_mask(ns_image_server_captured_image & c
 			}
 
 		}
-		catch (ns_ex & ex){
-			if (delete_registration_profile_after_use){
-				profile->cleanup(&image_server_const.image_storage);
-				delete profile;
-			}
+		catch (ns_ex & ex) {
 			sql.clear_query();
 			//if the image doesn't exist or is corrupted, mark the record as "problem".
-			if (ex.type() == ns_file_io){
-				ns_64_bit event_id = image_server_const.register_server_event(ex,&sql);
-				captured_image.mark_as_problem(&sql,event_id);
-				for (unsigned int i = 0; i < output_regions.size(); i++){
+			if (ex.type() == ns_file_io) {
+				ns_64_bit event_id = image_server_const.register_server_event(ex, &sql);
+				captured_image.mark_as_problem(&sql, event_id);
+				for (unsigned int i = 0; i < output_regions.size(); i++) {
 					sql << "DELETE images FROM images, sample_region_images WHERE sample_region_images.id= " << output_regions[i].region_images_id << " AND sample_region_images.image_id = images.id";
 					sql.send_query();
-					sql << "DELETE from sample_region_images WHERE id= " << output_regions[i].region_images_id ;
+					sql << "DELETE from sample_region_images WHERE id= " << output_regions[i].region_images_id;
 					sql.send_query();
 				}
 				sql.send_query("COMMIT");
@@ -2074,15 +2062,15 @@ void ns_image_processing_pipeline::apply_mask(ns_image_server_captured_image & c
 			}
 			else throw ex;
 		}
-		
+
 		//make region thumbnails
-		for (unsigned int i = 0; i < output_regions.size(); i++){
-			try{
-				resize_region_image(output_regions[i],sql);
+		for (unsigned int i = 0; i < output_regions.size(); i++) {
+			try {
+				resize_region_image(output_regions[i], sql);
 			}
-			catch(ns_ex & ex){
-				ns_64_bit ev(image_server_const.register_server_event(ex,&sql));
-				output_regions[i].mark_as_problem(&sql,ev);
+			catch (ns_ex & ex) {
+				ns_64_bit ev(image_server_const.register_server_event(ex, &sql));
+				output_regions[i].mark_as_problem(&sql, ev);
 			}
 		}
 
@@ -2093,19 +2081,19 @@ void ns_image_processing_pipeline::apply_mask(ns_image_server_captured_image & c
 
 		sample_image_statistics.calculate_statistics_from_histogram();
 		ns_64_bit sample_stats_db_id(0);
-		sample_image_statistics.submit_to_db(sample_stats_db_id,sql);
+		sample_image_statistics.submit_to_db(sample_stats_db_id, sql);
 		sql << "UPDATE captured_images SET mask_applied=1, image_statistics_id=" << sample_stats_db_id << " WHERE id= " << captured_image.captured_images_id;
 		sql.send_query();
 		sql.send_query("COMMIT");
-		
+
 		unsigned long stop_time = ns_current_time();
 		ev.specify_processing_duration(stop_time - start_time);
-//		image_server_const.update_registered_server_event(event_id,ev);
-		image_server.register_job_duration(ns_process_apply_mask,timer.stop());
+		//		image_server_const.update_registered_server_event(event_id,ev);
+		image_server.register_job_duration(ns_process_apply_mask, timer.stop());
 	}
-	catch(...){
+	catch (...) {
 		throw;
-	}
+	}	
 }
 
 void ns_image_processing_pipeline::register_event(const ns_processing_task & task, const ns_image_properties & properties, const ns_image_server_event & source_event,const bool precomputed,ns_sql & sql){
@@ -2527,7 +2515,7 @@ bool ns_image_processing_pipeline::check_for_precalculated_registration(const ns
 	return false;
 }
 
-ns_vector_2i ns_image_processing_pipeline::get_vertical_registration(const ns_image_server_captured_image & captured_image, ns_image_server_image & source, ns_sql & sql, const ns_disk_buffered_image_registration_profile ** requested_image,bool & delete_profile_after_use){
+ns_vector_2i ns_image_processing_pipeline::get_vertical_registration(const ns_image_server_captured_image & captured_image, ns_image_server_image & source, ns_image_registration_profile_cache::handle_t & requested_image, ns_image_registration_profile_cache::external_source_type & external_source){
 	ns_vector_2i registration_offset;
 	//delete_profile_after_use = false;
 	/*if (check_for_precalculated_registration(captured_image,registration_offset,sql)){
@@ -2539,85 +2527,52 @@ ns_vector_2i ns_image_processing_pipeline::get_vertical_registration(const ns_im
 	bool registration_image_loaded = false;
 	unsigned long attempts = 0;
 	ns_image_server_image reference_image_db_record;	
-	const ns_disk_buffered_image_registration_profile * reference_image_profile(0);
+	ns_image_registration_profile_cache::handle_t reference_image_profile;
 	
-	sql << "SELECT image_id, id, never_delete_image FROM captured_images WHERE sample_id = " << captured_image.sample_id << " AND never_delete_image = 1 AND problem = 0 AND censored = 0 ORDER BY capture_time ASC LIMIT 5";
+	*external_source.sql << "SELECT image_id, id, never_delete_image FROM captured_images WHERE sample_id = " << captured_image.sample_id << " AND never_delete_image = 1 AND problem = 0 AND censored = 0 ORDER BY capture_time ASC LIMIT 5";
 	ns_sql_result res;
-	sql.get_rows(res);
+	external_source.sql->get_rows(res);
 	if (res.size() == 0)
 		throw ns_ex("ns_image_processing_pipeline::run_vertical_registration()::Could not perform registration because no reference images exist for the sample") << captured_image.experiment_name << "::" << captured_image.sample_name;
 	reference_image_db_record.id = 0;
 	bool reference_image_loaded(false);
-	ns_high_precision_timer t;
 	ns_image_standard im;
 	for (unsigned int i = 0; !reference_image_loaded && i < res.size(); i++){
 		if (res[i][0] == "0")
 			continue;
 		reference_image_db_record.id = atol(res[i][0].c_str());
-		reference_image_db_record.load_from_db(reference_image_db_record.id,&sql);
+		reference_image_db_record.load_from_db(reference_image_db_record.id, external_source.sql);
 	//	bool running_retry(false);
 		//while(true){
 			try{
-				//all threads will block 
-				ns_acquire_lock_for_scope cache_lock(image_server.registration_cache_lock, __FILE__, __LINE__);
-				reference_image_profile = image_server.image_registration_profile_cache.get(reference_image_db_record.id);
-				cache_lock.release();
-
-				if (reference_image_profile != 0){
-					cache_lock.release();
-					reference_image_loaded = true;
-					break;
-				}
-				ns_disk_buffered_image_registration_profile * new_reference_image_profile = new ns_disk_buffered_image_registration_profile;
-				//if we can't pre-load the profile, load the source image from disk
-				t.start();
-				cerr << "Downsampling reference image...";
-				new_reference_image_profile->prepare_images(reference_image_db_record,500,sql,&image_server_const.image_storage);
-				cerr << "\n";
-				//cerr << "cache reference: " << t.stop()/1000.0/1000.0 << "\n";
-
-				image_server.image_registration_profile_cache.insert(reference_image_db_record.id, new_reference_image_profile,&image_server_const.image_storage);
-				cache_lock.release();
-				reference_image_profile = new_reference_image_profile;
+				image_server.image_registration_profile_cache.get_for_write(reference_image_db_record, reference_image_profile,external_source);
 				reference_image_loaded = true;
-				break;
 				}
 			catch(ns_ex & ex){
-				image_server_const.register_server_event(ex,&sql);
+				image_server_const.register_server_event(ex,external_source.sql);
 				//could do something here to allow more reference images to be used, but this is potentially
 				//troublesome and will be avoided for now
 			}
 	}
-	if (reference_image_profile== 0)
+	if (!reference_image_loaded)
 			throw ns_ex("ns_image_processing_pipeline::run_vertical_registration()::Could not perform registration because all of the first few raw images could not be loaded for sample ") << captured_image.experiment_name << "::" << captured_image.sample_name << " "
 			<< "Only images that are flagged in captured_images as problem=0, censored=0, never_delete=1 can be used as references for image registration";
 
+	ns_high_precision_timer t;
 	t.start();
-	*requested_image = image_server_const.image_registration_profile_cache.get(source.id);
-	if (*requested_image != 0)
-		delete_profile_after_use = false;
-	else{
-		delete_profile_after_use = true;
-		cerr << "Downsampling subject image...";
-		ns_disk_buffered_image_registration_profile * p = new ns_disk_buffered_image_registration_profile;
-
-		cerr << "\n";
-
-		p->prepare_images(source,500,sql,&image_server_const.image_storage,reference_image_profile->downsampling_factor);
-		*requested_image = p;
-	}
+	image_server.image_registration_profile_cache.get_for_write(source, requested_image,external_source);
+	
 //cerr << "cache subject: " << t.stop()/1000.0/1000.0 << "\n";
 	
-	image_server_const.register_server_event(ns_image_server::ns_register_in_central_db,ns_image_server_event("Aligning sample image to reference image."));
+	image_server_const.register_server_event(ns_image_server_event("Aligning sample image to reference image."),external_source.sql);
 	t.start();
-	ns_vector_2i offset(ns_image_registration<127,ns_8_bit>::register_full_images(*reference_image_profile,**requested_image,ns_vector_2i(400,400)));
+	ns_vector_2i offset(ns_image_registration<127,ns_8_bit>::register_full_images(reference_image_profile(), requested_image(),ns_vector_2i(400,400)));
 	//cerr << "Total Registration time: " << t.stop()/1000.0/1000.0 << "\n";
 	//exit(0);
 	//cerr << "Alignment: " << offset.x << "," << offset.y << "\n";
-	sql << "UPDATE captured_images SET registration_horizontal_offset='" << offset.x << "', registration_vertical_offset='" << offset.y << "', registration_offset_calculated=1 WHERE id = " << captured_image.captured_images_id;
+	*external_source.sql << "UPDATE captured_images SET registration_horizontal_offset='" << offset.x << "', registration_vertical_offset='" << offset.y << "', registration_offset_calculated=1 WHERE id = " << captured_image.captured_images_id;
 	//cerr << sql.query() << "\n";
-	sql.send_query();
-
+	external_source.sql->send_query();
 	return offset;
 }
 

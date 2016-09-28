@@ -135,9 +135,10 @@ public:
 			std::cerr << "ns_tiff_image_input_file::close()::Unknown error encountered while closing file.\n";
 		}
 	}
-	void seek_to_beginning(){
+	unsigned long seek_to_beginning(){
 		close_file();
 		open_file(opened_filename);
+		return 0;
 	}
 
 	//read in a single line

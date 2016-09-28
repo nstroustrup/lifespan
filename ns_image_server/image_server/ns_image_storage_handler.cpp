@@ -163,11 +163,11 @@ bool ns_storage_delete_from_local_cache(ns_image_storage_handler * image_storage
 }
 
 ns_sql * ns_get_sql_connection(){
-	return image_server_const.new_sql_connection(__FILE__,__LINE__);
+	return image_server.new_sql_connection(__FILE__,__LINE__);
 }
 
 ns_local_buffer_connection * ns_get_local_buffer_connection(){
-	return image_server_const.new_local_buffer_connection(__FILE__,__LINE__);
+	return image_server.new_local_buffer_connection(__FILE__,__LINE__);
 }
 std::string ns_get_default_partition(){
 	return image_server_const.default_partition();
@@ -175,15 +175,15 @@ std::string ns_get_default_partition(){
 
 
 
-ns_image_storage_source_handle<ns_8_bit>  ns_storage_request_from_local_cache(ns_image_storage_handler * image_storage, const std::string & filename){
+ns_image_storage_source_handle<ns_8_bit>  ns_storage_request_from_local_cache(const ns_image_storage_handler * image_storage, const std::string & filename) {
 	return image_storage->request_from_local_cache(filename);
 }
 
-ns_image_storage_source_handle<ns_8_bit> ns_storage_request_from_storage(ns_image_storage_handler * image_storage, ns_image_server_image & im,ns_sql & sql){
-	return image_storage->request_from_storage(im,&sql);
+ns_image_storage_source_handle<ns_8_bit> ns_storage_request_from_storage(const ns_image_storage_handler * image_storage, ns_image_server_image & im, ns_sql & sql) {
+	return image_storage->request_from_storage(im, &sql);
 }
 
-ns_image_storage_reciever_handle<ns_8_bit> ns_storage_request_local_cache_storage(ns_image_storage_handler * image_storage, 
+ns_image_storage_reciever_handle<ns_8_bit> ns_storage_request_local_cache_storage(const ns_image_storage_handler * image_storage, 
 																				  const std::string & filename, const ns_image_type & type,const unsigned long max_line_length, 
 																				  const bool report_to_db){
 	return image_storage->request_local_cache_storage(filename,type,max_line_length,report_to_db);

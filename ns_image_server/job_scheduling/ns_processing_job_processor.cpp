@@ -1222,7 +1222,7 @@ bool ns_processing_job_maintenance_processor:: run_job(ns_sql & sql){
 						if (compression_rate_f <= 0)
 							throw ns_ex("Invalid compression rate: ") << compression_rate_f ;
 						image.set_output_compression(compression_rate_f);
-						image.pump(&im_dest.output_stream(),2048);
+						image.pump(im_dest.output_stream(),2048);
 						im.save_to_db(im.id,&sql);
 						image_server->image_storage.delete_from_storage(old_im,ns_delete_long_term,&sql);
 					}

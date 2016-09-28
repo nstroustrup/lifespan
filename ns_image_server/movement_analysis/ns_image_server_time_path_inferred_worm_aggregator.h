@@ -132,7 +132,7 @@ public:
 			try{
 				im.load_from_db(current_region_image->second.raw_image_id,&sql);
 
-				image_server.image_storage.request_from_storage(im,&sql).input_stream().pump(&unprocessed_image,1024);
+				image_server.image_storage.request_from_storage(im,&sql).input_stream().pump(unprocessed_image,1024);
 			}
 			catch(ns_ex & ex_){
 				ex = ex_;
@@ -140,9 +140,9 @@ public:
 			}
 			try{
 				im.load_from_db(current_region_image->second.spatial_id,&sql);
-				image_server.image_storage.request_from_storage(im,&sql).input_stream().pump(&spatial_image,1024);
+				image_server.image_storage.request_from_storage(im,&sql).input_stream().pump(spatial_image,1024);
 				im.load_from_db(current_region_image->second.threshold_id,&sql);
-				image_server.image_storage.request_from_storage(im,&sql).input_stream().pump(&thresholded_image,1024);
+				image_server.image_storage.request_from_storage(im,&sql).input_stream().pump(thresholded_image,1024);
 				
 			}
 			catch(ns_ex & ex_){

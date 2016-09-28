@@ -232,7 +232,10 @@ public:
 		}
 		//store images in a cache to reduce the network load a little.  This might actually make things slower due to disk swapping,
 		//but we can't know without profiling so we take a guess it'll help
-		ns_image_simple_cache<ns_8_bit> cache(&image_server.image_storage,2048*1024);
+		ns_simple_image_cache cache(2048 * 1024);
+		ns_image_cache_data_source cache_source;
+		cache_source.handler = &image_server.image_storage;
+		cache_source.sql = &sql;
 		worms.reserve(total_worm_count);
 		images.reserve(total_worm_count);
 		images_with_boxes.reserve(total_worm_count);
@@ -240,10 +243,13 @@ public:
 		for (unsigned int i = 0; i < result.locations.size(); i++){
 			cerr << (int)(100*(float)i/(float)result.locations.size()) << "%";
 			for (unsigned int j = 0; j < result.locations[i].annotations.size(); j++){
-				const ns_image_standard & im(cache.get_for_read(
-					training_set_source_images_sorted_by_region_image_id[result_location_region_image_ids[i][j].image_id],sql));
+				ns_simple_image_cache::const_handle_t image;
+				cache.get_for_read(
+					training_set_source_images_sorted_by_region_image_id[result_location_region_image_ids[i][j].image_id],
+					image,cache_source);
 				ns_training_set_visualization_metadata_manager m;
-				m.from_collage(im);
+				m.from_collage(image().image);
+				image.release();
 				ns_whole_image_statistic_specification_key key;
 				key.capture_time = result.locations[i].annotations[j].time.period_end;
 				key.region_id = result.locations[i].annotations[j].region_info_id;

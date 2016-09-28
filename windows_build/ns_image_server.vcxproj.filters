@@ -1114,6 +1114,9 @@
     <ClCompile Include="..\ns_image_server\image_server\ns_sql_table_lock_manager.cpp">
       <Filter>image_server</Filter>
     </ClCompile>
+    <ClCompile Include="..\ns_image_server\image_server\ns_simple_cache.cpp">
+      <Filter>image_server</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="server_icon.ico">

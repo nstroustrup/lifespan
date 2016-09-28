@@ -141,7 +141,11 @@ bool ns_processing_job_scheduler::run_a_job(ns_sql & sql,bool first_in_first_out
 		
 
 		//don't let old, unused data accumulate.
-		image_server.image_registration_profile_cache.remove_old_images(10 * 60, &image_server.image_storage);
+		ns_image_registration_profile_cache::external_source_type source;
+		source.image_storage = &image_server.image_storage;
+		source.max_average_dimention = 500;
+		source.sql = &sql;
+		image_server.image_registration_profile_cache.remove_old_images(10 * 60, source);
 
 		idle_timer_running = true;
 		idle_timer.start();

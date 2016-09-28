@@ -569,7 +569,7 @@ ns_thread_return_type ns_image_server_device_manager::run_capture_on_device_inte
 		if (exp.type() == ns_memory_allocation){
 			try{
 				cerr << "\nTrying to free memory on error...\n";
-				image_server.image_storage.cache.clear_memory_cache();
+				image_server.image_storage.cache.clear_cache(0);
 			}
 			catch(ns_ex & exp2){
 				try{

@@ -128,7 +128,7 @@ public:
 	///Returns true if the ini file specified that the current image server node should halt if it detects it is running outdated software
 	const bool halt_on_new_software_release(){return _halt_on_new_software_release;}
 
-	std::string default_partition(){return "partition_000";}
+	std::string default_partition()const{return "partition_000";}
 	
 	void register_devices(const bool verbose=true);
 
@@ -310,10 +310,8 @@ public:
 	void clear(){
 		if(cleared)
 			return;
-		image_storage.cache.clear_cache();
-		image_registration_profile_cache.cleanup(&image_storage);
-		image_registration_profile_cache.clear();
-		image_registration_profile_cache.clear();
+		image_registration_profile_cache.clear_cache(0);
+		image_storage.cache.clear_cache(0);
 		#ifndef NS_MINIMAL_SERVER_BUILD
 		device_manager.clear();
 		#endif
@@ -403,8 +401,8 @@ public:
 	unsigned handle_software_updates()const{return multiprocess_control_options.handle_software_updates;}
 
 	
-	ns_image_registration_profile_cache<ns_disk_buffered_image_registration_profile> image_registration_profile_cache;
-	ns_lock registration_cache_lock;
+	ns_image_registration_profile_cache image_registration_profile_cache;
+	
 	ns_vector_2i max_terminal_window_size;
 	unsigned long terminal_hand_annotation_resize_factor;
 	std::string mask_upload_database;

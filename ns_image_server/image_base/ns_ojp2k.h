@@ -143,9 +143,10 @@ public:
 		}
 
 	}
-	void seek_to_beginning() {
+	unsigned long seek_to_beginning() {
 		close_file();
 		open_file(opened_filename);
+		return 0;
 	}
 	ns_component * operator()(const unsigned long x, const  unsigned int component, ns_component * buffer)const {
 		return &(buffer[this->properties.components*x + component]);

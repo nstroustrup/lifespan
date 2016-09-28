@@ -97,7 +97,7 @@ void ns_image_socket_reciever<ns_bit,read_buffer>::recieve_lines(const read_buff
 ///Recieves an image stream transmitted over a socket.
 ///Cross-platform implementation using both windows and linux sockets
 template<class ns_component>
-class ns_image_socket_reciever : public ns_image_stream_sender< ns_component, ns_image_socket_reciever< ns_component > >{
+class ns_image_socket_reciever : public ns_image_stream_sender< ns_component, ns_image_socket_reciever< ns_component >, unsigned long>{
 public:
 	
 	ns_image_socket_reciever():socket_connection(0),byte_resize_factor(sizeof(ns_component)/sizeof(char)),ns_image_stream_sender<ns_component, ns_image_socket_reciever<ns_component> >(ns_image_properties(0,0,0), this){}
@@ -107,7 +107,8 @@ public:
 		socket_connection = &connection;
 	}
 
-	void init_send(){
+	internal_state_t init_send_const() const { throw ns_ex("Invalid const function!"); }
+	internal_state_t init_send(){
 		if (socket_connection == 0)
 			throw ns_ex("ns_image_socket_sender::Attempting to recieve an image before a socket was specified!");
 

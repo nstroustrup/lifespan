@@ -295,7 +295,6 @@ private:
 	std::vector<ns_lock> thread_idle_locks;
 	bool shutdown_;
 	std::vector<ns_thread> threads;
-	ns_movement_analysis_shared_state * shared_state;
 
 	ns_lock thread_init_lock;
 	unsigned long thread_init_count;

@@ -2640,22 +2640,30 @@ void ns_rerun_image_registration(const ns_64_bit region_id, ns_sql & sql){
 	if (res.size() == 0)
 		throw ns_ex("ns_rerun_image_registration::The requested region, ") << region_id << ", contains no uncensored images.";
 	ns_64_bit ref_image_id = 0;
-	ns_disk_buffered_image_registration_profile ref_profile;
 	long i = 0;
-		
+
+	ns_image_registration_profile_cache::handle_t reference_profile;
+	ns_image_registration_profile_data_source profile_data_source;
+	profile_data_source.sql = &sql;
+	profile_data_source.image_storage = &image_server.image_storage;
+	profile_data_source.max_average_dimention = 500;
+
+
 	while(ref_image_id == 0){
 		if (i >= res.size())
 			throw ns_ex("ns_rerun_image_registration::Could not find a non-censored reference image to use for alignment.");
 		try{
 			ns_image_server_image im;
 			im.id = ns_atoi64(res[i][1].c_str());
-			ref_profile.prepare_images(im,500,sql,&image_server_const.image_storage);
+			image_server.image_registration_profile_cache.get_for_write(im, reference_profile, profile_data_source);
 			ref_image_id = im.id;
 		}catch(...){}
 		i++;
 	}
 	
-	ns_memory_image_registration_profile subject_profile;
+	ns_image_registration_profile_cache::handle_t subject_profile;
+	ns_image_standard buffer;
+	buffer.use_more_memory_to_avoid_reallocations();
 	for (;i<res.size();i++){
 		try{
 			ns_image_server_captured_image_region region_image;
@@ -2669,9 +2677,10 @@ void ns_rerun_image_registration(const ns_64_bit region_id, ns_sql & sql){
 			if (backup_unprocessed_id != 0){
 				source_im.id = backup_unprocessed_id;
 			}else source_im.id = unprocessed_id;
+			image_server.image_registration_profile_cache.get_for_write(source_im, subject_profile, profile_data_source);
 
-			subject_profile.prepare_images(source_im,500,sql,&image_server_const.image_storage);
-			ns_vector_2i offset(ns_image_registration<127,ns_8_bit>::register_full_images(ref_profile,subject_profile,ns_vector_2i(400,400)));
+			ns_vector_2i offset(ns_image_registration<127,ns_8_bit>::register_full_images(reference_profile(),subject_profile(),ns_vector_2i(400,400)));
+			
 			//ns_vector_2i offset(-500,500);
 			cout << (100*i)/res.size() << "%: " << ns_format_time_string_for_human(capture_time) << "\n";
 			
@@ -2684,16 +2693,18 @@ void ns_rerun_image_registration(const ns_64_bit region_id, ns_sql & sql){
 				ns_image_server_image backup_image = region_image.create_storage_for_processed_image(ns_process_unprocessed_backup,ns_tiff,&sql);
 				bool had_to_use_volatile_storage;
 				ns_image_storage_reciever_handle<ns_8_bit> out_im(image_server_const.image_storage.request_storage(backup_image,ns_tiff,1024,&sql,had_to_use_volatile_storage,false,false));
-				subject_profile.whole_image.pump(out_im.output_stream(),1024);
+				subject_profile().whole_image.pump(out_im.output_stream(),1024);
 				out_im.clear();
 			}
-			ns_shift_image_by_offset(subject_profile.whole_image,offset);
+			subject_profile().whole_image.pump(buffer, 1024);
+			ns_shift_image_by_offset(buffer,offset);
+
 			ns_image_server_image dest_im;
 			dest_im.id = unprocessed_id;
 			bool had_to_use_volatile_storage;
 			ns_image_storage_reciever_handle<ns_8_bit> out_im(image_server_const.image_storage.request_storage(dest_im,ns_tiff,1024,&sql,had_to_use_volatile_storage,false,false));
 			//now fix the registration of all derived images.
-			subject_profile.whole_image.pump(out_im.output_stream(),1024);
+			buffer.pump(out_im.output_stream(),1024);
 			out_im.clear();
 			ns_processing_task tasks[3] = { ns_process_spatial, ns_process_lossy_stretch,ns_process_threshold};
 			for (unsigned int j = 0; j < 3; j++){
@@ -2704,14 +2715,14 @@ void ns_rerun_image_registration(const ns_64_bit region_id, ns_sql & sql){
 						continue;
 					cout << ns_processing_task_to_string(tasks[j]) << "...";
 					ns_image_storage_source_handle<ns_8_bit> source(image_server_const.image_storage.request_from_storage(task_image,&sql));
-					source.input_stream().pump(subject_profile.whole_image,1024);
+					source.input_stream().pump(buffer,1024);
 					source.clear();
-					ns_shift_image_by_offset(subject_profile.whole_image,offset);
+					ns_shift_image_by_offset(buffer,offset);
 					ns_image_type type = ns_tiff;
 					if (tasks[j] == ns_process_lossy_stretch)
 						type = ns_jpeg;
 					ns_image_storage_reciever_handle<ns_8_bit> out_im(image_server_const.image_storage.request_storage(task_image,type,1024,&sql,had_to_use_volatile_storage,false,false));
-					subject_profile.whole_image.pump(out_im.output_stream(),1024);
+					buffer.pump(out_im.output_stream(),1024);
 				}
 				catch(ns_ex & ex){
 					cout << ex.text() << "\n";}

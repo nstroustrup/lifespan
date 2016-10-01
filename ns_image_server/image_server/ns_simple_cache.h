@@ -35,31 +35,40 @@ public:
 	typedef external_source_t external_source_type;
 };
 
-template<class data_type, bool locked>
+template<class data_t, bool locked>
 class ns_simple_cache_data_handle {
 public:
 	ns_simple_cache_data_handle():obj(0), cache(0), data(0) {}
-	data_type operator()() { return *data; }
-	const data_type operator()() const { return *data; }
+	data_t & operator()() { return *data; }
+	const data_t &operator()() const { return *data; }
 	~ns_simple_cache_data_handle();
 	void release() { check_in(); }
-private:
-	data_type * data; //the image cached in memory.
-	void check_out(bool write, ns_simple_cache_internal_object<data_type,locked> * o, ns_simple_cache<data_type, locked> *c);
+
+	//friend data_t;
+
+//	template<class data_t, bool locked> friend class ns_simple_cache;
+//private:
+	data_t * data; //the image cached in memory.
+	void check_out(bool write, ns_simple_cache_internal_object<data_t,locked> * o, ns_simple_cache<data_t, locked> *c);
 	void check_in();
-	ns_simple_cache_internal_object< data_type, locked> * obj;
-	ns_simple_cache< data_type, locked> * cache;
+	ns_simple_cache_internal_object< data_t, locked> * obj;
+	ns_simple_cache< data_t, locked> * cache;
 	bool write;
 
-	friend data_type;
 };
 
-template<class data_type, bool locked>
+template<class data_t, bool locked>
 class ns_simple_cache_internal_object {
-	class ns_simple_cache_internal_object() :number_waiting_or_write(0), object_write_lock("owl"), size_in_memory(0), do_not_delete(false), to_erase(false), to_be_deleted(false), number_checked_out_by_any_threads(0) {}
+public:
+	ns_simple_cache_internal_object() :number_waiting_or_write(0), 
+		object_write_lock("owl"), size_in_memory(0), do_not_delete(false), 
+		to_erase(false), to_be_deleted(false), number_checked_out_by_any_threads(0) {}
+
+	typedef data_t data_type;
+
 	unsigned long last_access; //the last time (in UNIX time seconds) that the image was requested from the cache
 
-	data_type image;
+	data_t data;
 
 	ns_lock object_write_lock;
 	//protected by the write lock but not the main lock
@@ -68,8 +77,8 @@ class ns_simple_cache_internal_object {
 	int number_checked_out_by_any_threads;
 	bool to_be_deleted;
 
-	friend data_type;
-	friend class ns_simple_cache<data_type,locked>;
+	//friend data_t;
+	//friend class ns_simple_cache<data_t,locked>;
 };
 
 ///ns_image_cache implements a local cache for images loaded from the central file server.
@@ -79,26 +88,30 @@ class ns_simple_cache_internal_object {
 template<class data_t, bool locked>
 class ns_simple_cache {
 
-	friend data_t;
+//	friend data_t;
 
 public:
+
+	ns_simple_cache(const unsigned long & max_memory_usage_) :
+		disk_cached_cleared(false),
+		max_memory_usage_in_kb(max_memory_usage_),
+		current_memory_usage_in_kb(0),
+		lock("clock") {}
+
 	typedef ns_simple_cache_data_handle<const typename data_t, locked> const_handle_t;
 	typedef ns_simple_cache_data_handle<typename data_t, locked> handle_t;
 
 	typedef typename data_t::external_source_type external_source_type;
 
-	ns_simple_cache(const unsigned long & max_memory_usage_) :
-		disk_cached_cleared(false), max_memory_usage_in_kb(max_memory_usage_), current_memory_usage_in_kb(0),lock("clock") {}
-
 	void set_memory_allocation_limit_in_kb(const unsigned long & max) {//in kilobytes
 		max_memory_usage = max;
 	}
 	void get_for_read(const typename data_t::id_type & id, const_handle_t & cache_object, typename data_t::external_source_type & external_source) {
-		get_image(id, cache_object, external_source, true);
+		get_image(id, &cache_object, external_source, true);
 	}
 
 	void get_for_write(const typename data_t::id_type & id, handle_t & cache_object, typename data_t::external_source_type & external_source) {
-		get_image(id, sql, cache_object, external_source, false);
+		get_image(id, &cache_object, external_source, false);
 	}
 
 	void clear_cache(typename data_t::external_source_type * external_source) {
@@ -111,7 +124,7 @@ public:
 		for (cache_t::iterator p = data_cache.begin(); p != data_cache.end(); p++) {
 			p->second.object_write_lock.wait_to_acquire(__FILE__, __LINE__);
 			if (external_source != 0)
-				p->second.image.clean_up(*external_source);
+				p->second.data.clean_up(*external_source);
 			p->second.object_write_lock.release();
 		}
 		this->current_memory_usage_in_kb = 0;
@@ -130,8 +143,8 @@ public:
 		for (cache_t::iterator p = data_cache.begin(); p != data_cache.end();) {
 			p->second.object_write_lock.wait_to_acquire(__FILE__, __LINE__);
 			if (p->second.last_access + age_in_seconds < current_time) {
-				current_memory_usage_in_kb -= p->second.image.size_in_memory_in_kbytes();
-				p->second.image.clean_up(external_source);
+				current_memory_usage_in_kb -= p->second.data.size_in_memory_in_kbytes();
+				p->second.data.clean_up(external_source);
 				p->second.object_write_lock.release();
 				p = data_cache.erase(p);
 			}
@@ -143,28 +156,37 @@ public:
 		if (locked)lock.release();
 	}
 
-private:
-	bool disk_cached_cleared;
 	typedef std::map<ns_64_bit, ns_simple_cache_internal_object<data_t, locked> > cache_t;
+
+
+//private:
+	bool disk_cached_cleared;
 	cache_t data_cache;
 	unsigned long max_memory_usage_in_kb;
 	unsigned long current_memory_usage_in_kb;
 
+	typedef typename cache_t::value_type map_pair_t;
+	typedef typename ns_simple_cache_internal_object<data_t, locked> internal_object_t;
+
 	//data_type_t will be either data_type or const data_type depending on whether 
 	template<class data_type_t>
-	void get_image(const typename data_t::id_type & id, 
-				   ns_simple_cache_data_handle< data_type_t, locked> * image,
-				   typename data_t::external_source_type & external_source, 
-				   bool read_only) {
+	void get_image(const typename data_t::id_type & id,
+		ns_simple_cache_data_handle< data_type_t, locked> * image,
+		typename data_t::external_source_type & external_source,
+		bool read_only) {
 		bool initial_read_request(read_only);
 		//check to see if we have this in the cache somewhere
 		bool currently_have_write_lock(false);
+
+		//used to convert ids.
+		const data_type_t dt;
+
 		while (true) {
 			//grab the lock needed to access anything
 			if (locked)lock.wait_to_acquire(__FILE__, __LINE__);
 			try {
 				//look for the image in the cache.
-				typename cache_t::iterator p = data_cache.find(id);
+				typename cache_t::iterator p = data_cache.find(dt.to_id(id));
 				if (p != data_cache.end()) {
 					//some cleanup needs to be done.
 					if (p->second.to_be_deleted)
@@ -180,27 +202,32 @@ private:
 							if (locked) {
 								//now we need to wait for any threads that are still reading.
 								//we minimize the # of locks by polling just a here.
-								while (p->second.image.number_checked_out_by_any_threads > 0) {
+								while (p->second.number_checked_out_by_any_threads > 0) {
 									ns_thread::sleep_microseconds(100);
 								}
 							}
 							//ok we've been asked to do some housekeeping by deleting this record and trying again.
 							if (p->second.to_be_deleted) {
-								p->second.write_lock.release();
-								data_cache.erase(p->second);
+								p->second.object_write_lock.release();
+								data_cache.erase(p);
 								lock.release();
 								read_only = initial_read_request;
 								continue; //do another round
 							}
 							//we have exclusive write access to a record no-one is reading!  We're done. 
-							cached_object.check_out(&p->second, this, !read_only);
+							data_t * a(0);
+							typename ns_simple_cache_internal_object<data_t,true>::data_type * b(0);
+							a = b;
+							ns_simple_cache_internal_object<data_t, locked> tt;
+
+							image->check_out(!read_only,&tt,this);
 							if (locked)lock.release();
 							return;
 						}
 						// we need to get the write lock.  let's wait for grab it but then we'll need to 
 						// redo the search in the map structure just in case the previous write deleted it been deleted
 						if (locked) {
-							p->second.write_lock.wait_to_acquire(__FILE__, __LINE__);  //this wont be given up until the object ns_simple_cache object is destructed!
+							p->second.object_write_lock.wait_to_acquire(__FILE__, __LINE__);  //this wont be given up until the object ns_simple_cache object is destructed!
 							currently_have_write_lock = true;
 							lock.release(); //keep the write lock (to catch any readers) but release the read lock (so that the readers can progress and get stuck on the wait lock)
 							continue;
@@ -213,66 +240,76 @@ private:
 						if (locked) {
 							//we need to wait until no threads are writing to this object
 							if (p->second.number_waiting_for_write_lock > 0) {
-								if (!currenty_have_write_lock)  //we need to block all others that want to write.
-									p->second.write_lock.wait_to_acquire(__FILE__, __LINE__);
+								if (!currently_have_write_lock)  //we need to block all others that want to write.
+									p->second.object_write_lock.wait_to_acquire(__FILE__, __LINE__);
 								currently_have_write_lock = true;
 								lock.release();
 								continue; //start over from the beginning of the request, as anything could have changed during the previous write
 							}
 
 							//we have the write lock, so nobody else does!  check it out!
-							cached_object.check_out(&p->second, this, !read_only);
-							if (currently_have_write_lock) p->second.write_lock.release();
+							image->check_out(true,&p->second, this);
+							if (currently_have_write_lock) p->second.object_write_lock.release();
 							if (locked)lock.release();
 							break;
 						}
 				}
 			}
-
-			//We couldn't find the image in the cache!  We need to load it from disk and add it to the cache
-			try {
-				//create a new cache entry for the new image, and reserve it for writing
-				std::pair<typename cache_t::iterator, bool> r = data_cache.insert(typename cache_t::value_type(id, ns_simple_cache_internal_object<data_t,locked>()));
-				p = r.first;
-				p->second.object_write_lock(__FILE__, __LINE__);
-				p->second.number_waiting_to_write++;
-				p->checkout(&p->second, this, true);  //check it out for writing.
-				lock.release();//release the lock so everything else can read and write other objects in the background while we load
-							   //this one in.
-
-
-				try {
-					p->second.data.load_from_external_source(id, external_source);
-				}
-				catch (...) {
-					p->second.to_be_deleted = true;  //we can't delete this now, because we've already given up the main lock.  but we can flag it for deletion next time it's encountered
-					throw;
-				}
-#ifdef NS_VERBOSE_IMAGE_CACHE
-				std::cerr << "Inserting new image with size " << image_size << " into the cache.  \nCache status is currently " << current_memory_usage / 1024 << "/" << max_memory_usage / 1024 << "\n";
-#endif
-				//ok! We've loaded the data into the new position in the map.  populate it with interesting info.
-				p->second.last_access = ns_current_time();
-				current_memory_usage += p->second.data.size_in_memory_in_kb();
-
-				if (!read_only)
-					return;  //we already have write access and everything loaded into cached_object, give it to the user.
-
-							 //lets give up write access manually here, and pass the remaining object, no read only, on to the user
-				p->second.number_waiting_to_write--;
-				cached_object.write = false;
-				return;
-
+			catch (...) {
+				if (locked) lock.release();
 			}
-			catch (ns_ex & ex) {
-				//any error that happens here is likely due to cache problems, rather than any problem with the source file.  flag as such.
-				ns_ex ex2(ex);
-				ex2 << ns_cache;
-				throw ex2;
-			}
+
 		}
-		catch (...) {
-			if (locked)lock.release();
+
+		//We couldn't find the image in the cache!  We need to load it from disk and add it to the cache
+		try {
+			typename cache_t::iterator p;
+			//create a new cache entry for the new image, and reserve it for writing
+			//{
+				internal_object_t foo;
+				const ns_64_bit id_num = dt.to_id(id);
+				//xxx unneccisary double lookup--easy to fix when bugs elsewhere are identified
+				data_cache[id_num] = foo;
+				p = data_cache.find(id_num);
+				////std::pair<const ns_64_bit, internal_object_t > obj( id_num, foo);
+				//auto obj = make_pair(id_num, foo);
+				//p = data_cache.insert(data_cache.begin(), obj)->first;
+			//}
+			p->second.object_write_lock.wait_to_acquire(__FILE__, __LINE__);
+			p->second.number_waiting_for_write_lock++;
+			image->check_out(true,&p->second, this);  //check it out for writing.
+			lock.release();//release the lock so everything else can read and write other objects in the background while we load
+							//this one in.
+
+
+			try {
+				p->second.data.load_from_external_source(id, external_source);
+			}
+			catch (...) {
+				p->second.to_be_deleted = true;  //we can't delete this now, because we've already given up the main lock.  but we can flag it for deletion next time it's encountered
+				throw;
+			}
+#ifdef NS_VERBOSE_IMAGE_CACHE
+			std::cerr << "Inserting new image with size " << image_size << " into the cache.  \nCache status is currently " << current_memory_usage / 1024 << "/" << max_memory_usage / 1024 << "\n";
+#endif
+			//ok! We've loaded the data into the new position in the map.  populate it with interesting info.
+			p->second.last_access = ns_current_time();
+			current_memory_usage_in_kb += p->second.data.size_in_memory_in_kbytes();
+
+			if (!read_only)
+				return;  //we already have write access and everything loaded into cached_object, give it to the user.
+
+							//lets give up write access manually here, and pass the remaining object, no read only, on to the user
+			p->second.number_waiting_for_write_lock--;
+			image->write = false;
+			return;
+
+		}
+		catch (ns_ex & ex) {
+			//any error that happens here is likely due to cache problems, rather than any problem with the source file.  flag as such.
+			ns_ex ex2(ex);
+			ex2 << ns_cache;
+			throw ex2;
 		}
 	}
 
@@ -343,7 +380,7 @@ private:
 		lock.release();
 		return;
 	}
-private:
+//private:
 	ns_lock lock;
 };
 
@@ -380,7 +417,7 @@ inline void ns_simple_cache_data_handle<data_t,locked>::check_in() {
 
 template<class data_t, bool locked>
 inline ns_simple_cache_data_handle<data_t, locked>::~ns_simple_cache_data_handle() {
-	if (image == 0 || obj == 0 || cache == 0)
+	if (data == 0 || obj == 0 || cache == 0)
 		return;
 	check_in();
 }

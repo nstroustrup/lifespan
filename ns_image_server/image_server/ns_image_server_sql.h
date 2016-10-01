@@ -17,7 +17,6 @@ public:
 private:
 	bool local_database;
 	std::string table_prefix_;
-
 };
 class ns_sql : public ns_image_server_sql{
 public:

@@ -30,12 +30,12 @@ using namespace std;
 
 void ns_image_server_global_debug_handler(const ns_text_stream_t & t);
 
-ns_image_server::ns_image_server():event_log_open(false),exit_requested(false),update_software(false), 
-	sql_lock("ns_is::sql"),server_event_lock("ns_is::server_event"), performance_stats_lock("ns_pfl"), registration_cache_lock("ns_rcl"),simulator_scan_lock("ns_is::sim_scan"),local_buffer_sql_lock("ns_is::lb"),
-	_act_as_processing_node(true),cleared(false),current_sql_server_address_id(0),
-	image_registration_profile_cache(1024*4), //allocate 4 gigabytes of disk space in which to store reference images for capture sample registration
-	_verbose_debug_output(false),_cache_subdirectory("cache"),sql_database_choice(possible_sql_databases.end()),next_scan_for_problems_time(0),
-_terminal_window_scale_factor(1),sql_table_lock_manager(this){
+ns_image_server::ns_image_server() :event_log_open(false), exit_requested(false), update_software(false),
+sql_lock("ns_is::sql"), server_event_lock("ns_is::server_event"), performance_stats_lock("ns_pfl"), simulator_scan_lock("ns_is::sim_scan"), local_buffer_sql_lock("ns_is::lb"),
+_act_as_processing_node(true), cleared(false),
+image_registration_profile_cache(1024 * 4), //allocate 4 gigabytes of disk space in which to store reference images for capture sample registration
+_verbose_debug_output(false), _cache_subdirectory("cache"), sql_database_choice(possible_sql_databases.end()), next_scan_for_problems_time(0),
+_terminal_window_scale_factor(1), sql_table_lock_manager(this), alert_handler_lock("ahl") {
 
 	ns_socket::global_init();
 	ns_worm_detection_constants::init();
@@ -62,8 +62,8 @@ void ns_image_server::update_scan_delays_from_db(ns_image_server_sql * con){
 
 void ns_image_server::toggle_central_mysql_server_connection_error_simulation()const{
 	if (ns_sql_connection::unreachable_hostname().empty())
-		ns_sql_connection::simulate_unreachable_mysql_server(sql_server_addresses[current_sql_server_address_id],true);
-	else ns_sql_connection::simulate_unreachable_mysql_server(sql_server_addresses[current_sql_server_address_id],false);
+		ns_sql_connection::simulate_unreachable_mysql_server(sql_server_addresses[0],true);
+	else ns_sql_connection::simulate_unreachable_mysql_server(sql_server_addresses[0],false);
 }
 
 std::string  ns_image_server::video_compilation_parameters(const std::string & input_file, const std::string & output_file, const unsigned long number_of_frames, const std::string & fps, ns_sql & sql)const{
@@ -623,13 +623,12 @@ void ns_image_server::reconnect_sql_connection(ns_sql * sql){
 	//Look through all possible paths to the server until one is found to work.
 	if (sql_server_addresses.empty())
 		throw ns_ex("ns_image_server::reconnect_sql_connection()::No addresses are specified for the sql server");
-	unsigned long start_address_id = current_sql_server_address_id;
+	unsigned long start_address_id = 0;
 	ns_ex er;
 	for (unsigned int i = 0; i < sql_server_addresses.size(); ++i){
 		const unsigned int j = (i+start_address_id)%sql_server_addresses.size();
 		try{
 			sql->connect(sql_server_addresses[j],sql_user,sql_pwd,0);
-			current_sql_server_address_id = j;
 			er.clear_text();
 			break;
 		}
@@ -647,17 +646,14 @@ void ns_image_server::reconnect_sql_connection(ns_sql * sql){
 	sql->select_db(*sql_database_choice);
 }
 
-ns_sql * ns_image_server::new_sql_connection_no_lock_or_retry(const std::string & source_file, const unsigned int source_line){
+ns_sql * ns_image_server::new_sql_connection_no_lock_or_retry(const std::string & source_file, const unsigned int source_line) const{
 	ns_sql *con(0);
 	con = new ns_sql();
 	try{
 		for (std::vector<string>::size_type server_i=0;  server_i < sql_server_addresses.size(); server_i++){
 				//cycle through different possible connections
-				const unsigned int server_id = (server_i+current_sql_server_address_id)%sql_server_addresses.size();
 				try{
-					con->connect(sql_server_addresses[server_id],sql_user,sql_pwd,0);
-					current_sql_server_address_id = server_id;
-				
+					con->connect(sql_server_addresses[server_i],sql_user,sql_pwd,0);				
 					con->select_db(*sql_database_choice);
 					return con;
 				}	
@@ -752,7 +748,7 @@ void ns_image_server::set_up_local_buffer(){
 	ns_buffered_capture_scheduler::store_last_update_time_in_db(ns_synchronized_time(ns_buffered_capture_scheduler::ns_default_update_time,ns_buffered_capture_scheduler::ns_default_update_time),buf());
 	#endif
 }
-ns_local_buffer_connection * ns_image_server::new_local_buffer_connection_no_lock_or_retry(const std::string & source_file, const unsigned int source_line){
+ns_local_buffer_connection * ns_image_server::new_local_buffer_connection_no_lock_or_retry(const std::string & source_file, const unsigned int source_line) const{
 	ns_local_buffer_connection * buf(new ns_local_buffer_connection);
 	try{
 		buf->connect(local_buffer_ip,local_buffer_user,local_buffer_pwd,0);
@@ -2356,7 +2352,7 @@ void ns_image_server::clear_old_server_events(ns_sql & sql){
 
 
 
-ns_64_bit ns_image_server::register_server_event(const ns_register_type type,const ns_image_server_event & s_event){
+ns_64_bit ns_image_server::register_server_event(const ns_register_type type,const ns_image_server_event & s_event)const{
 	if (s_event.type()==ns_ts_error || s_event.type() == ns_ts_debug){
 			register_server_event_no_db(s_event);
 			return 1;
@@ -2402,6 +2398,9 @@ ns_64_bit ns_image_server::register_server_event(const ns_register_type type,con
 
 
 void ns_image_server::register_server_event_no_db(const ns_image_server_event & s_event,bool no_double_endline)const{
+
+	std::map<ns_64_bit, ns_thread_output_state>::iterator current_thread_state = get_current_thread_state_info();
+	current_thread_state->second.last_event_sql_id = 0;
 	ns_acquire_lock_for_scope lock(server_event_lock,__FILE__,__LINE__);
 	if (s_event.text().size() != 0){	
 		if (!no_double_endline)
@@ -2425,10 +2424,23 @@ ns_64_bit ns_image_server::register_server_event(const ns_ex & ex, ns_image_serv
 
 }
 
+std::map<ns_64_bit, ns_thread_output_state>::iterator ns_image_server::get_current_thread_state_info() const{
+	ns_acquire_lock_for_scope lock(server_event_lock, __FILE__, __LINE__);
+	ns_64_bit thread_id = ns_thread::current_thread_id();
+	std::map<ns_64_bit, ns_thread_output_state>::iterator current_thread_state = thread_states.find(thread_id);
+	if (current_thread_state == thread_states.end())
+		current_thread_state = thread_states.insert(std::map<ns_64_bit, ns_thread_output_state>::value_type(thread_id, ns_thread_output_state())).first;
+	lock.release();
+	return current_thread_state;
+}
+
+
 ns_64_bit ns_image_server::register_server_event(const ns_image_server_event & s_event, ns_image_server_sql * sql,const bool no_display) const{
 	try{
+
 		if (!no_display){
-			ns_acquire_lock_for_scope lock(server_event_lock,__FILE__,__LINE__);
+
+			ns_acquire_lock_for_scope lock(server_event_lock, __FILE__, __LINE__);
 			if (s_event.text().size() != 0){	
 
 				cerr <<"\n";
@@ -2437,6 +2449,10 @@ ns_64_bit ns_image_server::register_server_event(const ns_image_server_event & s
 			}
 			lock.release();
 		}
+
+
+		std::map<ns_64_bit, ns_thread_output_state>::iterator current_thread_state = get_current_thread_state_info();
+
 		ns_64_bit event_id(0);
 		//if the event is to be logged and doesn't involve an sql connection error, connect to the db and log it.
 		if (s_event.log && s_event.type() != ns_ts_sql_error){
@@ -2459,9 +2475,13 @@ ns_64_bit ns_image_server::register_server_event(const ns_image_server_event & s
 				if (s_event.type() == ns_ts_error)
 					*sql << ", error=1";
 				event_id = sql->send_query_get_id();
+				current_thread_state->second.last_event_sql_id = event_id;
 			}
+
 					
 			catch(ns_ex & ex){
+
+				current_thread_state->second.last_event_sql_id = 0;
 				event_id = 1;
 				ns_image_server_event ev("ns_image_server::register_server_event()::Could not access ") ;
 				ev << (sql->connected_to_central_database()?("central database"):("local buffer database")) << " to register an error:";

@@ -244,6 +244,17 @@ ns_thread_handle::ns_thread_handle(const ns_thread_handle & h){
 			}
 		}
 #endif
+ns_64_bit ns_thread::current_thread_id() {
+#ifdef _WIN32
+	return GetCurrentThreadId();
+#else
+
+	pthread_id_np_t   tid;
+	tid = pthread_getthreadid_np();
+	return tid;
+#endif
+
+}
 ns_thread ns_thread::get_current_thread(){
 
 	ns_thread self;

@@ -226,6 +226,8 @@ public:
 	//used by any other threads
 	static ns_thread get_current_thread();
 
+	static ns_64_bit current_thread_id();
+
 private:
 	ns_thread_handle handle;
 };

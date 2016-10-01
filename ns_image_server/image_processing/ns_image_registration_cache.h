@@ -218,6 +218,10 @@ public:
 	void cleanup(ns_image_storage_handler * image_storage){whole_image.clear();downsampled_image.clear();downsampled_image_2.clear();}
 };
 
-typedef ns_simple_cache<ns_disk_buffered_image_registration_profile, true> ns_image_registration_profile_cache;
+class test_class : public ns_simple_cache_data<ns_image_server_image, ns_image_registration_profile_data_source> {
+public:
+
+};
+using ns_image_registration_profile_cache = ns_simple_cache<ns_disk_buffered_image_registration_profile,true> ;
 
 #endif

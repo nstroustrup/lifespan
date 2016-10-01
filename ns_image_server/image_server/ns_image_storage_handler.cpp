@@ -97,10 +97,12 @@ void ns_image_storage_handler::fix_orphaned_captured_images(ns_image_server_sql 
 void ns_image_handler_submit_alert(const ns_alert::ns_alert_type & alert_type, const std::string & text, const std::string & detailed_text, ns_image_server_sql * sql){
 	ns_alert a(text,detailed_text,alert_type,ns_alert::get_notification_type(alert_type,image_server_const.act_as_an_image_capture_server()),ns_alert::ns_rate_limited);
 
+	ns_acquire_lock_for_scope alert_lock(image_server.alert_handler_lock, __FILE__, __LINE__);
 	if (!sql->connected_to_central_database())
-		image_server_const.alert_handler.submit_locally_buffered_alert(a);
+		image_server.alert_handler.submit_locally_buffered_alert(a);
 	else
-		image_server_const.alert_handler.submit_alert(a, *static_cast<ns_sql *>(sql));
+		image_server.alert_handler.submit_alert(a, *static_cast<ns_sql *>(sql));
+	alert_lock.release();
 }
 
 

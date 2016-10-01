@@ -78,6 +78,13 @@ struct ns_multiprocess_control_options{
 	void to_parameters(std::vector<std::string> & parameters);
 };
 
+class ns_thread_output_state{
+public:
+	ns_thread_output_state() :internal_thread_id(0), last_event_sql_id(0) {}
+	ns_64_bit internal_thread_id,
+			  last_event_sql_id;
+};
+
 void ns_write_experimental_data_in_database_to_file(const unsigned long experiment_id, const std::string & output_directory,ns_sql & sql);
 void ns_zip_experimental_data(const std::string & output_directory,bool delete_original=false);
 bool ns_update_db_using_experimental_data_from_file(const std::string new_database,bool use_existing_database, const std::string & output_directory,ns_sql & sql);
@@ -136,12 +143,12 @@ public:
 	void set_up_model_directory();
 	///Provides a live sql connection to the central database.
 	ns_sql * new_sql_connection(const std::string & source_file, const unsigned int source_line, const unsigned int retry_count=10);
-	ns_sql *new_sql_connection_no_lock_or_retry(const std::string & source_file, const unsigned int source_line);
+	ns_sql *new_sql_connection_no_lock_or_retry(const std::string & source_file, const unsigned int source_line) const;
 
 	ns_sql_table_lock_manager sql_table_lock_manager;
 
 	ns_local_buffer_connection * new_local_buffer_connection(const std::string & source_file, const unsigned int source_line);
-	ns_local_buffer_connection * new_local_buffer_connection_no_lock_or_retry(const std::string & source_file, const unsigned int source_line);
+	ns_local_buffer_connection * new_local_buffer_connection_no_lock_or_retry(const std::string & source_file, const unsigned int source_line) const;
 
 	void set_sql_database(const std::string & database_name="",const bool report_to_db=true);
 	void reconnect_sql_connection(ns_sql * sql);
@@ -274,9 +281,9 @@ public:
 	void set_processing_node_behavior(const bool act_as_processing_node){_act_as_processing_node = act_as_processing_node;}
 
 	///returns a human-readible description of the sql server the image server is using.
-	std::string sql_info(){
+	std::string sql_info(ns_sql & sql){
 		if (sql_server_addresses.empty()) throw ns_ex("sql_info()::No sql sever specified"); 
-		return sql_user + std::string("@") + sql_server_addresses[current_sql_server_address_id] + std::string(".") + *sql_database_choice;
+		return sql_user + std::string("@") + sql.hostname() + std::string(".") + *sql_database_choice;
 	}
 
 	///Scanners identify themselves by scanning a barcode on their surface.
@@ -396,12 +403,13 @@ public:
 	void get_alert_suppression_lists(std::vector<std::string> & devices_to_suppress, std::vector<std::string> & experiments_to_suppress,ns_image_server_sql * sql);
 
 	ns_alert_handler alert_handler;
+	ns_lock alert_handler_lock;
 	void register_alerts_as_handled();
 	unsigned long number_of_node_processes_per_machine() const{ return number_of_node_processes_per_machine_;}
 	unsigned handle_software_updates()const{return multiprocess_control_options.handle_software_updates;}
 
 	
-	ns_image_registration_profile_cache image_registration_profile_cache;
+	ns_simple_cache<ns_disk_buffered_image_registration_profile, true> image_registration_profile_cache;
 	
 	ns_vector_2i max_terminal_window_size;
 	unsigned long terminal_hand_annotation_resize_factor;
@@ -422,8 +430,10 @@ public:
 	
 	typedef enum{ns_register_in_local_db, ns_register_in_central_db, ns_register_in_central_db_with_fallback} ns_register_type;
 
-	ns_64_bit register_server_event(const ns_register_type type,const ns_image_server_event & s_event);
-	ns_64_bit register_server_event(const ns_register_type type,const ns_ex & ex);
+	ns_64_bit register_server_event(const ns_register_type type,const ns_image_server_event & s_event) const;
+	ns_64_bit register_server_event(const ns_register_type type,const ns_ex & ex)const;
+
+
 
 	ns_os_signal_handler os_signal_handler;
 	inline long server_crash_daemon_port() const{return _server_crash_daemon_port;}
@@ -469,7 +479,6 @@ private:
 	
 	std::string host_name_suffix;
 	std::vector<std::string> sql_server_addresses;
-	mutable unsigned long current_sql_server_address_id;
 	std::vector<std::string> possible_sql_databases;
 	std::vector<std::string>::const_iterator sql_database_choice;  ///the name of the database to use on the mysql server
 
@@ -542,19 +551,21 @@ private:
 	///registers the specified device in the central database.
 	static void register_device(const ns_device_summary & device,ns_sql & con);
 
-
 	///used to prevent multiple threads from simultaneously registering server events in the mysql database
 	mutable ns_lock server_event_lock;
 	///used to coordinate multiple threads' communication with the database.
 	mutable ns_lock sql_lock;
 
 	mutable ns_lock local_buffer_sql_lock;
+	std::vector<ns_thread_output_state> thread_output_states;
 
 	///used to coordinate the simulator scan (to run test scans without accessing hardware) disk access
 	ns_lock simulator_scan_lock;
 
 	
-
+	//ordered by the system thread id;
+	mutable std::map<ns_64_bit, ns_thread_output_state> thread_states;
+	std::map<ns_64_bit, ns_thread_output_state>::iterator get_current_thread_state_info() const;
 
 
 	unsigned int _software_version_compile;

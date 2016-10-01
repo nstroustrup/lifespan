@@ -132,6 +132,7 @@ class ns_sql_connection{
 
   ~ns_sql_connection();
 
+  const std::string & hostname() const { return _server_name; }
  private:
   static std::string unreachable_host;
   void simulate_errors_if_requested() const;

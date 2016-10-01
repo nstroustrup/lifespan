@@ -138,7 +138,7 @@ public:
 		}
 		T * a(pool.top());
 		pool.pop();
-		if (is_locking)access_lock.release;
+		if (is_locking)access_lock.release();
 		return a;
 	}
 	unsigned long number_of_items_checked_out() const { return number_checked_out; }

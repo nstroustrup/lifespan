@@ -222,6 +222,6 @@ class test_class : public ns_simple_cache_data<ns_image_server_image, ns_image_r
 public:
 
 };
-using ns_image_registration_profile_cache = ns_simple_cache<ns_disk_buffered_image_registration_profile,true> ;
+typedef ns_simple_cache<ns_disk_buffered_image_registration_profile,true> ns_image_registration_profile_cache;
 
 #endif

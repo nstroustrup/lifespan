@@ -197,14 +197,14 @@ public:
 
 	typedef ns_component component_type;
 	typedef ns_image_stream_static_offset_buffer<ns_component> storage_type;
-
+	typedef ns_image_stream_sender<ns_component, ns_image_buffered_multi_line_random_access_input_image<ns_component, image_source_t>, unsigned long > sender_t;
 	//initialize as an empty image
 	ns_image_buffered_multi_line_random_access_input_image():buffer_bottom(0),total_buffer_height(0),previous_lines_required(0),image_source(0),lines_received(0),ns_image_stream_sender<ns_component,ns_image_buffered_multi_line_random_access_input_image<ns_component, image_source_t>, unsigned long >(ns_image_properties(0,0,0),this){}
 	
 
 	inline void resize(const ns_image_properties & properties){init(properties);}
 
-	internal_state_t seek_to_beginning(){
+	typename sender_t::internal_state_t seek_to_beginning(){
 		buffer_bottom = 0;
 		lines_received = 0;
 		sender_internal_state = image_source->seek_to_beginning(); 
@@ -274,20 +274,20 @@ public:
 	}
 
 	//sender functions
-	internal_state_t init_send(){
+	 typename sender_t::internal_state_t init_send(){
 		lines_sent = 0;
 		sender_internal_state = seek_to_beginning();
 		return 0;
 	}
-	internal_state_t init_send_const() const {
+	 typename sender_t::internal_state_t init_send_const() const {
 		throw ns_ex("Invalid use of const");
 	}
 
 	template<class write_buffer>
-	void send_lines(write_buffer & lines, const unsigned int count,internal_state_t & unused_state){
+	  void send_lines(write_buffer & lines, const unsigned int count,typename sender_t::internal_state_t & unused_state){
 		unsigned long to_send = count;
-		if (count + lines_sent > ns_image_stream_sender<ns_component,ns_image_buffered_multi_line_random_access_input_image<ns_component,image_source_t>, internal_state_t>::_properties.height)
-			to_send = ns_image_stream_sender<ns_component,ns_image_buffered_multi_line_random_access_input_image<ns_component, image_source_t>,internal_state_t >::_properties.height - lines_sent;
+		if (count + lines_sent > sender_t::_properties.height)
+			to_send = sender_t::_properties.height - lines_sent;
 
 		for (unsigned long y = 0; y < to_send; y++){
 			this->make_line_available(y+lines_sent);
@@ -304,7 +304,7 @@ public:
 
 
 private:
-	internal_state_t sender_internal_state;
+	typename sender_t::internal_state_t sender_internal_state;
 
 	unsigned long lines_sent;
 	storage_type image_buffer;
@@ -338,7 +338,7 @@ private:
 		buffer_bottom = 0;
 		lines_received = 0;
 		
-		ns_image_stream_sender<ns_component,ns_image_buffered_multi_line_random_access_input_image<ns_component, image_source_t>, internal_state_t>::_properties = properties;
+		sender_t::_properties = properties;
 	}
 
 

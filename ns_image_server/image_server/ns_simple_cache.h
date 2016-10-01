@@ -29,7 +29,7 @@ public:
 	virtual ns_64_bit to_id(const id_t & id) const = 0;
 	virtual ns_64_bit id() const =0 ;
 
-	virtual void clean_up(typename external_source_t & external_source) = 0;
+	virtual void clean_up(external_source_t & external_source) = 0;
 
 	typedef id_t id_type;
 	typedef external_source_t external_source_type;
@@ -60,9 +60,8 @@ public:
 template<class data_t, bool locked>
 class ns_simple_cache_internal_object {
 public:
-	ns_simple_cache_internal_object() :number_waiting_or_write(0), 
-		object_write_lock("owl"), size_in_memory(0), do_not_delete(false), 
-		to_erase(false), to_be_deleted(false), number_checked_out_by_any_threads(0) {}
+	ns_simple_cache_internal_object() :number_waiting_for_write_lock(0), 
+		object_write_lock("owl"),  to_be_deleted(false), number_checked_out_by_any_threads(0) {}
 
 	typedef data_t data_type;
 
@@ -98,13 +97,13 @@ public:
 		current_memory_usage_in_kb(0),
 		lock("clock") {}
 
-	typedef ns_simple_cache_data_handle<const typename data_t, locked> const_handle_t;
-	typedef ns_simple_cache_data_handle<typename data_t, locked> handle_t;
+	typedef ns_simple_cache_data_handle<const data_t, locked> const_handle_t;
+	typedef ns_simple_cache_data_handle<data_t, locked> handle_t;
 
 	typedef typename data_t::external_source_type external_source_type;
 
 	void set_memory_allocation_limit_in_kb(const unsigned long & max) {//in kilobytes
-		max_memory_usage = max;
+		max_memory_usage_in_kb = max;
 	}
 	void get_for_read(const typename data_t::id_type & id, const_handle_t & cache_object, typename data_t::external_source_type & external_source) {
 		get_image(id, &cache_object, external_source, true);
@@ -121,7 +120,7 @@ public:
 
 		//get all write locks!
 		//is it really that simple? 
-		for (cache_t::iterator p = data_cache.begin(); p != data_cache.end(); p++) {
+		for (typename cache_t::iterator p = data_cache.begin(); p != data_cache.end(); p++) {
 			p->second.object_write_lock.wait_to_acquire(__FILE__, __LINE__);
 			if (external_source != 0)
 				p->second.data.clean_up(*external_source);
@@ -140,7 +139,7 @@ public:
 		const unsigned long current_time(ns_current_time());
 		//get all write locks!
 		//is it really that simple? 
-		for (cache_t::iterator p = data_cache.begin(); p != data_cache.end();) {
+		for (typename cache_t::iterator p = data_cache.begin(); p != data_cache.end();) {
 			p->second.object_write_lock.wait_to_acquire(__FILE__, __LINE__);
 			if (p->second.last_access + age_in_seconds < current_time) {
 				current_memory_usage_in_kb -= p->second.data.size_in_memory_in_kbytes();
@@ -166,7 +165,7 @@ public:
 	unsigned long current_memory_usage_in_kb;
 
 	typedef typename cache_t::value_type map_pair_t;
-	typedef typename ns_simple_cache_internal_object<data_t, locked> internal_object_t;
+	typedef ns_simple_cache_internal_object<data_t, locked> internal_object_t;
 
 	//data_type_t will be either data_type or const data_type depending on whether 
 	template<class data_type_t>
@@ -327,8 +326,7 @@ public:
 			bool found(false);
 
 			for (typename cache_t::iterator p = data_cache.begin(); p != data_cache.end(); p++) {
-				if (p->first == im.id)  //don't delete the record of the image for which we're trying to make room.
-					continue;
+			       
 				if (p == target_id) {
 					oldest_in_memory = p;
 					found = true;
@@ -351,7 +349,7 @@ public:
 			//we have a write lock on a specific object, but it's been modified somehow and can't be found.  
 			if (locked && target_id != -1 && oldest_in_memory->second.id != target_id) {
 				lock.release();
-				throw ns_ex("The cache seems to have been corrupted!")
+				throw ns_ex("The cache seems to have been corrupted!");
 			}
 
 			//we have the object but we need to grab its wait lock
@@ -373,7 +371,7 @@ public:
 #ifdef NS_VERBOSE_IMAGE_CACHE
 			std::cerr << "Deleting image of size " << oldest_in_memory->second.size_in_memory / 1024 << " dated " << ns_format_time_string(oldest_in_memory->second.last_access) << "\n";
 #endif
-			current_memory_usage -= oldest_in_memory->second.data.size_in_memory_in_kb();
+			current_memory_usage_in_kb -= oldest_in_memory->second.data.size_in_memory_in_kb();
 			oldest_in_memory().clean_up(external_source);
 			data_cache.erase(oldest_in_memory);
 		}
@@ -389,7 +387,7 @@ inline void ns_simple_cache_data_handle<data_t, locked>::check_out(bool write, n
 	//not locked as the cache object will be locked while checking this object out
 	obj = o;
 	cache = c;
-	image = &obj->image;
+	data = &obj->data;
 	obj->number_checked_out_by_any_threads++;
 	obj->last_access = ns_current_time();
 	if (write)
@@ -411,7 +409,7 @@ inline void ns_simple_cache_data_handle<data_t,locked>::check_in() {
 	if (locked) cache->lock.release();
 	obj = 0;
 	cache = 0;
-	image = 0;
+	data = 0;
 }
 
 

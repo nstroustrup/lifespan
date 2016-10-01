@@ -152,7 +152,7 @@ template <class ns_component, class sender_t, class sender_internal_state_t>
 class ns_image_stream_sender{
 public:
 
-
+  
 	ns_image_stream_sender(const ns_image_properties & properties, const sender_t * sender):_properties(properties){verify_constraints(sender);}
 	typedef ns_component component_type;
 	typedef sender_internal_state_t internal_state_t;
@@ -198,7 +198,7 @@ protected:
 	unsigned long _max_line_block_height;
 private:
 	template<class reciever_t>
-	void pump(reciever_t * reciever, const unsigned int block_height, typename sender_t::internal_state_t & state)const {
+	void pump(reciever_t * reciever, const unsigned int block_height, sender_internal_state_t & state)const {
 		reciever->prepare_to_recieve_image(_properties);
 		ns_image_stream_buffer_properties buf_prop;
 
@@ -228,7 +228,7 @@ private:
 	}
 
 	template<class reciever_t>
-	void pump(reciever_t * reciever, const unsigned int block_height, typename sender_t::internal_state_t & state) {
+	void pump(reciever_t * reciever, const unsigned int block_height, sender_internal_state_t & state) {
 		reciever->prepare_to_recieve_image(_properties);
 		ns_image_stream_buffer_properties buf_prop;
 
@@ -266,7 +266,7 @@ private:
 ///image_stream_sender.
 ///
 template<class ns_component>
-class ns_image_stream_file_source : public ns_image_stream_sender<ns_component, ns_image_stream_file_source<ns_component>, unsigned long> {
+  class ns_image_stream_file_source : public ns_image_stream_sender<ns_component, ns_image_stream_file_source<ns_component>, unsigned long> {
 public:
 	ns_image_stream_file_source(ns_image_input_file<ns_component> & input_file):/*lines_sent(0),*/ns_image_stream_sender<ns_component, ns_image_stream_file_source<ns_component>,unsigned long >(input_file.properties(),this)
 		{file = &input_file;}
@@ -276,16 +276,16 @@ public:
 	//ns_image_stream_sender needs to be able to produce a block of lines upon request.
 	//n is a recommendation; less lines may be returned.
 	 template<class write_buffer>
-	 void send_lines(write_buffer & lines, const unsigned int count, internal_state_t & state){
+	 void send_lines(write_buffer & lines, const unsigned int count, unsigned long & state){
 		for (unsigned int i = 0; i < count; i++)
 			file->read_line(lines[i]);
 	}
-	 internal_state_t init_send() { return 0; }
-	 internal_state_t init_send_const()const{ return 0; }
+	unsigned long init_send() { return 0; }
+	unsigned long init_send_const()const{ return 0; }
 	void finish_send(){
 		file->close();
 	}
-	internal_state_t seek_to_beginning(){
+	unsigned long seek_to_beginning(){
 		return file->seek_to_beginning();
 	}
 
@@ -614,9 +614,6 @@ private:
 	unsigned long length;
 };
 
-#define NS_SR_PROPS ns_image_stream_reciever<ns_image_stream_static_offset_buffer<ns_component> >::_properties
-#define NS_SR_PROPS_SENDER ns_image_stream_sender<ns_component, ns_image_whole<ns_component> >::_properties
-
 #ifdef _WIN32 
 	template<class ns_component>
 	class ns_image_whole;
@@ -633,18 +630,19 @@ template<class ns_component>
 class ns_image_whole: public ns_image_stream_reciever<ns_image_stream_static_offset_buffer<ns_component> >,
 					  public ns_image_stream_sender<ns_component, ns_image_whole<ns_component>, unsigned long> {
 public:
-
+  typedef ns_image_stream_sender<ns_component,ns_image_whole<ns_component>,unsigned long> sender_t;
+  typedef ns_image_stream_reciever<ns_image_stream_static_offset_buffer<ns_component> > reciever_t;
 	typedef ns_component component_type;
 	typedef ns_image_stream_static_offset_buffer<ns_component> storage_type;
 
 
 	//initialize as an empty image
 	ns_image_whole():avoid_memory_reallocations(false),ns_image_stream_reciever<ns_image_stream_static_offset_buffer<ns_component> >(0,this),
-							ns_image_stream_sender<ns_component,ns_image_whole<ns_component>, internal_state_t >(ns_image_properties(0,0,0),this),
+	  ns_image_stream_sender<ns_component,ns_image_whole<ns_component>, typename sender_t::internal_state_t >(ns_image_properties(0,0,0),this),
 							lines_received(0),lines_sent(0){}
 
 	ns_image_whole<ns_component>(const ns_image_whole<ns_component> & w):ns_image_stream_reciever<ns_image_stream_static_offset_buffer<ns_component> >(0,this),
-							ns_image_stream_sender<ns_component,ns_image_whole<ns_component>,internal_state_t >(ns_image_properties(0,0,0),this),avoid_memory_reallocations(false),
+	  ns_image_stream_sender<ns_component,ns_image_whole<ns_component>,typename sender_t::internal_state_t >(ns_image_properties(0,0,0),this),avoid_memory_reallocations(false),
 							lines_received(0),lines_sent(0){
 		w.pump(*this,1024);
 	}
@@ -671,11 +669,11 @@ public:
 				else image_buffer.resize(prop);
 				resized = true;
 			}
-			NS_SR_PROPS = properties;
+		
 		}
 		///XXX Removing template specifications does not generate an error here
-		//NS_SR_PROPS_SENDER =
-		ns_image_stream_sender<ns_component, ns_image_whole<ns_component>,internal_state_t >::_properties = properties;
+		//NS_SR_PROP
+		reciever_t::_properties = sender_t::_properties = properties;
 		lines_received = 0;
 		image_buffer.set_offset(0);
 		return resized;
@@ -693,8 +691,8 @@ public:
 	void recieve_lines(const ns_image_stream_static_offset_buffer<ns_component> & lines, const unsigned long height){
 		lines_received+=height;
 	}
-	internal_state_t init_send() { return 0; }
-	internal_state_t init_send_const() const { return 0; }
+	typename sender_t::internal_state_t init_send() { return 0; }
+	typename sender_t::internal_state_t init_send_const() const { return 0; }
 
 	///increases the canvas size of the image (ie doesn't change the current image but addes a margin around it)
 	void inline increase_size(const ns_image_properties & prop){
@@ -707,7 +705,7 @@ public:
 		if (prop.components != this->properties().components)
 			throw ns_ex("ns_whole_image::whole images can only be increased in height, not component number");
 
-		NS_SR_PROPS = NS_SR_PROPS_SENDER = prop;
+		reciever_t::_properties = sender_t::_properties = prop;
 		ns_image_stream_buffer_properties bprop;
 		bprop.height = prop.height;
 		bprop.width = prop.width*prop.components;
@@ -718,20 +716,20 @@ public:
 	//STREAM_SENDER ABILITIES
 
 	template<class write_buffer>
-	void send_lines(write_buffer & lines, const unsigned int count, internal_state_t & lines_sent) {
+	  void send_lines(write_buffer & lines, const unsigned int count, typename sender_t::internal_state_t & lines_sent) {
 		send_lines_internal(lines, count, lines_sent);
 	}
 	template<class write_buffer>
-	void send_lines(write_buffer & lines, const unsigned int count, internal_state_t & lines_sent) const {
+	  void send_lines(write_buffer & lines, const unsigned int count, typename sender_t::internal_state_t & lines_sent) const {
 		send_lines_internal(lines, count, lines_sent);
 	}
 
 	template<class write_buffer>
-	void send_lines_internal(write_buffer & lines, const unsigned int count, internal_state_t & lines_sent) const {
+	  void send_lines_internal(write_buffer & lines, const unsigned int count, typename sender_t::internal_state_t & lines_sent) const {
 		image_buffer.set_offset(0);
 		unsigned long to_send = count;
-		if (count + lines_sent > NS_SR_PROPS.height)
-			to_send = NS_SR_PROPS.height - lines_sent;
+		if (count + lines_sent > reciever_t::_properties.height)
+		  to_send = reciever_t::properties.height - lines_sent;
 
 		for (unsigned long y = 0; y < to_send; y++) {
 			for (unsigned int x = 0; x < lines.properties().width; x++) {
@@ -744,14 +742,14 @@ public:
 	void finish_recieving_image(){image_buffer.set_offset(0);}
 
 	const inline ns_image_properties & properties() const{
-			return NS_SR_PROPS;
+	  return reciever_t::_properties;
 	}
 	void set_description(const std::string & dsc){
-		NS_SR_PROPS.description = dsc;
+	  reciever_t::_properties.description = dsc;
 	}
 	//fraction between (0 and 1].
 	void set_output_compression(const float & c){
-		NS_SR_PROPS.compression = c;
+	  reciever_t::_properties.compression = c;
 	}
 	
 	const float finline sample_f(const float y, const float x) const{
@@ -766,8 +764,8 @@ public:
 					d1y(1.0-dy);
 
 		#ifdef NS_DEBUG_IMAGE_ACCESS
-			if (p0y >= NS_SR_PROPS.height || p1y >= NS_SR_PROPS.height ||
-				p0x >= NS_SR_PROPS.width || p1x >= NS_SR_PROPS.width)
+		if (p0y >= reciever_t::_properties.height || p1y >= reciever_t::_properties.height ||
+		    p0x >= reciever_t::_properties.width || p1x >= reciever_t::_properties.width)
 				throw ns_ex("Out of bound access!");
 		#endif
 		return	image_buffer[p0y][p0x]*(d1y)*(d1x) +
@@ -788,8 +786,8 @@ public:
 					d1y(1.0-dy);
 
 		#ifdef NS_DEBUG_IMAGE_ACCESS
-			if (p0y >= NS_SR_PROPS.height || p1y >= NS_SR_PROPS.height ||
-				p0x >= NS_SR_PROPS.width || p1x >= NS_SR_PROPS.width)
+		if (p0y >= reciever_t::_properties.height || p1y >= reciever_t::_properties.height ||
+		    p0x >= reciever_t::_properties.width || p1x >= reciever_t::_properties.width)
 				throw ns_ex("Out of bound access!");
 		#endif
 		return	image_buffer[p0y][p0x]*(d1y)*(d1x) +
@@ -832,8 +830,9 @@ public:
 	///The current image is emptied.
 	void transfer_contents_to_new_image(ns_image_whole<ns_component> & n){
 		image_buffer.give_buffer_to_new_object(n.image_buffer);
-		n.NS_SR_PROPS = NS_SR_PROPS;
-		n.NS_SR_PROPS_SENDER = NS_SR_PROPS_SENDER;
+		n.reciever_t::_properties = reciever_t::_properties;
+		n.sender_t::_properties = sender_t::_properties;
+	    
 		n.lines_sent = lines_sent;
 		n.lines_received = lines_received;
 
@@ -846,14 +845,14 @@ public:
 		ns_histogram<unsigned int,ns_component> hist;
 		hist.clear();
 		unsigned long num_zeros = 0;
-		if (NS_SR_PROPS.components == 3)
-			for (unsigned int y = 0; y < NS_SR_PROPS.height; y++)
-				for (unsigned int x = 0; x < NS_SR_PROPS.width*3; x+=3){
+		if (reciever_t::_properties.components == 3)
+		  for (unsigned int y = 0; y < reciever_t::_properties.height; y++)
+		    for (unsigned int x = 0; x < reciever_t::_properties.width*3; x+=3){
 					hist[(image_buffer[y][x]+image_buffer[y][x+1]+image_buffer[y][x+2])/3]++;
 				}
 		else
-			for (unsigned int y = 0; y < NS_SR_PROPS.height; y++)
-				for (unsigned int x = 0; x < NS_SR_PROPS.width; x++){
+		  for (unsigned int y = 0; y < reciever_t::_properties.height; y++)
+		    for (unsigned int x = 0; x < reciever_t::_properties.width; x++){
 					hist[image_buffer[y][x]]++;
 				}
 		return hist;
@@ -862,16 +861,16 @@ public:
 	///Slow, Safe access to pixels.
 	///returns 0 for out of range outputs.
 	inline ns_component slow_safe_access(const int y, const int x){
-		if(x >= 0 && (static_cast<unsigned int>(x) < NS_SR_PROPS.components*NS_SR_PROPS.width) &&
-				y >= 0 && (static_cast<unsigned int>(y) < NS_SR_PROPS.height))
+	  if(x >= 0 && (static_cast<unsigned int>(x) < reciever_t::_properties.components*reciever_t::_properties.width) &&
+	     y >= 0 && (static_cast<unsigned int>(y) < reciever_t::_properties.height))
 			 return image_buffer[y][x];
 		return 0;
 	}
 	///Slow, Safe access to pixels.
 	///returns 0 for out of range outputs.
 	inline const ns_component slow_safe_access(const int y, const int x) const{
-		if(x >= 0 && (static_cast<unsigned int>(x) < NS_SR_PROPS.components*NS_SR_PROPS.width) &&
-				y >= 0 && (static_cast<unsigned int>(y) < NS_SR_PROPS.height))
+	  if(x >= 0 && (static_cast<unsigned int>(x) < reciever_t::_properties.components*reciever_t::_properties.width) &&
+	     y >= 0 && (static_cast<unsigned int>(y) < reciever_t::_properties.height))
 			 return image_buffer[y][x];
 		return 0;
 	}
@@ -896,7 +895,7 @@ public:
 	///Will segfault if called on B&W image
 	template<class color_t>
 	void inline safe_set_color(const int &y, const int &x, const color_t & color){
-		if (x < 0 || y < 0 || x >= NS_SR_PROPS.width || y >= NS_SR_PROPS.height)
+	  if (x < 0 || y < 0 || x >= reciever_t::_properties.width || y >= reciever_t::_properties.height)
 			return;
 		set_color((unsigned int)y,(unsigned int)x,color);
 	}
@@ -1157,7 +1156,7 @@ public:
 	}
 
 	//mimic interface of ns_buffered_random_access_image.h
-	inline internal_state_t seek_to_beginning() { internal_state_t t; return t; }
+	inline typename sender_t::internal_state_t seek_to_beginning() { typename sender_t::internal_state_t t; return t; }
 	inline void make_line_available(unsigned long i){}
 
 
@@ -1172,12 +1171,12 @@ private:
 	void inline constrain_vector(ns_vector_2i & a){
 		if (a.x < 0)
 			a.x = 0;
-		if ((unsigned int)a.x >= NS_SR_PROPS.width)
-			a.x = NS_SR_PROPS.width-1;
+		if ((unsigned int)a.x >= reciever_t::_properties.width)
+		  a.x = reciever_t::_properties.width-1;
 		if (a.y < 0)
 			a.y = 0;
-		if ((unsigned int)a.y >= NS_SR_PROPS.height)
-			a.y = (int)NS_SR_PROPS.height-1;
+		if ((unsigned int)a.y >= reciever_t::_properties.height)
+		  a.y = (int)reciever_t::_properties.height-1;
 	}
 
 		static inline ns_component lerp(const ns_component & c, const ns_component & d, float t){

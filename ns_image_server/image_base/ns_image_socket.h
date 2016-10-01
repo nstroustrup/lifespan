@@ -99,16 +99,18 @@ void ns_image_socket_reciever<ns_bit,read_buffer>::recieve_lines(const read_buff
 template<class ns_component>
 class ns_image_socket_reciever : public ns_image_stream_sender< ns_component, ns_image_socket_reciever< ns_component >, unsigned long>{
 public:
+  typedef ns_image_stream_sender<ns_component,ns_image_socket_reciever<ns_component>,unsigned long> sender_t;
 	
-	ns_image_socket_reciever():socket_connection(0),byte_resize_factor(sizeof(ns_component)/sizeof(char)),ns_image_stream_sender<ns_component, ns_image_socket_reciever<ns_component> >(ns_image_properties(0,0,0), this){}
+ ns_image_socket_reciever():socket_connection(0),byte_resize_factor(sizeof(ns_component)/sizeof(char)),ns_image_stream_sender<ns_component, ns_image_socket_reciever<ns_component>,unsigned long >(ns_image_properties(0,0,0), this){}
 	
 #pragma warning(default:4355)
 	void bind_socket(ns_socket_connection & connection){
 		socket_connection = &connection;
 	}
 
-	internal_state_t init_send_const() const { throw ns_ex("Invalid const function!"); }
-	internal_state_t init_send(){
+	typename sender_t::internal_state_t init_send_const() const { throw ns_ex("Invalid const function!"); }
+
+	typename sender_t::internal_state_t init_send(){
 		if (socket_connection == 0)
 			throw ns_ex("ns_image_socket_sender::Attempting to recieve an image before a socket was specified!");
 
@@ -120,18 +122,18 @@ public:
 
 		char * buf = new char[header_length];
 		socket_connection->read(buf,header_length);
-		ns_image_stream_sender< ns_component, ns_image_socket_reciever< ns_component > >::_properties = ns_char_to_image_properties(buf,header_length);
+		ns_image_stream_sender< ns_component, ns_image_socket_reciever< ns_component >, unsigned long >::_properties = ns_char_to_image_properties(buf,header_length);
 		delete buf;
 
 		ns_image_stream_buffer_properties bprop;
 		bprop.height = 512;
-		bprop.width = ns_image_stream_sender< ns_component, ns_image_socket_reciever< ns_component > >::_properties.width*ns_image_stream_sender< ns_component, ns_image_socket_reciever< ns_component > >::_properties.components;
+		bprop.width = ns_image_stream_sender< ns_component, ns_image_socket_reciever< ns_component >,unsigned long >::_properties.width*ns_image_stream_sender< ns_component, ns_image_socket_reciever< ns_component >,unsigned long >::_properties.components;
 		buffer.resize(bprop);
-		my_lines_received = 0;
+		return 0;
 
 	}
 	template<class write_buffer>
-	 void send_lines(write_buffer & lines, unsigned int count){
+	  void send_lines(write_buffer & lines, unsigned int count,typename sender_t::internal_state_t & my_lines_received){
 		//recieve in chunks of 512 lines
 		unsigned long lines_received_so_far = 0;
 		while (lines_received_so_far < count){
@@ -155,7 +157,7 @@ public:
 	ns_image_stream_static_buffer<ns_component> buffer;
 	ns_socket_connection * socket_connection;
 	char byte_resize_factor;
-	unsigned long my_lines_received;
+       
 };
 
 //specialization for bitmaps

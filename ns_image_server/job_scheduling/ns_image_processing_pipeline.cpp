@@ -850,13 +850,16 @@ void ns_image_processing_pipeline::process_region(const ns_image_server_captured
 					throw ns_ex("Could not load worm count maximum from database!");
 
 				//get potentially cached static image mask.  this caching was built to be threadsafe
-				ns_image_server_image static_mask_image(region_image.request_processed_image(ns_process_static_mask, sql));
+				ns_image_server_image static_mask_image = region_image.request_processed_image(ns_process_static_mask, sql);
 				ns_acquire_for_scope<ns_image_worm_detection_results> detected_worms;
 				{
 					ns_image_storage_handler::cache_t::const_handle_t static_mask;
+					ns_image_cache_data_source data_source;
+					data_source.handler = &image_server.image_storage; 
+					data_source.sql = & sql;
 					if (static_mask_image.id != 0) {
 						cout << "Using a static mask.\n";
-						image_server.image_storage.cache.get_for_read(static_mask_image, static_mask, ns_image_cache_data_source(&image_server.image_storage,&sql));
+						image_server.image_storage.cache.get_for_read(static_mask_image, static_mask, data_source);
 					}
 
 

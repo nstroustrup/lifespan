@@ -3,6 +3,7 @@
 
 #include "ns_ex.h"
 #include "ns_thread.h"
+#include <type_traits>
 #include <map>
 
 //#define NS_VERBOSE_IMAGE_CACHE
@@ -37,7 +38,9 @@ public:
 
 template<class data_t, bool locked>
 class ns_simple_cache_data_handle {
+  typedef typename std::remove_cv<data_t>::type data_type;
 public:
+
 	ns_simple_cache_data_handle():obj(0), cache(0), data(0) {}
 	data_t & operator()() { return *data; }
 	const data_t &operator()() const { return *data; }
@@ -49,10 +52,36 @@ public:
 //	template<class data_t, bool locked> friend class ns_simple_cache;
 //private:
 	data_t * data; //the image cached in memory.
-	void check_out(bool write, ns_simple_cache_internal_object<data_t,locked> * o, ns_simple_cache<data_t, locked> *c);
+
+	void check_out(bool to_write, 
+		       ns_simple_cache_internal_object<data_type,locked> * o, 
+		       ns_simple_cache<data_type, locked> *c){
+	  //not locked as the cache object will be locked while checking this object out
+	  obj = o;
+	  cache = c;
+	  data = &obj->data;
+	  obj->number_checked_out_by_any_threads++;
+	  obj->last_access = ns_current_time();
+	  write = to_write;
+	}
+	void check_out(bool to_write,
+		       ns_simple_cache_internal_object<const data_type,locked> * o,
+		       ns_simple_cache<const data_type,locked> * c){
+	  obj_const = o;
+	  cache_const = c;
+	  data = &obj_const->data;
+	  obj_const->number_checked_out_by_any_threads++;
+	  obj_const->last_access = ns_current_time();
+	  write = to_write;
+	}
+	
+ 
 	void check_in();
-	ns_simple_cache_internal_object< data_t, locked> * obj;
-	ns_simple_cache< data_t, locked> * cache;
+	const ns_simple_cache_internal_object<const data_type, locked> * obj_const;
+	ns_simple_cache_internal_object<data_type, locked> * obj;
+	const ns_simple_cache<const data_type,locked> * cache_const;
+	ns_simple_cache<data_type, locked> * cache;
+
 	bool write;
 
 };
@@ -65,16 +94,16 @@ public:
 
 	typedef data_t data_type;
 
-	unsigned long last_access; //the last time (in UNIX time seconds) that the image was requested from the cache
+	mutable unsigned long last_access; //the last time (in UNIX time seconds) that the image was requested from the cache
 
 	data_t data;
 
-	ns_lock object_write_lock;
+	mutable ns_lock object_write_lock;
 	//protected by the write lock but not the main lock
-	int number_waiting_for_write_lock;
+	mutable int number_waiting_for_write_lock;
 
-	int number_checked_out_by_any_threads;
-	bool to_be_deleted;
+	mutable int number_checked_out_by_any_threads;
+	mutable bool to_be_deleted;
 
 	//friend data_t;
 	//friend class ns_simple_cache<data_t,locked>;
@@ -97,16 +126,17 @@ public:
 		current_memory_usage_in_kb(0),
 		lock("clock") {}
 
-	typedef ns_simple_cache_data_handle<const data_t, locked> const_handle_t;
 	typedef ns_simple_cache_data_handle<data_t, locked> handle_t;
+	typedef ns_simple_cache_data_handle<const data_t, locked> const_handle_t;
 
 	typedef typename data_t::external_source_type external_source_type;
 
 	void set_memory_allocation_limit_in_kb(const unsigned long & max) {//in kilobytes
 		max_memory_usage_in_kb = max;
 	}
-	void get_for_read(const typename data_t::id_type & id, const_handle_t & cache_object, typename data_t::external_source_type & external_source) {
-		get_image(id, &cache_object, external_source, true);
+       
+	void get_for_read(const typename data_t::id_type & id, const_handle_t & cache_object, typename data_t::external_source_type & external_source){
+	  get_image(id,&cache_object,external_source,false);
 	}
 
 	void get_for_write(const typename data_t::id_type & id, handle_t & cache_object, typename data_t::external_source_type & external_source) {
@@ -168,9 +198,9 @@ public:
 	typedef ns_simple_cache_internal_object<data_t, locked> internal_object_t;
 
 	//data_type_t will be either data_type or const data_type depending on whether 
-	template<class data_type_t>
+	template<class handle_t>
 	void get_image(const typename data_t::id_type & id,
-		ns_simple_cache_data_handle< data_type_t, locked> * image,
+		handle_t * handle,
 		typename data_t::external_source_type & external_source,
 		bool read_only) {
 		bool initial_read_request(read_only);
@@ -178,7 +208,7 @@ public:
 		bool currently_have_write_lock(false);
 
 		//used to convert ids.
-		const data_type_t dt;
+		const data_t dt;
 
 		while (true) {
 			//grab the lock needed to access anything
@@ -214,12 +244,9 @@ public:
 								continue; //do another round
 							}
 							//we have exclusive write access to a record no-one is reading!  We're done. 
-							data_t * a(0);
-							typename ns_simple_cache_internal_object<data_t,true>::data_type * b(0);
-							a = b;
-							ns_simple_cache_internal_object<data_t, locked> tt;
-
-							image->check_out(!read_only,&tt,this);
+						     
+						 
+							handle->check_out(!read_only,&(p->second),this);
 							if (locked)lock.release();
 							return;
 						}
@@ -247,7 +274,7 @@ public:
 							}
 
 							//we have the write lock, so nobody else does!  check it out!
-							image->check_out(true,&p->second, this);
+							handle->check_out(true,&p->second, this);
 							if (currently_have_write_lock) p->second.object_write_lock.release();
 							if (locked)lock.release();
 							break;
@@ -276,7 +303,7 @@ public:
 			//}
 			p->second.object_write_lock.wait_to_acquire(__FILE__, __LINE__);
 			p->second.number_waiting_for_write_lock++;
-			image->check_out(true,&p->second, this);  //check it out for writing.
+			handle->check_out(true,&p->second, this);  //check it out for writing.
 			lock.release();//release the lock so everything else can read and write other objects in the background while we load
 							//this one in.
 
@@ -300,7 +327,7 @@ public:
 
 							//lets give up write access manually here, and pass the remaining object, no read only, on to the user
 			p->second.number_waiting_for_write_lock--;
-			image->write = false;
+			handle->write = false;
 			return;
 
 		}
@@ -379,37 +406,36 @@ public:
 		return;
 	}
 //private:
-	ns_lock lock;
+	mutable ns_lock lock;
 };
 
 template<class data_t, bool locked>
-inline void ns_simple_cache_data_handle<data_t, locked>::check_out(bool write, ns_simple_cache_internal_object<data_t, locked> * o, ns_simple_cache<data_t, locked> *c) {
-	//not locked as the cache object will be locked while checking this object out
-	obj = o;
-	cache = c;
-	data = &obj->data;
-	obj->number_checked_out_by_any_threads++;
-	obj->last_access = ns_current_time();
-	if (write)
-		obj->being_written_to = write = true;
-	else write = false;
-}
-
-template<class data_t, bool locked>
-inline void ns_simple_cache_data_handle<data_t,locked>::check_in() {
-	//we release this first, so that anyone holding the main lock
-	//and waiting for the write lock will continue;
-	if (locked && write)
-		obj->number_waiting_for_write_lock--;
-	if (locked && write)
-		obj->object_write_lock.release();
-
-	if (locked) cache->lock.wait_to_acquire(__FILE__, __LINE__);
-	obj->number_checked_out_by_any_threads--;
-	if (locked) cache->lock.release();
-	obj = 0;
-	cache = 0;
-	data = 0;
+  inline void ns_simple_cache_data_handle<data_t,locked>::check_in() {
+  //we release this first, so that anyone holding the main lock
+  //and waiting for the write lock will continue;
+  if (obj != 0){
+    if (locked && write)
+      obj->number_waiting_for_write_lock--;
+    if (locked && write)
+      obj->object_write_lock.release();
+    if (locked) cache->lock.wait_to_acquire(__FILE__, __LINE__);
+    obj->number_checked_out_by_any_threads--;
+    if (locked) cache->lock.release();
+    obj = 0;
+    cache = 0;
+  }
+  if (obj_const != 0){
+    if (locked && write)
+      obj_const->number_waiting_for_write_lock--;
+    if (locked && write)
+      obj_const->object_write_lock.release();
+    if (locked) cache_const->lock.wait_to_acquire(__FILE__, __LINE__);
+    obj_const->number_checked_out_by_any_threads--;
+    if (locked) cache_const->lock.release();
+    obj_const = 0;
+    cache_const = 0;
+  }
+  data = 0;
 }
 
 

@@ -729,7 +729,7 @@ public:
 		image_buffer.set_offset(0);
 		unsigned long to_send = count;
 		if (count + lines_sent > reciever_t::_properties.height)
-		  to_send = reciever_t::properties.height - lines_sent;
+		  to_send = reciever_t::_properties.height - lines_sent;
 
 		for (unsigned long y = 0; y < to_send; y++) {
 			for (unsigned int x = 0; x < lines.properties().width; x++) {

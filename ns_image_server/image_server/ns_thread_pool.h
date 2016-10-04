@@ -219,7 +219,6 @@ public:
 				thread_idle_lock.release();
 				return true;
 			}
-			job_specification_t job;
 			NS_TPDBG(*p.debug << "(t" << p.thread_id << " requests job lock)");
 			ns_acquire_lock_for_scope job_access_lock(p.pool->job_access_lock, __FILE__, __LINE__);
 
@@ -253,7 +252,8 @@ public:
 			}
 			//grab the job
 			NS_TPDBG(*p.debug << "(t" << p.thread_id << " finds a job and releases lock)");
-			job = p.pool->jobs.front();
+
+			job_specification_t job = p.pool->jobs.front();
 			p.pool->jobs.pop();
 			job_access_lock.release();
 

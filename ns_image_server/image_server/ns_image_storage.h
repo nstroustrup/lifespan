@@ -59,37 +59,33 @@ image_t & ns_choose_image_source(const ns_image_type & type, image_t & jpeg, ima
 }
 
 template<class ns_component>
-class ns_image_storage_reciever_to_disk: public ns_image_storage_reciever<ns_component>{
+class ns_image_storage_reciever_to_disk : public ns_image_storage_reciever<ns_component> {
 public:
-	ns_image_storage_reciever_to_disk(const unsigned long max_block_height, const std::string & filename,const ns_image_type & type,ns_performance_statistics_analyzer * performance_analyzer_,const bool volatile_file_=false):
-	  ns_image_storage_reciever<ns_component>(max_block_height),pa(performance_analyzer_),volatile_file(volatile_file_),total(0),
-		  file_sink(filename,ns_choose_image_source<ns_image_output_file<ns_component> >(type,jpeg_out,tiff_out,jp2k_out),max_block_height),tiff_out(ns_get_tiff_compression_type(type))
-	  {}
+	ns_image_storage_reciever_to_disk(const unsigned long max_block_height, const std::string & filename, const ns_image_type & type, const bool volatile_file_ = false) :
+		ns_image_storage_reciever<ns_component>(max_block_height), volatile_file(volatile_file_), total(0),
+		file_sink(filename, ns_choose_image_source<ns_image_output_file<ns_component> >(type,jpeg_out, tiff_out, jp2k_out), max_block_height), tiff_out(ns_get_tiff_compression_type(type))
+	{}
 
-    ns_image_stream_static_buffer<ns_component> * provide_buffer(const ns_image_stream_buffer_properties & buffer_properties)
-	{return file_sink.provide_buffer(buffer_properties);}
+	ns_image_stream_static_buffer<ns_component> * provide_buffer(const ns_image_stream_buffer_properties & buffer_properties)
+	{
+		return file_sink.provide_buffer(buffer_properties);
+	}
 
 	void recieve_lines(const ns_image_stream_static_buffer<ns_component> & lines, const unsigned long height)
-	{	mark_pa_started();
-		file_sink.recieve_lines(lines,height);
-		mark_pa_finished();
+	{
+		file_sink.recieve_lines(lines, height);
 	}
 
-	void finish_recieving_image(){
-	mark_pa_started();
-	file_sink.finish_recieving_image();
-	mark_pa_finished();
-	if (pa==0)return;
-	pa->register_job_duration(volatile_file?
-					ns_performance_statistics_analyzer::ns_volatile_io_write:
-					ns_performance_statistics_analyzer::ns_long_term_io_write,total);}
-	//deconstruction handled by output file destructors.
+	void finish_recieving_image() {
+		file_sink.finish_recieving_image();
+		//deconstruction handled by output file destructors.
+	}
 
-	~ns_image_storage_reciever_to_disk(){
-		
+	~ns_image_storage_reciever_to_disk() {
+
 	}
 protected:
-	bool init(const ns_image_properties & properties){return file_sink.init(properties);}
+	bool init(const ns_image_properties & properties) { return file_sink.init(properties); }
 private:
 	ns_jpeg_image_output_file<ns_component> jpeg_out;
 	ns_tiff_image_output_file<ns_component> tiff_out;
@@ -97,18 +93,9 @@ private:
 
 	ns_image_stream_file_sink<ns_component> file_sink;
 
-	inline void mark_pa_started(){ 
-		if (pa==0) return; 
-		tp.start();
-	}	
-	inline void mark_pa_finished(){ 
-		if (pa==0) return; 
-		total+=tp.stop();
-	}
-	ns_performance_statistics_analyzer * pa;
-	ns_high_precision_timer tp;
 	unsigned long long total;
 	bool volatile_file;
+
 };
 
 template<class ns_component>
@@ -173,8 +160,8 @@ class ns_image_storage_source_from_disk : public ns_image_storage_source<ns_comp
 public:
   typedef typename ns_image_storage_source<ns_component>::sender_t sender_t;
 
-	ns_image_storage_source_from_disk(const std::string & filename,ns_performance_statistics_analyzer * performance_analyzer_,const bool volatile_file_=false):
-	  pa(performance_analyzer_),volatile_file(volatile_file_),total(0),
+	ns_image_storage_source_from_disk(const std::string & filename,const bool volatile_file_=false):
+	volatile_file(volatile_file_),total(0),
 		_source( ns_choose_image_source<ns_image_input_file<ns_component> >(ns_get_image_type(filename),jpeg_in,tiff_in,jp2k_in) ),
 		ns_image_storage_source<ns_component>(ns_image_properties(0,0,0)){
 
@@ -187,18 +174,14 @@ public:
 	~ns_image_storage_source_from_disk(){}
 
 	//none of these are const, because the disk state is changed upon sending.
-	void send_lines(ns_image_stream_static_buffer<ns_component> & lines, const unsigned int count,typename sender_t::internal_state_t & state){mark_pa_started();_source.send_lines(lines,count,state);mark_pa_finished();	}
-	void send_lines(ns_image_stream_static_offset_buffer<ns_component> & lines, const unsigned int count, typename sender_t::internal_state_t & state){mark_pa_started();_source.send_lines(lines,count, state);mark_pa_finished();	}
-	void send_lines(ns_image_stream_sliding_offset_buffer<ns_component> & lines, const unsigned int count, typename sender_t::internal_state_t & state){mark_pa_started();_source.send_lines(lines,count, state);mark_pa_finished();	}
-	void send_lines(ns_image_stream_safe_sliding_offset_buffer<ns_component> & lines, const unsigned int count, typename sender_t::internal_state_t & state){mark_pa_started();_source.send_lines(lines,count, state);mark_pa_finished();	}
+	void send_lines(ns_image_stream_static_buffer<ns_component> & lines, const unsigned int count,typename sender_t::internal_state_t & state){_source.send_lines(lines,count,state);	}
+	void send_lines(ns_image_stream_static_offset_buffer<ns_component> & lines, const unsigned int count, typename sender_t::internal_state_t & state){_source.send_lines(lines,count, state);	}
+	void send_lines(ns_image_stream_sliding_offset_buffer<ns_component> & lines, const unsigned int count, typename sender_t::internal_state_t & state){_source.send_lines(lines,count, state);	}
+	void send_lines(ns_image_stream_safe_sliding_offset_buffer<ns_component> & lines, const unsigned int count, typename sender_t::internal_state_t & state){_source.send_lines(lines,count, state);	}
 	typename sender_t::internal_state_t seek_to_beginning(){return target->seek_to_beginning();}
 protected:
 	void finish_send(){
 		_source.finish_send();
-		if (pa==0)return;
-		pa->register_job_duration(volatile_file?
-			ns_performance_statistics_analyzer::ns_volatile_io_read:
-			ns_performance_statistics_analyzer::ns_long_term_io_read,total);
 	}
 	typename sender_t::internal_state_t init_send(){return _source.init_send();}
 private:
@@ -207,15 +190,6 @@ private:
 	ns_ojp2k_image_input_file<ns_component> jp2k_in;
 	ns_image_stream_file_source<ns_component> _source;
 	ns_image_input_file<ns_component> * target;
-	inline void mark_pa_started(){ 
-		if (pa==0) return; 
-		tp.start();
-	}	
-	inline void mark_pa_finished(){ 
-		if (pa==0) return; 
-		total+=tp.stop();
-	}
-	ns_performance_statistics_analyzer * pa;
 	ns_high_precision_timer tp;
 	bool volatile_file;
 	unsigned long long total;

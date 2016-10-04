@@ -34,7 +34,7 @@ void destroy_icons();
 
 
 void ns_image_server_dispatcher::init(const unsigned int port,const unsigned int socket_queue_length){
-  image_server.register_server_event(ns_image_server::ns_register_in_central_db_with_fallback,ns_image_server_event("Dispatcher bound to ") << image_server.dispatcher_ip() << ":" << (int)image_server.dispatcher_port() << ". Using database " << image_server.sql_info());
+  image_server.register_server_event(ns_image_server::ns_register_in_central_db_with_fallback,ns_image_server_event("Dispatcher bound to ") << image_server.dispatcher_ip() << ":" << (int)image_server.dispatcher_port());
 	incomming_socket.listen(port,socket_queue_length);
 }
 
@@ -348,7 +348,7 @@ void ns_image_server_dispatcher::run(){
 		
 		if (!currently_unable_to_connect_to_the_central_db){
 			ns_acquire_for_scope<ns_sql> sql(image_server.new_sql_connection(__FILE__,__LINE__));
-			image_server.performance_statistics.update_db(image_server.host_id(),sql());
+			image_server.update_performance_statistics_to_db(sql());
 			sql.release();
 		}
 		image_server.device_manager.reset_all_devices();
@@ -412,7 +412,9 @@ void ns_image_server_dispatcher::start_looking_for_new_work(){
 		cerr << "p";
 		return;
 	}
-	//ns_sql * sql = image_server.new_sql_connection();
+	ns_acquire_for_scope<ns_sql> sql(image_server.new_sql_connection(__FILE__,__LINE__));
+	image_server.register_server_event(ns_image_server_event(" Looking for work on database ") << image_server.sql_info(sql()),&sql());
+	sql.release();
 	try{
 		//when a processing thread is running, its handle is stored in processing_thread.
 		ns_acquire_lock_for_scope lock(processing_lock,__FILE__,__LINE__);
@@ -837,7 +839,7 @@ void ns_image_server_dispatcher::on_timer(){
 			#ifdef NS_TRACK_PERFORMANCE_STATISTICS
 			image_server.performance_statistics.merge(ns_image_allocation_performance_stats);
 			#endif
-			image_server.performance_statistics.update_db(image_server.host_id(),*timer_sql_connection);
+			image_server.update_performance_statistics_to_db(*timer_sql_connection);
 		}
 		catch(ns_ex & ex){
 			cerr << "Could not update performance statistics: " << ex.text() << "\n";
@@ -1101,7 +1103,7 @@ void ns_image_server_dispatcher::register_succesful_operation(){
 }
 void ns_image_server_dispatcher::handle_memory_allocation_error(){
 	memory_allocation_error_count++;
-	image_server.image_storage.cache.clear_memory_cache(0);
+	image_server.image_storage.cache.clear_cache_without_cleanup();
 	if (memory_allocation_error_count > 5){
 		image_server.pause_host();	
 		ns_ex ex("The host has recently encountered too many memory errors.  The host will pause until futher notice.");

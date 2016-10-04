@@ -143,6 +143,22 @@ public:
 		get_image(id, &cache_object, external_source, false);
 	}
 
+	void clear_cache_without_cleanup() {
+		//clear memory cache and all records
+
+		if (locked)lock.wait_to_acquire(__FILE__, __LINE__);
+
+		//get all write locks!
+		//is it really that simple? 
+		for (typename cache_t::iterator p = data_cache.begin(); p != data_cache.end(); p++) {
+			p->second.object_write_lock.wait_to_acquire(__FILE__, __LINE__);
+			p->second.object_write_lock.release();
+		}
+		this->current_memory_usage_in_kb = 0;
+		data_cache.clear();
+		if (locked)lock.release();
+	}
+
 	void clear_cache(typename data_t::external_source_type * external_source) {
 		//clear memory cache and all records
 
@@ -185,17 +201,16 @@ public:
 		if (locked)lock.release();
 	}
 
-	typedef std::map<ns_64_bit, ns_simple_cache_internal_object<data_t, locked> > cache_t;
-
 
 //private:
 	bool disk_cached_cleared;
-	cache_t data_cache;
 	unsigned long max_memory_usage_in_kb;
 	unsigned long current_memory_usage_in_kb;
 
-	typedef typename cache_t::value_type map_pair_t;
 	typedef ns_simple_cache_internal_object<data_t, locked> internal_object_t;
+	typedef std::map<ns_64_bit, internal_object_t > cache_t;
+
+	cache_t data_cache;
 
 	//data_type_t will be either data_type or const data_type depending on whether 
 	template<class handle_t>
@@ -216,70 +231,71 @@ public:
 			try {
 				//look for the image in the cache.
 				typename cache_t::iterator p = data_cache.find(dt.to_id(id));
-				if (p != data_cache.end()) {
-					//some cleanup needs to be done.
-					if (p->second.to_be_deleted)
-						read_only = false;
+				if (p == data_cache.end()) {
+					break;
+				}
+				//some cleanup needs to be done.
+				if (p->second.to_be_deleted)
+					read_only = false;
 
-					if (!read_only) {
-						//if we want write access, we need to wait until anyone currently reading is finished
-						//and then block out anyone who wants to read.
+				if (!read_only) {
+					//if we want write access, we need to wait until anyone currently reading is finished
+					//and then block out anyone who wants to read.
 
-						//if we have (or don't need) the write lock, we're done!  check out the object and return it.
-						if (!locked || currently_have_write_lock) {
-							p->second.number_waiting_for_write_lock++;  //mark that the lock is held
-							if (locked) {
-								//now we need to wait for any threads that are still reading.
-								//we minimize the # of locks by polling just a here.
-								while (p->second.number_checked_out_by_any_threads > 0) {
-									ns_thread::sleep_microseconds(100);
-								}
+					//if we have (or don't need) the write lock, we're done!  check out the object and return it.
+					if (!locked || currently_have_write_lock) {
+						p->second.number_waiting_for_write_lock++;  //mark that the lock is held
+						if (locked) {
+							//now we need to wait for any threads that are still reading.
+							//we minimize the # of locks by polling just a here.
+							while (p->second.number_checked_out_by_any_threads > 0) {
+								ns_thread::sleep_microseconds(100);
 							}
-							//ok we've been asked to do some housekeeping by deleting this record and trying again.
-							if (p->second.to_be_deleted) {
-								p->second.object_write_lock.release();
-								data_cache.erase(p);
-								lock.release();
-								read_only = initial_read_request;
-								continue; //do another round
-							}
-							//we have exclusive write access to a record no-one is reading!  We're done. 
+						}
+						//ok we've been asked to do some housekeeping by deleting this record and trying again.
+						if (p->second.to_be_deleted) {
+							p->second.object_write_lock.release();
+							data_cache.erase(p);
+							lock.release();
+							read_only = initial_read_request;
+							continue; //do another round
+						}
+						//we have exclusive write access to a record no-one is reading!  We're done. 
 						     
 						 
-							handle->check_out(!read_only,&(p->second),this);
-							if (locked)lock.release();
-							return;
-						}
-						// we need to get the write lock.  let's wait for grab it but then we'll need to 
-						// redo the search in the map structure just in case the previous write deleted it been deleted
-						if (locked) {
-							p->second.object_write_lock.wait_to_acquire(__FILE__, __LINE__);  //this wont be given up until the object ns_simple_cache object is destructed!
-							currently_have_write_lock = true;
-							lock.release(); //keep the write lock (to catch any readers) but release the read lock (so that the readers can progress and get stuck on the wait lock)
-							continue;
-						}
+						handle->check_out(!read_only,&(p->second),this);
+						if (locked)lock.release();
+						return;
 					}
-					//ok, we are looking only for read access, so we just need to confirm
-					//that nobody is currently writing.  this is much the same as when we wanted write access before
-					else //if we haven't picked up the write lock in the last iteration of the loop, we need to confirm
-						 //that no other threads are writing to this objects, and wait for the write lock if they are.
-						if (locked) {
-							//we need to wait until no threads are writing to this object
-							if (p->second.number_waiting_for_write_lock > 0) {
-								if (!currently_have_write_lock)  //we need to block all others that want to write.
-									p->second.object_write_lock.wait_to_acquire(__FILE__, __LINE__);
-								currently_have_write_lock = true;
-								lock.release();
-								continue; //start over from the beginning of the request, as anything could have changed during the previous write
-							}
-
-							//we have the write lock, so nobody else does!  check it out!
-							handle->check_out(true,&p->second, this);
-							if (currently_have_write_lock) p->second.object_write_lock.release();
-							if (locked)lock.release();
-							break;
-						}
+					// we need to get the write lock.  let's wait for grab it but then we'll need to 
+					// redo the search in the map structure just in case the previous write deleted it been deleted
+					if (locked) {
+						p->second.object_write_lock.wait_to_acquire(__FILE__, __LINE__);  //this wont be given up until the object ns_simple_cache object is destructed!
+						currently_have_write_lock = true;
+						lock.release(); //keep the write lock (to catch any readers) but release the read lock (so that the readers can progress and get stuck on the wait lock)
+						continue;
+					}
 				}
+				//ok, we are looking only for read access, so we just need to confirm
+				//that nobody is currently writing.  this is much the same as when we wanted write access before
+				else //if we haven't picked up the write lock in the last iteration of the loop, we need to confirm
+						//that no other threads are writing to this objects, and wait for the write lock if they are.
+					if (locked) {
+						//we need to wait until no threads are writing to this object
+						if (p->second.number_waiting_for_write_lock > 0) {
+							if (!currently_have_write_lock)  //we need to block all others that want to write.
+								p->second.object_write_lock.wait_to_acquire(__FILE__, __LINE__);
+							currently_have_write_lock = true;
+							lock.release();
+							continue; //start over from the beginning of the request, as anything could have changed during the previous write
+						}
+
+						//we have the write lock, so nobody else does!  check it out!
+						handle->check_out(true,&p->second, this);
+						if (currently_have_write_lock) p->second.object_write_lock.release();
+						if (locked)lock.release();
+						break;
+					}
 			}
 			catch (...) {
 				if (locked) lock.release();
@@ -295,11 +311,11 @@ public:
 				internal_object_t foo;
 				const ns_64_bit id_num = dt.to_id(id);
 				//xxx unneccisary double lookup--easy to fix when bugs elsewhere are identified
-				data_cache[id_num] = foo;
-				p = data_cache.find(id_num);
-				////std::pair<const ns_64_bit, internal_object_t > obj( id_num, foo);
+				//data_cache[id_num] = foo;
+				//p = data_cache.find(id_num);
+				auto obj = std::pair<const ns_64_bit, internal_object_t >(id_num, foo);
 				//auto obj = make_pair(id_num, foo);
-				//p = data_cache.insert(data_cache.begin(), obj)->first;
+				p = data_cache.insert(data_cache.begin(), obj).first;
 			//}
 			p->second.object_write_lock.wait_to_acquire(__FILE__, __LINE__);
 			p->second.number_waiting_for_write_lock++;
@@ -447,7 +463,7 @@ inline ns_simple_cache_data_handle<data_t, locked>::~ns_simple_cache_data_handle
 }
 
 
-void ns_test_simple_cache(const char * debug_output);
+void ns_test_simple_cache(char * debug_output);
 
 
 #endif

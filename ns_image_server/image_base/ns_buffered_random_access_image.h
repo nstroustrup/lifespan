@@ -119,6 +119,8 @@ public:
 
 	typedef ns_component component_type;
 	typedef ns_image_stream_static_buffer<ns_component> storage_type;
+	
+	typedef typename image_source_t::internal_state_t sender_internal_state_t;
 
 	//initialize as an empty image
 	ns_image_buffered_random_access_input_image(unsigned int max_height):buffer_top(0),max_buffer_height(max_height),image_source(0),cur_buffer_height(0){}
@@ -126,7 +128,10 @@ public:
 
 	inline void resize(const ns_image_properties & properties){init(properties);}
 
-	inline void seek_to_beginning(){image_source->seek_to_beginning(); assign_buffer_source(*image_source);}
+	inline void seek_to_beginning(){ 
+		sender_internal_state = image_source->seek_to_beginning();
+		assign_buffer_source(*image_source);
+	}
 
 	const inline ns_image_properties & properties() const{
 			return _properties;
@@ -155,6 +160,8 @@ private:
 	image_source_t * image_source;
 	ns_image_properties _properties;
 
+	sender_internal_state_t sender_internal_state;
+
 	void make_line_available(const unsigned long line_num){
 		while(line_num >= buffer_top){
 			//cerr << "Requested line " << line_num;
@@ -164,7 +171,7 @@ private:
 				throw ns_ex("Invalid line access requested: ") << line_num;
 			if ((unsigned long)lines_to_load > max_buffer_height)
 				lines_to_load = max_buffer_height;
-			image_source->send_lines(image_buffer, lines_to_load);
+			image_source->send_lines(image_buffer, lines_to_load, sender_internal_state);
 			buffer_top+=lines_to_load;
 			cur_buffer_height = lines_to_load;
 			//cerr << ", Loaded line up to " << buffer_top << "\n";
@@ -187,6 +194,7 @@ private:
 		//	sender->send_lines(image_buffer, max_buffer_height);
 		buffer_top = 0;
 		cur_buffer_height = 0;
+		sender_internal_state = image_source->init_send();
 	}
 
 };

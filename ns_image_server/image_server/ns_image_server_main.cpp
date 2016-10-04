@@ -1200,7 +1200,7 @@ int main(int argc, char * argv[]){
 
 		image_server.image_storage.refresh_experiment_partition_cache(&sql());
 		if (sql().connected_to_central_database()){
-			image_server.performance_statistics.clear_db(image_server.host_id(),*static_cast<ns_sql *>(&sql()));
+			image_server.clear_performance_statistics(*static_cast<ns_sql *>(&sql()));
 			image_server.clear_old_server_events(*static_cast<ns_sql *>(&sql()));
 			image_server.load_quotes(quotes,*static_cast<ns_sql *>(&sql()));
 			image_server.alert_handler.initialize(*static_cast<ns_sql *>(&sql()));	

@@ -108,6 +108,7 @@ public:
 		socket_connection = &connection;
 	}
 
+	typename sender_t::internal_state_t seek_to_beginning() { throw ns_ex("Cannot seek to beginning of a socket"); }
 	typename sender_t::internal_state_t init_send_const() const { throw ns_ex("Invalid const function!"); }
 
 	typename sender_t::internal_state_t init_send(){

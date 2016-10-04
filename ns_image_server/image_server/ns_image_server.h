@@ -162,7 +162,9 @@ public:
 	///shuts down the current image server node.
 	void shut_down_host();
 	///pauses the current host such that it does not take new jobs
-	void pause_host();
+	void pause_host(); 
+	void pause_host(ns_image_server_sql * sql) const;
+
 
 	///returns the id of the current image server node, as specified in the central sql database.
 	const ns_64_bit host_id() const{ return _host_id;}
@@ -212,7 +214,7 @@ public:
 
 	///Returns the ini-specified name of the subdirectory that local image caches use for
 	///disk storage (implemented by the ns_image_cache class)
-	std::string cache_directory() {return _cache_subdirectory;}
+	const std::string & cache_directory() const {return _cache_subdirectory;}
 
 	///Image caches can quickly exceed Windows default virtual memory limits, so we
 	///specify the maximum amount of memory to be allocated before swapping out to disk
@@ -462,6 +464,11 @@ public:
 	void update_performance_statistics_to_db(ns_sql & sql) {
 		ns_acquire_lock_for_scope lock(performance_stats_lock, __FILE__, __LINE__);
 		performance_statistics.update_db(host_id(), sql);
+		lock.release();
+	}
+	void clear_performance_statistics(ns_sql & sql) {
+		ns_acquire_lock_for_scope lock(performance_stats_lock, __FILE__, __LINE__);
+		performance_statistics.clear_db(host_id(), sql);
 		lock.release();
 	}
 

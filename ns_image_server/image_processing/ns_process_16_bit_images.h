@@ -7,11 +7,11 @@
 typedef enum{ns_features_are_dark,ns_features_are_light} ns_feature_intensity;
 ///Takes a 16 bit image as input and fills the 8-bit output from vales [0-set_crop_value] of the input.
 template<ns_feature_intensity features, class storage_buffer>
-class ns_image_process_16_bit : public ns_image_stream_reciever<ns_image_stream_static_buffer<ns_16_bit> >, ns_image_stream_sender<ns_8_bit,ns_image_process_16_bit<features, storage_buffer> >{
+class ns_image_process_16_bit : public ns_image_stream_reciever<ns_image_stream_static_buffer<ns_16_bit> >, ns_image_stream_sender<ns_8_bit,ns_image_process_16_bit<features, storage_buffer>,unsigned long>{
 public:	
 	typedef ns_image_stream_static_buffer<ns_16_bit> storage_type;
 	typedef ns_16_bit component_type;
-	ns_image_process_16_bit(const long max_line_block_height):ns_image_stream_sender<ns_8_bit,ns_image_process_16_bit<features, storage_buffer> >(ns_image_properties(0,0,0),this),
+	ns_image_process_16_bit(const long max_line_block_height):ns_image_stream_sender<ns_8_bit,ns_image_process_16_bit<features, storage_buffer>,unsigned long>(ns_image_properties(0,0,0),this),
 															  ns_image_stream_reciever<ns_image_stream_static_buffer<ns_16_bit> >(max_line_block_height,this),
 															  _max_line_block_height(max_line_block_height),
 															  small_image_output_buffer(0),
@@ -19,11 +19,13 @@ public:
 															  resampler(max_line_block_height),
 															  crop_value(64),resample_image_to_output(false){}
 	ns_image_statistics image_statistics;
-	void init_send(){}
+	unsigned long init_send() { return 0; }
+	unsigned long init_send_const() const { return 0; }
+	unsigned long seek_to_beginning() { return 0; }
 	void finish_send(){}
 
 	template<class storage_buffer_2>
-	void send_lines(storage_buffer_2 & output, const unsigned int lines_to_send){
+	void send_lines(storage_buffer_2 & output, const unsigned int lines_to_send, unsigned long & unusued_external_state){
 		ns_image_stream_buffer_properties prop;
 		prop.height = lines_to_send;
 		prop.width = buffer.properties().width;
@@ -147,7 +149,8 @@ public:
 		p.height = height;
 		p.width = buffer.properties().width;
 		typename reciever_t::storage_type * buf = rec.provide_buffer(p);
-		send_lines(*buf,height);
+		unsigned long unused_internal_state;
+		send_lines(*buf,height, unused_internal_state);
 		rec.recieve_lines(*buf,height);
 	}
 

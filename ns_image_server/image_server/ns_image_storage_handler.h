@@ -111,7 +111,7 @@ public:
 
 		if (verbosity >= ns_verbose)
 			ns_image_handler_register_server_event_to_central_db(ns_image_server_event("ns_image_storage_handler::Opening ") << fname << " for output.");
-		return ns_image_storage_reciever_handle<ns_bit_depth>(new ns_image_storage_reciever_to_disk<ns_bit_depth>(max_line_length, fname,ns_get_image_type(fname),&performance_statistics(),true));
+		return ns_image_storage_reciever_handle<ns_bit_depth>(new ns_image_storage_reciever_to_disk<ns_bit_depth>(max_line_length, fname,ns_get_image_type(fname),true));
 	}
 
 	
@@ -193,7 +193,7 @@ public:
 					if (verbosity >= ns_standard)
 						ns_image_handler_register_server_event(ns_image_server_event("ns_image_storage_handler::Opening VT ") << file_location.absolute_volatile_filename() << " for input." << ns_ts_minor_event,sql);
 					ns_image_storage_source_from_disk<ns_comp> * tmp;
-					tmp = new ns_image_storage_source_from_disk<ns_comp>(file_location.absolute_volatile_filename(),&performance_statistics(),true);
+					tmp = new ns_image_storage_source_from_disk<ns_comp>(file_location.absolute_volatile_filename(),true);
 					return ns_image_storage_source_handle<ns_comp>(tmp);
 				}
 				catch(ns_ex & ex){
@@ -214,7 +214,7 @@ public:
 				try{
 					if (ns_dir::file_exists(file_location.absolute_long_term_filename())){
 					//	ns_image_handler_register_server_event(ns_image_server_event("ns_image_storage_handler::Opening LT ",false) << display_filename << " for input." << ns_ts_minor_event);
-						return ns_image_storage_source_handle<ns_comp>(new ns_image_storage_source_from_disk<ns_comp>(file_location.absolute_long_term_filename(),&performance_statistics(),false));
+						return ns_image_storage_source_handle<ns_comp>(new ns_image_storage_source_from_disk<ns_comp>(file_location.absolute_long_term_filename(),false));
 					}
 				}
 				catch(ns_ex & ex){

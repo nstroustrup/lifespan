@@ -41,7 +41,7 @@ _terminal_window_scale_factor(1), sql_table_lock_manager(this), alert_handler_lo
 	ns_worm_detection_constants::init();
 	ns_set_global_debug_output_handler(ns_image_server_global_debug_handler);
 	_software_version_compile = 1;
-	image_storage.cache.set_memory_allocation_limit(maximum_image_cache_memory_size());
+	image_storage.cache.set_memory_allocation_limit_in_kb(maximum_image_cache_memory_size());
 
 }
 bool ns_image_server::scan_for_problems_now(){
@@ -1491,7 +1491,7 @@ ns_sql * ns_image_server::new_sql_connection(const std::string & source_file, co
 	unsigned long try_count(0);
 	con = new ns_sql();
 
-	unsigned long start_address_id = current_sql_server_address_id;
+	unsigned long start_address_id = 0;
 
 	try{
 		if (sql_server_addresses.empty())
@@ -1502,7 +1502,6 @@ ns_sql * ns_image_server::new_sql_connection(const std::string & source_file, co
 			const unsigned int server_id = (try_count+start_address_id)%sql_server_addresses.size();
 			try{
 				con->connect(sql_server_addresses[server_id],sql_user,sql_pwd,0);
-				current_sql_server_address_id = server_id;
 				break;
 			}
 			catch(ns_ex & ex){
@@ -2121,13 +2120,16 @@ void ns_image_server::load_constants(const ns_image_server::ns_image_server_exec
 	host_ip = socket.get_local_ip_address(_ethernet_interface);
 }
 void ns_image_server::pause_host(){
-	
 	image_server.server_pause_status = true;
 	ns_acquire_for_scope<ns_sql> sql(image_server.new_sql_connection(__FILE__,__LINE__));
-	
 	sql() << "UPDATE hosts SET pause_requested=1 WHERE id="<<image_server.host_id();
 	sql().send_query();
 	sql.release();
+}
+void ns_image_server::pause_host(ns_image_server_sql * sql)const {
+	image_server.server_pause_status = true;
+	*sql << "UPDATE hosts SET pause_requested=1 WHERE id=" << image_server.host_id();
+	sql->send_query();
 }
 
 void ns_image_server::get_alert_suppression_lists(std::vector<std::string> & devices_to_suppress, std::vector<std::string> & experiments_to_suppress,ns_image_server_sql * sql){
@@ -2388,7 +2390,7 @@ ns_64_bit ns_image_server::register_server_event(const ns_register_type type,con
 	}
 }
 
-ns_64_bit ns_image_server::register_server_event(const ns_register_type type,const ns_ex & ex){
+ns_64_bit ns_image_server::register_server_event(const ns_register_type type,const ns_ex & ex)const {
 		ns_image_server_event s_event(ex.text());
 		if (ex.type() == ns_sql_fatal) s_event << ns_ts_sql_error;
 		else s_event << ns_ts_error;
@@ -2800,7 +2802,7 @@ ns_image_storage_reciever_handle<ns_8_bit> ns_image_server_results_storage::move
 	string path(results_directory + DIR_CHAR_STR + spec.experiment_name + DIR_CHAR_STR + movement_timeseries_folder());
 	ns_image_server_results_file f(path, spec.experiment_filename()  + graph_type + "=collage.tif");
 	ns_dir::create_directory_recursive(path);
-	return ns_image_storage_reciever_handle<ns_image_storage_handler::ns_component>(new ns_image_storage_reciever_to_disk<ns_image_storage_handler::ns_component>(max_line_length, f.path(),image_type,&image_server.performance_statistics,false));
+	return ns_image_storage_reciever_handle<ns_image_storage_handler::ns_component>(new ns_image_storage_reciever_to_disk<ns_image_storage_handler::ns_component>(max_line_length, f.path(),image_type,false));
 }
 
 
@@ -2809,7 +2811,7 @@ ns_image_storage_reciever_handle<ns_8_bit> ns_image_server_results_storage::mach
 	string path(results_directory + DIR_CHAR_STR + machine_learning_training_set_folder());
 	ns_image_server_results_file f(path,spec.region_filename() +"=training_set.tif");
 	ns_dir::create_directory_recursive(path);
-	return ns_image_storage_reciever_handle<ns_image_storage_handler::ns_component>(new ns_image_storage_reciever_to_disk<ns_image_storage_handler::ns_component>(max_line_length, f.path(),ns_tiff,&image_server.performance_statistics,false));
+	return ns_image_storage_reciever_handle<ns_image_storage_handler::ns_component>(new ns_image_storage_reciever_to_disk<ns_image_storage_handler::ns_component>(max_line_length, f.path(),ns_tiff,false));
 
 }
 

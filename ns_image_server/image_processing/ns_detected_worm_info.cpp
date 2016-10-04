@@ -929,14 +929,14 @@ unsigned int ns_detected_worm_info::from_segment_cluster_solution(
 			worm.edges = region.edges;
 			//create copy of bitmap for new detected worm.
 			if (number_of_worms_added != 0){
-				whole_worm_bitmap.pump(worm._bitmap,1024);
-				whole_worm_absolute_grayscale.pump(worm._absolute_grayscale,1024);
-				whole_worm_relative_grayscale.pump(worm._relative_grayscale,1024);
+				whole_worm_bitmap.pump(*worm._bitmap,1024);
+				whole_worm_absolute_grayscale.pump(*worm._absolute_grayscale,1024);
+				whole_worm_relative_grayscale.pump(*worm._relative_grayscale,1024);
 				whole_worm_context.absolute_grayscale.pump(worm._worm_context_image->absolute_grayscale,1024);
 				whole_worm_context.relative_grayscale.pump(worm._worm_context_image->relative_grayscale,1024);
 				whole_worm_context.combined_image.pump(worm._worm_context_image->combined_image,1024);
-				whole_worm_edge_bitmap.pump(worm._edge_bitmap,1024);		
-				whole_worm_bitmap_of_worm_cluster.pump(worm._bitmap_of_worm_cluster,1024);
+				whole_worm_edge_bitmap.pump(*worm._edge_bitmap,1024);		
+				whole_worm_bitmap_of_worm_cluster.pump(*worm._bitmap_of_worm_cluster,1024);
 				worm.must_be_a_worm = worms[offset].must_be_a_worm;
 				worm.must_not_be_a_worm = worms[offset].must_not_be_a_worm;
 			}

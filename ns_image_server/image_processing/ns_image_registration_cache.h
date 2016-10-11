@@ -184,6 +184,7 @@ public:
 	}
 	ns_64_bit id() const { return image_record.id; }
 	ns_64_bit to_id(const ns_image_server_image & im) const { return im.id; }
+
 private:	
 	std::string whole_filename,
 		downsampled_filename;

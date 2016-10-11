@@ -1156,7 +1156,7 @@ public:
 	}
 
 	//mimic interface of ns_buffered_random_access_image.h
-	inline typename sender_t::internal_state_t seek_to_beginning() { typename sender_t::internal_state_t t; return t; }
+	inline typename sender_t::internal_state_t seek_to_beginning() { return 0; }
 	inline void make_line_available(unsigned long i){}
 
 

@@ -1074,7 +1074,7 @@ bool ns_image_server_dispatcher::look_for_work(){
 		cache_source.handler = &image_server.image_storage;
 		cache_source.sql = work_sql_connection;
 		if (!image_server.run_autonomously())
-			image_server.image_storage.cache.clear_cache(&cache_source);
+			image_server.image_storage.cache.clear_cache(cache_source);
 		job_scheduler.clear_heap();
 
 		//ns_thread::sleep(4*1000 + 39);
@@ -1091,7 +1091,7 @@ bool ns_image_server_dispatcher::look_for_work(){
 			//con = 0;
 		}
 		if (!image_server.run_autonomously())
-			image_server.image_storage.cache.clear_cache(0);
+			image_server.image_storage.cache.clear_cache_without_cleanup();
 		throw;
 	}
 	return action_performed;
@@ -1148,8 +1148,8 @@ ns_thread_return_type ns_image_server_dispatcher::thread_start_look_for_work(voi
 		ns_ex ex(exception);
 		//self.detach();
         ex << ex.text() << "(Error in processing_thread)";
-			if (ex.type() == ns_memory_allocation)
-				image_server.image_storage.cache.clear_cache(0);
+		if (ex.type() == ns_memory_allocation)
+			image_server.image_storage.cache.clear_cache_without_cleanup();
 		
 		image_server.register_server_event(ns_image_server::ns_register_in_central_db_with_fallback,ex);
 		image_server.ns_image_server::shut_down_host();

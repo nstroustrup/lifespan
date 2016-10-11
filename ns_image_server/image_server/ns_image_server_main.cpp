@@ -986,7 +986,7 @@ int main(int argc, char * argv[]){
 		}
 		cerr << "WHA";
 		*/
-		ns_test_simple_cache("c:\\server\\cache_debug.txt");
+		//ns_test_simple_cache("c:\\server\\cache_debug.txt");
 
 		bool restarting_after_crash(false);
 		//execute any commands requested at the command line\n";

@@ -319,8 +319,8 @@ public:
 	void clear(){
 		if(cleared)
 			return;
-		image_registration_profile_cache.clear_cache(0);
-		image_storage.cache.clear_cache(0);
+		image_registration_profile_cache.clear_cache_without_cleanup();
+		image_storage.cache.clear_cache_without_cleanup();
 		#ifndef NS_MINIMAL_SERVER_BUILD
 		device_manager.clear();
 		#endif

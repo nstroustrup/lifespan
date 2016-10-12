@@ -1118,6 +1118,34 @@ ns_thread_return_type ns_asynch_start_looking_for_new_work(void * dispatcher_poi
 	return 0;
 }
 
+struct ns_dispatcher_job_pool_persistant_data {
+	ns_dispatcher_job_pool_persistant_data() :thread_id(0) {}
+	int thread_id;
+};
+
+struct ns_dispatcher_job_pool_external_data {
+	unsigned long  * max_thread_id;
+	ns_lock * thread_id_lock;
+};
+
+class ns_dispatcher_job_pool_job {
+public:
+	ns_dispatcher_job_pool_job(const int aw, ns_dispatcher_job_pool_external_data & c) :
+		external_data(&c), average_wait_in_milliseconds(aw) {}
+
+	int average_wait_in_milliseconds;
+	ns_dispatcher_job_pool_external_data * external_data;
+	void operator()(ns_dispatcher_job_pool_persistant_data & persistant_data) {
+		//make sure each thread gets a unique ID
+		if (persistant_data.thread_id == 0) {
+			external_data->thread_id_lock->wait_to_acquire(__FILE__, __LINE__);
+			(*external_data->max_thread_id)++;
+			external_data->thread_id_lock->release();
+			persistant_data.thread_id = *external_data->max_thread_id;
+		}
+	}
+};
+
 ns_thread_return_type ns_image_server_dispatcher::thread_start_look_for_work(void * dispatcher_pointer){
 	ns_image_server_dispatcher * d = reinterpret_cast<ns_image_server_dispatcher *>(dispatcher_pointer);
 	

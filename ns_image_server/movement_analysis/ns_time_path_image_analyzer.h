@@ -377,7 +377,7 @@ typedef ns_image_pool<ns_registered_image_set,ns_overallocation_resizer,true> ns
 class ns_analyzed_image_time_path_element{
 public:
 	ns_analyzed_image_time_path_element():registered_images(0),registered_image_pool(0),path_aligned_images(0),
-	inferred_animal_location(false), element_before_fast_movement_cessation(false),element_was_processed(false),path_aligned_image_pool(0),movement(ns_movement_not_calculated),saturated_offset(false),registration_offset(0,0),number_of_extra_worms_observed_at_position(0),part_of_a_multiple_worm_disambiguation_group(0),excluded(false),censored(false){}
+	inferred_animal_location(false), path_aligned_images_are_loaded_and_released(false),element_before_fast_movement_cessation(false),element_was_processed(false),path_aligned_image_pool(0),movement(ns_movement_not_calculated),saturated_offset(false),registration_offset(0,0),number_of_extra_worms_observed_at_position(0),part_of_a_multiple_worm_disambiguation_group(0),excluded(false),censored(false){}
 	~ns_analyzed_image_time_path_element(){
 		clear_path_aligned_images();
 		clear_movement_images();
@@ -385,6 +385,7 @@ public:
 	inline const ns_vector_2i & context_offset_in_region_visualization_image() const {return context_position_in_region_vis_image;}
 	
 	bool element_was_processed;
+	bool path_aligned_images_are_loaded_and_released;
 
 	inline ns_vector_2i region_offset_in_context_image() const {return region_position_in_source_image-context_position_in_source_image;}
 
@@ -412,7 +413,7 @@ public:
 		 element_before_fast_movement_cessation;
 	
 	bool registered_image_is_loaded() const{return registered_images != 0 && registered_images->image.properties().height != 0;}
-	bool path_aligned_image_is_loaded() const{return path_aligned_images != 0 && path_aligned_images->image.properties().height != 0;}
+	bool path_aligned_image_is_loaded() const { return path_aligned_images != 0 && path_aligned_images->image.properties().height != 0 && path_aligned_images_are_loaded_and_released; }
 	const ns_image_standard & image() const { return registered_images->image;}
 	const ns_image_standard * image_p() const { if (registered_images == 0 ) return 0;return &registered_images->image;}
 	bool worm_threshold(unsigned long y, unsigned long x) const { return registered_images->get_worm_neighborhood_threshold(y,x);}
@@ -728,7 +729,9 @@ private:
 
 	void quantify_movement(const ns_analyzed_time_image_chunk & chunk);
 	//generates path_aligned_image from region visualiation
-	bool populate_images_from_region_visualization(const unsigned long time,const ns_image_standard & region_image,const ns_image_standard & interpolated_region_image,bool just_do_a_consistancy_check);
+
+	typedef enum { ns_lrv_just_images, ns_lrv_just_flag, ns_lrv_flag_and_images } ns_load_type;
+	bool populate_images_from_region_visualization(const unsigned long time,const ns_image_standard & region_image,const ns_image_standard & interpolated_region_image,bool just_do_a_consistancy_check, ns_load_type just_flag_elements_as_loaded);
 	bool region_image_is_required(const unsigned long time,const bool interpolated, const bool direction_is_backwards);
 
 	
@@ -904,7 +907,7 @@ private:
 	ns_64_bit calculate_division_size_that_fits_in_specified_memory_size(const ns_64_bit & mem, const int multiplicity_of_images) const;
 
 	void load_from_solution(const ns_time_path_solution & solution, const long group_number=-1);
-	void load_region_visualization_images(const unsigned long start_i, const unsigned long stop_i,const unsigned int start_group, const unsigned int stop_group,ns_sql & sql, bool just_do_a_consistancy_check,bool running_backwards);
+	void load_region_visualization_images(const unsigned long start_i, const unsigned long stop_i,const unsigned int start_group, const unsigned int stop_group,ns_sql & sql, bool just_do_a_consistancy_check,bool running_backwards, ns_analyzed_image_time_path::ns_load_type just_flag_elements_as_loaded);
 	void acquire_region_image_specifications(const ns_64_bit region_id,ns_sql & sql);
 	void get_output_image_storage_locations(const ns_64_bit region_id,ns_sql & sql,const bool create_only_flow);
 	bool load_movement_image_db_info(const ns_64_bit region_id,ns_sql & sql);

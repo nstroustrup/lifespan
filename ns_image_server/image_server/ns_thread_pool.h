@@ -28,6 +28,14 @@ struct ns_thread_pool_thread_init_data {
 	#endif
 };
 
+template<class job_specification_t>
+struct ns_thread_pool_exception{
+	ns_thread_pool_exception() {};
+	ns_thread_pool_exception(const job_specification_t & j, const ns_ex & e) :job(j), ex(e) {}
+	job_specification_t job;
+	ns_ex ex;
+};
+
 template<class job_specification_t,class thread_persistant_data_t>
 class ns_thread_pool {
 public:
@@ -35,16 +43,20 @@ public:
 
 	~ns_thread_pool() { shutdown(); }
 
-	void throw_errors() {
-		if (errors.empty())
-			return;
-		ns_ex ex(errors.front());
-		errors.pop();
-		while (!errors.empty()) {
-			image_server.register_server_event(ns_image_server::ns_register_in_central_db_with_fallback, errors.front());
-			errors.pop();
+	//gets the oldest exception thrown by any thread.
+	//returns the number errors in queue (including the one returned); 0 if no errors exist
+	long get_next_error(job_specification_t & job, ns_ex & ex) {
+		error_access_lock.wait_to_acquire(__FILE__, __LINE__);
+		if (errors.empty()) {
+			error_access_lock.release();
+			return 0;
 		}
-		throw ex;
+		unsigned long number_of_errors = errors.size();
+		job = errors.front().job;
+		ex = errors.front().ex;
+		errors.pop();
+		error_access_lock.release();
+		return number_of_errors;
 	}
 
 	void set_number_of_threads(unsigned long i) {
@@ -56,11 +68,30 @@ public:
 			thread_idle_locks.push_back(ns_lock(std::string("ns-tpi-") + ns_to_string(j)));
 	}
 
+	//waits until the the job queue becomes empty
+	//important!  this holds onto the wait_after_jobs_finish lock
+	//so 
+	void poll_until_jobs_queue_is_empty_and_hold_idle_threads() {
+		while (true) {
+			job_access_lock.wait_to_acquire(__FILE__, __LINE__);
+			if (jobs.empty())
+				break;
+			job_access_lock.release();
+			ns_thread::sleep_microseconds(100);
+		}
+		job_access_lock.release();
+		wait_after_jobs_finish.wait_to_acquire(__FILE__, __LINE__);
+	}
+	//call this after calling poll_until_jobs_queue_is_empty_and_hold_idle_threads()
+	//to let the idle threads get back to work.
+	void release_hold_on_idle_threads() {
+		wait_after_jobs_finish.release();
+	}
 
-
-
+	//this function waits for all jobs in the queue to be finished processing,
+	//and all threads to become idle
 	//important!  This /keeps/ the job_access_lock for the current thread.
-	void wait_for_jobs_to_finish() {
+	void wait_for_all_threads_to_become_idle() {
 		while (true) {
 			//wait until whichever thread has the running lock gives it up
 			//now grab control of everything
@@ -182,6 +213,12 @@ public:
 	void add_job_while_pool_is_not_running(const job_specification_t & job) {
 		jobs.push(job);
 	}
+	unsigned long number_of_jobs_pending() {
+		job_access_lock.wait_to_acquire(__FILE__, __LINE__);
+		const unsigned long n(jobs.size());
+		job_access_lock.release();
+		return n;
+	}
 	void add_job_while_pool_is_running(const job_specification_t & job) {
 		job_access_lock.wait_to_acquire(__FILE__, __LINE__);
 		add_job_while_pool_is_not_running(job);
@@ -264,12 +301,17 @@ public:
 			catch (ns_ex & ex) {
 				NS_TPDBG(*p.debug << "(t" << p.thread_id << " encounters an error " << ex.text() << ")");
 				p.pool->error_access_lock.wait_to_acquire(__FILE__, __LINE__);
-				p.pool->errors.push(ex);
+				p.pool->errors.push((ns_thread_pool_exception<job_specification_t>(job,ex)));
+				p.pool->error_access_lock.release();
+			}
+			catch (std::exception & e) {
+				p.pool->error_access_lock.wait_to_acquire(__FILE__, __LINE__);
+				p.pool->errors.push(ns_thread_pool_exception<job_specification_t>(job, ns_ex(std::string("std::exception::") + e.what())));
 				p.pool->error_access_lock.release();
 			}
 			catch (...) {
 				p.pool->error_access_lock.wait_to_acquire(__FILE__, __LINE__);
-				p.pool->errors.push(ns_ex("Unknown error"));
+				p.pool->errors.push(ns_thread_pool_exception<job_specification_t>(job,ns_ex("Unknown error")));
 				p.pool->error_access_lock.release();
 			}
 		}
@@ -287,7 +329,7 @@ private:
 	ns_lock job_access_lock;
 
 
-	std::queue<ns_ex> errors;
+	std::queue<ns_thread_pool_exception<job_specification_t> > errors;
 	ns_lock error_access_lock;
 
 	ns_lock wait_after_jobs_finish;

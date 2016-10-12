@@ -693,6 +693,25 @@ void ns_time_path_image_movement_analyzer::run_group_for_current_forwards_round(
 			cerr << "YIKES!";
 	}
 }
+void throw_pool_errors(
+	ns_thread_pool<ns_time_path_image_movement_analyzer_thread_pool_job,
+	ns_time_path_image_movement_analyzer_thread_pool_persistant_data> & thread_pool,ns_sql & sql) {
+
+	ns_time_path_image_movement_analyzer_thread_pool_job job;
+	ns_ex ex;
+	bool found_error(false);
+	while (true) {
+		long errors = thread_pool.get_next_error(job, ex);
+		if (errors == 0)
+			break;
+		found_error = true;
+		//register all but the last error
+		if (errors > 1) image_server_const.register_server_event(ex, &sql);
+	}
+	//throw the last error
+	if (found_error)
+		throw ex;
+}
 
 
 void ns_time_path_image_movement_analyzer::process_raw_images(const ns_64_bit region_id,const ns_time_path_solution & solution_, const ns_time_series_denoising_parameters & times_series_denoising_parameters,const ns_analyzed_image_time_path_death_time_estimator * e,ns_sql & sql, const long group_number,const bool write_status_to_db){
@@ -843,10 +862,6 @@ void ns_time_path_image_movement_analyzer::process_raw_images(const ns_64_bit re
 					}
 				}
 
-
-
-
-
 				if (write_status_to_db)
 					image_server.register_server_event(ns_image_server_event("Running backwards..."), &sql);
 				else
@@ -865,18 +880,20 @@ void ns_time_path_image_movement_analyzer::process_raw_images(const ns_64_bit re
 						stop_t = -1;
 
 					unsigned long allocated_count(this->memory_pool.aligned_image_pool.number_of_items_checked_out());
+					
 					try {
 						//we obtain all the image data from disk that required to run the image analysis for the current chunk.
 						//it is loaded into the groups[i].paths[j] data structures.
 						for (long t1 = stop_t + 1; t1 < t + 1; t1++) {
-							load_region_visualization_images(t1, t1 + 1, start_group, stop_group, sql, false, true);
+							load_region_visualization_images(t1, t1 + 1, start_group, stop_group, sql, false, true, ns_analyzed_image_time_path::ns_lrv_flag_and_images);
+					
 						}
 					}
 					catch (ns_ex & ex) {
 						ns_ex ex_f(ex);
 						image_server.register_server_event(ns_image_server::ns_register_in_central_db, ns_image_server_event("Found an error; doing a consistancy check on all images in the region: ") << ex.text());
 						try {
-							load_region_visualization_images(0, region_image_specifications.size(), 0, groups.size(), sql, true, true);
+							load_region_visualization_images(0, region_image_specifications.size(), 0, groups.size(), sql, true, true, ns_analyzed_image_time_path::ns_lrv_flag_and_images);
 						}
 						catch (ns_ex & ex2) {
 							ex_f << ";" << ex2.text();
@@ -913,10 +930,11 @@ void ns_time_path_image_movement_analyzer::process_raw_images(const ns_64_bit re
 					thread_pool.run_pool();
 					//ok!  here all the worker threads start handling all the schedule tasks.
 					//this main thread blocks until the worker threads are all done
-					thread_pool.wait_for_jobs_to_finish();
+					thread_pool.wait_for_all_threads_to_become_idle();
 					//now that all the worker threads are done, this thread holds the thread pool job lock again.
 					//we keep it until we need to run more jobs in the next round.
-					thread_pool.throw_errors();
+
+					throw_pool_errors(thread_pool,sql);
 				}
 
 				//since we have been registered images backwards in time, we've been writing everything in reverse order to the local disk.
@@ -1022,13 +1040,13 @@ void ns_time_path_image_movement_analyzer::process_raw_images(const ns_64_bit re
 					//	cerr << "Loading images " << t << "-" << stop_t << "\n";
 					try {
 						//load in image data for the current chunk
-						load_region_visualization_images(t, stop_t, start_group, stop_group, sql, false, false);
+						load_region_visualization_images(t, stop_t, start_group, stop_group, sql, false, false,ns_analyzed_image_time_path::ns_lrv_flag_and_images);
 					}
 					catch (ns_ex & ex) {
 						ns_ex ex_f(ex);
 						image_server.register_server_event(ns_image_server::ns_register_in_central_db, ns_image_server_event("Found an error; doing a consistancy check on all images in the region: ") << ex.text());
 						try {
-							load_region_visualization_images(0, region_image_specifications.size(), 0, groups.size(), sql, true, false);
+							load_region_visualization_images(0, region_image_specifications.size(), 0, groups.size(), sql, true, false, ns_analyzed_image_time_path::ns_lrv_flag_and_images);
 						}
 						catch (ns_ex & ex2) {
 							ex_f << ";" << ex2.text();
@@ -1053,10 +1071,10 @@ void ns_time_path_image_movement_analyzer::process_raw_images(const ns_64_bit re
 					thread_pool.run_pool();
 					//ok!  here all the worker threads start handling all the schedule tasks.
 					//this main thread blocks until the worker threads are all done
-					thread_pool.wait_for_jobs_to_finish();
+					thread_pool.wait_for_all_threads_to_become_idle();
 					//now that all the worker threads are done, this thread holds the thread pool job lock again
 					//and we keep it until we need to run more jobs, below.
-					thread_pool.throw_errors();
+					throw_pool_errors(thread_pool,sql);
 				}
 				//for (unsigned int i = 0; i < groups.size(); i++) {
 					//cerr << i << ":" << path_reset[i];
@@ -2945,7 +2963,7 @@ bool ns_analyzed_image_time_path::region_image_is_required(const unsigned long t
 
 //generates path_aligned_images->image from region visualiation
 //note that the region images contain context images (ie. the extra boundary around the region_image)
-bool ns_analyzed_image_time_path::populate_images_from_region_visualization(const unsigned long time,const ns_image_standard &region_visualization,const ns_image_standard & interpolated_region_visualization,bool just_do_a_consistancy_check){
+bool ns_analyzed_image_time_path::populate_images_from_region_visualization(const unsigned long time,const ns_image_standard &region_visualization,const ns_image_standard & interpolated_region_visualization,bool just_do_a_consistancy_check, ns_analyzed_image_time_path::ns_load_type just_flag_elements_as_loaded){
 	//region visualization is all worms detected at that time point.
 	ns_image_properties path_aligned_image_image_properties(region_visualization.properties());
 	if (region_visualization.properties().width == 0){
@@ -2956,6 +2974,7 @@ bool ns_analyzed_image_time_path::populate_images_from_region_visualization(cons
 	//		cerr << "WHA";
 	//this sets the correct image size based on the solution's information.
 	//the image resolution is taken from the region visualization
+	if (just_flag_elements_as_loaded != ns_analyzed_image_time_path::ns_lrv_just_flag)
 	set_path_alignment_image_dimensions(path_aligned_image_image_properties);
 
 	ns_output_subline output_subline;
@@ -2965,7 +2984,7 @@ bool ns_analyzed_image_time_path::populate_images_from_region_visualization(cons
 		//cerr << "P" << this->group_id << "(" << k << ")";
 		const bool was_previously_loaded(e.path_aligned_image_is_loaded());
 		try{
-			if (!just_do_a_consistancy_check && !was_previously_loaded) //don't do the check for double initilaizing if we're running a consistancy check 
+			if (!just_flag_elements_as_loaded && !just_do_a_consistancy_check && !was_previously_loaded) //don't do the check for double initilaizing if we're running a consistancy check 
 				e.initialize_path_aligned_images(path_aligned_image_image_properties,memory_pool->aligned_image_pool); // These allocations take a lot of time, so we pool them.  This speeds things up on machines with enough RAM to keep it all in memory.
 	
 			//offset_from_path is the distance the region image is from the bounding box around the path
@@ -2979,7 +2998,7 @@ bool ns_analyzed_image_time_path::populate_images_from_region_visualization(cons
 					<< path_aligned_image_image_properties.width << "," << tl_worm_context_position_in_pa.y 
 					<< " for a worm with an image size " << e.path_aligned_images->worm_region_threshold.properties().width << "," << e.path_aligned_images->worm_region_threshold.properties().height;
 		
-			if (!just_do_a_consistancy_check){
+			if (!just_do_a_consistancy_check && just_flag_elements_as_loaded != ns_analyzed_image_time_path::ns_lrv_just_flag){
 				for (long y = 0; y < tl_worm_context_position_in_pa.y; y++){
 					for (unsigned long x = 0; x < path_aligned_image_image_properties.width; x++){
 						e.path_aligned_images->image[y][x] = 0;
@@ -3014,8 +3033,10 @@ bool ns_analyzed_image_time_path::populate_images_from_region_visualization(cons
 				<< e.context_offset_in_region_visualization_image().x << "," << e.context_offset_in_region_visualization_image().x  
 				<< "; the region image: " << im->properties().width << "," << im->properties().height << "; "
 				<< " the worm context size: " << e.worm_context_size().x << "," << e.worm_context_size().y;
+			if (just_flag_elements_as_loaded != ns_analyzed_image_time_path::ns_lrv_just_images)
+				e.path_aligned_images_are_loaded_and_released = true;
 
-			if (!just_do_a_consistancy_check){
+			if (!just_do_a_consistancy_check && just_flag_elements_as_loaded != ns_analyzed_image_time_path::ns_lrv_just_flag){
 				for (long y = 0; y < e.worm_context_size().y; y++){		
 					output_subline(*im,							//source
 					e.context_offset_in_region_visualization_image().x,		//source x offset
@@ -3058,7 +3079,7 @@ bool ns_analyzed_image_time_path::populate_images_from_region_visualization(cons
 				}
 			}
 		
-			if (just_do_a_consistancy_check && !was_previously_loaded){
+			if (just_flag_elements_as_loaded != ns_analyzed_image_time_path::ns_lrv_just_flag && just_do_a_consistancy_check && !was_previously_loaded){
 				e.release_path_aligned_images(memory_pool->aligned_image_pool);
 			}
 		}
@@ -6478,7 +6499,7 @@ void ns_time_path_image_movement_analyzer::generate_movement_posture_visualizati
 
 //we step through all region visualizations between start_i and stop_i, ordered by time in region_image_specifications
 //and populate any worm images that are needed from each region image.
-void ns_time_path_image_movement_analyzer::load_region_visualization_images(const unsigned long start_i, const unsigned long stop_i,const unsigned int start_group, const unsigned int stop_group,ns_sql & sql, bool just_do_a_consistancy_check, bool running_backwards){
+void ns_time_path_image_movement_analyzer::load_region_visualization_images(const unsigned long start_i, const unsigned long stop_i,const unsigned int start_group, const unsigned int stop_group,ns_sql & sql, bool just_do_a_consistancy_check, bool running_backwards, ns_analyzed_image_time_path::ns_load_type just_flag_elements_as_loaded){
 	if (stop_group > groups.size())
 		throw ns_ex("ns_time_path_image_movement_analyzer::load_region_visualization_images()::An invalid group was specified: ") << stop_group << " (there are only " << groups.size() << " groups)";
 //	cerr << "Looking for region images from time point " << start_i << " until " << stop_i;
@@ -6522,30 +6543,34 @@ void ns_time_path_image_movement_analyzer::load_region_visualization_images(cons
 		}
 		if (!region_image_specifications[i].region_vis_required && !region_image_specifications[i].interpolated_region_vis_required)
 			continue;
+		
 		try{
-			//region images contain the context images
-			if (region_image_specifications[i].region_vis_required){
-				
-				ns_image_storage_source_handle<ns_8_bit> in(image_server.image_storage.request_from_storage(region_image_specifications[i].region_vis_image,&sql));
-				image_loading_temp.use_more_memory_to_avoid_reallocations();
-				in.input_stream().pump(image_loading_temp,4096);
-			}
-			else image_loading_temp.prepare_to_recieve_image(ns_image_properties(0,0,0,0));
 
-			if (region_image_specifications[i].interpolated_region_vis_image.id != 0){
-				image_loading_temp2.use_more_memory_to_avoid_reallocations();
-				ns_image_storage_source_handle<ns_8_bit> in2(image_server.image_storage.request_from_storage(region_image_specifications[i].interpolated_region_vis_image,&sql));
-				in2.input_stream().pump(image_loading_temp2,4096);
-			}
-			else image_loading_temp2.prepare_to_recieve_image(ns_image_properties(0,0,0,0));
+			if (just_flag_elements_as_loaded != ns_analyzed_image_time_path::ns_lrv_just_flag) {
+				//region images contain the context images
+				if (region_image_specifications[i].region_vis_required) {
 
-	//		cerr << "Done.\n";
-			//extract green channel, as this has the grayscale values.
-			ns_image_properties prop(image_loading_temp.properties());
-			if (!region_image_specifications[i].region_vis_required)
-				prop = image_loading_temp2.properties();
-			if (prop.components != 3)
-				throw ns_ex("ns_time_path_image_movement_analyzer::load_region_visualization_images()::Region images must be RBG");
+					ns_image_storage_source_handle<ns_8_bit> in(image_server.image_storage.request_from_storage(region_image_specifications[i].region_vis_image, &sql));
+					image_loading_temp.use_more_memory_to_avoid_reallocations();
+					in.input_stream().pump(image_loading_temp, 4096);
+				}
+				else image_loading_temp.prepare_to_recieve_image(ns_image_properties(0, 0, 0, 0));
+
+				if (region_image_specifications[i].interpolated_region_vis_image.id != 0) {
+					image_loading_temp2.use_more_memory_to_avoid_reallocations();
+					ns_image_storage_source_handle<ns_8_bit> in2(image_server.image_storage.request_from_storage(region_image_specifications[i].interpolated_region_vis_image, &sql));
+					in2.input_stream().pump(image_loading_temp2, 4096);
+				}
+				else image_loading_temp2.prepare_to_recieve_image(ns_image_properties(0, 0, 0, 0));
+
+				//		cerr << "Done.\n";
+						//extract green channel, as this has the grayscale values.
+				ns_image_properties prop(image_loading_temp.properties());
+				if (!region_image_specifications[i].region_vis_required)
+					prop = image_loading_temp2.properties();
+				if (prop.components != 3)
+					throw ns_ex("ns_time_path_image_movement_analyzer::load_region_visualization_images()::Region images must be RBG");
+			}
 			bool new_data_allocated = false;
 			for (unsigned int g = start_group; g < stop_group; g++){
 			
@@ -6568,7 +6593,7 @@ void ns_time_path_image_movement_analyzer::load_region_visualization_images(cons
 							continue;
 					}
 					ns_movement_image_collage_info m(&groups[g].paths[p]);
-					if (groups[g].paths[p].populate_images_from_region_visualization(region_image_specifications[i].time,image_loading_temp,image_loading_temp2,just_do_a_consistancy_check))
+					if (groups[g].paths[p].populate_images_from_region_visualization(region_image_specifications[i].time,image_loading_temp,image_loading_temp2,just_do_a_consistancy_check, just_flag_elements_as_loaded))
 						new_data_allocated = true;
 				}
 			}

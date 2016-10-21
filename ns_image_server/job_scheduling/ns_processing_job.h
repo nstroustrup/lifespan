@@ -71,6 +71,13 @@ struct ns_processing_job{
 	bool has_a_valid_job_type() const{
 		return !is_job_type(ns_no_job_type);
 	}
+	bool is_a_multithreaded_job() const{
+		return maintenance_task == ns_maintenance_rebuild_movement_data ||
+			 maintenance_task == ns_maintenance_rebuild_movement_from_stored_images ||
+			 maintenance_task == ns_maintenance_rebuild_movement_from_stored_image_quantification ||
+			 operations.size() > (int)ns_process_compile_video  &&
+			 operations[(int)ns_process_compile_video] != 0;
+	}
 	//returns the type of job the specification requests.
 	bool is_job_type(const ns_job_type t) const{
 

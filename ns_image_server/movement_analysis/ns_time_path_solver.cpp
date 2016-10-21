@@ -46,7 +46,7 @@ ns_time_path_solver_parameters ns_time_path_solver_parameters::default_parameter
 		if (res.empty() || res[0].empty())
 			throw ns_ex("ns_time_path_solver_parameters::default_paramers()::Could not find region id") << sample_region_image_info_id << " in the database!";
 		if (res[0][0].size() > 0)
-			return image_server.get_position_analysis_model(res[0][0],create_default_parameter_file_if_needed,sample_region_image_info_id,&sql);
+			return image_server_const.get_position_analysis_model(res[0][0],create_default_parameter_file_if_needed,sample_region_image_info_id,&sql);
 	}
 	sql << "SELECT s.id, s.device_name, s.experiment_id, s.device_capture_period_in_seconds,s.number_of_consecutive_captures_per_sample FROM capture_samples as s, sample_region_image_info as r WHERE r.id =" << sample_region_image_info_id << " AND r.sample_id = s.id";
 	sql.get_rows(res);
@@ -314,9 +314,9 @@ void ns_time_path_solver::break_paths_at_large_gaps(double max_gap_factor){
 		}
 	}
 	if (break_counts > 0)
-		cout << "Split " << break_counts << "/" << number_of_paths << " paths into " << fragment_counts << " fragments\n";
+		cerr << "Split " << break_counts << "/" << number_of_paths << " paths into " << fragment_counts << " fragments\n";
 }
-void ns_time_path_solver::solve(const ns_time_path_solver_parameters &param, ns_time_path_solution & solve){
+void ns_time_path_solver::solve(const ns_time_path_solver_parameters &param, ns_time_path_solution & solve, ns_image_server_sql * sql){
 
 	ns_global_debug(ns_text_stream_t("ns_time_path_solver::solve()::min_stationary_object_path_fragment_duration_in_seconds: ") <<             param.min_stationary_object_path_fragment_duration_in_seconds);
 	ns_global_debug(ns_text_stream_t("ns_time_path_solver::solve()::stationary_object_path_fragment_window_length_in_seconds: ") <<			  param.stationary_object_path_fragment_window_length_in_seconds);
@@ -422,7 +422,7 @@ void ns_time_path_solver::solve(const ns_time_path_solver_parameters &param, ns_
 	find_low_density_stationary_paths(param.min_final_stationary_path_duration_in_minutes*60,
 				   param.stationary_object_path_fragment_max_movement_distance/2);
 
-	handle_low_density_stationary_paths_and_stray_points(param.maximum_distance_betweeen_joined_path_fragments,param.min_final_stationary_path_duration_in_minutes);
+	handle_low_density_stationary_paths_and_stray_points(param.maximum_distance_betweeen_joined_path_fragments,param.min_final_stationary_path_duration_in_minutes,sql);
 	
 	//remove late large gaps, which probably result from linking spurious fas moving animals
 	break_paths_at_large_gaps(param.maximum_fraction_of_median_gap_allowed_in_low_density_paths);
@@ -495,10 +495,10 @@ void ns_time_path_solution::save_to_db(const ns_64_bit region_id, ns_sql & sql) 
 	im.id = atol(res[0][0].c_str());
 	bool update_db(false);
 	if (im.id == 0){
-		im = image_server.image_storage.get_region_movement_metadata_info(region_id,"time_path_solution_data",sql);
+		im = image_server_const.image_storage.get_region_movement_metadata_info(region_id,"time_path_solution_data",sql);
 		update_db = true;
 	}
-	ofstream * o(image_server.image_storage.request_metadata_output(im,"csv",false,&sql));
+	ofstream * o(image_server_const.image_storage.request_metadata_output(im,"csv",false,&sql));
 	im.save_to_db(im.id,&sql);
 
 	if (ns_dir::extract_extension(im.filename) != "csv")
@@ -529,10 +529,10 @@ void ns_time_path_solution::load_from_db(const ns_64_bit region_id, ns_sql & sql
 	if (load_directly_from_disk_without_db){
 		
 		ns_image_server_image im;
-		im = image_server.image_storage.get_region_movement_metadata_info(region_id,"time_path_solution_data",sql);
+		im = image_server_const.image_storage.get_region_movement_metadata_info(region_id,"time_path_solution_data",sql);
 		im.filename += ".csv";
 		try{
-			input_file.attach(image_server.image_storage.request_metadata_from_disk(im,false,&sql));
+			input_file.attach(image_server_const.image_storage.request_metadata_from_disk(im,false,&sql));
 		}catch(ns_ex & ex){
 			throw ns_ex("Solution data could not be found on disk");
 		}
@@ -541,7 +541,7 @@ void ns_time_path_solution::load_from_db(const ns_64_bit region_id, ns_sql & sql
 		im.id = atol(res[0][0].c_str());
 		if (im.id == 0)
 			throw ns_ex("Solution data has not been stored in db");
-		input_file.attach(image_server.image_storage.request_metadata_from_disk(im,false,&sql));
+		input_file.attach(image_server_const.image_storage.request_metadata_from_disk(im,false,&sql));
 	}
 
 
@@ -1385,7 +1385,7 @@ struct ns_time_element_link_orderer{
 	}
 };
 
-void ns_time_path_solver::handle_low_density_stationary_paths_and_stray_points(const unsigned long max_movement_distance, const double min_final_stationary_path_duration_in_minutes){
+void ns_time_path_solver::handle_low_density_stationary_paths_and_stray_points(const unsigned long max_movement_distance, const double min_final_stationary_path_duration_in_minutes, ns_image_server_sql * sql){
 	//this is important, finicky code. The details matter.
 	//It takes all the stationary points left in the data set but at low density
 	//and handles them correctly.  THis is important to get censoring right (as the censoring algorithm reasons over the moving worms,
@@ -1511,7 +1511,7 @@ void ns_time_path_solver::handle_low_density_stationary_paths_and_stray_points(c
 			}
 		}
 	}
-	cout << "Considering " << va << " unassigned matching positions\n";
+	image_server_const.add_subtext_to_current_event(std::string("Considering ") + ns_to_string(va) + " unassigned matching positions\n", sql);
 	//add the low density paths as free points
 	for (unsigned int i = 0 ; i < low_density_paths.size(); i++){
 		for (unsigned int j = 0; j < low_density_paths[i].elements.size(); j++){
@@ -1521,8 +1521,8 @@ void ns_time_path_solver::handle_low_density_stationary_paths_and_stray_points(c
 			vb++;
 		}
 	}
-	cout << "Considering " << paths.size() << " high density paths\n";
-	cout << "Considering " << vb << " points from low density paths\n";
+	image_server_const.add_subtext_to_current_event(std::string("Considering ") + ns_to_string(paths.size()) + " high density paths\n",sql);
+	image_server_const.add_subtext_to_current_event(std::string("Considering ") + ns_to_string(vb) + " points from low density paths\n",sql);
 	
 	for (unsigned int i = 0; i < timepoints.size(); i++){
 		for (unsigned int j = 0; j < timepoints[i].elements.size(); j++)
@@ -1531,16 +1531,16 @@ void ns_time_path_solver::handle_low_density_stationary_paths_and_stray_points(c
 	{
 		int i(0);
 		while(true){
-			cerr << "Round " << i+1 << ": Attempting to merge " << estimators.size() << " estimators...\n";
+			image_server_const.add_subtext_to_current_event(std::string("Round ") + ns_to_string( i+1 ) + ": Attempting to merge " + ns_to_string( estimators.size() )+" estimators...\n",sql);
 			i++;
 			bool changes_made=merge_estimator_groups(max_dist_sq,estimators);
 			if (changes_made)
-				cerr << "Merge reduced to " << estimators.size() << " estimators\n";
+				image_server_const.add_subtext_to_current_event(std::string("Merge reduced to ") + ns_to_string( estimators.size() )+ " estimators\n",sql);
 			if (!changes_made)
 				break;
 		}
 	}
-	cerr << "Finished Merging.\n";
+	image_server_const.add_subtext_to_current_event("Finished Merging.\n",sql);
 
 	
 	//sort elements of the path by time, and merge them.
@@ -1666,7 +1666,7 @@ void ns_time_path_solver::handle_low_density_stationary_paths_and_stray_points(c
 	//In this case the merge_fragment() function generates one path from thet two fragments that skip
 	//over the inbetween low-density points.
 	//This is actually hard to deal with elsewhere correctly, so we do it after the fact here.
-	cerr << "Identifying any remaining unassigned positions.\n";
+	image_server_const.add_subtext_to_current_event("Identifying any remaining unassigned positions.\n",sql);
 	
 	for (unsigned int t = 0; t < timepoints.size(); t++){
 		for (unsigned int e = 0; e < timepoints[t].elements.size(); e++){
@@ -1928,7 +1928,7 @@ void ns_register_path_solver_load_error(unsigned long region_info_id,const std::
 	}
 	else ex <<res[0][3]<<"::" <<res[0][2] << "::" <<res[0][0];
 	ex << ":" << expl;
-	image_server.register_server_event(ex,&sql);
+	image_server_const.register_server_event(ex,&sql);
 
 }
 
@@ -1992,7 +1992,7 @@ void ns_time_path_solver::load_detection_results(unsigned long region_id,ns_sql 
 	set<long> detection_ids;
 	detection_results->results.resize(time_point_result.size());
 	unsigned long current_timepoint_i(0);
-	cout << "Loading Worm Detection Results Metadata...\n";
+	image_server_const.add_subtext_to_current_event("Loading Worm Detection Results Metadata...\n", &sql);
 	for (unsigned int i = 0; i < time_point_result.size();i++){
 		if (current_timepoint_i == timepoints.size())
 			timepoints.resize(timepoints.size()+1);
@@ -2032,13 +2032,13 @@ void ns_time_path_solver::load(ns_64_bit region_id, ns_sql & sql){
 	load_detection_results(region_id,sql);
 
 	long last_c(-2);
-	cerr << "Compiling Detection Point Cloud...";
+	image_server_const.add_subtext_to_current_event("Compiling Detection Point Cloud...",&sql);
 	unsigned long debug_max_points_per_timepoint(0);
 	bool problem = false;
 	for (unsigned int i = 0; i < timepoints.size(); i++){
 		
 		if ((long)((i*100)/timepoints.size()) >= last_c+5){
-			cerr << (i*100)/timepoints.size() << "%...";
+			image_server_const.add_subtext_to_current_event(ns_to_string((i*100)/timepoints.size())+"%...",&sql);
 			last_c = i;
 		}
 	//	if (timepoints[i].time == 1321821542)
@@ -2047,7 +2047,7 @@ void ns_time_path_solver::load(ns_64_bit region_id, ns_sql & sql){
 			timepoints[i].load(timepoints[i].worm_results_id,detection_results->results[i],sql);
 		}
 		catch(ns_ex & ex){
-			image_server.register_server_event(ns_image_server::ns_register_in_central_db,ex);
+			image_server_const.register_server_event(ns_image_server::ns_register_in_central_db,ex);
 			sql << "UPDATE sample_region_images SET " 
 				<< ns_processing_step_db_column_name(ns_process_worm_detection) << " = 0,"
 				<< "worm_detection_results_id = 0"
@@ -2059,7 +2059,7 @@ void ns_time_path_solver::load(ns_64_bit region_id, ns_sql & sql){
 		if (timepoints[i].elements.size() > debug_max_points_per_timepoint)
 			debug_max_points_per_timepoint = timepoints[i].elements.size();
 	}
-	cerr << "\n";
+	image_server_const.add_subtext_to_current_event("\n",&sql);
 	if (problem)
 		throw ns_ex("One or more timepoints did not load correctly.  The problematic images have had their worm detection results deleted; recompute these and try again.");
 	ns_global_debug(ns_text_stream_t("ns_time_path_solver::load()::Max number of elements per timepoint:") << debug_max_points_per_timepoint);

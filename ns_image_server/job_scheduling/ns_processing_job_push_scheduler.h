@@ -51,7 +51,7 @@ public:
 	void report_new_job_and_mark_it_so(const ns_processing_job & job,ns_sql & sql);
 
 	void discover_new_jobs(ns_sql & sql);
-	ns_processing_job request_job(ns_sql & sql,bool first_in_first_out=false);
+	void request_jobs(unsigned long number_of_jobs,std::vector<ns_processing_job > & jobs,ns_sql & sql,bool first_in_first_out=false);
 	void report_job_as_finished(const ns_processing_job & job,ns_sql & sql);
 	void report_job_as_unfinished(const ns_processing_job & job,ns_sql & sql);
 
@@ -78,7 +78,7 @@ public:
 	};
 
 private:
-	std::vector<ns_processing_job> jobs;
+	std::vector<ns_processing_job> job_cache;
 	void get_processing_jobs_from_db(ns_sql & sql);
 	std::map<unsigned long,ns_machine_analysis_data_loader> movement_record_cache;
 	

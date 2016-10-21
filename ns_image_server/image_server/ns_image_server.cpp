@@ -351,7 +351,7 @@ private:
 		lock_held = true;
 	}
 };
-void ns_image_server_automated_job_scheduler::scan_for_tasks(ns_sql & sql){
+void ns_image_server_automated_job_scheduler::scan_for_tasks(ns_sql & sql) {
 	
 	ns_get_automated_job_scheduler_lock_for_scope lock(image_server.automated_job_interval(),sql);
 	if (!lock.run_requested()){
@@ -498,7 +498,7 @@ void ns_image_server_automated_job_scheduler::schedule_detection_jobs_for_region
 
 
 
-void ns_image_server::perform_experiment_maintenance(ns_sql & sql){
+void ns_image_server::perform_experiment_maintenance(ns_sql & sql) const{
 	automated_job_scheduler.scan_for_tasks(sql);
 }
 #endif
@@ -843,6 +843,7 @@ bool ns_image_server::upgrade_tables(ns_sql & sql,const bool just_test_if_needed
 	if (res.size() > 0 && res[0][0].find("unsigned") != res[0][0].npos){
 		if (just_test_if_needed)
 			return true;
+		cout << "Fixing " << schema_name << " registration horizontal record table\n";
 		sql << "ALTER TABLE " << schema_name << ".captured_images CHANGE COLUMN `registration_horizontal_offset` " 
 				"`registration_horizontal_offset` INT(10) NOT NULL DEFAULT '0' ";
 		sql.send_query();
@@ -856,6 +857,7 @@ bool ns_image_server::upgrade_tables(ns_sql & sql,const bool just_test_if_needed
 	if (res.size() > 0 && res[0][0].find("unsigned") != res[0][0].npos){
 		if (just_test_if_needed)
 			return true;
+		cout << "Fixing buffered images registration horizontal record table\n";
 		sql << "ALTER TABLE image_server_buffer.buffered_captured_images CHANGE COLUMN `registration_horizontal_offset` " 
 				"`registration_horizontal_offset` INT(10) NOT NULL DEFAULT '0' ";
 		sql.send_query();
@@ -865,7 +867,7 @@ bool ns_image_server::upgrade_tables(ns_sql & sql,const bool just_test_if_needed
 	if (!ns_sql_column_exists("sample_region_image_info","position_analysis_model",sql)){
 		if(just_test_if_needed)
 			return true;
-		cout << "Adding position analysis model column to sample_region_image_info";
+		cout << "Adding position analysis model column to sample_region_image_info\n";
 		sql << "ALTER TABLE sample_region_image_info "
 			   "ADD COLUMN `position_analysis_model` TEXT NOT NULL AFTER `time_series_denoising_flag`";
 		sql.send_query();
@@ -881,7 +883,7 @@ bool ns_image_server::upgrade_tables(ns_sql & sql,const bool just_test_if_needed
 	if (res.size() > 0 && res[0][0].find("bigint") == res[0][0].npos){
 		if (just_test_if_needed)
 			return true;
-		cout << "Fixing path id bit depths in path_data";
+		cout << "Fixing path id bit depths in path_data\n";
 		sql << "ALTER TABLE `path_data`"
 				"CHANGE COLUMN `region_id` `region_id` BIGINT UNSIGNED NOT NULL FIRST,"
 				"CHANGE COLUMN `image_id` `image_id` BIGINT UNSIGNED NOT NULL AFTER `path_id`,"
@@ -893,8 +895,19 @@ bool ns_image_server::upgrade_tables(ns_sql & sql,const bool just_test_if_needed
 	if (!ns_sql_column_exists("path_data","flow_image_id",sql)){
 		if(just_test_if_needed)
 			return true;
-		cout << "Adding flow record in path data";
+		cout << "Adding flow record in path data\n";
 		sql << " ALTER TABLE `path_data` ADD COLUMN `flow_image_id` BIGINT UNSIGNED NOT NULL DEFAULT '0' AFTER `id`";
+		sql.send_query();
+
+		changes_made = true;
+	}
+
+	if (!ns_sql_column_exists("host_event_log", "sub_text", sql)) {
+		if (just_test_if_needed)
+			return true;
+		cout << "Adding position analysis model column to sample_region_image_info\n";
+		sql << "ALTER TABLE `host_event_log` "
+				"ADD COLUMN `sub_text` MEDIUMTEXT NULL AFTER `processing_duration`";
 		sql.send_query();
 
 		changes_made = true;
@@ -1484,7 +1497,7 @@ void ns_write_experimental_data_in_database_to_file(const unsigned long experime
 	cout << "\n";
 }
 
-ns_sql * ns_image_server::new_sql_connection(const std::string & source_file, const unsigned int source_line, const unsigned int retry_count){
+ns_sql * ns_image_server::new_sql_connection(const std::string & source_file, const unsigned int source_line, const unsigned int retry_count) const{
 	//if there's a problem with the sql server, handle it.  Don't just cycle through errors!
 	ns_acquire_lock_for_scope lock(sql_lock,source_file.c_str(),source_line);
 	ns_sql *con(0);
@@ -2354,6 +2367,27 @@ void ns_image_server::clear_old_server_events(ns_sql & sql){
 
 
 
+void ns_image_server::add_subtext_to_current_event(const char * str, ns_image_server_sql * sql) const {
+	if (sql != 0) {
+		std::map<ns_64_bit, ns_thread_output_state>::iterator current_thread_state = get_current_thread_state_info();
+
+		*sql << "UPDATE host_event_log sub_text = CONCAT(sub_text,'" << sql->escape_string(str) << "') WHERE id = " << current_thread_state->second.last_event_sql_id;
+		sql->send_query();
+	}
+	cerr << str;
+}
+
+void  ns_image_server::add_subtext_to_current_event(const ns_image_server_event & s_event, ns_image_server_sql * sql,bool display_date) const {
+	if (!display_date)
+		add_subtext_to_current_event(s_event.text(), sql);
+	else {
+		std::string time_str = ns_format_time_string(ns_current_time());
+		time_str+=std::string(": ");
+		time_str += s_event.text();
+		time_str += std::string("\n");
+		add_subtext_to_current_event(time_str, sql);
+	}
+}
 ns_64_bit ns_image_server::register_server_event(const ns_register_type type,const ns_image_server_event & s_event)const{
 	if (s_event.type()==ns_ts_error || s_event.type() == ns_ts_debug){
 			register_server_event_no_db(s_event);
@@ -2608,7 +2642,7 @@ std::map<std::string,ns_posture_analysis_model>::iterator model = posture_analys
 	return posture_analysis_models[name];
 }
 
-ns_time_path_solver_parameters ns_image_server::get_position_analysis_model(const std::string & model_name,bool create_default_if_does_not_exist,const ns_64_bit region_info_id_for_default, ns_sql * sql_for_default){
+ns_time_path_solver_parameters ns_image_server::get_position_analysis_model(const std::string & model_name,bool create_default_if_does_not_exist,const ns_64_bit region_info_id_for_default, ns_sql * sql_for_default) const{
 
 	std::string filename = long_term_storage_directory + DIR_CHAR_STR + this->position_analysis_model_directory() + DIR_CHAR_STR + model_name;
 	ns_ini ini;

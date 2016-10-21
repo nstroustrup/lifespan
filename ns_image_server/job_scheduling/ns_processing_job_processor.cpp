@@ -793,7 +793,7 @@ bool ns_processing_job_maintenance_processor:: run_job(ns_sql & sql){
 					ns_time_path_solver tp_solver;
 					tp_solver.load(job.region_id,sql);
 					ns_time_path_solver_parameters solver_parameters(ns_time_path_solver_parameters::default_parameters(job.region_id,sql));
-					tp_solver.solve(solver_parameters,time_path_solution);
+					tp_solver.solve(solver_parameters,time_path_solution, &sql);
 					time_path_solution.save_to_db(job.region_id,sql);
 				}
 			}
@@ -810,7 +810,7 @@ bool ns_processing_job_maintenance_processor:: run_job(ns_sql & sql){
 			
 					ns_time_path_solver tp_solver;
 					tp_solver.load(job.region_id,sql);
-					tp_solver.solve(solver_parameters,time_path_solution);
+					tp_solver.solve(solver_parameters,time_path_solution, &sql);
 				
 					image_server->register_server_event(ns_image_server_event("Filling gaps and adding path prefixes."),&sql);
 					std::string prefix_length_str= image_server->get_cluster_constant_value("path_prefix_length_in_frames",ns_to_string(ns_time_path_solution::default_length_of_fast_moving_prefix()),&sql);

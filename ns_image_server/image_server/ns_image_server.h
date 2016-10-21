@@ -141,8 +141,8 @@ public:
 
 	void set_up_local_buffer();
 	void set_up_model_directory();
-	///Provides a live sql connection to the central database.
-	ns_sql * new_sql_connection(const std::string & source_file, const unsigned int source_line, const unsigned int retry_count=10);
+	///Provides a live sql connection to the central database.  
+	ns_sql * new_sql_connection(const std::string & source_file, const unsigned int source_line, const unsigned int retry_count=10) const;
 	ns_sql *new_sql_connection_no_lock_or_retry(const std::string & source_file, const unsigned int source_line) const;
 
 	ns_sql_table_lock_manager sql_table_lock_manager;
@@ -362,7 +362,7 @@ public:
 	#ifndef NS_MINIMAL_SERVER_BUILD
 	const ns_posture_analysis_model & get_posture_analysis_model_for_region(const ns_64_bit region_info_id, ns_sql & sql);
 	const ns_posture_analysis_model & get_posture_analysis_model(const ns_posture_analysis_model::ns_posture_analysis_method & m,const std::string & name);
-	ns_time_path_solver_parameters get_position_analysis_model(const std::string & model_name,bool create_default_if_does_not_exist=false,const ns_64_bit region_info_id_for_default=0, ns_sql * sql_for_default=0);
+	ns_time_path_solver_parameters get_position_analysis_model(const std::string & model_name,bool create_default_if_does_not_exist=false,const ns_64_bit region_info_id_for_default=0, ns_sql * sql_for_default=0) const;
 	#endif
 	///Clear all SVM machine learning models from the model cache so they are
 	///reloaded from the disk
@@ -389,7 +389,7 @@ public:
 	void set_cluster_constant_value(const std::string & key, const std::string & value, ns_image_server_sql * sql, const int time_stamp=-1);
 	
 	#ifndef NS_MINIMAL_SERVER_BUILD
-		void perform_experiment_maintenance(ns_sql & sql);
+		void perform_experiment_maintenance(ns_sql & sql) const;
 		static void process_experiment_capture_schedule_specification(const std::string & input_file,std::vector<std::string> & warnings,const bool overwrite_previous_experiment=false,const bool submit_to_db=false,const std::string & summary_output_file="",const bool output_to_stdout = false);
 
 	void start_autoscans_for_device(const std::string & device_name,ns_sql & sql);	
@@ -411,7 +411,7 @@ public:
 	unsigned handle_software_updates()const{return multiprocess_control_options.handle_software_updates;}
 
 	
-	ns_simple_cache<ns_disk_buffered_image_registration_profile, true> image_registration_profile_cache;
+	mutable ns_simple_cache<ns_disk_buffered_image_registration_profile, true> image_registration_profile_cache;
 	
 	ns_vector_2i max_terminal_window_size;
 	unsigned long terminal_hand_annotation_resize_factor;
@@ -434,6 +434,12 @@ public:
 
 	ns_64_bit register_server_event(const ns_register_type type,const ns_image_server_event & s_event) const;
 	ns_64_bit register_server_event(const ns_register_type type,const ns_ex & ex)const;
+	void add_subtext_to_current_event(const std::string & str, ns_image_server_sql * sql) const {
+		add_subtext_to_current_event(str.c_str(), sql);
+	}
+	void add_subtext_to_current_event(const char * str, ns_image_server_sql * sql) const;
+	void add_subtext_to_current_event(const ns_image_server_event & s_event, ns_image_server_sql * sql,bool display_date=true) const;
+
 
 
 
@@ -471,6 +477,10 @@ public:
 		performance_statistics.clear_db(host_id(), sql);
 		lock.release();
 	}
+
+	//ordered by the system thread id;
+	mutable std::map<ns_64_bit, ns_thread_output_state> thread_states;
+	std::map<ns_64_bit, ns_thread_output_state>::iterator get_current_thread_state_info() const;
 
 private:
 
@@ -570,15 +580,12 @@ private:
 	ns_lock simulator_scan_lock;
 
 	
-	//ordered by the system thread id;
-	mutable std::map<ns_64_bit, ns_thread_output_state> thread_states;
-	std::map<ns_64_bit, ns_thread_output_state>::iterator get_current_thread_state_info() const;
 
 
 	unsigned int _software_version_compile;
 	
 	#ifndef NS_MINIMAL_SERVER_BUILD
-	ns_image_server_automated_job_scheduler automated_job_scheduler;
+	mutable ns_image_server_automated_job_scheduler automated_job_scheduler;
 	#endif
 	
 	bool cleared;

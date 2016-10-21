@@ -41,7 +41,7 @@ class ns_thread_pool {
 public:
 	ns_thread_pool() :job_access_lock("ns_tpiatp"), wait_after_jobs_finish("ns_tpw"), thread_init_lock("ns_tic"), error_access_lock("ns_tpierr"), shutdown_(false) {}
 
-	~ns_thread_pool() { shutdown(); }
+	~ns_thread_pool() { shutdown(true); }
 
 	//gets the oldest exception thrown by any thread.
 	//returns the number errors in queue (including the one returned); 0 if no errors exist
@@ -67,6 +67,9 @@ public:
 		for (unsigned int j = 0; j < i; j++)
 			thread_idle_locks.push_back(ns_lock(std::string("ns-tpi-") + ns_to_string(j)));
 	}
+	unsigned long number_of_threads() const {
+		return thread_idle_locks.size();
+	}
 
 	//waits until the the job queue becomes empty
 	//important!  this holds onto the wait_after_jobs_finish lock
@@ -86,6 +89,21 @@ public:
 	//to let the idle threads get back to work.
 	void release_hold_on_idle_threads() {
 		wait_after_jobs_finish.release();
+	}
+	bool any_thread_is_idle() {
+		return number_of_idle_threads(true) > 0;
+	}
+	unsigned long number_of_idle_threads(bool any=false) {
+		unsigned long n(0);
+		for (int i = 0; i < thread_idle_locks.size(); i++) {
+			if (thread_idle_locks[i].try_to_acquire(__FILE__, __LINE__)) {
+				n++;
+				thread_idle_locks[i].release();
+				//short circuit
+				if (any) return 1;
+			}
+		}
+		return n;
 	}
 
 	//this function waits for all jobs in the queue to be finished processing,
@@ -149,7 +167,9 @@ public:
 			return;
 		}
 	}
-	void shutdown() {
+	void shutdown (bool release_job_lock) {
+		if (release_job_lock)
+			job_access_lock.release();
 		shutdown_ = true;
 		run_pool();
 		for (unsigned int i = 0; i < threads.size(); i++) {

@@ -78,7 +78,7 @@ public:
 
 	void reset_alert_time_limit(const ns_alert::ns_alert_type a,ns_sql & sql);
 
-	void submit_desperate_alert(const std::string & text);
+	void submit_desperate_alert(const std::string & text) const;
 
 	void reset_all_alert_time_limits(ns_sql & sql);
 	void handle_alerts(ns_sql & sql);
@@ -114,10 +114,10 @@ public:
 	void email_alert(const std::string & text, std::vector<std::string> & recipients, const bool report_to_db);
 	std::vector<ns_alert_recipient> recipients;
 	std::vector<unsigned long> initial_alert_delays;
-	unsigned long initial_desperate_alert_delay(){return 10;}
+	unsigned long initial_desperate_alert_delay()const{return 10;}
 	ns_lock recipient_lock;
-	unsigned long time_of_last_desperate_alert_submission;
-	unsigned long duration_until_next_desperate_alert_submission;
+	mutable unsigned long time_of_last_desperate_alert_submission;
+	mutable unsigned long duration_until_next_desperate_alert_submission;
 	std::vector<ns_alert> local_alert_buffer;
 };
 

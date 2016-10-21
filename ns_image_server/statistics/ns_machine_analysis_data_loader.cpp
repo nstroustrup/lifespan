@@ -86,7 +86,7 @@ bool ns_machine_analysis_region_data::recalculate_from_saved_movement_quantifica
 	const ns_time_series_denoising_parameters time_series_denoising_parameters(ns_time_series_denoising_parameters::load_from_db(region_id,sql));
 	ns_time_path_solver solver;
 	solver.load(region_id,sql);
-	solver.solve(solver_parameters,time_path_solution);
+	solver.solve(solver_parameters,time_path_solution,&sql);
 	time_path_solution.save_to_db(region_id,sql);
 	//time_path_solution.load_from_db(region_id,sql);
 

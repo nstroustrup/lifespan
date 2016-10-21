@@ -9,6 +9,7 @@
 #include "ns_processing_job_scheduler.h"
 #include "ns_processing_job_push_scheduler.h"
 #include "ns_image_capture_data_manager.h"
+#include "ns_thread_pool.h"
 #include <string>
 #include <vector>
 #include <list>
@@ -22,6 +23,34 @@ struct ns_remote_dispatcher_request{
 	ns_image_server_message message;
 	ns_socket_connection connection;
 };
+
+struct ns_processig_thread_pool_status_info {
+	struct ns_processig_thread_pool_status_info():lock("ptpsi"), number_of_multi_threaded_jobs_running(0){}
+	unsigned long number_of_multi_threaded_jobs_running;
+	ns_lock lock;
+};
+struct ns_dispatcher_job_pool_external_data {
+	ns_dispatcher_job_pool_external_data():image_server(0){}
+
+	const ns_image_server * image_server;
+
+	ns_processig_thread_pool_status_info status_info;
+};
+
+struct ns_dispatcher_job_pool_persistant_data {
+	ns_dispatcher_job_pool_persistant_data() :thread_id(0),sql(0), job_scheduler(0){}
+	ns_64_bit thread_id;
+	ns_sql * sql;
+	ns_processing_job_scheduler * job_scheduler;
+};
+class ns_dispatcher_job_pool_job {
+public:
+	ns_processing_job job;
+	ns_dispatcher_job_pool_job(const ns_processing_job & j, ns_dispatcher_job_pool_external_data & d) :job(j), external_data(&d){}
+	ns_dispatcher_job_pool_external_data * external_data;
+	void operator()(ns_dispatcher_job_pool_persistant_data & persistant_data);
+};
+
 
 class ns_image_server_dispatcher;
 
@@ -39,8 +68,7 @@ public:
 	//allow_processing: whether the dispatcher should run imaging processing jobs
 	//note that initial compression of raw tifs is always performed regardless of allow_processing value.
 	ns_image_server_dispatcher(const bool _allow_processing):
-	  allow_processing(_allow_processing),delayed_exception(0),
-		  job_scheduler(image_server),processing_lock("ns_isd::processing"),first_device_capture_run(true),
+	  allow_processing(_allow_processing),delayed_exception(0),processing_lock("ns_isd::processing"),first_device_capture_run(true),
 		  message_handling_lock("ns_isd::message"),memory_allocation_error_count(0),clean_clear_local_db_requested(false),
 		  hotplug_lock("ns_isd::hotplug"),device_capture_management_lock("ns_dml"),time_of_last_scan_for_problems(0),hotplug_running(false),work_sql_connection(0),currently_unable_to_connect_to_the_central_db(false),actively_avoid_connecting_to_central_db(false),timer_sql_connection(0),work_sql_management_lock("ns_isd::work_sql"),timer_sql_management_lock("ns_isd::timer_sql"),trigger_segfault(false){}
 
@@ -106,8 +134,11 @@ private:
 	bool allow_processing;
 
 	bool clean_clear_local_db_requested;
+	
+	ns_thread_pool<ns_dispatcher_job_pool_job, ns_dispatcher_job_pool_persistant_data> processing_thread_pool;
+	ns_dispatcher_job_pool_external_data processing_pool_external_data;
 
-	ns_single_thread_coordinator processing_thread;
+	ns_single_thread_coordinator processing_job_scheduler_thread;
 	ns_single_thread_coordinator message_handling_thread;
 
 	ns_lock message_handling_lock;
@@ -128,7 +159,6 @@ private:
 	void wait_for_local_jobs();
 	void run_hotplug(const bool rescan_bad_barcodes=true,const bool verbose=true);
 
-	ns_processing_job_scheduler job_scheduler;
 
 	ns_lock processing_lock;
 	ns_lock hotplug_lock;

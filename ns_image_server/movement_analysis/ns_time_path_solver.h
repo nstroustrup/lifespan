@@ -350,7 +350,7 @@ public:
 	//aggregates the set of worm positions from saved individual frames
 	void load(ns_64_bit region_id, ns_sql & sql);
 	//identifies staitonary objects in the 3d point cloud of worm positions
-	void solve(const ns_time_path_solver_parameters &parameters, ns_time_path_solution & solution);
+	void solve(const ns_time_path_solver_parameters &parameters, ns_time_path_solution & solution, ns_image_server_sql * sql_for_debug_output_only);
 	
 	void output_visualization_csv(std::ostream & o);
 
@@ -399,7 +399,7 @@ private:
 
 	//find low-density paths, and when possible merge them into the high-density paths
 	void find_low_density_stationary_paths(const unsigned long min_path_duration_in_seconds, const unsigned long max_movement_distance);
-	void handle_low_density_stationary_paths_and_stray_points(const unsigned long max_movement_distance, const double min_final_stationary_path_duration_in_minutes);
+	void handle_low_density_stationary_paths_and_stray_points(const unsigned long max_movement_distance, const double min_final_stationary_path_duration_in_minutes, ns_image_server_sql * sql_for_debug_output_only);
 
 	//used during high-density path detection algorithm
 	void assign_timepoint_elements_to_paths(std::vector<ns_time_path_solver_element> & elements, const unsigned long max_dist_sq, std::vector<ns_time_path_solver_path_builder> & paths);

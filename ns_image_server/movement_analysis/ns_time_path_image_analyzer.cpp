@@ -730,7 +730,7 @@ void ns_time_path_image_movement_analyzer::process_raw_images(const ns_64_bit re
 		get_output_image_storage_locations(region_id,sql,false);
 
 		unsigned long p(0);
-	//	image_server.register_server_event(ns_image_server_event("Calculating Movement",false),&sql);
+	//	image_server_const.register_server_event(ns_image_server_event("Calculating Movement",false),&sql);
 		
 		ns_movement_analysis_shared_state shared_state;
 		shared_state.sql = &sql;
@@ -771,13 +771,10 @@ void ns_time_path_image_movement_analyzer::process_raw_images(const ns_64_bit re
 			}
 		}
 		if (number_of_paths_to_consider == 0)
-			image_server.register_server_event(ns_image_server_event("No dead animals, or potentially dead animals, were identified in this region."),&sql);
+			image_server_const.register_server_event(ns_image_server_event("No dead animals, or potentially dead animals, were identified in this region."),&sql);
 		else {
-			if (write_status_to_db)
-				image_server.register_server_event(ns_image_server_event("Registering and Analyzing ") << number_of_paths_to_consider << " objects; discarding " << number_of_paths_to_ignore << " as noise.", &sql);
-			else
-				std::cout << "Registering and Analyzing " << number_of_paths_to_consider << " objects; discarding " << number_of_paths_to_ignore << " as noise.\n";
-
+				image_server_const.add_subtext_to_current_event(ns_image_server_event("Registering and Analyzing " ) << number_of_paths_to_consider << " objects; discarding "  << number_of_paths_to_ignore << " as noise.", write_status_to_db?&sql:0);
+			
 			const bool system_is_64_bit(sizeof(void *) == 8);
 			const int number_of_images_stored_in_memory_per_group(
 				(1 + 1 + 2 + 4 + 4)*shared_state.registered_image_clear_lag //the registered images; two 8 bt images one 16 and two 32bit
@@ -787,8 +784,8 @@ void ns_time_path_image_movement_analyzer::process_raw_images(const ns_64_bit re
 				1 //intermediate buffers used during saves
 			);
 
-			ns_64_bit max_mem_per_node = (((ns_64_bit)image_server.maximum_memory_allocation_in_mb()) * 1024 * 1024) /
-				image_server.number_of_node_processes_per_machine();
+			ns_64_bit max_mem_per_node = (((ns_64_bit)image_server_const.maximum_memory_allocation_in_mb()) * 1024 * 1024) /
+				image_server_const.number_of_node_processes_per_machine();
 			ns_64_bit max_mem_on_32_bit = (((ns_64_bit)1) << 28) * 7;  //1.75GB
 
 			//32 bit systems become unreliable if you allocate > 1.75 GB.
@@ -806,12 +803,9 @@ void ns_time_path_image_movement_analyzer::process_raw_images(const ns_64_bit re
 				throw ns_ex("The specified worms are so big that they cannot be processed in memory");
 			//const int ((int)(ceil(number_of_paths_to_consider/(float)maximum_number_of_worms_to_process_simultaneously)));
 			const int number_of_worms_per_repeat((int)(ceil(number_of_paths_to_consider / (float)number_of_repeats_required)));
-			if (number_of_repeats_required > 1) {
-				if (write_status_to_db)
-					image_server.register_server_event(ns_image_server_event("To fit everything into memory, we're doing this in ") << number_of_repeats_required << " rounds", &sql);
-				else
-					std::cout << "To fit everything into memory, we're doing this in " << number_of_repeats_required << " rounds\n";
-			}
+			if (number_of_repeats_required > 1) 
+					image_server_const.add_subtext_to_current_event(ns_image_server_event("To fit everything into memory, we're doing this in ") << number_of_repeats_required << " rounds", write_status_to_db?&sql:0);
+				
 			int current_round(0);
 			for (unsigned int g = 0; g < groups.size(); ) {
 
@@ -837,12 +831,9 @@ void ns_time_path_image_movement_analyzer::process_raw_images(const ns_64_bit re
 				if (start_group == stop_group)
 					break;
 				//cerr << "Running group " << start_group << "," << stop_group << "\n";
-				if (number_of_repeats_required > 1) {
-					if (write_status_to_db)
-						image_server.register_server_event(ns_image_server_event("Starting Round ") << (current_round + 1) << "\n", &sql);
-					else
-						std::cout << "\nStarting Round " << (current_round + 1) << "\n";
-			}
+				if (number_of_repeats_required > 1) 
+						image_server_const.add_subtext_to_current_event(ns_image_server_event("Starting Round ")  << current_round + 1 << "\n", write_status_to_db?&sql:0);
+		
 				calculate_memory_pool_maximum_image_size(start_group, stop_group);
 #ifdef NS_OUTPUT_ALGINMENT_DEBUG
 				ofstream oout("c:\\tst_quant.csv");
@@ -862,16 +853,13 @@ void ns_time_path_image_movement_analyzer::process_raw_images(const ns_64_bit re
 					}
 				}
 
-				if (write_status_to_db)
-					image_server.register_server_event(ns_image_server_event("Running backwards..."), &sql);
-				else
-					cerr << "Running Backwards...";
+				image_server_const.add_subtext_to_current_event(ns_image_server_event("Running backwards..."), write_status_to_db?&sql:0);
 				for (long t = (long)region_image_specifications.size() - 1; t >= 0; t--) {
 
 					//output_allocation_state("bk",region_image_specifications.size() - 1 - t, debug_out);
 
 					if (debug_output_skip == number_of_repeats_required || t == 0 && current_round == 0) {
-						std::cout << (100 * (region_image_specifications.size() - 1 - t + region_image_specifications.size()*current_round)) / (region_image_specifications.size()*number_of_repeats_required) << "%...";
+						image_server_const.add_subtext_to_current_event(ns_to_string((100 * (region_image_specifications.size() - 1 - t + region_image_specifications.size()*current_round)) / (region_image_specifications.size()*number_of_repeats_required))+ "%...", write_status_to_db ? &sql : 0);
 						debug_output_skip = 0;
 					}
 					else debug_output_skip++;
@@ -891,7 +879,7 @@ void ns_time_path_image_movement_analyzer::process_raw_images(const ns_64_bit re
 					}
 					catch (ns_ex & ex) {
 						ns_ex ex_f(ex);
-						image_server.register_server_event(ns_image_server::ns_register_in_central_db, ns_image_server_event("Found an error; doing a consistancy check on all images in the region: ") << ex.text());
+						image_server_const.register_server_event(ns_image_server::ns_register_in_central_db, ns_image_server_event("Found an error; doing a consistancy check on all images in the region: ") << ex.text());
 						try {
 							load_region_visualization_images(0, region_image_specifications.size(), 0, groups.size(), sql, true, true, ns_analyzed_image_time_path::ns_lrv_flag_and_images);
 						}
@@ -940,14 +928,12 @@ void ns_time_path_image_movement_analyzer::process_raw_images(const ns_64_bit re
 				//since we have been registered images backwards in time, we've been writing everything in reverse order to the local disk.
 				//So, now we need to reload everything back in, reverse the order so that the earliest frame is first, and then 
 				//write it all out to long term storage. 
-				if (write_status_to_db)
-					image_server.register_server_event(ns_image_server_event("Transfering current results to long term storage..."), &sql);
-				else std::cout << "Transfering current results to long term storage...\n";
+				image_server_const.add_subtext_to_current_event(ns_image_server_event("Transfering current results to long term storage..."), write_status_to_db ? &sql : 0);
 				unsigned long debug_count(0);
 				for (unsigned int i = start_group; i < stop_group; i++) {
 					for (unsigned int j = 0; j < groups[i].paths.size(); j++) {
 						if (i % 5 == 0)
-							cerr << (100 * i) / (stop_group - start_group) << "%...";
+							image_server_const.add_subtext_to_current_event(ns_to_string((100 * i) / (stop_group - start_group)) + "%...", write_status_to_db ? &sql : 0);
 						//output_allocation_state("rev", debug_count, debug_out);
 						debug_count++;
 						if (ns_skip_low_density_paths && groups[i].paths[j].is_low_density_path())
@@ -956,9 +942,9 @@ void ns_time_path_image_movement_analyzer::process_raw_images(const ns_64_bit re
 						if (groups[i].paths[j].first_stationary_timepoint() == 0)
 							continue;
 
-						ns_image_storage_source_handle<ns_8_bit> storage(image_server.image_storage.request_from_local_cache(groups[i].paths[j].volatile_storage_name(false), false));
+						ns_image_storage_source_handle<ns_8_bit> storage(image_server_const.image_storage.request_from_local_cache(groups[i].paths[j].volatile_storage_name(false), false));
 #ifdef NS_CALCULATE_OPTICAL_FLOW
-						ns_image_storage_source_handle<float> flow_storage(image_server.image_storage.request_from_local_cache_float(groups[i].paths[j].volatile_storage_name(true), false));
+						ns_image_storage_source_handle<float> flow_storage(image_server_const.image_storage.request_from_local_cache_float(groups[i].paths[j].volatile_storage_name(true), false));
 						groups[i].paths[j].initialize_movement_image_loading(storage, flow_storage, true);
 #else
 						groups[i].paths[j].initialize_movement_image_loading_no_flow(storage, true);
@@ -974,8 +960,8 @@ void ns_time_path_image_movement_analyzer::process_raw_images(const ns_64_bit re
 						groups[i].paths[j].load_movement_images_no_flow(chunk, storage);
 #endif
 						groups[i].paths[j].end_movement_image_loading();
-						image_server.image_storage.delete_from_local_cache(groups[i].paths[j].volatile_storage_name(true));
-						image_server.image_storage.delete_from_local_cache(groups[i].paths[j].volatile_storage_name(false));
+						image_server_const.image_storage.delete_from_local_cache(groups[i].paths[j].volatile_storage_name(true));
+						image_server_const.image_storage.delete_from_local_cache(groups[i].paths[j].volatile_storage_name(false));
 
 						//reverse order;
 						ns_registered_image_set * tmp;
@@ -1020,14 +1006,12 @@ void ns_time_path_image_movement_analyzer::process_raw_images(const ns_64_bit re
 						shared_state.chunk_generators[i][j].setup_first_chuck_for_forwards_registration();
 					}
 				}
-				if (write_status_to_db)
-					image_server.register_server_event(ns_image_server_event("Running forwards..."), &sql);
-				else std::cout << "\nRunning Forwards...";
+				image_server_const.add_subtext_to_current_event(ns_image_server_event("Running forwards..."), (write_status_to_db?(&sql):0));
 
 
 				for (unsigned int t = 0; t < region_image_specifications.size(); t += chunk_size) {
 					if (debug_output_skip == number_of_repeats_required || t == 0 && current_round == 0) {
-						std::cout << (100 * (t + region_image_specifications.size()*current_round)) / (region_image_specifications.size()*number_of_repeats_required) << "%...";
+						image_server_const.add_subtext_to_current_event(ns_to_string( (100 * (t + region_image_specifications.size()*current_round)) / (region_image_specifications.size()*number_of_repeats_required)) + "%...", write_status_to_db ? (&sql) : 0);
 						debug_output_skip = 0;
 					}
 					else debug_output_skip++;
@@ -1044,7 +1028,7 @@ void ns_time_path_image_movement_analyzer::process_raw_images(const ns_64_bit re
 					}
 					catch (ns_ex & ex) {
 						ns_ex ex_f(ex);
-						image_server.register_server_event(ns_image_server::ns_register_in_central_db, ns_image_server_event("Found an error; doing a consistancy check on all images in the region: ") << ex.text());
+						image_server_const.register_server_event(ns_image_server::ns_register_in_central_db, ns_image_server_event("Found an error; doing a consistancy check on all images in the region: ") << ex.text());
 						try {
 							load_region_visualization_images(0, region_image_specifications.size(), 0, groups.size(), sql, true, false, ns_analyzed_image_time_path::ns_lrv_flag_and_images);
 						}
@@ -1101,8 +1085,7 @@ void ns_time_path_image_movement_analyzer::process_raw_images(const ns_64_bit re
 				current_round++;
 				}
 		}
-		thread_pool.shutdown();
-		///xxx
+		thread_pool.shutdown(true);
 	
 		normalize_movement_scores_over_all_paths(times_series_denoising_parameters);
 		//xxx this could be paraellelized if it was worth it.
@@ -1142,7 +1125,7 @@ void ns_time_path_image_movement_analyzer::process_raw_images(const ns_64_bit re
 		throw;
 	}
 	if (write_status_to_db)
-			image_server.register_server_event(ns_image_server_event("Done."),&sql);
+			image_server_const.register_server_event(ns_image_server_event("Done."),&sql);
 	else cerr << "Done.\n";
 }
 
@@ -1237,7 +1220,7 @@ void ns_time_path_image_movement_analyzer::get_output_image_storage_locations(co
 	string region_name,sample_name,experiment_name;
 	ns_64_bit sample_id,experiment_id;
 	ns_region_info_lookup::get_region_info(region_id,&sql,region_name,sample_name,sample_id, experiment_name, experiment_id);
-	ns_file_location_specification region_info(image_server.image_storage.get_base_path_for_region(region_id, &sql));
+	ns_file_location_specification region_info(image_server_const.image_storage.get_base_path_for_region(region_id, &sql));
 	#ifndef NS_CALCULATE_OPTICAL_FLOW
 	if (create_only_flow)
 		throw ns_ex("Attempting to create flow image storage location in db with NS_CALCULATE_OPTICAL_FLOW set to false");
@@ -1250,17 +1233,17 @@ void ns_time_path_image_movement_analyzer::get_output_image_storage_locations(co
 		for (unsigned int i = 0; i < res.size(); i++) {
 			ns_image_server_image im;
 			im.load_from_db(atol(res[i][1].c_str()), &sql);
-			image_server.image_storage.delete_from_storage(im, ns_delete_both_volatile_and_long_term, &sql);
+			image_server_const.image_storage.delete_from_storage(im, ns_delete_both_volatile_and_long_term, &sql);
 			sql << "DELETE FROM images WHERE id = " << im.id;
 			sql.send_query();
 			im.load_from_db(atol(res[i][2].c_str()), &sql);
-			image_server.image_storage.delete_from_storage(im, ns_delete_both_volatile_and_long_term, &sql);
+			image_server_const.image_storage.delete_from_storage(im, ns_delete_both_volatile_and_long_term, &sql);
 			sql << "DELETE FROM images WHERE id = " << im.id;
 			sql.send_query();
 		}
 		if (res.size() > 0) {
 			sql << "DELETE FROM path_data WHERE region_id = " << region_id << " AND group_id >= " << groups.size();
-			cout << "Deleting extra paths...\n";
+			image_server_const.add_subtext_to_current_event("Deleting extra paths...\n",&sql);
 			sql.send_query();
 		}
 	}
@@ -1273,7 +1256,7 @@ void ns_time_path_image_movement_analyzer::get_output_image_storage_locations(co
 
 			
 			if (im.id == 0 && !create_only_flow){
-				im = image_server.image_storage.get_storage_for_path(region_info, j, i,
+				im = image_server_const.image_storage.get_storage_for_path(region_info, j, i,
 																region_id, region_name,experiment_name, sample_name,false);
 				im.save_to_db(0,&sql);
 				if (im.id == 0)
@@ -1283,7 +1266,7 @@ void ns_time_path_image_movement_analyzer::get_output_image_storage_locations(co
 			ns_image_server_image & im_flow(groups[i].paths[j].flow_output_image);
 
 			if (im_flow.id == 0){
-				im_flow = image_server.image_storage.get_storage_for_path(region_info, j, i,
+				im_flow = image_server_const.image_storage.get_storage_for_path(region_info, j, i,
 																region_id, region_name,experiment_name, sample_name,true);
 				im_flow.save_to_db(0,&sql);
 				if (im_flow.id == 0)
@@ -1365,7 +1348,7 @@ void ns_time_path_image_movement_analyzer::populate_movement_quantification_from
 	im.id = atol(res[0][0].c_str());
 	if (im.id == 0)
 		throw ns_ex("Movement quantification data has not been stored in db");
-	ifstream * i(image_server.image_storage.request_metadata_from_disk(im,false,&sql));
+	ifstream * i(image_server_const.image_storage.request_metadata_from_disk(im,false,&sql));
 
 	try{
 		load_movement_data_from_disk(*i, skip_movement_data);
@@ -1469,10 +1452,10 @@ void ns_time_path_image_movement_analyzer::save_movement_data_to_db(const ns_64_
 	im.id = atol(res[0][0].c_str());
 	bool update_db(false);
 	if (im.id == 0){
-		im = image_server.image_storage.get_region_movement_metadata_info(region_id,"time_path_movement_image_analysis_quantification",sql);
+		im = image_server_const.image_storage.get_region_movement_metadata_info(region_id,"time_path_movement_image_analysis_quantification",sql);
 		update_db = true;
 	}
-	ofstream * o(image_server.image_storage.request_metadata_output(im,"csv",false,&sql));
+	ofstream * o(image_server_const.image_storage.request_metadata_output(im,"csv",false,&sql));
 	im.save_to_db(im.id,&sql);
 	try{
 		save_movement_data_to_disk(*o);
@@ -4854,7 +4837,7 @@ ns_analyzed_image_time_path_group::ns_analyzed_image_time_path_group(const unsig
 	for (unsigned int i = 0; i < solution_.path_groups[group_id_].path_ids.size(); i++){
 		const unsigned long & path_id(solution_.path_groups[group_id_].path_ids[i]);
 		const ns_time_path & source_path(solution_.paths[path_id]);
-		paths.resize(current_path_id+1,ns_analyzed_image_time_path(memory_pool,image_server.processing_node_id()));
+		paths.resize(current_path_id+1,ns_analyzed_image_time_path(memory_pool,image_server_const.processing_node_id()));
 		ns_analyzed_image_time_path &path(paths[current_path_id]);
 
 		path.path = &source_path;
@@ -5104,17 +5087,17 @@ void ns_analyzed_image_time_path::save_movement_images(const ns_analyzed_time_im
 		//	cerr << "Opening path" << this->group_id << " in long term storage." << "\n";
 			//save final images in long term storage
 			if (save_image)
-				output_reciever = new ns_image_storage_reciever_handle<ns_8_bit>(image_server.image_storage.request_storage(output_image, ns_tiff_lzw, save_output_buffer_height, &sql, had_to_use_volatile_storage, false, false));
+				output_reciever = new ns_image_storage_reciever_handle<ns_8_bit>(image_server_const.image_storage.request_storage(output_image, ns_tiff_lzw, save_output_buffer_height, &sql, had_to_use_volatile_storage, false, false));
 			if (save_flow_image)
-				flow_output_reciever = new ns_image_storage_reciever_handle<float>(image_server.image_storage.request_storage_float(flow_output_image, ns_tiff_zip, save_output_buffer_height, &sql, had_to_use_volatile_storage, false, false));
+				flow_output_reciever = new ns_image_storage_reciever_handle<float>(image_server_const.image_storage.request_storage_float(flow_output_image, ns_tiff_zip, save_output_buffer_height, &sql, had_to_use_volatile_storage, false, false));
 		}
 		else {
 
 		//	cerr << "Opening path" << this->group_id << " in volatile storage: " << volatile_storage_name(false) << "\n";
 			if (save_image)
-				output_reciever = new ns_image_storage_reciever_handle<ns_8_bit>(image_server.image_storage.request_local_cache_storage(volatile_storage_name(false), ns_tiff_lzw, save_output_buffer_height, false));
+				output_reciever = new ns_image_storage_reciever_handle<ns_8_bit>(image_server_const.image_storage.request_local_cache_storage(volatile_storage_name(false), ns_tiff_lzw, save_output_buffer_height, false));
 			if (save_flow_image)
-				flow_output_reciever = new ns_image_storage_reciever_handle<float>(image_server.image_storage.request_local_cache_storage_float(volatile_storage_name(true), ns_tiff_zip, save_output_buffer_height, false));
+				flow_output_reciever = new ns_image_storage_reciever_handle<float>(image_server_const.image_storage.request_local_cache_storage_float(volatile_storage_name(true), ns_tiff_zip, save_output_buffer_height, false));
 		}
 	}
 	//write out a dummy image if there are no frames in the path.
@@ -5594,7 +5577,7 @@ bool ns_time_path_image_movement_analyzer::load_movement_image_db_info(const ns_
 		if (group_id >= groups.size() || (!groups[group_id].paths.empty() && path_id >= groups[group_id].paths.size())){
 			sql << "DELETE from path_data WHERE id = " << db_id;
 			sql.send_query();
-			image_server.register_server_event(ns_ex("ns_time_path_image_movement_analyzer::load_movement_image_db_info()::Deleting path data as a too-large group or path_id was found: (") << group_id << "," << path_id << ") in a region with " << groups.size() << " groups",&sql);
+			image_server_const.register_server_event(ns_ex("ns_time_path_image_movement_analyzer::load_movement_image_db_info()::Deleting path data as a too-large group or path_id was found: (") << group_id << "," << path_id << ") in a region with " << groups.size() << " groups",&sql);
 		}
 		else{
 			groups[group_id].paths[path_id].output_image.id = image_id;
@@ -5645,10 +5628,10 @@ void ns_time_path_image_movement_analyzer::load_images_for_group(const unsigned 
 				throw ns_ex("ns_time_path_image_movement_analyzer::load_images_for_group()::Group has no stored image id specified");
 			}
 			groups[group_id].paths[j].output_image.load_from_db(groups[group_id].paths[j].output_image.id,&sql);
-			groups[group_id].paths[j].movement_image_storage = image_server.image_storage.request_from_storage(groups[group_id].paths[j].output_image,&sql);
+			groups[group_id].paths[j].movement_image_storage = image_server_const.image_storage.request_from_storage(groups[group_id].paths[j].output_image,&sql);
 			groups[group_id].paths[j].movement_image_storage_internal_state = groups[group_id].paths[j].movement_image_storage.input_stream().init_send();
 			if (load_flow_images) {
-				groups[group_id].paths[j].flow_movement_image_storage = image_server.image_storage.request_from_storage_n_bits<float>(groups[group_id].paths[j].flow_output_image, &sql, ns_image_storage_handler::ns_long_term_storage);
+				groups[group_id].paths[j].flow_movement_image_storage = image_server_const.image_storage.request_from_storage_n_bits<float>(groups[group_id].paths[j].flow_output_image, &sql, ns_image_storage_handler::ns_long_term_storage);
 				groups[group_id].paths[j].flow_movement_image_storage_internal_state = groups[group_id].paths[j].flow_movement_image_storage.input_stream().init_send();
 
 				groups[group_id].paths[j].initialize_movement_image_loading(groups[group_id].paths[j].movement_image_storage, groups[group_id].paths[j].flow_movement_image_storage,false);
@@ -5734,7 +5717,7 @@ void ns_time_path_image_movement_analyzer::reanalyze_stored_aligned_images(const
 					number_flow_uncalculated++;
 			}
 		const bool calculate_flow_images(number_flow_uncalculated > 0);
-		image_server.register_server_event(ns_image_server_event("Some new movement quantification analyses is missing. It will be performed.",true),&sql);
+		image_server_const.register_server_event(ns_image_server_event("Some new movement quantification analyses is missing. It will be performed.",true),&sql);
 		
 		if (calculate_flow_images) 
 			get_output_image_storage_locations(region_id, sql, true); 
@@ -5749,24 +5732,24 @@ void ns_time_path_image_movement_analyzer::reanalyze_stored_aligned_images(const
 		populate_movement_quantification_from_file(sql,false);
 
 		for (unsigned int i = 0; i < groups.size(); i++){
-			cout << (100*i)/groups.size() << "%...";
+			image_server_const.add_subtext_to_current_event(ns_to_string((100*i)/groups.size()) + "%...",&sql);
 			for (unsigned int j = 0; j < groups[i].paths.size(); j++){
 				if (ns_skip_low_density_paths && groups[i].paths[j].is_low_density_path())
 					continue;
 				groups[i].paths[j].output_image.load_from_db(groups[i].paths[j].output_image.id,&sql);
-				ns_image_storage_source_handle<ns_8_bit> storage(image_server.image_storage.request_from_storage(groups[i].paths[j].output_image,&sql));
+				ns_image_storage_source_handle<ns_8_bit> storage(image_server_const.image_storage.request_from_storage(groups[i].paths[j].output_image,&sql));
 				
 				ns_image_storage_source_handle<float> flow_storage(0);
 				if (calculate_flow_images) {
 						/*	bool had_to_use_volatile_storage;
-							groups[i].paths[j].flow_output_reciever = new ns_image_storage_reciever_handle<float>(image_server.image_storage.request_storage_float(groups[i].paths[j].flow_output_image, ns_tiff_zip, 1024, &sql, had_to_use_volatile_storage, false, false));
+							groups[i].paths[j].flow_output_reciever = new ns_image_storage_reciever_handle<float>(image_server_const.image_storage.request_storage_float(groups[i].paths[j].flow_output_image, ns_tiff_zip, 1024, &sql, had_to_use_volatile_storage, false, false));
 							ns_image_properties prop(storage.input_stream().properties());
 							prop.components = 3;
 							groups[i].paths[j].flow_output_reciever->output_stream().init(prop);*/
 							groups[i].paths[j].initialize_movement_image_loading_no_flow(storage,false);
 				}
 				else {
-					flow_storage = image_server.image_storage.request_from_storage_n_bits<float>(groups[i].paths[j].flow_output_image, &sql, ns_image_storage_handler::ns_long_term_storage);
+					flow_storage = image_server_const.image_storage.request_from_storage_n_bits<float>(groups[i].paths[j].flow_output_image, &sql, ns_image_storage_handler::ns_long_term_storage);
 					groups[i].paths[j].initialize_movement_image_loading(storage, flow_storage,false);
 				}
 
@@ -5832,7 +5815,7 @@ void ns_time_path_image_movement_analyzer::reanalyze_stored_aligned_images(const
 			}
 		}
 		memory_pool.clear();
-		cout << "\n";
+		image_server_const.add_subtext_to_current_event("\n", &sql);
 		generate_movement_description_series();
 		movement_analyzed = true;
 	}
@@ -6132,7 +6115,7 @@ void ns_time_path_image_movement_analyzer::generate_death_aligned_movement_postu
 			continue;
 		}
 		groups[i].paths[0].output_image.load_from_db(groups[i].paths[0].output_image.id,&sql);
-		path_image_source.push_back(image_server.image_storage.request_from_storage(groups[i].paths[0].output_image,&sql));
+		path_image_source.push_back(image_server_const.image_storage.request_from_storage(groups[i].paths[0].output_image,&sql));
 		groups[i].paths[0].initialize_movement_image_loading_no_flow(path_image_source[i],false);
 	}
 
@@ -6295,7 +6278,7 @@ void ns_time_path_image_movement_analyzer::generate_death_aligned_movement_postu
 		ns_image_server_image im(reg.create_storage_for_aligned_path_image(t,(unsigned long)event_to_align,ns_tiff,sql,ns_movement_event_to_label(event_to_align)));
 		try{
 			bool had_to_use_volatile_storage;
-			ns_image_storage_reciever_handle<ns_8_bit> r(image_server.image_storage.request_storage(im,ns_tiff,1024,&sql,had_to_use_volatile_storage,false,false));
+			ns_image_storage_reciever_handle<ns_8_bit> r(image_server_const.image_storage.request_storage(im,ns_tiff,1024,&sql,had_to_use_volatile_storage,false,false));
 			output_image.pump(r.output_stream(),1024);
 			im.mark_as_finished_processing(&sql);
 		}
@@ -6347,7 +6330,7 @@ void ns_time_path_image_movement_analyzer::generate_movement_posture_visualizati
 			continue;
 		}
 		groups[i].paths[0].output_image.load_from_db(groups[i].paths[0].output_image.id,&sql);
-		path_image_source.push_back(image_server.image_storage.request_from_storage(groups[i].paths[0].output_image,&sql));
+		path_image_source.push_back(image_server_const.image_storage.request_from_storage(groups[i].paths[0].output_image,&sql));
 		groups[i].paths[0].initialize_movement_image_loading_no_flow(path_image_source[i],false);
 	}
 
@@ -6367,7 +6350,7 @@ void ns_time_path_image_movement_analyzer::generate_movement_posture_visualizati
 	}
 	//now go through each measurement time for the solution
 	for (unsigned long t = 0; t < solution.timepoints.size(); t++){
-		cerr << (100*t)/solution.timepoints.size() << "%...";
+		image_server_const.add_subtext_to_current_event(ns_to_string((100*t)/solution.timepoints.size())+"%...", &sql);
 
 		ns_movement_posture_visualization_summary vis_summary;
 		vis_summary.region_id = region_id;
@@ -6400,7 +6383,8 @@ void ns_time_path_image_movement_analyzer::generate_movement_posture_visualizati
 
 			//now load frames until done
 			if (best_frame > i+1)
-				cerr << "Skipping" << best_frame - i << " frames from path " << g << "\n";
+				image_server_const.add_subtext_to_current_event(std::string("Skipping") + ns_to_string(best_frame - i) +" frames from path " + ns_to_string(g) + "\n", &sql);
+				
 
 			for (; i < best_frame;){
 			//	cerr << "Clearing p"<<g<< " " << i << "\n";
@@ -6485,7 +6469,7 @@ void ns_time_path_image_movement_analyzer::generate_movement_posture_visualizati
 		ns_image_server_image im(reg.create_storage_for_processed_image(ns_process_movement_posture_visualization,ns_tiff,&sql));
 		try{
 			bool had_to_use_volatile_storage;
-			ns_image_storage_reciever_handle<ns_8_bit> r(image_server.image_storage.request_storage(im,ns_tiff,1024,&sql,had_to_use_volatile_storage,false,false));
+			ns_image_storage_reciever_handle<ns_8_bit> r(image_server_const.image_storage.request_storage(im,ns_tiff,1024,&sql,had_to_use_volatile_storage,false,false));
 			output_image.pump(r.output_stream(),1024);
 			im.mark_as_finished_processing(&sql);
 		}
@@ -6550,7 +6534,7 @@ void ns_time_path_image_movement_analyzer::load_region_visualization_images(cons
 				//region images contain the context images
 				if (region_image_specifications[i].region_vis_required) {
 
-					ns_image_storage_source_handle<ns_8_bit> in(image_server.image_storage.request_from_storage(region_image_specifications[i].region_vis_image, &sql));
+					ns_image_storage_source_handle<ns_8_bit> in(image_server_const.image_storage.request_from_storage(region_image_specifications[i].region_vis_image, &sql));
 					image_loading_temp.use_more_memory_to_avoid_reallocations();
 					in.input_stream().pump(image_loading_temp, 4096);
 				}
@@ -6558,7 +6542,7 @@ void ns_time_path_image_movement_analyzer::load_region_visualization_images(cons
 
 				if (region_image_specifications[i].interpolated_region_vis_image.id != 0) {
 					image_loading_temp2.use_more_memory_to_avoid_reallocations();
-					ns_image_storage_source_handle<ns_8_bit> in2(image_server.image_storage.request_from_storage(region_image_specifications[i].interpolated_region_vis_image, &sql));
+					ns_image_storage_source_handle<ns_8_bit> in2(image_server_const.image_storage.request_from_storage(region_image_specifications[i].interpolated_region_vis_image, &sql));
 					in2.input_stream().pump(image_loading_temp2, 4096);
 				}
 				else image_loading_temp2.prepare_to_recieve_image(ns_image_properties(0, 0, 0, 0));
@@ -6605,7 +6589,7 @@ void ns_time_path_image_movement_analyzer::load_region_visualization_images(cons
 		catch(ns_ex & ex){
 			problem_occurred = true;
 			problem = ex;
-			ns_64_bit problem_id = image_server.register_server_event(ns_image_server::ns_register_in_central_db,ns_image_server_event(ex.text()));
+			ns_64_bit problem_id = image_server_const.register_server_event(ns_image_server::ns_register_in_central_db,ns_image_server_event(ex.text()));
 			sql << " UPDATE sample_region_images SET problem = " << problem_id << " where id = " << region_image_specifications[i].sample_region_image_id;
 			sql.send_query();
 		}

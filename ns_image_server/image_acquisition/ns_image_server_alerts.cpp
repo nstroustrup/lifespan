@@ -432,7 +432,7 @@ ns_alert_handler::ns_alert_handler():
 	initial_alert_delays[(unsigned long)ns_alert::ns_low_disk_space_warning] = 5;
 }
 
-void ns_alert_handler::submit_desperate_alert(const string & text){
+void ns_alert_handler::submit_desperate_alert(const string & text) const{
 	const unsigned long current_time(ns_current_time());
 	if (current_time > 	time_of_last_desperate_alert_submission+
 						60*duration_until_next_desperate_alert_submission + 

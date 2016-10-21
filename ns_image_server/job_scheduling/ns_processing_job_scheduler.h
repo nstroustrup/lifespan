@@ -25,11 +25,11 @@ class ns_processing_error_specification{
 //and then starting the job.
 class ns_processing_job_scheduler{
 public:
-	ns_processing_job_scheduler(ns_image_server & cur_image_server):idle_timer_running(false),
+	ns_processing_job_scheduler(const ns_image_server & cur_image_server):idle_timer_running(false),
 	  current_server(&cur_image_server),db_movement_build_probility(25),pipeline(0){init_pipeline();}
 	~ns_processing_job_scheduler(){destruct_pipeline();}		
 	
-	bool run_a_job(ns_sql & sql,bool first_in_first_out_job_queue=false);
+	bool run_a_job(ns_processing_job & job,ns_sql & sql);
 	
 	void clear_heap();
 
@@ -38,7 +38,7 @@ private:
 	bool idle_timer_running;
 	void init_pipeline();
 	void destruct_pipeline();
-	ns_image_server * current_server;
+	const ns_image_server * current_server;
 	ns_image_processing_pipline_holder * pipeline;
 	unsigned int db_movement_build_probility;
 };

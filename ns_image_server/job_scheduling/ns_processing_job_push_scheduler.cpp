@@ -56,36 +56,36 @@ void ns_image_server_push_job_scheduler::report_sample_region_image(std::vector<
 			region_images[i].load_from_db(region_images[i].region_images_id,&sql);
 	}
 	//look at each region job
-	for (unsigned int j = 0; j < jobs.size(); j++){
-		bool exculde_region_jobs(jobs[j].id == job_to_exclude && (
+	for (unsigned int j = 0; j < job_cache.size(); j++){
+		bool exculde_region_jobs(job_cache[j].id == job_to_exclude && (
 								  job_type_to_exclude == ns_processing_job::ns_no_job_type ||
 								  job_type_to_exclude == ns_processing_job::ns_region_job));
-		bool exculde_movement_jobs(jobs[j].id == job_to_exclude && (
+		bool exculde_movement_jobs(job_cache[j].id == job_to_exclude && (
 								  job_type_to_exclude == ns_processing_job::ns_no_job_type ||
 								  job_type_to_exclude == ns_processing_job::ns_movement_job));
 		
 		//if we cannot deduce the job type, mark it as a problem.
-		if(!jobs[j].has_a_valid_job_type()){
-			sql << "UPDATE processing_jobs SET problem = 1 WHERE id = " << jobs[j].id;
+		if(!job_cache[j].has_a_valid_job_type()){
+			sql << "UPDATE processing_jobs SET problem = 1 WHERE id = " << job_cache[j].id;
 			sql.send_query();
 			continue;
 		}
 		
-		if (!jobs[j].is_job_type(ns_processing_job::ns_region_job) && 
-			!jobs[j].is_job_type(ns_processing_job::ns_movement_job)){
+		if (!job_cache[j].is_job_type(ns_processing_job::ns_region_job) &&
+			!job_cache[j].is_job_type(ns_processing_job::ns_movement_job)){
 	//		if (jobs[j].region_id != 0)
 		//		cerr << "(" << jobs[j].region_id << "!)";
 			continue;
 		}
 		for (unsigned int i = 0; i < region_images.size(); i++){
 		//	cerr << "(" << jobs[j].region_id<< "," <<  region_images[i].region_info_id  << ")";
-			if (region_images[i].region_info_id == jobs[j].region_id){
+			if (region_images[i].region_info_id == job_cache[j].region_id){
 				//the current region is the direct subject of a region job
-				if (jobs[j].is_job_type(ns_processing_job::ns_region_job) && !exculde_region_jobs){
+				if (job_cache[j].is_job_type(ns_processing_job::ns_region_job) && !exculde_region_jobs){
 					//see if the requested job has operations not yet performed on the region.
 					bool processing_requested=false;
-					for (unsigned int k = 0; k < jobs[j].operations.size(); k++){
-						if (region_images[i].op_images_[k] < jobs[j].operations[k]){
+					for (unsigned int k = 0; k < job_cache[j].operations.size(); k++){
+						if (region_images[i].op_images_[k] < job_cache[j].operations[k]){
 							processing_requested = true;
 							break;
 						}
@@ -95,14 +95,14 @@ void ns_image_server_push_job_scheduler::report_sample_region_image(std::vector<
 					
 					//No need for a lock here!  We are simply inserting records for new jobs
 					ns_processing_job_queue_item queue_item;
-					queue_item.job_id = jobs[j].id;
+					queue_item.job_id = job_cache[j].id;
 					queue_item.priority=ns_job_queue_region_priority;
 					queue_item.sample_region_image_id = region_images[i].region_images_id;
 					queue_item.sample_region_info_id = region_images[i].region_info_id;
 					queue_item.save_to_db(sql,false);
 				}
 				//the current region is the indirect subject of a movement job that may now be complete.
-				if (jobs[j].is_job_type(ns_processing_job::ns_movement_job) && !exculde_movement_jobs){
+				if (job_cache[j].is_job_type(ns_processing_job::ns_movement_job) && !exculde_movement_jobs){
 					sql << "SELECT region_id_short_1, region_id_short_2, region_id_long, id FROM worm_movement WHERE "
 						<< "calculated=0 AND ("
 						<< "region_id_short_1=" << region_images[i].region_images_id << " OR "
@@ -148,7 +148,7 @@ void ns_image_server_push_job_scheduler::report_sample_region_image(std::vector<
 
 						ns_processing_job_queue_item queue_item;
 						//No need to lock here!  We are only inserting records
-						queue_item.job_id = jobs[j].id;
+						queue_item.job_id = job_cache[j].id;
 						queue_item.movement_record_id = atol(res[k][3].c_str());
 						queue_item.priority = ns_job_queue_movement_priority;
 						queue_item.save_to_db(sql,false);
@@ -175,13 +175,13 @@ void ns_image_server_push_job_scheduler::report_capture_sample_image(std::vector
 
 	bool found_sample_job = false;
 	//look at each region job
-	for (unsigned int j = 0; j < jobs.size(); j++){
+	for (unsigned int j = 0; j < job_cache.size(); j++){
 		try{
-			if (!jobs[j].is_job_type(ns_processing_job::ns_sample_job))
+			if (!job_cache[j].is_job_type(ns_processing_job::ns_sample_job))
 				continue;
 		}
 		catch(ns_ex & ex){
-			sql << "UPDATE processing_jobs SET problem = 1 WHERE id = " << jobs[j].id;
+			sql << "UPDATE processing_jobs SET problem = 1 WHERE id = " << job_cache[j].id;
 			sql.send_query();
 			ex.text(); //suppress warning
 			continue;
@@ -191,11 +191,11 @@ void ns_image_server_push_job_scheduler::report_capture_sample_image(std::vector
 		//no need to lock here, as we're just inserting records!
 		//and see if it concerns any of the submitted region images.
 		for (unsigned int i = 0; i < captured_images.size(); i++){
-			if (captured_images[i].sample_id == jobs[j].sample_id){
-				if (jobs[j].operations[ns_process_thumbnail])  //resized images are calculated automatically, don't recalculate them
+			if (captured_images[i].sample_id == job_cache[j].sample_id){
+				if (job_cache[j].operations[ns_process_thumbnail])  //resized images are calculated automatically, don't recalculate them
 					continue;
 				ns_processing_job_queue_item queue_item;
-				queue_item.job_id = jobs[j].id;
+				queue_item.job_id = job_cache[j].id;
 				queue_item.priority=ns_job_queue_capture_sample_priority;
 				queue_item.capture_sample_id = captured_images[i].sample_id;
 				queue_item.captured_images_id = captured_images[i].captured_images_id;
@@ -387,95 +387,95 @@ void ns_image_server_push_job_scheduler::report_new_job(const ns_processing_job 
 }
 
 
-ns_processing_job ns_image_server_push_job_scheduler::request_job(ns_sql & sql,bool first_in_first_out){
-	ns_processing_job job;
-	ns_processing_job_queue_item queue_item;
+void ns_image_server_push_job_scheduler::request_jobs(unsigned long number_of_jobs, std::vector<ns_processing_job > & jobs, ns_sql & sql, bool first_in_first_out){
+	
+	std::vector<ns_processing_job_queue_item> queue_items;
 	ns_sql_result queue_item_res;
 	sql.set_autocommit(false);
+	jobs.resize(0);
+	try {
+		ns_sql_table_lock lock(image_server.sql_table_lock_manager.obtain_table_lock("processing_job_queue", &sql, true, __FILE__, __LINE__));
 
-	try{	
-		{
-			ns_sql_table_lock lock(image_server.sql_table_lock_manager.obtain_table_lock("processing_job_queue", &sql, true, __FILE__, __LINE__));
+		sql << ns_processing_job_queue_item::provide_stub() << " WHERE processor_id=0 AND problem=0 AND paused=0 ";
+		if (!image_server.compile_videos())
+			sql << " AND job_class = 0 ";
+		if (first_in_first_out)
+			sql << "ORDER BY priority DESC, id ASC LIMIT " << number_of_jobs;
+		else
+			sql << "ORDER BY priority DESC, id DESC LIMIT " << number_of_jobs;
 
-			sql << ns_processing_job_queue_item::provide_stub() << " WHERE processor_id=0 AND problem=0 AND paused=0 ";
-			if (!image_server.compile_videos())
-				sql << " AND job_class = 0 ";
-			if (first_in_first_out)
-				sql << "ORDER BY priority DESC, id ASC LIMIT 1";
-			else
-				sql << "ORDER BY priority DESC, id DESC LIMIT 1";
-			
-			sql.get_rows(queue_item_res);
-			//no jobs
-			if (queue_item_res.size() == 0){
-				job.id = 0;
-				lock.release(__FILE__, __LINE__);
-				return job;
-			}
-			queue_item.from_result(queue_item_res[0]);
-			//cerr << "Taking pjq " << queue_item.id << "\n";
-			sql << "UPDATE processing_job_queue SET processor_id=" << image_server.host_id() << " WHERE id=" << queue_item.id;
-			sql.send_query();
+		sql.get_rows(queue_item_res);
+		//no jobs
+		if (queue_item_res.size() == 0) {
 			lock.release(__FILE__, __LINE__);
+			return;
 		}
-		try{
-			//look for job in cache
-			for (unsigned int i = 0; i < jobs.size(); i++)
-				if (jobs[i].id == queue_item.job_id){
-					job = jobs[i];
-					break;
-				}
-			if (jobs.size() > 1000)
-				jobs.resize(0);
-
-			if (job.id == 0){
-				sql << ns_processing_job::provide_query_stub() << " FROM processing_jobs WHERE id = " << queue_item.job_id;
-				ns_sql_result job_res;
-				sql.get_rows(job_res);
-				if (job_res.size() == 0){
-					//no need to lock for this deletion
-					sql << "DELETE FROM processing_job_queue WHERE id = " << queue_item.id;
-					sql.send_query();
-					sql.send_query("COMMIT");
-					throw ns_ex("ns_image_server_push_job_scheduler::request_job()::Could not find job ") << queue_item.job_id << " specified by queue in db";
-				}
-				job.load_from_result(job_res[0]);
-			}
-
-			if (queue_item.experiment_id != 0)
-				job.experiment_id = queue_item.experiment_id;
-			if (queue_item.capture_sample_id != 0)
-				job.sample_id = queue_item.capture_sample_id;
-			if (queue_item.sample_region_info_id!=0)
-				job.region_id = queue_item.sample_region_info_id;
-			if (queue_item.captured_images_id!=0)
-				job.captured_image_id = queue_item.captured_images_id;
-			if (queue_item.sample_region_image_id!=0)
-				job.sample_region_image_id = queue_item.sample_region_image_id;
-			if (queue_item.movement_record_id!=0)
-				job.movement_record_id = queue_item.movement_record_id;
-			if (queue_item.image_id!=0)
-				job.image_id = queue_item.image_id;
-			if (queue_item.id!=0)
-				job.queue_entry_id = queue_item.id;
-			
-			//load names of all the jobs for output
-			ns_64_bit d;
-			if (job.region_id != 0)
-				ns_region_info_lookup::get_region_info(job.region_id,&sql,job.region_name,job.sample_name,d,job.experiment_name,d);
-			else if (job.sample_id != 0)
-				ns_region_info_lookup::get_sample_info(job.sample_id,&sql,job.sample_name,job.experiment_name,d);
-			else if (job.experiment_id != 0)
-				ns_region_info_lookup::get_experiment_info(job.experiment_id,&sql,job.experiment_name);
-
-			return job;
-		}
-		catch(...){
-			//no need to lock for this update
-			sql << "UPDATE processing_job_queue SET processor_id=0, problem=1 WHERE id=" << queue_item.id;
+		queue_items.resize(queue_item_res.size());
+		for (unsigned int i = 0; i < queue_item_res.size(); i++) {
+			queue_items[i].from_result(queue_item_res[i]);
+			sql << "UPDATE processing_job_queue SET processor_id=" << image_server.host_id() << " WHERE id=" << queue_items[i].id;
 			sql.send_query();
-			throw;
 		}
+		lock.release(__FILE__, __LINE__);
+	
+		for (unsigned int q = 0; q < queue_items.size(); q++) {
+			try {
+				//look for job in cache
+				for (unsigned int i = 0; i < job_cache.size(); i++)
+					if (job_cache[i].id == queue_items[q].job_id) {
+						jobs[q] = job_cache[i];
+						break;
+					}
+
+				if (jobs[q].id == 0) {
+					sql << ns_processing_job::provide_query_stub() << " FROM processing_jobs WHERE id = " << queue_items[q].job_id;
+					ns_sql_result job_res;
+					sql.get_rows(job_res);
+					if (job_res.size() == 0) {
+						//no need to lock for this deletion
+						sql << "DELETE FROM processing_job_queue WHERE id = " << queue_items[q].id;
+						sql.send_query();
+						sql.send_query("COMMIT");
+						throw ns_ex("ns_image_server_push_job_scheduler::request_job()::Could not find job ") << queue_items[q].job_id << " specified by queue in db";
+					}
+					jobs[q].load_from_result(job_res[0]);
+					job_cache.push_back(jobs[q]);
+				}
+
+				if (queue_items[q].experiment_id != 0)
+					jobs[q].experiment_id = queue_items[q].experiment_id;
+				if (queue_items[q].capture_sample_id != 0)
+					jobs[q].sample_id = queue_items[q].capture_sample_id;
+				if (queue_items[q].sample_region_info_id != 0)
+					jobs[q].region_id = queue_items[q].sample_region_info_id;
+				if (queue_items[q].captured_images_id != 0)
+					jobs[q].captured_image_id = queue_items[q].captured_images_id;
+				if (queue_items[q].sample_region_image_id != 0)
+					jobs[q].sample_region_image_id = queue_items[q].sample_region_image_id;
+				if (queue_items[q].movement_record_id != 0)
+					jobs[q].movement_record_id = queue_items[q].movement_record_id;
+				if (queue_items[q].image_id != 0)
+					jobs[q].image_id = queue_items[q].image_id;
+				if (queue_items[q].id != 0)
+					jobs[q].queue_entry_id = queue_items[q].id;
+
+				//load names of all the jobs for output
+				ns_64_bit d;
+				if (jobs[q].region_id != 0)
+					ns_region_info_lookup::get_region_info(jobs[q].region_id, &sql, jobs[q].region_name, jobs[q].sample_name, d, jobs[q].experiment_name, d);
+				else if (jobs[q].sample_id != 0)
+					ns_region_info_lookup::get_sample_info(jobs[q].sample_id, &sql, jobs[q].sample_name, jobs[q].experiment_name, d);
+				else if (jobs[q].experiment_id != 0)
+					ns_region_info_lookup::get_experiment_info(jobs[q].experiment_id, &sql, jobs[q].experiment_name);
+			}
+			catch (...) {
+				//no need to lock for this update
+				sql << "UPDATE processing_job_queue SET processor_id=0, problem=1 WHERE id=" << queue_items[q].id;
+				sql.send_query();
+				throw;
+			}
+		}
+		return;		
 	}
 	catch(...){
 		sql.set_autocommit(true);
@@ -511,8 +511,8 @@ void ns_image_server_push_job_scheduler::get_processing_jobs_from_db(ns_sql & sq
 	sql << " FROM processing_jobs";
 	ns_sql_result job_data;
 	sql.get_rows(job_data);
-	jobs.resize(0);
-	jobs.resize(job_data.size());
+	job_cache.resize(0);
+	job_cache.resize(job_data.size());
 	for (unsigned int i = 0; i < job_data.size(); i++)
-		jobs[i].load_from_result(job_data[i]);
+		job_cache[i].load_from_result(job_data[i]);
 }

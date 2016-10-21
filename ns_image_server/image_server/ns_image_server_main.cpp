@@ -898,7 +898,7 @@ int main(int argc, char * argv[]){
 						<< "output_image_buffer_info: Output information about the state of each scanner's locally buffered images.\n"
 						<< "stop_checking_central_db: Cease attempting to connect to the central db.\n"
 						<< "start_checking_central_db: Restart attempts to connect to the central db.\n"
-						<< "update_sql: upgrade the sql database schema to match the most recent version. No changes are made if the schema is already up-to-data.  Schema can be specified \n"
+						<< "update_sql [schema name]: update the sql database schema to match the most recent version. No changes are made if the schema is already up-to-data.  Schema can be specified\n"
 						<< "output_sql_debug: request that a running server output its sql debug information\n";
 					#ifndef _WIN32
 					ex << "daemon: run as a background process\n";
@@ -1391,7 +1391,7 @@ int main(int argc, char * argv[]){
 		
 		ns_acquire_for_scope<ns_sql> sql_2(image_server.new_sql_connection(__FILE__,__LINE__));
 		if (image_server.upgrade_tables(sql_2(),true,image_server.current_sql_database())){
-			throw ns_ex("The current database schema is out of date.  Please run the command: ns_image_server update_sql");
+			throw ns_ex("The current database schema is out of date.  Please run the command: ns_image_server update_sql [schema_name]");
 		}
 		sql_2.release();
 

@@ -24,8 +24,8 @@ void ns_check_for_file_errors(ns_processing_job & job, ns_sql & sql){
 		sql.get_rows(res);
 		unsigned long step(res.size()/10);
 		for (unsigned long i = 0; i < res.size(); i++){
-			if (i%step==0)
-				cerr << 10*(i/step) << "%...";
+			if (i%step == 0)
+				image_server_const.add_subtext_to_current_event(ns_to_string(10 * (i / step)) + "%...", &sql);
 			ns_image_server_captured_image_region reg;
 			try{
 				reg.load_from_db(ns_atoi64(res[i][0].c_str()),&sql);
@@ -36,7 +36,7 @@ void ns_check_for_file_errors(ns_processing_job & job, ns_sql & sql){
 						results.load_from_db(false,false,sql,true);
 					}
 					catch(ns_ex & ex){
-						cerr << ex.text() << "\n";
+						image_server_const.add_subtext_to_current_event(ex.text()+ "\n", &sql);
 					}
 				}
 				if (reg.region_interpolation_results_id != 0){
@@ -46,7 +46,7 @@ void ns_check_for_file_errors(ns_processing_job & job, ns_sql & sql){
 						results.load_from_db(false,true,sql,true);
 					}
 					catch(ns_ex & ex){
-						cerr << ex.text() << "\n";
+						image_server_const.add_subtext_to_current_event(ex.text() + "\n", &sql);
 					}
 				}
 				ns_image_stream_static_offset_buffer<ns_8_bit> buf(ns_image_stream_buffer_properties(10000,1));
@@ -82,7 +82,7 @@ void ns_check_for_file_errors(ns_processing_job & job, ns_sql & sql){
 				}
 			}
 			catch(ns_ex & ex){
-				cerr << ex.text() << "\n";
+				image_server_const.add_subtext_to_current_event(ex.text() + "\n", &sql);
 				continue;
 			}
 
@@ -855,7 +855,7 @@ void ns_image_processing_pipeline::process_region(const ns_image_server_captured
 				{
 					ns_image_storage_handler::cache_t::const_handle_t static_mask;
 					ns_image_cache_data_source data_source;
-					data_source.handler = &image_server.image_storage; 
+					data_source.handler = &image_server_const.image_storage; 
 					data_source.sql = & sql;
 					if (static_mask_image.id != 0) {
 						cout << "Using a static mask.\n";
@@ -1358,7 +1358,7 @@ void ns_image_processing_pipeline::calculate_static_mask_and_heat_map(const vect
 			}
 			//if loading from disk fails, make sure to calculate the heat map from scratch.
 			catch(ns_ex & ex){
-				cerr << ex.text() << "\n";
+				image_server_const.add_subtext_to_current_event(ex.text() + "\n", &sql);
 				calculate_heat_map = true;
 			}
 		}
@@ -1907,7 +1907,7 @@ void ns_image_processing_pipeline::apply_mask(ns_image_server_captured_image & c
 		ns_image_registration_profile_cache::handle_t profile;
 		ns_image_registration_profile_data_source profile_data_source;
 		profile_data_source.sql = &sql;
-		profile_data_source.image_storage = &image_server.image_storage;
+		profile_data_source.image_storage = &image_server_const.image_storage;
 		profile_data_source.max_average_dimention = 500;
 
 		bool delete_registration_profile_after_use;
@@ -2548,7 +2548,7 @@ ns_vector_2i ns_image_processing_pipeline::get_vertical_registration(const ns_im
 	//	bool running_retry(false);
 		//while(true){
 			try{
-				image_server.image_registration_profile_cache.get_for_write(reference_image_db_record, reference_image_profile,external_source);
+				image_server_const.image_registration_profile_cache.get_for_write(reference_image_db_record, reference_image_profile,external_source);
 				reference_image_loaded = true;
 				}
 			catch(ns_ex & ex){
@@ -2563,7 +2563,7 @@ ns_vector_2i ns_image_processing_pipeline::get_vertical_registration(const ns_im
 
 	ns_high_precision_timer t;
 	t.start();
-	image_server.image_registration_profile_cache.get_for_write(source, requested_image,external_source);
+	image_server_const.image_registration_profile_cache.get_for_write(source, requested_image,external_source);
 	
 //cerr << "cache subject: " << t.stop()/1000.0/1000.0 << "\n";
 	
@@ -2648,7 +2648,7 @@ void ns_rerun_image_registration(const ns_64_bit region_id, ns_sql & sql){
 	ns_image_registration_profile_cache::handle_t reference_profile;
 	ns_image_registration_profile_data_source profile_data_source;
 	profile_data_source.sql = &sql;
-	profile_data_source.image_storage = &image_server.image_storage;
+	profile_data_source.image_storage = &image_server_const.image_storage;
 	profile_data_source.max_average_dimention = 500;
 
 
@@ -2658,7 +2658,7 @@ void ns_rerun_image_registration(const ns_64_bit region_id, ns_sql & sql){
 		try{
 			ns_image_server_image im;
 			im.id = ns_atoi64(res[i][1].c_str());
-			image_server.image_registration_profile_cache.get_for_write(im, reference_profile, profile_data_source);
+			image_server_const.image_registration_profile_cache.get_for_write(im, reference_profile, profile_data_source);
 			ref_image_id = im.id;
 		}catch(...){}
 		i++;
@@ -2680,7 +2680,7 @@ void ns_rerun_image_registration(const ns_64_bit region_id, ns_sql & sql){
 			if (backup_unprocessed_id != 0){
 				source_im.id = backup_unprocessed_id;
 			}else source_im.id = unprocessed_id;
-			image_server.image_registration_profile_cache.get_for_write(source_im, subject_profile, profile_data_source);
+			image_server_const.image_registration_profile_cache.get_for_write(source_im, subject_profile, profile_data_source);
 
 			ns_vector_2i offset(ns_image_registration<127,ns_8_bit>::register_full_images(reference_profile(),subject_profile(),ns_vector_2i(400,400)));
 			

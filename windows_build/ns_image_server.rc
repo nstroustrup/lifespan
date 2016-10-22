@@ -25,18 +25,18 @@
 // TEXTINCLUDE
 //
 
-1 TEXTINCLUDE 
+1 TEXTINCLUDE
 BEGIN
     "resource.h\0"
 END
 
-2 TEXTINCLUDE 
+2 TEXTINCLUDE
 BEGIN
     "#include ""afxres.h""\r\n"
     "\0"
 END
 
-3 TEXTINCLUDE 
+3 TEXTINCLUDE
 BEGIN
     "\r\n"
     "\0"
@@ -54,7 +54,7 @@ IDR_MENU1 MENU
 BEGIN
     POPUP "Context Menu"
     BEGIN
-        MENUITEM "Lifespan Machine Image Server 2012",   ID_CONTEXTMENU_FONTANAIMAGESERVER, INACTIVE
+        MENUITEM "Lifespan Machine Image Server 2017",   ID_CONTEXTMENU_FONTANAIMAGESERVER, INACTIVE
         MENUITEM "Host Name",                   ID_CONTEXTMENU_HOSTNAME, INACTIVE
         MENUITEM SEPARATOR
         MENUITEM "Nicholas Stroustrup", ID_CONTEXTMENU_STROUSTR

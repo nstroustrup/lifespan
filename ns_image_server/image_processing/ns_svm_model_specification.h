@@ -12,7 +12,7 @@
 	#endif
 #endif
 
-
+#include "ns_simple_cache.h"
 #include "ns_worm_detection_constants.h"
 #undef min
 #undef max
@@ -85,5 +85,28 @@ struct ns_svm_model_specification{
 	void read_excluded_stats(const std::string & filename);
 	void read_included_stats(const std::string & filename);
 };
+
+
+struct ns_svm_model_specification_entry_source {
+	std::string model_directory;
+	//worm_detection_model_directory()
+	void set_directory(const std::string long_term_storage_directory, const std::string & worm_detection_dir);
+};
+
+class ns_svm_model_specification_entry : public ns_simple_cache_data<std::string, struct ns_svm_model_specification_entry_source, std::string> {
+public:
+	ns_svm_model_specification model_specification;
+	template <class a, class b, bool c>
+	friend class ns_simple_cache;
+private:
+	ns_64_bit size_in_memory_in_kbytes() const { return 0; }
+	void load_from_external_source(const std::string & name, ns_svm_model_specification_entry_source & external_source);
+	std::string to_id(const std::string & name) const { return name; }
+	const std::string & id() const { return model_specification.model_name; }
+	void clean_up(ns_svm_model_specification_entry_source & external_source) {}
+};
+
+typedef ns_simple_cache<ns_svm_model_specification_entry, std::string, true> ns_worm_detection_model_cache;
+
 
 #endif

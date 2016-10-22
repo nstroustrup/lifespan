@@ -2,6 +2,7 @@
 #define NS_DEATH_TIME_ANNOTATION_H
 #include "ns_ex.h"
 #include "ns_vector.h"
+#include "ns_thread.h"
 #include "ns_image_server_sql.h"
 #include "ns_movement_state.h"
 #include <stdlib.h>
@@ -106,6 +107,7 @@ struct ns_death_time_annotation_flag{
 private:
 	typedef std::map<std::string, ns_death_time_annotation_flag> ns_flag_cache_by_short_label;
 	static ns_flag_cache_by_short_label cached_flags_by_short_label;
+	static ns_lock flag_lock;
 	mutable bool label_is_cached;
 	mutable std::string cached_label;
 	mutable bool cached_excluded;

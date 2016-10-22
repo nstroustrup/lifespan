@@ -699,8 +699,9 @@ ns_image_server_sql * ns_connect_to_available_sql_server(){
 #include "ns_image_registration.h"
 #include "ns_optical_flow.h"
 #ifdef _WIN32 
-int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow){
-	int argc;
+//int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow){
+	int main(int argc, char ** argv){
+	/*int argc;
 	std::vector<std::string> argv;
 	argv.push_back("image_server_win32.exe");
 
@@ -723,8 +724,8 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLi
 		}
 	}
 	argc = (int)argv.size();
-
-	bool console_window_created(false);
+	*/
+	//bool console_window_created(false);
 
 #else
 int main(int argc, char * argv[]){
@@ -818,20 +819,18 @@ int main(int argc, char * argv[]){
 
 		//we run multiple instances of the server node on each computer.
 		//to do this we launch one process per instance at runtime.
-		ns_multiprocess_control_options mp_options;
+		/*ns_multiprocess_control_options mp_options;
 		for (unsigned int i = 1; i < argc; i++)
-			mp_options.from_parameter(argv[i]);
+			mp_options.from_parameter(argv[i]);*/
 		
 		//load setup information from ini file.  Provide any multiprocess options that may have
 		//been specified at the command line, as these options determine how the ini file values should be interpreted
-		image_server.load_constants(ns_image_server::ns_image_server_type,mp_options);		
+		image_server.load_constants(ns_image_server::ns_image_server_type);		
 		
 	
 		//make sure the multiprocess options are sane
-		mp_options.total_number_of_processes = image_server.number_of_node_processes_per_machine();
+		//mp_options.total_number_of_processes = image_server.number_of_node_processes_per_machine();
 	//	mp_options.total_number_of_processes = 1;
-		if (image_server.number_of_node_processes_per_machine() < 1)
-			throw ns_ex("No processes specificied for this machine.");
 
 		//set default options for command line arguments
 		ns_cl_command command(ns_start);
@@ -843,9 +842,9 @@ int main(int argc, char * argv[]){
 		for (int i = 1; i < argc; i++){
 			std::string command_str(argv[i]);
 			//ignore multi-process control parameters
-			ns_multiprocess_control_options opt_check;
-			if (opt_check.from_parameter(command_str))
-				continue;
+			//ns_multiprocess_control_options opt_check;
+			//if (opt_check.from_parameter(command_str))
+			//	continue;
 
 			//run as background daemon if requested.
 			if (std::string(argv[i]) == "daemon"){
@@ -887,7 +886,6 @@ int main(int argc, char * argv[]){
 						<< "test_alert : send a test alert to be processed by the cluster\n"
 						<< "test_rate_limited_alert : send a test alert to be processed by the cluster\n"
 						<< "wrap_m4v:  wrap the specified m4v stream in an mp4 wrapper with multiple frame rates.\n"
-						<< "single_process: only run a single instance of the image server\n"
 						<< "trigger_segfault: Trigger a segfault to test the crash daemon\n"
 						<< "trigger_dispatcher_segfault: Trigger a segfault in the dispatcher to test the crash daemon\n"
 						<< "run_pending_image_transfers: Start up the server, transfer any pending images to the central file server, and shut down\n"
@@ -939,29 +937,29 @@ int main(int argc, char * argv[]){
 				}
 			}
 		}
-		if (mp_options.only_run_single_process)
-			mp_options.total_number_of_processes = 1;
+	//	if (mp_options.only_run_single_process)
+		//	mp_options.total_number_of_processes = 1;
 
-		std::vector<ns_child_process_information> child_processes;
+		//std::vector<ns_child_process_information> child_processes;
 		//if we're starting up a new server, launch all the desired processes
 		if (command == ns_start || command == ns_restart){
 			
-			if (image_server.server_currently_running() && command == ns_start && mp_options.dispatcher_port_offset == 0)
+			if (image_server.server_currently_running() && command == ns_start )
 				throw ns_ex("An instance of the image server is already running.");
 
 
-			mp_options = ns_spawn_new_nodes(mp_options.total_number_of_processes-1,mp_options, child_processes,command==ns_restart);
-			image_server.load_constants(ns_image_server::ns_image_server_type,mp_options);
-			image_server.set_multiprocess_control_options(mp_options);
+//			mp_options = ns_spawn_new_nodes(mp_options.total_number_of_processes-1,mp_options, child_processes,command==ns_restart);
+			image_server.load_constants(ns_image_server::ns_image_server_type);
+	//		image_server.set_multiprocess_control_options(mp_options);
 		}
-		is_master_node = (mp_options.process_id == 0);
+		is_master_node = true;
 		//Starting here, all code is run by all processes
 		
 		ns_cl_command post_dispatcher_init_command(ns_none);
 		//make a console window
 		#ifdef _WIN32 
-		HWND console_hwnd(ns_make_windows_console_window());
-		console_window_created = true;
+	//	HWND console_hwnd(ns_make_windows_console_window());
+	//	console_window_created = true;
 		#endif
 
 		/*
@@ -1007,14 +1005,14 @@ int main(int argc, char * argv[]){
 			case ns_stop:{
 				if (!image_server.send_message_to_running_server(NS_QUIT))
 					throw ns_ex("No image server found running at ") << image_server.dispatcher_ip() << ":" << image_server.dispatcher_port() << ".";
-				ns_request_shutdown_of_all_spawned_nodes(child_processes);
+			//	ns_request_shutdown_of_all_spawned_nodes(child_processes);
 				std::cout << "Image Server halt requested.  Waiting for termination...";
 				while(image_server.server_currently_running()){
 					ns_thread::sleep(1);
 					std::cerr << ".";	
 				}
 				return 0;
-				ns_wait_for_all_spawned_nodes(child_processes);
+		//		ns_wait_for_all_spawned_nodes(child_processes);
 			}
 			case ns_simulate_central_db_connection_error:{
 					if (!image_server.send_message_to_running_server(NS_SIMULATE_CENTRL_DB_CONNECTION_ERROR))
@@ -1225,6 +1223,8 @@ int main(int argc, char * argv[]){
 				
 		#ifdef _WIN32 
 		if (image_server.hide_window()){
+
+				HWND console_hwnd = GetConsoleHwnd();
 				ShowWindow(console_hwnd,SW_HIDE);
 				ns_window_hidden = !ns_window_hidden;
 		}
@@ -1353,9 +1353,7 @@ int main(int argc, char * argv[]){
 		}
 		ns_image_server_dispatcher dispatch(true);
 
-		const unsigned long dispatcher_offset_time(
-			(image_server.dispatcher_refresh_interval()/
-			image_server.number_of_node_processes_per_machine())*mp_options.process_id);
+		const unsigned long dispatcher_offset_time(image_server.dispatcher_refresh_interval());
 
 		if (!restarting_after_crash){
 			if (is_master_node){
@@ -1463,9 +1461,7 @@ int main(int argc, char * argv[]){
 		}
 		else{
 
-			const unsigned long dispatcher_offset_time(
-			(image_server.dispatcher_refresh_interval()/
-			image_server.number_of_node_processes_per_machine())*mp_options.process_id);
+			const unsigned long dispatcher_offset_time(image_server.dispatcher_refresh_interval());
 			if (dispatcher_offset_time > 0)
 				ns_thread::sleep(dispatcher_offset_time);
 
@@ -1474,9 +1470,10 @@ int main(int argc, char * argv[]){
 			run_dispatcher_t rd;
 			rd.dispatcher =&dispatch;
 			rd.restarting_after_crash = restarting_after_crash;
-			HWND message_hwnd = create_message_window(hInstance);
+
+			HWND message_hwnd = create_message_window(GetModuleHandle(NULL));
 			rd.window_to_close = message_hwnd;
-			handle_icons(hInstance, message_hwnd);
+			handle_icons(GetModuleHandle(NULL), message_hwnd);
 			set_hostname_on_menu(image_server.host_name_out());
 		
 			//set_terminate(ns_terminator);
@@ -1500,26 +1497,26 @@ int main(int argc, char * argv[]){
 		ns_socket::global_clean();
 		#endif
 		
-		if (is_master_node){
-			cerr << "Waiting for external processes...\n";
-			ns_request_shutdown_of_all_spawned_nodes(child_processes);
-			ns_wait_for_all_spawned_nodes(child_processes);
-			#ifndef _WIN32
-			ns_image_server_crash_daemon::request_daemon_shutdown();
-			#endif
-		}
+		//if (is_master_node){
+		//	cerr << "Waiting for external processes...\n";
+		//	ns_request_shutdown_of_all_spawned_nodes(child_processes);
+		//	ns_wait_for_all_spawned_nodes(child_processes);
+		//	#ifndef _WIN32
+		//	ns_image_server_crash_daemon::request_daemon_shutdown();
+		//	#endif
+		//}
 		
 		cerr << "Terminating...\n";
 	}
 	catch(ns_ex & ex){
 	  #ifdef _WIN32 
-		if (!console_window_created)
-			ns_make_windows_console_window();
+		//if (!console_window_created)
+		//	ns_make_windows_console_window();
 		#endif
 
 		cerr << "Server Root Exception: " << ex.text() << "\n";
 		#ifdef _WIN32 
-		argv.clear();
+		//argv.clear();
 		for (unsigned int i = 5; i > 0; i--){
 			cerr << i << "...";
 			ns_thread::sleep(1);

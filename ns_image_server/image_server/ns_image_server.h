@@ -78,11 +78,34 @@ struct ns_multiprocess_control_options{
 	void to_parameters(std::vector<std::string> & parameters);
 };
 
+struct ns_posture_analysis_model_entry_source {
+	ns_posture_analysis_model::ns_posture_analysis_method analysis_method;
+	std::string model_directory;
+	//worm_detection_model_directory()
+	void set_directory(const std::string long_term_storage_directory, const std::string & worm_detection_dir);
+};
+
+class ns_posture_analysis_model_entry : public ns_simple_cache_data<std::string, ns_posture_analysis_model_entry_source,std::string> {
+public:
+	ns_posture_analysis_model model_specification;
+	std::string name;
+	template <class a,class b, bool c>
+	friend class ns_simple_cache;
+private:
+	ns_64_bit size_in_memory_in_kbytes() const {	return 0; }
+	void load_from_external_source(const std::string & name, ns_posture_analysis_model_entry_source & external_source);
+	std::string to_id(const std::string & n) const { return n; }
+	const std::string & id() const { return name; }
+	void clean_up(ns_posture_analysis_model_entry_source & external_source) {}
+};
+
 class ns_thread_output_state{
 public:
-	ns_thread_output_state() :internal_thread_id(0), last_event_sql_id(0) {}
+	ns_thread_output_state() :internal_thread_id(0), last_event_sql_id(0),thread_specific_logfile(0) {}
 	ns_64_bit internal_thread_id,
 			  last_event_sql_id;
+	std::ofstream * thread_specific_logfile;
+	~ns_thread_output_state() { ns_safe_delete(thread_specific_logfile); }
 };
 
 void ns_write_experimental_data_in_database_to_file(const unsigned long experiment_id, const std::string & output_directory,ns_sql & sql);
@@ -120,7 +143,7 @@ public:
 	///at a filename whose suffix is specified by log_suffix.  (This allows worm terminal instances
 	///to run on the same system as image server nodes)
 	typedef enum {ns_image_server_type,ns_worm_terminal_type,ns_sever_updater_type} ns_image_server_exec_type;
-	void load_constants(const ns_image_server_exec_type & log_suffix, const ns_multiprocess_control_options & opt, const bool reject_incorrect_fields=true);
+	void load_constants(const ns_image_server_exec_type & log_suffix, const bool reject_incorrect_fields=true);
 
 	///Hosts coordinate with each other through the sql database.  Register_host() updates the database with the current nodes
 	///IP information, software version, attached image-capture devices, etc.
@@ -355,21 +378,23 @@ public:
 	//the path to the base directory where analyzed results are stored
 	std::string results_storage_directory;
 
+	typedef ns_simple_cache<ns_posture_analysis_model_entry, std::string, true> ns_posture_analysis_model_cache;
+
+#ifndef NS_MINIMAL_SERVER_BUILD
 	///Given the name of an SVM machine learning model specification, returns the
 	///model file as loaded from the default model directory on the central file server
-	const ns_svm_model_specification & get_worm_detection_model(const std::string & name);
+	void get_worm_detection_model(const std::string & name, ns_worm_detection_model_cache::const_handle_t & handle);
 	
-	#ifndef NS_MINIMAL_SERVER_BUILD
-	const ns_posture_analysis_model & get_posture_analysis_model_for_region(const ns_64_bit region_info_id, ns_sql & sql);
-	const ns_posture_analysis_model & get_posture_analysis_model(const ns_posture_analysis_model::ns_posture_analysis_method & m,const std::string & name);
+	void get_posture_analysis_model_for_region(const ns_64_bit region_info_id, typename ns_posture_analysis_model_cache::const_handle_t & it, ns_sql & sql);
+	
 	ns_time_path_solver_parameters get_position_analysis_model(const std::string & model_name,bool create_default_if_does_not_exist=false,const ns_64_bit region_info_id_for_default=0, ns_sql * sql_for_default=0) const;
 	#endif
 	///Clear all SVM machine learning models from the model cache so they are
 	///reloaded from the disk
 	void clear_model_cache(){
-		worm_detection_models.clear();
+		worm_detection_model_cache.clear_cache_without_cleanup();
 #ifndef NS_MINIMAL_SERVER_BUILD
-		posture_analysis_models.clear();
+		posture_analysis_model_cache.clear_cache_without_cleanup();
 #endif
 	}
 
@@ -377,7 +402,7 @@ public:
 
 	///Searches the default SVM machine learning model directory on the central file server and returns
 	///a list of all models present there
-	void load_all_worm_detection_models(std::vector<ns_svm_model_specification* > & spec);
+	void load_all_worm_detection_models(std::vector<ns_worm_detection_model_cache::const_handle_t> & spec);
 
 	ns_64_bit make_record_for_new_sample_mask(const ns_64_bit sample_id, ns_sql & sql);
 
@@ -407,11 +432,11 @@ public:
 	ns_alert_handler alert_handler;
 	ns_lock alert_handler_lock;
 	void register_alerts_as_handled();
-	unsigned long number_of_node_processes_per_machine() const{ return number_of_node_processes_per_machine_;}
+	unsigned long maximum_number_of_processing_threads() const{ return maximum_number_of_processing_threads_;}
 	unsigned handle_software_updates()const{return multiprocess_control_options.handle_software_updates;}
 
 	
-	mutable ns_simple_cache<ns_disk_buffered_image_registration_profile, true> image_registration_profile_cache;
+	ns_simple_cache<ns_disk_buffered_image_registration_profile, ns_64_bit,true> image_registration_profile_cache;
 	
 	ns_vector_2i max_terminal_window_size;
 	unsigned long terminal_hand_annotation_resize_factor;
@@ -439,7 +464,7 @@ public:
 	}
 	void add_subtext_to_current_event(const char * str, ns_image_server_sql * sql) const;
 	void add_subtext_to_current_event(const ns_image_server_event & s_event, ns_image_server_sql * sql,bool display_date=true) const;
-
+	void log_current_thread_output_in_separate_file() const;
 
 
 
@@ -457,12 +482,12 @@ public:
 
 	ns_process_priority process_priority;
 
-	void register_job_duration(const ns_processing_task action, const ns_64_bit microseconds){
+	void register_job_duration(const ns_processing_task action, const ns_64_bit microseconds)  {
 		ns_acquire_lock_for_scope lock(performance_stats_lock,__FILE__,__LINE__);
 		performance_statistics.register_job_duration(action, microseconds); 
 		lock.release();
 	}
-	void register_job_duration(const ns_performance_statistics_analyzer::ns_operation_state state, const ns_64_bit microseconds){
+	void register_job_duration(const ns_performance_statistics_analyzer::ns_operation_state state, const ns_64_bit microseconds) {
 		ns_acquire_lock_for_scope lock(performance_stats_lock, __FILE__, __LINE__); 
 		performance_statistics.register_job_duration(state, microseconds);
 		lock.release();
@@ -480,16 +505,17 @@ public:
 
 	//ordered by the system thread id;
 	mutable std::map<ns_64_bit, ns_thread_output_state> thread_states;
+	mutable unsigned long max_internal_thread_id;
 	std::map<ns_64_bit, ns_thread_output_state>::iterator get_current_thread_state_info() const;
 
 private:
 
-
+	static void open_log_file(const ns_image_server::ns_image_server_exec_type & exec_type, unsigned long internal_thread_id, const std::string & volatile_directory, const std::string & file_name, std::ofstream & out);
 	ns_performance_statistics_analyzer performance_statistics;
-	ns_lock performance_stats_lock;
+	mutable ns_lock performance_stats_lock;
 
 	ns_multiprocess_control_options multiprocess_control_options;
-	unsigned long number_of_node_processes_per_machine_;
+	unsigned long maximum_number_of_processing_threads_;
 	bool alert_handler_running;
 	//ns_lock alert_handler_lock;
 	ns_single_thread_coordinator alert_handler_thread;
@@ -554,14 +580,13 @@ private:
 
 	///std::ostream used to write to the event log
 	mutable std::ofstream event_log;
-	///true if the event log std::ofstream is open, false if it is unitialized or closed
-	bool event_log_open;
 	std::string _font_file;
-	///memory cache of all used SVM models
-	std::map<std::string,ns_svm_model_specification> worm_detection_models;
-	
+
 #ifndef NS_MINIMAL_SERVER_BUILD
-	std::map<std::string,ns_posture_analysis_model> posture_analysis_models;
+	///memory cache of all used SVM models
+	ns_worm_detection_model_cache worm_detection_model_cache;
+	
+	ns_posture_analysis_model_cache posture_analysis_model_cache;
 #endif
 
 

@@ -128,11 +128,15 @@ struct ns_image_registration_profile_data_source {
 };
 
 
-class ns_disk_buffered_image_registration_profile : public ns_image_registration_profile<ns_registration_disk_buffer>, public ns_simple_cache_data<ns_image_server_image, ns_image_registration_profile_data_source> {
+class ns_disk_buffered_image_registration_profile : public ns_image_registration_profile<ns_registration_disk_buffer>, public ns_simple_cache_data<ns_image_server_image, ns_image_registration_profile_data_source, ns_64_bit> {
 public:
 	ns_disk_buffered_image_registration_profile():whole_image_source(0),
 													downsampled_image_2_source(0){}
 	ns_image_server_image image_record;
+
+	template<class a, class b, bool c>
+	friend class ns_simple_cache;
+private:
 	ns_64_bit size_in_memory_in_kbytes() const {
 		return (whole_image.properties().width*
 			whole_image.properties().height*
@@ -182,7 +186,7 @@ public:
 		data_source.image_storage->delete_from_local_cache(whole_filename);
 		data_source.image_storage->delete_from_local_cache(downsampled_filename);
 	}
-	ns_64_bit id() const { return image_record.id; }
+	const ns_64_bit & id() const { return image_record.id; }
 	ns_64_bit to_id(const ns_image_server_image & im) const { return im.id; }
 
 private:	
@@ -192,7 +196,7 @@ private:
 											 downsampled_image_2_source;
 };
 
-class ns_memory_image_registration_profile : public ns_image_registration_profile< ns_image_standard >, public ns_simple_cache_data<ns_image_server_image, ns_image_registration_profile_data_source> {
+class ns_memory_image_registration_profile : public ns_image_registration_profile< ns_image_standard >, public ns_simple_cache_data<ns_image_server_image, ns_image_registration_profile_data_source,ns_64_bit> {
 public:
 	ns_image_server_image image_record;
 	ns_64_bit size_in_memory_in_kbytes() const {
@@ -213,16 +217,16 @@ public:
 			whole_image.resample(downsampling_sizes.downsampled,downsampled_image);
 			downsampled_image.resample(downsampling_sizes.downsampled_2,downsampled_image_2);
 	}
-	ns_64_bit id() const { return image_record.id; }
+	const ns_64_bit & id() const { return image_record.id; }
 	ns_64_bit to_id(const ns_image_server_image & im) const { return im.id; }
 
 	void cleanup(ns_image_storage_handler * image_storage){whole_image.clear();downsampled_image.clear();downsampled_image_2.clear();}
 };
 
-class test_class : public ns_simple_cache_data<ns_image_server_image, ns_image_registration_profile_data_source> {
+class test_class : public ns_simple_cache_data<ns_image_server_image, ns_image_registration_profile_data_source,ns_64_bit> {
 public:
 
 };
-typedef ns_simple_cache<ns_disk_buffered_image_registration_profile,true> ns_image_registration_profile_cache;
+typedef ns_simple_cache<ns_disk_buffered_image_registration_profile,ns_64_bit, true> ns_image_registration_profile_cache;
 
 #endif

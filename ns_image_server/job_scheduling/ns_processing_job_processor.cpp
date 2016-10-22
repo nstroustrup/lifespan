@@ -86,7 +86,8 @@ void ns_get_worm_detection_model_for_job(ns_processing_job & job, ns_image_serve
 
 	if (model_name == "")
 		throw ns_ex("ns_processing_job_scheduler::The specified job refers to a sample with no model file specified");
-	job.model = &image_server.get_worm_detection_model(model_name);
+
+	image_server.get_worm_detection_model(model_name, job.model);
 }
 
 ns_image_server_captured_image_region ns_get_region_image(const ns_processing_job &job){
@@ -523,14 +524,14 @@ bool ns_processing_job_region_processor::run_job(ns_sql & sql){
 
 	if (detection_calculation_required){
 		ns_get_worm_detection_model_for_job(job,*image_server,sql);
-		if (job.model == 0)
+		if (!job.model.is_valid())
 			throw ns_ex("ns_processing_job_scheduler::run_job_from_push_queue()::Attempting to run task on region without specifying model");
 	}
 	if (job.death_time_annotations != 0)
-		pipeline->process_region(region_image,job.operations,sql,*job.model,*job.death_time_annotations);
+		pipeline->process_region(region_image,job.operations,sql,job.model().model_specification,*job.death_time_annotations);
 	else{
 		ns_lifespan_curve_cache_entry s;
-		pipeline->process_region(region_image,job.operations,sql,*job.model,s);
+		pipeline->process_region(region_image,job.operations,sql,job.model().model_specification,s);
 	}
 	return true;
 }
@@ -856,9 +857,11 @@ bool ns_processing_job_maintenance_processor:: run_job(ns_sql & sql){
 
 
 			ns_time_path_image_movement_analyzer time_path_image_analyzer;
+			ns_image_server::ns_posture_analysis_model_cache::const_handle_t posture_analysis_model_handle;
+			image_server->get_posture_analysis_model_for_region(job.region_id, posture_analysis_model_handle, sql);
 			ns_acquire_for_scope<ns_analyzed_image_time_path_death_time_estimator> death_time_estimator(
-				ns_get_death_time_estimator_from_posture_analysis_model(
-				image_server->get_posture_analysis_model_for_region(job.region_id,sql)));
+				ns_get_death_time_estimator_from_posture_analysis_model(posture_analysis_model_handle().model_specification));
+
 			const ns_time_series_denoising_parameters time_series_denoising_parameters(ns_time_series_denoising_parameters::load_from_db(job.region_id,sql));
 
 			if (job.maintenance_task==ns_maintenance_rebuild_movement_data){
@@ -1067,9 +1070,11 @@ bool ns_processing_job_maintenance_processor:: run_job(ns_sql & sql){
 			ns_time_path_image_movement_analyzer analyzer;
 			const ns_time_series_denoising_parameters time_series_denoising_parameters(ns_time_series_denoising_parameters::load_from_db(job.region_id,sql));
 
+			ns_image_server::ns_posture_analysis_model_cache::const_handle_t posture_analysis_model_handle;
+			image_server->get_posture_analysis_model_for_region(job.region_id, posture_analysis_model_handle, sql);
+
 			ns_acquire_for_scope<ns_analyzed_image_time_path_death_time_estimator> death_time_estimator(
-				ns_get_death_time_estimator_from_posture_analysis_model(
-				image_server->get_posture_analysis_model_for_region(job.region_id,sql)));
+				ns_get_death_time_estimator_from_posture_analysis_model(posture_analysis_model_handle().model_specification));
 			analyzer.load_completed_analysis(job.region_id,solution, time_series_denoising_parameters,&death_time_estimator(),sql);
 			death_time_estimator.release();
 			analyzer.generate_movement_posture_visualizations(false,job.region_id,solution,sql);
@@ -1083,10 +1088,12 @@ bool ns_processing_job_maintenance_processor:: run_job(ns_sql & sql){
 			solution.load_from_db(job.region_id,sql,true);
 			const ns_time_series_denoising_parameters time_series_denoising_parameters(ns_time_series_denoising_parameters::load_from_db(job.region_id,sql));
 
+			ns_image_server::ns_posture_analysis_model_cache::const_handle_t posture_analysis_model_handle;
+			image_server->get_posture_analysis_model_for_region(job.region_id, posture_analysis_model_handle, sql);
+
 			ns_time_path_image_movement_analyzer analyzer;
 			ns_acquire_for_scope<ns_analyzed_image_time_path_death_time_estimator> death_time_estimator(
-				ns_get_death_time_estimator_from_posture_analysis_model(
-				image_server->get_posture_analysis_model_for_region(job.region_id,sql)));
+				ns_get_death_time_estimator_from_posture_analysis_model(posture_analysis_model_handle().model_specification));
 			analyzer.load_completed_analysis(job.region_id,solution,time_series_denoising_parameters,&death_time_estimator(),sql);
 			death_time_estimator.release();
 			analyzer.generate_death_aligned_movement_posture_visualizations(false,job.region_id,ns_movement_cessation,solution,sql);

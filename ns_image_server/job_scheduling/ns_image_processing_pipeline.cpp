@@ -2548,7 +2548,7 @@ ns_vector_2i ns_image_processing_pipeline::get_vertical_registration(const ns_im
 	//	bool running_retry(false);
 		//while(true){
 			try{
-				image_server_const.image_registration_profile_cache.get_for_write(reference_image_db_record, reference_image_profile,external_source);
+				image_server.image_registration_profile_cache.get_for_write(reference_image_db_record, reference_image_profile,external_source);
 				reference_image_loaded = true;
 				}
 			catch(ns_ex & ex){
@@ -2563,7 +2563,7 @@ ns_vector_2i ns_image_processing_pipeline::get_vertical_registration(const ns_im
 
 	ns_high_precision_timer t;
 	t.start();
-	image_server_const.image_registration_profile_cache.get_for_write(source, requested_image,external_source);
+	image_server.image_registration_profile_cache.get_for_write(source, requested_image,external_source);
 	
 //cerr << "cache subject: " << t.stop()/1000.0/1000.0 << "\n";
 	
@@ -2658,7 +2658,7 @@ void ns_rerun_image_registration(const ns_64_bit region_id, ns_sql & sql){
 		try{
 			ns_image_server_image im;
 			im.id = ns_atoi64(res[i][1].c_str());
-			image_server_const.image_registration_profile_cache.get_for_write(im, reference_profile, profile_data_source);
+			image_server.image_registration_profile_cache.get_for_write(im, reference_profile, profile_data_source);
 			ref_image_id = im.id;
 		}catch(...){}
 		i++;
@@ -2680,7 +2680,7 @@ void ns_rerun_image_registration(const ns_64_bit region_id, ns_sql & sql){
 			if (backup_unprocessed_id != 0){
 				source_im.id = backup_unprocessed_id;
 			}else source_im.id = unprocessed_id;
-			image_server_const.image_registration_profile_cache.get_for_write(source_im, subject_profile, profile_data_source);
+			image_server.image_registration_profile_cache.get_for_write(source_im, subject_profile, profile_data_source);
 
 			ns_vector_2i offset(ns_image_registration<127,ns_8_bit>::register_full_images(reference_profile(),subject_profile(),ns_vector_2i(400,400)));
 			

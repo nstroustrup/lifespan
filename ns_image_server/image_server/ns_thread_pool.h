@@ -51,7 +51,7 @@ public:
 			error_access_lock.release();
 			return 0;
 		}
-		unsigned long number_of_errors = errors.size();
+		unsigned long number_of_errors = (unsigned long)errors.size();
 		job = errors.front().job;
 		ex = errors.front().ex;
 		errors.pop();
@@ -305,6 +305,7 @@ public:
 
 				//more work may have arrived!  the thread is released to look for more jobs
 				thread_has_been_idle = true;
+				ns_thread::sleep_microseconds(500);
 				continue;
 			}
 			//grab the job

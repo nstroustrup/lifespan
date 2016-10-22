@@ -411,6 +411,7 @@ void ns_image_server_push_job_scheduler::request_jobs(unsigned long number_of_jo
 			return;
 		}
 		queue_items.resize(queue_item_res.size());
+		jobs.resize(queue_item_res.size());
 		for (unsigned int i = 0; i < queue_item_res.size(); i++) {
 			queue_items[i].from_result(queue_item_res[i]);
 			sql << "UPDATE processing_job_queue SET processor_id=" << image_server.host_id() << " WHERE id=" << queue_items[i].id;

@@ -18,7 +18,7 @@ ns_image_storage_source_handle<ns_8_bit> ns_storage_request_from_storage(const n
 
 
 template<class ns_component>
-class ns_image_cache_data : public ns_simple_cache_data<ns_image_server_image, ns_image_cache_data_source> {
+class ns_image_cache_data : public ns_simple_cache_data<ns_image_server_image, ns_image_cache_data_source,ns_64_bit> {
 public:
 	ns_image_whole<ns_component> image;
 	ns_image_server_image image_record;
@@ -36,11 +36,11 @@ public:
 	}
 	void clean_up(ns_image_cache_data_source & source) {}
 
-	ns_64_bit id() const { return image_record.id; }
+	const ns_64_bit & id() const { return image_record.id; }
 	ns_64_bit to_id(const ns_image_server_image & im) const { return im.id; }
 };
 
-typedef  ns_simple_cache < ns_image_cache_data<ns_8_bit>, true> ns_simple_image_cache;
+typedef ns_simple_cache < ns_image_cache_data<ns_8_bit>, ns_64_bit, true> ns_simple_image_cache;
 
 
 #endif

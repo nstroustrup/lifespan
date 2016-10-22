@@ -30,12 +30,12 @@ using namespace std;
 
 void ns_image_server_global_debug_handler(const ns_text_stream_t & t);
 
-ns_image_server::ns_image_server() :event_log_open(false), exit_requested(false), update_software(false),
+ns_image_server::ns_image_server() : exit_requested(false), update_software(false),
 sql_lock("ns_is::sql"), server_event_lock("ns_is::server_event"), performance_stats_lock("ns_pfl"), simulator_scan_lock("ns_is::sim_scan"), local_buffer_sql_lock("ns_is::lb"),
 _act_as_processing_node(true), cleared(false),
 image_registration_profile_cache(1024 * 4), //allocate 4 gigabytes of disk space in which to store reference images for capture sample registration
 _verbose_debug_output(false), _cache_subdirectory("cache"), sql_database_choice(possible_sql_databases.end()), next_scan_for_problems_time(0),
-_terminal_window_scale_factor(1), sql_table_lock_manager(this), alert_handler_lock("ahl") {
+_terminal_window_scale_factor(1), sql_table_lock_manager(this), alert_handler_lock("ahl"),max_internal_thread_id(1),worm_detection_model_cache(0),posture_analysis_model_cache(0){
 
 	ns_socket::global_init();
 	ns_worm_detection_constants::init();
@@ -1833,11 +1833,42 @@ void ns_image_server::register_devices(const bool verbose){
 	
 	#endif
 }
+void ns_image_server::open_log_file(const ns_image_server::ns_image_server_exec_type & exec_type, unsigned long internal_thread_id, const std::string & volatile_directory, const std::string & file_name, ofstream & out) {
+	//open local logfile.
+	std::string lname = volatile_directory;
+	lname += DIR_CHAR_STR;
+	lname += ns_dir::extract_filename_without_extension(file_name);
+	string log_suffix;
+	switch (exec_type) {
+	case ns_image_server_type:
+		log_suffix = "_server";
+		break;
+	case ns_worm_terminal_type:
+		log_suffix = "_terminal";
+		break;
+	case ns_sever_updater_type:
+		log_suffix = "_updater";
+		break;
+	default: throw ns_ex("ns_image_server::load_constants()::Unknown image server exec type!");
+	}
+	lname += log_suffix;
+	if (internal_thread_id > 0)
+		lname += ns_to_string(internal_thread_id);
+	lname +=".txt";
+
+	ns_dir::create_directory_recursive(volatile_directory);
+	if (out.is_open())
+		out.close();
+	out.open(lname.c_str(), ios_base::app);	
+	if (out.fail())
+		throw ns_ex("ns_image_server::Could not open log file (") << lname << ") for writing";
+}
+
 bool ns_to_bool(const std::string & s){
 	return (s == "yes" || s == "Yes" || s == "YES" || s == "true" || s == "True" || s == "TRUE" || 
 			s == "y" || s == "Y" || s == "1");
 }
-void ns_image_server::load_constants(const ns_image_server::ns_image_server_exec_type & exec_type, const ns_multiprocess_control_options & opt,const bool reject_incorrect_fields){
+void ns_image_server::load_constants(const ns_image_server::ns_image_server_exec_type & exec_type,const bool reject_incorrect_fields){
 	ns_ini constants;
 	constants.reject_incorrect_fields(reject_incorrect_fields);
 	//register ini file constants
@@ -2007,14 +2038,14 @@ void ns_image_server::load_constants(const ns_image_server::ns_image_server_exec
 		if (host_name.size() > 15)
 			throw ns_ex("Host names must be 15 characters or less.  \"") << host_name << "\" is " << host_name.size() << " characters.";
 		base_host_name			= constants["host_name"];
-		host_name				= opt.host_name(base_host_name);
-		processing_node_id_ = opt.process_id;
+		host_name				= base_host_name;
+		processing_node_id_ = 0;
 
-		number_of_node_processes_per_machine_ = atol(constants["nodes_per_machine"].c_str());
-		volatile_storage_directory	= opt.volatile_storage(ns_dir::format_path(constants["volatile_storage_directory"]));
-		_dispatcher_port		= opt.port(atoi(constants["dispatcher_port"].c_str()));
-		_act_as_an_image_capture_server = ( ns_to_bool(constants["act_as_image_capture_server"]) && opt.manage_capture_devices);
-		_compile_videos = ( ns_to_bool(constants["compile_videos"]) && opt.compile_videos );
+		maximum_number_of_processing_threads_ = atol(constants["nodes_per_machine"].c_str());
+		volatile_storage_directory	= ns_dir::format_path(constants["volatile_storage_directory"]);
+		_dispatcher_port		= atoi(constants["dispatcher_port"].c_str());
+		_act_as_an_image_capture_server = ( ns_to_bool(constants["act_as_image_capture_server"]));
+		_compile_videos = ( ns_to_bool(constants["compile_videos"]));
 	
 		long_term_storage_directory	= ns_dir::format_path(constants["long_term_storage_directory"]);
 		results_storage_directory	= ns_dir::format_path(constants["results_storage_directory"]);
@@ -2045,7 +2076,7 @@ void ns_image_server::load_constants(const ns_image_server::ns_image_server_exec
 		std::string specified_simulated_device_name(constants["simulated_device_name"]);
 		if (specified_simulated_device_name == "" || specified_simulated_device_name== ".")
 			specified_simulated_device_name = "sim";
-		_simulated_device_name = base_host_name + "_" + opt.simulated_device_name(specified_simulated_device_name);
+		_simulated_device_name = base_host_name + "_" + specified_simulated_device_name;
 		for (unsigned int i = 0; i < _simulated_device_name.size(); i++){
 			if (!isalpha(_simulated_device_name[i]) && !isdigit(_simulated_device_name[i]))
 				_simulated_device_name[i] = '_';
@@ -2093,38 +2124,17 @@ void ns_image_server::load_constants(const ns_image_server::ns_image_server_exec
 	if (host_name.size() == 0)
 		throw ns_ex("No host name specified in ini file!");
 
-	//open local logfile.
-	std::string lname = volatile_storage_directory;
-	lname += DIR_CHAR_STR;
-	lname += ns_dir::extract_filename_without_extension(_log_filename);
-	string log_suffix;
+	open_log_file(exec_type, 0, volatile_storage_directory, _log_filename, event_log);
+
+	
 	switch(exec_type){
-		case ns_image_server_type:
-				log_suffix = "_server";
-				_cache_subdirectory = "server_cache";
-				break;
-		case ns_worm_terminal_type:
-				log_suffix = "_terminal";
-				_cache_subdirectory = "terminal_cache";
-				break;
-		case ns_sever_updater_type:
-				log_suffix = "_updater";
-				_cache_subdirectory = "updater_cache";
-				break;
+		case ns_image_server_type: _cache_subdirectory = "server_cache"; break;
+		case ns_worm_terminal_type: _cache_subdirectory = "terminal_cache"; break;
+		case ns_sever_updater_type: _cache_subdirectory = "updater_cache"; break;
 		default: throw ns_ex("ns_image_server::load_constants()::Unknown image server exec type!");
 
 	}
-	lname += log_suffix + ".txt";
 
-	ns_dir::create_directory_recursive(volatile_storage_directory);
-	if (event_log_open){
-		event_log.close();
-		event_log_open = false;
-	}
-	event_log.open(lname.c_str(),ios_base::app);
-	if (event_log.fail())
-		throw ns_ex("ns_image_server::Could not open log file (") << lname << ") for writing";
-	event_log_open = true;
 	//Obtain local network information
 	_ethernet_interface = constants["ethernet_interface"];
 	
@@ -2366,12 +2376,11 @@ void ns_image_server::clear_old_server_events(ns_sql & sql){
 }
 
 
-
 void ns_image_server::add_subtext_to_current_event(const char * str, ns_image_server_sql * sql) const {
 	if (sql != 0) {
 		std::map<ns_64_bit, ns_thread_output_state>::iterator current_thread_state = get_current_thread_state_info();
 
-		*sql << "UPDATE host_event_log sub_text = CONCAT(sub_text,'" << sql->escape_string(str) << "') WHERE id = " << current_thread_state->second.last_event_sql_id;
+		*sql << "UPDATE host_event_log SET sub_text = CONCAT(sub_text,'" << sql->escape_string(str) << "') WHERE id = " << current_thread_state->second.last_event_sql_id;
 		sql->send_query();
 	}
 	cerr << str;
@@ -2451,7 +2460,6 @@ void ns_image_server::register_server_event_no_db(const ns_image_server_event & 
 	lock.release();
 }
 
-
 ns_64_bit ns_image_server::register_server_event(const ns_ex & ex, ns_image_server_sql * sql)const{
 	ns_image_server_event s_event(ex.text());
 	if (ex.type() == ns_sql_fatal) s_event << ns_ts_sql_error;
@@ -2460,16 +2468,37 @@ ns_64_bit ns_image_server::register_server_event(const ns_ex & ex, ns_image_serv
 
 }
 
-std::map<ns_64_bit, ns_thread_output_state>::iterator ns_image_server::get_current_thread_state_info() const{
+std::map<ns_64_bit, ns_thread_output_state>::iterator ns_image_server::get_current_thread_state_info() const {
 	ns_acquire_lock_for_scope lock(server_event_lock, __FILE__, __LINE__);
 	ns_64_bit thread_id = ns_thread::current_thread_id();
 	std::map<ns_64_bit, ns_thread_output_state>::iterator current_thread_state = thread_states.find(thread_id);
-	if (current_thread_state == thread_states.end())
+	if (current_thread_state == thread_states.end()) {
 		current_thread_state = thread_states.insert(std::map<ns_64_bit, ns_thread_output_state>::value_type(thread_id, ns_thread_output_state())).first;
-	lock.release();
+		current_thread_state->second.internal_thread_id = image_server.max_internal_thread_id;
+		image_server.max_internal_thread_id++;
+
+		lock.release();
+	}
 	return current_thread_state;
 }
 
+void ns_image_server::log_current_thread_output_in_separate_file() const {
+	std::map<ns_64_bit, ns_thread_output_state>::iterator current_thread_state = get_current_thread_state_info();
+	ns_acquire_lock_for_scope lock(server_event_lock, __FILE__, __LINE__);
+	try {
+		if (current_thread_state->second.thread_specific_logfile != 0) {
+			lock.release();
+			return;
+		}
+		current_thread_state->second.thread_specific_logfile = new ofstream;
+		open_log_file(ns_image_server_type, current_thread_state->second.internal_thread_id, volatile_storage_directory, _log_filename, *(current_thread_state->second.thread_specific_logfile));
+	}
+	catch (ns_ex & ex) {
+		cerr << ex.text() << "\n";
+		current_thread_state->second.thread_specific_logfile = 0;
+	}
+	lock.release();
+}
 
 ns_64_bit ns_image_server::register_server_event(const ns_image_server_event & s_event, ns_image_server_sql * sql,const bool no_display) const{
 	try{
@@ -2541,6 +2570,12 @@ ns_64_bit ns_image_server::register_server_event(const ns_image_server_event & s
 			event_log << "\n";
 			event_log.flush();
 			lock.release();
+
+			if (current_thread_state->second.thread_specific_logfile != 0) {
+				s_event.print(*current_thread_state->second.thread_specific_logfile);
+				*current_thread_state->second.thread_specific_logfile << "\n";
+				current_thread_state->second.thread_specific_logfile->flush();
+			}
 		}
 
 		return event_id;
@@ -2562,25 +2597,26 @@ void ns_image_server::set_up_model_directory(){
 	path = long_term_storage_directory +  DIR_CHAR_STR + position_analysis_model_directory();
 	ns_dir::create_directory_recursive(path);
 }
-void ns_image_server::load_all_worm_detection_models(std::vector<ns_svm_model_specification* > & spec){
+void ns_image_server::load_all_worm_detection_models(std::vector<ns_worm_detection_model_cache::const_handle_t> & spec){
 	std::string path = long_term_storage_directory + DIR_CHAR_STR + worm_detection_model_directory();
 	ns_dir dir;
 	std::vector<std::string> files;
 	dir.load_masked(path,"txt",files);
+	unsigned long count(0);
+	spec.resize(dir.files.size());
 	for (unsigned int i = 0; i < files.size(); i++){
 		std::string::size_type l = files[i].rfind("_model");
 		if (l == std::string::npos)
 			continue;
 	//	l-=5;
 		std::string model_name = files[i].substr(0,l);
-		get_worm_detection_model(model_name);
+		get_worm_detection_model(model_name,spec[count]);
+		count++;
 	}
-	for (map<std::string,ns_svm_model_specification>::iterator p = worm_detection_models.begin(); p != worm_detection_models.end(); p++)
-		spec.push_back(&(p->second));
 }
 
 #ifndef NS_MINIMAL_SERVER_BUILD
-const ns_posture_analysis_model & ns_image_server::get_posture_analysis_model_for_region(const ns_64_bit region_info_id, ns_sql & sql){
+void ns_image_server::get_posture_analysis_model_for_region(const ns_64_bit region_info_id, typename ns_image_server::ns_posture_analysis_model_cache::const_handle_t & it, ns_sql & sql){
 	sql << "SELECT posture_analysis_model, posture_analysis_method FROM sample_region_image_info WHERE id = " << region_info_id;
 	ns_sql_result res;
 	sql.get_rows(res);
@@ -2588,58 +2624,48 @@ const ns_posture_analysis_model & ns_image_server::get_posture_analysis_model_fo
 		throw ns_ex("ns_image_server::get_posture_analysis_model_for_region()::Could not find region ") << region_info_id << " in db";
 	if (res[0][0].size() == 0)
 		throw ns_ex("ns_image_server::get_posture_analysis_model_for_region()::No posture analysis model was specified for region ")<< region_info_id;
-	ns_posture_analysis_model::ns_posture_analysis_method method(ns_posture_analysis_model::method_from_string(res[0][1]));
-	return get_posture_analysis_model(method,res[0][0]);
+	
+	ns_posture_analysis_model_entry_source source;
+	source.analysis_method = (ns_posture_analysis_model::method_from_string(res[0][1]));
+	source.set_directory(long_term_storage_directory, posture_analysis_model_directory());
+	posture_analysis_model_cache.get_for_read(res[0][0], it, source);
 }
 
-const ns_posture_analysis_model & ns_image_server::get_posture_analysis_model(const ns_posture_analysis_model::ns_posture_analysis_method & m,const std::string & name){
-std::map<std::string,ns_posture_analysis_model>::iterator model = posture_analysis_models.find(name);
-	std::string path(long_term_storage_directory);
-	path+= DIR_CHAR;
-	path += posture_analysis_model_directory();
-	ns_dir::create_directory_recursive(path);
-	path+=DIR_CHAR;
-	if (model == posture_analysis_models.end()){
-		try{
-			
-			ns_posture_analysis_model & spec = posture_analysis_models[name];
-			spec.posture_analysis_method = m;
 
-			if (m == ns_posture_analysis_model::ns_hidden_markov){
-				ifstream moving((path + name + "_moving.csv").c_str());
-				if (moving.fail())
-					throw ns_ex("Could not load ") << path + name + "_moving.csv";
-				
-				ifstream dead((path + name + "_dead.csv").c_str());
-				if (dead.fail())
-					throw ns_ex("Could not load ") << path + name + "_dead.csv";
-				spec.hmm_posture_estimator.read(moving,dead);
-				dead.close();
-				moving.close();
-				return spec;
-			}
-			else if (m == ns_posture_analysis_model::ns_threshold){
-				ifstream thresh((path + name + "_threshold.csv").c_str());
-				if (thresh.fail())
-					throw ns_ex("Could not load ") << path + name + "_thresh.csv";
-				spec.threshold_parameters.read(thresh);
-				thresh.close();
-				return spec;
-			}
-			else if (m == ns_posture_analysis_model::ns_not_specified)
-				throw ns_ex("The plate does not have a posture analysis method specified.");
-			else throw ns_ex("The plate has an unrecognized posture analysis method specified.");
-		}
-		catch(...){
-			//if an error occured while loading the model, erase it from the specification.
-			model = posture_analysis_models.find(name);
-			if (model != posture_analysis_models.end())
-				posture_analysis_models.erase(model);
-			throw;
-		}
-		
+void ns_posture_analysis_model_entry_source::set_directory(const std::string long_term_storage_directory, const std::string & posture_model_dir) {
+	model_directory.resize(0);
+	model_directory = long_term_storage_directory;
+	model_directory += DIR_CHAR;
+	model_directory += posture_model_dir;
+	model_directory += DIR_CHAR;
+}
+void ns_posture_analysis_model_entry::load_from_external_source(const std::string & name_, ns_posture_analysis_model_entry_source & external_source) {
+	name = name_;
+	model_specification.posture_analysis_method = external_source.analysis_method;
+	if (model_specification.posture_analysis_method == ns_posture_analysis_model::ns_hidden_markov) {
+		ifstream moving((external_source.model_directory + name + "_moving.csv").c_str());
+		if (moving.fail())
+			throw ns_ex("Could not load ") << external_source.model_directory + name + "_moving.csv";
+
+		ifstream dead((external_source.model_directory + name + "_dead.csv").c_str());
+		if (dead.fail())
+			throw ns_ex("Could not load ") << external_source.model_directory + name + "_dead.csv";
+		model_specification.hmm_posture_estimator.read(moving, dead);
+		dead.close();
+		moving.close();
+		return;
 	}
-	return posture_analysis_models[name];
+	if (model_specification.posture_analysis_method == ns_posture_analysis_model::ns_threshold) {
+		ifstream thresh((external_source.model_directory + name + "_threshold.csv").c_str());
+		if (thresh.fail())
+			throw ns_ex("Could not load ") << external_source.model_directory + name + "_thresh.csv";
+		model_specification.threshold_parameters.read(thresh);
+		thresh.close();
+		return;
+	}
+	if (model_specification.posture_analysis_method == ns_posture_analysis_model::ns_not_specified)
+		throw ns_ex("The plate does not have a posture analysis method specified.");
+	throw ns_ex("The plate has an unrecognized posture analysis method specified.");
 }
 
 ns_time_path_solver_parameters ns_image_server::get_position_analysis_model(const std::string & model_name,bool create_default_if_does_not_exist,const ns_64_bit region_info_id_for_default, ns_sql * sql_for_default) const{
@@ -2703,43 +2729,40 @@ ns_time_path_solver_parameters ns_image_server::get_position_analysis_model(cons
 	return p;
 }
 #endif
-const ns_svm_model_specification & ns_image_server::get_worm_detection_model(const std::string & name){
-	std::map<std::string,ns_svm_model_specification>::iterator model = worm_detection_models.find(name);
-	std::string path(long_term_storage_directory);
-	path+= DIR_CHAR;
-	path += worm_detection_model_directory();
-	ns_dir::create_directory_recursive(path);
-	path+=DIR_CHAR;
-	if (model == worm_detection_models.end()){
-		try{
-			ns_svm_model_specification & spec = worm_detection_models[name];
-			spec.read_statistic_ranges(path + name + "_range.txt");
-			spec.read_included_stats(path + name + "_included_stats.txt");
-			spec.pca_spec.read(path + name + "_pca_spec.txt");
-			spec.model_name = name;
-			
-			#ifdef NS_USE_MACHINE_LEARNING
-				std::string fn = path + name + "_model.txt";
-				#ifdef NS_USE_TINYSVM
-				if (!spec.model.read(fn.c_str()))
-					throw ns_ex("ns_image_server::Could not load SVM model file: ") << fn;
-				#else
-					spec.model = svm_load_model(fn.c_str());
-					if (spec.model == NULL)
-						throw ns_ex("ns_image_server::Could not load SVM model file:") << fn;
-				#endif
-			#endif
-			return spec;
-		}
-		catch(...){
-			//if an error occured while loading the model, erase it from the specification.
-			model = worm_detection_models.find(name);
-			if (model != worm_detection_models.end())
-				worm_detection_models.erase(model);
-			throw;
-		}
-	}
-	return worm_detection_models[name];
+
+
+void ns_svm_model_specification_entry_source::set_directory(const std::string long_term_storage_directory, const std::string & worm_detection_dir) {
+	model_directory.resize(0);
+	model_directory = long_term_storage_directory;
+	model_directory += DIR_CHAR;
+	model_directory += worm_detection_dir;
+	model_directory += DIR_CHAR;
+}
+void ns_svm_model_specification_entry::load_from_external_source(const std::string & name, ns_svm_model_specification_entry_source & external_source) {
+	ns_dir::create_directory_recursive(external_source.model_directory);
+	model_specification.read_statistic_ranges(external_source.model_directory + name + "_range.txt");
+	model_specification.read_included_stats(external_source.model_directory + name + "_included_stats.txt");
+	model_specification.pca_spec.read(external_source.model_directory + name + "_pca_spec.txt");
+	model_specification.model_name = name;
+
+	#ifdef NS_USE_MACHINE_LEARNING
+			std::string fn = external_source.model_directory + name + "_model.txt";
+	#ifdef NS_USE_TINYSVM
+			if (!spec.model.read(fn.c_str()))
+				throw ns_ex("ns_image_server::Could not load SVM model file: ") << fn;
+	#else
+			model_specification.model = svm_load_model(fn.c_str());
+			if (model_specification.model == NULL)
+				throw ns_ex("ns_image_server::Could not load SVM model file:") << fn;
+	#endif
+	#endif
+}
+
+
+void  ns_image_server::get_worm_detection_model(const std::string & name, typename  ns_worm_detection_model_cache::const_handle_t & it) {
+	ns_svm_model_specification_entry_source source;
+	source.set_directory(long_term_storage_directory, worm_detection_model_directory());
+	worm_detection_model_cache.get_for_read(name, it, source);
 }
 
 

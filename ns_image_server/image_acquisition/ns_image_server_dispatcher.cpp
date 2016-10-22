@@ -416,9 +416,9 @@ void ns_image_server_dispatcher::start_looking_for_new_work(){
 		cerr << "p";
 		return;
 	}
-	ns_acquire_for_scope<ns_sql> sql(image_server.new_sql_connection(__FILE__,__LINE__));
+	/*ns_acquire_for_scope<ns_sql> sql(image_server.new_sql_connection(__FILE__,__LINE__));
 	image_server.register_server_event(ns_image_server_event(" Looking for work on database ") << image_server.sql_info(sql()),&sql());
-	sql.release();
+	sql.release();*/
 	try{
 		//when a processing thread is running, its handle is stored in processing_thread.
 		ns_acquire_lock_for_scope lock(processing_lock,__FILE__,__LINE__);
@@ -556,7 +556,7 @@ void ns_image_server_dispatcher::on_timer(){
 		ns_sql_result h;
 		timer_sql_connection->get_rows(h);
 		if (h.size() == 0){
-			image_server.load_constants(ns_image_server::ns_image_server_type,image_server.get_multiprocess_control_options());	
+			image_server.load_constants(ns_image_server::ns_image_server_type);	
 			image_server.register_server_event(ns_image_server_event("Found an inconsistent host record in the db: Refreshing it."),timer_sql_connection);
 			image_server.register_host();
 			image_server.register_devices();
@@ -1034,6 +1034,7 @@ void ns_image_server_dispatcher::recieve_image_thread(ns_image_server_message & 
 
 
 void ns_dispatcher_job_pool_job::operator()(ns_dispatcher_job_pool_persistant_data & persistant_data) {
+	image_server_const.log_current_thread_output_in_separate_file();
 	bool multithreaded_job = job.is_a_multithreaded_job();
 	try {
 		//make sure each thread gets a unique ID
@@ -1071,14 +1072,12 @@ void ns_dispatcher_job_pool_job::operator()(ns_dispatcher_job_pool_persistant_da
 		}
 
 		try {
-			external_data->image_server->perform_experiment_maintenance(*persistant_data.sql);
+			ns_image_server_push_job_scheduler push_scheduler;
+			bool action_performed = persistant_data.job_scheduler->run_a_job(job, *persistant_data.sql);
 		}
 		catch (ns_ex & ex) {
-			external_data->image_server->register_server_event(ex, persistant_data.sql);
+			image_server.register_server_event(ex, persistant_data.sql);
 		}
-
-		ns_image_server_push_job_scheduler push_scheduler;
-		bool action_performed = persistant_data.job_scheduler->run_a_job(job, *persistant_data.sql);
 
 		if (multithreaded_job) {
 			external_data->status_info.lock.wait_to_acquire(__FILE__, __LINE__);
@@ -1089,6 +1088,15 @@ void ns_dispatcher_job_pool_job::operator()(ns_dispatcher_job_pool_persistant_da
 
 		persistant_data.sql->send_query("COMMIT");
 		image_server.sql_table_lock_manager.unlock_all_tables(persistant_data.sql, __FILE__, __LINE__);
+
+
+		try {
+			external_data->image_server->perform_experiment_maintenance(*persistant_data.sql);
+		}
+		catch (ns_ex & ex) {
+			external_data->image_server->register_server_event(ex, persistant_data.sql);
+		}
+
 	}
 	catch (...) {
 		if (multithreaded_job) {
@@ -1131,7 +1139,19 @@ bool ns_image_server_dispatcher::look_for_work(){
 		}
 	}
 	sql_lock.release();
-	
+	try {
+		while (true) {
+			ns_dispatcher_job_pool_job job = { ns_processing_job(),ns_dispatcher_job_pool_external_data() };
+			ns_ex ex;
+			if (processing_thread_pool.get_next_error(job, ex) == 0)
+				break;
+			image_server.register_server_event(ns_ex("Processing Job Thread Error: ") << ex.text(), work_sql_connection);
+		}
+	}
+	catch (...) {
+
+	}
+
 	try {
 		//search the server for an image processing task
 		const bool first_in_first_out_job_queue(image_server.get_cluster_constant_value("job_queue_is_FIFO", "false", work_sql_connection) != "false");
@@ -1159,10 +1179,7 @@ bool ns_image_server_dispatcher::look_for_work(){
 		long number_of_jobs_to_run;
 
 		if (first_run) {
-			number_of_jobs_to_run = image_server_const.number_of_node_processes_per_machine();
-			processing_thread_pool.set_number_of_threads(image_server_const.number_of_node_processes_per_machine());
-			processing_thread_pool.prepare_pool_to_run();
-			processing_pool_external_data.image_server = &image_server_const;
+			number_of_jobs_to_run = image_server_const.maximum_number_of_processing_threads();
 		}
 		else {
 			number_of_jobs_to_run = processing_thread_pool.number_of_idle_threads();
@@ -1177,7 +1194,8 @@ bool ns_image_server_dispatcher::look_for_work(){
 			//if the next job is a singleton job
 			if (jobs[0].is_a_multithreaded_job()) {
 				//if other jobs are running, give up.
-				if (!first_run && processing_thread_pool.number_of_idle_threads() < processing_thread_pool.number_of_threads()) {
+				unsigned long number_of_idle_threads = processing_thread_pool.number_of_idle_threads();
+				if (!first_run &&  number_of_idle_threads< processing_thread_pool.number_of_threads()) {
 					for (unsigned int i = 0; i < jobs.size(); i++) {
 						*work_sql_connection << "UPDATE processing_job_queue SET processor_id=0 WHERE id=" << jobs[i].queue_entry_id;
 						work_sql_connection->send_query();
@@ -1190,6 +1208,9 @@ bool ns_image_server_dispatcher::look_for_work(){
 					work_sql_connection->send_query();
 				}
 				jobs.resize(1);
+				processing_pool_external_data.status_info.lock.wait_to_acquire(__FILE__, __LINE__);
+				bool running_a_singleton_job = processing_pool_external_data.status_info.number_of_multi_threaded_jobs_running++;
+				processing_pool_external_data.status_info.lock.release();
 			}
 			//if any singeton jobs are on the queue, but not at the first position, truncate the queue right before that job
 			//That allows us to finish any non-singleton jobs, and then run the singleton job solo.
@@ -1212,8 +1233,12 @@ bool ns_image_server_dispatcher::look_for_work(){
 		else
 			for (unsigned int i = 0; i < jobs.size(); i++) 
 				processing_thread_pool.add_job_while_pool_is_running(ns_dispatcher_job_pool_job(jobs[i], processing_pool_external_data));
-		if (first_run)
+		if (first_run) {
+			processing_thread_pool.set_number_of_threads(image_server_const.maximum_number_of_processing_threads());
+			processing_thread_pool.prepare_pool_to_run();
+			processing_pool_external_data.image_server = &image_server_const;
 			processing_thread_pool.run_pool();
+		}
 	}
 	catch(...){
 
@@ -1253,41 +1278,50 @@ ns_thread_return_type ns_asynch_start_looking_for_new_work(void * dispatcher_poi
 }
 
 
-ns_thread_return_type ns_image_server_dispatcher::thread_start_look_for_work(void * dispatcher_pointer){
+ns_thread_return_type ns_image_server_dispatcher::thread_start_look_for_work(void * dispatcher_pointer) {
 	ns_image_server_dispatcher * d = reinterpret_cast<ns_image_server_dispatcher *>(dispatcher_pointer);
 
 	bool found_work(false);
-	try{
-		try{
+	while (true)
+		try {
+		try {
 			found_work = d->look_for_work();
 		}
-		catch(std::exception & exception){
+		catch (std::exception & exception) {
 			ns_ex ex(exception);
-			image_server.register_server_event(ns_image_server::ns_register_in_central_db,ex);
+			image_server.register_server_event(ns_image_server::ns_register_in_central_db, ex);
 			if (ex.type() == ns_memory_allocation)
-				d->handle_memory_allocation_error();			
+				d->handle_memory_allocation_error();
 		}
 
 		//ns_acquire_lock_for_scope lock(d->processing_lock,__FILE__,__LINE__);
 		d->processing_job_scheduler_thread.report_as_finished();
-		//if we found work, immediately look for another job.
-		if (found_work && !image_server.exit_requested)
-			ns_thread start_looking_for_new_work(ns_asynch_start_looking_for_new_work,dispatcher_pointer);
 
 		return 0;
 	}
-	catch(std::exception & exception){
+	catch (std::exception & exception) {
 		ns_ex ex(exception);
 		//self.detach();
-        ex << ex.text() << "(Error in processing_job_scheduler_thread)";
+		ex << ex.text() << "(Error in processing_job_scheduler_thread)";
 		if (ex.type() == ns_memory_allocation)
 			image_server.image_storage.cache.clear_cache_without_cleanup();
-		
-		image_server.register_server_event(ns_image_server::ns_register_in_central_db_with_fallback,ex);
-		image_server.ns_image_server::shut_down_host();
+		try {
+			image_server.register_server_event(ns_image_server::ns_register_in_central_db_with_fallback, ex);
+			image_server.ns_image_server::shut_down_host();
+		}
+		catch (ns_ex & ex2) {
+			image_server.register_server_event_no_db(ns_image_server_event(ex.text()));
+			image_server.register_server_event_no_db(ns_image_server_event(ex2.text()));
+		}
 
 		d->processing_job_scheduler_thread.report_as_finished();
 
+		return 0;
+	}
+	catch (...) {
+		cerr << "Unknown error!\n";
+		image_server.ns_image_server::shut_down_host();
+		d->processing_job_scheduler_thread.report_as_finished();
 		return 0;
 	}
 }

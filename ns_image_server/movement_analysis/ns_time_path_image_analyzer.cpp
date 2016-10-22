@@ -741,7 +741,7 @@ void ns_time_path_image_movement_analyzer::process_raw_images(const ns_64_bit re
 		//we can limit memory usage to just one region (and miminize paging and disk thrashing)
 		ns_thread_pool<ns_time_path_image_movement_analyzer_thread_pool_job, 
 					   ns_time_path_image_movement_analyzer_thread_pool_persistant_data> thread_pool;
-		thread_pool.set_number_of_threads(24);
+		thread_pool.set_number_of_threads(image_server_const.maximum_number_of_processing_threads()*3);
 		thread_pool.prepare_pool_to_run();
 
 		//xxx debug only
@@ -785,7 +785,7 @@ void ns_time_path_image_movement_analyzer::process_raw_images(const ns_64_bit re
 			);
 
 			ns_64_bit max_mem_per_node = (((ns_64_bit)image_server_const.maximum_memory_allocation_in_mb()) * 1024 * 1024) /
-				image_server_const.number_of_node_processes_per_machine();
+				image_server_const.maximum_number_of_processing_threads();
 			ns_64_bit max_mem_on_32_bit = (((ns_64_bit)1) << 28) * 7;  //1.75GB
 
 			//32 bit systems become unreliable if you allocate > 1.75 GB.
@@ -2946,7 +2946,7 @@ bool ns_analyzed_image_time_path::region_image_is_required(const unsigned long t
 
 //generates path_aligned_images->image from region visualiation
 //note that the region images contain context images (ie. the extra boundary around the region_image)
-bool ns_analyzed_image_time_path::populate_images_from_region_visualization(const unsigned long time,const ns_image_standard &region_visualization,const ns_image_standard & interpolated_region_visualization,bool just_do_a_consistancy_check, ns_analyzed_image_time_path::ns_load_type just_flag_elements_as_loaded){
+bool ns_analyzed_image_time_path::populate_images_from_region_visualization(const unsigned long time,const ns_image_standard &region_visualization,const ns_image_standard & interpolated_region_visualization,bool just_do_a_consistancy_check, ns_analyzed_image_time_path::ns_load_type load_type){
 	//region visualization is all worms detected at that time point.
 	ns_image_properties path_aligned_image_image_properties(region_visualization.properties());
 	if (region_visualization.properties().width == 0){
@@ -2957,7 +2957,8 @@ bool ns_analyzed_image_time_path::populate_images_from_region_visualization(cons
 	//		cerr << "WHA";
 	//this sets the correct image size based on the solution's information.
 	//the image resolution is taken from the region visualization
-	if (just_flag_elements_as_loaded != ns_analyzed_image_time_path::ns_lrv_just_flag)
+	bool just_flag_elements_as_loaded = (load_type == ns_lrv_just_flag);
+	if (just_flag_elements_as_loaded)
 	set_path_alignment_image_dimensions(path_aligned_image_image_properties);
 
 	ns_output_subline output_subline;

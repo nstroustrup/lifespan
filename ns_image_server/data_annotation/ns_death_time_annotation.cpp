@@ -2299,12 +2299,17 @@ void ns_death_time_annotation_compiler::normalize_times_to_zero_age(){
 		}
 	}
 }
+
+ns_lock ns_death_time_annotation_flag::flag_lock("flag");
+
 void ns_death_time_annotation_flag::get_flags_from_db(ns_sql & sql){
-	cached_flags_by_short_label.clear();
+
 		
 	sql << "SELECT id, label_short, label, exclude, next_flag_name_in_order, hidden, color FROM annotation_flags";
 	ns_sql_result res;
 	sql.get_rows(res);
+	ns_acquire_lock_for_scope lock(flag_lock,__FILE__,__LINE__);
+	cached_flags_by_short_label.clear();
 	const bool no_flags_in_database(res.empty());
 	for (unsigned int i = 0; i < res.size(); i++){
 		const std::string & flag_name(res[i][1].c_str());
@@ -2357,7 +2362,7 @@ void ns_death_time_annotation_flag::get_flags_from_db(ns_sql & sql){
 		}
 		
 	}
-		
+	lock.release();
 };
 
 
@@ -2393,16 +2398,19 @@ std::string ns_death_time_annotation_flag::label() const{
 		return cached_label;
 	}
 void ns_death_time_annotation_flag::get_cached_info() const{
+
+	ns_acquire_lock_for_scope lock(flag_lock,__FILE__,__LINE__);
 	if (cached_flags_by_short_label.empty())
 		throw ns_ex("Death time annotation flags have not been loaded from the database!");
 	ns_flag_cache_by_short_label::const_iterator p(cached_flags_by_short_label.find(this->label_short));
 	if (p == cached_flags_by_short_label.end())
 		throw ns_ex("Could not load flag information from db for flag ") << label_short;
-	label_is_cached = true;;
+	label_is_cached = true;
 	cached_label = p->second.cached_label;
 	cached_excluded = p->second.cached_excluded;
 	cached_hidden = p->second.cached_hidden;
 	cached_color = p->second.cached_color;
+	lock.release();
 }
 ns_color_8 ns_death_time_annotation_flag::flag_color() const{
 	if (!label_is_cached) 
@@ -2410,22 +2418,21 @@ ns_color_8 ns_death_time_annotation_flag::flag_color() const{
 	return cached_color;
 }
 void ns_death_time_annotation_flag::step_event(){
-		
-		if (cached_flags_by_short_label.empty())
-			throw ns_ex("ns_death_time_annotation_flag::step_event()::cached flags are not loaded.");
-		//if (label_short.empty())
-	//		*this = cached_flags_by_short_label.begin()->second;
-		//else{
-			ns_flag_cache_by_short_label::const_iterator p(cached_flags_by_short_label.find(label_short));
-			if (p == cached_flags_by_short_label.end())
-				throw ns_ex("ns_death_time_annotation_flag::step_event()::could not find current flag in cache");
-			ns_flag_cache_by_short_label::const_iterator q(cached_flags_by_short_label.find(p->second.next_flag_name_in_order));
-			if (q == cached_flags_by_short_label.end())
-				*this = none();
-			*this = q->second;
-			if (this->cached_hidden)
-				step_event();
-	//	}
-	}
+
+	ns_acquire_lock_for_scope lock(flag_lock,__FILE__,__LINE__);
+	if (cached_flags_by_short_label.empty())
+		throw ns_ex("ns_death_time_annotation_flag::step_event()::cached flags are not loaded.");
+	
+	ns_flag_cache_by_short_label::const_iterator p(cached_flags_by_short_label.find(label_short));
+	if (p == cached_flags_by_short_label.end())
+		throw ns_ex("ns_death_time_annotation_flag::step_event()::could not find current flag in cache");
+	ns_flag_cache_by_short_label::const_iterator q(cached_flags_by_short_label.find(p->second.next_flag_name_in_order));
+	if (q == cached_flags_by_short_label.end())
+		*this = none();
+	*this = q->second;
+	lock.release();
+	if (this->cached_hidden)
+		step_event();
+}
 //ns_death_time_annotation_flag::ns_flag_cache cached_flags_by_id;
 ns_death_time_annotation_flag::ns_flag_cache_by_short_label ns_death_time_annotation_flag::cached_flags_by_short_label;

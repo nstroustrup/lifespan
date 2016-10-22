@@ -112,6 +112,7 @@
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalDependencies>itkjpeg-4.10.lib;ITKFEM-4.10.lib;ITKCommon-4.10.lib;ITKIOImageBase-4.10.lib;itkvnl-4.10.lib;itkvcl-4.10.lib;ITKStatistics-4.10.lib;itkzlib-4.10.lib;itksys-4.10.lib;itknetlib-4.10.lib;itkv3p_netlib-4.10.lib;ITKVTK-4.10.lib;itkvnl_algo-4.10.lib;ITKVNLInstantiation-4.10.lib;ITKIOTIFF-4.10.lib;itktiff-4.10.lib;ITKIOVTK-4.10.lib;libmysql.lib;xvidcore.dll.a;freetype26d.lib;openjp2.lib;ITKGPUPDEDeformableRegistration-4.10.lib;ITKGPUImageFilterBase-4.10.lib;ITKGPUFiniteDifference-4.10.lib;ITKGPUCommon-4.10.lib;ITKGPUSmoothing-4.10.lib;OpenCL.lib;psapi.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <SubSystem>Console</SubSystem>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -156,6 +157,7 @@
       <OptimizeReferences>true</OptimizeReferences>
       <AdditionalDependencies>itkjpeg-4.10.lib;ITKFEM-4.10.lib;ITKCommon-4.10.lib;ITKIOImageBase-4.10.lib;itkvnl-4.10.lib;itkvcl-4.10.lib;ITKStatistics-4.10.lib;itkzlib-4.10.lib;itksys-4.10.lib;itknetlib-4.10.lib;itkv3p_netlib-4.10.lib;ITKVTK-4.10.lib;itkvnl_algo-4.10.lib;ITKVNLInstantiation-4.10.lib;ITKIOTIFF-4.10.lib;itktiff-4.10.lib;ITKIOVTK-4.10.lib;libmysql.lib;xvidcore.dll.a;freetype26.lib;openjp2.lib;ITKGPUPDEDeformableRegistration-4.10.lib;ITKGPUImageFilterBase-4.10.lib;ITKGPUFiniteDifference-4.10.lib;ITKGPUCommon-4.10.lib;ITKGPUSmoothing-4.10.lib;OpenCL.lib;psapi.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <LargeAddressAware>Yes</LargeAddressAware>
+      <SubSystem>Console</SubSystem>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>

@@ -16,27 +16,32 @@
 template<class data_t, bool locked>
 class ns_simple_cache_internal_object;
 
-template<class data_t, bool locked>
+template<class data_t, class cache_key_t, bool locked>
 class ns_simple_cache;
 
 //an example base class for the data stored in the cache
-template<class id_t, class external_source_t>
+template<class id_t, class external_source_t, class cache_key_t>
 class ns_simple_cache_data {
-public:
+
+	template<class a, class b, bool c>
+	friend class ns_simple_cache;
+
+private:
 	virtual ns_64_bit size_in_memory_in_kbytes()const = 0;
 
 	virtual void load_from_external_source(const id_t & id, external_source_t & external_source) = 0;
 
-	virtual ns_64_bit to_id(const id_t & id) const = 0;
-	virtual ns_64_bit id() const =0 ;
+	virtual cache_key_t to_id(const id_t & id) const = 0;
+	virtual const cache_key_t & id() const =0 ;
 
 	virtual void clean_up(external_source_t & external_source) = 0;
 
 	typedef id_t id_type;
 	typedef external_source_t external_source_type;
+
 };
 
-template<class data_t, bool locked>
+template<class data_t, class cache_key_t, bool locked>
 class ns_simple_cache_data_handle {
   typedef typename std::remove_cv<data_t>::type data_type;
 public:
@@ -44,18 +49,22 @@ public:
 	ns_simple_cache_data_handle():obj(0), obj_const(0),data(0) {}
 	data_t & operator()() { return *data; }
 	const data_t &operator()() const { return *data; }
+	bool is_valid() const{
+		return data != 0;
+	}
 	~ns_simple_cache_data_handle() { check_in(); }
 	void release() { check_in(); }
 
-	//friend data_t;
+	friend  data_t;
+	template<class a, class b, bool c>
+	friend class ns_simple_cache;
 
-//	template<class data_t, bool locked> friend class ns_simple_cache;
-//private:
+private:
 	data_t * data; //the image cached in memory.
 
 	void check_out(bool to_write, 
 		       ns_simple_cache_internal_object<data_type,locked> * o, 
-		       ns_simple_cache<data_type, locked> *c){
+		       ns_simple_cache<data_type, cache_key_t,locked> *c){
 	  //not locked as the cache object will be locked while checking this object out
 	  obj = o;
 	  obj->object_metadata_lock.wait_to_acquire(__FILE__, __LINE__);
@@ -67,7 +76,7 @@ public:
 	}
 	void check_out(bool to_write,
 		       ns_simple_cache_internal_object<const data_type,locked> * o,
-		       ns_simple_cache<const data_type,locked> * c){
+		       ns_simple_cache<const data_type, cache_key_t, locked> * c){
 	  obj_const = o;
 	  obj_const->object_metadata_lock.wait_to_acquire(__FILE__, __LINE__);
 	  data = &obj_const->data;
@@ -122,7 +131,7 @@ public:
 ///After an image is requested, ns_image_cache maintains a copy in memory for later use.
 ///Maximum memory usage can be specified (images in memory run ~750Mb and a few of these can
 ///exausts windows virtual memory default limits).  When the cache size is exceeded older images are deleted.
-template<class data_t, bool locked>
+template<class data_t, class cache_key_t, bool locked>
 class ns_simple_cache {
 
 //	friend data_t;
@@ -135,8 +144,8 @@ public:
 		current_memory_usage_in_kb(0), object_write_requests_pending(0),
 		lock("clock"), delete_lock("dl"){}
 
-	typedef ns_simple_cache_data_handle<data_t, locked> handle_t;
-	typedef ns_simple_cache_data_handle<const data_t, locked> const_handle_t;
+	typedef ns_simple_cache_data_handle<data_t, cache_key_t,locked> handle_t;
+	typedef ns_simple_cache_data_handle<const data_t, cache_key_t, locked> const_handle_t;
 
 	typedef typename data_t::external_source_type external_source_type;
 
@@ -204,13 +213,14 @@ public:
 	}
 
 
-//private:
+private:
+
 	bool disk_cached_cleared;
-	unsigned long max_memory_usage_in_kb;
-	unsigned long current_memory_usage_in_kb;
+	ns_64_bit max_memory_usage_in_kb;
+	ns_64_bit current_memory_usage_in_kb;
 
 	typedef ns_simple_cache_internal_object<data_t, locked> internal_object_t;
-	typedef std::map<ns_64_bit, internal_object_t > cache_t;
+	typedef std::map<cache_key_t, internal_object_t > cache_t;
 
 	cache_t data_cache;
 
@@ -378,7 +388,7 @@ public:
 				//create a new cache entry for the new image, and reserve it for writing
 				//{
 				internal_object_t foo;
-				const ns_64_bit id_num = dt.to_id(id);
+				const cache_key_t id_num = dt.to_id(id);
 				p = data_cache.emplace(std::piecewise_construct, std::make_tuple(id_num), std::make_tuple()).first;
 
 				p->second.object_write_lock.wait_to_acquire(__FILE__, __LINE__);
@@ -505,7 +515,7 @@ public:
 			std::cerr << "Memory cache " << current_memory_usage / 1024 << "/" << max_memory_usage / 1024 << " cannot fit new entry (" << new_image_memory_req << ").  Deleting oldest entries.\n";
 		}
 #endif
-		ns_64_bit target_id(-1);
+		cache_key_t target_id(-1);
 		while (current_memory_usage_in_kb + new_image_memory_req_in_kb > max_memory_usage_in_kb) {
 			if (locked)lock.wait_to_acquire(__FILE__, __LINE__);
 			typename cache_t::iterator oldest_in_memory = data_cache.begin();
@@ -565,13 +575,12 @@ public:
 		lock.release();
 		return;
 	}
-//private:
 	mutable ns_lock lock, delete_lock;
 	mutable long object_write_requests_pending;
 };
 
-template<class data_t, bool locked>
-  inline void ns_simple_cache_data_handle<data_t,locked>::check_in() {
+template<class data_t, class cache_key_t, bool locked>
+  inline void ns_simple_cache_data_handle<data_t, cache_key_t,locked>::check_in() {
   //we release this first, so that anyone holding the main lock
   //and waiting for the write lock will continue;
 	if (obj != 0){

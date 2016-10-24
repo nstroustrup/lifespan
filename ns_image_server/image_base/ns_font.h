@@ -1,5 +1,6 @@
 #ifndef NS_FONT_H
 #define NS_FONT_H
+#include "ns_thread.h"
 
 #include "ft2build.h"
 #include FT_FREETYPE_H
@@ -16,16 +17,20 @@ FT_Library & ns_get_ft_library();
 ///ns_font is a wrapper for the FreeType font renderer, allowing text rendering on ns_image_whole objects.
 class ns_font{
 public:
-	ns_font():face_loaded(false){}
+	ns_font():face_loaded(false),current_face_height(0){}
 
 	~ns_font(){
 		if (face_loaded){
+			ns_acquire_lock_for_scope lock(render_lock, __FILE__, __LINE__);
 			 FT_Done_Face(face);
+			 lock.release();
 			 face_loaded = false;
 		}
 	}
 	///Loads the specified font (ie Arial, Helvetica, etc) from disk
 	void load_font(const std::string &font_file){
+		ns_acquire_lock_for_scope lock(render_lock, __FILE__, __LINE__);
+
 		if (face_loaded){
 			 FT_Done_Face(face);
 			face_loaded =false;
@@ -38,14 +43,20 @@ public:
 		else if (error)
 			throw ns_ex("ns_font::Error opening font file ") << font_file;
 		face_loaded = true;
+		lock.release();
 	}
 
 	///Specifies the font size of characters to be rendered
 	void set_height(const int h){
+		if (current_face_height == h)
+			return;
+		ns_acquire_lock_for_scope lock(render_lock, __FILE__, __LINE__);
 		int error = FT_Set_Char_Size(
 			face,
 			0,64*h,  //width, height
 			0,0); //resolution horizontal, vertical.  default 72
+		current_face_height = h;
+		lock.release();
     }
 
 	ns_font_output_dimension get_render_size(const std::string & text){
@@ -79,7 +90,7 @@ public:
 		const int c(im.properties().components);
 		ns_vector_3<float> color_v(color.x,color.y,color.z);
 		ns_font_output_dimension dim(0,0);
-
+		ns_acquire_lock_for_scope lock(render_lock, __FILE__, __LINE__);
 		for (unsigned int i = 0; i < text.size(); i++) {
 			if (text[i] >= 127 || text[i] <= 31)  //ignore invalid characters
 				continue;
@@ -119,7 +130,7 @@ public:
 			/* increment pen position */
 			_x += face->glyph->advance.x >> 6;
 		}
-
+		lock.release();
 		dim.w = _x;
 		return dim;
 	}
@@ -133,6 +144,7 @@ public:
 	///Incorrect results occur if the image is not in the grayscale colorspace
 	template<class ns_component>
 	ns_font_output_dimension draw_grayscale(const int x, const int y, const ns_component & val, const std::string & text, ns_image_standard & im,const bool draw=true){
+		ns_acquire_lock_for_scope lock(render_lock,__FILE__,__LINE__);
 		int	previous_glyph_index=0;
 		int _x = 0;
 		const int c(im.properties().components);
@@ -169,10 +181,13 @@ public:
 			/* increment pen position */
 			_x += face->glyph->advance.x >> 6;
 		}
+		lock.release();
 		dim.w = _x;
 		return dim;
 	}
 private:
+	unsigned long current_face_height;
+	static ns_lock render_lock;
 	///launch the freetype render engine for specified current character.  Kerning occurs based on the specified index
 	///of the last glyph to be rendered
 	inline FT_Pos render_glyph(const char & c, int & previous_index){
@@ -205,7 +220,9 @@ private:
 
 class ns_font_server{
 public:
-	ns_font & default_font();
+	ns_font_server() :default_font_lock("dflk") {}
+	ns_lock default_font_lock;
+	ns_font & get_default_font();
 	~ns_font_server();
 private:
 	std::map<std::string,ns_font> fonts;

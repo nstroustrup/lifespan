@@ -64,8 +64,9 @@ int ns_third_point(const int & i, const int & j);
 #include "ns_tiff.h"
 //adapted from http://student.kuleuven.be/~m0216922/CG/floodfill.html
 template<class binary_image>
-void ns_flood_fill_from_outside(binary_image & im, const bool color){
-
+void ns_flood_fill_from_outside(binary_image & im, const bool color, std::stack<ns_vector_2i> & flood_fill_stack){
+	if (!flood_fill_stack.empty())
+		throw ns_ex("Recieved non-empty stack!");
 	unsigned long w = im.properties().width,
 				  h = im.properties().height;
 	if (w == 0 || h == 0)
@@ -77,47 +78,37 @@ void ns_flood_fill_from_outside(binary_image & im, const bool color){
 
 	//add edges as start points.
 
-	ns_flood_fill_stack.push(ns_vector_2i(0,0));
-	ns_flood_fill_stack.push(ns_vector_2i(w-1,0));
-	ns_flood_fill_stack.push(ns_vector_2i(0,h-1));
-	ns_flood_fill_stack.push(ns_vector_2i(w-1,h-1));
+	flood_fill_stack.push(ns_vector_2i(0,0));
+	flood_fill_stack.push(ns_vector_2i(w-1,0));
+	flood_fill_stack.push(ns_vector_2i(0,h-1));
+	flood_fill_stack.push(ns_vector_2i(w-1,h-1));
 
 	for (unsigned int x = 1; x < w; x++){
 		if ((im[0][x] == color) && (im[0][x-1] != color))
-				ns_flood_fill_stack.push(ns_vector_2i(x-1,0));
+			flood_fill_stack.push(ns_vector_2i(x-1,0));
 	}
 	for (unsigned int y = 1; y< h; y++){
 		if ((im[y][0] == color) && (im[y-1][0] != color))
-				ns_flood_fill_stack.push(ns_vector_2i(0,y-1));
+			flood_fill_stack.push(ns_vector_2i(0,y-1));
 		if ((im[y][w-1] == color) && (im[y-1][w-1] != color))
-				ns_flood_fill_stack.push(ns_vector_2i(w-1,y-1));
+			flood_fill_stack.push(ns_vector_2i(w-1,y-1));
 	}
 	for (unsigned int x = 1; x < w; x++){
 		if ((im[h-1][x] == color) && (im[h-1][x-1] != color))
-				ns_flood_fill_stack.push(ns_vector_2i(x-1,h-1));
+			flood_fill_stack.push(ns_vector_2i(x-1,h-1));
 	}
 
-	/*for (unsigned int y = 0; y < h; y++)
-		pix.push(ns_vector_2i(w-1,y));
-	
-	for (unsigned int y = 0; y < h; y++)
-		pix.push(ns_vector_2i(0,y));
-
-	for (int x = (int)w-1; x >= 0; x--){
-		pix.push(ns_vector_2i(x,h-1));
-		pix.push(ns_vector_2i(x,0));
-	}*/
 
 	long _x;	
 	//cerr << "{";
-	while (!ns_flood_fill_stack.empty()){
+	while (!flood_fill_stack.empty()){
 		//cerr << pix.size() << ",";
-		if (im[ns_flood_fill_stack.top().y][ns_flood_fill_stack.top().x] == color){
-			ns_flood_fill_stack.pop();
+		if (im[flood_fill_stack.top().y][flood_fill_stack.top().x] == color){
+			flood_fill_stack.pop();
 			continue;
 		}
-		ns_vector_2i cur = ns_flood_fill_stack.top();
-		ns_flood_fill_stack.pop();
+		ns_vector_2i cur = flood_fill_stack.top();
+		flood_fill_stack.pop();
 
 		//if (cur.x >= (int)im.properties().width || cur.y >= (int)im.properties().height)
 		//	throw ns_ex("ns_flood_fill::Invalid coordinate posted: ") << cur.x << "," << cur.y << "\n";
@@ -137,12 +128,12 @@ void ns_flood_fill_from_outside(binary_image & im, const bool color){
 
 			if (cur.y > 0 && im[cur.y-1][_x] != color){
 			//	cerr << "`";
-				ns_flood_fill_stack.push(ns_vector_2i(_x,cur.y-1));
+				flood_fill_stack.push(ns_vector_2i(_x,cur.y-1));
 			//	cerr << "'";
 			}
 			if (cur.y < (int)h-1 && im[cur.y+1][_x] != color){
 			//	cerr << "`";
-				ns_flood_fill_stack.push(ns_vector_2i(_x,cur.y+1));
+				flood_fill_stack.push(ns_vector_2i(_x,cur.y+1));
 			//	cerr << "'";
 			}
 			//cerr << ";";
@@ -160,8 +151,8 @@ void ns_process_hole_finding(ns_image_bitmap & temp, std::vector<ns_vector_2d> &
 ///blend in with the now-white background.
 ///any black pixels left are holes.
 template<class binary_image>
-void ns_find_holes(binary_image & source, std::vector<ns_vector_2d> & holes){
-	ns_image_bitmap temp;//, temp2;
+void ns_find_holes(binary_image & source, std::vector<ns_vector_2d> & holes,std::stack<ns_vector_2i> &temp_flood_fill_stack, ns_image_bitmap & temp){
+	
 	temp.prepare_to_recieve_image(source.properties());
 	//temp2.prepare_to_recieve_image(regions[i]->bitmap().properties());f
 	const unsigned int w(temp.properties().width),
@@ -173,15 +164,15 @@ void ns_find_holes(binary_image & source, std::vector<ns_vector_2d> & holes){
 			//temp2[y][x] = !(regions[i]->bitmap()[y][x]);
 		}
 
-	ns_flood_fill_from_outside(temp,false);
+	ns_flood_fill_from_outside(temp,false,temp_flood_fill_stack);
 	ns_process_hole_finding(temp, holes);
 
 }
 
 
 
-void ns_remove_small_holes(ns_image_whole<ns_8_bit> & source, unsigned long max_size_to_remove);
-void ns_remove_small_holes(ns_image_whole<bool> & source, unsigned long max_size_to_remove);
+void ns_remove_small_holes(ns_image_whole<ns_8_bit> & source, unsigned long max_size_to_remove, std::stack<ns_vector_2i> & flood_fill_stack, ns_image_bitmap & temp);
+void ns_remove_small_holes(ns_image_whole<bool> & source, unsigned long max_size_to_remove, std::stack<ns_vector_2i> & flood_fill_stack, ns_image_bitmap & temp);
 
 template<class ns_component>
 class ns_erode_helper{
@@ -300,7 +291,12 @@ void ns_create_edge_bitmap(const binary_image & input, ns_image_bitmap & output)
 //Subtracts the dialation of im with a plus-shaped kernal from the original image
 
 template<class binary_image>
-void ns_find_edge_coordinates(binary_image & im, ns_image_bitmap & edge_bitmap, std::vector<ns_vector_2d> & output_coordinates, std::vector<ns_vector_2d> & holes, std::vector<ns_edge_ui> & edges, const bool find_holes=true){
+void ns_find_edge_coordinates(binary_image & im, ns_image_bitmap & edge_bitmap, 
+							  std::vector<ns_vector_2d> & output_coordinates, std::vector<ns_vector_2d> & holes, 
+							std::vector<ns_edge_ui> & edges, 
+							std::stack<ns_vector_2i> &temp_flood_fill_stack, 
+							ns_image_bitmap & temp,
+							const bool find_holes=true){
 	output_coordinates.clear();
 	edges.clear();
 
@@ -314,7 +310,7 @@ void ns_find_edge_coordinates(binary_image & im, ns_image_bitmap & edge_bitmap, 
 		}
 
 	if (find_holes)
-		ns_find_holes(im,holes);
+		ns_find_holes(im,holes,temp_flood_fill_stack,temp);
 
 	//first we upsample the image 2x
 	ns_image_properties up = im.properties();

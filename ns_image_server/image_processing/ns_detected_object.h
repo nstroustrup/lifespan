@@ -95,8 +95,9 @@ public:
 	std::vector<ns_triangle_d> mesh;
 
 
-	void calculate_edges();
-	void remove_small_holes();
+	void calculate_edges(std::stack<ns_vector_2i> &temp_flood_fill_stack, ns_image_bitmap &temp);
+	//arguments provide temporary storage; not declared as local so that the memory doesn't have to be reallocated in each call
+	void remove_small_holes(std::stack<ns_vector_2i> & flood_fill_stack, ns_image_bitmap & temp);
 
 	///holds a single point for every hole (black area surrounded by white) in the bitmap
 	std::vector<ns_vector_2d> holes;
@@ -223,10 +224,13 @@ public:
 	}
 
 	void convert_bitmaps_into_node_graphs(const float resolution, const std::string & debug_filename){
+		std::stack<ns_vector_2i> temp_flood_fill_stack;
+		ns_image_bitmap temp_bitmap;
+		temp_bitmap.use_more_memory_to_avoid_reallocations(true);
 	//	unsigned long start_time = ns_current_time();
 		if (resolution <= 1201){
 			for (unsigned int i = 0; i < objects.size(); i++){
-				objects[i]->calculate_edges();
+				objects[i]->calculate_edges(temp_flood_fill_stack, temp_bitmap);
 				objects[i]->node_topology.build_via_delauny_method(objects[i]->edge_coordinates,objects[i]->edge_list,
 																			objects[i]->holes,debug_filename + "_" + ns_to_string(i));
 			}
@@ -234,7 +238,7 @@ public:
 		}
 		else{
 			for (unsigned int i = 0; i < objects.size(); i++){
-				objects[i]->remove_small_holes();
+				objects[i]->remove_small_holes(temp_flood_fill_stack,temp_bitmap);
 				objects[i]->node_topology.build_via_zhang_thinning(objects[i]->bitmap());
 			}
 		}

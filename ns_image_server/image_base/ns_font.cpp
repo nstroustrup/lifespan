@@ -1,8 +1,7 @@
 #include "ns_font.h"
 
-
 using namespace std;
-
+ns_lock ns_font::render_lock("ft_l");
 FT_Library ns_font_server::ft_lib;
 unsigned int ns_font_server::lib_instances = 0;
 
@@ -15,7 +14,7 @@ FT_Library &ns_get_ft_library(){
 //fix old freetype reference
 extern "C" { FILE __iob_func[3] = { *stdin,*stdout,*stderr }; }
 #endif
-ns_font & ns_font_server::default_font(){
+ns_font & ns_font_server::get_default_font(){
 	if (lib_instances == 0){
 		if (FT_Init_FreeType( &ft_lib))
 			throw ns_ex("ns_font:: Could not initialize freetype library.");

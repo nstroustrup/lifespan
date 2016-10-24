@@ -231,7 +231,8 @@ void ns_movement_visualization_generator::create_survival_curve_for_capture_time
 	
 	if (image.properties().height > 0){
 		const unsigned long number_of_lines(7);
-		ns_font & font(font_server.default_font());
+		ns_acquire_lock_for_scope font_lock(font_server.default_font_lock, __FILE__, __LINE__);
+		ns_font & font(font_server.get_default_font());
 		font.set_height(image.properties().height/ number_of_lines);
 
 		for (unsigned int y = 0; y <  image.properties().height; y++){
@@ -273,6 +274,7 @@ void ns_movement_visualization_generator::create_survival_curve_for_capture_time
 			text += ns_to_string_short(strain_fraction_surviving,2);
 			font.draw_color(8,line_num*image.properties().height/(number_of_lines-1),ns_color_8(255,255,255),text,image);
 		}
+		font_lock.release();
 	}
 
 }
@@ -624,9 +626,10 @@ void ns_movement_visualization_generator::create_time_path_analysis_visualizatio
 	ns_image_server_captured_image_region region_t(region_image);
 	results.load_images_from_db(region_t,sql);
 	const std::vector<const ns_detected_worm_info *> detected_worms(results.actual_worm_list());
-	ns_font & font(font_server.default_font());
+	/*ns_acquire_lock_for_scope font_lock(font_server.default_font_lock, __FILE__, __LINE__);
+	ns_font & font(font_server.get_default_font());
 	const unsigned long font_height(25);
-	font.set_height(font_height);
+	font.set_height(font_height);*/
 
 	std::vector<const ns_death_time_annotation *> representative_state_event_for_location(compiler_region.locations.size(),0);
 	for (unsigned int i = 0; i < compiler_region.locations.size(); i++){

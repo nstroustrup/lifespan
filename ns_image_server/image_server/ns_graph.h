@@ -237,11 +237,7 @@ public:
 		}
 		return false;
 	}
-	///The font used to draw axis labels
-	ns_font &label_font();
-	///The font used to draw the graph title
-	ns_font &title_font();
-
+	
 	std::string title;
 	ns_graph_axes axes;
 	double aspect_ratio;

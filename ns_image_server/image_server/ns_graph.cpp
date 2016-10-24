@@ -190,8 +190,10 @@ void ns_graph::draw(ns_image_standard & image){
 			}
 		}
 		if (title_properties.text.draw){
-			title_font().set_height(title_properties.text_size*FREETYPE_SCALE_FACTOR);
-			title_font().draw_color(w/3,(3*h)/4,title_properties.text.color,"(No Data)",image);
+			ns_acquire_lock_for_scope font_lock(font_server.default_font_lock, __FILE__, __LINE__);
+			font_server.get_default_font().set_height(title_properties.text_size*FREETYPE_SCALE_FACTOR);
+			font_server.get_default_font().draw_color(w/3,(3*h)/4,title_properties.text.color,"(No Data)",image);
+			font_lock.release();
 		}
 		return;
 	}
@@ -212,9 +214,11 @@ void ns_graph::draw(ns_image_standard & image){
 	}
 
 	if (!have_contents && area_properties.text.draw){
-		title_font().set_height(title_properties.text_size);
-		title_font().draw_color(w/3,0,title_properties.text.color,title,image);
-		title_font().draw_color(w/3,h/2,title_properties.text.color,"(no data)",image);
+		ns_acquire_lock_for_scope font_lock(font_server.default_font_lock, __FILE__, __LINE__);
+		font_server.get_default_font().set_height(title_properties.text_size);
+		font_server.get_default_font().draw_color(w/3,0,title_properties.text.color,title,image);
+		font_server.get_default_font().draw_color(w/3,h/2,title_properties.text.color,"(no data)",image);
+		font_lock.release();
 		return;
 	}
 
@@ -265,8 +269,8 @@ void ns_graph::draw(ns_image_standard & image){
 
 	//draw axes labels
 	//x axis
-
-	label_font().set_height(x_axis_properties.text_size*FREETYPE_SCALE_FACTOR);
+	ns_acquire_lock_for_scope font_lock(font_server.default_font_lock, __FILE__, __LINE__);
+	font_server.get_default_font().set_height(x_axis_properties.text_size*FREETYPE_SCALE_FACTOR);
 	for (unsigned int i = 0; i <= spec.number_of_x_major_ticks; i++){
 		unsigned int x = (border.x+(int)(spec.dx*(spec.major_x_tick*i+spec.axes.axis_offset(0))));
 		image.draw_line_color(ns_vector_2i(x,h-border.y-MAJOR_TICK_HEIGHT),ns_vector_2i(x,h-border.y+MAJOR_TICK_HEIGHT),x_axis_properties.line.color);
@@ -275,11 +279,11 @@ void ns_graph::draw(ns_image_standard & image){
 			if (x_axis_properties.text_decimal_places == -1)
 				text = ns_to_string_short((float)(spec.major_x_tick*i+spec.axes[0]));
 			else text = ns_to_string_short((float)(spec.major_x_tick*i+spec.axes[0]),x_axis_properties.text_decimal_places);
-			label_font().draw(x,h-border.y/2,x_axis_properties.text.color,text,image);
+			font_server.get_default_font().draw(x,h-border.y/2,x_axis_properties.text.color,text,image);
 		}
 	}
 	//y axis
-	label_font().set_height(y_axis_properties.text_size*FREETYPE_SCALE_FACTOR);
+	font_server.get_default_font().set_height(y_axis_properties.text_size*FREETYPE_SCALE_FACTOR);
 	for (unsigned int i = 0; i <= spec.number_of_y_major_ticks; i++){
 		unsigned int y = h - border.y -(int)(spec.dy*(spec.major_y_tick*i+spec.axes.axis_offset(1)));
 		image.draw_line_color(ns_vector_2i(border.x-MAJOR_TICK_HEIGHT,y),ns_vector_2i(border.x+MAJOR_TICK_HEIGHT,y),y_axis_properties.line.color);
@@ -288,9 +292,10 @@ void ns_graph::draw(ns_image_standard & image){
 			if (y_axis_properties.text_decimal_places == -1)
 				text = ns_to_string_short((float)(spec.major_y_tick*i+spec.axes[2]));
 			else text = ns_to_string_short((float)((float)(spec.major_y_tick*i+spec.axes[2])),y_axis_properties.text_decimal_places);
-			label_font().draw(3,y,y_axis_properties.text.color,text,image);
+			font_server.get_default_font().draw(3,y,y_axis_properties.text.color,text,image);
 		}
 	}
+	font_lock.release();
 	//draw minor ticks
 	if (x_axis_properties.draw_tick_marks){
 		//x axis
@@ -326,8 +331,10 @@ void ns_graph::draw(ns_image_standard & image){
 			plot_object(contents[i],contents[i],image,spec);
 	}
 	if (title_properties.text.draw){
-		title_font().set_height(title_properties.text_size*FREETYPE_SCALE_FACTOR);
-		title_font().draw_color(w/3,(3*border.y)/4,title_properties.text.color,title,image);
+		ns_acquire_lock_for_scope font_lock(font_server.default_font_lock, __FILE__, __LINE__);
+		font_server.get_default_font().set_height(title_properties.text_size*FREETYPE_SCALE_FACTOR);
+		font_server.get_default_font().draw_color(w/3,(3*border.y)/4,title_properties.text.color,title,image);
+		font_lock.release();
 	}
 }
 
@@ -990,13 +997,3 @@ ns_graph_axes ns_graph::add_frequency_distribution(const std::vector<const ns_gr
 	return axes;
 }
 
-ns_font & ns_graph::label_font(){
-	ns_graph_properties defaults;
-	//font_server.default_font().set_height(FREETYPE_SCALE_FACTOR*defaults.text_size);
-	return font_server.default_font();
-}	
-
-ns_font & ns_graph::title_font(){
-	//font_server.default_font().set_height(FREETYPE_SCALE_FACTOR*title_properties.text_size);
-	return font_server.default_font();
-}

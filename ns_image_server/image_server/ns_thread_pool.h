@@ -39,10 +39,11 @@ struct ns_thread_pool_exception{
 template<class job_specification_t,class thread_persistant_data_t>
 class ns_thread_pool {
 public:
-	ns_thread_pool() :job_access_lock("ns_tpiatp"), wait_after_jobs_finish("ns_tpw"), thread_init_lock("ns_tic"), error_access_lock("ns_tpierr"), shutdown_(false) {}
+	ns_thread_pool() :state(ns_uninitialized),job_access_lock("ns_tpiatp"), wait_after_jobs_finish("ns_tpw"), thread_init_lock("ns_tic"), error_access_lock("ns_tpierr"), shutdown_(false) {}
 
-	~ns_thread_pool() { shutdown(true); }
-
+	~ns_thread_pool() { shutdown(); }
+	typedef enum { ns_uninitialized, ns_paused, ns_polling_for_idle_threads,ns_holding_idle_threads,ns_running } ns_thread_pool_state;
+	ns_thread_pool_state state;
 	//gets the oldest exception thrown by any thread.
 	//returns the number errors in queue (including the one returned); 0 if no errors exist
 	long get_next_error(job_specification_t & job, ns_ex & ex) {
@@ -60,6 +61,8 @@ public:
 	}
 
 	void set_number_of_threads(unsigned long i) {
+		if (state != ns_uninitialized)
+			throw ns_ex("Cannot change number of threads on an active thread pool");
 		threads.clear();
 		threads.resize(i);
 		thread_idle_locks.clear();
@@ -73,8 +76,10 @@ public:
 
 	//waits until the the job queue becomes empty
 	//important!  this holds onto the wait_after_jobs_finish lock
-	//so 
+	//this does not require all threads to be finished
 	void poll_until_jobs_queue_is_empty_and_hold_idle_threads() {
+		if (state != ns_running)
+			throw ns_ex("Attempting to poll on non_running thread pool");
 		while (true) {
 			job_access_lock.wait_to_acquire(__FILE__, __LINE__);
 			if (jobs.empty())
@@ -84,11 +89,13 @@ public:
 		}
 		job_access_lock.release();
 		wait_after_jobs_finish.wait_to_acquire(__FILE__, __LINE__);
+		state = ns_holding_idle_threads;
 	}
 	//call this after calling poll_until_jobs_queue_is_empty_and_hold_idle_threads()
 	//to let the idle threads get back to work.
 	void release_hold_on_idle_threads() {
 		wait_after_jobs_finish.release();
+		state = ns_running;
 	}
 	bool any_thread_is_idle() {
 		return number_of_idle_threads(true) > 0;
@@ -110,12 +117,14 @@ public:
 	//and all threads to become idle
 	//important!  This /keeps/ the job_access_lock for the current thread.
 	void wait_for_all_threads_to_become_idle() {
+		if (state != ns_running)
+			throw ns_ex("Waiting for all threads to be idle on non-running thread pool!");
+		state = ns_polling_for_idle_threads;
+		//wait until whichever thread has the running lock gives it up
+		//now grab control of everything
 		while (true) {
-			//wait until whichever thread has the running lock gives it up
-			//now grab control of everything
 
 			wait_after_jobs_finish.wait_to_acquire(__FILE__, __LINE__);
-
 			bool give_up_and_try_again(false);
 			unsigned int i;
 			for (i = 0; i < thread_idle_locks.size(); i++) {
@@ -139,6 +148,7 @@ public:
 			if (give_up_and_try_again) {
 				for (unsigned int j = 0; j < i; j++)
 					thread_idle_locks[j].release();
+				wait_after_jobs_finish.release();
 				ns_thread::sleep_microseconds(100);
 				continue;
 			}
@@ -151,6 +161,7 @@ public:
 			if (!jobs.empty()) {
 				NS_TPDBG(debug << "(main gets job lock but finds jobs)");
 				job_access_lock.release();
+				wait_after_jobs_finish.release();
 				ns_thread::sleep_microseconds(100);
 				continue;
 			}
@@ -164,16 +175,40 @@ public:
 		/*	for (unsigned int i = 0; i < thread_idle_locks.size(); i++)
 				thread_idle_locks[i].release();
 				*/
+			state = ns_paused;
 			return;
 		}
 	}
-	void shutdown (bool release_job_lock) {
-		if (release_job_lock)
-			job_access_lock.release();
-		shutdown_ = true;
-		run_pool();
-		for (unsigned int i = 0; i < threads.size(); i++) {
-			threads[i].block_on_finish();
+	void shutdown () {
+		//wait to get out of temporary states
+		if (state == ns_holding_idle_threads) {
+			wait_after_jobs_finish.wait_to_acquire(__FILE__, __LINE__);
+			wait_after_jobs_finish.release();
+		}
+		if (state == ns_polling_for_idle_threads) {
+			while(true)
+				if (job_access_lock.try_to_acquire(__FILE__, __LINE__)) {
+					job_access_lock.release();
+				}
+				else {
+					if (state != ns_polling_for_idle_threads)
+						break;
+				}
+				ns_thread::sleep_microseconds(100);
+		}
+		
+		switch (state) {
+		case ns_uninitialized: break;
+		case ns_paused: 
+			run_pool();
+			//deliberate run-through
+		case ns_running:
+			shutdown_ = true;
+			for (unsigned int i = 0; i < threads.size(); i++) {
+				threads[i].block_on_finish();
+			}
+			break;
+		default: throw ns_ex("Unknown state encountered during thread pool shutdown");
 		}
 		threads.resize(0);
 		thread_idle_locks.resize(0);
@@ -181,6 +216,8 @@ public:
 	}
 
 	void prepare_pool_to_run() {
+		if (state != ns_uninitialized)
+			throw ns_ex("Prepping initialized pool!");
 		if (threads.size() == 0)
 			throw ns_ex("No threads!");
 
@@ -201,8 +238,11 @@ public:
 #endif
 			threads[i].run(this->run, data);
 		}
+		state = ns_paused;
 	}
 	void run_pool() {
+		if (state != ns_paused)
+			throw ns_ex("Attempting to run a non-paused pool!");
 		NS_TPDBG(debug << "(main waiting for thread init lock");
 		thread_init_lock.wait_to_acquire(__FILE__, __LINE__);
 		//we'll need to wait until all threads are initialized
@@ -228,6 +268,7 @@ public:
 			ns_thread::sleep_microseconds(5);
 		}
 		job_access_lock.release();
+		state = ns_running;
 	}
 
 	void add_job_while_pool_is_not_running(const job_specification_t & job) {

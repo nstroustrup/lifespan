@@ -705,6 +705,6 @@ private:
 unsigned int ns_count_number_of_worms_in_detected_object_group(std::vector<ns_detected_object *> & objects);
 
 
-void ns_calculate_res_aware_edges(ns_image_bitmap & im, ns_image_bitmap & edge_bitmap, std::vector<ns_vector_2d> & output_coordinates, std::vector<ns_vector_2d> & holes, std::vector<ns_edge_ui> & edge_list, std::vector<ns_edge_2d> &edges);
-void ns_calculate_res_aware_edges(ns_image_bitmap & im, ns_image_bitmap & edge_bitmap, std::vector<ns_edge_2d> &edges);
+void ns_calculate_res_aware_edges(ns_image_bitmap & im, ns_image_bitmap & edge_bitmap, std::vector<ns_vector_2d> & output_coordinates, std::vector<ns_vector_2d> & holes, std::vector<ns_edge_ui> & edge_list, std::vector<ns_edge_2d> &edges, std::stack<ns_vector_2i> &temp_flood_fill_stack, ns_image_bitmap & temp);
+//void ns_calculate_res_aware_edges(ns_image_bitmap & im, ns_image_bitmap & edge_bitmap, std::vector<ns_edge_2d> &edges, std::stack<ns_vector_2i> temp_flood_fill_stack, ns_image_bitmap & temp);
 #endif

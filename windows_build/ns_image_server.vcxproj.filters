@@ -1161,6 +1161,7 @@
     <None Include="..\external_libraries\wm4_bspline\Wm4Vector2.inl">
       <Filter>misc_lib\wm4_bspline</Filter>
     </None>
+    <None Include="ClassDiagram.cd" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="ns_image_server.rc">

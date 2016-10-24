@@ -773,8 +773,8 @@ void ns_time_path_image_movement_analyzer::process_raw_images(const ns_64_bit re
 		if (number_of_paths_to_consider == 0)
 			image_server_const.register_server_event(ns_image_server_event("No dead animals, or potentially dead animals, were identified in this region."),&sql);
 		else {
-				image_server_const.add_subtext_to_current_event(ns_image_server_event("Registering and Analyzing " ) << number_of_paths_to_consider << " objects; discarding "  << number_of_paths_to_ignore << " as noise.", write_status_to_db?&sql:0);
-			
+			image_server_const.add_subtext_to_current_event(ns_image_server_event("Registering and Analyzing ") << number_of_paths_to_consider << " objects; discarding " << number_of_paths_to_ignore << " as noise.", write_status_to_db ? &sql : 0);
+
 			const bool system_is_64_bit(sizeof(void *) == 8);
 			const int number_of_images_stored_in_memory_per_group(
 				(1 + 1 + 2 + 4 + 4)*shared_state.registered_image_clear_lag //the registered images; two 8 bt images one 16 and two 32bit
@@ -803,9 +803,9 @@ void ns_time_path_image_movement_analyzer::process_raw_images(const ns_64_bit re
 				throw ns_ex("The specified worms are so big that they cannot be processed in memory");
 			//const int ((int)(ceil(number_of_paths_to_consider/(float)maximum_number_of_worms_to_process_simultaneously)));
 			const int number_of_worms_per_repeat((int)(ceil(number_of_paths_to_consider / (float)number_of_repeats_required)));
-			if (number_of_repeats_required > 1) 
-					image_server_const.add_subtext_to_current_event(ns_image_server_event("To fit everything into memory, we're doing this in ") << number_of_repeats_required << " rounds", write_status_to_db?&sql:0);
-				
+			if (number_of_repeats_required > 1)
+				image_server_const.add_subtext_to_current_event(ns_image_server_event("To fit everything into memory, we're doing this in ") << number_of_repeats_required << " rounds", write_status_to_db ? &sql : 0);
+
 			int current_round(0);
 			for (unsigned int g = 0; g < groups.size(); ) {
 
@@ -831,9 +831,9 @@ void ns_time_path_image_movement_analyzer::process_raw_images(const ns_64_bit re
 				if (start_group == stop_group)
 					break;
 				//cerr << "Running group " << start_group << "," << stop_group << "\n";
-				if (number_of_repeats_required > 1) 
-						image_server_const.add_subtext_to_current_event(ns_image_server_event("Starting Round ")  << current_round + 1 << "\n", write_status_to_db?&sql:0);
-		
+				if (number_of_repeats_required > 1)
+					image_server_const.add_subtext_to_current_event(ns_image_server_event("Starting Round ") << current_round + 1 << "\n", write_status_to_db ? &sql : 0);
+
 				calculate_memory_pool_maximum_image_size(start_group, stop_group);
 #ifdef NS_OUTPUT_ALGINMENT_DEBUG
 				ofstream oout("c:\\tst_quant.csv");
@@ -853,13 +853,13 @@ void ns_time_path_image_movement_analyzer::process_raw_images(const ns_64_bit re
 					}
 				}
 
-				image_server_const.add_subtext_to_current_event(ns_image_server_event("Running backwards..."), write_status_to_db?&sql:0);
+				image_server_const.add_subtext_to_current_event(ns_image_server_event("Running backwards..."), write_status_to_db ? &sql : 0);
 				for (long t = (long)region_image_specifications.size() - 1; t >= 0; t--) {
 
 					//output_allocation_state("bk",region_image_specifications.size() - 1 - t, debug_out);
 
 					if (debug_output_skip == number_of_repeats_required || t == 0 && current_round == 0) {
-						image_server_const.add_subtext_to_current_event(ns_to_string((100 * (region_image_specifications.size() - 1 - t + region_image_specifications.size()*current_round)) / (region_image_specifications.size()*number_of_repeats_required))+ "%...", write_status_to_db ? &sql : 0);
+						image_server_const.add_subtext_to_current_event(ns_to_string((100 * (region_image_specifications.size() - 1 - t + region_image_specifications.size()*current_round)) / (region_image_specifications.size()*number_of_repeats_required)) + "%...", write_status_to_db ? &sql : 0);
 						debug_output_skip = 0;
 					}
 					else debug_output_skip++;
@@ -868,13 +868,13 @@ void ns_time_path_image_movement_analyzer::process_raw_images(const ns_64_bit re
 						stop_t = -1;
 
 					unsigned long allocated_count(this->memory_pool.aligned_image_pool.number_of_items_checked_out());
-					
+
 					try {
 						//we obtain all the image data from disk that required to run the image analysis for the current chunk.
 						//it is loaded into the groups[i].paths[j] data structures.
 						for (long t1 = stop_t + 1; t1 < t + 1; t1++) {
 							load_region_visualization_images(t1, t1 + 1, start_group, stop_group, sql, false, true, ns_analyzed_image_time_path::ns_lrv_flag_and_images);
-					
+
 						}
 					}
 					catch (ns_ex & ex) {
@@ -890,7 +890,7 @@ void ns_time_path_image_movement_analyzer::process_raw_images(const ns_64_bit re
 					}
 
 
-				
+
 					//now we have all the relevant image data loaded into path data structures for
 					//the time points specified in the current chunk.
 					//So, we can run image registration and analysis for all these images.
@@ -904,9 +904,9 @@ void ns_time_path_image_movement_analyzer::process_raw_images(const ns_64_bit re
 							//this is a very paralellizeable step; we schedule each path to be analyzed individually and run them 
 							//on all cores.
 							thread_pool.add_job_while_pool_is_not_running(
-								ns_time_path_image_movement_analyzer_thread_pool_job(i,j,
-								&ns_time_path_image_movement_analyzer::run_group_for_current_backwards_round,
-								this,&shared_state));
+								ns_time_path_image_movement_analyzer_thread_pool_job(i, j,
+									&ns_time_path_image_movement_analyzer::run_group_for_current_backwards_round,
+									this, &shared_state));
 
 							//	run_group_for_current_backwards_round(i, j, &shared_state);
 
@@ -922,7 +922,7 @@ void ns_time_path_image_movement_analyzer::process_raw_images(const ns_64_bit re
 					//now that all the worker threads are done, this thread holds the thread pool job lock again.
 					//we keep it until we need to run more jobs in the next round.
 
-					throw_pool_errors(thread_pool,sql);
+					throw_pool_errors(thread_pool, sql);
 				}
 
 				//since we have been registered images backwards in time, we've been writing everything in reverse order to the local disk.
@@ -988,7 +988,7 @@ void ns_time_path_image_movement_analyzer::process_raw_images(const ns_64_bit re
 					}
 				}
 
-					
+
 				debug_output_skip = 0;
 
 				//OK; we've finished the backwards registration.
@@ -1006,12 +1006,12 @@ void ns_time_path_image_movement_analyzer::process_raw_images(const ns_64_bit re
 						shared_state.chunk_generators[i][j].setup_first_chuck_for_forwards_registration();
 					}
 				}
-				image_server_const.add_subtext_to_current_event(ns_image_server_event("Running forwards..."), (write_status_to_db?(&sql):0));
+				image_server_const.add_subtext_to_current_event(ns_image_server_event("Running forwards..."), (write_status_to_db ? (&sql) : 0));
 
 
 				for (unsigned int t = 0; t < region_image_specifications.size(); t += chunk_size) {
 					if (debug_output_skip == number_of_repeats_required || t == 0 && current_round == 0) {
-						image_server_const.add_subtext_to_current_event(ns_to_string( (100 * (t + region_image_specifications.size()*current_round)) / (region_image_specifications.size()*number_of_repeats_required)) + "%...", write_status_to_db ? (&sql) : 0);
+						image_server_const.add_subtext_to_current_event(ns_to_string((100 * (t + region_image_specifications.size()*current_round)) / (region_image_specifications.size()*number_of_repeats_required)) + "%...", write_status_to_db ? (&sql) : 0);
 						debug_output_skip = 0;
 					}
 					else debug_output_skip++;
@@ -1024,7 +1024,7 @@ void ns_time_path_image_movement_analyzer::process_raw_images(const ns_64_bit re
 					//	cerr << "Loading images " << t << "-" << stop_t << "\n";
 					try {
 						//load in image data for the current chunk
-						load_region_visualization_images(t, stop_t, start_group, stop_group, sql, false, false,ns_analyzed_image_time_path::ns_lrv_flag_and_images);
+						load_region_visualization_images(t, stop_t, start_group, stop_group, sql, false, false, ns_analyzed_image_time_path::ns_lrv_flag_and_images);
 					}
 					catch (ns_ex & ex) {
 						ns_ex ex_f(ex);
@@ -1058,7 +1058,7 @@ void ns_time_path_image_movement_analyzer::process_raw_images(const ns_64_bit re
 					thread_pool.wait_for_all_threads_to_become_idle();
 					//now that all the worker threads are done, this thread holds the thread pool job lock again
 					//and we keep it until we need to run more jobs, below.
-					throw_pool_errors(thread_pool,sql);
+					throw_pool_errors(thread_pool, sql);
 				}
 				//for (unsigned int i = 0; i < groups.size(); i++) {
 					//cerr << i << ":" << path_reset[i];
@@ -1083,9 +1083,9 @@ void ns_time_path_image_movement_analyzer::process_raw_images(const ns_64_bit re
 				memory_pool.clear();
 				g = stop_group;
 				current_round++;
-				}
+			}
 		}
-		thread_pool.shutdown(true);
+		thread_pool.shutdown();
 	
 		normalize_movement_scores_over_all_paths(times_series_denoising_parameters);
 		//xxx this could be paraellelized if it was worth it.
@@ -2957,9 +2957,9 @@ bool ns_analyzed_image_time_path::populate_images_from_region_visualization(cons
 	//		cerr << "WHA";
 	//this sets the correct image size based on the solution's information.
 	//the image resolution is taken from the region visualization
-	bool just_flag_elements_as_loaded = (load_type == ns_lrv_just_flag);
-	if (just_flag_elements_as_loaded)
-	set_path_alignment_image_dimensions(path_aligned_image_image_properties);
+	const bool just_flag_elements_as_loaded = (load_type == ns_lrv_just_flag);
+	if (!just_flag_elements_as_loaded)
+		set_path_alignment_image_dimensions(path_aligned_image_image_properties);
 
 	ns_output_subline output_subline;
 	for (unsigned int k = 0; k < elements.size(); k++){
@@ -2982,7 +2982,7 @@ bool ns_analyzed_image_time_path::populate_images_from_region_visualization(cons
 					<< path_aligned_image_image_properties.width << "," << tl_worm_context_position_in_pa.y 
 					<< " for a worm with an image size " << e.path_aligned_images->worm_region_threshold.properties().width << "," << e.path_aligned_images->worm_region_threshold.properties().height;
 		
-			if (!just_do_a_consistancy_check && just_flag_elements_as_loaded != ns_analyzed_image_time_path::ns_lrv_just_flag){
+			if (!just_do_a_consistancy_check && !just_flag_elements_as_loaded ){
 				for (long y = 0; y < tl_worm_context_position_in_pa.y; y++){
 					for (unsigned long x = 0; x < path_aligned_image_image_properties.width; x++){
 						e.path_aligned_images->image[y][x] = 0;
@@ -3017,10 +3017,10 @@ bool ns_analyzed_image_time_path::populate_images_from_region_visualization(cons
 				<< e.context_offset_in_region_visualization_image().x << "," << e.context_offset_in_region_visualization_image().x  
 				<< "; the region image: " << im->properties().width << "," << im->properties().height << "; "
 				<< " the worm context size: " << e.worm_context_size().x << "," << e.worm_context_size().y;
-			if (just_flag_elements_as_loaded != ns_analyzed_image_time_path::ns_lrv_just_images)
+			if (load_type != ns_analyzed_image_time_path::ns_lrv_just_images)
 				e.path_aligned_images_are_loaded_and_released = true;
 
-			if (!just_do_a_consistancy_check && just_flag_elements_as_loaded != ns_analyzed_image_time_path::ns_lrv_just_flag){
+			if (!just_do_a_consistancy_check && !just_flag_elements_as_loaded ){
 				for (long y = 0; y < e.worm_context_size().y; y++){		
 					output_subline(*im,							//source
 					e.context_offset_in_region_visualization_image().x,		//source x offset
@@ -3063,7 +3063,7 @@ bool ns_analyzed_image_time_path::populate_images_from_region_visualization(cons
 				}
 			}
 		
-			if (just_flag_elements_as_loaded != ns_analyzed_image_time_path::ns_lrv_just_flag && just_do_a_consistancy_check && !was_previously_loaded){
+			if (!just_flag_elements_as_loaded  && just_do_a_consistancy_check && !was_previously_loaded){
 				e.release_path_aligned_images(memory_pool->aligned_image_pool);
 			}
 		}
@@ -6484,7 +6484,7 @@ void ns_time_path_image_movement_analyzer::generate_movement_posture_visualizati
 
 //we step through all region visualizations between start_i and stop_i, ordered by time in region_image_specifications
 //and populate any worm images that are needed from each region image.
-void ns_time_path_image_movement_analyzer::load_region_visualization_images(const unsigned long start_i, const unsigned long stop_i,const unsigned int start_group, const unsigned int stop_group,ns_sql & sql, bool just_do_a_consistancy_check, bool running_backwards, ns_analyzed_image_time_path::ns_load_type just_flag_elements_as_loaded){
+void ns_time_path_image_movement_analyzer::load_region_visualization_images(const unsigned long start_i, const unsigned long stop_i,const unsigned int start_group, const unsigned int stop_group,ns_sql & sql, bool just_do_a_consistancy_check, bool running_backwards, ns_analyzed_image_time_path::ns_load_type load_type){
 	if (stop_group > groups.size())
 		throw ns_ex("ns_time_path_image_movement_analyzer::load_region_visualization_images()::An invalid group was specified: ") << stop_group << " (there are only " << groups.size() << " groups)";
 //	cerr << "Looking for region images from time point " << start_i << " until " << stop_i;
@@ -6531,7 +6531,7 @@ void ns_time_path_image_movement_analyzer::load_region_visualization_images(cons
 		
 		try{
 
-			if (just_flag_elements_as_loaded != ns_analyzed_image_time_path::ns_lrv_just_flag) {
+			if (load_type != ns_analyzed_image_time_path::ns_lrv_just_flag) {
 				//region images contain the context images
 				if (region_image_specifications[i].region_vis_required) {
 
@@ -6578,7 +6578,7 @@ void ns_time_path_image_movement_analyzer::load_region_visualization_images(cons
 							continue;
 					}
 					ns_movement_image_collage_info m(&groups[g].paths[p]);
-					if (groups[g].paths[p].populate_images_from_region_visualization(region_image_specifications[i].time,image_loading_temp,image_loading_temp2,just_do_a_consistancy_check, just_flag_elements_as_loaded))
+					if (groups[g].paths[p].populate_images_from_region_visualization(region_image_specifications[i].time,image_loading_temp,image_loading_temp2,just_do_a_consistancy_check, load_type))
 						new_data_allocated = true;
 				}
 			}

@@ -421,6 +421,8 @@ public:
 			//cerr << "Loading fonts.\n";
 			unsigned long image_height = mask_visualization_output->properties().height,
 						  text_height;
+			ns_acquire_lock_for_scope font_lock(font_server.default_font_lock, __FILE__, __LINE__);
+			font_server.get_default_font().set_height(text_height);
 			for (unsigned int i = 0; i < _mask_info.size(); i++){
 				if (_mask_info[i]->stats.pixel_count != 0){
 					text_height = image_height - _mask_info[i]->stats.y_avg -3;
@@ -431,15 +433,14 @@ public:
 					if (text_height < 12)
 						text_height = 12;
 					
-					
-					font_server.default_font().set_height(text_height);
 					//cerr << "Drawing font at (" << _mask_info[i].stats.x_avg << "," << _mask_info[i].stats.y_avg << ")";
-					font_server.default_font().draw(_mask_info[i]->stats.x_min/resize_factor+line_width,_mask_info[i]->stats.y_avg/resize_factor+line_width,ns_color_8(0,0,0),ns_to_string(_mask_info[i]->mask_value),*mask_visualization_output);
+					font_server.get_default_font().draw(_mask_info[i]->stats.x_min/resize_factor+line_width,_mask_info[i]->stats.y_avg/resize_factor+line_width,ns_color_8(0,0,0),ns_to_string(_mask_info[i]->mask_value),*mask_visualization_output);
 		
 					//cerr << "..n";
-					font_server.default_font().draw(_mask_info[i]->stats.x_min/resize_factor,_mask_info[i]->stats.y_avg/resize_factor,ns_color_8(255,255,255),ns_to_string(_mask_info[i]->mask_value),*mask_visualization_output);
+					font_server.get_default_font().draw(_mask_info[i]->stats.x_min/resize_factor,_mask_info[i]->stats.y_avg/resize_factor,ns_color_8(255,255,255),ns_to_string(_mask_info[i]->mask_value),*mask_visualization_output);
 				}
 			}
+			font_lock.release();
 			#endif
 			mask_visualization_output = 0;
 		}

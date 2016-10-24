@@ -462,10 +462,11 @@ void ns_barcode_encoder::encode(const string & str, ns_image_standard & image, c
 							image[y][3*x+c] = encode->image->pxl[3*encode->image->width*(y-margin_size) + 3*(x-margin_size)+c];
 						
 			}
-
-			ns_font & font(font_server.default_font());
+			ns_acquire_lock_for_scope font_lock(font_server.default_font_lock, __FILE__, __LINE__);
+			ns_font & font(font_server.get_default_font());
+			font.set_height(16);
 			font.draw(margin_size+10,margin_size + encode->image->height + 10,ns_color_8(125,125,125),str,image);
-
+			font_lock.release();
 			
 			dmtxEncodeDestroy(&encode);
 			delete[] a;

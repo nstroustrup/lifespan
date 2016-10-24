@@ -1505,7 +1505,8 @@ void ns_experiment_storyboard::draw_label_margin(const unsigned long sub_image_i
 			im[y][x] = 255;
 		}
 	}
-	ns_font &font(font_server.default_font());
+	ns_acquire_lock_for_scope font_lock(font_server.default_font_lock, __FILE__, __LINE__);
+	ns_font &font(font_server.get_default_font());
 	font.set_height(h/3);
 
 	for (unsigned int i = 0; i < divisions.size(); i++){
@@ -1534,6 +1535,7 @@ void ns_experiment_storyboard::draw_label_margin(const unsigned long sub_image_i
 			font.draw_color(1+3*divisions[i].position_on_storyboard.x,im.properties().height-(4*h/10),ns_color_8(255,255,255),text,im);
 		else font.draw_grayscale(1+divisions[i].position_on_storyboard.x,im.properties().height-(4*h/10),255,text,im);
 	}
+	font_lock.release();
 }
 
 std::string ns_experiment_storyboard::image_suffix(const ns_experiment_storyboard_spec & spec){

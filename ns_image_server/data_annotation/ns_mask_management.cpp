@@ -219,8 +219,8 @@ void ns_bulk_experiment_mask_manager::produce_mask_file(const unsigned int exper
 			
 		ns_image_properties label_prop(prop);
 		label_prop.height = label_margin_buffer;
-		
-		ns_font & font(font_server.default_font());
+		ns_acquire_lock_for_scope font_lock(font_server.default_font_lock, __FILE__, __LINE__);
+		ns_font & font(font_server.get_default_font());
 			
 		font.set_height(label_margin_buffer/3);
 		//cerr << "Font Size = " << label_margin_buffer/3 << "\n";
@@ -317,6 +317,7 @@ void ns_bulk_experiment_mask_manager::produce_mask_file(const unsigned int exper
 			mask_file.flush_buffer(flush_size,reciever);
 			y+=flush_size;
 		}
+		font_lock.release();
 		reciever.finish_recieving_image();
 		pr(prop.height);
 	}

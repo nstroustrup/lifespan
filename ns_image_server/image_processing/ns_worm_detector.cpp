@@ -143,13 +143,13 @@ void ns_detected_object_manager::constrain_region_area(unsigned int minimum_area
 			p++;
 	}*/
 }
-void ns_detected_object::remove_small_holes(){
+void ns_detected_object::remove_small_holes(std::stack<ns_vector_2i> & flood_fill_stack, ns_image_bitmap & temp){
 	if (bitmap().properties().resolution > 1201)
-		ns_remove_small_holes(bitmap(),ns_worm_detection_constants::get(ns_worm_detection_constant::minimum_worm_hole_size,bitmap().properties().resolution));
+		ns_remove_small_holes(bitmap(),ns_worm_detection_constants::get(ns_worm_detection_constant::minimum_worm_hole_size,bitmap().properties().resolution),flood_fill_stack,temp);
 }
-void ns_detected_object::calculate_edges(){
+void ns_detected_object::calculate_edges(std::stack<ns_vector_2i> &temp_flood_fill_stack,ns_image_bitmap &temp){
 	
-	ns_calculate_res_aware_edges(bitmap(),edge_bitmap(),edge_coordinates,holes,edge_list,edges);
+	ns_calculate_res_aware_edges(bitmap(),edge_bitmap(),edge_coordinates,holes,edge_list,edges,temp_flood_fill_stack,temp);
 	
 	
 }

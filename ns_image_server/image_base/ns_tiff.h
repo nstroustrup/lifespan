@@ -108,7 +108,8 @@ public:
 			}
 
 			strip_buffer = (ns_component *)_TIFFmalloc(sizeof(ns_component)*tiff_info.stripsize);
-			
+			if (strip_buffer == 0)
+				ns_throw_tiff_exception(ns_ex("ns_tiff_image_input_file::Count not allocate strip buffer!"));
 			if (client_data.exception_thrown()){
 				std::cerr << "4";
 				ns_throw_tiff_exception(client_data.ex());
@@ -148,6 +149,8 @@ public:
 				ns_throw_tiff_exception(ns_ex("ns_tiff::read_line()::Attempting to read too many lines from file: Requested line ") << (lines_read+1) << " from an image with height " << ns_image_input_file<ns_component>::_properties.height);
 			
 			unsigned int bytes_read;
+			if (strip_buffer == 0)
+				ns_throw_tiff_exception("Trying to read from a broken ns_tiff object!");
 			//read in another strip when strip buffer is empty
 			if (tiff_info.rows_read_from_current_strip == tiff_info.rows_per_strip){
 				bytes_read = TIFFReadEncodedStrip(image,tiff_info.current_strip,strip_buffer,tiff_info.stripsize);

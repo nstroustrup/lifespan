@@ -125,7 +125,7 @@ public:
 class ns_segment_path_possible_solution_hash{
 public:
 	ns_segment_path_possible_solution_hash(){}
-	ns_segment_path_possible_solution_hash(const ns_segment_path_possible_solution & sol){
+	ns_segment_path_possible_solution_hash(const ns_segment_path_possible_solution & sol, std::vector<const ns_segment_cluster_solution * > & sorted_solutions_temp){
 		unsigned int pos(0);
 		sorted_solutions_temp.resize(sol.worms.size());
 		for (unsigned int i = 0; i < sol.worms.size(); i++)
@@ -163,10 +163,7 @@ public:
 		}
 	}
 	ns_segment * path[512];
-private:
-	static vector<const ns_segment_cluster_solution * > sorted_solutions_temp;
 };
-vector<const ns_segment_cluster_solution * > ns_segment_path_possible_solution_hash::sorted_solutions_temp;
 
 ostream & operator << (ostream & o, const ns_segment_path_possible_solution_hash & h){
 	h.out_debug(o);
@@ -466,7 +463,7 @@ void ns_smart_complex_segment_cluster_solver::find_possible_paths(const int numb
 
 
 	//o2.open("c:\\tt\\adding.txt");
-	
+	vector<const ns_segment_cluster_solution * > sorted_solutions_temp;
 	while(!branch_points.empty()){
 		ns_segment_path_search_branch_point bp = branch_points.top();
 		branch_points.pop();
@@ -523,7 +520,7 @@ void ns_smart_complex_segment_cluster_solver::find_possible_paths(const int numb
 
 			//bp.current_solution.output_debug_label(o2,false);
 			//o2 << ":";
-			std::pair<set<ns_segment_path_possible_solution_hash>::iterator, bool> p = recorded_paths.insert(ns_segment_path_possible_solution_hash(bp.current_solution));
+			std::pair<set<ns_segment_path_possible_solution_hash>::iterator, bool> p = recorded_paths.insert(ns_segment_path_possible_solution_hash(bp.current_solution, sorted_solutions_temp));
 			if (p.second){
 		//		o2 << " Added\n";
 				

@@ -730,10 +730,19 @@ void ns_divvy_up_bitmap_among_solutions_alt(const ns_image_bitmap & bmp, std::ve
 			}
 		}
 	}
-	
+
+	//these are temp variables used 
+	std::stack<ns_vector_2i> temp_flood_fill_stack;
+	ns_image_bitmap  temp;
+	temp.use_more_memory_to_avoid_reallocations();
+	std::vector<ns_vector_2d> output_coordinates;
+	std::vector<ns_vector_2d> holes;
+	std::vector<ns_edge_ui> edge_list;
 	//rebuild edge bitmaps;
 	for (unsigned int i = 0; i < worms.size(); i++)
-		ns_calculate_res_aware_edges(worms[i]->bitmap(), worms[i]->edge_bitmap(), worms[i]->edges);
+		ns_calculate_res_aware_edges(worms[i]->bitmap(), worms[i]->edge_bitmap(),
+			output_coordinates,holes,edge_list,
+			worms[i]->edges,temp_flood_fill_stack,temp);
 }
 void ns_divvy_up_bitmap_among_solutions(const ns_image_bitmap & bmp,std::vector<ns_detected_worm_info *> & worms){
 	ns_image_properties p(bmp.properties());
@@ -832,11 +841,14 @@ void ns_divvy_up_bitmap_among_solutions(const ns_image_bitmap & bmp,std::vector<
 			worms[i]->bitmap()[tip_halos[i].tip_associated_boundary_points[1][j].y][tip_halos[i].tip_associated_boundary_points[1][j].x] = 0;
 	}
 
+	std::stack<ns_vector_2i> temp_flood_fill_stack;
+	ns_image_bitmap temp;
+	temp.use_more_memory_to_avoid_reallocations();
 	//rebuild edge bitmaps;
 	for (unsigned int i = 0; i < worms.size(); i++){
 		ns_detected_object new_object;
 		worms[i]->bitmap().pump(new_object.bitmap(),1024);
-		new_object.calculate_edges();
+		new_object.calculate_edges(temp_flood_fill_stack,temp);
 		new_object.edge_bitmap().pump(worms[i]->edge_bitmap(),512);
 		worms[i]->edges = new_object.edges;
 	}
@@ -2593,7 +2605,8 @@ void ns_image_worm_detection_results::create_visualization(const unsigned int cr
 	}	
 	//ouput reasons for rejection of rejected reasons.
 	if (draw_labels){
-		ns_font & font(font_server.default_font());
+		ns_acquire_lock_for_scope font_lock(font_server.default_font_lock, __FILE__, __LINE__);
+		ns_font & font(font_server.get_default_font());
 		font.set_height(16);
 		ns_color_8 c(180,180,180);
 		for(unsigned int i = 0; i < putative_worms.size(); i++){
@@ -2606,12 +2619,14 @@ void ns_image_worm_detection_results::create_visualization(const unsigned int cr
 		for (unsigned int i = 0; i < region_labels.size(); i++)
 			font.draw(region_labels[i].pos.x, region_labels[i].pos.y,
 					  c,region_labels[i].text,image);
+		font_lock.release();
 	}
 
 	if (data_label.size() != 0){
 		unsigned int im_bottom = image.properties().height;
 		unsigned int bottom_margin_size = im_bottom/15;
-		ns_font & font(font_server.default_font());
+		ns_acquire_lock_for_scope font_lock(font_server.default_font_lock, __FILE__, __LINE__);
+		ns_font & font(font_server.get_default_font());
 		font.set_height((bottom_margin_size)/3);
 	
 		image.increase_size(ns_image_properties(im_bottom + bottom_margin_size,image.properties().width,image.properties().components));
@@ -2621,6 +2636,7 @@ void ns_image_worm_detection_results::create_visualization(const unsigned int cr
 				image[im_bottom + y][x] = 0;
 
 		font.draw(17,im_bottom+bottom_margin_size/2,ns_color_8(200,200,200),data_label,image);
+		font_lock.release();
 	}
 
 }
@@ -2980,16 +2996,19 @@ void ns_image_worm_detection_results::clear(){
 	 data_storage_on_disk = ns_image_server_image();
 }
 
-void ns_calculate_res_aware_edges(ns_image_bitmap & im, ns_image_bitmap & edge_bitmap, std::vector<ns_vector_2d> & output_coordinates, std::vector<ns_vector_2d> & holes, std::vector<ns_edge_ui> & edge_list, std::vector<ns_edge_2d> &edges){
+void ns_calculate_res_aware_edges(ns_image_bitmap & im, ns_image_bitmap & edge_bitmap, std::vector<ns_vector_2d> & output_coordinates, 
+	std::vector<ns_vector_2d> & holes, std::vector<ns_edge_ui> & edge_list, std::vector<ns_edge_2d> &edges,
+	std::stack<ns_vector_2i> & temp_flood_fill_stack, ns_image_bitmap & temp){
 
 	bool find_holes(im.properties().resolution <= 1201);
-	ns_find_edge_coordinates(im,edge_bitmap,output_coordinates,holes,edge_list,find_holes);
+	ns_find_edge_coordinates(im,edge_bitmap,output_coordinates,holes,edge_list,temp_flood_fill_stack,temp,find_holes);
 	edges.resize(edge_list.size());
 	for (unsigned int i = 0; i < edge_list.size(); i++)
 		edges[i] = ns_edge_2d(output_coordinates[edge_list[i].vertex[0]],output_coordinates[edge_list[i].vertex[1]]);
 }
-void ns_calculate_res_aware_edges(ns_image_bitmap & im, ns_image_bitmap & edge_bitmap, std::vector<ns_edge_2d> &edges){
+/*
+void ns_calculate_res_aware_edges(ns_image_bitmap & im, ns_image_bitmap & edge_bitmap, std::vector<ns_edge_2d> &edges, std::stack<ns_vector_2i> temp_flood_fill_stack, ns_image_bitmap & temp){
 	std::vector<ns_vector_2d> tmp1,tmp2;
 	std::vector<ns_edge_ui> tmp3;
-	 ns_calculate_res_aware_edges(im,edge_bitmap,tmp1,tmp2,tmp3,edges);
-}
+	 ns_calculate_res_aware_edges(im,edge_bitmap,tmp1,tmp2,tmp3,edges,temp_flood_fill_stack,temp);
+}*/

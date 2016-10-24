@@ -213,8 +213,7 @@ inline void ns_mean_smooth(const std::vector<T> & in, std::vector<T> & out){
 
 #ifndef NS_MINIMAL_SERVER_BUILD
 template<class ns_component> 
-void ns_remove_small_holes_template(ns_image_whole<ns_component> & source, unsigned long max_size_to_remove){
-	ns_image_bitmap temp;//, temp2;
+void ns_remove_small_holes_template(ns_image_whole<ns_component> & source, unsigned long max_size_to_remove, std::stack<ns_vector_2i> & flood_fill_stack,ns_image_bitmap & temp){
 	temp.prepare_to_recieve_image(source.properties());
 	const unsigned int w(temp.properties().width),
 					   h(temp.properties().height);
@@ -226,7 +225,7 @@ void ns_remove_small_holes_template(ns_image_whole<ns_component> & source, unsig
 			temp[y][x] = !(source[y][x]);
 		}
 	}
-	ns_flood_fill_from_outside(temp,false);
+	ns_flood_fill_from_outside(temp,false,flood_fill_stack);
 
 	//at this point all holes should be white on a black background.
 	std::vector<ns_detected_object *> hole_objects;
@@ -279,13 +278,12 @@ void ns_remove_small_holes_template(ns_image_whole<ns_component> & source, unsig
 }
 
 
-void ns_remove_small_holes(ns_image_whole<ns_8_bit> & source, unsigned long max_size_to_remove){
-	ns_remove_small_holes_template(source,max_size_to_remove);
+void ns_remove_small_holes(ns_image_whole<ns_8_bit> & source, unsigned long max_size_to_remove, std::stack<ns_vector_2i> & flood_fill_stack, ns_image_bitmap & temp){
+	ns_remove_small_holes_template(source,max_size_to_remove,flood_fill_stack, temp);
 }
-void ns_remove_small_holes(ns_image_whole<bool> & source, unsigned long max_size_to_remove){
-	ns_remove_small_holes_template(source,max_size_to_remove);
+void ns_remove_small_holes(ns_image_whole<bool> & source, unsigned long max_size_to_remove, std::stack<ns_vector_2i> & flood_fill_stack, ns_image_bitmap & temp){
+	ns_remove_small_holes_template(source,max_size_to_remove,flood_fill_stack,temp);
 }
 
 
-std::stack<ns_vector_2i> ns_flood_fill_stack;
 #endif

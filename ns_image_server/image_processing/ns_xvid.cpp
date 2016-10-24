@@ -309,25 +309,28 @@ void ns_xvid_encoder::run(const vector<string> & input_files,  ns_xvid_parameter
 	p.YDIM -= p.YDIM%2;
 
 	ns_vector_2d text_resample_factor(spec.width/(double)p.XDIM,spec.height/(double)p.YDIM);
-	
-	ns_font * font(0);
-	if (labels.size() > 0)
-		font = &font_server.default_font();
-	
 
-	if (!spec.label_info_is_specified() && labels.size() > 0){
-		spec.label_size = spec.height/50;
-		font->set_height(spec.label_size);
-		unsigned long w(0);
-		for (unsigned int i = 0; i < labels.size(); i++){
-			unsigned long ww(font->text_size(labels[i]).w);
-			if (w < ww)
-				w = ww;
+	{
+		ns_acquire_lock_for_scope font_lock(font_server.default_font_lock, __FILE__, __LINE__);
+		ns_font * font(0);
+		if (labels.size() > 0)
+			font = &font_server.get_default_font();
+
+
+		if (!spec.label_info_is_specified() && labels.size() > 0) {
+			spec.label_size = spec.height / 50;
+			font->set_height(spec.label_size);
+			unsigned long w(0);
+			for (unsigned int i = 0; i < labels.size(); i++) {
+				unsigned long ww(font->text_size(labels[i]).w);
+				if (w < ww)
+					w = ww;
+			}
+			spec.label_position_x = spec.width - (3 * w) / 2;
+			spec.label_position_y = spec.height - 3 * spec.label_size / 2;
 		}
-		spec.label_position_x = spec.width-(3*w)/2;
-		spec.label_position_y = spec.height - 3*spec.label_size/2;
+		font_lock.release();
 	}
-
 
 	cerr << input_files.size() << " frames: ";
 	if (spec.width != p.XDIM || spec.height != p.YDIM)
@@ -452,25 +455,34 @@ void ns_xvid_encoder::run(const vector<string> & input_files,  ns_xvid_parameter
 					subregion = &sub_region_temp;
 				}
 			
-				
-				if (subregion->properties().width == p.XDIM && subregion->properties().height == p.YDIM){
-					if (font != 0){
-						font->draw(spec.label_position_x,spec.label_position_y,ns_color_8(255,255,255),labels[input_num],*subregion);
+				{
+					ns_acquire_lock_for_scope font_lock(font_server.default_font_lock, __FILE__, __LINE__);
+					ns_font * font(0);
+					if (labels.size() > 0) {
+						font = &font_server.get_default_font();
+						font->set_height(spec.label_size);
 					}
-					in_buffer = subregion->to_raw_buf(false);
 
-				}
-				else{
-					subregion->resample(ns_image_properties(p.YDIM,p.XDIM,subregion->properties().components),resampled_temp);
-					if (font != 0){
-						font->set_height(spec.label_size/text_resample_factor.y);
-						font->draw(spec.label_position_x/text_resample_factor.x,
-						spec.label_position_y/text_resample_factor.y,
-						ns_color_8(255,255,255),
-						labels[input_num],
-						resampled_temp);
+					if (subregion->properties().width == p.XDIM && subregion->properties().height == p.YDIM) {
+						if (font != 0) {
+							font->draw(spec.label_position_x, spec.label_position_y, ns_color_8(255, 255, 255), labels[input_num], *subregion);
+						}
+						in_buffer = subregion->to_raw_buf(false);
+
 					}
-					in_buffer = resampled_temp.to_raw_buf(false,0,true);
+					else {
+						subregion->resample(ns_image_properties(p.YDIM, p.XDIM, subregion->properties().components), resampled_temp);
+						if (font != 0) {
+							font->set_height(spec.label_size / text_resample_factor.y);
+							font->draw(spec.label_position_x / text_resample_factor.x,
+								spec.label_position_y / text_resample_factor.y,
+								ns_color_8(255, 255, 255),
+								labels[input_num],
+								resampled_temp);
+						}
+						in_buffer = resampled_temp.to_raw_buf(false, 0, true);
+					}
+					font_lock.release();
 				}
 				result = 0;
 				//start loading next frame simultaneously

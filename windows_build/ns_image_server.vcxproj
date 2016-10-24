@@ -551,6 +551,7 @@
     <None Include="..\external_libraries\wm4_bspline\Wm4Vector2.inl">
       <FileType>Document</FileType>
     </None>
+    <None Include="ClassDiagram.cd" />
     <None Include="server_icon.ico" />
     <None Include="server_notify_icon.ico" />
     <None Include="worm_icon.ico" />

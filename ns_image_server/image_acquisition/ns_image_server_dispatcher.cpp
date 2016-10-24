@@ -376,7 +376,7 @@ void ns_image_server_dispatcher::clear_for_termination(){
 	if (processing_job_scheduler_thread.is_running())
 		processing_job_scheduler_thread.block_on_finish();
 	processing_thread_pool.wait_for_all_threads_to_become_idle();
-	processing_thread_pool.shutdown(true);
+	processing_thread_pool.shutdown();
 	if (schedule_error_check_thread.is_running())
 		schedule_error_check_thread.block_on_finish();
 	lock.release();
@@ -401,7 +401,7 @@ void ns_image_server_dispatcher::wait_for_local_jobs(){
 		image_server.register_server_event(ns_image_server::ns_register_in_central_db_with_fallback,ns_image_server_event("Exit requested.  Waiting for local jobs to finish..."));
 		processing_job_scheduler_thread.block_on_finish();
 		processing_thread_pool.wait_for_all_threads_to_become_idle();
-		processing_thread_pool.shutdown(true);
+		processing_thread_pool.shutdown();
 	}
 	lock.release();
 	if(schedule_error_check_thread.is_running())
@@ -864,7 +864,7 @@ void ns_image_server_dispatcher::on_timer(){
 						image_server.register_server_event(ns_image_server::ns_register_in_central_db,ns_image_server_event("Database Change Requested: waiting for jobs to finish."));
 						processing_job_scheduler_thread.block_on_finish();
 						processing_thread_pool.wait_for_all_threads_to_become_idle();
-						processing_thread_pool.shutdown(true);
+						processing_thread_pool.shutdown();
 					}
 					image_server.set_sql_database(database_requested);
 					if (work_sql_connection!=0)

@@ -26,9 +26,12 @@ public:
 	typedef float ns_difference_type;
 	//images can be shifted a maximum of 2^(ns_max_pyramid_size+1) times
 	enum { ns_max_pyramid_size = 30 };
-	ns_calc_best_alignment_fast(const ns_vector_2i & max_offset_, const ns_vector_2i &local_offset_, const ns_vector_2i &bottom_offset_, const ns_vector_2i &size_offset_);
+	ns_calc_best_alignment_fast(const ns_vector_2i & max_offset_, const ns_vector_2i &bottom_offset_, const ns_vector_2i &size_offset_);
 	~ns_calc_best_alignment_fast();
 	ns_vector_2d operator()(const ns_vector_2d & initial_alignment,const ns_vector_2d & max_alignment, ns_alignment_state & state, const ns_image_standard & image, bool & saturated_offset);
+
+	ns_vector_2d operator()(const ns_vector_2d & initial_alignment, const ns_vector_2d & max_alignment, const ns_gaussian_pyramid * state_pyramid, const ns_gaussian_pyramid *image_pyramid, bool & saturated_offset);
+
 
 	void clear();
 
@@ -42,7 +45,7 @@ public:
 	ns_vector_2d debug_gold_standard_shift;
 
 private:
-	const ns_vector_2<float> max_offset, local_offset, bottom_offset, size_offset;
+	const ns_vector_2<float> max_offset, bottom_offset, size_offset;
 
 	ns_gaussian_pyramid * state_pyramid, *image_pyramid;
 	ns_gradient_shift * gradient_shift;

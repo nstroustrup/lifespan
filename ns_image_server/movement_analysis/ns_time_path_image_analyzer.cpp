@@ -2973,7 +2973,8 @@ bool ns_analyzed_image_time_path::populate_images_from_region_visualization(cons
 	
 			//offset_from_path is the distance the region image is from the bounding box around the path
 			const ns_vector_2i tl_worm_context_position_in_pa(ns_analyzed_image_time_path::maximum_alignment_offset()+e.offset_from_path);
-
+			if (e.path_aligned_images == 0)
+				throw ns_ex("Encountered unloaded image!");
 			if (tl_worm_context_position_in_pa.y > e.path_aligned_images->worm_region_threshold.properties().height ||
 				path_aligned_image_image_properties.width > e.path_aligned_images->worm_region_threshold.properties().width || 
 				tl_worm_context_position_in_pa.y > e.path_aligned_images->image.properties().height ||
@@ -3068,7 +3069,7 @@ bool ns_analyzed_image_time_path::populate_images_from_region_visualization(cons
 			}
 		}
 		catch(...){
-			if (just_do_a_consistancy_check && !was_previously_loaded){
+			if (!just_do_a_consistancy_check && !was_previously_loaded){
 				e.release_path_aligned_images(memory_pool->aligned_image_pool);
 			}
 		}
@@ -3371,8 +3372,8 @@ ns_vector_2d ns_gradient_shift::calc_shifts_from_grad()  {
 #ifdef NS_USE_INTEL_IPP
 #include "ns_gaussian_pyramid.h"
 
-ns_calc_best_alignment_fast::ns_calc_best_alignment_fast(const ns_vector_2i & max_offset_, const ns_vector_2i &local_offset_, const ns_vector_2i &bottom_offset_, const ns_vector_2i &size_offset_) :
-	max_offset(max_offset_), local_offset(local_offset_), image_pyramid(0), state_pyramid(0), gradient_shift(0),bottom_offset(bottom_offset_), size_offset(size_offset_) {
+ns_calc_best_alignment_fast::ns_calc_best_alignment_fast(const ns_vector_2i & max_offset_, const ns_vector_2i &bottom_offset_, const ns_vector_2i &size_offset_) :
+	max_offset(max_offset_), image_pyramid(0), state_pyramid(0), gradient_shift(0),bottom_offset(bottom_offset_), size_offset(size_offset_) {
 	state_pyramid = new ns_gaussian_pyramid();
 	image_pyramid = new ns_gaussian_pyramid();
 	gradient_shift = new ns_gradient_shift;
@@ -3404,32 +3405,30 @@ struct ns_path_debug_info {
 };
 ns_path_debug_info global_path_debug_info;
 #endif
-ns_vector_2d ns_calc_best_alignment_fast::operator()(const ns_vector_2d & initial_alignment,const ns_vector_2d & max_alignment,ns_alignment_state & state, const ns_image_standard & image, bool & saturated_offset) {
+void ns_align_two_gaussian_pyramids(ns_gaussian_pyramid * state_pyramid, 
+									ns_gaussian_pyramid * image_pyramid, 
+									ns_gradient_shift * gradient_shift,
+									const ns_vector_2i & bottom_offset) {
 
-	saturated_offset = false;
-	state.current_round_consensus.init(state.consensus.properties());
-	for (unsigned int y = 0; y < state.consensus.properties().height; y++)
-		for (unsigned int x = 0; x < state.consensus.properties().width; x++)
-			state.current_round_consensus[y][x] = (state.consensus_count[y][x] != 0) ? (state.consensus[y][x] / (ns_difference_type)state.consensus_count[y][x]) : 0;
-	
-	state_pyramid->calculate(state.current_round_consensus);
-	image_pyramid->calculate(image);
-	
+}
 
+ns_vector_2d ns_calc_best_alignment_fast::operator()(const ns_vector_2d & initial_alignment, const ns_vector_2d & max_alignment, const ns_gaussian_pyramid * state_pyramid, const ns_gaussian_pyramid *image_pyramid, bool & saturated_offset) {
 
+	if (state_pyramid->image_size != image_pyramid->image_size)
+		throw ns_ex("Pyramid sizes don't match!");
 	const ns_vector_2d tl(bottom_offset),
-		br((long)image.properties().width - size_offset.x,
-		(long)image.properties().height - size_offset.y);
+		br((long)state_pyramid->image_size.width - size_offset.x,
+		(long)state_pyramid->image_size.height - size_offset.y);
 	//build an image pyramid
 	ns_vector_2d shift[ns_max_pyramid_size];
 	//walk down the image pyrmaid.  reg updates as the most accurate registration at the next level of the pyramid, based on the levels above.
 	ns_vector_2d reg;
-	
+
 	///xxx
 #ifdef NS_DEBUG_FAST_IMAGE_REGISTRATION
 	vector<ns_image_whole<float > > grad_x(state_pyramid->num_current_pyramid_levels),
-								grad_y(state_pyramid->num_current_pyramid_levels),
-								diff(state_pyramid->num_current_pyramid_levels);
+		grad_y(state_pyramid->num_current_pyramid_levels),
+		diff(state_pyramid->num_current_pyramid_levels);
 	if (pyramid_buffer == 0) {
 		pyramid_buffer = new ofstream("c:\\server\\pyramid_data.csv");
 		*pyramid_buffer << "group_id,path_id,time,human_time,id,downsample factor,iteration,lowest_resolution_level,A0,A1,A2,A3,B0,B1,L0,L1,L2,L3,C1 cur it,C2 cur it, C1 cumulative, C2 cumulative,Rx,Ry,Sx,Sy,diff\n";
@@ -3450,7 +3449,7 @@ ns_vector_2d ns_calc_best_alignment_fast::operator()(const ns_vector_2d & initia
 			bool err(false);
 			//search around three times at the lowest resolution to iterate towards the best shift.
 			//this lets us identify larger shifts.
-			const int num_iterations_this_round( (lowest_resolution_level) ? 4 : 1);
+			const int num_iterations_this_round((lowest_resolution_level) ? 4 : 1);
 			for (unsigned int j = 0; j < num_iterations_this_round; j++) {
 				ns_vector_2d sh = gradient_shift->calc_gradient_shift(state_pyramid->image_scaled[i],
 					image_pyramid->image_scaled[i],
@@ -3468,41 +3467,41 @@ ns_vector_2d ns_calc_best_alignment_fast::operator()(const ns_vector_2d & initia
 				}
 
 				shift[i] += sh;
-				#ifdef NS_DEBUG_FAST_IMAGE_REGISTRATION
+#ifdef NS_DEBUG_FAST_IMAGE_REGISTRATION
 				*pyramid_buffer << global_path_debug_info.group_id << "," <<
-					global_path_debug_info.path_id << "," << 
+					global_path_debug_info.path_id << "," <<
 					global_path_debug_info.time << "," <<
-					ns_format_time_string(global_path_debug_info .time) << "," <<
-					fast_alignment_debug_id << "," << 
-					fold << "," << j << 
-					"," << (lowest_resolution_level?"lowest":"not_lowest") << "," <<
+					ns_format_time_string(global_path_debug_info.time) << "," <<
+					fast_alignment_debug_id << "," <<
+					fold << "," << j <<
+					"," << (lowest_resolution_level ? "lowest" : "not_lowest") << "," <<
 
-				gradient_shift->A[0] << "," <<
-				gradient_shift->A[1] << "," <<
-				gradient_shift->A[2] << "," <<
-				gradient_shift->A[3] << ",";
-
-				*pyramid_buffer <<
-				gradient_shift->b[0] << "," <<
-				gradient_shift->b[1] << ",";
+					gradient_shift->A[0] << "," <<
+					gradient_shift->A[1] << "," <<
+					gradient_shift->A[2] << "," <<
+					gradient_shift->A[3] << ",";
 
 				*pyramid_buffer <<
-				gradient_shift->LU[0] << "," <<
-				gradient_shift->LU[1] << "," <<
-				gradient_shift->LU[2] << "," <<
-				gradient_shift->LU[3] << ",";
+					gradient_shift->b[0] << "," <<
+					gradient_shift->b[1] << ",";
 
 				*pyramid_buffer <<
-				-sh.x << "," <<
-				-sh.y << "," <<
-				-shift[i].x << "," <<
-				-shift[i].y << "," << (err ? "ERR" : "") << ",";
+					gradient_shift->LU[0] << "," <<
+					gradient_shift->LU[1] << "," <<
+					gradient_shift->LU[2] << "," <<
+					gradient_shift->LU[3] << ",";
+
+				*pyramid_buffer <<
+					-sh.x << "," <<
+					-sh.y << "," <<
+					-shift[i].x << "," <<
+					-shift[i].y << "," << (err ? "ERR" : "") << ",";
 				*pyramid_buffer << reg.x*fold << "," << reg.y*fold << ",";
 
-				*pyramid_buffer << debug_gold_standard_shift.x<< "," << debug_gold_standard_shift.y << "," << (reg - debug_gold_standard_shift / fold).mag() << "\n";
-				#endif
-				
-			//	cerr << shift[i] << "\n";
+				*pyramid_buffer << debug_gold_standard_shift.x << "," << debug_gold_standard_shift.y << "," << (reg - debug_gold_standard_shift / fold).mag() << "\n";
+#endif
+
+				//	cerr << shift[i] << "\n";
 			}
 			lowest_resolution_level = false;
 			reg += shift[i];
@@ -3513,10 +3512,10 @@ ns_vector_2d ns_calc_best_alignment_fast::operator()(const ns_vector_2d & initia
 
 			debug_number_of_levels_processed++;
 
-		
+
 			if (std::isnan(shift[i].x) || std::isnan(shift[i].y))
 				throw ns_ex("Registration produced a nan!");
-		//	if (i == 0 && reg.x < 10 && reg.y < 10 && (reg - debug_gold_standard_shift / fold).mag() > 40)
+			//	if (i == 0 && reg.x < 10 && reg.y < 10 && (reg - debug_gold_standard_shift / fold).mag() > 40)
 			//	throw ns_ex("Bad registration!");
 
 		}
@@ -3524,7 +3523,7 @@ ns_vector_2d ns_calc_best_alignment_fast::operator()(const ns_vector_2d & initia
 
 			cerr << ex.text() << "\n";
 
-			#ifdef NS_DEBUG_FAST_IMAGE_REGISTRATION
+#ifdef NS_DEBUG_FAST_IMAGE_REGISTRATION
 			ns_image_properties prop(0, 0, 1);
 			for (unsigned int i = 0; i < state_pyramid->num_current_pyramid_levels; i++) {
 				unsigned long w(state_pyramid->image_scaled[i].properties().width + image_pyramid->image_scaled[i].properties().width);
@@ -3559,48 +3558,61 @@ ns_vector_2d ns_calc_best_alignment_fast::operator()(const ns_vector_2d & initia
 
 			if (debug_number_of_levels_processed > 0) {
 				prop.height = 0;
-				prop.width = 3 * (grad_x[number_of_levels - debug_number_of_levels_processed].properties().width+50);
+				prop.width = 3 * (grad_x[number_of_levels - debug_number_of_levels_processed].properties().width + 50);
 				prop.components = 3;
 				for (int i = 0; i < debug_number_of_levels_processed; i++) {
-					prop.height += grad_x[number_of_levels - 1 - i].properties().height+50;
+					prop.height += grad_x[number_of_levels - 1 - i].properties().height + 50;
 				}
 				dbg.init(prop);
 				for (unsigned int y = 0; y < prop.height; y++)
-					for (unsigned int x = 0; x < 3*prop.width; x++)
+					for (unsigned int x = 0; x < 3 * prop.width; x++)
 						dbg[y][x] = 0;
 				h = 0;
 				for (int ii = 0; ii < debug_number_of_levels_processed; ii++) {
 					int i = number_of_levels - 1 - ii;
-					unsigned long w(grad_x[i].properties().width+50);
+					unsigned long w(grad_x[i].properties().width + 50);
 					for (unsigned int y = 0; y < grad_x[i].properties().height; y++)
 						for (unsigned int x = 0; x < grad_x[i].properties().width; x++) {
-							dbg[h + y][3*x] = 255*ns_pos_part(grad_x[i][y][x]);
-							dbg[h + y][3 * x+1] = 255 * ns_neg_part(grad_x[i][y][x]);
+							dbg[h + y][3 * x] = 255 * ns_pos_part(grad_x[i][y][x]);
+							dbg[h + y][3 * x + 1] = 255 * ns_neg_part(grad_x[i][y][x]);
 
-							dbg[h + y][3*(x + w)] = 255 * ns_pos_part(grad_y[i][y][x]);
-							dbg[h + y][3 * (x + w)+1] = 255 * ns_neg_part(grad_y[i][y][x]);
+							dbg[h + y][3 * (x + w)] = 255 * ns_pos_part(grad_y[i][y][x]);
+							dbg[h + y][3 * (x + w) + 1] = 255 * ns_neg_part(grad_y[i][y][x]);
 
-							dbg[h + y][3*(x + 2 * w)] = 255* ns_pos_part(diff[i][y][x]);
-							dbg[h + y][3*(x + 2 * w)+1] = 255 * ns_neg_part(diff[i][y][x]);
+							dbg[h + y][3 * (x + 2 * w)] = 255 * ns_pos_part(diff[i][y][x]);
+							dbg[h + y][3 * (x + 2 * w) + 1] = 255 * ns_neg_part(diff[i][y][x]);
 
 						}
 					h += grad_x[i].properties().height + 50;
 				}
 				ns_save_image("c:\\server\\pyramid_grad_" + ns_to_string(fast_alignment_debug_id) + ".tif", dbg);
 			}
-			#endif
+#endif
 			return ns_vector_2d(0, 0);
 		}
 	}
-	#ifdef NS_DEBUG_FAST_IMAGE_REGISTRATION
+#ifdef NS_DEBUG_FAST_IMAGE_REGISTRATION
 	pyramid_buffer->flush();
-	#endif
+#endif
 	fast_alignment_debug_id++;
 	if (reg.x < -max_alignment.x) { reg.x = -max_alignment.x; saturated_offset = true; }
 	if (reg.y < -max_alignment.y) { reg.y = -max_alignment.y; saturated_offset = true; }
 	if (reg.x > max_alignment.x) { reg.x = max_alignment.x; saturated_offset = true; }
 	if (reg.y > max_alignment.y) { reg.y = max_alignment.y; saturated_offset = true; }
 	return reg;
+}
+ns_vector_2d ns_calc_best_alignment_fast::operator()(const ns_vector_2d & initial_alignment,const ns_vector_2d & max_alignment,ns_alignment_state & state, const ns_image_standard & image, bool & saturated_offset) {
+
+	saturated_offset = false;
+	state.current_round_consensus.init(state.consensus.properties());
+	for (unsigned int y = 0; y < state.consensus.properties().height; y++)
+		for (unsigned int x = 0; x < state.consensus.properties().width; x++)
+			state.current_round_consensus[y][x] = (state.consensus_count[y][x] != 0) ? (state.consensus[y][x] / (ns_difference_type)state.consensus_count[y][x]) : 0;
+	
+	state_pyramid->calculate(state.current_round_consensus);
+	image_pyramid->calculate(image);
+	return (*this)(initial_alignment, max_alignment, state_pyramid, image_pyramid, saturated_offset);
+
 }
 #endif
 
@@ -6528,6 +6540,12 @@ void ns_time_path_image_movement_analyzer::load_region_visualization_images(cons
 		}
 		if (!region_image_specifications[i].region_vis_required && !region_image_specifications[i].interpolated_region_vis_required)
 			continue;
+		if (region_image_specifications[i].interpolated_region_vis_required &&
+			region_image_specifications[i].interpolated_region_vis_image.id==0)
+			throw ns_ex("Interpolated region visualization requested with no id specified");
+		if (region_image_specifications[i].region_vis_required &&
+			region_image_specifications[i].region_vis_image.id==0)
+			throw ns_ex("Region visualization requested with no id specified");
 		
 		try{
 
@@ -6541,7 +6559,7 @@ void ns_time_path_image_movement_analyzer::load_region_visualization_images(cons
 				}
 				else image_loading_temp.prepare_to_recieve_image(ns_image_properties(0, 0, 0, 0));
 
-				if (region_image_specifications[i].interpolated_region_vis_image.id != 0) {
+				if (region_image_specifications[i].interpolated_region_vis_required) {
 					image_loading_temp2.use_more_memory_to_avoid_reallocations();
 					ns_image_storage_source_handle<ns_8_bit> in2(image_server_const.image_storage.request_from_storage(region_image_specifications[i].interpolated_region_vis_image, &sql));
 					in2.input_stream().pump(image_loading_temp2, 4096);

@@ -1112,8 +1112,8 @@ class ns_worm_terminal_main_menu_organizer : public ns_menu_organizer{
 	
 	static void specifiy_model(const std::string & value){
 		for (unsigned int i = 0; i < worm_learner.model_specifications.size(); ++i){
-			if (worm_learner.model_specifications[i]->model_name == value){
-				worm_learner.set_svm_model_specification(*worm_learner.model_specifications[i]);
+			if (worm_learner.model_specifications[i]().model_specification.model_name == value){
+				worm_learner.set_svm_model_specification(worm_learner.model_specifications[i]);
 				return;
 			}
 		}
@@ -1323,7 +1323,7 @@ public:
 		
 		ns_menu_item_spec model_spec(specifiy_model,"&Testing/Worm Detection/Specify SVM Model");
 		for (unsigned int i = 0; i < worm_learner.model_specifications.size(); i++)
-			model_spec.options.push_back(ns_menu_item_options(worm_learner.model_specifications[i]->model_name));
+			model_spec.options.push_back(ns_menu_item_options(worm_learner.model_specifications[i]().model_specification.model_name));
 	
 		add(model_spec);
 		add(ns_menu_item_spec(spatial_median,"Testing/Image Processing/Spatial Median Filter"));
@@ -2546,7 +2546,7 @@ int main() {
 		ns_multiprocess_control_options mp_options;
 		mp_options.total_number_of_processes = 1;
 		ns_worm_browser_output_debug(__LINE__,__FILE__,"Loading constants");
-		image_server.load_constants(ns_image_server::ns_worm_terminal_type,mp_options); 
+		image_server.load_constants(ns_image_server::ns_worm_terminal_type); 
 		if (image_server.verbose_debug_output())
 			output_debug_messages = true;
 		
@@ -2606,7 +2606,7 @@ int main() {
 		else {
 			
 			ns_worm_browser_output_debug(__LINE__,__FILE__,"Setting svm model specification");
-			worm_learner.set_svm_model_specification(*worm_learner.model_specifications[0]);
+			worm_learner.set_svm_model_specification(worm_learner.model_specifications[0]);
 		}
 		
 		ns_worm_browser_output_debug(__LINE__,__FILE__,"Displaying splash image");

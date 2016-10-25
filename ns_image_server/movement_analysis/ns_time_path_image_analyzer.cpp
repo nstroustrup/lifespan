@@ -518,7 +518,6 @@ struct ns_movement_analysis_shared_state {
 struct ns_time_path_image_movement_analyzer_thread_pool_persistant_data {
 	ns_time_path_image_movement_analyzer_thread_pool_persistant_data() :
 		fast_aligner(ns_analyzed_image_time_path::maximum_alignment_offset(),
-			ns_analyzed_image_time_path::maximum_local_alignment_offset(),
 			ns_analyzed_image_time_path::maximum_alignment_offset(),
 			ns_analyzed_image_time_path::maximum_alignment_offset()) {}
 	ns_calc_best_alignment_fast fast_aligner;
@@ -3390,6 +3389,8 @@ void ns_calc_best_alignment_fast::clear() {
 	gradient_shift->clear();
 }
 
+
+
 int fast_alignment_debug_id = 0;
 
 float ns_pos_part(float a) {return a > 0 ? a : 0;}
@@ -3414,11 +3415,11 @@ void ns_align_two_gaussian_pyramids(ns_gaussian_pyramid * state_pyramid,
 
 ns_vector_2d ns_calc_best_alignment_fast::operator()(const ns_vector_2d & initial_alignment, const ns_vector_2d & max_alignment, const ns_gaussian_pyramid * state_pyramid, const ns_gaussian_pyramid *image_pyramid, bool & saturated_offset) {
 
-	if (state_pyramid->image_size != image_pyramid->image_size)
+	if (state_pyramid->properties() != image_pyramid->properties())
 		throw ns_ex("Pyramid sizes don't match!");
 	const ns_vector_2d tl(bottom_offset),
-		br((long)state_pyramid->image_size.width - size_offset.x,
-		(long)state_pyramid->image_size.height - size_offset.y);
+		br((long)state_pyramid->properties().width - size_offset.x,
+		(long)state_pyramid->properties().height - size_offset.y);
 	//build an image pyramid
 	ns_vector_2d shift[ns_max_pyramid_size];
 	//walk down the image pyrmaid.  reg updates as the most accurate registration at the next level of the pyramid, based on the levels above.
@@ -4734,7 +4735,7 @@ void ns_analyzed_image_time_path::calculate_image_registration(const ns_analyzed
 	global_path_debug_info.time = elements[i].absolute_time;
 	#endif
 	#ifdef NS_USE_FAST_IMAGE_REGISTRATION
-		align.debug_gold_standard_shift = elements[i].registration_offset;
+		//align.debug_gold_standard_shift = elements[i].registration_offset;
 		t.start();
 		elements[i].registration_offset =
 			align(state.registration_offset_average() - state.consensus_internal_offset,maximum_alignment_offset(), state, elements[i].path_aligned_images->image, elements[i].saturated_offset)

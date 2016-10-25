@@ -125,9 +125,8 @@ bool ns_processing_job_scheduler::run_a_job(ns_processing_job & job,ns_sql & sql
 		
 
 		//don't let old, unused data accumulate.
-		ns_image_registration_profile_cache::external_source_type source;
+		ns_image_fast_registration_profile_cache::external_source_type source;
 		source.image_storage = &image_server.image_storage;
-		source.max_average_dimention = 500;
 		source.sql = &sql;
 		image_server.image_registration_profile_cache.remove_old_images(10 * 60, source);
 

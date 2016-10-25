@@ -145,8 +145,8 @@ private:
 		}
 		if (black_out_performed)
 				tp->blacked_out_non_subject_animals = true;
-
-		ns_font & font(font_server.default_font());
+		ns_acquire_lock_for_scope lock(font_server.default_font_lock, __FILE__, __LINE__);
+		ns_font & font(font_server.get_default_font());
 		font.set_height(14);
 		for (unsigned int i = 0; i < tp->division->events.size(); i++){
 			//if (!tp->division->events[i].annotations_specifiy_censoring)
@@ -266,6 +266,7 @@ private:
 		count_text+=" Excluded: ";
 		count_text+=ns_to_string(censored_count);
 		font.draw(label_position.x,label_position.y,ns_color_8(255,255,255),count_text,im);
+		lock.release();
 	}
 
 	long side_border_width()const {return 15;}
@@ -322,7 +323,8 @@ private:
 			throw ns_ex("Could not find storyboard image.");
 		//cerr << "Composit height:" << composit.properties().height << "\n";
 		bool use_color(composit.properties().components == 3);
-		ns_font & font(font_server.default_font());
+		ns_acquire_lock_for_scope lock(font_server.default_font_lock, __FILE__, __LINE__);
+		ns_font & font(font_server.get_default_font());
 		font.set_height(bottom_text_size());
 
 		for (unsigned int i = 0; i < divisions.size(); i++){
@@ -420,6 +422,7 @@ private:
 				font.draw_color(3*border,label_position_y,ns_color_8(255,255,255),label,divisions[i].division_image);
 			else font.draw_grayscale(border,label_position_y,255,label,divisions[i].division_image);
 		}
+		lock.release();
 	}
 
 	ns_worm_learner * worm_learner;

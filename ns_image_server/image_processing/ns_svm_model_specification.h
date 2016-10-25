@@ -73,7 +73,7 @@ struct ns_svm_model_specification{
 	#endif
 
 	///Saves statistics required for normalization of features
-	void write_statistic_ranges(const std::string & filename, bool write_all_features=false);
+	void write_statistic_ranges(const std::string & filename, bool write_all_features=false) const;
 	///Loads in statistics required for normalization of features.
 	void read_statistic_ranges(const std::string & filename);
 

@@ -139,9 +139,9 @@ void ns_worm_learner::calculate_movement_threshold(const std::string & filename,
 
 
 }
-void ns_worm_learner::set_svm_model_specification(ns_svm_model_specification & spec){
+void ns_worm_learner::set_svm_model_specification(ns_worm_detection_model_cache::const_handle_t & spec){
 	model_specification = &spec;
-	cout << "Using model specification " << spec.model_name << "\n";
+	cout << "Using model specification " << spec().model_specification.model_name << "\n";
 }
 void ns_worm_learner::calculate_heatmap_overlay(){
 	ns_image_standard tmp;
@@ -614,7 +614,7 @@ void ns_worm_learner::analyze_time_path(const unsigned long region_id){
 	ns_time_path_solution time_path_solution;
 	ns_time_path_solver tp_solver;
 	tp_solver.load(region_id,sql());
-	tp_solver.solve(solver_parameters,time_path_solution);
+	tp_solver.solve(solver_parameters,time_path_solution,&sql());
 	time_path_solution.fill_gaps_and_add_path_prefixes(ns_time_path_solution::default_length_of_fast_moving_prefix());
 	time_path_solution.save_to_db(region_id,sql());
 				
@@ -1113,8 +1113,11 @@ void ns_handle_pair(const ns_random_picker_type::return_type & d1, const ns_rand
 void ns_worm_learner::simulate_multiple_worm_clumps(const bool use_waiting_time_cropping,const bool require_nearly_slow_moving){
 	ns_acquire_for_scope<ns_sql> sql(image_server.new_sql_connection(__FILE__,__LINE__));
 	load_current_experiment_movement_results(ns_death_time_annotation_set::ns_censoring_and_movement_transitions,data_selector.current_experiment_id());
-	unsigned long wait_time (image_server.get_posture_analysis_model_for_region(
-		movement_results.samples.begin()->regions.begin()->metadata.region_id,sql()).threshold_parameters.permanance_time_required_in_seconds);
+	ns_image_server::ns_posture_analysis_model_cache::const_handle_t handle;
+	image_server.get_posture_analysis_model_for_region(
+		movement_results.samples.begin()->regions.begin()->metadata.region_id, handle, sql());
+	unsigned long wait_time = handle().model_specification.threshold_parameters.permanance_time_required_in_seconds;
+	handle.release();
 	wait_time=24*60*60;
 
 	ns_compiler_random_picker_list random_pickers_by_strain;
@@ -1689,9 +1692,13 @@ void ns_worm_learner::output_movement_analysis_optimization_data(const ns_parame
 					denoising_parameters.movement_score_normalization = norm_type[k];
 
 					ns_time_path_image_movement_analyzer time_path_image_analyzer;
+					ns_image_server::ns_posture_analysis_model_cache::const_handle_t handle;
+					image_server.get_posture_analysis_model_for_region(region_id, handle, sql());
+
 					ns_acquire_for_scope<ns_analyzed_image_time_path_death_time_estimator> death_time_estimator(
-					ns_get_death_time_estimator_from_posture_analysis_model(
-					image_server.get_posture_analysis_model_for_region(region_id,sql())));
+					
+						ns_get_death_time_estimator_from_posture_analysis_model(
+					handle().model_specification));
 					time_path_image_analyzer.load_completed_analysis(region_id,time_path_solution,denoising_parameters,&death_time_estimator(),sql());
 					death_time_estimator.release();
 					ns_region_metadata metadata;
@@ -1867,13 +1874,15 @@ void ns_worm_learner::generate_experiment_movement_image_quantification_analysis
 				}
 				movement_results.samples[i].regions[j].time_path_solution.load_from_db(movement_results.samples[i].regions[j].metadata.region_id,sql(),true);
 				ns_posture_analysis_model dummy_model(ns_posture_analysis_model::dummy());
-				const ns_posture_analysis_model * posture_analysis_model(&dummy_model);
+				const ns_posture_analysis_model * posture_analysis_model(&dummy_model); 
+				ns_image_server::ns_posture_analysis_model_cache::const_handle_t handle;
 				if (detail_level != ns_build_worm_markov_posture_model_from_by_hand_annotations){
-					posture_analysis_model = &image_server.get_posture_analysis_model_for_region(movement_results.samples[i].regions[j].metadata.region_id,sql());
+					image_server.get_posture_analysis_model_for_region(movement_results.samples[i].regions[j].metadata.region_id, handle, sql());
+					posture_analysis_model = &handle().model_specification;
 				}
 				ns_acquire_for_scope<ns_analyzed_image_time_path_death_time_estimator> death_time_estimator(
 					ns_get_death_time_estimator_from_posture_analysis_model(
-					image_server.get_posture_analysis_model_for_region(movement_results.samples[i].regions[j].metadata.region_id,sql())));
+					handle().model_specification));
 				const ns_time_series_denoising_parameters time_series_denoising_parameters(ns_time_series_denoising_parameters::load_from_db(movement_results.samples[i].regions[j].metadata.region_id,sql()));
 
 				movement_results.samples[i].regions[j].time_path_image_analyzer.load_completed_analysis(
@@ -2688,9 +2697,9 @@ void ns_worm_learner::test_time_path_analysis_parameters(unsigned long region_id
 	for (unsigned int i = 0; i < parameters.size(); i++){
 		solutions[i].resize( parameters[i].size());
 		for (unsigned int j = 0; j < parameters[i].size(); j++){
-			//get the solution
+			//get the solutions
 			ns_time_path_solver tp(tp_solver);
-			tp.solve(parameters[i][j],solutions[i][j]);
+			tp.solve(parameters[i][j],solutions[i][j],&sql());
 	
 			//find which paths are new relative to the refence
 			vector<char> path_is_new_this_round(solutions[i][j].paths.size(),0);
@@ -2896,12 +2905,13 @@ struct ns_movement_quantification_visualization{
 					im[i*p.height+y][x] = g[i]->composit[y][x];
 				}
 		}
-		ns_font & font(font_server.default_font());
+		ns_acquire_lock_for_scope lock(font_server.default_font_lock, __FILE__, __LINE__);
+		ns_font & font(font_server.get_default_font());
 		font.set_height(14);
 		for(unsigned int i = 0; i < labels.size(); i++){
 			font.draw_grayscale(5,i*p.height+16,255,labels[i],im);
 		}
-
+		lock.release();
 	}
 	static void output(const std::string & base, int worm_id,unsigned long time, const ns_image_standard & im){
 		string full_dir(base + "im_" + ns_to_string(worm_id));
@@ -3995,7 +4005,9 @@ void ns_worm_learner::paste_from_clipboard(){
 }
 
 void ns_worm_learner::run_binary_morpholgical_manipulations(){
-	ns_remove_small_holes(current_image,110);
+	std::stack<ns_vector_2i> stack;
+	ns_image_bitmap b;
+	ns_remove_small_holes(current_image,110,stack,b);
 	draw();
 }
 
@@ -4352,7 +4364,7 @@ void ns_worm_learner::make_object_collage(){
 		ns_worm_detection_constants::get(ns_worm_detection_constant::minimum_worm_region_area,current_image.properties().resolution),
 		ns_worm_detection_constants::get(ns_worm_detection_constant::maximum_worm_region_area,current_image.properties().resolution),
 		ns_worm_detection_constants::get(ns_worm_detection_constant::maximum_region_diagonal,current_image.properties().resolution),
-		*model_specification,ns_worm_detection_constants::get(ns_worm_detection_constant::maximum_number_of_actual_worms_per_image),
+		(*model_specification)().model_specification,ns_worm_detection_constants::get(ns_worm_detection_constant::maximum_number_of_actual_worms_per_image),
 		"spine_debug_output");
 	ns_image_standard bmp;
 	current_image.pump(bmp,1024);
@@ -4382,7 +4394,7 @@ void ns_worm_learner::make_spine_collage(const bool svg,const std::string & svg_
 		ns_worm_detection_constants::get(ns_worm_detection_constant::minimum_worm_region_area,current_image.properties().resolution),
 		ns_worm_detection_constants::get(ns_worm_detection_constant::maximum_worm_region_area,current_image.properties().resolution),
 		ns_worm_detection_constants::get(ns_worm_detection_constant::maximum_region_diagonal,current_image.properties().resolution),
-		*model_specification,ns_worm_detection_constants::get(ns_worm_detection_constant::maximum_number_of_actual_worms_per_image),"spine_debug_output",ns_detected_worm_info::ns_vis_both);
+		(*model_specification)().model_specification,ns_worm_detection_constants::get(ns_worm_detection_constant::maximum_number_of_actual_worms_per_image),"spine_debug_output",ns_detected_worm_info::ns_vis_both);
 	worm_detection_results->create_spine_visualizations(current_image);
 	draw_image(-1,-1,current_image);
 	if (svg){
@@ -4399,7 +4411,7 @@ void ns_worm_learner::make_spine_collage_with_stats(const bool svg,const std::st
 		ns_worm_detection_constants::get(ns_worm_detection_constant::minimum_worm_region_area,current_image.properties().resolution),
 		ns_worm_detection_constants::get(ns_worm_detection_constant::maximum_worm_region_area,current_image.properties().resolution),
 		ns_worm_detection_constants::get(ns_worm_detection_constant::maximum_region_diagonal,current_image.properties().resolution),
-		*model_specification,ns_worm_detection_constants::get(ns_worm_detection_constant::maximum_number_of_actual_worms_per_image),"spine_debug_output",ns_detected_worm_info::ns_vis_both);
+		(*model_specification)().model_specification,ns_worm_detection_constants::get(ns_worm_detection_constant::maximum_number_of_actual_worms_per_image),"spine_debug_output",ns_detected_worm_info::ns_vis_both);
 	worm_detection_results->create_spine_visualizations_with_stats(current_image);
 	draw_image(-1,-1,current_image);
 	if (svg){
@@ -4417,7 +4429,7 @@ void ns_worm_learner::show_edges(){
 		ns_worm_detection_constants::get(ns_worm_detection_constant::minimum_worm_region_area,current_image.properties().resolution),
 		ns_worm_detection_constants::get(ns_worm_detection_constant::maximum_worm_region_area,current_image.properties().resolution),
 		ns_worm_detection_constants::get(ns_worm_detection_constant::maximum_region_diagonal,current_image.properties().resolution),
-		*model_specification,ns_worm_detection_constants::get(ns_worm_detection_constant::maximum_number_of_actual_worms_per_image),"spine_debug_output",ns_detected_worm_info::ns_vis_both);
+		(*model_specification)().model_specification,ns_worm_detection_constants::get(ns_worm_detection_constant::maximum_number_of_actual_worms_per_image),"spine_debug_output",ns_detected_worm_info::ns_vis_both);
 	worm_detection_results->create_edge_visualization(current_image);
 	draw_image(-1,-1,current_image);
 }
@@ -4430,7 +4442,7 @@ void ns_worm_learner::make_reject_spine_collage(const bool svg,const std::string
 		ns_worm_detection_constants::get(ns_worm_detection_constant::minimum_worm_region_area,current_image.properties().resolution),
 		ns_worm_detection_constants::get(ns_worm_detection_constant::maximum_worm_region_area,current_image.properties().resolution),
 		ns_worm_detection_constants::get(ns_worm_detection_constant::maximum_region_diagonal,current_image.properties().resolution),
-		*model_specification,ns_worm_detection_constants::get(ns_worm_detection_constant::maximum_number_of_actual_worms_per_image),"spine_debug_output",ns_detected_worm_info::ns_vis_both);
+		(*model_specification)().model_specification,ns_worm_detection_constants::get(ns_worm_detection_constant::maximum_number_of_actual_worms_per_image),"spine_debug_output",ns_detected_worm_info::ns_vis_both);
 	worm_detection_results->create_reject_spine_visualizations(current_image);
 	if (svg){
 		std::vector<ns_svg> objects;
@@ -4448,7 +4460,7 @@ void ns_worm_learner::make_reject_spine_collage_with_stats(const bool svg,const 
 		ns_worm_detection_constants::get(ns_worm_detection_constant::minimum_worm_region_area,current_image.properties().resolution),
 		ns_worm_detection_constants::get(ns_worm_detection_constant::maximum_worm_region_area,current_image.properties().resolution),
 		ns_worm_detection_constants::get(ns_worm_detection_constant::maximum_region_diagonal,current_image.properties().resolution),
-		*model_specification,ns_worm_detection_constants::get(ns_worm_detection_constant::maximum_number_of_actual_worms_per_image),"spine_debug_output",ns_detected_worm_info::ns_vis_both);
+		(*model_specification)().model_specification,ns_worm_detection_constants::get(ns_worm_detection_constant::maximum_number_of_actual_worms_per_image),"spine_debug_output",ns_detected_worm_info::ns_vis_both);
 	worm_detection_results->create_reject_spine_visualizations_with_stats(current_image);
 	if (svg){
 		std::vector<ns_svg> objects;
@@ -4483,7 +4495,8 @@ void ns_worm_learner::difference_threshold(){
 	to_bw();
 	//find correct threshold level and use it.
 	//current_image->thresholder->current_image_indirect->current_image
-	font_server.default_font().set_height(48);
+	ns_acquire_lock_for_scope lock(font_server.default_font_lock, __FILE__, __LINE__);
+	font_server.get_default_font().set_height(48);
 	unsigned int res = 10;
 	std::vector<ns_image_standard> images(res*res );
 	#pragma omp parallel for
@@ -4494,8 +4507,9 @@ void ns_worm_learner::difference_threshold(){
 			ns_difference_thresholder::run(current_image, images[i+res*j],difference,kernel_size,0);
 			ns_text_stream_t s;
 			s << "D=" << difference << " K = " << kernel_size;
-			font_server.default_font().draw(0,60,ns_color_8(155,155,155),s.text(),images[i+res*j]);
+			font_server.get_default_font().draw(0,60,ns_color_8(155,155,155),s.text(),images[i+res*j]);
 		}
+	lock.release();
 	ns_make_collage(images, current_image, 512);
 
 	/*
@@ -4689,12 +4703,12 @@ void ns_worm_learner::process_contiguous_regions(){
 		ns_worm_detection_constants::get(ns_worm_detection_constant::minimum_worm_region_area,current_image.properties().resolution),
 		ns_worm_detection_constants::get(ns_worm_detection_constant::maximum_worm_region_area,current_image.properties().resolution),
 		ns_worm_detection_constants::get(ns_worm_detection_constant::maximum_region_diagonal,current_image.properties().resolution),
-		*model_specification,1000,debug_file,ns_detected_worm_info::ns_vis_both);
+		(*model_specification)().model_specification,1000,debug_file,ns_detected_worm_info::ns_vis_both);
 
 	cerr << "min object size: " << 
 	ns_worm_detection_constants::get(ns_worm_detection_constant::minimum_worm_region_area,current_image.properties().resolution) << "; max object size: " << 
 		ns_worm_detection_constants::get(ns_worm_detection_constant::maximum_worm_region_area,current_image.properties().resolution)<< "; max object diagonal: " << 
-		ns_worm_detection_constants::get(ns_worm_detection_constant::maximum_region_diagonal,current_image.properties().resolution) << " model file: " << model_specification->model_name << "\n";
+		ns_worm_detection_constants::get(ns_worm_detection_constant::maximum_region_diagonal,current_image.properties().resolution) << " model file: " << (*model_specification)().model_specification.model_name << "\n";
 
 
 	cout << worm_detection_results->actual_worm_list().size() << " out of " << worm_detection_results->number_of_putative_worms() << " potential objects were identified as worms.\n";
@@ -6454,11 +6468,11 @@ ns_worm_learner::~ns_worm_learner(){
 
 void ns_worm_learner::train_from_data(const std::string & base_dir){
 	ns_acquire_for_scope<ns_sql> sql(image_server.new_sql_connection(__FILE__,__LINE__));
-	training_file_generator.generate_from_curated_set(base_dir,*model_specification,true,&sql());
+	training_file_generator.generate_from_curated_set(base_dir,(*model_specification)().model_specification,true,&sql());
 	sql.release();
 }
-ns_svm_model_specification & ns_worm_learner::get_svm_model_specification(){
-	return *model_specification;
+const ns_svm_model_specification & ns_worm_learner::get_svm_model_specification(){
+	return (*model_specification)().model_specification;
 }
 
 extern ns_worm_learner worm_learner;

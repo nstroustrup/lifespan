@@ -477,6 +477,7 @@
     <ClCompile Include="..\ns_image_server\image_processing\ns_difference_thresholder.cpp" />
     <ClCompile Include="..\ns_image_server\image_processing\ns_heat_map_interpolation.cpp" />
     <ClCompile Include="..\ns_image_server\image_processing\ns_identify_contiguous_bitmap_regions.cpp" />
+    <ClCompile Include="..\ns_image_server\image_processing\ns_image_registration_cache.cpp" />
     <ClCompile Include="..\ns_image_server\image_processing\ns_image_tools.cpp" />
     <ClCompile Include="..\ns_image_server\image_processing\ns_movement_visualization_generator.cpp" />
     <ClCompile Include="..\ns_image_server\image_processing\ns_node_topology.cpp" />

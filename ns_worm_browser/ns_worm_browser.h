@@ -595,7 +595,7 @@ public:
 	void zhang_thinning();
 	void compress_dark_noise();
 	void two_stage_threshold(const bool & make_vis=false);
-	void set_svm_model_specification(ns_svm_model_specification & spec);
+	void set_svm_model_specification(ns_worm_detection_model_cache::const_handle_t & spec);
 	void run_binary_morpholgical_manipulations();
 	void to_bw();
 	void to_color();
@@ -716,8 +716,8 @@ public:
 
 	//GUI
 	const std::string & get_experiment_name(const unsigned long id);
-	std::vector<ns_svm_model_specification* > model_specifications;
-	ns_svm_model_specification & get_svm_model_specification();
+	std::vector<ns_worm_detection_model_cache::const_handle_t>  model_specifications;
+	const ns_svm_model_specification & get_svm_model_specification();
 
 	void draw_image(const double x, const double y, ns_image_standard & image, float dynamic_stretch_factor=0);
 	void draw_line_on_overlay(const ns_vector_2i & a, const ns_vector_2i & b);
@@ -826,7 +826,7 @@ public:
 				worm_window;
 
 	ns_experiment_storyboard_spec::ns_storyboard_flavor current_storyboard_flavor;
-	ns_svm_model_specification default_model;	
+	ns_worm_detection_model_cache::const_handle_t default_model;
 	std::string current_mask_filename;
 	float dynamic_range_rescale;
 private:
@@ -851,7 +851,7 @@ private:
 
 	ns_area_handler area_handler;
 
-	ns_svm_model_specification * model_specification;
+	ns_worm_detection_model_cache::const_handle_t * model_specification;
 
 	ns_image_mask_analyzer<ns_8_bit > mask_analyzer;
 

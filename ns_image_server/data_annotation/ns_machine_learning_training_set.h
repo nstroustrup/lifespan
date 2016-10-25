@@ -42,11 +42,11 @@ public:
 
 class ns_training_file_generator{
 public:
-	void generate_from_curated_set(const std::string & directory, ns_svm_model_specification & model_specification, bool use_training_collages,ns_sql * sql_for_looking_up_genotypes);
+	void generate_from_curated_set(const std::string & directory, const ns_svm_model_specification & model_specification, bool use_training_collages,ns_sql * sql_for_looking_up_genotypes);
 
 	void plot_errors_on_freq(const std::string & results_filename);
 
-	void re_threshold_training_set(const std::string &directory, ns_svm_model_specification & model);
+	void re_threshold_training_set(const std::string &directory, const ns_svm_model_specification & model);
 
 	void repair_xml_metadata(const std::string & directory_with_problems, const std::string & reference_directory, const std::string & output_directory);
 
@@ -73,16 +73,16 @@ public:
 	std::vector<ns_graph_object> non_worm_distributions;
 
 
-	void add_object_to_training_set(ns_svm_model_specification & model, const bool is_a_worm, const std::string & filename, const std::string & relative_filename, ns_detected_worm_info & worm, const long long & region_id);
+	void add_object_to_training_set(const ns_svm_model_specification & model, const bool is_a_worm, const std::string & filename, const std::string & relative_filename, ns_detected_worm_info & worm, const long long & region_id);
 
 	void output_image_stats(std::ostream & out_training_data, const bool is_a_worm, ns_detected_worm_stats & stats);
 
 
-	void re_threshold_image(const std::string & fname,const bool take_best_spine_solution, ns_svm_model_specification & model);
-	void re_threshold_image(ns_image_standard & im,std::vector<ns_image_standard> & new_test_images, const bool take_best_spine_solution, ns_svm_model_specification & model);
+	void re_threshold_image(const std::string & fname,const bool take_best_spine_solution, const ns_svm_model_specification & model);
+	void re_threshold_image(ns_image_standard & im,std::vector<ns_image_standard> & new_test_images, const bool take_best_spine_solution, const ns_svm_model_specification & model);
 	
-	void output_training_set_excluding_stats(std::vector<ns_detected_worm_stats> & worm_stats, std::vector<ns_detected_worm_stats> & non_worm_stats, const std::vector<ns_detected_worm_classifier> & excluded_stats, ns_svm_model_specification & model, const std::string & base_directory,const std::string & genotype_specific_directory,const std::string & base_filename);
-	void output_training_set_including_stats(std::vector<ns_detected_worm_stats> & worm_stats, std::vector<ns_detected_worm_stats> & non_worm_stats, const std::vector<ns_detected_worm_classifier> & included_stats, ns_svm_model_specification & model, const std::string & base_directory,const std::string & genotype_specific_directory,const std::string & base_filename);
+	void output_training_set_excluding_stats(std::vector<ns_detected_worm_stats> & worm_stats, std::vector<ns_detected_worm_stats> & non_worm_stats, const std::vector<ns_detected_worm_classifier> & excluded_stats, const ns_svm_model_specification & model, const std::string & base_directory,const std::string & genotype_specific_directory,const std::string & base_filename);
+	void output_training_set_including_stats(std::vector<ns_detected_worm_stats> & worm_stats, std::vector<ns_detected_worm_stats> & non_worm_stats, const std::vector<ns_detected_worm_classifier> & included_stats, const ns_svm_model_specification & model, const std::string & base_directory,const std::string & genotype_specific_directory,const std::string & base_filename);
 	std::vector<std::string> genotypes_in_set;
 
 };

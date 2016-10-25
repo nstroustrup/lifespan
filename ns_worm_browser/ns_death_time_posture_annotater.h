@@ -94,13 +94,15 @@ public:
 			}
 		}
 //		vis_info.from_xml(temp_buffer.properties().description);
-		ns_font & font(font_server.default_font());
+		ns_acquire_lock_for_scope lock(font_server.default_font_lock, __FILE__, __LINE__);
+		ns_font & font(font_server.get_default_font());
 		font.set_height(ns_text_height);
 		ns_vector_2i label_position(im.im->properties().width-3*ns_bottom_border_height,im.im->properties().height-ns_text_distance_from_bottom);
 		font.draw_color(label_position.x,label_position.y,ns_color_8(255,255,255),ns_to_string(frame_id+1) + "/" + ns_to_string(total_number_of_frames),*im.im);
 		if (output_absolute_times && max_time!=0){
 			font.draw_color(ns_bottom_border_height,label_position.y,ns_color_8(255,255,255),ns_format_time_string_for_human(max_time),*im.im);
 		}
+		lock.release();
 		im.loaded = true;
 	}
 	

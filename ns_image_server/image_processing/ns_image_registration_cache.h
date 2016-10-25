@@ -4,6 +4,7 @@
 #include "ns_buffered_random_access_image.h"
 #include "ns_image_storage_handler.h"
 #include "ns_simple_cache.h"
+#include "ns_subpixel_image_alignment.h"
 
 #define NS_MAX_CAPTURED_IMAGE_REGISTRATION_VERTICAL_OFFSET 200
 
@@ -192,6 +193,7 @@ private:
 private:	
 	std::string whole_filename,
 		downsampled_filename;
+
 	ns_image_storage_source_handle<ns_8_bit> whole_image_source,
 											 downsampled_image_2_source;
 };
@@ -223,10 +225,35 @@ public:
 	void cleanup(ns_image_storage_handler * image_storage){whole_image.clear();downsampled_image.clear();downsampled_image_2.clear();}
 };
 
-class test_class : public ns_simple_cache_data<ns_image_server_image, ns_image_registration_profile_data_source,ns_64_bit> {
+typedef ns_simple_cache<ns_disk_buffered_image_registration_profile,ns_64_bit, true> ns_image_registration_profile_cache;
+
+
+
+
+struct ns_image_fast_registration_profile_data_source {
+	ns_sql * sql;
+	const ns_image_storage_handler * image_storage;
+	//	unsigned long downsample_factor;
+};
+
+
+class ns_image_fast_registration_profile :  public ns_simple_cache_data<ns_image_server_image, ns_image_fast_registration_profile_data_source, ns_64_bit> {
 public:
+	ns_image_server_image image_record;
+	ns_gaussian_pyramid * pyramid;
+	template<class a, class b, bool c>
+	friend class ns_simple_cache;
+private:
+	ns_64_bit size_in_memory_in_kbytes() const;
+
+	void load_from_external_source(const ns_image_server_image & im, ns_image_fast_registration_profile_data_source & data_source);
+	void clean_up(ns_image_fast_registration_profile_data_source & data_source);
+	const ns_64_bit & id() const { return image_record.id; }
+	ns_64_bit to_id(const ns_image_server_image & im) const { return im.id; }
 
 };
-typedef ns_simple_cache<ns_disk_buffered_image_registration_profile,ns_64_bit, true> ns_image_registration_profile_cache;
+
+
+typedef ns_simple_cache<ns_image_fast_registration_profile, ns_64_bit, true> ns_image_fast_registration_profile_cache;
 
 #endif

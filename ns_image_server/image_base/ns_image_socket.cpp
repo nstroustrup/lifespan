@@ -1,6 +1,6 @@
 #include "ns_image_socket.h"
 
-using namespace std;
+using namespace std; 
 
 unsigned int ns_image_properties_length_as_char(){
 	ns_image_properties p;

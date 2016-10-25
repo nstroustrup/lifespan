@@ -18,6 +18,7 @@ struct ns_alignment_state {
 
 #define USE_INTEL_IPP
 #ifdef USE_INTEL_IPP
+
 //builds a gausian pyramid and compares image gradients to solve for optimal alignment at each pyramid level
 class ns_gaussian_pyramid;
 class ns_gradient_shift;
@@ -42,7 +43,7 @@ public:
 
 
 	//xxx
-	ns_vector_2d debug_gold_standard_shift;
+	//ns_vector_2d debug_gold_standard_shift;
 
 private:
 	const ns_vector_2<float> max_offset, bottom_offset, size_offset;

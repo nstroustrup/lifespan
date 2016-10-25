@@ -7,6 +7,7 @@
 #include "ns_hand_annotation_loader.h"
 #include "ns_image_registration.h"
 #include "ns_simple_cache.h"
+#include "ns_gaussian_pyramid.h"
 using namespace std;
 
 void ns_check_for_file_errors(ns_processing_job & job, ns_sql & sql){
@@ -1904,11 +1905,10 @@ void ns_image_processing_pipeline::apply_mask(ns_image_server_captured_image & c
 
 
 		ns_vector_2i offset = ns_vector_2i(0, 0);
-		ns_image_registration_profile_cache::handle_t profile;
-		ns_image_registration_profile_data_source profile_data_source;
+		ns_image_fast_registration_profile_cache::handle_t profile;
+		ns_image_fast_registration_profile_data_source profile_data_source;
 		profile_data_source.sql = &sql;
 		profile_data_source.image_storage = &image_server_const.image_storage;
-		profile_data_source.max_average_dimention = 500;
 
 		bool delete_registration_profile_after_use;
 		if (apply_vertical_image_registration)
@@ -2027,7 +2027,7 @@ void ns_image_processing_pipeline::apply_mask(ns_image_server_captured_image & c
 		mask_splitter.specificy_sample_image_statistics(sample_image_statistics);
 
 		try {
-			profile().whole_image.pump(mask_splitter, _image_chunk_size);
+			profile().pyramid->pump(mask_splitter, _image_chunk_size);
 
 			//mark all regions as processed.
 			for (unsigned int i = 0; i < output_regions.size(); i++) {
@@ -2518,7 +2518,7 @@ bool ns_image_processing_pipeline::check_for_precalculated_registration(const ns
 	return false;
 }
 
-ns_vector_2i ns_image_processing_pipeline::get_vertical_registration(const ns_image_server_captured_image & captured_image, ns_image_server_image & source, ns_image_registration_profile_cache::handle_t & requested_image, ns_image_registration_profile_cache::external_source_type & external_source){
+ns_vector_2i ns_image_processing_pipeline::get_vertical_registration(const ns_image_server_captured_image & captured_image, ns_image_server_image & source, ns_image_fast_registration_profile_cache::handle_t & requested_image, ns_image_fast_registration_profile_cache::external_source_type & external_source){
 	ns_vector_2i registration_offset;
 	//delete_profile_after_use = false;
 	/*if (check_for_precalculated_registration(captured_image,registration_offset,sql)){
@@ -2530,7 +2530,7 @@ ns_vector_2i ns_image_processing_pipeline::get_vertical_registration(const ns_im
 	bool registration_image_loaded = false;
 	unsigned long attempts = 0;
 	ns_image_server_image reference_image_db_record;	
-	ns_image_registration_profile_cache::handle_t reference_image_profile;
+	ns_image_fast_registration_profile_cache::handle_t reference_image_profile;
 	
 	*external_source.sql << "SELECT image_id, id, never_delete_image FROM captured_images WHERE sample_id = " << captured_image.sample_id << " AND never_delete_image = 1 AND problem = 0 AND censored = 0 ORDER BY capture_time ASC LIMIT 5";
 	ns_sql_result res;
@@ -2565,14 +2565,19 @@ ns_vector_2i ns_image_processing_pipeline::get_vertical_registration(const ns_im
 	t.start();
 	image_server.image_registration_profile_cache.get_for_write(source, requested_image,external_source);
 	
-//cerr << "cache subject: " << t.stop()/1000.0/1000.0 << "\n";
+	cerr << "cache subject: " << t.stop()/1000.0/1000.0 << "\n";
 	
 	image_server_const.register_server_event(ns_image_server_event("Aligning sample image to reference image."),external_source.sql);
 	t.start();
-	ns_vector_2i offset(ns_image_registration<127,ns_8_bit>::register_full_images(reference_image_profile(), requested_image(),ns_vector_2i(400,400)));
-	//cerr << "Total Registration time: " << t.stop()/1000.0/1000.0 << "\n";
+	ns_calc_best_alignment_fast aligner(ns_vector_2i(1000,1000), ns_vector_2i(0,0), ns_vector_2i(0, 0));
+	bool saturated_offset;
+	ns_vector_2d fine_offset = aligner(ns_vector_2d(0, 0), ns_vector_2d(1000, 1000), reference_image_profile().pyramid, requested_image().pyramid, saturated_offset);
+
+	ns_vector_2i offset(round(fine_offset.x), round(fine_offset.y));
+
+	cerr << "Total Registration time: " << t.stop()/1000.0/1000.0 << "\n";
 	//exit(0);
-	//cerr << "Alignment: " << offset.x << "," << offset.y << "\n";
+	cerr << "Alignment: " << offset.x << "," << offset.y << "\n";
 	*external_source.sql << "UPDATE captured_images SET registration_horizontal_offset='" << offset.x << "', registration_vertical_offset='" << offset.y << "', registration_offset_calculated=1 WHERE id = " << captured_image.captured_images_id;
 	//cerr << sql.query() << "\n";
 	external_source.sql->send_query();
@@ -2645,11 +2650,11 @@ void ns_rerun_image_registration(const ns_64_bit region_id, ns_sql & sql){
 	ns_64_bit ref_image_id = 0;
 	long i = 0;
 
-	ns_image_registration_profile_cache::handle_t reference_profile;
-	ns_image_registration_profile_data_source profile_data_source;
+	ns_image_fast_registration_profile_cache::handle_t reference_profile;
+	ns_image_fast_registration_profile_data_source profile_data_source;
 	profile_data_source.sql = &sql;
 	profile_data_source.image_storage = &image_server_const.image_storage;
-	profile_data_source.max_average_dimention = 500;
+//	profile_data_source.max_average_dimention = 500;
 
 
 	while(ref_image_id == 0){
@@ -2664,7 +2669,7 @@ void ns_rerun_image_registration(const ns_64_bit region_id, ns_sql & sql){
 		i++;
 	}
 	
-	ns_image_registration_profile_cache::handle_t subject_profile;
+	ns_image_fast_registration_profile_cache::handle_t subject_profile;
 	ns_image_standard buffer;
 	buffer.use_more_memory_to_avoid_reallocations();
 	for (;i<res.size();i++){
@@ -2682,8 +2687,12 @@ void ns_rerun_image_registration(const ns_64_bit region_id, ns_sql & sql){
 			}else source_im.id = unprocessed_id;
 			image_server.image_registration_profile_cache.get_for_write(source_im, subject_profile, profile_data_source);
 
-			ns_vector_2i offset(ns_image_registration<127,ns_8_bit>::register_full_images(reference_profile(),subject_profile(),ns_vector_2i(400,400)));
-			
+			ns_calc_best_alignment_fast aligner(ns_vector_2i(1000, 1000), ns_vector_2i(0, 0), ns_vector_2i(0, 0));
+			bool saturated_offset;
+			ns_vector_2d fine_offset = aligner(ns_vector_2d(0, 0), ns_vector_2d(1000, 1000), reference_profile().pyramid, subject_profile().pyramid, saturated_offset);
+
+			ns_vector_2i offset(round(fine_offset.x), round(fine_offset.y));
+
 			//ns_vector_2i offset(-500,500);
 			cout << (100*i)/res.size() << "%: " << ns_format_time_string_for_human(capture_time) << "\n";
 			
@@ -2696,10 +2705,10 @@ void ns_rerun_image_registration(const ns_64_bit region_id, ns_sql & sql){
 				ns_image_server_image backup_image = region_image.create_storage_for_processed_image(ns_process_unprocessed_backup,ns_tiff,&sql);
 				bool had_to_use_volatile_storage;
 				ns_image_storage_reciever_handle<ns_8_bit> out_im(image_server_const.image_storage.request_storage(backup_image,ns_tiff,1024,&sql,had_to_use_volatile_storage,false,false));
-				subject_profile().whole_image.pump(out_im.output_stream(),1024);
+				subject_profile().pyramid->pump(out_im.output_stream(),1024);
 				out_im.clear();
 			}
-			subject_profile().whole_image.pump(buffer, 1024);
+			subject_profile().pyramid->pump(buffer, 1024);
 			ns_shift_image_by_offset(buffer,offset);
 
 			ns_image_server_image dest_im;

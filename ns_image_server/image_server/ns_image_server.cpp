@@ -2213,7 +2213,7 @@ void ns_image_server::shut_down_host(){
 		sql.send_query("COMMIT");
 }*/
 
-void ns_svm_model_specification::write_statistic_ranges(const std::string & filename, bool write_all_features){
+void ns_svm_model_specification::write_statistic_ranges(const std::string & filename, bool write_all_features) const{
 	
 
 	ofstream out(filename.c_str());
@@ -2613,6 +2613,7 @@ void ns_image_server::load_all_worm_detection_models(std::vector<ns_worm_detecti
 		get_worm_detection_model(model_name,spec[count]);
 		count++;
 	}
+	spec.resize(count);
 }
 
 #ifndef NS_MINIMAL_SERVER_BUILD

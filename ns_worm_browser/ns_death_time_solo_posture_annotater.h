@@ -84,10 +84,12 @@ public:
 	void load_movement_analysis(const unsigned long region_id_,ns_sql & sql, const bool load_movement_quantification = false){
 		solution.load_from_db(region_id_,sql,true);
 		const ns_time_series_denoising_parameters time_series_denoising_parameters(ns_time_series_denoising_parameters::load_from_db(region_id_,sql));
-
+		ns_image_server::ns_posture_analysis_model_cache::const_handle_t handle;
+		image_server.get_posture_analysis_model_for_region(region_id_, handle, sql);
 		ns_acquire_for_scope<ns_analyzed_image_time_path_death_time_estimator> death_time_estimator(
-				ns_get_death_time_estimator_from_posture_analysis_model(
-				image_server.get_posture_analysis_model_for_region(region_id_,sql)));
+				ns_get_death_time_estimator_from_posture_analysis_model(handle().model_specification
+				));
+		handle.release();
 		loaded_path_data_successfully = movement_analyzer.load_completed_analysis(region_id_,solution,time_series_denoising_parameters,&death_time_estimator(),sql,!load_movement_quantification);
 		death_time_estimator.release();
 	}
@@ -390,7 +392,8 @@ private:
 		const ns_death_time_solo_posture_annotater_timepoint * tp(static_cast<const ns_death_time_solo_posture_annotater_timepoint * >(tp_a));
 		const unsigned long clear_thickness(5);
 		const unsigned long thickness_offset(3);
-		ns_font & font(font_server.default_font());
+		ns_acquire_lock_for_scope lock(font_server.default_font_lock, __FILE__, __LINE__);
+		ns_font & font(font_server.get_default_font());
 		const unsigned long text_height(14);
 		font.set_height(text_height);
 		ns_vector_2i bottom_margin_bottom(bottom_margin_position());
@@ -512,7 +515,8 @@ private:
 
 //		font.set_height(im.properties().height/40);
 	//	font.draw_color(1,im.properties().height/39,ns_color_8(255,255,255),ns_format_time_string_for_human(tp->absolute_time),im);
-	}
+		lock.release();
+}
 
 	
 

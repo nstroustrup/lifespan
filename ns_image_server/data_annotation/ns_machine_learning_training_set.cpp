@@ -285,7 +285,7 @@ void ns_training_file_generator::repair_xml_metadata(const std::string & directo
 	}
 }
 
-void ns_training_file_generator::generate_from_curated_set(const std::string & directory, ns_svm_model_specification & model_specification, bool use_training_collages=true,ns_sql * sql_for_looking_up_genotypes=0){
+void ns_training_file_generator::generate_from_curated_set(const std::string & directory, const  ns_svm_model_specification & model_specification, bool use_training_collages=true,ns_sql * sql_for_looking_up_genotypes=0){
 	std::string source_dir = ns_dir::extract_path(directory);
 	cerr << "Loading training set images from " << directory << "...\n";
 	ns_dir dir;	
@@ -958,7 +958,7 @@ void ns_training_file_generator::plot_errors_on_freq(const std::string & results
 	cerr << "Done.\n";
 }
 
-void ns_training_file_generator::re_threshold_training_set(const std::string &directory, ns_svm_model_specification & model){
+void ns_training_file_generator::re_threshold_training_set(const std::string &directory,const  ns_svm_model_specification & model){
 	std::string base_dir = ns_dir::extract_path(directory);
 	training_set_base_dir = base_dir;
 	ns_dir dir;
@@ -1208,7 +1208,7 @@ void ns_training_file_generator::lookup_genotypes(ns_sql & sql){
 		genotypes_in_set.push_back(p->first);
 }
 
-void ns_training_file_generator::add_object_to_training_set(ns_svm_model_specification & model, const bool is_a_worm, const std::string & filename, const std::string & relative_filename, ns_detected_worm_info & worm, const long long & region_id){
+void ns_training_file_generator::add_object_to_training_set(const ns_svm_model_specification & model, const bool is_a_worm, const std::string & filename, const std::string & relative_filename, ns_detected_worm_info & worm, const long long & region_id){
 
 	ns_detected_worm_stats stats = worm.generate_stats();
 
@@ -1342,7 +1342,7 @@ void ns_training_file_generator::output_image_stats(ostream & out_training_data,
 }		
 
 
-void ns_training_file_generator::re_threshold_image(const std::string & fname,const bool take_best_spine_solution, ns_svm_model_specification & model){
+void ns_training_file_generator::re_threshold_image(const std::string & fname,const bool take_best_spine_solution, const ns_svm_model_specification & model){
 	ns_image_standard im;
 	ns_load_image(fname, im);
 	std::vector<ns_image_standard> new_images;
@@ -1367,7 +1367,7 @@ void ns_training_file_generator::re_threshold_image(const std::string & fname,co
 
 }
 
-void ns_training_file_generator::re_threshold_image(ns_image_standard & im,std::vector<ns_image_standard> & new_test_images, const bool take_best_spine_solution, ns_svm_model_specification & model){
+void ns_training_file_generator::re_threshold_image(ns_image_standard & im,std::vector<ns_image_standard> & new_test_images, const bool take_best_spine_solution, const ns_svm_model_specification & model){
 	throw ns_ex("Needs to be reimpemented for new training set encoding");
 	ns_image_properties p = im.properties();
 	if (p.components != 3)
@@ -1442,9 +1442,10 @@ void ns_training_file_generator::re_threshold_image(ns_image_standard & im,std::
 	}
 }
 
-void ns_training_file_generator::output_training_set_including_stats(std::vector<ns_detected_worm_stats> & worm_stats, std::vector<ns_detected_worm_stats> & non_worm_stats, const std::vector<ns_detected_worm_classifier> & included_stats, ns_svm_model_specification & model, const std::string & base_directory,const std::string & genotype_specific_directory,const std::string & base_filename){
+void ns_training_file_generator::output_training_set_including_stats(std::vector<ns_detected_worm_stats> & worm_stats, std::vector<ns_detected_worm_stats> & non_worm_stats, const std::vector<ns_detected_worm_classifier> & included_stats, const ns_svm_model_specification & model_base, const std::string & base_directory,const std::string & genotype_specific_directory,const std::string & base_filename){
 	if (worm_stats.size() == 0)
 		return;
+	ns_svm_model_specification model = model_base;
 	vector<string> genotypes_to_output;
 	genotypes_to_output.push_back("");//all genotypes
 	genotypes_to_output.insert(genotypes_to_output.end(),genotypes_in_set.begin(),genotypes_in_set.end());
@@ -1534,7 +1535,7 @@ void ns_training_file_generator::output_training_set_including_stats(std::vector
 }
 
 
-void ns_training_file_generator::output_training_set_excluding_stats(std::vector<ns_detected_worm_stats> & worm_stats, std::vector<ns_detected_worm_stats> & non_worm_stats, const std::vector<ns_detected_worm_classifier> & excluded_stats, ns_svm_model_specification & model, const std::string & base_directory,const std::string & genotype_specific_directory,const std::string & base_filename){
+void ns_training_file_generator::output_training_set_excluding_stats(std::vector<ns_detected_worm_stats> & worm_stats, std::vector<ns_detected_worm_stats> & non_worm_stats, const std::vector<ns_detected_worm_classifier> & excluded_stats, const ns_svm_model_specification & model, const std::string & base_directory,const std::string & genotype_specific_directory,const std::string & base_filename){
 	vector<char> use_stat(model.included_statistics.size(),1);
 
 	for (unsigned int i = 0; i < excluded_stats.size(); i++)

@@ -1,4 +1,5 @@
 #pragma once
+#include "ns_subpixel_image_alignment.h"
 #include "ipp.h"
 #ifdef _MSC_VER
 #define finline                     __forceinline
@@ -116,21 +117,38 @@ private:
 };
 
 
-class ns_gaussian_pyramid {
+class ns_gaussian_pyramid : public ns_image_stream_sender<ns_8_bit, ns_gaussian_pyramid, unsigned long>{
 public:
-	ns_gaussian_pyramid() :image_size(0, 0, 0),
+	ns_gaussian_pyramid() :_properties(0, 0, 0),
 		pyrLStateSize(0), pyrLBufferSize(0), max_pyrLStateSize(0), max_pyrLBufferSize(0), pPyrLStateBuf(0), pPyrLBuffer(0),
-		pPyrStruct(0), pPyrBuffer(0), pPyrStrBuffer(0), max_pyrBufferSize(0), max_pyrStructSize(0), pyrBufferSize(0), pyrStructSize(0) {}
+		pPyrStruct(0), ns_image_stream_sender<ns_8_bit, ns_gaussian_pyramid, unsigned long>(ns_image_properties(0,0,0),this),pPyrBuffer(0), pPyrStrBuffer(0), max_pyrBufferSize(0), max_pyrStructSize(0), pyrBufferSize(0), pyrStructSize(0) {}
 	void clear() {
 		for (unsigned int i = 0; i < ns_calc_best_alignment_fast::ns_max_pyramid_size; i++)
 			image_scaled[i].clear();
-		image_size.width = image_size.height = 0;
+		_properties.width = _properties.height = 0;
 		ns_ipps_safe_delete(pPyrLStateBuf);
 		ns_ipps_safe_delete(pPyrLBuffer);
 		ns_ipps_safe_delete(pPyrStrBuffer);
 		ns_ipps_safe_delete(pPyrBuffer);
 	}
 	~ns_gaussian_pyramid() { clear(); }
+
+	template< class sender_t >
+	void recieve_and_calculate(sender_t & source) {
+		allocate(source.input_stream().properties());
+		ns_image_stream_buffer_properties p;
+		p.height = 1; 
+		p.width = _properties.width;
+		ns_image_stream_static_buffer<ns_8_bit> buffer(p);
+		unsigned long source_state = source.input_stream().init_send();
+		for (unsigned int y = 0; y < _properties.height; y++) {
+			source.input_stream().send_lines(buffer, 1, source_state);
+			for (unsigned int x = 0; x < _properties.width; x++)
+				image_scaled[0].val(y, x) = buffer[0][x] / 255.f;
+		}
+		source.input_stream().finish_send();
+		calculate();
+	}
 
 	template<class T>
 	void calculate(const ns_image_whole<T> & im) {
@@ -142,6 +160,49 @@ public:
 			for (unsigned int x = 0; x < p.width; x++)
 				image_scaled[0].val(y, x) = im[y][x] / 255.f;
 
+		calculate();
+	}
+	template<class T>
+	void calculate(const T & im) {
+		ns_image_properties p(im.properties());
+		allocate(p);
+
+		//copy over raw image to first layer of pyramid
+		for (unsigned int y = 0; y < p.height; y++)
+			for (unsigned int x = 0; x < p.width; x++)
+				image_scaled[0].val(y, x) = im[y][x] / 255.f;
+		calculate();
+		
+	}
+
+
+	//contains some temporary image data buffers that are kept to avoid reallocating memory each time
+	ns_intel_image_32f image_scaled[ns_calc_best_alignment_fast::ns_max_pyramid_size];
+	const ns_image_properties & properties() const { return _properties; }
+	int num_current_pyramid_levels;
+
+	unsigned long seek_to_beginning() { return 0; }
+	unsigned long  init_send() { return 0; }
+	void finish_send() {}
+	unsigned long init_send_const()const {return 0;}
+	void finish_send_const()const {}
+	template<class buffer_t>
+	void send_lines(buffer_t & buffer, 
+							const unsigned int number_of_lines_requested, 
+							unsigned long & current_state) {
+
+		for (unsigned int y = 0; y < number_of_lines_requested; y++)
+			for (unsigned int x = 0; x < _properties.width; x++) {
+				buffer[y][x] = (ns_8_bit)round(255.0 * image_scaled[0].val(y + current_state,x));
+			}
+		current_state += number_of_lines_requested;
+	}
+
+
+
+private:
+	ns_image_properties _properties;
+	void calculate() {
 		/* Perform downsampling of the image with 5x5 Gaussian kernel */
 		for (int i = 1; i < num_current_pyramid_levels; i++) {
 			int status = ippiPyramidLayerDown_32f_C1R(image_scaled[i - 1].buffer, pPyrStruct->pStep[i - 1], pPyrStruct->pRoi[i - 1],
@@ -149,16 +210,8 @@ public:
 			if (status != ippStsNoErr)
 				throw ns_ex("Could not calculate pyramid layer ") << i;
 		}
+
 	}
-
-
-	//contains some temporary image data buffers that are kept to avoid reallocating memory each time
-	ns_intel_image_32f image_scaled[ns_calc_best_alignment_fast::ns_max_pyramid_size];
-	ns_image_properties image_size;
-	int num_current_pyramid_levels;
-
-
-private:
 
 	void allocate(const ns_image_properties & image) {
 
@@ -212,7 +265,7 @@ private:
 			throw ns_ex("Could not init pyramid layers");
 		/* Allocate pyramid layers */
 
-		image_size = image;
+		_properties = image;
 		for (int i = 0; i < num_current_pyramid_levels; i++) {
 			if (image_scaled[i].properties().width != pPyrStruct->pRoi[i].width ||
 				image_scaled[i].properties().height != pPyrStruct->pRoi[i].height)

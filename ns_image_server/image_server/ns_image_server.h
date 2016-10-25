@@ -436,7 +436,7 @@ public:
 	unsigned handle_software_updates()const{return multiprocess_control_options.handle_software_updates;}
 
 	
-	ns_simple_cache<ns_disk_buffered_image_registration_profile, ns_64_bit,true> image_registration_profile_cache;
+	ns_simple_cache<ns_image_fast_registration_profile, ns_64_bit,true> image_registration_profile_cache;
 	
 	ns_vector_2i max_terminal_window_size;
 	unsigned long terminal_hand_annotation_resize_factor;

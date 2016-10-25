@@ -1971,8 +1971,8 @@ void ns_image_server::load_constants(const ns_image_server::ns_image_server_exec
 			max_terminal_window_size.x = atol(terminal_constants["max_width"].c_str());
 			max_terminal_window_size.y = atol(terminal_constants["max_height"].c_str());
 			terminal_hand_annotation_resize_factor = atol(terminal_constants["hand_annotation_resize_factor"].c_str());
-			mask_upload_database = terminal_constants["mask_upload_database"];
-			mask_upload_hostname = terminal_constants["mask_upload_hostname"];	
+			//mask_upload_database = terminal_constants["mask_upload_database"];
+			//mask_upload_hostname = terminal_constants["mask_upload_hostname"];	
 			if (terminal_constants.field_specified("verbose_debug_output") && terminal_constants["verbose_debug_output"] == "true" ){
 				_verbose_debug_output = true;
 			}		

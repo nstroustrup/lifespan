@@ -420,7 +420,7 @@ public:
 			//now go through and label the regions.
 			//cerr << "Loading fonts.\n";
 			unsigned long image_height = mask_visualization_output->properties().height,
-						  text_height;
+						  text_height(16);
 			ns_acquire_lock_for_scope font_lock(font_server.default_font_lock, __FILE__, __LINE__);
 			font_server.get_default_font().set_height(text_height);
 			for (unsigned int i = 0; i < _mask_info.size(); i++){

@@ -440,8 +440,6 @@ public:
 	
 	ns_vector_2i max_terminal_window_size;
 	unsigned long terminal_hand_annotation_resize_factor;
-	std::string mask_upload_database;
-	std::string mask_upload_hostname;
 
 	unsigned long automated_job_timeout_in_seconds(){ return 15*60;}
 	unsigned long automated_job_interval(){ return 30*60;}

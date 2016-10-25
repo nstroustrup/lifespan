@@ -194,7 +194,9 @@ private:
 		//	sender->send_lines(image_buffer, max_buffer_height);
 		buffer_top = 0;
 		cur_buffer_height = 0;
-		sender_internal_state = image_source->init_send();
+		if (image_source != 0)
+			sender_internal_state = image_source->init_send();
+		else sender_internal_state = 0;
 	}
 
 };

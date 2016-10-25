@@ -584,12 +584,12 @@ public:
 	void submit_experiment_mask_file_to_cluster();
 	void view_current_mask();
 	void apply_mask_on_current_image();
-	ns_mask_info send_mask_to_server(const std::string & ip_address,const unsigned long port);
+	ns_mask_info send_mask_to_server(const ns_64_bit &sample_id);
 	void load_mask(const std::string & filename,bool draw_to_screen=true);
 	bool mask_loaded();
 	void generate_scanner_report(unsigned long first_experiment_time, unsigned long last_experiment_time);
 
-	void get_ip_and_port_for_mask_upload(std::string & ip_address,unsigned long & port);
+	//void get_ip_and_port_for_mask_upload(std::string & ip_address,unsigned long & port);
 	//image transformations
 	void resize_image();
 	void zhang_thinning();

@@ -222,7 +222,7 @@ void ns_image_server_push_job_scheduler::request_job_queue_discovery(ns_sql & sq
 
 		sql << "INSERT INTO processing_job_queue SET job_id=" << id << ", job_name='', priority=50";
 		sql.send_query();
-		//table_lock.unlock();
+		lock.release(__FILE__, __LINE__);
 	}
 }
 bool ns_image_server_push_job_scheduler::try_to_process_a_job_pending_anothers_completion(const ns_processing_job & job,ns_sql & sql){

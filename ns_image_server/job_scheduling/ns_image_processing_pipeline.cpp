@@ -2565,7 +2565,7 @@ ns_vector_2i ns_image_processing_pipeline::get_vertical_registration(const ns_im
 	t.start();
 	image_server.image_registration_profile_cache.get_for_write(source, requested_image,external_source);
 	
-	cerr << "cache subject: " << t.stop()/1000.0/1000.0 << "\n";
+	//cerr << "cache subject: " << t.stop()/1000.0/1000.0 << "\n";
 	
 	image_server_const.register_server_event(ns_image_server_event("Aligning sample image to reference image."),external_source.sql);
 	t.start();
@@ -2575,9 +2575,9 @@ ns_vector_2i ns_image_processing_pipeline::get_vertical_registration(const ns_im
 
 	ns_vector_2i offset(round(fine_offset.x), round(fine_offset.y));
 
-	cerr << "Total Registration time: " << t.stop()/1000.0/1000.0 << "\n";
+	//cerr << "Total Registration time: " << t.stop()/1000.0/1000.0 << "\n";
 	//exit(0);
-	cerr << "Alignment: " << offset.x << "," << offset.y << "\n";
+	//cerr << "Alignment: " << offset.x << "," << offset.y << "\n";
 	*external_source.sql << "UPDATE captured_images SET registration_horizontal_offset='" << offset.x << "', registration_vertical_offset='" << offset.y << "', registration_offset_calculated=1 WHERE id = " << captured_image.captured_images_id;
 	//cerr << sql.query() << "\n";
 	external_source.sql->send_query();

@@ -239,10 +239,12 @@ struct ns_image_fast_registration_profile_data_source {
 
 class ns_image_fast_registration_profile :  public ns_simple_cache_data<ns_image_server_image, ns_image_fast_registration_profile_data_source, ns_64_bit> {
 public:
+	ns_image_fast_registration_profile() :pyramid(0) {}
 	ns_image_server_image image_record;
 	ns_gaussian_pyramid * pyramid;
 	template<class a, class b, bool c>
 	friend class ns_simple_cache;
+	~ns_image_fast_registration_profile();
 private:
 	ns_64_bit size_in_memory_in_kbytes() const;
 

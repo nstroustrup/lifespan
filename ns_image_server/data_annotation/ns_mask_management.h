@@ -110,7 +110,7 @@ public:
 
 	void process_mask_file(ns_image_standard & mask_vis);
 
-	void submit_masks_to_cluster(const std::string & ip_address,const unsigned long port,bool balk_on_overwrite=true);
+	void submit_masks_to_cluster(bool balk_on_overwrite = true);
 
 private:
 	unsigned long resize_factor;

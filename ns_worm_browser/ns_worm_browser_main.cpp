@@ -839,10 +839,10 @@ class ns_worm_terminal_main_menu_organizer : public ns_menu_organizer{
 			cout << "Could not guess what sample this comes from.\n";
 		}
 
-		string ip_address;
-		unsigned long port;
-		worm_learner.get_ip_and_port_for_mask_upload(ip_address,port);
-		ns_mask_info mask_info(worm_learner.send_mask_to_server(ip_address,port));
+		//string ip_address;
+		//unsigned long port;
+	//	worm_learner.get_ip_and_port_for_mask_upload(ip_address,port);
+		ns_mask_info mask_info(worm_learner.send_mask_to_server(im.sample_id));
 		ns_acquire_for_scope<ns_sql> sql(image_server.new_sql_connection(__FILE__,__LINE__));
 		sql() << "UPDATE capture_samples SET mask_id=" << mask_info.mask_id << " WHERE id=" << im.sample_id;
 		sql().send_query();

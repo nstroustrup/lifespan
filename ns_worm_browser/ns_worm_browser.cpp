@@ -67,10 +67,7 @@ void ns_worm_learner::decode_experiment_mask_file(const std::string & filename, 
 //	draw();
 }
 void ns_worm_learner::submit_experiment_mask_file_to_cluster(){
-	string ip_address;
-	unsigned long port;
-	get_ip_and_port_for_mask_upload(ip_address,port);
-	mask_manager.submit_masks_to_cluster(ip_address,port,!overwrite_existing_mask_when_submitting);
+	mask_manager.submit_masks_to_cluster(!overwrite_existing_mask_when_submitting);
 }
 
 
@@ -3833,10 +3830,7 @@ void ns_worm_learner::handle_file_request(const string & fname){
 		string debug_filename(ns_dir::extract_filename_without_extension(filename) + "=summary.txt");
 		bool write_to_disk,write_to_db;
 		ask_if_schedule_should_be_submitted_to_db(write_to_disk,write_to_db);
-
-		if (write_to_db && image_server.current_sql_database() != image_server.mask_upload_database)
-				throw ns_ex("To upload experiment schedules to the cluster, the terminal must be set to access the database ") << image_server.mask_upload_database;
-		
+	
 		if (write_to_disk || write_to_db){
 			vector<std::string> warnings;
 			try{
@@ -4977,6 +4971,7 @@ bool ns_worm_learner::load_threshold_if_possible(const std::string & filename){
 	
 	return true;
 }
+/*
 void ns_worm_learner::get_ip_and_port_for_mask_upload(std::string & ip_address,unsigned long & port){
 	if (image_server.current_sql_database() != image_server.mask_upload_database)
 		throw ns_ex("To upload experiments to the mask file cluster, the terminal must be set to access the database ") << image_server.mask_upload_database;
@@ -4992,34 +4987,40 @@ void ns_worm_learner::get_ip_and_port_for_mask_upload(std::string & ip_address,u
 	ip_address = res[0][0];
 	port = atol(res[0][1].c_str());
 }
-
-ns_mask_info ns_worm_learner::send_mask_to_server(const std::string & ip_address,const unsigned long port){
+*/
+ns_mask_info ns_worm_learner::send_mask_to_server(const ns_64_bit & sample_id){
 	ns_mask_info mask_info;
 	if (!mask_loaded())
 		throw ns_ex("No mask is currently loaded.");
 	//Connecting to image server
-	cerr << "Connecting to image server...";
-	ns_socket socket;
-	ns_socket_connection c = socket.connect(ip_address,port);
 	//Updating database
 	cerr << "\nUpdating database....";
-	ns_sql * sql = image_server.new_sql_connection(__FILE__,__LINE__);
-	*sql << "INSERT INTO images SET filename = '" << current_mask_filename << "', creation_time = '" << ns_current_time() << "', "
+	ns_acquire_for_scope<ns_sql> sql(image_server.new_sql_connection(__FILE__,__LINE__));
+	sql() << "INSERT INTO images SET filename = '" << current_mask_filename << "', creation_time = '" << ns_current_time() << "', "
 		<< "path = '" << ns_image_server::unclaimed_masks_directory() << "', currently_under_processing=0, partition=''";
-	mask_info.image_id = sql->send_query_get_id();
-	*sql << "INSERT INTO image_masks SET image_id = " << mask_info.image_id << ", processed='0'";
-	mask_info.mask_id = sql->send_query_get_id();
-	sql->disconnect();
-	delete sql;
-	cerr << "\nSending image......";
-	ns_image_server_message m(c);
-	m.send_message_header(NS_IMAGE_SEND,0);
-	c.write(mask_info.image_id); //image_id
-	c.write((unsigned long)8);  //bits in image
-	ns_image_socket_sender<ns_8_bit>sender(512);
-	sender.bind_socket(c);
-	current_mask.pump(sender,512);
-	c.close();
+	mask_info.image_id = sql().send_query_get_id();
+	sql() << "INSERT INTO image_masks SET image_id = " << mask_info.image_id << ", processed='0'";
+	mask_info.mask_id = sql().send_query_get_id();
+	
+	ns_image_server_image image;
+	image.load_from_db(mask_info.image_id, &sql());
+	bool had_to_use_local_storage;
+	ns_image_storage_reciever_handle<ns_8_bit> image_storage = image_server.image_storage.request_storage(image, ns_tiff, 512, &sql(), had_to_use_local_storage, false, false);
+
+	//ns_image_standard decoded_image;
+	current_mask.pump(image_storage.output_stream(), 512);
+	//decoded_image.pump(sender,512);
+	//c.close();
+
+
+	sql() << "UPDATE capture_samples SET mask_id=" << mask_info.mask_id << " WHERE id=" << sample_id;
+	sql().send_query();
+	sql() << "INSERT INTO processing_jobs SET image_id=" << mask_info.image_id << ", mask_id=" << mask_info.mask_id << ", "
+		<< "op" << (unsigned int)ns_process_analyze_mask << " = 1, time_submitted=" << ns_current_time() << ", urgent=1";
+	sql().send_query();
+	sql().send_query("COMMIT");
+	
+
 	return mask_info;
 	cerr << "\nDone.\n";
 }

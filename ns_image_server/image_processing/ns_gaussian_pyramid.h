@@ -126,6 +126,7 @@ public:
 		for (unsigned int i = 0; i < ns_calc_best_alignment_fast::ns_max_pyramid_size; i++)
 			image_scaled[i].clear();
 		_properties.width = _properties.height = 0;
+		ns_image_stream_sender<ns_8_bit, ns_gaussian_pyramid, unsigned long>::_properties = _properties;
 		ns_ipps_safe_delete(pPyrLStateBuf);
 		ns_ipps_safe_delete(pPyrLBuffer);
 		ns_ipps_safe_delete(pPyrStrBuffer);
@@ -139,6 +140,7 @@ public:
 		ns_image_stream_buffer_properties p;
 		p.height = 1; 
 		p.width = _properties.width;
+
 		ns_image_stream_static_buffer<ns_8_bit> buffer(p);
 		unsigned long source_state = source.input_stream().init_send();
 		for (unsigned int y = 0; y < _properties.height; y++) {
@@ -266,6 +268,7 @@ private:
 		/* Allocate pyramid layers */
 
 		_properties = image;
+		ns_image_stream_sender<ns_8_bit, ns_gaussian_pyramid, unsigned long>::_properties = _properties;
 		for (int i = 0; i < num_current_pyramid_levels; i++) {
 			if (image_scaled[i].properties().width != pPyrStruct->pRoi[i].width ||
 				image_scaled[i].properties().height != pPyrStruct->pRoi[i].height)

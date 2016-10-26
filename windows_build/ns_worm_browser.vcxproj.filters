@@ -982,9 +982,6 @@
     <ClInclude Include="..\ns_image_server\image_server\ns_image_server_stock_quotes.h">
       <Filter>image_server</Filter>
     </ClInclude>
-    <ClInclude Include="..\ns_image_server\image_server\ns_image_simple_cache.h">
-      <Filter>image_server</Filter>
-    </ClInclude>
     <ClInclude Include="..\ns_image_server\image_server\ns_image_statistics.h">
       <Filter>image_server</Filter>
     </ClInclude>

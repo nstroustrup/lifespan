@@ -22,9 +22,12 @@ class ns_simple_cache;
 //an example base class for the data stored in the cache
 template<class id_t, class external_source_t, class cache_key_t>
 class ns_simple_cache_data {
-
+public:
 	template<class a, class b, bool c>
 	friend class ns_simple_cache;
+
+	typedef id_t id_type;
+	typedef external_source_t external_source_type;
 
 private:
 	virtual ns_64_bit size_in_memory_in_kbytes()const = 0;
@@ -36,15 +39,13 @@ private:
 
 	virtual void clean_up(external_source_t & external_source) = 0;
 
-	typedef id_t id_type;
-	typedef external_source_t external_source_type;
 
 };
 
 template<class data_t, class cache_key_t, bool locked>
 class ns_simple_cache_data_handle {
-  typedef typename std::remove_cv<data_t>::type data_type;
 public:
+	typedef typename std::remove_cv<data_t>::type data_type;
 
 	ns_simple_cache_data_handle():obj(0), obj_const(0),data(0) {}
 	data_t & operator()() { return *data; }
@@ -56,8 +57,11 @@ public:
 	void release() { check_in(); }
 
 	friend  data_t;
-	template<class a, class b, bool c>
+	template<class data_t, class cache_key_t, bool locked>
 	friend class ns_simple_cache;
+	
+	template<class a, class b>
+	friend class ns_cache_request;
 
 private:
 	data_t * data; //the image cached in memory.
@@ -126,6 +130,23 @@ public:
 	//friend data_t;
 	//friend class ns_simple_cache<data_t,locked>;
 };
+template<class handle_t, class id_t>
+class ns_cache_request {
+	public:
+		ns_cache_request(const id_t & id_,
+			handle_t * handle_ptr_) :id(id_), handle_ptr(handle_ptr_) {}
+		ns_cache_request(){}
+		
+	id_t id;
+
+	handle_t * handle_ptr;
+	typedef typename handle_t::data_type data_type;
+	bool operator()(const ns_cache_request<handle_t,id_t> & l,
+				    const ns_cache_request<handle_t, id_t> & r) {
+		data_type t;
+		return  t.to_id(l.id) < t.to_id(r.id);
+	}
+};
 
 ///ns_image_cache implements a local cache for images loaded from the central file server.
 ///After an image is requested, ns_image_cache maintains a copy in memory for later use.
@@ -142,23 +163,67 @@ public:
 		disk_cached_cleared(false),
 		max_memory_usage_in_kb(max_memory_usage_),
 		current_memory_usage_in_kb(0), object_write_requests_pending(0),
-		lock("clock"), delete_lock("dl"){}
+		lock("clock"), delete_lock("dl"), multiple_get_lock("mgl"){}
 
 	typedef ns_simple_cache_data_handle<data_t, cache_key_t,locked> handle_t;
 	typedef ns_simple_cache_data_handle<const data_t, cache_key_t, locked> const_handle_t;
+
+	typedef ns_cache_request<handle_t, typename data_t::id_type> cache_request_t;
+	typedef ns_cache_request<const_handle_t, typename data_t::id_type> const_cache_request_t;
 
 	typedef typename data_t::external_source_type external_source_type;
 
 	void set_memory_allocation_limit_in_kb(const unsigned long & max) {//in kilobytes
 		max_memory_usage_in_kb = max;
 	}
+	//prevent deadlocks by requesting multiple elements simultaneously
+	void get_multiple_elements(std::vector<const_cache_request_t> & read_requests,
+							   std::vector<cache_request_t> & write_requests,
+								typename data_t::external_source_type & external_source) {
+		//always do this in the same order, to minimize encountering potential deadlocks
+		std::sort(read_requests.begin(), read_requests.end(), const_cache_request_t());
+		std::sort(write_requests.begin(), write_requests.end(), cache_request_t());
+		
+		while (true) {
+			ns_acquire_lock_for_scope mlock(multiple_get_lock, __FILE__, __LINE__);
+			bool must_restart(false);
+			for (long i = 0; i < read_requests.size(); i++) {
+				if (!get_image<const_handle_t>(read_requests[i].id, read_requests[i].handle_ptr, external_source, true, true)) {
+					//release all if any is taken
+					must_restart = true;
+					for (long j = i - 1; j >= 0; --j)
+						read_requests[j].handle_ptr->release();
+					break;
+				}
+			}
+			if (must_restart) {
+				mlock.release();
+				continue;
+			}
+			for (long i = 0; i < write_requests.size(); i++) {
+				if (!get_image<handle_t>(write_requests[i].id, write_requests[i].handle_ptr, external_source, false, true)) {
+					//release all if any is taken
+					must_restart = true;
+					for (long j = i - 1; j >= 0; --j)
+						write_requests[j].handle_ptr->release();
+					for (long j = ((long)read_requests.size()) - 1; j >= 0; --j)
+						read_requests[j].handle_ptr->release();
+					break;
+				}
+			}
+			mlock.release();
+			if (must_restart) 
+				continue;
+			break;
+		}
+	}
        
 	void get_for_read(const typename data_t::id_type & id, const_handle_t & cache_object, typename data_t::external_source_type & external_source){
-	  get_image(id,&cache_object,external_source,true);
+	  get_image(id,&cache_object,external_source,true,false);
 	}
 
 	void get_for_write(const typename data_t::id_type & id, handle_t & cache_object, typename data_t::external_source_type & external_source) {
-		get_image(id, &cache_object, external_source, false);
+		get_image(id, &cache_object, external_source, false,false);
 	}
 
 	//clears the cache without allowing any of its contents the opportunity to clean up any external resources
@@ -202,6 +267,8 @@ public:
 				p = data_cache.erase(p);
 			else ++p;
 		}
+		lock.release();
+		delete_lock.release();
 	}
 	//removes old objects from the cache until its contents are below the maximum size
 	//this does not lock the whole table
@@ -230,6 +297,8 @@ private:
 	//if lock_all_and_clear_quickly is set to true, then the entire cache is locked while all objects are deleted,
 	//which is a lot faster (as deletion wont wait on any new readers) for the calling thread, but of course
 	//is much slower for any other threads looking to access cache.
+
+	//any cache elements currently in use will not be deleted.
 	template<bool only_pair_down_to_max_size>
 	void remove_old_images(bool lock_all_and_clear_quickly, unsigned long age_in_seconds, typename data_t::external_source_type & external_source) {
 		//clear memory cache and all records
@@ -278,9 +347,12 @@ private:
 					if (locked) {
 						object_write_requests_pending++;
 						lock.release();
-						p->second.object_write_lock.wait_to_acquire(__FILE__, __LINE__);
+						bool is_in_use = !p->second.object_write_lock.try_to_acquire(__FILE__, __LINE__);
 						lock.wait_to_acquire(__FILE__, __LINE__);
 						object_write_requests_pending--;
+						//skip objects that are in use
+						if (is_in_use)
+							continue;
 					}
 
 					if (age_in_seconds == 0 || p->second.last_access + age_in_seconds < current_time) {
@@ -357,11 +429,13 @@ private:
 
 
 	//data_type_t will be either data_type or const data_type depending on whether 
+	//if only_try_to_get is set to true, then get_image will return false if the 
+	//requested object is currently checked out for either read or write.
 	template<class handle_t>
-	void get_image(const typename data_t::id_type & id,
+	bool get_image(const typename data_t::id_type & id,
 					handle_t * handle,
 					typename data_t::external_source_type & external_source,
-					bool read_only) {
+					bool read_only, bool only_try_to_get) {
 		bool initial_read_request(read_only);
 		//check to see if we have this in the cache somewhere
 		bool currently_have_write_lock(false), currently_have_table_lock(false);
@@ -383,7 +457,7 @@ private:
 
 			//create a new cache entry if one isn't already there!
 			if (p == data_cache.end()) {
-				std::cerr << "$";
+				//std::cerr << "$";
 				typename cache_t::iterator p;
 				//create a new cache entry for the new image, and reserve it for writing
 				//{
@@ -391,14 +465,15 @@ private:
 				const cache_key_t id_num = dt.to_id(id);
 				p = data_cache.emplace(std::piecewise_construct, std::make_tuple(id_num), std::make_tuple()).first;
 
-				p->second.object_write_lock.wait_to_acquire(__FILE__, __LINE__);
+				p->second.object_write_lock.wait_to_acquire(__FILE__, __LINE__); 
+				currently_have_table_lock = false;
 				setup_new_cache_object_and_handle_and_release_locks(id,handle,external_source,read_only,p);
-				return;
+				return true;
 			}
 
 			//some cleanup needs to be done.
-			if (p->second.to_be_deleted)
-				read_only = false;
+			//if (p->second.to_be_deleted)
+			//	read_only = false;
 
 			if (!read_only) {
 
@@ -409,9 +484,12 @@ private:
 				//we can't hold up all access to the table in the meantime!
 				lock.release();
 				currently_have_table_lock = false;
-				p->second.object_write_lock.wait_to_acquire(__FILE__, __LINE__);  //this wont be given up until the object ns_simple_cache object is destructed!
+				bool could_not_get_object = false;
+				if (only_try_to_get)
+					could_not_get_object = !p->second.object_write_lock.try_to_acquire(__FILE__, __LINE__);  //this wont be given up until the object ns_simple_cache object is destructed!
+				else p->second.object_write_lock.wait_to_acquire(__FILE__, __LINE__);  //this wont be given up until the object ns_simple_cache object is destructed!
 
-				if (locked) {
+				if (!could_not_get_object && locked) {
 					//now we need to wait for any threads that are still reading.
 					//we minimize the # of locks by polling just a here.
 					poll_until_no_threads_are_reading_from_object(p);
@@ -422,29 +500,27 @@ private:
 				currently_have_table_lock = true;
 				object_write_requests_pending--;
 
-				//somebody wants to delete this.  But we're requesting a new version of it!
-				//so rather than deleting it, we can just try to create a new version
+				if (could_not_get_object) {
+					lock.release();
+					return false;
+				}
+				//if we find an old broken entry from a previous failed load.
+				//we will try to reload using this entry
 				if (p->second.to_be_deleted) {
-					try {
-						p->second.data.clean_up(external_source);
-					}
-					catch (...) {
-						if (locked) p->second.object_write_lock.release();
-						throw;
-					}
 					std::cerr << "%";
-					p->second.to_be_deleted = false;
+					currently_have_table_lock = false;
 					setup_new_cache_object_and_handle_and_release_locks(id, handle, external_source, initial_read_request, p);
-					return;
+					return true;
 				}
 
 				//we have exclusive write access to a record no-one is reading!  We're done. 
 				handle->check_out(true, &(p->second), this);
 				if (locked)lock.release();
-				return;
+				return true;
 			}
 			else {
 				//At this stage we 1)have the object being looked for and 2) only need read access to it.
+
 				//so we just need to wait until nobody is writing to it. 
 				//if we don't do this, reads may supersede requests for writes that arrived before them.
 				if (locked) {
@@ -454,10 +530,28 @@ private:
 						throw ns_ex("YIKES");
 					object_write_requests_pending++;
 					lock.release();
-					p->second.object_write_lock.wait_to_acquire(__FILE__, __LINE__);
+
+					bool could_not_get_object = false;
+					if (only_try_to_get)
+						could_not_get_object = !p->second.object_write_lock.try_to_acquire(__FILE__, __LINE__);
+					else p->second.object_write_lock.wait_to_acquire(__FILE__, __LINE__);
+
 					lock.wait_to_acquire(__FILE__, __LINE__);
 					object_write_requests_pending--;
 					currently_have_write_lock = true;
+					if (could_not_get_object) {
+						lock.release();
+						return false;
+					}
+				}
+
+				//if we find an old broken entry from a previous failed load.
+				//we will try to reload using this entry
+				if (p->second.to_be_deleted) {
+					std::cerr << "%";
+					currently_have_table_lock = false;
+					setup_new_cache_object_and_handle_and_release_locks(id, handle, external_source, initial_read_request, p);
+					return true;
 				}
 
 				//we have the write lock, so nobody else does!  check it out, and since we're 
@@ -465,7 +559,7 @@ private:
 				handle->check_out(false, &p->second, this);
 				p->second.object_write_lock.release();
 				if (locked)lock.release();
-				return;
+				return true;
 			}
 
 		}
@@ -482,14 +576,15 @@ private:
 		typename data_t::external_source_type & external_source,
 		bool read_only, typename cache_t::iterator p) {
 		handle->check_out(true, &p->second, this);  //check it out for writing.
+		p->second.to_be_deleted = false;
 		lock.release();//release the lock so everything else can read and write other objects in the background while we load
 					   //this one in.
 		try {
 			p->second.data.load_from_external_source(id, external_source);
 		}
 		catch (...) {
-			p->second.object_write_lock.release();
 			p->second.to_be_deleted = true;  //we can't delete this now, because we've already given up the main lock.  but we can flag it for deletion next time it's encountered
+			handle->check_in();
 			throw;
 		}
 #ifdef NS_VERBOSE_IMAGE_CACHE
@@ -502,7 +597,7 @@ private:
 		if (!read_only)
 			return;  //we already have write access and everything loaded into cached_object, give it to the user.
 
-					 //lets give up write access manually here, and pass the remaining object, no read only, on to the user
+		//give up write access manually here, and pass the remaining object, no read only, on to the user
 		p->second.object_write_lock.release();
 		handle->write = false;
 		return;
@@ -575,8 +670,9 @@ private:
 		lock.release();
 		return;
 	}
-	mutable ns_lock lock, delete_lock;
+	mutable ns_lock lock, delete_lock, multiple_get_lock;
 	mutable long object_write_requests_pending;
+	
 };
 
 template<class data_t, class cache_key_t, bool locked>

@@ -1905,18 +1905,27 @@ void ns_image_processing_pipeline::apply_mask(ns_image_server_captured_image & c
 
 
 		ns_vector_2i offset = ns_vector_2i(0, 0);
-		ns_image_fast_registration_profile_cache::handle_t profile;
+		ns_image_fast_registration_profile_cache::const_handle_t requested_image, reference_image;
 		ns_image_fast_registration_profile_data_source profile_data_source;
 		profile_data_source.sql = &sql;
 		profile_data_source.image_storage = &image_server_const.image_storage;
 
-		bool delete_registration_profile_after_use;
-		if (apply_vertical_image_registration)
-			offset = get_vertical_registration(captured_image, source_image, profile, profile_data_source);
+	
+		if (apply_vertical_image_registration) {
+			image_server_const.add_subtext_to_current_event(ns_image_server_event("Loading images..."), &sql);
+			get_image_and_reference_image(captured_image, requested_image, reference_image, profile_data_source);
+
+			image_server_const.add_subtext_to_current_event(ns_image_server_event("Aligning sample image to reference image..."), &sql);
+			offset = get_vertical_registration(reference_image, requested_image, profile_data_source);
+			reference_image.release();
+
+			sql << "UPDATE captured_images SET registration_horizontal_offset='" << offset.x << "', registration_vertical_offset='" << offset.y << "', registration_offset_calculated=1 WHERE id = " << captured_image.captured_images_id;
+			sql.send_query();
+		}
 		else {
 			ns_image_server_image im;
 			im.id = captured_image.capture_images_image_id;
-			image_server.image_registration_profile_cache.get_for_write(im, profile, profile_data_source);
+			image_server.image_registration_profile_cache.get_for_read(im, requested_image, profile_data_source);
 		}
 
 		mask_splitter.mask_info()->load_from_db(mask_id, sql);
@@ -1925,12 +1934,7 @@ void ns_image_processing_pipeline::apply_mask(ns_image_server_captured_image & c
 		if (!mask_image_info.load_from_db(mask_image_id, &sql))
 			throw ns_ex("ns_image_processing_pipeline::Mask ") << mask_id << " has no image specified when applying mask.";
 
-		ns_simple_image_cache::const_handle_t mask_image;
-		ns_image_cache_data_source data_source;
-		data_source.handler = &image_server_const.image_storage;
-		data_source.sql = &sql;
-		image_server.image_storage.cache.get_for_read(mask_image_info, mask_image, data_source);
-
+	
 		//obtain output streams for split regions.
 		sql << "SELECT sample_region_image_info.id, sample_region_image_info.name, image_mask_regions.id, image_mask_regions.mask_value FROM image_mask_regions, sample_region_image_info WHERE sample_region_image_info.mask_region_id = image_mask_regions.id AND image_mask_regions.mask_id= '" << mask_id << "'";
 		sql.get_rows(res);
@@ -2018,6 +2022,15 @@ void ns_image_processing_pipeline::apply_mask(ns_image_server_captured_image & c
 			output_images.push_back(output_image);
 		}
 		sql.send_query("COMMIT");
+
+		//No opportunity for deadlocks because we are only reading.
+		ns_simple_image_cache::const_handle_t mask_image;
+		ns_image_cache_data_source data_source;
+		data_source.handler = &image_server_const.image_storage;
+		data_source.sql = &sql;
+		image_server.image_storage.cache.get_for_read(mask_image_info, mask_image, data_source);
+
+
 		mask_splitter.specify_mask(mask_image().image);
 		//if the whole image is shifted down in relation to the reference image
 		//we need to shift the mask up to compensate!
@@ -2027,8 +2040,8 @@ void ns_image_processing_pipeline::apply_mask(ns_image_server_captured_image & c
 		mask_splitter.specificy_sample_image_statistics(sample_image_statistics);
 
 		try {
-			profile().pyramid->pump(mask_splitter, _image_chunk_size);
-
+			requested_image().pyramid->pump(mask_splitter, _image_chunk_size);
+			requested_image.release();
 			//mark all regions as processed.
 			for (unsigned int i = 0; i < output_regions.size(); i++) {
 				(*mask_splitter.mask_info())[output_regions[i].mask_color]->image_stats.calculate_statistics_from_histogram();
@@ -2517,8 +2530,6 @@ bool ns_image_processing_pipeline::check_for_precalculated_registration(const ns
 	}
 	return false;
 }
-
-ns_vector_2i ns_image_processing_pipeline::get_vertical_registration(const ns_image_server_captured_image & captured_image, ns_image_server_image & source, ns_image_fast_registration_profile_cache::handle_t & requested_image, ns_image_fast_registration_profile_cache::external_source_type & external_source){
 	ns_vector_2i registration_offset;
 	//delete_profile_after_use = false;
 	/*if (check_for_precalculated_registration(captured_image,registration_offset,sql)){
@@ -2526,12 +2537,14 @@ ns_vector_2i ns_image_processing_pipeline::get_vertical_registration(const ns_im
 		return registration_offset;
 	}*/
 
+void ns_image_processing_pipeline::get_image_and_reference_image(const ns_image_server_captured_image & captured_image, 
+													   ns_image_fast_registration_profile_cache::const_handle_t & requested_image,
+													   ns_image_fast_registration_profile_cache::const_handle_t & reference_image,
+													   ns_image_fast_registration_profile_cache::external_source_type & external_source) {
 	//load the reference image to which the masked image must be vertically registered
 	bool registration_image_loaded = false;
 	unsigned long attempts = 0;
-	ns_image_server_image reference_image_db_record;	
-	ns_image_fast_registration_profile_cache::handle_t reference_image_profile;
-	
+	ns_image_server_image reference_image_db_record;
 	*external_source.sql << "SELECT image_id, id, never_delete_image FROM captured_images WHERE sample_id = " << captured_image.sample_id << " AND never_delete_image = 1 AND problem = 0 AND censored = 0 ORDER BY capture_time ASC LIMIT 5";
 	ns_sql_result res;
 	external_source.sql->get_rows(res);
@@ -2540,47 +2553,46 @@ ns_vector_2i ns_image_processing_pipeline::get_vertical_registration(const ns_im
 	reference_image_db_record.id = 0;
 	bool reference_image_loaded(false);
 	ns_image_standard im;
-	for (unsigned int i = 0; !reference_image_loaded && i < res.size(); i++){
+	std::vector<ns_image_fast_registration_profile_cache::const_cache_request_t> cache_requests(2);
+	cache_requests[0].id.id = captured_image.capture_images_image_id;
+	cache_requests[0].handle_ptr = &requested_image;
+	std::vector<ns_image_fast_registration_profile_cache::cache_request_t> tmp;
+
+	for (unsigned int i = 0; !reference_image_loaded && i < res.size(); i++) {
 		if (res[i][0] == "0")
 			continue;
 		reference_image_db_record.id = atol(res[i][0].c_str());
 		reference_image_db_record.load_from_db(reference_image_db_record.id, external_source.sql);
-	//	bool running_retry(false);
-		//while(true){
-			try{
-				image_server.image_registration_profile_cache.get_for_write(reference_image_db_record, reference_image_profile,external_source);
-				reference_image_loaded = true;
-				}
-			catch(ns_ex & ex){
-				image_server_const.register_server_event(ex,external_source.sql);
-				//could do something here to allow more reference images to be used, but this is potentially
-				//troublesome and will be avoided for now
-			}
+		//	bool running_retry(false);
+			//while(true){
+		try {
+			cache_requests[1].id = reference_image_db_record;
+			cache_requests[1].handle_ptr = &reference_image;
+			image_server.image_registration_profile_cache.get_multiple_elements(cache_requests, tmp, external_source);
+			reference_image_loaded = true;
+		}
+		catch (ns_ex & ex) {
+			image_server_const.register_server_event(ex, external_source.sql);
+			//could do something here to allow more reference images to be used, but this is potentially
+			//troublesome and will be avoided for now
+		}
 	}
 	if (!reference_image_loaded)
-			throw ns_ex("ns_image_processing_pipeline::run_vertical_registration()::Could not perform registration because all of the first few raw images could not be loaded for sample ") << captured_image.experiment_name << "::" << captured_image.sample_name << " "
-			<< "Only images that are flagged in captured_images as problem=0, censored=0, never_delete=1 can be used as references for image registration";
+		throw ns_ex("ns_image_processing_pipeline::run_vertical_registration()::Could not perform registration because all of the first few raw images could not be loaded for sample ") << captured_image.experiment_name << "::" << captured_image.sample_name << " "
+		<< "Only images that are flagged in captured_images as problem=0, censored=0, never_delete=1 can be used as references for image registration";
+}
 
-	ns_high_precision_timer t;
-	t.start();
-	image_server.image_registration_profile_cache.get_for_write(source, requested_image,external_source);
-	
-	//cerr << "cache subject: " << t.stop()/1000.0/1000.0 << "\n";
-	
-	image_server_const.register_server_event(ns_image_server_event("Aligning sample image to reference image."),external_source.sql);
-	t.start();
+ns_vector_2i ns_image_processing_pipeline::get_vertical_registration(
+			ns_image_fast_registration_profile_cache::const_handle_t & requested_image,
+			ns_image_fast_registration_profile_cache::const_handle_t & reference_image,
+			ns_image_fast_registration_profile_cache::external_source_type & external_source) {
+
 	ns_calc_best_alignment_fast aligner(ns_vector_2i(1000,1000), ns_vector_2i(0,0), ns_vector_2i(0, 0));
 	bool saturated_offset;
-	ns_vector_2d fine_offset = aligner(ns_vector_2d(0, 0), ns_vector_2d(1000, 1000), reference_image_profile().pyramid, requested_image().pyramid, saturated_offset);
+	ns_vector_2d fine_offset = aligner(ns_vector_2d(0, 0), ns_vector_2d(1000, 1000), reference_image().pyramid, requested_image().pyramid, saturated_offset);
 
 	ns_vector_2i offset(round(fine_offset.x), round(fine_offset.y));
 
-	//cerr << "Total Registration time: " << t.stop()/1000.0/1000.0 << "\n";
-	//exit(0);
-	//cerr << "Alignment: " << offset.x << "," << offset.y << "\n";
-	*external_source.sql << "UPDATE captured_images SET registration_horizontal_offset='" << offset.x << "', registration_vertical_offset='" << offset.y << "', registration_offset_calculated=1 WHERE id = " << captured_image.captured_images_id;
-	//cerr << sql.query() << "\n";
-	external_source.sql->send_query();
 	return offset;
 }
 
@@ -2647,29 +2659,38 @@ void ns_rerun_image_registration(const ns_64_bit region_id, ns_sql & sql){
 	sql.get_rows(res);
 	if (res.size() == 0)
 		throw ns_ex("ns_rerun_image_registration::The requested region, ") << region_id << ", contains no uncensored images.";
-	ns_64_bit ref_image_id = 0;
+
 	long i = 0;
 
-	ns_image_fast_registration_profile_cache::handle_t reference_profile;
+	ns_image_fast_registration_profile_cache::const_handle_t reference_profile;
+	ns_image_fast_registration_profile_cache::const_handle_t image_profile;
 	ns_image_fast_registration_profile_data_source profile_data_source;
 	profile_data_source.sql = &sql;
 	profile_data_source.image_storage = &image_server_const.image_storage;
-//	profile_data_source.max_average_dimention = 500;
 
+	std::vector<ns_image_fast_registration_profile_cache::const_cache_request_t> cache_requests(2);
+	std::vector<ns_image_fast_registration_profile_cache::cache_request_t> tmp;
+	cache_requests[0].id.id = 0;
+	cache_requests[0].handle_ptr = &image_profile;
+	cache_requests[1].id.id = 0;
+	cache_requests[1].handle_ptr = &reference_profile;
 
-	while(ref_image_id == 0){
+	ns_image_server_image im;
+	while (cache_requests[1].id.id == 0) {
 		if (i >= res.size())
 			throw ns_ex("ns_rerun_image_registration::Could not find a non-censored reference image to use for alignment.");
-		try{
-			ns_image_server_image im;
-			im.id = ns_atoi64(res[i][1].c_str());
-			image_server.image_registration_profile_cache.get_for_write(im, reference_profile, profile_data_source);
-			ref_image_id = im.id;
-		}catch(...){}
+		try {
+			cache_requests[1].id.id = ns_atoi64(res[i][1].c_str());
+			image_server.image_registration_profile_cache.get_for_read(cache_requests[1].id, *cache_requests[1].handle_ptr, profile_data_source);
+			reference_profile.release();
+		}
+		catch (...) { 
+			cache_requests[1].id.id = 0;
+		}
 		i++;
 	}
-	
-	ns_image_fast_registration_profile_cache::handle_t subject_profile;
+	if (cache_requests[1].id.id == 0)
+		throw ns_ex("Could not find a suitable reference image");
 	ns_image_standard buffer;
 	buffer.use_more_memory_to_avoid_reallocations();
 	for (;i<res.size();i++){
@@ -2681,34 +2702,35 @@ void ns_rerun_image_registration(const ns_64_bit region_id, ns_sql & sql){
 			ns_64_bit backup_unprocessed_id = ns_atoi64(res[i][2].c_str());
 			unsigned long capture_time = atol(res[i][3].c_str());
 
-			ns_image_server_image source_im;
+			
 			if (backup_unprocessed_id != 0){
-				source_im.id = backup_unprocessed_id;
-			}else source_im.id = unprocessed_id;
-			image_server.image_registration_profile_cache.get_for_write(source_im, subject_profile, profile_data_source);
+				cache_requests[0].id.id = backup_unprocessed_id;
+			}else cache_requests[0].id.id = unprocessed_id;
+			image_server.image_registration_profile_cache.get_multiple_elements(cache_requests,tmp , profile_data_source);
 
 			ns_calc_best_alignment_fast aligner(ns_vector_2i(1000, 1000), ns_vector_2i(0, 0), ns_vector_2i(0, 0));
 			bool saturated_offset;
-			ns_vector_2d fine_offset = aligner(ns_vector_2d(0, 0), ns_vector_2d(1000, 1000), reference_profile().pyramid, subject_profile().pyramid, saturated_offset);
-
+			ns_vector_2d fine_offset = aligner(ns_vector_2d(0, 0), ns_vector_2d(1000, 1000), reference_profile().pyramid, image_profile().pyramid, saturated_offset);
+			reference_profile.release();
 			ns_vector_2i offset(round(fine_offset.x), round(fine_offset.y));
 
 			//ns_vector_2i offset(-500,500);
-			cout << (100*i)/res.size() << "%: " << ns_format_time_string_for_human(capture_time) << "\n";
+			image_server_const.add_subtext_to_current_event(ns_to_string((100*i)/res.size()) + "%: " + ns_format_time_string_for_human(capture_time) = "\n",&sql);
 			
 			//if registration is required and a backup does not already exist, create a backup.
 			if (offset.squared() <= 1)
 				continue;
-			cout << "Fixing offset: " << offset.x << "," << offset.y << "..." << ns_processing_task_to_string(ns_unprocessed)<< "...";
+			image_server_const.add_subtext_to_current_event(std::string("Fixing offset : ") +ns_to_string(offset.x)+", " + ns_to_string(offset.y) + "..." + ns_processing_task_to_string(ns_unprocessed)= "...",&sql);
 			if (backup_unprocessed_id == 0){
 				//cerr << "Creating backup...";
 				ns_image_server_image backup_image = region_image.create_storage_for_processed_image(ns_process_unprocessed_backup,ns_tiff,&sql);
 				bool had_to_use_volatile_storage;
 				ns_image_storage_reciever_handle<ns_8_bit> out_im(image_server_const.image_storage.request_storage(backup_image,ns_tiff,1024,&sql,had_to_use_volatile_storage,false,false));
-				subject_profile().pyramid->pump(out_im.output_stream(),1024);
+				image_profile().pyramid->pump(out_im.output_stream(),1024);
 				out_im.clear();
 			}
-			subject_profile().pyramid->pump(buffer, 1024);
+			image_profile().pyramid->pump(buffer, 1024);
+			image_profile.release();
 			ns_shift_image_by_offset(buffer,offset);
 
 			ns_image_server_image dest_im;

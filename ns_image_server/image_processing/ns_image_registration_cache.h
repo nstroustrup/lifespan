@@ -245,13 +245,13 @@ public:
 	template<class a, class b, bool c>
 	friend class ns_simple_cache;
 	~ns_image_fast_registration_profile();
+	ns_64_bit to_id(const ns_image_server_image & im) const { return im.id; }
 private:
 	ns_64_bit size_in_memory_in_kbytes() const;
 
 	void load_from_external_source(const ns_image_server_image & im, ns_image_fast_registration_profile_data_source & data_source);
 	void clean_up(ns_image_fast_registration_profile_data_source & data_source);
 	const ns_64_bit & id() const { return image_record.id; }
-	ns_64_bit to_id(const ns_image_server_image & im) const { return im.id; }
 
 };
 

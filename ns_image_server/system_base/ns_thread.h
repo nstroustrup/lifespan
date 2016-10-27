@@ -220,7 +220,7 @@ public:
 	static unsigned long ns_get_process_id();
 
 	static void sleep(const unsigned int seconds);
-	static void sleep_microseconds(const unsigned int microseconds);
+	static void sleep_milliseconds(const ns_64_bit & milliseconds);
 
 	//this generates a handle that is only valid as "self-referential"... it can't be
 	//used by any other threads

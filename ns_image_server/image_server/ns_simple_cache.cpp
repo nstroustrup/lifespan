@@ -101,7 +101,7 @@ public:
 				external_data->output_lock->release();
 			}
 
-			ns_thread::sleep_microseconds(wait / 2);
+			ns_thread::sleep_milliseconds(wait / 2);
 			int n = h().size + (long)(rand() % 200) - 100;
 			if (n < 0) n = 200;
 			h().size = n;
@@ -110,7 +110,7 @@ public:
 			for (unsigned int i = 0; i < h().size; i++) {
 				h().data[i] = 0;
 			}
-			ns_thread::sleep_microseconds(wait / 2);
+			ns_thread::sleep_milliseconds(wait / 2);
 			if (output) {
 				external_data->output_lock->wait_to_acquire(__FILE__, __LINE__);
 				std::cerr << persistant_data.thread_id << "w" << id << ") ";
@@ -142,7 +142,7 @@ public:
 			for (unsigned int i = 0; i < h().size; i++)
 				sum += h().data[i];
 
-			ns_thread::sleep_microseconds(wait);
+			ns_thread::sleep_milliseconds(wait);
 			if (output) {
 				external_data->output_lock->wait_to_acquire(__FILE__, __LINE__);
 				std::cerr << persistant_data.thread_id << "r" << id << ") ";

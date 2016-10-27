@@ -803,6 +803,59 @@ ns_image_storage_reciever_handle<float> ns_image_storage_handler::request_local_
 	return ns_image_storage_reciever_handle<float>(new ns_image_storage_reciever_to_disk<float>(max_line_length, output_filename, image_type, true));
 }
 
+
+std::string ns_image_storage_handler::add_to_local_cache(ns_image_server_image & image, ns_image_server_sql * sql)const {
+
+	ns_file_location_specification file_location(look_up_image_location(image, sql, ns_tiff_lzw));
+
+	if (!long_term_storage_is_accessible(file_location, __FILE__, __LINE__))
+		throw ns_ex("Could not access long term storage.");
+
+	try {
+		string cache_filename = file_location.relative_directory + "_" + file_location.filename;
+		std::string extension = ns_dir::extract_extension(file_location.filename);
+		cache_filename = ns_dir::extract_filename_without_extension(cache_filename);
+		if (file_location.relative_directory.empty() || file_location.filename.empty())
+			throw ns_ex("Blank image record encountered:");
+		for (unsigned int i = 0; i < cache_filename.size(); i++)
+			if (cache_filename[i] == '/' || cache_filename[i] == '\\') cache_filename[i] = '_';
+		std::string dir = volatile_storage_directory + DIR_CHAR_STR + ns_image_server_cache_directory();
+		std::string output_filename = dir + DIR_CHAR_STR + cache_filename;
+		ns_dir::convert_slashes(output_filename);
+
+
+
+
+		//guarentee unique filename for this process
+		string tmp(output_filename);
+		int i = 0;
+		unsigned long thread_id = image_server_const.get_current_thread_state_info()->second.internal_thread_id;
+		while(ns_dir::file_exists(tmp + "." + extension)){
+			tmp = output_filename + "_" + ns_to_string(thread_id) + "_" + ns_to_string(i) ;
+			i++;
+		}
+		if (i != 0) {
+			cache_filename += "_" + ns_to_string(thread_id) + "_" + ns_to_string(i);
+			output_filename += "_" + ns_to_string(thread_id) + "_" + ns_to_string(i);
+		}
+		cache_filename += "." + extension;
+		output_filename += "." + extension;
+
+			//	ns_imag_handler_register_server_event(ns_image_server_event("ns_image_storage_handler::Opening LT ",false) << display_filename << " for input." << ns_ts_minor_event);
+			if (!ns_dir::copy_file(file_location.absolute_long_term_filename(), output_filename))
+				throw ns_ex("Could not find file ") << file_location.absolute_long_term_filename();
+			return cache_filename;
+		
+			
+		}
+	catch (ns_ex & ex) {
+
+		*sql << "UPDATE " << sql->table_prefix() << "images SET problem=1 WHERE id = " << image.id;
+		sql->send_query();
+		throw ns_ex("ns_image_storage_handler::request_from_storage_n_bis()::file ") << image.path <<
+			DIR_CHAR_STR << image.filename << " could not be opened: " << ex.text() << ns_file_io;
+	}
+}
 	
 ns_image_storage_source_handle<ns_image_storage_handler::ns_component> ns_image_storage_handler::request_from_local_cache(const std::string & filename, const bool report_to_db) const{
 	if (!ns_dir::file_exists(volatile_storage_directory))

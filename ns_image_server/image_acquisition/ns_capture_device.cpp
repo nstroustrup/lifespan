@@ -580,7 +580,7 @@ ns_64_bit ns_image_capture_device_speed_regulator::run_delay_if_necessary(){
 		delay_time_injected+=pending_delay;
 		pending_delay = 0;
 		//cerr << "Injecting a " << time_to_delay << " millisecond delay";
-		ns_thread::sleep_microseconds(1000*time_to_delay);
+		ns_thread::sleep_milliseconds(time_to_delay);
 	//	cerr << ".\n";
 		return time_to_delay;
 	}

@@ -193,11 +193,14 @@ void ns_thread::sleep(const unsigned int seconds){
 #endif
 }
 
-void ns_thread::sleep_microseconds(const unsigned int microseconds){
+void ns_thread::sleep_milliseconds(const ns_64_bit & milliseconds){
 	#ifdef _WIN32 
-	::Sleep(microseconds);
+	::Sleep(milliseconds);
 #else
-	::usleep(microseconds);
+	timespec t, res;
+	t.tv_sec = milliseconds / 1000;
+	t.tv_nsec = (milliseconds % 1000) * 1000 * 1000;
+	::nanosleep(&t,&res);
 #endif
 }
 

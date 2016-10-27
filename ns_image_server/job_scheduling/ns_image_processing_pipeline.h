@@ -353,9 +353,8 @@ private:
 		ns_image_fast_registration_profile_cache::const_handle_t & reference_image,
 		ns_image_fast_registration_profile_cache::external_source_type & external_source);
 
-	void get_image_and_reference_image(
+	void get_reference_image(
 		const ns_image_server_captured_image & captured_image,
-		ns_image_fast_registration_profile_cache::const_handle_t & requested_image,
 		ns_image_fast_registration_profile_cache::const_handle_t & reference_image,
 		ns_image_fast_registration_profile_cache::external_source_type & external_source);
 	bool check_for_precalculated_registration(const ns_image_server_captured_image & captured_image, ns_vector_2i & registration_offset, ns_sql & sql);

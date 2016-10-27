@@ -47,7 +47,8 @@ class ns_simple_cache_data_handle {
 public:
 	typedef typename std::remove_cv<data_t>::type data_type;
 
-	ns_simple_cache_data_handle():obj(0), obj_const(0),data(0) {}
+	ns_simple_cache_data_handle():obj(0), unlinked_singleton(0), obj_const(0),data(0) {}
+
 	data_t & operator()() { return *data; }
 	const data_t &operator()() const { return *data; }
 	bool is_valid() const{
@@ -65,10 +66,12 @@ public:
 
 private:
 	data_t * data; //the image cached in memory.
+	bool unlinked_singleton;
 
 	void check_out(bool to_write, 
 		       ns_simple_cache_internal_object<data_type,locked> * o, 
 		       ns_simple_cache<data_type, cache_key_t,locked> *c){
+		if (unlinked_singleton) return;
 	  //not locked as the cache object will be locked while checking this object out
 	  obj = o;
 	  obj->object_metadata_lock.wait_to_acquire(__FILE__, __LINE__);
@@ -81,6 +84,7 @@ private:
 	void check_out(bool to_write,
 		       ns_simple_cache_internal_object<const data_type,locked> * o,
 		       ns_simple_cache<const data_type, cache_key_t, locked> * c){
+	  if (unlinked_singleton) return;
 	  obj_const = o;
 	  obj_const->object_metadata_lock.wait_to_acquire(__FILE__, __LINE__);
 	  data = &obj_const->data;
@@ -188,7 +192,7 @@ public:
 			ns_acquire_lock_for_scope mlock(multiple_get_lock, __FILE__, __LINE__);
 			bool must_restart(false);
 			for (long i = 0; i < read_requests.size(); i++) {
-				if (!get_image<const_handle_t>(read_requests[i].id, read_requests[i].handle_ptr, external_source, true, true)) {
+				if (!get_image<const_handle_t>(read_requests[i].id, read_requests[i].handle_ptr, external_source, ns_read, true)) {
 					//release all if any is taken
 					must_restart = true;
 					for (long j = i - 1; j >= 0; --j)
@@ -201,7 +205,7 @@ public:
 				continue;
 			}
 			for (long i = 0; i < write_requests.size(); i++) {
-				if (!get_image<handle_t>(write_requests[i].id, write_requests[i].handle_ptr, external_source, false, true)) {
+				if (!get_image<handle_t>(write_requests[i].id, write_requests[i].handle_ptr, external_source, ns_write, true)) {
 					//release all if any is taken
 					must_restart = true;
 					for (long j = i - 1; j >= 0; --j)
@@ -217,13 +221,20 @@ public:
 			break;
 		}
 	}
+	typedef enum { ns_read, ns_write, ns_unlinked_singleton } ns_request_type;
        
 	void get_for_read(const typename data_t::id_type & id, const_handle_t & cache_object, typename data_t::external_source_type & external_source){
-	  get_image(id,&cache_object,external_source,true,false);
+	  get_image(id,&cache_object,external_source, ns_read,false);
 	}
 
 	void get_for_write(const typename data_t::id_type & id, handle_t & cache_object, typename data_t::external_source_type & external_source) {
-		get_image(id, &cache_object, external_source, false,false);
+		get_image(id, &cache_object, external_source, ns_write,false);
+	}
+	void get_unlinked_singleton(const typename data_t::id_type & id, handle_t & cache_object, typename data_t::external_source_type & external_source) {
+		get_image(id, &cache_object, external_source, ns_unlinked_singleton, false);
+	}
+	void get_unlinked_singleton(const typename data_t::id_type & id, const_handle_t & cache_object, typename data_t::external_source_type & external_source) {
+		get_image(id, &cache_object, external_source, ns_unlinked_singleton, false);
 	}
 
 	//clears the cache without allowing any of its contents the opportunity to clean up any external resources
@@ -409,7 +420,7 @@ private:
 					break;
 				}
 				lock.release();
-				ns_thread::sleep_microseconds(100);
+				ns_thread::sleep_milliseconds(1);
 			}
 		}
 	}
@@ -423,7 +434,7 @@ private:
 				break;
 			}
 			p->second.object_metadata_lock.release();
-			ns_thread::sleep_microseconds(100);
+			ns_thread::sleep_milliseconds(1);
 		}
 	}
 
@@ -435,13 +446,26 @@ private:
 	bool get_image(const typename data_t::id_type & id,
 					handle_t * handle,
 					typename data_t::external_source_type & external_source,
-					bool read_only, bool only_try_to_get) {
-		bool initial_read_request(read_only);
+					ns_request_type request_type, bool only_try_to_get) {
 		//check to see if we have this in the cache somewhere
 		bool currently_have_write_lock(false), currently_have_table_lock(false);
 
 		//used to convert ids.
 		const data_t dt;
+
+		if (request_type == ns_unlinked_singleton) {
+			handle->unlinked_singleton = true;
+			data_t * data = new data_t;
+			try {
+				data->load_from_external_source(id, external_source);
+			}
+			catch (...) {
+				delete data;
+				throw;
+			}
+			handle->data = data;
+			return true;
+		}
 
 		try {
 			//grab the lock needed to access anything
@@ -467,7 +491,7 @@ private:
 
 				p->second.object_write_lock.wait_to_acquire(__FILE__, __LINE__); 
 				currently_have_table_lock = false;
-				setup_new_cache_object_and_handle_and_release_locks(id,handle,external_source,read_only,p);
+				setup_new_cache_object_and_handle_and_release_locks(id,handle,external_source,request_type,p);
 				return true;
 			}
 
@@ -475,7 +499,7 @@ private:
 			//if (p->second.to_be_deleted)
 			//	read_only = false;
 
-			if (!read_only) {
+			if (request_type == ns_write) {
 
 				//if we want write access, we need to wait until anyone currently reading is finished
 				//and then block out anyone who wants to read.
@@ -509,7 +533,7 @@ private:
 				if (p->second.to_be_deleted) {
 					std::cerr << "%";
 					currently_have_table_lock = false;
-					setup_new_cache_object_and_handle_and_release_locks(id, handle, external_source, initial_read_request, p);
+					setup_new_cache_object_and_handle_and_release_locks(id, handle, external_source, request_type, p);
 					return true;
 				}
 
@@ -550,7 +574,7 @@ private:
 				if (p->second.to_be_deleted) {
 					std::cerr << "%";
 					currently_have_table_lock = false;
-					setup_new_cache_object_and_handle_and_release_locks(id, handle, external_source, initial_read_request, p);
+					setup_new_cache_object_and_handle_and_release_locks(id, handle, external_source, request_type, p);
 					return true;
 				}
 
@@ -574,7 +598,7 @@ private:
 	void setup_new_cache_object_and_handle_and_release_locks(const typename data_t::id_type & id,
 		handle_t * handle,
 		typename data_t::external_source_type & external_source,
-		bool read_only, typename cache_t::iterator p) {
+		ns_request_type request_type, typename cache_t::iterator p) {
 		handle->check_out(true, &p->second, this);  //check it out for writing.
 		p->second.to_be_deleted = false;
 		lock.release();//release the lock so everything else can read and write other objects in the background while we load
@@ -594,7 +618,7 @@ private:
 		p->second.last_access = ns_current_time();
 		current_memory_usage_in_kb += p->second.data.size_in_memory_in_kbytes();
 
-		if (!read_only)
+		if (request_type == ns_write)
 			return;  //we already have write access and everything loaded into cached_object, give it to the user.
 
 		//give up write access manually here, and pass the remaining object, no read only, on to the user
@@ -677,6 +701,11 @@ private:
 
 template<class data_t, class cache_key_t, bool locked>
   inline void ns_simple_cache_data_handle<data_t, cache_key_t,locked>::check_in() {
+	  if (unlinked_singleton) {
+		  ns_safe_delete(data);
+		  data = 0;
+		  return;
+	  }
   //we release this first, so that anyone holding the main lock
   //and waiting for the write lock will continue;
 	if (obj != 0){

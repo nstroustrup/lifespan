@@ -424,10 +424,8 @@ void ns_image_server_dispatcher::start_looking_for_new_work(){
 		ns_acquire_lock_for_scope lock(processing_lock,__FILE__,__LINE__);
 		if (allow_processing && !processing_job_scheduler_thread.is_running()){
 			//get a job from the server
-			cerr << ".";
 			processing_job_scheduler_thread.run(thread_start_look_for_work,this);
 		}
-		else cerr << ":";
 		lock.release();
 	}
 	catch(std::exception & exception){
@@ -1032,17 +1030,52 @@ void ns_image_server_dispatcher::recieve_image_thread(ns_image_server_message & 
 	reciever.pump(image_storage.output_stream(),512);
 }
 
+ns_64_bit ns_processing_thread_pool_status_info::sleep_to_stagger_threads() {
+	ns_processing_thread_run_stats latest(get_lastest_thead_info());
+	if (latest.last_run_time == 0)
+		return 0;
+	float ideal_duration;
 
+	const unsigned long time(ns_current_time());
+
+	if (latest.last_run_duration == 0)
+		ideal_duration = 5;
+	else {
+		unsigned long num_threads = this->run_stats.size();
+		unsigned long time_since_last_run(time - latest.last_run_time);
+		if (num_threads != 0) {
+			float expected_average_interval_between_jobs = latest.last_run_duration / (float)this->run_stats.size();
+			//if the jobs are roughly spread out evenly, we're doing find and don't need to delay anything.
+			if (expected_average_interval_between_jobs > (time_since_last_run)*.75)
+				return 0;
+		}
+		ideal_duration = latest.last_run_duration / 5.0;
+	}
+
+	if (ideal_duration > 5)
+		ideal_duration = 5;
+	ns_64_bit dur_in_milliseconds(rand() % (long)(1000 * ideal_duration));
+	ns_thread::sleep_milliseconds(dur_in_milliseconds);
+//	std::cerr << "Slept for" << dur_in_milliseconds / 1000.0 << "\n";
+	return dur_in_milliseconds;
+}
 void ns_dispatcher_job_pool_job::operator()(ns_dispatcher_job_pool_persistant_data & persistant_data) {
 	image_server_const.log_current_thread_output_in_separate_file();
 	bool multithreaded_job = job.is_a_multithreaded_job();
+	ns_processing_thread_run_stats stats;
+	stats.last_run_time = ns_current_time();
+	ns_64_bit stagger_duration(0);
 	try {
+		std::map<ns_64_bit, ns_thread_output_state>::iterator current_thread_state = external_data->image_server->get_current_thread_state_info();
+
 		//make sure each thread gets a unique ID
 		if (persistant_data.thread_id == 0) {
-			std::map<ns_64_bit, ns_thread_output_state>::iterator current_thread_state = external_data->image_server->get_current_thread_state_info();
 			persistant_data.thread_id = current_thread_state->second.internal_thread_id;
+			srand(ns_current_time() * persistant_data.thread_id);
 		}
 
+		external_data->status_info.update_thread_stats(current_thread_state->second.internal_thread_id, stats);
+		stagger_duration = external_data->status_info.sleep_to_stagger_threads();
 		if (persistant_data.job_scheduler == 0)
 			persistant_data.job_scheduler = new ns_processing_job_scheduler(*external_data->image_server);
 		//make sure sql is connected
@@ -1074,6 +1107,11 @@ void ns_dispatcher_job_pool_job::operator()(ns_dispatcher_job_pool_persistant_da
 		try {
 			ns_image_server_push_job_scheduler push_scheduler;
 			bool action_performed = persistant_data.job_scheduler->run_a_job(job, *persistant_data.sql);
+
+			stats.last_run_duration = ns_current_time() - stats.last_run_time - stagger_duration;
+			external_data->status_info.update_thread_stats(current_thread_state->second.internal_thread_id, stats);
+
+
 		}
 		catch (ns_ex & ex) {
 			image_server.register_server_event(ex, persistant_data.sql);
@@ -1171,6 +1209,7 @@ bool ns_image_server_dispatcher::look_for_work(){
 			(processing_thread_pool.number_of_jobs_pending() > 0 ||
 				!processing_thread_pool.any_thread_is_idle())) {
 			processing_job_scheduler_thread.report_as_finished();
+			cerr << ":";
 			return false;
 		}
 		ns_image_server_push_job_scheduler push_scheduler;
@@ -1186,8 +1225,10 @@ bool ns_image_server_dispatcher::look_for_work(){
 		}
 
 		push_scheduler.request_jobs(number_of_jobs_to_run, jobs, *work_sql_connection, first_in_first_out_job_queue);
-		if (jobs.size() == 0)
+		if (jobs.size() == 0) {
+			cerr << ".";
 			return false;
+		}
 
 		//here is the logic that allows multithreaded jobs to run alone in the thread pool.
 		{
@@ -1282,47 +1323,48 @@ ns_thread_return_type ns_image_server_dispatcher::thread_start_look_for_work(voi
 	ns_image_server_dispatcher * d = reinterpret_cast<ns_image_server_dispatcher *>(dispatcher_pointer);
 
 	bool found_work(false);
-	while (true)
+	while (true) {
 		try {
-		try {
-			found_work = d->look_for_work();
+			try {
+				found_work = d->look_for_work();
+			}
+			catch (std::exception & exception) {
+				ns_ex ex(exception);
+				image_server.register_server_event(ns_image_server::ns_register_in_central_db, ex);
+				if (ex.type() == ns_memory_allocation)
+					d->handle_memory_allocation_error();
+			}
+
+			//ns_acquire_lock_for_scope lock(d->processing_lock,__FILE__,__LINE__);
+			d->processing_job_scheduler_thread.report_as_finished();
+
+			return 0;
 		}
 		catch (std::exception & exception) {
 			ns_ex ex(exception);
-			image_server.register_server_event(ns_image_server::ns_register_in_central_db, ex);
+			//self.detach();
+			ex << ex.text() << "(Error in processing_job_scheduler_thread)";
 			if (ex.type() == ns_memory_allocation)
-				d->handle_memory_allocation_error();
+				image_server.image_storage.cache.clear_cache_without_cleanup();
+			try {
+				image_server.register_server_event(ns_image_server::ns_register_in_central_db_with_fallback, ex);
+				image_server.ns_image_server::shut_down_host();
+			}
+			catch (ns_ex & ex2) {
+				image_server.register_server_event_no_db(ns_image_server_event(ex.text()));
+				image_server.register_server_event_no_db(ns_image_server_event(ex2.text()));
+			}
+
+			d->processing_job_scheduler_thread.report_as_finished();
+
+			return 0;
 		}
-
-		//ns_acquire_lock_for_scope lock(d->processing_lock,__FILE__,__LINE__);
-		d->processing_job_scheduler_thread.report_as_finished();
-
-		return 0;
-	}
-	catch (std::exception & exception) {
-		ns_ex ex(exception);
-		//self.detach();
-		ex << ex.text() << "(Error in processing_job_scheduler_thread)";
-		if (ex.type() == ns_memory_allocation)
-			image_server.image_storage.cache.clear_cache_without_cleanup();
-		try {
-			image_server.register_server_event(ns_image_server::ns_register_in_central_db_with_fallback, ex);
+		catch (...) {
+			cerr << "Unknown error!\n";
 			image_server.ns_image_server::shut_down_host();
+			d->processing_job_scheduler_thread.report_as_finished();
+			return 0;
 		}
-		catch (ns_ex & ex2) {
-			image_server.register_server_event_no_db(ns_image_server_event(ex.text()));
-			image_server.register_server_event_no_db(ns_image_server_event(ex2.text()));
-		}
-
-		d->processing_job_scheduler_thread.report_as_finished();
-
-		return 0;
-	}
-	catch (...) {
-		cerr << "Unknown error!\n";
-		image_server.ns_image_server::shut_down_host();
-		d->processing_job_scheduler_thread.report_as_finished();
-		return 0;
 	}
 }
 ns_thread_return_type ns_scan_for_problems(void * d){

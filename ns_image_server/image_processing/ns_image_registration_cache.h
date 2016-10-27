@@ -239,6 +239,7 @@ struct ns_image_fast_registration_profile_data_source {
 
 class ns_image_fast_registration_profile :  public ns_simple_cache_data<ns_image_server_image, ns_image_fast_registration_profile_data_source, ns_64_bit> {
 public:
+	enum {ns_registration_downsample_factor = 2};
 	ns_image_fast_registration_profile() :pyramid(0) {}
 	ns_image_server_image image_record;
 	ns_gaussian_pyramid * pyramid;
@@ -246,9 +247,11 @@ public:
 	friend class ns_simple_cache;
 	~ns_image_fast_registration_profile();
 	ns_64_bit to_id(const ns_image_server_image & im) const { return im.id; }
+	ns_image_storage_source_handle<ns_8_bit> full_res_image(ns_image_fast_registration_profile_data_source & data_source)const;
+	void delete_cached_file(ns_image_fast_registration_profile_data_source & data_source) const ;
 private:
 	ns_64_bit size_in_memory_in_kbytes() const;
-
+	mutable std::string local_cache_filename;
 	void load_from_external_source(const ns_image_server_image & im, ns_image_fast_registration_profile_data_source & data_source);
 	void clean_up(ns_image_fast_registration_profile_data_source & data_source);
 	const ns_64_bit & id() const { return image_record.id; }

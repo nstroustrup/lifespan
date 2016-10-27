@@ -85,7 +85,7 @@ public:
 			if (jobs.empty())
 				break;
 			job_access_lock.release();
-			ns_thread::sleep_microseconds(100);
+			ns_thread::sleep_milliseconds(1);
 		}
 		job_access_lock.release();
 		wait_after_jobs_finish.wait_to_acquire(__FILE__, __LINE__);
@@ -149,7 +149,7 @@ public:
 				for (unsigned int j = 0; j < i; j++)
 					thread_idle_locks[j].release();
 				wait_after_jobs_finish.release();
-				ns_thread::sleep_microseconds(100);
+				ns_thread::sleep_milliseconds(1);
 				continue;
 			}
 
@@ -162,7 +162,7 @@ public:
 				NS_TPDBG(debug << "(main gets job lock but finds jobs)");
 				job_access_lock.release();
 				wait_after_jobs_finish.release();
-				ns_thread::sleep_microseconds(100);
+				ns_thread::sleep_milliseconds(1);
 				continue;
 			}
 
@@ -194,7 +194,7 @@ public:
 					if (state != ns_polling_for_idle_threads)
 						break;
 				}
-				ns_thread::sleep_microseconds(100);
+				ns_thread::sleep_milliseconds(1);
 		}
 		
 		switch (state) {
@@ -265,7 +265,7 @@ public:
 			thread_init_lock.release();
 			if (c == threads.size())
 				break;
-			ns_thread::sleep_microseconds(5);
+			ns_thread::sleep_milliseconds(1);
 		}
 		job_access_lock.release();
 		state = ns_running;
@@ -346,7 +346,7 @@ public:
 
 				//more work may have arrived!  the thread is released to look for more jobs
 				thread_has_been_idle = true;
-				ns_thread::sleep_microseconds(500);
+				ns_thread::sleep_milliseconds(1);
 				continue;
 			}
 			//grab the job

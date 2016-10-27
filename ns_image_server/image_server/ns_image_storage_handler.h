@@ -121,10 +121,15 @@ public:
 	ns_image_storage_reciever_handle<ns_component> request_local_cache_storage(const std::string & filename, const ns_image_type & image_type, const unsigned long max_line_length, const bool report_to_db = true) const;
 	ns_image_storage_reciever_handle<float> request_local_cache_storage_float(const std::string & filename, const ns_image_type & image_type, const unsigned long max_line_length, const bool report_to_db = true) const;
 
+
+
 	unsigned long request_local_cache_file_size(const std::string & filename) const;
 	
 	ns_image_storage_source_handle<ns_component> request_from_local_cache(const std::string & filename, const bool report_to_db=true)const;
 	ns_image_storage_source_handle<float> request_from_local_cache_float(const std::string & filename, const bool report_to_db = true)const;
+
+
+	std::string add_to_local_cache(ns_image_server_image & image, ns_image_server_sql * sql)const;
 
 	ns_image_storage_source_handle<ns_component> request_from_volatile_storage(const std::string & filename,const bool report_to_db=true)const;
 	bool delete_from_volatile_storage(const std::string & filename)const;
@@ -177,6 +182,7 @@ public:
 		}
 		return true;
 	}
+
 
 	template<class ns_comp>
 	ns_image_storage_source_handle<ns_comp> request_from_storage_n_bits(ns_image_server_image & image, ns_image_server_sql * sql,const ns_storage_location & location) const{

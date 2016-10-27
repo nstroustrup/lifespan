@@ -32,7 +32,7 @@ public:
 	ns_vector_2d operator()(const ns_vector_2d & initial_alignment,const ns_vector_2d & max_alignment, ns_alignment_state & state, const ns_image_standard & image, bool & saturated_offset);
 
 	ns_vector_2d operator()(const ns_vector_2d & initial_alignment, const ns_vector_2d & max_alignment, const ns_gaussian_pyramid * state_pyramid, const ns_gaussian_pyramid *image_pyramid, bool & saturated_offset);
-
+	void minimize_memory_use(bool min) { minimize_memory_use_ = min; }
 
 	void clear();
 
@@ -47,7 +47,7 @@ public:
 
 private:
 	const ns_vector_2<float> max_offset, bottom_offset, size_offset;
-
+	bool minimize_memory_use_;
 	ns_gaussian_pyramid * state_pyramid, *image_pyramid;
 	ns_gradient_shift * gradient_shift;
 

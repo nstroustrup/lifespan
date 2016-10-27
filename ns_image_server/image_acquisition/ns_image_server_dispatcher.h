@@ -23,10 +23,41 @@ struct ns_remote_dispatcher_request{
 	ns_image_server_message message;
 	ns_socket_connection connection;
 };
+struct ns_processing_thread_run_stats {
+	ns_processing_thread_run_stats() :last_run_time(0), last_run_duration(0) {}
+	unsigned long last_run_time;
+	unsigned long last_run_duration;
+};
 
-struct ns_processig_thread_pool_status_info {
-	struct ns_processig_thread_pool_status_info():lock("ptpsi"), number_of_multi_threaded_jobs_running(0){}
+struct ns_processing_thread_pool_status_info {
+	struct ns_processing_thread_pool_status_info():lock("ptpsi"), number_of_multi_threaded_jobs_running(0){}
 	unsigned long number_of_multi_threaded_jobs_running;
+
+	std::map<unsigned long, ns_processing_thread_run_stats> run_stats;
+
+	void update_thread_stats(unsigned long thread_id, const ns_processing_thread_run_stats & st) {
+		ns_acquire_lock_for_scope mlock(lock, __FILE__, __LINE__);
+		run_stats[thread_id] = st;
+		mlock.release();
+	}
+	ns_processing_thread_run_stats get_lastest_thead_info() {
+		ns_acquire_lock_for_scope mlock(lock,__FILE__,__LINE__);
+		ns_processing_thread_run_stats latest;
+		if (run_stats.size() == 0) {
+			mlock.release();
+			return latest;
+		}
+		ns_64_bit duration_sum(0);
+		for (std::map<unsigned long, ns_processing_thread_run_stats>::iterator p = run_stats.begin(); p != run_stats.end(); p++) {
+			if (p->second.last_run_time >= latest.last_run_time)
+				latest.last_run_time = p->second.last_run_time;
+			duration_sum+= p->second.last_run_duration;
+		}
+		mlock.release();
+		latest.last_run_duration = (unsigned long)(duration_sum / run_stats.size());
+		return latest;
+	}
+	ns_64_bit sleep_to_stagger_threads();
 	ns_lock lock;
 };
 struct ns_dispatcher_job_pool_external_data {
@@ -34,7 +65,7 @@ struct ns_dispatcher_job_pool_external_data {
 
 	const ns_image_server * image_server;
 
-	ns_processig_thread_pool_status_info status_info;
+	ns_processing_thread_pool_status_info status_info;
 };
 
 struct ns_dispatcher_job_pool_persistant_data {

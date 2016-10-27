@@ -3264,6 +3264,11 @@ class ns_gradient_shift {
 public:
 	ns_gradient_shift();
 	void clear();
+	/*void preallocate(const ns_image_properties &p) {
+		grad_x.resize(p);
+		grad_y.resize(p);
+		diff.resize(p);
+	}*/
 	//we need to correctly handle initial offset
 	template<class T1, class T2>
 	//estimate the shift between the images given that s2 is shifted initial_offset over from s1
@@ -3291,16 +3296,18 @@ public:
 
 
 		//calculate gradients;
-		grad_x.resize(p);
-		grad_y.resize(p);
-		diff.resize(p);
+
+		//grad_x.resize(p);
+		//grad_y.resize(p);
+		//diff.resize(p);
 
 		//todo: alculation of the image gradient can likely be accelerated using the following intel IPP functions
 		//WarpBilinear
 		//GradientVectorScharr
 		//ippiSub_8u
 
-
+		A[0] = A[1] = A[2] = A[3] = b[0] = b[1] = 0;
+		double grad_x, grad_y, diff;
 		for (int y = 0; y < p.height; y++) {
 			for (int x = 0; x < p.width; x++) {
 	//	for (int y = tl.y + 1; y < br.y - 1; y++) {
@@ -3308,10 +3315,15 @@ public:
 				//we want to apply the offset to im2, so we pull pixels offset in the opposite direction of the desired shift
 				const double x_(x - initial_offset.x + tl.x+1),  //the plus one is because the grad_x is 2 smaller than im2, because we ignore the boundaries of the kernel
 							y_(y - initial_offset.y + tl.y+1);
-				grad_x[y][x] = .5*(im2.sample_d(y_, x_ + 1) - im2.sample_d(y_, x_ - 1));
-				grad_y[y][x] = .5*(im2.sample_d(y_+1,x_) - im2.sample_d(y_-1, x_));
+				grad_x= .5*(im2.sample_d(y_, x_ + 1) - im2.sample_d(y_, x_ - 1));
+				grad_y = .5*(im2.sample_d(y_+1,x_) - im2.sample_d(y_-1, x_));
 
-				diff[y][x] = im2.sample_d(y_,x_) - im1.sample_d(y + tl.y+1, x + tl.x+1);
+				diff = im2.sample_d(y_,x_) - im1.sample_d(y + tl.y+1, x + tl.x+1);
+				A[0] += grad_x * grad_x;
+				A[1] += grad_x * grad_y;
+				A[3] += grad_y * grad_y;
+				b[0] -= grad_x * diff;
+				b[1] -= grad_y * diff;
 			}
 		}
 
@@ -3319,7 +3331,7 @@ public:
 	}
 private:
 	ns_vector_2d calc_shifts_from_grad();
-	ns_image_whole<double> grad_x, grad_y, diff;
+	//ns_image_whole<double> grad_x, grad_y, diff;
 	double A[4]; //2x2 matrix
 	double b[2];//2x1 vector
 	double LU[4];//2x2 matrix (Cholesky decomposition of A)
@@ -3329,26 +3341,26 @@ private:
 
 
 ns_gradient_shift::ns_gradient_shift() {
-	diff.use_more_memory_to_avoid_reallocations();
+/*	diff.use_more_memory_to_avoid_reallocations();
 	grad_x.use_more_memory_to_avoid_reallocations();
-	grad_y.use_more_memory_to_avoid_reallocations();
+	grad_y.use_more_memory_to_avoid_reallocations();*/
 }
 void ns_gradient_shift::clear() {
-	diff.clear();
+	/*diff.clear();
 	grad_x.clear();
-	grad_y.clear();
+	grad_y.clear();*/
 }
 
 ns_vector_2d ns_gradient_shift::calc_shifts_from_grad()  {
-	A[0] = A[1] = A[2] = A[3] = b[0] = b[1] = 0;
-	for (unsigned long y = 0; y < grad_x.properties().height; y++)
+	//A[0] = A[1] = A[2] = A[3] = b[0] = b[1] = 0;
+	/*for (unsigned long y = 0; y < grad_x.properties().height; y++)
 		for (unsigned long x = 0; x < grad_x.properties().width; x++) {
 			A[0] += grad_x[y][x] * grad_x[y][x];
 			A[1] += grad_x[y][x] * grad_y[y][x];
 			A[3] += grad_y[y][x] * grad_y[y][x];
 			b[0] -= grad_x[y][x] * diff[y][x];
 			b[1] -= grad_y[y][x] * diff[y][x];
-		}
+		}*/
 	A[2] = A[1];
 
 	//calculate the determinant to test that matrix is singular
@@ -3438,6 +3450,10 @@ ns_vector_2d ns_calc_best_alignment_fast::operator()(const ns_vector_2d & initia
 	unsigned long number_of_levels((state_pyramid->num_current_pyramid_levels < image_pyramid->num_current_pyramid_levels) ? state_pyramid->num_current_pyramid_levels : image_pyramid->num_current_pyramid_levels);
 	unsigned long debug_number_of_levels_processed(0);
 	bool lowest_resolution_level(true);
+
+	//saves us having to reallocate memory each time we step down the pyramid (look at a larger size)
+//	gradient_shift->preallocate(state_pyramid->image_scaled[0].properties());
+
 	for (int i = number_of_levels - 1; i >= 0; i--) {
 		int fold = pow(2, i);
 		if (lowest_resolution_level)
@@ -3589,12 +3605,15 @@ ns_vector_2d ns_calc_best_alignment_fast::operator()(const ns_vector_2d & initia
 				ns_save_image("c:\\server\\pyramid_grad_" + ns_to_string(fast_alignment_debug_id) + ".tif", dbg);
 			}
 #endif
+			gradient_shift->clear();
 			return ns_vector_2d(0, 0);
 		}
 	}
 #ifdef NS_DEBUG_FAST_IMAGE_REGISTRATION
 	pyramid_buffer->flush();
 #endif
+	if (minimize_memory_use_)
+		gradient_shift->clear();
 	fast_alignment_debug_id++;
 	if (reg.x < -max_alignment.x) { reg.x = -max_alignment.x; saturated_offset = true; }
 	if (reg.y < -max_alignment.y) { reg.y = -max_alignment.y; saturated_offset = true; }

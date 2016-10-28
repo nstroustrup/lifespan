@@ -274,7 +274,7 @@ function ns_output_database_selector($name,$db_choice,$submit_immediately=TRUE){
 	echo "</select>";
 }
 
-function display_worm_page_header($title, $link = "<a href=\"view_experiments.php\">[Back to Experiment Index]</a>",$display_db_choice=FALSE){
+function display_worm_page_header($title, $link = "<a href=\"view_experiments.php\">[Back to Experiment Index]</a>",$display_db_choice=FALSE,$extra_header_text){
 	global $db_name;
 	?><!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
 <html>
@@ -303,27 +303,6 @@ body {
 	font-family: Arial, Helvetica, sans-serif;
 	font-size: 12px
 }
-#popup { 
-  position:relative; 
-  }
-
-#popup a span {
-	display: none; color: #FFFFFF;
-}
-
-#popup a span {
-	display: none;
-}
-
-#popup a:hover span { 
-  display: block; position: absolute; width: 400px; left: 100px; top: -10px; 
-color: #000000; 
-background: #FFFFFF;
-background-color=#FFFFFF;
-padding: 0 5px; 
-}
-
-
 -->
 </style>
 <script>
@@ -358,6 +337,7 @@ padding: 0 5px;
 
 }
 </script>
+<?php echo $extra_header_text?>
 </head>
 <body>
 <table width="1200" border="0" cellspacing="2" cellpadding="2" align="center">

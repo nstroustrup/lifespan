@@ -473,7 +473,7 @@ if (!$show_plate_stats){
 ?>
 <td><center>Image Analysis</center></td>
 <td><center>Capture<br>Schedule</center></td>
-<td><center>Modify Plate Metadata</center></td>
+<td><center>Annotate Plate Information</center></td>
 <td><center>Comments</td><td>Devices</center></td>
 <td><center>Duration</center></td>
 <?php
@@ -542,7 +542,7 @@ if (!$show_plate_stats){
 echo "<a href=\"view_processing_job.php?job_id=0&experiment_id=$experiment_id&live_dangerously=1&hide_entire_region_job=1\">[Cancel Pending Scans]</a>";
         echo "</center></td><td nowrap bgcolor=\"$clrs[1]\"  valign='top'>";
         echo "<center><a href=\"experiment_overview.php?experiment_id=".$experiment_id."\">[By Image]</a>"; 
-echo "<a href=\"plate_labeling.php?experiment_id=".$experiment_id."\">[By Position]</a>";  
+echo "<a href=\"plate_labeling.php?experiment_id=".$experiment_id."\">[By Position]</a><br>";  
 echo "<a href=\"device_temperatures.php?experiment_id=".$experiment_id."\">[Device Temperatures]</a>";
 	echo "</center></td><td bgcolor=\"$clrs[0]\" valign='top'>";
 if ($experiment[6] == '1')

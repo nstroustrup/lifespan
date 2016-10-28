@@ -194,12 +194,12 @@ if ($specified_experiment_list){
 	if ($device != "")
 		$censored_string .= "device_name = '$device' AND";
 	$query = "SELECT id FROM capture_samples WHERE $censored_string experiment_id = " . $experiments_to_process[$i];
-		  //die($query);
+	//  die($query);
 	$sql->get_row($query,$res);
 	for ($j = 0; $j < sizeof($res); $j++)
 		array_push($samples_to_process,$res[$j][0]);
 	//	var_dump($samples_to_process);die("");
-	}
+    }//die("");
   }
   else if ($specified_sample_id != 0){
    	 array_push($samples_to_process,$specified_sample_id);
@@ -880,7 +880,7 @@ for ($i = 0; $i < sizeof($jobs); $i++){
     $sql->send_query($unlock_tables_query);
     if (!($clear_region=='')){
       for ($i = 0; $i < sizeof($samples_to_process); $i++){
-	$query = "UPDATE captured_images SET problem = 0, mask_applied=0,registration_offset_calculated=0,registration_horizontal_offset=0,registration_vertical_offset=0 WHERE sample_id = " . $samples_to_process[$i];
+	$query = "UPDATE captured_images SET problem = 0, mask_applied=0 WHERE sample_id = " . $samples_to_process[$i];
 	//echo $query . "<BR>";
 	$sql->send_query($query);
       }

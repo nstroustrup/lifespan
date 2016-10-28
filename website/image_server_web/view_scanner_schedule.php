@@ -11,7 +11,7 @@ $show_future = @$query_string['show_future'];
 
 $experiment = new ns_experiment($experiment_id,"",$sql);
 if ($experiment->name == '')
-	$experiment->name = "All Experiments";
+	$experiment->name = "All";
 if (!isset($show_past))
   $show_past = array(0,50);
  else if ($show_past === '1')
@@ -21,7 +21,7 @@ if (!isset($show_past))
  else $show_past = explode(",",$show_past);
 
 if (!isset($show_future))
-  $show_future = array(0,0);
+  $show_future = array(0,50);
  else if ($show_future === '1')
   $show_future = array(0,50);
  else if ($show_future === '0')
@@ -78,7 +78,7 @@ function out_limits($event_type,&$data,$limits){
   if ($limits[1] - $limits[0] <= sizeof($data))
     $out .= out_limits_p($event_type,array($limits[0]+50,$limits[1]+50)) . " [next]</a>";
   else $out .= "[next]";
-  return "Showing events " . $limits[0] . "-" . $limits[1] ." " . $out;
+  return "Showing events " . $limits[0] . "-" . $limits[1] . "<br>" . $out;
 }
 
 function display_events(&$events,&$name_hash,&$sample_hash,&$limits){
@@ -87,21 +87,19 @@ function display_events(&$events,&$name_hash,&$sample_hash,&$limits){
 		echo '(No Events in this Category)';
 		return;
 	}
-	echo "<table width=\"0%\" bgcolor=\"#555555\" cellspacing='0' cellpadding='1' ><tr><td>";
+	echo "<table width=\"100%\" bgcolor=\"#555555\" cellspacing='0' cellpadding='1' ><tr><td>";
 	echo "<table width=\"100%\" cellspacing='0' cellpadding='4'>";
-	echo "<tr $table_header_color><td>Scheduled Time</td><td>Subject</td><td>Started Time</td><td>Stop Time</td><td>Error</td><td>Output</td></tr>";	
+	echo "<tr $table_header_color><td>Scheduled Time</td><td>Device</td><td>Experiment.Sample</td><td>Started Time</td><td>Stop Time</td><td>Failed Attempts</td><td>Output</td></tr>";	
 	for ($i = 0; $i < sizeof($events); $i++){
 		$clrs = $table_colors[$i%2];
-		echo "<tr><td bgcolor=\"$clrs[0]\">".format_time($events[$i][4]).   "</td>".
-		  
-			"<td bgcolor=\"$clrs[1]\">". display_hash_name($events[$i][1],$name_hash)."." . display_double_hash_name($events[$i][1],$events[$i][2],$sample_hash) ."</td>".
-			"<td bgcolor=\"$clrs[0]\">".format_time($events[$i][5])."</td>".
-			"<td bgcolor=\"$clrs[1]\">".format_time($events[$i][6])."</td>";
-														      echo "<td bgcolor=\"$clrs[0]\"><center>";
-														      if  ($events[$i][7] == 0)
-															echo "(none)";
-														      else echo "<a href=\"view_hosts_log.php?event_id=" . $events[$i][7] . "\">[Error]</a>";
-														      echo "</center></td>".			"<td bgcolor=\"$clrs[0]\">";
+	
+		echo "<tr><td bgcolor=\"$clrs[0]\">".format_time($events[$i][4]). " " . $events[$i][0] . "</td>".
+		  "<td bgcolor=\"$clrs[1]\">";  if ($events[$i][3] == "0") echo "(none)"; else echo $events[$i][3]; echo "</td>".
+			"<td bgcolor=\"$clrs[0]\">". display_hash_name($events[$i][1],$name_hash)."." . display_double_hash_name($events[$i][1],$events[$i][2],$sample_hash) ."</td>".
+			"<td bgcolor=\"$clrs[1]\">".format_time($events[$i][5])."</td>".
+			"<td bgcolor=\"$clrs[0]\">".format_time($events[$i][6])."</td>";
+		echo "<td bgcolor=\"$clrs[1]\"><center>" . $events[$i][7] . "</center></td>".
+			"<td bgcolor=\"$clrs[0]\">";
 			if ($events[$i][8] != 0){
 				echo ns_view_captured_image_link( $events[$i][8], "[Image]");
 				//if ($events[$i][9] == '1')
@@ -180,15 +178,12 @@ if ($show_past[1] - $show_past[0] > 0){
 }
 
 
-$text = "Image Acquisition Schedule for ";
-if (isset($device_name))
-  $text .= $device_name . ": ";
-$text .=  $experiment->name;
-display_worm_page_header($text);
+
+display_worm_page_header("Capture Schedule (" . $experiment->name .")");
 
 ?>
 
-<!--<a href="#Current">[Current]</a> <a href="#future">[Future]</a> <a href="#completed">[Completed]<br><br>-->
+<a href="#Current">[Current]</a> <a href="#future">[Future]</a> <a href="#completed">[Completed]<br><br>
 
 
 </a>
@@ -210,32 +205,30 @@ for($i = 0; $i < sizeof($device_names); $i++){
        
 	}*/
 ?>
-<a name="Current"></a>
-  <?php if (0){
+<a name="Current"></a><br>
+<?php
 echo  "<h2>Currently Scanning</h2>";
 display_events($current_events, $experiment_names,$sample_names,$device_names);
-}
+
 ?><a name="future"></a><?php
 if ($show_future[1] - $show_future[0] > 0)
   $r = array(0,0);
  else $r = array(0,50);
-
+echo  "<br><h2>" . out_link($experiment_id, $device_name, $show_past, $r) . "Future Scans</a></h2>";
 if ($show_future[1] - $show_future[0] != 0){
-  echo  "<span class=\"style1\">" . out_link($experiment_id, $device_name, $show_past, $r) . "Future Scans</a></span><br>";
   echo out_limits(1,$future_events,$show_future);
-  display_events($future_events, $experiment_names,$sample_names,$show_future); } else  echo out_link($experiment_id, $device_name, $show_past, $r) . "[Show Future Scans]</a><br><br>";
+  display_events($future_events, $experiment_names,$sample_names,$show_future);
+    
+    }
 ?><a name="completed"></a><?php
 if ($show_past[1] - $show_past[0] > 0)
   $r = array(0,0);
  else $r = array(0,50);
-
-
+echo  "<br><h2>" . out_link($experiment_id, $device_name, $r, $show_future) . "Completed Scans</a></h2>";
 if ($show_past[1] - $show_past[0] > 0){
-echo "<span class=\"style1\">" . out_link($experiment_id, $device_name, $r, $show_future) . "Completed Scans</a></span><br>";
   echo out_limits(0,$completed_events,$show_past);
   display_events($completed_events, $experiment_names,$sample_names,$show_past);
-}
-else echo  out_link($experiment_id, $device_name, $r, $show_future) . "[Show Completed Scans]</a>";
+    }
 
 display_worm_page_footer();
 ?>

@@ -23,7 +23,7 @@ namespace ns_mysql_header{
 // Thanks to standard #include guards, subsequent attempts to include the same 
 // in the global namespace will do nothing. On OS X, this in particular breaks
 // sys/stat.h which is included by both mysql/my_dir.h and ns_dir.h
-#include "mysql.h"
+#include <mysql/mysql.h>
 #endif
 }
 

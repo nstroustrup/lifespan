@@ -1,6 +1,5 @@
 #include "ns_usb.h"
 #include "ns_thread.h"
-#include "config.h"
 #if NS_USB_1 == 1
 #define USE_NEW_USB
 #endif

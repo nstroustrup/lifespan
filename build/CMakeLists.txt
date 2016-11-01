@@ -90,6 +90,8 @@ list (APPEND ns_external_SOURCES "${PROJECT_SOURCE_DIR}/../external_libraries/li
 set(DEF_FONT "${pkgdatadir}/default_font.ttf")
 set(INI_PATH "${sysconfdir}/ns_image_server.ini")
 
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
+
 add_definitions(-DTRILIBRARY -DNO_TIMER -DANSI_DECLARATORS -DNS_DEFAULT_FONT="${DEF_FONT}" -DNS_INI_PATH="${INI_PATH}" -DUSE_NEW_USB=1)
    
 add_library(ns_image_server_base STATIC ${ns_image_server_base_SOURCES} ${ns_external_SOURCES})
@@ -97,7 +99,7 @@ add_executable (ns_image_server "${PROJECT_SOURCE_DIR}/../ns_image_server/image_
 add_dependencies(ns_image_server ns_image_server_base)
 
 
-
+find_package(MYSQL REQUIRED)
 include_directories(${MYSQL_INCLUDE_DIR})
 target_link_libraries(ns_image_server ${MYSQL_LIBRARY})
 

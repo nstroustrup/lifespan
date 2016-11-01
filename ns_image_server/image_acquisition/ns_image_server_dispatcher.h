@@ -30,7 +30,7 @@ struct ns_processing_thread_run_stats {
 };
 
 struct ns_processing_thread_pool_status_info {
-	struct ns_processing_thread_pool_status_info():lock("ptpsi"), number_of_multi_threaded_jobs_running(0){}
+        ns_processing_thread_pool_status_info():lock("ptpsi"), number_of_multi_threaded_jobs_running(0){}
 	unsigned long number_of_multi_threaded_jobs_running;
 
 	std::map<unsigned long, ns_processing_thread_run_stats> run_stats;

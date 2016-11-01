@@ -95,7 +95,7 @@ struct ns_death_time_annotation_flag{
 	
 	ns_color_8 flag_color() const;
 
-	static char * first_default_flag_short_label();
+	static const char * first_default_flag_short_label();
 	static void generate_default_flags(std::vector<ns_death_time_annotation_flag> & flags);
 
 	static ns_death_time_annotation_flag none(){

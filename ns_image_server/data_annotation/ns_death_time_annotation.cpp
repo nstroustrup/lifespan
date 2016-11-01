@@ -2366,7 +2366,7 @@ void ns_death_time_annotation_flag::get_flags_from_db(ns_sql & sql){
 };
 
 
-char * ns_death_time_annotation_flag::first_default_flag_short_label(){
+const char * ns_death_time_annotation_flag::first_default_flag_short_label(){
 	return "MULTI_ERR";
 }
 ns_death_time_annotation_flag ns_death_time_annotation_flag::extra_worm_from_multiworm_disambiguation(){

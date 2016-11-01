@@ -1,6 +1,9 @@
 cmake_minimum_required(VERSION 2.8)
 project (ns_image_server)
 
+option (ADVANCED_MOVEMENT_QUANTIFICATION
+        "Use advanced movement quantitifiation" OFF) 
+
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${PROJECT_SOURCE_DIR}/modules/")
 
 file(GLOB_RECURSE image_server_SOURCES "${PROJECT_SOURCE_DIR}/../ns_image_server/image_server//*.cpp")
@@ -20,6 +23,14 @@ file(GLOB_RECURSE image_base_HEADERS "${PROJECT_SOURCE_DIR}/../ns_image_server/i
 
 file(GLOB_RECURSE image_processing_SOURCES "${PROJECT_SOURCE_DIR}/../ns_image_server/image_processing/*.cpp")
 file(GLOB_RECURSE image_processing_HEADERS "${PROJECT_SOURCE_DIR}/../ns_image_server/image_processing/*.h")
+
+if(ADVANCED_MOVEMENT_QUANTIFICATION)
+message(ERROR "Advanced movement quantification not currently supported under linux")
+else()
+ list(REMOVE_ITEM image_processing_SOURCES "${PROJECT_SOURCE_DIR}/../ns_image_server/image_processing/ns_optical_flow.cpp")
+endif()
+
+
 
 file(GLOB_RECURSE job_scheduling_SOURCES "${PROJECT_SOURCE_DIR}/../ns_image_server/job_scheduling/*.cpp")
 file(GLOB_RECURSE job_scheduling_HEADERS "${PROJECT_SOURCE_DIR}/../ns_image_server/job_scheduling/*.h")
@@ -97,11 +108,17 @@ add_definitions(-DTRILIBRARY -DNO_TIMER -DANSI_DECLARATORS -DNS_DEFAULT_FONT="${
 add_library(ns_image_server_base STATIC ${ns_image_server_base_SOURCES} ${ns_external_SOURCES})
 add_executable (ns_image_server "${PROJECT_SOURCE_DIR}/../ns_image_server/image_server/ns_image_server_main.cpp")
 add_dependencies(ns_image_server ns_image_server_base)
+target_link_libraries(ns_image_server ns_image_server_base)
 
+SET(IPP_STATIC 1)
+SET(IPP_MULTI_THREADED 0)
+find_package(IPP REQUIRED)
+include_directories(${IPP_INCLUDE_DIR})
+target_link_libraries(ns_image_server ${IPP_LIBRARIES})
 
 find_package(MYSQL REQUIRED)
 include_directories(${MYSQL_INCLUDE_DIR})
-target_link_libraries(ns_image_server ${MYSQL_LIBRARY})
+target_link_libraries(ns_image_server ${MYSQL_LIBRARIES})
 
 find_package(JPEG REQUIRED)
 include_directories(${JPEG_INCLUDE_DIR})

@@ -3,7 +3,6 @@
 #include "ns_image.h"
 #include "ns_image_server_sql.h"
 #include "ns_image_tools.h"
-
 typedef enum{ns_threshold_one_stage, ns_threshold_two_stage} ns_threshold_type;
 
 class ns_difference_thresholder{
@@ -20,7 +19,7 @@ struct ns_two_stage_difference_parameters{
 				  permissive_absolute_threshold,
 				  permissive_radius;
 };
-
+void ns_output_logged_info(const std::string & s, ns_sql * sql);
 class ns_two_stage_difference_thresholder{
 public:
 	template<class ns_component>
@@ -29,21 +28,21 @@ public:
 		//unsigned long start_time = ns_current_time();
 
 		ns_image_whole<ns_component> skeleton_thresh;
-		image_server_const.add_subtext_to_current_event("0% ", sql_for_debug_output);
+		ns_output_logged_info("0% ", sql_for_debug_output);
 		ns_difference_thresholder::run(im,skeleton_thresh,dp.strict_height,dp.strict_radius,dp.strict_absolute_threshold);
-		image_server_const.add_subtext_to_current_event("25% ", sql_for_debug_output);
+		ns_output_logged_info("25% ", sql_for_debug_output);
 		ns_remove_small_objects<ns_component,12>(skeleton_thresh);
-		image_server_const.add_subtext_to_current_event("37.5% ", sql_for_debug_output);
+		ns_output_logged_info("37.5% ", sql_for_debug_output);
 		ns_image_whole<ns_component> skeleton_dialated;
 		ns_dilate<7>(skeleton_thresh,skeleton_dialated);
-		image_server_const.add_subtext_to_current_event("50% ", sql_for_debug_output);
+		ns_output_logged_info("50% ", sql_for_debug_output);
 	
 		ns_image_whole<ns_component> body_thresh;
 		ns_difference_thresholder::run(im,body_thresh,dp.permissive_height,dp.permissive_radius,dp.permissive_absolute_threshold);
 		ns_remove_small_objects<ns_component,5>(body_thresh);
 
 		ns_image_properties prop(im.properties());
-		image_server_const.add_subtext_to_current_event("75% ", sql_for_debug_output);
+		ns_output_logged_info("75% ", sql_for_debug_output);
 		const unsigned int h( im.properties().height),
 							w( im.properties().width);
 		if (make_color_vis){
@@ -80,7 +79,7 @@ public:
 				for (unsigned int x = 0; x < w; x++)
 					out[y][x]*=255;
 		}
-		image_server_const.add_subtext_to_current_event("100% ", sql_for_debug_output);
+		ns_output_logged_info("100% ", sql_for_debug_output);
 		//cerr << ns_current_time() - start_time << "sec\n";
 	}
 };

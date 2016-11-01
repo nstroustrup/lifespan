@@ -88,6 +88,10 @@ bool ns_image_server::register_and_run_simulated_devices(ns_image_server_sql * s
 	return false;
 };
 
+void ns_output_logged_info(const std::string & info, ns_sql * sql){
+  image_server_const.add_subtext_to_current_event(info,sql);
+}
+
 #ifndef NS_MINIMAL_SERVER_BUILD
 void ns_image_server::start_autoscans_for_device(const std::string & device_name, ns_sql & sql){
 

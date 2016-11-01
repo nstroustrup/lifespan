@@ -4645,8 +4645,8 @@ ns_analyzed_time_image_chunk ns_analyzed_image_time_path::initiate_image_registr
 			d.x < elements[i].registration_offset.x ||
 			h_sub.y - elements[i].registration_offset.y >= state.consensus.properties().height ||
 			h_sub.x - elements[i].registration_offset.x >= state.consensus.properties().width) {
-			cerr << "invalid registration: " << elements[i].registration_offset << ";" << d << ";" << h_sub << "\n";
-			throw ns_ex("invalid registration: ") << elements[i].registration_offset << ";" << d << ";" << h_sub;
+		  cerr << "invalid registration: " << elements[i].registration_offset.x << "," << elements[i].registration_offset.y << ";" << d << ";" << h_sub << "\n";
+		  throw ns_ex("invalid registration: ") << elements[i].registration_offset.x << "," << elements[i].registration_offset.y << ";" << d << ";" << h_sub;
 		}
 		for (long y = d.y; y < h_sub.y; y++){
 			for (long x = d.x; x < h_sub.x; x++){

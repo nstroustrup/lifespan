@@ -1181,7 +1181,8 @@ bool ns_image_server_dispatcher::look_for_work(){
 	sql_lock.release();
 	try {
 		while (true) {
-			ns_dispatcher_job_pool_job job = { ns_processing_job(),ns_dispatcher_job_pool_external_data() };
+		  ns_dispatcher_job_pool_external_data dd;
+		  ns_dispatcher_job_pool_job job = {ns_processing_job(),dd};
 			ns_ex ex;
 			if (processing_thread_pool.get_next_error(job, ex) == 0)
 				break;

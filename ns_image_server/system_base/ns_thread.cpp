@@ -6,6 +6,8 @@
 #include <unistd.h>
 #include <sys/time.h>
 #include <sys/resource.h>
+#include <sys/types.h>
+#include <sys/syscall.h>
 #endif
 #include <cerrno>
 #include <string.h>
@@ -252,9 +254,9 @@ ns_64_bit ns_thread::current_thread_id() {
 	return GetCurrentThreadId();
 #else
 
-	pthread_id_np_t   tid;
-	tid = pthread_getthreadid_np();
-	return tid;
+        pid_t tid;
+	tid = (pid_t) syscall (SYS_gettid);
+	return (ns_64_bit)tid;
 #endif
 
 }

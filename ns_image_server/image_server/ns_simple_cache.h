@@ -34,8 +34,9 @@ private:
 	virtual ns_64_bit size_in_memory_in_kbytes()const = 0;
 
 	virtual void load_from_external_source(const id_t & id, external_source_t & external_source) = 0;
-
-	virtual cache_key_t to_id(const id_t & id) const = 0;
+	
+	//this must be declared as static in derrived types
+	//static cache_key_t to_id(const id_t & id) const = 0;
 	virtual const cache_key_t & id() const =0 ;
 
 	virtual void clean_up(external_source_t & external_source) = 0;
@@ -148,8 +149,8 @@ class ns_cache_request {
 	typedef typename handle_t::data_type data_type;
 	bool operator()(const ns_cache_request<handle_t,id_t> & l,
 				    const ns_cache_request<handle_t, id_t> & r) {
-		data_type t;
-		return  t.to_id(l.id) < t.to_id(r.id);
+		
+		return  data_type::to_id(l.id) < data_type::to_id(r.id);
 	}
 };
 
@@ -451,9 +452,6 @@ private:
 		//check to see if we have this in the cache somewhere
 		bool currently_have_write_lock(false), currently_have_table_lock(false);
 
-		//used to convert ids.
-		const data_t dt;
-
 		if (request_type == ns_unlinked_singleton) {
 			handle->unlinked_singleton = true;
 			data_t * data = new data_t;
@@ -478,7 +476,7 @@ private:
 				currently_have_table_lock = true;
 			}
 			//look for the image in the cache.
-			typename cache_t::iterator p = data_cache.find(dt.to_id(id));
+			typename cache_t::iterator p = data_cache.find(data_t::to_id(id));
 
 			//create a new cache entry if one isn't already there!
 			if (p == data_cache.end()) {
@@ -487,7 +485,7 @@ private:
 				//create a new cache entry for the new image, and reserve it for writing
 				//{
 				internal_object_t foo;
-				const cache_key_t id_num = dt.to_id(id);
+				const cache_key_t id_num = data_t::to_id(id);
 				p = data_cache.emplace(std::piecewise_construct, std::make_tuple(id_num), std::make_tuple()).first;
 
 				p->second.object_write_lock.wait_to_acquire(__FILE__, __LINE__); 

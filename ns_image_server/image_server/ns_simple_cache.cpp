@@ -25,7 +25,7 @@ private:
 		size = source;
 	}
 	void clean_up(int & source) {}
-	ns_64_bit to_id(const int & id) const {
+	static ns_64_bit to_id(const int & id) {
 		return id;
 	}
 	const ns_64_bit & id() const {

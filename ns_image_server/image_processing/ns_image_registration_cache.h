@@ -246,7 +246,7 @@ public:
 	template<class a, class b, bool c>
 	friend class ns_simple_cache;
 	~ns_image_fast_registration_profile();
-	ns_64_bit to_id(const ns_image_server_image & im) const { return im.id; }
+	static ns_64_bit to_id(const ns_image_server_image & im) { return im.id; }
 	ns_image_storage_source_handle<ns_8_bit> full_res_image(ns_image_fast_registration_profile_data_source & data_source)const;
 	void delete_cached_file(ns_image_fast_registration_profile_data_source & data_source) const ;
 private:

@@ -94,7 +94,7 @@ public:
 private:
 	ns_64_bit size_in_memory_in_kbytes() const {	return 0; }
 	void load_from_external_source(const std::string & name, ns_posture_analysis_model_entry_source & external_source);
-	std::string to_id(const std::string & n) const { return n; }
+	static std::string to_id(const std::string & n) { return n; }
 	const std::string & id() const { return name; }
 	void clean_up(ns_posture_analysis_model_entry_source & external_source) {}
 };

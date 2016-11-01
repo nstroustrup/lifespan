@@ -37,7 +37,7 @@ public:
 	void clean_up(ns_image_cache_data_source & source) {}
 
 	const ns_64_bit & id() const { return image_record.id; }
-	ns_64_bit to_id(const ns_image_server_image & im) const { return im.id; }
+	static ns_64_bit to_id(const ns_image_server_image & im) { return im.id; }
 };
 
 typedef ns_simple_cache < ns_image_cache_data<ns_8_bit>, ns_64_bit, true> ns_simple_image_cache;

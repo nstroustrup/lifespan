@@ -101,7 +101,7 @@ public:
 private:
 	ns_64_bit size_in_memory_in_kbytes() const { return 0; }
 	void load_from_external_source(const std::string & name, ns_svm_model_specification_entry_source & external_source);
-	std::string to_id(const std::string & name) const { return name; }
+	static std::string to_id(const std::string & name)  { return name; }
 	const std::string & id() const { return model_specification.model_name; }
 	void clean_up(ns_svm_model_specification_entry_source & external_source) {}
 };

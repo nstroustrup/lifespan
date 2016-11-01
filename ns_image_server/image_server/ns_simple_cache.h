@@ -5,6 +5,7 @@
 #include "ns_thread.h"
 #include <type_traits>
 #include <map>
+#include <algorithm>
 
 //#define NS_VERBOSE_IMAGE_CACHE
 
@@ -58,7 +59,7 @@ public:
 	void release() { check_in(); }
 
 	friend  data_t;
-	template<class data_t, class cache_key_t, bool locked>
+	template<class a, class b, bool c>
 	friend class ns_simple_cache;
 	
 	template<class a, class b>
@@ -273,7 +274,7 @@ public:
 	//this function cleares them out (at the cost of locking the whole table)
 	void pause_everything_to_clean_up_internal_structures() {
 		wait_for_all_current_operations_to_be_processed_and_get_delete_and_table_lock();
-		for (cache_t::iterator p = data_cache.begin(); p != data_cache.end();) {
+		for (typename cache_t::iterator p = data_cache.begin(); p != data_cache.end();) {
 			if (p->second.to_be_deleted)
 				p = data_cache.erase(p);
 			else ++p;
@@ -340,7 +341,7 @@ private:
 				objects_sorted_by_age[i] = ns_cache_object_sort_by_age<typename cache_t::iterator>(p->second.last_access, p);
 				i++;
 			}
-			std::sort(objects_sorted_by_age.begin(), objects_sorted_by_age.end(), ns_cache_object_sort_by_age<cache_t::iterator>());
+			std::sort(objects_sorted_by_age.begin(), objects_sorted_by_age.end(), ns_cache_object_sort_by_age<typename cache_t::iterator>());
 
 
 			try {
@@ -351,7 +352,7 @@ private:
 					if (only_pair_down_to_max_size && current_memory_usage_in_kb <= max_memory_usage_in_kb)
 						break;
 
-					cache_t::iterator p = objects_sorted_by_age[i].pair.second;
+					typename cache_t::iterator p = objects_sorted_by_age[i].pair.second;
 					if (p->second.to_be_deleted) {
 						continue;
 					}

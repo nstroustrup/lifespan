@@ -20,7 +20,7 @@ class ns_thread_pool;
 
 template<class job_specification_t, class thread_persistant_data_t>
 struct ns_thread_pool_thread_init_data {
-	ns_thread_pool<typename job_specification_t, typename thread_persistant_data_t> * pool;
+	ns_thread_pool<job_specification_t, thread_persistant_data_t> * pool;
 	unsigned long thread_id;
 
 	#ifdef NS_THREAD_POOL_DEBUG
@@ -230,7 +230,7 @@ public:
 			//we grab these locks as a precodition to running run_pool() which releases them
 			thread_idle_locks[i].wait_to_acquire(__FILE__, __LINE__);
 			//put this on the heap so the thread can access it whenever it pleases.
-			ns_thread_pool_thread_init_data<typename job_specification_t,typename thread_persistant_data_t> * data = new ns_thread_pool_thread_init_data<typename job_specification_t, typename thread_persistant_data_t>;
+			ns_thread_pool_thread_init_data<job_specification_t,thread_persistant_data_t> * data = new ns_thread_pool_thread_init_data<job_specification_t, thread_persistant_data_t>;
 			data->pool = this;
 			data->thread_id = i;
 #ifdef NS_THREAD_POOL_DEBUG
@@ -287,12 +287,12 @@ public:
 	}
 	static ns_thread_return_type run(void * pool_data) {
 		//copy this from the heap to the stack, and free up the heap.
-		ns_thread_pool_thread_init_data<typename job_specification_t, typename thread_persistant_data_t> * pp = (ns_thread_pool_thread_init_data<typename job_specification_t, typename thread_persistant_data_t> *)pool_data;
-		ns_thread_pool_thread_init_data<typename job_specification_t, typename thread_persistant_data_t> p = *pp;
+		ns_thread_pool_thread_init_data<job_specification_t,thread_persistant_data_t> * pp = (ns_thread_pool_thread_init_data<job_specification_t, thread_persistant_data_t> *)pool_data;
+		ns_thread_pool_thread_init_data<job_specification_t, thread_persistant_data_t> p = *pp;
 		delete pp;
 
 
-		typename thread_persistant_data_t persistant_data;
+		thread_persistant_data_t persistant_data;
 
 
 		bool thread_has_been_idle = true;
@@ -315,7 +315,7 @@ public:
 			if (p.pool->shutdown_) {
 				NS_TPDBG((*p.debug) << "(t" << p.thread_id << " shutsdown)");
 				thread_idle_lock.release();
-				return true;
+				return 0;
 			}
 			NS_TPDBG(*p.debug << "(t" << p.thread_id << " requests job lock)");
 			ns_acquire_lock_for_scope job_access_lock(p.pool->job_access_lock, __FILE__, __LINE__);
@@ -326,7 +326,7 @@ public:
 				NS_TPDBG(*p.debug << "(t" << p.thread_id << " shutsdown)");
 				thread_idle_lock.release();
 				job_access_lock.release();
-				return true;
+				return 0;
 			}
 			//if the pool of jobs is empty, the thread goes idle and wait on the job access lock until something happens.
 			//if some other thread is waiting for all jobs to be done, it will grab this job access lock,
@@ -377,7 +377,7 @@ public:
 				p.pool->error_access_lock.release();
 			}
 		}
-		return true;
+		return 0;
 	}
 
 #ifdef NS_THREAD_POOL_DEBUG

@@ -1,6 +1,7 @@
 #ifndef NS_DIFFERENCE_THRESHOLDER_H
 #define NS_DIFFERENCE_THRESHOLDER_H
 #include "ns_image.h"
+#include "ns_image_server_sql.h"
 #include "ns_image_tools.h"
 
 typedef enum{ns_threshold_one_stage, ns_threshold_two_stage} ns_threshold_type;
@@ -23,28 +24,26 @@ struct ns_two_stage_difference_parameters{
 class ns_two_stage_difference_thresholder{
 public:
 	template<class ns_component>
-	static void run(const ns_image_whole<ns_component> & im, ns_image_whole<ns_component> & out, const ns_two_stage_difference_parameters & dp=ns_two_stage_difference_parameters(), const bool make_color_vis=false){
+	static void run(const ns_image_whole<ns_component> & im, ns_image_whole<ns_component> & out, ns_sql * sql_for_debug_output,const ns_two_stage_difference_parameters & dp=ns_two_stage_difference_parameters(), const bool make_color_vis=false){
 
 		//unsigned long start_time = ns_current_time();
 
 		ns_image_whole<ns_component> skeleton_thresh;
-		std::cerr << "0% ";
+		image_server_const.add_subtext_to_current_event("0% ", sql_for_debug_output);
 		ns_difference_thresholder::run(im,skeleton_thresh,dp.strict_height,dp.strict_radius,dp.strict_absolute_threshold);
-		std::cerr << "25% ";
+		image_server_const.add_subtext_to_current_event("25% ", sql_for_debug_output);
 		ns_remove_small_objects<ns_component,12>(skeleton_thresh);
-		std::cerr << "37.5% ";
-
+		image_server_const.add_subtext_to_current_event("37.5% ", sql_for_debug_output);
 		ns_image_whole<ns_component> skeleton_dialated;
 		ns_dilate<7>(skeleton_thresh,skeleton_dialated);
-
-		std::cerr << "50% ";
+		image_server_const.add_subtext_to_current_event("50% ", sql_for_debug_output);
+	
 		ns_image_whole<ns_component> body_thresh;
 		ns_difference_thresholder::run(im,body_thresh,dp.permissive_height,dp.permissive_radius,dp.permissive_absolute_threshold);
 		ns_remove_small_objects<ns_component,5>(body_thresh);
 
 		ns_image_properties prop(im.properties());
-
-		std::cerr << "75% ";
+		image_server_const.add_subtext_to_current_event("75% ", sql_for_debug_output);
 		const unsigned int h( im.properties().height),
 							w( im.properties().width);
 		if (make_color_vis){
@@ -81,8 +80,7 @@ public:
 				for (unsigned int x = 0; x < w; x++)
 					out[y][x]*=255;
 		}
-
-		std::cerr << "100%";
+		image_server_const.add_subtext_to_current_event("100% ", sql_for_debug_output);
 		//cerr << ns_current_time() - start_time << "sec\n";
 	}
 };
@@ -117,8 +115,8 @@ void ns_movement_threshold(const read_image & image, const read_image & time_lap
 		ns_difference_thresholder::run(image,temp,900,5,0);
 	}
 	else if (threshold_type == ns_threshold_two_stage){
-		ns_two_stage_difference_thresholder::run(temp,movement_threshold);
-		ns_two_stage_difference_thresholder::run(image,temp);
+		ns_two_stage_difference_thresholder::run(temp,movement_threshold,0);
+		ns_two_stage_difference_thresholder::run(image,temp,0);
 	}
 
 	//combine both images

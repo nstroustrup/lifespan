@@ -1392,7 +1392,7 @@ void ns_training_file_generator::re_threshold_image(ns_image_standard & im,std::
 	source.pump(im,512);
 	
 	ns_image_standard thresh;
-	ns_two_stage_difference_thresholder::run(source,thresh,ns_two_stage_difference_parameters(),false);
+	ns_two_stage_difference_thresholder::run(source,thresh,0,ns_two_stage_difference_parameters(),false);
 	//ns_whole_image_region_stats image_region_stats;
 	ns_worm_detector<ns_image_standard> worm_detector;
 	ns_image_standard unprocessed;
@@ -1403,7 +1403,7 @@ void ns_training_file_generator::re_threshold_image(ns_image_standard & im,std::
 				ns_worm_detection_constants::get(ns_worm_detection_constant::minimum_worm_region_area,thresh.properties().resolution),
 				ns_worm_detection_constants::get(ns_worm_detection_constant::maximum_worm_region_area,thresh.properties().resolution),
 				ns_worm_detection_constants::get(ns_worm_detection_constant::maximum_region_diagonal,thresh.properties().resolution),
-			model,ns_worm_detection_constants::get(ns_worm_detection_constant::maximum_number_of_actual_worms_per_image),"",ns_detected_worm_info::ns_vis_none);
+			model,ns_worm_detection_constants::get(ns_worm_detection_constant::maximum_number_of_actual_worms_per_image),0,"",ns_detected_worm_info::ns_vis_none);
 	try{
 		new_test_images.resize(0);
 		if (dr->number_of_putative_worms() == 0)

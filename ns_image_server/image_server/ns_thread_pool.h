@@ -40,7 +40,7 @@ template<class job_specification_t,class thread_persistant_data_t>
 class ns_thread_pool {
 public:
 	ns_thread_pool() :state(ns_uninitialized),job_access_lock("ns_tpiatp"), wait_after_jobs_finish("ns_tpw"), thread_init_lock("ns_tic"), error_access_lock("ns_tpierr"), shutdown_(false) {}
-
+	
 	~ns_thread_pool() { shutdown(); }
 	typedef enum { ns_uninitialized, ns_paused, ns_polling_for_idle_threads,ns_holding_idle_threads,ns_running } ns_thread_pool_state;
 	ns_thread_pool_state state;
@@ -59,7 +59,7 @@ public:
 		error_access_lock.release();
 		return number_of_errors;
 	}
-
+	bool initialized() { return state != ns_uninitialized; }
 	void set_number_of_threads(unsigned long i) {
 		if (state != ns_uninitialized)
 			throw ns_ex("Cannot change number of threads on an active thread pool");

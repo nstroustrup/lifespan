@@ -488,7 +488,7 @@ public:
 	///into worm/non-worm categories.
 	///Ownership of contiguous regions are taken by the ns_image_worm_detection object and so the regions std::vector is cleared.
 	void process_segment_cluster_solutions(std::vector<ns_detected_object *> & objects, const ns_image_standard &relative_grayscale_source, 
-			const ns_image_standard & absolute_grayscale_source,  const ns_detected_worm_info::ns_visualization_type visualization_type, const unsigned long maximum_number_of_worms=0);
+			const ns_image_standard & absolute_grayscale_source,  const ns_detected_worm_info::ns_visualization_type visualization_type, const unsigned long maximum_number_of_worms=0, ns_sql * sql_for_debug_output=0);
 
 	///Certain object features need to be normalized to statistics calculated over the entire image 
 	///in which they are found (average image pixel intensity, for example).  calculate_image_region_stats()

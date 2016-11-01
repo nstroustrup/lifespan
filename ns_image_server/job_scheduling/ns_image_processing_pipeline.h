@@ -95,7 +95,7 @@ public:
 
 		//for high res photos we use the two-stage threshold technique.
 		if (1 || in.properties().resolution > 1201){
-			ns_two_stage_difference_thresholder::run(in, out, ns_two_stage_difference_parameters(),false);
+			ns_two_stage_difference_thresholder::run(in, out, &sql, ns_two_stage_difference_parameters(),false);
 			return;
 		}
 		//for low-res photos we compare the current frame and the next frame to place moving pixels in the foreground.

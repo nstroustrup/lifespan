@@ -17,7 +17,7 @@ void ns_image_fast_registration_profile::delete_cached_file(ns_image_fast_regist
 }
 
 void ns_image_fast_registration_profile::load_from_external_source(const ns_image_server_image & im, ns_image_fast_registration_profile_data_source & data_source) {
-	image_record = im;
+hei	image_record = im;
 	if (!image_record.load_from_db(im.id, data_source.sql))
 		throw ns_ex("Invalid image spec");
 	local_cache_filename = data_source.image_storage->add_to_local_cache(image_record, data_source.sql);

@@ -905,9 +905,19 @@ bool ns_image_server::upgrade_tables(ns_sql & sql,const bool just_test_if_needed
 	if (!ns_sql_column_exists("host_event_log", "sub_text", sql)) {
 		if (just_test_if_needed)
 			return true;
-		cout << "Adding position analysis model column to sample_region_image_info\n";
+		cout << "Adding column for additional subtext to host log \n";
 		sql << "ALTER TABLE `host_event_log` "
-				"ADD COLUMN `sub_text` MEDIUMTEXT NULL AFTER `processing_duration`";
+				"ADD COLUMN `sub_text` MEDIUMTEXT NOT NULL AFTER `processing_duration`";
+		sql.send_query();
+
+		changes_made = true;
+	}
+	if (!ns_sql_column_exists("host_event_log", "node_id", sql)) {
+		if (just_test_if_needed)
+			return true;
+		cout << "Adding adding thread id column to host event log\n";
+		sql << "ALTER TABLE `host_event_log` "
+			"ADD COLUMN `node_id` INT NOT NULL DEFAULT '0' AFTER `sub_text`";
 		sql.send_query();
 
 		changes_made = true;
@@ -2536,7 +2546,8 @@ ns_64_bit ns_image_server::register_server_event(const ns_image_server_event & s
 				*sql << ", subject_image_id=" << s_event.subject_image_id;
 				*sql << ", subject_width = " << s_event.subject_properties.width << ", subject_height = " << s_event.subject_properties.height;
 				*sql << ", processing_duration = " << s_event.processing_duration;
-
+				if (current_thread_state->second.separate_output())
+					*sql << ", node_id = " << current_thread_state->second.internal_thread_id;
 				if (s_event.type() == ns_ts_error)
 					*sql << ", error=1";
 				event_id = sql->send_query_get_id();
@@ -2565,13 +2576,14 @@ ns_64_bit ns_image_server::register_server_event(const ns_image_server_event & s
 		else event_id = 1;
 		
 		if (!no_display){
-			ns_acquire_lock_for_scope lock(server_event_lock,__FILE__,__LINE__);
-			s_event.print(event_log);
-			event_log << "\n";
-			event_log.flush();
-			lock.release();
-
-			if (current_thread_state->second.thread_specific_logfile != 0) {
+			if (!current_thread_state->second.separate_output()) {
+				ns_acquire_lock_for_scope lock(server_event_lock, __FILE__, __LINE__);
+				s_event.print(event_log);
+				event_log << "\n";
+				event_log.flush();
+				lock.release();
+			}
+			else {
 				s_event.print(*current_thread_state->second.thread_specific_logfile);
 				*current_thread_state->second.thread_specific_logfile << "\n";
 				current_thread_state->second.thread_specific_logfile->flush();

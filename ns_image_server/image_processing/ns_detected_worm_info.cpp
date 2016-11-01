@@ -539,7 +539,7 @@ void ns_detected_worm_info::build_object_context_image(ns_detected_object & regi
 	p.height = context_t - context_b + 1;
 
 	if (p.width == 0 || p.height == 0)
-		throw ns_ex("YIKES");
+		throw ns_ex("ns_detected_worm_info::build_object_context_image::trying to make a context image that should have dimensions 0x0");
 	_worm_context_image->absolute_grayscale.prepare_to_recieve_image(p);
 	_worm_context_image->relative_grayscale.prepare_to_recieve_image(p);
 	for (unsigned int y = 0; y < p.height; y++)
@@ -2072,12 +2072,12 @@ void ns_image_worm_detection_results::load_from_db(const bool load_worm_postures
 				//output code generates spurious comma
 				in().get();
 				if (putative_worms[i].worm_shape.nodes.size() == 0)
-					cerr << "Yikes";
+					throw ns_ex("ns_image_worm_detection_results::load_from_db()::Encountered empty worm shape!");
 				for (unsigned int j = 0; j < putative_worms[i].worm_shape.nodes.size(); j++){
 					if (putative_worms[i].worm_shape.nodes[j].x >= putative_worms[i].region_size.x)
-						cerr << "Out of bound node";
+						throw ns_ex("ns_image_worm_detection_results::load_from_db()::Encountered an out of band node!");
 					if (putative_worms[i].worm_shape.nodes[j].y >= putative_worms[i].region_size.y)
-						cerr << "Out of bound node";
+						throw ns_ex("ns_image_worm_detection_results::load_from_db()::Encountered an out of band node!");
 
 				}
 			}
@@ -2189,9 +2189,9 @@ void ns_worm_context_image::generate(const bool part_of_a_worm_cluster,const ns_
 		for (unsigned long y = 0; y < absolute_grayscale.properties().height;y++){
 			for (unsigned long x = 0; x < absolute_grayscale.properties().width; x++){
 				if (info.context_image().absolute_grayscale[y][x] != absolute_grayscale[y][x])
-					throw ns_ex("Yikes:") << (int)info.context_image().absolute_grayscale[y][x] << " vs " << (int)absolute_grayscale[y][x];
+					throw ns_ex("ns_worm_context_image::generate(): Invalid pixel found in absolute context image:") << (int)info.context_image().absolute_grayscale[y][x] << " vs " << (int)absolute_grayscale[y][x];
 				if (info.context_image().relative_grayscale[y][x] != relative_grayscale[y][x])
-					throw ns_ex("Yikes: ") << info.context_image().relative_grayscale[y][x] << " vs " << (int)relative_grayscale[y][x];
+					throw ns_ex("ns_worm_context_image::generate(): Invalid pixel found in relative context image:") << info.context_image().relative_grayscale[y][x] << " vs " << (int)relative_grayscale[y][x];
 			}
 		}	
 		if (worm_bitmap.properties() != info.bitmap().properties())
@@ -2199,9 +2199,9 @@ void ns_worm_context_image::generate(const bool part_of_a_worm_cluster,const ns_
 		for (unsigned long y = 0; y < worm_bitmap.properties().height;y++){
 			for (unsigned long x = 0; x < worm_bitmap.properties().width; x++){
 				if (info.bitmap()[y][x] != worm_bitmap[y][x])
-					throw ns_ex("Yikes!");
+					throw ns_ex("ns_worm_context_image::generate(): Invalid pixel found in context image bitmap.");
 				if (info.bitmap_of_worm_cluster()[y][x] != worm_cluster_bitmap[y][x])
-					throw ns_ex("Yikes!");
+					throw ns_ex("ns_worm_context_image::generate(): Invalid pixel found in context image bitmap.");
 			}
 		}
 	}
@@ -2316,7 +2316,8 @@ double ns_detected_worm_stats::scaled_statistic(const ns_detected_worm_classifie
 		return 0;
 	if (_model->statistics_ranges[val].min > _model->statistics_ranges[val].max) throw ns_ex("ns_detected_worm_stats::range for ") << ns_classifier_abbreviation(val) << " has larger min (" << _model->statistics_ranges[val].min << ") than max(" << _model->statistics_ranges[val].max << ")";
 	if (_model->statistics_ranges[val].max == _model->statistics_ranges[val].min){
-		cerr << "statistic range for " << ns_classifier_label(val) << " is 0!\n";
+		
+		throw ns_ex("Statistic range for ") << ns_classifier_label(val) << " is 0!";
 		return 0;
 	}
 
@@ -2807,7 +2808,7 @@ for (unsigned int i = 0; i < objects.size(); i++){
 	}
 	return number_of_worms;
 }
-void ns_image_worm_detection_results::process_segment_cluster_solutions(std::vector<ns_detected_object *> & objects, const ns_image_standard &relative_grayscale_source, const ns_image_standard &absolute_grayscale_source, const ns_detected_worm_info::ns_visualization_type visualization_type, const unsigned long maximum_number_of_putative_worms){
+void ns_image_worm_detection_results::process_segment_cluster_solutions(std::vector<ns_detected_object *> & objects, const ns_image_standard &relative_grayscale_source, const ns_image_standard &absolute_grayscale_source, const ns_detected_worm_info::ns_visualization_type visualization_type, const unsigned long maximum_number_of_putative_worms, ns_sql * sql_for_debug_output){
 
 	//first we count the maximum number of worms that our algorithm could produce
 	unsigned long number_of_worms = ns_count_number_of_worms_in_detected_object_group(objects);
@@ -2817,7 +2818,7 @@ void ns_image_worm_detection_results::process_segment_cluster_solutions(std::vec
 
 	//then we convert the detected objects to worms
 
-	cerr << "Solving segment clusters: ";
+	image_server_const.add_subtext_to_current_event("Solving segment clusters: ", sql_for_debug_output);
 	ns_progress_reporter pr(number_of_worms,5);
 
 	unsigned long worms_found = 0;

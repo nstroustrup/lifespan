@@ -859,7 +859,7 @@ void ns_image_processing_pipeline::process_region(const ns_image_server_captured
 					data_source.handler = &image_server_const.image_storage; 
 					data_source.sql = & sql;
 					if (static_mask_image.id != 0) {
-						cout << "Using a static mask.\n";
+						image_server_const.add_subtext_to_current_event("Using a static mask.\n", &sql);
 						image_server.image_storage.cache.get_for_read(static_mask_image, static_mask, data_source);
 					}
 
@@ -876,6 +876,7 @@ void ns_image_processing_pipeline::process_region(const ns_image_server_captured
 						ns_worm_detection_constants::get(ns_worm_detection_constant::maximum_region_diagonal, spatial_average.properties().resolution),
 						model,
 						worm_count_max,
+						&sql,
 						"",
 						vis_type,
 						image_stats

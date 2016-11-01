@@ -105,6 +105,7 @@ public:
 	ns_64_bit internal_thread_id,
 			  last_event_sql_id;
 	std::ofstream * thread_specific_logfile;
+	bool separate_output() { return thread_specific_logfile != 0; }
 	~ns_thread_output_state() { ns_safe_delete(thread_specific_logfile); }
 };
 

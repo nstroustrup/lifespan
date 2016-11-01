@@ -375,8 +375,10 @@ void ns_image_server_dispatcher::clear_for_termination(){
 	ns_acquire_lock_for_scope lock(processing_lock,__FILE__,__LINE__);
 	if (processing_job_scheduler_thread.is_running())
 		processing_job_scheduler_thread.block_on_finish();
-	processing_thread_pool.wait_for_all_threads_to_become_idle();
-	processing_thread_pool.shutdown();
+	if (processing_thread_pool.initialized()) {
+		processing_thread_pool.wait_for_all_threads_to_become_idle();
+		processing_thread_pool.shutdown();
+	}
 	if (schedule_error_check_thread.is_running())
 		schedule_error_check_thread.block_on_finish();
 	lock.release();

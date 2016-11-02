@@ -118,7 +118,7 @@ void ns_worm_learner::compress_dark_noise(){
 }
 void ns_worm_learner::two_stage_threshold(const bool & make_vis){
 	ns_image_standard out;
-	ns_two_stage_difference_thresholder::run(current_image,out,ns_two_stage_difference_parameters(),make_vis);
+	ns_two_stage_difference_thresholder::run(current_image,out,0,ns_two_stage_difference_parameters(),make_vis);
 		out.pump(current_image,512);
 		 out.pump(thresholded_image,512);
 	//if (!make_vis)
@@ -4359,6 +4359,7 @@ void ns_worm_learner::make_object_collage(){
 		ns_worm_detection_constants::get(ns_worm_detection_constant::maximum_worm_region_area,current_image.properties().resolution),
 		ns_worm_detection_constants::get(ns_worm_detection_constant::maximum_region_diagonal,current_image.properties().resolution),
 		(*model_specification)().model_specification,ns_worm_detection_constants::get(ns_worm_detection_constant::maximum_number_of_actual_worms_per_image),
+		0,
 		"spine_debug_output");
 	ns_image_standard bmp;
 	current_image.pump(bmp,1024);
@@ -4388,7 +4389,8 @@ void ns_worm_learner::make_spine_collage(const bool svg,const std::string & svg_
 		ns_worm_detection_constants::get(ns_worm_detection_constant::minimum_worm_region_area,current_image.properties().resolution),
 		ns_worm_detection_constants::get(ns_worm_detection_constant::maximum_worm_region_area,current_image.properties().resolution),
 		ns_worm_detection_constants::get(ns_worm_detection_constant::maximum_region_diagonal,current_image.properties().resolution),
-		(*model_specification)().model_specification,ns_worm_detection_constants::get(ns_worm_detection_constant::maximum_number_of_actual_worms_per_image),"spine_debug_output",ns_detected_worm_info::ns_vis_both);
+		(*model_specification)().model_specification,ns_worm_detection_constants::get(ns_worm_detection_constant::maximum_number_of_actual_worms_per_image),
+			0,"spine_debug_output",ns_detected_worm_info::ns_vis_both);
 	worm_detection_results->create_spine_visualizations(current_image);
 	draw_image(-1,-1,current_image);
 	if (svg){
@@ -4405,7 +4407,9 @@ void ns_worm_learner::make_spine_collage_with_stats(const bool svg,const std::st
 		ns_worm_detection_constants::get(ns_worm_detection_constant::minimum_worm_region_area,current_image.properties().resolution),
 		ns_worm_detection_constants::get(ns_worm_detection_constant::maximum_worm_region_area,current_image.properties().resolution),
 		ns_worm_detection_constants::get(ns_worm_detection_constant::maximum_region_diagonal,current_image.properties().resolution),
-		(*model_specification)().model_specification,ns_worm_detection_constants::get(ns_worm_detection_constant::maximum_number_of_actual_worms_per_image),"spine_debug_output",ns_detected_worm_info::ns_vis_both);
+		(*model_specification)().model_specification,ns_worm_detection_constants::get(ns_worm_detection_constant::maximum_number_of_actual_worms_per_image),
+			0,
+			"spine_debug_output",ns_detected_worm_info::ns_vis_both);
 	worm_detection_results->create_spine_visualizations_with_stats(current_image);
 	draw_image(-1,-1,current_image);
 	if (svg){
@@ -4423,7 +4427,8 @@ void ns_worm_learner::show_edges(){
 		ns_worm_detection_constants::get(ns_worm_detection_constant::minimum_worm_region_area,current_image.properties().resolution),
 		ns_worm_detection_constants::get(ns_worm_detection_constant::maximum_worm_region_area,current_image.properties().resolution),
 		ns_worm_detection_constants::get(ns_worm_detection_constant::maximum_region_diagonal,current_image.properties().resolution),
-		(*model_specification)().model_specification,ns_worm_detection_constants::get(ns_worm_detection_constant::maximum_number_of_actual_worms_per_image),"spine_debug_output",ns_detected_worm_info::ns_vis_both);
+		(*model_specification)().model_specification,ns_worm_detection_constants::get(ns_worm_detection_constant::maximum_number_of_actual_worms_per_image),
+			0,"spine_debug_output",ns_detected_worm_info::ns_vis_both);
 	worm_detection_results->create_edge_visualization(current_image);
 	draw_image(-1,-1,current_image);
 }
@@ -4436,7 +4441,8 @@ void ns_worm_learner::make_reject_spine_collage(const bool svg,const std::string
 		ns_worm_detection_constants::get(ns_worm_detection_constant::minimum_worm_region_area,current_image.properties().resolution),
 		ns_worm_detection_constants::get(ns_worm_detection_constant::maximum_worm_region_area,current_image.properties().resolution),
 		ns_worm_detection_constants::get(ns_worm_detection_constant::maximum_region_diagonal,current_image.properties().resolution),
-		(*model_specification)().model_specification,ns_worm_detection_constants::get(ns_worm_detection_constant::maximum_number_of_actual_worms_per_image),"spine_debug_output",ns_detected_worm_info::ns_vis_both);
+		(*model_specification)().model_specification,ns_worm_detection_constants::get(ns_worm_detection_constant::maximum_number_of_actual_worms_per_image),
+			0,"spine_debug_output",ns_detected_worm_info::ns_vis_both);
 	worm_detection_results->create_reject_spine_visualizations(current_image);
 	if (svg){
 		std::vector<ns_svg> objects;
@@ -4454,7 +4460,9 @@ void ns_worm_learner::make_reject_spine_collage_with_stats(const bool svg,const 
 		ns_worm_detection_constants::get(ns_worm_detection_constant::minimum_worm_region_area,current_image.properties().resolution),
 		ns_worm_detection_constants::get(ns_worm_detection_constant::maximum_worm_region_area,current_image.properties().resolution),
 		ns_worm_detection_constants::get(ns_worm_detection_constant::maximum_region_diagonal,current_image.properties().resolution),
-		(*model_specification)().model_specification,ns_worm_detection_constants::get(ns_worm_detection_constant::maximum_number_of_actual_worms_per_image),"spine_debug_output",ns_detected_worm_info::ns_vis_both);
+		(*model_specification)().model_specification,ns_worm_detection_constants::get(ns_worm_detection_constant::maximum_number_of_actual_worms_per_image),
+			0,
+			"spine_debug_output",ns_detected_worm_info::ns_vis_both);
 	worm_detection_results->create_reject_spine_visualizations_with_stats(current_image);
 	if (svg){
 		std::vector<ns_svg> objects;
@@ -4697,7 +4705,7 @@ void ns_worm_learner::process_contiguous_regions(){
 		ns_worm_detection_constants::get(ns_worm_detection_constant::minimum_worm_region_area,current_image.properties().resolution),
 		ns_worm_detection_constants::get(ns_worm_detection_constant::maximum_worm_region_area,current_image.properties().resolution),
 		ns_worm_detection_constants::get(ns_worm_detection_constant::maximum_region_diagonal,current_image.properties().resolution),
-		(*model_specification)().model_specification,1000,debug_file,ns_detected_worm_info::ns_vis_both);
+		(*model_specification)().model_specification,1000,0,debug_file,ns_detected_worm_info::ns_vis_both);
 
 	cerr << "min object size: " << 
 	ns_worm_detection_constants::get(ns_worm_detection_constant::minimum_worm_region_area,current_image.properties().resolution) << "; max object size: " << 

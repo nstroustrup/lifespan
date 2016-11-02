@@ -3,6 +3,12 @@ project (ns_image_server)
 
 option (ADVANCED_MOVEMENT_QUANTIFICATION
         "Use advanced movement quantitifiation" OFF) 
+option (BUILD_WORM_BROWSER
+        "Compile the worm browser" OFF) 
+SET(DATA_INSTALLATION_PATH
+    #   "Location to store files for the worm browser" 
+       "/usr/local/share/ns_image_server")
+
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${PROJECT_SOURCE_DIR}/modules/")
 
@@ -19,6 +25,7 @@ file(GLOB_RECURSE image_acquisition_HEADERS "${PROJECT_SOURCE_DIR}/../ns_image_s
 
 file(GLOB_RECURSE image_base_SOURCES "${PROJECT_SOURCE_DIR}/../ns_image_server/image_base/*.cpp")
 file(GLOB_RECURSE image_base_HEADERS "${PROJECT_SOURCE_DIR}/../ns_image_server/image_base/*.h")
+list(APPEND image_base_SOURCES "${PROJECT_SOURCE_DIR}/../ns_image_server/image_base/ns_libtiff_interface.c")
 
 
 file(GLOB_RECURSE image_processing_SOURCES "${PROJECT_SOURCE_DIR}/../ns_image_server/image_processing/*.cpp")
@@ -29,8 +36,6 @@ message(ERROR "Advanced movement quantification not currently supported under li
 else()
  list(REMOVE_ITEM image_processing_SOURCES "${PROJECT_SOURCE_DIR}/../ns_image_server/image_processing/ns_optical_flow.cpp")
 endif()
-
-
 
 file(GLOB_RECURSE job_scheduling_SOURCES "${PROJECT_SOURCE_DIR}/../ns_image_server/job_scheduling/*.cpp")
 file(GLOB_RECURSE job_scheduling_HEADERS "${PROJECT_SOURCE_DIR}/../ns_image_server/job_scheduling/*.h")
@@ -55,23 +60,6 @@ foreach (_headerFile ${ns_image_server_base_HEADERS})
     get_filename_component(_dir ${_headerFile} PATH)
     list (APPEND ns_image_server_base_INCLUDE_DIRS ${_dir})
 endforeach()
-
-list(REMOVE_DUPLICATES ns_image_server_base_INCLUDE_DIRS)
-
-set (ns_image_minimimal_SOURCES  "")
-list (APPEND ns_image_minimimal_SOURCES
-"${PROJECT_SOURCE_DIR}/../image_acquisition/ns_barcode.cpp"
-"${PROJECT_SOURCE_DIR}/../image_base/ns_font.cpp" 
-"${PROJECT_SOURCE_DIR}/../image_base/ns_image.cpp" 
-"${PROJECT_SOURCE_DIR}/../image_base/ns_jpeg.cpp" 
-"${PROJECT_SOURCE_DIR}/../image_base/ns_libtiff_interface.c" 
-"${PROJECT_SOURCE_DIR}/../image_base/ns_ojp2k.cpp" 
-"${PROJECT_SOURCE_DIR}/../image_base/ns_svg.cpp" 
-"${PROJECT_SOURCE_DIR}/../image_base/ns_tiff.cpp" 
-"${PROJECT_SOURCE_DIR}/../image_base/ns_vector.cpp" 
-"${PROJECT_SOURCE_DIR}/../system_base/ns_dir.cpp" 
-"${PROJECT_SOURCE_DIR}/../system_base/ns_ex.cpp" 
-"${PROJECT_SOURCE_DIR}/../system_base/ns_thread.cpp" )
 
 set (ns_external_sources  "")
 list (APPEND ns_external_SOURCES "${PROJECT_SOURCE_DIR}/../external_libraries/libsvm/svm.cpp" 
@@ -98,67 +86,99 @@ list (APPEND ns_external_SOURCES "${PROJECT_SOURCE_DIR}/../external_libraries/li
 "${PROJECT_SOURCE_DIR}/../external_libraries/tinyxml/tinyxmlerror.cpp" 
 "${PROJECT_SOURCE_DIR}/../external_libraries/tinyxml/tinyxmlparser.cpp")
 
-set(DEF_FONT "${pkgdatadir}/default_font.ttf")
-set(INI_PATH "${sysconfdir}/ns_image_server.ini")
+set(NS_INC  "")
+set(NS_LN "")
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
+list(APPEND NS_INC ${ns_image_server_base_INCLUDE_DIRS})
 
-add_definitions(-DTRILIBRARY -DNO_TIMER -DANSI_DECLARATORS -DNS_DEFAULT_FONT="${DEF_FONT}" -DNS_INI_PATH="${INI_PATH}" -DUSE_NEW_USB=1)
-   
-add_library(ns_image_server_base STATIC ${ns_image_server_base_SOURCES} ${ns_external_SOURCES})
-add_executable (ns_image_server "${PROJECT_SOURCE_DIR}/../ns_image_server/image_server/ns_image_server_main.cpp")
-add_dependencies(ns_image_server ns_image_server_base)
-target_link_libraries(ns_image_server ns_image_server_base)
-
-SET(IPP_STATIC 1)
-SET(IPP_MULTI_THREADED 0)
+SET(IPP_STATIC 0)
 find_package(IPP REQUIRED)
-include_directories(${IPP_INCLUDE_DIR})
-target_link_libraries(ns_image_server ${IPP_LIBRARIES})
+LIST(APPEND NS_INC ${IPP_INCLUDE_DIR})
+LIST(APPEND NS_LN ${IPP_LIBRARIES})
 
 find_package(MYSQL REQUIRED)
-include_directories(${MYSQL_INCLUDE_DIR})
-target_link_libraries(ns_image_server ${MYSQL_LIBRARIES})
+LIST(APPEND NS_INC ${MYSQL_INCLUDE_DIR})
+LIST(APPEND NS_LN ${MYSQL_LIBRARIES})
 
 find_package(JPEG REQUIRED)
-include_directories(${JPEG_INCLUDE_DIR})
-target_link_libraries(ns_image_server ${JPEG_LIBRARIES})
+list(APPEND NS_INC ${JPEG_INCLUDE_DIR})
+LIST(APPEND NS_LN  ${JPEG_LIBRARIES})
 
-target_link_libraries(ns_image_server m)
+LIST(APPEND NS_LN "m")
 find_package(DMTX REQUIRED)
-target_link_libraries(ns_image_server dmtx)
+LIST(APPEND NS_LN "dmtx")
 find_package(TIFF REQUIRED)
-target_link_libraries(ns_image_server tiff)
+LIST(APPEND NS_LN "tiff")
 find_package(Freetype REQUIRED)
-include_directories(${FREETYPE_INCLUDE_DIRS})
-target_link_libraries(ns_image_server freetype)
-target_link_libraries(ns_image_server pthread)
+LIST(APPEND NS_INC ${FREETYPE_INCLUDE_DIRS})
+LIST(APPEND NS_LN "freetype")
+LIST(APPEND NS_LN "pthread")
 
 find_package(OpenJPEG REQUIRED)
-include_directories(ns_image_server ${OPENJPEG_DIRECTORIES})
-target_link_libraries(ns_image_server ${OPENJPEG_LIBRARIES})
+LIST(APPEND NS_INC ${OPENJPEG_DIRECTORIES})
+LIST(APPEND NS_LN ${OPENJPEG_LIBRARIES})
 find_package(xvid REQUIRED)
-include_directories(${XVID_INCLUDE_DIRS})
-target_link_libraries(ns_image_server ${XVID_LIBRARIES})
+LIST(APPEND NS_INC ${XVID_INCLUDE_DIRS})
+LIST(APPEND NS_LN ${XVID_LIBRARIES})
 
 find_package(ZLIB REQUIRED)
-target_link_libraries(ns_image_server z)
+LIST(APPEND NS_LN "z")
 find_package(libusb-1.0 REQUIRED)
-include_directories(ns_image_server ${LIBUSB_1_INCLUDE_DIRS})
-target_link_libraries(ns_image_server ${LIBUSB_1_LIBRARIES})
+LIST(APPEND NS_INC ${LIBUSB_1_INCLUDE_DIRS})
+LIST(APPEND NS_LN ${LIBUSB_1_LIBRARIES})
 
-include_directories("${PROJECT_SOURCE_DIR}/../external_libraries/libsvm"
+LIST(APPEND NS_INC "${PROJECT_SOURCE_DIR}/../external_libraries/libsvm"
 	       "${PROJECT_SOURCE_DIR}/../external_libraries/ctmf"
 	       "${PROJECT_SOURCE_DIR}/../external_libraries/triangle"
 	       "${PROJECT_SOURCE_DIR}/../external_libraries/libhungarian"
 	       "${PROJECT_SOURCE_DIR}/../external_libraries/wm4_bspline"
 	       "${PROJECT_SOURCE_DIR}/../external_libraries/tinyxml"
 	       "${PROJECT_SOURCE_DIR}/../external_libraries/libtiff-proc")
-	       
-	       
+LIST(REMOVE_DUPLICATES NS_INC)
+LIST(REMOVE_DUPLICATES NS_LN)
+
+set(DEF_FONT "${pkgdatadir}/default_font.ttf")
+set(INI_PATH "${sysconfdir}/ns_image_server.ini")
+
+
+
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
+
+add_definitions(-DTRILIBRARY -DNO_TIMER -DANSI_DECLARATORS -DNS_DEFAULT_FONT="${DEF_FONT}" -DNS_INI_PATH="${INI_PATH}" -DUSE_NEW_USB=1 -DNS_USE_INTEL_IPP -DNS_DATA_PATH="${DATA_INSTALLATION_PATH}")
+
+set(RUNTIME_OUTPUT_DIRECTORY "${PROJECT_SOURCE_DIR}/bin")
+   
+#build base library used for image server and worm browser
+add_library(ns_image_server_base STATIC ${ns_image_server_base_SOURCES} ${ns_external_SOURCES})
+target_include_directories(ns_image_server_base PRIVATE ${NS_INC})
+
+#build the image server
+add_executable (ns_image_server "${PROJECT_SOURCE_DIR}/../ns_image_server/image_server/ns_image_server_main.cpp")
+target_include_directories(ns_image_server PRIVATE ${NS_INC})
+target_link_libraries(ns_image_server ns_image_server_base)
+target_link_libraries(ns_image_server ${NS_LN})
+
+
+#the barcode generator
+add_executable(ns_image_server_barcodes ../ns_image_server_utilities/ns_image_server_barcodes_main.cpp)
+target_include_directories(ns_image_server_barcodes PRIVATE ${NS_INC})
+target_link_libraries(ns_image_server_barcodes ns_image_server_base)
+target_link_libraries(ns_image_server_barcodes ${NS_LN})
+
+
+#the worm browser
+
+if (BUILD_WORM_BROWSER)
+ FIND_PACKAGE(FLTK REQUIRED)
+ FIND_PACKAGE(OpenGL REQUIRED)
+
 
 add_executable (ns_worm_browser "${PROJECT_SOURCE_DIR}/../ns_worm_browser/ns_worm_browser_main.cpp" "${PROJECT_SOURCE_DIR}/../ns_worm_browser/ns_worm_browser.cpp")
+target_include_directories(ns_worm_browser PRIVATE ${NS_INC})
+target_include_directories(ns_worm_browser PRIVATE "${PROJECT_SOURCE_DIR}/../ns_worm_browser")
+target_link_libraries(ns_worm_browser ${FLTK_LIBRARIES})
+target_link_libraries(ns_worm_browser ${OPENGL_LIBRARIES})
 add_dependencies(ns_worm_browser ns_image_server_base)
 
-include_directories(${ns_image_server_base_INCLUDE_DIRS})
-include_directories("${PROJECT_SOURCE_DIR}/../ns_worm_browser")
+
+endif()

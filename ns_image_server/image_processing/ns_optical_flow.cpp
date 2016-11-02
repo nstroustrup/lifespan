@@ -4,7 +4,7 @@
 //set somewhere  if you want posture analysis to run partially on the GPU
 //#define NS_USE_ITK_GPU
 //#undef NS_USE_ITK_GPU
-
+#ifdef NS_PROCESS_OPTICAL_FLOW
 #undef NS_USE_LEVEL_SET_REGISTRATION
 #define NS_USE_ITK_GPU
 #include "itkHistogramMatchingImageFilter.h"

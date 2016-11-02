@@ -68,13 +68,14 @@ ns_analyzed_image_time_path_element_measurements operator+(const ns_analyzed_ima
 	s.mean_intensity_within_worm_area			=a.	mean_intensity_within_worm_area			+b.mean_intensity_within_worm_area;
 	s.mean_intensity_within_region			=a.	mean_intensity_within_region			+b.mean_intensity_within_region;
 	s.mean_intensity_within_alternate_worm	=a.	mean_intensity_within_alternate_worm	+b.mean_intensity_within_alternate_worm;
-
+		#ifdef NS_CALCULATE_OPTICAL_FLOW
 	s.scaled_flow_magnitude = a.scaled_flow_magnitude + b.scaled_flow_magnitude;
 	s.raw_flow_magnitude = a.raw_flow_magnitude + b.raw_flow_magnitude;
 	s.scaled_flow_dx = a.scaled_flow_dx + b.scaled_flow_dx;
 	s.scaled_flow_dy = a.scaled_flow_dy + b.scaled_flow_dy;
 	s.raw_flow_dx = a.raw_flow_dx + b.raw_flow_dx;
 	s.raw_flow_dy = a.raw_flow_dy + b.raw_flow_dy;
+#endif
 	return s;
 }
 
@@ -110,13 +111,14 @@ ns_analyzed_image_time_path_element_measurements operator/(const ns_analyzed_ima
 	s.mean_intensity_within_worm_area/=d;
 	s.mean_intensity_within_region/=d;
 	s.mean_intensity_within_alternate_worm/=d;
-
+	#ifdef NS_CALCULATE_OPTICAL_FLOW
 	s.scaled_flow_magnitude = s.scaled_flow_magnitude / d;
 	s.raw_flow_magnitude = s.raw_flow_magnitude / d;
 	s.scaled_flow_dx = s.scaled_flow_dx / d;
 	s.scaled_flow_dy = s.scaled_flow_dy / d;
 	s.raw_flow_dx = s.raw_flow_dx / d;
 	s.raw_flow_dy = s.raw_flow_dy / d;
+#endif
 
 	return s;
 }
@@ -141,13 +143,14 @@ void ns_analyzed_image_time_path_element_measurements::square(){
 	mean_intensity_within_worm_area			*=	mean_intensity_within_worm_area;
 	mean_intensity_within_region			*=	mean_intensity_within_region;
 	mean_intensity_within_alternate_worm	*=	mean_intensity_within_alternate_worm;
-
+	#ifdef NS_CALCULATE_OPTICAL_FLOW
 	scaled_flow_magnitude = scaled_flow_magnitude.square();
 	raw_flow_magnitude = raw_flow_magnitude.square();
 	scaled_flow_dx = scaled_flow_dx.square();
 	scaled_flow_dy = scaled_flow_dy.square();
 	raw_flow_dx = raw_flow_dx.square();
 	raw_flow_dy = raw_flow_dy.square();
+#endif
 
 
 }
@@ -170,13 +173,14 @@ void ns_analyzed_image_time_path_element_measurements::square_root(){
 	mean_intensity_within_worm_area		=sqrt(		mean_intensity_within_worm_area);
 	mean_intensity_within_region		=sqrt(		mean_intensity_within_region);
 	mean_intensity_within_alternate_worm=sqrt(		mean_intensity_within_alternate_worm);
-
+	#ifdef NS_CALCULATE_OPTICAL_FLOW
 	scaled_flow_magnitude = scaled_flow_magnitude.square_root();
 	raw_flow_magnitude = raw_flow_magnitude.square_root();
 	scaled_flow_dx = scaled_flow_dx.square_root();
 	scaled_flow_dy = scaled_flow_dy.square_root();
 	raw_flow_dx = raw_flow_dx.square_root();
 	raw_flow_dy = raw_flow_dy.square_root();
+	#endif
 
 }
 
@@ -200,13 +204,14 @@ void ns_analyzed_image_time_path_element_measurements::zero(){
 	mean_intensity_within_worm_area=0;
 	mean_intensity_within_region=0;
 	mean_intensity_within_alternate_worm=0;
-
+#ifdef NS_CALCULATE_OPTICAL_FLOW
 	scaled_flow_magnitude.zero();
 	raw_flow_magnitude.zero();
 	scaled_flow_dx.zero();
 	scaled_flow_dy.zero();
 	raw_flow_dx.zero();
 	raw_flow_dy.zero();
+#endif
 }
 
 class ns_chunk_generator {
@@ -1575,23 +1580,32 @@ void ns_time_path_image_movement_analyzer::load_movement_data_from_disk(istream 
 		if (in.fail()) throw ns_ex("Invalid Specification");
 		if (a == '\n') {
 			//old style records
+	#ifdef NS_CALCULATE_OPTICAL_FLOW
 			groups[group_id].paths[path_id].elements[element_id].measurements.raw_flow_magnitude.zero();
 			groups[group_id].paths[path_id].elements[element_id].measurements.scaled_flow_dx.zero();
 			groups[group_id].paths[path_id].elements[element_id].measurements.scaled_flow_dy.zero();
 			groups[group_id].paths[path_id].elements[element_id].measurements.raw_flow_dx.zero();
 			groups[group_id].paths[path_id].elements[element_id].measurements.raw_flow_dy.zero();
+#endif
 			continue;
 		}
 		if (!tmp.empty())
 			throw ns_ex("Badly formed input file!");
 
-
+		#ifdef NS_CALCULATE_OPTICAL_FLOW
 		groups[group_id].paths[path_id].elements[element_id].measurements.scaled_flow_magnitude.read(in);
 		groups[group_id].paths[path_id].elements[element_id].measurements.raw_flow_magnitude.read(in);
 		groups[group_id].paths[path_id].elements[element_id].measurements.scaled_flow_dx.read(in);
 		groups[group_id].paths[path_id].elements[element_id].measurements.scaled_flow_dy.read(in);
 		groups[group_id].paths[path_id].elements[element_id].measurements.raw_flow_dx.read(in);
 		groups[group_id].paths[path_id].elements[element_id].measurements.raw_flow_dy.read(in);
+		#else
+		for (unsigned int i = 0; i < 6; i++)
+		  for (unsigned int j = 0; j < 6; j++){
+		    get_int(in,tmp);
+		    if (in.fail()) throw ns_ex("Invalid Specification");
+		  }
+#endif
 
 		//open for future use
 		for (unsigned int i = 0; i < 10; i++){
@@ -1654,9 +1668,10 @@ void ns_time_path_image_movement_analyzer::save_movement_data_to_disk(ostream & 
 					<< groups[i].paths[j].elements[k].measurements.unnormalized_movement_sum << ","//24
 					<< groups[i].paths[j].elements[k].measurements.denoised_movement_score << ","//25
 					<< groups[i].paths[j].elements[k].measurements.movement_score <<","//26
-					<< groups[i].paths[j].elements[k].measurements.change_in_total_worm_intensity << ",";//27
+				  << groups[i].paths[j].elements[k].measurements.change_in_total_worm_intensity << ",";//27
+			       #ifdef NS_CALCULATE_OPTICAL_FLOW
 				o << ","; //deliberately left blank to mark old record format
-				groups[i].paths[j].elements[k].measurements.scaled_flow_magnitude.write(o); o << ",";
+       				groups[i].paths[j].elements[k].measurements.scaled_flow_magnitude.write(o); o << ",";
 				groups[i].paths[j].elements[k].measurements.raw_flow_magnitude.write(o); o << ",";
 				groups[i].paths[j].elements[k].measurements.scaled_flow_dx.write(o); o << ",";
 				groups[i].paths[j].elements[k].measurements.scaled_flow_dy.write(o); o << ",";
@@ -1664,7 +1679,7 @@ void ns_time_path_image_movement_analyzer::save_movement_data_to_disk(ostream & 
 				groups[i].paths[j].elements[k].measurements.raw_flow_dy.write(o); 
 				for (unsigned int i = 0; i < 10; i++)
 					o << ",";
-
+				#endif
 
 
 				o <<"\n";
@@ -1959,12 +1974,14 @@ void ns_analyzed_image_time_path::write_detailed_movement_quantification_analysi
 		"Total Alternate Worm Area,Total Alternate Worm Intensity,Saturated Registration, Local Region Maximum Movement Sum, Local Region Stationary Sum,"
 		"Local Region Position X, Local Region Position Y, Local Region Width, Local Region Height, Machine Error (Days ),";
 
+	#ifdef NS_CALCULATE_OPTICAL_FLOW
 	ns_optical_flow_quantification::write_header("Scaled Flow Magnitude", o); o << ",";
 	ns_optical_flow_quantification::write_header("Raw Flow Magnitude", o); o << ",";
 	ns_optical_flow_quantification::write_header("Scaled Flow dx", o); o << ",";
 	ns_optical_flow_quantification::write_header("Scaled Flow dy", o); o << ",";
 	ns_optical_flow_quantification::write_header("Raw Flow dx", o); o << ",";
 	ns_optical_flow_quantification::write_header("Raw Flow dy", o);
+#endif
 	for (unsigned int i = 0; i < this->posture_quantification_extra_debug_field_names.size(); i++){
 		o << "," << posture_quantification_extra_debug_field_names[i];
 
@@ -2075,15 +2092,14 @@ void ns_analyzed_image_time_path::write_detailed_movement_quantification_analysi
 		else o << ns_output_interval_difference(this->state_entrance_interval_time(state_intervals[(int)ns_movement_stationary]).
 													best_estimate_event_time_for_possible_partially_unbounded_interval(),
 													by_hand_annotation_event_times[(int)ns_movement_cessation]) <<",";
-
+	#ifdef NS_CALCULATE_OPTICAL_FLOW
 		elements[k].measurements.scaled_flow_magnitude.write(o); o << ",";
 		elements[k].measurements.raw_flow_magnitude.write(o); o << ",";
 		elements[k].measurements.scaled_flow_dx.write(o); o << ",";
 		elements[k].measurements.scaled_flow_dy.write(o); o << ",";
 		elements[k].measurements.raw_flow_dx.write(o); o << ",";
 		elements[k].measurements.raw_flow_dy.write(o);
-
-
+#endif
 		for (unsigned int i = 0; i < elements[k].measurements.posture_quantification_extra_debug_fields.size(); i++){
 			o << "," << elements[k].measurements.posture_quantification_extra_debug_fields[i];
 		}

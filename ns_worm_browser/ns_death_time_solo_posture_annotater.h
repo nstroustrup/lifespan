@@ -787,7 +787,7 @@ public:
 		sticky_properties.flag.step_event();
 		
 	}
-	static std::string pad_zeros(std::string & str, int len){
+	static std::string pad_zeros(const std::string & str, int len){
 		int add = len-(int)str.size();
 		if (add <= 0)
 			return str;

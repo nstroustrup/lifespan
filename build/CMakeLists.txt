@@ -4,11 +4,7 @@ project (ns_image_server)
 option (ADVANCED_MOVEMENT_QUANTIFICATION
         "Use advanced movement quantitifiation" OFF) 
 option (BUILD_WORM_BROWSER
-        "Compile the worm browser" OFF) 
-SET(DATA_INSTALLATION_PATH
-    #   "Location to store files for the worm browser" 
-       "/usr/local/share/ns_image_server")
-
+        "Compile the worm browser" OFF)
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${PROJECT_SOURCE_DIR}/modules/")
 
@@ -61,7 +57,7 @@ foreach (_headerFile ${ns_image_server_base_HEADERS})
     list (APPEND ns_image_server_base_INCLUDE_DIRS ${_dir})
 endforeach()
 
-set (ns_external_sources  "")
+set (ns_external_SOURCES  "")
 list (APPEND ns_external_SOURCES "${PROJECT_SOURCE_DIR}/../external_libraries/libsvm/svm.cpp" 
 "${PROJECT_SOURCE_DIR}/../external_libraries/ctmf/ctmf.c" 
 "${PROJECT_SOURCE_DIR}/../external_libraries/triangle/triangle.cpp" 
@@ -136,17 +132,17 @@ LIST(APPEND NS_INC "${PROJECT_SOURCE_DIR}/../external_libraries/libsvm"
 	       "${PROJECT_SOURCE_DIR}/../external_libraries/libtiff-proc")
 LIST(REMOVE_DUPLICATES NS_INC)
 LIST(REMOVE_DUPLICATES NS_LN)
+include(GNUInstallDirs)
 
-set(DEF_FONT "${pkgdatadir}/default_font.ttf")
-set(INI_PATH "${sysconfdir}/ns_image_server.ini")
-
-
+set(FONT_FILE "${CMAKE_INSTALL_FULL_DATADIR}/default_font.ttf")
+set(INI_FILE "${CMAKE_INSTALL_FULL_SYSCONFDIR}/ns_image_server.ini")
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 
-add_definitions(-DTRILIBRARY -DNO_TIMER -DANSI_DECLARATORS -DNS_DEFAULT_FONT="${DEF_FONT}" -DNS_INI_PATH="${INI_PATH}" -DUSE_NEW_USB=1 -DNS_USE_INTEL_IPP -DNS_DATA_PATH="${DATA_INSTALLATION_PATH}")
+add_definitions(-DTRILIBRARY -DNO_TIMER -DANSI_DECLARATORS -DNS_DEFAULT_FONT="${FONT_FILE}" -DNS_INI_PATH="${INI_FILE}" -DUSE_NEW_USB=1 -DNS_USE_INTEL_IPP -DNS_DATA_PATH="${CMAKE_INSTALL_FULL_DATADIR}/")
 
-set(RUNTIME_OUTPUT_DIRECTORY "${PROJECT_SOURCE_DIR}/bin")
+set(CMAKE_INSTALL_RPATH ${NS_LN})
+set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
    
 #build base library used for image server and worm browser
 add_library(ns_image_server_base STATIC ${ns_image_server_base_SOURCES} ${ns_external_SOURCES})
@@ -172,13 +168,19 @@ if (BUILD_WORM_BROWSER)
  FIND_PACKAGE(FLTK REQUIRED)
  FIND_PACKAGE(OpenGL REQUIRED)
 
-
 add_executable (ns_worm_browser "${PROJECT_SOURCE_DIR}/../ns_worm_browser/ns_worm_browser_main.cpp" "${PROJECT_SOURCE_DIR}/../ns_worm_browser/ns_worm_browser.cpp")
 target_include_directories(ns_worm_browser PRIVATE ${NS_INC})
 target_include_directories(ns_worm_browser PRIVATE "${PROJECT_SOURCE_DIR}/../ns_worm_browser")
 target_link_libraries(ns_worm_browser ${FLTK_LIBRARIES})
 target_link_libraries(ns_worm_browser ${OPENGL_LIBRARIES})
-add_dependencies(ns_worm_browser ns_image_server_base)
-
-
+target_link_libraries(ns_worm_browser ns_image_server_base)
+target_link_libraries(ns_worm_browser ${NS_LN})
+INSTALL(TARGETS ns_worm_browser RUNTIME DESTINATION bin)
 endif()
+
+INSTALL(TARGETS ns_image_server RUNTIME DESTINATION bin)
+INSTALL(TARGETS ns_image_server_barcodes RUNTIME DESTINATION bin)
+INSTALL(FILES "../files/default_font.ttf" DESTINATION ${CMAKE_INSTALL_FULL_DATADIR})
+INSTALL(FILES "../files/occupied_image.tif" DESTINATION ${CMAKE_INSTALL_FULL_DATADIR})
+
+INSTALL(FILES "../files/start.tif" DESTINATION ${CMAKE_INSTALL_FULL_DATADIR})

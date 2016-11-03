@@ -1119,24 +1119,27 @@ int main(int argc, char * argv[]){
 			default:
 				throw ns_ex("Unhandled command:") << (int)command;
 		}
-		cout << "=============ns_image_server=============\n";
-		cout << "==                                     ==\n";
-		cout << "== Image Capture and Processing Server ==\n";
-		cout <<	"==               "
-			 << image_server.software_version_major()
-			 << "."<< image_server.software_version_minor()
-			 << "."<<image_server.software_version_compile()
-			 << "               ==\n";
-		cout << " ==                                   ==\n";
-		cout << " ==        Nicholas Stroustrup        ==\n";
-		cout << " ==    Harvard Medical School 2015    ==\n";
-		cout << " ==                                   ==\n";
-		cout << " =======================================\n";
+		
+		string splash;
+		splash += "=============ns_image_server==============\n";
+		splash += "==                                      ==\n";
+		splash += "== Image Capture and Processing Server  ==\n";
+		splash += " ==               "
+			 + ns_to_string(image_server.software_version_major())
+			 + "." + ns_to_string(image_server.software_version_minor())
+			 + "." + ns_to_string(image_server.software_version_compile())
+			 + "                ==\n";
+		splash += " ==                                    ==\n";
+		splash += " ==        Nicholas Stroustrup         ==\n";
+		splash += " == Center for Genomic Regulation 2017 ==\n";
+		splash += " ==     Harvard Medical School 2015    ==\n";
+		splash += " ==                                    ==\n";
+		splash += " ========================================\n";
+		std::cout << splash;
+		
 
 		std::vector<std::pair<std::string,std::string> > quotes;
 	
-		
-		
 		ns_acquire_for_scope<ns_image_server_sql> sql;
 		
 		image_server.os_signal_handler.set_signal_handler(ns_interrupt,exit_signal_handler);
@@ -1208,19 +1211,21 @@ int main(int argc, char * argv[]){
 		
 		const bool register_and_run_simulated_devices(image_server.register_and_run_simulated_devices(&sql()));
 		srand(ns_current_time());
+		std::string quote;
 		if (quotes.size() == 0)
-			cout << "The oracle is silent.\n\n";
+			quote = "The oracle is silent.\n\n";
 		else{
-			std::pair<std::string,std::string> & quote(quotes[rand()%quotes.size()]);
-			if (quote.first.size() == 0)
-				cout << "The oracle is silent.\n\n";
+			std::pair<std::string,std::string> & q(quotes[rand()%quotes.size()]);
+			if (q.first.size() == 0)
+				quote = "The oracle is silent.\n\n";
 			else{
-				cout << "\"" << quote.first << "\"\n";
-				cout << "\t--" << quote.second << "\n\n";
+				quote = "\"" + q.first + "\"\n";
+				quote += "\t--";
+				quote += q.second + "\n\n";
 			}
 		}
+		std::cout << quote;
 			
-				
 		#ifdef _WIN32 
 		if (image_server.hide_window()){
 
@@ -1239,18 +1244,12 @@ int main(int argc, char * argv[]){
 			cout.setf(ios::dec);
 		#endif
 
-			image_server.image_storage.test_connection_to_long_term_storage(true);
-		if (!image_server.image_storage.long_term_storage_was_recently_writeable() && image_server.act_as_processing_node()){
-			if (image_server.act_as_an_image_capture_server()){
-				image_server.set_processing_node_behavior(false);
-				image_server.register_server_event(ns_image_server_event("Cannot connect to long term storage.  This server will not act as an image processing node."),&sql());
-			}
-			else throw ns_ex("Cannot connect to long term storage.");
-		}
-
 		if (sql().connected_to_central_database()){
 			image_server.get_requested_database_from_db();
-			image_server.register_host();
+			image_server.register_host(&sql());
+			image_server.register_server_event(ns_image_server_event("Launching server..."), &sql(),true);
+			image_server.add_subtext_to_current_event(splash, &sql(),true);
+			image_server.add_subtext_to_current_event(quote, &sql(),true);
 			if (image_server.new_software_release_available() && image_server.halt_on_new_software_release()){
 				image_server.register_server_event(ns_image_server_event("A more recent version of server software was found running on the cluster.  This server is outdated and is halting now."),&sql());
 				#ifdef _WIN32 
@@ -1258,6 +1257,15 @@ int main(int argc, char * argv[]){
 				#endif
 				throw ns_ex("Updated software detected on the cluster.");
 			}
+		}
+
+		image_server.image_storage.test_connection_to_long_term_storage(true);
+		if (!image_server.image_storage.long_term_storage_was_recently_writeable() && image_server.act_as_processing_node()) {
+			if (image_server.act_as_an_image_capture_server()) {
+				image_server.set_processing_node_behavior(false);
+				image_server.register_server_event(ns_image_server_event("Cannot connect to long term storage.  This server will not act as an image processing node."), &sql());
+			}
+			else throw ns_ex("Cannot connect to long term storage.");
 		}
 
 		//handle requested commandline commands that requre a database
@@ -1410,21 +1418,11 @@ int main(int argc, char * argv[]){
 			if (image_server.simulated_device_name().size() > 2)
 				image_server.device_manager.attach_simulated_device(image_server.simulated_device_name());
 		}
-	/*
-		vector<string> sim_devices;
-		for (unsigned int i = 0; i < 20; i++){
-			sim_devices.push_back(image_server.simulated_device_name() + "_" + ns_to_string(i));
-				image_server.device_manager.attach_simulated_device(sim_devices[i]);
-		}
-		for (unsigned int i = 0; i < 20; i++){
-			image_server.device_manager.set_autoscan_interval(sim_devices[i],10);//*(static_cast<ns_sql *>(&sql())));
-		}
-		*/
 		if (image_server.act_as_an_image_capture_server())
 			image_server.device_manager.save_last_known_device_configuration();
 
 		if (sql().connected_to_central_database())
-			image_server.register_devices();
+			image_server.register_devices(false,&sql());
 		
 		if (!image_server.act_as_processing_node()){
 			image_server.register_server_event(ns_image_server_event("Not acting as a processing node."),&sql());

@@ -813,7 +813,7 @@ void ns_image_server::set_sql_database(const std::string & database_name,const b
 		register_server_event(ns_image_server_event("Switching to database ") << database_name,&sql());
 		sql() << "UPDATE hosts SET database_used='" << database_name << "' WHERE id = " << host_id();
 		sql().send_query();
-		image_server.unregister_host();	
+		image_server.unregister_host(&sql());	
 	}
 	std::vector<std::string>::const_iterator p = std::find(possible_sql_databases.begin(),possible_sql_databases.end(),database_name);
 	image_server.sql_lock.wait_to_acquire(__FILE__,__LINE__);
@@ -825,8 +825,8 @@ void ns_image_server::set_sql_database(const std::string & database_name,const b
 	ns_death_time_annotation_flag::get_flags_from_db(sql());
 	image_server.sql_lock.release();
 	if (report_to_db){
-		image_server.register_host();
-		image_server.register_devices();
+		image_server.register_host(&sql());
+		image_server.register_devices(false,&sql());
 	}
 }
 
@@ -1592,31 +1592,31 @@ ns_sql * ns_image_server::new_sql_connection(const std::string & source_file, co
 }
 
 //look for existing device name, create if not found
-void ns_image_server::register_device(const ns_device_summary & device,ns_sql & con){
+void ns_image_server::register_device(const ns_device_summary & device, ns_image_server_sql * con){
 	
-	con << "SELECT host_id FROM devices WHERE name='" << device.name << "'";
+	*con << "SELECT host_id FROM devices WHERE name='" << device.name << "'";
 	ns_sql_result device_info;
-	con.get_rows(device_info);
+	con->get_rows(device_info);
 	if (device_info.size() > 1)
 		throw ns_ex() << static_cast<unsigned long>(device_info.size()) << " devices named " << device.name << " were found!";
 	
 	//if the device does not exist in database, register it.
 	if (device_info.size() == 0){
-		con << "INSERT INTO devices SET host_id ='" << image_server.host_id() << "', name='" << device.name << "',"
+		*con << "INSERT INTO devices SET host_id ='" << image_server.host_id() << "', name='" << device.name << "',"
 			<< "simulated_device=" << (device.simulated_device?"1":"0") << ", unknown_identity=" << (device.unknown_identity?"1":"0")
 			<< ", pause_captures=" << (device.paused?"1":"0") <<  ", currently_scanning=" << (device.currently_scanning?"1":"0")
 			<< ", autoscan_interval=" << device.autoscan_interval << ",comments='',error_text=''";
-		con.send_query();
+		con->send_query();
 	}
 	else{
 		//if the device is registered as being owned by another server, change its registration.
 		if (atoi(device_info[0][0].c_str()) != image_server.host_id()){
-			con << "UPDATE devices SET host_id ='" << image_server.host_id() << "', in_recognized_error_state='0', "
+			*con << "UPDATE devices SET host_id ='" << image_server.host_id() << "', in_recognized_error_state='0', "
 			<< "simulated_device= " << (device.simulated_device?"1":"0") << ", unknown_identity=" << (device.unknown_identity?"1":"0")
 			<< ", pause_captures=" << (device.paused?"1":"0") << ", currently_scanning=" << (device.currently_scanning?"1":"0")
 			<< ", autoscan_interval=" << device.autoscan_interval
 			<< " WHERE name='" << device.name << "'";
-			con.send_query();
+			con->send_query();
 		}		
 	}
 }
@@ -1732,37 +1732,33 @@ bool ns_image_server::new_software_release_available(ns_sql & sql){
 	return (res.size() > 0);	
 }
 
-void ns_image_server::unregister_host() {
-	ns_acquire_for_scope<ns_sql> sql(new_sql_connection(__FILE__,__LINE__));
-	sql() << "UPDATE hosts SET last_ping = 0 WHERE name = '" << host_name << "'";
-	sql().send_query();
-	sql.release();
+void ns_image_server::unregister_host(ns_image_server_sql * sql) {
+	*sql << "UPDATE hosts SET last_ping = 0 WHERE name = '" << host_name << "'";
+	sql->send_query();
 };
-void ns_image_server::register_host(bool overwrite_current_entry){
+void ns_image_server::register_host(ns_image_server_sql * sql, bool overwrite_current_entry) {
 	
 	//log in to the server, register the host, get its database id, and update the filed ip address.
-
-	ns_acquire_for_scope<ns_sql> sql(new_sql_connection(__FILE__,__LINE__));
 
 	std::string long_term_storage_ = "0";
 	if (image_storage.long_term_storage_was_recently_writeable())
 		long_term_storage_ = "1";
-	sql().set_autocommit(false);
-	sql().send_query("BEGIN");
-	sql() << "SELECT id, ip, port, long_term_storage_enabled FROM hosts WHERE name='" << host_name << "'";
+	sql->set_autocommit(false);
+	sql->send_query("BEGIN");
+	*sql << "SELECT id, ip, port, long_term_storage_enabled FROM hosts WHERE name='" << host_name << "'";
 	if (overwrite_current_entry)
-		sql() << " FOR UPDATE";
+		*sql << " FOR UPDATE";
 
 	ns_sql_result h;
-	sql().get_rows(h);
+	sql->get_rows(h);
 
 	if (h.size() == 0){
-		sql()<< "INSERT INTO hosts SET name='" << host_name << "', base_host_name='" << base_host_name << "', ip='" << host_ip << "', port='" << _dispatcher_port 
+		*sql<< "INSERT INTO hosts SET name='" << host_name << "', base_host_name='" << base_host_name << "', ip='" << host_ip << "', port='" << _dispatcher_port 
 			<< "', long_term_storage_enabled='" << long_term_storage_ << "', comments='', "
 			<< "software_version_major=" << software_version_major() << ", software_version_minor=" << software_version_minor()
 			<< ", software_version_compile=" << software_version_compile()<< ",database_used='" << *sql_database_choice 
 			<< "', time_of_last_successful_long_term_storage_write=0";
-		_host_id = sql().send_query_get_id();
+		_host_id = sql->send_query_get_id();
 	}
 	else if (h.size() != 1)
 		throw ns_ex() << (int)h.size() << " hosts found with current hostname!";
@@ -1770,16 +1766,15 @@ void ns_image_server::register_host(bool overwrite_current_entry){
 			
 		_host_id = atoi(h[0][0].c_str());
 		if (overwrite_current_entry){
-			sql() << "UPDATE hosts SET ip='" << host_ip << "', port='" << _dispatcher_port 
+			*sql << "UPDATE hosts SET ip='" << host_ip << "', port='" << _dispatcher_port 
 				<< "', long_term_storage_enabled='" << long_term_storage_ << "', "
 				<< "software_version_major=" << software_version_major() << ", software_version_minor=" << software_version_minor()
 				<< ", software_version_compile=" << software_version_compile() << ",database_used='" << *sql_database_choice << "'" <<
 				" WHERE id='" << _host_id << "'";
-			sql().send_query();
+			sql->send_query();
 		}
 	}
-	sql().send_query("COMMIT");
-	sql.release();
+	sql->send_query("COMMIT");
 }
 void ns_image_server::update_device_status_in_db(ns_sql & sql) const{
 	#ifndef NS_MINIMAL_SERVER_BUILD
@@ -1796,17 +1791,17 @@ void ns_image_server::update_device_status_in_db(ns_sql & sql) const{
 	}
 	#endif
 }
-void ns_image_server::register_devices(const bool verbose){
+void ns_image_server::register_devices(const bool verbose, ns_image_server_sql * sql){
 	#ifndef NS_MINIMAL_SERVER_BUILD
-	ns_acquire_for_scope<ns_sql> sql(new_sql_connection(__FILE__,__LINE__));
+
 
 	ns_image_server_device_manager::ns_device_name_list connected_devices;
 	device_manager.request_device_list(connected_devices);
 
 	//we want to remember specified information about devices, so we download it from the db before clearing the db. 
-	sql() << "SELECT name, pause_captures,autoscan_interval, next_autoscan_time FROM devices WHERE host_id = " << image_server.host_id();
+	*sql << "SELECT name, pause_captures,autoscan_interval, next_autoscan_time FROM devices WHERE host_id = " << image_server.host_id();
 	ns_sql_result device_state;
-	sql().get_rows(device_state);
+	sql->get_rows(device_state);
 	std::map<string,ns_device_summary> device_state_map;
 	for (unsigned int i = 0; i < device_state.size(); i++){
 		device_state_map[device_state[i][0]].paused = device_state[i][1]!="0";
@@ -1822,28 +1817,27 @@ void ns_image_server::register_devices(const bool verbose){
 		try{
 			device_manager.set_pause_state(connected_devices[i].name,p->second.paused);
 			if (p->second.next_autoscan_time < current_time)
-				 device_manager.set_autoscan_interval_and_balance(connected_devices[i].name,p->second.autoscan_interval,sql());
+				 device_manager.set_autoscan_interval_and_balance(connected_devices[i].name,p->second.autoscan_interval,sql);
 			else device_manager.set_autoscan_interval(connected_devices[i].name,p->second.autoscan_interval,p->second.next_autoscan_time);
 		}
 		catch(ns_ex & ex){
-			image_server.register_server_event(ex,&sql());
+			image_server.register_server_event(ex,sql);
 		}
 	}
 
-	sql() << "DELETE from devices WHERE host_id ='" << image_server.host_id() << "'";
-	sql().send_query();
+	*sql << "DELETE from devices WHERE host_id ='" << image_server.host_id() << "'";
+	sql->send_query();
 
 	std::string devices_registered;
 
 	for (unsigned int i = 0; i < connected_devices.size(); i++){
-		register_device(connected_devices[i],sql());	
+		register_device(connected_devices[i],sql);	
 		devices_registered += connected_devices[i].name + ",";
 	}
 	ns_image_server_event ev("Registering devices ");
 	ev << devices_registered;
 
-	if (verbose)image_server.register_server_event(ev,&sql());
-	sql.release();
+	if (verbose)image_server.register_server_event(ev,sql);
 	
 	#endif
 }
@@ -2390,17 +2384,18 @@ void ns_image_server::clear_old_server_events(ns_sql & sql){
 }
 
 
-void ns_image_server::add_subtext_to_current_event(const char * str, ns_image_server_sql * sql) const {
+void ns_image_server::add_subtext_to_current_event(const char * str, ns_image_server_sql * sql,bool suppress_display) const {
 	if (sql != 0) {
 		std::map<ns_64_bit, ns_thread_output_state>::iterator current_thread_state = get_current_thread_state_info();
 
 		*sql << "UPDATE host_event_log SET sub_text = CONCAT(sub_text,'" << sql->escape_string(str) << "') WHERE id = " << current_thread_state->second.last_event_sql_id;
 		sql->send_query();
 	}
-	cerr << str;
+	if (!suppress_display)
+		cout << str;
 }
 
-void  ns_image_server::add_subtext_to_current_event(const ns_image_server_event & s_event, ns_image_server_sql * sql,bool display_date) const {
+void  ns_image_server::add_subtext_to_current_event(const ns_image_server_event & s_event, ns_image_server_sql * sql,bool display_date,bool suppress_display) const {
 	if (!display_date)
 		add_subtext_to_current_event(s_event.text(), sql);
 	else {
@@ -2408,7 +2403,7 @@ void  ns_image_server::add_subtext_to_current_event(const ns_image_server_event 
 		time_str+=std::string(": ");
 		time_str += s_event.text();
 		time_str += std::string("\n");
-		add_subtext_to_current_event(time_str, sql);
+		add_subtext_to_current_event(time_str, sql,suppress_display);
 	}
 }
 ns_64_bit ns_image_server::register_server_event(const ns_register_type type,const ns_image_server_event & s_event)const{

@@ -47,27 +47,27 @@ ns_thread_return_type handle_dispatcher_request(void * d){
 	return 0;
 }
 
-void ns_image_server_dispatcher::run_hotplug(const bool rescan_bad_barcodes,const bool verbose){
+bool ns_image_server_dispatcher::hotplug_devices(const bool rescan_bad_barcodes,const bool verbose){
 	if (!image_server.act_as_an_image_capture_server()){
 		image_server.register_server_event(ns_image_server::ns_register_in_central_db_with_fallback,ns_image_server_event("Cannot execute hotplug command, as query_cluster_for_device_names is set to false in the config file."));
-		return;
+		return false;
 	}
 	ns_acquire_lock_for_scope lock(hotplug_lock,__FILE__,__LINE__);
-	
+
 	if (hotplug_running){
 		lock.release();
 		image_server.register_server_event(ns_image_server::ns_register_in_central_db_with_fallback,ns_image_server_event("Hotplug already in process."));
-		return;
+		return false;
 	}
 	hotplug_running = true;
 	lock.release();
 
 	try{
-		if (image_server.device_manager.hotplug_new_devices(rescan_bad_barcodes,verbose)){
-			image_server.register_devices(verbose);
+		if (image_server.device_manager.hotplug_new_devices(rescan_bad_barcodes, verbose)) {
 			image_server.device_manager.save_last_known_device_configuration();
 		}
 		hotplug_running = false;
+		return true;
 	}
 	catch(...){
 		hotplug_running = false;
@@ -110,93 +110,105 @@ void ns_image_server_dispatcher::handle_remote_requests(){
 				}
 				//if (message.request() == NS_CHECK_FOR_WORK) cerr<< ".";
 
-				switch(message.request()){
-					case NS_NULL:
-						socket_connection.close();
-						//do nothing
-						break;
+				switch (message.request()) {
+				case NS_NULL:
+					socket_connection.close();
+					//do nothing
+					break;
 
-					case NS_TIMER: 
-						//no data to recieve.
-						socket_connection.close();
-						this->on_timer();
-						break;
+				case NS_TIMER:
+					//no data to recieve.
+					socket_connection.close();
+					this->on_timer();
+					break;
 
-					case NS_CHECK_FOR_WORK:
-						//don't accept outside requests for work if 
-						//the server should run autonomously
-						if (image_server.run_autonomously()){
-							socket_connection.close();
-							break;
-						}
-						//HERE, A BREAK IS DELIBERATELY OMITTED
-					case NS_LOCAL_CHECK_FOR_WORK:
-						socket_connection.close();
-						this->on_timer();
-						if (image_server.act_as_processing_node()){
-							this->start_looking_for_new_work();
-						}
-						break;
-
-					case NS_IMAGE_REQUEST:{
-						//if possible, send the image
-						ns_vars v;
-						v.from_string(message.data());
-						this->process_image_request(v.get_int("image_id"),v("host_ip"),v.get_int("host_port"));
+				case NS_CHECK_FOR_WORK:
+					//don't accept outside requests for work if 
+					//the server should run autonomously
+					if (image_server.run_autonomously()) {
 						socket_connection.close();
 						break;
 					}
-					case NS_CLEAR_DB_BUF_CLEAN:
-						clean_clear_local_db_requested = true;
-						break;
-					case NS_CLEAR_DB_BUF_DIRTY:	
-						try{
-							
-							ns_acquire_for_scope<ns_local_buffer_connection> local_buffer_connection(image_server.new_local_buffer_connection(__FILE__,__LINE__));
-							ns_acquire_for_scope<ns_local_buffer_connection> sql(image_server.new_local_buffer_connection(__FILE__,__LINE__));
-							this->buffered_capture_scheduler.clear_local_cache(sql());
-							local_buffer_connection.release();
+					//HERE, A BREAK IS DELIBERATELY OMITTED
+				case NS_LOCAL_CHECK_FOR_WORK:
+					socket_connection.close();
+					this->on_timer();
+					if (image_server.act_as_processing_node()) {
+						this->start_looking_for_new_work();
+					}
+					break;
+
+				case NS_IMAGE_REQUEST: {
+					//if possible, send the image
+					ns_vars v;
+					v.from_string(message.data());
+					this->process_image_request(v.get_int("image_id"), v("host_ip"), v.get_int("host_port"));
+					socket_connection.close();
+					break;
+				}
+				case NS_CLEAR_DB_BUF_CLEAN:
+					clean_clear_local_db_requested = true;
+					break;
+				case NS_CLEAR_DB_BUF_DIRTY:
+					try {
+
+						ns_acquire_for_scope<ns_local_buffer_connection> local_buffer_connection(image_server.new_local_buffer_connection(__FILE__, __LINE__));
+						ns_acquire_for_scope<ns_local_buffer_connection> sql(image_server.new_local_buffer_connection(__FILE__, __LINE__));
+						this->buffered_capture_scheduler.clear_local_cache(sql());
+						local_buffer_connection.release();
+						sql.release();
+					}
+					catch (ns_ex & ex) {
+						image_server.register_server_event_no_db(ns_image_server_event(ex.text()));
+					}
+					break;
+				case NS_RELOAD_MODELS: {
+					socket_connection.close();
+					image_server.clear_model_cache();
+					break;
+				}
+				case NS_SIMULATE_CENTRL_DB_CONNECTION_ERROR: {
+					image_server.toggle_central_mysql_server_connection_error_simulation();
+					break;
+				}
+				case NS_OUTPUT_IMAGE_BUFFER_INFO: {
+					this->buffered_capture_scheduler.image_capture_data_manager.transfer_status_debugger.print_status();
+					break;
+				}
+				case NS_IMAGE_SEND:
+					//a remote host is sending an image; save it.
+					this->recieve_image(message, socket_connection);
+					break;
+				case NS_OUTPUT_SQL_LOCK_INFORMATION: {
+					std::string out;
+					image_server.sql_table_lock_manager.output_current_locks(out);
+					image_server.register_server_event(ns_image_server::ns_register_in_central_db_with_fallback, ns_image_server_event(out));
+					break;
+				}
+				case NS_STATUS_REQUEST:
+					//send information to remote host.
+					break;
+				case NS_HOTPLUG_NEW_DEVICES:
+					socket_connection.close();
+					if (hotplug_devices()) {
+						try {
+							ns_acquire_for_scope<ns_local_buffer_connection> sql(image_server.new_local_buffer_connection(__FILE__, __LINE__));
+							image_server.register_devices(false, &sql());
 							sql.release();
 						}
-						catch(ns_ex & ex){
-							image_server.register_server_event_no_db(ns_image_server_event(ex.text()));
+						catch (ns_ex &ex) {
+							image_server.register_server_event(ns_image_server::ns_register_in_central_db_with_fallback, ex);
 						}
-						break;
-					case NS_RELOAD_MODELS:{
-						socket_connection.close();
-						image_server.clear_model_cache();
-						break;
 					}
-					case NS_SIMULATE_CENTRL_DB_CONNECTION_ERROR:{
-						image_server.toggle_central_mysql_server_connection_error_simulation();
-						break;
-																}
-					case NS_OUTPUT_IMAGE_BUFFER_INFO:{
-						this->buffered_capture_scheduler.image_capture_data_manager.transfer_status_debugger.print_status();
-						break;
-					}
-					case NS_IMAGE_SEND:
-						//a remote host is sending an image; save it.
-						this->recieve_image(message,socket_connection);
-						break;
-					case NS_OUTPUT_SQL_LOCK_INFORMATION: {
-						std::string out;
-						image_server.sql_table_lock_manager.output_current_locks(out);
-						image_server.register_server_event(ns_image_server::ns_register_in_central_db_with_fallback, ns_image_server_event(out));
-						break;
-					}
-					case NS_STATUS_REQUEST:
-						//send information to remote host.
-						break;
-					case NS_HOTPLUG_NEW_DEVICES:
-						socket_connection.close();
-						run_hotplug();
-						break;
-					case NS_RESET_DEVICES:
+					break;
+					case NS_RESET_DEVICES: {
 						socket_connection.close();
 						image_server.device_manager.clear_device_list_and_identify_all_hardware();
-						image_server.register_devices();
+						ns_acquire_for_scope<ns_sql> sql(image_server.new_sql_connection(__FILE__, __LINE__));
+						image_server.register_devices(false,&sql());
+						sql.release();
 						break;
+					}
 					case NS_WRAP_M4V:{
 						socket_connection.close();
 						string input_filename = message.data();
@@ -327,8 +339,10 @@ void ns_image_server_dispatcher::run(){
 
 	//shut down routines
 	try{		
-		if (!currently_unable_to_connect_to_the_central_db)
-			image_server.unregister_host();
+		if (!currently_unable_to_connect_to_the_central_db) {
+			ns_acquire_for_scope<ns_sql> sql(image_server.new_sql_connection(__FILE__, __LINE__));
+			image_server.unregister_host(&sql());
+		}
 		//close all outstanding connections and clear the request queue
 		ns_acquire_lock_for_scope lock(message_handling_lock,__FILE__,__LINE__);
 		for(list<ns_remote_dispatcher_request>::iterator p = pending_remote_requests.begin(); p != pending_remote_requests.end();){
@@ -499,7 +513,7 @@ void ns_image_server_dispatcher::on_timer(){
 					timer_sql_lock.release();
 					return;
 				}
-				image_server.register_host();
+				image_server.register_host(timer_sql_connection);
 			}
 
 			bool try_to_reestablish_connection = false;
@@ -529,7 +543,7 @@ void ns_image_server_dispatcher::on_timer(){
 						timer_sql_connection->check_connection();	
 						timer_sql_lock.release();
 						image_server.register_server_event(ns_image_server_event("Recovered from a lost MySQL connection."),timer_sql_connection);
-						image_server.register_host();
+						image_server.register_host(timer_sql_connection);
 						image_server.alert_handler.buffer_all_alerts_locally(false);
 						currently_unable_to_connect_to_the_central_db = false;
 						return;
@@ -558,8 +572,8 @@ void ns_image_server_dispatcher::on_timer(){
 		if (h.size() == 0){
 			image_server.load_constants(ns_image_server::ns_image_server_type);	
 			image_server.register_server_event(ns_image_server_event("Found an inconsistent host record in the db: Refreshing it."),timer_sql_connection);
-			image_server.register_host();
-			image_server.register_devices();
+			image_server.register_host(timer_sql_connection);
+			image_server.register_devices(false,timer_sql_connection);
 			image_server.alert_handler.buffer_all_alerts_locally(false);
 			return;
 		}
@@ -694,7 +708,7 @@ void ns_image_server_dispatcher::on_timer(){
 
 					image_server.register_server_event(ev,timer_sql_connection);
 				//	image_server.register_host();
-					image_server.register_devices();
+					image_server.register_devices(false,timer_sql_connection);
 					return;
 				}
 
@@ -713,7 +727,7 @@ void ns_image_server_dispatcher::on_timer(){
 							}
 						}
 						int autoscan_interval(atoi(prev_res[i][4].c_str()));	
-						if (image_server.device_manager.set_autoscan_interval_and_balance(prev_res[i][0],autoscan_interval,*timer_sql_connection)){
+						if (image_server.device_manager.set_autoscan_interval_and_balance(prev_res[i][0],autoscan_interval,timer_sql_connection)){
 							if (autoscan_interval > 0)
 								image_server.register_server_event(ns_image_server_event("Setting autoscan interval to ") << autoscan_interval << " on device " << prev_res[i][0],timer_sql_connection);
 							else
@@ -775,7 +789,7 @@ void ns_image_server_dispatcher::on_timer(){
 			}
 			try{
 				if (hotplug_requested)
-					run_hotplug();
+					hotplug_devices(timer_sql_connection);
 				std::vector<std::string> device_names(devices.size());
 				for (unsigned int i = 0; i < devices.size(); i++)
 					device_names[i] = devices[i].name;
@@ -1212,7 +1226,7 @@ bool ns_image_server_dispatcher::look_for_work(){
 			(processing_thread_pool.number_of_jobs_pending() > 0 ||
 				!processing_thread_pool.any_thread_is_idle())) {
 			processing_job_scheduler_thread.report_as_finished();
-			cerr << ":";
+			image_server.add_subtext_to_current_event(":", work_sql_connection);
 			return false;
 		}
 		ns_image_server_push_job_scheduler push_scheduler;
@@ -1229,7 +1243,7 @@ bool ns_image_server_dispatcher::look_for_work(){
 
 		push_scheduler.request_jobs(number_of_jobs_to_run, jobs, *work_sql_connection, first_in_first_out_job_queue);
 		if (jobs.size() == 0) {
-			cerr << ".";
+			image_server.add_subtext_to_current_event(".", work_sql_connection);
 			return false;
 		}
 

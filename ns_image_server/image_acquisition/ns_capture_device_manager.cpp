@@ -64,44 +64,44 @@ void ns_image_server_device_manager::test_balancing_(){
 	attach_simulated_device("device_4");
 	ns_acquire_for_scope<ns_sql > sql(image_server.new_sql_connection(__FILE__,__LINE__));
 	unsigned long time_offset = ns_current_time();
-	set_autoscan_interval_and_balance("device_1",20*60,sql());
+	set_autoscan_interval_and_balance("device_1",20*60,&sql());
 	cerr << "Balancing 1\n";
 	for (ns_device_list::iterator p = devices.begin(); p != devices.end(); p++){
 		if (p->second->autoscan_interval != 0) cerr << p->first << ":" << (p->second->next_autoscan_time - time_offset)/60  << " : " << p->second->autoscan_interval << "\n";
 	}
 
-	set_autoscan_interval_and_balance("device_2",20*60,sql());
+	set_autoscan_interval_and_balance("device_2",20*60,&sql());
 	cerr << "Balancing 2\n";
 	for (ns_device_list::iterator p = devices.begin(); p != devices.end(); p++){
 		if (p->second->autoscan_interval != 0) cerr << p->first << ":" << (p->second->next_autoscan_time - time_offset)/60  << " : " << p->second->autoscan_interval << "\n";
 	}
-	set_autoscan_interval_and_balance("device_3",20*60,sql());
+	set_autoscan_interval_and_balance("device_3",20*60,&sql());
 	cerr << "Balancing 3\n";
 	for (ns_device_list::iterator p = devices.begin(); p != devices.end(); p++){
 		if (p->second->autoscan_interval != 0) cerr << p->first << ":" << (p->second->next_autoscan_time - time_offset)/60  << " : " << p->second->autoscan_interval << "\n";
 	}
-	set_autoscan_interval_and_balance("device_4",20*60,sql());
+	set_autoscan_interval_and_balance("device_4",20*60,&sql());
 	cerr << "Balancing 4\n";
 	for (ns_device_list::iterator p = devices.begin(); p != devices.end(); p++){
 		if (p->second->autoscan_interval != 0) cerr << p->first << ":" << (p->second->next_autoscan_time- time_offset)/60  << " : " << p->second->autoscan_interval << "\n";
 	}
-	set_autoscan_interval_and_balance("device_3",0,sql());
+	set_autoscan_interval_and_balance("device_3",0,&sql());
 	cerr << "Removing 3\n";
 	for (ns_device_list::iterator p = devices.begin(); p != devices.end(); p++){
 		if (p->second->autoscan_interval != 0) cerr << p->first << ":" << (p->second->next_autoscan_time- time_offset)/60  << " : " << p->second->autoscan_interval << "\n";
 	}	
 
-	set_autoscan_interval_and_balance("device_1",0,sql());
+	set_autoscan_interval_and_balance("device_1",0,&sql());
 	cerr << "Removing 1\n";
 	for (ns_device_list::iterator p = devices.begin(); p != devices.end(); p++){
 		if (p->second->autoscan_interval != 0) cerr << p->first << ":" << (p->second->next_autoscan_time- time_offset)/60  << " : " << p->second->autoscan_interval << "\n";
 	}	
-	set_autoscan_interval_and_balance("device_2",0,sql());
+	set_autoscan_interval_and_balance("device_2",0,&sql());
 	cerr << "Removing 2\n";
 	for (ns_device_list::iterator p = devices.begin(); p != devices.end(); p++){
 		if (p->second->autoscan_interval != 0) cerr << p->first << ":" << (p->second->next_autoscan_time- time_offset)/60  << " : " << p->second->autoscan_interval << "\n";
 	}	
-	set_autoscan_interval_and_balance("device_4",0,sql());
+	set_autoscan_interval_and_balance("device_4",0,&sql());
 	cerr << "Removing 4\n";
 	for (ns_device_list::iterator p = devices.begin(); p != devices.end(); p++){
 		if (p->second->autoscan_interval != 0) cerr << p->first << ":" << (p->second->next_autoscan_time- time_offset)/60  << " : " << p->second->autoscan_interval << "\n";
@@ -203,13 +203,13 @@ public:
 		return a->second->next_autoscan_time < b->second->next_autoscan_time;
 	};
 };
-bool ns_image_server_device_manager::set_autoscan_interval_and_balance(const std::string & device_name, int interval_in_seconds,ns_sql &sql){
+bool ns_image_server_device_manager::set_autoscan_interval_and_balance(const std::string & device_name, int interval_in_seconds,ns_sql_connection * sql){
 
 	//we want to balance scanners within the same incubator, so we need to get all the assignments
 	std::map<std::string,std::string> incubator_assignments;
-	sql << "SELECT device_name, incubator_name FROM device_inventory";
+	*sql << "SELECT device_name, incubator_name FROM device_inventory";
 	ns_sql_result res;
-	sql.get_rows(res);
+	sql->get_rows(res);
 	for (unsigned int i = 0; i < res.size(); ++i)
 		incubator_assignments[res[i][0]] = res[i][1];
 

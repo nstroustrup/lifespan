@@ -148,9 +148,9 @@ public:
 
 	///Hosts coordinate with each other through the sql database.  Register_host() updates the database with the current nodes
 	///IP information, software version, attached image-capture devices, etc.
-	void register_host(bool overwrite_current_entry=true);
+	void register_host(ns_image_server_sql * sql, bool overwrite_current_entry=true);
 	void update_device_status_in_db(ns_sql & sql) const;
-	void unregister_host();
+	void unregister_host(ns_image_server_sql * sql);
 
 	///new_software_release_available returns true if the current image server node is running software that is older than the
 	///most recent version present in the image server cluster.
@@ -161,7 +161,7 @@ public:
 
 	std::string default_partition()const{return "partition_000";}
 	
-	void register_devices(const bool verbose=true);
+	void register_devices(const bool verbose, ns_image_server_sql * sql);
 
 	void set_up_local_buffer();
 	void set_up_model_directory();
@@ -458,11 +458,11 @@ public:
 
 	ns_64_bit register_server_event(const ns_register_type type,const ns_image_server_event & s_event) const;
 	ns_64_bit register_server_event(const ns_register_type type,const ns_ex & ex)const;
-	void add_subtext_to_current_event(const std::string & str, ns_image_server_sql * sql) const {
-		add_subtext_to_current_event(str.c_str(), sql);
+	void add_subtext_to_current_event(const std::string & str, ns_image_server_sql * sql,bool suppress_display=false) const {
+		add_subtext_to_current_event(str.c_str(), sql,suppress_display);
 	}
-	void add_subtext_to_current_event(const char * str, ns_image_server_sql * sql) const;
-	void add_subtext_to_current_event(const ns_image_server_event & s_event, ns_image_server_sql * sql,bool display_date=true) const;
+	void add_subtext_to_current_event(const char * str, ns_image_server_sql * sql, bool suppress_display=false) const;
+	void add_subtext_to_current_event(const ns_image_server_event & s_event, ns_image_server_sql * sql,bool display_date=true,bool suppress_display=false) const;
 	void log_current_thread_output_in_separate_file() const;
 
 
@@ -590,7 +590,7 @@ private:
 
 
 	///registers the specified device in the central database.
-	static void register_device(const ns_device_summary & device,ns_sql & con);
+	static void register_device(const ns_device_summary & device, ns_image_server_sql * con);
 
 	///used to prevent multiple threads from simultaneously registering server events in the mysql database
 	mutable ns_lock server_event_lock;

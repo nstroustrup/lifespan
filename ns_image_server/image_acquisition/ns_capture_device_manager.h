@@ -75,7 +75,7 @@ public:
 	
 	bool set_autoscan_interval(const std::string & device_name, const int interval_in_seconds,const unsigned long start_time=0);
 	
-	bool set_autoscan_interval_and_balance(const std::string & device_name, const int interval_in_seconds,ns_sql &sql);
+	bool set_autoscan_interval_and_balance(const std::string & device_name, const int interval_in_seconds,ns_sql_connection * sql);
 
 	///hotplug_new_devices() checks the USB interface to see if any changes have occured since it was last checked,
 	///and updates the device registry accordingly.

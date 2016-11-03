@@ -104,7 +104,7 @@ public:
 		  hotplug_lock("ns_isd::hotplug"),device_capture_management_lock("ns_dml"),time_of_last_scan_for_problems(0),hotplug_running(false),work_sql_connection(0),currently_unable_to_connect_to_the_central_db(false),actively_avoid_connecting_to_central_db(false),timer_sql_connection(0),work_sql_management_lock("ns_isd::work_sql"),timer_sql_management_lock("ns_isd::timer_sql"),trigger_segfault(false){}
 
 	void init(const unsigned int port,const unsigned int socket_queue_length);
-	void register_device(const ns_device_name &device);
+	void register_device(const ns_device_name &device,ns_sql & sql);
 
 	void run();
 	void handle_remote_requests();
@@ -186,9 +186,9 @@ private:
 	ns_socket incomming_socket;
 
 	ns_ex * delayed_exception;
-
+	
 	void wait_for_local_jobs();
-	void run_hotplug(const bool rescan_bad_barcodes=true,const bool verbose=true);
+	bool hotplug_devices(const bool rescan_bad_barcodes=true,const bool verbose=true);
 
 
 	ns_lock processing_lock;

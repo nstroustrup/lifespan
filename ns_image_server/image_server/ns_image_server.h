@@ -458,11 +458,11 @@ public:
 
 	ns_64_bit register_server_event(const ns_register_type type,const ns_image_server_event & s_event) const;
 	ns_64_bit register_server_event(const ns_register_type type,const ns_ex & ex)const;
-	void add_subtext_to_current_event(const std::string & str, ns_image_server_sql * sql,bool suppress_display=false) const {
+	void add_subtext_to_current_event(const std::string & str, ns_image_server_sql * sql,bool suppress_display=false, const ns_64_bit impersonate_using_internal_thread_id = 0) const {
 		add_subtext_to_current_event(str.c_str(), sql,suppress_display);
 	}
-	void add_subtext_to_current_event(const char * str, ns_image_server_sql * sql, bool suppress_display=false) const;
-	void add_subtext_to_current_event(const ns_image_server_event & s_event, ns_image_server_sql * sql,bool display_date=true,bool suppress_display=false) const;
+	void add_subtext_to_current_event(const char * str, ns_image_server_sql * sql, bool suppress_display=false, const ns_64_bit impersonate_using_internal_thread_id=0) const;
+	void add_subtext_to_current_event(const ns_image_server_event & s_event, ns_image_server_sql * sql,bool display_date=true,bool suppress_display=false, const ns_64_bit impersonate_using_internal_thread_id = 0) const;
 	void log_current_thread_output_in_separate_file() const;
 
 
@@ -505,10 +505,12 @@ public:
 	//ordered by the system thread id;
 	mutable std::map<ns_64_bit, ns_thread_output_state> thread_states;
 	mutable unsigned long max_internal_thread_id;
-	std::map<ns_64_bit, ns_thread_output_state>::iterator get_current_thread_state_info() const;
+	std::map<ns_64_bit, ns_thread_output_state>::iterator get_current_thread_state_info(const ns_64_bit thread_to_impersonate=0) const;
 
+	ns_64_bit main_thread_id() { return _main_thread_id; }
+	void set_main_thread_id();
 private:
-
+	ns_64_bit _main_thread_id;
 	static void open_log_file(const ns_image_server::ns_image_server_exec_type & exec_type, unsigned long internal_thread_id, const std::string & volatile_directory, const std::string & file_name, std::ofstream & out);
 	ns_performance_statistics_analyzer performance_statistics;
 	mutable ns_lock performance_stats_lock;

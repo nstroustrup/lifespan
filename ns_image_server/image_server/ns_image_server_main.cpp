@@ -1119,7 +1119,8 @@ int main(int argc, char * argv[]){
 			default:
 				throw ns_ex("Unhandled command:") << (int)command;
 		}
-		
+		image_server.set_main_thread_id();
+
 		string splash;
 		splash += "=============ns_image_server==============\n";
 		splash += "==                                      ==\n";

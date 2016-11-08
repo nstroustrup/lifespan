@@ -789,7 +789,7 @@ void ns_image_server_dispatcher::on_timer(){
 			}
 			try{
 				if (hotplug_requested)
-					hotplug_devices(timer_sql_connection);
+					hotplug_devices();
 				std::vector<std::string> device_names(devices.size());
 				for (unsigned int i = 0; i < devices.size(); i++)
 					device_names[i] = devices[i].name;
@@ -1226,7 +1226,7 @@ bool ns_image_server_dispatcher::look_for_work(){
 			(processing_thread_pool.number_of_jobs_pending() > 0 ||
 				!processing_thread_pool.any_thread_is_idle())) {
 			processing_job_scheduler_thread.report_as_finished();
-			image_server.add_subtext_to_current_event(":", work_sql_connection);
+			image_server.add_subtext_to_current_event(":", work_sql_connection,false,image_server.main_thread_id());
 			return false;
 		}
 		ns_image_server_push_job_scheduler push_scheduler;
@@ -1243,7 +1243,7 @@ bool ns_image_server_dispatcher::look_for_work(){
 
 		push_scheduler.request_jobs(number_of_jobs_to_run, jobs, *work_sql_connection, first_in_first_out_job_queue);
 		if (jobs.size() == 0) {
-			image_server.add_subtext_to_current_event(".", work_sql_connection);
+			image_server.add_subtext_to_current_event(".", work_sql_connection,false, image_server.main_thread_id());
 			return false;
 		}
 

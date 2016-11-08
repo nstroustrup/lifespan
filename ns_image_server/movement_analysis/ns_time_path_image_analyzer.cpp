@@ -932,7 +932,7 @@ void ns_time_path_image_movement_analyzer::process_raw_images(const ns_64_bit re
 				//since we have been registered images backwards in time, we've been writing everything in reverse order to the local disk.
 				//So, now we need to reload everything back in, reverse the order so that the earliest frame is first, and then 
 				//write it all out to long term storage. 
-				image_server_const.add_subtext_to_current_event(ns_image_server_event("Transfering current results to long term storage..."), write_status_to_db ? &sql : 0);
+				image_server_const.add_subtext_to_current_event(ns_image_server_event("\nTransfering current results to long term storage..."), write_status_to_db ? &sql : 0);
 				unsigned long debug_count(0);
 				for (unsigned int i = start_group; i < stop_group; i++) {
 					for (unsigned int j = 0; j < groups[i].paths.size(); j++) {
@@ -1010,7 +1010,7 @@ void ns_time_path_image_movement_analyzer::process_raw_images(const ns_64_bit re
 						shared_state.chunk_generators[i][j].setup_first_chuck_for_forwards_registration();
 					}
 				}
-				image_server_const.add_subtext_to_current_event(ns_image_server_event("Running forwards..."), (write_status_to_db ? (&sql) : 0));
+				image_server_const.add_subtext_to_current_event(ns_image_server_event("\nRunning forwards..."), (write_status_to_db ? (&sql) : 0));
 
 
 				for (unsigned int t = 0; t < region_image_specifications.size(); t += chunk_size) {
@@ -1116,13 +1116,17 @@ void ns_time_path_image_movement_analyzer::process_raw_images(const ns_64_bit re
 				total_skipped+=c;
 			}
 		}
-		//oo.close();
+
 		if (total_skipped > 0){
 			throw ns_ex("") << total_skipped << " frames were missed among " << total_groups << " out of a total of " << groups.size() << " path groups.";
 		}
 		generate_movement_description_series();
+
+
 		mark_path_images_as_cached_in_db(region_id,sql);
-		movement_analyzed = true;
+		movement_analyzed = true; 
+		image_server_const.add_subtext_to_current_event(ns_image_server_event("\nFinished."), (write_status_to_db ? (&sql) : 0));
+
 	}
 	catch(...){
 		delete_from_db(region_id,sql);

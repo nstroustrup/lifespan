@@ -503,6 +503,7 @@
     <ClCompile Include="..\ns_image_server\job_scheduling\ns_processing_job_processor.cpp" />
     <ClCompile Include="..\ns_image_server\job_scheduling\ns_processing_job_push_scheduler.cpp" />
     <ClCompile Include="..\ns_image_server\job_scheduling\ns_processing_job_scheduler.cpp" />
+    <ClCompile Include="..\ns_image_server\movement_analysis\ns_analyze_movement_over_time.cpp" />
     <ClCompile Include="..\ns_image_server\movement_analysis\ns_hidden_markov_model_posture_analyzer.cpp" />
     <ClCompile Include="..\ns_image_server\movement_analysis\ns_time_path_image_analyzer.cpp" />
     <ClCompile Include="..\ns_image_server\movement_analysis\ns_time_path_solver.cpp" />

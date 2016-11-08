@@ -769,7 +769,7 @@ public:
 	}
 	void navigate_death_time_annotation(ns_image_series_annotater::ns_image_series_annotater_action action,bool asynch=false);
 	void navigate_solo_worm_annotation(ns_death_time_solo_posture_annotater::ns_image_series_annotater_action action, bool asynch=false);
-	void save_death_time_annotations();
+	void save_death_time_annotations(ns_sql & sql);
 	bool prompt_to_save_death_time_annotations();
 	void load_strain_metadata_into_database(const std::string filename);
 	void upgrade_tables();
@@ -829,7 +829,11 @@ public:
 	ns_worm_detection_model_cache::const_handle_t default_model;
 	std::string current_mask_filename;
 	float dynamic_range_rescale;
+	ns_sql & get_sql_connection();
+	ns_lock persistant_sql_lock;
 private:
+
+
 	ns_image_standard animation_temp;
 	ns_death_time_annotation_set::ns_annotation_type_to_load last_annotation_type_loaded;
 	void touch_main_window_pixel_internal(const ns_button_press & p);
@@ -870,7 +874,7 @@ private:
 	bool movement_data_is_strictly_decreasing_;
 
 	string current_clipboard_filename;
-
+	ns_sql persistant_sql_connection;
 
 };
 

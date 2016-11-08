@@ -145,7 +145,7 @@ void ns_region_metadata::load_only_region_info_from_db(const ns_64_bit region_in
 	sql << "SELECT sample_id, name, strain, strain_condition_1,strain_condition_2,strain_condition_3,"
 		   "culturing_temperature,experiment_temperature,food_source, environmental_conditions,"
 		   "time_at_which_animals_had_zero_age,details,time_of_last_valid_sample,"
-		   "position_in_sample_x,position_in_sample_y,size_x,size_y, latest_movement_rebuild_timestamp "
+		   "position_in_sample_x,position_in_sample_y,size_x,size_y, latest_movement_rebuild_timestamp,latest_by_hand_annotation_timestamp "
 		   "FROM sample_region_image_info WHERE id = " << region_info_id;
 	ns_sql_result res;
 	sql.get_rows(res);
@@ -170,6 +170,7 @@ void ns_region_metadata::load_only_region_info_from_db(const ns_64_bit region_in
 	size.x = atof(res[0][15].c_str());
 	size.y = atof(res[0][16].c_str());
 	movement_rebuild_timestamp = atol(res[0][17].c_str());
+	by_hand_annotation_timestamp = atol(res[0][18].c_str());
 	analysis_type = analysis_type_;
 }
 

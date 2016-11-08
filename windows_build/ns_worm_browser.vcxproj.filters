@@ -683,6 +683,9 @@
     <ClCompile Include="..\ns_image_server\image_processing\ns_image_registration_cache.cpp">
       <Filter>image_server</Filter>
     </ClCompile>
+    <ClCompile Include="..\ns_image_server\movement_analysis\ns_analyze_movement_over_time.cpp">
+      <Filter>movement_analysis</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\ns_image_server\system_base\ns_dir.h">

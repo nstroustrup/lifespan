@@ -2384,9 +2384,9 @@ void ns_image_server::clear_old_server_events(ns_sql & sql){
 }
 
 
-void ns_image_server::add_subtext_to_current_event(const char * str, ns_image_server_sql * sql,bool suppress_display) const {
+void ns_image_server::add_subtext_to_current_event(const char * str, ns_image_server_sql * sql,bool suppress_display,const ns_64_bit impersonate_using_internal_thread_id) const {
 	if (sql != 0) {
-		std::map<ns_64_bit, ns_thread_output_state>::iterator current_thread_state = get_current_thread_state_info();
+		std::map<ns_64_bit, ns_thread_output_state>::iterator current_thread_state = get_current_thread_state_info(impersonate_using_internal_thread_id);
 
 		*sql << "UPDATE host_event_log SET sub_text = CONCAT(sub_text,'" << sql->escape_string(str) << "') WHERE id = " << current_thread_state->second.last_event_sql_id;
 		sql->send_query();
@@ -2395,7 +2395,7 @@ void ns_image_server::add_subtext_to_current_event(const char * str, ns_image_se
 		cout << str;
 }
 
-void  ns_image_server::add_subtext_to_current_event(const ns_image_server_event & s_event, ns_image_server_sql * sql,bool display_date,bool suppress_display) const {
+void  ns_image_server::add_subtext_to_current_event(const ns_image_server_event & s_event, ns_image_server_sql * sql,bool display_date,bool suppress_display, const ns_64_bit impersonate_using_internal_thread_id) const {
 	if (!display_date)
 		add_subtext_to_current_event(s_event.text(), sql);
 	else {
@@ -2476,11 +2476,18 @@ ns_64_bit ns_image_server::register_server_event(const ns_ex & ex, ns_image_serv
 	return register_server_event(s_event,sql);
 
 }
-
-std::map<ns_64_bit, ns_thread_output_state>::iterator ns_image_server::get_current_thread_state_info() const {
+void ns_image_server::set_main_thread_id() {
+	_main_thread_id = ns_thread::current_thread_id();;
+}
+std::map<ns_64_bit, ns_thread_output_state>::iterator ns_image_server::get_current_thread_state_info(const ns_64_bit thread_id_to_impersonate) const {
 	ns_acquire_lock_for_scope lock(server_event_lock, __FILE__, __LINE__);
-	ns_64_bit thread_id = ns_thread::current_thread_id();
+	ns_64_bit thread_id;
+	if (thread_id_to_impersonate == 0)
+		thread_id = ns_thread::current_thread_id();
+	else thread_id = thread_id_to_impersonate;
+
 	std::map<ns_64_bit, ns_thread_output_state>::iterator current_thread_state = thread_states.find(thread_id);
+
 	if (current_thread_state == thread_states.end()) {
 		current_thread_state = thread_states.insert(std::map<ns_64_bit, ns_thread_output_state>::value_type(thread_id, ns_thread_output_state())).first;
 		current_thread_state->second.internal_thread_id = image_server.max_internal_thread_id;

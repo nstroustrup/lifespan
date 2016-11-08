@@ -15,11 +15,37 @@
 #include <set>
 #include "ns_processing_job_processor.h"
 #include "hungarian.h"
+#include "ns_analyze_movement_over_time.h"
 using namespace std;
 
 void ns_to_lower(std::string & s){
 	for (unsigned int i = 0; i < s.size(); i++)
 		s[i] = tolower(s[i]);
+}
+ns_sql & ns_worm_learner::get_sql_connection() {
+
+	ns_acquire_lock_for_scope lock(persistant_sql_lock, __FILE__, __LINE__);
+	bool try_to_reestablish_connection = false;
+
+	try {
+		persistant_sql_connection.clear_query();
+		persistant_sql_connection.check_connection();
+		image_server.check_for_sql_database_access(&persistant_sql_connection);
+	}
+	catch (ns_ex ex) {
+		std::cerr << ex.text() << "\n";
+		try_to_reestablish_connection = true;
+	}
+	
+
+	if (try_to_reestablish_connection) {
+		//if we've lost the connection, try to reconnect via conventional means
+		image_server.reconnect_sql_connection(&persistant_sql_connection);
+		persistant_sql_connection.check_connection();
+		lock.release();
+		image_server.register_server_event(ns_image_server_event("Recovered from a lost MySQL connection."), &persistant_sql_connection);
+		return persistant_sql_connection;		
+	}
 }
 
 void ns_worm_learner::produce_experiment_mask_file(const std::string & filename){
@@ -3201,6 +3227,7 @@ void ns_worm_learner::compile_experiment_survival_and_movement_data(bool use_by_
 
 	ns_acquire_for_scope<ns_sql> sql(image_server.new_sql_connection(__FILE__,__LINE__));
 	ns_death_time_annotation_compiler survival_curve_compiler;
+
 	
 	ns_death_time_annotation_set::ns_annotation_type_to_load type_to_load;
 	if (vis == ns_survival_curve)
@@ -3210,6 +3237,58 @@ void ns_worm_learner::compile_experiment_survival_and_movement_data(bool use_by_
 	
 	cerr << "Loading Machine Annotations...\n";
 	load_current_experiment_movement_results(type_to_load,experiment_id);
+
+	//we explicitly check to see if any regions need to have their censoring recalulated.
+	//people were often forgetting to do this, so we now bug them about it.
+	std::vector<ns_64_bit> regions_needing_censoring_recalculation;
+	regions_needing_censoring_recalculation.reserve(15);
+	for (unsigned int i = 0; i < movement_results.samples.size(); i++)
+		for (unsigned int j = 0; j < movement_results.samples[i].regions.size(); j++) {
+			const ns_region_metadata & metadata(movement_results.samples[i].regions[j].metadata);
+			if (metadata.by_hand_annotation_timestamp > metadata.movement_rebuild_timestamp)
+				regions_needing_censoring_recalculation.push_back(metadata.region_id);
+		}
+	if (!regions_needing_censoring_recalculation.empty()) {
+		class ns_choice_dialog dialog;
+		dialog.title = ns_to_string(regions_needing_censoring_recalculation.size()) + " regions have by-hand annotations that are not encorporated into the censoring calculations.  How should this be handled?\n";
+		dialog.title += "Immediately: Recalculate censoring immediately on this machine\n";
+		dialog.title += "Schedule: Schedule jobs to recalculate censoring using the image processing server\n";
+		dialog.title += "Ignore: Use older, out-of-date censoring calculations\n";
+		dialog.option_1 = "Immediately";
+		dialog.option_2 = "Schedule";
+		dialog.option_3 = "Ignore";
+		ns_run_in_main_thread<ns_choice_dialog> b(&dialog);
+		switch (dialog.result) {
+		case 1: {
+			image_server.register_server_event(ns_image_server_event("Recalculating censoring"), &sql());
+			ns_image_processing_pipeline p(1024);
+			for (unsigned int i = 0; i < regions_needing_censoring_recalculation.size(); i++) {
+				image_server.add_subtext_to_current_event(ns_to_string((int)(i *100.0 / regions_needing_censoring_recalculation.size())) + "%...", &sql());
+				ns_processing_job job;
+				job.region_id = regions_needing_censoring_recalculation[i];
+				job.maintenance_task = ns_maintenance_rebuild_movement_from_stored_image_quantification;
+				analyze_worm_movement_across_frames(job, &image_server, sql(), false);
+			}
+			break;
+		}
+		case 2: {
+			image_server.register_server_event(ns_image_server_event("Submitting jobs to cluster."), &sql());
+			ns_processing_job job;
+			for (unsigned int i = 0; i < regions_needing_censoring_recalculation.size(); i++) {
+				sql() << "INSERT INTO processing_jobs SET region_id=" << regions_needing_censoring_recalculation[i] << ", "
+					<< "maintenance_task=" << (unsigned int)ns_maintenance_rebuild_movement_from_stored_image_quantification << ", time_submitted=" << ns_current_time() << ", urgent=1";
+				sql().send_query();
+			}
+			sql().send_query("COMMIT");
+			ns_image_server_push_job_scheduler::request_job_queue_discovery(sql());
+			return;
+		}
+		case 3:
+			image_server.register_server_event(ns_image_server_event("Ignoring request to rebuild censoring data."), &sql());
+			break;
+		default: throw ns_ex("Unknown result!");
+		}
+	}
 	
 	std::vector<ns_image_standard >sample_graphs;
 	sample_graphs.reserve(movement_results.samples.size());
@@ -5475,7 +5554,9 @@ bool ns_worm_learner::register_main_window_key_press(int key, const bool shift_k
 				return true;
 			}
 			else if (key == 'S' || key == '.'){
-				save_death_time_annotations();
+				ns_acquire_lock_for_scope lock(persistant_sql_lock, __FILE__, __LINE__);
+				save_death_time_annotations(get_sql_connection());
+				lock.release();
 			}
 		}
 	}
@@ -5496,14 +5577,17 @@ bool ns_worm_learner::prompt_to_save_death_time_annotations(){
 	dialog.option_3 = "Cancel";
 	ns_run_in_main_thread<ns_choice_dialog> b(&dialog);
 	if (dialog.result == 1){
-		save_death_time_annotations();
+
+		ns_acquire_lock_for_scope lock(persistant_sql_lock, __FILE__, __LINE__);
+		save_death_time_annotations(get_sql_connection());
+		lock.release();
 		return true;
 	}
 	if (dialog.result == 2)
 		return true;
 	return false;
 }
-void ns_worm_learner::save_death_time_annotations(){
+void ns_worm_learner::save_death_time_annotations(ns_sql & sql){
 	
 	ns_death_time_annotation_set set;
 
@@ -5515,11 +5599,9 @@ void ns_worm_learner::save_death_time_annotations(){
 			//discard orphans
 	}*/
 	current_annotater->save_annotations(set);
-	ns_acquire_for_scope<ns_sql> sql(image_server.new_sql_connection(__FILE__,__LINE__));
-	sql() << "UPDATE sample_region_image_info SET "
+	sql << "UPDATE sample_region_image_info SET "
 			<< "latest_by_hand_annotation_timestamp = UNIX_TIMESTAMP(NOW()) WHERE id = " << data_selector.current_region().region_id;
-	sql().send_query();
-	sql.release();
+	sql.send_query();
 
 };
 
@@ -6427,8 +6509,10 @@ void ns_worm_learner::navigate_death_time_annotation(ns_image_series_annotater::
 		case ns_image_series_annotater::ns_fast_back:	current_annotater->fast_back();break;
 		case ns_image_series_annotater::ns_stop: current_annotater->stop_fast_movement();break;
 		case ns_image_series_annotater::ns_save:{
-			
-			save_death_time_annotations();
+
+			ns_acquire_lock_for_scope lock(persistant_sql_lock, __FILE__, __LINE__);
+			save_death_time_annotations(get_sql_connection());
+			lock.release();
 
 			break;
 		}

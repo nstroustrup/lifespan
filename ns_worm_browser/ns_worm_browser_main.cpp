@@ -11,7 +11,7 @@
 #include "ns_high_precision_timer.h"
 #include "ns_experiment_storyboard.h"
 
-#define IDLE_THROTTLE_FPS 20
+#define IDLE_THROTTLE_FPS 40
 #define SCALE_FONTS_WITH_WINDOW_SIZE 0
 
 bool output_debug_messages = false;
@@ -126,7 +126,10 @@ class ns_worm_terminal_gl_window : public Fl_Gl_Window {
         if (!valid()) { 
 			valid(1); 
 			fix_viewport(x(),y(),w(), h()); 
-			Fl::add_timeout(1.0/IDLE_THROTTLE_FPS, idle_main_window_update_callback); 
+			if (!window_update_is_running) {
+				Fl::add_timeout(1.0 / IDLE_THROTTLE_FPS, idle_main_window_update_callback);
+				window_update_is_running = true;
+			}
 			glClearColor(1, 1, 1, 1); 
 			 glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); // clear buffer
 			 //glLoadIdentity ();             /* clear the matrix */
@@ -143,7 +146,7 @@ class ns_worm_terminal_gl_window : public Fl_Gl_Window {
 				cerr << ex.text() << "\n";
 				exit(1);
 			}
-    }    
+    }   
 	int handle(int state){
 		//cerr << "s: " << state;
 		switch(state){
@@ -219,6 +222,8 @@ class ns_worm_terminal_gl_window : public Fl_Gl_Window {
 	}
 	
 public:
+
+	bool window_update_is_running;
 	// HANDLE WINDOW RESIZING
     void resize(int X,int Y,int W,int H) {
         Fl_Gl_Window::resize(X,Y,W,H);
@@ -230,7 +235,7 @@ public:
     }
 
     // OPENGL WINDOW CONSTRUCTOR
-    ns_worm_terminal_gl_window(int X,int Y,int W,int H,const char*L=0) : Fl_Gl_Window(X,Y,W,H,L),mouse_is_down(false),mouse_click_location(0,0),have_focus(false) {
+    ns_worm_terminal_gl_window(int X,int Y,int W,int H,const char*L=0) :window_update_is_running(false),Fl_Gl_Window(X,Y,W,H,L),mouse_is_down(false),mouse_click_location(0,0),have_focus(false) {
         end();
     }
 };
@@ -272,7 +277,10 @@ class ns_worm_gl_window : public Fl_Gl_Window {
         if (!valid()) { 
 			valid(1); 
 			fix_viewport(w(), h()); 
-			Fl::add_timeout(1.0/IDLE_THROTTLE_FPS, idle_worm_window_update_callback); 
+			if (!window_update_is_running) {
+				Fl::add_timeout(1.0 / IDLE_THROTTLE_FPS, idle_worm_window_update_callback);
+				window_update_is_running = true;
+			}
 			glClearColor(1, 1, 1, 1); 
 			 glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); // clear buffer
 			 glLoadIdentity ();             /* clear the matrix */
@@ -361,6 +369,7 @@ class ns_worm_gl_window : public Fl_Gl_Window {
 	}
 	
 public:
+	bool window_update_is_running;
 	// HANDLE WINDOW RESIZING
     void resize(int X,int Y,int W,int H) {
         Fl_Gl_Window::resize(X,Y,W,H);
@@ -372,7 +381,7 @@ public:
     }
 
     // OPENGL WINDOW CONSTRUCTOR
-    ns_worm_gl_window (int X,int Y,int W,int H,const char*L=0) : Fl_Gl_Window(X,Y,W,H,L),mouse_is_down(false),mouse_click_location(0,0),have_focus(false) {
+    ns_worm_gl_window (int X,int Y,int W,int H,const char*L=0) : Fl_Gl_Window(X,Y,W,H,L),window_update_is_running(false),mouse_is_down(false),mouse_click_location(0,0),have_focus(false) {
        //xxxx
 		end();
     }
@@ -2332,9 +2341,11 @@ void idle_worm_window_update_callback(void *){
 		Fl::unlock();
 	}
 	catch(...){
-		Fl::lock();
+		Fl::unlock();
 	}
-	Fl::repeat_timeout(1/20., idle_worm_window_update_callback);
+	if (!hide_worm_window)
+		Fl::repeat_timeout(1/20., idle_worm_window_update_callback);
+	else worm_window->gl_window->window_update_is_running = false;
 }
 
 

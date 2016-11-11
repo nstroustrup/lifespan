@@ -379,9 +379,9 @@ Forward any questions to <?php echo $contact_name . " at <a href=\"mailto:" . $c
  <tr <?php echo $table_header_color?>> <td>Image Analysis Action</td><td>Description</td></tr>
 <tr>
 <td bgcolor="<?php echo $table_colors[0][0]?>">
-<a href="view_cluster_status.php"> Server Logs</a>
+<a href="view_cluster_status.php"> Cluster Status</a>
 </td>
-<td bgcolor="<?php echo $table_colors[0][1]?>">View most recent log entries for all acquisition and analysis servers</td></tr>
+<td bgcolor="<?php echo $table_colors[0][1]?>">View the current status and logs of all servers</td></tr>
 <tr>
 <td bgcolor="<?php echo $table_colors[1][0]?>">
 <a href="view_cluster_efficiency.php"> Analysis Performance Statistics</a>

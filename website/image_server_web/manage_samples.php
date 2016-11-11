@@ -374,6 +374,7 @@ Handle Requests to delete a sample
       }
     }
   }
+  //var_dump($sample_jobs);
   /***************************
    Load Region Jobs
   ****************************/
@@ -891,15 +892,15 @@ if (sizeof($all_animal_type_values) > 1){
 		echo "\n</font></td><td bgcolor=\"$clrs[1]\" valign=\"top\" align=\"right\" nowrap>\n";
 		echo "<a href=\"manage_samples.php?experiment_id=$experiment_id&sample_id=".$experiment->samples[$i]->id()."&sample_action=clear_problem&$region_job_query_string#{$experiment->samples[$i]->id()}\"><font size=\"-1\">[Problem]</font></a>\\";
 		echo "<a href=\"manage_samples.php?experiment_id=$experiment_id&sample_id=".$experiment->samples[$i]->id()."&sample_action=clear_busy&$region_job_query_string#{$experiment->samples[$i]->id()}\"><font size=\"-1\">[Busy]</font></a><br>";
-
+		global $show_sample_jobs;
 		if (!$edit){
 		  //echo "<a href=\"$new_url&sample_id=$cur_id\">[Edit]</a>";
 			echo "<a href=\"$new_url&sample_id=$cur_id&edit=1&$region_job_query_string#{$experiment->samples[$i]->id()}\">[Edit]</a><br>";
-			if ($show_sample_jobs){ echo "<a href=\"view_processing_job.php?job_id=0&experiment_id=$experiment_id&all_new=1&sample_id=".$experiment->samples[$i]->id()."\"><font size=\"-1\">[Create]</font></a>";
-			echo "<a href=\"view_processing_job.php?job_id=0&experiment_id=$experiment_id&sample_id=".$experiment->samples[$i]->id()."\"><font size=\"-1\">[Edit]</font></a> <font size=\"-1\">a Sample Job</font></a><br>";
-}
+		        echo "<a href=\"view_processing_job.php?job_id=0&experiment_id=$experiment_id&all_new=1&sample_id=".$experiment->samples[$i]->id()."\"><font size=\"-1\">[Create]</font></a>";
+			echo "<a href=\"view_processing_job.php?job_id=0&experiment_id=$experiment_id&sample_id=".$experiment->samples[$i]->id()."\"><font size=\"-1\">[Edit]</font></a> <font size=\"-1\">a job for this sample</font></a><br>";
+
   echo "<a href=\"view_processing_job.php?job_id=0&experiment_id=$experiment_id&sample_id=".$experiment->samples[$i]->id()."&region_id=all&all_new=1\"><font size=\"-1\">[Create]</font>";
-		  echo "<a href=\"view_processing_job.php?job_id=0&experiment_id=$experiment_id&sample_id=".$experiment->samples[$i]->id()."&region_id=all\"><font size=\"-1\">[Edit]</font></a><font size=\"-1\"> a Job for all Sample Regions</font><br>"	;
+		  echo "<a href=\"view_processing_job.php?job_id=0&experiment_id=$experiment_id&sample_id=".$experiment->samples[$i]->id()."&region_id=all\"><font size=\"-1\">[Edit]</font></a><font size=\"-1\"> a Job for all regions in this sample</font><br>"	;
 		  //		  echo "<a href=\"view_processing_job.php?job_id=0&experiment_id=$experiment_id&sample_id=".$experiment->samples[$i]->id()."&region_id=all&all_new=1&include_censored=1\"><font size=\"-1\">[Create]</font></a><font size=\"-1\"> a job for all Sample Regions including censored";
 		}
 		else{
@@ -919,22 +920,22 @@ if (sizeof($all_animal_type_values) > 1){
 		echo "</td></tr>\n";
 		echo "<tr><td bgcolor=\"$clrs[1]\" colspan=\"2\">&nbsp;</td><td bgcolor=\"$clrs[1]\" colspan=\"2\">";
 		    echo "<table cellspacing=0 cellpadding=0 align=\"left\"><tr valign=\"top\"><td>";
-		  
-		$job = new ns_processing_job;
+		    if ($show_sample_jobs){
+		    $job = new ns_processing_job;
 				$job->sample_id = $experiment->samples[$i]->id();
 				echo $job->get_processing_state_description(TRUE,$sql);
-		    
-				echo "</td></tr></table>";
+		    }
+		    echo "</td></tr></table>";
 		    
 
 		//out job info
 		//$row_color = !$row_color;
+				global $show_sample_jobs;
 		if ($show_sample_jobs){
-
+	       
 		echo "<table cellspacing=0 cellpadding=0 align = \"right\"><tr><td valign=\"top\">";
 		  for ($j = 0; $j < sizeof($sample_jobs[$i]); $j++){
 		    $clrs = $table_colors[$row_color];
-		  
 		    
 		    echo $sample_jobs[$i][$j]->get_job_description($sql);
 		    //$row_color = !$row_color;

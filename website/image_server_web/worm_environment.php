@@ -168,7 +168,7 @@ function ns_current_time(){
 }
 function format_time($t){
 	if ($t == 0) return "(Never)";
-	return date("H:i ",$t) . date("m-d-Y ",$t);
+	return date("H:i ",$t) . date("m-d-Y",$t);
 }
 
 function ns_expand_unix_timestamp($time, &$minute, &$hour,&$day,&$month,&$year){
@@ -287,10 +287,18 @@ function display_worm_page_header($title, $link = "<a href=\"view_experiments.ph
 <META HTTP-EQUIV="PRAGMA" CONTENT="NO-CACHE">
 <style type="text/css">
 <!--
+	     .fixed_table{
+	  table-layout: fixed;
+	}
 .style1 {
 	font-family: Arial, Helvetica, sans-serif;
 	font-size: 18px;
 	font-weight: bold;
+}
+.calculated-width {
+    width: -moz-calc(100% - 47px-26px);
+    width: -webkit-calc(100% - 47px-26px);
+    width: calc(100% - 47px-26px);
 }
   a {
     text-decoration: none;
@@ -340,13 +348,13 @@ body {
 <?php echo $extra_header_text?>
 </head>
 <body>
-<table width="1200" border="0" cellspacing="2" cellpadding="2" align="center">
+    <table width="100%" border="0" cellspacing="2" cellpadding="2" align="center" class="fixed_table">
   <tr>
     <td bgcolor="#FFFFFF">
-<table width="100%" border="0" cellpadding="6" cellspacing="0">
+<table width="100%" border="0" cellpadding="6" cellspacing="0" class="fixed_table">
   <tr bgcolor="#dbdbdb">
-    <td width="0%" bgcolor="#dbdbdb"><img src="w1.png" width=47 height=41></td>
-    <td bgcolor="#dbdbdb"><span class="style1">The Lifespan Machine<br>
+    <td bgcolor="#dbdbdb" width=47><img src="w1.png" width=47 height=41></td>
+    <td bgcolor="#dbdbdb" id="calculated_width"><span class="style1">The Lifespan Machine<br>
 <table border="0" cellspacing="0" cellpadding="0">
   <tr><td><img src="../subsection.png"></td><td><?php echo $title?></td></tr></table></span></td>
     <td bgcolor="#dbdbdb"><div align="right">
@@ -359,7 +367,7 @@ body {
 		    <?php }?>
 <?php echo $link?></div></td>
 
-    <td width="0%" bgcolor="#dbdbdb" width="50"></td>
+    <td bgcolor="#dbdbdb" width=26><!-- upper right corner --></td>
   </tr>
   <tr>
     <td width="0%" bgcolor="#dbdbdb" valign="top" ><br><br><br><br><br><br><br><br><br><br><div align="right"><img src="w2.png" width=26 height=57></div></td>
@@ -371,7 +379,7 @@ function display_worm_page_footer(){
   global $website_version;
 ?> <!--End Content-->
 </td>
-    <td width="0%" bgcolor="#dbdbdb" valign="bottom"><img src="w3.png" width=26 height=57><br><br></td>
+    <td width=26 bgcolor="#dbdbdb" valign="bottom"><img src="w3.png" width=26 height=57><br><br></td>
   </tr>
   <tr>
     <td width="0%" bgcolor="#dbdbdb">&nbsp;</td>

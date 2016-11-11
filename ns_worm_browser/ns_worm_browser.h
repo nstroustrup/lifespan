@@ -554,7 +554,7 @@ public:
 		current_image_lock("ns_worm_learner::current_image"),
 		movement_data_is_strictly_decreasing_(false),overwrite_existing_mask_when_submitting(false),output_svg_spines(false),static_mask(0),generate_mp4_(false),
 		/*submit_capture_specification_to_db_when_recieved(false),*/overwrite_submitted_capture_specification(false),maximum_window_size(1024,768),
-		current_annotater(&death_time_annotater),storyboard_annotater(2),main_window("Main Window"),
+		current_annotater(&death_time_annotater),storyboard_annotater(2),main_window("Main Window"), persistant_sql_connection(0), persistant_sql_lock("psl"),
 				worm_window("Worm Window"),dynamic_range_rescale(1){
 		storyboard_annotater.set_resize_factor(2);
 	}
@@ -874,7 +874,7 @@ private:
 	bool movement_data_is_strictly_decreasing_;
 
 	string current_clipboard_filename;
-	ns_sql persistant_sql_connection;
+	ns_sql * persistant_sql_connection;
 
 };
 

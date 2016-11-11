@@ -25,12 +25,15 @@ void ns_to_lower(std::string & s){
 ns_sql & ns_worm_learner::get_sql_connection() {
 
 	ns_acquire_lock_for_scope lock(persistant_sql_lock, __FILE__, __LINE__);
+	if (persistant_sql_connection == 0) {
+		persistant_sql_connection = image_server.new_sql_connection(__FILE__, __LINE__);
+	}
 	bool try_to_reestablish_connection = false;
 
 	try {
-		persistant_sql_connection.clear_query();
-		persistant_sql_connection.check_connection();
-		image_server.check_for_sql_database_access(&persistant_sql_connection);
+		persistant_sql_connection->clear_query();
+		persistant_sql_connection->check_connection();
+		image_server.check_for_sql_database_access(persistant_sql_connection);
 	}
 	catch (ns_ex ex) {
 		std::cerr << ex.text() << "\n";
@@ -40,12 +43,13 @@ ns_sql & ns_worm_learner::get_sql_connection() {
 
 	if (try_to_reestablish_connection) {
 		//if we've lost the connection, try to reconnect via conventional means
-		image_server.reconnect_sql_connection(&persistant_sql_connection);
-		persistant_sql_connection.check_connection();
+		image_server.reconnect_sql_connection(persistant_sql_connection);
+		persistant_sql_connection->check_connection();
 		lock.release();
-		image_server.register_server_event(ns_image_server_event("Recovered from a lost MySQL connection."), &persistant_sql_connection);
-		return persistant_sql_connection;		
+		image_server.register_server_event(ns_image_server_event("Recovered from a lost MySQL connection."), persistant_sql_connection);
+
 	}
+	return *persistant_sql_connection;
 }
 
 void ns_worm_learner::produce_experiment_mask_file(const std::string & filename){

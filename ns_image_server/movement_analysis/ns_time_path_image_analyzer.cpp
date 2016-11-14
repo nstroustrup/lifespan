@@ -717,12 +717,11 @@ void throw_pool_errors(
 		throw ex;
 }
 
-void ns_analyzed_image_time_path::calculate_and_save_stabilized_worm_neighborhood(ns_image_whole<unsigned long> & temp_storage,ns_sql & sql) {
+void ns_analyzed_image_time_path::calculate_stabilized_worm_neighborhood(ns_image_whole<unsigned long> & temp_storage) {
 
-	
+
 	ns_image_properties p;
-	p.width = path_context_size.x;
-	p.height = path_context_size.y;
+	set_path_alignment_image_dimensions(p);
 	temp_storage.init(p);
 
 	//add up all thresholds
@@ -755,10 +754,6 @@ void ns_analyzed_image_time_path::calculate_and_save_stabilized_worm_neighborhoo
 			for (unsigned int x = 0; x < p.width; x++)
 				elements[k].registered_images->set_just_stabilized_worm_neighborhood_threshold(y, x, temp_storage[y][x] >= cutoff);
 	}
-	bool had_to_use_volatile_storage;
-	ns_image_storage_reciever_handle<ns_8_bit> out(image_server_const.image_storage.request_storage(output_image, ns_tiff_lzw, save_output_buffer_height, &sql, had_to_use_volatile_storage, false, false));
-	if (had_to_use_volatile_storage)
-		throw ns_ex("Could not write path data to long term storage.");
 }
 
 void ns_time_path_image_movement_analyzer::process_raw_images(const ns_64_bit region_id,const ns_time_path_solution & solution_, const ns_time_series_denoising_parameters & times_series_denoising_parameters,const ns_analyzed_image_time_path_death_time_estimator * e,ns_sql & sql, const long group_number,const bool write_status_to_db){
@@ -1136,7 +1131,8 @@ void ns_time_path_image_movement_analyzer::process_raw_images(const ns_64_bit re
 				groups[i].paths[j].load_movement_images_no_flow(chunk, in);
 				in.clear();
 				//calculate stabilized threshold
-				groups[i].paths[j].calculate_and_save_stabilized_worm_neighborhood(temp_storage, sql);
+				groups[i].paths[j].calculate_stabilized_worm_neighborhood(temp_storage);
+				groups[i].paths[j].save_movement_images(chunk, sql, ns_analyzed_image_time_path::ns_save_simple, false);
 
 				if (ns_skip_low_density_paths && groups[i].paths[j].is_low_density_path())
 					continue;
@@ -4169,9 +4165,11 @@ void ns_analyzed_image_time_path::quantify_movement(const ns_analyzed_time_image
 
 		if (elements[i].registered_images == 0)
 			throw ns_ex("ns_analyzed_image_time_path::quantify_movement()::Encountered an unloaded registered image!");
+
+		elements[i].measurements.total_region_area = elements[i].worm_region_size_.x*elements[i].worm_region_size_.y;
 		for (unsigned long y = 0; y < elements[i].registered_images->movement_image_.properties().height; y++){
 			for (unsigned long x = 0; x < elements[i].registered_images->movement_image_.properties().width; x++){
-				const bool worm_threshold(elements[i].registered_images->get_worm_neighborhood_threshold(y,x));
+				const bool worm_threshold(elements[i].registered_images->get_stabilized_worm_neighborhood_threshold(y,x));
 				elements[i].measurements.total_intensity_within_region+=elements[i].registered_images->image[y][x];
 				elements[i].measurements.total_intensity_within_worm_area+=worm_threshold?elements[i].registered_images->image[y][x]:0;
 				elements[i].measurements.total_worm_area += (worm_threshold?1:0);
@@ -4244,7 +4242,7 @@ void ns_analyzed_image_time_path::quantify_movement(const ns_analyzed_time_image
 		for (unsigned long y = 0; y < elements[i].registered_images->movement_image_.properties().height; y++){
 			for (unsigned long x = 0; x < elements[i].registered_images->movement_image_.properties().width; x++){
 				
-				const bool worm_threshold(elements[i].registered_images->get_worm_neighborhood_threshold(y,x));
+				const bool worm_threshold(elements[i].registered_images->get_stabilized_worm_neighborhood_threshold(y,x));
 
 				const bool alternate_worm_threshold(elements[i].registered_images->get_region_threshold(y,x) == 1 && 
 													!worm_threshold);
@@ -4318,7 +4316,7 @@ void ns_analyzed_image_time_path::quantify_movement(const ns_analyzed_time_image
 				for (int dx = -kernel_half_width; dx <= kernel_half_width; dx++){
 					const int y(max_y+dy),
 							 x(max_x+dx);
-					const bool worm_threshold(elements[i].registered_images->get_worm_neighborhood_threshold(y,x));
+					const bool worm_threshold(elements[i].registered_images->get_stabilized_worm_neighborhood_threshold(y,x));
 				/*	const double m(
 						fabs(
 						elements[i].registered_images->movement_image_[y][x]+
@@ -5328,10 +5326,8 @@ void ns_analyzed_image_time_path::save_movement_image(const ns_analyzed_time_ima
 							save_image_buffer[dy][3 * x + 2] = (((ns_8_bit)((e.registered_images->movement_image_[y_im_offset][x - l_x]<0) ? 1 : 0))) | //sign of movement difference
 								(((ns_8_bit)(e.registered_images->get_worm_neighborhood_threshold(y_im_offset, x - l_x) ? 1 : 0)) << 3) |
 								(((ns_8_bit)(e.registered_images->get_worm_threshold(y_im_offset, x - l_x) ? 1 : 0)) << 4) |
-								(((ns_8_bit)(e.registered_images->get_region_threshold(y_im_offset, x - l_x) ? 1 : 0)) << 5);
-							(((ns_8_bit)(e.registered_images->get_stabilized_worm_neighborhood_threshold(y_im_offset, x - l_x) ? 1 : 0)) << 6);
-							;
-
+								(((ns_8_bit)(e.registered_images->get_region_threshold(y_im_offset, x - l_x) ? 1 : 0)) << 5) |
+								(((ns_8_bit)(e.registered_images->get_stabilized_worm_neighborhood_threshold(y_im_offset, x - l_x) ? 1 : 0)) << 6);
 						}
 					}
 				}
@@ -5813,18 +5809,19 @@ void ns_time_path_image_movement_analyzer::reanalyze_stored_aligned_images(const
 	#endif
 	const unsigned long chunk_size(10);
 	analysis_id = ns_current_time();
-	try{
+	try {
 		region_info_id = region_id;
-		
-		externally_specified_plate_observation_interval = get_externally_specified_last_measurement(region_id,sql);
+
+		externally_specified_plate_observation_interval = get_externally_specified_last_measurement(region_id, sql);
 		load_from_solution(solution_);
 		crop_path_observation_times(externally_specified_plate_observation_interval);
 
-		load_movement_image_db_info(region_id,sql);
-		#ifdef NS_CALCULATE_OPTICAL_FLOW
+		if (!load_movement_image_db_info(region_id, sql))
+			throw ns_ex("Could not find pre-calculated movement analysis for this region");
+#ifdef NS_CALCULATE_OPTICAL_FLOW
 		unsigned long number_flow_uncalculated(0);
 		for (unsigned int i = 0; i < groups.size(); i++)
-			for (unsigned int j = 0; j < groups[i].paths.size(); j++){
+			for (unsigned int j = 0; j < groups[i].paths.size(); j++) {
 				if (ns_skip_low_density_paths && groups[i].paths[j].is_low_density_path())
 					continue;
 				if (groups[i].paths[j].output_image.id == 0)
@@ -5833,12 +5830,13 @@ void ns_time_path_image_movement_analyzer::reanalyze_stored_aligned_images(const
 					number_flow_uncalculated++;
 			}
 		const bool calculate_flow_images(number_flow_uncalculated > 0);
-		image_server_const.register_server_event(ns_image_server_event("Some new movement quantification analyses is missing. It will be performed.",true),&sql);
-		
-		if (calculate_flow_images) 
-			get_output_image_storage_locations(region_id, sql, true); 
-		#else
-		const bool calculate_flow_images(false);
+		image_server_const.register_server_event(ns_image_server_event("Some new movement quantification analyses is missing. It will be performed.", true), &sql);
+
+		if (calculate_flow_images)
+			get_output_image_storage_locations(region_id, sql, true);
+#else
+		typedef enum { ns_ignore, ns_use_existing, ns_create } ns_flow_image_handling;
+		const ns_flow_image_handling flow_handling_approach(ns_ignore);
 		#endif
 
 		calculate_memory_pool_maximum_image_size(0,groups.size());
@@ -5856,7 +5854,7 @@ void ns_time_path_image_movement_analyzer::reanalyze_stored_aligned_images(const
 				ns_image_storage_source_handle<ns_8_bit> storage(image_server_const.image_storage.request_from_storage(groups[i].paths[j].output_image,&sql));
 				
 				ns_image_storage_source_handle<float> flow_storage(0);
-				if (calculate_flow_images) {
+				if (flow_handling_approach  == ns_ignore || flow_handling_approach == ns_create) {
 						/*	bool had_to_use_volatile_storage;
 							groups[i].paths[j].flow_output_reciever = new ns_image_storage_reciever_handle<float>(image_server_const.image_storage.request_storage_float(groups[i].paths[j].flow_output_image, ns_tiff_zip, 1024, &sql, had_to_use_volatile_storage, false, false));
 							ns_image_properties prop(storage.input_stream().properties());
@@ -5889,16 +5887,19 @@ void ns_time_path_image_movement_analyzer::reanalyze_stored_aligned_images(const
 
 					ns_analyzed_time_image_chunk chunk(0,number_of_valid_elements);
 					
-					if (calculate_flow_images) {
+					if (flow_handling_approach  == ns_ignore || flow_handling_approach == ns_create) {
 						groups[i].paths[j].load_movement_images_no_flow(chunk, storage);
-						groups[i].paths[j].calc_flow_images_from_registered_images(chunk);
-						groups[i].paths[j].save_movement_images(chunk, sql,ns_analyzed_image_time_path::ns_save_flow,false);
+						if (flow_handling_approach == ns_create) {
+							groups[i].paths[j].calc_flow_images_from_registered_images(chunk);
+							groups[i].paths[j].save_movement_images(chunk, sql, ns_analyzed_image_time_path::ns_save_flow, false);
+						}
 					}
 					else {
-
 						groups[i].paths[j].load_movement_images(chunk, storage,flow_storage);
 					}
-					groups[i].paths[j].calculate_and_save_stabilized_worm_neighborhood(temp_storage, sql);
+					groups[i].paths[j].calculate_stabilized_worm_neighborhood(temp_storage);
+					groups[i].paths[j].save_movement_images(chunk, sql, ns_analyzed_image_time_path::ns_save_simple, false);
+
 					groups[i].paths[j].quantify_movement(chunk);
 					/*unsigned long start(chunk.start_i);
 					

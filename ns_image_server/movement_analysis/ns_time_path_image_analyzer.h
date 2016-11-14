@@ -620,7 +620,7 @@ public:
 			}
 		}
 	}
-	void calculate_and_save_stabilized_worm_neighborhood(ns_image_whole<unsigned long> & temp_storage, ns_sql & sql);
+	void calculate_stabilized_worm_neighborhood(ns_image_whole<unsigned long> & temp_storage);
 
 	mutable std::vector<std::string> posture_quantification_extra_debug_field_names;
 	//used by movement analysis algorithm
@@ -652,7 +652,6 @@ public:
 
 	//void out_histograms(std::ostream & o) const;
 
-	void clear_images();
 	void confirm_all_images_released() {
 		//	if (this->registered_image_pool.number_checked_out() > 0 || this->aligned_image_pool.number_checked_out() > 0)
 		//		std::cerr << "Leaking Images!";

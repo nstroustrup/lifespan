@@ -340,13 +340,20 @@ struct ns_registered_image_set{
 		flow_image_dy.init(p);
 		#endif
 	}
-	enum{region_mask=1,worm_mask=2,worm_neighborhood_mask=4};
+	enum{region_mask=1,worm_mask=2,worm_neighborhood_mask=4, stabilized_worm_neighborhood_mask=8};
 	bool get_region_threshold(const int y, const int x) const { return (worm_region_threshold[y][x]&region_mask)!=0;}
 	bool get_worm_neighborhood_threshold(const int y, const int x) const { return (worm_region_threshold[y][x]&worm_neighborhood_mask)!=0;}
+	bool get_stabilized_worm_neighborhood_threshold(const int y, const int x) const { return (worm_region_threshold[y][x] & stabilized_worm_neighborhood_mask) != 0; }
 	bool mask(const int y, const int x) const { return get_worm_neighborhood_threshold(y, x); }
 	bool get_worm_threshold(const int y, const int x)const { return (worm_region_threshold[y][x]&worm_mask)!=0;}
-	void set_thresholds(const int y, const int x, const bool region,const bool worm, const bool worm_neighborhood) {
-		worm_region_threshold[y][x] = ((ns_8_bit)region) | ((ns_8_bit)worm<<1) | ((ns_8_bit)worm_neighborhood<<2);
+	void set_thresholds(const int y, const int x, const bool region,const bool worm, const bool worm_neighborhood, const bool stabilized_worm_neighborhood) {
+		worm_region_threshold[y][x] = ((ns_8_bit)region) | ((ns_8_bit)worm<<1) | ((ns_8_bit)worm_neighborhood<<2 | ((ns_8_bit)stabilized_worm_neighborhood << 3));
+	}
+	void set_just_stabilized_worm_neighborhood_threshold(const int y, const int x, const bool stabilized_worm_neighborhood) {
+		if (stabilized_worm_neighborhood)
+			worm_region_threshold[y][x] = worm_region_threshold[y][x] | ((ns_8_bit)1 << 3);
+		else
+			worm_region_threshold[y][x] = worm_region_threshold[y][x] & ~((ns_8_bit)1 << 3);
 	}
 	void resize(const ns_image_properties & p){
 		image.resize(p);
@@ -613,6 +620,7 @@ public:
 			}
 		}
 	}
+	void calculate_and_save_stabilized_worm_neighborhood(ns_image_whole<unsigned long> & temp_storage, ns_sql & sql);
 
 	mutable std::vector<std::string> posture_quantification_extra_debug_field_names;
 	//used by movement analysis algorithm

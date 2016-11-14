@@ -667,7 +667,7 @@ void ns_time_path_image_movement_analyzer::run_group_for_current_forwards_round(
 	}
 	oout.flush();
 #endif
-	groups[i].paths[j].quantify_movement(chunk);
+	//groups[i].paths[j].quantify_movement(chunk);
 	{
 		ns_acquire_lock_for_scope sql_lock(shared_state->sql_lock, __FILE__, __LINE__);
 #ifdef NS_CALCULATE_OPTICAL_FLOW
@@ -717,6 +717,49 @@ void throw_pool_errors(
 		throw ex;
 }
 
+void ns_analyzed_image_time_path::calculate_and_save_stabilized_worm_neighborhood(ns_image_whole<unsigned long> & temp_storage,ns_sql & sql) {
+
+	
+	ns_image_properties p;
+	p.width = path_context_size.x;
+	p.height = path_context_size.y;
+	temp_storage.init(p);
+
+	//add up all thresholds
+	for (unsigned int y = 0; y < p.height; y++)
+		for (unsigned int x = 0; x < p.width; x++)
+			temp_storage[y][x] = 0;
+
+	unsigned long total(0);
+	for (unsigned int k = first_stationary_timepoint(); k < element_count(); k++) {
+		if (elements[k].excluded)
+			continue;
+		for (unsigned int y = 0; y < p.height; y++)
+			for (unsigned int x = 0; x < p.width; x++)
+				temp_storage[y][x] +=
+				(elements[k].registered_images->get_worm_neighborhood_threshold(y, x)) ? 1 : 0;
+		total++;
+	}
+	unsigned long mmax(0);
+	for (unsigned int y = 0; y < p.height; y++)
+		for (unsigned int x = 0; x < p.width; x++)
+			if (temp_storage[y][x] > mmax)
+				mmax = temp_storage[y][x];
+
+	//set stabilized worm neighborhood mask as all pixels 
+	unsigned long cutoff = total / 10;
+	if (cutoff > mmax)
+		cutoff = 0;
+	for (unsigned int k = 0; k <element_count(); k++) {
+		for (unsigned int y = 0; y < p.height; y++)
+			for (unsigned int x = 0; x < p.width; x++)
+				elements[k].registered_images->set_just_stabilized_worm_neighborhood_threshold(y, x, temp_storage[y][x] >= cutoff);
+	}
+	bool had_to_use_volatile_storage;
+	ns_image_storage_reciever_handle<ns_8_bit> out(image_server_const.image_storage.request_storage(output_image, ns_tiff_lzw, save_output_buffer_height, &sql, had_to_use_volatile_storage, false, false));
+	if (had_to_use_volatile_storage)
+		throw ns_ex("Could not write path data to long term storage.");
+}
 
 void ns_time_path_image_movement_analyzer::process_raw_images(const ns_64_bit region_id,const ns_time_path_solution & solution_, const ns_time_series_denoising_parameters & times_series_denoising_parameters,const ns_analyzed_image_time_path_death_time_estimator * e,ns_sql & sql, const long group_number,const bool write_status_to_db){
 	analysis_id = ns_current_time();
@@ -975,8 +1018,8 @@ void ns_time_path_image_movement_analyzer::process_raw_images(const ns_64_bit re
 								groups[i].paths[j].elements[groups[i].paths[j].first_stationary_timepoint() - k - 1].registered_images;
 							groups[i].paths[j].elements[groups[i].paths[j].first_stationary_timepoint() - k - 1].registered_images = tmp;
 						}
-						//it shouldn't matter where this is done; we might want to paralellize it if if ever gets expensive.
-						groups[i].paths[j].quantify_movement(chunk);
+						//it shouldn't matter where this is done; we might want to paralellize it if it ever gets expensive.
+						//groups[i].paths[j].quantify_movement(chunk);
 #ifdef NS_CALCULATE_OPTICAL_FLOW
 						groups[i].paths[j].save_movement_images(chunk, sql, ns_analyzed_image_time_path::ns_save_both, false);
 #else
@@ -1064,33 +1107,47 @@ void ns_time_path_image_movement_analyzer::process_raw_images(const ns_64_bit re
 					//and we keep it until we need to run more jobs, below.
 					throw_pool_errors(thread_pool, sql);
 				}
-				//for (unsigned int i = 0; i < groups.size(); i++) {
-					//cerr << i << ":" << path_reset[i];
-					//	if (path_reset[i] == 0)
-					//		cerr << "!";
-					//	cerr << ",";
-					//}
+
 
 				//ok! We've finished all the computationally expensive image registration and image analysis. 
 				//Now we calculate some statistics and then we're done.
 				image_loading_temp.use_more_memory_to_avoid_reallocations(false);
 				image_loading_temp.clear();
 
-				for (unsigned int i = start_group; i < stop_group; i++) {
-					for (unsigned int j = 0; j < groups[i].paths.size(); j++) {
-						if (ns_skip_low_density_paths && groups[i].paths[j].is_low_density_path())
-							continue;
-
-						groups[i].paths[j].denoise_movement_series(times_series_denoising_parameters);
-					}
-				}
 				memory_pool.clear();
 				g = stop_group;
 				current_round++;
 			}
 		}
 		thread_pool.shutdown();
-	
+
+
+		ns_image_whole<unsigned long> temp_storage;
+		temp_storage.use_more_memory_to_avoid_reallocations();
+		//now we need to calculate the stablized worm area.
+		for (unsigned int i = 0; i < groups.size(); i++) {
+			for (unsigned int j = 0; j < groups[i].paths.size(); j++) {
+
+				//load all images
+				ns_analyzed_time_image_chunk chunk;
+				chunk.start_i = 0;
+				chunk.stop_i = groups[i].paths[j].element_count();
+				ns_image_storage_source_handle<ns_image_storage_handler::ns_component>  in(image_server_const.image_storage.request_from_storage(groups[i].paths[j].output_image, &sql));
+				groups[i].paths[j].load_movement_images_no_flow(chunk, in);
+				in.clear();
+				//calculate stabilized threshold
+				groups[i].paths[j].calculate_and_save_stabilized_worm_neighborhood(temp_storage, sql);
+
+				if (ns_skip_low_density_paths && groups[i].paths[j].is_low_density_path())
+					continue;
+
+				groups[i].paths[j].quantify_movement(chunk);
+				clear_images_for_group(i);
+				groups[i].paths[j].denoise_movement_series(times_series_denoising_parameters);
+			}
+		}
+		temp_storage.clear();
+
 		normalize_movement_scores_over_all_paths(times_series_denoising_parameters);
 		//xxx this could be paraellelized if it was worth it.
 		for (unsigned int i = 0; i < groups.size(); i++){
@@ -4393,7 +4450,7 @@ void ns_analyzed_image_time_path::copy_aligned_path_to_registered_image(const ns
 		ns_dilate<16, ns_image_standard, ns_image_standard>(worm_threshold, worm_neighborhood_threshold);
 		for (unsigned int y = 0; y < worm_threshold.properties().height; y++)
 			for (unsigned int x = 0; x < worm_threshold.properties().width; x++)
-				elements[i].registered_images->set_thresholds(y, x, region_threshold[y][x], worm_threshold[y][x], worm_neighborhood_threshold[y][x]);
+				elements[i].registered_images->set_thresholds(y, x, region_threshold[y][x], worm_threshold[y][x], worm_neighborhood_threshold[y][x],0);
 
 		//xxx
 		if (i - istep > 0 && elements[i - istep].registered_image_is_loaded()) {
@@ -5272,6 +5329,7 @@ void ns_analyzed_image_time_path::save_movement_image(const ns_analyzed_time_ima
 								(((ns_8_bit)(e.registered_images->get_worm_neighborhood_threshold(y_im_offset, x - l_x) ? 1 : 0)) << 3) |
 								(((ns_8_bit)(e.registered_images->get_worm_threshold(y_im_offset, x - l_x) ? 1 : 0)) << 4) |
 								(((ns_8_bit)(e.registered_images->get_region_threshold(y_im_offset, x - l_x) ? 1 : 0)) << 5);
+							(((ns_8_bit)(e.registered_images->get_stabilized_worm_neighborhood_threshold(y_im_offset, x - l_x) ? 1 : 0)) << 6);
 							;
 
 						}
@@ -5485,11 +5543,14 @@ void ns_analyzed_image_time_path::load_movement_images(const ns_analyzed_time_im
 					 e.registered_images->movement_image_[y_im_offset][x-l_x] = movement_loading_buffer[dy][3*x] * (((movement_loading_buffer[dy][3*x+2])&1)?-1:1);
 					 e.registered_images->image[y_im_offset][x-l_x] = movement_loading_buffer[dy][3*x+1];
 					 e.registered_images->set_thresholds(y_im_offset,x-l_x,
-						 /* e.registered_images->region_threshold[y_im_offset][x-l_x]*/ ((movement_loading_buffer[dy][3*x+2])&(((ns_8_bit)1)<<5))>0,
+														((movement_loading_buffer[dy][3*x+2])&(((ns_8_bit)1)<<5))>0,
 				
-					 /*e.registered_images->worm_threshold_[y_im_offset][x-l_x] =  */ ((movement_loading_buffer[dy][3*x+2])&(((ns_8_bit)1)<<4))>0,
+														((movement_loading_buffer[dy][3*x+2])&(((ns_8_bit)1)<<4))>0,
 						
-					/* e.registered_images->worm_neighborhood_threshold[][] =*/   ((movement_loading_buffer[dy][3*x+2])&(((ns_8_bit)1)<<3))>0);
+														((movement_loading_buffer[dy][3*x+2])&(((ns_8_bit)1)<<3))>0,
+
+														((movement_loading_buffer[dy][3 * x + 2])&(((ns_8_bit)1) << 6))>0
+						 );
 					#ifdef NS_CALCULATE_OPTICAL_FLOW
 					  e.registered_images->flow_image_dx[y_im_offset][x-l_x] = flow_movement_loading_buffer[dy][3*x+1];
 					 e.registered_images->flow_image_dy[y_im_offset][x-l_x] =  flow_movement_loading_buffer[dy][3*x+2];
@@ -5598,11 +5659,13 @@ void ns_analyzed_image_time_path::load_movement_images_no_flow(const ns_analyzed
 					 e.registered_images->movement_image_[y_im_offset][x-l_x] = movement_loading_buffer[dy][3*x] * (((movement_loading_buffer[dy][3*x+2])&1)?-1:1);
 					 e.registered_images->image[y_im_offset][x-l_x] = movement_loading_buffer[dy][3*x+1];
 					 e.registered_images->set_thresholds(y_im_offset,x-l_x,
-						 /* e.registered_images->region_threshold[y_im_offset][x-l_x]*/ ((movement_loading_buffer[dy][3*x+2])&(((ns_8_bit)1)<<5))>0,
+						((movement_loading_buffer[dy][3*x+2])&(((ns_8_bit)1)<<5))>0,
 				
-					 /*e.registered_images->worm_threshold_[y_im_offset][x-l_x] =  */ ((movement_loading_buffer[dy][3*x+2])&(((ns_8_bit)1)<<4))>0,
+						 ((movement_loading_buffer[dy][3*x+2])&(((ns_8_bit)1)<<4))>0,
 						
-					/* e.registered_images->worm_neighborhood_threshold[][] =*/   ((movement_loading_buffer[dy][3*x+2])&(((ns_8_bit)1)<<3))>0);
+						((movement_loading_buffer[dy][3*x+2])&(((ns_8_bit)1)<<3))>0,
+						((movement_loading_buffer[dy][3 * x + 2])&(((ns_8_bit)1) << 6))>0
+						 );
 					}
 			}
 		}
@@ -5806,6 +5869,8 @@ void ns_time_path_image_movement_analyzer::reanalyze_stored_aligned_images(const
 					groups[i].paths[j].initialize_movement_image_loading(storage, flow_storage,false);
 				}
 
+				ns_image_whole<unsigned long> temp_storage;
+				temp_storage.use_more_memory_to_avoid_reallocations();
 				unsigned long number_of_valid_elements(0);
 				if (load_images_after_last_valid_sample)
 					number_of_valid_elements = groups[i].paths[j].elements.size();
@@ -5820,10 +5885,9 @@ void ns_time_path_image_movement_analyzer::reanalyze_stored_aligned_images(const
 
 
 				//load in chunk by chunk
-				for (unsigned int k = 0; k < number_of_valid_elements; k+=chunk_size){
-					ns_analyzed_time_image_chunk chunk(k,k+chunk_size);
-					if (chunk.stop_i >= number_of_valid_elements)
-						chunk.stop_i = number_of_valid_elements;
+				//for (unsigned int k = 0; k < number_of_valid_elements; k+=chunk_size){
+
+					ns_analyzed_time_image_chunk chunk(0,number_of_valid_elements);
 					
 					if (calculate_flow_images) {
 						groups[i].paths[j].load_movement_images_no_flow(chunk, storage);
@@ -5834,9 +5898,9 @@ void ns_time_path_image_movement_analyzer::reanalyze_stored_aligned_images(const
 
 						groups[i].paths[j].load_movement_images(chunk, storage,flow_storage);
 					}
-
+					groups[i].paths[j].calculate_and_save_stabilized_worm_neighborhood(temp_storage, sql);
 					groups[i].paths[j].quantify_movement(chunk);
-					unsigned long start(chunk.start_i);
+					/*unsigned long start(chunk.start_i);
 					
 					long stop(chunk.stop_i - ns_analyzed_image_time_path::movement_time_kernel_width);
 					if (stop < 0)
@@ -5844,8 +5908,9 @@ void ns_time_path_image_movement_analyzer::reanalyze_stored_aligned_images(const
 					if (chunk.stop_i == number_of_valid_elements)
 						stop = chunk.stop_i;
 					for (long l = 0; l < stop; l++)
-						groups[i].paths[j].elements[l].clear_movement_images();
-				}
+						groups[i].paths[j].elements[l].clear_movement_images();*/
+				//}
+				clear_images_for_group(i);
 				groups[i].paths[j].end_movement_image_loading();
 				groups[i].paths[j].denoise_movement_series(times_series_denoising_parameters);
 			

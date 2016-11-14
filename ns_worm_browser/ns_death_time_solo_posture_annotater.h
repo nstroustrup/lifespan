@@ -494,7 +494,7 @@ private:
 		//font.set_height(small_label_height);
 
 		//clear out old box
-		ns_vector_2d off(ns_analyzed_image_time_path::maximum_alignment_offset() + current_worm->element(current_element_id()).offset_in_registered_image());
+		/*ns_vector_2d off(ns_analyzed_image_time_path::maximum_alignment_offset() + current_worm->element(current_element_id()).offset_from_path);
 		draw_box(ns_vector_2i(off.x+ns_death_time_solo_posture_annotater_timepoint::ns_side_border_width,off.y),
 			current_worm->element(current_element_id()).worm_context_size(),
 				  ns_color_8(60,60,60),im,2);
@@ -508,7 +508,7 @@ private:
 				 ns_vector_2i(timepoints[current_element_id()].path_timepoint_element->image().properties().width, 
 				 timepoints[current_element_id()].path_timepoint_element->image().properties().height), 
 				ns_color_8(60,60,60),im,2);
-
+				*/
 	//	draw_box(timepoints[current_element_id()].path_timepoint_element->measurements.local_maximum_position, 
 	//			 timepoints[current_element_id()].path_timepoint_element->measurements.local_maximum_area,
 	//			ns_color_8(0,0,60),im,1);

@@ -317,7 +317,6 @@
     <ClCompile Include="..\ns_image_server\image_processing\ns_image_tools.cpp" />
     <ClCompile Include="..\ns_image_server\image_processing\ns_movement_visualization_generator.cpp" />
     <ClCompile Include="..\ns_image_server\image_processing\ns_node_topology.cpp" />
-    <ClCompile Include="..\ns_image_server\image_processing\ns_optical_flow.cpp" />
     <ClCompile Include="..\ns_image_server\image_processing\ns_segment_topology.cpp" />
     <ClCompile Include="..\ns_image_server\image_processing\ns_spatial_avg.cpp" />
     <ClCompile Include="..\ns_image_server\image_processing\ns_spine_drawer.cpp" />

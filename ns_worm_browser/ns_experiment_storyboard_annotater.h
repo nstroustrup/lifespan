@@ -76,6 +76,7 @@ public:
 	
 	typedef enum {ns_show_all,ns_hide_censored,ns_hide_uncensored} ns_censor_masking;
 	const ns_experiment_storyboard & get_storyboard(){return storyboard;}
+	bool draw_group_ids;
 private:
 	friend class ns_experiment_storyboard_annotater_timepoint;
 	inline ns_annotater_timepoint * timepoint(const unsigned long i){
@@ -217,18 +218,32 @@ private:
 					tp->division->events[i].drawn_worm_top_right_overlay = true;
 			}
 			
-			//we store whether or not extra worms have been annotate dfor the specified worm because we'll
+			//we store whether or not extra worms have been annotated for the specified worm because we'll
 			//need to write over the number afterwards.
 			if (tp->has_had_extra_worms_annotated.size() != tp->division->events.size()){
 				tp->has_had_extra_worms_annotated.resize(0);
 				tp->has_had_extra_worms_annotated.resize(tp->division->events.size(),false);
 			}
 
+			if (draw_group_ids) {
+				ns_vector_2i pos(box_pos);
+				pos.y += box_size.y - 15;
+				long box_offset(23);
+				for (unsigned int y = 0; y < 15; y++)
+					for (unsigned int x = 0; x < box_offset; x++) {
+						im[pos.y + y][3 * (pos.x + x)] = 0;
+						im[pos.y + y][3 * (pos.x + x) + 1] = 0;
+						im[pos.y + y][3 * (pos.x + x) + 2] = 0;
+					}	
+				ns_font_output_dimension d(0, 0);
+					font.draw_color(pos.x + 1, pos.y + 14, ns_color_8(255, 255, 255),
+						ns_to_string(tp->division->events[i].event_annotation.stationary_path_id.group_id), im);
+			}
+
 			if (tp->division->events[i].event_annotation.number_of_worms_at_location_marked_by_hand> 0 ||
-				tp->division->events[i].event_annotation.number_of_worms_at_location_marked_by_machine > 1 ||
 				tp->has_had_extra_worms_annotated[i]){
 				ns_vector_2i pos(box_pos);
-				long box_offset(23);
+				long box_offset(13);
 				pos.x+=box_size.x-box_offset;
 				for (unsigned int y = 0; y < 15; y++)
 					for (unsigned int x = 0; x < box_offset; x++){
@@ -237,14 +252,8 @@ private:
 						im[pos.y+y][3*(pos.x+x)+2] = 0;
 					}
 				ns_font_output_dimension d(0,0);
-				if (tp->division->events[i].event_annotation.number_of_worms_at_location_marked_by_machine > 1 ||
-					tp->division->events[i].event_annotation.number_of_worms_at_location_marked_by_hand > 0){
-					d = font.draw_color(pos.x+1,pos.y+14,ns_color_8(200,200,255), 
-						ns_to_string(tp->division->events[i].event_annotation.number_of_worms_at_location_marked_by_machine),im);
-					tp->has_had_extra_worms_annotated[i] = true;
-				}
 				if (tp->division->events[i].event_annotation.number_of_worms_at_location_marked_by_hand > 0){
-					font.draw_color(pos.x+1+d.w,pos.y+14,ns_color_8(255,200,200),string("/") + 
+					font.draw_color(pos.x+1+d.w,pos.y+14,ns_color_8(255,200,200),
 						ns_to_string(tp->division->events[i].event_annotation.number_of_worms_at_location_marked_by_hand),im);
 					tp->has_had_extra_worms_annotated[i] = true;
 				}
@@ -440,7 +449,7 @@ public:
 		resize_factor = resize_factor_;
 	}
 	bool data_saved()const{return saved_;}
-	ns_experiment_storyboard_annotater(const unsigned long res):ns_image_series_annotater(res,0),saved_(true){}
+	ns_experiment_storyboard_annotater(const unsigned long res):ns_image_series_annotater(res,0), draw_group_ids(0),saved_(true){}
 
 	std::string image_label(const unsigned long frame_id){
 		return ns_to_string(frame_id) + "/" + ns_to_string(divisions.size());	
@@ -460,6 +469,7 @@ public:
 	void redraw_current_metadata(){
 		draw_metadata(&divisions[current_timepoint_id],*current_image.im);
 	}
+	void overlay_worm_ids() { draw_group_ids = true; }
 
 	void specifiy_worm_details(const unsigned long region_id,const ns_stationary_path_id & worm, const ns_death_time_annotation & sticky_properties, std::vector<ns_death_time_annotation> & movement_event_times){
 		if (!worm.specified())

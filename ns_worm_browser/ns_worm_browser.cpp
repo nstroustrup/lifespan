@@ -5534,6 +5534,9 @@ bool ns_worm_learner::register_main_window_key_press(int key, const bool shift_k
 		main_window.redraw_screen();
 		return true;
 	}
+	else if (key == 'i') {
+		storyboard_annotater.overlay_worm_ids();
+	}
 
 	switch(behavior_mode){
 		case ns_worm_learner::ns_draw_boxes:{

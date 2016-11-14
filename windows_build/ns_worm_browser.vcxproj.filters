@@ -676,15 +676,14 @@
     <ClCompile Include="..\external_libraries\OpticalFlow\mex\Stochastic.cpp">
       <Filter>misc_lib\OpticalFlow</Filter>
     </ClCompile>
-    <ClCompile Include="..\ns_image_server\image_processing\ns_optical_flow.cpp">
-      <Filter>image_processing</Filter>
-    </ClCompile>
-    <ClCompile Include="..\ns_image_server\image_server\ns_sql_table_lock_manager.cpp" />
     <ClCompile Include="..\ns_image_server\image_processing\ns_image_registration_cache.cpp">
       <Filter>image_server</Filter>
     </ClCompile>
     <ClCompile Include="..\ns_image_server\movement_analysis\ns_analyze_movement_over_time.cpp">
       <Filter>movement_analysis</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ns_image_server\image_server\ns_sql_table_lock_manager.cpp">
+      <Filter>image_server</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

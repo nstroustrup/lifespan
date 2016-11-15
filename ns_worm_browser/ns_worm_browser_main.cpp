@@ -263,14 +263,6 @@ class ns_worm_gl_window : public Fl_Gl_Window {
 	    glMatrixMode (GL_MODELVIEW);  /* back to modelview matrix */
 	    glViewport (0, 0, width,height);      /* define the viewport */
 
-	  //glViewport(0, 0, width, height); // set viewport
-	  //ProjectionMatrix();              // set projection matrix
-		//remember the current window values
-		//set the current window values as ideal.  The algorithm may disagree later.
-	//	cerr << "GL: Setting ideal width and height to " << width << "x" << height << "\n";
-		//worm_learner.worm_window.image_size.y = height ;
-		//worm_learner.worm_window.image_size.x = width;
-		//worm_learner.worm_window.image_size = worm_learner.worm_window.ideal_image_size-worm_image_window_size_difference();
     }
     // DRAW METHOD
     void draw() {
@@ -1907,8 +1899,8 @@ public:
 		return ns_vector_2i(0,(int)menu_height()+(int)info_bar_height());
 	}
 	void resize(int x, int y, int w__, int h__){
-		const int w_(worm_learner.main_window.image_size.x),
-				  h_(worm_learner.main_window.image_size.y);
+		const int w_(worm_learner.main_window.gl_image_size.x),
+				  h_(worm_learner.main_window.gl_image_size.y);
 		const float d(worm_learner.main_window.display_rescale_factor);
 		float menu_d(worm_learner.main_window.display_rescale_factor);
 		if (!SCALE_FONTS_WITH_WINDOW_SIZE)
@@ -1921,8 +1913,8 @@ public:
 		Fl_Window::resize(x,y,w_*d+image_window_size_difference().x*menu_d,h_*d+image_window_size_difference().y*menu_d);
 		
 		gl_window->resize(0,menu_height()*menu_d,
-			worm_learner.main_window.image_size.x*d,
-			worm_learner.main_window.image_size.y*d);
+			worm_learner.main_window.gl_image_size.x*d,
+			worm_learner.main_window.gl_image_size.y*d);
 	
 		main_menu->resize(0,0,w_*d,menu_height()*menu_d);
 
@@ -2040,11 +2032,11 @@ public:
         // OpenGL window
 		begin();
 		
-        gl_window = new  ns_worm_gl_window(30, 0, worm_learner.worm_window.image_size.x, worm_learner.worm_window.image_size.y);
+        gl_window = new  ns_worm_gl_window(30, 0, worm_learner.worm_window.gl_image_size.x, worm_learner.worm_window.gl_image_size.y);
 
 		
 		annotation_group = new ns_death_event_solo_annotation_group(0,
-															  worm_learner.worm_window.image_size.y,
+															  worm_learner.worm_window.gl_image_size.y,
 															  ns_death_event_solo_annotation_group::all_buttons_width,
 															  ns_death_event_solo_annotation_group::button_height,
 															  false);
@@ -2062,8 +2054,8 @@ public:
 		return ns_vector_2i(0,(long)ns_death_event_solo_annotation_group::button_height);
 	}
 	void resize(int x, int y, int w__, int h__){
-		const int w_(worm_learner.worm_window.image_size.x),
-				h_(worm_learner.worm_window.image_size.y);
+		const int w_(worm_learner.worm_window.gl_image_size.x),
+				h_(worm_learner.worm_window.gl_image_size.y);
 		float menu_d(worm_learner.worm_window.display_rescale_factor);
 		if (!SCALE_FONTS_WITH_WINDOW_SIZE)
 			menu_d = 1;
@@ -2100,11 +2092,13 @@ public:
 					int c(Fl::event_key());
 					if (c!=0){
 						if (worm_learner.register_worm_window_key_press(c,
-														Fl::event_key(FL_Shift_L) || Fl::event_key(FL_Shift_R),
-														Fl::event_key(FL_Control_L) || Fl::event_key(FL_Control_R),
-														Fl::event_key(FL_Alt_L) || Fl::event_key(FL_Alt_R)
-														))
-														return 1;
+							Fl::event_key(FL_Shift_L) || Fl::event_key(FL_Shift_R),
+							Fl::event_key(FL_Control_L) || Fl::event_key(FL_Control_R),
+							Fl::event_key(FL_Alt_L) || Fl::event_key(FL_Alt_R)
+						)) {
+							worm_learner.death_time_solo_annotater.request_refresh();
+							return 1;
+						}
 					}
 					Fl::release();
 				//}
@@ -2248,9 +2242,9 @@ void idle_main_window_update_callback(void *){
 	//	worm_learner.main_window.image_size = worm_learner.main_window.ideal_image_size;
 		//worm_learner.main_window.image_size.y+=ns_worm_terminal_main_window::menu_height()+ns_worm_terminal_main_window::info_bar_height();
 		//worm_learner.main_window.image_size.x+= ns_worm_terminal_main_window::border_width();
-		if ( abs((int)(worm_learner.main_window.image_size.x - cur_size.x)) > 0 && abs((int)(worm_learner.main_window.image_size.y- cur_size.y)) > 0){
+		if ( abs((int)(worm_learner.main_window.gl_image_size.x - cur_size.x)) > 0 && abs((int)(worm_learner.main_window.gl_image_size.y- cur_size.y)) > 0){
 			//current_window->size(current_window->size(worm_learner.main_window.image_size.x, worm_learner.ideal_current_window_height);
-			current_window->size(worm_learner.main_window.image_size.x, worm_learner.main_window.image_size.y);
+			current_window->size(worm_learner.main_window.gl_image_size.x, worm_learner.main_window.gl_image_size.y);
 		//	current_window->gl_window->size(worm_learner.main_window.ideal_image_size.x, worm_learner.main_window.ideal_image_size.y);
 		//	cerr << "Redrawing screen from " << cur_size << " to ideal " << worm_learner.main_window.image_size << "\n";
 		}
@@ -2259,7 +2253,7 @@ void idle_main_window_update_callback(void *){
 			worm_learner.current_annotater->display_current_frame();
 		}
 		if (worm_learner.main_window.redraw_requested){
-			redraw_main_window(worm_learner.main_window.image_size.x,worm_learner.main_window.image_size.y,true);
+			redraw_main_window(worm_learner.main_window.gl_image_size.x,worm_learner.main_window.gl_image_size.y,true);
 		}
 		ns_image_series_annotater::ns_image_series_annotater_action a(worm_learner.current_annotater->fast_movement_requested());
 		if (a == ns_image_series_annotater::ns_fast_forward){
@@ -2284,8 +2278,8 @@ void idle_main_window_update_callback(void *){
 		}
 		if (show_worm_window){
 			show_worm_window = false;
-			worm_window->size(worm_learner.worm_window.image_size.x,
-							  worm_learner.worm_window.image_size.y);
+			worm_window->size(worm_learner.worm_window.gl_image_size.x,
+							  worm_learner.worm_window.gl_image_size.y);
 			worm_window->show();
 			ns_set_menu_bar_activity(true);	
 		}
@@ -2319,15 +2313,15 @@ void idle_worm_window_update_callback(void *){
 		/*worm_learner.worm_window.image_size = worm_learner.worm_window.image_size;
 		worm_learner.worm_window.image_size.x+=ns_worm_terminal_worm_window::border_width();
 		worm_learner.worm_window.image_size.y+=ns_worm_terminal_worm_window::info_bar_height();*/
-		if ( abs((int)(worm_learner.worm_window.image_size.x - cur_size.x)) > 0 && abs((int)(worm_learner.worm_window.image_size.y - cur_size.y)) > 0){
-			worm_window->size(worm_learner.worm_window.image_size.x, worm_learner.worm_window.image_size.y);
+		if ( abs((int)(worm_learner.worm_window.gl_image_size.x - cur_size.x)) > 0 && abs((int)(worm_learner.worm_window.gl_image_size.y - cur_size.y)) > 0){
+			worm_window->size(worm_learner.worm_window.gl_image_size.x, worm_learner.worm_window.gl_image_size.y);
 			//xxxx
 		}
 		if (worm_learner.death_time_solo_annotater.refresh_requested()){
 			worm_learner.death_time_solo_annotater.display_current_frame();
 		}
 		if (worm_learner.worm_window.redraw_requested){
-			redraw_worm_window(worm_learner.worm_window.image_size.x,worm_learner.worm_window.image_size.y,true);
+			redraw_worm_window(worm_learner.worm_window.gl_image_size.x,worm_learner.worm_window.gl_image_size.y,true);
 		}
 		ns_image_series_annotater::ns_image_series_annotater_action a(worm_learner.death_time_solo_annotater.fast_movement_requested());
 		if (a == ns_image_series_annotater::ns_fast_forward){

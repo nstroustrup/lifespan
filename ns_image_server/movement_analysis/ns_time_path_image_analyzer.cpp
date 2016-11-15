@@ -1139,7 +1139,7 @@ void ns_time_path_image_movement_analyzer::process_raw_images(const ns_64_bit re
 
 				groups[i].paths[j].quantify_movement(chunk);
 				clear_images_for_group(i);
-				groups[i].paths[j].denoise_movement_series(times_series_denoising_parameters);
+				groups[i].paths[j].denoise_movement_series(0,times_series_denoising_parameters);
 			}
 		}
 		temp_storage.clear();
@@ -1471,7 +1471,7 @@ bool ns_time_path_image_movement_analyzer::load_completed_analysis(const ns_64_b
 			}
 		//	if (g == 5)
 		//		cerr << "WHA";
-			groups[g].paths[p].denoise_movement_series(times_series_denoising_parameters);
+			groups[g].paths[p].denoise_movement_series(0,times_series_denoising_parameters);
 		}
 
 	normalize_movement_scores_over_all_paths(times_series_denoising_parameters);
@@ -4023,17 +4023,18 @@ public:
 		}
 	}
 };
-void ns_analyzed_image_time_path::denoise_movement_series( const ns_time_series_denoising_parameters & times_series_denoising_parameters){
+void ns_analyzed_image_time_path::denoise_movement_series(const unsigned long change_time_in_seconds, const ns_time_series_denoising_parameters & times_series_denoising_parameters){
 	if (elements.size() == 0)
 		return;
 
 	const bool use_kernal_smoother(true);
 	if (use_kernal_smoother){
-		
 		const int kernel_width(1);
 		ns_kernel_smoother<ns_movement_data_accessor>m;
 		ns_movement_data_accessor acc(elements);
 		
+
+		//calculate the slope at each point
 		//Here, ns_movement_data_accessor calculates the movement score and stores it.
 		//This movement score is generally not used for automated movement analysis, but is useful for understanding worm behavior and debugging.
 		for (unsigned int i = 0; i < elements.size(); i++){
@@ -4049,10 +4050,9 @@ void ns_analyzed_image_time_path::denoise_movement_series( const ns_time_series_
 		//If the "normalize_movement_timeseries_to_median" flag is set, the set smoothed movement score values
 		//for each object is subtracted out to zero.
 		m(kernel_width,acc);
-		
 		for (unsigned int i= 0; i < elements.size(); i++){
-			elements[i].measurements.normalized_worm_area = elements[i].measurements.total_worm_area/(double)elements[0].measurements.total_worm_area;
-			elements[i].measurements.normalized_total_intensity = elements[i].measurements.total_intensity_within_worm_area/(double)elements[0].measurements.total_intensity_within_worm_area;
+			elements[i].measurements.normalized_worm_area = elements[i].measurements.total_worm_area/(double)elements[first_stationary_timepoint()].measurements.total_worm_area;
+			elements[i].measurements.normalized_total_intensity = elements[i].measurements.total_intensity_within_worm_area/(double)elements[first_stationary_timepoint()].measurements.total_intensity_within_worm_area;
 			if (i > 0)
 				elements[i].measurements.change_in_average_normalized_worm_intensity = elements[i].measurements.normalized_total_intensity - elements[i-1].measurements.normalized_total_intensity;
 			else elements[i].measurements.change_in_average_normalized_worm_intensity = 0;
@@ -4061,19 +4061,6 @@ void ns_analyzed_image_time_path::denoise_movement_series( const ns_time_series_
 			elements[0].measurements.change_in_average_normalized_worm_intensity = 0;
 		else elements[0].measurements.change_in_average_normalized_worm_intensity = elements[1].measurements.change_in_average_normalized_worm_intensity;
 		
-		//ns_kernel_smoother<ns_intensity_data_accessor> i;
-		//i(kernel_width,ns_kernel_smoother<ns_intensity_data_accessor>::ns_fix_to_first_value,ns_intensity_data_accessor(elements));
-		//ns_kernel_smoother<ns_size_data_accessor> s;
-		//s(kernel_width,ns_kernel_smoother<ns_size_data_accessor>::ns_fix_to_first_value,ns_size_data_accessor(elements));
-		
-	/*	for (unsigned int i = 1; i < elements.size();i++)
-			elements[i].measurements.normalized_change_in_worm_intensity = 
-			elements[i].measurements.normalized_total_intensity - 
-			elements[i-1].measurements.normalized_total_intensity;
-		if (elements.size() == 1)
-		elements[0].measurements.normalized_change_in_worm_intensity = 0;
-		else elements[0].measurements.normalized_change_in_worm_intensity =
-			elements[1].measurements.normalized_change_in_worm_intensity;*/
 		ns_kernel_smoother<ns_intensity_data_accessor> i;
 		ns_intensity_data_accessor acc2(elements);
 		i(kernel_width,acc2);
@@ -5913,7 +5900,7 @@ void ns_time_path_image_movement_analyzer::reanalyze_stored_aligned_images(const
 				//}
 				clear_images_for_group(i);
 				groups[i].paths[j].end_movement_image_loading();
-				groups[i].paths[j].denoise_movement_series(times_series_denoising_parameters);
+				groups[i].paths[j].denoise_movement_series(0,times_series_denoising_parameters);
 			
 				//groups[i].paths[j].analyze_movement(e,generate_stationary_path_id(i,j));
 				

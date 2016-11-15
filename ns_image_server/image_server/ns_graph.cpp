@@ -152,10 +152,12 @@ void ns_graph::calculate_graph_specifics(const unsigned int width, const unsigne
 		s.number_of_y_minor_ticks =  (unsigned int)((axes[3]-axes[2])/s.minor_y_tick);
 	}
 
-	s.x_axis_pos = (int)(h-border.y);
-	if (axes[2] < 0 && axes[3] > 0)
-		s.x_axis_pos = (int)(h-border.y)-(int)(dy*(0-axes[2]));
-	else if (axes[2] < 0)	s.x_axis_pos = border.y;
+	if (specified_axes.axis_position[0] == ns_graph_axes::ns_at_min_value)
+		s.x_axis_pos = (int)(h-border.y);
+	else if (specified_axes.axis_position[0] == ns_graph_axes::ns_at_zero)
+		s.x_axis_pos = (int)(h - border.y) - (int)(dy*(0 - axes[2]));
+	else //at max value
+		s.x_axis_pos = border.y;
 }
 void ns_graph_axes::check_for_sanity() const{
 	if (boundary_specified(0) && boundary_specified(1) && boundary(0) >= boundary(1))
@@ -165,7 +167,7 @@ void ns_graph_axes::check_for_sanity() const{
 }
 
 
-void ns_graph::draw(ns_image_standard & image){
+ns_graph_specifics ns_graph::draw(ns_image_standard & image){
 	//check to see if input data isn't self-contradicting.
 	//Also, see if a scatter plot is desired (no global independant variable specified)
 	if (image.properties().components != 3)
@@ -195,7 +197,7 @@ void ns_graph::draw(ns_image_standard & image){
 			font_server.get_default_font().draw_color(w/3,(3*h)/4,title_properties.text.color,"(No Data)",image);
 			font_lock.release();
 		}
-		return;
+		return ns_graph_specifics();
 	}
 
 	axes.check_for_sanity();
@@ -219,7 +221,7 @@ void ns_graph::draw(ns_image_standard & image){
 		font_server.get_default_font().draw_color(w/3,0,title_properties.text.color,title,image);
 		font_server.get_default_font().draw_color(w/3,h/2,title_properties.text.color,"(no data)",image);
 		font_lock.release();
-		return;
+		return ns_graph_specifics();
 	}
 
 	ns_graph_specifics spec;
@@ -256,6 +258,7 @@ void ns_graph::draw(ns_image_standard & image){
 		}
 	}
 
+
 	//draw y axis
 	line_l_width = y_axis_properties.line.width/2;
 	line_r_width = y_axis_properties.line.width/2 + x_axis_properties.line.width%2;
@@ -273,7 +276,22 @@ void ns_graph::draw(ns_image_standard & image){
 	font_server.get_default_font().set_height(x_axis_properties.text_size*FREETYPE_SCALE_FACTOR);
 	for (unsigned int i = 0; i <= spec.number_of_x_major_ticks; i++){
 		unsigned int x = (border.x+(int)(spec.dx*(spec.major_x_tick*i+spec.axes.axis_offset(0))));
-		image.draw_line_color(ns_vector_2i(x,h-border.y-MAJOR_TICK_HEIGHT),ns_vector_2i(x,h-border.y+MAJOR_TICK_HEIGHT),x_axis_properties.line.color);
+
+		int y1, y2;
+		if (axes.axis_position[1] == ns_graph_axes::ns_at_zero) {
+			y1 = spec.x_axis_pos - MAJOR_TICK_HEIGHT;
+			y2 = spec.x_axis_pos + MAJOR_TICK_HEIGHT;
+		}
+		else if (axes.axis_position[1] == ns_graph_axes::ns_at_min_value) {
+			y1 = spec.x_axis_pos;
+			y2 = spec.x_axis_pos + MAJOR_TICK_HEIGHT;
+		}
+		else if (axes.axis_position[1] == ns_graph_axes::ns_at_max_value) {
+			y1 = spec.x_axis_pos;
+			y2 = spec.x_axis_pos - MAJOR_TICK_HEIGHT;
+		}
+
+		image.draw_line_color(ns_vector_2i(x,y1),ns_vector_2i(x,y2),x_axis_properties.line.color);
 		if (x_axis_properties.text.draw){
 			std::string text;
 			if (x_axis_properties.text_decimal_places == -1)
@@ -286,7 +304,8 @@ void ns_graph::draw(ns_image_standard & image){
 	font_server.get_default_font().set_height(y_axis_properties.text_size*FREETYPE_SCALE_FACTOR);
 	for (unsigned int i = 0; i <= spec.number_of_y_major_ticks; i++){
 		unsigned int y = h - border.y -(int)(spec.dy*(spec.major_y_tick*i+spec.axes.axis_offset(1)));
-		image.draw_line_color(ns_vector_2i(border.x-MAJOR_TICK_HEIGHT,y),ns_vector_2i(border.x+MAJOR_TICK_HEIGHT,y),y_axis_properties.line.color);
+
+		image.draw_line_color(ns_vector_2i(border.x-MAJOR_TICK_HEIGHT,y),ns_vector_2i(border.x,y),y_axis_properties.line.color);
 		if (y_axis_properties.text.draw){
 			std::string text;
 			if (y_axis_properties.text_decimal_places == -1)
@@ -303,7 +322,21 @@ void ns_graph::draw(ns_image_standard & image){
 			int x = border.x+(int)(spec.dx*(spec.minor_x_tick*i+spec.axes.axis_offset(0)));
 			if (x < 0 || x >= w)
 				throw ns_ex("ns_graph::Error drawing x axis minor ticks");
-			image.draw_line_color(ns_vector_2i(x,h-border.y-MINOR_TICK_HEIGHT),ns_vector_2i(x,h-border.y+MINOR_TICK_HEIGHT),x_axis_properties.line.color);
+			int y1, y2;
+			if (axes.axis_position[1] == ns_graph_axes::ns_at_zero) {
+				y1 = spec.x_axis_pos - MINOR_TICK_HEIGHT;
+				y2 = spec.x_axis_pos + MINOR_TICK_HEIGHT;
+			}
+			else if (axes.axis_position[1] == ns_graph_axes::ns_at_min_value) {
+				y1 = spec.x_axis_pos;
+				y2 = spec.x_axis_pos + MINOR_TICK_HEIGHT;
+			}
+			else if (axes.axis_position[1] == ns_graph_axes::ns_at_max_value) {
+				y1 = spec.x_axis_pos;
+				y2 = spec.x_axis_pos - MINOR_TICK_HEIGHT;
+			}
+				
+			image.draw_line_color(ns_vector_2i(x, y1),ns_vector_2i(x,y2),x_axis_properties.line.color);
 		}
 	}
 	if (y_axis_properties.draw_tick_marks){
@@ -312,7 +345,8 @@ void ns_graph::draw(ns_image_standard & image){
 			int y = h - border.y -(int)(spec.dy*(spec.minor_y_tick*i + spec.axes.axis_offset(1)));		
 			if (y < 0 || y >= h)
 				throw ns_ex("ns_graph::Error drawing y axis minor ticks");
-			image.draw_line_color(ns_vector_2i(border.x-MINOR_TICK_HEIGHT,y),ns_vector_2i(border.x+MINOR_TICK_HEIGHT,y),y_axis_properties.line.color);
+
+			image.draw_line_color(ns_vector_2i(border.x-MINOR_TICK_HEIGHT,y),ns_vector_2i(border.x,y),y_axis_properties.line.color);
 		}
 	}
 
@@ -336,6 +370,7 @@ void ns_graph::draw(ns_image_standard & image){
 		font_server.get_default_font().draw_color(w/3,(3*border.y)/4,title_properties.text.color,title,image);
 		font_lock.release();
 	}
+	return spec;
 }
 
 void ns_graph::draw(ns_svg & svg){

@@ -502,7 +502,9 @@ struct ns_button_press{
 class ns_gl_window_data{
 public:
 	ns_gl_window_data(const string & window_name):gl_buffer(0),display_lock(string("ns_lock::display_") + window_name),redraw_requested(false),display_rescale_factor(0){}
-	ns_vector_2i image_size;
+	ns_vector_2i worm_image_size,
+		telemetry_size,
+		gl_image_size;
 	float image_zoom;
 	unsigned int pre_gl_downsample;
 	ns_8_bit * gl_buffer;
@@ -726,7 +728,7 @@ public:
 	void touch_main_window_pixel(const ns_button_press & press);
 	bool register_main_window_key_press(int key, const bool shift_key_held,const bool control_key_held,const bool alt_key_held);
 	
-	void draw_worm_window_image(const double x, const double y, ns_image_standard & image,const float & dynamic_stretch_factor);
+	void draw_worm_window_image(ns_image_standard & image,const float & dynamic_stretch_factor);
 	void update_worm_window_display();
 	void touch_worm_window_pixel(const ns_button_press & press);
 	bool register_worm_window_key_press(int key, const bool shift_key_held,const bool control_key_held,const bool alt_key_held);

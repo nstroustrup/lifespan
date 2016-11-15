@@ -5450,7 +5450,7 @@ void ns_worm_learner::clear_areas(){
 
 void ns_worm_learner::touch_worm_window_pixel(const ns_button_press & press){
 	if (press.screen_position.x < 4|| press.screen_position.y < 4 ||
-		press.screen_position.x+4 >= worm_window.image_size.x*worm_window.display_rescale_factor|| press.screen_position.y+4 >= worm_window.image_size.y*worm_window.display_rescale_factor)
+		press.screen_position.x+4 >= worm_window.gl_image_size.x*worm_window.display_rescale_factor|| press.screen_position.y+4 >= worm_window.gl_image_size.y*worm_window.display_rescale_factor)
 		return;
 	float z = ((float)worm_window.pre_gl_downsample)/worm_window.image_zoom;
 	ns_button_press p(press);
@@ -5490,13 +5490,17 @@ bool ns_worm_learner::register_worm_window_key_press(int key, const bool shift_k
 		death_time_solo_annotater.register_click(ns_vector_2i(0,0),ns_death_time_solo_posture_annotater::ns_decrease_contrast);
 		return true;
 	}
+	else if (key == 'i') {
+		death_time_solo_annotater.telemetry.show(!death_time_solo_annotater.telemetry.show());
+		return true;
+	}
 	return false;
 }
 
 
 void ns_worm_learner::touch_main_window_pixel(const ns_button_press & press){
 	if (press.screen_position.x < 4|| press.screen_position.y < 4 ||
-		press.screen_position.x+4 >= main_window.image_size.x*main_window.display_rescale_factor|| press.screen_position.y+4 >= main_window.image_size.y*main_window.display_rescale_factor)
+		press.screen_position.x+4 >= main_window.gl_image_size.x*main_window.display_rescale_factor|| press.screen_position.y+4 >= main_window.gl_image_size.y*main_window.display_rescale_factor)
 		return;
 	float z = ((float)main_window.pre_gl_downsample)/(float)main_window.image_zoom/main_window.display_rescale_factor;
 	ns_button_press p(press);
@@ -5536,6 +5540,8 @@ bool ns_worm_learner::register_main_window_key_press(int key, const bool shift_k
 	}
 	else if (key == 'i') {
 		storyboard_annotater.overlay_worm_ids();
+		main_window.redraw_screen();
+		return true;
 	}
 
 	switch(behavior_mode){
@@ -5733,8 +5739,8 @@ void ns_worm_learner::draw_image(const double x, const double y, ns_image_standa
 		if (r < gl_resize)
 			gl_resize = r;
 	}
-	main_window.image_size.y= (unsigned int)floor(new_prop.height*gl_resize);
-	main_window.image_size.x = (unsigned int)floor(new_prop.width*gl_resize);
+	main_window.gl_image_size.y= (unsigned int)floor(new_prop.height*gl_resize);
+	main_window.gl_image_size.x = (unsigned int)floor(new_prop.width*gl_resize);
 
 	if (main_window.gl_buffer_properties.width != new_prop.width || main_window.gl_buffer_properties.height != new_prop.height || main_window.gl_buffer_properties.components != new_prop.components){
 		
@@ -5771,11 +5777,11 @@ void ns_worm_learner::draw_image(const double x, const double y, ns_image_standa
 	area_handler.draw_boxes(main_window.gl_buffer ,image.properties(),main_window.pre_gl_downsample,main_window.image_zoom);
 
 	//now we handle the gl scaling
-	if (main_window.image_size.x*main_window.display_rescale_factor > this->maximum_window_size.x ||
-		main_window.image_size.y*main_window.display_rescale_factor > this->maximum_window_size.y){
+	if (main_window.gl_image_size.x*main_window.display_rescale_factor > this->maximum_window_size.x ||
+		main_window.gl_image_size.y*main_window.display_rescale_factor > this->maximum_window_size.y){
 		cerr << "Cannot resize, as the current window has hit the maximum size specified in the ns_worm_browser.ini file\n";
-		main_window.display_rescale_factor = floor(min(maximum_window_size.x/(double)main_window.image_size.x,
-												maximum_window_size.y/(double)main_window.image_size.y)*10)/10;
+		main_window.display_rescale_factor = floor(min(maximum_window_size.x/(double)main_window.gl_image_size.x,
+												maximum_window_size.y/(double)main_window.gl_image_size.y)*10)/10;
 	
 	}
 
@@ -5783,41 +5789,59 @@ void ns_worm_learner::draw_image(const double x, const double y, ns_image_standa
 	main_window.redraw_screen();
 }
 
-void ns_worm_learner::draw_worm_window_image(const double x, const double y, ns_image_standard & image, const float & dynamic_range_rescale_factor){
+
+void ns_worm_learner::draw_worm_window_image(ns_image_standard & image, const float & dynamic_range_rescale_factor){
 
 	ns_acquire_lock_for_scope lock(worm_window.display_lock,__FILE__,__LINE__);
 
-	ns_image_properties new_prop = image.properties();
-	new_prop.components = 3;
-	//if the image is larger than the display size
-	//it should be downsampled before being sent to the video card.
-	int resize_x = (int)floor((1.0*new_prop.width)/maximum_window_size.x);
-	int resize_y = (int)floor((1.0*new_prop.height)/maximum_window_size.y);
-	
-	worm_window.pre_gl_downsample = resize_x;
 
+	//if the image is an integer factor larger than the display size
+	//it should be downsampled before being sent to the video card.
+	worm_window.pre_gl_downsample = image.properties().width / (maximum_window_size.x- death_time_solo_annotater.telemetry.image_size().x);
 	if (worm_window.pre_gl_downsample < 1)
 		worm_window.pre_gl_downsample = 1;
-	//pre_gl_downsample*=2;
-	//cerr << "Downsampling: " << pre_gl_downsample << "\n";
+
+	ns_image_properties new_prop = image.properties();
+	new_prop.components = 3;
+
 	new_prop.width/=worm_window.pre_gl_downsample;
 	new_prop.height/=worm_window.pre_gl_downsample;
 
+	ns_vector_2i buffer_size(new_prop.width + death_time_solo_annotater.telemetry.image_size().x,
+		new_prop.height > death_time_solo_annotater.telemetry.image_size().y ?
+		new_prop.height : death_time_solo_annotater.telemetry.image_size().y);
 
+	//we resize the image by an integer factor
+	//but it still needs to be resized by the video card
+	//by a non-integer factor in order to fit into the desired window size.
+	//we calculate this and send it to the video ard
 	double gl_resize(1);
-	if (new_prop.height > maximum_window_size.y)
-		gl_resize = ((double)maximum_window_size.y)/new_prop.height;
-	if (new_prop.width > maximum_window_size.x){
-		const double r(((double)maximum_window_size.x)/new_prop.width);
+	if (buffer_size.y > maximum_window_size.y)
+		gl_resize = ((double)maximum_window_size.y)/ buffer_size.y;
+	if (buffer_size.x > maximum_window_size.x){
+		const double r(((double)maximum_window_size.x)/ buffer_size.x);
 		if (r < gl_resize)
 			gl_resize = r;
 	}
-	worm_window.image_size = ns_vector_2i((unsigned int)floor(new_prop.width*gl_resize),
-												(unsigned int)floor(new_prop.height*gl_resize));
+	//don't do this, because it ends up looking messy.
+	gl_resize = 1;
+
+	worm_window.telemetry_size = ns_vector_2i(
+		(unsigned int)floor(death_time_solo_annotater.telemetry.image_size().x*gl_resize),
+		(unsigned int)floor(death_time_solo_annotater.telemetry.image_size().y*gl_resize));
+	
+	worm_window.worm_image_size = ns_vector_2i(
+		(unsigned int)floor(new_prop.width*gl_resize),
+		(unsigned int)floor(new_prop.height*gl_resize));
+
+	worm_window.gl_image_size = ns_vector_2i(worm_window.worm_image_size.x + worm_window.telemetry_size.x,
+											worm_window.worm_image_size.y);
+	if (worm_window.gl_image_size.y < worm_window.telemetry_size.y)
+		worm_window.gl_image_size.y = worm_window.telemetry_size.y;
 
 	//cerr << "Draw requests a worm window size of " << worm_window.image_size << "\n";
 
-	if (worm_window.gl_buffer_properties.width != new_prop.width || worm_window.gl_buffer_properties.height != new_prop.height 
+	if (worm_window.gl_buffer_properties.width != worm_window.gl_image_size.x || worm_window.gl_buffer_properties.height != worm_window.gl_image_size.y
 		|| worm_window.gl_buffer_properties.components != new_prop.components){
 		
 		if (worm_window.gl_buffer != 0){
@@ -5825,42 +5849,62 @@ void ns_worm_learner::draw_worm_window_image(const double x, const double y, ns_
 			worm_window.gl_buffer = 0;
 		}
 		
-		worm_window.gl_buffer = new ns_8_bit[new_prop.components*new_prop.height*new_prop.width];
-	
-		worm_window.gl_buffer_properties = new_prop;
+		worm_window.gl_buffer = new ns_8_bit[new_prop.components*buffer_size.x*buffer_size.y];
+		
+		worm_window.gl_buffer_properties.components = new_prop.components;
+		worm_window.gl_buffer_properties.width = buffer_size.x;
+		worm_window.gl_buffer_properties.height = buffer_size.y;
 	}
+
 	if (image.properties().components == 3){
+		for (int _y = 0; _y < new_prop.height; _y++) {
 		for (unsigned int _x = 0; _x < new_prop.width; _x++){
-		for (int _y = 0; _y < (int)new_prop.height; _y++){
-			worm_window.gl_buffer [3*(new_prop.width*_y + _x) ] = 
-				ns_rescale(image[(image.properties().height - 1 - _y*worm_window.pre_gl_downsample)][3*_x*worm_window.pre_gl_downsample],dynamic_range_rescale_factor);
-			worm_window.gl_buffer [3*(new_prop.width*_y + _x) +1] = 
-				ns_rescale(image[(image.properties().height - 1 - _y*worm_window.pre_gl_downsample)][3*_x*worm_window.pre_gl_downsample+1],dynamic_range_rescale_factor);
-			worm_window.gl_buffer [3*(new_prop.width*_y + _x) +2 ] = 
-				ns_rescale(image[(image.properties().height - 1 - _y*worm_window.pre_gl_downsample)][3*_x*worm_window.pre_gl_downsample+2],dynamic_range_rescale_factor);
-		}
+				worm_window.gl_buffer [3*(worm_window.gl_buffer_properties.width*_y + _x) ] =
+					ns_rescale(image[(image.properties().height - 1 - _y*worm_window.pre_gl_downsample)][3*_x*worm_window.pre_gl_downsample],dynamic_range_rescale_factor);
+				worm_window.gl_buffer [3*(worm_window.gl_buffer_properties.width*_y + _x) +1] =
+					ns_rescale(image[(image.properties().height - 1 - _y*worm_window.pre_gl_downsample)][3*_x*worm_window.pre_gl_downsample+1],dynamic_range_rescale_factor);
+				worm_window.gl_buffer [3*(worm_window.gl_buffer_properties.width*_y + _x) +2 ] =
+					ns_rescale(image[(image.properties().height - 1 - _y*worm_window.pre_gl_downsample)][3*_x*worm_window.pre_gl_downsample+2],dynamic_range_rescale_factor);
+			}
 		}
 	}
 
 	//b&w images
 	else if (image.properties().components == 1){
-		for (unsigned int _x = 0; _x < new_prop.width; _x++){
-		for (int _y = 0; _y < (int)new_prop.height; _y++){
-				worm_window.gl_buffer [new_prop.width*3*_y + 3*_x + 0] =
-				worm_window.gl_buffer [new_prop.width*3*_y + 3*_x + 1] =
-				worm_window.gl_buffer [new_prop.width*3*_y + 3*_x + 2] = image[(image.properties().height - 1 - _y*worm_window.pre_gl_downsample) ][_x*worm_window.pre_gl_downsample];
+		for (int _y = 0; _y < new_prop.height; _y++) {
+			for (unsigned int _x = 0; _x < new_prop.width; _x++){
+				worm_window.gl_buffer [worm_window.gl_buffer_properties.width *3*_y + 3*_x + 0] =
+				worm_window.gl_buffer [worm_window.gl_buffer_properties.width *3*_y + 3*_x + 1] =
+				worm_window.gl_buffer [worm_window.gl_buffer_properties.width *3*_y + 3*_x + 2] = image[(image.properties().height - 1 - _y*worm_window.pre_gl_downsample) ][_x*worm_window.pre_gl_downsample];
 			}
 		}		
 	}
-	//area_handler.draw_boxes(main_window.gl_buffer ,image.properties(),worm_window.pre_gl_downsample);
-
+	if (death_time_solo_annotater.telemetry.show()) {
+		try {
+			if (!death_time_solo_annotater.movement_quantification_data_loaded()) {
+				ns_acquire_lock_for_scope lock(persistant_sql_lock, __FILE__, __LINE__);
+				death_time_solo_annotater.load_movement_analysis(get_sql_connection());
+				lock.release();
+			}
+			death_time_solo_annotater.draw_telemetry(ns_vector_2i(new_prop.width, 0),
+				death_time_solo_annotater.telemetry.image_size(),
+				ns_vector_2i(worm_window.gl_buffer_properties.width,
+					worm_window.gl_buffer_properties.height),
+				worm_window.gl_buffer);
+		}
+		catch (ns_ex & ex) {
+			cout << ex.text();
+		}
+	}
+	
 	
 	//now we handle the gl scaling
-	if (worm_window.image_size.x*worm_window.display_rescale_factor > this->maximum_window_size.x ||
-		worm_window.image_size.y*worm_window.display_rescale_factor > this->maximum_window_size.y){
+	if (worm_window.gl_image_size.x*worm_window.display_rescale_factor > this->maximum_window_size.x ||
+		worm_window.gl_image_size.y*worm_window.display_rescale_factor > this->maximum_window_size.y){
 		cerr << "Cannot resize, as the current window has hit the maximum size specified in the ns_worm_browser.ini file\n";
-		worm_window.display_rescale_factor = floor(min(maximum_window_size.x/(double)worm_window.image_size.x,
-											           maximum_window_size.y/(double)worm_window.image_size.y)*10)/10;
+		worm_window.display_rescale_factor = floor(min(maximum_window_size.x/(double)worm_window.gl_image_size.x,
+											           maximum_window_size.y/(double)worm_window.gl_image_size.y)*10)/10;
+		cerr << worm_window.display_rescale_factor << " ";
 	}
 
 
@@ -6217,8 +6261,8 @@ void ns_worm_learner::draw_animation(const double &t){
 
 void ns_worm_learner::update_main_window_display(){
 
-	unsigned long	new_gl_image_pane_width = (main_window.image_size.x );
-	unsigned long	new_gl_image_pane_height =  (main_window.image_size.y);
+	unsigned long	new_gl_image_pane_width = (main_window.gl_image_size.x );
+	unsigned long	new_gl_image_pane_height =  (main_window.gl_image_size.y);
 
 	if (new_gl_image_pane_width == 0)
 		new_gl_image_pane_width = 100;
@@ -6238,8 +6282,8 @@ void ns_worm_learner::update_main_window_display(){
 	//else main_window.image_zoom = zoom_y;
 		
 
-	main_window.image_size.x = (unsigned int)(main_window.gl_buffer_properties.width * main_window.image_zoom);
-	main_window.image_size.y = (unsigned int)(main_window.gl_buffer_properties.height * main_window.image_zoom);
+	main_window.gl_image_size.x = (unsigned int)(main_window.gl_buffer_properties.width * main_window.image_zoom);
+	main_window.gl_image_size.y = (unsigned int)(main_window.gl_buffer_properties.height * main_window.image_zoom);
 	
 	//cerr << "To fit the new dimensions, the ideal window is changed to " << main_window.image_size.x << "x" << main_window.image_size.y<< "\n";
 	glPixelZoom(main_window.image_zoom*main_window.display_rescale_factor,main_window.image_zoom*main_window.display_rescale_factor);
@@ -6254,26 +6298,30 @@ void ns_worm_learner::update_main_window_display(){
 
 void ns_worm_learner::update_worm_window_display(){
 
-	unsigned long new_gl_image_pane_width = (worm_window.image_size.x);
-	unsigned long new_gl_image_pane_height =  (worm_window.image_size.y);
+	unsigned long new_gl_image_pane_width = (worm_window.gl_image_size.x);
+	unsigned long new_gl_image_pane_height =  (worm_window.gl_image_size.y);
 
 	if (new_gl_image_pane_width == 0)
 		new_gl_image_pane_width = 100;
 	if (new_gl_image_pane_height == 0)
 		new_gl_image_pane_height = 100;
-//	cerr << "worm_learner has received a request for " << window_width << "x" << window_height << "\n";
+
 	float zoom_x =(float)((float)new_gl_image_pane_width)/worm_window.gl_buffer_properties.width;
 	float zoom_y = (float)((float)new_gl_image_pane_height)/worm_window.gl_buffer_properties.height;
 	if (zoom_x < .01)
 		zoom_x = .01;
 	
 	ns_acquire_lock_for_scope lock(worm_window.display_lock,__FILE__,__LINE__);
-	//if (zoom_x < zoom_y)
-		worm_window.image_zoom = zoom_x;
-	//else worm_window.image_zoom = zoom_y;
-		
-	worm_window.image_size.x = (unsigned int)((worm_window.gl_buffer_properties.width * worm_window.image_zoom));
-	worm_window.image_size.y= (unsigned int)((worm_window.gl_buffer_properties.height * worm_window.image_zoom));
+
+	float cur_resize = (worm_window.gl_buffer_properties.width * worm_window.image_zoom) / (float)worm_window.gl_image_size.x;
+	
+	worm_window.image_zoom = zoom_x;
+	worm_window.gl_image_size.x = (unsigned int)((worm_window.gl_buffer_properties.width * worm_window.image_zoom));
+	worm_window.gl_image_size.y= (unsigned int)((worm_window.gl_buffer_properties.height * worm_window.image_zoom));
+
+	worm_window.worm_image_size = worm_window.worm_image_size*cur_resize;
+	worm_window.telemetry_size = worm_window.gl_image_size - worm_window.worm_image_size;
+
 	
 //	cerr << "update display needs to resize the worm image to " << worm_window.image_size << "\n";
 	//xxxx
@@ -6439,7 +6487,7 @@ void ns_death_time_posture_annotater::display_current_frame(){
 void ns_death_time_solo_posture_annotater::display_current_frame(){
 	refresh_requested_ = false;
 	//ns_acquire_lock_for_scope lock(image_buffer_access_lock,__FILE__,__LINE__);
-	worm_learner->draw_worm_window_image(-1,-1,*current_image.im,worm_learner->death_time_solo_annotater.dynamic_range_rescale_factor);
+	worm_learner->draw_worm_window_image(*current_image.im,worm_learner->death_time_solo_annotater.dynamic_range_rescale_factor);
 	//lock.release();
 }
 

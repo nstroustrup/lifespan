@@ -609,7 +609,7 @@ public:
 	ns_64_bit unique_process_id;
 	~ns_analyzed_image_time_path();
 	unsigned long number_of_elements_not_processed_correctly() const;
-	void denoise_movement_series(const ns_time_series_denoising_parameters &);
+	void denoise_movement_series(const unsigned long change_time_in_seconds,const ns_time_series_denoising_parameters &);
 
 	void find_first_labeled_stationary_timepoint() {
 		first_stationary_timepoint_ = 0;

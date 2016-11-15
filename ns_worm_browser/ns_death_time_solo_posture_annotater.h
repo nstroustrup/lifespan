@@ -9,6 +9,7 @@
 #include "ns_hidden_markov_model_posture_analyzer.h"
 #include <functional> 
 #include "ns_fl_modal_dialogs.h"
+#include "ns_animal_telemetry.h"
 void ns_hide_worm_window();
 
 void ns_specifiy_worm_details(const unsigned long region_info_id,const ns_stationary_path_id & worm, const ns_death_time_annotation & sticky_properties, std::vector<ns_death_time_annotation> & event_times);
@@ -22,13 +23,7 @@ public:
 	ns_time_path_image_movement_analyzer * movement_analyzer;
 	unsigned long element_id;
 	unsigned long group_id;
-	//returns true if a worm was picked and a change was made to the metadata
-	//const ns_movement_visualization_summary_entry * get_worm_at_visualization_position(const ns_vector_2i & c) const {
-	//	return &summary_entry;
-	//}
-	//ns_movement_visualization_summary_entry * get_worm_at_visualization_position(const ns_vector_2i & c){
-	//	return &summary_entry;
-	//}
+
 	enum {ns_movement_bar_height=15,ns_bottom_border_height_minus_hand_bars=115,ns_side_border_width=4, ns_minimum_width = 350};
 	
 	static int bottom_border_height(){return (int)ns_bottom_border_height_minus_hand_bars + ns_movement_bar_height*(int)ns_death_time_annotation::maximum_number_of_worms_at_position;}
@@ -71,145 +66,6 @@ public:
 	
 };
 
-struct ns_animal_list_at_position{
-	ns_stationary_path_id stationary_path_id;
-	typedef std::vector<ns_death_timing_data> ns_animal_list;  //positions can hold multiple animals
-	ns_animal_list animals;
-};
-
-class ns_death_time_posture_solo_annotater_region_data{
-public:
-	ns_death_time_posture_solo_annotater_region_data():movement_data_loaded(false),annotation_file("",""),loading_time(0),loaded_path_data_successfully(false){}
-	bool loaded_path_data_successfully;
-	void load_movement_analysis(const unsigned long region_id_,ns_sql & sql, const bool load_movement_quantification = false){
-		solution.load_from_db(region_id_,sql,true);
-		const ns_time_series_denoising_parameters time_series_denoising_parameters(ns_time_series_denoising_parameters::load_from_db(region_id_,sql));
-		ns_image_server::ns_posture_analysis_model_cache::const_handle_t handle;
-		image_server.get_posture_analysis_model_for_region(region_id_, handle, sql);
-		ns_acquire_for_scope<ns_analyzed_image_time_path_death_time_estimator> death_time_estimator(
-				ns_get_death_time_estimator_from_posture_analysis_model(handle().model_specification
-				));
-		handle.release();
-		loaded_path_data_successfully = movement_analyzer.load_completed_analysis(region_id_,solution,time_series_denoising_parameters,&death_time_estimator(),sql,!load_movement_quantification);
-		death_time_estimator.release();
-	}
-	void load_images_for_worm(const ns_stationary_path_id & path_id,const unsigned long number_of_images_to_load,ns_sql & sql){
-		const unsigned long current_time(ns_current_time());
-		const unsigned long max_number_of_cached_worms(2);
-		//don't allow more than 2 paths to be loaded (to prevent memory overflow). Delete animals that have been in the cache for longest.
-		if(image_loading_times_for_groups.size() >= max_number_of_cached_worms){
-			
-			//delete animals that are older than 5 minutes.
-			const unsigned long cutoff_time(current_time-5*60);
-			for (ns_loading_time_cache::iterator p = image_loading_times_for_groups.begin(); p != image_loading_times_for_groups.end(); ){
-				if (p->second < cutoff_time){
-					movement_analyzer.clear_images_for_group(p->first);
-					image_loading_times_for_groups.erase(p++);
-				}
-				else p++;
-			}
-			//delete younger ones if necissary
-			while (image_loading_times_for_groups.size() >= max_number_of_cached_worms){
-				ns_loading_time_cache::iterator youngest(image_loading_times_for_groups.begin());
-				for (ns_loading_time_cache::iterator p = image_loading_times_for_groups.begin(); p != image_loading_times_for_groups.end(); p++){
-					if (youngest->second > p->second)
-						youngest = p;
-				}
-				movement_analyzer.clear_images_for_group(youngest->first);
-				image_loading_times_for_groups.erase(youngest);
-			}
-		}
-		movement_analyzer.load_images_for_group(path_id.group_id,number_of_images_to_load,sql,false,false);
-		image_loading_times_for_groups[path_id.group_id] = current_time;
-	}	
-	void clear_images_for_worm(const ns_stationary_path_id & path_id){
-		movement_analyzer.clear_images_for_group(path_id.group_id);
-		ns_loading_time_cache::iterator p = image_loading_times_for_groups.find(path_id.group_id);
-		if (p != image_loading_times_for_groups.end())
-			image_loading_times_for_groups.erase(p);
-	}	
-
-	ns_time_path_image_movement_analyzer movement_analyzer;
-
-	std::vector<ns_animal_list_at_position> by_hand_timing_data; //organized by group.  that is movement_analyzer.group(4) is timing_data(4)
-	std::vector<ns_animal_list_at_position> machine_timing_data; //organized by group.  that is movement_analyzer.group(4) is timing_data(4)
-	std::vector<ns_death_time_annotation> orphaned_events;
-	ns_region_metadata metadata;
-	
-	//group id,time of loading
-	typedef std::map<long,unsigned long> ns_loading_time_cache;
-	ns_loading_time_cache image_loading_times_for_groups;
-
-	mutable ns_image_server_results_file annotation_file;
-	unsigned long loading_time;
-	bool load_annotations(ns_sql & sql, const bool load_by_hand=true){
-		orphaned_events.resize(0);
-		ns_timing_data_and_death_time_annotation_matcher <std::vector<ns_animal_list_at_position> > matcher;
-		bool could_load_by_hand(false);
-		if (load_by_hand){
-			//load by hand annotations
-			ns_acquire_for_scope<std::istream> in(annotation_file.input());
-			if (!in.is_null()){
-				ns_death_time_annotation_set set;
-				set.read(ns_death_time_annotation_set::ns_all_annotations,in());
-			
-				std::string error_message;
-				if (matcher.load_timing_data_from_set(set,false,by_hand_timing_data,orphaned_events,error_message)){
-					if (error_message.size() != 0){
-						ns_update_information_bar(error_message);
-						could_load_by_hand = true;
-					}
-
-				}
-			}
-		}
-
-		//load machine annotations
-		ns_machine_analysis_data_loader machine_annotations;
-		machine_annotations.load(ns_death_time_annotation_set::ns_censoring_and_movement_transitions,metadata.region_id,0,0,sql,true);
-		if (machine_annotations.samples.size() != 0 && machine_annotations.samples.begin()->regions.size() != 0){
-			std::vector<ns_death_time_annotation> _unused_orphaned_events;
-			std::string _unused_error_message;
-			matcher.load_timing_data_from_set(machine_annotations.samples.begin()->regions.begin()->death_time_annotation_set,true,
-				machine_timing_data,_unused_orphaned_events,_unused_error_message);
-			
-			return true;
-		}
-
-		
-	
-		return could_load_by_hand;
-	}
-	void add_annotations_to_set(ns_death_time_annotation_set & set, std::vector<ns_death_time_annotation> & orphaned_events){
-		ns_death_time_annotation_set t_set;
-		std::vector<ns_death_time_annotation> t_orphaned_events;
-		ns_timing_data_and_death_time_annotation_matcher<std::vector<ns_death_timing_data> > matcher;
-		for (unsigned int i = 0; i < by_hand_timing_data.size(); i++)
-			matcher.save_death_timing_data_to_set(by_hand_timing_data[i].animals,t_orphaned_events,t_set, false);
-		orphaned_events.insert(orphaned_events.end(),t_orphaned_events.begin(),t_orphaned_events.end());
-		set.add(t_set);
-	}
-
-	void save_annotations(const ns_death_time_annotation_set & extra_annotations) const{
-		throw ns_ex("The solo posture annotations should be mixed in with storyboard annotations!");
-		ns_death_time_annotation_set set;
-		
-
-		ns_acquire_for_scope<std::ostream> out(annotation_file.output());
-		if (out.is_null())
-			throw ns_ex("Could not open output file.");
-		set.write(out());
-		out.release();
-	//	ns_update_information_bar(ns_to_string(set.events.size()) + " events saved at " + ns_format_time_string_for_human(ns_current_time()));
-	//	saved_=true;
-	};
-private:
-	ns_time_path_solution solution;
-	bool movement_data_loaded;
-};
-
-
-
 
 class ns_death_time_posture_solo_annotater_data_cache{
 	
@@ -221,7 +77,7 @@ public:
 	void clear(){
 		region_movement_data.clear();
 	}
-	ns_death_time_posture_solo_annotater_region_data * get_region_movement_data(const unsigned int region_id,ns_sql & sql){
+	ns_death_time_posture_solo_annotater_region_data * get_region_movement_data(const unsigned int region_id,ns_sql & sql,bool load_movement_quantification_data){
 		ns_movement_data_list::iterator p = region_movement_data.find(region_id);
 		if (p == region_movement_data.end()){
 			unsigned long current_time(ns_current_time());
@@ -262,7 +118,7 @@ public:
 				p->second.annotation_file = image_server.results_storage.hand_curated_death_times(sub,sql);
 				//this will work even if no path data can be loaded, but 
 				//p->loaded_path_data_successfully will be set to false
-				p->second.load_movement_analysis(region_id,sql);
+				p->second.load_movement_analysis(region_id,sql, load_movement_quantification_data);
 				
 				p->second.by_hand_timing_data.resize(p->second.movement_analyzer.size());
 				p->second.machine_timing_data.resize(p->second.movement_analyzer.size());
@@ -340,7 +196,6 @@ void ns_crop_time(const ns_time_path_limits & limits, const ns_death_time_annota
 class ns_worm_learner;
 class ns_death_time_solo_posture_annotater : public ns_image_series_annotater{
 private:
-
 	std::vector<ns_death_time_solo_posture_annotater_timepoint> timepoints;
 	static ns_death_time_posture_solo_annotater_data_cache data_cache;
 	ns_death_time_posture_solo_annotater_region_data * current_region_data;
@@ -527,7 +382,8 @@ private:
 
 	mutable bool saved_;
 public:
-	
+
+	ns_animal_telemetry telemetry;
 	typedef enum {ns_none,ns_forward, ns_back, ns_fast_forward, ns_fast_back,ns_stop,ns_save,ns_rewind_to_zero,ns_write_quantification_to_disk,ns_number_of_annotater_actions} ns_image_series_annotater_action;
 
 	void clear_cache(){
@@ -635,6 +491,9 @@ public:
 			current_timepoint_id++;
 
 	}
+	void draw_telemetry(const ns_vector_2i & position, const ns_vector_2i & graph_size, const ns_vector_2i & buffer_size, ns_8_bit * buffer) {
+		telemetry.draw(current_timepoint_id,  position, graph_size, buffer_size, buffer);
+	}
 
 	void load_worm(const unsigned long region_info_id_, const ns_stationary_path_id & worm, const unsigned long current_time,const ns_experiment_storyboard  * storyboard,ns_worm_learner * worm_learner_,ns_sql & sql){
 		stop_fast_movement();
@@ -655,7 +514,7 @@ public:
 			properties_for_all_animals.region_info_id = region_info_id_;
 			//get movement information for current worm
 			try{
-				current_region_data = data_cache.get_region_movement_data(region_info_id_,sql);
+				current_region_data = data_cache.get_region_movement_data(region_info_id_,sql,telemetry.show());
 			}
 			catch(...){
 				metadata.load_from_db(region_info_id_,"",sql);
@@ -672,6 +531,8 @@ public:
 				throw ns_ex("The specified group has multiple paths! This should be impossible");
 			current_worm = &current_region_data->movement_analyzer[worm.group_id].paths[worm.path_id];
 			current_animal_id = 0;
+			telemetry.set_current_animal(worm.group_id, current_region_data);
+
 
 		//	if (current_region_data->by_hand_timing_data[worm.group_id].animals.size() == 0)
 		//		cerr << "WHA";
@@ -738,14 +599,7 @@ public:
 
 
 			//allocate image buffer
-			if (previous_images.size() != max_buffer_size || next_images.size() != max_buffer_size){
-				previous_images.resize(max_buffer_size);
-				next_images.resize(max_buffer_size);
-				for (unsigned int i = 0; i < max_buffer_size; i++){
-					previous_images[i].im = new ns_image_standard();
-					next_images[i].im = new ns_image_standard();
-				}
-			}
+			
 			if (current_image.im == 0)
 				current_image.im = new ns_image_standard();
 
@@ -755,6 +609,18 @@ public:
 			{
 				ns_image_standard temp_buffer;
 				timepoints[current_timepoint_id].load_image(1024,current_image,sql,temp_buffer,1);
+			}
+			if (previous_images.size() != max_buffer_size || next_images.size() != max_buffer_size) {
+				previous_images.resize(max_buffer_size);
+				next_images.resize(max_buffer_size);
+				for (unsigned int i = 0; i < max_buffer_size; i++) {
+					previous_images[i].im = new ns_image_standard();
+					next_images[i].im = new ns_image_standard();
+				}
+				for (unsigned int i = 0; i < max_buffer_size; i++) 
+					previous_images[i].im->init(current_image.im->properties());
+				for (unsigned int i = 0; i < max_buffer_size; i++)
+					next_images[i].im->init(current_image.im->properties());
 			}
 			draw_metadata(&timepoints[current_timepoint_id],*current_image.im);
 			
@@ -796,6 +662,16 @@ public:
 			ret+='0';
 		}
 		return ret+str;
+	}
+	bool movement_quantification_data_loaded() {
+		if (current_region_data == 0)
+			return false;
+		return current_region_data->movement_quantification_data_is_loaded();
+	}
+	void load_movement_analysis(ns_sql & sql) {
+		if (current_region_data == 0)
+			return;
+		current_region_data->load_movement_analysis(current_region_data->metadata.region_id, sql, true);
 	}
 	void output_worm_frames(const string &base_dir,const std::string & filename, ns_sql & sql){
 		const string bd(base_dir);

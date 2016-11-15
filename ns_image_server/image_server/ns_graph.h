@@ -86,6 +86,7 @@ struct ns_graph_object{
 * tick_intervals[2-3]: major and minor tick size of y axis
 */
 struct ns_graph_axes{
+	typedef enum{ns_at_zero,ns_at_min_value,ns_at_max_value} ns_axes_position;
 	ns_graph_axes(){
 		_boundaries[0] = 0;
 		_boundaries[1] = 0;
@@ -105,8 +106,9 @@ struct ns_graph_axes{
 		_tick_interval_specified[3] = false;
 		_axis_offset[0] = 0;
 		_axis_offset[1] = 0;
+		axis_position[0] = axis_position[1] = ns_at_min_value;
 	}
-
+	ns_axes_position axis_position[2];
 	inline double & operator[] (const unsigned int & i){return boundary(i);}
 
 	inline double & boundary(const unsigned int & i){
@@ -184,7 +186,7 @@ public:
 	int  check_input_data();
 
 	///generates a graph of all data specified in contents
-	void draw(ns_image_standard & image);
+	ns_graph_specifics draw(ns_image_standard & image);
 	void draw(std::string & svg_output);
 	void draw(std::ostream & svg_output);
 	void draw(ns_svg & svg_output);

@@ -661,9 +661,11 @@ public:
 	void save_movement_image(const ns_analyzed_time_image_chunk & chunk, ns_image_storage_reciever_handle<ns_8_bit> & out, const bool only_write_backwards_frames);
 	void save_movement_flow_image(const ns_analyzed_time_image_chunk & chunk, ns_image_storage_reciever_handle<float> & flow_out, const bool only_write_backwards_frames);
 	typedef enum { ns_save_simple, ns_save_flow, ns_save_both } ns_images_to_save;
-	void save_movement_images(const ns_analyzed_time_image_chunk & chunk,ns_sql & sql, const ns_images_to_save & images_to_save,const bool only_write_backwards_frames);
+	typedef enum{ns_only_output_backwards_images,ns_output_all_images} ns_backwards_image_handling;
+	typedef enum { ns_local_0, ns_local_1, ns_long_term } ns_output_location;
+	void save_movement_images(const ns_analyzed_time_image_chunk & chunk,ns_sql & sql, const ns_images_to_save & images_to_save,const ns_backwards_image_handling & backwards_image_handling,const ns_output_location & output_location);
 	void reset_movement_image_saving();
-	std::string volatile_storage_name(const bool flow) const;
+	std::string volatile_storage_name(const unsigned long & rep_id, const bool flow) const;
 	void calc_flow_images_from_registered_images(const ns_analyzed_time_image_chunk & chunk);
 
 	static ns_vector_2d maximum_alignment_offset(){return ns_vector_2d(60,60);}

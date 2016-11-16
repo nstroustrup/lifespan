@@ -564,10 +564,10 @@ void ns_time_path_image_movement_analyzer::run_group_for_current_backwards_round
 		groups[i].paths[j].calculate_movement_images(registration_chunk);
 		ns_acquire_lock_for_scope sql_lock(shared_state->sql_lock, __FILE__, __LINE__);
 #ifdef NS_CALCULATE_OPTICAL_FLOW
-		groups[i].paths[j].save_movement_images(registration_chunk, *shared_state->sql, ns_analyzed_image_time_path::ns_save_both, true);
+		groups[i].paths[j].save_movement_images(registration_chunk, *shared_state->sql, ns_analyzed_image_time_path::ns_save_both, ns_analyzed_image_time_path::ns_only_output_backwards_images, ns_analyzed_image_time_path::ns_local_0);
 
 #else
-		groups[i].paths[j].save_movement_images(registration_chunk, *shared_state->sql, ns_analyzed_image_time_path::ns_save_simple, true);
+		groups[i].paths[j].save_movement_images(registration_chunk, *shared_state->sql, ns_analyzed_image_time_path::ns_save_simple, ns_analyzed_image_time_path::ns_only_output_backwards_images,ns_analyzed_image_time_path::ns_local_0);
 #endif
 		sql_lock.release();
 	}
@@ -590,10 +590,10 @@ void ns_time_path_image_movement_analyzer::run_group_for_current_backwards_round
 		groups[i].paths[j].calculate_movement_images(registration_chunk);
 		ns_acquire_lock_for_scope sql_lock(shared_state->sql_lock, __FILE__, __LINE__);
 #ifdef NS_CALCULATE_OPTICAL_FLOW
-		groups[i].paths[j].save_movement_images(registration_chunk, *shared_state->sql, ns_analyzed_image_time_path::ns_save_both, true);
+		groups[i].paths[j].save_movement_images(registration_chunk, *shared_state->sql, ns_analyzed_image_time_path::ns_save_both, ns_analyzed_image_time_path::ns_only_output_backwards_images, ns_analyzed_image_time_path::ns_local_0);
 		ns_safe_delete(groups[i].paths[j].flow);
 #else
-		groups[i].paths[j].save_movement_images(registration_chunk, *shared_state->sql, ns_analyzed_image_time_path::ns_save_simple, true);
+		groups[i].paths[j].save_movement_images(registration_chunk, *shared_state->sql, ns_analyzed_image_time_path::ns_save_simple, ns_analyzed_image_time_path::ns_only_output_backwards_images, ns_analyzed_image_time_path::ns_local_0);
 #endif
 		sql_lock.release();
 
@@ -671,9 +671,9 @@ void ns_time_path_image_movement_analyzer::run_group_for_current_forwards_round(
 	{
 		ns_acquire_lock_for_scope sql_lock(shared_state->sql_lock, __FILE__, __LINE__);
 #ifdef NS_CALCULATE_OPTICAL_FLOW
-		groups[i].paths[j].save_movement_images(chunk, *shared_state->sql, ns_analyzed_image_time_path::ns_save_both, false);
+		groups[i].paths[j].save_movement_images(chunk, *shared_state->sql, ns_analyzed_image_time_path::ns_save_both, ns_analyzed_image_time_path::ns_output_all_images, ns_analyzed_image_time_path::ns_local_1);
 #else
-		groups[i].paths[j].save_movement_images(chunk, *shared_state->sql, ns_analyzed_image_time_path::ns_save_simple, false);
+		groups[i].paths[j].save_movement_images(chunk, *shared_state->sql, ns_analyzed_image_time_path::ns_save_simple, ns_analyzed_image_time_path::ns_output_all_images, ns_analyzed_image_time_path::ns_local_1);
 #endif
 		sql_lock.release();
 	}
@@ -970,7 +970,7 @@ void ns_time_path_image_movement_analyzer::process_raw_images(const ns_64_bit re
 				//since we have been registered images backwards in time, we've been writing everything in reverse order to the local disk.
 				//So, now we need to reload everything back in, reverse the order so that the earliest frame is first, and then 
 				//write it all out to long term storage. 
-				image_server_const.add_subtext_to_current_event(ns_image_server_event("\nTransfering current results to long term storage..."), write_status_to_db ? &sql : 0);
+				image_server_const.add_subtext_to_current_event(ns_image_server_event("\nReversing backwards image..."), write_status_to_db ? &sql : 0);
 				unsigned long debug_count(0);
 				for (unsigned int i = start_group; i < stop_group; i++) {
 					for (unsigned int j = 0; j < groups[i].paths.size(); j++) {
@@ -984,7 +984,7 @@ void ns_time_path_image_movement_analyzer::process_raw_images(const ns_64_bit re
 						if (groups[i].paths[j].first_stationary_timepoint() == 0)
 							continue;
 
-						ns_image_storage_source_handle<ns_8_bit> storage(image_server_const.image_storage.request_from_local_cache(groups[i].paths[j].volatile_storage_name(false), false));
+						ns_image_storage_source_handle<ns_8_bit> storage(image_server_const.image_storage.request_from_local_cache(groups[i].paths[j].volatile_storage_name(0,false), false));
 #ifdef NS_CALCULATE_OPTICAL_FLOW
 						ns_image_storage_source_handle<float> flow_storage(image_server_const.image_storage.request_from_local_cache_float(groups[i].paths[j].volatile_storage_name(true), false));
 						groups[i].paths[j].initialize_movement_image_loading(storage, flow_storage, true);
@@ -1002,8 +1002,8 @@ void ns_time_path_image_movement_analyzer::process_raw_images(const ns_64_bit re
 						groups[i].paths[j].load_movement_images_no_flow(chunk, storage);
 #endif
 						groups[i].paths[j].end_movement_image_loading();
-						image_server_const.image_storage.delete_from_local_cache(groups[i].paths[j].volatile_storage_name(true));
-						image_server_const.image_storage.delete_from_local_cache(groups[i].paths[j].volatile_storage_name(false));
+						image_server_const.image_storage.delete_from_local_cache(groups[i].paths[j].volatile_storage_name(0,true));
+						image_server_const.image_storage.delete_from_local_cache(groups[i].paths[j].volatile_storage_name(0,false));
 
 						//reverse order;
 						ns_registered_image_set * tmp;
@@ -1018,7 +1018,7 @@ void ns_time_path_image_movement_analyzer::process_raw_images(const ns_64_bit re
 #ifdef NS_CALCULATE_OPTICAL_FLOW
 						groups[i].paths[j].save_movement_images(chunk, sql, ns_analyzed_image_time_path::ns_save_both, false);
 #else
-						groups[i].paths[j].save_movement_images(chunk, sql, ns_analyzed_image_time_path::ns_save_simple, false);
+						groups[i].paths[j].save_movement_images(chunk, sql, ns_analyzed_image_time_path::ns_save_simple,ns_analyzed_image_time_path::ns_output_all_images, ns_analyzed_image_time_path::ns_local_1);
 #endif
 						//we leave the image saving buffers open as we'll continue writing to them while moving forward.
 	//					groups[i].paths[j].reset_movement_image_saving();
@@ -1035,9 +1035,9 @@ void ns_time_path_image_movement_analyzer::process_raw_images(const ns_64_bit re
 
 				//OK; we've finished the backwards registration.
 				//Now we go ahead and work forwards.
-				//Running forwards is done essentially in the same way as running backwards,
-				//the only difference being we don't need to cache locally to disk and can
-				//write straight out to long term storage.
+				//Running forwards is done essentially in the same way as running backwards
+				//we're again caching to disk because we need to load everything in one final time
+				//to calculate the stablizized worm region
 
 				for (unsigned int i = 0; i < groups.size(); i++)
 					shared_state.path_reset[i] = 0;
@@ -1116,23 +1116,29 @@ void ns_time_path_image_movement_analyzer::process_raw_images(const ns_64_bit re
 		}
 		thread_pool.shutdown();
 
-
+		image_server_const.add_subtext_to_current_event(ns_image_server_event("\nStabilizing regions of focus..."), (write_status_to_db ? (&sql) : 0));
 		ns_image_whole<unsigned long> temp_storage;
 		temp_storage.use_more_memory_to_avoid_reallocations();
 		//now we need to calculate the stablized worm area.
 		for (unsigned int i = 0; i < groups.size(); i++) {
 			for (unsigned int j = 0; j < groups[i].paths.size(); j++) {
+			
+				image_server_const.add_subtext_to_current_event(ns_to_string((100*i)/groups.size()))+"%...", (write_status_to_db ? (&sql) : 0));
 
 				//load all images
 				ns_analyzed_time_image_chunk chunk;
 				chunk.start_i = 0;
 				chunk.stop_i = groups[i].paths[j].element_count();
-				ns_image_storage_source_handle<ns_image_storage_handler::ns_component>  in(image_server_const.image_storage.request_from_storage(groups[i].paths[j].output_image, &sql));
+				//ns_image_storage_source_handle<ns_image_storage_handler::ns_component>  in(image_server_const.image_storage.request_from_storage(groups[i].paths[j].output_image, &sql));		
+				ns_image_storage_source_handle<ns_8_bit> in(image_server_const.image_storage.request_from_local_cache(groups[i].paths[j].volatile_storage_name(1, false), false));
+				groups[i].paths[j].initialize_movement_image_loading_no_flow(in, false);
+
+
 				groups[i].paths[j].load_movement_images_no_flow(chunk, in);
 				in.clear();
 				//calculate stabilized threshold
 				groups[i].paths[j].calculate_stabilized_worm_neighborhood(temp_storage);
-				groups[i].paths[j].save_movement_images(chunk, sql, ns_analyzed_image_time_path::ns_save_simple, false);
+				groups[i].paths[j].save_movement_images(chunk, sql, ns_analyzed_image_time_path::ns_save_simple, ns_analyzed_image_time_path::ns_output_all_images, ns_analyzed_image_time_path::ns_long_term);
 
 				if (ns_skip_low_density_paths && groups[i].paths[j].is_low_density_path())
 					continue;
@@ -4505,6 +4511,30 @@ void ns_analyzed_image_time_path::calculate_movement_images(const ns_analyzed_ti
 		calculate_flow(i);
 		#endif
 
+		float histogram_matching_factors[256];
+		if (first_frames) {
+			for (unsigned int i = 0; i < 256; i++)
+				histogram_matching_factors[i] = i;
+		}
+		else {
+			ns_histogram<unsigned int, ns_8_bit> h1(elements[i].registered_images->image.histogram());
+			ns_histogram<unsigned int, ns_8_bit> h2(elements[i - dt].registered_images->image.histogram());
+			long cdf1[256], cdf2[256];
+			cdf1[0] = h1[0];
+			for (unsigned int i = 1; i < 256; i++)	cdf1[i] = h1[i] + cdf1[i - 1];
+			cdf2[0] = h2[0];
+			for (unsigned int i = 1; i < 256; i++)	cdf2[i] = h2[i] + cdf2[i - 1];
+			int cur_v(0);
+			for (int i = 0; i < 256; i++) {
+				while (cdf1[cur_v] < cdf2[i])
+					cur_v++;
+				if (cur_v == 0) histogram_matching_factors[i] = 0;
+				if (cdf1[cur_v] - cdf2[i] < cdf2[i] - cdf1[cur_v - 1])
+					histogram_matching_factors[i] = cur_v;
+				else histogram_matching_factors[i] = cur_v - 1;
+			}
+		}
+
 		//now we generate the movement image
 		const ns_vector_2d v1(first_frames ? ns_vector_2d(0, 0) : elements[i - dt].registration_offset);
 		
@@ -4540,7 +4570,7 @@ void ns_analyzed_image_time_path::calculate_movement_images(const ns_analyzed_ti
 					for (long dy = -n; dy <= n; dy++) {
 						for (long dx = -n; dx <= n; dx++) {
 							float d(elements[i].registered_images->image[y][x]
-								- elements[i - dt].registered_images->image[y][x]);
+								- histogram_matching_factors[elements[i - dt].registered_images->image[y][x]]);
 							d_numerator += d;
 						}
 					}
@@ -5151,10 +5181,10 @@ void ns_movement_image_collage_info::from_path(const ns_analyzed_image_time_path
 //			prop.width << "x" << prop.height << "\n";
 }
 
-std::string ns_analyzed_image_time_path::volatile_storage_name(const bool flow) const {
-	return std::string("path_") + ns_to_string(this->region_info_id) + "_"
-		+ ns_to_string(this->group_id) + "_"
-		+ ns_to_string(this->path_id) + "_" + (flow?"flow":"im") + "_" + ns_to_string(unique_process_id) + ".tif";
+std::string ns_analyzed_image_time_path::volatile_storage_name(const unsigned long &rep_id,const bool flow) const {
+	return std::string("path_") + ns_to_string(this->region_info_id) + "="
+		+ ns_to_string(this->group_id) + "="
+		+ ns_to_string(this->path_id) + "=" + (flow?"flow":"im") + "=" + ns_to_string(rep_id) + "=" + ns_to_string(unique_process_id) + ".tif";
 }
 void ns_analyzed_image_time_path::reset_movement_image_saving() {
 	ns_safe_delete(output_reciever);
@@ -5162,7 +5192,7 @@ void ns_analyzed_image_time_path::reset_movement_image_saving() {
 	save_flow_image_buffer.resize(ns_image_stream_buffer_properties(0, 0));
 	save_image_buffer.resize(ns_image_stream_buffer_properties(0, 0));
 }
-void ns_analyzed_image_time_path::save_movement_images(const ns_analyzed_time_image_chunk & chunk, ns_sql & sql, const ns_images_to_save & images_to_save, const bool only_write_backwards_frames) {
+void ns_analyzed_image_time_path::save_movement_images(const ns_analyzed_time_image_chunk & chunk, ns_sql & sql, const ns_images_to_save & images_to_save, const ns_backwards_image_handling & backwards_image_handling, const ns_output_location & output_location){
 	const bool save_image(images_to_save == ns_save_simple || images_to_save == ns_save_both),
 			   save_flow_image(images_to_save == ns_save_flow || images_to_save == ns_save_both);
 	#ifndef NS_CALCULATE_OPTICAL_FLOW
@@ -5171,28 +5201,26 @@ void ns_analyzed_image_time_path::save_movement_images(const ns_analyzed_time_im
 	#endif
 	//handle small or non-existant images
 	unsigned long number_of_frames_to_write(0);
-	if (only_write_backwards_frames)
+	if (backwards_image_handling == ns_only_output_backwards_images)
 		number_of_frames_to_write = this->first_stationary_timepoint();
 
 	ns_movement_image_collage_info d(this, number_of_frames_to_write);
 	bool first_write(output_reciever == 0 && flow_output_reciever == 0);
 	bool had_to_use_volatile_storage;
 	if (first_write) {
-		if (!only_write_backwards_frames) {
-		//	cerr << "Opening path" << this->group_id << " in long term storage." << "\n";
-			//save final images in long term storage
+		if (output_location == ns_local_0 || output_location == ns_local_1) {
+			int round_id = (output_location == ns_local_0) ? 0 : 1;
+			//	cerr << "Opening path" << this->group_id << " in volatile storage: " << volatile_storage_name(false) << "\n";
+			if (save_image)
+				output_reciever = new ns_image_storage_reciever_handle<ns_8_bit>(image_server_const.image_storage.request_local_cache_storage(volatile_storage_name(round_id, false), ns_tiff_lzw, save_output_buffer_height, false));
+			if (save_flow_image)
+				flow_output_reciever = new ns_image_storage_reciever_handle<float>(image_server_const.image_storage.request_local_cache_storage_float(volatile_storage_name(round_id, true), ns_tiff_zip, save_output_buffer_height, false));
+		}
+		else {
 			if (save_image)
 				output_reciever = new ns_image_storage_reciever_handle<ns_8_bit>(image_server_const.image_storage.request_storage(output_image, ns_tiff_lzw, save_output_buffer_height, &sql, had_to_use_volatile_storage, false, false));
 			if (save_flow_image)
 				flow_output_reciever = new ns_image_storage_reciever_handle<float>(image_server_const.image_storage.request_storage_float(flow_output_image, ns_tiff_zip, save_output_buffer_height, &sql, had_to_use_volatile_storage, false, false));
-		}
-		else {
-
-		//	cerr << "Opening path" << this->group_id << " in volatile storage: " << volatile_storage_name(false) << "\n";
-			if (save_image)
-				output_reciever = new ns_image_storage_reciever_handle<ns_8_bit>(image_server_const.image_storage.request_local_cache_storage(volatile_storage_name(false), ns_tiff_lzw, save_output_buffer_height, false));
-			if (save_flow_image)
-				flow_output_reciever = new ns_image_storage_reciever_handle<float>(image_server_const.image_storage.request_local_cache_storage_float(volatile_storage_name(true), ns_tiff_zip, save_output_buffer_height, false));
 		}
 	}
 	//write out a dummy image if there are no frames in the path.
@@ -5218,8 +5246,8 @@ void ns_analyzed_image_time_path::save_movement_images(const ns_analyzed_time_im
 		if (save_flow_image)	flow_output_reciever->output_stream().init(d.prop);
 	}
 
-	if (save_image ) save_movement_image(chunk, *output_reciever,only_write_backwards_frames);
-	if (save_flow_image) save_movement_flow_image(chunk, *flow_output_reciever, only_write_backwards_frames);
+	if (save_image ) save_movement_image(chunk, *output_reciever, backwards_image_handling== ns_only_output_backwards_images);
+	if (save_flow_image) save_movement_flow_image(chunk, *flow_output_reciever, backwards_image_handling == ns_only_output_backwards_images);
 
 	if (chunk.stop_i == elements.size()) {
 		if (save_image) {
@@ -5878,14 +5906,14 @@ void ns_time_path_image_movement_analyzer::reanalyze_stored_aligned_images(const
 						groups[i].paths[j].load_movement_images_no_flow(chunk, storage);
 						if (flow_handling_approach == ns_create) {
 							groups[i].paths[j].calc_flow_images_from_registered_images(chunk);
-							groups[i].paths[j].save_movement_images(chunk, sql, ns_analyzed_image_time_path::ns_save_flow, false);
+							groups[i].paths[j].save_movement_images(chunk, sql, ns_analyzed_image_time_path::ns_save_flow, ns_analyzed_image_time_path::ns_output_all_images, ns_analyzed_image_time_path::ns_long_term);
 						}
 					}
 					else {
 						groups[i].paths[j].load_movement_images(chunk, storage,flow_storage);
 					}
 					groups[i].paths[j].calculate_stabilized_worm_neighborhood(temp_storage);
-					groups[i].paths[j].save_movement_images(chunk, sql, ns_analyzed_image_time_path::ns_save_simple, false);
+					groups[i].paths[j].save_movement_images(chunk, sql, ns_analyzed_image_time_path::ns_save_simple, ns_analyzed_image_time_path::ns_output_all_images, ns_analyzed_image_time_path::ns_long_term);
 
 					groups[i].paths[j].quantify_movement(chunk);
 					/*unsigned long start(chunk.start_i);

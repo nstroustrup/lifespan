@@ -2523,8 +2523,6 @@ ns_64_bit ns_image_server::register_server_event(const ns_image_server_event & s
 
 			ns_acquire_lock_for_scope lock(server_event_lock, __FILE__, __LINE__);
 			if (s_event.text().size() != 0){	
-
-				cerr <<"\n";
 				s_event.print(cerr);
 				cerr << "\n";
 			}

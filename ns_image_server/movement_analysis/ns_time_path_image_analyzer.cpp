@@ -931,7 +931,7 @@ void ns_time_path_image_movement_analyzer::process_raw_images(const ns_64_bit re
 					//output_allocation_state("bk",region_image_specifications.size() - 1 - t, debug_out);
 
 					if (debug_output_skip == number_of_repeats_required || t == 0 && current_round == 0) {
-						int r(100 * (region_image_specifications.size() - 1 - t + region_image_specifications.size()*current_round)) / (region_image_specifications.size()*number_of_repeats_required);
+						int r( (100 * (region_image_specifications.size() - 1 - t + region_image_specifications.size()*current_round)) / (region_image_specifications.size()*number_of_repeats_required) );
 						if (r >= last_r + 5) {
 							image_server_const.add_subtext_to_current_event(ns_to_string(r) + "%...", write_status_to_db ? &sql : 0);
 							last_r = r;
@@ -1004,13 +1004,13 @@ void ns_time_path_image_movement_analyzer::process_raw_images(const ns_64_bit re
 				//since we have been registered images backwards in time, we've been writing everything in reverse order to the local disk.
 				//So, now we need to reload everything back in, reverse the order so that the earliest frame is first, and then 
 				//write it all out to long term storage. 
-				image_server_const.add_subtext_to_current_event("\n", (write_status_to_db ? (&sql) : 0));
-				image_server_const.add_subtext_to_current_event(ns_image_server_event("Reversing backwards image..."), write_status_to_db ? &sql : 0);
+				//image_server_const.add_subtext_to_current_event("\n", (write_status_to_db ? (&sql) : 0));
+				//image_server_const.add_subtext_to_current_event(ns_image_server_event("Reversing backwards image..."), write_status_to_db ? &sql : 0);
 				unsigned long debug_count(0);
 				for (unsigned int i = start_group; i < stop_group; i++) {
 					for (unsigned int j = 0; j < groups[i].paths.size(); j++) {
-						if (i % 5 == 0)
-							image_server_const.add_subtext_to_current_event(ns_to_string((100 * i) / (stop_group - start_group)) + "%...", write_status_to_db ? &sql : 0);
+					//	if (i % 5 == 0)
+						//	image_server_const.add_subtext_to_current_event(ns_to_string((100 * i) / (stop_group - start_group)) + "%...", write_status_to_db ? &sql : 0);
 						//output_allocation_state("rev", debug_count, debug_out);
 						debug_count++;
 						if (ns_skip_low_density_paths && groups[i].paths[j].is_low_density_path())

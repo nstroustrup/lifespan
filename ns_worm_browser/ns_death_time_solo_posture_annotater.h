@@ -23,6 +23,7 @@ public:
 	ns_time_path_image_movement_analyzer * movement_analyzer;
 	unsigned long element_id;
 	unsigned long group_id;
+	ns_vector_2i image_pane_area;
 
 	enum {ns_movement_bar_height=15,ns_bottom_border_height_minus_hand_bars=115,ns_side_border_width=4, ns_minimum_width = 350};
 	
@@ -61,6 +62,8 @@ public:
 				(*im.im)[y][3*(x+ns_side_border_width)+2] = path_timepoint_element->image()[y][x];
 
 			}
+		image_pane_area.y = path_timepoint_element->image().properties().height;
+		image_pane_area.x = path_timepoint_element->image().properties().width;
 		im.loaded = true;
 	}
 	
@@ -231,14 +234,7 @@ private:
 		}
 	}
 	enum{bottom_offset=5};
-	ns_vector_2i bottom_margin_position(){
-		if (!current_worm->element(current_element_id()).registered_image_is_loaded()){
-			cerr << "No image is loaded for current element;";
-			return ns_vector_2i(0,0);
-		}
-		return ns_vector_2i(ns_death_time_solo_posture_annotater_timepoint::ns_side_border_width,
-		current_worm->element(current_element_id()).image().properties().height+bottom_offset);}
-
+	
 	void draw_metadata(ns_annotater_timepoint * tp_a,ns_image_standard & im){
 	//	cerr << resize_factor << "\n";	
 		//no image!  
@@ -392,32 +388,6 @@ public:
 		current_region_data = 0;
 		properties_for_all_animals = ns_death_time_annotation();
 	}
-/* // output_movement_quantification is never called anywhere...
-	void output_movement_quantification(){
-		throw ns_ex("DDData not loaded");
-		string filename(save_file_dialog("Save Movement Quantification",vector<dialog_file_type>(1,dialog_file_type("CSV","csv")),"csv","movement_quantification.csv"));
-		if (filename == "")
-			return;
-		ofstream o(filename.c_str());
-		if (o.fail())
-			throw ns_ex("Could not write to file ") << filename;
-		current_worm->write_detailed_movement_quantification_analysis_header(o);
-		current_worm->write_detailed_movement_quantification_analysis_data(current_region_data->metadata,properties_for_all_animals.stationary_path_id.group_id,properties_for_all_animals.stationary_path_id.path_id,o,false);
-		o.close();
-	}/*
-
-	/*bool step_forward(bool asynch=false){
-		const bool ret(ns_image_series_annotater::step_forward(asynch));
-		if (ret)
-			current_element_id++;
-		return ret;
-	}
-	bool step_back(bool asynch=false){	
-		const bool ret(ns_image_series_annotater::step_back(asynch));
-		if(ret)
-			current_element_id--;	
-		return ret;
-	}*/
 
 	inline ns_annotater_timepoint * timepoint(const unsigned long i){return &timepoints[i];}
 	inline unsigned long number_of_timepoints(){return timepoints.size();}
@@ -494,6 +464,16 @@ public:
 	void draw_telemetry(const ns_vector_2i & position, const ns_vector_2i & graph_size, const ns_vector_2i & buffer_size, ns_8_bit * buffer) {
 		telemetry.draw(current_timepoint_id,  position, graph_size, buffer_size, buffer);
 	}
+
+	ns_vector_2i bottom_margin_position() {
+		if (!current_worm->element(current_element_id()).registered_image_is_loaded()) {
+			cerr << "No image is loaded for current element;";
+			return ns_vector_2i(0, 0);
+		}
+		return ns_vector_2i(ns_death_time_solo_posture_annotater_timepoint::ns_side_border_width,
+			current_worm->element(current_element_id()).image().properties().height + bottom_offset);
+	}
+
 
 	void load_worm(const unsigned long region_info_id_, const ns_stationary_path_id & worm, const unsigned long current_time,const ns_experiment_storyboard  * storyboard,ns_worm_learner * worm_learner_,ns_sql & sql){
 		stop_fast_movement();

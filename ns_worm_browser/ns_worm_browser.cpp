@@ -5823,7 +5823,7 @@ void ns_worm_learner::draw_worm_window_image(ns_image_standard & image, const fl
 		if (r < gl_resize)
 			gl_resize = r;
 	}
-	//don't do this, because it ends up looking messy.
+	//don't do this, because it always ends up looking messy.
 	gl_resize = 1;
 
 	worm_window.telemetry_size = ns_vector_2i(
@@ -5855,29 +5855,32 @@ void ns_worm_learner::draw_worm_window_image(ns_image_standard & image, const fl
 		worm_window.gl_buffer_properties.width = buffer_size.x;
 		worm_window.gl_buffer_properties.height = buffer_size.y;
 	}
-
-	if (image.properties().components == 3){
-		for (int _y = 0; _y < new_prop.height; _y++) {
-		for (unsigned int _x = 0; _x < new_prop.width; _x++){
-				worm_window.gl_buffer [3*(worm_window.gl_buffer_properties.width*_y + _x) ] =
-					ns_rescale(image[(image.properties().height - 1 - _y*worm_window.pre_gl_downsample)][3*_x*worm_window.pre_gl_downsample],dynamic_range_rescale_factor);
-				worm_window.gl_buffer [3*(worm_window.gl_buffer_properties.width*_y + _x) +1] =
-					ns_rescale(image[(image.properties().height - 1 - _y*worm_window.pre_gl_downsample)][3*_x*worm_window.pre_gl_downsample+1],dynamic_range_rescale_factor);
-				worm_window.gl_buffer [3*(worm_window.gl_buffer_properties.width*_y + _x) +2 ] =
-					ns_rescale(image[(image.properties().height - 1 - _y*worm_window.pre_gl_downsample)][3*_x*worm_window.pre_gl_downsample+2],dynamic_range_rescale_factor);
+	if (image.properties().components == 3) {
+		for (int _y = 0; _y < new_prop.height- death_time_solo_annotater.bottom_margin_position().y; _y++) {
+			for (unsigned int _x = 0; _x < new_prop.width; _x++) {
+				worm_window.gl_buffer[3 * (worm_window.gl_buffer_properties.width*_y + _x)] =
+					image[(image.properties().height - 1 - _y*worm_window.pre_gl_downsample)][3 * _x*worm_window.pre_gl_downsample];
+				worm_window.gl_buffer[3 * (worm_window.gl_buffer_properties.width*_y + _x) + 1] =
+					image[(image.properties().height - 1 - _y*worm_window.pre_gl_downsample)][3 * _x*worm_window.pre_gl_downsample + 1];
+				worm_window.gl_buffer[3 * (worm_window.gl_buffer_properties.width*_y + _x) + 2] =
+					image[(image.properties().height - 1 - _y*worm_window.pre_gl_downsample)][3 * _x*worm_window.pre_gl_downsample + 2];
+			}
+		}
+		for (int _y = new_prop.height - death_time_solo_annotater.bottom_margin_position().y; _y < new_prop.height; _y++) {
+			for (unsigned int _x = 0; _x < new_prop.width; _x++) {
+				worm_window.gl_buffer[3 * (worm_window.gl_buffer_properties.width*_y + _x)] =
+					ns_rescale(image[(image.properties().height - 1 - _y*worm_window.pre_gl_downsample)][3 * _x*worm_window.pre_gl_downsample], dynamic_range_rescale_factor);
+				worm_window.gl_buffer[3 * (worm_window.gl_buffer_properties.width*_y + _x) + 1] =
+					ns_rescale(image[(image.properties().height - 1 - _y*worm_window.pre_gl_downsample)][3 * _x*worm_window.pre_gl_downsample + 1], dynamic_range_rescale_factor);
+				worm_window.gl_buffer[3 * (worm_window.gl_buffer_properties.width*_y + _x) + 2] =
+					ns_rescale(image[(image.properties().height - 1 - _y*worm_window.pre_gl_downsample)][3 * _x*worm_window.pre_gl_downsample + 2], dynamic_range_rescale_factor);
 			}
 		}
 	}
 
 	//b&w images
 	else if (image.properties().components == 1){
-		for (int _y = 0; _y < new_prop.height; _y++) {
-			for (unsigned int _x = 0; _x < new_prop.width; _x++){
-				worm_window.gl_buffer [worm_window.gl_buffer_properties.width *3*_y + 3*_x + 0] =
-				worm_window.gl_buffer [worm_window.gl_buffer_properties.width *3*_y + 3*_x + 1] =
-				worm_window.gl_buffer [worm_window.gl_buffer_properties.width *3*_y + 3*_x + 2] = image[(image.properties().height - 1 - _y*worm_window.pre_gl_downsample) ][_x*worm_window.pre_gl_downsample];
-			}
-		}		
+		throw ns_ex("Err!");
 	}
 	if (death_time_solo_annotater.telemetry.show()) {
 		try {

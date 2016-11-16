@@ -970,7 +970,8 @@ void ns_time_path_image_movement_analyzer::process_raw_images(const ns_64_bit re
 				//since we have been registered images backwards in time, we've been writing everything in reverse order to the local disk.
 				//So, now we need to reload everything back in, reverse the order so that the earliest frame is first, and then 
 				//write it all out to long term storage. 
-				image_server_const.add_subtext_to_current_event(ns_image_server_event("\nReversing backwards image..."), write_status_to_db ? &sql : 0);
+				image_server_const.add_subtext_to_current_event("\n", (write_status_to_db ? (&sql) : 0));
+				image_server_const.add_subtext_to_current_event(ns_image_server_event("Reversing backwards image..."), write_status_to_db ? &sql : 0);
 				unsigned long debug_count(0);
 				for (unsigned int i = start_group; i < stop_group; i++) {
 					for (unsigned int j = 0; j < groups[i].paths.size(); j++) {
@@ -1048,7 +1049,9 @@ void ns_time_path_image_movement_analyzer::process_raw_images(const ns_64_bit re
 						shared_state.chunk_generators[i][j].setup_first_chuck_for_forwards_registration();
 					}
 				}
-				image_server_const.add_subtext_to_current_event(ns_image_server_event("\nRunning forwards..."), (write_status_to_db ? (&sql) : 0));
+				image_server_const.add_subtext_to_current_event("\n", (write_status_to_db ? (&sql) : 0));
+
+				image_server_const.add_subtext_to_current_event(ns_image_server_event("Running forwards..."), (write_status_to_db ? (&sql) : 0));
 
 
 				for (unsigned int t = 0; t < region_image_specifications.size(); t += chunk_size) {
@@ -1116,14 +1119,15 @@ void ns_time_path_image_movement_analyzer::process_raw_images(const ns_64_bit re
 		}
 		thread_pool.shutdown();
 
-		image_server_const.add_subtext_to_current_event(ns_image_server_event("\nStabilizing regions of focus..."), (write_status_to_db ? (&sql) : 0));
+		image_server_const.add_subtext_to_current_event("\n", (write_status_to_db ? (&sql) : 0));
+		image_server_const.add_subtext_to_current_event(ns_image_server_event("Stabilizing regions of focus..."), (write_status_to_db ? (&sql) : 0));
 		ns_image_whole<unsigned long> temp_storage;
 		temp_storage.use_more_memory_to_avoid_reallocations();
 		//now we need to calculate the stablized worm area.
 		for (unsigned int i = 0; i < groups.size(); i++) {
 			for (unsigned int j = 0; j < groups[i].paths.size(); j++) {
 			
-				image_server_const.add_subtext_to_current_event(ns_to_string((100*i)/groups.size()))+"%...", (write_status_to_db ? (&sql) : 0));
+				image_server_const.add_subtext_to_current_event(ns_to_string((100*i)/groups.size())+"%...", (write_status_to_db ? (&sql) : 0));
 
 				//load all images
 				ns_analyzed_time_image_chunk chunk;
@@ -1183,8 +1187,9 @@ void ns_time_path_image_movement_analyzer::process_raw_images(const ns_64_bit re
 
 
 		mark_path_images_as_cached_in_db(region_id,sql);
-		movement_analyzed = true; 
-		image_server_const.add_subtext_to_current_event(ns_image_server_event("\nFinished."), (write_status_to_db ? (&sql) : 0));
+		movement_analyzed = true;
+		image_server_const.add_subtext_to_current_event("\n", (write_status_to_db ? (&sql) : 0));
+		image_server_const.add_subtext_to_current_event(ns_image_server_event("Finished."), (write_status_to_db ? (&sql) : 0));
 
 	}
 	catch(...){

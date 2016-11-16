@@ -196,16 +196,26 @@ class ns_animal_telemetry {
 		}
 
 		time_axes.x_label = "age (days)";
-		time_axes.properties.text.color = ns_color_8(0, 0, 0);
+		time_axes.properties.text.color = ns_color_8(255, 255, 255);
+		time_axes.properties.line.color = ns_color_8(255, 255, 255);
 		movement_vals.y_label = "Movement score";
-		movement_vals.properties.line.color = ns_color_8(0,0,0);
-		size_vals.properties.line.color = ns_color_8(0, 0, 255);
+		movement_vals.properties.text.color = ns_color_8(255, 255, 255);
+		movement_vals.properties.line.color = ns_color_8(255,255,255);
+		size_vals.properties.line.color = ns_color_8(125, 125, 255);
 		movement_vals.properties.line.draw = size_vals.properties.line.draw = true;
 		movement_vals.properties.line.width = size_vals.properties.line.width = 1;
 		movement_vals.properties.point.draw = size_vals.properties.point.draw = false;
+
+	
+		
 		graph.contents.push_back(movement_vals);
 		graph.contents.push_back(time_axes);
 		graph.contents.push_back(size_vals);
+
+		graph.x_axis_properties.line.color = graph.y_axis_properties.line.color = ns_color_8(255, 255, 255);
+		graph.x_axis_properties.text.color = graph.y_axis_properties.text.color = ns_color_8(255, 255, 255);
+		graph.x_axis_properties.text_size = graph.y_axis_properties.text_size = 10;
+		graph.area_properties.area_fill.color = ns_color_8(0, 0, 0);
 
 		ns_graph_axes axes;
 		axes.boundary(0) = floor( min_time / 6.0 / 60 / 24) / 10;
@@ -227,7 +237,7 @@ class ns_animal_telemetry {
 		y1 = base_graph.properties().height - graph_specifics.boundary.y - (unsigned int)(graph_specifics.dy*(y - graph_specifics.axes.boundary(2) + graph_specifics.axes.axis_offset(1)));
 	}
 	inline unsigned long map_pixel_from_image_onto_buffer(const unsigned long &x, const unsigned long &y, const ns_vector_2i &position, const ns_vector_2i &buffer_size) {
-		return 3 * ((buffer_size.y - y - position.y)*buffer_size.x + x + position.x);
+		return 3 * ((buffer_size.y - y - position.y-1)*buffer_size.x + x + position.x);
 	}
 	void overlay_metadata(const unsigned long current_element, const ns_vector_2i & position, const ns_vector_2i & buffer_size, ns_8_bit * buffer) {
 		unsigned long x_score, y_score, x_size, y_size;

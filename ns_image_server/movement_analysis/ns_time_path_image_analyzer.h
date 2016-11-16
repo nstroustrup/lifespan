@@ -897,7 +897,7 @@ private:
 
 	void run_group_for_current_backwards_round(unsigned int group_id, const unsigned int path_id, ns_time_path_image_movement_analyzer_thread_pool_persistant_data *,ns_movement_analysis_shared_state * shared_state);
 	void run_group_for_current_forwards_round(unsigned int group_id, unsigned int path_id, ns_time_path_image_movement_analyzer_thread_pool_persistant_data *,ns_movement_analysis_shared_state * shared_state);
-	
+	void calc_stabilized_worm_region_and_calc_stats(unsigned int group_id, unsigned int path_id, ns_time_path_image_movement_analyzer_thread_pool_persistant_data * persistant_data, ns_movement_analysis_shared_state * shared_state);
 	ns_stationary_path_id generate_stationary_path_id(const unsigned long group_id, const unsigned long path_id) const{
 		return ns_stationary_path_id(group_id,path_id,analysis_id);
 	}

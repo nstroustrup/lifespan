@@ -212,6 +212,9 @@ public:
 		}
 		threads.resize(0);
 		thread_idle_locks.resize(0);
+		thread_init_count = 0;
+		while(!jobs.empty())jobs.pop();
+		state = ns_uninitialized;
 		shutdown_ = false;
 	}
 

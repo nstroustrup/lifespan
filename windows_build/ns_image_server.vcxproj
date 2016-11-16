@@ -238,6 +238,7 @@
     <ClInclude Include="..\ns_image_server\image_processing\ns_detected_object.h" />
     <ClInclude Include="..\ns_image_server\image_processing\ns_detected_worm_info.h" />
     <ClInclude Include="..\ns_image_server\image_processing\ns_difference_thresholder.h" />
+    <ClInclude Include="..\ns_image_server\image_processing\ns_gaussian_pyramid.h" />
     <ClInclude Include="..\ns_image_server\image_processing\ns_identify_contiguous_bitmap_regions.h" />
     <ClInclude Include="..\ns_image_server\image_processing\ns_image_registration.h" />
     <ClInclude Include="..\ns_image_server\image_processing\ns_image_tools.h" />

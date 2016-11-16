@@ -520,6 +520,9 @@
     <ClInclude Include="..\ns_image_server\image_processing\ns_optical_flow.h">
       <Filter>image_processing</Filter>
     </ClInclude>
+    <ClInclude Include="..\ns_image_server\image_processing\ns_gaussian_pyramid.h">
+      <Filter>image_processing</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\ns_image_server\data_annotation\ns_death_time_annotation.cpp">

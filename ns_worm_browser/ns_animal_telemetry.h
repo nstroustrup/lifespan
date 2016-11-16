@@ -186,6 +186,8 @@ class ns_animal_telemetry {
 			//scale denoised movement score to a value between 1 and 2
 			//which on log scale becomes 0 and 1
 			movement_vals.y[i] = log((path->element(i).measurements.denoised_movement_score - min_score) / (max_score-min_score) + 1);
+			//we crop off scores at .4 and stretch again., as we never see anything useful above that.
+			movement_vals.y[i] *= 10 / 4;
 			if (movement_vals.y[i] < 0) movement_vals.y[i] = 0;
 			if (movement_vals.y[i] > 1) movement_vals.y[i] = 1;
 

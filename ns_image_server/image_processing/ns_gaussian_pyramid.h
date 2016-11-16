@@ -1,4 +1,5 @@
-#pragma once
+#ifndef NS_GAUSIAN_PYRAMID_H
+#define NS_GAUSIAN_PYRAMID_H
 #include "ns_subpixel_image_alignment.h"
 #include "ipp.h"
 #ifdef _MSC_VER
@@ -31,12 +32,20 @@ public:
 		clear();
 	}
 	finline Ipp32f &  val(const int & y, const int & x) { return buffer[y*line_step_in_pixels + x]; }
-	finline const Ipp32f & val(const int & y, const int & x) const { return buffer[y*line_step_in_pixels + x]; }
+	//finline 
+		const Ipp32f & val(const int & y, const int & x) const {
+		if (y < 0 || x < 0 ||
+			y > properties_.height ||x > properties_.width) { //OK because we allocate an extra pixel pad; see comment in init()
+			std::cerr << "ns_intel_image_32f::Out of bound access: (" << x << "," << y << ") [" << properties_.width << "," << properties_.height << "]: " <<  x << ',' << y <<")\n";
+			throw ns_ex("ns_intel_image_32f::Out of bound access: (") << x << "," << y << ") [" << properties_.width << "," << properties_.height << "]: " << x << ',' << y << ")";
+		}
+		return buffer[y*line_step_in_pixels + x];
+	}
 
 	const Ipp32f
 		//xxx
 #ifndef NS_DEBUG_IMAGE_ACCESS
-		finline
+	//	finline
 #endif
 		sample_d(const float y, const float x) const {
 
@@ -54,16 +63,21 @@ public:
 			p0x < 0 || p1x < 0 ||
 			p0y >= properties_.height || p1y >= properties_.height ||
 			p0x >= properties_.width || p1x >= properties_.width) {
-			cerr << "ns_intel_image_32f::Out of bound access: (" << x << "," << y << ") [" << properties_.width << "," << properties_.height << "]: (" << p0x << "," << p0y << ")-(" << p1x << "," << p1y << ")\n";
+			std::cerr << "ns_intel_image_32f::Out of bound access: (" << x << "," << y << ") [" << properties_.width << "," << properties_.height << "]: (" << p0x << "," << p0y << ")-(" << p1x << "," << p1y << ")\n";
 			throw ns_ex("ns_intel_image_32f::Out of bound access: (") << x << "," << y << "): (" << p0x << "," << p0y << ")-(" << p1x << "," << p1y << ")";
 		}
 #endif
 		//note that accessing val[height-1][width-1]  only works because we allocate an extra 1 pixel right and bottom buffer
 		//(see the function init()
-		return	val(p0y, p0x) * (d1y)*(d1x)+
-			val(p0y, p1x) * (d1y)*(dx)+
-			val(p1y, p0x) * (dy)*(d1x)+
-			val(p1y, p1x) * (dy)*(dx);
+		const float d = (d1y)*(d1x)*val(p0y, p0x) +
+			(d1y)*(dx)*val(p0y, p1x) +
+			(dy)*(d1x)*val(p1y, p0x) +
+			(dy)*(dx)*val(p1y, p1x);
+	/*	if (std::isnan(d)) {
+			std::cerr << "ns_intel_image_32f::Out of bound access: (" << x << "," << y << ") [" << properties_.width << "," << properties_.height << "]: (" << p0x << "," << p0y << ")-(" << p1x << "," << p1y << ")\n";
+			std::cerr << dx << " "<< dy<< " " << d1x << " " << d1y << "\n";
+		}*/
+		return d;
 	}
 
 
@@ -98,6 +112,23 @@ public:
 		properties_.width = width;
 		properties_.height = height;
 		properties_.components = 1;
+
+
+		//zero out buffer.
+		//we need to do this in case any of these pixels have a nan value
+		//as 0*nan == nan 
+		for (unsigned int y = 0; y < height + 1; y++) {
+		//	if (std::isnan(val(y, width)))
+			//	std::cerr << "Found NAN";
+			val(y, width) = 0;
+		}
+		for (unsigned int x = 0; x < width + 1; x++) {
+			//if (std::isnan(val(height, x)))
+			//	std::cerr << "Found NAN"; 
+			val(height, x) = 0;
+		}
+
+
 		return line_step_in_bytes;
 	}
 	void convert(ns_image_whole<float> & im) {
@@ -160,26 +191,35 @@ public:
 	}
 
 	template<class T>
-	void calculate(const ns_image_whole<T> & im) {
+	void calculate(const ns_image_whole<T> & im, 
+		const ns_vector_2i & subregion_position,
+		const ns_vector_2i & subregion_size) {
 		ns_image_properties p(im.properties());
+		p.height = subregion_size.y;
+		p.width = subregion_size.x;
 		allocate(p);
-
+		
 		//copy over raw image to first layer of pyramid
 		for (unsigned int y = 0; y < p.height; y++)
 			for (unsigned int x = 0; x < p.width; x++)
-				image_scaled[0].val(y, x) = im[y][x] / 255.f;
+				image_scaled[0].val(y, x) = im[y+subregion_position.y][x +subregion_position.x] / 255.f;
 
 		calculate();
 	}
 	template<class T>
-	void calculate(const T & im) {
+	void calculate(const T & im,
+		const ns_vector_2i & subregion_position,
+		const ns_vector_2i & subregion_size) {
+
 		ns_image_properties p(im.properties());
+		p.height = subregion_size.y;
+		p.width = subregion_size.x;
 		allocate(p);
 
 		//copy over raw image to first layer of pyramid
 		for (unsigned int y = 0; y < p.height; y++)
 			for (unsigned int x = 0; x < p.width; x++)
-				image_scaled[0].val(y, x) = im[y][x] / 255.f;
+				image_scaled[0].val(y, x) = im[y + subregion_position.y][x + subregion_position.x] / 255.f;
 		calculate();
 		
 	}
@@ -298,3 +338,4 @@ private:
 	Ipp8u   *pPyrLStateBuf;
 	Ipp8u   *pPyrLBuffer;
 };
+#endif

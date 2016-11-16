@@ -506,13 +506,14 @@ struct ns_movement_analysis_shared_state {
 	vector<vector<ns_chunk_generator> > chunk_generators;
 	vector<vector<ns_alignment_state> > alignment_states;
 
-	std::vector<int> path_reset;
+	//std::vector<int> path_reset;
 
 	unsigned long open_object_count;
 	unsigned long deallocated_aligned_count;
 
 	ns_sql * sql;
 	ns_lock sql_lock;
+	const ns_time_series_denoising_parameters * time_series_denoising_parameters;
 
 	const  long path_aligned_image_clear_lag;
 	const  long registered_image_clear_lag;
@@ -523,11 +524,12 @@ struct ns_movement_analysis_shared_state {
 struct ns_time_path_image_movement_analyzer_thread_pool_persistant_data {
 	ns_time_path_image_movement_analyzer_thread_pool_persistant_data() :
 		fast_aligner(ns_analyzed_image_time_path::maximum_alignment_offset(),
-			ns_analyzed_image_time_path::maximum_alignment_offset(),
-			ns_analyzed_image_time_path::maximum_alignment_offset()) {}
+			ns_vector_2i(0,0),
+			ns_vector_2i(0, 0)) {}
 	ns_calc_best_alignment_fast fast_aligner;
 
 	std::vector<ns_image_standard> temporary_image;
+	ns_image_whole<unsigned long> temp_storage;
 };
 
 void ns_time_path_image_movement_analyzer::run_group_for_current_backwards_round(unsigned int group_id, unsigned int path_id, ns_time_path_image_movement_analyzer_thread_pool_persistant_data * persistant_data,ns_movement_analysis_shared_state * shared_state) {
@@ -607,9 +609,9 @@ void ns_time_path_image_movement_analyzer::run_group_for_current_backwards_round
 			groups[i].paths[j].elements[k].clear_movement_images();
 
 		groups[i].paths[j].reset_movement_image_saving();
-		shared_state->path_reset[i]++;
-		if (shared_state->path_reset[i] > 1)
-			cerr << "YIKES!";
+		//shared_state->path_reset[i]++;
+		//if (shared_state->path_reset[i] > 1)
+			//cerr << "YIKES!";
 	}
 }
 
@@ -635,7 +637,33 @@ struct ns_time_path_image_movement_analyzer_thread_pool_job {
 
 typedef std::pair<unsigned int, unsigned int> ns_tpiatp_job;
 
+void ns_time_path_image_movement_analyzer::calc_stabilized_worm_region_and_calc_stats(unsigned int group_id, unsigned int path_id, ns_time_path_image_movement_analyzer_thread_pool_persistant_data * persistant_data, ns_movement_analysis_shared_state * shared_state) {
+	//load all images
+	ns_analyzed_time_image_chunk chunk;
+	chunk.start_i = 0;
+	chunk.stop_i = groups[group_id].paths[path_id].element_count();
+	//ns_image_storage_source_handle<ns_image_storage_handler::ns_component>  in(image_server_const.image_storage.request_from_storage(groups[i].paths[j].output_image, &sql));		
+	ns_image_storage_source_handle<ns_8_bit> in(image_server_const.image_storage.request_from_local_cache(groups[group_id].paths[path_id].volatile_storage_name(1, false), false));
+	groups[group_id].paths[path_id].initialize_movement_image_loading_no_flow(in, false);
 
+
+	groups[group_id].paths[path_id].load_movement_images_no_flow(chunk, in);
+	in.clear();
+	//calculate stabilized threshold
+	persistant_data->temp_storage.use_more_memory_to_avoid_reallocations();
+	groups[group_id].paths[path_id].calculate_stabilized_worm_neighborhood(persistant_data->temp_storage);
+	ns_acquire_lock_for_scope lock(shared_state->sql_lock, __FILE__, __LINE__);
+	groups[group_id].paths[path_id].save_movement_images(chunk,*shared_state->sql, ns_analyzed_image_time_path::ns_save_simple, ns_analyzed_image_time_path::ns_output_all_images, ns_analyzed_image_time_path::ns_long_term);
+	lock.release();
+	if (ns_skip_low_density_paths && groups[group_id].paths[path_id].is_low_density_path()) {
+		clear_images_for_group(group_id);
+		return;
+	}
+
+	groups[group_id].paths[path_id].quantify_movement(chunk);
+	clear_images_for_group(group_id);
+	groups[group_id].paths[path_id].denoise_movement_series(0, *shared_state->time_series_denoising_parameters);
+}
 void ns_time_path_image_movement_analyzer::run_group_for_current_forwards_round(unsigned int group_id, unsigned int path_id, ns_time_path_image_movement_analyzer_thread_pool_persistant_data * persistant_data,ns_movement_analysis_shared_state * shared_state) {
 	const unsigned int &i(group_id), &j(path_id);
 #ifdef NS_OUTPUT_ALGINMENT_DEBUG
@@ -692,9 +720,9 @@ void ns_time_path_image_movement_analyzer::run_group_for_current_forwards_round(
 			groups[i].paths[j].elements[k].clear_movement_images();
 		}
 		groups[i].paths[j].reset_movement_image_saving();
-		shared_state->path_reset[i]++;
-		if (shared_state->path_reset[i] > 1)
-			cerr << "YIKES!";
+	//	shared_state->path_reset[i]++;
+	//	if (shared_state->path_reset[i] > 1)
+	//		cerr << "YIKES!";
 	}
 }
 void throw_pool_errors(
@@ -776,6 +804,7 @@ void ns_time_path_image_movement_analyzer::process_raw_images(const ns_64_bit re
 		
 		ns_movement_analysis_shared_state shared_state;
 		shared_state.sql = &sql;
+		shared_state.time_series_denoising_parameters = &times_series_denoising_parameters;
 
 		//we distribute the registration and image analysis tasks across multiple processors
 		//to speed movement analysis up.  Doing it this way (within a process) is important because
@@ -787,7 +816,7 @@ void ns_time_path_image_movement_analyzer::process_raw_images(const ns_64_bit re
 		thread_pool.prepare_pool_to_run();
 
 		//xxx debug only
-		shared_state.path_reset.resize(groups.size(), 0);
+		//shared_state.path_reset.resize(groups.size(), 0);
 
 		//initiate chunk generator and alignment states
 		const unsigned long chunk_size(1);//minimize memory use
@@ -896,13 +925,18 @@ void ns_time_path_image_movement_analyzer::process_raw_images(const ns_64_bit re
 				}
 
 				image_server_const.add_subtext_to_current_event(ns_image_server_event("Running backwards..."), write_status_to_db ? &sql : 0);
+				int last_r = 0;
 				for (long t = (long)region_image_specifications.size() - 1; t >= 0; t--) {
 
 					//output_allocation_state("bk",region_image_specifications.size() - 1 - t, debug_out);
 
 					if (debug_output_skip == number_of_repeats_required || t == 0 && current_round == 0) {
-						image_server_const.add_subtext_to_current_event(ns_to_string((100 * (region_image_specifications.size() - 1 - t + region_image_specifications.size()*current_round)) / (region_image_specifications.size()*number_of_repeats_required)) + "%...", write_status_to_db ? &sql : 0);
-						debug_output_skip = 0;
+						int r(100 * (region_image_specifications.size() - 1 - t + region_image_specifications.size()*current_round)) / (region_image_specifications.size()*number_of_repeats_required);
+						if (r >= last_r + 5) {
+							image_server_const.add_subtext_to_current_event(ns_to_string(r) + "%...", write_status_to_db ? &sql : 0);
+							last_r = r;
+						}
+							debug_output_skip = 0;
 					}
 					else debug_output_skip++;
 					long stop_t(t - (long)chunk_size);
@@ -1040,8 +1074,8 @@ void ns_time_path_image_movement_analyzer::process_raw_images(const ns_64_bit re
 				//we're again caching to disk because we need to load everything in one final time
 				//to calculate the stablizized worm region
 
-				for (unsigned int i = 0; i < groups.size(); i++)
-					shared_state.path_reset[i] = 0;
+			//	for (unsigned int i = 0; i < groups.size(); i++)
+			//		shared_state.path_reset[i] = 0;
 
 				for (unsigned int i = start_group; i < stop_group; i++) {
 					for (unsigned int j = 0; j < groups[i].paths.size(); j++) {
@@ -1053,10 +1087,14 @@ void ns_time_path_image_movement_analyzer::process_raw_images(const ns_64_bit re
 
 				image_server_const.add_subtext_to_current_event(ns_image_server_event("Running forwards..."), (write_status_to_db ? (&sql) : 0));
 
-
+				last_r = 0;
 				for (unsigned int t = 0; t < region_image_specifications.size(); t += chunk_size) {
 					if (debug_output_skip == number_of_repeats_required || t == 0 && current_round == 0) {
-						image_server_const.add_subtext_to_current_event(ns_to_string((100 * (t + region_image_specifications.size()*current_round)) / (region_image_specifications.size()*number_of_repeats_required)) + "%...", write_status_to_db ? (&sql) : 0);
+						int r = (100 * (t + region_image_specifications.size()*current_round)) / (region_image_specifications.size()*number_of_repeats_required);
+						if (r >= last_r + 5) {
+							image_server_const.add_subtext_to_current_event(ns_to_string(r) + "%...", write_status_to_db ? (&sql) : 0);
+							last_r = r;
+						}
 						debug_output_skip = 0;
 					}
 					else debug_output_skip++;
@@ -1118,41 +1156,41 @@ void ns_time_path_image_movement_analyzer::process_raw_images(const ns_64_bit re
 			}
 		}
 		thread_pool.shutdown();
+		thread_pool.set_number_of_threads(image_server_const.maximum_number_of_processing_threads());
+		thread_pool.prepare_pool_to_run();
+
+		for (unsigned int i = 0; i < groups.size(); i++) {
+			for (unsigned int j = 0; j < groups[i].paths.size(); j++) {
+
+				thread_pool.add_job_while_pool_is_not_running(
+					ns_time_path_image_movement_analyzer_thread_pool_job(i, j,
+						&ns_time_path_image_movement_analyzer::calc_stabilized_worm_region_and_calc_stats,
+						this, &shared_state));
+			}
+		}
 
 		image_server_const.add_subtext_to_current_event("\n", (write_status_to_db ? (&sql) : 0));
 		image_server_const.add_subtext_to_current_event(ns_image_server_event("Stabilizing regions of focus..."), (write_status_to_db ? (&sql) : 0));
-		ns_image_whole<unsigned long> temp_storage;
-		temp_storage.use_more_memory_to_avoid_reallocations();
-		//now we need to calculate the stablized worm area.
-		for (unsigned int i = 0; i < groups.size(); i++) {
-			for (unsigned int j = 0; j < groups[i].paths.size(); j++) {
-			
-				image_server_const.add_subtext_to_current_event(ns_to_string((100*i)/groups.size())+"%...", (write_status_to_db ? (&sql) : 0));
 
-				//load all images
-				ns_analyzed_time_image_chunk chunk;
-				chunk.start_i = 0;
-				chunk.stop_i = groups[i].paths[j].element_count();
-				//ns_image_storage_source_handle<ns_image_storage_handler::ns_component>  in(image_server_const.image_storage.request_from_storage(groups[i].paths[j].output_image, &sql));		
-				ns_image_storage_source_handle<ns_8_bit> in(image_server_const.image_storage.request_from_local_cache(groups[i].paths[j].volatile_storage_name(1, false), false));
-				groups[i].paths[j].initialize_movement_image_loading_no_flow(in, false);
+		thread_pool.run_pool();
 
-
-				groups[i].paths[j].load_movement_images_no_flow(chunk, in);
-				in.clear();
-				//calculate stabilized threshold
-				groups[i].paths[j].calculate_stabilized_worm_neighborhood(temp_storage);
-				groups[i].paths[j].save_movement_images(chunk, sql, ns_analyzed_image_time_path::ns_save_simple, ns_analyzed_image_time_path::ns_output_all_images, ns_analyzed_image_time_path::ns_long_term);
-
-				if (ns_skip_low_density_paths && groups[i].paths[j].is_low_density_path())
-					continue;
-
-				groups[i].paths[j].quantify_movement(chunk);
-				clear_images_for_group(i);
-				groups[i].paths[j].denoise_movement_series(0,times_series_denoising_parameters);
+		if (write_status_to_db) {
+			int last_n(0);
+			while (true) {
+				int n = thread_pool.number_of_jobs_pending();
+				if (n != last_n) {
+					image_server_const.add_subtext_to_current_event(ns_to_string((100 * (groups.size()-n)) / groups.size()) + "%...", (write_status_to_db ? (&sql) : 0));
+					last_n = n;
+				}
+				if (n == 0)
+					break;
 			}
+			ns_thread::sleep(3);
 		}
-		temp_storage.clear();
+
+		thread_pool.wait_for_all_threads_to_become_idle();
+		throw_pool_errors(thread_pool, sql);
+		thread_pool.shutdown();
 
 		normalize_movement_scores_over_all_paths(times_series_denoising_parameters);
 		//xxx this could be paraellelized if it was worth it.
@@ -2036,7 +2074,8 @@ void ns_analyzed_image_time_path::write_detailed_movement_quantification_analysi
 		"Machine Death Relative Time, Machine Slow Movement Cessation Relative Time, Machine Fast Movement Cessation Relative Time,"
 		"By Hand Death Relative Time, By Hand Slow Movement Cessation Relative Time, By Hand Fast Movement Cessation Relative Time,"
 		"By Hand Death-Associated Contraction Time,"
-		"Unnormalized Movement Sum, Unnormalized Movement Sum Scaled by Worm Size, Movement Score, Denoised Movement Score,Movement Alternate Worm Sum, Change in Total Pixel Intensity Between Frames,Change in Average Normalized Pixel Intensity Between Frames, Movement Ratio,"
+		"Unnormalized Movement Sum, Unnormalized Movement Sum Scaled by Worm Size, Movement Score, Denoised Movement Score,"
+		"Movement Alternate Worm Sum, Change in Total Pixel Intensity Between Frames,Change in Average Normalized Pixel Intensity Between Frames, Movement Ratio,"
 		"Total Worm Area, Normalized Total Worm Area,Total Worm Intensity, Total Region Area, Total Region Intensity,"
 		"Normalized Worm Area, Normalized Worm Intensity, Normalized Change in Worm Intensity,"
 		"Total Alternate Worm Area,Total Alternate Worm Intensity,Saturated Registration, Local Region Maximum Movement Sum, Local Region Stationary Sum,"
@@ -3058,6 +3097,7 @@ bool ns_analyzed_image_time_path::populate_images_from_region_visualization(cons
 			const ns_vector_2i tl_worm_context_position_in_pa(ns_analyzed_image_time_path::maximum_alignment_offset()+e.offset_from_path);
 			if (e.path_aligned_images == 0)
 				throw ns_ex("Encountered unloaded image!");
+			
 			if (tl_worm_context_position_in_pa.y > e.path_aligned_images->worm_region_threshold.properties().height ||
 				path_aligned_image_image_properties.width > e.path_aligned_images->worm_region_threshold.properties().width || 
 				tl_worm_context_position_in_pa.y > e.path_aligned_images->image.properties().height ||
@@ -3403,6 +3443,13 @@ public:
 				grad_y = .5*(im2.sample_d(y_+1,x_) - im2.sample_d(y_-1, x_));
 
 				diff = im2.sample_d(y_,x_) - im1.sample_d(y + tl.y+1, x + tl.x+1);
+
+				/*if (std::isnan(grad_x) || std::isnan(grad_y) || std::isnan(diff)) {
+					cerr << grad_x << " " << grad_y << " " << diff << " " << x_ << " " << y_ << "\n";
+					cerr << im2.sample_d(y_, x_ + 1) << " " << im2.sample_d(y_, x_ - 1) << " " << im2.sample_d(y_ + 1, x_) << " " << im2.sample_d(y_ - 1, x_) << "\n";
+					throw ns_ex("yikes");
+				}*/
+
 				A[0] += grad_x * grad_x;
 				A[1] += grad_x * grad_y;
 				A[3] += grad_y * grad_y;
@@ -3460,6 +3507,8 @@ ns_vector_2d ns_gradient_shift::calc_shifts_from_grad()  {
 	double C[2];
 	ns_solveCholesky(2, LU, b, C, tmp);
 
+	//if (std::isnan(-C[0]) || std::isnan(-C[1]))
+	//	throw ns_ex("Yikes");
 	return ns_vector_2d(-C[0], -C[1]);
 }
 
@@ -3552,10 +3601,15 @@ ns_vector_2d ns_calc_best_alignment_fast::operator()(const ns_vector_2d & initia
 			//this lets us identify larger shifts.
 			const int num_iterations_this_round((lowest_resolution_level) ? 4 : 1);
 			for (unsigned int j = 0; j < num_iterations_this_round; j++) {
+				/*for (unsigned int y = 0; y < state_pyramid->image_scaled[i].properties().height; y++)
+					for (unsigned int x = 0; x < state_pyramid->image_scaled[i].properties().width; x++)
+						if (std::isnan(state_pyramid->image_scaled[i].val(y, x))) {
+							cerr << "nan!:" << i << " " << j << "(" << x << "," << y << ")\n";
+						}*/
 				ns_vector_2d sh = gradient_shift->calc_gradient_shift(state_pyramid->image_scaled[i],
 					image_pyramid->image_scaled[i],
 					tl / fold, br / fold, reg + shift[i]);
-
+					
 				//reject too-large shifts; 
 				//gradient registration only works well for small
 				//deviations around the set point.
@@ -3705,16 +3759,39 @@ ns_vector_2d ns_calc_best_alignment_fast::operator()(const ns_vector_2d & initia
 	if (reg.y > max_alignment.y) { reg.y = max_alignment.y; saturated_offset = true; }
 	return reg;
 }
-ns_vector_2d ns_calc_best_alignment_fast::operator()(const ns_vector_2d & initial_alignment,const ns_vector_2d & max_alignment,ns_alignment_state & state, const ns_image_standard & image, bool & saturated_offset) {
+ns_vector_2d ns_calc_best_alignment_fast::operator()(const ns_vector_2d & initial_alignment,const ns_vector_2d & max_alignment,ns_alignment_state & state, const ns_image_standard & image, bool & saturated_offset, const ns_vector_2i & subregion_pos, const ns_vector_2i & subregion_size) {
 
 	saturated_offset = false;
 	state.current_round_consensus.init(state.consensus.properties());
-	for (unsigned int y = 0; y < state.consensus.properties().height; y++)
-		for (unsigned int x = 0; x < state.consensus.properties().width; x++)
-			state.current_round_consensus[y][x] = (state.consensus_count[y][x] != 0) ? (state.consensus[y][x] / (ns_difference_type)state.consensus_count[y][x]) : 0;
-	
-	state_pyramid->calculate(state.current_round_consensus);
-	image_pyramid->calculate(image);
+	ns_vector_2i min_non_zero_consensus(INT_MAX, INT_MAX);
+	ns_vector_2i max_non_zero_consensus(0, 0);
+	for (unsigned int y = subregion_pos.y; y < subregion_pos.y + subregion_size.y; y++) {
+		for (unsigned int x = subregion_pos.x; x < subregion_pos.x + subregion_size.x; x++) {
+			const bool z(state.consensus_count[y][x] != 0);
+			state.current_round_consensus[y][x] = z ? (state.consensus[y][x] / (ns_difference_type)state.consensus_count[y][x]) : 0;
+		//	if (std::isnan(state.current_round_consensus[y][x]))
+		//		throw ns_ex("yikes");
+			if (z && state.current_round_consensus[y][x] != 0) {
+				if (min_non_zero_consensus.x > x)min_non_zero_consensus.x = x;
+				if (min_non_zero_consensus.y > y)min_non_zero_consensus.y = y;
+				if (max_non_zero_consensus.x < x)max_non_zero_consensus.x = x;
+				if (max_non_zero_consensus.y < y)max_non_zero_consensus.y = y;
+			}
+		}
+	}
+	//we want to register only the region where 1) the current frame is defined (e.g not the empty margins of the path aligned image)
+	//and 2) the state consensus is also defined (e.g there have been some pixels measured recently)
+	//so we find the smallest bounding box in which both conditions are met, and build image pyramids from only that.
+	const ns_vector_2i subregion_max(subregion_pos + subregion_size);
+	if (subregion_pos.x > min_non_zero_consensus.x) min_non_zero_consensus.x = subregion_pos.x;
+	if (subregion_pos.y > min_non_zero_consensus.y) min_non_zero_consensus.y = subregion_pos.y;
+	if (subregion_max.x < max_non_zero_consensus.x) max_non_zero_consensus.x = subregion_max.x;
+	if (subregion_max.y < max_non_zero_consensus.y) max_non_zero_consensus.y = subregion_max.y;
+	const ns_vector_2i non_zero_size (max_non_zero_consensus - min_non_zero_consensus);
+
+	state_pyramid->calculate(state.current_round_consensus, min_non_zero_consensus, non_zero_size);
+	image_pyramid->calculate(image, min_non_zero_consensus, non_zero_size);
+
 	return (*this)(initial_alignment, max_alignment, state_pyramid, image_pyramid, saturated_offset);
 
 }
@@ -3847,12 +3924,6 @@ ns_vector_2d ns_calc_best_alignment::operator()(ns_alignment_state & state,const
 					//the value of the consensus image is it's mean: consensus[y][x]/consensus_count[y][x]
 					sum+=fabs(
 						state.current_round_consensus.sample_f(y+dy,x+dx)
-						/*state.consensus.weighted_sample(y+dy,x+dx,
-						state.consensus_count[y + (long)dy  ][x + (long)dx ],
-						state.consensus_count[y + (long)dy  ][x+ (long)dx+1],
-						state.consensus_count[y + (long)dy+1][x+ (long)dx  ],
-						state.consensus_count[y + (long)dy+1][x+ (long)dx+1]
-						)*/
 						- (ns_difference_type)image[y][x]);
 				}
 			}
@@ -4240,7 +4311,11 @@ void ns_analyzed_image_time_path::quantify_movement(const ns_analyzed_time_image
 		for (unsigned long y = 0; y < elements[i].registered_images->movement_image_.properties().height; y++){
 			for (unsigned long x = 0; x < elements[i].registered_images->movement_image_.properties().width; x++){
 				
-				const bool worm_threshold(elements[i].registered_images->get_stabilized_worm_neighborhood_threshold(y,x));
+				//only calculate movement sum for areas where both images are defined.
+				bool worm_threshold(elements[i].registered_images->get_stabilized_worm_neighborhood_threshold(y,x) &&
+																		elements[i].registered_images->image[y][x] > 0);
+				if (i > movement_time_kernel_width)
+					worm_threshold = worm_threshold && (elements[i - movement_time_kernel_width].registered_images->image[y][x] > 0);
 
 				const bool alternate_worm_threshold(elements[i].registered_images->get_region_threshold(y,x) == 1 && 
 													!worm_threshold);
@@ -4725,7 +4800,16 @@ ns_analyzed_time_image_chunk ns_analyzed_image_time_path::initiate_image_registr
 		global_path_debug_info.time = elements[i].absolute_time;
 #endif
 		#ifdef NS_USE_FAST_IMAGE_REGISTRATION
-			elements[i].registration_offset = align(state.registration_offset_average(),maximum_alignment_offset(), state, elements[i].path_aligned_images->image, elements[i].saturated_offset);
+
+			const ns_vector_2i tl_worm_context_position_in_pa(ns_analyzed_image_time_path::maximum_alignment_offset() + elements[i].offset_from_path);
+		
+			elements[i].registration_offset = align(state.registration_offset_average(),
+													maximum_alignment_offset(), 
+													state, 
+													elements[i].path_aligned_images->image, 
+													elements[i].saturated_offset,
+													tl_worm_context_position_in_pa,
+													elements[i].worm_context_size());
 			//cerr << elements[i].registration_offset;
 	#endif
 		#ifdef NS_CALCULATE_SLOW_IMAGE_REGISTRATION
@@ -4853,8 +4937,9 @@ void ns_analyzed_image_time_path::calculate_image_registration(const ns_analyzed
 	#ifdef NS_USE_FAST_IMAGE_REGISTRATION
 		//align.debug_gold_standard_shift = elements[i].registration_offset;
 		t.start();
+		const ns_vector_2i tl_worm_context_position_in_pa(ns_analyzed_image_time_path::maximum_alignment_offset() + elements[i].offset_from_path);
 		elements[i].registration_offset =
-			align(state.registration_offset_average() - state.consensus_internal_offset,maximum_alignment_offset(), state, elements[i].path_aligned_images->image, elements[i].saturated_offset)
+			align(state.registration_offset_average() - state.consensus_internal_offset,maximum_alignment_offset(), state, elements[i].path_aligned_images->image, elements[i].saturated_offset, tl_worm_context_position_in_pa,elements[i].worm_context_size())
 			+ //every once in a while we recenter the state if the offsets are getting close to saturating. 
 			state.consensus_internal_offset;
 		
@@ -4866,10 +4951,10 @@ void ns_analyzed_image_time_path::calculate_image_registration(const ns_analyzed
 		for (long y = d.y; y < h_sub.y; y++){
 			for (long x = d.x; x < h_sub.x; x++){
 				state.consensus		 [y][x]+= elements[i            ].path_aligned_images->image.sample_f(y-elements[i].registration_offset.y + state.consensus_internal_offset.y,x-elements[i].registration_offset.x + state.consensus_internal_offset.x);
-				//state.consensus_count[y][x]++;
+			//	state.consensus_count[y][x]++;
 
 				state.consensus		 [y][x]-= elements[i-step*time_kernal].path_aligned_images->image.sample_f(y-elements[i-step*time_kernal].registration_offset.y + state.consensus_internal_offset.y,x-elements[i-step*time_kernal].registration_offset.x+ +state.consensus_internal_offset.x);
-				//state.consensus_count[y][x]--;
+			//	state.consensus_count[y][x]--;
 			
 			}
 		}

@@ -5894,10 +5894,19 @@ void ns_worm_learner::draw_worm_window_image(ns_image_standard & image, const fl
 				ns_vector_2i(worm_window.gl_buffer_properties.width,
 					worm_window.gl_buffer_properties.height),
 				worm_window.gl_buffer);
+
+			//clear out bottom margin
+			for (int _y = death_time_solo_annotater.telemetry.image_size().y; _y < worm_window.gl_buffer_properties.height; _y++)
+				for (unsigned int _x = 3 * new_prop.width; _x < 3 * worm_window.gl_buffer_properties.width; _x++)
+					worm_window.gl_buffer[3 * (worm_window.gl_buffer_properties.height- _y)*worm_window.gl_buffer_properties.width + _x] = 0;
 		}
 		catch (ns_ex & ex) {
+			for (int _y = 0; _y < worm_window.gl_buffer_properties.height; _y++) 
+				for (unsigned int _x = 3*new_prop.width; _x < 3*worm_window.gl_buffer_properties.width; _x++) 
+					worm_window.gl_buffer[3 * worm_window.gl_buffer_properties.width*_y + _x] = 0;
 			cout << ex.text();
 		}
+		
 	}
 	
 	

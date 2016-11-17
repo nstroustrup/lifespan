@@ -17,10 +17,6 @@ ns_analyzed_image_time_path_death_time_estimator * ns_get_death_time_estimator_f
 
 struct ns_analyzed_image_time_path_element_measurements{
 
-	
-	//float old_movement_ratio() const{return ((float)movement_sum - (float)movement_alternate_worm_sum)/(total_intensity_within_worm_area+1);}
-	//the total sum of movement seen between this and the previous frame, minus the total change in intensity between this and the previous frame, minus the change in movement that can be accounted for by a second worm
-	//normalized by the average intensity of this and the previous frames.
 	float new_movement_ratio() const{
 		return (float)(((float)interframe_time_scaled_movement_sum - fabs(change_in_average_normalized_worm_intensity*total_worm_area))/(total_intensity_within_worm_area-(change_in_average_normalized_worm_intensity*total_worm_area)/2+1));
 	}

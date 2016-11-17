@@ -4118,7 +4118,6 @@ void ns_analyzed_image_time_path::denoise_movement_series(const unsigned long ch
 
 		//calculate the slope at each point
 		//Here, ns_movement_data_accessor calculates the movement score and stores it.
-		//This movement score is generally not used for automated movement analysis, but is useful for understanding worm behavior and debugging.
 		for (unsigned int i = 0; i < elements.size(); i++){
 			elements[i].measurements.movement_score = acc.raw(i);
 			if (i > 0)

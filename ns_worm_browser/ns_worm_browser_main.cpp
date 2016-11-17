@@ -2543,7 +2543,8 @@ int main() {
 	Fl_File_Icon::load_system_icons();
 	Fl::scheme("none");
 
-	
+	worm_learner.worm_window.dynamic_range_rescale_factor = 1.75;
+	worm_learner.main_window.dynamic_range_rescale_factor = 1;
 	//never used?
 	//ns_main_thread_id = GetCurrentThread();
 	try{

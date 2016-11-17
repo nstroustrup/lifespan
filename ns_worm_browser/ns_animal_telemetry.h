@@ -170,7 +170,7 @@ class ns_animal_telemetry {
 		float min_intensity(FLT_MAX), max_intensity(-FLT_MAX);
 		float min_time(FLT_MAX), max_time(-FLT_MAX);
 		for (unsigned int i = 0; i < movement_vals.y.size(); i++) {
-			double d(path->element(i).measurements.denoised_movement_score);
+			double d(path->element(i).measurements.new_movement_ratio());
 			double n(path->element(i).measurements.total_intensity_within_worm_area);
 			double t(path->element(i).relative_time);
 			if (d < min_score) min_score = d;
@@ -185,7 +185,7 @@ class ns_animal_telemetry {
 			time_axes.x[i] = floor(path->element(i).relative_time / 6.0 / 60 / 24) / 10;
 			//scale denoised movement score to a value between 1 and 2
 			//which on log scale becomes 0 and 1
-			movement_vals.y[i] = log((path->element(i).measurements.denoised_movement_score - min_score) / (max_score-min_score) + 1);
+			movement_vals.y[i] = log((path->element(i).measurements.new_movement_ratio() - min_score) / (max_score-min_score) + 1);
 			//we crop off scores at .4 and stretch again., as we never see anything useful above that.
 			movement_vals.y[i] *= 10 / 4;
 			if (movement_vals.y[i] < 0) movement_vals.y[i] = 0;

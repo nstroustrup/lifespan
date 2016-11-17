@@ -81,7 +81,7 @@ protected:
 	ns_annotater_image_buffer_entry current_image;
 	std::vector<ns_annotater_image_buffer_entry> previous_images;
 	std::vector<ns_annotater_image_buffer_entry> next_images;
-	ns_image_series_annotater(const unsigned long resize_factor_, const unsigned long bottom_border_size):image_buffer_access_lock("ns_da_ib"),resize_factor(resize_factor_),image_bottom_border_size(bottom_border_size),dynamic_range_rescale_factor(1.3){}
+	ns_image_series_annotater(const unsigned long resize_factor_, const unsigned long bottom_border_size):image_buffer_access_lock("ns_da_ib"),resize_factor(resize_factor_),image_bottom_border_size(bottom_border_size){}
 	
 	virtual void draw_metadata(ns_annotater_timepoint * tp,ns_image_standard & im)=0;
 	
@@ -152,8 +152,6 @@ protected:
 	ns_acquire_for_scope<ns_sql> sql;
 public:
 	
-	
-	float dynamic_range_rescale_factor;
 
 	typedef enum {ns_none,ns_forward, ns_back, ns_fast_forward, ns_fast_back,ns_stop,ns_save,ns_rewind_to_zero,ns_number_of_annotater_actions} ns_image_series_annotater_action;
 

@@ -501,7 +501,7 @@ struct ns_button_press{
 
 class ns_gl_window_data{
 public:
-	ns_gl_window_data(const string & window_name):gl_buffer(0),display_lock(string("ns_lock::display_") + window_name),redraw_requested(false),display_rescale_factor(0){}
+	ns_gl_window_data(const string & window_name):gl_buffer(0),display_lock(string("ns_lock::display_") + window_name),redraw_requested(false),display_rescale_factor(1), dynamic_range_rescale_factor(1){}
 	ns_vector_2i worm_image_size,
 		telemetry_size,
 		gl_image_size;
@@ -511,6 +511,7 @@ public:
 	ns_image_properties gl_buffer_properties;
 	ns_lock display_lock;
 	float display_rescale_factor;
+	float dynamic_range_rescale_factor;
 
 	bool redraw_requested;
 	void redraw_screen(){
@@ -557,7 +558,7 @@ public:
 		movement_data_is_strictly_decreasing_(false),overwrite_existing_mask_when_submitting(false),output_svg_spines(false),static_mask(0),generate_mp4_(false),
 		/*submit_capture_specification_to_db_when_recieved(false),*/overwrite_submitted_capture_specification(false),maximum_window_size(1024,768),
 		current_annotater(&death_time_annotater),storyboard_annotater(2),main_window("Main Window"), persistant_sql_connection(0), persistant_sql_lock("psl"),
-				worm_window("Worm Window"),dynamic_range_rescale(1){
+				worm_window("Worm Window"){
 		storyboard_annotater.set_resize_factor(2);
 	}
 
@@ -721,14 +722,14 @@ public:
 	std::vector<ns_worm_detection_model_cache::const_handle_t>  model_specifications;
 	const ns_svm_model_specification & get_svm_model_specification();
 
-	void draw_image(const double x, const double y, ns_image_standard & image, float dynamic_stretch_factor=0);
+	void draw_image(const double x, const double y, ns_image_standard & image);
 	void draw_line_on_overlay(const ns_vector_2i & a, const ns_vector_2i & b);
 	void update_main_window_display();
 	void draw();
 	void touch_main_window_pixel(const ns_button_press & press);
 	bool register_main_window_key_press(int key, const bool shift_key_held,const bool control_key_held,const bool alt_key_held);
 	
-	void draw_worm_window_image(ns_image_standard & image,const float & dynamic_stretch_factor);
+	void draw_worm_window_image(ns_image_standard & image);
 	void update_worm_window_display();
 	void touch_worm_window_pixel(const ns_button_press & press);
 	bool register_worm_window_key_press(int key, const bool shift_key_held,const bool control_key_held,const bool alt_key_held);

@@ -3766,31 +3766,40 @@ ns_vector_2d ns_calc_best_alignment_fast::operator()(const ns_vector_2d & initia
 ns_vector_2d ns_calc_best_alignment_fast::operator()(const ns_vector_2d & initial_alignment,const ns_vector_2d & max_alignment,ns_alignment_state & state, const ns_image_standard & image, bool & saturated_offset, const ns_vector_2i & subregion_pos, const ns_vector_2i & subregion_size) {
 
 	saturated_offset = false;
+	//we want to register only the region where 1) the current frame is defined (e.g not the empty margins of the path aligned image)
+	//and 2) the state consensus is also defined (e.g there have been some pixels measured recently)
+
 	state.current_round_consensus.init(state.consensus.properties());
 	ns_vector_2i min_non_zero_consensus(INT_MAX, INT_MAX);
 	ns_vector_2i max_non_zero_consensus(0, 0);
+	unsigned long count(0);
 	for (unsigned int y = subregion_pos.y; y < subregion_pos.y + subregion_size.y; y++) {
 		for (unsigned int x = subregion_pos.x; x < subregion_pos.x + subregion_size.x; x++) {
 			const bool z(state.consensus_count[y][x] != 0);
 			state.current_round_consensus[y][x] = z ? (state.consensus[y][x] / (ns_difference_type)state.consensus_count[y][x]) : 0;
-		//	if (std::isnan(state.current_round_consensus[y][x]))
-		//		throw ns_ex("yikes");
+		
 			if (z && state.current_round_consensus[y][x] != 0) {
-				if (min_non_zero_consensus.x > x)min_non_zero_consensus.x = x;
-				if (min_non_zero_consensus.y > y)min_non_zero_consensus.y = y;
-				if (max_non_zero_consensus.x < x)max_non_zero_consensus.x = x;
-				if (max_non_zero_consensus.y < y)max_non_zero_consensus.y = y;
+				count++;
+				if (min_non_zero_consensus.x > x) min_non_zero_consensus.x = x;
+				if (min_non_zero_consensus.y > y) min_non_zero_consensus.y = y;
+				if (max_non_zero_consensus.x < x) max_non_zero_consensus.x = x;
+				if (max_non_zero_consensus.y < y) max_non_zero_consensus.y = y;
 			}
 		}
 	}
-	//we want to register only the region where 1) the current frame is defined (e.g not the empty margins of the path aligned image)
-	//and 2) the state consensus is also defined (e.g there have been some pixels measured recently)
-	//so we find the smallest bounding box in which both conditions are met, and build image pyramids from only that.
-	const ns_vector_2i subregion_max(subregion_pos + subregion_size);
-	if (subregion_pos.x > min_non_zero_consensus.x) min_non_zero_consensus.x = subregion_pos.x;
-	if (subregion_pos.y > min_non_zero_consensus.y) min_non_zero_consensus.y = subregion_pos.y;
-	if (subregion_max.x < max_non_zero_consensus.x) max_non_zero_consensus.x = subregion_max.x;
-	if (subregion_max.y < max_non_zero_consensus.y) max_non_zero_consensus.y = subregion_max.y;
+	//if there is a very small overlap between the state and the current image,  use the whole subregion
+	if (count < 16 * 16) {
+		min_non_zero_consensus = subregion_pos;
+		max_non_zero_consensus = subregion_pos + subregion_size;
+	}
+	else {
+		//find the smallest bounding box in which both conditions specified above are met, and build image pyramids from only that.
+		const ns_vector_2i subregion_max(subregion_pos + subregion_size);
+		if (subregion_pos.x > min_non_zero_consensus.x) min_non_zero_consensus.x = subregion_pos.x;
+		if (subregion_pos.y > min_non_zero_consensus.y) min_non_zero_consensus.y = subregion_pos.y;
+		if (subregion_max.x < max_non_zero_consensus.x) max_non_zero_consensus.x = subregion_max.x;
+		if (subregion_max.y < max_non_zero_consensus.y) max_non_zero_consensus.y = subregion_max.y;
+	}
 	const ns_vector_2i non_zero_size (max_non_zero_consensus - min_non_zero_consensus);
 
 	state_pyramid->calculate(state.current_round_consensus, min_non_zero_consensus, non_zero_size);

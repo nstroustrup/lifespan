@@ -32,20 +32,20 @@ public:
 		clear();
 	}
 	finline Ipp32f &  val(const int & y, const int & x) { return buffer[y*line_step_in_pixels + x]; }
-	//finline 
+	finline 
 		const Ipp32f & val(const int & y, const int & x) const {
-		if (y < 0 || x < 0 ||
+		/*if (y < 0 || x < 0 ||
 			y > properties_.height ||x > properties_.width) { //OK because we allocate an extra pixel pad; see comment in init()
 			std::cerr << "ns_intel_image_32f::Out of bound access: (" << x << "," << y << ") [" << properties_.width << "," << properties_.height << "]: " <<  x << ',' << y <<")\n";
 			throw ns_ex("ns_intel_image_32f::Out of bound access: (") << x << "," << y << ") [" << properties_.width << "," << properties_.height << "]: " << x << ',' << y << ")";
-		}
+		}*/
 		return buffer[y*line_step_in_pixels + x];
 	}
 
 	const Ipp32f
 		//xxx
 #ifndef NS_DEBUG_IMAGE_ACCESS
-	//	finline
+		finline
 #endif
 		sample_d(const float y, const float x) const {
 
@@ -91,7 +91,7 @@ public:
 		line_step_in_pixels = 0;
 		ns_ippi_safe_delete(buffer);
 	}
-	int init(const int width, const int height) {
+	int init(const unsigned long int width, const unsigned long int height) {
 		if (properties_.width == width && properties_.height == height)
 			return line_step_in_bytes;
 
@@ -103,7 +103,7 @@ public:
 		// by allocating that 1 pixel boundary, we prevent accessing unallocated memory
 		// while also we never propigating the uninitialized values at sample_d[height][..] or sample_d[..][width]
 		// which are multiplied by zero in every case.
-		buffer = ippiMalloc_32f_C1(width + 1, height + 1, &line_step_in_bytes);
+		buffer = ippiMalloc_32f_C1((int)(width + 1), (int)(height + 1), &line_step_in_bytes);
 		if (buffer == NULL) {
 			//ippiFree(buffer);
 			throw ns_ex("ns_intel_image_32f::Could not allocate buffer ") << width << "," << height;
@@ -268,6 +268,13 @@ private:
 		//if we go resample to images smaller than 16x16 pixels, our gradient calculations
 		//we lose the important features we want to align.
 		num_current_pyramid_levels = log2(min_d) - 4;
+		
+		if (num_current_pyramid_levels <= 1) {
+			num_current_pyramid_levels = 1;
+			//if the image is too small to reasonably build a pyramid, don't do anything.
+			image_scaled[0].init(image.width, image.height);
+			return;
+		}
 
 		/* Computes the temporary work buffer size */
 		IppiSize    roiSize = { image.width,image.height };
@@ -277,7 +284,7 @@ private:
 
 		int status = ippiPyramidGetSize(&pyrStructSize, &pyrBufferSize, num_current_pyramid_levels - 1, roiSize, rate);
 		if (status != ippStsNoErr)
-			throw ns_ex("Could not estimate intel pyramid size");
+			throw ns_ex("Could not estimate intel pyramid size for image size") << roiSize.width << ", " << roiSize.height << " levels: " << num_current_pyramid_levels - 1 << " rate: " << rate;
 		if (pyrStructSize > max_pyrStructSize) {
 			max_pyrStructSize = pyrStructSize;
 			ns_ipps_safe_delete(pPyrStrBuffer);

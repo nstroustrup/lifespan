@@ -17,15 +17,12 @@ ns_analyzed_image_time_path_death_time_estimator * ns_get_death_time_estimator_f
 
 struct ns_analyzed_image_time_path_element_measurements{
 
-	float new_movement_ratio() const{
-		return (float)(((float)interframe_time_scaled_movement_sum - fabs(change_in_average_normalized_worm_intensity*total_worm_area))/(total_intensity_within_worm_area-(change_in_average_normalized_worm_intensity*total_worm_area)/2+1));
-	}
 	inline const double & death_time_posture_analysis_measure() const{return denoised_movement_score;}//return local_maximum_movement_sum;}
 	inline double & death_time_posture_analysis_measure()      {return denoised_movement_score;}//return local_maximum_movement_sum;}
 	
 
 	unsigned long interframe_time_scaled_movement_sum,
-				  unnormalized_movement_sum,
+				  movement_sum,
 				  movement_alternate_worm_sum,
 				  total_worm_area,
 				  total_intensity_within_worm_area,
@@ -34,12 +31,6 @@ struct ns_analyzed_image_time_path_element_measurements{
 				  total_alternate_worm_area,
 				  total_intensity_within_alternate_worm;
 
-	unsigned long local_maximum_movement_sum,
-				  local_maximum_stationary_sum;
-
-	ns_vector_2i local_maximum_position,
-				 local_maximum_area;
-	
 	double change_in_total_worm_intensity,
 		   change_in_average_normalized_worm_intensity,
 		   change_in_average_region_intensity,
@@ -47,13 +38,19 @@ struct ns_analyzed_image_time_path_element_measurements{
 		   normalized_worm_area,
 		   denoised_change_in_average_normalized_worm_intensity;
 
-	ns_optical_flow_quantification scaled_flow_magnitude,
+	/*ns_optical_flow_quantification scaled_flow_magnitude,
 								raw_flow_magnitude,
 								scaled_flow_dx, scaled_flow_dy,
-								raw_flow_dx, raw_flow_dy;
+								raw_flow_dx, raw_flow_dy;*/
 
-	double movement_score,
-		   denoised_movement_score;
+	double
+		movement_score,
+		denoised_movement_score,
+
+		spatial_averaged_movement_sum,
+		interframe_scaled_spatial_averaged_movement_sum,
+		spatial_averaged_movement_score,
+		denoised_spatial_averaged_movement_score;
 
 	ns_vector_2d registration_displacement;
 
@@ -597,7 +594,7 @@ class ns_analyzed_image_time_path {
 public:
 	ns_analyzed_image_time_path(ns_time_path_image_movement_analysis_memory_pool & memory_pool_, ns_64_bit unique_process_id_) :
 		memory_pool(&memory_pool_), volatile_backwards_path_data_written(false), first_stationary_timepoint_(0),
-		entirely_excluded(false), image_analysis_temp1(0), image_analysis_temp2(0), images_preallocated(false),
+		entirely_excluded(false), images_preallocated(false),
 		low_density_path(false), output_reciever(0), flow_output_reciever(0), path_db_id(0), region_info_id(0), movement_image_storage(0), flow_movement_image_storage(0),
 		number_of_images_loaded(0), flow(0), unique_process_id(unique_process_id_){
 		by_hand_annotation_event_times.resize((int)ns_number_of_movement_event_types, ns_death_time_annotation_time_interval::unobserved_interval()); state_intervals.resize((int)ns_movement_number_of_states);
@@ -706,9 +703,6 @@ private:
 
 		
 	ns_time_path_limits time_path_limits;
-
-	unsigned char * image_analysis_temp1,
-				  * image_analysis_temp2;
 	
 	unsigned long first_stationary_timepoint_;
 

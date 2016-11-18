@@ -596,7 +596,7 @@ public:
 		memory_pool(&memory_pool_), volatile_backwards_path_data_written(false), first_stationary_timepoint_(0),
 		entirely_excluded(false), images_preallocated(false),
 		low_density_path(false), output_reciever(0), flow_output_reciever(0), path_db_id(0), region_info_id(0), movement_image_storage(0), flow_movement_image_storage(0),
-		number_of_images_loaded(0), flow(0), unique_process_id(unique_process_id_){
+		number_of_images_loaded(0), flow(0), stabilized_worm_region_total(0), unique_process_id(unique_process_id_){
 		by_hand_annotation_event_times.resize((int)ns_number_of_movement_event_types, ns_death_time_annotation_time_interval::unobserved_interval()); state_intervals.resize((int)ns_movement_number_of_states);
 	}
 	ns_64_bit unique_process_id;
@@ -613,7 +613,7 @@ public:
 			}
 		}
 	}
-	void calculate_stabilized_worm_neighborhood(ns_image_whole<unsigned long> & temp_storage);
+	void calculate_stabilized_worm_neighborhood(ns_image_bitmap & stabilized_neighborhood);
 
 	mutable std::vector<std::string> posture_quantification_extra_debug_field_names;
 	//used by movement analysis algorithm
@@ -701,7 +701,8 @@ public:
 
 private:
 
-		
+	ns_image_whole<unsigned long> stabilized_worm_region_temp;
+	unsigned long stabilized_worm_region_total;
 	ns_time_path_limits time_path_limits;
 	
 	unsigned long first_stationary_timepoint_;
@@ -887,7 +888,7 @@ private:
 
 	void run_group_for_current_backwards_round(unsigned int group_id, const unsigned int path_id, ns_time_path_image_movement_analyzer_thread_pool_persistant_data *,ns_movement_analysis_shared_state * shared_state);
 	void run_group_for_current_forwards_round(unsigned int group_id, unsigned int path_id, ns_time_path_image_movement_analyzer_thread_pool_persistant_data *,ns_movement_analysis_shared_state * shared_state);
-	void calc_stabilized_worm_region_and_calc_stats(unsigned int group_id, unsigned int path_id, ns_time_path_image_movement_analyzer_thread_pool_persistant_data * persistant_data, ns_movement_analysis_shared_state * shared_state);
+	void finish_up_and_write_to_long_term_storage(unsigned int group_id, unsigned int path_id, ns_time_path_image_movement_analyzer_thread_pool_persistant_data * persistant_data, ns_movement_analysis_shared_state * shared_state);
 	ns_stationary_path_id generate_stationary_path_id(const unsigned long group_id, const unsigned long path_id) const{
 		return ns_stationary_path_id(group_id,path_id,analysis_id);
 	}

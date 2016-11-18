@@ -273,6 +273,8 @@ private:
 			num_current_pyramid_levels = 1;
 			//if the image is too small to reasonably build a pyramid, don't do anything.
 			image_scaled[0].init(image.width, image.height);
+			_properties = image;
+			ns_image_stream_sender<ns_8_bit, ns_gaussian_pyramid, unsigned long>::_properties = _properties;
 			return;
 		}
 

@@ -1202,7 +1202,7 @@ void ns_time_path_image_movement_analyzer::process_raw_images(const ns_64_bit re
 			while (true) {
 				int n = thread_pool.number_of_jobs_pending();
 				if (n != last_n) {
-					ns_acquire_lock_for_scope lock(shared_state.sql_lock, __FILE__, __LINE__, false);
+					ns_acquire_lock_for_scope lock(shared_state.sql_lock, __FILE__, __LINE__);
 					image_server_const.add_subtext_to_current_event(ns_to_string((100 * (groups.size()-n)) / groups.size()) + "%...", (write_status_to_db ? (&sql) : 0));
 					lock.release();
 					last_n = n;

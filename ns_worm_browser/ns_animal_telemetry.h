@@ -158,7 +158,7 @@ class ns_animal_telemetry {
 	ns_image_standard base_graph;
 	ns_graph graph;
 	ns_graph_specifics graph_specifics;
-	ns_graph_object movement_vals, size_vals, time_axes;
+	ns_graph_object movement_vals, smoothed_movement_vals,size_vals, time_axes;
 	void draw_base_graph() {
 		graph.clear();
 		ns_analyzed_image_time_path *path(&region_data->movement_analyzer.group(group_id).paths[0]);
@@ -169,8 +169,18 @@ class ns_animal_telemetry {
 		float min_score(FLT_MAX), max_score(-FLT_MAX);
 		float min_intensity(FLT_MAX), max_intensity(-FLT_MAX);
 		float min_time(FLT_MAX), max_time(-FLT_MAX);
+		float min_raw_score(FLT_MAX);
+		for (unsigned int i = 0; i < movement_vals.y.size(); i++)
+			if (path->element(i).measurements.spatial_averaged_movement_score>0 && 
+			    min_raw_score > path->element(i).measurements.spatial_averaged_movement_score)
+				min_raw_score = path->element(i).measurements.spatial_averaged_movement_score;
+		min_raw_score /= 2;
 		for (unsigned int i = 0; i < movement_vals.y.size(); i++) {
-			double d(path->element(i).measurements.new_movement_ratio());
+			double d;
+			if (path->element(i).measurements.spatial_averaged_movement_score <= 0)
+				d = log(min_raw_score);
+			else d = log(path->element(i).measurements.spatial_averaged_movement_score);
+			movement_vals.y[i] = d;
 			double n(path->element(i).measurements.total_intensity_within_worm_area);
 			double t(path->element(i).relative_time);
 			if (d < min_score) min_score = d;
@@ -180,14 +190,14 @@ class ns_animal_telemetry {
 			if (t < min_time) min_time = t;
 			if (t > max_time) max_time = t;
 		}
-
 		for (unsigned int i = 0; i < movement_vals.y.size(); i++) {
 			time_axes.x[i] = floor(path->element(i).relative_time / 6.0 / 60 / 24) / 10;
-			//scale denoised movement score to a value between 1 and 2
+			//scale denoised movement score to a value between 0 and 1
 			//which on log scale becomes 0 and 1
-			movement_vals.y[i] = log((path->element(i).measurements.new_movement_ratio() - min_score) / (max_score-min_score) + 1);
+			
+			movement_vals.y[i] = (movement_vals.y[i] - min_score) / (max_score - min_score);
 			//we crop off scores at .4 and stretch again., as we never see anything useful above that.
-			movement_vals.y[i] *= 10 / 4;
+		//	movement_vals.y[i] *= 10 / 4;
 			if (movement_vals.y[i] < 0) movement_vals.y[i] = 0;
 			if (movement_vals.y[i] > 1) movement_vals.y[i] = 1;
 
@@ -196,23 +206,41 @@ class ns_animal_telemetry {
 			if (size_vals.y[i] < 0) size_vals.y[i] = 0;
 			if (size_vals.y[i] > 1) size_vals.y[i] = 1;
 		}
+		smoothed_movement_vals.y.resize(movement_vals.y.size());
+		for ( int i = 0; i < movement_vals.y.size(); i++) {
+			int di = i - 4;
+			int ddi = i + 4;
+			if (di < 0) di = 0;
+			if (ddi >= movement_vals.y.size()) di = movement_vals.y.size()-1;
+			float sum(0);
+			for (int j = di; j <= ddi; j++) 
+				sum += movement_vals.y[j];
+			smoothed_movement_vals.y[i] = sum / (ddi - di + 1);
+		}
 
 		time_axes.x_label = "age (days)";
 		time_axes.properties.text.color = ns_color_8(255, 255, 255);
 		time_axes.properties.line.color = ns_color_8(255, 255, 255);
-		movement_vals.y_label = "Movement score";
-		movement_vals.properties.text.color = ns_color_8(255, 255, 255);
-		movement_vals.properties.line.color = ns_color_8(255,255,255);
+		smoothed_movement_vals.y_label = "Movement score";
+		smoothed_movement_vals.properties.text.color = ns_color_8(255, 255, 255);
+		smoothed_movement_vals.properties.line.color = ns_color_8(255,255,255);
 		size_vals.properties.line.color = ns_color_8(125, 125, 255);
-		movement_vals.properties.line.draw = size_vals.properties.line.draw = true;
-		movement_vals.properties.line.width = size_vals.properties.line.width = 1;
-		movement_vals.properties.point.draw = size_vals.properties.point.draw = false;
+		smoothed_movement_vals.properties.line.draw = size_vals.properties.line.draw = true;
+		smoothed_movement_vals.properties.line.width = size_vals.properties.line.width = 1;
+		smoothed_movement_vals.properties.point.draw = size_vals.properties.point.draw = false;
+
+		movement_vals.properties.line.draw = false;
+		movement_vals.properties.point.draw = true;
+		movement_vals.properties.point.width = 1;
+		movement_vals.properties.point.color = ns_color_8(200, 200, 200);
+
 
 	
-		
+
 		graph.contents.push_back(movement_vals);
-		graph.contents.push_back(time_axes);
+		graph.contents.push_back(smoothed_movement_vals);
 		graph.contents.push_back(size_vals);
+		graph.contents.push_back(time_axes);
 
 		graph.x_axis_properties.line.color = graph.y_axis_properties.line.color = ns_color_8(255, 255, 255);
 		graph.x_axis_properties.text.color = graph.y_axis_properties.text.color = ns_color_8(255, 255, 255);
@@ -243,7 +271,7 @@ class ns_animal_telemetry {
 	}
 	void overlay_metadata(const unsigned long current_element, const ns_vector_2i & position, const ns_vector_2i & buffer_size, ns_8_bit * buffer) {
 		unsigned long x_score, y_score, x_size, y_size;
-		map_value_from_graph_onto_image(time_axes.x[current_element], movement_vals.y[current_element], x_score, y_score);
+		map_value_from_graph_onto_image(time_axes.x[current_element], smoothed_movement_vals.y[current_element], x_score, y_score);
 		map_value_from_graph_onto_image(time_axes.x[current_element], size_vals.y[current_element], x_size, y_size);
 		for (int y = -2; y <= 2; y++)
 			for (int x = -2; x <= 2; x++) {
@@ -266,7 +294,7 @@ public:
 	ns_vector_2i border() const {
 		return ns_vector_2i(25, 25);
 	}
-	ns_animal_telemetry() :_show(true), region_data(0), group_id(0),size_vals(ns_graph_object::ns_graph_dependant_variable),movement_vals(ns_graph_object::ns_graph_dependant_variable), time_axes(ns_graph_object::ns_graph_independant_variable){}
+	ns_animal_telemetry() :_show(true), region_data(0), group_id(0),size_vals(ns_graph_object::ns_graph_dependant_variable), smoothed_movement_vals(ns_graph_object::ns_graph_dependant_variable),movement_vals(ns_graph_object::ns_graph_dependant_variable), time_axes(ns_graph_object::ns_graph_independant_variable){}
 	void set_current_animal(const unsigned int & group_id_, ns_death_time_posture_solo_annotater_region_data * region_data_) {
 		group_id = group_id_;
 		region_data = region_data_;

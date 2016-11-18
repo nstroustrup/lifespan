@@ -33,8 +33,6 @@ public:
 						"Winston Churchill"));
 		quotes.push_back(ns_quote("Nothing tends so much to the advancement of knowledge as the application of a new instrument. The native intellectual powers of men in different times are not so much the causes of the different success of their labours, as the peculiar nature of the means and artificial resources in their possession.",
 						"Sir Humphrey Davy"));
-		quotes.push_back(ns_quote("The technologies which have had the most profound effects on human life are usually simple. A good example of a simple technology with profound historical consequences is hay. Nobody knows who invented hay, the idea of cutting grass in the autumn and storing it in large enough quantities to keep horses and cows alive through the winter. All we know is that the technology of hay was unknown to the Roman Empire but was known to every village of medieval Europe...",
-						"Freeman Dyson"));
 		quotes.push_back(ns_quote("If it could be demonstrated that any complex organ existed which could not possibly have been formed by numerous, successive, slight modifications, my theory would absolutely break down.",
 						"Charles Darwin"));
 		quotes.push_back(ns_quote("Chance favors only the prepared mind.",

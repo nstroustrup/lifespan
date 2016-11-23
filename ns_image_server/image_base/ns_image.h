@@ -841,7 +841,7 @@ public:
 
 	///calculates the image's histogram, neglecting the value 0 which is used to represent
 	///pixels that are not part of the image.
-	ns_histogram<unsigned int, ns_component> histogram(){
+	ns_histogram<unsigned int, ns_component> histogram() const{
 		ns_histogram<unsigned int,ns_component> hist;
 		hist.clear();
 		unsigned long num_zeros = 0;

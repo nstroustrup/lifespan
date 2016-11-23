@@ -729,9 +729,9 @@ void ns_graph::plot_object(const ns_graph_object & y, const ns_graph_object & x,
 									int rx = 3*(border.x + (int)(dx*(x.x[i] - axes.boundary(0)+ spec.axes.axis_offset(0)) + shape_x))+c,
 										ry = (int)(h-border.y)-(int)(dy*(y.y[i]-axes.boundary(2)+ spec.axes.axis_offset(1)))+ shape_y;
 									if (ry < 0 || ry >= (int)h)
-										throw ns_ex("ns_graph::Could not draw point due to ry");
+										throw ns_ex("ns_graph::Could not draw vertical line due to ry");
 									if (rx < 0 || rx >= (int)(3*w))
-										throw ns_ex("ns_graph::Could not draw point due to rx");
+										throw ns_ex("ns_graph::Could not draw vertical line due to rx");
 									image[ry][rx] = (ns_8_bit)( (1.0 - y.properties.point.opacity)*image[ry][rx] + y.properties.point.opacity*(*color)[c]);
 								}
 							}
@@ -755,6 +755,16 @@ void ns_graph::plot_object(const ns_graph_object & y, const ns_graph_object & x,
 				}
 			}
 		}			
+	}
+	else if (y.type == ns_graph_object::ns_graph_horizontal_line) {
+		for (unsigned int i = 0; i < y.y.size(); i++) {
+			for (unsigned int _x = border.x; _x < w - border.x; _x++) {
+				int ry = (int)(h - border.y) - (int)(dy*(y.y[i] - axes.boundary(2) + spec.axes.axis_offset(1)));
+				for (unsigned int c = 0; c < 3; c++) {
+					image[ry][3 * _x + c] = (ns_8_bit)((1.0 - y.properties.line.opacity)*image[ry][3 * _x + c] + y.properties.line.opacity*y.properties.line.color[c]);
+				}
+			}
+		}
 	}
 	else
 		throw ns_ex("ns_graph::Support for specified graph object not yet supported");

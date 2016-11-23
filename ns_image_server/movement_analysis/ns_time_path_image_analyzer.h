@@ -17,15 +17,19 @@ ns_analyzed_image_time_path_death_time_estimator * ns_get_death_time_estimator_f
 
 struct ns_analyzed_image_time_path_element_measurements{
 
-	inline const double & death_time_posture_analysis_measure() const{return denoised_movement_score;}//return local_maximum_movement_sum;}
-	inline double & death_time_posture_analysis_measure()      {return denoised_movement_score;}//return local_maximum_movement_sum;}
+	inline const double & death_time_posture_analysis_measure_v1() const{return denoised_movement_score;}
+	inline double & death_time_posture_analysis_measure_v1 ()     {return denoised_movement_score;}
 	
+	inline const double & death_time_posture_analysis_measure_v2() const{ return denoised_spatial_averaged_movement_score; }
+	inline double & death_time_posture_analysis_measure_v2() { return spatial_averaged_movement_score; }
+
 
 	unsigned long interframe_time_scaled_movement_sum,
 				  movement_sum,
 				  movement_alternate_worm_sum,
 				  total_worm_area,
 				  total_intensity_within_worm_area,
+				total_intensity_in_previous_frame_scaled_to_current_frames_histogram,
 				  total_region_area,
 				  total_intensity_within_region,
 				  total_alternate_worm_area,
@@ -313,7 +317,7 @@ inline void ns_set_bit(const bool f, //conditional
 
 struct ns_registered_image_set{
 	ns_registered_image_set(){}
-	ns_registered_image_set(const ns_image_properties & p){
+	ns_registered_image_set(const ns_image_properties & p):histograms_matched(false){
 		image.use_more_memory_to_avoid_reallocations();	
 		//worm_threshold_.use_more_memory_to_avoid_reallocations();	
 		worm_region_threshold.use_more_memory_to_avoid_reallocations();	
@@ -360,10 +364,12 @@ struct ns_registered_image_set{
 		flow_image_dy.resize(p);
 		#endif
 	}
+	//the per-level scane factor that transforms the previous registered image
+	//in the series to have the same histogram as this one.
+	float histogram_matching_factors[256];
+	bool histograms_matched;
+
 	ns_image_standard image;
-	//ns_image_bitmap   worm_threshold_;
-	//ns_image_bitmap   worm_neighborhood_threshold;
-	//ns_image_bitmap   region_threshold;
 	ns_image_standard worm_region_threshold;
 	ns_image_standard_signed movement_image_;
 	#ifdef NS_CALCULATE_OPTICAL_FLOW
@@ -635,8 +641,8 @@ public:
 	void write_detailed_movement_quantification_analysis_header(std::ostream & o);
 	static void write_summary_movement_quantification_analysis_header(std::ostream & o);
 	static void write_analysis_optimization_data_header(std::ostream & o);
-	void write_analysis_optimization_data(const ns_stationary_path_id & id, const std::vector<double> & thresholds, const std::vector<double> & hold_times, const ns_region_metadata & m, const ns_time_series_denoising_parameters & denoising_parameters, std::ostream & o) const;
-	void calculate_analysis_optimization_data(const std::vector<double> & thresholds, const std::vector<double> & hold_times, std::vector< std::vector < unsigned long > > & death_times) const;
+	void write_analysis_optimization_data(int software_version_number,const ns_stationary_path_id & id, const std::vector<double> & thresholds, const std::vector<double> & hold_times, const ns_region_metadata & m, const ns_time_series_denoising_parameters & denoising_parameters, std::ostream & o) const;
+	void calculate_analysis_optimization_data(const std::vector<double> & thresholds, const std::vector<double> & hold_times, std::vector< std::vector < unsigned long > > & death_times, int software_version) const;
 
 	ns_vector_2i path_region_position,
 		path_region_size,
@@ -854,7 +860,7 @@ public:
 	void write_summary_movement_quantification_analysis_data(const ns_region_metadata & m, std::ostream & o)const;
 
 	void write_detailed_movement_quantification_analysis_data(const ns_region_metadata & m, std::ostream & o,const bool only_output_elements_with_by_hand_data,const long specific_animal_id=-1, const bool abbreviated_time_series=false)const;
-	void write_analysis_optimization_data(const std::vector<double> & thresholds, const std::vector<double> & hold_times, const ns_region_metadata & m,std::ostream & o) const;
+	void write_analysis_optimization_data(int software_version_number,const std::vector<double> & thresholds, const std::vector<double> & hold_times, const ns_region_metadata & m,std::ostream & o) const;
 	
 	void output_visualization(const std::string & base_directory) const;
 
@@ -918,7 +924,7 @@ private:
 
 	const ns_time_path_solution * solution;
 	void generate_movement_description_series();
-	void normalize_movement_scores_over_all_paths(const ns_time_series_denoising_parameters &);
+	void normalize_movement_scores_over_all_paths(const int software_version,const ns_time_series_denoising_parameters &);
 	ns_worm_movement_description_series description_series;
 
 	ns_time_series_denoising_parameters denoising_parameters_used;

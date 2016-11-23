@@ -277,7 +277,7 @@ void analyze_worm_movement_across_frames(const ns_processing_job & job, ns_image
 		ns_acquire_for_scope < std:: ostream > o2(image_server->results_storage.time_path_image_analysis_quantification(sub, "optimization_stats", false, sql).output());
 		ns_analyzed_image_time_path::write_analysis_optimization_data_header(o2());
 		o2() << "\n";
-		time_path_image_analyzer.write_analysis_optimization_data(thresholds, hold_times, metadata, o2());
+		time_path_image_analyzer.write_analysis_optimization_data(2,thresholds, hold_times, metadata, o2());
 	}
 
 	//update db stats

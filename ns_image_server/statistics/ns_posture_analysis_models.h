@@ -139,7 +139,7 @@ struct ns_emperical_posture_quantification_value_estimator{
 	}
 	void read(std::istream & moving_cdf_in,std::istream & dead_cdf_in);
 	void write(std::ostream & moving_cdf_out,std::ostream & dead_cdf_out,std::ostream * visualization_file, const std::string & experiment_name = "") const;
-	bool add_by_hand_data_to_sample_set(ns_analyzed_image_time_path * path);
+	bool add_by_hand_data_to_sample_set(int software_version,ns_analyzed_image_time_path * path);
 	void generate_estimators_from_samples();
 	void write_samples(std::ostream & o,const std::string & experiment_name="");
 	static ns_emperical_posture_quantification_value_estimator dummy();
@@ -151,6 +151,7 @@ struct ns_threshold_movement_posture_analyzer_parameters{
 	double stationary_cutoff,
 		   posture_cutoff;
 	unsigned long permanance_time_required_in_seconds;
+	bool use_v1_movement_score;
 	static ns_threshold_movement_posture_analyzer_parameters default_parameters(const unsigned long experiment_duration_in_seconds);
 	void read(std::istream & i);
 	void write(std::ostream & o)const;

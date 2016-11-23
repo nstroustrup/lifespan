@@ -135,7 +135,7 @@ void ns_posture_change_markov_likelihood_estimator::calculate_cumulative_loglike
 	out.close();*/
 };
 
-ns_time_path_posture_movement_solution ns_time_path_movement_markov_solver::estimate_posture_movement_states(const ns_analyzed_image_time_path * path, ns_analyzed_image_time_path * output_path, std::ostream * debug_output)const{
+ns_time_path_posture_movement_solution ns_time_path_movement_markov_solver::estimate_posture_movement_states(int software_version,const ns_analyzed_image_time_path * path, ns_analyzed_image_time_path * output_path, std::ostream * debug_output)const{
 	std::vector<double> movement_ratio, 
 					    tm;
 	std::vector<unsigned long> index_mapping;
@@ -146,7 +146,7 @@ ns_time_path_posture_movement_solution ns_time_path_movement_markov_solver::esti
 	for (unsigned int i = 0; i < path->element_count(); i++){
 		if (path->element(i).excluded)
 			continue;
-		movement_ratio.push_back(path->element(i).measurements.death_time_posture_analysis_measure());
+		movement_ratio.push_back((software_version == 1 ? path->element(i).measurements.death_time_posture_analysis_measure_v1() : path->element(i).measurements.death_time_posture_analysis_measure_v2()));
 		tm.push_back(path->element(i).absolute_time);
 		index_mapping.push_back(i);
 	}
@@ -311,7 +311,7 @@ void ns_emperical_posture_quantification_value_estimator::write_visualization(st
 	}
 
 }
-bool ns_emperical_posture_quantification_value_estimator::add_by_hand_data_to_sample_set(ns_analyzed_image_time_path * path){
+bool ns_emperical_posture_quantification_value_estimator::add_by_hand_data_to_sample_set(int software_version, ns_analyzed_image_time_path * path){
 	if (path->by_hand_data_specified()){
 		for (unsigned int i = 0; i < path->element_count(); i++){
 			ns_movement_state s(path->by_hand_movement_state(path->element(i).absolute_time));
@@ -328,11 +328,11 @@ bool ns_emperical_posture_quantification_value_estimator::add_by_hand_data_to_sa
 																			  //the movement score at the death time in the moving 
 																			  //animal set.
 				{
-				raw_moving_cdf.add_sample(path->element(i).measurements.death_time_posture_analysis_measure());
+				raw_moving_cdf.add_sample((software_version==1)?path->element(i).measurements.death_time_posture_analysis_measure_v1(): path->element(i).measurements.death_time_posture_analysis_measure_v2());
 			}
 			if (s == ns_movement_stationary ||
 				s == ns_movement_death_posture_relaxation)
-				dead_cdf.add_sample(path->element(i).measurements.death_time_posture_analysis_measure());
+				dead_cdf.add_sample((software_version == 1) ? path->element(i).measurements.death_time_posture_analysis_measure_v1() : path->element(i).measurements.death_time_posture_analysis_measure_v2());
 		}
 		return true;
 	}
@@ -376,6 +376,9 @@ ns_threshold_movement_posture_analyzer_parameters ns_threshold_movement_posture_
 		
 	p.posture_cutoff = 6;
 	p.stationary_cutoff = 6;
+
+	p.use_v1_movement_score = true;
+
 	//for really short experiments (i.e. heat shock), lower the duration for which animals must be stationary 
 	//before being annotated as such.
 	
@@ -401,9 +404,21 @@ void ns_threshold_movement_posture_analyzer_parameters::read(std::istream & i){
 	if (tmp != "hold_time_seconds" || i.fail())
 		throw ns_ex("ns_threshold_movement_posture_analyzer_parameters::read()::Syntax error 3");
 	i >> permanance_time_required_in_seconds;
+	getline(i, tmp, '\n');
+	getline(i, tmp, ',');
+	if (i.fail()) {
+		use_v1_movement_score = true;
+		return;
+	}
+	 if (tmp != "software_version_number")
+		throw ns_ex("ns_threshold_movement_posture_analyzer_parameters::read()::Syntax error 4");
+	 int a;
+	 i >> a;
+	 use_v1_movement_score = a == 1;
 }
 void ns_threshold_movement_posture_analyzer_parameters::write(std::ostream & o)const{
 	o << "posture_cutoff, " << posture_cutoff << "\n"
 		"stationary_cutoff, " << stationary_cutoff << "\n"
-		"hold_time, " << permanance_time_required_in_seconds << "\n";
+		"hold_time, " << permanance_time_required_in_seconds << "\n"
+		"software_version_number, " << (use_v1_movement_score?"1":"2") << "\n";
 }

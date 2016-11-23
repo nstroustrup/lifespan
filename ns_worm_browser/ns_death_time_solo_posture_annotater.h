@@ -436,6 +436,8 @@ public:
 				if (current_worm->element(current_timepoint_id).absolute_time >= current_time)
 					break;
 			}	
+		if (current_timepoint_id >= current_worm->element_count())
+			current_timepoint_id = current_worm->element_count() - 1;
 		bool give_up_on_preload(false);
 		if (current_timepoint_id > 50 && give_up_if_too_long){
 			give_up_on_preload = true;
@@ -511,7 +513,14 @@ public:
 				throw ns_ex("The specified group has multiple paths! This should be impossible");
 			current_worm = &current_region_data->movement_analyzer[worm.group_id].paths[worm.path_id];
 			current_animal_id = 0;
-			telemetry.set_current_animal(worm.group_id, current_region_data);
+
+			ns_image_server::ns_posture_analysis_model_cache::const_handle_t handle;
+			image_server.get_posture_analysis_model_for_region(region_info_id_, handle, sql);
+			ns_posture_analysis_model mod(handle().model_specification);
+			mod.threshold_parameters.use_v1_movement_score = false;
+			handle.release();
+
+			telemetry.set_current_animal(worm.group_id,mod, current_region_data);
 
 
 		//	if (current_region_data->by_hand_timing_data[worm.group_id].animals.size() == 0)

@@ -1001,11 +1001,11 @@ class ns_worm_terminal_main_menu_organizer : public ns_menu_organizer{
 	static void generate_movement_image_analysis_optimization_data(const std::string & value){
 	
 		if (value.find("Quiecent") != value.npos)
-			worm_learner.output_movement_analysis_optimization_data(ns_worm_learner::ns_quiecent);
+			worm_learner.output_movement_analysis_optimization_data(2,ns_worm_learner::ns_quiecent);
 		else if (value.find("Lifespan") != value.npos)
-			worm_learner.output_movement_analysis_optimization_data(ns_worm_learner::ns_lifespan);
+			worm_learner.output_movement_analysis_optimization_data(2,ns_worm_learner::ns_lifespan);
 		else 
-			worm_learner.output_movement_analysis_optimization_data(ns_worm_learner::ns_thermotolerance);
+			worm_learner.output_movement_analysis_optimization_data(2,ns_worm_learner::ns_thermotolerance);
 		
 	}
 

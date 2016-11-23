@@ -1640,19 +1640,34 @@ void ns_worm_learner::generate_scanner_lifespan_statistics(bool use_by_hand_cens
 
 };
 
-void ns_worm_learner::output_movement_analysis_optimization_data(const ns_parameter_set_range & range){
+void ns_worm_learner::output_movement_analysis_optimization_data(int software_version_number, const ns_parameter_set_range & range){
 	ns_acquire_for_scope<ns_sql> sql(image_server.new_sql_connection(__FILE__,__LINE__));
 	unsigned int experiment_id = data_selector.current_experiment_id();
+	std::vector<double> thresholds;
+	if (software_version_number == 1) {
+		const double min_thresh(.0005);
+		const double max_thresh(.5);
+		const long number_of_thresholds(60);
+		const double log_dt(((log(max_thresh) - log(min_thresh)) / number_of_thresholds));
+		thresholds.resize(number_of_thresholds);
 
-	const double min_thresh(.0005);
-	const double max_thresh(.5);
-	const long number_of_thresholds(60);
-	const double log_dt(((log(max_thresh)-log(min_thresh))/number_of_thresholds));
-	std::vector<double> thresholds(number_of_thresholds);
-	
-	double cur=min_thresh;
-	for (unsigned long i = 0; i < number_of_thresholds; i++){
-		thresholds[i]=exp(log(min_thresh)+log_dt*i);
+		double cur = min_thresh;
+		for (unsigned long i = 0; i < number_of_thresholds; i++) {
+			thresholds[i] = exp(log(min_thresh) + log_dt*i);
+		}
+	}
+	else {
+		const double min_thresh(.00005);
+		const double max_thresh(.05);
+		const long number_of_thresholds(60);
+		const double log_dt(((log(max_thresh) - log(min_thresh)) / number_of_thresholds));
+		thresholds.resize(number_of_thresholds);
+
+		double cur = min_thresh;
+		for (unsigned long i = 0; i < number_of_thresholds; i++) {
+			thresholds[i] = exp(log(min_thresh) + log_dt*i);
+		}
+
 	}
 
 	
@@ -1721,11 +1736,13 @@ void ns_worm_learner::output_movement_analysis_optimization_data(const ns_parame
 					ns_time_path_image_movement_analyzer time_path_image_analyzer;
 					ns_image_server::ns_posture_analysis_model_cache::const_handle_t handle;
 					image_server.get_posture_analysis_model_for_region(region_id, handle, sql());
-
+					ns_posture_analysis_model mod(handle().model_specification);
+					mod.threshold_parameters.use_v1_movement_score = false;
+					handle.release();
 					ns_acquire_for_scope<ns_analyzed_image_time_path_death_time_estimator> death_time_estimator(
 					
-						ns_get_death_time_estimator_from_posture_analysis_model(
-					handle().model_specification));
+					ns_get_death_time_estimator_from_posture_analysis_model(mod));
+
 					time_path_image_analyzer.load_completed_analysis(region_id,time_path_solution,denoising_parameters,&death_time_estimator(),sql());
 					death_time_estimator.release();
 					ns_region_metadata metadata;
@@ -1744,7 +1761,7 @@ void ns_worm_learner::output_movement_analysis_optimization_data(const ns_parame
 				
 					o2() << "\n";
 					cerr << metadata.plate_name() << "\n";
-					time_path_image_analyzer.write_analysis_optimization_data(thresholds,hold_times,metadata,o2());
+					time_path_image_analyzer.write_analysis_optimization_data(software_version_number,thresholds,hold_times,metadata,o2());
 				}
 			}
 			catch(ns_ex & ex){
@@ -1953,8 +1970,8 @@ void ns_worm_learner::generate_experiment_movement_image_quantification_analysis
 					bool added_data(false);
 					for (unsigned int g = 0; g < movement_results.samples[i].regions[j].time_path_image_analyzer.size(); g++){
 						for (unsigned int p = 0; p < movement_results.samples[i].regions[j].time_path_image_analyzer.group(g).paths.size(); p++){
-							aggregate_value_estimator.add_by_hand_data_to_sample_set(&movement_results.samples[i].regions[j].time_path_image_analyzer.group(g).paths[p]);
-							value_estimators[movement_results.samples[i].regions[j].metadata.device_regression_match_description()].add_by_hand_data_to_sample_set(&movement_results.samples[i].regions[j].time_path_image_analyzer.group(g).paths[p]);
+							aggregate_value_estimator.add_by_hand_data_to_sample_set(2,&movement_results.samples[i].regions[j].time_path_image_analyzer.group(g).paths[p]);
+							value_estimators[movement_results.samples[i].regions[j].metadata.device_regression_match_description()].add_by_hand_data_to_sample_set(2, &movement_results.samples[i].regions[j].time_path_image_analyzer.group(g).paths[p]);
 					
 						}
 					}
@@ -7257,14 +7274,52 @@ void ns_death_time_solo_posture_annotater::register_click(const ns_vector_2i & i
 
 	const unsigned long hand_bar_height((current_by_hand_timing_data().animals.size() + 1)*ns_death_time_solo_posture_annotater_timepoint::ns_movement_bar_height);
 
+	ns_vector_2i graph_tl(worm_learner->worm_window.worm_image_size.x, 0);
+	ns_vector_2i graph_br = graph_tl + telemetry.image_size();
 
+	const bool click_in_graph_area(image_position.x >= graph_tl.x && image_position.x < graph_br.x &&
+		image_position.y >= graph_tl.y && image_position.y < graph_br.y);
+
+		const bool click_in_bar_area(image_position.y >= hand_bar_group_bottom &&
+			image_position.y < hand_bar_group_bottom + hand_bar_height);
 	bool change_made = false;
 	bool click_handled_by_hand_bar_choice(false);
-	if (action == ns_cycle_state &&
-		image_position.y >= hand_bar_group_bottom &&
-		image_position.y < hand_bar_group_bottom + hand_bar_height) {
+	if (action == ns_cycle_state && (click_in_bar_area || click_in_graph_area )) {
 		const unsigned long all_bar_id((image_position.y - hand_bar_group_bottom) / ns_death_time_solo_posture_annotater_timepoint::ns_movement_bar_height);
-		if (all_bar_id > 0) {
+
+		if (all_bar_id == 0 || click_in_graph_area) {
+
+			ns_vector_2i bottom_margin_bottom(bottom_margin_position());
+			const ns_time_path_limits observation_limit(current_worm->observation_limits());
+
+			bool switch_time(false);
+			unsigned long requested_time;
+			if (click_in_graph_area) {
+				ns_vector_2d graph_position(telemetry.get_graph_value_from_click_position(image_position.x-graph_tl.x, image_position.y- graph_tl.y));
+				cerr << graph_position << "\n";
+				if (graph_position.x >= 0) {
+					switch_time = true;
+					requested_time = telemetry.get_graph_time_from_graph_position(graph_position.x);
+				}
+			}
+			else {
+				switch_time = true;
+				requested_time = current_machine_timing_data->animals[0].get_time_from_movement_diagram_position(image_position.x, bottom_margin_bottom,
+					ns_vector_2i(current_worm->element(current_element_id()).image().properties().width, 0),
+					observation_limit);
+			}
+			if (switch_time) {
+				clear_cached_images();
+				set_current_timepoint(requested_time, false);
+				{
+					ns_image_standard temp_buffer;
+					timepoints[current_timepoint_id].load_image(1024, current_image, sql(), temp_buffer, 1);
+				}
+				change_made = true;
+			}
+			click_handled_by_hand_bar_choice = true;
+		}
+		else {
 			const unsigned long hand_bar_id = all_bar_id - 1;
 			if (hand_bar_id > current_by_hand_timing_data().animals.size())
 				throw ns_ex("Invalid hand bar");
@@ -7273,23 +7328,6 @@ void ns_death_time_solo_posture_annotater::register_click(const ns_vector_2i & i
 				change_made = true;
 				click_handled_by_hand_bar_choice = true;
 			}
-		}
-		else {
-			ns_vector_2i bottom_margin_bottom(bottom_margin_position());
-			const ns_time_path_limits observation_limit(current_worm->observation_limits());
-
-			unsigned long requested_time = current_machine_timing_data->animals[0].get_time_from_movement_diagram_position(image_position.x, bottom_margin_bottom,
-				ns_vector_2i(current_worm->element(current_element_id()).image().properties().width, 0),
-				observation_limit);
-			clear_cached_images();
-			set_current_timepoint(requested_time, false);
-			{
-				ns_image_standard temp_buffer;
-				timepoints[current_timepoint_id].load_image(1024, current_image, sql(), temp_buffer, 1);
-			}
-			change_made = true;
-
-			click_handled_by_hand_bar_choice = true;
 		}
 	}
 	if (!click_handled_by_hand_bar_choice) {

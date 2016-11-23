@@ -159,27 +159,41 @@ class ns_animal_telemetry {
 	ns_graph graph;
 	ns_graph_specifics graph_specifics;
 	ns_graph_object movement_vals, smoothed_movement_vals,size_vals, time_axes;
+	ns_posture_analysis_model posture_analysis_model;
 	void draw_base_graph() {
 		graph.clear();
 		ns_analyzed_image_time_path *path(&region_data->movement_analyzer.group(group_id).paths[0]);
-
+		if (path->element_count() < 1)
+			throw ns_ex("Time series is too short");
 		movement_vals.y.resize(path->element_count());
 		time_axes.x.resize(movement_vals.y.size());
 		size_vals.y.resize(movement_vals.y.size());
 		float min_score(FLT_MAX), max_score(-FLT_MAX);
 		float min_intensity(FLT_MAX), max_intensity(-FLT_MAX);
 		float min_time(FLT_MAX), max_time(-FLT_MAX);
-		float min_raw_score(FLT_MAX);
+		std::vector<float> scores(movement_vals.y.size());
+		//find lowest movement score.
 		for (unsigned int i = 0; i < movement_vals.y.size(); i++)
-			if (path->element(i).measurements.spatial_averaged_movement_score>0 && 
-			    min_raw_score > path->element(i).measurements.spatial_averaged_movement_score)
-				min_raw_score = path->element(i).measurements.spatial_averaged_movement_score;
-		min_raw_score /= 2;
+			scores[i] = path->element(i).measurements.death_time_posture_analysis_measure_v2();
+		std::sort(scores.begin(), scores.end());
+		float min_raw_score = scores[scores.size() / 20];
+		float second_min_raw_score = min_raw_score *= 1.01; //default
+		for (int i = scores.size() / 20 + 1; i < scores.size(); i++) {
+			if (scores[i] > min_raw_score) {
+				second_min_raw_score = scores[i];
+				break;
+			}
+		}
+		float max_raw_score = scores[scores.size()-scores.size() / 20 -1];
+	
 		for (unsigned int i = 0; i < movement_vals.y.size(); i++) {
-			double d;
-			if (path->element(i).measurements.spatial_averaged_movement_score <= 0)
-				d = log(min_raw_score);
-			else d = log(path->element(i).measurements.spatial_averaged_movement_score);
+			double d(path->element(i).measurements.death_time_posture_analysis_measure_v2());
+			if (d >= max_raw_score) d = log(max_raw_score - min_raw_score);
+			else if (d <= min_raw_score)
+				d = log(second_min_raw_score - min_raw_score); //can't be zero before we take the log
+			else d = log(d- min_raw_score);
+			
+
 			movement_vals.y[i] = d;
 			double n(path->element(i).measurements.total_intensity_within_worm_area);
 			double t(path->element(i).relative_time);
@@ -190,14 +204,23 @@ class ns_animal_telemetry {
 			if (t < min_time) min_time = t;
 			if (t > max_time) max_time = t;
 		}
+		double threshold;
+		if (posture_analysis_model.threshold_parameters.stationary_cutoff >= max_raw_score)
+			threshold = max_raw_score - min_raw_score;
+		else if (posture_analysis_model.threshold_parameters.stationary_cutoff <= min_raw_score)
+			threshold = second_min_raw_score - min_raw_score;
+		else threshold = posture_analysis_model.threshold_parameters.stationary_cutoff - min_raw_score;
+		threshold = log(threshold);
+		if (min_score > threshold)
+			min_score = threshold;
+		if (max_score < threshold)
+			max_score = threshold;
 		for (unsigned int i = 0; i < movement_vals.y.size(); i++) {
 			time_axes.x[i] = floor(path->element(i).relative_time / 6.0 / 60 / 24) / 10;
 			//scale denoised movement score to a value between 0 and 1
 			//which on log scale becomes 0 and 1
 			
 			movement_vals.y[i] = (movement_vals.y[i] - min_score) / (max_score - min_score);
-			//we crop off scores at .4 and stretch again., as we never see anything useful above that.
-		//	movement_vals.y[i] *= 10 / 4;
 			if (movement_vals.y[i] < 0) movement_vals.y[i] = 0;
 			if (movement_vals.y[i] > 1) movement_vals.y[i] = 1;
 
@@ -206,17 +229,26 @@ class ns_animal_telemetry {
 			if (size_vals.y[i] < 0) size_vals.y[i] = 0;
 			if (size_vals.y[i] > 1) size_vals.y[i] = 1;
 		}
+
+		ns_graph_object threshold_object(ns_graph_object::ns_graph_horizontal_line);
+		double th((threshold- min_score)/(max_score - min_score));
+		if (th< 0) th = 0;
+		if (th > 1) th = 1;
+		threshold_object.y.push_back(th);
+
+
 		smoothed_movement_vals.y.resize(movement_vals.y.size());
 		for ( int i = 0; i < movement_vals.y.size(); i++) {
 			int di = i - 4;
 			int ddi = i + 4;
 			if (di < 0) di = 0;
-			if (ddi >= movement_vals.y.size()) di = movement_vals.y.size()-1;
+			if (ddi >= movement_vals.y.size()) ddi = movement_vals.y.size()-1;
 			float sum(0);
 			for (int j = di; j <= ddi; j++) 
 				sum += movement_vals.y[j];
 			smoothed_movement_vals.y[i] = sum / (ddi - di + 1);
 		}
+
 
 		time_axes.x_label = "age (days)";
 		time_axes.properties.text.color = ns_color_8(255, 255, 255);
@@ -233,14 +265,20 @@ class ns_animal_telemetry {
 		movement_vals.properties.point.draw = true;
 		movement_vals.properties.point.width = 1;
 		movement_vals.properties.point.color = ns_color_8(200, 200, 200);
+		movement_vals.properties.point.edge_width = 1;
 
 
-	
+
+		threshold_object.properties.line.color = ns_color_8(100, 100, 100);
+		threshold_object.properties.line.draw = true;
+
 
 		graph.contents.push_back(movement_vals);
 		graph.contents.push_back(smoothed_movement_vals);
+		graph.contents.push_back(threshold_object);
 		graph.contents.push_back(size_vals);
 		graph.contents.push_back(time_axes);
+
 
 		graph.x_axis_properties.line.color = graph.y_axis_properties.line.color = ns_color_8(255, 255, 255);
 		graph.x_axis_properties.text.color = graph.y_axis_properties.text.color = ns_color_8(255, 255, 255);
@@ -286,7 +324,24 @@ class ns_animal_telemetry {
 			}
 
 	}
+	
 public:
+	unsigned long get_graph_time_from_graph_position(const float x) { //x is in relative time
+		ns_analyzed_image_time_path *path(&region_data->movement_analyzer.group(group_id).paths[0]);
+
+		unsigned long dT(path->element(path->element_count()-1).absolute_time - path->element(0).absolute_time);
+		float dt((path->element(path->element_count()-1).relative_time - path->element(0).relative_time) / 60.0 / 60.0 / 24.0);
+		return ((x - path->element(0).relative_time / 60.0 / 60.0 / 24.0) / dt)*dT + path->element(0).absolute_time;
+
+	}
+	ns_vector_2i get_graph_value_from_click_position(const unsigned long &x, const unsigned long & y) const{
+		ns_vector_2i res;
+		res.x = ((long)x - (long)graph_specifics.boundary.x - (long)border().x) / (graph_specifics.dx) + graph_specifics.axes.boundary(0) - graph_specifics.axes.axis_offset(0);
+
+		//y = base_graph.properties().height - graph_specifics.boundary.y - (unsigned int)(graph_specifics.dy*(y - graph_specifics.axes.boundary(2) + graph_specifics.axes.axis_offset(1)));
+		res.y = -((long)y - base_graph.properties().height + graph_specifics.boundary.y + border().y) / graph_specifics.dy + graph_specifics.axes.boundary(2) - graph_specifics.axes.axis_offset(1);
+		return res;
+	}
 	ns_vector_2i image_size() const { 
 		if (!_show) return ns_vector_2i(0, 0);
 		return ns_vector_2i(300, 300); 
@@ -295,10 +350,11 @@ public:
 		return ns_vector_2i(25, 25);
 	}
 	ns_animal_telemetry() :_show(true), region_data(0), group_id(0),size_vals(ns_graph_object::ns_graph_dependant_variable), smoothed_movement_vals(ns_graph_object::ns_graph_dependant_variable),movement_vals(ns_graph_object::ns_graph_dependant_variable), time_axes(ns_graph_object::ns_graph_independant_variable){}
-	void set_current_animal(const unsigned int & group_id_, ns_death_time_posture_solo_annotater_region_data * region_data_) {
+	void set_current_animal(const unsigned int & group_id_, ns_posture_analysis_model & mod,ns_death_time_posture_solo_annotater_region_data * region_data_) {
 		group_id = group_id_;
 		region_data = region_data_;
 		base_graph.init(ns_image_properties(0, 0, 3));
+		posture_analysis_model = mod;
 	}
 	void draw(const unsigned long element_id, const ns_vector_2i & position, const ns_vector_2i & graph_size, const ns_vector_2i & buffer_size, ns_8_bit * buffer) {
 		if (base_graph.properties().height == 0) {
@@ -307,6 +363,8 @@ public:
 			prop.components = 3;
 			prop.width = graph_size.x- 2*border().x;
 			prop.height = graph_size.y - 2*border().y;
+
+
 			base_graph.init(prop);
 			try {
 				draw_base_graph();

@@ -3654,6 +3654,22 @@ void ns_match_histograms(const ns_image_standard & im1, const ns_image_standard 
 	}
 }
 
+void ns_analyzed_image_time_path::spatially_average_movement(const int y, const int x, const int k, const ns_image_standard_signed & im, long &averaged_sum, long &count) {
+	averaged_sum = 0; 
+	count = 0;
+	for (int dy = -k; dy <= k; dy++) {
+		const long y_(y + dy);
+		if (y_ < 0 || y_ >= im.properties().height)
+			continue;
+		for (int dx = -k; dx <= k; dx++) {
+			const long x_(x + dx);
+			if (x_ < 0 || x_ >=im.properties().width)
+				continue;
+			averaged_sum += im[y_][x_];
+			count++;
+		}
+	}
+}
 void ns_analyzed_image_time_path::quantify_movement(const ns_analyzed_time_image_chunk & chunk){
 	
 
@@ -3787,6 +3803,8 @@ void ns_analyzed_image_time_path::quantify_movement(const ns_analyzed_time_image
 			alternate_movement_sum(0);
 		elements[i].measurements.movement_sum = 0;
 		elements[i].measurements.spatial_averaged_movement_sum = 0;
+
+
 		for (long y = 0; y < elements[i].registered_images->movement_image_.properties().height; y++) {
 			for (long x = 0; x < elements[i].registered_images->movement_image_.properties().width; x++) {
 
@@ -3801,20 +3819,9 @@ void ns_analyzed_image_time_path::quantify_movement(const ns_analyzed_time_image
 				elements[i].measurements.movement_sum += (worm_threshold ? abs(elements[i].registered_images->movement_image_[y][x]) : 0);
 				//there is a lot of low-level pixel noise that can average out even with a small 5x5 kernal.
 				if (worm_threshold) {
-					long averaged_sum(0), count(0), averaged_intensity(0);
-					for (int dy = -2; dy <= 2; dy++) {
-						const long y_(y + dy);
-						if (y_ < 0 || y_ >= elements[i].registered_images->movement_image_.properties().height)
-							continue;
-						for (int dx = -2; dx <= 2; dx++) {
-							const long x_(x + dx);
-							if (x_ < 0 || x_ >= elements[i].registered_images->movement_image_.properties().width)
-								continue;
-							averaged_sum += elements[i].registered_images->movement_image_[y_][x_];
-						count++;
-						}
-					}
-					if (averaged_sum < count*ns_time_path_image_movement_analyzer::ns_spatially_averaged_movement_threshold)
+					long averaged_sum, count;
+					spatially_average_movement(y, x, ns_time_path_image_movement_analyzer::ns_spatially_averaged_movement_kernal_half_size,elements[i].registered_images->movement_image_, averaged_sum, count);
+					if (abs(averaged_sum) < count*ns_time_path_image_movement_analyzer::ns_spatially_averaged_movement_threshold)
 						averaged_sum = 0;
 					if (count > 0) {
 						elements[i].measurements.spatial_averaged_movement_sum += abs(averaged_sum / (float)count);

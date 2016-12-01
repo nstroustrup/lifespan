@@ -423,6 +423,8 @@ public:
 	const ns_image_standard & image() const { return registered_images->image;}
 	const ns_image_standard * image_p() const { if (registered_images == 0 ) return 0;return &registered_images->image;}
 	bool worm_threshold(unsigned long y, unsigned long x) const { return registered_images->get_worm_neighborhood_threshold(y,x);}
+	bool worm_stabilized_threshold(unsigned long y, unsigned long x) const { return registered_images->get_stabilized_worm_neighborhood_threshold(y, x); }
+
 	const ns_image_standard_signed & movement_image_() const {return registered_images->movement_image_;}
 	
 	bool saturated_offset;
@@ -704,6 +706,7 @@ public:
 		return ns_death_time_annotation_time_interval(elements[first_stationary_timepoint_-1].absolute_time,elements[first_stationary_timepoint_].absolute_time);
 	}
 
+	static inline void spatially_average_movement(const int y, const int x, const int k, const ns_image_standard_signed & im, long &averaged_sum, long &count);
 
 private:
 
@@ -734,6 +737,7 @@ private:
 	std::vector<ns_death_time_annotation_time_interval> by_hand_annotation_event_times;
 
 	void quantify_movement(const ns_analyzed_time_image_chunk & chunk);
+
 	//generates path_aligned_image from region visualiation
 
 	typedef enum { ns_lrv_just_images, ns_lrv_just_flag, ns_lrv_flag_and_images } ns_load_type;
@@ -813,7 +817,7 @@ struct ns_analyzed_image_time_path_group{
 struct ns_movement_analysis_shared_state;
 class ns_time_path_image_movement_analyzer {
 public:
-	enum { ns_spatially_averaged_movement_threshold = 30 };
+	enum { ns_spatially_averaged_movement_threshold = 10, ns_spatially_averaged_movement_kernal_half_size=2};
 	ns_time_path_image_movement_analyzer():paths_loaded_from_solution(false),
 		movement_analyzed(false),region_info_id(0),last_timepoint_in_analysis_(0),
 		number_of_timepoints_in_analysis_(0),image_db_info_loaded(false),externally_specified_plate_observation_interval(0,ULONG_MAX){}

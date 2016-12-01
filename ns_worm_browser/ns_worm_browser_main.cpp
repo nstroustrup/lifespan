@@ -1826,9 +1826,7 @@ public:
         gl_window = new ns_worm_terminal_gl_window(0, menu_height(), w()-border_width(), h()-menu_height()-info_bar_height());
 
     	main_menu = new Fl_Menu_Bar(0,0,W,menu_height());
-		region_menu = new Fl_Menu_Bar(experiment_bar_width(),H-info_bar_height(),region_name_bar_width(),info_bar_height());
-		strain_menu = new Fl_Menu_Bar(experiment_bar_width()+region_name_bar_width(),H-info_bar_height(),strain_bar_width(),info_bar_height());
-		exclusion_menu = new Fl_Menu_Bar(experiment_bar_width() + region_name_bar_width() + strain_bar_width(),H-info_bar_height(),exclusion_bar_width(),info_bar_height());
+		
 	
 		float d(worm_learner.main_window.display_rescale_factor);
 		float menu_d(worm_learner.main_window.display_rescale_factor);
@@ -1838,27 +1836,9 @@ public:
 
 		main_menu->textsize((main_menu->textsize()-2)*menu_d);
 		main_menu->textfont(FL_HELVETICA);
-		region_menu->textsize((region_menu->textsize()-4)*menu_d);
-		region_menu->textfont(FL_HELVETICA);
-		strain_menu->textsize(region_menu->textsize()*menu_d);
-		strain_menu->textfont(FL_HELVETICA);
-		exclusion_menu->textsize(region_menu->textsize()*menu_d);
-		exclusion_menu->textfont(FL_HELVETICA);
-		
 		main_menu_handler = new ns_worm_terminal_main_menu_organizer();
-		main_menu_handler->build_menus(*main_menu);
-
-		//dialog_window = new ns_dialog_window(300,150,"Dialog");
-
-		region_menu_handler = new ns_worm_terminal_region_menu_organizer();
-		region_menu_handler->update_region_choice(*region_menu);
-		
-		strain_menu_handler = new ns_worm_terminal_strain_menu_organizer();
-		strain_menu_handler->update_strain_choice(*strain_menu);
-
-		
-		exclusion_menu_handler = new ns_worm_terminal_exclusion_menu_organizer();
-		exclusion_menu_handler->update_exclusion_choice(*exclusion_menu);
+		main_menu_handler->build_menus(*main_menu);		
+	
 
 		experiment_name_bar = new Fl_Output(0,
 											h()*d-info_bar_height()*menu_d,
@@ -1867,12 +1847,33 @@ public:
 		experiment_name_bar->textsize((experiment_name_bar->textsize()-4)*menu_d);
 		experiment_name_bar->textfont(FL_HELVETICA);
 
-		info_bar = new Fl_Output(			(experiment_bar_width()+region_name_bar_width() + strain_bar_width() + exclusion_bar_width())*d,
-											h()*d-info_bar_height()*menu_d,
-											(W-experiment_bar_width()-region_name_bar_width()-strain_bar_width() - ns_death_event_annotation_group::window_width)*d,
-											info_bar_height()*menu_d);
+		region_menu = new Fl_Menu_Bar(experiment_bar_width()*d, H - info_bar_height()*menu_d, region_name_bar_width()*menu_d, info_bar_height()*menu_d);
+		region_menu->textsize((region_menu->textsize() - 4)*menu_d);
+		region_menu->textfont(FL_HELVETICA);
+
+		region_menu_handler = new ns_worm_terminal_region_menu_organizer();
+		region_menu_handler->update_region_choice(*region_menu);
+
+		strain_menu = new Fl_Menu_Bar((int)(d*experiment_bar_width() + menu_d*region_name_bar_width()), (int)(H - info_bar_height()*menu_d), (int)(menu_d*strain_bar_width()), (int)(menu_d*info_bar_height()));
+		exclusion_menu = new Fl_Menu_Bar((int)(d*experiment_bar_width() + menu_d*(region_name_bar_width() + strain_bar_width())), (int)(H - menu_d*info_bar_height()),(int)(menu_d*exclusion_bar_width()), (int)(menu_d*info_bar_height()));
+		strain_menu_handler = new ns_worm_terminal_strain_menu_organizer();
+		strain_menu_handler->update_strain_choice(*strain_menu);
+		exclusion_menu_handler = new ns_worm_terminal_exclusion_menu_organizer();
+		exclusion_menu_handler->update_exclusion_choice(*exclusion_menu);
+		strain_menu->textsize(region_menu->textsize()*menu_d);
+		strain_menu->textfont(FL_HELVETICA);
+		exclusion_menu->textsize(region_menu->textsize()*menu_d);
+		exclusion_menu->textfont(FL_HELVETICA);
+
+
+		int left_buttons_width(d*experiment_bar_width() + menu_d*(region_name_bar_width() + strain_bar_width() + exclusion_bar_width()));
+		cerr << W - left_buttons_width - ns_death_event_annotation_group::window_width << " ";
+		info_bar = new Fl_Output(left_buttons_width,
+										    (int)(h() - menu_d*info_bar_height()),
+											W- left_buttons_width - ns_death_event_annotation_group::window_width,
+											(int)(info_bar_height()*menu_d));
 		
-		info_bar->textsize((info_bar->textsize()-4)*menu_d);
+		info_bar->textsize(experiment_name_bar->textsize());
 		info_bar->textfont(FL_HELVETICA);
 	
 
@@ -1886,8 +1887,8 @@ public:
 		info_bar->box(FL_EMBOSSED_BOX);
 
 		info_bar->deactivate();
-		//region_name_bar->deactivate();
 		experiment_name_bar->deactivate();
+
 		update_information_bar("Welcome!");
 
 	
@@ -1902,9 +1903,7 @@ public:
 	static ns_vector_2i image_window_size_difference(){
 		return ns_vector_2i(0,(int)menu_height()+(int)info_bar_height());
 	}
-	void resize(int x, int y, int w__, int h__){
-		const int w_(worm_learner.main_window.gl_image_size.x),
-				  h_(worm_learner.main_window.gl_image_size.y);
+	void resize(int x, int y, int width, int height){
 		const float d(worm_learner.main_window.display_rescale_factor);
 		float menu_d(worm_learner.main_window.display_rescale_factor);
 		if (!SCALE_FONTS_WITH_WINDOW_SIZE)
@@ -1913,12 +1912,18 @@ public:
 	//	worm_learner.main_window.image_size = ns_vector_2d(w_,h_);
 	//	worm_learner.main_window.specified_gl_image_size = (worm_learner.main_window.image_size+
 	//			image_window_size_difference());
-		lock.release();
+
+		int w_(worm_learner.main_window.gl_image_size.x),
+			h_(worm_learner.main_window.gl_image_size.y);
+		if (w_ == 0)
+			w_ = width;
+		if (h_ == 0)
+			h_ = height;
 		Fl_Window::resize(x,y,w_*d+image_window_size_difference().x*menu_d,h_*d+image_window_size_difference().y*menu_d);
 		
 		gl_window->resize(0,menu_height()*menu_d,
-			worm_learner.main_window.gl_image_size.x*d,
-			worm_learner.main_window.gl_image_size.y*d);
+			w_,
+			h_);
 	
 		main_menu->resize(0,0,w_*d,menu_height()*menu_d);
 
@@ -1940,16 +1945,18 @@ public:
 											bottom_bar_height,
 											exclusion_bar_width()*d,
 											info_bar_height()*menu_d);
-		info_bar->resize((experiment_bar_width()+region_name_bar_width()+strain_bar_width()+exclusion_bar_width())*d,
+		int left_buttons_width((experiment_bar_width() + region_name_bar_width() + strain_bar_width() + exclusion_bar_width())*d);
+		info_bar->resize(left_buttons_width,
 											bottom_bar_height,
-											w_-(experiment_bar_width()-region_name_bar_width()-strain_bar_width()-ns_death_event_annotation_group::window_width)*d,
+											w_*d- left_buttons_width -(ns_death_event_annotation_group::window_width)*d,
 											info_bar_height()*menu_d);
 
 		annotation_group->resize((w_-ns_death_event_annotation_group::window_width)*d,
 								bottom_bar_height,
 								 ns_death_event_annotation_group::window_width*d,
 								 ns_death_event_annotation_group::window_height*menu_d);
-		
+
+		lock.release();
 	}
 	 
 	void update_region_choice_menu(){

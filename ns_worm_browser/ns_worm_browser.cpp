@@ -5512,7 +5512,7 @@ bool ns_worm_learner::register_worm_window_key_press(int key, const bool shift_k
 		return true;
 	}
 	else if (key == 'v') {
-		death_time_solo_annotater.step_visualization_type();
+		solo_annotation_visualization_type = death_time_solo_annotater.step_visualization_type();
 		return true;
 	}
 	return false;
@@ -6548,6 +6548,10 @@ void ns_worm_learner::navigate_solo_worm_annotation(ns_death_time_solo_posture_a
 		case ns_death_time_solo_posture_annotater::ns_fast_back:	death_time_solo_annotater.fast_back();break;
 		case ns_death_time_solo_posture_annotater::ns_stop: death_time_solo_annotater.stop_fast_movement();break;
 		case ns_death_time_solo_posture_annotater::ns_rewind_to_zero: break;
+		case ns_death_time_solo_posture_annotater::ns_step_visualization: 
+			solo_annotation_visualization_type = death_time_solo_annotater.step_visualization_type();
+			death_time_solo_annotater.request_refresh();
+			break;
 		case ns_death_time_solo_posture_annotater::ns_write_quantification_to_disk: 
 			death_time_solo_annotater.register_click(ns_vector_2i(0,0),ns_death_time_solo_posture_annotater::ns_output_images); break;
 		default: throw ns_ex("Unkown death time annotater action");
@@ -7317,7 +7321,7 @@ void ns_death_time_solo_posture_annotater::register_click(const ns_vector_2i & i
 				set_current_timepoint(requested_time, false);
 				{
 					ns_image_standard temp_buffer;
-					timepoints[current_timepoint_id].load_image(1024, current_image, sql(), temp_buffer, current_visualization_type,1);
+					timepoints[current_timepoint_id].load_image(1024, current_image, sql(), temp_buffer,1);
 				}
 				change_made = true;
 			}

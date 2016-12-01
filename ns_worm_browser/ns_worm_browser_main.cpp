@@ -1691,13 +1691,15 @@ public:
 class ns_death_event_solo_annotation_group : public Fl_Pack {
 public:
 	Fl_Button * forward_button,
-			  * back_button,
-			  * play_forward_button,
-			  * play_reverse_button,
-			  * stop_button,
-			  * goto_death_time_button,
-			  * save_button;
-	enum{button_width=18,button_height=18,all_buttons_width=108};
+		*back_button,
+		*play_forward_button,
+		*play_reverse_button,
+		*stop_button,
+		*goto_death_time_button,
+		*save_button,
+		*visualization_button;
+	enum{button_width=18,button_height=18,export_button_width=3*18,
+		 visualization_button_width=2*18,all_buttons_width=18*8};
 	int handle(int e){
 		//don't claim keystrokes--we want them to be passed on to the glwindow for navigation
 		switch(e){
@@ -1711,27 +1713,29 @@ public:
 	ns_death_event_solo_annotation_group(int x,int y, int w, int h, bool add_save_button) : Fl_Pack(x,y,w,h) {
 		type(Fl_Pack::HORIZONTAL);
 		spacing(0);
-		back_button 		= new Fl_Button(0*button_width,0,button_width,button_height,"@-2<");
-		back_button->callback(ns_handle_death_time_solo_annotation_button,
-			new ns_death_time_solo_posture_annotater::ns_image_series_annotater_action(ns_death_time_solo_posture_annotater::ns_back));
-		play_reverse_button = new Fl_Button(1*button_width,0,button_width,button_height,"@-2<<");
+		play_reverse_button = new Fl_Button(0*button_width,0,button_width,button_height,"@-2<<");
 		play_reverse_button->callback(ns_handle_death_time_solo_annotation_button,
 			new ns_death_time_solo_posture_annotater::ns_image_series_annotater_action(ns_death_time_solo_posture_annotater::ns_fast_back));
+		back_button = new Fl_Button(1 * button_width, 0, button_width, button_height, "@-2<");
+		back_button->callback(ns_handle_death_time_solo_annotation_button,
+			new ns_death_time_solo_posture_annotater::ns_image_series_annotater_action(ns_death_time_solo_posture_annotater::ns_back));
+
 		stop_button 		= new Fl_Button(2*button_width,0,button_width,button_height,"@-9square");
 		stop_button->callback(ns_handle_death_time_solo_annotation_button,
 			new ns_death_time_solo_posture_annotater::ns_image_series_annotater_action(ns_death_time_solo_posture_annotater::ns_stop));
-
-		goto_death_time_button = new Fl_Button(3*button_width,0,button_width,button_height,"@-9square"); 
-		goto_death_time_button->callback(ns_handle_death_time_solo_annotation_button,
-			new ns_death_time_solo_posture_annotater::ns_image_series_annotater_action(ns_death_time_solo_posture_annotater::ns_rewind_to_zero));
-
-		play_forward_button = new Fl_Button(4*button_width,0,button_width,button_height,"@-2>>");
-		play_forward_button->callback(ns_handle_death_time_solo_annotation_button,
-			new ns_death_time_solo_posture_annotater::ns_image_series_annotater_action(ns_death_time_solo_posture_annotater::ns_fast_forward));
-		forward_button 		= new Fl_Button(5*button_width,0,button_width,button_height,".");
+		
+		forward_button 		= new Fl_Button(3*button_width,0,button_width,button_height,"@-2>");
 		forward_button->callback(ns_handle_death_time_solo_annotation_button,
 			new ns_death_time_solo_posture_annotater::ns_image_series_annotater_action(ns_death_time_solo_posture_annotater::ns_forward));
-		save_button = new Fl_Button(8*button_width,0,3*button_width,button_height,"Export");
+
+		play_forward_button = new Fl_Button(4 * button_width , 0, button_width, button_height, "@-2>>");
+		play_forward_button->callback(ns_handle_death_time_solo_annotation_button,
+			new ns_death_time_solo_posture_annotater::ns_image_series_annotater_action(ns_death_time_solo_posture_annotater::ns_fast_forward));
+		visualization_button = new Fl_Button(5 * button_width , 0, visualization_button_width, button_height, "Vis");
+		visualization_button->callback(ns_handle_death_time_solo_annotation_button,
+			new ns_death_time_solo_posture_annotater::ns_image_series_annotater_action(ns_death_time_solo_posture_annotater::ns_step_visualization));
+
+		save_button = new Fl_Button(5*button_width+ visualization_button_width,0,3*button_width,button_height,"Export");
 		save_button->  callback(ns_handle_death_time_solo_annotation_button,
 			new ns_death_time_solo_posture_annotater::ns_image_series_annotater_action(ns_death_time_solo_posture_annotater::ns_write_quantification_to_disk));
 
@@ -2032,11 +2036,15 @@ public:
         // OpenGL window
 		begin();
 		
-        gl_window = new  ns_worm_gl_window(30, 0, worm_learner.worm_window.gl_image_size.x, worm_learner.worm_window.gl_image_size.y);
+		ns_vector_2i size(worm_learner.worm_window.gl_image_size.x, worm_learner.worm_window.gl_image_size.y + ns_death_event_solo_annotation_group::button_height);
+		if (size.x < ns_death_event_solo_annotation_group::all_buttons_width)
+			size.x = ns_death_event_solo_annotation_group::all_buttons_width;
+
+        gl_window = new  ns_worm_gl_window(30, 30, size.x,size.y);
 
 		
-		annotation_group = new ns_death_event_solo_annotation_group(0,
-															  worm_learner.worm_window.gl_image_size.y,
+		annotation_group = new ns_death_event_solo_annotation_group(30,
+															  worm_learner.worm_window.gl_image_size.y+30,
 															  ns_death_event_solo_annotation_group::all_buttons_width,
 															  ns_death_event_solo_annotation_group::button_height,
 															  false);
@@ -2150,8 +2158,11 @@ void ns_handle_death_time_annotation_button(Fl_Widget * w, void * data){
 	worm_learner.navigate_death_time_annotation(action);
 }
 void ns_handle_death_time_solo_annotation_button(Fl_Widget * w, void * data){
-	ns_death_time_solo_posture_annotater::ns_image_series_annotater_action action(*static_cast<ns_death_time_solo_posture_annotater::ns_image_series_annotater_action *>(data));
+	ns_death_time_solo_posture_annotater::ns_image_series_annotater_action * a = static_cast<ns_death_time_solo_posture_annotater::ns_image_series_annotater_action *>(data);
+	ns_death_time_solo_posture_annotater::ns_image_series_annotater_action action(*a);
+	//delete a;
 	worm_learner.navigate_solo_worm_annotation(action);
+	
 	//Fl::focus(current_window->gl_window);
 }
 
@@ -2717,7 +2728,7 @@ struct ns_asynch_worm_launcher{
 		try{
 			//if (worm_window_sql == 0)
 			ns_sql *	worm_window_sql = image_server.new_sql_connection(__FILE__,__LINE__);
-			worm_learner.death_time_solo_annotater.load_worm(region_id,worm,current_time,storyboard,&worm_learner,*worm_window_sql);
+			worm_learner.death_time_solo_annotater.load_worm(region_id,worm,current_time,worm_learner.solo_annotation_visualization_type,storyboard,&worm_learner,*worm_window_sql);
 			
 
 			worm_learner.death_time_solo_annotater.display_current_frame();

@@ -15,9 +15,6 @@ void ns_hide_worm_window();
 void ns_specifiy_worm_details(const unsigned long region_info_id,const ns_stationary_path_id & worm, const ns_death_time_annotation & sticky_properties, std::vector<ns_death_time_annotation> & event_times);
 
 class ns_death_time_solo_posture_annotater_timepoint : public ns_annotater_timepoint{
-private:
-	//ns_movement_visualization_summary_entry summary_entry;
-
 public:
 	typedef enum { ns_image, ns_movement, ns_movement_threshold, ns_movement_and_image, ns_movement_threshold_and_image } ns_visualization_type;
 
@@ -36,7 +33,7 @@ public:
 		throw ns_ex("N/A");
 	}
 	
-	void load_image(const unsigned long buffer_height,ns_annotater_image_buffer_entry & im,ns_sql & sql,ns_image_standard & temp_buffer, const ns_visualization_type vis_type,const unsigned long resize_factor_=1){
+	void load_image(const unsigned long buffer_height,ns_annotater_image_buffer_entry & im,ns_sql & sql,ns_image_standard & temp_buffer, const unsigned long resize_factor_=1){
 		movement_analyzer->load_images_for_group(group_id,element_id+10,sql,false,false);
 	//	ns_annotater_timepoint::load_image(buffer_height,im,sql,temp_buffer,resize_factor_);
 		if (!path_timepoint_element->registered_image_is_loaded()){
@@ -56,6 +53,8 @@ public:
 		if (vis_type != ns_image) {
 			for (int y = 0; y < path_timepoint_element->movement_image_().properties().height; y++)
 				for (int x = 0; x < path_timepoint_element->movement_image_().properties().width; x++) {
+					if (!path_timepoint_element->worm_stabilized_threshold(y, x))
+						continue;
 					int t(abs(path_timepoint_element->movement_image_()[y][x]));
 					if (t < min_mov)
 						min_mov = t;
@@ -88,7 +87,18 @@ public:
 				break;
 			case ns_movement:
 				for (unsigned int x = 0; x < path_timepoint_element->image().properties().width; x++) {
-					ns_8_bit t = 255 * ((abs(path_timepoint_element->movement_image_()[y][x]) - min_mov) / mov_r);
+					ns_8_bit t;
+
+					if (path_timepoint_element->worm_stabilized_threshold(y, x)) {
+						long sum, count;
+						ns_analyzed_image_time_path::spatially_average_movement(y, x, ns_time_path_image_movement_analyzer::ns_spatially_averaged_movement_kernal_half_size, path_timepoint_element->movement_image_(), sum, count);
+
+						if (count == 0) t = 0;
+						else t = 255 * ((abs(sum / count) - min_mov) / mov_r);
+					}
+					else t = 0;
+				
+
 					(*im.im)[y][3 * (x + ns_side_border_width)] =
 						(*im.im)[y][3 * (x + ns_side_border_width) + 1] =
 						(*im.im)[y][3 * (x + ns_side_border_width) + 2] = t;
@@ -97,10 +107,15 @@ public:
 			case ns_movement_threshold:
 				for (unsigned int x = 0; x < path_timepoint_element->image().properties().width; x++) {
 					ns_8_bit t;
-					if (abs(path_timepoint_element->movement_image_()[y][x]) <
-							ns_time_path_image_movement_analyzer::ns_spatially_averaged_movement_threshold)
-						t = 0;
-					else t = 255 * ((abs(path_timepoint_element->movement_image_()[y][x]) - min_mov) / mov_r);
+					if (path_timepoint_element->worm_stabilized_threshold(y, x)) {
+						long sum, count;
+						ns_analyzed_image_time_path::spatially_average_movement(y, x, ns_time_path_image_movement_analyzer::ns_spatially_averaged_movement_kernal_half_size, path_timepoint_element->movement_image_(), sum, count);
+
+						if (abs(sum) < count*ns_time_path_image_movement_analyzer::ns_spatially_averaged_movement_threshold)
+							t = 0;
+						else t = 255 * ((abs(sum/count) - min_mov) / mov_r);
+					}
+					else t = 0;
 					(*im.im)[y][3 * (x + ns_side_border_width)] =
 						(*im.im)[y][3 * (x + ns_side_border_width) + 1] =
 						(*im.im)[y][3 * (x + ns_side_border_width) + 2] = t;
@@ -108,23 +123,38 @@ public:
 				break;
 			case ns_movement_and_image:
 				for (unsigned int x = 0; x < path_timepoint_element->image().properties().width; x++) {
-					const float f ((abs(path_timepoint_element->movement_image_()[y][x]) - min_mov) / mov_r);
+					float f;
+					if (path_timepoint_element->worm_stabilized_threshold(y, x)) {
+						long sum, count;
+						ns_analyzed_image_time_path::spatially_average_movement(y, x, ns_time_path_image_movement_analyzer::ns_spatially_averaged_movement_kernal_half_size, path_timepoint_element->movement_image_(), sum, count);
+						if (count == 0)
+							f = 0;
+						else f = ((abs(sum/count) - min_mov) / mov_r);
+					}
+					else f = 0;
+					
 					const int r = path_timepoint_element->image()[y][x] * (1-f)+255*f,  //goes up to 255 the more movement there is
 						bg = path_timepoint_element->image()[y][x] * (1 - f);  //goes down to zero the more movement there is.
-					(*im.im)[y][3 * (x + ns_side_border_width)] = f;
+					(*im.im)[y][3 * (x + ns_side_border_width)] = r;
 					(*im.im)[y][3 * (x + ns_side_border_width) + 1] =
 						(*im.im)[y][3 * (x + ns_side_border_width) + 2] = bg;
 				}
 				break;
 			case ns_movement_threshold_and_image:
 				for (unsigned int x = 0; x < path_timepoint_element->image().properties().width; x++) {
-					float f((abs(path_timepoint_element->movement_image_()[y][x]) - min_mov) / mov_r);
-					if (abs(path_timepoint_element->movement_image_()[y][x]) <
-						ns_time_path_image_movement_analyzer::ns_spatially_averaged_movement_threshold)
-						f = 0;
+					float f;
+					if (path_timepoint_element->worm_stabilized_threshold(y, x)) {
+						long sum, count;
+						ns_analyzed_image_time_path::spatially_average_movement(y, x, ns_time_path_image_movement_analyzer::ns_spatially_averaged_movement_kernal_half_size, path_timepoint_element->movement_image_(), sum, count);
+						if (count == 0 || abs(sum) < count* ns_time_path_image_movement_analyzer::ns_spatially_averaged_movement_threshold)
+							f = 0;
+						else f = ((abs(sum / count) - min_mov) / mov_r);
+					}
+					else f = 0;
+
 					int r = path_timepoint_element->image()[y][x] * (1 - f) + 255 * f,  //goes up to 255 the more movement there is
 						bg = path_timepoint_element->image()[y][x] * (1 - f);  //goes down to zero the more movement there is.
-					(*im.im)[y][3 * (x + ns_side_border_width)] = f;
+					(*im.im)[y][3 * (x + ns_side_border_width)] = r;
 					(*im.im)[y][3 * (x + ns_side_border_width) + 1] =
 						(*im.im)[y][3 * (x + ns_side_border_width) + 2] = bg;
 				}
@@ -148,7 +178,9 @@ public:
 		image_pane_area.x = path_timepoint_element->image().properties().width;
 		im.loaded = true;
 	}
-	
+	void set_visulaization_type(const ns_visualization_type t) { vis_type = t; }
+	private:
+		 ns_visualization_type vis_type;
 };
 
 
@@ -464,16 +496,28 @@ private:
 public:
 
 
-	void step_visualization_type() {
+	ns_death_time_solo_posture_annotater_timepoint::ns_visualization_type step_visualization_type() {
 		
 		if (current_visualization_type == ns_death_time_solo_posture_annotater_timepoint::ns_movement_threshold_and_image)
 			current_visualization_type = ns_death_time_solo_posture_annotater_timepoint::ns_image;
 		else current_visualization_type = (ns_death_time_solo_posture_annotater_timepoint::ns_visualization_type)((int)current_visualization_type + 1);
 
+		for (unsigned int i = 0; i < timepoints.size(); i++) {
+			timepoints[i].set_visulaization_type(current_visualization_type);
+		}
+		for (unsigned int i = 0; i < previous_images.size(); i++) {
+			previous_images[i].loaded = false;
+			next_images[i].loaded = false;
+		}
+
+		ns_image_standard temp_buffer;
+		timepoints[current_timepoint_id].load_image(1024, current_image, sql(), temp_buffer, 1);
+		draw_metadata(&timepoints[current_timepoint_id], *current_image.im);
+		return current_visualization_type;
 	}
 
 	ns_animal_telemetry telemetry;
-	typedef enum {ns_none,ns_forward, ns_back, ns_fast_forward, ns_fast_back,ns_stop,ns_save,ns_rewind_to_zero,ns_write_quantification_to_disk,ns_number_of_annotater_actions} ns_image_series_annotater_action;
+	typedef enum {ns_none,ns_forward, ns_back, ns_fast_forward, ns_fast_back,ns_stop,ns_save,ns_rewind_to_zero,ns_write_quantification_to_disk, ns_step_visualization,ns_number_of_annotater_actions} ns_image_series_annotater_action;
 
 	void clear_cache(){
 		close_worm();
@@ -570,7 +614,8 @@ public:
 	}
 
 
-	void load_worm(const unsigned long region_info_id_, const ns_stationary_path_id & worm, const unsigned long current_time,const ns_experiment_storyboard  * storyboard,ns_worm_learner * worm_learner_,ns_sql & sql){
+	void load_worm(const unsigned long region_info_id_, const ns_stationary_path_id & worm, const unsigned long current_time, const ns_death_time_solo_posture_annotater_timepoint::ns_visualization_type visualization_type, const ns_experiment_storyboard  * storyboard,ns_worm_learner * worm_learner_,ns_sql & sql){
+		current_visualization_type = visualization_type;
 		stop_fast_movement();
 		clear();
 		ns_image_series_annotater::clear();
@@ -676,6 +721,7 @@ public:
 				timepoints[i].element_id = i;
 				timepoints[i].movement_analyzer = & current_region_data->movement_analyzer;
 				timepoints[i].group_id = properties_for_all_animals.stationary_path_id.group_id;
+				timepoints[i].set_visulaization_type(current_visualization_type);
 			}
 //			current_by_hand_timing_data->animals[current_animal_id].first_frame_time = timepoints[0].path_timepoint_element->absolute_time;
 
@@ -690,7 +736,8 @@ public:
 			set_current_timepoint(current_time,true,true);
 			{
 				ns_image_standard temp_buffer;
-				timepoints[current_timepoint_id].load_image(1024,current_image,sql,temp_buffer,current_visualization_type,1);
+
+				timepoints[current_timepoint_id].load_image(1024,current_image,sql,temp_buffer,1);
 			}
 			if (previous_images.size() != max_buffer_size || next_images.size() != max_buffer_size) {
 				previous_images.resize(max_buffer_size);

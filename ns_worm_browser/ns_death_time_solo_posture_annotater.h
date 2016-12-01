@@ -19,6 +19,8 @@ private:
 	//ns_movement_visualization_summary_entry summary_entry;
 
 public:
+	typedef enum { ns_image, ns_movement, ns_movement_threshold, ns_movement_and_image, ns_movement_threshold_and_image } ns_visualization_type;
+
 	const ns_analyzed_image_time_path_element * path_timepoint_element;
 	ns_time_path_image_movement_analyzer * movement_analyzer;
 	unsigned long element_id;
@@ -33,7 +35,8 @@ public:
 	ns_image_storage_source_handle<ns_8_bit> get_image(ns_sql & sql){
 		throw ns_ex("N/A");
 	}
-	void load_image(const unsigned long buffer_height,ns_annotater_image_buffer_entry & im,ns_sql & sql,ns_image_standard & temp_buffer,const unsigned long resize_factor_=1){
+	
+	void load_image(const unsigned long buffer_height,ns_annotater_image_buffer_entry & im,ns_sql & sql,ns_image_standard & temp_buffer, const ns_visualization_type vis_type,const unsigned long resize_factor_=1){
 		movement_analyzer->load_images_for_group(group_id,element_id+10,sql,false,false);
 	//	ns_annotater_timepoint::load_image(buffer_height,im,sql,temp_buffer,resize_factor_);
 		if (!path_timepoint_element->registered_image_is_loaded()){
@@ -48,20 +51,99 @@ public:
 		prop.components = 3;
 		im.loaded = true;
 		im.im->init(prop);
-		for (unsigned int y = 0; y < prop.height; y++)
-			for (unsigned int x = 0; x < prop.width; x++){
-				(*im.im)[y][3*x] = 
-				(*im.im)[y][3*x+1] =
-				(*im.im)[y][3*x+2] = 0;
+		int min_mov(INT_MAX), max_mov(0);
+		float mov_r;
+		if (vis_type != ns_image) {
+			for (int y = 0; y < path_timepoint_element->movement_image_().properties().height; y++)
+				for (int x = 0; x < path_timepoint_element->movement_image_().properties().width; x++) {
+					int t(abs(path_timepoint_element->movement_image_()[y][x]));
+					if (t < min_mov)
+						min_mov = t;
+					if (t > max_mov)
+						max_mov = t;
+				}
+			if (min_mov == max_mov) {
+				if (min_mov != 0)
+					min_mov--;
+				if (max_mov != 255)
+					max_mov++;
 			}
+			mov_r = max_mov - min_mov;
+		}
+
 		
-		for (unsigned int y = 0; y < path_timepoint_element->image().properties().height; y++)
-			for (unsigned int x = 0; x < path_timepoint_element->image().properties().width; x++){
-				(*im.im)[y][3*(x+ns_side_border_width)] = 
-				(*im.im)[y][3*(x+ns_side_border_width)+1] =
-				(*im.im)[y][3*(x+ns_side_border_width)+2] = path_timepoint_element->image()[y][x];
+		for (unsigned int y = 0; y < path_timepoint_element->image().properties().height; y++) {
+			for (unsigned int x = 0; x < ns_side_border_width; x++) {
+				(*im.im)[y][3 * x] =
+					(*im.im)[y][3 * x + 1] =
+					(*im.im)[y][3 * x + 2] = 0;
+			}
+			switch(vis_type){
+			case ns_image:
+				for (unsigned int x = 0; x < path_timepoint_element->image().properties().width; x++) {
+					(*im.im)[y][3 * (x + ns_side_border_width)] =
+						(*im.im)[y][3 * (x + ns_side_border_width) + 1] =
+						(*im.im)[y][3 * (x + ns_side_border_width) + 2] = path_timepoint_element->image()[y][x];
+				}
+				break;
+			case ns_movement:
+				for (unsigned int x = 0; x < path_timepoint_element->image().properties().width; x++) {
+					ns_8_bit t = 255 * ((abs(path_timepoint_element->movement_image_()[y][x]) - min_mov) / mov_r);
+					(*im.im)[y][3 * (x + ns_side_border_width)] =
+						(*im.im)[y][3 * (x + ns_side_border_width) + 1] =
+						(*im.im)[y][3 * (x + ns_side_border_width) + 2] = t;
+				}
+				break;
+			case ns_movement_threshold:
+				for (unsigned int x = 0; x < path_timepoint_element->image().properties().width; x++) {
+					ns_8_bit t;
+					if (abs(path_timepoint_element->movement_image_()[y][x]) <
+							ns_time_path_image_movement_analyzer::ns_spatially_averaged_movement_threshold)
+						t = 0;
+					else t = 255 * ((abs(path_timepoint_element->movement_image_()[y][x]) - min_mov) / mov_r);
+					(*im.im)[y][3 * (x + ns_side_border_width)] =
+						(*im.im)[y][3 * (x + ns_side_border_width) + 1] =
+						(*im.im)[y][3 * (x + ns_side_border_width) + 2] = t;
+				}
+				break;
+			case ns_movement_and_image:
+				for (unsigned int x = 0; x < path_timepoint_element->image().properties().width; x++) {
+					const float f ((abs(path_timepoint_element->movement_image_()[y][x]) - min_mov) / mov_r);
+					const int r = path_timepoint_element->image()[y][x] * (1-f)+255*f,  //goes up to 255 the more movement there is
+						bg = path_timepoint_element->image()[y][x] * (1 - f);  //goes down to zero the more movement there is.
+					(*im.im)[y][3 * (x + ns_side_border_width)] = f;
+					(*im.im)[y][3 * (x + ns_side_border_width) + 1] =
+						(*im.im)[y][3 * (x + ns_side_border_width) + 2] = bg;
+				}
+				break;
+			case ns_movement_threshold_and_image:
+				for (unsigned int x = 0; x < path_timepoint_element->image().properties().width; x++) {
+					float f((abs(path_timepoint_element->movement_image_()[y][x]) - min_mov) / mov_r);
+					if (abs(path_timepoint_element->movement_image_()[y][x]) <
+						ns_time_path_image_movement_analyzer::ns_spatially_averaged_movement_threshold)
+						f = 0;
+					int r = path_timepoint_element->image()[y][x] * (1 - f) + 255 * f,  //goes up to 255 the more movement there is
+						bg = path_timepoint_element->image()[y][x] * (1 - f);  //goes down to zero the more movement there is.
+					(*im.im)[y][3 * (x + ns_side_border_width)] = f;
+					(*im.im)[y][3 * (x + ns_side_border_width) + 1] =
+						(*im.im)[y][3 * (x + ns_side_border_width) + 2] = bg;
+				}
+				break;
 
 			}
+			for (unsigned int x = path_timepoint_element->image().properties().width+ ns_side_border_width; x < prop.width; x++) {
+				(*im.im)[y][3 * x] =
+					(*im.im)[y][3 * x + 1] =
+					(*im.im)[y][3 * x + 2] = 0;
+			}
+		}
+		for (unsigned int y = path_timepoint_element->image().properties().height; y < prop.height; y++) {
+			for (unsigned int x = 0; x < prop.width; x++) {
+				(*im.im)[y][3 * x] =
+					(*im.im)[y][3 * x + 1] =
+					(*im.im)[y][3 * x + 2] = 0;
+			}
+		}
 		image_pane_area.y = path_timepoint_element->image().properties().height;
 		image_pane_area.x = path_timepoint_element->image().properties().width;
 		im.loaded = true;
@@ -199,6 +281,8 @@ void ns_crop_time(const ns_time_path_limits & limits, const ns_death_time_annota
 class ns_worm_learner;
 class ns_death_time_solo_posture_annotater : public ns_image_series_annotater{
 private:
+	
+	ns_death_time_solo_posture_annotater_timepoint::ns_visualization_type current_visualization_type;
 	std::vector<ns_death_time_solo_posture_annotater_timepoint> timepoints;
 	static ns_death_time_posture_solo_annotater_data_cache data_cache;
 	ns_death_time_posture_solo_annotater_region_data * current_region_data;
@@ -379,6 +463,15 @@ private:
 	mutable bool saved_;
 public:
 
+
+	void step_visualization_type() {
+		
+		if (current_visualization_type == ns_death_time_solo_posture_annotater_timepoint::ns_movement_threshold_and_image)
+			current_visualization_type = ns_death_time_solo_posture_annotater_timepoint::ns_image;
+		else current_visualization_type = (ns_death_time_solo_posture_annotater_timepoint::ns_visualization_type)((int)current_visualization_type + 1);
+
+	}
+
 	ns_animal_telemetry telemetry;
 	typedef enum {ns_none,ns_forward, ns_back, ns_fast_forward, ns_fast_back,ns_stop,ns_save,ns_rewind_to_zero,ns_write_quantification_to_disk,ns_number_of_annotater_actions} ns_image_series_annotater_action;
 
@@ -395,7 +488,7 @@ public:
 	void set_resize_factor(const unsigned long resize_factor_){resize_factor = resize_factor_;}
 	bool data_saved()const{return saved_;}
 	ns_death_time_solo_posture_annotater():ns_image_series_annotater(default_resize_factor, ns_death_time_posture_annotater_timepoint::ns_bottom_border_height),
-		saved_(true),current_region_data(0),current_worm(0),current_machine_timing_data(0){}
+		saved_(true),current_visualization_type(ns_death_time_solo_posture_annotater_timepoint::ns_image),current_region_data(0),current_worm(0),current_machine_timing_data(0){}
 
 	typedef enum {ns_time_aligned_images,ns_death_aligned_images} ns_alignment_type;
 
@@ -597,7 +690,7 @@ public:
 			set_current_timepoint(current_time,true,true);
 			{
 				ns_image_standard temp_buffer;
-				timepoints[current_timepoint_id].load_image(1024,current_image,sql,temp_buffer,1);
+				timepoints[current_timepoint_id].load_image(1024,current_image,sql,temp_buffer,current_visualization_type,1);
 			}
 			if (previous_images.size() != max_buffer_size || next_images.size() != max_buffer_size) {
 				previous_images.resize(max_buffer_size);

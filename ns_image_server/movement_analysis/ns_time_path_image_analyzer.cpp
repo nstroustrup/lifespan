@@ -3814,7 +3814,7 @@ void ns_analyzed_image_time_path::quantify_movement(const ns_analyzed_time_image
 						count++;
 						}
 					}
-					if (averaged_sum < 30)
+					if (averaged_sum < count*ns_time_path_image_movement_analyzer::ns_spatially_averaged_movement_threshold)
 						averaged_sum = 0;
 					if (count > 0) {
 						elements[i].measurements.spatial_averaged_movement_sum += abs(averaged_sum / (float)count);

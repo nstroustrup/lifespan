@@ -5511,6 +5511,10 @@ bool ns_worm_learner::register_worm_window_key_press(int key, const bool shift_k
 		death_time_solo_annotater.telemetry.show(!death_time_solo_annotater.telemetry.show());
 		return true;
 	}
+	else if (key == 'v') {
+		death_time_solo_annotater.step_visualization_type();
+		return true;
+	}
 	return false;
 }
 
@@ -7313,7 +7317,7 @@ void ns_death_time_solo_posture_annotater::register_click(const ns_vector_2i & i
 				set_current_timepoint(requested_time, false);
 				{
 					ns_image_standard temp_buffer;
-					timepoints[current_timepoint_id].load_image(1024, current_image, sql(), temp_buffer, 1);
+					timepoints[current_timepoint_id].load_image(1024, current_image, sql(), temp_buffer, current_visualization_type,1);
 				}
 				change_made = true;
 			}

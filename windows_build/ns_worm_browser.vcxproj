@@ -320,6 +320,7 @@
     <ClCompile Include="..\ns_image_server\image_processing\ns_segment_topology.cpp" />
     <ClCompile Include="..\ns_image_server\image_processing\ns_spatial_avg.cpp" />
     <ClCompile Include="..\ns_image_server\image_processing\ns_spine_drawer.cpp" />
+    <ClCompile Include="..\ns_image_server\image_processing\ns_subpixel_image_alignment.cpp" />
     <ClCompile Include="..\ns_image_server\image_processing\ns_worm_detection_constants.cpp" />
     <ClCompile Include="..\ns_image_server\image_processing\ns_worm_detector.cpp" />
     <ClCompile Include="..\ns_image_server\image_processing\ns_worm_training_set_image.cpp" />

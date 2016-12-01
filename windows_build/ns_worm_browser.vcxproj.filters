@@ -685,6 +685,9 @@
     <ClCompile Include="..\ns_image_server\image_server\ns_sql_table_lock_manager.cpp">
       <Filter>image_server</Filter>
     </ClCompile>
+    <ClCompile Include="..\ns_image_server\image_processing\ns_subpixel_image_alignment.cpp">
+      <Filter>image_processing</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\ns_image_server\system_base\ns_dir.h">

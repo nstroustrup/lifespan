@@ -813,6 +813,7 @@ struct ns_analyzed_image_time_path_group{
 struct ns_movement_analysis_shared_state;
 class ns_time_path_image_movement_analyzer {
 public:
+	enum { ns_spatially_averaged_movement_threshold = 30 };
 	ns_time_path_image_movement_analyzer():paths_loaded_from_solution(false),
 		movement_analyzed(false),region_info_id(0),last_timepoint_in_analysis_(0),
 		number_of_timepoints_in_analysis_(0),image_db_info_loaded(false),externally_specified_plate_observation_interval(0,ULONG_MAX){}

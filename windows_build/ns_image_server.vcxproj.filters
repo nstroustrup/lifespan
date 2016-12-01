@@ -1126,6 +1126,9 @@
     <ClCompile Include="..\ns_image_server\movement_analysis\ns_analyze_movement_over_time.cpp">
       <Filter>job_scheduling</Filter>
     </ClCompile>
+    <ClCompile Include="..\ns_image_server\image_processing\ns_subpixel_image_alignment.cpp">
+      <Filter>image_processing</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="server_icon.ico">

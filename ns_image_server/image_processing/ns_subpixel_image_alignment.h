@@ -4,6 +4,8 @@
 #include "ns_vector.h"
 #include <queue>
 
+#define USE_INTEL_IPP
+
 struct ns_alignment_state {
 	ns_alignment_state() :consensus_internal_offset(0, 0),registration_offset_count(0),registration_offset_sum(0,0) {}
 	void clear();
@@ -16,7 +18,6 @@ struct ns_alignment_state {
 	inline ns_vector_2d registration_offset_average() { return registration_offset_sum / (double)registration_offset_count; }
 };
 
-#define USE_INTEL_IPP
 #ifdef USE_INTEL_IPP
 
 //builds a gausian pyramid and compares image gradients to solve for optimal alignment at each pyramid level
@@ -51,6 +52,20 @@ private:
 	ns_gaussian_pyramid * state_pyramid, *image_pyramid;
 	ns_gradient_shift * gradient_shift;
 
+};
+
+struct ns_stretch_registration_line_offsets {
+	std::vector<float> p;
+};
+class ns_stretch_registration {
+public:
+	void calculate(const ns_image_standard & im1, const ns_image_standard & im2, 
+		const ns_vector_2i & tl, const ns_vector_2i & br,
+		const ns_vector_2d &initial_offset, ns_stretch_registration_line_offsets & new_line_offsets);
+private:
+	ns_gradient_shift * gradient_shift;
+	~ns_stretch_registration();
+	ns_stretch_registration();
 };
 #endif
 

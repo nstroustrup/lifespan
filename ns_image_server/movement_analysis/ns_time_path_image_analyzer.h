@@ -706,7 +706,7 @@ public:
 		return ns_death_time_annotation_time_interval(elements[first_stationary_timepoint_-1].absolute_time,elements[first_stationary_timepoint_].absolute_time);
 	}
 
-	static inline void spatially_average_movement(const int y, const int x, const int k, const ns_image_standard_signed & im, long &averaged_sum, long &count);
+	static  void spatially_average_movement(const int y, const int x, const int k, const ns_image_standard_signed & im, long &averaged_sum, long &count);
 
 private:
 

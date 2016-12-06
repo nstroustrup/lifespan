@@ -795,6 +795,28 @@ public:
 				image_buffer[p1y][p0x]*(dy)*(d1x) + 
 				image_buffer[p1y][p1x]*(dy)*(dx);
 	}
+	const double finline sample_d_scaled(const double y, const double x, const float * scale_f) const {
+
+		const int p0x(xs_float::xs_FloorToInt(x)),
+			p0y(xs_float::xs_FloorToInt(y));
+		const int p1x(p0x + 1),
+			p1y(p0y + 1);
+		const double dx(x - (double)p0x),
+			dy(y - (double)p0y);
+		const double d1x(1.0 - dx),
+			d1y(1.0 - dy);
+
+#ifdef NS_DEBUG_IMAGE_ACCESS
+		if (p0y >= reciever_t::_properties.height || p1y >= reciever_t::_properties.height ||
+			p0x >= reciever_t::_properties.width || p1x >= reciever_t::_properties.width)
+			throw ns_ex("Out of bound access!");
+#endif
+		return	scale_f[image_buffer[p0y][p0x]]* (d1y)*(d1x)+
+			scale_f[image_buffer[p0y][p1x]] * (d1y)*(dx)+
+			scale_f[image_buffer[p1y][p0x]] * (dy)*(d1x)+
+			scale_f[image_buffer[p1y][p1x]] * (dy)*(dx);
+	}
+
 	const double finline weighted_sample(const double &y, const double &x, 
 										 const double &p00_weight, const double &p10_weight, const double &p01_weight, const double &p11_weight ) const{
 

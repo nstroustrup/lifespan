@@ -57,15 +57,22 @@ private:
 struct ns_stretch_registration_line_offsets {
 	std::vector<float> p;
 };
+struct ns_stretch_source_mappings {
+	std::vector<float> p;
+};
 class ns_stretch_registration {
 public:
-	void calculate(const ns_image_standard & im1, const ns_image_standard & im2, 
+	double calculate(const ns_image_standard & im1, const ns_image_standard & im2, 
 		const ns_vector_2i & tl, const ns_vector_2i & br,
-		const ns_vector_2d &initial_offset, ns_stretch_registration_line_offsets & new_line_offsets);
-private:
-	ns_gradient_shift * gradient_shift;
+		const ns_vector_2d &initial_offset, ns_stretch_registration_line_offsets & new_line_offsets, const float * histogram_matching_factors=0);
+
+	static void convert_offsets_to_source_positions(const ns_stretch_registration_line_offsets & offsets, ns_stretch_source_mappings & mappings);
+	static void register_image(const ns_stretch_source_mappings & mappings, const double x_shift, const ns_image_standard & im1,  ns_image_standard & im2);
+
 	~ns_stretch_registration();
 	ns_stretch_registration();
+private:
+	ns_gradient_shift * gradient_shift;
 };
 #endif
 

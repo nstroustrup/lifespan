@@ -8,6 +8,7 @@
 #include "ns_death_time_posture_annotater.h"
 #include "ns_hidden_markov_model_posture_analyzer.h"
 #include <functional> 
+#include "ns_subpixel_image_alignment.h";
 #include "ns_fl_modal_dialogs.h"
 #include "ns_animal_telemetry.h"
 void ns_hide_worm_window();
@@ -33,6 +34,159 @@ public:
 		throw ns_ex("N/A");
 	}
 	
+	static void render_image(const ns_visualization_type vis_type,const ns_registered_image_set & registered_images, ns_image_standard & output) {
+		const ns_image_standard_signed & movement_image(registered_images.movement_image_);
+		const ns_image_standard &image(registered_images.image);
+
+		int min_mov(INT_MAX), max_mov(0);
+		float mov_r;
+		if (vis_type != ns_image) {
+			for (int y = 0; y < movement_image.properties().height; y++)
+				for (int x = 0; x < movement_image.properties().width; x++) {
+					if (!registered_images.get_stabilized_worm_neighborhood_threshold(y, x))
+						continue;
+					int t(abs(movement_image[y][x]));
+					if (t < min_mov)
+						min_mov = t;
+					if (t > max_mov)
+						max_mov = t;
+				}
+			if (min_mov == max_mov) {
+				if (min_mov != 0)
+					min_mov--;
+				if (max_mov != 255)
+					max_mov++;
+			}
+			mov_r = max_mov - min_mov;
+		}
+		cout << "(" << max_mov << "," << min_mov << "; ";
+		float movement_sum(0);
+		for (unsigned int y = 0; y < ns_side_border_width; y++) {
+			for (unsigned int x = 0; x < 3 * output.properties().width; x++) {
+				output[y][x] = 0;
+			}
+		}
+		for (unsigned int y = 0; y < image.properties().height; y++) {
+
+			for (unsigned int x = 0; x < ns_side_border_width; x++) {
+				output[y + ns_side_border_width][3 * x] =
+					output[y + ns_side_border_width][3 * x + 1] =
+					output[y + ns_side_border_width][3 * x + 2] = 0;
+			}
+			switch (vis_type) {
+			case ns_image:
+				for (unsigned int x = 0; x < image.properties().width; x++) {
+					output[y + ns_side_border_width][3 * (x + ns_side_border_width)] =
+						output[y + ns_side_border_width][3 * (x + ns_side_border_width) + 1] =
+						output[y + ns_side_border_width][3 * (x + ns_side_border_width) + 2] = image[y][x];
+				}
+				break;
+			case ns_movement:
+				for (unsigned int x = 0; x < image.properties().width; x++) {
+					ns_8_bit t;
+
+					if (registered_images.get_stabilized_worm_neighborhood_threshold(y, x)) {
+						long sum, count;
+						ns_analyzed_image_time_path::spatially_average_movement(y, x, ns_time_path_image_movement_analyzer::ns_spatially_averaged_movement_kernal_half_size, movement_image, sum, count);
+					
+						if (count == 0) t = 0;
+						else {
+							t = 255 * ((abs(sum / count) - min_mov) / mov_r);
+							movement_sum += abs(sum) / (float)count;
+						}
+					}
+					else t = 0;
+
+
+					output[y + ns_side_border_width][3 * (x + ns_side_border_width)] =
+						output[y + ns_side_border_width][3 * (x + ns_side_border_width) + 1] =
+						output[y + ns_side_border_width][3 * (x + ns_side_border_width) + 2] = t;
+				}
+				break;
+			case ns_movement_threshold:
+				for (unsigned int x = 0; x < image.properties().width; x++) {
+					ns_8_bit t;
+					if (registered_images.get_stabilized_worm_neighborhood_threshold(y, x)) {
+						long sum, count;
+						ns_analyzed_image_time_path::spatially_average_movement(y, x, ns_time_path_image_movement_analyzer::ns_spatially_averaged_movement_kernal_half_size, movement_image, sum, count);
+						
+						if (abs(sum) < count*ns_time_path_image_movement_analyzer::ns_spatially_averaged_movement_threshold)
+							t = 0;
+						else {
+							t = 255 * ((abs(sum / count) - min_mov) / mov_r);
+							movement_sum += abs(sum) / (float)count;
+						}
+					}
+					else t = 0;
+					output[y][3 * (x + ns_side_border_width)] =
+						output[y + ns_side_border_width][3 * (x + ns_side_border_width) + 1] =
+						output[y + ns_side_border_width][3 * (x + ns_side_border_width) + 2] = t;
+				}
+				break;
+			case ns_movement_and_image:
+				for (unsigned int x = 0; x < image.properties().width; x++) {
+					float f;
+					if (registered_images.get_stabilized_worm_neighborhood_threshold(y, x)) {
+						long sum, count;
+						ns_analyzed_image_time_path::spatially_average_movement(y, x, ns_time_path_image_movement_analyzer::ns_spatially_averaged_movement_kernal_half_size, movement_image, sum, count);
+						
+						if (count == 0)
+							f = 0;
+						else {
+							f = ((abs(sum / count) - min_mov) / mov_r);
+							movement_sum += abs(sum)/ (float)count;
+						}
+					}
+					else f = 0;
+
+					const int r = image[y][x] * (1 - f) + 255 * f,  //goes up to 255 the more movement there is
+						bg = image[y][x] * (1 - f);  //goes down to zero the more movement there is.
+					output[y + ns_side_border_width][3 * (x + ns_side_border_width)] = r;
+					output[y + ns_side_border_width][3 * (x + ns_side_border_width) + 1] =
+						output[y + ns_side_border_width][3 * (x + ns_side_border_width) + 2] = bg;
+				}
+				break;
+			case ns_movement_threshold_and_image:
+				for (unsigned int x = 0; x < image.properties().width; x++) {
+					float f;
+					if (registered_images.get_stabilized_worm_neighborhood_threshold(y, x)) {
+						long sum, count;
+						ns_analyzed_image_time_path::spatially_average_movement(y, x, ns_time_path_image_movement_analyzer::ns_spatially_averaged_movement_kernal_half_size, movement_image, sum, count);
+						if (count == 0 || abs(sum) < count* ns_time_path_image_movement_analyzer::ns_spatially_averaged_movement_threshold)
+							f = 0;
+						else {
+							f = ((abs(sum / count) - min_mov) / mov_r);
+							movement_sum += abs(sum) / (float)count;
+						}
+					}
+					else f = 0;
+
+					int r = image[y][x] * (1 - f) + 255 * f,  //goes up to 255 the more movement there is
+						bg = image[y][x] * (1 - f);  //goes down to zero the more movement there is.
+					output[y+ns_side_border_width][3 * (x + ns_side_border_width)] = r;
+					output[y + ns_side_border_width][3 * (x + ns_side_border_width) + 1] =
+						output[y + ns_side_border_width][3 * (x + ns_side_border_width) + 2] = bg;
+				}
+				break;
+
+			}
+			for (unsigned int x = output.properties().width - ns_side_border_width-1; x < output.properties().width; x++) {
+				output[y][3 * x] =
+					output[y][3 * x + 1] =
+					output[y][3 * x + 2] = 0;
+			}
+		}
+		for (unsigned int y = output.properties().height - ns_side_border_width-1; y < output.properties().height; y++) {
+			for (unsigned int x = 0; x < output.properties().width; x++) {
+				output[y][3 * x] =
+					output[y][3 * x + 1] =
+					output[y][3 * x + 2] = 0;
+			}
+		}
+		cerr << movement_sum << ")\n";
+
+	}
+	
 	void load_image(const unsigned long buffer_height,ns_annotater_image_buffer_entry & im,ns_sql & sql,ns_image_standard & temp_buffer, const unsigned long resize_factor_=1){
 		movement_analyzer->load_images_for_group(group_id,element_id+10,sql,false,false);
 	//	ns_annotater_timepoint::load_image(buffer_height,im,sql,temp_buffer,resize_factor_);
@@ -48,132 +202,9 @@ public:
 		prop.components = 3;
 		im.loaded = true;
 		im.im->init(prop);
-		int min_mov(INT_MAX), max_mov(0);
-		float mov_r;
-		if (vis_type != ns_image) {
-			for (int y = 0; y < path_timepoint_element->movement_image_().properties().height; y++)
-				for (int x = 0; x < path_timepoint_element->movement_image_().properties().width; x++) {
-					if (!path_timepoint_element->worm_stabilized_threshold(y, x))
-						continue;
-					int t(abs(path_timepoint_element->movement_image_()[y][x]));
-					if (t < min_mov)
-						min_mov = t;
-					if (t > max_mov)
-						max_mov = t;
-				}
-			if (min_mov == max_mov) {
-				if (min_mov != 0)
-					min_mov--;
-				if (max_mov != 255)
-					max_mov++;
-			}
-			mov_r = max_mov - min_mov;
-		}
 
+		render_image(vis_type, path_timepoint_element->registered_image_set(), *im.im);
 		
-		for (unsigned int y = 0; y < path_timepoint_element->image().properties().height; y++) {
-			for (unsigned int x = 0; x < ns_side_border_width; x++) {
-				(*im.im)[y][3 * x] =
-					(*im.im)[y][3 * x + 1] =
-					(*im.im)[y][3 * x + 2] = 0;
-			}
-			switch(vis_type){
-			case ns_image:
-				for (unsigned int x = 0; x < path_timepoint_element->image().properties().width; x++) {
-					(*im.im)[y][3 * (x + ns_side_border_width)] =
-						(*im.im)[y][3 * (x + ns_side_border_width) + 1] =
-						(*im.im)[y][3 * (x + ns_side_border_width) + 2] = path_timepoint_element->image()[y][x];
-				}
-				break;
-			case ns_movement:
-				for (unsigned int x = 0; x < path_timepoint_element->image().properties().width; x++) {
-					ns_8_bit t;
-
-					if (path_timepoint_element->worm_stabilized_threshold(y, x)) {
-						long sum, count;
-						ns_analyzed_image_time_path::spatially_average_movement(y, x, ns_time_path_image_movement_analyzer::ns_spatially_averaged_movement_kernal_half_size, path_timepoint_element->movement_image_(), sum, count);
-
-						if (count == 0) t = 0;
-						else t = 255 * ((abs(sum / count) - min_mov) / mov_r);
-					}
-					else t = 0;
-				
-
-					(*im.im)[y][3 * (x + ns_side_border_width)] =
-						(*im.im)[y][3 * (x + ns_side_border_width) + 1] =
-						(*im.im)[y][3 * (x + ns_side_border_width) + 2] = t;
-				}
-				break;
-			case ns_movement_threshold:
-				for (unsigned int x = 0; x < path_timepoint_element->image().properties().width; x++) {
-					ns_8_bit t;
-					if (path_timepoint_element->worm_stabilized_threshold(y, x)) {
-						long sum, count;
-						ns_analyzed_image_time_path::spatially_average_movement(y, x, ns_time_path_image_movement_analyzer::ns_spatially_averaged_movement_kernal_half_size, path_timepoint_element->movement_image_(), sum, count);
-
-						if (abs(sum) < count*ns_time_path_image_movement_analyzer::ns_spatially_averaged_movement_threshold)
-							t = 0;
-						else t = 255 * ((abs(sum/count) - min_mov) / mov_r);
-					}
-					else t = 0;
-					(*im.im)[y][3 * (x + ns_side_border_width)] =
-						(*im.im)[y][3 * (x + ns_side_border_width) + 1] =
-						(*im.im)[y][3 * (x + ns_side_border_width) + 2] = t;
-				}
-				break;
-			case ns_movement_and_image:
-				for (unsigned int x = 0; x < path_timepoint_element->image().properties().width; x++) {
-					float f;
-					if (path_timepoint_element->worm_stabilized_threshold(y, x)) {
-						long sum, count;
-						ns_analyzed_image_time_path::spatially_average_movement(y, x, ns_time_path_image_movement_analyzer::ns_spatially_averaged_movement_kernal_half_size, path_timepoint_element->movement_image_(), sum, count);
-						if (count == 0)
-							f = 0;
-						else f = ((abs(sum/count) - min_mov) / mov_r);
-					}
-					else f = 0;
-					
-					const int r = path_timepoint_element->image()[y][x] * (1-f)+255*f,  //goes up to 255 the more movement there is
-						bg = path_timepoint_element->image()[y][x] * (1 - f);  //goes down to zero the more movement there is.
-					(*im.im)[y][3 * (x + ns_side_border_width)] = r;
-					(*im.im)[y][3 * (x + ns_side_border_width) + 1] =
-						(*im.im)[y][3 * (x + ns_side_border_width) + 2] = bg;
-				}
-				break;
-			case ns_movement_threshold_and_image:
-				for (unsigned int x = 0; x < path_timepoint_element->image().properties().width; x++) {
-					float f;
-					if (path_timepoint_element->worm_stabilized_threshold(y, x)) {
-						long sum, count;
-						ns_analyzed_image_time_path::spatially_average_movement(y, x, ns_time_path_image_movement_analyzer::ns_spatially_averaged_movement_kernal_half_size, path_timepoint_element->movement_image_(), sum, count);
-						if (count == 0 || abs(sum) < count* ns_time_path_image_movement_analyzer::ns_spatially_averaged_movement_threshold)
-							f = 0;
-						else f = ((abs(sum / count) - min_mov) / mov_r);
-					}
-					else f = 0;
-
-					int r = path_timepoint_element->image()[y][x] * (1 - f) + 255 * f,  //goes up to 255 the more movement there is
-						bg = path_timepoint_element->image()[y][x] * (1 - f);  //goes down to zero the more movement there is.
-					(*im.im)[y][3 * (x + ns_side_border_width)] = r;
-					(*im.im)[y][3 * (x + ns_side_border_width) + 1] =
-						(*im.im)[y][3 * (x + ns_side_border_width) + 2] = bg;
-				}
-				break;
-
-			}
-			for (unsigned int x = path_timepoint_element->image().properties().width+ ns_side_border_width; x < prop.width; x++) {
-				(*im.im)[y][3 * x] =
-					(*im.im)[y][3 * x + 1] =
-					(*im.im)[y][3 * x + 2] = 0;
-			}
-		}
-		for (unsigned int y = path_timepoint_element->image().properties().height; y < prop.height; y++) {
-			for (unsigned int x = 0; x < prop.width; x++) {
-				(*im.im)[y][3 * x] =
-					(*im.im)[y][3 * x + 1] =
-					(*im.im)[y][3 * x + 2] = 0;
-			}
-		}
 		image_pane_area.y = path_timepoint_element->image().properties().height;
 		image_pane_area.x = path_timepoint_element->image().properties().width;
 		im.loaded = true;
@@ -603,6 +634,65 @@ public:
 	void draw_telemetry(const ns_vector_2i & position, const ns_vector_2i & graph_size, const ns_vector_2i & buffer_size, ns_8_bit * buffer) {
 		telemetry.draw(current_timepoint_id,  position, graph_size, buffer_size, buffer);
 	}
+	void draw_registration_debug(const ns_vector_2i & position, const ns_vector_2i & buffer_size, ns_8_bit * buffer) {
+		if (current_timepoint_id == 0)
+			return;
+		const ns_image_standard & im1(timepoints[current_timepoint_id].path_timepoint_element->registered_image_set().image);
+		const ns_image_standard & im2(timepoints[current_timepoint_id - 1].path_timepoint_element->registered_image_set().image);
+		const ns_image_standard & thresh(timepoints[current_timepoint_id].path_timepoint_element->registered_image_set().worm_region_threshold);
+
+		ns_stretch_registration_line_offsets offsets;
+		ns_stretch_registration reg;
+
+		float histogram_matching_factors[256];
+		ns_match_histograms(im1, im2, histogram_matching_factors);
+		float avg_x = reg.calculate(im1, im2, ns_vector_2i(0, 0), ns_vector_2i(im1.properties().width, im1.properties().height), ns_vector_2i(0, 0), offsets, histogram_matching_factors);
+		ns_stretch_source_mappings mappings;
+		ns_stretch_registration::convert_offsets_to_source_positions(offsets, mappings);
+		ns_image_standard imr;
+		ns_stretch_registration::register_image(mappings, avg_x, im2, imr);
+		cerr << avg_x << " ";
+		ns_registered_image_set im_set;
+		im1.pump(im_set.image, 1024);
+		im_set.movement_image_.init(im1.properties());
+		ns_match_histograms(im1, imr, histogram_matching_factors);
+		const int n(2);
+		const long kernel_area((2 * n + 1)*(2 * n + 1));
+		for ( int y = n; y < imr.properties().height-n; y++) {
+			for ( int x = n; x < imr.properties().width-n; x++) {
+				double d(0);
+				for (long dy = -n; dy <= n; dy++) {
+					for (long dx = -n; dx <= n; dx++) {
+						d += (short)(im1[y][x] - histogram_matching_factors[imr[y][x]]);
+					}
+				}
+				im_set.movement_image_[y][x] = d /= kernel_area;
+			}
+		}
+		thresh.pump(im_set.worm_region_threshold, 1024);
+		ns_image_properties prop(im1.properties());
+		prop.components = 3;
+		ns_image_standard out;
+		prop.width += 2 * ns_death_time_solo_posture_annotater_timepoint::ns_side_border_width; 
+		prop.height += 2 * ns_death_time_solo_posture_annotater_timepoint::ns_side_border_width;
+		out.init(prop);
+		ns_death_time_solo_posture_annotater_timepoint::render_image(current_visualization_type, im_set, out);
+
+
+		for (unsigned int y = 0; y < out.properties().height; y++) {
+			const int y_(buffer_size.y - y-position.y);
+			if (y_ >= buffer_size.y || y_ < 0)
+				continue;
+			for (unsigned int x = 0; x < 3*out.properties().width; x++) {
+				const int x_(3*position.x + x);
+				if (x_ >= 3*buffer_size.x)
+					break;
+				buffer[3 * buffer_size.x*(y_) + x_ ] = (out[y][x]<64)?4* out[y][x]:255;
+			}
+
+		}
+
+	}
 
 	ns_vector_2i bottom_margin_position() {
 		if (!current_worm->element(current_element_id()).registered_image_is_loaded()) {
@@ -746,7 +836,7 @@ public:
 					previous_images[i].im = new ns_image_standard();
 					next_images[i].im = new ns_image_standard();
 				}
-				for (unsigned int i = 0; i < max_buffer_size; i++) 
+				for (unsigned int i = 0; i < max_buffer_size; i++)
 					previous_images[i].im->init(current_image.im->properties());
 				for (unsigned int i = 0; i < max_buffer_size; i++)
 					next_images[i].im->init(current_image.im->properties());

@@ -426,7 +426,7 @@ public:
 	bool worm_stabilized_threshold(unsigned long y, unsigned long x) const { return registered_images->get_stabilized_worm_neighborhood_threshold(y, x); }
 
 	const ns_image_standard_signed & movement_image_() const {return registered_images->movement_image_;}
-	
+	const ns_registered_image_set & registered_image_set() const { return *registered_images; }
 	bool saturated_offset;
 
 	ns_vector_2d  offset_in_registered_image()const {return ns_vector_2d(offset_from_path.x,offset_from_path.y) + registration_offset;}
@@ -973,5 +973,7 @@ public:
 	void from_xml(const std::string & text);
 };
 
+
+void ns_match_histograms(const ns_image_standard & im1, const ns_image_standard & im2, float * histogram_matching_factors);
 
 #endif

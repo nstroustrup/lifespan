@@ -80,6 +80,10 @@ public:
 		return d;
 	}
 
+	const Ipp32f
+		sample_d_scaled(const float y, const float x,const float *sf) const {
+		throw ns_ex("Not implemented");
+	}
 
 	int  init(const ns_image_properties & prop) {
 		return init(prop.width, prop.height);

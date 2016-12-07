@@ -674,7 +674,7 @@ public:
 	
 	void set_resize_factor(const unsigned long resize_factor_){resize_factor = resize_factor_;}
 	bool data_saved()const{return saved_;}
-	ns_death_time_posture_annotater():ns_image_series_annotater(default_resize_factor, ns_death_time_posture_annotater_timepoint::ns_bottom_border_height),annotation_file("",""),saved_(true){}
+ ns_death_time_posture_annotater():ns_image_series_annotater(default_resize_factor, ns_death_time_posture_annotater_timepoint::ns_bottom_border_height),annotation_file("","",""),saved_(true){}
 	typedef enum {ns_time_aligned_images,ns_death_aligned_images} ns_alignment_type;
 
 	std::string image_label(const unsigned long frame_id){

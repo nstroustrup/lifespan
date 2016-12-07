@@ -12,7 +12,7 @@ struct ns_animal_list_at_position {
 
 class ns_death_time_posture_solo_annotater_region_data {
 public:
-	ns_death_time_posture_solo_annotater_region_data() :movement_data_loaded(false), annotation_file("", ""), loading_time(0), loaded_path_data_successfully(false), movement_quantification_data_loaded(false){}
+ ns_death_time_posture_solo_annotater_region_data() :movement_data_loaded(false), annotation_file("","", ""), loading_time(0), loaded_path_data_successfully(false), movement_quantification_data_loaded(false){}
 	
 	void load_movement_analysis(const unsigned long region_id_, ns_sql & sql, const bool load_movement_quantification = false) {
 		if (!movement_data_loaded) {

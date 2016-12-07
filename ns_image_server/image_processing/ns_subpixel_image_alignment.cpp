@@ -7,6 +7,7 @@
 #include <limits>
 #include <limits.h>
 #include <cmath>
+#include <algorithm>
 //cholesky matrix inversion from http://www.sci.utah.edu/~wallstedt/LU.htm
 // Crout uses unit diagonals for the upper triangle
 

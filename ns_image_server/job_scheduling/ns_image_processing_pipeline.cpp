@@ -262,7 +262,7 @@ void ns_handle_file_delete_request(ns_processing_job & job, ns_sql & sql){
 			
 		return;
 	}
-	unsigned long job_id = image_server.image_storage.create_file_deletion_job(job.id,sql);
+	  ns_64_bit job_id = image_server.image_storage.create_file_deletion_job(job.id,sql);
 	for (unsigned int i = 0; i < files.size(); i++)
 		image_server.image_storage.submit_file_deletion_request(job_id,files[i],sql);
 }
@@ -285,7 +285,6 @@ ns_processing_job ns_handle_file_delete_action(ns_processing_job & job, ns_sql &
 	try{
 		sql << "UPDATE processing_jobs SET currently_under_processing=" << image_server.host_id() << "  WHERE id=" << parent_job.id;
 		sql.send_query();
-
 		ns_image_server_event ev("ns_image_processing_pipeline::Processing file deletion job for ");
 		ev << parent_job.experiment_name << "(" << parent_job.experiment_id << ")::"
 			<< parent_job.sample_name << "(" << parent_job.sample_id << ")";

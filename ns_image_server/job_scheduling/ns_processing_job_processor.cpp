@@ -689,18 +689,22 @@ void ns_processing_job_maintenance_processor::flag_job_as_being_processed(ns_sql
 }
 
 
-bool ns_processing_job_maintenance_processor:: run_job(ns_sql & sql){
+
+bool ns_processing_job_maintenance_processor::run_job(ns_sql & sql) {
 	delete_job_ = true;
 
-//	ns_movement_database_maintainer m;
+	//	ns_movement_database_maintainer m;
 
-	image_server->register_server_event(
-		ns_image_server_event("Performing maintenance task '")
-			<< ns_maintenance_task_to_string(job.maintenance_task) << "' on "
-			<< job.experiment_name <<"(" << job.experiment_id << ")" << job.sample_name << "(" << job.sample_id << ")" 
-			<< job.region_name << "(" << job.region_id << ")",&sql
-		);
+	ns_image_server_event event("Performing maintenance task '");
+	event << ns_maintenance_task_to_string(job.maintenance_task);
+	if (job.maintenance_task != ns_maintenance_delete_files_from_disk_action){
+		event << "' on "
+		<< job.experiment_name << "(" << job.experiment_id << ")" << job.sample_name << "(" << job.sample_id << ")"
+		<< job.region_name << "(" << job.region_id << ")";
+	}
 
+
+	image_server->register_server_event(event, &sql);
 	//just so the web-based UI shows that the job is being processed.  Not needed for locking.
 	sql << "UPDATE processing_jobs SET currently_under_processing=" << image_server->host_id() << " WHERE id=" << job.id;
 	sql.send_query();

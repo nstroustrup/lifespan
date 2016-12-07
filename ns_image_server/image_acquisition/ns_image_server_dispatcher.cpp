@@ -779,7 +779,7 @@ void ns_image_server_dispatcher::on_timer(){
 
 		try{
 			bool do_not_change_pause_status(false);
-			if (!image_server.server_is_paused() && image_server.new_software_release_available(*timer_sql_connection)){
+			if (0 && !image_server.server_is_paused() && image_server.new_software_release_available(*timer_sql_connection)){
 				if (image_server.halt_on_new_software_release()){
 					image_server.register_server_event(ns_image_server_event("A more recent version of server software was found running on the cluster.  This server is outdated and is halting now."),timer_sql_connection);
 					image_server.update_software = true;

@@ -289,10 +289,37 @@ ns_processing_job ns_handle_file_delete_action(ns_processing_job & job, ns_sql &
 		sql << "UPDATE processing_jobs SET currently_under_processing=" << image_server_const.host_id() << "  WHERE id=" << parent_job.id;
 		sql.send_query();
 		ns_image_server_event ev("ns_image_processing_pipeline::Processing file deletion job for ");
-		ev << parent_job.experiment_name << "(" << parent_job.experiment_id << ")::"
-			<< parent_job.sample_name << "(" << parent_job.sample_id << ")";
-		if(parent_job.region_id != 0){
-			ev << "::" << parent_job.region_name << "(" << parent_job.region_id << ")";
+		if (parent_job.region_id != 0) {
+			sql << "SELECT e.name, s.name, r.name FROM experiments as e, capture_samples as s, sample_region_image_info as r WHERE r.id = " << parent_job.region_id << " AND r.sample_id = s.id AND s.experiment_id = e.id";
+			ns_sql_result res;
+			sql.get_rows(res);
+			if (res.size() != 0) {
+				parent_job.experiment_name = res[0][0];
+				parent_job.sample_name = res[0][1];
+				parent_job.region_name = res[0][2];
+				ev << parent_job.experiment_name << "::" << parent_job.sample_name << "::" << parent_job.region_name;
+			}
+		}
+		else if (parent_job.sample_id != 0) {
+			sql << "SELECT e.name, s.name FROM experiments as e, capture_samples as s WHERE s.id = " << parent_job.sample_id << " AND s.experiment_id = e.id";
+			ns_sql_result res;
+			sql.get_rows(res);
+			if (res.size() != 0) {
+				parent_job.experiment_name = res[0][0];
+				parent_job.sample_name = res[0][1];
+
+				ev << parent_job.experiment_name << "::" << parent_job.sample_name;
+			}
+		} 
+		else if (parent_job.experiment_id != 0) {
+			sql << "SELECT e.nameFROM experiments as es WHERE e.id = " << parent_job.experiment_id;
+			ns_sql_result res;
+			sql.get_rows(res);
+			if (res.size() != 0) {
+				parent_job.experiment_name = res[0][0];
+
+				ev << parent_job.experiment_name;
+			}
 		}
 		if(parent_job.image_id != 0){
 			ev << "::Image id " << parent_job.image_id;

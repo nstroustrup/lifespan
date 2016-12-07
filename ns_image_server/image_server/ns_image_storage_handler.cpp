@@ -1313,6 +1313,11 @@ void ns_image_storage_handler::get_file_deletion_requests(const ns_64_bit deleti
 		specs[i].long_term_directory = long_term_storage_directory;
 		specs[i].volatile_directory = volatile_storage_directory;
 		specs[i].relative_directory = res[i][0];
+		//convert all slashes to local file system appropriate
+		for (unsigned int j = 0; j < specs[i].relative_directory.size(); j++) {
+			if (specs[i].relative_directory[j] == WRONG_DIR_CHAR)
+				specs[i].relative_directory[j] = DIR_CHAR;
+		}
 		specs[i].filename = res[i][1];
 		specs[i].partition = res[i][2];
 	}

@@ -41,6 +41,8 @@ ns_local_buffer_connection * ns_get_local_buffer_connection();
 
 std::string ns_get_default_partition();
 
+class ns_image_server_results_file;
+
 #pragma warning(disable: 4355) //our use of this in constructor is valid, so we suppress the error message
 
 //when servers want to store an image, they should acquire a ns_image_storage_reciever from the appropraite
@@ -263,7 +265,12 @@ public:
 
 	ns_file_location_specification get_path_for_region(ns_64_bit region_image_info_id,ns_image_server_sql * sql, const ns_processing_task task= ns_unprocessed) const;
 	ns_file_location_specification get_base_path_for_region(ns_64_bit region_image_info_id,ns_image_server_sql * sql) const;
+	ns_file_location_specification get_detection_data_path_for_region(ns_64_bit region_image_info_id, ns_image_server_sql * sql) const;
 
+	ns_file_location_specification get_file_specification_for_path_data(const ns_file_location_specification & region_spec) const;
+	ns_file_location_specification get_file_specification_for_movement_data(ns_64_bit region_info_id, const std::string & data, ns_image_server_sql * sql) const;
+
+	static ns_file_location_specification convert_results_file_to_location(const ns_image_server_results_file * f);
 	
 	ns_file_location_specification get_path_for_sample(ns_64_bit sample_id, ns_image_server_sql * sql) const;
 	ns_file_location_specification get_path_for_sample_captured_images(ns_64_bit sample_id, bool small_images, ns_image_server_sql * sql) const;
@@ -297,13 +304,11 @@ public:
 			default: return "Unknown storage location";
 		}
 	}
-	std::string movement_file_directory(ns_64_bit region_info_id,ns_image_server_sql * sql,bool abs) const;
+	std::string movement_file_directory(ns_64_bit region_info_id,ns_image_server_sql * sql, std::string & absolute_directory_prefix) const;
 private:
 	std::string get_storage_to_open(ns_image_server_image & image, const ns_image_type & image_type, const unsigned long max_line_length, ns_image_server_sql * sql, bool & had_to_use_local_storage, const bool report_to_db, const bool allow_volatile_storage) const;
 	
-	ns_file_location_specification get_file_specification_for_path_data(const ns_file_location_specification & region_spec) const;
-	ns_file_location_specification get_file_specification_for_movement_data(ns_64_bit region_info_id, const std::string & data,ns_image_server_sql * sql) const;
-
+	
 	ns_file_location_specification look_up_image_location(ns_image_server_image & image,ns_image_server_sql * sql,const ns_image_type & image_type = ns_tiff_lzw) const;
 	ns_file_location_specification compile_absolute_paths_from_relative(const std::string & rel_path, const std::string & partition, const std::string & filename) const ;
 	

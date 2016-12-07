@@ -59,10 +59,10 @@ class ns_image_server_results_subject{
 
 class ns_image_server_results_file{
 	public:
-	ns_image_server_results_file(const std::string & d,const std::string & f):directory(d),filename(f){}
+	ns_image_server_results_file(const std::string & p,const std::string & d,const std::string & f):long_term_directory(p),relative_directory(d),filename(f){}
 	std::ostream * output(){
 
-		ns_dir::create_directory_recursive(directory);
+		ns_dir::create_directory_recursive(dir());
 		std::ofstream * o(new std::ofstream(path().c_str()));
 		if (o->fail()){
 			delete o;
@@ -83,9 +83,11 @@ class ns_image_server_results_file{
 	}
 	const std::string & output_filename() const{return filename;}
 	private:
-	std::string directory, filename;
-	std::string path(){return directory + DIR_CHAR_STR + filename;}
+	std::string long_term_directory,relative_directory, filename;
+	std::string path(){return dir() + DIR_CHAR_STR + filename;}
+	std::string dir() { return long_term_directory + DIR_CHAR_STR + relative_directory; }
 	friend class ns_image_server_results_storage;
+	friend class ns_image_storage_handler;
 };
 class ns_image_server_results_storage{
 	static std::string multi_experiment_data_folder(){return "multiple_experiment_data";}
@@ -102,12 +104,9 @@ class ns_image_server_results_storage{
 public:
 	void set_results_directory(const std::string & dir){results_directory = dir;}
 
-	ns_image_server_results_file capture_sample_image_statistics(ns_image_server_results_subject & spec, ns_sql & sql,bool multi_experiment=false){
+	ns_image_server_results_file capture_sample_image_statistics(ns_image_server_results_subject & spec, ns_sql & sql,bool multi_experiment=false) const{
 		spec.get_names(sql);
-		std::string dir(multi_experiment?results_directory + DIR_CHAR_STR + multi_experiment_data_folder() + DIR_CHAR_STR + image_statistics_folder()
-										:results_directory + DIR_CHAR_STR + ns_image_server_results_subject::create_short_name(spec.experiment_name) + DIR_CHAR_STR + image_statistics_folder());
-		
-		return ns_image_server_results_file(results_directory + DIR_CHAR_STR + ns_image_server_results_subject::create_short_name(spec.experiment_name) + DIR_CHAR_STR +image_statistics_folder(), 
+		return ns_image_server_results_file(results_directory, ns_image_server_results_subject::create_short_name(spec.experiment_name) + DIR_CHAR_STR +image_statistics_folder(),
 											ns_image_server_results_subject::create_short_name(spec.experiment_filename())  + "capture_sample_image_statistics.csv");
 	}
 
@@ -117,29 +116,29 @@ public:
 					+ spec.experiment_name + "=db_export";
 	}
 
-	ns_image_server_results_file capture_region_image_statistics(ns_image_server_results_subject & spec,ns_sql & sql,bool multi_experiment=false){
+	ns_image_server_results_file capture_region_image_statistics(ns_image_server_results_subject & spec,ns_sql & sql,bool multi_experiment=false) const {
 		spec.get_names(sql);
-		std::string dir(multi_experiment?results_directory + DIR_CHAR_STR + multi_experiment_data_folder() + DIR_CHAR_STR + image_statistics_folder()
-										:results_directory + DIR_CHAR_STR + ns_image_server_results_subject::create_short_name(spec.experiment_name) + DIR_CHAR_STR + image_statistics_folder());
-		return ns_image_server_results_file(dir,
+		std::string dir(multi_experiment?multi_experiment_data_folder() + DIR_CHAR_STR + image_statistics_folder()
+										:ns_image_server_results_subject::create_short_name(spec.experiment_name) + DIR_CHAR_STR + image_statistics_folder());
+		return ns_image_server_results_file(results_directory, dir,
 											ns_image_server_results_subject::create_short_name(spec.experiment_filename()) + "capture_region_image_statistics.csv");
 	}
 	
-	ns_image_server_results_file device_capture_image_statistics(ns_image_server_results_subject & spec, ns_sql & sql){
+	ns_image_server_results_file device_capture_image_statistics(ns_image_server_results_subject & spec, ns_sql & sql)const{
 		spec.get_names(sql);
-		return ns_image_server_results_file(results_directory + DIR_CHAR_STR + multi_experiment_data_folder() + DIR_CHAR_STR +image_statistics_folder(), 
+		return ns_image_server_results_file(results_directory, multi_experiment_data_folder() + DIR_CHAR_STR +image_statistics_folder(),
 											spec.device_filename() + "capture_device_image_statistics.csv");
 	}
 
-	ns_image_server_results_file device_history(ns_image_server_results_subject & spec, ns_sql & sql){
+	ns_image_server_results_file device_history(ns_image_server_results_subject & spec, ns_sql & sql)const{
 		spec.get_names(sql);
-		return ns_image_server_results_file(results_directory + DIR_CHAR_STR + multi_experiment_data_folder() + DIR_CHAR_STR +device_data_folder(), 
+		return ns_image_server_results_file(results_directory, multi_experiment_data_folder() + DIR_CHAR_STR +device_data_folder(), 
 											spec.device_filename() + "capture_device_history.csv");
 	}
 
-	ns_image_server_results_file survival_data(ns_image_server_results_subject & spec,const std::string & sub_dir,const std::string & format_type,const std::string & extension, ns_sql & sql,bool make_matlab_safe=false){
+	ns_image_server_results_file survival_data(ns_image_server_results_subject & spec,const std::string & sub_dir,const std::string & format_type,const std::string & extension, ns_sql & sql,bool make_matlab_safe=false)const{
 		spec.get_names(sql);
-		std::string dir(results_directory + DIR_CHAR_STR + ns_image_server_results_subject::create_short_name(spec.experiment_name) + DIR_CHAR_STR +survival_data_folder());
+		std::string dir(ns_image_server_results_subject::create_short_name(spec.experiment_name) + DIR_CHAR_STR +survival_data_folder());
 		if (!sub_dir.empty())
 			dir+=DIR_CHAR_STR + sub_dir;
 		std::string file(ns_image_server_results_subject::create_short_name(spec.experiment_filename()) + "survival=" + format_type + "." + extension);
@@ -153,7 +152,7 @@ public:
 				file = std::string("m") + file;
 		}
 
-		return ns_image_server_results_file(dir,file);
+		return ns_image_server_results_file(results_directory,dir,file);
 	
 		
 	}
@@ -162,39 +161,39 @@ public:
 			if (s[i] == ' ')
 				s[i] = '_';
 	}
-	ns_image_server_results_file animal_event_data(ns_image_server_results_subject & spec,const std::string & format_type, ns_sql & sql){
+	ns_image_server_results_file animal_event_data(ns_image_server_results_subject & spec,const std::string & format_type, ns_sql & sql) const{
 		spec.get_names(sql);
-		return ns_image_server_results_file(results_directory + DIR_CHAR_STR + ns_image_server_results_subject::create_short_name(spec.experiment_name) + DIR_CHAR_STR + survival_data_folder(), 
+		return ns_image_server_results_file(results_directory, ns_image_server_results_subject::create_short_name(spec.experiment_name) + DIR_CHAR_STR + survival_data_folder(), 
 											ns_image_server_results_subject::create_short_name(spec.experiment_filename()) + "animal_events=" + format_type + ".csv");
 	}
 	typedef enum{ns_censoring_and_movement_transitions,ns_worm_position_annotations} ns_death_time_annotation_file_type;
-	static std::string death_time_annotation_file_type_label(const ns_death_time_annotation_file_type & t){
+	static std::string death_time_annotation_file_type_label(const ns_death_time_annotation_file_type & t) {
 		switch(t){
 		case ns_censoring_and_movement_transitions: return "transitions";
 		case ns_worm_position_annotations: return "positions";
 		default: throw ns_ex("Unknown death time annotation file type");
 		}
 	}
-	ns_image_server_results_file machine_death_times(ns_image_server_results_subject & spec, const ns_death_time_annotation_file_type & type,const std::string & analysis_type,ns_sql & sql){		
+	ns_image_server_results_file machine_death_times(ns_image_server_results_subject & spec, const ns_death_time_annotation_file_type & type,const std::string & analysis_type,ns_sql & sql) const{		
 		spec.get_names(sql);
-		return ns_image_server_results_file(results_directory + DIR_CHAR_STR + ns_image_server_results_subject::create_short_name(spec.experiment_name) + DIR_CHAR_STR + machine_death_time_annotations(),
+		return ns_image_server_results_file(results_directory,ns_image_server_results_subject::create_short_name(spec.experiment_name) + DIR_CHAR_STR + machine_death_time_annotations(),
 											spec.region_filename() + "machine_event_annotations=" + death_time_annotation_file_type_label(type) + "=" + analysis_type + ".csv");
 	}
-	ns_image_server_results_file hand_curated_death_times(ns_image_server_results_subject & spec, ns_sql & sql){		
+	ns_image_server_results_file hand_curated_death_times(ns_image_server_results_subject & spec, ns_sql & sql) const{		
 		spec.get_names(sql);
-		return ns_image_server_results_file(results_directory + DIR_CHAR_STR + ns_image_server_results_subject::create_short_name(spec.experiment_name) + DIR_CHAR_STR + hand_curation_folder(),
+		return ns_image_server_results_file(results_directory,ns_image_server_results_subject::create_short_name(spec.experiment_name) + DIR_CHAR_STR + hand_curation_folder(),
 											spec.region_filename() + "hand_curation.xml");
 	}
 
-	ns_image_server_results_file time_path_image_analysis_quantification(ns_image_server_results_subject & spec,const std::string & type, const bool store_in_results_directory,ns_sql & sql, bool abbreviated_time_series=false);
+	ns_image_server_results_file time_path_image_analysis_quantification(ns_image_server_results_subject & spec,const std::string & type, const bool store_in_results_directory,ns_sql & sql, bool abbreviated_time_series=false, bool compress_file_names=true) const;
 
-	ns_image_server_results_file movement_timeseries_plot(ns_image_server_results_subject & spec,const std::string & type, ns_sql & sql){	
+	ns_image_server_results_file movement_timeseries_plot(ns_image_server_results_subject & spec,const std::string & type, ns_sql & sql) const{	
 		spec.get_names(sql);
 		if (spec.region_id != 0)
-			return ns_image_server_results_file(results_directory + DIR_CHAR_STR + ns_image_server_results_subject::create_short_name(spec.experiment_name) + DIR_CHAR_STR + movement_timeseries_folder() + DIR_CHAR_STR + "regions",
+			return ns_image_server_results_file(results_directory,ns_image_server_results_subject::create_short_name(spec.experiment_name) + DIR_CHAR_STR + movement_timeseries_folder() + DIR_CHAR_STR + "regions",
 												spec.region_filename() + type + ".svg");
 		else
-			return ns_image_server_results_file(results_directory + DIR_CHAR_STR + ns_image_server_results_subject::create_short_name(spec.experiment_name) + DIR_CHAR_STR + movement_timeseries_folder(),
+			return ns_image_server_results_file(results_directory,ns_image_server_results_subject::create_short_name(spec.experiment_name) + DIR_CHAR_STR + movement_timeseries_folder(),
 												ns_image_server_results_subject::create_short_name(spec.experiment_filename()) + type + ".svg");
 	}
 
@@ -202,7 +201,7 @@ public:
 		const ns_death_time_annotation::ns_multiworm_censoring_strategy & multiworm_strategy,
 		const ns_death_time_annotation::ns_missing_worm_return_strategy & missing_worm_return_strategy,
 		const ns_animals_that_slow_but_do_not_die_handling_strategy & partial_path_strategy,
-		ns_image_server_results_subject & spec,const std::string & type, const std::string & details,ns_sql & sql){	
+		ns_image_server_results_subject & spec,const std::string & type, const std::string & details,ns_sql & sql) const{	
 		spec.get_names(sql);
 		std::string sub_dir(type);
 		replace_spaces_by_underscores(sub_dir);
@@ -215,12 +214,12 @@ public:
 		replace_spaces_by_underscores(filename);
 		if (spec.region_id != 0)
 			return ns_image_server_results_file(
-			results_directory + DIR_CHAR_STR + ns_image_server_results_subject::create_short_name(spec.experiment_name) + 
+			results_directory ,ns_image_server_results_subject::create_short_name(spec.experiment_name) + 
 			DIR_CHAR_STR + movement_timeseries_folder() + DIR_CHAR_STR + "single_regions" + DIR_CHAR_STR + sub_dir,
 			spec.region_filename(30) + filename + ".csv");
 		else
 			return ns_image_server_results_file(
-			results_directory + DIR_CHAR_STR + ns_image_server_results_subject::create_short_name(spec.experiment_name) + 
+			results_directory,ns_image_server_results_subject::create_short_name(spec.experiment_name) + 
 			DIR_CHAR_STR + movement_timeseries_folder() + DIR_CHAR_STR + sub_dir,
 					ns_image_server_results_subject::create_short_name(spec.experiment_filename()) + filename + ".csv");
 	}
@@ -232,19 +231,19 @@ public:
 
 	typedef enum {ns_3d_plot,ns_3d_plot_with_annotations,ns_3d_plot_launcher,ns_3d_plot_launcher_environment} ns_timeseries_3d_plot_type;
 
-	ns_image_server_results_file animal_position_timeseries_3d(ns_image_server_results_subject & spec,ns_sql & sql,ns_timeseries_3d_plot_type type =  ns_3d_plot, const std::string & calibration_data = ""){	
+	ns_image_server_results_file animal_position_timeseries_3d(ns_image_server_results_subject & spec,ns_sql & sql,ns_timeseries_3d_plot_type type =  ns_3d_plot, const std::string & calibration_data = "") const{	
 		spec.get_names(sql);
 		std::string calibration_dir = calibration_data.empty()?"":(std::string(DIR_CHAR_STR) + "calibration");
 		std::string calibration_str = calibration_data.empty()?"":std::string("=") + calibration_data;
 		if (type==ns_3d_plot_launcher_environment) //location of the R file that sets up the environment for viewing 3d plot files
-			return ns_image_server_results_file(results_directory + DIR_CHAR_STR + ns_image_server_results_subject::create_short_name(spec.experiment_name) + DIR_CHAR_STR + animal_position_folder() + calibration_dir,
+			return ns_image_server_results_file(results_directory, ns_image_server_results_subject::create_short_name(spec.experiment_name) + DIR_CHAR_STR + animal_position_folder() + calibration_dir,
 										"set_environment.r");
 		//location of the R file that either contains or loads the 3d plot data
-		return ns_image_server_results_file(results_directory + DIR_CHAR_STR + ns_image_server_results_subject::create_short_name(spec.experiment_name) + DIR_CHAR_STR + animal_position_folder() + calibration_dir,
+		return ns_image_server_results_file(results_directory ,ns_image_server_results_subject::create_short_name(spec.experiment_name) + DIR_CHAR_STR + animal_position_folder() + calibration_dir,
 											spec.region_filename() + "animal_position_3d" + ((type==ns_3d_plot_with_annotations)?"_with_hand_annotations":"")+calibration_str + ((type==ns_3d_plot_launcher)?".r":".csv"));
 	}
 
-	void write_animal_position_timeseries_3d_launcher(ns_image_server_results_subject & spec,const ns_timeseries_3d_plot_type & graph_type,ns_sql & sql, const std::string & calibration_data = ""){	
+	void write_animal_position_timeseries_3d_launcher(ns_image_server_results_subject & spec,const ns_timeseries_3d_plot_type & graph_type,ns_sql & sql, const std::string & calibration_data = "") const{	
 
 		ns_image_server_results_file launcher_file_spec(animal_position_timeseries_3d(spec,sql,ns_3d_plot_launcher,calibration_data));
 		ns_image_server_results_file launcher_file_environment_spec(animal_position_timeseries_3d(spec,sql,ns_3d_plot_launcher_environment,calibration_data));
@@ -259,14 +258,14 @@ public:
 		out() << "ns_plot_3d_animal_movement(rd,title_text)\n";
 		out.release();
 
-		
+		const std::string dir(launcher_file_spec.dir());
 		ns_acquire_for_scope<std::ostream> out2(launcher_file_environment_spec.output());
-		out2() << "#" << launcher_file_spec.directory << "\n";
+		out2() << "#" << dir << "\n";
 		out2() << "setwd(\"";
-		for (unsigned int i = 0; i < launcher_file_spec.directory.size(); i++){
-			if (launcher_file_spec.directory[i] == '\\')
+		for (unsigned int i = 0; i < dir.size(); i++){
+			if (dir[i] == '\\')
 				out2() << "\\\\";
-			else out2() << launcher_file_spec.directory[i];
+			else out2() << dir[i];
 		}
 		out2() << "\")\n";
 		out2.release();

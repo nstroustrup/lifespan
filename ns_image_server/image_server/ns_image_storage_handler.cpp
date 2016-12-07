@@ -1,5 +1,6 @@
 #include "ns_image_storage_handler.h"
 #include "ns_image_server.h"
+#include <functional>
 
 using namespace std;
 
@@ -1141,7 +1142,7 @@ ns_file_location_specification ns_image_storage_handler::get_file_specification_
 	return look_up_image_location(image,sql);
 }
 
-std::string ns_image_storage_handler::movement_file_directory(ns_64_bit region_info_id,ns_image_server_sql * sql, bool abs) const{
+std::string ns_image_storage_handler::movement_file_directory(ns_64_bit region_info_id, ns_image_server_sql * sql, std::string & absolute_directory_prefix) const {
 		
 	std::string region_name,sample_name,experiment_name,dir;
 	ns_64_bit sample_id,experiment_id;
@@ -1151,26 +1152,39 @@ std::string ns_image_storage_handler::movement_file_directory(ns_64_bit region_i
 	dir = ns_sample_directory(sample_name,sample_id,experiment_directory);
 	dir+= DIR_CHAR_STR;
 	dir+= "movement_data";
-	if (abs)
-		
-		return long_term_storage_directory + DIR_CHAR_STR + get_partition_for_experiment_int(experiment_id,sql) + DIR_CHAR_STR + dir;
+	absolute_directory_prefix = long_term_storage_directory + DIR_CHAR_STR + get_partition_for_experiment_int(experiment_id, sql);
 	return dir;
 }
+
+
+
+ns_file_location_specification  ns_image_storage_handler::get_detection_data_path_for_region(ns_64_bit region_image_info_id, ns_image_server_sql * sql) const {
+	ns_file_location_specification spec(get_base_path_for_region(region_image_info_id, sql));
+	spec.relative_directory += DIR_CHAR;
+	spec.relative_directory += "detected_data";
+	return spec;
+}
+ns_file_location_specification ns_image_storage_handler::convert_results_file_to_location(const ns_image_server_results_file * f) {
+	ns_file_location_specification spec;
+	spec.partition = "";
+	spec.long_term_directory = f->long_term_directory;
+	spec.relative_directory = f->relative_directory;
+	spec.filename = f->filename;
+	return spec;
+}
+
 ns_file_location_specification ns_image_storage_handler::get_file_specification_for_movement_data(ns_64_bit region_info_id, const std::string & data_source,ns_image_server_sql * sql) const{
 	ns_file_location_specification spec;
-	spec.relative_directory = movement_file_directory(region_info_id,sql,false);
+	std::string abs_path;
+
+	spec.relative_directory = movement_file_directory(region_info_id,sql, abs_path);
 	
 	std::string region_name,sample_name,experiment_name;
 	ns_64_bit sample_id,experiment_id;
 	ns_region_info_lookup::get_region_info(region_info_id,sql,region_name,sample_name,sample_id,experiment_name,experiment_id);
-	std::string experiment_directory(ns_image_server_captured_image::experiment_directory(experiment_name,experiment_id));
-
-	spec.relative_directory = 
-			ns_sample_directory(sample_name,sample_id,experiment_directory);
-	spec.relative_directory += DIR_CHAR_STR;
-	spec.relative_directory += "movement_data";
 	spec.partition = get_partition_for_experiment_int(experiment_id,sql);
-	spec.filename = experiment_name +"="+sample_name+"="+region_name + "=" + data_source;
+	if (!data_source.empty())
+		spec.filename = experiment_name +"="+sample_name+"="+region_name + "=" + data_source;
 	return spec;
 }
 ns_image_server_image ns_image_storage_handler::get_region_movement_metadata_info(ns_64_bit region_info_id,const std::string & data_source,ns_sql & sql) const{
@@ -1466,8 +1480,13 @@ std::string ns_shorten_filename(std::string name, const unsigned long limit){
 				name[i] != 'u')
 				n+=name[i];
 		}
-		if (n.length() > limit)
-			n.resize(limit);
+		//if the string is still too long after removing vowels, crop it and add a hash to the end
+		std::string h(ns_to_string(std::hash<std::string>{}(name)));
+		long p((long)limit - (long)h.size());
+		if (p > 0)
+			n.resize(p);
+		n += h;
+		
 		return n;
 	}
 }

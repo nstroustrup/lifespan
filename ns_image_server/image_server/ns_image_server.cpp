@@ -2873,8 +2873,8 @@ void ns_wrap_m4v_stream(const std::string & m4v_filename, const std::string & ou
 
 ns_image_storage_reciever_handle<ns_8_bit> ns_image_server_results_storage::movement_timeseries_collage(ns_image_server_results_subject & spec,const std::string & graph_type ,const ns_image_type & image_type, const unsigned long max_line_length, ns_sql & sql){
 	spec.get_names(sql);
-	string path(results_directory + DIR_CHAR_STR + spec.experiment_name + DIR_CHAR_STR + movement_timeseries_folder());
-	ns_image_server_results_file f(path, spec.experiment_filename()  + graph_type + "=collage.tif");
+	string path(spec.experiment_name + DIR_CHAR_STR + movement_timeseries_folder());
+	ns_image_server_results_file f(results_directory,path, spec.experiment_filename()  + graph_type + "=collage.tif");
 	ns_dir::create_directory_recursive(path);
 	return ns_image_storage_reciever_handle<ns_image_storage_handler::ns_component>(new ns_image_storage_reciever_to_disk<ns_image_storage_handler::ns_component>(max_line_length, f.path(),image_type,false));
 }
@@ -2882,14 +2882,14 @@ ns_image_storage_reciever_handle<ns_8_bit> ns_image_server_results_storage::move
 
 ns_image_storage_reciever_handle<ns_8_bit> ns_image_server_results_storage::machine_learning_training_set_image(ns_image_server_results_subject & spec, const unsigned long max_line_length, ns_sql & sql){
 	spec.get_names(sql);
-	string path(results_directory + DIR_CHAR_STR + machine_learning_training_set_folder());
-	ns_image_server_results_file f(path,spec.region_filename() +"=training_set.tif");
+	string path( machine_learning_training_set_folder());
+	ns_image_server_results_file f(results_directory,path,spec.region_filename() +"=training_set.tif");
 	ns_dir::create_directory_recursive(path);
 	return ns_image_storage_reciever_handle<ns_image_storage_handler::ns_component>(new ns_image_storage_reciever_to_disk<ns_image_storage_handler::ns_component>(max_line_length, f.path(),ns_tiff,false));
 
 }
 
-ns_image_server_results_file ns_image_server_results_storage::time_path_image_analysis_quantification(ns_image_server_results_subject & spec,const std::string & type, const bool store_in_results_directory,ns_sql & sql, bool abbreviated_time_series){	
+ns_image_server_results_file ns_image_server_results_storage::time_path_image_analysis_quantification(ns_image_server_results_subject & spec,const std::string & type, const bool store_in_results_directory,ns_sql & sql, bool abbreviated_time_series, bool compress_file_names) const{
 		spec.get_names(sql);
 		string fname(""),dir("");
 		string abbreviated;
@@ -2897,17 +2897,24 @@ ns_image_server_results_file ns_image_server_results_storage::time_path_image_an
 			abbreviated = "=abbreviated";
 		if (spec.region_id != 0){
 			dir = time_path_image_analysis_quantification() + DIR_CHAR_STR + "regions";
-			fname = ns_image_server_results_subject::create_short_name(spec.region_filename()) + "=" + type + abbreviated+".csv";
+			if (compress_file_names)
+				fname = ns_image_server_results_subject::create_short_name(spec.region_filename());
+			else fname = spec.region_filename();
 		}
 		else{
 			dir = time_path_image_analysis_quantification();
-			fname = ns_image_server_results_subject::create_short_name(spec.experiment_filename()) + type + abbreviated+ ".csv";
+			if (compress_file_names)
+				fname = ns_image_server_results_subject::create_short_name(spec.experiment_filename());
+			else fname = spec.experiment_filename();
 		}
+		fname += type + abbreviated + ".csv";
 
 		if (store_in_results_directory)
-			return ns_image_server_results_file(results_directory + DIR_CHAR_STR + ns_image_server_results_subject::create_short_name(spec.experiment_name) + DIR_CHAR_STR + dir, fname);
+ 			return ns_image_server_results_file(results_directory,spec.experiment_name + DIR_CHAR_STR + dir, fname);
 		else{
-			return ns_image_server_results_file(image_server.image_storage.movement_file_directory(spec.region_id,&sql,true) + DIR_CHAR_STR + dir, fname);
+			std::string abs_path;
+			std::string relative_path = image_server.image_storage.movement_file_directory(spec.region_id, &sql, abs_path);
+			return ns_image_server_results_file(abs_path,relative_path+ DIR_CHAR_STR+dir, fname);
 		}
 	}
 

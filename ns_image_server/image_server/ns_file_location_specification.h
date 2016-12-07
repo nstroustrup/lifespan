@@ -13,10 +13,14 @@ private:
 			filename;
 
 	inline std::string absolute_volatile_directory() const{
-		return volatile_directory + DIR_CHAR_STR + par() + relative_directory;
+		const std::string rel(par() + relative_directory);
+		if (rel.empty()) return volatile_directory;
+		else return volatile_directory + DIR_CHAR_STR + rel;
 	}
 	inline std::string absolute_long_term_directory() const{
-		return long_term_directory + DIR_CHAR_STR + par() + relative_directory;
+		const std::string rel(par() + relative_directory);
+		if (rel.empty()) return long_term_directory;
+		else return long_term_directory + DIR_CHAR_STR + rel;
 	}
 
 	inline std::string absolute_volatile_filename() const{

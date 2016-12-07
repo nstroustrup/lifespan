@@ -197,7 +197,7 @@ void ns_handle_file_delete_request(ns_processing_job & job, ns_sql & sql){
 		else{
 			//if we are deleting the raw data, delete the entire region including all processed images
 			if (!specific_job_specified){
-				files.push_back(image_server_const.image_storage.get_path_for_region(job.region_id,&sql,ns_unprocessed));
+				files.push_back(image_server_const.image_storage.get_base_path_for_region(job.region_id,&sql));
 			}
 			else{
 				//if we're deleting only certain image processing tasks, just do that.
@@ -206,7 +206,23 @@ void ns_handle_file_delete_request(ns_processing_job & job, ns_sql & sql){
 						files.push_back(image_server_const.image_storage.get_path_for_region(job.region_id,&sql,(ns_processing_task)i));
 					}
 				}
-		
+				//delete metadata associated with that region
+				if (job.operations[(int)ns_process_worm_detection]) {
+					files.push_back(image_server_const.image_storage.get_path_for_region(job.region_id, &sql, ns_process_region_vis));
+					files.push_back(image_server_const.image_storage.get_path_for_region(job.region_id, &sql, ns_process_region_interpolation_vis));
+					files.push_back(image_server_const.image_storage.get_file_specification_for_path_data(image_server_const.image_storage.get_base_path_for_region(job.region_id, &sql)));
+					files.push_back(image_server_const.image_storage.get_file_specification_for_movement_data(job.region_id, "time_path_movement_image_analysis_quantification.csv",&sql));
+					files.push_back(image_server_const.image_storage.get_file_specification_for_movement_data(job.region_id, "time_path_solution_data.csv", &sql));
+					files.push_back(image_server_const.image_storage.get_detection_data_path_for_region(job.region_id, &sql));
+
+					ns_image_server_results_subject spec;
+					spec.region_id = job.region_id;
+
+					ns_image_server_results_file f = image_server_const.results_storage.time_path_image_analysis_quantification(spec, "detailed", false, sql, false,false);
+					files.push_back(image_server_const.image_storage.convert_results_file_to_location(&f));
+					f = image_server_const.results_storage.time_path_image_analysis_quantification(spec, "detailed", false, sql, false,true);
+					files.push_back(image_server_const.image_storage.convert_results_file_to_location(&f));
+				}
 			}
 		}
 	}

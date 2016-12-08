@@ -7,7 +7,7 @@ if ($_POST['create'] !=''){
   $new_experiment_group_name = $_POST['new_group_name'];
   $query = "UPDATE experiment_groups SET group_order=group_order+1";
   $sql->send_query($query);
-  $query = "INSERT INTO experiment_groups SET group_name='$new_experiment_group_name', group_order=0, hidden=0";
+  $query = "INSERT INTO experiment_groups SET group_name='$new_experiment_group_name', group_order=0";
 	//die($query);
   $sql->send_query($query);
   $reload = TRUE;

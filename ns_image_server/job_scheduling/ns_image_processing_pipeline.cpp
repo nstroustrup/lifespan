@@ -151,6 +151,39 @@ void ns_check_for_file_errors(ns_processing_job & job, ns_sql & sql){
 	else throw ns_ex("ns_check_for_file_errors()::No subject specified for file checking");
 }
 
+void ns_identify_region_files_to_delete(const ns_64_bit & region_id,const bool entire_region, const std::vector<char> & operations, ns_sql & sql,std::vector<ns_file_location_specification> & files){
+
+	//if we are deleting the raw data, delete the entire region including all processed images
+	if (entire_region) {
+		files.push_back(image_server_const.image_storage.get_base_path_for_region(region_id, &sql));
+		return;
+	}
+	//if we're deleting only certain image processing tasks, just do that.
+	for (unsigned long i = 0; i < (unsigned long)operations.size(); i++) {
+		if (operations[i]) 
+			files.push_back(image_server_const.image_storage.get_path_for_region(region_id, &sql, (ns_processing_task)i));
+	}
+	//delete metadata associated with that region
+	if (operations[(int)ns_process_worm_detection]) {
+		if (!operations[(int)ns_process_region_vis])
+			files.push_back(image_server_const.image_storage.get_path_for_region(region_id, &sql, ns_process_region_vis));
+		if (!operations[(int)ns_process_region_interpolation_vis])
+			files.push_back(image_server_const.image_storage.get_path_for_region(region_id, &sql, ns_process_region_interpolation_vis));
+		files.push_back(image_server_const.image_storage.get_file_specification_for_path_data(image_server_const.image_storage.get_base_path_for_region(region_id, &sql)));
+		files.push_back(image_server_const.image_storage.get_file_specification_for_movement_data(region_id, "time_path_movement_image_analysis_quantification.csv", &sql));
+		files.push_back(image_server_const.image_storage.get_file_specification_for_movement_data(region_id, "time_path_solution_data.csv", &sql));
+		files.push_back(image_server_const.image_storage.get_detection_data_path_for_region(region_id, &sql));
+
+		ns_image_server_results_subject spec;
+		spec.region_id = region_id;
+
+		ns_image_server_results_file f = image_server_const.results_storage.time_path_image_analysis_quantification(spec, "detailed", false, sql, false, false);
+		files.push_back(image_server_const.image_storage.convert_results_file_to_location(&f));
+		f = image_server_const.results_storage.time_path_image_analysis_quantification(spec, "detailed", false, sql, false, true);
+		files.push_back(image_server_const.image_storage.convert_results_file_to_location(&f));
+	}
+}
+
 struct ns_get_file_deletion_arguments{
 	//delete captured images whose small image has been calculated and mask applied
 	static std::string captured_file_specification(const std::string & table_name){
@@ -168,6 +201,26 @@ struct ns_get_file_deletion_arguments{
 			return table_name + ".censored!=0 AND " + table_name + ".never_delete_image = 0 AND " + table_name + ".problem = 0 AND " + table_name + ".currently_being_processed=0 ";
 	}
 };
+void ns_get_experiment_cleanup_subjects(const ns_64_bit experiment_id, ns_sql_result & regions, std::vector<char> & operations, ns_sql & sql) {
+/*	sql << "SELECT s.id from capture_samples as s WHERE s.experiment_id = " << experiment_id;
+	ns_sql_result samples;
+	sql.get_rows(samples);*/
+	sql << "SELECT r.id from capture_samples as s, sample_region_image_info as r WHERE s.experiment_id = " << experiment_id << " AND r.sample_id = s.id";
+	sql.get_rows(regions);
+	operations.resize(0);
+	operations.resize((int)ns_process_last_task_marker, 0);
+	for (unsigned int i = 0; i < (int)ns_process_last_task_marker; i++) {
+		if (i != (int)ns_unprocessed &&
+			i != (int)ns_process_apply_mask &&
+			i != (int)ns_process_thumbnail &&
+			i != (int)ns_process_add_to_training_set &&
+			i != (int)ns_process_analyze_mask &&
+			i != (int)ns_process_compile_video &&
+			i != (int)ns_process_heat_map &&
+			i != (int)ns_process_static_mask)
+			operations[i] = 1;
+	}
+}
 
 void ns_handle_file_delete_request(ns_processing_job & job, ns_sql & sql){
 	vector<ns_file_location_specification> files;
@@ -194,37 +247,8 @@ void ns_handle_file_delete_request(ns_processing_job & job, ns_sql & sql){
 					files.push_back(image_server_const.image_storage.get_file_specification_for_image(im,sql));
 				}*/
 		}
-		else{
-			//if we are deleting the raw data, delete the entire region including all processed images
-			if (!specific_job_specified){
-				files.push_back(image_server_const.image_storage.get_base_path_for_region(job.region_id,&sql));
-			}
-			else{
-				//if we're deleting only certain image processing tasks, just do that.
-				for (unsigned long i = 0; i < (unsigned long)job.operations.size(); i++){
-					if (job.operations[i]){
-						files.push_back(image_server_const.image_storage.get_path_for_region(job.region_id,&sql,(ns_processing_task)i));
-					}
-				}
-				//delete metadata associated with that region
-				if (job.operations[(int)ns_process_worm_detection]) {
-					files.push_back(image_server_const.image_storage.get_path_for_region(job.region_id, &sql, ns_process_region_vis));
-					files.push_back(image_server_const.image_storage.get_path_for_region(job.region_id, &sql, ns_process_region_interpolation_vis));
-					files.push_back(image_server_const.image_storage.get_file_specification_for_path_data(image_server_const.image_storage.get_base_path_for_region(job.region_id, &sql)));
-					files.push_back(image_server_const.image_storage.get_file_specification_for_movement_data(job.region_id, "time_path_movement_image_analysis_quantification.csv",&sql));
-					files.push_back(image_server_const.image_storage.get_file_specification_for_movement_data(job.region_id, "time_path_solution_data.csv", &sql));
-					files.push_back(image_server_const.image_storage.get_detection_data_path_for_region(job.region_id, &sql));
-
-					ns_image_server_results_subject spec;
-					spec.region_id = job.region_id;
-
-					ns_image_server_results_file f = image_server_const.results_storage.time_path_image_analysis_quantification(spec, "detailed", false, sql, false,false);
-					files.push_back(image_server_const.image_storage.convert_results_file_to_location(&f));
-					f = image_server_const.results_storage.time_path_image_analysis_quantification(spec, "detailed", false, sql, false,true);
-					files.push_back(image_server_const.image_storage.convert_results_file_to_location(&f));
-				}
-			}
-		}
+		else 
+			ns_identify_region_files_to_delete(job.region_id, !specific_job_specified, job.operations, sql, files);
 	}
 	else if (job.sample_id != 0){
 		//we want to delete just the raw, unmasked images
@@ -269,8 +293,29 @@ void ns_handle_file_delete_request(ns_processing_job & job, ns_sql & sql){
 		else
 			files.push_back(image_server_const.image_storage.get_path_for_sample(job.sample_id,&sql));	
 	}
-	else if (job.experiment_id != 0)
-		files.push_back(image_server_const.image_storage.get_path_for_experiment(job.experiment_id,&sql));	
+	else if (job.experiment_id != 0) {
+		if (job.maintenance_flag == ns_processing_job::ns_delete_everything_but_raw_data) {
+			std::vector<char> operations;
+			ns_sql_result regions;
+			ns_get_experiment_cleanup_subjects(job.experiment_id, regions, operations, sql);
+			//delete images and storyboard for each region
+			for (unsigned int i = 0; i < regions.size(); i++) {
+				const ns_64_bit region_id(ns_atoi64(regions[i][0].c_str()));
+				ns_identify_region_files_to_delete(region_id, false, operations, sql, files);
+				files.push_back(image_server.image_storage.get_storyboard_path(0, region_id, 0, "", sql, true));
+			}
+			//delete experiment storyboards
+			files.push_back(image_server.image_storage.get_storyboard_path(job.experiment_id, 0, 0, "", sql, true));
+			//delete all region movement data
+			if (regions.size() != 0)
+				files.push_back(image_server_const.image_storage.get_file_specification_for_movement_data(ns_atoi64(regions[0][0].c_str()),"", &sql));
+
+		}
+		//delete all data stored on disk for the experiment!
+		else 
+			files.push_back(image_server_const.image_storage.get_path_for_experiment(job.experiment_id, &sql));
+
+	}
 	else throw ns_ex("ns_handle_file_delete_request()::Unknown delete job type");
 	if (files.size() == 0){
 		image_server_const.register_server_event(
@@ -328,7 +373,7 @@ ns_processing_job ns_handle_file_delete_action(ns_processing_job & job, ns_sql &
 			}
 		} 
 		else if (parent_job.experiment_id != 0) {
-			sql << "SELECT e.nameFROM experiments as es WHERE e.id = " << parent_job.experiment_id;
+			sql << "SELECT e.name FROM experiments as e WHERE e.id = " << parent_job.experiment_id;
 			ns_sql_result res;
 			sql.get_rows(res);
 			if (res.size() != 0) {
@@ -368,6 +413,9 @@ void ns_handle_image_metadata_delete_action(ns_processing_job & job,ns_sql & sql
 	bool autocommit_state = sql.autocommit_state();
 	sql.set_autocommit(false);
 	sql.send_query("BEGIN");
+	std::vector<char> operations;
+	operations.reserve(job.operations.size());
+	operations.insert(operations.end(), job.operations.begin(), job.operations.end());
 	try{
 		if (job.image_id != 0){
 			sql << "DELETE FROM images WHERE id = " << job.image_id;
@@ -376,7 +424,7 @@ void ns_handle_image_metadata_delete_action(ns_processing_job & job,ns_sql & sql
 		else if (job.region_id != 0)
 			regions_to_delete.push_back(job.region_id);
 		else if (job.sample_id != 0){
-			if (job.operations[ns_unprocessed]){
+			if (operations[ns_unprocessed]){
 				if (job.maintenance_flag == ns_processing_job::ns_only_delete_processed_captured_images){
 					sql << "DELETE images FROM images, captured_images WHERE captured_images.sample_id = " << job.sample_id
 						<< " AND captured_images.image_id = images.id "
@@ -395,7 +443,7 @@ void ns_handle_image_metadata_delete_action(ns_processing_job & job,ns_sql & sql
 						<< " AND " <<  ns_get_file_deletion_arguments::censored_file_specification("captured_images");
 					sql.send_query();
 				}
-				else if (job.operations[ns_process_thumbnail]){
+				else if (operations[ns_process_thumbnail]){
 					sql << "DELETE images FROM images, captured_images WHERE captured_images.sample_id = " << job.sample_id
 							<< " AND captured_images.small_image_id = images.id "
 							<< " AND " << ns_get_file_deletion_arguments::small_captured_file_specification("captured_images");
@@ -408,18 +456,30 @@ void ns_handle_image_metadata_delete_action(ns_processing_job & job,ns_sql & sql
 			}
 			else{
 				for (unsigned int task = 0; task < (unsigned int)ns_process_last_task_marker; task++)
-					if (job.operations[task]) throw ns_ex("Full sample image deletion specified with operations flagged!");
+					if (operations[task]) throw ns_ex("Full sample image deletion specified with operations flagged!");
 				samples_to_delete.push_back(job.sample_id);
 				//check for malformed request
 			}
 		}
 		else if (job.experiment_id != 0){
-			experiment_to_delete = job.experiment_id;
-			sql << "SELECT id FROM capture_samples WHERE experiment_id = " << experiment_to_delete;
-			ns_sql_result res;
-			sql.get_rows(res);
-			for (unsigned long i = 0; i < res.size(); i++)
-				samples_to_delete.push_back(atol(res[i][0].c_str()));
+			//delete all data!
+			if (job.maintenance_flag != ns_processing_job::ns_delete_everything_but_raw_data) {
+				experiment_to_delete = job.experiment_id;
+				sql << "SELECT id FROM capture_samples WHERE experiment_id = " << experiment_to_delete;
+				ns_sql_result res;
+				sql.get_rows(res);
+				for (unsigned long i = 0; i < res.size(); i++)
+					samples_to_delete.push_back(ns_atoi64(res[i][0].c_str()));
+			}
+			//delete everything but unprocessed data
+			else {
+				ns_sql_result regions;
+				//note that this /changes/ the options specificied to those required of a cleanup.
+				//so that later in this function we'll delete files according to those options.
+				ns_get_experiment_cleanup_subjects(job.experiment_id, regions, operations, sql);
+				for (unsigned long i = 0; i < regions.size(); i++)
+					regions_to_delete.push_back(ns_atoi64(regions[i][0].c_str()));
+			}
 		}
 		for (unsigned long i = 0; i < samples_to_delete.size(); i++){
 			sql << "SELECT id FROM sample_region_image_info WHERE sample_id = " << samples_to_delete[i];
@@ -432,7 +492,7 @@ void ns_handle_image_metadata_delete_action(ns_processing_job & job,ns_sql & sql
 			//unless the job is flagged as deleting the entire sample region, just delete individual images
 			if (job.maintenance_flag != ns_processing_job::ns_delete_entire_sample_region){
 				for (unsigned int task = 0; task < (unsigned int)ns_process_last_task_marker; task++){
-					if (!job.operations[task]) continue;
+					if (!operations[task]) continue;
 					const string db_table(ns_processing_step_db_table_name(task));
 					//if the data is processed for each time point in the image, delete each one
 					if (db_table ==  "sample_region_images"){
@@ -457,7 +517,7 @@ void ns_handle_image_metadata_delete_action(ns_processing_job & job,ns_sql & sql
 			else{
 				//check for malformed request
 				for (unsigned int task = 0; task < (unsigned int)ns_process_last_task_marker; task++)
-					if (job.operations[task]) throw ns_ex("Full region image deletion specified with operations flagged!");
+					if (operations[task]) throw ns_ex("Full region image deletion specified with operations flagged!");
 
 				//delete processed images
 				for (unsigned int task = 0; task < (unsigned int)ns_process_last_task_marker; task++){

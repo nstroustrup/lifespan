@@ -153,16 +153,14 @@ $NS_LAST_MAINTENANCE_TASK = 18;
 $ns_maintenance_flags = array('ns_none'=>0,
 			     'ns_only_delete_processed_capture_images'=>1,
 			     'ns_only_delete_censored_images'=>2,
-			      'ns_delete_entire_sample_region'=>3,
-			      'ns_delete_everything_but_raw_data'=>4
+			     'ns_delete_entire_sample_region'=>3
 			    );
 $ns_maintenance_flag_labels = array(0=>'',
 				    1=>'Delete only Processed Capture Images',
 				    2=>'Delete Censored Images',
-			     	    3=>'Delete Entire Sample Region Including Metadata',
-				    4=>'Delete Everything Except for Raw Data'
+			     	    3=>'Delete Entire Sample Region Including Metadata'
 				    );
-$NS_LAST_MAINTENANCE_FLAG = 4;
+$NS_LAST_MAINTENANCE_FLAG = 3;
 
 
 $ns_operation_state_labels = array(	0=>'Idle',
@@ -415,11 +413,10 @@ class ns_processing_job{
 	
 	    $query = 'SELECT op' .  $ns_processing_tasks['ns_process_static_mask']
 	      .'_image_id, op' . $ns_processing_tasks['ns_process_heat_map']
-	      .'_image_id,path_movement_images_are_cached, latest_movement_rebuild_timestamp, last_timepoint_in_latest_movement_rebuild,time_path_solution_id  FROM sample_region_image_info WHERE id=' . $this->region_id ;
+	      .'_image_id,path_movement_images_are_cached, latest_movement_rebuild_timestamp, last_timepoint_in_latest_movement_rebuild  FROM sample_region_image_info WHERE id=' . $this->region_id ;
 	    $sql->get_row($query,$res);
 	    $operations[-5] = $res[0][3];
 	    $operations[-6] = $res[0][4];
-	    $operations[-7] = $res[0][5];
 	    
 	    $query = 'SELECT count(*) FROM sample_region_images WHERE censored!=0 AND region_info_id = ' . $this->region_id;
 	    $sql->get_value($query,$operations[-2]);
@@ -486,7 +483,6 @@ class ns_processing_job{
 
 	  $movement_analysis_rebuild_timestamp = $complete[-5];
 	  $movement_analyisis_last_timepoint = $complete[-6];
-	  $time_path_solution_exists = (int)$complete[-7] > 0;
 	  // var_dump($complete);
 	  global $ns_processing_task_labels;
 	  
@@ -582,11 +578,7 @@ class ns_processing_job{
 		$res .= "<br>Up to time " . format_time($movement_analyisis_last_timepoint);
 	      }
 	      else $res.= "Never";
-	      $res .= "</font>";
-	      if (!$time_path_solution_exists){
-		$res.="<BR><font size=\"-2\" color=\"#FF0000\">(time path solution appears lost) </font>";
-	      }
-	      $res.="</td></tr>\n";
+	      $res .= "</font></td></tr>\n";
 	       
 	      $count_column = 0;
 	    }

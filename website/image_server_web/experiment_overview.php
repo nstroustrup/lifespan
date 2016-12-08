@@ -64,8 +64,8 @@ try{
 	//die($data[$id]['condition_1']);
       
     }
-    //$query = "LOCK TABLES capture_samples WRITE";
-    //$sql->send_query($query);
+    $query = "LOCK TABLES capture_samples WRITE";
+    $sql->send_query($query);
     foreach ($sample_data as $key => $value){
       $censoring_requested = $value['censored'];
       $censored_reason = $value['censored_reason'];
@@ -93,10 +93,10 @@ try{
 //	echo $query . "<BR>";
       $sql->send_query($query);
     }
-    //$query = "UNLOCK TABLES";
-    //$sql->send_query($query);
-    //$query = "LOCK TABLES sample_region_image_info WRITE";
-    //$sql->send_query ($query);
+    $query = "UNLOCK TABLES";
+    $sql->send_query($query);
+    $query = "LOCK TABLES sample_region_image_info WRITE";
+    $sql->send_query ($query);
     foreach ($region_data as $key => $value){
 
     // echo $key . "=" ;
@@ -125,8 +125,8 @@ try{
     //  echo $query . "<br>";
       $sql->send_query($query);
     }
-    //$query = "UNLOCK TABLES";
-    //$sql->send_query($query);
+    $query = "UNLOCK TABLES";
+    $sql->send_query($query);
  //   $refresh_page = TRUE;
   }
 //die('');

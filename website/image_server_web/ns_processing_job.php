@@ -153,14 +153,16 @@ $NS_LAST_MAINTENANCE_TASK = 18;
 $ns_maintenance_flags = array('ns_none'=>0,
 			     'ns_only_delete_processed_capture_images'=>1,
 			     'ns_only_delete_censored_images'=>2,
-			     'ns_delete_entire_sample_region'=>3
+			      'ns_delete_entire_sample_region'=>3,
+			      'ns_delete_everything_but_raw_data'=>4
 			    );
 $ns_maintenance_flag_labels = array(0=>'',
 				    1=>'Delete only Processed Capture Images',
 				    2=>'Delete Censored Images',
-			     	    3=>'Delete Entire Sample Region Including Metadata'
+			     	    3=>'Delete Entire Sample Region Including Metadata',
+				    4=>'Delete Everything Except for Raw Data'
 				    );
-$NS_LAST_MAINTENANCE_FLAG = 3;
+$NS_LAST_MAINTENANCE_FLAG = 4;
 
 
 $ns_operation_state_labels = array(	0=>'Idle',

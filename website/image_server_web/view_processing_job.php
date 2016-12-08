@@ -736,7 +736,28 @@ for ($i = 0; $i < sizeof($jobs); $i++){
     header("Location: $back_url\n\n");
     die("");
   } 
+  if ($_POST['delete_experiment_processed_data'] != ''){
   
+    for ($i = 0; $i < sizeof($jobs); $i++){
+      $e_id = $jobs[$i]->experiment_id;
+      if ($e_id == 0)
+	throw ns_exception("No experiment id specified for job!");
+	$job = new ns_processing_job();
+	$job->id = 0;
+	$job->maintenance_task =  $ns_maintenance_tasks['ns_maintenance_delete_files_from_disk_request'];
+	$job->maintenance_flag = $ns_maintenance_flags['ns_delete_everything_but_raw_data'];
+	$job->time_submited = ns_current_time();
+	for ($d = 0; $d < sizeof($file_deletion_job->operations); $d++)
+	  $job->operations[$d] = 0;
+	
+	$job->experiment_id = $e_id;
+	$job->save_to_db($sql);
+    }
+    ns_update_job_queue($sql);
+
+    header("Location: $back_url\n\n");
+    die("");
+  }
   if ($_POST['retry_transfer_to_long_term_storage'] !=''){
     
     for ($i = 0; $i < sizeof($jobs); $i++){
@@ -1490,6 +1511,19 @@ Schedule Database/File Storage Job Begin
 </table>
 </td></tr>
 </table>
+<br>
+																	<?php if ($job_type==$IS_EXPERIMENT){?>
+<table align="center" border="0" cellpadding="0" cellspacing="1" bgcolor="#000000" width="50%"><tr><td>
+<table border="0" cellpadding="4" cellspacing="0" width="100%">
+<tr <?php echo $table_header_color?> ><td colspan=2><b>Clean up</b></td></tr>
+				  <tr><td width = "400" bgcolor="<?php echo $table_colors[1][0] ?>">Minimize disk usage by deleting all image data except for raw unprocessed images.</td><td bgcolor="<?php echo $table_colors[1][1] ?>" width="1%">
+			       
+				  <input name="delete_experiment_processed_data" type="submit" value="Delete all processed files" onClick="javascript:return confirm('Are you sure you want to delete all processed data?  You will need to re-analyze everything from scratch.')"></td></tr>
+				      
+</table>
+</td></tr>
+</table>
+																					     <?php }?>
 <?php }?>
 </form>
 				

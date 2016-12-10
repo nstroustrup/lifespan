@@ -5921,10 +5921,10 @@ void ns_worm_learner::draw_worm_window_image(ns_image_standard & image){
 				for (unsigned int _x = 3 * new_prop.width; _x < 3 * worm_window.gl_buffer_properties.width; _x++)
 					worm_window.gl_buffer[3 * (worm_window.gl_buffer_properties.height- _y)*worm_window.gl_buffer_properties.width + _x] = 0;
 		
-			death_time_solo_annotater.draw_registration_debug(ns_vector_2i(new_prop.width, death_time_solo_annotater.telemetry.image_size().y),
-				ns_vector_2i(worm_window.gl_buffer_properties.width,
-					worm_window.gl_buffer_properties.height),
-				worm_window.gl_buffer);
+	//		death_time_solo_annotater.draw_registration_debug(ns_vector_2i(new_prop.width, death_time_solo_annotater.telemetry.image_size().y),
+		//		ns_vector_2i(worm_window.gl_buffer_properties.width,
+			//		worm_window.gl_buffer_properties.height),
+				//worm_window.gl_buffer);
 		
 		}
 		catch (ns_ex & ex) {

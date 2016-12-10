@@ -54,7 +54,7 @@ public:
 	template<class T1, class T2>
 	//estimate the shift between the images given that s2 is shifted initial_offset over from s1
 	ns_vector_2d calc_gradient_shift(const T1 & im1, const T2 & im2,
-		const ns_vector_2d &tl_, const ns_vector_2d & br_, const ns_vector_2d & initial_offset, bool & saturated_offset, const float * im_2_histogram_stretch_factors = 0) {
+		const ns_vector_2d &tl_, const ns_vector_2d & br_, const ns_vector_2d & initial_offset, bool & saturated_offset, const float * im_2_histogram_stretch_factors = 0, const bool only_vertical = 0) {
 
 
 		//bounds check the additional shift.
@@ -92,38 +92,78 @@ public:
 		A[0] = A[1] = A[2] = A[3] = b[0] = b[1] = 0;
 		double grad_x, grad_y, diff;
 		if (im_2_histogram_stretch_factors == 0) {
-			for (int y = 0; y < p.height; y++) {
-				for (int x = 0; x < p.width; x++) {
-					//we want to apply the offset to im2, so we pull pixels offset in the opposite direction of the desired shift
-					const double x_(x - initial_offset.x + tl.x + 1),  //the plus one is because the grad_x is 2 smaller than im2, because we ignore the boundaries of the kernel
-						y_(y - initial_offset.y + tl.y + 1);
-					grad_x = .5*(im2.sample_d(y_, x_ + 1) - im2.sample_d(y_, x_ - 1));
-					grad_y = .5*(im2.sample_d(y_ + 1, x_) - im2.sample_d(y_ - 1, x_));
+			if (only_vertical) {
+				for (int y = 0; y < p.height; y++) {
+					for (int x = 0; x < p.width; x++) {
+						//we want to apply the offset to im2, so we pull pixels offset in the opposite direction of the desired shift
+						const double x_(x - initial_offset.x + tl.x + 1),  //the plus one is because the grad_x is 2 smaller than im2, because we ignore the boundaries of the kernel
+							y_(y - initial_offset.y + tl.y + 1);
+						grad_x = .5*(im2.sample_d(y_, x_ + 1) - im2.sample_d(y_, x_ - 1));
+						grad_y = .5*(im2.sample_d(y_ + 1, x_) - im2.sample_d(y_ - 1, x_));
 
-					diff = im2.sample_d(y_, x_) - im1.sample_d(y + tl.y + 1, x + tl.x + 1);
-					A[0] += grad_x * grad_x;
-					A[1] += grad_x * grad_y;
-					A[3] += grad_y * grad_y;
-					b[0] -= grad_x * diff;
-					b[1] -= grad_y * diff;
+						diff = im2.sample_d(y_, x_) - im1.sample_d(y + tl.y + 1, x + tl.x + 1);
+						A[0] += grad_x * grad_x;
+						A[1] += grad_x * grad_y;
+						A[3] += grad_y * grad_y;
+					//	b[0] -= grad_x * diff;
+						b[1] -= grad_y * diff;
+					}
+				}
+			}
+			else {
+				for (int y = 0; y < p.height; y++) {
+					for (int x = 0; x < p.width; x++) {
+						//we want to apply the offset to im2, so we pull pixels offset in the opposite direction of the desired shift
+						const double x_(x - initial_offset.x + tl.x + 1),  //the plus one is because the grad_x is 2 smaller than im2, because we ignore the boundaries of the kernel
+							y_(y - initial_offset.y + tl.y + 1);
+						grad_x = .5*(im2.sample_d(y_, x_ + 1) - im2.sample_d(y_, x_ - 1));
+						grad_y = .5*(im2.sample_d(y_ + 1, x_) - im2.sample_d(y_ - 1, x_));
+
+						diff = im2.sample_d(y_, x_) - im1.sample_d(y + tl.y + 1, x + tl.x + 1);
+						A[0] += grad_x * grad_x;
+						A[1] += grad_x * grad_y;
+						A[3] += grad_y * grad_y;
+						b[0] -= grad_x * diff;
+						b[1] -= grad_y * diff;
+					}
 				}
 			}
 		}
 		else {
-			for (int y = 0; y < p.height; y++) {
-				for (int x = 0; x < p.width; x++) {
-					//we want to apply the offset to im2, so we pull pixels offset in the opposite direction of the desired shift
-					const double x_(x - initial_offset.x + tl.x + 1),  //the plus one is because the grad_x is 2 smaller than im2, because we ignore the boundaries of the kernel
-						y_(y - initial_offset.y + tl.y + 1);
-					grad_x = .5*(im2.sample_d_scaled(y_, x_ + 1, im_2_histogram_stretch_factors) - im2.sample_d_scaled(y_, x_ - 1, im_2_histogram_stretch_factors));
-					grad_y = .5*(im2.sample_d_scaled(y_ + 1, x_, im_2_histogram_stretch_factors) - im2.sample_d_scaled(y_ - 1, x_, im_2_histogram_stretch_factors));
+			if (only_vertical) {
+				for (int y = 0; y < p.height; y++) {
+					for (int x = 0; x < p.width; x++) {
+						//we want to apply the offset to im2, so we pull pixels offset in the opposite direction of the desired shift
+						const double x_(x - initial_offset.x + tl.x + 1),  //the plus one is because the grad_x is 2 smaller than im2, because we ignore the boundaries of the kernel
+							y_(y - initial_offset.y + tl.y + 1);
+						grad_x = .5*(im2.sample_d_scaled(y_, x_ + 1, im_2_histogram_stretch_factors) - im2.sample_d_scaled(y_, x_ - 1, im_2_histogram_stretch_factors));
+						grad_y = .5*(im2.sample_d_scaled(y_ + 1, x_, im_2_histogram_stretch_factors) - im2.sample_d_scaled(y_ - 1, x_, im_2_histogram_stretch_factors));
 
-					diff = im2.sample_d_scaled(y_, x_, im_2_histogram_stretch_factors) - im1.sample_d(y + tl.y + 1, x + tl.x + 1);
-					A[0] += grad_x * grad_x;
-					A[1] += grad_x * grad_y;
-					A[3] += grad_y * grad_y;
-					b[0] -= grad_x * diff;
-					b[1] -= grad_y * diff;
+						diff = im2.sample_d_scaled(y_, x_, im_2_histogram_stretch_factors) - im1.sample_d(y + tl.y + 1, x + tl.x + 1);
+						A[0] += grad_x * grad_x;
+						A[1] += grad_x * grad_y;
+						A[3] += grad_y * grad_y;
+					//	b[0] -= grad_x * diff;
+						b[1] -= grad_y * diff;
+					}
+				}
+			}
+			else {
+				for (int y = 0; y < p.height; y++) {
+					for (int x = 0; x < p.width; x++) {
+						//we want to apply the offset to im2, so we pull pixels offset in the opposite direction of the desired shift
+						const double x_(x - initial_offset.x + tl.x + 1),  //the plus one is because the grad_x is 2 smaller than im2, because we ignore the boundaries of the kernel
+							y_(y - initial_offset.y + tl.y + 1);
+						grad_x = .5*(im2.sample_d_scaled(y_, x_ + 1, im_2_histogram_stretch_factors) - im2.sample_d_scaled(y_, x_ - 1, im_2_histogram_stretch_factors));
+						grad_y = .5*(im2.sample_d_scaled(y_ + 1, x_, im_2_histogram_stretch_factors) - im2.sample_d_scaled(y_ - 1, x_, im_2_histogram_stretch_factors));
+
+						diff = im2.sample_d_scaled(y_, x_, im_2_histogram_stretch_factors) - im1.sample_d(y + tl.y + 1, x + tl.x + 1);
+						A[0] += grad_x * grad_x;
+						A[1] += grad_x * grad_y;
+						A[3] += grad_y * grad_y;
+						b[0] -= grad_x * diff;
+						b[1] -= grad_y * diff;
+					}
 				}
 			}
 		}
@@ -154,15 +194,7 @@ void ns_gradient_shift::clear() {
 }
 
 ns_vector_2d ns_gradient_shift::calc_shifts_from_grad() {
-	//A[0] = A[1] = A[2] = A[3] = b[0] = b[1] = 0;
-	/*for (unsigned long y = 0; y < grad_x.properties().height; y++)
-	for (unsigned long x = 0; x < grad_x.properties().width; x++) {
-	A[0] += grad_x[y][x] * grad_x[y][x];
-	A[1] += grad_x[y][x] * grad_y[y][x];
-	A[3] += grad_y[y][x] * grad_y[y][x];
-	b[0] -= grad_x[y][x] * diff[y][x];
-	b[1] -= grad_y[y][x] * diff[y][x];
-	}*/
+	
 	A[2] = A[1];
 
 	//calculate the determinant to test that matrix is singular
@@ -198,30 +230,39 @@ double ns_stretch_registration::calculate(const ns_image_standard & im1, const n
 										const ns_vector_2d &initial_offset, ns_stretch_registration_line_offsets & new_line_offsets, const float * histogram_matching_factors) {
 	if (gradient_shift == 0)
 		gradient_shift = new ns_gradient_shift();
-	const int half_height(25);
-	const double max_offset(1);
+	const int half_height(50);
+	const double max_offset(4);
 	new_line_offsets.p.resize(0);
 	new_line_offsets.p.resize(br.y - tl.y, 0);
 	//iterate to find more optimal shifts
+	ns_calc_best_alignment_fast f(ns_vector_2d(4, 4), ns_vector_2i(4, 4), ns_vector_2i(4, 4));
+	ns_gaussian_pyramid p1, p2;
 
 	ns_vector_2d last_shift(0, 0);
-	for (unsigned int rep = 0; rep < 3; rep++) {
+	for (unsigned int rep = 0; rep < 1; rep++) {
 
 		double sum_x_shifts(0);
-		last_shift.y = new_line_offsets.p[0];
+		last_shift.y = 0;
 		int line_count(0);
+
 		for (unsigned int y = tl.y + half_height; y < br.y - half_height; y += 4) {
 			const int yp = y - tl.y;
 			bool saturated_offset;
 			long top(y + half_height);
 			if (top + 1 >= im1.properties().height)
 				top = im1.properties().height - 2;
-			ns_vector_2d sh = gradient_shift->calc_gradient_shift(im1, im2,
+			ns_vector_2i tl(tl.x, y - half_height), br(br.x - 1, top);
+			p1.calculate(im1, tl, br - tl);
+			p2.calculate(im2, tl, br - tl);
+			ns_vector_2d sh = f(
+				ns_vector_2d(initial_offset.x, initial_offset.y + new_line_offsets.p[yp]), 
+				ns_vector_2d(4, 4), &p1, &p2, saturated_offset,true);
+			/*ns_vector_2d sh = gradient_shift->calc_gradient_shift(im1, im2,
 				ns_vector_2i(tl.x, y - half_height),
 				ns_vector_2i(br.x - 1, top),  //subtract 1 to work around sample issue on edges
-				ns_vector_2d(initial_offset.x + last_shift.x, initial_offset.y + last_shift.y + new_line_offsets.p[yp]),
+				ns_vector_2d(initial_offset.x, initial_offset.y +  new_line_offsets.p[yp]),
 				saturated_offset,
-				histogram_matching_factors);
+				histogram_matching_factors);*/
 			if (saturated_offset) {
 				last_shift.y = 0;
 			}
@@ -232,10 +273,10 @@ double ns_stretch_registration::calculate(const ns_image_standard & im1, const n
 				if (sh.x < -max_offset) sh.x = -max_offset;
 				else if (sh.x > max_offset) sh.x = max_offset;
 
-				new_line_offsets.p[yp] = sh.y + last_shift.y + new_line_offsets.p[yp];
-				last_shift.y = sh.y;
+				new_line_offsets.p[yp] = sh.y + new_line_offsets.p[yp];
+				//last_shift.y = sh.y;
 
-				sum_x_shifts += sh.x;
+			//	sum_x_shifts += sh.x;
 				line_count++;
 			}
 		}
@@ -395,7 +436,7 @@ void ns_align_two_gaussian_pyramids(ns_gaussian_pyramid * state_pyramid,
 
 }
 
-ns_vector_2d ns_calc_best_alignment_fast::operator()(const ns_vector_2d & initial_alignment, const ns_vector_2d & max_alignment, const ns_gaussian_pyramid * state_pyramid, const ns_gaussian_pyramid *image_pyramid, bool & saturated_offset) {
+ns_vector_2d ns_calc_best_alignment_fast::operator()(const ns_vector_2d & initial_alignment, const ns_vector_2d & max_alignment, const ns_gaussian_pyramid * state_pyramid, const ns_gaussian_pyramid *image_pyramid, bool & saturated_offset, const bool only_vertical) {
 
 	if (state_pyramid->properties() != image_pyramid->properties())
 		throw ns_ex("Pyramid sizes don't match!");
@@ -445,7 +486,7 @@ ns_vector_2d ns_calc_best_alignment_fast::operator()(const ns_vector_2d & initia
 				}*/
 				ns_vector_2d sh = gradient_shift->calc_gradient_shift(state_pyramid->image_scaled[i],
 					image_pyramid->image_scaled[i],
-					tl / fold, br / fold, reg + shift[i], saturated_offset);
+					tl / fold, br / fold, reg + shift[i], saturated_offset,0,only_vertical);
 				if (saturated_offset) {
 					err = true;
 					break;
@@ -603,7 +644,7 @@ ns_vector_2d ns_calc_best_alignment_fast::operator()(const ns_vector_2d & initia
 	if (reg.y > max_alignment.y) { reg.y = max_alignment.y; saturated_offset = true; }
 	return reg;
 }
-ns_vector_2d ns_calc_best_alignment_fast::operator()(const ns_vector_2d & initial_alignment, const ns_vector_2d & max_alignment, ns_alignment_state & state, const ns_image_standard & image, bool & saturated_offset, const ns_vector_2i & subregion_pos, const ns_vector_2i & subregion_size) {
+ns_vector_2d ns_calc_best_alignment_fast::operator()(const ns_vector_2d & initial_alignment, const ns_vector_2d & max_alignment, ns_alignment_state & state, const ns_image_standard & image, bool & saturated_offset, const ns_vector_2i & subregion_pos, const ns_vector_2i & subregion_size, const bool only_vertical) {
 
 	saturated_offset = false;
 	//we want to register only the region where 1) the current frame is defined (e.g not the empty margins of the path aligned image)
@@ -645,7 +686,7 @@ ns_vector_2d ns_calc_best_alignment_fast::operator()(const ns_vector_2d & initia
 	state_pyramid->calculate(state.current_round_consensus, min_non_zero_consensus, non_zero_size);
 	image_pyramid->calculate(image, min_non_zero_consensus, non_zero_size);
 
-	return (*this)(initial_alignment, max_alignment, state_pyramid, image_pyramid, saturated_offset);
+	return (*this)(initial_alignment, max_alignment, state_pyramid, image_pyramid, saturated_offset,only_vertical);
 
 }
 #endif

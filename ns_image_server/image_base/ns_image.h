@@ -795,7 +795,9 @@ public:
 				image_buffer[p1y][p0x]*(dy)*(d1x) + 
 				image_buffer[p1y][p1x]*(dy)*(dx);
 	}
-	const double finline sample_d_scaled(const double y, const double x, const float * scale_f) const {
+	const double
+		//finline 
+		sample_d_scaled(const double y, const double x, const float * scale_f) const {
 
 		const int p0x(xs_float::xs_FloorToInt(x)),
 			p0y(xs_float::xs_FloorToInt(y));
@@ -806,11 +808,13 @@ public:
 		const double d1x(1.0 - dx),
 			d1y(1.0 - dy);
 
-#ifdef NS_DEBUG_IMAGE_ACCESS
+//#ifdef NS_DEBUG_IMAGE_ACCESS
 		if (p0y >= reciever_t::_properties.height || p1y >= reciever_t::_properties.height ||
-			p0x >= reciever_t::_properties.width || p1x >= reciever_t::_properties.width)
+			p0x >= reciever_t::_properties.width || p1x >= reciever_t::_properties.width ||
+			p0x < 0 ||
+			p0y < 0)
 			throw ns_ex("Out of bound access!");
-#endif
+//#endif
 		return	scale_f[image_buffer[p0y][p0x]]* (d1y)*(d1x)+
 			scale_f[image_buffer[p0y][p1x]] * (d1y)*(dx)+
 			scale_f[image_buffer[p1y][p0x]] * (dy)*(d1x)+

@@ -30,9 +30,9 @@ public:
 	enum { ns_max_pyramid_size = 30 };
 	ns_calc_best_alignment_fast(const ns_vector_2i & max_offset_, const ns_vector_2i &bottom_offset_, const ns_vector_2i &size_offset_);
 	~ns_calc_best_alignment_fast();
-	ns_vector_2d operator()(const ns_vector_2d & initial_alignment,const ns_vector_2d & max_alignment, ns_alignment_state & state, const ns_image_standard & image, bool & saturated_offset, const ns_vector_2i & subregion_pos, const ns_vector_2i & subregion_size);
+	ns_vector_2d operator()(const ns_vector_2d & initial_alignment,const ns_vector_2d & max_alignment, ns_alignment_state & state, const ns_image_standard & image, bool & saturated_offset, const ns_vector_2i & subregion_pos, const ns_vector_2i & subregion_size, const bool only_vertical=false);
 
-	ns_vector_2d operator()(const ns_vector_2d & initial_alignment, const ns_vector_2d & max_alignment, const ns_gaussian_pyramid * state_pyramid, const ns_gaussian_pyramid *image_pyramid, bool & saturated_offset);
+	ns_vector_2d operator()(const ns_vector_2d & initial_alignment, const ns_vector_2d & max_alignment, const ns_gaussian_pyramid * state_pyramid, const ns_gaussian_pyramid *image_pyramid, bool & saturated_offset, const bool only_vertical=false);
 	void minimize_memory_use(bool min) { minimize_memory_use_ = min; }
 
 	void clear();

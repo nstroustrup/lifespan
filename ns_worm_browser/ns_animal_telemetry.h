@@ -309,7 +309,7 @@ class ns_animal_telemetry {
 	}
 	void overlay_metadata(const unsigned long current_element, const ns_vector_2i & position, const ns_vector_2i & buffer_size, ns_8_bit * buffer) {
 		unsigned long x_score, y_score, x_size, y_size;
-		map_value_from_graph_onto_image(time_axes.x[current_element], smoothed_movement_vals.y[current_element], x_score, y_score);
+		map_value_from_graph_onto_image(time_axes.x[current_element], movement_vals.y[current_element], x_score, y_score);
 		map_value_from_graph_onto_image(time_axes.x[current_element], size_vals.y[current_element], x_size, y_size);
 		for (int y = -2; y <= 2; y++)
 			for (int x = -2; x <= 2; x++) {

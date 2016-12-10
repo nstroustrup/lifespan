@@ -34,7 +34,7 @@ public:
 		throw ns_ex("N/A");
 	}
 	
-	static void render_image(const ns_visualization_type vis_type,const ns_registered_image_set & registered_images, ns_image_standard & output) {
+	static void render_image(const ns_visualization_type vis_type,const ns_registered_image_set & registered_images, ns_image_standard & output, const std::string & debug_label) {
 		const ns_image_standard_signed & movement_image(registered_images.movement_image_);
 		const ns_image_standard &image(registered_images.image);
 
@@ -59,7 +59,7 @@ public:
 			}
 			mov_r = max_mov - min_mov;
 		}
-		cout << "(" << max_mov << "," << min_mov << "; ";
+		//cout << debug_label <<  "(" << max_mov << "," << min_mov << "; ";
 		float movement_sum(0);
 		for (unsigned int y = 0; y < ns_side_border_width; y++) {
 			for (unsigned int x = 0; x < 3 * output.properties().width; x++) {
@@ -170,20 +170,20 @@ public:
 				break;
 
 			}
-			for (unsigned int x = output.properties().width - ns_side_border_width-1; x < output.properties().width; x++) {
+			for (unsigned int x = image.properties().width - ns_side_border_width; x < output.properties().width; x++) {
 				output[y][3 * x] =
 					output[y][3 * x + 1] =
 					output[y][3 * x + 2] = 0;
 			}
 		}
-		for (unsigned int y = output.properties().height - ns_side_border_width-1; y < output.properties().height; y++) {
+		for (unsigned int y = image.properties().height + ns_side_border_width-1; y < output.properties().height; y++) {
 			for (unsigned int x = 0; x < output.properties().width; x++) {
 				output[y][3 * x] =
 					output[y][3 * x + 1] =
 					output[y][3 * x + 2] = 0;
 			}
 		}
-		cerr << movement_sum << ")\n";
+		//cerr << movement_sum << ")\n";
 
 	}
 	
@@ -203,7 +203,7 @@ public:
 		im.loaded = true;
 		im.im->init(prop);
 
-		render_image(vis_type, path_timepoint_element->registered_image_set(), *im.im);
+		render_image(vis_type, path_timepoint_element->registered_image_set(), *im.im,"precomputed");
 		
 		image_pane_area.y = path_timepoint_element->image().properties().height;
 		image_pane_area.x = path_timepoint_element->image().properties().width;
@@ -644,39 +644,52 @@ public:
 		ns_stretch_registration_line_offsets offsets;
 		ns_stretch_registration reg;
 
-		float histogram_matching_factors[256];
-		ns_match_histograms(im1, im2, histogram_matching_factors);
-		float avg_x = reg.calculate(im1, im2, ns_vector_2i(0, 0), ns_vector_2i(im1.properties().width, im1.properties().height), ns_vector_2i(0, 0), offsets, histogram_matching_factors);
+		float histogram_matching_factors_r[256], histogram_matching_factors_s[256];
+		ns_match_histograms(im1, im2, histogram_matching_factors_s);
+		float avg_x = reg.calculate(im1, im2, ns_vector_2i(0, 0), ns_vector_2i(im1.properties().width, im1.properties().height), ns_vector_2i(0, 0), offsets, histogram_matching_factors_s);
 		ns_stretch_source_mappings mappings;
 		ns_stretch_registration::convert_offsets_to_source_positions(offsets, mappings);
 		ns_image_standard imr;
-		ns_stretch_registration::register_image(mappings, avg_x, im2, imr);
+		ofstream foo("C:\\Users\\ns89\\Dropbox\\foo.csv");
+		foo << "pos,offset,npos,inverse\n";
+		for (unsigned int i = 0; i < mappings.p.size(); i++) {
+			foo << i << "," << offsets.p[i] << "," << (offsets.p[i] + i) << "," << mappings.p[i] << "\n";
+		}
+		foo.close();
+		ns_stretch_registration::register_image(mappings, 0, im2, imr);
 		cerr << avg_x << " ";
-		ns_registered_image_set im_set;
-		im1.pump(im_set.image, 1024);
-		im_set.movement_image_.init(im1.properties());
-		ns_match_histograms(im1, imr, histogram_matching_factors);
+		ns_registered_image_set im_set_r, im_set_s;
+		im1.pump(im_set_r.image, 1024);
+		im1.pump(im_set_s.image, 1024);
+		im_set_r.movement_image_.init(im1.properties());
+		im_set_s.movement_image_.init(im2.properties());
+	//	ns_match_histograms(im1, imr, histogram_matching_factors_r);
 		const int n(2);
 		const long kernel_area((2 * n + 1)*(2 * n + 1));
 		for ( int y = n; y < imr.properties().height-n; y++) {
 			for ( int x = n; x < imr.properties().width-n; x++) {
-				double d(0);
+				double d_r(0);
+				double d_s(0);
 				for (long dy = -n; dy <= n; dy++) {
 					for (long dx = -n; dx <= n; dx++) {
-						d += (short)(im1[y][x] - histogram_matching_factors[imr[y][x]]);
+						d_r += (short)(im1[y][x] - histogram_matching_factors_r[imr[y][x]]);
+						d_s += (short)(im1[y][x] - histogram_matching_factors_s[im2[y][x]]);
 					}
 				}
-				im_set.movement_image_[y][x] = d /= kernel_area;
+				im_set_r.movement_image_[y][x] = d_r /= kernel_area;
+				im_set_s.movement_image_[y][x] = d_s /= kernel_area;
 			}
 		}
-		thresh.pump(im_set.worm_region_threshold, 1024);
+		thresh.pump(im_set_r.worm_region_threshold, 1024);
+		thresh.pump(im_set_s.worm_region_threshold, 1024);
 		ns_image_properties prop(im1.properties());
 		prop.components = 3;
 		ns_image_standard out;
 		prop.width += 2 * ns_death_time_solo_posture_annotater_timepoint::ns_side_border_width; 
 		prop.height += 2 * ns_death_time_solo_posture_annotater_timepoint::ns_side_border_width;
 		out.init(prop);
-		ns_death_time_solo_posture_annotater_timepoint::render_image(current_visualization_type, im_set, out);
+		ns_death_time_solo_posture_annotater_timepoint::render_image(current_visualization_type, im_set_s, out, "linear");
+		ns_death_time_solo_posture_annotater_timepoint::render_image(current_visualization_type, im_set_r, out,"nonlinear");
 
 
 		for (unsigned int y = 0; y < out.properties().height; y++) {

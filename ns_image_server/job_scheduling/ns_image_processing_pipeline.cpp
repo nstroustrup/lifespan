@@ -225,7 +225,13 @@ void ns_get_experiment_cleanup_subjects(const ns_64_bit experiment_id, ns_sql_re
 void ns_handle_file_delete_request(ns_processing_job & job, ns_sql & sql){
 	vector<ns_file_location_specification> files;
 
-	if (job.image_id != 0){
+	if (job.image_id != 0 &&					//older versions of the software do not respect the "ns_delete_everything_but_raw_data" flag.  
+													//to avoid the situation where old versions will delete all data for an experiment,
+													//jobs with this flag set also have image_id set to an arbitrary value
+													//which will cause older versions of the software to simply try to delete that single image
+													//rather than an entire experiment.
+													//So here, we check that experiment_id = 0, to identify legit image deletion tasks
+		job.experiment_id == 0) {
 		ns_image_server_image im;
 		im.load_from_db(job.image_id,&sql);
 		files.push_back(image_server_const.image_storage.get_file_specification_for_image(im,&sql));
@@ -372,6 +378,15 @@ ns_processing_job ns_handle_file_delete_action(ns_processing_job & job, ns_sql &
 				ev << parent_job.experiment_name << "::" << parent_job.sample_name;
 			}
 		} 
+		else if (parent_job.image_id != 0 &&		//older versions of the software do not respect the "ns_delete_everything_but_raw_data" flag.  
+											//to avoid the situation where old versions will delete all data for an experiment,
+											//jobs with this flag set also have image_id set to an arbitrary value
+											//which will cause older versions of the software to simply try to delete that single image
+											//rather than an entire experiment.
+											//So here, we check that experiment_id = 0, to identify legit image deletion tasks
+			parent_job.experiment_id == 0) {
+			ev << "::Image id " << parent_job.image_id;
+		}
 		else if (parent_job.experiment_id != 0) {
 			sql << "SELECT e.name FROM experiments as e WHERE e.id = " << parent_job.experiment_id;
 			ns_sql_result res;
@@ -382,9 +397,7 @@ ns_processing_job ns_handle_file_delete_action(ns_processing_job & job, ns_sql &
 				ev << parent_job.experiment_name;
 			}
 		}
-		if(parent_job.image_id != 0){
-			ev << "::Image id " << parent_job.image_id;
-		}
+		else throw ns_ex("Could not identify job type!");
 		image_server_const.register_server_event(ev,&sql);
 
 		for (unsigned int i = 0; i < specs.size(); i++)
@@ -417,7 +430,13 @@ void ns_handle_image_metadata_delete_action(ns_processing_job & job,ns_sql & sql
 	operations.reserve(job.operations.size());
 	operations.insert(operations.end(), job.operations.begin(), job.operations.end());
 	try{
-		if (job.image_id != 0){
+		if (job.image_id != 0 &&		//older versions of the software do not respect the "ns_delete_everything_but_raw_data" flag.  
+										//to avoid the situation where old versions will delete all data for an experiment,
+										//jobs with this flag set also have image_id set to an arbitrary value
+										//which will cause older versions of the software to simply try to delete that single image
+										//rather than an entire experiment.
+										//So here, we check that experiment_id = 0, to identify legit image deletion tasks
+			job.experiment_id == 0){  
 			sql << "DELETE FROM images WHERE id = " << job.image_id;
 			sql.send_query();
 		}

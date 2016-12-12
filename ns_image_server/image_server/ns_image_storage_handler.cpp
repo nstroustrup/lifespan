@@ -41,7 +41,7 @@ bool ns_fix_image(const std::string & filename, ns_image_server_sql * sql){
   sql->get_rows(res); 
   if (res.size() != 1)
     return false;
-  bool im_db_has_filename_specified(!res[0][0].empty());
+  bool im_db_has_filename_specified(res[0][0].size()>0);
   //cerr << "DB: " << res[0][0] << "\n" << res[0][1] << "\n";
  
   if(im_db_has_filename_specified && shed_ci_has_blank_ciid){
@@ -629,7 +629,7 @@ ofstream * ns_image_storage_handler::request_binary_output_for_captured_image(co
 		if (volatile_storage) dir += volatile_storage_directory;
 		else{
 			dir = long_term_storage_directory;
-			if (captured_image.experiment_id || image.id == 0 || image.filename.empty() || image.path == ""){
+			if (captured_image.experiment_id || image.id == 0 || image.filename.size() == 0 || image.path == ""){
 				throw ns_ex("ns_image_storage_handler::request_binary_output_for_captured_image()::Incomplete information provided about captured image");
 			}
 			partition = get_partition_for_experiment(captured_image.experiment_id,sql,true);
@@ -816,7 +816,7 @@ std::string ns_image_storage_handler::add_to_local_cache(ns_image_server_image &
 		string cache_filename = file_location.relative_directory + "_" + file_location.filename;
 		std::string extension = ns_dir::extract_extension(file_location.filename);
 		cache_filename = ns_dir::extract_filename_without_extension(cache_filename);
-		if (file_location.relative_directory.empty() || file_location.filename.empty())
+		if (file_location.relative_directory.size() == 0 || file_location.filename.size()==0)
 			throw ns_ex("Blank image record encountered:");
 		for (unsigned int i = 0; i < cache_filename.size(); i++)
 			if (cache_filename[i] == '/' || cache_filename[i] == '\\') cache_filename[i] = '_';
@@ -1156,7 +1156,47 @@ std::string ns_image_storage_handler::movement_file_directory(ns_64_bit region_i
 	return dir;
 }
 
+ns_file_location_specification ns_image_storage_handler::get_storyboard_path(const ns_64_bit & experiment_id, const ns_64_bit & region_id, const ns_64_bit & subimage_id, const std::string & filename_suffix, ns_sql & sql, const bool just_path) const{
+	ns_file_location_specification spec;
+	if (experiment_id != 0 && region_id != 0)
+		throw ns_ex("Storyboards for experiments and regions are stored in different locations! Specify only one.");
+	if (region_id != 0) {
+		sql << "SELECT r.name,s.name, s.id,e.name,e.id FROM sample_region_image_info as r, capture_samples as s, experiments as e WHERE "
+			"r.id = " << region_id << " AND r.sample_id = s.id AND s.experiment_id = e.id";
+		ns_sql_result res;
+		sql.get_rows(res);
+		if (res.size() == 0)
+			throw ns_ex("ns_experiment_storyboard_manager::get_default_storage_locations()::Could not load information for region ") << region_id;
 
+		const std::string experiment_directory(ns_image_server_captured_image_region::experiment_directory(res[0][3], atol(res[0][4].c_str())));
+		std::string region_path = ns_image_server_captured_image_region::region_base_directory(res[0][0],
+			ns_image_server_captured_image_region::captured_image_directory_d(res[0][1], atol(res[0][2].c_str()), experiment_directory, false),
+			experiment_directory);
+		std::string f;
+		if (!just_path) {
+			spec.filename = res[0][3] + "=" + res[0][1] +
+				"=" + res[0][0] + "=" + filename_suffix + "=" + ns_to_string(subimage_id);
+		}
+		spec.relative_directory = region_path + DIR_CHAR_STR + "animal_storyboard";
+
+		spec.partition = image_server.image_storage.get_partition_for_experiment(atol(res[0][4].c_str()), &sql);
+		return spec;
+	}
+	if (experiment_id == 0)
+		throw ns_ex("No samples specified");
+
+	sql << "SELECT name FROM experiments WHERE id = " << experiment_id;
+	ns_sql_result res;
+	sql.get_rows(res);
+	if (res.size() == 0)
+		throw ns_ex("ns_experiment_storyboard_manager::get_default_storage_locations()::Could not load information for experiment ") << experiment_id;
+	if (!just_path)
+		spec.filename = res[0][0] + "=" + filename_suffix + "=" + ns_to_string(subimage_id);
+	const std::string experiment_directory(ns_image_server_captured_image_region::experiment_directory(res[0][0], experiment_id));
+	spec.relative_directory = experiment_directory + DIR_CHAR_STR + "animal_storyboard";
+	spec.partition = image_server.image_storage.get_partition_for_experiment(experiment_id, &sql);
+	return spec;
+}
 
 ns_file_location_specification  ns_image_storage_handler::get_detection_data_path_for_region(ns_64_bit region_image_info_id, ns_image_server_sql * sql) const {
 	ns_file_location_specification spec(get_base_path_for_region(region_image_info_id, sql));
@@ -1183,7 +1223,7 @@ ns_file_location_specification ns_image_storage_handler::get_file_specification_
 	ns_64_bit sample_id,experiment_id;
 	ns_region_info_lookup::get_region_info(region_info_id,sql,region_name,sample_name,sample_id,experiment_name,experiment_id);
 	spec.partition = get_partition_for_experiment_int(experiment_id,sql);
-	if (!data_source.empty())
+	if (data_source.size() > 0)
 		spec.filename = experiment_name +"="+sample_name+"="+region_name + "=" + data_source;
 	return spec;
 }
@@ -1200,6 +1240,14 @@ ns_file_location_specification  ns_image_storage_handler::get_file_specification
 	spec.relative_directory += DIR_CHAR_STR;
 	spec.relative_directory+="path_data";
 	return spec;
+}
+
+ns_image_server_image ns_image_storage_handler::get_storage_for_specification(const ns_file_location_specification & spec) {
+	ns_image_server_image im;
+	im.filename = spec.filename;
+	im.path = spec.relative_directory;
+	im.partition = spec.partition;
+	return im;
 }
 
 ns_image_server_image ns_image_storage_handler::get_storage_for_path(const ns_file_location_specification & region_spec, 

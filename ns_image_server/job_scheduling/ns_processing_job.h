@@ -66,7 +66,7 @@ struct ns_processing_job{
 		death_time_annotations(0){operations.resize((unsigned int)ns_process_last_task_marker);}
 		typedef enum{ns_no_timestamp,ns_date_timestamp,ns_age_timestamp} ns_timestamp_type;
 	typedef enum {ns_experiment_job, ns_sample_job, ns_region_job, ns_image_job, ns_movement_job, ns_whole_region_job, ns_whole_sample_job, ns_whole_experiment_job, ns_maintenance_job,ns_no_job_type} ns_job_type;
-	typedef enum {ns_none, ns_only_delete_processed_captured_images, ns_delete_censored_images, ns_delete_entire_sample_region} ns_maintenance_flag;
+	typedef enum {ns_none, ns_only_delete_processed_captured_images, ns_delete_censored_images, ns_delete_entire_sample_region, ns_delete_everything_but_raw_data} ns_maintenance_flag;
 	bool has_a_valid_job_type() const{
 		return !is_job_type(ns_no_job_type);
 	}

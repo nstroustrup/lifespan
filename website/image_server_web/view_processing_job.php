@@ -751,6 +751,12 @@ for ($i = 0; $i < sizeof($jobs); $i++){
 	  $job->operations[$d] = 0;
 	
 	$job->experiment_id = $e_id;
+	$job->image_id = 1;  //we put this here to prevent old 
+	//versions of the image server from inappropriately
+	//deleting whole experiments when they don't check for
+	//the "delete everything but raw data" flag.
+	//Setting the image_id field causes them to treat the job
+	//as an image deletion job
 	$job->save_to_db($sql);
     }
     ns_update_job_queue($sql);

@@ -527,6 +527,16 @@ private:
 public:
 
 
+	ns_animal_telemetry::ns_graph_contents step_graph_type() {
+		graph_contents = (ns_animal_telemetry::ns_graph_contents)((int)graph_contents + 1);
+		if (graph_contents == ns_animal_telemetry::ns_number_of_graph_types) {
+			graph_contents = ns_animal_telemetry::ns_none;
+			telemetry.show(false);
+		}
+		else 
+			telemetry.show(true);
+		return graph_contents;
+	}
 	ns_death_time_solo_posture_annotater_timepoint::ns_visualization_type step_visualization_type() {
 		
 		if (current_visualization_type == ns_death_time_solo_posture_annotater_timepoint::ns_movement_threshold_and_image)
@@ -548,7 +558,8 @@ public:
 	}
 
 	ns_animal_telemetry telemetry;
-	typedef enum {ns_none,ns_forward, ns_back, ns_fast_forward, ns_fast_back,ns_stop,ns_save,ns_rewind_to_zero,ns_write_quantification_to_disk, ns_step_visualization,ns_number_of_annotater_actions} ns_image_series_annotater_action;
+	ns_animal_telemetry::ns_graph_contents graph_contents;
+	typedef enum {ns_none,ns_forward, ns_back, ns_fast_forward, ns_fast_back,ns_stop,ns_save,ns_rewind_to_zero,ns_write_quantification_to_disk, ns_step_visualization, ns_step_graph,ns_number_of_annotater_actions} ns_image_series_annotater_action;
 
 	void clear_cache(){
 		close_worm();
@@ -563,7 +574,7 @@ public:
 	void set_resize_factor(const unsigned long resize_factor_){resize_factor = resize_factor_;}
 	bool data_saved()const{return saved_;}
 	ns_death_time_solo_posture_annotater():ns_image_series_annotater(default_resize_factor, ns_death_time_posture_annotater_timepoint::ns_bottom_border_height),
-		saved_(true),current_visualization_type(ns_death_time_solo_posture_annotater_timepoint::ns_image),current_region_data(0),current_worm(0),current_machine_timing_data(0){}
+		saved_(true), graph_contents(ns_animal_telemetry::ns_movement),current_visualization_type(ns_death_time_solo_posture_annotater_timepoint::ns_image),current_region_data(0),current_worm(0),current_machine_timing_data(0){}
 
 	typedef enum {ns_time_aligned_images,ns_death_aligned_images} ns_alignment_type;
 
@@ -632,7 +643,7 @@ public:
 
 	}
 	void draw_telemetry(const ns_vector_2i & position, const ns_vector_2i & graph_size, const ns_vector_2i & buffer_size, ns_8_bit * buffer) {
-		telemetry.draw(current_timepoint_id,  position, graph_size, buffer_size, buffer);
+		telemetry.draw(graph_contents,current_timepoint_id,  position, graph_size, buffer_size, buffer);
 	}
 	void draw_registration_debug(const ns_vector_2i & position, const ns_vector_2i & buffer_size, ns_8_bit * buffer) {
 		if (current_timepoint_id == 0)

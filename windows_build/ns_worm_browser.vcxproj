@@ -513,6 +513,7 @@
     <ClInclude Include="..\ns_image_server\system_base\ns_sql.h" />
     <ClInclude Include="..\ns_image_server\system_base\ns_thread.h" />
     <ClInclude Include="..\ns_image_server\system_base\ns_xml.h" />
+    <ClInclude Include="..\ns_worm_browser\ns_animal_telemetry.h" />
     <ClInclude Include="..\ns_worm_browser\ns_death_time_posture_annotater.h" />
     <ClInclude Include="..\ns_worm_browser\ns_death_time_solo_posture_annotater.h" />
     <ClInclude Include="..\ns_worm_browser\ns_experiment_storyboard_annotater.h" />

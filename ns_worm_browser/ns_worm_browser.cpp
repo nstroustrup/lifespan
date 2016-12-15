@@ -1720,12 +1720,16 @@ void ns_worm_learner::output_movement_analysis_optimization_data(int software_ve
 				data_selector.samples[i].regions[j].excluded)
 				continue;
 			try{
-				ns_time_series_denoising_parameters::ns_movement_score_normalization_type norm_type[3] = 
+			/*	ns_time_series_denoising_parameters::ns_movement_score_normalization_type norm_type[3] = 
 						{ns_time_series_denoising_parameters::ns_none,
 						ns_time_series_denoising_parameters::ns_subtract_out_median_of_end,
 						ns_time_series_denoising_parameters::ns_subtract_out_plate_median
-						};
-				for (unsigned int k = 0; k < 3; k++){
+						};*/
+
+				ns_time_series_denoising_parameters::ns_movement_score_normalization_type norm_type[1] =
+				{ ns_time_series_denoising_parameters::ns_none };
+				
+				for (unsigned int k = 0; k < 1; k++){
 					const unsigned long region_id(data_selector.samples[i].regions[j].region_id);
 					ns_time_path_solution time_path_solution;
 					time_path_solution.load_from_db(region_id,sql(),true);
@@ -1737,7 +1741,7 @@ void ns_worm_learner::output_movement_analysis_optimization_data(int software_ve
 					ns_image_server::ns_posture_analysis_model_cache::const_handle_t handle;
 					image_server.get_posture_analysis_model_for_region(region_id, handle, sql());
 					ns_posture_analysis_model mod(handle().model_specification);
-					mod.threshold_parameters.use_v1_movement_score = false;
+					mod.threshold_parameters.use_v1_movement_score = software_version_number==1;
 					handle.release();
 					ns_acquire_for_scope<ns_analyzed_image_time_path_death_time_estimator> death_time_estimator(
 					
@@ -6556,6 +6560,10 @@ void ns_worm_learner::navigate_solo_worm_annotation(ns_death_time_solo_posture_a
 		case ns_death_time_solo_posture_annotater::ns_rewind_to_zero: break;
 		case ns_death_time_solo_posture_annotater::ns_step_visualization: 
 			solo_annotation_visualization_type = death_time_solo_annotater.step_visualization_type();
+			death_time_solo_annotater.request_refresh();
+			break;
+		case ns_death_time_solo_posture_annotater::ns_step_graph:
+			death_time_solo_annotater.step_graph_type();
 			death_time_solo_annotater.request_refresh();
 			break;
 		case ns_death_time_solo_posture_annotater::ns_write_quantification_to_disk: 

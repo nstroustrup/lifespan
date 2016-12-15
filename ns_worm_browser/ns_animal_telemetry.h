@@ -152,57 +152,74 @@ private:
 };
 
 class ns_animal_telemetry {
+public:
+	typedef enum { ns_none, ns_movement, ns_movement_intensity, ns_movement_intensity_slope, ns_all,ns_number_of_graph_types } ns_graph_contents;
+private:
 	bool _show;
 	ns_death_time_posture_solo_annotater_region_data *region_data;
 	unsigned long group_id;
 	ns_image_standard base_graph;
 	ns_graph graph;
 	ns_graph_specifics graph_specifics;
-	ns_graph_object movement_vals, smoothed_movement_vals,size_vals, time_axes;
+	ns_graph_object movement_vals, smoothed_movement_vals,size_vals, slope_vals, time_axes;
 	ns_posture_analysis_model posture_analysis_model;
-	void draw_base_graph() {
+	
+	void draw_base_graph(const ns_graph_contents & graph_contents) {
+		if (graph_contents == ns_none)
+			return;
 		graph.clear();
 		ns_analyzed_image_time_path *path(&region_data->movement_analyzer.group(group_id).paths[0]);
 		if (path->element_count() < 1)
 			throw ns_ex("Time series is too short");
 		movement_vals.y.resize(path->element_count());
+		slope_vals.y.resize(path->element_count());
 		time_axes.x.resize(movement_vals.y.size());
 		size_vals.y.resize(movement_vals.y.size());
 		float min_score(FLT_MAX), max_score(-FLT_MAX);
 		float min_intensity(FLT_MAX), max_intensity(-FLT_MAX);
+		float min_intensity_slope(0),  //we want to include a zero slope
+			max_intensity_slope(-FLT_MAX);
 		float min_time(FLT_MAX), max_time(-FLT_MAX);
 		std::vector<float> scores(movement_vals.y.size());
 		//find lowest movement score.
 		for (unsigned int i = 0; i < movement_vals.y.size(); i++)
 			scores[i] = path->element(i).measurements.death_time_posture_analysis_measure_v2();
 		std::sort(scores.begin(), scores.end());
-		float min_raw_score = scores[scores.size() / 20];
+		float min_raw_score = scores[scores.size() / 50];
 		float second_min_raw_score = min_raw_score *= 1.01; //default
-		for (int i = scores.size() / 20 + 1; i < scores.size(); i++) {
+		for (int i = scores.size() / 50; i < scores.size(); i++) {
 			if (scores[i] > min_raw_score) {
 				second_min_raw_score = scores[i];
 				break;
 			}
 		}
-		float max_raw_score = scores[scores.size()-scores.size() / 20 -1];
+		float max_raw_score = scores[scores.size()-scores.size() / 50 -1];
 	
 		for (unsigned int i = 0; i < movement_vals.y.size(); i++) {
 			double d(path->element(i).measurements.death_time_posture_analysis_measure_v2());
 			if (d >= max_raw_score) d = log(max_raw_score - min_raw_score);
 			else if (d <= min_raw_score)
 				d = log(second_min_raw_score - min_raw_score); //can't be zero before we take the log
-			else d = log(d- min_raw_score);
-			
+			else d = log(d - min_raw_score);
 
 			movement_vals.y[i] = d;
-			double n(path->element(i).measurements.total_intensity_within_worm_area);
-			double t(path->element(i).relative_time);
+		}
+
+		for (unsigned int i = 0; i < movement_vals.y.size(); i++) {
+			const double t(path->element(i).relative_time);
+			if (t < min_time) min_time = t;
+			if (t > max_time) max_time = t;
+			if (i < path->first_stationary_timepoint())
+				continue;
+			const double n(path->element(i).measurements.total_intensity_within_worm_area);
+			const double s(path->element(i).measurements.change_in_total_worm_intensity);
+			const double d(movement_vals.y[i]);
 			if (d < min_score) min_score = d;
 			if (d > max_score) max_score = d;
 			if (n < min_intensity) min_intensity = n;
 			if (n > max_intensity) max_intensity = n;
-			if (t < min_time) min_time = t;
-			if (t > max_time) max_time = t;
+			if (s < min_intensity_slope) min_intensity_slope = s;
+			if (s > max_intensity_slope) max_intensity_slope = s;
 		}
 		double threshold;
 		if (posture_analysis_model.threshold_parameters.stationary_cutoff >= max_raw_score)
@@ -211,10 +228,6 @@ class ns_animal_telemetry {
 			threshold = second_min_raw_score - min_raw_score;
 		else threshold = posture_analysis_model.threshold_parameters.stationary_cutoff - min_raw_score;
 		threshold = log(threshold);
-		if (min_score > threshold)
-			min_score = threshold;
-		if (max_score < threshold)
-			max_score = threshold;
 		for (unsigned int i = 0; i < movement_vals.y.size(); i++) {
 			time_axes.x[i] = floor(path->element(i).relative_time / 6.0 / 60 / 24) / 10;
 			//scale denoised movement score to a value between 0 and 1
@@ -228,6 +241,11 @@ class ns_animal_telemetry {
 			size_vals.y[i] = (path->element(i).measurements.total_intensity_within_worm_area - min_intensity) / (max_intensity-min_intensity) ;
 			if (size_vals.y[i] < 0) size_vals.y[i] = 0;
 			if (size_vals.y[i] > 1) size_vals.y[i] = 1;
+
+
+			slope_vals.y[i] = (path->element(i).measurements.change_in_total_worm_intensity - min_intensity_slope) / (max_intensity_slope - min_intensity_slope);
+			if (slope_vals.y[i] < 0) slope_vals.y[i] = 0;
+			if (slope_vals.y[i] > 1) slope_vals.y[i] = 1;
 		}
 
 		ns_graph_object threshold_object(ns_graph_object::ns_graph_horizontal_line);
@@ -235,6 +253,13 @@ class ns_animal_telemetry {
 		if (th< 0) th = 0;
 		if (th > 1) th = 1;
 		threshold_object.y.push_back(th);
+
+
+		double zero_slope_value = (0 - min_intensity_slope) / (max_intensity_slope - min_intensity_slope);
+
+		ns_graph_object zero_slope_object(ns_graph_object::ns_graph_horizontal_line);
+		zero_slope_object.y.push_back(zero_slope_value);
+
 
 
 		smoothed_movement_vals.y.resize(movement_vals.y.size());
@@ -267,16 +292,25 @@ class ns_animal_telemetry {
 		movement_vals.properties.point.color = ns_color_8(200, 200, 200);
 		movement_vals.properties.point.edge_width = 1;
 
+		slope_vals.properties = smoothed_movement_vals.properties;
+		slope_vals.properties.line.color = ns_color_8(150, 250, 200);
 
-
-		threshold_object.properties.line.color = ns_color_8(100, 100, 100);
+		threshold_object.properties.line.color = ns_color_8(150, 150, 150);
 		threshold_object.properties.line.draw = true;
 
+		zero_slope_object.properties.line.color = ns_color_8(150, 150, 150);
+		zero_slope_object.properties.line.draw = true;
 
 		graph.contents.push_back(movement_vals);
+		if (graph_contents == ns_movement_intensity_slope || graph_contents == ns_all) {
+			graph.contents.push_back(slope_vals);
+			graph.contents.push_back(zero_slope_object);
+		}
 		graph.contents.push_back(smoothed_movement_vals);
 		graph.contents.push_back(threshold_object);
+		if (graph_contents == ns_movement_intensity || graph_contents == ns_all)
 		graph.contents.push_back(size_vals);
+
 		graph.contents.push_back(time_axes);
 
 
@@ -288,7 +322,7 @@ class ns_animal_telemetry {
 		ns_graph_axes axes;
 		axes.boundary(0) = floor( min_time / 6.0 / 60 / 24) / 10;
 		axes.boundary(1) = floor(max_time / 6.0 / 60 / 24) / 10;
-		axes.boundary(2) = -.1;
+		axes.boundary(2) = 0;
 		axes.boundary(3) = 1;
 		ns_color_8 gray(50, 50, 50);
 		graph.x_axis_properties.line.width = 
@@ -307,7 +341,7 @@ class ns_animal_telemetry {
 	inline unsigned long map_pixel_from_image_onto_buffer(const unsigned long &x, const unsigned long &y, const ns_vector_2i &position, const ns_vector_2i &buffer_size) {
 		return 3 * ((buffer_size.y - y - position.y-1)*buffer_size.x + x + position.x);
 	}
-	void overlay_metadata(const unsigned long current_element, const ns_vector_2i & position, const ns_vector_2i & buffer_size, ns_8_bit * buffer) {
+	void overlay_metadata(const ns_animal_telemetry::ns_graph_contents graph_contents,const unsigned long current_element, const ns_vector_2i & position, const ns_vector_2i & buffer_size, ns_8_bit * buffer) {
 		unsigned long x_score, y_score, x_size, y_size;
 		map_value_from_graph_onto_image(time_axes.x[current_element], movement_vals.y[current_element], x_score, y_score);
 		map_value_from_graph_onto_image(time_axes.x[current_element], size_vals.y[current_element], x_size, y_size);
@@ -317,14 +351,16 @@ class ns_animal_telemetry {
 				buffer[p] = 255;
 				buffer[p+1] = 0;
 				buffer[p+2] = 0;
-				p = map_pixel_from_image_onto_buffer(x_size + x + border().x, y_size + y + border().y, position, buffer_size);
-				buffer[p] = 255;
-				buffer[p + 1] = 0;
-				buffer[p + 2] = 0;
+				if (graph_contents == ns_animal_telemetry::ns_all || graph_contents == ns_animal_telemetry::ns_movement_intensity) {
+					p = map_pixel_from_image_onto_buffer(x_size + x + border().x, y_size + y + border().y, position, buffer_size);
+					buffer[p] = 255;
+					buffer[p + 1] = 0;
+					buffer[p + 2] = 0;
+				}
 			}
 
 	}
-	
+	ns_graph_contents last_graph_contents;
 public:
 	unsigned long get_graph_time_from_graph_position(const float x) { //x is in relative time
 		ns_analyzed_image_time_path *path(&region_data->movement_analyzer.group(group_id).paths[0]);
@@ -349,15 +385,15 @@ public:
 	ns_vector_2i border() const {
 		return ns_vector_2i(25, 25);
 	}
-	ns_animal_telemetry() :_show(true), region_data(0), group_id(0),size_vals(ns_graph_object::ns_graph_dependant_variable), smoothed_movement_vals(ns_graph_object::ns_graph_dependant_variable),movement_vals(ns_graph_object::ns_graph_dependant_variable), time_axes(ns_graph_object::ns_graph_independant_variable){}
+	ns_animal_telemetry() :_show(true), last_graph_contents(ns_none), region_data(0), group_id(0),size_vals(ns_graph_object::ns_graph_dependant_variable), slope_vals(ns_graph_object::ns_graph_dependant_variable), smoothed_movement_vals(ns_graph_object::ns_graph_dependant_variable),movement_vals(ns_graph_object::ns_graph_dependant_variable), time_axes(ns_graph_object::ns_graph_independant_variable){}
 	void set_current_animal(const unsigned int & group_id_, ns_posture_analysis_model & mod,ns_death_time_posture_solo_annotater_region_data * region_data_) {
 		group_id = group_id_;
 		region_data = region_data_;
 		base_graph.init(ns_image_properties(0, 0, 3));
 		posture_analysis_model = mod;
 	}
-	void draw(const unsigned long element_id, const ns_vector_2i & position, const ns_vector_2i & graph_size, const ns_vector_2i & buffer_size, ns_8_bit * buffer) {
-		if (base_graph.properties().height == 0) {
+	void draw(const ns_graph_contents graph_contents, const unsigned long element_id, const ns_vector_2i & position, const ns_vector_2i & graph_size, const ns_vector_2i & buffer_size, ns_8_bit * buffer) {
+		if (base_graph.properties().height == 0 || graph_contents != last_graph_contents) {
 			base_graph.use_more_memory_to_avoid_reallocations();
 			ns_image_properties prop;
 			prop.components = 3;
@@ -367,7 +403,8 @@ public:
 
 			base_graph.init(prop);
 			try {
-				draw_base_graph();
+				draw_base_graph(graph_contents);
+				last_graph_contents = graph_contents;
 			}
 			catch (...) {
 				base_graph.init(ns_image_properties(0, 0, 3));
@@ -390,7 +427,7 @@ public:
 				for (unsigned int c = 0; c < 3; c++) 
 					buffer[map_pixel_from_image_onto_buffer(x + border().x, y + border().y, position, buffer_size) + c] = base_graph[y][3 * x + c];
 			}
-			overlay_metadata(element_id, position, buffer_size, buffer);
+			overlay_metadata(graph_contents,element_id, position, buffer_size, buffer);
 
 			//right margin
 			for (unsigned int x = base_graph.properties().width + border().x; x < graph_size.x; x++)

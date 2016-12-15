@@ -1697,9 +1697,10 @@ public:
 		*stop_button,
 		*goto_death_time_button,
 		*save_button,
-		*visualization_button;
+		*visualization_button,
+		*graph_button;
 	enum{button_width=18,button_height=18,export_button_width=3*18,
-		 visualization_button_width=2*18,all_buttons_width=18*8};
+		 visualization_button_width=2*18, graph_button_width = 3 * 18,all_buttons_width=21*8};
 	int handle(int e){
 		//don't claim keystrokes--we want them to be passed on to the glwindow for navigation
 		switch(e){
@@ -1734,8 +1735,11 @@ public:
 		visualization_button = new Fl_Button(5 * button_width , 0, visualization_button_width, button_height, "Vis");
 		visualization_button->callback(ns_handle_death_time_solo_annotation_button,
 			new ns_death_time_solo_posture_annotater::ns_image_series_annotater_action(ns_death_time_solo_posture_annotater::ns_step_visualization));
+		graph_button = new Fl_Button(5 * button_width+ visualization_button_width, 0, graph_button_width, button_height, "Plot");
+		graph_button->callback(ns_handle_death_time_solo_annotation_button,
+			new ns_death_time_solo_posture_annotater::ns_image_series_annotater_action(ns_death_time_solo_posture_annotater::ns_step_graph));
 
-		save_button = new Fl_Button(5*button_width+ visualization_button_width,0,3*button_width,button_height,"Export");
+		save_button = new Fl_Button(5*button_width+ visualization_button_width+graph_button_width,0,3*button_width,button_height,"Export");
 		save_button->  callback(ns_handle_death_time_solo_annotation_button,
 			new ns_death_time_solo_posture_annotater::ns_image_series_annotater_action(ns_death_time_solo_posture_annotater::ns_write_quantification_to_disk));
 

@@ -4,6 +4,7 @@
 #include "ns_image_tools.h"
 #include "ctmf.h"
 #include "ns_thread_pool.h"
+#include "ns_linear_regression_model.h"
 
 #ifdef NS_CALCULATE_OPTICAL_FLOW
 #include "ns_optical_flow.h"
@@ -3538,6 +3539,7 @@ void ns_analyzed_image_time_path::denoise_movement_series(const unsigned long ch
 	if (elements.size() == 0)
 		return;
 
+
 	const bool use_kernal_smoother(true);
 	if (use_kernal_smoother){
 		const int kernel_width(1);
@@ -3550,9 +3552,9 @@ void ns_analyzed_image_time_path::denoise_movement_series(const unsigned long ch
 		for (unsigned int i = 0; i < elements.size(); i++){
 			elements[i].measurements.movement_score = acc.raw(i);
 			elements[i].measurements.spatial_averaged_movement_score = acc_spatial.raw(i);
-			if (i > 0)
-				elements[i].measurements.change_in_total_worm_intensity =  (double)elements[i].measurements.total_intensity_within_worm_area - (double)elements[i-1].measurements.total_intensity_within_worm_area;
-			else elements[i].measurements.change_in_total_worm_intensity = 0;
+		//	if (i > 0)
+			//	elements[i].measurements.change_in_total_worm_intensity =  (double)elements[i].measurements.total_intensity_within_worm_area - (double)elements[i-1].measurements.total_intensity_within_worm_area;
+			//else elements[i].measurements.change_in_total_worm_intensity = 0;
 		}
 
 		//Here, ns_movement_data_accessor calculates and provides the raw movement score to the kernel smoother,
@@ -3568,67 +3570,98 @@ void ns_analyzed_image_time_path::denoise_movement_series(const unsigned long ch
 
 		for (unsigned int i= 0; i < elements.size(); i++){
 			elements[i].measurements.normalized_worm_area = elements[i].measurements.total_worm_area/(double)elements[first_stationary_timepoint()].measurements.total_worm_area;
-			elements[i].measurements.normalized_total_intensity = elements[i].measurements.total_intensity_within_worm_area/(double)elements[first_stationary_timepoint()].measurements.total_intensity_within_worm_area;
-			if (i > 0)
-				elements[i].measurements.change_in_average_normalized_worm_intensity = elements[i].measurements.normalized_total_intensity - elements[i-1].measurements.normalized_total_intensity;
-			else elements[i].measurements.change_in_average_normalized_worm_intensity = 0;
+			if (elements[i].measurements.total_worm_area == 0)
+				elements[i].measurements.normalized_total_intensity = 0;
+			else elements[i].measurements.normalized_total_intensity = elements[i].measurements.total_intensity_within_worm_area / elements[i].measurements.total_worm_area;
+			elements[i].measurements.change_in_average_normalized_worm_intensity = 0;
 		}
-		if (elements.size() == 1)
-			elements[0].measurements.change_in_average_normalized_worm_intensity = 0;
-		else elements[0].measurements.change_in_average_normalized_worm_intensity = elements[1].measurements.change_in_average_normalized_worm_intensity;
-		
+
 		ns_kernel_smoother<ns_intensity_data_accessor> i;
 		ns_intensity_data_accessor acc2(elements);
 		i(kernel_width,acc2);
+
+		//use a kernal to calculate slope
+		const int slope_kernel_half_width(8);
+		const int slope_kernel_width = slope_kernel_half_width * 2 + 1;
+		if (elements.size() >= slope_kernel_width) {
+			ns_linear_regression_model model;
+			std::vector<unsigned long> vals(slope_kernel_width);
+			std::vector<unsigned long> times(slope_kernel_width);
+			for (unsigned int i = 0; i < slope_kernel_width; i++) {
+				vals[i] = elements[i].measurements.normalized_total_intensity;
+				times[i] = elements[i].absolute_time;
+			}
+			ns_linear_regression_model_parameters params(model.fit(vals, times));
+			for (unsigned int i = 0; i < slope_kernel_half_width; i++)
+				elements[i].measurements.change_in_total_worm_intensity = params.slope * 60 * 60; // units/hour
+			int pos = 0;
+			for (unsigned int i = slope_kernel_half_width; ; i++) {
+				//calculate slope of current kernal
+				params = model.fit(vals, times);
+				elements[i].measurements.change_in_total_worm_intensity = params.slope * 60 * 60;
+				if (i + slope_kernel_half_width + 2 >= elements.size())
+					break;
+				//update kernal for next step, by replacing earliest value i
+				vals[pos] = elements[i + slope_kernel_half_width + 2].measurements.normalized_total_intensity;
+				times[pos] = elements[i + slope_kernel_half_width + 2].absolute_time;
+				pos++;
+				if (pos == slope_kernel_width)
+					pos = 0;
+			}
+			for (unsigned int i = elements.size() - slope_kernel_half_width - 1; i < elements.size(); i++)
+				elements[i].measurements.change_in_total_worm_intensity = params.slope;
+
+		}
 		
 		return;
 	}
-	else{
+	else {
+		throw ns_ex("THIS CODE SHOULD NOT BE RUNNING");
 		const int offset_size(4);
 		const bool use_median(true);
 		std::vector<double> normalization_factors(offset_size);
-		if (use_median){
+		if (use_median) {
 			std::vector<std::vector<unsigned long> > values(offset_size);
-			for (unsigned int i=0; i < offset_size; i++){
-				values[i].reserve(elements.size()/offset_size);
+			for (unsigned int i = 0; i < offset_size; i++) {
+				values[i].reserve(elements.size() / offset_size);
 			}
 			int k(0);
-			for (unsigned int i = 0; i < elements.size(); i++){
+			for (unsigned int i = 0; i < elements.size(); i++) {
 				values[k].push_back(elements[i].measurements.movement_sum);
 				k++;
-				if (k==offset_size) k = 0;
+				if (k == offset_size) k = 0;
 			}
-			for (unsigned int i=0; i < offset_size; i++){
-				std::sort(values[i].begin(),values[i].end());
-				normalization_factors[i] = values[i][values[i].size()/2];
+			for (unsigned int i = 0; i < offset_size; i++) {
+				std::sort(values[i].begin(), values[i].end());
+				normalization_factors[i] = values[i][values[i].size() / 2];
 			}
 		}
-		else{
+		else {
 			long long sums[offset_size];
 			long count[offset_size];
 			//initialize
-			for (unsigned int i = 0; i < offset_size; i++){
+			for (unsigned int i = 0; i < offset_size; i++) {
 				sums[i] = 0;
 				count[i] = 0;
 			}
 			//calculate mean of each offset, first by calculating sum and count
 			int k(0);
-			for (unsigned int i = elements.size()/3; i < elements.size(); i++){
+			for (unsigned int i = elements.size() / 3; i < elements.size(); i++) {
 				sums[k] += elements[i].measurements.movement_sum;
 				count[k]++;
 				k++;
-				if (k==offset_size) k = 0;
+				if (k == offset_size) k = 0;
 			}
 			//then dividing to get the means.
 			for (unsigned int i = 0; i < offset_size; i++)
-				normalization_factors[i] = sums[i]/(double)count[i];
+				normalization_factors[i] = sums[i] / (double)count[i];
 		}
 		//now normalize each movement score by its offset's mean
 		int k = 0;
-		for (unsigned int i = 0; i < elements.size(); i++){
-			elements[i].measurements.denoised_movement_score = elements[i].measurements.movement_sum/(double)normalization_factors[k];
+		for (unsigned int i = 0; i < elements.size(); i++) {
+			elements[i].measurements.denoised_movement_score = elements[i].measurements.movement_sum / (double)normalization_factors[k];
 			k++;
-			if (k==offset_size) k = 0;
+			if (k == offset_size) k = 0;
 		}
 	}
 }

@@ -35,7 +35,7 @@ sql_lock("ns_is::sql"), server_event_lock("ns_is::server_event"), performance_st
 _act_as_processing_node(true), cleared(false),
 image_registration_profile_cache(1024 * 4), //allocate 4 gigabytes of disk space in which to store reference images for capture sample registration
 _verbose_debug_output(false), _cache_subdirectory("cache"), sql_database_choice(possible_sql_databases.end()), next_scan_for_problems_time(0),
-_terminal_window_scale_factor(1), sql_table_lock_manager(this), alert_handler_lock("ahl"),max_internal_thread_id(1),worm_detection_model_cache(0),posture_analysis_model_cache(0){
+_terminal_window_scale_factor(1), sql_table_lock_manager(this), alert_handler_lock("ahl"),max_internal_thread_id(1), max_external_thread_id(1),worm_detection_model_cache(0),posture_analysis_model_cache(0){
 
 	ns_socket::global_init();
 	ns_worm_detection_constants::init();
@@ -1841,7 +1841,7 @@ void ns_image_server::register_devices(const bool verbose, ns_image_server_sql *
 	
 	#endif
 }
-void ns_image_server::open_log_file(const ns_image_server::ns_image_server_exec_type & exec_type, unsigned long internal_thread_id, const std::string & volatile_directory, const std::string & file_name, ofstream & out) {
+void ns_image_server::open_log_file(const ns_image_server::ns_image_server_exec_type & exec_type, unsigned long thread_id, const std::string & volatile_directory, const std::string & file_name, ofstream & out) {
 	//open local logfile.
 	std::string lname = volatile_directory;
 	lname += DIR_CHAR_STR;
@@ -1860,8 +1860,8 @@ void ns_image_server::open_log_file(const ns_image_server::ns_image_server_exec_
 	default: throw ns_ex("ns_image_server::load_constants()::Unknown image server exec type!");
 	}
 	lname += log_suffix;
-	if (internal_thread_id > 0)
-		lname += ns_to_string(internal_thread_id);
+	if (thread_id > 0)
+		lname += ns_to_string(thread_id);
 	lname +=".txt";
 
 	ns_dir::create_directory_recursive(volatile_directory);
@@ -2492,22 +2492,26 @@ std::map<ns_64_bit, ns_thread_output_state>::iterator ns_image_server::get_curre
 		current_thread_state = thread_states.insert(std::map<ns_64_bit, ns_thread_output_state>::value_type(thread_id, ns_thread_output_state())).first;
 		current_thread_state->second.internal_thread_id = image_server.max_internal_thread_id;
 		image_server.max_internal_thread_id++;
-
-		lock.release();
 	}
+	lock.release();
 	return current_thread_state;
 }
 
 void ns_image_server::log_current_thread_output_in_separate_file() const {
 	std::map<ns_64_bit, ns_thread_output_state>::iterator current_thread_state = get_current_thread_state_info();
+	
 	ns_acquire_lock_for_scope lock(server_event_lock, __FILE__, __LINE__);
 	try {
+		if (current_thread_state->second.external_thread_id == 0) {
+			current_thread_state->second.external_thread_id = max_external_thread_id;
+			max_external_thread_id++;
+		}
 		if (current_thread_state->second.thread_specific_logfile != 0) {
 			lock.release();
 			return;
 		}
 		current_thread_state->second.thread_specific_logfile = new ofstream;
-		open_log_file(ns_image_server_type, current_thread_state->second.internal_thread_id, volatile_storage_directory, _log_filename, *(current_thread_state->second.thread_specific_logfile));
+		open_log_file(ns_image_server_type, current_thread_state->second.external_thread_id, volatile_storage_directory, _log_filename, *(current_thread_state->second.thread_specific_logfile));
 	}
 	catch (ns_ex & ex) {
 		cerr << ex.text() << "\n";
@@ -2551,7 +2555,7 @@ ns_64_bit ns_image_server::register_server_event(const ns_image_server_event & s
 				*sql << ", subject_width = " << s_event.subject_properties.width << ", subject_height = " << s_event.subject_properties.height;
 				*sql << ", processing_duration = " << s_event.processing_duration;
 				if (current_thread_state->second.separate_output())
-					*sql << ", node_id = " << current_thread_state->second.internal_thread_id;
+					*sql << ", node_id = " << current_thread_state->second.external_thread_id;
 				if (s_event.type() == ns_ts_error)
 					*sql << ", error=1";
 				event_id = sql->send_query_get_id();

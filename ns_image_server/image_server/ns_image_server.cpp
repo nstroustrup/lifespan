@@ -31,7 +31,7 @@ using namespace std;
 void ns_image_server_global_debug_handler(const ns_text_stream_t & t);
 
 ns_image_server::ns_image_server() : exit_requested(false), update_software(false),
-sql_lock("ns_is::sql"), server_event_lock("ns_is::server_event"), performance_stats_lock("ns_pfl"), simulator_scan_lock("ns_is::sim_scan"), local_buffer_sql_lock("ns_is::lb"),
+sql_lock("ns_is::sql"), server_event_lock("ns_is::server_event"), performance_stats_lock("ns_pfl"), simulator_scan_lock("ns_is::sim_scan"), local_buffer_sql_lock("ns_is::lb"), processing_run_counter_lock("ns_pcl"),
 _act_as_processing_node(true), cleared(false),
 image_registration_profile_cache(1024 * 4), //allocate 4 gigabytes of disk space in which to store reference images for capture sample registration
 _verbose_debug_output(false), _cache_subdirectory("cache"), sql_database_choice(possible_sql_databases.end()), next_scan_for_problems_time(0),
@@ -43,7 +43,9 @@ _terminal_window_scale_factor(1), sql_table_lock_manager(this), alert_handler_lo
 	_software_version_compile = 1;
 	image_storage.cache.set_memory_allocation_limit_in_kb(maximum_image_cache_memory_size());
 	system_host_name = ns_get_system_hostname();
-
+	//by default, run indefinately
+	set_image_processing_run_limits(0, 0);
+	reset_empty_job_queue_check_count();
 }
 bool ns_image_server::scan_for_problems_now(){
 	unsigned long current_time = ns_current_time();
@@ -1922,6 +1924,7 @@ void ns_image_server::load_constants(const ns_image_server::ns_image_server_exec
 	constants.add_field("device_names", "", "This can be used to explicitly specify scanner names on an image acquisition server.  These should be detected just fine automatically, and so in most cases this field can be left blank");
 	
 	constants.start_specification_group(ns_ini_specification_group("Image Analysis Server Settings ","These settings control the behavior of image processing servers"));
+	constants.add_field("number_of_times_to_check_empty_processing_job_queue_before_stopping", "0", "The number of times the image server should re-check an empty processing job queue before giving up and shutting down.  Useful when running on a HPC cluster.  A value of 0 indicates the server never should shut down for this reason.");
 	constants.add_field("act_as_processing_node","yes","Should the server run image processing jobs requested by the user via the website? (yes / no)");
 	constants.add_field("nodes_per_machine", "1","A single computer can run multiple copies of the image processing server simultaneously, which allows many jobs to be processed in parallel.  Set this value to the number of parallel servers you want to run on this machine.  This can usually be set to the number of physical cores on the machine's processor, or the number of GB of RAM on the machine; whichever is smaller.");
 	constants.add_field("hide_window","no","On windows, specifies whether the server should start minimized.  (yes / no )");
@@ -2048,7 +2051,7 @@ void ns_image_server::load_constants(const ns_image_server::ns_image_server_exec
 		local_buffer_pwd = constants["local_buffer_sql_password"];
 		local_buffer_user = constants["local_buffer_sql_username"]; 
 
-	
+		number_of_times_to_check_empty_job_queue_before_stopping = atol(constants["number_of_times_to_check_empty_processing_job_queue_before_stopping"].c_str());
 
 		for (unsigned int i = 0; i < possible_sql_databases.size(); i++){
 			if (local_buffer_db == possible_sql_databases[i])

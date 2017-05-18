@@ -513,7 +513,41 @@ public:
 	void set_main_thread_id();
 	std::string get_system_host_name() const {return system_host_name;}
 	void set_additional_host_description(const std::string & d) { additional_host_description = d; }
+	void set_image_processing_run_limits(const unsigned long maximum_runtime_in_seconds_, const unsigned long maximum_number_of_jobs_to_process_) { 
+		maximum_runtime_in_seconds = maximum_runtime_in_seconds_;
+		maximum_number_of_jobs_to_process = maximum_number_of_jobs_to_process_;
+	}
+	void reset_image_processing_run_data() {
+		ns_acquire_lock_for_scope lock(processing_run_counter_lock, __FILE__, __LINE__);
+		processing_server_start_time = ns_current_time();
+		number_of_processing_jobs_run = 0;
+		lock.release();
+	}
 	const std::string & get_additional_host_description(const std::string & d) const { return additional_host_description; }
+	bool processing_time_is_exceeded() const { return (maximum_runtime_in_seconds> 0) && ((ns_current_time() - processing_server_start_time) >= maximum_runtime_in_seconds); }
+	bool number_of_jobs_processed_is_exceeded() const { 
+		ns_acquire_lock_for_scope lock(processing_run_counter_lock, __FILE__, __LINE__);
+		bool val = (maximum_number_of_jobs_to_process> 0) && (number_of_processing_jobs_run >= maximum_number_of_jobs_to_process); 
+		lock.release();
+		return val;
+	}
+	void increment_job_processing_counter(unsigned long i = 1) { 
+		ns_acquire_lock_for_scope lock(processing_run_counter_lock, __FILE__, __LINE__); 
+		number_of_processing_jobs_run += i;
+		lock.release();
+	}
+	long number_of_remaining_processing_jobs_before_max_is_hit() const {
+		ns_acquire_lock_for_scope lock(processing_run_counter_lock, __FILE__, __LINE__);
+		long val;
+		if (maximum_number_of_jobs_to_process == 0)
+			val = LONG_MAX;
+		else val = maximum_number_of_jobs_to_process - number_of_processing_jobs_run;
+		lock.release();
+		return val;
+	}
+	void reset_empty_job_queue_check_count() { empty_job_queue_check_count = 0; }
+	void incremenent_empty_job_queue_check_count() { empty_job_queue_check_count++; }
+	bool empty_job_queue_check_count_is_exceeded() { return empty_job_queue_check_count>=number_of_times_to_check_empty_job_queue_before_stopping; }
 private:
 	ns_64_bit _main_thread_id;
 	static void open_log_file(const ns_image_server::ns_image_server_exec_type & exec_type, unsigned long thread_id, const std::string & volatile_directory, const std::string & file_name, std::ofstream & out);
@@ -523,6 +557,12 @@ private:
 	ns_multiprocess_control_options multiprocess_control_options;
 	unsigned long maximum_number_of_processing_threads_;
 	bool alert_handler_running;
+
+	unsigned long maximum_runtime_in_seconds, maximum_number_of_jobs_to_process;
+	unsigned long processing_server_start_time, number_of_processing_jobs_run;
+	unsigned long number_of_times_to_check_empty_job_queue_before_stopping, empty_job_queue_check_count;
+	mutable ns_lock processing_run_counter_lock;
+
 	//ns_lock alert_handler_lock;
 	ns_single_thread_coordinator alert_handler_thread;
 	

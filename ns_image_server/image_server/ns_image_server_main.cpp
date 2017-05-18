@@ -674,7 +674,7 @@ ns_multiprocess_control_options ns_spawn_new_nodes(	const unsigned int & count,
 typedef enum {ns_none,ns_start, ns_stop, ns_help, ns_restart, ns_status, ns_hotplug,
 			  ns_reset_devices,ns_reload_models,ns_submit_experiment,ns_test_email,ns_test_alert, ns_test_rate_limited_alert,ns_wrap_m4v,
 			  ns_restarting_after_a_crash,ns_trigger_segfault_in_main_thread,ns_trigger_segfault_in_dispatcher_thread, ns_run_pending_image_transfers,
-	      ns_clear_local_db_buffer_cleanly,ns_clear_local_db_buffer_dangerously,ns_simulate_central_db_connection_error,ns_fix_orphaned_captured_images,ns_update_sql,ns_output_image_buffer_info,ns_stop_checking_central_db,ns_start_checking_central_db,ns_output_sql_debug, ns_additional_host_description} ns_cl_command;
+	      ns_clear_local_db_buffer_cleanly,ns_clear_local_db_buffer_dangerously,ns_simulate_central_db_connection_error,ns_fix_orphaned_captured_images,ns_update_sql,ns_output_image_buffer_info,ns_stop_checking_central_db,ns_start_checking_central_db,ns_output_sql_debug, ns_additional_host_description, ns_max_run_time_in_seconds, ns_max_number_of_jobs_to_process} ns_cl_command;
 
 ns_image_server_sql * ns_connect_to_available_sql_server(){
 		try{
@@ -809,9 +809,11 @@ int main(int argc, char * argv[]){
 	commands["stop_checking_central_db"] = ns_stop_checking_central_db;
 	commands["update_sql"] = ns_update_sql;
 	commands["additional_host_description"] = ns_additional_host_description;
+	commands["max_run_time_in_seconds"] = ns_max_run_time_in_seconds;
+	commands["max_number_of_jobs_to_process"] = ns_max_number_of_jobs_to_process;
 	commands["output_sql_debug"] = ns_output_sql_debug;
 	bool is_master_node(false);
-	std::string schema_name, additional_host_description;
+	std::string schema_name;
 	try{
 
 
@@ -923,11 +925,32 @@ int main(int argc, char * argv[]){
 				if (i + 1 == argc)  //default
 					throw ns_ex("if additional_host_description is specified, a value must be provided");
 				else {
-					additional_host_description = argv[i+1];
+					std::string additional_host_description = argv[i+1];
 					image_server.set_additional_host_description(additional_host_description);
 					i++; // "consume" the next argument so it doesn't get interpreted as a command-string.
 				}
 			}
+			unsigned long max_run_time(0), max_job_num(0);
+			if (p->second == ns_max_number_of_jobs_to_process) {
+				if (i + 1 == argc)  //default
+					throw ns_ex("if max_number_of_jobs_to_process is specified, a value must be provided");
+				else {
+					std::string  tmp = argv[i + 1];
+					max_job_num = atol(tmp.c_str());
+					i++; // "consume" the next argument so it doesn't get interpreted as a command-string.
+				}
+			}
+			if (p->second == ns_max_run_time_in_seconds) {
+				if (i + 1 == argc)  //default
+					throw ns_ex("if max_run_time_in_seconds is specified, a value must be provided");
+				else {
+					std::string tmp = argv[i + 1]; 
+					max_run_time = atol(tmp.c_str());
+					i++; // "consume" the next argument so it doesn't get interpreted as a command-string.
+				}
+			}
+			image_server.set_image_processing_run_limits(max_run_time, max_job_num);
+
 			if (p->second == ns_submit_experiment){
 				
 				if (i+1== argc) throw ns_ex("Output type and filename must be specified for schedule submission");
@@ -1117,6 +1140,7 @@ int main(int argc, char * argv[]){
 					throw ns_ex("No image server found running at ") << image_server.dispatcher_ip() << ":" << image_server.dispatcher_port() << ".";	
 				return 0;
 
+			case ns_additional_host_description: break; //handled above
 			//all of these require access to the sql database and will be handled
 			//a little later in the startup process
 			case ns_fix_orphaned_captured_images:

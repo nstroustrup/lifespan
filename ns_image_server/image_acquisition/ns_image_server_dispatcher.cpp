@@ -263,6 +263,7 @@ void ns_image_server_dispatcher::run(){
 		image_server.register_server_event(ns_image_server::ns_register_in_central_db_with_fallback,ns_image_server_event("Dispatcher refresh interval set to ",false) << image_server.dispatcher_refresh_interval() << " seconds.");
 		image_server.register_server_event(ns_image_server::ns_register_in_central_db_with_fallback,ns_image_server_event("Software Compilation Date: ") << __DATE__);
 		image_server.register_server_event(ns_image_server::ns_register_in_central_db_with_fallback,ns_image_server_event("Dispatcher started.",false));
+		image_server.reset_image_processing_run_data();
 		while(!image_server.exit_requested){
 			ns_socket_connection socket_connection;
 			try{
@@ -275,6 +276,7 @@ void ns_image_server_dispatcher::run(){
 			}
 			
 			ns_acquire_lock_for_scope lock(message_handling_lock,__FILE__,__LINE__);
+
 			pending_remote_requests.push_front(ns_remote_dispatcher_request(socket_connection));
 
 			try{
@@ -324,6 +326,11 @@ void ns_image_server_dispatcher::run(){
 			if (!pending_remote_requests.empty() && !message_handling_thread.is_running() && !image_server.exit_requested){
 				message_handling_thread.run(handle_dispatcher_request,this);
 			}
+
+			if (image_server.processing_time_is_exceeded()){
+				image_server.register_server_event(ns_image_server::ns_register_in_central_db_with_fallback, ns_image_server_event("Processing time exceeded."));
+				image_server.exit_requested = true;
+			}
 			lock.release();
 		}
 		//cerr << "Leaving dispatcher::run() Loop";
@@ -339,10 +346,6 @@ void ns_image_server_dispatcher::run(){
 
 	//shut down routines
 	try{		
-		if (!currently_unable_to_connect_to_the_central_db) {
-			ns_acquire_for_scope<ns_sql> sql(image_server.new_sql_connection(__FILE__, __LINE__));
-			image_server.unregister_host(&sql());
-		}
 		//close all outstanding connections and clear the request queue
 		ns_acquire_lock_for_scope lock(message_handling_lock,__FILE__,__LINE__);
 		for(list<ns_remote_dispatcher_request>::iterator p = pending_remote_requests.begin(); p != pending_remote_requests.end();){
@@ -366,7 +369,12 @@ void ns_image_server_dispatcher::run(){
 			sql.release();
 		}
 		image_server.device_manager.reset_all_devices();
-		image_server.register_server_event(ns_image_server::ns_register_in_central_db_with_fallback,ns_image_server_event("Shutting down."));
+
+		if (!currently_unable_to_connect_to_the_central_db) {
+			ns_acquire_for_scope<ns_sql> sql(image_server.new_sql_connection(__FILE__, __LINE__));
+			image_server.unregister_host(&sql());
+		}
+		image_server.register_server_event(ns_image_server::ns_register_in_central_db_with_fallback,ns_image_server_event("Finished cleanup and shutting down."));
 	}
 	catch(ns_ex & ex){
 		image_server.register_server_event(ns_image_server::ns_register_in_central_db_with_fallback,ex);
@@ -439,8 +447,11 @@ void ns_image_server_dispatcher::start_looking_for_new_work(){
 		//when a processing thread is running, its handle is stored in processing_thread.
 		ns_acquire_lock_for_scope lock(processing_lock,__FILE__,__LINE__);
 		if (allow_processing && !processing_job_scheduler_thread.is_running()){
+			if (image_server.number_of_jobs_processed_is_exceeded()) {
+				image_server.exit_requested = true;
+			}
 			//get a job from the server
-			processing_job_scheduler_thread.run(thread_start_look_for_work,this);
+			else processing_job_scheduler_thread.run(thread_start_look_for_work,this);
 		}
 		lock.release();
 	}
@@ -1240,12 +1251,25 @@ bool ns_image_server_dispatcher::look_for_work(){
 		else {
 			number_of_jobs_to_run = processing_thread_pool.number_of_idle_threads();
 		}
+		long number_of_jobs_left_before_max_is_reached = image_server.number_of_remaining_processing_jobs_before_max_is_hit();
+		if (number_of_jobs_left_before_max_is_reached <= 0)
+			return false;
+		if (number_of_jobs_to_run > number_of_jobs_left_before_max_is_reached)
+			number_of_jobs_to_run = number_of_jobs_left_before_max_is_reached;
 
 		push_scheduler.request_jobs(number_of_jobs_to_run, jobs, *work_sql_connection, first_in_first_out_job_queue);
 		if (jobs.size() == 0) {
-			image_server.add_subtext_to_current_event(".", work_sql_connection,false, image_server.main_thread_id());
+			image_server.add_subtext_to_current_event(".", work_sql_connection, false, image_server.main_thread_id());
+
+			image_server.incremenent_empty_job_queue_check_count();
+			if (image_server.empty_job_queue_check_count_is_exceeded()) {
+				image_server.register_server_event(ns_ex("Idle image processing job queue count limit reached."), work_sql_connection);
+				image_server.exit_requested = true;
+			}
 			return false;
 		}
+		else
+			image_server.reset_empty_job_queue_check_count();
 
 		//here is the logic that allows multithreaded jobs to run alone in the thread pool.
 		{
@@ -1297,6 +1321,7 @@ bool ns_image_server_dispatcher::look_for_work(){
 			processing_pool_external_data.image_server = &image_server_const;
 			processing_thread_pool.run_pool();
 		}
+		image_server.increment_job_processing_counter(jobs.size());
 	}
 	catch(...){
 

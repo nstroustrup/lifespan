@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 2.8)
 project (ns_image_server)
-
+#include(CheckTypeSize)
 option (ADVANCED_MOVEMENT_QUANTIFICATION
         "Use advanced movement quantitifiation" OFF) 
 option (BUILD_WORM_BROWSER
@@ -91,7 +91,7 @@ list(APPEND NS_INC ${ns_image_server_base_INCLUDE_DIRS})
 
 SET(IPP_STATIC 0)
 find_package(IPP REQUIRED)
-LIST(APPEND NS_INC ${IPP_INCLUDE_DIR})
+LIST(APPEND NS_INC ${IPP_INCLUDE_DIRS})
 LIST(APPEND NS_LN ${IPP_LIBRARIES})
 
 find_package(MYSQL REQUIRED)
@@ -104,7 +104,9 @@ LIST(APPEND NS_LN  ${JPEG_LIBRARIES})
 
 LIST(APPEND NS_LN "m")
 find_package(DMTX REQUIRED)
-LIST(APPEND NS_LN "dmtx")
+LIST(APPEND NS_LN ${DMTX_LIBRARIES})
+LIST(APPEND NS_INC ${DMTX_INCLUDE_DIRS})
+
 find_package(TIFF REQUIRED)
 LIST(APPEND NS_LN "tiff")
 find_package(Freetype REQUIRED)
@@ -121,6 +123,7 @@ LIST(APPEND NS_LN ${XVID_LIBRARIES})
 
 find_package(ZLIB REQUIRED)
 LIST(APPEND NS_LN "z")
+
 find_package(libusb-1.0 REQUIRED)
 LIST(APPEND NS_INC ${LIBUSB_1_INCLUDE_DIRS})
 LIST(APPEND NS_LN ${LIBUSB_1_LIBRARIES})

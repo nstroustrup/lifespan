@@ -2554,6 +2554,7 @@ ns_64_bit ns_image_server::register_server_event(const ns_image_server_event & s
 				*sql << ", subject_image_id=" << s_event.subject_image_id;
 				*sql << ", subject_width = " << s_event.subject_properties.width << ", subject_height = " << s_event.subject_properties.height;
 				*sql << ", processing_duration = " << s_event.processing_duration;
+				*sql << ", sub_text = ''";
 				if (current_thread_state->second.separate_output())
 					*sql << ", node_id = " << current_thread_state->second.external_thread_id;
 				if (s_event.type() == ns_ts_error)

@@ -1248,11 +1248,14 @@ int main(int argc, char * argv[]){
 		if (sql().connected_to_central_database()){
 			image_server.get_requested_database_from_db();
 			image_server.register_host(&sql());
-			image_server.register_server_event(ns_image_server_event("Launching server..."), &sql(),true);
-			image_server.add_subtext_to_current_event(splash, &sql(),true);
-			image_server.add_subtext_to_current_event(quote, &sql(),true);
+			if (command != ns_update_sql) {  //we can't register events in the db until the db is updated
+				image_server.register_server_event(ns_image_server_event("Launching server..."), &sql(), true);
+				image_server.add_subtext_to_current_event(splash, &sql(), true);
+				image_server.add_subtext_to_current_event(quote, &sql(), true);
+			}
 			if (image_server.new_software_release_available() && image_server.halt_on_new_software_release()){
-				image_server.register_server_event(ns_image_server_event("A more recent version of server software was found running on the cluster.  This server is outdated and is halting now."),&sql());
+				if (command != ns_update_sql)  //we can't register events in the db until the db is updated
+					image_server.register_server_event(ns_image_server_event("A more recent version of server software was found running on the cluster.  This server is outdated and is halting now."),&sql());
 				#ifdef _WIN32 
 				image_server.update_software = true;
 				#endif

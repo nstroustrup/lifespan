@@ -674,7 +674,7 @@ ns_multiprocess_control_options ns_spawn_new_nodes(	const unsigned int & count,
 typedef enum {ns_none,ns_start, ns_stop, ns_help, ns_restart, ns_status, ns_hotplug,
 			  ns_reset_devices,ns_reload_models,ns_submit_experiment,ns_test_email,ns_test_alert, ns_test_rate_limited_alert,ns_wrap_m4v,
 			  ns_restarting_after_a_crash,ns_trigger_segfault_in_main_thread,ns_trigger_segfault_in_dispatcher_thread, ns_run_pending_image_transfers,
-	      ns_clear_local_db_buffer_cleanly,ns_clear_local_db_buffer_dangerously,ns_simulate_central_db_connection_error,ns_fix_orphaned_captured_images,ns_update_sql,ns_output_image_buffer_info,ns_stop_checking_central_db,ns_start_checking_central_db,ns_output_sql_debug} ns_cl_command;
+	      ns_clear_local_db_buffer_cleanly,ns_clear_local_db_buffer_dangerously,ns_simulate_central_db_connection_error,ns_fix_orphaned_captured_images,ns_update_sql,ns_output_image_buffer_info,ns_stop_checking_central_db,ns_start_checking_central_db,ns_output_sql_debug, ns_additional_host_description} ns_cl_command;
 
 ns_image_server_sql * ns_connect_to_available_sql_server(){
 		try{
@@ -808,9 +808,10 @@ int main(int argc, char * argv[]){
 	commands["start_checking_central_db"] = ns_start_checking_central_db;
 	commands["stop_checking_central_db"] = ns_stop_checking_central_db;
 	commands["update_sql"] = ns_update_sql;
+	commands["additional_host_description"] = ns_additional_host_description;
 	commands["output_sql_debug"] = ns_output_sql_debug;
 	bool is_master_node(false);
-	std::string schema_name;
+	std::string schema_name, additional_host_description;
 	try{
 
 
@@ -878,6 +879,7 @@ int main(int argc, char * argv[]){
 						<< "hotplug : request the currently running local instance of the image server check for hardware changes to image acquisition devices attached to local machine\n"
 						<< "reset_devices : request the currently running local instance of the image server reset its image acquisition device registry and build it from scratch\n"
 						<< "reload_models : request the currently running local instance of the image server clear its cache of worm detection models so they are reloaded from disk.\n"
+						<< "additional_host_description [text]: optionally specify extra information to distinguish the current host (e.g when running in an HPC cluster)\n"
 						<< "submit_experiment: Test and submit an experiment specification XML file to the cluster\n"
 						<< "    By default this only outputs a summary of the proposed experiment to stdout\n"
 						<< "    With sub-option 'u': actually submit the experiment specification to the database \n"
@@ -916,7 +918,15 @@ int main(int argc, char * argv[]){
 					schema_name = argv[i+1];
 					i++; // "consume" the next argument so it doesn't get interpreted as a command-string.
 				}
-
+			}
+			if (p->second == ns_additional_host_description) {
+				if (i + 1 == argc)  //default
+					throw ns_ex("if additional_host_description is specified, a value must be provided");
+				else {
+					additional_host_description = argv[i+1];
+					image_server.set_additional_host_description(additional_host_description);
+					i++; // "consume" the next argument so it doesn't get interpreted as a command-string.
+				}
 			}
 			if (p->second == ns_submit_experiment){
 				
@@ -1138,6 +1148,7 @@ int main(int argc, char * argv[]){
 		splash += " ========================================\n";
 		std::cout << splash;
 		
+		std::cout << image_server.get_system_host_name() << "\n";
 
 		std::vector<std::pair<std::string,std::string> > quotes;
 	

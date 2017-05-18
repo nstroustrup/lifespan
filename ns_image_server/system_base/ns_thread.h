@@ -147,6 +147,8 @@ struct ns_external_execute_options{
 	#endif
 };
 
+std::string ns_get_system_hostname();
+
 class ns_external_execute{
 public:	
 	#ifndef _WIN32

@@ -1087,3 +1087,22 @@ bool ns_process_priority::set_priority(const ns_process_priority::ns_priority re
 		return ret==0;
 	#endif
 }
+
+std::string ns_get_system_hostname() {
+#ifdef _WIN32
+	char hostname[MAX_COMPUTERNAME_LENGTH + 1];
+	DWORD size(MAX_COMPUTERNAME_LENGTH + 1);
+	if (!GetComputerName(hostname, &size)) {
+		ns_ex ex("Could not obtain system hostname:");
+		ex.append_windows_error();
+		throw ex;
+	}
+	return std::string(hostname);
+#else
+	char hostname[1024];
+	if (gethostname(hostname, 1024) != 0) {
+		ns_ex ex("Could not obtain system hostname");
+	}
+#endif
+
+}

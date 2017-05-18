@@ -42,6 +42,7 @@ _terminal_window_scale_factor(1), sql_table_lock_manager(this), alert_handler_lo
 	ns_set_global_debug_output_handler(ns_image_server_global_debug_handler);
 	_software_version_compile = 1;
 	image_storage.cache.set_memory_allocation_limit_in_kb(maximum_image_cache_memory_size());
+	system_host_name = ns_get_system_hostname();
 
 }
 bool ns_image_server::scan_for_problems_now(){
@@ -927,9 +928,18 @@ bool ns_image_server::upgrade_tables(ns_sql & sql,const bool just_test_if_needed
 		changes_made = true;
 	}
 
+	if (!ns_sql_column_exists("hosts", "system_hostname",sql)) {
+		cout << "Adding system hostname and additional host description columns to hosts table\n";
+		sql << " ALTER TABLE `hosts` "
+			"ADD COLUMN `system_hostname` CHAR(255) NOT NULL DEFAULT '' AFTER `time_of_last_successful_long_term_storage_write`, "
+			"ADD COLUMN `additional_host_description` CHAR(255) NOT NULL DEFAULT '' AFTER `system_hostname` ";
+		sql.send_query();
+		changes_made = true;
+	}
 	if (!changes_made && !just_test_if_needed){
 		cout << "The database appears up-to-date; no changes were made.\n";
 	}
+
 	return changes_made;
 }
 
@@ -1745,7 +1755,7 @@ void ns_image_server::register_host(ns_image_server_sql * sql, bool overwrite_cu
 		long_term_storage_ = "1";
 	sql->set_autocommit(false);
 	sql->send_query("BEGIN");
-	*sql << "SELECT id, ip, port, long_term_storage_enabled FROM hosts WHERE name='" << host_name << "'";
+	*sql << "SELECT id, ip, port, long_term_storage_enabled FROM hosts WHERE name='" << host_name << "' AND additional_host_description='" << additional_host_description << "'";
 	if (overwrite_current_entry)
 		*sql << " FOR UPDATE";
 
@@ -1757,7 +1767,9 @@ void ns_image_server::register_host(ns_image_server_sql * sql, bool overwrite_cu
 			<< "', long_term_storage_enabled='" << long_term_storage_ << "', comments='', "
 			<< "software_version_major=" << software_version_major() << ", software_version_minor=" << software_version_minor()
 			<< ", software_version_compile=" << software_version_compile()<< ",database_used='" << *sql_database_choice 
-			<< "', time_of_last_successful_long_term_storage_write=0";
+			<< "', time_of_last_successful_long_term_storage_write=0,"
+			<< "system_hostname = '" << system_host_name << "',"
+			<< "additional_host_description='"<< additional_host_description << "' ";
 		_host_id = sql->send_query_get_id();
 	}
 	else if (h.size() != 1)
@@ -1769,7 +1781,8 @@ void ns_image_server::register_host(ns_image_server_sql * sql, bool overwrite_cu
 			*sql << "UPDATE hosts SET ip='" << host_ip << "', port='" << _dispatcher_port 
 				<< "', long_term_storage_enabled='" << long_term_storage_ << "', "
 				<< "software_version_major=" << software_version_major() << ", software_version_minor=" << software_version_minor()
-				<< ", software_version_compile=" << software_version_compile() << ",database_used='" << *sql_database_choice << "'" <<
+				<< ", software_version_compile=" << software_version_compile() << ",database_used='" << *sql_database_choice << "',"
+				<< "system_hostname = '" << system_host_name << "'"
 				" WHERE id='" << _host_id << "'";
 			sql->send_query();
 		}
@@ -1919,7 +1932,6 @@ void ns_image_server::load_constants(const ns_image_server::ns_image_server_exec
 	constants.add_field("latest_release_path","image_server_software/image_server_win32.exe", "Image acquisition servers can be set to automatically update if new versions of the software is identified as running on the cluster.  This is the path name where the new software can be found.");
 	constants.add_field("run_autonomously","yes","should the server automatically poll the MySQL database for new scans/jobs (yes) or should it only do this when a command is received from an external source (no).  Most configurations set this to yes.");
 	
-
 	constants.start_specification_group(ns_ini_specification_group("Other Settings","These settings control the behavior of image acquisition and image processing servers"));
 	constants.add_field("verbose_debug_output","false","If this option is set to true, the image server and worm browser will generate detailed debug information while running various steps of image acquisition and image processing.  An file containing this output will be written to the volatile_storage directory.");
 	constants.add_field("dispatcher_refresh_interval","6000","How often should image acquisition servers check for pending scans?  (in seconds).  Also specifies how often analysis servers will check for new jobs.");

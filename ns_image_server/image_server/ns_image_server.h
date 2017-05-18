@@ -511,6 +511,9 @@ public:
 
 	ns_64_bit main_thread_id() { return _main_thread_id; }
 	void set_main_thread_id();
+	std::string get_system_host_name() const {return system_host_name;}
+	void set_additional_host_description(const std::string & d) { additional_host_description = d; }
+	const std::string & get_additional_host_description(const std::string & d) const { return additional_host_description; }
 private:
 	ns_64_bit _main_thread_id;
 	static void open_log_file(const ns_image_server::ns_image_server_exec_type & exec_type, unsigned long thread_id, const std::string & volatile_directory, const std::string & file_name, std::ofstream & out);
@@ -530,6 +533,8 @@ private:
 
 	std::string base_host_name, ///host name (specified in the ini file) of the current host
 		host_name,
+		system_host_name,		//host name of the computer/system running the software
+		additional_host_description, //additional host name information that can be supplied at the commandline (for running in HPC cluster environments)
 		host_ip, ///ip address of the current host
 		sql_user, ///username with which to connect to the sql server
 		sql_pwd;  ///password with which to connect to the sql server

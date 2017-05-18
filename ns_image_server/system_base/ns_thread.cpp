@@ -1101,8 +1101,9 @@ std::string ns_get_system_hostname() {
 #else
 	char hostname[1024];
 	if (gethostname(hostname, 1024) != 0) {
-		ns_ex ex("Could not obtain system hostname");
+		throw ns_ex("Could not obtain system hostname");
 	}
+	return std::string(hostname);
 #endif
 
 }

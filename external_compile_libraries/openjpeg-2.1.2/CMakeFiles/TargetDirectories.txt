@@ -1,0 +1,8 @@
+/users/nstroustrup/nstroustrup/projects/lifespan/external_compile_libraries/openjpeg-2.1.2/thirdparty/liblcms2/CMakeFiles/lcms2.dir
+/users/nstroustrup/nstroustrup/projects/lifespan/external_compile_libraries/openjpeg-2.1.2/src/lib/openjp2/CMakeFiles/openjp2.dir
+/users/nstroustrup/nstroustrup/projects/lifespan/external_compile_libraries/openjpeg-2.1.2/src/bin/jp2/CMakeFiles/opj_compress.dir
+/users/nstroustrup/nstroustrup/projects/lifespan/external_compile_libraries/openjpeg-2.1.2/src/bin/jp2/CMakeFiles/opj_decompress.dir
+/users/nstroustrup/nstroustrup/projects/lifespan/external_compile_libraries/openjpeg-2.1.2/src/bin/jp2/CMakeFiles/opj_dump.dir
+/users/nstroustrup/nstroustrup/projects/lifespan/external_compile_libraries/openjpeg-2.1.2/thirdparty/libpng/CMakeFiles/png.dir
+/users/nstroustrup/nstroustrup/projects/lifespan/external_compile_libraries/openjpeg-2.1.2/thirdparty/libtiff/CMakeFiles/tiff.dir
+/users/nstroustrup/nstroustrup/projects/lifespan/external_compile_libraries/openjpeg-2.1.2/thirdparty/libz/CMakeFiles/z.dir

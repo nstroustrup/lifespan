@@ -1,19 +1,19 @@
 <?php
 require_once('worm_environment.php');
-require_once('ns_dir.php');	
+require_once('ns_dir.php');
 //require_once('ns_external_interface.php');
 require_once('ns_experiment.php');
 require_once('ns_processing_job.php');
 
 try{
- 
+
 if (!isset($query_string['experiment_id']))
 	throw new ns_exception('No experiment id specified!');
 $experiment_id = @(int)$query_string['experiment_id'];
 
 
 if ($experiment_id != 0){
- 
+
 	$query = "SELECT name FROM experiments WHERE id = $experiment_id";
 	$sql->get_row($query,$enames);
 	$experiment_name = $enames[0][0];
@@ -21,7 +21,7 @@ if ($experiment_id != 0){
  $page_title = "Machine Analysis Configuration for " . $experiment_name;
 
    $query_parameters = "experiment_id=$experiment_id";
-$external_detail_spec = FALSE;  
+$external_detail_spec = FALSE;
 if ($_POST['detail_level']){
      $detail_level = $_POST['detail_level'];
      $external_detail_spec = TRUE;
@@ -61,18 +61,16 @@ $query = "UPDATE experiments SET delete_captured_images_after_mask=" . ($delete_
    // die($query);
    $sql->send_query($query);
    if ($mask_date != 0){
-     $query = "DELETE FROM constants WHERE k='mask_time=" . $experiment_id."'";
-     $sql->send_query($query);
-     // die($query);
-     $query =   "INSERT INTO constants SET k='mask_time=" .$experiment_id. "', v='$mask_date'";
+
+     $query =   "UPDATE experiments SET mask_time=$mask_date WHERE id = $experiment_id";
      // die($query);
      $sql->send_query($query);
    }
-   header("Location: manage_experiment_analysis_configuration.php?$query_parameters\n\n");  
+   header("Location: manage_experiment_analysis_configuration.php?$query_parameters\n\n");
 
  }
  if ($query_string['regression_setup'] == 1){
- 
+
    if ($_POST['set_control_strain']){
      $region_id = $_POST['control_region_id'];
      $control_lifespan = $_POST['control_lifespan'];
@@ -84,9 +82,9 @@ $query = "UPDATE experiments SET delete_captured_images_after_mask=" . ($delete_
      //	die($control_string);
      $query = "UPDATE experiments SET control_strain_for_device_regression = '" . $control_string . "' WHERE id = " . $experiment_id;
      //echo $query
-     
+
      $sql->send_query($query);
-     header("Location: manage_experiment_analysis_configuration.php?$query_parameters\n\n");  
+     header("Location: manage_experiment_analysis_configuration.php?$query_parameters\n\n");
    }
  }
  $query = "SELECT apply_vertical_image_registration FROM capture_samples WHERE experiment_id = " . $experiment_id;
@@ -94,7 +92,7 @@ $query = "UPDATE experiments SET delete_captured_images_after_mask=" . ($delete_
  $apply_vertical_image_registration = $vir[0][0];
  //var_dump($vir);
  //die();
- $query = "SELECT v FROM constants WHERE k = 'mask_time=" . $experiment_id . "'";
+ $query = "SELECT mask_time FROM constants WHERE id=$experiment_id";
  //die($query);
  $sql->get_row($query,$res);
  //var_dump($res);die($res);
@@ -107,7 +105,7 @@ $query = "UPDATE experiments SET delete_captured_images_after_mask=" . ($delete_
  $delete_captured_images = $dci[0][0];
  $query = "SELECT control_strain_for_device_regression FROM experiments WHERE id = " . $experiment_id;
  $sql->get_row($query,$exps);
- 
+
  $cs = $exps[0][0];
  //die ($cs);
  $i = strpos($cs,";");
@@ -121,7 +119,7 @@ $query = "UPDATE experiments SET delete_captured_images_after_mask=" . ($delete_
    $control_region_hash[$control_regions[$i]] = '1';
  if (sizeof($control_regions) >= 1)
    $control_lifespan = $control_regions[sizeof($control_regions)-1];
- 
+
  $strain_posture_models = array();
  $strain_detection_models = array();
  $strain_position_models = array();
@@ -152,14 +150,14 @@ $strain = $exps[$i][1];
      if ($detail_level != 's1'){
        if ($exps[$i][3] != '')
 	 $strain .= "::" . $exps[$i][3];
-     } 
+     }
      if ($detail_level != 's12'){
        if ($exps[$i][4] != '')
 	 $strain .= "::" . $exps[$i][4];
      }
    }
    // echo $strain;
-   
+
    $region_strains[$exps[$i][0]] = array($exps[$i][1],$exps[$i][2],$exps[$i][3],$exps[$i][4]);
 
    if ($strain_posture_models[$strain] == '')
@@ -201,7 +199,7 @@ $strain = $exps[$i][1];
    $single_position_model_name="";
 }
  else{
- 
+
    $is_single_position_model = true;
    $single_position_model_name = "";
    //var_dump($strain_position_models);
@@ -209,7 +207,7 @@ $strain = $exps[$i][1];
    foreach ($strain_position_models as $s => $m){
      if ($single_position_model_name === ""){
        $single_position_model_name = $m;
-      
+
      }
      else if ($single_position_model_name != $m){
        //   die("e" . $single_position_model_name . "e");
@@ -231,21 +229,21 @@ $strain = $exps[$i][1];
      if      ($single_detection_model_name === "")
               $single_detection_model_name = $m;
      else if ( $single_detection_model_name != $m){
- 
+
        $is_single_detection_model = FALSE;
        break;
      }
    }
  }
- 
-  
+
+
  if ($_POST['set_posture_models']){
    if ($is_single_posture_model){
      $model_name = $_POST['single_posture_model_name'];
      $posture_analysis_method = $_POST['posture_analysis_method'];
      //die($posture_analysis_method);
      $query = "UPDATE sample_region_image_info as i, capture_samples as s SET posture_analysis_model ='$model_name',posture_analysis_method='$posture_analysis_method' WHERE i.sample_id = s.id AND s.experiment_id = $experiment_id";
-     // die($query); 
+     // die($query);
      $sql->send_query($query);
    }
    else{
@@ -257,7 +255,7 @@ $strain = $exps[$i][1];
 	 $model = $v;
 	 $strain_condition = "i.strain = '" .$st[0] . "'";
 	 if ($detail_level != 's'){
-	   
+
 	   $strain_condition .= " AND i.strain_condition_1 = '" . $st[1] . "'";
 	   if ($detail_level != 's1'){
 	     $strain_condition .=" AND i.strain_condition_2 = '" . $st[2] . "'";
@@ -266,13 +264,13 @@ $strain = $exps[$i][1];
 	 //	 	 echo $region_id . ": " . $model . "<br>";
 	$query =  " UPDATE sample_region_image_info as i, capture_samples as s SET posture_analysis_model ='$model',posture_analysis_method='$posture_analysis_method' WHERE $strain_condition AND i.sample_id = s.id AND s.experiment_id = $experiment_id";
 	//		echo $query . "<BR>";
-	
+
 	$sql->send_query($query);
        }
-	 
+
      }
    }
-     header("Location: manage_experiment_analysis_configuration.php?$query_parameters\n\n"); 
+     header("Location: manage_experiment_analysis_configuration.php?$query_parameters\n\n");
 
  }
 
@@ -292,7 +290,7 @@ $strain = $exps[$i][1];
 	 $model = $v;
 	 $strain_condition = "i.strain = '" .$st[0] . "'";
 	 if ($detail_level != 's'){
-	   
+
 	   $strain_condition .= " AND i.strain_condition_1 = '" . $st[1] . "'";
 	   if ($detail_level != 's1'){
 	     $strain_condition .=" AND i.strain_condition_2 = '" . $st[2] . "'";
@@ -301,10 +299,10 @@ $strain = $exps[$i][1];
 	 //	 	 echo $region_id . ": " . $model . "<br>";
 	$query =  " UPDATE sample_region_image_info as i, capture_samples as s SET position_analysis_model ='$model'  WHERE $strain_condition AND i.sample_id = s.id AND s.experiment_id = $experiment_id";
 	//		echo $query . "<BR>";
-	
+
 	$sql->send_query($query);
        }
-	 
+
      }
      //   die("");
    }
@@ -316,7 +314,7 @@ $strain = $exps[$i][1];
    if ($is_single_detection_model){
      $model_name = $_POST['single_detection_model_name'];
      $query = "UPDATE sample_region_image_info as i, capture_samples as s SET worm_detection_model ='$model_name' WHERE i.sample_id = s.id AND s.experiment_id = $experiment_id";
-   
+
    $sql->send_query($query);
    }
    else{
@@ -325,13 +323,13 @@ $strain = $exps[$i][1];
        if (substr($k,0,16) == "detection_modelZ"){
 	 $region_id = substr($k,16);
 	 $st = $region_strains[$region_id];
-	 
+
 	 $model = $v;
-	 
+
 	 $strain_condition = "i.strain = '" .$st[0] . "'";
    //echo $detail_level;
 	 if ($detail_level != 's'){
-	   
+
 	   $strain_condition .= " AND i.strain_condition_1 = '" . $st[1] . "'";
 	   if ($detail_level != 's1'){
 	     $strain_condition .=" AND i.strain_condition_2 = '" . $st[2] . "'";
@@ -343,11 +341,11 @@ $strain = $exps[$i][1];
 	$sql->send_query($query);
        }
        // die("");
-	 
+
      }
    }
    //   die("");
-     header("Location: manage_experiment_analysis_configuration.php?$query_parameters\n\n"); 
+     header("Location: manage_experiment_analysis_configuration.php?$query_parameters\n\n");
 
  }
  $back_url = "manage_samples.php?experiment_id=$experiment_id";
@@ -367,10 +365,10 @@ catch(ns_exception $ex){
 <table align="center" border="0" cellpadding="0" cellspacing="1" bgcolor="#000000"><tr><td><table border="0" cellpadding="4" cellspacing="0" width="100%"><tr <?php echo $table_header_color?> ><td colspan=2><b>Image Analysis Options</b></td></tr>
 
 <tr><td bgcolor="<?php echo $table_colors[1][0] ?>">Time Series Denoising</td><td bgcolor="<?php echo $table_colors[1][1] ?>">
-     
+
 <select name="time_series_median" style="width: 245px">
 <?php
-  
+
     foreach($ns_denoising_option_labels as $l => $v){
       echo "<option value=\"" . $v . "\" ";
       if($time_series_denoising_flag == $v) echo "selected";
@@ -386,14 +384,14 @@ catch(ns_exception $ex){
 <option value="do_not_apply"<?php if ($apply_vertical_image_registration == '0') echo "selected"?> >Do not apply vertical registration</option>
 <option value="apply" <?php if ($apply_vertical_image_registration == '1') echo "selected"?> >Appy vertical registration</option>
 </select></td></tr>
-		
+
 <tr><td bgcolor="<?php echo $table_colors[1][0] ?>">Delete Captured Images after Masking</td><td bgcolor="<?php echo $table_colors[1][1] ?>">
 
 <select name="delete_captured_images">
 <option value="do_not_delete"<?php if ($delete_captured_images == '0') echo "selected"?> >Do not delete captured images</option>
 <option value="delete" <?php if ($delete_captured_images == '1') echo "selected"?> >Delete Captured Images</option>
 </select></td></tr>
-		
+
 <tr><td bgcolor="<?php echo $table_colors[0][0] ?>">Maximum Number of Worms per Plate</td><td bgcolor="<?php echo $table_colors[0][1] ?>">
 	<?php output_editable_field("maximum_number_of_worms",$maximum_number_of_worms,true,5);?></td></tr>
 		<!--
@@ -410,10 +408,10 @@ catch(ns_exception $ex){
 					echo "/";
 					output_editable_field("end_day",$d,TRUE,2);
 					echo "/";
-					output_editable_field("end_year",$y,TRUE,4);	
-?>			       
+					output_editable_field("end_year",$y,TRUE,4);
+?>
 </td></tr>
-																							
+
 
 <tr><td bgcolor="<?php echo $table_colors[0][0] ?>" colspan=2>
 	<div align="right"><input name="set_denoising_options" type="submit" value="Set Analysis Options">
@@ -453,7 +451,7 @@ catch(ns_exception $ex){
       echo "</option>\n";
     }
 
-  ?>						
+  ?>
     </select>
 </td></tr>
     <tr><TD bgcolor="<?php echo $table_colors[1][0] ?>">Device Calibration Strain <br>Lifespan Mean</td><td bgcolor="<?php echo $table_colors[1][1] ?>">
@@ -488,7 +486,7 @@ catch(ns_exception $ex){
       <tr><td bgcolor="<?php echo $table_colors[0][0] ?>">All Plate Model:</td><TD bgcolor="<?php echo $table_colors[0][1] ?>">
 	<?php output_editable_field("single_posture_model_name",$single_posture_model_name,$number_of_regions>0,30);?>
 							     </td></tr>
-																	   <?php } else{?>			    
+																	   <?php } else{?>
 
 <tr><td bgcolor="<?php echo $table_colors[1][0] ?>">Strain Grouping</td><td bgcolor="<?php echo $table_colors[1][1] ?>">
 
@@ -496,12 +494,12 @@ catch(ns_exception $ex){
 <option value="s" <?php if ($detail_level == 's') echo "selected"?> >Just Strain</option>
 <option value="s1"<?php if ($detail_level == 's1') echo "selected"?> >Strain And Condition 1</option>
 <option value="s12"<?php if ($detail_level == 's12') echo "selected"?> >Strain and Conditions 1 and 2</option>
-<option value = "s123"<?php if ($detail_level == 's123' || $detail_level == '') echo "selected"?> >Strain And Conditions 1,2,and 3</option></select></td></tr>  
+<option value = "s123"<?php if ($detail_level == 's123' || $detail_level == '') echo "selected"?> >Strain And Conditions 1,2,and 3</option></select></td></tr>
 <?php
 	$c = 0;
      # var_dump($experiment_strains);
     foreach($experiment_strains as $strain => $region_id){
-	echo 
+	echo
 	"<tr><td bgcolor=\"".$table_colors[$c][0] . "\">$strain</td>" .
 	"<td bgcolor=\"" . $table_colors[$c][1] . "\">";
 	output_editable_field("posture_model_" . $region_id ,$strain_posture_models[$strain],$number_of_regions>0,30);
@@ -509,7 +507,7 @@ catch(ns_exception $ex){
 	$c =!$c;
     }
 
-  ?>					   
+  ?>
 	<?php }?>
 
 <tr><td bgcolor="<?php echo $table_colors[0][0] ?>" colspan=2>
@@ -531,7 +529,7 @@ catch(ns_exception $ex){
       <tr><td bgcolor="<?php echo $table_colors[0][0] ?>">All Plate Model:</td><TD bgcolor="<?php echo $table_colors[0][1] ?>">
 	<?php output_editable_field("single_detection_model_name",$single_detection_model_name,$number_of_regions>0,30);?>
 							     </td></tr>
-																							   <?php } else{?>			    
+																							   <?php } else{?>
 
 <tr><td bgcolor="<?php echo $table_colors[1][0] ?>">Strain Grouping</td><td bgcolor="<?php echo $table_colors[1][1] ?>">
 
@@ -540,11 +538,11 @@ catch(ns_exception $ex){
 <option value="s1"<?php if ($detail_level == 's1') echo "selected"?> >Strain And Condition 1</option>
 <option value="s12"<?php if ($detail_level == 's12') echo "selected"?> >Strain and Conditions 1 and 2</option>
 <option value = "s123"<?php if ($detail_level == 's123' || $detail_level == '') echo "selected"?> >Strain And Conditions 1,2,and 3</option></select></td></tr>
-  
+
 <?php
 	$c = 0;
     foreach($experiment_strains as $strain => $region_id){
-	echo 
+	echo
 	"<tr><td bgcolor=\"".$table_colors[$c][0] . "\">$strain</td>" .
 	"<td bgcolor=\"" . $table_colors[$c][1] . "\">";
 	output_editable_field("detection_modelZ" . $region_id ,$strain_detection_models[$strain],true,30);
@@ -552,7 +550,7 @@ catch(ns_exception $ex){
 	$c =!$c;
     }
 
-  ?>					   
+  ?>
 	<?php }?>
 
 <tr><td bgcolor="<?php echo $table_colors[0][0] ?>" colspan=2>
@@ -575,7 +573,7 @@ catch(ns_exception $ex){
       <tr><td bgcolor="<?php echo $table_colors[0][0] ?>">All Plate Model:</td><TD bgcolor="<?php echo $table_colors[0][1] ?>">
 	<?php output_editable_field("single_position_model_name",$single_position_model_name,$number_of_regions>0,30);?>
 							     </td></tr>
-																							   <?php } else{?>			    
+																							   <?php } else{?>
 
 <tr><td bgcolor="<?php echo $table_colors[1][0] ?>">Strain Grouping</td><td bgcolor="<?php echo $table_colors[1][1] ?>">
 
@@ -584,11 +582,11 @@ catch(ns_exception $ex){
 <option value="s1"<?php if ($detail_level == 's1') echo "selected"?> >Strain And Condition 1</option>
 <option value="s12"<?php if ($detail_level == 's12') echo "selected"?> >Strain and Conditions 1 and 2</option>
 <option value = "s123"<?php if ($detail_level == 's123' || $detail_level == '') echo "selected"?> >Strain And Conditions 1,2,and 3</option></select></td></tr>
-  
+
 <?php
 	$c = 0;
     foreach($experiment_strains as $strain => $region_id){
-	echo 
+	echo
 	"<tr><td bgcolor=\"".$table_colors[$c][0] . "\">$strain</td>" .
 	"<td bgcolor=\"" . $table_colors[$c][1] . "\">";
 	output_editable_field("position_modelZ" . $region_id ,$strain_position_models[$strain],true,30);
@@ -596,7 +594,7 @@ catch(ns_exception $ex){
 	$c =!$c;
     }
 
-  ?>					   
+  ?>
 	<?php }?>
 
 <tr><td bgcolor="<?php echo $table_colors[0][0] ?>" colspan=2>

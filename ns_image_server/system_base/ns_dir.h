@@ -68,6 +68,7 @@ class ns_dir{
 	static unsigned long get_free_disk_space(const std::string & path);
 
 	static double get_directory_size(const std::string & path, const std::string & du_path="du", const bool recurse=true);
+	static double get_file_size(const std::string file);
 
 	static const bool file_exists(const std::string & f);
 	static const bool file_is_writeable(const std::string & f);

@@ -734,12 +734,11 @@ int main(int argc, char * argv[]){
 	#ifdef NS_USE_INTEL_IPP
 	ippInit();
 	#endif
-
-
+	
+	
 	/*
-
 	try {
-		ns_opengl_test("c:\\server\\");
+		ns_openjpeg_test("Z:\\nstroustrup\\image_server_storage\\tst.tif", "Z:\\nstroustrup\\image_server_storage\\tst_lsm_");
 	}
 	catch (ns_ex & ex) {
 		std::cerr << ex.text() << "\n";

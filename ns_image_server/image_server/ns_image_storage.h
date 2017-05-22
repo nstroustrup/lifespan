@@ -15,7 +15,8 @@
 #include "ns_managed_pointer.h"
 
 #define NS_DEFAULT_JPEG_COMPRESSION .8
-#define NS_DEFAULT_JP2K_COMPRESSION .05
+#define NS_DEFAULT_JP2K_COMPRESSION 1.0/30.0
+#define NS_DEFAULT_JP2K_HD_COMPRESSION 1.0/16.0
 
 
 std::string ns_shorten_filename(std::string name, const unsigned long limit=40);

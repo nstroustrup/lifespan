@@ -717,7 +717,12 @@ void ns_image_processing_pipeline::process_region(const ns_image_server_captured
 	const bool allow_use_of_volatile_storage(false);
 	const bool report_file_activity_to_db(false);
 	bool had_to_use_volatile_storage;
-	
+
+	string hd_compression_rate = image_server_const.get_cluster_constant_value("jp2k_hd_compression_rate", ns_to_string(NS_DEFAULT_JP2K_HD_COMPRESSION), &sql);
+	float hd_compression_rate_f = atof(hd_compression_rate.c_str());
+	if (hd_compression_rate_f <= 0)
+		throw ns_ex("Invalid compression rate specified in jp2k_hd_compression_rate cluster constant: ") << hd_compression_rate_f;
+
 	ns_high_precision_timer tm;
 	try{
 		vector<char> operations = ops;
@@ -774,53 +779,89 @@ void ns_image_processing_pipeline::process_region(const ns_image_server_captured
 			//if we're doing worm detection on the image, we're going to need the spatial average image.
 			//So we must grab it from the pre-computed images.
 			bool unprocessed_loaded(false);
-			if (operations[ns_process_spatial]){
+			
+			if (operations[ns_process_spatial]) {
 
-				if (!attempt_to_preload(ns_process_spatial,precomputed_images,operations,spatial_average,sql)){
-				
-					ns_image_server_image unprocessed_image(region_image.request_processed_image(ns_unprocessed,sql));
-					ns_image_storage_source_handle<ns_8_bit> unprocessed_image_file(image_server_const.image_storage.request_from_storage(unprocessed_image,&sql));
-				
-					register_event(ns_process_spatial,unprocessed_image_file.input_stream().properties(),parent_event,false,sql);
-				
+				if (!attempt_to_preload(ns_process_spatial, precomputed_images, operations, spatial_average, sql)) {
+					ns_image_server_image unprocessed_image(region_image.request_processed_image(ns_unprocessed, sql));
+					ns_image_storage_source_handle<ns_8_bit> unprocessed_image_file(image_server_const.image_storage.request_from_storage(unprocessed_image, &sql));
+					unprocessed_image_file.input_stream().pump(unprocessed, _image_chunk_size);
+					unprocessed_loaded = true;
+
+					register_event(ns_process_spatial, unprocessed_image_file.input_stream().properties(), parent_event, false, sql);
+
 					tm.start();
-				
+
 					///internal binding used to link processing steps
 					///spatial averager -> next step in pipeline
-					ns_image_stream_binding<ns_spatial_median_calculator<ns_component,true>, ns_image_whole<ns_component> >
-							spatial_calc(spatial_averager,spatial_average,_image_chunk_size);
+					ns_image_stream_binding<ns_spatial_median_calculator<ns_component, true>, ns_image_whole<ns_component> >
+						spatial_calc(spatial_averager, spatial_average, _image_chunk_size);
 
-					unprocessed_image_file.input_stream().pump(unprocessed,_image_chunk_size);
-					unprocessed_loaded = true;
-					unprocessed.pump(spatial_calc,_image_chunk_size);
-				
-					ns_crop_lower_intensity<ns_component>(spatial_average,(ns_component)ns_worm_detection_constants::get(ns_worm_detection_constant::tiff_compression_intensity_crop_value,spatial_average.properties().resolution));
-				
+					unprocessed.pump(spatial_calc, _image_chunk_size);
 
-					//output an uncompressed spatially averaged copy to disk.
-					ns_image_server_image output_image = region_image.create_storage_for_processed_image(ns_process_spatial,ns_tiff,&sql);
-					ns_image_storage_reciever_handle<ns_component> r = image_server_const.image_storage.request_storage(
-																output_image,
-																ns_tiff, 1.0,_image_chunk_size,&sql,
-																had_to_use_volatile_storage,
-																report_file_activity_to_db,
-																allow_use_of_volatile_storage);
-					spatial_average.pump(r.output_stream(),_image_chunk_size);
-				
-					r.output_stream().init(ns_image_properties(0,0,0));
-				
+					ns_crop_lower_intensity<ns_component>(spatial_average, (ns_component)ns_worm_detection_constants::get(ns_worm_detection_constant::tiff_compression_intensity_crop_value, spatial_average.properties().resolution));
+
+
+					//output a spatially averaged copy to disk.
+					ns_image_server_image output_image = region_image.create_storage_for_processed_image(ns_process_spatial, ns_tiff, &sql);
+
+					if (0) {  
+						//do not compress spatial images: uses 3x more disk space for negliable improvement in image quality (and attendant increase in movement dection accuracy)
+						ns_image_storage_reciever_handle<ns_component> r = image_server_const.image_storage.request_storage(
+							output_image,
+							ns_tiff, 1.0, _image_chunk_size, &sql,
+							had_to_use_volatile_storage,
+							report_file_activity_to_db,
+							allow_use_of_volatile_storage);
+						spatial_average.pump(r.output_stream(), _image_chunk_size);
+
+					//	r.output_stream().init(ns_image_properties(0, 0, 0));
+					}
+					else {
+
+						ns_image_storage_reciever_handle<ns_component> r = image_server_const.image_storage.request_storage(
+							output_image,
+							ns_jp2k, hd_compression_rate_f, _image_chunk_size, &sql,
+							had_to_use_volatile_storage,
+							report_file_activity_to_db,
+							allow_use_of_volatile_storage);
+						spatial_average.pump(r.output_stream(), _image_chunk_size);
+						
+					}
 					output_image.mark_as_finished_processing(&sql);
 
-					image_server.register_job_duration(ns_process_spatial,tm.stop());
+					image_server.register_job_duration(ns_process_spatial, tm.stop());
 				}
 			}
-			if (!unprocessed_loaded && precomputed_images.worm_detection_needs_to_be_performed){
-					ns_image_server_image unprocessed_image(region_image.request_processed_image(ns_unprocessed,sql));
-					ns_image_storage_source_handle<ns_8_bit> unprocessed_image_file(image_server_const.image_storage.request_from_storage(unprocessed_image,&sql));
-					unprocessed_image_file.input_stream().pump(unprocessed,_image_chunk_size);
-					unprocessed_loaded = true;
-			}
 
+			if (!unprocessed_loaded && (precomputed_images.worm_detection_needs_to_be_performed || operations[ns_process_compress_unprocessed])) {
+				ns_image_server_image unprocessed_image(region_image.request_processed_image(ns_unprocessed, sql));
+				ns_image_storage_source_handle<ns_8_bit> unprocessed_image_file(image_server_const.image_storage.request_from_storage(unprocessed_image, &sql));
+				unprocessed_image_file.input_stream().pump(unprocessed, _image_chunk_size);
+				unprocessed_loaded = true;
+			}
+			if (operations[ns_process_compress_unprocessed]) {
+				
+				ns_image_server_image unprocessed_image(region_image.request_processed_image(ns_unprocessed, sql));
+			
+				ns_image_server_image old_im(unprocessed_image);
+				ns_image_type t(ns_get_image_type(unprocessed_image.filename));
+				if (t != ns_jp2k) {
+					unprocessed_image.filename = ns_dir::extract_filename_without_extension(unprocessed_image.filename);
+					unprocessed_image.filename += ".jp2";
+
+					string compression_rate = image_server_const.get_cluster_constant_value("jp2k_compression_rate", ns_to_string(NS_DEFAULT_JP2K_COMPRESSION), &sql);
+					float compression_rate_f = atof(compression_rate.c_str());
+					if (compression_rate_f <= 0)
+						throw ns_ex("Invalid compression rate specified in jp2k_compression_rate cluster constant: ") << compression_rate_f;
+					bool b;
+					ns_image_storage_reciever_handle<ns_8_bit> im_dest(image_server_const.image_storage.request_storage(
+						unprocessed_image, ns_jp2k, compression_rate_f, 1024, &sql, b, false, false));
+					unprocessed.pump(im_dest.output_stream(), 1024);
+					unprocessed_image.save_to_db(unprocessed_image.id, &sql);
+					image_server_const.image_storage.delete_from_storage(old_im, ns_delete_long_term, &sql);
+				}
+			}
 
 			//lossy stretch of dynamic range
 			if (operations[ns_process_lossy_stretch]){
@@ -1538,25 +1579,6 @@ void ns_image_processing_pipeline::calculate_static_mask_and_heat_map(const vect
 	}
 }
 
-/*void ns_image_processing_pipeline::calculate_temporal_interpolation(const vector<char> operations, ns_image_server_captured_image_region & region_image, ns_sql & sql){
-	
-	register_event(ns_process_temporal_interpolation,ns_image_server_event(),false,sql);
-
-	ns_worm_multi_frame_interpolation mfi;
-	mfi.clear_previous_interpolation_results(region_image.region_info_id,sql);
-
-	ns_image_standard heat_map;
-	mfi.load_all_region_worms(region_image.region_info_id,sql,true);
-	mfi.run_analysis(0,sql);
-	sql << "UPDATE sample_region_image_info SET temporal_interpolation_performed = " << image_server_const.host_id() << " WHERE id = " << region_image.region_info_id;
-	sql.send_query();
-	sql << "UPDATE sample_region_images SET currently_under_processing=0 WHERE region_info_id = " << region_image.region_info_id;
-	sql.send_query();
-	sql << "UPDATE worm_movement SET problem=0,calculated=0 WHERE region_info_id = " << region_image.region_info_id;
-	sql.send_query();
-	sql.send_query("COMMIT");
-}
-*/
 ///Creates a time-lapse video of the specified region.  A video is made for each of the specified processing steps.
 #ifndef NS_NO_XVID
 void ns_image_processing_pipeline::compile_video(ns_image_server_captured_image_region & region_image, const vector<char> operations,const ns_video_region_specification & region_spec, ns_sql & sql){
@@ -2279,14 +2301,14 @@ bool ns_image_processing_pipeline::preprocessed_step_required(const ns_processin
 	const ns_processing_task & s(might_be_needed);
 	switch(task_to_perform){
 		case ns_process_apply_mask: 
-		case ns_process_temporal_interpolation: 
+		case ns_process_compress_unprocessed:
 		case ns_process_thumbnail:
 		case ns_process_compile_video:
 		case ns_process_analyze_mask: 
 		case ns_process_heat_map:
 		case ns_process_static_mask:
 		case ns_process_last_task_marker:
-			return false;//throw ns_ex("Task found in inpropper context: ") << ns_processing_task_to_string(might_be_needed);
+			return false;
 		
 		case ns_unprocessed: return false;
 		case ns_process_spatial: return s==ns_unprocessed;

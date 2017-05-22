@@ -811,7 +811,7 @@ std::string ns_processing_step_directory_d(const ns_processing_task & task){
 		case ns_process_movement_coloring_with_graph:return "movement_graph";
 		case ns_process_heat_map:					return "heat_map";
 		case ns_process_static_mask:				return "static_mask";
-		case ns_process_temporal_interpolation:		return "temporal_interpolation";
+		case ns_process_compress_unprocessed:		return "temporal_interpolation";
 		case ns_process_movement_coloring_with_survival:return "movement_survival";
 			
 		case ns_process_movement_paths_visualization: return "movement_path_vis";
@@ -886,7 +886,7 @@ std::string ns_processing_task_to_string(const ns_processing_task & t){
 		case ns_process_movement_coloring_with_graph:	return "Movement Characterization with Graph";
 		case ns_process_heat_map:						return "Movement Heat Map";
 		case ns_process_static_mask:					return "Static Mask";
-		case ns_process_temporal_interpolation:			return "Temporal Interpolation";
+		case ns_process_compress_unprocessed:			return "Compress Unprocessed Image";
 		case ns_process_movement_coloring_with_survival:return "Movement Characterization with Survival";
 		case ns_process_movement_paths_visualization:	return "Movement Path Visualization";
 		case ns_process_movement_paths_visualition_with_mortality_overlay:	return "Movement Path Visualization with Mortality Overlay";

@@ -149,6 +149,30 @@ public:
 		return s;
 	}
 };
+double ns_dir::get_file_size(const std::string filename) {
+#ifdef _WIN32
+	//from https://stackoverflow.com/questions/8991192/check-filesize-without-opening-file-in-c
+	HANDLE hFile = CreateFile(filename.c_str(), GENERIC_READ,
+		FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING,
+		FILE_ATTRIBUTE_NORMAL, NULL);
+	if (hFile == INVALID_HANDLE_VALUE)
+		return -1; // error condition, could call GetLastError to find out more
+
+	LARGE_INTEGER size;
+	if (!GetFileSizeEx(hFile, &size))
+	{
+		CloseHandle(hFile);
+		return -1; // error condition, could call GetLastError to find out more
+	}
+
+	CloseHandle(hFile);
+	return size.QuadPart;
+#else
+	struct stat stat_buf;
+	int rc = stat(filename.c_str(), &stat_buf);
+	return rc == 0 ? stat_buf.st_size : -1;
+#endif
+}
 
 double ns_dir::get_directory_size(const std::string & path, const std::string & du_path, const bool recurse){
 	if (!ns_dir::file_exists(path))

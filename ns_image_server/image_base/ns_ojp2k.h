@@ -348,7 +348,7 @@ public:
 };
 
 void ns_jp2k_out_error_callback(const char *msg, void *client_data);
-
-void ns_opengl_test(const std::string & pathname);
+//run a diagnostic comparing different compression levels
+void ns_openjpeg_test(const std::string & input_filename, const std::string & output_basename);
 
 #endif

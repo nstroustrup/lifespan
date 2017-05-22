@@ -1,12 +1,12 @@
 <?php
 
 $ns_processing_tasks =  array(	'ns_unprocessed'=>0,
-				'ns_process_apply_mask' => 1,     
-				'ns_process_spatial'=>2, 
-				'ns_process_lossy_stretch'=>3, 
-				'ns_process_threshold'=>4 , 
+				'ns_process_apply_mask' => 1,
+				'ns_process_spatial'=>2,
+				'ns_process_lossy_stretch'=>3,
+				'ns_process_threshold'=>4 ,
 				'ns_process_resized_sample_image'=>5,
-				'ns_process_worm_detection'=>6, 
+				'ns_process_worm_detection'=>6,
 				'ns_process_worm_detection_labels'=>7,
 				'ns_process_worm_detection_with_graph'=>8,
 				'ns_process_region_vis'=>9,
@@ -23,7 +23,7 @@ $ns_processing_tasks =  array(	'ns_unprocessed'=>0,
 				'ns_process_movement_coloring_with_graph'=>20,
 				'ns_process_heat_map'=>21,
 				'ns_process_static_mask'=>22,
-				'ns_process_temporal_interpolation'=>23,
+				'ns_process_compress_unprocessed'=>23,
 				'ns_process_movement_coloring_with_survival'=>24,
 				'ns_process_movement_paths_visualization'=>25,
 				'ns_process_movement_paths_visualization_with_mortality_overlay'=>26,
@@ -31,18 +31,18 @@ $ns_processing_tasks =  array(	'ns_unprocessed'=>0,
 				'ns_process_movement_posture_aligned_visualization'=>28
 );
 
-$ns_processing_task_labels = array(0 =>'Unprocessed', 
-				   1 =>'Apply Mask',  
+$ns_processing_task_labels = array(0 =>'Unprocessed',
+				   1 =>'Apply Mask',
 				   2=>'Median Filter',
-				   3=>'Intensity Stretch', 
-				   4=>'Threshold', 
-				   5=>'Resized Small Image', 
-				   6=>'Worm Detection', 
-				   7=>'Worm Detection (Vis)' , 
+				   3=>'Intensity Stretch',
+				   4=>'Threshold',
+				   5=>'Resized Small Image',
+				   6=>'Worm Detection',
+				   7=>'Worm Detection (Vis)' ,
 				   8=>'Worm Detection (Graph)',
 				   9=>'Detected Object Data',
 				   10=>'Interpolated Region Visualization',
-				   11=>'Accepted Worm Visualization' , 
+				   11=>'Accepted Worm Visualization' ,
 				   12=>'Rejected Worm Visualization',
 				   13=>'Interpolated Worm Visualization',
 				   14=>'Add Detected Objects to Training Set',
@@ -54,7 +54,7 @@ $ns_processing_task_labels = array(0 =>'Unprocessed',
 				   20=>'Movement Coloring with Graph',
 				   21=>'Heat Map',
 				   22=>'Static Mask',
-				   23=>'Temporal Interpolation',
+				   23=>'Compress Unprocessed Image for archiving',
 				   24=>'Movement Coloring With Survival',
 				   25=>'Movement Paths Visualization',
 				   26=>'Movement Paths Vis with Mortality Overlay',
@@ -95,13 +95,13 @@ $ns_denoising_option_labels = array(
 		       "Normalize worm movement scores to individual's median"=>2,
 		       "Normalize worm movement scores to individual's 15% oldest median"=>3,
 		       "Normalize worm movement scores among all worms on a scanner"=>4);
-		       
+
 function ns_maintenance_task_order($is_region,$is_sample,$is_experiment){
   $r = array();
   global $ns_maintenance_tasks;
   if ($is_region){
     array_push($r,$ns_maintenance_tasks['ns_maintenance_rebuild_movement_data']);
-    array_push($r,$ns_maintenance_tasks['ns_maintenance_generate_animal_storyboard']);   
+    array_push($r,$ns_maintenance_tasks['ns_maintenance_generate_animal_storyboard']);
     array_push($r,$ns_maintenance_tasks['ns_maintenance_rebuild_movement_from_stored_image_quantification']);
     array_push($r,$ns_maintenance_tasks['ns_maintenance_generate_movement_posture_visualization']);
     array_push($r,$ns_maintenance_tasks['ns_maintenance_generate_movement_posture_aligned_visualization']);
@@ -188,7 +188,7 @@ class ns_processing_job{
 
 	public $id,
 	  $experiment_id,
-	  $sample_id, 
+	  $sample_id,
 	  $region_id,
 	  $image_id,
 	  $urgent,
@@ -217,7 +217,7 @@ class ns_processing_job{
 	  $subregion_width,
 	  $subregion_height,
 	  $maintenance_flag;
-	
+
 	function ns_processing_job(){
 		$this->operations = array();
 		$this->currently_under_processing = 0;
@@ -293,7 +293,7 @@ class ns_processing_job{
 	  for ($i = 1; $i <= $NS_LAST_PROCESSING_JOB; $i++)
 	    $this->operations[$i] = (int)$res[25+$i];
 	}
-	
+
 	function save_to_db($sql){
 		global $ddbug;
 		if ($ddbug=='') $ddebug = 0;
@@ -346,21 +346,21 @@ class ns_processing_job{
 		if ($this->experiment_id != 0){
 			$query = "SELECT name FROM experiments WHERE id='{$this->experiment_id}'";
 			$sql->get_value($query,$this->experiment_name);
-		}	
+		}
 		if ($this->sample_id != 0){
 			$query = "SELECT name FROM capture_samples WHERE id='{$this->sample_id}'";
 			$sql->get_value($query,$this->sample_name);
-		}	
+		}
 		if ($this->region_id != 0){
 			$query = "SELECT name FROM sample_region_image_info WHERE id='{$this->region_id}'";
 			$sql->get_value($query,$this->region_name);
-		}	
+		}
 		if ($this->maintenance_task == 0 && $this->image_id != 0){
 			$query = "SELECT filename, path FROM images WHERE id='{$this->image_id}'";
 			$sql->get_single_row($query,$p);
 			$this->image_filename = $p[0];
 			$this->image_path = $p[1];
-		}	
+		}
 		if ($this->processor_id != 0){
 			$query = "SELECT name FROM hosts WHERE id='{$this->processor_id}'";
 			$sql->get_row($query,$res);
@@ -368,7 +368,7 @@ class ns_processing_job{
 			  $this->processor_name = "(Unknown)";
 			}
 			else $this->processor_name = $res[0][0];
-		}	
+		}
 	}
 	//returns an array containing the number of images calculated.
 	//[0] is the total number of jobs pending and [i] is the number of jobs completed of the current task.
@@ -382,8 +382,8 @@ class ns_processing_job{
 	    $query = "SELECT SUM(image_id>0)";
 	    $query_suffix = " FROM sample_region_images WHERE region_info_id ='{$this->region_id}' AND censored = 0 ";
 	  //  $sql->get_value($base_query,$operations[0]);
-		
-	   
+
+
 	    for ($i = 1; $i <= $NS_LAST_PROCESSING_JOB; $i++){
 	      if ($i == $ns_processing_tasks['ns_process_heat_map'] ||
 		  $i == $ns_processing_tasks['ns_process_static_mask'] ||
@@ -391,7 +391,7 @@ class ns_processing_job{
 		  $i == $ns_processing_tasks['ns_process_analyze_mask']  ||
 		  $i == $ns_processing_tasks['ns_process_compile_video'])
 		continue;
-	   
+
 	      $query .= ",SUM(op{$i}_image_id > 0)";
 	    }
 	    $query .=$query_suffix;
@@ -412,7 +412,7 @@ class ns_processing_job{
 	    }
 	  // var_dump($operations);
 	  // die('');
-	
+
 	    $query = 'SELECT op' .  $ns_processing_tasks['ns_process_static_mask']
 	      .'_image_id, op' . $ns_processing_tasks['ns_process_heat_map']
 	      .'_image_id,path_movement_images_are_cached, latest_movement_rebuild_timestamp, last_timepoint_in_latest_movement_rebuild,time_path_solution_id  FROM sample_region_image_info WHERE id=' . $this->region_id ;
@@ -420,7 +420,7 @@ class ns_processing_job{
 	    $operations[-5] = $res[0][3];
 	    $operations[-6] = $res[0][4];
 	    $operations[-7] = $res[0][5];
-	    
+
 	    $query = 'SELECT count(*) FROM sample_region_images WHERE censored!=0 AND region_info_id = ' . $this->region_id;
 	    $sql->get_value($query,$operations[-2]);
 		$query = 'SELECT count(*) FROM sample_region_images WHERE problem!=0 AND region_info_id = ' . $this->region_id;
@@ -432,13 +432,13 @@ class ns_processing_job{
 	    $operations[$ns_processing_tasks['ns_process_static_mask']] = 1*($res[0][0] != '0');
 	    $operations[$ns_processing_tasks['ns_process_heat_map']] = 1*($res[0][1] != '0');
 	    $operations[$ns_path_image_task] = 1*($res[0][2] != '0');
-	    
+
 	    return $operations;
 	  }
 	  //to find the number of captured images masked, we take the number of masked captured images for the specified sample
 	  //and divide it by the number of captured images.
 	  else{
-	    
+
 	    $capture_query = "SELECT count(*) FROM captured_images WHERE sample_id = {$this->sample_id}";
 	    /*$sql->get_value($capture_query,$operations[-1]);
 	    $capture_query = "SELECT count(*) FROM captured_images WHERE sample_id = {$this->sample_id}";
@@ -451,11 +451,11 @@ class ns_processing_job{
 */
 
 		$query = "SELECT COUNT(*),COUNT(DISTINCT image_id), COUNT(DISTINCT small_image_id), SUM(censored>0), SUM(problem>0), SUM(currently_being_processed>0),SUM(mask_applied) FROM captured_images WHERE sample_id = {$this->sample_id}";
-		
+
 		$sql->get_row($query,$r);
 		$operations[-1] = $r[0][0];
 		$operations[0] = $r[0][1];
-		$operations[$ns_processing_tasks['ns_process_resized_sample_image']] = $r[0][2];  
+		$operations[$ns_processing_tasks['ns_process_resized_sample_image']] = $r[0][2];
 		//	$query2 = $capture_query . " AND censored!=0";
 		//	$sql->get_value($query2,$operations[-2]);
 		$operations[-2] = $r[0][3];
@@ -468,7 +468,7 @@ class ns_processing_job{
 	   	//$sql->get_value($query2,$operations[-4]);
 		//$query2 = $capture_query . " AND mask_applied != 0";
 	   	//$sql->get_value($query2,$operations[1]);
-	   
+
 
 
 	    // die (var_dump($this->sample_id));
@@ -476,7 +476,7 @@ class ns_processing_job{
       	  }
 	}
 
-	
+
 	function get_processing_state_description($only_sample_info,$sql){
 	  global $ns_processing_tasks,
 	    $ns_maintenance_task_labels;
@@ -489,7 +489,7 @@ class ns_processing_job{
 	  $time_path_solution_exists = (int)$complete[-7] > 0;
 	  // var_dump($complete);
 	  global $ns_processing_task_labels;
-	  
+
 	  $display = array();
 	  $number_of_operations = 0;
 	  if ($only_sample_info){
@@ -497,7 +497,7 @@ class ns_processing_job{
 	    $display[2] = $ns_processing_tasks['ns_process_apply_mask'];
 	    $display[1] = $ns_processing_tasks['ns_process_resized_sample_image'];
 	  }
-	  else{ 
+	  else{
 	    $display[0] = $ns_processing_tasks['ns_process_resized_sample_image'];
 	    $display[1]=$ns_processing_tasks['ns_process_spatial'];
 	    $display[2]=$ns_processing_tasks['ns_process_lossy_stretch'];
@@ -519,7 +519,7 @@ class ns_processing_job{
 	    $display[17]=$ns_processing_tasks['ns_process_movement_paths_visualization_with_mortality_overlay'];
 	    $display[18]=$ns_processing_tasks['ns_process_movement_posture_visualization'];
 	    $display[18]=$ns_processing_tasks['ns_process_movement_posture_aligned_visualization'];
-	    
+
 	  }
 
 	  $complete[$ns_processing_tasks["ns_process_movement_coloring"]]*=2;
@@ -530,7 +530,7 @@ class ns_processing_job{
 
 	  //static mask and heat map are all or nothing.
 	  $complete[$ns_processing_tasks["ns_process_static_mask"]]*=$complete[0];
-   
+
 	  $complete[$ns_processing_tasks["ns_process_heat_map"]]*=$complete[0];
 
 	  $number_of_operations = 0;
@@ -565,10 +565,10 @@ class ns_processing_job{
 	     $images_present = TRUE;
 	    if ($number_of_columns > 1 && $j == $a)
 	      $res .="</table>\n</td><td>&nbsp;</td><td valign=\"top\">\n<table cellspacing=0 cellpadding=0 valign=\"top\">";
-	    
+
 	    $res .= "<tr><td><font face=\"Arial\" size=\"-2\">".  $ns_processing_task_labels[$display[$i]] . "&nbsp;</font></td><td>";
-	    
-	    
+
+
 	    $res .=  "<font size=\"-2\">" . $vals[$i]. /*"%(" . $complete[$display[$i]] . "/" . $complete[0] . ")*/"</font></td></tr>\n";
 	    $j++;
 	  }
@@ -577,7 +577,7 @@ class ns_processing_job{
 	      $res .= "<tr><td valign=\"top\"><font face=\"Arial\" size=\"-2\">Movement Last Calculated &nbsp;</font></td><td>";
 	      $res .=  "<font size=\"-2\">";
 	      if ($complete[$ns_path_image_task] != 0){
-		
+
 		$res .= format_time($movement_analysis_rebuild_timestamp);
 		$res .= "<br>Up to time " . format_time($movement_analyisis_last_timepoint);
 	      }
@@ -587,11 +587,11 @@ class ns_processing_job{
 		$res.="<BR><font size=\"-2\" color=\"#FF0000\">(time path solution appears lost) </font>";
 	      }
 	      $res.="</td></tr>\n";
-	       
+
 	      $count_column = 0;
 	    }
 	    else $count_column = -1;
-		
+
 		$res .= "<tr><td><font face=\"Arial\" size=\"-2\"> <i>Censored </i>&nbsp; </font></td><td>";
 		$res .=  "<font size=\"-2\">" . floor(10000*$complete[-2]/($complete[-2]+$complete[$count_column])/100). "%</font></td></tr>\n";
 		$res .= "<tr><td><font face=\"Arial\" size=\"-2\"> <i>Problem </i>&nbsp; </font></td><td>";
@@ -605,11 +605,11 @@ class ns_processing_job{
 	  return $res;
 	}
 
-    
+
 	function get_job_description($sql,$show_subject_data=FALSE){
 	  global $ns_processing_tasks,
 	    $ns_maintenance_task_labels;
-       
+
 	  global $ns_processing_task_labels,
 		$ns_maintenance_flag_labels;
 
@@ -617,7 +617,7 @@ class ns_processing_job{
 	  for ($i = 0; $i < sizeof($this->operations);$i++)
 	    if ($this->operations[$i] != 0 && $i != $ns_processing_tasks['ns_processing_compile_video'])
 	      $number_of_operations++;
-	 
+
 	  $number_of_columns = 1;
 	  if ($number_of_operations > 4)
 	    $number_of_columns++;
@@ -657,10 +657,10 @@ class ns_processing_job{
 	    $vid = 1;
 	    $res .= "<tr><td colspan=\"$number_of_columns\">\n<font size=\"-1\">Compile Video";
 		if ($this->subregion_position_x != 0 || $this->subregion_position_y != 0 || $this->subregion_width != 0 || $this->subregion_height != 0){
-				echo "<br>Position: ({$this->subregion_position_x},{$this->subregion_position_y})<br>Size: (" . $this->subregion_width . "," .$this->subregion_height . ")"; 
+				echo "<br>Position: ({$this->subregion_position_x},{$this->subregion_position_y})<br>Size: (" . $this->subregion_width . "," .$this->subregion_height . ")";
 			}
 	   $res.="</font>\n</td></tr>\n";
-	  } 
+	  }
 	if ($show_subject_data){
 	    $res .= "<tr><td colspan=\"$number_of_columns\">\n<font size=\"-1\">Subject: ";
 		$res .= $this->experiment_name . "::" . $this->sample_name;
@@ -682,17 +682,17 @@ class ns_processing_job{
 		$res.="<tr><td>\n<font size=\"-1\">";
 		//$res.=var_dump($this->operations);
 		for ($i = 0; $i < sizeof($this->operations); $i++){
-			if ($this->operations[(int)$i] == 0 || 
+			if ($this->operations[(int)$i] == 0 ||
 				$i == $ns_processing_tasks["ns_process_compile_video"]){
 				continue;
 				}
-		
+
 			if ($number_of_columns > 1 && $order == $a)
 				$res .="</font>\n</td><td>\n<font size=\"-1\"> ";
-	
+
 			$res .= $order . ". " .  $ns_processing_task_labels[$i] . "<br>";
 			$order++;
-			
+
 		}
 		$res .= "</font>\n</td></tr>\n";
 	}
@@ -732,7 +732,7 @@ function ns_delete_images_from_database($experiment_id,$sample_id,$region_id,$im
   $job->region_id = $region_id;
   $job->image_id = $image_id;
   $job->urgent = 2;
-  $job->time_submitted = ns_current_time(); 
+  $job->time_submitted = ns_current_time();
  if ($experiment_id == 0 && $sample_id == 0 && $region_id!=0 && $image_id == 0){
 //	die("WHOOP!");
 	$job->maintenance_flag = $ns_maintenance_flags['ns_delete_entire_sample_region'];

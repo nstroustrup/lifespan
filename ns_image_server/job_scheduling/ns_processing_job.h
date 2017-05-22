@@ -85,8 +85,7 @@ struct ns_processing_job{
 
 		bool whole_job =	operations[(unsigned int)ns_process_compile_video] != 0 ||
 							operations[(unsigned int)ns_process_heat_map] != 0 ||
-							operations[(unsigned int)ns_process_static_mask] != 0 ||
-							operations[(unsigned int)ns_process_temporal_interpolation];
+							operations[(unsigned int)ns_process_static_mask] != 0;
 		if (image_id != 0)
 			return (t == ns_image_job);
 

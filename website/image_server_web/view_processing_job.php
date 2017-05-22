@@ -1,6 +1,6 @@
 <?php
 require_once('worm_environment.php');
-require_once('ns_dir.php');	
+require_once('ns_dir.php');
 //require_once('ns_external_interface.php');
 require_once('ns_experiment.php');
 require_once('ns_processing_job.php');
@@ -17,13 +17,14 @@ $region_processing_jobs_to_display = array($ns_processing_tasks['ns_process_spat
 $ns_processing_tasks['ns_process_threshold'],
 $ns_processing_tasks['ns_process_worm_detection'],
 $ns_processing_tasks['ns_process_worm_detection_labels'],
-					   $ns_processing_tasks['ns_process_add_to_training_set'],
+$ns_processing_tasks['ns_process_compress_unprocessed'],
+$ns_processing_tasks['ns_process_add_to_training_set'],
 $ns_processing_tasks['ns_process_movement_paths_visualization'],
 				$ns_processing_tasks['ns_process_movement_paths_visualization_with_mortality_overlay']);
 try{
- 
 
-  $jobs = array();		
+
+  $jobs = array();
   $job_id = @$query_string['job_id'];
   $hide_entire_region_job = @$query_string['hide_entire_region_job'];
   $specified_experiment_id = @(int)$query_string['experiment_id'];
@@ -38,7 +39,7 @@ try{
   $condition_2_specified = isset($query_string['condition_2']);
   $condition_3_specified = isset($query_string['condition_3']);
   $device_specified = isset($query_string['device']);
-  
+
   $culturing_temperature_specified = isset($query_string['culturing_temperature']);
   $experiment_temperature_specified = isset($query_string['experiment_temperature']);
   $food_source_specified = isset($query_string['food_source']);
@@ -91,16 +92,16 @@ else{
 	$region_id = $specified_region_id;
 	$image_id = $specified_image_id;
 }
-$IS_EXPERIMENT = 0; 
+$IS_EXPERIMENT = 0;
 $IS_SAMPLE = 1;
 $IS_REGION = 2;
- 
+
   if (  ($experiment_id != 0  || $specified_all_experiments ||
 	 $specified_experiment_list)
-	&& ($sample_id === 0 && !$specified_all_samples    ) 
+	&& ($sample_id === 0 && !$specified_all_samples    )
 	&& ($region_id === 0  && !$specified_all_regions    ))
-	$job_type = $IS_EXPERIMENT;  
-else if (  ($sample_id !== 0  || $specified_all_samples    ) 
+	$job_type = $IS_EXPERIMENT;
+else if (  ($sample_id !== 0  || $specified_all_samples    )
 	&& ($region_id === 0  && !$specified_all_regions    ))
 	$job_type = $IS_SAMPLE;
 else if ($region_id != 0  || $specified_all_regions)
@@ -146,18 +147,18 @@ if ($specified_experiment_list){
 	for ($i = 0; $i < sizeof($enames); $i++){
 		$experiment_name_hash[$enames[$i][0]] = $enames[$i][1];
 	}
-  }  
+  }
 }
 //var_dump($experiments_to_process);
  if (sizeof($experiments_to_process) > 0){
    $append_experiment_name_to_sample = 0;//sizeof($experiments_to_process) > 1;
-  
+
    $request_type = "experiment";
 
 
     for ($i = 0; $i < sizeof($experiments_to_process); $i++){
 	$query = "SELECT id, name FROM capture_samples WHERE experiment_id = " . $experiments_to_process[$i];
-	
+
 	$sql->get_row($query,$snames);
 	if ($append_experiment_name_to_sample){
 		for ($j = 0; $j < sizeof($snames); $j++){
@@ -176,7 +177,7 @@ if ($specified_experiment_list){
    $sql->get_row($query,$rnames);
    for ($i = 0; $i < sizeof($rnames); $i++)
       $region_name_hash[$rnames[$i][0]] = $rnames[$i][1] . "::" . $rnames[$i][2];*/
-    
+
   }
 
 
@@ -216,23 +217,23 @@ $region_strain_condition_2 = array();
  $region_environment_conditions = array();
 
  if ($specified_all_regions){
-   
+
    $request_type = "region";
 
    $k = 0;
    for ($j = 0; $j < sizeof($samples_to_process); $j++){
      $cur_sample = $samples_to_process[$j];
-    
+
      if ($include_censored==0 || $include_censored==='') $censored_string = 'ri.censored=0 AND';
-     
+
      if ($include_censored==2) $censored_string = 'ri.censored=1 AND';
      $conditions_string = '';
      //  die ($censored_string);
-     if ($strain_specified) 
+     if ($strain_specified)
        $conditions_string .= "STRCMP(LOWER(ri.strain),LOWER('".mysql_real_escape_string($strain_specification)."'))=0 AND ";
      if ($condition_1_specified)
        $conditions_string .= "STRCMP(LOWER(ri.strain_condition_1),LOWER('".mysql_real_escape_string($condition_1)."'))=0 AND ";
-     
+
       if ($condition_2_specified)
 	$conditions_string.= "STRCMP(LOWER(ri.strain_condition_2),LOWER('".mysql_real_escape_string($condition_2)."'))=0 AND ";
      ;
@@ -241,19 +242,19 @@ $region_strain_condition_2 = array();
 
       if ($device_specified)
 	$conditions_string .= "STRCMP(LOWER(s.device_name),LOWER('".mysql_real_escape_string($device)."'))=0 AND ";
-   
+
       if ($culturing_temperature_specified)
 	$conditions_string .= "STRCMP(LOWER(ri.culturing_temperature),LOWER('".mysql_real_escape_string($culturing_temperature)."'))=0 AND ";
-     
+
       if ($experiment_temperature_specified)
 	$conditions_string .= "STRCMP(LOWER(ri.experiment_temperature),LOWER('".mysql_real_escape_string($experiment_temperature)."'))=0 AND ";
-     
+
       if ($food_source_specified)
 	$conditions_string .= "STRCMP(LOWER(ri.food_source),LOWER('".mysql_real_escape_string($food_source)."'))=0 AND ";
 
       if ($environment_conditions_specified)
 	$conditions_string .= "STRCMP(LOWER(ri.environmental_conditions),LOWER('".mysql_real_escape_string($environment_conditions)."'))=0 AND ";
-    
+
 
       $query = "SELECT ri.id, s.id,s.experiment_id, ri.name, ri.time_at_which_animals_had_zero_age,ri.time_of_last_valid_sample, ri.strain, ri.strain_condition_1,ri.strain_condition_2, ri.strain_condition_3, ri.culturing_temperature,ri.experiment_temperature,ri.food_source,ri.environmental_conditions FROM sample_region_image_info as ri, capture_samples as s WHERE $censored_string $strain_string $conditions_string ri.sample_id=" . $cur_sample . " AND ri.sample_id = s.id";
       // die($query);
@@ -298,7 +299,7 @@ $region_strain_condition_2 = array();
 	    $jobs[$k]->region_id = $region_ids[$i][0];
 	  $jobs[$k]->sample_id = $region_ids[$i][1];
 	  $jobs[$k]->experiment_id = $region_ids[$i][2];
-	    $jobs[$k]->id = 0; 
+	    $jobs[$k]->id = 0;
 	  }
 	  else{
 	    //attach to existing jobs
@@ -315,7 +316,7 @@ $region_strain_condition_2 = array();
 	    $k--;
 	  }
 	}
-	
+
 	$jobs[$k]->maintenance_task = $_POST['maintenance_task'];
 	$jobs[$k]->maintenance_flag = $_POST['maintenance_flag'];
 	//echo $jobs[$i]->region_id . ": " . $jobs[$i]->sample_id . ':' . $jobs[$i]->experiment_id . "<BR>";
@@ -328,7 +329,7 @@ $region_strain_condition_2 = array();
   $k=0;
   //if we're creating a sample job to run on specified samples
   if (sizeof($samples_to_process) > 0 && !$specified_all_regions){
-    
+
     $request_type = "sample";
     for ($i = 0; $i < sizeof($samples_to_process); $i++){
 
@@ -370,34 +371,34 @@ $region_strain_condition_2 = array();
 //echo "JOB SIZE = " . sizeof($jobs);
   //look for jobs that are attached only to a single region
   if (!$specified_all_regions && $region_id > 0 && !$job_specified){
-    
+
     $request_type = "region";
-    
+
     if (!$all_new){
       $query = "SELECT id FROM processing_jobs WHERE region_id = " . $region_id;
       $sql->get_row($query,$extant_jobs);
     }
-    
+
     $query = "SELECT cs.id, cs.name, r.name, r.time_at_which_animals_had_zero_age,r.time_of_last_valid_sample FROM capture_samples as cs,sample_region_image_info as r WHERE r.id=$region_id AND cs.id = r.sample_id";
     $sql->get_row($query,$smp_name);
     if (sizeof($smp_name) == 0)
       die("No sample name found for region");
-    
+
     $region_start_times[$region_id] = $smp_name[0][3];
     $region_end_times[$region_id] = $smp_name[0][4];
     $region_name_hash[$region_id] = $smp_name[0][2];
     // echo $query . "::" . sizeof($extant_jobs);
     //die($extant_jobs);
-    
+
     if (sizeof($extant_jobs) != 0){
-      
+
       for ($i = 0; $i < sizeof($extant_jobs); $i++){
 	$jobs[$i] = new ns_processing_job;
 	$jobs[$i]->id = $extant_jobs[$i][0];
 	// die($jobs[$i]->id);
 	$jobs[$i]->load_from_db($jobs[$i]->id,$sql);
 	$jobs[$i]->get_names($sql);
-	
+
 	//$jobs[$i]->sample_id = $smp_name[0][0];
 	//$jobs[$i]->region_id = $region_id;
 	//	var_dump($smp_name);
@@ -424,9 +425,9 @@ $region_strain_condition_2 = array();
       $jobs[$i]->maintenance_task = $_POST['maintenance_task'];
       $jobs[$i]->maintenance_flag = $_POST['maintenance_flag'];
     }
-    
+
   }
-  
+
   //if we're creating a job to run on a single region
   //on a single sample, or a single experiment
   if (sizeof($samples_to_process) == 0){
@@ -452,21 +453,21 @@ $region_strain_condition_2 = array();
 	if ($jobs[0]->sample_id == '')		$jobs[0]->sample_id = 0;
 	if ($jobs[0]->region_id == '')		$jobs[0]->region_id = 0;
 	if ($jobs[0]->image_id == '')		$jobs[0]->image_id = 0;
-	
+
 	if ($region_id != 0 && $sample_id == 0){
 	  //  die("WHA")
 	  $query = "SELECT sample_id FROM sample_region_image_info WHERE id=$region_id";
 	  $sql->get_row($query,$res);
 	  $jobs[0]->sample_id = $res[0][0];
-	  
+
 	}
       }
     }
-    
+
     //var_dump($jobs[0]->operations); die("");
   }
   $query_parameters = $_SERVER['QUERY_STRING'];
-  
+
   $pos = strpos($query_parameters,"include_censored=");
   // die(":".$pos);
   if ($pos === FALSE)
@@ -492,13 +493,13 @@ $region_strain_condition_2 = array();
       $region_id = '';
     $query = "UPDATE experiments SET control_strain_for_device_regression = '" . $region_id . "' WHERE id = " . $experiment_id;
     //echo $query
-    
+
     $sql->send_query($query);
-    
-    
+
+
   }
   */
-  
+
   if ($job_type == $IS_EXPERMENT){
     foreach($experiments_to_process as $e){
     $query = "SELECT r.id,r.strain, r.strain_condition_1,r.strain_condition_2,r.strain_condition_3 "
@@ -515,7 +516,7 @@ $region_strain_condition_2 = array();
       }
    // $query = "SELECT control_strain_for_device_regression FROM experiments WHERE id = " . $experiment_id;
   //  $sql->get_row($query,$exps);
-    
+
   //  $experiment_control_strain = $exps[0][0];
     }
   }
@@ -537,7 +538,7 @@ $region_strain_condition_2 = array();
   if ($_POST['censor_none']){
     for ($i = 0; $i < sizeof($jobs); $i++){
       if ($jobs[$i]->region_id != 0){
-    
+
 	$query = "UPDATE sample_region_images SET censored=0 WHERE region_info_id= " . $jobs[$i]->region_id;
 	$sql->send_query($query);
       }
@@ -604,7 +605,7 @@ $region_strain_condition_2 = array();
     $experiment_temperature = $_POST['experiment_temperature'];
     $food_source = $_POST['food_source'];
     $environment_conditions = $_POST['environment_conditions'];
-    
+
     $set_strain = $_POST['set_strain']=='1';
     $set_strain_condition_1 = $_POST['set_strain_condition_1']=='1';
     $set_strain_condition_2 = $_POST['set_strain_condition_2']=='1';
@@ -629,7 +630,7 @@ $region_strain_condition_2 = array();
     if ($set_environment_conditions) array_push($vals,"environmental_conditions='" .mysql_real_escape_string($environment_conditions)."'");
     if ($set_start_time) array_push($vals,"time_at_which_animals_had_zero_age='$start_time'");
     if ($set_end_time_date)   array_push($vals,"time_of_last_valid_sample='$end_time_date'");
-    
+
     if ($set_end_time_age){
       $time_in_seconds = floor($end_time_age*60*60*24);
       array_push($vals,"time_of_last_valid_sample=time_at_which_animals_had_zero_age + " . $time_in_seconds);
@@ -662,7 +663,7 @@ $region_strain_condition_2 = array();
     //   die("YES");
   //else die("NO");
 
-  
+
   if ($_POST['pause_job'] || $_POST['unpause_job']){
     $paused = ($_POST['pause_job']!='')?"1":"0";
 
@@ -683,26 +684,26 @@ $region_strain_condition_2 = array();
   if ($_POST['cancel_captures']){
     $sample_ids = array();
     $device_names = array();
-    
+
 for ($i = 0; $i < sizeof($jobs); $i++){
       $e_id = $jobs[$i]->experiment_id;
       if ($e_id == 0)
 	throw ns_exception("No experiment id specified for job!");
-      
+
       //echo var_dump($jobs[$i]);
       if ($jobs[$i]->region_id != 0){
 	$query = "SELECT r.sample_id, s.device_name FROM sample_region_image_info as r, capture_samples as s WHERE r.id = " . $jobs[$i]->region_id . " AND s.id = r.sample_id";
 	$sql->get_row($query,$res);
 	if (sizeof($res) == 0)
 	  throw ns_exception("Could not find sample for region " . $jobs[$i]->region_id);
-	
+
 	$sample_ids[$res[0][0]] = 1;
 	$device_names[$res[0][1]] = 1;
       }
       if ($jobs[$i]->sample_id != 0){
 	$query = "SELECT device_name FROM capture_samples WHERE id = " . $jobs[$i]->sample_id;
 	$sql->get_row($query,$res);
-	
+
 	if (sizeof($res)==0)
 	  throw ns_exception("Could not find sample id " . $jobs[$i]->sample_id);
 	$sample_ids[$jobs[$i]->sample_id] = 1;
@@ -719,7 +720,7 @@ for ($i = 0; $i < sizeof($jobs); $i++){
     }
     $lock_cs = "LOCK TABLES capture_schedule WRITE";
     $unlock_cs = "UNLOCK TABLES";
-    
+
     $sql->send_query($lock_cs);
     foreach ($sample_ids as $sample_id => $d){
       $query = "UPDATE capture_schedule SET censored=1 WHERE sample_id='$sample_id' AND time_at_start='0' AND missed='0'";
@@ -727,17 +728,17 @@ for ($i = 0; $i < sizeof($jobs); $i++){
       $sql->send_query($query);
     }
     $sql->send_query($unlock_cs);
-    
-    foreach($device_names as $device_name=>$d){  
+
+    foreach($device_names as $device_name=>$d){
       $query = "DELETE FROM autoscan_schedule WHERE device_name ='" . $device_name . "'";
       //echo $query . "<br>";
-      $sql->send_query($query); 
+      $sql->send_query($query);
     }
     header("Location: $back_url\n\n");
     die("");
-  } 
+  }
   if ($_POST['delete_experiment_processed_data'] != ''){
-  
+
     for ($i = 0; $i < sizeof($jobs); $i++){
       $e_id = $jobs[$i]->experiment_id;
       if ($e_id == 0)
@@ -749,9 +750,9 @@ for ($i = 0; $i < sizeof($jobs); $i++){
 	$job->time_submited = ns_current_time();
 	for ($d = 0; $d < sizeof($file_deletion_job->operations); $d++)
 	  $job->operations[$d] = 0;
-	
+
 	$job->experiment_id = $e_id;
-	$job->image_id = 1;  //we put this here to prevent old 
+	$job->image_id = 1;  //we put this here to prevent old
 	//versions of the image server from inappropriately
 	//deleting whole experiments when they don't check for
 	//the "delete everything but raw data" flag.
@@ -765,12 +766,12 @@ for ($i = 0; $i < sizeof($jobs); $i++){
     die("");
   }
   if ($_POST['retry_transfer_to_long_term_storage'] !=''){
-    
+
     for ($i = 0; $i < sizeof($jobs); $i++){
       $e_id = $jobs[$i]->experiment_id;
       if ($e_id == 0)
 	throw ns_exception("No experiment id specified for job!");
-      
+
      //echo var_dump($jobs[$i]);
       if ($jobs[$i]->region_id != 0)
 	throw ns_exception("Cannot schedule a cache transfer jobon a region!");
@@ -779,7 +780,7 @@ for ($i = 0; $i < sizeof($jobs); $i++){
       else if ($jobs[$i]->experiment_id != 0)
 	ns_attempt_to_retry_transfer_to_long_term_storage(0,"",$jobs[$i]->experiment_id,$sql);
     }
-    
+
     header("Location: $back_url\n\n");
     die("");
   }
@@ -803,8 +804,8 @@ for ($i = 0; $i < sizeof($jobs); $i++){
     }
     $sql->send_query($ed);
     $sql->send_query($unlock_tables_query);
- 
-  
+
+
     //$sql->send_query($lock_jobs_query);
     //$sql->send_query($bg);
    for ($i = 0; $i < sizeof($jobs); $i++){
@@ -843,7 +844,7 @@ for ($i = 0; $i < sizeof($jobs); $i++){
     ns_update_job_queue($sql);
     header("Location: $back_url\n\n");
    die("");
-  }	
+  }
   //see if any image processing steps have been requested cleare
   $operations_to_clear = array_fill(0,$NS_LAST_PROCESSING_JOB+1,0);
 
@@ -858,8 +859,8 @@ for ($i = 0; $i < sizeof($jobs); $i++){
   //if the user has requested a deletion of an entire sample region, do so.
   if (($clear_region != '' || $delete_sample_images != '')&&  sizeof($samples_to_process) != 0){
     $sample_regions = array();
-    
-    
+
+
 	if (!$live_dangerously)
 	throw new ns_exception("I can't let you do that Dave!  (Enable dangerous operations to continue)");
 
@@ -868,10 +869,10 @@ for ($i = 0; $i < sizeof($jobs); $i++){
       //echo $query . "<BR>";
       $sql->get_row($query,$sample_regions[$i]);
     }
-    
+
     $sql->send_query($lock_jobs_query,TRUE);
     for ($i = 0; $i < sizeof($samples_to_process); $i++){
-      
+
       if ($delete_files_from_disk){
 	//make a processing job for the sample--this will allow us to delete all temprary data later on.
 	$job = new ns_processing_job();
@@ -880,28 +881,28 @@ for ($i = 0; $i < sizeof($jobs); $i++){
 	$job->time_submited = ns_current_time();
 	for ($d = 0; $d < sizeof($file_deletion_job->operations); $d++)
 	  $job->operations[$d] = 0;
-	
+
 	if ($delete_sample_images!=''){
 	  $job->sample_id = $samples_to_process[$i];
 	  $job->save_to_db($sql);
-	  
-	  
+
+
 	  //  ns_delete_sample_from_database($samples_to_process[$i],$sql);
 	}
 	else if ($clear_region !=''){
-	  for ($b = 0; $b < sizeof($sample_regions[$i]); $b++){  
+	  for ($b = 0; $b < sizeof($sample_regions[$i]); $b++){
 	    $file_deletion_job = clone $job;
 	    $file_deletion_job->region_id = $sample_regions[$i][$b][0];
 	    $file_deletion_job->save_to_db($sql);
-	    
+
 	    ns_delete_region_from_database($sample_regions[$i][$b][0],$sql);
 	  }
-       
+
 	}
 	else{
 	  throw new ns_ex("Unknown error!");
 	}
-	
+
       }
     }
     $sql->send_query($unlock_tables_query);
@@ -912,10 +913,10 @@ for ($i = 0; $i < sizeof($jobs); $i++){
 	$sql->send_query($query);
       }
     }
- 
 
-    
-    
+
+
+
     ns_update_job_queue($sql);
     if(!($clear_region == ''))
       $operations_to_clear = array_fill(0,$NS_LAST_PROCESSING_JOB,1); //this will trigger deletion of all temporary images in the region
@@ -929,7 +930,7 @@ for ($i = 0; $i < sizeof($jobs); $i++){
   if ($job_type == $IS_REGION){
     for ($i = 0; $i <= $ns_processing_tasks['ns_process_worm_detection']; $i++){
       if ($operations_to_clear[$i] == 1 && $i != $ns_processing_tasks['ns_process_lossy_stretch']){
-	
+
 	for ($j = $i+1; $j <= $NS_LAST_PROCESSING_JOB; $j++){
 	  if ($operations_to_clear[$j] == 0)
 	    $operations_to_clear[$j] = 2;
@@ -937,7 +938,7 @@ for ($i = 0; $i < sizeof($jobs); $i++){
 	break;
       }
     }
-    
+
     //deleting worm detection jobs should delete all later jobs
     //var_dump($operations_to_clear);
     //die("");
@@ -951,16 +952,16 @@ for ($i = 0; $i < sizeof($jobs); $i++){
 	  $operations_to_clear[$j] = 2;
       }
     }
-    
+
     if ($operations_to_clear[$ns_processing_tasks['ns_process_movement_coloring']]==1){
       for ($j = $ns_processing_tasks['ns_process_movement_coloring']+1; $j <= $NS_LAST_PROCESSING_JOB; $j++){
 	if ($operations_to_clear[$j] == 0)
 	  $operations_to_clear[$j] = 2;
       }
     }
-    
-    
-    
+
+
+
     //make sure that static masks, heat maps, and temporal interpolation are deleted only explicitly.
     if ($operations_to_clear[$ns_processing_tasks['ns_process_static_mask']] != 1 &&
 	$operations_to_clear[$ns_processing_tasks['ns_process_heat_map']] != 1){
@@ -969,34 +970,34 @@ for ($i = 0; $i < sizeof($jobs); $i++){
     }
     if ($operations_to_clear[$ns_processing_tasks['ns_process_temporal_interpolation']] != 1)
       $operations_to_clear[$ns_processing_tasks['ns_process_temporal_interpolation']] = 0;
-    
-    $operations_to_clear[$ns_processing_tasks['ns_process_compile_video']] = 0;  
+
+    $operations_to_clear[$ns_processing_tasks['ns_process_compile_video']] = 0;
     $operations_to_clear[$ns_processing_tasks['ns_process_analyze_mask']] = 0;
     $operations_to_clear[$ns_processing_tasks['ns_process_apply_mask']] = 0;
     $operations_to_clear[$ns_processing_tasks['ns_process_resized_sample_image']] = 0;
   }
-  
+
   for ($i = 0; $i <= $NS_LAST_PROCESSING_JOB; $i++){
     if ($operations_to_clear[$i] > 0){
       $image_deletion_requested = TRUE;
       $last_deletion_operation = $i;
     }
   }
-  
+
   if ($_POST['delete_images'] != ''){
     //if any sample_region processing step images are identified for deletion, delete them
-   
+
     if ($image_deletion_requested){
       //die("clear value: " . $clear_value);
       for ($b = 0; $b < sizeof($jobs); $b++){
-	
-	$file_deletion_job = clone $jobs[$b];	
+
+	$file_deletion_job = clone $jobs[$b];
 	//die("WHOOP");
 	if ($delete_files_from_disk){
 	  $file_deletion_job->maintenance_task =  		$ns_maintenance_tasks['ns_maintenance_delete_files_from_disk_request'];
 	}
-	else{ 
-	  $file_deletion_job->maintenance_task = 
+	else{
+	  $file_deletion_job->maintenance_task =
 	    $ns_maintenance_tasks['ns_maintenance_delete_images_from_database'];
 	}
 	//die("IT IS: " . $file_deletion_job->maintenance_task);
@@ -1004,12 +1005,12 @@ for ($i = 0; $i < sizeof($jobs); $i++){
 	  $file_deletion_job->operations[$i] = $operations_to_clear[$i]?1:0;
 	}
 	if (!$live_dangerously){
-	  if($file_deletion_job->operations[0] != 0 && 
+	  if($file_deletion_job->operations[0] != 0 &&
 	     $file_deletion_job->maintenance_flag == 0){
 	    throw new ns_exception("To delete capture images that have not yet been processed, you must enable dangerous operations.");
 	  }
-	  
-	} 
+
+	}
 	//var_dump($file_deletion_job->operations);
 	//die();
 	$file_deletion_job->maintenance_flag = $_POST['maintenance_flag'];
@@ -1023,7 +1024,7 @@ for ($i = 0; $i < sizeof($jobs); $i++){
       die("");
     }
   }
-  
+
   if ($_POST['delete_job'] != ''){
 	//die(var_dump($jobs));
     // $lock_job_queue_query);
@@ -1038,7 +1039,7 @@ for ($i = 0; $i < sizeof($jobs); $i++){
     }
     //$sql->send_query($ed);
     //$sql->send_query($unlock_tables_query);
-  
+
     //$sql->send_query($unlock_tables_query);
     //$commit_query = "COMMIT";
     //$sql->send_query($commit_query);
@@ -1047,7 +1048,7 @@ for ($i = 0; $i < sizeof($jobs); $i++){
     for ($i = 0; $i < sizeof($jobs); $i++){
       $query = "DELETE FROM processing_jobs WHERE id={$jobs[$i]->id}";
       //echo $query . "<BR>";
-      
+
       $sql->send_query($query);
     }
     //$sql->send_query($ed);
@@ -1062,10 +1063,10 @@ for ($i = 0; $i < sizeof($jobs); $i++){
     die("No Jobs or job subjects could be found matching the specifications.");
   //$jobs[0]->get_names($sql);
 
-  
+
   if ($jobs[0]->image_id == 0 && $jobs[0]->region_id == 0 && $jobs[0]->sample_id == 0 && $jobs[0]->experiment_id == 0)
     throw new ns_exception("You must specifiy an image or an image group on which to apply the processing job.");
-  
+
     $last_experiment_id = 0;
     $last_sample_id = 0;
     $out_first_experiment = TRUE;
@@ -1078,7 +1079,7 @@ for ($i = 0; $i < sizeof($jobs); $i++){
 	  if ($jobs[$i]->sample_id != 0) $target_text .= "<font size=\"+1\"> ]</font>";
 	  $target_text.="<BR>";
 	}
-	
+
 	else $out_first_experiment = $jobs[$i]->sample_id != 0;
 	$target_text .= " <font size=\"+1\">". $experiment_name_hash[$jobs[$i]->experiment_id];
 	if ($jobs[$i]->sample_id != 0) $target_text .= "[";
@@ -1086,7 +1087,7 @@ for ($i = 0; $i < sizeof($jobs); $i++){
 	$last_experiment_id = $jobs[$i]->experiment_id;
 	$last_sample_id = '';
 	$out_first_sample = TRUE;
-      
+
       }
       if ($jobs[$i]->sample_id != $last_sample_id ){
 	if (!$out_first_sample && $jobs[$i]->region_id != 0) $target_text .= "] ";
@@ -1138,7 +1139,7 @@ if ($query_string['delete_file_taskbar']!=''){
 	$view_delete_images_taskbar = FALSE;
 	$view_boundaries_taskbar = FALSE;
 	//$view_control_strain_taskbar = TRUE;
-	
+
 	}
 	else{
 	$view_processing_taskbar = TRUE;
@@ -1161,7 +1162,7 @@ if ($query_string['delete_file_taskbar']!=''){
     $view_processing_taskbar = FALSE;
     $view_video_taskbar = FALSE;
     $view_maintenance_taskbar = TRUE;
-	
+
     if ($jobs[0]->maintenance_task == $ns_maintenance_tasks['ns_maintenance_delete_files_from_disk_request'] ||
 	$jobs[0]->maintenance_task ==  $ns_maintenance_tasks['ns_maintenance_delete_files_from_disk_action'] ||
 	$jobs[0]->maintenance_task ==  $ns_maintenance_tasks['ns_maintenance_delete_images_from_database']){
@@ -1183,7 +1184,7 @@ if ($query_string['delete_file_taskbar']!=''){
     $view_boundaries_taskbar = FALSE;
   }
 /*if ($job_type == $IS_EXPERIMENT){
- 
+
   $view_processing_taskbar = FALSE;
   $view_video_taskbar = FALSE;
   $view_boundaries_taskbar = FALSE;
@@ -1204,8 +1205,8 @@ else display_worm_page_header($page_title);
 ?>
 
 
-<span class="style1">Job Target(s):</span><br><?php echo $target_text?> 
-<?php 
+<span class="style1">Job Target(s):</span><br><?php echo $target_text?>
+<?php
 if ($job_type != $IS_EXPERIMENT){
   if ($job_type == $IS_SAMPLE)
     $sub = "Samples";
@@ -1217,13 +1218,13 @@ if ($job_type != $IS_EXPERIMENT){
     echo "<a href=\"view_processing_job.php?" . $query_parameters_without_censored."&include_censored=0\">[Exclude Censored $sub]</a>";
   }
   else{
-    echo "<a href=\"view_processing_job.php?" . $query_parameters_without_censored."&include_censored=1\">[Include Censored $sub]</a>"; 
+    echo "<a href=\"view_processing_job.php?" . $query_parameters_without_censored."&include_censored=1\">[Include Censored $sub]</a>";
   }
   if ($region_id == "all" && $device != "") echo "<a href=\"view_processing_job.php?job_id=0&experiment_id=$experiment_id&sample_id=all&device=$device\">[Include all samples on device]</a>";
 }
-?>			      
+?>
 <br><br>
- 
+
 <table width="100%"><tr><td valign="top">
 <table width="100%"><tr><td valign="top">
 
@@ -1239,7 +1240,7 @@ Schedule an Image Processing Job Begin
 <tr <?php echo $table_header_color?> ><td colspan=2><b>Schedule a Job for Individual Images</a></td></tr>
   <tr><td bgcolor="<?php echo  $table_colors[0][0] ?>" >Submission time</td>
 	  <td bgcolor="<?php echo  $table_colors[0][1] ?>"><?php echo format_time($jobs[0]->time_submitted)?></td>
-  </tr>  
+  </tr>
   <tr>
     <td bgcolor="<?php echo  $table_colors[1][0] ?>" >Priority</td>
 	  <td bgcolor="<?php echo  $table_colors[1][1] ?>">
@@ -1249,12 +1250,12 @@ Schedule an Image Processing Job Begin
 <option value="-1" <?php if ($jobs[0]->urgent==-1) echo "selected "?> >Low</option>
 	  	</select><br>
 	</td>
-  </tr>  
+  </tr>
 <!--
 	<tr>
 		<td bgcolor="<?php echo  $table_colors[0][0] ?>" >Paused</td>
 		  <td bgcolor="<?php echo  $table_colors[0][1] ?>"><select name="processor_id">
-			<?php for ($i = sizeof($hosts)-1; $i >= 0; $i--){ 
+			<?php for ($i = sizeof($hosts)-1; $i >= 0; $i--){
 				echo "<option value=\"{$hosts[$i][0]}\"";
 				if ($jobs[0]->processor_id == $hosts[$i][0]) echo " selected";
 				echo ">" . $hosts[$i][1] . "</option>\n";
@@ -1265,11 +1266,11 @@ Schedule an Image Processing Job Begin
 	 <table border="0" cellpadding="4" cellspacing="0" width="100%">
 	<tr <?php echo $table_header_color?>><td colspan=3>Processing Tasks</td></tr>
 				     <?php if ($job_type == $IS_REGION){?><tr ><td bgcolor="<?php echo  $table_colors[1][0] ?>" colspan=3><font size="-1">Only "Median Filter", "Threshold" and "Worm Detection" are necessary.</font></td></tr><?php }?>
-	<?php 
+	<?php
 				     $cc = 0;
 				     $start = 1;
 				     $finish = $NS_LAST_PROCESSING_JOB;
-				   
+
 				     if ($job_type == $IS_REGION || $region_id==="all")
 				       $start = 2;
 				     else $finish = $ns_processing_tasks['ns_process_apply_mask'];
@@ -1313,7 +1314,7 @@ Schedule an Image Procesing Job End
 
 <br></td></tr><td><tr>
 
- <?php 
+ <?php
  //die("CCC" + $view_video_taskbar);
 ?>
 
@@ -1334,7 +1335,7 @@ Make A Video Job Start
 <tr <?php echo $table_header_color?> ><td colspan=2><b>Create a Video</b></td></tr>
   <tr><td bgcolor="<?php echo  $table_colors[0][0] ?>" >Submission time</td>
 	  <td bgcolor="<?php echo  $table_colors[0][1] ?>"><?php echo format_time($jobs[0]->time_submitted)?></td>
-  </tr>  
+  </tr>
   <tr>
     <td bgcolor="<?php echo  $table_colors[1][0] ?>" >Priority</td>
 	  <td bgcolor="<?php echo  $table_colors[1][1] ?>">
@@ -1349,7 +1350,7 @@ Make A Video Job Start
 	<tr>
 		<td bgcolor="<?php echo  $table_colors[0][0] ?>" >Host</td>
 		  <td bgcolor="<?php echo  $table_colors[0][1] ?>"><select name="processor_id">
-			<?php for ($i = sizeof($hosts)-1; $i >= 0; $i--){ 
+			<?php for ($i = sizeof($hosts)-1; $i >= 0; $i--){
 				echo "<option value=\"{$hosts[$i][0]}\"";
 				if ($jobs[0]->processor_id == $hosts[$i][0]) echo " selected";
 				echo ">" . $hosts[$i][1] . "</option>\n";
@@ -1363,16 +1364,16 @@ Make A Video Job Start
 				      <select name="video_add_timestamp">
 				      <?php
 				      global $ns_video_timestamp_types;
-				     
-				     
+
+
 				      foreach ($ns_video_timestamp_types as $num=>$name){
    echo "<option value=\"$num\"";
    if ($num == 1)
      echo " selected";
    echo">$name</option>";
-   
+
  }
-				     
+
 ?>
 				      </select>
 		      </td>
@@ -1381,10 +1382,10 @@ Make A Video Job Start
 	 <table border="0" cellpadding="4" cellspacing="0" width="100%">
 	<tr <?php echo $table_header_color?>><td colspan=3>Image Types</td></tr>
 		<?php
-	$cc = 0; 
+	$cc = 0;
 	$start = 0;
 $finish = $NS_LAST_PROCESSING_JOB;
-				  
+
 				     if ($job_type == $IS_REGION|| $region_id==="all")
 				       $start = 0;
 				     else $finish = $ns_processing_tasks['ns_unprocessed'];
@@ -1402,7 +1403,7 @@ else{
 
 }
   $cc++;
-  
+
 		$clrs = $table_colors[($cc+1)%2];
 	?>
   		<tr>
@@ -1460,7 +1461,7 @@ Schedule Database/File Storage Job Begin
 <tr <?php echo $table_header_color?> ><td colspan=2><b>Schedule a Job For an Entire Region</b></td></tr>
   <tr><td bgcolor="<?php echo  $table_colors[0][0] ?>" >Submission time</td>
 	  <td bgcolor="<?php echo  $table_colors[0][1] ?>"><?php echo format_time($jobs[0]->time_submitted)?></td>
-  </tr>  
+  </tr>
   <tr>
     <td bgcolor="<?php echo  $table_colors[1][0] ?>" >Priority</td>
 	  <td bgcolor="<?php echo  $table_colors[1][1] ?>">
@@ -1476,9 +1477,9 @@ Schedule Database/File Storage Job Begin
 	<tr>
 		<td bgcolor="<?php echo  $table_colors[0][0] ?>" >Host</td>
 		  <td bgcolor="<?php echo  $table_colors[0][1] ?>"><select name="processor_id">
-			<?php 
+			<?php
 
-				    for ($i = sizeof($hosts)-1; $i >= 0; $i--){ 
+				    for ($i = sizeof($hosts)-1; $i >= 0; $i--){
 				echo "<option value=\"{$hosts[$i][0]}\"";
 				if ($jobs[0]->processor_id == $hosts[$i][0]) echo " selected";
 				echo ">" . $hosts[$i][1] . "</option>\n";
@@ -1487,7 +1488,7 @@ Schedule Database/File Storage Job Begin
 		  </select></td>
 	  --></tr><tr><td colspan = 2 bgcolor="<?php echo $table_colors[1][1] ?>">
 	 <select name = "maintenance_task" size="1">
-					
+
 					<?php $mt = ns_maintenance_task_order($job_type==$IS_REGION,$job_type==$IS_SAMPLE,$job_type==$IS_EXPERIMENT);
 					var_dump($mt);
 					for ($i = 0; $i < sizeof($mt) ; $i++){?>
@@ -1511,9 +1512,9 @@ Schedule Database/File Storage Job Begin
 <table border="0" cellpadding="4" cellspacing="0" width="100%">
 <tr <?php echo $table_header_color?> ><td colspan=2><b>Update capture schedule</b></td></tr>
 				  <tr><td width = "400" bgcolor="<?php echo $table_colors[1][0] ?>">Cancel any scans pending for this experiment.</td><td bgcolor="<?php echo $table_colors[1][1] ?>" width="1%">
-			       
+
 				  <input name="cancel_captures" type="submit" value="Cancel Scheduled Captures" onClick="javascript:return confirm('Are you sure you want to cancel all pending scans?')"></td></tr><tr><td colspan = 1 bgcolor="<?php echo $table_colors[0][0] ?>">In certain circumstances, image servers may fail to correctly transfer images cached locally to long term storage.  This option instructs the server to retry such transfers.</td><td colspan = 1 bgcolor="<?php echo $table_colors[0][1] ?>"><input name="retry_transfer_to_long_term_storage" type="submit" value="Retry transfer of cached images" width = "1%"></td></tr>
-				      
+
 </table>
 </td></tr>
 </table>
@@ -1523,16 +1524,16 @@ Schedule Database/File Storage Job Begin
 <table border="0" cellpadding="4" cellspacing="0" width="100%">
 <tr <?php echo $table_header_color?> ><td colspan=2><b>Clean up</b></td></tr>
 				  <tr><td width = "400" bgcolor="<?php echo $table_colors[1][0] ?>">Minimize disk usage by deleting all image data except for raw unprocessed images.</td><td bgcolor="<?php echo $table_colors[1][1] ?>" width="1%">
-			       
+
 				  <input name="delete_experiment_processed_data" type="submit" value="Delete all processed files" onClick="javascript:return confirm('Are you sure you want to delete all processed data?  You will need to re-analyze everything from scratch.')"></td></tr>
-				      
+
 </table>
 </td></tr>
 </table>
 																					     <?php }?>
 <?php }?>
 </form>
-				
+
 
 <!--********************************
 Set Control Strain Info
@@ -1560,7 +1561,7 @@ Set Control Strain Info
       echo $strain;
       echo "</option>\n";
     }
-  ?>						
+  ?>
     </select><br><br>
 	<div align="right"><input name="set_control_strain" type="submit" value="Set Control Strain">
 	</div>
@@ -1599,7 +1600,7 @@ Update Region info Begin
 					echo "/";
 					output_editable_field("start_day",$d,TRUE,2);
 					echo "/";
-					output_editable_field("start_year",$y,TRUE,4);				       
+					output_editable_field("start_year",$y,TRUE,4);
 ?>
 </td>
 	  </tr>
@@ -1648,7 +1649,7 @@ Update Region info Begin
 					echo "/";
 					output_editable_field("end_day",$d,TRUE,2);
 					echo "/";
-					output_editable_field("end_year",$y,TRUE,4);				       
+					output_editable_field("end_year",$y,TRUE,4);
 ?><br><font size="-2">(Leave blank to include all images in analysis)</font>
 </td></tr>
 	<tr>
@@ -1658,8 +1659,8 @@ Update Region info Begin
     $end_age = ($region_end_times[$jobs[0]->region_id] - $region_start_times[$jobs[0]->region_id])/(60*60*24);
 						if($end_age < 0)
 						  $end_age = '';
-    
-					output_editable_field("end_age",$end_age,TRUE,2)				       
+
+					output_editable_field("end_age",$end_age,TRUE,2)
 ?> days<br><font size="-2">(Leave blank to include all images in analysis)</font>
 </td></tr>
 <!--
@@ -1671,7 +1672,7 @@ Update Region info Begin
 
 
 	<tr><td colspan = 3 bgcolor="<?php echo $table_colors[1][1] ?>">
-      
+
 	<div align="right"><input name="update_region_information" type="submit" value="Update Selected Fields"></div><br>
 </td></tr>
 
@@ -1690,7 +1691,7 @@ Update Region info Begin
 </table>
 </form>
   <br>
-   				
+
 <!--********************************
 Update Region info
 *********************************-->
@@ -1713,21 +1714,21 @@ Delete Images Begin
 <tr><td bgcolor="<?php echo  $table_colors[1][0] ?>">Delete all Captured Images?</td>
 <td bgcolor="<?php echo  $table_colors[1][1] ?>">
 <input name="delete_sample_images" type="submit" value="Delete Sample Data" onClick="javascript:return confirm('Are you sure you wish to clear all raw and processed data in this sample?')"></td></tr>
-   
+
 <?php }if ($job_type == $IS_REGION && $live_dangerously){?>
 <tr><td bgcolor="<?php echo  $table_colors[0][0] ?>">Delete all Masked Images?</td>
 <td bgcolor="<?php echo  $table_colors[0][1] ?>">
 <input name="clear_region" type="submit" value="Delete Region Data" onClick="javascript:return confirm('Are you sure you wish to clear all processed images in this sample?')"></td></tr>
-   
+
 <?php }?>
 </table>
 	 <table border="0" cellpadding="4" cellspacing="0" width="100%">
 	<tr <?php echo $table_header_color?>><td colspan=3>Processing Tasks</td></tr>
-	      
-	<?php 
-    $cc = 0; 
+
+	<?php
+    $cc = 0;
 $finish = $NS_LAST_PROCESSING_JOB;
-				  
+
 				     if ($job_type == $IS_REGION || $region_id==="all"){
 					if ( $live_dangerously)$start = 0;
 					 else $start = 2;
@@ -1761,7 +1762,7 @@ else{
 	?>
  <tr><TD  bgcolor="<?php echo  $table_colors[0][0] ?>" colspan=3><div align="right">
 Options: <select name = "maintenance_flag" size="1" STYLE="font-size:8pt">
-					
+
 					<?php for ($i = (int)0; $i <= $NS_LAST_MAINTENANCE_FLAG ; $i++){
 						if ($i == $ns_maintenance_flags['ns_delete_entire_sample_region'])
 continue;			  ?>

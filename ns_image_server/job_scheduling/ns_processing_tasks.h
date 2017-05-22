@@ -25,7 +25,7 @@ typedef enum{
 	ns_process_movement_coloring_with_graph,
 	ns_process_heat_map,
 	ns_process_static_mask,
-	ns_process_temporal_interpolation,
+	ns_process_compress_unprocessed,
 	ns_process_movement_coloring_with_survival,
 	ns_process_movement_paths_visualization,
 	ns_process_movement_paths_visualition_with_mortality_overlay,

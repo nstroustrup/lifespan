@@ -538,16 +538,6 @@ bool ns_processing_job_whole_region_processor::run_job(ns_sql & sql){
 		);
 		pipeline->calculate_static_mask_and_heat_map(job.operations,region_image,sql);
 	}
-	else if (job.operations[(int)ns_process_temporal_interpolation]){
-		image_server->register_server_event(
-			ns_image_server_event("Running Temporal Interpolation for '")
-			<< ns_processing_task_to_string(ns_process_temporal_interpolation) << "' on"
-			<< job.experiment_name <<"(" << job.experiment_id << ")" << job.sample_name << "(" << job.sample_id << ")" 
-			<< job.region_name << "(" << job.region_id << ")",&sql
-		);
-		throw ns_ex("Depreciated!");
-		//pipeline->calculate_temporal_interpolation(job.operations,region_image,sql);
-	}
 	else throw ns_ex("ns_processing_job_scheduler::run_job_from_push_queue()::Unknown whole region job type.");				
 	return true;
 }
@@ -878,7 +868,7 @@ bool ns_processing_job_maintenance_processor::run_job(ns_sql & sql) {
 						bool b;
 						im.filename += ".jp2";
 						
-						string compression_rate = image_server->get_cluster_constant_value("jp2k_compression_rate",".05",&sql);
+						string compression_rate = image_server->get_cluster_constant_value("jp2k_compression_rate",ns_to_string(NS_DEFAULT_JP2K_COMPRESSION),&sql);
 						float compression_rate_f = atof(compression_rate.c_str());
 						if (compression_rate_f <= 0)
 							throw ns_ex("Invalid compression rate: ") << compression_rate_f ;

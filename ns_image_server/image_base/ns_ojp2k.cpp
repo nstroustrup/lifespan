@@ -60,7 +60,7 @@ void ns_ojp2k_setup_output(const ns_image_properties & properties,const float co
 	//data->parameters.cp_matrice = 0;
 	data->parameters.prog_order = OPJ_LRCP;
 	//data->parameters.numpocs = 0;
-	//data->parameters.numresolution = 2;
+	data->parameters.numresolution = 8;
 	data->parameters.cod_format = 1;//jp2
 	//data->parameters.cp_comment = 0;
 	//data->parameters.csty = 0;
@@ -157,7 +157,8 @@ void ns_jp2k_warning_callback(const char *msg, void *client_data){
 	std::cerr << "ns_jp2k::Warning: " << msg;
 }
 void ns_jp2k_info_callback(const char *msg, void *client_data){
-	std::cerr << "ns_jp2k::Info: " << msg;
+	//don't output any informational openjpeg messages.
+	//std::cerr << "ns_jp2k::Info: " << msg;
 }
 
 std::string ns_oj2k_xmp_filename(const std::string &filename) {
@@ -168,40 +169,51 @@ void ns_jp2k_out_error_callback(const char *msg, void *client_data){
 	c->ex = new ns_ex("ns_jp2k::Error: ");
 	*c->ex << msg;
 }
-
-
-
-void ns_opengl_test(const std::string & pathname) {
+#include "ns_image_easy_io.h"
+#include <fstream>
+#include "ns_high_precision_timer.h"
+//run a diagnostic
+void ns_openjpeg_test(const std::string & input_filename,  const std::string & output_basename) {
 	try {
-		ns_image_whole<ns_16_bit> im;
-		ns_image_properties prop;
-		prop.width = 2000;
-		prop.height = 2000;
-		prop.components = 1;
-		im.init(prop);
-		for (unsigned int y = 0; y < prop.height; y++)
-			for (unsigned int x = 0; x < prop.width; x++) {
-				im[y][x] = ((x*y) / (double)(prop.height*prop.width))*USHRT_MAX;
-				if (x*y % 500 > 450)
-					im[y][x] = 0;
-			}
+		ns_image_standard im;
+		std::string base_path(output_basename);
+		int fold_compression[16] = { 0,1,2,4,8,16,20,25,30,35,40,50,55,60,80,100 };
+		int max_diff[16];
+		ns_64_bit total_diff[16];
+		ns_64_bit file_size[16];
+		ns_64_bit read_time[16];
+		ns_high_precision_timer tm;
+		tm.start();
+		ns_load_image(input_filename, im);
+		read_time[0] = tm.stop();
+		total_diff[0] = max_diff[0] = 0;
 
-		ns_ojp2k_image_output_file<ns_16_bit> file_out;
-		ns_image_stream_file_sink<ns_16_bit> file_sink(pathname + "test.jp2", file_out, 1024, 0.05);
-		im.pump(file_sink, 1024);
+		for (int i = 1; i < 16; i++) {
+			std::string fn = base_path + ns_to_string(fold_compression[i]) + ".jp2";
+			ns_save_image(fn, im, 1.0 / fold_compression[i]);
+			ns_image_standard reread;
+			tm.start();
+			ns_load_image(fn, reread);
+			read_time[i] = tm.stop();
+			max_diff[i] = 0;
+			total_diff[i] = 0;
+			file_size[i] = ns_dir::get_file_size(fn);
+			for (unsigned int y = 0; y < reread.properties().height; y++)
+				for (unsigned int x = 0; x < reread.properties().width; x++) {
+					unsigned long p = abs((long)im[y][x] - (long)reread[y][x]);
+					if (max_diff[i] < p)
+						max_diff[i] = p;
+					total_diff[i] += p;
+				}
+		}
+		file_size[0] = file_size[1];
 
-		ns_image_whole<ns_16_bit> in2;
-		ns_ojp2k_image_input_file<ns_16_bit> file_in;
-		file_in.open_file(pathname + "test.jp2");
-		ns_image_stream_file_source<ns_16_bit> file_source(file_in);
-		file_source.pump(in2, 1024);		
-
-		ns_ojp2k_image_output_file<ns_16_bit> file_out2;
-		ns_image_stream_file_sink<ns_16_bit> file_sink2(pathname + "test_2.jp2", file_out2, 1024,0.05);
-		in2.pump(file_sink2, 1024);
-		
-
-		exit(1);
+		std::ofstream out((base_path + "quant.csv").c_str());
+		out << "fold_compression,max_diff,total_diff,file_size,read_time_ms\n";
+		for (int i = 0; i < 16; i++) {
+			out << fold_compression[i] << "," << max_diff[i] << "," << total_diff[i] << "," << file_size[i] << "," << read_time[i]/1000 <<  "\n";
+		}
+		out.close();
 	}
 	catch (ns_ex & ex) {
 		std::cerr << ex.text();

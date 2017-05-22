@@ -377,7 +377,7 @@ void ns_bulk_experiment_mask_manager::submit_masks_to_cluster(bool balk_on_overw
 			ns_image_server_image image;
 			image.load_from_db(image_id, &sql());
 			bool had_to_use_local_storage;
-			ns_image_storage_reciever_handle<ns_8_bit> image_storage = image_server.image_storage.request_storage(image, ns_tiff, 512, &sql(), had_to_use_local_storage, false, false);
+			ns_image_storage_reciever_handle<ns_8_bit> image_storage = image_server.image_storage.request_storage(image, ns_tiff, 1.0,512, &sql(), had_to_use_local_storage, false, false);
 			
 			//ns_image_standard decoded_image;
 			ns_image_storage_source_handle<ns_8_bit> in(image_server.image_storage.request_from_local_cache(scratch_filenames[i]));

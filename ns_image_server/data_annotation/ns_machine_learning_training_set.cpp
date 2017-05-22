@@ -190,7 +190,7 @@ void ns_learning_results_decision_set::produce_frequency_distribution(const std:
 			graph.draw(o);
 			o.close();
 			ns_tiff_image_output_file<ns_8_bit> im_out;
-			ns_image_stream_file_sink<ns_8_bit > file_sink(filename,im_out,128);
+			ns_image_stream_file_sink<ns_8_bit > file_sink(filename,im_out,1.0,128);
 			freq_graph.pump(file_sink,128);
 		}
 		catch(ns_ex & ex){
@@ -1361,7 +1361,7 @@ void ns_training_file_generator::re_threshold_image(const std::string & fname,co
 		filename += ns_dir::extract_filename_without_extension(ns_dir::extract_filename(fname));
 		filename += ns_to_string(i)+".tif";
 		ns_tiff_image_output_file<ns_8_bit> tiff_out;
-		ns_image_stream_file_sink<ns_8_bit > file_sink(filename,tiff_out,512);
+		ns_image_stream_file_sink<ns_8_bit > file_sink(filename,tiff_out,1.0,512);
 		new_images[i].pump(file_sink,128);
 	}
 

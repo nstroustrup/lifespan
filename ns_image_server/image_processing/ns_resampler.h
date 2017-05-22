@@ -58,7 +58,6 @@ public:
 		output_properties.width=(unsigned long)(output_properties.width*resize_factor.x);
 		output_properties.height=(unsigned long)(output_properties.height*resize_factor.y);
 		output_properties.resolution=(float)(output_properties.resolution*resize_factor.y);
-		output_properties.compression = .8;
 	
 
 		current_output_y_coordinate = 0;

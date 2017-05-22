@@ -109,11 +109,11 @@ bool ns_image_capture_data_manager::transfer_data_to_long_term_storage(ns_image_
 			ns_image_storage_source_handle<ns_16_bit> high_depth(storage_handler->request_from_storage_n_bits<ns_16_bit>(image,&sql,ns_image_storage_handler::ns_volatile_storage));
 			image.specified_16_bit = false;
 			
-			ns_image_storage_reciever_handle<ns_8_bit> low_depth(storage_handler->request_storage_ci(image,ns_tiff,1024,&sql,had_to_use_local_storage,true));
+			ns_image_storage_reciever_handle<ns_8_bit> low_depth(storage_handler->request_storage_ci(image,ns_tiff,1.0,1024,&sql,had_to_use_local_storage,true));
 			ns_image_server_image small_image(image.make_small_image_storage(&sql));
 
 			bool had_to_use_local_storage_2;
-			ns_image_storage_reciever_handle<ns_8_bit> small_image_output(storage_handler->request_storage(small_image,ns_jpeg,1024,&sql,had_to_use_local_storage_2,false,true));
+			ns_image_storage_reciever_handle<ns_8_bit> small_image_output(storage_handler->request_storage(small_image,ns_jpeg, NS_DEFAULT_JPEG_COMPRESSION, 1024,&sql,had_to_use_local_storage_2,false,true));
 
 			ns_image_process_16_bit<ns_features_are_light, ns_image_stream_static_offset_buffer<ns_16_bit> > processor(1024);
 
@@ -205,7 +205,7 @@ bool ns_image_capture_data_manager::transfer_data_to_long_term_storage(ns_image_
 
 		ns_image_storage_source_handle<ns_8_bit> in(storage_handler->request_from_storage(image,&sql));
 		try{
-			ns_image_storage_reciever_handle<ns_8_bit> out(storage_handler->request_storage_ci(image,ns_tiff,1024,&sql,had_to_use_local_storage,false));
+			ns_image_storage_reciever_handle<ns_8_bit> out(storage_handler->request_storage_ci(image,ns_tiff,1.0,1024,&sql,had_to_use_local_storage,false));
 		
 			if (had_to_use_local_storage)
 				return had_to_use_local_storage;

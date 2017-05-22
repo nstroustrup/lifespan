@@ -4787,9 +4787,9 @@ void ns_analyzed_image_time_path::save_movement_images(const ns_analyzed_time_im
 		}
 		else {
 			if (save_image)
-				output_reciever = new ns_image_storage_reciever_handle<ns_8_bit>(image_server_const.image_storage.request_storage(output_image, ns_tiff_lzw, save_output_buffer_height, &sql, had_to_use_volatile_storage, false, false));
+				output_reciever = new ns_image_storage_reciever_handle<ns_8_bit>(image_server_const.image_storage.request_storage(output_image, ns_tiff_lzw, 1.0,save_output_buffer_height, &sql, had_to_use_volatile_storage, false, false));
 			if (save_flow_image)
-				flow_output_reciever = new ns_image_storage_reciever_handle<float>(image_server_const.image_storage.request_storage_float(flow_output_image, ns_tiff_zip, save_output_buffer_height, &sql, had_to_use_volatile_storage, false, false));
+				flow_output_reciever = new ns_image_storage_reciever_handle<float>(image_server_const.image_storage.request_storage_float(flow_output_image, ns_tiff_zip, 1.0, save_output_buffer_height, &sql, had_to_use_volatile_storage, false, false));
 		}
 	}
 	//write out a dummy image if there are no frames in the path.
@@ -5984,7 +5984,7 @@ void ns_time_path_image_movement_analyzer::generate_death_aligned_movement_postu
 		ns_image_server_image im(reg.create_storage_for_aligned_path_image(t,(unsigned long)event_to_align,ns_tiff,sql,ns_movement_event_to_label(event_to_align)));
 		try{
 			bool had_to_use_volatile_storage;
-			ns_image_storage_reciever_handle<ns_8_bit> r(image_server_const.image_storage.request_storage(im,ns_tiff,1024,&sql,had_to_use_volatile_storage,false,false));
+			ns_image_storage_reciever_handle<ns_8_bit> r(image_server_const.image_storage.request_storage(im,ns_tiff,1.0,1024,&sql,had_to_use_volatile_storage,false,false));
 			output_image.pump(r.output_stream(),1024);
 			im.mark_as_finished_processing(&sql);
 		}
@@ -6175,7 +6175,7 @@ void ns_time_path_image_movement_analyzer::generate_movement_posture_visualizati
 		ns_image_server_image im(reg.create_storage_for_processed_image(ns_process_movement_posture_visualization,ns_tiff,&sql));
 		try{
 			bool had_to_use_volatile_storage;
-			ns_image_storage_reciever_handle<ns_8_bit> r(image_server_const.image_storage.request_storage(im,ns_tiff,1024,&sql,had_to_use_volatile_storage,false,false));
+			ns_image_storage_reciever_handle<ns_8_bit> r(image_server_const.image_storage.request_storage(im,ns_tiff,1.0,1024,&sql,had_to_use_volatile_storage,false,false));
 			output_image.pump(r.output_stream(),1024);
 			im.mark_as_finished_processing(&sql);
 		}

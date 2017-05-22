@@ -24,7 +24,7 @@ unsigned int _c = 0;
 void debug_bitmap_output(ns_image_bitmap & bitmap,unsigned int _l){
 	ns_jpeg_image_output_file<ns_8_bit> j;
 	string filename = "c:\\debug\\debug_l" + ns_to_string(_l) + "_" + ns_to_string(_c) + ".jpg";
-	ns_image_stream_file_sink<ns_8_bit> output(filename,j,512);
+	ns_image_stream_file_sink<ns_8_bit> output(filename,j, .8,512);
 	bitmap.pump(output,512);
 	_c++;
 };

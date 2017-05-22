@@ -3,9 +3,10 @@
 #include "ns_image.h"
 #ifdef _WIN32
 #define OPJ_STATIC
+#include "openjp2/openjpeg.h"
+#else
+#include "openjpeg-2.1.2/openjpeg.h"
 #endif
-#include "openjpeg-2.1/openjpeg.h"
-
 struct ns_ojp2k_initialization{
 	static void init();
 	static void cleanup();
@@ -236,8 +237,9 @@ struct ns_jp2k_output_data {
 		}
 	}
 };
-
-void ns_ojp2k_setup_output(const ns_image_properties & properties, const std::string & filename, const unsigned long rows_per_strip, ns_jp2k_output_data * data, const char bit_depth);
+//tcp ratio (equivalent to setting the -r value in opj_compress) is set as 1/properties.compression. 
+//early testing suggested that a 20x ratio works well, e.g properties.compression = .05
+void ns_ojp2k_setup_output(const ns_image_properties & properties, const float compression_ratio,const std::string & filename, const unsigned long rows_per_strip, ns_jp2k_output_data * data, const char bit_depth);
 
 template<class ns_component>
 class ns_ojp2k_image_output_file : public ns_image_output_file<ns_component> {
@@ -257,7 +259,9 @@ public:
 	}
 	~ns_ojp2k_image_output_file() { ns_safe_delete(data); if (output_buf != 0) delete[] output_buf; output_buf = 0; }
 
-	void open_file(const std::string & filename, const ns_image_properties & properties) {
+	//tcp ratio (equivalent to setting the -r value in opj_compress) is set as 1/compression_ratio
+	//early testing suggested that a 20x ratio works well, e.g compression_ratio = .05
+	void open_file(const std::string & filename, const ns_image_properties & properties, const float compression_ratio) {
 		if (data != 0)
 			throw ns_ex("Opening already-open file");
 		data = new ns_jp2k_output_data;
@@ -274,7 +278,7 @@ public:
 			rows_per_strip = properties.height;
 		output_buf = new ns_component[rows_per_strip*ns_image_output_file<ns_component>::_properties.width];
 
-		ns_ojp2k_setup_output(properties, filename, rows_per_strip, data,sizeof(ns_component));
+		ns_ojp2k_setup_output(properties, compression_ratio,filename, rows_per_strip, data,sizeof(ns_component));
 	}
 
 	void close() {

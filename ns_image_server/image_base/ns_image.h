@@ -26,8 +26,8 @@ ns_image_type ns_image_type_from_filename(const std::string & filename);
 ///The quality property is only meaningful for compressed images.
 ///
 struct ns_image_properties{
-	ns_image_properties():height(0),width(0),components(0),compression(1),resolution(0){}
-	ns_image_properties(unsigned long h, unsigned long w, unsigned char c,float r=-1):height(h),width(w),components(c),compression(1),resolution(r){}
+	ns_image_properties():height(0),width(0),components(0),resolution(0){}
+	ns_image_properties(unsigned long h, unsigned long w, unsigned char c,float r=-1):height(h),width(w),components(c),resolution(r){}
 	bool operator==(const ns_image_properties & l) const{
 		return (height == l.height) && (width == l.width) && (components == l.components) && (resolution == l.resolution);
 	}
@@ -42,8 +42,6 @@ struct ns_image_properties{
 	float resolution;
 
 	unsigned char components;
-	//fraction between (0,1], used for jpeg and jpeg2000 formats
-	float compression;
 	std::string description;
 };
 
@@ -81,7 +79,7 @@ template<class ns_component>
 class ns_image_output_file{
 public:
 	//open and close files
-	virtual void open_file(const std::string & filename, const ns_image_properties & properties)=0;
+	virtual void open_file(const std::string & filename, const ns_image_properties & properties, const float compression_ratio)=0;
 	virtual void open_mem(const void *, const ns_image_properties & properties)=0;
 	virtual void close()=0;
 
@@ -301,8 +299,8 @@ template<class ns_component>
 class ns_image_stream_file_sink : public ns_image_stream_reciever<ns_image_stream_static_buffer<ns_component> >{
 
 public:
-	ns_image_stream_file_sink(const std::string & filename, ns_image_output_file<ns_component> & output_file, const long max_line_block_height)
-		:_filename(filename),file_opened(false),ns_image_stream_reciever<ns_image_stream_static_buffer<ns_component> >(max_line_block_height,this),file(&output_file){}
+	ns_image_stream_file_sink(const std::string & filename, ns_image_output_file<ns_component> & output_file, const long max_line_block_height, const float compression_ratio_)
+		:compression_ratio(compression_ratio_),_filename(filename),file_opened(false),ns_image_stream_reciever<ns_image_stream_static_buffer<ns_component> >(max_line_block_height,this),file(&output_file){}
 
 	typedef ns_image_stream_static_buffer<ns_component> storage_type;
 	typedef ns_component component_type;
@@ -316,7 +314,7 @@ public:
 			return true;
 		}
 		//cerr << "Opening file " << _filename << " for " << properties.height << " lines.\n";
-		file->open_file(_filename,properties);
+		file->open_file(_filename,properties, compression_ratio);
 		file_opened = true;
 
 		//allocate buffer
@@ -357,6 +355,7 @@ public:
 		}
 	}
 protected:
+	float compression_ratio;
 	ns_image_output_file<ns_component> * file;
 	ns_image_stream_static_buffer<ns_component> buffer;
 	bool file_opened;
@@ -747,11 +746,6 @@ public:
 	void set_description(const std::string & dsc){
 	  reciever_t::_properties.description = dsc;
 	}
-	//fraction between (0 and 1].
-	void set_output_compression(const float & c){
-	  reciever_t::_properties.compression = c;
-	}
-	
 	const float finline sample_f(const float y, const float x) const{
 
 		const int p0x((int)x),
@@ -808,13 +802,13 @@ public:
 		const double d1x(1.0 - dx),
 			d1y(1.0 - dy);
 
-//#ifdef NS_DEBUG_IMAGE_ACCESS
+#ifdef NS_DEBUG_IMAGE_ACCESS
 		if (p0y >= reciever_t::_properties.height || p1y >= reciever_t::_properties.height ||
 			p0x >= reciever_t::_properties.width || p1x >= reciever_t::_properties.width ||
 			p0x < 0 ||
 			p0y < 0)
 			throw ns_ex("Out of bound access!");
-//#endif
+#endif
 		return	scale_f[image_buffer[p0y][p0x]]* (d1y)*(d1x)+
 			scale_f[image_buffer[p0y][p1x]] * (d1y)*(dx)+
 			scale_f[image_buffer[p1y][p0x]] * (dy)*(d1x)+
@@ -1360,44 +1354,6 @@ public:
 	inline short * operator[](const unsigned long y){
 		return reinterpret_cast<short *> (ns_image_standard_16_bit::operator[](y));
 	}
-	/*
-	virtual void seek_to_beginning(){ns_image_standard_16_bit::seek_to_beginning();}
-
-	///ns_image_stream_sender needs to be fill the specified buffer upon request.
-	///n is a recommendation; less lines may be returned.
-	///void send_lines(write_buffer & lines, unsigned int count)=0;
-
-	///This command takes all of the current buffer and pumps it into the reciever
-	template<class reciever_t>
-	void pump(reciever_t * reciever, const unsigned int block_height){ns_image_standard_16_bit::pump(reciever,block_height);}
-
-	template<class reciever_t>
-	void inline pump(reciever_t & reciever, const unsigned int block_height){ns_image_standard_16_bit::pump(reciever,block_height);}
-
-	template<class reciever_t>
-	void pump(reciever_t & reciever, const unsigned int block_height) const{ns_image_standard_16_bit::pump(reciever,block_height);}
-
-	const unsigned int image_line_buffer_length() const {return ns_image_standard_16_bit::image_line_buffer_length();}
-
-//	inline ns_image_properties & properties() {return ns_image_standard_16_bit::properties();}
-	inline const ns_image_properties & properties() const {return ns_image_standard_16_bit::properties();}
-
-	//should implement any code needed to prepare for a new file being sent
-	void init_send(){ns_image_standard_16_bit::init_send();}
-	void finish_send(){ns_image_standard_16_bit::init_send();}
-
-	///tells the stream to prepare to recieve a file of a certain width/height/etc
-	void prepare_to_recieve_image(const ns_image_properties & properties){ns_image_standard_16_bit::prepare_to_recieve_image(properties);}
-
-	void finish_recieving_image(){ns_image_standard_16_bit::finish_recieving_image();}
-	//to recieve a message, first the reciever must provide a buffer into which the data will be written.
-	//virtual read_buffer * provide_buffer(const ns_image_stream_buffer_properties & buffer_properties)=0;
-
-	//after the data is written to the provide_buffer() buffer, recieve_lines() is called.
-	//virtual void recieve_lines(const read_buffer & lines, const unsigned long height)=0;
-
-	long line_block_height(){return ns_image_standard_16_bit::line_block_height();}
-	*/
 };
 
 #endif

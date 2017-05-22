@@ -61,7 +61,7 @@ class ns_jpeg_image_output_file : public ns_image_output_file<ns_component>, pri
 public:
 	ns_jpeg_image_output_file():fp(0),_open(false){cinfo.err = &error_manager();}	
 	
-	void open_file(const std::string & filename, const ns_image_properties & properties);
+	void open_file(const std::string & filename, const ns_image_properties & properties, const float compression_ratio);
 	void open_mem(const void *, const ns_image_properties & properties);
 	void close();
 
@@ -81,7 +81,7 @@ public:
 	}
 
 private:
-	void start_decompression(const ns_image_properties & properties);
+	void start_decompression(const ns_image_properties & properties, const float compression_ratio);
 
 	FILE *fp;
 	mutable jpeg_compress_struct cinfo;
@@ -181,13 +181,13 @@ void ns_jpeg_image_input_file<ns_component> ::start_decompression(){
 
 //***********************ns_jpeg_image_output_file member functions****************************
 template<class ns_component>
-void ns_jpeg_image_output_file<ns_component>:: open_file(const std::string & filename, const ns_image_properties & properties){
+void ns_jpeg_image_output_file<ns_component>:: open_file(const std::string & filename, const ns_image_properties & properties, const float compression_ratio){
 	fp = fopen(filename.c_str(), "wb");
 	if (fp == NULL){
 		throw ns_ex("Could not open output file ") << ns_file_io << filename << "\n";
 	}
 	_open = true;
-	start_decompression(properties);
+	start_decompression(properties,compression_ratio);
 }
 
 template<class ns_component>
@@ -237,7 +237,7 @@ void ns_jpeg_image_output_file<ns_component>:: close(){
 
 
 template<class ns_component>
-void ns_jpeg_image_output_file<ns_component>:: start_decompression(const ns_image_properties & properties){
+void ns_jpeg_image_output_file<ns_component>:: start_decompression(const ns_image_properties & properties,const float compression_ratio){
 	ns_image_output_file<ns_component>::_properties = properties;
 	//std::cout << "Starting compression encoder" << std::endl;
 	//set up output encoder
@@ -256,7 +256,7 @@ void ns_jpeg_image_output_file<ns_component>:: start_decompression(const ns_imag
 
 	//std::cout << "Setting Defaults" << std::endl;
 	jpeg_set_defaults (&cinfo);
-	jpeg_set_quality(&cinfo,(int)(properties.compression*100),TRUE);
+	jpeg_set_quality(&cinfo,(int)(compression_ratio *100),TRUE);
 	//std::cout << "Starting Compression" << std::endl;
 	jpeg_start_compress(&cinfo, TRUE);
 }

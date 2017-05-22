@@ -133,7 +133,7 @@ public:
 					bool had_to_use_volatile_storage;
 					ns_image_storage_reciever_handle<ns_component> r = image_server.image_storage.request_storage(
 																output_image,
-																ns_tiff, _image_chunk_size,&sql,had_to_use_volatile_storage,false,false);
+																ns_tiff, 1.0, _image_chunk_size,&sql,had_to_use_volatile_storage,false,false);
 					long_spatial.pump(r.output_stream(),_image_chunk_size);
 				}
 

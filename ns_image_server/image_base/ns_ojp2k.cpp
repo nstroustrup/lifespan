@@ -5,7 +5,7 @@
 #include <fstream>
 
 
-void ns_ojp2k_setup_output(const ns_image_properties & properties,const std::string & filename, const unsigned long rows_per_strip , ns_jp2k_output_data * data,const char bit_depth) {
+void ns_ojp2k_setup_output(const ns_image_properties & properties,const float compression_ratio,const std::string & filename, const unsigned long rows_per_strip , ns_jp2k_output_data * data,const char bit_depth) {
 
 	if (properties.height == 0)
 		throw (ns_ex("Cannot create an image with 0 height!"));
@@ -15,7 +15,7 @@ void ns_ojp2k_setup_output(const ns_image_properties & properties,const std::str
 		throw (ns_ex("Cannot create an image with 0 pixel components!"));
 	opj_set_default_encoder_parameters(&data->parameters);
 	
-	if (properties.compression == 1)
+	if (compression_ratio == 1)
 		data->parameters.irreversible = 0;
 	else data->parameters.irreversible = 1;
 	data->parameters.cblockw_init = 64;
@@ -41,10 +41,10 @@ void ns_ojp2k_setup_output(const ns_image_properties & properties,const std::str
 	
 	
 	data->parameters.tcp_numlayers = 1;
-	if (properties.compression == 0)
+	if (compression_ratio == 0)
 		data->parameters.tcp_rates[0] = 0;
 	else
-	data->parameters.tcp_rates[0] = 1.0 / properties.compression;
+	data->parameters.tcp_rates[0] = 1.0 / compression_ratio;
 	data->parameters.tcp_rates[1] = 0;
 	
 	data->parameters.roi_compno = -1;
@@ -177,7 +177,6 @@ void ns_opengl_test(const std::string & pathname) {
 		prop.width = 2000;
 		prop.height = 2000;
 		prop.components = 1;
-		prop.compression = .25;
 		im.init(prop);
 		for (unsigned int y = 0; y < prop.height; y++)
 			for (unsigned int x = 0; x < prop.width; x++) {
@@ -187,7 +186,7 @@ void ns_opengl_test(const std::string & pathname) {
 			}
 
 		ns_ojp2k_image_output_file<ns_16_bit> file_out;
-		ns_image_stream_file_sink<ns_16_bit> file_sink(pathname + "test.jp2", file_out, 1024);
+		ns_image_stream_file_sink<ns_16_bit> file_sink(pathname + "test.jp2", file_out, 1024, 0.05);
 		im.pump(file_sink, 1024);
 
 		ns_image_whole<ns_16_bit> in2;
@@ -197,7 +196,7 @@ void ns_opengl_test(const std::string & pathname) {
 		file_source.pump(in2, 1024);		
 
 		ns_ojp2k_image_output_file<ns_16_bit> file_out2;
-		ns_image_stream_file_sink<ns_16_bit> file_sink2(pathname + "test_2.jp2", file_out2, 1024);
+		ns_image_stream_file_sink<ns_16_bit> file_sink2(pathname + "test_2.jp2", file_out2, 1024,0.05);
 		in2.pump(file_sink2, 1024);
 		
 

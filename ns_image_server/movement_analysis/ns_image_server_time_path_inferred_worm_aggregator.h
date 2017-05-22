@@ -232,7 +232,7 @@ public:
 				try {
 					ns_image_storage_reciever_handle<ns_8_bit> region_bitmap_o = image_server.image_storage.request_storage(
 						region_bitmap,
-						ns_tiff, 1024, &sql,
+						ns_tiff, 1.0, 1024, &sql,
 						had_to_use_volatile_storage,
 						false,
 						false);

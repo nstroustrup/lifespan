@@ -1848,7 +1848,7 @@ void ns_experiment_storyboard_manager::save_image_to_db(const unsigned long sub_
 	if (sub_images[sub_image_id].id == 0)
 		throw ns_ex("ns_experiment_storyboard_manager::save_image_to_db()::Metadata has not been established");
 	bool had_to_use_volatile;
-	ns_image_storage_reciever_handle<ns_8_bit> h(image_server.image_storage.request_storage(sub_images[sub_image_id],ns_tiff,1024,&sql,had_to_use_volatile,true,false));
+	ns_image_storage_reciever_handle<ns_8_bit> h(image_server.image_storage.request_storage(sub_images[sub_image_id],ns_tiff,1.0,1024,&sql,had_to_use_volatile,true,false));
 	im.pump(h.output_stream(),1024);
 }
 

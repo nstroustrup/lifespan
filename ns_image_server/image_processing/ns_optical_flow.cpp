@@ -397,8 +397,8 @@ void ns_optical_flow::test(){
 			}
 			
 
-			ns_tiff_image_output_file<ns_16_bit> tiff_out(ns_tiff_compression_none);
-			ns_image_stream_file_sink<ns_16_bit> file_sink(dir + "out\\worm_" + ns_to_string(k) + ".tif", tiff_out, 1024);
+			ns_tiff_image_output_file<ns_16_bit> tiff_out(ns_tiff_compression_zip);
+			ns_image_stream_file_sink<ns_16_bit> file_sink(dir + "out\\worm_" + ns_to_string(k) + ".tif", tiff_out, 1.0,1024);
 			out.pump(file_sink, 1024);
 		}
 	}

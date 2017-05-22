@@ -2459,7 +2459,7 @@ void ns_detected_worm_stats::draw_feature_frequency_distributions(const std::vec
 			std::string fn = freq_base_dir + "\\" + ns_classifier_abbreviation((ns_detected_worm_classifier)s) + ".tif";
 
 			ns_tiff_image_output_file<ns_8_bit> im_out;
-			ns_image_stream_file_sink<ns_8_bit > file_sink(fn,im_out,128);
+			ns_image_stream_file_sink<ns_8_bit > file_sink(fn,im_out,1.0,128);
 			freq_graph.pump(file_sink,128);
 		}
 		catch(ns_ex & ex){

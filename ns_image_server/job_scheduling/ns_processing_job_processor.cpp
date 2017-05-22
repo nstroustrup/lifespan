@@ -877,13 +877,14 @@ bool ns_processing_job_maintenance_processor::run_job(ns_sql & sql) {
 						im_source.input_stream().pump(image,1024);
 						bool b;
 						im.filename += ".jp2";
-						ns_image_storage_reciever_handle<ns_8_bit> im_dest(image_server->image_storage.request_storage(
-									im, ns_jp2k, 2048, &sql, b, false, false));
-						string compression_rate = image_server->get_cluster_constant_value("jp2k_compression_rate",".03",&sql);
+						
+						string compression_rate = image_server->get_cluster_constant_value("jp2k_compression_rate",".05",&sql);
 						float compression_rate_f = atof(compression_rate.c_str());
 						if (compression_rate_f <= 0)
 							throw ns_ex("Invalid compression rate: ") << compression_rate_f ;
-						image.set_output_compression(compression_rate_f);
+
+						ns_image_storage_reciever_handle<ns_8_bit> im_dest(image_server->image_storage.request_storage(
+							im, ns_jp2k, compression_rate_f,2048, &sql, b, false, false));
 						image.pump(im_dest.output_stream(),2048);
 						im.save_to_db(im.id,&sql);
 						image_server->image_storage.delete_from_storage(old_im,ns_delete_long_term,&sql);
@@ -1094,7 +1095,7 @@ bool ns_processing_job_maintenance_processor::run_job(ns_sql & sql) {
 			ns_image_server_image a_vis = region_image.create_storage_for_processed_image(ns_process_heat_map,ns_tiff,&sql);
 			ns_image_storage_reciever_handle<ns_8_bit> a_vis_o = image_server->image_storage.request_storage(
 														a_vis,
-														ns_tiff, 1024,&sql,had_to_use_local_storage,false,false);
+														ns_tiff, 1.0,1024,&sql,had_to_use_local_storage,false,false);
 			heat_map.pump(a_vis_o.output_stream(),1024);
 			a_vis.mark_as_finished_processing(&sql);
 	
@@ -1106,7 +1107,7 @@ bool ns_processing_job_maintenance_processor::run_job(ns_sql & sql) {
 			ns_image_server_image b_vis = region_image.create_storage_for_processed_image(ns_process_static_mask,ns_tiff,&sql);
 			ns_image_storage_reciever_handle<ns_8_bit> b_vis_o = image_server->image_storage.request_storage(
 													b_vis,
-													ns_tiff, 1024,&sql,had_to_use_local_storage,false,false);
+													ns_tiff, 1.0,1024,&sql,had_to_use_local_storage,false,false);
 			static_mask.pump(b_vis_o.output_stream(),1024);
 			b_vis.mark_as_finished_processing(&sql);
 

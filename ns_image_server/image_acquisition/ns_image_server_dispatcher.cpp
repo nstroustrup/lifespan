@@ -1049,7 +1049,7 @@ void ns_image_server_dispatcher::recieve_image_thread(ns_image_server_message & 
 	//cerr << "Getting storage...\n";
 	//get access to image storage
 	bool had_to_use_local_storage;
-	ns_image_storage_reciever_handle<ns_8_bit> image_storage = image_server.image_storage.request_storage(image,ns_tiff,512,&sql(),had_to_use_local_storage,false,true);
+	ns_image_storage_reciever_handle<ns_8_bit> image_storage = image_server.image_storage.request_storage(image,ns_tiff,1.0,512,&sql(),had_to_use_local_storage,false,true);
 	
 	sql().disconnect();
 	sql.release();

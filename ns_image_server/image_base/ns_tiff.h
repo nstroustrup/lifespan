@@ -270,7 +270,7 @@ public:
 		catch(...)
 		{std::cerr << "~ns_tiff_image_output_file() tried to throw an exception!";}}
 	//open and close files
-	void open_file(const std::string & filename, const ns_image_properties & properties){
+	void open_file(const std::string & filename, const ns_image_properties & properties, const float compression_ratio){
 	
 		try{
 			client_data.clear();

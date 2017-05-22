@@ -14,6 +14,9 @@
 #include "ns_performance_statistics.h"
 #include "ns_managed_pointer.h"
 
+#define NS_DEFAULT_JPEG_COMPRESSION .8
+#define NS_DEFAULT_JP2K_COMPRESSION .05
+
 
 std::string ns_shorten_filename(std::string name, const unsigned long limit=40);
 
@@ -61,9 +64,9 @@ image_t & ns_choose_image_source(const ns_image_type & type, image_t & jpeg, ima
 template<class ns_component>
 class ns_image_storage_reciever_to_disk : public ns_image_storage_reciever<ns_component> {
 public:
-	ns_image_storage_reciever_to_disk(const unsigned long max_block_height, const std::string & filename, const ns_image_type & type, const bool volatile_file_ = false) :
+	ns_image_storage_reciever_to_disk(const unsigned long max_block_height, const std::string & filename, const ns_image_type & type, const float compression_ratio,const bool volatile_file_ = false) :
 		ns_image_storage_reciever<ns_component>(max_block_height), volatile_file(volatile_file_), total(0),
-		file_sink(filename, ns_choose_image_source<ns_image_output_file<ns_component> >(type,jpeg_out, tiff_out, jp2k_out), max_block_height), tiff_out(ns_get_tiff_compression_type(type))
+		file_sink(filename, ns_choose_image_source<ns_image_output_file<ns_component> >(type,jpeg_out, tiff_out, jp2k_out), max_block_height, compression_ratio), tiff_out(ns_get_tiff_compression_type(type))
 	{}
 
 	ns_image_stream_static_buffer<ns_component> * provide_buffer(const ns_image_stream_buffer_properties & buffer_properties)

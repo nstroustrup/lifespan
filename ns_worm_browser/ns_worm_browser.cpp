@@ -59,17 +59,17 @@ void ns_worm_learner::produce_experiment_mask_file(const std::string & filename)
 	ns_image_standard mask_file;
 
 	ns_tiff_image_output_file<ns_8_bit> tiff_out;
-	ns_image_stream_file_sink<ns_8_bit> file_sink(filename,tiff_out,1024);
+	ns_image_stream_file_sink<ns_8_bit> file_sink(filename,tiff_out,1.0,1024);
 
 	cerr << "writing: " << filename  << "\n";	
 	
 	ns_acquire_for_scope<ns_sql> sql(image_server.new_sql_connection(__FILE__,__LINE__));
-	const string mask_time(image_server.get_cluster_constant_value(string("mask_time=") + ns_to_string(experiment_id),"0",&sql()));
-	const unsigned long mask_time_t(static_cast<unsigned long>(ns_atoi64(mask_time.c_str())));
+	sql() << "SELECT mask_time FROM experiments WHERE experiment_id = " << experiment_id;
+	unsigned long mask_time = sql().get_ulong_value();
 	cerr << "Generating mask";
-	if (mask_time_t != 0)
-		cerr << " using images up until" << ns_format_time_string_for_human(mask_time_t);
-	mask_manager.produce_mask_file(experiment_id,file_sink,mask_time_t);
+	if (mask_time != 0)
+		cerr << " using images up until" << ns_format_time_string_for_human(mask_time);
+	mask_manager.produce_mask_file(experiment_id,file_sink,mask_time);
 }
 
 
@@ -5117,7 +5117,7 @@ ns_mask_info ns_worm_learner::send_mask_to_server(const ns_64_bit & sample_id){
 	ns_image_server_image image;
 	image.load_from_db(mask_info.image_id, &sql());
 	bool had_to_use_local_storage;
-	ns_image_storage_reciever_handle<ns_8_bit> image_storage = image_server.image_storage.request_storage(image, ns_tiff, 512, &sql(), had_to_use_local_storage, false, false);
+	ns_image_storage_reciever_handle<ns_8_bit> image_storage = image_server.image_storage.request_storage(image, ns_tiff, 1.0,512, &sql(), had_to_use_local_storage, false, false);
 
 	//ns_image_standard decoded_image;
 	current_mask.pump(image_storage.output_stream(), 512);
@@ -5272,7 +5272,7 @@ void ns_worm_learner::output_learning_set(const std::string & directory, const b
 	for (unsigned int i = 0; i < worm_detection_results->number_of_actual_worms(); i++){
 		std::string filename = worm_dir + DIR_CHAR_STR + "ns_w_" + ns_to_string(image_id) + ".tif";
 		ns_tiff_image_output_file<ns_8_bit> tiff_out;
-		ns_image_stream_file_sink<ns_8_bit> file_sink(filename,tiff_out,128);
+		ns_image_stream_file_sink<ns_8_bit> file_sink(filename,tiff_out,1.0,128);
 		worm_detection_results->generate_actual_training_set_visualization(i,im);
 		im.pump(file_sink,128);
 		image_id++;
@@ -5286,7 +5286,7 @@ void ns_worm_learner::output_learning_set(const std::string & directory, const b
 	for (unsigned int i = 0; i < worm_detection_results->number_of_non_worms(); i++){
 		std::string filename = non_worm_dir + DIR_CHAR_STR + "ns_n_" + ns_to_string(image_id) + ".tif";
 		ns_tiff_image_output_file<ns_8_bit> tiff_out;
-		ns_image_stream_file_sink<ns_8_bit> file_sink(filename,tiff_out,128);
+		ns_image_stream_file_sink<ns_8_bit> file_sink(filename,tiff_out,1.0,128);
 		worm_detection_results->generate_non_worm_training_set_visualization(i,im);
 		im.pump(file_sink,128);
 		image_id++;
@@ -5350,18 +5350,18 @@ void ns_worm_learner::save_current_image(const std::string & filename){
 	//open jpeg
 	if (extension == "jpg"){
 		ns_jpeg_image_output_file<ns_8_bit> jpeg_out;
-		ns_image_stream_file_sink<ns_8_bit > file_sink(filename,jpeg_out,1024);
+		ns_image_stream_file_sink<ns_8_bit > file_sink(filename,jpeg_out, NS_DEFAULT_JPEG_COMPRESSION,1024);
 		current_image.pump(file_sink,128);
 	}
 	//open tiff
 	else if (extension == "tif" || extension == "tiff"){
 		ns_tiff_image_output_file<ns_8_bit> tiff_out;
-		ns_image_stream_file_sink<ns_8_bit> file_sink(filename,tiff_out,1024);
+		ns_image_stream_file_sink<ns_8_bit> file_sink(filename,tiff_out, 1.0,1024);
 		current_image.pump(file_sink,1024);
 	}
 	if (extension == "jp2"){
 		ns_ojp2k_image_output_file<ns_8_bit> jp2k_out;
-		ns_image_stream_file_sink<ns_8_bit > file_sink(filename,jp2k_out,1024);
+		ns_image_stream_file_sink<ns_8_bit > file_sink(filename,jp2k_out,NS_DEFAULT_JP2K_COMPRESSION,1024);
 		current_image.pump(file_sink,1024);
 	}
 

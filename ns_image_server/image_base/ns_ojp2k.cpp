@@ -15,11 +15,10 @@ void ns_ojp2k_setup_output(const ns_image_properties & properties,const float co
 		throw (ns_ex("Cannot create an image with 0 pixel components!"));
 	opj_set_default_encoder_parameters(&data->parameters);
 	
-	if (compression_ratio == 1)
+	//if (compression_ratio == 1)
+	//	data->parameters.irreversible = 1;
+	//else 
 		data->parameters.irreversible = 0;
-	else data->parameters.irreversible = 1;
-	data->parameters.cblockw_init = 64;
-	data->parameters.cblockh_init = 64;
 	
 	data->parameters.cp_tx0 = 0;
 	data->parameters.cp_ty0 = 0;
@@ -39,37 +38,37 @@ void ns_ojp2k_setup_output(const ns_image_properties & properties,const float co
 	else	data->parameters.cp_tdy = pow(2, floor(log2(properties.height)));
 	*/
 	
-	
 	data->parameters.tcp_numlayers = 1;
-	if (compression_ratio == 0)
+	if (compression_ratio == 0 || compression_ratio==1)
 		data->parameters.tcp_rates[0] = 0;
 	else
 	data->parameters.tcp_rates[0] = 1.0 / compression_ratio;
 	data->parameters.tcp_rates[1] = 0;
 	
 	data->parameters.roi_compno = -1;
-	data->parameters.roi_shift = 0;
-	data->parameters.res_spec = 0;
-	data->parameters.index_on = NULL;
-	data->parameters.image_offset_x0 = 0;
-	data->parameters.image_offset_y0 = 0;
-	data->parameters.subsampling_dx = 0;
-	data->parameters.subsampling_dy = 0;
+	//data->parameters.roi_shift = 0;
+	//data->parameters.res_spec = 0;
+	//data->parameters.index_on = NULL;
+	//data->parameters.image_offset_x0 = 0;
+	//data->parameters.image_offset_y0 = 0;
+	//data->parameters.subsampling_dx = 0;
+	//data->parameters.subsampling_dy = 0;
 	
 	data->parameters.cp_disto_alloc = 1;
-	data->parameters.cp_fixed_alloc = 0;
-	data->parameters.cp_fixed_quality = 0;
-	data->parameters.cp_matrice = 0;
+	//data->parameters.cp_fixed_alloc = 0;
+	//data->parameters.cp_fixed_quality = 0;
+	//data->parameters.cp_matrice = 0;
 	data->parameters.prog_order = OPJ_LRCP;
-	data->parameters.numpocs = 0;
-	data->parameters.numresolution = 1;
+	//data->parameters.numpocs = 0;
+	//data->parameters.numresolution = 2;
 	data->parameters.cod_format = 1;//jp2
-	data->parameters.cp_comment = 0;
-	data->parameters.csty = 0;
-	data->parameters.mode = 0;
-	data->parameters.max_comp_size = 0;
-	
+	//data->parameters.cp_comment = 0;
+	//data->parameters.csty = 0;
+	//data->parameters.mode = 0;
+	//data->parameters.max_comp_size = 0;
+	data->parameters.tcp_mct = (properties.components == 3) ? 1 : 0;
 	opj_image_comptparm prm[3];
+	memset(prm, 0, 3*sizeof(opj_image_comptparm));
 	for (unsigned int i = 0; i < properties.components; i++) {
 		prm[i].dx = prm[i].dy = 1;
 		prm[i].w = properties.width;
@@ -81,7 +80,9 @@ void ns_ojp2k_setup_output(const ns_image_properties & properties,const float co
 	}
 	
 	OPJ_COLOR_SPACE color_space((properties.components == 3) ? OPJ_CLRSPC_SRGB : OPJ_CLRSPC_GRAY);
-	data->image = opj_image_tile_create(properties.components, prm, color_space);
+	data->image = opj_image_tile_create(properties.components, &prm[0], color_space);
+	data->image->x0 = 0;
+	data->image->y0 = 0;
 	data->image->x1 = properties.width;
 	data->image->y1 = properties.height;
 	if (data->image == 0)

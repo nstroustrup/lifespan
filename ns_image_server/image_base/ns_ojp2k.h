@@ -5,7 +5,7 @@
 #define OPJ_STATIC
 #include "openjp2/openjpeg.h"
 #else
-#include "openjpeg-2.1.2/openjpeg.h"
+#include "openjpeg.h"
 #endif
 struct ns_ojp2k_initialization{
 	static void init();
@@ -19,7 +19,7 @@ void ns_jp2k_error_callback(const char *msg, void *client_data);
 void ns_jp2k_warning_callback(const char *msg, void *client_data);
 void ns_jp2k_info_callback(const char *msg, void *client_data);
 
-//ns_8_bit_jp2k_image_input_file contains all the code to interact 
+//ns_8_bit_jp2k_image_input_file contains all the code to interact
 //with the JASPER jppeg2000 library
 //It is encapsulated as its own (non-templated) class so that
 //the implemenentation (which requires the inclusion of the JASPER header file
@@ -67,14 +67,14 @@ protected:
 public:
 	ns_ojp2k_image_input_file() :lines_read(0), data(0), lines_sent(0), total_lines_sent(0),input_buffer(0), input_buffer_size(0)
 	{ ns_ojp2k_initialization::init(); }
-	
+
 	void open_file(const std::string & filename) {
 		if (input_buffer != 0) {
 			delete[] input_buffer;
 			input_buffer = 0;
 			input_buffer_size = 0;
 		}
-		lines_read = 0; 
+		lines_read = 0;
 		lines_sent = 0;
 		total_lines_sent = 0;
 		if (data != 0)
@@ -93,7 +93,7 @@ public:
 		opj_set_warning_handler(data->codec, ns_jp2k_warning_callback, 00);
 		opj_set_error_handler(data->codec, ns_jp2k_error_callback, 00);
 
-	
+
 		opj_dparameters_t parameters;
 		opj_set_default_decoder_parameters(&parameters);
 		parameters.decod_format = 1;
@@ -104,7 +104,7 @@ public:
 
 		if (!opj_read_header(data->stream, data->codec, &data->image))
 			throw ns_ex("openjpeg::Could not read header");
-		
+
 
 		this->properties.width = data->image->x1 - data->image->x0;
 		this->properties.height = data->image->y1 - data->image->y0;
@@ -113,13 +113,13 @@ public:
 
 		if (data->image->comps[0].prec / 8 != sizeof(ns_component))
 			throw ns_ex("Attempting to load an ") << data->image->comps[0].prec << " bit image into a " << sizeof(ns_component) * 8 << " bit data structure!";
-	
-		if (!opj_set_decode_area(data->codec, data->image, data->image->x0, data->image->y0, data->image->x1, data->image->y1)) 
+
+		if (!opj_set_decode_area(data->codec, data->image, data->image->x0, data->image->y0, data->image->x1, data->image->y1))
 			throw ns_ex("Cannot open decode area");
-	
+
 	}
 	void close_file() { close(); }
-	void close() { 
+	void close() {
 		try {
 			if (data != 0) {
 				ns_ex ex;
@@ -152,7 +152,7 @@ public:
 	ns_component * operator()(const unsigned long x, const  unsigned int component, ns_component * buffer)const {
 		return &(buffer[this->properties.components*x + component]);
 	}
-	bool read_line(ns_component * buffer) { 
+	bool read_line(ns_component * buffer) {
 		if (lines_read <= lines_sent) {
 			OPJ_UINT32 tile_index, data_size, num_components;
 			OPJ_INT32 current_tile_x0, current_tile_y0, current_tile_x1, current_tile_y1;
@@ -204,7 +204,7 @@ public:
 
 
 
-//ns_8_bit_jp2k_image_output_file contains all the code to interact 
+//ns_8_bit_jp2k_image_output_file contains all the code to interact
 //with the openjpeg library
 #define NS_OPJEG_WIDTH ns_image_output_file<ns_component>::_properties.width*ns_image_output_file<ns_component>::_properties.components
 
@@ -237,7 +237,7 @@ struct ns_jp2k_output_data {
 		}
 	}
 };
-//tcp ratio (equivalent to setting the -r value in opj_compress) is set as 1/properties.compression. 
+//tcp ratio (equivalent to setting the -r value in opj_compress) is set as 1/properties.compression.
 //early testing suggested that a 20x ratio works well, e.g properties.compression = .05
 void ns_ojp2k_setup_output(const ns_image_properties & properties, const float compression_ratio,const std::string & filename, const unsigned long rows_per_strip, ns_jp2k_output_data * data, const char bit_depth);
 
@@ -325,7 +325,7 @@ public:
 		if (output_buffer_height == rows_per_strip) {
 
 			OPJ_UINT32 l_data_size = sizeof(ns_component)*ns_image_output_file<ns_component>::_properties.width*output_buffer_height;
-			
+
 			if (!opj_write_tile(data->codec, lines_written / rows_per_strip, (OPJ_BYTE *)((void *)output_buf), l_data_size, data->stream))
 				throw ns_ex("openjpeg::Could not write line");
 			lines_written += output_buffer_height;
@@ -340,7 +340,7 @@ public:
 	void write_lines(const ns_component ** buffer, const unsigned int n) {
 		for (unsigned int i = 0; i < n; i++)
 			write_line(buffer[i]);
-	}	
+	}
 	void open_mem(const void *, const ns_image_properties &p) { throw ns_ex("NOT IMPLEMENTED"); }
 	virtual ns_component * operator()(const unsigned long x, const unsigned int component, ns_component * buffer)const {
 		return &(buffer[ns_image_output_file<ns_component>::_properties.components*x + component]);

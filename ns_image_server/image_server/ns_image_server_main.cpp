@@ -839,7 +839,7 @@ int main(int argc, char * argv[]){
 		bool upload_experiment_spec_to_db(false),
 			  overwrite_existing_experiments(false);
 		std::string input_filename;
-
+		bool sql_update_requested(false);
 		//parse the command line
 		for (int i = 1; i < argc; i++){
 			std::string command_str(argv[i]);
@@ -912,7 +912,8 @@ int main(int argc, char * argv[]){
 				if (i+1>= argc) throw ns_ex("M4v filename must be specified");
 				input_filename = argv[i+1];
 			}
-			if (p->second == ns_update_sql){
+			else if (p->second == ns_update_sql){
+			  sql_update_requested = true;
 				if (i+1 == argc)  //default
 					schema_name = "image_server";
 				else {
@@ -920,7 +921,7 @@ int main(int argc, char * argv[]){
 					i++; // "consume" the next argument so it doesn't get interpreted as a command-string.
 				}
 			}
-			if (p->second == ns_additional_host_description) {
+			else if (p->second == ns_additional_host_description) {
 				if (i + 1 == argc)  //default
 					throw ns_ex("if additional_host_description is specified, a value must be provided");
 				else {
@@ -1019,6 +1020,7 @@ int main(int argc, char * argv[]){
 		//ns_test_simple_cache("c:\\server\\cache_debug.txt");
 
 		bool restarting_after_crash(false);
+	       
 		//execute any commands requested at the command line\n";
 		switch(command){
 			case ns_start: break;
@@ -1178,11 +1180,17 @@ int main(int argc, char * argv[]){
 		ns_acquire_for_scope<ns_image_server_sql> sql;
 		
 		image_server.os_signal_handler.set_signal_handler(ns_interrupt,exit_signal_handler);
-		
+		if (sql_update_requested){
+                  ns_acquire_for_scope<ns_sql> sql(image_server.new_sql_connection(__FILE__,__LINE__));
+                  image_server.upgrade_tables(sql(),false,schema_name);
+                  sql.release();
+                  return 0;
+                }	
 		//ns_optical_flow flow;
 		//flow.test();
 		#ifndef _WIN32
-			//start a crash daemon to handle server crashes
+	       
+      			//start a crash daemon to handle server crashes
 			ns_image_server_crash_daemon crash_daemon;
 		       
 			while(true){
@@ -1212,9 +1220,10 @@ int main(int argc, char * argv[]){
 					else{
 						image_server.register_server_event(ns_image_server_event("The image server has restarted after a crash."),&sql());
 					}
-			    }
+				
+				}
 			}
-			  
+	
 			//register a swath or error handlers to allow recovery from segfaults and such under linux
 			image_server.os_signal_handler.set_signal_handler(ns_segmentation_fault,segmentation_fault_signal_handler);
 			image_server.os_signal_handler.set_signal_handler(ns_bus_error,bus_error_signal_handler);
@@ -1223,8 +1232,10 @@ int main(int argc, char * argv[]){
 			while(!ns_image_server_crash_daemon::daemon_is_running()){
 			  ns_thread::sleep(1);
 			}
-		#endif
-
+			
+			      
+#endif
+		
 
 		//don't act as an image capture server if we just want to copy over images.
 		if (post_dispatcher_init_command == ns_run_pending_image_transfers){
@@ -1233,7 +1244,7 @@ int main(int argc, char * argv[]){
 
 		if (sql.is_null())
 				sql.attach(ns_connect_to_available_sql_server());
-
+	      
 		image_server.image_storage.refresh_experiment_partition_cache(&sql());
 		if (sql().connected_to_central_database()){
 			image_server.clear_performance_statistics(*static_cast<ns_sql *>(&sql()));
@@ -1282,13 +1293,13 @@ int main(int argc, char * argv[]){
 		if (sql().connected_to_central_database()){
 			image_server.get_requested_database_from_db();
 			image_server.register_host(&sql());
-			if (command != ns_update_sql) {  //we can't register events in the db until the db is updated
+		       
 				image_server.register_server_event(ns_image_server_event("Launching server..."), &sql(), true);
 				image_server.add_subtext_to_current_event(splash, &sql(), true);
 				image_server.add_subtext_to_current_event(quote, &sql(), true);
-			}
+			
 			if (image_server.new_software_release_available() && image_server.halt_on_new_software_release()){
-				if (command != ns_update_sql)  //we can't register events in the db until the db is updated
+			       
 					image_server.register_server_event(ns_image_server_event("A more recent version of server software was found running on the cluster.  This server is outdated and is halting now."),&sql());
 				#ifdef _WIN32 
 				image_server.update_software = true;
@@ -1296,6 +1307,7 @@ int main(int argc, char * argv[]){
 				throw ns_ex("Updated software detected on the cluster.");
 			}
 		}
+	       
 
 		image_server.image_storage.test_connection_to_long_term_storage(true);
 		if (!image_server.image_storage.long_term_storage_was_recently_writeable() && image_server.act_as_processing_node()) {
@@ -1314,12 +1326,7 @@ int main(int argc, char * argv[]){
 				sql.release();
 				return 0;
 			}
-			case ns_update_sql:{
-				ns_acquire_for_scope<ns_sql> sql(image_server.new_sql_connection(__FILE__,__LINE__));
-				image_server.upgrade_tables(sql(),false,schema_name);
-				sql.release();
-				return 0;
-			}
+		    
 			case ns_test_email:{
 				std::string text("Image server node ");
 				text += image_server.host_name_out();
@@ -1543,7 +1550,7 @@ int main(int argc, char * argv[]){
 		//}
 		
 		cerr << "Terminating...\n";
-	}
+		}
 	catch(ns_ex & ex){
 	  #ifdef _WIN32 
 		//if (!console_window_created)

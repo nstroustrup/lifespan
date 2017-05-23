@@ -939,11 +939,11 @@ bool ns_image_server::upgrade_tables(ns_sql & sql,const bool just_test_if_needed
 		changes_made = true;
 	}
 
-	if (!ns_sql_column_exists("`experiments","mask_time",sql)) {
+	if (!ns_sql_column_exists("experiments","mask_time",sql)) {
 		cout << "Adding additional metadata columns to experiment table\n";
 		sql << "ALTER TABLE `experiments`"
 			"ADD COLUMN `mask_time` BIGINT(20) UNSIGNED NOT NULL DEFAULT '0' AFTER `number_of_regions_in_latest_storyboard_build`,"
-			"ADD COLUMN `compression_type` CHAR(50) NOT NULL DEFAULT '\'jp2k\'' AFTER `mask_time`,"
+			"ADD COLUMN `compression_type` CHAR(50) NOT NULL DEFAULT 'jp2k' AFTER `mask_time`,"
 			"ADD COLUMN `compression_ratio` FLOAT NOT NULL DEFAULT '0.05' AFTER `compression_type`";
 		sql.send_query();
 		changes_made = true;

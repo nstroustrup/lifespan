@@ -329,7 +329,7 @@ void ns_image_server_dispatcher::run(){
 
 			if (image_server.processing_time_is_exceeded()){
 				image_server.register_server_event(ns_image_server::ns_register_in_central_db_with_fallback, ns_image_server_event("Processing time exceeded."));
-				image_server.exit_requested = true;
+				image_server.shut_down_host();
 			}
 			lock.release();
 		}
@@ -448,7 +448,7 @@ void ns_image_server_dispatcher::start_looking_for_new_work(){
 		ns_acquire_lock_for_scope lock(processing_lock,__FILE__,__LINE__);
 		if (allow_processing && !processing_job_scheduler_thread.is_running()){
 			if (image_server.number_of_jobs_processed_is_exceeded()) {
-				image_server.exit_requested = true;
+			  image_server.shut_down_host();
 			}
 			//get a job from the server
 			else processing_job_scheduler_thread.run(thread_start_look_for_work,this);
@@ -1264,7 +1264,7 @@ bool ns_image_server_dispatcher::look_for_work(){
 			image_server.incremenent_empty_job_queue_check_count();
 			if (image_server.empty_job_queue_check_count_is_exceeded()) {
 				image_server.register_server_event(ns_ex("Idle image processing job queue count limit reached."), work_sql_connection);
-				image_server.exit_requested = true;
+				image_server.shut_down_host();
 			}
 			return false;
 		}

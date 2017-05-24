@@ -561,22 +561,79 @@ int main(int argc, char ** argv){
 	commands["max_memory_to_use"] = ns_max_memory_to_use;
 	commands["idle_queue_check_limit"] = ns_idle_queue_check_limit;
 	commands["ini_file_location"] = ns_ini_file_location;
+
+
+	ns_ex command_line_usage;
+
+	command_line_usage << "Usage: " << argv[0] << " [Option] [value] [Option] [value]";
+
+	command_line_usage << "\nOptions:\n"
+		<< "**Basic server control functions**\n"
+		<< "start:  start an instance of the image server on the local machine (default)\n"
+		<< "status: check to see if an instance of the image server is running on the local machine\n"
+		<< "stop:   request that the currently running local instance of the image server terminate\n"
+		<< "restart:request that the currently running local instance of the image server terminate,\n"
+		"        and launch a new instance in current process\n"
+		<< "hotplug:request the currently running local instance of the image server check for hardware\n"
+		"        changes to image acquisition devices attached to local machine\n"
+		"ini_file_location: explicitly specify the location and filename of an ns_image_server.ini\n"
+		<< "\n**Runtime control limits**\n"
+		<< "max_run_time_in_seconds : Specify a maximum time to run; useful for running on a HPC cluster)\n"
+		<< "max_number_of_jobs_to_process:  Specify a maximum number of jobs to process; (useful for\n"
+		"     running on a HPC cluster)\n"
+		<< "idle_queue_check_limit : specify a maximum number of times to check an idle processing queue\n"
+		"     before giving up and shutting down.  Overrides the value in ns_image_server.ini of \n"
+		"     number_of_times_to_check_empty_processing_job_queue_before_stopping\n"
+		<< "number_of_processor_cores_to_use [value] e: specify the number of processing cores to use, overriding\n"
+		"      the value of number_of_processing_nodes specified in the ns_image_server.ini file\n"
+		"max_memory_to_use:  Specify an ideal memory allocation limit, overriding the value in ns_image_server.ini\n"
+#ifndef _WIN32
+		 "daemon: run as a background process\n";
+#endif
+
+		<< "\n**Advanced control functions**\n"
+		<< "stop_checking_central_db: Cease attempting to connect to the central db.\n"
+		<< "start_checking_central_db: Restart attempts to connect to the central db.\n"
+		<< "output_sql_debug: request that a running server output its sql debug information\n"
+		<< "reset_devices : request the currently running local instance of the image server reset its\n"
+		"       image acquisition device registry and build it from scratch\n"
+		<< "reload_models : request the currently running local instance of the image server clear its\n"
+		"       cache of worm detection models so they are reloaded from disk.\n"
+		<< "additional_host_description [text]: optionally specify extra information to distinguish the \n"
+		"       current host (e.g when running in an HPC cluster)\n"
+		<< "run_pending_image_transfers: Start up the server, transfer any pending images to the central\n"
+		"       file server, and shut down\n"
+		<< "clear_local_db_buffer_cleanly: Clear all information from the local database after \n"
+		"       synchronizing it with the central db.\n"
+		<< "clear_local_db_buffer_dangerously: Clear all information from the local database without\n"
+		"       synchronizing.\n"
+		<< "fix_orphaned_captured_images: Go through the volatile storage and fix database records for \n"
+		"       images orphaned by a previous bug in the lifespan machine software\n"
+		<< "update_sql [schema name]: update the sql database schema to match the most recent version. \n"
+		"       No changes are made if the schema is already up-to-data.  Schema can be specified\n"
+
+		<< "\n**Redundant, test, or debug functions**\n"
+		<< "submit_experiment: Test and submit an experiment specification XML file to the cluster\n"
+		<< "       By default this only outputs a summary of the proposed experiment to stdout\n"
+		<< "       With sub-option 'u': actually submit the experiment specification to the database \n"
+		<< "       With sub-option 'f' (which implies 'u'): force overwriting of existing experiments\n"
+		<< "test_email : send a test alert email from the current node\n"
+		<< "test_alert : send a test alert to be processed by the cluster\n"
+		<< "test_rate_limited_alert : send a test alert to be processed by the cluster\n"
+		<< "wrap_m4v:  wrap the specified m4v stream in an mp4 wrapper with multiple frame rates.\n"
+		<< "trigger_segfault: Trigger a segfault to test the crash daemon\n"
+		<< "trigger_dispatcher_segfault: Trigger a segfault in the dispatcher to test the crash daemon\n"
+		<< "simulate_central_db_connection_error: Simulate a broken connection to the central database.\n"
+		<< "output_image_buffer_info: Output information about the state of each scanner's locally \n"
+		"       buffered images.\n";
+
 	bool is_master_node(false);
 	std::string schema_name, ini_file_location;
 	unsigned long max_run_time(0), max_job_num(0), number_of_processing_cores(-1), idle_queue_check_limit(-1), memory_allocation_limit(-1);
 
 	try{
 
-
-		
 		ns_sql::load_sql_library();
-
-		//we run multiple instances of the server node on each computer.
-		//to do this we launch one process per instance at runtime.
-		/*ns_multiprocess_control_options mp_options;
-		for (unsigned int i = 1; i < argc; i++)
-			mp_options.from_parameter(argv[i]);*/
-		
 
 
 		//set default options for command line arguments
@@ -585,108 +642,47 @@ int main(int argc, char ** argv){
 			  overwrite_existing_experiments(false);
 		std::string input_filename;
 		bool sql_update_requested(false);
+		ns_cl_command post_dispatcher_init_command(ns_none);
+		bool restarting_after_crash(false);
 
-		//parse the command line
-		for (int i = 1; i < argc; i++){
+		//first, look for commandline arguments that modify the server behavior.
+		//there can be multiple arguments like this.
+		for (int i = 1; i < argc; i++) {
 			std::string command_str(argv[i]);
 
+
+
 			//run as background daemon if requested.
-			if (std::string(argv[i]) == "daemon"){
-				#ifdef _WIN32 
+			if (std::string(argv[i]) == "daemon") {
+#ifdef _WIN32 
 				throw ns_ex("The image server cannot explicity start as dameon under windows.");
-				#else
-				if (::daemon(1,0)!=0)
+#else
+				if (::daemon(1, 0) != 0)
 					throw ns_ex("Could not launch as a daemon!");
 				continue;
-				#endif
+#endif
 			}
 
-			std::map<std::string,ns_cl_command>::iterator p = commands.find(command_str);
-			if (p == commands.end() || p->second == ns_help){
-					ns_ex ex;
-					if (p == commands.end())
-						ex << "Unknown command line argument: " << command_str << "\n";
-				
-					ex << "Usage: " << argv[0] << " [Option] [value] [Option] [value]";
-					#ifndef _WIN32
-					ex << " [daemon]";
-					#endif
-					ex << "\nOptions:\n"
-						<< "**Basic server control functions**\n"
-						<< "start:  start an instance of the image server on the local machine (default)\n"
-						<< "status: check to see if an instance of the image server is running on the local machine\n"
-						<< "stop:   request that the currently running local instance of the image server terminate\n"
-						<< "restart:request that the currently running local instance of the image server terminate,\n"
-						"        and launch a new instance in current process\n"
-						<< "hotplug:request the currently running local instance of the image server check for hardware\n"
-						"        changes to image acquisition devices attached to local machine\n"
-						"ini_file_location: explicitly specify the location and filename of an ns_image_server.ini\n"
-
-						<< "\n**Runtime control limits**\n"
-						<< "max_run_time_in_seconds : Specify a maximum time to run; useful for running on a HPC cluster)\n"
-						<< "max_number_of_jobs_to_process:  Specify a maximum number of jobs to process; (useful for\n"
-						  "     running on a HPC cluster)\n"
-						<< "idle_queue_check_limit : specify a maximum number of times to check an idle processing queue\n"
-						  "     before giving up and shutting down.  Overrides the value in ns_image_server.ini of \n"
-						  "     number_of_times_to_check_empty_processing_job_queue_before_stopping\n"
-						<< "number_of_processor_cores_to_use [value] e: specify the number of processing cores to use, overriding\n"
-						  "      the value of number_of_processing_nodes specified in the ns_image_server.ini file "
-						  "max_memory_to_use:  Specify an ideal memory allocation limit, overriding the value in ns_image_server.ini\n"
-
-						<< "\n**Advanced control functions**\n"
-						<< "stop_checking_central_db: Cease attempting to connect to the central db.\n"
-						<< "start_checking_central_db: Restart attempts to connect to the central db.\n"
-						<< "output_sql_debug: request that a running server output its sql debug information\n"
-						<< "reset_devices : request the currently running local instance of the image server reset its\n"
-						   "       image acquisition device registry and build it from scratch\n"
-						<< "reload_models : request the currently running local instance of the image server clear its\n"
-						   "       cache of worm detection models so they are reloaded from disk.\n"
-						<< "additional_host_description [text]: optionally specify extra information to distinguish the \n"
-						   "       current host (e.g when running in an HPC cluster)\n"
-						<< "run_pending_image_transfers: Start up the server, transfer any pending images to the central\n"
-						   "       file server, and shut down\n"
-						<< "clear_local_db_buffer_cleanly: Clear all information from the local database after \n"
-						   "       synchronizing it with the central db.\n"
-						<< "clear_local_db_buffer_dangerously: Clear all information from the local database without\n"
-						   "       synchronizing.\n"
-						<< "fix_orphaned_captured_images: Go through the volatile storage and fix database records for \n"
-						   "       images orphaned by a previous bug in the lifespan machine software\n"
-						<< "update_sql [schema name]: update the sql database schema to match the most recent version. \n"
-						   "       No changes are made if the schema is already up-to-data.  Schema can be specified\n"
-
-						<< "\n**Redundant, test, or debug functions**\n"
-						<< "submit_experiment: Test and submit an experiment specification XML file to the cluster\n"
-						<< "       By default this only outputs a summary of the proposed experiment to stdout\n"
-						<< "       With sub-option 'u': actually submit the experiment specification to the database \n"
-						<< "       With sub-option 'f' (which implies 'u'): force overwriting of existing experiments\n"
-						<< "test_email : send a test alert email from the current node\n"
-						<< "test_alert : send a test alert to be processed by the cluster\n"
-						<< "test_rate_limited_alert : send a test alert to be processed by the cluster\n"
-						<< "wrap_m4v:  wrap the specified m4v stream in an mp4 wrapper with multiple frame rates.\n"
-						<< "trigger_segfault: Trigger a segfault to test the crash daemon\n"
-						<< "trigger_dispatcher_segfault: Trigger a segfault in the dispatcher to test the crash daemon\n"
-						<< "simulate_central_db_connection_error: Simulate a broken connection to the central database.\n"
-						<< "output_image_buffer_info: Output information about the state of each scanner's locally \n"
-						   "       buffered images.\n";
-						
-					#ifndef _WIN32
-					ex << "daemon: run as a background process\n";
-					#endif
-					throw ex;
+			std::map<std::string, ns_cl_command>::iterator p = commands.find(command_str);
+			if (p == commands.end() || p->second == ns_help) {
+				ns_ex ex;
+				if (p == commands.end())
+					ex << "Unknown command line argument: " << command_str << "\n";
+				ex << command_line_usage.text();
+				throw ex;
 			}
-			command = p->second;
 
 			//grab extra information for arguments that are longer than one argument
-			if (p->second == ns_wrap_m4v){
-				if (i+1>= argc) throw ns_ex("M4v filename must be specified");
-				input_filename = argv[i+1];
+			if (p->second == ns_wrap_m4v) {
+				if (i + 1 >= argc) throw ns_ex("M4v filename must be specified");
+				input_filename = argv[i + 1];
 			}
-			else if (p->second == ns_update_sql){
-			  sql_update_requested = true;
-				if (i+1 == argc)  //default
+			else if (p->second == ns_update_sql) {
+				sql_update_requested = true;
+				if (i + 1 == argc)  //default
 					schema_name = "image_server";
 				else {
-					schema_name = argv[i+1];
+					schema_name = argv[i + 1];
 					i++; // "consume" the next argument so it doesn't get interpreted as a command-string.
 				}
 			}
@@ -694,7 +690,7 @@ int main(int argc, char ** argv){
 				if (i + 1 == argc)  //default
 					throw ns_ex("if additional_host_description is specified, a value must be provided");
 				else {
-					std::string additional_host_description = argv[i+1];
+					std::string additional_host_description = argv[i + 1];
 					image_server.set_additional_host_description(additional_host_description);
 					i++; // "consume" the next argument so it doesn't get interpreted as a command-string.
 				}
@@ -712,7 +708,7 @@ int main(int argc, char ** argv){
 				if (i + 1 == argc)  //default
 					throw ns_ex("if max_run_time_in_seconds is specified, a value must be provided");
 				else {
-					std::string tmp = argv[i + 1]; 
+					std::string tmp = argv[i + 1];
 					max_run_time = atol(tmp.c_str());
 					i++; // "consume" the next argument so it doesn't get interpreted as a command-string.
 				}
@@ -728,7 +724,7 @@ int main(int argc, char ** argv){
 			}
 			else if (p->second == ns_idle_queue_check_limit) {
 				if (i + 1 == argc)  //default
-					throw ns_ex("if number_of_processing_cores is specified, a value must be provided");
+					throw ns_ex("if ns_idle_queue_check_limit is specified, a value must be provided");
 				else {
 					std::string tmp = argv[i + 1];
 					idle_queue_check_limit = atol(tmp.c_str());
@@ -737,7 +733,7 @@ int main(int argc, char ** argv){
 			}
 			else if (p->second == ns_max_memory_to_use) {
 				if (i + 1 == argc)  //default
-					throw ns_ex("if number_of_processing_cores is specified, a value must be provided");
+					throw ns_ex("if ns_max_memory_to_use is specified, a value must be provided");
 				else {
 					std::string tmp = argv[i + 1];
 					memory_allocation_limit = atol(tmp.c_str());
@@ -746,54 +742,57 @@ int main(int argc, char ** argv){
 			}
 			else if (p->second == ns_ini_file_location) {
 				if (i + 1 == argc)  //default
-					throw ns_ex("if number_of_processing_cores is specified, a value must be provided");
+					throw ns_ex("if ns_ini_file_location is specified, a value must be provided");
 				else {
 					ini_file_location = argv[i + 1];
 					i++; // "consume" the next argument so it doesn't get interpreted as a command-string.
 				}
 			}
+			else if (p->second == ns_submit_experiment) {
 
-			if (p->second == ns_submit_experiment){
-				
-				if (i+1== argc) throw ns_ex("Output type and filename must be specified for schedule submission");
-				
-				if (i+2 == argc) {
-					input_filename = argv[i+1];
+				if (i + 1 == argc) throw ns_ex("Output type and filename must be specified for schedule submission");
+
+				if (i + 2 == argc) {
+					input_filename = argv[i + 1];
 					i++; // "consume" the next argument so it doesn't get interpreted as a command-string.
 				}
-				else if (i+3 == argc){
-					string opt(argv[i+1]);
-					if (opt == "f" || opt.size()==2 && (opt[0]=='f' || opt[1]=='f'))
+				else if (i + 3 == argc) {
+					string opt(argv[i + 1]);
+					if (opt == "f" || opt.size() == 2 && (opt[0] == 'f' || opt[1] == 'f'))
 						overwrite_existing_experiments = true;
-					if (opt == "u" || opt.size()==2 && (opt[0]=='u' || opt[1]=='u'))
+					if (opt == "u" || opt.size() == 2 && (opt[0] == 'u' || opt[1] == 'u'))
 						upload_experiment_spec_to_db = true;
-					input_filename = argv[i+2];
+					input_filename = argv[i + 2];
 					i += 2; // "consume" the next  two arguments so they don't get interpreted as a command-string.
 				}
 			}
+			//any other arguments dictate a specific action to be taken by the image server.  This can only be specified once; so fail if multiple such
+			//commands are provided
+			else {
+				if (command == ns_start) {
+					command = p->second;
+				}
+				else {
+					ns_ex ex;
+					if (p == commands.end())
+						ex << "Could not parse argument after : " << command_str << "\n";
+					ex << command_line_usage.text();
+				}
+			}
 		}
-		//by default, ini_file_location == "", and default locations are checked
-		image_server.load_constants(ns_image_server::ns_image_server_type,ini_file_location);
-
+		//check to see that no other nodes are running on this machine.
 		if (command == ns_start || command == ns_restart){
-			
 			if (image_server.server_currently_running() && command == ns_start )
 				throw ns_ex("An instance of the image server is already running.");
-
-			image_server.set_image_processing_run_limits(max_run_time, max_job_num);
-			image_server.set_resource_limits(idle_queue_check_limit, memory_allocation_limit, number_of_processing_cores);
 		}
 
 		//load setup information from ini file.  Provide any multiprocess options that may have
 		//been specified at the command line, as these options determine how the ini file values should be interpreted
-	
+		//by default, ini_file_location == "", and default locations are checked
+		image_server.load_constants(ns_image_server::ns_image_server_type, ini_file_location);
+		image_server.set_image_processing_run_limits(max_run_time, max_job_num);
+		image_server.set_resource_limits(idle_queue_check_limit, memory_allocation_limit, number_of_processing_cores);
 
-
-
-		is_master_node = true;
-		ns_cl_command post_dispatcher_init_command(ns_none);
-
-		bool restarting_after_crash(false);
 	       
 		//execute any commands requested at the command line\n";
 		switch(command){
@@ -914,19 +913,6 @@ int main(int argc, char ** argv){
 				if (!image_server.send_message_to_running_server(NS_CLEAR_DB_BUF_DIRTY))
 					throw ns_ex("No image server found running at ") << image_server.dispatcher_ip() << ":" << image_server.dispatcher_port() << ".";	
 				return 0;
-
-			case ns_additional_host_description: break; //handled above
-			//all of these require access to the sql database and will be handled
-			//a little later in the startup process
-			case ns_fix_orphaned_captured_images:
-			case ns_update_sql:
-			case ns_test_email:
-			case ns_test_alert:
-			case ns_test_rate_limited_alert:
-			case ns_restarting_after_a_crash:
-				break;
-			default:
-				throw ns_ex("Unhandled command:") << (int)command;
 		}
 		image_server.set_main_thread_id();
 
@@ -942,13 +928,10 @@ int main(int argc, char ** argv){
 		splash += " ==                                    ==\n";
 		splash += " ==        Nicholas Stroustrup         ==\n";
 		splash += " == Center for Genomic Regulation 2017 ==\n";
-		splash += " ==     Harvard Medical School 2015    ==\n";
-		splash += " ==                                    ==\n";
+		splash += " ==              BCN                   ==\n";
 		splash += " ========================================\n";
 		std::cout << splash;
 		
-		std::cout << image_server.get_system_host_name() << "\n";
-
 		std::vector<std::pair<std::string,std::string> > quotes;
 	
 		ns_acquire_for_scope<ns_image_server_sql> sql;
@@ -960,8 +943,8 @@ int main(int argc, char ** argv){
                   sql.release();
                   return 0;
                 }	
-		//ns_optical_flow flow;
-		//flow.test();
+		
+
 		#ifndef _WIN32
 	       
       			//start a crash daemon to handle server crashes
@@ -1009,7 +992,6 @@ int main(int argc, char ** argv){
 			
 			      
 #endif
-		
 
 		//don't act as an image capture server if we just want to copy over images.
 		if (post_dispatcher_init_command == ns_run_pending_image_transfers){

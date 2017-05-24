@@ -13,13 +13,13 @@ function ns_clean_up_for_tooltip($str){
 }
 $current_device_cutoff = 60*3;
 
-$host_id = $query_string['host_id'];
+$host_id = @$query_string['host_id'];
 if (isset($_POST['host_id']))
 $host_id = $_POST['host_id'];
-$show_host_nodes = $query_string['show_host_nodes']=='1';
-$device_name = $query_string['device_name'];
+$show_host_nodes = @$query_string['show_host_nodes']=='1';
+$device_name = @$query_string['device_name'];
 $highlight_host_id = @$query_string['highlight_host_id'];
-$selected_devices = $_POST['selected_devices'];
+$selected_devices = @$_POST['selected_devices'];
 
 $refresh = FALSE;
 $host_id_name = '';
@@ -31,7 +31,7 @@ if ($host_id != 0){
 	$host_id_name = $r[0][0];
 
 }
-if ($_POST['save_host'] != ''){
+if (ns_param_spec($_POST,'save_host')){
 	$comments = ($_POST['comments']);
 
 	$update_database_name = $_POST['update_database_name']=='1';
@@ -50,14 +50,14 @@ if ($_POST['save_host'] != ''){
 	}
 	$refresh = true;
 }
-if ($_POST['save_device'] != ''){
+if (ns_param_spec($_POST,'save_device')){
 	$comments = ($_POST['comments']);
 	$query = "UPDATE devices SET comments='$comments' WHERE name='$device_name'";
 	$sql->send_query($query);
 	$refresh = true;
 }
 
-if ($_POST['request_preview_capture'] != ''){
+if (ns_param_spec($_POST,'request_preview_capture')){
 	$reflective = $_POST['reflective_preview'];
 
 	if ($reflective != '')
@@ -72,12 +72,12 @@ if ($_POST['request_preview_capture'] != ''){
 	$refresh = TRUE;
  }
 
-if ($_POST['delete_host'] != ''){
+if (ns_param_spec($_POST,'delete_host')){
 	$query = "DELETE FROM hosts WHERE id='$host_id'";
 	$sql->send_query($query);
 	$refresh = TRUE;
 }
-if ($_POST['pause'] != ''){
+if (ns_param_spec($_POST,'pause')){
 //die($show_host_nodes?"YES":"NO");
 
   if ($show_host_nodes){
@@ -91,32 +91,32 @@ if ($_POST['pause'] != ''){
   }
 	$refresh = TRUE;
  }
-if ($_POST['hotplug'] != ''){
+if (ns_param_spec($_POST,'hotplug')){
   $id = $_POST['host_id'];
   $query = "UPDATE hosts SET hotplug_requested = 1 WHERE id='$id'";
   $sql->send_query($query);
 	$refresh = TRUE;
  }
-if ($_POST['buffer_reload'] != ''){
+if (ns_param_spec($_POST,'buffer_reload')){
   $id = $_POST['host_id'];
   $query = "UPDATE hosts SET hotplug_requested = 2 WHERE id = '$id'";
   //die($query);
   $sql->send_query($query);
   $refresh = TRUE;
  }
-if ($_POST['pause_all'] != ''){
+if (ns_param_spec($_POST,'pause_all')){
   $id = $_POST['host_id'];
   $query = "UPDATE hosts SET pause_requested= 1";
   $sql->send_query($query);
 	$refresh = TRUE;
  }
-if ($_POST['pause_none'] != ''){
+if (ns_param_spec($_POST,'pause_none')){
   $id = $_POST['host_id'];
   $query = "UPDATE hosts SET pause_requested= 0";
   $sql->send_query($query);
 	$refresh = TRUE;
  }
-if ($_POST['shut_down'] != ''){
+if (ns_param_spec($_POST,'shut_down')){
   $id = $_POST['host_id'];
   $query = "UPDATE hosts SET shutdown_requested=1 WHERE id='$id'";
   $sql->send_query($query);
@@ -126,7 +126,7 @@ if ($_POST['shut_down'] != ''){
 	}
 	$refresh = TRUE;
  }
-if ($_POST['launch_from_screen_saver'] != ''){
+if (ns_param_spec($_POST,'launch_from_screen_saver')){
   $id = $_POST['host_id'];
   $query = "UPDATE hosts SET launch_from_screen_saver=1 WHERE id='$id'";
   $sql->send_query($query);
@@ -134,10 +134,10 @@ if ($_POST['launch_from_screen_saver'] != ''){
  }
 
 //var_dump($_POST);
-if ($_POST['add_to_device_inventory'] != ''){
+if (ns_param_spec($_POST,'add_to_device_inventory')){
 	//var_dump($selected_devices);
 	//die('');
-	echo $selected_devices . "<BR>";
+	//echo $selected_devices . "<BR>";
 	foreach ($selected_devices as $name){
 		$query = "SELECT device_name FROM device_inventory WHERE device_name = '$name'";
 		$sql->get_row($query,$res);
@@ -150,7 +150,7 @@ if ($_POST['add_to_device_inventory'] != ''){
 	}
 	$refresh = TRUE;
 }
-if ($_POST['remove_device_from_inventory'] != ''){	
+if (ns_param_spec($_POST,'remove_device_from_inventory')){	
 	echo $selected_devices . "<BR>";
 	foreach ($selected_devices as $name){
 		$query = "SELECT device_name FROM device_inventory WHERE device_name = '$name'";
@@ -165,7 +165,7 @@ if ($_POST['remove_device_from_inventory'] != ''){
 	}
 	$refresh = TRUE;
 }
-if ($_POST['pause_captures'] != ''){	
+if (ns_param_spec($_POST,'pause_captures')){	
 	//echo $selected_devices . "<BR>";
 	foreach ($selected_devices as $name){
 		
@@ -175,7 +175,7 @@ if ($_POST['pause_captures'] != ''){
 	$refresh = TRUE;
 }
 
-if ($_POST['set_autoscan_interval']){
+if (ns_param_spec($_POST,'set_autoscan_interval')){
 	$interval = 60*(int)$_POST['autoscan_interval'];
 	foreach ($selected_devices as $name){
 		
@@ -184,7 +184,7 @@ if ($_POST['set_autoscan_interval']){
 	}
 	$refresh = TRUE;
 }
-if ($_POST['cancel_autoscan_interval']){
+if (ns_param_spec($_POST,'cancel_autoscan_interval')){
 	$interval = $_POST['autoscan_interval'];
 	foreach ($selected_devices as $name){
 		
@@ -193,7 +193,7 @@ if ($_POST['cancel_autoscan_interval']){
 	}
 	$refresh = TRUE;
 }
-if ($_POST['save_device_locations']){
+if (ns_param_spec($_POST,'save_device_locations')){
 	$device_locations = $_POST['device_locations'];
 	foreach($device_locations as $name => $location){
 		$query = "UPDATE device_inventory SET incubator_location='$location' WHERE device_name = '$name'";
@@ -285,7 +285,7 @@ foreach ($devices_identified as $name => $info){
 	}
 }
 	
-display_worm_page_header("Hosts and Devices","<a href=\"view_experiments.php\">[Back to Experiment Index]</a>",TRUE);
+display_worm_page_header("Hosts and Devices","<a href=\"view_experiments.php\">[Back to Experiment Index]</a>",TRUE,"");
 ?>
 <table border="0" cellspacing="15"><TR><TD valign="top">
 <form action="view_hosts_and_devices.php?<?php echo "show_host_nodes=" . ($show_host_nodes?"1":"0")?>" method="post">

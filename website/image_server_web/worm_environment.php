@@ -8,7 +8,9 @@ define("NS_TEMPORAL_NORM", 2);
 define("NS_BROWSE", 3);
 define("NS_JPG", 3);
 
-
+function ns_param_spec($myarray,$key){
+	 return array_key_exists($key,$myarray) && $myarray[$key] != '';
+}
 function ns_load_experiment_groups(&$experiment_groups,&$group_order,&$sql){
 	$query = "SELECT group_id, group_name, hidden, group_order FROM experiment_groups ORDER BY group_order ASC";
 	$sql->get_row($query,$res);

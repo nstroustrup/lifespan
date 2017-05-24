@@ -586,9 +586,10 @@ int main(int argc, char ** argv){
 		"     number_of_times_to_check_empty_processing_job_queue_before_stopping\n"
 		<< "number_of_processor_cores_to_use [value] e: specify the number of processing cores to use, overriding\n"
 		"      the value of number_of_processing_nodes specified in the ns_image_server.ini file\n"
-		"max_memory_to_use:  Specify an ideal memory allocation limit, overriding the value in ns_image_server.ini\n"
+	  "max_memory_to_use:  Specify an ideal memory allocation limit, in megabytes overriding the value \n"
+	        "      in ns_image_server.ini\n"
 #ifndef _WIN32
-		 "daemon: run as a background process\n";
+		 "daemon: run as a background process\n"
 #endif
 
 		<< "\n**Advanced control functions**\n"
@@ -662,7 +663,6 @@ int main(int argc, char ** argv){
 				continue;
 #endif
 			}
-
 			std::map<std::string, ns_cl_command>::iterator p = commands.find(command_str);
 			if (p == commands.end() || p->second == ns_help) {
 				ns_ex ex;
@@ -671,9 +671,9 @@ int main(int argc, char ** argv){
 				ex << command_line_usage.text();
 				throw ex;
 			}
-
+			
 			//grab extra information for arguments that are longer than one argument
-			if (p->second == ns_wrap_m4v) {
+			else if (p->second == ns_wrap_m4v) {
 				if (i + 1 >= argc) throw ns_ex("M4v filename must be specified");
 				input_filename = argv[i + 1];
 			}
@@ -774,9 +774,10 @@ int main(int argc, char ** argv){
 				}
 				else {
 					ns_ex ex;
-					if (p == commands.end())
-						ex << "Could not parse argument after : " << command_str << "\n";
+					
+					ex << "Could not parse argument after : " << command_str << "\n";
 					ex << command_line_usage.text();
+					throw ex;
 				}
 			}
 		}

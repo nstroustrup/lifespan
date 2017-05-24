@@ -5,20 +5,20 @@ display_worm_page_header("Hosts and Devices", "<a href=\"view_hosts_and_devices.
 
 $current_device_cutoff = 60*10;
 
-$host_id = $query_string['host_id'];
-$event_id = $query_string['event_id'];
-$region_id = $query_string['region_id'];
-$sample_id = $query_string['sample_id'];
-$experiment_id = $query_string['experiment_id'];
-$show_errors = $query_string['show_errors'];
+$host_id = @$query_string['host_id'];
+$event_id = @$query_string['event_id'];
+$region_id = @$query_string['region_id'];
+$sample_id = @$query_string['sample_id'];
+$experiment_id = @$query_string['experiment_id'];
+$show_errors = @$query_string['show_errors'];
 
-$start_time = $query_string['start_time'];
-$limit = $query_string['limit'];
+$start_time = @$query_string['start_time'];
+$limit = @$query_string['limit'];
 
-if ($_POST['jump_to_time'] != ''){
+if (ns_param_spec($_POST,'jump_to_time')){
   $query = "SELECT  UNIX_TIMESTAMP('"
     . $_POST['jump_year'] . "-" . $_POST['jump_month'] . "-" . $_POST['jump_day'] ." 23:59:59Ab')";
-  
+
   $sql->get_row($query,$res);
   $start_time = $res[0][0];
   header("Location: view_hosts_log.php?host_id=$host_id&start_time=" . $start_time . "&limit=" . $limit .  "\n\n");
@@ -30,7 +30,7 @@ if ($start_time == 0)
 
 ns_expand_unix_timestamp($start_time,$cur_min,$cur_hour,$cur_day,$cur_month,$cur_year);
 
-if ($query_string['delete_before'] != '' && $query_string['delete_before'] != 0){
+if (ns_param_spec($query_string,'delete_before') && $query_string['delete_before'] != 0){
   $query = "DELETE FROM host_event_log WHERE host_id='$host_id' AND time <= " . $query_string['delete_before'];
   $sql->send_query($query);
  }
@@ -117,7 +117,7 @@ if ($host_id  == 0) echo " for all hosts ";
 <?php
 if (!$show_errors)
   echo "<a href=\"view_hosts_log.php?host_id=$host_id&limit=$limit&show_errors=1\">[Show Only Errors]</a>";
- else 
+ else
    echo "<a href=\"view_hosts_log.php?host_id=$host_id&limit=$limit&show_errors=0\">[Show All Events]</a>";
 echo "<BR><br>";
 echo "Jump to date ";
@@ -157,7 +157,7 @@ for ($i = 0; $i < sizeof($events); $i++){
 ?>
 </table></td></tr></table>
 
-<?php 
+<?php
 
 if ($limit != ''){
   echo "<div align=\"right\">";
@@ -173,6 +173,6 @@ if ($limit != ''){
 <br>
 
 
-<?php 
+<?php
 display_worm_page_footer();
 ?>

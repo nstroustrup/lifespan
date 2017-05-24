@@ -4,7 +4,7 @@ require_once('ns_experiment.php');
 $query = "SELECT id, k,v FROM constants ORDER BY k ASC";
 $sql->get_row($query,$constants);
 $reload = FALSE;
-if ($_POST['save'] !=''){
+if (ns_param_spec($_POST,'save')){
   $id = $_POST['id'];
   $k = $_POST['k'];
   $v = $_POST['v'];
@@ -15,7 +15,7 @@ if ($_POST['save'] !=''){
   $sql->send_query($query);
   $reload = TRUE;
 }
-if ($_POST['delete'] !=''){
+if (ns_param_spec($_POST,'delete')){
   $id = $_POST['id'];
   $query = "DELETE FROM constants WHERE id = $id";
   $sql->send_query($query);
@@ -47,7 +47,7 @@ for ($i = 0; $i < sizeof($flags); $i++){
   }
 }
 //var_dump($flags);
-if($number_of_tails != 1 || $query_string["fix_flags"] == "1"){//|| TRUE){
+if($number_of_tails != 1 || ns_param_spec($query_string,'fix_flags') && $query_string["fix_flags"] == "1"){
   #echo("Number of tails: " . $number_of_tails . "<BR>");
   #die("WHA");
   for ($i = 0; $i < sizeof($flags); $i++){
@@ -58,7 +58,7 @@ if($number_of_tails != 1 || $query_string["fix_flags"] == "1"){//|| TRUE){
 	$next_index = 1;
       $next = $flags[$next_index][0];
       $next_id = $flags[$next_index][6];
-     
+
     }
     else if ($i+1 ==sizeof($flags) || $i+2 == sizeof($flags) && $flags[sizeof($flags)-1][0]=="MULTI_ERR"){
       $next='';
@@ -102,7 +102,7 @@ for (;;){
       $last_flag_id = $sorted_flags[$last_flag_id][4];
  }
 
-if ($_POST['save_label']){
+if (ns_param_spec($_POST,'save_label')){
   $label_short = $_POST['label_short'];
   $label = $_POST['label'];
   $exclude = $_POST['exclude'];
@@ -117,14 +117,14 @@ if ($_POST['save_label']){
    $query .= "1";
  else $query .="0";
  $query .= ", color='$color'";
- 
+
   $query .= " WHERE label_short= '" . $label_short . "'";
   //die($query);
   $sql->send_query($query);
   header("Location: cluster_configuration.php\n\n");
  }
 
- if ($_POST['new_label']){
+ if (ns_param_spec($_POST,'new_label')){
     $label_short = $_POST['label_short'];
 
     $label = $_POST['label_long'];
@@ -145,24 +145,24 @@ if ($_POST['save_label']){
 
   header("Location: cluster_configuration.php\n\n");
  }
-if ($_POST['move_up']!='' || $_POST['move_down']!=''){
+if (ns_param_spec($_POST,'move_up') || ns_param_spec($_POST,'move_down')){
   $name = $_POST['label_short'];
-  
+
   //handle error  state where this flag is floating.
- 
+
    if ($name != $flags[$root_flag_index]){/*
     if (!isset($references_to_flags[$name]) || sizeof($references_to_flags[$name]) == 0){
       $query = "UPDATE annotation_flags SET next_flag_name_in_order = '$name' WHERE label_short = '" . $flags[$root_flag_index][0] . "'";
       echo $query . "<BR>";
-      $query = "UPDATE annotation_flags SET next_flag_name_in_order = '" . 
+      $query = "UPDATE annotation_flags SET next_flag_name_in_order = '" .
 $flags[$root_flag_index][3] . "' WHERE label_short = '$name'";
       echo $query . "<BR>";
       die("");
       }*/
-      
-    
 
-    if ($_POST['move_up'] != ''){
+
+
+    if (ns_param_spec($_POST,'move_up')){
       // die( "MOVING UP<BR>");
       //make grandparents point to current node
       $earliest_parent = $references_to_flags[$name][0];
@@ -171,7 +171,7 @@ $flags[$root_flag_index][3] . "' WHERE label_short = '$name'";
 	  $earliest_parent = $references_to_flags[$name][$i];
       }
       if ($earliest_parent != $flags[$root_flag_index][0]){
-	
+
       //make parents point to moving node's child
       $query = "UPDATE annotation_flags SET next_flag_name_in_order = '" . $sorted_flags[$name][4] . "' WHERE next_flag_name_in_order = '$name'";
       //echo $query . "<BR>";
@@ -193,10 +193,10 @@ $flags[$root_flag_index][3] . "' WHERE label_short = '$name'";
       //echo $id . "<BR>";
       //make sure it's not already at the bottom
       if (isset($sorted_flags[$sorted_flags[$name][4]])){
-	
+
 	//make parents point to moving node's child
 	$query = "UPDATE annotation_flags SET next_flag_name_in_order = '" . $sorted_flags[$name][4] . "' WHERE next_flag_name_in_order = '$name'";
-	//		echo $query . "<BR>";	
+	//		echo $query . "<BR>";
 	$sql->send_query($query);
 	//mark children's next as current
 	$query = "UPDATE annotation_flags SET next_flag_name_in_order = '$name WHERE label_short = '" . $sorted_flags[$name][4] ."'";
@@ -250,7 +250,7 @@ for ($i = 0; $i < sizeof($constants); $i++){
   echo "<tr><td bgcolor=\"{$table_colors[$i%2][0]}\" width=400>\n";
   output_editable_field('k',$constants[$i][1],TRUE, 55);
   echo "\n</td><td bgcolor=\"{$table_colors[$i%2][1]}\" width = 400>\n";
-  
+
   output_editable_field('v',$constants[$i][2],TRUE, 55);
   echo "\n</td><td bgcolor=\"{$table_colors[$i%2][0]}\">\n";
   echo "<input type=\"hidden\" name=\"id\" value=\"{$constants[$i][0]}\">";
@@ -291,7 +291,7 @@ for ($i = 0; $i < sizeof($constants); $i++){
 
 for ($i = 0; $i < sizeof($ordered_flags); $i++){
   echo "<tr><td>";
-  
+
   echo '<form action="cluster_configuration.php" method="post">';
   echo "\n<table cellspacing=0 cellpadding=0 width=\"100%\">\n";
   echo "<tr><td bgcolor=\"{$table_colors[$i%2][0]}\" width=200>\n";
@@ -304,7 +304,7 @@ for ($i = 0; $i < sizeof($ordered_flags); $i++){
   echo "<center><input type=\"checkbox\" name=\"exclude\" value=\"1\"";
   if ($ordered_flags[$i][2]=="1")
     echo " checked";
-  echo "></center></td><td width=100 bgcolor=\"{$table_colors[$i%2][0]}\"><center>";  
+  echo "></center></td><td width=100 bgcolor=\"{$table_colors[$i%2][0]}\"><center>";
 echo "<input type=\"checkbox\" name=\"hide\" value=\"1\"";
   if ($ordered_flags[$i][4]=="1")
     echo " checked";
@@ -325,7 +325,7 @@ echo "<input type=\"checkbox\" name=\"hide\" value=\"1\"";
   <tr bgcolor="#CCCCCC"><td>
    <?php output_editable_field('label_short','',TRUE,55) ?>
    </td><td>
-   <?php output_editable_field('label_long','',TRUE,55) ?> 
+   <?php output_editable_field('label_long','',TRUE,55) ?>
    </td>
    <td>
    <input type="hidden" name="id" value="new">

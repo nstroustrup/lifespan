@@ -9,8 +9,8 @@ try{
   $db_name_set = @$_POST['db_name_set'];
   if ($db_name_set==1){
 
-    $db_req_name = $_POST['requested_db_name'];
-    $db_ref = $_POST['db_ref'];
+    $db_req_name = @$_POST['requested_db_name'];
+    $db_ref = @$_POST['db_ref'];
   //  die($db_ref);
     if ($db_ref != '')
 	$forward = $db_ref;
@@ -24,11 +24,11 @@ try{
 	$show_disk_usage = @$query_string['show_disk_usage']==='1';
 	$show_plate_stats = @$query_string['show_plate_stats']==='1';
 
-	$edit_id = $query_string['edit_id'];
+	$edit_id = @$query_string['edit_id'];
 	$id = @$_POST['id'];
 	if ($edit_id != '' || $id != ''){
 	  $mid = $edit_id;
-	  if ($edit_id == '') 
+	  if ($edit_id == '')
 	    $mid = $id;
 	  $query = "SELECT long_capture_interval, short_capture_interval, apply_vertical_image_registration, model_filename,id FROM capture_samples WHERE experiment_id=$mid ORDER BY id DESC LIMIT 1";
 	  $sql->get_row($query,$res);
@@ -43,7 +43,7 @@ try{
 	      ."HOUR(FROM_UNIXTIME(time_at_which_animals_had_zero_age)),"
 	      ."MINUTE(FROM_UNIXTIME(time_at_which_animals_had_zero_age)),"
 	      ."number_of_frames_used_to_mask_stationary_objects, maximum_number_of_worms_per_plate "
-	      
+
 	      ."FROM sample_region_image_info WHERE sample_id=".$res[0][4] . " LIMIT 1";
 	    $sql->get_row($query,$res2);
 	    if (sizeof($res2) != 0){
@@ -66,28 +66,28 @@ try{
 	    }
 	  }
 	}
-	
-	
-	if ($_POST['to_jpg'] != ''){
+
+
+	if (ns_param_spec($_POST,'to_jpg')){
 		$id = $_POST['id'];
 		$ex = new experiment($id,$sql);
 		$ex->generate_jpegs($sql,FALSE);
-	
+
 	}
-	if ($_POST['spatial_normalize'] != ''){
+	if (ns_param_spec($_POST,'spatial_normalize')){
 			$id = $_POST['id'];
 			$ex = new experiment($id,$sql);
 			$ex->normalize_spatially($sql,FALSE);
-		
+
 	}
-	if ($_POST['temporal_normalize'] != ''){
+	if (ns_param_spec($_POST,'temporal_normalize')){
 			$id = $_POST['id'];
 			$ex = new experiment($id,$sql);
 			$ex->normalize_temporally($sql);
-		
+
 	}
-	
-	if ($_POST['save'] != ''){
+
+	if (ns_param_spec($_POST,'save')){
 		$experiment_group_id = $_POST['experiment_group_id'];
 		$id = $_POST['id'];
 		$name = addslashes($_POST['name']);
@@ -120,14 +120,14 @@ try{
 		//	r.number_of_frames_used_to_mask_stationary_objects = '". $number_stationary_mask . "', r.maximum_number_of_worms_per_plate='" . $max_worms_per_plate . "'";
 		  //, sample_region_image_info.time_at_which_animals_had_zero_age=UNIX_TIMESTAMP('".
 		  //		  $age_0_year . "-" . $age_0_month . "-" . $age_0_day ." ".$age_0_hour.":".$age_0_minute.":00')";
-		
+
 		//	$query .= " WHERE s.experiment_id=$id AND s.id=r.sample_id";
 		//	die($query);
 		//	$sql->send_query($query);
 
 		//	if ($long != $long_capture_interval || $short != $short_capture_interval || $v_reg != $apply_vertical_registration){
 
-		  // $query = "UPDATE capture_samples SET " 
+		  // $query = "UPDATE capture_samples SET "
 		//long_capture_interval=$long, short_capture_interval=$short,
 		//." apply_vertical_image_registration=$v_reg WHERE experiment_id = $id";
 		  //$sql->send_query($query);
@@ -149,14 +149,14 @@ $sql->send_query($query);
 		for ($i = 0; $i < sizeof($res); $i++)
 			$dev[$res[$i][0]] = 1;
 		foreach($dev as $key=>$value){
-			
+
 			$query = "DELETE FROM autoscan_schedule WHERE device_name ='" . $key . "'";
 			//echo $query . "<br>";
-			$sql->send_query($query); 
+			$sql->send_query($query);
 		}
 	}
 
-	if ($_POST['toggle_hide_experiment'] != ''){
+	if (ns_param_spec($_POST,'toggle_hide_experiment')){
 	  //	  die("Why would you want to do this??");
 		$id = $_POST['id'];
 		$query = "UPDATE experiments SET hidden=NOT(hidden) WHERE id='$id'";
@@ -165,7 +165,7 @@ $sql->send_query($query);
 		header("Location: view_experiments.php\n\n");
 		die("");
 	}
-	if ($_POST['toggle_experiment_priority'] != ''){
+	if (ns_param_spec($_POST,'toggle_experiment_priority')){
 	  //	  die("Why would you want to do this??");
 		$id = $_POST['id'];
 		//if priority==1000, =>500
@@ -176,15 +176,15 @@ $sql->send_query($query);
 		header("Location: view_experiments.php\n\n");
 		die("");
 	}
-	if ($_POST['delete_all'] != ''){
+	if (ns_param_spec($_POST,'delete_all')){
 	  $id = $_POST['id'];
 	  ns_delete_experiment_from_database($id,$sql);
 
 	  header("Location: view_experiments.php\n\n");
 	  die("");
-	 
+
 	}
-	
+
 	$query = "SELECT id, name, description, num_time_points, first_time_point, last_time_point, hidden, delete_captured_images_after_mask,size_unprocessed_captured_images,size_processed_captured_images,size_unprocessed_region_images,size_processed_region_images,size_metadata, size_video, size_calculation_time, priority, group_id FROM experiments ";
 	if (!$show_hidden_experiments) $query .= "WHERE hidden = 0 ";
 	$query .="ORDER BY group_id,priority DESC, first_time_point DESC";
@@ -200,7 +200,7 @@ $sql->send_query($query);
 //var_dump($experiments_by_group);
 	//	$query = "SELECT id, name, description, num_time_points, first_time_point, last_time_point FROM experiments WHERE hidden = '1'";
 	//	$sql->get_row($query,$hidden);
-	
+
 	$query = "SELECT DISTINCT device_name, experiment_id FROM capture_samples";
 	$sql->get_row($query,$devices_raw);
 	$device_count = array();
@@ -209,13 +209,13 @@ $sql->send_query($query);
 	for ($i = 0; $i < sizeof($devices_raw);$i++)
 		$device_count[$devices_raw[$i][1]] = $device_count[$devices_raw[$i][1]] + 1;
 
-	if ($query_string['recalc_stats'] != ''){
+	if (ns_param_spec($query_string,'recalc_stats')){
 
 		for ($i = 0; $i < sizeof($experiments);$i++){
 			$id = $experiments[$i][0];
 			$query = "SELECT count(*), min(scheduled_time), max(scheduled_time) FROM capture_schedule WHERE experiment_id='$id' AND censored=0";
 			$sql->get_single_row($query,$res);
-			
+
 			$query = "UPDATE experiments SET num_time_points = '". ($res[0]+0) . "', first_time_point = '". ($res[1]+0) . "', last_time_point = '".($res[2]+0)."' WHERE id='$id'";
 			$sql->send_query($query);
 		}
@@ -237,7 +237,7 @@ $TOTAL = 9;
 if ($show_plate_stats){
   $strain_info = array();
 	foreach ($experiments as $i => &$exp){
-	
+
 
 		$query = "SELECT id,censored, excluded_from_analysis, reason_censored FROM capture_samples WHERE experiment_id=" . $exp[0];
 		$sql->get_row($query,$samples_to_count);
@@ -248,16 +248,16 @@ if ($show_plate_stats){
 		$query = "SELECT DISTINCT r.strain FROM capture_samples as s, sample_region_image_info as r WHERE r.sample_id = s.id AND s.experiment_id = $exp[0]";
 		$sql->get_row($query,$raw_experiment_strains);
 		$experiment_strains[$exp[0]] = array();
-		
 
-		$query = 
+
+		$query =
 		$cur_strain_id = 0;
-		
+
 		$total = array($OTHER_CENSOR=>0,$FOGGING =>0,
 			$EMPTY=>0,$CONTAMINATED=>0,
 			$EXCLUDED=>0,$GOOD=>0);
 		foreach($raw_experiment_strains as &$cur_strain){
-		  
+
 		  if ($cur_strain[0] != ''){
 		    $query = "SELECT genotype FROM strain_aliases WHERE strain='{$cur_strain[0]}'";
 		    //  die($query);
@@ -267,8 +267,8 @@ if ($show_plate_stats){
 		    else $strain_info[$cur_strain[0]] = '';
 		    //  var_dump($strain_info);
 		  }
-		  
-		  
+
+
 			if (strlen($cur_strain[0]) > 0)
 				array_push($experiment_strains[$exp[0]],$cur_strain[0]);
 else
@@ -279,10 +279,10 @@ else
 				$EMPTY=>0,$CONTAMINATED=>0,
 				$EXCLUDED=>0,$GOOD=>0);
 
-	
-		
 
-			
+
+
+
 			$query = "SELECT r.sample_id,r.id, r.censored, r.excluded_from_analysis, r.reason_censored FROM sample_region_image_info as r, capture_samples as s WHERE r.sample_id = s.id AND s.experiment_id=" . $exp[0] . " AND r.strain = '" . $cur_strain[0] . "'";
 			$sql->get_row($query,$res);
 			$stats[$TOTAL] = sizeof($res);
@@ -296,13 +296,13 @@ else
 					else if ($reason == 'condensation')
 						$stats[$FOGGING]++;
 					else if ($reason == 'contamination')
-						$stats[$CONTAMINATED]++;	
+						$stats[$CONTAMINATED]++;
 					else if ($reason == 'desiccation')
-						$stats[$DESICCATION]++;		
+						$stats[$DESICCATION]++;
 					else if ($reason == 'starved')
-						$stats[$STARVED]++;		
+						$stats[$STARVED]++;
 					else if ($reason == 'larvae')
-						$stats[$LARVAE]++;	
+						$stats[$LARVAE]++;
 					else $stats[$OTHER_CENSOR]++;
 				}
 				else if ($sp[1] || $r[3])	$stats[$EXCLUDED]++;
@@ -312,13 +312,13 @@ else
 
 			foreach($stats as $key=>&$value){
 				$total[$key] += $value;
-			} 
+			}
 		}
 		if (sizeof($experiment_strains[$exp[0]]) > 1){
 			$plate_statistics[$exp[0]][$cur_strain_id] = $total;
 			$experiment_strains[$exp[0]][$cur_strain_id] = "All";
 		}
-		
+
 	}
 
 }
@@ -468,7 +468,7 @@ echo $exps;
 //echo $experiment_groups[$group_order[$i]][1] . "</font></td></tr>";
 ?><tr <?php echo $table_header_color?>><td>Experiment Name</td>
 
-<?php 
+<?php
 if (!$show_plate_stats){
 ?>
 <td><center>Image Analysis</center></td>
@@ -492,7 +492,7 @@ if ($show_disk_usage){
 <?php
 
 $number_of_columns+= 8;
-} 
+}
 if ($show_plate_stats){
 ?>
 <td><font size="-2"><center>Strain Name</center></font></td>
@@ -507,7 +507,7 @@ if ($show_plate_stats){
 <td><font size="-2"><center>Total Plates</center></font></td>
 <td><font size="-2"><center>Empty Slots</center></font></td>
 
-<?php 
+<?php
 $number_of_columns+= 10;} ?>
 <td>&nbsp;</td></tr>
 
@@ -520,12 +520,12 @@ $number_of_columns+= 10;} ?>
         if ($experiment[6] == '1' && !$show_hidden_experiments){
             continue;
 }
-        
+
 	$delete_captured_after_mask = ($experiment[7]=='1');
 	//die ($delete_captured_after_mask);
 	$clrs = $table_colors[$j%2];
         $j++;
-	
+
 	$edit = $edit_id==$experiment_id;
 	echo "<tr><td bgcolor=\"$clrs[0]\"  valign='top'><font size=\"+1\">";
 echo "<a name=\"" . $experiment[1] . "\">";
@@ -534,15 +534,15 @@ echo "<a name=\"" . $experiment[1] . "\">";
 if (!$show_plate_stats){
 	echo "<td bgcolor=\"$clrs[1]\"  valign='top' nowrap><center>";
 	echo "<a href=\"manage_samples.php?experiment_id=".$experiment_id . "&hide_region_jobs=1&hide_sample_jobs=1\"> [Run Analysis] </a><br>";
-   
+
 	echo "<a href=\"analysis_status.php?experiment_id=".$experiment_id ."\"> [Analysis Status] </a>";
 	echo "</center></td>";
 	echo "<td nowrap=\"nowrap\" bgcolor=\"$clrs[0]\"  valign='top'><center>";
 	echo "<a href=\"view_scanner_schedule.php?experiment_id=".$experiment_id . "&show_past=1\">[View Schedule]</a><br>";
 echo "<a href=\"view_processing_job.php?job_id=0&experiment_id=$experiment_id&live_dangerously=1&hide_entire_region_job=1\">[Cancel Pending Scans]</a>";
         echo "</center></td><td nowrap bgcolor=\"$clrs[1]\"  valign='top'>";
-        echo "<center><a href=\"experiment_overview.php?experiment_id=".$experiment_id."\">[By Image]</a>"; 
-echo "<a href=\"plate_labeling.php?experiment_id=".$experiment_id."\">[By Position]</a><br>";  
+        echo "<center><a href=\"experiment_overview.php?experiment_id=".$experiment_id."\">[By Image]</a>";
+echo "<a href=\"plate_labeling.php?experiment_id=".$experiment_id."\">[By Position]</a><br>";
 echo "<a href=\"device_temperatures.php?experiment_id=".$experiment_id."\">[Device Temperatures]</a>";
 	echo "</center></td><td bgcolor=\"$clrs[0]\" valign='top'>";
 if ($experiment[6] == '1')
@@ -550,7 +550,7 @@ echo "[Experiment is hidden]<br>";
 
 
 	if ($edit){
-	  
+
 
 	  echo "<table>";
 /*	 echo "<tr><td colspan=2>Minimal Interval between Long Capture Pairs:<br>";
@@ -560,7 +560,7 @@ echo "[Experiment is hidden]<br>";
 	  output_editable_field("short_capture_interval",$short_capture_interval,TRUE,3);
 
 	  echo " minutes</td></tr>";
-	*/	
+	*/
 /*
 echo "<tr><td colspan = 2> Apply vertical image registration?\n";
 	  echo "\n<select name=\"apply_vertical_registration\">\n<option value = \"1\" ";
@@ -583,7 +583,7 @@ echo "<tr><td colspan = 2> Apply vertical image registration?\n";
 	  output_editable_field("age_0_day",$age_0_day,TRUE,2);
 	  echo "/";
 	  output_editable_field("age_0_year",$age_0_year,TRUE,4);
-     	
+
 	  echo "</td></tr>";*/
 
 echo "<tr><td colspan=2>";
@@ -594,7 +594,7 @@ echo "<select name=\"experiment_group_id\">";
 		if ($experiment[16] == $g[0])
 			echo " selected";
 		echo ">" . $experiment_groups[$g][1] . "</option>\n";
-} 
+}
 echo "</td></tr>";
 /*
 	echo "<tr><td colspan = 2>";
@@ -607,13 +607,13 @@ echo "</td></tr>";
 	 echo "</td></tr>";
  	 echo "<tr><td><font size=\"-1\">Number of images used to detect stationary plate features<br>(0 for automatic)</font></td><td>";
 	 output_editable_field("number_stationary_mask",$number_stationary_mask,TRUE,2);
-     	
-	  echo "</td></tr>";	 
+
+	  echo "</td></tr>";
 
        	  echo "<tr><td><font size=\"-1\">Maximum Number of Worms per Plate</font></td><td>";
 	 output_editable_field("max_worms_per_plate",$max_worms_per_plate,TRUE,2);
-     	
-	  echo "</td></tr>";*/	 
+
+	  echo "</td></tr>";*/
 	  echo "</table>";
 	}
 	output_editable_field("comments",$experiment[2],$edit,20,TRUE);
@@ -656,7 +656,7 @@ echo "</td>";
 					(int)$experiment[11] +
 					(int)$experiment[12] +
 					(int)$experiment[13];
-	
+
 		$start_time = (int)$experiment[4];
 		$stop_time = (int)$experiment[5];
 		$calc_time = (int)$experiment[14];
@@ -672,7 +672,7 @@ echo "</td>";
 		if ($stop_time > $current_time || $experiment_id === $ALL_EXPERIMENTS_ID){
 			if ($experiment_id === $ALL_EXPERIMENTS_ID)
 				$data_rate = $total_data_rate;
-			else 
+			else
 				$total_data_rate += $data_rate;
 			if ($data_rate === 0)
 				echo "0b/s";
@@ -712,7 +712,7 @@ echo "</td>";
 echo "<td bgcolor=\"$clrs[0]\"  nowrap valign='top'><center><font size=\"-1\">";
 
 for ($ss = 0; $ss < sizeof($experiment_strains[$experiment_id]); $ss++){
-		if ($ps[$ss][$FOGGING] > 0){		
+		if ($ps[$ss][$FOGGING] > 0){
 			echo round(100*$ps[$ss][$FOGGING]/$ps[$ss][$TOTAL],1)."%";
 			echo '<i><font size=\"-1\">('.$ps[$ss][$FOGGING].')</font></i>';
 }
@@ -722,7 +722,7 @@ echo "<BR>";
 		echo "<td nowrap bgcolor=\"$clrs[1]\"  valign='top'><center><font size=\"-1\">";
 
 for ($ss = 0; $ss < sizeof($experiment_strains[$experiment_id]); $ss++){
-		
+
 		if ($ps[$ss][$CONTAMINATED] > 0){
 			echo round(100*$ps[$ss][$CONTAMINATED]/$ps[$ss][$TOTAL],1)."%";
 			echo '<i><font size=\"-1\">('.$ps[$ss][$CONTAMINATED].')</font></i>';
@@ -734,7 +734,7 @@ echo "</font></center></td>";
 		echo "<td nowrap bgcolor=\"$clrs[0]\"  valign='top'><center><font size=\"-1\">";
 
 for ($ss = 0; $ss < sizeof($experiment_strains[$experiment_id]); $ss++){
-		
+
 		if ($ps[$ss][$DESICCATION] > 0){
 			echo round(100*$ps[$ss][$DESICCATION]/$ps[$ss][$TOTAL],1)."%";
 			echo '<i><font size=\"-1\">('.$ps[$ss][$DESICCATION].')</font></i>';
@@ -745,7 +745,7 @@ for ($ss = 0; $ss < sizeof($experiment_strains[$experiment_id]); $ss++){
 		echo "<td nowrap bgcolor=\"$clrs[1]\"  valign='top'><center><font size=\"-1\">";
 
 for ($ss = 0; $ss < sizeof($experiment_strains[$experiment_id]); $ss++){
-		
+
 		if ($ps[$ss][$STARVED] > 0){
 			echo round(100*$ps[$ss][$STARVED]/$ps[$ss][$TOTAL],1)."%";
 			echo '<i><font size=\"-1\">('.$ps[$ss][$STARVED].')</font></i>';
@@ -757,7 +757,7 @@ for ($ss = 0; $ss < sizeof($experiment_strains[$experiment_id]); $ss++){
 		echo "<td nowrap bgcolor=\"$clrs[0]\"  valign='top'><center><font size=\"-1\">";
 
 for ($ss = 0; $ss < sizeof($experiment_strains[$experiment_id]); $ss++){
-		
+
 		if ($ps[$ss][$LARVAE] > 0){
 			echo round(100*$ps[$ss][$LARVAE]/$ps[$ss][$TOTAL],1)."%";
 			echo '<i><font size=\"-1\">('.$ps[$ss][$LARVAE].')</font></i>';
@@ -768,7 +768,7 @@ for ($ss = 0; $ss < sizeof($experiment_strains[$experiment_id]); $ss++){
 		echo "<td bgcolor=\"$clrs[1]\" nowrap valign='top'><center><font size=\"-1\">";
 
 for ($ss = 0; $ss < sizeof($experiment_strains[$experiment_id]); $ss++){
-		
+
 		if ($ps[$ss][$OTHER_CENSOR] > 0){
 
 			echo round(100*$ps[$ss][$OTHER_CENSOR]/$ps[$ss][$TOTAL],1)."%";
@@ -776,10 +776,10 @@ for ($ss = 0; $ss < sizeof($experiment_strains[$experiment_id]); $ss++){
 		}
 echo "<BR>";
 }
-		echo "</font></center></td>";	
+		echo "</font></center></td>";
 		echo "<td nowrap bgcolor=\"$clrs[0]\"  valign='top'><center><font size=\"-1\">";
 for ($ss = 0; $ss < sizeof($experiment_strains[$experiment_id]); $ss++){
-	
+
 		if ($ps[$ss][$EXCLUDED] > 0){
 			echo round(100*$ps[$ss][$EXCLUDED]/$ps[$ss][$TOTAL],1)."%";
 			echo '<i><font size=\"-1\">('.$ps[$ss][$EXCLUDED].')</font></i>';
@@ -787,12 +787,12 @@ for ($ss = 0; $ss < sizeof($experiment_strains[$experiment_id]); $ss++){
 		echo "<br>";
 		}
 		echo "</font></center></td>";
-		
-		
+
+
 		echo "<td  nowrap bgcolor=\"$clrs[1]\"  valign='top'><center><font size=\"-1\">";
-		
+
 for ($ss = 0; $ss < sizeof($experiment_strains[$experiment_id]); $ss++){
-		
+
 		if ($ps[$ss][$GOOD] > 0){
 			echo round(100*$ps[$ss][$GOOD]/$ps[$ss][$TOTAL],1)."%";
 			echo '<i><font size=\"-1\">('.$ps[$ss][$GOOD].')</font></i>';
@@ -801,7 +801,7 @@ for ($ss = 0; $ss < sizeof($experiment_strains[$experiment_id]); $ss++){
 		}
 		echo "</font></center></td>";
 		echo "<td bgcolor=\"$clrs[0]\"  valign='top'><center><font size=\"-1\">";
-		
+
 for ($ss = 0; $ss < sizeof($experiment_strains[$experiment_id]); $ss++){
 
 		if ($ps[$ss][$TOTAL] > 0)
@@ -809,11 +809,11 @@ for ($ss = 0; $ss < sizeof($experiment_strains[$experiment_id]); $ss++){
 		echo "<BR>";
 }
 		echo "</font></center></td>";
-		
+
 		echo "<td bgcolor=\"$clrs[1]\"  valign='top'><center><font size=\"-1\">";
-	
+
 for ($ss = 0; $ss < sizeof($experiment_strains[$experiment_id]); $ss++){
-	
+
 		if ($ps[$ss][$EMPTY] > 0){
 			echo round(100*$ps[$ss][$EMPTY]/($ps[$ss][$TOTAL]+$ps[$ss][$EMPTY]),1)."%";
 			echo '<i><font size=\"-1\">('.$ps[$ss][$EXCLUDED].')</font></i>';
@@ -822,14 +822,14 @@ for ($ss = 0; $ss < sizeof($experiment_strains[$experiment_id]); $ss++){
 }
 		echo "</font></center></td>";
 }
-	
+
 	echo "<td bgcolor=\"$clrs[1]\"  valign='top'><center>";
 
 	if ($edit){
 		echo " <input type = \"hidden\" name =\"id\" value=\"" . $experiment_id . "\">";
-		
+
 		echo "<input type=\"submit\" name=\"save\" value=\"Save\"><br>";
-		//		echo "<input type=\"submit\" name=\"delete_future\" value=\"Cancel Pending Scans\" onClick=\"javascript:return confirm('Are you sure you wish to cancel all pending scans?')\"><br>";		
+		//		echo "<input type=\"submit\" name=\"delete_future\" value=\"Cancel Pending Scans\" onClick=\"javascript:return confirm('Are you sure you wish to cancel all pending scans?')\"><br>";
 		echo "<input type=\"submit\" name=\"toggle_hide_experiment\" value=\"";
                 if ($experiment[6] == '1')
                       echo 'Un-Hide Experiment';
@@ -840,7 +840,7 @@ for ($ss = 0; $ss < sizeof($experiment_strains[$experiment_id]); $ss++){
                       echo 'Set as Standard Priority';
                 else echo 'Set as Low Priority';
                       echo '"><br>';
-		    
+
 		echo "<input type=\"submit\" name=\"delete_all\" value=\"Delete Experiment Data\" onClick=\"javascript:return confirm('Are you sure you wish to delete all data from this experiment?')\"><br>";
 	}
 	else {
@@ -849,7 +849,7 @@ for ($ss = 0; $ss < sizeof($experiment_strains[$experiment_id]); $ss++){
 	."&show_plate_stats=" . ($show_plate_stats?"1":"0")
 	."&show_disk_usage=" . ($show_disk_usage?"1":"0");
 		echo "&edit_id=".$experiment_id."#" . $experiment[1] . "\">[Edit]</a><br>";
-		
+
 	}
 	echo "</center></td></tr>";
 }

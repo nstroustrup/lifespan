@@ -3,7 +3,7 @@ require_once ('worm_environment.php');
 
  ns_load_experiment_groups($experiment_groups,$group_order,$sql);
 
-if ($_POST['create'] !=''){
+if (ns_param_spec($_POST,'create')){
   $new_experiment_group_name = $_POST['new_group_name'];
   $query = "UPDATE experiment_groups SET group_order=group_order+1";
   $sql->send_query($query);
@@ -12,17 +12,17 @@ if ($_POST['create'] !=''){
   $sql->send_query($query);
   $reload = TRUE;
 }
-if ($_POST['delete'] !=''){
+if (ns_param_spec($_POST,'delete')){
 
   	$id = $_POST['selected_group_id'];
-	
+
 	$query = "DELETE FROM experiment_groups WHERE id = $id";
 	die($query);
 	$sql->send_query($query);
   $reload = TRUE;
 }
-if ($_POST['modify'] !=''){
-	
+if (ns_param_spec($_POST,'modify')){
+
   	$id = $_POST['selected_group_id'];
   	$new_name = $_POST['selected_group_name'];
 
@@ -32,8 +32,8 @@ if ($_POST['modify'] !=''){
 
   $reload = TRUE;
 }
-if ($_POST['move_up'] !='' || $_POST['move_down']){
-	
+if (ns_param_spec($_POST,'move_up') || ns_param_spec($_POST,'move_down')){
+
   	$id = $_POST['selected_group_id'];
 	$query = "SELECT group_order FROM experiment_groups WHERE group_id = $id";
 	$sql->get_row($query,$res);
@@ -70,13 +70,13 @@ echo "<tr><td bgcolor=\"#000000\">\n";
 echo "<table border=0 bgcolor=\"#FFFFFF\" cellspacing=0 cellpadding=3>\n";
 for ($i = 0; $i < sizeof($constants); $i++){
   echo "<tr><td>";
-  
+
   echo '<form action="cluster_configuration.php" method="post">';
   echo "\n<table cellspacing=0 cellpadding=0 width=\"100%\">\n";
   echo "<tr><td bgcolor=\"{$table_colors[$i%2][0]}\" width=400>\n";
   output_editable_field('k',$constants[$i][1],TRUE, 55);
   echo "\n</td><td bgcolor=\"{$table_colors[$i%2][1]}\" width = 400>\n";
-  
+
   output_editable_field('v',$constants[$i][2],TRUE, 55);
   echo "\n</td><td bgcolor=\"{$table_colors[$i%2][0]}\">\n";
   echo "<input type=\"hidden\" name=\"id\" value=\"{$constants[$i][0]}\">";
@@ -111,7 +111,7 @@ Modify Existing Group
 <?php
 	foreach ($group_order as $g){
 		if ($g == 0) continue;
-		echo "<option value=\"". $experiment_groups[$g][0] . "\">" . $experiment_groups[$g][1] . "</option>\n"; 
+		echo "<option value=\"". $experiment_groups[$g][0] . "\">" . $experiment_groups[$g][1] . "</option>\n";
 }
 
 ?><BR>

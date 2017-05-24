@@ -1,6 +1,6 @@
 <?php
 require_once('worm_environment.php');
-require_once('ns_dir.php');	
+require_once('ns_dir.php');
 //require_once('ns_external_interface.php');
 require_once('ns_experiment.php');
 require_once('ns_processing_job.php');
@@ -28,7 +28,7 @@ try{
     throw new ns_exception("Please specify an experiment number");
   $experiment = new ns_experiment($experiment_id,'',$sql,false);
 
-  if ($_POST["save"] != ''){
+  if (ns_param_spec($_POST,"save")){
     $sample_data = array();
     $region_data = array();
     foreach($_POST as $key => $value){
@@ -62,7 +62,7 @@ try{
 	$data[$id]['condition_2'] = $value;
       else throw new ns_exception("Unknown option");
 	//die($data[$id]['condition_1']);
-      
+
     }
     //$query = "LOCK TABLES capture_samples WRITE";
     //$sql->send_query($query);
@@ -73,7 +73,7 @@ try{
       $was_censored = $censoring_requested || ($censored_reason != '' && $censored_reason != 'none');
 
 
-      if ($was_censored){	
+      if ($was_censored){
 	if ($censored_reason == 'none')
 		$censored_reason = 'unknown';
 	else if ($censored_reason != 'empty' &&
@@ -139,22 +139,22 @@ try{
 
 
   $experiment->get_sample_information($sql);
-  
+
   $regions = array();
-  
+
   $sample_list='';
   $query = "SELECT v from constants WHERE k='mask_time=$experiment_id'";
   $sql->get_row($query,$res);
-  
+
   $mask_time = 0;
   if (sizeof($res) > 0)
     $mask_time = $res[0][0];
   //die($mask_time);
 
   for ($i = $start_position; $i < ($start_position + $count) && $i< sizeof($experiment->samples); $i++){
-    
+
     $sample_list .= $experiment->samples[$i]->id() . "o";
-  
+
     $query = "SELECT id,name,details,censored,reason_censored,strain,$video_column, time_at_which_animals_had_zero_age, time_of_last_valid_sample,strain_condition_1,strain_condition_2 FROM sample_region_image_info WHERE sample_id = " . $experiment->samples[$i]->id() . " ORDER BY name";
 
     $region_info_data_column_size = 11;
@@ -173,7 +173,7 @@ try{
 		$query1 .= " AND capture_time <= " .$reg[$j][8];
 	else if ($mask_time != 0)
 	  $query1 .= "AND capture_time <= " . $mask_time;
-       
+
  	$query1 .= " ORDER BY capture_time DESC LIMIT $d";
 
 	//die($query);
@@ -233,7 +233,7 @@ catch (ns_exception $e){
 function output_nav_links(){
   global $reached_end,$start_position,$count,$experiment_id,$show_images;
   if ($reached_end)
-    return;  
+    return;
   if ($start_position != 0){
   echo "<a href=\"experiment_overview.php?experiment_id=$experiment_id&show_images=" . ($show_images?"1":"0") . "&start_position=";
   echo $start_position - $count;
@@ -250,7 +250,7 @@ display_worm_page_header($experiment->name . " Overview");
 -->
 
 <span class="style1">Experiment Samples</span><br>
-Displaying <?php 
+Displaying <?php
 echo "(";
 echo $start_position;
 echo " - ";
@@ -259,7 +259,7 @@ echo ") / ";
 echo sizeof($experiment->samples);?>
 <br>
 
-<?php  
+<?php
 echo "<a href=\"view_sample_videos.php?samples=$sample_list\">[View All Samples]</a> ";
 output_nav_links()
 ?>
@@ -279,7 +279,7 @@ else echo "0";
 <table border="0" cellpadding="4" cellspacing="0" width="100%">
   <tr <?php echo $table_header_color?> ><td>Name</td><td >Latest Image</td><td>Censor</td><td>Strain / Description</td><td>&nbsp;</td></tr>
 
-		
+
  <?php
 	$row_color = 0;
 	for ($i = $start_position; $i < $start_position + $count; $i++){
@@ -288,7 +288,7 @@ else echo "0";
 
 		echo "<tr><td bgcolor=\"$clrs[1]\" valign=\"top\">\n";
 		echo "<a name=\"" . $experiment->samples[$i]->id() . "\">";
-		echo "<b>";  
+		echo "<b>";
 		echo ns_slash($experiment->samples[$i]->name()) . "</b><br><br>";
 		echo "<font size=\"-2\"><a href=\"ns_view_sample_images.php?sample_id=" . $experiment->samples[$i]->id() . "\">[View Images]</a></font>";
 		echo "</td>";
@@ -309,26 +309,26 @@ else echo "0";
 		echo "Reason Censored: ";
 		echo "<select name=\"sr" .  $experiment->samples[$i]->id() . "\" size=1>\n";
 
-		echo "<option value = \"none\" " . 
+		echo "<option value = \"none\" " .
 			(($experiment->samples[$i]->censored == 0)?'selected="selected"':'') .
  			">None</option>\n";
-		echo "<option value=\"condensation\" " . 
+		echo "<option value=\"condensation\" " .
 			(($experiment->samples[$i]->reason_censored == 'condensation')?'selected="selected"':'') .
  			">Fogging</option>\n";
-		echo "<option value= \"contamination\" "  . 
+		echo "<option value= \"contamination\" "  .
 			(($experiment->samples[$i]->reason_censored == 'contamination')?'selected="selected"':'') .
 			">Contamination</option>\n";
-		echo "<option value=\"desiccation\" " . 
-			(($experiment->samples[$i]->reason_censored == 'desiccation')?'selected=1':'') . 
-			">Desiccation</option>\n";		
-		echo "<option value=\"starved\" " . 
-			(($experiment->samples[$i]->reason_censored == 'starved')?'selected=1':'') . 
+		echo "<option value=\"desiccation\" " .
+			(($experiment->samples[$i]->reason_censored == 'desiccation')?'selected=1':'') .
+			">Desiccation</option>\n";
+		echo "<option value=\"starved\" " .
+			(($experiment->samples[$i]->reason_censored == 'starved')?'selected=1':'') .
 			">Starved</option>\n";
-		echo "<option value=\"larvae\" " . 
-			(($experiment->samples[$i]->reason_censored == 'larvae')?'selected=1':'') . 
+		echo "<option value=\"larvae\" " .
+			(($experiment->samples[$i]->reason_censored == 'larvae')?'selected=1':'') .
 			">Larvae</option>\n";
-		echo "<option value=\"empty\" " . 
-			(($experiment->samples[$i]->reason_censored == 'empty')?'selected=1':'') . 
+		echo "<option value=\"empty\" " .
+			(($experiment->samples[$i]->reason_censored == 'empty')?'selected=1':'') .
 			">Empty</option>\n";
 		echo "<option value=\"other\" " . (
 			($experiment->samples[$i]->censored != 0 &&
@@ -343,9 +343,9 @@ else echo "0";
 
 		echo "</td><td bgcolor=\"$clrs[1]\" valign=\"top\" align=\"right\">\n";
 		echo "<input name=\"save\" type=\"submit\" value=\"Save\"><br>\n";
-		echo "</td>";		  
+		echo "</td>";
 		echo "</td></tr>";
-		
+
 		$regs =& $regions[$experiment->samples[$i]->id()];
 		for ($j = 0; $j < sizeof($regs); $j++){
 		  if ($row_color)
@@ -366,9 +366,9 @@ else echo "0";
 		if ($show_images!==TRUE)
 		    echo "<a href=\"experiment_overview.php?experiment_id=$experiment_id&start_position=$start_position&count=$count&show_images=1\">[Display Images]</a>";
 
-		  else if ($regs[$j][$region_info_data_column_size] === '') 
+		  else if ($regs[$j][$region_info_data_column_size] === '')
 		    echo "(No Images Available)";
-		  else{ 
+		  else{
 			//echo "image_id={$regs[$j][6]}&video_id={$regs[$j][5]}";
 			$image_height = 300;
 			$image_width = 300;
@@ -388,7 +388,7 @@ else echo "0";
 		  if ($regs[$j][3])
 		    echo " checked";
 		  echo " value = \"1\">";
-		  
+
 		  echo "\n</td><td bgcolor=\"$clrs[0]\" valign=\"top\" width=\"200\"><font size=\"-1\">";
 		  echo "<table border=0 cellpadding = 1 cellspacing = 0><tr><td>";
 		  echo "Strain:</td><td>";
@@ -402,30 +402,30 @@ else echo "0";
 		output_editable_field('rd' . $regs[$j][0], ns_slash($regs[$j][2]),TRUE,30,TRUE,$det_height);
 		//  echo $regs[$j][11];
 		  echo "\n</font>";
-			
+
 		echo "Reason Censored: ";
 		echo "<select name=\"rr" .  $regs[$j][0] . "\" size=1>\n";
 
-		echo "<option value = \"none\" " . 
+		echo "<option value = \"none\" " .
 			(($regs[$j][3] == 0)?'selected="selected"':'') .
  			">None</option>\n";
-		echo "<option value=\"condensation\" " . 
+		echo "<option value=\"condensation\" " .
 			(($regs[$j][4] == 'condensation')?'selected="selected"':'') .
  			">Fogging</option>\n";
-		echo "<option value= \"contamination\" "  . 
+		echo "<option value= \"contamination\" "  .
 			(($regs[$j][4] == 'contamination')?'selected="selected"':'') .
 			">Contamination</option>\n";
-		echo "<option value=\"desiccation\" " . 
-			(($regs[$j][4] == 'desiccation')?'selected=1':'') . 
+		echo "<option value=\"desiccation\" " .
+			(($regs[$j][4] == 'desiccation')?'selected=1':'') .
 			">Desiccation</option>\n";
-		echo "<option value=\"starved\" " . 
-			(($regs[$j][4] == 'starved')?'selected=1':'') . 
+		echo "<option value=\"starved\" " .
+			(($regs[$j][4] == 'starved')?'selected=1':'') .
 			">Starved</option>\n";
-		echo "<option value=\"larvae\" " . 
-			(($regs[$j][4] == 'larvae')?'selected=1':'') . 
+		echo "<option value=\"larvae\" " .
+			(($regs[$j][4] == 'larvae')?'selected=1':'') .
 			">Larvae</option>\n";
-		echo "<option value=\"empty\" " . 
-			(($regs[$j][4] == 'empty')?'selected=1':'') . 
+		echo "<option value=\"empty\" " .
+			(($regs[$j][4] == 'empty')?'selected=1':'') .
 			">Empty</option>\n";
 		echo "<option value=\"other\" " . (
 			($regs[$j][3] != 0 &&
@@ -441,13 +441,13 @@ else echo "0";
 
 		  echo "<br><br></td><td bgcolor=\"$clrs[1]\" valign=\"top\" align=\"right\">\n";
 		  echo "<input name=\"save\" type=\"submit\" value=\"Save\"><br>\n";
-		  echo "</td>";		  
+		  echo "</td>";
 		  echo "</td></tr>";
 		}
 		if ($row_color)
 		  $row_color = 0;
 		else $row_color = 1;
-  
+
 	}
 
 ?>

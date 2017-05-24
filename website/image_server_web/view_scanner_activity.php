@@ -21,11 +21,11 @@ for ($i = 0; $i < sizeof($devices); $i++){
 	$schedule_past[$i] = array();
 }
 $number_past = @(int)$query_string['number_past'];
-if (!isset($query_string['number_past']))
+if (!ns_param_spec_true($query_string,'number_past'))
 	$number_past = 5;
 
 $number_future = @(int)$query_string['number_future'];
-if (!isset($query_string['number_future']))
+if (!ns_param_spec_true($query_string,'number_future'))
 	$number_future= 5;
 
 
@@ -57,7 +57,7 @@ $query .= " AND (c.time_at_start != 0 || c.censored=0)";
 //  flush();
 //  ob_flush();
   //$sql->get_row($query_past,$schedule_past[$i]);
- 
+
 
 //var_dump($devices_per_incubator);
 //die("");
@@ -121,7 +121,7 @@ display_worm_page_header("Imaging Cluster Activity");
 </TD>
 </TR>
 </table><br>
-<?php 
+<?php
 	$show_more_future = $number_future+5;
 	$show_more_past   = $number_past+5;
 	$show_less_future = $number_future-5;
@@ -156,20 +156,20 @@ for ($i = 0; $i < sizeof($devices); $i++){
 		}
 		$last_incubator_name = $devices[$i][1];
 		$name = "Incubator " . $last_incubator_name;
-		
+
 		if($last_incubator_name == '')
 		$name = "Unknown Incubator";
-	
+
 		$aname = $last_incubator_name;
 		if ($last_incubator_name == '')
 			$aname = "Unknown";
-		
+
 ?>
 <!--Incubator <?php echo $aname?>-->
 <table width="100%" bgcolor="#555555" cellspacing='0' cellpadding='1' ><tr><td>
 <table width="100%" cellspacing='0' cellpadding='0' >
   <tr <?php echo $table_header_color?>><td><b>
-<?php 
+<?php
 echo "<a name=\"i$aname\">";
 echo "<font size=\"+2\">" . $name . "</font></a>";
 ?></b></td></tr>
@@ -178,7 +178,7 @@ echo "<font size=\"+2\">" . $name . "</font></a>";
 <table width="100%" cellspacing=0 cellpadding=6><TR><TD valign="top" bgcolor="<?php echo $table_colors[1][0]?>">
 <?php
 
-		
+
 }
   $need_end = true;
   // echo "<!-- Begin " . $exp[$schedule_future[$i][$j][3]] ."::". $schedule_future[$i][$j][5]  . " Table -->\n";
@@ -197,7 +197,7 @@ echo "<font size=\"+2\">" . $name . "</font></a>";
   }
   if (sizeof($schedule_future[$i]) == 0) echo "<tr><td bgcolor=\"{$table_colors[0][0]}\"><center>(None)</center></td></tr>\n";
   echo "<tr><td><center><b><font size=\"+1\"><a href=\"view_scanner_schedule.php?device_name=" . $devices[$i][0] . "\">". $devices[$i][0] . "</a></font></b></center></td></tr>\n";
-  
+
   for ($j = 0; $j < sizeof($schedule_past[$i]); $j++){
     echo "<tr><td bgcolor=\"{$table_colors[0][1]}\"><font size=\"-1\">";
     echo format_time($schedule_past[$i][$j][0]);
@@ -226,7 +226,7 @@ echo "<font size=\"+2\">" . $name . "</font></a>";
   if (sizeof($schedule_past[$i]) == 0) echo "<tr bgcolor=\"{$table_colors[0][1]}\"><td><center>(None)</center></td></tr>\n";
   echo "</table></td></tr></table><BR>\n\n";
   //echo "<!-- End" . $exp[$schedule_future[$i][$j][3]] ."::". $schedule_future[$i][$j][5]  . " Table -->";
-	
+
 //echo $incubator_pos ."/" . $devices_per_incubator[$devices[$i][1]]/3;
 //echo $incubator_pos . "/" . floor($devices_per_incubator[$devices[$i][1]]/3);
 $first_column_size = ceil($devices_per_incubator[$devices[$i][1]]/3);

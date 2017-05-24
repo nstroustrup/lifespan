@@ -32,18 +32,18 @@ try{
   $specified_region_id = @(int)$query_string['region_id'];
   $specified_image_id =  @(int)$query_string['image_id'];
 
-  $strain_specified= isset($query_string['strain']);
+  $strain_specified= ns_param_spec($query_string,'strain');
   $strain_specification = @$query_string['strain'];
 
-  $condition_1_specified = isset($query_string['condition_1']);
-  $condition_2_specified = isset($query_string['condition_2']);
-  $condition_3_specified = isset($query_string['condition_3']);
-  $device_specified = isset($query_string['device']);
+  $condition_1_specified = ns_param_spec($query_string,'condition_1');
+  $condition_2_specified = ns_param_spec($query_string,'condition_2');
+  $condition_3_specified = ns_param_spec($query_string,'condition_3');
+  $device_specified = ns_param_spec($query_string,'device');
 
-  $culturing_temperature_specified = isset($query_string['culturing_temperature']);
-  $experiment_temperature_specified = isset($query_string['experiment_temperature']);
-  $food_source_specified = isset($query_string['food_source']);
-  $environment_conditions_specified = isset($query_string['environment_conditions']);
+  $culturing_temperature_specified = ns_param_spec($query_string,'culturing_temperature');
+  $experiment_temperature_specified = ns_param_spec($query_string,'experiment_temperature');
+  $food_source_specified = ns_param_spec($query_string,'food_source']);
+  $environment_conditions_specified = ns_param_spec($query_string,'environment_conditions');
 
   $condition_1 = @$query_string['condition_1'];
   $condition_2 = @$query_string['condition_2'];
@@ -57,7 +57,7 @@ try{
 
   $specified_all_experiments = @$query_string['experiment_id'] === "all";
   $specified_hidden_experiments = @$query_string['hidden']=="1";
-  $specified_experiment_list = isset($query_string['experiment_list']);
+  $specified_experiment_list = ns_param_spec($query_string,'experiment_list');
   $specified_all_samples = @$query_string['sample_id']=== "all";
   $specified_all_regions = @$query_string['region_id']=== "all";
 
@@ -487,7 +487,7 @@ $region_strain_condition_2 = array();
     $page_title = "Inspect";
 
 /*
-  if ($_POST['set_control_strain']){
+  if (ns_param_spec_true($_POST,'set_control_strain')){
     $region_id = $_POST['control_region_id'];
     if ($region_id == 'none')
       $region_id = '';
@@ -520,7 +520,7 @@ $region_strain_condition_2 = array();
   //  $experiment_control_strain = $exps[0][0];
     }
   }
-  if ($_POST['censor_images_after_last_valid_sample']){
+  if (ns_param_spec_true($_POST,'censor_images_after_last_valid_sample')){
 
     for ($i = 0; $i < sizeof($jobs); $i++){
       if ($jobs[$i]->region_id != 0){
@@ -535,7 +535,7 @@ $region_strain_condition_2 = array();
       }
     }
   }
-  if ($_POST['censor_none']){
+  if (ns_param_spec_true($_POST,'censor_none')){
     for ($i = 0; $i < sizeof($jobs); $i++){
       if ($jobs[$i]->region_id != 0){
 
@@ -553,16 +553,16 @@ $region_strain_condition_2 = array();
 	$refresh_url.= $k . '=' .$v. '&';
 
   $value_to_set = '';
-  if ($_POST['censor']){
+  if (ns_param_spec_true($_POST,'censor')){
     $value_to_set = 'censored = 1';
   }
-  if ($_POST['uncensor']){
+  if (ns_param_spec_true($_POST,'uncensor'])){
     $value_to_set = 'censored = 0';
   }
-  if ($_POST['exclude']){
+  if (ns_param_spec_true($_POST,'exclude')){
     $value_to_set = 'excluded_from_analysis=1';
   }
-  if ($_POST['unexclude']){
+  if (ns_param_spec_true($_POST,'unexclude')){
     $value_to_set = 'excluded_from_analysis=0';
   }
   if ($value_to_set != ''){
@@ -577,7 +577,7 @@ $region_strain_condition_2 = array();
     header("Location: $back_url\n\n");
 	die("");
   }
-  if ($_POST['update_region_information'] !=''){
+  if (ns_param_spec$_POST,'update_region_information')){
 	$start_minute = $_POST['start_minute'];
     	$start_hour = $_POST['start_hour'];
     	$start_day = $_POST['start_day'];
@@ -658,14 +658,14 @@ $region_strain_condition_2 = array();
   }
 
 
-  $delete_files_from_disk = $_POST['delete_files'] == "1";
+  $delete_files_from_disk = @$_POST['delete_files'] == "1";
   // if ($delete_files)
     //   die("YES");
   //else die("NO");
 
 
-  if ($_POST['pause_job'] || $_POST['unpause_job']){
-    $paused = ($_POST['pause_job']!='')?"1":"0";
+  if (ns_param_spec_true($_POST['pause_job') || ns_param_spec_true($_POST,'unpause_job')){
+    $paused = ns_param_spec($_POST,'pause_job')?"1":"0";
 
     for ($i = 0; $i < sizeof($jobs); $i++){
       //if ($jobs[$i]->id == 0)
@@ -681,7 +681,7 @@ $region_strain_condition_2 = array();
     die("");
   }
 //	die($_POST['cancel_captures']);
-  if ($_POST['cancel_captures']){
+  if (ns_param_spec_true($_POST,'cancel_captures')){
     $sample_ids = array();
     $device_names = array();
 
@@ -737,7 +737,7 @@ for ($i = 0; $i < sizeof($jobs); $i++){
     header("Location: $back_url\n\n");
     die("");
   }
-  if ($_POST['delete_experiment_processed_data'] != ''){
+  if (ns_param_spec($_POST,'delete_experiment_processed_data')){
 
     for ($i = 0; $i < sizeof($jobs); $i++){
       $e_id = $jobs[$i]->experiment_id;
@@ -765,7 +765,7 @@ for ($i = 0; $i < sizeof($jobs); $i++){
     header("Location: $back_url\n\n");
     die("");
   }
-  if ($_POST['retry_transfer_to_long_term_storage'] !=''){
+  if (ns_param_spec($_POST,'retry_transfer_to_long_term_storage']){
 
     for ($i = 0; $i < sizeof($jobs); $i++){
       $e_id = $jobs[$i]->experiment_id;
@@ -785,7 +785,7 @@ for ($i = 0; $i < sizeof($jobs); $i++){
     die("");
   }
 
-    if ($_POST['submit'] != ''){
+    if (ns_param_spec($_POST,'submit'])){
     //var_dump($jobs);
     //	die("");
     //$query = "LOCK TABLES processing_job_queue write";
@@ -984,7 +984,7 @@ for ($i = 0; $i < sizeof($jobs); $i++){
     }
   }
 
-  if ($_POST['delete_images'] != ''){
+  if (ns_param_spec($_POST,'delete_images')){
     //if any sample_region processing step images are identified for deletion, delete them
 
     if ($image_deletion_requested){
@@ -1025,7 +1025,7 @@ for ($i = 0; $i < sizeof($jobs); $i++){
     }
   }
 
-  if ($_POST['delete_job'] != ''){
+  if (ns_param_spec($_POST,'delete_job')){
 	//die(var_dump($jobs));
     // $lock_job_queue_query);
     //$sql->send_query($set_autocommit_query);
@@ -1121,7 +1121,7 @@ catch(ns_exception $e){
 }
 $hide_image_delete_button=FALSE;
 //edit an image deletion job
-if ($query_string['delete_file_taskbar']!=''){
+if (ns_param_spec($query_string,'delete_file_taskbar')){
   $view_processing_taskbar = FALSE;
   // die("BLO");
   $view_video_taskbar = FALSE;
@@ -1211,7 +1211,7 @@ if ($job_type != $IS_EXPERIMENT){
   if ($job_type == $IS_SAMPLE)
     $sub = "Samples";
   else $sub = "Regions";
-  if ($query_string["include_censored"] == 1){
+  if (!ns_param_spec($query_string,'include_censored') || $query_string["include_censored"] == 1){
     echo "<a href=\"view_processing_job.php?" . $query_parameters_without_censored."&include_censored=2\">[Include Only Censored $sub]</a>";
   }
   else if ($query_string["include_censored"] == 2){

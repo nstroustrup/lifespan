@@ -7,9 +7,9 @@ require_once('ns_processing_job.php');
 
 try{
 
-if (!isset($query_string['experiment_id']))
+if (ns_param_spec($query_string,'experiment_id'))
 	throw new ns_exception('No experiment id specified!');
-$experiment_id = @(int)$query_string['experiment_id'];
+else $experiment_id = (int)$query_string['experiment_id'];
 
 
 if ($experiment_id != 0){
@@ -22,12 +22,12 @@ if ($experiment_id != 0){
 
    $query_parameters = "experiment_id=$experiment_id";
 $external_detail_spec = FALSE;
-if ($_POST['detail_level']){
+if (ns_param_spec($_POST,'detail_level')){
      $detail_level = $_POST['detail_level'];
      $external_detail_spec = TRUE;
  }
 
- if ($query_string['set_denoising_options']==1){
+ if (ns_param_spec($query_string,'set_denoising_options') && $query_string['set_denoising_options']==1){
    $denoising_flag = $_POST['time_series_median'];
 
    #die("".$denoising_flag);
@@ -69,7 +69,7 @@ $query = "UPDATE experiments SET delete_captured_images_after_mask=" . ($delete_
    header("Location: manage_experiment_analysis_configuration.php?$query_parameters\n\n");
 
  }
- if ($query_string['regression_setup'] == 1){
+ if (ns_param_spec($query_string,'regression_setup'] && $query_string['regression_setup'] == 1){
 
    if ($_POST['set_control_strain']){
      $region_id = $_POST['control_region_id'];

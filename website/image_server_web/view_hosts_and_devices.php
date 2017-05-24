@@ -14,8 +14,9 @@ function ns_clean_up_for_tooltip($str){
 $current_device_cutoff = 60*3;
 
 $host_id = @$query_string['host_id'];
-if (isset($_POST['host_id']))
-$host_id = $_POST['host_id'];
+if (ns_param_spec($_POST,'host_id'))
+	$host_id = $_POST['host_id'];
+else $host_id = "";
 $show_host_nodes = @$query_string['show_host_nodes']=='1';
 $device_name = @$query_string['device_name'];
 $highlight_host_id = @$query_string['highlight_host_id'];
@@ -86,7 +87,7 @@ if (ns_param_spec($_POST,'pause')){
   }
   else{
 	$query = "UPDATE hosts SET pause_requested = !pause_requested WHERE base_host_name = '$host_id_name' OR name='$host_id_name'";
-       
+
 	$sql->send_query($query);
   }
 	$refresh = TRUE;
@@ -150,7 +151,7 @@ if (ns_param_spec($_POST,'add_to_device_inventory')){
 	}
 	$refresh = TRUE;
 }
-if (ns_param_spec($_POST,'remove_device_from_inventory')){	
+if (ns_param_spec($_POST,'remove_device_from_inventory')){
 	echo $selected_devices . "<BR>";
 	foreach ($selected_devices as $name){
 		$query = "SELECT device_name FROM device_inventory WHERE device_name = '$name'";
@@ -165,10 +166,10 @@ if (ns_param_spec($_POST,'remove_device_from_inventory')){
 	}
 	$refresh = TRUE;
 }
-if (ns_param_spec($_POST,'pause_captures')){	
+if (ns_param_spec($_POST,'pause_captures')){
 	//echo $selected_devices . "<BR>";
 	foreach ($selected_devices as $name){
-		
+
 		$query = "UPDATE devices SET pause_captures = !pause_captures WHERE name='$name'";
 		$sql->send_query($query);
 	}
@@ -178,7 +179,7 @@ if (ns_param_spec($_POST,'pause_captures')){
 if (ns_param_spec($_POST,'set_autoscan_interval')){
 	$interval = 60*(int)$_POST['autoscan_interval'];
 	foreach ($selected_devices as $name){
-		
+
 		$query = "UPDATE devices SET autoscan_interval = $interval WHERE name='$name'";
 		$sql->send_query($query);
 	}
@@ -187,7 +188,7 @@ if (ns_param_spec($_POST,'set_autoscan_interval')){
 if (ns_param_spec($_POST,'cancel_autoscan_interval')){
 	$interval = $_POST['autoscan_interval'];
 	foreach ($selected_devices as $name){
-		
+
 		$query = "UPDATE devices SET autoscan_interval = 0 WHERE name='$name'";
 		$sql->send_query($query);
 	}
@@ -198,13 +199,13 @@ if (ns_param_spec($_POST,'save_device_locations')){
 	foreach($device_locations as $name => $location){
 		$query = "UPDATE device_inventory SET incubator_location='$location' WHERE device_name = '$name'";
 		$sql->send_query($query);
-	
+
 	}
 	$device_incubators = $_POST['device_incubator'];
 	foreach($device_incubators as $name => $incubator){
 		$query = "UPDATE device_inventory SET incubator_name='$incubator' WHERE device_name = '$name'";
 		$sql->send_query($query);
-	
+
 	}
 	//$refresh = TRUE;
 }
@@ -222,7 +223,7 @@ foreach ($hosts as $row){
 	$base_hosts[$row[11]] = array();
 	$nodes_running[$row[11]][0] = 0;
 	$nodes_running[$row[11]][1] = 0;
-	
+
 }
 
 $current_time = ns_current_time();
@@ -236,12 +237,12 @@ foreach ($hosts as $row){
 }
 
 
-$query = "SELECT devices.host_id, devices.name, 
+$query = "SELECT devices.host_id, devices.name,
 		devices.comments, devices.error_text,
 		devices.in_recognized_error_state, devices.simulated_device,
-		devices.unknown_identity, devices.pause_captures, 
+		devices.unknown_identity, devices.pause_captures,
 		devices.currently_scanning, devices.last_capture_start_time,
-		devices.autoscan_interval, devices.preview_requested, devices.next_autoscan_time 
+		devices.autoscan_interval, devices.preview_requested, devices.next_autoscan_time
 		FROM devices, hosts WHERE devices.host_id = hosts.id ORDER BY name";
 $sql->get_row($query, $devices);
 $devices_identified = array();
@@ -284,7 +285,7 @@ foreach ($devices_identified as $name => $info){
 			array($name,"",1));
 	}
 }
-	
+
 display_worm_page_header("Hosts and Devices","<a href=\"view_experiments.php\">[Back to Experiment Index]</a>",TRUE,"");
 ?>
 <table border="0" cellspacing="15"><TR><TD valign="top">
@@ -320,15 +321,15 @@ foreach ($base_hosts as $base_host_name => $host){
 		$current = $cur_time - $host[$i][3] < $current_device_cutoff;
 		if ($current) echo "<b>";
 		if ($highlight_host_id == $host[$i][0]) echo "<i>";
-		
+
 		echo $host[$i][1];
-		
+
 		if ($host[$i][10] == "1")
 		echo "(p)";
-	
+
 		if ($current) echo "</b>";
 		if ($highlight_host_id == $host[$i][0]) echo "</i>";
-	
+
 		echo "<a href=\"view_hosts_log.php?host_id={$host[$i][0]}&limit=50\">[log]</a></td>";
 		echo "<td bgcolor=\"$clrs[1]\">{$host[$i][7]}.{$host[$i][8]}.{$host[$i][9]}</td>";
 		echo "<td bgcolor=\"$clrs[0]\">";
@@ -384,7 +385,7 @@ foreach ($base_hosts as $base_host_name => $host){
 			echo '</table>';
 		}
 		echo "</td></tr>";
-		
+
 		$k++;
 		$clrs = $table_colors[1];
 		$l = 0;
@@ -402,21 +403,21 @@ foreach ($base_hosts as $base_host_name => $host){
 			foreach ($sorted_devs as  $inc_name => $inc){
 			  if ($inc_name == '')
 			    echo "<b>Unknown Incubator</b>";
-			  else 
+			  else
 			    echo "<b>Incubator " . $inc_name . "</b>";
 			  // $clrs = $table_colors[$l%2];
 			  echo "</td><td bgcolor=\"$clrs[0]\">";
 			  $j++;
-		     
+
 			  foreach ($inc as $dev){
-			
+
 				$edit_device = ($device_name == $dev[1]);
 				echo "<a href=\"view_scanner_schedule.php?device_name=".$dev[1]."\">" . $dev[1] . "</a>";
 				//echo "</td><td bgcolor=\"$clrs[0]\">";
 				if ($dev[3] != ""){
-				  
+
 				  echo " <span title=\"" . ns_clean_up_for_tooltip($dev[3]) . "\">";
-				  
+
 				echo "<font color=\"red\">(Error)";
 				//	if ($dev[4] == "1")
 				//echo "(Recognized)";
@@ -449,7 +450,7 @@ foreach ($base_hosts as $base_host_name => $host){
 		}
 		if ($base_host_name != '' && !$show_host_nodes)
 			break;
-		
+
 	}
 }
 ?>
@@ -487,7 +488,7 @@ foreach ($device_inventory as $incubator => $devices){
 		$k++;
 		echo "\t<td bgcolor=\"$clrs[1]\">$device[0]</a></td>\n";
 		echo "\t<td bgcolor=\"$clrs[1]\">";
-		if ($device[2] == 1){			
+		if ($device[2] == 1){
 			if ($dev[8]==1)
 				echo "<i>".number_format((-$dev[9] +$current_time)/60,1)  . " min</i>";
 			if ($dev[7]==1)
@@ -514,7 +515,7 @@ foreach ($device_inventory as $incubator => $devices){
 			  //	echo "</b>:";
 			  //b	echo $dev[3];
 			}
-		
+
 		if ($device[2] != 1){
 			echo "<font size=\"-1\">(Missing)</font>";
 		}
@@ -548,7 +549,7 @@ foreach ($unregistered_device_inventory as $device){
 	$dev =& $unregistered_device_inventory[$device[0]];
 	$k++;
 	echo "\t<td bgcolor=\"$clrs[1]\">$device[0]</a></td>\n";
-		
+
 	echo "\t<td bgcolor=\"$clrs[1]\" colspan=3>&nbsp;</td>\n";
 	echo "</td>\n";
 	echo "\t<td bgcolor=\"$clrs[1]\">";
@@ -596,6 +597,6 @@ echo "</form>";
 
 ?>
 </td></tr></table>
-<?php 
+<?php
 display_worm_page_footer();
 ?>

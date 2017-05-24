@@ -1,7 +1,6 @@
 <?php
 require_once('worm_environment.php');
-require_once('ns_dir.php');	
-//require_once('ns_external_interface.php');
+require_once('ns_dir.php');
 require_once('ns_experiment.php');
 require_once('ns_processing_job.php');
 
@@ -46,16 +45,16 @@ else{
 }
 ?>
 <span class="style1">Plate Image Analysis:</span><br>
-<?php 
+<?php
 try{
-  
+
     try{
       $query = "SELECT r.id, r.name, s.name FROM sample_region_image_info as r, capture_samples as s WHERE r.sample_id = s.id AND s.experiment_id = $experiment_id AND r.censored =0 AND s.censored = 0";
       $sql->get_row($query,$region_ids);
       if (sizeof($region_ids) == 0){
 	echo "There are no plates specified yet for this experiment.  Have you generated and submitted a sample mask?";
       }
-      else{  
+      else{
     $region_names = array();
       for ($i = 0; $i < sizeof($region_ids);$i++){
 	$region_names[$region_ids[$i][0]] = $region_ids[$i][2] . "::" . $region_ids[$i][1];
@@ -63,7 +62,7 @@ try{
       $movement_query = 'SELECT id, op' .  $ns_processing_tasks['ns_process_static_mask']
 	      .'_image_id, op' . $ns_processing_tasks['ns_process_heat_map']
       .'_image_id,path_movement_images_are_cached, latest_movement_rebuild_timestamp, last_timepoint_in_latest_movement_rebuild  FROM sample_region_image_info WHERE ';
-      
+
 $operations = array();
       $processing_jobs = array();
       $query = "SELECT region_info_id, SUM(image_id>0)";
@@ -121,7 +120,7 @@ $operations = array();
       $plates_ready_for_detection = array();
       $plates_ready_for_movement = array();
       $plates_ready_for_validation = array();
-      
+
       for ($i = 0; $i < sizeof($op_counts); $i++){
 	$id = $op_counts[$i][0];
 	$N = $op_counts[$i][1];
@@ -154,9 +153,9 @@ echo "<table cellspacing=0 cellpadding=3><tr><td $table_header_color colspan=4>N
      echo "<td bgcolor=\"".$table_colors[0][0]."\" valign=\"top\">";
       foreach($plates_ready_for_detection as $d){
 	echo plate_output_info($d) . " ";
-     
+
       }
-      echo "</td>";     
+      echo "</td>";
       echo "<td bgcolor=\"".$table_colors[0][1]."\" valign=\"top\">";
       foreach($plates_ready_for_movement as $d){
 	echo plate_output_info($d) . " ";
@@ -167,14 +166,14 @@ echo "<table cellspacing=0 cellpadding=3><tr><td $table_header_color colspan=4>N
 	echo plate_output_info($d) . " ";
       }
       echo "</td></tr></table>";
-      echo "</td></tr></table>";   
-        
+      echo "</td></tr></table>";
+
     }
     }
     catch (ns_exception $e){
       die($e->text);
     }
-    
+
 }
 catch(ns_exception $e){
   die($e->text);

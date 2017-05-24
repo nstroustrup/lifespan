@@ -1,7 +1,7 @@
 <?php
 require_once("ns_exception.php");
 require_once("ns_image_server_website.ini");
-$website_version = "1.11";
+$website_version = "1.12";
 
 define("NS_SPATIAL_NORM", 1);
 define("NS_TEMPORAL_NORM", 2);
@@ -10,6 +10,9 @@ define("NS_JPG", 3);
 
 function ns_param_spec($myarray,$key){
 	 return array_key_exists($key,$myarray) && $myarray[$key] != '';
+}
+function ns_param_spec_true($myarray,$key){
+	 return array_key_exists($key,$myarray) && $myarray[$key] != '' && $myarray[$key];
 }
 function ns_load_experiment_groups(&$experiment_groups,&$group_order,&$sql){
 	$query = "SELECT group_id, group_name, hidden, group_order FROM experiment_groups ORDER BY group_order ASC";
@@ -61,11 +64,11 @@ function ns_set_database_name($name){
   global $db_name;
   ns_check_db_name($name);
     setcookie('ns_image_server_db_name',$name);
-  
+
     $db_name = $name;
 }
-    
-  
+
+
 try{
 
   require_once('ns_sql.php');
@@ -96,7 +99,7 @@ try{
 		//echo $c;
 		if ($default_database == $c){
 		  $db_name = $c;
-		 
+
 		 // die("Found $db_name");
 		  break;
 		}
@@ -106,15 +109,15 @@ try{
 }
   else
     $db_name = $_COOKIE['ns_image_server_db_name'];
-  
+
   $query = "USE " . $db_name;
   $sql->send_query($query);
 
   parse_str($_SERVER['QUERY_STRING'], $query_string );
- 
+
   if (isset($query_string['db_name']))
       $database_choices = $query_string['db_name'];
- 
+
 
 
 }
@@ -231,7 +234,7 @@ function delete_image($image_id,&$sql){
 	if (sizeof($res) == 0)
 		return;
 	$filename = $ns_image_server_storage_directory_absolute . "/" . $res[0][0] . "/" . $res[0][1];
-	
+
 	delete_file($filename);
 	$query =  "DELETE FROM images WHERE id='$image_id'";
 	$sql->send_query($query);
@@ -266,7 +269,7 @@ function ns_output_database_selector($name,$db_choice,$submit_immediately=TRUE){
 	if ($submit_immediately)
 	echo " onchange='this.form.submit()'";
 	echo ">";
-	
+
 	global $database_choices;
 	foreach($database_choices as $o ){
 	echo "<option value=\"$o\"";

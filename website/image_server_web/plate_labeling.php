@@ -1,6 +1,6 @@
 <?php
 require_once('worm_environment.php');
-require_once('ns_dir.php');	
+require_once('ns_dir.php');
 //require_once('ns_external_interface.php');
 require_once('ns_experiment.php');
 require_once('ns_processing_job.php');
@@ -12,8 +12,9 @@ $only_strain = @$query_string['only_strain']==1;
 $only_experiment_conditions = @$query_string['only_experiment_conditions']==1;
 #if ($only_experiment_conditions)
 #  echo "WHWHWHW";
-if (isset($_POST['load_from_device']))
+if (ns_param_spec($_POST,'load_from_device'))
 	$load_from_device_name= $_POST['load_from_device_name'];
+else $load_from_device_name = "";
 try{
  	if ($experiment_id == '' || $experiment_id == 0)
 		throw new ns_exception("Please specify an experiment number");
@@ -59,13 +60,13 @@ $strain_condition_2_positions = $positions_map;
 	}
 }
 $save = FALSE;
-if ($_POST['save_to_all_devices']){
+if (ns_param_spec($_POST,'save_to_all_devices')){
 	$save = TRUE;
 	$devices_to_save = array();
 	foreach($devices as $d)
 		array_push($devices_to_save,$d[0]);
 }
-  if ($_POST["save_to_devices"] != ''){
+  if (ns_param_spec($_POST,"save_to_devices")){
 	$save = true;
 	$devices_to_save = $_POST['save_to_device_names'];
 }
@@ -88,7 +89,7 @@ if ($save){
 	continue;
       $col = substr($key,2,1);
       $row = substr($key,4,1);
- 
+
       if ($is_strain)
 	$data[$col][$row]['strain'] = $value;
       else if ($is_strain_condition_1)
@@ -105,9 +106,9 @@ if ($save){
 	$data[$col][$row]['food_source'] = $value;
       else if ($is_environmental_conditions)
 	$data[$col][$row]['environmental_conditions'] = $value;
-      
+
       else throw new ns_exception("Unknown option");
-      
+
     }
     $sql->send_query($query);
    // $query = "LOCK TABLES sample_region_image_info as r WRITE";
@@ -126,7 +127,7 @@ if ($save){
 	    ob_end_clean();
 	    throw new ns_exception("Incomplete information found for " . $column_name . "_" . $row_name . ": " . $vv);
 	  }
-	  
+
 	  $query = "SELECT id FROM capture_samples WHERE experiment_id = $experiment_id AND RIGHT(name,1) = '$column_name' AND (device_name = '" .$devices_to_save[0] ."'";
 
 	  for($i = 1; $i < sizeof($devices_to_save); $i++)
@@ -134,8 +135,8 @@ if ($save){
 	  $query .=")";
 	  $sql->get_row($query,$sample_ids);
 	  for ($i = 0; $i < sizeof($sample_ids); $i++){
-	  
-	    $query = "UPDATE sample_region_image_info as r SET r.strain='" . $props['strain'] 
+
+	    $query = "UPDATE sample_region_image_info as r SET r.strain='" . $props['strain']
 	      . "' WHERE r.name = '" . $row_name . "' AND r.sample_id = ".$sample_ids[$i][0];
 	    $sql->send_query($query);
 	  }
@@ -153,48 +154,48 @@ if ($save){
 	    ob_end_clean();
 	    throw new ns_exception("Incomplete information found for " . $column_name . "_" . $row_name . ": " . $vv);
 	  }
-	  
-	  
-	  $query = "UPDATE sample_region_image_info as r, capture_samples as s SET r.environmental_conditions='" . $props['environmental_conditions'] 
+
+
+	  $query = "UPDATE sample_region_image_info as r, capture_samples as s SET r.environmental_conditions='" . $props['environmental_conditions']
 	    . "' WHERE " .
 	    "r.name = '" . $row_name . "' AND RIGHT(s.name,1) = '" . $column_name . "' " .
 	    "AND r.sample_id = s.id AND s.experiment_id = $experiment_id AND (s.device_name = '" . $devices_to_save[0] ."'";
-	  
+
 	  for($i = 1; $i < sizeof($devices_to_save); $i++){
 	    $query .= " || s.device_name = '" . $devices_to_save[$i] . "'";
 	  }
 	  $query .=")";
 	  $sql->send_query($query);
-	  
+
 	}
       }
     }
     else{
       foreach ($data as $column_name => $r){
 	foreach($r as $row_name => $props){
-	  
+
 	  if (!isset($props['strain']) || !isset($props['condition_1']) || !isset($props['condition_2']) || !isset($props['condition_3']) || !isset($props['condition_3']) || !isset($props['culturing_temperature']) || !isset($props['experiment_temperature']) || !isset($props['food_source']) || !isset($props['environmental_conditions'])){
 	    ob_start();
 	    var_dump($props);
 	    $vv = ob_get_contents();
 	    ob_end_clean();
 	    throw new ns_exception("Incomplete information found for " . $column_name . "_" . $row_name . ": " . $vv);
-	    
+
 	  }
-	  $query = "UPDATE sample_region_image_info as r, capture_samples as s SET r.strain='" . $props['strain'] . "', r.strain_condition_1=  '" . $props['condition_1'] . "', r.strain_condition_2='" . $props['condition_2'] . "', r.strain_condition_3='" . $props['condition_3'] . "', r.culturing_temperature='" . $props['culturing_temperature'] . "', r.experiment_temperature='" . $props['experiment_temperature'] . "', r.food_source='" . $props['food_source'] . "', r.environmental_conditions='" . $props['environmental_conditions'] . 
-	    
-	    
+	  $query = "UPDATE sample_region_image_info as r, capture_samples as s SET r.strain='" . $props['strain'] . "', r.strain_condition_1=  '" . $props['condition_1'] . "', r.strain_condition_2='" . $props['condition_2'] . "', r.strain_condition_3='" . $props['condition_3'] . "', r.culturing_temperature='" . $props['culturing_temperature'] . "', r.experiment_temperature='" . $props['experiment_temperature'] . "', r.food_source='" . $props['food_source'] . "', r.environmental_conditions='" . $props['environmental_conditions'] .
+
+
 	    "' WHERE " .
 	    "r.name = '" . $row_name . "' AND RIGHT(s.name,1) = '" . $column_name . "'" .
 	    "AND r.sample_id = s.id AND s.experiment_id = $experiment_id AND (s.device_name = '" . $devices_to_save[0] ."'";
-	  
+
 	  for($i = 1; $i < sizeof($devices_to_save); $i++){
 	    $query .= " || s.device_name = '" . $devices_to_save[$i] . "'";
 	  }
 	  $query .=")";
 	  //echo $query . "<br>";
 	  $sql->send_query($query);
-	  
+
 	}
       }
       //  $query = "UNLOCK TABLES";      //  $sql->send_query($query);
@@ -208,7 +209,7 @@ if ($save){
     header("Location: plate_labeling.php?experiment_id=$experiment_id$s\n\n");
     die("");
   }
-  
+
 }
 catch (ns_exception $e){
   die($e->text);
@@ -244,7 +245,7 @@ else{
 </tr>
 <tr><td bgcolor="<?php echo $table_colors[0][0];?>">
 <select name="load_from_device_name">
-<?php 
+<?php
 
 foreach($devices as $d){
 echo "<option value=\"{$d[0]}\"";
@@ -264,13 +265,13 @@ echo ">{$d[0]} ({$d[2]} {$d[1]})</option>\n";
 <table border="0" cellpadding="0" cellspacing="1" bgcolor="#000000" width="100%">
 
   <tr>
-<?php 
+<?php
 $column_id = 0;
 foreach ($positions as $column_name => $rows){
 ?>
     <td <?php echo $table_header_color?> align="center"><br><b>Column <?php echo $column_name?></b><br><br>
     <table cellpadding="0" cellspacing="0" width="100%">
-<?php 
+<?php
 	$clrs = $table_colors[$column_id];
 	$column_id = !$column_id;
 	$row_color = 0;
@@ -281,14 +282,14 @@ foreach ($positions as $column_name => $rows){
 if (!$only_experiment_conditions){
   echo "<td>";
 		  echo "Strain:</td><td>";
-		  output_editable_field('s_' . $column_name . '_' . $row, ns_slash($strain_positions[$column_name][$row]),TRUE,20,FALSE); 
+		  output_editable_field('s_' . $column_name . '_' . $row, ns_slash($strain_positions[$column_name][$row]),TRUE,20,FALSE);
 }
 
 if (!$only_strain && !$only_experiment_conditions){
 		  echo "</td></tr><tr><td>Culturing T:</td><td>";
 		  output_editable_field('4_' . $column_name . '_' . $row, ns_slash($culturing_temperature_positions[$column_name][$row]),TRUE,20,FALSE);	  echo "</td></tr><tr><td>Experiment T:</td><td>";
 		  output_editable_field('5_' . $column_name . '_' . $row, ns_slash($experiment_temperature_positions[$column_name][$row]),TRUE,20,FALSE);	  echo "</td></tr><tr><td>Food Source:</td><td>";
-		  output_editable_field('6_' . $column_name . '_' . $row, ns_slash($food_source_positions[$column_name][$row]),TRUE,20,FALSE);	 
+		  output_editable_field('6_' . $column_name . '_' . $row, ns_slash($food_source_positions[$column_name][$row]),TRUE,20,FALSE);
 }
 if (!$only_strain){
   echo "</td></tr><tr><td>Environment:</td><td>";
@@ -302,7 +303,7 @@ if (!$only_strain && !$only_experiment_conditions){
 		  echo "</td></tr><tr><td>Condition 3:</td><td>";
 		  output_editable_field('3_' . $column_name . '_' . $row, ns_slash($strain_condition_3_positions[$column_name][$row]),TRUE,20,FALSE);
 }
-		  echo "</td></tr></table>"; 
+		  echo "</td></tr></table>";
 		  echo "</td></tr>";
 		if ($row_color)
 		  $row_color = 0;
@@ -326,7 +327,7 @@ if (!$only_strain && !$only_experiment_conditions){
 <TD bgcolor="<?php echo $table_colors[0][0];?>">
 
 <select name="save_to_device_names[]" multiple size=<?php echo sizeof($devices);?>>
-<?php 
+<?php
 
 foreach($devices as $d){
 echo "<option value=\"{$d[0]}\"";

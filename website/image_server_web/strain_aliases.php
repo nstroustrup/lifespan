@@ -3,7 +3,7 @@ require_once ('worm_environment.php');
 require_once('ns_experiment.php');
 $experiment_id = @$query_string['experiment_id'];
 $strain_name = @$query_string['strain'];
-$update_experiment = $_POST['update_experiment']=='1';
+$update_experiment = @$_POST['update_experiment']=='1';
 
 
 if ($experiment_id != ''){
@@ -42,12 +42,12 @@ if ($experiment_id != ''){
 			array_push($new_strains_from_experiment,$v[0]);
 			$j++;
 		}
-	
+
 	}
 }
 
 $reload = FALSE;
-if ($_POST['edit'] =='1'){
+if (ns_param_spec($_POST,'edit') && $_POST['edit'] =='1'){
   foreach($_POST as $key => $value){
     //     echo $key . "=" . $value . "<BR>";
     $is_strain = $key[0] == 's';
@@ -72,7 +72,7 @@ if ($_POST['edit'] =='1'){
       $strain_info[$id][2] = $value;
     else throw new ns_exception("Unknown option");
   }
-  
+
   foreach ($strain_info as $id => $d){
     if ($d[0] == '')
       continue;
@@ -81,26 +81,26 @@ if ($_POST['edit'] =='1'){
       $query = "INSERT INTO strain_aliases ";
       $insert = TRUE;
     }
-    else 
+    else
       $query = "UPDATE strain_aliases ";
-    
+
     $query .= "SET strain='" . mysql_real_escape_string($d[0]) . "', genotype='".mysql_real_escape_string($d[1])."', conditions='".mysql_real_escape_string($d[2])."'";
-    
+
     if (!$insert) $query .= " WHERE id = $id ";
     //       echo $query . "<BR>";
     //      continue;
     $sql->send_query($query);
     $reload = TRUE;
   }
-  
+
    if (FALSE && $update_experiment){
      foreach($strain_info as $id => $d){
        if ($d[0] != $known_strains_by_id[$id]){
 	 //		var_dump($known_strains_by_id);
 	 //		echo "<BR>$id<br>";
 	 $query = "UPDATE sample_region_image_info as r, capture_samples as s "
-	   . "SET r.strain = '" . mysql_real_escape_string($d[0]) . 
-	   "' WHERE r.strain='" . mysql_real_escape_string($known_strains_by_id[$id]) 
+	   . "SET r.strain = '" . mysql_real_escape_string($d[0]) .
+	   "' WHERE r.strain='" . mysql_real_escape_string($known_strains_by_id[$id])
 	   . "' AND r.sample_id = s.id AND s.experiment_id = $experiment_id";
 	 $sql->send_query($query);
        }
@@ -141,7 +141,7 @@ if (sizeof($current_strain_aliases) +sizeof($new_strains_from_experiment)== 0)
 
 for ($i = 0; $i < sizeof($current_strain_aliases); $i++){
   echo "<tr><td>";
-  
+
   echo "<tr><td bgcolor=\"{$table_colors[$i%2][0]}\">\n";
   output_editable_field('s_'.$current_strain_aliases[$i][0],$current_strain_aliases[$i][1],TRUE, 10);
   echo "\n</td><td bgcolor=\"{$table_colors[$i%2][1]}\">\n";
@@ -151,7 +151,7 @@ for ($i = 0; $i < sizeof($current_strain_aliases); $i++){
   echo "\n</td><td bgcolor=\"{$table_colors[$i%2][1]}\">\n";
   echo "<input name=\"d_{$current_strain_aliases[$i][0]}\" type=\"submit\" value=\"delete\">\n";
   echo "\n</td></tr>";
-  
+
  }
 for ($i = 0; $i < sizeof($new_strains_from_experiment); $i++){
   echo "<tr><td>";
@@ -164,7 +164,7 @@ for ($i = 0; $i < sizeof($new_strains_from_experiment); $i++){
   echo "\n</td><td bgcolor=\"{$table_colors[$i%2][1]}\">\n";
   echo "&nbsp;";
   echo "\n</td></tr>";
-  
+
  }
 ?>
 <tr><td colspan=3  bgcolor="<?php echo $table_colors[0][0] ?>"><font size="-1">Add new strain description:</font></td></tr>

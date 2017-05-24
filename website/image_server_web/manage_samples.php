@@ -1,7 +1,6 @@
 <?php
 require_once('worm_environment.php');
-require_once('ns_dir.php');	
-//require_once('ns_external_interface.php');
+require_once('ns_dir.php');
 require_once('ns_experiment.php');
 require_once('ns_processing_job.php');
 
@@ -20,7 +19,7 @@ $edit_region_id=@$query_string['edit_region_id'];
 $delete_censored_jobs = @$query_string['delete_censored_jobs'];
 $delete_problem_images = @$query_string['delete_problem_images'];
 $delete_experiment_jobs = @$query_string['delete_experiment_jobs'];
-$pause_jobs_set = isset($query_string['pause_jobs']);
+$pause_jobs_set = ns_param_spec($query_string,'pause_jobs');
 $pause_jobs = @$query_string['pause_jobs'];
 
 $show_region_jobs=TRUE;
@@ -42,7 +41,7 @@ if ($pause_jobs_set){
   $sql->send_query($query);
  }
 try{
-  
+
   /*****************
    Load Experiment, Sample, and Region Information
   ****************/
@@ -57,7 +56,7 @@ try{
     }
     $query .= " currently_under_processing=0 WHERE r.problem > 0 AND r.region_info_id = i.id AND i.sample_id = s.id AND s.experiment_id = $experiment_id";
     $sql->send_query($query);
-    
+
   }
   if ($delete_censored_jobs){
     $query = "SELECT id FROM capture_samples WHERE censored=1 AND experiment_id=$experiment_id";
@@ -66,12 +65,12 @@ try{
       $query = "DELETE FROM processing_jobs as p, processing_job_queue as q WHERE p.sample_id=" . $samples[$i][0] . "AND q.job_id = p.id";
       //echo $query . "<BR>";
       $sql->send_query($query);
- 
+
     }
     $query = "SELECT i.id FROM sample_region_image_info as i, capture_samples as s WHERE i.censored=1 AND i.sample_id = s.id AND s.experiment_id = $experiment_id";
-  
+
     $sql->get_row($query,$regions);
-    
+
     for ($i = 0; $i < sizeof($regions); $i++){
       $query = "DELETE FROM processing_jobs WHERE region_id=" . $regions[$i][0];
       //echo $query . "<BR>";
@@ -86,17 +85,17 @@ try{
     header("Location: manage_samples.php?experiment_id=$experiment_id\n\n");
     die("");
   }
-  
+
   $experiment = new ns_experiment($experiment_id,'',$sql,false);
 #if ($hide_censored)die("HIDE");
 # else die("NO HIDE");
   $experiment->get_sample_information($sql,!$hide_censored);
-  
-  
+
+
   /**************************
    Sort Samples, putting censored samples at back of list.
   *************************/
-  
+
   $uncensored = array();
   $censored = array();
   for ($i=0; $i < sizeof($experiment->samples); $i++){
@@ -108,11 +107,11 @@ try{
     $experiment->samples[$i] = $uncensored[$i];
   for ($i = 0; $i < sizeof($censored); $i++)
     $experiment->samples[sizeof($uncensored)+$i] = $censored[$i];
-  
+
 
   if ($sample_id =='')
-    $sample_id = $_POST['sample_id'];
-  
+    $sample_id = ns_param_spec($_POST,'sample_id')?$_POST['sample_id']:0;
+
   /***************************
    Handle Requests for Regions to Exclude, Censor, or flag busy
   ***************************/
@@ -146,7 +145,7 @@ try{
 	$query2 .='worm_movement.currently_under_processing=0';
       }
       else throw new ns_exception("Unknown region sample image action: $region_action");
-      
+
       $query .= " WHERE region_info_id=$region_id";
       $query2 .= " WHERE sample_region_images.region_info_id=$region_id AND sample_region_images.worm_movement_id = worm_movement.id";
       $sql->send_query($query);
@@ -172,20 +171,20 @@ try{
     $sample_id = 0;
     $refresh_page = TRUE;
   }
-if ($sample_id != 0 && $_POST['cancel_pending_scans'] != ''){
+if ($sample_id != 0 && ns_param_spec($_POST,'cancel_pending_scans')){
 	$query = "DELETE FROM capture_schedule WHERE sample_id = $sample_id AND time_at_start='0' AND missed='0' AND time_at_start='0' AND scheduled_time > " . ns_current_time();
 	$sql->send_query($query);
     header("Location: manage_samples.php?experiment_id=$experiment_id&$region_job_query_string#$sample_id\n\n");
     die("");
 }
-  
-  if ($sample_id != 0 && $_POST['censor_sample'] != ''){
+
+  if ($sample_id != 0 && ns_param_spec($_POST,'censor_sample')){
     $query = "UPDATE capture_samples SET censored=1 WHERE id=" . $sample_id;
     $sql->send_query($query);
     header("Location: manage_samples.php?experiment_id=$experiment_id&$region_job_query_string#$sample_id\n\n");
     die("");
   }
-  if ($sample_id != 0 && $_POST['uncensor_sample'] != ''){
+  if ($sample_id != 0 && ns_param_spec($_POST,'uncensor_sample')){
     $query = "UPDATE capture_samples SET censored=0 WHERE id=" . $sample_id;
     $sql->send_query($query);
     header("Location: manage_samples.php?experiment_id=$experiment_id&$region_job_query_string#$sample_id\n\n");
@@ -197,13 +196,13 @@ if ($sample_id != 0 && $_POST['cancel_pending_scans'] != ''){
   ******************************/
 
   if ($edit_region_id == '')
-    $edit_region_id = $_POST['edit_region_id'];
-  
+    $edit_region_id = ns_param_spec($_POST,'edit_region_id')?$_POST['edit_region_id']:0;
+
   $new_url = "manage_samples.php?experiment_id=$experiment_id$region_job_query_string";
 
   if ($region_id != 0){
     unset($set_plate_lf);
-    $excluded = true;			       
+    $excluded = true;
     //  var_dump($query_string);
     //  die("")'
     if ($query_string['mark_c3'] == 'short')
@@ -222,9 +221,9 @@ if ($sample_id != 0 && $_POST['cancel_pending_scans'] != ''){
     }
 
   }
-  
 
-  if ($edit_region_id != 0 && $_POST['save'] != ''){
+
+  if ($edit_region_id != 0 && ns_param_spec($_POST,'save')){
     $region_details = $_POST['region_details'];
     $region_condition_1 = $_POST['region_condition_1'];
     $region_condition_2 = $_POST['region_condition_2'];
@@ -250,18 +249,18 @@ if ($sample_id != 0 && $_POST['cancel_pending_scans'] != ''){
     //die($query);
     $sql->send_query($query);
     $edit_region_id = 0;
-    
+
   }
-  
-  if ($sample_id != 0 && $_POST['cancel'] != '')
+
+  if ($sample_id != 0 && ns_param_spec($_POST,'cancel'))
     $sample_id = 0;
 
 
   /*********************************
 Handle Requests to delete a sample
   *************************************/
- 
-  if ($sample_id !=0 && $_POST['delete_sample'] != ''){
+
+  if ($sample_id !=0 && ns_param_spec($_POST,'delete_sample')){
     ns_delete_sample_from_database($sample_id,$sql);
     /*
     $query = "DELETE FROM capture_schedule WHERE sample_id =" . $sample_id;
@@ -283,23 +282,23 @@ Handle Requests to delete a sample
     $query = "DELETE FROM capture_samples WHERE id=" . $sample_id;
     $sql->send_query($query);*/
     header("Location: manage_samples.php?experiment_id=$experiment_id&$region_job_query_string#$sample_id\n\n");
-    die("");    
+    die("");
   }
 
   /*********************************
    Handle Requests to Change Sample Information
   ***********************************/
-  
-  if ($sample_id != 0 && $_POST['save'] != ''){
+
+  if ($sample_id != 0 && ns_param_spec($_POST,'save')){
     $found = false;
-    
+
     for ($i = 0; $i < sizeof($experiment->samples); $i++){
       if ($experiment->samples[$i]->id() == $sample_id){
 	$found = true;
 	$experiment->samples[$i]->name = ns_slash($_POST['sample_name']);
 	$experiment->samples[$i]->description = ns_slash($_POST['sample_description']);
 	$experiment->samples[$i]->capture_parameters = ns_slash($_POST['sample_capture_parameters']);
-	
+
 	$mask_new_id = $_POST['mask_id'];
 	if ($experiment->samples[$i]->mask_id != $mask_new_id && $mask_new_id != 0){
 	  $ex_name = $experiment->name;
@@ -319,22 +318,22 @@ Handle Requests to delete a sample
 	  $sql->send_query($query);
 	}
 	$experiment->samples[$i]->mask_id = ns_slash($_POST['mask_id']);
-	
+
 	$experiment->samples[$i]->model_filename = ns_slash($_POST['sample_model_filename']);
 	//die ($experiment->samples[$i]->model_filename);
-	
+
 	if ($experiment->samples[$i]->name == '')
 	  throw new ns_exception("You must specify a sample name.");
 	if ($experiment->samples[$i]->capture_parameters == '')
 	  throw new ns_exception("You must specify capture parameters for your sample.");
 	$experiment->samples[$i]->save($sql);
       }
-      
+
     }
     if (!$found)
       throw ns_exception("The sample you modified no longer exists in the database!");
     $sample_id = 0;
-    
+
   }
   /*******************************
    Load Mask information for samples
@@ -342,7 +341,7 @@ Handle Requests to delete a sample
   $query = "SELECT image_masks.id, images.id, images.filename FROM image_masks, images WHERE image_masks.processed = 0 AND image_masks.image_id = images.id ORDER BY images.filename ";
   $sql->get_row($query, $masks);
   $masks[sizeof($masks)] = array(0,0,"(none)");
-  
+
   /**********************************
    Load Experiment-wide Jobs
   **********************************/
@@ -355,7 +354,7 @@ Handle Requests to delete a sample
     $experiment_jobs[$i] = new ns_processing_job;
     $experiment_jobs[$i]->load_from_result($ejobs[$i]);
   }
-  
+
 
   /*****************************
    Load Sample Jobs
@@ -429,7 +428,7 @@ $current_region_job_index = 0;
 	  $cur_region =& $rrr[$k];
 	  $censored = $cur_region[14]!="0";
 	  if (!$censored){
-	    $strains[strtoupper($cur_region[4])] = $cur_region[4]; 
+	    $strains[strtoupper($cur_region[4])] = $cur_region[4];
 	    $condition_1_values[strtolower($cur_region[7])] = $cur_region[7];
 	    $condition_2_values[strtolower($cur_region[8])] = $cur_region[8];
 	    $condition_3_values[strtolower($cur_region[9])] = $cur_region[9];
@@ -437,13 +436,13 @@ $current_region_job_index = 0;
 	    $experiment_temperature_values[strtolower($cur_region[11])] = $cur_region[11];
 	    $food_source_values[strtolower($cur_region[12])] = $cur_region[12];
 	    $environment_condition_values[strtolower($cur_region[13])] = $cur_region[13];
-	    
+
 	    $cstr = strtolower($cur_region[4]);
 	    if($cur_region[7] != '')
 	      $cstr .= "::" . strtolower($cur_region[7]);
 	    if($cur_region[8] != '')
 	      $cstr .= "::" . strtolower($cur_region[8]);
-	    
+
 	    if($cur_region[9] != '')
 	      $cstr .= "::" . strtolower($cur_region[9]);
 	    if($cur_region[10] != '')
@@ -454,18 +453,18 @@ $current_region_job_index = 0;
 	      $cstr .= "::" . strtolower($cur_region[12]);
 	    if($cur_region[13] != '')
 	      $cstr .= "::" . strtolower($cur_region[13]);
-	    
-	    $all_animal_type_values[$cstr] = 
+
+	    $all_animal_type_values[$cstr] =
 	      array($cur_region[4],
 		    $cur_region[7],
 		    $cur_region[8],$cur_region[9],$cur_region[10],$cur_region[11],$cur_region[12],$cur_region[13],);
 	  }
-	  
+
 	  $region_jobs[$cur_region[0]] = array();
 	  if ($show_region_jobs){
 	    $jid=0;
 	    #print($all_region_job_results[$current_region_job_index][3] ." ". $cur_region[0] . ";");
-	  
+
 	    while($all_region_job_results[$current_region_job_index][3] == $cur_region[0]){
 	      #print($jid. " ");
 	      //#$query = $job->provide_query_stub();
@@ -473,12 +472,12 @@ $current_region_job_index = 0;
 	      //	die($query);
 	      //#$sjobs = array();
 	      //#$sql->get_row($query,$sjobs);
-	      
-	      
+
+
 	      $region_jobs[$cur_region[0]][$jid] = new ns_processing_job;
-	     
+
 	      $region_jobs[$cur_region[0]][$jid]->load_from_result($all_region_job_results[$current_region_job_index]);
-	      
+
 	      $current_region_job_index++;
 	      $jid++;
 	    }
@@ -522,22 +521,22 @@ $current_region_job_index = 0;
 	$sql->send_query($query);
 	$query = "UPDATE worm_movement SET $change WHERE region_info_id = " . $regions[$experiment->samples[$i]->id()][$j][0];
 	$sql->send_query($query);
-	
+
 	if ($experiment_action == "remove_problems"){
 	  $query = "UPDATE worm_movement as m, sample_region_images as s SET m.calculated=0 WHERE m.region_info_id=".$regions[$experiment->samples[$i]->id()][$j][0]." AND s.id = m.region_id_short_1 AND s.op" . $ns_processing_tasks["ns_process_movement_coloring"] . "_image_id = 0";
 	  $sql->send_query($query);
-	  
+
 	}
-	
+
       }
     }
     ;$refresh_page = TRUE;
   }
 
-  if ($save_data != 0){    
+  if ($save_data != 0){
     $sample_id = 0;
   }
-  
+
   $strain_info = array();
   foreach ($strains as $s){
     $query = "SELECT genotype,conditions FROM strain_aliases WHERE strain='$s'";
@@ -567,7 +566,7 @@ $current_region_job_index = 0;
     if ($latest_rebuild > $storyboard_build_timestamp)
       $storyboard_info.="<tr><td></td><td><b>(Out of date!)</b></td></tr>";
     $storyboard_info .="<tr><td>Up to time </td><td>" . format_time($storyboard_last_timepoint) . "</td></tr>";
-    
+
     $storyboard_info .= "</table>";
     //	  $storyboard_info .= $latest_rebuild;
   }
@@ -616,7 +615,7 @@ display_worm_page_header($experiment->name . " samples");
 <td bgcolor="<?php echo  $table_colors[0][0] ?>" valign="top">
 
 <b>Configuration</b><br>
-<?php 
+<?php
 //echo "<table border=0 cellpadding=4 cellspacing=0><tr><td valign=\"top\" bgcolor=\"{$table_colors[0][0]}\">";
 echo "<a href=\"manage_experiment_analysis_configuration.php?experiment_id=$experiment_id\">[Configure Machine Analysis]</a><br>";
 ?>
@@ -797,7 +796,7 @@ if (sizeof($all_animal_type_values) > 1){
 	    if ($c == 0)
 	      echo "<tr>";
 	    $clrs = $table_colors[$c%2];
-	    echo "<td valign=\"top\" bgcolor=\"$clrs[$r]\">";  
+	    echo "<td valign=\"top\" bgcolor=\"$clrs[$r]\">";
 	    echo "<a href=\"view_processing_job.php?job_id={$experiment_jobs[$i]->id}$region_job_query_string\"";
 	    echo format_time($experiment_jobs[$i]->time_submitted);
 	    echo "</a>";
@@ -812,13 +811,13 @@ if (sizeof($all_animal_type_values) > 1){
 	  }
 	  if ($c != 0){
 	    for (;$c < $number_of_columns; $c++){
-	      
+
 	    $clrs = $table_colors[$c%2];
 	    echo "<td bgcolor=\"$clrs[$r]\"></td>";
 	    }
 	  echo "</tr>";
 	  }
-	  
+
 ?></td>
   </tr>
 </table></td></tr></table>
@@ -840,7 +839,7 @@ if (sizeof($all_animal_type_values) > 1){
 <table border="0" cellpadding="4" cellspacing="0" width="100%">
   <tr <?php echo $table_header_color?> ><td >Sample Name</td><td>Info</td><td>Parameters</td><td>&nbsp;</td></tr>
 
-		
+
  <?php
 	//echo "<tr><td bgcolor=\"#FFFFFF\" colspan = 7>fsfdsdf";
 	//var_dump($region_jobs);
@@ -853,7 +852,7 @@ if (sizeof($all_animal_type_values) > 1){
 
 		echo "<tr><td bgcolor=\"$clrs[1]\" valign=\"top\">\n";
 		echo "<a name=\"" . $experiment->samples[$i]->id() . "\">";
-		echo "<b>";  
+		echo "<b>";
 		output_editable_field('sample_name', ns_slash($experiment->samples[$i]->name()),$edit,12);
 		if ($experiment->samples[$i]->censored){
 		  echo "<br>Censored";
@@ -926,17 +925,17 @@ if (sizeof($all_animal_type_values) > 1){
 				echo $job->get_processing_state_description(TRUE,$sql);
 		    }
 		    echo "</td></tr></table>";
-		    
+
 
 		//out job info
 		//$row_color = !$row_color;
 				global $show_sample_jobs;
 		if ($show_sample_jobs){
-	       
+
 		echo "<table cellspacing=0 cellpadding=0 align = \"right\"><tr><td valign=\"top\">";
 		  for ($j = 0; $j < sizeof($sample_jobs[$i]); $j++){
 		    $clrs = $table_colors[$row_color];
-		    
+
 		    echo $sample_jobs[$i][$j]->get_job_description($sql);
 		    //$row_color = !$row_color;
 		  }
@@ -944,12 +943,12 @@ if (sizeof($all_animal_type_values) > 1){
 
 		}
 		echo "</td></tr>\n";
-		$row_color = !$row_color;	
+		$row_color = !$row_color;
 		$cur_sample_id = $experiment->samples[$i]->id();
 		for ($k = 0; $k < sizeof($regions[$cur_sample_id]); $k++){
-		  
+
 			$clrs = $table_colors[$row_color];
-	   
+
 			$cur_region =& $regions[$cur_sample_id][$k];
 			$cur_region_id = $cur_region[0];
 			if ($cur_region[3] == "0")
@@ -963,7 +962,7 @@ if (sizeof($all_animal_type_values) > 1){
 			//	echo "$cur_region_id :: $k . <BR>";
 			echo $experiment->samples[$i]->name() . "::{$cur_region[1]}";
 			echo "</b>";
-			
+
 			$b = '<BR>';
 			global $show_region_jobs;
 			if (!$show_region_jobs)
@@ -971,7 +970,7 @@ if (sizeof($all_animal_type_values) > 1){
 			echo  "<br><font size=\"-2\"><a href=\"ns_view_region_images.php?region_id={$cur_region[0]}&experiment_id={$experiment->id()}\">[View Region Images]</a></font><br>";
 			//	echo "<a href=\"view_movement_data.php?region_id={$cur_region[0]}\"><font size=\"-2\">[View Movement]</font></a>$b";
 			echo "<a href=\"view_hosts_log.php?region_id={$cur_region[0]}\"><font size=\"-2\">[View Problems]</font></a>$b";
-			echo "</td>\n"; 
+			echo "</td>\n";
 			echo "<td bgcolor=\"$clrs[0]\" colspan=2 valign=\"top\">";
 			echo "<table width=\"100%\" colspan =0 colpadding=0><tr><td width=\"200\"  valign=\"top\">";
 			$edit_region = $edit_region_id == $cur_region[0];
@@ -985,18 +984,18 @@ if (sizeof($all_animal_type_values) > 1){
 			}
 
 			//	if ($edit_region || ($cur_region[2]!=''&& $cur_region[4]!=''))
-		    	
+
 			if ($cur_region[3] != "0"){
 			  echo "<tr><td><font size=\"-1\"><b>Censored</b>:</font></td><td><font size=\"-1\">";
 			if ($cur_region[6] != '')
 				echo "" . $cur_region[6] . "";
 			echo "</font></td></tr>";
 			}
-			
+
 			if ($cur_region[5] != "0"){
 			  echo "<tr><td colspan=2><font size=\"-1\"><b>(excluded)</b></font></td></tr>";
 
-}	
+}
 			//echo ($cur_region[15]);
 if ($cur_region[15] > 0) echo "<tr><td colspan=2><font size=\"-1\"><a href=\"ns_view_image.php?image_id=" . $cur_region[15] . "\">Subregion Mask Specified</a></font></td></tr>";
 if (strlen($cur_region[10]) > 0 || $edit_region){
@@ -1017,8 +1016,8 @@ echo "</font></td></tr>";
 if (strlen($cur_region[13]) > 0 || $edit_region){
 echo "<tr><td><font size=\"-1\">Environment Condition:</font></td><td><font size=\"-1\">";
 			output_editable_field('region_environment_condition',$cur_region[13],$edit_region,10);
-echo "</font></td></tr>";		
- }	
+echo "</font></td></tr>";
+ }
 if (strlen($cur_region[7]) > 0 || $edit_region){
 echo "<tr><td><font size=\"-1\">Condition 1:</font></td><td><font size=\"-1\">";
 			output_editable_field('region_condition_1',$cur_region[7],$edit_region,10);
@@ -1032,7 +1031,7 @@ echo "</font></td></tr>";
 if (strlen($cur_region[9]) > 0 || $edit_region){
 echo "<tr><td><font size=\"-1\">Condition 3:</font></td><td><font size=\"-1\">";
 			output_editable_field('region_condition_3',$cur_region[9],$edit_region,10);
-		
+
 echo "</font></td></tr>";
 }
 if (strlen($cur_region[2]) > 0 || $edit_region){
@@ -1046,7 +1045,7 @@ echo "</table>";
 			  echo "<input type=\"hidden\" name=\"edit_region_id\" value=\"" . $cur_region[0] . "\"><br>";
 			echo "</td><td>";
 			if ($show_region_jobs){
-			
+
 			  $job = new ns_processing_job;
 			  $job->region_id = $cur_region[0];
 			  $v = $job->get_processing_state_description(FALSE,$sql);
@@ -1062,7 +1061,7 @@ echo "</table>";
 			  if (strlen($v) > 0)
 			    echo "<a href=\"view_processing_job.php?job_id=0&experiment_id=$experiment_id&region_id=".$cur_region[0]."&all_new=1&delete_file_taskbar=1\"><font size=\"-1\">[Delete Images]</font></a> ";
 			}
-			
+
 			echo "</td></tr></table>";
 			echo "</td>";
 			echo "<td bgcolor=\"{$clrs[0]}\" align=\"right\" nowrap valign=\"top\">";
@@ -1081,33 +1080,33 @@ echo "</table>";
 			  echo "<a href=\"view_processing_job.php?job_id=0&experiment_id=$experiment_id&region_id=".$cur_region[0]."\"><font size=\"-1\">[Edit Jobs]</font></a>";
 
 			  //  echo "<BR>Plate lifespan: <a href=\"manage_samples.php?experiment_id=$experiment_id&region_id=".$cur_region[0]."&mark_c3=short\"><font size=\"-1\">[short]</font></a><a href=\"manage_samples.php?experiment_id=$experiment_id&region_id=".$cur_region[0]."&mark_c3=long\"><font size=\"-1\">[long]</font></a><a href=\"manage_samples.php?experiment_id=$experiment_id&region_id=".$cur_region[0]."&mark_c3=OK\"><font size=\"-1\">[OK]</font></a>";
-			 
+
 			  //		}
-			
-			  
-			   
+
+
+
 			if ($show_region_jobs){
 			  //out job info
 			  echo '<br><br>'; echo "<table cellspacing=0 cellpadding=0 align = \"right\"><tr><td valign=\"top\">";
 			  for ($m = 0; $m < sizeof($region_jobs[ $cur_region[0] ]); $m++){
 			    $clrs = $table_colors[$row_color];
 			    $cur_job =&  $region_jobs[ $cur_region[0] ][$m];
-			    
+
 			    echo $cur_job->get_job_description($sql);
 			    echo  "</font>\n";
 			    //$row_color = !$row_color;
 			  }
 			    echo "</td></tr></table>";
 			}
-		  
+
 			echo "</td></tr>\n";
 			/*($clrs = $table_colors[$row_color];
-			echo "<tr><td bgcolor=\"$clrs[0]\" colspan=\"5\"></td>\n"; 
+			echo "<tr><td bgcolor=\"$clrs[0]\" colspan=\"5\"></td>\n";
 			echo "<td bgcolor=\"$clrs[1]\">&nbsp;</td>";
 			echo "<td bgcolor=\"{$clrs[1]}\" nowrap></td></tr>";*/
-			$row_color = !$row_color;		
+			$row_color = !$row_color;
 		}
-		
+
 	}
 ?></td>
   </tr>

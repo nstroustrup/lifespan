@@ -3,11 +3,11 @@ require_once ('worm_environment.php');
 require_once('ns_experiment.php');
 require_once('ns_processing_job.php');
 $refresh=FALSE;
-$job_id = $_POST["job_id"];
+$job_id = @$_POST["job_id"];
 if(array_key_exists("show",$query_string))
   $show = $query_string["show"];
 else $show="none";
-if ($_POST["confirm"] != ''){
+if (ns_param_spec($_POST,"confirm")){
   $query = "UPDATE delete_file_jobs SET confirmed=1 WHERE id=$job_id";
   $sql->send_query($query);
   $job = new ns_processing_job;
@@ -20,7 +20,7 @@ if ($_POST["confirm"] != ''){
   $refresh=TRUE;
  }
 
-if ($_POST["confirm_all"] != ''){
+if (ns_param_spec($_POST,"confirm_all")){
   $query = "SELECT id FROM delete_file_jobs WHERE confirmed = 0";
   $sql->get_row($query,$res);
   for ($i = 0; $i < sizeof($res); $i++){
@@ -39,7 +39,7 @@ if ($_POST["confirm_all"] != ''){
 	$refresh=TRUE;
  }
 
-if ($_POST["dismiss_all"] != ''){
+if (ns_param_spec($_POST,"dismiss_all")){
   $query = "DELETE FROM delete_file_specifications";
   $sql->send_query($query);
   $query = "DELETE FROM delete_file_jobs";
@@ -48,7 +48,7 @@ if ($_POST["dismiss_all"] != ''){
   $sql->send_query($query);
   $refresh=TRUE;
 }
-if ($_POST["dismiss"] != ''){
+if (ns_param_spec($_POST,"dismiss")){
 
   $query = "DELETE FROM delete_file_specifications WHERE delete_job_id = $job_id";
   $sql->send_query($query);
@@ -59,7 +59,7 @@ if ($_POST["dismiss"] != ''){
   $refresh=TRUE;
  }
 
-$show_details_id = $query_string['show_details_id'];
+$show_details_id = @$query_string['show_details_id'];
 if ($refresh){
   header("Location: manage_file_deletion_jobs.php\n\n");
   die("");
@@ -85,7 +85,7 @@ display_worm_page_header("Manage File Deletion Jobs");
 <form method="post" action="manage_file_deletion_jobs.php">
 <input name="dismiss_all" type="submit" value="Dismiss All Deletion Requests" onClick="javascript:return confirm('Are you sure you wish to dismiss all requests?')">
 </form>
- <?php if ($show == "partial") 
+ <?php if ($show == "partial")
 echo "<font size=-1><a href=\"manage_file_deletion_jobs.php?show=full\">[Show more detail]</a></font>";?>
 </td></tr><?php
 if ($show == "none"){
@@ -117,7 +117,7 @@ else if (sizeof($jobs) == 0){
 	$max = $s;
 	if ($job_id != $show_details_id && $s > 10)
 		$max = 10;
-	
+
      for ($j=0; $j < $max; $j++)
        echo $job_specifications[$i][$j][0] . "\\" . $job_specifications[$i][$j][1] . "<BR>\n";
 	if ($s != $max)

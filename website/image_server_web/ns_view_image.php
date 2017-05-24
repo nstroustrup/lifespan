@@ -20,21 +20,21 @@ $safari = strpos($agent,'Safari');
 $chrome = strpos($agent,'Chrome');
 $can_display_video = $msie || $safari || $chrome;
 
-$image_id = $query_string['image_id'];
-$captured_images_id = $query_string['captured_images_id'];
-$redirect = $query_string['redirect'];
-$video_image_id = $query_string['video_image_id'];
-$fps = $query_string['fps'];
-$width = $query_string['width'];
-$height = $query_string['height'];
+$image_id = @$query_string['image_id'];
+$captured_images_id = @$query_string['captured_images_id'];
+$redirect = @$query_string['redirect'];
+$video_image_id = @$query_string['video_image_id'];
+$fps = @$query_string['fps'];
+$width = @$query_string['width'];
+$height = @$query_string['height'];
 
-if (!isset($query_string['width']))
+if (!ns_param_spec($query_string,'width'))
 	$width = 600;
-if (!isset($query_string['height']))
+if (!ns_param_spec($query_string,'height'))
 	$height = 600;
 
 
-if (!isset($query_string['fps']))
+if (!ns_param_spec($query_string,$query_string['fps')))
 	$fps = 10;
 
 
@@ -76,7 +76,7 @@ if ($video_image_id != 0){
 			$filename = $data[0][0] . $fps_suffix;
 			ns_get_filenames($filename,$data[0][1],$data[0][2],$video_url,$video_filesystem_filename);
 			$video_data_present = file_exists($video_filesystem_filename);
-			
+
 			if (!$video_data_present)
 				$video_problem = " the video could not be located on disk ($video_filesystem_filename)";
 		}
@@ -96,7 +96,7 @@ if ($image_id != 0){
 		ns_get_filenames($data[0][0],$data[0][1],$data[0][2],$image_url,$image_filesystem_filename);
 
 		//var_dump($image_filesystem_filename);
-//die('');		
+//die('');
 $image_data_present = file_exists($image_filesystem_filename);
 
 		if (!$image_data_present)
@@ -122,7 +122,7 @@ if (!$video_data_present){
 		}
 
 		display_worm_page_header("View Image");
-	
+
 		echo "<center>";
 		if ($video_image_id){
 			echo "<br>(Defaulting to still image because $video_problem)<br><br>";
@@ -138,7 +138,7 @@ else{
 		echo "<html><head></head><body>";
 	else
 	display_worm_page_header("View Image");
-	
+
 	echo "<video src=\"$video_url\" controls=\"controls\" width=\"$width\" height=\"$height\" onerror=\"report_video_failure(event)\">This web browser does not support the video tag.</video>";
 	if ($redirect == "1")
 		echo "</body></html>";

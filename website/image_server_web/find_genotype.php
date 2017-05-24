@@ -16,8 +16,8 @@ $sql->get_row($query,$loc);
 $strain_experiment = array();
 $strain_experiment_id = array();
 $genotypes = array();
-$show_experiment = $query_string['show_experiment']!="0";
-$show_strain = $query_string['show_strain'] != "0";
+$show_experiment = @$query_string['show_experiment']!="0";
+$show_strain = @$query_string['show_strain'] != "0";
 for ($i = 0; $i < sizeof($loc); $i++){
   $n = $loc[$i][0];
   if (!isset($strain_experiment[$n])){
@@ -54,7 +54,7 @@ foreach ($strain_experiment as $strain=>$experiment){
   }
 }
   echo "</table>";
-  
+
 
 
 ?>

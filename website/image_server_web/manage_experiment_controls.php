@@ -1,19 +1,19 @@
 <?php
 require_once('worm_environment.php');
-require_once('ns_dir.php');	
+require_once('ns_dir.php');
 //require_once('ns_external_interface.php');
 require_once('ns_experiment.php');
 require_once('ns_processing_job.php');
 
 try{
- 
-if (!isset($query_string['experiment_id']))
+
+if (!ns_param_spec($query_string,'experiment_id')))
 	throw new ns_exception('No experiment id specified!');
 $experiment_id = @(int)$query_string['experiment_id'];
 
 
 if ($experiment_id != 0){
- 
+
 	$query = "SELECT name FROM experiments WHERE id = $experiment_id";
 	$sql->get_row($query,$enames);
 	$experiment_name = $enames[0][0];
@@ -21,14 +21,14 @@ if ($experiment_id != 0){
  $page_title = "Machine Analysis Configuration for " . $experiment_name;
 
    $query_parameters = "experiment_id=$experiment_id";
-$external_detail_spec = FALSE;  
-if ($_POST['detail_level']){
+$external_detail_spec = FALSE;
+if (ns_param_spec($_POST,'detail_level')){
      $detail_level = $_POST['detail_level'];
      $external_detail_spec = TRUE;
    }
- if ($query_string['regression_setup'] == 1){
- 
-   if ($_POST['set_control_strain']){
+ if (ns_param_spec($query_string,'regression_setup') && $query_string['regression_setup'] == 1){
+
+   if (ns_param_spec($_POST,'set_control_strain')){
      $region_id = $_POST['control_region_id'];
      $control_lifespan = $_POST['control_lifespan'];
      //	var_dump($region_id);
@@ -39,15 +39,15 @@ if ($_POST['detail_level']){
      //	die($control_string);
      $query = "UPDATE experiments SET control_strain_for_device_regression = '" . $control_string . "' WHERE id = " . $experiment_id;
      //echo $query
-     
+
      $sql->send_query($query);
-     header("Location: manage_experiment_controls.php?$query_parameters\n\n");  
+     header("Location: manage_experiment_controls.php?$query_parameters\n\n");
    }
  }
 
  $query = "SELECT control_strain_for_device_regression FROM experiments WHERE id = " . $experiment_id;
  $sql->get_row($query,$exps);
- 
+
  $cs = $exps[0][0];
  //die ($cs);
  $i = strpos($cs,";");
@@ -61,7 +61,7 @@ if ($_POST['detail_level']){
    $control_region_hash[$control_regions[$i]] = '1';
  if (sizeof($control_regions) >= 1)
    $control_lifespan = $control_regions[sizeof($control_regions)-1];
- 
+
  $strain_models = array();
  $region_strains = array();
  //die("Control Regions" . implode(".",$control_regions));
@@ -82,7 +82,7 @@ if ($_POST['detail_level']){
 		}
 	}
    //echo $exps[$i][0] . "<BR>";
-   
+
    $region_strains[$exps[$i][0]] = array($exps[$i][1],$exps[$i][2],$exps[$i][3],$exps[$i][4]);
    if ($strain_models[$strain] == '')
      $strain_models[$strain] = $exps[$i][5];
@@ -94,7 +94,7 @@ if ($_POST['detail_level']){
      $control_strain_hash[$strain]= '1';
  }
 
- if (isset($_POST['is_single_posture_model']) && $_POST['is_single_posture_model']=="0"){
+ if (ns_param_spec($_POST,'is_single_posture_model') && $_POST['is_single_posture_model']=="0"){
    $is_single_posture_model = fals;
  }
  else{
@@ -109,13 +109,13 @@ if ($_POST['detail_level']){
      }
    }
  }
-  
- if ($_POST['set_posture_models']){
+
+ if (ns_param_spec($_POST,'set_posture_models')){
    if ($is_single_posture_model){
      $model_name = $_POST['single_posture_model_name'];
      $posture_analysis_method = $_POST['posture_analysis_method'];
      $query = "UPDATE sample_region_image_info as i, capture_samples as s SET posture_analysis_model ='$model_name',posture_analysis_method='$posture_analysis_method' WHERE i.sample_id = s.id AND s.experiment_id = $experiment_id";
-   
+
    $sql->send_query($query);
    }
    else{
@@ -123,14 +123,14 @@ if ($_POST['detail_level']){
        if (substr($k,0,16) == "posture_modelZ"){
 	 $region_id = substr($k,16);
 	 $st = $region_strains[$region_id];
-	 
-       
+
+
 	 $model = $v;
-	 
+
 	 $strain_condition = "i.strain = '" .$st[0] . "'";
    //echo $detail_level;
 	 if ($detail_level != 's'){
-	   
+
 	   $strain_condition .= " AND i.strain_condition_1 = '" . $st[1] . "'";
 	   if ($detail_level != 's1'){
 	     $strain_condition .=" AND i.strain_condition_2 = '" . $st[2] . "'";
@@ -140,10 +140,10 @@ if ($_POST['detail_level']){
 	$query =  " UPDATE sample_region_image_info as i, capture_samples as s SET posture_analysis_model ='$model',posture_analysis_method='$posture_analysis_method' WHERE $strain_condition AND i.sample_id = s.id AND s.experiment_id = $experiment_id";
 	$sql->send_query($query);
        }
-	 
+
      }
    }
-     header("Location: manage_experiment_controls.php?$query_parameters\n\n"); 
+     header("Location: manage_experiment_controls.php?$query_parameters\n\n");
 
  }
  $back_url = "manage_samples.php?experiment_id=$experiment_id";
@@ -185,7 +185,7 @@ catch(ns_exception $ex){
       echo "</option>\n";
     }
 
-  ?>						
+  ?>
     </select></td></tr>
     <tr><TD bgcolor="<?php echo $table_colors[1][0] ?>">Device Calibration Strain <br>Lifespan Mean</td><td bgcolor="<?php echo $table_colors[1][1] ?>">
 <input type="text" size=3 name="control_lifespan" value="<?php echo $control_lifespan?>"> days<font size="-2"><br>*leave blank to use grand mean</font></td></tr>
@@ -226,12 +226,12 @@ catch(ns_exception $ex){
       <tr><td bgcolor="<?php echo $table_colors[0][0] ?>">All Plate Model:</td><TD bgcolor="<?php echo $table_colors[0][1] ?>">
 	<?php output_editable_field("single_posture_model_name",$single_posture_model_name,true,30);?>
 							     </td></tr>
-																							   <?} else{?>			    
-  
+																							   <?} else{?>
+
 <?php
 	$c = 0;
     foreach($experiment_strains as $strain => $region_id){
-	echo 
+	echo
 	"<tr><td bgcolor=\"".$table_colors[$c][0] . "\">$strain</td>" .
 	"<td bgcolor=\"" . $table_colors[$c][1] . "\">";
 	output_editable_field("posture_modelZ" . $region_id ,$strain_models[$strain],true,30);
@@ -239,7 +239,7 @@ catch(ns_exception $ex){
 	$c =!$c;
     }
 
-  ?>					   
+  ?>
 	<?php }?>
 
 <tr><td bgcolor="<?php echo $table_colors[0][0] ?>" colspan=2>

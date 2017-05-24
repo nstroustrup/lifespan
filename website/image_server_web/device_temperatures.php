@@ -1,6 +1,6 @@
 <?php
 require_once('worm_environment.php');
-require_once('ns_dir.php');	
+require_once('ns_dir.php');
 //require_once('ns_external_interface.php');
 require_once('ns_experiment.php');
 require_once('ns_processing_job.php');
@@ -10,27 +10,27 @@ $selected_devices=@$_POST['selected_devices'];
 $load_from_device_name = '';
 $only_strain = @$query_string['only_strain'];
 $incubators = array();
-$simple_table = $query_string['simple_table']==1;
+$simple_table = @$query_string['simple_table']==1;
 try{
-  if ($_POST['save']){
+  if (ns_param_spec_true($_POST,'save')){
     //die(var_dump($devices_to_save));
     foreach($_POST as $key => $value){
-      
+
       if ($key[0] != 't' || $key[1] != '_')
 	continue;
-      
+
       $device_name = substr($key,2);
-      
+
       $device_temperatures[$device_name] = $value;
-      
+
     }
     foreach($device_temperatures as $d=>$t){
       $query = "UPDATE sample_region_image_info as r, capture_samples as s SET r.experiment_temperature = '" . $t . "' WHERE s.experiment_id = $experiment_id AND s.device_name = '" . $d . "' AND s.id = r.sample_id";
       $sql->send_query($query);
     }
-    
+
     header("Location: device_temperatures.php?experiment_id=$experiment_id\n\n");
-    die(""); 
+    die("");
   }
   $query = "SELECT name FROM experiments WHERE id = $experiment_id";
   $sql->get_value($query,$experiment_name);
@@ -72,7 +72,7 @@ $row_color = !$row_color;
  echo "<td bgcolor=\"" . $table_colors[0][$row_color]. "\" valign=\"top\" align=\"center\">\n";
 		echo "<center><b>" . $device_incubator[$d]. "</b></center>";
 		echo "</td>";
- 
+
 echo "<td bgcolor=\"" . $table_colors[0][$row_color]. "\" valign=\"top\" align=\"center\">\n";
 		echo "<center><b>" . $d . "</b> (" . $device_locations[$d] . ")</center>";
 echo "</td><td  bgcolor=\"" . $table_colors[1][$row_color]. "\" valign=\"top\" align=\"center\">";
@@ -93,7 +93,7 @@ echo "</td></tr>";
 </form><?php if (!$simple_table){?>
 <a href="device_temperatures.php?simple_table=1&experiment_id=<?php echo $experiment_id?>">[Simple Table]</a>
 	    <?php } else {?>
-<a href="device_temperatures.php?simple_table=0&experiment_id=<?php echo $experiment_id?>">[Editable Table]</a>	  
+<a href="device_temperatures.php?simple_table=0&experiment_id=<?php echo $experiment_id?>">[Editable Table]</a>
 	  <?php }?>
 </center>
 <?php

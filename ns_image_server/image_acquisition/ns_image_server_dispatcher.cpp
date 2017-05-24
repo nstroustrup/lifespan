@@ -293,7 +293,10 @@ void ns_image_server_dispatcher::run(){
 			}
 			ns_message_request req = pending_remote_requests.begin()->message.request();
 
-			if (req == NS_QUIT){
+			if (req == NS_QUIT || image_server.processing_time_is_exceeded()){
+				if (image_server.processing_time_is_exceeded()) {
+					image_server.register_server_event(ns_image_server::ns_register_in_central_db_with_fallback, ns_image_server_event("Processing time exceeded."));
+				}
 				pending_remote_requests.begin()->connection.close();
 				pending_remote_requests.pop_front();
 				image_server.exit_requested = true;
@@ -327,10 +330,7 @@ void ns_image_server_dispatcher::run(){
 				message_handling_thread.run(handle_dispatcher_request,this);
 			}
 
-			if (image_server.processing_time_is_exceeded()){
-				image_server.register_server_event(ns_image_server::ns_register_in_central_db_with_fallback, ns_image_server_event("Processing time exceeded."));
-				image_server.shut_down_host();
-			}
+			
 			lock.release();
 		}
 		//cerr << "Leaving dispatcher::run() Loop";

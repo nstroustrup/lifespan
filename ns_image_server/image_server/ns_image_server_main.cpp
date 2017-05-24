@@ -489,192 +489,18 @@ ns_os_signal_handler_return_type floating_point_error_signal_handler(ns_os_signa
 	ns_server_panic_restart();
 }
 #endif
-bool ns_multiprocess_control_options::from_parameter(const std::string & param){
-	if (param == "single_process"){
-		only_run_single_process = true; 
-		return 1;
-	}
-	string::size_type p=param.find("=");
-	if (p == param.npos)
-		return 0;
-	string key(param.substr(0,p)),
-		   value(param.substr(p+1,param.npos));
-	if (key=="--process_id")				{process_id = atol(value.c_str()); return 1;}
-	if (key=="--total_number_of_processes")	{total_number_of_processes = atol(value.c_str()); return 1;}
-	if (key=="--compile_videos")			{compile_videos = (value=="1"); return 1;}
-	if (key=="--handle_software_updates")	{handle_software_updates = (value=="1"); return 1;}
-	if (key=="--manage_capture_devices")	{manage_capture_devices = (value=="1"); return 1;}
-	if (key=="--port_offset")	{dispatcher_port_offset = atol(value.c_str()); return 1;}
-	return false;
-}
 
-
-void ns_multiprocess_control_options::to_parameters(std::vector<std::string> & param){
-	param.push_back(string("--process_id=") + ns_to_string(process_id));
-	param.push_back(string("--total_number_of_processes=") + ns_to_string(total_number_of_processes));
-	param.push_back(string("--compile_videos=") + (compile_videos?"1":"0"));
-	param.push_back(string("--handle_software_updates=") + (handle_software_updates?"1":"0"));
-	param.push_back(string("--manage_capture_devices=") + (manage_capture_devices?"1":"0"));
-	param.push_back(string("--port_offset=") + ns_to_string(dispatcher_port_offset));
-}
-#ifdef _WIN32 
-HWND ns_make_windows_console_window(){
-
-	AllocConsole();
-	HANDLE stdout_handle = GetStdHandle(STD_OUTPUT_HANDLE),
-		   stderr_handle = GetStdHandle(STD_ERROR_HANDLE),
-		   stdin_handle = GetStdHandle(STD_INPUT_HANDLE);
-	int stdout_handle_i = _open_osfhandle((intptr_t) stdout_handle, _O_TEXT),
-		stderr_handle_i = _open_osfhandle((intptr_t) stderr_handle, _O_TEXT),
-		stdin_handle_i = _open_osfhandle((intptr_t) stdin_handle, _O_TEXT);
-	FILE * stdout_fp = _fdopen( stdout_handle_i, "w" ),
-		 * stderr_fp = _fdopen( stderr_handle_i, "w" ),
-		 * stdin_fp =  _fdopen( stdin_handle_i,  "r" );
-	*stdout = *stdout_fp;
-	*stdin = *stdin_fp;
-	*stderr = *stderr_fp;
-
-	freopen("CONOUT$", "w", stdout);
-	freopen("CONOUT$", "w", stderr);
-	freopen("CONIN$", "r", stdin);
-	ios::sync_with_stdio();
-
-	HWND console_hwnd = GetConsoleHwnd();
-	ns_window_to_hide = console_hwnd;
-
-	//remove close option from console window (close via toolbar icon)
-	HMENU cur_menu = GetSystemMenu(console_hwnd, FALSE);
-	DeleteMenu (cur_menu, SC_CLOSE,MF_BYCOMMAND);
-
-	
-	image_server.set_console_window_title();
-	return console_hwnd;
-}
-#endif
-
-struct ns_child_process_information{
-	ns_external_execute execute;
-	ns_multiprocess_control_options options;
-};
-
-void ns_request_shutdown_of_all_spawned_nodes(const std::vector<ns_child_process_information> &child_processes){
-	for (unsigned int i = 0; i < child_processes.size(); ++i){
-		try{
-			unsigned long port(child_processes[i].options.port(image_server.dispatcher_port()));
-			if (!image_server.send_message_to_running_server(NS_QUIT,"",port))
-				throw ns_ex("No image server found running at ") << image_server.dispatcher_ip() << ":" << port << ".";
-		}
-		catch(ns_ex & ex){
-			image_server.register_server_event(ns_image_server::ns_register_in_central_db,ex);
-		}
-	}	
-}
-void ns_wait_for_all_spawned_nodes(std::vector<ns_child_process_information> &child_processes){
-	for (unsigned int i = 0; i < child_processes.size(); ++i){
-		try{
-			cerr << "Waiting for node on port " << child_processes[i].options.port(image_server.dispatcher_port()) << "...\n";
-			for (unsigned int i = 0; i < child_processes.size(); i++){
-				try{child_processes[i].execute.wait_for_termination();
-				}
-				catch(...){}
-			}
-		}
-		catch(ns_ex & ex){
-			image_server.register_server_event(ns_image_server::ns_register_in_central_db,ex);
-		}
-	}	
-}
 
 void ns_terminate(){
 	return;
 }
 
-ns_multiprocess_control_options ns_spawn_new_nodes(	const unsigned int & count,
-													const ns_multiprocess_control_options & command_line_options,
-													std::vector<ns_child_process_information> &child_processes, const bool allow_duplicate_port_assigments=false){
-	
-	if (count==0)
-		return command_line_options;
-	#ifdef _WIN32 
-	//if we are a child process launched on windows, just return what was provided at the commandline
-	if (command_line_options.process_id != 0)
-		return command_line_options;
-	#endif
-	
-	ns_multiprocess_control_options parent_options;
-	parent_options.compile_videos = true;
-	parent_options.handle_software_updates = true;
-	parent_options.manage_capture_devices = true;
-	unsigned long next_port_offset(1);
-
-	//if we're the parent process, spawn off a bunch of child processes.
-	child_processes.resize(count);
-	for (int i = 0; i < count; i++){
-		child_processes[i].options = command_line_options;
-		child_processes[i].options.compile_videos = false;
-		child_processes[i].options.handle_software_updates = false;
-		child_processes[i].options.manage_capture_devices = false;
-		child_processes[i].options.process_id = i+1;
-		ns_socket s;
-		bool good_bport(false);
-		if (!allow_duplicate_port_assigments){
-			//find the next good port
-			while(1){
-				try{
-					s.listen(image_server.dispatcher_port() + next_port_offset,1024);
-					s.close_socket();
-					break;
-				}
-				catch(...){}
-				next_port_offset++;
-			}
-		}
-		child_processes[i].options.dispatcher_port_offset = next_port_offset;
-		next_port_offset++;
-		#ifdef _WIN32 
-			//on windows, launch a new process passing instructions via the commandline
-			vector<string> args;
-			child_processes[i].options.to_parameters(args);
-			string parameters;
-			for (int j = 0; j < args.size(); j++){
-				parameters+= args[j];
-				if (j != args.size()-1)
-					parameters+=" ";
-			}
-
-			ns_external_execute_options opts;
-			opts.take_stderr_handle = false;
-			opts.take_stdin_handle = false;
-			opts.take_stdout_handle = false;
-			
-			char full_command_line[1024];
-			GetModuleFileName(NULL,full_command_line,1024);
-			child_processes[i].execute.run(full_command_line,parameters, opts);
-			child_processes[i].execute.release_io();
-
-
-		#else
-			//on linux, fork and return the apropriate options
-			ns_external_execute_options opts;
-			opts.take_stderr_handle = false;
-			opts.take_stdin_handle = false;
-			opts.take_stdout_handle = false;
-			opts.only_fork = true;
-			bool is_parent_thread(child_processes[i].execute.run("","",opts));
-			if (!is_parent_thread){
-				ns_multiprocess_control_options opt(child_processes[i].options);
-				child_processes.clear();
-				return opt;
-			}
-		#endif
-	}
-	return parent_options;
-}
-
 typedef enum {ns_none,ns_start, ns_stop, ns_help, ns_restart, ns_status, ns_hotplug,
 			  ns_reset_devices,ns_reload_models,ns_submit_experiment,ns_test_email,ns_test_alert, ns_test_rate_limited_alert,ns_wrap_m4v,
 			  ns_restarting_after_a_crash,ns_trigger_segfault_in_main_thread,ns_trigger_segfault_in_dispatcher_thread, ns_run_pending_image_transfers,
-	      ns_clear_local_db_buffer_cleanly,ns_clear_local_db_buffer_dangerously,ns_simulate_central_db_connection_error,ns_fix_orphaned_captured_images,ns_update_sql,ns_output_image_buffer_info,ns_stop_checking_central_db,ns_start_checking_central_db,ns_output_sql_debug, ns_additional_host_description, ns_max_run_time_in_seconds, ns_max_number_of_jobs_to_process} ns_cl_command;
+	      ns_clear_local_db_buffer_cleanly,ns_clear_local_db_buffer_dangerously,ns_simulate_central_db_connection_error,ns_fix_orphaned_captured_images,
+	ns_update_sql,ns_output_image_buffer_info,ns_stop_checking_central_db,ns_start_checking_central_db,ns_output_sql_debug, ns_additional_host_description, 
+	ns_max_run_time_in_seconds, ns_number_of_processing_cores, ns_idle_queue_check_limit, ns_max_memory_to_use,ns_ini_file_location,ns_max_number_of_jobs_to_process} ns_cl_command;
 
 ns_image_server_sql * ns_connect_to_available_sql_server(){
 		try{
@@ -695,92 +521,12 @@ ns_image_server_sql * ns_connect_to_available_sql_server(){
 #include "ipp.h"
 #endif
 
-#include "ns_ojp2k.h"
-#include "ns_image_registration.h"
-#include "ns_optical_flow.h"
-#ifdef _WIN32 
-//int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow){
-	int main(int argc, char ** argv){
-	/*int argc;
-	std::vector<std::string> argv;
-	argv.push_back("image_server_win32.exe");
-
-	if (lpCmdLine != 0){
-		
-		int pos = 0;
-		std::string temp;
-		while(true){
-			char a = lpCmdLine[pos];
-			if (a == 0){
-				if (temp.size() != 0) argv.push_back(temp);
-				break;
-			}
-			else if (a == ' '){
-				argv.push_back(temp);
-				temp.resize(0);
-			}
-			else temp += a;
-			pos++;
-		}
-	}
-	argc = (int)argv.size();
-	*/
-	//bool console_window_created(false);
-
-#else
-int main(int argc, char * argv[]){
-#endif
+int main(int argc, char ** argv){
 
 	#ifdef NS_USE_INTEL_IPP
 	ippInit();
 	#endif
 	
-	
-	/*
-	try {
-		ns_openjpeg_test("Z:\\nstroustrup\\image_server_storage\\tst.tif", "Z:\\nstroustrup\\image_server_storage\\tst_lsm_");
-	}
-	catch (ns_ex & ex) {
-		std::cerr << ex.text() << "\n";
-		char a;
-		std::cin >> a;
-	}*/
-	//Image registration code test
-	/*if(0){
-	try{
-	ns_image_registration<127,ns_8_bit> registration;
-	ns_image_standard im1, im2;
-	std::string dir("Y:\\image_server_storage\\partition_000\\2014_12_21_compound_scaling\\rise_d\\captured_images\\");
-	ns_load_image(dir+"2014_12_21_compound_scaling=1035=rise_d=29839=1419150907=2014-12-21=03-35=5395566=235850499.tif",im1);
-	ns_load_image(dir+"2014_12_21_compound_scaling=1035=rise_d=29839=1422236107=2015-01-25=20-35=5582815=238599372.tif",im2);
-	ns_high_precision_timer t;
-	t.start();
-	ns_vector_2i diff (registration.register_images(im1,im2,ns_full_registration,ns_vector_2i(150,150)));
-	ns_64_bit diff_time(t.stop());
-	t.start();
-	//ns_vector_2i diff2 (registration.register_images(im1,im2,ns_sum_registration,ns_vector_2i(50,50)));
-	ns_vector_2i diff3 (registration.register_images(im1,im2,ns_threshold_registration,ns_vector_2i(150,150)));
-	ns_64_bit diff3_time(t.stop());
-	ofstream foo ("c:\\server\\out.txt");
-	foo << diff.x << "," << diff.y << "\n";
-	foo << diff_time << "\n";
-	//foo << diff2.x << "," << diff2.y << "\n";
-	foo << diff3.x << "," << diff3.y << "\n";
-	foo << diff3_time << "\n";
-	foo.close();
-	cerr << "WHA";
-	}
-	catch(ns_ex & ex){
-		cerr << ex.text() << "\n";
-		cerr << "\n";
-	}
-	return 0;
-	}
-	*/
-
-	
-
-
 	std::map<std::string,ns_cl_command> commands;
 	commands["start"] = ns_start;
 	commands["stop"] = ns_stop;
@@ -811,8 +557,14 @@ int main(int argc, char * argv[]){
 	commands["max_run_time_in_seconds"] = ns_max_run_time_in_seconds;
 	commands["max_number_of_jobs_to_process"] = ns_max_number_of_jobs_to_process;
 	commands["output_sql_debug"] = ns_output_sql_debug;
+	commands["number_of_processor_cores_to_use"] = ns_number_of_processing_cores;
+	commands["max_memory_to_use"] = ns_max_memory_to_use;
+	commands["idle_queue_check_limit"] = ns_idle_queue_check_limit;
+	commands["ini_file_location"] = ns_ini_file_location;
 	bool is_master_node(false);
-	std::string schema_name;
+	std::string schema_name, ini_file_location;
+	unsigned long max_run_time(0), max_job_num(0), number_of_processing_cores(-1), idle_queue_check_limit(-1), memory_allocation_limit(-1);
+
 	try{
 
 
@@ -825,14 +577,7 @@ int main(int argc, char * argv[]){
 		for (unsigned int i = 1; i < argc; i++)
 			mp_options.from_parameter(argv[i]);*/
 		
-		//load setup information from ini file.  Provide any multiprocess options that may have
-		//been specified at the command line, as these options determine how the ini file values should be interpreted
-		image_server.load_constants(ns_image_server::ns_image_server_type);		
-		
-	
-		//make sure the multiprocess options are sane
-		//mp_options.total_number_of_processes = image_server.number_of_node_processes_per_machine();
-	//	mp_options.total_number_of_processes = 1;
+
 
 		//set default options for command line arguments
 		ns_cl_command command(ns_start);
@@ -840,13 +585,10 @@ int main(int argc, char * argv[]){
 			  overwrite_existing_experiments(false);
 		std::string input_filename;
 		bool sql_update_requested(false);
+
 		//parse the command line
 		for (int i = 1; i < argc; i++){
 			std::string command_str(argv[i]);
-			//ignore multi-process control parameters
-			//ns_multiprocess_control_options opt_check;
-			//if (opt_check.from_parameter(command_str))
-			//	continue;
 
 			//run as background daemon if requested.
 			if (std::string(argv[i]) == "daemon"){
@@ -859,54 +601,81 @@ int main(int argc, char * argv[]){
 				#endif
 			}
 
-
-
-
 			std::map<std::string,ns_cl_command>::iterator p = commands.find(command_str);
 			if (p == commands.end() || p->second == ns_help){
 					ns_ex ex;
 					if (p == commands.end())
 						ex << "Unknown command line argument: " << command_str << "\n";
 				
-					ex	<< "Usage: " << argv[0] << " [start] [status] [stop] [restart] [hotplug] [reset_devices] [reload_models] [wrap_m4v] [submit_experiment [f,u] filename] [single_process] [help]";
+					ex << "Usage: " << argv[0] << " [Option] [value] [Option] [value]";
 					#ifndef _WIN32
 					ex << " [daemon]";
 					#endif
 					ex << "\nOptions:\n"
-						<< "start : start an instance of the image server on the local machine (default)\n"
-						<< "status : check to see if an instance of the image server is running on the local machine\n"
-						<< "stop : request that the currently running local instance of the image server terminate\n"
-						<< "restart : request that the currently running local instance of the image server terminate, and launch a new instance in current process\n"
-						<< "hotplug : request the currently running local instance of the image server check for hardware changes to image acquisition devices attached to local machine\n"
-						<< "reset_devices : request the currently running local instance of the image server reset its image acquisition device registry and build it from scratch\n"
-						<< "reload_models : request the currently running local instance of the image server clear its cache of worm detection models so they are reloaded from disk.\n"
-						<< "additional_host_description [text]: optionally specify extra information to distinguish the current host (e.g when running in an HPC cluster)\n"
+						<< "**Basic server control functions**\n"
+						<< "start:  start an instance of the image server on the local machine (default)\n"
+						<< "status: check to see if an instance of the image server is running on the local machine\n"
+						<< "stop:   request that the currently running local instance of the image server terminate\n"
+						<< "restart:request that the currently running local instance of the image server terminate,\n"
+						"        and launch a new instance in current process\n"
+						<< "hotplug:request the currently running local instance of the image server check for hardware\n"
+						"        changes to image acquisition devices attached to local machine\n"
+						"ini_file_location: explicitly specify the location and filename of an ns_image_server.ini\n"
+
+						<< "\n**Runtime control limits**\n"
+						<< "max_run_time_in_seconds : Specify a maximum time to run; useful for running on a HPC cluster)\n"
+						<< "max_number_of_jobs_to_process:  Specify a maximum number of jobs to process; (useful for\n"
+						  "     running on a HPC cluster)\n"
+						<< "idle_queue_check_limit : specify a maximum number of times to check an idle processing queue\n"
+						  "     before giving up and shutting down.  Overrides the value in ns_image_server.ini of \n"
+						  "     number_of_times_to_check_empty_processing_job_queue_before_stopping\n"
+						<< "number_of_processor_cores_to_use [value] e: specify the number of processing cores to use, overriding\n"
+						  "      the value of number_of_processing_nodes specified in the ns_image_server.ini file "
+						  "max_memory_to_use:  Specify an ideal memory allocation limit, overriding the value in ns_image_server.ini\n"
+
+						<< "\n**Advanced control functions**\n"
+						<< "stop_checking_central_db: Cease attempting to connect to the central db.\n"
+						<< "start_checking_central_db: Restart attempts to connect to the central db.\n"
+						<< "output_sql_debug: request that a running server output its sql debug information\n"
+						<< "reset_devices : request the currently running local instance of the image server reset its\n"
+						   "       image acquisition device registry and build it from scratch\n"
+						<< "reload_models : request the currently running local instance of the image server clear its\n"
+						   "       cache of worm detection models so they are reloaded from disk.\n"
+						<< "additional_host_description [text]: optionally specify extra information to distinguish the \n"
+						   "       current host (e.g when running in an HPC cluster)\n"
+						<< "run_pending_image_transfers: Start up the server, transfer any pending images to the central\n"
+						   "       file server, and shut down\n"
+						<< "clear_local_db_buffer_cleanly: Clear all information from the local database after \n"
+						   "       synchronizing it with the central db.\n"
+						<< "clear_local_db_buffer_dangerously: Clear all information from the local database without\n"
+						   "       synchronizing.\n"
+						<< "fix_orphaned_captured_images: Go through the volatile storage and fix database records for \n"
+						   "       images orphaned by a previous bug in the lifespan machine software\n"
+						<< "update_sql [schema name]: update the sql database schema to match the most recent version. \n"
+						   "       No changes are made if the schema is already up-to-data.  Schema can be specified\n"
+
+						<< "\n**Redundant, test, or debug functions**\n"
 						<< "submit_experiment: Test and submit an experiment specification XML file to the cluster\n"
-						<< "    By default this only outputs a summary of the proposed experiment to stdout\n"
-						<< "    With sub-option 'u': actually submit the experiment specification to the database \n"
-						<< "    With sub-option 'f' (which implies 'u'): force overwriting of existing experiments\n"
+						<< "       By default this only outputs a summary of the proposed experiment to stdout\n"
+						<< "       With sub-option 'u': actually submit the experiment specification to the database \n"
+						<< "       With sub-option 'f' (which implies 'u'): force overwriting of existing experiments\n"
 						<< "test_email : send a test alert email from the current node\n"
 						<< "test_alert : send a test alert to be processed by the cluster\n"
 						<< "test_rate_limited_alert : send a test alert to be processed by the cluster\n"
 						<< "wrap_m4v:  wrap the specified m4v stream in an mp4 wrapper with multiple frame rates.\n"
 						<< "trigger_segfault: Trigger a segfault to test the crash daemon\n"
 						<< "trigger_dispatcher_segfault: Trigger a segfault in the dispatcher to test the crash daemon\n"
-						<< "run_pending_image_transfers: Start up the server, transfer any pending images to the central file server, and shut down\n"
-						<< "clear_local_db_buffer_cleanly: Clear all information from the local database after synchronizing it with the central db.\n"
-						<< "clear_local_db_buffer_dangerously: Clear all information from the local database without synchronizing.\n"
 						<< "simulate_central_db_connection_error: Simulate a broken connection to the central database.\n"
-						<< "fix_orphaned_captured_images: Go through the volatile storage and fix database records for images orphaned by a previous bug in the lifespan machine software\n"
-						<< "output_image_buffer_info: Output information about the state of each scanner's locally buffered images.\n"
-						<< "stop_checking_central_db: Cease attempting to connect to the central db.\n"
-						<< "start_checking_central_db: Restart attempts to connect to the central db.\n"
-						<< "update_sql [schema name]: update the sql database schema to match the most recent version. No changes are made if the schema is already up-to-data.  Schema can be specified\n"
-						<< "output_sql_debug: request that a running server output its sql debug information\n";
+						<< "output_image_buffer_info: Output information about the state of each scanner's locally \n"
+						   "       buffered images.\n";
+						
 					#ifndef _WIN32
 					ex << "daemon: run as a background process\n";
 					#endif
 					throw ex;
 			}
 			command = p->second;
+
 			//grab extra information for arguments that are longer than one argument
 			if (p->second == ns_wrap_m4v){
 				if (i+1>= argc) throw ns_ex("M4v filename must be specified");
@@ -930,8 +699,7 @@ int main(int argc, char * argv[]){
 					i++; // "consume" the next argument so it doesn't get interpreted as a command-string.
 				}
 			}
-			unsigned long max_run_time(0), max_job_num(0);
-			if (p->second == ns_max_number_of_jobs_to_process) {
+			else if (p->second == ns_max_number_of_jobs_to_process) {
 				if (i + 1 == argc)  //default
 					throw ns_ex("if max_number_of_jobs_to_process is specified, a value must be provided");
 				else {
@@ -940,7 +708,7 @@ int main(int argc, char * argv[]){
 					i++; // "consume" the next argument so it doesn't get interpreted as a command-string.
 				}
 			}
-			if (p->second == ns_max_run_time_in_seconds) {
+			else if (p->second == ns_max_run_time_in_seconds) {
 				if (i + 1 == argc)  //default
 					throw ns_ex("if max_run_time_in_seconds is specified, a value must be provided");
 				else {
@@ -949,7 +717,41 @@ int main(int argc, char * argv[]){
 					i++; // "consume" the next argument so it doesn't get interpreted as a command-string.
 				}
 			}
-			image_server.set_image_processing_run_limits(max_run_time, max_job_num);
+			else if (p->second == ns_number_of_processing_cores) {
+				if (i + 1 == argc)  //default
+					throw ns_ex("if number_of_processing_cores is specified, a value must be provided");
+				else {
+					std::string tmp = argv[i + 1];
+					number_of_processing_cores = atol(tmp.c_str());
+					i++; // "consume" the next argument so it doesn't get interpreted as a command-string.
+				}
+			}
+			else if (p->second == ns_idle_queue_check_limit) {
+				if (i + 1 == argc)  //default
+					throw ns_ex("if number_of_processing_cores is specified, a value must be provided");
+				else {
+					std::string tmp = argv[i + 1];
+					idle_queue_check_limit = atol(tmp.c_str());
+					i++; // "consume" the next argument so it doesn't get interpreted as a command-string.
+				}
+			}
+			else if (p->second == ns_max_memory_to_use) {
+				if (i + 1 == argc)  //default
+					throw ns_ex("if number_of_processing_cores is specified, a value must be provided");
+				else {
+					std::string tmp = argv[i + 1];
+					memory_allocation_limit = atol(tmp.c_str());
+					i++; // "consume" the next argument so it doesn't get interpreted as a command-string.
+				}
+			}
+			else if (p->second == ns_ini_file_location) {
+				if (i + 1 == argc)  //default
+					throw ns_ex("if number_of_processing_cores is specified, a value must be provided");
+				else {
+					ini_file_location = argv[i + 1];
+					i++; // "consume" the next argument so it doesn't get interpreted as a command-string.
+				}
+			}
 
 			if (p->second == ns_submit_experiment){
 				
@@ -970,54 +772,26 @@ int main(int argc, char * argv[]){
 				}
 			}
 		}
-	//	if (mp_options.only_run_single_process)
-		//	mp_options.total_number_of_processes = 1;
+		//by default, ini_file_location == "", and default locations are checked
+		image_server.load_constants(ns_image_server::ns_image_server_type,ini_file_location);
 
-		//std::vector<ns_child_process_information> child_processes;
-		//if we're starting up a new server, launch all the desired processes
 		if (command == ns_start || command == ns_restart){
 			
 			if (image_server.server_currently_running() && command == ns_start )
 				throw ns_ex("An instance of the image server is already running.");
 
-
-//			mp_options = ns_spawn_new_nodes(mp_options.total_number_of_processes-1,mp_options, child_processes,command==ns_restart);
-			image_server.load_constants(ns_image_server::ns_image_server_type);
-	//		image_server.set_multiprocess_control_options(mp_options);
+			image_server.set_image_processing_run_limits(max_run_time, max_job_num);
+			image_server.set_resource_limits(idle_queue_check_limit, memory_allocation_limit, number_of_processing_cores);
 		}
+
+		//load setup information from ini file.  Provide any multiprocess options that may have
+		//been specified at the command line, as these options determine how the ini file values should be interpreted
+	
+
+
+
 		is_master_node = true;
-		//Starting here, all code is run by all processes
-		
 		ns_cl_command post_dispatcher_init_command(ns_none);
-		//make a console window
-		#ifdef _WIN32 
-	//	HWND console_hwnd(ns_make_windows_console_window());
-	//	console_window_created = true;
-		#endif
-
-		/*
-		try{
-			ns_image_whole<float> im;
-			for ( int i = 200; i < 500; i++)
-				for ( int j = 200; j < 500; j++)
-				{
-					ns_image_properties p(200 ,200, 1);
-					cerr << p.width << "," << p.height << "\n";
-					im.init(p);
-					ns_gaussian_pyramid py;
-					py.calculate(im);
-
-				}
-		
-		
-		
-			}
-		catch (ns_ex & ex) {
-			cerr << ex.text();
-		}
-		cerr << "WHA";
-		*/
-		//ns_test_simple_cache("c:\\server\\cache_debug.txt");
 
 		bool restarting_after_crash(false);
 	       
@@ -1027,7 +801,7 @@ int main(int argc, char * argv[]){
 			case ns_help: break;
 			case ns_output_sql_debug: 	
 				if (!image_server.send_message_to_running_server(NS_OUTPUT_SQL_LOCK_INFORMATION))
-				cerr << "No image server found running at " << image_server.dispatcher_ip() << ":" << image_server.dispatcher_port() << ".";
+				std::cerr << "No image server found running at " << image_server.dispatcher_ip() << ":" << image_server.dispatcher_port() << ".";
 				return 0; break;
 
 			case ns_status:{

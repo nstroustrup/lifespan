@@ -145,7 +145,7 @@ public:
 	///at a filename whose suffix is specified by log_suffix.  (This allows worm terminal instances
 	///to run on the same system as image server nodes)
 	typedef enum {ns_image_server_type,ns_worm_terminal_type,ns_sever_updater_type} ns_image_server_exec_type;
-	void load_constants(const ns_image_server_exec_type & log_suffix, const bool reject_incorrect_fields=true);
+	void load_constants(const ns_image_server_exec_type & log_suffix, const std::string & ini_file_location="", bool reject_incorrect_fields=true);
 
 	///Hosts coordinate with each other through the sql database.  Register_host() updates the database with the current nodes
 	///IP information, software version, attached image-capture devices, etc.
@@ -516,6 +516,14 @@ public:
 	void set_image_processing_run_limits(const unsigned long maximum_runtime_in_seconds_, const unsigned long maximum_number_of_jobs_to_process_) { 
 		maximum_runtime_in_seconds = maximum_runtime_in_seconds_;
 		maximum_number_of_jobs_to_process = maximum_number_of_jobs_to_process_;
+	}
+	void set_resource_limits(const int idle_queue_check_limit, int memory_allocation_limit, int number_of_processing_cores) {
+		if (idle_queue_check_limit != -1)
+			number_of_times_to_check_empty_job_queue_before_stopping = idle_queue_check_limit;
+		if (memory_allocation_limit != -1)
+			_maximum_memory_allocation_in_mb = memory_allocation_limit;
+		if (number_of_processing_cores != -1)
+			maximum_number_of_processing_threads_ = number_of_processing_cores;
 	}
 	void reset_image_processing_run_data() {
 		ns_acquire_lock_for_scope lock(processing_run_counter_lock, __FILE__, __LINE__);

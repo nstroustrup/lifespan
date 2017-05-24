@@ -1902,7 +1902,7 @@ bool ns_to_bool(const std::string & s){
 	return (s == "yes" || s == "Yes" || s == "YES" || s == "true" || s == "True" || s == "TRUE" || 
 			s == "y" || s == "Y" || s == "1");
 }
-void ns_image_server::load_constants(const ns_image_server::ns_image_server_exec_type & exec_type,const bool reject_incorrect_fields){
+void ns_image_server::load_constants(const ns_image_server::ns_image_server_exec_type & exec_type, const std::string & ini_file_path, const bool reject_incorrect_fields){
 	ns_ini constants;
 	constants.reject_incorrect_fields(reject_incorrect_fields);
 	//register ini file constants
@@ -1970,7 +1970,14 @@ void ns_image_server::load_constants(const ns_image_server::ns_image_server_exec
 	string ini_directory,ini_filename;
 	try{
 		//look for the ini file in the current directory
-		if (ns_dir::file_exists("./ns_image_server.ini")){
+		if (!ini_file_path.empty()) {
+			if (!ns_dir::file_exists(ini_file_path))
+				throw ns_ex("Could not load ini file specified at ") << ini_file_path;
+			ini_filename = ini_file_path;
+			constants.load(ini_filename);
+			ini_directory = ns_dir::extract_path(ini_file_path);
+		}
+		else if (ns_dir::file_exists("./ns_image_server.ini")) {
 			ini_filename = "./ns_image_server.ini";
 			constants.load("./ns_image_server.ini");
 			ini_directory = "./";

@@ -113,7 +113,7 @@ for ($i = 0; $i < sizeof($hosts); $i++){
 	if ($single_device)
 	echo "<a href=\"view_cluster_status.php\">(view all hosts)</a>";
 	echo "</div></td></tr>";
-
+$col = 0;
   for ($j = 0; $j < sizeof($node_ids); $j++){
     $query = "SELECT time, event, processing_job_op, node_id, sub_text FROM host_event_log WHERE host_id = " . $hosts[$i][0] . " AND node_id = " . $node_ids[$j][0]. " ORDER BY time DESC";
     if ($single_device)

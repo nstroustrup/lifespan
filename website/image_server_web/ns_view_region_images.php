@@ -65,7 +65,6 @@ if ($sort_forwards){
 $id1 = $ns_processing_tasks['ns_process_add_to_training_set'];
   $id2 = $ns_processing_tasks['ns_process_analyze_mask'];
   $id3 = $ns_processing_tasks['ns_process_compile_video'];
-$id4 = $ns_processing_tasks['ns_process_remove_problem_areas'];
 if (sizeof($region_images) == 0) echo "(No region images available)";
  else {
    ?>
@@ -77,7 +76,7 @@ if (sizeof($region_images) == 0) echo "(No region images available)";
    <?php
      $j=1;
    for ($i = 1; $i <= $NS_LAST_PROCESSING_JOB; $i++){
-      if ($i == $id1|| $i == $id2 || $i == $id3 || $i == $id4) continue;
+      if ($i == $id1|| $i == $id2 || $i == $id3) continue;
       if ($i == 1)
 	$name = 'Unprocessed';
       else $name = $ns_processing_task_labels[$i];
@@ -104,7 +103,7 @@ if (sizeof($region_images) == 0) echo "(No region images available)";
      <?php 
 	 $k = 0;
 	 for ($j = 2; $j <= $NS_LAST_PROCESSING_JOB; $j++){
-	if ($j == $id1|| $j == $id2 || $j == $id3 || $j == $id4) continue;
+	if ($j == $id1|| $j == $id2 || $j == $id3) continue;
 	echo "<td bgcolor=\"{$table_colors[1][$k%2]}\"><center>";
 	
 	if ($region_images[$i][$j + -1 +$job_offset] != 0){

@@ -42,7 +42,7 @@ try{
 
   $culturing_temperature_specified = ns_param_spec($query_string,'culturing_temperature');
   $experiment_temperature_specified = ns_param_spec($query_string,'experiment_temperature');
-  $food_source_specified = ns_param_spec($query_string,'food_source']);
+  $food_source_specified = ns_param_spec($query_string,'food_source');
   $environment_conditions_specified = ns_param_spec($query_string,'environment_conditions');
 
   $condition_1 = @$query_string['condition_1'];
@@ -317,8 +317,8 @@ $region_strain_condition_2 = array();
 	  }
 	}
 
-	$jobs[$k]->maintenance_task = $_POST['maintenance_task'];
-	$jobs[$k]->maintenance_flag = $_POST['maintenance_flag'];
+	$jobs[$k]->maintenance_task = @$_POST['maintenance_task'];
+	$jobs[$k]->maintenance_flag = @$_POST['maintenance_flag'];
 	//echo $jobs[$i]->region_id . ": " . $jobs[$i]->sample_id . ':' . $jobs[$i]->experiment_id . "<BR>";
 	//	$jobs[$k]->image_id = 0;
 	$k++;
@@ -361,8 +361,8 @@ $region_strain_condition_2 = array();
 	}
 	$k--;
       }
-      $jobs[$k]->maintenance_task = $_POST['maintenance_task'];
-      $jobs[$k]->maintenance_flag = $_POST['maintenance_flag'];
+      $jobs[$k]->maintenance_task = @$_POST['maintenance_task'];
+      $jobs[$k]->maintenance_flag = @$_POST['maintenance_flag'];
       $jobs[$k]->region_id = 0;
       $jobs[$k]->image_id = 0;
       $k++;
@@ -422,8 +422,8 @@ $region_strain_condition_2 = array();
       $jobs[$i]->sample_id=0;
       $jobs[$i]->region_id=0;
       $jobs[$i]->image_id=0;
-      $jobs[$i]->maintenance_task = $_POST['maintenance_task'];
-      $jobs[$i]->maintenance_flag = $_POST['maintenance_flag'];
+      $jobs[$i]->maintenance_task = @$_POST['maintenance_task'];
+      $jobs[$i]->maintenance_flag = @$_POST['maintenance_flag'];
     }
 
   }
@@ -446,8 +446,8 @@ $region_strain_condition_2 = array();
 	$jobs[0]->sample_id=$sample_id;
 	$jobs[0]->region_id=$region_id;
 	$jobs[0]->image_id=$image_id;
-	$jobs[0]->maintenance_task = $_POST['maintenance_task'];
-	$jobs[0]->maintenance_flag = $_POST['maintenance_flag'];
+	$jobs[0]->maintenance_task = @$_POST['maintenance_task'];
+	$jobs[0]->maintenance_flag = @$_POST['maintenance_flag'];
 	if ($jobs[0]->id == '')	$jobs[0]->id = 0;
 	if ($jobs[0]->experiment_id == '')	$jobs[0]->experiment_id = 0;
 	if ($jobs[0]->sample_id == '')		$jobs[0]->sample_id = 0;
@@ -500,7 +500,7 @@ $region_strain_condition_2 = array();
   }
   */
 
-  if ($job_type == $IS_EXPERMENT){
+  if ($job_type == $IS_EXPERIMENT){
     foreach($experiments_to_process as $e){
     $query = "SELECT r.id,r.strain, r.strain_condition_1,r.strain_condition_2,r.strain_condition_3 "
       ."FROM sample_region_image_info as r, capture_samples as s "
@@ -556,7 +556,7 @@ $region_strain_condition_2 = array();
   if (ns_param_spec_true($_POST,'censor')){
     $value_to_set = 'censored = 1';
   }
-  if (ns_param_spec_true($_POST,'uncensor'])){
+  if (ns_param_spec_true($_POST,'uncensor')){
     $value_to_set = 'censored = 0';
   }
   if (ns_param_spec_true($_POST,'exclude')){
@@ -577,7 +577,7 @@ $region_strain_condition_2 = array();
     header("Location: $back_url\n\n");
 	die("");
   }
-  if (ns_param_spec$_POST,'update_region_information')){
+  if (ns_param_spec($_POST,'update_region_information')){
 	$start_minute = $_POST['start_minute'];
     	$start_hour = $_POST['start_hour'];
     	$start_day = $_POST['start_day'];
@@ -664,7 +664,7 @@ $region_strain_condition_2 = array();
   //else die("NO");
 
 
-  if (ns_param_spec_true($_POST['pause_job') || ns_param_spec_true($_POST,'unpause_job')){
+  if (ns_param_spec_true($_POST,'pause_job') || ns_param_spec_true($_POST,'unpause_job')){
     $paused = ns_param_spec($_POST,'pause_job')?"1":"0";
 
     for ($i = 0; $i < sizeof($jobs); $i++){
@@ -765,7 +765,7 @@ for ($i = 0; $i < sizeof($jobs); $i++){
     header("Location: $back_url\n\n");
     die("");
   }
-  if (ns_param_spec($_POST,'retry_transfer_to_long_term_storage']){
+  if (ns_param_spec($_POST,'retry_transfer_to_long_term_storage')){
 
     for ($i = 0; $i < sizeof($jobs); $i++){
       $e_id = $jobs[$i]->experiment_id;
@@ -785,7 +785,7 @@ for ($i = 0; $i < sizeof($jobs); $i++){
     die("");
   }
 
-    if (ns_param_spec($_POST,'submit'])){
+    if (ns_param_spec($_POST,'submit')){
     //var_dump($jobs);
     //	die("");
     //$query = "LOCK TABLES processing_job_queue write";
@@ -1013,7 +1013,7 @@ for ($i = 0; $i < sizeof($jobs); $i++){
 	}
 	//var_dump($file_deletion_job->operations);
 	//die();
-	$file_deletion_job->maintenance_flag = $_POST['maintenance_flag'];
+	$file_deletion_job->maintenance_flag = @$_POST['maintenance_flag'];
 	//die($file_deletion_job->maintenance_flag);
 	$file_deletion_job->id = 0;
 	//echo "<BR>----<br>";var_dump($file_deletion_job);echo "<BR><br>";
@@ -1072,9 +1072,10 @@ for ($i = 0; $i < sizeof($jobs); $i++){
     $out_first_experiment = TRUE;
     $out_first_sample = TRUE;
     $out_first_region = TRUE;
+    $target_text = '';
     for ($i = 0; $i < sizeof($jobs); $i++){
       if ($jobs[$i]->experiment_id != $last_experiment_id){
-	//$target_text.='a';
+	
 	if (!$out_first_experiment){
 	  if ($jobs[$i]->sample_id != 0) $target_text .= "<font size=\"+1\"> ]</font>";
 	  $target_text.="<BR>";
@@ -1121,6 +1122,7 @@ catch(ns_exception $e){
 }
 $hide_image_delete_button=FALSE;
 //edit an image deletion job
+$view_control_strain_taskbar = FALSE;
 if (ns_param_spec($query_string,'delete_file_taskbar')){
   $view_processing_taskbar = FALSE;
   // die("BLO");

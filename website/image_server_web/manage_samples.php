@@ -115,7 +115,7 @@ try{
   /***************************
    Handle Requests for Regions to Exclude, Censor, or flag busy
   ***************************/
-
+$refresh_page=FALSE;
   if ($region_id != '' && $region_action != ''){
     if ($region_action == "Censor"||$region_action == "Uncensor"){
       $c = "0";

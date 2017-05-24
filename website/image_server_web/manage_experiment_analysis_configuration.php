@@ -7,7 +7,7 @@ require_once('ns_processing_job.php');
 
 try{
 
-if (ns_param_spec($query_string,'experiment_id'))
+if (!ns_param_spec($query_string,'experiment_id'))
 	throw new ns_exception('No experiment id specified!');
 else $experiment_id = (int)$query_string['experiment_id'];
 
@@ -30,36 +30,35 @@ if (ns_param_spec($_POST,'detail_level')){
  if (ns_param_spec($query_string,'set_denoising_options') && $query_string['set_denoising_options']==1){
    $denoising_flag = $_POST['time_series_median'];
 
-   #die("".$denoising_flag);
+  
+   $number_of_stationary_images = @$_POST['number_of_stationary_images'];
 
-   $number_of_stationary_images = $_POST['number_of_stationary_images'];
-
-    	$end_minute = $_POST['end_minute'];
-    	$end_hour = $_POST['end_hour'];
-    	$end_day = $_POST['end_day'];
-    	$end_month = $_POST['end_month'];
-    	$end_year = $_POST['end_year'];
+    	$end_minute = (int)$_POST['end_minute'];
+    	$end_hour = (int)$_POST['end_hour'];
+    	$end_day = (int)$_POST['end_day'];
+    	$end_month = (int)$_POST['end_month'];
+    	$end_year = (int)$_POST['end_year'];
   $mask_date = mktime($end_hour, $end_minute, 0, $end_month, $end_day, $end_year);
- # die(".".date(DATE_ATOM,$mask_date));
-$maximum_number_of_worms = $_POST['maximum_number_of_worms'];
-   //   if (!($number_of_stationary_images==='')){
-$query = "UPDATE sample_region_image_info as r, capture_samples as s SET r.time_series_denoising_flag = '$denoising_flag',r.number_of_frames_used_to_mask_stationary_objects=".(string)((int)$number_of_stationary_images).",r.maximum_number_of_worms_per_plate=".(string)((int)$maximum_number_of_worms)." WHERE r.sample_id = s.id AND s.experiment_id = " . $experiment_id;
-     //    die($query);
-     $sql->send_query($query);
-     //  }
-   //die($_POST['apply_vertical_image_registration']);
+   $image_compression = $_POST['image_compression'];
+   $image_compression_ratio = $_POST['image_compression_ratio'];
    $apply_vertical_image_registration = $_POST['apply_vertical_image_registration'] == "apply";
-   //die(
+   
    $delete_captured_images = $_POST['delete_captured_images'] == "delete";
    //  die($_POST['delete_captured_images']);
-$query = "UPDATE experiments SET delete_captured_images_after_mask=" . ($delete_captured_images?"1":"0") . " WHERE id = $experiment_id";
-//die($query);
-//die($query);
+
+  
+      $query = "UPDATE experiments SET delete_captured_images_after_mask=" . ($delete_captured_images?"1":"0") . ", compression_type='$image_compression' WHERE id = $experiment_id";
+
    $sql->send_query($query);
 
    $query = "UPDATE capture_samples SET apply_vertical_image_registration=" . ($apply_vertical_image_registration?"1":"0"). " WHERE experiment_id = $experiment_id";
    // die($query);
    $sql->send_query($query);
+   if ($image_compression != 'lzw'){
+      $query = "UPDATE experiments SET compression_ratio=$image_compression_ratio WHERE id = $experiment_id";
+      $sql->send_query($query);
+
+   }
    if ($mask_date != 0){
 
      $query =   "UPDATE experiments SET mask_time=$mask_date WHERE id = $experiment_id";
@@ -69,7 +68,7 @@ $query = "UPDATE experiments SET delete_captured_images_after_mask=" . ($delete_
    header("Location: manage_experiment_analysis_configuration.php?$query_parameters\n\n");
 
  }
- if (ns_param_spec($query_string,'regression_setup'] && $query_string['regression_setup'] == 1){
+ if (ns_param_spec($query_string,'regression_setup') && $query_string['regression_setup'] == 1){
 
    if ($_POST['set_control_strain']){
      $region_id = $_POST['control_region_id'];
@@ -92,13 +91,18 @@ $query = "UPDATE experiments SET delete_captured_images_after_mask=" . ($delete_
  $apply_vertical_image_registration = $vir[0][0];
  //var_dump($vir);
  //die();
- $query = "SELECT mask_time FROM constants WHERE id=$experiment_id";
- //die($query);
+ $query = "SELECT mask_time, compression_type,compression_ratio FROM experiments WHERE id=$experiment_id";
  $sql->get_row($query,$res);
- //var_dump($res);die($res);
- if(sizeof($res) != 0)
+//var_dump($res);
+ if(sizeof($res) != 0){
    $mask_date = $res[0][0];
- else $mask_date = 0;
+   $image_compression = $res[0][1];
+   
+   $image_compression_ratio = $res[0][2];
+}
+ else{
+ die("Could not find experiment info in db");
+}
  //die("".$mask_date);
  $query = "SELECT delete_captured_images_after_mask FROM experiments WHERE id = " . $experiment_id;
  $sql->get_row($query,$dci);
@@ -160,9 +164,9 @@ $strain = $exps[$i][1];
 
    $region_strains[$exps[$i][0]] = array($exps[$i][1],$exps[$i][2],$exps[$i][3],$exps[$i][4]);
 
-   if ($strain_posture_models[$strain] == '')
+   if (!array_key_exists($strain,$strain_posture_models) || $strain_posture_models[$strain] == '')
      $strain_posture_models[$strain] = $exps[$i][5];
-   if ($strain_detection_models[$strain] == '')
+   if (!array_key_exists($strain,$strain_detection_models) || $strain_detection_models[$strain] == '')
      $strain_detection_models[$strain] = $exps[$i][7];
 
    $experiment_strains[$strain] = $exps[$i][0];
@@ -170,14 +174,14 @@ $strain = $exps[$i][1];
    if ($posture_analysis_method == '')
      $posture_analysis_method = $exps[$i][6];
 
-   if ($strain_position_models[$strain] == '')
+   if (!array_key_exists($strain,$strain_position_models) || $strain_position_models[$strain] =='')
      $strain_position_models[$strain] = $exps[$i][8];
 
    if (isset($control_region_hash[$exps[$i][0]]))
      $control_strain_hash[$strain]= '1';
  }
 
- if (isset($_POST['is_single_posture_model']) && $_POST['is_single_posture_model']=="0"){
+ if (ns_param_spec($_POST,'is_single_posture_model') && $_POST['is_single_posture_model']=="0"){
    $is_single_posture_model = false;
    // die("WHA");
  }
@@ -194,7 +198,7 @@ $strain = $exps[$i][1];
    }
    //die("" . $is_single_posture_model);
  }
- if (isset($_POST['is_single_position_model']) && $_POST['is_single_position_model']=="0"){
+ if (ns_param_spec($_POST,'is_single_position_model') && $_POST['is_single_position_model']=="0"){
    $is_single_position_model = false;
    $single_position_model_name="";
 }
@@ -216,7 +220,7 @@ $strain = $exps[$i][1];
      }
    }
  }
- if (isset($_POST['is_single_detection_model']) && $_POST['is_single_detection_model']=="0"){
+ if (ns_param_spec($_POST,'is_single_detection_model') && $_POST['is_single_detection_model']=="0"){
    $is_single_detection_model = false;
    $single_detection_model_name="";
    //die("WHA");
@@ -237,7 +241,7 @@ $strain = $exps[$i][1];
  }
 
 
- if ($_POST['set_posture_models']){
+ if (ns_param_spec_true($_POST,'set_posture_models')){
    if ($is_single_posture_model){
      $model_name = $_POST['single_posture_model_name'];
      $posture_analysis_method = $_POST['posture_analysis_method'];
@@ -274,7 +278,7 @@ $strain = $exps[$i][1];
 
  }
 
- if ($_POST['set_position_models']){
+ if (ns_param_spec_true($_POST,'set_position_models')){
    if ($is_single_position_model){
     $model_name = $_POST['single_position_model_name'];
      $query = "UPDATE sample_region_image_info as i, capture_samples as s SET position_analysis_model ='$model_name' WHERE i.sample_id = s.id AND s.experiment_id = $experiment_id";
@@ -310,7 +314,7 @@ $strain = $exps[$i][1];
  }
 
 
- if ($_POST['set_detection_models']){
+ if (ns_param_spec_true($_POST,'set_detection_models')){
    if ($is_single_detection_model){
      $model_name = $_POST['single_detection_model_name'];
      $query = "UPDATE sample_region_image_info as i, capture_samples as s SET worm_detection_model ='$model_name' WHERE i.sample_id = s.id AND s.experiment_id = $experiment_id";
@@ -410,9 +414,22 @@ catch(ns_exception $ex){
 					echo "/";
 					output_editable_field("end_year",$y,TRUE,4);
 ?>
+<?php if ($image_compression == 'Lossless'){?>
+<input type="hidden" name="image_compression_ratio" value="<?php echo $image_compression_ratio?>">
+<?php }
+?>
 </td></tr>
+<tr><td bgcolor="<?php echo $table_colors[1][0] ?>">Image Compression</td><td bgcolor="<?php echo $table_colors[1][1] ?>">
 
-
+<select name="image_compression">
+<option value="lzw"<?php if ($image_compression == 'lzw') echo "selected"?> >Lossless</option>
+<option value="jp2k" <?php if ($image_compression == 'jp2k') echo "selected"?> >Openjpeg2000 (recommended)</option>
+</select></td></tr>
+<?php if ($image_compression != 'lzw'){?>
+<tr><td bgcolor="<?php echo $table_colors[0][0] ?>">Compression ratio</td><td bgcolor="<?php echo $table_colors[0][1] ?>">
+<?php 
+output_editable_field("image_compression_ratio",$image_compression_ratio,TRUE,4);?></tr>
+<?php } ?>
 <tr><td bgcolor="<?php echo $table_colors[0][0] ?>" colspan=2>
 	<div align="right"><input name="set_denoising_options" type="submit" value="Set Analysis Options">
 	</div>
@@ -422,9 +439,9 @@ catch(ns_exception $ex){
 	</table>
 </form><br>
 
+<?php if (0){?>
 <form action="manage_experiment_analysis_configuration.php?<?php echo $query_parameters . "&regression_setup=1"?>" method="post">
-<?php //var_dump($jobs[0]);
-?>
+
 <table align="center" border="0" cellpadding="0" cellspacing="1" bgcolor="#000000"><tr><td><table border="0" cellpadding="4" cellspacing="0" width="100%">
 <tr <?php echo $table_header_color?> ><td colspan=2><b>Device Effect Regression Configuration</b></td></tr>
 <tr><td bgcolor="<?php echo $table_colors[1][0] ?>">Strain Grouping</td><td bgcolor="<?php echo $table_colors[1][1] ?>">
@@ -463,7 +480,7 @@ catch(ns_exception $ex){
 	</table>
 	</td></tr>
 	</table>
-</form>
+</form><?php } ?>
 	<br>
 
 </td><td valign="top">

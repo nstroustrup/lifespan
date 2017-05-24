@@ -279,7 +279,7 @@ function ns_output_database_selector($name,$db_choice,$submit_immediately=TRUE){
 	echo "</select>";
 }
 
-function display_worm_page_header($title, $link = "<a href=\"view_experiments.php\">[Back to Experiment Index]</a>",$display_db_choice=FALSE,$extra_header_text){
+function display_worm_page_header($title, $link = "<a href=\"view_experiments.php\">[Back to Experiment Index]</a>",$display_db_choice=FALSE,$extra_header_text=""){
 	global $db_name;
 	?><!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
 <html>

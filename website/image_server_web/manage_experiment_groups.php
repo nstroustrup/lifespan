@@ -2,7 +2,7 @@
 require_once ('worm_environment.php');
 
  ns_load_experiment_groups($experiment_groups,$group_order,$sql);
-
+$reload = FALSE;
 if (ns_param_spec($_POST,'create')){
   $new_experiment_group_name = $_POST['new_group_name'];
   $query = "UPDATE experiment_groups SET group_order=group_order+1";
@@ -68,6 +68,7 @@ display_worm_page_header("Experiment Group Management");
 echo "<table align=\"center\" border=0 cellspacing=1 cellpadding=1>\n";
 echo "<tr><td bgcolor=\"#000000\">\n";
 echo "<table border=0 bgcolor=\"#FFFFFF\" cellspacing=0 cellpadding=3>\n";
+if (isset($constants))
 for ($i = 0; $i < sizeof($constants); $i++){
   echo "<tr><td>";
 

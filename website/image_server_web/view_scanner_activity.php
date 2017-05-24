@@ -240,7 +240,7 @@ $second_column_size = ceil(($devices_per_incubator[$devices[$i][1]] - $first_col
 $incubator_pos++;
  }
 
-if ($need_end){
+if (isset($need_end) && $need_end){
 			?>
 			</TD></TR></table>
 			</td></tr>

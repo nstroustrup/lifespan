@@ -22,6 +22,9 @@ $sql->get_row($query, $current_strain_aliases );
 
 //build a hash table for strain aliases
 $j = 0;
+$known_strains = array();
+$known_strains_by_name = array();
+$known_strains_by_id = array();
 foreach($current_strain_aliases as $i => $v){
   $known_strains[$j]=array($v[0],$v[1],$v[2]);
   $known_strains_by_name[$v[1]] = 1;
@@ -107,7 +110,7 @@ if (ns_param_spec($_POST,'edit') && $_POST['edit'] =='1'){
      }
    }
  }
-$next_qs = "experiment_id=$experiment_id&strain=$strain";
+$next_qs = "experiment_id=$experiment_id&strain=$strain_name";
 
 if ($reload){
   header("Location: strain_aliases.php?$next_qs\n\n");

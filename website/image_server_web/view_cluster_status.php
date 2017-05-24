@@ -28,6 +28,7 @@ function output_wrap($s,$interval=20){
 $refresh_time = @$query_string["rt"];
 if ($refresh_time == '')
   $refresh_time = 0;
+$header_text = "";
 if ($refresh_time > 0)
   $header_text = "<meta http-equiv=\"refresh\" content=\"" . $refresh_time ."\">";
 $header_text .= "<style type=\"text/css\">

@@ -412,7 +412,8 @@ if ($show_region_jobs){
 }
 $current_region_job_index = 0;
     $start_range = 0;
-    $cur_sample_id = $all_results[0][16];
+    if (sizeof($all_results) > 0)
+        $cur_sample_id = $all_results[0][16];
     for ($i = 0; $i < sizeof($all_results); $i++){
       #echo $cur_sample_id . ": ";
       if ($all_results[$i][16] != $cur_sample_id || $i+1 == sizeof($all_results)){
@@ -464,7 +465,7 @@ $current_region_job_index = 0;
 	  if ($show_region_jobs){
 	    $jid=0;
 	    #print($all_region_job_results[$current_region_job_index][3] ." ". $cur_region[0] . ";");
-
+	    if (sizeof($all_region_job_results)>0)
 	    while($all_region_job_results[$current_region_job_index][3] == $cur_region[0]){
 	      #print($jid. " ");
 	      //#$query = $job->provide_query_stub();
@@ -945,6 +946,12 @@ if (sizeof($all_animal_type_values) > 1){
 		echo "</td></tr>\n";
 		$row_color = !$row_color;
 		$cur_sample_id = $experiment->samples[$i]->id();
+		if (!array_key_exists($cur_sample_id,$regions)){
+		         echo "<tr>";
+                        echo "<td bgcolor=\"$clrs[0]\" nowrap valign=\"top\" colspan = 4>";
+			echo "No Regions identified in this sample";
+			echo "</td></tr>";
+		}else 
 		for ($k = 0; $k < sizeof($regions[$cur_sample_id]); $k++){
 
 			$clrs = $table_colors[$row_color];

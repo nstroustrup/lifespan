@@ -291,7 +291,7 @@ Handle Requests to delete a sample
 
   if ($sample_id != 0 && ns_param_spec($_POST,'save')){
     $found = false;
-
+    
     for ($i = 0; $i < sizeof($experiment->samples); $i++){
       if ($experiment->samples[$i]->id() == $sample_id){
 	$found = true;
@@ -466,19 +466,14 @@ $current_region_job_index = 0;
 	    $jid=0;
 	    #print($all_region_job_results[$current_region_job_index][3] ." ". $cur_region[0] . ";");
 	    if (sizeof($all_region_job_results)>0)
-	    while($all_region_job_results[$current_region_job_index][3] == $cur_region[0]){
-	      #print($jid. " ");
-	      //#$query = $job->provide_query_stub();
-	      //#$query .= "FROM processing_jobs WHERE region_id = {$cur_region[0]} AND ( image_id = 0)";
-	      //	die($query);
-	      //#$sjobs = array();
-	      //#$sql->get_row($query,$sjobs);
-
-
+	    while(array_key_exists($current_region_job_index,$all_region_job_results) &&
+	          $all_region_job_results[$current_region_job_index][3] == $cur_region[0]){
+	      //print($current_region_job_index  "<BR>");
+	      
+	      
 	      $region_jobs[$cur_region[0]][$jid] = new ns_processing_job;
-
 	      $region_jobs[$cur_region[0]][$jid]->load_from_result($all_region_job_results[$current_region_job_index]);
-
+	      
 	      $current_region_job_index++;
 	      $jid++;
 	    }

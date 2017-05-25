@@ -256,7 +256,7 @@ $region_strain_condition_2 = array();
 	$conditions_string .= "STRCMP(LOWER(ri.environmental_conditions),LOWER('".mysql_real_escape_string($environment_conditions)."'))=0 AND ";
 
 
-      $query = "SELECT ri.id, s.id,s.experiment_id, ri.name, ri.time_at_which_animals_had_zero_age,ri.time_of_last_valid_sample, ri.strain, ri.strain_condition_1,ri.strain_condition_2, ri.strain_condition_3, ri.culturing_temperature,ri.experiment_temperature,ri.food_source,ri.environmental_conditions FROM sample_region_image_info as ri, capture_samples as s WHERE $censored_string $strain_string $conditions_string ri.sample_id=" . $cur_sample . " AND ri.sample_id = s.id";
+      $query = "SELECT ri.id, s.id,s.experiment_id, ri.name, ri.time_at_which_animals_had_zero_age,ri.time_of_last_valid_sample, ri.strain, ri.strain_condition_1,ri.strain_condition_2, ri.strain_condition_3, ri.culturing_temperature,ri.experiment_temperature,ri.food_source,ri.environmental_conditions FROM sample_region_image_info as ri, capture_samples as s WHERE $censored_string  $conditions_string ri.sample_id=" . $cur_sample . " AND ri.sample_id = s.id";
       // die($query);
       $sql->get_row($query,$region_ids);
       //   var_dump($region_ids);die();
@@ -809,30 +809,31 @@ for ($i = 0; $i < sizeof($jobs); $i++){
     //$sql->send_query($lock_jobs_query);
     //$sql->send_query($bg);
    for ($i = 0; $i < sizeof($jobs); $i++){
-      $jobs[$i]->processor_id = $_POST['processor_id'];
-      $jobs[$i]->video_timestamp_type = $_POST['video_add_timestamp'];
-      if ($_POST['urgent'] == 69){
+     //var_dump($jobs[$i]);
+      $jobs[$i]->processor_id = @$_POST['processor_id'];
+      $jobs[$i]->video_timestamp_type = @$_POST['video_add_timestamp'];
+      if (ns_param_spec($_POST,'urgent') && $_POST['urgent'] == 69){
 	$jobs[$i]->pending_another_jobs_completion = 1;
 	$jobs[$i]->urgent = 0;
       }
-      else $jobs[$i]->urgent = $_POST['urgent'];
-      $jobs[$i]->paused = $_POST['paused'];
+      else $jobs[$i]->urgent = @$_POST['urgent'];
+      $jobs[$i]->paused = @$_POST['paused'];
       $jobs[$i]->processed_by_push_scheduler = 0;
       for ($j = 0; $j <= $NS_LAST_PROCESSING_JOB ; $j++){
 	$jobs[$i]->operations[$j] = 0;
-	if ($_POST["op$j"] == '1'){
+	if (ns_param_spec($_POST,"op$j") && $_POST["op$j"] == '1'){
 	  $jobs[$i]->operations[$j] = 1;
 	}
       }
       $jobs[$i]->job_name = $jobs[$i]->experiment_id . "=" . //$sample_name_hash[$jobs[$i]->sample_id] . "=" . $region_name_hash[$jobs[$i]->region_id];
       //echo $jobs[$i]->job_name . "<BR>";
       $jobs[$i]->time_submitted = ns_current_time();
-      $jobs[$i]->subregion_position_x = $_POST['subregion_position_x'];
-      $jobs[$i]->subregion_position_y = $_POST['subregion_position_y'];
-      $jobs[$i]->subregion_width = $_POST['subregion_width'];
-      $jobs[$i]->subregion_height = $_POST['subregion_height'];
-      $jobs[$i]->subregion_start_time = $_POST['subregion_start_time'];
-      $jobs[$i]->subregion_stop_time = $_POST['subregion_stop_time'];
+      $jobs[$i]->subregion_position_x = @$_POST['subregion_position_x'];
+      $jobs[$i]->subregion_position_y = @$_POST['subregion_position_y'];
+      $jobs[$i]->subregion_width = @$_POST['subregion_width'];
+      $jobs[$i]->subregion_height = @$_POST['subregion_height'];
+      $jobs[$i]->subregion_start_time = @$_POST['subregion_start_time'];
+      $jobs[$i]->subregion_stop_time = @$_POST['subregion_stop_time'];
     //  echo "Submitting job " . $i . "<BR>";
       $jobs[$i]->save_to_db($sql);
       $jobs[$i]->load_from_db($jobs[$i]->id,$sql);
@@ -849,7 +850,7 @@ for ($i = 0; $i < sizeof($jobs); $i++){
   $operations_to_clear = array_fill(0,$NS_LAST_PROCESSING_JOB+1,0);
 
   for ($i = 0; $i <= $NS_LAST_PROCESSING_JOB ; $i++){
-    if (@$_POST["clear_$i"] === '1'){
+    if (ns_param_spec($_POST,"clear_$i") && $_POST["clear_$i"] === '1'){
       $operations_to_clear[$i] = 1;
     }
   }
@@ -968,8 +969,8 @@ for ($i = 0; $i < sizeof($jobs); $i++){
       $operations_to_clear[$ns_processing_tasks['ns_process_static_mask']] = 0;
       $operations_to_clear[$ns_processing_tasks['ns_process_heat_map']] = 0;
     }
-    if ($operations_to_clear[$ns_processing_tasks['ns_process_temporal_interpolation']] != 1)
-      $operations_to_clear[$ns_processing_tasks['ns_process_temporal_interpolation']] = 0;
+   // if ($operations_to_clear[$ns_processing_tasks['ns_process_compress_unprocessed']] != 1)
+      $operations_to_clear[$ns_processing_tasks['ns_process_compress_unprocessed']] = 0;
 
     $operations_to_clear[$ns_processing_tasks['ns_process_compile_video']] = 0;
     $operations_to_clear[$ns_processing_tasks['ns_process_analyze_mask']] = 0;
@@ -1400,7 +1401,7 @@ $finish = $NS_LAST_PROCESSING_JOB;
 else{
   /*	if ($i == $ns_processing_tasks['ns_process_analyze_mask'] || $i==$ns_processing_tasks['ns_process_region_vis'] || $i==$ns_processing_tasks['ns_process_region_interpolation_vis'] || $i==$ns_processing_tasks['ns_process_interpolation_vis']   || $i==$ns_processing_tasks['ns_process_movement_posture_visualization'] || $i==$ns_processing_tasks['ns_process_movement_mapping'] || $i==$ns_processing_tasks['ns_process_temporal_interpolation'] || $i==$ns_processing_tasks['ns_process_movement_coloring_with_graph']  || $i==$ns_processing_tasks['ns_process_movement_coloring_with_survival'] || $i==$ns_processing_tasks['ns_process_posture_vis']) continue;
 */
-  if ($i != $ns_processing_jobs['ns_unprocessed'] && array_search($i,$region_processing_jobs_to_display) === FALSE)
+  if ($i != $ns_processing_tasks['ns_unprocessed'] && array_search($i,$region_processing_jobs_to_display) === FALSE)
     continue;
 
 }

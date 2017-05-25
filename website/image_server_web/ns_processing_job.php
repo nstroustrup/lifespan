@@ -364,7 +364,7 @@ class ns_processing_job{
 		if ($this->processor_id != 0){
 			$query = "SELECT name FROM hosts WHERE id='{$this->processor_id}'";
 			$sql->get_row($query,$res);
-			if (sizeof($res) < 0){
+			if (sizeof($res) <= 0){
 			  $this->processor_name = "(Unknown)";
 			}
 			else $this->processor_name = $res[0][0];

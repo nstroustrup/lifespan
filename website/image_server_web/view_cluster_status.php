@@ -107,7 +107,7 @@ for ($i = 0; $i < sizeof($hosts); $i++){
 	echo "<table cellspacing='0' cellpadding='0', width='100%'><tr><td>";	
 	if ($host_is_online)
 		echo "<b>" . host_label($hosts[$i]) . "</b> ";
-	else echo $hosts[$i][1];
+	else echo host_label($hosts[$i]);
 	echo "</td><td><div align=\"right\">";
 	
 	if (!$single_device && !$host_is_online){

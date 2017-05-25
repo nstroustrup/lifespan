@@ -148,6 +148,13 @@ if (ns_param_spec($_POST,'shut_down')){
   $sql->send_query($query);
 	$refresh = TRUE;
  }
+
+if (ns_param_spec($_POST,'shut_down_all')){
+  $query = "UPDATE hosts SET shutdown_requested=1";
+  $sql->send_query($query);
+        $refresh = TRUE;
+ }
+
 if (ns_param_spec($_POST,'launch_from_screen_saver')){
   $id = $_POST['host_id'];
   $query = "UPDATE hosts SET launch_from_screen_saver=1 WHERE $host_where_statement";
@@ -479,10 +486,17 @@ foreach ($base_hosts as $base_host_name => $host){
 	}
 }
 ?>
-</table></td></tr></table>
+</table>
+</td></tr></table>
+<form action="view_hosts_and_devices.php?<?php echo "show_host_nodes=" . ($show_host_nodes?"1":"0")?>" method="post">
+
+<table border = 0 bgcolor="#FFFFFF"><TR><td width="100%">
+&nbsp;</td>
+<td nowrap bgcolor="#FFFFFF">
+<input name="shut_down_all" type="submit" value="Shut Down All Nodes"></td></TR></table>
+
 </form>
 
-<!--*Connected to long term storage.  These hosts can act as file servers.-->
 </td><td valign="top">
 <span class="style1">Image Capture Devices</span>
 <table bgcolor="#555555" cellspacing='0' cellpadding='1'><tr><td><table cellspacing='0' cellpadding='3'>

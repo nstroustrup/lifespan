@@ -581,8 +581,8 @@ void ns_image_server_dispatcher::on_timer(){
 		ns_sql_result h;
 		timer_sql_connection->get_rows(h);
 		if (h.size() == 0){
-			image_server.load_constants(ns_image_server::ns_image_server_type);	
-			image_server.register_server_event(ns_image_server_event("Found an inconsistent host record in the db: Refreshing it."),timer_sql_connection);
+			//image_server.load_constants(ns_image_server::ns_image_server_type);	
+			image_server.register_server_event(ns_image_server_event("A record of this host was not found in the database ") << image_server.current_sql_database() << ". Creating a new one.",timer_sql_connection);
 			image_server.register_host(timer_sql_connection);
 			image_server.register_devices(false,timer_sql_connection);
 			image_server.alert_handler.buffer_all_alerts_locally(false);

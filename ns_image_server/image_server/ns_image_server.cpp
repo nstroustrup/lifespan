@@ -771,10 +771,8 @@ ns_local_buffer_connection * ns_image_server::new_local_buffer_connection_no_loc
 
 
 void ns_image_server::get_requested_database_from_db(){
-	if (host_name.size() == 0)
-		return;
 	ns_acquire_for_scope<ns_sql> sql(new_sql_connection(__FILE__,__LINE__));
-	sql() << "SELECT database_used FROM hosts WHERE name = '" << host_name << "'";
+	sql() << "SELECT database_used FROM hosts WHERE id = " << host_id() << "";
 	ns_sql_result res;
 	sql().get_rows(res);
 	if (res.size() == 0)
@@ -1756,7 +1754,7 @@ bool ns_image_server::new_software_release_available(ns_sql & sql){
 }
 
 void ns_image_server::unregister_host(ns_image_server_sql * sql) {
-	*sql << "UPDATE hosts SET last_ping = 0 WHERE name = '" << host_name << "'";
+	*sql << "UPDATE hosts SET last_ping = 0 WHERE id = " << host_id();
 	sql->send_query();
 };
 void ns_image_server::register_host(ns_image_server_sql * sql, bool overwrite_current_entry, bool respect_existing_database_choice) {
@@ -1769,8 +1767,8 @@ void ns_image_server::register_host(ns_image_server_sql * sql, bool overwrite_cu
 	sql->set_autocommit(false);
 	sql->send_query("BEGIN");
 	*sql << "SELECT id, ip, port, long_term_storage_enabled FROM hosts WHERE name='" << host_name << "' "
-			"AND system_hostname='" << system_host_name << "' "
-			"AND additional_host_description='" << additional_host_description << "'";
+		"AND system_hostname='" << system_host_name << "' ";
+			//"AND additional_host_description='" << additional_host_description << "'";
 	if (overwrite_current_entry)
 		*sql << " FOR UPDATE";
 
@@ -2108,7 +2106,7 @@ void ns_image_server::load_constants(const ns_image_server::ns_image_server_exec
 		_dispatcher_refresh_interval = atoi(constants["dispatcher_refresh_interval"].c_str())/1000;
 		if (_dispatcher_refresh_interval == 0) _dispatcher_refresh_interval = 1;
 		_server_timeout_interval = atol(constants["server_timeout_interval"].c_str());
-		_log_filename = constants["log_filename"];
+		_log_filename = constants["log_filename"] + "_" + image_server.system_host_name;
 		_hide_window = ns_to_bool(constants["hide_window"]);
 		_run_autonomously = ns_to_bool(constants["run_autonomously"]);
 		_scanner_list_command	= constants["device_list_command"];
@@ -2122,7 +2120,7 @@ void ns_image_server::load_constants(const ns_image_server::ns_image_server_exec
 		std::string specified_simulated_device_name(constants["simulated_device_name"]);
 		if (specified_simulated_device_name == "" || specified_simulated_device_name== ".")
 			specified_simulated_device_name = "sim";
-		_simulated_device_name = base_host_name + "_" + specified_simulated_device_name;
+		_simulated_device_name = base_host_name + "_" + image_server.system_host_name + "_" + specified_simulated_device_name;
 		for (unsigned int i = 0; i < _simulated_device_name.size(); i++){
 			if (!isalpha(_simulated_device_name[i]) && !isdigit(_simulated_device_name[i]))
 				_simulated_device_name[i] = '_';
@@ -2163,7 +2161,7 @@ void ns_image_server::load_constants(const ns_image_server::ns_image_server_exec
 	
 		//	cerr << "LOOP";
 	//set output directories for ther server
-	image_storage.set_directories(volatile_storage_directory, long_term_storage_directory);
+	image_storage.set_directories(volatile_storage_directory + DIR_CHAR_STR + system_host_name, long_term_storage_directory);
 	results_storage.set_results_directory(results_storage_directory);
 	//cerr << "SNAP";
 	//cerr << "GFRP";
@@ -2226,11 +2224,8 @@ void ns_image_server::get_alert_suppression_lists(std::vector<std::string> & dev
 #ifdef _WIN32 
 void ns_image_server::set_console_window_title(const string & title) const{
 	string t(title);
-	if (t.size() == 0){
-		if (host_name.size() == 0)
+	if (t.size() == 0)
 			t="ns_image_server";
-		else t = string("ns_image_server::") + host_name;
-	}
 	SetConsoleTitle(t.c_str());
 }
 #endif

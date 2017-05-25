@@ -2162,6 +2162,9 @@ void ns_image_server::load_constants(const ns_image_server::ns_image_server_exec
 		//	cerr << "LOOP";
 	//set output directories for ther server
 	image_storage.set_directories(volatile_storage_directory + DIR_CHAR_STR + system_host_name, long_term_storage_directory);
+
+	ns_dir::create_directory_recursive(volatile_storage_directory);
+
 	results_storage.set_results_directory(results_storage_directory);
 	//cerr << "SNAP";
 	//cerr << "GFRP";

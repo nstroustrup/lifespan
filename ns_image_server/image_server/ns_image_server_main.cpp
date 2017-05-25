@@ -600,7 +600,7 @@ int main(int argc, char ** argv){
 		"       image acquisition device registry and build it from scratch\n"
 		<< "reload_models : request the currently running local instance of the image server clear its\n"
 		"       cache of worm detection models so they are reloaded from disk.\n"
-		<< "additional_host_description [text]: optionally specify extra information to distinguish the \n"
+		<< "additional_host_description [text]: optionally specify extra commentary to describe the \n"
 		"       current host (e.g when running in an HPC cluster)\n"
 		<< "run_pending_image_transfers: Start up the server, transfer any pending images to the central\n"
 		"       file server, and shut down\n"

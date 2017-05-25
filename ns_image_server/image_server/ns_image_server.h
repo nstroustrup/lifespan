@@ -149,7 +149,7 @@ public:
 
 	///Hosts coordinate with each other through the sql database.  Register_host() updates the database with the current nodes
 	///IP information, software version, attached image-capture devices, etc.
-	void register_host(ns_image_server_sql * sql, bool overwrite_current_entry=true);
+	void register_host(ns_image_server_sql * sql, bool overwrite_current_entry=true, bool respect_existing_database_choice=true);
 	void update_device_status_in_db(ns_sql & sql) const;
 	void unregister_host(ns_image_server_sql * sql);
 

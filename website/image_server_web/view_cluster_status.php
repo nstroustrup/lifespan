@@ -45,14 +45,14 @@ word-wrap: break-word;
 }
 
 .rw{
-  white-space: -o-pre-wrap; 
+  white-space: -o-pre-wrap;
     word-wrap: break-word;
-    white-space: pre-wrap; 
-    white-space: -moz-pre-wrap; 
-    white-space: -pre-wrap; 
+    white-space: pre-wrap;
+    white-space: -moz-pre-wrap;
+    white-space: -pre-wrap;
 }
 
-.tw{ 
+.tw{
   table-layout: fixed;
   width: 100%
 }</style>";
@@ -101,7 +101,7 @@ for ($i = 0; $i < sizeof($hosts); $i++){
 <table cellspacing='0' cellpadding='3' width="100%">
 <tr <?php echo $table_header_color?>><td >
 <?php
-	
+
 	if ($host_is_online)
 		echo "<b>{$hosts[$i][1]}</b> ";
 	else echo $hosts[$i][1];
@@ -113,7 +113,7 @@ for ($i = 0; $i < sizeof($hosts); $i++){
 	if ($single_device)
 	echo "<a href=\"view_cluster_status.php\">(view all hosts)</a>";
 	echo "</div></td></tr>";
-
+$col = 0;
   for ($j = 0; $j < sizeof($node_ids); $j++){
     $query = "SELECT time, event, processing_job_op, node_id, sub_text FROM host_event_log WHERE host_id = " . $hosts[$i][0] . " AND node_id = " . $node_ids[$j][0]. " ORDER BY time DESC";
     if ($single_device)
@@ -123,7 +123,7 @@ for ($i = 0; $i < sizeof($hosts); $i++){
     else $limit = 20;
     $query .=" LIMIT " . $limit;
     $sql->get_row($query, $host_events);
-    
+
     $clrs = $table_colors[$j%2];
     if ($j != 0) echo "</td></tr>";
     $node_i = $node_ids[$j][0];
@@ -131,7 +131,7 @@ for ($i = 0; $i < sizeof($hosts); $i++){
       $col2 = "#CCCCCC";
       $thread_name = "main";
     }
-    else{ 
+    else{
       if ($j % 2 == 0)
       $col2 = "#EEEEEE";
       else $col2 = "#CCEEEE";
@@ -147,20 +147,20 @@ for ($i = 0; $i < sizeof($hosts); $i++){
       else echo "style=\"height:600px\"";
       echo ">";
     $col = 1-$col;
-    
+
     for ($k = sizeof($host_events)-1; $k > 0; $k--){
-      
+
       echo "<b>" . format_time($host_events[$k][0]) . ": </b>";
       output_wrap($host_events[$k][1]);
       	if ($host_events[$k][2] != 0)
 		echo "ns_image_processing_pipeline::Calculating " . $ns_processing_task_labels[$host_events[$k][2]];
-      
+
 		echo "<br>";
       if ($host_events[$k][4]){
 	output_wrap($host_events[$k][4]);
 	echo "<br>";
       }
-     
+
     }
     echo "</div></td></tr></table>";
 echo "<script type=\"text/javascript\">
@@ -168,7 +168,7 @@ echo "<script type=\"text/javascript\">
 $sid++;
 echo "</td></tr>";
   }
-  
+
   ?>
     </table></td></tr></table><br><?php
 	}?>
@@ -189,6 +189,6 @@ else $r = $refresh_time-2;
 	gotoBottom('foo' + i.toString());
     }
     </script>
-<?php 
+<?php
 display_worm_page_footer();
 ?>

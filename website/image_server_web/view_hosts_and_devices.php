@@ -13,10 +13,12 @@ function ns_clean_up_for_tooltip($str){
 }
 $current_device_cutoff = 60*3;
 
-$host_id = @$query_string['host_id'];
 if (ns_param_spec($_POST,'host_id'))
 	$host_id = $_POST['host_id'];
-else $host_id = "";
+else if (ns_param_spec($query_string,'host_id'))
+     $host_id = $query_string['host_id'];
+else $host_id = '';
+
 $show_host_nodes = @$query_string['show_host_nodes']=='1';
 $device_name = @$query_string['device_name'];
 $highlight_host_id = @$query_string['highlight_host_id'];

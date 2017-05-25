@@ -1049,8 +1049,8 @@ int main(int argc, char ** argv){
 
 		if (sql().connected_to_central_database()){
 			image_server.get_requested_database_from_db();
-			image_server.register_host(&sql());
-		       
+			image_server.register_host(&sql(),true,false);
+
 				image_server.register_server_event(ns_image_server_event("Launching server..."), &sql(), true);
 				image_server.add_subtext_to_current_event(splash, &sql(), true);
 				image_server.add_subtext_to_current_event(quote, &sql(), true);

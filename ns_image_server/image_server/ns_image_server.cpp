@@ -828,7 +828,7 @@ void ns_image_server::set_sql_database(const std::string & database_name,const b
 	ns_death_time_annotation_flag::get_flags_from_db(sql());
 	image_server.sql_lock.release();
 	if (report_to_db){
-		image_server.register_host(&sql());
+		image_server.register_host(&sql(),true,false);
 		image_server.register_devices(false,&sql());
 	}
 }
@@ -1759,7 +1759,7 @@ void ns_image_server::unregister_host(ns_image_server_sql * sql) {
 	*sql << "UPDATE hosts SET last_ping = 0 WHERE name = '" << host_name << "'";
 	sql->send_query();
 };
-void ns_image_server::register_host(ns_image_server_sql * sql, bool overwrite_current_entry) {
+void ns_image_server::register_host(ns_image_server_sql * sql, bool overwrite_current_entry, bool respect_existing_database_choice) {
 	
 	//log in to the server, register the host, get its database id, and update the filed ip address.
 
@@ -1791,11 +1791,14 @@ void ns_image_server::register_host(ns_image_server_sql * sql, bool overwrite_cu
 			
 		_host_id = atoi(h[0][0].c_str());
 		if (overwrite_current_entry){
-			*sql << "UPDATE hosts SET ip='" << host_ip << "', port='" << _dispatcher_port 
+			*sql << "UPDATE hosts SET ip='" << host_ip << "', port='" << _dispatcher_port
 				<< "', long_term_storage_enabled='" << long_term_storage_ << "', "
 				<< "software_version_major=" << software_version_major() << ", software_version_minor=" << software_version_minor()
-				<< ", software_version_compile=" << software_version_compile() << ",database_used='" << *sql_database_choice << "',"
-				<< "system_hostname = '" << system_host_name << "'"
+				<< ", software_version_compile=" << software_version_compile();
+				//if the user has requested a database change, we update the record in the new database (to, for example, prevent infinite looping between databases).
+				//on the initial startup, however, we want to respect the specification in the db, and switch databases if requested.
+			    if (!respect_existing_database_choice) *sql << ",database_used='" << *sql_database_choice << "'"
+				<< ",system_hostname = '" << system_host_name << "'"
 				" WHERE id='" << _host_id << "'";
 			sql->send_query();
 		}

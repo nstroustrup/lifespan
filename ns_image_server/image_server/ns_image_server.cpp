@@ -1798,9 +1798,9 @@ void ns_image_server::register_host(ns_image_server_sql * sql, bool overwrite_cu
 				<< ", additional_host_description='"<< additional_host_description << "' ";
 				//if the user has requested a database change, we update the record in the new database (to, for example, prevent infinite looping between databases).
 				//on the initial startup, however, we want to respect the specification in the db, and switch databases if requested.
-			    if (!respect_existing_database_choice) *sql << ",database_used='" << *sql_database_choice << "'"
-				<< ",system_hostname = '" << system_host_name << "'"
-				" WHERE id='" << _host_id << "'";
+			if (!respect_existing_database_choice) *sql << ",database_used='" << *sql_database_choice << "'";
+				*sql << ",system_hostname = '" << system_host_name << "'"
+					   " WHERE id='" << _host_id << "'";
 			sql->send_query();
 		}
 	}

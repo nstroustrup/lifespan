@@ -1768,7 +1768,9 @@ void ns_image_server::register_host(ns_image_server_sql * sql, bool overwrite_cu
 		long_term_storage_ = "1";
 	sql->set_autocommit(false);
 	sql->send_query("BEGIN");
-	*sql << "SELECT id, ip, port, long_term_storage_enabled FROM hosts WHERE name='" << host_name << "' AND additional_host_description='" << additional_host_description << "'";
+	*sql << "SELECT id, ip, port, long_term_storage_enabled FROM hosts WHERE name='" << host_name << "' "
+			"AND system_hostname='" << system_host_name << "' "
+			"AND additional_host_description='" << additional_host_description << "'";
 	if (overwrite_current_entry)
 		*sql << " FOR UPDATE";
 

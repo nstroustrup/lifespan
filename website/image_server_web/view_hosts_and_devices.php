@@ -1,7 +1,9 @@
 <?php
 require_once("worm_environment.php");
 
-
+function host_label($base_host_name,$system_host_name){
+	 return $base_host_name + '@' + $system_host_name;
+}
 function ns_clean_up_for_tooltip($str){
   $out = "";
   for ($i = 0; $i < strlen($str); $i++){
@@ -13,11 +15,29 @@ function ns_clean_up_for_tooltip($str){
 }
 $current_device_cutoff = 60*3;
 
+
+
 if (ns_param_spec($_POST,'host_id'))
 	$host_id = $_POST['host_id'];
 else if (ns_param_spec($query_string,'host_id'))
      $host_id = $query_string['host_id'];
 else $host_id = '';
+
+if ($host_id != ''){
+   //we need this to apply commands to all processes running on a node 
+   //which each get a separate id but share the same base host name and 
+   //system_host_name
+   $query = "SELECT base_host_name, system_hostname FROM hosts WHERE id = $host_id";
+   $sql->get_row($query,$res);
+   if (sizeof($res) == 0)
+     die("Could not identify specified host");
+   $base_host_name = $res[0][0];
+   $system_host_name = $res[0][1]; 
+}else{
+
+	$base_host_name = '';
+	$system_host_name = '';
+}
 
 $show_host_nodes = @$query_string['show_host_nodes']=='1';
 $device_name = @$query_string['device_name'];
@@ -25,15 +45,10 @@ $highlight_host_id = @$query_string['highlight_host_id'];
 $selected_devices = @$_POST['selected_devices'];
 
 $refresh = FALSE;
-$host_id_name = '';
-if ($host_id != 0){
-	$query = "SELECT name FROM hosts WHERE id=$host_id";
-	$sql->get_row($query,$r);
-	if (sizeof($r) == 0)
-		die("Could not find specified host id in db:  $host_id");
-	$host_id_name = $r[0][0];
 
-}
+$host_where_statement = "id = $host_id";
+if (!$show_host_nodes)
+   $host_where_statement = "base_host_name = '$base_host_name' AND system_host_name = '$system_host_name'";
 if (ns_param_spec($_POST,'save_host')){
 	$comments = ($_POST['comments']);
 
@@ -42,15 +57,9 @@ if (ns_param_spec($_POST,'save_host')){
 	$requested_database_name = $_POST['requested_database_name'];
 	if ($update_database_name){
 		$dname = ",database_used='$requested_database_name'";
-		//die("WHEE");
 	}
-	$query = "UPDATE hosts SET comments='$comments' $dname WHERE id='$host_id'";
-//	die ($query);
+	$query = "UPDATE hosts SET comments='$comments' $dname WHERE $host_where_statement";	
 	$sql->send_query($query);
-	if (!$show_host_nodes){
-		$query = "UPDATE hosts SET comments='$comments' $dname WHERE base_host_name = '$host_id_name'  OR name='$host_id_name'";
-		$sql->send_query($query);
-	}
 	$refresh = true;
 }
 if (ns_param_spec($_POST,'save_device')){
@@ -76,7 +85,7 @@ if (ns_param_spec($_POST,'request_preview_capture')){
  }
 
 if (ns_param_spec($_POST,'delete_host')){
-	$query = "DELETE FROM hosts WHERE id='$host_id'";
+	$query = "DELETE FROM hosts WHERE $host_where_statement";
 	$sql->send_query($query);
 	$refresh = TRUE;
 }
@@ -88,7 +97,21 @@ if (ns_param_spec($_POST,'pause')){
   $sql->send_query($query);
   }
   else{
-	$query = "UPDATE hosts SET pause_requested = !pause_requested WHERE base_host_name = '$host_id_name' OR name='$host_id_name'";
+	$query = "SELECT pause_requested FROM hosts WHERE $host_where_statement";
+	$sql->get_row($query,$res);
+	if (sizeof($res) == 0)
+	   $val = 0;
+	   else {
+	   $val = 1;
+	   foreach ($res as $r){
+	   	   if ($r[0]=='1'){
+		   $val = 0;
+		   break;
+		    }
+           }
+         }
+	   
+	$query = "UPDATE hosts SET pause_requested = $val WHERE $host_where_statement";
 
 	$sql->send_query($query);
   }
@@ -96,13 +119,13 @@ if (ns_param_spec($_POST,'pause')){
  }
 if (ns_param_spec($_POST,'hotplug')){
   $id = $_POST['host_id'];
-  $query = "UPDATE hosts SET hotplug_requested = 1 WHERE id='$id'";
+  $query = "UPDATE hosts SET hotplug_requested = 1 WHERE $host_where_statement";
   $sql->send_query($query);
 	$refresh = TRUE;
  }
 if (ns_param_spec($_POST,'buffer_reload')){
   $id = $_POST['host_id'];
-  $query = "UPDATE hosts SET hotplug_requested = 2 WHERE id = '$id'";
+  $query = "UPDATE hosts SET hotplug_requested = 2 WHERE $host_where_statement";
   //die($query);
   $sql->send_query($query);
   $refresh = TRUE;
@@ -121,17 +144,13 @@ if (ns_param_spec($_POST,'pause_none')){
  }
 if (ns_param_spec($_POST,'shut_down')){
   $id = $_POST['host_id'];
-  $query = "UPDATE hosts SET shutdown_requested=1 WHERE id='$id'";
+  $query = "UPDATE hosts SET shutdown_requested=1 WHERE $host_where_statement";
   $sql->send_query($query);
-	if (!$show_host_nodes){
-		$query = "UPDATE hosts SET shutdown_requested=1 WHERE base_host_name = '$host_id_name' OR name='$host_id_name'";
-		$sql->send_query($query);
-	}
 	$refresh = TRUE;
  }
 if (ns_param_spec($_POST,'launch_from_screen_saver')){
   $id = $_POST['host_id'];
-  $query = "UPDATE hosts SET launch_from_screen_saver=1 WHERE id='$id'";
+  $query = "UPDATE hosts SET launch_from_screen_saver=1 WHERE $host_where_statement";
   $sql->send_query($query);
 	$refresh = TRUE;
  }
@@ -218,24 +237,26 @@ die("");
  }
 
 
-$query = "SELECT id, name, ip, last_ping, comments, long_term_storage_enabled, port,software_version_major,software_version_minor,software_version_compile, pause_requested, base_host_name, database_used,available_space_in_volatile_storage_in_mb,time_of_last_successful_long_term_storage_write FROM hosts ORDER BY pause_requested,name";
+$query = "SELECT id, name, ip, last_ping, comments, long_term_storage_enabled, port,software_version_major,software_version_minor,software_version_compile, pause_requested, base_host_name, database_used,available_space_in_volatile_storage_in_mb,time_of_last_successful_long_term_storage_write,system_hostname,additional_host_description FROM hosts ORDER BY pause_requested,name";
 $sql->get_row($query,$hosts);
+
 $base_hosts = array();
 foreach ($hosts as $row){
-	$base_hosts[$row[11]] = array();
-	$nodes_running[$row[11]][0] = 0;
-	$nodes_running[$row[11]][1] = 0;
+	$lab = host_label($row[11],$row[15]);
+	$base_hosts[$lab] = array();
+	$nodes_running[$lab][0] = 0;
+	$nodes_running[$lab][1] = 0;
 
 }
 
 $current_time = ns_current_time();
-
 foreach ($hosts as $row){
-	array_push($base_hosts[$row[11]],$row);
+	$lab = host_label($row[11],$row[15]);
+	array_push($base_hosts[$lab],$row);
 	$current = $current_time - $row[3] < $current_device_cutoff;
 	if ($current)
-		$nodes_running[$row[11]][0]++;
-	$nodes_running[$row[11]][1]++;
+		$nodes_running[$lab][0]++;
+	$nodes_running[$lab][1]++;
 }
 
 
@@ -264,7 +285,7 @@ for ($i = 0; $i < sizeof($device_inventory_q); $i++)
 	$device_inventory[$device_inventory_q[$i][2]] = array();
 
 for ($i = 0; $i < sizeof($device_inventory_q); $i++){
-	$device_identified = ($devices_identified[$device_inventory_q[$i][0]]===1)?1:0;
+	$device_identified = (array_key_exists($device_inventory_q[$i][0],$devices_identified) && $devices_identified[$device_inventory_q[$i][0]]===1)?1:0;
 	if ($device_identified == 1)
 		$devices_identified[$device_inventory_q[$i][0]]=2;
 	$incubator_name = $device_inventory_q[$i][2];
@@ -308,7 +329,7 @@ if ($show_host_nodes)
 <table cellspacing='0' cellpadding='3' >
 <tr <?php echo $table_header_color?>><td>Host Name</td>
 <td>Version</td>
-<td>IP Address</td>
+<td>Location</td>
 <td>Last Ping</td>
 <td>Comments</td>
 <td>&nbsp;</td></tr>
@@ -335,7 +356,7 @@ foreach ($base_hosts as $base_host_name => $host){
 		echo "<a href=\"view_hosts_log.php?host_id={$host[$i][0]}&limit=50\">[log]</a></td>";
 		echo "<td bgcolor=\"$clrs[1]\">{$host[$i][7]}.{$host[$i][8]}.{$host[$i][9]}</td>";
 		echo "<td bgcolor=\"$clrs[0]\">";
-		echo $host[$i][2] . ":" . $host[$i][6];
+		echo $hosts[$i][15] . "<br>" . $host[$i][2] . ":" . $host[$i][6];
 		echo "</td><td bgcolor=\"$clrs[1]\">";
 		echo format_time($host[$i][3]);
 		echo "</td><td bgcolor=\"$clrs[0]\" nowrap>";
@@ -363,8 +384,10 @@ foreach ($base_hosts as $base_host_name => $host){
 }
 		if (sizeof($devs) > 0)
 			echo sizeof($devs). " devices<br>";
+		if (strlen($host[$i][16])>0)
+		   echo "Extra Info: " . $host[$i][16] . "<BR>";
 		echo output_editable_field("comments",$host[$i][4],$edit_host,'',TRUE);
-			echo (floor($host[$i][13]/1024)) . " gb free</br>";
+			echo "Disk: " . (floor($host[$i][13]/1024)) . " gb free</br>";
 		echo "</td><td bgcolor=\"$clrs[1]\">";
 		if (!$edit_host)
 		  echo "<a href=\"view_hosts_and_devices.php?show_host_nodes=" . ($show_host_nodes?"1":"0") . "&host_id={$host[$i][0]}\">[Edit]</a>";

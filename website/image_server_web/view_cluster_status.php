@@ -45,14 +45,14 @@ word-wrap: break-word;
 }
 
 .rw{
-  white-space: -o-pre-wrap;
+  white-space: -o-pre-wrap; 
     word-wrap: break-word;
-    white-space: pre-wrap;
-    white-space: -moz-pre-wrap;
-    white-space: -pre-wrap;
+    white-space: pre-wrap; 
+    white-space: -moz-pre-wrap; 
+    white-space: -pre-wrap; 
 }
 
-.tw{
+.tw{ 
   table-layout: fixed;
   width: 100%
 }</style>";
@@ -71,7 +71,10 @@ if (array_key_exists("n",$query_string))
 else
   $node_id = -1;
 $single_device = $host_id != 0;
-$query = "SELECT id, name, last_ping,software_version_major,software_version_minor,software_version_compile FROM hosts";
+function host_label($res_row){
+	 return $res_row[1] . ' @ ' . $res_row[6] . ( (strlen($res_row[7])>0)? (" (" . $res_row[7] . ")"): "");
+}
+$query = "SELECT id, name, last_ping,software_version_major,software_version_minor,software_version_compile,system_hostname,additional_host_description FROM hosts";
 if ($single_device)
   $query .= " WHERE id = $host_id";
 $query .=" ORDER BY name";
@@ -83,7 +86,7 @@ $cur_time = ns_current_time();
 $sid = 0;
 echo "Go to host: ";
 for ($i = 0; $i < sizeof($hosts); $i++){
-  echo "<a href=\"#h" . $hosts[$i][0] . "\">[".$hosts[$i][1]."]</a> ";
+  echo "<a href=\"#h" . $hosts[$i][0] . "\">[".host_label($hosts[$i])."]</a> ";
 }
 echo "<BR>";
 for ($i = 0; $i < sizeof($hosts); $i++){
@@ -99,20 +102,20 @@ for ($i = 0; $i < sizeof($hosts); $i++){
 	else $node_ids = array();
 	?><a name="h<?php echo $hosts[$i][0]?>"><table class ="tw" bgcolor="#555555" cellspacing='0' cellpadding='1' width="100%"><tr><td>
 <table cellspacing='0' cellpadding='3' width="100%">
-<tr <?php echo $table_header_color?>><td >
+<tr <?php echo $table_header_color?>><td colspan = 2>
 <?php
-
+	echo "<table cellspacing='0' cellpadding='0', width='100%'><tr><td>";	
 	if ($host_is_online)
-		echo "<b>{$hosts[$i][1]}</b> ";
+		echo "<b>" . host_label($hosts[$i]) . "</b> ";
 	else echo $hosts[$i][1];
-	echo "</td><td width=\"100%\"><div align=\"right\">";
-
+	echo "</td><td><div align=\"right\">";
+	
 	if (!$single_device && !$host_is_online){
 	  echo "This host does not appear to be online.  <a href=\"view_cluster_status.php?h=" . $hosts[$i][0]. "&rt=".$refresh_time . "\">[View logs]</a>";
 	}
 	if ($single_device)
 	echo "<a href=\"view_cluster_status.php\">(view all hosts)</a>";
-	echo "</div></td></tr>";
+	echo "</div></td></tr></table></td></tr>";
 $col = 0;
   for ($j = 0; $j < sizeof($node_ids); $j++){
     $query = "SELECT time, event, processing_job_op, node_id, sub_text FROM host_event_log WHERE host_id = " . $hosts[$i][0] . " AND node_id = " . $node_ids[$j][0]. " ORDER BY time DESC";
@@ -123,7 +126,7 @@ $col = 0;
     else $limit = 20;
     $query .=" LIMIT " . $limit;
     $sql->get_row($query, $host_events);
-
+    
     $clrs = $table_colors[$j%2];
     if ($j != 0) echo "</td></tr>";
     $node_i = $node_ids[$j][0];
@@ -131,7 +134,7 @@ $col = 0;
       $col2 = "#CCCCCC";
       $thread_name = "main";
     }
-    else{
+    else{ 
       if ($j % 2 == 0)
       $col2 = "#EEEEEE";
       else $col2 = "#CCEEEE";
@@ -147,20 +150,20 @@ $col = 0;
       else echo "style=\"height:600px\"";
       echo ">";
     $col = 1-$col;
-
+    
     for ($k = sizeof($host_events)-1; $k > 0; $k--){
-
+      
       echo "<b>" . format_time($host_events[$k][0]) . ": </b>";
       output_wrap($host_events[$k][1]);
       	if ($host_events[$k][2] != 0)
 		echo "ns_image_processing_pipeline::Calculating " . $ns_processing_task_labels[$host_events[$k][2]];
-
+      
 		echo "<br>";
       if ($host_events[$k][4]){
 	output_wrap($host_events[$k][4]);
 	echo "<br>";
       }
-
+     
     }
     echo "</div></td></tr></table>";
 echo "<script type=\"text/javascript\">
@@ -168,7 +171,7 @@ echo "<script type=\"text/javascript\">
 $sid++;
 echo "</td></tr>";
   }
-
+  
   ?>
     </table></td></tr></table><br><?php
 	}?>
@@ -189,6 +192,6 @@ else $r = $refresh_time-2;
 	gotoBottom('foo' + i.toString());
     }
     </script>
-<?php
+<?php 
 display_worm_page_footer();
 ?>

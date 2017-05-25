@@ -42,11 +42,13 @@ if (ns_param_spec($_POST,'detail_level')){
    $image_compression = $_POST['image_compression'];
    $image_compression_ratio = $_POST['image_compression_ratio'];
    $apply_vertical_image_registration = $_POST['apply_vertical_image_registration'] == "apply";
-   
+   $maximum_number_of_worms = $_POST['maximum_number_of_worms'];
    $delete_captured_images = $_POST['delete_captured_images'] == "delete";
    //  die($_POST['delete_captured_images']);
 
-  
+   $query = "UPDATE sample_region_image_info as r, capture_samples as s SET r.maximum_number_of_worms_per_plate=$maximum_number_of_worms WHERE r.sample_id = s.id AND s.experiment_id = $experiment_id";
+   $sql->send_query($query);   
+
       $query = "UPDATE experiments SET delete_captured_images_after_mask=" . ($delete_captured_images?"1":"0") . ", compression_type='$image_compression' WHERE id = $experiment_id";
 
    $sql->send_query($query);

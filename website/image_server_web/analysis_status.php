@@ -81,7 +81,7 @@ $operations = array();
       for ($i = 1; $i <= $NS_LAST_PROCESSING_JOB; $i++){
 	if ($i == $ns_processing_tasks['ns_process_heat_map'] ||
 	    $i == $ns_processing_tasks['ns_process_static_mask'] ||
-	    $i == $ns_processing_tasks['ns_process_temporal_interpolation'] ||
+	    $i == $ns_processing_tasks['ns_process_compress_unprocessed'] ||
 	    $i == $ns_processing_tasks['ns_process_analyze_mask']  ||
 	    $i == $ns_processing_tasks['ns_process_compile_video'])
 	  continue;
@@ -103,7 +103,7 @@ $operations = array();
       for ($i = 1; $i <= $NS_LAST_PROCESSING_JOB; $i++){
 	if ($i == $ns_processing_tasks['ns_process_heat_map'] ||
 	    $i == $ns_processing_tasks['ns_process_static_mask'] ||
-	    $i == $ns_processing_tasks['ns_process_temporal_interpolation'] ||
+	    $i == $ns_processing_tasks['ns_process_compress_unprocessed'] ||
 	    $i == $ns_processing_tasks['ns_process_analyze_mask']  ||
 	    $i == $ns_processing_tasks['ns_process_compile_video'])
 	  continue;

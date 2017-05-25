@@ -619,9 +619,13 @@ echo "</td></tr>";
 	output_editable_field("comments",$experiment[2],$edit,20,TRUE);
 	echo "</td>";
 	echo "<td bgcolor=\"$clrs[1]\"  valign='top'><center>";
-	if ($experiment[5] > $current_time)
-		echo '<b><font size = "+1">' . $device_count[$experiment_id] . "</font></b>";
-	else echo $device_count[$experiment_id];
+	 if (array_key_exists($experiment_id,$device_count))
+           $dc =  $device_count[$experiment_id];
+	else $dc = 0;
+	if ($experiment[5] > $current_time){
+	 
+		echo '<b><font size = "+1">' . $dc . "</font></b>";
+	}else echo $dc;
 	echo "</center></td>";
 
 	echo "<td bgcolor=\"$clrs[0]\"  valign='top' nowrap><center><font size=\"-1\">";

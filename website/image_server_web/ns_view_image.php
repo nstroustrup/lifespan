@@ -34,7 +34,7 @@ if (!ns_param_spec($query_string,'height'))
 	$height = 600;
 
 
-if (!ns_param_spec($query_string,$query_string['fps')))
+if (!ns_param_spec($query_string,'fps'))
 	$fps = 10;
 
 

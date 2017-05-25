@@ -356,7 +356,7 @@ public:
 		 clear();
 	}
 	///Returns the ini-specified host name of the current image server.
-	const std::string & host_name_out() const{
+	const std::string host_name_out() const{
 		return host_name + '@' + system_host_name;
 	}
 	///loads quotes from the database to display to the user;

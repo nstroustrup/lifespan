@@ -1444,8 +1444,9 @@ ns_file_location_specification ns_image_storage_handler::look_up_image_location(
 
 	if (image.filename.size() == 0 || image.path.size() == 0)
 		image.load_from_db(image.id,sql);
-
-	if (ns_dir::extract_extension(image.filename).size() == 0)
+	std::string desired_suffix;
+	ns_add_image_suffix(desired_suffix, image_type);
+	if (ns_dir::extract_extension(image.filename) != desired_suffix.substr(1))
 		ns_add_image_suffix(image.filename, image_type);
 	ns_dir::convert_slashes(image.path);
 	return compile_absolute_paths_from_relative(image.path,image.partition,image.filename);

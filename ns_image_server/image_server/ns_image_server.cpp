@@ -35,7 +35,7 @@ sql_lock("ns_is::sql"), server_event_lock("ns_is::server_event"), performance_st
 _act_as_processing_node(true), cleared(false),
 image_registration_profile_cache(1024 * 4), //allocate 4 gigabytes of disk space in which to store reference images for capture sample registration
 _verbose_debug_output(false), _cache_subdirectory("cache"), sql_database_choice(possible_sql_databases.end()), next_scan_for_problems_time(0),
-_terminal_window_scale_factor(1), sql_table_lock_manager(this), alert_handler_lock("ahl"),max_internal_thread_id(1), max_external_thread_id(1),worm_detection_model_cache(0),posture_analysis_model_cache(0){
+_terminal_window_scale_factor(1), _system_parallel_process_id(0), _allow_multiple_processes_per_system(false),sql_table_lock_manager(this), alert_handler_lock("ahl"),max_internal_thread_id(1), max_external_thread_id(1),worm_detection_model_cache(0),posture_analysis_model_cache(0){
 
 	ns_socket::global_init();
 	ns_worm_detection_constants::init();
@@ -1939,6 +1939,7 @@ void ns_image_server::load_constants(const ns_image_server::ns_image_server_exec
 	constants.add_field("device_names", "", "This can be used to explicitly specify scanner names on an image acquisition server.  These should be detected just fine automatically, and so in most cases this field can be left blank");
 
 	constants.start_specification_group(ns_ini_specification_group("Image Analysis Server Settings ","These settings control the behavior of image processing servers"));
+	constants.add_field("allow_multiple_processes_per_system", "no", "By default, only one ns_image_server process can run on each system.  If allow_multiple_process_per_system is set to yes then this constraint is removed.  In that case, be certain to specify a unique value of additional_host_description at the commandline for each ns_image_server process run on the same system, to prevent cache, image, and database corruption.");
 	constants.add_field("number_of_times_to_check_empty_processing_job_queue_before_stopping", "0", "The number of times the image server should re-check an empty processing job queue before giving up and shutting down.  Useful when running on a HPC cluster.  A value of 0 indicates the server never should shut down for this reason.");
 	constants.add_field("act_as_processing_node","yes","Should the server run image processing jobs requested by the user via the website? (yes / no)");
 	constants.add_field("nodes_per_machine", "1","A single computer can run multiple copies of the image processing server simultaneously, which allows many jobs to be processed in parallel.  Set this value to the number of parallel servers you want to run on this machine.  This can usually be set to the number of physical cores on the machine's processor, or the number of GB of RAM on the machine; whichever is smaller.");
@@ -2084,7 +2085,6 @@ void ns_image_server::load_constants(const ns_image_server::ns_image_server_exec
 			throw ns_ex("Host names must be 15 characters or less.  \"") << host_name << "\" is " << host_name.size() << " characters.";
 		base_host_name			= constants["host_name"];
 		host_name				= base_host_name;
-		processing_node_id_ = 0;
 
 		maximum_number_of_processing_threads_ = atol(constants["nodes_per_machine"].c_str());
 		volatile_storage_directory	= ns_dir::format_path(constants["volatile_storage_directory"]);
@@ -2100,6 +2100,9 @@ void ns_image_server::load_constants(const ns_image_server::ns_image_server_exec
 				throw ns_ex("maximum_memory_allocation_in_mb is set to an extremely low value: 1024.  The lifespan machine will not function properly with less than one GB of RAM.");
 		}else _maximum_memory_allocation_in_mb = 1024*4;
 
+		_allow_multiple_processes_per_system = ns_to_bool(constants["allow_multiple_processes_per_system"]);
+		if (_act_as_an_image_capture_server && _allow_multiple_processes_per_system)
+			throw ns_ex("Multiple image capture servers cannot be allowed to run on the same system.  Please unset either act_as_an_image_capture_server or allow_multiple_processes_per_system in ns_image_server.ini");
 
 		_capture_command		= constants["device_capture_command"];
 		_server_crash_daemon_port	= atol(constants["server_crash_daemon_port"].c_str());

@@ -60,6 +60,7 @@ public:
 		experiment_partition_cache_last_update_time(0),verbosity(ns_standard){}
 
 	void set_directories(const std::string & _volatile_storage_directory, const std::string & _long_term_storage_directory);
+	void update_volatile_storage_directory_for_parallel_processes(unsigned long system_parallel_process_id);
 
 	ns_image_storage_reciever_handle<ns_component> request_storage(ns_image_server_captured_image_region & captured_image_region, const ns_image_type & image_type, const float compression_ratio, const unsigned long max_line_length, ns_image_server_sql * sql, const bool allow_volatile_storage) const;
 	ns_image_storage_reciever_handle<ns_component> request_storage_ci(ns_image_server_captured_image & captured_image, const ns_image_type & image_type, const float compression_ratio, const unsigned long max_line_length, ns_image_server_sql * sql, bool & had_to_use_local_storage, const bool allow_volatile_storage) const;

@@ -628,11 +628,10 @@ int main(int argc, char ** argv){
 		<< "output_image_buffer_info: Output information about the state of each scanner's locally \n"
 		"       buffered images.\n";
 
-	bool is_master_node(false);
 	std::string schema_name, ini_file_location;
 	unsigned long max_run_time(0), max_job_num(0), number_of_processing_cores(-1), idle_queue_check_limit(-1), memory_allocation_limit(-1);
 
-	try{
+	try {
 
 		ns_sql::load_sql_library();
 
@@ -640,7 +639,7 @@ int main(int argc, char ** argv){
 		//set default options for command line arguments
 		ns_cl_command command(ns_start);
 		bool upload_experiment_spec_to_db(false),
-			  overwrite_existing_experiments(false);
+			overwrite_existing_experiments(false);
 		std::string input_filename;
 		bool sql_update_requested(false);
 		ns_cl_command post_dispatcher_init_command(ns_none);
@@ -671,7 +670,7 @@ int main(int argc, char ** argv){
 				ex << command_line_usage.text();
 				throw ex;
 			}
-			
+
 			//grab extra information for arguments that are longer than one argument
 			else if (p->second == ns_wrap_m4v) {
 				if (i + 1 >= argc) throw ns_ex("M4v filename must be specified");
@@ -774,7 +773,7 @@ int main(int argc, char ** argv){
 				}
 				else {
 					ns_ex ex;
-					
+
 					ex << "Could not parse argument after : " << command_str << "\n";
 					ex << command_line_usage.text();
 					throw ex;
@@ -782,8 +781,8 @@ int main(int argc, char ** argv){
 			}
 		}
 		//check to see that no other nodes are running on this machine.
-		if (command == ns_start || command == ns_restart){
-			if (image_server.server_currently_running() && command == ns_start )
+		if (command == ns_start || command == ns_restart) {
+			if (image_server.server_currently_running() && command == ns_start)
 				throw ns_ex("An instance of the image server is already running.");
 		}
 
@@ -794,126 +793,126 @@ int main(int argc, char ** argv){
 		image_server.set_image_processing_run_limits(max_run_time, max_job_num);
 		image_server.set_resource_limits(idle_queue_check_limit, memory_allocation_limit, number_of_processing_cores);
 
-	       
-		//execute any commands requested at the command line\n";
-		switch(command){
-			case ns_start: break;
-			case ns_help: break;
-			case ns_output_sql_debug: 	
-				if (!image_server.send_message_to_running_server(NS_OUTPUT_SQL_LOCK_INFORMATION))
-				std::cerr << "No image server found running at " << image_server.dispatcher_ip() << ":" << image_server.dispatcher_port() << ".";
-				return 0; break;
 
-			case ns_status:{
-				if (image_server.server_currently_running())
-						std::cout << "The image server is running\n";
-				else std::cout << "The image server is not running.\n";
-				return 0;
-			}
-			case ns_stop:{
-				if (!image_server.send_message_to_running_server(NS_QUIT))
-					throw ns_ex("No image server found running at ") << image_server.dispatcher_ip() << ":" << image_server.dispatcher_port() << ".";
+		//execute any commands requested at the command line\n";
+		switch (command) {
+		case ns_start: break;
+		case ns_help: break;
+		case ns_output_sql_debug:
+			if (!image_server.send_message_to_running_server(NS_OUTPUT_SQL_LOCK_INFORMATION))
+				std::cerr << "No image server found running at " << image_server.dispatcher_ip() << ":" << image_server.dispatcher_port() << ".";
+			return 0; break;
+
+		case ns_status: {
+			if (image_server.server_currently_running())
+				std::cout << "The image server is running\n";
+			else std::cout << "The image server is not running.\n";
+			return 0;
+		}
+		case ns_stop: {
+			if (!image_server.send_message_to_running_server(NS_QUIT))
+				throw ns_ex("No image server found running at ") << image_server.dispatcher_ip() << ":" << image_server.dispatcher_port() << ".";
 			//	ns_request_shutdown_of_all_spawned_nodes(child_processes);
-				std::cout << "Image Server halt requested.  Waiting for termination...";
-				while(image_server.server_currently_running()){
+			std::cout << "Image Server halt requested.  Waiting for termination...";
+			while (image_server.server_currently_running()) {
+				ns_thread::sleep(1);
+				std::cerr << ".";
+			}
+			return 0;
+			//		ns_wait_for_all_spawned_nodes(child_processes);
+		}
+		case ns_simulate_central_db_connection_error: {
+			if (!image_server.send_message_to_running_server(NS_SIMULATE_CENTRL_DB_CONNECTION_ERROR))
+				cerr << "No image server found running at " << image_server.dispatcher_ip() << ":" << image_server.dispatcher_port() << ".";
+			return 0;
+		}
+		case ns_output_image_buffer_info: {
+			if (!image_server.send_message_to_running_server(NS_OUTPUT_IMAGE_BUFFER_INFO))
+				cerr << "No image server found running at " << image_server.dispatcher_ip() << ":" << image_server.dispatcher_port() << ".";
+			return 0;
+		}
+		case ns_stop_checking_central_db: {
+			if (!image_server.send_message_to_running_server(NS_STOP_CHECKING_CENTRAL_DB))
+				cerr << "No image server found running at " << image_server.dispatcher_ip() << ":" << image_server.dispatcher_port() << ".";
+			return 0;
+		}
+		case ns_start_checking_central_db: {
+			if (!image_server.send_message_to_running_server(NS_START_CHECKING_CENTRAL_DB))
+				cerr << "No image server found running at " << image_server.dispatcher_ip() << ":" << image_server.dispatcher_port() << ".";
+			return 0;
+		}
+		case ns_restart: {
+
+			if (!image_server.send_message_to_running_server(NS_QUIT))
+				cerr << "No image server found running at " << image_server.dispatcher_ip() << ":" << image_server.dispatcher_port() << ".";
+			else {
+				cerr << "Waiting for the termination of the image server running at " << image_server.dispatcher_ip() << ":" << image_server.dispatcher_port() << ".";
+				while (image_server.server_currently_running()) {
 					ns_thread::sleep(1);
-					std::cerr << ".";	
+					std::cerr << ".";
 				}
-				return 0;
-		//		ns_wait_for_all_spawned_nodes(child_processes);
-			}
-			case ns_simulate_central_db_connection_error:{
-					if (!image_server.send_message_to_running_server(NS_SIMULATE_CENTRL_DB_CONNECTION_ERROR))
-					cerr << "No image server found running at " << image_server.dispatcher_ip() << ":" << image_server.dispatcher_port() << ".";
-				return 0;
-			}
-			case ns_output_image_buffer_info:{
-					if (!image_server.send_message_to_running_server(NS_OUTPUT_IMAGE_BUFFER_INFO))
-					cerr << "No image server found running at " << image_server.dispatcher_ip() << ":" << image_server.dispatcher_port() << ".";
-				return 0;
-			}
-			case ns_stop_checking_central_db:{
-					if (!image_server.send_message_to_running_server(NS_STOP_CHECKING_CENTRAL_DB))
-					cerr << "No image server found running at " << image_server.dispatcher_ip() << ":" << image_server.dispatcher_port() << ".";
-				return 0;
-			}
-			case ns_start_checking_central_db:{
-					if (!image_server.send_message_to_running_server(NS_START_CHECKING_CENTRAL_DB))
-					cerr << "No image server found running at " << image_server.dispatcher_ip() << ":" << image_server.dispatcher_port() << ".";
-				return 0;
-			}				
-			case ns_restart:{
-			  
-				if (!image_server.send_message_to_running_server(NS_QUIT))
-					cerr << "No image server found running at " << image_server.dispatcher_ip() << ":" << image_server.dispatcher_port() << ".";
-				else{
-					cerr << "Waiting for the termination of the image server running at " << image_server.dispatcher_ip() << ":" << image_server.dispatcher_port() << ".";
-					while(image_server.server_currently_running()){
-						ns_thread::sleep(1);
-						std::cerr << ".";		
-					}
-					cerr << "Giving the previous image server a few extra seconds to wrap everything up...";
-					for (unsigned int i = 0; i < 20; i++){
-						ns_thread::sleep(1);
-						std::cerr << ".";		
-					}
+				cerr << "Giving the previous image server a few extra seconds to wrap everything up...";
+				for (unsigned int i = 0; i < 20; i++) {
+					ns_thread::sleep(1);
+					std::cerr << ".";
 				}
-				break;
 			}
-							
-			case ns_hotplug:{
-				if (!image_server.send_message_to_running_server(NS_HOTPLUG_NEW_DEVICES))
-					throw ns_ex("No image server found running at ") << image_server.dispatcher_ip() << ":" << image_server.dispatcher_port() << ".";	
-				return 0;
+			break;
+		}
+
+		case ns_hotplug: {
+			if (!image_server.send_message_to_running_server(NS_HOTPLUG_NEW_DEVICES))
+				throw ns_ex("No image server found running at ") << image_server.dispatcher_ip() << ":" << image_server.dispatcher_port() << ".";
+			return 0;
+		}
+		case ns_reset_devices: {
+			if (!image_server.send_message_to_running_server(NS_RESET_DEVICES))
+				throw ns_ex("No image server found running at ") << image_server.dispatcher_ip() << ":" << image_server.dispatcher_port() << ".";
+			return 0;
+		}
+		case ns_reload_models: {
+			if (!image_server.send_message_to_running_server(NS_RELOAD_MODELS))
+				throw ns_ex("No image server found running at ") << image_server.dispatcher_ip() << ":" << image_server.dispatcher_port() << ".";
+			return 0;
+		}
+		case ns_run_pending_image_transfers: {
+			post_dispatcher_init_command = ns_run_pending_image_transfers;
+			break;
+		}
+		case ns_submit_experiment: {
+			std::vector<std::string> warnings;
+			ns_image_server::process_experiment_capture_schedule_specification(input_filename,
+				warnings,
+				overwrite_existing_experiments,
+				upload_experiment_spec_to_db,
+				std::string(""),
+				true);
+			return 0;
+		}
+
+		case ns_wrap_m4v: {
+			if (!image_server.send_message_to_running_server(NS_WRAP_M4V, argv[2])) {
+				std::string output_basename = ns_dir::extract_filename_without_extension(input_filename);
+				ns_wrap_m4v_stream(input_filename, output_basename);
 			}
-			case ns_reset_devices:{
-				if (!image_server.send_message_to_running_server(NS_RESET_DEVICES))
-					throw ns_ex("No image server found running at ") << image_server.dispatcher_ip() << ":" << image_server.dispatcher_port() << ".";	
-				return 0;
-			 }
-			case ns_reload_models:{
-				if (!image_server.send_message_to_running_server(NS_RELOAD_MODELS))
-					throw ns_ex("No image server found running at ") << image_server.dispatcher_ip() << ":" << image_server.dispatcher_port() << ".";	
-				return 0;
-			}	
-			case ns_run_pending_image_transfers:{
-				post_dispatcher_init_command = ns_run_pending_image_transfers;
-				break;
-			}
-			case ns_submit_experiment:{
-				std::vector<std::string> warnings;
-				ns_image_server::process_experiment_capture_schedule_specification(input_filename,
-					warnings,
-					overwrite_existing_experiments,
-					upload_experiment_spec_to_db,
-					std::string(""),
-					true);
-				return 0;
-			}
-			
-			case ns_wrap_m4v:{
-				if (!image_server.send_message_to_running_server(NS_WRAP_M4V,argv[2])){
-					std::string output_basename = ns_dir::extract_filename_without_extension(input_filename);
-					ns_wrap_m4v_stream(input_filename,output_basename);
-				}
-				return 0;
-			}
-			case ns_trigger_segfault_in_main_thread:{
-				post_dispatcher_init_command = ns_trigger_segfault_in_main_thread;
-				break;
-			}
-			case ns_trigger_segfault_in_dispatcher_thread:{
-				post_dispatcher_init_command = ns_trigger_segfault_in_dispatcher_thread;
-				break;
-			}
-			case ns_clear_local_db_buffer_cleanly:	
-				if (!image_server.send_message_to_running_server(NS_CLEAR_DB_BUF_CLEAN))
-					throw ns_ex("No image server found running at ") << image_server.dispatcher_ip() << ":" << image_server.dispatcher_port() << ".";	
-				return 0;
-			case ns_clear_local_db_buffer_dangerously:	
-				if (!image_server.send_message_to_running_server(NS_CLEAR_DB_BUF_DIRTY))
-					throw ns_ex("No image server found running at ") << image_server.dispatcher_ip() << ":" << image_server.dispatcher_port() << ".";	
-				return 0;
+			return 0;
+		}
+		case ns_trigger_segfault_in_main_thread: {
+			post_dispatcher_init_command = ns_trigger_segfault_in_main_thread;
+			break;
+		}
+		case ns_trigger_segfault_in_dispatcher_thread: {
+			post_dispatcher_init_command = ns_trigger_segfault_in_dispatcher_thread;
+			break;
+		}
+		case ns_clear_local_db_buffer_cleanly:
+			if (!image_server.send_message_to_running_server(NS_CLEAR_DB_BUF_CLEAN))
+				throw ns_ex("No image server found running at ") << image_server.dispatcher_ip() << ":" << image_server.dispatcher_port() << ".";
+			return 0;
+		case ns_clear_local_db_buffer_dangerously:
+			if (!image_server.send_message_to_running_server(NS_CLEAR_DB_BUF_DIRTY))
+				throw ns_ex("No image server found running at ") << image_server.dispatcher_ip() << ":" << image_server.dispatcher_port() << ".";
+			return 0;
 		}
 		image_server.set_main_thread_id();
 
@@ -922,149 +921,149 @@ int main(int argc, char ** argv){
 		splash += "==                                      ==\n";
 		splash += "== Image Capture and Processing Server  ==\n";
 		splash += " ==               "
-			 + ns_to_string(image_server.software_version_major())
-			 + "." + ns_to_string(image_server.software_version_minor())
-			 + "." + ns_to_string(image_server.software_version_compile())
-			 + "                ==\n";
+			+ ns_to_string(image_server.software_version_major())
+			+ "." + ns_to_string(image_server.software_version_minor())
+			+ "." + ns_to_string(image_server.software_version_compile())
+			+ "                ==\n";
 		splash += " ==                                    ==\n";
 		splash += " ==        Nicholas Stroustrup         ==\n";
 		splash += " == Center for Genomic Regulation 2017 ==\n";
 		splash += " ==              BCN                   ==\n";
 		splash += " ========================================\n";
 		std::cout << splash;
-		
-		std::vector<std::pair<std::string,std::string> > quotes;
-	
-		ns_acquire_for_scope<ns_image_server_sql> sql;
-		
-		image_server.os_signal_handler.set_signal_handler(ns_interrupt,exit_signal_handler);
-		if (sql_update_requested){
-                  ns_acquire_for_scope<ns_sql> sql(image_server.new_sql_connection(__FILE__,__LINE__));
-                  image_server.upgrade_tables(sql(),false,schema_name);
-                  sql.release();
-                  return 0;
-                }	
-		
 
-		#ifndef _WIN32
-	       
-      			//start a crash daemon to handle server crashes
+		std::vector<std::pair<std::string, std::string> > quotes;
+
+		ns_acquire_for_scope<ns_image_server_sql> sql;
+
+		image_server.os_signal_handler.set_signal_handler(ns_interrupt, exit_signal_handler);
+		if (sql_update_requested) {
+			ns_acquire_for_scope<ns_sql> sql(image_server.new_sql_connection(__FILE__, __LINE__));
+			image_server.upgrade_tables(sql(), false, schema_name);
+			sql.release();
+			return 0;
+		}
+
+
+#ifndef _WIN32
+		//if running as an image capture server, launch a second process that moniters the first, and takes over if the first becomes unresponsive.
+		if (image_server_const.act_as_an_image_capture_server()) {
+			//start a crash daemon to handle server crashes
 			ns_image_server_crash_daemon crash_daemon;
-		       
-			while(true){
-			    if (crash_daemon.start(image_server.server_crash_daemon_port())==ns_image_server_crash_daemon::ns_ok)
-			      break;
-				else{
+
+			while (true) {
+				if (crash_daemon.start(image_server.server_crash_daemon_port()) == ns_image_server_crash_daemon::ns_ok)
+					break;
+				else {
 					if (sql.is_null())
 						sql.attach(ns_connect_to_available_sql_server());
 
-					if (sql().connected_to_central_database()){
+					if (sql().connected_to_central_database()) {
 						image_server.alert_handler.initialize(*static_cast<ns_sql *>(&sql()));
 						std::string text("The image server node ");
 						text += image_server.host_name_out() + " restarted after a fatal error at ";
 						text += ns_format_time_string_for_human(ns_current_time());
-						ns_acquire_for_scope<ns_sql> sql(image_server.new_sql_connection(__FILE__,__LINE__));
+						ns_acquire_for_scope<ns_sql> sql(image_server.new_sql_connection(__FILE__, __LINE__));
 						image_server.alert_handler.initialize(sql());
 
-							ns_alert alert(text,
-								text,
-								ns_alert::ns_server_crash,
-								ns_alert::get_notification_type(ns_alert::ns_server_crash,false),
-								ns_alert::ns_rate_limited
-								);
+						ns_alert alert(text,
+							text,
+							ns_alert::ns_server_crash,
+							ns_alert::get_notification_type(ns_alert::ns_server_crash, false),
+							ns_alert::ns_rate_limited
+						);
 
-						image_server.alert_handler.submit_alert(alert,*static_cast<ns_sql *>(&sql()));
+						image_server.alert_handler.submit_alert(alert, *static_cast<ns_sql *>(&sql()));
 					}
-					else{
-						image_server.register_server_event(ns_image_server_event("The image server has restarted after a crash."),&sql());
+					else {
+						image_server.register_server_event(ns_image_server_event("The image server has restarted after a crash."), &sql());
 					}
-				
+
 				}
 			}
-	
-			//register a swath or error handlers to allow recovery from segfaults and such under linux
-			image_server.os_signal_handler.set_signal_handler(ns_segmentation_fault,segmentation_fault_signal_handler);
-			image_server.os_signal_handler.set_signal_handler(ns_bus_error,bus_error_signal_handler);
-			image_server.os_signal_handler.set_signal_handler(ns_illegal_instruction,illegal_instruction_signal_handler);
-			image_server.os_signal_handler.set_signal_handler(ns_floating_point_error,floating_point_error_signal_handler);
-			while(!ns_image_server_crash_daemon::daemon_is_running()){
-			  ns_thread::sleep(1);
-			}
-			
-			      
-#endif
 
-		//don't act as an image capture server if we just want to copy over images.
-		if (post_dispatcher_init_command == ns_run_pending_image_transfers){
-			image_server.override_ini_specified_image_capture_server_behavior(false);
+			//register a swath or error handlers to allow recovery from segfaults and such under linux
+			image_server.os_signal_handler.set_signal_handler(ns_segmentation_fault, segmentation_fault_signal_handler);
+			image_server.os_signal_handler.set_signal_handler(ns_bus_error, bus_error_signal_handler);
+			image_server.os_signal_handler.set_signal_handler(ns_illegal_instruction, illegal_instruction_signal_handler);
+			image_server.os_signal_handler.set_signal_handler(ns_floating_point_error, floating_point_error_signal_handler);
+			while (!ns_image_server_crash_daemon::daemon_is_running()) {
+				ns_thread::sleep(1);
+			}
 		}
+	#endif
+
+			//don't act as an image capture server if we just want to copy over images.
+			if (post_dispatcher_init_command == ns_run_pending_image_transfers) {
+				image_server.override_ini_specified_image_capture_server_behavior(false);
+			}
 
 		if (sql.is_null())
-				sql.attach(ns_connect_to_available_sql_server());
-	      
+			sql.attach(ns_connect_to_available_sql_server());
+
 		image_server.image_storage.refresh_experiment_partition_cache(&sql());
-		if (sql().connected_to_central_database()){
+		if (sql().connected_to_central_database()) {
 			image_server.clear_performance_statistics(*static_cast<ns_sql *>(&sql()));
 			image_server.clear_old_server_events(*static_cast<ns_sql *>(&sql()));
-			image_server.load_quotes(quotes,*static_cast<ns_sql *>(&sql()));
-			image_server.alert_handler.initialize(*static_cast<ns_sql *>(&sql()));	
+			image_server.load_quotes(quotes, *static_cast<ns_sql *>(&sql()));
+			image_server.alert_handler.initialize(*static_cast<ns_sql *>(&sql()));
 			image_server.alert_handler.reset_all_alert_time_limits(*static_cast<ns_sql *>(&sql()));
 			ns_death_time_annotation_flag::get_flags_from_db(*static_cast<ns_sql *>(&sql()));
 		}
-		
+
 		const bool register_and_run_simulated_devices(image_server.register_and_run_simulated_devices(&sql()));
 		srand(ns_current_time());
 		std::string quote;
 		if (quotes.size() == 0)
 			quote = "The oracle is silent.\n\n";
-		else{
-			std::pair<std::string,std::string> & q(quotes[rand()%quotes.size()]);
+		else {
+			std::pair<std::string, std::string> & q(quotes[rand() % quotes.size()]);
 			if (q.first.size() == 0)
 				quote = "The oracle is silent.\n\n";
-			else{
+			else {
 				quote = "\"" + q.first + "\"\n";
 				quote += "\t--";
 				quote += q.second + "\n\n";
 			}
 		}
 		std::cout << quote;
-			
-		#ifdef _WIN32 
-		if (image_server.hide_window()){
 
-				HWND console_hwnd = GetConsoleHwnd();
-				ShowWindow(console_hwnd,SW_HIDE);
-				ns_window_hidden = !ns_window_hidden;
+#ifdef _WIN32 
+		if (image_server.hide_window()) {
+
+			HWND console_hwnd = GetConsoleHwnd();
+			ShowWindow(console_hwnd, SW_HIDE);
+			ns_window_hidden = !ns_window_hidden;
 		}
-		
-		#endif
 
-		#ifndef _WIN32
-			
-			int res =  umask(S_IWOTH);//S_IRUSR|S_IWUSR|S_IRGRP|S_IWGRP|S_IROTH|S_IWOTH);
-			cout.setf(ios::oct);
+#endif
+
+#ifndef _WIN32
+
+		int res = umask(S_IWOTH);//S_IRUSR|S_IWUSR|S_IRGRP|S_IWGRP|S_IROTH|S_IWOTH);
+		cout.setf(ios::oct);
 		//	cout << "Changing mask from " << res << " to " << res2 << "\n";
-			cout.setf(ios::dec);
-		#endif
+		cout.setf(ios::dec);
+#endif
 
-		if (sql().connected_to_central_database()){
+		if (sql().connected_to_central_database()) {
 			image_server.get_requested_database_from_db();
-			image_server.register_host(&sql(),true,true);
+			image_server.register_host(&sql(), true, true);
 
-				image_server.register_server_event(ns_image_server_event("Launching server..."), &sql(), true);
-				image_server.add_subtext_to_current_event(splash, &sql(), true);
-				image_server.add_subtext_to_current_event(quote, &sql(), true);
-			
-			if (image_server.new_software_release_available() && image_server.halt_on_new_software_release()){
-			       
-					image_server.register_server_event(ns_image_server_event("A more recent version of server software was found running on the cluster.  This server is outdated and is halting now."),&sql());
-				#ifdef _WIN32 
+			image_server.register_server_event(ns_image_server_event("Launching server..."), &sql(), true);
+			image_server.add_subtext_to_current_event(splash, &sql(), true);
+			image_server.add_subtext_to_current_event(quote, &sql(), true);
+
+			if (image_server.new_software_release_available() && image_server.halt_on_new_software_release()) {
+
+				image_server.register_server_event(ns_image_server_event("A more recent version of server software was found running on the cluster.  This server is outdated and is halting now."), &sql());
+#ifdef _WIN32 
 				image_server.update_software = true;
-				#endif
+#endif
 				throw ns_ex("Updated software detected on the cluster.");
 			}
 		}
-	       
+
 
 		image_server.image_storage.test_connection_to_long_term_storage(true);
 		if (!image_server.image_storage.long_term_storage_was_recently_writeable() && image_server.act_as_processing_node()) {
@@ -1076,126 +1075,142 @@ int main(int argc, char ** argv){
 		}
 
 		//handle requested commandline commands that requre a database
-		switch(command){
-			case ns_fix_orphaned_captured_images:{
-		  		ns_acquire_for_scope<ns_sql> sql(image_server.new_sql_connection(__FILE__,__LINE__));
-				image_server.image_storage.fix_orphaned_captured_images(&sql());
-				sql.release();
-				return 0;
-			}
-		    
-			case ns_test_email:{
-				std::string text("Image server node ");
-				text += image_server.host_name_out();
-				text += " has succesfully sent an email.";
-				ns_acquire_for_scope<ns_sql> sql(image_server.new_sql_connection(__FILE__,__LINE__));
-				image_server.alert_handler.initialize(sql());
-				image_server.alert_handler.submit_desperate_alert(text);
-				sql.release();
-				return 0;
-			}
-			case ns_test_alert:{
-				std::string text("At ");
-				text += ns_format_time_string_for_human (ns_current_time()) + " a cluster node submitted a test alert.";
-				ns_acquire_for_scope<ns_sql> sql(image_server.new_sql_connection(__FILE__,__LINE__));
-				image_server.alert_handler.initialize(sql());
-				ns_alert alert(text,
-					text + "  If you are recieving this message, it has been handled successfully.",
-					ns_alert::ns_test_alert
-					,ns_alert::get_notification_type(ns_alert::ns_test_alert,false),
-					ns_alert::ns_not_rate_limited
-					);
-
-				image_server.alert_handler.submit_alert(alert,sql());
-				sql.release();
-				return 0;
-			}
-			case ns_test_rate_limited_alert:{
-				ns_acquire_for_scope<ns_sql> sql(image_server.new_sql_connection(__FILE__,__LINE__));
-					image_server.alert_handler.initialize(sql());		
-					std::string text("At ");
-					text += ns_format_time_string_for_human (ns_current_time()) + " a cluster node submitted a rate limited test alert.";
-					ns_alert alert(text,
-						text + "  If you are recieving this message, it has been handled successfully.",
-						ns_alert::ns_test_alert
-						,ns_alert::get_notification_type(ns_alert::ns_test_alert,false),
-						ns_alert::ns_rate_limited
-						);
-
-					image_server.alert_handler.submit_alert(alert,sql());
-					sql.release();
-					return 0;
-			}
-				
-			case ns_restarting_after_a_crash:{
-				std::string text("The image server node ");
-				text += image_server.host_name_out() + " restarted after a fatal error at ";
-				text += ns_format_time_string_for_human(ns_current_time());
-				ns_acquire_for_scope<ns_sql> sql(image_server.new_sql_connection(__FILE__,__LINE__));
-				image_server.alert_handler.initialize(sql());
-
-					ns_alert alert(text,
-						text,
-						ns_alert::ns_server_crash,
-						ns_alert::get_notification_type(ns_alert::ns_server_crash,true),
-						ns_alert::ns_rate_limited
-						);
-
-				image_server.alert_handler.submit_alert(alert,sql());
-				sql.release();
-				restarting_after_crash = true;
-				break;
-			}
+		switch (command) {
+		case ns_fix_orphaned_captured_images: {
+			ns_acquire_for_scope<ns_sql> sql(image_server.new_sql_connection(__FILE__, __LINE__));
+			image_server.image_storage.fix_orphaned_captured_images(&sql());
+			sql.release();
+			return 0;
 		}
 
-		image_server.register_server_event(ns_image_server_event("Clearing local image cache"),&sql());
-		image_server.image_storage.clear_local_cache();
+		case ns_test_email: {
+			std::string text("Image server node ");
+			text += image_server.host_name_out();
+			text += " has succesfully sent an email.";
+			ns_acquire_for_scope<ns_sql> sql(image_server.new_sql_connection(__FILE__, __LINE__));
+			image_server.alert_handler.initialize(sql());
+			image_server.alert_handler.submit_desperate_alert(text);
+			sql.release();
+			return 0;
+		}
+		case ns_test_alert: {
+			std::string text("At ");
+			text += ns_format_time_string_for_human(ns_current_time()) + " a cluster node submitted a test alert.";
+			ns_acquire_for_scope<ns_sql> sql(image_server.new_sql_connection(__FILE__, __LINE__));
+			image_server.alert_handler.initialize(sql());
+			ns_alert alert(text,
+				text + "  If you are recieving this message, it has been handled successfully.",
+				ns_alert::ns_test_alert
+				, ns_alert::get_notification_type(ns_alert::ns_test_alert, false),
+				ns_alert::ns_not_rate_limited
+			);
 
-	
-	//	else image_server.image_storage.set_verbosity(ns_image_storage_handler::ns_deletion_events);
-	
-		
+			image_server.alert_handler.submit_alert(alert, sql());
+			sql.release();
+			return 0;
+		}
+		case ns_test_rate_limited_alert: {
+			ns_acquire_for_scope<ns_sql> sql(image_server.new_sql_connection(__FILE__, __LINE__));
+			image_server.alert_handler.initialize(sql());
+			std::string text("At ");
+			text += ns_format_time_string_for_human(ns_current_time()) + " a cluster node submitted a rate limited test alert.";
+			ns_alert alert(text,
+				text + "  If you are recieving this message, it has been handled successfully.",
+				ns_alert::ns_test_alert
+				, ns_alert::get_notification_type(ns_alert::ns_test_alert, false),
+				ns_alert::ns_rate_limited
+			);
 
-		if (post_dispatcher_init_command == ns_trigger_segfault_in_main_thread){
-		  cerr << "Triggering Segfault...\n";
+			image_server.alert_handler.submit_alert(alert, sql());
+			sql.release();
+			return 0;
+		}
+
+		case ns_restarting_after_a_crash: {
+			std::string text("The image server node ");
+			text += image_server.host_name_out() + " restarted after a fatal error at ";
+			text += ns_format_time_string_for_human(ns_current_time());
+			ns_acquire_for_scope<ns_sql> sql(image_server.new_sql_connection(__FILE__, __LINE__));
+			image_server.alert_handler.initialize(sql());
+
+			ns_alert alert(text,
+				text,
+				ns_alert::ns_server_crash,
+				ns_alert::get_notification_type(ns_alert::ns_server_crash, true),
+				ns_alert::ns_rate_limited
+			);
+
+			image_server.alert_handler.submit_alert(alert, sql());
+			sql.release();
+			restarting_after_crash = true;
+			break;
+		}
+		}
+
+
+		//	else image_server.image_storage.set_verbosity(ns_image_storage_handler::ns_deletion_events);
+
+
+
+		if (post_dispatcher_init_command == ns_trigger_segfault_in_main_thread) {
+			cerr << "Triggering Segfault...\n";
 			char * a(0);
 			(*a)++;
 		}
+		if (image_server_const.allow_multiple_processes_per_system() && image_server_const.get_additional_host_description().empty())
+			throw ns_ex("If allow_multiple_processes_per_system is set in the ns_image_server.ini file, a unique value of get_additional_host_description must be provided to each instance of ns_image_server.ini as a commandline argument!");
+
 		ns_image_server_dispatcher dispatch(true);
 
 		const unsigned long dispatcher_offset_time(image_server.dispatcher_refresh_interval());
 
-		if (!restarting_after_crash){
-			if (is_master_node){
-				image_server.set_up_model_directory();
-			}
+		const bool try_multiple_ports(restarting_after_crash || image_server_const.allow_multiple_processes_per_system());
+
+		if (!try_multiple_ports) {
+			image_server.set_up_model_directory();
 			dispatch.init(image_server.dispatcher_port(), dispatcher_socket_queue_length);
 		}
-		else{
-			//if we are restarting after the crash, it is possible the previous 
-			//socket may be inaccessible.  In this case we search around until we find an available port.
-			cerr << "Searching for the next available port after crash.\n";
+		else {
+			if (restarting_after_crash) {
+				cerr << "Searching for the next available port after crash.\n";
+			}
+			const long first_port(image_server.dispatcher_port());
+
 			bool found_available_socket(false);
-			for (unsigned int i  =1; i < 1024; i++){
-				for (unsigned int j = 0; j < 2; j++){
-					try{
+			for (unsigned int i = 1; i < 1024; i++) {
+				for (unsigned int j = 0; j < 2; j++) {
+					try {
 						dispatch.init(image_server.dispatcher_port(), dispatcher_socket_queue_length);
-							found_available_socket = true;
-							break;
+						found_available_socket = true;
+						break;
 					}
-					catch(ns_ex & ex){
-						cerr << "Could not bind to " << image_server.dispatcher_port() << ": " << ex.text();
-						ns_thread::sleep(4);
+					catch (ns_ex & ex) {
+						//cerr << "Could not bind to " << image_server.dispatcher_port() << ": " << ex.text();
+						ns_thread::sleep_milliseconds(100);
 					}
 				}
 				if (found_available_socket)
 					break;
-				else image_server.increment_dispatcher_port();
+				else {
+					image_server.increment_dispatcher_port();
+					//if a port is blocked, we assume that another server is running there (unless we are restarting after a crash)
+					if (! (i==1 && restarting_after_crash))
+						image_server.increment_system_parallel_process_id();
+				}
+			}
+			if (!found_available_socket)
+				throw ns_ex("Could not bind to any sockets, ") << first_port << " to " << image_server.dispatcher_port();
+			else {
+				if (!image_server.act_as_an_image_capture_server())
+					image_server.image_storage.update_volatile_storage_directory_for_parallel_processes(image_server.system_parallel_process_id());
 			}
 		}
+
+		image_server.register_server_event(ns_image_server_event("Clearing local image cache"), &sql());
+		image_server.image_storage.clear_local_cache();
+
 		if (post_dispatcher_init_command == ns_trigger_segfault_in_dispatcher_thread)
 			dispatch.trigger_segfault_on_next_timer();
-
 		
 		ns_acquire_for_scope<ns_sql> sql_2(image_server.new_sql_connection(__FILE__,__LINE__));
 		if (image_server.upgrade_tables(sql_2(),true,image_server.current_sql_database())){
@@ -1329,7 +1344,7 @@ int main(int argc, char ** argv){
 	#ifdef _WIN32 	
 		ns_socket::global_clean();
 		destroy_icons();
-		if (is_master_node && image_server.update_software && image_server.handle_software_updates()){
+		if (image_server.update_software && image_server.handle_software_updates()){
 			try{
 				ns_update_software();
 			}
@@ -1345,4 +1360,3 @@ int main(int argc, char ** argv){
 
 	return 0;
 }
-

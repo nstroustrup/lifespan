@@ -213,6 +213,8 @@ public:
 	const unsigned int dispatcher_port() const{ return _dispatcher_port;}
 	void increment_dispatcher_port() { _dispatcher_port++;}
 
+	bool allow_multiple_processes_per_system() const { return _allow_multiple_processes_per_system; }
+
 	///Returns the ini-specified name of the subdirectory in which orphaned images are stored
 	static std::string orphaned_image_directory() { return "orphaned_images";}
 
@@ -473,9 +475,9 @@ public:
 
 	unsigned long local_buffer_commit_frequency_in_seconds(){return 10;}
 
-	unsigned long processing_node_id() const {
-		return processing_node_id_;
-	}
+	//unsigned long processing_node_id() const {
+	//	return processing_node_id_;
+	//}
 	inline bool verbose_debug_output() const {return _verbose_debug_output;}
 	inline double & terminal_window_scale_factor() {return _terminal_window_scale_factor;}
 	inline const unsigned long & maximum_memory_allocation_in_mb()const{return  _maximum_memory_allocation_in_mb;}
@@ -531,7 +533,9 @@ public:
 		number_of_processing_jobs_run = 0;
 		lock.release();
 	}
-	const std::string & get_additional_host_description(const std::string & d) const { return additional_host_description; }
+	unsigned long system_parallel_process_id() const { return _system_parallel_process_id; }
+	void increment_system_parallel_process_id() { _system_parallel_process_id++; }
+	const std::string & get_additional_host_description() const { return additional_host_description; }
 	bool processing_time_is_exceeded() const { return (maximum_runtime_in_seconds> 0) && ((ns_current_time() - processing_server_start_time) >= maximum_runtime_in_seconds); }
 	bool number_of_jobs_processed_is_exceeded() const { 
 		ns_acquire_lock_for_scope lock(processing_run_counter_lock, __FILE__, __LINE__);
@@ -586,8 +590,10 @@ private:
 		host_ip, ///ip address of the current host
 		sql_user, ///username with which to connect to the sql server
 		sql_pwd;  ///password with which to connect to the sql server
-	//number of this processing node
-	unsigned long processing_node_id_;
+
+	//if multiple processes are running on the system, this is unique for each one.
+	unsigned long _system_parallel_process_id;
+
 	std::string local_buffer_ip, ///ip address of the current host
 				local_buffer_user, ///username with which to connect to the sql server
 				local_buffer_pwd,  ///password with which to connect to the sql server
@@ -609,6 +615,7 @@ private:
 		_mail_path,
 		_ethernet_interface,
 		_cache_subdirectory;
+	bool _allow_multiple_processes_per_system;
 
 	unsigned long _maximum_memory_allocation_in_mb; 
 

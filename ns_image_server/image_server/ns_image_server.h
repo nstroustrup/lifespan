@@ -359,7 +359,10 @@ public:
 	}
 	///Returns the ini-specified host name of the current image server.
 	const std::string host_name_out() const{
-		return host_name + '@' + system_host_name;
+		if (allow_multiple_processes_per_system())
+			return host_name + '@' + system_host_name + std::string("-") + ns_to_string(system_parallel_process_id());
+		else
+			return host_name + '@' + system_host_name;
 	}
 	///loads quotes from the database to display to the user;
 	void load_quotes(std::vector<std::pair<std::string,std::string> > & quotes, ns_sql & con);

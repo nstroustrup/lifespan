@@ -929,6 +929,8 @@ bool ns_image_server::upgrade_tables(ns_sql & sql,const bool just_test_if_needed
 	}
 
 	if (!ns_sql_column_exists("hosts", "system_hostname",sql)) {
+		if (just_test_if_needed)
+			return true;
 		cout << "Adding system hostname and additional host description columns to hosts table\n";
 		sql << " ALTER TABLE `hosts` "
 			"ADD COLUMN `system_hostname` CHAR(255) NOT NULL DEFAULT '' AFTER `time_of_last_successful_long_term_storage_write`, "
@@ -938,6 +940,8 @@ bool ns_image_server::upgrade_tables(ns_sql & sql,const bool just_test_if_needed
 	}
 
 	if (!ns_sql_column_exists("experiments","mask_time",sql)) {
+		if (just_test_if_needed)
+			return true;
 		cout << "Adding additional metadata columns to experiment table\n";
 		sql << "ALTER TABLE `experiments`"
 			"ADD COLUMN `mask_time` BIGINT(20) UNSIGNED NOT NULL DEFAULT '0' AFTER `number_of_regions_in_latest_storyboard_build`,"
@@ -946,6 +950,16 @@ bool ns_image_server::upgrade_tables(ns_sql & sql,const bool just_test_if_needed
 		sql.send_query();
 		changes_made = true;
 	}
+	if (!ns_sql_column_exists("hosts", "system_parallel_process_id",sql) ){
+		if (just_test_if_needed)
+			return true;
+		cout << "Adding additional host HPC columns\n";
+		sql << "ALTER TABLE `hosts` ADD COLUMN `system_parallel_process_id` INT UNSIGNED NOT NULL DEFAULT '0' AFTER `additional_host_description`";
+		sql.send_query();
+		changes_made = true;
+	}
+
+
 	if (!changes_made && !just_test_if_needed){
 		cout << "The database appears up-to-date; no changes were made.\n";
 	}
@@ -1767,7 +1781,7 @@ void ns_image_server::register_host(ns_image_server_sql * sql, bool overwrite_cu
 	sql->set_autocommit(false);
 	sql->send_query("BEGIN");
 	*sql << "SELECT id, ip, port, long_term_storage_enabled FROM hosts WHERE name='" << host_name << "' "
-		"AND system_hostname='" << system_host_name << "' ";
+		"AND system_hostname='" << system_host_name << "' AND system_parallel_process_id=" << system_parallel_process_id();
 			//"AND additional_host_description='" << additional_host_description << "'";
 	if (overwrite_current_entry)
 		*sql << " FOR UPDATE";
@@ -1782,7 +1796,7 @@ void ns_image_server::register_host(ns_image_server_sql * sql, bool overwrite_cu
 			<< ", software_version_compile=" << software_version_compile()<< ",database_used='" << *sql_database_choice
 			<< "', time_of_last_successful_long_term_storage_write=0,"
 			<< "system_hostname = '" << system_host_name << "',"
-			<< "additional_host_description='"<< additional_host_description << "' ";
+			<< "additional_host_description='"<< additional_host_description << "', system_parallel_process_id=" << system_parallel_process_id();
 		_host_id = sql->send_query_get_id();
 	}
 	else if (h.size() != 1)
@@ -1795,7 +1809,7 @@ void ns_image_server::register_host(ns_image_server_sql * sql, bool overwrite_cu
 				<< "', long_term_storage_enabled='" << long_term_storage_ << "', "
 				<< "software_version_major=" << software_version_major() << ", software_version_minor=" << software_version_minor()
 				<< ", software_version_compile=" << software_version_compile()
-				<< ", additional_host_description='"<< additional_host_description << "' ";
+				<< ", additional_host_description='"<< additional_host_description << "', system_parallel_process_id=" << system_parallel_process_id();
 				//if the user has requested a database change, we update the record in the new database (to, for example, prevent infinite looping between databases).
 				//on the initial startup, however, we want to respect the specification in the db, and switch databases if requested.
 			if (!respect_existing_database_choice) *sql << ",database_used='" << *sql_database_choice << "'";

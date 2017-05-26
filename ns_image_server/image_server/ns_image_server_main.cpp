@@ -942,7 +942,13 @@ int main(int argc, char ** argv){
 			image_server.upgrade_tables(sql(), false, schema_name);
 			sql.release();
 			return 0;
+		}		
+		//check old tables
+		ns_acquire_for_scope<ns_sql> sql_2(image_server.new_sql_connection(__FILE__, __LINE__));
+		if (image_server.upgrade_tables(sql_2(), true, image_server.current_sql_database())) {
+			throw ns_ex("The current database schema is out of date.  Please run the command: ns_image_server update_sql [schema_name]");
 		}
+		sql_2.release();
 
 
 #ifndef _WIN32
@@ -1230,11 +1236,6 @@ int main(int argc, char ** argv){
 		if (post_dispatcher_init_command == ns_trigger_segfault_in_dispatcher_thread)
 			dispatch.trigger_segfault_on_next_timer();
 		
-		ns_acquire_for_scope<ns_sql> sql_2(image_server.new_sql_connection(__FILE__,__LINE__));
-		if (image_server.upgrade_tables(sql_2(),true,image_server.current_sql_database())){
-			throw ns_ex("The current database schema is out of date.  Please run the command: ns_image_server update_sql [schema_name]");
-		}
-		sql_2.release();
 
 		//search for devices
 		if (image_server.act_as_an_image_capture_server()){

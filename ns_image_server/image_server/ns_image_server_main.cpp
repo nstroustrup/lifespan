@@ -1158,7 +1158,7 @@ int main(int argc, char ** argv){
 			(*a)++;
 		}
 		if (image_server_const.allow_multiple_processes_per_system() && image_server_const.get_additional_host_description().empty())
-			throw ns_ex("If allow_multiple_processes_per_system is set in the ns_image_server.ini file, a unique value of get_additional_host_description must be provided to each instance of ns_image_server.ini as a commandline argument!");
+			throw ns_ex("If allow_multiple_processes_per_system is set in the ns_image_server.ini file, a unique value of additional_host_description must be provided to each instance of ns_image_server.ini as a commandline argument!");
 
 		ns_image_server_dispatcher dispatch(true);
 

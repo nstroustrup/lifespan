@@ -1046,9 +1046,68 @@ int main(int argc, char ** argv){
 		cout.setf(ios::dec);
 #endif
 
+		//first we check which port to open.
+		//we do this first because it also gives us an idea of how many parallel processes are running on this system
+		//and lets us obtain a unique system_parallel_process_id that we will subsequently report to the db when register_host() is called
+
+		ns_image_server_dispatcher dispatch(true);
+
+		const unsigned long dispatcher_offset_time(image_server.dispatcher_refresh_interval());
+
+		const bool try_multiple_ports(restarting_after_crash || image_server_const.allow_multiple_processes_per_system());
+		ns_ex stored_ex;
+		try {
+			if (!try_multiple_ports) {
+				image_server.set_up_model_directory();
+				dispatch.init(image_server.dispatcher_port(), dispatcher_socket_queue_length);
+			}
+			else {
+				if (restarting_after_crash) {
+					std::cerr << "Searching for the next available port after crash.\n";
+				}
+				const long first_port(image_server.dispatcher_port());
+
+				bool found_available_socket(false);
+				for (unsigned int i = 1; i < 1024; i++) {
+					for (unsigned int j = 0; j < 2; j++) {
+						try {
+							dispatch.init(image_server.dispatcher_port(), dispatcher_socket_queue_length);
+							found_available_socket = true;
+							break;
+						}
+						catch (ns_ex & ex) {
+							//cerr << "Could not bind to " << image_server.dispatcher_port() << ": " << ex.text();
+							ns_thread::sleep_milliseconds(100);
+						}
+					}
+					if (found_available_socket)
+						break;
+					else {
+						image_server.increment_dispatcher_port();
+						//if a port is blocked, we assume that another server is running there (unless we are restarting after a crash)
+						if (!(i == 1 && restarting_after_crash))
+							image_server.increment_system_parallel_process_id();
+					}
+				}
+				if (!found_available_socket)
+					throw ns_ex("Could not bind to any sockets, ") << first_port << " to " << image_server.dispatcher_port();
+			}
+			if (!image_server.act_as_an_image_capture_server())
+				image_server.image_storage.update_volatile_storage_directory_for_parallel_processes(image_server.system_parallel_process_id());
+		}
+		catch (ns_ex & ex) {
+			//we want to wait to throw the error until after we've registered in the db, so that the error can be recorded there.
+			stored_ex = ex;
+		
+		}
+	
+
 		if (sql().connected_to_central_database()) {
 			image_server.get_requested_database_from_db();
 			image_server.register_host(&sql(), true, true);
+
+			if (!stored_ex.text().empty())
+				throw stored_ex;
 
 			image_server.register_server_event(ns_image_server_event("Launching server..."), &sql(), true);
 			image_server.add_subtext_to_current_event(splash, &sql(), true);
@@ -1063,6 +1122,9 @@ int main(int argc, char ** argv){
 				throw ns_ex("Updated software detected on the cluster.");
 			}
 		}
+
+		image_server.register_server_event(ns_image_server_event("Clearing local image cache"), &sql());
+		image_server.image_storage.clear_local_cache();
 
 
 		image_server.image_storage.test_connection_to_long_term_storage(true);
@@ -1160,51 +1222,7 @@ int main(int argc, char ** argv){
 		if (image_server_const.allow_multiple_processes_per_system() && image_server_const.get_additional_host_description().empty())
 			throw ns_ex("If allow_multiple_processes_per_system is set in the ns_image_server.ini file, a unique value of additional_host_description must be provided to each instance of ns_image_server.ini as a commandline argument!");
 
-		ns_image_server_dispatcher dispatch(true);
-
-		const unsigned long dispatcher_offset_time(image_server.dispatcher_refresh_interval());
-
-		const bool try_multiple_ports(restarting_after_crash || image_server_const.allow_multiple_processes_per_system());
-
-		if (!try_multiple_ports) {
-			image_server.set_up_model_directory();
-			dispatch.init(image_server.dispatcher_port(), dispatcher_socket_queue_length);
-		}
-		else {
-			if (restarting_after_crash) {
-				cerr << "Searching for the next available port after crash.\n";
-			}
-			const long first_port(image_server.dispatcher_port());
-
-			bool found_available_socket(false);
-			for (unsigned int i = 1; i < 1024; i++) {
-				for (unsigned int j = 0; j < 2; j++) {
-					try {
-						dispatch.init(image_server.dispatcher_port(), dispatcher_socket_queue_length);
-						found_available_socket = true;
-						break;
-					}
-					catch (ns_ex & ex) {
-						//cerr << "Could not bind to " << image_server.dispatcher_port() << ": " << ex.text();
-						ns_thread::sleep_milliseconds(100);
-					}
-				}
-				if (found_available_socket)
-					break;
-				else {
-					image_server.increment_dispatcher_port();
-					//if a port is blocked, we assume that another server is running there (unless we are restarting after a crash)
-					if (! (i==1 && restarting_after_crash))
-						image_server.increment_system_parallel_process_id();
-				}
-			}
-			if (!found_available_socket)
-				throw ns_ex("Could not bind to any sockets, ") << first_port << " to " << image_server.dispatcher_port();
-			else {
-				if (!image_server.act_as_an_image_capture_server())
-					image_server.image_storage.update_volatile_storage_directory_for_parallel_processes(image_server.system_parallel_process_id());
-			}
-		}
+		
 
 		image_server.register_server_event(ns_image_server_event("Clearing local image cache"), &sql());
 		image_server.image_storage.clear_local_cache();

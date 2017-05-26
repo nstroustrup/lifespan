@@ -38,7 +38,7 @@ void ns_image_server_dispatcher::init(const unsigned int port,const unsigned int
   image_server.register_server_event(ns_image_server::ns_register_in_central_db_with_fallback, 
 	  ns_image_server_event("Dispatcher bound to ") << image_server.dispatcher_ip() << ":" << (int)port
 	  << " on " << image_server_const.get_system_host_name() 
-	  << " ( " << image_server_const.get_additional_host_description() << ")"
+	  << " ( " << image_server_const.get_additional_host_description() << " ):"
 	  << "p" << image_server_const.system_parallel_process_id());
 
 }

@@ -5,7 +5,7 @@
 #$ -pe smp 4
 #$ -N ns_im_4    #job name
 #$ -q short-sl7  #queue
-#$ -t 1-40
+#$ -t 1-2
 #try to stop after 5 hours walltime, giving one hour for any pending jobs to run before hard stop at 6h 
 #stop after 10 checks of an empty job queue
 #run using four cores and 8*1024 megabytes of memory

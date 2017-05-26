@@ -803,7 +803,7 @@ void ns_image_processing_pipeline::process_region(const ns_image_server_captured
 
 
 					//output a spatially averaged copy to disk.
-					ns_image_server_image output_image = region_image.create_storage_for_processed_image(ns_process_spatial, ns_tiff, &sql);
+					ns_image_server_image output_image = region_image.create_storage_for_processed_image(ns_process_spatial, ns_jp2k, &sql);
 
 					if (0) {  
 						//do not compress spatial images: uses 3x more disk space for negliable improvement in image quality (and attendant increase in movement dection accuracy)

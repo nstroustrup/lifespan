@@ -72,9 +72,9 @@ else
   $node_id = -1;
 $single_device = $host_id != 0;
 function host_label($res_row){
-	 return $res_row[1] . ' @ ' . $res_row[6] . ( (strlen($res_row[7])>0)? (" (" . $res_row[7] . ")"): "");
+	 return $res_row[1] . ' @ ' . $res_row[6] . ( (strlen($res_row[7])>0 )? (" (" . $res_row[7] . ":" . $res_row[8].")"): "");
 }
-$query = "SELECT id, name, last_ping,software_version_major,software_version_minor,software_version_compile,system_hostname,additional_host_description FROM hosts";
+$query = "SELECT id, name, last_ping,software_version_major,software_version_minor,software_version_compile,system_hostname,additional_host_description,system_parallel_process_id FROM hosts";
 if ($single_device)
   $query .= " WHERE id = $host_id";
 $query .=" ORDER BY name";

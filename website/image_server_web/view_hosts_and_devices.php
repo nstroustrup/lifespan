@@ -1,8 +1,8 @@
 <?php
 require_once("worm_environment.php");
 
-function host_label($base_host_name,$system_host_name){
-	 return $base_host_name + '@' + $system_host_name;
+function host_label($base_host_name,$system_host_name,$parallel_process_id){
+	 return $base_host_name + '@' + $system_host_name + $parallel_process_id;
 }
 function ns_clean_up_for_tooltip($str){
   $out = "";
@@ -148,13 +148,25 @@ if (ns_param_spec($_POST,'shut_down')){
   $sql->send_query($query);
 	$refresh = TRUE;
  }
+if (ns_param_spec($_POST,'delete_all_hosts')){
 
-if (ns_param_spec($_POST,'shut_down_all')){
-  $query = "UPDATE hosts SET shutdown_requested=1";
+  $query = "DELETE FROM hosts WHERE UNIX_TIMESTAMP(NOW())-last_ping > $current_device_cutoff";
   $sql->send_query($query);
-        $refresh = TRUE;
+  $refresh = TRUE;
  }
 
+if (ns_param_spec($_POST,'shut_down_all')){
+   
+  $query = "UPDATE hosts SET shutdown_requested=1";
+  $sql->send_query($query);
+  $refresh = TRUE;
+ }
+if (ns_param_spec($_POST,'shut_down_none')){
+
+  $query = "UPDATE hosts SET shutdown_requested=0";
+  $sql->send_query($query);
+  $refresh = TRUE;
+ }
 if (ns_param_spec($_POST,'launch_from_screen_saver')){
   $id = $_POST['host_id'];
   $query = "UPDATE hosts SET launch_from_screen_saver=1 WHERE $host_where_statement";
@@ -244,12 +256,12 @@ die("");
  }
 
 
-$query = "SELECT id, name, ip, last_ping, comments, long_term_storage_enabled, port,software_version_major,software_version_minor,software_version_compile, pause_requested, base_host_name, database_used,available_space_in_volatile_storage_in_mb,time_of_last_successful_long_term_storage_write,system_hostname,additional_host_description FROM hosts ORDER BY pause_requested,name";
+$query = "SELECT id, name, ip, last_ping, comments, long_term_storage_enabled, port,software_version_major,software_version_minor,software_version_compile, pause_requested, base_host_name, database_used,available_space_in_volatile_storage_in_mb,time_of_last_successful_long_term_storage_write,system_hostname,additional_host_description,system_parallel_process_id FROM hosts ORDER BY pause_requested,name";
 $sql->get_row($query,$hosts);
 
 $base_hosts = array();
 foreach ($hosts as $row){
-	$lab = host_label($row[11],$row[15]);
+	$lab = host_label($row[11],$row[15],$row[16]);
 	$base_hosts[$lab] = array();
 	$nodes_running[$lab][0] = 0;
 	$nodes_running[$lab][1] = 0;
@@ -258,7 +270,7 @@ foreach ($hosts as $row){
 
 $current_time = ns_current_time();
 foreach ($hosts as $row){
-	$lab = host_label($row[11],$row[15]);
+	$lab = host_label($row[11],$row[15],$row[16]);
 	array_push($base_hosts[$lab],$row);
 	$current = $current_time - $row[3] < $current_device_cutoff;
 	if ($current)
@@ -335,7 +347,6 @@ if ($show_host_nodes)
 <table bgcolor="#555555" cellspacing='0' cellpadding='1'><tr><td>
 <table cellspacing='0' cellpadding='3' >
 <tr <?php echo $table_header_color?>><td>Host Name</td>
-<td>Version</td>
 <td>Location</td>
 <td>Last Ping</td>
 <td>Comments</td>
@@ -361,12 +372,12 @@ foreach ($base_hosts as $base_host_name => $host){
 		if ($highlight_host_id == $host[$i][0]) echo "</i>";
 
 		echo "<a href=\"view_hosts_log.php?host_id={$host[$i][0]}&limit=50\">[log]</a></td>";
-		echo "<td bgcolor=\"$clrs[1]\">{$host[$i][7]}.{$host[$i][8]}.{$host[$i][9]}</td>";
-		echo "<td bgcolor=\"$clrs[0]\">";
+		//echo "<td bgcolor=\"$clrs[1]\">{$host[$i][7]}.{$host[$i][8]}.{$host[$i][9]}</td>";
+		echo "<td bgcolor=\"$clrs[1]\">";
 		echo $hosts[$i][15] . "<br>" . $host[$i][2] . ":" . $host[$i][6];
-		echo "</td><td bgcolor=\"$clrs[1]\">";
+		echo "</td><td bgcolor=\"$clrs[0]\">";
 		echo format_time($host[$i][3]);
-		echo "</td><td bgcolor=\"$clrs[0]\" nowrap>";
+		echo "</td><td bgcolor=\"$clrs[1]\" nowrap>";
 		if ($host[$i][5] != "1"){
 		  echo "<b>Unable to Access Long Term Storage since ";
 		  echo  format_time($host[$i][14]);
@@ -395,7 +406,7 @@ foreach ($base_hosts as $base_host_name => $host){
 		   echo "Extra Info: " . $host[$i][16] . "<BR>";
 		echo output_editable_field("comments",$host[$i][4],$edit_host,'',TRUE);
 			echo "Disk: " . (floor($host[$i][13]/1024)) . " gb free</br>";
-		echo "</td><td bgcolor=\"$clrs[1]\">";
+		echo "</td><td bgcolor=\"$clrs[0]\">";
 		if (!$edit_host)
 		  echo "<a href=\"view_hosts_and_devices.php?show_host_nodes=" . ($show_host_nodes?"1":"0") . "&host_id={$host[$i][0]}\">[Edit]</a>";
 		else{
@@ -493,7 +504,7 @@ foreach ($base_hosts as $base_host_name => $host){
 <table border = 0 bgcolor="#FFFFFF"><TR><td width="100%">
 &nbsp;</td>
 <td nowrap bgcolor="#FFFFFF">
-<input name="shut_down_all" type="submit" value="Shut Down All Nodes"></td></TR></table>
+<input name="shut_down_all" type="submit" value="Shut Down All Nodes"><input name="shut_down_none" type="submit" value="Cancel all Shut Down Requests"><br><input name="delete_all_hosts" type="submit" value="Clear old host records"></td></TR></table>
 
 </form>
 

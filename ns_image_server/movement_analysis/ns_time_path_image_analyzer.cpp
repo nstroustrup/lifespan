@@ -4531,7 +4531,7 @@ ns_analyzed_image_time_path_group::ns_analyzed_image_time_path_group(const unsig
 	for (unsigned int i = 0; i < solution_.path_groups[group_id_].path_ids.size(); i++){
 		const unsigned long & path_id(solution_.path_groups[group_id_].path_ids[i]);
 		const ns_time_path & source_path(solution_.paths[path_id]);
-		paths.resize(current_path_id+1,ns_analyzed_image_time_path(memory_pool,image_server_const.processing_node_id()));
+		paths.resize(current_path_id+1,ns_analyzed_image_time_path(memory_pool,0));
 		ns_analyzed_image_time_path &path(paths[current_path_id]);
 
 		path.path = &source_path;

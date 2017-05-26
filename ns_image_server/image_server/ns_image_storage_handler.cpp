@@ -297,7 +297,11 @@ ns_image_type ns_get_image_type(const std::string & filename){
 
 
 
+void ns_image_storage_handler::update_volatile_storage_directory_for_parallel_processes(unsigned long system_parallel_process_id) {
+	volatile_storage_directory = volatile_storage_directory + DIR_CHAR_STR + "process_" + ns_to_string(system_parallel_process_id);
+	ns_dir::create_directory_recursive(volatile_storage_directory);
 
+}
 void ns_image_storage_handler::set_directories(const std::string & _volatile_storage_directory, const std::string & _long_term_storage_directory){
 	volatile_storage_directory = _volatile_storage_directory;
 	long_term_storage_directory = _long_term_storage_directory;

@@ -1250,7 +1250,7 @@ int main(int argc, char ** argv){
 		}
 		else image_server.register_server_event(ns_image_server_event("Not searching for attached devices."),&sql());
 	
-		if (register_and_run_simulated_devices){
+		if (image_server.act_as_an_image_capture_server() && register_and_run_simulated_devices){
 			if (image_server.simulated_device_name().size() > 2)
 				image_server.device_manager.attach_simulated_device(image_server.simulated_device_name());
 		}

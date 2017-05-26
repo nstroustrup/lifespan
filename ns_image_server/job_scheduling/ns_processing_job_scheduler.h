@@ -8,7 +8,7 @@
 #include "ns_processing_job_push_scheduler.h"
 //#include "ns_processing_job_processor.h"
 
-#define ns_pipeline_chunk_size 1024
+#define ns_pipeline_chunk_size 1024  //note that, if openjpeg2000 is being used, the chunk size sets the tile height of the openjpeg2000 images.
 
 struct ns_image_processing_pipline_holder;
 

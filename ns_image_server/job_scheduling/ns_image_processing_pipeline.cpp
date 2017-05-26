@@ -803,31 +803,21 @@ void ns_image_processing_pipeline::process_region(const ns_image_server_captured
 
 
 					//output a spatially averaged copy to disk.
-					ns_image_server_image output_image = region_image.create_storage_for_processed_image(ns_process_spatial, ns_jp2k, &sql);
+					//if set to tiff, do not compress spatial images: uses 3x more disk space for negliable improvement in image quality (and attendant increase in movement dection accuracy)
+					const ns_image_type spatial_image_type = ns_jp2k;
+					ns_image_server_image output_image = region_image.create_storage_for_processed_image(ns_process_spatial, spatial_image_type, &sql);
 
-					if (0) {  
-						//do not compress spatial images: uses 3x more disk space for negliable improvement in image quality (and attendant increase in movement dection accuracy)
+				
 						ns_image_storage_reciever_handle<ns_component> r = image_server_const.image_storage.request_storage(
 							output_image,
-							ns_tiff, 1.0, _image_chunk_size, &sql,
+							spatial_image_type, (spatial_image_type==ns_jp2k)? hd_compression_rate_f:1.0, _image_chunk_size, &sql,
 							had_to_use_volatile_storage,
 							report_file_activity_to_db,
 							allow_use_of_volatile_storage);
 						spatial_average.pump(r.output_stream(), _image_chunk_size);
 
 					//	r.output_stream().init(ns_image_properties(0, 0, 0));
-					}
-					else {
-
-						ns_image_storage_reciever_handle<ns_component> r = image_server_const.image_storage.request_storage(
-							output_image,
-							ns_jp2k, hd_compression_rate_f, _image_chunk_size, &sql,
-							had_to_use_volatile_storage,
-							report_file_activity_to_db,
-							allow_use_of_volatile_storage);
-						spatial_average.pump(r.output_stream(), _image_chunk_size);
-						
-					}
+					
 					output_image.mark_as_finished_processing(&sql);
 
 					image_server.register_job_duration(ns_process_spatial, tm.stop());

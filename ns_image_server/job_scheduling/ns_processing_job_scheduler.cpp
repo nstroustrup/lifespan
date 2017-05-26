@@ -193,7 +193,7 @@ bool ns_processing_job_scheduler::run_a_job(ns_processing_job & job,ns_sql & sql
 void ns_processing_job_scheduler::clear_heap(){pipeline->pipeline.clear_heap();}
 
 void ns_processing_job_scheduler::init_pipeline(){
-	pipeline = new ns_image_processing_pipline_holder(ns_pipeline_chunk_size);
+	pipeline = new ns_image_processing_pipline_holder(ns_pipeline_chunk_size);  //note that, if openjpeg2000 is being used, the chunk size sets the tile height of the openjpeg2000 images.
 }
 void ns_processing_job_scheduler::destruct_pipeline(){
 	if (pipeline != 0){

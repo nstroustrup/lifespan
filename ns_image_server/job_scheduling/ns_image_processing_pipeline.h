@@ -229,7 +229,7 @@ class ns_image_processing_pipeline{
 
 public:
 	typedef ns_8_bit ns_component;
-
+	//note that, if openjpeg2000 is being used, the image_chunk_size sets the tile height of the openjpeg2000 images.
 	ns_image_processing_pipeline(const unsigned int image_chunk_size):
 		_image_chunk_size(image_chunk_size),
 		spatial_averager(image_chunk_size,ns_image_processing_pipeline_spatial_average_kernal_width),

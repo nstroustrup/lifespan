@@ -29,7 +29,7 @@ struct ns_image_properties{
 	ns_image_properties():height(0),width(0),components(0),resolution(0){}
 	ns_image_properties(unsigned long h, unsigned long w, unsigned char c,float r=-1):height(h),width(w),components(c),resolution(r){}
 	bool operator==(const ns_image_properties & l) const{
-		return (height == l.height) && (width == l.width) && (components == l.components) && (resolution == l.resolution);
+		return (height == l.height) && (width == l.width) && (components == l.components);
 	}
 	bool operator!=(const ns_image_properties & l) const{
 		return !(*this == l);
@@ -150,7 +150,7 @@ template <class ns_component, class sender_t, class sender_internal_state_t>
 class ns_image_stream_sender{
 public:
 
-  
+
 	ns_image_stream_sender(const ns_image_properties & properties, const sender_t * sender):_properties(properties){verify_constraints(sender);}
 	typedef ns_component component_type;
 	typedef sender_internal_state_t internal_state_t;
@@ -270,7 +270,7 @@ public:
 		{file = &input_file;}
 	typedef ns_image_stream_static_buffer<ns_component> storage_type;
 	typedef ns_component component_type;
-	
+
 	//ns_image_stream_sender needs to be able to produce a block of lines upon request.
 	//n is a recommendation; less lines may be returned.
 	 template<class write_buffer>
@@ -479,7 +479,7 @@ public:
 		for (unsigned int i = 0; i < max_pixel_depth; i++)
 			hist[i] = 0;
 	}
-	inline ns_component median(bool ignore_zero = false) const{ 
+	inline ns_component median(bool ignore_zero = false) const{
 		storage_type c_area = N;
 		if (ignore_zero) c_area-=hist[0];
 		if (c_area == 0) return 0;
@@ -493,7 +493,7 @@ public:
 		}
 		throw ns_ex("ns_histogram::median_from_histogram_ignore_zero::Not enough pixels!");
 	}
-	
+
 	double mean(bool ignore_zero = false) const{
 		storage_type c_area = N;
 		if (ignore_zero) c_area-=hist[0];
@@ -550,7 +550,7 @@ public:
 
 		if (ntile_width == 0) return 0;
 
-	
+
 		storage_type under_count(0);
 		ns_64_bit cur_ntile_sum(0);
 		storage_type  cur_ntile_width(0);
@@ -613,7 +613,7 @@ private:
 	unsigned long length;
 };
 
-#ifdef _WIN32 
+#ifdef _WIN32
 	template<class ns_component>
 	class ns_image_whole;
 	typedef ns_image_whole<ns_8_bit>  ns_image_standard;
@@ -668,7 +668,7 @@ public:
 				else image_buffer.resize(prop);
 				resized = true;
 			}
-		
+
 		}
 		///XXX Removing template specifications does not generate an error here
 		//NS_SR_PROP
@@ -763,8 +763,8 @@ public:
 				throw ns_ex("Out of bound access!");
 		#endif
 		return	image_buffer[p0y][p0x]*(d1y)*(d1x) +
-				image_buffer[p0y][p1x]*(d1y)*(dx) + 
-				image_buffer[p1y][p0x]*(dy)*(d1x) + 
+				image_buffer[p0y][p1x]*(d1y)*(dx) +
+				image_buffer[p1y][p0x]*(dy)*(d1x) +
 				image_buffer[p1y][p1x]*(dy)*(dx);
 	}
 
@@ -785,12 +785,12 @@ public:
 				throw ns_ex("Out of bound access!");
 		#endif
 		return	image_buffer[p0y][p0x]*(d1y)*(d1x) +
-				image_buffer[p0y][p1x]*(d1y)*(dx) + 
-				image_buffer[p1y][p0x]*(dy)*(d1x) + 
+				image_buffer[p0y][p1x]*(d1y)*(dx) +
+				image_buffer[p1y][p0x]*(dy)*(d1x) +
 				image_buffer[p1y][p1x]*(dy)*(dx);
 	}
 	const double
-		//finline 
+		//finline
 		sample_d_scaled(const double y, const double x, const float * scale_f) const {
 
 		const int p0x(xs_float::xs_FloorToInt(x)),
@@ -815,7 +815,7 @@ public:
 			scale_f[image_buffer[p1y][p1x]] * (dy)*(dx);
 	}
 
-	const double finline weighted_sample(const double &y, const double &x, 
+	const double finline weighted_sample(const double &y, const double &x,
 										 const double &p00_weight, const double &p10_weight, const double &p01_weight, const double &p11_weight ) const{
 
 		const int p0x((int)(x)),
@@ -829,8 +829,8 @@ public:
 
 
 		return	((p00_weight!=0)?((image_buffer[p0y][p0x]/p00_weight)*(dy)*(dx)):0) +
-				((p10_weight!=0)?((image_buffer[p0y][p1x]/p10_weight)*(dy)*(d1x)):0) + 
-				((p01_weight!=0)?((image_buffer[p1y][p0x]/p01_weight)*(d1y)*(dx)):0) + 
+				((p10_weight!=0)?((image_buffer[p0y][p1x]/p10_weight)*(dy)*(d1x)):0) +
+				((p01_weight!=0)?((image_buffer[p1y][p0x]/p01_weight)*(d1y)*(dx)):0) +
 				((p11_weight!=0)?((image_buffer[p1y][p1x]/p11_weight)*(d1y)*(d1x)):0);
 	}
 
@@ -852,7 +852,7 @@ public:
 		image_buffer.give_buffer_to_new_object(n.image_buffer);
 		n.reciever_t::_properties = reciever_t::_properties;
 		n.sender_t::_properties = sender_t::_properties;
-	    
+
 		n.lines_sent = lines_sent;
 		n.lines_received = lines_received;
 
@@ -903,7 +903,7 @@ public:
 		image_buffer[y][3*x    ] = color.x;
 		image_buffer[y][3*x + 1] = color.y;
 		image_buffer[y][3*x + 2] = color.z;
-	}	
+	}
 	template<class color_t>
 	inline void set_color(const unsigned int & y, const unsigned int & x, const color_t & color,float opacity){
 		image_buffer[y][3*x    ] = (ns_8_bit)(opacity*color.x+(1-opacity)*image_buffer[y][3*x    ]);
@@ -1001,8 +1001,8 @@ public:
 		}
 		else{
 			for (int x = start.x; x <= stop.x; x++){
-				if (steep) image_buffer[x][y] = (ns_component)(color*opacity + (1-opacity)*image_buffer[x][y]); 
-					 else image_buffer[y][x] =  (ns_component)(color*opacity + (1-opacity)*image_buffer[y][x]); 
+				if (steep) image_buffer[x][y] = (ns_component)(color*opacity + (1-opacity)*image_buffer[x][y]);
+					 else image_buffer[y][x] =  (ns_component)(color*opacity + (1-opacity)*image_buffer[y][x]);
 				error += deltay;
 				if (2*error >= deltax){
 					y += ystep;
@@ -1041,7 +1041,7 @@ public:
 			draw_line_grayscale(_start+p_offset*i,_stop+p_offset*i,color);
 	}
 
-	#ifdef _WIN32 
+	#ifdef _WIN32
 	///Returns the image data as a Windows GDI device bitmap.
 	///Only available under windows.
 	HBITMAP create_GDI_bitmap(const HDC & device){
@@ -1346,7 +1346,7 @@ typedef ns_image_whole_indirect<ns_32_bit> ns_image_standard_indirect_32_bit;
 
 class ns_image_standard_signed : public ns_image_standard_16_bit{
 public:
-	
+
 	const inline short * operator[](const unsigned long y)const{
 		return reinterpret_cast<const short *> (ns_image_standard_16_bit::operator[](y));
 	}

@@ -167,7 +167,7 @@ public:
 				}
 			}
 		}
-	
+
 		saturated_offset = false;
 		return calc_shifts_from_grad();
 	}
@@ -194,7 +194,7 @@ void ns_gradient_shift::clear() {
 }
 
 ns_vector_2d ns_gradient_shift::calc_shifts_from_grad() {
-	
+
 	A[2] = A[1];
 
 	//calculate the determinant to test that matrix is singular
@@ -225,8 +225,8 @@ ns_stretch_registration::~ns_stretch_registration() {
 	ns_safe_delete(gradient_shift);
 }
 
-double ns_stretch_registration::calculate(const ns_image_standard & im1, const ns_image_standard & im2, 
-									    const ns_vector_2i & tl, const ns_vector_2i & br, 
+double ns_stretch_registration::calculate(const ns_image_standard & im1, const ns_image_standard & im2,
+									    const ns_vector_2i & tl, const ns_vector_2i & br,
 										const ns_vector_2d &initial_offset, ns_stretch_registration_line_offsets & new_line_offsets, const float * histogram_matching_factors) {
 	if (gradient_shift == 0)
 		gradient_shift = new ns_gradient_shift();
@@ -255,7 +255,7 @@ double ns_stretch_registration::calculate(const ns_image_standard & im1, const n
 			p1.calculate(im1, tl, br - tl);
 			p2.calculate(im2, tl, br - tl);
 			ns_vector_2d sh = f(
-				ns_vector_2d(initial_offset.x, initial_offset.y + new_line_offsets.p[yp]), 
+				ns_vector_2d(initial_offset.x, initial_offset.y + new_line_offsets.p[yp]),
 				ns_vector_2d(4, 4), &p1, &p2, saturated_offset,true);
 			/*ns_vector_2d sh = gradient_shift->calc_gradient_shift(im1, im2,
 				ns_vector_2i(tl.x, y - half_height),
@@ -329,9 +329,9 @@ void ns_stretch_registration::convert_offsets_to_source_positions(const ns_stret
 		if (pos[i - 1].first == pos[i].first)
 			continue;
 		int  y0(ceil(pos[i - 1].first)),  //the smallest integer inbetween pos[i-1] and pos[i]
-			y1(floor(pos[i].first));	  //the largest integer inbetween pos[i-1] and pos[i] 
+			y1(floor(pos[i].first));	  //the largest integer inbetween pos[i-1] and pos[i]
 		//std::cerr << "(" << pos[i - 1].first << " " << y0 << "," << y1 << " " << pos[i].first << "):";
-		
+
 		if (y1 >= pos[i].first) {
 			y1--;
 		//	std::cerr << "y1--";
@@ -345,7 +345,7 @@ void ns_stretch_registration::convert_offsets_to_source_positions(const ns_stret
 			if (y1 + 1 >= offsets.p.size())
 				y1 = offsets.p.size() - 1;
 
-			//go through each integer destination position that crosses inbetween the two source positions 
+			//go through each integer destination position that crosses inbetween the two source positions
 			for (unsigned int y = y0; y <= y1; y++) {
 				//linearly interpolate between the two source positions to find the intermediate source position at which the integer destination position crosses them
 				float dist((y - pos[i - 1].first) / (pos[i].first - pos[i - 1].first));
@@ -439,7 +439,8 @@ void ns_align_two_gaussian_pyramids(ns_gaussian_pyramid * state_pyramid,
 ns_vector_2d ns_calc_best_alignment_fast::operator()(const ns_vector_2d & initial_alignment, const ns_vector_2d & max_alignment, const ns_gaussian_pyramid * state_pyramid, const ns_gaussian_pyramid *image_pyramid, bool & saturated_offset, const bool only_vertical) {
 
 	if (state_pyramid->properties() != image_pyramid->properties())
-		throw ns_ex("Pyramid sizes don't match!");
+		throw ns_ex("Pyramid sizes don't match: state (") << state_pyramid->properties().width << "," << state_pyramid->properties().height << "," << state_pyramid->properties().components << "," << state_pyramid->properties().resolution << ") "
+				                                << "im (" << image_pyramid->properties().width << "," << image_pyramid->properties().height << "," << image_pyramid->properties().components << "," << image_pyramid->properties().resolution << ")";
 	const ns_vector_2d tl(bottom_offset),
 		br((long)state_pyramid->properties().width - size_offset.x,
 		(long)state_pyramid->properties().height - size_offset.y);
@@ -491,7 +492,7 @@ ns_vector_2d ns_calc_best_alignment_fast::operator()(const ns_vector_2d & initia
 					err = true;
 					break;
 				}
-				//reject too-large shifts; 
+				//reject too-large shifts;
 				//gradient registration only works well for small
 				//deviations around the set point.
 				if (fabs(sh.x) > 2 ||
@@ -707,7 +708,7 @@ ns_vector_2d ns_calc_best_alignment::operator()(ns_alignment_state & state, cons
 
 	//	const ns_vector_2i br_s(image.properties().width-size_offset.x,image.properties().height-size_offset.y);
 
-	//double area_2(((br.y-tl.y+1)/2)*((br.x-tl.x+1)/2));	
+	//double area_2(((br.y-tl.y+1)/2)*((br.x-tl.x+1)/2));
 	const ns_vector_2i tl(bottom_offset),
 		br((long)image.properties().width - size_offset.x,
 		(long)image.properties().height - size_offset.y);
@@ -749,7 +750,7 @@ ns_vector_2d ns_calc_best_alignment::operator()(ns_alignment_state & state, cons
 
 
 			bool found_new_minimum_this_round(false);
-			//very corse first search	
+			//very corse first search
 			const ns_vector_2i range_l(offset_range_l.x, offset_range_l.y),
 				range_h(offset_range_h.x, offset_range_h.y);
 

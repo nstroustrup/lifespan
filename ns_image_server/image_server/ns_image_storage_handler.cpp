@@ -429,7 +429,7 @@ bool ns_image_storage_handler::assign_unique_filename(ns_image_server_image & im
 ifstream * ns_image_storage_handler::request_metadata_from_disk(ns_image_server_image & image,const bool binary,ns_image_server_sql * sql) const{
 	if (image.filename.size() == 0 || image.path.size() == 0 || image.partition.size() == 0) image.load_from_db(image.id,sql);
 
-	ns_file_location_specification spec(look_up_image_location(image,sql));
+	ns_file_location_specification spec(look_up_image_location_no_extension_alteration (image, sql));
 
 	//try to store image in long-term storage
 	if (long_term_storage_directory.size() == 0 || !ns_dir::file_exists(spec.long_term_directory)){
@@ -451,7 +451,7 @@ ifstream * ns_image_storage_handler::request_metadata_from_disk(ns_image_server_
 	return i;
 }
 
-ofstream * ns_image_storage_handler::request_metadata_output(ns_image_server_image & image, const std::string & extension, const bool binary,ns_image_server_sql * sql) const{
+ofstream * ns_image_storage_handler::request_metadata_output(ns_image_server_image & image, const ns_image_type & extension, const bool binary,ns_image_server_sql * sql) const{
 
 	if (image.filename.size() == 0 || image.path.size() == 0 || image.partition.size() == 0) image.load_from_db(image.id,sql);
 	//std::string existing_filename_extension(ns_dir::extract_extension(image.filename));
@@ -462,7 +462,7 @@ ofstream * ns_image_storage_handler::request_metadata_output(ns_image_server_ima
 	image.filename += extension;
 
 
-	ns_file_location_specification spec(look_up_image_location(image,sql));
+	ns_file_location_specification spec(look_up_image_location(image,sql,extension));
 
 	//try to store image in long-term storage
 	if (long_term_storage_directory.size() != 0 && ns_dir::file_exists(spec.long_term_directory)){
@@ -1037,7 +1037,7 @@ void ns_image_storage_handler::delete_file_specification(const ns_file_location_
 bool ns_image_storage_handler::delete_from_storage(ns_image_server_image & image,const ns_file_deletion_type & type,ns_image_server_sql * sql)const{
 
 	bool successfully_deleted(false);
-	ns_file_location_specification file_location(look_up_image_location(image,sql));
+	ns_file_location_specification file_location(look_up_image_location_no_extension_alteration(image,sql));
 	if (type == ns_delete_volatile || type == ns_delete_both_volatile_and_long_term){
 		if (verbosity >= ns_deletion_events)
 			image_server_const.register_server_event(ns_image_server_event("ns_image_storage_handler::delete_from_storage(ns_image_server_image & image)::Deleting ") << file_location.absolute_volatile_filename(),sql);
@@ -1143,7 +1143,7 @@ void ns_image_storage_handler::refresh_experiment_partition_cache(ns_image_serve
 }
 
 ns_file_location_specification ns_image_storage_handler::get_file_specification_for_image(ns_image_server_image & image,ns_image_server_sql * sql) const{
-	return look_up_image_location(image,sql);
+	return this->look_up_image_location_no_extension_alteration(image,sql);
 }
 
 std::string ns_image_storage_handler::movement_file_directory(ns_64_bit region_info_id, ns_image_server_sql * sql, std::string & absolute_directory_prefix) const {
@@ -1437,17 +1437,24 @@ void ns_region_info_lookup::get_experiment_info(const ns_64_bit experiment_id,ns
 		throw ns_ex("ns_image_storage_handler::get_experiment_info()::Could not locate experiment id ") << experiment_id << " in the database.";
 	experiment_name = res[0][0];
 }
-ns_file_location_specification ns_image_storage_handler::look_up_image_location(ns_image_server_image & image,ns_image_server_sql * sql,const ns_image_type & image_type ) const{
+
+ns_file_location_specification ns_image_storage_handler::look_up_image_location_no_extension_alteration(ns_image_server_image & image, ns_image_server_sql * sql) const {
+	return look_up_image_location(image, sql, ns_unknown, false);
+}
+ns_file_location_specification ns_image_storage_handler::look_up_image_location(ns_image_server_image & image, ns_image_server_sql * sql, const ns_image_type & image_type, const bool alter_file_extension) const {
 	ns_file_location_specification spec;
 	if ((image.filename.size() == 0 || image.path.size() == 0) && image.id <= 0)
 		throw ns_ex("ns_image_storage_handler::look_up_image_location()::No id specified when requesting image storage.");
 
 	if (image.filename.size() == 0 || image.path.size() == 0)
-		image.load_from_db(image.id,sql);
-	std::string desired_suffix;
-	ns_add_image_suffix(desired_suffix, image_type);
-	if (ns_dir::extract_extension(image.filename) != desired_suffix.substr(1))
-		ns_add_image_suffix(image.filename, image_type);
+		image.load_from_db(image.id, sql);
+
+	if (alter_file_extension) {
+		std::string desired_suffix;
+		ns_add_image_suffix(desired_suffix, image_type);
+		if (ns_dir::extract_extension(image.filename) != desired_suffix.substr(1))
+			ns_add_image_suffix(image.filename, image_type);
+	}
 	ns_dir::convert_slashes(image.path);
 	return compile_absolute_paths_from_relative(image.path,image.partition,image.filename);
 }

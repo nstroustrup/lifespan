@@ -80,7 +80,7 @@ public:
 
 	void fix_orphaned_captured_images(ns_image_server_sql * sql)const;
 
-	std::ofstream * request_metadata_output(ns_image_server_image & image, const std::string & extension, const bool binary,ns_image_server_sql * sql) const;
+	std::ofstream * request_metadata_output(ns_image_server_image & image, const ns_image_type & extension, const bool binary,ns_image_server_sql * sql) const;
 
 		
 	
@@ -312,7 +312,8 @@ private:
 	std::string get_storage_to_open(ns_image_server_image & image, const ns_image_type & image_type, const unsigned long max_line_length, ns_image_server_sql * sql, bool & had_to_use_local_storage, const bool report_to_db, const bool allow_volatile_storage) const;
 	
 	
-	ns_file_location_specification look_up_image_location(ns_image_server_image & image,ns_image_server_sql * sql,const ns_image_type & image_type = ns_tiff_lzw) const;
+	ns_file_location_specification look_up_image_location(ns_image_server_image & image,ns_image_server_sql * sql,const ns_image_type & image_type, const bool alter_extension=true) const;
+	ns_file_location_specification look_up_image_location_no_extension_alteration(ns_image_server_image & image, ns_image_server_sql * sql) const;
 	ns_file_location_specification compile_absolute_paths_from_relative(const std::string & rel_path, const std::string & partition, const std::string & filename) const ;
 	
 	void refresh_experiment_partition_cache_int(ns_image_server_sql * sql,const bool get_lock = true) const;

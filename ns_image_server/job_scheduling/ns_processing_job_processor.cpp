@@ -923,7 +923,7 @@ bool ns_processing_job_maintenance_processor::run_job(ns_sql & sql) {
 				
 					ns_experiment_storyboard_manager man;
 					man.delete_metadata_from_db(specs[j],sql);
-					man.save_metadata_to_db(specs[j],s,"xml",sql);
+					man.save_metadata_to_db(specs[j],s,ns_xml,sql);
 					//reload the storyboard just to confirm it still works
 					if (1){
 						ns_experiment_storyboard s2;

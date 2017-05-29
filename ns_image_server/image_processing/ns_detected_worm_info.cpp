@@ -1873,7 +1873,7 @@ void ns_image_worm_detection_results::save(ns_image_server_captured_image_region
 }
 void ns_image_worm_detection_results::save_data_to_disk(ns_image_server_captured_image_region & region, const bool interpolated, ns_sql & sql){
 	region.create_storage_for_worm_results(data_storage_on_disk,interpolated,sql);
-	ns_acquire_for_scope<ofstream> out(image_server.image_storage.request_metadata_output(data_storage_on_disk,"wrm",true,&sql));
+	ns_acquire_for_scope<ofstream> out(image_server.image_storage.request_metadata_output(data_storage_on_disk,ns_wrm,true,&sql));
 
 	if (out().fail())
 		throw ns_ex("Could not make storage for region data file.");

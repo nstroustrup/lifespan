@@ -1158,7 +1158,7 @@ void ns_image_processing_pipeline::process_region(const ns_image_server_captured
 							
 								ti.pump(a_worm.output_stream(),_image_chunk_size);
 
-								ofstream * metadata_out(image_server_const.image_storage.request_metadata_output(a_worm_im,"csv",false,&sql));
+								ofstream * metadata_out(image_server_const.image_storage.request_metadata_output(a_worm_im,ns_csv,false,&sql));
 								try{
 									detected_worms().output_feature_statistics(*metadata_out);
 									metadata_out->close();

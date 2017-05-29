@@ -192,7 +192,7 @@ class ns_experiment_storyboard_manager{
 public:
 	bool load_metadata_from_db(const ns_experiment_storyboard_spec & spec, ns_experiment_storyboard & storyboard, ns_sql & sql);
 	bool load_image_from_db(const unsigned long sub_image_id,const ns_experiment_storyboard_spec & spec, ns_image_standard & im,ns_sql & sql);
-	void save_metadata_to_db(const ns_experiment_storyboard_spec & spec, const ns_experiment_storyboard & storyboard, const std::string & metadata_suffix,ns_sql & sql);
+	void save_metadata_to_db(const ns_experiment_storyboard_spec & spec, const ns_experiment_storyboard & storyboard, const ns_image_type & metadata_suffix,ns_sql & sql);
 	void save_image_to_db(const unsigned long sub_image_id,const ns_experiment_storyboard_spec & spec, const ns_image_standard & im, ns_sql & sql);
 	void delete_metadata_from_db(const ns_experiment_storyboard_spec & spec, ns_sql & sql);
 	unsigned long number_of_sub_images() const{return sub_images.size();}

@@ -1596,7 +1596,7 @@ void ns_time_path_image_movement_analyzer::save_movement_data_to_db(const ns_64_
 		im = image_server_const.image_storage.get_region_movement_metadata_info(region_id,"time_path_movement_image_analysis_quantification",sql);
 		update_db = true;
 	}
-	ofstream * o(image_server_const.image_storage.request_metadata_output(im,"csv",false,&sql));
+	ofstream * o(image_server_const.image_storage.request_metadata_output(im,ns_csv,false,&sql));
 	im.save_to_db(im.id,&sql);
 	try{
 		save_movement_data_to_disk(*o);

@@ -1928,7 +1928,7 @@ void ns_register_path_solver_load_error(unsigned long region_info_id,const std::
 	}
 	else ex <<res[0][3]<<"::" <<res[0][2] << "::" <<res[0][0];
 	ex << ":" << expl;
-	image_server_const.register_server_event(ex,&sql);
+	image_server_const.add_subtext_to_current_event(ns_image_server_event(ex.text()) << "\n",&sql);
 
 }
 
@@ -2047,7 +2047,7 @@ void ns_time_path_solver::load(ns_64_bit region_id, ns_sql & sql){
 			timepoints[i].load(timepoints[i].worm_results_id,detection_results->results[i],sql);
 		}
 		catch(ns_ex & ex){
-			image_server_const.register_server_event(ns_image_server::ns_register_in_central_db,ex);
+			image_server_const.add_subtext_to_current_event(ns_image_server_event(ex.text()) << "\n",&sql);
 			sql << "UPDATE sample_region_images SET " 
 				<< ns_processing_step_db_column_name(ns_process_worm_detection) << " = 0,"
 				<< "worm_detection_results_id = 0"

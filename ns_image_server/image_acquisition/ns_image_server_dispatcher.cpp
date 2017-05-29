@@ -1209,6 +1209,7 @@ bool ns_image_server_dispatcher::look_for_work(){
 		}
 	}
 	sql_lock.release();
+	//look to see if any jobs run in the job pool produced exceptions.  If so, register them.
 	try {
 		while (true) {
 		  ns_dispatcher_job_pool_external_data dd;

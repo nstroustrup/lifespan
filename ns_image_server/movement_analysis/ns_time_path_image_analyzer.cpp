@@ -778,7 +778,7 @@ void throw_pool_errors(
 			break;
 		found_error = true;
 		//register all but the last error
-		if (errors > 1) image_server_const.register_server_event(ex, &sql);
+		if (errors > 1) image_server_const.add_subtext_to_current_event(ns_image_server_event(ex.text()) << "\n", &sql);
 	}
 	//throw the last error
 	if (found_error)
@@ -862,9 +862,9 @@ void ns_time_path_image_movement_analyzer::process_raw_images(const ns_64_bit re
 			}
 		}
 		if (number_of_paths_to_consider == 0)
-			image_server_const.register_server_event(ns_image_server_event("No dead animals, or potentially dead animals, were identified in this region."),&sql);
+			image_server_const.add_subtext_to_current_event(ns_image_server_event("No dead animals, or potentially dead animals, were identified in this region.") << "\n",&sql);
 		else {
-			image_server_const.add_subtext_to_current_event(ns_image_server_event("Registering and Analyzing ") << number_of_paths_to_consider << " objects; discarding " << number_of_paths_to_ignore << " as noise.", write_status_to_db ? &sql : 0);
+			image_server_const.add_subtext_to_current_event(ns_image_server_event("Registering and Analyzing ") << number_of_paths_to_consider << " objects; discarding " << number_of_paths_to_ignore << " as noise.\n", write_status_to_db ? &sql : 0);
 
 			const bool system_is_64_bit(sizeof(void *) == 8);
 			const int number_of_images_stored_in_memory_per_group(
@@ -975,7 +975,7 @@ void ns_time_path_image_movement_analyzer::process_raw_images(const ns_64_bit re
 					}
 					catch (ns_ex & ex) {
 						ns_ex ex_f(ex);
-						image_server_const.register_server_event(ns_image_server::ns_register_in_central_db, ns_image_server_event("Found an error; doing a consistancy check on all images in the region: ") << ex.text());
+						image_server_const.add_subtext_to_current_event(ns_image_server_event("Found an error; doing a consistancy check on all images in the region: ") << ex.text(),&sql);
 						try {
 							load_region_visualization_images(0, region_image_specifications.size(), 0, groups.size(), sql, true, true, ns_analyzed_image_time_path::ns_lrv_flag_and_images);
 						}
@@ -1131,7 +1131,7 @@ void ns_time_path_image_movement_analyzer::process_raw_images(const ns_64_bit re
 					}
 					catch (ns_ex & ex) {
 						ns_ex ex_f(ex);
-						image_server_const.register_server_event(ns_image_server::ns_register_in_central_db, ns_image_server_event("Found an error; doing a consistancy check on all images in the region: ") << ex.text());
+						image_server_const.add_subtext_to_current_event(ns_image_server_event("Found an error; doing a consistancy check on all images in the region: ") << ex.text() << "\n",&sql);
 						try {
 							load_region_visualization_images(0, region_image_specifications.size(), 0, groups.size(), sql, true, false, ns_analyzed_image_time_path::ns_lrv_flag_and_images);
 						}
@@ -1266,7 +1266,7 @@ void ns_time_path_image_movement_analyzer::process_raw_images(const ns_64_bit re
 		throw;
 	}
 	if (write_status_to_db)
-			image_server_const.register_server_event(ns_image_server_event("Done."),&sql);
+			image_server_const.add_subtext_to_current_event(ns_image_server_event("Done."),&sql);
 	else cerr << "Done.\n";
 }
 
@@ -5273,7 +5273,7 @@ bool ns_time_path_image_movement_analyzer::load_movement_image_db_info(const ns_
 		if (group_id >= groups.size() || (!groups[group_id].paths.empty() && path_id >= groups[group_id].paths.size())){
 			sql << "DELETE from path_data WHERE id = " << db_id;
 			sql.send_query();
-			image_server_const.register_server_event(ns_ex("ns_time_path_image_movement_analyzer::load_movement_image_db_info()::Deleting path data as a too-large group or path_id was found: (") << group_id << "," << path_id << ") in a region with " << groups.size() << " groups",&sql);
+			image_server_const.add_subtext_to_current_event(ns_image_server_event("ns_time_path_image_movement_analyzer::load_movement_image_db_info()::Deleting path data as a too-large group or path_id was found: (") << group_id << "," << path_id << ") in a region with " << groups.size() << " groups\n",&sql);
 		}
 		else{
 			groups[group_id].paths[path_id].output_image.id = image_id;
@@ -5414,7 +5414,7 @@ void ns_time_path_image_movement_analyzer::reanalyze_stored_aligned_images(const
 					number_flow_uncalculated++;
 			}
 		const bool calculate_flow_images(number_flow_uncalculated > 0);
-		image_server_const.register_server_event(ns_image_server_event("Some new movement quantification analyses is missing. It will be performed.", true), &sql);
+		image_server_const.add_subtext_to_current_eventns_image_server_event("Some new movement quantification analyses is missing. It will be performed.", true), &sql);
 
 		if (calculate_flow_images)
 			get_output_image_storage_locations(region_id, sql, true);
@@ -6301,8 +6301,9 @@ void ns_time_path_image_movement_analyzer::load_region_visualization_images(cons
 		catch(ns_ex & ex){
 			problem_occurred = true;
 			problem = ex;
-			ns_64_bit problem_id = image_server_const.register_server_event(ns_image_server::ns_register_in_central_db,ns_image_server_event(ex.text()));
+			ns_64_bit problem_id = image_server_const.register_server_event(ns_image_server::ns_register_in_central_db,ns_image_server_event(ex.text(), true));
 			sql << " UPDATE sample_region_images SET problem = " << problem_id << " where id = " << region_image_specifications[i].sample_region_image_id;
+			image_server_const.add_subtext_to_current_event(ns_image_server_event(ex.text()) << "\n", &sql);
 			sql.send_query();
 		}
 	}

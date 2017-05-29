@@ -132,7 +132,7 @@ public:
 	ns_image_storage_source_handle<float> request_from_local_cache_float(const std::string & filename, const bool report_to_db = true)const;
 
 
-	std::string add_to_local_cache(ns_image_server_image & image, ns_image_server_sql * sql)const;
+	std::string add_to_local_cache(ns_image_server_image & image, const ns_image_type & image_type, ns_image_server_sql * sql)const;
 
 	ns_image_storage_source_handle<ns_component> request_from_volatile_storage(const std::string & filename,const bool report_to_db=true)const;
 	bool delete_from_volatile_storage(const std::string & filename)const;
@@ -191,7 +191,7 @@ public:
 	ns_image_storage_source_handle<ns_comp> request_from_storage_n_bits(ns_image_server_image & image, ns_image_server_sql * sql,const ns_storage_location & location) const{
 		ns_ex stored_error[3];
 	
-		ns_file_location_specification file_location(look_up_image_location(image,sql,ns_tiff_lzw));
+		ns_file_location_specification file_location(look_up_image_location_no_extension_alteration(image,sql));
 
 		std::string  input_filename;
 		//try and get the data from volatile storage (to reduce network traffic)

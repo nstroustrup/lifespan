@@ -809,9 +809,9 @@ ns_image_storage_reciever_handle<float> ns_image_storage_handler::request_local_
 }
 
 
-std::string ns_image_storage_handler::add_to_local_cache(ns_image_server_image & image, ns_image_server_sql * sql)const {
+std::string ns_image_storage_handler::add_to_local_cache(ns_image_server_image & image, const ns_image_type & image_type, ns_image_server_sql * sql)const {
 
-	ns_file_location_specification file_location(look_up_image_location(image, sql, ns_tiff_lzw));
+	ns_file_location_specification file_location(look_up_image_location(image, sql, image_type));
 
 	if (!long_term_storage_is_accessible(file_location, __FILE__, __LINE__))
 		throw ns_ex("Could not access long term storage.");

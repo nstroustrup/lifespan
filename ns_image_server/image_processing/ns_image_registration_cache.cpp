@@ -20,7 +20,8 @@ void ns_image_fast_registration_profile::load_from_external_source(const ns_imag
 	image_record = im;
 	if (!image_record.load_from_db(im.id, data_source.sql))
 		throw ns_ex("Invalid image spec");
-	local_cache_filename = data_source.image_storage->add_to_local_cache(image_record, data_source.sql);
+	//compress everything in the cache as tiff
+	local_cache_filename = data_source.image_storage->add_to_local_cache(image_record, ns_tiff_lzw,data_source.sql);
 	ns_image_storage_source_handle<ns_8_bit> source(data_source.image_storage->request_from_local_cache(local_cache_filename, false));
 	pyramid = new ns_gaussian_pyramid();
 	pyramid->recieve_and_calculate(source, (int)ns_registration_downsample_factor);

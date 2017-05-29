@@ -55,6 +55,7 @@ struct ns_jp2k_data {
 	}
 };
 
+void ns_load_xml_information_from_ojp2k_xmp(const std::string filename, ns_image_properties & prop);
 
 template<class ns_component>
 class ns_ojp2k_image_input_file : public ns_image_input_file<ns_component>{
@@ -84,6 +85,9 @@ public:
 		data->stream = opj_stream_create_default_file_stream(filename.c_str(), 1);
 		if (!data->stream)
 			throw ns_ex("openjpeg::Could not open file ") << filename;
+
+		ns_load_xml_information_from_ojp2k_xmp(ns_oj2k_xmp_filename(filename), properties);
+	
 
 		data->codec = opj_create_decompress(OPJ_CODEC_JP2);
 		if (data->codec == 0)

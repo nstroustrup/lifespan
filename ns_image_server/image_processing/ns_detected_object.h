@@ -229,10 +229,11 @@ public:
 		temp_bitmap.use_more_memory_to_avoid_reallocations(true);
 	//	unsigned long start_time = ns_current_time();
 		if (resolution <= 1201){
+			throw ns_ex("Encountered an image with low resolution.  This can't be correct.");
 			for (unsigned int i = 0; i < objects.size(); i++){
 				objects[i]->calculate_edges(temp_flood_fill_stack, temp_bitmap);
 				objects[i]->node_topology.build_via_delauny_method(objects[i]->edge_coordinates,objects[i]->edge_list,
-																			objects[i]->holes,debug_filename + "_" + ns_to_string(i));
+																			objects[i]->holes,"");
 			}
 			remove_empty_spines();
 		}

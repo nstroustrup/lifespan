@@ -5,6 +5,36 @@
 #include <fstream>
 
 
+void ns_load_xml_information_from_ojp2k_xmp(const std::string filename, ns_image_properties & properties) {
+
+	std::ifstream xmp_f(filename.c_str());
+	if (!xmp_f.fail()) {
+		ns_xmp_tiff_data xmp_tiff_data;
+
+		std::string xmp_input;
+		xmp_input.reserve(2000);
+		char a;
+		while (true) {
+			xmp_f.read(&a, 1);
+			if (xmp_f.fail())
+				break;
+			xmp_input += a;
+
+		}
+
+		ns_long_string_xmp_encoder::read(xmp_input, properties.description, &xmp_tiff_data);
+		properties.resolution = xmp_tiff_data.xresolution;
+		if (xmp_tiff_data.xresolution != xmp_tiff_data.yresolution)
+			throw ns_ex("Unmatching x and y resolutions encountered.  This is not implemented.");
+		properties.resolution = xmp_tiff_data.xresolution;
+	}
+	else {
+
+		std::cerr << "Warning: Could not open ojp2k metadata file " << filename << ".  Continuing with defaults.";
+		properties.resolution = 3200;
+	}
+}
+
 void ns_ojp2k_setup_output(const ns_image_properties & properties,const float compression_ratio,const std::string & filename, const unsigned long rows_per_strip , ns_jp2k_output_data * data,const char bit_depth) {
 
 	if (properties.height == 0)

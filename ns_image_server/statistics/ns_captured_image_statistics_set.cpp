@@ -2,6 +2,62 @@
 #include "ns_worm_detector.h"
 #include <set>
 
+
+void ns_summarize_stats(const std::vector<const ns_detected_worm_info *> & worms, ns_image_object_statistics & stats) {
+
+	ns_detected_worm_stats w_stats;
+	stats.count = worms.size();
+	for (unsigned int i = 0; i < worms.size(); i++) {
+		w_stats = worms[i]->generate_stats();
+		stats.area_mean += w_stats[ns_stat_pixel_area];
+		stats.length_mean += w_stats[ns_stat_spine_length];
+		stats.width_mean += w_stats[ns_stat_average_width];
+
+		stats.absolute_intensity.mean += w_stats[ns_stat_absolute_intensity_average];
+		stats.absolute_intensity.variance += w_stats[ns_stat_absolute_intensity_variance] * w_stats[ns_stat_absolute_intensity_variance];
+		stats.absolute_intensity.bottom_percentile_average += w_stats[ns_stat_absolute_intensity_dark_pixel_average];
+		stats.absolute_intensity.entropy += w_stats[ns_stat_absolute_intensity_roughness_1];
+		stats.absolute_intensity.top_percentile_average = 0;
+
+		stats.relative_intensity.mean += w_stats[ns_stat_relative_intensity_average];
+		stats.relative_intensity.variance += w_stats[ns_stat_relative_intensity_variance] * w_stats[ns_stat_relative_intensity_variance];
+		stats.relative_intensity.bottom_percentile_average += w_stats[ns_stat_relative_intensity_dark_pixel_average];
+		stats.relative_intensity.entropy += w_stats[ns_stat_relative_intensity_roughness_1];
+		stats.relative_intensity.top_percentile_average = 0;
+
+		stats.area_variance += w_stats[ns_stat_pixel_area] * w_stats[ns_stat_pixel_area];
+		stats.length_variance += w_stats[ns_stat_spine_length] * w_stats[ns_stat_spine_length];
+		stats.width_variance += w_stats[ns_stat_average_width] * w_stats[ns_stat_average_width];
+	}
+
+	if (stats.count > 0) {
+		stats.area_variance /= stats.count;
+		stats.length_variance /= stats.count;
+		stats.width_variance /= stats.count;
+		stats.absolute_intensity.variance /= stats.count;
+		stats.relative_intensity.variance /= stats.count;
+
+		stats.area_mean /= stats.count;
+		stats.length_mean /= stats.count;
+		stats.width_mean /= stats.count;
+		stats.absolute_intensity.mean /= stats.count;
+		stats.relative_intensity.mean /= stats.count;
+
+		// E[x^2]-E[x]^2
+		stats.area_variance -= stats.area_mean*stats.area_mean;
+		stats.length_variance -= stats.length_mean*stats.length_mean;
+		stats.width_variance -= stats.width_mean*stats.width_mean;
+		stats.absolute_intensity.variance -= stats.absolute_intensity.mean*stats.absolute_intensity.mean;
+		stats.relative_intensity.variance -= stats.relative_intensity.mean*stats.relative_intensity.mean;
+
+		stats.area_variance = sqrt(stats.area_variance);
+		stats.length_variance = sqrt(stats.length_variance);
+		stats.width_variance = sqrt(stats.width_variance);
+		stats.absolute_intensity.variance = sqrt(stats.absolute_intensity.variance);
+		stats.relative_intensity.variance = sqrt(stats.relative_intensity.variance);
+	}
+}
+
 void ns_capture_scan_statistics::set_as_zero(){
 	date_of_first_sample_scan = 0;		
 	scheduled_time		=	0;						
@@ -475,12 +531,12 @@ void ns_capture_sample_region_data::load_from_db(const ns_64_bit region_id_,
 			im.region_info_id = metadata.region_id;
 			im.region_images_id = ns_atoi64(res[i][0].c_str());
 			ns_image_worm_detection_results results;
-			results.id =  ns_atoi64(res[i][4].c_str());
+			results.detection_results_id =  ns_atoi64(res[i][4].c_str());
 			try{
 				//load,calculate.and save worm stats
 				results.load_from_db(true,false,sql,false);
 				results.load_images_from_db(im,sql);
-				im.summarize_stats(&results,&timepoints[pos].statistics,false);
+				ns_summarize_stats(results.actual_worm_list(),timepoints[pos].statistics.worm_statistics);
 				if (recalculate_raw_image_statistics){
 					ns_image_server_image unpr_im;
 					unpr_im.id = ns_atoi64(res[i][5].c_str());

@@ -5,6 +5,8 @@
 #include "ns_spine_drawer.h"
 #include "ns_progress_reporter.h"
 
+#include "ns_image_statistics.h"
+
 using namespace std;
 
 #ifdef NS_RETHRESHOLD_TRAINING_SET
@@ -1806,79 +1808,113 @@ void ns_image_worm_detection_results::add_data_to_db_query(ns_sql & sql){
 
 }
 
-void ns_image_worm_detection_results::save(ns_image_server_captured_image_region & region, const bool interpolated,const bool save_to_disk, const bool only_output_movement_tags,ns_sql & sql){
 
-	if (!only_output_movement_tags && save_to_disk)
-			save_data_to_disk(region,interpolated, sql);
-	//check to see that the pre-existing record exists in the database
-	if (id != 0){
-		sql << "SELECT id FROM worm_detection_results WHERE id=" << id;
+
+void ns_image_worm_detection_results::save(ns_image_server_captured_image_region & region, const bool interpolated, ns_sql & sql, const bool calculate_stats) {
+
+	ns_image_statistics stats;
+	stats.db_id = 0;
+	if (calculate_stats) {
+		//save a summary of the current image to the image_statistics table
+		ns_summarize_stats(actual_worm_list(), stats.worm_statistics);
+
+		sql << "SELECT image_statistics_id FROM sample_region_images WHERE id= " << region.region_images_id;
 		ns_sql_result res;
 		sql.get_rows(res);
 		if (res.size() == 0)
-			id = 0;
+			stats.db_id = 0;
+		else stats.db_id = ns_atoi64(res[0][0].c_str());
+		stats.submit_to_db(stats.db_id, sql, false, true);
 	}
-	if (id == 0)
-		sql << "INSERT INTO worm_detection_results SET ";
-	else sql << "UPDATE worm_detection_results SET ";
-	if (!only_output_movement_tags){
-		sql << "id = " << id << ", source_image_id = " << source_image_id << ", "
-			<< "capture_sample_id = " << capture_sample_id << ", number_of_worms=" << static_cast<unsigned int>(actual_worms.size()) << ", "
-			<< "number_of_interpolated_worm_areas = "  << (unsigned int)interpolated_worm_areas.size() << ", ";
-		if (!save_to_disk){
-			throw ns_ex("Saving worm data to the database is depreciated!");
-			add_data_to_db_query(sql);
-			data_storage_on_disk.id = 0;
-		}
-		sql << "data_storage_on_disk_id=" << data_storage_on_disk.id << ",";
 
-		//write bitmap info
-		sql << "bitmap_tiles_per_row = " << worm_collage.info().tiles_per_row << ", "
-			<< "bitmap_tile_width = " << worm_collage.info().tile_width << ", "
-			<< "bitmap_tile_height = " << worm_collage.info().tile_height;
-		sql << ", ";
+	ns_sql_result res;
+	
+
+	//find worm_detection_results record.  If it doesn't exist, make a new one.
+	sql << "SELECT worm_detection_results_id, worm_interpolation_results_id FROM sample_region_images WHERE id = " << region.region_images_id;
+	sql.get_rows(res);
+	if (res.size() != 0) {
+		if (!interpolated)	detection_results_id = atol(res[0][0].c_str());
+		else				detection_results_id = atol(res[0][1].c_str());
 	}
-		
+	else detection_results_id = 0;
+
+	if(detection_results_id != 0){
+
+		sql << "SELECT data_storage_on_disk_id FROM worm_detection_results WHERE id = " << detection_results_id;
+		ns_sql_result res2;
+		sql.get_rows(res2);
+		if (res2.size() == 0)
+			data_storage_on_disk.id = 0;
+		else data_storage_on_disk.id = ns_atoi64(res2[0][0].c_str());
+
+		sql << "UPDATE worm_detection_results SET ";
+	}
+	else {
+		data_storage_on_disk.id = 0;
+		sql << "INSERT INTO worm_detection_results SET ";
+	}
+
+	region.create_storage_for_worm_results(data_storage_on_disk, interpolated, sql);
+
+	if (calculate_stats)
+		sql << "image_statistics_id=" << stats.db_id << ",";
+
+	sql << "source_image_id = " << source_image_id << ", "
+		<< "capture_sample_id = " << capture_sample_id << ", number_of_worms=" << static_cast<unsigned int>(actual_worms.size()) << ", "
+		<< "number_of_interpolated_worm_areas = " << (unsigned int)interpolated_worm_areas.size() << ", ";
+	sql << "data_storage_on_disk_id=" << data_storage_on_disk.id << ",";
+
+	//write bitmap info
+	sql << "bitmap_tiles_per_row = " << worm_collage.info().tiles_per_row << ", "
+		<< "bitmap_tile_width = " << worm_collage.info().tile_width << ", "
+		<< "bitmap_tile_height = " << worm_collage.info().tile_height;
+	sql << ", ";
+
 	//write movement tags
 	sql << "worm_movement_tags='";
 	string movement_tags;
-	for (unsigned int i = 0; i < actual_worms.size(); i++){
-		movement_tags+=ns_to_string((unsigned long)actual_worms[i]->movement_state);
-		if (i+1 <  actual_worms.size())
-			movement_tags+=",";
+	for (unsigned int i = 0; i < actual_worms.size(); i++) {
+		movement_tags += ns_to_string((unsigned long)actual_worms[i]->movement_state);
+		if (i + 1 <  actual_worms.size())
+			movement_tags += ",";
 	}
 	sql << movement_tags << "' ,";
 	// Now provide empty values for the required-though-deprecated blob columns:
 	sql << "worm_segment_node_counts='', worm_segment_information='', worm_region_information='', worm_fast_movement_mapping=''"
-	    << ", worm_slow_movement_mapping='', worm_movement_state='', worm_movement_fast_speed='', worm_movement_slow_speed=''"
+		<< ", worm_slow_movement_mapping='', worm_movement_state='', worm_movement_fast_speed='', worm_movement_slow_speed=''"
 		<< ", interpolated_worm_areas=''";
-	
-	/*
-	std::vector<unsigned char> worm_movement_tags(2*actual_worms.size(),0);
-	for (unsigned int i = 0; i < actual_worms.size(); i++){
-		worm_movement_tags[2*i] = static_cast<unsigned char>(actual_worms[i]->movement_state);
-		worm_movement_tags[2*i+1] = 0;  //reserved for future information
-	}
 
-	if (worm_movement_tags.size() != 0)
-		sql.write_data(reinterpret_cast<char *>(&worm_movement_tags[0]),static_cast<unsigned int>(worm_movement_tags.size())*sizeof(unsigned char)/sizeof(char));
-	sql << "'";
-	*/
-	if (id == 0)
-		id = sql.send_query_get_id();
-	else{
-		sql << " WHERE id=" << id;
+	if (res.size() != 0)
+		detection_results_id = sql.send_query_get_id();
+	else {
+		sql << " WHERE id=" << detection_results_id;
 		sql.send_query();
 	}
-}
-void ns_image_worm_detection_results::save_data_to_disk(ns_image_server_captured_image_region & region, const bool interpolated, ns_sql & sql){
-	region.create_storage_for_worm_results(data_storage_on_disk,interpolated,sql);
-	ns_acquire_for_scope<ofstream> out(image_server.image_storage.request_metadata_output(data_storage_on_disk,ns_wrm,true,&sql));
 
-	if (out().fail())
+	//update the region record to reflect the new results
+	sql << "UPDATE sample_region_images SET ";
+	if (!interpolated) sql << "worm_detection_results_id=";
+	else			   sql << "worm_interpolation_results_id=";
+	sql << detection_results_id << " WHERE id = " << region.region_images_id;
+	sql.send_query();
+
+	//OK! Now we have all the database records set.
+	//we just need to output everything to disk.
+
+	ns_acquire_for_scope<ofstream> outfile(image_server.image_storage.request_metadata_output(data_storage_on_disk, ns_wrm, true, &sql));
+	if (outfile().fail())
 		throw ns_ex("Could not make storage for region data file.");
+	save_data_to_disk(outfile(), interpolated, sql);
+	outfile().close();
+	outfile.release();
+
+}
+void ns_image_worm_detection_results::save_data_to_disk(std::ofstream & out, const bool interpolated, ns_sql & sql){
+
+
 		
-	out() << actual_worms.size() << "," << interpolated_worm_areas.size() << "\n";
+	out << actual_worms.size() << "," << interpolated_worm_areas.size() << "\n";
 		
 	//write the region offset region info
 	if (actual_worms.size() != 0){
@@ -1886,7 +1922,7 @@ void ns_image_worm_detection_results::save_data_to_disk(ns_image_server_captured
 		for (unsigned int i = 0; i < actual_worms.size(); i++){
 			if (actual_worms[i]->context_image_size.x == 0)
 				throw ns_ex("Empty context Image!");
-			out() << actual_worms[i]->region_position_in_source_image.x << ","
+			out << actual_worms[i]->region_position_in_source_image.x << ","
 				<< actual_worms[i]->region_position_in_source_image.y << ","
 				<< actual_worms[i]->context_position_in_source_image.x << ","
 				<< actual_worms[i]->context_position_in_source_image.y << ","
@@ -1897,11 +1933,10 @@ void ns_image_worm_detection_results::save_data_to_disk(ns_image_server_captured
 		
 		}
 	}
-
 	
 	if (interpolated_worm_areas.size() != 0){
 		for (unsigned int i = 0; i < interpolated_worm_areas.size(); i++){
-			out() << interpolated_worm_areas[i].position_in_source_image.x << ","
+			out << interpolated_worm_areas[i].position_in_source_image.x << ","
 				<< interpolated_worm_areas[i].position_in_source_image.y << ","
 				<< interpolated_worm_areas[i].size.x << ","
 				<< interpolated_worm_areas[i].size.y << "\n";
@@ -1913,39 +1948,36 @@ void ns_image_worm_detection_results::save_data_to_disk(ns_image_server_captured
 	unsigned int total_length = 0;
 	if (actual_worms.size()!= 0){
 		for (unsigned int i = 0; i < actual_worms.size(); i++){
-			out() << actual_worms[i]->worm_shape.nodes.size() << ",";
+			out << actual_worms[i]->worm_shape.nodes.size() << ",";
 		
 			total_length += static_cast<unsigned int>(actual_worms[i]->worm_shape.nodes.size());
 		}
 	
-		out() << "\n";
+		out << "\n";
 	}
 	//output spine information
 	if (total_length != 0){
 	
 		unsigned int nodes_written = 0;
 		for (unsigned int i = 0; i < actual_worms.size(); i++){
-			actual_worms[i]->worm_shape.write_to_csv(out());
-			out() << "\n";
+			actual_worms[i]->worm_shape.write_to_csv(out);
+			out << "\n";
 			
 		}
 
 	}
-
-	out().close();
-	out.release();
 }
 
 void ns_image_worm_detection_results::load_from_db(const bool load_worm_postures,const bool images_comes_from_interpolated_annotations,ns_sql & sql,const bool delete_from_db_on_error){
-	if (id == 0)
+	if (detection_results_id == 0)
 		throw ns_ex("ns_image_worm_detection_results::Attempting to load from db with id=0.");
 	sql << "SELECT source_image_id, capture_sample_id, bitmap_tiles_per_row, bitmap_tile_width, bitmap_tile_height, "
 		<< "number_of_worms, worm_movement_tags,data_storage_on_disk_id,number_of_interpolated_worm_areas "
-		<< "FROM worm_detection_results WHERE id = " << id;
+		<< "FROM worm_detection_results WHERE id = " << detection_results_id;
 	ns_sql_result data;
 	sql.get_rows(data);
 	if (data.size() == 0){
-		throw ns_ex("ns_image_worm_detection_resuls::Could not load specified result") << id <<", as it does not exist in the db";
+		throw ns_ex("ns_image_worm_detection_resuls::Could not load specified result") << detection_results_id <<", as it does not exist in the db";
 	}
 	source_image_id = atol(data[0][0].c_str());
 	capture_sample_id = atol(data[0][1].c_str());
@@ -1978,7 +2010,7 @@ void ns_image_worm_detection_results::load_from_db(const bool load_worm_postures
 					<< ns_processing_step_db_column_name(ns_process_region_interpolation_vis) << "=0,"
 					<< "worm_detection_results_id = 0 WHERE id = " << source_image_id;
 				sql.send_query();
-				sql << "DELETE FROM worm_detection_results WHERE id = " << id;
+				sql << "DELETE FROM worm_detection_results WHERE id = " << detection_results_id;
 				sql.send_query();
 			}
 			throw;
@@ -2984,7 +3016,7 @@ void ns_image_worm_detection_results::clear(){
 	 capture_sample_id = 0;
 	 capture_time = 0;
 	 data_storage_on_disk = ns_image_server_image();
-	 id = 0;
+	 detection_results_id = 0;
 	 mutually_exclusive_worm_groups.clear();
 	 interpolated_worm_areas.clear();
 	 region_info_id = 0;

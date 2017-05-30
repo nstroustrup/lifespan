@@ -621,7 +621,7 @@ void ns_movement_visualization_generator::create_time_path_analysis_visualizatio
 */
 	
 	ns_image_worm_detection_results results;
-	results.id = region_image.region_detection_results_id;
+	results.detection_results_id = region_image.region_detection_results_id;
 	results.load_from_db(false,false,sql);
 	ns_image_server_captured_image_region region_t(region_image);
 	results.load_images_from_db(region_t,sql);

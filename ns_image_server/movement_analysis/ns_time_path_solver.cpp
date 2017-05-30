@@ -1892,7 +1892,7 @@ void ns_time_path_solver::mark_unassigned_points(){
 void ns_time_path_solver_timepoint::load(const unsigned long worm_detection_results_id,ns_image_worm_detection_results & results,ns_sql & sql){
 	elements.resize(0);
 	worm_detection_results = &results;
-	results.id = worm_detection_results_id;
+	results.detection_results_id = worm_detection_results_id;
 	results.load_from_db(false,false,sql);
 	const std::vector<const ns_detected_worm_info *> & worms(results.actual_worm_list());
 //	if (results.capture_time == 1321821542)		

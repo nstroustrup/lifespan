@@ -460,7 +460,7 @@ private:
 ///that summarizes the result of worm detection
 class ns_image_worm_detection_results{
 public:
-	ns_64_bit id,
+	ns_64_bit detection_results_id,
 				 source_image_id,
 				 capture_sample_id,
 				 region_info_id;
@@ -474,7 +474,9 @@ public:
 		return worm_collage.generate_collage(absolute_grayscale,relative_grayscale,threshold,actual_worms);
 	}
 
-	ns_image_worm_detection_results():id(0),source_image_id(0),capture_sample_id(0),region_info_id(0),capture_time(0){}
+	ns_image_worm_detection_results():detection_results_id(0),source_image_id(0),capture_sample_id(0),region_info_id(0),capture_time(0) {
+		data_storage_on_disk.id = 0;
+	}
 	///returns the number of worms detected in an image
 	const unsigned int number_of_worms()const { return (unsigned int)actual_worms.size();}
 
@@ -588,29 +590,6 @@ public:
 	//returns the feature statistics calculated for the specified contiguous-region
 	ns_detected_worm_stats get_putative_worm_stats(const unsigned int id) const {return putative_worms[id].generate_stats();}
 
-	///creates a collage of grayscale images of all contiguous regions classified as worms
-/*	template<class whole_image>
-	void create_grayscale_object_collage(whole_image  & reciever){
-		cerr << "MAKE SURE TO DEBUG THIS";
-		if (worm_region_collage.properties().height!=0)
-			worm_region_collage.pump(reciever,1024);
-		else{
-			//std::vector<ns_image_standard> im(actual_worms.size());
-			std::vector<const whole_image *> images(actual_worms.size());
-			for (unsigned int i = 0; i < actual_worms.size(); i++){
-				//actual_worms[i]->grayscale().pump(im[i],512);
-				//cerr << "grayscale res = " << im[i].properties().resolution << "\n";
-				//mask non-worm regions for visualization
-				//for (unsigned int y = 0; y < actual_worms[i]->grayscale().properties().height; y++)
-				//	for (unsigned int x = 0; x < actual_worms[i]->grayscale().properties().width; x++)
-				//		if (!actual_worms[i]->bitmap()[y][x])
-				//			im[i][y][x] = 0;
-				images[i] = &actual_worms[i]->grayscale();
-			}
-			make_collage(images, reciever, 128);
-		}
-	}*/
-
 
 	///returns the set of all contiguous regions classified as worms
 	
@@ -635,13 +614,7 @@ public:
 			putative_worms[i].interpolated = interpolated;
 	}
 
-	void save_to_db(ns_sql & sql, const bool interpolated,const bool only_output_movement_tags=false){
-		ns_image_server_captured_image_region tmp;
-		save(tmp,interpolated,false,only_output_movement_tags,sql);
-	}
-	void save_to_disk(ns_image_server_captured_image_region & source_region, const bool interpolated,ns_sql & sql){
-		save(source_region,interpolated,true,false,sql);
-	}
+	 void save(ns_image_server_captured_image_region & source_region, const bool interpolated, ns_sql & sql, const bool calculate_stats);
 
 	///Loades detected worm information from the database.  Data is loaded from the entry who's id is stored in ns_image_worm_detection_results::id
 	void load_from_db(const bool load_worm_shape,const bool images_comes_from_interpolated_annotations,ns_sql & sql,const bool delete_from_db_on_error=true );
@@ -662,9 +635,8 @@ public:
 private:
 	
     ns_image_server_image data_storage_on_disk;
-	void save(ns_image_server_captured_image_region & source_region,const bool interpolated, const bool save_to_disk, const bool only_output_movement_tags,ns_sql & sql);
 
-	void save_data_to_disk(ns_image_server_captured_image_region & region,const bool interpolated, ns_sql & sql);
+	void save_data_to_disk(std::ofstream & out,const bool interpolated, ns_sql & sql);
 
 	void load_data_from_db(ns_sql & sql);
 	void load_data_from_disk(ns_sql & sql);

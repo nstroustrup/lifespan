@@ -160,4 +160,7 @@ public:
 			histogram[i] = (unsigned long)(histogram[i]/r);
 	}
 };
+class ns_detected_worm_info;
+void ns_summarize_stats(const std::vector<const ns_detected_worm_info *> & worms, ns_image_object_statistics & stats);
+
 #endif

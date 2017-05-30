@@ -183,7 +183,7 @@ public:
 
 			}
 			ns_image_worm_detection_results results;
-			results.id = 0;
+			results.detection_results_id = 0;
 			
 			ns_image_properties prop(unprocessed_image.properties());
 			prop.components = 1;
@@ -223,7 +223,7 @@ public:
 			
 			ns_image_server_captured_image_region reg_im;
 			reg_im.load_from_db(current_region_image->second.id,&sql);
-			reg_im.register_worm_detection(&results,true,sql);
+			results.save(reg_im, true, sql, false);
 
 			bool had_to_use_volatile_storage;
 			ns_image_server_image region_bitmap = reg_im.create_storage_for_processed_image(ns_process_region_interpolation_vis,ns_tiff,&sql);
@@ -249,7 +249,7 @@ public:
 			for (unsigned int i = 0; i < current_region_image->second.duplicates_of_this_time_point.size(); i++){
 				ns_image_server_captured_image_region reg_im2;
 				reg_im2.load_from_db(current_region_image->second.duplicates_of_this_time_point[i].id,&sql);
-				reg_im2.register_worm_detection(&results,true,sql);
+				results.save(reg_im2, true, sql, false);
 
 				sql << "UPDATE " << ns_processing_step_db_table_name(ns_process_region_interpolation_vis) << " SET " 
 								 << ns_processing_step_db_column_name(ns_process_region_interpolation_vis)

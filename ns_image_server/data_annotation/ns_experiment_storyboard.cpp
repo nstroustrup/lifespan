@@ -155,8 +155,8 @@ void ns_experiment_storyboard_timepoint::load_images(bool use_color,ns_sql & sql
 		if (i == 0 || sorted_events[i-1].results_id  != sorted_events[i].results_id){
 			try{
 			results.clear();
-			results.id = sorted_events[i].results_id;
-			if (results.id == 0)
+			results.detection_results_id = sorted_events[i].results_id;
+			if (results.detection_results_id == 0)
 				throw ns_ex("Found an unspecified results id for region ID ") << sorted_events[i].e->event_annotation.region_info_id << " (Image #" << sorted_events[i].region_id << ")";
 			results.load_from_db(false,false,sql,false);
 			ns_image_server_captured_image_region reg;
@@ -182,8 +182,8 @@ void ns_experiment_storyboard_timepoint::load_images(bool use_color,ns_sql & sql
 		if (i == 0 || sorted_events[i-1].interpolated_results_id  != sorted_events[i].interpolated_results_id){
 		
 			interpolated_results.clear();
-			interpolated_results.id = sorted_events[i].interpolated_results_id;
-			if (interpolated_results.id != 0){
+			interpolated_results.detection_results_id = sorted_events[i].interpolated_results_id;
+			if (interpolated_results.detection_results_id != 0){
 				try{
 				interpolated_results.load_from_db(false,true,sql,false);
 				ns_image_server_captured_image_region reg;

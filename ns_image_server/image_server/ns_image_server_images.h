@@ -6,9 +6,6 @@
 #include "ns_dir.h"
 #include "ns_processing_tasks.h"
 #include "ns_image_server_sql.h"
-class ns_image_worm_detection_results;
-
-
 
 ///returns true if the specified processing task can be used as a pre-computed image for later steps (ie it is saved in a non-lossy format)
 //bool ns_use_as_precomputed_task(const ns_processing_task & t);
@@ -98,12 +95,6 @@ struct ns_image_server_image{
 		return path + DIR_CHAR_STR + filename;
 	}
 
-	//don't store worm detection info for single image info.
-	#ifndef NS_MINIMAL_SERVER_BUILD
-	void register_worm_detection(ns_image_worm_detection_results * wi, const bool interpolated,ns_sql & sql){
-		return;
-	}
-	#endif
 
 	//sometimes, images are used to house a single object.  In this case, the object can either be a worm, not a worm, or unsorted.
 	ns_detected_worm_state detected_worm_state;
@@ -226,15 +217,6 @@ struct ns_image_server_captured_image{
 	}
 
 	bool from_filename(const std::string & filename, int & offset);
-
-
-	#ifndef NS_MINIMAL_SERVER_BUILD
-	//don't store worm detection info for single image capture info.
-	void register_worm_detection(ns_image_worm_detection_results * wi,const bool interpolated,ns_sql & sql){
-		return;
-	}
-	#endif
-
 	
 	//needed for template completeness but not used
 	const ns_image_server_image request_processed_image(const ns_processing_task & task, ns_sql & sql){ return ns_image_server_image();}
@@ -346,11 +328,6 @@ struct ns_image_server_captured_image_region : public ns_image_server_captured_i
 		ret += ns_format_time_string_for_human(capture_time);
 		return ret;
 	}
-	#ifndef NS_MINIMAL_SERVER_BUILD
-	void register_worm_detection(ns_image_worm_detection_results * wi, const bool interpolated,ns_sql & sql,const bool calculate_stats=true);
-	
-	void summarize_stats(ns_image_worm_detection_results * wi,ns_image_statistics * stats,bool calculate_non_worm=true);
-	#endif
 
 	//sometimes, regions are used to house a single object.  In this case, the object can either be a worm, not a worm, or unsorted.
 	ns_detected_worm_state detected_worm_state;

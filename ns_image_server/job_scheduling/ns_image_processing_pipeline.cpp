@@ -32,7 +32,7 @@ void ns_check_for_file_errors(ns_processing_job & job, ns_sql & sql){
 				reg.load_from_db(ns_atoi64(res[i][0].c_str()),&sql);
 				if (reg.region_detection_results_id != 0){
 					ns_image_worm_detection_results results;
-					results.id = reg.region_detection_results_id;
+					results.detection_results_id = reg.region_detection_results_id;
 					try{
 						results.load_from_db(false,false,sql,true);
 					}
@@ -42,7 +42,7 @@ void ns_check_for_file_errors(ns_processing_job & job, ns_sql & sql){
 				}
 				if (reg.region_interpolation_results_id != 0){
 					ns_image_worm_detection_results results;
-					results.id = reg.region_interpolation_results_id;
+					results.detection_results_id = reg.region_interpolation_results_id;
 					try{
 						results.load_from_db(false,true,sql,true);
 					}
@@ -1037,7 +1037,9 @@ void ns_image_processing_pipeline::process_region(const ns_image_server_captured
 
 				image_server.register_job_duration(ns_process_worm_detection,tm.stop());
 				//save worm information
-				region_image.register_worm_detection(&detected_worms(),false,sql);
+				detected_worms().save(region_image, false, sql, true);
+
+
 				ns_image_stream_color_converter<ns_component, ns_image_stream_static_offset_buffer<ns_component> >color_converter(_image_chunk_size);
 				color_converter.set_output_components(3);
 				ns_image_stream_binding<ns_image_stream_color_converter<ns_component, ns_image_stream_static_offset_buffer<ns_component> >,

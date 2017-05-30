@@ -61,15 +61,15 @@ public:
 	}
 private:
 	void erode_and_characterize(ns_image_standard & im){
-		
+
 		//calculate statistics for the current edge
 		for (unsigned int y = 0; y < im.properties().height; y++){
 			for (unsigned int x = 0; x < im.properties().width; x++){
-				if (im[y][x] != 0 && 
+				if (im[y][x] != 0 &&
 					(y == 0 || y+1  == im.properties().height ||
 					 x == 0 || x+1  == im.properties().width ||
-					 im[y-1][x  ] == 0 || im[y+1][x  ] == 0 || 
-					 im[y  ][x-1] == 0 || im[y  ][x+1] == 0 || 
+					 im[y-1][x  ] == 0 || im[y+1][x  ] == 0 ||
+					 im[y  ][x-1] == 0 || im[y  ][x+1] == 0 ||
 					 im[y-1][x-1] == 0 || im[y+1][x+1] == 0)){
 						current_round_sum+=im[y][x];
 						current_round_N++;
@@ -94,7 +94,7 @@ private:
 ns_detected_worm_stats ns_detected_worm_info::generate_stats() const{
 	const float resolution(bitmap().properties().resolution);
 	const double percentage_distance_ends(0.1);
-	
+
 	ns_detected_worm_stats stats;
 	if (worm_shape.nodes.size() == 0 || worm_shape.width.size() == 0){
 		for (unsigned int i = 0; i < stats.size(); i++)
@@ -140,7 +140,7 @@ ns_detected_worm_stats ns_detected_worm_info::generate_stats() const{
 			sorted_widths.push_back(worm_shape.width[i]);
 	}
 	std::sort(sorted_widths.begin(),sorted_widths.end());
-	
+
 	if ( sorted_widths.size() > 6 ){
 		stats[ns_stat_average_width] = sorted_widths[sorted_widths.size()/2];
 		stats[ns_stat_max_width] = sorted_widths[sorted_widths.size()-3];
@@ -157,7 +157,7 @@ ns_detected_worm_stats ns_detected_worm_info::generate_stats() const{
 	stats[ns_stat_spine_length_to_bitmap_width_ratio] = stats[ns_stat_spine_length] / stats[ns_stat_bitmap_width];
 	stats[ns_stat_spine_length_to_bitmap_height_ratio]  = stats[ns_stat_spine_length] / stats[ns_stat_bitmap_height];
 	stats[ns_stat_spine_length_to_bitmap_diagonal_ratio] = stats[ns_stat_spine_length] / stats[ns_stat_bitmap_diagonal];
-	
+
 	//widths at end information
 	int width_half_interval = (int)worm_shape.nodes.size()/20;
 	if (width_half_interval > 0){
@@ -194,11 +194,11 @@ ns_detected_worm_stats ns_detected_worm_info::generate_stats() const{
 		else stats[ns_stat_end_width_ratio] = 0;
 	}
 	else{
-		stats[ns_stat_width_at_end_0] = 0; 
+		stats[ns_stat_width_at_end_0] = 0;
 		stats[ns_stat_width_at_end_1] = 0;
 
 		stats[ns_stat_end_width_to_middle_width_ratio_0] = 0;
-		stats[ns_stat_end_width_to_middle_width_ratio_1] = 0; 
+		stats[ns_stat_end_width_to_middle_width_ratio_1] = 0;
 		stats[ns_stat_end_width_ratio] = 0;
 	}
 	//curvature
@@ -211,7 +211,7 @@ ns_detected_worm_stats ns_detected_worm_info::generate_stats() const{
 		stats[ns_stat_curvature_variance]=1000*c_stats.variance;
 		stats[ns_stat_max_curvature]=10*c_stats.maximum;
 		stats[ns_stat_curvature_x_intercept] = c_stats.x_intercept_count;
-	
+
 	}
 	else{
 		stats[ns_stat_average_curvature] = 0;
@@ -233,7 +233,7 @@ ns_detected_worm_stats ns_detected_worm_info::generate_stats() const{
 	stats[ns_stat_edge_length] = 0;
 	ns_histogram<unsigned long long,ns_8_bit> absolute_histogram,
 											  relative_histogram;
-	
+
 	for (unsigned int y = 0; y < _bitmap->properties().height; y++){
 		for (unsigned int x = 0; x < _bitmap->properties().width; x++){
 			if ( (*_bitmap )[y][x] ){
@@ -248,7 +248,7 @@ ns_detected_worm_stats ns_detected_worm_info::generate_stats() const{
 	if (stats[ns_stat_pixel_area] != 0)
 		stats[ns_stat_edge_to_area_ratio] = stats[ns_stat_edge_length]/stats[ns_stat_pixel_area];
 	else stats[ns_stat_edge_to_area_ratio] = 0;
-	
+
 	stats[ns_stat_absolute_intensity_roughness_2] = 0;
 	stats[ns_stat_relative_intensity_roughness_2] = 0;
 	long dd(3),dd_area(0);
@@ -265,7 +265,7 @@ ns_detected_worm_stats ns_detected_worm_info::generate_stats() const{
 		stats[ns_stat_absolute_intensity_roughness_2]/=dd_area;
 		stats[ns_stat_relative_intensity_roughness_2]/=dd_area;
 	}
-	
+
 	stats[ns_stat_absolute_intensity_variance] = 0;
 	stats[ns_stat_absolute_intensity_skew] = 0;
 	stats[ns_stat_absolute_intensity_dark_pixel_area]= 0;
@@ -291,7 +291,7 @@ ns_detected_worm_stats ns_detected_worm_info::generate_stats() const{
 
 		//calculate darkest 20%
 		stats[ns_stat_absolute_intensity_dark_pixel_average] = absolute_histogram.average_of_ntile(4,5);  //"darkest" pixels in absolute raw images are bright
-		stats[ns_stat_relative_intensity_dark_pixel_average] = relative_histogram.average_of_ntile(0,5);	
+		stats[ns_stat_relative_intensity_dark_pixel_average] = relative_histogram.average_of_ntile(0,5);
 
 		//calculate brightest 20%
 		stats[ns_stat_absolute_intensity_max] = absolute_histogram.average_of_ntile(0,5);
@@ -300,7 +300,7 @@ ns_detected_worm_stats ns_detected_worm_info::generate_stats() const{
 		//normalize dark area
 		stats[ns_stat_absolute_intensity_dark_pixel_area]/=stats[ns_stat_pixel_area];
 		stats[ns_stat_relative_intensity_dark_pixel_area]/=stats[ns_stat_pixel_area];
-	
+
 		//calculate brightest 2%
 		stats[ns_stat_absolute_intensity_max] = absolute_histogram.average_of_ntile(0,50);
 		stats[ns_stat_relative_intensity_max] = absolute_histogram.average_of_ntile(49,50);
@@ -328,7 +328,7 @@ ns_detected_worm_stats ns_detected_worm_info::generate_stats() const{
 	}
 
 
-		
+
 	stats[ns_stat_absolute_intensity_containing_image_region_average] = whole_image_stats.whole_image_region_stats.absolute_intensity_stats.average_intensity;
 	stats[ns_stat_relative_intensity_containing_image_region_average] = whole_image_stats.whole_image_region_stats.relative_intensity_stats.average_intensity;
 
@@ -340,7 +340,7 @@ ns_detected_worm_stats ns_detected_worm_info::generate_stats() const{
 		stats[ns_stat_relative_intensity_normalized_average] = stats[ns_stat_relative_intensity_average] / whole_image_stats.whole_image_region_stats.relative_intensity_stats.maximum_intensity;
 
 	stats[ns_stat_absolute_intensity_normalized_max] = 	(stats[ns_stat_absolute_intensity_max] - whole_image_stats.whole_image_region_stats.absolute_intensity_stats.average_intensity);
-	
+
 	stats[ns_stat_relative_intensity_normalized_max] = whole_image_stats.whole_image_region_stats.relative_intensity_stats.maximum_intensity - stats[ns_stat_relative_intensity_max];
 
 	ns_vector_2d center = worm_center();
@@ -374,9 +374,9 @@ ns_detected_worm_stats ns_detected_worm_info::generate_stats() const{
 		stats[ns_stat_absolute_intensity_of_neighborhood]/= non_worm_pixels;
 	}
 	stats[ns_stat_relative_intensity_distance_from_neighborhood] = stats[ns_stat_relative_intensity_average] - stats[ns_stat_relative_intensity_of_neighborhood];
-	
+
 	stats[ns_stat_absolute_intensity_distance_from_neighborhood] = stats[ns_stat_absolute_intensity_average] - stats[ns_stat_absolute_intensity_of_neighborhood];
-	
+
 	//worm_shape intensity
 	stats[ns_stat_absolute_intensity_spine_average] = 0;
 	stats[ns_stat_absolute_intensity_spine_variance] = 0;
@@ -422,16 +422,16 @@ ns_detected_worm_stats ns_detected_worm_info::generate_stats() const{
 		}
 
 		//normalize against average intensity for all regions detected in the image that contained the worm
-		
+
 		if (whole_image_stats.whole_image_region_stats.absolute_intensity_stats.average_intensity)
 			stats[ns_stat_absolute_intensity_normalized_spine_average] = stats[ns_stat_absolute_intensity_spine_average]/whole_image_stats.whole_image_region_stats.absolute_intensity_stats.average_intensity;
 		if (whole_image_stats.whole_image_region_stats.relative_intensity_stats.maximum_intensity)
 			stats[ns_stat_relative_intensity_normalized_spine_average] = stats[ns_stat_absolute_intensity_spine_average]/whole_image_stats.whole_image_region_stats.relative_intensity_stats.maximum_intensity;
-	
+
 		for (unsigned int i = end_left; i < end_right; i++){
 			double val = ( *_absolute_grayscale )[(unsigned int)worm_shape.nodes[i].y][(unsigned int)worm_shape.nodes[i].x] - stats[ns_stat_absolute_intensity_spine_average];
 			stats[ns_stat_absolute_intensity_spine_variance] += val*val;
-		
+
 			val = ( *_relative_grayscale )[(unsigned int)worm_shape.nodes[i].y][(unsigned int)worm_shape.nodes[i].x] - stats[ns_stat_relative_intensity_spine_average];
 			stats[ns_stat_relative_intensity_spine_variance] += val*val;
 		}
@@ -445,7 +445,7 @@ ns_detected_worm_stats ns_detected_worm_info::generate_stats() const{
 
 ns_detected_worm_info::~ns_detected_worm_info(){
 	ns_safe_delete(_bitmap);
-	ns_safe_delete(_edge_bitmap);	
+	ns_safe_delete(_edge_bitmap);
 	ns_safe_delete(_absolute_grayscale);
 	ns_safe_delete(_relative_grayscale);
 	ns_safe_delete(_spine_visualization);
@@ -477,7 +477,7 @@ void ns_detected_worm_info::copy(const ns_detected_worm_info & wi){
 
 	part_of_a_multiple_worm_cluster = wi.part_of_a_multiple_worm_cluster;
 	whole_image_stats = wi.whole_image_stats;
-	
+
 
 	failure_reason << wi.failure_reason.text();
 	must_be_a_worm = wi.must_be_a_worm;
@@ -518,7 +518,7 @@ void ns_detected_worm_info::extract_grayscale_from_large_image(const ns_vector_2
 	}
 }
 void ns_detected_worm_info::build_object_context_image(ns_detected_object & region, const ns_image_standard & absolute_grayscale, const ns_image_standard & relative_grayscale){
-	
+
 	//generate an image showing the worm's context
 	int context_l = (int)region.offset_in_source_image.x - (int)ns_worm_collage_storage::context_border_size().x,
 		context_r = (int)region.offset_in_source_image.x + region.size.x + (int)ns_worm_collage_storage::context_border_size().x,
@@ -585,7 +585,7 @@ inline bool ns_set_pixel_appropriately(const long & x,const long & y,const long 
 	if (ids[y+_y][x+_x] == 0 || ids[y+_y][x+_x] == 2)
 		return false;
 	if (ids[y+_y][x+_x] == 1){
-		ids[y+_y][x+_x] = ids[y][x]; 
+		ids[y+_y][x+_x] = ids[y][x];
 		changed[y+_y][x+_x]=true;
 		return true;
 	}
@@ -598,7 +598,7 @@ inline bool ns_set_pixel_appropriately(const long & x,const long & y,const long 
 			return false;
 		}
 		else return false;
-	}	
+	}
 	//mark pixels where different segments of the same worm touch
 	if ( node_distance_cutoff < (unsigned long)abs((long)ns_segment_node_id_from_pix(ids[y+_y][x+_x]) - (long)ns_segment_node_id_from_pix(ids[y][x]))){
 		ids[y+_y][x+_x]= 2;
@@ -624,18 +624,18 @@ void ns_divvy_up_bitmap_among_solutions_alt(const ns_image_bitmap & bmp, std::ve
 	for (unsigned int i = 0; i < worms.size(); i++){
 		for (unsigned int j = 0; j < worms[i]->worm_shape.nodes.size(); j++){
 		//	if ((unsigned long)worms[i]->worm_shape.nodes[j].y > t || (unsigned long)worms[i]->worm_shape.nodes[j].x > r)
-		//		throw ns_ex("ns_divvy_up_bitmap_among_solutions_alt::Out of bound node location found in worm shape specification (") << 
-		//			worms[i]->worm_shape.nodes[j].x  << "," << worms[i]->worm_shape.nodes[j].y << ") in an image of dimensions (" << 
+		//		throw ns_ex("ns_divvy_up_bitmap_among_solutions_alt::Out of bound node location found in worm shape specification (") <<
+		//			worms[i]->worm_shape.nodes[j].x  << "," << worms[i]->worm_shape.nodes[j].y << ") in an image of dimensions (" <<
 		//			r+1 << "," << t+1 << ")";
 			ids[(unsigned long)worms[i]->worm_shape.nodes[j].y][(unsigned long)worms[i]->worm_shape.nodes[j].x] = ns_encode_pix_info(i,j);
 		//	if (ns_worm_id_from_pix(ids[(unsigned long)worms[i]->worm_shape.nodes[j].y][(unsigned long)worms[i]->worm_shape.nodes[j].x]) >= worms.size())
 		//		throw ns_ex("ns_divvy_up_bitmap_among_solutions_alt::Invalid worm id encoding!");
 		//	if (ns_segment_node_id_from_pix(ids[(unsigned long)worms[i]->worm_shape.nodes[j].y][(unsigned long)worms[i]->worm_shape.nodes[j].x]) >= worms[i]->worm_shape.nodes.size())
-		//		throw ns_ex("ns_divvy_up_bitmap_among_solutions_alt::Invalid worm segment id encoding!");	
+		//		throw ns_ex("ns_divvy_up_bitmap_among_solutions_alt::Invalid worm segment id encoding!");
 		}
 
 	}
-			
+
 	bool expansion_complete(false);
 	unsigned int rounds(0);
 
@@ -647,10 +647,10 @@ void ns_divvy_up_bitmap_among_solutions_alt(const ns_image_bitmap & bmp, std::ve
 		if (rounds > ids.properties().height + ids.properties().width)
 			throw ns_ex("ERR");
 		expansion_complete = true;
- 
+
 		// vis
 	/*	std::string fname = "c:\\tt\\exp_";
-	
+
 		for (unsigned int y = 1; y <ids.properties().height-1; y++){
 			for (unsigned int x = 1; x <ids.properties().width-1; x++){
 				out[y][x] = 127*(ids[y][x] >= 1) + 64*(ids[y][x] > 1) + 64*(ids[y][x] == 2);
@@ -674,7 +674,7 @@ void ns_divvy_up_bitmap_among_solutions_alt(const ns_image_bitmap & bmp, std::ve
 				if (changed[y][x] || ids[y][x] < 3)
 					continue;
 				const unsigned long nodes_to_break((unsigned long)worms[ns_worm_id_from_pix(ids[y][x])]->worm_shape.nodes.size()/percent_of_node_to_break);
-		
+
 				//the expansion is complete if no actions are taken looking at any of the neighboring pixels
 				bool action_taken[4] = {
 										ns_set_pixel_appropriately(x,y,1,0,ids,changed,nodes_to_break,worms),
@@ -689,12 +689,12 @@ void ns_divvy_up_bitmap_among_solutions_alt(const ns_image_bitmap & bmp, std::ve
 				if (ids[y][x+1] == 1){ids[y][x+1] = ids[y][x]; expansion_complete = false; changed[y][x+1]=true;}*/
 			}
 		}
-		
-		
+
+
 		rounds++;
 		//cerr << "Round " << rounds << "\n";
 
-	}		
+	}
 
 	std::vector<char> worm_has_shared_segment(worms.size(),0);
 	for (unsigned int i = 0; i < worms.size(); i++){
@@ -733,7 +733,7 @@ void ns_divvy_up_bitmap_among_solutions_alt(const ns_image_bitmap & bmp, std::ve
 		}
 	}
 
-	//these are temp variables used 
+	//these are temp variables used
 	std::stack<ns_vector_2i> temp_flood_fill_stack;
 	ns_image_bitmap  temp;
 	temp.use_more_memory_to_avoid_reallocations();
@@ -797,10 +797,10 @@ void ns_divvy_up_bitmap_among_solutions(const ns_image_bitmap & bmp,std::vector<
 				worms[closest_worm_without_line_of_sight_id]->bitmap()[y][x] = 1;
 		}
 	}
-	
+
 	for (unsigned int i = 0; i < worms.size(); i++){
 		ns_vector_2i off[4] = {ns_vector_2i(1,0),ns_vector_2i(0,-1),ns_vector_2i(-1,0),ns_vector_2i(0,1)};
-		
+
 		unsigned long cutoff_start[2] = {0, (unsigned long)worms[i]->worm_shape.nodes.size()- (unsigned long)worms[i]->worm_shape.nodes.size()/4};
 		unsigned long cutoff_end[2] = {(unsigned long)worms[i]->worm_shape.nodes.size()/4, (unsigned long)worms[i]->worm_shape.nodes.size()};
 
@@ -869,7 +869,7 @@ void ns_detected_worm_info::finalize_stats_from_shape(){
 	}
 }
 unsigned int ns_detected_worm_info::from_segment_cluster_solution(
-	ns_detected_object & region, std::vector<ns_detected_worm_info> & worms, unsigned int offset, std::vector<std::vector<ns_detected_worm_info *> > & mutually_exclusive_groups, 
+	ns_detected_object & region, std::vector<ns_detected_worm_info> & worms, unsigned int offset, std::vector<std::vector<ns_detected_worm_info *> > & mutually_exclusive_groups,
 	const ns_image_standard & relative_grayscale_image, const ns_image_standard & absolute_grayscale_image, const ns_grayscale_image_type & type, const ns_visualization_type visualization_type){
 	if (region.segment_cluster_solutions.mutually_exclusive_solution_groups.size() == 0)
 		return 0;
@@ -920,14 +920,14 @@ unsigned int ns_detected_worm_info::from_segment_cluster_solution(
 	ns_vector_2i whole_worm_context_size = worms[offset].context_image_size;
 	ns_object_hand_annotation_data whole_worm_annotations(worms[offset].hand_annotations);
 
-	
+
 	//first we build a list of detected_worm_info mutually exclusive groups from the region specification
 	mutually_exclusive_groups.resize(region.segment_cluster_solutions.mutually_exclusive_solution_groups.size());
 
 	unsigned int number_of_worms_added = 0;
 	for (unsigned int g = 0; g < region.segment_cluster_solutions.mutually_exclusive_solution_groups.size(); g++){
-		
-		if (region.segment_cluster_solutions.mutually_exclusive_solution_groups[g].size() == 0) 
+
+		if (region.segment_cluster_solutions.mutually_exclusive_solution_groups[g].size() == 0)
 			throw ns_ex("ns_detected_worm_info::from_segment_cluster_solution::No worms could be constructed from provided detected_object");
 		mutually_exclusive_groups[g].resize(region.segment_cluster_solutions.mutually_exclusive_solution_groups[g].size());
 
@@ -949,7 +949,7 @@ unsigned int ns_detected_worm_info::from_segment_cluster_solution(
 				whole_worm_context.absolute_grayscale.pump(worm._worm_context_image->absolute_grayscale,1024);
 				whole_worm_context.relative_grayscale.pump(worm._worm_context_image->relative_grayscale,1024);
 				whole_worm_context.combined_image.pump(worm._worm_context_image->combined_image,1024);
-				whole_worm_edge_bitmap.pump(*worm._edge_bitmap,1024);		
+				whole_worm_edge_bitmap.pump(*worm._edge_bitmap,1024);
 				whole_worm_bitmap_of_worm_cluster.pump(*worm._bitmap_of_worm_cluster,1024);
 				worm.must_be_a_worm = worms[offset].must_be_a_worm;
 				worm.must_not_be_a_worm = worms[offset].must_not_be_a_worm;
@@ -973,11 +973,11 @@ unsigned int ns_detected_worm_info::from_segment_cluster_solution(
 			number_of_worms_added++;
 		}
 	}
-	
+
 
 	//now we handle divvying up the complex segments' bitmaps into their solutions
 	for (unsigned int g = 0; g < mutually_exclusive_groups.size(); g++){
-		
+
 		#ifdef NS_RECALULCATE_SUBSPINE_BITMAPS
 		//bool multiple_worm_cluster = !(mutually_exclusive_groups.size() == 1 && mutually_exclusive_groups[g].size() == 1);
 		ns_divvy_up_bitmap_among_solutions_alt(whole_worm_bitmap,mutually_exclusive_groups[g]);
@@ -1005,7 +1005,7 @@ unsigned int ns_detected_worm_info::from_segment_cluster_solution(
 				ns_worm_shape & sp = worm.worm_shape;
 				ns_segment_cluster_solution_group & sn = region.segment_cluster_solutions.mutually_exclusive_solution_groups[g];
 
-				#ifdef NS_ZHANG_THINNING_ON_SPINE		
+				#ifdef NS_ZHANG_THINNING_ON_SPINE
 					ns_image_bitmap zhang_image;
 					ns_zhang_thinning(worms[offset+worm_id_offset].bitmap(),zhang_image);
 				#endif
@@ -1019,7 +1019,7 @@ unsigned int ns_detected_worm_info::from_segment_cluster_solution(
 							reg_vis[y][3*x] = worm.grayscale()[y][x];
 							reg_vis[y][3*x+1] = worm.bitmap()[y][x] ? 255/2 : worm.grayscale()[y][x];
 							reg_vis[y][3*x+2] = worm.bitmap()[y][x] ? 255   : worm.grayscale()[y][x];
-							#ifdef NS_ZHANG_THINNING_ON_SPINE	
+							#ifdef NS_ZHANG_THINNING_ON_SPINE
 							if (zhang_image[y][x]!=0){
 								reg_vis[y][3*x] = 0;
 								reg_vis[y][3*x+1] = 255;
@@ -1027,9 +1027,9 @@ unsigned int ns_detected_worm_info::from_segment_cluster_solution(
 							}
 							#endif
 						}
-				#else		
+				#else
 					reg_vis_prop =  worm.absolute_grayscale().properties();
-					reg_vis.prepare_to_recieve_image(reg_vis_prop);	
+					reg_vis.prepare_to_recieve_image(reg_vis_prop);
 					if (reg_vis_prop.height != 0 && reg_vis_prop.width != 0){
 						//find darkest, lightest pixel
 						int min, max;
@@ -1049,7 +1049,7 @@ unsigned int ns_detected_worm_info::from_segment_cluster_solution(
 							for (unsigned int x = 0; x < reg_vis_prop.width; x++){
 								reg_vis[y][x] = (ns_8_bit)((((float)lightest)*((float)(worm.absolute_grayscale()[y][x]-min)))/((float)(max-min)));
 								reg_vis[y][x]*=worm.bitmap()[y][x];
-								#ifdef NS_ZHANG_THINNING_ON_SPINE	
+								#ifdef NS_ZHANG_THINNING_ON_SPINE
 									if (zhang_image[y][x]!=0){
 										reg_vis[y][x] = 0;
 									}
@@ -1085,7 +1085,7 @@ unsigned int ns_detected_worm_info::from_segment_cluster_solution(
 
 void ns_detected_worm_stats::from_string(std::istream & str){
 	std::string tmp;
-	
+
 	for (unsigned int i = 0; i < (unsigned int)ns_stat_number_of_stats; i++){
 		if (_model->included_statistics[i] == 0) continue;
 		//first to characters are #: representing the feature number suffix
@@ -1123,8 +1123,8 @@ void ns_detected_worm_stats::output_html_worm_summary(ostream & out){
 	out << "</td></tr></table>\n";
 }
 void ns_detected_worm_stats::output_csv_data(const ns_64_bit region_id, const unsigned long capture_time, const ns_vector_2i & position, const ns_vector_2i & size,const ns_object_hand_annotation_data & hand_data,ostream & out){
-	out << region_id << "," << capture_time << "," 
-		<< position.x << "," << position.y << "," 
+	out << region_id << "," << capture_time << ","
+		<< position.x << "," << position.y << ","
 		<< size.x << "," << size.y << ",";
 	hand_data.out_data(out);
 	for (unsigned int i = 0; i < (unsigned int)ns_stat_number_of_stats; i++){
@@ -1205,16 +1205,16 @@ ns_image_standard * ns_detected_worm_info::curvature_graph(){
 	im->init(prop);
 	ns_graph graph;
 	make_curvature_graph(graph);
-	
+
 	graph.set_graph_display_options("Curvature");
 	graph.draw(*im);
 	return im;
 }
 void ns_detected_worm_info::curvature_graph(ns_svg & svg){
-	
+
 	ns_graph graph;
-	make_curvature_graph(graph);	
-	ns_graph_axes axis; 
+	make_curvature_graph(graph);
+	ns_graph_axes axis;
 	axis.boundary(0) = 0;
 	axis.boundary(1) = 120;
 	axis.boundary(2) = -5;
@@ -1242,10 +1242,10 @@ void ns_detected_worm_info::make_width_graph(ns_graph &graph){
 }
 
 void ns_detected_worm_info::width_graph(ns_svg & svg){
-	
+
 	ns_graph graph;
 	make_width_graph(graph);
-	graph.set_graph_display_options("Width");	
+	graph.set_graph_display_options("Width");
 	graph.draw(svg);
 }
 ns_image_standard * ns_detected_worm_info::width_graph(){
@@ -1456,9 +1456,9 @@ inline void ns_fill_line(const int & x1, const int & x2, const int & y, image_ty
 //triangle filler algorithm from http://www.geocities.com/wronski12/3d_tutor/tri_fillers.html
 template<class image_type>
 inline void ns_fill_triangle(const ns_vector_2d & _a, const ns_vector_2d & _b, const ns_vector_2d & _c, image_type & out){
-	
+
 	if (_a == _b || _b == _c || _a == _c ||
-		_a.x == _b.x && _a.x == _c.x || 
+		_a.x == _b.x && _a.x == _c.x ||
 		_a.y == _b.y && _a.x == _c.y)
 		return;
 	ns_vector_2d a,b,c;
@@ -1515,7 +1515,7 @@ void ns_worm_collage_storage::clear(){
 	bitmaps.resize(0);
 	collage_cache.clear();
 }
-		
+
 void ns_worm_collage_storage::specifiy_region_sizes(const std::vector<ns_detected_worm_info> & worms){
 	region_image_sizes.resize(worms.size());
 	region_offsets_in_context_image.resize(worms.size());
@@ -1546,7 +1546,7 @@ const ns_image_standard & ns_worm_collage_storage::generate_collage(const ns_ima
 						  (br.y<relative_grayscale.properties().height)?br.y:(relative_grayscale.properties().height));
 		ns_vector_2i tl_gap(tl_c-tl),
 					 br_gap(br-br_c);
-					
+
 		//top gap
 		for (long y = 0; y < tl_gap.y; y++)
 			for (long x = 0; x < 3*prop.width; x++)
@@ -1589,7 +1589,7 @@ const ns_image_standard & ns_worm_collage_storage::generate_collage(const ns_ima
 
 //void ns_worm_collage_storage::populate_worms_from_db(ns_image_server_captured_image_region & region,std::vector<ns_detected_worm_info> & worms, ns_sql & sql,const bool interpolated){
 void ns_worm_collage_storage::load_images_from_db(ns_image_server_captured_image_region & region,const unsigned long expected_number_of_worms,ns_sql & sql,const bool interpolated, const bool only_load_absolute_grayscale){
-	
+
 	//interpolated worm region images are stored in a different record than detected regions
 	ns_processing_task region_task;
 	if (interpolated) region_task = ns_process_region_interpolation_vis;
@@ -1597,7 +1597,7 @@ void ns_worm_collage_storage::load_images_from_db(ns_image_server_captured_image
 
 	ns_image_server_image im(region.request_processed_image(region_task,sql));
 	ns_image_standard worm_collage;
-	
+
 	std::vector<ns_image_standard *> images;
 	try{
 		ns_image_storage_source_handle<ns_8_bit> image = image_server.image_storage.request_from_storage(im,&sql);
@@ -1613,7 +1613,7 @@ void ns_worm_collage_storage::load_images_from_db(ns_image_server_captured_image
 			<< ns_processing_step_db_column_name(ns_process_worm_detection_labels) << "=0 WHERE id=" << region.region_images_id;
 		sql.send_query();
 		throw ex;
-	}	
+	}
 	try{
 
 		//For example, 7 worms cannot be evenly divided into multiple rows of multiple worms.
@@ -1642,7 +1642,7 @@ void ns_worm_collage_storage::load_images_from_db(ns_image_server_captured_image
 		if (images[0]->properties().components != 3)
 			throw ns_ex("ns_worm_collage_storage::load_images_from_db()::Encountered a black and white collage when RGB is required.");
 
-		
+
 		context_images.resize(images.size(),0);
 		relative_region_images.resize(images.size(),0);
 		absolute_region_images.resize(images.size(),0);
@@ -1706,7 +1706,7 @@ void ns_worm_collage_storage::load_images_from_db(ns_image_server_captured_image
 		for (unsigned int i = 0; i < images.size(); i++){
 			ns_safe_delete(images[i]);
 		}
-			
+
 		for (unsigned int i = 0; i < context_images.size(); i++){
 			ns_safe_delete(context_images[i]);
 			ns_safe_delete(absolute_region_images[i]);
@@ -1720,7 +1720,7 @@ void ns_worm_collage_storage::load_images_from_db(ns_image_server_captured_image
 void ns_worm_collage_storage::populate_worm_images(std::vector<ns_detected_worm_info> & worms,const bool interpolated, const bool  only_load_context_absolute_grayscle){
 	if (context_images.size() != worms.size())
 		throw ns_ex("ns_worm_collage_storage::populate_worm_images()::The number of worms in collage and worms[] does not match");
-	
+
 	for (unsigned int i = 0; i < worms.size(); i++){
 		context_images[i]->absolute_grayscale.pump(worms[i].context_image().absolute_grayscale,1024);
 		if (only_load_context_absolute_grayscle)
@@ -1778,7 +1778,7 @@ void ns_image_worm_detection_results::add_data_to_db_query(ns_sql & sql){
 	sql << "', ";
 
 	//write the region position_in_source_image region info
-	        
+
 	sql << "worm_region_information='";
 	std::vector<unsigned int> worm_region_info(4*actual_worms.size());
 	for (unsigned int i = 0; i < actual_worms.size(); i++){
@@ -1825,10 +1825,14 @@ void ns_image_worm_detection_results::save(ns_image_server_captured_image_region
 			stats.db_id = 0;
 		else stats.db_id = ns_atoi64(res[0][0].c_str());
 		stats.submit_to_db(stats.db_id, sql, false, true);
+		if (res.size() == 0){
+			sql << "UPDATE sample_region_images SET image_statistics_id=" << stats.db_id << " WHERE id = " << region.region_images_id;
+			sql.send_query();
+		}
 	}
 
 	ns_sql_result res;
-	
+
 
 	//find worm_detection_results record.  If it doesn't exist, make a new one.
 	sql << "SELECT worm_detection_results_id, worm_interpolation_results_id FROM sample_region_images WHERE id = " << region.region_images_id;
@@ -1851,14 +1855,12 @@ void ns_image_worm_detection_results::save(ns_image_server_captured_image_region
 		data_storage_on_disk.id = 0;
 
 	region.create_storage_for_worm_results(data_storage_on_disk, interpolated, sql);
-	if (detection_results_id != 0) 
+	if (detection_results_id != 0)
 		sql << "UPDATE worm_detection_results SET ";
-	else 
+	else
 		sql << "INSERT INTO worm_detection_results SET ";
-	
 
-	if (calculate_stats)
-		sql << "image_statistics_id=" << stats.db_id << ",";
+
 
 	sql << "source_image_id = " << source_image_id << ", "
 		<< "capture_sample_id = " << capture_sample_id << ", number_of_worms=" << static_cast<unsigned int>(actual_worms.size()) << ", "
@@ -1913,9 +1915,9 @@ void ns_image_worm_detection_results::save(ns_image_server_captured_image_region
 void ns_image_worm_detection_results::save_data_to_disk(std::ofstream & out, const bool interpolated, ns_sql & sql){
 
 
-		
+
 	out << actual_worms.size() << "," << interpolated_worm_areas.size() << "\n";
-		
+
 	//write the region offset region info
 	if (actual_worms.size() != 0){
 
@@ -1930,10 +1932,10 @@ void ns_image_worm_detection_results::save_data_to_disk(std::ofstream & out, con
 				<< actual_worms[i]->region_size.y << ","
 				<< actual_worms[i]->context_image_size.x << ","
 				<< actual_worms[i]->context_image_size.y << "\n";
-		
+
 		}
 	}
-	
+
 	if (interpolated_worm_areas.size() != 0){
 		for (unsigned int i = 0; i < interpolated_worm_areas.size(); i++){
 			out << interpolated_worm_areas[i].position_in_source_image.x << ","
@@ -1949,20 +1951,20 @@ void ns_image_worm_detection_results::save_data_to_disk(std::ofstream & out, con
 	if (actual_worms.size()!= 0){
 		for (unsigned int i = 0; i < actual_worms.size(); i++){
 			out << actual_worms[i]->worm_shape.nodes.size() << ",";
-		
+
 			total_length += static_cast<unsigned int>(actual_worms[i]->worm_shape.nodes.size());
 		}
-	
+
 		out << "\n";
 	}
 	//output spine information
 	if (total_length != 0){
-	
+
 		unsigned int nodes_written = 0;
 		for (unsigned int i = 0; i < actual_worms.size(); i++){
 			actual_worms[i]->worm_shape.write_to_csv(out);
 			out << "\n";
-			
+
 		}
 
 	}
@@ -1987,12 +1989,12 @@ void ns_image_worm_detection_results::load_from_db(const bool load_worm_postures
 
 	unsigned int number_of_worms = atol(data[0][5].c_str()),
 				 number_of_interpolated_worm_areas = atol(data[0][8].c_str());
-	
+
 	data_storage_on_disk.id = atol(data[0][7].c_str());
 
 	if (data_storage_on_disk.id == 0){
 		throw ns_ex("Database storage of worm information is depreciated!");
-		
+
 	}
 	else{
 		//load from disk
@@ -2025,20 +2027,20 @@ void ns_image_worm_detection_results::load_from_db(const bool load_worm_postures
 			throw ns_ex("ns_image_worm_detection_results::load_from_db()::File specified incorrect number of worms: ") << file_number_of_worms << "; db specifies " << number_of_worms;
 		if (file_number_of_interpolated_worms != number_of_interpolated_worm_areas)
 			throw ns_ex("ns_image_worm_detection_results::load_from_db()::File specified incorrect number of interpolated worms: ") << file_number_of_interpolated_worms << "; db specifies " << number_of_interpolated_worm_areas << "(" << data_storage_on_disk.filename << ")";
-		
+
 		putative_worms.resize(number_of_worms);
 		actual_worms.resize(putative_worms.size());
-		
+
 		if (number_of_worms != 0){
-		
+
 			for (unsigned int i = 0; i < putative_worms.size(); i++){
-				
+
 				putative_worms[i].interpolated = images_comes_from_interpolated_annotations;
 				actual_worms[i] = &putative_worms[i];
 				if (!ns_read_csv_value(in(),putative_worms[i].region_position_in_source_image.x))
 					throw ns_ex("ns_image_worm_detection_results::load_from_disk()::Malformed file");
 				if (!ns_read_csv_value(in(),putative_worms[i].region_position_in_source_image.y))
-					throw ns_ex("ns_image_worm_detection_results::load_from_disk()::Malformed file");	
+					throw ns_ex("ns_image_worm_detection_results::load_from_disk()::Malformed file");
 				if (!ns_read_csv_value(in(),putative_worms[i].context_position_in_source_image.x))
 					throw ns_ex("ns_image_worm_detection_results::load_from_disk()::Malformed file");
 				if (!ns_read_csv_value(in(),putative_worms[i].context_position_in_source_image.y))
@@ -2098,7 +2100,7 @@ void ns_image_worm_detection_results::load_from_db(const bool load_worm_postures
 		//output code generates spurious comma
 		in().get();
 		if (total_node_length != 0){
-		
+
 			for (unsigned int i = 0; i < number_of_worms; i++){
 				putative_worms[i].worm_shape.read_from_csv(in(),worm_segment_node_counts[i]);
 				//output code generates spurious comma
@@ -2118,7 +2120,7 @@ void ns_image_worm_detection_results::load_from_db(const bool load_worm_postures
 			throw ns_ex("Improper file format: error at EOF");
 		in().close();
 		in.release();
-		
+
 	}
 
 	//if movement tags are unspecified, assume not_assigned.
@@ -2137,7 +2139,7 @@ void ns_image_worm_detection_results::load_from_db(const bool load_worm_postures
 				current_worm++;
 				continue;
 			}
-			cur_val+=data[0][6][i];	
+			cur_val+=data[0][6][i];
 		}
 		if (cur_val.size() != 0){
 			actual_worms[current_worm]->movement_state = (ns_movement_state)atol(cur_val.c_str());
@@ -2180,14 +2182,14 @@ void ns_worm_context_image::generate(const bool part_of_a_worm_cluster,const ns_
 //	cout << p.width << "," << p.height << "\n";
 	p.components = 3;
 	output.prepare_to_recieve_image(p);
-	
+
 	for (unsigned int y = 0; y < p.height; y++){
 		for (unsigned int x = 0; x < p.width; x++){
 			output[y][3*x+0] = (255-relative_grayscale[y][x])>>1 | 0x80; //stick everything but the lowest bit into channel 0
 			output[y][3*x+1] = (((255-relative_grayscale[y][x])>>1) & 0xFE) | ((255-relative_grayscale[y][x]) & 0x01) | 0x80;  //stick the lowest bit into channel 1
 			output[y][3*x+2] = absolute_grayscale[y][x];
-		
-			
+
+
 		}
 	}
 
@@ -2207,7 +2209,7 @@ void ns_worm_context_image::generate(const bool part_of_a_worm_cluster,const ns_
 
 		}
 	}
-	
+
 	ns_worm_context_image im;
 	output.pump(im.combined_image,1024);
 	if (0){
@@ -2225,7 +2227,7 @@ void ns_worm_context_image::generate(const bool part_of_a_worm_cluster,const ns_
 				if (info.context_image().relative_grayscale[y][x] != relative_grayscale[y][x])
 					throw ns_ex("ns_worm_context_image::generate(): Invalid pixel found in relative context image:") << info.context_image().relative_grayscale[y][x] << " vs " << (int)relative_grayscale[y][x];
 			}
-		}	
+		}
 		if (worm_bitmap.properties() != info.bitmap().properties())
 			throw ns_ex("Properties Mismatch!");
 		for (unsigned long y = 0; y < worm_bitmap.properties().height;y++){
@@ -2265,12 +2267,12 @@ void ns_worm_context_image::split(ns_image_standard & relative_grayscale, ns_ima
 
 void ns_detected_worm_info::from_training_set_visualization(ns_worm_context_image & context_visualization, const ns_vector_2i & region_size_, const ns_vector_2i & region_offset_in_context_image, const ns_vector_2i & context_image_size_){
 	//cerr << "Image is " << im.properties().width << "x" << im.properties().height <<  "\n";
-	
+
 	context_visualization.split(relative_grayscale(),absolute_grayscale(),bitmap_of_worm_cluster(),bitmap());
 	context_image_size = ns_vector_2i(relative_grayscale().properties().width,relative_grayscale().properties().height);
 	if (!(context_image_size == context_image_size_))
 		throw ns_ex("ns_detected_worm_info::from_training_set_visualization()::Context image size does not match metadata spec");
-	
+
 	region_size = region_size_;
 	context_visualization.combined_image.pump(_worm_context_image->combined_image,1024);
 	relative_grayscale().pump(_worm_context_image->relative_grayscale,1024);
@@ -2291,7 +2293,7 @@ void ns_detected_worm_info::crop_images_to_region_size(const ns_vector_2i & regi
 		 b(region_offset_in_context_image.y),
 		 r(region_offset_in_context_image.x+region_size.x-1),
 		 t(region_offset_in_context_image.y+region_size.y-1);
-	
+
 	ns_image_properties p(_bitmap_of_worm_cluster->properties());
 	p.width = region_size.x;
 	p.height = region_size.y;
@@ -2331,7 +2333,7 @@ double ns_detected_worm_stats::transformed_statistic(const ns_detected_worm_clas
 		double trans = statistics[i]-_model->statistics_ranges[i].avg;
 		if (_model->statistics_ranges[i].std != 0)
 			trans /=_model->statistics_ranges[i].std;
-		value += _model->pca_spec.pc_vectors[val][i]*trans; 
+		value += _model->pca_spec.pc_vectors[val][i]*trans;
 	}
 	return value;
 }
@@ -2348,7 +2350,7 @@ double ns_detected_worm_stats::scaled_statistic(const ns_detected_worm_classifie
 		return 0;
 	if (_model->statistics_ranges[val].min > _model->statistics_ranges[val].max) throw ns_ex("ns_detected_worm_stats::range for ") << ns_classifier_abbreviation(val) << " has larger min (" << _model->statistics_ranges[val].min << ") than max(" << _model->statistics_ranges[val].max << ")";
 	if (_model->statistics_ranges[val].max == _model->statistics_ranges[val].min){
-		
+
 		throw ns_ex("Statistic range for ") << ns_classifier_label(val) << " is 0!";
 		return 0;
 	}
@@ -2405,24 +2407,24 @@ void ns_detected_worm_stats::draw_feature_frequency_distributions(const std::vec
 	std::string freq_base_dir = output_directory;
 	ns_dir::create_directory_recursive(freq_base_dir);
 	ofstream raw_stats((freq_base_dir + DIR_CHAR_STR + "stats.csv").c_str());
-	
+
 	raw_stats << "Worm ID,Label,Classification";
 	for (unsigned int s = 0; s < (unsigned int) ns_stat_number_of_stats; s++){
 		raw_stats << "," << ns_classifier_label((ns_detected_worm_classifier)s);
 	}
 	raw_stats << "\n";
-	for (unsigned int i = 0; i < worm_stats.size(); i++){		
+	for (unsigned int i = 0; i < worm_stats.size(); i++){
 		raw_stats << i << "," << label << ",Accepted";
 		for (unsigned int s = 0; s < (unsigned int) ns_stat_number_of_stats; s++)
 			raw_stats << "," << worm_stats[i][(ns_detected_worm_classifier)s];
-		
+
 		raw_stats << "\n";
 	}
-	for (unsigned int i = 0; i < non_worm_stats.size(); i++){		
+	for (unsigned int i = 0; i < non_worm_stats.size(); i++){
 		raw_stats << i << "," << label <<",Rejected";
 		for (unsigned int s = 0; s < (unsigned int) ns_stat_number_of_stats; s++)
 			raw_stats << "," << non_worm_stats[i][(ns_detected_worm_classifier)s];
-		
+
 		raw_stats << "\n";
 	}
 	raw_stats.close();
@@ -2438,7 +2440,7 @@ void ns_detected_worm_stats::draw_feature_frequency_distributions(const std::vec
 		draw_feature_frequency_distributions(std::vector<ns_detected_worm_stats>(),merged,label,new_dir);
 	}
 	std::vector<ns_graph_object> worm_distributions, non_worm_distributions;
-	
+
 	worm_distributions.clear();
 	worm_distributions.resize((unsigned int)ns_stat_number_of_stats,ns_graph_object::ns_graph_dependant_variable);
 	non_worm_distributions.clear();
@@ -2487,7 +2489,7 @@ void ns_detected_worm_stats::draw_feature_frequency_distributions(const std::vec
 			freq_graph.prepare_to_recieve_image(prop);
 			graph.set_graph_display_options(ns_classifier_label((ns_detected_worm_classifier)s),axes);
 			graph.draw(freq_graph);
-			
+
 			std::string fn = freq_base_dir + "\\" + ns_classifier_abbreviation((ns_detected_worm_classifier)s) + ".tif";
 
 			ns_tiff_image_output_file<ns_8_bit> im_out;
@@ -2507,18 +2509,18 @@ void ns_image_worm_detection_results::create_visualization(const unsigned int cr
 	long y_bounds[2];
 	long width = image.properties().width;
 	long height = image.properties().height;
-	
+
 	long thickness_x_bounds[2];
 	long thickness_y_bounds[2];
 
-	
+
 	if (draw_non_worms){
 		//make rejected worms red
 		for (unsigned int i = 0; i < not_worms.size(); i++){
 			//draw centers
 			for (int y = 0; y < not_worms[i]->region_size.y; y++){
 				for (int x = 0; x < not_worms[i]->region_size.x; x++){
-					if (not_worms[i]->bitmap()[y][x]){		
+					if (not_worms[i]->bitmap()[y][x]){
 						image[y+not_worms[i]->region_position_in_source_image.y][3*(x+not_worms[i]->region_position_in_source_image.x)] = 255;
 						image[y+not_worms[i]->region_position_in_source_image.y][3*(x+not_worms[i]->region_position_in_source_image.x)+1] = image[y][3*(x+not_worms[i]->region_position_in_source_image.x)+1]/2;
 						image[y+not_worms[i]->region_position_in_source_image.y][3*(x+not_worms[i]->region_position_in_source_image.x)+2] = image[y][3*(x+not_worms[i]->region_position_in_source_image.x)+2]/2;
@@ -2538,7 +2540,7 @@ void ns_image_worm_detection_results::create_visualization(const unsigned int cr
 						image[y+actual_worms[i]->region_position_in_source_image.y][3*(x+actual_worms[i]->region_position_in_source_image.x)+2] = 255;
 					}
 				}
-				
+
 			}
 			//draw edges
 			for (int y = 0; y < actual_worms[i]->region_size.y; y++){
@@ -2550,7 +2552,7 @@ void ns_image_worm_detection_results::create_visualization(const unsigned int cr
 					}
 				}
 			}
-		}		
+		}
 	}
 	else{
 		for (unsigned int i = 0; i < actual_worms.size(); i++){
@@ -2563,7 +2565,7 @@ void ns_image_worm_detection_results::create_visualization(const unsigned int cr
 						image[y+actual_worms[i]->region_position_in_source_image.y][3*(x+actual_worms[i]->region_position_in_source_image.x)+2] = image[y][3*(x+actual_worms[i]->region_position_in_source_image.x)+2]/2;
 					}
 				}
-				
+
 			}
 			//draw edges
 			for (int y = 0; y < actual_worms[i]->region_size.y; y++){
@@ -2575,7 +2577,7 @@ void ns_image_worm_detection_results::create_visualization(const unsigned int cr
 					}
 				}
 			}
-		}		
+		}
 	}
 
 	for (unsigned int i = 0; i < actual_worms.size(); i++){
@@ -2584,7 +2586,7 @@ void ns_image_worm_detection_results::create_visualization(const unsigned int cr
 		if (actual_worms[i]->worm_shape.nodes.size() != 0){
 			spine_vertex[0].x = actual_worms[i]->region_position_in_source_image.x + (int)actual_worms[i]->worm_shape.nodes[0].x;
 			spine_vertex[0].y = actual_worms[i]->region_position_in_source_image.y + (int)actual_worms[i]->worm_shape.nodes[0].y;
-		
+
 			for (unsigned int j = 1; j < actual_worms[i]->worm_shape.nodes.size()-1; j++){  //deliberately leave out ends to differentiate multiple worms
 				spine_vertex[1].x = actual_worms[i]->region_position_in_source_image.x + (int)actual_worms[i]->worm_shape.nodes[j].x;
 				spine_vertex[1].y = actual_worms[i]->region_position_in_source_image.y + (int)actual_worms[i]->worm_shape.nodes[j].y;
@@ -2603,17 +2605,17 @@ void ns_image_worm_detection_results::create_visualization(const unsigned int cr
 				y_bounds[0] = (long)avg.y - (long)cross_height/2;
 				y_bounds[1] = (long)avg.y + (long)cross_height/2;
 				if (x_bounds[0] < 0)		x_bounds[0] = 0;
-				if (x_bounds[1] > width-1)	x_bounds[1] = width-1;			
+				if (x_bounds[1] > width-1)	x_bounds[1] = width-1;
 				if (y_bounds[0] < 0)		y_bounds[0] = 0;
 				if (y_bounds[1] > height-1) y_bounds[1] = height-1;
-				
+
 				thickness_x_bounds[0] = (long)avg.x - (long)cross_thickness/2;
 				thickness_x_bounds[1] = (long)avg.x + (long)cross_thickness/2;
 				thickness_y_bounds[0] = (long)avg.y - (long)cross_thickness/2;
 				thickness_y_bounds[1] = (long)avg.y + (long)cross_thickness/2;
 
 				if (thickness_x_bounds[0] < 0)			thickness_x_bounds[0] = 0;
-				if (thickness_x_bounds[1] > width-1)	thickness_x_bounds[1] = width-1;			
+				if (thickness_x_bounds[1] > width-1)	thickness_x_bounds[1] = width-1;
 				if (thickness_y_bounds[0] < 0)			thickness_y_bounds[0] = 0;
 				if (thickness_y_bounds[1] > height-1)	thickness_y_bounds[1] = height-1;
 				if (!draw_non_worms){
@@ -2635,7 +2637,7 @@ void ns_image_worm_detection_results::create_visualization(const unsigned int cr
 			}
 		}
 
-	}	
+	}
 	//ouput reasons for rejection of rejected reasons.
 	if (draw_labels){
 		ns_acquire_lock_for_scope font_lock(font_server.default_font_lock, __FILE__, __LINE__);
@@ -2661,9 +2663,9 @@ void ns_image_worm_detection_results::create_visualization(const unsigned int cr
 		ns_acquire_lock_for_scope font_lock(font_server.default_font_lock, __FILE__, __LINE__);
 		ns_font & font(font_server.get_default_font());
 		font.set_height((bottom_margin_size)/3);
-	
+
 		image.increase_size(ns_image_properties(im_bottom + bottom_margin_size,image.properties().width,image.properties().components));
-		 
+
 		for (unsigned int y = 0; y < bottom_margin_size; y++)
 			for (unsigned int x = 0; x < image.properties().width*image.properties().components; x++)
 				image[im_bottom + y][x] = 0;
@@ -2909,7 +2911,7 @@ void ns_image_worm_detection_results::calculate_image_region_stats(){
 		overall_stats.absolute_intensity_stats.average_intensity/=(unsigned int)putative_worms.size();
 		overall_stats.relative_intensity_stats.average_intensity/=(unsigned int)putative_worms.size();
 	}
-	
+
 	for (unsigned int i = 0; i < putative_worms.size(); i++)
 		putative_worms[i].whole_image_stats.worm_region_specific_region_stats = overall_stats;
 }
@@ -2926,7 +2928,7 @@ std::map<std::string,unsigned long> ns_image_worm_detection_results:: give_worm_
 }
 void ns_image_worm_detection_results::sort_putative_worms(const ns_svm_model_specification & model){
 	actual_worms.reserve(putative_worms.size());
-	not_worms.reserve(putative_worms.size());	
+	not_worms.reserve(putative_worms.size());
 
 	for (unsigned int i = 0; i < mutually_exclusive_worm_groups.size(); i++){
 		std::vector<unsigned int> number_of_worms_in_exclusive_group;
@@ -2942,7 +2944,7 @@ void ns_image_worm_detection_results::sort_putative_worms(const ns_svm_model_spe
 		//find worms in each mutually exclusive group
 		for (unsigned int g = 0; g < mutually_exclusive_worms.size(); g++){
 			for (unsigned int w = 0; w < mutually_exclusive_worms[g].size(); w++){
-				
+
 				mutually_exclusive_worms[g][w]->hand_annotations.identified_as_a_worm_by_machine = mutually_exclusive_worms[g][w]->is_a_worm(model);
 				if (mutually_exclusive_worms[g][w]->hand_annotations.identified_as_a_worm_by_machine){
 					total_length_of_worms_in_exclusive_group[g]+= mutually_exclusive_worms[g][w]->worm_shape.length;
@@ -2963,13 +2965,13 @@ void ns_image_worm_detection_results::sort_putative_worms(const ns_svm_model_spe
 			}
 		}
 		//cout << "Winning group has " << number_of_worms_in_exclusive_group[largest_group_id] << " worms.\n";
-		
-	
+
+
 		//add all the worms from the winning group to the detected worm list.
-		
+
 		for (unsigned int g = 0; g < mutually_exclusive_worms.size(); g++){
 			#ifdef ALLOW_ALL_SPINE_PERMUTATIONS
-			if (true){	
+			if (true){
 			#else
 			if (g == largest_group_id){
 			#endif
@@ -2983,7 +2985,7 @@ void ns_image_worm_detection_results::sort_putative_worms(const ns_svm_model_spe
 				for (unsigned int w = 0; w <mutually_exclusive_worms[g].size(); w++)
 						if (mutually_exclusive_worms[g][w]->hand_annotations.identified_as_a_worm_by_machine)
 							mutually_exclusive_worms[g][w]->hand_annotations.identified_as_misdisambiguated_multiple_worms = true;
-				
+
 			}
 		}
 
@@ -3029,7 +3031,7 @@ void ns_image_worm_detection_results::clear(){
 	 data_storage_on_disk = ns_image_server_image();
 }
 
-void ns_calculate_res_aware_edges(ns_image_bitmap & im, ns_image_bitmap & edge_bitmap, std::vector<ns_vector_2d> & output_coordinates, 
+void ns_calculate_res_aware_edges(ns_image_bitmap & im, ns_image_bitmap & edge_bitmap, std::vector<ns_vector_2d> & output_coordinates,
 	std::vector<ns_vector_2d> & holes, std::vector<ns_edge_ui> & edge_list, std::vector<ns_edge_2d> &edges,
 	std::stack<ns_vector_2i> & temp_flood_fill_stack, ns_image_bitmap & temp){
 

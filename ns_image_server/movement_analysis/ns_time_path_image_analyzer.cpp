@@ -4787,10 +4787,16 @@ void ns_analyzed_image_time_path::save_movement_images(const ns_analyzed_time_im
 				flow_output_reciever = new ns_image_storage_reciever_handle<float>(image_server_const.image_storage.request_local_cache_storage_float(volatile_storage_name(round_id, true), ns_tiff_zip, save_output_buffer_height, false));
 		}
 		else {
-			if (save_image)
-				output_reciever = new ns_image_storage_reciever_handle<ns_8_bit>(image_server_const.image_storage.request_storage(output_image, ns_tiff_lzw, 1.0,save_output_buffer_height, &sql, had_to_use_volatile_storage, false, false));
-			if (save_flow_image)
+			if (save_image) {
+				if (ns_fix_filename_suffix(output_image.filename, ns_tiff_lzw))
+					output_image.save_to_db(output_image.id, &sql);
+				output_reciever = new ns_image_storage_reciever_handle<ns_8_bit>(image_server_const.image_storage.request_storage(output_image, ns_tiff_lzw, 1.0, save_output_buffer_height, &sql, had_to_use_volatile_storage, false, false));
+			}
+			if (save_flow_image) {
+				if (ns_fix_filename_suffix(output_image.filename, ns_tiff_zip))
+					output_image.save_to_db(output_image.id, &sql);
 				flow_output_reciever = new ns_image_storage_reciever_handle<float>(image_server_const.image_storage.request_storage_float(flow_output_image, ns_tiff_zip, 1.0, save_output_buffer_height, &sql, had_to_use_volatile_storage, false, false));
+			}
 		}
 	}
 	//write out a dummy image if there are no frames in the path.
@@ -5983,6 +5989,8 @@ void ns_time_path_image_movement_analyzer::generate_death_aligned_movement_postu
 		reg.sample_name = sample_name;
 		reg.experiment_name = experiment_name;
 		ns_image_server_image im(reg.create_storage_for_aligned_path_image(t,(unsigned long)event_to_align,ns_tiff,sql,ns_movement_event_to_label(event_to_align)));
+		if (ns_fix_filename_suffix(im.filename, ns_tiff))
+			im.save_to_db(im.id, &sql);
 		try{
 			bool had_to_use_volatile_storage;
 			ns_image_storage_reciever_handle<ns_8_bit> r(image_server_const.image_storage.request_storage(im,ns_tiff,1.0,1024,&sql,had_to_use_volatile_storage,false,false));

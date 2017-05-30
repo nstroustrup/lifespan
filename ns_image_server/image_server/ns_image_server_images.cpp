@@ -624,6 +624,8 @@ ns_image_server_captured_image_region ns_image_server_captured_image_region::get
 const ns_image_server_image & ns_image_server_image::create_storage_for_processed_image(const ns_processing_task & task, const ns_image_type & image_type, ns_image_server_sql * sql, const std::string & filename_suffix){
 //	throw ns_ex("Nonsensical storage request!");
 	processed_output_storage->load_from_db(processed_output_storage->id,sql);
+	if (ns_fix_filename_suffix(processed_output_storage->filename, image_type))
+		processed_output_storage->save_to_db(processed_output_storage->id, sql);
 	//delete the file if it already exists
 	/*if (processed_output_storage->id != 0)
 		image_server_const.image_storage.delete_from_storage(*processed_output_storage,sql);

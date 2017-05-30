@@ -26,6 +26,16 @@ ns_image_type ns_image_type_from_filename(const string & filename){
 
 }
 
+
+bool ns_fix_filename_suffix(std::string & filename, const ns_image_type & type) {
+	if (ns_image_type_from_filename(filename) == type)
+		return false;
+	filename = ns_dir::extract_filename_without_extension(filename);
+	ns_add_image_suffix(filename,type);
+	return true;
+}
+
+
 unsigned int _c = 0;
 void debug_bitmap_output(ns_image_bitmap & bitmap,unsigned int _l){
 	ns_jpeg_image_output_file<ns_8_bit> j;

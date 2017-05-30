@@ -451,18 +451,13 @@ ifstream * ns_image_storage_handler::request_metadata_from_disk(ns_image_server_
 	return i;
 }
 
-ofstream * ns_image_storage_handler::request_metadata_output(ns_image_server_image & image, const ns_image_type & extension, const bool binary,ns_image_server_sql * sql) const{
+ofstream * ns_image_storage_handler::request_metadata_output(ns_image_server_image & image, const ns_image_type & file_type, const bool binary,ns_image_server_sql * sql) const{
 
 	if (image.filename.size() == 0 || image.path.size() == 0 || image.partition.size() == 0) image.load_from_db(image.id,sql);
 	//std::string existing_filename_extension(ns_dir::extract_extension(image.filename));
 
 	//remove the current extension and make use the specified one
-	image.filename = ns_dir::extract_filename_without_extension(image.filename);
-	image.filename+= ".";
-	image.filename += extension;
-
-
-	ns_file_location_specification spec(look_up_image_location(image,sql,extension));
+	ns_file_location_specification spec(look_up_image_location(image,sql, file_type,true));
 
 	//try to store image in long-term storage
 	if (long_term_storage_directory.size() != 0 && ns_dir::file_exists(spec.long_term_directory)){
@@ -1453,7 +1448,7 @@ ns_file_location_specification ns_image_storage_handler::look_up_image_location(
 		std::string desired_suffix;
 		ns_add_image_suffix(desired_suffix, image_type);
 		if (ns_dir::extract_extension(image.filename) != desired_suffix.substr(1))
-			ns_add_image_suffix(image.filename, image_type);
+			throw ns_ex("Requesting incorrect suffix: ") << image.filename << " != " << desired_suffix.substr(1);
 	}
 	ns_dir::convert_slashes(image.path);
 	return compile_absolute_paths_from_relative(image.path,image.partition,image.filename);

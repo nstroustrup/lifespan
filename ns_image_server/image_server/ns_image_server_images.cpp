@@ -444,7 +444,7 @@ void ns_image_server_captured_image_region::create_storage_for_worm_results(ns_i
 	im.path = region_dir + DIR_CHAR + "detected_data";
 	im.filename = filename(&sql);
 	if (interpolated) im.filename += "_i";
-	im.filename += ".wrm";
+	ns_add_image_suffix(im.filename, ns_wrm);
 	im.partition = image_server_const.image_storage.get_partition_for_experiment(experiment_id,&sql);
 
 	sql.send_query("BEGIN");

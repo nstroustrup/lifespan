@@ -1144,10 +1144,13 @@ void ns_dispatcher_job_pool_job::operator()(ns_dispatcher_job_pool_persistant_da
 			external_data->status_info.update_thread_stats(current_thread_state->second.internal_thread_id, stats);
 
 
+			image_server.update_processing_status("Idle", 0, 0, *persistant_data.sql);
 		}
 		catch (ns_ex & ex) {
 			image_server.register_server_event(ex, persistant_data.sql);
+			image_server.update_processing_status("Idle", 0, 0, *persistant_data.sql);
 		}
+
 
 		if (multithreaded_job) {
 			external_data->status_info.lock.wait_to_acquire(__FILE__, __LINE__);

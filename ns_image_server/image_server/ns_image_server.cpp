@@ -959,6 +959,29 @@ bool ns_image_server::upgrade_tables(ns_sql & sql,const bool just_test_if_needed
 		changes_made = true;
 	}
 
+	sql << "SELECT table_name "
+		"FROM information_schema.tables "
+		"WHERE table_schema = '" << schema_name << "' ";
+		" AND table_name = 'processing_node_status'";
+	res.clear();
+	sql.get_rows(res);
+	if (res.empty()) {
+		if (just_test_if_needed)
+			return true;
+		sql << "CREATE TABLE `processing_node_status` ("
+			"`host_id` BIGINT NULL,"
+			"`node_id` BIGINT NULL,"
+			"`current_processing_job_queue_id` BIGINT NULL,"
+			"`current_processing_job_id` BIGINT NULL,"
+			"`state` VARCHAR(20) NOT NULL DEFAULT '',"
+			"`current_output_event_id` BIGINT NULL,"
+			"`ts` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP"
+			")"
+			"COLLATE = 'utf8_general_ci'"
+			"ENGINE = MyISAM";
+		sql.send_query();
+		changes_made = true;
+	}
 
 	if (!changes_made && !just_test_if_needed){
 		cout << "The database appears up-to-date; no changes were made.\n";
@@ -1771,6 +1794,18 @@ void ns_image_server::unregister_host(ns_image_server_sql * sql) {
 	*sql << "UPDATE hosts SET last_ping = 0 WHERE id = " << host_id();
 	sql->send_query();
 };
+
+void ns_image_server::update_processing_status(const std::string & processing_state, const ns_64_bit processing_job_id, const ns_64_bit processing_job_queue_id,ns_sql & sql) const {
+
+	std::map<ns_64_bit, ns_thread_output_state>::iterator current_thread_state = get_current_thread_state_info();
+	
+	sql << "DELETE FROM  processing_node_status WHERE " << " host_id = " << _host_id << " AND node_id = " << current_thread_state->second.internal_thread_id;
+	sql.send_query();
+
+	sql << "INSERT INTO processing_node_status SET host_id = " << _host_id << ", node_id = " << current_thread_state->second.internal_thread_id << ", "
+		   "state='" << processing_state << "', current_processing_job_queue_id = " << processing_job_queue_id << ", current_processing_job_id = " << processing_job_id << ", current_output_event_id = " << current_thread_state->second.last_event_sql_id;
+	sql.send_query();
+}
 void ns_image_server::register_host(ns_image_server_sql * sql, bool overwrite_current_entry, bool respect_existing_database_choice) {
 
 	//log in to the server, register the host, get its database id, and update the filed ip address.
@@ -1812,9 +1847,10 @@ void ns_image_server::register_host(ns_image_server_sql * sql, bool overwrite_cu
 				<< ", additional_host_description='"<< additional_host_description << "', system_parallel_process_id=" << system_parallel_process_id();
 				//if the user has requested a database change, we update the record in the new database (to, for example, prevent infinite looping between databases).
 				//on the initial startup, however, we want to respect the specification in the db, and switch databases if requested.
-			if (!respect_existing_database_choice) *sql << ",database_used='" << *sql_database_choice << "'";
-				*sql << ",system_hostname = '" << system_host_name << "'"
-					   " WHERE id='" << _host_id << "'";
+			if (!respect_existing_database_choice) 
+				*sql << ",database_used='" << *sql_database_choice << "'";
+			*sql << ",system_hostname = '" << system_host_name << "'";
+			*sql <<  " WHERE id='" << _host_id << "'";
 			sql->send_query();
 		}
 	}

@@ -71,7 +71,7 @@ bool ns_processing_job_scheduler::run_a_job(ns_processing_job & job,ns_sql & sql
 
 	if (job.maintenance_task == ns_maintenance_update_processing_job_queue){
 		image_server.register_server_event(ns_image_server_event("Updating job queue"),&sql);
-
+		image_server.update_processing_status("Updating Queue", 0, 0, sql);
 		sql << "DELETE from processing_jobs WHERE maintenance_task =" << ns_maintenance_update_processing_job_queue;
 		sql.send_query();
 		push_scheduler.report_job_as_finished(job,sql);
@@ -108,6 +108,8 @@ bool ns_processing_job_scheduler::run_a_job(ns_processing_job & job,ns_sql & sql
 			processor().flag_job_as_being_processed(sql);
 		sql.send_query("COMMIT");
 
+		image_server.update_processing_status("Processing Job", job.id,job.queue_entry_id, sql);
+
 		if (processor().run_job(sql))
 		processor().mark_subject_as_busy(false,sql);
 
@@ -119,6 +121,8 @@ bool ns_processing_job_scheduler::run_a_job(ns_processing_job & job,ns_sql & sql
 		if (processor().delete_job_after_processing())
 			processor().delete_job(sql);
 		sql.send_query("COMMIT");
+
+		image_server.update_processing_status("Finished Job", job.id, job.queue_entry_id, sql);
 
 		processor.release();
 		image_server.register_job_duration(ns_performance_statistics_analyzer::ns_running_a_job,tp.stop());
@@ -140,12 +144,15 @@ bool ns_processing_job_scheduler::run_a_job(ns_processing_job & job,ns_sql & sql
 		//host_event log, and annotate the current job (and any associated images)
 		//with a reference to the error that occurred.
 		sql.clear_query();
+		image_server.update_processing_status("Handling Error", job.id, job.queue_entry_id, sql);
 		
 		processor().mark_subject_as_busy(false,sql);
 
 
 		ns_64_bit error_id(push_scheduler.report_job_as_problem(job,ex,sql));
 		sql.send_query("COMMIT");
+
+
 
 		//there are a variety of problems that could cause an exception to be thrown.
 		//only mark the image itself as problematic if the error doesn't come from 
@@ -169,6 +176,7 @@ bool ns_processing_job_scheduler::run_a_job(ns_processing_job & job,ns_sql & sql
 		ns_ex ex(e);
 		
 		sql.clear_query();
+		image_server.update_processing_status("Handling Error", job.id, job.queue_entry_id, sql);
 		
 		processor().mark_subject_as_busy(false,sql);
 		//we have found an error, handle it by registering it in the
@@ -176,7 +184,7 @@ bool ns_processing_job_scheduler::run_a_job(ns_processing_job & job,ns_sql & sql
 		//with a reference to the error that occurred.
 		ns_64_bit error_id(push_scheduler.report_job_as_problem(job,ex,sql));
 		sql.send_query("COMMIT");
-		
+
 		
 		processor().mark_subject_as_problem(error_id,sql);
 

@@ -1839,7 +1839,7 @@ void ns_image_worm_detection_results::save(ns_image_server_captured_image_region
 	}
 	else detection_results_id = 0;
 
-	if(detection_results_id != 0){
+	if (detection_results_id != 0) {
 
 		sql << "SELECT data_storage_on_disk_id FROM worm_detection_results WHERE id = " << detection_results_id;
 		ns_sql_result res2;
@@ -1847,7 +1847,7 @@ void ns_image_worm_detection_results::save(ns_image_server_captured_image_region
 		if (res2.size() == 0)
 			data_storage_on_disk.id = 0;
 		else data_storage_on_disk.id = ns_atoi64(res2[0][0].c_str());
-
+	}
 
 	region.create_storage_for_worm_results(data_storage_on_disk, interpolated, sql);
 	if (detection_results_id != 0) {

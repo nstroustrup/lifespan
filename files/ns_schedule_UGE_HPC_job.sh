@@ -1,7 +1,7 @@
 #!/bin/bash
 #$ -e /users/nstroustrup/nstroustrup/qsub/lifespan/lifespan_machine_$JOB_ID_$HOSTNAME_$TASK_ID_errors.txt
 #$ -o /users/nstroustrup/nstroustrup/qsub/lifespan/lifespan_machine_$JOB_ID_$HOSTNAME_$TASK_ID_output.txt
-#$ -l virtual_free=8G,h_rt=06:00:00
+#$ -l virtual_free=8G,h_rt=0:10:00
 #$ -pe smp 4
 #$ -N ns_im_4    #job name
 #$ -q short-sl7  #queue

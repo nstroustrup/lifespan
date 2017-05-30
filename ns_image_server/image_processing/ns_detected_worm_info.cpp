@@ -1847,13 +1847,17 @@ void ns_image_worm_detection_results::save(ns_image_server_captured_image_region
 		sql << "SELECT data_storage_on_disk_id FROM worm_detection_results WHERE id = " << detection_results_id;
 		ns_sql_result res2;
 		sql.get_rows(res2);
-		if (res2.size() == 0) {
+		if (res2.size() != 0) 
+			data_storage_on_disk.id = ns_atoi64(res2[0][0].c_str()); 
+		else {
 			need_to_make_new_record = true;
 			data_storage_on_disk.id = 0;
 		}
-		else data_storage_on_disk.id = ns_atoi64(res2[0][0].c_str());
-	}else
+	}
+	else {
+		need_to_make_new_record = true;
 		data_storage_on_disk.id = 0;
+	}
 
 	region.create_storage_for_worm_results(data_storage_on_disk, interpolated, sql);
 	if (need_to_make_new_record)
@@ -1875,23 +1879,26 @@ void ns_image_worm_detection_results::save(ns_image_server_captured_image_region
 	sql << ", ";
 
 	//write movement tags
-	sql << "worm_movement_tags='";
-	string movement_tags;
+	sql << "worm_movement_tags='',";
+	/*string movement_tags;
 	for (unsigned int i = 0; i < actual_worms.size(); i++) {
 		movement_tags += ns_to_string((unsigned long)actual_worms[i]->movement_state);
 		if (i + 1 <  actual_worms.size())
 			movement_tags += ",";
 	}
-	sql << movement_tags << "' ,";
+	sql << movement_tags << "' ,";*/
 	// Now provide empty values for the required-though-deprecated blob columns:
 	sql << "worm_segment_node_counts='', worm_segment_information='', worm_region_information='', worm_fast_movement_mapping=''"
 		<< ", worm_slow_movement_mapping='', worm_movement_state='', worm_movement_fast_speed='', worm_movement_slow_speed=''"
 		<< ", interpolated_worm_areas=''";
 
-	if (need_to_make_new_record)
+	if (need_to_make_new_record) {
+		cout << sql.query() << "\n";
 		detection_results_id = sql.send_query_get_id();
+	}
 	else {
 		sql << " WHERE id=" << detection_results_id;
+		cout << sql.query() << "\n";
 		sql.send_query();
 	}
 
@@ -1902,6 +1909,7 @@ void ns_image_worm_detection_results::save(ns_image_server_captured_image_region
 		if (!interpolated) sql << "worm_detection_results_id=";
 		else			   sql << "worm_interpolation_results_id=";
 		sql << detection_results_id << " WHERE id = " << region.region_images_id;
+		cout << sql.query() << "\n";
 		sql.send_query();
 	}
 
@@ -1911,12 +1919,12 @@ void ns_image_worm_detection_results::save(ns_image_server_captured_image_region
 	ns_acquire_for_scope<ofstream> outfile(image_server.image_storage.request_metadata_output(data_storage_on_disk, ns_wrm, true, &sql));
 	if (outfile().fail())
 		throw ns_ex("Could not make storage for region data file.");
-	save_data_to_disk(outfile(), interpolated, sql);
+	save_data_to_disk(outfile(), interpolated);
 	outfile().close();
 	outfile.release();
 
 }
-void ns_image_worm_detection_results::save_data_to_disk(std::ofstream & out, const bool interpolated, ns_sql & sql){
+void ns_image_worm_detection_results::save_data_to_disk(std::ofstream & out, const bool interpolated){
 
 
 

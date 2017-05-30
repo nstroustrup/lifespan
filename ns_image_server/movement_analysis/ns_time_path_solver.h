@@ -235,7 +235,7 @@ struct ns_time_path_solver_path{
 
 
 struct ns_time_path_solver_path_group{
-	std::vector<ns_atoi64> path_ids;
+	std::vector<ns_64_bit> path_ids;
 };
 
 

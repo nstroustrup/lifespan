@@ -149,7 +149,7 @@ public:
 
 	///saves all information about each region in a mask to
 	///the database.
-	void save_to_db(ns_64_bitmask_id, ns_sql & sql) const{
+	void save_to_db(ns_64_bit mask_id, ns_sql & sql) const{
 		sql << "DELETE FROM image_mask_regions WHERE mask_id=" << mask_id;
 		sql.send_query();
 		sql.send_query("COMMIT");

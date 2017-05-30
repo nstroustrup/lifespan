@@ -1847,16 +1847,15 @@ void ns_image_worm_detection_results::save(ns_image_server_captured_image_region
 		if (res2.size() == 0)
 			data_storage_on_disk.id = 0;
 		else data_storage_on_disk.id = ns_atoi64(res2[0][0].c_str());
-	}
+	}else
+		data_storage_on_disk.id = 0;
 
 	region.create_storage_for_worm_results(data_storage_on_disk, interpolated, sql);
-	if (detection_results_id != 0) {
+	if (detection_results_id != 0) 
 		sql << "UPDATE worm_detection_results SET ";
-	}
-	else {
-		data_storage_on_disk.id = 0;
+	else 
 		sql << "INSERT INTO worm_detection_results SET ";
-	}
+	
 
 	if (calculate_stats)
 		sql << "image_statistics_id=" << stats.db_id << ",";

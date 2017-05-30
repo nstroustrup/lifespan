@@ -288,13 +288,13 @@ void ns_buffered_capture_scheduler::commit_all_local_schedule_changes_to_central
 }
 
 
-std::string ns_compile_sql_where_clause(const std::set<unsigned long> & ids, const std::string column_name){
+std::string ns_compile_sql_where_clause(const std::set<ns_64_bit> & ids, const std::string column_name){
 		std::string r;
 		if (!ids.empty()){
 			r += " (id=";
 			r += ns_to_string(*ids.begin());
 				
-			for (std::set<unsigned long>::const_iterator p = ++ids.begin(); p!= ids.end(); p++){
+			for (std::set<ns_64_bit>::const_iterator p = ++ids.begin(); p!= ids.end(); p++){
 				r += " OR ";
 				r+=column_name;
 				r+= "=";

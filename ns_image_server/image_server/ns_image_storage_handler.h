@@ -84,10 +84,10 @@ public:
 
 		
 	
-	double get_experiment_video_size_on_disk(const unsigned long experiment_id,ns_sql & sql) const;
-	double get_region_metadata_size_on_disk(const unsigned long region_id,ns_sql & sql) const;
-	double get_region_images_size_on_disk(const unsigned long region_id,const ns_processing_task t,ns_sql & sql) const;
-	double get_sample_images_size_on_disk(const unsigned long region_id,const ns_processing_task t,ns_sql & sql) const;
+	double get_experiment_video_size_on_disk(const ns_64_bit  experiment_id,ns_sql & sql) const;
+	double get_region_metadata_size_on_disk(const ns_64_bit  region_id,ns_sql & sql) const;
+	double get_region_images_size_on_disk(const ns_64_bit region_id,const ns_processing_task t,ns_sql & sql) const;
+	double get_sample_images_size_on_disk(const ns_64_bit region_id,const ns_processing_task t,ns_sql & sql) const;
 
 
 	

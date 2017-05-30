@@ -53,11 +53,11 @@ struct ns_training_set_visualization_image_info{
 	ns_object_hand_annotation_data hand_annotation_data;
 	
 	unsigned long multiple_worm_cluster_group_id;
-	unsigned long multiple_worm_cluster_solution_id;
+	ns_64_bit multiple_worm_cluster_solution_id;
 	ns_vector_2i position;
 	ns_vector_2i dimensions;
 
-	unsigned long region_info_id;
+	ns_64_bit region_info_id;
 	unsigned long time;
 	static void write_header(ostream & o){
 		o << "Identified as a worm by human,"
@@ -105,7 +105,7 @@ struct ns_training_set_visualization_image_info{
 
 struct ns_whole_image_statistic_specification_key{
 	unsigned long capture_time;
-	unsigned long region_id;
+	ns_64_bit region_id;
 };
 bool operator<(const ns_whole_image_statistic_specification_key & a, const ns_whole_image_statistic_specification_key & b){
 	if (a.region_id != b.region_id)
@@ -113,7 +113,7 @@ bool operator<(const ns_whole_image_statistic_specification_key & a, const ns_wh
 	return a.capture_time < b.capture_time;
 }
 struct ns_result_location_region_info{
-	unsigned long image_id;
+	ns_64_bit image_id;
 	unsigned long capture_time;
 };
 
@@ -218,7 +218,7 @@ public:
 		}
 		//for each training set image, identify the training set source image
 
-		map<unsigned long, ns_image_server_image> training_set_source_images_sorted_by_region_image_id;
+		map<ns_64_bit, ns_image_server_image> training_set_source_images_sorted_by_region_image_id;
 		for (unsigned int i = 0; i < result_location_region_image_ids.size(); ++i){
 			for (unsigned int j = 0; j < result_location_region_image_ids[i].size(); ++j){
 				if (result_location_region_image_ids[i][j].image_id == 0 ||
@@ -415,7 +415,7 @@ public:
 		im.set_description(this->metadata_to_string());
 	}
 	
-	void add_region_metadata(const unsigned long region_id, const unsigned long capture_time, const ns_whole_image_statistic_specification & spec){
+	void add_region_metadata(const ns_64_bit region_id, const unsigned long capture_time, const ns_whole_image_statistic_specification & spec){
 		ns_whole_image_statistic_specification_key key;
 		key.region_id = region_id;
 		key.capture_time = capture_time;
@@ -514,7 +514,7 @@ public:
 			
 					
 			if (reader.objects[i].name == "w"){
-				unsigned long s = (unsigned long)image_info.size();
+				ns_64_bit s = (unsigned long)image_info.size();
 				image_info.resize(s+1);
 				image_info[s].position.x = atol(reader.objects[i].tag("px").c_str());
 				image_info[s].position.y = atol(reader.objects[i].tag("py").c_str());

@@ -192,7 +192,7 @@ ns_image_storage_reciever_handle<ns_8_bit> ns_storage_request_local_cache_storag
 	return image_storage->request_local_cache_storage(filename,type,max_line_length,report_to_db);
 }
 
-double ns_image_storage_handler::get_region_images_size_on_disk(const unsigned long region_id,const ns_processing_task t,ns_sql & sql) const{
+double ns_image_storage_handler::get_region_images_size_on_disk(const ns_64_bit region_id,const ns_processing_task t,ns_sql & sql) const{
 	std::string suffix("");
 	#ifdef _WIN32
 	//	suffix += " /accepteula";
@@ -204,13 +204,13 @@ double ns_image_storage_handler::get_region_images_size_on_disk(const unsigned l
 	const ns_file_location_specification loc(this->get_path_for_region(region_id,&sql,t));
 	return ns_dir::get_directory_size(loc.absolute_long_term_directory(),du_path + suffix);
 }
-double ns_image_storage_handler::get_experiment_video_size_on_disk(const unsigned long experiment_id,ns_sql & sql) const{
+double ns_image_storage_handler::get_experiment_video_size_on_disk(const ns_64_bit experiment_id,ns_sql & sql) const{
 	ns_file_location_specification spec(image_server_const.image_storage.get_path_for_experiment(experiment_id,&sql));
 	return ns_dir::get_directory_size(image_server_const.image_storage.get_absolute_path_for_video(spec,false,true),du_path);
 }
 
 
-double ns_image_storage_handler::get_region_metadata_size_on_disk(const unsigned long region_id,ns_sql & sql) const{
+double ns_image_storage_handler::get_region_metadata_size_on_disk(const ns_64_bit region_id,ns_sql & sql) const{
 	ns_file_location_specification loc(get_file_specification_for_movement_data(region_id,"",&sql));
 	double s(ns_dir::get_directory_size(loc.absolute_long_term_directory(),du_path));
 
@@ -220,7 +220,7 @@ double ns_image_storage_handler::get_region_metadata_size_on_disk(const unsigned
 	return s;
 }
 
-double ns_image_storage_handler::get_sample_images_size_on_disk(const unsigned long sample_id,const ns_processing_task t,ns_sql & sql) const{
+double ns_image_storage_handler::get_sample_images_size_on_disk(const ns_64_bit sample_id,const ns_processing_task t,ns_sql & sql) const{
 
 	if (t == ns_process_thumbnail || t == ns_unprocessed){
 		ns_file_location_specification loc(get_path_for_sample_captured_images(sample_id,t == ns_process_thumbnail,&sql));

@@ -572,6 +572,13 @@ bool ns_read_csv_value(std:: istream & i, unsigned long  & str){
 	str = atol(a.c_str());
 	return true;
 }
+bool ns_read_csv_value(std::istream & i, ns_64_bit  & str) {
+	string a;
+	if (!ns_read_csv_value(i, a))
+		return false;
+	str = ns_atoi64(a.c_str());
+	return true;
+}
 bool ns_read_csv_value(std:: istream & i, int  & str){
 	string a;
 	if (!ns_read_csv_value(i,a))

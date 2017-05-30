@@ -45,7 +45,7 @@ struct ns_experiment_storyboard_timepoint_element{
 	bool annotation_was_censored_on_loading; //temporary storage during annotaiton
 	
 	void write_metadata(const unsigned long division_id,ns_xml_simple_writer & xml) const;
-	unsigned long from_xml_group(ns_xml_simple_object & group);
+	ns_64_bit from_xml_group(ns_xml_simple_object & group);
 	unsigned long neighbor_group_id;
 	unsigned long neighbor_group_size;
 	unsigned long neighbor_group_id_of_which_this_element_is_an_in_situ_duplicate;
@@ -168,7 +168,7 @@ public:
 
 	private:
 		void prepare_to_draw(ns_sql & sql);
-		std::map<unsigned long, std::map<unsigned long,  ns_reg_info> > worm_detection_id_lookup;
+		std::map<ns_64_bit, std::map<ns_64_bit,  ns_reg_info> > worm_detection_id_lookup;
 		unsigned long first_time,
 				  last_time;
 		std::vector<ns_vector_2i> worm_images_size;

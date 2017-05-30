@@ -107,7 +107,7 @@ void ns_image_server::start_autoscans_for_device(const std::string & device_name
 		image_server.register_server_event(ns_image_server_event("Multiple autoscan schedules were specified for device ") << device_name,&sql);
 
 	for (string::size_type i = 0; i < res.size(); i++){
-		const long interval(atol(res[i][1].c_str()));
+		const ns_64_bit interval(ns_atoi64(res[i][1].c_str()));
 		image_server.device_manager.set_autoscan_interval(device_name,interval);
 		image_server.register_server_event(ns_image_server_event("Starting scheduled autoscans on device ") << device_name << " with a period of " << res[i][1] << " seconds",&sql);
 		sql << "DELETE FROM autoscan_schedule WHERE device_name = '" << device_name << "'";
@@ -184,7 +184,7 @@ void ns_image_server::calculate_experiment_disk_usage(const ns_64_bit experiment
 	full_experiment.video = image_storage.get_experiment_video_size_on_disk(experiment_id,sql);
 
 	for (unsigned int i = 0; i < samples.size(); i++){
-		unsigned long sample_id(atol(samples[i][0].c_str()));
+		ns_64_bit sample_id(ns_atoi64(samples[i][0].c_str()));
 		ns_image_data_disk_size s;
 		s.unprocessed_captured_images= image_storage.get_sample_images_size_on_disk(sample_id,ns_unprocessed,sql);
 			//grab any old-style images stored in the base directory of the region
@@ -200,7 +200,7 @@ void ns_image_server::calculate_experiment_disk_usage(const ns_64_bit experiment
 
 		//heat map directory holds data for the entire sample so we just add it in once
 		if (regions.size() != 0){
-			unsigned long region_id(atol(regions[0][0].c_str()));
+			ns_64_bit region_id(ns_atoi64(regions[0][0].c_str()));
 			s.processed_region_images += image_storage.get_region_images_size_on_disk(region_id,ns_process_heat_map,sql);
 			s.processed_region_images += image_storage.get_region_images_size_on_disk(region_id,ns_process_static_mask,sql);
 		}
@@ -211,7 +211,7 @@ void ns_image_server::calculate_experiment_disk_usage(const ns_64_bit experiment
 				continue;
 			last_name = regions[j][1];
 		//	cerr << "["<<samples[i][1] << "::" << regions[j][1] << ":";
-			unsigned long region_id(atol(regions[j][0].c_str()));
+			ns_64_bit region_id(ns_atoi64(regions[j][0].c_str()));
 			ns_image_data_disk_size r;
 			r.unprocessed_region_images = image_storage.get_region_images_size_on_disk(region_id,ns_unprocessed,sql);
 			//grab any old-style images stored in the base directory of the region
@@ -279,7 +279,7 @@ private:
 			return;
 		}
 
-		if (atol(res[0][0].c_str()) != image_server.host_id()){
+		if (ns_atoi64(res[0][0].c_str()) != image_server.host_id()){
 			lock.release(__FILE__, __LINE__);
 			image_server.register_server_event(ns_image_server_event("This client's lock on the automation process was usurped!"),&sql);
 			return;
@@ -310,7 +310,7 @@ private:
 			}
 			if (res.size() > 1)
 				throw ns_ex("ns_get_automated_job_scheduler_lock_for_scope::wait_for_lock()::Multiple entries for lock : ") << res.size();
-			const unsigned long current_running_id(atol(res[0][0].c_str())),
+			const ns_64_bit current_running_id(ns_atoi64(res[0][0].c_str())),
 								acquisition_time(atol(res[0][1].c_str())),
 								next_run_time(atol(res[0][2].c_str())),
 								cur_time(atol(res[0][3].c_str()));
@@ -476,7 +476,7 @@ void ns_image_server_automated_job_scheduler::identify_regions_needing_static_ma
 			announced = true;
 		}
 		ns_processing_job job;
-		job.region_id = atol(regions[i][0].c_str());
+		job.region_id = ns_atoi64(regions[i][0].c_str());
 		job.time_submitted = ns_current_time();
 		job.operations[(int)ns_process_heat_map] = true;
 		job.operations[(int)ns_process_static_mask] = true;
@@ -601,14 +601,14 @@ ns_64_bit ns_image_server::make_record_for_new_sample_mask(const ns_64_bit sampl
 	std::string experiment_name = res[0][0];
 
 	std::string path;
-	add_string_or_number(path,experiment_name,"experiment_",atol(experiment_id.c_str()));
+	add_string_or_number(path,experiment_name,"experiment_", ns_atoi64(experiment_id.c_str()));
 	path += DIR_CHAR_STR;
 	path += "region_masks";
 	std::string filename = "mask_";
 	filename += sample_name + ".tif";
 
 	sql << "INSERT INTO images SET host_id = " << host_id() << ", creation_time=" << ns_current_time() << ", currently_under_processing=0, "
-		<< "path = '" << sql.escape_string(path) << "', filename='" << sql.escape_string(filename) << "', `partition`='" << image_server.image_storage.get_partition_for_experiment(atol(experiment_id.c_str()),&sql) << "'";
+		<< "path = '" << sql.escape_string(path) << "', filename='" << sql.escape_string(filename) << "', `partition`='" << image_server.image_storage.get_partition_for_experiment(ns_atoi64(experiment_id.c_str()),&sql) << "'";
 //	cerr << sql.query() << "\n";
 	ns_64_bit id = sql.send_query_get_id();
 	sql.send_query("COMMIT");

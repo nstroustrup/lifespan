@@ -58,7 +58,7 @@ ns_time_path_solver_parameters ns_time_path_solver_parameters::default_parameter
 
 	if (device_capture_period_in_seconds == 0 || number_of_consecutive_captures_per_sample == 0)
 		throw ns_ex("Found invalid capture specification information in db: Capture period = ") << device_capture_period_in_seconds << "s; Number of consecutive samples: " << number_of_consecutive_captures_per_sample;
-	const unsigned long experiment_id(atol(res[0][2].c_str()));
+	const ns_64_bit experiment_id(ns_atoi64(res[0][2].c_str()));
 	sql << "SELECT count(*) FROM capture_samples WHERE device_name = '" << res[0][1] << "' AND experiment_id = " << res[0][2];
 	sql.get_rows(res);
 	if (res.size() == 0)
@@ -492,7 +492,7 @@ void ns_time_path_solution::save_to_db(const ns_64_bit region_id, ns_sql & sql) 
 	if (res.size() == 0)
 		throw ns_ex("ns_time_path_solution::save_to_db():Could not load info from db");
 	ns_image_server_image im;
-	im.id = atol(res[0][0].c_str());
+	im.id = ns_atoi64(res[0][0].c_str());
 	bool update_db(false);
 	if (im.id == 0){
 		im = image_server_const.image_storage.get_region_movement_metadata_info(region_id,"time_path_solution_data",sql);
@@ -538,7 +538,7 @@ void ns_time_path_solution::load_from_db(const ns_64_bit region_id, ns_sql & sql
 		}
 	}else{
 		ns_image_server_image im;
-		im.id = atol(res[0][0].c_str());
+		im.id = ns_atoi64(res[0][0].c_str());
 		if (im.id == 0)
 			throw ns_ex("Solution data has not been stored in db");
 		input_file.attach(image_server_const.image_storage.request_metadata_from_disk(im,false,&sql));
@@ -1989,7 +1989,7 @@ void ns_time_path_solver::load_detection_results(unsigned long region_id,ns_sql 
 	}
 	timepoints.reserve(time_point_result.size());
 	set<long> times;
-	set<long> detection_ids;
+	set<ns_64_bit> detection_ids;
 	detection_results->results.resize(time_point_result.size());
 	unsigned long current_timepoint_i(0);
 	image_server_const.add_subtext_to_current_event("Loading Worm Detection Results Metadata...\n", &sql);
@@ -1999,8 +1999,8 @@ void ns_time_path_solver::load_detection_results(unsigned long region_id,ns_sql 
 		if (current_timepoint_i > timepoints.size())
 			throw ns_ex("ns_time_path_solver::load_detection_results()::Logic Error!");
 		timepoints[current_timepoint_i].time = atol(time_point_result[i][1].c_str());
-		timepoints[current_timepoint_i].sample_region_image_id = atol(time_point_result[i][2].c_str());
-		const unsigned long worm_detection_results_id(atol(time_point_result[i][0].c_str()));
+		timepoints[current_timepoint_i].sample_region_image_id = ns_atoi64(time_point_result[i][2].c_str());
+		const ns_64_bit worm_detection_results_id(ns_atoi64(time_point_result[i][0].c_str()));
 		//if (timepoints[current_timepoint_i].time == 1321821542)
 		//	cerr << "MA";
 		if (!times.insert(timepoints[current_timepoint_i].time).second){

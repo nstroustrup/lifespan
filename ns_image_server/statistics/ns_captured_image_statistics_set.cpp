@@ -617,7 +617,7 @@ void ns_capture_sample_statistics_set::load_whole_experiment(const unsigned long
 	samples.resize(res.size());
 	samples_sorted_by_id.clear();
 	for (unsigned int j = 0; j < res.size(); j++){
-		samples[j].load_from_db(atol(res[j][0].c_str()),sql);
+		samples[j].load_from_db(ns_atoi64(res[j][0].c_str()),sql);
 		samples_sorted_by_id[samples[j].sample_id] = &samples[j];
 	}
 	calculate_scanner_behavior();
@@ -764,7 +764,7 @@ void ns_capture_sample_region_statistics_set::load_whole_experiment(const ns_64_
 	for (unsigned int j = 0; j < res.size(); j++){
 		
 		ns_region_metadata sample_metadata;
-		sample_metadata.sample_id = atol(res[j][0].c_str());
+		sample_metadata.sample_id = ns_atoi64(res[j][0].c_str());
 		sample_metadata.experiment_name = experiment_name;
 		sample_metadata.sample_name = res[j][1];
 		sample_metadata.device = res[j][2];
@@ -787,7 +787,7 @@ void ns_capture_sample_region_statistics_set::load_whole_experiment(const ns_64_
 
 		for (unsigned long k = 0; k < res2.size(); ++k){
 			ns_region_metadata metadata(sample_metadata);
-			unsigned long region_id(atol(res2[k][0].c_str()));
+			unsigned long region_id(ns_atoi64(res2[k][0].c_str()));
 			metadata.load_from_db(region_id,"",sql);
 			
 			bool region_censored(res2[k][1]!="0"),

@@ -189,9 +189,9 @@ public:
 		sql << "SELECT id,capture_time FROM sample_region_images WHERE region_info_id = " << result.metadata.region_id << " ORDER BY capture_time ASC";
 		ns_sql_result res;
 		sql.get_rows(res);
-		map<unsigned long, unsigned long> region_image_id_sorted_by_time;
+		map<ns_64_bit,ns_64_bit> region_image_id_sorted_by_time;
 		for (unsigned int i = 0; i < res.size(); i++)
-			region_image_id_sorted_by_time[atol(res[i][1].c_str())] = atol(res[i][0].c_str());
+			region_image_id_sorted_by_time[ns_atoi64(res[i][1].c_str())] = ns_atoi64(res[i][0].c_str());
 		
 
 		//for each event, identify the region_image in which it was annotated
@@ -206,7 +206,7 @@ public:
 				if (result.locations[i].annotations[j].region_info_id != result.metadata.region_id)
 					throw ns_ex("Invalid region id found!");
 				result_location_region_image_ids[i][j].capture_time = result.locations[i].annotations[j].time.period_end;
-				map<unsigned long,unsigned long>::iterator p(region_image_id_sorted_by_time.find(result.locations[i].annotations[j].time.period_end));
+				map<ns_64_bit,ns_64_bit>::iterator p(region_image_id_sorted_by_time.find(result.locations[i].annotations[j].time.period_end));
 				if (p == region_image_id_sorted_by_time.end()){
 					if (result.locations[i].annotations[j].excluded != ns_death_time_annotation::ns_not_excluded)
 						result_location_region_image_ids[i][j].image_id = 0;
@@ -450,7 +450,7 @@ public:
 				}
 				else{
 					ns_whole_image_statistic_specification_key key;
-					key.region_id = atol(reader.objects[i].tag("r_id").c_str());
+					key.region_id = ns_atoi64(reader.objects[i].tag("r_id").c_str());
 					key.capture_time = atol(reader.objects[i].tag("t").c_str());
 					ns_whole_image_statistics_list::iterator p(whole_image_stats.find(key));
 					if (p!=whole_image_stats.end())
@@ -521,8 +521,8 @@ public:
 				image_info[s].dimensions.x = atol(reader.objects[i].tag("dx").c_str());
 				image_info[s].dimensions.y = atol(reader.objects[i].tag("dy").c_str());
 
-				image_info[s].multiple_worm_cluster_group_id = atol(reader.objects[i].tag("g").c_str());
-				image_info[s].multiple_worm_cluster_solution_id = atol(reader.objects[i].tag("s").c_str());
+				image_info[s].multiple_worm_cluster_group_id = ns_atoi64(reader.objects[i].tag("g").c_str());
+				image_info[s].multiple_worm_cluster_solution_id = ns_atoi64(reader.objects[i].tag("s").c_str());
 				image_info[s].original_region_position_in_source_image.x= atol(reader.objects[i].tag("ox").c_str());
 				image_info[s].original_region_position_in_source_image.y = atol(reader.objects[i].tag("oy").c_str());
 				try{
@@ -560,7 +560,7 @@ public:
 				}*/
 			
 				if(reader.objects[i].tag_specified("r"))
-					image_info[s].region_info_id = atol(reader.objects[i].tag("r").c_str());
+					image_info[s].region_info_id = ns_atoi64(reader.objects[i].tag("r").c_str());
 				if(reader.objects[i].tag_specified("t"))
 					image_info[s].time = atol(reader.objects[i].tag("t").c_str());
 				if (reader.objects[i].tag_specified("m"))

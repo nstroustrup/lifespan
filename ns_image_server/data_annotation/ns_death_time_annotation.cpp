@@ -127,8 +127,8 @@ void ns_death_time_annotation::from_string(const std::string v){
 																							
 	annotation_time = atol(s[5].c_str());													
 	time.period_end = atol(s[6].c_str());
-	region_info_id = atol(s[7].c_str());
-	region_id = atol(s[8].c_str());
+	region_info_id = ns_atoi64(s[7].c_str());
+	region_id = ns_atoi64(s[8].c_str());
 	position.x = atol(s[9].c_str());
 	position.y = atol(s[10].c_str());
 	size.x = atol(s[11].c_str());
@@ -137,7 +137,7 @@ void ns_death_time_annotation::from_string(const std::string v){
 	stationary_path_id.group_id = atol(s[14].c_str());
 	stationary_path_id.path_id = atol(s[15].c_str());
 	
-	stationary_path_id.detection_set_id = atol(s[16].c_str());
+	stationary_path_id.detection_set_id = ns_atoi64(s[16].c_str());
 	time.period_start = atol(s[17].c_str());
 	const unsigned long time_interval_observation_code(atol(s[18].c_str()));
 	if (time_interval_observation_code % 2 == 1)
@@ -499,11 +499,11 @@ void ns_death_time_annotation_set::read_column_format(const  ns_annotation_type_
 
 		getline(i,val,',');
 		if (i.fail()) throw ns_ex("ns_death_time_annotation_set::read_column_format()::Unexpected EOF");
-		e.region_id = atol(val.c_str());
+		e.region_id = ns_atoi64(val.c_str());
 
 		getline(i,val,',');
 		if (i.fail()) throw ns_ex("ns_death_time_annotation_set::read_column_format()::Unexpected EOF");
-		e.region_info_id  = atol(val.c_str());
+		e.region_info_id  = ns_atoi64(val.c_str());
 		if (e.region_info_id == 0)
 			throw ns_ex("ns_death_time_annotation_set::read_column_format()::Found an annotation with no region info specified");
 
@@ -587,7 +587,7 @@ void ns_death_time_annotation_set::read_column_format(const  ns_annotation_type_
 			
 			getline(i,val,',');
 			if (i.fail()) throw ns_ex("ns_death_time_annotation_set::read_column_format()::Unexpected EOF");
-			e.stationary_path_id.detection_set_id = atol(val.c_str());
+			e.stationary_path_id.detection_set_id = ns_atoi64(val.c_str());
 
 			getline(i,val,',');
 			if (i.fail()) throw ns_ex("ns_death_time_annotation_set::read_column_format()::Unexpected EOF");
@@ -839,8 +839,8 @@ void ns_death_time_annotation_set::read_xml(const ns_annotation_type_to_load & t
 		a.annotation_source = (ns_death_time_annotation::ns_annotation_source_type)atol(xml.objects[i].tag("u").c_str());
 		a.time.period_end = atol(xml.objects[i].tag("t").c_str());
 		a.time.period_start = atol(xml.objects[i].tag("tt").c_str());
-		a.region_info_id = atol(xml.objects[i].tag("i").c_str()),
-		a.region_id = atol(xml.objects[i].tag("r").c_str()),
+		a.region_info_id = ns_atoi64(xml.objects[i].tag("i").c_str()),
+		a.region_id = ns_atoi64(xml.objects[i].tag("r").c_str()),
 		a.position = ns_pos_from_str(xml.objects[i].tag("p"));
 		a.size = ns_pos_from_str(xml.objects[i].tag("s"));
 

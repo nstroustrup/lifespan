@@ -1065,17 +1065,17 @@ void ns_experiment_storyboard::prepare_to_draw(ns_sql & sql){
 		ns_sql_result res;
 		sql.get_rows(res);
 		for (unsigned int i = 0; i < res.size(); i++){
-			worm_detection_id_lookup[atol(res[i][2].c_str())][atol(res[i][1].c_str())] = ns_reg_info(atol(res[i][0].c_str()),atol(res[i][3].c_str()));
+			worm_detection_id_lookup[ns_atoi64(res[i][2].c_str())][ns_atoi64(res[i][1].c_str())] = ns_reg_info(ns_atoi64(res[i][0].c_str()), ns_atoi64(res[i][3].c_str()));
 		}
-		std::map<unsigned long,vector<unsigned long> > problem_ids,all_ids;
+		std::map<ns_64_bit,vector<ns_64_bit> > problem_ids,all_ids;
 
 		for (unsigned int i = 0; i < divisions.size(); i++){
 		
 			for (unsigned int j = 0; j < divisions[i].events.size(); j++){
-				std::map<unsigned long, map<unsigned long,ns_reg_info> >::iterator p(worm_detection_id_lookup.find(divisions[i].events[j].event_annotation.region_info_id));
+				std::map<ns_64_bit, map<ns_64_bit,ns_reg_info> >::iterator p(worm_detection_id_lookup.find(divisions[i].events[j].event_annotation.region_info_id));
 				if (p == worm_detection_id_lookup.end())
 					throw ns_ex("Found an anotation from a region not in the subject: region info id = ") << divisions[i].events[j].event_annotation.region_info_id;
-				map<unsigned long,ns_reg_info>::iterator q(p->second.find(divisions[i].events[j].event_annotation.time.period_end));
+				map<ns_64_bit,ns_reg_info>::iterator q(p->second.find(divisions[i].events[j].event_annotation.time.period_end));
 				if (q == p->second.end())
 					throw ns_ex("Found an anotation from a capture time not in the subject:region info id = ") << divisions[i].events[j].event_annotation.region_info_id << "; time  = " << divisions[i].events[j].event_annotation.time.period_end;;
 				if (q->second.worm_detection_results_id == 0)
@@ -1088,11 +1088,11 @@ void ns_experiment_storyboard::prepare_to_draw(ns_sql & sql){
 		if (problem_ids.size() > 0){
 			ns_ex ex("ns_experiment_storyboard::draw()::Found ");
 			ex << problem_ids.size() << " out of " << (all_ids.size()) << " regions contained images in which worms had been annotated but worm detection data had been deleted.\n";
-			for (std::map<unsigned long,vector<unsigned long> >::iterator q = problem_ids.begin(); q != problem_ids.end(); q++){
+			for (std::map<ns_64_bit,vector<ns_64_bit> >::iterator q = problem_ids.begin(); q != problem_ids.end(); q++){
 				ex << "Region " << q->first << " contains " << q->second.size() << " problem images\n";
 			}
 
-			for (std::map<unsigned long,vector<unsigned long> >::iterator p = problem_ids.begin(); p != problem_ids.end(); p++){
+			for (std::map<ns_64_bit,vector<ns_64_bit> >::iterator p = problem_ids.begin(); p != problem_ids.end(); p++){
 				for (unsigned int i = 0; i < p->second.size(); i++){
 					sql << "UPDATE sample_region_images SET problem=1 WHERE id = " << (p->second)[i];
 					sql.send_query();
@@ -1209,7 +1209,7 @@ bool ns_experiment_storyboard::create_storyboard_metadata_from_machine_annotatio
 		sql.get_rows(res);
 		if (res.size() == 0)
 			throw ns_ex("Could not load experiment for region ") << spec.region_id;
-		experiment_ids.push_back(atol(res[0][0].c_str()));
+		experiment_ids.push_back(ns_atoi64(res[0][0].c_str()));
 		last_timepoint_in_storyboard = atol(res[0][1].c_str());
 		number_of_regions_in_storyboard = 1;
 	}
@@ -1231,7 +1231,7 @@ bool ns_experiment_storyboard::create_storyboard_metadata_from_machine_annotatio
 			for (set<unsigned long>::iterator p = experiments.begin(); p != experiments.end(); p++)
 				experiment_ids.push_back(*p);*/
 			if (res.size() != 0)
-				experiment_ids.push_back(atol(res[0][1].c_str()));
+				experiment_ids.push_back(ns_atoi64(res[0][1].c_str()));
 		}
 		else{
 			if (spec.experiment_id == 0)
@@ -1250,7 +1250,7 @@ bool ns_experiment_storyboard::create_storyboard_metadata_from_machine_annotatio
 		number_of_regions_in_storyboard = res.size();
 		last_timepoint_in_storyboard = 0;
 		for (unsigned int i = 0; i < res.size(); i++){
-			region_ids[i] = atol(res[i][0].c_str());
+			region_ids[i] = ns_atoi64(res[i][0].c_str());
 			unsigned long last_timepoint(atol(res[i][1].c_str()));
 			if (last_timepoint > this->last_timepoint_in_storyboard)
 				last_timepoint_in_storyboard = last_timepoint;
@@ -1584,9 +1584,9 @@ void  ns_experiment_storyboard_spec::add_to_xml(ns_xml_simple_writer & xml) cons
 }
 void ns_experiment_storyboard_spec::from_xml_group(ns_xml_simple_object & obj){
 	this->event_to_mark=(ns_movement_event)atol(obj.tag("ev").c_str());
-	this->experiment_id =atol(obj.tag("e").c_str());
-	this->region_id=atol(obj.tag("r").c_str());
-	this->sample_id=atol(obj.tag("s").c_str());
+	this->experiment_id = ns_atoi64(obj.tag("e").c_str());
+	this->region_id= ns_atoi64(obj.tag("r").c_str());
+	this->sample_id= ns_atoi64(obj.tag("s").c_str());
 	this->strain_to_use.strain=obj.tag("str");
 	this->strain_to_use.strain_condition_1=obj.tag("str_1");
 	this->strain_to_use.strain_condition_2=obj.tag("str_2");
@@ -1605,14 +1605,14 @@ void ns_experiment_storyboard_timepoint_element::write_metadata(const unsigned l
 	xml.add_tag("ia",annotation_whose_image_should_be_used.to_string());
 	xml.add_tag("d_id",division_id);
 }
-unsigned long  ns_experiment_storyboard_timepoint_element::from_xml_group(ns_xml_simple_object & o){
+ns_64_bit  ns_experiment_storyboard_timepoint_element::from_xml_group(ns_xml_simple_object & o){
 	position_on_time_point.x = atol(o.tag("p_t_x").c_str());
 	position_on_time_point.y = atol(o.tag("p_t_y").c_str());
 	string r = o.tag("a");
 	event_annotation.from_string(r);
 	r = o.tag("ia");
 	annotation_whose_image_should_be_used.from_string(r);
-	return atol(o.tag("d_id").c_str());
+	return ns_atoi64(o.tag("d_id").c_str());
 }
 
 bool ns_experiment_storyboard::read_metadata(std::istream & in,ns_sql & sql){
@@ -1634,7 +1634,7 @@ bool ns_experiment_storyboard::read_metadata(std::istream & in,ns_sql & sql){
 			time_of_last_death = atol(xml.objects[i].tag("ld").c_str());
 		}
 		else if (xml.objects[i].name == "wi"){
-			unsigned long id(atol(xml.objects[i].tag("i").c_str()));
+			ns_64_bit id(ns_atoi64(xml.objects[i].tag("i").c_str()));
 			if (id >= worm_images_size.size())
 				worm_images_size.resize(id+1,ns_vector_2i(0,0));
 			worm_images_size[id].x = atol(xml.objects[i].tag("wis_x").c_str());
@@ -1660,7 +1660,7 @@ bool ns_experiment_storyboard::read_metadata(std::istream & in,ns_sql & sql){
 		sql.get_rows(res);
 		if(res.size() == 0)
 			throw ns_ex("ns_experiment_storyboard::read_metadata()::Could not load experiment information for sample ") << subject_specification.sample_id;
-		experiment_id = atol(res[0][0].c_str());
+		experiment_id = ns_atoi64(res[0][0].c_str());
 	}
 	else if (subject_specification.region_id != 0){
 		sql << "SELECT s.experiment_id FROM sample_region_image_info as r, capture_samples as s WHERE r.id = " << subject_specification.region_id << " AND r.sample_id = s.id";
@@ -1668,7 +1668,7 @@ bool ns_experiment_storyboard::read_metadata(std::istream & in,ns_sql & sql){
 		sql.get_rows(res);
 		if(res.size() == 0)
 			throw ns_ex("ns_experiment_storyboard::read_metadata()::Could not load experiment information for region ") << subject_specification.region_id;
-		experiment_id = atol(res[0][0].c_str());
+		experiment_id = ns_atoi64(res[0][0].c_str());
 	}
 	
 	ns_death_time_annotation_compiler all_events;
@@ -1864,12 +1864,12 @@ void ns_experiment_storyboard_manager::load_metadata_from_db(const ns_experiment
 	sql.get_rows(res);	
 	if (res.size() == 0)
 		throw ns_ex("Could not find storyboard in database.");
-	unsigned long m_id(atol(res[0][2].c_str()));
+	ns_64_bit m_id(ns_atoi64(res[0][2].c_str()));
 	try{
 		for (unsigned int i = 0; i < res.size(); i++){
 			if (atol(res[i][3].c_str()) != res.size())
 				throw ns_ex("ns_experiment_storyboard_manager::load_metadata_from_db()::Inconsistant records of sub_image_count!");
-			if (atol(res[i][2].c_str()) != m_id)
+			if (ns_atoi64(res[i][2].c_str()) != m_id)
 				throw ns_ex("ns_experiment_storyboard_manager::load_metadata_from_db()::Inconsistant records of metadata id!");
 		}
 	}
@@ -1940,14 +1940,14 @@ bool ns_experiment_storyboard_manager::load_subimages_from_db(const ns_experimen
 	if (res.size() == 0)
 		return false;
 	sub_images.resize(res.size());
-	unsigned long m_id(atol(res[0][2].c_str()));
+	ns_64_bit m_id(ns_atoi64(res[0][2].c_str()));
 	try{
 		for (unsigned int i = 0; i < res.size(); i++){
-			sub_images[i].id =  atol(res[i][1].c_str());
-			if (atol(res[i][3].c_str()) != res.size())
+			sub_images[i].id = ns_atoi64(res[i][1].c_str());
+			if (ns_atoi64(res[i][3].c_str()) != res.size())
 				throw ns_ex("ns_experiment_storyboard_manager::load_subimages_from_db()::Inconsistant records of sub_image_count!");
 			
-			if (atol(res[i][2].c_str()) != m_id)
+			if (ns_atoi64(res[i][2].c_str()) != m_id)
 				throw ns_ex("ns_experiment_storyboard_manager::load_subimages_from_db()::Inconsistant records of metadata id!");
 		}
 	}

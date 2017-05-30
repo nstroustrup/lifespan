@@ -125,7 +125,7 @@ public:
 	ns_image_mask_info():region_info(256){clear();}
 
 	///Loads the statistics for each region of a mask from the database
-	void load_from_db(const long mask_id, ns_sql & sql){
+	void load_from_db(ns_64_bit mask_id, ns_sql & sql){
 		sql << "SELECT mask_value, x_min, y_min, x_max, y_max, y_average, x_average, pixel_count FROM image_mask_regions WHERE mask_id=" << mask_id;
 		ns_sql_result region_data;
 		sql.get_rows(region_data);
@@ -149,7 +149,7 @@ public:
 
 	///saves all information about each region in a mask to
 	///the database.
-	void save_to_db(const long mask_id, ns_sql & sql) const{
+	void save_to_db(ns_64_bitmask_id, ns_sql & sql) const{
 		sql << "DELETE FROM image_mask_regions WHERE mask_id=" << mask_id;
 		sql.send_query();
 		sql.send_query("COMMIT");

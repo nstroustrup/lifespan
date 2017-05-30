@@ -234,7 +234,7 @@ void ns_machine_analysis_data_loader::set_up_spec_to_load(const ns_64_bit & regi
 		sql.get_rows(res);
 		if (res.size() == 0)
 			throw ns_ex("ns_experiment_movement_results::load()::Could not load region information ") << region_id;
-		sample_id = atol(res[0][0].c_str());
+		sample_id = ns_atoi64(res[0][0].c_str());
 	}
 	if (sample_id != 0){
 		sql << "SELECT experiment_id FROM capture_samples WHERE id = " << sample_id;
@@ -242,7 +242,7 @@ void ns_machine_analysis_data_loader::set_up_spec_to_load(const ns_64_bit & regi
 		sql.get_rows(res);
 		if (res.size() == 0)
 			throw ns_ex("ns_experiment_movement_results::load()::Could not load sample information ") << sample_id;
-		experiment_id_a = atol(res[0][0].c_str());
+		experiment_id_a = ns_atoi64(res[0][0].c_str());
 	}
 
 	sql << "SELECT name FROM experiments WHERE id=" << experiment_id_a;
@@ -264,7 +264,7 @@ void ns_machine_analysis_data_loader::set_up_spec_to_load(const ns_64_bit & regi
 		sql.get_rows(samp);
 		samples.resize(samp.size());
 		for (unsigned int i = 0; i < samp.size(); i++)
-			samples[i].set_id(atol(samp[i][0].c_str()));
+			samples[i].set_id(ns_atoi64(samp[i][0].c_str()));
 	}
 	else{
 		//add just the sample

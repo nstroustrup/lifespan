@@ -67,7 +67,7 @@ public:
 			metadata.incubator_name = res[i][3];
 			metadata.incubator_location = res[i][4];
 			for (unsigned int j = 0; j < res2.size(); j++){
-				metadata.region_id = atol(res2[j][0].c_str());
+				metadata.region_id = ns_atoi64(res2[j][0].c_str());
 				metadata.region_name = res2[j][1];
 				metadata.strain = res2[j][2];
 				metadata.technique = ns_region_metadata::by_hand_technique_label();

@@ -78,14 +78,14 @@ bool ns_image_server_captured_image::load_from_db(const ns_64_bit _id, ns_image_
 			return false;
 		if (info.size() > 1)
 			throw ns_ex("Captured image doesn't have a unique id!");
-		sample_id						= atol(info[0][0].c_str());
-		experiment_id					= atol(info[0][1].c_str());
-		capture_images_image_id		 	= atol(info[0][2].c_str());
+		sample_id						= ns_atoi64(info[0][0].c_str());
+		experiment_id					= ns_atoi64(info[0][1].c_str());
+		capture_images_image_id		 	= ns_atoi64(info[0][2].c_str());
 		sample_name						= info[0][3];
 		experiment_name					= info[0][4];
-		capture_time					= atol(info[0][5].c_str());
+		capture_time					= ns_atoi64(info[0][5].c_str());
 		device_name						= info[0][6].c_str();
-		capture_images_small_image_id	= atol(info[0][7].c_str());
+		capture_images_small_image_id	= ns_atoi64(info[0][7].c_str());
 		never_delete_image				= (info[0][8] != "0");
 		return true;
 	}
@@ -229,11 +229,11 @@ bool ns_image_server_captured_image::from_filename(const std::string & fn, int &
 	}
 	else if (state < 8)
 		return false;
-	experiment_id = atol(experiment_id_str.c_str());
-	sample_id = atol(sample_id_str.c_str());
-	capture_time = atol(capture_time_str.c_str());
-	captured_images_id = atol(captured_images_id_str.c_str());
-	capture_images_image_id = atol(captured_images_image_id_str.c_str());
+	experiment_id = ns_atoi64(experiment_id_str.c_str());
+	sample_id = ns_atoi64(sample_id_str.c_str());
+	capture_time = ns_atoi64(capture_time_str.c_str());
+	captured_images_id = ns_atoi64(captured_images_id_str.c_str());
+	capture_images_image_id = ns_atoi64(captured_images_image_id_str.c_str());
 	return true;
 }
 
@@ -280,7 +280,7 @@ bool ns_image_server_captured_image_region::from_filename(const std::string & fi
 	}
 	if (state < 1)
 		return false;
-	region_images_id = atol(region_images_id_str.c_str());
+	region_images_id = ns_atoi64(region_images_id_str.c_str());
 	return true;
 }
 bool ns_image_server_captured_image_region::load_from_db(const ns_64_bit _id, ns_image_server_sql * sql){
@@ -303,20 +303,20 @@ bool ns_image_server_captured_image_region::load_from_db(const ns_64_bit _id, ns
 	region_images_id = _id;
 	if (res.size() == 0)
 		return false;
-	captured_images_id = atol(res[0][0].c_str());
+	captured_images_id = ns_atoi64(res[0][0].c_str());
 	region_name = res[0][1];
-	region_images_image_id = atol(res[0][2].c_str());
-	region_info_id = atol(res[0][3].c_str());
-	region_detection_results_id = atol(res[0][4].c_str());
-	region_interpolation_results_id = atol(res[0][5].c_str());
-	movement_characterization_id = atol(res[0][6].c_str());
-	problem_id = atol(res[0][7].c_str());
-	processor_id = atol(res[0][8].c_str());
-	capture_time = atol(res[0][9].c_str());
+	region_images_image_id = ns_atoi64(res[0][2].c_str());
+	region_info_id = ns_atoi64(res[0][3].c_str());
+	region_detection_results_id = ns_atoi64(res[0][4].c_str());
+	region_interpolation_results_id = ns_atoi64(res[0][5].c_str());
+	movement_characterization_id = ns_atoi64(res[0][6].c_str());
+	problem_id = ns_atoi64(res[0][7].c_str());
+	processor_id = ns_atoi64(res[0][8].c_str());
+	capture_time = ns_atoi64(res[0][9].c_str());
 	op_images_.resize(ns_process_last_task_marker);
 	op_images_[0] = region_images_image_id;
 	for (unsigned int i = 1; i < op_images_.size(); i++)  //op[0] is unprocessed image
-		op_images_[i] = atol(res[0][9+i].c_str());
+		op_images_[i] = ns_atoi64(res[0][9+i].c_str());
 
 	return ns_image_server_captured_image::load_from_db(captured_images_id, sql);
 
@@ -390,7 +390,7 @@ const ns_image_server_image ns_image_server_captured_image_region::request_proce
 	sql.get_rows(res);
 	if (res.size() == 0)
 		throw ns_ex("Sample region image ") << region_info_id << " could not be found in the database.";
-	im.id = atol(res[0][0].c_str());
+	im.id = ns_atoi64(res[0][0].c_str());
 
 	if (task != ns_process_static_mask && task != ns_process_heat_map && im.id == 0)
 		throw ns_ex("ns_image_server_captured_image_region::Required image processing step, ") << ns_processing_task_to_string(task) << " has not yet been completed.";
@@ -504,8 +504,8 @@ const ns_image_server_image ns_image_server_captured_image_region::create_storag
 	if(res.size() == 0)
 		im.id = 0;
 	else{
-		db_id = atol(res[0][0].c_str());
-		im.load_from_db(atol(res[0][1].c_str()),&sql);
+		db_id = ns_atoi64(res[0][0].c_str());
+		im.load_from_db(ns_atoi64(res[0][1].c_str()),&sql);
 	}
 	
 	//delete the old file if it exists
@@ -564,7 +564,7 @@ const ns_image_server_image ns_image_server_captured_image_region::create_storag
 	sql->get_rows(res);
 	if (res.size() == 0)
 		throw ns_ex("ns_image_server_captured_image_region::create_storage_for_processed_image()::Could not locate ") << db_table_name << " id  " << db_table_row_id;
-	im.id = atol(res[0][0].c_str());
+	im.id = ns_atoi64(res[0][0].c_str());
 
 	//delete the old file if it exists
 //	if (im.id != 0)
@@ -617,7 +617,7 @@ ns_image_server_captured_image_region ns_image_server_captured_image_region::get
 	if (res[0][0] == "0")
 		throw ns_ex("ns_image_server_captured_image_region::image's movement characterization record does not have a long time point specified!");
 	ns_image_server_captured_image_region region;
-	region.load_from_db(atol(res[0][0].c_str()),&sql);
+	region.load_from_db(ns_atoi64(res[0][0].c_str()),&sql);
 	return region;
 }
 

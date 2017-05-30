@@ -152,7 +152,7 @@ void ns_region_metadata::load_only_region_info_from_db(const ns_64_bit region_in
 	if (res.size() == 0)
 		throw ns_ex("Could not load metadata for region") << region_info_id;
 	region_id = region_info_id;
-	sample_id = atol(res[0][0].c_str());
+	sample_id = ns_atoi64(res[0][0].c_str());
 	region_name = res[0][1];
 	strain = res[0][2];
 	strain_condition_1 = res[0][3];
@@ -185,7 +185,7 @@ void ns_region_metadata::load_only_sample_info_from_db(const ns_64_bit sample_id
 	device = res[0][2];
 	incubator_name = res[0][3];
 	incubator_location = res[0][4];
-	experiment_id = atol(res[0][0].c_str());
+	experiment_id = ns_atoi64(res[0][0].c_str());
 	float resolution(atof(res[0][7].c_str()));
 	if (resolution == 0)
 		throw ns_ex("Sample had a resolution of 0 specified in the database!");
@@ -1774,7 +1774,7 @@ void ns_device_temperature_normalization_data::load_data_for_experiment(const un
 	control_strains.resize(exp.size()-2);
 
 	for (unsigned int i = 1; i < exp.size()-1; i++){
-		int control_strain_region_id(atol(exp[i].c_str()));
+		int control_strain_region_id(ns_atoi64(exp[i].c_str()));
 		if (control_strain_region_id == 0)
 			throw ns_ex("Could not parse experiment strain specification");
 		control_strains[i-1].load_from_db(control_strain_region_id,"",sql);

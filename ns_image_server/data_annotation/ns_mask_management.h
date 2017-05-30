@@ -8,7 +8,7 @@
 #include "ns_font.h"
 #include "ns_process_mask_regions.h"
 struct ns_mask_collage_info{
-	unsigned long experiment_id,
+	ns_64_bit experiment_id,
 				  sample_id;
 	std::string sample_name;
 	ns_vector_2i position,
@@ -40,8 +40,8 @@ public:
 			throw ns_ex("ns_mask_collage_info_manager::from_string()::Could not parse image metadata");
 		collage_info.resize(reader.objects.size());
 		for (unsigned int i = 0; i < collage_info.size(); i++){
-			collage_info[i].experiment_id = atol(reader.objects[i].tag("e_id").c_str());
-			collage_info[i].sample_id = atol(reader.objects[i].tag("s_id").c_str());
+			collage_info[i].experiment_id = ns_atoi64(reader.objects[i].tag("e_id").c_str());
+			collage_info[i].sample_id = ns_atoi64(reader.objects[i].tag("s_id").c_str());
 			collage_info[i].position.x = atol(reader.objects[i].tag("x").c_str());
 			collage_info[i].position.y = atol(reader.objects[i].tag("y").c_str());
 			collage_info[i].dimentions.x = atol(reader.objects[i].tag("w").c_str());

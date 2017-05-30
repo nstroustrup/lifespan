@@ -190,15 +190,15 @@ struct ns_processing_job{
 	}
 
 	void load_from_result(const std::vector<std::string> & res){
-		id =				atol(res[0].c_str());
-		experiment_id =		        atol(res[1].c_str());
-		sample_id =			atol(res[2].c_str());
-		region_id =			atol(res[3].c_str());
-		image_id =			atol(res[4].c_str());
+		id = ns_atoi64(res[0].c_str());
+		experiment_id = ns_atoi64(res[1].c_str());
+		sample_id = ns_atoi64(res[2].c_str());
+		region_id = ns_atoi64(res[3].c_str());
+		image_id = ns_atoi64(res[4].c_str());
 		urgent =			(res[5] == "1");
-		processor_id =		        atol(res[6].c_str());
+		processor_id = ns_atoi64(res[6].c_str());
 		time_submitted =	        atol(res[7].c_str());
-		mask_id	=			atol(res[8].c_str());
+		mask_id	= ns_atoi64(res[8].c_str());
 		//x
 		maintenance_task	= (ns_maintenance_task)atol(res[9].c_str());
 		subregion_position.x = atol(res[10].c_str());
@@ -207,7 +207,7 @@ struct ns_processing_job{
 		subregion_size.y = atol(res[13].c_str());
 		subregion_start_time =  atol(res[14].c_str());
 		subregion_stop_time =  atol(res[15].c_str());
-		delete_file_job_id = atol(res[16].c_str());
+		delete_file_job_id = ns_atoi64(res[16].c_str());
 		video_timestamp_type = (ns_processing_job::ns_timestamp_type)(atol(res[17].c_str()));
 		maintenance_flag = (ns_maintenance_flag)atol(res[18].c_str());
 		pending_another_jobs_completion = atol(res[19].c_str());

@@ -306,7 +306,7 @@ void ns_worm_multi_frame_interpolation::load_all_region_worms(const unsigned int
 		//time_points_storage[i].region.region_images_id = atol(res[i][1].c_str());
 		//time_points_storage[i].detected_worms.id =  atol(res[i][2].c_str());
 		//time_points_storage[i].interpolated_worms.id =  atol(res[i][3].c_str());
-		time_points_storage[i].threshold_image.id = atol(res[i][5].c_str());
+		time_points_storage[i].threshold_image.id = ns_atoi64(res[i][5].c_str());
 
 		//if (only_use_processed_frames){
 		//	time_points_storage[i].detected_worms.load_from_db(sql);

@@ -48,7 +48,7 @@ struct ns_image_server_image{
 		id = _id;
 		if (info.size() == 0)
 			return false;
-		host_id = atol(info[0][0].c_str());
+		host_id = ns_atoi64(info[0][0].c_str());
 		capture_time = atol(info[0][1].c_str());
 		filename = info[0][2];
 		path = info[0][3];

@@ -386,7 +386,7 @@ void ns_movement_posture_visualization_summary::from_xml(const std::string & tex
 	try{
 		for (unsigned int i = 0; i < o.objects.size(); i++){
 			if (o.objects[i].name == "rid"){
-				region_id = atol(o.objects[i].value.c_str());
+				region_id = ns_atoi64(o.objects[i].value.c_str());
 				continue;
 			}
 			if (o.objects[i].name == "fn"){
@@ -412,7 +412,7 @@ void ns_movement_posture_visualization_summary::from_xml(const std::string & tex
 			worms[s].metadata_in_visualizationA.size = ns_get_integer_pair(o.objects[i].tag("mz"));
 			worms[s].stationary_path_id.path_id = atol(o.objects[i].tag("pi").c_str());
 			worms[s].stationary_path_id.group_id = atol(o.objects[i].tag("gi").c_str());
-			worms[s].stationary_path_id.detection_set_id = atol(o.objects[i].tag("gt").c_str());
+			worms[s].stationary_path_id.detection_set_id = ns_atoi64(o.objects[i].tag("gt").c_str());
 			if (o.objects[i].tag("ps") == "-1")
 				worms[s].path_time.period_start_was_not_observed = true;
 			else 
@@ -1373,11 +1373,12 @@ void ns_time_path_image_movement_analyzer::get_output_image_storage_locations(co
 		sql.get_rows(res);
 		for (unsigned int i = 0; i < res.size(); i++) {
 			ns_image_server_image im;
-			im.load_from_db(atol(res[i][1].c_str()), &sql);
+			im.load_from_db(ns_atoi64(res[i][1].c_str()), &sql);
 			image_server_const.image_storage.delete_from_storage(im, ns_delete_both_volatile_and_long_term, &sql);
 			sql << "DELETE FROM images WHERE id = " << im.id;
 			sql.send_query();
-			im.load_from_db(atol(res[i][2].c_str()), &sql);
+			im = ns_image_server_image();
+			im.load_from_db(ns_atoi64(res[i][2].c_str()), &sql);
 			image_server_const.image_storage.delete_from_storage(im, ns_delete_both_volatile_and_long_term, &sql);
 			sql << "DELETE FROM images WHERE id = " << im.id;
 			sql.send_query();
@@ -1486,7 +1487,7 @@ void ns_time_path_image_movement_analyzer::populate_movement_quantification_from
 	if (res.size() == 0)
 		throw ns_ex("ns_time_path_image_movement_analyzer::load_movement_data_from_db():Could not load info from db");
 	ns_image_server_image im;
-	im.id = atol(res[0][0].c_str());
+	im.id = ns_atoi64(res[0][0].c_str());
 	if (im.id == 0)
 		throw ns_ex("Movement quantification data has not been stored in db");
 	ifstream * i(image_server_const.image_storage.request_metadata_from_disk(im,false,&sql));
@@ -1590,7 +1591,7 @@ void ns_time_path_image_movement_analyzer::save_movement_data_to_db(const ns_64_
 	if (res.size() == 0)
 		throw ns_ex("ns_time_path_image_movement_analyzer::save_movement_data_to_db():Could not load info from db");
 	ns_image_server_image im;
-	im.id = atol(res[0][0].c_str());
+	im.id = ns_atoi64(res[0][0].c_str());
 	bool update_db(false);
 	if (im.id == 0){
 		im = image_server_const.image_storage.get_region_movement_metadata_info(region_id,"time_path_movement_image_analysis_quantification",sql);

@@ -97,7 +97,7 @@ void ns_check_for_file_errors(ns_processing_job & job, ns_sql & sql){
 		if (res.size() == 0)
 			throw ns_ex("ns_check_for_file_errors()::Could not load sample ") << job.sample_id << " from db!";
 		const string sample_name(res[0][0]);
-		unsigned long experiment_id = atol( res[0][1].c_str());
+		unsigned long experiment_id = ns_atoi64( res[0][1].c_str());
 		sql << "SELECT name FROM experiments WHERE id = " << experiment_id;
 		sql.get_rows(res);
 		if (res.size() == 0)
@@ -111,7 +111,7 @@ void ns_check_for_file_errors(ns_processing_job & job, ns_sql & sql){
 			bool problem(false);
 			bool large_image_exists(false);
 			ns_image_server_image im;
-			im.id = atol(res[i][2].c_str());
+			im.id = ns_atoi64(res[i][2].c_str());
 			if (im.id != 0){
 				im.load_from_db(im.id,&sql);
 				if (!image_server_const.image_storage.image_exists(im,&sql,true)){
@@ -122,7 +122,7 @@ void ns_check_for_file_errors(ns_processing_job & job, ns_sql & sql){
 				}
 				else large_image_exists = true;
 			}
-			im.id = atol(res[i][3].c_str());
+			im.id = ns_atoi64(res[i][3].c_str());
 			bool clear_small_image(false);
 			if (im.id != 0){
 				if (!image_server_const.image_storage.image_exists(im,&sql,true)){
@@ -267,7 +267,7 @@ void ns_handle_file_delete_request(ns_processing_job & job, ns_sql & sql){
 				sql.get_rows(res);
 				for (unsigned int i = 0; i < res.size(); i++){
 					ns_image_server_image im;
-					im.id = atol(res[i][0].c_str());
+					im.id = ns_atoi64(res[i][0].c_str());
 					files.push_back(image_server_const.image_storage.get_file_specification_for_image(im,&sql));
 				}
 			}
@@ -278,7 +278,7 @@ void ns_handle_file_delete_request(ns_processing_job & job, ns_sql & sql){
 				sql.get_rows(res);
 				for (unsigned int i = 0; i < res.size(); i++){
 					ns_image_server_image im;
-					im.id = atol(res[i][0].c_str());
+					im.id = ns_atoi64(res[i][0].c_str());
 					files.push_back(image_server_const.image_storage.get_file_specification_for_image(im,&sql));
 				}
 			}
@@ -289,7 +289,7 @@ void ns_handle_file_delete_request(ns_processing_job & job, ns_sql & sql){
 				sql.get_rows(res);
 				for (unsigned int i = 0; i < res.size(); i++){
 					ns_image_server_image im;
-					im.id = atol(res[i][0].c_str());
+					im.id = ns_atoi64(res[i][0].c_str());
 					files.push_back(image_server_const.image_storage.get_file_specification_for_image(im,&sql));
 				}
 			}
@@ -505,7 +505,7 @@ void ns_handle_image_metadata_delete_action(ns_processing_job & job,ns_sql & sql
 			ns_sql_result res;
 			sql.get_rows(res);
 			for (unsigned int i = 0; i < res.size(); i++)
-				regions_to_delete.push_back(atol(res[i][0].c_str()));
+				regions_to_delete.push_back(ns_atoi64(res[i][0].c_str()));
 		}
 		for (unsigned long i = 0; i < regions_to_delete.size(); i++){
 			//unless the job is flagged as deleting the entire sample region, just delete individual images
@@ -750,7 +750,7 @@ void ns_image_processing_pipeline::process_region(const ns_image_server_captured
 				if (res.size() > 1){
 					unsigned int cur_point_pos;
 					for (cur_point_pos = 0; cur_point_pos < res.size(); cur_point_pos++)
-						if (atol(res[cur_point_pos][0].c_str()) == region_image.region_images_id)
+						if (ns_atoi64(res[cur_point_pos][0].c_str()) == region_image.region_images_id)
 							break;
 					if (cur_point_pos%offset==0)
 						this_frame_should_generate_a_training_set_image = true;
@@ -1296,7 +1296,7 @@ float ns_image_processing_pipeline::process_mask(ns_image_server_image & source_
 		sql.send_query();
 	}
 	else{
-		visualization_image.id = atol(res[0][0].c_str());
+		visualization_image.id = ns_atoi64(res[0][0].c_str());
 		sql << "UPDATE images SET filename = '" << sql.escape_string(new_filename) << "', path='" << sql.escape_string(source_image.path) << "', `partition`='" << source_image.partition << "', host_id= " << image_server_const.host_id() << ", creation_time = " << ns_current_time()
 				<< " WHERE id=" << 	visualization_image.id;
 	//	cerr << sql.query() << "\n";
@@ -1344,7 +1344,7 @@ void ns_image_processing_pipeline::generate_sample_regions_from_mask(ns_64_bit s
 
 	//sort regions top to boytom based on their positions in the mask
 	for (unsigned long i = 0; i < res.size(); i++){
-		mask_regions[i].mask_region_id = atol(res[i][0].c_str());
+		mask_regions[i].mask_region_id = ns_atoi64(res[i][0].c_str());
 		mask_regions[i].mask_value = atol(res[i][1].c_str());
 		mask_regions[i].pos.x = atol(res[i][2].c_str());
 		mask_regions[i].pos.y = atol(res[i][3].c_str());
@@ -1401,7 +1401,7 @@ void ns_image_processing_pipeline::generate_sample_regions_from_mask(ns_64_bit s
 	sql << "SELECT id, mask_region_id FROM sample_region_image_info WHERE sample_id = " << sample_id;
 	sql.get_rows(res);
 	for (unsigned int i = 0; i < res.size(); i++){
-		unsigned long region_id = atol(res[i][0].c_str());
+		unsigned long region_id = ns_atoi64(res[i][0].c_str());
 		if (mask_finder.find(region_id) == mask_finder.end()){
 			ns_processing_job job;
 			job.region_id = region_id;
@@ -2020,8 +2020,8 @@ void ns_image_processing_pipeline::apply_mask(ns_image_server_captured_image & c
 			throw ns_ex("ns_image_processing_pipeline::Specified sample does not exist in database during mask application.");
 		if (res[0][0] == "" || res[0][0] == "0")
 			throw ns_ex("ns_image_processing_pipeline::Specified sample '") << captured_image.sample_name << "'(" << captured_image.sample_id << ") does have mask set.";
-		unsigned long mask_id = atol(res[0][0].c_str()),
-			mask_image_id = atol(res[0][1].c_str()),
+		unsigned long mask_id = ns_atoi64(res[0][0].c_str()),
+			mask_image_id = ns_atoi64(res[0][1].c_str()),
 			apply_vertical_image_registration = atol(res[0][2].c_str());
 		//	if (apply_vertical_image_registration)
 		//		cerr << "Vertical registration requested\n";
@@ -2084,9 +2084,9 @@ void ns_image_processing_pipeline::apply_mask(ns_image_server_captured_image & c
 		vector<ns_image_server_image> output_images;
 		unsigned long mask_info_size = mask_splitter.mask_info()->size();
 		for (unsigned int i = 0; i < res.size(); i++) {
-			unsigned int	mask_region_info_id = atol(res[i][0].c_str());
-			unsigned int 	mask_region_id = atol(res[i][2].c_str());
-			int				mask_region_value = atol(res[i][3].c_str()); // if it could accidentally be < 0 (see below) it ought to be an int
+			unsigned int	mask_region_info_id = ns_atoi64(res[i][0].c_str());
+			unsigned int 	mask_region_id = ns_atoi64(res[i][2].c_str());
+			int				mask_region_value = ns_atoi64(res[i][3].c_str()); // if it could accidentally be < 0 (see below) it ought to be an int
 			string			mask_region_name = res[i][1];
 
 			if (mask_region_value < 0 || mask_region_value > mask_info_size)
@@ -2104,12 +2104,12 @@ void ns_image_processing_pipeline::apply_mask(ns_image_server_captured_image & c
 			//if a record in the sample_region_images table exists, and if so, whether a record in the images table exists as well.
 			if (out.size() != 0) {
 				//delete the previous file
-				output_image.id = atol(out[0][1].c_str());
+				output_image.id = ns_atoi64(out[0][1].c_str());
 				//	if (output_image.id != 0)
 				//			image_server_const.image_storage.delete_from_storage(output_image,sql);
 					//we can use the old image; its filename must be correct.
 					//we can also use the existing region_image record.
-				new_region_image.region_images_id = atol(out[0][0].c_str());
+				new_region_image.region_images_id = ns_atoi64(out[0][0].c_str());
 				new_region_image.region_images_image_id = output_image.id;
 				new_region_image.region_info_id = mask_region_info_id;
 				new_region_image.capture_time = captured_image.capture_time;
@@ -2465,7 +2465,7 @@ const ns_lifespan_curve_cache_entry & ns_lifespan_curve_cache::get_experiment_da
 	sql.get_rows(res);
 	bool reload_experiment_data(false);
 	for (unsigned int i = 0; i < res.size(); i++){
-		const unsigned long region_id(atol(res[i][0].c_str()));
+		const unsigned long region_id(ns_atoi64(res[i][0].c_str()));
 		const unsigned long latest_machine_timestamp(atol(res[i][1].c_str()));
 		const unsigned long latest_hand_timestamp(atol(res[i][2].c_str()));
 		ns_lifespan_region_timestamp_cache::iterator p = timestamp_cache.find(region_id);
@@ -2655,7 +2655,7 @@ void ns_image_processing_pipeline::analyze_operations(const ns_image_server_capt
 			i == ns_process_region_vis ||
 			i == ns_process_thumbnail)
 			continue;
-		precomputed_images.specify_image_id((ns_processing_task)i,atol(res[0][i-2].c_str()),sql);
+		precomputed_images.specify_image_id((ns_processing_task)i, ns_atoi64(res[0][i-2].c_str()),sql);
 	}
 
 	reason_through_precomputed_dependencies(operations,precomputed_images);
@@ -2703,7 +2703,7 @@ void ns_image_processing_pipeline::get_reference_image(const ns_image_server_cap
 		if (res[i][0] == "0")
 			continue;
 		ns_image_server_image im;
-		im.id = atol(res[i][0].c_str());
+		im.id = ns_atoi64(res[i][0].c_str());
 	
 		try {
 			image_server.image_registration_profile_cache.get_for_read(im, reference_image, external_source);

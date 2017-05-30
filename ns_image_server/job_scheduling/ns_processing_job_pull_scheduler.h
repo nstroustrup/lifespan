@@ -62,13 +62,13 @@ struct ns_processing_job_pull_finder{
 		//it has no jobs left.  Instead, we will randomly choose
 		//jobs from each available experiment so they all are worked on evenly
 		if (randomize_experiment_priority){
-			unsigned int last_id = 0;
-			vector<unsigned long> exp_id_start;
+			ns_64_bit last_id = 0;
+			vector<ns_64_bit> exp_id_start;
 			exp_id_start.reserve(10);
 			//go through all the jobs and see the result row
 			//at which each experiment's jobs start.
 			for (unsigned int i = 0; i < rows.size(); i++){
-				unsigned long id = atol(rows[i][1].c_str());
+				ns_64_bit id = ns_atoi64(rows[i][1].c_str());
 				if (id != last_id){
 					exp_id_start.push_back(i);
 					last_id = id;

@@ -1837,8 +1837,8 @@ void ns_image_worm_detection_results::save(ns_image_server_captured_image_region
 	sql.get_rows(res);
 	bool need_to_make_new_record = res.empty();
 	if (!need_to_make_new_record) {
-		if (!interpolated)	detection_results_id = atol(res[0][0].c_str());
-		else				detection_results_id = atol(res[0][1].c_str());
+		if (!interpolated)	detection_results_id = ns_atoi64(res[0][0].c_str());
+		else				detection_results_id = ns_atoi64(res[0][1].c_str());
 	}
 	else detection_results_id = 0;
 	
@@ -1993,16 +1993,16 @@ void ns_image_worm_detection_results::load_from_db(const bool load_worm_postures
 	if (data.size() == 0){
 		throw ns_ex("ns_image_worm_detection_resuls::Could not load specified result") << detection_results_id <<", as it does not exist in the db";
 	}
-	source_image_id = atol(data[0][0].c_str());
-	capture_sample_id = atol(data[0][1].c_str());
-	worm_collage.info().tiles_per_row = atol(data[0][2].c_str());
-	worm_collage.info().tile_width = atol(data[0][3].c_str());
-	worm_collage.info().tile_height = atol(data[0][4].c_str());
+	source_image_id = ns_atoi64(data[0][0].c_str());
+	capture_sample_id = ns_atoi64(data[0][1].c_str());
+	worm_collage.info().tiles_per_row = ns_atoi64(data[0][2].c_str());
+	worm_collage.info().tile_width = ns_atoi64(data[0][3].c_str());
+	worm_collage.info().tile_height = ns_atoi64(data[0][4].c_str());
 
-	unsigned int number_of_worms = atol(data[0][5].c_str()),
-				 number_of_interpolated_worm_areas = atol(data[0][8].c_str());
+	unsigned int number_of_worms = ns_atoi64(data[0][5].c_str()),
+				 number_of_interpolated_worm_areas = ns_atoi64(data[0][8].c_str());
 
-	data_storage_on_disk.id = atol(data[0][7].c_str());
+	data_storage_on_disk.id = ns_atoi64(data[0][7].c_str());
 
 	if (data_storage_on_disk.id == 0){
 		throw ns_ex("Database storage of worm information is depreciated!");

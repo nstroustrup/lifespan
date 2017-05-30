@@ -197,7 +197,7 @@ void ns_bulk_experiment_mask_manager::produce_mask_file(const unsigned int exper
 			collage_info_manager.collage_info[i].position.x = prop.width;
 			collage_info_manager.collage_info[i].position.y = label_margin_buffer;
 			collage_info_manager.collage_info[i].sample_name = samples[i][0];
-			collage_info_manager.collage_info[i].sample_id = atol(samples[i][1].c_str());
+			collage_info_manager.collage_info[i].sample_id = ns_atoi64(samples[i][1].c_str());
 
 			prop.width+=images[i].properties().width/resize_factor;
 			prop.width+=image_margin;  //fifty pixel margin between samples
@@ -343,7 +343,7 @@ void ns_bulk_experiment_mask_manager::submit_masks_to_cluster(bool balk_on_overw
 			if (res.size() == 0)
 				throw ns_ex("Could not find sample in db");
 
-			if (atol(res[0][0].c_str()) != 0) {
+			if (ns_atoi64(res[0][0].c_str()) != 0) {
 				if (balk_on_overwrite) {
 					ex_not_ok = true;
 					throw ns_ex("ns_bulk_experiment_mask_manager::submit_masks_to_cluster::A mask already exists for specified sample: ") << collage_info_manager.collage_info[i].sample_id << ". To continue anyway, select the menu item Config/Set Behavior/Overwrite existing sample masks";

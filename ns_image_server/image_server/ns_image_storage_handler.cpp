@@ -1167,9 +1167,9 @@ ns_file_location_specification ns_image_storage_handler::get_storyboard_path(con
 		if (res.size() == 0)
 			throw ns_ex("ns_experiment_storyboard_manager::get_default_storage_locations()::Could not load information for region ") << region_id;
 
-		const std::string experiment_directory(ns_image_server_captured_image_region::experiment_directory(res[0][3], atol(res[0][4].c_str())));
+		const std::string experiment_directory(ns_image_server_captured_image_region::experiment_directory(res[0][3], ns_atoi64(res[0][4].c_str())));
 		std::string region_path = ns_image_server_captured_image_region::region_base_directory(res[0][0],
-			ns_image_server_captured_image_region::captured_image_directory_d(res[0][1], atol(res[0][2].c_str()), experiment_directory, false),
+			ns_image_server_captured_image_region::captured_image_directory_d(res[0][1], ns_atoi64(res[0][2].c_str()), experiment_directory, false),
 			experiment_directory);
 		std::string f;
 		if (!just_path) {
@@ -1178,7 +1178,7 @@ ns_file_location_specification ns_image_storage_handler::get_storyboard_path(con
 		}
 		spec.relative_directory = region_path + DIR_CHAR_STR + "animal_storyboard";
 
-		spec.partition = image_server.image_storage.get_partition_for_experiment(atol(res[0][4].c_str()), &sql);
+		spec.partition = image_server.image_storage.get_partition_for_experiment(ns_atoi64(res[0][4].c_str()), &sql);
 		return spec;
 	}
 	if (experiment_id == 0)
@@ -1263,6 +1263,7 @@ ns_image_server_image ns_image_storage_handler::get_storage_for_path(const ns_fi
 			+ ns_to_string(path_group_id) + "=" + ns_to_string(path_id);
 	if (flow)
 		im.filename += "=flow";
+	ns_add_image_suffix(im.filename,ns_tiff);
 	return im;
 }
 
@@ -1364,7 +1365,7 @@ void ns_image_storage_handler::get_file_deletion_requests(const ns_64_bit deleti
 		throw ns_ex("ns_handle_file_delete_action()::Parent processeing job has not been specified");
 	if (res[0][1] == "0")
 		throw ns_ex("ns_handle_file_delete_action()::Specified file deletion job has not been confirmed.");
-	parent_job_id = atol(res[0][0].c_str());
+	parent_job_id = ns_atoi64(res[0][0].c_str());
 	sql << "SELECT relative_directory,filename,`partition` FROM delete_file_specifications WHERE delete_job_id = " << deletion_job_id;
 	sql.get_rows(res);
 	specs.resize(0);
@@ -1411,7 +1412,7 @@ void ns_region_info_lookup::get_region_info(const ns_64_bit region_id,ns_image_s
 	if (res.size() == 0)
 		throw ns_ex("ns_image_storage_handler::get_region_info()::Could not locate region id ") << region_id << " in the database.";
 	region_name = res[0][1];
-	sample_id = atol(res[0][0].c_str());
+	sample_id = ns_atoi64(res[0][0].c_str());
 	get_sample_info(sample_id,sql,sample_name,experiment_name,experiment_id);
 }
 void ns_region_info_lookup::get_sample_info(const ns_64_bit sample_id,ns_image_server_sql * sql, std::string & sample_name, std::string & experiment_name, ns_64_bit & experiment_id){
@@ -1421,7 +1422,7 @@ void ns_region_info_lookup::get_sample_info(const ns_64_bit sample_id,ns_image_s
 	if (res.size() == 0)
 		throw ns_ex("ns_image_storage_handler::get_sample_info()::Could not locate sample id ") << sample_id << " in the database.";
 	sample_name = res[0][0];
-	experiment_id = atol(res[0][1].c_str());
+	experiment_id = ns_atoi64(res[0][1].c_str());
 	get_experiment_info(experiment_id,sql,experiment_name);
 }
 void ns_region_info_lookup::get_experiment_info(const ns_64_bit experiment_id,ns_image_server_sql * sql, std::string & experiment_name){
@@ -1477,7 +1478,7 @@ void ns_image_storage_handler::refresh_experiment_partition_cache_int(ns_image_s
 			std::string partition = res[i][1];
 			if (partition.size() == 0)
 				partition = ns_get_default_partition();
-			experiment_partition_cache[atol(res[i][0].c_str())] = partition;
+			experiment_partition_cache[ns_atoi64(res[i][0].c_str())] = partition;
 		}
 		if (get_lock) experiment_partition_cache_lock.release();
 		experiment_partition_cache_last_update_time = ns_current_time();
@@ -1567,7 +1568,7 @@ ns_socket_connection ns_image_storage_handler::connect_to_fileserver_node(ns_sql
 
 	for (unsigned int i = 0; i < hosts.size(); i++){
 		try{
-			return socket.connect(hosts[ order[i] ][0], atol(hosts[ order[i] ][1].c_str()));
+			return socket.connect(hosts[ order[i] ][0], ns_atoi64(hosts[ order[i] ][1].c_str()));
 		}
 		catch(ns_ex & ex){/*do nothing */}
 	}

@@ -84,7 +84,7 @@ std::string ns_experiment_capture_specification::submit_schedule_to_db(std::vect
 			debug+="Overwriting an existing experiment named "; 
 			debug+= name + " with id = " + res[0][0] + "\n";
 		}
-		experiment_id = atol(res[0][0].c_str());
+		experiment_id = ns_atoi64(res[0][0].c_str());
 	}
 	
 	
@@ -100,7 +100,7 @@ std::string ns_experiment_capture_specification::submit_schedule_to_db(std::vect
 					throw ns_ex("ns_experiment_capture_specification::submit_schedule_to_db::Sample ") << samples[i].sample_name << " already exists and overwrite_previous set to false";
 				
 
-				samples[i].sample_id = atol(res[0][0].c_str());
+				samples[i].sample_id = ns_atoi64(res[0][0].c_str());
 				ns_processing_job job;
 				job.sample_id = samples[i].sample_id;
 				if (!actually_write)

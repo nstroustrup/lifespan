@@ -30,20 +30,20 @@ std::string ns_processing_job_queue_item::provide_stub(){
 	return "SELECT id, job_id, priority, experiment_id, capture_sample_id, captured_images_id, sample_region_info_id, sample_region_id, image_id, processor_id, problem, progress, movement_record_id, job_class FROM processing_job_queue ";
 }
 void ns_processing_job_queue_item::from_result(std::vector<std::string> & result){
-		id = atol(result[0].c_str());
-		job_id = atol(result[1].c_str());
-		priority=atol(result[2].c_str());  //higher is more important
-		experiment_id=atol(result[3].c_str());
-		capture_sample_id=atol(result[4].c_str());
-		captured_images_id=atol(result[5].c_str());
-		sample_region_info_id=atol(result[6].c_str());
-		sample_region_image_id=atol(result[7].c_str());
-		image_id=atol(result[8].c_str());
-		processor_id=atol(result[9].c_str());
-		problem=atol(result[10].c_str());
-		progress=atol(result[11].c_str());
-		movement_record_id=atol(result[12].c_str());
-		job_class=atol(result[13].c_str());
+		id = ns_atoi64(result[0].c_str());
+		job_id = ns_atoi64(result[1].c_str());
+		priority= ns_atoi64(result[2].c_str());  //higher is more important
+		experiment_id= ns_atoi64(result[3].c_str());
+		capture_sample_id= ns_atoi64(result[4].c_str());
+		captured_images_id= ns_atoi64(result[5].c_str());
+		sample_region_info_id= ns_atoi64(result[6].c_str());
+		sample_region_image_id= ns_atoi64(result[7].c_str());
+		image_id= ns_atoi64(result[8].c_str());
+		processor_id= ns_atoi64(result[9].c_str());
+		problem= ns_atoi64(result[10].c_str());
+		progress= ns_atoi64(result[11].c_str());
+		movement_record_id= ns_atoi64(result[12].c_str());
+		job_class= ns_atoi64(result[13].c_str());
 }
 
 
@@ -149,7 +149,7 @@ void ns_image_server_push_job_scheduler::report_sample_region_image(std::vector<
 						ns_processing_job_queue_item queue_item;
 						//No need to lock here!  We are only inserting records
 						queue_item.job_id = job_cache[j].id;
-						queue_item.movement_record_id = atol(res[k][3].c_str());
+						queue_item.movement_record_id = ns_atoi64(res[k][3].c_str());
 						queue_item.priority = ns_job_queue_movement_priority;
 						queue_item.save_to_db(sql,false);
 					}

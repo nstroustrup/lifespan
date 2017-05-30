@@ -107,29 +107,29 @@ bool ns_processing_job_sample_processor::job_is_still_relevant(ns_sql & sql, std
 	if (res.size() == 0)
 		return false;
 	//don't process jobs with no source image
-	if (atol(res[0][0].c_str()) == 0){
+	if (ns_atoi64(res[0][0].c_str()) == 0){
 		reason_not_relevant = "Raw captured image does not exist.";
 		return false;
 	}
 	//don't process completed jobs
-	if (job.operations[ns_process_thumbnail] && atol(res[0][1].c_str())!=0){
+	if (job.operations[ns_process_thumbnail] && ns_atoi64(res[0][1].c_str())!=0){
 		reason_not_relevant = "Captured image's resized copy has already been calculated.";
 		return false;
 	}
 	//don't process completed jobs
-	if (job.operations[ns_process_apply_mask] && atol(res[0][2].c_str())!=0){
+	if (job.operations[ns_process_apply_mask] && ns_atoi64(res[0][2].c_str())!=0){
 		reason_not_relevant = "Captured image has already had its mask applied.";
 		return false;
 	}
 	//don't processes busy or problem jobs
-	unsigned long host_id = atol(res[0][3].c_str());
+	unsigned long host_id = ns_atoi64(res[0][3].c_str());
 
 	if (host_id != 0){
 		reason_not_relevant = "Captured image is flagged as being processed by";
 		reason_not_relevant += ns_to_string(host_id);
 		return false;
 	}
-	if (atol(res[0][4].c_str()) !=0){
+	if (ns_atoi64(res[0][4].c_str()) !=0){
 		reason_not_relevant = "Captured image is flagged as having a problem";
 		return false;
 	}
@@ -276,12 +276,12 @@ bool ns_processing_job_sample_processor::identify_subjects_of_job_specification(
 		sql.get_rows(res);
 		if(res.size()==0)
 			throw ns_ex("ns_image_server_push_job_scheduler::report_new_job()::Cannot find sample id ") << job.sample_id << " in db.";
-		if (atol(res[0][0].c_str()) != 0){
+		if (ns_atoi64(res[0][0].c_str()) != 0){
 			sql << "SELECT id FROM captured_images WHERE sample_id = " << job.sample_id << " AND mask_applied = 0 AND image_id != 0 AND problem = 0 AND censored = 0 AND currently_being_processed=0";
 			sql.get_rows(res);
 			for (unsigned int i = 0; i < res.size(); i++){
 				ns_processing_job_queue_item item;
-				item.captured_images_id = atol(res[i][0].c_str());
+				item.captured_images_id = ns_atoi64(res[i][0].c_str());
 				item.capture_sample_id = job.sample_id;
 				item.job_id = job.id;
 				if (job.urgent) item.priority = ns_image_server_push_job_scheduler::ns_job_queue_urgent_priority;
@@ -297,7 +297,7 @@ bool ns_processing_job_sample_processor::identify_subjects_of_job_specification(
 		sql.get_rows(res);
 		for (unsigned int i = 0; i < res.size(); i++){
 			ns_processing_job_queue_item item;
-			item.captured_images_id = atol(res[i][0].c_str());
+			item.captured_images_id = ns_atoi64(res[i][0].c_str());
 			item.capture_sample_id = job.sample_id;
 			item.job_id = job.id;
 			if (job.urgent) item.priority = ns_image_server_push_job_scheduler::ns_job_queue_urgent_priority;
@@ -333,7 +333,7 @@ bool ns_processing_job_region_processor::identify_subjects_of_job_specification(
 	for (unsigned int i = 0; i < res.size(); i++){
 		ns_processing_job_queue_item item;
 		item.sample_region_info_id = job.region_id;
-		item.sample_region_image_id = atol(res[i][0].c_str());
+		item.sample_region_image_id = ns_atoi64(res[i][0].c_str());
 		item.job_id = job.id;
 		if (job.urgent) item.priority = ns_image_server_push_job_scheduler::ns_job_queue_urgent_priority;
 		else item.priority = ns_image_server_push_job_scheduler::ns_job_queue_region_priority;
@@ -354,7 +354,7 @@ bool ns_processing_job_whole_region_processor::identify_subjects_of_job_specific
 	//ns_sql_full_table_lock lock(sql,"processing_job_queue");
 	ns_processing_job_queue_item item;
 	item.sample_region_info_id = job.region_id;
-	item.sample_region_image_id = atol(res[0][0].c_str());
+	item.sample_region_image_id = ns_atoi64(res[0][0].c_str());
 	item.job_id = job.id;
 	if (job.operations[(int)ns_process_compile_video] != 0)
 		item.job_class = 1;
@@ -373,7 +373,7 @@ bool ns_processing_job_whole_sample_processor::identify_subjects_of_job_specific
 	
 	ns_processing_job_queue_item item;
 	item.capture_sample_id = job.sample_id;
-	item.captured_images_id = atol(res[0][0].c_str());
+	item.captured_images_id = ns_atoi64(res[0][0].c_str());
 	item.job_id = job.id;
 	if (job.operations[(int)ns_process_compile_video] != 0)
 		item.job_class = 1; //only process one video per computer (because the code uses all processors effectively)
@@ -788,7 +788,7 @@ bool ns_processing_job_maintenance_processor::run_job(ns_sql & sql) {
 					ns_sql_result res;
 					sql.get_rows(res);
 					for (unsigned int i = 0; i < res.size(); i++){
-						region_ids_to_spawn.push_back(atol(res[i][0].c_str()));
+						region_ids_to_spawn.push_back(ns_atoi64(res[i][0].c_str()));
 					}
 				}
 				else if (job.region_id == 0){
@@ -798,7 +798,7 @@ bool ns_processing_job_maintenance_processor::run_job(ns_sql & sql) {
 					ns_sql_result res;
 					sql.get_rows(res);
 					for (unsigned int i = 0; i < res.size(); i++){
-						region_ids_to_spawn.push_back(atol(res[i][0].c_str()));
+						region_ids_to_spawn.push_back(ns_atoi64(res[i][0].c_str()));
 					}
 				}
 				else region_ids_to_spawn.push_back(job.region_id);
@@ -1052,12 +1052,12 @@ bool ns_processing_job_maintenance_processor::run_job(ns_sql & sql) {
 			sql.get_rows(res);
 			if (res.empty())
 				throw ns_ex("Could not find region in db:")<< job.region_id;
-			region_image.experiment_id = atol(res[0][0].c_str());
+			region_image.experiment_id = ns_atoi64(res[0][0].c_str());
 			region_image.region_name = res[0][1];
 			region_image.experiment_name = res[0][2];
 			region_image.sample_name = res[0][3];
 			region_image.device_name = res[0][4];
-			region_image.sample_id = atol(res[0][5].c_str());
+			region_image.sample_id = ns_atoi64(res[0][5].c_str());
 			region_image.region_images_id = 1;
 			region_image.captured_images_id = 1;
 			region_image.capture_time = 1;
@@ -1128,7 +1128,7 @@ bool ns_processing_job_image_processor::run_job(ns_sql & sql){
 	vector<ns_ex> exceptions;
 	for (std::vector<ns_ex>::size_type i = 0; i < res.size(); i++){
 		try{
-			pipeline->generate_sample_regions_from_mask(atol(res[i][0].c_str()),image_resolution,sql);
+			pipeline->generate_sample_regions_from_mask(ns_atoi64(res[i][0].c_str()),image_resolution,sql);
 		}
 		catch(ns_ex & ex){
 			exceptions.push_back(ex);

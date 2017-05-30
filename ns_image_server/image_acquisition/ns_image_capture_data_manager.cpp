@@ -468,7 +468,7 @@ unsigned long ns_image_capture_data_manager::handle_pending_transfers(const stri
 				ns_image_server_captured_image im;
 				im.captured_images_id = ns_atoi64(events[i][1].c_str());
 				im.load_from_db(im.captured_images_id,&sql());
-				ns_64_bit capture_schedule_id = atol(events[i][0].c_str());
+				ns_64_bit capture_schedule_id = ns_atoi64(events[i][0].c_str());
 				try{
 					transfer_image_to_long_term_storage_locked(capture_schedule_id,im,sql());
 				}

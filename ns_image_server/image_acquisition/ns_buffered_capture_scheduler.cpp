@@ -128,10 +128,10 @@ void ns_buffered_capture_scheduler::commit_all_local_schedule_changes_to_central
 	std::vector<ns_ex *> errors;
 	for (unsigned long i = 0; i < updated_data.size(); i++){
 		try{
-			unsigned long captured_image_id = atol(updated_data[i][buffered_capture_schedule.image_id_column].c_str());
-			unsigned long problem_id = atol(updated_data[i][buffered_capture_schedule.problem_column].c_str());
+			ns_64_bit captured_image_id = ns_atoi64(updated_data[i][buffered_capture_schedule.image_id_column].c_str());
+			ns_64_bit problem_id = ns_atoi64(updated_data[i][buffered_capture_schedule.problem_column].c_str());
 		
-			unsigned long central_captured_image_id(0), 
+			ns_64_bit central_captured_image_id(0), 
 						  central_problem_id(0);
 			if (captured_image_id != 0 || problem_id != 0){
 				central_db << "SELECT captured_image_id,problem FROM capture_schedule WHERE id = " << updated_data[i][buffered_capture_schedule.id_column];
@@ -139,8 +139,8 @@ void ns_buffered_capture_scheduler::commit_all_local_schedule_changes_to_central
 				central_db.get_rows(res);
 				if (res.size() == 0)
 					throw ns_ex("Could not find capture schedule entry in central db for sample id " ) << updated_data[i][buffered_capture_schedule.id_column] << " finishing at time " << updated_data[i][buffered_capture_schedule.time_at_finish_column];
-				central_captured_image_id = atol(res[0][0].c_str());
-				central_problem_id = atol(res[0][1].c_str());
+				central_captured_image_id = ns_atoi64(res[0][0].c_str());
+				central_problem_id = ns_atoi64(res[0][1].c_str());
 			}
 
 			const bool need_to_make_new_capture_image(captured_image_id != 0 && central_captured_image_id != captured_image_id);
@@ -375,12 +375,12 @@ void ns_buffered_capture_scheduler::update_local_buffer_from_central_server(ns_i
 
 	ns_sql_result new_schedule;
 	central_db.get_rows(new_schedule);
-	std::set<unsigned long> altered_experiment_ids;
-	std::set<unsigned long> altered_sample_ids;
+	std::set<ns_64_bit> altered_experiment_ids;
+	std::set<ns_64_bit> altered_sample_ids;
 	for (unsigned int i = 0; i < new_schedule.size(); i++){
 	//	if (atol(new_schedule[i][4].c_str()) > central_time_of_last_update_from_central_db){
-			altered_sample_ids.insert(atol(new_schedule[i][1].c_str()));
-			altered_experiment_ids.insert(atol(new_schedule[i][2].c_str()));
+			altered_sample_ids.insert(ns_atoi64(new_schedule[i][1].c_str()));
+			altered_experiment_ids.insert(ns_atoi64(new_schedule[i][2].c_str()));
 	//	}
 	}
 	const unsigned long new_timestamp(update_start_time.local_time);
@@ -673,9 +673,9 @@ bool ns_buffered_capture_scheduler::run_pending_scans(const std::string & device
 		ca->capture_specification.speed_regulator.initialize_for_capture(raw_image_size_in_bytes,desired_capture_duration_in_seconds);
 		
 		//capture will need to mark job as done by setting time_at_finish
-		ca->capture_specification.capture_schedule_entry_id=atol(events[0][5].c_str());
-		ca->capture_specification.image.experiment_id = atol(events[0][0].c_str());
-		ca->capture_specification.image.sample_id = atol(events[0][3].c_str());
+		ca->capture_specification.capture_schedule_entry_id= ns_atoi64(events[0][5].c_str());
+		ca->capture_specification.image.experiment_id = ns_atoi64(events[0][0].c_str());
+		ca->capture_specification.image.sample_id = ns_atoi64(events[0][3].c_str());
 		ca->capture_specification.image.device_name = device_name;
 		ca->capture_specification.image.capture_time = atol(events[0][6].c_str());
 		ca->capture_specification.image.experiment_name = events[0][4];

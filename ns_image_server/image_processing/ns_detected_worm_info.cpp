@@ -1814,6 +1814,7 @@ void ns_image_worm_detection_results::save(ns_image_server_captured_image_region
 
 	ns_image_statistics stats;
 	stats.db_id = 0;
+	bool need_to_update_stat_id(false);
 	if (calculate_stats) {
 		//save a summary of the current image to the image_statistics table
 		ns_summarize_stats(actual_worm_list(), stats.worm_statistics);
@@ -1821,14 +1822,12 @@ void ns_image_worm_detection_results::save(ns_image_server_captured_image_region
 		sql << "SELECT image_statistics_id FROM sample_region_images WHERE id= " << region.region_images_id;
 		ns_sql_result res;
 		sql.get_rows(res);
-		if (res.size() == 0)
-			stats.db_id = 0;
-		else stats.db_id = ns_atoi64(res[0][0].c_str());
-		stats.submit_to_db(stats.db_id, sql, false, true);
-		if (res.size() == 0){
-			sql << "UPDATE sample_region_images SET image_statistics_id=" << stats.db_id << " WHERE id = " << region.region_images_id;
-			sql.send_query();
-		}
+		ns_64_bit cur_id;
+		if (res.empty())
+			cur_id = 0;
+		else cur_id = ns_atoi64(res[0][0].c_str());
+		stats.submit_to_db(cur_id, sql, false, true);
+		need_to_update_stat_id = stats.db_id != cur_id;
 	}
 
 	ns_sql_result res;
@@ -1837,28 +1836,30 @@ void ns_image_worm_detection_results::save(ns_image_server_captured_image_region
 	//find worm_detection_results record.  If it doesn't exist, make a new one.
 	sql << "SELECT worm_detection_results_id, worm_interpolation_results_id FROM sample_region_images WHERE id = " << region.region_images_id;
 	sql.get_rows(res);
-	if (res.size() != 0) {
+	bool need_to_make_new_record = res.empty();
+	if (!need_to_make_new_record) {
 		if (!interpolated)	detection_results_id = atol(res[0][0].c_str());
 		else				detection_results_id = atol(res[0][1].c_str());
 	}
 	else detection_results_id = 0;
-
+	
 	if (detection_results_id != 0) {
-
 		sql << "SELECT data_storage_on_disk_id FROM worm_detection_results WHERE id = " << detection_results_id;
 		ns_sql_result res2;
 		sql.get_rows(res2);
-		if (res2.size() == 0)
+		if (res2.size() == 0) {
+			need_to_make_new_record = true;
 			data_storage_on_disk.id = 0;
+		}
 		else data_storage_on_disk.id = ns_atoi64(res2[0][0].c_str());
 	}else
 		data_storage_on_disk.id = 0;
 
 	region.create_storage_for_worm_results(data_storage_on_disk, interpolated, sql);
-	if (detection_results_id != 0)
-		sql << "UPDATE worm_detection_results SET ";
-	else
+	if (need_to_make_new_record)
 		sql << "INSERT INTO worm_detection_results SET ";
+	else
+		sql << "UPDATE worm_detection_results SET ";
 
 
 
@@ -1887,7 +1888,7 @@ void ns_image_worm_detection_results::save(ns_image_server_captured_image_region
 		<< ", worm_slow_movement_mapping='', worm_movement_state='', worm_movement_fast_speed='', worm_movement_slow_speed=''"
 		<< ", interpolated_worm_areas=''";
 
-	if (res.size() != 0)
+	if (need_to_make_new_record)
 		detection_results_id = sql.send_query_get_id();
 	else {
 		sql << " WHERE id=" << detection_results_id;
@@ -1895,11 +1896,14 @@ void ns_image_worm_detection_results::save(ns_image_server_captured_image_region
 	}
 
 	//update the region record to reflect the new results
-	sql << "UPDATE sample_region_images SET ";
-	if (!interpolated) sql << "worm_detection_results_id=";
-	else			   sql << "worm_interpolation_results_id=";
-	sql << detection_results_id << " WHERE id = " << region.region_images_id;
-	sql.send_query();
+	if (need_to_update_stat_id || need_to_make_new_record) {
+		sql << "UPDATE sample_region_images SET "
+			<< "image_statistics_id=" << stats.db_id << ",";
+		if (!interpolated) sql << "worm_detection_results_id=";
+		else			   sql << "worm_interpolation_results_id=";
+		sql << detection_results_id << " WHERE id = " << region.region_images_id;
+		sql.send_query();
+	}
 
 	//OK! Now we have all the database records set.
 	//we just need to output everything to disk.

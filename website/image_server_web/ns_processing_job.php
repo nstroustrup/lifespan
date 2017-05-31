@@ -429,7 +429,7 @@ class ns_processing_job{
 		$query = 'SELECT count(*) FROM sample_region_images WHERE currently_under_processing!=0 AND region_info_id = ' . $this->region_id;
 	    $sql->get_value($query,$operations[-4]);
 	    //var_dump($res);
-	    
+
 	    $operations[$ns_processing_tasks['ns_process_static_mask']] = 1*($res[0][0] != '0');
 	    $operations[$ns_processing_tasks['ns_process_heat_map']] = 1*($res[0][1] != '0');
 	    $operations[$ns_path_image_task] = 1*($res[0][2] != '0');
@@ -449,13 +449,13 @@ class ns_processing_job{
 		$operations[-1] = $r[0][0];
 		$operations[0] = $r[0][1];
 		$operations[$ns_processing_tasks['ns_process_resized_sample_image']] = $r[0][2];
-		
+
 		$operations[-2] = $r[0][3];
 		$operations[-3] = $r[0][4];
 		$operations[-4] = $r[0][5];
-	
+
 		$operations[1] = $r[0][6];
-	
+
 
 	    return $operations;
       	  }
@@ -685,6 +685,39 @@ class ns_processing_job{
 	}
 	  $res.= "</table></td></tr>\n</table>\n\n";
 	  return $res;
+	}
+
+	function get_concise_description(){
+	  $res = "";
+	  if ($this->operations[$ns_processing_tasks["ns_process_compile_video"]] != 0){
+		    $vid = 1;
+		    $res .= "Compile Video";
+	  }
+
+	  if ($this->maintenance_task != 0){
+		$res.= "Maintenance task: ";
+		$res .= $ns_maintenance_task_labels[$this->maintenance_task];
+		if($this->maintenance_flag != 0)
+			$res.=" (".$ns_maintenance_flag_labels[$this->maintenance_flag] . ")";
+	  }
+	  $order = 1;
+	  $a = floor($number_of_operations/2)+1;
+	  $res .= "(";
+	  if(sizeof($this->operations > 0)){
+		for ($i = 0; $i < sizeof($this->operations); $i++){
+			if ($this->operations[(int)$i] == 0 ||
+				$i == $ns_processing_tasks["ns_process_compile_video"]){
+					continue;
+			}
+
+
+			$res .= $ns_processing_task_labels[$i] . "<br>";
+			if ($order != $a)
+				$res .=",";
+			$order++;
+		}
+		$res.=")";
+	return $res;
 	}
 }
 

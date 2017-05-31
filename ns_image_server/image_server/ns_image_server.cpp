@@ -3002,7 +3002,8 @@ ns_image_server_results_file ns_image_server_results_storage::time_path_image_an
 				fname = ns_image_server_results_subject::create_short_name(spec.experiment_filename());
 			else fname = spec.experiment_filename();
 		}
-		fname += type + abbreviated + ".csv";
+		fname += type + abbreviated;
+		ns_add_image_suffix(fname,ns_csv);
 
 		if (store_in_results_directory)
  			return ns_image_server_results_file(results_directory,spec.experiment_name + DIR_CHAR_STR + dir, fname);

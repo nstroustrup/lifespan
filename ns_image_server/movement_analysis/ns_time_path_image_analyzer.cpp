@@ -1385,8 +1385,10 @@ void ns_time_path_image_movement_analyzer::get_output_image_storage_locations(co
 				image_server_const.image_storage.delete_from_storage(im1, ns_delete_both_volatile_and_long_term, &sql);
 				image_server_const.image_storage.delete_from_storage(im2, ns_delete_both_volatile_and_long_term, &sql);
 			}
-			images_to_delete.push_back(im1.id);
-			images_to_delete.push_back(im2.id);
+			if (im1.id != 0)
+				images_to_delete.push_back(im1.id);
+			if (im2.id != 0)
+				images_to_delete.push_back(im2.id);
 		}
 		if (extra_groups_found) {
 			sql << "DELETE FROM path_data WHERE region_id = " << region_id << " AND group_id >= " << groups.size();
@@ -1394,7 +1396,7 @@ void ns_time_path_image_movement_analyzer::get_output_image_storage_locations(co
 			sql.send_query();
 		}
 		if (!images_to_delete.empty()) {
-			sql << "DELETE FROM images SET id = " << images_to_delete[0];
+			sql << "DELETE FROM images WHERE id = " << images_to_delete[0];
 			for (unsigned int i = 1; i < images_to_delete.size(); i++)
 				sql << " OR id = " << images_to_delete[i];
 			sql.send_query();

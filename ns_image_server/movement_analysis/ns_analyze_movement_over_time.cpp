@@ -25,6 +25,7 @@ void analyze_worm_movement_across_frames(const ns_processing_job & job, ns_image
 	ns_time_path_solution time_path_solution;
 	if (skip_inferred_worm_analysis) {
 		try {
+			throw ns_ex("tmp");
 			time_path_solution.load_from_db(job.region_id, sql, false);
 		}
 		catch (ns_ex & ex) {

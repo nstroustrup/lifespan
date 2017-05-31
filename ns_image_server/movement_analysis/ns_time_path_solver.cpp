@@ -530,7 +530,6 @@ void ns_time_path_solution::load_from_db(const ns_64_bit region_id, ns_sql & sql
 		
 		ns_image_server_image im;
 		im = image_server_const.image_storage.get_region_movement_metadata_info(region_id,"time_path_solution_data",sql);
-		im.filename += ".csv";
 		try{
 			input_file.attach(image_server_const.image_storage.request_metadata_from_disk(im,false,&sql));
 		}catch(ns_ex & ex){

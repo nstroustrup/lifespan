@@ -1224,6 +1224,7 @@ ns_file_location_specification ns_image_storage_handler::get_file_specification_
 	spec.partition = get_partition_for_experiment_int(experiment_id,sql);
 	if (data_source.size() > 0)
 		spec.filename = experiment_name +"="+sample_name+"="+region_name + "=" + data_source;
+	ns_add_image_suffix(spec.filename, ns_csv);
 	return spec;
 }
 ns_image_server_image ns_image_storage_handler::get_region_movement_metadata_info(ns_64_bit region_info_id,const std::string & data_source,ns_sql & sql) const{

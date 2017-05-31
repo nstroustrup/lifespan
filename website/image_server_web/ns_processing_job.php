@@ -688,6 +688,7 @@ class ns_processing_job{
 	}
 
 	function get_concise_description(){
+	  global $ns_processing_tasks, $ns_maintenance_task_labels, $number_of_operations;
 	  $res = "";
 	  if ($this->operations[$ns_processing_tasks["ns_process_compile_video"]] != 0){
 		    $vid = 1;
@@ -717,6 +718,7 @@ class ns_processing_job{
 			$order++;
 		}
 		$res.=")";
+		}
 	return $res;
 	}
 }

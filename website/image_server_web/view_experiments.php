@@ -384,8 +384,8 @@ Forward any questions to <?php echo $contact_name . " at <a href=\"mailto:" . $c
 <td bgcolor="<?php echo $table_colors[0][1]?>">View the current status and logs of all servers</td></tr>
 <tr>
 <td bgcolor="<?php echo $table_colors[1][0]?>">
-<a href="view_cluster_efficiency.php"> Analysis Performance Statistics</a>
-</td><td bgcolor="<?php echo $table_colors[1][1]?>">View estimates of the speed at which images are currently being processed.</td></tr>
+<a href="view_processing_queue_status.php"> Processing Job Queue</a>
+</td><td bgcolor="<?php echo $table_colors[1][1]?>">View the image processing jobs pending and running</td></tr>
 <tr>
 <td bgcolor="<?php echo $table_colors[0][0]?>">
 <a href="cluster_configuration.php">Server Configuration</a>
@@ -396,9 +396,14 @@ Forward any questions to <?php echo $contact_name . " at <a href=\"mailto:" . $c
 <a href="manage_file_deletion_jobs.php">Manage File Deletions</a>
 </td>
 <td bgcolor="<?php echo $table_colors[1][1]?>">Confirm or reject pending file deletions.</td></tr>
+<tr>
 <td bgcolor="<?php echo $table_colors[0][0]?>">
+<a href="view_cluster_efficiency.php"> Analysis Performance Statistics</a>
+</td><td bgcolor="<?php echo $table_colors[0][1]?>">View estimates of the speed at which images are currently being processed.</td></tr>
+<tr>
+<td bgcolor="<?php echo $table_colors[1][0]?>">
 <a href="find_genotype.php">List All Genotypes Observed</a>
-</td><td bgcolor="<?php echo $table_colors[0][1]?>">Identify experiments including a specific strain or genotype
+</td><td bgcolor="<?php echo $table_colors[1][1]?>">Identify experiments including a specific strain or genotype
 </td></tr>
 </table></td></tr></table>
 </td></tr></table>

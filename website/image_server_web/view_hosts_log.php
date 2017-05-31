@@ -15,6 +15,8 @@ $show_errors = @$query_string['show_errors'];
 $start_time = @$query_string['start_time'];
 $limit = @$query_string['limit'];
 
+
+
 if (ns_param_spec($_POST,'jump_to_time')){
   $query = "SELECT  UNIX_TIMESTAMP('"
     . $_POST['jump_year'] . "-" . $_POST['jump_month'] . "-" . $_POST['jump_day'] ." 23:59:59Ab')";
@@ -76,8 +78,11 @@ if ($host_id != '' || $event_id != ''){
   $query.=" ORDER BY time DESC";
  if ($limit != '')
     $query .=" LIMIT " . $limit;
- // die($query);
+
   $sql->get_row($query,$events);
+  if (sizeof($events) > 0){
+     $host_id = $events[0][3];
+  }  
 }
  else if ($output_region_problems || $region_id != ''){
    for ($i = 0; $i < sizeof($regions); $i++){
@@ -99,10 +104,10 @@ if ($host_id != '' || $event_id != ''){
 
 
 $host_names = array();
-$query = "SELECT id, name FROM hosts";
+$query = "SELECT id, name, system_hostname,additional_host_description,system_parallel_process_id FROM hosts";
 $sql->get_row($query,$host_names_raw);
 for ($i = 0; $i < sizeof($host_names_raw); $i++)
-  $host_names[$host_names_raw[$i][0]] = $host_names_raw[$i][1];
+  $host_names[$host_names_raw[$i][0]] = $host_names_raw[$i][1] . '@' . $host_names_raw[$i][2] . " ( " . $host_names_raw[$i][3] . " ) p" . $host_names_raw[$i][4];
 
 
 ?>

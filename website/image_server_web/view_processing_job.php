@@ -379,18 +379,34 @@ $region_strain_condition_2 = array();
       $sql->get_row($query,$extant_jobs);
     }
 
-    $query = "SELECT cs.id, cs.name, r.name, r.time_at_which_animals_had_zero_age,r.time_of_last_valid_sample FROM capture_samples as cs,sample_region_image_info as r WHERE r.id=$region_id AND cs.id = r.sample_id";
+    $query = "SELECT cs.id, cs.name, r.name, r.time_at_which_animals_had_zero_age,r.time_of_last_valid_sample,r.strain, r.strain_condition_1,r.strain_condition_2, r.strain_condition_3, r.culturing_temperature,r.experiment_temperature,r.food_source,r.environmental_conditions FROM capture_samples as cs,sample_region_image_info as r WHERE r.id=$region_id AND cs.id = r.sample_id";
     $sql->get_row($query,$smp_name);
     if (sizeof($smp_name) == 0)
       die("No sample name found for region");
-
+     
     $region_start_times[$region_id] = $smp_name[0][3];
     $region_end_times[$region_id] = $smp_name[0][4];
     $region_name_hash[$region_id] = $smp_name[0][2];
-    // echo $query . "::" . sizeof($extant_jobs);
-    //die($extant_jobs);
 
-    if (sizeof($extant_jobs) != 0){
+        $region_strain[$region_id] = $smp_name[0][5];
+        $region_strain_condition_1[$region_id] = $smp_name[0][6];
+        $region_strain_condition_2[$region_id] = $smp_name[0][7];
+        $region_strain_condition_3[$region_id] = $smp_name[0][8];
+        $region_culturing_temperature[$region_id] = $smp_name[0][9];
+        $region_experiment_temperature[$region_id] = $smp_name[0][10];
+        $region_food_source[$region_id] = $smp_name[0][11];
+        $region_environment_conditions[$region_id] = $smp_name[0][12];
+    
+
+
+
+
+
+// echo $query . "::" . sizeof($extant_jobs);
+    //die($extant_jobs);
+    //var_dump($region_start_times);
+    //die( );
+    if (isset($extant_jobs) && sizeof($extant_jobs) != 0){
 
       for ($i = 0; $i < sizeof($extant_jobs); $i++){
 	$jobs[$i] = new ns_processing_job;
@@ -1493,7 +1509,7 @@ Schedule Database/File Storage Job Begin
 	 <select name = "maintenance_task" size="1">
 
 					<?php $mt = ns_maintenance_task_order($job_type==$IS_REGION,$job_type==$IS_SAMPLE,$job_type==$IS_EXPERIMENT);
-					var_dump($mt);
+					//var_dump($mt);
 					for ($i = 0; $i < sizeof($mt) ; $i++){?>
 					  <option value = "<?php echo $mt[$i];?>" <?php if ($jobs[0]->maintenance_task == $mt[$i]) echo "selected"?> > <?php echo $ns_maintenance_task_labels[$mt[$i]];?> </option>
 	<?php } ?>

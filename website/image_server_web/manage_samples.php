@@ -135,22 +135,22 @@ $refresh_page=FALSE;
     }
     else{
       $query = "UPDATE sample_region_images SET ";
-      $query2= "UPDATE worm_movement, sample_region_images SET ";
+      //$query2= "UPDATE worm_movement, sample_region_images SET ";
       if ($region_action=='remove_problems'){
 	$query .= 'problem=0';
-	$query2.= 'worm_movement.problem=0';
+	//$query2.= 'worm_movement.problem=0';
       }
       else if ($region_action=='remove_busy'){
 	$query .='currently_under_processing=0';
-	$query2 .='worm_movement.currently_under_processing=0';
+	//$query2 .='worm_movement.currently_under_processing=0';
       }
       else throw new ns_exception("Unknown region sample image action: $region_action");
 
       $query .= " WHERE region_info_id=$region_id";
-      $query2 .= " WHERE sample_region_images.region_info_id=$region_id AND sample_region_images.worm_movement_id = worm_movement.id";
+      //$query2 .= " WHERE sample_region_images.region_info_id=$region_id AND sample_region_images.worm_movement_id = worm_movement.id";
       $sql->send_query($query);
-      echo $query2;
-      $sql->send_query($query2);
+      //echo $query2;
+      //$sql->send_query($query2);
     }
     $refresh_page = TRUE;
   }
@@ -277,8 +277,8 @@ Handle Requests to delete a sample
     $sql->send_query($query);
     $query = "DELETE FROM sample_time_relationships WHERE sample_id=" . $sample_id;
     $sql->send_query($query);
-    $query = "DELETE FROM worm_movement WHERE sample_id =" . $sample_id;
-    $sql->send_query($query);
+    //$query = "DELETE FROM worm_movement WHERE sample_id =" . $sample_id;
+    //$sql->send_query($query);
     $query = "DELETE FROM capture_samples WHERE id=" . $sample_id;
     $sql->send_query($query);*/
     header("Location: manage_samples.php?experiment_id=$experiment_id&$region_job_query_string#$sample_id\n\n");
@@ -515,12 +515,12 @@ $current_region_job_index = 0;
 	$query = "UPDATE sample_region_images SET $change WHERE region_info_id=" . $regions[$experiment->samples[$i]->id()][$j][0];
 	//echo $query . "<br>";
 	$sql->send_query($query);
-	$query = "UPDATE worm_movement SET $change WHERE region_info_id = " . $regions[$experiment->samples[$i]->id()][$j][0];
-	$sql->send_query($query);
+	//$query = "UPDATE worm_movement SET $change WHERE region_info_id = " . $regions[$experiment->samples[$i]->id()][$j][0];
+	//$sql->send_query($query);
 
 	if ($experiment_action == "remove_problems"){
-	  $query = "UPDATE worm_movement as m, sample_region_images as s SET m.calculated=0 WHERE m.region_info_id=".$regions[$experiment->samples[$i]->id()][$j][0]." AND s.id = m.region_id_short_1 AND s.op" . $ns_processing_tasks["ns_process_movement_coloring"] . "_image_id = 0";
-	  $sql->send_query($query);
+	  //$query = "UPDATE worm_movement as m, sample_region_images as s SET m.calculated=0 WHERE m.region_info_id=".$regions[$experiment->samples[$i]->id()][$j][0]." AND s.id = m.region_id_short_1 AND s.op" . $ns_processing_tasks["ns_process_movement_coloring"] . "_image_id = 0";
+	  //$sql->send_query($query);
 
 	}
 

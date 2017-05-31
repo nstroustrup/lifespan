@@ -27,16 +27,18 @@ if ($host_id != ''){
    //we need this to apply commands to all processes running on a node 
    //which each get a separate id but share the same base host name and 
    //system_host_name
-   $query = "SELECT base_host_name, system_hostname FROM hosts WHERE id = $host_id";
+   $query = "SELECT base_host_name, system_hostname, system_parallel_process_id FROM hosts WHERE id = $host_id";
    $sql->get_row($query,$res);
    if (sizeof($res) == 0)
      die("Could not identify specified host");
    $base_host_name = $res[0][0];
    $system_host_name = $res[0][1]; 
+   $system_parallel_process_id = $res[0][2];
 }else{
 
 	$base_host_name = '';
 	$system_host_name = '';
+	$system_parallel_process_id = '';
 }
 
 $show_host_nodes = @$query_string['show_host_nodes']=='1';
@@ -48,7 +50,8 @@ $refresh = FALSE;
 
 $host_where_statement = "id = $host_id";
 if (!$show_host_nodes)
-   $host_where_statement = "base_host_name = '$base_host_name' AND system_host_name = '$system_host_name'";
+   $host_where_statement = "base_host_name = '$base_host_name' AND system_hostname = '$system_host_name' AND system_parallel_process_id = $system_parallel_process_id";
+
 if (ns_param_spec($_POST,'save_host')){
 	$comments = ($_POST['comments']);
 
@@ -437,8 +440,10 @@ foreach ($base_hosts as $base_host_name => $host){
 			echo "<table cellspacing = 0 cellpadding = 2 width=\"100%\"><tr><td>";
 			$sorted_devs = array();
 			for ($j = 0; $j < sizeof($devs); $j++){
+			if (array_key_exists($devs[$j][1],$device_incubators))
 			  $inc = $device_incubators[$devs[$j][1]];
-			  if (!isset($sorted_devs[$inc]))
+			  else $inc = "(Unknown)";
+			  if (!array_key_exists($inc,$sorted_devs))
 			    $sorted_devs[$inc] = array();
 			  array_push($sorted_devs[$inc],$devs[$j]);
 			}

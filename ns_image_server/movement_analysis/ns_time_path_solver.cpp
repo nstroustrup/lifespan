@@ -498,11 +498,23 @@ void ns_time_path_solution::save_to_db(const ns_64_bit region_id, ns_sql & sql) 
 		im = image_server_const.image_storage.get_region_movement_metadata_info(region_id,"time_path_solution_data",sql);
 		update_db = true;
 	}
-	ofstream * o(image_server_const.image_storage.request_metadata_output(im,ns_csv,false,&sql));
+	ofstream * o(0);
+	try {
+		o = image_server_const.image_storage.request_metadata_output(im, ns_csv, false, &sql);
+	}
+	catch (ns_ex & ex) {
+		ns_64_bit old_im_id(im.id);
+			//if there's some problem with the existing filename, create a new one.
+			im = image_server_const.image_storage.get_region_movement_metadata_info(region_id, "time_path_solution_data", sql);
+			o = image_server_const.image_storage.request_metadata_output(im, ns_csv, false, &sql);
+
+			sql << "DELETE from images WHERE id = " << old_im_id;
+			sql.send_query();
+
+			update_db = true;
+	}
 	im.save_to_db(im.id,&sql);
 
-	if (ns_dir::extract_extension(im.filename) != "csv")
-		update_db = true;
 	try{
 		save_to_disk(*o);
 		delete o;

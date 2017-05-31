@@ -4803,7 +4803,7 @@ void ns_analyzed_image_time_path::save_movement_images(const ns_analyzed_time_im
 			if (save_image) {
 				if (output_image.filename.empty())
 					throw ns_ex("Empty filename!");
-				if (ns_fix_filename_suffix(output_image.filename, ns_tiff_lzw))
+				if (ns_fix_filename_suffix(output_image.filename, ns_tiff))
 					output_image.save_to_db(output_image.id, &sql);
 				if (output_image.filename == ".tif")
 					throw ns_ex("Invalid filename");

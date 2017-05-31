@@ -1367,28 +1367,41 @@ void ns_time_path_image_movement_analyzer::get_output_image_storage_locations(co
 		throw ns_ex("Attempting to create flow image storage location in db with NS_CALCULATE_OPTICAL_FLOW set to false");
 	#endif
 	if (!create_only_flow) {
-		//delete any path data that's no longer included in this analysis...eg a reanalysis that has less groups (worms).
-		sql << "SELECT id, image_id, flow_image_id FROM path_data WHERE region_id = " << region_id << " AND group_id >= " << groups.size();
+		//delete all old images (to prevent recurrent db corruption problems from propigating)
+		sql << "SELECT id, image_id, flow_image_id, group_id FROM path_data WHERE region_id = " << region_id;
 		ns_sql_result res;
 		sql.get_rows(res);
+		std::vector<ns_64_bit> images_to_delete;
+		bool extra_groups_found(false);
 		for (unsigned int i = 0; i < res.size(); i++) {
-			ns_image_server_image im;
-			im.load_from_db(ns_atoi64(res[i][1].c_str()), &sql);
-			image_server_const.image_storage.delete_from_storage(im, ns_delete_both_volatile_and_long_term, &sql);
-			sql << "DELETE FROM images WHERE id = " << im.id;
-			sql.send_query();
-			im = ns_image_server_image();
-			im.load_from_db(ns_atoi64(res[i][2].c_str()), &sql);
-			image_server_const.image_storage.delete_from_storage(im, ns_delete_both_volatile_and_long_term, &sql);
-			sql << "DELETE FROM images WHERE id = " << im.id;
-			sql.send_query();
+
+			//also delete from disk any path data that's no longer included in this analysis...eg a reanalysis that has less groups (worms).
+			bool group_not_needed_in_this_analysis(atol(res[i][3].c_str()) >= groups.size());
+			ns_image_server_image im1, im2;;
+			if (group_not_needed_in_this_analysis) {
+				extra_groups_found = true;
+				im1.load_from_db(ns_atoi64(res[i][1].c_str()), &sql);
+				im2.load_from_db(ns_atoi64(res[i][2].c_str()), &sql);
+				image_server_const.image_storage.delete_from_storage(im1, ns_delete_both_volatile_and_long_term, &sql);
+				image_server_const.image_storage.delete_from_storage(im2, ns_delete_both_volatile_and_long_term, &sql);
+			}
+			images_to_delete.push_back(im1.id);
+			images_to_delete.push_back(im2.id);
 		}
-		if (res.size() > 0) {
+		if (extra_groups_found) {
 			sql << "DELETE FROM path_data WHERE region_id = " << region_id << " AND group_id >= " << groups.size();
-			image_server_const.add_subtext_to_current_event("Deleting extra paths...\n",&sql);
+			image_server_const.add_subtext_to_current_event("Deleting extra paths...\n", &sql);
 			sql.send_query();
 		}
+		if (!images_to_delete.empty()) {
+			sql << "DELETE FROM images SET id = " << images_to_delete[0];
+			for (unsigned int i = 1; i < images_to_delete.size(); i++)
+				sql << " OR id = " << images_to_delete[i];
+			sql.send_query();
+		}
+		
 	}
+
 	//now allocate images
 	for (unsigned int i = 0; i < groups.size(); i++){
 		for (unsigned int j = 0; j < groups[i].paths.size(); j++){
@@ -1397,7 +1410,7 @@ void ns_time_path_image_movement_analyzer::get_output_image_storage_locations(co
 			ns_image_server_image & im(groups[i].paths[j].output_image);
 
 			
-			if (im.id == 0 && !create_only_flow){
+			if (!create_only_flow){
 				im = image_server_const.image_storage.get_storage_for_path(region_info, j, i,
 																region_id, region_name,experiment_name, sample_name,false);
 				im.save_to_db(0,&sql);
@@ -1407,13 +1420,13 @@ void ns_time_path_image_movement_analyzer::get_output_image_storage_locations(co
 			#ifdef NS_CALCULATE_OPTICAL_FLOW
 			ns_image_server_image & im_flow(groups[i].paths[j].flow_output_image);
 
-			if (im_flow.id == 0){
-				im_flow = image_server_const.image_storage.get_storage_for_path(region_info, j, i,
-																region_id, region_name,experiment_name, sample_name,true);
-				im_flow.save_to_db(0,&sql);
-				if (im_flow.id == 0)
-					throw ns_ex("ns_time_path_image_movement_analyzer::get_output_image_storage_locations()::Could not generate a new path id flow image id.");
-			}
+			
+			im_flow = image_server_const.image_storage.get_storage_for_path(region_info, j, i,
+															region_id, region_name,experiment_name, sample_name,true);
+			im_flow.save_to_db(0,&sql);
+			if (im_flow.id == 0)
+				throw ns_ex("ns_time_path_image_movement_analyzer::get_output_image_storage_locations()::Could not generate a new path id flow image id.");
+			
 			#else
 			ns_image_server_image  im_flow;
 			im_flow.id = 0;
@@ -4788,8 +4801,12 @@ void ns_analyzed_image_time_path::save_movement_images(const ns_analyzed_time_im
 		}
 		else {
 			if (save_image) {
+				if (output_image.filename.empty())
+					throw ns_ex("Empty filename!");
 				if (ns_fix_filename_suffix(output_image.filename, ns_tiff_lzw))
 					output_image.save_to_db(output_image.id, &sql);
+				if (output_image.filename == ".tif")
+					throw ns_ex("Invalid filename");
 				output_reciever = new ns_image_storage_reciever_handle<ns_8_bit>(image_server_const.image_storage.request_storage(output_image, ns_tiff_lzw, 1.0, save_output_buffer_height, &sql, had_to_use_volatile_storage, false, false));
 			}
 			if (save_flow_image) {

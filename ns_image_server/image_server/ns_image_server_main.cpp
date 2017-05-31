@@ -935,7 +935,7 @@ int main(int argc, char ** argv){
 		std::vector<std::pair<std::string, std::string> > quotes;
 
 		ns_acquire_for_scope<ns_image_server_sql> sql;
-
+		//update table formats to newest version, if requested
 		image_server.os_signal_handler.set_signal_handler(ns_interrupt, exit_signal_handler);
 		if (sql_update_requested) {
 			ns_acquire_for_scope<ns_sql> sql(image_server.new_sql_connection(__FILE__, __LINE__));
@@ -1009,6 +1009,7 @@ int main(int argc, char ** argv){
 
 		image_server.image_storage.refresh_experiment_partition_cache(&sql());
 		if (sql().connected_to_central_database()) {
+			image_server.clear_processing_status(*static_cast<ns_sql *>(&sql()));
 			image_server.clear_performance_statistics(*static_cast<ns_sql *>(&sql()));
 			image_server.clear_old_server_events(*static_cast<ns_sql *>(&sql()));
 			image_server.load_quotes(quotes, *static_cast<ns_sql *>(&sql()));
@@ -1285,7 +1286,8 @@ int main(int argc, char ** argv){
 		//otherwise we will re-register the host upon the timer thread noticing it isn't connected
 		if (sql().connected_to_central_database())
 			dispatch.connect_timer_sql_connection();
-		
+
+
 		sql.release();
 		unsigned int * timer_interval = new unsigned int(image_server.dispatcher_refresh_interval());
 		
@@ -1323,8 +1325,9 @@ int main(int argc, char ** argv){
 			image_server.exit_requested = true;
 			timer.block_on_finish();
 			#endif
+			image_server.clear_processing_status(*static_cast<ns_sql *>(&sql()));
 		}
-		
+
 		//cerr << "Clearing dispatcher\n";
 		dispatch.clear_for_termination();
 		#ifndef _WIN32

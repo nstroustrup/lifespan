@@ -1612,8 +1612,19 @@ void ns_time_path_image_movement_analyzer::save_movement_data_to_db(const ns_64_
 		im = image_server_const.image_storage.get_region_movement_metadata_info(region_id,"time_path_movement_image_analysis_quantification",sql);
 		update_db = true;
 	}
-	ofstream * o(image_server_const.image_storage.request_metadata_output(im,ns_csv,false,&sql));
-	im.save_to_db(im.id,&sql);
+	ofstream * o;
+	try {
+		o = image_server_const.image_storage.request_metadata_output(im, ns_csv, false, &sql);
+		im.save_to_db(im.id, &sql);
+	}
+	catch (ns_ex & ex) {
+		//if there's a problem create a new entry in the db to halt propigation of db errors
+		im = ns_image_server_image();
+		im = image_server_const.image_storage.get_region_movement_metadata_info(region_id, "time_path_movement_image_analysis_quantification", sql);
+		im.save_to_db(im.id, &sql);
+		update_db = true;
+		 o = image_server_const.image_storage.request_metadata_output(im, ns_csv, false, &sql);
+	}
 	try{
 		save_movement_data_to_disk(*o);
 		delete o;

@@ -1795,6 +1795,10 @@ void ns_image_server::unregister_host(ns_image_server_sql * sql) {
 	sql->send_query();
 };
 
+void ns_image_server::clear_processing_status(ns_sql & sql) const {
+	sql << "DELETE FROM  processing_node_status WHERE " << " host_id = " << _host_id;
+	sql.send_query();
+}
 void ns_image_server::update_processing_status(const std::string & processing_state, const ns_64_bit processing_job_id, const ns_64_bit processing_job_queue_id,ns_sql & sql) const {
 
 	std::map<ns_64_bit, ns_thread_output_state>::iterator current_thread_state = get_current_thread_state_info();

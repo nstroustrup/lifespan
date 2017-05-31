@@ -566,7 +566,7 @@ public:
 
 
 	void update_processing_status(const std::string & processing_state, const ns_64_bit processing_job_id, const ns_64_bit processing_job_queue_id,ns_sql & sql) const;
-
+	void clear_processing_status(ns_sql & sql) const;
 private:
 	ns_64_bit _main_thread_id;
 	static void open_log_file(const ns_image_server::ns_image_server_exec_type & exec_type, unsigned long thread_id, const std::string & volatile_directory, const std::string & file_name, std::ofstream & out);

@@ -2008,7 +2008,7 @@ void ns_experiment_storyboard_manager::get_default_storage_base_filenames(const 
 		s = image_server_const.image_storage.get_storyboard_path(0, spec.region_id, subimage_id, ns_experiment_storyboard::image_suffix(spec), sql);
 	}
 	else if (spec.experiment_id != 0){
-		s = image_server_const.image_storage.get_storyboard_path(0, spec.experiment_id, subimage_id, ns_experiment_storyboard::image_suffix(spec), sql);
+		s = image_server_const.image_storage.get_storyboard_path(spec.experiment_id,0, subimage_id, ns_experiment_storyboard::image_suffix(spec), sql);
 	}
 	image = image_server_const.image_storage.get_storage_for_specification(s);
 	image.host_id = image_server.host_id();

@@ -1176,6 +1176,7 @@ ns_file_location_specification ns_image_storage_handler::get_storyboard_path(con
 			spec.filename = res[0][3] + "=" + res[0][1] +
 				"=" + res[0][0] + "=" + filename_suffix + "=" + ns_to_string(subimage_id);
 		}
+		ns_add_image_suffix(spec.filename, ns_tiff);
 		spec.relative_directory = region_path + DIR_CHAR_STR + "animal_storyboard";
 
 		spec.partition = image_server.image_storage.get_partition_for_experiment(ns_atoi64(res[0][4].c_str()), &sql);

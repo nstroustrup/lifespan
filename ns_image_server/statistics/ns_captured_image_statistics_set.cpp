@@ -787,7 +787,7 @@ void ns_capture_sample_region_statistics_set::load_whole_experiment(const ns_64_
 
 		for (unsigned long k = 0; k < res2.size(); ++k){
 			ns_region_metadata metadata(sample_metadata);
-			unsigned long region_id(ns_atoi64(res2[k][0].c_str()));
+			ns_64_bit region_id(ns_atoi64(res2[k][0].c_str()));
 			metadata.load_from_db(region_id,"",sql);
 			
 			bool region_censored(res2[k][1]!="0"),

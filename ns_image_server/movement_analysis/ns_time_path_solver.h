@@ -173,7 +173,7 @@ struct ns_time_path_solver_timepoint{
 
 	std::vector<ns_time_path_solver_element> elements;
 	bool combine_very_close_elements(const unsigned long max_d_squared);
-	void load(const unsigned long worm_detection_results_id,ns_image_worm_detection_results & results,ns_sql & sql);
+	void load(const ns_64_bit worm_detection_results_id,ns_image_worm_detection_results & results,ns_sql & sql);
 
 	ns_64_bit worm_results_id;
 private:
@@ -361,7 +361,7 @@ public:
 	//This is great for debugging as the aggregation step can take a lot longer than just loading
 	//the result from disk.
 	void generate_raw_solution(ns_time_path_solution & solution);
-	void load_from_raw_solution(const unsigned long region_id,const ns_time_path_solution & solution,ns_sql & sql);
+	void load_from_raw_solution(const ns_64_bit region_id,const ns_time_path_solution & solution,ns_sql & sql);
 
 	ns_time_path_solver():detection_results(new ns_worm_detection_results_set){}
 	~ns_time_path_solver(){if (detection_results != 0) delete detection_results; detection_results = 0;}
@@ -447,7 +447,7 @@ private:
 	ns_vector_2d estimate(const ns_time_path_solution_stationary_drift_estimator_group & g,const unsigned long time) const;
 
 	//load the detection results for aggregated point cloud from the database
-	void load_detection_results(unsigned long region_id,ns_sql & sql);
+	void load_detection_results(ns_64_bit region_id,ns_sql & sql);
 
 	void break_paths_at_large_gaps(double fraction_max_gap_factor);
 };

@@ -33,9 +33,9 @@ struct ns_processing_thread_pool_status_info {
         ns_processing_thread_pool_status_info():lock("ptpsi"), number_of_multi_threaded_jobs_running(0){}
 	unsigned long number_of_multi_threaded_jobs_running;
 
-	std::map<unsigned long, ns_processing_thread_run_stats> run_stats;
+	std::map<ns_64_bit, ns_processing_thread_run_stats> run_stats;
 
-	void update_thread_stats(unsigned long thread_id, const ns_processing_thread_run_stats & st) {
+	void update_thread_stats(ns_64_bit thread_id, const ns_processing_thread_run_stats & st) {
 		ns_acquire_lock_for_scope mlock(lock, __FILE__, __LINE__);
 		run_stats[thread_id] = st;
 		mlock.release();
@@ -48,7 +48,7 @@ struct ns_processing_thread_pool_status_info {
 			return latest;
 		}
 		ns_64_bit duration_sum(0);
-		for (std::map<unsigned long, ns_processing_thread_run_stats>::iterator p = run_stats.begin(); p != run_stats.end(); p++) {
+		for (std::map<ns_64_bit, ns_processing_thread_run_stats>::iterator p = run_stats.begin(); p != run_stats.end(); p++) {
 			if (p->second.last_run_time >= latest.last_run_time)
 				latest.last_run_time = p->second.last_run_time;
 			duration_sum+= p->second.last_run_duration;

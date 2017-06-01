@@ -122,7 +122,7 @@ bool ns_processing_job_sample_processor::job_is_still_relevant(ns_sql & sql, std
 		return false;
 	}
 	//don't processes busy or problem jobs
-	unsigned long host_id = ns_atoi64(res[0][3].c_str());
+	ns_64_bit host_id = ns_atoi64(res[0][3].c_str());
 
 	if (host_id != 0){
 		reason_not_relevant = "Captured image is flagged as being processed by";
@@ -860,13 +860,13 @@ bool ns_processing_job_maintenance_processor::run_job(ns_sql & sql) {
 						ns_image_server_image im;
 						im.load_from_db(id,&sql);
 						ns_image_server_image old_im(im);
-						ns_image_type t(ns_get_image_type(im.filename));
-						if (t == ns_jp2k || t == ns_jpeg)
+						ns_image_type image_type(ns_get_image_type(im.filename));
+						if (image_type == ns_jp2k || image_type == ns_jpeg)
 							continue;
 						ns_image_storage_source_handle<ns_8_bit> im_source (image_server->image_storage.request_from_storage(im,&sql));
 						im_source.input_stream().pump(image,1024);
 						bool b;
-						im.filename += ".jp2";
+						ns_add_image_suffix(im.filename, ns_jp2k);
 						
 						string compression_rate = image_server->get_cluster_constant_value("jp2k_compression_rate",ns_to_string(NS_DEFAULT_JP2K_COMPRESSION),&sql);
 						float compression_rate_f = atof(compression_rate.c_str());
@@ -1038,7 +1038,7 @@ bool ns_processing_job_maintenance_processor::run_job(ns_sql & sql) {
 				man.load_metadata_from_db(specs[j],s,sql);	
 				image_server->register_server_event(ns_image_server_event("Rendering a type ") <<(j+1) << " storyboard, divisions " << start+1 << "-" << stop+1 << " of " << s.divisions.size() << " (job " << job.id <<")\n",&sql);
 				ns_image_standard ima;
-				for (long i = start; i < stop && i < man.number_of_sub_images(); i++){
+				for (ns_64_bit i = start; i < stop && i < man.number_of_sub_images(); i++){
 					cerr << "Rendering division " << i << ":";
 					s.draw(i,ima,true,sql);
 					cerr << "\n";

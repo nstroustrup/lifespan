@@ -886,7 +886,7 @@ void ns_time_path_image_movement_analyzer::process_raw_images(const ns_64_bit re
 			if (!system_is_64_bit && max_mem_per_node > max_mem_on_32_bit)
 				max_mem_per_node = max_mem_on_32_bit;
 
-			const int number_of_repeats_required(
+			const ns_64_bit number_of_repeats_required(
 				calculate_division_size_that_fits_in_specified_memory_size(
 					max_mem_per_node,
 					number_of_images_stored_in_memory_per_group));

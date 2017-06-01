@@ -107,7 +107,7 @@ void ns_image_server::start_autoscans_for_device(const std::string & device_name
 		image_server.register_server_event(ns_image_server_event("Multiple autoscan schedules were specified for device ") << device_name,&sql);
 
 	for (string::size_type i = 0; i < res.size(); i++){
-		const ns_64_bit interval(ns_atoi64(res[i][1].c_str()));
+		const unsigned long interval(atol(res[i][1].c_str()));
 		image_server.device_manager.set_autoscan_interval(device_name,interval);
 		image_server.register_server_event(ns_image_server_event("Starting scheduled autoscans on device ") << device_name << " with a period of " << res[i][1] << " seconds",&sql);
 		sql << "DELETE FROM autoscan_schedule WHERE device_name = '" << device_name << "'";
@@ -130,7 +130,7 @@ struct ns_image_data_disk_size{
 			  processed_region_images,
 			  metadata,
 			  video;
-	void update_experiment_metadata(unsigned long experiment_id,ns_sql & sql){
+	void update_experiment_metadata(ns_64_bit experiment_id,ns_sql & sql){
 		sql << "UPDATE experiments SET "
 				"size_unprocessed_captured_images=" << (unsigned long)unprocessed_captured_images << ","
 				"size_processed_captured_images=" << (unsigned long)processed_captured_images << ","
@@ -143,7 +143,7 @@ struct ns_image_data_disk_size{
 		sql.send_query();
 
 	}
-	void update_sample_metadata(unsigned long sample_id,ns_sql & sql){
+	void update_sample_metadata(ns_64_bit sample_id,ns_sql & sql){
 		sql << "UPDATE capture_samples SET "
 				"size_unprocessed_captured_images=" << (unsigned long)unprocessed_captured_images << ","
 				"size_processed_captured_images=" << (unsigned long)processed_captured_images << ","
@@ -488,7 +488,7 @@ void ns_image_server_automated_job_scheduler::identify_regions_needing_static_ma
 	if (jobs_submitted)
 		ns_image_server_push_job_scheduler::request_job_queue_discovery(sql);
 }
-void ns_image_server_automated_job_scheduler::register_static_mask_completion(const unsigned long region_id, ns_sql & sql){
+void ns_image_server_automated_job_scheduler::register_static_mask_completion(const ns_64_bit region_id, ns_sql & sql){
 	sql << "UPDATE sample_region_image_info SET analysis_scheduling_state = " << (int)ns_worm_detection << " WHERE id = " << region_id;
 	sql.send_query();
 	schedule_detection_jobs_for_region(region_id,sql);
@@ -1923,7 +1923,7 @@ void ns_image_server::register_devices(const bool verbose, ns_image_server_sql *
 
 	#endif
 }
-void ns_image_server::open_log_file(const ns_image_server::ns_image_server_exec_type & exec_type, unsigned long thread_id, const std::string & volatile_directory, const std::string & file_name, ofstream & out) {
+void ns_image_server::open_log_file(const ns_image_server::ns_image_server_exec_type & exec_type, ns_64_bit thread_id, const std::string & volatile_directory, const std::string & file_name, ofstream & out) {
 	//open local logfile.
 	std::string lname = volatile_directory;
 	lname += DIR_CHAR_STR;

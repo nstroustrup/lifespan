@@ -1664,7 +1664,7 @@ void ns_device_temperature_normalization_data::load_data_for_experiment(const un
 	control_strains.resize(exp.size()-2);
 
 	for (unsigned int i = 1; i < exp.size()-1; i++){
-		int control_strain_region_id(ns_atoi64(exp[i].c_str()));
+		ns_64_bit control_strain_region_id(ns_atoi64(exp[i].c_str()));
 		if (control_strain_region_id == 0)
 			throw ns_ex("Could not parse experiment strain specification");
 		control_strains[i-1].load_from_db(control_strain_region_id,"",sql);

@@ -44,7 +44,7 @@ public:
 	//server events can represent processing tasks that are being performed.
 	void specify_processing_job_operation(const ns_processing_task &operation){processing_job_operation = operation;}
 	//server events can have "sub-events" that correspond to substeps of the parent job.
-	void specify_parent_server_event(const unsigned long & event_id){parent_event_id = event_id;}
+	void specify_parent_server_event(const ns_64_bit & event_id){parent_event_id = event_id;}
 	void specifiy_event_subject(const ns_image_server_image & image){
 		subject_image_id = image.id;
 	}

@@ -870,7 +870,7 @@ void ns_detected_worm_info::finalize_stats_from_shape(){
 }
 unsigned int ns_detected_worm_info::from_segment_cluster_solution(
 	ns_detected_object & region, std::vector<ns_detected_worm_info> & worms, unsigned int offset, std::vector<std::vector<ns_detected_worm_info *> > & mutually_exclusive_groups,
-	const ns_image_standard & relative_grayscale_image, const ns_image_standard & absolute_grayscale_image, const ns_grayscale_image_type & type, const ns_visualization_type visualization_type){
+	const ns_image_standard & relative_grayscale_image, const ns_image_standard & absolute_grayscale_image, const ns_grayscale_image_type & image_type, const ns_visualization_type visualization_type){
 	if (region.segment_cluster_solutions.mutually_exclusive_solution_groups.size() == 0)
 		return 0;
 	if (region.segment_cluster_solutions.mutually_exclusive_solution_groups[0].size() == 0)
@@ -889,11 +889,11 @@ unsigned int ns_detected_worm_info::from_segment_cluster_solution(
 
 	//build context image if requested
 	ns_vector_2i worm_position_in_grayscale(0,0);
-	if(type == ns_large_source_grayscale_images_provided)
+	if(image_type == ns_large_source_grayscale_images_provided)
 		worm_position_in_grayscale = worms[offset].region_position_in_source_image;
 	worms[offset].extract_grayscale_from_large_image(worm_position_in_grayscale,absolute_grayscale_image,relative_grayscale_image);
 
-	if (type==ns_large_source_grayscale_images_provided)
+	if (image_type==ns_large_source_grayscale_images_provided)
 		worms[offset].build_object_context_image(region,absolute_grayscale_image,relative_grayscale_image);
 	else{
 		worms[offset].context_position_in_source_image = worms[offset].region_position_in_source_image;
@@ -1995,12 +1995,12 @@ void ns_image_worm_detection_results::load_from_db(const bool load_worm_postures
 	}
 	source_image_id = ns_atoi64(data[0][0].c_str());
 	capture_sample_id = ns_atoi64(data[0][1].c_str());
-	worm_collage.info().tiles_per_row = ns_atoi64(data[0][2].c_str());
-	worm_collage.info().tile_width = ns_atoi64(data[0][3].c_str());
-	worm_collage.info().tile_height = ns_atoi64(data[0][4].c_str());
+	worm_collage.info().tiles_per_row = atol(data[0][2].c_str());
+	worm_collage.info().tile_width = atol(data[0][3].c_str());
+	worm_collage.info().tile_height = atol(data[0][4].c_str());
 
-	unsigned int number_of_worms = ns_atoi64(data[0][5].c_str()),
-				 number_of_interpolated_worm_areas = ns_atoi64(data[0][8].c_str());
+	unsigned int number_of_worms = atol(data[0][5].c_str()),
+				 number_of_interpolated_worm_areas = atol(data[0][8].c_str());
 
 	data_storage_on_disk.id = ns_atoi64(data[0][7].c_str());
 

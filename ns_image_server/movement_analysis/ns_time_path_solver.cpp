@@ -1900,7 +1900,7 @@ void ns_time_path_solver::mark_unassigned_points(){
 	}
 }
 
-void ns_time_path_solver_timepoint::load(const unsigned long worm_detection_results_id,ns_image_worm_detection_results & results,ns_sql & sql){
+void ns_time_path_solver_timepoint::load(const ns_64_bit worm_detection_results_id,ns_image_worm_detection_results & results,ns_sql & sql){
 	elements.resize(0);
 	worm_detection_results = &results;
 	results.detection_results_id = worm_detection_results_id;
@@ -1943,7 +1943,7 @@ void ns_register_path_solver_load_error(unsigned long region_info_id,const std::
 
 }
 
-void ns_time_path_solver::load_detection_results(unsigned long region_id,ns_sql & sql){
+void ns_time_path_solver::load_detection_results(ns_64_bit region_id,ns_sql & sql){
 	sql << "SELECT time_of_last_valid_sample FROM sample_region_image_info WHERE id = " << region_id;
 	ns_sql_result res;
 	sql.get_rows(res);
@@ -2129,7 +2129,7 @@ void ns_time_path_solver::generate_raw_solution(ns_time_path_solution & solution
 	}
 	transfer_data_to_solution(solution);
 }
-void ns_time_path_solver::load_from_raw_solution(const unsigned long region_id,const ns_time_path_solution & solution,ns_sql & sql){
+void ns_time_path_solver::load_from_raw_solution(const ns_64_bit region_id,const ns_time_path_solution & solution,ns_sql & sql){
 	timepoints.resize(solution.timepoints.size());
 	for (unsigned int i = 0; i < solution.timepoints.size(); i++){
 		timepoints[i].elements.resize(solution.timepoints[i].elements.size());

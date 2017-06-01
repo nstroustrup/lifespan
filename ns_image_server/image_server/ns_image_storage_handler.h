@@ -80,7 +80,7 @@ public:
 
 	void fix_orphaned_captured_images(ns_image_server_sql * sql)const;
 
-	std::ofstream * request_metadata_output(ns_image_server_image & image, const ns_image_type & extension, const bool binary,ns_image_server_sql * sql) const;
+	std::ofstream * request_metadata_output(ns_image_server_image & image, const ns_image_type & image_type, const bool binary,ns_image_server_sql * sql) const;
 
 		
 	
@@ -250,7 +250,7 @@ public:
 	}
 
 	ns_image_server_image get_storage_for_path(const ns_file_location_specification & region_spec, const unsigned long path_id, const unsigned long path_group_id,
-			const unsigned long region_info_id, const std::string & region_name, const std::string & experiment_name, const std::string & sample_name,const bool flow) const;
+			const ns_64_bit region_info_id, const std::string & region_name, const std::string & experiment_name, const std::string & sample_name,const bool flow) const;
 	
 	static ns_image_server_image get_storage_for_specification(const ns_file_location_specification & spec);
 

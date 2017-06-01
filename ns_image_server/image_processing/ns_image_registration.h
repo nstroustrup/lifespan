@@ -174,10 +174,6 @@ public:
 			if (h > 10) d = h/10;
 			else d = h;
 		}
-		//ofstream o(std::string("c:\\server\\alignments_")+debug_filename + ".csv");
-		//o << "offset,diff\n";
-		//ofstream o2(std::string("c:\\server\\distance_")+debug_filename + ".csv");
-		//o2 << "registration_shift,x_position,diff,cumulative_diff,r,a\n";
 		if (registration_method == ns_sum_registration || registration_method == ns_compound_registration){
 			
 			double minimum_offset_difference = DBL_MAX;

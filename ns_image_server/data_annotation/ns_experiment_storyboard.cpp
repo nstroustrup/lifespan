@@ -1917,10 +1917,10 @@ bool ns_experiment_storyboard_manager::load_image_from_db(const unsigned long im
 	in.input_stream().pump(im,1024);
 	return true;
 }
-void ns_experiment_storyboard_manager::save_metadata_to_db(const ns_experiment_storyboard_spec & spec, const ns_experiment_storyboard & storyboard, const ns_image_type & metadata_suffix,ns_sql & sql){
+void ns_experiment_storyboard_manager::save_metadata_to_db(const ns_experiment_storyboard_spec & spec, const ns_experiment_storyboard & storyboard, const ns_image_type & image_type,ns_sql & sql){
 	create_records_and_storage_for_subimages(storyboard.number_of_sub_images(),spec,sql,true);
 	save_metadata_to_db(spec,sql);
-	ns_acquire_for_scope<ofstream> o(image_server.image_storage.request_metadata_output(xml_metadata_database_record,metadata_suffix,false,&sql));
+	ns_acquire_for_scope<ofstream> o(image_server.image_storage.request_metadata_output(xml_metadata_database_record, image_type,false,&sql));
 	storyboard.write_metadata(o());
 	xml_metadata_database_record.save_to_db(xml_metadata_database_record.id,&sql);
 	o().close();

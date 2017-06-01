@@ -334,7 +334,7 @@ private:
 			else lock.wait_to_acquire(__FILE__, __LINE__);
 
 			if (number_of_objects_in_cache == -1)
-				number_of_objects_in_cache = data_cache.size();
+				number_of_objects_in_cache = (long)data_cache.size();
 			//order elements by age
 			std::vector<ns_cache_object_sort_by_age<typename cache_t::iterator> > objects_sorted_by_age(data_cache.size());
 			unsigned long int i = 0;

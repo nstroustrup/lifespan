@@ -187,9 +187,9 @@ ns_image_storage_source_handle<ns_8_bit> ns_storage_request_from_storage(const n
 }
 
 ns_image_storage_reciever_handle<ns_8_bit> ns_storage_request_local_cache_storage(const ns_image_storage_handler * image_storage,
-																				  const std::string & filename, const ns_image_type & type,const unsigned long max_line_length,
+																				  const std::string & filename, const ns_image_type & image_type,const unsigned long max_line_length,
 																				  const bool report_to_db){
-	return image_storage->request_local_cache_storage(filename,type,max_line_length,report_to_db);
+	return image_storage->request_local_cache_storage(filename,image_type,max_line_length,report_to_db);
 }
 
 double ns_image_storage_handler::get_region_images_size_on_disk(const ns_64_bit region_id,const ns_processing_task t,ns_sql & sql) const{
@@ -451,13 +451,13 @@ ifstream * ns_image_storage_handler::request_metadata_from_disk(ns_image_server_
 	return i;
 }
 
-ofstream * ns_image_storage_handler::request_metadata_output(ns_image_server_image & image, const ns_image_type & file_type, const bool binary,ns_image_server_sql * sql) const{
+ofstream * ns_image_storage_handler::request_metadata_output(ns_image_server_image & image, const ns_image_type & image_type, const bool binary,ns_image_server_sql * sql) const{
 
 	if (image.filename.size() == 0 || image.path.size() == 0 || image.partition.size() == 0) image.load_from_db(image.id,sql);
 	//std::string existing_filename_extension(ns_dir::extract_extension(image.filename));
 
 	//remove the current extension and make use the specified one
-	ns_file_location_specification spec(look_up_image_location(image,sql, file_type,true));
+	ns_file_location_specification spec(look_up_image_location(image,sql, image_type,true));
 
 	//try to store image in long-term storage
 	if (long_term_storage_directory.size() != 0 && ns_dir::file_exists(spec.long_term_directory)){
@@ -1155,7 +1155,7 @@ std::string ns_image_storage_handler::movement_file_directory(ns_64_bit region_i
 	return dir;
 }
 
-ns_file_location_specification ns_image_storage_handler::get_storyboard_path(const ns_64_bit & experiment_id, const ns_64_bit & region_id, const ns_64_bit & subimage_id, const std::string & filename_suffix, const ns_image_type & type, ns_sql & sql, const bool just_path) const{
+ns_file_location_specification ns_image_storage_handler::get_storyboard_path(const ns_64_bit & experiment_id, const ns_64_bit & region_id, const ns_64_bit & subimage_id, const std::string & filename_suffix, const ns_image_type & image_type, ns_sql & sql, const bool just_path) const{
 	ns_file_location_specification spec;
 	if (experiment_id != 0 && region_id != 0)
 		throw ns_ex("Storyboards for experiments and regions are stored in different locations! Specify only one.");
@@ -1176,7 +1176,7 @@ ns_file_location_specification ns_image_storage_handler::get_storyboard_path(con
 			spec.filename = res[0][3] + "=" + res[0][1] +
 				"=" + res[0][0] + "=" + filename_suffix + "=" + ns_to_string(subimage_id);
 		}
-		ns_add_image_suffix(spec.filename, type);
+		ns_add_image_suffix(spec.filename, image_type);
 		spec.relative_directory = region_path + DIR_CHAR_STR + "animal_storyboard";
 
 		spec.partition = image_server.image_storage.get_partition_for_experiment(ns_atoi64(res[0][4].c_str()), &sql);
@@ -1193,7 +1193,7 @@ ns_file_location_specification ns_image_storage_handler::get_storyboard_path(con
 	if (!just_path)
 		spec.filename = res[0][0] + "=" + filename_suffix + "=" + ns_to_string(subimage_id);
 	const std::string experiment_directory(ns_image_server_captured_image_region::experiment_directory(res[0][0], experiment_id));
-	ns_add_image_suffix(spec.filename, type);
+	ns_add_image_suffix(spec.filename, image_type);
 	spec.relative_directory = experiment_directory + DIR_CHAR_STR + "animal_storyboard";
 	spec.partition = image_server.image_storage.get_partition_for_experiment(experiment_id, &sql);
 	return spec;
@@ -1254,7 +1254,7 @@ ns_image_server_image ns_image_storage_handler::get_storage_for_specification(co
 
 ns_image_server_image ns_image_storage_handler::get_storage_for_path(const ns_file_location_specification & region_spec,
 			const unsigned long path_id, const unsigned long path_group_id,
-			const unsigned long region_info_id, const std::string & region_name, const std::string & experiment_name, const std::string & sample_name,bool flow) const{
+			const ns_64_bit region_info_id, const std::string & region_name, const std::string & experiment_name, const std::string & sample_name,bool flow) const{
 
 	ns_file_location_specification spec(region_spec);
 	ns_file_location_specification dir_spec(get_file_specification_for_path_data(region_spec));

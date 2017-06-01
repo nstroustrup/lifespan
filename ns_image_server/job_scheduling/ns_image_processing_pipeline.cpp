@@ -838,7 +838,7 @@ void ns_image_processing_pipeline::process_region(const ns_image_server_captured
 				ns_image_type t(ns_get_image_type(unprocessed_image.filename));
 				if (t != ns_jp2k) {
 					unprocessed_image.filename = ns_dir::extract_filename_without_extension(unprocessed_image.filename);
-					unprocessed_image.filename += ".jp2";
+					ns_add_image_suffix(unprocessed_image.filename, ns_jp2k);
 
 					string compression_rate = image_server_const.get_cluster_constant_value("jp2k_compression_rate", ns_to_string(NS_DEFAULT_JP2K_COMPRESSION), &sql);
 					float compression_rate_f = atof(compression_rate.c_str());
@@ -1311,8 +1311,8 @@ float ns_image_processing_pipeline::process_mask(ns_image_server_image & source_
 }
 
 struct ns_mask_region_sorter_element{
-	unsigned long mask_region_id,
-				  mask_value;
+	ns_64_bit mask_region_id;
+	unsigned long  mask_value;
 	ns_vector_2i average,
 				 pos,
 				 size;
@@ -1340,7 +1340,7 @@ void ns_image_processing_pipeline::generate_sample_regions_from_mask(ns_64_bit s
 	sql << "SELECT id, mask_value, x_min, y_min, x_max, y_max, x_average, y_average FROM image_mask_regions WHERE mask_id = " << mask_id << " ORDER BY mask_value ASC";
 	sql.get_rows(res);
 	vector<ns_mask_region_sorter_element> mask_regions(res.size());
-	std::map<unsigned long, ns_mask_region_sorter_element *> mask_finder;
+	std::map<ns_64_bit, ns_mask_region_sorter_element *> mask_finder;
 
 	//sort regions top to boytom based on their positions in the mask
 	for (unsigned long i = 0; i < res.size(); i++){
@@ -2086,7 +2086,7 @@ void ns_image_processing_pipeline::apply_mask(ns_image_server_captured_image & c
 		for (unsigned int i = 0; i < res.size(); i++) {
 			ns_64_bit	mask_region_info_id = ns_atoi64(res[i][0].c_str());
 			ns_64_bit 	mask_region_id = ns_atoi64(res[i][2].c_str());
-			int				mask_region_value = ns_atoi64(res[i][3].c_str()); // if it could accidentally be < 0 (see below) it ought to be an int
+			int				mask_region_value = atol(res[i][3].c_str()); // if it could accidentally be < 0 (see below) it ought to be an int
 			string			mask_region_name = res[i][1];
 
 			if (mask_region_value < 0 || mask_region_value > mask_info_size)

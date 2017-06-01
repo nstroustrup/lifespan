@@ -1191,7 +1191,7 @@ void ns_death_time_annotation_compiler::add(const ns_death_time_annotation_set &
 	if (set.events.size() == 0)
 		return;
 
-	unsigned long region_info_id(set.events[0].region_info_id);
+	ns_64_bit region_info_id(set.events[0].region_info_id);
 	for (unsigned int i = 1; i < set.events.size(); i++){
 		if (set.events[i].region_info_id != region_info_id)
 			throw ns_ex("ns_death_time_annotation_compiler::add()::Cannot add multi-region set and metadata simultaneously");

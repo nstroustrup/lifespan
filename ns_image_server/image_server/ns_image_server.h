@@ -570,7 +570,7 @@ public:
 	void clear_processing_status(ns_sql & sql) const;
 private:
 	ns_64_bit _main_thread_id;
-	static void open_log_file(const ns_image_server::ns_image_server_exec_type & exec_type, unsigned long thread_id, const std::string & volatile_directory, const std::string & file_name, std::ofstream & out);
+	static void open_log_file(const ns_image_server::ns_image_server_exec_type & exec_type, ns_64_bit thread_id, const std::string & volatile_directory, const std::string & file_name, std::ofstream & out);
 	ns_performance_statistics_analyzer performance_statistics;
 	mutable ns_lock performance_stats_lock;
 

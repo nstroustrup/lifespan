@@ -206,7 +206,7 @@ public:
 
 	const ns_death_time_annotation_compiler & get_region_data(const ns_death_time_annotation_set::ns_annotation_type_to_load & a,const ns_64_bit id,ns_sql & sql) const;
 private:
-	typedef std::map<unsigned long,ns_lifespan_curve_cache_entry_data> ns_region_raw_cache;
+	typedef std::map<ns_64_bit,ns_lifespan_curve_cache_entry_data> ns_region_raw_cache;
 	void clean() const;
 	mutable ns_region_raw_cache region_raw_data_cache;
 };

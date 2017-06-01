@@ -403,7 +403,7 @@ void ns_xvid_encoder::run(const vector<string> & input_files,  ns_xvid_parameter
 		ns_image_standard	  resampled_temp;
 		do {
 		//	cerr << "Running Loop\n";
-			char *type;
+			const char *type;
 
 			if (input_num >= p.ARG_MAXFRAMENR) {
 				result = 1;

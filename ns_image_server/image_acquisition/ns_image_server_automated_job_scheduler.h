@@ -13,7 +13,7 @@ private:
 	static void calculate_capture_schedule_boundaries(ns_sql & sql);
 	static void identify_regions_needing_static_mask(ns_sql & sql);
 //	static unsigned long interval_before_database_scans();//in seconds
-	static void schedule_detection_jobs_for_region(const unsigned long region_id,ns_sql & sql);
+	static void schedule_detection_jobs_for_region(const ns_64_bit region_id,ns_sql & sql);
 };
 
 #endif

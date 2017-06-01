@@ -44,8 +44,9 @@ public:
 };
 
 #ifdef NS_OPTIMIZE_SPEED_OVER_MEMORY
-
+#ifndef __SSE2__
 #define __SSE2__
+#endif
 #include "ctmf.h"
 
 ///Calculates the spatial median filter output of an image

@@ -451,14 +451,16 @@ ifstream * ns_image_storage_handler::request_metadata_from_disk(ns_image_server_
 	return i;
 }
 
-ofstream * ns_image_storage_handler::request_metadata_output(ns_image_server_image & image, const ns_image_type & image_type, const bool binary,ns_image_server_sql * sql) const{
+ofstream * ns_image_storage_handler::request_metadata_output(ns_image_server_image & image, const ns_image_type & image_type, const bool binary, ns_image_server_sql * sql) const {
 
-	if (image.filename.size() == 0 || image.path.size() == 0 || image.partition.size() == 0) image.load_from_db(image.id,sql);
+	if (image.filename.size() == 0 || image.path.size() == 0 || image.partition.size() == 0) image.load_from_db(image.id, sql);
 	//std::string existing_filename_extension(ns_dir::extract_extension(image.filename));
+
 
 	//remove the current extension and make use the specified one
 	ns_file_location_specification spec(look_up_image_location(image,sql, image_type,true));
 
+	ns_probe_for_illegal_character(spec.absolute_long_term_filename());
 	//try to store image in long-term storage
 	if (long_term_storage_directory.size() != 0 && ns_dir::file_exists(spec.long_term_directory)){
 

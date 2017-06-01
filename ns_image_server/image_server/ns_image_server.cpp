@@ -494,7 +494,7 @@ void ns_image_server_automated_job_scheduler::register_static_mask_completion(co
 	schedule_detection_jobs_for_region(region_id,sql);
 	ns_image_server_push_job_scheduler::request_job_queue_discovery(sql);
 }
-void ns_image_server_automated_job_scheduler::schedule_detection_jobs_for_region(const unsigned long region_id,ns_sql & sql){
+void ns_image_server_automated_job_scheduler::schedule_detection_jobs_for_region(const ns_64_bit region_id,ns_sql & sql){
 	ns_processing_job job;
 	job.region_id = region_id;
 	job.time_submitted = ns_current_time();

@@ -26,6 +26,13 @@ ns_image_type ns_image_type_from_filename(const string & filename){
 
 }
 
+bool ns_probe_for_illegal_character(const std::string & filename) {
+	for (ns_image_type tp = (ns_image_type)0; tp < ns_unknown; tp = (ns_image_type)((int)tp + 1)) {
+		if (filename.find(tp) != std::string::npos)
+			throw ns_ex("Found illegal character in filename: ") << ns_to_string((int)tp) << " : " << filename;
+	}
+}
+
 
 bool ns_fix_filename_suffix(std::string & filename, const ns_image_type & type) {
 	if (ns_image_type_from_filename(filename) == type)

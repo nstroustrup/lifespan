@@ -1621,7 +1621,7 @@ void ns_time_path_image_movement_analyzer::obtain_analysis_id_and_save_movement_
 		throw ns_ex(" ns_time_path_image_movement_analyzer::obtain_analysis_id_and_save_movement_data()::Could not find existing record.");
 
 	if (id_options == ns_force_creation_of_new_db_record && im.id != 0) {
-		sql << "DELETE FROM images SET id = " << im.id;
+		sql << "DELETE FROM images WHERE id = " << im.id;
 		sql.send_query();
 		im.id = 0; 
 		sql << "UPDATE sample_region_image_info SET movement_image_analysis_quantification_id = 0 WHERE id = " << region_id;

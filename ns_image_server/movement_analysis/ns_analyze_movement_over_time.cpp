@@ -179,7 +179,7 @@ void analyze_worm_movement_across_frames(const ns_processing_job & job, ns_image
 						(ns_death_time_annotation::ns_multiworm_censoring_strategy)censoring_strategy,
 						ns_death_time_annotation::ns_censoring_assume_uniform_distribution_of_missing_times,
 						compiler, ns_include_unchanged);
-					summary_series.generate_censoring_annotations(metadata, censoring_set);
+					summary_series.generate_censoring_annotations(metadata, time_path_image_analyzer.db_analysis_id(),censoring_set);
 					try {
 						ns_image_server_results_file movement_timeseries(image_server->results_storage.movement_timeseries_data(
 							by_hand_annotation_integration_strategy[bhais],
@@ -202,7 +202,7 @@ void analyze_worm_movement_across_frames(const ns_processing_job & job, ns_image
 						(ns_death_time_annotation::ns_multiworm_censoring_strategy)censoring_strategy,
 						ns_death_time_annotation::default_missing_return_strategy(),
 						compiler, ns_include_unchanged);
-					summary_series.generate_censoring_annotations(metadata, censoring_set);
+					summary_series.generate_censoring_annotations(metadata, time_path_image_analyzer.db_analysis_id(),censoring_set);
 
 					try {
 						ns_image_server_results_file movement_timeseries(image_server->results_storage.movement_timeseries_data(by_hand_annotation_integration_strategy[bhais],

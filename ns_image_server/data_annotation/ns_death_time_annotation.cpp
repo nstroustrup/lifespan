@@ -916,7 +916,10 @@ void ns_death_time_annotation_set::read_xml(const ns_annotation_type_to_load & t
 		
 		if (xml.objects[i].tag_specified("w"))
 			a.stationary_path_id.path_id = (ns_death_time_annotation::ns_disambiguation_type)atol(xml.objects[i].tag("w").c_str());
-		
+
+		if (xml.objects[i].tag_specified("dt"))
+			a.stationary_path_id.detection_set_id = (ns_death_time_annotation::ns_disambiguation_type)atol(xml.objects[i].tag("dt").c_str());
+
 		if (annotation_matches(t,a))
 			events.push_back(a);
 	}
@@ -948,7 +951,7 @@ void  ns_death_time_annotation_set::write_xml(std::ostream & o) const{
 
 		xml.add_tag("q",events[i].stationary_path_id.group_id);
 		xml.add_tag("w",events[i].stationary_path_id.path_id);
-
+		xml.add_tag("dt", events[i].stationary_path_id.detection_set_id);
 		xml.end_group();
 	}
 	xml.add_footer();

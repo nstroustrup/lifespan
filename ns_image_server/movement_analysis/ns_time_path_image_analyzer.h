@@ -780,7 +780,7 @@ private:
 	ns_element_list elements;
 	//std::vector<unsigned long> movement_transition_times;
 	const ns_time_path * path;
-	unsigned long path_id,group_id;
+	ns_stationary_path_id group_id;
 	const ns_time_path_solution * solution;
 
 	void initialize_movement_image_loading(ns_image_storage_source_handle<ns_8_bit> & in,ns_image_storage_source_handle<float> & flow_in,const bool read_only_backwards_frames);
@@ -810,7 +810,7 @@ private:
 };
 
 struct ns_analyzed_image_time_path_group{
-	ns_analyzed_image_time_path_group(const unsigned long group_id_, const ns_64_bit region_info_id,const ns_time_path_solution & solution_, const ns_death_time_annotation_time_interval & observation_interval, ns_death_time_annotation_set & rejected_annotations,ns_time_path_image_movement_analysis_memory_pool & memory_pool_);
+	ns_analyzed_image_time_path_group(const ns_stationary_path_id group_id_, const ns_64_bit region_info_id,const ns_time_path_solution & solution_, const ns_death_time_annotation_time_interval & observation_interval, ns_death_time_annotation_set & rejected_annotations,ns_time_path_image_movement_analysis_memory_pool & memory_pool_);
 	std::vector<ns_analyzed_image_time_path> paths;
 	void clear_images();
 };

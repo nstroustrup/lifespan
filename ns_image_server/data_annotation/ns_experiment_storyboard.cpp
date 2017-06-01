@@ -1261,7 +1261,7 @@ bool ns_experiment_storyboard::create_storyboard_metadata_from_machine_annotatio
 	//get all the regions requested
 	if (spec.region_id != 0) {
 		region_ids.push_back(spec.region_id);
-		sql << "SELECT e.id, r.last_timepoint_in_latest_movement_rebuild, r.latest_movement_rebuild_timestamp FROM experiments as e, capture_samples as s, sample_region_image_info as r WHERE r.id = "
+		sql << "SELECT e.id, r.last_timepoint_in_latest_movement_rebuild, r.movement_image_analysis_quantification_id FROM experiments as e, capture_samples as s, sample_region_image_info as r WHERE r.id = "
 			<< spec.region_id << " AND r.sample_id = s.id AND s.experiment_id = e.id";
 
 		ns_sql_result res;
@@ -1276,7 +1276,7 @@ bool ns_experiment_storyboard::create_storyboard_metadata_from_machine_annotatio
 	else {
 		ns_sql_result res;
 		if (spec.sample_id != 0) {
-			sql << "SELECT r.id,r.last_timepoint_in_latest_movement_rebuild, r.latest_movement_rebuild_timestamp FROM sample_region_image_info as r, capture_samples as s  "
+			sql << "SELECT r.id,r.last_timepoint_in_latest_movement_rebuild, r.movement_image_analysis_quantification_id FROM sample_region_image_info as r, capture_samples as s  "
 				"WHERE r.sample_id = s.id AND s.id = " << spec.sample_id << " AND r.censored = 0 AND r.excluded_from_analysis=0";
 			if (spec.strain_to_use.strain.size() > 0)
 				sql << " AND r.strain = '" << spec.strain_to_use.strain << "'";
@@ -1293,7 +1293,7 @@ bool ns_experiment_storyboard::create_storyboard_metadata_from_machine_annotatio
 			if (spec.experiment_id == 0)
 				throw ns_ex("No data requested!");
 			experiment_ids.push_back(spec.experiment_id);
-			sql << "SELECT r.id, r.last_timepoint_in_latest_movement_rebuild, r.latest_movement_rebuild_timestamp FROM sample_region_image_info as r, capture_samples as s WHERE r.sample_id = s.id AND s.experiment_id = " << spec.experiment_id << " AND r.censored=0 AND latest_movement_rebuild_timestamp != 0 AND s.censored=0";
+			sql << "SELECT r.id, r.last_timepoint_in_latest_movement_rebuild, r.movement_image_analysis_quantification_id FROM sample_region_image_info as r, capture_samples as s WHERE r.sample_id = s.id AND s.experiment_id = " << spec.experiment_id << " AND r.censored=0 AND latest_movement_rebuild_timestamp != 0 AND s.censored=0";
 			if (spec.strain_to_use.strain.size() > 0)
 				sql << " AND r.strain = '" << spec.strain_to_use.strain << "'";
 			if (spec.strain_to_use.strain_condition_1.size() > 0)

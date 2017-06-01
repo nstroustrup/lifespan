@@ -229,7 +229,7 @@ struct ns_worm_movement_summary_series{
 	
 	std::vector<ns_multiple_worm_description> multiple_worm_clump_details;
 	
-	void generate_censoring_annotations(const ns_region_metadata & m,ns_death_time_annotation_set & set);
+	void generate_censoring_annotations(const ns_region_metadata & m, const ns_64_bit analysis_id,ns_death_time_annotation_set & set);
 	static void output_censoring_diagnostic_header(std::ostream & o);
 	void generate_censoring_diagnostic_file(const ns_region_metadata & metadata,std::ostream & o);
 	unsigned long number_of_worms_at_start(const bool refresh_cache=true)const;	

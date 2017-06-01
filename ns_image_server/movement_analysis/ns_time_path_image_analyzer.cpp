@@ -1303,7 +1303,7 @@ void ns_time_path_image_movement_analyzer::load_from_solution(const ns_time_path
 	number_of_timepoints_in_analysis_ = solution_.timepoints.size();
 	groups.reserve(solution_.path_groups.size());
 	if (group_number != -1){
-		groups.push_back(ns_analyzed_image_time_path_group(group_number,region_info_id,solution_,externally_specified_plate_observation_interval,extra_non_path_events,memory_pool));
+		groups.push_back(ns_analyzed_image_time_path_group(ns_stationary_path_id(group_number,0,analysis_id),region_info_id,solution_,externally_specified_plate_observation_interval,extra_non_path_events,memory_pool));
 		for (unsigned int i = 0; i < groups.rbegin()->paths.size(); i++){
 			if (groups.rbegin()->paths[i].elements.size() < ns_analyzed_image_time_path::alignment_time_kernel_width)
 				throw ns_ex("ns_time_path_image_movement_analyzer::load_from_solution::Path loaded that is too short.");
@@ -1314,7 +1314,7 @@ void ns_time_path_image_movement_analyzer::load_from_solution(const ns_time_path
 	else{
 		for (unsigned int i = 0; i < solution_.path_groups.size(); i++){
 			
-			groups.push_back(ns_analyzed_image_time_path_group(i,region_info_id,solution_,externally_specified_plate_observation_interval,extra_non_path_events,memory_pool));
+			groups.push_back(ns_analyzed_image_time_path_group(ns_stationary_path_id(i, 0, analysis_id),region_info_id,solution_,externally_specified_plate_observation_interval,extra_non_path_events,memory_pool));
 			for (unsigned int j = 0; j < groups.rbegin()->paths.size(); j++){
 				if (groups.rbegin()->paths[j].elements.size() < ns_analyzed_image_time_path::alignment_time_kernel_width)
 					throw ns_ex("ns_time_path_image_movement_analyzer::load_from_solution::Path loaded that is too short.");
@@ -1347,7 +1347,7 @@ void ns_time_path_image_movement_analyzer::load_from_solution(const ns_time_path
 				ns_death_time_annotation_event_count(1+e.number_of_extra_worms_identified_at_location,0),
 				current_time,ns_death_time_annotation::ns_lifespan_machine,
 				(e.part_of_a_multiple_worm_disambiguation_cluster)?ns_death_time_annotation::ns_part_of_a_mutliple_worm_disambiguation_cluster:ns_death_time_annotation::ns_single_worm,
-				ns_stationary_path_id(),false,e.inferred_animal_location,
+				ns_stationary_path_id(0,0,analysis_id),false,e.inferred_animal_location,
 				expl)
 		);
 	}
@@ -4555,9 +4555,9 @@ struct ns_index_orderer{
 	unsigned long index;
 	const T * data;
 };
-ns_analyzed_image_time_path_group::ns_analyzed_image_time_path_group(const unsigned long group_id_, const ns_64_bit region_info_id,const ns_time_path_solution & solution_, const ns_death_time_annotation_time_interval & observation_time_interval,ns_death_time_annotation_set & rejected_annotations,ns_time_path_image_movement_analysis_memory_pool & memory_pool){
+ns_analyzed_image_time_path_group::ns_analyzed_image_time_path_group(const ns_stationary_path_id group_id, const ns_64_bit region_info_id,const ns_time_path_solution & solution_, const ns_death_time_annotation_time_interval & observation_time_interval,ns_death_time_annotation_set & rejected_annotations,ns_time_path_image_movement_analysis_memory_pool & memory_pool){
 	
-	paths.reserve(solution_.path_groups[group_id_].path_ids.size());
+	paths.reserve(solution_.path_groups[group_id.group_id].path_ids.size());
 	unsigned long current_path_id(0);
 
 	//we find when the first and last observations of the plate were made
@@ -4586,15 +4586,15 @@ ns_analyzed_image_time_path_group::ns_analyzed_image_time_path_group(const unsig
 	//			cerr << "MA";
 	//if (limits.last_obsevation_of_plate.periode
 
-	for (unsigned int i = 0; i < solution_.path_groups[group_id_].path_ids.size(); i++){
-		const unsigned long & path_id(solution_.path_groups[group_id_].path_ids[i]);
+	for (unsigned int i = 0; i < solution_.path_groups[group_id.group_id].path_ids.size(); i++){
+		const unsigned long & path_id(solution_.path_groups[group_id.group_id].path_ids[i]);
 		const ns_time_path & source_path(solution_.paths[path_id]);
 		paths.resize(current_path_id+1,ns_analyzed_image_time_path(memory_pool,0));
 		ns_analyzed_image_time_path &path(paths[current_path_id]);
 
 		path.path = &source_path;
-		path.path_id = path_id;
-		path.group_id = group_id_;
+		path.group_id = group_id;
+		path.group_id.path_id = path_id;
 		path.solution = &solution_;
 		path.region_info_id = region_info_id;
 		
@@ -4697,7 +4697,7 @@ ns_analyzed_image_time_path_group::ns_analyzed_image_time_path_group(const unsig
 					 ns_death_time_annotation::ns_not_excluded,
 					 ns_death_time_annotation_event_count(1+path.elements[j].number_of_extra_worms_observed_at_position,0),current_time,ns_death_time_annotation::ns_lifespan_machine,
 					 path.elements[j].part_of_a_multiple_worm_disambiguation_group?ns_death_time_annotation::ns_part_of_a_mutliple_worm_disambiguation_cluster:ns_death_time_annotation::ns_single_worm,
-					 ns_stationary_path_id(),false,
+					 ns_stationary_path_id(0,0,group_id.detection_set_id),false,
 					 "PTS")
 					 );
 			}
@@ -4810,8 +4810,8 @@ void ns_movement_image_collage_info::from_path(const ns_analyzed_image_time_path
 
 std::string ns_analyzed_image_time_path::volatile_storage_name(const unsigned long &rep_id,const bool flow) const {
 	return std::string("path_") + ns_to_string(this->region_info_id) + "="
-		+ ns_to_string(this->group_id) + "="
-		+ ns_to_string(this->path_id) + "=" + (flow?"flow":"im") + "=" + ns_to_string(rep_id) + "=" + ns_to_string(unique_process_id) + ".tif";
+		+ ns_to_string(this->group_id.group_id) + "="
+		+ ns_to_string(this->group_id.path_id) + "=" + (flow?"flow":"im") + "=" + ns_to_string(rep_id) + "=" + ns_to_string(unique_process_id) + ".tif";
 }
 void ns_analyzed_image_time_path::reset_movement_image_saving() {
 	ns_safe_delete(output_reciever);

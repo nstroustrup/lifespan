@@ -62,7 +62,7 @@ typedef std::map<ns_worm_movement_measurement_summary_timepoint_type,ns_max_info
 	ns_worm_movement_summary_series_maximum_info_list;
 
 
-void ns_worm_movement_summary_series::generate_censoring_annotations(const ns_region_metadata & m,ns_death_time_annotation_set & set){
+void ns_worm_movement_summary_series::generate_censoring_annotations(const ns_region_metadata & m, const ns_64_bit analysis_id, ns_death_time_annotation_set & set){
 	
 	//calculate_survival();
 	
@@ -81,7 +81,7 @@ void ns_worm_movement_summary_series::generate_censoring_annotations(const ns_re
 			ns_death_time_annotation_event_count(estimated_number_of_worms_alive_at_measurement_end,0),ns_current_time(),
 			ns_death_time_annotation::ns_lifespan_machine,
 			ns_death_time_annotation::ns_single_worm,
-			ns_stationary_path_id(),false,false,
+			ns_stationary_path_id(0,0, analysis_id),false,false,
 			"Apparently Moving at end of experiment",
 			1,0,
 			this->multiworm_cluster_censoring_strategy,
@@ -135,7 +135,7 @@ void ns_worm_movement_summary_series::generate_censoring_annotations(const ns_re
 					 ns_death_time_annotation_event_count(missing_censored,0),ns_current_time(),
 					 ns_death_time_annotation::ns_lifespan_machine,
 					 ns_death_time_annotation::ns_single_worm,
-					 ns_stationary_path_id(),false,false,
+					 ns_stationary_path_id(0,0,analysis_id),false,false,
 					 "Worm Went Missing",
 					 1,0,
 					 this->multiworm_cluster_censoring_strategy,

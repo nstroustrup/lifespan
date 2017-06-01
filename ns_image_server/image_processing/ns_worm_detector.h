@@ -38,7 +38,7 @@ public:
 	template<class whole_im>
 	ns_image_worm_detection_results * run(const ns_64_bit region_info_id,const unsigned long capture_time,ns_detected_object_manager & detected_objects, const whole_im & unprocessed_image,const whole_im & spatial_median_image, const ns_image_standard * static_mask, const ns_svm_model_specification & model, const unsigned long maximum_number_of_objects, ns_sql * sql_for_debug_output, const std::string & debug_filename_output="", const ns_detected_worm_info::ns_visualization_type visualization_type=ns_detected_worm_info::ns_vis_raster, ns_whole_image_region_stats whole_image_region_stats = ns_whole_image_region_stats::null(),const bool do_multiple_worm_disambiguation=true){
 		const unsigned long start_time = ns_current_time();
-		const vector<ns_detected_object *>::size_type s(detected_objects.objects.size());
+		const std::vector<ns_detected_object *>::size_type s(detected_objects.objects.size());
 		hande_static_mask(detected_objects,spatial_median_image, static_mask);
 
 		image_server_const.add_subtext_to_current_event(ns_to_string(s - detected_objects.objects.size()) + "objects were removed by the static mask.\n", sql_for_debug_output);

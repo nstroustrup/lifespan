@@ -44,7 +44,7 @@ struct ns_experiment_storyboard_timepoint_element{
 
 	bool annotation_was_censored_on_loading; //temporary storage during annotaiton
 	
-	void write_metadata(const unsigned long division_id,ns_xml_simple_writer & xml) const;
+	void write_metadata(const ns_64_bit division_id,ns_xml_simple_writer & xml) const;
 	ns_64_bit from_xml_group(ns_xml_simple_object & group);
 	unsigned long neighbor_group_id;
 	unsigned long neighbor_group_size;
@@ -117,8 +117,8 @@ class ns_experiment_storyboard_manager;
 
 struct ns_reg_info{
 	ns_reg_info(){}
-	ns_reg_info(unsigned long wd, unsigned long regid):worm_detection_results_id(wd),region_image_id(regid){}
-	unsigned long worm_detection_results_id,
+	ns_reg_info(ns_64_bit wd, ns_64_bit regid):worm_detection_results_id(wd),region_image_id(regid){}
+	ns_64_bit worm_detection_results_id,
 				region_image_id;
 };
 
@@ -156,7 +156,7 @@ public:
 		return subject_specification;
 	}
 
-	const ns_experiment_storyboard_timepoint_element & find_animal(const unsigned long region_info_id,const ns_stationary_path_id & id) const;
+	const ns_experiment_storyboard_timepoint_element & find_animal(const ns_64_bit region_info_id,const ns_stationary_path_id & id) const;
 	
 	std::vector<ns_experiment_storyboard_timepoint> divisions;
 	std::vector<ns_death_time_annotation> orphan_by_hand_annotations;
@@ -167,14 +167,17 @@ public:
 	unsigned long time_of_last_death;
 
 	private:
+
+		void build_worm_detection_id_lookup_table(ns_sql & sql);
 		void prepare_to_draw(ns_sql & sql);
+		//worm_detection_id_lookup[region_info_id][time] = info
 		std::map<ns_64_bit, std::map<ns_64_bit,  ns_reg_info> > worm_detection_id_lookup;
 		unsigned long first_time,
 				  last_time;
 		std::vector<ns_vector_2i> worm_images_size;
 		std::vector<ns_vector_2i>::size_type number_of_images_in_storyboard()const{return worm_images_size.size();}
 
-	typedef std::map<unsigned long,ns_image_server_results_file> ns_region_annotation_file_cache_type;	
+	typedef std::map<ns_64_bit,ns_image_server_results_file> ns_region_annotation_file_cache_type;	
 	mutable ns_region_annotation_file_cache_type  region_annotation_file_cache;
 
 
@@ -199,12 +202,12 @@ public:
 
 private:
 	std::vector<ns_image_server_image> sub_images;
-	ns_image_server_image metadata;
+	ns_image_server_image xml_metadata_database_record;
 	void load_metadata_from_db(const ns_experiment_storyboard_spec & spec,ns_sql & sql);
 	void save_metadata_to_db(const ns_experiment_storyboard_spec & spec,ns_sql & sql);
 	bool load_subimages_from_db(const ns_experiment_storyboard_spec & spec,ns_sql & sql);
 	void create_records_and_storage_for_subimages(const unsigned long number_of_subimages,const ns_experiment_storyboard_spec & spec,ns_sql & sql, const bool create_if_missing);
-	void get_default_storage_base_filenames(const unsigned long subimage_id,ns_image_server_image & image, 
+	void get_default_storage_base_filenames(const unsigned long subimage_id,ns_image_server_image & image, const ns_image_type & type,
 		const ns_experiment_storyboard_spec & spec,ns_sql & sql);
 	
 	ns_image_server_image & get_storage_for_storyboard(const unsigned long subimage_id, const ns_experiment_storyboard_spec & spec,ns_sql & sql);

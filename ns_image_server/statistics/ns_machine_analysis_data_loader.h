@@ -26,10 +26,10 @@ public:
 		return cached_summary_series;
 	}
 	
-	bool recalculate_from_saved_movement_quantification(const unsigned long region_id,ns_sql & sql);
+	bool recalculate_from_saved_movement_quantification(const ns_64_bit region_id,ns_sql & sql);
 
 	bool load_from_db(const ns_death_time_annotation_set::ns_annotation_type_to_load & annotation_types_to_load,const ns_loading_details & details,
-		const unsigned long region_id,ns_sql & sql);
+		const ns_64_bit region_id,ns_sql & sql);
 	
 	ns_time_path_solution time_path_solution;
 	ns_time_path_image_movement_analyzer time_path_image_analyzer;
@@ -76,13 +76,13 @@ public:
 	//uses much less memory just to compile the data into a survival curve data set
 	void load_just_survival(ns_lifespan_experiment_set & set,ns_64_bit region_id, ns_64_bit sample_id, ns_64_bit experiment_id_a, ns_sql & sql, const bool load_excluded_regions, const bool load_by_hand_data);
 	const std::string & experiment_name(){return experiment_name_;}
-	const unsigned long experiment_id(){return experiment_id_;}
+	const ns_64_bit experiment_id(){return experiment_id_;}
 	std::vector<ns_machine_analysis_sample_data> samples;
 private:
 	bool be_quiet;
 	void set_up_spec_to_load(const ns_64_bit & region_id, ns_64_bit &sample_id, ns_64_bit & experiment_id_a, ns_sql & sql, const bool load_excluded_regions);
 	std::string experiment_name_;
-	unsigned int experiment_id_;
+	ns_64_bit experiment_id_;
 	unsigned long total_number_of_regions_;
 };
 

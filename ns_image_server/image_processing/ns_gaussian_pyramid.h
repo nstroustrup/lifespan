@@ -283,7 +283,7 @@ private:
 		}
 
 		/* Computes the temporary work buffer size */
-		IppiSize    roiSize = { image.width,image.height };
+		IppiSize    roiSize = { (int)image.width,(int)image.height };
 		float rate(2);
 		const int kernel_size = 5;
 		Ipp32f kernel[kernel_size] = { 1.f, 4.f, 6.f,4.f,1.f };

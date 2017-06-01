@@ -1323,7 +1323,6 @@ int main(int argc, char ** argv){
 			image_server.exit_requested = true;
 			timer.block_on_finish();
 			#endif
-			image_server.clear_processing_status(*static_cast<ns_sql *>(&sql()));
 		}
 
 		//cerr << "Clearing dispatcher\n";

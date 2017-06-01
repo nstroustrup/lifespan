@@ -48,7 +48,41 @@ ns_vector_2i ns_pos_from_str(const std::string & str){
 	return ns_vector_2i(atol(str.substr(0,p).c_str()),atol(str.substr(p+1,string::npos).c_str()));
 }
 
+std::string ns_death_time_annotation::brief_description() const {
+	bool movement_event(type != ns_no_movement_event);
+	bool excluded_event(excluded != ns_death_time_annotation::ns_not_excluded);
+	bool flagged_event(flag.specified());
+	bool multip_worm_event(number_of_worms() > 0);
 
+	bool volt(volatile_duration_of_time_not_fast_moving ||
+		volatile_time_spent_before_end_of_death_time_contraction ||
+		volatile_matches_machine_detected_death);
+		
+	//bool has_sticky_properties();
+
+	std::string ret;
+	if (movement_event) {
+		ret += "[" + ns_movement_event_to_string(type) +"]";
+	}
+	else ret += "[No movement event]";
+	ret += ":";
+	if (excluded_event)
+		if (is_censored())
+			ret += "(" + censor_description(excluded) + ")";
+		else if (is_excluded())
+			ret += "(Excluded)";
+		else ret += "?";
+
+	if (flagged_event)ret += "(" + flag.label() +")";
+
+	if (volt) ret += "(volatile)";
+	if (inferred_animal_location) ret += "(Inferred)";
+	ret += " @ " + ns_format_time_string_for_human(time.period_end);
+	ret += " by " + source_type_to_string(annotation_source) + " @ " + ns_format_time_string_for_human(annotation_time);
+
+		return ret;
+
+}
 std::string ns_death_time_annotation::description() const{
 	return ns_movement_event_to_string(type) + "::" + source_type_to_string(annotation_source) + 
 		"::" + exclusion_string(excluded) +"::pos(" + ns_to_string(position.x) + "," + ns_to_string(position.y) +

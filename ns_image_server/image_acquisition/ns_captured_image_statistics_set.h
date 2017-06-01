@@ -79,7 +79,7 @@ struct ns_capture_scan_statistics{
 
 class ns_capture_sample_image_statistics{
 public:
-	unsigned long sample_id;
+	ns_64_bit sample_id;
 	std::string experiment_name,
 		sample_name,
 		device_name;
@@ -87,7 +87,7 @@ public:
 	unsigned long date_of_first_sample_scan;
 	
 #ifndef NS_NO_SQL
-	void load_from_db(unsigned long id,ns_sql & sql);
+	void load_from_db(ns_64_bit id,ns_sql & sql);
 #endif
 	void calculate_running_statistics();
 
@@ -171,7 +171,7 @@ public:
 	ns_whole_device_activity_aggregator_list device_list;
 	
 #ifndef NS_NO_SQL
-	void load_whole_experiment(const unsigned long experiment_id, ns_sql & sql);
+	void load_whole_experiment(const ns_64_bit experiment_id, ns_sql & sql);
 #endif
 	void output_scanner_activity_plot(std::ostream & o);
 
@@ -182,7 +182,7 @@ public:
 class ns_capture_sample_region_statistics_set{
 public:
 	std::vector<ns_capture_sample_region_data> regions;
-	std::map<unsigned long,ns_capture_sample_region_data *> regions_sorted_by_id;
+	std::map<ns_64_bit,ns_capture_sample_region_data *> regions_sorted_by_id;
 
 	void build_id_mapping();
 

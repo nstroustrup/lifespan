@@ -110,7 +110,9 @@ void analyze_worm_movement_across_frames(const ns_processing_job & job, ns_image
 			image_server->register_server_event(ns_image_server_event("Analyzing images for animal posture changes."), &sql);
 
 		time_path_image_analyzer.process_raw_images(job.region_id, time_path_solution, time_series_denoising_parameters, &death_time_estimator(), sql, -1, true);
-		time_path_image_analyzer.save_movement_data_to_db(job.region_id, sql);
+		time_path_image_analyzer.ns_time_path_image_movement_analyzer::obtain_analysis_id_and_save_movement_data(job.region_id, sql,
+																			ns_time_path_image_movement_analyzer::ns_require_existing_record,
+																			ns_time_path_image_movement_analyzer::ns_write_data );
 	}
 	else if (job.maintenance_task == ns_maintenance_rebuild_movement_from_stored_images) {
 		//load in previously calculated image quantification from disk for re-analysis
@@ -123,7 +125,9 @@ void analyze_worm_movement_across_frames(const ns_processing_job & job, ns_image
 		reanalyze_optical_flow = true;
 #endif
 		time_path_image_analyzer.reanalyze_stored_aligned_images(job.region_id, time_path_solution, time_series_denoising_parameters, &death_time_estimator(), sql, true, reanalyze_optical_flow);
-		time_path_image_analyzer.save_movement_data_to_db(job.region_id, sql);
+		time_path_image_analyzer.obtain_analysis_id_and_save_movement_data(job.region_id, sql,
+			ns_time_path_image_movement_analyzer::ns_require_existing_record,
+			ns_time_path_image_movement_analyzer::ns_write_data);
 	}
 	else {
 		//load in previously calculated image quantification from disk for re-analysis
@@ -133,7 +137,9 @@ void analyze_worm_movement_across_frames(const ns_processing_job & job, ns_image
 		if (log_output)
 			image_server->register_server_event(ns_image_server_event("Analyzing stored animal posture quantification."), &sql);
 		time_path_image_analyzer.load_completed_analysis(job.region_id, time_path_solution, time_series_denoising_parameters, &death_time_estimator(), sql);
-		time_path_image_analyzer.save_movement_data_to_db(job.region_id, sql);
+		time_path_image_analyzer.obtain_analysis_id_and_save_movement_data(job.region_id, sql,
+			ns_time_path_image_movement_analyzer::ns_require_existing_record,
+			ns_time_path_image_movement_analyzer::ns_write_data);
 	}
 	death_time_estimator.release();
 

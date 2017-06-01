@@ -908,87 +908,99 @@ bool ns_processing_job_maintenance_processor::run_job(ns_sql & sql) {
 				vector<char> storyboard_has_valid_worms(specs.size(),0);
 				
 				bool empty_storyboard(false);
-
-				for (unsigned int j = 0; j < specs.size(); j++){
-				//	continue;
-					specs[j].minimum_distance_to_juxtipose_neighbors = neighbor_distance_to_juxtipose;
-					if (specs.size() > 1)
-						cerr << "Compiling storyboard outline " << j+1 << " of " << specs.size() << "\n";
-					if (!s.create_storyboard_metadata_from_machine_annotations(specs[j],sql)){
-						empty_storyboard = true;
-						continue;
-					}
-					else 
-						storyboard_has_valid_worms[j] = true;
-				
-					ns_experiment_storyboard_manager man;
-					man.delete_metadata_from_db(specs[j],sql);
-					man.save_metadata_to_db(specs[j],s,ns_xml,sql);
-					//reload the storyboard just to confirm it still works
-					if (1){
-						ns_experiment_storyboard s2;
-						try{
-							ns_experiment_storyboard_manager man2;
-							man2.load_metadata_from_db(specs[j],s2,sql);
-						}
-						catch(ns_ex & ex){
-							std::string r;
-							if (r.size() == 0)
-								ex << "\nns_experiment_storyboard::compare()::Found no differences between the storyboards.";
-							else ex << "\n" << s.compare(s2).text();	
-							throw ex;
-						}
-						ns_ex ex(s.compare(s2).text());
-						if (ex.text().size() > 0)
-							throw ex;
-					}
-					
-				}
-				if (empty_storyboard){
-					for (unsigned int j = 0; j < specs.size(); j++){
-						if (storyboard_has_valid_worms[j]){
-							ns_experiment_storyboard_manager man;
-							man.delete_metadata_from_db(specs[j],sql);
-						}
-					}
-					throw ns_ex("The storyboard could not be generated as no dead or potentially dead worms were identified");
-				}
-				std::vector<ns_ex> errors;
-				//if this is a job for a specific region or sample, just do the work
-				if (job.region_id != 0 || job.sample_id != 0){
-					for (unsigned int j = 0; j < specs.size(); j++){
+				std::vector<ns_ex> generation_errors(specs.size());
+				for (unsigned int j = 0; j < specs.size(); j++) {
+					try {
+						//	continue;
+						specs[j].minimum_distance_to_juxtipose_neighbors = neighbor_distance_to_juxtipose;
 						if (specs.size() > 1)
-							cerr << "Generating storyboard type " << j+1 << " 1-" << specs.size() << " of " << specs.size() << "\n";
-						if (!s.create_storyboard_metadata_from_machine_annotations(specs[j],sql))
-							break;
+							cerr << "Compiling storyboard outline " << j + 1 << " of " << specs.size() << "\n";
+						if (!s.create_storyboard_metadata_from_machine_annotations(specs[j], sql)) {
+							empty_storyboard = true;
+							continue;
+						}
+						else
+							storyboard_has_valid_worms[j] = true;
+
 						ns_experiment_storyboard_manager man;
-						man.load_metadata_from_db(specs[j],s,sql);
-						ns_image_standard ima;
-							for (unsigned int i = 0; i < man.number_of_sub_images(); i++){
-								try{
-									s.draw(i,ima,true,sql);
-									man.save_image_to_db(i,specs[j],ima,sql);
-								}
-								catch(ns_ex & ex){
-									errors.push_back(ex);
+						man.delete_metadata_from_db(specs[j], sql);
+						man.save_metadata_to_db(specs[j], s, ns_xml, sql);
+						//reload the storyboard just to confirm it still works
+						if (1) {
+							ns_experiment_storyboard s2;
+							try {
+								ns_experiment_storyboard_manager man2;
+								man2.load_metadata_from_db(specs[j], s2, sql);
+							}
+							catch (ns_ex & ex) {
+								std::string r;
+								if (r.size() == 0)
+									ex << "\nns_experiment_storyboard::compare()::Found no differences between the storyboards.";
+								else ex << "\n" << s.compare(s2).text();
+								throw ex;
+							}
+							ns_ex ex(s.compare(s2).text());
+							if (ex.text().size() > 0)
+								throw ex;
+						}
+
+
+						if (empty_storyboard) {
+							for (unsigned int j = 0; j < specs.size(); j++) {
+								if (storyboard_has_valid_worms[j]) {
+									ns_experiment_storyboard_manager man;
+									man.delete_metadata_from_db(specs[j], sql);
 								}
 							}
+							throw ns_ex("The storyboard could not be generated as no dead or potentially dead worms were identified");
+						}
+					}
+					catch (ns_ex & ex) {
+						image_server_const.add_subtext_to_current_event(ex.text(), &sql);
+						generation_errors[j] = ex;
+					}
+				}
+				std::vector<ns_ex> errors;
+				bool there_were_errors(false);
+				//if this is a job for a specific region or sample, just do the work
+				if (job.region_id != 0 || job.sample_id != 0) {
+					for (unsigned int j = 0; j < specs.size(); j++) {
+						if (!generation_errors[j].text().empty()) {
+							there_were_errors = true;
+							continue;
+						}
+						if (specs.size() > 1)
+							cerr << "Generating storyboard type " << j + 1 << " 1-" << specs.size() << " of " << specs.size() << "\n";
+						if (!s.create_storyboard_metadata_from_machine_annotations(specs[j], sql))
+							break;
+						ns_experiment_storyboard_manager man;
+						man.load_metadata_from_db(specs[j], s, sql);
+						ns_image_standard ima;
+						for (unsigned int i = 0; i < man.number_of_sub_images(); i++) {
+							try {
+								s.draw(i, ima, true, sql);
+								man.save_image_to_db(i, specs[j], ima, sql);
+							}
+							catch (ns_ex & ex) {
+								errors.push_back(ex);
+							}
+						}
 					}
 				}
 				//if this is an experiment job, divvy up the tasks among the cluster
-				else{
+				else {
 					ns_experiment_storyboard_manager man;
-					man.load_metadata_from_db(specs[0],s,sql);
+					man.load_metadata_from_db(specs[0], s, sql);
 
 					ns_processing_job j(job);
 					j.maintenance_task = ns_maintenance_generate_animal_storyboard_subimage;
-					for (unsigned int i = 0; i < man.number_of_sub_images(); i+=5){
+					for (unsigned int i = 0; i < man.number_of_sub_images(); i += 5) {
 						j.id = 0;
 						j.image_id = i;
-						try{
+						try {
 							j.save_to_db(sql);
 						}
-						catch(ns_ex & ex){
+						catch (ns_ex & ex) {
 							errors.push_back(ex);
 						}
 					}
@@ -998,15 +1010,19 @@ bool ns_processing_job_maintenance_processor::run_job(ns_sql & sql) {
 						<< "last_timepoint_in_latest_storyboard_build = " << s.last_timepoint_in_storyboard << ","
 						<< "number_of_regions_in_latest_storyboard_build = " << s.number_of_regions_in_storyboard
 						<< " WHERE id = " << job.experiment_id;
-						sql.send_query();
+					sql.send_query();
 					ns_image_server_push_job_scheduler::request_job_queue_discovery(sql);
 				}
-				if (errors.size() > 0){
+				if (errors.size() > 0) {
 					//register all the errors but only throw the first one
-					for (unsigned long i = 1; i < errors.size(); i++){
-						image_server->register_server_event(ns_image_server::ns_register_in_central_db,errors[i]);
+					for (unsigned long i = 1; i < errors.size(); i++) {
+						image_server->register_server_event(ns_image_server::ns_register_in_central_db, errors[i]);
 					}
 					throw errors[0];
+				}
+				else {
+					if (there_were_errors)
+						throw ns_ex("One or more errors were encountered while generating storyboards.");
 				}
 				
 				break;

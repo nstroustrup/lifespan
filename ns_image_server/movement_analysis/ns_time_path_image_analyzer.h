@@ -858,7 +858,9 @@ public:
 		}
 			
 	}
-	void save_movement_data_to_db(const ns_64_bit region_id, ns_sql & sql);
+	typedef enum { ns_use_existing_record_if_possible, ns_force_creation_of_new_db_record,ns_require_existing_record } ns_analysis_db_options;
+	typedef enum { ns_do_not_write_data, ns_write_data } ns_data_write_options;
+	void obtain_analysis_id_and_save_movement_data(const ns_64_bit region_id, ns_sql & sql, ns_analysis_db_options id_options, ns_data_write_options write_options);
 	void delete_from_db(const ns_64_bit region_id,ns_sql & sql);
 	
 	
@@ -896,6 +898,7 @@ public:
 	unsigned long number_of_timepoints_in_analysis()const { return number_of_timepoints_in_analysis_;}
 	ns_64_bit db_analysis_id() const{return analysis_id;}
 private:
+
 
 	void run_group_for_current_backwards_round(unsigned int group_id, const unsigned int path_id, ns_time_path_image_movement_analyzer_thread_pool_persistant_data *,ns_movement_analysis_shared_state * shared_state);
 	void run_group_for_current_forwards_round(unsigned int group_id, unsigned int path_id, ns_time_path_image_movement_analyzer_thread_pool_persistant_data *,ns_movement_analysis_shared_state * shared_state);

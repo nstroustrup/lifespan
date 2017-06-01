@@ -770,35 +770,31 @@ ns_local_buffer_connection * ns_image_server::new_local_buffer_connection_no_loc
 }
 
 
-void ns_image_server::get_requested_database_from_db(){
-	ns_acquire_for_scope<ns_sql> sql(new_sql_connection(__FILE__,__LINE__));
-	sql() << "SELECT database_used FROM hosts WHERE id = " << host_id() << "";
+void ns_image_server::request_database_from_db_and_switch_to_it(ns_sql & sql, bool update_hosts_records_in_db){
+	sql << "SELECT database_used FROM hosts WHERE id = " << host_id() << "";
 	ns_sql_result res;
-	sql().get_rows(res);
+	sql.get_rows(res);
 	if (res.size() == 0)
 		return;
 	try{
-		set_sql_database(res[0][0]);
+		set_sql_database(res[0][0], update_hosts_records_in_db,sql);
 	}
 	catch(ns_ex & ex){
-		register_server_event(ex,&sql());
+		register_server_event(ex,&sql);
 	}
-	sql.release();
 	return;
 };
 
-void ns_image_server::set_sql_database(const std::string & database_name,const bool report_to_db){
+void ns_image_server::switch_to_default_db() {
+	sql_database_choice = possible_sql_databases.begin();
+}
+void ns_image_server::set_sql_database(const std::string & database_name,const bool update_hosts_records_in_db, ns_sql & sql){
 	if (possible_sql_databases.size() == 0)
 		throw ns_ex("ns_image_server::set_sql_database()::No possible databases specified in ini file!");
-	if (database_name.size() == 0){
-		sql_database_choice = possible_sql_databases.begin();
-		return;
-	}
 
-	ns_acquire_for_scope<ns_sql> sql(new_sql_connection(__FILE__,__LINE__));
-	sql() << "SHOW DATABASES";
+	sql << "SHOW DATABASES";
 	ns_sql_result database;
-	sql().get_rows(database);
+	sql.get_rows(database);
 	bool found(false);
 	for (unsigned int i = 0; i < database.size(); i++){
 		if (database_name == database[i][0]){
@@ -810,24 +806,25 @@ void ns_image_server::set_sql_database(const std::string & database_name,const b
 		throw ns_ex("ns_image_server::set_sql_database()::Requested database name '") << database_name << "' could not be found";
 	}
 
-	if (report_to_db){
-		register_server_event(ns_image_server_event("Switching to database ") << database_name,&sql());
-		sql() << "UPDATE hosts SET database_used='" << database_name << "' WHERE id = " << host_id();
-		sql().send_query();
-		image_server.unregister_host(&sql());
+	if (update_hosts_records_in_db){
+		register_server_event(ns_image_server_event("Switching to database ") << database_name,&sql);
+		sql << "UPDATE hosts SET database_used='" << database_name << "' WHERE id = " << host_id();
+		sql.send_query();
+		unregister_host(&sql);
+		clear_processing_status(sql);
 	}
+	image_server.sql_lock.wait_to_acquire(__FILE__, __LINE__);
 	std::vector<std::string>::const_iterator p = std::find(possible_sql_databases.begin(),possible_sql_databases.end(),database_name);
-	image_server.sql_lock.wait_to_acquire(__FILE__,__LINE__);
 	if (p == possible_sql_databases.end()){
 		p = possible_sql_databases.insert(possible_sql_databases.end(),database_name);
 	}
 	sql_database_choice = p;
-	sql().select_db(database_name);
-	ns_death_time_annotation_flag::get_flags_from_db(sql());
+	sql.select_db(database_name);
+	ns_death_time_annotation_flag::get_flags_from_db(sql);
 	image_server.sql_lock.release();
-	if (report_to_db){
-		image_server.register_host(&sql(),true,false);
-		image_server.register_devices(false,&sql());
+	if (update_hosts_records_in_db){
+		image_server.register_host(&sql,true,false);
+		image_server.register_devices(false,&sql);
 	}
 }
 
@@ -961,13 +958,14 @@ bool ns_image_server::upgrade_tables(ns_sql & sql,const bool just_test_if_needed
 
 	sql << "SELECT table_name "
 		"FROM information_schema.tables "
-		"WHERE table_schema = '" << schema_name << "' ";
+		"WHERE table_schema = '" << schema_name << "' "
 		" AND table_name = 'processing_node_status'";
 	res.clear();
 	sql.get_rows(res);
 	if (res.empty()) {
 		if (just_test_if_needed)
 			return true;
+		cout << "Adding additional host HPC columns\n";
 		sql << "CREATE TABLE `processing_node_status` ("
 			"`host_id` BIGINT NULL,"
 			"`node_id` BIGINT NULL,"
@@ -2118,7 +2116,7 @@ void ns_image_server::load_constants(const ns_image_server::ns_image_server_exec
 			}
 		}
 		//set default database
-		set_sql_database();
+		switch_to_default_db();
 
 		sql_user				= constants["central_sql_username"];
 		sql_pwd					= constants["central_sql_password"];

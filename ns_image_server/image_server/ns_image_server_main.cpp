@@ -1006,10 +1006,13 @@ int main(int argc, char ** argv){
 
 		if (sql.is_null())
 			sql.attach(ns_connect_to_available_sql_server());
+		if (sql().connected_to_central_database()) {
+			image_server.register_host(&sql(), true, true);  //we need to get the host id in order to be able to look for a request to change databases.
+			image_server.request_database_from_db_and_switch_to_it(*static_cast<ns_sql *>(&sql()),true);  //this registers host in the new db as well
+		}
 
 		image_server.image_storage.refresh_experiment_partition_cache(&sql());
 		if (sql().connected_to_central_database()) {
-			image_server.clear_processing_status(*static_cast<ns_sql *>(&sql()));
 			image_server.clear_performance_statistics(*static_cast<ns_sql *>(&sql()));
 			image_server.clear_old_server_events(*static_cast<ns_sql *>(&sql()));
 			image_server.load_quotes(quotes, *static_cast<ns_sql *>(&sql()));
@@ -1110,8 +1113,6 @@ int main(int argc, char ** argv){
 	
 
 		if (sql().connected_to_central_database()) {
-			image_server.get_requested_database_from_db();
-			image_server.register_host(&sql(), true, true);
 
 			if (!stored_ex.text().empty())
 				throw stored_ex;
@@ -1130,6 +1131,7 @@ int main(int argc, char ** argv){
 			}
 		}
 
+		image_server.clear_processing_status(*static_cast<ns_sql *>(&sql()));
 		image_server.register_server_event(ns_image_server_event("Clearing local image cache"), &sql());
 		image_server.image_storage.clear_local_cache();
 
@@ -1229,10 +1231,6 @@ int main(int argc, char ** argv){
 		if (image_server_const.allow_multiple_processes_per_system() && image_server_const.get_additional_host_description().empty())
 			throw ns_ex("If allow_multiple_processes_per_system is set in the ns_image_server.ini file, a unique value of additional_host_description must be provided to each instance of ns_image_server.ini as a commandline argument!");
 
-		
-
-		image_server.register_server_event(ns_image_server_event("Clearing local image cache"), &sql());
-		image_server.image_storage.clear_local_cache();
 
 		if (post_dispatcher_init_command == ns_trigger_segfault_in_dispatcher_thread)
 			dispatch.trigger_segfault_on_next_timer();

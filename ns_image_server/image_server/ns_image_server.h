@@ -175,7 +175,8 @@ public:
 	ns_local_buffer_connection * new_local_buffer_connection(const std::string & source_file, const unsigned int source_line);
 	ns_local_buffer_connection * new_local_buffer_connection_no_lock_or_retry(const std::string & source_file, const unsigned int source_line) const;
 
-	void set_sql_database(const std::string & database_name="",const bool report_to_db=true);
+	void set_sql_database(const std::string & database_name,const bool update_host_registry_in_db,ns_sql & sql);
+	void switch_to_default_db();
 	void reconnect_sql_connection(ns_sql * sql);
 	
 	void check_for_sql_database_access(ns_image_server_sql * sql) const;
@@ -405,7 +406,7 @@ public:
 #endif
 	}
 
-	 void get_requested_database_from_db();
+	void request_database_from_db_and_switch_to_it(ns_sql & sql, bool update_hosts_records_in_db);
 
 	///Searches the default SVM machine learning model directory on the central file server and returns
 	///a list of all models present there

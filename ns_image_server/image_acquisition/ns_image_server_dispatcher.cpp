@@ -896,7 +896,7 @@ void ns_image_server_dispatcher::on_timer(){
 						processing_thread_pool.wait_for_all_threads_to_become_idle();
 						processing_thread_pool.shutdown();
 					}
-					image_server.set_sql_database(database_requested);
+					image_server.set_sql_database(database_requested,true,*timer_sql_connection);
 					if (work_sql_connection!=0)
 						work_sql_connection->select_db(image_server.current_sql_database());
 					if (timer_sql_connection!=0)

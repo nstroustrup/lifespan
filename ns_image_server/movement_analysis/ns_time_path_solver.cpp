@@ -545,7 +545,13 @@ void ns_time_path_solution::load_from_db(const ns_64_bit region_id, ns_sql & sql
 		try{
 			input_file.attach(image_server_const.image_storage.request_metadata_from_disk(im,false,&sql));
 		}catch(ns_ex & ex){
-			throw ns_ex("Solution data could not be found on disk");
+
+			ns_image_server_image im;
+			im.id = ns_atoi64(res[0][0].c_str());
+			if (im.id == 0)
+				throw ns_ex("Solution data has not been stored in db");
+			input_file.attach(image_server_const.image_storage.request_metadata_from_disk(im, false, &sql));
+
 		}
 	}else{
 		ns_image_server_image im;

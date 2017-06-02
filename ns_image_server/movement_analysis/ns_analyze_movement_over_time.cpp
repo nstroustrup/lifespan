@@ -253,7 +253,7 @@ void analyze_worm_movement_across_frames(const ns_processing_job & job, ns_image
 	ns_image_server_results_subject sub;
 	sub.region_id = job.region_id;
 	try {
-		ns_acquire_for_scope<std::ostream> o(image_server->results_storage.time_path_image_analysis_quantification(sub, "detailed", false, sql).output());
+		ns_acquire_for_scope<std::ostream> o(image_server->results_storage.time_path_image_analysis_quantification(sub, "detailed", false, sql,false,false).output());
 		if (time_path_image_analyzer.size() > 0) {
 			time_path_image_analyzer.group(0).paths[0].write_detailed_movement_quantification_analysis_header(o());
 			o() << "\n";

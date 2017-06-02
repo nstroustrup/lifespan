@@ -1449,7 +1449,8 @@ ns_file_location_specification ns_image_storage_handler::look_up_image_location(
 
 	if (image.filename.size() == 0 || image.path.size() == 0)
 		image.load_from_db(image.id, sql);
-
+	if (image.filename.empty())
+		throw ns_ex("ns_image_storage_handler::Empty filename requested");
 	if (alter_file_extension) {
 		std::string desired_suffix;
 		ns_add_image_suffix(desired_suffix, image_type);

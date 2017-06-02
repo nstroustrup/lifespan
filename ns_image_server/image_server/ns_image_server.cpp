@@ -2998,7 +2998,7 @@ ns_image_server_results_file ns_image_server_results_storage::time_path_image_an
 		string fname(""),dir("");
 		string abbreviated;
 		if(abbreviated_time_series)
-			abbreviated = "=abbreviated";
+			abbreviated = "=abr";
 		if (spec.region_id != 0){
 			dir = time_path_image_analysis_quantification() + DIR_CHAR_STR + "regions";
 			if (compress_file_names)

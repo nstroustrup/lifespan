@@ -2070,7 +2070,7 @@ void ns_experiment_storyboard_manager::save_metadata_to_db(const ns_experiment_s
 }
 bool ns_experiment_storyboard_manager::load_subimages_from_db(const ns_experiment_storyboard_spec & spec,ns_sql & sql){
 
-	sql << "SELECT id, image_id, metadata_id, number_of_sub_images,minimum_distance_to_juxtipose_neighbors FROM animal_storyboard WHERE " << generate_sql_query_where_clause_for_specification(spec);
+	sql << "SELECT id, image_id, metadata_id, number_of_sub_images,minimum_distance_to_juxtipose_neighbors,storyboard_sub_image_number FROM animal_storyboard WHERE " << generate_sql_query_where_clause_for_specification(spec);
 	ns_sql_result res;
 	sql.get_rows(res);
 	sub_images.resize(0);		
@@ -2081,14 +2081,18 @@ bool ns_experiment_storyboard_manager::load_subimages_from_db(const ns_experimen
 	ns_64_bit m_id(ns_atoi64(res[0][2].c_str()));
 	try{
 		for (unsigned int i = 0; i < res.size(); i++){
-			sub_images[i].id = ns_atoi64(res[i][1].c_str());
+			ns_64_bit sub_image_number = ns_atoi64(res[i][5].c_str());
+			if (sub_image_number >= sub_images.size())
+				throw ns_ex("An invalid storyboard sub image record was found in the database.");
+
+			sub_images[sub_image_number].id = ns_atoi64(res[i][1].c_str());
 			if (ns_atoi64(res[i][3].c_str()) != res.size())
 				throw ns_ex("ns_experiment_storyboard_manager::load_subimages_from_db()::Inconsistant records of sub_image_count!");
 			
 			if (ns_atoi64(res[i][2].c_str()) != m_id)
 				throw ns_ex("ns_experiment_storyboard_manager::load_subimages_from_db()::Inconsistant records of metadata id!");
 
-			if (ns_atoi64(res[i][3].c_str()) != spec.minimum_distance_to_juxtipose_neighbors)
+			if (ns_atoi64(res[i][4].c_str()) != spec.minimum_distance_to_juxtipose_neighbors)
 				throw ns_ex("ns_experiment_storyboard_manager::load_subimages_from_db()::Inconsistant records of minimum_distance_to_juxtipose_neighbors!");
 		}
 	}

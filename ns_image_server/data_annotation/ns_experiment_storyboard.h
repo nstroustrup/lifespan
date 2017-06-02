@@ -220,7 +220,7 @@ private:
 	bool load_subimages_from_db(const ns_experiment_storyboard_spec & spec,ns_sql & sql);
 	void create_records_and_storage_for_subimages(const unsigned long number_of_subimages,const ns_experiment_storyboard_spec & spec,ns_sql & sql, const bool create_if_missing);
 
-	static std::string ns_experiment_storyboard_manager::generate_sql_query_where_clause_for_specification(const ns_experiment_storyboard_spec & spec);
+	static std::string generate_sql_query_where_clause_for_specification(const ns_experiment_storyboard_spec & spec);
 
 	void get_default_storage_base_filenames(const unsigned long subimage_id,ns_image_server_image & image, const ns_image_type & type,
 		const ns_experiment_storyboard_spec & spec,ns_sql & sql);

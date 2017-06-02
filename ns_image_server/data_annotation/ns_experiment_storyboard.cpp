@@ -1407,12 +1407,12 @@ void ns_experiment_storyboard_compiled_event_set::load(const ns_experiment_story
 }
 bool ns_experiment_storyboard_compiled_event_set::need_to_reload_for_new_spec(const ns_experiment_storyboard_spec & new_spec) {
 
-	return new_spec.experiment_id == spec.experiment_id &&
+	return !(new_spec.experiment_id == spec.experiment_id &&
 		new_spec.region_id == spec.region_id &&
 		new_spec.sample_id == spec.sample_id &&
 		new_spec.strain_to_use.strain == spec.strain_to_use.strain &&
 		new_spec.strain_to_use.strain_condition_1 == spec.strain_to_use.strain_condition_1 &&
-		new_spec.strain_to_use.strain_condition_2 == spec.strain_to_use.strain_condition_2;
+		new_spec.strain_to_use.strain_condition_2 == spec.strain_to_use.strain_condition_2);
 }
 
 bool ns_experiment_storyboard::create_storyboard_metadata_from_machine_annotations(ns_experiment_storyboard_spec spec, const ns_experiment_storyboard_compiled_event_set & compiled_event_set,ns_sql & sql) {

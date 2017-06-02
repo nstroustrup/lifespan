@@ -983,6 +983,7 @@ bool ns_image_server::upgrade_tables(ns_sql & sql,const bool just_test_if_needed
 	if (!ns_sql_column_exists("animal_storyboard", "minimum_distance_to_juxtipose_neighbors", sql)) {
 		if (just_test_if_needed)
 			return true;
+		cout << "Update storyboard column\n";
 			sql << "ALTER TABLE animal_storyboard ADD COLUMN minimum_distance_to_juxtipose_neighbors INT NOT NULL DEFAULT 0 AFTER image_delay_time_after_event";
 			sql.send_query();
 		changes_made = true;

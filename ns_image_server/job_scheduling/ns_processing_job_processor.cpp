@@ -909,13 +909,19 @@ bool ns_processing_job_maintenance_processor::run_job(ns_sql & sql) {
 				
 				bool empty_storyboard(false);
 				std::vector<ns_ex> generation_errors(specs.size());
+				ns_experiment_storyboard_compiled_event_set compiled_event_set;
 				for (unsigned int j = 0; j < specs.size(); j++) {
 					try {
-						//	continue;
 						specs[j].minimum_distance_to_juxtipose_neighbors = neighbor_distance_to_juxtipose;
 						if (specs.size() > 1)
 							cerr << "Compiling storyboard outline " << j + 1 << " of " << specs.size() << "\n";
-						if (!s.create_storyboard_metadata_from_machine_annotations(specs[j], sql)) {
+
+						if (compiled_event_set.need_to_reload_for_new_spec(specs[j]))
+							compiled_event_set.load(specs[j], sql);
+						else cout << "Running fast using cached annotations.\n";
+
+
+						if (!s.create_storyboard_metadata_from_machine_annotations(specs[j], compiled_event_set,sql)) {
 							empty_storyboard = true;
 							continue;
 						}
@@ -965,13 +971,17 @@ bool ns_processing_job_maintenance_processor::run_job(ns_sql & sql) {
 				//if this is a job for a specific region or sample, just do the work
 				if (job.region_id != 0 || job.sample_id != 0) {
 					for (unsigned int j = 0; j < specs.size(); j++) {
+						if (compiled_event_set.need_to_reload_for_new_spec(specs[j]))
+							compiled_event_set.load(specs[j], sql);
+						else cout << "Running fast using cached annotations.\n";
+
 						if (!generation_errors[j].text().empty()) {
 							there_were_errors = true;
 							continue;
 						}
 						if (specs.size() > 1)
 							cerr << "Generating storyboard type " << j + 1 << " 1-" << specs.size() << " of " << specs.size() << "\n";
-						if (!s.create_storyboard_metadata_from_machine_annotations(specs[j], sql))
+						if (!s.create_storyboard_metadata_from_machine_annotations(specs[j], compiled_event_set,sql))
 							break;
 						ns_experiment_storyboard_manager man;
 						man.load_metadata_from_db(specs[j], s, sql);

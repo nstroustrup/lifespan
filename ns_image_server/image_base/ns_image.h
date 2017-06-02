@@ -17,7 +17,7 @@ typedef enum{ns_jpeg, ns_tiff, ns_tiff_uncompressed,ns_tiff_lzw,ns_tiff_zip,ns_j
 void ns_add_image_suffix(std::string & str, const ns_image_type & type);
 
 bool ns_fix_filename_suffix(std::string & filename, const ns_image_type & type);
-bool ns_probe_for_illegal_character( const std::string & filename);
+void ns_probe_for_illegal_character( const std::string & filename);
 
 ns_image_type ns_image_type_from_filename(const std::string & filename);
 

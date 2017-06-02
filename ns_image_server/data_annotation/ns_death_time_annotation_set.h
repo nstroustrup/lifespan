@@ -127,6 +127,7 @@ public:
 	ns_death_time_annotation_set non_location_events;
 	ns_death_time_annotation_set fast_moving_animals;
 	void add(const ns_death_time_annotation & e, const bool create_new_location);
+	void clear();
 	ns_region_metadata metadata;
 
 	ns_death_time_annotation_time_interval latest_interval() const;

@@ -122,16 +122,28 @@ struct ns_reg_info{
 				region_image_id;
 };
 
+class ns_experiment_storyboard_compiled_event_set {
+	public:
+		ns_experiment_storyboard_compiled_event_set();
+		ns_death_time_annotation_compiler all_events;	
+		unsigned long last_timepoint_in_storyboard;
+		unsigned long number_of_regions_in_storyboard;
+		void load(const ns_experiment_storyboard_spec & spec, ns_sql & sql);
+		bool need_to_reload_for_new_spec(const ns_experiment_storyboard_spec & new_spec);
+	private:
+		ns_experiment_storyboard_spec spec;
+};
+
 class ns_experiment_storyboard{
 
 public:
 	ns_experiment_storyboard(){clear();}
 	typedef enum {ns_creating_from_machine_annotations,ns_loading_from_storyboard_file} ns_loading_type;
-	bool load_events_from_annotation_compiler(const ns_loading_type & loading_type,ns_death_time_annotation_compiler & all_events,const bool use_absolute_time,const bool state_annotations_available_in_loaded_annotations,const unsigned long minimum_distance_to_juxtipose_neighbors, ns_sql & sql);
+	bool load_events_from_annotation_compiler(const ns_loading_type & loading_type,const ns_death_time_annotation_compiler & all_events,const bool use_absolute_time,const bool state_annotations_available_in_loaded_annotations,const unsigned long minimum_distance_to_juxtipose_neighbors, ns_sql & sql);
 
 	void draw(const unsigned long sub_image_id,ns_image_standard & im,bool use_color,ns_sql & sql);
 
-	bool create_storyboard_metadata_from_machine_annotations(ns_experiment_storyboard_spec spec, ns_sql & sql);
+	bool create_storyboard_metadata_from_machine_annotations(ns_experiment_storyboard_spec spec, const ns_experiment_storyboard_compiled_event_set & compiled_event_set, ns_sql & sql);
 	void save_by_hand_annotations(ns_sql & sql,const ns_death_time_annotation_set & extra_annotations) const;
 
 	static std::string image_suffix(const ns_experiment_storyboard_spec & spec);
@@ -208,7 +220,7 @@ private:
 	bool load_subimages_from_db(const ns_experiment_storyboard_spec & spec,ns_sql & sql);
 	void create_records_and_storage_for_subimages(const unsigned long number_of_subimages,const ns_experiment_storyboard_spec & spec,ns_sql & sql, const bool create_if_missing);
 
-	std::string static ns_experiment_storyboard_manager::generate_sql_query_where_clause_for_specification(const ns_experiment_storyboard_spec & spec);
+	static std::string ns_experiment_storyboard_manager::generate_sql_query_where_clause_for_specification(const ns_experiment_storyboard_spec & spec);
 
 	void get_default_storage_base_filenames(const unsigned long subimage_id,ns_image_server_image & image, const ns_image_type & type,
 		const ns_experiment_storyboard_spec & spec,ns_sql & sql);

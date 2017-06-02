@@ -1009,6 +1009,13 @@ void ns_death_time_annotation_compiler_location::handle_sticky_properties(const 
 	a.transfer_sticky_properties(properties);
 }
 
+
+void ns_death_time_annotation_compiler_region::clear() {
+	locations.clear();
+	non_location_events.clear();
+	fast_moving_animals.clear();
+	metadata.clear();
+}
 void ns_death_time_annotation_compiler_region::add(const ns_death_time_annotation & e, const bool create_new_location){
 //	if (e.stationary_path_id.path_id == 0  && e.stationary_path_id.group_id == 0 && e.stationary_path_id.detection_set_id != 0)
 //			cerr << "WHAA";

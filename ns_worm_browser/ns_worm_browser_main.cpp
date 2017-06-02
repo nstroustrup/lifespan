@@ -1125,7 +1125,7 @@ class ns_worm_terminal_main_menu_organizer : public ns_menu_organizer{
 	*****************************/
 	
 	static void set_database(const std::string & data){
-		image_server.set_sql_database(data,false);
+		image_server.set_sql_database(data,false,worm_learner.get_sql_connection());
 		cerr << "Switching to database " << data << "\n";
 		get_menu_handler()->update_experiment_choice(*get_menu_bar());
 	}

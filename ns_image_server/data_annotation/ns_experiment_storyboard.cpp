@@ -1333,29 +1333,49 @@ bool ns_experiment_storyboard::create_storyboard_metadata_from_machine_annotatio
 				if(machine_annotations.samples[i].regions[j].death_time_annotation_set[k].stationary_path_id.detection_set_id != current_movement_analysis_id){
 					problems[machine_annotations.samples[i].regions[j].metadata.region_id].push_back(machine_annotations.samples[i].regions[j].death_time_annotation_set[k].brief_description());
 				}
-				else {
-					all_events.add(machine_annotations.samples[i].regions[j].death_time_annotation_set[k],machine_annotations.samples[i].regions[j].metadata);
-				}
 				count->second++;
 			}
-			/*all_events.add(machine_annotations.samples[i].regions[j].death_time_annotation_set);
+
+
+			all_events.add(machine_annotations.samples[i].regions[j].death_time_annotation_set);
 			all_events.specifiy_region_metadata(machine_annotations.samples[i].regions[j].metadata.region_id,
-																	machine_annotations.samples[i].regions[j].metadata);*/
+																	machine_annotations.samples[i].regions[j].metadata);
 		}	
 	}
+	//display useful diatgnostic info when the file on disk does not match the database spec.
 	if (!problems.empty()) {
 
-		for (map<ns_64_bit, vector<string> >::iterator p = problems.begin(); p != problems.end(); p++) 
-
-			image_server.add_subtext_to_current_event((std::string("Ignoring ") + ns_to_string( p->second.size()) + " of " + ns_to_string(total_events[p->first]) + " records that are out-of-date in region " + ns_to_string( p->first ) + "\n").c_str(),&sql);
-
+		ns_ex ex;
 		for (map<ns_64_bit, vector<string> >::iterator p = problems.begin(); p != problems.end(); p++) {
-			cout << "**Region " << p->first << "\n";
-			for (unsigned int i = 0; i < p->second.size(); i++) {
-				cout << p->second[i] << "\n";
+			sql << "SELECT s.name,r.name FROM capture_samples as s, sample_region_image_info as r WHERE r.id = "
+				<< p->first << " AND s.id=r.sample_id";
+			ns_sql_result res;
+			sql.get_rows(res);
+			std::string region_name;
+			if (res.size() > 0) {
+				region_name = res[0][0] + "::" + res[0][1];
+			}
+			else region_name = ns_to_string(p->first);
+
+			if (p->second.size() == total_events[p->first]) {
+				ex << " All records on disk corresponding to region " << region_name << " are out of date.  Rerun movement analysis or censor the region to allow storyboard generation.\n";
+			}
+			else if (2 * p->second.size() > total_events[p->first]) {
+				ex << " Most (" << ns_to_string(p->second.size()) + " / " + ns_to_string(total_events[p->first]) << ") of the records on disk corresponding to region " << region_name << " are out-of-date.  Rerun movement analysis or censor the region to allow storyboard generation.\n";
+			}
+			else image_server.add_subtext_to_current_event((std::string("Ignoring ") + ns_to_string(p->second.size()) + " of the records on disk corresponding to region " + region_name + "  are out-of-date.  If problems occur in storyboard generation,  Rerun movement analysis or censor this region.").c_str(), &sql);
+
+			if (image_server.verbose_debug_output()) {
+				for (map<ns_64_bit, vector<string> >::iterator p = problems.begin(); p != problems.end(); p++) {
+					cout << "**Region " << p->first << "\n";
+					for (unsigned int i = 0; i < p->second.size(); i++) {
+						cout << p->second[i] << "\n";
+					}
 				}
+			}
 		}
-		
+		if (!ex.text().empty())
+			throw ex;
 	}
 
 	//load by-hand annotations
@@ -1926,24 +1946,38 @@ void ns_experiment_storyboard_manager::save_metadata_to_db(const ns_experiment_s
 	o().close();
 	o.release();
 }
-void ns_experiment_storyboard_manager::save_image_to_db(const unsigned long sub_image_id,const ns_experiment_storyboard_spec & spec, const ns_image_standard & im, ns_sql & sql){
+void ns_experiment_storyboard_manager::save_image_to_db(const unsigned long sub_image_id, const ns_experiment_storyboard_spec & spec, const ns_image_standard & im, ns_sql & sql) {
 	if (sub_image_id >= sub_images.size())
 		throw ns_ex("ns_experiment_storyboard_manager::save_image_to_db()::Requesting invalid sub image");
 	if (sub_images[sub_image_id].id == 0)
 		throw ns_ex("ns_experiment_storyboard_manager::save_image_to_db()::Metadata has not been established");
 	bool had_to_use_volatile;
-	ns_image_storage_reciever_handle<ns_8_bit> h(image_server.image_storage.request_storage(sub_images[sub_image_id],ns_tiff,1.0,1024,&sql,had_to_use_volatile,true,false));
-	im.pump(h.output_stream(),1024);
+	try {
+		ns_image_storage_reciever_handle<ns_8_bit> h(image_server.image_storage.request_storage(sub_images[sub_image_id], ns_tiff, 1.0, 1024, &sql, had_to_use_volatile, true, false));
+		im.pump(h.output_stream(), 1024);
+	}
+	catch (ns_ex & ex) {
+		//this can fail if an unusual record previously existed in the database previous to this current round of storyboard generation.
+		//before giving up, we first try to make a fresh record and delete the old one.
+
+		sql << "DELETE FROM images WHERE id = " << sub_images[sub_image_id].id;
+		sql.send_query();
+		//get a new image record and save it to the db
+		get_default_storage_base_filenames(sub_image_id, sub_images[sub_image_id], ns_tiff_lzw, spec, sql);
+		sub_images[sub_image_id].save_to_db(sub_images[sub_image_id].id, &sql);
+		//update the storyboard db record to point to the new image
+		sql << "UPDATE animal_storyboard SET image_id = " << sub_images[sub_image_id].id << " WHERE " << generate_sql_query_where_clause_for_specification(spec)
+			<< " AND storyboard_sub_image_number = " << sub_image_id;
+		sql.send_query();
+		//try to open the new image.
+		ns_image_storage_reciever_handle<ns_8_bit> h(image_server.image_storage.request_storage(sub_images[sub_image_id], ns_tiff, 1.0, 1024, &sql, had_to_use_volatile, true, false));
+		im.pump(h.output_stream(), 1024);
+		//if this fails, it will throw the error.
+	}
 }
 
 void ns_experiment_storyboard_manager::load_metadata_from_db(const ns_experiment_storyboard_spec & spec,ns_sql & sql){
-	sql << "SELECT id, image_id, metadata_id, number_of_sub_images FROM animal_storyboard WHERE region_id = " << spec.region_id
-		<< " AND sample_id = " << spec.sample_id << " AND experiment_id = " << spec.experiment_id
-		<< " AND using_by_hand_annotations = " << (spec.use_by_hand_annotations?"1":"0") 
-		<< " AND movement_event_used=" << (long)spec.event_to_mark  
-		<< " AND aligned_by_absolute_time = " << (spec.use_absolute_time?"1":"0")
-		<< " AND images_chosen_from_time_of_last_death = " << (spec.choose_images_from_time_of_last_death?"1":"0")
-		<< " AND image_delay_time_after_event = " << spec.delay_time_after_event;
+	sql << "SELECT id, image_id, metadata_id, number_of_sub_images FROM animal_storyboard WHERE " << generate_sql_query_where_clause_for_specification(spec);
 	ns_sql_result res;
 	sql.get_rows(res);	
 	if (res.size() == 0)
@@ -1967,13 +2001,7 @@ void ns_experiment_storyboard_manager::load_metadata_from_db(const ns_experiment
 
 void ns_experiment_storyboard_manager::delete_metadata_from_db(const ns_experiment_storyboard_spec & spec, ns_sql & sql){
 
-	sql << "SELECT image_id,metadata_id FROM animal_storyboard WHERE region_id = " << spec.region_id
-		<< " AND sample_id = " << spec.sample_id << " AND experiment_id = " << spec.experiment_id
-		<< " AND using_by_hand_annotations = " << (spec.use_by_hand_annotations?"1":"0") 
-		<< " AND movement_event_used=" << (long)spec.event_to_mark  
-		<< " AND aligned_by_absolute_time = " << (spec.use_absolute_time?"1":"0")
-		<< " AND images_chosen_from_time_of_last_death = " << (spec.choose_images_from_time_of_last_death?"1":"0")
-		<< " AND image_delay_time_after_event = " << spec.delay_time_after_event;
+	sql << "SELECT image_id,metadata_id FROM animal_storyboard WHERE " << generate_sql_query_where_clause_for_specification(spec);
 	ns_sql_result res;
 	sql.get_rows(res);
 	if (res.size() == 0)
@@ -1987,37 +2015,18 @@ void ns_experiment_storyboard_manager::delete_metadata_from_db(const ns_experime
 	sql << "DELETE FROM images WHERE id = " << res[0][1];
 	sql.send_query();
 
-	sql << "DELETE FROM animal_storyboard WHERE region_id = " << spec.region_id
-		<< " AND sample_id = " << spec.sample_id << " AND experiment_id = " << spec.experiment_id
-		<< " AND using_by_hand_annotations = " << (spec.use_by_hand_annotations?"1":"0") 
-		<< " AND movement_event_used=" << (long)spec.event_to_mark  
-		<< " AND aligned_by_absolute_time = " << (spec.use_absolute_time?"1":"0")
-		<< " AND images_chosen_from_time_of_last_death = " << (spec.choose_images_from_time_of_last_death?"1":"0")
-		<< " AND image_delay_time_after_event = " << spec.delay_time_after_event;
+	sql << "DELETE FROM animal_storyboard WHERE " << generate_sql_query_where_clause_for_specification(spec);
 	sql.send_query();
 }
 
 void ns_experiment_storyboard_manager::save_metadata_to_db(const ns_experiment_storyboard_spec & spec,ns_sql & sql){
 	get_default_storage_base_filenames(0, xml_metadata_database_record,ns_xml,spec,sql);
 	xml_metadata_database_record.save_to_db(xml_metadata_database_record.id,&sql);
-	sql << "UPDATE animal_storyboard SET metadata_id=" << xml_metadata_database_record.id
-	<<	" WHERE region_id = " << spec.region_id
-	<< " AND sample_id = " << spec.sample_id << " AND experiment_id = " << spec.experiment_id
-	<< " AND using_by_hand_annotations = " << (spec.use_by_hand_annotations?"1":"0") 
-	<< " AND movement_event_used=" << (long)spec.event_to_mark  
-	<< " AND aligned_by_absolute_time = " << (spec.use_absolute_time?"1":"0")
-	<< " AND images_chosen_from_time_of_last_death = " << (spec.choose_images_from_time_of_last_death?"1":"0")
-	<< " AND image_delay_time_after_event = " << spec.delay_time_after_event;
+	sql << "UPDATE animal_storyboard SET metadata_id=" << xml_metadata_database_record.id << " WHERE " << generate_sql_query_where_clause_for_specification(spec);
 	sql.send_query();
 }
 bool ns_experiment_storyboard_manager::load_subimages_from_db(const ns_experiment_storyboard_spec & spec,ns_sql & sql){
-	sql << "SELECT id, image_id, metadata_id, number_of_sub_images FROM animal_storyboard WHERE region_id = " << spec.region_id
-		<< " AND sample_id = " << spec.sample_id << " AND experiment_id = " << spec.experiment_id
-		<< " AND using_by_hand_annotations = " << (spec.use_by_hand_annotations?"1":"0") 
-		<< " AND movement_event_used=" << (long)spec.event_to_mark  
-		<< " AND aligned_by_absolute_time = " << (spec.use_absolute_time?"1":"0")
-		<< " AND images_chosen_from_time_of_last_death = " << (spec.choose_images_from_time_of_last_death?"1":"0")
-		<< " AND image_delay_time_after_event = " << spec.delay_time_after_event;
+	sql << "SELECT id, image_id, metadata_id, number_of_sub_images FROM animal_storyboard WHERE " << generate_sql_query_where_clause_for_specification(spec);
 	ns_sql_result res;
 	sql.get_rows(res);
 	sub_images.resize(0);		
@@ -2036,18 +2045,26 @@ bool ns_experiment_storyboard_manager::load_subimages_from_db(const ns_experimen
 		}
 	}
 	catch(ns_ex & ex){
-		sql << "DELETE FROM animal_storyboard WHERE region_id = " << spec.region_id
-		<< " AND sample_id = " << spec.sample_id << " AND experiment_id = " << spec.experiment_id
-		<< " AND using_by_hand_annotations = " << (spec.use_by_hand_annotations?"1":"0") 
-		<< " AND movement_event_used=" << (long)spec.event_to_mark  
-		<< " AND aligned_by_absolute_time = " << spec.use_absolute_time
-		<< " AND images_chosen_from_time_of_last_death = " << (spec.choose_images_from_time_of_last_death?"1":"0")
-		<< " AND image_delay_time_after_event = " << spec.delay_time_after_event;
+		sql << "DELETE FROM animal_storyboard WHERE " << generate_sql_query_where_clause_for_specification(spec);
 		sql.send_query();
 		throw ex;
 	}
 	return true;
 }
+
+ std::string ns_experiment_storyboard_manager::generate_sql_query_where_clause_for_specification(const ns_experiment_storyboard_spec & spec) {
+	 ns_text_stream_t ex;
+	 ex << "  region_id = " << spec.region_id
+		 << " AND sample_id = " << spec.sample_id << " AND experiment_id = " << spec.experiment_id
+		 << " AND using_by_hand_annotations = " << (spec.use_by_hand_annotations ? "1" : "0")
+		 << " AND movement_event_used=" << (long)spec.event_to_mark
+		 << " AND aligned_by_absolute_time = " << (spec.use_absolute_time ? "1" : "0")
+		 << " AND images_chosen_from_time_of_last_death = " << (spec.choose_images_from_time_of_last_death ? "1" : "0")
+		 << " AND image_delay_time_after_event = " << spec.delay_time_after_event;
+	 return ex.text();
+}
+
+
 void ns_experiment_storyboard_manager::create_records_and_storage_for_subimages(const unsigned long number_of_subimages,const ns_experiment_storyboard_spec & spec,ns_sql & sql, const bool create_if_missing){
 	sub_images.resize(number_of_subimages);
 	for (unsigned int i = 0; i < sub_images.size(); i++){
@@ -2068,17 +2085,11 @@ void ns_experiment_storyboard_manager::create_records_and_storage_for_subimages(
 				<< ", number_of_sub_images = " << sub_images.size();
 			sql.send_query();
 		}
-		get_default_storage_base_filenames(i,sub_images[i],ns_xml,spec,sql);
+		get_default_storage_base_filenames(i,sub_images[i],ns_tiff_lzw,spec,sql);
 		sub_images[i].save_to_db(sub_images[i].id,&sql);
 	}
 
-	sql << "DELETE FROM animal_storyboard WHERE region_id = " << spec.region_id
-		<< " AND sample_id = " << spec.sample_id << " AND experiment_id = " << spec.experiment_id
-		<< " AND using_by_hand_annotations = " << (spec.use_by_hand_annotations?"1":"0") 
-		<< " AND movement_event_used=" << (long)spec.event_to_mark  
-		<< " AND aligned_by_absolute_time = " << (spec.use_absolute_time?"1":"0")
-		<< " AND images_chosen_from_time_of_last_death = " << (spec.choose_images_from_time_of_last_death?"1":"0")
-		<< " AND image_delay_time_after_event = " << spec.delay_time_after_event
+	sql << "DELETE FROM animal_storyboard WHERE " << generate_sql_query_where_clause_for_specification(spec)
 		<< " AND storyboard_sub_image_number >= " << sub_images.size();
 	sql.send_query();
 }

@@ -4008,7 +4008,7 @@ void ns_analyzed_image_time_path::copy_aligned_path_to_registered_image(const ns
 
 		if (!chunk.forward() || !elements[i].registered_image_is_loaded() || (i > ns_analyzed_image_time_path::alignment_time_kernel_width && i > this->first_stationary_timepoint()))
 			elements[i].initialize_registered_images(prop, memory_pool->registered_image_pool);
-		else cerr << "Skipping reg im init";
+		//else cerr << "Skipping reg im init";
 
 		if (elements[i].path_aligned_images == 0)
 			throw ns_ex("Encountered an unloaded path aligned image!");
@@ -5957,8 +5957,13 @@ void ns_time_path_image_movement_analyzer::generate_death_aligned_movement_postu
 	}*/
 
 	//now go through each measurement time for the solution
+	unsigned long last_o = 0;
 	for (unsigned long t = 0; t < aligned_size; t++){
-		cerr << (100*t)/aligned_size << "%...";
+		unsigned long o2((100 * t) / aligned_size);
+		if (o2 - last_o >= 5) {
+			last_o - o2;
+			image_server_const.add_subtext_to_current_event(ns_to_string(o2)+"%...",&sql);
+		}
 
 		ns_movement_posture_visualization_summary vis_summary;
 		vis_summary.region_id = region_id;

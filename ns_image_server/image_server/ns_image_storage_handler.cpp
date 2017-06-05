@@ -1226,8 +1226,10 @@ ns_file_location_specification ns_image_storage_handler::get_file_specification_
 	ns_64_bit sample_id,experiment_id;
 	ns_region_info_lookup::get_region_info(region_info_id,sql,region_name,sample_name,sample_id,experiment_name,experiment_id);
 	spec.partition = get_partition_for_experiment_int(experiment_id,sql);
+	spec.filename = experiment_name + "=" + sample_name + "=" + region_name;
+	
 	if (data_source.size() > 0)
-		spec.filename = experiment_name +"="+sample_name+"="+region_name + "=" + data_source;
+		spec.filename += std::string("=") + data_source;
 	ns_add_image_suffix(spec.filename, ns_csv);
 	return spec;
 }

@@ -227,15 +227,15 @@ void ns_experiment_storyboard_timepoint::load_images(bool use_color,ns_sql & sql
 			if (worms[j]->region_position_in_source_image == sorted_events[i].e->annotation_whose_image_should_be_used.position){
 				if (worms[j]->interpolated != sorted_events[i].e->annotation_whose_image_should_be_used.inferred_animal_location){
 					current_worm_in_incorrect_image = worms[j];
-					cerr << "Found worm in incorrect image.\n";
+					image_server.add_subtext_to_current_event("Found worm in incorrect image.\n", &sql);
 					if (sorted_events[i].e->image.properties().width > sorted_events[i].e->image_image_size().x ||
 						sorted_events[i].e->image.properties().height > sorted_events[i].e->image_image_size().y)
-						cerr << "Incorrect image had an incorrect size: " << sorted_events[i].e->image.properties().width << "," 
-																						<< sorted_events[i].e->image.properties().height
-																						 << " vs an expected " <<  
-																						 sorted_events[i].e->image_image_size().x << 
-																						 "," <<
-																					  sorted_events[i].e->image_image_size().y;
+						image_server.add_subtext_to_current_event(std::string("Incorrect image had an incorrect size: ") + ns_to_string(sorted_events[i].e->image.properties().width) + "," 
+																						+ ns_to_string(sorted_events[i].e->image.properties().height)
+																						 +" vs an expected " + 
+							ns_to_string(sorted_events[i].e->image_image_size().x)+
+																						 "," +
+							ns_to_string(sorted_events[i].e->image_image_size().y),&sql);
 				}
 				else{
 					current_worm = worms[j];	
@@ -616,6 +616,57 @@ ns_experiment_storyboard_compiled_event_set::ns_experiment_storyboard_compiled_e
 	//spec needs to be initialized, but it it has it's own default initializer to do this, so we're fine.
 }
 
+void ns_experiment_storyboard::check_that_all_time_path_information_is_valid(ns_sql & sql) {
+	build_worm_detection_id_lookup_table(sql);
+	std::set<ns_64_bit> region_ids;
+	for (unsigned i = 0; i < divisions.size(); i++) {
+		for (unsigned int j = 0; j < divisions[i].events.size(); j++) {
+			region_ids.insert(region_ids.begin(), divisions[i].events[j].event_annotation.region_info_id);
+		}
+	}
+	std::vector<ns_ex> unfixable_errors;
+	for (std::set<ns_64_bit>::iterator id = region_ids.begin(); id != region_ids.end(); id++) {
+		/*std::map<ns_64_bit, std::map<ns_64_bit, ns_reg_info> >::const_iterator p = worm_detection_id_lookup.find(*id);
+		if (p == worm_detection_id_lookup.end())
+			throw ns_ex("Could not find region id ") << *id << " in worm detection table.";*/
+		try {
+			ns_image_server_image im = ns_time_path_image_movement_analyzer::get_movement_quantification_id(*id, sql);
+			ns_acquire_for_scope<ifstream> i(image_server_const.image_storage.request_metadata_from_disk(im, false, &sql));
+			i().close();
+			i.release();
+		}
+		catch (ns_ex & ex) {
+			sql << "SELECT r.name,s.name FROM sample_region_image_info as r, capture_samples as s WHERE r.id = " << *id << " AND r.sample_id = s.id";
+			ns_sql_result res;
+			sql.get_rows(res);
+			std::string name = ns_to_string(*id);
+			if (res.size() > 0)
+				name = res[0][1] + "::" + res[0][0];
+
+			try {
+				ns_image_server_image im = image_server_const.image_storage.get_region_movement_metadata_info(*id, "time_path_movement_image_analysis_quantification", sql);
+				ns_acquire_for_scope<ifstream> i(image_server_const.image_storage.request_metadata_from_disk(im, false, &sql));
+				i().close();
+				i.release();
+				im.save_to_db(im.id, &sql);
+				sql << "UPDATE sample_region_image_info SET movement_image_analysis_quantification_id = " << im.id << " WHERE id = " << *id;
+				sql.send_query();
+				image_server.add_subtext_to_current_event(std::string("Fixed bad db record for region ") + name + ".  This is probably OK, but you may want to regenerate the region if further problems are encountered.", &sql);
+			}
+			catch (ns_ex & ex2) {
+				unfixable_errors.push_back(ns_ex("Could not fix the error in region ") << name <<": " << ex.text() << "(" << ex2.text() << ")");
+			}
+		}
+	}
+	if (!unfixable_errors.empty()) {
+		ns_ex ex;
+		for (unsigned int i = 0; i < unfixable_errors.size(); i++)
+			ex << unfixable_errors[i].text() << "\n";
+		throw ex;
+	}
+}
+
+
 //unsigned long cc(0); 
 bool ns_experiment_storyboard::load_events_from_annotation_compiler(const ns_loading_type & loading_type,const ns_death_time_annotation_compiler & all_events,const bool use_absolute_time, const bool state_annotations_available_in_loaded_annotations,const unsigned long minimum_distance_to_juxtipose_neighbors,ns_sql & sql){
 	first_time = ns_current_time();
@@ -637,7 +688,7 @@ bool ns_experiment_storyboard::load_events_from_annotation_compiler(const ns_loa
 	unsigned long number_of_observed_deaths(0);
 	unsigned long number_of_multi_stationary_event_animals(0);
 	unsigned long cc(0);
-	cout << "Aggregating Region Events.\n";
+	image_server.add_subtext_to_current_event("Aggregating Region Events.\n",&sql);
 	ns_machine_analysis_data_loader region_state_annotations(true);
 	unsigned long last_cc(0);
 
@@ -666,7 +717,7 @@ bool ns_experiment_storyboard::load_events_from_annotation_compiler(const ns_loa
 
 		unsigned long cur_cc = (100 * cc) / all_events.regions.size();
 		if (cur_cc - last_cc > 5) {
-			cerr << cur_cc << "%...";
+			image_server_const.add_subtext_to_current_event(ns_to_string(cur_cc) + "%...",&sql);
 			last_cc = cur_cc;
 		}
 		cc++;
@@ -1847,7 +1898,7 @@ bool ns_experiment_storyboard::read_metadata(std::istream & in,ns_sql & sql){
 }
 
 void ns_experiment_storyboard::write_metadata(std::ostream & o) const{
-	cout << " Writing metadata to disk containing " << number_of_images_in_storyboard() << " images.\n";
+	//cout << " Writing metadata to disk containing " << number_of_images_in_storyboard() << " images.\n";
 	ns_xml_simple_writer xml;
 	xml.generate_whitespace();
 	xml.add_header();
@@ -2077,7 +2128,7 @@ bool ns_experiment_storyboard_manager::load_subimages_from_db(const ns_experimen
 	if (res.size() == 0)
 		return false;
 	sub_images.resize(res.size());
-	cout << "Loading " << res.size() << " sub images from disk";
+	//cout << "Loading " << res.size() << " sub images from disk";
 	ns_64_bit m_id(ns_atoi64(res[0][2].c_str()));
 	try{
 		for (unsigned int i = 0; i < res.size(); i++){
@@ -2124,7 +2175,7 @@ void ns_experiment_storyboard_manager::create_records_and_storage_for_subimages(
 			if (!create_if_missing) throw ns_ex("Information for sub_image " ) << i << " was not loaded.";
 			sub_images[i].save_to_db(0,&sql);
 
-			cout << "Creating database record containing " << number_of_sub_images() << " images.\n";
+		//	cout << "Creating database record containing " << number_of_sub_images() << " images.\n";
 			sql << "INSERT INTO animal_storyboard SET region_id = " << spec.region_id
 				<< ",sample_id = " << spec.sample_id << ", experiment_id = " << spec.experiment_id
 				<< ",using_by_hand_annotations = " << (spec.use_by_hand_annotations ? "1" : "0")

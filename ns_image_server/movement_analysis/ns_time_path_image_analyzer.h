@@ -898,6 +898,7 @@ public:
 	unsigned long number_of_timepoints_in_analysis()const { return number_of_timepoints_in_analysis_;}
 	ns_64_bit db_analysis_id() const{return analysis_id;}
 	bool try_to_rebuild_after_failure() const;
+	static ns_image_server_image get_movement_quantification_id(const ns_64_bit region_info_id,ns_sql & sql);
 private:
 
 	unsigned long _number_of_invalid_images_encountered;

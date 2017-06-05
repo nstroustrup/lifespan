@@ -927,6 +927,7 @@ bool ns_processing_job_maintenance_processor::run_job(ns_sql & sql) {
 						}
 						else
 							storyboard_has_valid_worms[j] = true;
+						s.check_that_all_time_path_information_is_valid(sql);
 
 						ns_experiment_storyboard_manager man;
 						man.delete_metadata_from_db(specs[j], sql);

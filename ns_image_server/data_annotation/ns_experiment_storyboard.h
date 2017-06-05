@@ -144,6 +144,7 @@ public:
 	void draw(const unsigned long sub_image_id,ns_image_standard & im,bool use_color,ns_sql & sql);
 
 	bool create_storyboard_metadata_from_machine_annotations(ns_experiment_storyboard_spec spec, const ns_experiment_storyboard_compiled_event_set & compiled_event_set, ns_sql & sql);
+	void check_that_all_time_path_information_is_valid(ns_sql & sql);
 	void save_by_hand_annotations(ns_sql & sql,const ns_death_time_annotation_set & extra_annotations) const;
 
 	static std::string image_suffix(const ns_experiment_storyboard_spec & spec);

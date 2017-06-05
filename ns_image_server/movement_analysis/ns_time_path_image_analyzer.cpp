@@ -1510,10 +1510,8 @@ void ns_time_path_image_movement_analyzer::crop_path_observation_times(const ns_
 		else ++p;
 	}
 }
-
-void ns_time_path_image_movement_analyzer::populate_movement_quantification_from_file(ns_sql & sql,const bool skip_movement_data){
-	
-	sql << "SELECT movement_image_analysis_quantification_id FROM sample_region_image_info WHERE id = " << this->region_info_id;
+ns_image_server_image ns_time_path_image_movement_analyzer::get_movement_quantification_id(const ns_64_bit reg_info_id, ns_sql & sql) {
+	sql << "SELECT movement_image_analysis_quantification_id FROM sample_region_image_info WHERE id = " << reg_info_id;
 	ns_sql_result res;
 	sql.get_rows(res);
 	if (res.size() == 0)
@@ -1522,6 +1520,13 @@ void ns_time_path_image_movement_analyzer::populate_movement_quantification_from
 	im.id = ns_atoi64(res[0][0].c_str());
 	if (im.id == 0)
 		throw ns_ex("Movement quantification data has not been stored in db");
+	return im;
+}
+
+void ns_time_path_image_movement_analyzer::populate_movement_quantification_from_file(ns_sql & sql,const bool skip_movement_data){
+	
+	
+	ns_image_server_image im = get_movement_quantification_id(this->region_info_id,sql);
 	ifstream * i(image_server_const.image_storage.request_metadata_from_disk(im,false,&sql));
 
 	try{

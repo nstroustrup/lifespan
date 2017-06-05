@@ -41,6 +41,9 @@ function gotoBottom(id){
    div.scrollTop = div.scrollHeight;
 }</script>";
 
+if (ns_param_spec($query_string,"q_highlight_id")){
+	$q_highlight_id = $query_string['q_highlight_id'];
+}else $q_highlight_id = 0;
 if (ns_param_spec($_POST,"pause")){
 	$query = "UPDATE processing_job_queue SET paused = 1";
 	$sql->send_query($query);
@@ -67,15 +70,17 @@ else
   $node_id = -1;
 $single_device = $host_id != 0;
 function host_label($res_row){
-	 return $res_row[1] . ' @ ' . $res_row[3] . ( (strlen($res_row[4])>0 )? (" (" . $res_row[5] . ")"): "");
+	 return $res_row[1] . ' @ ' . $res_row[3] . " " . ( (strlen($res_row[4])>0 )? (" (" . $res_row[5] . ")"): "");
 }
 $last_ping_index = 2;
 $query = "SELECT id, name, last_ping,system_hostname,additional_host_description,system_parallel_process_id FROM hosts ORDER BY name";
 $sql->get_row($query,$hosts);
 $host_names = array();
-for ($i = 0; $i < sizeof($hosts); $i++)
+$host_info = array();
+for ($i = 0; $i < sizeof($hosts); $i++){
 	$host_names[$hosts[$i][0]] = host_label($hosts[$i]);
-
+	$host_info[$hosts[$i][0]] = $hosts[$i];
+}
 $query = "SELECT host_id, node_id, current_processing_job_queue_id, current_processing_job_id, state, UNIX_TIMESTAMP(ts), current_output_event_id FROM processing_node_status ORDER BY ts DESC";
 $sql->get_row($query,$processing_node_status);
 
@@ -87,7 +92,7 @@ for ($i = 0; $i < sizeof($processing_node_status); $i++){
 	$processing_jobs_referenced[$processing_node_status[$i][3]] = 1;
 }
 
-$query = "SELECT id, job_id,priority,experiment_id,capture_sample_id,sample_region_info_id,sample_region_id,image_id,processor_id,problem, captured_images_id,job_submission_time,paused FROM processing_job_queue ORDER BY job_submission_time";
+$query = "SELECT id, job_id,priority,experiment_id,capture_sample_id,sample_region_info_id,sample_region_id,image_id,processor_id,problem, captured_images_id,job_submission_time,paused FROM processing_job_queue ORDER BY priority DESC,id DESC LIMIT 1000";
 $sql->get_row($query,$processing_job_queue);
 
 for ($i = 0; $i < sizeof($processing_job_queue); $i++){
@@ -155,19 +160,47 @@ for ($i = 0; $i < sizeof($sample_data); $i++)
 <table cellspacing='0' cellpadding='3' width="100%">
 <tr <?php echo $table_header_color?>><td>Job</td><td>Subject</td><td>Status</td><td>Priority</td><td>Submission Time</td></tr>
 <?php
-	if (sizeof($processing_job_queue) == 0)
+	$cur_time = ns_current_time();
+	if (sizeof($processing_job_queue) == 0){
 	 echo "<tr><td valign=\"top\" bgcolor=\"".$clrs[0] . "\"> There do not appear to be any items on the job queue</td></tr>";
-	 
+}
+
 	for ($i = 0; $i < sizeof($processing_job_queue); $i++){
+	
 	$queue = &$processing_job_queue[$i];
-	$job = &$processing_jobs[$queue[1]];
-    $clrs = $table_colors[$i%2];
+	$job_is_missing = false;
+	if (!ns_param_spec($processing_jobs,$queue[1]))
+	   $job_is_missing = true;
+	else  $job = &$processing_jobs[$queue[1]];
+	
+	$h = $q_highlight_id == $queue[0];
+	$job_is_busy = $queue[8] != 0;
+	$job_is_problem = $queue[9] != 0;
+	$job_is_paused = $queue[12] != 0;
+	$host_id = $queue[8];
+
+	$host_is_offline = $host_id!=0 && (!ns_param_spec($host_info,$host_id) ||
+			    $cur_time - $host_info[$host_id][$last_ping_index] >= $current_device_cutoff);
+	$idle_job = $job_is_problem || $job_is_paused || $host_is_offline || $job_is_missing;
+
+    	$clrs = $table_colors[$i%2];
        echo "<tr><td valign=\"top\" bgcolor=\"".$clrs[0] . "\">";
-       
+       $ft1 = $ft2 = "";
+       if ($h){ $ft1 = "<b>"; $ft2 = "</b>";}
+       if($idle_job){
+	$ft1.="<font color=\"#666666\"><i>";
+	$ft2.="</i></font>";
+       }  
      
-echo $job->get_concise_description();
+       echo $ft1;
+       if (!$job_is_missing)
+       echo $job->get_concise_description();
+       else "(Deleted)";
+       echo $ft2;
        echo" </td>";
        echo "<td valign=\"top\" bgcolor=\"".$clrs[1] . "\">";
+       echo $ft1;
+       if (!$job_is_missing){
        if ($job->region_id != 0){
        		$r = &$regions[$job->region_id];
         	echo $r[3] ."::" .$r[2]. "::". $r[1];
@@ -178,25 +211,33 @@ echo $job->get_concise_description();
        		$r = &$experiment[$job->experiment_id];
         	echo $r[2]. "::". $r[1] ;
        }
+       }
        if ($queue[6] != 0)
        	echo " id: " . $queue[7];
        	if ($queue[7] != 0)
        	echo " id: " . $queue[7];
+	echo $ft2;
        echo " </td>";
        echo "<td valign=\"top\" bgcolor=\"".$clrs[0] . "\">";
-       if ($queue[8] != 0)
-       	echo "<a href=\"view_hosts_log.php?host_id=" . $queue[8] . "\">(Busy)</a>";
-       if ($queue[9] != 0)
+       echo $ft1;
+       if ($job_is_busy)
+       	echo "<a href=\"view_hosts_log.php?host_id=" . $host_id . "\">(Busy)</a>";
+       if ($job_is_problem)
        	echo "<a href=\"view_hosts_log.php?event_id=" . $queue[9] . "\">(Problem)</a>";
-       if ($queue[12])
+       if ($job_is_paused)
        	echo "(Paused)";
+	if ($job_is_missing){
+	echo "(Job Deleted)";
+	}
+	echo $ft2;
        echo " </td>";
-       echo "<td valign=\"top\" bgcolor=\"".$clrs[1] . "\">";
+       echo "<td valign=\"top\" bgcolor=\"".$clrs[1] . "\">$ft1";
        echo $queue[2];
-       echo " </td>";
-       echo "<td valign=\"top\" bgcolor=\"".$clrs[0] . "\">";
+       echo " $ft2</td>";
+       echo "<td valign=\"top\" bgcolor=\"".$clrs[0] . "\">$ft1";
        echo format_time($queue[11]);
-       echo " </td>";
+
+       echo " $ft2</td>";
 
 	}
 ?>
@@ -218,20 +259,28 @@ bs?')">
         for ($i = 0; $i < sizeof($processing_node_status); $i++){
 
         $p = &$processing_node_status[$i];
-        if ( ($cur_time - $p[$last_ping_index]) >= $current_device_cutoff)
+	$node_last_ping = $p[5];
+	$host_last_ping = ns_param_spec($host_info,$p[0])?$host_info[$p[0]][$last_ping_index]:0;
+	$most_recent_ping = max($node_last_ping,$host_last_ping);
+	//echo ($cur_time - $most_recent_ping) . "<br>";
+        if ( ($cur_time - $most_recent_ping) >= $current_device_cutoff)
            continue;
 	   $num_displayed++;
     $clrs = $table_colors[$i%2];
-       echo "<tr><td valign=\"top\" bgcolor=\"".$clrs[0] . "\">";
-       echo $cur_time . " " . $p[$last_ping_index];
+       echo "<tr><td valign=\"top\" bgcolor=\"".$clrs[0] . "\" >";
+       //echo $cur_time . " " . $p[$last_ping_index];
        if (ns_param_spec($host_names,$p[0]))
           echo  $host_names[$p[0]];
-         echo "HID" . $p[0];
+         else echo "HID" . $p[0];
          echo  " p" . $p[1] ." </td>";
-       echo "<td valign=\"top\" bgcolor=\"".$clrs[1] . "\">";
+       echo "<td valign=\"top\" bgcolor=\"".$clrs[1] . "\" >";
        if ($p[2]!='0'){
           if ($p[3]!='0'){
-             echo "Job " . $p[2] . " queue " . $p[3];
+	     if (ns_param_spec($processing_jobs,$p[3])){
+	     	     echo "<a href=\"view_processing_queue_status.php?q_highlight_id=$p[2]\">";
+             	     echo $processing_jobs[ $p[3]]->get_concise_description(); 
+	     	     echo "</a>";
+	     }else echo "Job information was deleted";
           }
        }
        echo " </td>";
@@ -251,7 +300,7 @@ if ($refresh_time ==0)
 else if ($refresh_time < 2)
   $r = 0;
 else $r = $refresh_time-2;
-	echo "<a href=\"view_cluster_status.php?h=" . $host_id. "&rt=" . $r. "\">(monitor in real time)</a>";
+	echo "<a href=\"view_processing_queue_status.php?rt=" . $r. "\">(monitor in real time)</a>";
 ?>
    <script type="text/javascript">
 

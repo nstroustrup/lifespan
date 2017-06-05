@@ -751,7 +751,7 @@ if (sizeof($all_animal_type_values) > 1){
 		echo "</font>";
 }
 	if (sizeof($devices_used) > 1){
-		echo "<br>New Job for Device:<br><font size=\"-1\">";
+		echo "New Job for a Specific Device:<br><font size=\"-1\">";
 		$k = 0;
 		foreach($devices_used as $s){
 			echo "<a href=\"view_processing_job.php?job_id=0&experiment_id= $experiment_id&sample_id=all&region_id=all&all_new=1&device=".urlencode($s)."\">[$s]</a> ";
@@ -760,6 +760,8 @@ if (sizeof($all_animal_type_values) > 1){
 		}
 		echo "</font><br>";
 	}
+echo "<BR>";
+echo "<a href=\"view_processing_queue_status.php\">[View Running Processing Jobs]</a>";
 ?>
 </td>
 </tr>

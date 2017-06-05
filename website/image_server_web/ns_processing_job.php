@@ -688,7 +688,7 @@ class ns_processing_job{
 	}
 
 	function get_concise_description(){
-	  global $ns_processing_tasks, $ns_maintenance_task_labels, $number_of_operations;
+	  global $ns_processing_tasks, $ns_maintenance_task_labels, $number_of_operations,$ns_maintenance_flag_labels;
 	  $res = "";
 	  if ($this->operations[$ns_processing_tasks["ns_process_compile_video"]] != 0){
 		    $vid = 1;
@@ -696,14 +696,15 @@ class ns_processing_job{
 	  }
 
 	  if ($this->maintenance_task != 0){
-		$res.= "Maintenance task: ";
+
 		$res .= $ns_maintenance_task_labels[$this->maintenance_task];
-		if($this->maintenance_flag != 0)
+	
+		if ($ns_maintenance_flag_labels[$this->maintenance_flag]!='')
 			$res.=" (".$ns_maintenance_flag_labels[$this->maintenance_flag] . ")";
 	  }
 	  $order = 1;
 	  $a = floor($number_of_operations/2)+1;
-	  $res .= "(";
+	 
 	  if(sizeof($this->operations > 0)){
 		for ($i = 0; $i < sizeof($this->operations); $i++){
 			if ($this->operations[(int)$i] == 0 ||
@@ -717,7 +718,7 @@ class ns_processing_job{
 				$res .=",";
 			$order++;
 		}
-		$res.=")";
+	
 		}
 	return $res;
 	}

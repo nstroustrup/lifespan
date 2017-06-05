@@ -108,8 +108,38 @@ void analyze_worm_movement_across_frames(const ns_processing_job & job, ns_image
 		//load in worm images and analyze them for non-translating animals for posture changes
 		if (log_output)
 			image_server->register_server_event(ns_image_server_event("Analyzing images for animal posture changes."), &sql);
+		unsigned long attempt_count(0);
+		while (true) {
+			try {
+				time_path_image_analyzer.process_raw_images(job.region_id, time_path_solution, time_series_denoising_parameters, &death_time_estimator(), sql, -1, true);
+				break;
+			}
+			catch (ns_ex & ex) {
+				if (attempt_count > 1 || !time_path_image_analyzer.try_to_rebuild_after_failure())
+					throw ex;
+				else attempt_count++;
+				
+				//if a problem is encountered loading images from disk,
+				//we may be able to recover simply by excluding those images.
+				//In that case, we don't want to have to rebuild all the prefixes and inferred images, which is a very slow process.
+				//so, we simply remove the broken timepoints and try again.
+				ns_time_path_solver_parameters solver_parameters(ns_time_path_solver_parameters::default_parameters(job.region_id, sql));
 
-		time_path_image_analyzer.process_raw_images(job.region_id, time_path_solution, time_series_denoising_parameters, &death_time_estimator(), sql, -1, true);
+				time_path_solution.remove_invalidated_points(job.region_id, solver_parameters, sql);
+
+
+				time_path_solution.save_to_db(job.region_id, sql);
+				ns_acquire_for_scope<std::ostream> position_3d_file_output(
+					image_server->results_storage.animal_position_timeseries_3d(
+						results_subject, sql, ns_image_server_results_storage::ns_3d_plot
+					).output()
+				);
+				time_path_solution.output_visualization_csv(position_3d_file_output());
+				position_3d_file_output.release();
+
+				image_server->results_storage.write_animal_position_timeseries_3d_launcher(results_subject, ns_image_server_results_storage::ns_3d_plot, sql);
+			}
+		}
 		time_path_image_analyzer.ns_time_path_image_movement_analyzer::obtain_analysis_id_and_save_movement_data(job.region_id, sql,
 																			ns_time_path_image_movement_analyzer::ns_require_existing_record,
 																			ns_time_path_image_movement_analyzer::ns_write_data );

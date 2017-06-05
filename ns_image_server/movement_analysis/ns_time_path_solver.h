@@ -85,33 +85,33 @@ struct ns_time_path_timepoint{
 	ns_64_bit sample_region_image_id;
 	std::vector<ns_time_path_element> elements;
 };
-class ns_time_path_solution{
+class ns_time_path_solution {
 public:
 	static long default_length_of_fast_moving_prefix();
-	ns_time_path_solution():detection_results(0),worms_loaded(false){}
-	~ns_time_path_solution(){if (detection_results != 0)delete detection_results; detection_results = 0;}
-	static void output_visualization_csv_header(std::ostream & o){	
+	ns_time_path_solution() :detection_results(0), worms_loaded(false) {}
+	~ns_time_path_solution() { if (detection_results != 0)delete detection_results; detection_results = 0; }
+	static void output_visualization_csv_header(std::ostream & o) {
 		o << "t,t_abs,x,y,w,h,path_group_id,path_id,slowly_moving,low_temporal_resolution,hand_annotation,inferred,before_first_stationary,number_of_extra_worms,movement\n";
 	};
-	static void output_visualization_csv_data(std::ostream & o,const float relative_time,const unsigned long absolute_time,const ns_vector_2i & pos, const ns_vector_2i & size,
-											  const long path_id,const long path_group_id,const bool slowly_moving,
-											  const bool low_temporal_resolution,const bool by_hand_annotation, const bool inferred_worm,const bool before_first_stationary_measurement, const unsigned long number_of_extra_worms,
-											  const ns_movement_state & movement){
-	  o << relative_time << "," << absolute_time << "," << pos.x << "," << pos.y << "," << size.x << "," << size.y << ","
-		<< path_id << "," << (path_group_id?"1":"0") << "," << (slowly_moving?"1":"0") << "," << (low_temporal_resolution?"1":"0") << "," << (by_hand_annotation?"1":"0") << ","
-		<< (inferred_worm?"1":"0") << "," << (before_first_stationary_measurement?"1":"0") << ","
-		<< number_of_extra_worms << "," << (int)movement << "\n";
+	static void output_visualization_csv_data(std::ostream & o, const float relative_time, const unsigned long absolute_time, const ns_vector_2i & pos, const ns_vector_2i & size,
+		const long path_id, const long path_group_id, const bool slowly_moving,
+		const bool low_temporal_resolution, const bool by_hand_annotation, const bool inferred_worm, const bool before_first_stationary_measurement, const unsigned long number_of_extra_worms,
+		const ns_movement_state & movement) {
+		o << relative_time << "," << absolute_time << "," << pos.x << "," << pos.y << "," << size.x << "," << size.y << ","
+			<< path_id << "," << (path_group_id ? "1" : "0") << "," << (slowly_moving ? "1" : "0") << "," << (low_temporal_resolution ? "1" : "0") << "," << (by_hand_annotation ? "1" : "0") << ","
+			<< (inferred_worm ? "1" : "0") << "," << (before_first_stationary_measurement ? "1" : "0") << ","
+			<< number_of_extra_worms << "," << (int)movement << "\n";
 	}
 	void output_visualization_csv(std::ostream & o);
 	void output_mathematica_file(std::ostream & o);
 	bool worms_loaded;
-	bool paths_loaded()const {return paths.size() != 0;}
-	ns_time_path_element & element(const ns_time_element_link & e){return timepoints[e.t_id].elements[e.index];}
-	
-	const ns_time_path_element & element(const ns_time_element_link & e) const {return timepoints[e.t_id].elements[e.index];}
+	bool paths_loaded()const { return paths.size() != 0; }
+	ns_time_path_element & element(const ns_time_element_link & e) { return timepoints[e.t_id].elements[e.index]; }
 
-	const unsigned long & time(const ns_time_element_link & e) const{return timepoints[e.t_id].time;}
-	unsigned long & time(const ns_time_element_link & e){return timepoints[e.t_id].time;}
+	const ns_time_path_element & element(const ns_time_element_link & e) const { return timepoints[e.t_id].elements[e.index]; }
+
+	const unsigned long & time(const ns_time_element_link & e) const { return timepoints[e.t_id].time; }
+	unsigned long & time(const ns_time_element_link & e) { return timepoints[e.t_id].time; }
 
 	void fill_gaps_and_add_path_prefixes(const unsigned long prefix_length);
 	void remove_inferred_animal_locations(const unsigned long timepoint_index, bool delete_uninferred_animals_also);
@@ -119,29 +119,32 @@ public:
 	std::vector<ns_time_path> paths;
 	std::vector<ns_time_path_group> path_groups;
 
-	void clear(){
+	void clear() {
 		if (detection_results != 0)delete detection_results;
 		detection_results = 0;
 		timepoints.resize(0);
 		paths.resize(0);
 		path_groups.resize(0);
 		unassigned_points.stationary_elements.resize(0);
-		unassigned_points.center = ns_vector_2i(0,0);
+		unassigned_points.center = ns_vector_2i(0, 0);
 		worms_loaded = false;
 	}
-	void unlink_detection_results(){
+	void unlink_detection_results() {
 		detection_results = 0;
 	}
 	ns_time_path unassigned_points;
 
-	void set_results(ns_worm_detection_results_set * results){if (detection_results != 0)delete detection_results; detection_results = results;}
+	void set_results(ns_worm_detection_results_set * results) { if (detection_results != 0)delete detection_results; detection_results = results; }
 
+	void remove_invalidated_points(const ns_64_bit region_id, const ns_time_path_solver_parameters &param, ns_sql & sql);
 	void save_to_db(const ns_64_bit region_id, ns_sql & sql) const;
 	void load_from_db(const ns_64_bit region_id, ns_sql & sql, bool load_directly_from_disk_without_db);
 	void save_to_disk(std::ostream & o) const;
 	void load_from_disk(std::istream & o);
 	void check_for_duplicate_events();
+
 private:
+
 	ns_worm_detection_results_set * detection_results;
 };
 
@@ -365,6 +368,8 @@ public:
 
 	ns_time_path_solver():detection_results(new ns_worm_detection_results_set){}
 	~ns_time_path_solver(){if (detection_results != 0) delete detection_results; detection_results = 0;}
+
+	static void load_worm_detection_ids(const ns_64_bit region_id, ns_sql & sql, unsigned long & time_of_last_valid_sample, ns_sql_result & res);
 private:
 	//all measurement times, each containing the objects detected at that time
 	std::vector<ns_time_path_solver_timepoint> timepoints;

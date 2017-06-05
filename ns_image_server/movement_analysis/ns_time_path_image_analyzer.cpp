@@ -242,7 +242,7 @@ void ns_analyzed_image_time_path_element_measurements::zero(){
 
 class ns_chunk_generator {
 public:
-	ns_chunk_generator(const unsigned long chunk_size_, const ns_analyzed_image_time_path & path_) :path(&path_), chunk_size(chunk_size_), current_chunk(0, 0) {}
+	ns_chunk_generator(const unsigned long chunk_size_, const ns_analyzed_image_time_path & path_, const ns_64_bit group_id_) :path(&path_), chunk_size(chunk_size_), current_chunk(0, 0),group_id(group_id_) {}
 
 
 	void setup_first_chuck_for_forwards_registration() {
@@ -307,6 +307,8 @@ public:
 		for (; current_chunk.stop_i >= 0 && path->element(current_chunk.stop_i).path_aligned_image_is_loaded(); current_chunk.stop_i--);
 
 		const unsigned long cur_size(current_chunk.start_i - current_chunk.stop_i);
+	//	if ((this->group_id == 0 || this->group_id == 12) && cur_size != 0)
+	//		cout << "g[" << group_id << "]=" << cur_size << "\n";
 		if (current_chunk.start_i > -1 &&
 			(cur_size >= chunk_size ||
 				current_chunk.stop_i == -1)) {
@@ -327,6 +329,7 @@ private:
 	ns_analyzed_time_image_chunk current_chunk;
 	const ns_analyzed_image_time_path * path;
 	ns_analyzed_time_image_chunk first_chunk_;
+	const ns_64_bit group_id;
 
 };
 void ns_time_path_image_movement_analyzer::delete_from_db(const ns_64_bit region_id,ns_sql & sql){
@@ -562,8 +565,11 @@ void ns_time_path_image_movement_analyzer::run_group_for_current_backwards_round
 	const unsigned int & i(group_id), &j(path_id);
 	ns_analyzed_time_image_chunk chunk;
 
-	if (!shared_state->chunk_generators[i][j].backwards_update_and_check_for_new_chunk(chunk))
+	if (!shared_state->chunk_generators[i][j].backwards_update_and_check_for_new_chunk(chunk)) {
+	//	if (i == 0 || i == 12)
+	//		cout << "!(" << group_id << ")";
 		return;
+	}
 
 	shared_state->open_object_count++;
 	if (abs(chunk.start_i - chunk.stop_i) != 1)
@@ -804,6 +810,11 @@ void ns_analyzed_image_time_path::calculate_stabilized_worm_neighborhood(ns_imag
 	stabilized_worm_region_total = 0;
 }
 
+
+
+bool ns_time_path_image_movement_analyzer::try_to_rebuild_after_failure() const {return  _number_of_invalid_images_encountered*10 <= number_of_timepoints_in_analysis_; }
+
+
 void ns_time_path_image_movement_analyzer::process_raw_images(const ns_64_bit region_id,const ns_time_path_solution & solution_, const ns_time_series_denoising_parameters & times_series_denoising_parameters,const ns_analyzed_image_time_path_death_time_estimator * e,ns_sql & sql, const long group_number,const bool write_status_to_db){
 	region_info_id = region_id; 
 	obtain_analysis_id_and_save_movement_data(region_id, sql, ns_force_creation_of_new_db_record,ns_do_not_write_data);
@@ -859,7 +870,7 @@ void ns_time_path_image_movement_analyzer::process_raw_images(const ns_64_bit re
 				if (!ns_skip_low_density_paths || !groups[i].paths[j].is_low_density_path())
 					number_of_paths_to_consider++;
 				else number_of_paths_to_ignore++;
-				shared_state.chunk_generators[i].push_back(ns_chunk_generator(chunk_size,groups[i].paths[j]));
+				shared_state.chunk_generators[i].push_back(ns_chunk_generator(chunk_size,groups[i].paths[j],i));
 			}
 		}
 		if (number_of_paths_to_consider == 0)
@@ -950,7 +961,7 @@ void ns_time_path_image_movement_analyzer::process_raw_images(const ns_64_bit re
 				for (long t = (long)region_image_specifications.size() - 1; t >= 0; t--) {
 
 					//output_allocation_state("bk",region_image_specifications.size() - 1 - t, debug_out);
-
+					//cout << "t=" << t << " ";
 					if (debug_output_skip == number_of_repeats_required || t == 0 && current_round == 0) {
 						int r( (100 * (region_image_specifications.size() - 1 - t + region_image_specifications.size()*current_round)) / (region_image_specifications.size()*number_of_repeats_required) );
 						if (r >= last_r + 5) {
@@ -969,12 +980,17 @@ void ns_time_path_image_movement_analyzer::process_raw_images(const ns_64_bit re
 					try {
 						//we obtain all the image data from disk that required to run the image analysis for the current chunk.
 						//it is loaded into the groups[i].paths[j] data structures.
+						//cout << "li(" << stop_t + 1 <<","<< t << ")";
 						for (long t1 = stop_t + 1; t1 < t + 1; t1++) {
+
+							//throw ns_ex("test");
 							load_region_visualization_images(t1, t1 + 1, start_group, stop_group, sql, false, true, ns_analyzed_image_time_path::ns_lrv_flag_and_images);
 
 						}
 					}
 					catch (ns_ex & ex) {
+						//if we find an image error, we go back and go through /all/ images to root out all errors.  
+						//Aftwerwards, the _number_of_invalid_images_encountered field can be inspected to see if an attempt to rebuild is worthwhile.
 						ns_ex ex_f(ex);
 						image_server_const.add_subtext_to_current_event(ns_image_server_event("Found an error; doing a consistancy check on all images in the region: ") << ex.text(),&sql);
 						try {
@@ -985,8 +1001,6 @@ void ns_time_path_image_movement_analyzer::process_raw_images(const ns_64_bit re
 						}
 						throw ex_f;
 					}
-
-
 
 					//now we have all the relevant image data loaded into path data structures for
 					//the time points specified in the current chunk.
@@ -1112,6 +1126,8 @@ void ns_time_path_image_movement_analyzer::process_raw_images(const ns_64_bit re
 				for (unsigned int t = 0; t < region_image_specifications.size(); t += chunk_size) {
 					if (debug_output_skip == number_of_repeats_required || t == 0 && current_round == 0) {
 						int r = (100 * (t + region_image_specifications.size()*current_round)) / (region_image_specifications.size()*number_of_repeats_required);
+						//if (r > 100)
+						//	cerr << "YIKES!";
 						if (r >= last_r + 5) {
 							image_server_const.add_subtext_to_current_event(ns_to_string(r) + "%...", write_status_to_db ? (&sql) : 0);
 							last_r = r;
@@ -1290,7 +1306,7 @@ void ns_time_path_image_movement_analyzer::load_from_solution(const ns_time_path
 	solution = &solution_;
 	groups.clear();
 	extra_non_path_events.clear();
-
+	_number_of_invalid_images_encountered = 0;
 	if (region_info_id == 0)
 		throw ns_ex("load_from_solution()::No Region ID Specified!");
 	
@@ -3160,7 +3176,8 @@ bool ns_analyzed_image_time_path::populate_images_from_region_visualization(cons
 	for (unsigned int k = 0; k < elements.size(); k++){
 		if (time != elements[k].absolute_time) continue;
 		ns_analyzed_image_time_path_element & e(elements[k]);
-		//cerr << "P" << this->group_id << "(" << k << ")";
+	//	if (group_id.group_id == 0 || group_id.group_id == 12)
+	//		cerr << "#" << group_id.group_id << "(" << k << ")";
 		const bool was_previously_loaded(e.path_aligned_image_is_loaded());
 		try{
 			if (!just_flag_elements_as_loaded && !just_do_a_consistancy_check && !was_previously_loaded) //don't do the check for double initilaizing if we're running a consistancy check 
@@ -3264,10 +3281,17 @@ bool ns_analyzed_image_time_path::populate_images_from_region_visualization(cons
 				e.release_path_aligned_images(memory_pool->aligned_image_pool);
 			}
 		}
+		catch (ns_ex & ex) {
+			if (!just_do_a_consistancy_check && !was_previously_loaded) {
+				e.release_path_aligned_images(memory_pool->aligned_image_pool);
+			}
+			throw ex;
+		}
 		catch(...){
 			if (!just_do_a_consistancy_check && !was_previously_loaded){
 				e.release_path_aligned_images(memory_pool->aligned_image_pool);
 			}
+			throw;
 		}
 		return true;
 	}
@@ -4814,6 +4838,8 @@ std::string ns_analyzed_image_time_path::volatile_storage_name(const unsigned lo
 		+ ns_to_string(this->group_id.path_id) + "=" + (flow?"flow":"im") + "=" + ns_to_string(rep_id) + "=" + ns_to_string(unique_process_id) + ".tif";
 }
 void ns_analyzed_image_time_path::reset_movement_image_saving() {
+	if (this->group_id.group_id == 0 || group_id.group_id == 12)
+	//cout << "Deleting group" << this->group_id.group_id << "\n";
 	ns_safe_delete(output_reciever);
 	ns_safe_delete(flow_output_reciever);
 	save_flow_image_buffer.resize(ns_image_stream_buffer_properties(0, 0));
@@ -4829,7 +4855,8 @@ void ns_analyzed_image_time_path::save_movement_images(const ns_analyzed_time_im
 	//handle small or non-existant images
 	unsigned long number_of_frames_to_write(0);
 	if (backwards_image_handling == ns_only_output_backwards_images)
-		number_of_frames_to_write = this->first_stationary_timepoint();
+		number_of_frames_to_write = this->first_stationary_timepoint();  //this returns the index of the first stationary timepoint in the path element array, which is also the number of non-stationary
+																		 //timepoints, which is the total number of time-points we want to write now.
 
 	ns_movement_image_collage_info d(this, number_of_frames_to_write);
 	bool first_write(output_reciever == 0 && flow_output_reciever == 0);
@@ -4879,14 +4906,24 @@ void ns_analyzed_image_time_path::save_movement_images(const ns_analyzed_time_im
 	}
 	
 	if (first_write) {
+		//if (this->group_id.group_id == 0 || group_id.group_id == 12)
+		//cout << "Opening group " << this->group_id.group_id << " between " << chunk.start_i << " and " << chunk.stop_i << ", to write out " << number_of_frames_to_write << " images @ (" << this->path_context_size.x << "," << this->path_context_size.y << ")(" << d.prop.width << "," << d.prop.height << ")\n";
+
 		if (save_image)	output_reciever->output_stream().init(d.prop);
 		if (save_flow_image)	flow_output_reciever->output_stream().init(d.prop);
+	}
+	else {
+		//if (this->group_id.group_id == 0 || group_id.group_id == 12)
+		//	cout << "writing  " << this->group_id.group_id << " between " << chunk.start_i << " and " << chunk.stop_i << "\n";
 	}
 
 	if (save_image ) save_movement_image(chunk, *output_reciever, backwards_image_handling== ns_only_output_backwards_images);
 	if (save_flow_image) save_movement_flow_image(chunk, *flow_output_reciever, backwards_image_handling == ns_only_output_backwards_images);
 
-	if (chunk.stop_i == elements.size()) {
+	if (!backwards_image_handling && chunk.stop_i == elements.size() ||
+		backwards_image_handling && chunk.stop_i ==-1) {
+	//	if (this->group_id.group_id == 0 || group_id.group_id == 12)
+	//		cout << "Closing group " << this->group_id.group_id << "\n";
 		if (save_image) {
 			output_reciever->output_stream().finish_recieving_image();
 			ns_safe_delete(output_reciever);
@@ -6293,7 +6330,7 @@ void ns_time_path_image_movement_analyzer::load_region_visualization_images(cons
 				if (running_backwards) {
 					unsigned long latest_path_element_to_load = groups[g].paths[p].first_stationary_timepoint() + ns_analyzed_image_time_path::alignment_time_kernel_width;
 					if (groups[g].paths[p].first_stationary_timepoint() == 0 ||
-						latest_path_element_to_load < groups[g].paths[p].elements.size() &&
+						latest_path_element_to_load >= groups[g].paths[p].elements.size() ||
 						groups[g].paths[p].elements[latest_path_element_to_load].absolute_time < region_image_specifications[i].time)
 						continue;
 				}
@@ -6301,10 +6338,15 @@ void ns_time_path_image_movement_analyzer::load_region_visualization_images(cons
 						if (groups[g].paths[p].elements[groups[g].paths[p].first_stationary_timepoint()].absolute_time > region_image_specifications[i].time)
 						continue;
 				}
+				//if ((g == 0 || g == 12))
+				//	cout << "l(" << g << ")";
 				
-
+				//check to see if the group has a worm detected in the current timepoint
 				bool region_vis_required = groups[g].paths[p].region_image_is_required(region_image_specifications[i].time,false,false);
 				bool interpolated_region_vis_required = groups[g].paths[p].region_image_is_required(region_image_specifications[i].time,true,false);
+				//if ((region_vis_required || interpolated_region_vis_required) && (g == 0 || g == 12)) {
+				//	cout << "f(" << g << ")\n";
+				//}
 				
 				region_image_specifications[i].region_vis_required = 
 					region_image_specifications[i].region_vis_required || region_vis_required;
@@ -6350,7 +6392,8 @@ void ns_time_path_image_movement_analyzer::load_region_visualization_images(cons
 			}
 			bool new_data_allocated = false;
 			for (unsigned int g = start_group; g < stop_group; g++){
-			
+			//	if (g == 12)
+				//cout << "LD";
 				for (unsigned int p = 0; p < groups[g].paths.size(); p++){
 					if (g >= groups.size())
 						throw ns_ex("ns_time_path_image_movement_analyzer::load_region_visualization_images()::An invalid group was specified: ") << g << " (there are only " << groups.size() << " groups)";
@@ -6360,18 +6403,26 @@ void ns_time_path_image_movement_analyzer::load_region_visualization_images(cons
 					
 					if (running_backwards) {
 						unsigned long latest_path_element_to_load = groups[g].paths[p].first_stationary_timepoint() + ns_analyzed_image_time_path::alignment_time_kernel_width;
-						if (groups[g].paths[p].first_stationary_timepoint() == 0 || 
-							latest_path_element_to_load < groups[g].paths[p].elements.size() &&
-							groups[g].paths[p].elements[latest_path_element_to_load].absolute_time < region_image_specifications[i].time)
+						if (groups[g].paths[p].first_stationary_timepoint() == 0 ||
+							latest_path_element_to_load > groups[g].paths[p].elements.size() ||
+							groups[g].paths[p].elements[latest_path_element_to_load].absolute_time < region_image_specifications[i].time) {
+						//	if (g == 12) cout << "{!12}";
 							continue;
+						}
 					}
 					else {
-						if (groups[g].paths[p].elements[groups[g].paths[p].first_stationary_timepoint()].absolute_time > region_image_specifications[i].time)
-							continue;
+						if (groups[g].paths[p].elements[groups[g].paths[p].first_stationary_timepoint()].absolute_time > region_image_specifications[i].time) {
+						//	if (g == 12) "cout << {!12}";
+								continue;
+						}
 					}
+					if (g == 0 || g == 12)
+				//	cout << "P[" << g << "]";
 					ns_movement_image_collage_info m(&groups[g].paths[p]);
-					if (groups[g].paths[p].populate_images_from_region_visualization(region_image_specifications[i].time,image_loading_temp,image_loading_temp2,just_do_a_consistancy_check, load_type))
-						new_data_allocated = true;
+					if (!just_do_a_consistancy_check) {
+						if (groups[g].paths[p].populate_images_from_region_visualization(region_image_specifications[i].time, image_loading_temp, image_loading_temp2, just_do_a_consistancy_check, load_type))
+							new_data_allocated = true;
+					}
 				}
 			}
 			if (!just_do_a_consistancy_check && new_data_allocated){
@@ -6381,11 +6432,12 @@ void ns_time_path_image_movement_analyzer::load_region_visualization_images(cons
 		}
 		catch(ns_ex & ex){
 			problem_occurred = true;
+			_number_of_invalid_images_encountered++;
 			problem = ex;
 			ns_64_bit problem_id = image_server_const.register_server_event(ns_image_server::ns_register_in_central_db,ns_image_server_event(ex.text(), true));
 			sql << " UPDATE sample_region_images SET problem = " << problem_id << " where id = " << region_image_specifications[i].sample_region_image_id;
-			image_server_const.add_subtext_to_current_event(ns_image_server_event(ex.text()) << "\n", &sql);
 			sql.send_query();
+			image_server_const.add_subtext_to_current_event(ns_image_server_event(ex.text()) << "\n", &sql);
 		}
 	}
 	if (problem_occurred)

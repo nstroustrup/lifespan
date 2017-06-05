@@ -125,8 +125,9 @@ void analyze_worm_movement_across_frames(const ns_processing_job & job, ns_image
 				//so, we simply remove the broken timepoints and try again.
 				ns_time_path_solver_parameters solver_parameters(ns_time_path_solver_parameters::default_parameters(job.region_id, sql));
 
-				time_path_solution.remove_invalidated_points(job.region_id, solver_parameters, sql);
-
+				bool something_changed = time_path_solution.remove_invalidated_points(job.region_id, solver_parameters, sql);
+				if (!something_changed)
+					throw ns_ex("Could not fix the error in this region.");
 
 				time_path_solution.save_to_db(job.region_id, sql);
 				ns_acquire_for_scope<std::ostream> position_3d_file_output(

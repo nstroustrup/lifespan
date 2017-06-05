@@ -136,7 +136,7 @@ public:
 
 	void set_results(ns_worm_detection_results_set * results) { if (detection_results != 0)delete detection_results; detection_results = results; }
 
-	void remove_invalidated_points(const ns_64_bit region_id, const ns_time_path_solver_parameters &param, ns_sql & sql);
+	bool remove_invalidated_points(const ns_64_bit region_id, const ns_time_path_solver_parameters &param, ns_sql & sql);
 	void save_to_db(const ns_64_bit region_id, ns_sql & sql) const;
 	void load_from_db(const ns_64_bit region_id, ns_sql & sql, bool load_directly_from_disk_without_db);
 	void save_to_disk(std::ostream & o) const;

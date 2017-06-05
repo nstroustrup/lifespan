@@ -307,8 +307,8 @@ public:
 		for (; current_chunk.stop_i >= 0 && path->element(current_chunk.stop_i).path_aligned_image_is_loaded(); current_chunk.stop_i--);
 
 		const unsigned long cur_size(current_chunk.start_i - current_chunk.stop_i);
-	//	if ((this->group_id == 0 || this->group_id == 12) && cur_size != 0)
-	//		cout << "g[" << group_id << "]=" << cur_size << "\n";
+		//if ((this->group_id == 0 || this->group_id == 12) && cur_size != 0)
+		//	cout << "g[" << group_id << "]=" << cur_size << "\n";
 		if (current_chunk.start_i > -1 &&
 			(cur_size >= chunk_size ||
 				current_chunk.stop_i == -1)) {
@@ -4843,7 +4843,7 @@ std::string ns_analyzed_image_time_path::volatile_storage_name(const unsigned lo
 		+ ns_to_string(this->group_id.path_id) + "=" + (flow?"flow":"im") + "=" + ns_to_string(rep_id) + "=" + ns_to_string(unique_process_id) + ".tif";
 }
 void ns_analyzed_image_time_path::reset_movement_image_saving() {
-	if (this->group_id.group_id == 0 || group_id.group_id == 12)
+	//if (this->group_id.group_id == 0 || group_id.group_id == 12)
 	//cout << "Deleting group" << this->group_id.group_id << "\n";
 	ns_safe_delete(output_reciever);
 	ns_safe_delete(flow_output_reciever);
@@ -4921,14 +4921,15 @@ void ns_analyzed_image_time_path::save_movement_images(const ns_analyzed_time_im
 		//if (this->group_id.group_id == 0 || group_id.group_id == 12)
 		//	cout << "writing  " << this->group_id.group_id << " between " << chunk.start_i << " and " << chunk.stop_i << "\n";
 	}
-
+	//if (chunk.stop_i == -1 && group_id.group_id == 12)
+	//	cerr << "HERE!";
 	if (save_image ) save_movement_image(chunk, *output_reciever, backwards_image_handling== ns_only_output_backwards_images);
 	if (save_flow_image) save_movement_flow_image(chunk, *flow_output_reciever, backwards_image_handling == ns_only_output_backwards_images);
 
-	if (!backwards_image_handling && chunk.stop_i == elements.size() ||
-		backwards_image_handling && chunk.stop_i ==-1) {
-	//	if (this->group_id.group_id == 0 || group_id.group_id == 12)
-	//		cout << "Closing group " << this->group_id.group_id << "\n";
+	if (!backwards_image_handling == ns_output_all_images && chunk.stop_i == elements.size() ||
+		backwards_image_handling == ns_only_output_backwards_images && chunk.stop_i ==-1) {
+		//if (this->group_id.group_id == 0 || group_id.group_id == 12)
+		//	cout << "Closing group " << this->group_id.group_id << "\n";
 		if (save_image) {
 			output_reciever->output_stream().finish_recieving_image();
 			ns_safe_delete(output_reciever);
@@ -6426,9 +6427,9 @@ void ns_time_path_image_movement_analyzer::load_region_visualization_images(cons
 								continue;
 						}
 					}
-					if (g == 0 || g == 12)
+				//	if (g == 0 || g == 12)
 				//	cout << "P[" << g << "]";
-					ns_movement_image_collage_info m(&groups[g].paths[p]);
+					//ns_movement_image_collage_info m(&groups[g].paths[p]);
 					if (!just_do_a_consistancy_check) {
 						if (groups[g].paths[p].populate_images_from_region_visualization(region_image_specifications[i].time, image_loading_temp, image_loading_temp2, just_do_a_consistancy_check, load_type))
 							new_data_allocated = true;

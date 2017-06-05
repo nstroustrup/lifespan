@@ -283,7 +283,7 @@ void ns_worm_multi_frame_interpolation::clear_previous_interpolation_results(con
 	sql.send_query();
 }*/
 
-void ns_worm_multi_frame_interpolation::load_all_region_worms(const unsigned int region_info_id, ns_sql & sql, bool only_use_processed_frames){
+void ns_worm_multi_frame_interpolation::load_all_region_worms(const ns_64_bit region_info_id, ns_sql & sql, bool only_use_processed_frames){
 
 	cerr << "Downloading Dataset...\n";
 	sql << "SELECT capture_time, id, worm_detection_results_id, worm_interpolation_results_id, worm_movement_id, "

@@ -83,7 +83,7 @@ bool ns_image_server_captured_image::load_from_db(const ns_64_bit _id, ns_image_
 		capture_images_image_id		 	= ns_atoi64(info[0][2].c_str());
 		sample_name						= info[0][3];
 		experiment_name					= info[0][4];
-		capture_time					= ns_atoi64(info[0][5].c_str());
+		capture_time					= atol(info[0][5].c_str());
 		device_name						= info[0][6].c_str();
 		capture_images_small_image_id	= ns_atoi64(info[0][7].c_str());
 		never_delete_image				= (info[0][8] != "0");
@@ -231,7 +231,7 @@ bool ns_image_server_captured_image::from_filename(const std::string & fn, int &
 		return false;
 	experiment_id = ns_atoi64(experiment_id_str.c_str());
 	sample_id = ns_atoi64(sample_id_str.c_str());
-	capture_time = ns_atoi64(capture_time_str.c_str());
+	capture_time = atol(capture_time_str.c_str());
 	captured_images_id = ns_atoi64(captured_images_id_str.c_str());
 	capture_images_image_id = ns_atoi64(captured_images_image_id_str.c_str());
 	return true;
@@ -312,7 +312,7 @@ bool ns_image_server_captured_image_region::load_from_db(const ns_64_bit _id, ns
 	movement_characterization_id = ns_atoi64(res[0][6].c_str());
 	problem_id = ns_atoi64(res[0][7].c_str());
 	processor_id = ns_atoi64(res[0][8].c_str());
-	capture_time = ns_atoi64(res[0][9].c_str());
+	capture_time = atol(res[0][9].c_str());
 	op_images_.resize(ns_process_last_task_marker);
 	op_images_[0] = region_images_image_id;
 	for (unsigned int i = 1; i < op_images_.size(); i++)  //op[0] is unprocessed image
@@ -500,7 +500,7 @@ const ns_image_server_image ns_image_server_captured_image_region::create_storag
 	sql << "SELECT id,image_id FROM sample_region_image_aligned_path_images WHERE region_info_id=" << region_info_id << " AND frame_index = " << frame_index;
 	ns_sql_result res;
 	sql.get_rows(res);
-	unsigned long db_id(0);
+	ns_64_bit db_id(0);
 	if(res.size() == 0)
 		im.id = 0;
 	else{

@@ -5,7 +5,7 @@
 #include <iostream>
 #include "ns_hand_annotation_loader.h"
 #include "ns_hidden_markov_model_posture_analyzer.h"
-bool ns_machine_analysis_region_data::load_from_db(const ns_death_time_annotation_set::ns_annotation_type_to_load & annotation_type_to_load,const ns_loading_details & details,const unsigned long region_id,ns_sql & sql){
+bool ns_machine_analysis_region_data::load_from_db(const ns_death_time_annotation_set::ns_annotation_type_to_load & annotation_type_to_load,const ns_loading_details & details,const ns_64_bit region_id,ns_sql & sql){
 	death_time_annotation_set.clear();
 	metadata.region_id = region_id;
 	if (annotation_type_to_load == ns_death_time_annotation_set::ns_recalculate_from_movement_quantification_data)
@@ -77,7 +77,7 @@ bool ns_machine_analysis_region_data::load_from_db(const ns_death_time_annotatio
 	return true;
 }
 
-bool ns_machine_analysis_region_data::recalculate_from_saved_movement_quantification(const unsigned long region_id,ns_sql & sql){
+bool ns_machine_analysis_region_data::recalculate_from_saved_movement_quantification(const ns_64_bit region_id,ns_sql & sql){
 	death_time_annotation_set.clear();
 	metadata.region_id = region_id;
 	//load 3d point cloud
@@ -254,7 +254,7 @@ void ns_machine_analysis_data_loader::set_up_spec_to_load(const ns_64_bit & regi
 
 	experiment_name_ = res[0][0];
 	experiment_id_ = experiment_id_a;
-	std::vector<unsigned long> sample_ids;
+	std::vector<ns_64_bit > sample_ids;
 
 	if (!region_specified && !sample_specified){
 		sql << "SELECT id FROM capture_samples WHERE censored=0 AND experiment_id = " << experiment_id_a;

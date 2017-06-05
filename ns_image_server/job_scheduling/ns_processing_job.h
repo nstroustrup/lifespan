@@ -156,8 +156,8 @@ struct ns_processing_job{
 				 subregion_size;
 	unsigned long subregion_start_time,
 				  subregion_stop_time,
-				  delete_file_job_id,
-				  pending_another_jobs_completion;
+		pending_another_jobs_completion;
+	ns_64_bit delete_file_job_id;
 
 	bool urgent;
 	ns_timestamp_type video_timestamp_type;

@@ -42,7 +42,7 @@ class ns_worm_multi_frame_interpolation{
 	std::vector<ns_worm_interpolation_timepoint> time_points_storage;
 	std::vector<ns_worm_interpolation_timepoint * > time_points;
 public:
-	void load_all_region_worms(const unsigned int region_info_id, ns_sql & sql, bool only_use_processed_frames=true);
+	void load_all_region_worms(const ns_64_bit region_info_id, ns_sql & sql, bool only_use_processed_frames=true);
 	//void clear_previous_interpolation_results(const unsigned int region_info_id, ns_sql & sql);
 	void generate_heat_map(ns_image_standard & heat_map,const unsigned int number_of_frames_used_to_find_stationary_objects,ns_sql & sql);
 	static void generate_static_mask_from_heatmap(const ns_image_standard & heat_map, ns_image_standard & out);

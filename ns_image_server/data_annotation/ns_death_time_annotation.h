@@ -199,6 +199,7 @@ struct ns_death_time_annotation{
 	static std::string source_type_to_string(const ns_annotation_source_type & t);
 
 	std::string description() const;
+	std::string brief_description() const;
 	static ns_exclusion_type combine_exclusion_types(const ns_exclusion_type & a, const ns_exclusion_type & b);
 	std::string to_string() const;
 	void from_string(const std::string v);

@@ -780,7 +780,7 @@ private:
 	ns_element_list elements;
 	//std::vector<unsigned long> movement_transition_times;
 	const ns_time_path * path;
-	unsigned long path_id,group_id;
+	ns_stationary_path_id group_id;
 	const ns_time_path_solution * solution;
 
 	void initialize_movement_image_loading(ns_image_storage_source_handle<ns_8_bit> & in,ns_image_storage_source_handle<float> & flow_in,const bool read_only_backwards_frames);
@@ -810,7 +810,7 @@ private:
 };
 
 struct ns_analyzed_image_time_path_group{
-	ns_analyzed_image_time_path_group(const unsigned long group_id_, const ns_64_bit region_info_id,const ns_time_path_solution & solution_, const ns_death_time_annotation_time_interval & observation_interval, ns_death_time_annotation_set & rejected_annotations,ns_time_path_image_movement_analysis_memory_pool & memory_pool_);
+	ns_analyzed_image_time_path_group(const ns_stationary_path_id group_id_, const ns_64_bit region_info_id,const ns_time_path_solution & solution_, const ns_death_time_annotation_time_interval & observation_interval, ns_death_time_annotation_set & rejected_annotations,ns_time_path_image_movement_analysis_memory_pool & memory_pool_);
 	std::vector<ns_analyzed_image_time_path> paths;
 	void clear_images();
 };
@@ -819,7 +819,7 @@ class ns_time_path_image_movement_analyzer {
 public:
 	enum { ns_spatially_averaged_movement_threshold = 10, ns_spatially_averaged_movement_kernal_half_size=2};
 	ns_time_path_image_movement_analyzer():paths_loaded_from_solution(false),
-		movement_analyzed(false),region_info_id(0),last_timepoint_in_analysis_(0),
+		movement_analyzed(false),region_info_id(0),last_timepoint_in_analysis_(0), _number_of_invalid_images_encountered(0),
 		number_of_timepoints_in_analysis_(0),image_db_info_loaded(false),externally_specified_plate_observation_interval(0,ULONG_MAX){}
 
 	~ns_time_path_image_movement_analyzer(){
@@ -858,7 +858,9 @@ public:
 		}
 			
 	}
-	void save_movement_data_to_db(const ns_64_bit region_id, ns_sql & sql);
+	typedef enum { ns_use_existing_record_if_possible, ns_force_creation_of_new_db_record,ns_require_existing_record } ns_analysis_db_options;
+	typedef enum { ns_do_not_write_data, ns_write_data } ns_data_write_options;
+	void obtain_analysis_id_and_save_movement_data(const ns_64_bit region_id, ns_sql & sql, ns_analysis_db_options id_options, ns_data_write_options write_options);
 	void delete_from_db(const ns_64_bit region_id,ns_sql & sql);
 	
 	
@@ -895,8 +897,10 @@ public:
 	unsigned long last_timepoint_in_analysis()const {return last_timepoint_in_analysis_;}
 	unsigned long number_of_timepoints_in_analysis()const { return number_of_timepoints_in_analysis_;}
 	ns_64_bit db_analysis_id() const{return analysis_id;}
+	bool try_to_rebuild_after_failure() const;
 private:
 
+	unsigned long _number_of_invalid_images_encountered;
 	void run_group_for_current_backwards_round(unsigned int group_id, const unsigned int path_id, ns_time_path_image_movement_analyzer_thread_pool_persistant_data *,ns_movement_analysis_shared_state * shared_state);
 	void run_group_for_current_forwards_round(unsigned int group_id, unsigned int path_id, ns_time_path_image_movement_analyzer_thread_pool_persistant_data *,ns_movement_analysis_shared_state * shared_state);
 	void finish_up_and_write_to_long_term_storage(unsigned int group_id, unsigned int path_id, ns_time_path_image_movement_analyzer_thread_pool_persistant_data * persistant_data, ns_movement_analysis_shared_state * shared_state);

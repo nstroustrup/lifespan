@@ -378,6 +378,7 @@ void ns_image_server_dispatcher::run(){
 		if (!currently_unable_to_connect_to_the_central_db) {
 			ns_acquire_for_scope<ns_sql> sql(image_server.new_sql_connection(__FILE__, __LINE__));
 			image_server.unregister_host(&sql());
+			image_server.clear_processing_status(*static_cast<ns_sql *>(&sql()));
 		}
 		image_server.register_server_event(ns_image_server::ns_register_in_central_db_with_fallback,ns_image_server_event("Finished cleanup and shutting down."));
 	}
@@ -896,7 +897,7 @@ void ns_image_server_dispatcher::on_timer(){
 						processing_thread_pool.wait_for_all_threads_to_become_idle();
 						processing_thread_pool.shutdown();
 					}
-					image_server.set_sql_database(database_requested);
+					image_server.set_sql_database(database_requested,true,*timer_sql_connection);
 					if (work_sql_connection!=0)
 						work_sql_connection->select_db(image_server.current_sql_database());
 					if (timer_sql_connection!=0)
@@ -1270,7 +1271,8 @@ bool ns_image_server_dispatcher::look_for_work(){
 		if (jobs.size() == 0) {
 			image_server.add_subtext_to_current_event(".", work_sql_connection, false, image_server.main_thread_id());
 
-			image_server.incremenent_empty_job_queue_check_count();
+			if (processing_thread_pool.number_of_idle_threads() == processing_thread_pool.number_of_threads())
+				image_server.incremenent_empty_job_queue_check_count();
 			if (image_server.empty_job_queue_check_count_is_exceeded()) {
 				image_server.register_server_event(ns_ex("Idle image processing job queue count limit reached."), work_sql_connection);
 				image_server.shut_down_host();

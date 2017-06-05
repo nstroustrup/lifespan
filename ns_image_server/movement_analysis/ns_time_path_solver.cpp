@@ -484,6 +484,88 @@ void ns_time_path_solver::handle_paths_with_ambiguous_points(){
 		}
 	}
 }
+void ns_time_path_solution::remove_invalidated_points(const ns_64_bit region_id, const ns_time_path_solver_parameters &param, ns_sql & sql) {
+
+	//record existing mapping between t_index in paths to time in timepoints vector
+	//[index id] = time;
+	map<unsigned long, unsigned long> previous_timepoint_to_index_mapping;
+	for (unsigned int i = 0; i < timepoints.size(); i++)
+		previous_timepoint_to_index_mapping[i] = timepoints[i].time;
+
+	//load valid timepoints from db
+	unsigned long time_of_last_valid_sample;
+	ns_sql_result time_point_result;
+	ns_time_path_solver::load_worm_detection_ids(region_id, sql, time_of_last_valid_sample, time_point_result);
+	std::set<unsigned long> extant_times;
+	for (unsigned int i = 0; i < time_point_result.size(); i++)
+		extant_times.insert(extant_times.end(), atol(time_point_result[i][1].c_str()));
+	bool something_changed(false);
+	//go through each timepoint and see if it still has a valid record
+	for (std::vector<ns_time_path_timepoint>::iterator t = timepoints.begin(); t != timepoints.end();) {
+
+		//if the timepoint no longer exists in the db
+		if (extant_times.find(t->time) == extant_times.end()) {
+			something_changed = true;
+			//remove its membership from all paths
+			for (unsigned int p = 0; p < paths.size(); p++) {
+				for (std::vector <ns_time_element_link>::iterator e = paths[p].stationary_elements.begin(); e != paths[p].stationary_elements.end();) {
+					if (previous_timepoint_to_index_mapping[e->t_id] == t->time)
+						e = paths[p].stationary_elements.erase(e);
+					else ++e;
+				}
+			}
+			//remove its membership from any unassigned points
+			for (std::vector <ns_time_element_link>::iterator e = unassigned_points.stationary_elements.begin(); e != unassigned_points.stationary_elements.end();) {
+				if (previous_timepoint_to_index_mapping[e->t_id] == t->time)
+					e = unassigned_points.stationary_elements.erase(e);
+				else ++e;
+			}
+
+			//remove it from the timepoints list
+			t = timepoints.erase(t);
+		}
+		else ++t;
+	}
+	//[time] = index_id
+	//update timepoint mappings in each path to reflect the new timepoint set
+	if (something_changed) {
+		map<unsigned long, unsigned long> new_timepoint_to_index_mapping;
+		for (unsigned int i = 0; i < timepoints.size(); i++)
+			new_timepoint_to_index_mapping[timepoints[i].time] = i;
+
+		for (unsigned int p = 0; p < paths.size(); p++) {
+			for (unsigned int i = 0; i < paths[p].stationary_elements.size(); i++) {
+				cerr << paths[p].stationary_elements[i].t_id << "->";
+				paths[p].stationary_elements[i].t_id = new_timepoint_to_index_mapping[
+					previous_timepoint_to_index_mapping[
+						paths[p].stationary_elements[i].t_id]];
+				cerr << paths[p].stationary_elements[i].t_id << "\n";
+			}
+		}
+
+		//remove paths that have become invalidated.
+		bool groups_changed = false;
+		for (std::vector<ns_time_path>::iterator p = paths.begin(); p != paths.end();) {
+			if (p->stationary_elements.size() < 2) {
+				groups_changed = true;
+				p = paths.erase(p);
+				continue;
+			}
+			unsigned long duration = timepoints[p->stationary_elements.rbegin()->t_id].time - timepoints[p->stationary_elements.begin()->t_id].time;
+			if (duration < param.min_final_stationary_path_duration_in_minutes) {
+				groups_changed = true;
+				p = paths.erase(p);
+				continue;
+			}
+			++p;
+		}
+		//remove path groups that have become invalidated.
+		path_groups.resize(paths.size());
+		for (unsigned int i = 0; i < path_groups.size(); i++) {
+			path_groups[i].path_ids[0] = i;
+		}
+	}
+}
 
 void ns_time_path_solution::save_to_db(const ns_64_bit region_id, ns_sql & sql) const{
 	sql << "SELECT time_path_solution_id FROM sample_region_image_info WHERE id = " << region_id;
@@ -545,7 +627,13 @@ void ns_time_path_solution::load_from_db(const ns_64_bit region_id, ns_sql & sql
 		try{
 			input_file.attach(image_server_const.image_storage.request_metadata_from_disk(im,false,&sql));
 		}catch(ns_ex & ex){
-			throw ns_ex("Solution data could not be found on disk");
+
+			ns_image_server_image im;
+			im.id = ns_atoi64(res[0][0].c_str());
+			if (im.id == 0)
+				throw ns_ex("Solution data has not been stored in db");
+			input_file.attach(image_server_const.image_storage.request_metadata_from_disk(im, false, &sql));
+
 		}
 	}else{
 		ns_image_server_image im;
@@ -1900,7 +1988,7 @@ void ns_time_path_solver::mark_unassigned_points(){
 	}
 }
 
-void ns_time_path_solver_timepoint::load(const unsigned long worm_detection_results_id,ns_image_worm_detection_results & results,ns_sql & sql){
+void ns_time_path_solver_timepoint::load(const ns_64_bit worm_detection_results_id,ns_image_worm_detection_results & results,ns_sql & sql){
 	elements.resize(0);
 	worm_detection_results = &results;
 	results.detection_results_id = worm_detection_results_id;
@@ -1943,29 +2031,34 @@ void ns_register_path_solver_load_error(unsigned long region_info_id,const std::
 
 }
 
-void ns_time_path_solver::load_detection_results(unsigned long region_id,ns_sql & sql){
+void ns_time_path_solver::load_worm_detection_ids(const ns_64_bit region_id, ns_sql & sql, unsigned long & time_of_last_valid_sample, ns_sql_result & time_point_result) {
 	sql << "SELECT time_of_last_valid_sample FROM sample_region_image_info WHERE id = " << region_id;
 	ns_sql_result res;
 	sql.get_rows(res);
 	if (res.size() == 0)
 		throw ns_ex("ns_time_path_solver::load()::Could not load region ") << region_id << " from database.";
-	unsigned long time_of_last_valid_sample = atol(res[0][0].c_str());
+	 time_of_last_valid_sample = atol(res[0][0].c_str());
 
 	if (time_of_last_valid_sample == 0)
 		ns_global_debug(ns_text_stream_t("ns_time_path_solver::load_detection_results()::Time of last valid sample is not set."));
 	else
 		ns_global_debug(ns_text_stream_t("ns_time_path_solver::load_detection_results()::Time of last valid sample = ") << ns_format_time_string_for_human(time_of_last_valid_sample));
-	
 
-	sql << "SELECT worm_detection_results_id,capture_time, id FROM sample_region_images WHERE region_info_id = " 
+
+	sql << "SELECT worm_detection_results_id,capture_time, id FROM sample_region_images WHERE region_info_id = "
 		<< region_id << " AND worm_detection_results_id != 0 AND problem = 0 AND currently_under_processing = 0 "
 		<< "AND censored = 0";
 	if (time_of_last_valid_sample != 0)
 		sql << " AND capture_time <= " << time_of_last_valid_sample;
 	sql << " ORDER BY capture_time ASC";
-	
-	ns_sql_result time_point_result;
+
 	sql.get_rows(time_point_result);
+}
+
+void ns_time_path_solver::load_detection_results(ns_64_bit region_id,ns_sql & sql){
+	unsigned long time_of_last_valid_sample;
+	ns_sql_result time_point_result;
+	load_worm_detection_ids(region_id, sql, time_of_last_valid_sample, time_point_result);
 	
 	ns_global_debug(ns_text_stream_t("ns_time_path_solver::load_detection_results()::Found ") << time_point_result.size() << " time points (measurement times) in the db");
 	
@@ -2129,7 +2222,7 @@ void ns_time_path_solver::generate_raw_solution(ns_time_path_solution & solution
 	}
 	transfer_data_to_solution(solution);
 }
-void ns_time_path_solver::load_from_raw_solution(const unsigned long region_id,const ns_time_path_solution & solution,ns_sql & sql){
+void ns_time_path_solver::load_from_raw_solution(const ns_64_bit region_id,const ns_time_path_solution & solution,ns_sql & sql){
 	timepoints.resize(solution.timepoints.size());
 	for (unsigned int i = 0; i < solution.timepoints.size(); i++){
 		timepoints[i].elements.resize(solution.timepoints[i].elements.size());

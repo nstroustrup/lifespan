@@ -233,7 +233,7 @@ ns_64_bit ns_atoi64(const char * s){
   return atoll(s);
 #endif
 }*/
-void ns_capture_sample_image_statistics::load_from_db(unsigned long id,ns_sql & sql){
+void ns_capture_sample_image_statistics::load_from_db(ns_64_bit id,ns_sql & sql){
 		
 	sample_id = id;
 	sql << "SELECT name,device_name, position_x,position_y,size_x,size_y, experiment_id FROM capture_samples WHERE id="<<id;
@@ -610,7 +610,7 @@ void ns_capture_sample_region_data::output_region_data_in_jmp_format(std::ostrea
 }
 
 
-void ns_capture_sample_statistics_set::load_whole_experiment(const unsigned long experiment_id, ns_sql & sql){
+void ns_capture_sample_statistics_set::load_whole_experiment(const ns_64_bit experiment_id, ns_sql & sql){
 	ns_sql_result res;
 	sql << "SELECT id FROM capture_samples WHERE censored=0 AND excluded_from_analysis=0 AND experiment_id=" << experiment_id;
 	sql.get_rows(res);
@@ -787,7 +787,7 @@ void ns_capture_sample_region_statistics_set::load_whole_experiment(const ns_64_
 
 		for (unsigned long k = 0; k < res2.size(); ++k){
 			ns_region_metadata metadata(sample_metadata);
-			unsigned long region_id(ns_atoi64(res2[k][0].c_str()));
+			ns_64_bit region_id(ns_atoi64(res2[k][0].c_str()));
 			metadata.load_from_db(region_id,"",sql);
 			
 			bool region_censored(res2[k][1]!="0"),

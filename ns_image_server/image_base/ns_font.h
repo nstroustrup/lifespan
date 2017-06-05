@@ -102,13 +102,13 @@ public:
 				(int)y - (int)face->glyph->bitmap_top < 0))
 				continue;
 
-			if (dim.h < face->glyph->bitmap.rows)
-				dim.h = face->glyph->bitmap.rows;
+			if ((unsigned int) dim.h < face->glyph->bitmap.rows)
+				dim.h = (int)face->glyph->bitmap.rows;
 
 			if (draw){
 		//		previous_glyph_index = text[i];
-				for (int yi = 0; yi < face->glyph->bitmap.rows; yi++)
-					for (int xi = 0; xi < face->glyph->bitmap.width; xi++){
+				for (unsigned int yi = 0; yi < face->glyph->bitmap.rows; yi++)
+					for (unsigned int xi = 0; xi < face->glyph->bitmap.width; xi++){
 
 						int cur_y = (int)(y+yi)- face->glyph->bitmap_top;
 						float v = face->glyph->bitmap.buffer
@@ -166,8 +166,8 @@ public:
 
 			if (draw){
 
-				for (int yi = 0; yi < face->glyph->bitmap.rows; yi++)
-					for (int xi = 0; xi < face->glyph->bitmap.width; xi++){
+				for (unsigned int yi = 0; yi < face->glyph->bitmap.rows; yi++)
+					for (unsigned int xi = 0; xi < face->glyph->bitmap.width; xi++){
 						int cur_y = y+yi- face->glyph->bitmap_top;
 						float v = face->glyph->bitmap.buffer
 											[(yi)*((face->glyph->bitmap.width+face->glyph->bitmap.pitch)/2) +

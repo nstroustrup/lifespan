@@ -108,9 +108,41 @@ void analyze_worm_movement_across_frames(const ns_processing_job & job, ns_image
 		//load in worm images and analyze them for non-translating animals for posture changes
 		if (log_output)
 			image_server->register_server_event(ns_image_server_event("Analyzing images for animal posture changes."), &sql);
+		unsigned long attempt_count(0);
+		while (true) {
+			try {
+				time_path_image_analyzer.process_raw_images(job.region_id, time_path_solution, time_series_denoising_parameters, &death_time_estimator(), sql, -1, true);
+				break;
+			}
+			catch (ns_ex & ex) {
+				if (attempt_count > 1 || !time_path_image_analyzer.try_to_rebuild_after_failure())
+					throw ex;
+				else attempt_count++;
+				
+				//if a problem is encountered loading images from disk,
+				//we may be able to recover simply by excluding those images.
+				//In that case, we don't want to have to rebuild all the prefixes and inferred images, which is a very slow process.
+				//so, we simply remove the broken timepoints and try again.
+				ns_time_path_solver_parameters solver_parameters(ns_time_path_solver_parameters::default_parameters(job.region_id, sql));
 
-		time_path_image_analyzer.process_raw_images(job.region_id, time_path_solution, time_series_denoising_parameters, &death_time_estimator(), sql, -1, true);
-		time_path_image_analyzer.save_movement_data_to_db(job.region_id, sql);
+				time_path_solution.remove_invalidated_points(job.region_id, solver_parameters, sql);
+
+
+				time_path_solution.save_to_db(job.region_id, sql);
+				ns_acquire_for_scope<std::ostream> position_3d_file_output(
+					image_server->results_storage.animal_position_timeseries_3d(
+						results_subject, sql, ns_image_server_results_storage::ns_3d_plot
+					).output()
+				);
+				time_path_solution.output_visualization_csv(position_3d_file_output());
+				position_3d_file_output.release();
+
+				image_server->results_storage.write_animal_position_timeseries_3d_launcher(results_subject, ns_image_server_results_storage::ns_3d_plot, sql);
+			}
+		}
+		time_path_image_analyzer.ns_time_path_image_movement_analyzer::obtain_analysis_id_and_save_movement_data(job.region_id, sql,
+																			ns_time_path_image_movement_analyzer::ns_require_existing_record,
+																			ns_time_path_image_movement_analyzer::ns_write_data );
 	}
 	else if (job.maintenance_task == ns_maintenance_rebuild_movement_from_stored_images) {
 		//load in previously calculated image quantification from disk for re-analysis
@@ -123,7 +155,9 @@ void analyze_worm_movement_across_frames(const ns_processing_job & job, ns_image
 		reanalyze_optical_flow = true;
 #endif
 		time_path_image_analyzer.reanalyze_stored_aligned_images(job.region_id, time_path_solution, time_series_denoising_parameters, &death_time_estimator(), sql, true, reanalyze_optical_flow);
-		time_path_image_analyzer.save_movement_data_to_db(job.region_id, sql);
+		time_path_image_analyzer.obtain_analysis_id_and_save_movement_data(job.region_id, sql,
+			ns_time_path_image_movement_analyzer::ns_require_existing_record,
+			ns_time_path_image_movement_analyzer::ns_write_data);
 	}
 	else {
 		//load in previously calculated image quantification from disk for re-analysis
@@ -133,7 +167,9 @@ void analyze_worm_movement_across_frames(const ns_processing_job & job, ns_image
 		if (log_output)
 			image_server->register_server_event(ns_image_server_event("Analyzing stored animal posture quantification."), &sql);
 		time_path_image_analyzer.load_completed_analysis(job.region_id, time_path_solution, time_series_denoising_parameters, &death_time_estimator(), sql);
-		time_path_image_analyzer.save_movement_data_to_db(job.region_id, sql);
+		time_path_image_analyzer.obtain_analysis_id_and_save_movement_data(job.region_id, sql,
+			ns_time_path_image_movement_analyzer::ns_require_existing_record,
+			ns_time_path_image_movement_analyzer::ns_write_data);
 	}
 	death_time_estimator.release();
 
@@ -173,7 +209,7 @@ void analyze_worm_movement_across_frames(const ns_processing_job & job, ns_image
 						(ns_death_time_annotation::ns_multiworm_censoring_strategy)censoring_strategy,
 						ns_death_time_annotation::ns_censoring_assume_uniform_distribution_of_missing_times,
 						compiler, ns_include_unchanged);
-					summary_series.generate_censoring_annotations(metadata, censoring_set);
+					summary_series.generate_censoring_annotations(metadata, time_path_image_analyzer.db_analysis_id(),censoring_set);
 					try {
 						ns_image_server_results_file movement_timeseries(image_server->results_storage.movement_timeseries_data(
 							by_hand_annotation_integration_strategy[bhais],
@@ -196,7 +232,7 @@ void analyze_worm_movement_across_frames(const ns_processing_job & job, ns_image
 						(ns_death_time_annotation::ns_multiworm_censoring_strategy)censoring_strategy,
 						ns_death_time_annotation::default_missing_return_strategy(),
 						compiler, ns_include_unchanged);
-					summary_series.generate_censoring_annotations(metadata, censoring_set);
+					summary_series.generate_censoring_annotations(metadata, time_path_image_analyzer.db_analysis_id(),censoring_set);
 
 					try {
 						ns_image_server_results_file movement_timeseries(image_server->results_storage.movement_timeseries_data(by_hand_annotation_integration_strategy[bhais],
@@ -247,7 +283,7 @@ void analyze_worm_movement_across_frames(const ns_processing_job & job, ns_image
 	ns_image_server_results_subject sub;
 	sub.region_id = job.region_id;
 	try {
-		ns_acquire_for_scope<std::ostream> o(image_server->results_storage.time_path_image_analysis_quantification(sub, "detailed", false, sql).output());
+		ns_acquire_for_scope<std::ostream> o(image_server->results_storage.time_path_image_analysis_quantification(sub, "detailed", false, sql,false,false).output());
 		if (time_path_image_analyzer.size() > 0) {
 			time_path_image_analyzer.group(0).paths[0].write_detailed_movement_quantification_analysis_header(o());
 			o() << "\n";

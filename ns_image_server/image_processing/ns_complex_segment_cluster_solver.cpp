@@ -462,7 +462,6 @@ void ns_smart_complex_segment_cluster_solver::find_possible_paths(const int numb
 
 
 
-	//o2.open("c:\\tt\\adding.txt");
 	vector<const ns_segment_cluster_solution * > sorted_solutions_temp;
 	while(!branch_points.empty()){
 		ns_segment_path_search_branch_point bp = branch_points.top();
@@ -726,46 +725,7 @@ void ns_smart_complex_segment_cluster_solver::choose_best_solution_for_each_worm
 					bspline.calculate_with_standard_params(nodes,(unsigned int)nodes.size()/NS_BSPLINE_OUTPUT_DOWNSAMPLE_RATE,true);
 					bspline.crop_ends(end_crop_fraction);
 					
-					//vis
-					/*ns_image_properties prop(0,0,1,3200);
 					
-					for (unsigned int j = 0; j < bspline.positions.size(); j++){
-						if (bspline.positions[j].x > prop.width)
-							prop.width = ceil(bspline.positions[j].x);
-						if (bspline.positions[j].y > prop.height)
-							prop.height = ceil(bspline.positions[j].y);
-					}
-					for (unsigned int j = 0; j < nodes.size(); j++){
-						if (nodes[j].x > prop.width)
-							prop.width = ceil(nodes[j].x);
-						if (nodes[j].y > prop.height)
-							prop.height = ceil(nodes[j].y);
-					}
-					ns_image_standard vis;
-					prop.width++;prop.height++;
-					prop.width*=2; prop.height*=2;
-					vis.init(prop);
-					for (unsigned int y = 0; y < prop.height; y++)
-						for (unsigned int x = 0; x < prop.width; x++)
-							vis[y][x] = 0;
-					for (unsigned int j = 0; j < bspline.positions.size(); j++)
-						vis[2*(int)bspline.positions[j].y][2*(int)bspline.positions[j].x] = 255;
-					for (unsigned int j = 0; j < nodes.size(); j++)
-						vis[2*(int)nodes[j].y][2*(int)nodes[j].x] = 127;
-					string filename = "c:\\tt\\object_";
-					filename += ns_to_string(worm_id);
-					filename +="_spline_count_";
-					filename += ns_to_string(i);
-					filename += "=option";
-					filename += ns_to_string(s);
-					filename += "=worm";
-					filename += ns_to_string(w);
-					filename += "of";
-					filename += ns_to_string(solution_groups[i].solutions[s].size());
-					filename += ".tif";
-					ns_save_image(filename,vis);
-					// /vis
-	*/
 					for (unsigned int j = 0; j < bspline.curvature.size(); j++){
 						mean_curvature[w]+=bspline.curvature[j];
 						if (bspline.curvature[j] > max_curvature[w])

@@ -107,7 +107,7 @@ void ns_image_server::start_autoscans_for_device(const std::string & device_name
 		image_server.register_server_event(ns_image_server_event("Multiple autoscan schedules were specified for device ") << device_name,&sql);
 
 	for (string::size_type i = 0; i < res.size(); i++){
-		const ns_64_bit interval(ns_atoi64(res[i][1].c_str()));
+		const unsigned long interval(atol(res[i][1].c_str()));
 		image_server.device_manager.set_autoscan_interval(device_name,interval);
 		image_server.register_server_event(ns_image_server_event("Starting scheduled autoscans on device ") << device_name << " with a period of " << res[i][1] << " seconds",&sql);
 		sql << "DELETE FROM autoscan_schedule WHERE device_name = '" << device_name << "'";
@@ -130,7 +130,7 @@ struct ns_image_data_disk_size{
 			  processed_region_images,
 			  metadata,
 			  video;
-	void update_experiment_metadata(unsigned long experiment_id,ns_sql & sql){
+	void update_experiment_metadata(ns_64_bit experiment_id,ns_sql & sql){
 		sql << "UPDATE experiments SET "
 				"size_unprocessed_captured_images=" << (unsigned long)unprocessed_captured_images << ","
 				"size_processed_captured_images=" << (unsigned long)processed_captured_images << ","
@@ -143,7 +143,7 @@ struct ns_image_data_disk_size{
 		sql.send_query();
 
 	}
-	void update_sample_metadata(unsigned long sample_id,ns_sql & sql){
+	void update_sample_metadata(ns_64_bit sample_id,ns_sql & sql){
 		sql << "UPDATE capture_samples SET "
 				"size_unprocessed_captured_images=" << (unsigned long)unprocessed_captured_images << ","
 				"size_processed_captured_images=" << (unsigned long)processed_captured_images << ","
@@ -488,13 +488,13 @@ void ns_image_server_automated_job_scheduler::identify_regions_needing_static_ma
 	if (jobs_submitted)
 		ns_image_server_push_job_scheduler::request_job_queue_discovery(sql);
 }
-void ns_image_server_automated_job_scheduler::register_static_mask_completion(const unsigned long region_id, ns_sql & sql){
+void ns_image_server_automated_job_scheduler::register_static_mask_completion(const ns_64_bit region_id, ns_sql & sql){
 	sql << "UPDATE sample_region_image_info SET analysis_scheduling_state = " << (int)ns_worm_detection << " WHERE id = " << region_id;
 	sql.send_query();
 	schedule_detection_jobs_for_region(region_id,sql);
 	ns_image_server_push_job_scheduler::request_job_queue_discovery(sql);
 }
-void ns_image_server_automated_job_scheduler::schedule_detection_jobs_for_region(const unsigned long region_id,ns_sql & sql){
+void ns_image_server_automated_job_scheduler::schedule_detection_jobs_for_region(const ns_64_bit region_id,ns_sql & sql){
 	ns_processing_job job;
 	job.region_id = region_id;
 	job.time_submitted = ns_current_time();
@@ -770,35 +770,31 @@ ns_local_buffer_connection * ns_image_server::new_local_buffer_connection_no_loc
 }
 
 
-void ns_image_server::get_requested_database_from_db(){
-	ns_acquire_for_scope<ns_sql> sql(new_sql_connection(__FILE__,__LINE__));
-	sql() << "SELECT database_used FROM hosts WHERE id = " << host_id() << "";
+void ns_image_server::request_database_from_db_and_switch_to_it(ns_sql & sql, bool update_hosts_records_in_db){
+	sql << "SELECT database_used FROM hosts WHERE id = " << host_id() << "";
 	ns_sql_result res;
-	sql().get_rows(res);
+	sql.get_rows(res);
 	if (res.size() == 0)
 		return;
 	try{
-		set_sql_database(res[0][0]);
+		set_sql_database(res[0][0], update_hosts_records_in_db,sql);
 	}
 	catch(ns_ex & ex){
-		register_server_event(ex,&sql());
+		register_server_event(ex,&sql);
 	}
-	sql.release();
 	return;
 };
 
-void ns_image_server::set_sql_database(const std::string & database_name,const bool report_to_db){
+void ns_image_server::switch_to_default_db() {
+	sql_database_choice = possible_sql_databases.begin();
+}
+void ns_image_server::set_sql_database(const std::string & database_name,const bool update_hosts_records_in_db, ns_sql & sql){
 	if (possible_sql_databases.size() == 0)
 		throw ns_ex("ns_image_server::set_sql_database()::No possible databases specified in ini file!");
-	if (database_name.size() == 0){
-		sql_database_choice = possible_sql_databases.begin();
-		return;
-	}
 
-	ns_acquire_for_scope<ns_sql> sql(new_sql_connection(__FILE__,__LINE__));
-	sql() << "SHOW DATABASES";
+	sql << "SHOW DATABASES";
 	ns_sql_result database;
-	sql().get_rows(database);
+	sql.get_rows(database);
 	bool found(false);
 	for (unsigned int i = 0; i < database.size(); i++){
 		if (database_name == database[i][0]){
@@ -810,24 +806,25 @@ void ns_image_server::set_sql_database(const std::string & database_name,const b
 		throw ns_ex("ns_image_server::set_sql_database()::Requested database name '") << database_name << "' could not be found";
 	}
 
-	if (report_to_db){
-		register_server_event(ns_image_server_event("Switching to database ") << database_name,&sql());
-		sql() << "UPDATE hosts SET database_used='" << database_name << "' WHERE id = " << host_id();
-		sql().send_query();
-		image_server.unregister_host(&sql());
+	if (update_hosts_records_in_db){
+		register_server_event(ns_image_server_event("Switching to database ") << database_name,&sql);
+		sql << "UPDATE hosts SET database_used='" << database_name << "' WHERE id = " << host_id();
+		sql.send_query();
+		unregister_host(&sql);
+		clear_processing_status(sql);
 	}
+	image_server.sql_lock.wait_to_acquire(__FILE__, __LINE__);
 	std::vector<std::string>::const_iterator p = std::find(possible_sql_databases.begin(),possible_sql_databases.end(),database_name);
-	image_server.sql_lock.wait_to_acquire(__FILE__,__LINE__);
 	if (p == possible_sql_databases.end()){
 		p = possible_sql_databases.insert(possible_sql_databases.end(),database_name);
 	}
 	sql_database_choice = p;
-	sql().select_db(database_name);
-	ns_death_time_annotation_flag::get_flags_from_db(sql());
+	sql.select_db(database_name);
+	ns_death_time_annotation_flag::get_flags_from_db(sql);
 	image_server.sql_lock.release();
-	if (report_to_db){
-		image_server.register_host(&sql(),true,false);
-		image_server.register_devices(false,&sql());
+	if (update_hosts_records_in_db){
+		image_server.register_host(&sql,true,false);
+		image_server.register_devices(false,&sql);
 	}
 }
 
@@ -961,13 +958,14 @@ bool ns_image_server::upgrade_tables(ns_sql & sql,const bool just_test_if_needed
 
 	sql << "SELECT table_name "
 		"FROM information_schema.tables "
-		"WHERE table_schema = '" << schema_name << "' ";
+		"WHERE table_schema = '" << schema_name << "' "
 		" AND table_name = 'processing_node_status'";
 	res.clear();
 	sql.get_rows(res);
 	if (res.empty()) {
 		if (just_test_if_needed)
 			return true;
+		cout << "Adding additional host HPC columns\n";
 		sql << "CREATE TABLE `processing_node_status` ("
 			"`host_id` BIGINT NULL,"
 			"`node_id` BIGINT NULL,"
@@ -982,7 +980,14 @@ bool ns_image_server::upgrade_tables(ns_sql & sql,const bool just_test_if_needed
 		sql.send_query();
 		changes_made = true;
 	}
-
+	if (!ns_sql_column_exists("animal_storyboard", "minimum_distance_to_juxtipose_neighbors", sql)) {
+		if (just_test_if_needed)
+			return true;
+		cout << "Update storyboard column\n";
+			sql << "ALTER TABLE animal_storyboard ADD COLUMN minimum_distance_to_juxtipose_neighbors INT NOT NULL DEFAULT 0 AFTER image_delay_time_after_event";
+			sql.send_query();
+		changes_made = true;
+	}
 	if (!changes_made && !just_test_if_needed){
 		cout << "The database appears up-to-date; no changes were made.\n";
 	}
@@ -1795,6 +1800,10 @@ void ns_image_server::unregister_host(ns_image_server_sql * sql) {
 	sql->send_query();
 };
 
+void ns_image_server::clear_processing_status(ns_sql & sql) const {
+	sql << "DELETE FROM  processing_node_status WHERE " << " host_id = " << _host_id;
+	sql.send_query();
+}
 void ns_image_server::update_processing_status(const std::string & processing_state, const ns_64_bit processing_job_id, const ns_64_bit processing_job_queue_id,ns_sql & sql) const {
 
 	std::map<ns_64_bit, ns_thread_output_state>::iterator current_thread_state = get_current_thread_state_info();
@@ -1921,7 +1930,7 @@ void ns_image_server::register_devices(const bool verbose, ns_image_server_sql *
 
 	#endif
 }
-void ns_image_server::open_log_file(const ns_image_server::ns_image_server_exec_type & exec_type, unsigned long thread_id, const std::string & volatile_directory, const std::string & file_name, ofstream & out) {
+void ns_image_server::open_log_file(const ns_image_server::ns_image_server_exec_type & exec_type, ns_64_bit thread_id, const std::string & volatile_directory, const std::string & file_name, ofstream & out) {
 	//open local logfile.
 	std::string lname = volatile_directory;
 	lname += DIR_CHAR_STR;
@@ -2114,7 +2123,7 @@ void ns_image_server::load_constants(const ns_image_server::ns_image_server_exec
 			}
 		}
 		//set default database
-		set_sql_database();
+		switch_to_default_db();
 
 		sql_user				= constants["central_sql_username"];
 		sql_pwd					= constants["central_sql_password"];
@@ -2989,7 +2998,7 @@ ns_image_server_results_file ns_image_server_results_storage::time_path_image_an
 		string fname(""),dir("");
 		string abbreviated;
 		if(abbreviated_time_series)
-			abbreviated = "=abbreviated";
+			abbreviated = "=abr";
 		if (spec.region_id != 0){
 			dir = time_path_image_analysis_quantification() + DIR_CHAR_STR + "regions";
 			if (compress_file_names)

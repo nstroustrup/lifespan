@@ -175,7 +175,8 @@ public:
 	ns_local_buffer_connection * new_local_buffer_connection(const std::string & source_file, const unsigned int source_line);
 	ns_local_buffer_connection * new_local_buffer_connection_no_lock_or_retry(const std::string & source_file, const unsigned int source_line) const;
 
-	void set_sql_database(const std::string & database_name="",const bool report_to_db=true);
+	void set_sql_database(const std::string & database_name,const bool update_host_registry_in_db,ns_sql & sql);
+	void switch_to_default_db();
 	void reconnect_sql_connection(ns_sql * sql);
 	
 	void check_for_sql_database_access(ns_image_server_sql * sql) const;
@@ -405,7 +406,7 @@ public:
 #endif
 	}
 
-	 void get_requested_database_from_db();
+	void request_database_from_db_and_switch_to_it(ns_sql & sql, bool update_hosts_records_in_db);
 
 	///Searches the default SVM machine learning model directory on the central file server and returns
 	///a list of all models present there
@@ -566,10 +567,10 @@ public:
 
 
 	void update_processing_status(const std::string & processing_state, const ns_64_bit processing_job_id, const ns_64_bit processing_job_queue_id,ns_sql & sql) const;
-
+	void clear_processing_status(ns_sql & sql) const;
 private:
 	ns_64_bit _main_thread_id;
-	static void open_log_file(const ns_image_server::ns_image_server_exec_type & exec_type, unsigned long thread_id, const std::string & volatile_directory, const std::string & file_name, std::ofstream & out);
+	static void open_log_file(const ns_image_server::ns_image_server_exec_type & exec_type, ns_64_bit thread_id, const std::string & volatile_directory, const std::string & file_name, std::ofstream & out);
 	ns_performance_statistics_analyzer performance_statistics;
 	mutable ns_lock performance_stats_lock;
 

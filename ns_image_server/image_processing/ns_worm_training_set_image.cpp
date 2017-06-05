@@ -521,7 +521,7 @@ public:
 				image_info[s].dimensions.x = atol(reader.objects[i].tag("dx").c_str());
 				image_info[s].dimensions.y = atol(reader.objects[i].tag("dy").c_str());
 
-				image_info[s].multiple_worm_cluster_group_id = ns_atoi64(reader.objects[i].tag("g").c_str());
+				image_info[s].multiple_worm_cluster_group_id = atol(reader.objects[i].tag("g").c_str());
 				image_info[s].multiple_worm_cluster_solution_id = ns_atoi64(reader.objects[i].tag("s").c_str());
 				image_info[s].original_region_position_in_source_image.x= atol(reader.objects[i].tag("ox").c_str());
 				image_info[s].original_region_position_in_source_image.y = atol(reader.objects[i].tag("oy").c_str());
@@ -706,10 +706,7 @@ void ns_worm_training_set_image::decode(const ns_image_standard & im,ns_annotate
 			cerr << "Problem: Object size: " << manager.image_info[i].original_bitmap_size << "\n";
 			continue;
 		}
-	//	if (manager.image_info[i].original_bitmap_position_in_source_image == ns_vector_2i(2385,241)){
-	//		ns_save_image("c:\\attmept_com.tif",manager.images[i].combined_image);
-	//		cerr << "ok!";
-	//	}
+	
 		if (manager.image_info[i].original_bitmap_size.x > manager.images[i].combined_image.properties().width || 
 			manager.image_info[i].original_bitmap_size.y > manager.images[i].combined_image.properties().height){
 			manager.image_info[i].original_bitmap_size =  ns_vector_2i(
@@ -721,12 +718,7 @@ void ns_worm_training_set_image::decode(const ns_image_standard & im,ns_annotate
 													manager.image_info[i].bitmap_offset_in_context_image(),manager.image_info[i].original_context_image_size);
 		manager.images[i].deallocate_images();
 		
-		/*if (manager.image_info[i].original_bitmap_position_in_source_image == ns_vector_2i(2385,241)){
-			//cerr <<"ok!";
-			ns_save_image("c:\\attmept_ag.tif",t.objects[i].object.absolute_grayscale());
-			ns_save_image("c:\\attmept_rg.tif",t.objects[i].object.relative_grayscale());
-			ns_save_image("c:\\attmept_bmp.tif",t.objects[i].object.bitmap());
-		}*/
+	
 		t.objects[i].hand_annotation_data = manager.image_info[i].hand_annotation_data;
 		t.objects[i].region_info_id = manager.image_info[i].region_info_id;
 		t.objects[i].capture_time = manager.image_info[i].time;

@@ -35,7 +35,7 @@ struct ns_precomputed_processing_step_images{
 		worm_detection_needs_to_be_performed(false){}
 
 	///specifies the database entry id for the precomputed image corresponding to the specified processing step
-	bool specify_image_id(const ns_processing_task & i, const unsigned int id,ns_sql & sql);
+	bool specify_image_id(const ns_processing_task & i, const ns_64_bit id,ns_sql & sql);
 
 	///loads all precomputed images based on the ids specified using specifiy_image_id()
 	void load_from_db(ns_sql & sql);
@@ -204,9 +204,9 @@ public:
 	mutable ns_region_metadata cached_risk_timeseries_metadata;
 	mutable ns_region_metadata cached_strain_risk_timeseries_metadata;
 
-	const ns_death_time_annotation_compiler & get_region_data(const ns_death_time_annotation_set::ns_annotation_type_to_load & a,const unsigned long id,ns_sql & sql) const;
+	const ns_death_time_annotation_compiler & get_region_data(const ns_death_time_annotation_set::ns_annotation_type_to_load & a,const ns_64_bit id,ns_sql & sql) const;
 private:
-	typedef std::map<unsigned long,ns_lifespan_curve_cache_entry_data> ns_region_raw_cache;
+	typedef std::map<ns_64_bit,ns_lifespan_curve_cache_entry_data> ns_region_raw_cache;
 	void clean() const;
 	mutable ns_region_raw_cache region_raw_data_cache;
 };
@@ -276,7 +276,7 @@ public:
 	void compile_video(ns_image_server_captured_image & sample_image, const std::vector<char> operations, const ns_video_region_specification & region_spec,ns_sql & sql);
 	///Creates a time-lapse video of the specified sample.  A video is made for each of the specified processing steps.
 	void compile_video_experiment(ns_image_server_captured_image & sample_image, const std::vector<char> operations, ns_sql & sql);
-	static void make_video(const unsigned long experiment_id, const std::vector< std::vector<std::string> > path_and_filenames, const ns_video_region_specification & region_spec, const std::vector<ns_vector_2i> registration_offsets, const std::string &output_basename, ns_sql & sql);
+	static void make_video(const ns_64_bit experiment_id, const std::vector< std::vector<std::string> > path_and_filenames, const ns_video_region_specification & region_spec, const std::vector<ns_vector_2i> registration_offsets, const std::string &output_basename, ns_sql & sql);
 	#endif
 	static void wrap_m4v_stream(const std::string & m4v_filename, const std::string & output_basename, const long number_of_frames, const bool for_ppt,ns_sql & sql);
 	

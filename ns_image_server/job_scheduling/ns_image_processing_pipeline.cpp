@@ -97,7 +97,7 @@ void ns_check_for_file_errors(ns_processing_job & job, ns_sql & sql){
 		if (res.size() == 0)
 			throw ns_ex("ns_check_for_file_errors()::Could not load sample ") << job.sample_id << " from db!";
 		const string sample_name(res[0][0]);
-		unsigned long experiment_id = ns_atoi64( res[0][1].c_str());
+		ns_64_bit experiment_id = ns_atoi64( res[0][1].c_str());
 		sql << "SELECT name FROM experiments WHERE id = " << experiment_id;
 		sql.get_rows(res);
 		if (res.size() == 0)
@@ -308,10 +308,10 @@ void ns_handle_file_delete_request(ns_processing_job & job, ns_sql & sql){
 			for (unsigned int i = 0; i < regions.size(); i++) {
 				const ns_64_bit region_id(ns_atoi64(regions[i][0].c_str()));
 				ns_identify_region_files_to_delete(region_id, false, operations, sql, files);
-				files.push_back(image_server.image_storage.get_storyboard_path(0, region_id, 0, "", sql, true));
+				files.push_back(image_server.image_storage.get_storyboard_path(0, region_id, 0, "", ns_xml,sql, true));
 			}
 			//delete experiment storyboards
-			files.push_back(image_server.image_storage.get_storyboard_path(job.experiment_id, 0, 0, "", sql, true));
+			files.push_back(image_server.image_storage.get_storyboard_path(job.experiment_id, 0, 0, "", ns_xml, sql, true));
 			//delete all region movement data
 			if (regions.size() != 0)
 				files.push_back(image_server_const.image_storage.get_file_specification_for_movement_data(ns_atoi64(regions[0][0].c_str()),"", &sql));
@@ -410,7 +410,7 @@ ns_processing_job ns_handle_file_delete_action(ns_processing_job & job, ns_sql &
 		sql.send_query();
 	}
 	catch(ns_ex & ex){
-		unsigned long event_id = image_server_const.register_server_event(ex,&sql);
+		ns_64_bit event_id = image_server_const.register_server_event(ex,&sql);
 		sql << "UPDATE processing_jobs SET currently_under_processing=0,problem=" << event_id << " WHERE id=" << parent_job.id;
 		sql.send_query();	
 		sql << "DELETE from processing_jobs WHERE id=" << job.id;
@@ -420,9 +420,9 @@ ns_processing_job ns_handle_file_delete_action(ns_processing_job & job, ns_sql &
 }
 
 void ns_handle_image_metadata_delete_action(ns_processing_job & job,ns_sql & sql){
-	vector<unsigned long> regions_to_delete;
-	vector<unsigned long> samples_to_delete;
-	unsigned long experiment_to_delete(0);
+	vector<ns_64_bit> regions_to_delete;
+	vector<ns_64_bit> samples_to_delete;
+	ns_64_bit experiment_to_delete(0);
 	bool autocommit_state = sql.autocommit_state();
 	sql.set_autocommit(false);
 	sql.send_query("BEGIN");
@@ -633,7 +633,7 @@ void ns_handle_image_metadata_delete_action(ns_processing_job & job,ns_sql & sql
 
 
 ///specifies the database entry id for the precomputed image corresponding to the specified processing step
-bool ns_precomputed_processing_step_images::specify_image_id(const ns_processing_task & i, const unsigned int id,ns_sql & sql){
+bool ns_precomputed_processing_step_images::specify_image_id(const ns_processing_task & i, const ns_64_bit id,ns_sql & sql){
 	exists[i] = (id != 0);
 	if (id == 0) return false;
 	
@@ -838,7 +838,7 @@ void ns_image_processing_pipeline::process_region(const ns_image_server_captured
 				ns_image_type t(ns_get_image_type(unprocessed_image.filename));
 				if (t != ns_jp2k) {
 					unprocessed_image.filename = ns_dir::extract_filename_without_extension(unprocessed_image.filename);
-					unprocessed_image.filename += ".jp2";
+					ns_add_image_suffix(unprocessed_image.filename, ns_jp2k);
 
 					string compression_rate = image_server_const.get_cluster_constant_value("jp2k_compression_rate", ns_to_string(NS_DEFAULT_JP2K_COMPRESSION), &sql);
 					float compression_rate_f = atof(compression_rate.c_str());
@@ -1311,8 +1311,8 @@ float ns_image_processing_pipeline::process_mask(ns_image_server_image & source_
 }
 
 struct ns_mask_region_sorter_element{
-	unsigned long mask_region_id,
-				  mask_value;
+	ns_64_bit mask_region_id;
+	unsigned long  mask_value;
 	ns_vector_2i average,
 				 pos,
 				 size;
@@ -1340,7 +1340,7 @@ void ns_image_processing_pipeline::generate_sample_regions_from_mask(ns_64_bit s
 	sql << "SELECT id, mask_value, x_min, y_min, x_max, y_max, x_average, y_average FROM image_mask_regions WHERE mask_id = " << mask_id << " ORDER BY mask_value ASC";
 	sql.get_rows(res);
 	vector<ns_mask_region_sorter_element> mask_regions(res.size());
-	std::map<unsigned long, ns_mask_region_sorter_element *> mask_finder;
+	std::map<ns_64_bit, ns_mask_region_sorter_element *> mask_finder;
 
 	//sort regions top to boytom based on their positions in the mask
 	for (unsigned long i = 0; i < res.size(); i++){
@@ -1401,7 +1401,7 @@ void ns_image_processing_pipeline::generate_sample_regions_from_mask(ns_64_bit s
 	sql << "SELECT id, mask_region_id FROM sample_region_image_info WHERE sample_id = " << sample_id;
 	sql.get_rows(res);
 	for (unsigned int i = 0; i < res.size(); i++){
-		unsigned long region_id = ns_atoi64(res[i][0].c_str());
+		ns_64_bit region_id = ns_atoi64(res[i][0].c_str());
 		if (mask_finder.find(region_id) == mask_finder.end()){
 			ns_processing_job job;
 			job.region_id = region_id;
@@ -1767,7 +1767,7 @@ void ns_image_processing_pipeline::compile_video(ns_image_server_captured_image 
 			ev.specifiy_event_subject(sample_image);
 			ev.specify_processing_job_operation(ns_process_compile_video);
 
-			unsigned long event_id = image_server_const.register_server_event(ev,&sql);
+			ns_64_bit event_id = image_server_const.register_server_event(ev,&sql);
 
 
 			//calculate registration information if required
@@ -1839,7 +1839,7 @@ void ns_image_processing_pipeline::wrap_m4v_stream(const string & m4v_filename, 
 	cout << "\n";
 }
 #ifndef NS_NO_XVID
-void ns_image_processing_pipeline::make_video(const unsigned long experiment_id, const vector< vector<string> > path_and_filenames, const ns_video_region_specification & region_spec, const vector<ns_vector_2i> registration_offsets, const string &output_basename, ns_sql & sql){
+void ns_image_processing_pipeline::make_video(const ns_64_bit experiment_id, const vector< vector<string> > path_and_filenames, const ns_video_region_specification & region_spec, const vector<ns_vector_2i> registration_offsets, const string &output_basename, ns_sql & sql){
 	
 	ns_xvid_encoder xvid;	
 	vector<string> filenames;
@@ -2020,7 +2020,7 @@ void ns_image_processing_pipeline::apply_mask(ns_image_server_captured_image & c
 			throw ns_ex("ns_image_processing_pipeline::Specified sample does not exist in database during mask application.");
 		if (res[0][0] == "" || res[0][0] == "0")
 			throw ns_ex("ns_image_processing_pipeline::Specified sample '") << captured_image.sample_name << "'(" << captured_image.sample_id << ") does have mask set.";
-		unsigned long mask_id = ns_atoi64(res[0][0].c_str()),
+		ns_64_bit mask_id = ns_atoi64(res[0][0].c_str()),
 			mask_image_id = ns_atoi64(res[0][1].c_str()),
 			apply_vertical_image_registration = atol(res[0][2].c_str());
 		//	if (apply_vertical_image_registration)
@@ -2084,9 +2084,9 @@ void ns_image_processing_pipeline::apply_mask(ns_image_server_captured_image & c
 		vector<ns_image_server_image> output_images;
 		unsigned long mask_info_size = mask_splitter.mask_info()->size();
 		for (unsigned int i = 0; i < res.size(); i++) {
-			unsigned int	mask_region_info_id = ns_atoi64(res[i][0].c_str());
-			unsigned int 	mask_region_id = ns_atoi64(res[i][2].c_str());
-			int				mask_region_value = ns_atoi64(res[i][3].c_str()); // if it could accidentally be < 0 (see below) it ought to be an int
+			ns_64_bit	mask_region_info_id = ns_atoi64(res[i][0].c_str());
+			ns_64_bit 	mask_region_id = ns_atoi64(res[i][2].c_str());
+			int				mask_region_value = atol(res[i][3].c_str()); // if it could accidentally be < 0 (see below) it ought to be an int
 			string			mask_region_name = res[i][1];
 
 			if (mask_region_value < 0 || mask_region_value > mask_info_size)
@@ -2413,7 +2413,7 @@ void ns_lifespan_curve_cache_entry::clean()const{
 	if (region_raw_data_cache.size() > 1)
 		region_raw_data_cache.clear();
 }
-const ns_death_time_annotation_compiler & ns_lifespan_curve_cache_entry::get_region_data(const ns_death_time_annotation_set::ns_annotation_type_to_load & a,const unsigned long id,ns_sql & sql) const{
+const ns_death_time_annotation_compiler & ns_lifespan_curve_cache_entry::get_region_data(const ns_death_time_annotation_set::ns_annotation_type_to_load & a,const ns_64_bit id,ns_sql & sql) const{
 	//check to see if local data is up to date
 	sql << "SELECT latest_movement_rebuild_timestamp FROM sample_region_image_info WHERE id = " << id;
 	ns_sql_result res;
@@ -2465,7 +2465,7 @@ const ns_lifespan_curve_cache_entry & ns_lifespan_curve_cache::get_experiment_da
 	sql.get_rows(res);
 	bool reload_experiment_data(false);
 	for (unsigned int i = 0; i < res.size(); i++){
-		const unsigned long region_id(ns_atoi64(res[i][0].c_str()));
+		const ns_64_bit region_id(ns_atoi64(res[i][0].c_str()));
 		const unsigned long latest_machine_timestamp(atol(res[i][1].c_str()));
 		const unsigned long latest_hand_timestamp(atol(res[i][2].c_str()));
 		ns_lifespan_region_timestamp_cache::iterator p = timestamp_cache.find(region_id);

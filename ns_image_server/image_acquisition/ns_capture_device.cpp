@@ -586,7 +586,7 @@ ns_64_bit ns_image_capture_device_speed_regulator::run_delay_if_necessary(){
 	}
 	//if we are delaying more than a second, use the second delay.
 	else{
-		const unsigned long seconds_to_sleep(pending_delay/1000);
+		const ns_64_bit seconds_to_sleep(pending_delay/1000);
 		if (seconds_to_sleep > 15){
 			ns_64_bit current_time(scan_duration.absolute_time()/1000);  //in ms
 

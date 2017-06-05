@@ -65,7 +65,7 @@ struct ns_image_capture_specification{
 	//information about the image being captured
 	ns_image_server_captured_image image;
 	std::ofstream * volatile_storage;
-	unsigned long capture_schedule_entry_id;
+	ns_64_bit capture_schedule_entry_id;
 	//parameterse to send to the capture device
 	std::string capture_parameters;
 	bool turn_off_lamp_after_capture;

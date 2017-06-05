@@ -187,9 +187,9 @@ ns_image_storage_source_handle<ns_8_bit> ns_storage_request_from_storage(const n
 }
 
 ns_image_storage_reciever_handle<ns_8_bit> ns_storage_request_local_cache_storage(const ns_image_storage_handler * image_storage,
-																				  const std::string & filename, const ns_image_type & type,const unsigned long max_line_length,
+																				  const std::string & filename, const ns_image_type & image_type,const unsigned long max_line_length,
 																				  const bool report_to_db){
-	return image_storage->request_local_cache_storage(filename,type,max_line_length,report_to_db);
+	return image_storage->request_local_cache_storage(filename,image_type,max_line_length,report_to_db);
 }
 
 double ns_image_storage_handler::get_region_images_size_on_disk(const ns_64_bit region_id,const ns_processing_task t,ns_sql & sql) const{
@@ -451,14 +451,16 @@ ifstream * ns_image_storage_handler::request_metadata_from_disk(ns_image_server_
 	return i;
 }
 
-ofstream * ns_image_storage_handler::request_metadata_output(ns_image_server_image & image, const ns_image_type & file_type, const bool binary,ns_image_server_sql * sql) const{
+ofstream * ns_image_storage_handler::request_metadata_output(ns_image_server_image & image, const ns_image_type & image_type, const bool binary, ns_image_server_sql * sql) const {
 
-	if (image.filename.size() == 0 || image.path.size() == 0 || image.partition.size() == 0) image.load_from_db(image.id,sql);
+	if (image.filename.size() == 0 || image.path.size() == 0 || image.partition.size() == 0) image.load_from_db(image.id, sql);
 	//std::string existing_filename_extension(ns_dir::extract_extension(image.filename));
 
-	//remove the current extension and make use the specified one
-	ns_file_location_specification spec(look_up_image_location(image,sql, file_type,true));
 
+	//remove the current extension and make use the specified one
+	ns_file_location_specification spec(look_up_image_location(image,sql, image_type,true));
+
+	ns_probe_for_illegal_character(spec.absolute_long_term_filename());
 	//try to store image in long-term storage
 	if (long_term_storage_directory.size() != 0 && ns_dir::file_exists(spec.long_term_directory)){
 
@@ -829,7 +831,7 @@ std::string ns_image_storage_handler::add_to_local_cache(ns_image_server_image &
 		//guarentee unique filename for this process
 		string tmp(output_filename);
 		int i = 0;
-		unsigned long thread_id = image_server_const.get_current_thread_state_info()->second.internal_thread_id;
+		ns_64_bit thread_id = image_server_const.get_current_thread_state_info()->second.internal_thread_id;
 		while(ns_dir::file_exists(tmp + "." + extension)){
 			tmp = output_filename + "_" + ns_to_string(thread_id) + "_" + ns_to_string(i) ;
 			i++;
@@ -1155,7 +1157,7 @@ std::string ns_image_storage_handler::movement_file_directory(ns_64_bit region_i
 	return dir;
 }
 
-ns_file_location_specification ns_image_storage_handler::get_storyboard_path(const ns_64_bit & experiment_id, const ns_64_bit & region_id, const ns_64_bit & subimage_id, const std::string & filename_suffix, ns_sql & sql, const bool just_path) const{
+ns_file_location_specification ns_image_storage_handler::get_storyboard_path(const ns_64_bit & experiment_id, const ns_64_bit & region_id, const ns_64_bit & subimage_id, const std::string & filename_suffix, const ns_image_type & image_type, ns_sql & sql, const bool just_path) const{
 	ns_file_location_specification spec;
 	if (experiment_id != 0 && region_id != 0)
 		throw ns_ex("Storyboards for experiments and regions are stored in different locations! Specify only one.");
@@ -1176,6 +1178,7 @@ ns_file_location_specification ns_image_storage_handler::get_storyboard_path(con
 			spec.filename = res[0][3] + "=" + res[0][1] +
 				"=" + res[0][0] + "=" + filename_suffix + "=" + ns_to_string(subimage_id);
 		}
+		ns_add_image_suffix(spec.filename, image_type);
 		spec.relative_directory = region_path + DIR_CHAR_STR + "animal_storyboard";
 
 		spec.partition = image_server.image_storage.get_partition_for_experiment(ns_atoi64(res[0][4].c_str()), &sql);
@@ -1192,6 +1195,7 @@ ns_file_location_specification ns_image_storage_handler::get_storyboard_path(con
 	if (!just_path)
 		spec.filename = res[0][0] + "=" + filename_suffix + "=" + ns_to_string(subimage_id);
 	const std::string experiment_directory(ns_image_server_captured_image_region::experiment_directory(res[0][0], experiment_id));
+	ns_add_image_suffix(spec.filename, image_type);
 	spec.relative_directory = experiment_directory + DIR_CHAR_STR + "animal_storyboard";
 	spec.partition = image_server.image_storage.get_partition_for_experiment(experiment_id, &sql);
 	return spec;
@@ -1252,7 +1256,7 @@ ns_image_server_image ns_image_storage_handler::get_storage_for_specification(co
 
 ns_image_server_image ns_image_storage_handler::get_storage_for_path(const ns_file_location_specification & region_spec,
 			const unsigned long path_id, const unsigned long path_group_id,
-			const unsigned long region_info_id, const std::string & region_name, const std::string & experiment_name, const std::string & sample_name,bool flow) const{
+			const ns_64_bit region_info_id, const std::string & region_name, const std::string & experiment_name, const std::string & sample_name,bool flow) const{
 
 	ns_file_location_specification spec(region_spec);
 	ns_file_location_specification dir_spec(get_file_specification_for_path_data(region_spec));
@@ -1445,7 +1449,8 @@ ns_file_location_specification ns_image_storage_handler::look_up_image_location(
 
 	if (image.filename.size() == 0 || image.path.size() == 0)
 		image.load_from_db(image.id, sql);
-
+	if (image.filename.empty())
+		throw ns_ex("ns_image_storage_handler::Empty filename requested");
 	if (alter_file_extension) {
 		std::string desired_suffix;
 		ns_add_image_suffix(desired_suffix, image_type);
@@ -1496,7 +1501,7 @@ std::string ns_image_storage_handler::get_partition_for_experiment_int(const ns_
 	if (get_lock)
 		experiment_partition_cache_lock.wait_to_acquire(__FILE__,__LINE__);
 	try{
-		map<unsigned long,std::string>::iterator p = experiment_partition_cache.find(experiment_id);
+		map<ns_64_bit,std::string>::iterator p = experiment_partition_cache.find(experiment_id);
 		if (p == experiment_partition_cache.end()){
 			if (!request_from_db_on_miss)
 				throw ns_ex("ns_image_storage_handler::get_partition_for_experiment_int()::Experiment id ") << experiment_id << " does not have an entry in the local experiment_partition_cache!";
@@ -1569,7 +1574,7 @@ ns_socket_connection ns_image_storage_handler::connect_to_fileserver_node(ns_sql
 
 	for (unsigned int i = 0; i < hosts.size(); i++){
 		try{
-			return socket.connect(hosts[ order[i] ][0], ns_atoi64(hosts[ order[i] ][1].c_str()));
+			return socket.connect(hosts[ order[i] ][0], atol(hosts[ order[i] ][1].c_str()));
 		}
 		catch(ns_ex & ex){/*do nothing */}
 	}

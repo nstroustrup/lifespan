@@ -3455,7 +3455,7 @@ void ns_worm_learner::compile_experiment_survival_and_movement_data(bool use_by_
 							(ns_death_time_annotation::ns_multiworm_censoring_strategy)censoring_strategy,
 							default_missing_return_strategy,
 							compiled_region,ns_force_to_fast_moving);
-						series.generate_censoring_annotations(movement_results.samples[i].regions[j].metadata,set);
+						series.generate_censoring_annotations(movement_results.samples[i].regions[j].metadata,0,set);
 						series.to_file(movement_results.samples[i].regions[j].metadata,movement_data_plate_file_with_incomplete[censoring_strategy][by_hand_annotation_integration_strategy[bhais]]());
 						series.to_file(movement_results.samples[i].regions[j].metadata,movement_data_plate_file_without_incomplete[censoring_strategy][by_hand_annotation_integration_strategy[bhais]]());
 
@@ -3463,7 +3463,7 @@ void ns_worm_learner::compile_experiment_survival_and_movement_data(bool use_by_
 							(ns_death_time_annotation::ns_multiworm_censoring_strategy)censoring_strategy,
 							default_missing_return_strategy,
 							compiled_region,ns_include_unchanged);
-						series.generate_censoring_annotations(movement_results.samples[i].regions[j].metadata,set);
+						series.generate_censoring_annotations(movement_results.samples[i].regions[j].metadata,0,set);
 						series.to_file(movement_results.samples[i].regions[j].metadata,movement_data_plate_file_with_incomplete[censoring_strategy][by_hand_annotation_integration_strategy[bhais]]());
 					
 						if (censoring_strategy == ns_death_time_annotation::ns_merge_multiple_worm_clusters_and_missing_and_censor){
@@ -3472,7 +3472,7 @@ void ns_worm_learner::compile_experiment_survival_and_movement_data(bool use_by_
 								(ns_death_time_annotation::ns_multiworm_censoring_strategy)censoring_strategy,
 								alternate_missing_return_strategy_1,
 								compiled_region,ns_include_unchanged);
-							series.generate_censoring_annotations(movement_results.samples[i].regions[j].metadata,set);
+							series.generate_censoring_annotations(movement_results.samples[i].regions[j].metadata,0,set);
 							series.to_file(movement_results.samples[i].regions[j].metadata,
 									movement_data_plate_file_with_alternate_missing_return_strategy_1());
 

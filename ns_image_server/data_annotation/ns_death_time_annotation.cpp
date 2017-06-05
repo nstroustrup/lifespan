@@ -48,7 +48,41 @@ ns_vector_2i ns_pos_from_str(const std::string & str){
 	return ns_vector_2i(atol(str.substr(0,p).c_str()),atol(str.substr(p+1,string::npos).c_str()));
 }
 
+std::string ns_death_time_annotation::brief_description() const {
+	bool movement_event(type != ns_no_movement_event);
+	bool excluded_event(excluded != ns_death_time_annotation::ns_not_excluded);
+	bool flagged_event(flag.specified());
+	bool multip_worm_event(number_of_worms() > 0);
 
+	bool volt(volatile_duration_of_time_not_fast_moving ||
+		volatile_time_spent_before_end_of_death_time_contraction ||
+		volatile_matches_machine_detected_death);
+		
+	//bool has_sticky_properties();
+
+	std::string ret;
+	if (movement_event) {
+		ret += "[" + ns_movement_event_to_string(type) +"]";
+	}
+	else ret += "[No movement event]";
+	ret += ":";
+	if (excluded_event)
+		if (is_censored())
+			ret += "(" + censor_description(excluded) + ")";
+		else if (is_excluded())
+			ret += "(Excluded)";
+		else ret += "?";
+
+	if (flagged_event)ret += "(" + flag.label() +")";
+
+	if (volt) ret += "(volatile)";
+	if (inferred_animal_location) ret += "(Inferred)";
+	ret += " @ " + ns_format_time_string_for_human(time.period_end);
+	ret += " by " + source_type_to_string(annotation_source) + " @ " + ns_format_time_string_for_human(annotation_time);
+
+		return ret;
+
+}
 std::string ns_death_time_annotation::description() const{
 	return ns_movement_event_to_string(type) + "::" + source_type_to_string(annotation_source) + 
 		"::" + exclusion_string(excluded) +"::pos(" + ns_to_string(position.x) + "," + ns_to_string(position.y) +
@@ -882,7 +916,10 @@ void ns_death_time_annotation_set::read_xml(const ns_annotation_type_to_load & t
 		
 		if (xml.objects[i].tag_specified("w"))
 			a.stationary_path_id.path_id = (ns_death_time_annotation::ns_disambiguation_type)atol(xml.objects[i].tag("w").c_str());
-		
+
+		if (xml.objects[i].tag_specified("dt"))
+			a.stationary_path_id.detection_set_id = (ns_death_time_annotation::ns_disambiguation_type)atol(xml.objects[i].tag("dt").c_str());
+
 		if (annotation_matches(t,a))
 			events.push_back(a);
 	}
@@ -914,7 +951,7 @@ void  ns_death_time_annotation_set::write_xml(std::ostream & o) const{
 
 		xml.add_tag("q",events[i].stationary_path_id.group_id);
 		xml.add_tag("w",events[i].stationary_path_id.path_id);
-
+		xml.add_tag("dt", events[i].stationary_path_id.detection_set_id);
 		xml.end_group();
 	}
 	xml.add_footer();
@@ -972,6 +1009,13 @@ void ns_death_time_annotation_compiler_location::handle_sticky_properties(const 
 	a.transfer_sticky_properties(properties);
 }
 
+
+void ns_death_time_annotation_compiler_region::clear() {
+	locations.clear();
+	non_location_events.clear();
+	fast_moving_animals.clear();
+	metadata.clear();
+}
 void ns_death_time_annotation_compiler_region::add(const ns_death_time_annotation & e, const bool create_new_location){
 //	if (e.stationary_path_id.path_id == 0  && e.stationary_path_id.group_id == 0 && e.stationary_path_id.detection_set_id != 0)
 //			cerr << "WHAA";
@@ -1157,7 +1201,7 @@ void ns_death_time_annotation_compiler::add(const ns_death_time_annotation_set &
 	if (set.events.size() == 0)
 		return;
 
-	unsigned long region_info_id(set.events[0].region_info_id);
+	ns_64_bit region_info_id(set.events[0].region_info_id);
 	for (unsigned int i = 1; i < set.events.size(); i++){
 		if (set.events[i].region_info_id != region_info_id)
 			throw ns_ex("ns_death_time_annotation_compiler::add()::Cannot add multi-region set and metadata simultaneously");

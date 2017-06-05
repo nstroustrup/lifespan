@@ -265,117 +265,7 @@ double ns_find_percentile_average(const std::vector<double> & d, const unsigned 
 			return 0;
 		return sum/(stop-start);
 }
-/*
-ns_survival_data_summary ns_survival_data::produce_summary() const{
-	ns_survival_data_summary s;
-	s.metadata = metadata;
-	s.death.set_as_zero();
-	s.local_movement_cessation.set_as_zero();
-	s.long_distance_movement_cessation.set_as_zero();
-	vector<double> death_times,
-						  local_movement_cessation_times,
-						  long_distance_movement_cessation_times;
 
-	for (unsigned int j = 0; j < timepoints.size(); ++j){
-
-		const unsigned long death_total(timepoints[j].deaths.total(ns_death_time_annotation::ns_not_excluded)),
-			local_total(timepoints[j].local_movement_cessations.total(ns_death_time_annotation::ns_not_excluded)),
-			long_distance_total(timepoints[j].long_distance_movement_cessations.total(ns_death_time_annotation::ns_not_excluded));
-
-		const double age(timepoints[j].absolute_time-metadata.time_at_which_animals_had_zero_age);
-	//	const long age(timepoints[j].absolute_time);
-		s.death.count+=death_total;
-		s.death.machine_excluded_count += timepoints[j].deaths.total(ns_death_time_annotation::ns_machine_excluded);
-		s.death.by_hand_excluded_count += timepoints[j].deaths.total(ns_death_time_annotation::ns_by_hand_excluded);
-		s.death.censored_count += timepoints[j].deaths.total(ns_death_time_annotation::ns_censored);
-		s.death.number_of_events_involving_multiple_worm_disambiguation += timepoints[j].deaths.mulitple_worm_disambiguation_total(true);
-		
-		s.local_movement_cessation.count+=local_total;
-		s.local_movement_cessation.machine_excluded_count += timepoints[j].local_movement_cessations.total(ns_death_time_annotation::ns_machine_excluded);
-		s.local_movement_cessation.by_hand_excluded_count += timepoints[j].local_movement_cessations.total(ns_death_time_annotation::ns_by_hand_excluded);
-		s.local_movement_cessation.censored_count += timepoints[j].local_movement_cessations.total(ns_death_time_annotation::ns_censored);
-		s.local_movement_cessation.number_of_events_involving_multiple_worm_disambiguation += timepoints[j].local_movement_cessations.mulitple_worm_disambiguation_total(true);
-		
-		s.long_distance_movement_cessation.count+=long_distance_total;
-		s.long_distance_movement_cessation.machine_excluded_count += timepoints[j].long_distance_movement_cessations.total(ns_death_time_annotation::ns_machine_excluded);
-		s.long_distance_movement_cessation.by_hand_excluded_count += timepoints[j].long_distance_movement_cessations.total(ns_death_time_annotation::ns_by_hand_excluded);
-		s.long_distance_movement_cessation.censored_count += timepoints[j].long_distance_movement_cessations.total(ns_death_time_annotation::ns_censored);
-		s.long_distance_movement_cessation.number_of_events_involving_multiple_worm_disambiguation += timepoints[j].long_distance_movement_cessations.mulitple_worm_disambiguation_total(true);
-
-		s.death.mean+=death_total*age;
-		s.local_movement_cessation.mean+=local_total*age;
-		s.long_distance_movement_cessation.mean+=timepoints[j].long_distance_movement_cessations.total(ns_death_time_annotation::ns_not_excluded)*age;
-
-		death_times.resize(death_times.size()+death_total,age);
-		local_movement_cessation_times.resize(local_movement_cessation_times.size()+local_total,age);
-		 long_distance_movement_cessation_times.resize(long_distance_movement_cessation_times.size()+long_distance_total,age);
-	}	
-	if (s.death.count!= 0) s.death.mean/=s.death.count;
-	if (s.local_movement_cessation.count!= 0) s.local_movement_cessation.mean/=s.local_movement_cessation.count;
-	if (s.long_distance_movement_cessation.count!= 0) s.long_distance_movement_cessation.mean/=s.long_distance_movement_cessation.count;
-
-	for (unsigned int j = 0; j < timepoints.size(); ++j){
-		const unsigned long death_total(timepoints[j].deaths.total(ns_death_time_annotation::ns_not_excluded)),
-			local_total(timepoints[j].local_movement_cessations.total(ns_death_time_annotation::ns_not_excluded)),
-			long_distance_total(timepoints[j].long_distance_movement_cessations.total(ns_death_time_annotation::ns_not_excluded));
-
-		const double age(timepoints[j].absolute_time-metadata.time_at_which_animals_had_zero_age);
-		s.death.variance+=death_total*(age-s.death.mean)*(age-s.death.mean);
-		s.local_movement_cessation.variance+=local_total*(age-s.local_movement_cessation.mean)*(age-s.local_movement_cessation.mean);
-		s.long_distance_movement_cessation.variance+=long_distance_total*(age-s.long_distance_movement_cessation.mean)*(age-s.long_distance_movement_cessation.mean);
-	}
-	if (s.death.count!= 0) s.death.variance/=s.death.count;
-	if (s.local_movement_cessation.count!= 0) s.local_movement_cessation.variance/=s.local_movement_cessation.count;
-	if (s.long_distance_movement_cessation.count!= 0) s.long_distance_movement_cessation.variance/=s.long_distance_movement_cessation.count;
-
-	std::sort(death_times.begin(),death_times.end());
-	std::sort(local_movement_cessation_times.begin(),local_movement_cessation_times.end());
-	std::sort(long_distance_movement_cessation_times.begin(),long_distance_movement_cessation_times.end());
-	if (death_times.size() > 0){
-		s.death.percentile_10th = ns_find_percentile_average(death_times,1);
-		s.death.percentile_90th = ns_find_percentile_average(death_times,9);
-		s.death.percentile_50th =death_times[death_times.size()/2];
-		s.death.minimum = *death_times.begin();
-		s.death.maximum = *death_times.rbegin();
-	}	
-	if (local_movement_cessation_times.size() > 0){
-		s.local_movement_cessation.percentile_10th = ns_find_percentile_average(local_movement_cessation_times,1);
-		s.local_movement_cessation.percentile_90th = ns_find_percentile_average(local_movement_cessation_times,9);
-		s.local_movement_cessation.percentile_50th =local_movement_cessation_times[local_movement_cessation_times.size()/2];
-		s.local_movement_cessation.minimum = *local_movement_cessation_times.begin();
-		s.local_movement_cessation.maximum = *local_movement_cessation_times.rbegin();
-	}	
-	if (long_distance_movement_cessation_times.size() > 0){
-		s.long_distance_movement_cessation.percentile_10th = ns_find_percentile_average(long_distance_movement_cessation_times,1);
-		s.long_distance_movement_cessation.percentile_90th = ns_find_percentile_average(long_distance_movement_cessation_times,9);
-		s.long_distance_movement_cessation.percentile_50th =long_distance_movement_cessation_times[long_distance_movement_cessation_times.size()/2];
-		s.long_distance_movement_cessation.minimum = *long_distance_movement_cessation_times.begin();
-		s.long_distance_movement_cessation.maximum = *long_distance_movement_cessation_times.rbegin();
-	}
-
-	s.death.maximum+=metadata.time_at_which_animals_had_zero_age;
-	s.death.minimum+=metadata.time_at_which_animals_had_zero_age;
-	s.death.mean+=metadata.time_at_which_animals_had_zero_age;
-	s.death.percentile_10th+=metadata.time_at_which_animals_had_zero_age;
-	s.death.percentile_50th+=metadata.time_at_which_animals_had_zero_age;
-	s.death.percentile_90th+=metadata.time_at_which_animals_had_zero_age;
-
-	s.local_movement_cessation.maximum+=metadata.time_at_which_animals_had_zero_age;
-	s.local_movement_cessation.minimum+=metadata.time_at_which_animals_had_zero_age;
-	s.local_movement_cessation.mean+=metadata.time_at_which_animals_had_zero_age;
-	s.local_movement_cessation.percentile_10th+=metadata.time_at_which_animals_had_zero_age;
-	s.local_movement_cessation.percentile_50th+=metadata.time_at_which_animals_had_zero_age;
-	s.local_movement_cessation.percentile_90th+=metadata.time_at_which_animals_had_zero_age;
-
-	s.long_distance_movement_cessation.maximum+=metadata.time_at_which_animals_had_zero_age;
-	s.long_distance_movement_cessation.minimum+=metadata.time_at_which_animals_had_zero_age;
-	s.long_distance_movement_cessation.mean+=metadata.time_at_which_animals_had_zero_age;
-	s.long_distance_movement_cessation.percentile_10th+=metadata.time_at_which_animals_had_zero_age;
-	s.long_distance_movement_cessation.percentile_50th+=metadata.time_at_which_animals_had_zero_age;
-	s.long_distance_movement_cessation.percentile_90th+=metadata.time_at_which_animals_had_zero_age;
-	return s;
-}
-*/
 std::string ns_region_metadata::to_xml() const{
 	ns_xml_simple_writer xml;
 	xml.add_tag("device",device);
@@ -1774,7 +1664,7 @@ void ns_device_temperature_normalization_data::load_data_for_experiment(const un
 	control_strains.resize(exp.size()-2);
 
 	for (unsigned int i = 1; i < exp.size()-1; i++){
-		int control_strain_region_id(ns_atoi64(exp[i].c_str()));
+		ns_64_bit control_strain_region_id(ns_atoi64(exp[i].c_str()));
 		if (control_strain_region_id == 0)
 			throw ns_ex("Could not parse experiment strain specification");
 		control_strains[i-1].load_from_db(control_strain_region_id,"",sql);

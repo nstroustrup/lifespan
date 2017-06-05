@@ -7,8 +7,8 @@
 
 
 struct ns_annotated_training_set_object{
-	unsigned long region_info_id,
-				  capture_time;
+	unsigned long  capture_time;
+	ns_64_bit region_info_id;
 	ns_detected_worm_info object;
 	ns_whole_image_statistic_specification whole_image_stats;
 	ns_packed_collage_position collage_position;

@@ -100,7 +100,7 @@ class ns_image_server_results_storage{
 	static std::string device_data_folder(){return "device_data";}
 	static std::string animal_event_folder(){return "animal_event_data";}
 	static std::string machine_learning_training_set_folder(){return "machine_learning_training_set_images";}
-	static std::string time_path_image_analysis_quantification(){return "time_path_image_analysis_quantification";}
+	static std::string time_path_image_analysis_quantification(){return "posture_analysis";}
 public:
 	void set_results_directory(const std::string & dir){results_directory = dir;}
 

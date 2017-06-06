@@ -1643,8 +1643,11 @@ void ns_time_path_image_movement_analyzer::obtain_analysis_id_and_save_movement_
 
 	if (im.id != 0) { //load and check for bad filenames
 		im.load_from_db(im.id, &sql);
-		if (im.filename.empty())
+		if (im.filename.empty()) {
+			if (id_options == ns_require_existing_record)
+				throw ns_ex("obtain_analysis_id_and_save_movement_data()::Encountered an empty record");
 			id_options = ns_force_creation_of_new_db_record;
+		}
 	}
 	if (id_options == ns_force_creation_of_new_db_record && im.id != 0) {
 		sql << "DELETE FROM images WHERE id = " << im.id;
@@ -1664,7 +1667,6 @@ void ns_time_path_image_movement_analyzer::obtain_analysis_id_and_save_movement_
 		if (im.filename.empty()) throw ns_ex("Encountered a blank filename!");
 		if (write_options == ns_write_data)
 			o = image_server_const.image_storage.request_metadata_output(im, ns_csv, false, &sql);
-		im.save_to_db(im.id, &sql);
 	}
 	catch (ns_ex & ex) {
 		//if there's a problem create a new entry in the db to halt propigation of db errors
@@ -1693,6 +1695,7 @@ void ns_time_path_image_movement_analyzer::obtain_analysis_id_and_save_movement_
 		throw;
 	}
 	if (update_db){
+		im.save_to_db(im.id, &sql);
 		sql << "UPDATE sample_region_image_info SET movement_image_analysis_quantification_id = " << im.id << " WHERE id = " << region_id;
 		sql.send_query();
 	}

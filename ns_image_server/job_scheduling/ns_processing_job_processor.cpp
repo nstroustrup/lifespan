@@ -985,6 +985,7 @@ bool ns_processing_job_maintenance_processor::run_job(ns_sql & sql) {
 							break;
 						ns_experiment_storyboard_manager man;
 						man.load_metadata_from_db(specs[j], s, sql);
+						s.prepare_to_draw(sql);
 						ns_image_standard ima;
 						for (unsigned int i = 0; i < man.number_of_sub_images(); i++) {
 							try {
@@ -1043,16 +1044,15 @@ bool ns_processing_job_maintenance_processor::run_job(ns_sql & sql) {
 			const ns_64_bit start (job.image_id),
 							    stop(job.image_id+5);
 			for (unsigned int j = 0; j < specs.size(); j++){
-				ns_experiment_storyboard s;
-				ns_experiment_storyboard_manager man;
-				man.load_metadata_from_db(specs[j],s,sql);	
-				image_server->register_server_event(ns_image_server_event("Rendering a type ") <<(j+1) << " storyboard, divisions " << start+1 << "-" << stop+1 << " of " << s.divisions.size() << " (job " << job.id <<")\n",&sql);
+				ns_image_server::ns_storyboard_cache::const_handle_t storyboard;
+				image_server->get_storyboard(specs[j], storyboard, sql);
+				image_server->register_server_event(ns_image_server_event("Rendering a type ") << (j + 1) << " storyboard, divisions " << start + 1 << "-" << stop + 1 << " of " << storyboard().storyboard.divisions.size() << " (job " << job.id << ")\n", &sql);
 				ns_image_standard ima;
-				for (ns_64_bit i = start; i < stop && i < man.number_of_sub_images(); i++){
-					cerr << "Rendering division " << i << ":";
-					s.draw(i,ima,true,sql);
-					cerr << "\n";
-					man.save_image_to_db(i,specs[j],ima,sql);
+				for (ns_64_bit i = start; i < stop && i < storyboard().manager.number_of_sub_images(); i++){
+					image_server->add_subtext_to_current_event(std::string("Rendering division ") + ns_to_string(i) + ":",&sql);
+					storyboard().storyboard.draw(i,ima,true,sql);
+					image_server->add_subtext_to_current_event("\n",&sql);
+					storyboard().manager.save_image_to_db_no_error_handling(i,specs[j],ima,sql);
 				}
 			}
 			break;

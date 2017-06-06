@@ -35,7 +35,7 @@ sql_lock("ns_is::sql"), server_event_lock("ns_is::server_event"), performance_st
 _act_as_processing_node(true), cleared(false),
 image_registration_profile_cache(1024 * 4), //allocate 4 gigabytes of disk space in which to store reference images for capture sample registration
 _verbose_debug_output(false), _cache_subdirectory("cache"), sql_database_choice(possible_sql_databases.end()), next_scan_for_problems_time(0),
-_terminal_window_scale_factor(1), _system_parallel_process_id(0), _allow_multiple_processes_per_system(false),sql_table_lock_manager(this), alert_handler_lock("ahl"),max_internal_thread_id(1), max_external_thread_id(1),worm_detection_model_cache(0),posture_analysis_model_cache(0){
+_terminal_window_scale_factor(1), _system_parallel_process_id(0), _allow_multiple_processes_per_system(false),sql_table_lock_manager(this), alert_handler_lock("ahl"),max_internal_thread_id(1), max_external_thread_id(1),worm_detection_model_cache(0),posture_analysis_model_cache(0),storyboard_cache(0){
 
 	ns_socket::global_init();
 	ns_worm_detection_constants::init();
@@ -2789,6 +2789,8 @@ void ns_posture_analysis_model_entry::load_from_external_source(const std::strin
 	throw ns_ex("The plate has an unrecognized posture analysis method specified.");
 }
 
+
+
 ns_time_path_solver_parameters ns_image_server::get_position_analysis_model(const std::string & model_name,bool create_default_if_does_not_exist,const ns_64_bit region_info_id_for_default, ns_sql * sql_for_default) const{
 
 	std::string filename = long_term_storage_directory + DIR_CHAR_STR + this->position_analysis_model_directory() + DIR_CHAR_STR + model_name;
@@ -2879,6 +2881,29 @@ void ns_svm_model_specification_entry::load_from_external_source(const std::stri
 	#endif
 }
 
+
+
+void ns_storyboard_cache_entry::load_from_external_source(const ns_experiment_storyboard_spec & specification, ns_sql & sql){
+	spec = specification;
+	manager.load_metadata_from_db(spec, storyboard,sql);
+	storyboard.prepare_to_draw(sql);
+}
+
+void ns_storyboard_cache_entry::clean_up(ns_sql & external_source) {
+	storyboard.clear();
+}
+
+
+void ns_image_server::get_storyboard(const ns_experiment_storyboard_spec & spec, ns_storyboard_cache::const_handle_t & handle, ns_sql & sql) {
+	storyboard_cache.get_for_read(spec, handle, sql);
+}
+
+void ns_image_server::clean_up_storyboard_cache(bool remove_all, ns_sql & sql) {
+	if (remove_all)
+		storyboard_cache.clear_cache(sql);
+	else storyboard_cache.remove_old_images(60*5,sql);
+
+}
 
 void  ns_image_server::get_worm_detection_model(const std::string & name, typename  ns_worm_detection_model_cache::const_handle_t & it) {
 	ns_svm_model_specification_entry_source source;

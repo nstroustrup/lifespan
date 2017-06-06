@@ -134,6 +134,12 @@ bool ns_processing_job_scheduler::run_a_job(ns_processing_job & job,ns_sql & sql
 		source.sql = &sql;
 		image_server.image_registration_profile_cache.remove_old_images(10 * 60, source);
 
+		if (job.maintenance_task == ns_maintenance_generate_animal_storyboard ||
+			job.maintenance_task == ns_maintenance_generate_animal_storyboard_subimage)
+			image_server.clean_up_storyboard_cache(false, sql);
+		else
+			image_server.clean_up_storyboard_cache(true, sql);
+
 		idle_timer_running = true;
 		idle_timer.start();
 

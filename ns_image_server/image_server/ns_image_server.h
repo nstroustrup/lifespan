@@ -28,6 +28,8 @@
 #include "ns_image_server_results_storage.h"
 #include "ns_get_double.h"
 
+#include "ns_experiment_storyboard.h"
+
 ///attached scanners have both human-readable names as well as
 ///USB-assigned hardware addresses.
 struct ns_device_name{
@@ -113,6 +115,23 @@ public:
 void ns_write_experimental_data_in_database_to_file(const unsigned long experiment_id, const std::string & output_directory,ns_sql & sql);
 void ns_zip_experimental_data(const std::string & output_directory,bool delete_original=false);
 bool ns_update_db_using_experimental_data_from_file(const std::string new_database,bool use_existing_database, const std::string & output_directory,ns_sql & sql);
+
+
+class  ns_storyboard_cache_entry : public ns_simple_cache_data<ns_experiment_storyboard_spec, ns_sql, std::string> {
+public:
+	ns_experiment_storyboard_spec spec;
+	ns_experiment_storyboard_manager manager;
+	ns_experiment_storyboard storyboard;
+	unsigned long creation_time; 
+	template <class a, class b, bool c>
+		friend class ns_simple_cache;
+private:
+	ns_64_bit size_in_memory_in_kbytes() const { return 0; }
+	void load_from_external_source(const ns_experiment_storyboard_spec & spec, ns_sql & sql);
+	static std::string to_id(const ns_experiment_storyboard_spec & n) { return n.to_string(); }
+	const std::string & id() const { return spec.to_string(); }
+	void clean_up(ns_sql & external_source);
+};
 
 ///ns_image_server is the portal through which all aspects of an image server node communicates and coordinate with each other
 ///It provides access to all filesystem i/o and SQL connections, as well as managing image-capture devices and logging any errors encountered
@@ -388,12 +407,20 @@ public:
 
 	typedef ns_simple_cache<ns_posture_analysis_model_entry, std::string, true> ns_posture_analysis_model_cache;
 
+	typedef ns_simple_cache<ns_storyboard_cache_entry, std::string, true> ns_storyboard_cache;
+
+
+
 #ifndef NS_MINIMAL_SERVER_BUILD
 	///Given the name of an SVM machine learning model specification, returns the
 	///model file as loaded from the default model directory on the central file server
 	void get_worm_detection_model(const std::string & name, ns_worm_detection_model_cache::const_handle_t & handle);
 	
 	void get_posture_analysis_model_for_region(const ns_64_bit region_info_id, typename ns_posture_analysis_model_cache::const_handle_t & it, ns_sql & sql);
+
+	void get_storyboard(const ns_experiment_storyboard_spec & spec, ns_storyboard_cache::const_handle_t & handle, ns_sql & sql);
+	void clean_up_storyboard_cache(bool remove_all, ns_sql & sql);
+
 	
 	ns_time_path_solver_parameters get_position_analysis_model(const std::string & model_name,bool create_default_if_does_not_exist=false,const ns_64_bit region_info_id_for_default=0, ns_sql * sql_for_default=0) const;
 	#endif
@@ -658,6 +685,8 @@ private:
 	ns_worm_detection_model_cache worm_detection_model_cache;
 	
 	ns_posture_analysis_model_cache posture_analysis_model_cache;
+
+	ns_storyboard_cache storyboard_cache;
 #endif
 
 

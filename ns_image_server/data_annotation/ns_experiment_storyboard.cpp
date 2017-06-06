@@ -592,6 +592,20 @@ std::string ns_death_time_annotation_region_details(const ns_death_time_annotati
 
 typedef enum {ns_inspect_for_non_worms,ns_inspect_for_multiworm_clumps, ns_number_of_flavors} ns_storyboard_flavor;
 
+
+ns_vector_2i ns_experiment_storyboard_timepoint_element::event_object_size()const { return event_annotation.size; }
+ns_vector_2i ns_experiment_storyboard_timepoint_element::event_image_size()const { return event_annotation.size + ns_worm_collage_storage::context_border_size() * 2; }
+ns_vector_2i ns_experiment_storyboard_timepoint_element::image_object_size()const { return annotation_whose_image_should_be_used.size; }
+ns_vector_2i ns_experiment_storyboard_timepoint_element::image_image_size()const { return annotation_whose_image_should_be_used.size + ns_worm_collage_storage::context_border_size() * 2; }
+
+
+
+std::string ns_experiment_storyboard_spec::to_string() const {
+	return ns_to_string(region_id) + ns_to_string(sample_id) + ns_to_string(experiment_id) + (use_by_hand_annotations ? "1" : "0") + ns_to_string((int)event_to_mark)
+		+ strain_to_use.strain + strain_to_use.strain_condition_1 + strain_to_use.strain_condition_2 + (use_absolute_time ? "1" : "0") + ns_to_string(delay_time_after_event) + ns_to_string(minimum_distance_to_juxtipose_neighbors)
+		+ (choose_images_from_time_of_last_death ? "1" : "0");
+}
+
 void ns_experiment_storyboard_spec::set_flavor(const ns_storyboard_flavor & f){
 	use_by_hand_annotations = false;
 	use_absolute_time = false;
@@ -1234,9 +1248,9 @@ void ns_experiment_storyboard::prepare_to_draw(ns_sql & sql){
 
 	}
 }
-void ns_experiment_storyboard::draw(const unsigned long sub_image_id,ns_image_standard & im,bool use_color,ns_sql & sql){
+void ns_experiment_storyboard::draw(const unsigned long sub_image_id,ns_image_standard & im,bool use_color,ns_sql & sql) const{
 	if (worm_detection_id_lookup.empty())
-		prepare_to_draw(sql);
+		throw ns_ex("ns_experiment_storyboard::draw()::Prepare to draw must be called!");
 	im.prepare_to_recieve_image(ns_image_properties(worm_images_size[sub_image_id].y+label_margin_height(),worm_images_size[sub_image_id].x,use_color?3:1,72));
 	if (use_color){
 		for (unsigned int y = 0; y < im.properties().height; y++)
@@ -1252,54 +1266,55 @@ void ns_experiment_storyboard::draw(const unsigned long sub_image_id,ns_image_st
 	draw_label_margin(sub_image_id,use_color,im);
 
 
-	for (unsigned int i = 0; i < divisions.size(); i++){
-		if (divisions[i].sub_image_id != sub_image_id)
+	for (unsigned int k = 0; k < divisions.size(); k++){
+		if (divisions[k].sub_image_id != sub_image_id)
 			continue;
+		ns_experiment_storyboard_timepoint cur_division = divisions[k];
 //std::cerr << "\nRendering sub-division " << (i+1) << " of " << divisions.size() << "...";
 		//cerr << (100*i)/divisions.size() << "%...";
-		divisions[i].load_images(use_color,sql);
+		cur_division.load_images(use_color,sql);
 	
-		for (unsigned int j = 0; j < divisions[i].events.size(); j++){
+		for (unsigned int j = 0; j < cur_division.events.size(); j++){
 			try{
-				if (divisions[i].events[j].image_image_size().x < 
-					divisions[i].events[j].image.properties().width ||
-					divisions[i].events[j].image_image_size().y < 
-					divisions[i].events[j].image.properties().height
+				if (cur_division.events[j].image_image_size().x <
+					cur_division.events[j].image.properties().width ||
+					cur_division.events[j].image_image_size().y <
+					cur_division.events[j].image.properties().height
 				
 				){
 					throw ns_ex("There is a disagreement between the annotation (") 
-						<< divisions[i].events[j].image_image_size().x << ","
-						<< divisions[i].events[j].image_image_size().y
+						<< cur_division.events[j].image_image_size().x << ","
+						<< cur_division.events[j].image_image_size().y
 						<< ") and the actual size of the region image "
-						<< divisions[i].events[j].image.properties().width << ","
-						<< divisions[i].events[j].image.properties().height;
+						<< cur_division.events[j].image.properties().width << ","
+						<< cur_division.events[j].image.properties().height;
 				}
-				const ns_vector_2i p((divisions[i].events[j].position_on_time_point + divisions[i].position_on_storyboard));
+				const ns_vector_2i p((cur_division.events[j].position_on_time_point + cur_division.position_on_storyboard));
 				if(use_color){
-					for (unsigned int y = 0; y < divisions[i].events[j].image.properties().height; y++){
-						for (unsigned int x = 0; x < 3*divisions[i].events[j].image.properties().width; x++){
+					for (unsigned int y = 0; y < cur_division.events[j].image.properties().height; y++){
+						for (unsigned int x = 0; x < 3* cur_division.events[j].image.properties().width; x++){
 							if (y+p.y >= im.properties().height)
 								throw ns_ex("Out of bounds y position encountered while generating storyboard:") << y+p.y << "/" << im.properties().height;
 							if (x+3*p.x >= 3*im.properties().width)
 								throw ns_ex("Out of bounds y position encountered while generating storyboard:") << x+p.x << "/" << im.properties().width;
-							im[y+p.y][x+3*p.x] = divisions[i].events[j].image[y][x];
+							im[y+p.y][x+3*p.x] = cur_division.events[j].image[y][x];
 						}
 					}
 				}
 				else{
-					for (unsigned int y = 0; y < divisions[i].events[j].image.properties().height; y++){
-						for (unsigned int x = 0; x < divisions[i].events[j].image.properties().width; x++){
+					for (unsigned int y = 0; y < cur_division.events[j].image.properties().height; y++){
+						for (unsigned int x = 0; x < cur_division.events[j].image.properties().width; x++){
 					//		if (y+p.y >= im.properties().height)
 				//				throw ns_ex("YIKES");
 				//			if (x+p.x >= im.properties().width)
 				//				throw ns_ex("YIKES");
-							im[y+p.y][x+p.x] = divisions[i].events[j].image[y][x];
+							im[y+p.y][x+p.x] = cur_division.events[j].image[y][x];
 						}
 					}
 				}
 			}
 			catch (ns_ex & ex) {
-				ns_experiment_storyboard_timepoint_element e(divisions[i].events[j]);
+				ns_experiment_storyboard_timepoint_element e(cur_division.events[j]);
 				sql << "SELECT s.name,r.name FROM capture_samples as s, sample_region_image_info as r WHERE r.id = "
 					<< e.event_annotation.region_info_id <<
 					" AND s.id=r.sample_id";
@@ -1318,7 +1333,7 @@ void ns_experiment_storyboard::draw(const unsigned long sub_image_id,ns_image_st
 					<< e.annotation_whose_image_should_be_used.description() << ": " << ex.text();
 			}
 		}
-		divisions[i].clear_images();
+		cur_division.clear_images();
 	}
 }
 
@@ -1682,11 +1697,11 @@ ns_division_count ns_experiment_storyboard::count_of_animals_in_division(const u
 
 	return largest_group;
 }
-unsigned long ns_experiment_storyboard::label_margin_height(){
+unsigned long ns_experiment_storyboard::label_margin_height() const{
 	unsigned long h(worm_images_size[0].y/6);
 	return (h<40?h:40);
 }
-void ns_experiment_storyboard::draw_label_margin(const unsigned long sub_image_id,bool use_color,ns_image_standard & im){
+void ns_experiment_storyboard::draw_label_margin(const unsigned long sub_image_id,bool use_color,ns_image_standard & im) const{
 	unsigned long h(label_margin_height());
 	int c(use_color?3:1);
 
@@ -2041,7 +2056,21 @@ void ns_experiment_storyboard_manager::save_metadata_to_db(const ns_experiment_s
 	o().close();
 	o.release();
 }
-void ns_experiment_storyboard_manager::save_image_to_db(const unsigned long sub_image_id, const ns_experiment_storyboard_spec & spec, const ns_image_standard & im, ns_sql & sql) {
+
+void ns_experiment_storyboard_manager::save_image_to_db_no_error_handling(const unsigned long sub_image_id, const ns_experiment_storyboard_spec & spec, const ns_image_standard & im, ns_sql & sql) const {
+	if (sub_image_id >= sub_images.size())
+		throw ns_ex("ns_experiment_storyboard_manager::save_image_to_db()::Requesting invalid sub image");
+	if (sub_images[sub_image_id].id == 0)
+		throw ns_ex("ns_experiment_storyboard_manager::save_image_to_db()::Metadata has not been established");
+	bool had_to_use_volatile;
+	ns_image_server_image image_record = sub_images[sub_image_id];
+	get_default_storage_base_filenames(sub_image_id, image_record, ns_tiff_lzw, spec, sql);
+	ns_image_storage_reciever_handle<ns_8_bit> h(image_server.image_storage.request_storage(image_record, ns_tiff, 1.0, 1024, &sql, had_to_use_volatile, true, false));
+	im.pump(h.output_stream(), 1024);
+}
+
+
+void ns_experiment_storyboard_manager::save_image_to_db(const unsigned long sub_image_id, const ns_experiment_storyboard_spec & spec, const ns_image_standard & im, ns_sql & sql){
 	if (sub_image_id >= sub_images.size())
 		throw ns_ex("ns_experiment_storyboard_manager::save_image_to_db()::Requesting invalid sub image");
 	if (sub_images[sub_image_id].id == 0)
@@ -2137,7 +2166,7 @@ bool ns_experiment_storyboard_manager::load_subimages_from_db(const ns_experimen
 			if (sub_image_number >= sub_images.size())
 				throw ns_ex("An invalid storyboard sub image record was found in the database.");
 
-			sub_images[sub_image_number].id = ns_atoi64(res[i][1].c_str());
+			sub_images[sub_image_number].load_from_db(ns_atoi64(res[i][1].c_str()),&sql);
 			if (ns_atoi64(res[i][3].c_str()) != res.size())
 				throw ns_ex("ns_experiment_storyboard_manager::load_subimages_from_db()::Inconsistant records of sub_image_count!");
 			
@@ -2204,7 +2233,7 @@ void ns_experiment_storyboard_manager::create_records_and_storage_for_subimages(
 
 	
 void ns_experiment_storyboard_manager::get_default_storage_base_filenames(const unsigned long subimage_id,ns_image_server_image & image, const ns_image_type & type,
-	const ns_experiment_storyboard_spec & spec,ns_sql & sql){
+	const ns_experiment_storyboard_spec & spec,ns_sql & sql) const{
 	ns_file_location_specification s;
 	if (spec.region_id != 0){
 		s = image_server_const.image_storage.get_storyboard_path(0, spec.region_id, subimage_id, ns_experiment_storyboard::image_suffix(spec),type, sql);

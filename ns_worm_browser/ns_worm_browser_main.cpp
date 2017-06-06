@@ -11,12 +11,14 @@
 #include "ns_high_precision_timer.h"
 #include "ns_experiment_storyboard.h"
 
-#define IDLE_THROTTLE_FPS 40
+#define IDLE_THROTTLE_FPS 30
 #define SCALE_FONTS_WITH_WINDOW_SIZE 0
 
 bool output_debug_messages = false;
 bool output_debug_file_opened = false;
 std::ofstream debug_output;
+
+void refresh_main_window_internal(void *);
 
 void ns_worm_browser_output_debug(const unsigned long line_number,const std::string & source, const std::string & message){
 	if (!output_debug_messages)
@@ -41,15 +43,15 @@ void ns_set_menu_bar_activity(bool a);
 void refresh_main_window();
 
 
-double GetTime(void){
+ns_64_bit GetTime(void){
 #ifdef _WIN32 
 	struct _timeb t;
 	_ftime(&t);
-	return t.time+t.millitm/1000.0;
+	return (1000*(ns_64_bit)t.time)+(ns_64_bit)t.millitm;
 #else
 	struct timeval t;
 	gettimeofday(&t,NULL);
-	return t.tv_sec+(double)t.tv_usec/1000000;
+	return (1000 * (ns_64_bit)t.tv_sec)+ (ns_64_bit)t.tv_usec/1000;
 #endif
 }
 
@@ -93,6 +95,7 @@ void ns_handle_drag_and_drop(){
 void idle_main_window_update_callback(void *);
 void idle_worm_window_update_callback(void *);
 
+
 //structure of class lifted from example at 
 // http://seriss.com/people/erco/fltk/#OpenGlSimpleWidgets
 
@@ -126,10 +129,6 @@ class ns_worm_terminal_gl_window : public Fl_Gl_Window {
         if (!valid()) { 
 			valid(1); 
 			fix_viewport(x(),y(),w(), h()); 
-			if (!window_update_is_running) {
-				Fl::add_timeout(1.0 / IDLE_THROTTLE_FPS, idle_main_window_update_callback);
-				window_update_is_running = true;
-			}
 			glClearColor(1, 1, 1, 1); 
 			 glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); // clear buffer
 			 //glLoadIdentity ();             /* clear the matrix */
@@ -150,20 +149,27 @@ class ns_worm_terminal_gl_window : public Fl_Gl_Window {
 	int handle(int state){
 		//cerr << "s: " << state;
 		switch(state){
-			case FL_FOCUS:
-				have_focus = true;
-				return Fl_Gl_Window::handle(state);
-			case FL_UNFOCUS:
-				have_focus = false;
-				return Fl_Gl_Window::handle(state);
-
+		case FL_FOCUS: {
+			have_focus = true;
+			int a = Fl_Gl_Window::handle(state);
+			idle_main_window_update_callback(0);
+			return a; 
+		}
+		case FL_UNFOCUS: {
+			have_focus = false;
+			int a = Fl_Gl_Window::handle(state);
+			idle_main_window_update_callback(0);
+			return a;
+		}
 			case FL_DND_ENTER:
             case FL_DND_RELEASE:
             case FL_DND_LEAVE:
             case FL_DND_DRAG:
+				idle_main_window_update_callback(0);
                 return 1;
 			case FL_PASTE: 
-				ns_handle_drag_and_drop();
+				ns_handle_drag_and_drop(); 
+				idle_main_window_update_callback(0);
 				 return 1;
 		}
 
@@ -192,20 +198,24 @@ class ns_worm_terminal_gl_window : public Fl_Gl_Window {
 						mouse_click_location = press.screen_position;
 						mouse_is_down = true;
 						worm_learner.touch_main_window_pixel(press);		
-						
+
+						idle_main_window_update_callback(0);
 						return 1;
 					}
 					case FL_RELEASE:{
 						press.click_type = ns_button_press::ns_up;
 						mouse_is_down = false;
 						worm_learner.touch_main_window_pixel(press);
-						
+
+						idle_main_window_update_callback(0);
 						return 1;
 					}
 					case FL_DRAG:{
 						press.click_type = ns_button_press::ns_drag;
 						if (mouse_is_down && (abs(mouse_click_location.x-press.screen_position.x) > 4 || abs(mouse_click_location.y - press.screen_position.y) > 4))
 								worm_learner.touch_main_window_pixel(press);
+
+						idle_main_window_update_callback(0);
 						return 1;
 					} 
 
@@ -218,12 +228,13 @@ class ns_worm_terminal_gl_window : public Fl_Gl_Window {
 			return 1;
 		}
 		//cerr << "Could not handle " << state << "\n";
-		return Fl_Gl_Window::handle(state);
+		int a = Fl_Gl_Window::handle(state);
+		idle_main_window_update_callback(0);
+		return a;
 	}
 	
 public:
 
-	bool window_update_is_running;
 	// HANDLE WINDOW RESIZING
     void resize(int X,int Y,int W,int H) {
         Fl_Gl_Window::resize(X,Y,W,H);
@@ -231,11 +242,12 @@ public:
 	//		cerr << W << "x" << H << " from " << w() << "x" << h() << "\n";
        		fix_viewport(X,Y,W,H);
 		}
+		idle_main_window_update_callback(0);
         redraw();
     }
 
     // OPENGL WINDOW CONSTRUCTOR
-    ns_worm_terminal_gl_window(int X,int Y,int W,int H,const char*L=0) :window_update_is_running(false),Fl_Gl_Window(X,Y,W,H,L),mouse_is_down(false),mouse_click_location(0,0),have_focus(false) {
+    ns_worm_terminal_gl_window(int X,int Y,int W,int H,const char*L=0) :Fl_Gl_Window(X,Y,W,H,L),mouse_is_down(false),mouse_click_location(0,0),have_focus(false) {
         end();
     }
 };
@@ -269,10 +281,6 @@ class ns_worm_gl_window : public Fl_Gl_Window {
         if (!valid()) { 
 			valid(1); 
 			fix_viewport(w(), h()); 
-			if (!window_update_is_running) {
-				Fl::add_timeout(1.0 / IDLE_THROTTLE_FPS, idle_worm_window_update_callback);
-				window_update_is_running = true;
-			}
 			glClearColor(1, 1, 1, 1); 
 			 glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); // clear buffer
 			 glLoadIdentity ();             /* clear the matrix */
@@ -293,13 +301,18 @@ class ns_worm_gl_window : public Fl_Gl_Window {
 	int handle(int state){
 		
 		switch(state){
-			case FL_FOCUS:
-				have_focus = true;
-				return Fl_Gl_Window::handle(state);
-			case FL_UNFOCUS:
+		case FL_FOCUS: {
+			have_focus = true;
+			int a = Fl_Gl_Window::handle(state);
+			idle_worm_window_update_callback(0);
+			return a;
+		}
+			case FL_UNFOCUS: {
 				have_focus = false;
-				return Fl_Gl_Window::handle(state);
-
+				int a = Fl_Gl_Window::handle(state);
+				idle_worm_window_update_callback(0);
+				return a;
+			}
 	/*		case FL_DND_ENTER:
             case FL_DND_RELEASE:
             case FL_DND_LEAVE:
@@ -331,20 +344,21 @@ class ns_worm_gl_window : public Fl_Gl_Window {
 						mouse_click_location = press.screen_position;
 						mouse_is_down = true;
 						worm_learner.touch_worm_window_pixel(press);		
-						
+						idle_worm_window_update_callback(0);
 						return 1;
 					}
 					case FL_RELEASE:{
 						press.click_type = ns_button_press::ns_up;
 						mouse_is_down = false;
 						worm_learner.touch_worm_window_pixel(press);
-						
+						idle_worm_window_update_callback(0);
 						return 1;
 					}
 					case FL_DRAG:{
 						press.click_type = ns_button_press::ns_drag;
 						if (mouse_is_down && (abs(mouse_click_location.x-press.screen_position.x) > 4 || abs(mouse_click_location.y - press.screen_position.y) > 4))
 								worm_learner.touch_worm_window_pixel(press);
+						idle_worm_window_update_callback(0);
 						return 1;
 					} 
 
@@ -357,11 +371,12 @@ class ns_worm_gl_window : public Fl_Gl_Window {
 			return 1;
 		}
 		//cerr << "Could not handle " << state << "\n";
-		return Fl_Gl_Window::handle(state);
+		int a = Fl_Gl_Window::handle(state);
+		idle_worm_window_update_callback(0);
+		return a;
 	}
 	
 public:
-	bool window_update_is_running;
 	// HANDLE WINDOW RESIZING
     void resize(int X,int Y,int W,int H) {
         Fl_Gl_Window::resize(X,Y,W,H);
@@ -369,11 +384,12 @@ public:
 			cerr << W << "x" << H << " from " << w() << "x" << h() << "\n";
        		fix_viewport(W,H);
 		}
+		idle_worm_window_update_callback(0);
         redraw();
     }
 
     // OPENGL WINDOW CONSTRUCTOR
-    ns_worm_gl_window (int X,int Y,int W,int H,const char*L=0) : Fl_Gl_Window(X,Y,W,H,L),window_update_is_running(false),mouse_is_down(false),mouse_click_location(0,0),have_focus(false) {
+    ns_worm_gl_window (int X,int Y,int W,int H,const char*L=0) : Fl_Gl_Window(X,Y,W,H,L),mouse_is_down(false),mouse_click_location(0,0),have_focus(false) {
        //xxxx
 		end();
     }
@@ -1127,6 +1143,7 @@ class ns_worm_terminal_main_menu_organizer : public ns_menu_organizer{
 	static void set_database(const std::string & data){
 		image_server.set_sql_database(data,false,worm_learner.get_sql_connection());
 		cerr << "Switching to database " << data << "\n";
+		ns_thread::sleep(5);
 		get_menu_handler()->update_experiment_choice(*get_menu_bar());
 	}
 	static void file_open(const std::string & data){
@@ -2243,20 +2260,39 @@ void redraw_worm_window(const unsigned long w, const unsigned long h,const bool 
 }
 
 
-double init_time;
+ns_64_bit init_time;
 void ns_show_worm_display_error(){
 	cerr << "Error! Could not show image.\n";
 }
 
+void schedule_repeating_callback(void *a ) {
+	if (a == 0)
+		Fl::add_timeout(1.0 / IDLE_THROTTLE_FPS, idle_main_window_update_callback);
+	else
+		Fl::repeat_timeout(1.0 / IDLE_THROTTLE_FPS, idle_main_window_update_callback);
+}
 void ns_handle_menu_bar_activity_request();
+
+ns_64_bit last_callback_time(0);
+ns_lock idle_launch_lock("tst");
+ns_64_bit throttle_spf = 1000 / IDLE_THROTTLE_FPS;
 void idle_main_window_update_callback(void *){
-	// double last_time = c_time;
-	// c_time =  GetTime() - init_time;
-	// cerr << "FPS = " << 1.0/(time-last_time) << "\n";
+	 double last_time = last_callback_time;
+	 last_callback_time =  GetTime();
+	 ns_64_bit last_interval = last_callback_time - last_time;
+	/* if (last_interval < throttle_spf) {
+		 if (!idle_launch_lock.try_to_acquire(__FILE__,__LINE__))
+			 return;
+		 cerr << "Waiting" << throttle_spf - last_interval << "\n";
+		 ns_thread::sleep_milliseconds(throttle_spf-last_interval);
+		 idle_launch_lock.release();
+	 }*/
+	 //cerr << "SPF = " << last_interval << "\n";
 	float menu_d(worm_learner.main_window.display_rescale_factor);
 	if (!SCALE_FONTS_WITH_WINDOW_SIZE)
 			menu_d = 1;
 	Fl::lock();
+	bool schedule_timer(false);
 	try{
 		ns_vector_2d cur_size(current_window->w(),current_window->h());
 		cur_size = cur_size - ns_vector_2i(0,(current_window->menu_height()+current_window->info_bar_height())*menu_d);
@@ -2288,8 +2324,8 @@ void idle_main_window_update_callback(void *){
 		}
 		//draw busy animation if requested
 		if (current_window->draw_animation){
-			worm_learner.draw_animation(GetTime() - init_time);
-		//	cerr << GetTime() << "\n";
+			worm_learner.draw_animation((GetTime() - init_time)/1000.0);
+			schedule_timer = true;
 			current_window->last_draw_animation = true;
 		}
 		//clear animation when finished
@@ -2309,12 +2345,18 @@ void idle_main_window_update_callback(void *){
 			hide_worm_window = false;
 			worm_window->hide();
 		}
+		if (schedule_timer) {
+
+			current_window->gl_window->damage(1);
+			current_window->gl_window->redraw();
+		//	Fl::awake(refresh_main_window_internal, 0);
+			Fl::awake(schedule_repeating_callback, (void*)1);// Fl::repeat_timeout(1.0 / IDLE_THROTTLE_FPS, idle_main_window_update_callback);
+		}
 		Fl::unlock();
 	}
 	catch(...){
 		Fl::unlock();
 	}
-	Fl::repeat_timeout(1/IDLE_THROTTLE_FPS, idle_main_window_update_callback);
 }
 void ns_hide_worm_window(){
 	hide_worm_window = true;
@@ -2359,9 +2401,8 @@ void idle_worm_window_update_callback(void *){
 	catch(...){
 		Fl::unlock();
 	}
-	if (!hide_worm_window)
-		Fl::repeat_timeout(1/20., idle_worm_window_update_callback);
-	else worm_window->gl_window->window_update_is_running = false;
+	//if (!hide_worm_window)
+	//	Fl::repeat_timeout(1/20., idle_worm_window_update_callback);
 }
 
 
@@ -2418,87 +2459,7 @@ void ns_transfer_annotations_directory(const std::string & annotation_source_dir
 	}
 }
 
-// The below code isn't called anywhere... 
-/*void ns_align_to_reference(const unsigned long region_info_id,ns_sql & sql){
-	ns_sql_result res;
-	sql << "SELECT " << ns_processing_step_db_column_name(ns_unprocessed) << ", " 
-		<< ns_processing_step_db_column_name(ns_process_spatial) << ", "
-		<< ns_processing_step_db_column_name(ns_process_lossy_stretch) << ", "
-		<< ns_processing_step_db_column_name(ns_process_threshold)
-		<< " FROM sample_region_images WHERE region_info_id = " << region_info_id
-		<< " ORDER BY capture_time ASC";
 
-	sql.get_rows(res);
-	if (res.size() == 0)
-		throw ns_ex("Region has no images!");
-	
-	ns_image_registration_profile reference_profile;
-	{
-		ns_image_standard reference_image;
-		ns_image_server_image im;
-		im.id = atol(res[0][0].c_str());
-		try{
-			image_server.image_storage.request_from_storage(im,&sql).input_stream().pump(reference_image,1024);
-		}
-		catch(ns_ex & ex){
-			throw ns_ex("Could not load reference image: ") << ex.text();
-		}
-		ns_image_registration<127,ns_8_bit>::generate_profiles(reference_image,reference_profile);
-	}
-	
-	ns_image_standard current_image;
-	ofstream alignment_out("c:\\alignment_test\\alignments.csv");
-	if (alignment_out.fail())
-		throw ns_ex("Could not open alignment output file");
-	for (unsigned int i = 255; i < res.size(); i++){
-		try{
-			ns_image_server_image im;
-			im.id = atol(res[i][0].c_str());
-			image_server.image_storage.request_from_storage(im,&sql).input_stream().pump(current_image,1024);
-			ns_image_registration_profile current_image_profile;
-			ns_image_registration<127,ns_8_bit>::generate_profiles(current_image,current_image_profile);
-			ns_vector_2i offset(ns_image_registration<127,ns_8_bit>::register_profiles(reference_profile,current_image_profile));
-			cerr << "Offset: " << offset << "\n";
-			alignment_out << i << "," << im.filename << "," << offset.x << "," << offset.y << "\n";
-			alignment_out.flush();
-			ns_image_standard registered_current;
-			registered_current.init(current_image.properties());
-			ns_vector_2i source_offset(offset*-1),
-				dest_offset(0,0);
-			if (offset.y < 0){
-				source_offset.y = 0;
-				dest_offset.y = offset.y;
-			}
-			else{
-				for (unsigned int y = 0; y < offset.y; y++)
-					for (unsigned int x = 0; x < current_image.properties().width; x++)
-						registered_current[y][x] = 0;
-			}
-			if (offset.x < 0){
-				source_offset.x = 0;
-				dest_offset.x = offset.x;
-			}
-			for (unsigned int y = abs(offset.y); y < current_image.properties().height; y++){
-				for (long x = 0; x < dest_offset.x; x++)
-					registered_current[y+dest_offset.y][x] = 0;
-				for (long x = abs(offset.x); x < (long)current_image.properties().width; x++)
-					registered_current[y+dest_offset.y][x+dest_offset.x] = current_image[y+source_offset.y+offset.y][x+source_offset.y+offset.y];
-				for (long x = current_image.properties().width+dest_offset.x; x < current_image.properties().width; x++)
-					registered_current[y+dest_offset.y][x] = 0;
-			}
-			for (unsigned int y = current_image.properties().height+offset.y; y < current_image.properties().height; y++)
-					for (unsigned int x = 0; x < current_image.properties().width; x++)
-						registered_current[y][x] = 0;
-
-			string filename("c:\\alignment_test\\");
-			filename+=im.filename;
-			ns_save_image(filename,registered_current);
-		}
-		catch(ns_ex & ex){
-			cerr << ex.text() << "\n";
-		}
-	}
-}*/
 
 void ns_update_sample_info(ns_sql & sql){
 	sql << "SELECT id, device_name, experiment_id FROM capture_samples WHERE device_capture_period_in_seconds = 0 || number_of_consecutive_captures_per_sample > 10";
@@ -2549,6 +2510,9 @@ void ns_update_sample_info(ns_sql & sql){
 
 };
 #include "ns_optical_flow.h"
+void refresh_main_window_internal(void *) {
+	current_window->redraw();
+}
 void refresh_main_window(){
 	current_window->redraw();
 }
@@ -2851,6 +2815,8 @@ void ns_set_menu_bar_activity(bool activate){
 	menu_bar_processing_lock.wait_to_acquire(__FILE__,__LINE__);
 	set_menu_bar_request = activate?ns_activate:ns_deactivate;
 	menu_bar_processing_lock.release();
+	if (!activate)
+		Fl::awake(schedule_repeating_callback);
 }
 
 void ask_if_schedule_should_be_submitted_to_db(bool & write_to_disk, bool & write_to_db){

@@ -2065,6 +2065,7 @@ void ns_experiment_storyboard_manager::save_image_to_db_no_error_handling(const 
 	bool had_to_use_volatile;
 	ns_image_server_image image_record = sub_images[sub_image_id];
 	get_default_storage_base_filenames(sub_image_id, image_record, ns_tiff_lzw, spec, sql);
+	///cout << "Writing " << image_record.filename << " to " << image_record.id  << "\n";
 	image_record.save_to_db(image_record.id, &sql);
 	ns_image_storage_reciever_handle<ns_8_bit> h(image_server.image_storage.request_storage(image_record, ns_tiff, 1.0, 1024, &sql, had_to_use_volatile, true, false));
 	im.pump(h.output_stream(), 1024);
@@ -2089,6 +2090,7 @@ void ns_experiment_storyboard_manager::save_image_to_db(const unsigned long sub_
 		sql.send_query();
 		//get a new image record and save it to the db
 		get_default_storage_base_filenames(sub_image_id, sub_images[sub_image_id], ns_tiff_lzw, spec, sql);
+		//cout << "Re-Writing " << sub_images[sub_image_id].filename << " to " << sub_images[sub_image_id].id << "\n";
 		sub_images[sub_image_id].save_to_db(sub_images[sub_image_id].id, &sql);
 		//update the storyboard db record to point to the new image
 		sql << "UPDATE animal_storyboard SET image_id = " << sub_images[sub_image_id].id << " WHERE " << generate_sql_query_where_clause_for_specification(spec)
@@ -2223,6 +2225,7 @@ void ns_experiment_storyboard_manager::create_records_and_storage_for_subimages(
 			sql.send_query();
 		}
 		get_default_storage_base_filenames(i,sub_images[i],ns_tiff_lzw,spec,sql);
+		//cout << "Writing " << sub_images[i].filename << " to " << sub_images[i].id << "\n";
 		sub_images[i].save_to_db(sub_images[i].id,&sql);
 	}
 
@@ -2242,7 +2245,9 @@ void ns_experiment_storyboard_manager::get_default_storage_base_filenames(const 
 	else if (spec.experiment_id != 0){
 		s = image_server_const.image_storage.get_storyboard_path(spec.experiment_id,0, subimage_id, ns_experiment_storyboard::image_suffix(spec), type, sql,false);
 	}
+	ns_64_bit id = image.id;
 	image = image_server_const.image_storage.get_storage_for_specification(s);
+	image.id = id;
 	image.host_id = image_server.host_id();
 }
 

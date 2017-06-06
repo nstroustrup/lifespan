@@ -6299,7 +6299,7 @@ void ns_worm_learner::draw_animation(const double &t){
 		main_window.display_lock.release();
 		throw;
 	}
-	main_window.redraw_screen();
+	//main_window.redraw_screen();
 }
 
 void ns_worm_learner::update_main_window_display(){

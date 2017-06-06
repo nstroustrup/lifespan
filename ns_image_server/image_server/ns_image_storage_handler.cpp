@@ -427,7 +427,9 @@ bool ns_image_storage_handler::assign_unique_filename(ns_image_server_image & im
 }
 
 ifstream * ns_image_storage_handler::request_metadata_from_disk(ns_image_server_image & image,const bool binary,ns_image_server_sql * sql) const{
-	if (image.filename.size() == 0 || image.path.size() == 0 || image.partition.size() == 0) image.load_from_db(image.id,sql);
+	if (image.filename.size() == 0 || image.path.size() == 0 || image.partition.size() == 0) 
+		if (!image.load_from_db(image.id, sql)) 
+			throw ns_ex("Could not find image record for time path image analyzer metadata");
 
 	ns_file_location_specification spec(look_up_image_location_no_extension_alteration (image, sql));
 

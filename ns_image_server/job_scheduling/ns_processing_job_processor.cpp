@@ -1049,9 +1049,8 @@ bool ns_processing_job_maintenance_processor::run_job(ns_sql & sql) {
 				image_server->register_server_event(ns_image_server_event("Rendering a type ") << (j + 1) << " storyboard, divisions " << start + 1 << "-" << stop + 1 << " of " << storyboard().storyboard.divisions.size() << " (job " << job.id << ")\n", &sql);
 				ns_image_standard ima;
 				for (ns_64_bit i = start; i < stop && i < storyboard().manager.number_of_sub_images(); i++){
-					image_server->add_subtext_to_current_event(std::string("Rendering division ") + ns_to_string(i) + ":",&sql);
+					image_server->add_subtext_to_current_event(std::string("Rendering division ") + ns_to_string(i) + "\n",&sql);
 					storyboard().storyboard.draw(i,ima,true,sql);
-					image_server->add_subtext_to_current_event("\n",&sql);
 					storyboard().manager.save_image_to_db_no_error_handling(i,specs[j],ima,sql);
 				}
 			}

@@ -2065,6 +2065,7 @@ void ns_experiment_storyboard_manager::save_image_to_db_no_error_handling(const 
 	bool had_to_use_volatile;
 	ns_image_server_image image_record = sub_images[sub_image_id];
 	get_default_storage_base_filenames(sub_image_id, image_record, ns_tiff_lzw, spec, sql);
+	image_record.save_to_db(image_record.id, &sql);
 	ns_image_storage_reciever_handle<ns_8_bit> h(image_server.image_storage.request_storage(image_record, ns_tiff, 1.0, 1024, &sql, had_to_use_volatile, true, false));
 	im.pump(h.output_stream(), 1024);
 }
@@ -2236,10 +2237,10 @@ void ns_experiment_storyboard_manager::get_default_storage_base_filenames(const 
 	const ns_experiment_storyboard_spec & spec,ns_sql & sql) const{
 	ns_file_location_specification s;
 	if (spec.region_id != 0){
-		s = image_server_const.image_storage.get_storyboard_path(0, spec.region_id, subimage_id, ns_experiment_storyboard::image_suffix(spec),type, sql);
+		s = image_server_const.image_storage.get_storyboard_path(0, spec.region_id, subimage_id, ns_experiment_storyboard::image_suffix(spec),type, sql,false);
 	}
 	else if (spec.experiment_id != 0){
-		s = image_server_const.image_storage.get_storyboard_path(spec.experiment_id,0, subimage_id, ns_experiment_storyboard::image_suffix(spec), type, sql);
+		s = image_server_const.image_storage.get_storyboard_path(spec.experiment_id,0, subimage_id, ns_experiment_storyboard::image_suffix(spec), type, sql,false);
 	}
 	image = image_server_const.image_storage.get_storage_for_specification(s);
 	image.host_id = image_server.host_id();

@@ -280,7 +280,7 @@ public:
 
 	ns_file_location_specification get_path_for_experiment(ns_64_bit experiment_id, ns_image_server_sql * sql) const;
 	ns_file_location_specification get_path_for_video_storage(ns_64_bit experiment_id, ns_image_server_sql * sql) const;
-	ns_file_location_specification get_storyboard_path(const ns_64_bit & experiment_id, const ns_64_bit & region_id, const ns_64_bit & subimage_id, const std::string & filename_suffix, const ns_image_type & type, ns_sql & sql, const bool just_path=false) const;
+	ns_file_location_specification get_storyboard_path(const ns_64_bit & experiment_id, const ns_64_bit & region_id, const ns_64_bit & subimage_id, const std::string & filename_suffix, const ns_image_type & type, ns_sql & sql, const bool just_path) const;
 
 	ns_64_bit create_file_deletion_job(const ns_64_bit parent_processing_job_id,ns_sql & sql)const;
 	void delete_file_deletion_job(const ns_64_bit deletion_job_id, ns_sql & sql)const;

@@ -640,6 +640,9 @@ void ns_experiment_storyboard::check_that_all_time_path_information_is_valid(ns_
 	}
 	std::vector<ns_ex> unfixable_errors;
 	for (std::set<ns_64_bit>::iterator id = region_ids.begin(); id != region_ids.end(); id++) {
+	//	cout << " Validating region " << *id << "\n";
+	//	if (*id == 53771)
+	//		cerr << "checking it!";
 		/*std::map<ns_64_bit, std::map<ns_64_bit, ns_reg_info> >::const_iterator p = worm_detection_id_lookup.find(*id);
 		if (p == worm_detection_id_lookup.end())
 			throw ns_ex("Could not find region id ") << *id << " in worm detection table.";*/

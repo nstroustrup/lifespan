@@ -1641,6 +1641,11 @@ void ns_time_path_image_movement_analyzer::obtain_analysis_id_and_save_movement_
 	if (id_options == ns_require_existing_record && im.id == 0)
 		throw ns_ex(" ns_time_path_image_movement_analyzer::obtain_analysis_id_and_save_movement_data()::Could not find existing record.");
 
+	if (im.id != 0) { //load and check for bad filenames
+		im.load_from_db(im.id, &sql);
+		if (im.filename.empty())
+			id_options = ns_force_creation_of_new_db_record;
+	}
 	if (id_options == ns_force_creation_of_new_db_record && im.id != 0) {
 		sql << "DELETE FROM images WHERE id = " << im.id;
 		sql.send_query();
@@ -1656,6 +1661,7 @@ void ns_time_path_image_movement_analyzer::obtain_analysis_id_and_save_movement_
 	}
 	ofstream * o(0);
 	try {
+		if (im.filename.empty()) throw ns_ex("Encountered a blank filename!");
 		if (write_options == ns_write_data)
 			o = image_server_const.image_storage.request_metadata_output(im, ns_csv, false, &sql);
 		im.save_to_db(im.id, &sql);
@@ -1666,6 +1672,7 @@ void ns_time_path_image_movement_analyzer::obtain_analysis_id_and_save_movement_
 			throw ns_ex("ns_time_path_image_movement_analyzer::obtain_analysis_id_and_save_movement_data()::Cannot write to existing movement analysis record");
 		im = ns_image_server_image();
 		im = image_server_const.image_storage.get_region_movement_metadata_info(region_id, "time_path_movement_image_analysis_quantification", sql);
+		if (im.filename.empty()) throw ns_ex("Encountered a blank filename!");
 		im.save_to_db(im.id, &sql);
 		update_db = true;
 

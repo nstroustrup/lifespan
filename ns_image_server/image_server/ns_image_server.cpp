@@ -2885,6 +2885,7 @@ void ns_svm_model_specification_entry::load_from_external_source(const std::stri
 
 void ns_storyboard_cache_entry::load_from_external_source(const ns_experiment_storyboard_spec & specification, ns_sql & sql){
 	spec = specification;
+	name = spec.to_string();
 	manager.load_metadata_from_db(spec, storyboard,sql);
 	storyboard.prepare_to_draw(sql);
 }

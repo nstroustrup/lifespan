@@ -126,10 +126,11 @@ public:
 	template <class a, class b, bool c>
 		friend class ns_simple_cache;
 private:
+	std::string name;
 	ns_64_bit size_in_memory_in_kbytes() const { return 0; }
 	void load_from_external_source(const ns_experiment_storyboard_spec & spec, ns_sql & sql);
 	static std::string to_id(const ns_experiment_storyboard_spec & n) { return n.to_string(); }
-	const std::string & id() const { return spec.to_string(); }
+	const std::string & id() const { return name; }
 	void clean_up(ns_sql & external_source);
 };
 

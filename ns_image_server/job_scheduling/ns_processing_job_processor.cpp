@@ -914,24 +914,27 @@ bool ns_processing_job_maintenance_processor::run_job(ns_sql & sql) {
 					try {
 						specs[j].minimum_distance_to_juxtipose_neighbors = neighbor_distance_to_juxtipose;
 						if (specs.size() > 1)
-							cerr << "Compiling storyboard outline " << j + 1 << " of " << specs.size() << "\n";
+							image_server_const.add_subtext_to_current_event("Compiling storyboard " + ns_to_string(j + 1) + " of " + ns_to_string(specs.size()) + "\n", &sql);
 
 						if (compiled_event_set.need_to_reload_for_new_spec(specs[j]))
 							compiled_event_set.load(specs[j], sql);
-						else cout << "Running fast using cached annotations.\n";
+						else image_server_const.add_subtext_to_current_event("Running fast using cached annotations.\n", &sql);
 
 
-						if (!s.create_storyboard_metadata_from_machine_annotations(specs[j], compiled_event_set,sql)) {
+						if (!s.create_storyboard_metadata_from_machine_annotations(specs[j], compiled_event_set, sql)) {
 							empty_storyboard = true;
 							continue;
 						}
 						else
 							storyboard_has_valid_worms[j] = true;
-						s.check_that_all_time_path_information_is_valid(sql);
+
 
 						ns_experiment_storyboard_manager man;
 						man.delete_metadata_from_db(specs[j], sql);
 						man.save_metadata_to_db(specs[j], s, ns_xml, sql);
+
+						image_server_const.add_subtext_to_current_event("Validating stored metadata\n", &sql);
+						s.check_that_all_time_path_information_is_valid(sql);
 						//reload the storyboard just to confirm it still works
 						if (1) {
 							ns_experiment_storyboard s2;
@@ -940,32 +943,28 @@ bool ns_processing_job_maintenance_processor::run_job(ns_sql & sql) {
 								man2.load_metadata_from_db(specs[j], s2, sql);
 							}
 							catch (ns_ex & ex) {
-								std::string r;
-								if (r.size() == 0)
-									ex << "\nns_experiment_storyboard::compare()::Found no differences between the storyboards.";
-								else ex << "\n" << s.compare(s2).text();
+								ex << "\n" << s.compare(s2).text();
 								throw ex;
 							}
 							ns_ex ex(s.compare(s2).text());
 							if (ex.text().size() > 0)
 								throw ex;
 						}
-
-
-						if (empty_storyboard) {
-							for (unsigned int j = 0; j < specs.size(); j++) {
-								if (storyboard_has_valid_worms[j]) {
-									ns_experiment_storyboard_manager man;
-									man.delete_metadata_from_db(specs[j], sql);
-								}
-							}
-							throw ns_ex("The storyboard could not be generated as no dead or potentially dead worms were identified");
-						}
 					}
 					catch (ns_ex & ex) {
 						image_server_const.add_subtext_to_current_event(ex.text(), &sql);
 						generation_errors[j] = ex;
 					}
+				}
+
+				if (empty_storyboard) {
+					for (unsigned int j = 0; j < specs.size(); j++) {
+						if (storyboard_has_valid_worms[j]) {
+							ns_experiment_storyboard_manager man;
+							man.delete_metadata_from_db(specs[j], sql);
+						}
+					}
+					throw ns_ex("The storyboard could not be generated as no dead or potentially dead worms were identified");
 				}
 				std::vector<ns_ex> errors;
 				bool there_were_errors(false);
@@ -974,14 +973,14 @@ bool ns_processing_job_maintenance_processor::run_job(ns_sql & sql) {
 					for (unsigned int j = 0; j < specs.size(); j++) {
 						if (compiled_event_set.need_to_reload_for_new_spec(specs[j]))
 							compiled_event_set.load(specs[j], sql);
-						else cout << "Running fast using cached annotations.\n";
+						else image_server_const.add_subtext_to_current_event("Running fast using cached annotations.\n", &sql);
 
 						if (!generation_errors[j].text().empty()) {
 							there_were_errors = true;
 							continue;
 						}
 						if (specs.size() > 1)
-							cerr << "Generating storyboard type " << j + 1 << " 1-" << specs.size() << " of " << specs.size() << "\n";
+							image_server_const.add_subtext_to_current_event("Rendering storyboard " + ns_to_string(j + 1) + " of " + ns_to_string(specs.size()) + "\n", &sql);
 						if (!s.create_storyboard_metadata_from_machine_annotations(specs[j], compiled_event_set,sql))
 							break;
 						ns_experiment_storyboard_manager man;

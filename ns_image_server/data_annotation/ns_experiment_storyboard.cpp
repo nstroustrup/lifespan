@@ -1323,8 +1323,9 @@ void ns_experiment_storyboard::draw(const unsigned long sub_image_id,ns_image_st
 }
 
 
-void ns_experiment_storyboard_compiled_event_set::load(const ns_experiment_storyboard_spec & spec, ns_sql & sql) {
+void ns_experiment_storyboard_compiled_event_set::load(const ns_experiment_storyboard_spec & specification, ns_sql & sql) {
 	//load machine annotations
+	this->spec = specification;
 	if (spec.event_to_mark == ns_no_movement_event)
 		throw ns_ex("ns_experiment_storyboard::load_events_from_db()An event type must be specified.");
 	vector<ns_64_bit> region_ids;

@@ -4919,7 +4919,7 @@ void ns_analyzed_image_time_path::save_movement_images(const ns_analyzed_time_im
 	if (first_write) {
 		if (output_location == ns_local_0 || output_location == ns_local_1) {
 			int round_id = (output_location == ns_local_0) ? 0 : 1;
-				cerr << "Allocating path" << this->group_id.group_id << " in volatile storage.\n";
+			//	cerr << "Allocating path" << this->group_id.group_id << " in volatile storage.\n";
 
 			debug_number_images_written = 0;
 

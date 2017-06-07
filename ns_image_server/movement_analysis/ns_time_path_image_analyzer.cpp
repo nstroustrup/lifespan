@@ -308,15 +308,19 @@ public:
 
 		const unsigned long cur_size(current_chunk.start_i - current_chunk.stop_i);
 		//if ((this->group_id == 0 || this->group_id == 12) && cur_size != 0)
-		//	cout << "g[" << group_id << "]=" << cur_size << "\n";
+	//	cout << "g[" << group_id << "]=" << current_chunk.start_i << "," << current_chunk.stop_i;
 		if (current_chunk.start_i > -1 &&
 			(cur_size >= chunk_size ||
 				current_chunk.stop_i == -1)) {
 			new_chunk = current_chunk;
 			//mark the current chunk (which will be referenced in the next iteration) as starting at the first unprocessed position (the stop of the new chunk)
 			current_chunk.start_i = current_chunk.stop_i;
+		//	cout << "!\n";
 			return true;
 		}
+	//	if (group_id == 37) {
+	//		cout << "[" << current_chunk.start_i << "," << current_chunk.stop_i << "]";
+	//	}
 		return false;
 	}
 	bool no_more_chunks_forward(){return current_chunk.stop_i == path->element_count();}
@@ -566,10 +570,11 @@ void ns_time_path_image_movement_analyzer::run_group_for_current_backwards_round
 	ns_analyzed_time_image_chunk chunk;
 
 	if (!shared_state->chunk_generators[i][j].backwards_update_and_check_for_new_chunk(chunk)) {
-	//	if (i == 0 || i == 12)
-	//		cout << "!(" << group_id << ")";
+		
 		return;
 	}
+	//if (group_id == 37)
+	//	cout << "(" << group_id << ")!";
 
 	shared_state->open_object_count++;
 	if (abs(chunk.start_i - chunk.stop_i) != 1)
@@ -950,6 +955,7 @@ void ns_time_path_image_movement_analyzer::process_raw_images(const ns_64_bit re
 				for (unsigned int i = start_group; i < stop_group; i++) {
 					for (unsigned int j = 0; j < groups[i].paths.size(); j++) {
 						groups[i].paths[j].find_first_labeled_stationary_timepoint();
+						groups[i].paths[j].debug_number_images_written = -1;
 						//	if (i == 24)
 						//		cerr <<"SHA";
 						shared_state.chunk_generators[i][j].setup_first_chuck_for_backwards_registration();
@@ -984,6 +990,7 @@ void ns_time_path_image_movement_analyzer::process_raw_images(const ns_64_bit re
 						for (long t1 = stop_t + 1; t1 < t + 1; t1++) {
 
 							//throw ns_ex("test");
+							//cout << "Loading " << ns_format_time_string_for_human(region_image_specifications[t1].time) << "-" << ns_format_time_string_for_human(t1 + 1) << "\n";
 							load_region_visualization_images(t1, t1 + 1, start_group, stop_group, sql, false, true, ns_analyzed_image_time_path::ns_lrv_flag_and_images);
 
 						}
@@ -1034,6 +1041,38 @@ void ns_time_path_image_movement_analyzer::process_raw_images(const ns_64_bit re
 					//we keep it until we need to run more jobs in the next round.
 
 					throw_pool_errors(thread_pool, sql);
+				}
+				ns_ex still_open_errors("Paths still open: ");
+				bool paths_still_open(false);
+				for (unsigned int i = start_group; i < stop_group; i++) {
+					for (unsigned int j = 0; j < groups[i].paths.size(); j++) {
+						if (groups[i].paths[j].output_reciever != 0) {
+							paths_still_open = true;
+							still_open_errors << i << ", ";
+						}
+					}
+				}
+				still_open_errors << "\n: ";
+				for (unsigned int i = start_group; i < stop_group; i++) {
+					for (unsigned int j = 0; j < groups[i].paths.size(); j++) {
+					
+						if (groups[i].paths[j].debug_number_images_written != groups[i].paths[j].first_stationary_timepoint()) {
+							if (groups[i].paths[j].debug_number_images_written != -1) {
+								paths_still_open = true;
+								still_open_errors << "Incorrect output length: group " << i << "(" << groups[i].paths[j].debug_number_images_written << "," << groups[i].paths[j].first_stationary_timepoint() << "),";
+
+							}
+							else {
+								image_server_const.add_subtext_to_current_event(std::string("Group ") + ns_to_string(i) + " was never opened.\n",&sql);
+							//	cout << "defined across" << ns_format_time_string_for_human(groups[i].paths[j].elements[0].absolute_time) << "-" << ns_format_time_string_for_human(groups[i].paths[j].elements[groups[i].paths[j].first_stationary_timepoint()].absolute_time) << "\n";
+
+							}
+						}
+					}
+				}
+				if (paths_still_open) {
+					cerr << still_open_errors.text();
+					throw still_open_errors;
 				}
 
 				//since we have been registered images backwards in time, we've been writing everything in reverse order to the local disk.
@@ -4880,7 +4919,10 @@ void ns_analyzed_image_time_path::save_movement_images(const ns_analyzed_time_im
 	if (first_write) {
 		if (output_location == ns_local_0 || output_location == ns_local_1) {
 			int round_id = (output_location == ns_local_0) ? 0 : 1;
-			//	cerr << "Opening path" << this->group_id << " in volatile storage: " << volatile_storage_name(false) << "\n";
+				cerr << "Allocating path" << this->group_id.group_id << " in volatile storage.\n";
+
+			debug_number_images_written = 0;
+
 			if (save_image)
 				output_reciever = new ns_image_storage_reciever_handle<ns_8_bit>(image_server_const.image_storage.request_local_cache_storage(volatile_storage_name(round_id, false), ns_tiff_lzw, save_output_buffer_height, false));
 			if (save_flow_image)
@@ -4923,7 +4965,7 @@ void ns_analyzed_image_time_path::save_movement_images(const ns_analyzed_time_im
 	
 	if (first_write) {
 		//if (this->group_id.group_id == 0 || group_id.group_id == 12)
-		//cout << "Opening group " << this->group_id.group_id << " between " << chunk.start_i << " and " << chunk.stop_i << ", to write out " << number_of_frames_to_write << " images @ (" << this->path_context_size.x << "," << this->path_context_size.y << ")(" << d.prop.width << "," << d.prop.height << ")\n";
+		//	cout << "Opening group " << this->group_id.group_id << " between " << chunk.start_i << " and " << chunk.stop_i << ", to write out " << number_of_frames_to_write << " images @ (" << this->path_context_size.x << "," << this->path_context_size.y << ")(" << d.prop.width << "," << d.prop.height << ")\n";
 
 		if (save_image)	output_reciever->output_stream().init(d.prop);
 		if (save_flow_image)	flow_output_reciever->output_stream().init(d.prop);
@@ -4934,13 +4976,16 @@ void ns_analyzed_image_time_path::save_movement_images(const ns_analyzed_time_im
 	}
 	//if (chunk.stop_i == -1 && group_id.group_id == 12)
 	//	cerr << "HERE!";
-	if (save_image ) save_movement_image(chunk, *output_reciever, backwards_image_handling== ns_only_output_backwards_images);
+	if (save_image) {
+		debug_number_images_written++;
+		save_movement_image(chunk, *output_reciever, backwards_image_handling == ns_only_output_backwards_images);
+	}
 	if (save_flow_image) save_movement_flow_image(chunk, *flow_output_reciever, backwards_image_handling == ns_only_output_backwards_images);
 
 	if (!backwards_image_handling == ns_output_all_images && chunk.stop_i == elements.size() ||
 		backwards_image_handling == ns_only_output_backwards_images && chunk.stop_i ==-1) {
-		//if (this->group_id.group_id == 0 || group_id.group_id == 12)
-		//	cout << "Closing group " << this->group_id.group_id << "\n";
+	//	if (this->group_id.group_id == 0 || group_id.group_id == 12)
+			//cout << "Closing group " << this->group_id.group_id << "\n";
 		if (save_image) {
 			output_reciever->output_stream().finish_recieving_image();
 			ns_safe_delete(output_reciever);
@@ -6335,44 +6380,58 @@ void ns_time_path_image_movement_analyzer::load_region_visualization_images(cons
 //	cerr << "Looking for region images from time point " << start_i << " until " << stop_i;
 	bool problem_occurred(false);
 	ns_ex problem;
+
+	
 	for (unsigned long i = start_i; i < stop_i; i++){
 		//check to see if the region images are needed at this time point
 		region_image_specifications[i].region_vis_required = false;
 		region_image_specifications[i].interpolated_region_vis_required = false;
-		for (unsigned int g = start_group; g < stop_group; g++){
-			
-			#ifdef NS_OUTPUT_ALGINMENT_DEBUG
+
+		for (unsigned int g = start_group; g < stop_group; g++) {
+
+#ifdef NS_OUTPUT_ALGINMENT_DEBUG
 			//xxx
-			if (g !=1)
+			if (g != 1)
 				continue;
-			#endif
-			for (unsigned int p = 0; p < groups[g].paths.size(); p++){
+#endif
+			for (unsigned int p = 0; p < groups[g].paths.size(); p++) {
 				//if we're running backwards, we don't want to load any images
 				//corresponding to time points that will only be processed when running forwards.
 				if (running_backwards) {
 					unsigned long latest_path_element_to_load = groups[g].paths[p].first_stationary_timepoint() + ns_analyzed_image_time_path::alignment_time_kernel_width;
+					if (latest_path_element_to_load >= groups[g].paths[p].elements.size()) {
+						if (groups[g].paths[p].elements.size() == 0)
+							throw ns_ex("Empty path encountered!");
+						else latest_path_element_to_load = groups[g].paths[p].elements.size() - 1;
+					}
+
 					if (groups[g].paths[p].first_stationary_timepoint() == 0 ||
-						latest_path_element_to_load >= groups[g].paths[p].elements.size() ||
-						groups[g].paths[p].elements[latest_path_element_to_load].absolute_time < region_image_specifications[i].time)
-						continue;
+						groups[g].paths[p].elements[latest_path_element_to_load].absolute_time < region_image_specifications[i].time) {
+						/*if (g == 37) {
+							if (groups[g].paths[p].first_stationary_timepoint() == 0) cout << "no stationary.";
+							if (latest_path_element_to_load >= groups[g].paths[p].elements.size()) cout << "beyond latest (" << latest_path_element_to_load << ")";
+							else if (groups[g].paths[p].elements[latest_path_element_to_load].absolute_time < region_image_specifications[i].time) cout << " too early";
+
+						}*/
+							continue;
+					}
 				}
 				else {
-						if (groups[g].paths[p].elements[groups[g].paths[p].first_stationary_timepoint()].absolute_time > region_image_specifications[i].time)
+					if (groups[g].paths[p].elements[groups[g].paths[p].first_stationary_timepoint()].absolute_time > region_image_specifications[i].time)
 						continue;
 				}
 				//if ((g == 0 || g == 12))
 				//	cout << "l(" << g << ")";
-				
+
 				//check to see if the group has a worm detected in the current timepoint
-				bool region_vis_required = groups[g].paths[p].region_image_is_required(region_image_specifications[i].time,false,false);
-				bool interpolated_region_vis_required = groups[g].paths[p].region_image_is_required(region_image_specifications[i].time,true,false);
-				//if ((region_vis_required || interpolated_region_vis_required) && (g == 0 || g == 12)) {
-				//	cout << "f(" << g << ")\n";
-				//}
-				
-				region_image_specifications[i].region_vis_required = 
+				bool region_vis_required = groups[g].paths[p].region_image_is_required(region_image_specifications[i].time, false, false);
+				bool interpolated_region_vis_required = groups[g].paths[p].region_image_is_required(region_image_specifications[i].time, true, false);
+				//if (g == 37)
+				//	cout << "(" << (region_vis_required ? "1" : "0") << "," << (interpolated_region_vis_required ? "1" : "0") << ")";
+
+				region_image_specifications[i].region_vis_required =
 					region_image_specifications[i].region_vis_required || region_vis_required;
-				region_image_specifications[i].interpolated_region_vis_required = 
+				region_image_specifications[i].interpolated_region_vis_required =
 					region_image_specifications[i].interpolated_region_vis_required || interpolated_region_vis_required;
 			}
 		}
@@ -6413,34 +6472,39 @@ void ns_time_path_image_movement_analyzer::load_region_visualization_images(cons
 					throw ns_ex("ns_time_path_image_movement_analyzer::load_region_visualization_images()::Region images must be RBG");
 			}
 			bool new_data_allocated = false;
-			for (unsigned int g = start_group; g < stop_group; g++){
-			//	if (g == 12)
-				//cout << "LD";
-				for (unsigned int p = 0; p < groups[g].paths.size(); p++){
+			for (unsigned int g = start_group; g < stop_group; g++) {
+				//	if (g == 12)
+					//cout << "LD";
+				for (unsigned int p = 0; p < groups[g].paths.size(); p++) {
 					if (g >= groups.size())
 						throw ns_ex("ns_time_path_image_movement_analyzer::load_region_visualization_images()::An invalid group was specified: ") << g << " (there are only " << groups.size() << " groups)";
-	
+
 					if (p >= groups[g].paths.size())
 						throw ns_ex("ns_time_path_image_movement_analyzer::load_region_visualization_images()::An invalid path was specified: ") << p << " (there are only " << groups[g].paths.size() << " paths)";
-					
+
 					if (running_backwards) {
 						unsigned long latest_path_element_to_load = groups[g].paths[p].first_stationary_timepoint() + ns_analyzed_image_time_path::alignment_time_kernel_width;
+						if (latest_path_element_to_load >= groups[g].paths[p].elements.size()) {
+							if (groups[g].paths[p].elements.size() == 0)
+								throw ns_ex("Empty path encountered!");
+							else latest_path_element_to_load = groups[g].paths[p].elements.size() - 1;
+						}
+
 						if (groups[g].paths[p].first_stationary_timepoint() == 0 ||
-							latest_path_element_to_load > groups[g].paths[p].elements.size() ||
 							groups[g].paths[p].elements[latest_path_element_to_load].absolute_time < region_image_specifications[i].time) {
-						//	if (g == 12) cout << "{!12}";
+							//	if (g == 12) cout << "{!12}";
 							continue;
 						}
 					}
 					else {
 						if (groups[g].paths[p].elements[groups[g].paths[p].first_stationary_timepoint()].absolute_time > region_image_specifications[i].time) {
-						//	if (g == 12) "cout << {!12}";
-								continue;
+							//	if (g == 12) "cout << {!12}";
+							continue;
 						}
 					}
-				//	if (g == 0 || g == 12)
-				//	cout << "P[" << g << "]";
-					//ns_movement_image_collage_info m(&groups[g].paths[p]);
+					//	if (g == 0 || g == 12)
+					//	cout << "P[" << g << "]";
+						//ns_movement_image_collage_info m(&groups[g].paths[p]);
 					if (!just_do_a_consistancy_check) {
 						if (groups[g].paths[p].populate_images_from_region_visualization(region_image_specifications[i].time, image_loading_temp, image_loading_temp2, just_do_a_consistancy_check, load_type))
 							new_data_allocated = true;

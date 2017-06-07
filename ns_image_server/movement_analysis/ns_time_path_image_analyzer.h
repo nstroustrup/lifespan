@@ -707,7 +707,7 @@ public:
 	}
 
 	static  void spatially_average_movement(const int y, const int x, const int k, const ns_image_standard_signed & im, long &averaged_sum, long &count);
-
+	long debug_number_images_written;
 private:
 
 	ns_image_whole<unsigned long> stabilized_worm_region_temp;

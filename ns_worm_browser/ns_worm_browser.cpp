@@ -6261,8 +6261,8 @@ void ns_run_first_thermometer_experiment(){
 void ns_worm_learner::draw_animation(const double &t){
 	unsigned long offset(10);
 //	cerr << t << "\n";
-	if (!main_window.display_lock.try_to_acquire(__FILE__,__LINE__))
-		return;
+	main_window.display_lock.wait_to_acquire(__FILE__, __LINE__);
+	//	return;
 	try{
 		if (animation.properties().width +offset <= main_window.gl_buffer_properties.width &&
 			animation.properties().height +offset <= main_window.gl_buffer_properties.height){
@@ -6710,16 +6710,18 @@ void ns_worm_learner::navigate_death_time_annotation(ns_image_series_annotater::
 	switch(action){
 		case ns_image_series_annotater::ns_none: break;
 		case ns_image_series_annotater::ns_forward: 
-			if(current_annotater->step_forward(ns_throw_error,asynch))
-				current_annotater->request_refresh();
+			if (current_annotater->step_forward(ns_throw_error, asynch)) {
+				current_annotater->request_refresh(); report_changes_made_to_screen();
+			}
 			break;
 		case ns_image_series_annotater::ns_back:	
-			if(current_annotater->step_back(ns_throw_error,asynch)) 
-				current_annotater->request_refresh();
+			if (current_annotater->step_back(ns_throw_error, asynch)) {
+				current_annotater->request_refresh(); report_changes_made_to_screen();
+			}
 			break;
-		case ns_image_series_annotater::ns_fast_forward: current_annotater->fast_forward();break;
-		case ns_image_series_annotater::ns_fast_back:	current_annotater->fast_back();break;
-		case ns_image_series_annotater::ns_stop: current_annotater->stop_fast_movement();break;
+		case ns_image_series_annotater::ns_fast_forward: current_annotater->fast_forward(); report_changes_made_to_screen(); break;
+		case ns_image_series_annotater::ns_fast_back:	current_annotater->fast_back(); report_changes_made_to_screen(); break;
+		case ns_image_series_annotater::ns_stop: current_annotater->stop_fast_movement(); report_changes_made_to_screen(); break;
 		case ns_image_series_annotater::ns_save:{
 
 			ns_acquire_lock_for_scope lock(persistant_sql_lock, __FILE__, __LINE__);

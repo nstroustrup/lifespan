@@ -11,7 +11,7 @@
 #include "ns_high_precision_timer.h"
 #include "ns_experiment_storyboard.h"
 
-#define IDLE_THROTTLE_FPS 30
+#define IDLE_THROTTLE_FPS 20
 #define SCALE_FONTS_WITH_WINDOW_SIZE 0
 
 bool output_debug_messages = false;
@@ -95,7 +95,6 @@ void ns_handle_drag_and_drop(){
 void idle_main_window_update_callback(void *);
 void idle_worm_window_update_callback(void *);
 
-
 //structure of class lifted from example at 
 // http://seriss.com/people/erco/fltk/#OpenGlSimpleWidgets
 
@@ -152,24 +151,24 @@ class ns_worm_terminal_gl_window : public Fl_Gl_Window {
 		case FL_FOCUS: {
 			have_focus = true;
 			int a = Fl_Gl_Window::handle(state);
-			idle_main_window_update_callback(0);
+			report_changes_made_to_screen();
 			return a; 
 		}
 		case FL_UNFOCUS: {
 			have_focus = false;
 			int a = Fl_Gl_Window::handle(state);
-			idle_main_window_update_callback(0);
+			report_changes_made_to_screen();
 			return a;
 		}
 			case FL_DND_ENTER:
             case FL_DND_RELEASE:
             case FL_DND_LEAVE:
             case FL_DND_DRAG:
-				idle_main_window_update_callback(0);
+				report_changes_made_to_screen();
                 return 1;
 			case FL_PASTE: 
-				ns_handle_drag_and_drop(); 
-				idle_main_window_update_callback(0);
+				ns_handle_drag_and_drop();
+				report_changes_made_to_screen();
 				 return 1;
 		}
 
@@ -199,7 +198,7 @@ class ns_worm_terminal_gl_window : public Fl_Gl_Window {
 						mouse_is_down = true;
 						worm_learner.touch_main_window_pixel(press);		
 
-						idle_main_window_update_callback(0);
+						report_changes_made_to_screen();
 						return 1;
 					}
 					case FL_RELEASE:{
@@ -207,7 +206,7 @@ class ns_worm_terminal_gl_window : public Fl_Gl_Window {
 						mouse_is_down = false;
 						worm_learner.touch_main_window_pixel(press);
 
-						idle_main_window_update_callback(0);
+						report_changes_made_to_screen();
 						return 1;
 					}
 					case FL_DRAG:{
@@ -215,7 +214,7 @@ class ns_worm_terminal_gl_window : public Fl_Gl_Window {
 						if (mouse_is_down && (abs(mouse_click_location.x-press.screen_position.x) > 4 || abs(mouse_click_location.y - press.screen_position.y) > 4))
 								worm_learner.touch_main_window_pixel(press);
 
-						idle_main_window_update_callback(0);
+						report_changes_made_to_screen();
 						return 1;
 					} 
 
@@ -229,7 +228,7 @@ class ns_worm_terminal_gl_window : public Fl_Gl_Window {
 		}
 		//cerr << "Could not handle " << state << "\n";
 		int a = Fl_Gl_Window::handle(state);
-		idle_main_window_update_callback(0);
+		report_changes_made_to_screen();
 		return a;
 	}
 	
@@ -242,7 +241,7 @@ public:
 	//		cerr << W << "x" << H << " from " << w() << "x" << h() << "\n";
        		fix_viewport(X,Y,W,H);
 		}
-		idle_main_window_update_callback(0);
+		//request_screen_redraw_from_main_thread();
         redraw();
     }
 
@@ -1143,7 +1142,7 @@ class ns_worm_terminal_main_menu_organizer : public ns_menu_organizer{
 	static void set_database(const std::string & data){
 		image_server.set_sql_database(data,false,worm_learner.get_sql_connection());
 		cerr << "Switching to database " << data << "\n";
-		//ns_thread::sleep(5);
+		ns_thread::sleep(15);
 		get_menu_handler()->update_experiment_choice(*get_menu_bar());
 	}
 	static void file_open(const std::string & data){
@@ -2273,89 +2272,149 @@ void schedule_repeating_callback(void *a ) {
 }
 void ns_handle_menu_bar_activity_request();
 
+
+ns_lock redraw_rate_limiting_lock("overdisplay");
+bool redrawing_rate_limiter = false;
+
+void perform_screen_redraw_callback(void * a) {
+	try {
+		Fl::lock();
+		ns_vector_2d cur_size(current_window->w(), current_window->h());
+		float menu_d(worm_learner.main_window.display_rescale_factor);
+		if (!SCALE_FONTS_WITH_WINDOW_SIZE)
+			menu_d = 1;
+		cur_size = cur_size - ns_vector_2i(0, (current_window->menu_height() + current_window->info_bar_height())*menu_d);
+		cur_size = cur_size / worm_learner.main_window.display_rescale_factor;
+		if (abs((int)(worm_learner.main_window.gl_image_size.x - cur_size.x)) > 0 && abs((int)(worm_learner.main_window.gl_image_size.y - cur_size.y)) > 0)
+			current_window->size(worm_learner.main_window.gl_image_size.x, worm_learner.main_window.gl_image_size.y);
+
+		if (worm_learner.main_window.redraw_requested)
+			redraw_main_window(worm_learner.main_window.gl_image_size.x, worm_learner.main_window.gl_image_size.y, true);
+
+		if (worm_learner.worm_window.redraw_requested)
+			redraw_worm_window(worm_learner.worm_window.gl_image_size.x, worm_learner.worm_window.gl_image_size.y, true);
+	
+		Fl::unlock(); 
+		redrawing_rate_limiter = false;
+	}
+	catch (...) {
+
+		Fl::unlock();
+		redrawing_rate_limiter = false;
+		throw;
+	}
+}
+
+void request_window_redraw_from_main_thread() {
+	if (redrawing_rate_limiter) return;
+	if (!redraw_rate_limiting_lock.try_to_acquire(__FILE__, __LINE__)) return;
+	if (redrawing_rate_limiter) return;
+	redrawing_rate_limiter = true;
+	redraw_rate_limiting_lock.release();
+	Fl::awake(perform_screen_redraw_callback, 0);
+}
+
+void report_changes_made_to_screen() {
+	Fl::awake(idle_main_window_update_callback, 0);
+}
+
+
 ns_64_bit last_callback_time(0);
 ns_lock idle_launch_lock("tst");
 ns_64_bit throttle_spf = 1000 / IDLE_THROTTLE_FPS;
-void idle_main_window_update_callback(void *){
-	 double last_time = last_callback_time;
-	 last_callback_time =  GetTime();
-	 ns_64_bit last_interval = last_callback_time - last_time;
-	/* if (last_interval < throttle_spf) {
-		 if (!idle_launch_lock.try_to_acquire(__FILE__,__LINE__))
-			 return;
-		 cerr << "Waiting" << throttle_spf - last_interval << "\n";
-		 ns_thread::sleep_milliseconds(throttle_spf-last_interval);
-		 idle_launch_lock.release();
-	 }*/
-	 //cerr << "SPF = " << last_interval << "\n";
-	float menu_d(worm_learner.main_window.display_rescale_factor);
-	if (!SCALE_FONTS_WITH_WINDOW_SIZE)
-			menu_d = 1;
-	Fl::lock();
-	bool schedule_timer(false);
-	try{
-		ns_vector_2d cur_size(current_window->w(),current_window->h());
-		cur_size = cur_size - ns_vector_2i(0,(current_window->menu_height()+current_window->info_bar_height())*menu_d);
-		cur_size = cur_size/worm_learner.main_window.display_rescale_factor;
-	//	worm_learner.main_window.image_size = worm_learner.main_window.ideal_image_size;
-		//worm_learner.main_window.image_size.y+=ns_worm_terminal_main_window::menu_height()+ns_worm_terminal_main_window::info_bar_height();
-		//worm_learner.main_window.image_size.x+= ns_worm_terminal_main_window::border_width();
-		if ( abs((int)(worm_learner.main_window.gl_image_size.x - cur_size.x)) > 0 && abs((int)(worm_learner.main_window.gl_image_size.y- cur_size.y)) > 0){
-			//current_window->size(current_window->size(worm_learner.main_window.image_size.x, worm_learner.ideal_current_window_height);
-			current_window->size(worm_learner.main_window.gl_image_size.x, worm_learner.main_window.gl_image_size.y);
-		//	current_window->gl_window->size(worm_learner.main_window.ideal_image_size.x, worm_learner.main_window.ideal_image_size.y);
-		//	cerr << "Redrawing screen from " << cur_size << " to ideal " << worm_learner.main_window.image_size << "\n";
-		}
-		ns_handle_menu_bar_activity_request();
-		if (worm_learner.current_annotater->refresh_requested()){
-			worm_learner.current_annotater->display_current_frame();
-		}
-		if (worm_learner.main_window.redraw_requested){
-			redraw_main_window(worm_learner.main_window.gl_image_size.x,worm_learner.main_window.gl_image_size.y,true);
-		}
-		ns_image_series_annotater::ns_image_series_annotater_action a(worm_learner.current_annotater->fast_movement_requested());
-		if (a == ns_image_series_annotater::ns_fast_forward){
-			worm_learner.current_annotater->step_forward(ns_show_worm_display_error);
-			worm_learner.current_annotater->display_current_frame();
-		}
-		else if (a==ns_image_series_annotater::ns_fast_back){
-			worm_learner.current_annotater->step_back(ns_show_worm_display_error);
-			worm_learner.current_annotater->display_current_frame();
-		}
-		//draw busy animation if requested
-		if (current_window->draw_animation){
-			worm_learner.draw_animation((GetTime() - init_time)/1000.0);
-			schedule_timer = true;
-			current_window->last_draw_animation = true;
-		}
-		//clear animation when finished
-		if (!current_window->draw_animation && current_window->last_draw_animation){
-			current_window->last_draw_animation = false;
-			worm_learner.draw();
-	//		redraw_screen();
-		}
-		if (show_worm_window){
-			show_worm_window = false;
-			worm_window->size(worm_learner.worm_window.gl_image_size.x,
-							  worm_learner.worm_window.gl_image_size.y);
-			worm_window->show();
-			ns_set_menu_bar_activity(true);	
-		}
-		if (hide_worm_window){
-			hide_worm_window = false;
-			worm_window->hide();
-		}
-		if (schedule_timer) {
 
-			current_window->gl_window->damage(1);
-			current_window->gl_window->redraw();
-		//	Fl::awake(refresh_main_window_internal, 0);
+ns_lock idle_rate_limiting_lock("overidle");
+bool idle_rate_limiter = false;
+void idle_main_window_update_callback(void *) {
+	{
+		bool schedule_timer(false);
+		Fl::lock();
+		ns_image_series_annotater::ns_image_series_annotater_action a(worm_learner.current_annotater->fast_movement_requested());
+		if (a == ns_image_series_annotater::ns_fast_forward ||
+			a == ns_image_series_annotater::ns_fast_back ||
+			current_window->draw_animation)
+			schedule_timer = true;
+
+		Fl::unlock();
+
+		if (schedule_timer) {
+			worm_learner.main_window.redraw_requested = true;
+			worm_learner.worm_window.redraw_requested = true;
 			Fl::awake(schedule_repeating_callback, (void*)1);// Fl::repeat_timeout(1.0 / IDLE_THROTTLE_FPS, idle_main_window_update_callback);
 		}
-		Fl::unlock();
 	}
-	catch(...){
-		Fl::unlock();
+
+	if (idle_rate_limiter)
+		return;
+
+	ns_try_to_acquire_lock_for_scope  idle_lock(idle_rate_limiting_lock);
+
+	if (!idle_lock.try_to_get(__FILE__, __LINE__)) return;
+	if (idle_rate_limiter) return;
+	idle_rate_limiter = true;
+	idle_lock.release();
+	try {
+
+		ns_64_bit last_time = last_callback_time;
+		last_callback_time = GetTime();
+		ns_64_bit last_interval = last_callback_time - last_time;
+
+	//	cerr << "SPF = " << last_interval << "\n";
+
+		Fl::lock();
+		try {
+
+			ns_handle_menu_bar_activity_request();
+			if (worm_learner.current_annotater->refresh_requested()) {
+				worm_learner.current_annotater->display_current_frame();
+			}
+
+
+			ns_image_series_annotater::ns_image_series_annotater_action a(worm_learner.current_annotater->fast_movement_requested());
+			if (a == ns_image_series_annotater::ns_fast_forward) {
+				worm_learner.current_annotater->step_forward(ns_show_worm_display_error);
+				worm_learner.current_annotater->display_current_frame();
+			}
+			else if (a == ns_image_series_annotater::ns_fast_back) {
+				worm_learner.current_annotater->step_back(ns_show_worm_display_error);
+				worm_learner.current_annotater->display_current_frame();
+				//worm_learner.draw();
+			}
+			//draw busy animation if requested
+			if (current_window->draw_animation) {
+				worm_learner.draw_animation((GetTime() - init_time) / 1000.0);
+				current_window->last_draw_animation = true;
+			}
+			//clear animation when finished
+			if (!current_window->draw_animation && current_window->last_draw_animation) {
+				current_window->last_draw_animation = false;
+				worm_learner.draw();
+				//		redraw_screen();
+			}
+			if (show_worm_window) {
+				show_worm_window = false;
+				worm_window->size(worm_learner.worm_window.gl_image_size.x,
+					worm_learner.worm_window.gl_image_size.y);
+				worm_window->show();
+				ns_set_menu_bar_activity(true);
+			}
+			if (hide_worm_window) {
+				hide_worm_window = false;
+				worm_window->hide();
+			}
+
+			request_window_redraw_from_main_thread();
+		
+			Fl::unlock();
+		}
+		catch (...) {
+			Fl::unlock();
+		}
+		idle_rate_limiter = false;
+	}
+	catch (...) {
+		idle_rate_limiter = false;
+		throw;
 	}
 }
 void ns_hide_worm_window(){
@@ -2385,7 +2444,7 @@ void idle_worm_window_update_callback(void *){
 			worm_learner.death_time_solo_annotater.display_current_frame();
 		}
 		if (worm_learner.worm_window.redraw_requested){
-			redraw_worm_window(worm_learner.worm_window.gl_image_size.x,worm_learner.worm_window.gl_image_size.y,true);
+			report_changes_made_to_screen();
 		}
 		ns_image_series_annotater::ns_image_series_annotater_action a(worm_learner.death_time_solo_annotater.fast_movement_requested());
 		if (a == ns_image_series_annotater::ns_fast_forward){
@@ -2816,7 +2875,7 @@ void ns_set_menu_bar_activity(bool activate){
 	set_menu_bar_request = activate?ns_activate:ns_deactivate;
 	menu_bar_processing_lock.release();
 	if (!activate)
-		Fl::awake(schedule_repeating_callback);
+		report_changes_made_to_screen();
 }
 
 void ask_if_schedule_should_be_submitted_to_db(bool & write_to_disk, bool & write_to_db){

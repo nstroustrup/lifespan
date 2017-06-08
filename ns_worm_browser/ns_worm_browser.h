@@ -74,6 +74,8 @@ ns_vector_2i worm_image_window_size_difference();
 void ns_worm_browser_output_debug(const unsigned long line_number,const std::string & source, const std::string & message);
 
 
+void report_changes_made_to_screen();
+
 void ns_set_main_window_annotation_controls_activity(const bool active);
 
 std::string ns_extract_scanner_name_from_filename(const std::string & filename);

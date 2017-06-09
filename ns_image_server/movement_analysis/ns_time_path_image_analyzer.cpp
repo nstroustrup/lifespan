@@ -27,6 +27,8 @@ const bool ns_skip_low_density_paths(false);
 
 //#define NS_OUTPUT_ALGINMENT_DEBUG
 
+
+
 ns_analyzed_image_time_path::~ns_analyzed_image_time_path(){
 		ns_safe_delete(output_reciever);
 		ns_safe_delete(flow_output_reciever);
@@ -5828,6 +5830,30 @@ void ns_time_path_image_movement_analyzer::normalize_movement_scores_over_all_pa
 		}
 	}
 }
+
+
+void ns_time_path_image_movement_analyzer::guess_if_region_is_excluded_by_hand(std::vector<ns_region_area> & areas) {
+	for (unsigned int i = 0; i < areas.size(); i++)
+		areas[i].clear_stats();
+	ns_64_bit average_path_duration(0), path_count(0);
+	for (unsigned int g=0; g < groups.size(); g++)
+		for (unsigned int p = 0; p < groups[g].paths.size(); p++) {
+			const ns_64_bit path_duration = groups[g].paths[p].elements.rbegin()->absolute_time - groups[g].paths[p].elements[0].absolute_time;
+			average_path_duration += path_duration;
+			path_count++;
+			for(unsigned int i = 0; i < areas.size(); i++)
+				if (ns_rectangle_intersect(areas[i].pos, areas[i].pos + areas[i].size, groups[g].paths[p].path_region_position, groups[g].paths[p].path_region_position + groups[g].paths[p].path_region_size)) {
+					if (groups[g].paths[p].excluded())
+						areas[i].total_exclusion_time_in_seconds += path_duration;
+					else areas[i].total_inclusion_time_in_seconds += path_duration;
+				}
+		}
+	average_path_duration /= path_count;
+	ns_time_path_image_movement_analyzer a;
+	for (unsigned int i = 0; i < areas.size(); i++)
+		areas[i].average_annotation_time_for_region = average_path_duration;
+}
+
 void ns_time_path_image_movement_analyzer::generate_movement_description_series(){
 	//group sizes and position
 	description_series.group_region_sizes.resize(groups.size(),ns_vector_2i(0,0));

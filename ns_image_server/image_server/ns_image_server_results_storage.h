@@ -93,6 +93,7 @@ class ns_image_server_results_storage{
 	static std::string multi_experiment_data_folder(){return "multiple_experiment_data";}
 	static std::string survival_data_folder(){return "survival_data";}
 	static std::string image_statistics_folder(){return "image_statistics";}
+	static std::string worm_morphology_timeseries_folder() { return "morphology"; }
 	static std::string movement_timeseries_folder(){return "movement_timeseries";}
 	static std::string hand_curation_folder(){return "hand_curation";}
 	static std::string machine_death_time_annotations(){return "machine_event_annotations";}
@@ -123,7 +124,14 @@ public:
 		return ns_image_server_results_file(results_directory, dir,
 											ns_image_server_results_subject::create_short_name(spec.experiment_filename()) + "capture_region_image_statistics.csv");
 	}
-	
+
+	ns_image_server_results_file worm_morphology_timeseries(ns_image_server_results_subject & spec, ns_sql & sql, bool whole_experiment = false) const {
+		spec.get_names(sql);
+		std::string dir = spec.experiment_name + DIR_CHAR_STR + worm_morphology_timeseries_folder() + DIR_CHAR_STR;
+		dir += (whole_experiment ? "exp" : "reg");
+		std::string fname = (whole_experiment ? spec.experiment_filename(): spec.region_filename());
+		return ns_image_server_results_file(results_directory, dir, fname + "=morphology.csv");
+	}
 	ns_image_server_results_file device_capture_image_statistics(ns_image_server_results_subject & spec, ns_sql & sql)const{
 		spec.get_names(sql);
 		return ns_image_server_results_file(results_directory, multi_experiment_data_folder() + DIR_CHAR_STR +image_statistics_folder(),
@@ -151,10 +159,7 @@ public:
 			if (file.size() > 0 && isdigit(file[0]))
 				file = std::string("m") + file;
 		}
-
 		return ns_image_server_results_file(results_directory,dir,file);
-	
-		
 	}
 	static void replace_spaces_by_underscores(std::string & s){
 		for (unsigned int i = 0; i < s.size(); i++)

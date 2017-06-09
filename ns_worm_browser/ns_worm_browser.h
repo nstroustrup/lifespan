@@ -639,6 +639,9 @@ public:
 	bool movement_data_is_strictly_decreasing(){return movement_data_is_strictly_decreasing_;}
 	void output_device_timing_data(const unsigned long experiment_id,const unsigned long experiment_group_id);
 	void output_region_statistics(const unsigned long experiment_id,const unsigned long experiment_group_id);
+
+	void generate_morphology_statistics(const ns_64_bit & experiment_id);
+
 	void create_feature_time_series(const std::string & directory);
 
 	

@@ -336,3 +336,70 @@ void analyze_worm_movement_across_frames(const ns_processing_job & job, ns_image
 	//	image_server->performance_statistics.register_job_duration(ns_process_movement_paths_visualization,tm.stop());
 
 }
+
+void ns_refine_image_statistics(const ns_64_bit region_id, std::ostream & out,ns_sql & sql) {
+
+	ns_time_path_solution solution;
+	solution.load_from_db(region_id, sql, false);
+
+	ns_time_path_image_movement_analyzer analyzer;
+	ns_image_server::ns_posture_analysis_model_cache::const_handle_t posture_analysis_model_handle;
+	image_server.get_posture_analysis_model_for_region(region_id, posture_analysis_model_handle, sql);
+
+	ns_acquire_for_scope<ns_analyzed_image_time_path_death_time_estimator> death_time_estimator(
+		ns_get_death_time_estimator_from_posture_analysis_model(posture_analysis_model_handle().model_specification));
+
+	const ns_time_series_denoising_parameters time_series_denoising_parameters(ns_time_series_denoising_parameters::load_from_db(region_id, sql));
+
+	analyzer.load_completed_analysis(region_id, solution, time_series_denoising_parameters, &death_time_estimator(), sql, true);
+
+	ns_region_metadata metadata;	
+	ns_hand_annotation_loader by_hand_region_annotations;
+	metadata = by_hand_region_annotations.load_region_annotations(ns_death_time_annotation_set::ns_censoring_and_movement_transitions, region_id, sql);
+
+	analyzer.add_by_hand_annotations(by_hand_region_annotations.annotations);
+
+	ns_detected_worm_stats::output_csv_header(out);
+	out << ",";
+	metadata.out_JMP_plate_identity_header_short(out);
+	out << ",time spent included, time_spent_excluded,average_time,excluded by visual inspection\n";
+		sql << "SELECT id, worm_detection_results_id, capture_time FROM sample_region_images WHERE region_info_id = " << region_id << " ORDER BY capture_time";
+	ns_sql_result res;
+	sql.get_rows(res);
+	if (res.empty())
+		throw ns_ex("Could not find any valid timepoints in region ") << region_id;
+	int r(0);
+	for (unsigned int i = 0; i < res.size(); i++) {
+		int r1 = (100 * i) / res.size();
+		if (r1 - r >= 5) {
+			image_server.add_subtext_to_current_event(ns_to_string(r1) + "%...",&sql);
+			r = r1;
+		}
+		ns_image_worm_detection_results results;
+		results.detection_results_id = ns_atoi64(res[i][1].c_str());
+		results.load_from_db(true, false, sql,false);
+		ns_image_server_captured_image_region region;
+		region.load_from_db(ns_atoi64(res[i][0].c_str()), &sql);
+		results.load_images_from_db(region, sql, false,false);
+		const std::vector<const ns_detected_worm_info *> worms = results.actual_worm_list();
+		std::vector<ns_region_area> areas(worms.size());
+		for (unsigned int j = 0; j < worms.size(); j++) {
+			areas[j].pos = worms[j]->region_position_in_source_image;
+			areas[j].size = worms[j]->region_size;
+		}
+		ns_object_hand_annotation_data hd;
+		analyzer.guess_if_region_is_excluded_by_hand(areas);
+		for (unsigned int j = 0; j < worms.size(); j++) {
+			ns_detected_worm_stats worm_stats = worms[j]->generate_stats();
+			worm_stats.output_csv_data(region_id, ns_atoi64(res[i][2].c_str()), areas[j].pos, areas[j].size, hd, out);
+			out << ",";
+			metadata.out_JMP_plate_identity_data_short(out);
+			out << "," << areas[j].total_inclusion_time_in_seconds << "," << areas[j].total_exclusion_time_in_seconds << "," << areas[j].average_annotation_time_for_region << ",";
+			if (areas[j].total_exclusion_time_in_seconds == 0 || areas[j].total_exclusion_time_in_seconds < areas[j].total_inclusion_time_in_seconds)
+				out << "no";
+			else out << "yes";
+			out << "\n";
+		
+		}
+	}
+}

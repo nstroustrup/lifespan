@@ -814,6 +814,16 @@ struct ns_analyzed_image_time_path_group{
 	std::vector<ns_analyzed_image_time_path> paths;
 	void clear_images();
 };
+
+struct ns_region_area {
+	ns_vector_2i pos, size;
+	void clear_stats() {
+		total_exclusion_time_in_seconds = total_inclusion_time_in_seconds = average_annotation_time_for_region = 0;
+	}
+	ns_region_area():total_exclusion_time_in_seconds(0), total_inclusion_time_in_seconds(0), average_annotation_time_for_region(0){}
+	ns_64_bit total_exclusion_time_in_seconds, total_inclusion_time_in_seconds, average_annotation_time_for_region;
+};
+
 struct ns_movement_analysis_shared_state;
 class ns_time_path_image_movement_analyzer {
 public:
@@ -858,6 +868,8 @@ public:
 		}
 			
 	}
+
+
 	typedef enum { ns_use_existing_record_if_possible, ns_force_creation_of_new_db_record,ns_require_existing_record } ns_analysis_db_options;
 	typedef enum { ns_do_not_write_data, ns_write_data } ns_data_write_options;
 	void obtain_analysis_id_and_save_movement_data(const ns_64_bit region_id, ns_sql & sql, ns_analysis_db_options id_options, ns_data_write_options write_options);
@@ -899,6 +911,8 @@ public:
 	ns_64_bit db_analysis_id() const{return analysis_id;}
 	bool try_to_rebuild_after_failure() const;
 	static ns_image_server_image get_movement_quantification_id(const ns_64_bit region_info_id,ns_sql & sql);
+
+	void guess_if_region_is_excluded_by_hand(std::vector<ns_region_area> & areas);
 private:
 
 	unsigned long _number_of_invalid_images_encountered;

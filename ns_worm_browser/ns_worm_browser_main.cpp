@@ -10,8 +10,8 @@
 #endif
 #include "ns_high_precision_timer.h"
 #include "ns_experiment_storyboard.h"
-
-#define IDLE_THROTTLE_FPS 20
+#include "ns_analyze_movement_over_time.h"
+#define IDLE_THROTTLE_FPS 40
 #define SCALE_FONTS_WITH_WINDOW_SIZE 0
 
 bool output_debug_messages = false;
@@ -998,6 +998,11 @@ class ns_worm_terminal_main_menu_organizer : public ns_menu_organizer{
 		worm_learner.data_selector.get_experiment_info(worm_learner.data_selector.current_experiment_id(),info);
 		worm_learner.output_region_statistics(0,info.experiment_group_id);
 	}
+	static void generate_morphology_stats(const std::string & value) {
+		worm_learner.generate_morphology_statistics(worm_learner.data_selector.current_experiment_id());
+	}
+
+
 	static void generate_experiment_detailed_w_by_hand_movement_image_quantification_analysis_data(const std::string & value){worm_learner.generate_experiment_movement_image_quantification_analysis_data(ns_worm_learner::ns_quantification_detailed_with_by_hand);	}
 	static void generate_experiment_abbreviated_movement_image_quantification_analysis_data(const std::string & value){worm_learner.generate_experiment_movement_image_quantification_analysis_data(ns_worm_learner::ns_quantification_abbreviated_detailed);	}
 	
@@ -1317,7 +1322,7 @@ public:
 		add(ns_menu_item_spec(generate_timing_data_all_exp,"Data Files/Other Statistics/_Generate Scanner Timing Data for All Experiments in Group"));
 		add(ns_menu_item_spec(generate_region_stats,"Data Files/Other Statistics/Generate Image Statistics for all regions in current Experiment"));
 		add(ns_menu_item_spec(generate_region_stats_for_all_regions_in_group,"Data Files/Other Statistics/_Generate Image Statistics for all Regions in current Experiment Group"));
-	//	add(ns_menu_item_spec(generate_detailed_animal_data_file,"Data/Statistics/_Generate Detailed Animal Statistics for current experiment"));
+		add(ns_menu_item_spec(generate_morphology_stats,"Data Files/Other Statistics/_Compile Worm Morphology Statistics for Current Experiment"));
 		add(ns_menu_item_spec(export_experiment_data,"Data Files/Transfer and Backup/Export Database Contents for Current Experiment"));
 		add(ns_menu_item_spec(import_experiment_data,"Data Files/Transfer and Backup/_Import Experiment from Backup"));
 		add(ns_menu_item_spec(create_experiment_from_filenames,"Data Files/Transfer and Backup/Database Repair/_Create a new experiment in the database from images on disk"));
@@ -2581,7 +2586,6 @@ int main() {
 
 	//ns_optical_flow::test();
 
-
 	ns_worm_browser_output_debug(__LINE__,__FILE__,"Launching worm browser");
 	init_time = GetTime();
 	Fl::lock();
@@ -2630,7 +2634,6 @@ int main() {
 			ns_worm_browser_output_debug(__LINE__,__FILE__,"Getting flags from db again");
 			ns_death_time_annotation_flag::get_flags_from_db(sql());
 
-			
 			cerr << "Loading the experiment list...";
 			worm_learner.data_selector.load_experiment_names(sql());
 			worm_learner.load_databases(sql());

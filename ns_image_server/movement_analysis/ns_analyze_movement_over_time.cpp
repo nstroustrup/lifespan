@@ -358,12 +358,14 @@ void ns_refine_image_statistics(const ns_64_bit region_id, std::ostream & out,ns
 	metadata = by_hand_region_annotations.load_region_annotations(ns_death_time_annotation_set::ns_censoring_and_movement_transitions, region_id, sql);
 
 	analyzer.add_by_hand_annotations(by_hand_region_annotations.annotations);
-
 	ns_detected_worm_stats::output_csv_header(out);
 	out << ",";
 	metadata.out_JMP_plate_identity_header_short(out);
-	out << ",time spent included, time_spent_excluded,average_time,excluded by visual inspection\n";
-		sql << "SELECT id, worm_detection_results_id, capture_time FROM sample_region_images WHERE region_info_id = " << region_id << " AND worm_detection_results_id != 0 ORDER BY capture_time";
+	out << ",time spent included, time_spent_excluded,average_time,excluded by visual inspection, overlap with path match,Age (days), Stationary Worm ID, Movement State\n";
+
+
+
+	sql << "SELECT id, worm_detection_results_id, capture_time FROM sample_region_images WHERE region_info_id = " << region_id << " AND worm_detection_results_id != 0 ORDER BY capture_time";
 	ns_sql_result res;
 	sql.get_rows(res);
 	if (res.empty())
@@ -376,6 +378,9 @@ void ns_refine_image_statistics(const ns_64_bit region_id, std::ostream & out,ns
 			r = r1;
 		}
 		try {
+
+			ns_64_bit t = ns_atoi64(res[i][2].c_str());
+
 			ns_image_worm_detection_results results;
 			results.detection_results_id = ns_atoi64(res[i][1].c_str());
 			results.load_from_db(true, false, sql, false);
@@ -387,18 +392,29 @@ void ns_refine_image_statistics(const ns_64_bit region_id, std::ostream & out,ns
 			for (unsigned int j = 0; j < worms.size(); j++) {
 				areas[j].pos = worms[j]->region_position_in_source_image;
 				areas[j].size = worms[j]->region_size;
+				areas[j].time = t;
 			}
+
+			//we need to do this so that the analyzer object can generate estimates of the movement state of objects over time
+			const ns_time_series_denoising_parameters time_series_denoising_parameters(ns_time_series_denoising_parameters::load_from_db(region_id, sql));
+			ns_acquire_for_scope<ns_analyzed_image_time_path_death_time_estimator> death_time_estimator(
+				ns_get_death_time_estimator_from_posture_analysis_model(posture_analysis_model_handle().model_specification));
+			analyzer.reanalyze_with_different_movement_estimator(time_series_denoising_parameters, &death_time_estimator());
+			
 			ns_object_hand_annotation_data hd;
 			analyzer.guess_if_region_is_excluded_by_hand(areas);
 			for (unsigned int j = 0; j < worms.size(); j++) {
 				ns_detected_worm_stats worm_stats = worms[j]->generate_stats();
-				worm_stats.output_csv_data(region_id, ns_atoi64(res[i][2].c_str()), areas[j].pos, areas[j].size, hd, out);
+				worm_stats.output_csv_data(region_id, t, areas[j].pos, areas[j].size, hd, out);
 				out << ",";
 				metadata.out_JMP_plate_identity_data_short(out);
 				out << "," << areas[j].total_inclusion_time_in_seconds << "," << areas[j].total_exclusion_time_in_seconds << "," << areas[j].average_annotation_time_for_region << ",";
 				if (areas[j].total_exclusion_time_in_seconds == 0 || areas[j].total_exclusion_time_in_seconds < areas[j].total_inclusion_time_in_seconds)
 					out << "no";
 				else out << "yes";
+				out << "," << areas[j].overlap_area_with_match << ",";
+				out << ((t - metadata.time_at_which_animals_had_zero_age) / 60.0 / 60.0 / 24) << ",";
+				out << areas[j].worm_id << "," << ns_movement_state_to_string_short(areas[j].movement_state);
 				out << "\n";
 			}
 		}

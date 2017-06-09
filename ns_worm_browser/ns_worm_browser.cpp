@@ -677,7 +677,7 @@ void ns_worm_learner::generate_morphology_statistics(const ns_64_bit & experimen
 
 	ns_acquire_for_scope<ostream> o(outf.output());
 
-	sql << "SELECT r.id FROM capture_sample_region_info as r, capture_samples as s WHERE r.sample_id = s.id AND s.experiment_id = " << experiment_id;
+	sql << "SELECT r.id FROM sample_region_image_info as r, capture_samples as s WHERE r.sample_id = s.id AND s.experiment_id = " << experiment_id;
 	ns_sql_result res;
 	sql.get_rows(res);
 	bool write_header = true;

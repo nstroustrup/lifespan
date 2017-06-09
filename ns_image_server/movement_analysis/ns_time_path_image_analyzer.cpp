@@ -2319,7 +2319,7 @@ void ns_analyzed_image_time_path::write_detailed_movement_quantification_analysi
 			<< elements[k].measurements.registration_displacement.mag() << ","
 			<< elements[k].absolute_time << ","
 			<< ns_to_string_short((elements[k].absolute_time - m.time_at_which_animals_had_zero_age)/(60.0*60*24),3) << ","
-			<< ns_movement_state_to_string(movement_state(elements[k].absolute_time)) << ","
+			<< ns_movement_state_to_string(explicitly_recognized_movement_state(elements[k].absolute_time)) << ","
 			<< ns_movement_state_to_string(by_hand_movement_state(elements[k].absolute_time)) << ","
 			<< ns_calc_rel_time_by_index(elements[k].absolute_time,state_intervals[(int)ns_movement_stationary],*this) << ","
 			<< ns_calc_rel_time_by_index(elements[k].absolute_time,state_intervals[(int)ns_movement_posture],*this) << ","
@@ -2481,7 +2481,7 @@ void ns_make_path_movement_graph(const ns_analyzed_image_time_path & path,ns_gra
 //	transition_posture.y[0] = -1;
 //	transition_stationary.y[0] = -1;
 	for (unsigned int i = 1; i < path.element_count(); i++){
-		ns_movement_state m(path.movement_state(path.element(i).absolute_time));
+		ns_movement_state m(path.explicitly_recognized_movement_state(path.element(i).absolute_time));
 		if (slow && m == ns_movement_posture){
 			transition_posture.x.push_back(path.element(i).absolute_time);
 			transition_posture.y.push_back(movement_ratios.y[i]);
@@ -2606,6 +2606,61 @@ long ns_find_last_valid_observation_index(const long index,const ns_analyzed_ima
 	}
 	return -1;
 }
+
+
+void calculate_state_transitions_in_the_presence_of_missing_states(
+	const ns_movement_state_time_interval_indicies & frame_before_first,
+	const ns_movement_state_observation_boundary_interval & slow_moving_interval,
+	const ns_movement_state_observation_boundary_interval & posture_changing_interval,
+	const ns_movement_state_observation_boundary_interval & dead_interval,
+	ns_movement_state_observation_boundary_interval & slow_moving_interval_including_missed_states,
+	ns_movement_state_observation_boundary_interval & posture_changing_interval_including_missed_states,
+	ns_movement_state_observation_boundary_interval & dead_interval_including_missed_states) {
+
+	slow_moving_interval_including_missed_states = slow_moving_interval;
+	posture_changing_interval_including_missed_states = posture_changing_interval;
+	dead_interval_including_missed_states = dead_interval;
+
+	//to make it into a path, the animals *have* to have slowed down to slow moving.
+	if (slow_moving_interval.skipped) {
+		slow_moving_interval_including_missed_states.skipped = false;
+		slow_moving_interval_including_missed_states.entrance_interval = frame_before_first;
+		if (!posture_changing_interval.skipped)
+			slow_moving_interval_including_missed_states.exit_interval = posture_changing_interval.entrance_interval;
+		else if (!dead_interval.skipped)
+			slow_moving_interval_including_missed_states.exit_interval = dead_interval.entrance_interval;
+		else throw ns_ex("Movement estimator reported slow movent as having been skipped when all later states had also been skipped!");
+	}
+	//we only know that the posture changing interval *had* to have occurred if the animal was ultimately seen to have died.
+	if (posture_changing_interval.skipped && !dead_interval.skipped) {
+		posture_changing_interval_including_missed_states.skipped = false;
+		//if both slow and posture are skipped, they both occur the frame before the first
+		if (slow_moving_interval.skipped)
+			posture_changing_interval_including_missed_states = slow_moving_interval_including_missed_states;
+		else {
+			//otherwise the posture changing interval was sandwhiched between fast movement and death.
+			posture_changing_interval_including_missed_states.entrance_interval = dead_interval.entrance_interval;
+			posture_changing_interval_including_missed_states.exit_interval = dead_interval.entrance_interval;
+		}
+	}
+	//dead animals can be skipped without any editing, as we'll never be able to confirm that it happened unless we observed it.
+
+}
+
+
+ns_movement_state_time_interval_indicies calc_frame_before_first(const ns_movement_state_time_interval_indicies & first_valid_element_id) {
+
+	ns_movement_state_time_interval_indicies frame_before_first(first_valid_element_id);
+	if (first_valid_element_id.period_start_index == 0) {
+		frame_before_first.interval_occurs_before_observation_interval = true;
+		frame_before_first.period_start_index = -1;
+	}
+	else frame_before_first.period_start_index--;
+	frame_before_first.interval_occurs_after_observation_interval = false;
+	frame_before_first.period_end_index--;
+	return frame_before_first;
+}
+
 //Welcome to the dark innards of the lifespan machine!
 //
 //detect_death_times_and_generate_annotations_from_movement_quantification() is the part of the machine
@@ -2651,7 +2706,6 @@ long ns_find_last_valid_observation_index(const long index,const ns_analyzed_ima
 //
 //There is no problem handling events that continue past the end of the path;
 //we don't use this information for anything and do not output any annotations about it.
-
 void ns_analyzed_image_time_path::detect_death_times_and_generate_annotations_from_movement_quantification(const ns_stationary_path_id & path_id, const ns_analyzed_image_time_path_death_time_estimator * movement_death_time_estimator,ns_death_time_annotation_set & set, const unsigned long last_time_point_in_analysis){
 	
 	//if (path_id.group_id == 5)
@@ -2664,8 +2718,8 @@ void ns_analyzed_image_time_path::detect_death_times_and_generate_annotations_fr
 	set.clear();
 	if (elements.size() == 0) return;
 
-	ns_movement_state_time_interval_indicies first_valid_element_id(elements.size(),elements.size()),
-				  last_valid_element_id(0,0);
+	first_valid_element_id = ns_movement_state_time_interval_indicies(elements.size(), elements.size());
+	last_valid_element_id = ns_movement_state_time_interval_indicies(0,0);
 	for (unsigned int i = 0; i < elements.size(); i++)
 		if (!elements[i].excluded && !elements[i].element_before_fast_movement_cessation){
 			//find first measurment
@@ -2747,14 +2801,7 @@ void ns_analyzed_image_time_path::detect_death_times_and_generate_annotations_fr
 		//the event occurred at any specific time (yet!)
 		//We'll resolve this observational ambiguity later.
 	
-		ns_movement_state_time_interval_indicies frame_before_first(first_valid_element_id);
-		if (first_valid_element_id.period_start_index == 0){
-			frame_before_first.interval_occurs_before_observation_interval = true;
-			frame_before_first.period_start_index = -1;
-		}
-		else frame_before_first.period_start_index--;
-		frame_before_first.interval_occurs_after_observation_interval = false;
-		frame_before_first.period_end_index--;
+		ns_movement_state_time_interval_indicies frame_before_first = calc_frame_before_first(first_valid_element_id);
 
 		ns_movement_state_time_interval_indicies frame_after_last(elements.size()-1,elements.size());
 		frame_after_last.interval_occurs_after_observation_interval = true;
@@ -2820,33 +2867,14 @@ void ns_analyzed_image_time_path::detect_death_times_and_generate_annotations_fr
 		//ok we have the correct state intervals.  BUT we need to change them around because we know that animals have to pass through 
 		//fast to slow movement to posture, and posture to death.  If the movement detection algorithms didn't find any states
 		//that's because the animals went through too quickly.  So we make *new* intervals for this purpose with those assumptions in mind
-		slow_moving_interval_including_missed_states = slow_moving_interval;
-		posture_changing_interval_including_missed_states = posture_changing_interval;
-		dead_interval_including_missed_states = dead_interval;
-	
-		//to make it into a path, the animals *have* to have slowed down to slow moving.
-		if (slow_moving_interval.skipped){
-			slow_moving_interval_including_missed_states.skipped = false;
-			slow_moving_interval_including_missed_states.entrance_interval = frame_before_first;
-			if (!posture_changing_interval.skipped)
-				slow_moving_interval_including_missed_states.exit_interval = posture_changing_interval.entrance_interval;
-			else if (!dead_interval.skipped)
-				slow_moving_interval_including_missed_states.exit_interval = dead_interval.entrance_interval;
-			else throw ns_ex("Movement estimator reported slow movent as having been skipped when all later states had also been skipped!");
-		}
-		//we only know that the posture changing interval *had* to have occurred if the animal was ultimately seen to have died.
-		if (posture_changing_interval.skipped && !dead_interval.skipped){
-			posture_changing_interval_including_missed_states.skipped = false;
-			//if both slow and posture are skipped, they both occur the frame before the first
-			if (slow_moving_interval.skipped)
-				posture_changing_interval_including_missed_states = slow_moving_interval_including_missed_states;
-			else{
-				//otherwise the posture changing interval was sandwhiched between fast movement and death.
-				posture_changing_interval_including_missed_states.entrance_interval = dead_interval.entrance_interval;
-				posture_changing_interval_including_missed_states.exit_interval = dead_interval.entrance_interval;
-			}
-		}
-		//dead animals can be skipped without any editing, as we'll never be able to confirm that it happened unless we observed it.
+		calculate_state_transitions_in_the_presence_of_missing_states(
+			frame_before_first,
+			slow_moving_interval,
+			posture_changing_interval,
+			dead_interval,
+			slow_moving_interval_including_missed_states,
+			posture_changing_interval_including_missed_states,
+			dead_interval_including_missed_states);
 	}
 
 	//if the path has extra worms at least 25% of the points leading up to it's death
@@ -3062,15 +3090,53 @@ bool inline ns_state_match(const unsigned long t,const ns_movement_state_observa
 	if (i.skipped)
 		return false;
 	const ns_death_time_annotation_time_interval interval(p.state_entrance_interval_time(i));
-	if (!interval.period_start_was_not_observed &&
-		t < interval.period_start)
+	if (!interval.period_start_was_not_observed && t < interval.period_start)
 		return false;
-	if (!interval.period_end_was_not_observed &&
-		t >= interval.period_end)
+	else if (interval.period_end_was_not_observed && t < interval.period_end)
 		return false;
+
+	if (!interval.period_end_was_not_observed && t >= interval.period_end)
+		return false;
+	else if (!interval.period_end_was_not_observed && t>= interval.period_end)
 	return true;
 }
-ns_movement_state ns_analyzed_image_time_path::movement_state(const unsigned long & t) const{
+
+ns_movement_state ns_analyzed_image_time_path::best_guess_movement_state(const unsigned long & t) const {
+	ns_movement_state_observation_boundary_interval 
+		slow_moving_interval_including_missed_states,
+		posture_changing_interval_including_missed_states,
+		 dead_interval_including_missed_states;
+
+	//get the relevant transition times
+	ns_movement_state_time_interval_indicies frame_before_first = calc_frame_before_first(first_valid_element_id);
+	calculate_state_transitions_in_the_presence_of_missing_states(
+		frame_before_first,
+		state_intervals[ns_movement_slow],
+		state_intervals[ns_movement_posture],
+		state_intervals[ns_movement_stationary],
+		slow_moving_interval_including_missed_states,
+		posture_changing_interval_including_missed_states,
+		dead_interval_including_missed_states);
+	
+	//slow moving is never skipped
+	if (t < state_entrance_interval_time(slow_moving_interval_including_missed_states).best_estimate_event_time_for_possible_partially_unbounded_interval())
+		return ns_movement_fast;
+
+	if (posture_changing_interval_including_missed_states.skipped) 
+		 return ns_movement_slow;
+
+	if (t < state_entrance_interval_time(posture_changing_interval_including_missed_states).best_estimate_event_time_for_possible_partially_unbounded_interval())
+		return ns_movement_slow;
+
+	if (dead_interval_including_missed_states.skipped)
+		return ns_movement_posture;
+
+	if (t < state_entrance_interval_time(dead_interval_including_missed_states).best_estimate_event_time_for_possible_partially_unbounded_interval())
+		return ns_movement_posture;
+	return ns_movement_stationary;
+
+}
+ns_movement_state ns_analyzed_image_time_path::explicitly_recognized_movement_state(const unsigned long & t) const{
 	//if (this->is_not_stationary())
 //		return ns_movement_fast;
 	if (this->is_low_density_path())
@@ -5833,21 +5899,46 @@ void ns_time_path_image_movement_analyzer::normalize_movement_scores_over_all_pa
 
 
 void ns_time_path_image_movement_analyzer::guess_if_region_is_excluded_by_hand(std::vector<ns_region_area> & areas) {
-	for (unsigned int i = 0; i < areas.size(); i++)
+	for (unsigned int i = 0; i < areas.size(); i++) {
+		areas[i].worm_id = 0;
+		areas[i].movement_state = ns_movement_fast;
 		areas[i].clear_stats();
+	}
 	ns_64_bit average_path_duration(0), path_count(0);
-	for (unsigned int g=0; g < groups.size(); g++)
+
+
+	for (unsigned int g = 0; g < groups.size(); g++) {
 		for (unsigned int p = 0; p < groups[g].paths.size(); p++) {
 			const ns_64_bit path_duration = groups[g].paths[p].elements.rbegin()->absolute_time - groups[g].paths[p].elements[0].absolute_time;
 			average_path_duration += path_duration;
 			path_count++;
-			for(unsigned int i = 0; i < areas.size(); i++)
-				if (ns_rectangle_intersect(areas[i].pos, areas[i].pos + areas[i].size, groups[g].paths[p].path_region_position, groups[g].paths[p].path_region_position + groups[g].paths[p].path_region_size)) {
-					if (groups[g].paths[p].excluded())
-						areas[i].total_exclusion_time_in_seconds += path_duration;
-					else areas[i].total_inclusion_time_in_seconds += path_duration;
+
+			for (unsigned int i = 0; i < areas.size(); i++) {
+				ns_vector_2i overlap_area = ns_rectangle_overlap_area(areas[i].pos, areas[i].pos + areas[i].size,
+					groups[g].paths[p].path_region_position, groups[g].paths[p].path_region_position + groups[g].paths[p].path_region_size);
+				unsigned long oa = overlap_area.x*overlap_area.y;
+				if (oa == 0)
+					continue;
+				if (oa > areas[i].overlap_area_with_match) {
+					areas[i].overlap_area_with_match = oa;
+					areas[i].worm_id = g + 1;
+
+					if (groups[g].paths[p].excluded() || groups[g].paths[p].is_low_density_path())
+						areas[i].total_exclusion_time_in_seconds = path_duration;
+					else areas[i].total_inclusion_time_in_seconds = path_duration;
+
+					if (areas[i].time < groups[g].paths[p].elements[0].absolute_time)
+						areas[i].movement_state = ns_movement_fast;
+					else if (areas[i].time > groups[g].paths[p].elements.rbegin()->absolute_time)
+						areas[i].movement_state = ns_movement_stationary;
+					else {
+						areas[i].movement_state = groups[g].paths[p].best_guess_movement_state(areas[i].time);
+					}
+					//			cout << "Matched " << areas[i].worm_id << ": " << ns_movement_state_to_string_short(areas[i].movement_state) << "\n";
 				}
+			}
 		}
+	}
 	average_path_duration /= path_count;
 	ns_time_path_image_movement_analyzer a;
 	for (unsigned int i = 0; i < areas.size(); i++)
@@ -5895,7 +5986,7 @@ void ns_time_path_image_movement_analyzer::generate_movement_description_series(
 		for (unsigned int i = 0; i < groups.size(); i++){
 			for (unsigned int j = 0; j < groups[i].paths.size(); j++){
 				//see if this path is defined at the provided time point
-				const ns_movement_state s(groups[i].paths[j].movement_state(description_series.timepoints[t].time));
+				const ns_movement_state s(groups[i].paths[j].explicitly_recognized_movement_state(description_series.timepoints[t].time));
 				if (s == ns_movement_not_calculated) continue;
 
 				//find the position of the worm at time tt.
@@ -6083,7 +6174,7 @@ void ns_time_path_image_movement_analyzer::generate_death_aligned_movement_postu
 				if (include_motion_graphs)marker_manager.set_marker(-1,path_movement_graphs[g]);
 			}
 			else if (i >= 0){
-				c = ns_movement_colors::color(path.movement_state(path.elements[i].absolute_time));
+				c = ns_movement_colors::color(path.explicitly_recognized_movement_state(path.elements[i].absolute_time));
 				if (include_motion_graphs)marker_manager.set_marker(path.elements[i].absolute_time,path_movement_graphs[g]);
 			}
 			else{
@@ -6318,7 +6409,7 @@ void ns_time_path_image_movement_analyzer::generate_movement_posture_visualizati
 			ns_image_standard im;
 			ns_color_8 c;
 			path.elements[i].generate_movement_visualization(im);
-			c = ns_movement_colors::color(path.movement_state(time));
+			c = ns_movement_colors::color(path.explicitly_recognized_movement_state(time));
 		
 			if (im.properties().height == 0)
 				throw ns_ex("Registered images not loaded! Path ") << g << " i " << i;

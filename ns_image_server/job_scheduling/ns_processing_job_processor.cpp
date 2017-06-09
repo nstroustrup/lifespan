@@ -666,6 +666,7 @@ bool ns_processing_job_maintenance_processor::run_job(ns_sql & sql) {
 		sub.region_id = job.region_id;
 		ns_image_server_results_file f(image_server->results_storage.worm_morphology_timeseries(sub, sql, false));
 		ns_acquire_for_scope<ostream> o(f.output());
+
 		ns_refine_image_statistics(job.region_id, o(), sql);
 		o.release();
 	}

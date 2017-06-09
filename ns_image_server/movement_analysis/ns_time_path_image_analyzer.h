@@ -602,7 +602,7 @@ class ns_analyzed_image_time_path {
 public:
 	ns_analyzed_image_time_path(ns_time_path_image_movement_analysis_memory_pool & memory_pool_, ns_64_bit unique_process_id_) :
 		memory_pool(&memory_pool_), volatile_backwards_path_data_written(false), first_stationary_timepoint_(0),
-		entirely_excluded(false), images_preallocated(false),
+		entirely_excluded(false), images_preallocated(false), 
 		low_density_path(false), output_reciever(0), flow_output_reciever(0), path_db_id(0), region_info_id(0), movement_image_storage(0), flow_movement_image_storage(0),
 		number_of_images_loaded(0), flow(0), stabilized_worm_region_total(0), unique_process_id(unique_process_id_){
 		by_hand_annotation_event_times.resize((int)ns_number_of_movement_event_types, ns_death_time_annotation_time_interval::unobserved_interval()); state_intervals.resize((int)ns_movement_number_of_states);
@@ -626,7 +626,12 @@ public:
 	mutable std::vector<std::string> posture_quantification_extra_debug_field_names;
 	//used by movement analysis algorithm
 	bool volatile_backwards_path_data_written;
-	ns_movement_state movement_state(const unsigned long & t) const;
+	//death time estimation breaks down stationary worms into three intervals
+	//moving slowly, changing posture, and stationary
+	//explicitly_recognized_movement_state checks to see if the specified time is in any of those intervals.
+	ns_movement_state explicitly_recognized_movement_state(const unsigned long & t) const;
+	//best_guess_movement_state simply makes the best guess as to a worm's state at the specificied time
+	ns_movement_state best_guess_movement_state(const unsigned long & t) const;
 	ns_death_time_annotation_time_interval by_hand_death_time() const;
 	ns_movement_state by_hand_movement_state(const unsigned long & t) const;
 	void add_death_time_events_to_set(ns_death_time_annotation_set & set) const;
@@ -715,6 +720,8 @@ private:
 	ns_time_path_limits time_path_limits;
 	
 	unsigned long first_stationary_timepoint_;
+
+	ns_movement_state_time_interval_indicies first_valid_element_id, last_valid_element_id;
 
 	bool images_preallocated;
 	ns_death_time_annotation censoring_and_flag_details;
@@ -817,8 +824,10 @@ struct ns_analyzed_image_time_path_group{
 
 struct ns_region_area {
 	ns_vector_2i pos, size;
+	unsigned long time, worm_id, overlap_area_with_match;
+	ns_movement_state movement_state;
 	void clear_stats() {
-		total_exclusion_time_in_seconds = total_inclusion_time_in_seconds = average_annotation_time_for_region = 0;
+		total_exclusion_time_in_seconds = total_inclusion_time_in_seconds = average_annotation_time_for_region = overlap_area_with_match = 0;
 	}
 	ns_region_area():total_exclusion_time_in_seconds(0), total_inclusion_time_in_seconds(0), average_annotation_time_for_region(0){}
 	ns_64_bit total_exclusion_time_in_seconds, total_inclusion_time_in_seconds, average_annotation_time_for_region;

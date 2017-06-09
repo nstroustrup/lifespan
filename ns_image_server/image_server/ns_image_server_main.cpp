@@ -1325,6 +1325,7 @@ int main(int argc, char ** argv){
 			#endif
 		}
 
+		image_server.register_server_event(ns_image_server::ns_register_in_central_db_with_fallback, ns_image_server_event("Finished cleanup; waiting for pending jobs to complete."));
 		//cerr << "Clearing dispatcher\n";
 		dispatch.clear_for_termination();
 		#ifndef _WIN32

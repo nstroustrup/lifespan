@@ -380,7 +380,6 @@ void ns_image_server_dispatcher::run(){
 			image_server.unregister_host(&sql());
 			image_server.clear_processing_status(*static_cast<ns_sql *>(&sql()));
 		}
-		image_server.register_server_event(ns_image_server::ns_register_in_central_db_with_fallback,ns_image_server_event("Finished cleanup and shutting down."));
 	}
 	catch(ns_ex & ex){
 		image_server.register_server_event(ns_image_server::ns_register_in_central_db_with_fallback,ex);

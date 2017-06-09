@@ -363,7 +363,7 @@ void ns_refine_image_statistics(const ns_64_bit region_id, std::ostream & out,ns
 	out << ",";
 	metadata.out_JMP_plate_identity_header_short(out);
 	out << ",time spent included, time_spent_excluded,average_time,excluded by visual inspection\n";
-		sql << "SELECT id, worm_detection_results_id, capture_time FROM sample_region_images WHERE region_info_id = " << region_id << " ORDER BY capture_time";
+		sql << "SELECT id, worm_detection_results_id, capture_time FROM sample_region_images WHERE region_info_id = " << region_id << " AND worm_detection_results_id != 0 ORDER BY capture_time";
 	ns_sql_result res;
 	sql.get_rows(res);
 	if (res.empty())
@@ -372,34 +372,38 @@ void ns_refine_image_statistics(const ns_64_bit region_id, std::ostream & out,ns
 	for (unsigned int i = 0; i < res.size(); i++) {
 		int r1 = (100 * i) / res.size();
 		if (r1 - r >= 5) {
-			image_server.add_subtext_to_current_event(ns_to_string(r1) + "%...",&sql);
+			image_server.add_subtext_to_current_event(ns_to_string(r1) + "%...", &sql);
 			r = r1;
 		}
-		ns_image_worm_detection_results results;
-		results.detection_results_id = ns_atoi64(res[i][1].c_str());
-		results.load_from_db(true, false, sql,false);
-		ns_image_server_captured_image_region region;
-		region.load_from_db(ns_atoi64(res[i][0].c_str()), &sql);
-		results.load_images_from_db(region, sql, false,false);
-		const std::vector<const ns_detected_worm_info *> worms = results.actual_worm_list();
-		std::vector<ns_region_area> areas(worms.size());
-		for (unsigned int j = 0; j < worms.size(); j++) {
-			areas[j].pos = worms[j]->region_position_in_source_image;
-			areas[j].size = worms[j]->region_size;
+		try {
+			ns_image_worm_detection_results results;
+			results.detection_results_id = ns_atoi64(res[i][1].c_str());
+			results.load_from_db(true, false, sql, false);
+			ns_image_server_captured_image_region region;
+			region.load_from_db(ns_atoi64(res[i][0].c_str()), &sql);
+			results.load_images_from_db(region, sql, false, false);
+			const std::vector<const ns_detected_worm_info *> worms = results.actual_worm_list();
+			std::vector<ns_region_area> areas(worms.size());
+			for (unsigned int j = 0; j < worms.size(); j++) {
+				areas[j].pos = worms[j]->region_position_in_source_image;
+				areas[j].size = worms[j]->region_size;
+			}
+			ns_object_hand_annotation_data hd;
+			analyzer.guess_if_region_is_excluded_by_hand(areas);
+			for (unsigned int j = 0; j < worms.size(); j++) {
+				ns_detected_worm_stats worm_stats = worms[j]->generate_stats();
+				worm_stats.output_csv_data(region_id, ns_atoi64(res[i][2].c_str()), areas[j].pos, areas[j].size, hd, out);
+				out << ",";
+				metadata.out_JMP_plate_identity_data_short(out);
+				out << "," << areas[j].total_inclusion_time_in_seconds << "," << areas[j].total_exclusion_time_in_seconds << "," << areas[j].average_annotation_time_for_region << ",";
+				if (areas[j].total_exclusion_time_in_seconds == 0 || areas[j].total_exclusion_time_in_seconds < areas[j].total_inclusion_time_in_seconds)
+					out << "no";
+				else out << "yes";
+				out << "\n";
+			}
 		}
-		ns_object_hand_annotation_data hd;
-		analyzer.guess_if_region_is_excluded_by_hand(areas);
-		for (unsigned int j = 0; j < worms.size(); j++) {
-			ns_detected_worm_stats worm_stats = worms[j]->generate_stats();
-			worm_stats.output_csv_data(region_id, ns_atoi64(res[i][2].c_str()), areas[j].pos, areas[j].size, hd, out);
-			out << ",";
-			metadata.out_JMP_plate_identity_data_short(out);
-			out << "," << areas[j].total_inclusion_time_in_seconds << "," << areas[j].total_exclusion_time_in_seconds << "," << areas[j].average_annotation_time_for_region << ",";
-			if (areas[j].total_exclusion_time_in_seconds == 0 || areas[j].total_exclusion_time_in_seconds < areas[j].total_inclusion_time_in_seconds)
-				out << "no";
-			else out << "yes";
-			out << "\n";
-		
+		catch (ns_ex & ex) {
+			image_server.add_subtext_to_current_event(ex.text(), &sql);
 		}
 	}
 }

@@ -295,6 +295,22 @@ std::string ns_movement_state_to_string(const ns_movement_state & s){
 			default: throw ns_ex("ns_movement_state_to_string()::Unknown movement state: ") << (int)s;
 	}
 }
+
+std::string ns_movement_state_to_string_short(const ns_movement_state & s) {
+	switch (s) {
+	case ns_movement_stationary: return "Dead";
+	case ns_movement_posture: return "Pos";
+	case ns_movement_slow:  return "Slow";
+	case ns_movement_fast:  return "Fast";
+	case ns_movement_by_hand_excluded: return "EX H";
+	case ns_movement_machine_excluded: return "EX M";
+	case ns_movement_death_posture_relaxation: return "SHR";
+	case ns_movement_total: return "Total";
+	case ns_movement_not_calculated: return "NA";
+	case ns_movement_number_of_states: throw ns_ex("ns_movement_state_to_string()::Invalid movement state: ") << (int)s;
+	default: throw ns_ex("ns_movement_state_to_string()::Unknown movement state: ") << (int)s;
+	}
+}
 ns_movement_state ns_movement_event_state(const ns_movement_event & e){
 	switch(e){
 	case ns_no_movement_event:	

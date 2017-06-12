@@ -484,7 +484,7 @@ void ns_time_path_solver::handle_paths_with_ambiguous_points(){
 		}
 	}
 }
-void ns_time_path_solution::remove_invalidated_points(const ns_64_bit region_id, const ns_time_path_solver_parameters &param, ns_sql & sql) {
+bool ns_time_path_solution::remove_invalidated_points(const ns_64_bit region_id, const ns_time_path_solver_parameters &param, ns_sql & sql) {
 
 	//record existing mapping between t_index in paths to time in timepoints vector
 	//[index id] = time;
@@ -565,6 +565,7 @@ void ns_time_path_solution::remove_invalidated_points(const ns_64_bit region_id,
 			path_groups[i].path_ids[0] = i;
 		}
 	}
+	return something_changed;
 }
 
 void ns_time_path_solution::save_to_db(const ns_64_bit region_id, ns_sql & sql) const{
@@ -627,7 +628,7 @@ void ns_time_path_solution::load_from_db(const ns_64_bit region_id, ns_sql & sql
 		try{
 			input_file.attach(image_server_const.image_storage.request_metadata_from_disk(im,false,&sql));
 		}catch(ns_ex & ex){
-
+			cerr << ex.text() << "\n";
 			ns_image_server_image im;
 			im.id = ns_atoi64(res[0][0].c_str());
 			if (im.id == 0)

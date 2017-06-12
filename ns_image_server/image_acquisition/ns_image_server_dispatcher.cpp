@@ -380,7 +380,6 @@ void ns_image_server_dispatcher::run(){
 			image_server.unregister_host(&sql());
 			image_server.clear_processing_status(*static_cast<ns_sql *>(&sql()));
 		}
-		image_server.register_server_event(ns_image_server::ns_register_in_central_db_with_fallback,ns_image_server_event("Finished cleanup and shutting down."));
 	}
 	catch(ns_ex & ex){
 		image_server.register_server_event(ns_image_server::ns_register_in_central_db_with_fallback,ex);
@@ -1268,19 +1267,20 @@ bool ns_image_server_dispatcher::look_for_work(){
 			number_of_jobs_to_run = number_of_jobs_left_before_max_is_reached;
 
 		push_scheduler.request_jobs(number_of_jobs_to_run, jobs, *work_sql_connection, first_in_first_out_job_queue);
-		if (jobs.size() == 0) {
-			image_server.add_subtext_to_current_event(".", work_sql_connection, false, image_server.main_thread_id());
 
-			if (processing_thread_pool.number_of_idle_threads() == processing_thread_pool.number_of_threads())
-				image_server.incremenent_empty_job_queue_check_count();
+		//no jobs and no work being done
+		if (jobs.size() == 0 && processing_thread_pool.number_of_idle_threads() == processing_thread_pool.number_of_threads()) {
+
+			image_server.add_subtext_to_current_event(".", work_sql_connection, false, image_server.main_thread_id());
+			image_server.incremenent_empty_job_queue_check_count();
+			
 			if (image_server.empty_job_queue_check_count_is_exceeded()) {
 				image_server.register_server_event(ns_ex("Idle image processing job queue count limit reached."), work_sql_connection);
 				image_server.shut_down_host();
 			}
-			return false;
 		}
-		else
-			image_server.reset_empty_job_queue_check_count();
+		if (jobs.size() == 0) 
+			return false;
 
 		//here is the logic that allows multithreaded jobs to run alone in the thread pool.
 		{

@@ -658,6 +658,18 @@ bool ns_processing_job_maintenance_processor::run_job(ns_sql & sql) {
 			ns_image_processing_pipeline::generate_sample_regions_from_mask(job.sample_id,atof(res[0][0].c_str()),sql);
 			break;
 		}
+
+	case ns_maintenance_recalc_worm_morphology_statistics: {
+		if (job.region_id == 0)
+			throw ns_ex("Can only calculate worm morphology timeseries for each region individually");
+		ns_image_server_results_subject sub;
+		sub.region_id = job.region_id;
+		ns_image_server_results_file f(image_server->results_storage.worm_morphology_timeseries(sub, sql, false));
+		ns_acquire_for_scope<ostream> o(f.output());
+
+		ns_refine_image_statistics(job.region_id, o(), sql);
+		o.release();
+	}
 	case ns_maintenance_recalc_image_stats:{
 
 		ns_image_server_results_subject sub;
@@ -914,23 +926,27 @@ bool ns_processing_job_maintenance_processor::run_job(ns_sql & sql) {
 					try {
 						specs[j].minimum_distance_to_juxtipose_neighbors = neighbor_distance_to_juxtipose;
 						if (specs.size() > 1)
-							cerr << "Compiling storyboard outline " << j + 1 << " of " << specs.size() << "\n";
+							image_server_const.add_subtext_to_current_event("Compiling storyboard " + ns_to_string(j + 1) + " of " + ns_to_string(specs.size()) + "\n", &sql);
 
 						if (compiled_event_set.need_to_reload_for_new_spec(specs[j]))
 							compiled_event_set.load(specs[j], sql);
-						else cout << "Running fast using cached annotations.\n";
+						else image_server_const.add_subtext_to_current_event("Running fast using cached annotations.\n", &sql);
 
 
-						if (!s.create_storyboard_metadata_from_machine_annotations(specs[j], compiled_event_set,sql)) {
+						if (!s.create_storyboard_metadata_from_machine_annotations(specs[j], compiled_event_set, sql)) {
 							empty_storyboard = true;
 							continue;
 						}
 						else
 							storyboard_has_valid_worms[j] = true;
 
+
 						ns_experiment_storyboard_manager man;
 						man.delete_metadata_from_db(specs[j], sql);
 						man.save_metadata_to_db(specs[j], s, ns_xml, sql);
+
+						image_server_const.add_subtext_to_current_event("Validating stored metadata\n", &sql);
+						s.check_that_all_time_path_information_is_valid(sql);
 						//reload the storyboard just to confirm it still works
 						if (1) {
 							ns_experiment_storyboard s2;
@@ -939,32 +955,28 @@ bool ns_processing_job_maintenance_processor::run_job(ns_sql & sql) {
 								man2.load_metadata_from_db(specs[j], s2, sql);
 							}
 							catch (ns_ex & ex) {
-								std::string r;
-								if (r.size() == 0)
-									ex << "\nns_experiment_storyboard::compare()::Found no differences between the storyboards.";
-								else ex << "\n" << s.compare(s2).text();
+								ex << "\n" << s.compare(s2).text();
 								throw ex;
 							}
 							ns_ex ex(s.compare(s2).text());
 							if (ex.text().size() > 0)
 								throw ex;
 						}
-
-
-						if (empty_storyboard) {
-							for (unsigned int j = 0; j < specs.size(); j++) {
-								if (storyboard_has_valid_worms[j]) {
-									ns_experiment_storyboard_manager man;
-									man.delete_metadata_from_db(specs[j], sql);
-								}
-							}
-							throw ns_ex("The storyboard could not be generated as no dead or potentially dead worms were identified");
-						}
 					}
 					catch (ns_ex & ex) {
 						image_server_const.add_subtext_to_current_event(ex.text(), &sql);
 						generation_errors[j] = ex;
 					}
+				}
+
+				if (empty_storyboard) {
+					for (unsigned int j = 0; j < specs.size(); j++) {
+						if (storyboard_has_valid_worms[j]) {
+							ns_experiment_storyboard_manager man;
+							man.delete_metadata_from_db(specs[j], sql);
+						}
+					}
+					throw ns_ex("The storyboard could not be generated as no dead or potentially dead worms were identified");
 				}
 				std::vector<ns_ex> errors;
 				bool there_were_errors(false);
@@ -973,18 +985,19 @@ bool ns_processing_job_maintenance_processor::run_job(ns_sql & sql) {
 					for (unsigned int j = 0; j < specs.size(); j++) {
 						if (compiled_event_set.need_to_reload_for_new_spec(specs[j]))
 							compiled_event_set.load(specs[j], sql);
-						else cout << "Running fast using cached annotations.\n";
+						else image_server_const.add_subtext_to_current_event("Running fast using cached annotations.\n", &sql);
 
 						if (!generation_errors[j].text().empty()) {
 							there_were_errors = true;
 							continue;
 						}
 						if (specs.size() > 1)
-							cerr << "Generating storyboard type " << j + 1 << " 1-" << specs.size() << " of " << specs.size() << "\n";
+							image_server_const.add_subtext_to_current_event("Rendering storyboard " + ns_to_string(j + 1) + " of " + ns_to_string(specs.size()) + "\n", &sql);
 						if (!s.create_storyboard_metadata_from_machine_annotations(specs[j], compiled_event_set,sql))
 							break;
 						ns_experiment_storyboard_manager man;
 						man.load_metadata_from_db(specs[j], s, sql);
+						s.prepare_to_draw(sql);
 						ns_image_standard ima;
 						for (unsigned int i = 0; i < man.number_of_sub_images(); i++) {
 							try {
@@ -1043,16 +1056,14 @@ bool ns_processing_job_maintenance_processor::run_job(ns_sql & sql) {
 			const ns_64_bit start (job.image_id),
 							    stop(job.image_id+5);
 			for (unsigned int j = 0; j < specs.size(); j++){
-				ns_experiment_storyboard s;
-				ns_experiment_storyboard_manager man;
-				man.load_metadata_from_db(specs[j],s,sql);	
-				image_server->register_server_event(ns_image_server_event("Rendering a type ") <<(j+1) << " storyboard, divisions " << start+1 << "-" << stop+1 << " of " << s.divisions.size() << " (job " << job.id <<")\n",&sql);
+				ns_image_server::ns_storyboard_cache::const_handle_t storyboard;
+				image_server->get_storyboard(specs[j], storyboard, sql);
+				image_server->register_server_event(ns_image_server_event("Rendering a type ") << (j + 1) << " storyboard, divisions " << start + 1 << "-" << stop + 1 << " of " << storyboard().storyboard.divisions.size() << " (job " << job.id << ")\n", &sql);
 				ns_image_standard ima;
-				for (ns_64_bit i = start; i < stop && i < man.number_of_sub_images(); i++){
-					cerr << "Rendering division " << i << ":";
-					s.draw(i,ima,true,sql);
-					cerr << "\n";
-					man.save_image_to_db(i,specs[j],ima,sql);
+				for (ns_64_bit i = start; i < stop && i < storyboard().manager.number_of_sub_images(); i++){
+					image_server->add_subtext_to_current_event(std::string("Rendering division ") + ns_to_string(i) + "\n",&sql);
+					storyboard().storyboard.draw(i,ima,true,sql);
+					storyboard().manager.save_image_to_db_no_error_handling(i,specs[j],ima,sql);
 				}
 			}
 			break;

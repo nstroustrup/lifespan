@@ -667,6 +667,46 @@ void ns_worm_learner::analyze_time_path(const unsigned long region_id){
 
 }
 
+void ns_worm_learner::generate_morphology_statistics(const ns_64_bit & experiment_id) {
+
+
+	ns_sql & sql(get_sql_connection());
+	ns_image_server_results_subject sub;
+	sub.experiment_id = experiment_id;
+	ns_image_server_results_file outf(image_server.results_storage.worm_morphology_timeseries(sub, sql, true));
+
+	ns_acquire_for_scope<ostream> o(outf.output());
+
+	sql << "SELECT r.id FROM sample_region_image_info as r, capture_samples as s WHERE r.sample_id = s.id AND s.experiment_id = " << experiment_id;
+	ns_sql_result res;
+	sql.get_rows(res);
+	bool write_header = true;
+	int r(0);
+	for (unsigned i = 0; i < res.size(); i++) {
+		int r1 = (100 * i) / res.size();
+		if (r1 - r > 5) {
+			cout << r1 << "%...";
+			r = r1;
+		}
+		ns_image_server_results_subject sub;
+		sub.region_id = ns_atoi64(res[i][0].c_str());
+		ns_image_server_results_file f(image_server.results_storage.worm_morphology_timeseries(sub, sql, false));
+		ns_acquire_for_scope<istream> in(f.input());
+		if (in.is_null())
+			continue;
+		char tmp(0);
+		//only write header once
+		while (!in().fail() && tmp != '\n') {
+			tmp = in().get();
+			if (write_header)
+				o() << tmp;
+		}
+		write_header = false;
+		//write out entire file
+		o() << in().rdbuf();
+	}
+}
+
 void ns_worm_learner::output_region_statistics(const unsigned long experiment_id, const unsigned long experiment_group_id){
 
 	ns_acquire_for_scope<ns_sql> sql(image_server.new_sql_connection(__FILE__,__LINE__));
@@ -6261,8 +6301,8 @@ void ns_run_first_thermometer_experiment(){
 void ns_worm_learner::draw_animation(const double &t){
 	unsigned long offset(10);
 //	cerr << t << "\n";
-	if (!main_window.display_lock.try_to_acquire(__FILE__,__LINE__))
-		return;
+	main_window.display_lock.wait_to_acquire(__FILE__, __LINE__);
+	//	return;
 	try{
 		if (animation.properties().width +offset <= main_window.gl_buffer_properties.width &&
 			animation.properties().height +offset <= main_window.gl_buffer_properties.height){
@@ -6299,7 +6339,7 @@ void ns_worm_learner::draw_animation(const double &t){
 		main_window.display_lock.release();
 		throw;
 	}
-	main_window.redraw_screen();
+	//main_window.redraw_screen();
 }
 
 void ns_worm_learner::update_main_window_display(){
@@ -6375,7 +6415,113 @@ void ns_worm_learner::update_worm_window_display(){
 	glDrawPixels(worm_window.gl_buffer_properties.width, worm_window.gl_buffer_properties.height,GL_RGB,GL_UNSIGNED_BYTE,worm_window.gl_buffer );
 	lock.release();
 }
+void ns_experiment_storyboard_annotater::load_from_storyboard(const ns_region_metadata & strain_to_display_, const ns_censor_masking censor_masking_, ns_experiment_storyboard_spec & spec, ns_worm_learner * worm_learner_) {
+	stop_fast_movement();
+	clear();
+	ns_acquire_lock_for_scope lock(image_buffer_access_lock, __FILE__, __LINE__);
+	worm_learner = worm_learner_;
+	strain_to_display = strain_to_display_;
+	censor_masking = censor_masking_;
+	ns_sql &sql(worm_learner_->get_sql_connection());
+	excluded_regions.clear();
+	if (spec.experiment_id != 0) {
+		sql << "SELECT r.id, r.excluded_from_analysis FROM sample_region_image_info as r, capture_samples as s WHERE r.sample_id = s.id AND s.experiment_id = " << spec.experiment_id;
+		ns_sql_result res;
+		sql.get_rows(res);
+		for (unsigned long i = 0; i < res.size(); i++)
+			excluded_regions[atol(res[i][0].c_str())] = res[i][1] != "0";
 
+	}
+	else if (spec.sample_id != 0) {
+		sql << "SELECT r.id, r.excluded_from_analysis FROM sample_region_image_info as r, capture_samples as s WHERE r.sample_id = s.id AND s.id = " << spec.sample_id;
+		ns_sql_result res;
+		sql.get_rows(res);
+		for (unsigned long i = 0; i < res.size(); i++)
+			excluded_regions[atol(res[i][0].c_str())] = res[i][1] != "0";
+
+	}
+	else if (spec.region_id != 0) {
+		sql << "SELECT r.excluded_from_analysis FROM sample_region_image_info as r WHERE r.id = " << spec.region_id;
+		ns_sql_result res;
+		sql.get_rows(res);
+		for (unsigned long i = 0; i < res.size(); i++)
+			excluded_regions[spec.region_id] = res[i][0] != "0";
+	}
+	storyboard_manager.load_metadata_from_db(spec, storyboard, sql);
+	unsigned long number_of_nonempty_divisions(0);
+	for (unsigned int i = 0; i < storyboard.divisions.size(); i++) {
+		if (storyboard.divisions[i].events.size() > 0)
+			number_of_nonempty_divisions++;
+	}
+
+	divisions.resize(0);
+	divisions.resize(number_of_nonempty_divisions);
+	unsigned long cur_i(0);
+	for (unsigned int i = 0; i < storyboard.divisions.size(); i++) {
+		divisions[cur_i].init();
+		if (storyboard.divisions[i].events.size() == 0)
+			continue;
+		divisions[cur_i].division_id = i;
+		divisions[cur_i].division = &storyboard.divisions[i];
+		divisions[cur_i].resize_factor = resize_factor;
+		divisions[cur_i].experiment_annotater = this;
+
+		for (unsigned int j = 0; j < divisions[cur_i].division->events.size(); j++) {
+
+			if (censor_masking == ns_show_all)
+				divisions[cur_i].division->events[j].annotation_was_censored_on_loading = false;
+			if (censor_masking == ns_hide_censored)
+				divisions[cur_i].division->events[j].annotation_was_censored_on_loading = divisions[cur_i].division->events[j].event_annotation.is_excluded();
+			if (censor_masking == ns_hide_uncensored)
+				divisions[cur_i].division->events[j].annotation_was_censored_on_loading = !divisions[cur_i].division->events[j].event_annotation.is_excluded();
+		}
+
+		if (!strain_to_display.device_regression_match_description().empty()) {
+			for (unsigned int j = 0; j < divisions[cur_i].division->events.size(); j++) {
+				display_events_from_region[divisions[cur_i].division->events[j].event_annotation.region_info_id] = false;
+			}
+		}
+		else {
+			for (unsigned int j = 0; j < divisions[cur_i].division->events.size(); j++) {
+				display_events_from_region[divisions[cur_i].division->events[j].event_annotation.region_info_id] = true;
+			}
+		}
+		cur_i++;
+	}
+	if (divisions.size() == 0)
+		throw ns_ex("No divisions or animals present in storyboard");
+
+	if (!strain_to_display.device_regression_match_description().empty())
+		for (ns_event_display_spec_list::iterator p = display_events_from_region.begin(); p != display_events_from_region.end(); p++) {
+			ns_region_metadata m;
+			m.load_from_db(p->first, "", sql);
+			p->second = (m.device_regression_match_description() == strain_to_display.device_regression_match_description());
+		}
+
+	//	cerr << divisions.size() << " divisions loaded.\n Loading images...";
+	this->initalize_division_image_population(sql);
+	//cerr << "Done.\n";
+
+	//allocate image buffer
+	if (previous_images.size() != max_buffer_size || next_images.size() != max_buffer_size) {
+		previous_images.resize(max_buffer_size);
+		next_images.resize(max_buffer_size);
+		for (unsigned int i = 0; i < max_buffer_size; i++) {
+			previous_images[i].im = new ns_image_standard();
+			next_images[i].im = new ns_image_standard();
+		}
+	}
+	if (current_image.im == 0)
+		current_image.im = new ns_image_standard();
+
+	current_timepoint_id = 0;
+
+	divisions[current_timepoint_id].load_image(0, current_image, sql, asynch_load_specification.temp_buffer, resize_factor);
+	draw_metadata(&divisions[current_timepoint_id], *current_image.im);
+	this->saved_ = true;
+	request_refresh();
+	lock.release();
+}
 
 bool ns_worm_learner::start_death_time_annotation(const ns_behavior_mode m,const ns_experiment_storyboard_spec::ns_storyboard_flavor & f){
 	if (m != ns_annotate_storyboard_experiment && !data_selector.region_selected()) throw ns_ex("No region selected");
@@ -6604,16 +6750,18 @@ void ns_worm_learner::navigate_death_time_annotation(ns_image_series_annotater::
 	switch(action){
 		case ns_image_series_annotater::ns_none: break;
 		case ns_image_series_annotater::ns_forward: 
-			if(current_annotater->step_forward(ns_throw_error,asynch))
-				current_annotater->request_refresh();
+			if (current_annotater->step_forward(ns_throw_error, asynch)) {
+				current_annotater->request_refresh(); report_changes_made_to_screen();
+			}
 			break;
 		case ns_image_series_annotater::ns_back:	
-			if(current_annotater->step_back(ns_throw_error,asynch)) 
-				current_annotater->request_refresh();
+			if (current_annotater->step_back(ns_throw_error, asynch)) {
+				current_annotater->request_refresh(); report_changes_made_to_screen();
+			}
 			break;
-		case ns_image_series_annotater::ns_fast_forward: current_annotater->fast_forward();break;
-		case ns_image_series_annotater::ns_fast_back:	current_annotater->fast_back();break;
-		case ns_image_series_annotater::ns_stop: current_annotater->stop_fast_movement();break;
+		case ns_image_series_annotater::ns_fast_forward: current_annotater->fast_forward(); report_changes_made_to_screen(); break;
+		case ns_image_series_annotater::ns_fast_back:	current_annotater->fast_back(); report_changes_made_to_screen(); break;
+		case ns_image_series_annotater::ns_stop: current_annotater->stop_fast_movement(); report_changes_made_to_screen(); break;
 		case ns_image_series_annotater::ns_save:{
 
 			ns_acquire_lock_for_scope lock(persistant_sql_lock, __FILE__, __LINE__);

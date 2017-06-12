@@ -476,4 +476,18 @@ bool ns_rectangle_intersect(const ns_vector &a1, const ns_vector &a2, const ns_v
 	if(a1.y > b2.y && a2.y > b2.y) return false;
 	return true;
 }
+
+template<class ns_vector>
+//two rectangles a and b
+//a1 is top left of a, a2 is bottom right
+ns_vector ns_rectangle_overlap_area(const ns_vector &a1, const ns_vector &a2, const ns_vector & b1, const ns_vector & b2) {
+	if (!ns_rectangle_intersect(a1, a2, b1, b2))
+		return ns_vector(0,0);
+	ns_vector ds;
+	if (a2.x > b2.x)  ds.x = b2.x - a1.x;
+	else ds.x = a2.x - b1.x;
+	if (a2.y > b2.y)  ds.y = b2.y - a1.y;
+	else ds.y = a2.y - b1.y;
+	return ds;
+}
 #endif

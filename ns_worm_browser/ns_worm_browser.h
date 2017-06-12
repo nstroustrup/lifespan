@@ -74,6 +74,8 @@ ns_vector_2i worm_image_window_size_difference();
 void ns_worm_browser_output_debug(const unsigned long line_number,const std::string & source, const std::string & message);
 
 
+void report_changes_made_to_screen();
+
 void ns_set_main_window_annotation_controls_activity(const bool active);
 
 std::string ns_extract_scanner_name_from_filename(const std::string & filename);
@@ -637,6 +639,9 @@ public:
 	bool movement_data_is_strictly_decreasing(){return movement_data_is_strictly_decreasing_;}
 	void output_device_timing_data(const unsigned long experiment_id,const unsigned long experiment_group_id);
 	void output_region_statistics(const unsigned long experiment_id,const unsigned long experiment_group_id);
+
+	void generate_morphology_statistics(const ns_64_bit & experiment_id);
+
 	void create_feature_time_series(const std::string & directory);
 
 	

@@ -16,6 +16,7 @@ typedef enum{
 		} ns_movement_state;
 
 std::string ns_movement_state_to_string(const ns_movement_state & s);
+std::string ns_movement_state_to_string_short(const ns_movement_state & s);
 
 class ns_movement_data_source_type{
 public:

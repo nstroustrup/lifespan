@@ -86,7 +86,8 @@ $ns_maintenance_tasks = array('ns_maintenance_no_task'=>0,
 			      'ns_maintenance_compress_stored_images'=>18,
 			      'ns_maintenance_generate_subregion_mask'=>19,
 			      'ns_maintenance_rerun_image_registration'=>20,
-			      'ns_maintenance_recalc_image_stats'=>21
+			      'ns_maintenance_recalc_image_stats'=>21,
+			      'ns_maintenance_recalc_worm_morphology_statistics'=>22  
 			      );
 
 $ns_denoising_option_labels = array(
@@ -103,8 +104,8 @@ function ns_maintenance_task_order($is_region,$is_sample,$is_experiment){
     array_push($r,$ns_maintenance_tasks['ns_maintenance_rebuild_movement_data']);
     array_push($r,$ns_maintenance_tasks['ns_maintenance_generate_animal_storyboard']);
     array_push($r,$ns_maintenance_tasks['ns_maintenance_rebuild_movement_from_stored_image_quantification']);
-    array_push($r,$ns_maintenance_tasks['ns_maintenance_generate_movement_posture_visualization']);
-    array_push($r,$ns_maintenance_tasks['ns_maintenance_generate_movement_posture_aligned_visualization']);
+    //array_push($r,$ns_maintenance_tasks['ns_maintenance_generate_movement_posture_visualization']);
+    //array_push($r,$ns_maintenance_tasks['ns_maintenance_generate_movement_posture_aligned_visualization']);
     array_push($r,$ns_maintenance_tasks['ns_maintenance_determine_disk_usage']);
     array_push($r,$ns_maintenance_tasks['ns_maintenance_compress_stored_images']);
     array_push($r,$ns_maintenance_tasks['ns_maintenance_rerun_image_registration']);
@@ -112,6 +113,7 @@ function ns_maintenance_task_order($is_region,$is_sample,$is_experiment){
     array_push($r,$ns_maintenance_tasks['ns_maintenance_rebuild_movement_from_stored_images']);
     array_push($r,$ns_maintenance_tasks['ns_maintenance_generate_subregion_mask']);
     array_push($r,$ns_maintenance_tasks['ns_maintenance_recalc_image_stats']);
+    array_push($r,$ns_maintenance_tasks['ns_maintenance_recalc_worm_morphology_statistics']);
     return $r;
   }
   if ($is_sample || $is_experiment){
@@ -146,9 +148,10 @@ $ns_maintenance_task_labels = array(0=>'No Task',
 				    18=>'Compress Stored Images',
 				    19=>'Generate Subregion Mask',
 				    20=>'Re-Run Image Registration',
-				    21=>'Re-Calculate Image Statistics'
+				    21=>'Re-Calculate Image Statistics',
+				    22=>'Compile Worm Morphology Statistics'
 			      );
-$NS_LAST_MAINTENANCE_TASK = 18;
+$NS_LAST_MAINTENANCE_TASK = 22;
 
 $ns_maintenance_flags = array('ns_none'=>0,
 			     'ns_only_delete_processed_capture_images'=>1,
@@ -688,7 +691,7 @@ class ns_processing_job{
 	}
 
 	function get_concise_description(){
-	  global $ns_processing_tasks, $ns_maintenance_task_labels, $number_of_operations,$ns_maintenance_flag_labels;
+	  global $ns_processing_tasks, $ns_maintenance_task_labels, $number_of_operations,$ns_maintenance_flag_labels,$ns_processing_task_labels;
 	  $res = "";
 	  if ($this->operations[$ns_processing_tasks["ns_process_compile_video"]] != 0){
 		    $vid = 1;
@@ -702,21 +705,23 @@ class ns_processing_job{
 		if ($ns_maintenance_flag_labels[$this->maintenance_flag]!='')
 			$res.=" (".$ns_maintenance_flag_labels[$this->maintenance_flag] . ")";
 	  }
-	  $order = 1;
-	  $a = floor($number_of_operations/2)+1;
-	 
+
 	  if(sizeof($this->operations > 0)){
+	  $first = true;
 		for ($i = 0; $i < sizeof($this->operations); $i++){
 			if ($this->operations[(int)$i] == 0 ||
 				$i == $ns_processing_tasks["ns_process_compile_video"]){
 					continue;
 			}
-
-
-			$res .= $ns_processing_task_labels[$i] . "<br>";
-			if ($order != $a)
-				$res .=",";
-			$order++;
+			$l = $ns_processing_task_labels[$i];
+			if ($l != ''){
+			   if (!$first){
+			      $res.=", ";
+			      
+			      }
+			      else $first = false;
+			      $res .= $ns_processing_task_labels[$i];
+			      }
 		}
 	
 		}

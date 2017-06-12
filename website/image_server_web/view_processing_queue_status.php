@@ -59,6 +59,11 @@ if (ns_param_spec($_POST,"delete_all_jobs")){
 	$query = "DELETE FROM processing_jobs";
 	$sql->send_query($query);
 }
+if (ns_param_spec($_POST,"delete_problem_jobs")){
+   $query = "DELETE FROM processing_job_queue WHERE problem != 0";
+   $sql->send_query($query);
+}
+
 
 display_worm_page_header("Processing Queue Status","<a href=\"view_experiments.php\">[Back to Experiment Index]</a>",FALSE,$header_text);
 
@@ -89,20 +94,39 @@ $experiments_referenced = array();
 $samples_referenced = array();
 $regions_referenced = array();
 for ($i = 0; $i < sizeof($processing_node_status); $i++){
-	$processing_jobs_referenced[$processing_node_status[$i][3]] = 1;
+	$processing_jobs_referenced[intval($processing_node_status[$i][3])] = 1;
 }
 
 $query = "SELECT id, job_id,priority,experiment_id,capture_sample_id,sample_region_info_id,sample_region_id,image_id,processor_id,problem, captured_images_id,job_submission_time,paused FROM processing_job_queue ORDER BY priority DESC,id DESC LIMIT 1000";
 $sql->get_row($query,$processing_job_queue);
 
+$region_images_referenced = array();
 for ($i = 0; $i < sizeof($processing_job_queue); $i++){
-	$processing_jobs_referenced[$processing_job_queue[$i][1]] = 1;
-	$experiments_referenced[$processing_job_queue[$i][3]] = 1;
-	$samples_referenced[$processing_job_queue[$i][4]] = 1;
-	$regions_referenced[$processing_job_queue[$i][5]] = 1;
+	$processing_jobs_referenced[intval($processing_job_queue[$i][1])] = 1;
+	$experiments_referenced[intval($processing_job_queue[$i][3])] = 1;
+	$samples_referenced[intval($processing_job_queue[$i][4])] = 1;
+	$regions_referenced[intval($processing_job_queue[$i][5])] = 1;
+	if ($processing_job_queue[$i][6] != '0')
+	   $region_images_referenced[intval($processing_job_queue[$i][6])] = 0;
 }
 
+if (sizeof($region_images_referenced)>0){
+   $first = true;
+
+   $query = "SELECT id, capture_time FROM sample_region_images WHERE ";
+
+   foreach ($region_images_referenced as $id => $val){
+   	   if (!$first)
+	      $query .= " OR ";
+	   else $first = false;
+	   $query .= "id = " . $id;
+   }
+   $sql->get_row($query,$res);
+   for ($i = 0; $i < sizeof($res); $i++)
+       $region_image_data[intval($res[$i][0])] = $res[$i];
+}
 $j = new ns_processing_job();
+
 $query = $j->provide_query_stub() . " FROM processing_jobs WHERE ";
 $query2 = "SELECT r.id,r.name, s.name,e.name FROM sample_region_image_info as r, capture_samples as s, experiments as e WHERE e.id = s.experiment_id AND s.id = r.sample_id AND (";
 $query3 = "SELECT s.id,s.name,e.name FROM  capture_samples as s, experiments as e WHERE e.id = s.experiment_id AND (";
@@ -129,16 +153,22 @@ foreach($experiments_referenced as $key => $value){
 	if ($first){ $query4 .= " id = " . $key; $first = false;}
 	else $query4 .= " OR id = " . $key;
 }
-
+if (sizeof($processing_jobs_referenced)>0)
 $sql->get_row($query,$processing_job_data);
+else $processing_job_data = array();
+if (sizeof($regions_referenced) > 0)
 $sql->get_row($query2,$region_data);
+else $region_data = array();
+if (sizeof($samples_referenced)>0)
 $sql->get_row($query3,$sample_data);
+else $sample_data = array();
+if (sizeof($experiments_referenced)>0)
 $sql->get_row($query4,$experiment_data);
-
+else $experiment_data = array();
 $processing_jobs = array();
 for ($i = 0; $i < sizeof($processing_job_data); $i++){
-	$processing_jobs[$processing_job_data[$i][0]] = new ns_processing_job();
-	$processing_jobs[$processing_job_data[$i][0]]->load_from_result($processing_job_data[$i]);
+	$processing_jobs[intval($processing_job_data[$i][0])] = new ns_processing_job();
+	$processing_jobs[intval($processing_job_data[$i][0])]->load_from_result($processing_job_data[$i]);
 }
 
 $experiments = array();
@@ -152,7 +182,7 @@ $samples = array();
 for ($i = 0; $i < sizeof($sample_data); $i++)
 	$samples[$sample_data[$i][0]] = $sample_data[$i];
 
-
+$clrs = $table_colors[0];
 ?>
 
 <span class="style1">Processing Job Queue</span>
@@ -212,11 +242,14 @@ for ($i = 0; $i < sizeof($sample_data); $i++)
         	echo $r[2]. "::". $r[1] ;
        }
        }
-       if ($queue[6] != 0)
-       	echo " id: " . $queue[7];
-       	if ($queue[7] != 0)
-       	echo " id: " . $queue[7];
-	echo $ft2;
+       if ($queue[6] != '0'){
+       if (ns_param_spec($region_image_data,intval($queue[6])))
+       	  echo " " . format_time($region_image_data[intval($queue[6])][1]);
+       	else echo " id: " . $queue[6];
+       }
+       if ($queue[7] != '0')
+       	   echo " id: " . $queue[7];
+       echo $ft2;
        echo " </td>";
        echo "<td valign=\"top\" bgcolor=\"".$clrs[0] . "\">";
        echo $ft1;
@@ -243,9 +276,10 @@ for ($i = 0; $i < sizeof($sample_data); $i++)
 ?>
 </tr></table></td></tr></table>
 <form action="view_processing_queue_status.php" method="post">
-<input name="pause" type="submit" value="Pause All" >
-<input name="unpause" type="submit" value="Un-Pause All" >
-<input name="delete_all_jobs" type="submit" value="Delete" onClick="javascript: return confirm('Are you sure you want to delete all pending processing jo\
+<input name="delete_problem_jobs" type="submit" value="Delete problematic jobs">
+<input name="pause" type="submit" value="Pause All Jobs" >
+<input name="unpause" type="submit" value="Reume All Jobs" >
+<input name="delete_all_jobs" type="submit" value="Delete all Jobs" onClick="javascript: return confirm('Are you sure you want to delete all pending processing jo\
 bs?')">
 </form>
 <br>
@@ -276,9 +310,9 @@ bs?')">
        echo "<td valign=\"top\" bgcolor=\"".$clrs[1] . "\" >";
        if ($p[2]!='0'){
           if ($p[3]!='0'){
-	     if (ns_param_spec($processing_jobs,$p[3])){
+	     if (ns_param_spec($processing_jobs,intval($p[3]))){
 	     	     echo "<a href=\"view_processing_queue_status.php?q_highlight_id=$p[2]\">";
-             	     echo $processing_jobs[ $p[3]]->get_concise_description(); 
+             	     echo $processing_jobs[ intval($p[3])]->get_concise_description(); 
 	     	     echo "</a>";
 	     }else echo "Job information was deleted";
           }

@@ -59,6 +59,7 @@ void analyze_worm_movement_across_frames(const ns_processing_job & job, ns_image
 			if (prefix_length_str.length() > 0) {
 				prefix_length = atol(prefix_length_str.c_str());
 			}
+
 			time_path_solution.fill_gaps_and_add_path_prefixes(prefix_length);
 
 			//unnecissary save, done for debug
@@ -66,10 +67,15 @@ void analyze_worm_movement_across_frames(const ns_processing_job & job, ns_image
 			if (log_output)
 				image_server->register_server_event(ns_image_server_event("Caching image data for inferred worm positions."), &sql);
 			ns_image_server_time_path_inferred_worm_aggregator ag;
-			bool solution_needs_to_be_rebuilt(ag.create_images_for_solution(job.region_id, time_path_solution, sql));
+			bool problematic_image_encountered(ag.create_images_for_solution(job.region_id, time_path_solution, sql));
 			//corrupt images are marked as problematic in the db and have their worm detection deleted. Thus, we need to rebuild the 
 			//solution in order to account for these deletions.
-			if (solution_needs_to_be_rebuilt) {
+			if (problematic_image_encountered) {
+
+				bool fixed_something = time_path_solution.remove_invalidated_points(job.region_id, solver_parameters, sql);
+				if (fixed_something)
+					break;
+
 				if (count > 2)
 					throw ns_ex("Multiple attempts at analysis turned up corrupt images.  They all should have been caught in the first round, so we're giving up.");
 				image_server->register_server_event(ns_image_server_event("Corrupt images were found and excluded.  Attempting to re-run analysis.."), &sql);

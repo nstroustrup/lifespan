@@ -179,6 +179,13 @@ bool ns_ojp2k_initialization::jp2k_initialized = false;
 #define JP2_XML 0x786D6C20
 
 void ns_jp2k_error_callback(const char *msg, void *client_data){
+	if (client_data == 0) {
+		std::cerr << "openpeg2000 did not provide client data in its callback for error: ";
+		if (msg != 0)
+			std::cerr << msg;
+		std::cerr << "\n";
+		return;
+	}
 	ns_jp2k_data * c = (ns_jp2k_data *)client_data;
 	c->ex = new ns_ex("ns_jp2k::Error: ");
 	*c->ex << msg;

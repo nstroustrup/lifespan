@@ -409,13 +409,14 @@ void ns_buffered_capture_scheduler::update_local_buffer_from_central_server(ns_i
 			//local_buffer_db.send_query("DELETE FROM buffered_capture_samples");
 			if (capture_samples.time_stamp_column_id == -1)
 					throw ns_ex("Could not find capture sample time stamp column!");
-			long last_displayed_percent(-5);
+			long r(-5);
 			for(unsigned int i = 0; i < capture_sample_data.size(); i++){
-				const long percent((100*i)/capture_sample_data.size());
-				if (percent >= last_displayed_percent+5){
-					std::cerr << percent << "%...";
-					last_displayed_percent = percent;
+				long r1 = (100 * i) / capture_sample_data.size();
+				if (r1 - r >= 5) {
+					image_server.add_subtext_to_current_event(ns_to_string(r1) + "%...", &central_db);
+					r = r1;
 				}
+
 				std::string values;
 				
 				values += "`";

@@ -376,7 +376,7 @@ void ns_refine_image_statistics(const ns_64_bit region_id, std::ostream & out,ns
 	sql.get_rows(res);
 	if (res.empty())
 		throw ns_ex("Could not find any valid timepoints in region ") << region_id;
-	int r(0);
+	int r(-5);
 	for (unsigned int i = 0; i < res.size(); i++) {
 		int r1 = (100 * i) / res.size();
 		if (r1 - r >= 5) {

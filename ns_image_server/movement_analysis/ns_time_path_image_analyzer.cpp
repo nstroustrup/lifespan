@@ -5674,9 +5674,13 @@ void ns_time_path_image_movement_analyzer::reanalyze_stored_aligned_images(const
 		if (analysis_id == 0)
 			throw ns_ex("Could not obtain analysis id!");
 
-
+		 long last_r(-5);
 		for (unsigned int i = 0; i < groups.size(); i++){
-			image_server_const.add_subtext_to_current_event(ns_to_string((100*i)/groups.size()) + "%...",&sql);
+			 long cur_r = (100 * i) / groups.size();
+			if (cur_r - last_r >= 5) {
+				image_server_const.add_subtext_to_current_event(ns_to_string(cur_r) + "%...", &sql);
+				last_r = cur_r;
+			}
 			for (unsigned int j = 0; j < groups[i].paths.size(); j++){
 				if (ns_skip_low_density_paths && groups[i].paths[j].is_low_density_path())
 					continue;
@@ -6136,12 +6140,12 @@ void ns_time_path_image_movement_analyzer::generate_death_aligned_movement_postu
 	}*/
 
 	//now go through each measurement time for the solution
-	unsigned long last_o = 0;
+	 long last_o = -5;
 	for (unsigned long t = 0; t < aligned_size; t++){
-		unsigned long o2((100 * t) / aligned_size);
+		 long o2((100 * t) / aligned_size);
 		if (o2 - last_o >= 5) {
-			last_o - o2;
 			image_server_const.add_subtext_to_current_event(ns_to_string(o2)+"%...",&sql);
+			last_o = o2;
 		}
 
 		ns_movement_posture_visualization_summary vis_summary;
@@ -6357,8 +6361,13 @@ void ns_time_path_image_movement_analyzer::generate_movement_posture_visualizati
 		groups[g].paths[0].load_movement_images_no_flow(ns_analyzed_time_image_chunk(0,1),path_image_source[g]);
 	}
 	//now go through each measurement time for the solution
+	 long last_r(-5);
 	for (unsigned long t = 0; t < solution.timepoints.size(); t++){
-		image_server_const.add_subtext_to_current_event(ns_to_string((100*t)/solution.timepoints.size())+"%...", &sql);
+		 long cur_r = (100 * t) / solution.timepoints.size();
+		if (cur_r - last_r >= 5) {
+			image_server_const.add_subtext_to_current_event(ns_to_string(cur_r) + "%...", &sql);
+			last_r = cur_r;
+		}
 
 		ns_movement_posture_visualization_summary vis_summary;
 		vis_summary.region_id = region_id;

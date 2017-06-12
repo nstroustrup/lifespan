@@ -2138,15 +2138,15 @@ void ns_time_path_solver::load(ns_64_bit region_id, ns_sql & sql){
 	
 	load_detection_results(region_id,sql);
 
-	long last_c(-2);
+	long last_c(-5);
 	image_server_const.add_subtext_to_current_event("Compiling Detection Point Cloud...",&sql);
 	unsigned long debug_max_points_per_timepoint(0);
 	bool problem = false;
 	for (unsigned int i = 0; i < timepoints.size(); i++){
-		
-		if ((long)((i*100)/timepoints.size()) >= last_c+5){
-			image_server_const.add_subtext_to_current_event(ns_to_string((i*100)/timepoints.size())+"%...",&sql);
-			last_c = i;
+		long c = (i * 100) / timepoints.size();
+		if (c-last_c >= 5){
+			image_server_const.add_subtext_to_current_event(ns_to_string(c)+"%...",&sql);
+			last_c = c;
 		}
 	//	if (timepoints[i].time == 1321821542)
 	//		cerr << "WHA";

@@ -167,8 +167,13 @@ void ns_machine_analysis_data_loader::load_just_survival(ns_lifespan_experiment_
 	ns_genotype_fetcher genotypes;
 	genotypes.load_from_db(&sql);
 	//load in just the sample information, one sample at a time to reduce memory consumption
+	long last_r(-10);
 	for (unsigned int i = 0; i < samples.size(); i++){
-		std::cerr << (100*i)/samples.size() << "%...";
+		long r = (100 * i) / samples.size();
+		if (r - last_r >= 10) {
+			std::cout << r << "%...";
+			last_r = r;
+		}
 		metadata.load_only_sample_info_from_db(samples[i].id(),sql);
 		samples[i].load(ns_death_time_annotation_set::ns_censoring_and_movement_transitions,metadata.sample_id,metadata,sql,region_id,load_excluded_regions);
 		ns_death_time_annotation_compiler compiler;
@@ -206,10 +211,15 @@ void ns_machine_analysis_data_loader::load(const ns_death_time_annotation_set::n
 	
 	ns_genotype_fetcher genotypes;
 	genotypes.load_from_db(&sql);
-
+	long last_r(-10);
 	for (unsigned int i = 0; i < samples.size(); i++){
-		if(!be_quiet)
-			std::cerr << (100*i)/samples.size() << "%...";
+		if (!be_quiet) {
+			long r = (100 * i) / samples.size();
+			if (r - last_r >= 10) {
+				std::cout << r << "%...";
+				last_r = r;
+			}
+		}
 		metadata.load_only_sample_info_from_db(samples[i].id(),sql);
 	//	if (metadata.sample_name != "frog_c")
 	//		continue;

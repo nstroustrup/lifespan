@@ -707,7 +707,7 @@ bool ns_experiment_storyboard::load_events_from_annotation_compiler(const ns_loa
 	unsigned long cc(0);
 	image_server.add_subtext_to_current_event("Aggregating Region Events.\n",&sql);
 	ns_machine_analysis_data_loader region_state_annotations(true);
-	unsigned long last_cc(0);
+	unsigned long last_cc(-10);
 
 
 	//use to confirm validity of each annotation
@@ -733,7 +733,7 @@ bool ns_experiment_storyboard::load_events_from_annotation_compiler(const ns_loa
 		}
 
 		unsigned long cur_cc = (100 * cc) / all_events.regions.size();
-		if (cur_cc - last_cc > 5) {
+		if (cur_cc - last_cc >10) {
 			image_server_const.add_subtext_to_current_event(ns_to_string(cur_cc) + "%...",&sql);
 			last_cc = cur_cc;
 		}

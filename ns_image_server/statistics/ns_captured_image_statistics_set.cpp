@@ -525,8 +525,13 @@ void ns_capture_sample_region_data::load_from_db(const ns_64_bit region_id_,
 		timepoints.resize(res.size());
 		unsigned int pos=0;
 		ns_image_standard image_buffer;
+		int r(-5);
 		for (unsigned int i = 0; i < res.size(); i++){
-			std::cout << (100*i/res.size()) << "%...";
+			int r1 = (100 * i) / res.size();
+			if (r1 - r >= 10) {
+				std::cout << r << "%...";
+				r = r1;
+			}
 			ns_image_server_captured_image_region im;
 			im.region_info_id = metadata.region_id;
 			im.region_images_id = ns_atoi64(res[i][0].c_str());

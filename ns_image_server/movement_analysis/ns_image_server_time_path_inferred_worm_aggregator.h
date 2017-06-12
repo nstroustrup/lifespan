@@ -101,11 +101,12 @@ public:
 		double counter(0);
 		//std::cerr << "Caching images for path gaps and prefixes...";
 		bool needs_to_be_rebuilt(false);
-
+		 long last_r(-5);
 		for (unsigned int t = 0; t < s.timepoints.size(); t++){
-			if (s.timepoints.size()/20 < counter){
-				counter = 0;
-				std::cerr << (t*100)/s.timepoints.size() << "%...";
+			 long cur_r = (100 * t) / s.timepoints.size();
+			if (cur_r-last_r>=5){
+				image_server_const.add_subtext_to_current_event(ns_to_string(cur_r) + "%...", &sql);
+				last_r = cur_r;
 			}
 			counter++;
 			inferred_elements.resize(0);

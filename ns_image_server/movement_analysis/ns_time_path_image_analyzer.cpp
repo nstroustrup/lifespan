@@ -6554,14 +6554,15 @@ void ns_time_path_image_movement_analyzer::load_region_visualization_images(cons
 		}
 		if (!region_image_specifications[i].region_vis_required && !region_image_specifications[i].interpolated_region_vis_required)
 			continue;
-		if (region_image_specifications[i].interpolated_region_vis_required &&
-			region_image_specifications[i].interpolated_region_vis_image.id==0)
-			throw ns_ex("Interpolated region visualization requested with no id specified");
-		if (region_image_specifications[i].region_vis_required &&
-			region_image_specifications[i].region_vis_image.id==0)
-			throw ns_ex("Region visualization requested with no id specified");
+
+		try {
+			if (region_image_specifications[i].interpolated_region_vis_required &&
+				region_image_specifications[i].interpolated_region_vis_image.id==0)
+				throw ns_ex("Interpolated region visualization requested with no id specified");
+			if (region_image_specifications[i].region_vis_required &&
+				region_image_specifications[i].region_vis_image.id==0)
+				throw ns_ex("Region visualization requested with no id specified");
 		
-		try{
 
 			if (load_type != ns_analyzed_image_time_path::ns_lrv_just_flag) {
 				//region images contain the context images
@@ -6628,7 +6629,7 @@ void ns_time_path_image_movement_analyzer::load_region_visualization_images(cons
 					}
 				}
 			}
-			if (!just_do_a_consistancy_check && new_data_allocated){
+			if (!just_do_a_consistancy_check && new_data_allocated) {
 				memory_pool.aligned_image_pool.mark_stack_size_waypoint_and_trim();
 				memory_pool.registered_image_pool.mark_stack_size_waypoint_and_trim();
 			}

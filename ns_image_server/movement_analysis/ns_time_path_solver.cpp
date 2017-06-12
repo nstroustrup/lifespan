@@ -535,13 +535,15 @@ bool ns_time_path_solution::remove_invalidated_points(const ns_64_bit region_id,
 
 		for (unsigned int p = 0; p < paths.size(); p++) {
 			for (unsigned int i = 0; i < paths[p].stationary_elements.size(); i++) {
-				cerr << paths[p].stationary_elements[i].t_id << "->";
 				paths[p].stationary_elements[i].t_id = new_timepoint_to_index_mapping[
 					previous_timepoint_to_index_mapping[
 						paths[p].stationary_elements[i].t_id]];
-				cerr << paths[p].stationary_elements[i].t_id << "\n";
 			}
 		}
+		for (unsigned int i = 0; i < unassigned_points.stationary_elements.size(); i++) 
+			unassigned_points.stationary_elements[i].t_id = new_timepoint_to_index_mapping[
+				previous_timepoint_to_index_mapping[
+					unassigned_points.stationary_elements[i].t_id]];
 
 		//remove paths that have become invalidated.
 		bool groups_changed = false;

@@ -38,48 +38,6 @@ struct ns_device_name{
 };
 
 
-struct ns_multiprocess_control_options{
-
-	ns_multiprocess_control_options():
-		process_id(0),
-			total_number_of_processes(1),
-			compile_videos(true),
-			handle_software_updates(true),
-			manage_capture_devices(true),
-			dispatcher_port_offset(0),
-			only_run_single_process(false){}
-
-	unsigned long process_id,
-				  total_number_of_processes,
-				  dispatcher_port_offset;
-
-	bool compile_videos,
-		 handle_software_updates,
-		 manage_capture_devices,
-		 only_run_single_process;
-
-	unsigned long port(const unsigned long base_port) const{
-		return dispatcher_port_offset + base_port;
-	}
-	std::string host_name(const std::string & base_hostname) const{
-		if (total_number_of_processes == 1)
-			return base_hostname;
-		return base_hostname + "::" + ns_to_string(process_id);
-	}
-	std::string simulated_device_name(const std::string & name) const{
-		return host_name(name);
-	}
-
-	std::string volatile_storage(const std::string & base_storage) const{
-		if (total_number_of_processes == 1)
-			return base_storage;
-		return base_storage + DIR_CHAR_STR + ns_to_string(process_id);
-	}
-
-	bool from_parameter(const std::string & parameter);
-	void to_parameters(std::vector<std::string> & parameters);
-};
-
 struct ns_posture_analysis_model_entry_source {
 	ns_posture_analysis_model::ns_posture_analysis_method analysis_method;
 	std::string model_directory;
@@ -141,17 +99,14 @@ public:
 	ns_image_server();
 	#ifndef NS_MINIMAL_SERVER_BUILD
 	ns_image_server_device_manager device_manager;
-
-	void set_multiprocess_control_options(const ns_multiprocess_control_options & opt){multiprocess_control_options = opt;}
-	const ns_multiprocess_control_options & get_multiprocess_control_options() const{ return multiprocess_control_options;}
 	
 	#endif
 	///image server nodes check the cluster to see if they are running the latest version of the software,
 	///which is specified by (major).(minor).(software_version_compile).
-	unsigned int software_version_major(){return 1;}
+	unsigned int software_version_major(){return 2;}
 	///image server nodes check the cluster to see if they are running the latest version of the software,
 	///which is specified by (major).(minor).(software_version_compile).
-	unsigned int software_version_minor(){return 9;}
+	unsigned int software_version_minor(){return 0;}
 	///image server nodes check the cluster to see if they are running the latest version of the software,
 	///which is specified by (major).(minor).(software_version_compile).
 	unsigned int software_version_compile(){return _software_version_compile;}
@@ -220,6 +175,8 @@ public:
 
 	///if true, the user (or the image server itself) has requested the image server node stop
 	bool exit_requested;
+	//server is idle
+	bool server_is_processing_jobs;
 
 	///if true, the server will attempt to install new version of image server software when available
 	bool update_software;
@@ -469,7 +426,6 @@ public:
 	ns_lock alert_handler_lock;
 	void register_alerts_as_handled();
 	unsigned long maximum_number_of_processing_threads() const{ return maximum_number_of_processing_threads_;}
-	unsigned handle_software_updates()const{return multiprocess_control_options.handle_software_updates;}
 
 	
 	ns_simple_cache<ns_image_fast_registration_profile, ns_64_bit,true> image_registration_profile_cache;
@@ -602,7 +558,6 @@ private:
 	ns_performance_statistics_analyzer performance_statistics;
 	mutable ns_lock performance_stats_lock;
 
-	ns_multiprocess_control_options multiprocess_control_options;
 	unsigned long maximum_number_of_processing_threads_;
 	bool alert_handler_running;
 

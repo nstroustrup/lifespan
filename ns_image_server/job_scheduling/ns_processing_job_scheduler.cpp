@@ -74,10 +74,12 @@ bool ns_processing_job_scheduler::run_a_job(ns_processing_job & job,ns_sql & sql
 	if (job.maintenance_task == ns_maintenance_update_processing_job_queue){
 		image_server.register_server_event(ns_image_server_event("Updating job queue"),&sql);
 		image_server.update_processing_status("Updating Queue", 0, 0, sql);
-		sql << "DELETE from processing_jobs WHERE maintenance_task =" << ns_maintenance_update_processing_job_queue;
-		sql.send_query();
 		push_scheduler.report_job_as_finished(job,sql);
 		push_scheduler.discover_new_jobs(sql);
+		sql << "DELETE from processing_jobs WHERE id = " << job.id;
+		sql.send_query();
+		sql << "DELETE from processing_job_queue WHERE id = " << job.queue_entry_id;
+		sql.send_query();
 		return true;		
 	}
 
@@ -112,22 +114,38 @@ bool ns_processing_job_scheduler::run_a_job(ns_processing_job & job,ns_sql & sql
 
 		image_server.update_processing_status("Processing Job", job.id,job.queue_entry_id, sql);
 
-		if (processor().run_job(sql))
+		ns_64_bit problem_id;
+		try {
+			processor().run_job(sql);
+		}
+		catch (ns_ex & e) {
+			ns_ex ex("Processing job did not handle its own exception: ");
+			ex << e.text();
+			throw e;
+		}
+		if (problem_id != 0)
+			processor().mark_subject_as_problem(problem_id, sql);
+
 		processor().mark_subject_as_busy(false,sql);
 
-		push_scheduler.report_job_as_finished(job,sql);
+		if (problem_id != 0)
+			push_scheduler.report_job_as_finished(job,sql);
+
 		sql.send_query("COMMIT");
 
-		processor().handle_concequences_of_job_completion(sql);
+		if (problem_id != 0) {
+			processor().handle_concequences_of_job_completion(sql);
 
-		if (processor().delete_job_after_processing())
-			processor().delete_job(sql);
-		sql.send_query("COMMIT");
+			if (processor().delete_job_after_processing())
+				processor().delete_job(sql);
+			sql.send_query("COMMIT");
 
-		image_server.update_processing_status("Finished Job", job.id, job.queue_entry_id, sql);
+			image_server.update_processing_status("Finished Job", job.id, job.queue_entry_id, sql);
+		}
 
-		processor.release();
-		image_server.register_job_duration(ns_performance_statistics_analyzer::ns_running_a_job,tp.stop());
+		processor.release(); 
+		if (problem_id != 0) 
+			image_server.register_job_duration(ns_performance_statistics_analyzer::ns_running_a_job,tp.stop());
 		
 
 		//don't let old, unused data accumulate.

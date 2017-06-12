@@ -85,7 +85,7 @@ void ns_image_server_dispatcher::handle_remote_requests(){
 	srand(ns_current_time());
 	//empty the queue of pending messages
 	while(true){
-		if (pending_remote_requests.empty() || image_server.exit_requested){
+		if (pending_remote_requests.empty() || (image_server.exit_requested && !image_server.server_is_processing_jobs)){
 			message_handling_thread.report_as_finished();
 
 			return;
@@ -95,19 +95,11 @@ void ns_image_server_dispatcher::handle_remote_requests(){
 		pending_remote_requests.pop_back();
 		lock.release();
 
-		//srand(random_number_seed);
-		//random_number_seed=rand();
-		//double d(rand());
-		//long s(300*d/(RAND_MAX+1));
-		//cerr << "Sleeping for " << s << " ms....";
-		//ns_thread::sleep(s);
-	//	cerr << "Done.\n";
 		try{
 			try{
 				ns_image_server_message &message(req.message);
 				ns_socket_connection & socket_connection(req.connection);
-		//	socket_connection.close();
-		//	return;
+
 				if (message.request() != NS_TIMER && message.request() != NS_CHECK_FOR_WORK && message.request() != NS_LOCAL_CHECK_FOR_WORK) {
 					if (currently_unable_to_connect_to_the_central_db)
 						image_server.register_server_event(ns_image_server::ns_register_in_local_db,ns_image_server_event("received the message: ") << ns_message_request_to_string(message.request()));
@@ -138,7 +130,7 @@ void ns_image_server_dispatcher::handle_remote_requests(){
 				case NS_LOCAL_CHECK_FOR_WORK:
 					socket_connection.close();
 					this->on_timer();
-					if (image_server.act_as_processing_node()) {
+					if (image_server.act_as_processing_node() && !image_server.exit_requested) {
 						this->start_looking_for_new_work();
 					}
 					break;
@@ -269,7 +261,7 @@ void ns_image_server_dispatcher::run(){
 		image_server.register_server_event(ns_image_server::ns_register_in_central_db_with_fallback,ns_image_server_event("Software Compilation Date: ") << __DATE__);
 		image_server.register_server_event(ns_image_server::ns_register_in_central_db_with_fallback,ns_image_server_event("Dispatcher started.",false));
 		image_server.reset_image_processing_run_data();
-		while(!image_server.exit_requested){
+		while(!image_server.exit_requested || image_server.server_is_processing_jobs){
 			ns_socket_connection socket_connection;
 			try{
 				socket_connection = incomming_socket.accept();
@@ -331,7 +323,10 @@ void ns_image_server_dispatcher::run(){
 				}
 			}
 			//if there are jobs to do, spawn a new thread to handle them.
-			if (!pending_remote_requests.empty() && !message_handling_thread.is_running() && !image_server.exit_requested){
+			//stop if an exit is requested /and/ no more jobs are running.
+			//this requirement that no more jobs are running allows the server to continue to update the db regarding
+			//processing node activity, etc, until the last job is finished.
+			if (!pending_remote_requests.empty() && !message_handling_thread.is_running() && (!image_server.exit_requested || image_server.server_is_processing_jobs) ){
 				message_handling_thread.run(handle_dispatcher_request,this);
 			}
 
@@ -1228,6 +1223,9 @@ bool ns_image_server_dispatcher::look_for_work(){
 	}
 
 	try {
+		const unsigned long number_of_idle_processing_threads(processing_thread_pool.number_of_idle_threads());
+		image_server.server_is_processing_jobs = processing_thread_pool.number_of_threads() > 0 && number_of_idle_processing_threads < processing_thread_pool.number_of_threads();
+
 		//search the server for an image processing task
 		const bool first_in_first_out_job_queue(image_server.get_cluster_constant_value("job_queue_is_FIFO", "false", work_sql_connection) != "false");
 
@@ -1258,7 +1256,7 @@ bool ns_image_server_dispatcher::look_for_work(){
 			number_of_jobs_to_run = image_server_const.maximum_number_of_processing_threads();
 		}
 		else {
-			number_of_jobs_to_run = processing_thread_pool.number_of_idle_threads();
+			number_of_jobs_to_run = number_of_idle_processing_threads;
 		}
 		long number_of_jobs_left_before_max_is_reached = image_server.number_of_remaining_processing_jobs_before_max_is_hit();
 		if (number_of_jobs_left_before_max_is_reached <= 0)
@@ -1266,11 +1264,39 @@ bool ns_image_server_dispatcher::look_for_work(){
 		if (number_of_jobs_to_run > number_of_jobs_left_before_max_is_reached)
 			number_of_jobs_to_run = number_of_jobs_left_before_max_is_reached;
 
-		push_scheduler.request_jobs(number_of_jobs_to_run, jobs, *work_sql_connection, first_in_first_out_job_queue);
+		std::vector<ns_processing_job> new_jobs;
+		while (true) {
+			new_jobs.resize(0);
+			push_scheduler.request_jobs(number_of_jobs_to_run-jobs.size(), new_jobs, *work_sql_connection, first_in_first_out_job_queue);
+			if (new_jobs.size() == 0)
+				break;
+
+			//only run maintenence update once.
+			bool already_found_update_queue_job(false);
+			for (std::vector<ns_processing_job>::iterator p = new_jobs.begin(); p != new_jobs.end(); ) {
+				if (p->maintenance_task == ns_maintenance_update_processing_job_queue) {
+					if (already_found_update_queue_job) {
+						*work_sql_connection << "DELETE FROM processing_job_queue WHERE id=" << p->queue_entry_id;
+						work_sql_connection->send_query();
+						*work_sql_connection << "DELETE FROM processing_jobs WHERE id=" << p->id;
+						work_sql_connection->send_query();
+						p = new_jobs.erase(p);
+					}
+					else {
+						already_found_update_queue_job = true;
+						p++;
+					}
+				}
+				else p++;
+			}
+			jobs.insert(jobs.end(), new_jobs.begin(), new_jobs.end());
+			if (jobs.size() >= number_of_jobs_to_run)
+				break;
+		}
 
 		//no jobs and no work being done
-		if (jobs.size() == 0 && processing_thread_pool.number_of_idle_threads() == processing_thread_pool.number_of_threads()) {
-
+		if (jobs.size() == 0 && number_of_idle_processing_threads == processing_thread_pool.number_of_threads()) {
+			image_server.server_is_processing_jobs = false;
 			image_server.add_subtext_to_current_event(".", work_sql_connection, false, image_server.main_thread_id());
 			image_server.incremenent_empty_job_queue_check_count();
 			

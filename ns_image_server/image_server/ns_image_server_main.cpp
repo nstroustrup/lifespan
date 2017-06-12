@@ -1364,15 +1364,15 @@ int main(int argc, char ** argv){
 	#ifdef _WIN32 	
 		ns_socket::global_clean();
 		destroy_icons();
-		if (image_server.update_software && image_server.handle_software_updates()){
+	/*	if (image_server.update_software && image_server.handle_software_updates()){
 			try{
 				ns_update_software();
 			}
 			catch(ns_ex & ex){
 				cerr << ex.text() << "\n";
 			}
-
-		}
+			
+		}*/
 	#endif
 	image_server.clear();
 	ns_sql::unload_sql_library();

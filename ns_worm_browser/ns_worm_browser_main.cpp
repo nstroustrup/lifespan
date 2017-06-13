@@ -150,14 +150,15 @@ class ns_worm_terminal_gl_window : public Fl_Gl_Window {
 		switch(state){
 		case FL_FOCUS: {
 			have_focus = true;
-			int a = Fl_Gl_Window::handle(state);
+			int a = Fl_Gl_Window::handle(state); 
+			//schedule_repeating_callback(0);
 			report_changes_made_to_screen();
 			return a; 
 		}
 		case FL_UNFOCUS: {
 			have_focus = false;
 			int a = Fl_Gl_Window::handle(state);
-			report_changes_made_to_screen();
+		//	report_changes_made_to_screen();
 			return a;
 		}
 			case FL_DND_ENTER:
@@ -228,7 +229,7 @@ class ns_worm_terminal_gl_window : public Fl_Gl_Window {
 		}
 		//cerr << "Could not handle " << state << "\n";
 		int a = Fl_Gl_Window::handle(state);
-		report_changes_made_to_screen();
+		//report_changes_made_to_screen();
 		return a;
 	}
 	
@@ -241,7 +242,7 @@ public:
 	//		cerr << W << "x" << H << " from " << w() << "x" << h() << "\n";
        		fix_viewport(X,Y,W,H);
 		}
-		//request_screen_redraw_from_main_thread();
+	//	report_changes_made_to_screen();
         redraw();
     }
 
@@ -303,13 +304,13 @@ class ns_worm_gl_window : public Fl_Gl_Window {
 		case FL_FOCUS: {
 			have_focus = true;
 			int a = Fl_Gl_Window::handle(state);
-			idle_worm_window_update_callback(0);
+		//	idle_worm_window_update_callback(0);
 			return a;
 		}
 			case FL_UNFOCUS: {
 				have_focus = false;
 				int a = Fl_Gl_Window::handle(state);
-				idle_worm_window_update_callback(0);
+		//		idle_worm_window_update_callback(0);
 				return a;
 			}
 	/*		case FL_DND_ENTER:
@@ -1982,6 +1983,7 @@ public:
 								 ns_death_event_annotation_group::window_height*menu_d);
 
 		lock.release();
+
 	}
 	 
 	void update_region_choice_menu(){
@@ -2270,7 +2272,7 @@ void ns_show_worm_display_error(){
 }
 
 void schedule_repeating_callback(void *a ) {
-	if (a == 0)
+	if (0 == 0)
 		Fl::add_timeout(1.0 / IDLE_THROTTLE_FPS, idle_main_window_update_callback);
 	else
 		Fl::repeat_timeout(1.0 / IDLE_THROTTLE_FPS, idle_main_window_update_callback);
@@ -2311,9 +2313,12 @@ void perform_screen_redraw_callback(void * a) {
 }
 
 void request_window_redraw_from_main_thread() {
-	if (redrawing_rate_limiter) return;
-	if (!redraw_rate_limiting_lock.try_to_acquire(__FILE__, __LINE__)) return;
-	if (redrawing_rate_limiter) return;
+	if (redrawing_rate_limiter) 
+		return;
+	if (!redraw_rate_limiting_lock.try_to_acquire(__FILE__, __LINE__)) 
+		return;
+	if (redrawing_rate_limiter) 
+		return;
 	redrawing_rate_limiter = true;
 	redraw_rate_limiting_lock.release();
 	Fl::awake(perform_screen_redraw_callback, 0);
@@ -2332,14 +2337,15 @@ ns_lock idle_rate_limiting_lock("overidle");
 bool idle_rate_limiter = false;
 void idle_main_window_update_callback(void *) {
 	{
+	
 		bool schedule_timer(false);
 		Fl::lock();
 		ns_image_series_annotater::ns_image_series_annotater_action a(worm_learner.current_annotater->fast_movement_requested());
 		if (a == ns_image_series_annotater::ns_fast_forward ||
 			a == ns_image_series_annotater::ns_fast_back ||
-			current_window->draw_animation)
+			current_window->draw_animation || 
+			current_window->last_draw_animation)
 			schedule_timer = true;
-
 		Fl::unlock();
 
 		if (schedule_timer) {
@@ -2388,11 +2394,13 @@ void idle_main_window_update_callback(void *) {
 			//draw busy animation if requested
 			if (current_window->draw_animation) {
 				worm_learner.draw_animation((GetTime() - init_time) / 1000.0);
-				current_window->last_draw_animation = true;
+				current_window->last_draw_animation = true; 
+				worm_learner.main_window.redraw_requested = true;
 			}
 			//clear animation when finished
 			if (!current_window->draw_animation && current_window->last_draw_animation) {
 				current_window->last_draw_animation = false;
+				worm_learner.main_window.redraw_requested = true;
 				worm_learner.draw();
 				//		redraw_screen();
 			}
@@ -2598,8 +2606,7 @@ int main() {
 	//ns_main_thread_id = GetCurrentThread();
 	try{
 	
-		ns_multiprocess_control_options mp_options;
-		mp_options.total_number_of_processes = 1;
+		
 		ns_worm_browser_output_debug(__LINE__,__FILE__,"Loading constants");
 		image_server.load_constants(ns_image_server::ns_worm_terminal_type); 
 		if (image_server.verbose_debug_output())
@@ -2845,10 +2852,12 @@ void ns_set_menu_bar_activity_internal(bool activate){
 		//worm_window->redraw();
 	}
 	else {
-		
+
+		current_window->draw_animation = true;
+		schedule_repeating_callback(0);
+
 		for (unsigned int i = 0; i < current_window->main_menu->size(); i++){
 			current_window->main_menu->mode(i,current_window->main_menu->mode(i) |  FL_MENU_INACTIVE);
-			current_window->draw_animation = true;
 		}
 		current_window->main_menu->deactivate();
 		current_window->gl_window->deactivate();
@@ -2877,8 +2886,7 @@ void ns_set_menu_bar_activity(bool activate){
 	menu_bar_processing_lock.wait_to_acquire(__FILE__,__LINE__);
 	set_menu_bar_request = activate?ns_activate:ns_deactivate;
 	menu_bar_processing_lock.release();
-	if (!activate)
-		report_changes_made_to_screen();
+	report_changes_made_to_screen();
 }
 
 void ask_if_schedule_should_be_submitted_to_db(bool & write_to_disk, bool & write_to_db){

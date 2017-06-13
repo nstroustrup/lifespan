@@ -3097,7 +3097,8 @@ bool inline ns_state_match(const unsigned long t,const ns_movement_state_observa
 
 	if (!interval.period_end_was_not_observed && t >= interval.period_end)
 		return false;
-	else if (!interval.period_end_was_not_observed && t>= interval.period_end)
+	else if (interval.period_end_was_not_observed && t>= interval.period_start)
+		return false;
 	return true;
 }
 

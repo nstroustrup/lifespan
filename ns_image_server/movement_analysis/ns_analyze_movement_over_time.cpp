@@ -542,7 +542,6 @@ bool ns_image_server_time_path_inferred_worm_aggregator::create_images_for_solut
 
 	ns_inferred_worm_aggregator_shared_state shared_state(region_images_by_time,sql);
 
-
 	ns_thread_pool<ns_inferred_worm_aggregator_thread_pool_job,
 		ns_inferred_worm_aggregator_thread_pool_persistant_data> thread_pool;
 	const unsigned long number_of_threads(image_server_const.maximum_number_of_processing_threads());
@@ -550,9 +549,7 @@ bool ns_image_server_time_path_inferred_worm_aggregator::create_images_for_solut
 	thread_pool.prepare_pool_to_run();
 
 
-	double counter(0);
 	//std::cerr << "Caching images for path gaps and prefixes...";
-	bool needs_to_be_rebuilt(false);
 	long last_r(-5);
 
 	ns_image_worm_detection_results results;
@@ -563,7 +560,6 @@ bool ns_image_server_time_path_inferred_worm_aggregator::create_images_for_solut
 			image_server_const.add_subtext_to_current_event(ns_to_string(cur_r) + "%...", &sql);
 			last_r = cur_r;
 		}
-		counter++;
 		unsigned long num_to_run = number_of_threads;
 		if (t + num_to_run >= s.timepoints.size())
 			num_to_run = s.timepoints.size() - t - 1;
@@ -617,8 +613,10 @@ void ns_process_inferred_worms_for_timepoint(ns_time_path_timepoint * timepoint,
 	ns_acquire_lock_for_scope lock(shared_state.sql_lock, __FILE__, __LINE__);
 	if (persistant_data.inferred_elements.empty()) {
 		current_region_image->second.remove_inferred_element_from_db(*shared_state.sql);
-		for (unsigned int i = 0; i < current_region_image->second.duplicates_of_this_time_point.size(); i++)
+		for (unsigned int i = 0; i < current_region_image->second.duplicates_of_this_time_point.size(); i++) {
+			image_server_const.add_subtext_to_current_event("Removing duplicate timepoint", shared_state.sql);
 			current_region_image->second.duplicates_of_this_time_point[i].remove_inferred_element_from_db(*shared_state.sql);
+		}
 		lock.release();
 		return;
 	}

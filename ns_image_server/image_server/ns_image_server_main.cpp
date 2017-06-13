@@ -46,7 +46,7 @@ ns_thread_return_type timer_thread(void * inter){
 		ns_thread::sleep(interval);
 		unsigned int error_count(0);
 		unsigned long last_ping_time(0);
-		while(image_server.exit_requested == false){
+		while(!image_server.exit_requested || image_server.server_is_processing_jobs){
 			unsigned long current_time = ns_current_time();
 			if (current_time - last_ping_time > interval){
 				last_ping_time = current_time;
@@ -189,7 +189,7 @@ LRESULT CALLBACK handle_windows_message(HWND hWnd, UINT message, WPARAM wParam, 
 						ns_window_hidden = !ns_window_hidden;
 					break;
 				case ID_CONTEXTMENU_QUIT:
-					if (image_server.exit_requested == false){
+					if (!image_server.exit_requested || image_server.server_is_processing_jobs){
 						//if we throw an exception here, we'll start unwinding the stack and kick the foundation out of any
 						//processing job threads that are running during the shutdown
 						try{
@@ -326,7 +326,7 @@ ns_os_signal_handler_return_type exit_signal_handler(ns_os_signal_handler_signal
 #else
 ns_os_signal_handler_return_type exit_signal_handler(ns_os_signal_handler_signal signal,siginfo_t *info, void * context){
 #endif
-	if (image_server.exit_requested == false){
+	if (!image_server.exit_requested){
 		try{
 		ns_shutdown_dispatcher();
 		image_server.os_signal_handler.set_signal_handler(ns_interrupt,exit_signal_handler);

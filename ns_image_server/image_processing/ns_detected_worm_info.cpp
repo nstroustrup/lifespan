@@ -1500,7 +1500,7 @@ inline void ns_fill_triangle(const ns_vector_2d & _a, const ns_vector_2d & _b, c
 
 
 
-void ns_worm_collage_storage::clear(){
+void ns_worm_collage_storage::clear(const bool clear_cache) {
 	for (unsigned int i = 0; i < context_images.size(); i++)
 		ns_safe_delete(context_images[i]);
 	for (unsigned int i = 0; i < absolute_region_images.size(); i++)
@@ -1512,8 +1512,11 @@ void ns_worm_collage_storage::clear(){
 	context_images.resize(0);
 	absolute_region_images.resize(0);
 	relative_region_images.resize(0);
+	region_image_sizes.resize(0);
 	bitmaps.resize(0);
-	collage_cache.clear();
+	if (clear_cache)
+		collage_cache.clear();
+	else collage_cache.resize(ns_image_properties(0, 0, 3));
 }
 
 void ns_worm_collage_storage::specifiy_region_sizes(const std::vector<ns_detected_worm_info> & worms){
@@ -1526,17 +1529,25 @@ void ns_worm_collage_storage::specifiy_region_sizes(const std::vector<ns_detecte
 	}
 }
 
-const ns_image_standard & ns_worm_collage_storage::generate_collage(const ns_image_standard & absolute_grayscale,const ns_image_standard & relative_grayscale,const ns_image_standard & threshold,const std::vector<ns_detected_worm_info *> & worms){
+const ns_image_standard & ns_worm_collage_storage::generate_collage(const ns_image_standard & absolute_grayscale,const ns_image_standard & relative_grayscale,const ns_image_standard & threshold,const std::vector<ns_detected_worm_info *> & worms, ns_collage_image_pool * pool){
 	if (collage_cache.properties().height != 0){
 		return collage_cache;
 	}
-	std::vector<ns_image_standard > images(worms.size());
-	for (unsigned int i = 0; i < worms.size(); i++){
+	std::vector<ns_image_standard *> images(worms.size());
+	
+	for (unsigned int i = 0; i < worms.size(); i++) {
 		ns_image_properties prop(relative_grayscale.properties());
-		prop.height = worms[i]->region_size.y + 2*context_border_size().y;
-		prop.width = worms[i]->region_size.x + 2*context_border_size().x;
+		prop.height = worms[i]->region_size.y + 2 * context_border_size().y;
+		prop.width = worms[i]->region_size.x + 2 * context_border_size().x;
 		prop.components = 3;
-		images[i].init(prop);
+		if (pool != 0)
+			images[i] = pool->get(prop);
+		else {
+			images[i] = new ns_image_standard;
+			images[i]->init(prop);
+		}
+	}
+	for (unsigned int i = 0; i < worms.size(); i++) {
 		ns_vector_2i tl(worms[i]->region_position_in_source_image - context_border_size());
 		ns_vector_2i br(tl+worms[i]->region_size + context_border_size()*2);
 		//find cropped
@@ -1549,41 +1560,47 @@ const ns_image_standard & ns_worm_collage_storage::generate_collage(const ns_ima
 
 		//top gap
 		for (long y = 0; y < tl_gap.y; y++)
-			for (long x = 0; x < 3*prop.width; x++)
-				images[i][y][x] = 0;
+			for (long x = 0; x < 3*images[i]->properties().width; x++)
+				(*images[i])[y][x] = 0;
 
 		for (long y = tl_c.y; y < br_c.y; y++){
 			//left gap
 			for (long x = 0; x < 3*tl_gap.x; x++)
-				images[i][y-tl.y][x] = 0;
+				(*images[i])[y-tl.y][x] = 0;
 			for (long x = tl_c.x; x < br_c.x; x++){
-				images[i][y-tl.y][3*(x-tl.x)+0]=absolute_grayscale[y][x];
-				images[i][y-tl.y][3*(x-tl.x)+1]=relative_grayscale[y][x];
-				images[i][y-tl.y][3*(x-tl.x)+2]=NS_REGION_VIS_ALL_THRESHOLDED_OBJECTS_VALUE*(threshold[y][x]>0);
+				(*images[i])[y-tl.y][3*(x-tl.x)+0]=absolute_grayscale[y][x];
+				(*images[i])[y-tl.y][3*(x-tl.x)+1]=relative_grayscale[y][x];
+				(*images[i])[y-tl.y][3*(x-tl.x)+2]=NS_REGION_VIS_ALL_THRESHOLDED_OBJECTS_VALUE*(threshold[y][x]>0);
 			}
 			//right gap
-			for (long x = 3*(br_c.x-tl.x); x < 3*prop.width; x++)
-				images[i][y-tl.y][x] = 0;
+			for (long x = 3*(br_c.x-tl.x); x < 3* images[i]->properties().width; x++)
+				(*images[i])[y-tl.y][x] = 0;
 		}
 		//bottom gap
-		for (long y = br_c.y-tl.y; y < prop.height; y++)
-			for (long x = 0; x < 3*prop.width; x++)
-				images[i][y][x] = 0;
+		for (long y = br_c.y-tl.y; y < images[i]->properties().height; y++)
+			for (long x = 0; x < 3* images[i]->properties().width; x++)
+				(*images[i])[y][x] = 0;
 
 	//in channel three, a value of 70 indicates the pixel is in the worm cluster
 	//a value of of 255 indicates the pixel is in the specific worm
 		for (unsigned int y = 0; y < worms[i]->region_size.y; y++){
 			for (unsigned int x = 0; x < worms[i]->region_size.x; x++){
 				if (worms[i]->bitmap()[y][x])
-					images[i][y+context_border_size().y][3*(x+context_border_size().x)+2] = NS_REGION_VIS_WORM_THRESHOLD_VALUE;
+					(*images[i])[y+context_border_size().y][3*(x+context_border_size().x)+2] = NS_REGION_VIS_WORM_THRESHOLD_VALUE;
 		//		else if (worms[i]->bitmap_of_worm_cluster()[y][x])
 		//			images[i][y+context_border_size().y][3*(x+context_border_size().x)] = 70;
 			//	else images[i][y+context_border_size().y][3*(x+context_border_size().x)] = 0;
 			}
 		}
 	}
-
 	collage_info = ns_make_collage(images, collage_cache, 128);
+
+	for (unsigned int i = 0; i < worms.size(); i++) {
+		if (pool != 0)
+			pool->release(images[i]);
+		else delete images[i];
+	}
+
 	return collage_cache;
 }
 
@@ -3025,7 +3042,7 @@ void ns_image_worm_detection_results::clear_images(){
 		putative_worms[i].edge_bitmap().clear();
 	}
 }
-void ns_image_worm_detection_results::clear(){
+void ns_image_worm_detection_results::clear(const bool clear_collage_cache){
 	 source_image_id = 0;
 	 capture_sample_id = 0;
 	 capture_time = 0;
@@ -3035,7 +3052,7 @@ void ns_image_worm_detection_results::clear(){
 	 interpolated_worm_areas.clear();
 	 region_info_id = 0;
 	 region_labels.clear();
-	 worm_collage.clear();
+	 worm_collage.clear(clear_collage_cache);
 	 putative_worms.clear();
 	 actual_worms.clear();
 	 not_worms.clear();

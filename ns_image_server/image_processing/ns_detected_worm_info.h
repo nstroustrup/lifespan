@@ -11,6 +11,7 @@
 #include "ns_image_server.h"
 #include "ns_movement_state.h"
 #include "ns_region_metadata.h"
+#include "ns_image_pool.h";
 
 //#define NS_RETHRESHOLD_TRAINING_SET
 
@@ -424,9 +425,10 @@ struct ns_text_label{
 //The images are stored as context images, i.e. with an extra ring around the data of the close crop
 class ns_worm_collage_storage{
 public:
+	typedef ns_image_pool<ns_image_standard, ns_wasteful_overallocation_resizer> ns_collage_image_pool;
 	ns_worm_collage_storage():id(0){}
 	unsigned long id;
-	void generate_collage();
+//	void generate_collage(ns_collage_image_pool * = 0);
 	unsigned long number_of_worms();
 	void extract_region_image(const unsigned long & i, ns_image_standard & im);
 	void extract_region_context_image(const unsigned long & i, ns_image_standard & im);
@@ -434,10 +436,13 @@ public:
 	void populate_worm_images(std::vector<ns_detected_worm_info> & worms,const bool interpolated,const bool  only_load_context_absolute_grayscle=false);
 	void specifiy_region_sizes(const std::vector<ns_detected_worm_info> & worms);
 	ns_collage_info & info(){return collage_info;}
-	const ns_image_standard & generate_collage(const ns_image_standard & absolute_grayscale,const ns_image_standard & relative_grayscale,const ns_image_standard & threshold,const std::vector<ns_detected_worm_info *> & worms);
+	const ns_image_standard & generate_collage(const ns_image_standard & absolute_grayscale,const ns_image_standard & relative_grayscale,const ns_image_standard & threshold,const std::vector<ns_detected_worm_info *> & worms, ns_collage_image_pool * = 0);
 	~ns_worm_collage_storage(){clear();}
-	void clear();
+	void clear(const bool clear_cache=true);
 	static ns_vector_2i context_border_size(){return ns_vector_2i(50,50);}
+	void use_more_memory_to_avoid_reallocations(const bool val) {
+		collage_cache.use_more_memory_to_avoid_reallocations(val);
+	}
 		
 private:
 	std::vector<ns_worm_context_image *> context_images;
@@ -470,8 +475,8 @@ public:
 
 	ns_worm_collage_storage worm_collage;
 
-	const ns_image_standard & generate_region_collage(const ns_image_standard & absolute_grayscale,const ns_image_standard & relative_grayscale, const ns_image_standard & threshold){
-		return worm_collage.generate_collage(absolute_grayscale,relative_grayscale,threshold,actual_worms);
+	const ns_image_standard & generate_region_collage(const ns_image_standard & absolute_grayscale,const ns_image_standard & relative_grayscale, const ns_image_standard & threshold, ns_worm_collage_storage::ns_collage_image_pool * image_pool=0){
+		return worm_collage.generate_collage(absolute_grayscale,relative_grayscale,threshold,actual_worms, image_pool);
 	}
 
 	ns_image_worm_detection_results():detection_results_id(0),source_image_id(0),capture_sample_id(0),region_info_id(0),capture_time(0) {
@@ -481,7 +486,7 @@ public:
 	const unsigned int number_of_worms()const { return (unsigned int)actual_worms.size();}
 
 	///clears all detection results
-	void clear();
+	void clear(const bool clear_collage_cache=true);
 
 	std::map<std::string,unsigned long> give_worm_rejection_reasons() const;
 	

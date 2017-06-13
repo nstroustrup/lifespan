@@ -648,6 +648,11 @@ public:
 							lines_received(0),lines_sent(0){
 		w.pump(*this,1024);
 	}
+	ns_image_whole(const ns_image_properties & properties):avoid_memory_reallocations(false), ns_image_stream_reciever<ns_image_stream_static_offset_buffer<ns_component> >(0, this),
+		ns_image_stream_sender<ns_component, ns_image_whole<ns_component>, typename sender_t::internal_state_t >(ns_image_properties(0, 0, 0), this),
+		lines_received(0), lines_sent(0) {
+		init(properties);
+	}
 
 	//deconstruction of buffer handled by buffer class
 

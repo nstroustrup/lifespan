@@ -68,7 +68,7 @@ public:
 
 	ns_alert_handler();
 
-	void initialize(ns_sql & sql);
+	void initialize(const std::string & from_field, ns_sql & sql);
 
 	void submit_alert(const ns_alert & alert,ns_sql & sql);
 	void submit_locally_buffered_alert(const ns_alert & alert);
@@ -113,6 +113,7 @@ public:
 
 	void email_alert(const std::string & text, std::vector<std::string> & recipients, const bool report_to_db);
 	std::vector<ns_alert_recipient> recipients;
+	std::string from_field;
 	std::vector<unsigned long> initial_alert_delays;
 	unsigned long initial_desperate_alert_delay()const{return 10;}
 	ns_lock recipient_lock;

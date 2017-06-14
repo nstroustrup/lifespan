@@ -1859,7 +1859,7 @@ void ns_worm_learner::generate_experiment_movement_image_quantification_analysis
 					suffix[i] = '_';
 			}
 		}
-		o_all.attach(image_server.results_storage.time_path_image_analysis_quantification(sub_e,"detailed" + suffix,true,sql(),detail_level==ns_quantification_abbreviated_detailed).output());
+		o_all.attach(image_server.results_storage.time_path_image_analysis_quantification(sub_e,"detailed" + suffix,true,sql(),detail_level==ns_quantification_abbreviated_detailed,false).output());
 	//	ns_analyzed_image_time_path::write_summary_movement_quantification_analysis_header(o_all());
 		//o_all() <<"\n";
 
@@ -1884,7 +1884,7 @@ void ns_worm_learner::generate_experiment_movement_image_quantification_analysis
 				if (!r_m.matches(ns_region_metadata::ns_strain_and_conditions_1_2_and_3,m))
 					continue;
 			}
-			ns_acquire_for_scope<istream> in(image_server.results_storage.time_path_image_analysis_quantification(sub,"detailed",false,sql(),detail_level==ns_quantification_abbreviated_detailed).input());
+			ns_acquire_for_scope<istream> in(image_server.results_storage.time_path_image_analysis_quantification(sub,"detailed",false,sql(),detail_level==ns_quantification_abbreviated_detailed,false).input());
 			if (in.is_null()){
 				cerr << "Could not load cached movement quantification analysis for " << res[i][2] << "::" << res[i][1] << "\n";
 				continue;

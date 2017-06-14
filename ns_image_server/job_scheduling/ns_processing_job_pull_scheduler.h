@@ -3,27 +3,6 @@
 #include "ns_image_server_images.h"
 #include "ns_processing_job.h"
 
-/************************************************************************
-A note on error handling in processing jobs:
-COULD BE OUT OF DATE MAKE SURE TO UPDATE --Nick 12/12/2007
-
-If an error occurs in the pipeline, the following action is taken
-
-*On single image jobs: the job itself has its 'problem' column entry flagged as 1
-*On captured sample jobs (masking images): the capture sample has its 'problem' column entry flagged as 1
-*On region image jobs: the region image entry (the table sample_region_images) has its 'problem' column entry flagged as 1, as does 
-the image associated with it in the images table.
-*whole experiment jobs: in theory, the processing job has its problem column flagged as 1, but since no whole-experiment
-jobs have been tested recently this may not work.
-
-The rational is that for captured sample jobs or sample region image jobs, the entire cluster shouldn't halt just because one of the thousands of images are broken.
-Thus, problems must be handled on a per-image case.
-
-However, in a single image job, the entire job *should* stop, without stopping other jobs that could be being performed on the same image.
-Thus, errors should be handled at the level of the whole job.
-*************************************************************************/
-//A variety of SQL queries are used to locate pending image-processing jobs from the database.
-//Rather than compile the sql queries each time, they are done at runtime and stored for future use by this object.
 
 struct ns_processing_job_pull_finder{
 	ns_processing_job_pull_finder():last_job_taken(1024),randomize_experiment_priority(false){}

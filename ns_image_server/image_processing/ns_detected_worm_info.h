@@ -11,7 +11,7 @@
 #include "ns_image_server.h"
 #include "ns_movement_state.h"
 #include "ns_region_metadata.h"
-#include "ns_image_pool.h";
+#include "ns_image_pool.h"
 
 //#define NS_RETHRESHOLD_TRAINING_SET
 

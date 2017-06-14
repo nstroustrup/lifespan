@@ -5677,9 +5677,18 @@ void ns_worm_learner::save_death_time_annotations(ns_sql & sql){
 			//discard orphans
 	}*/
 	current_annotater->save_annotations(set);
-	sql << "UPDATE sample_region_image_info SET "
+	std::set<ns_64_bit> region_ids;
+	
+	if (behavior_mode == ns_worm_learner::ns_annotate_storyboard_experiment) {
+		sql << "UPDATE sample_region_image_info as r, capture_samples as s SET "
+			<< "r.latest_by_hand_annotation_timestamp = UNIX_TIMESTAMP(NOW()) WHERE r.sample_id = s.id AND s.experiment_id = " << data_selector.current_experiment_id();
+		sql.send_query();
+	}
+	else {
+		sql << "UPDATE sample_region_image_info SET "
 			<< "latest_by_hand_annotation_timestamp = UNIX_TIMESTAMP(NOW()) WHERE id = " << data_selector.current_region().region_id;
-	sql.send_query();
+		sql.send_query();
+	}
 
 };
 

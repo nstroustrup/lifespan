@@ -987,9 +987,6 @@ bool ns_experiment_storyboard::load_events_from_annotation_compiler(const ns_loa
 		ns_ex ex("ns_experiment_storyboard::draw()::Found ");
 		ex << problem_ids.size() << " out of " << (all_ids.size()) << " regions contained images in which worms had been annotated but worm detection data had been deleted.\n";
 		for (std::map<ns_64_bit, vector<std::pair<ns_64_bit, std::string> > >::iterator q = problem_ids.begin(); q != problem_ids.end(); q++) {
-			ex << "Region " << q->first << " contains " << q->second.size() << " problem images\n";
-		}
-		for (std::map<ns_64_bit, vector<std::pair<ns_64_bit, std::string> > >::iterator q = problem_ids.begin(); q != problem_ids.end(); q++) {
 			ex << "****Region " << q->first << " ( " << q->second.size() << ")\n";
 			for (unsigned int i = 0; i < q->second.size(); i++) {
 				ex << (q->second)[i].second << "\n";
@@ -998,6 +995,9 @@ bool ns_experiment_storyboard::load_events_from_annotation_compiler(const ns_loa
 					sql.send_query();
 				}
 			}
+		}
+		for (std::map<ns_64_bit, vector<std::pair<ns_64_bit, std::string> > >::iterator q = problem_ids.begin(); q != problem_ids.end(); q++) {
+			ex << "Region " << q->first << " contains " << q->second.size() << " problem images\n";
 		}
 		throw ex;
 	}

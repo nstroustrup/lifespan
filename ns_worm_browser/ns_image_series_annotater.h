@@ -1,7 +1,7 @@
 #ifndef NS_TIME_SERIES_ANNOTATER_H
 #define NS_TIME_SERIES_ANNOTATER_H
 #include "ns_image.h"
-
+extern bool debug_handlers;
 struct ns_annotater_image_buffer_entry{
 	ns_annotater_image_buffer_entry():loaded(false),im(0){}
 	bool loaded;
@@ -71,6 +71,7 @@ public:
 	ns_handle_error_handler fatal_error_handler;
 };
 
+void report_changes_made_to_screen();
 
 class ns_image_series_annotater{
 protected:
@@ -122,7 +123,8 @@ protected:
 			ns_swap<ns_annotater_image_buffer_entry > s;
 			s(*spec.swap_1,*spec.swap_2);
 		}
-		spec.annotater->request_refresh();
+		spec.annotater->request_refresh(); 
+		report_changes_made_to_screen();
 		lock1.release();
 		lock2.release();
 		return 0;
@@ -182,7 +184,7 @@ public:
 	}
 	virtual void save_annotations(const ns_death_time_annotation_set & extra_annotations)const=0 ;
 	bool step_forward(ns_handle_error_handler error_handler,bool asynch=false){
-		if (!image_buffer_access_lock.try_to_acquire(__FILE__,__LINE__))return false;
+		image_buffer_access_lock.try_to_acquire(__FILE__, __LINE__);
 		try{
 			if (sql.is_null())
 				sql.attach(image_server.new_sql_connection(__FILE__,__LINE__));
@@ -215,15 +217,19 @@ public:
 		//	output_buffer_state();
 			//if the next image is already loaded, we run the swap now and are done!
 			if (previous_images[0].loaded){
+				if (debug_handlers) cerr << "L";
 				draw_metadata(timepoint(current_timepoint_id),*previous_images[0].im);
 				ns_swap<ns_annotater_image_buffer_entry> s;
 				s(previous_images[0],current_image);
 			}
 			else{
 		//		cerr << "Loading " << current_timepoint_id << "\n";
-				if (asynch)
-					load_image_asynch(timepoint(current_timepoint_id),previous_images[0],error_handler,&current_image,&previous_images[0]);
+				if (asynch) {
+					if (debug_handlers) cerr << "A";
+					load_image_asynch(timepoint(current_timepoint_id), previous_images[0], error_handler, &current_image, &previous_images[0]);
+				}
 				else{
+					if (debug_handlers) cerr << "Q";
 					timepoint(current_timepoint_id)->load_image(asynch_load_specification.bottom_border_size,previous_images[0],sql(),asynch_load_specification.temp_buffer,resize_factor);
 					draw_metadata(timepoint(current_timepoint_id),*previous_images[0].im);
 					ns_swap<ns_annotater_image_buffer_entry> s;
@@ -241,7 +247,7 @@ public:
 		}
 	}
 	bool step_back(ns_handle_error_handler error_handler,bool asynch=false){	
-	if (!image_buffer_access_lock.try_to_acquire(__FILE__,__LINE__))return false;
+		image_buffer_access_lock.wait_to_acquire(__FILE__, __LINE__);
 	
 		try{
 			if (sql.is_null())
@@ -275,15 +281,20 @@ public:
 		//	output_buffer_state();
 			//if the next image is already loaded, we run the swap now and are done!
 			if (next_images[0].loaded){
+				if (debug_handlers) cerr << "L";
 				draw_metadata(timepoint(current_timepoint_id),*next_images[0].im);
 				ns_swap<ns_annotater_image_buffer_entry> s;
 				s(next_images[0],current_image);
 			}
 			else{
 				//cerr << "Loading " << current_timepoint_id << "\n";
-				if (asynch)
-					load_image_asynch(timepoint(current_timepoint_id),next_images[0],error_handler,&current_image,&next_images[0]);
+				if (asynch) {
+					load_image_asynch(timepoint(current_timepoint_id), next_images[0], error_handler, &current_image, &next_images[0]);
+					if (debug_handlers) cerr << "A";
+				}
 				else{
+
+					if (debug_handlers) cerr << "Q";
 					timepoint(current_timepoint_id)->load_image(asynch_load_specification.bottom_border_size,next_images[0],sql(),asynch_load_specification.temp_buffer,resize_factor);
 					draw_metadata(timepoint(current_timepoint_id),*next_images[0].im);
 					ns_swap<ns_annotater_image_buffer_entry> s;

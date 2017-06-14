@@ -19,6 +19,7 @@ bool output_debug_file_opened = false;
 std::ofstream debug_output;
 
 void refresh_main_window_internal(void *);
+bool debug_handlers = false;
 
 void ns_worm_browser_output_debug(const unsigned long line_number,const std::string & source, const std::string & message){
 	if (!output_debug_messages)
@@ -146,7 +147,7 @@ class ns_worm_terminal_gl_window : public Fl_Gl_Window {
 			}
     }   
 	int handle(int state){
-		//cerr << "s: " << state;
+		if (debug_handlers) cout << "g\n";
 		switch(state){
 		case FL_FOCUS: {
 			have_focus = true;
@@ -177,7 +178,7 @@ class ns_worm_terminal_gl_window : public Fl_Gl_Window {
 			int button(Fl::event_button());
 		//	cerr << "B:" << button;
 			if(button == FL_LEFT_MOUSE || button == FL_RIGHT_MOUSE || mouse_is_down){
-		//	cerr << "!";
+	
 			
 			ns_button_press press;
 			press.right_button = false;
@@ -299,7 +300,8 @@ class ns_worm_gl_window : public Fl_Gl_Window {
 			}
     }    
 	int handle(int state){
-		
+
+		if (debug_handlers) cout << "l";
 		switch(state){
 		case FL_FOCUS: {
 			have_focus = true;
@@ -326,7 +328,6 @@ class ns_worm_gl_window : public Fl_Gl_Window {
 		try{
 			int button(Fl::event_button());
 			if(button == FL_LEFT_MOUSE || button == FL_RIGHT_MOUSE){
-			
 			
 			ns_button_press press;
 			press.right_button = false;
@@ -2007,6 +2008,7 @@ public:
 		
 	int handle(int state) {
 
+		if (debug_handlers) cout << "m";
 
 		switch(state){ 
 			case FL_FOCUS:
@@ -2017,15 +2019,21 @@ public:
 				break;
 			case FL_KEYDOWN:{
 				//if (have_focus){
-					Fl::lock();
+					Fl::lock();	
 					int c(Fl::event_key());
 					if (c!=0){
 						if (worm_learner.register_main_window_key_press(c,
-														Fl::event_key(FL_Shift_L) || Fl::event_key(FL_Shift_R),
-														Fl::event_key(FL_Control_L) || Fl::event_key(FL_Control_R),
-														Fl::event_key(FL_Alt_L) || Fl::event_key(FL_Alt_R)
-														))
-														return 1;
+							Fl::event_key(FL_Shift_L) || Fl::event_key(FL_Shift_R),
+							Fl::event_key(FL_Control_L) || Fl::event_key(FL_Control_R),
+							Fl::event_key(FL_Alt_L) || Fl::event_key(FL_Alt_R)
+						)) {
+
+
+							Fl::release();
+							report_changes_made_to_screen();
+							return 1;
+
+						}
 					}
 					Fl::release();
 				//}
@@ -2119,7 +2127,7 @@ public:
 		
 		
 	int handle(int state) {
-
+		if (debug_handlers) cout << "w";
 
 		switch(state){ 
 			case FL_FOCUS:
@@ -2139,6 +2147,7 @@ public:
 							Fl::event_key(FL_Alt_L) || Fl::event_key(FL_Alt_R)
 						)) {
 							worm_learner.death_time_solo_annotater.request_refresh();
+
 							return 1;
 						}
 					}
@@ -2284,6 +2293,8 @@ ns_lock redraw_rate_limiting_lock("overdisplay");
 bool redrawing_rate_limiter = false;
 
 void perform_screen_redraw_callback(void * a) {
+
+	if (debug_handlers) cout << "D";
 	try {
 		Fl::lock();
 		ns_vector_2d cur_size(current_window->w(), current_window->h());
@@ -2312,20 +2323,33 @@ void perform_screen_redraw_callback(void * a) {
 	}
 }
 
-void request_window_redraw_from_main_thread() {
-	if (redrawing_rate_limiter) 
+void request_rate_limited_window_redraw_from_main_thread() {
+	if (redrawing_rate_limiter) {
+		if (debug_handlers) cout << "r";
 		return;
-	if (!redraw_rate_limiting_lock.try_to_acquire(__FILE__, __LINE__)) 
+	}
+	if (!redraw_rate_limiting_lock.try_to_acquire(__FILE__, __LINE__)) {
+		if (debug_handlers) cout << "r";
 		return;
-	if (redrawing_rate_limiter) 
+	}
+	if (redrawing_rate_limiter) {
+		if (debug_handlers) cout << "r";
 		return;
+	}
+	if (debug_handlers) cout << "R";
 	redrawing_rate_limiter = true;
 	redraw_rate_limiting_lock.release();
 	Fl::awake(perform_screen_redraw_callback, 0);
 }
 
+void demand_window_redraw_from_main_thread() {
+	Fl::awake(perform_screen_redraw_callback, 0);
+}
+
 void report_changes_made_to_screen() {
-	Fl::awake(idle_main_window_update_callback, 0);
+
+	if (debug_handlers) cout << "z";
+	Fl::awake(idle_main_window_update_callback,(void *) 1);
 }
 
 
@@ -2335,7 +2359,8 @@ ns_64_bit throttle_spf = 1000 / IDLE_THROTTLE_FPS;
 
 ns_lock idle_rate_limiting_lock("overidle");
 bool idle_rate_limiter = false;
-void idle_main_window_update_callback(void *) {
+void idle_main_window_update_callback(void * force_redraw) {
+	if (debug_handlers) cout << "i";
 	{
 	
 		bool schedule_timer(false);
@@ -2377,7 +2402,9 @@ void idle_main_window_update_callback(void *) {
 
 			ns_handle_menu_bar_activity_request();
 			if (worm_learner.current_annotater->refresh_requested()) {
+				if (debug_handlers) cout << "A";
 				worm_learner.current_annotater->display_current_frame();
+				worm_learner.main_window.redraw_requested = true;
 			}
 
 
@@ -2415,8 +2442,10 @@ void idle_main_window_update_callback(void *) {
 				hide_worm_window = false;
 				worm_window->hide();
 			}
-
-			request_window_redraw_from_main_thread();
+			if (force_redraw)
+				demand_window_redraw_from_main_thread();
+			else
+				request_rate_limited_window_redraw_from_main_thread();
 		
 			Fl::unlock();
 		}

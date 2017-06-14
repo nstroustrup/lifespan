@@ -965,12 +965,12 @@ int main(int argc, char ** argv){
 						sql.attach(ns_connect_to_available_sql_server());
 
 					if (sql().connected_to_central_database()) {
-						image_server.alert_handler.initialize(*static_cast<ns_sql *>(&sql()));
+					  image_server.alert_handler.initialize(image_server.mail_from_address(),*static_cast<ns_sql *>(&sql()));
 						std::string text("The image server node ");
 						text += image_server.host_name_out() + " restarted after a fatal error at ";
 						text += ns_format_time_string_for_human(ns_current_time());
 						ns_acquire_for_scope<ns_sql> sql(image_server.new_sql_connection(__FILE__, __LINE__));
-						image_server.alert_handler.initialize(sql());
+						image_server.alert_handler.initialize(image_server.mail_from_address(),sql());
 
 						ns_alert alert(text,
 							text,

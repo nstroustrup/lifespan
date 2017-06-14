@@ -96,10 +96,10 @@ void ns_alert_handler::email_alert(const string & text, vector<string> & recips,
 		return;
 	}
 	recipient_lock.release();
-	string subject("Fontanalab Image Server Alert!");
+	string subject("Lifespan Machine Alert");
 	#ifdef _WIN32 
 	
-	string out = "From: <stroustr@fas.harvard.edu>\n";
+	string out = "From: " + from_field + "\n";
 
 	for (unsigned int i = 0; i < recips.size(); i++)
 		out+="To: " + recips[i] + "\n";
@@ -387,7 +387,9 @@ ns_alert::ns_notification_type ns_notification_type_from_string(const std::strin
 	throw ns_ex("ns_notification_type_from_string()::Unknown notification type: ") << s;
 }
 
-void ns_alert_handler::initialize(ns_sql & sql){
+void ns_alert_handler::initialize(const std::string & from_field_,ns_sql & sql){
+	from_field = from_field_;
+
 	sql << "SELECT v,k FROM constants WHERE "
 			"k='alert_recipient' OR "
 			"k='alert_recipient_low_urgency' OR "

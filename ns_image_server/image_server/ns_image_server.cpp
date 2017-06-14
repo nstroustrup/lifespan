@@ -1721,7 +1721,7 @@ ns_thread_return_type alert_handler_start(void * a){
 	try{
 		ns_alert_handler * alert_handler(static_cast<ns_alert_handler*>(a));
 		ns_acquire_for_scope<ns_sql> sql(image_server.new_sql_connection(__FILE__,__LINE__,0));
-		alert_handler->initialize(sql());
+		alert_handler->initialize(image_server.mail_from_address(),sql());
 		alert_handler->submit_buffered_alerts(sql());
 		if (alert_handler->can_send_alerts())
 			alert_handler->handle_alerts(sql());
@@ -2014,6 +2014,7 @@ void ns_image_server::load_constants(const ns_image_server::ns_image_server_exec
 	constants.add_field("verbose_debug_output","false","If this option is set to true, the image server and worm browser will generate detailed debug information while running various steps of image acquisition and image processing.  An file containing this output will be written to the volatile_storage directory.");
 	constants.add_field("dispatcher_refresh_interval","6000","How often should image acquisition servers check for pending scans?  (in milliseconds).  Also specifies how often analysis servers will check for new jobs.");
 	constants.add_field("mail_path", "/bin/mail","Each copy of the image server running on the cluster occasionally checks for errors occurring in other nodes, for example missed scans or low disk space.  If problems are discovered, the image server can send users an email notifying them of the problem.  To activate this feature, set mail_path to the POSIX mail program on the local system.");
+	constants.add_field("mail_from", "Local User <user@localhost>", "The 'from' field to provide the mailer daemon when sending emails.");
 	constants.add_field("ethernet_interface","","This field should be left blank if you want the server to access the network through the default network interface.  If you have multiple network interfaces and want to use a specific one, specify it here.");
 	constants.add_field("dispatcher_port","1043","Image acquisition and image processing servers open a TCP/IP port on the local machine through which control commands can be sent.  dispatcher_port determines the specific port on which the dispatcher should listen for remote requests.");
 	constants.add_field("server_crash_daemon_port","1042",": To provide some protection against server crashes, an image acquisition server running under linux launches a persistent second thread that checks whether the image acquisition server has crashed.  In the event of a crash, the crash_daemon launches a new instance of the image acquisition server.  Often, the crashed copy retains a lock its TCP/IP port, requiring that the crash daemon use a second port instead, specified here.");
@@ -2179,6 +2180,10 @@ void ns_image_server::load_constants(const ns_image_server::ns_image_server_exec
 		_video_compiler_filename = constants["video_compiler_filename"];
 		_video_ppt_compiler_filename = constants["video_ppt_compiler_filename"];
 		_latest_release_path = constants["latest_release_path"];
+
+		_mail_from = constants["mail_from"];
+
+
 	//	_local_exec_path = constants["local_exec_path"];
 		std::string specified_simulated_device_name(constants["simulated_device_name"]);
 		if (specified_simulated_device_name == "" || specified_simulated_device_name== ".")

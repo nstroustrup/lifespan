@@ -707,7 +707,7 @@ void ns_training_file_generator::generate_from_curated_set(const std::string & d
 	std::string output_filename = analysis_dir + DIR_CHAR_STR + "training_set_matlab.m";
 	ofstream output_matlab(output_filename.c_str());
 	output_matlab << "%ns_image_server feature sets\n";
-	output_matlab << "%Nicholas Stroustrup, 2007\n\n";
+	output_matlab << "%Nicholas Stroustrup, 2017\n\n";
 	for (unsigned int s = 0; s < (unsigned int) ns_stat_number_of_stats; s++){
 		unsigned int nl = 0;
 		output_matlab << ns_classifier_abbreviation((ns_detected_worm_classifier)s) << "_false = [";

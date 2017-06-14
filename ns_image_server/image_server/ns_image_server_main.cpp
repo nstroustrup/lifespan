@@ -151,7 +151,7 @@ void set_hostname_on_menu(const string & hostname){
 void ns_shutdown_dispatcher(){
 	cerr << "Attempting elegant shutdown...\n";
 	#ifdef _WIN32 
-			ModifyMenu(toolbar_menu,ID_CONTEXTMENU_FONTANAIMAGESERVER,MF_BYCOMMAND,MF_STRING | MF_DISABLED,"Shutting down...");
+			ModifyMenu(toolbar_menu,ID_CONTEXTMENU_IMAGESERVER,MF_BYCOMMAND,MF_STRING | MF_DISABLED,"Shutting down...");
 			ModifyMenu(toolbar_menu,ID_CONTEXTMENU_STROUSTR,MF_BYCOMMAND,MF_STRING | MF_GRAYED,"Updating database, please be patient.");
 	#endif
 	image_server.shut_down_host();
@@ -302,7 +302,7 @@ void handle_icons(HINSTANCE hInstance, HWND current_window){
 	notify_icon_info.uID = 100 ;
 	notify_icon_info.uFlags = NIF_MESSAGE | NIF_ICON | NIF_TIP ;	
 	notify_icon_info.uCallbackMessage = WM_USER + 1;  
-	strcpy ( notify_icon_info.szTip, "Fontana Imaging Server");
+	strcpy ( notify_icon_info.szTip, "Lifespan Machine Server");
  
 	// save the pointer to the icon list and set the initial
 	// default icon.
@@ -927,8 +927,8 @@ int main(int argc, char ** argv){
 			+ "                ==\n";
 		splash += " ==                                    ==\n";
 		splash += " ==        Nicholas Stroustrup         ==\n";
-		splash += " == Center for Genomic Regulation 2017 ==\n";
-		splash += " ==              BCN                   ==\n";
+		splash += " ==    Center for Genomic Regulation   ==\n";
+		splash += " ==             BCN 2017               ==\n";
 		splash += " ========================================\n";
 		std::cout << splash;
 
@@ -1016,7 +1016,7 @@ int main(int argc, char ** argv){
 			image_server.clear_performance_statistics(*static_cast<ns_sql *>(&sql()));
 			image_server.clear_old_server_events(*static_cast<ns_sql *>(&sql()));
 			image_server.load_quotes(quotes, *static_cast<ns_sql *>(&sql()));
-			image_server.alert_handler.initialize(*static_cast<ns_sql *>(&sql()));
+			image_server.alert_handler.initialize(image_server.mail_from_address(),*static_cast<ns_sql *>(&sql()));
 			image_server.alert_handler.reset_all_alert_time_limits(*static_cast<ns_sql *>(&sql()));
 			ns_death_time_annotation_flag::get_flags_from_db(*static_cast<ns_sql *>(&sql()));
 		}
@@ -1159,7 +1159,7 @@ int main(int argc, char ** argv){
 			text += image_server.host_name_out();
 			text += " has succesfully sent an email.";
 			ns_acquire_for_scope<ns_sql> sql(image_server.new_sql_connection(__FILE__, __LINE__));
-			image_server.alert_handler.initialize(sql());
+			image_server.alert_handler.initialize(image_server.mail_from_address(),sql());
 			image_server.alert_handler.submit_desperate_alert(text);
 			sql.release();
 			return 0;
@@ -1168,7 +1168,7 @@ int main(int argc, char ** argv){
 			std::string text("At ");
 			text += ns_format_time_string_for_human(ns_current_time()) + " a cluster node submitted a test alert.";
 			ns_acquire_for_scope<ns_sql> sql(image_server.new_sql_connection(__FILE__, __LINE__));
-			image_server.alert_handler.initialize(sql());
+			image_server.alert_handler.initialize(image_server.mail_from_address(),sql());
 			ns_alert alert(text,
 				text + "  If you are recieving this message, it has been handled successfully.",
 				ns_alert::ns_test_alert
@@ -1182,7 +1182,7 @@ int main(int argc, char ** argv){
 		}
 		case ns_test_rate_limited_alert: {
 			ns_acquire_for_scope<ns_sql> sql(image_server.new_sql_connection(__FILE__, __LINE__));
-			image_server.alert_handler.initialize(sql());
+			image_server.alert_handler.initialize(image_server.mail_from_address(),sql());
 			std::string text("At ");
 			text += ns_format_time_string_for_human(ns_current_time()) + " a cluster node submitted a rate limited test alert.";
 			ns_alert alert(text,
@@ -1202,7 +1202,7 @@ int main(int argc, char ** argv){
 			text += image_server.host_name_out() + " restarted after a fatal error at ";
 			text += ns_format_time_string_for_human(ns_current_time());
 			ns_acquire_for_scope<ns_sql> sql(image_server.new_sql_connection(__FILE__, __LINE__));
-			image_server.alert_handler.initialize(sql());
+			image_server.alert_handler.initialize(image_server.mail_from_address(),sql());
 
 			ns_alert alert(text,
 				text,

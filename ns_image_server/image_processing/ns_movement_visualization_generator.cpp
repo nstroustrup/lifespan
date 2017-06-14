@@ -474,7 +474,7 @@ void ns_movement_visualization_generator::create_scatter_proportion_graph_for_ca
 		worm_states_percent[i].hyperlinks.resize(r.size());
 	}
 	
-	std::string hyperlink = "http://fontanacluster.med.harvard.edu/image_server_web/ns_view_region_images.php?region_image_id=";
+	std::string hyperlink = "http://localhost/image_server_web/ns_view_region_images.php?region_image_id=";
 	total_worms.y.resize(r.size());
 	number_of_worms_involving_multiple_worm_disambiguation.y.resize(r.size());
 

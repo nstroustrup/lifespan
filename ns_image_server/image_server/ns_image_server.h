@@ -552,6 +552,7 @@ public:
 
 	void update_processing_status(const std::string & processing_state, const ns_64_bit processing_job_id, const ns_64_bit processing_job_queue_id,ns_sql & sql) const;
 	void clear_processing_status(ns_sql & sql) const;
+	const std::string & mail_from_address() const{return _mail_from;}
 private:
 	ns_64_bit _main_thread_id;
 	static void open_log_file(const ns_image_server::ns_image_server_exec_type & exec_type, ns_64_bit thread_id, const std::string & volatile_directory, const std::string & file_name, std::ofstream & out);
@@ -605,7 +606,8 @@ private:
 		_simulated_device_name,
 		_mail_path,
 		_ethernet_interface,
-		_cache_subdirectory;
+		_cache_subdirectory,
+		_mail_from;
 	bool _allow_multiple_processes_per_system;
 
 	unsigned long _maximum_memory_allocation_in_mb; 

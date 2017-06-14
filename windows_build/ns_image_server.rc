@@ -54,7 +54,7 @@ IDR_MENU1 MENU
 BEGIN
     POPUP "Context Menu"
     BEGIN
-        MENUITEM "Lifespan Machine Image Server 2017",   ID_CONTEXTMENU_FONTANAIMAGESERVER, INACTIVE
+        MENUITEM "Lifespan Machine Image Server 2017",   ID_CONTEXTMENU_IMAGESERVER, INACTIVE
         MENUITEM "Host Name",                   ID_CONTEXTMENU_HOSTNAME, INACTIVE
         MENUITEM SEPARATOR
         MENUITEM "Nicholas Stroustrup", ID_CONTEXTMENU_STROUSTR

@@ -116,7 +116,7 @@ bool ns_processing_job_scheduler::run_a_job(ns_processing_job & job,ns_sql & sql
 
 		ns_64_bit problem_id;
 		try {
-			processor().run_job(sql);
+			problem_id = processor().run_job(sql);
 		}
 		catch (ns_ex & e) {
 			ns_ex ex("Processing job did not handle its own exception: ");

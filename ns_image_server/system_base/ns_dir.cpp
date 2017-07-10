@@ -441,9 +441,16 @@ ns_split_string extract_base_directory(const string & a){
 		ret.second = a;
 		return ret;
 	}
+	
 	if (i == 0){  //image path starts at root
-	  string::size_type j = a.find_first_of(DIR_CHAR_STR,1);
-	  //	  cerr << j << "\n";
+		string::size_type j;
+		//identify remote paths like //mywindowsfileserver/
+		const bool windows_remote_path = (a.size() >= 2 && a[1] == DIR_CHAR);
+
+		if (windows_remote_path)
+			j = a.find_first_of(DIR_CHAR_STR, 2);
+		else j = a.find_first_of(DIR_CHAR_STR, 1);
+
 	  if(j==a.npos){
 	    ret.first = a;
 	    ret.second = "";

@@ -2030,7 +2030,7 @@ public:
 
 
 							Fl::release();
-							report_changes_made_to_screen();
+							demand_window_redraw_from_main_thread();
 							return 1;
 
 						}

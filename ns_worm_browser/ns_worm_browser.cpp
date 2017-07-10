@@ -1684,6 +1684,7 @@ void ns_worm_learner::output_movement_analysis_optimization_data(int software_ve
 	ns_acquire_for_scope<ns_sql> sql(image_server.new_sql_connection(__FILE__,__LINE__));
 	unsigned int experiment_id = data_selector.current_experiment_id();
 	std::vector<double> thresholds;
+	//old movement scores
 	if (software_version_number == 1) {
 		const double min_thresh(.0005);
 		const double max_thresh(.5);
@@ -1697,8 +1698,9 @@ void ns_worm_learner::output_movement_analysis_optimization_data(int software_ve
 		}
 	}
 	else {
-		const double min_thresh(.00005);
-		const double max_thresh(.05);
+		//new movement scores
+		const double min_thresh(.1);
+		const double max_thresh(200000);
 		const long number_of_thresholds(60);
 		const double log_dt(((log(max_thresh) - log(min_thresh)) / number_of_thresholds));
 		thresholds.resize(number_of_thresholds);

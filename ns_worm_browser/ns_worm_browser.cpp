@@ -2439,7 +2439,7 @@ ns_64_bit ns_worm_learner::create_experiment_from_directory_structure(const std:
 }
 
 
-void ns_worm_learner::rebuild_experiment_samples_from_disk(unsigned long experiment_id){
+void ns_worm_learner::rebuild_experiment_samples_from_disk(ns_64_bit experiment_id){
 	ns_acquire_for_scope<ns_sql> sql(image_server.new_sql_connection(__FILE__,__LINE__));
 
 	sql() << "SELECT name FROM experiments WHERE id = " << experiment_id;
@@ -2568,7 +2568,7 @@ void repair_missing_captured_images(const ns_64_bit experiment_id){
 }
 		
 
-void ns_worm_learner::rebuild_experiment_regions_from_disk(unsigned long experiment_id){
+void ns_worm_learner::rebuild_experiment_regions_from_disk(ns_64_bit experiment_id){
 	ns_acquire_for_scope<ns_sql> sql(image_server.new_sql_connection(__FILE__,__LINE__));
 
 	sql() << "SELECT name FROM experiments WHERE id = " << experiment_id;
@@ -5535,11 +5535,11 @@ bool ns_worm_learner::register_worm_window_key_press(int key, const bool shift_k
 																
 	else if (key == FL_Left || key== 'a'){
 		ns_worm_learner::navigate_solo_worm_annotation(ns_death_time_solo_posture_annotater::ns_back,true);
-		return true;
+		return false;
 	}
 	else if (key == FL_Right || key == 'd'){
 		ns_worm_learner::navigate_solo_worm_annotation(ns_death_time_solo_posture_annotater::ns_forward,true);
-		return true;
+		return false;
 	}
 	else if (key == 's' && control_key_held){
 		death_time_solo_annotater.register_click(ns_vector_2i(0,0),ns_death_time_solo_posture_annotater::ns_output_images);
@@ -6534,18 +6534,15 @@ void ns_experiment_storyboard_annotater::load_from_storyboard(const ns_region_me
 	lock.release();
 }
 
-bool ns_worm_learner::start_death_time_annotation(const ns_behavior_mode m,const ns_experiment_storyboard_spec::ns_storyboard_flavor & f){
+bool ns_worm_learner::start_death_time_annotation(const ns_behavior_mode m, const ns_experiment_storyboard_spec::ns_storyboard_flavor & f) {
 	if (m != ns_annotate_storyboard_experiment && !data_selector.region_selected()) throw ns_ex("No region selected");
 	//if (!current_annotater->data_saved())
 	//	save_death_time_annotations();
-	if (this->behavior_mode ==	ns_annotate_storyboard_region ||
-		this->behavior_mode == ns_annotate_storyboard_sample ||
-		this->behavior_mode == ns_annotate_storyboard_experiment){
-		current_annotater->stop_fast_movement();
-		current_annotater->clear();
-	}
+	//if (this->behavior_mode ==	ns_annotate_storyboard_region ||
+	//	this->behavior_mode == ns_annotate_storyboard_sample ||
+	//	this->behavior_mode == ns_annotate_storyboard_experiment){
+	
 	current_storyboard_flavor = f;
-	death_time_solo_annotater.clear_cache();
 	
 	area_handler.clear_boxes();
 	try{
@@ -6553,6 +6550,8 @@ bool ns_worm_learner::start_death_time_annotation(const ns_behavior_mode m,const
 			m == ns_worm_learner::ns_annotate_storyboard_sample || 
 			m == ns_worm_learner::ns_annotate_storyboard_experiment){
 				current_annotater = &storyboard_annotater;
+				storyboard_annotater.clear();
+
 				ns_experiment_storyboard_spec subject;
 				switch(m){
 					case ns_worm_learner::ns_annotate_storyboard_region:
@@ -6567,21 +6566,23 @@ bool ns_worm_learner::start_death_time_annotation(const ns_behavior_mode m,const
 				}
 				subject.event_to_mark = ns_image_server::movement_event_used_for_animal_storyboards();
 				subject.set_flavor(f);
-				ns_region_metadata m;
+				ns_region_metadata metadata;
 				if (data_selector.strain_selected())
-					m = data_selector.current_strain();
+					metadata = data_selector.current_strain();
 
 				ns_experiment_region_selector::ns_censor_masking c(data_selector.censor_masking());
 				ns_experiment_storyboard_annotater::ns_censor_masking c2;
 
 				c2 = (ns_experiment_storyboard_annotater::ns_censor_masking)((int)c);
-
-				storyboard_annotater.load_from_storyboard(m,c2,subject,this);
+				
+				storyboard_annotater.load_from_storyboard(metadata,c2,subject,this);
 				storyboard_annotater.display_current_frame();
-				//set_behavior_mode(m);
+				set_behavior_mode(m);
 		}
 		else{
 			current_annotater = &death_time_annotater;
+			death_time_annotater.clear();
+
 			unsigned long region_id = data_selector.current_region().region_id;
 			ns_update_information_bar(string("Annotating ") + data_selector.current_region().region_name);
 			ns_death_time_posture_annotater::ns_alignment_type type;

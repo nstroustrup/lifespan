@@ -741,6 +741,15 @@ public:
 		ns_update_information_bar(ns_to_string(set.events.size()) + " events saved at " + ns_format_time_string_for_human(ns_current_time()));
 		saved_=true;
 	};
+
+	void clear() {
+		clear_base();
+		orphaned_events.clear();
+		timepoints.clear();
+		timing_data.clear();
+		saved_ = false;
+
+	}
 	void load_region(const unsigned long region_info_id_,const ns_alignment_type alignment_type_,ns_worm_learner * worm_learner_){
 		stop_fast_movement();
 		clear();

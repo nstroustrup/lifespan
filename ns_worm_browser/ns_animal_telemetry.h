@@ -362,6 +362,20 @@ private:
 	}
 	ns_graph_contents last_graph_contents;
 public:
+	void clear() {
+		_show = false;
+		region_data = 0;
+		group_id = 0;
+		base_graph.clear();
+		graph.clear();
+		
+		movement_vals.clear();
+		smoothed_movement_vals.clear();
+		size_vals.clear();
+		slope_vals.clear();
+		time_axes.clear();
+		ns_posture_analysis_model posture_analysis_model;
+	}
 	unsigned long get_graph_time_from_graph_position(const float x) { //x is in relative time
 		ns_analyzed_image_time_path *path(&region_data->movement_analyzer.group(group_id).paths[0]);
 

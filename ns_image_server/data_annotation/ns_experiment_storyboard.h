@@ -162,6 +162,7 @@ public:
 		divisions.resize(0);
 		orphan_by_hand_annotations.clear();
 		region_annotation_file_cache.clear();
+		worm_detection_id_lookup.clear();
 	};
 
 	const ns_experiment_storyboard_spec & subject() const{

@@ -8,12 +8,12 @@
 #include "ns_death_time_posture_annotater.h"
 #include "ns_hidden_markov_model_posture_analyzer.h"
 #include <functional> 
-#include "ns_subpixel_image_alignment.h";
+#include "ns_subpixel_image_alignment.h"
 #include "ns_fl_modal_dialogs.h"
 #include "ns_animal_telemetry.h"
 void ns_hide_worm_window();
 
-void ns_specifiy_worm_details(const unsigned long region_info_id,const ns_stationary_path_id & worm, const ns_death_time_annotation & sticky_properties, std::vector<ns_death_time_annotation> & event_times);
+void ns_specify_worm_details(const ns_64_bit region_info_id,const ns_stationary_path_id & worm, const ns_death_time_annotation & sticky_properties, std::vector<ns_death_time_annotation> & event_times);
 
 class ns_death_time_solo_posture_annotater_timepoint : public ns_annotater_timepoint{
 public:
@@ -561,13 +561,6 @@ public:
 	ns_animal_telemetry::ns_graph_contents graph_contents;
 	typedef enum {ns_none,ns_forward, ns_back, ns_fast_forward, ns_fast_back,ns_stop,ns_save,ns_rewind_to_zero,ns_write_quantification_to_disk, ns_step_visualization, ns_step_graph,ns_number_of_annotater_actions} ns_image_series_annotater_action;
 
-	void clear_cache(){
-		close_worm();
-		data_cache.clear();
-		current_region_data = 0;
-		properties_for_all_animals = ns_death_time_annotation();
-	}
-
 	inline ns_annotater_timepoint * timepoint(const unsigned long i){return &timepoints[i];}
 	inline unsigned long number_of_timepoints(){return timepoints.size();}
 	
@@ -878,6 +871,19 @@ public:
 			throw;
 		}
 	}
+
+	void clear() {
+		clear_base();
+		saved_ = false;
+		timepoints.resize(0);
+		telemetry.clear();
+		data_cache.clear();
+		close_worm();
+		data_cache.clear();
+		current_region_data = 0;
+		properties_for_all_animals = ns_death_time_annotation();
+	}
+
 	static void step_error_label(ns_death_time_annotation &  sticky_properties){
 		//first clear errors where event is both excluded and a flag specified
 		if (sticky_properties.is_excluded() && sticky_properties.flag.specified()){
@@ -987,7 +993,7 @@ public:
 			current_by_hand_timing_data().animals[i].generate_event_timing_data(click_event_cache);
 			current_by_hand_timing_data().animals[i].specified = true;
 		}
-		ns_specifiy_worm_details(properties_for_all_animals.region_info_id,properties_for_all_animals.stationary_path_id,properties_for_all_animals,click_event_cache);
+		ns_specify_worm_details(properties_for_all_animals.region_info_id,properties_for_all_animals.stationary_path_id,properties_for_all_animals,click_event_cache);
 	}
 		
 	ns_alignment_type alignment_type;

@@ -13,7 +13,7 @@ void ns_fill_bottom_flat_triangle(const ns_vector_2i & t1, const ns_vector_2i & 
 void ns_fill_top_flat_triangle(const ns_vector_2i & t1, const ns_vector_2i & t2, const ns_vector_2i & b3,const ns_color_8 &c,const double & opacity,ns_image_standard & im);
 
 
-void ns_launch_worm_window_for_worm(const unsigned long region_id, const ns_stationary_path_id & worm, const unsigned long current_time);
+void ns_launch_worm_window_for_worm(const ns_64_bit region_id, const ns_stationary_path_id & worm, const unsigned long current_time);
 
 class ns_experiment_storyboard_annotater;
 class ns_experiment_storyboard_annotater_timepoint : public ns_annotater_timepoint{
@@ -77,6 +77,8 @@ public:
 	typedef enum {ns_show_all,ns_hide_censored,ns_hide_uncensored} ns_censor_masking;
 	const ns_experiment_storyboard & get_storyboard(){return storyboard;}
 	bool draw_group_ids;
+
+
 private:
 	friend class ns_experiment_storyboard_annotater_timepoint;
 	inline ns_annotater_timepoint * timepoint(const unsigned long i){
@@ -98,6 +100,7 @@ private:
 		im.draw_line_color_thick(p+s,p+ns_vector_2i(0,s.y),c,thickness);
 	}
 	
+
 	
 	void draw_metadata(ns_annotater_timepoint * tp_a,ns_image_standard & im){
 //		return;
@@ -496,5 +499,15 @@ public:
 	void register_click(const ns_vector_2i & image_position, const ns_click_request & action);
 
 	void display_current_frame();
+
+	void clear() {
+		clear_base();
+		saved_ = false;
+		divisions.resize(0);
+		storyboard.clear();
+		strain_to_display.clear();
+		display_events_from_region.clear();
+		excluded_regions.clear();
+	}
 };
 #endif

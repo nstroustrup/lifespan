@@ -64,6 +64,7 @@ struct ns_graph_properties{
 ///Vertical lines are drawn as a vertical line positioned at x=x[0].
 ///Stars are drawn as an asterisk at position (x[0],y[0])
 struct ns_graph_object{
+	void clear() { y.clear(); x.clear(); data_label.clear(); x_label.clear(); y_label.clear(); hyperlinks.clear();}
 	typedef enum{ ns_graph_none, ns_graph_independant_variable, ns_graph_dependant_variable, ns_graph_vertical_line, ns_graph_star,ns_graph_horizontal_line} ns_graph_object_type;
 
 	ns_graph_object(const ns_graph_object_type & _type):type(_type){}

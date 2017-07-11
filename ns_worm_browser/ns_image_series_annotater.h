@@ -168,7 +168,11 @@ public:
 	~ns_image_series_annotater(){sql.release();}
 	const unsigned long image_bottom_border_size;
 
-	void clear(){
+	virtual void clear() {}
+
+	void clear_base(){
+
+		image_buffer_access_lock.wait_to_acquire(__FILE__, __LINE__);
 		for (unsigned int i = 0; i < previous_images.size(); i++){
 			ns_safe_delete(previous_images[i].im);
 			previous_images[i].loaded = false;
@@ -181,10 +185,11 @@ public:
 		next_images.resize(0);
 		ns_safe_delete(current_image.im);
 		current_image.loaded = false;
+		image_buffer_access_lock.release();
 	}
 	virtual void save_annotations(const ns_death_time_annotation_set & extra_annotations)const=0 ;
 	bool step_forward(ns_handle_error_handler error_handler,bool asynch=false){
-		image_buffer_access_lock.try_to_acquire(__FILE__, __LINE__);
+		image_buffer_access_lock.wait_to_acquire(__FILE__, __LINE__);
 		try{
 			if (sql.is_null())
 				sql.attach(image_server.new_sql_connection(__FILE__,__LINE__));

@@ -1909,6 +1909,7 @@ bool ns_experiment_storyboard::read_metadata(std::istream & in,ns_sql & sql){
 				p->second.metadata.load_from_db(p->first,"",sql);
 		
 	}
+
 	bool loaded = load_events_from_annotation_compiler(ns_loading_from_storyboard_file,all_events,subject_specification.use_absolute_time,true,subject_specification.minimum_distance_to_juxtipose_neighbors,sql);
 	if (number_of_sub_images() != worm_images_size_in_record) {
 		throw ns_ex("The events contained in the storyboard file (") << number_of_sub_images() << ") did not render into the expected number of sub images, specified in the metatadata stored on disk (" << worm_images_size_in_record << ")";

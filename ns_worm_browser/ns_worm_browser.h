@@ -682,8 +682,8 @@ public:
 	void test_image_metatadata();
 	
 	ns_64_bit create_experiment_from_directory_structure(const std::string & directory_name,const bool process_masks_locally);
-	void rebuild_experiment_samples_from_disk(unsigned long experiment_id);
-	void rebuild_experiment_regions_from_disk(unsigned long experiment_id);
+	void rebuild_experiment_samples_from_disk(ns_64_bit experiment_id);
+	void rebuild_experiment_regions_from_disk(ns_64_bit experiment_id);
 
 
 	//machine learning

@@ -1769,6 +1769,7 @@ public:
 };
 			
 
+void demand_window_redraw_from_main_thread();
 // APP WINDOW CLASS
 class ns_dialog_window : public Fl_Window {
 public:
@@ -2074,7 +2075,7 @@ public:
         // OpenGL window
 		begin();
 		
-		ns_vector_2i size(worm_learner.worm_window.gl_image_size.x, worm_learner.worm_window.gl_image_size.y + ns_death_event_solo_annotation_group::button_height);
+		ns_vector_2i size(worm_learner.worm_window.gl_image_size.x, worm_learner.worm_window.gl_image_size.y + image_window_size_difference().y);
 		if (size.x < ns_death_event_solo_annotation_group::all_buttons_width)
 			size.x = ns_death_event_solo_annotation_group::all_buttons_width;
 
@@ -2106,8 +2107,10 @@ public:
 		if (!SCALE_FONTS_WITH_WINDOW_SIZE)
 			menu_d = 1;
 		float d(worm_learner.worm_window.display_rescale_factor);
-		Fl_Window::resize(x,y,w_*d+image_window_size_difference().x*menu_d,h_*d+image_window_size_difference().y*menu_d);
 
+		cout << y << "," << h_*d + image_window_size_difference().y*menu_d << "\n";
+
+		Fl_Window::resize(x,y,w_*d+image_window_size_difference().x*menu_d,h_*d+image_window_size_difference().y*menu_d);
 
 		gl_window->resize(0,0,w_*d,h_*d);
 		//xxxx
@@ -2160,7 +2163,7 @@ public:
 };
 
 
-void ns_specifiy_worm_details(const unsigned long region_id,const ns_stationary_path_id & worm, const ns_death_time_annotation & sticky_properties, std::vector<ns_death_time_annotation> & event_times){
+void ns_specify_worm_details(const ns_64_bit region_id,const ns_stationary_path_id & worm, const ns_death_time_annotation & sticky_properties, std::vector<ns_death_time_annotation> & event_times){
 	worm_learner.storyboard_annotater.specifiy_worm_details(region_id,worm,sticky_properties,event_times);
 	worm_learner.storyboard_annotater.redraw_current_metadata();
 	worm_learner.storyboard_annotater.request_refresh();
@@ -2481,10 +2484,7 @@ void idle_worm_window_update_callback(void * force_redraw){
 			something_done = true;
 			//xxxx
 		}
-		if (worm_learner.death_time_solo_annotater.refresh_requested()){
-			worm_learner.death_time_solo_annotater.display_current_frame();
-			something_done = true;
-		}
+		
 		ns_image_series_annotater::ns_image_series_annotater_action a(worm_learner.death_time_solo_annotater.fast_movement_requested());
 		if (a == ns_image_series_annotater::ns_fast_forward){
 			worm_learner.death_time_solo_annotater.step_forward(ns_hide_worm_window);
@@ -2496,6 +2496,10 @@ void idle_worm_window_update_callback(void * force_redraw){
 			worm_learner.death_time_solo_annotater.display_current_frame();
 			something_done = true;
 		}
+		else if (worm_learner.death_time_solo_annotater.refresh_requested()) {
+				worm_learner.death_time_solo_annotater.display_current_frame();
+				something_done = true;
+			}
 		Fl::unlock();
 
 		if (force_redraw)
@@ -2790,7 +2794,7 @@ int main() {
 //ns_sql * worm_window_sql = 0;
 struct ns_asynch_worm_launcher{
 
-	unsigned long region_id;
+	ns_64_bit region_id;
 	ns_stationary_path_id worm;
 	const ns_experiment_storyboard * storyboard;
 	unsigned long current_time;
@@ -2829,13 +2833,14 @@ struct ns_asynch_worm_launcher{
 };
 
 
-void ns_launch_worm_window_for_worm(const unsigned long region_id, const ns_stationary_path_id & worm, const unsigned long current_time){
+void ns_launch_worm_window_for_worm(const ns_64_bit region_id, const ns_stationary_path_id & worm, const unsigned long current_time){
 	
 	ns_set_menu_bar_activity(false);
 	ns_asynch_worm_launcher * launcher(new ns_asynch_worm_launcher);
 	launcher->region_id = region_id;
 	launcher->worm = worm;
 	launcher->current_time = current_time;
+	//worm_learner.storyboard_annotater.clear();
 	launcher->storyboard = &worm_learner.storyboard_annotater.get_storyboard();
 	ns_thread worm_launcher(ns_asynch_worm_launcher::run_asynch,launcher);
 	worm_launcher.detach();

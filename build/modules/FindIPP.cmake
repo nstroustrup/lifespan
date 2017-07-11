@@ -239,11 +239,7 @@ if(DEFINED ENV{OPENCV_IPP_PATH} AND NOT DEFINED IPPROOT)
 endif()
 
 if(NOT DEFINED IPPROOT)
-  include("${OpenCV_SOURCE_DIR}/3rdparty/ippicv/ippicv.cmake")
-  download_ippicv(IPPROOT)
-  if(NOT IPPROOT)
-    return()
-  endif()
+  _ipp_not_supported("Intel Performance Primitives are required, but not installed")
 endif()
 
 file(TO_CMAKE_PATH "${IPPROOT}" __IPPROOT)

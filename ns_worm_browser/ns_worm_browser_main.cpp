@@ -19,6 +19,7 @@ bool output_debug_file_opened = false;
 std::ofstream debug_output;
 
 void refresh_main_window_internal(void *);
+void refresh_worm_window_internal(void *);
 bool debug_handlers = false;
 
 void ns_worm_browser_output_debug(const unsigned long line_number,const std::string & source, const std::string & message){
@@ -243,8 +244,7 @@ public:
 	//		cerr << W << "x" << H << " from " << w() << "x" << h() << "\n";
        		fix_viewport(X,Y,W,H);
 		}
-	//	report_changes_made_to_screen();
-        redraw();
+   //     redraw();
     }
 
     // OPENGL WINDOW CONSTRUCTOR
@@ -306,13 +306,11 @@ class ns_worm_gl_window : public Fl_Gl_Window {
 		case FL_FOCUS: {
 			have_focus = true;
 			int a = Fl_Gl_Window::handle(state);
-		//	idle_worm_window_update_callback(0);
 			return a;
 		}
 			case FL_UNFOCUS: {
 				have_focus = false;
 				int a = Fl_Gl_Window::handle(state);
-		//		idle_worm_window_update_callback(0);
 				return a;
 			}
 	/*		case FL_DND_ENTER:
@@ -345,21 +343,21 @@ class ns_worm_gl_window : public Fl_Gl_Window {
 						mouse_click_location = press.screen_position;
 						mouse_is_down = true;
 						worm_learner.touch_worm_window_pixel(press);		
-						idle_worm_window_update_callback(0);
+						report_changes_made_to_screen();
 						return 1;
 					}
 					case FL_RELEASE:{
 						press.click_type = ns_button_press::ns_up;
 						mouse_is_down = false;
 						worm_learner.touch_worm_window_pixel(press);
-						idle_worm_window_update_callback(0);
+						report_changes_made_to_screen();
 						return 1;
 					}
 					case FL_DRAG:{
 						press.click_type = ns_button_press::ns_drag;
 						if (mouse_is_down && (abs(mouse_click_location.x-press.screen_position.x) > 4 || abs(mouse_click_location.y - press.screen_position.y) > 4))
 								worm_learner.touch_worm_window_pixel(press);
-						idle_worm_window_update_callback(0);
+						report_changes_made_to_screen();
 						return 1;
 					} 
 
@@ -373,7 +371,6 @@ class ns_worm_gl_window : public Fl_Gl_Window {
 		}
 		//cerr << "Could not handle " << state << "\n";
 		int a = Fl_Gl_Window::handle(state);
-		idle_worm_window_update_callback(0);
 		return a;
 	}
 	
@@ -385,7 +382,6 @@ public:
 			cerr << W << "x" << H << " from " << w() << "x" << h() << "\n";
        		fix_viewport(W,H);
 		}
-		idle_worm_window_update_callback(0);
         redraw();
     }
 
@@ -2146,7 +2142,7 @@ public:
 							Fl::event_key(FL_Control_L) || Fl::event_key(FL_Control_R),
 							Fl::event_key(FL_Alt_L) || Fl::event_key(FL_Alt_R)
 						)) {
-							worm_learner.death_time_solo_annotater.request_refresh();
+							report_changes_made_to_screen();
 
 							return 1;
 						}
@@ -2281,10 +2277,10 @@ void ns_show_worm_display_error(){
 }
 
 void schedule_repeating_callback(void *a ) {
-	if (0 == 0)
-		Fl::add_timeout(1.0 / IDLE_THROTTLE_FPS, idle_main_window_update_callback);
+	if (a == 0)
+		Fl::add_timeout(1.0 / IDLE_THROTTLE_FPS, idle_main_window_update_callback,0);
 	else
-		Fl::repeat_timeout(1.0 / IDLE_THROTTLE_FPS, idle_main_window_update_callback);
+		Fl::repeat_timeout(1.0 / IDLE_THROTTLE_FPS, idle_main_window_update_callback,0);
 }
 void ns_handle_menu_bar_activity_request();
 
@@ -2347,18 +2343,18 @@ void demand_window_redraw_from_main_thread() {
 }
 
 void report_changes_made_to_screen() {
-
 	if (debug_handlers) cout << "z";
+	//this will also call idle_window_update_callbacl
 	Fl::awake(idle_main_window_update_callback,(void *) 1);
+
 }
 
 
 ns_64_bit last_callback_time(0);
-ns_lock idle_launch_lock("tst");
-ns_64_bit throttle_spf = 1000 / IDLE_THROTTLE_FPS;
+//ns_64_bit throttle_spf = 1000 / IDLE_THROTTLE_FPS;
 
-ns_lock idle_rate_limiting_lock("overidle");
-bool idle_rate_limiter = false;
+//ns_lock idle_rate_limiting_lock("overidle");
+//bool idle_rate_limiter = false;
 void idle_main_window_update_callback(void * force_redraw) {
 	if (debug_handlers) cout << "i";
 	{
@@ -2380,22 +2376,23 @@ void idle_main_window_update_callback(void * force_redraw) {
 		}
 	}
 
-	if (idle_rate_limiter)
-		return;
+	//if (idle_rate_limiter)
+	//	return;
 
-	ns_try_to_acquire_lock_for_scope  idle_lock(idle_rate_limiting_lock);
+	/*ns_try_to_acquire_lock_for_scope  idle_lock(idle_rate_limiting_lock);
 
 	if (!idle_lock.try_to_get(__FILE__, __LINE__)) return;
 	if (idle_rate_limiter) return;
 	idle_rate_limiter = true;
-	idle_lock.release();
+	idle_lock.release();*/
 	try {
 
 		ns_64_bit last_time = last_callback_time;
 		last_callback_time = GetTime();
 		ns_64_bit last_interval = last_callback_time - last_time;
 
-	//	cerr << "SPF = " << last_interval << "\n";
+		//allways call both functions together
+		idle_worm_window_update_callback(force_redraw);
 
 		Fl::lock();
 		try {
@@ -2452,10 +2449,10 @@ void idle_main_window_update_callback(void * force_redraw) {
 		catch (...) {
 			Fl::unlock();
 		}
-		idle_rate_limiter = false;
+		//idle_rate_limiter = false;
 	}
 	catch (...) {
-		idle_rate_limiter = false;
+		//idle_rate_limiter = false;
 		throw;
 	}
 }
@@ -2463,7 +2460,7 @@ void ns_hide_worm_window(){
 	hide_worm_window = true;
 }
 
-void idle_worm_window_update_callback(void *){
+void idle_worm_window_update_callback(void * force_redraw){
 	//double last_time = c_time;
 	//c_time =  GetTime() - init_time;
 	//cerr << "FPS = " << 1.0/(time-last_time) << "\n";
@@ -2478,32 +2475,38 @@ void idle_worm_window_update_callback(void *){
 		/*worm_learner.worm_window.image_size = worm_learner.worm_window.image_size;
 		worm_learner.worm_window.image_size.x+=ns_worm_terminal_worm_window::border_width();
 		worm_learner.worm_window.image_size.y+=ns_worm_terminal_worm_window::info_bar_height();*/
+		bool something_done(false);
 		if ( abs((int)(worm_learner.worm_window.gl_image_size.x - cur_size.x)) > 0 && abs((int)(worm_learner.worm_window.gl_image_size.y - cur_size.y)) > 0){
 			worm_window->size(worm_learner.worm_window.gl_image_size.x, worm_learner.worm_window.gl_image_size.y);
+			something_done = true;
 			//xxxx
 		}
 		if (worm_learner.death_time_solo_annotater.refresh_requested()){
 			worm_learner.death_time_solo_annotater.display_current_frame();
-		}
-		if (worm_learner.worm_window.redraw_requested){
-			report_changes_made_to_screen();
+			something_done = true;
 		}
 		ns_image_series_annotater::ns_image_series_annotater_action a(worm_learner.death_time_solo_annotater.fast_movement_requested());
 		if (a == ns_image_series_annotater::ns_fast_forward){
 			worm_learner.death_time_solo_annotater.step_forward(ns_hide_worm_window);
 			worm_learner.death_time_solo_annotater.display_current_frame();
+			something_done = true;
 		}
 		else if (a==ns_image_series_annotater::ns_fast_back){
 			worm_learner.death_time_solo_annotater.step_back(ns_hide_worm_window);
 			worm_learner.death_time_solo_annotater.display_current_frame();
+			something_done = true;
 		}
 		Fl::unlock();
+
+		if (force_redraw)
+			demand_window_redraw_from_main_thread();
+		if (something_done){
+			request_rate_limited_window_redraw_from_main_thread();
+		}
 	}
 	catch(...){
 		Fl::unlock();
 	}
-	//if (!hide_worm_window)
-	//	Fl::repeat_timeout(1/20., idle_worm_window_update_callback);
 }
 
 

@@ -1,8 +1,8 @@
-# Install script for directory: /users/nstroustrup/nstroustrup/projects/lifespan/external_compile_libraries/openjpeg-2.1.2/thirdparty
+# Install script for directory: /home/image_server/lifespan/external_compile_libraries/openjpeg-2.1.2/thirdparty
 
 # Set the install prefix
 IF(NOT DEFINED CMAKE_INSTALL_PREFIX)
-  SET(CMAKE_INSTALL_PREFIX "/users/nstroustrup/nstroustrup/libs")
+  SET(CMAKE_INSTALL_PREFIX "/usr/local")
 ENDIF(NOT DEFINED CMAKE_INSTALL_PREFIX)
 STRING(REGEX REPLACE "/$" "" CMAKE_INSTALL_PREFIX "${CMAKE_INSTALL_PREFIX}")
 
@@ -31,13 +31,4 @@ ENDIF(NOT CMAKE_INSTALL_COMPONENT)
 IF(NOT DEFINED CMAKE_INSTALL_SO_NO_EXE)
   SET(CMAKE_INSTALL_SO_NO_EXE "0")
 ENDIF(NOT DEFINED CMAKE_INSTALL_SO_NO_EXE)
-
-IF(NOT CMAKE_INSTALL_LOCAL_ONLY)
-  # Include the install script for each subdirectory.
-  INCLUDE("/users/nstroustrup/nstroustrup/projects/lifespan/external_compile_libraries/openjpeg-2.1.2/thirdparty/libz/cmake_install.cmake")
-  INCLUDE("/users/nstroustrup/nstroustrup/projects/lifespan/external_compile_libraries/openjpeg-2.1.2/thirdparty/libpng/cmake_install.cmake")
-  INCLUDE("/users/nstroustrup/nstroustrup/projects/lifespan/external_compile_libraries/openjpeg-2.1.2/thirdparty/libtiff/cmake_install.cmake")
-  INCLUDE("/users/nstroustrup/nstroustrup/projects/lifespan/external_compile_libraries/openjpeg-2.1.2/thirdparty/liblcms2/cmake_install.cmake")
-
-ENDIF(NOT CMAKE_INSTALL_LOCAL_ONLY)
 

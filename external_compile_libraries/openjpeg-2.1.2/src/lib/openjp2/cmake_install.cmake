@@ -1,8 +1,8 @@
-# Install script for directory: /users/nstroustrup/nstroustrup/projects/lifespan/external_compile_libraries/openjpeg-2.1.2/src/lib/openjp2
+# Install script for directory: /home/image_server/lifespan/external_compile_libraries/openjpeg-2.1.2/src/lib/openjp2
 
 # Set the install prefix
 IF(NOT DEFINED CMAKE_INSTALL_PREFIX)
-  SET(CMAKE_INSTALL_PREFIX "/users/nstroustrup/nstroustrup/libs")
+  SET(CMAKE_INSTALL_PREFIX "/usr/local")
 ENDIF(NOT DEFINED CMAKE_INSTALL_PREFIX)
 STRING(REGEX REPLACE "/$" "" CMAKE_INSTALL_PREFIX "${CMAKE_INSTALL_PREFIX}")
 
@@ -33,7 +33,7 @@ IF(NOT DEFINED CMAKE_INSTALL_SO_NO_EXE)
 ENDIF(NOT DEFINED CMAKE_INSTALL_SO_NO_EXE)
 
 IF(NOT CMAKE_INSTALL_COMPONENT OR "${CMAKE_INSTALL_COMPONENT}" STREQUAL "Headers")
-  FILE(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/include/openjpeg-2.1" TYPE FILE FILES "/users/nstroustrup/nstroustrup/projects/lifespan/external_compile_libraries/openjpeg-2.1.2/src/lib/openjp2/opj_config.h")
+  FILE(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/include/openjpeg-2.1" TYPE FILE FILES "/home/image_server/lifespan/external_compile_libraries/openjpeg-2.1.2/src/lib/openjp2/opj_config.h")
 ENDIF(NOT CMAKE_INSTALL_COMPONENT OR "${CMAKE_INSTALL_COMPONENT}" STREQUAL "Headers")
 
 IF(NOT CMAKE_INSTALL_COMPONENT OR "${CMAKE_INSTALL_COMPONENT}" STREQUAL "Libraries")
@@ -50,9 +50,9 @@ IF(NOT CMAKE_INSTALL_COMPONENT OR "${CMAKE_INSTALL_COMPONENT}" STREQUAL "Librari
     ENDIF()
   ENDFOREACH()
   FILE(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/lib" TYPE SHARED_LIBRARY FILES
-    "/users/nstroustrup/nstroustrup/projects/lifespan/external_compile_libraries/openjpeg-2.1.2/bin/libopenjp2.so.2.1.2"
-    "/users/nstroustrup/nstroustrup/projects/lifespan/external_compile_libraries/openjpeg-2.1.2/bin/libopenjp2.so.7"
-    "/users/nstroustrup/nstroustrup/projects/lifespan/external_compile_libraries/openjpeg-2.1.2/bin/libopenjp2.so"
+    "/home/image_server/lifespan/external_compile_libraries/openjpeg-2.1.2/bin/libopenjp2.so.2.1.2"
+    "/home/image_server/lifespan/external_compile_libraries/openjpeg-2.1.2/bin/libopenjp2.so.7"
+    "/home/image_server/lifespan/external_compile_libraries/openjpeg-2.1.2/bin/libopenjp2.so"
     )
   FOREACH(file
       "$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/lib/libopenjp2.so.2.1.2"
@@ -70,8 +70,8 @@ ENDIF(NOT CMAKE_INSTALL_COMPONENT OR "${CMAKE_INSTALL_COMPONENT}" STREQUAL "Libr
 
 IF(NOT CMAKE_INSTALL_COMPONENT OR "${CMAKE_INSTALL_COMPONENT}" STREQUAL "Headers")
   FILE(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/include/openjpeg-2.1" TYPE FILE FILES
-    "/users/nstroustrup/nstroustrup/projects/lifespan/external_compile_libraries/openjpeg-2.1.2/src/lib/openjp2/openjpeg.h"
-    "/users/nstroustrup/nstroustrup/projects/lifespan/external_compile_libraries/openjpeg-2.1.2/src/lib/openjp2/opj_stdint.h"
+    "/home/image_server/lifespan/external_compile_libraries/openjpeg-2.1.2/src/lib/openjp2/openjpeg.h"
+    "/home/image_server/lifespan/external_compile_libraries/openjpeg-2.1.2/src/lib/openjp2/opj_stdint.h"
     )
 ENDIF(NOT CMAKE_INSTALL_COMPONENT OR "${CMAKE_INSTALL_COMPONENT}" STREQUAL "Headers")
 

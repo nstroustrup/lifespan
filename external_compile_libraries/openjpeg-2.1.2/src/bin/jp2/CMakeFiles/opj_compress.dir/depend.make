@@ -8,7 +8,6 @@ src/bin/jp2/CMakeFiles/opj_compress.dir/__/common/color.c.o: src/lib/openjp2/ope
 src/bin/jp2/CMakeFiles/opj_compress.dir/__/common/color.c.o: src/lib/openjp2/opj_config.h
 src/bin/jp2/CMakeFiles/opj_compress.dir/__/common/color.c.o: src/lib/openjp2/opj_config_private.h
 src/bin/jp2/CMakeFiles/opj_compress.dir/__/common/color.c.o: src/lib/openjp2/opj_stdint.h
-src/bin/jp2/CMakeFiles/opj_compress.dir/__/common/color.c.o: thirdparty/liblcms2/include/lcms2.h
 
 src/bin/jp2/CMakeFiles/opj_compress.dir/__/common/opj_getopt.c.o: src/bin/common/opj_getopt.c
 src/bin/jp2/CMakeFiles/opj_compress.dir/__/common/opj_getopt.c.o: src/bin/common/opj_getopt.h
@@ -36,11 +35,6 @@ src/bin/jp2/CMakeFiles/opj_compress.dir/convertpng.c.o: src/lib/openjp2/openjpeg
 src/bin/jp2/CMakeFiles/opj_compress.dir/convertpng.c.o: src/lib/openjp2/opj_config.h
 src/bin/jp2/CMakeFiles/opj_compress.dir/convertpng.c.o: src/lib/openjp2/opj_config_private.h
 src/bin/jp2/CMakeFiles/opj_compress.dir/convertpng.c.o: src/lib/openjp2/opj_stdint.h
-src/bin/jp2/CMakeFiles/opj_compress.dir/convertpng.c.o: thirdparty/include/zconf.h
-src/bin/jp2/CMakeFiles/opj_compress.dir/convertpng.c.o: thirdparty/include/zlib.h
-src/bin/jp2/CMakeFiles/opj_compress.dir/convertpng.c.o: thirdparty/libpng/png.h
-src/bin/jp2/CMakeFiles/opj_compress.dir/convertpng.c.o: thirdparty/libpng/pngconf.h
-src/bin/jp2/CMakeFiles/opj_compress.dir/convertpng.c.o: thirdparty/libpng/pnglibconf.h
 
 src/bin/jp2/CMakeFiles/opj_compress.dir/converttif.c.o: src/bin/jp2/convert.h
 src/bin/jp2/CMakeFiles/opj_compress.dir/converttif.c.o: src/bin/jp2/converttif.c
@@ -49,11 +43,6 @@ src/bin/jp2/CMakeFiles/opj_compress.dir/converttif.c.o: src/lib/openjp2/openjpeg
 src/bin/jp2/CMakeFiles/opj_compress.dir/converttif.c.o: src/lib/openjp2/opj_config.h
 src/bin/jp2/CMakeFiles/opj_compress.dir/converttif.c.o: src/lib/openjp2/opj_config_private.h
 src/bin/jp2/CMakeFiles/opj_compress.dir/converttif.c.o: src/lib/openjp2/opj_stdint.h
-src/bin/jp2/CMakeFiles/opj_compress.dir/converttif.c.o: thirdparty/libtiff/tif_config.h
-src/bin/jp2/CMakeFiles/opj_compress.dir/converttif.c.o: thirdparty/libtiff/tiff.h
-src/bin/jp2/CMakeFiles/opj_compress.dir/converttif.c.o: thirdparty/libtiff/tiffconf.h
-src/bin/jp2/CMakeFiles/opj_compress.dir/converttif.c.o: thirdparty/libtiff/tiffio.h
-src/bin/jp2/CMakeFiles/opj_compress.dir/converttif.c.o: thirdparty/libtiff/tiffvers.h
 
 src/bin/jp2/CMakeFiles/opj_compress.dir/index.c.o: src/bin/jp2/index.c
 src/bin/jp2/CMakeFiles/opj_compress.dir/index.c.o: src/bin/jp2/index.h

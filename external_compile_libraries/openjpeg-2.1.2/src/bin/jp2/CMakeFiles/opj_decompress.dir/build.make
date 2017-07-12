@@ -38,10 +38,10 @@ EQUALS = =
 CMAKE_EDIT_COMMAND = /usr/bin/ccmake
 
 # The top-level source directory on which CMake was run.
-CMAKE_SOURCE_DIR = /users/nstroustrup/nstroustrup/projects/lifespan/external_compile_libraries/openjpeg-2.1.2
+CMAKE_SOURCE_DIR = /home/image_server/lifespan/external_compile_libraries/openjpeg-2.1.2
 
 # The top-level build directory on which CMake was run.
-CMAKE_BINARY_DIR = /users/nstroustrup/nstroustrup/projects/lifespan/external_compile_libraries/openjpeg-2.1.2
+CMAKE_BINARY_DIR = /home/image_server/lifespan/external_compile_libraries/openjpeg-2.1.2
 
 # Include any dependencies generated for this target.
 include src/bin/jp2/CMakeFiles/opj_decompress.dir/depend.make
@@ -54,17 +54,17 @@ include src/bin/jp2/CMakeFiles/opj_decompress.dir/flags.make
 
 src/bin/jp2/CMakeFiles/opj_decompress.dir/opj_decompress.c.o: src/bin/jp2/CMakeFiles/opj_decompress.dir/flags.make
 src/bin/jp2/CMakeFiles/opj_decompress.dir/opj_decompress.c.o: src/bin/jp2/opj_decompress.c
-	$(CMAKE_COMMAND) -E cmake_progress_report /users/nstroustrup/nstroustrup/projects/lifespan/external_compile_libraries/openjpeg-2.1.2/CMakeFiles $(CMAKE_PROGRESS_1)
+	$(CMAKE_COMMAND) -E cmake_progress_report /home/image_server/lifespan/external_compile_libraries/openjpeg-2.1.2/CMakeFiles $(CMAKE_PROGRESS_1)
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Building C object src/bin/jp2/CMakeFiles/opj_decompress.dir/opj_decompress.c.o"
-	cd /users/nstroustrup/nstroustrup/projects/lifespan/external_compile_libraries/openjpeg-2.1.2/src/bin/jp2 && /usr/bin/cc  $(C_DEFINES) $(C_FLAGS) -o CMakeFiles/opj_decompress.dir/opj_decompress.c.o   -c /users/nstroustrup/nstroustrup/projects/lifespan/external_compile_libraries/openjpeg-2.1.2/src/bin/jp2/opj_decompress.c
+	cd /home/image_server/lifespan/external_compile_libraries/openjpeg-2.1.2/src/bin/jp2 && /usr/bin/cc  $(C_DEFINES) $(C_FLAGS) -o CMakeFiles/opj_decompress.dir/opj_decompress.c.o   -c /home/image_server/lifespan/external_compile_libraries/openjpeg-2.1.2/src/bin/jp2/opj_decompress.c
 
 src/bin/jp2/CMakeFiles/opj_decompress.dir/opj_decompress.c.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/opj_decompress.dir/opj_decompress.c.i"
-	cd /users/nstroustrup/nstroustrup/projects/lifespan/external_compile_libraries/openjpeg-2.1.2/src/bin/jp2 && /usr/bin/cc  $(C_DEFINES) $(C_FLAGS) -E /users/nstroustrup/nstroustrup/projects/lifespan/external_compile_libraries/openjpeg-2.1.2/src/bin/jp2/opj_decompress.c > CMakeFiles/opj_decompress.dir/opj_decompress.c.i
+	cd /home/image_server/lifespan/external_compile_libraries/openjpeg-2.1.2/src/bin/jp2 && /usr/bin/cc  $(C_DEFINES) $(C_FLAGS) -E /home/image_server/lifespan/external_compile_libraries/openjpeg-2.1.2/src/bin/jp2/opj_decompress.c > CMakeFiles/opj_decompress.dir/opj_decompress.c.i
 
 src/bin/jp2/CMakeFiles/opj_decompress.dir/opj_decompress.c.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/opj_decompress.dir/opj_decompress.c.s"
-	cd /users/nstroustrup/nstroustrup/projects/lifespan/external_compile_libraries/openjpeg-2.1.2/src/bin/jp2 && /usr/bin/cc  $(C_DEFINES) $(C_FLAGS) -S /users/nstroustrup/nstroustrup/projects/lifespan/external_compile_libraries/openjpeg-2.1.2/src/bin/jp2/opj_decompress.c -o CMakeFiles/opj_decompress.dir/opj_decompress.c.s
+	cd /home/image_server/lifespan/external_compile_libraries/openjpeg-2.1.2/src/bin/jp2 && /usr/bin/cc  $(C_DEFINES) $(C_FLAGS) -S /home/image_server/lifespan/external_compile_libraries/openjpeg-2.1.2/src/bin/jp2/opj_decompress.c -o CMakeFiles/opj_decompress.dir/opj_decompress.c.s
 
 src/bin/jp2/CMakeFiles/opj_decompress.dir/opj_decompress.c.o.requires:
 .PHONY : src/bin/jp2/CMakeFiles/opj_decompress.dir/opj_decompress.c.o.requires
@@ -77,17 +77,17 @@ src/bin/jp2/CMakeFiles/opj_decompress.dir/opj_decompress.c.o.provides.build: src
 
 src/bin/jp2/CMakeFiles/opj_decompress.dir/convert.c.o: src/bin/jp2/CMakeFiles/opj_decompress.dir/flags.make
 src/bin/jp2/CMakeFiles/opj_decompress.dir/convert.c.o: src/bin/jp2/convert.c
-	$(CMAKE_COMMAND) -E cmake_progress_report /users/nstroustrup/nstroustrup/projects/lifespan/external_compile_libraries/openjpeg-2.1.2/CMakeFiles $(CMAKE_PROGRESS_2)
+	$(CMAKE_COMMAND) -E cmake_progress_report /home/image_server/lifespan/external_compile_libraries/openjpeg-2.1.2/CMakeFiles $(CMAKE_PROGRESS_2)
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Building C object src/bin/jp2/CMakeFiles/opj_decompress.dir/convert.c.o"
-	cd /users/nstroustrup/nstroustrup/projects/lifespan/external_compile_libraries/openjpeg-2.1.2/src/bin/jp2 && /usr/bin/cc  $(C_DEFINES) $(C_FLAGS) -o CMakeFiles/opj_decompress.dir/convert.c.o   -c /users/nstroustrup/nstroustrup/projects/lifespan/external_compile_libraries/openjpeg-2.1.2/src/bin/jp2/convert.c
+	cd /home/image_server/lifespan/external_compile_libraries/openjpeg-2.1.2/src/bin/jp2 && /usr/bin/cc  $(C_DEFINES) $(C_FLAGS) -o CMakeFiles/opj_decompress.dir/convert.c.o   -c /home/image_server/lifespan/external_compile_libraries/openjpeg-2.1.2/src/bin/jp2/convert.c
 
 src/bin/jp2/CMakeFiles/opj_decompress.dir/convert.c.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/opj_decompress.dir/convert.c.i"
-	cd /users/nstroustrup/nstroustrup/projects/lifespan/external_compile_libraries/openjpeg-2.1.2/src/bin/jp2 && /usr/bin/cc  $(C_DEFINES) $(C_FLAGS) -E /users/nstroustrup/nstroustrup/projects/lifespan/external_compile_libraries/openjpeg-2.1.2/src/bin/jp2/convert.c > CMakeFiles/opj_decompress.dir/convert.c.i
+	cd /home/image_server/lifespan/external_compile_libraries/openjpeg-2.1.2/src/bin/jp2 && /usr/bin/cc  $(C_DEFINES) $(C_FLAGS) -E /home/image_server/lifespan/external_compile_libraries/openjpeg-2.1.2/src/bin/jp2/convert.c > CMakeFiles/opj_decompress.dir/convert.c.i
 
 src/bin/jp2/CMakeFiles/opj_decompress.dir/convert.c.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/opj_decompress.dir/convert.c.s"
-	cd /users/nstroustrup/nstroustrup/projects/lifespan/external_compile_libraries/openjpeg-2.1.2/src/bin/jp2 && /usr/bin/cc  $(C_DEFINES) $(C_FLAGS) -S /users/nstroustrup/nstroustrup/projects/lifespan/external_compile_libraries/openjpeg-2.1.2/src/bin/jp2/convert.c -o CMakeFiles/opj_decompress.dir/convert.c.s
+	cd /home/image_server/lifespan/external_compile_libraries/openjpeg-2.1.2/src/bin/jp2 && /usr/bin/cc  $(C_DEFINES) $(C_FLAGS) -S /home/image_server/lifespan/external_compile_libraries/openjpeg-2.1.2/src/bin/jp2/convert.c -o CMakeFiles/opj_decompress.dir/convert.c.s
 
 src/bin/jp2/CMakeFiles/opj_decompress.dir/convert.c.o.requires:
 .PHONY : src/bin/jp2/CMakeFiles/opj_decompress.dir/convert.c.o.requires
@@ -100,17 +100,17 @@ src/bin/jp2/CMakeFiles/opj_decompress.dir/convert.c.o.provides.build: src/bin/jp
 
 src/bin/jp2/CMakeFiles/opj_decompress.dir/convertbmp.c.o: src/bin/jp2/CMakeFiles/opj_decompress.dir/flags.make
 src/bin/jp2/CMakeFiles/opj_decompress.dir/convertbmp.c.o: src/bin/jp2/convertbmp.c
-	$(CMAKE_COMMAND) -E cmake_progress_report /users/nstroustrup/nstroustrup/projects/lifespan/external_compile_libraries/openjpeg-2.1.2/CMakeFiles $(CMAKE_PROGRESS_3)
+	$(CMAKE_COMMAND) -E cmake_progress_report /home/image_server/lifespan/external_compile_libraries/openjpeg-2.1.2/CMakeFiles $(CMAKE_PROGRESS_3)
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Building C object src/bin/jp2/CMakeFiles/opj_decompress.dir/convertbmp.c.o"
-	cd /users/nstroustrup/nstroustrup/projects/lifespan/external_compile_libraries/openjpeg-2.1.2/src/bin/jp2 && /usr/bin/cc  $(C_DEFINES) $(C_FLAGS) -o CMakeFiles/opj_decompress.dir/convertbmp.c.o   -c /users/nstroustrup/nstroustrup/projects/lifespan/external_compile_libraries/openjpeg-2.1.2/src/bin/jp2/convertbmp.c
+	cd /home/image_server/lifespan/external_compile_libraries/openjpeg-2.1.2/src/bin/jp2 && /usr/bin/cc  $(C_DEFINES) $(C_FLAGS) -o CMakeFiles/opj_decompress.dir/convertbmp.c.o   -c /home/image_server/lifespan/external_compile_libraries/openjpeg-2.1.2/src/bin/jp2/convertbmp.c
 
 src/bin/jp2/CMakeFiles/opj_decompress.dir/convertbmp.c.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/opj_decompress.dir/convertbmp.c.i"
-	cd /users/nstroustrup/nstroustrup/projects/lifespan/external_compile_libraries/openjpeg-2.1.2/src/bin/jp2 && /usr/bin/cc  $(C_DEFINES) $(C_FLAGS) -E /users/nstroustrup/nstroustrup/projects/lifespan/external_compile_libraries/openjpeg-2.1.2/src/bin/jp2/convertbmp.c > CMakeFiles/opj_decompress.dir/convertbmp.c.i
+	cd /home/image_server/lifespan/external_compile_libraries/openjpeg-2.1.2/src/bin/jp2 && /usr/bin/cc  $(C_DEFINES) $(C_FLAGS) -E /home/image_server/lifespan/external_compile_libraries/openjpeg-2.1.2/src/bin/jp2/convertbmp.c > CMakeFiles/opj_decompress.dir/convertbmp.c.i
 
 src/bin/jp2/CMakeFiles/opj_decompress.dir/convertbmp.c.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/opj_decompress.dir/convertbmp.c.s"
-	cd /users/nstroustrup/nstroustrup/projects/lifespan/external_compile_libraries/openjpeg-2.1.2/src/bin/jp2 && /usr/bin/cc  $(C_DEFINES) $(C_FLAGS) -S /users/nstroustrup/nstroustrup/projects/lifespan/external_compile_libraries/openjpeg-2.1.2/src/bin/jp2/convertbmp.c -o CMakeFiles/opj_decompress.dir/convertbmp.c.s
+	cd /home/image_server/lifespan/external_compile_libraries/openjpeg-2.1.2/src/bin/jp2 && /usr/bin/cc  $(C_DEFINES) $(C_FLAGS) -S /home/image_server/lifespan/external_compile_libraries/openjpeg-2.1.2/src/bin/jp2/convertbmp.c -o CMakeFiles/opj_decompress.dir/convertbmp.c.s
 
 src/bin/jp2/CMakeFiles/opj_decompress.dir/convertbmp.c.o.requires:
 .PHONY : src/bin/jp2/CMakeFiles/opj_decompress.dir/convertbmp.c.o.requires
@@ -123,17 +123,17 @@ src/bin/jp2/CMakeFiles/opj_decompress.dir/convertbmp.c.o.provides.build: src/bin
 
 src/bin/jp2/CMakeFiles/opj_decompress.dir/index.c.o: src/bin/jp2/CMakeFiles/opj_decompress.dir/flags.make
 src/bin/jp2/CMakeFiles/opj_decompress.dir/index.c.o: src/bin/jp2/index.c
-	$(CMAKE_COMMAND) -E cmake_progress_report /users/nstroustrup/nstroustrup/projects/lifespan/external_compile_libraries/openjpeg-2.1.2/CMakeFiles $(CMAKE_PROGRESS_4)
+	$(CMAKE_COMMAND) -E cmake_progress_report /home/image_server/lifespan/external_compile_libraries/openjpeg-2.1.2/CMakeFiles $(CMAKE_PROGRESS_4)
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Building C object src/bin/jp2/CMakeFiles/opj_decompress.dir/index.c.o"
-	cd /users/nstroustrup/nstroustrup/projects/lifespan/external_compile_libraries/openjpeg-2.1.2/src/bin/jp2 && /usr/bin/cc  $(C_DEFINES) $(C_FLAGS) -o CMakeFiles/opj_decompress.dir/index.c.o   -c /users/nstroustrup/nstroustrup/projects/lifespan/external_compile_libraries/openjpeg-2.1.2/src/bin/jp2/index.c
+	cd /home/image_server/lifespan/external_compile_libraries/openjpeg-2.1.2/src/bin/jp2 && /usr/bin/cc  $(C_DEFINES) $(C_FLAGS) -o CMakeFiles/opj_decompress.dir/index.c.o   -c /home/image_server/lifespan/external_compile_libraries/openjpeg-2.1.2/src/bin/jp2/index.c
 
 src/bin/jp2/CMakeFiles/opj_decompress.dir/index.c.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/opj_decompress.dir/index.c.i"
-	cd /users/nstroustrup/nstroustrup/projects/lifespan/external_compile_libraries/openjpeg-2.1.2/src/bin/jp2 && /usr/bin/cc  $(C_DEFINES) $(C_FLAGS) -E /users/nstroustrup/nstroustrup/projects/lifespan/external_compile_libraries/openjpeg-2.1.2/src/bin/jp2/index.c > CMakeFiles/opj_decompress.dir/index.c.i
+	cd /home/image_server/lifespan/external_compile_libraries/openjpeg-2.1.2/src/bin/jp2 && /usr/bin/cc  $(C_DEFINES) $(C_FLAGS) -E /home/image_server/lifespan/external_compile_libraries/openjpeg-2.1.2/src/bin/jp2/index.c > CMakeFiles/opj_decompress.dir/index.c.i
 
 src/bin/jp2/CMakeFiles/opj_decompress.dir/index.c.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/opj_decompress.dir/index.c.s"
-	cd /users/nstroustrup/nstroustrup/projects/lifespan/external_compile_libraries/openjpeg-2.1.2/src/bin/jp2 && /usr/bin/cc  $(C_DEFINES) $(C_FLAGS) -S /users/nstroustrup/nstroustrup/projects/lifespan/external_compile_libraries/openjpeg-2.1.2/src/bin/jp2/index.c -o CMakeFiles/opj_decompress.dir/index.c.s
+	cd /home/image_server/lifespan/external_compile_libraries/openjpeg-2.1.2/src/bin/jp2 && /usr/bin/cc  $(C_DEFINES) $(C_FLAGS) -S /home/image_server/lifespan/external_compile_libraries/openjpeg-2.1.2/src/bin/jp2/index.c -o CMakeFiles/opj_decompress.dir/index.c.s
 
 src/bin/jp2/CMakeFiles/opj_decompress.dir/index.c.o.requires:
 .PHONY : src/bin/jp2/CMakeFiles/opj_decompress.dir/index.c.o.requires
@@ -146,17 +146,17 @@ src/bin/jp2/CMakeFiles/opj_decompress.dir/index.c.o.provides.build: src/bin/jp2/
 
 src/bin/jp2/CMakeFiles/opj_decompress.dir/__/common/color.c.o: src/bin/jp2/CMakeFiles/opj_decompress.dir/flags.make
 src/bin/jp2/CMakeFiles/opj_decompress.dir/__/common/color.c.o: src/bin/common/color.c
-	$(CMAKE_COMMAND) -E cmake_progress_report /users/nstroustrup/nstroustrup/projects/lifespan/external_compile_libraries/openjpeg-2.1.2/CMakeFiles $(CMAKE_PROGRESS_5)
+	$(CMAKE_COMMAND) -E cmake_progress_report /home/image_server/lifespan/external_compile_libraries/openjpeg-2.1.2/CMakeFiles $(CMAKE_PROGRESS_5)
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Building C object src/bin/jp2/CMakeFiles/opj_decompress.dir/__/common/color.c.o"
-	cd /users/nstroustrup/nstroustrup/projects/lifespan/external_compile_libraries/openjpeg-2.1.2/src/bin/jp2 && /usr/bin/cc  $(C_DEFINES) $(C_FLAGS) -o CMakeFiles/opj_decompress.dir/__/common/color.c.o   -c /users/nstroustrup/nstroustrup/projects/lifespan/external_compile_libraries/openjpeg-2.1.2/src/bin/common/color.c
+	cd /home/image_server/lifespan/external_compile_libraries/openjpeg-2.1.2/src/bin/jp2 && /usr/bin/cc  $(C_DEFINES) $(C_FLAGS) -o CMakeFiles/opj_decompress.dir/__/common/color.c.o   -c /home/image_server/lifespan/external_compile_libraries/openjpeg-2.1.2/src/bin/common/color.c
 
 src/bin/jp2/CMakeFiles/opj_decompress.dir/__/common/color.c.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/opj_decompress.dir/__/common/color.c.i"
-	cd /users/nstroustrup/nstroustrup/projects/lifespan/external_compile_libraries/openjpeg-2.1.2/src/bin/jp2 && /usr/bin/cc  $(C_DEFINES) $(C_FLAGS) -E /users/nstroustrup/nstroustrup/projects/lifespan/external_compile_libraries/openjpeg-2.1.2/src/bin/common/color.c > CMakeFiles/opj_decompress.dir/__/common/color.c.i
+	cd /home/image_server/lifespan/external_compile_libraries/openjpeg-2.1.2/src/bin/jp2 && /usr/bin/cc  $(C_DEFINES) $(C_FLAGS) -E /home/image_server/lifespan/external_compile_libraries/openjpeg-2.1.2/src/bin/common/color.c > CMakeFiles/opj_decompress.dir/__/common/color.c.i
 
 src/bin/jp2/CMakeFiles/opj_decompress.dir/__/common/color.c.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/opj_decompress.dir/__/common/color.c.s"
-	cd /users/nstroustrup/nstroustrup/projects/lifespan/external_compile_libraries/openjpeg-2.1.2/src/bin/jp2 && /usr/bin/cc  $(C_DEFINES) $(C_FLAGS) -S /users/nstroustrup/nstroustrup/projects/lifespan/external_compile_libraries/openjpeg-2.1.2/src/bin/common/color.c -o CMakeFiles/opj_decompress.dir/__/common/color.c.s
+	cd /home/image_server/lifespan/external_compile_libraries/openjpeg-2.1.2/src/bin/jp2 && /usr/bin/cc  $(C_DEFINES) $(C_FLAGS) -S /home/image_server/lifespan/external_compile_libraries/openjpeg-2.1.2/src/bin/common/color.c -o CMakeFiles/opj_decompress.dir/__/common/color.c.s
 
 src/bin/jp2/CMakeFiles/opj_decompress.dir/__/common/color.c.o.requires:
 .PHONY : src/bin/jp2/CMakeFiles/opj_decompress.dir/__/common/color.c.o.requires
@@ -169,17 +169,17 @@ src/bin/jp2/CMakeFiles/opj_decompress.dir/__/common/color.c.o.provides.build: sr
 
 src/bin/jp2/CMakeFiles/opj_decompress.dir/__/common/opj_getopt.c.o: src/bin/jp2/CMakeFiles/opj_decompress.dir/flags.make
 src/bin/jp2/CMakeFiles/opj_decompress.dir/__/common/opj_getopt.c.o: src/bin/common/opj_getopt.c
-	$(CMAKE_COMMAND) -E cmake_progress_report /users/nstroustrup/nstroustrup/projects/lifespan/external_compile_libraries/openjpeg-2.1.2/CMakeFiles $(CMAKE_PROGRESS_6)
+	$(CMAKE_COMMAND) -E cmake_progress_report /home/image_server/lifespan/external_compile_libraries/openjpeg-2.1.2/CMakeFiles $(CMAKE_PROGRESS_6)
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Building C object src/bin/jp2/CMakeFiles/opj_decompress.dir/__/common/opj_getopt.c.o"
-	cd /users/nstroustrup/nstroustrup/projects/lifespan/external_compile_libraries/openjpeg-2.1.2/src/bin/jp2 && /usr/bin/cc  $(C_DEFINES) $(C_FLAGS) -o CMakeFiles/opj_decompress.dir/__/common/opj_getopt.c.o   -c /users/nstroustrup/nstroustrup/projects/lifespan/external_compile_libraries/openjpeg-2.1.2/src/bin/common/opj_getopt.c
+	cd /home/image_server/lifespan/external_compile_libraries/openjpeg-2.1.2/src/bin/jp2 && /usr/bin/cc  $(C_DEFINES) $(C_FLAGS) -o CMakeFiles/opj_decompress.dir/__/common/opj_getopt.c.o   -c /home/image_server/lifespan/external_compile_libraries/openjpeg-2.1.2/src/bin/common/opj_getopt.c
 
 src/bin/jp2/CMakeFiles/opj_decompress.dir/__/common/opj_getopt.c.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/opj_decompress.dir/__/common/opj_getopt.c.i"
-	cd /users/nstroustrup/nstroustrup/projects/lifespan/external_compile_libraries/openjpeg-2.1.2/src/bin/jp2 && /usr/bin/cc  $(C_DEFINES) $(C_FLAGS) -E /users/nstroustrup/nstroustrup/projects/lifespan/external_compile_libraries/openjpeg-2.1.2/src/bin/common/opj_getopt.c > CMakeFiles/opj_decompress.dir/__/common/opj_getopt.c.i
+	cd /home/image_server/lifespan/external_compile_libraries/openjpeg-2.1.2/src/bin/jp2 && /usr/bin/cc  $(C_DEFINES) $(C_FLAGS) -E /home/image_server/lifespan/external_compile_libraries/openjpeg-2.1.2/src/bin/common/opj_getopt.c > CMakeFiles/opj_decompress.dir/__/common/opj_getopt.c.i
 
 src/bin/jp2/CMakeFiles/opj_decompress.dir/__/common/opj_getopt.c.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/opj_decompress.dir/__/common/opj_getopt.c.s"
-	cd /users/nstroustrup/nstroustrup/projects/lifespan/external_compile_libraries/openjpeg-2.1.2/src/bin/jp2 && /usr/bin/cc  $(C_DEFINES) $(C_FLAGS) -S /users/nstroustrup/nstroustrup/projects/lifespan/external_compile_libraries/openjpeg-2.1.2/src/bin/common/opj_getopt.c -o CMakeFiles/opj_decompress.dir/__/common/opj_getopt.c.s
+	cd /home/image_server/lifespan/external_compile_libraries/openjpeg-2.1.2/src/bin/jp2 && /usr/bin/cc  $(C_DEFINES) $(C_FLAGS) -S /home/image_server/lifespan/external_compile_libraries/openjpeg-2.1.2/src/bin/common/opj_getopt.c -o CMakeFiles/opj_decompress.dir/__/common/opj_getopt.c.s
 
 src/bin/jp2/CMakeFiles/opj_decompress.dir/__/common/opj_getopt.c.o.requires:
 .PHONY : src/bin/jp2/CMakeFiles/opj_decompress.dir/__/common/opj_getopt.c.o.requires
@@ -192,17 +192,17 @@ src/bin/jp2/CMakeFiles/opj_decompress.dir/__/common/opj_getopt.c.o.provides.buil
 
 src/bin/jp2/CMakeFiles/opj_decompress.dir/converttif.c.o: src/bin/jp2/CMakeFiles/opj_decompress.dir/flags.make
 src/bin/jp2/CMakeFiles/opj_decompress.dir/converttif.c.o: src/bin/jp2/converttif.c
-	$(CMAKE_COMMAND) -E cmake_progress_report /users/nstroustrup/nstroustrup/projects/lifespan/external_compile_libraries/openjpeg-2.1.2/CMakeFiles $(CMAKE_PROGRESS_7)
+	$(CMAKE_COMMAND) -E cmake_progress_report /home/image_server/lifespan/external_compile_libraries/openjpeg-2.1.2/CMakeFiles $(CMAKE_PROGRESS_7)
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Building C object src/bin/jp2/CMakeFiles/opj_decompress.dir/converttif.c.o"
-	cd /users/nstroustrup/nstroustrup/projects/lifespan/external_compile_libraries/openjpeg-2.1.2/src/bin/jp2 && /usr/bin/cc  $(C_DEFINES) $(C_FLAGS) -o CMakeFiles/opj_decompress.dir/converttif.c.o   -c /users/nstroustrup/nstroustrup/projects/lifespan/external_compile_libraries/openjpeg-2.1.2/src/bin/jp2/converttif.c
+	cd /home/image_server/lifespan/external_compile_libraries/openjpeg-2.1.2/src/bin/jp2 && /usr/bin/cc  $(C_DEFINES) $(C_FLAGS) -o CMakeFiles/opj_decompress.dir/converttif.c.o   -c /home/image_server/lifespan/external_compile_libraries/openjpeg-2.1.2/src/bin/jp2/converttif.c
 
 src/bin/jp2/CMakeFiles/opj_decompress.dir/converttif.c.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/opj_decompress.dir/converttif.c.i"
-	cd /users/nstroustrup/nstroustrup/projects/lifespan/external_compile_libraries/openjpeg-2.1.2/src/bin/jp2 && /usr/bin/cc  $(C_DEFINES) $(C_FLAGS) -E /users/nstroustrup/nstroustrup/projects/lifespan/external_compile_libraries/openjpeg-2.1.2/src/bin/jp2/converttif.c > CMakeFiles/opj_decompress.dir/converttif.c.i
+	cd /home/image_server/lifespan/external_compile_libraries/openjpeg-2.1.2/src/bin/jp2 && /usr/bin/cc  $(C_DEFINES) $(C_FLAGS) -E /home/image_server/lifespan/external_compile_libraries/openjpeg-2.1.2/src/bin/jp2/converttif.c > CMakeFiles/opj_decompress.dir/converttif.c.i
 
 src/bin/jp2/CMakeFiles/opj_decompress.dir/converttif.c.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/opj_decompress.dir/converttif.c.s"
-	cd /users/nstroustrup/nstroustrup/projects/lifespan/external_compile_libraries/openjpeg-2.1.2/src/bin/jp2 && /usr/bin/cc  $(C_DEFINES) $(C_FLAGS) -S /users/nstroustrup/nstroustrup/projects/lifespan/external_compile_libraries/openjpeg-2.1.2/src/bin/jp2/converttif.c -o CMakeFiles/opj_decompress.dir/converttif.c.s
+	cd /home/image_server/lifespan/external_compile_libraries/openjpeg-2.1.2/src/bin/jp2 && /usr/bin/cc  $(C_DEFINES) $(C_FLAGS) -S /home/image_server/lifespan/external_compile_libraries/openjpeg-2.1.2/src/bin/jp2/converttif.c -o CMakeFiles/opj_decompress.dir/converttif.c.s
 
 src/bin/jp2/CMakeFiles/opj_decompress.dir/converttif.c.o.requires:
 .PHONY : src/bin/jp2/CMakeFiles/opj_decompress.dir/converttif.c.o.requires
@@ -215,17 +215,17 @@ src/bin/jp2/CMakeFiles/opj_decompress.dir/converttif.c.o.provides.build: src/bin
 
 src/bin/jp2/CMakeFiles/opj_decompress.dir/convertpng.c.o: src/bin/jp2/CMakeFiles/opj_decompress.dir/flags.make
 src/bin/jp2/CMakeFiles/opj_decompress.dir/convertpng.c.o: src/bin/jp2/convertpng.c
-	$(CMAKE_COMMAND) -E cmake_progress_report /users/nstroustrup/nstroustrup/projects/lifespan/external_compile_libraries/openjpeg-2.1.2/CMakeFiles $(CMAKE_PROGRESS_8)
+	$(CMAKE_COMMAND) -E cmake_progress_report /home/image_server/lifespan/external_compile_libraries/openjpeg-2.1.2/CMakeFiles $(CMAKE_PROGRESS_8)
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Building C object src/bin/jp2/CMakeFiles/opj_decompress.dir/convertpng.c.o"
-	cd /users/nstroustrup/nstroustrup/projects/lifespan/external_compile_libraries/openjpeg-2.1.2/src/bin/jp2 && /usr/bin/cc  $(C_DEFINES) $(C_FLAGS) -o CMakeFiles/opj_decompress.dir/convertpng.c.o   -c /users/nstroustrup/nstroustrup/projects/lifespan/external_compile_libraries/openjpeg-2.1.2/src/bin/jp2/convertpng.c
+	cd /home/image_server/lifespan/external_compile_libraries/openjpeg-2.1.2/src/bin/jp2 && /usr/bin/cc  $(C_DEFINES) $(C_FLAGS) -o CMakeFiles/opj_decompress.dir/convertpng.c.o   -c /home/image_server/lifespan/external_compile_libraries/openjpeg-2.1.2/src/bin/jp2/convertpng.c
 
 src/bin/jp2/CMakeFiles/opj_decompress.dir/convertpng.c.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/opj_decompress.dir/convertpng.c.i"
-	cd /users/nstroustrup/nstroustrup/projects/lifespan/external_compile_libraries/openjpeg-2.1.2/src/bin/jp2 && /usr/bin/cc  $(C_DEFINES) $(C_FLAGS) -E /users/nstroustrup/nstroustrup/projects/lifespan/external_compile_libraries/openjpeg-2.1.2/src/bin/jp2/convertpng.c > CMakeFiles/opj_decompress.dir/convertpng.c.i
+	cd /home/image_server/lifespan/external_compile_libraries/openjpeg-2.1.2/src/bin/jp2 && /usr/bin/cc  $(C_DEFINES) $(C_FLAGS) -E /home/image_server/lifespan/external_compile_libraries/openjpeg-2.1.2/src/bin/jp2/convertpng.c > CMakeFiles/opj_decompress.dir/convertpng.c.i
 
 src/bin/jp2/CMakeFiles/opj_decompress.dir/convertpng.c.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/opj_decompress.dir/convertpng.c.s"
-	cd /users/nstroustrup/nstroustrup/projects/lifespan/external_compile_libraries/openjpeg-2.1.2/src/bin/jp2 && /usr/bin/cc  $(C_DEFINES) $(C_FLAGS) -S /users/nstroustrup/nstroustrup/projects/lifespan/external_compile_libraries/openjpeg-2.1.2/src/bin/jp2/convertpng.c -o CMakeFiles/opj_decompress.dir/convertpng.c.s
+	cd /home/image_server/lifespan/external_compile_libraries/openjpeg-2.1.2/src/bin/jp2 && /usr/bin/cc  $(C_DEFINES) $(C_FLAGS) -S /home/image_server/lifespan/external_compile_libraries/openjpeg-2.1.2/src/bin/jp2/convertpng.c -o CMakeFiles/opj_decompress.dir/convertpng.c.s
 
 src/bin/jp2/CMakeFiles/opj_decompress.dir/convertpng.c.o.requires:
 .PHONY : src/bin/jp2/CMakeFiles/opj_decompress.dir/convertpng.c.o.requires
@@ -260,13 +260,14 @@ bin/opj_decompress: src/bin/jp2/CMakeFiles/opj_decompress.dir/converttif.c.o
 bin/opj_decompress: src/bin/jp2/CMakeFiles/opj_decompress.dir/convertpng.c.o
 bin/opj_decompress: src/bin/jp2/CMakeFiles/opj_decompress.dir/build.make
 bin/opj_decompress: bin/libopenjp2.so.2.1.2
-bin/opj_decompress: thirdparty/lib/libpng.a
-bin/opj_decompress: thirdparty/lib/libtiff.a
-bin/opj_decompress: thirdparty/lib/liblcms2.a
-bin/opj_decompress: thirdparty/lib/libz.a
+bin/opj_decompress: /usr/lib64/libpng.so
+bin/opj_decompress: /usr/lib64/libz.so
+bin/opj_decompress: /usr/lib64/libtiff.so
+bin/opj_decompress: /usr/lib64/libz.so
+bin/opj_decompress: /usr/lib64/libtiff.so
 bin/opj_decompress: src/bin/jp2/CMakeFiles/opj_decompress.dir/link.txt
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --red --bold "Linking C executable ../../../bin/opj_decompress"
-	cd /users/nstroustrup/nstroustrup/projects/lifespan/external_compile_libraries/openjpeg-2.1.2/src/bin/jp2 && $(CMAKE_COMMAND) -E cmake_link_script CMakeFiles/opj_decompress.dir/link.txt --verbose=$(VERBOSE)
+	cd /home/image_server/lifespan/external_compile_libraries/openjpeg-2.1.2/src/bin/jp2 && $(CMAKE_COMMAND) -E cmake_link_script CMakeFiles/opj_decompress.dir/link.txt --verbose=$(VERBOSE)
 
 # Rule to build all files generated by this target.
 src/bin/jp2/CMakeFiles/opj_decompress.dir/build: bin/opj_decompress
@@ -283,10 +284,10 @@ src/bin/jp2/CMakeFiles/opj_decompress.dir/requires: src/bin/jp2/CMakeFiles/opj_d
 .PHONY : src/bin/jp2/CMakeFiles/opj_decompress.dir/requires
 
 src/bin/jp2/CMakeFiles/opj_decompress.dir/clean:
-	cd /users/nstroustrup/nstroustrup/projects/lifespan/external_compile_libraries/openjpeg-2.1.2/src/bin/jp2 && $(CMAKE_COMMAND) -P CMakeFiles/opj_decompress.dir/cmake_clean.cmake
+	cd /home/image_server/lifespan/external_compile_libraries/openjpeg-2.1.2/src/bin/jp2 && $(CMAKE_COMMAND) -P CMakeFiles/opj_decompress.dir/cmake_clean.cmake
 .PHONY : src/bin/jp2/CMakeFiles/opj_decompress.dir/clean
 
 src/bin/jp2/CMakeFiles/opj_decompress.dir/depend:
-	cd /users/nstroustrup/nstroustrup/projects/lifespan/external_compile_libraries/openjpeg-2.1.2 && $(CMAKE_COMMAND) -E cmake_depends "Unix Makefiles" /users/nstroustrup/nstroustrup/projects/lifespan/external_compile_libraries/openjpeg-2.1.2 /users/nstroustrup/nstroustrup/projects/lifespan/external_compile_libraries/openjpeg-2.1.2/src/bin/jp2 /users/nstroustrup/nstroustrup/projects/lifespan/external_compile_libraries/openjpeg-2.1.2 /users/nstroustrup/nstroustrup/projects/lifespan/external_compile_libraries/openjpeg-2.1.2/src/bin/jp2 /users/nstroustrup/nstroustrup/projects/lifespan/external_compile_libraries/openjpeg-2.1.2/src/bin/jp2/CMakeFiles/opj_decompress.dir/DependInfo.cmake --color=$(COLOR)
+	cd /home/image_server/lifespan/external_compile_libraries/openjpeg-2.1.2 && $(CMAKE_COMMAND) -E cmake_depends "Unix Makefiles" /home/image_server/lifespan/external_compile_libraries/openjpeg-2.1.2 /home/image_server/lifespan/external_compile_libraries/openjpeg-2.1.2/src/bin/jp2 /home/image_server/lifespan/external_compile_libraries/openjpeg-2.1.2 /home/image_server/lifespan/external_compile_libraries/openjpeg-2.1.2/src/bin/jp2 /home/image_server/lifespan/external_compile_libraries/openjpeg-2.1.2/src/bin/jp2/CMakeFiles/opj_decompress.dir/DependInfo.cmake --color=$(COLOR)
 .PHONY : src/bin/jp2/CMakeFiles/opj_decompress.dir/depend
 

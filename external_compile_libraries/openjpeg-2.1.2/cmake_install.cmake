@@ -1,8 +1,8 @@
-# Install script for directory: /users/nstroustrup/nstroustrup/projects/lifespan/external_compile_libraries/openjpeg-2.1.2
+# Install script for directory: /home/image_server/lifespan/external_compile_libraries/openjpeg-2.1.2
 
 # Set the install prefix
 IF(NOT DEFINED CMAKE_INSTALL_PREFIX)
-  SET(CMAKE_INSTALL_PREFIX "/users/nstroustrup/nstroustrup/libs")
+  SET(CMAKE_INSTALL_PREFIX "/usr/local")
 ENDIF(NOT DEFINED CMAKE_INSTALL_PREFIX)
 STRING(REGEX REPLACE "/$" "" CMAKE_INSTALL_PREFIX "${CMAKE_INSTALL_PREFIX}")
 
@@ -36,7 +36,7 @@ IF(NOT CMAKE_INSTALL_COMPONENT OR "${CMAKE_INSTALL_COMPONENT}" STREQUAL "Unspeci
   IF(EXISTS "$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/lib/openjpeg-2.1/OpenJPEGTargets.cmake")
     FILE(DIFFERENT EXPORT_FILE_CHANGED FILES
          "$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/lib/openjpeg-2.1/OpenJPEGTargets.cmake"
-         "/users/nstroustrup/nstroustrup/projects/lifespan/external_compile_libraries/openjpeg-2.1.2/CMakeFiles/Export/lib/openjpeg-2.1/OpenJPEGTargets.cmake")
+         "/home/image_server/lifespan/external_compile_libraries/openjpeg-2.1.2/CMakeFiles/Export/lib/openjpeg-2.1/OpenJPEGTargets.cmake")
     IF(EXPORT_FILE_CHANGED)
       FILE(GLOB OLD_CONFIG_FILES "$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/lib/openjpeg-2.1/OpenJPEGTargets-*.cmake")
       IF(OLD_CONFIG_FILES)
@@ -45,26 +45,26 @@ IF(NOT CMAKE_INSTALL_COMPONENT OR "${CMAKE_INSTALL_COMPONENT}" STREQUAL "Unspeci
       ENDIF(OLD_CONFIG_FILES)
     ENDIF(EXPORT_FILE_CHANGED)
   ENDIF()
-  FILE(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/lib/openjpeg-2.1" TYPE FILE FILES "/users/nstroustrup/nstroustrup/projects/lifespan/external_compile_libraries/openjpeg-2.1.2/CMakeFiles/Export/lib/openjpeg-2.1/OpenJPEGTargets.cmake")
+  FILE(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/lib/openjpeg-2.1" TYPE FILE FILES "/home/image_server/lifespan/external_compile_libraries/openjpeg-2.1.2/CMakeFiles/Export/lib/openjpeg-2.1/OpenJPEGTargets.cmake")
   IF("${CMAKE_INSTALL_CONFIG_NAME}" MATCHES "^()$")
-    FILE(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/lib/openjpeg-2.1" TYPE FILE FILES "/users/nstroustrup/nstroustrup/projects/lifespan/external_compile_libraries/openjpeg-2.1.2/CMakeFiles/Export/lib/openjpeg-2.1/OpenJPEGTargets-noconfig.cmake")
+    FILE(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/lib/openjpeg-2.1" TYPE FILE FILES "/home/image_server/lifespan/external_compile_libraries/openjpeg-2.1.2/CMakeFiles/Export/lib/openjpeg-2.1/OpenJPEGTargets-noconfig.cmake")
   ENDIF("${CMAKE_INSTALL_CONFIG_NAME}" MATCHES "^()$")
 ENDIF(NOT CMAKE_INSTALL_COMPONENT OR "${CMAKE_INSTALL_COMPONENT}" STREQUAL "Unspecified")
 
 IF(NOT CMAKE_INSTALL_COMPONENT OR "${CMAKE_INSTALL_COMPONENT}" STREQUAL "Unspecified")
-  FILE(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/lib/openjpeg-2.1" TYPE FILE FILES "/users/nstroustrup/nstroustrup/projects/lifespan/external_compile_libraries/openjpeg-2.1.2/OpenJPEGConfig.cmake")
+  FILE(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/lib/openjpeg-2.1" TYPE FILE FILES "/home/image_server/lifespan/external_compile_libraries/openjpeg-2.1.2/OpenJPEGConfig.cmake")
 ENDIF(NOT CMAKE_INSTALL_COMPONENT OR "${CMAKE_INSTALL_COMPONENT}" STREQUAL "Unspecified")
 
 IF(NOT CMAKE_INSTALL_COMPONENT OR "${CMAKE_INSTALL_COMPONENT}" STREQUAL "Unspecified")
-  FILE(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/lib/pkgconfig" TYPE FILE FILES "/users/nstroustrup/nstroustrup/projects/lifespan/external_compile_libraries/openjpeg-2.1.2/libopenjp2.pc")
+  FILE(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/lib/pkgconfig" TYPE FILE FILES "/home/image_server/lifespan/external_compile_libraries/openjpeg-2.1.2/libopenjp2.pc")
 ENDIF(NOT CMAKE_INSTALL_COMPONENT OR "${CMAKE_INSTALL_COMPONENT}" STREQUAL "Unspecified")
 
 IF(NOT CMAKE_INSTALL_LOCAL_ONLY)
   # Include the install script for each subdirectory.
-  INCLUDE("/users/nstroustrup/nstroustrup/projects/lifespan/external_compile_libraries/openjpeg-2.1.2/src/lib/cmake_install.cmake")
-  INCLUDE("/users/nstroustrup/nstroustrup/projects/lifespan/external_compile_libraries/openjpeg-2.1.2/thirdparty/cmake_install.cmake")
-  INCLUDE("/users/nstroustrup/nstroustrup/projects/lifespan/external_compile_libraries/openjpeg-2.1.2/src/bin/cmake_install.cmake")
-  INCLUDE("/users/nstroustrup/nstroustrup/projects/lifespan/external_compile_libraries/openjpeg-2.1.2/wrapping/cmake_install.cmake")
+  INCLUDE("/home/image_server/lifespan/external_compile_libraries/openjpeg-2.1.2/src/lib/cmake_install.cmake")
+  INCLUDE("/home/image_server/lifespan/external_compile_libraries/openjpeg-2.1.2/thirdparty/cmake_install.cmake")
+  INCLUDE("/home/image_server/lifespan/external_compile_libraries/openjpeg-2.1.2/src/bin/cmake_install.cmake")
+  INCLUDE("/home/image_server/lifespan/external_compile_libraries/openjpeg-2.1.2/wrapping/cmake_install.cmake")
 
 ENDIF(NOT CMAKE_INSTALL_LOCAL_ONLY)
 
@@ -74,7 +74,7 @@ ELSE(CMAKE_INSTALL_COMPONENT)
   SET(CMAKE_INSTALL_MANIFEST "install_manifest.txt")
 ENDIF(CMAKE_INSTALL_COMPONENT)
 
-FILE(WRITE "/users/nstroustrup/nstroustrup/projects/lifespan/external_compile_libraries/openjpeg-2.1.2/${CMAKE_INSTALL_MANIFEST}" "")
+FILE(WRITE "/home/image_server/lifespan/external_compile_libraries/openjpeg-2.1.2/${CMAKE_INSTALL_MANIFEST}" "")
 FOREACH(file ${CMAKE_INSTALL_MANIFEST_FILES})
-  FILE(APPEND "/users/nstroustrup/nstroustrup/projects/lifespan/external_compile_libraries/openjpeg-2.1.2/${CMAKE_INSTALL_MANIFEST}" "${file}\n")
+  FILE(APPEND "/home/image_server/lifespan/external_compile_libraries/openjpeg-2.1.2/${CMAKE_INSTALL_MANIFEST}" "${file}\n")
 ENDFOREACH(file)

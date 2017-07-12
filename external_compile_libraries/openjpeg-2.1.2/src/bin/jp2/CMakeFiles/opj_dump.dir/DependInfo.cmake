@@ -4,34 +4,26 @@ SET(CMAKE_DEPENDS_LANGUAGES
   )
 # The set of files for implicit dependencies of each language:
 SET(CMAKE_DEPENDS_CHECK_C
-  "/users/nstroustrup/nstroustrup/projects/lifespan/external_compile_libraries/openjpeg-2.1.2/src/bin/common/color.c" "/users/nstroustrup/nstroustrup/projects/lifespan/external_compile_libraries/openjpeg-2.1.2/src/bin/jp2/CMakeFiles/opj_dump.dir/__/common/color.c.o"
-  "/users/nstroustrup/nstroustrup/projects/lifespan/external_compile_libraries/openjpeg-2.1.2/src/bin/common/opj_getopt.c" "/users/nstroustrup/nstroustrup/projects/lifespan/external_compile_libraries/openjpeg-2.1.2/src/bin/jp2/CMakeFiles/opj_dump.dir/__/common/opj_getopt.c.o"
-  "/users/nstroustrup/nstroustrup/projects/lifespan/external_compile_libraries/openjpeg-2.1.2/src/bin/jp2/convert.c" "/users/nstroustrup/nstroustrup/projects/lifespan/external_compile_libraries/openjpeg-2.1.2/src/bin/jp2/CMakeFiles/opj_dump.dir/convert.c.o"
-  "/users/nstroustrup/nstroustrup/projects/lifespan/external_compile_libraries/openjpeg-2.1.2/src/bin/jp2/convertbmp.c" "/users/nstroustrup/nstroustrup/projects/lifespan/external_compile_libraries/openjpeg-2.1.2/src/bin/jp2/CMakeFiles/opj_dump.dir/convertbmp.c.o"
-  "/users/nstroustrup/nstroustrup/projects/lifespan/external_compile_libraries/openjpeg-2.1.2/src/bin/jp2/convertpng.c" "/users/nstroustrup/nstroustrup/projects/lifespan/external_compile_libraries/openjpeg-2.1.2/src/bin/jp2/CMakeFiles/opj_dump.dir/convertpng.c.o"
-  "/users/nstroustrup/nstroustrup/projects/lifespan/external_compile_libraries/openjpeg-2.1.2/src/bin/jp2/converttif.c" "/users/nstroustrup/nstroustrup/projects/lifespan/external_compile_libraries/openjpeg-2.1.2/src/bin/jp2/CMakeFiles/opj_dump.dir/converttif.c.o"
-  "/users/nstroustrup/nstroustrup/projects/lifespan/external_compile_libraries/openjpeg-2.1.2/src/bin/jp2/index.c" "/users/nstroustrup/nstroustrup/projects/lifespan/external_compile_libraries/openjpeg-2.1.2/src/bin/jp2/CMakeFiles/opj_dump.dir/index.c.o"
-  "/users/nstroustrup/nstroustrup/projects/lifespan/external_compile_libraries/openjpeg-2.1.2/src/bin/jp2/opj_dump.c" "/users/nstroustrup/nstroustrup/projects/lifespan/external_compile_libraries/openjpeg-2.1.2/src/bin/jp2/CMakeFiles/opj_dump.dir/opj_dump.c.o"
+  "/home/image_server/lifespan/external_compile_libraries/openjpeg-2.1.2/src/bin/common/color.c" "/home/image_server/lifespan/external_compile_libraries/openjpeg-2.1.2/src/bin/jp2/CMakeFiles/opj_dump.dir/__/common/color.c.o"
+  "/home/image_server/lifespan/external_compile_libraries/openjpeg-2.1.2/src/bin/common/opj_getopt.c" "/home/image_server/lifespan/external_compile_libraries/openjpeg-2.1.2/src/bin/jp2/CMakeFiles/opj_dump.dir/__/common/opj_getopt.c.o"
+  "/home/image_server/lifespan/external_compile_libraries/openjpeg-2.1.2/src/bin/jp2/convert.c" "/home/image_server/lifespan/external_compile_libraries/openjpeg-2.1.2/src/bin/jp2/CMakeFiles/opj_dump.dir/convert.c.o"
+  "/home/image_server/lifespan/external_compile_libraries/openjpeg-2.1.2/src/bin/jp2/convertbmp.c" "/home/image_server/lifespan/external_compile_libraries/openjpeg-2.1.2/src/bin/jp2/CMakeFiles/opj_dump.dir/convertbmp.c.o"
+  "/home/image_server/lifespan/external_compile_libraries/openjpeg-2.1.2/src/bin/jp2/convertpng.c" "/home/image_server/lifespan/external_compile_libraries/openjpeg-2.1.2/src/bin/jp2/CMakeFiles/opj_dump.dir/convertpng.c.o"
+  "/home/image_server/lifespan/external_compile_libraries/openjpeg-2.1.2/src/bin/jp2/converttif.c" "/home/image_server/lifespan/external_compile_libraries/openjpeg-2.1.2/src/bin/jp2/CMakeFiles/opj_dump.dir/converttif.c.o"
+  "/home/image_server/lifespan/external_compile_libraries/openjpeg-2.1.2/src/bin/jp2/index.c" "/home/image_server/lifespan/external_compile_libraries/openjpeg-2.1.2/src/bin/jp2/CMakeFiles/opj_dump.dir/index.c.o"
+  "/home/image_server/lifespan/external_compile_libraries/openjpeg-2.1.2/src/bin/jp2/opj_dump.c" "/home/image_server/lifespan/external_compile_libraries/openjpeg-2.1.2/src/bin/jp2/CMakeFiles/opj_dump.dir/opj_dump.c.o"
   )
 SET(CMAKE_C_COMPILER_ID "GNU")
 
 # Targets to which this target links.
 SET(CMAKE_TARGET_LINKED_INFO_FILES
-  "/users/nstroustrup/nstroustrup/projects/lifespan/external_compile_libraries/openjpeg-2.1.2/src/lib/openjp2/CMakeFiles/openjp2.dir/DependInfo.cmake"
-  "/users/nstroustrup/nstroustrup/projects/lifespan/external_compile_libraries/openjpeg-2.1.2/thirdparty/libpng/CMakeFiles/png.dir/DependInfo.cmake"
-  "/users/nstroustrup/nstroustrup/projects/lifespan/external_compile_libraries/openjpeg-2.1.2/thirdparty/libtiff/CMakeFiles/tiff.dir/DependInfo.cmake"
-  "/users/nstroustrup/nstroustrup/projects/lifespan/external_compile_libraries/openjpeg-2.1.2/thirdparty/liblcms2/CMakeFiles/lcms2.dir/DependInfo.cmake"
-  "/users/nstroustrup/nstroustrup/projects/lifespan/external_compile_libraries/openjpeg-2.1.2/thirdparty/libz/CMakeFiles/z.dir/DependInfo.cmake"
+  "/home/image_server/lifespan/external_compile_libraries/openjpeg-2.1.2/src/lib/openjp2/CMakeFiles/openjp2.dir/DependInfo.cmake"
   )
 
 # The include file search paths:
 SET(CMAKE_C_TARGET_INCLUDE_PATH
   "src/lib/openjp2"
   "src/bin/common"
-  "thirdparty/liblcms2/include"
-  "thirdparty/include"
-  "thirdparty/libpng"
-  "thirdparty/libtiff"
   )
 SET(CMAKE_CXX_TARGET_INCLUDE_PATH ${CMAKE_C_TARGET_INCLUDE_PATH})
 SET(CMAKE_Fortran_TARGET_INCLUDE_PATH ${CMAKE_C_TARGET_INCLUDE_PATH})

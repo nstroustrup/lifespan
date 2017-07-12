@@ -42,10 +42,10 @@ EQUALS = =
 CMAKE_EDIT_COMMAND = /usr/bin/ccmake
 
 # The top-level source directory on which CMake was run.
-CMAKE_SOURCE_DIR = /users/nstroustrup/nstroustrup/projects/lifespan/external_compile_libraries/openjpeg-2.1.2
+CMAKE_SOURCE_DIR = /home/image_server/lifespan/external_compile_libraries/openjpeg-2.1.2
 
 # The top-level build directory on which CMake was run.
-CMAKE_BINARY_DIR = /users/nstroustrup/nstroustrup/projects/lifespan/external_compile_libraries/openjpeg-2.1.2
+CMAKE_BINARY_DIR = /home/image_server/lifespan/external_compile_libraries/openjpeg-2.1.2
 
 #=============================================================================
 # Targets provided globally by CMake.
@@ -114,7 +114,7 @@ package/fast: package
 # Special rule for the target package_source
 package_source:
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --cyan "Run CPack packaging tool for source..."
-	/usr/bin/cpack --config ./CPackSourceConfig.cmake /users/nstroustrup/nstroustrup/projects/lifespan/external_compile_libraries/openjpeg-2.1.2/CPackSourceConfig.cmake
+	/usr/bin/cpack --config ./CPackSourceConfig.cmake /home/image_server/lifespan/external_compile_libraries/openjpeg-2.1.2/CPackSourceConfig.cmake
 .PHONY : package_source
 
 # Special rule for the target package_source
@@ -133,9 +133,9 @@ rebuild_cache/fast: rebuild_cache
 
 # The main all target
 all: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /users/nstroustrup/nstroustrup/projects/lifespan/external_compile_libraries/openjpeg-2.1.2/CMakeFiles /users/nstroustrup/nstroustrup/projects/lifespan/external_compile_libraries/openjpeg-2.1.2/CMakeFiles/progress.marks
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/image_server/lifespan/external_compile_libraries/openjpeg-2.1.2/CMakeFiles /home/image_server/lifespan/external_compile_libraries/openjpeg-2.1.2/CMakeFiles/progress.marks
 	$(MAKE) -f CMakeFiles/Makefile2 all
-	$(CMAKE_COMMAND) -E cmake_progress_start /users/nstroustrup/nstroustrup/projects/lifespan/external_compile_libraries/openjpeg-2.1.2/CMakeFiles 0
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/image_server/lifespan/external_compile_libraries/openjpeg-2.1.2/CMakeFiles 0
 .PHONY : all
 
 # The main clean target
@@ -174,58 +174,6 @@ openjp2: cmake_check_build_system
 openjp2/fast:
 	$(MAKE) -f src/lib/openjp2/CMakeFiles/openjp2.dir/build.make src/lib/openjp2/CMakeFiles/openjp2.dir/build
 .PHONY : openjp2/fast
-
-#=============================================================================
-# Target rules for targets named z
-
-# Build rule for target.
-z : cmake_check_build_system
-	$(MAKE) -f CMakeFiles/Makefile2 z
-.PHONY : z
-
-# fast build rule for target.
-z/fast:
-	$(MAKE) -f thirdparty/libz/CMakeFiles/z.dir/build.make thirdparty/libz/CMakeFiles/z.dir/build
-.PHONY : z/fast
-
-#=============================================================================
-# Target rules for targets named png
-
-# Build rule for target.
-png: cmake_check_build_system
-	$(MAKE) -f CMakeFiles/Makefile2 png
-.PHONY : png
-
-# fast build rule for target.
-png/fast:
-	$(MAKE) -f thirdparty/libpng/CMakeFiles/png.dir/build.make thirdparty/libpng/CMakeFiles/png.dir/build
-.PHONY : png/fast
-
-#=============================================================================
-# Target rules for targets named tiff
-
-# Build rule for target.
-tiff: cmake_check_build_system
-	$(MAKE) -f CMakeFiles/Makefile2 tiff
-.PHONY : tiff
-
-# fast build rule for target.
-tiff/fast:
-	$(MAKE) -f thirdparty/libtiff/CMakeFiles/tiff.dir/build.make thirdparty/libtiff/CMakeFiles/tiff.dir/build
-.PHONY : tiff/fast
-
-#=============================================================================
-# Target rules for targets named lcms2
-
-# Build rule for target.
-lcms2: cmake_check_build_system
-	$(MAKE) -f CMakeFiles/Makefile2 lcms2
-.PHONY : lcms2
-
-# fast build rule for target.
-lcms2/fast:
-	$(MAKE) -f thirdparty/liblcms2/CMakeFiles/lcms2.dir/build.make thirdparty/liblcms2/CMakeFiles/lcms2.dir/build
-.PHONY : lcms2/fast
 
 #=============================================================================
 # Target rules for targets named opj_compress
@@ -281,10 +229,6 @@ help:
 	@echo "... package_source"
 	@echo "... rebuild_cache"
 	@echo "... openjp2"
-	@echo "... z"
-	@echo "... png"
-	@echo "... tiff"
-	@echo "... lcms2"
 	@echo "... opj_compress"
 	@echo "... opj_decompress"
 	@echo "... opj_dump"

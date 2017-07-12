@@ -42,10 +42,10 @@ EQUALS = =
 CMAKE_EDIT_COMMAND = /usr/bin/ccmake
 
 # The top-level source directory on which CMake was run.
-CMAKE_SOURCE_DIR = /users/nstroustrup/nstroustrup/projects/lifespan/external_compile_libraries/openjpeg-2.1.2
+CMAKE_SOURCE_DIR = /home/image_server/lifespan/external_compile_libraries/openjpeg-2.1.2
 
 # The top-level build directory on which CMake was run.
-CMAKE_BINARY_DIR = /users/nstroustrup/nstroustrup/projects/lifespan/external_compile_libraries/openjpeg-2.1.2
+CMAKE_BINARY_DIR = /home/image_server/lifespan/external_compile_libraries/openjpeg-2.1.2
 
 #=============================================================================
 # Targets provided globally by CMake.
@@ -104,7 +104,7 @@ list_install_components/fast: list_install_components
 # Special rule for the target package
 package: preinstall
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --cyan "Run CPack packaging tool..."
-	cd /users/nstroustrup/nstroustrup/projects/lifespan/external_compile_libraries/openjpeg-2.1.2 && /usr/bin/cpack --config ./CPackConfig.cmake
+	cd /home/image_server/lifespan/external_compile_libraries/openjpeg-2.1.2 && /usr/bin/cpack --config ./CPackConfig.cmake
 .PHONY : package
 
 # Special rule for the target package
@@ -114,7 +114,7 @@ package/fast: package
 # Special rule for the target package_source
 package_source:
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --cyan "Run CPack packaging tool for source..."
-	cd /users/nstroustrup/nstroustrup/projects/lifespan/external_compile_libraries/openjpeg-2.1.2 && /usr/bin/cpack --config ./CPackSourceConfig.cmake /users/nstroustrup/nstroustrup/projects/lifespan/external_compile_libraries/openjpeg-2.1.2/CPackSourceConfig.cmake
+	cd /home/image_server/lifespan/external_compile_libraries/openjpeg-2.1.2 && /usr/bin/cpack --config ./CPackSourceConfig.cmake /home/image_server/lifespan/external_compile_libraries/openjpeg-2.1.2/CPackSourceConfig.cmake
 .PHONY : package_source
 
 # Special rule for the target package_source
@@ -133,14 +133,14 @@ rebuild_cache/fast: rebuild_cache
 
 # The main all target
 all: cmake_check_build_system
-	cd /users/nstroustrup/nstroustrup/projects/lifespan/external_compile_libraries/openjpeg-2.1.2 && $(CMAKE_COMMAND) -E cmake_progress_start /users/nstroustrup/nstroustrup/projects/lifespan/external_compile_libraries/openjpeg-2.1.2/CMakeFiles /users/nstroustrup/nstroustrup/projects/lifespan/external_compile_libraries/openjpeg-2.1.2/src/bin/jp2/CMakeFiles/progress.marks
-	cd /users/nstroustrup/nstroustrup/projects/lifespan/external_compile_libraries/openjpeg-2.1.2 && $(MAKE) -f CMakeFiles/Makefile2 src/bin/jp2/all
-	$(CMAKE_COMMAND) -E cmake_progress_start /users/nstroustrup/nstroustrup/projects/lifespan/external_compile_libraries/openjpeg-2.1.2/CMakeFiles 0
+	cd /home/image_server/lifespan/external_compile_libraries/openjpeg-2.1.2 && $(CMAKE_COMMAND) -E cmake_progress_start /home/image_server/lifespan/external_compile_libraries/openjpeg-2.1.2/CMakeFiles /home/image_server/lifespan/external_compile_libraries/openjpeg-2.1.2/src/bin/jp2/CMakeFiles/progress.marks
+	cd /home/image_server/lifespan/external_compile_libraries/openjpeg-2.1.2 && $(MAKE) -f CMakeFiles/Makefile2 src/bin/jp2/all
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/image_server/lifespan/external_compile_libraries/openjpeg-2.1.2/CMakeFiles 0
 .PHONY : all
 
 # The main clean target
 clean:
-	cd /users/nstroustrup/nstroustrup/projects/lifespan/external_compile_libraries/openjpeg-2.1.2 && $(MAKE) -f CMakeFiles/Makefile2 src/bin/jp2/clean
+	cd /home/image_server/lifespan/external_compile_libraries/openjpeg-2.1.2 && $(MAKE) -f CMakeFiles/Makefile2 src/bin/jp2/clean
 .PHONY : clean
 
 # The main clean target
@@ -149,22 +149,22 @@ clean/fast: clean
 
 # Prepare targets for installation.
 preinstall: all
-	cd /users/nstroustrup/nstroustrup/projects/lifespan/external_compile_libraries/openjpeg-2.1.2 && $(MAKE) -f CMakeFiles/Makefile2 src/bin/jp2/preinstall
+	cd /home/image_server/lifespan/external_compile_libraries/openjpeg-2.1.2 && $(MAKE) -f CMakeFiles/Makefile2 src/bin/jp2/preinstall
 .PHONY : preinstall
 
 # Prepare targets for installation.
 preinstall/fast:
-	cd /users/nstroustrup/nstroustrup/projects/lifespan/external_compile_libraries/openjpeg-2.1.2 && $(MAKE) -f CMakeFiles/Makefile2 src/bin/jp2/preinstall
+	cd /home/image_server/lifespan/external_compile_libraries/openjpeg-2.1.2 && $(MAKE) -f CMakeFiles/Makefile2 src/bin/jp2/preinstall
 .PHONY : preinstall/fast
 
 # clear depends
 depend:
-	cd /users/nstroustrup/nstroustrup/projects/lifespan/external_compile_libraries/openjpeg-2.1.2 && $(CMAKE_COMMAND) -H$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR) --check-build-system CMakeFiles/Makefile.cmake 1
+	cd /home/image_server/lifespan/external_compile_libraries/openjpeg-2.1.2 && $(CMAKE_COMMAND) -H$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR) --check-build-system CMakeFiles/Makefile.cmake 1
 .PHONY : depend
 
 # Convenience name for target.
 src/bin/jp2/CMakeFiles/opj_compress.dir/rule:
-	cd /users/nstroustrup/nstroustrup/projects/lifespan/external_compile_libraries/openjpeg-2.1.2 && $(MAKE) -f CMakeFiles/Makefile2 src/bin/jp2/CMakeFiles/opj_compress.dir/rule
+	cd /home/image_server/lifespan/external_compile_libraries/openjpeg-2.1.2 && $(MAKE) -f CMakeFiles/Makefile2 src/bin/jp2/CMakeFiles/opj_compress.dir/rule
 .PHONY : src/bin/jp2/CMakeFiles/opj_compress.dir/rule
 
 # Convenience name for target.
@@ -173,12 +173,12 @@ opj_compress: src/bin/jp2/CMakeFiles/opj_compress.dir/rule
 
 # fast build rule for target.
 opj_compress/fast:
-	cd /users/nstroustrup/nstroustrup/projects/lifespan/external_compile_libraries/openjpeg-2.1.2 && $(MAKE) -f src/bin/jp2/CMakeFiles/opj_compress.dir/build.make src/bin/jp2/CMakeFiles/opj_compress.dir/build
+	cd /home/image_server/lifespan/external_compile_libraries/openjpeg-2.1.2 && $(MAKE) -f src/bin/jp2/CMakeFiles/opj_compress.dir/build.make src/bin/jp2/CMakeFiles/opj_compress.dir/build
 .PHONY : opj_compress/fast
 
 # Convenience name for target.
 src/bin/jp2/CMakeFiles/opj_decompress.dir/rule:
-	cd /users/nstroustrup/nstroustrup/projects/lifespan/external_compile_libraries/openjpeg-2.1.2 && $(MAKE) -f CMakeFiles/Makefile2 src/bin/jp2/CMakeFiles/opj_decompress.dir/rule
+	cd /home/image_server/lifespan/external_compile_libraries/openjpeg-2.1.2 && $(MAKE) -f CMakeFiles/Makefile2 src/bin/jp2/CMakeFiles/opj_decompress.dir/rule
 .PHONY : src/bin/jp2/CMakeFiles/opj_decompress.dir/rule
 
 # Convenience name for target.
@@ -187,12 +187,12 @@ opj_decompress: src/bin/jp2/CMakeFiles/opj_decompress.dir/rule
 
 # fast build rule for target.
 opj_decompress/fast:
-	cd /users/nstroustrup/nstroustrup/projects/lifespan/external_compile_libraries/openjpeg-2.1.2 && $(MAKE) -f src/bin/jp2/CMakeFiles/opj_decompress.dir/build.make src/bin/jp2/CMakeFiles/opj_decompress.dir/build
+	cd /home/image_server/lifespan/external_compile_libraries/openjpeg-2.1.2 && $(MAKE) -f src/bin/jp2/CMakeFiles/opj_decompress.dir/build.make src/bin/jp2/CMakeFiles/opj_decompress.dir/build
 .PHONY : opj_decompress/fast
 
 # Convenience name for target.
 src/bin/jp2/CMakeFiles/opj_dump.dir/rule:
-	cd /users/nstroustrup/nstroustrup/projects/lifespan/external_compile_libraries/openjpeg-2.1.2 && $(MAKE) -f CMakeFiles/Makefile2 src/bin/jp2/CMakeFiles/opj_dump.dir/rule
+	cd /home/image_server/lifespan/external_compile_libraries/openjpeg-2.1.2 && $(MAKE) -f CMakeFiles/Makefile2 src/bin/jp2/CMakeFiles/opj_dump.dir/rule
 .PHONY : src/bin/jp2/CMakeFiles/opj_dump.dir/rule
 
 # Convenience name for target.
@@ -201,7 +201,7 @@ opj_dump: src/bin/jp2/CMakeFiles/opj_dump.dir/rule
 
 # fast build rule for target.
 opj_dump/fast:
-	cd /users/nstroustrup/nstroustrup/projects/lifespan/external_compile_libraries/openjpeg-2.1.2 && $(MAKE) -f src/bin/jp2/CMakeFiles/opj_dump.dir/build.make src/bin/jp2/CMakeFiles/opj_dump.dir/build
+	cd /home/image_server/lifespan/external_compile_libraries/openjpeg-2.1.2 && $(MAKE) -f src/bin/jp2/CMakeFiles/opj_dump.dir/build.make src/bin/jp2/CMakeFiles/opj_dump.dir/build
 .PHONY : opj_dump/fast
 
 __/common/color.o: __/common/color.c.o
@@ -209,9 +209,9 @@ __/common/color.o: __/common/color.c.o
 
 # target to build an object file
 __/common/color.c.o:
-	cd /users/nstroustrup/nstroustrup/projects/lifespan/external_compile_libraries/openjpeg-2.1.2 && $(MAKE) -f src/bin/jp2/CMakeFiles/opj_compress.dir/build.make src/bin/jp2/CMakeFiles/opj_compress.dir/__/common/color.c.o
-	cd /users/nstroustrup/nstroustrup/projects/lifespan/external_compile_libraries/openjpeg-2.1.2 && $(MAKE) -f src/bin/jp2/CMakeFiles/opj_decompress.dir/build.make src/bin/jp2/CMakeFiles/opj_decompress.dir/__/common/color.c.o
-	cd /users/nstroustrup/nstroustrup/projects/lifespan/external_compile_libraries/openjpeg-2.1.2 && $(MAKE) -f src/bin/jp2/CMakeFiles/opj_dump.dir/build.make src/bin/jp2/CMakeFiles/opj_dump.dir/__/common/color.c.o
+	cd /home/image_server/lifespan/external_compile_libraries/openjpeg-2.1.2 && $(MAKE) -f src/bin/jp2/CMakeFiles/opj_compress.dir/build.make src/bin/jp2/CMakeFiles/opj_compress.dir/__/common/color.c.o
+	cd /home/image_server/lifespan/external_compile_libraries/openjpeg-2.1.2 && $(MAKE) -f src/bin/jp2/CMakeFiles/opj_decompress.dir/build.make src/bin/jp2/CMakeFiles/opj_decompress.dir/__/common/color.c.o
+	cd /home/image_server/lifespan/external_compile_libraries/openjpeg-2.1.2 && $(MAKE) -f src/bin/jp2/CMakeFiles/opj_dump.dir/build.make src/bin/jp2/CMakeFiles/opj_dump.dir/__/common/color.c.o
 .PHONY : __/common/color.c.o
 
 __/common/color.i: __/common/color.c.i
@@ -219,9 +219,9 @@ __/common/color.i: __/common/color.c.i
 
 # target to preprocess a source file
 __/common/color.c.i:
-	cd /users/nstroustrup/nstroustrup/projects/lifespan/external_compile_libraries/openjpeg-2.1.2 && $(MAKE) -f src/bin/jp2/CMakeFiles/opj_compress.dir/build.make src/bin/jp2/CMakeFiles/opj_compress.dir/__/common/color.c.i
-	cd /users/nstroustrup/nstroustrup/projects/lifespan/external_compile_libraries/openjpeg-2.1.2 && $(MAKE) -f src/bin/jp2/CMakeFiles/opj_decompress.dir/build.make src/bin/jp2/CMakeFiles/opj_decompress.dir/__/common/color.c.i
-	cd /users/nstroustrup/nstroustrup/projects/lifespan/external_compile_libraries/openjpeg-2.1.2 && $(MAKE) -f src/bin/jp2/CMakeFiles/opj_dump.dir/build.make src/bin/jp2/CMakeFiles/opj_dump.dir/__/common/color.c.i
+	cd /home/image_server/lifespan/external_compile_libraries/openjpeg-2.1.2 && $(MAKE) -f src/bin/jp2/CMakeFiles/opj_compress.dir/build.make src/bin/jp2/CMakeFiles/opj_compress.dir/__/common/color.c.i
+	cd /home/image_server/lifespan/external_compile_libraries/openjpeg-2.1.2 && $(MAKE) -f src/bin/jp2/CMakeFiles/opj_decompress.dir/build.make src/bin/jp2/CMakeFiles/opj_decompress.dir/__/common/color.c.i
+	cd /home/image_server/lifespan/external_compile_libraries/openjpeg-2.1.2 && $(MAKE) -f src/bin/jp2/CMakeFiles/opj_dump.dir/build.make src/bin/jp2/CMakeFiles/opj_dump.dir/__/common/color.c.i
 .PHONY : __/common/color.c.i
 
 __/common/color.s: __/common/color.c.s
@@ -229,9 +229,9 @@ __/common/color.s: __/common/color.c.s
 
 # target to generate assembly for a file
 __/common/color.c.s:
-	cd /users/nstroustrup/nstroustrup/projects/lifespan/external_compile_libraries/openjpeg-2.1.2 && $(MAKE) -f src/bin/jp2/CMakeFiles/opj_compress.dir/build.make src/bin/jp2/CMakeFiles/opj_compress.dir/__/common/color.c.s
-	cd /users/nstroustrup/nstroustrup/projects/lifespan/external_compile_libraries/openjpeg-2.1.2 && $(MAKE) -f src/bin/jp2/CMakeFiles/opj_decompress.dir/build.make src/bin/jp2/CMakeFiles/opj_decompress.dir/__/common/color.c.s
-	cd /users/nstroustrup/nstroustrup/projects/lifespan/external_compile_libraries/openjpeg-2.1.2 && $(MAKE) -f src/bin/jp2/CMakeFiles/opj_dump.dir/build.make src/bin/jp2/CMakeFiles/opj_dump.dir/__/common/color.c.s
+	cd /home/image_server/lifespan/external_compile_libraries/openjpeg-2.1.2 && $(MAKE) -f src/bin/jp2/CMakeFiles/opj_compress.dir/build.make src/bin/jp2/CMakeFiles/opj_compress.dir/__/common/color.c.s
+	cd /home/image_server/lifespan/external_compile_libraries/openjpeg-2.1.2 && $(MAKE) -f src/bin/jp2/CMakeFiles/opj_decompress.dir/build.make src/bin/jp2/CMakeFiles/opj_decompress.dir/__/common/color.c.s
+	cd /home/image_server/lifespan/external_compile_libraries/openjpeg-2.1.2 && $(MAKE) -f src/bin/jp2/CMakeFiles/opj_dump.dir/build.make src/bin/jp2/CMakeFiles/opj_dump.dir/__/common/color.c.s
 .PHONY : __/common/color.c.s
 
 __/common/opj_getopt.o: __/common/opj_getopt.c.o
@@ -239,9 +239,9 @@ __/common/opj_getopt.o: __/common/opj_getopt.c.o
 
 # target to build an object file
 __/common/opj_getopt.c.o:
-	cd /users/nstroustrup/nstroustrup/projects/lifespan/external_compile_libraries/openjpeg-2.1.2 && $(MAKE) -f src/bin/jp2/CMakeFiles/opj_compress.dir/build.make src/bin/jp2/CMakeFiles/opj_compress.dir/__/common/opj_getopt.c.o
-	cd /users/nstroustrup/nstroustrup/projects/lifespan/external_compile_libraries/openjpeg-2.1.2 && $(MAKE) -f src/bin/jp2/CMakeFiles/opj_decompress.dir/build.make src/bin/jp2/CMakeFiles/opj_decompress.dir/__/common/opj_getopt.c.o
-	cd /users/nstroustrup/nstroustrup/projects/lifespan/external_compile_libraries/openjpeg-2.1.2 && $(MAKE) -f src/bin/jp2/CMakeFiles/opj_dump.dir/build.make src/bin/jp2/CMakeFiles/opj_dump.dir/__/common/opj_getopt.c.o
+	cd /home/image_server/lifespan/external_compile_libraries/openjpeg-2.1.2 && $(MAKE) -f src/bin/jp2/CMakeFiles/opj_compress.dir/build.make src/bin/jp2/CMakeFiles/opj_compress.dir/__/common/opj_getopt.c.o
+	cd /home/image_server/lifespan/external_compile_libraries/openjpeg-2.1.2 && $(MAKE) -f src/bin/jp2/CMakeFiles/opj_decompress.dir/build.make src/bin/jp2/CMakeFiles/opj_decompress.dir/__/common/opj_getopt.c.o
+	cd /home/image_server/lifespan/external_compile_libraries/openjpeg-2.1.2 && $(MAKE) -f src/bin/jp2/CMakeFiles/opj_dump.dir/build.make src/bin/jp2/CMakeFiles/opj_dump.dir/__/common/opj_getopt.c.o
 .PHONY : __/common/opj_getopt.c.o
 
 __/common/opj_getopt.i: __/common/opj_getopt.c.i
@@ -249,9 +249,9 @@ __/common/opj_getopt.i: __/common/opj_getopt.c.i
 
 # target to preprocess a source file
 __/common/opj_getopt.c.i:
-	cd /users/nstroustrup/nstroustrup/projects/lifespan/external_compile_libraries/openjpeg-2.1.2 && $(MAKE) -f src/bin/jp2/CMakeFiles/opj_compress.dir/build.make src/bin/jp2/CMakeFiles/opj_compress.dir/__/common/opj_getopt.c.i
-	cd /users/nstroustrup/nstroustrup/projects/lifespan/external_compile_libraries/openjpeg-2.1.2 && $(MAKE) -f src/bin/jp2/CMakeFiles/opj_decompress.dir/build.make src/bin/jp2/CMakeFiles/opj_decompress.dir/__/common/opj_getopt.c.i
-	cd /users/nstroustrup/nstroustrup/projects/lifespan/external_compile_libraries/openjpeg-2.1.2 && $(MAKE) -f src/bin/jp2/CMakeFiles/opj_dump.dir/build.make src/bin/jp2/CMakeFiles/opj_dump.dir/__/common/opj_getopt.c.i
+	cd /home/image_server/lifespan/external_compile_libraries/openjpeg-2.1.2 && $(MAKE) -f src/bin/jp2/CMakeFiles/opj_compress.dir/build.make src/bin/jp2/CMakeFiles/opj_compress.dir/__/common/opj_getopt.c.i
+	cd /home/image_server/lifespan/external_compile_libraries/openjpeg-2.1.2 && $(MAKE) -f src/bin/jp2/CMakeFiles/opj_decompress.dir/build.make src/bin/jp2/CMakeFiles/opj_decompress.dir/__/common/opj_getopt.c.i
+	cd /home/image_server/lifespan/external_compile_libraries/openjpeg-2.1.2 && $(MAKE) -f src/bin/jp2/CMakeFiles/opj_dump.dir/build.make src/bin/jp2/CMakeFiles/opj_dump.dir/__/common/opj_getopt.c.i
 .PHONY : __/common/opj_getopt.c.i
 
 __/common/opj_getopt.s: __/common/opj_getopt.c.s
@@ -259,9 +259,9 @@ __/common/opj_getopt.s: __/common/opj_getopt.c.s
 
 # target to generate assembly for a file
 __/common/opj_getopt.c.s:
-	cd /users/nstroustrup/nstroustrup/projects/lifespan/external_compile_libraries/openjpeg-2.1.2 && $(MAKE) -f src/bin/jp2/CMakeFiles/opj_compress.dir/build.make src/bin/jp2/CMakeFiles/opj_compress.dir/__/common/opj_getopt.c.s
-	cd /users/nstroustrup/nstroustrup/projects/lifespan/external_compile_libraries/openjpeg-2.1.2 && $(MAKE) -f src/bin/jp2/CMakeFiles/opj_decompress.dir/build.make src/bin/jp2/CMakeFiles/opj_decompress.dir/__/common/opj_getopt.c.s
-	cd /users/nstroustrup/nstroustrup/projects/lifespan/external_compile_libraries/openjpeg-2.1.2 && $(MAKE) -f src/bin/jp2/CMakeFiles/opj_dump.dir/build.make src/bin/jp2/CMakeFiles/opj_dump.dir/__/common/opj_getopt.c.s
+	cd /home/image_server/lifespan/external_compile_libraries/openjpeg-2.1.2 && $(MAKE) -f src/bin/jp2/CMakeFiles/opj_compress.dir/build.make src/bin/jp2/CMakeFiles/opj_compress.dir/__/common/opj_getopt.c.s
+	cd /home/image_server/lifespan/external_compile_libraries/openjpeg-2.1.2 && $(MAKE) -f src/bin/jp2/CMakeFiles/opj_decompress.dir/build.make src/bin/jp2/CMakeFiles/opj_decompress.dir/__/common/opj_getopt.c.s
+	cd /home/image_server/lifespan/external_compile_libraries/openjpeg-2.1.2 && $(MAKE) -f src/bin/jp2/CMakeFiles/opj_dump.dir/build.make src/bin/jp2/CMakeFiles/opj_dump.dir/__/common/opj_getopt.c.s
 .PHONY : __/common/opj_getopt.c.s
 
 convert.o: convert.c.o
@@ -269,9 +269,9 @@ convert.o: convert.c.o
 
 # target to build an object file
 convert.c.o:
-	cd /users/nstroustrup/nstroustrup/projects/lifespan/external_compile_libraries/openjpeg-2.1.2 && $(MAKE) -f src/bin/jp2/CMakeFiles/opj_compress.dir/build.make src/bin/jp2/CMakeFiles/opj_compress.dir/convert.c.o
-	cd /users/nstroustrup/nstroustrup/projects/lifespan/external_compile_libraries/openjpeg-2.1.2 && $(MAKE) -f src/bin/jp2/CMakeFiles/opj_decompress.dir/build.make src/bin/jp2/CMakeFiles/opj_decompress.dir/convert.c.o
-	cd /users/nstroustrup/nstroustrup/projects/lifespan/external_compile_libraries/openjpeg-2.1.2 && $(MAKE) -f src/bin/jp2/CMakeFiles/opj_dump.dir/build.make src/bin/jp2/CMakeFiles/opj_dump.dir/convert.c.o
+	cd /home/image_server/lifespan/external_compile_libraries/openjpeg-2.1.2 && $(MAKE) -f src/bin/jp2/CMakeFiles/opj_compress.dir/build.make src/bin/jp2/CMakeFiles/opj_compress.dir/convert.c.o
+	cd /home/image_server/lifespan/external_compile_libraries/openjpeg-2.1.2 && $(MAKE) -f src/bin/jp2/CMakeFiles/opj_decompress.dir/build.make src/bin/jp2/CMakeFiles/opj_decompress.dir/convert.c.o
+	cd /home/image_server/lifespan/external_compile_libraries/openjpeg-2.1.2 && $(MAKE) -f src/bin/jp2/CMakeFiles/opj_dump.dir/build.make src/bin/jp2/CMakeFiles/opj_dump.dir/convert.c.o
 .PHONY : convert.c.o
 
 convert.i: convert.c.i
@@ -279,9 +279,9 @@ convert.i: convert.c.i
 
 # target to preprocess a source file
 convert.c.i:
-	cd /users/nstroustrup/nstroustrup/projects/lifespan/external_compile_libraries/openjpeg-2.1.2 && $(MAKE) -f src/bin/jp2/CMakeFiles/opj_compress.dir/build.make src/bin/jp2/CMakeFiles/opj_compress.dir/convert.c.i
-	cd /users/nstroustrup/nstroustrup/projects/lifespan/external_compile_libraries/openjpeg-2.1.2 && $(MAKE) -f src/bin/jp2/CMakeFiles/opj_decompress.dir/build.make src/bin/jp2/CMakeFiles/opj_decompress.dir/convert.c.i
-	cd /users/nstroustrup/nstroustrup/projects/lifespan/external_compile_libraries/openjpeg-2.1.2 && $(MAKE) -f src/bin/jp2/CMakeFiles/opj_dump.dir/build.make src/bin/jp2/CMakeFiles/opj_dump.dir/convert.c.i
+	cd /home/image_server/lifespan/external_compile_libraries/openjpeg-2.1.2 && $(MAKE) -f src/bin/jp2/CMakeFiles/opj_compress.dir/build.make src/bin/jp2/CMakeFiles/opj_compress.dir/convert.c.i
+	cd /home/image_server/lifespan/external_compile_libraries/openjpeg-2.1.2 && $(MAKE) -f src/bin/jp2/CMakeFiles/opj_decompress.dir/build.make src/bin/jp2/CMakeFiles/opj_decompress.dir/convert.c.i
+	cd /home/image_server/lifespan/external_compile_libraries/openjpeg-2.1.2 && $(MAKE) -f src/bin/jp2/CMakeFiles/opj_dump.dir/build.make src/bin/jp2/CMakeFiles/opj_dump.dir/convert.c.i
 .PHONY : convert.c.i
 
 convert.s: convert.c.s
@@ -289,9 +289,9 @@ convert.s: convert.c.s
 
 # target to generate assembly for a file
 convert.c.s:
-	cd /users/nstroustrup/nstroustrup/projects/lifespan/external_compile_libraries/openjpeg-2.1.2 && $(MAKE) -f src/bin/jp2/CMakeFiles/opj_compress.dir/build.make src/bin/jp2/CMakeFiles/opj_compress.dir/convert.c.s
-	cd /users/nstroustrup/nstroustrup/projects/lifespan/external_compile_libraries/openjpeg-2.1.2 && $(MAKE) -f src/bin/jp2/CMakeFiles/opj_decompress.dir/build.make src/bin/jp2/CMakeFiles/opj_decompress.dir/convert.c.s
-	cd /users/nstroustrup/nstroustrup/projects/lifespan/external_compile_libraries/openjpeg-2.1.2 && $(MAKE) -f src/bin/jp2/CMakeFiles/opj_dump.dir/build.make src/bin/jp2/CMakeFiles/opj_dump.dir/convert.c.s
+	cd /home/image_server/lifespan/external_compile_libraries/openjpeg-2.1.2 && $(MAKE) -f src/bin/jp2/CMakeFiles/opj_compress.dir/build.make src/bin/jp2/CMakeFiles/opj_compress.dir/convert.c.s
+	cd /home/image_server/lifespan/external_compile_libraries/openjpeg-2.1.2 && $(MAKE) -f src/bin/jp2/CMakeFiles/opj_decompress.dir/build.make src/bin/jp2/CMakeFiles/opj_decompress.dir/convert.c.s
+	cd /home/image_server/lifespan/external_compile_libraries/openjpeg-2.1.2 && $(MAKE) -f src/bin/jp2/CMakeFiles/opj_dump.dir/build.make src/bin/jp2/CMakeFiles/opj_dump.dir/convert.c.s
 .PHONY : convert.c.s
 
 convertbmp.o: convertbmp.c.o
@@ -299,9 +299,9 @@ convertbmp.o: convertbmp.c.o
 
 # target to build an object file
 convertbmp.c.o:
-	cd /users/nstroustrup/nstroustrup/projects/lifespan/external_compile_libraries/openjpeg-2.1.2 && $(MAKE) -f src/bin/jp2/CMakeFiles/opj_compress.dir/build.make src/bin/jp2/CMakeFiles/opj_compress.dir/convertbmp.c.o
-	cd /users/nstroustrup/nstroustrup/projects/lifespan/external_compile_libraries/openjpeg-2.1.2 && $(MAKE) -f src/bin/jp2/CMakeFiles/opj_decompress.dir/build.make src/bin/jp2/CMakeFiles/opj_decompress.dir/convertbmp.c.o
-	cd /users/nstroustrup/nstroustrup/projects/lifespan/external_compile_libraries/openjpeg-2.1.2 && $(MAKE) -f src/bin/jp2/CMakeFiles/opj_dump.dir/build.make src/bin/jp2/CMakeFiles/opj_dump.dir/convertbmp.c.o
+	cd /home/image_server/lifespan/external_compile_libraries/openjpeg-2.1.2 && $(MAKE) -f src/bin/jp2/CMakeFiles/opj_compress.dir/build.make src/bin/jp2/CMakeFiles/opj_compress.dir/convertbmp.c.o
+	cd /home/image_server/lifespan/external_compile_libraries/openjpeg-2.1.2 && $(MAKE) -f src/bin/jp2/CMakeFiles/opj_decompress.dir/build.make src/bin/jp2/CMakeFiles/opj_decompress.dir/convertbmp.c.o
+	cd /home/image_server/lifespan/external_compile_libraries/openjpeg-2.1.2 && $(MAKE) -f src/bin/jp2/CMakeFiles/opj_dump.dir/build.make src/bin/jp2/CMakeFiles/opj_dump.dir/convertbmp.c.o
 .PHONY : convertbmp.c.o
 
 convertbmp.i: convertbmp.c.i
@@ -309,9 +309,9 @@ convertbmp.i: convertbmp.c.i
 
 # target to preprocess a source file
 convertbmp.c.i:
-	cd /users/nstroustrup/nstroustrup/projects/lifespan/external_compile_libraries/openjpeg-2.1.2 && $(MAKE) -f src/bin/jp2/CMakeFiles/opj_compress.dir/build.make src/bin/jp2/CMakeFiles/opj_compress.dir/convertbmp.c.i
-	cd /users/nstroustrup/nstroustrup/projects/lifespan/external_compile_libraries/openjpeg-2.1.2 && $(MAKE) -f src/bin/jp2/CMakeFiles/opj_decompress.dir/build.make src/bin/jp2/CMakeFiles/opj_decompress.dir/convertbmp.c.i
-	cd /users/nstroustrup/nstroustrup/projects/lifespan/external_compile_libraries/openjpeg-2.1.2 && $(MAKE) -f src/bin/jp2/CMakeFiles/opj_dump.dir/build.make src/bin/jp2/CMakeFiles/opj_dump.dir/convertbmp.c.i
+	cd /home/image_server/lifespan/external_compile_libraries/openjpeg-2.1.2 && $(MAKE) -f src/bin/jp2/CMakeFiles/opj_compress.dir/build.make src/bin/jp2/CMakeFiles/opj_compress.dir/convertbmp.c.i
+	cd /home/image_server/lifespan/external_compile_libraries/openjpeg-2.1.2 && $(MAKE) -f src/bin/jp2/CMakeFiles/opj_decompress.dir/build.make src/bin/jp2/CMakeFiles/opj_decompress.dir/convertbmp.c.i
+	cd /home/image_server/lifespan/external_compile_libraries/openjpeg-2.1.2 && $(MAKE) -f src/bin/jp2/CMakeFiles/opj_dump.dir/build.make src/bin/jp2/CMakeFiles/opj_dump.dir/convertbmp.c.i
 .PHONY : convertbmp.c.i
 
 convertbmp.s: convertbmp.c.s
@@ -319,9 +319,9 @@ convertbmp.s: convertbmp.c.s
 
 # target to generate assembly for a file
 convertbmp.c.s:
-	cd /users/nstroustrup/nstroustrup/projects/lifespan/external_compile_libraries/openjpeg-2.1.2 && $(MAKE) -f src/bin/jp2/CMakeFiles/opj_compress.dir/build.make src/bin/jp2/CMakeFiles/opj_compress.dir/convertbmp.c.s
-	cd /users/nstroustrup/nstroustrup/projects/lifespan/external_compile_libraries/openjpeg-2.1.2 && $(MAKE) -f src/bin/jp2/CMakeFiles/opj_decompress.dir/build.make src/bin/jp2/CMakeFiles/opj_decompress.dir/convertbmp.c.s
-	cd /users/nstroustrup/nstroustrup/projects/lifespan/external_compile_libraries/openjpeg-2.1.2 && $(MAKE) -f src/bin/jp2/CMakeFiles/opj_dump.dir/build.make src/bin/jp2/CMakeFiles/opj_dump.dir/convertbmp.c.s
+	cd /home/image_server/lifespan/external_compile_libraries/openjpeg-2.1.2 && $(MAKE) -f src/bin/jp2/CMakeFiles/opj_compress.dir/build.make src/bin/jp2/CMakeFiles/opj_compress.dir/convertbmp.c.s
+	cd /home/image_server/lifespan/external_compile_libraries/openjpeg-2.1.2 && $(MAKE) -f src/bin/jp2/CMakeFiles/opj_decompress.dir/build.make src/bin/jp2/CMakeFiles/opj_decompress.dir/convertbmp.c.s
+	cd /home/image_server/lifespan/external_compile_libraries/openjpeg-2.1.2 && $(MAKE) -f src/bin/jp2/CMakeFiles/opj_dump.dir/build.make src/bin/jp2/CMakeFiles/opj_dump.dir/convertbmp.c.s
 .PHONY : convertbmp.c.s
 
 convertpng.o: convertpng.c.o
@@ -329,9 +329,9 @@ convertpng.o: convertpng.c.o
 
 # target to build an object file
 convertpng.c.o:
-	cd /users/nstroustrup/nstroustrup/projects/lifespan/external_compile_libraries/openjpeg-2.1.2 && $(MAKE) -f src/bin/jp2/CMakeFiles/opj_compress.dir/build.make src/bin/jp2/CMakeFiles/opj_compress.dir/convertpng.c.o
-	cd /users/nstroustrup/nstroustrup/projects/lifespan/external_compile_libraries/openjpeg-2.1.2 && $(MAKE) -f src/bin/jp2/CMakeFiles/opj_decompress.dir/build.make src/bin/jp2/CMakeFiles/opj_decompress.dir/convertpng.c.o
-	cd /users/nstroustrup/nstroustrup/projects/lifespan/external_compile_libraries/openjpeg-2.1.2 && $(MAKE) -f src/bin/jp2/CMakeFiles/opj_dump.dir/build.make src/bin/jp2/CMakeFiles/opj_dump.dir/convertpng.c.o
+	cd /home/image_server/lifespan/external_compile_libraries/openjpeg-2.1.2 && $(MAKE) -f src/bin/jp2/CMakeFiles/opj_compress.dir/build.make src/bin/jp2/CMakeFiles/opj_compress.dir/convertpng.c.o
+	cd /home/image_server/lifespan/external_compile_libraries/openjpeg-2.1.2 && $(MAKE) -f src/bin/jp2/CMakeFiles/opj_decompress.dir/build.make src/bin/jp2/CMakeFiles/opj_decompress.dir/convertpng.c.o
+	cd /home/image_server/lifespan/external_compile_libraries/openjpeg-2.1.2 && $(MAKE) -f src/bin/jp2/CMakeFiles/opj_dump.dir/build.make src/bin/jp2/CMakeFiles/opj_dump.dir/convertpng.c.o
 .PHONY : convertpng.c.o
 
 convertpng.i: convertpng.c.i
@@ -339,9 +339,9 @@ convertpng.i: convertpng.c.i
 
 # target to preprocess a source file
 convertpng.c.i:
-	cd /users/nstroustrup/nstroustrup/projects/lifespan/external_compile_libraries/openjpeg-2.1.2 && $(MAKE) -f src/bin/jp2/CMakeFiles/opj_compress.dir/build.make src/bin/jp2/CMakeFiles/opj_compress.dir/convertpng.c.i
-	cd /users/nstroustrup/nstroustrup/projects/lifespan/external_compile_libraries/openjpeg-2.1.2 && $(MAKE) -f src/bin/jp2/CMakeFiles/opj_decompress.dir/build.make src/bin/jp2/CMakeFiles/opj_decompress.dir/convertpng.c.i
-	cd /users/nstroustrup/nstroustrup/projects/lifespan/external_compile_libraries/openjpeg-2.1.2 && $(MAKE) -f src/bin/jp2/CMakeFiles/opj_dump.dir/build.make src/bin/jp2/CMakeFiles/opj_dump.dir/convertpng.c.i
+	cd /home/image_server/lifespan/external_compile_libraries/openjpeg-2.1.2 && $(MAKE) -f src/bin/jp2/CMakeFiles/opj_compress.dir/build.make src/bin/jp2/CMakeFiles/opj_compress.dir/convertpng.c.i
+	cd /home/image_server/lifespan/external_compile_libraries/openjpeg-2.1.2 && $(MAKE) -f src/bin/jp2/CMakeFiles/opj_decompress.dir/build.make src/bin/jp2/CMakeFiles/opj_decompress.dir/convertpng.c.i
+	cd /home/image_server/lifespan/external_compile_libraries/openjpeg-2.1.2 && $(MAKE) -f src/bin/jp2/CMakeFiles/opj_dump.dir/build.make src/bin/jp2/CMakeFiles/opj_dump.dir/convertpng.c.i
 .PHONY : convertpng.c.i
 
 convertpng.s: convertpng.c.s
@@ -349,9 +349,9 @@ convertpng.s: convertpng.c.s
 
 # target to generate assembly for a file
 convertpng.c.s:
-	cd /users/nstroustrup/nstroustrup/projects/lifespan/external_compile_libraries/openjpeg-2.1.2 && $(MAKE) -f src/bin/jp2/CMakeFiles/opj_compress.dir/build.make src/bin/jp2/CMakeFiles/opj_compress.dir/convertpng.c.s
-	cd /users/nstroustrup/nstroustrup/projects/lifespan/external_compile_libraries/openjpeg-2.1.2 && $(MAKE) -f src/bin/jp2/CMakeFiles/opj_decompress.dir/build.make src/bin/jp2/CMakeFiles/opj_decompress.dir/convertpng.c.s
-	cd /users/nstroustrup/nstroustrup/projects/lifespan/external_compile_libraries/openjpeg-2.1.2 && $(MAKE) -f src/bin/jp2/CMakeFiles/opj_dump.dir/build.make src/bin/jp2/CMakeFiles/opj_dump.dir/convertpng.c.s
+	cd /home/image_server/lifespan/external_compile_libraries/openjpeg-2.1.2 && $(MAKE) -f src/bin/jp2/CMakeFiles/opj_compress.dir/build.make src/bin/jp2/CMakeFiles/opj_compress.dir/convertpng.c.s
+	cd /home/image_server/lifespan/external_compile_libraries/openjpeg-2.1.2 && $(MAKE) -f src/bin/jp2/CMakeFiles/opj_decompress.dir/build.make src/bin/jp2/CMakeFiles/opj_decompress.dir/convertpng.c.s
+	cd /home/image_server/lifespan/external_compile_libraries/openjpeg-2.1.2 && $(MAKE) -f src/bin/jp2/CMakeFiles/opj_dump.dir/build.make src/bin/jp2/CMakeFiles/opj_dump.dir/convertpng.c.s
 .PHONY : convertpng.c.s
 
 converttif.o: converttif.c.o
@@ -359,9 +359,9 @@ converttif.o: converttif.c.o
 
 # target to build an object file
 converttif.c.o:
-	cd /users/nstroustrup/nstroustrup/projects/lifespan/external_compile_libraries/openjpeg-2.1.2 && $(MAKE) -f src/bin/jp2/CMakeFiles/opj_compress.dir/build.make src/bin/jp2/CMakeFiles/opj_compress.dir/converttif.c.o
-	cd /users/nstroustrup/nstroustrup/projects/lifespan/external_compile_libraries/openjpeg-2.1.2 && $(MAKE) -f src/bin/jp2/CMakeFiles/opj_decompress.dir/build.make src/bin/jp2/CMakeFiles/opj_decompress.dir/converttif.c.o
-	cd /users/nstroustrup/nstroustrup/projects/lifespan/external_compile_libraries/openjpeg-2.1.2 && $(MAKE) -f src/bin/jp2/CMakeFiles/opj_dump.dir/build.make src/bin/jp2/CMakeFiles/opj_dump.dir/converttif.c.o
+	cd /home/image_server/lifespan/external_compile_libraries/openjpeg-2.1.2 && $(MAKE) -f src/bin/jp2/CMakeFiles/opj_compress.dir/build.make src/bin/jp2/CMakeFiles/opj_compress.dir/converttif.c.o
+	cd /home/image_server/lifespan/external_compile_libraries/openjpeg-2.1.2 && $(MAKE) -f src/bin/jp2/CMakeFiles/opj_decompress.dir/build.make src/bin/jp2/CMakeFiles/opj_decompress.dir/converttif.c.o
+	cd /home/image_server/lifespan/external_compile_libraries/openjpeg-2.1.2 && $(MAKE) -f src/bin/jp2/CMakeFiles/opj_dump.dir/build.make src/bin/jp2/CMakeFiles/opj_dump.dir/converttif.c.o
 .PHONY : converttif.c.o
 
 converttif.i: converttif.c.i
@@ -369,9 +369,9 @@ converttif.i: converttif.c.i
 
 # target to preprocess a source file
 converttif.c.i:
-	cd /users/nstroustrup/nstroustrup/projects/lifespan/external_compile_libraries/openjpeg-2.1.2 && $(MAKE) -f src/bin/jp2/CMakeFiles/opj_compress.dir/build.make src/bin/jp2/CMakeFiles/opj_compress.dir/converttif.c.i
-	cd /users/nstroustrup/nstroustrup/projects/lifespan/external_compile_libraries/openjpeg-2.1.2 && $(MAKE) -f src/bin/jp2/CMakeFiles/opj_decompress.dir/build.make src/bin/jp2/CMakeFiles/opj_decompress.dir/converttif.c.i
-	cd /users/nstroustrup/nstroustrup/projects/lifespan/external_compile_libraries/openjpeg-2.1.2 && $(MAKE) -f src/bin/jp2/CMakeFiles/opj_dump.dir/build.make src/bin/jp2/CMakeFiles/opj_dump.dir/converttif.c.i
+	cd /home/image_server/lifespan/external_compile_libraries/openjpeg-2.1.2 && $(MAKE) -f src/bin/jp2/CMakeFiles/opj_compress.dir/build.make src/bin/jp2/CMakeFiles/opj_compress.dir/converttif.c.i
+	cd /home/image_server/lifespan/external_compile_libraries/openjpeg-2.1.2 && $(MAKE) -f src/bin/jp2/CMakeFiles/opj_decompress.dir/build.make src/bin/jp2/CMakeFiles/opj_decompress.dir/converttif.c.i
+	cd /home/image_server/lifespan/external_compile_libraries/openjpeg-2.1.2 && $(MAKE) -f src/bin/jp2/CMakeFiles/opj_dump.dir/build.make src/bin/jp2/CMakeFiles/opj_dump.dir/converttif.c.i
 .PHONY : converttif.c.i
 
 converttif.s: converttif.c.s
@@ -379,9 +379,9 @@ converttif.s: converttif.c.s
 
 # target to generate assembly for a file
 converttif.c.s:
-	cd /users/nstroustrup/nstroustrup/projects/lifespan/external_compile_libraries/openjpeg-2.1.2 && $(MAKE) -f src/bin/jp2/CMakeFiles/opj_compress.dir/build.make src/bin/jp2/CMakeFiles/opj_compress.dir/converttif.c.s
-	cd /users/nstroustrup/nstroustrup/projects/lifespan/external_compile_libraries/openjpeg-2.1.2 && $(MAKE) -f src/bin/jp2/CMakeFiles/opj_decompress.dir/build.make src/bin/jp2/CMakeFiles/opj_decompress.dir/converttif.c.s
-	cd /users/nstroustrup/nstroustrup/projects/lifespan/external_compile_libraries/openjpeg-2.1.2 && $(MAKE) -f src/bin/jp2/CMakeFiles/opj_dump.dir/build.make src/bin/jp2/CMakeFiles/opj_dump.dir/converttif.c.s
+	cd /home/image_server/lifespan/external_compile_libraries/openjpeg-2.1.2 && $(MAKE) -f src/bin/jp2/CMakeFiles/opj_compress.dir/build.make src/bin/jp2/CMakeFiles/opj_compress.dir/converttif.c.s
+	cd /home/image_server/lifespan/external_compile_libraries/openjpeg-2.1.2 && $(MAKE) -f src/bin/jp2/CMakeFiles/opj_decompress.dir/build.make src/bin/jp2/CMakeFiles/opj_decompress.dir/converttif.c.s
+	cd /home/image_server/lifespan/external_compile_libraries/openjpeg-2.1.2 && $(MAKE) -f src/bin/jp2/CMakeFiles/opj_dump.dir/build.make src/bin/jp2/CMakeFiles/opj_dump.dir/converttif.c.s
 .PHONY : converttif.c.s
 
 index.o: index.c.o
@@ -389,9 +389,9 @@ index.o: index.c.o
 
 # target to build an object file
 index.c.o:
-	cd /users/nstroustrup/nstroustrup/projects/lifespan/external_compile_libraries/openjpeg-2.1.2 && $(MAKE) -f src/bin/jp2/CMakeFiles/opj_compress.dir/build.make src/bin/jp2/CMakeFiles/opj_compress.dir/index.c.o
-	cd /users/nstroustrup/nstroustrup/projects/lifespan/external_compile_libraries/openjpeg-2.1.2 && $(MAKE) -f src/bin/jp2/CMakeFiles/opj_decompress.dir/build.make src/bin/jp2/CMakeFiles/opj_decompress.dir/index.c.o
-	cd /users/nstroustrup/nstroustrup/projects/lifespan/external_compile_libraries/openjpeg-2.1.2 && $(MAKE) -f src/bin/jp2/CMakeFiles/opj_dump.dir/build.make src/bin/jp2/CMakeFiles/opj_dump.dir/index.c.o
+	cd /home/image_server/lifespan/external_compile_libraries/openjpeg-2.1.2 && $(MAKE) -f src/bin/jp2/CMakeFiles/opj_compress.dir/build.make src/bin/jp2/CMakeFiles/opj_compress.dir/index.c.o
+	cd /home/image_server/lifespan/external_compile_libraries/openjpeg-2.1.2 && $(MAKE) -f src/bin/jp2/CMakeFiles/opj_decompress.dir/build.make src/bin/jp2/CMakeFiles/opj_decompress.dir/index.c.o
+	cd /home/image_server/lifespan/external_compile_libraries/openjpeg-2.1.2 && $(MAKE) -f src/bin/jp2/CMakeFiles/opj_dump.dir/build.make src/bin/jp2/CMakeFiles/opj_dump.dir/index.c.o
 .PHONY : index.c.o
 
 index.i: index.c.i
@@ -399,9 +399,9 @@ index.i: index.c.i
 
 # target to preprocess a source file
 index.c.i:
-	cd /users/nstroustrup/nstroustrup/projects/lifespan/external_compile_libraries/openjpeg-2.1.2 && $(MAKE) -f src/bin/jp2/CMakeFiles/opj_compress.dir/build.make src/bin/jp2/CMakeFiles/opj_compress.dir/index.c.i
-	cd /users/nstroustrup/nstroustrup/projects/lifespan/external_compile_libraries/openjpeg-2.1.2 && $(MAKE) -f src/bin/jp2/CMakeFiles/opj_decompress.dir/build.make src/bin/jp2/CMakeFiles/opj_decompress.dir/index.c.i
-	cd /users/nstroustrup/nstroustrup/projects/lifespan/external_compile_libraries/openjpeg-2.1.2 && $(MAKE) -f src/bin/jp2/CMakeFiles/opj_dump.dir/build.make src/bin/jp2/CMakeFiles/opj_dump.dir/index.c.i
+	cd /home/image_server/lifespan/external_compile_libraries/openjpeg-2.1.2 && $(MAKE) -f src/bin/jp2/CMakeFiles/opj_compress.dir/build.make src/bin/jp2/CMakeFiles/opj_compress.dir/index.c.i
+	cd /home/image_server/lifespan/external_compile_libraries/openjpeg-2.1.2 && $(MAKE) -f src/bin/jp2/CMakeFiles/opj_decompress.dir/build.make src/bin/jp2/CMakeFiles/opj_decompress.dir/index.c.i
+	cd /home/image_server/lifespan/external_compile_libraries/openjpeg-2.1.2 && $(MAKE) -f src/bin/jp2/CMakeFiles/opj_dump.dir/build.make src/bin/jp2/CMakeFiles/opj_dump.dir/index.c.i
 .PHONY : index.c.i
 
 index.s: index.c.s
@@ -409,9 +409,9 @@ index.s: index.c.s
 
 # target to generate assembly for a file
 index.c.s:
-	cd /users/nstroustrup/nstroustrup/projects/lifespan/external_compile_libraries/openjpeg-2.1.2 && $(MAKE) -f src/bin/jp2/CMakeFiles/opj_compress.dir/build.make src/bin/jp2/CMakeFiles/opj_compress.dir/index.c.s
-	cd /users/nstroustrup/nstroustrup/projects/lifespan/external_compile_libraries/openjpeg-2.1.2 && $(MAKE) -f src/bin/jp2/CMakeFiles/opj_decompress.dir/build.make src/bin/jp2/CMakeFiles/opj_decompress.dir/index.c.s
-	cd /users/nstroustrup/nstroustrup/projects/lifespan/external_compile_libraries/openjpeg-2.1.2 && $(MAKE) -f src/bin/jp2/CMakeFiles/opj_dump.dir/build.make src/bin/jp2/CMakeFiles/opj_dump.dir/index.c.s
+	cd /home/image_server/lifespan/external_compile_libraries/openjpeg-2.1.2 && $(MAKE) -f src/bin/jp2/CMakeFiles/opj_compress.dir/build.make src/bin/jp2/CMakeFiles/opj_compress.dir/index.c.s
+	cd /home/image_server/lifespan/external_compile_libraries/openjpeg-2.1.2 && $(MAKE) -f src/bin/jp2/CMakeFiles/opj_decompress.dir/build.make src/bin/jp2/CMakeFiles/opj_decompress.dir/index.c.s
+	cd /home/image_server/lifespan/external_compile_libraries/openjpeg-2.1.2 && $(MAKE) -f src/bin/jp2/CMakeFiles/opj_dump.dir/build.make src/bin/jp2/CMakeFiles/opj_dump.dir/index.c.s
 .PHONY : index.c.s
 
 opj_compress.o: opj_compress.c.o
@@ -419,7 +419,7 @@ opj_compress.o: opj_compress.c.o
 
 # target to build an object file
 opj_compress.c.o:
-	cd /users/nstroustrup/nstroustrup/projects/lifespan/external_compile_libraries/openjpeg-2.1.2 && $(MAKE) -f src/bin/jp2/CMakeFiles/opj_compress.dir/build.make src/bin/jp2/CMakeFiles/opj_compress.dir/opj_compress.c.o
+	cd /home/image_server/lifespan/external_compile_libraries/openjpeg-2.1.2 && $(MAKE) -f src/bin/jp2/CMakeFiles/opj_compress.dir/build.make src/bin/jp2/CMakeFiles/opj_compress.dir/opj_compress.c.o
 .PHONY : opj_compress.c.o
 
 opj_compress.i: opj_compress.c.i
@@ -427,7 +427,7 @@ opj_compress.i: opj_compress.c.i
 
 # target to preprocess a source file
 opj_compress.c.i:
-	cd /users/nstroustrup/nstroustrup/projects/lifespan/external_compile_libraries/openjpeg-2.1.2 && $(MAKE) -f src/bin/jp2/CMakeFiles/opj_compress.dir/build.make src/bin/jp2/CMakeFiles/opj_compress.dir/opj_compress.c.i
+	cd /home/image_server/lifespan/external_compile_libraries/openjpeg-2.1.2 && $(MAKE) -f src/bin/jp2/CMakeFiles/opj_compress.dir/build.make src/bin/jp2/CMakeFiles/opj_compress.dir/opj_compress.c.i
 .PHONY : opj_compress.c.i
 
 opj_compress.s: opj_compress.c.s
@@ -435,7 +435,7 @@ opj_compress.s: opj_compress.c.s
 
 # target to generate assembly for a file
 opj_compress.c.s:
-	cd /users/nstroustrup/nstroustrup/projects/lifespan/external_compile_libraries/openjpeg-2.1.2 && $(MAKE) -f src/bin/jp2/CMakeFiles/opj_compress.dir/build.make src/bin/jp2/CMakeFiles/opj_compress.dir/opj_compress.c.s
+	cd /home/image_server/lifespan/external_compile_libraries/openjpeg-2.1.2 && $(MAKE) -f src/bin/jp2/CMakeFiles/opj_compress.dir/build.make src/bin/jp2/CMakeFiles/opj_compress.dir/opj_compress.c.s
 .PHONY : opj_compress.c.s
 
 opj_decompress.o: opj_decompress.c.o
@@ -443,7 +443,7 @@ opj_decompress.o: opj_decompress.c.o
 
 # target to build an object file
 opj_decompress.c.o:
-	cd /users/nstroustrup/nstroustrup/projects/lifespan/external_compile_libraries/openjpeg-2.1.2 && $(MAKE) -f src/bin/jp2/CMakeFiles/opj_decompress.dir/build.make src/bin/jp2/CMakeFiles/opj_decompress.dir/opj_decompress.c.o
+	cd /home/image_server/lifespan/external_compile_libraries/openjpeg-2.1.2 && $(MAKE) -f src/bin/jp2/CMakeFiles/opj_decompress.dir/build.make src/bin/jp2/CMakeFiles/opj_decompress.dir/opj_decompress.c.o
 .PHONY : opj_decompress.c.o
 
 opj_decompress.i: opj_decompress.c.i
@@ -451,7 +451,7 @@ opj_decompress.i: opj_decompress.c.i
 
 # target to preprocess a source file
 opj_decompress.c.i:
-	cd /users/nstroustrup/nstroustrup/projects/lifespan/external_compile_libraries/openjpeg-2.1.2 && $(MAKE) -f src/bin/jp2/CMakeFiles/opj_decompress.dir/build.make src/bin/jp2/CMakeFiles/opj_decompress.dir/opj_decompress.c.i
+	cd /home/image_server/lifespan/external_compile_libraries/openjpeg-2.1.2 && $(MAKE) -f src/bin/jp2/CMakeFiles/opj_decompress.dir/build.make src/bin/jp2/CMakeFiles/opj_decompress.dir/opj_decompress.c.i
 .PHONY : opj_decompress.c.i
 
 opj_decompress.s: opj_decompress.c.s
@@ -459,7 +459,7 @@ opj_decompress.s: opj_decompress.c.s
 
 # target to generate assembly for a file
 opj_decompress.c.s:
-	cd /users/nstroustrup/nstroustrup/projects/lifespan/external_compile_libraries/openjpeg-2.1.2 && $(MAKE) -f src/bin/jp2/CMakeFiles/opj_decompress.dir/build.make src/bin/jp2/CMakeFiles/opj_decompress.dir/opj_decompress.c.s
+	cd /home/image_server/lifespan/external_compile_libraries/openjpeg-2.1.2 && $(MAKE) -f src/bin/jp2/CMakeFiles/opj_decompress.dir/build.make src/bin/jp2/CMakeFiles/opj_decompress.dir/opj_decompress.c.s
 .PHONY : opj_decompress.c.s
 
 opj_dump.o: opj_dump.c.o
@@ -467,7 +467,7 @@ opj_dump.o: opj_dump.c.o
 
 # target to build an object file
 opj_dump.c.o:
-	cd /users/nstroustrup/nstroustrup/projects/lifespan/external_compile_libraries/openjpeg-2.1.2 && $(MAKE) -f src/bin/jp2/CMakeFiles/opj_dump.dir/build.make src/bin/jp2/CMakeFiles/opj_dump.dir/opj_dump.c.o
+	cd /home/image_server/lifespan/external_compile_libraries/openjpeg-2.1.2 && $(MAKE) -f src/bin/jp2/CMakeFiles/opj_dump.dir/build.make src/bin/jp2/CMakeFiles/opj_dump.dir/opj_dump.c.o
 .PHONY : opj_dump.c.o
 
 opj_dump.i: opj_dump.c.i
@@ -475,7 +475,7 @@ opj_dump.i: opj_dump.c.i
 
 # target to preprocess a source file
 opj_dump.c.i:
-	cd /users/nstroustrup/nstroustrup/projects/lifespan/external_compile_libraries/openjpeg-2.1.2 && $(MAKE) -f src/bin/jp2/CMakeFiles/opj_dump.dir/build.make src/bin/jp2/CMakeFiles/opj_dump.dir/opj_dump.c.i
+	cd /home/image_server/lifespan/external_compile_libraries/openjpeg-2.1.2 && $(MAKE) -f src/bin/jp2/CMakeFiles/opj_dump.dir/build.make src/bin/jp2/CMakeFiles/opj_dump.dir/opj_dump.c.i
 .PHONY : opj_dump.c.i
 
 opj_dump.s: opj_dump.c.s
@@ -483,7 +483,7 @@ opj_dump.s: opj_dump.c.s
 
 # target to generate assembly for a file
 opj_dump.c.s:
-	cd /users/nstroustrup/nstroustrup/projects/lifespan/external_compile_libraries/openjpeg-2.1.2 && $(MAKE) -f src/bin/jp2/CMakeFiles/opj_dump.dir/build.make src/bin/jp2/CMakeFiles/opj_dump.dir/opj_dump.c.s
+	cd /home/image_server/lifespan/external_compile_libraries/openjpeg-2.1.2 && $(MAKE) -f src/bin/jp2/CMakeFiles/opj_dump.dir/build.make src/bin/jp2/CMakeFiles/opj_dump.dir/opj_dump.c.s
 .PHONY : opj_dump.c.s
 
 # Help Target
@@ -544,6 +544,6 @@ help:
 # No rule that depends on this can have commands that come from listfiles
 # because they might be regenerated.
 cmake_check_build_system:
-	cd /users/nstroustrup/nstroustrup/projects/lifespan/external_compile_libraries/openjpeg-2.1.2 && $(CMAKE_COMMAND) -H$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR) --check-build-system CMakeFiles/Makefile.cmake 0
+	cd /home/image_server/lifespan/external_compile_libraries/openjpeg-2.1.2 && $(CMAKE_COMMAND) -H$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR) --check-build-system CMakeFiles/Makefile.cmake 0
 .PHONY : cmake_check_build_system
 

@@ -1,4 +1,4 @@
-prefix=/users/nstroustrup/nstroustrup/libs
+prefix=/usr/local
 bindir=${prefix}/bin
 mandir=${prefix}/
 docdir=${prefix}/

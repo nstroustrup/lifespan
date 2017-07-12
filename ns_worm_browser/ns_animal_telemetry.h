@@ -211,8 +211,8 @@ private:
 			if (t > max_time) max_time = t;
 			if (i < path->first_stationary_timepoint())
 				continue;
-			const double n(path->element(i).measurements.total_intensity_within_worm_area);
-			const double s(path->element(i).measurements.change_in_total_worm_intensity);
+			const double n(path->element(i).measurements.total_intensity_within_stabilized);
+			const double s(path->element(i).measurements.change_in_total_stabilized_intensity);
 			const double d(movement_vals.y[i]);
 			if (d < min_score) min_score = d;
 			if (d > max_score) max_score = d;
@@ -238,12 +238,12 @@ private:
 			if (movement_vals.y[i] > 1) movement_vals.y[i] = 1;
 
 			//scale intensity to a value between 0 and 1.
-			size_vals.y[i] = (path->element(i).measurements.total_intensity_within_worm_area - min_intensity) / (max_intensity-min_intensity) ;
+			size_vals.y[i] = (path->element(i).measurements.total_intensity_within_stabilized - min_intensity) / (max_intensity-min_intensity) ;
 			if (size_vals.y[i] < 0) size_vals.y[i] = 0;
 			if (size_vals.y[i] > 1) size_vals.y[i] = 1;
 
 
-			slope_vals.y[i] = (path->element(i).measurements.change_in_total_worm_intensity - min_intensity_slope) / (max_intensity_slope - min_intensity_slope);
+			slope_vals.y[i] = (path->element(i).measurements.change_in_total_stabilized_intensity - min_intensity_slope) / (max_intensity_slope - min_intensity_slope);
 			if (slope_vals.y[i] < 0) slope_vals.y[i] = 0;
 			if (slope_vals.y[i] > 1) slope_vals.y[i] = 1;
 		}

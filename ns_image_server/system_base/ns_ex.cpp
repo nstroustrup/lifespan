@@ -213,6 +213,13 @@ ns_64_bit ns_atoi64(const char * s){
 	  return atoll(s);
 	#endif
 }
+ns_s64_bit ns_atois64(const char * s) {
+#ifdef _WIN32
+	return _atoi64(s);
+#else
+	return atoll(s);
+#endif
+}
 
 string ns_to_string(const unsigned int k){
 	char buf[NS_SNPRINTF_BUFFER_SIZE];

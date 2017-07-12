@@ -2076,18 +2076,16 @@ public:
 		begin();
 		
 		ns_vector_2i size(worm_learner.worm_window.gl_image_size.x, worm_learner.worm_window.gl_image_size.y + image_window_size_difference().y);
-		if (size.x < ns_death_event_solo_annotation_group::all_buttons_width)
-			size.x = ns_death_event_solo_annotation_group::all_buttons_width;
-
+	
         gl_window = new  ns_worm_gl_window(30, 30, size.x,size.y);
 
 		
-		annotation_group = new ns_death_event_solo_annotation_group(30,
-															  worm_learner.worm_window.gl_image_size.y+30,
+		annotation_group = new ns_death_event_solo_annotation_group(0,
+															  worm_learner.worm_window.gl_image_size.y,
 															  ns_death_event_solo_annotation_group::all_buttons_width,
 															  ns_death_event_solo_annotation_group::button_height,
 															  false);
-
+		resize(0, 0, 0, 0);
 		//annotation_group->deactivate();
 		//annotation_group->hide();
 		
@@ -2100,7 +2098,13 @@ public:
 	static ns_vector_2i image_window_size_difference(){
 		return ns_vector_2i(0,(long)ns_death_event_solo_annotation_group::button_height);
 	}
+	void size(int w__, int h__) { resize(x(), y(), 0, 0); }
+	void resize(int w__, int h__) {
+		ns_worm_terminal_worm_window::resize(x(), y(), w__, h__);
+	}
 	void resize(int x, int y, int w__, int h__){
+
+		ns_acquire_lock_for_scope lock(worm_learner.worm_window.display_lock, __FILE__, __LINE__);
 		const int w_(worm_learner.worm_window.gl_image_size.x),
 				h_(worm_learner.worm_window.gl_image_size.y);
 		float menu_d(worm_learner.worm_window.display_rescale_factor);
@@ -2108,7 +2112,8 @@ public:
 			menu_d = 1;
 		float d(worm_learner.worm_window.display_rescale_factor);
 
-		cout << y << "," << h_*d + image_window_size_difference().y*menu_d << "\n";
+	//	cout << "gl("<< h_*d
+	//		<< ") w(" << h_*d + image_window_size_difference().y*menu_d << ")\n";
 
 		Fl_Window::resize(x,y,w_*d+image_window_size_difference().x*menu_d,h_*d+image_window_size_difference().y*menu_d);
 
@@ -2117,10 +2122,11 @@ public:
 	//	gl_window->redraw();
 		
 		annotation_group->resize(0,
-								 h_,
+								 h_*d,
 								 ns_death_event_solo_annotation_group::all_buttons_width*d,
 								 ns_death_event_solo_annotation_group::button_height*menu_d);
-		//redraw();
+
+		lock.release();
 	}
 	private:
 		
@@ -2265,7 +2271,8 @@ void redraw_worm_window(const unsigned long w, const unsigned long h,const bool 
 	//Fl::awake();
 	Fl::lock();
 	if (resize){
-		worm_window->size(w,h);	
+	//	cerr << "rww(" << h << ")\n";
+		worm_window->resize(worm_window->x(),worm_window->y(),w,h);	
 	}
 	worm_window->gl_window->damage(1);
 	worm_window->gl_window->redraw();
@@ -2303,7 +2310,7 @@ void perform_screen_redraw_callback(void * a) {
 		cur_size = cur_size - ns_vector_2i(0, (current_window->menu_height() + current_window->info_bar_height())*menu_d);
 		cur_size = cur_size / worm_learner.main_window.display_rescale_factor;
 		if (abs((int)(worm_learner.main_window.gl_image_size.x - cur_size.x)) > 0 && abs((int)(worm_learner.main_window.gl_image_size.y - cur_size.y)) > 0)
-			current_window->size(worm_learner.main_window.gl_image_size.x, worm_learner.main_window.gl_image_size.y);
+			current_window->resize(current_window->x(), current_window->y(),0,0);
 
 		if (worm_learner.main_window.redraw_requested)
 			redraw_main_window(worm_learner.main_window.gl_image_size.x, worm_learner.main_window.gl_image_size.y, true);
@@ -2374,6 +2381,7 @@ void idle_main_window_update_callback(void * force_redraw) {
 
 		if (schedule_timer) {
 			worm_learner.main_window.redraw_requested = true;
+			if (worm_window->visible())
 			worm_learner.worm_window.redraw_requested = true;
 			Fl::awake(schedule_repeating_callback, (void*)1);// Fl::repeat_timeout(1.0 / IDLE_THROTTLE_FPS, idle_main_window_update_callback);
 		}
@@ -2395,7 +2403,8 @@ void idle_main_window_update_callback(void * force_redraw) {
 		ns_64_bit last_interval = last_callback_time - last_time;
 
 		//allways call both functions together
-		idle_worm_window_update_callback(force_redraw);
+		if (worm_window->visible())
+			idle_worm_window_update_callback(force_redraw);
 
 		Fl::lock();
 		try {
@@ -2433,7 +2442,7 @@ void idle_main_window_update_callback(void * force_redraw) {
 			}
 			if (show_worm_window) {
 				show_worm_window = false;
-				worm_window->size(worm_learner.worm_window.gl_image_size.x,
+				worm_window->resize(worm_window->x(),worm_window->y(),worm_learner.worm_window.gl_image_size.x,
 					worm_learner.worm_window.gl_image_size.y);
 				worm_window->show();
 				ns_set_menu_bar_activity(true);
@@ -2480,7 +2489,7 @@ void idle_worm_window_update_callback(void * force_redraw){
 		worm_learner.worm_window.image_size.y+=ns_worm_terminal_worm_window::info_bar_height();*/
 		bool something_done(false);
 		if ( abs((int)(worm_learner.worm_window.gl_image_size.x - cur_size.x)) > 0 && abs((int)(worm_learner.worm_window.gl_image_size.y - cur_size.y)) > 0){
-			worm_window->size(worm_learner.worm_window.gl_image_size.x, worm_learner.worm_window.gl_image_size.y);
+			worm_window->resize(worm_window->x(), worm_window->y(),worm_learner.worm_window.gl_image_size.x, worm_learner.worm_window.gl_image_size.y);
 			something_done = true;
 			//xxxx
 		}
@@ -2840,7 +2849,6 @@ void ns_launch_worm_window_for_worm(const ns_64_bit region_id, const ns_stationa
 	launcher->region_id = region_id;
 	launcher->worm = worm;
 	launcher->current_time = current_time;
-	//worm_learner.storyboard_annotater.clear();
 	launcher->storyboard = &worm_learner.storyboard_annotater.get_storyboard();
 	ns_thread worm_launcher(ns_asynch_worm_launcher::run_asynch,launcher);
 	worm_launcher.detach();

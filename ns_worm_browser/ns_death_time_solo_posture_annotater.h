@@ -722,11 +722,12 @@ public:
 
 
 	void load_worm(const unsigned long region_info_id_, const ns_stationary_path_id & worm, const unsigned long current_time, const ns_death_time_solo_posture_annotater_timepoint::ns_visualization_type visualization_type, const ns_experiment_storyboard  * storyboard,ns_worm_learner * worm_learner_,ns_sql & sql){
-		current_visualization_type = visualization_type;
-		stop_fast_movement();
 		clear();
 		ns_image_series_annotater::clear();
 		this->close_worm();
+		stop_fast_movement();
+		current_visualization_type = visualization_type;
+	
 		ns_region_metadata metadata;
 		metadata.region_id = region_info_id_;
 		try{

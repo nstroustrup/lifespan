@@ -1846,9 +1846,10 @@ void ns_worm_learner::generate_experiment_movement_image_quantification_analysis
 	ns_region_metadata m;
 
 	if (detail_level == ns_quantification_summary){
-		o_all.attach(image_server.results_storage.time_path_image_analysis_quantification(sub_e,"summary",true,sql()).output());
-		ns_analyzed_image_time_path::write_summary_movement_quantification_analysis_header(o_all());
-		o_all() <<"\n";
+		throw ns_ex("No longer implemented");
+		//o_all.attach(image_server.results_storage.time_path_image_analysis_quantification(sub_e,"summary",true,sql()).output());
+	//	ns_analyzed_image_time_path::write_summary_movement_quantification_analysis_header(o_all());
+	//	o_all() <<"\n";
 	}
 	else if (detail_level == ns_quantification_detailed || detail_level == ns_quantification_abbreviated_detailed){
 		std::string suffix;
@@ -2025,8 +2026,9 @@ void ns_worm_learner::generate_experiment_movement_image_quantification_analysis
 				//	break;
 				}
 				else{
-					movement_results.samples[i].regions[j].time_path_image_analyzer.write_summary_movement_quantification_analysis_data(
-																	movement_results.samples[i].regions[j].metadata,o_all());
+					throw ns_ex("No longer implemented");
+					//movement_results.samples[i].regions[j].time_path_image_analyzer.write_summary_movement_quantification_analysis_data(
+				//													movement_results.samples[i].regions[j].metadata,o_all());
 				}
 				movement_results.samples[i].regions[j].time_path_image_analyzer.clear();
 			}
@@ -5535,11 +5537,11 @@ bool ns_worm_learner::register_worm_window_key_press(int key, const bool shift_k
 																
 	else if (key == FL_Left || key== 'a'){
 		ns_worm_learner::navigate_solo_worm_annotation(ns_death_time_solo_posture_annotater::ns_back,true);
-		return false;
+		return true;
 	}
 	else if (key == FL_Right || key == 'd'){
 		ns_worm_learner::navigate_solo_worm_annotation(ns_death_time_solo_posture_annotater::ns_forward,true);
-		return false;
+		return true;
 	}
 	else if (key == 's' && control_key_held){
 		death_time_solo_annotater.register_click(ns_vector_2i(0,0),ns_death_time_solo_posture_annotater::ns_output_images);
@@ -6722,6 +6724,7 @@ void ns_worm_learner::navigate_solo_worm_annotation(ns_death_time_solo_posture_a
 			break;
 		case ns_death_time_solo_posture_annotater::ns_step_graph:
 			death_time_solo_annotater.step_graph_type();
+			death_time_solo_annotater.display_current_frame();
 			death_time_solo_annotater.request_refresh();
 			break;
 		case ns_death_time_solo_posture_annotater::ns_write_quantification_to_disk: 

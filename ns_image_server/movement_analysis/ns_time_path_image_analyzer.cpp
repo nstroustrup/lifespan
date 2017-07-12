@@ -43,205 +43,6 @@ ns_analyzed_image_time_path::~ns_analyzed_image_time_path(){
 	}
 
 
-ns_64_bit total_flow_time = 0;
-unsigned long total_flow_calc = 0;
-
-ns_analyzed_image_time_path_element_measurements operator+(const ns_analyzed_image_time_path_element_measurements & a,const ns_analyzed_image_time_path_element_measurements & b){
-	ns_analyzed_image_time_path_element_measurements s(a);
-
-	s.interframe_time_scaled_movement_sum+=b.interframe_time_scaled_movement_sum;
-	s.movement_sum += b.movement_sum;
-
-	s.spatial_averaged_movement_sum += b.spatial_averaged_movement_sum;
-	s.interframe_scaled_spatial_averaged_movement_sum += b.interframe_scaled_spatial_averaged_movement_sum;
-	s.total_intensity_in_previous_frame_scaled_to_current_frames_histogram = a.total_intensity_in_previous_frame_scaled_to_current_frames_histogram + b.total_intensity_in_previous_frame_scaled_to_current_frames_histogram;
-	s.movement_alternate_worm_sum			=a.	movement_alternate_worm_sum				+b.movement_alternate_worm_sum;
-	s.total_worm_area							=a.	total_worm_area							+b.total_worm_area;
-	s.total_intensity_within_worm_area		=a.	total_intensity_within_worm_area		+b.total_intensity_within_worm_area;
-	s.total_region_area						=a.	total_region_area						+b.total_region_area;
-	s.total_intensity_within_region			=a.	total_intensity_within_region			+b.total_intensity_within_region;
-	s.total_alternate_worm_area				=a.	total_alternate_worm_area				+b.total_alternate_worm_area;
-	s.total_intensity_within_alternate_worm	=a.	total_intensity_within_alternate_worm	+b.total_intensity_within_alternate_worm;
-	s.change_in_average_normalized_worm_intensity = a.change_in_average_normalized_worm_intensity + b.change_in_average_normalized_worm_intensity;
-	s.change_in_total_worm_intensity = a.change_in_total_worm_intensity + b.change_in_total_worm_intensity;
-	s.change_in_average_region_intensity = a.change_in_average_region_intensity + b.change_in_average_region_intensity;
-	
-	s.registration_displacement= a.registration_displacement + b.registration_displacement;
-
-	s.mean_intensity_within_worm_area			=a.	mean_intensity_within_worm_area			+b.mean_intensity_within_worm_area;
-	s.mean_intensity_within_region			=a.	mean_intensity_within_region			+b.mean_intensity_within_region;
-	s.mean_intensity_within_alternate_worm	=a.	mean_intensity_within_alternate_worm	+b.mean_intensity_within_alternate_worm;
-		#ifdef NS_CALCULATE_OPTICAL_FLOW
-	s.scaled_flow_magnitude = a.scaled_flow_magnitude + b.scaled_flow_magnitude;
-	s.raw_flow_magnitude = a.raw_flow_magnitude + b.raw_flow_magnitude;
-	s.scaled_flow_dx = a.scaled_flow_dx + b.scaled_flow_dx;
-	s.scaled_flow_dy = a.scaled_flow_dy + b.scaled_flow_dy;
-	s.raw_flow_dx = a.raw_flow_dx + b.raw_flow_dx;
-	s.raw_flow_dy = a.raw_flow_dy + b.raw_flow_dy;
-#endif
-	return s;
-}
-
-void ns_analyzed_image_time_path_element_measurements::calculate_means(){
-	if (total_worm_area != 0)
-		mean_intensity_within_worm_area = total_intensity_within_worm_area/(double)total_worm_area;
-	else mean_intensity_within_worm_area = 0;
-	if (total_region_area != 0)
-		mean_intensity_within_region= total_intensity_within_region/(double)total_region_area;
-	else mean_intensity_within_region = 0;
-	if (total_alternate_worm_area != 0)
-		mean_intensity_within_alternate_worm= total_intensity_within_alternate_worm/(double)total_alternate_worm_area;
-	else mean_intensity_within_alternate_worm = 0;
-}
-
-ns_analyzed_image_time_path_element_measurements operator/(const ns_analyzed_image_time_path_element_measurements & a,const int & d){
-	ns_analyzed_image_time_path_element_measurements s(a);
-
-	s.movement_sum /= d;
-	s.interframe_time_scaled_movement_sum /= d;
-	s.spatial_averaged_movement_sum /= d;
-	s.interframe_scaled_spatial_averaged_movement_sum /= d;
-
-	s.interframe_time_scaled_movement_sum/=d;
-	s.total_intensity_in_previous_frame_scaled_to_current_frames_histogram /= d;
-	s.movement_alternate_worm_sum/=d;
-	//s.stationary_sum/=d;
-	s.change_in_average_normalized_worm_intensity/=d;
-	s.change_in_total_worm_intensity/=d;
-	s.change_in_average_region_intensity/=d;
-	s.total_worm_area/=d;
-	s.total_intensity_within_worm_area/=d;
-	s.total_region_area/=d;
-	s.total_intensity_within_region/=d;
-	s.total_alternate_worm_area/=d;
-	s.total_intensity_within_alternate_worm/=d;
-
-	s.registration_displacement = s.registration_displacement/d;
-
-	s.mean_intensity_within_worm_area/=d;
-	s.mean_intensity_within_region/=d;
-	s.mean_intensity_within_alternate_worm/=d;
-	#ifdef NS_CALCULATE_OPTICAL_FLOW
-	s.scaled_flow_magnitude = s.scaled_flow_magnitude / d;
-	s.raw_flow_magnitude = s.raw_flow_magnitude / d;
-	s.scaled_flow_dx = s.scaled_flow_dx / d;
-	s.scaled_flow_dy = s.scaled_flow_dy / d;
-	s.raw_flow_dx = s.raw_flow_dx / d;
-	s.raw_flow_dy = s.raw_flow_dy / d;
-#endif
-
-	return s;
-}
-
-void ns_analyzed_image_time_path_element_measurements::square(){
-	movement_sum							*=	movement_sum;
-	interframe_time_scaled_movement_sum *= interframe_time_scaled_movement_sum;
-	spatial_averaged_movement_sum *= spatial_averaged_movement_sum;
-	interframe_scaled_spatial_averaged_movement_sum *= interframe_scaled_spatial_averaged_movement_sum;
-	total_intensity_in_previous_frame_scaled_to_current_frames_histogram *= total_intensity_in_previous_frame_scaled_to_current_frames_histogram;
-	movement_alternate_worm_sum				*=	movement_alternate_worm_sum;
-	change_in_average_normalized_worm_intensity					*=	change_in_average_normalized_worm_intensity;
-	change_in_total_worm_intensity					*=	change_in_total_worm_intensity;
-	change_in_average_region_intensity					*=	change_in_average_region_intensity;
-	total_worm_area							*=	total_worm_area;
-	total_intensity_within_worm_area		*=	total_intensity_within_worm_area;
-	total_region_area						*=	total_region_area;
-	total_intensity_within_region			*=	total_intensity_within_region;
-	total_alternate_worm_area				*=	total_alternate_worm_area;
-	total_intensity_within_alternate_worm	*=	total_intensity_within_alternate_worm;
-
-	registration_displacement.x*= registration_displacement.x;
-	registration_displacement.y*= registration_displacement.y;
-
-	mean_intensity_within_worm_area			*=	mean_intensity_within_worm_area;
-	mean_intensity_within_region			*=	mean_intensity_within_region;
-	mean_intensity_within_alternate_worm	*=	mean_intensity_within_alternate_worm;
-	#ifdef NS_CALCULATE_OPTICAL_FLOW
-	scaled_flow_magnitude = scaled_flow_magnitude.square();
-	raw_flow_magnitude = raw_flow_magnitude.square();
-	scaled_flow_dx = scaled_flow_dx.square();
-	scaled_flow_dy = scaled_flow_dy.square();
-	raw_flow_dx = raw_flow_dx.square();
-	raw_flow_dy = raw_flow_dy.square();
-#endif
-
-
-}
-void ns_analyzed_image_time_path_element_measurements::square_root() {
-	movement_sum = sqrt((double)movement_sum);
-	interframe_time_scaled_movement_sum = sqrt((double)interframe_time_scaled_movement_sum);
-	movement_alternate_worm_sum			=sqrt((double)		movement_alternate_worm_sum);
-	total_intensity_in_previous_frame_scaled_to_current_frames_histogram = sqrt((double)total_intensity_in_previous_frame_scaled_to_current_frames_histogram);
-	this->change_in_average_region_intensity						=sqrt((double)		this->change_in_average_region_intensity);
-	this->change_in_average_normalized_worm_intensity				=sqrt((double)		this->change_in_average_normalized_worm_intensity);
-	this->change_in_total_worm_intensity				=sqrt((double)		this->change_in_total_worm_intensity);
-	total_worm_area						=sqrt((double)		total_worm_area);
-	total_intensity_within_worm_area	=sqrt((double)		total_intensity_within_worm_area);
-	total_region_area					=sqrt((double)		total_region_area);
-	total_intensity_within_region		=sqrt((double)		total_intensity_within_region);
-	total_alternate_worm_area			=sqrt((double)		total_alternate_worm_area);
-	total_intensity_within_alternate_worm=sqrt((double)		total_intensity_within_alternate_worm);
-
-	registration_displacement.x = sqrt(registration_displacement.x);
-	registration_displacement.y = sqrt(registration_displacement.y);
-
-	mean_intensity_within_worm_area		=sqrt(		mean_intensity_within_worm_area);
-	mean_intensity_within_region		=sqrt(		mean_intensity_within_region);
-	mean_intensity_within_alternate_worm=sqrt(		mean_intensity_within_alternate_worm);
-	spatial_averaged_movement_sum = sqrt(spatial_averaged_movement_sum);
-	interframe_scaled_spatial_averaged_movement_sum = sqrt(interframe_scaled_spatial_averaged_movement_sum);
-	spatial_averaged_movement_score = sqrt(spatial_averaged_movement_score);
-	denoised_spatial_averaged_movement_score = sqrt(denoised_spatial_averaged_movement_score);
-
-
-	#ifdef NS_CALCULATE_OPTICAL_FLOW
-	scaled_flow_magnitude = scaled_flow_magnitude.square_root();
-	raw_flow_magnitude = raw_flow_magnitude.square_root();
-	scaled_flow_dx = scaled_flow_dx.square_root();
-	scaled_flow_dy = scaled_flow_dy.square_root();
-	raw_flow_dx = raw_flow_dx.square_root();
-	raw_flow_dy = raw_flow_dy.square_root();
-	#endif
-
-}
-
-void ns_analyzed_image_time_path_element_measurements::zero(){
-	movement_sum=0;
-	interframe_time_scaled_movement_sum = 0;
-	spatial_averaged_movement_sum = 0;
-	interframe_scaled_spatial_averaged_movement_sum = 0;
-	spatial_averaged_movement_score = 0;
-	denoised_spatial_averaged_movement_score = 0;
-
-	total_intensity_in_previous_frame_scaled_to_current_frames_histogram = 0;
-	movement_alternate_worm_sum=0;
-	//stationary_sum=0;
-//	stationary_change_sum=0;
-	this->change_in_average_region_intensity = 0;
-	this->change_in_average_normalized_worm_intensity = 0;
-	this->change_in_total_worm_intensity = 0;
-	total_worm_area=0;
-	total_intensity_within_worm_area=0;
-	total_region_area=0;
-	total_intensity_within_region=0;
-	total_alternate_worm_area=0;
-	total_intensity_within_alternate_worm=0;
-
-	registration_displacement = ns_vector_2d(0,0);
-
-	mean_intensity_within_worm_area=0;
-	mean_intensity_within_region=0;
-	mean_intensity_within_alternate_worm=0;
-#ifdef NS_CALCULATE_OPTICAL_FLOW
-	scaled_flow_magnitude.zero();
-	raw_flow_magnitude.zero();
-	scaled_flow_dx.zero();
-	scaled_flow_dy.zero();
-	raw_flow_dx.zero();
-	raw_flow_dy.zero();
-#endif
-}
-
 class ns_chunk_generator {
 public:
 	ns_chunk_generator(const unsigned long chunk_size_, const ns_analyzed_image_time_path & path_, const ns_64_bit group_id_) :path(&path_), chunk_size(chunk_size_), current_chunk(0, 0),group_id(group_id_) {}
@@ -715,7 +516,7 @@ void ns_time_path_image_movement_analyzer::finish_up_and_write_to_long_term_stor
 		for (long j = s; j < chunk.stop_i- (long)ns_analyzed_image_time_path::movement_time_kernel_width; j++)
 			groups[group_id].paths[path_id].elements[j].clear_movement_images();
 	}
-	groups[group_id].paths[path_id].denoise_movement_series(0, *shared_state->time_series_denoising_parameters);
+	groups[group_id].paths[path_id].denoise_movement_series_and_calculate_intensity_slopes(0, *shared_state->time_series_denoising_parameters);
 }
 void ns_time_path_image_movement_analyzer::run_group_for_current_forwards_round(unsigned int group_id, unsigned int path_id, ns_time_path_image_movement_analyzer_thread_pool_persistant_data * persistant_data,ns_movement_analysis_shared_state * shared_state) {
 	const unsigned int &i(group_id), &j(path_id);
@@ -867,7 +668,7 @@ void ns_time_path_image_movement_analyzer::process_raw_images(const ns_64_bit re
 		const unsigned long minimum_chunk_size(ns_analyzed_image_time_path::alignment_time_kernel_width);
 		shared_state.chunk_generators.resize(groups.size());
 		shared_state.alignment_states.resize(groups.size());
-		total_flow_time = 0;
+		//total_flow_time = 0;
 		long number_of_paths_to_consider(0),
 				number_of_paths_to_ignore(0);
 		for (unsigned int i = 0; i < groups.size(); i++){
@@ -1636,7 +1437,7 @@ bool ns_time_path_image_movement_analyzer::load_completed_analysis(const ns_64_b
 			}
 		//	if (g == 5)
 		//		cerr << "WHA";
-			groups[g].paths[p].denoise_movement_series(0,times_series_denoising_parameters);
+			groups[g].paths[p].denoise_movement_series_and_calculate_intensity_slopes(0,times_series_denoising_parameters);
 		}
 
 	normalize_movement_scores_over_all_paths(e->software_version_number(),times_series_denoising_parameters);
@@ -1745,7 +1546,6 @@ void ns_time_path_image_movement_analyzer::obtain_analysis_id_and_save_movement_
 }
 
 
-
 void ns_time_path_image_movement_analyzer::load_movement_data_from_disk(istream & in, bool skip_movement_data){
 
 	ns_get_int get_int;
@@ -1775,31 +1575,29 @@ void ns_time_path_image_movement_analyzer::load_movement_data_from_disk(istream 
 		if(in.fail()) throw ns_ex("Invalid Specification 3");
 	//	std::cerr << "(" << group_id << "," << path_id << "," << element_id << ",";
 		if (group_id >= groups.size())
-			throw ns_ex("ns_time_path_image_movement_analyzer::load_movement_data_from_disk()::Invalid group id ") << group_id;
-		if (path_id >= groups[group_id].paths.size())
-			throw ns_ex("ns_time_path_image_movement_analyzer::load_movement_data_from_disk()::Invalid path id ") << path_id;
-		if (groups[group_id].paths[path_id].elements.size() == 0)
-			throw ns_ex("ns_time_path_image_movement_analyzer::load_movement_data_from_disk()::Encountered an empty path");
-		if (element_id >= groups[group_id].paths[path_id].elements.size())
-			throw ns_ex("ns_time_path_image_movement_analyzer::load_movement_data_from_disk()::Element is too large ") << path_id;
-		get_int(in,groups[group_id].paths[path_id].elements[element_id].absolute_time);//4
-	//	cerr << groups[group_id].paths[path_id].elements[element_id].absolute_time << ")";
-		if(in.fail()) throw ns_ex("Invalid Specification 4");
-		get_int(in,groups[group_id].paths[path_id].elements[element_id].measurements.interframe_time_scaled_movement_sum);//5
-	//	cerr << "[" << groups[group_id].paths[path_id].elements[element_id].measurements.interframe_time_scaled_movement_sum << "]";
-		if(in.fail()) throw ns_ex("Invalid Specification 5");
-		get_int(in,groups[group_id].paths[path_id].elements[element_id].measurements.movement_alternate_worm_sum);//6
-		if(in.fail()) throw ns_ex("Invalid Specification 6");
-		get_double(in,groups[group_id].paths[path_id].elements[element_id].measurements.change_in_average_region_intensity);//7
-		if(in.fail()) throw ns_ex("Invalid Specification 7");
-		get_double(in,groups[group_id].paths[path_id].elements[element_id].measurements.change_in_average_normalized_worm_intensity);//8
-		if(in.fail()) throw ns_ex("Invalid Specification 8");
-		get_int(in,groups[group_id].paths[path_id].elements[element_id].measurements.total_worm_area);//9
-		if(in.fail()) throw ns_ex("Invalid Specification 9");
-		get_int(in,groups[group_id].paths[path_id].elements[element_id].measurements.total_intensity_within_worm_area);//10
-		if(in.fail()) throw ns_ex("Invalid Specification 10");
-		get_int(in,groups[group_id].paths[path_id].elements[element_id].measurements.total_region_area);//11
-		if(in.fail()) throw ns_ex("Invalid Specification 11");
+			throw ns_ex("ns_time_path_image_movement_analyzer::load_movement_data_from_disk()::Invalid group id ") << group_id;                                     
+		if (path_id >= groups[group_id].paths.size())																												
+			throw ns_ex("ns_time_path_image_movement_analyzer::load_movement_data_from_disk()::Invalid path id ") << path_id;										
+		if (groups[group_id].paths[path_id].elements.size() == 0)																									
+			throw ns_ex("ns_time_path_image_movement_analyzer::load_movement_data_from_disk()::Encountered an empty path");											
+		if (element_id >= groups[group_id].paths[path_id].elements.size())																							
+			throw ns_ex("ns_time_path_image_movement_analyzer::load_movement_data_from_disk()::Element is too large ") << path_id;									
+		get_int(in,groups[group_id].paths[path_id].elements[element_id].absolute_time);//4																			
+		if(in.fail()) throw ns_ex("Invalid Specification 4");																										
+		get_int(in,groups[group_id].paths[path_id].elements[element_id].measurements.interframe_time_scaled_movement_sum);//5										
+		if(in.fail()) throw ns_ex("Invalid Specification 5");																										
+		get_int(in,groups[group_id].paths[path_id].elements[element_id].measurements.movement_alternate_worm_sum);//6												
+		if(in.fail()) throw ns_ex("Invalid Specification 6");																										
+		get_double(in,groups[group_id].paths[path_id].elements[element_id].measurements.change_in_total_region_intensity);//7										
+		if(in.fail()) throw ns_ex("Invalid Specification 7");																										
+		get_double(in,groups[group_id].paths[path_id].elements[element_id].measurements.change_in_total_foreground_intensity);//8								  
+		if(in.fail()) throw ns_ex("Invalid Specification 8");																										
+		get_int(in,groups[group_id].paths[path_id].elements[element_id].measurements.total_foreground_area);//9														
+		if(in.fail()) throw ns_ex("Invalid Specification 9");																										
+		get_int(in,groups[group_id].paths[path_id].elements[element_id].measurements.total_intensity_within_foreground);//10										
+		if(in.fail()) throw ns_ex("Invalid Specification 10");																										
+		get_int(in,groups[group_id].paths[path_id].elements[element_id].measurements.total_region_area);//11														
+		if(in.fail()) throw ns_ex("Invalid Specification 11");																										
 		get_int(in,groups[group_id].paths[path_id].elements[element_id].measurements.total_intensity_within_region);//12
 		if(in.fail()) throw ns_ex("Invalid Specification 12");
 		get_int(in,groups[group_id].paths[path_id].elements[element_id].measurements.total_alternate_worm_area);//13
@@ -1826,7 +1624,7 @@ void ns_time_path_image_movement_analyzer::load_movement_data_from_disk(istream 
 		get_double(in,groups[group_id].paths[path_id].elements[element_id].measurements.movement_score);//20
 		if(in.fail()) 
 			throw ns_ex("Invalid Specification 20");
-		get_int(in,groups[group_id].paths[path_id].elements[element_id].measurements.change_in_total_worm_intensity);//21
+		get_int(in,groups[group_id].paths[path_id].elements[element_id].measurements.total_intensity_within_stabilized);//21
 		if(in.fail()) 
 			throw ns_ex("Invalid Specification 21");
 		get_double(in, groups[group_id].paths[path_id].elements[element_id].measurements.spatial_averaged_movement_sum);//22
@@ -1841,9 +1639,16 @@ void ns_time_path_image_movement_analyzer::load_movement_data_from_disk(istream 
 		get_double(in, groups[group_id].paths[path_id].elements[element_id].measurements.denoised_spatial_averaged_movement_score);//25
 		if (in.fail()) 
 			throw ns_ex("Invalid Specification 25");
-		get_double(in, groups[group_id].paths[path_id].elements[element_id].measurements.total_intensity_in_previous_frame_scaled_to_current_frames_histogram);
+		get_double(in, groups[group_id].paths[path_id].elements[element_id].measurements.total_intensity_in_previous_frame_scaled_to_current_frames_histogram);//26
 		if (in.fail()) 
 			throw ns_ex("Invalid Specification 26");
+		get_int(in, groups[group_id].paths[path_id].elements[element_id].measurements.total_stabilized_area);//27
+		if (in.fail())
+			throw ns_ex("Invalid Specification 27");
+		get_int(in, groups[group_id].paths[path_id].elements[element_id].measurements.change_in_total_stabilized_intensity);//28
+		if (in.fail())
+			throw ns_ex("Invalid Specification 28");
+		
 		string tmp;
 		char a = get_int(in, tmp);
 		if (in.fail()) 
@@ -1907,6 +1712,12 @@ void ns_time_path_image_movement_analyzer::get_processing_stats_from_solution(co
 
 }
 
+
+
+
+
+
+
 void ns_time_path_image_movement_analyzer::save_movement_data_to_disk(ostream & o) const{
 	o << this->analysis_id << "\n";
 	for (unsigned long i = 0; i < groups.size(); i++){
@@ -1915,13 +1726,13 @@ void ns_time_path_image_movement_analyzer::save_movement_data_to_disk(ostream & 
 				o << i << ","//1
 					<< j << ","//2
 					<< k << ","//3
-					<< groups[i].paths[j].elements[k].absolute_time << ","//4
+					<< groups[i].paths[j].elements[k].absolute_time << ","//4 
 					<< groups[i].paths[j].elements[k].measurements.interframe_time_scaled_movement_sum << ","//5
 					<< groups[i].paths[j].elements[k].measurements.movement_alternate_worm_sum << ","//6
-					<< groups[i].paths[j].elements[k].measurements.change_in_average_region_intensity << ","//7
-					<< groups[i].paths[j].elements[k].measurements.change_in_average_normalized_worm_intensity << ","//8
-					<< groups[i].paths[j].elements[k].measurements.total_worm_area << ","//9
-					<< groups[i].paths[j].elements[k].measurements.total_intensity_within_worm_area << ","//10
+					<< groups[i].paths[j].elements[k].measurements.change_in_total_region_intensity<< ","//7
+					<< groups[i].paths[j].elements[k].measurements.change_in_total_foreground_intensity << ","//8
+					<< groups[i].paths[j].elements[k].measurements.total_foreground_area << ","//9
+					<< groups[i].paths[j].elements[k].measurements.total_intensity_within_foreground << ","//10
 					<< groups[i].paths[j].elements[k].measurements.total_region_area << ","//11
 					<< groups[i].paths[j].elements[k].measurements.total_intensity_within_region << ","//12
 					<< groups[i].paths[j].elements[k].measurements.total_alternate_worm_area << ","//13
@@ -1932,12 +1743,15 @@ void ns_time_path_image_movement_analyzer::save_movement_data_to_disk(ostream & 
 					<< groups[i].paths[j].elements[k].measurements.movement_sum << ","//18
 					<< groups[i].paths[j].elements[k].measurements.denoised_movement_score << ","//19
 					<< groups[i].paths[j].elements[k].measurements.movement_score <<","//20
-				  << groups[i].paths[j].elements[k].measurements.change_in_total_worm_intensity << ","//21
+				  << groups[i].paths[j].elements[k].measurements.total_intensity_within_stabilized << ","//21
 					<< groups[i].paths[j].elements[k].measurements.spatial_averaged_movement_sum << ","//22
 					<< groups[i].paths[j].elements[k].measurements.interframe_scaled_spatial_averaged_movement_sum << ","//23
 					<< groups[i].paths[j].elements[k].measurements.spatial_averaged_movement_score << ","//24
 					<< groups[i].paths[j].elements[k].measurements.denoised_spatial_averaged_movement_score << ","//25
-					<< groups[i].paths[j].elements[k].measurements.total_intensity_in_previous_frame_scaled_to_current_frames_histogram << ",";
+					<< groups[i].paths[j].elements[k].measurements.total_intensity_in_previous_frame_scaled_to_current_frames_histogram << ","//26
+					<< groups[i].paths[j].elements[k].measurements.total_stabilized_area << ","//27
+					<< groups[i].paths[j].elements[k].measurements.change_in_total_stabilized_intensity;//28
+
 			    #ifdef NS_CALCULATE_OPTICAL_FLOW
 				o << ","; //deliberately left blank to mark old record format
        				groups[i].paths[j].elements[k].measurements.scaled_flow_magnitude.write(o); o << ",";
@@ -1982,31 +1796,6 @@ std::string ns_output_interval_difference(const unsigned long time, const ns_dea
 	if (b.period_end_was_not_observed)
 		return "";
 	return ns_to_string_short(((double)time-(double)b.period_end)/(60.0*60*24),3);
-}
-
-
-void ns_analyzed_image_time_path::write_summary_movement_quantification_analysis_header(std::ostream & o){
-	ns_region_metadata::out_JMP_plate_identity_header(o);
-	o << ",";
-	o << "By Handed Excluded, By Hand Censored, Misc Flags,"
-	  << "Group ID, Path ID, Absolute Position X, Absolute Position Y,"
-		 "Machine Death Time, Machine Slow Movement Cessation Time, Machine Fast Movement Cessation Time,"
-		 "By Hand Death Time, By Hand Slow Movement Cessation Time, By Hand Fast Movement Cessation Time,"
-		 "Worm Intensity Mean Overall, Worm Intensity Variability Overall, Neighborhood Intensity Mean Overall, Neighborhood Intensity Variability Overall, Alternate Worm Intensity Mean Overall, Alternate Worm Intensity Variability Overall,"
-		 "Worm Intensity Mean Before Death, Worm Intensity Variability Before Death, Neighborhood Intensity Mean Before Death, Neighborhood Intensity Variability Before Death, Alternate Worm Intensity Mean Before Death, Alternate Worm Intensity Variability Before Death,"
-		
-		 "Worm Registration Offset X Mean Overall, Worm Registration Offset X Variability Overall,"
-		 "Worm Registration Offset Y Mean Overall, Worm Registration Offset Y Variability Overall,"
-		 "Worm Registration Offset Magnitude Mean Overall, Worm Registration Offset Magnitude Variability Overall,"
-		 "Worm Area Mean Overall, Worm Area Variability Overall, Registration Region Area Mean Overall, Registration Region Area Variability Overall, Worm Area to Region Area Average Ratio Overall,"
-		
-		 "Worm Registration Offset X Mean Before Death, Worm Registration Offset X Variability Before Death,"
-		 "Worm Registration Offset Y Mean Before Death, Worm Registration Offset Y Variability Before Death,"
-		 "Worm Registration Offset Magnitude Mean Before Death, Worm Registration Offset Magnitude Variability Before Death,"
-		 "Worm Area Mean Before Death, Worm Area Variability Before Death, Registration Region Area Mean Before Death, Registration Region Area Variability Before Death, Worm Area to Region Area Average Ratio Before Death,"
-		
-		 "Number of Frames Before Death, Number of Frames After Death, Death as % of frames,"
-		 "% Saturated Frames Before Death, % Saturated Frames Total";
 }
 
 
@@ -2094,59 +1883,6 @@ void ns_analyzed_image_time_path::calculate_analysis_optimization_data(const std
 }
 
 
-void ns_analyzed_image_time_path::write_summary_movement_quantification_analysis_data(const ns_region_metadata & m, const unsigned long group_id, const unsigned long path_id, std::ostream & o)const{
-	m.out_JMP_plate_identity_data(o);
-	o << ",";
-	o << (censoring_and_flag_details.is_excluded()?ns_death_time_annotation::exclusion_value(censoring_and_flag_details.excluded):0) << ","
-		<< (censoring_and_flag_details.is_censored()?ns_death_time_annotation::exclusion_value(censoring_and_flag_details.excluded):0) << ","
-		<< censoring_and_flag_details.flag.label() << ",";
-	o << group_id<<","<<path_id<<","
-		<< path_region_position.x << ","
-		<< path_region_position.y << ","
-		<< ns_normalize_indexed_time(state_intervals[(int)ns_movement_stationary],m.time_at_which_animals_had_zero_age,*this) << ","
-		<< ns_normalize_indexed_time(state_intervals[(int)ns_movement_posture],m.time_at_which_animals_had_zero_age,*this) << ","
-		<< ns_normalize_indexed_time(state_intervals[(int)ns_movement_slow],m.time_at_which_animals_had_zero_age,*this) << ","
-		<< ns_normalize_abs_time(by_hand_annotation_event_times[(int)ns_movement_cessation].period_end,m.time_at_which_animals_had_zero_age) << ","
-		<< ns_normalize_abs_time(by_hand_annotation_event_times[(int)ns_translation_cessation].period_end,m.time_at_which_animals_had_zero_age) << ","
-		<< ns_normalize_abs_time(by_hand_annotation_event_times[(int)ns_fast_movement_cessation].period_end,m.time_at_which_animals_had_zero_age) << ",";
-	o << quantification_summary.mean_all.mean_intensity_within_worm_area << "," << quantification_summary.variability_all.mean_intensity_within_worm_area << ","
-	  << quantification_summary.mean_all.mean_intensity_within_region << "," << quantification_summary.variability_all.mean_intensity_within_region << ","
-	  << quantification_summary.mean_all.mean_intensity_within_alternate_worm << "," << quantification_summary.variability_all.mean_intensity_within_alternate_worm << ",";
-	
-	o << quantification_summary.mean_before_death.mean_intensity_within_worm_area << "," << quantification_summary.variability_before_death.mean_intensity_within_worm_area << ","
-	  << quantification_summary.mean_before_death.mean_intensity_within_region << "," << quantification_summary.variability_before_death.mean_intensity_within_region << ","
-	  << quantification_summary.mean_before_death.mean_intensity_within_alternate_worm << "," << quantification_summary.variability_before_death.mean_intensity_within_alternate_worm << ",";
-	
-	o << quantification_summary.mean_all.registration_displacement.x << "," << quantification_summary.variability_all.registration_displacement.x << ","
-		<< quantification_summary.mean_all.registration_displacement.y << "," << quantification_summary.variability_all.registration_displacement.y << ","
-		<< quantification_summary.mean_all.registration_displacement.mag() << "," << quantification_summary.variability_all.registration_displacement.mag() << ","
-
-	  << quantification_summary.mean_all.total_worm_area << "," << quantification_summary.variability_all.total_worm_area << ","
-	  << quantification_summary.mean_all.total_region_area << "," << quantification_summary.variability_all.total_region_area << ",";
-	if (quantification_summary.mean_all.total_region_area != 0)
-		o << quantification_summary.mean_all.total_worm_area/(double)quantification_summary.mean_all.total_region_area << ",";
-	else o<< "0,";
-
-	o << quantification_summary.mean_before_death.registration_displacement.x << "," << quantification_summary.variability_before_death.registration_displacement.x << ","
-	  << quantification_summary.mean_before_death.registration_displacement.y << "," << quantification_summary.variability_before_death.registration_displacement.y << ","
-	  << quantification_summary.mean_before_death.registration_displacement.mag() << "," << quantification_summary.variability_before_death.registration_displacement.mag() << ","
-	  << quantification_summary.mean_before_death.total_worm_area << "," << quantification_summary.variability_before_death.total_worm_area << ","
-	  << quantification_summary.mean_before_death.total_region_area << "," << quantification_summary.variability_before_death.total_region_area << ",";
-	if (quantification_summary.mean_all.total_region_area != 0)
-		o << quantification_summary.mean_all.total_worm_area/(double)quantification_summary.mean_all.total_region_area << ",";
-	else o << "0,";
-	o << quantification_summary.count_before_death << "," << quantification_summary.count_after_death << 100*quantification_summary.count_before_death/(double)quantification_summary.count_all << ",";
-	if (quantification_summary.count_before_death != 0)
-		o << 100*quantification_summary.number_of_registration_saturated_frames_before_death/(double)quantification_summary.count_before_death << ",";
-	else o << "0,";
-	if (quantification_summary.count_after_death != 0)
-		o << 100*quantification_summary.number_of_registration_saturated_frames_after_death/(double)quantification_summary.count_after_death << ",";
-	else o << "0,";
-	if (quantification_summary.count_all != 0)
-		o << 100*(quantification_summary.number_of_registration_saturated_frames_before_death+quantification_summary.number_of_registration_saturated_frames_after_death)/(double)quantification_summary.count_all << "\n";
-	else o << "0\n";
-
-}
 void ns_analyzed_image_time_path::calculate_movement_quantification_summary(){
 
 	quantification_summary.mean_before_death.zero();
@@ -2168,7 +1904,7 @@ void ns_analyzed_image_time_path::calculate_movement_quantification_summary(){
 	if (death_index != -1){
 		for (unsigned int i = 0; i <= death_index; i++){
 			quantification_summary.count_before_death++;
-			elements[i].measurements.calculate_means();
+		//	elements[i].measurements.calculate_means();
 			quantification_summary.mean_before_death = quantification_summary.mean_before_death + elements[i].measurements;
 			if (elements[i].saturated_offset)
 				quantification_summary.number_of_registration_saturated_frames_before_death++;
@@ -2176,7 +1912,7 @@ void ns_analyzed_image_time_path::calculate_movement_quantification_summary(){
 	}	
 	for (unsigned int i = death_index+1; i < elements.size();i++){
 	quantification_summary.count_after_death++;
-		elements[i].measurements.calculate_means();
+	//	elements[i].measurements.calculate_means();
 		quantification_summary.mean_after_death = quantification_summary.mean_after_death + elements[i].measurements;
 		if (elements[i].saturated_offset)
 			quantification_summary.number_of_registration_saturated_frames_after_death++;
@@ -2234,18 +1970,21 @@ void ns_analyzed_image_time_path::write_detailed_movement_quantification_analysi
 		"Registration Offset X, Registration Offset Y, Registration Offset Magnitude,"
 		"Absolute Time, Age Relative Time,"
 		"Machine-Annotated Movement State,By Hand Annotated Movement State,"
-		"Machine Death Relative Time, Machine Slow Movement Cessation Relative Time, Machine Fast Movement Cessation Relative Time,"
-		"By Hand Death Relative Time, By Hand Slow Movement Cessation Relative Time, By Hand Fast Movement Cessation Relative Time,"
-		"By Hand Death-Associated Contraction Time,"
+		"Machine Death Relative Time, Machine Slow Movement Cessation Relative Time, Machine Fast Movement Cessation Relative Time,Machine Death-Associated Expansion Time,"
+		"By Hand Death Relative Time, By Hand Slow Movement Cessation Relative Time, By Hand Fast Movement Cessation Relative Time,By Hand Death-Associated Expansion Time,"
 		"Movement Sum, Movement Score, Denoised Movement Score,"
 		"Spatially Averaged Movement Sum,"
 		"Spatially Averaged Movement Score,"
 		"Denoised Spatially Averaged Movement Score,"
-		"Total intensity in previous frame (scaled to current frame histogram),"
-		"Movement Alternate Worm Sum, Change in Total Pixel Intensity Between Frames,Change in Average Normalized Pixel Intensity Between Frames, "
-		"Total Worm Area, Normalized Total Worm Area,Total Worm Intensity, Total Region Area, Total Region Intensity,"
-		"Normalized Worm Area, Normalized Worm Intensity, Normalized Change in Worm Intensity,"
-		"Total Alternate Worm Area,Total Alternate Worm Intensity,Saturated Registration, Machine Error (Days ),";
+		"Movement quantification used to identify death,"
+		"Movement Alternate Worm Sum,"
+		"Total Foreground Area, Total Stabilized Area, Total Region Area,Total Alternate Worm Area,"
+		"Total Foreground Intensity, Total Stabilized Intensity,Total Region Intensity,Total Alternate Worm Intensity,"
+		"Change in Foreground Intensity (pix/hour),Change in Stabilized Intensity (pix/hour),Change in Region Intensity (pix/hour),"
+		"Saturated Registration, Machine Error (Days ),"
+		"Death Time,"
+		"Total Foreground Area at Death,"
+		"Total Stablilized Intensity at Death,";
 
 	#ifdef NS_CALCULATE_OPTICAL_FLOW
 	ns_optical_flow_quantification::write_header("Scaled Flow Magnitude", o); o << ",";
@@ -2264,27 +2003,29 @@ void ns_analyzed_image_time_path::write_detailed_movement_quantification_analysi
 	if (output_only_elements_with_hand && by_hand_annotation_event_times[(int)ns_movement_cessation].period_end_was_not_observed)
 		return;
 	//find animal size one day before death
-	double death_relative_time_to_normalize(0);
+	//double death_relative_time_to_normalize(0);
 	double time_after_death_to_write_in_abbreviated(24*60*60);
 	unsigned long end_index(0);
-	long least_dt_to_death(LONG_MAX);
-	double size_at_closest_distance(1);
+	unsigned long death_index(0);
+	
+	unsigned long death_time(0);
 	if(!state_intervals[(int)ns_movement_stationary].skipped){
+		long least_dt_to_death(LONG_MAX);
+		//double size_at_closest_distance(1);
 		double death_time(0);
 		if (by_hand_annotation_event_times[(int)ns_movement_stationary].period_end_was_not_observed)
 			death_time = state_entrance_interval_time(state_intervals[(int)ns_movement_stationary]).best_estimate_event_time_for_possible_partially_unbounded_interval();
 		else 
 			death_time = by_hand_annotation_event_times[(int)ns_movement_stationary].period_end;
 		
-		const double time_to_match(death_time+death_relative_time_to_normalize);
 		const double time_to_match_2(death_time+time_after_death_to_write_in_abbreviated);
 
 		for (unsigned long k = 0; k < elements.size(); k++){
 	
-			const double dt(fabs(elements[k].absolute_time-time_to_match));
+			const double dt(fabs(elements[k].absolute_time- death_time));
 			if (dt < least_dt_to_death){
 				least_dt_to_death = dt;
-				size_at_closest_distance = element(k).measurements.total_worm_area;
+				death_index = k;
 			}
 		}
 		
@@ -2295,6 +2036,7 @@ void ns_analyzed_image_time_path::write_detailed_movement_quantification_analysi
 			}
 		}
 	}
+	
 	if (!abbreviated_time_series)
 		end_index = elements.size();
 
@@ -2302,7 +2044,7 @@ void ns_analyzed_image_time_path::write_detailed_movement_quantification_analysi
 		m.out_JMP_plate_identity_data_short(o);
 		o << ",";
 		o << group_id<<","<<path_id<<","
-			<< ((censoring_and_flag_details.is_excluded() || censoring_and_flag_details.flag.event_should_be_excluded()) ?"1":"0")<< ",";
+			<< ((censoring_and_flag_details.is_excluded() || censoring_and_flag_details.flag.event_should_be_excluded()) ?"1":"0")<< ",";                                               
 		if (censoring_and_flag_details.flag.specified())
 				o << censoring_and_flag_details.flag.label_short;
 			o << ","
@@ -2324,41 +2066,50 @@ void ns_analyzed_image_time_path::write_detailed_movement_quantification_analysi
 			<< ns_calc_rel_time_by_index(elements[k].absolute_time,state_intervals[(int)ns_movement_stationary],*this) << ","
 			<< ns_calc_rel_time_by_index(elements[k].absolute_time,state_intervals[(int)ns_movement_posture],*this) << ","
 			<< ns_calc_rel_time_by_index(elements[k].absolute_time,state_intervals[(int)ns_movement_slow],*this) << ","
+			<< ns_calc_rel_time_by_index(elements[k].absolute_time, state_intervals[(int)ns_worm_death_posture_relaxation_termination], *this) << ","
 			<< ns_output_interval_difference(elements[k].absolute_time,by_hand_annotation_event_times[(int)ns_movement_cessation]) << ","
 			<< ns_output_interval_difference(elements[k].absolute_time,by_hand_annotation_event_times[(int)ns_translation_cessation]) << ","
 			<< ns_output_interval_difference(elements[k].absolute_time,by_hand_annotation_event_times[(int)ns_fast_movement_cessation]) << ","
 			<< ns_output_interval_difference(elements[k].absolute_time,by_hand_annotation_event_times[(int)ns_worm_death_posture_relaxation_termination]) << ",";
 
 		
-			o << elements[k].measurements.interframe_time_scaled_movement_sum << ",";
+			//o << elements[k].measurements.interframe_time_scaled_movement_sum << ",";                                                               	
 			o << elements[k].measurements.movement_score << ","
 				<< elements[k].measurements.denoised_movement_score << ","
 				<< elements[k].measurements.interframe_scaled_spatial_averaged_movement_sum << ","
 				<< elements[k].measurements.spatial_averaged_movement_score << ","
 				<< elements[k].measurements.denoised_spatial_averaged_movement_score << ","
-				<< elements[k].measurements.total_intensity_in_previous_frame_scaled_to_current_frames_histogram << ","
-			<< elements[k].measurements.movement_alternate_worm_sum << ","
-			<< elements[k].measurements.change_in_total_worm_intensity << ","
-			<< elements[k].measurements.change_in_average_normalized_worm_intensity << ","
-			<< elements[k].measurements.total_worm_area << ",";
-			//size normalized to 1 exactly 1 day before death.
-		if (least_dt_to_death > 60*60*12)
-			o << ",";
-		else o << elements[k].measurements.total_worm_area/size_at_closest_distance<< ",";
-		o << elements[k].measurements.total_intensity_within_worm_area << ","
-			<< elements[k].measurements.total_region_area << ","
-			<< elements[k].measurements.total_intensity_within_region << ","
-			<< elements[k].measurements.normalized_worm_area << ","
-			<< elements[k].measurements.normalized_total_intensity << ","
-			<< elements[k].measurements.denoised_change_in_average_normalized_worm_intensity << ","
-			<< elements[k].measurements.total_alternate_worm_area << ","
-			<< elements[k].measurements.total_intensity_within_alternate_worm << ","
+				<< elements[k].measurements.death_time_posture_analysis_measure_v2() << ","
+				//	<< elements[k].measurements.total_intensity_in_previous_frame_scaled_to_current_frames_histogram << ","		
+				<< elements[k].measurements.movement_alternate_worm_sum << ","													
+				<< elements[k].measurements.total_foreground_area << ","														
+				<< elements[k].measurements.total_stabilized_area << ","														
+				<< elements[k].measurements.total_region_area << ","															
+				<< elements[k].measurements.total_alternate_worm_area << ","
+				<< elements[k].measurements.total_intensity_within_foreground << ","
+				<< elements[k].measurements.total_intensity_within_stabilized << ","
+				<< elements[k].measurements.total_intensity_within_region << ","
+				<< elements[k].measurements.total_intensity_within_alternate_worm << ","
+
+				<< elements[k].measurements.change_in_total_foreground_intensity << ","
+				<< elements[k].measurements.change_in_total_stabilized_intensity << ","
+				<< elements[k].measurements.change_in_total_region_intensity << ","
+			
+			
+		
 			<< (elements[k].saturated_offset ? "1" : "0") << ",";
 		if ( state_intervals[(int)ns_movement_stationary].skipped)
 			 o << ",";
 		else o << ns_output_interval_difference(this->state_entrance_interval_time(state_intervals[(int)ns_movement_stationary]).
 													best_estimate_event_time_for_possible_partially_unbounded_interval(),
 													by_hand_annotation_event_times[(int)ns_movement_cessation]) <<",";
+
+		o << death_time << ",";
+		if (state_intervals[(int)ns_movement_stationary].skipped)
+			o << ",,";
+		else o << elements[death_index].measurements.total_foreground_area << ","
+			<< elements[death_index].measurements.total_stabilized_area << ",";
+
 	#ifdef NS_CALCULATE_OPTICAL_FLOW
 		elements[k].measurements.scaled_flow_magnitude.write(o); o << ",";
 		elements[k].measurements.raw_flow_magnitude.write(o); o << ",";
@@ -2373,7 +2124,7 @@ void ns_analyzed_image_time_path::write_detailed_movement_quantification_analysi
 		o << "\n";
 	}
 }
-
+/*
 void ns_time_path_image_movement_analyzer::write_summary_movement_quantification_analysis_data(const ns_region_metadata & m, std::ostream & o)const{
 
 	for (unsigned long i = 0; i < groups.size(); i++){
@@ -2385,7 +2136,7 @@ void ns_time_path_image_movement_analyzer::write_summary_movement_quantification
 			groups[i].paths[j].write_summary_movement_quantification_analysis_data(m,i,j,o);
 		}
 	}
-}
+}*/
 
 
 void ns_time_path_image_movement_analyzer::write_analysis_optimization_data(int software_version,const std::vector<double> & thresholds, const std::vector<double> & hold_times, const ns_region_metadata & m,std::ostream & o) const{
@@ -3533,12 +3284,12 @@ void ns_time_path_image_movement_analyzer::output_visualization(const string & b
 
 			for (unsigned int k = 0; k < groups[i].paths[j].element_count(); k++){
 				quant << p << "," << groups[i].paths[j].element(k).relative_time/(60*60*24.0) << ","
-					<< groups[i].paths[j].element(k).measurements.total_intensity_within_worm_area << "," 
+					<< groups[i].paths[j].element(k).measurements.total_intensity_within_stabilized << "," 
 					<< groups[i].paths[j].element(k).measurements.interframe_time_scaled_movement_sum << "," 
 					<< groups[i].paths[j].elements[k].measurements.movement_alternate_worm_sum <<"\n";
 				
 				all_quant << p << "," << groups[i].paths[j].element(k).relative_time/(60*60*24.0) << ","
-					<< groups[i].paths[j].element(k).measurements.total_intensity_within_worm_area << "," 
+					<< groups[i].paths[j].element(k).measurements.total_intensity_within_stabilized << ","
 					<< groups[i].paths[j].element(k).measurements.interframe_time_scaled_movement_sum  << ","
 					<< groups[i].paths[j].elements[k].measurements.movement_alternate_worm_sum <<"\n";
 
@@ -3635,17 +3386,17 @@ public:
 	double raw(const unsigned long i){
 		if (i == 0)
 			return raw(1);
-		if ((*elements)[i-1].measurements.total_intensity_within_worm_area == 0)
+		if ((*elements)[i-1].measurements.total_intensity_within_stabilized == 0)
 			return 0;
-		//XXX This is the definition of a "movement score".
+		//XXX This is the definition of a "movement score" used by the old version of the software
 		return  (
 					(*elements)[i].measurements.movement_sum-
 					//this term normalizes for changes in absolute intensity between frames (ie. light levels changing or worm size changes)
-					fabs((double)(*elements)[i].measurements.total_intensity_within_worm_area 
-					- (double)(*elements)[i-1].measurements.total_intensity_within_worm_area)
+					fabs((double)(*elements)[i].measurements.total_intensity_within_foreground
+					- (double)(*elements)[i-1].measurements.total_intensity_within_foreground)
 				)
 				/
-				(*elements)[i-1].measurements.total_intensity_within_worm_area;
+				(*elements)[i-1].measurements.total_intensity_within_foreground;
 		
 	}
 	double & processed(const unsigned long i){
@@ -3663,18 +3414,12 @@ public:
 	double raw(const unsigned long i) {
 		if (i == 0)
 			return raw(1);
-		if ((*elements)[i - 1].measurements.total_intensity_within_worm_area == 0)
+		if ((*elements)[i - 1].measurements.total_intensity_within_stabilized == 0)
 			return 0;
 		//XXX This is the definition of a "spatially averaged movement score".
-		return  //(
-			(*elements)[i].measurements.spatial_averaged_movement_sum;
-			
-			//this term normalizes for changes in absolute intensity between frames (ie. light levels changing or worm size changes)
-		//	- fabs((double)(*elements)[i].measurements.total_intensity_within_worm_area
-			//	- (double)(*elements)[i].measurements.total_intensity_in_previous_frame_scaled_to_current_frames_histogram)
-		//	)
-		//	/
-		//	(*elements)[i - 1].measurements.total_intensity_within_worm_area;
+		//and in the current version used  used to identify death time
+		return  (*elements)[i].measurements.spatial_averaged_movement_sum;
+		
 
 	}
 	double & processed(const unsigned long i) {
@@ -3683,7 +3428,7 @@ public:
 private:
 	ns_analyzed_image_time_path::ns_element_list * elements;
 };
-
+/*
 class ns_intensity_data_accessor{
 public:
 	ns_intensity_data_accessor(ns_analyzed_image_time_path::ns_element_list & l):elements(&l){}
@@ -3705,14 +3450,14 @@ public:
 	unsigned long size()const {return elements->size();}
 	const unsigned long time(const unsigned long i){return (*elements)[i].absolute_time;}
 	double raw(const unsigned long i){
-		return (*elements)[i].measurements.total_worm_area;
+		return (*elements)[i].measurements.total_foreground_area;
 	}
 	double & processed(const unsigned long i){
-		return (*elements)[i].measurements.normalized_worm_area;
+		return (*elements)[i].measurements.normalized_foreground_area;
 	}
 private:
 	ns_analyzed_image_time_path::ns_element_list * elements;
-};
+};*/
 
 template <class T>
 class ns_kernel_smoother{
@@ -3741,7 +3486,7 @@ public:
 		}
 	}
 };
-void ns_analyzed_image_time_path::denoise_movement_series(const unsigned long change_time_in_seconds, const ns_time_series_denoising_parameters & times_series_denoising_parameters){
+void ns_analyzed_image_time_path::denoise_movement_series_and_calculate_intensity_slopes(const unsigned long change_time_in_seconds, const ns_time_series_denoising_parameters & times_series_denoising_parameters){
 	if (elements.size() == 0)
 		return;
 
@@ -3774,48 +3519,69 @@ void ns_analyzed_image_time_path::denoise_movement_series(const unsigned long ch
 		m(kernel_width,acc);
 		m_s(kernel_width, acc_spatial);
 
-		for (unsigned int i= 0; i < elements.size(); i++){
+		/*for (unsigned int i= 0; i < elements.size(); i++){
 			elements[i].measurements.normalized_worm_area = elements[i].measurements.total_worm_area/(double)elements[first_stationary_timepoint()].measurements.total_worm_area;
 			if (elements[i].measurements.total_worm_area == 0)
 				elements[i].measurements.normalized_total_intensity = 0;
 			else elements[i].measurements.normalized_total_intensity = elements[i].measurements.total_intensity_within_worm_area / elements[i].measurements.total_worm_area;
 			elements[i].measurements.change_in_average_normalized_worm_intensity = 0;
-		}
+		}*/
 
-		ns_kernel_smoother<ns_intensity_data_accessor> i;
+	/*	ns_kernel_smoother<ns_intensity_data_accessor> i;
 		ns_intensity_data_accessor acc2(elements);
-		i(kernel_width,acc2);
+		i(kernel_width,acc2);*/
 
 		//use a kernal to calculate slope
 		const int slope_kernel_half_width(8);
 		const int slope_kernel_width = slope_kernel_half_width * 2 + 1;
 		if (elements.size() >= slope_kernel_width) {
 			ns_linear_regression_model model;
-			std::vector<unsigned long> vals(slope_kernel_width);
-			std::vector<unsigned long> times(slope_kernel_width);
+			std::vector<unsigned long > stabilized_vals(slope_kernel_width);
+			std::vector<unsigned long > foreground_vals(slope_kernel_width);
+			std::vector<unsigned long > region_vals(slope_kernel_width);
+			std::vector<unsigned long > times(slope_kernel_width);
 			for (unsigned int i = 0; i < slope_kernel_width; i++) {
-				vals[i] = elements[i].measurements.normalized_total_intensity;
+				foreground_vals[i] = elements[i].measurements.total_intensity_within_foreground;
+				stabilized_vals[i] = elements[i].measurements.total_intensity_within_stabilized;
+				region_vals[i] = elements[i].measurements.total_intensity_within_region;
 				times[i] = elements[i].absolute_time;
 			}
-			ns_linear_regression_model_parameters params(model.fit(vals, times));
-			for (unsigned int i = 0; i < slope_kernel_half_width; i++)
-				elements[i].measurements.change_in_total_worm_intensity = params.slope * 60 * 60; // units/hour
+			ns_linear_regression_model_parameters foreground_params(model.fit(foreground_vals, times));
+			ns_linear_regression_model_parameters region_params(model.fit(region_vals, times));
+			ns_linear_regression_model_parameters stabilized_params(model.fit(stabilized_vals, times));
+			for (unsigned int i = 0; i < slope_kernel_half_width; i++) {
+				elements[i].measurements.change_in_total_foreground_intensity = foreground_params.slope * 60 * 60; // units/
+				elements[i].measurements.change_in_total_region_intensity = region_params.slope * 60 * 60; // units/hour
+				elements[i].measurements.change_in_total_stabilized_intensity = stabilized_params.slope * 60 * 60; // units/hour
+
+			}
 			int pos = 0;
 			for (unsigned int i = slope_kernel_half_width; ; i++) {
 				//calculate slope of current kernal
-				params = model.fit(vals, times);
-				elements[i].measurements.change_in_total_worm_intensity = params.slope * 60 * 60;
+				foreground_params = model.fit(foreground_vals, times);
+				region_params = model.fit(region_vals, times);
+				stabilized_params = model.fit(stabilized_vals, times);
+
+				elements[i].measurements.change_in_total_foreground_intensity = foreground_params.slope * 60 * 60; // units/
+				elements[i].measurements.change_in_total_region_intensity = region_params.slope * 60 * 60; // units/hour
+				elements[i].measurements.change_in_total_stabilized_intensity = stabilized_params.slope * 60 * 60; // units/hour
+
 				if (i + slope_kernel_half_width + 2 >= elements.size())
 					break;
 				//update kernal for next step, by replacing earliest value i
-				vals[pos] = elements[i + slope_kernel_half_width + 2].measurements.normalized_total_intensity;
+				foreground_vals[pos] = elements[i + slope_kernel_half_width + 2].measurements.total_intensity_within_foreground;
+				stabilized_vals[pos] = elements[i + slope_kernel_half_width + 2].measurements.total_intensity_within_stabilized;
+				region_vals[pos] = elements[i + slope_kernel_half_width + 2].measurements.total_intensity_within_region;
 				times[pos] = elements[i + slope_kernel_half_width + 2].absolute_time;
 				pos++;
 				if (pos == slope_kernel_width)
 					pos = 0;
 			}
-			for (unsigned int i = elements.size() - slope_kernel_half_width - 1; i < elements.size(); i++)
-				elements[i].measurements.change_in_total_worm_intensity = params.slope;
+			for (unsigned int i = elements.size() - slope_kernel_half_width - 1; i < elements.size(); i++) {
+				elements[i].measurements.change_in_total_foreground_intensity = foreground_params.slope * 60 * 60; // units/
+				elements[i].measurements.change_in_total_region_intensity = region_params.slope * 60 * 60; // units/hour
+				elements[i].measurements.change_in_total_stabilized_intensity = stabilized_params.slope * 60 * 60; // units/hour
+			}
 
 		}
 		
@@ -3955,50 +3721,40 @@ void ns_analyzed_image_time_path::quantify_movement(const ns_analyzed_time_image
 		elements[i].measurements.total_region_area = elements[i].worm_region_size_.x*elements[i].worm_region_size_.y;
 		for (unsigned long y = 0; y < elements[i].registered_images->movement_image_.properties().height; y++) {
 			for (unsigned long x = 0; x < elements[i].registered_images->movement_image_.properties().width; x++) {
-				//const bool worm_threshold(elements[i].registered_images->get_stabilized_worm_neighborhood_threshold(y, x));
-				bool worm_threshold(elements[i].registered_images->get_stabilized_worm_neighborhood_threshold(y, x) &&
-					elements[i].registered_images->image[y][x] > 0);
-				if (!first_frames)
-					worm_threshold = worm_threshold && (elements[i - movement_time_kernel_width].registered_images->image[y][x] > 0);
+				const bool stabilized = elements[i].registered_images->get_stabilized_worm_neighborhood_threshold(y, x);
+				const bool worm_threshold(stabilized && elements[i].registered_images->image[y][x] > 0);
 
 				elements[i].measurements.total_intensity_within_region += elements[i].registered_images->image[y][x];
-				elements[i].measurements.total_intensity_within_worm_area += worm_threshold ? elements[i].registered_images->image[y][x] : 0;
-				elements[i].measurements.total_worm_area += (worm_threshold ? 1 : 0);
+				elements[i].measurements.total_intensity_within_foreground += worm_threshold ? elements[i].registered_images->image[y][x] : 0;
+				elements[i].measurements.total_intensity_within_stabilized += stabilized ? elements[i].registered_images->image[y][x] : 0;
+				elements[i].measurements.total_foreground_area += (worm_threshold ? 1 : 0);
+				elements[i].measurements.total_stabilized_area += (stabilized ? 1 : 0);
 			}
 		}
+		
+		elements[i].measurements.total_intensity_in_previous_frame_scaled_to_current_frames_histogram = 0;
 		if (!first_frames) {
 			for (unsigned long y = 0; y < elements[i- movement_time_kernel_width].registered_images->movement_image_.properties().height; y++) {
 				for (unsigned long x = 0; x < elements[i-movement_time_kernel_width].registered_images->movement_image_.properties().width; x++) {
 					//const bool worm_threshold(elements[i].registered_images->get_stabilized_worm_neighborhood_threshold(y, x));
-					bool worm_threshold(elements[i].registered_images->get_stabilized_worm_neighborhood_threshold(y, x) &&
-						(elements[i].registered_images->image[y][x] > 0) && 
-						(elements[i - movement_time_kernel_width].registered_images->image[y][x] > 0));
+					const bool stabilized = elements[i].registered_images->get_stabilized_worm_neighborhood_threshold(y, x);
 					elements[i].measurements.total_intensity_in_previous_frame_scaled_to_current_frames_histogram +=
-						worm_threshold ? elements[i].registered_images->histogram_matching_factors[elements[i - movement_time_kernel_width].registered_images->image[y][x]] : 0;
+						stabilized ? elements[i].registered_images->histogram_matching_factors[elements[i - movement_time_kernel_width].registered_images->image[y][x]] : 0;
 				}
 			}
 		}
 
-		//	elements[i].measurements.total_region_area=elements[i].registered_images->movement_image_.properties().height*elements[i].registered_images->movement_image_.properties().width;
-		//	double interframe_scaling_factor;
 		if (first_frames) {
-			elements[i].measurements.change_in_average_normalized_worm_intensity =
-				elements[i].measurements.change_in_average_region_intensity = 0;
-			//			interframe_scaling_factor = 1;
+			elements[i].measurements.change_in_total_foreground_intensity =
+				elements[i].measurements.change_in_total_region_intensity = elements[i].measurements.change_in_total_stabilized_intensity = 0;
 		}
 		else {
-			elements[i].measurements.change_in_average_region_intensity =
-				elements[i].measurements.total_intensity_within_region / (double)elements[i].measurements.total_region_area
-				- elements[i - movement_time_kernel_width].measurements.total_intensity_within_region / (double)elements[i - movement_time_kernel_width].measurements.total_region_area;
+			if (elements[i].measurements.total_foreground_area > 0 && elements[i - movement_time_kernel_width].measurements.total_foreground_area > 0) {
+				elements[i].measurements.change_in_total_foreground_intensity = elements[i].measurements.total_intensity_within_region / (double)elements[i].measurements.total_foreground_area
+					- elements[i - movement_time_kernel_width].measurements.total_intensity_within_region / (double)elements[i - movement_time_kernel_width].measurements.total_foreground_area;
 
-			if (elements[i].measurements.total_worm_area == 0 || elements[i - movement_time_kernel_width].measurements.total_worm_area == 0) {
-				elements[i].measurements.change_in_average_normalized_worm_intensity = 0;
 			}
-			else {
-				elements[i].measurements.change_in_average_normalized_worm_intensity =
-					(elements[i].measurements.total_intensity_within_worm_area 
-					- elements[i].measurements.total_intensity_in_previous_frame_scaled_to_current_frames_histogram) / (double)elements[i ].measurements.total_worm_area;
-			}
+
 		}
 		const unsigned long border(0);
 #ifdef NS_CALCULATE_OPTICAL_FLOW
@@ -5377,6 +5133,150 @@ void ns_analyzed_image_time_path::load_movement_images(const ns_analyzed_time_im
 	//	cerr << "(" << y << "->" << dh << ")\n";
 	}
 }
+void ns_analyzed_image_time_path_element_measurements::zero(){
+	interframe_time_scaled_movement_sum = 0;
+	movement_sum = 0;
+	movement_alternate_worm_sum = 0;
+	total_foreground_area = 0;
+	total_stabilized_area = 0;
+	total_region_area = 0;
+	total_intensity_within_region = 0;
+	total_intensity_within_stabilized = 0;
+	total_intensity_within_foreground = 0;
+	total_intensity_in_previous_frame_scaled_to_current_frames_histogram = 0;
+	total_alternate_worm_area = 0;
+	total_intensity_within_alternate_worm = 0;
+
+	change_in_total_foreground_intensity = 0;
+	change_in_total_region_intensity = 0;
+	change_in_total_stabilized_intensity = 0;
+
+	movement_score = 0;
+	denoised_movement_score = 0; 
+	spatial_averaged_movement_sum = 0;
+	interframe_scaled_spatial_averaged_movement_sum = 0;
+	spatial_averaged_movement_score = 0;
+	denoised_spatial_averaged_movement_score = 0;
+	registration_displacement = ns_vector_2d(0,0);
+}
+void ns_analyzed_image_time_path_element_measurements::square() {
+	interframe_time_scaled_movement_sum = interframe_time_scaled_movement_sum* interframe_time_scaled_movement_sum;
+	movement_sum = movement_sum*movement_sum;
+	movement_alternate_worm_sum = movement_alternate_worm_sum*movement_alternate_worm_sum;
+	total_foreground_area = total_foreground_area*total_foreground_area;
+	total_stabilized_area = total_stabilized_area*total_stabilized_area;
+	total_region_area = total_region_area*total_region_area;
+	total_intensity_within_region = total_intensity_within_region*total_intensity_within_region;
+	total_intensity_within_stabilized = total_intensity_within_stabilized*total_intensity_within_stabilized;
+	total_intensity_within_foreground = total_intensity_within_foreground*total_intensity_within_foreground;
+	total_intensity_in_previous_frame_scaled_to_current_frames_histogram = total_intensity_in_previous_frame_scaled_to_current_frames_histogram*total_intensity_in_previous_frame_scaled_to_current_frames_histogram;
+	total_alternate_worm_area = total_alternate_worm_area*total_alternate_worm_area;
+	total_intensity_within_alternate_worm = total_intensity_within_alternate_worm*total_intensity_within_alternate_worm;
+
+	change_in_total_foreground_intensity = change_in_total_foreground_intensity*change_in_total_foreground_intensity;
+	change_in_total_region_intensity = change_in_total_region_intensity*change_in_total_region_intensity;
+	change_in_total_stabilized_intensity = change_in_total_stabilized_intensity*change_in_total_stabilized_intensity;
+
+	movement_score = movement_score*movement_score;
+	denoised_movement_score = denoised_movement_score*denoised_movement_score;
+	spatial_averaged_movement_sum = spatial_averaged_movement_sum*spatial_averaged_movement_sum;
+	interframe_scaled_spatial_averaged_movement_sum = interframe_scaled_spatial_averaged_movement_sum*interframe_scaled_spatial_averaged_movement_sum;
+	spatial_averaged_movement_score = spatial_averaged_movement_score*spatial_averaged_movement_score;
+	denoised_spatial_averaged_movement_score = denoised_spatial_averaged_movement_score*denoised_spatial_averaged_movement_score;
+
+	registration_displacement.x = registration_displacement.x*registration_displacement.x;
+	registration_displacement.y = registration_displacement.y*registration_displacement.y;
+}
+void ns_analyzed_image_time_path_element_measurements::square_root() {
+	interframe_time_scaled_movement_sum = sqrt(interframe_time_scaled_movement_sum);
+	movement_sum = sqrt(movement_sum);
+	movement_alternate_worm_sum = sqrt(movement_alternate_worm_sum);
+	total_foreground_area =	sqrt(total_foreground_area);
+	total_stabilized_area = sqrt(total_stabilized_area);
+	total_region_area = sqrt(total_region_area);
+	total_intensity_within_region = sqrt(total_intensity_within_region);
+	total_intensity_within_stabilized = sqrt(total_intensity_within_stabilized);
+	total_intensity_within_foreground = sqrt(total_intensity_within_foreground);
+	total_intensity_in_previous_frame_scaled_to_current_frames_histogram = sqrt(total_intensity_in_previous_frame_scaled_to_current_frames_histogram);
+	total_alternate_worm_area = sqrt(total_alternate_worm_area);
+	total_intensity_within_alternate_worm = sqrt(total_intensity_within_alternate_worm);
+
+	change_in_total_foreground_intensity  = sqrt(change_in_total_foreground_intensity);
+	change_in_total_region_intensity = sqrt(change_in_total_region_intensity);
+	change_in_total_stabilized_intensity = sqrt(change_in_total_stabilized_intensity);
+
+	movement_score = sqrt(movement_score);
+	denoised_movement_score = sqrt(denoised_movement_score);
+	spatial_averaged_movement_sum = sqrt(spatial_averaged_movement_sum);
+	interframe_scaled_spatial_averaged_movement_sum = sqrt(interframe_scaled_spatial_averaged_movement_sum);
+	spatial_averaged_movement_score = sqrt(spatial_averaged_movement_score);
+	denoised_spatial_averaged_movement_score = sqrt(denoised_spatial_averaged_movement_score);
+
+	registration_displacement.x = sqrt(registration_displacement.x);
+	registration_displacement.y = sqrt(registration_displacement.y);
+}
+
+
+ns_analyzed_image_time_path_element_measurements operator+(const ns_analyzed_image_time_path_element_measurements & a, const ns_analyzed_image_time_path_element_measurements & b){
+	ns_analyzed_image_time_path_element_measurements ret;
+	ret.interframe_time_scaled_movement_sum = a.interframe_time_scaled_movement_sum+b.interframe_time_scaled_movement_sum;
+	ret.movement_sum = a.movement_sum+b.movement_sum;
+	ret.movement_alternate_worm_sum = a.movement_alternate_worm_sum+b.movement_alternate_worm_sum;
+	ret.total_foreground_area = a.total_foreground_area+b.total_foreground_area;
+	ret.total_stabilized_area = a.total_stabilized_area+b.total_stabilized_area;
+	ret.total_region_area = a.total_region_area+b.total_region_area;
+	ret.total_intensity_within_region = a.total_intensity_within_region+b.total_intensity_within_region;
+	ret.total_intensity_within_stabilized = a.total_intensity_within_stabilized+b.total_intensity_within_stabilized;
+	ret.total_intensity_within_foreground = a.total_intensity_within_foreground+b.total_intensity_within_foreground;
+	ret.total_intensity_in_previous_frame_scaled_to_current_frames_histogram = a.total_intensity_in_previous_frame_scaled_to_current_frames_histogram+b.total_intensity_in_previous_frame_scaled_to_current_frames_histogram;
+	ret.total_alternate_worm_area = a.total_alternate_worm_area+b.total_alternate_worm_area;
+	ret.total_intensity_within_alternate_worm = a.total_intensity_within_alternate_worm+b.total_intensity_within_alternate_worm;
+
+	ret.change_in_total_foreground_intensity = a.change_in_total_foreground_intensity+b.change_in_total_foreground_intensity;
+	ret.change_in_total_region_intensity = a.change_in_total_region_intensity+b.change_in_total_region_intensity;
+	ret.change_in_total_stabilized_intensity = a.change_in_total_stabilized_intensity+b.change_in_total_stabilized_intensity;
+
+	ret.movement_score = a.movement_score+b.movement_score;
+	ret.denoised_movement_score = a.denoised_movement_score+b.denoised_movement_score;
+	ret.spatial_averaged_movement_sum = a.spatial_averaged_movement_sum+b.spatial_averaged_movement_sum;
+	ret.interframe_scaled_spatial_averaged_movement_sum = a.interframe_scaled_spatial_averaged_movement_sum+b.interframe_scaled_spatial_averaged_movement_sum;
+	ret.spatial_averaged_movement_score = a.spatial_averaged_movement_score+b.spatial_averaged_movement_score;
+	ret.denoised_spatial_averaged_movement_score = a.denoised_spatial_averaged_movement_score+b.denoised_spatial_averaged_movement_score;
+
+	ret.registration_displacement.x = a.registration_displacement.x+b.registration_displacement.x;
+	ret.registration_displacement.y = a.registration_displacement.y+b.registration_displacement.y;
+	return ret;
+}
+
+ns_analyzed_image_time_path_element_measurements operator/(const ns_analyzed_image_time_path_element_measurements & a, const int & d) {
+	ns_analyzed_image_time_path_element_measurements ret;
+	ret.interframe_time_scaled_movement_sum = a.interframe_time_scaled_movement_sum / d;
+	ret.movement_sum = a.movement_sum / d;
+	ret.movement_alternate_worm_sum = a.movement_alternate_worm_sum / d;
+	ret.total_foreground_area = a.total_foreground_area / d;
+	ret.total_stabilized_area = a.total_stabilized_area / d;
+	ret.total_region_area = a.total_region_area / d;
+	ret.total_intensity_within_region = a.total_intensity_within_region / d;
+	ret.total_intensity_within_stabilized = a.total_intensity_within_stabilized / d;
+	ret.total_intensity_within_foreground = a.total_intensity_within_foreground / d;
+	ret.total_intensity_in_previous_frame_scaled_to_current_frames_histogram = a.total_intensity_in_previous_frame_scaled_to_current_frames_histogram / d;
+	ret.total_alternate_worm_area = a.total_alternate_worm_area / d;
+	ret.total_intensity_within_alternate_worm = a.total_intensity_within_alternate_worm / d;
+	ret.change_in_total_foreground_intensity = a.change_in_total_foreground_intensity / d;
+	ret.change_in_total_region_intensity = a.change_in_total_region_intensity / d;
+	ret.change_in_total_stabilized_intensity = a.change_in_total_stabilized_intensity / d;
+	ret.movement_score = a.movement_score / d;
+	ret.denoised_movement_score = a.denoised_movement_score / d;
+	ret.spatial_averaged_movement_sum = a.spatial_averaged_movement_sum / d;
+	ret.interframe_scaled_spatial_averaged_movement_sum = a.interframe_scaled_spatial_averaged_movement_sum / d;
+	ret.spatial_averaged_movement_score = a.spatial_averaged_movement_score / d;
+	ret.denoised_spatial_averaged_movement_score = a.denoised_spatial_averaged_movement_score / d;
+	ret.registration_displacement.x = a.registration_displacement.x / d;
+	ret.registration_displacement.y = a.registration_displacement.y / d;
+	return ret;
+}
+
+
 
 
 void ns_analyzed_image_time_path::calc_flow_images_from_registered_images(const ns_analyzed_time_image_chunk & chunk) {
@@ -5748,7 +5648,7 @@ void ns_time_path_image_movement_analyzer::reanalyze_stored_aligned_images(const
 				//}
 				clear_images_for_group(i);
 				groups[i].paths[j].end_movement_image_loading();
-				groups[i].paths[j].denoise_movement_series(0,times_series_denoising_parameters);
+				groups[i].paths[j].denoise_movement_series_and_calculate_intensity_slopes(0,times_series_denoising_parameters);
 			
 				//groups[i].paths[j].analyze_movement(e,generate_stationary_path_id(i,j));
 				

@@ -62,6 +62,7 @@ std::string ns_format_time_string_for_tiff(const unsigned long t);
 unsigned long ns_time_from_format_string(const std::string & t);
 
 ns_64_bit ns_atoi64(const char * s);
+ns_s64_bit ns_atois64(const char * s);
 
 std::string ns_to_string(const unsigned int);
 std::string ns_to_string(const int);

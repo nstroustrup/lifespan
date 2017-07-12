@@ -77,7 +77,7 @@ macro(ipp_get_version VERSION_FILE)
 endmacro()
 
 macro(_ipp_not_supported)
-  message(STATUS ${ARGN})
+  message(FATAL_ERROR ${ARGN})
   unset(HAVE_IPP)
   unset(HAVE_IPP_ICV_ONLY)
   unset(IPP_VERSION_STR)
@@ -233,19 +233,49 @@ macro(ipp_detect_version)
   #message(STATUS "Intel IPP libs: ${IPP_LIBRARIES}")
 endmacro()
 
-# OPENCV_IPP_PATH is an environment variable for internal usage only, do not use it
-if(DEFINED ENV{OPENCV_IPP_PATH} AND NOT DEFINED IPPROOT)
-  set(IPPROOT "$ENV{OPENCV_IPP_PATH}")
-endif()
+
+list(APPEND posloc  /usr /usr/local /opt/local /sw  /opt/local /root/intel /opt/intel)
+
+FOREACH(curpath ${posloc})
+ FILE(GLOB_RECURSE new_list ${curpath}/*/ipp/include/ippversion.h)
+ FILE(GLOB_RECURSE new_list2 ${curpath}/*/linux/ipp/include/ippversion.h)
+ LIST(APPEND new_list ${new_list2})
+ FILE(GLOB_RECURSE new_list2 ${curpath}/*/include/ippversion.h)
+ LIST(APPEND new_list ${new_list2})
+ FILE(GLOB_RECURSE new_list2 ${curpath}/*/include/ippversion.h)
+ LIST(APPEND new_list ${new_list2})
+
+ list(LENGTH new_list len)
+ if (len GREATER 0)
+   list(GET new_list 0 IPPVER_PATH)
+ endif()
+ENDFOREACH()
+
+string(REGEX REPLACE "//" "/" IPPVER_PATH ${IPPVER_PATH})
+message(STATUS ${IPPVER_PATH})
+
+string(REGEX REPLACE "/include/ippversion.h" "" IPPROOT ${IPPVER_PATH})
+#message(FATAL_ERROR ${IPPROOT} )
+
+ find_path(IPPROOT
+    NAMES
+      ippversion.h
+    PATHS
+       ${IPPROOT}/include/
+  )
 
 if(NOT DEFINED IPPROOT)
   _ipp_not_supported("Intel Performance Primitives are required, but not installed")
 endif()
 
+
 file(TO_CMAKE_PATH "${IPPROOT}" __IPPROOT)
 if(EXISTS "${__IPPROOT}/include/ippversion.h")
   set(IPP_ROOT_DIR ${__IPPROOT})
   ipp_detect_version()
+  message(STATUS " - IPPROOT: ${IPP_ROOT_DIR}")
+else()
+ _ipp_not_supported("Could not find ippversion.h at ${__IPPROOT}/include")
 endif()
 
 

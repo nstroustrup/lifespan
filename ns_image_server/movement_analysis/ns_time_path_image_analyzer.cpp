@@ -1648,7 +1648,6 @@ void ns_time_path_image_movement_analyzer::load_movement_data_from_disk(istream 
 		get_int(in, groups[group_id].paths[path_id].elements[element_id].measurements.change_in_total_stabilized_intensity);//28
 		if (in.fail())
 			throw ns_ex("Invalid Specification 28");
-		
 		string tmp;
 		char a = get_int(in, tmp);
 		if (in.fail()) 
@@ -1683,7 +1682,7 @@ void ns_time_path_image_movement_analyzer::load_movement_data_from_disk(istream 
 #endif
 
 		//open for future use
-		for (unsigned int i = 0; i < 9; i++){
+		for (unsigned int i = 0; i < 7; i++){
 			get_int(in,tmp);
 	//		std::cerr << "E" << i << "'" << tmp << "' ";
 				if(in.fail()) throw ns_ex("Invalid Specification");

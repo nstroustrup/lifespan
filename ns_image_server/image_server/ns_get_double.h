@@ -20,21 +20,22 @@ class ns_get_int{
 			i = static_cast<T>(atol(tmp.c_str()));
 			return a;
 		}
-		template<>
-		inline char operator()(std::istream & in, ns_64_bit & i) {
-			char a((*this)(in, tmp));
-			i = static_cast<ns_64_bit>(ns_atoi64(tmp.c_str()));
-			return a;
-		}
-		template<>
-			inline char operator()(std::istream & in, ns_s64_bit & i) {
-			char a((*this)(in, tmp));
-			i = static_cast<ns_s64_bit>(ns_atois64(tmp.c_str()));
-			return a;
-		}
+       
 	private:
 	std::string tmp;
 };
+template<>
+inline char ns_get_int::operator()(std::istream & in, ns_64_bit & i) {
+  char a((*this)(in, tmp));
+  i = static_cast<ns_64_bit>(ns_atoi64(tmp.c_str()));
+  return a;
+}
+template<>
+inline char ns_get_int::operator()(std::istream & in, ns_s64_bit & i) {
+  char a((*this)(in, tmp));
+  i = static_cast<ns_s64_bit>(ns_atois64(tmp.c_str()));
+  return a;
+}
 
 class ns_get_double{
 	public:

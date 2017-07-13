@@ -234,7 +234,7 @@ macro(ipp_detect_version)
 endmacro()
 
 
-list(APPEND posloc  /usr /usr/local /opt/local /sw  /opt/local /root/intel /opt/intel)
+list(APPEND posloc  /usr /usr/local /opt/local /sw  /opt/local /root/intel /opt/intel /users/nstroustrup/nstroustrup)
 
 FOREACH(curpath ${posloc})
  FILE(GLOB_RECURSE new_list ${curpath}/*/ipp/include/ippversion.h)
@@ -244,15 +244,23 @@ FOREACH(curpath ${posloc})
  LIST(APPEND new_list ${new_list2})
  FILE(GLOB_RECURSE new_list2 ${curpath}/*/include/ippversion.h)
  LIST(APPEND new_list ${new_list2})
+ FILE(GLOB_RECURSE new_list2 ${curpath}/*/intel/ipp/include/ippversion.h)
+ LIST(APPEND new_list ${new_list2})
 
  list(LENGTH new_list len)
  if (len GREATER 0)
    list(GET new_list 0 IPPVER_PATH)
+   set(IPPROOT_FOUND 1)
  endif()
 ENDFOREACH()
+#message(STATUS "FOUNDIT ${IPPVER_PATH}")
+if (NOT DEFINED IPPROOT_FOUND)
+_ipp_not_supported("Intel Performance Primitives are required, but not installed")
+endif()
 
+#message(STATUS "FOUNDIT ${IPPVER_PATH}")
 string(REGEX REPLACE "//" "/" IPPVER_PATH ${IPPVER_PATH})
-message(STATUS ${IPPVER_PATH})
+#message(STATUS ${IPPVER_PATH})
 
 string(REGEX REPLACE "/include/ippversion.h" "" IPPROOT ${IPPVER_PATH})
 #message(FATAL_ERROR ${IPPROOT} )

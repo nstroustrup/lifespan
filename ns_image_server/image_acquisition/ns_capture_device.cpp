@@ -112,11 +112,16 @@ public:
 		string current_line;
 		for (unsigned int i = 0; i < output.size(); i++){
 			if (output[i] == '\n'){
+			  std::cout << current_line << "\n";
+			  if(current_line.find("descriptor: Pipe error") == current_line.npos){
+			
 				string::size_type pos = current_line.find_last_of(" ");
 				if (pos != current_line.npos){
 					scanner_names.push_back(current_line.substr(pos+1));
 				}
-				current_line = "";
+    
+			  }
+			  current_line="";
 			}
 			else current_line+=output[i];
 		}

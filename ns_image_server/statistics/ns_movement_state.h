@@ -37,9 +37,11 @@ typedef enum{ns_no_movement_event,				//nothing happens at the specified time
 			ns_posture_changing_worm_observed,
 			ns_stationary_worm_observed,
 			ns_stationary_worm_disappearance,
-			ns_worm_death_posture_relaxation_termination,
+			ns_death_posture_relaxation_termination,
 			ns_moving_worm_disappearance,
 			ns_additional_worm_entry,
+			ns_death_posture_relaxation_start,
+			ns_death_posture_relaxing_observed,
 			ns_number_of_movement_event_types
 } ns_movement_event;
 

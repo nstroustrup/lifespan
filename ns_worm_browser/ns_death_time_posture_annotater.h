@@ -265,6 +265,11 @@ public:
 	
 			}
 			if (death_posture_relaxation_termination.time.period_end != 0 && death_posture_relaxation_termination.time.period_end >= path_start_time){
+
+				if (dt*(death_posture_relaxation_termination.time.period_start - path_start_time >= x))
+					x = dt*(death_posture_relaxation_termination.time.period_start - path_start_time);
+
+
 				if (death_posture_relaxation_termination.time.period_end > last_path_frame_time)
 					throw ns_ex("Invalid Death Posture Relaxation Termination Time!");
 				c = ns_movement_colors::color(ns_movement_death_posture_relaxation);

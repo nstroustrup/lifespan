@@ -515,7 +515,7 @@ public:
 
 	const ns_time_path_limits & observation_limits() const{return time_path_limits;}
 	ns_death_time_annotation_time_interval state_entrance_interval_time(const ns_movement_state_observation_boundary_interval & e) const;
-	//ns_death_time_annotation_time_interval state_exit_interval_time(const ns_movement_state_observation_boundary_interval & e) const;
+	ns_death_time_annotation_time_interval state_exit_interval_time(const ns_movement_state_observation_boundary_interval & e) const;
 
 	unsigned long first_stationary_timepoint() const{return first_stationary_timepoint_;}
 	ns_death_time_annotation_time_interval cessation_of_fast_movement_interval(){

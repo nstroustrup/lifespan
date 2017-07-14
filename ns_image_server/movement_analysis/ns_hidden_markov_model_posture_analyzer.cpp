@@ -410,15 +410,29 @@ void ns_threshold_movement_posture_analyzer_parameters::read(std::istream & i){
 		use_v1_movement_score = true;
 		return;
 	}
-	 if (tmp != "software_version_number")
+	 if (tmp != "software_version")
 		throw ns_ex("ns_threshold_movement_posture_analyzer_parameters::read()::Syntax error 4");
 	 int a;
 	 i >> a;
 	 use_v1_movement_score = a == 1;
+	 if (use_v1_movement_score)
+		 return;
+	 getline(i, tmp, '\n');
+	 getline(i, tmp, ',');
+	 if (tmp != "death_time_expansion_cutoff" || i.fail())
+		 throw ns_ex("ns_threshold_movement_posture_analyzer_parameters::read()::Syntax error 5");
+	 i >> death_time_expansion_cutoff;
+	 getline(i, tmp, '\n');
+	 getline(i, tmp, ',');
+	 if (tmp != "death_time_expansion_time_kernel" || i.fail())
+		 throw ns_ex("ns_threshold_movement_posture_analyzer_parameters::read()::Syntax error 6");
+	 i >> death_time_expansion_time_kernel_in_seconds;
 }
 void ns_threshold_movement_posture_analyzer_parameters::write(std::ostream & o)const{
 	o << "posture_cutoff, " << posture_cutoff << "\n"
 		"stationary_cutoff, " << stationary_cutoff << "\n"
 		"hold_time, " << permanance_time_required_in_seconds << "\n"
-		"software_version_number, " << (use_v1_movement_score?"1":"2") << "\n";
+		"software_version, " << (use_v1_movement_score ? "1" : "2") << "\n"
+		"death_time_expansion_cutoff, " << death_time_expansion_cutoff << "\n"
+		"death_time_expansion_time_kernel, " << death_time_expansion_time_kernel_in_seconds << "\n";
 }

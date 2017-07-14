@@ -800,13 +800,20 @@ bool ns_experiment_storyboard::load_events_from_annotation_compiler(const ns_loa
 					found_storyboard_event = true;
 				}
 				break;
-			case ns_worm_death_posture_relaxation_termination:
+			case ns_death_posture_relaxation_termination:
 				if (d.machine.death_posture_relaxation_termination != 0) {
 					event_to_place_on_storyboard = *d.machine.death_posture_relaxation_termination;
 					state_to_search = ns_stationary_worm_observed;
 					found_storyboard_event = true;
 				}
-				break;
+				break; 
+			case ns_death_posture_relaxation_start:
+					if (d.machine.death_posture_relaxation_start != 0) {
+						event_to_place_on_storyboard = *d.machine.death_posture_relaxation_start;
+						state_to_search = ns_stationary_worm_observed;
+						found_storyboard_event = true;
+					}
+					break;
 			default: throw ns_ex("Unknown storyboard event type:") << (int)subject_specification.event_to_mark;
 			}
 

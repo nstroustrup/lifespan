@@ -149,8 +149,11 @@ private:
 
 struct ns_threshold_movement_posture_analyzer_parameters{
 	double stationary_cutoff,
-		   posture_cutoff;
+		posture_cutoff,
+		death_time_expansion_cutoff;
 	unsigned long permanance_time_required_in_seconds;
+
+	unsigned long death_time_expansion_time_kernel_in_seconds;
 	bool use_v1_movement_score;
 	static ns_threshold_movement_posture_analyzer_parameters default_parameters(const unsigned long experiment_duration_in_seconds);
 	void read(std::istream & i);

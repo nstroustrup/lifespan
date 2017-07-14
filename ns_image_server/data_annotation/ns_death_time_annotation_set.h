@@ -69,6 +69,7 @@ struct ns_dying_animal_description_group{
 	T *death_annotation,
 								*last_slow_movement_annotation,
 								*last_fast_movement_annotation,
+								*death_posture_relaxation_start,
 								*death_posture_relaxation_termination,
 								*stationary_worm_dissapearance;
 	std::vector<T *> slow_moving_state_annotations,

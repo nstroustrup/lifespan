@@ -226,10 +226,12 @@ std::string ns_movement_event_to_string(const ns_movement_event & t){
 		case ns_slow_moving_worm_observed: return "slow-moving worm observed";
 		case ns_posture_changing_worm_observed: return "posture-changing worm observed";
 		case ns_stationary_worm_observed: return "stationary worm observed";
-		case ns_worm_death_posture_relaxation_termination: return "worm death relaxation termination";
+		case ns_death_posture_relaxation_termination: return "death relaxation termination";
 		case ns_stationary_worm_disappearance: return "stationary worm disappeared";
 		case ns_moving_worm_disappearance: return "moving worm dissapeared";
 		case ns_additional_worm_entry: return "additional worm entered path";
+		case ns_death_posture_relaxation_start: return "death relaxation start";
+		case ns_death_posture_relaxing_observed: return "death relaxation observed";
 		default:
 			throw ns_ex("ns_movement_event_to_string()::Unknown event type ") << (int)t;
 	}
@@ -245,10 +247,12 @@ std::string ns_movement_event_to_label(const ns_movement_event & t){
 		case ns_slow_moving_worm_observed: return "slow_moving_worm_observed";
 		case ns_posture_changing_worm_observed: return "posture_changing_worm_observed";
 		case ns_stationary_worm_observed: return "";
-		case ns_worm_death_posture_relaxation_termination: return "worm_death_relaxation_termination";
+		case ns_death_posture_relaxation_termination: return "death_relaxation_termination";
 		case ns_stationary_worm_disappearance: return "";
 		case ns_moving_worm_disappearance: return "";
 		case ns_additional_worm_entry: return "";
+		case ns_death_posture_relaxation_start: return "death_posture_relaxation_start";
+		case ns_death_posture_relaxing_observed: return "death_posture_relaxing_observed";
 		default: throw ns_ex("ns_movement_event_to_string()::Unknown event type ") << (int)t;
 	}
 }
@@ -258,7 +262,8 @@ bool ns_movement_event_is_a_state_transition_event(const ns_movement_event & t){
 		case ns_fast_movement_cessation:
 		case ns_translation_cessation:
 		case ns_movement_cessation: 
-		case ns_worm_death_posture_relaxation_termination:
+		case ns_death_posture_relaxation_termination:
+		case ns_death_posture_relaxation_start:
 		case ns_moving_worm_disappearance:
 		case ns_stationary_worm_disappearance: 
 		case ns_additional_worm_entry:
@@ -267,7 +272,8 @@ bool ns_movement_event_is_a_state_transition_event(const ns_movement_event & t){
 		case ns_movement_censored_worm_observed: 
 		case ns_fast_moving_worm_observed:
 		case ns_slow_moving_worm_observed:
-		case ns_posture_changing_worm_observed: 
+		case ns_posture_changing_worm_observed:
+		case ns_death_posture_relaxing_observed:
 		case ns_stationary_worm_observed: return false;
 			
 		case ns_no_movement_event: return false;
@@ -381,7 +387,9 @@ void ns_death_time_annotation_compiler_region::output_visualization_csv(std::ost
 						state = ns_movement_slow; break;
 					case ns_fast_moving_worm_observed:
 						state = ns_movement_fast; break;
-					case ns_worm_death_posture_relaxation_termination:
+					case ns_death_posture_relaxation_termination:
+						state = ns_movement_death_posture_relaxation;
+					case ns_death_posture_relaxation_start:
 						state = ns_movement_death_posture_relaxation;
 					case ns_movement_censored_worm_observed:
 						state = ns_movement_machine_excluded;
@@ -1811,9 +1819,12 @@ class ns_dying_animal_description_generator{
 				case ns_fast_movement_cessation:
 						group->last_fast_movement_annotation = & annotations[i];
 					break;
-				case ns_worm_death_posture_relaxation_termination:
+				case ns_death_posture_relaxation_termination:
 						group->death_posture_relaxation_termination = & annotations[i];
 					break;
+				case ns_death_posture_relaxation_start:
+						group->death_posture_relaxation_start= &annotations[i];
+						break;
 				case ns_stationary_worm_disappearance:
 						group->stationary_worm_dissapearance = & annotations[i];
 					break;

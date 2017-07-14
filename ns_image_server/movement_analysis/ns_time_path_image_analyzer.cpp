@@ -1651,7 +1651,7 @@ void ns_time_path_image_movement_analyzer::load_movement_data_from_disk(istream 
 		string tmp;
 		char a = get_int(in, tmp);
 		if (in.fail()) 
-			throw ns_ex("Invalid Specification 27");
+			throw ns_ex("Invalid Specification 29");
 		if (a == '\n') {
 			//old style records
 	#ifdef NS_CALCULATE_OPTICAL_FLOW
@@ -1663,9 +1663,10 @@ void ns_time_path_image_movement_analyzer::load_movement_data_from_disk(istream 
 #endif
 			continue;
 		}
-		if (!tmp.empty())
-			throw ns_ex("Badly formed input file!");
-
+		if (!tmp.empty()) {
+			//throw ns_ex("Badly formed input file!");
+			cerr << "Badly formed input file: " << tmp << "\n";
+		}
 		#ifdef NS_CALCULATE_OPTICAL_FLOW
 		groups[group_id].paths[path_id].elements[element_id].measurements.scaled_flow_magnitude.read(in);
 		groups[group_id].paths[path_id].elements[element_id].measurements.raw_flow_magnitude.read(in);
@@ -1682,10 +1683,12 @@ void ns_time_path_image_movement_analyzer::load_movement_data_from_disk(istream 
 #endif
 
 		//open for future use
-		for (unsigned int i = 0; i < 7; i++){
-			get_int(in,tmp);
+		for (unsigned int i = 0; i < 9; i++){
+			char a = get_int(in,tmp);
+			if (a == '\n')
+				break;
 	//		std::cerr << "E" << i << "'" << tmp << "' ";
-				if(in.fail()) throw ns_ex("Invalid Specification");
+				if(in.fail() || !tmp.empty()) throw ns_ex("Invalid Specification");
 		}
 	//	std::cerr << "\n";
 
@@ -1728,7 +1731,7 @@ void ns_time_path_image_movement_analyzer::save_movement_data_to_disk(ostream & 
 					<< groups[i].paths[j].elements[k].absolute_time << ","//4 
 					<< groups[i].paths[j].elements[k].measurements.interframe_time_scaled_movement_sum << ","//5
 					<< groups[i].paths[j].elements[k].measurements.movement_alternate_worm_sum << ","//6
-					<< groups[i].paths[j].elements[k].measurements.change_in_total_region_intensity<< ","//7
+					<< groups[i].paths[j].elements[k].measurements.change_in_total_region_intensity << ","//7
 					<< groups[i].paths[j].elements[k].measurements.change_in_total_foreground_intensity << ","//8
 					<< groups[i].paths[j].elements[k].measurements.total_foreground_area << ","//9
 					<< groups[i].paths[j].elements[k].measurements.total_intensity_within_foreground << ","//10
@@ -1741,8 +1744,8 @@ void ns_time_path_image_movement_analyzer::save_movement_data_to_disk(ostream & 
 					<< groups[i].paths[j].elements[k].registration_offset.y << ","//17
 					<< groups[i].paths[j].elements[k].measurements.movement_sum << ","//18
 					<< groups[i].paths[j].elements[k].measurements.denoised_movement_score << ","//19
-					<< groups[i].paths[j].elements[k].measurements.movement_score <<","//20
-				  << groups[i].paths[j].elements[k].measurements.total_intensity_within_stabilized << ","//21
+					<< groups[i].paths[j].elements[k].measurements.movement_score << ","//20
+					<< groups[i].paths[j].elements[k].measurements.total_intensity_within_stabilized << ","//21
 					<< groups[i].paths[j].elements[k].measurements.spatial_averaged_movement_sum << ","//22
 					<< groups[i].paths[j].elements[k].measurements.interframe_scaled_spatial_averaged_movement_sum << ","//23
 					<< groups[i].paths[j].elements[k].measurements.spatial_averaged_movement_score << ","//24
@@ -2065,7 +2068,7 @@ void ns_analyzed_image_time_path::write_detailed_movement_quantification_analysi
 			<< ns_calc_rel_time_by_index(elements[k].absolute_time,state_intervals[(int)ns_movement_stationary],*this) << ","
 			<< ns_calc_rel_time_by_index(elements[k].absolute_time,state_intervals[(int)ns_movement_posture],*this) << ","
 			<< ns_calc_rel_time_by_index(elements[k].absolute_time,state_intervals[(int)ns_movement_slow],*this) << ","
-			<< ns_calc_rel_time_by_index(elements[k].absolute_time, state_intervals[(int)ns_worm_death_posture_relaxation_termination], *this) << ","
+			<< ns_calc_rel_time_by_index(elements[k].absolute_time, state_intervals[(int)ns_movement_death_posture_relaxation], *this) << ","
 			<< ns_output_interval_difference(elements[k].absolute_time,by_hand_annotation_event_times[(int)ns_movement_cessation]) << ","
 			<< ns_output_interval_difference(elements[k].absolute_time,by_hand_annotation_event_times[(int)ns_translation_cessation]) << ","
 			<< ns_output_interval_difference(elements[k].absolute_time,by_hand_annotation_event_times[(int)ns_fast_movement_cessation]) << ","
@@ -3549,7 +3552,7 @@ void ns_analyzed_image_time_path::denoise_movement_series_and_calculate_intensit
 			ns_linear_regression_model_parameters region_params(model.fit(region_vals, times));
 			ns_linear_regression_model_parameters stabilized_params(model.fit(stabilized_vals, times));
 			for (unsigned int i = 0; i < slope_kernel_half_width; i++) {
-				elements[i].measurements.change_in_total_foreground_intensity = foreground_params.slope * 60 * 60; // units/
+				elements[i].measurements.change_in_total_foreground_intensity = foreground_params.slope * 60 * 60; // units: per hour
 				elements[i].measurements.change_in_total_region_intensity = region_params.slope * 60 * 60; // units/hour
 				elements[i].measurements.change_in_total_stabilized_intensity = stabilized_params.slope * 60 * 60; // units/hour
 

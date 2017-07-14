@@ -66,6 +66,8 @@ struct ns_analyzed_image_time_path_element_measurements{
 
 	void square();
 	void square_root();
+
+	ns_analyzed_image_time_path_element_measurements() { zero(); }
 };
 
 ns_analyzed_image_time_path_element_measurements operator+(const ns_analyzed_image_time_path_element_measurements & a,const ns_analyzed_image_time_path_element_measurements & b);

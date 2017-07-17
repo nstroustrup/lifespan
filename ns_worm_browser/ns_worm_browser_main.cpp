@@ -1891,7 +1891,7 @@ public:
 
 
 		int left_buttons_width(d*experiment_bar_width() + menu_d*(region_name_bar_width() + strain_bar_width() + exclusion_bar_width()));
-		cerr << W - left_buttons_width - ns_death_event_annotation_group::window_width << " ";
+		//cerr << W - left_buttons_width - ns_death_event_annotation_group::window_width << " ";
 		info_bar = new Fl_Output(left_buttons_width,
 										    (int)(h() - menu_d*info_bar_height()),
 											W- left_buttons_width - ns_death_event_annotation_group::window_width,
@@ -2299,7 +2299,7 @@ ns_lock redraw_rate_limiting_lock("overdisplay");
 bool redrawing_rate_limiter = false;
 
 void perform_screen_redraw_callback(void * a) {
-
+  try{
 	if (debug_handlers) cout << "D";
 	try {
 		Fl::lock();
@@ -2327,6 +2327,13 @@ void perform_screen_redraw_callback(void * a) {
 		redrawing_rate_limiter = false;
 		throw;
 	}
+  }
+  catch(ns_ex & ex){
+    cout << "redraw callback exception: " << ex.text() << "\n";
+  }
+  catch(...){
+    cout << "Unknown callback exeption\n";
+  }
 }
 
 void request_rate_limited_window_redraw_from_main_thread() {
@@ -2366,6 +2373,7 @@ ns_64_bit last_callback_time(0);
 //ns_lock idle_rate_limiting_lock("overidle");
 //bool idle_rate_limiter = false;
 void idle_main_window_update_callback(void * force_redraw) {
+  try{
 	if (debug_handlers) cout << "i";
 	{
 	
@@ -2467,6 +2475,13 @@ void idle_main_window_update_callback(void * force_redraw) {
 		//idle_rate_limiter = false;
 		throw;
 	}
+  }
+  catch(ns_ex & ex){
+    cerr << "Idle Error: " << ex.text() << "\n";
+  }
+  catch(...){
+    cerr << "Unknown idle error\n";
+      }
 }
 void ns_hide_worm_window(){
 	hide_worm_window = true;
@@ -2817,6 +2832,7 @@ struct ns_asynch_worm_launcher{
 		try{
 			//if (worm_window_sql == 0)
 			ns_sql *	worm_window_sql = image_server.new_sql_connection(__FILE__,__LINE__);
+		       
 			worm_learner.death_time_solo_annotater.load_worm(region_id,worm,current_time,worm_learner.solo_annotation_visualization_type,storyboard,&worm_learner,*worm_window_sql);
 			
 

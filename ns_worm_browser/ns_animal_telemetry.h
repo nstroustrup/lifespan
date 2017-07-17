@@ -368,7 +368,7 @@ public:
 		group_id = 0;
 		base_graph.clear();
 		graph.clear();
-		
+		last_graph_contents = ns_none;
 		movement_vals.clear();
 		smoothed_movement_vals.clear();
 		size_vals.clear();
@@ -399,7 +399,7 @@ public:
 	ns_vector_2i border() const {
 		return ns_vector_2i(25, 25);
 	}
-	ns_animal_telemetry() :_show(true), last_graph_contents(ns_none), region_data(0), group_id(0),size_vals(ns_graph_object::ns_graph_dependant_variable), slope_vals(ns_graph_object::ns_graph_dependant_variable), smoothed_movement_vals(ns_graph_object::ns_graph_dependant_variable),movement_vals(ns_graph_object::ns_graph_dependant_variable), time_axes(ns_graph_object::ns_graph_independant_variable){}
+	ns_animal_telemetry() :_show(false), last_graph_contents(ns_none), region_data(0), group_id(0),size_vals(ns_graph_object::ns_graph_dependant_variable), slope_vals(ns_graph_object::ns_graph_dependant_variable), smoothed_movement_vals(ns_graph_object::ns_graph_dependant_variable),movement_vals(ns_graph_object::ns_graph_dependant_variable), time_axes(ns_graph_object::ns_graph_independant_variable){}
 	void set_current_animal(const unsigned int & group_id_, ns_posture_analysis_model & mod,ns_death_time_posture_solo_annotater_region_data * region_data_) {
 		group_id = group_id_;
 		region_data = region_data_;

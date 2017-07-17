@@ -316,7 +316,8 @@ public:
 			throw;
 		}
 	}
-	void clear_cached_images(){
+	void clear_cached_images(bool lock=true){
+	  if(lock)
 		image_buffer_access_lock.wait_to_acquire(__FILE__,__LINE__);
 		try{
 			for (unsigned int i = 0; i < next_images.size(); i++){
@@ -327,9 +328,11 @@ public:
 				previous_images[i].loaded = false;
 				previous_images[i].im->clear();
 			}
+			if (lock)
 			image_buffer_access_lock.release();
 		}
 		catch(...){
+		  if (lock)
 			image_buffer_access_lock.release();
 		}
 	}

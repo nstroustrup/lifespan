@@ -5176,9 +5176,9 @@ ns_mask_info ns_worm_learner::send_mask_to_server(const ns_64_bit & sample_id){
 	sql().send_query();
 	sql().send_query("COMMIT");
 	
-
-	return mask_info;
 	cerr << "\nDone.\n";
+	return mask_info;
+     
 }
 
 void ns_worm_learner::diff_encode(const std::string & f1, const std::string & f2){
@@ -5636,9 +5636,9 @@ bool ns_worm_learner::register_main_window_key_press(int key, const bool shift_k
 				return true;
 			}
 			else if (key == 'S' || key == '.'){
-				ns_acquire_lock_for_scope lock(persistant_sql_lock, __FILE__, __LINE__);
+			  //ns_acquire_lock_for_scope lock(persistant_sql_lock, __FILE__, __LINE__);
 				save_death_time_annotations(get_sql_connection());
-				lock.release();
+				//	lock.release();
 			}
 		}
 	}
@@ -5660,9 +5660,9 @@ bool ns_worm_learner::prompt_to_save_death_time_annotations(){
 	ns_run_in_main_thread<ns_choice_dialog> b(&dialog);
 	if (dialog.result == 1){
 
-		ns_acquire_lock_for_scope lock(persistant_sql_lock, __FILE__, __LINE__);
+	  //ns_acquire_lock_for_scope lock(persistant_sql_lock, __FILE__, __LINE__);
 		save_death_time_annotations(get_sql_connection());
-		lock.release();
+		//	lock.release();
 		return true;
 	}
 	if (dialog.result == 2)
@@ -5879,15 +5879,15 @@ void ns_worm_learner::draw_worm_window_image(ns_image_standard & image){
 	if (worm_window.pre_gl_downsample < 1)
 		worm_window.pre_gl_downsample = 1;
 
-	ns_image_properties new_prop = image.properties();
-	new_prop.components = 3;
+	ns_image_properties new_image_size = image.properties();
+	new_image_size.components = 3;
 
-	new_prop.width/=worm_window.pre_gl_downsample;
-	new_prop.height/=worm_window.pre_gl_downsample;
+	new_image_size.width/=worm_window.pre_gl_downsample;
+	new_image_size.height/=worm_window.pre_gl_downsample;
 
-	ns_vector_2i buffer_size(new_prop.width + death_time_solo_annotater.telemetry.image_size().x,
-		new_prop.height > death_time_solo_annotater.telemetry.image_size().y ?
-		new_prop.height : death_time_solo_annotater.telemetry.image_size().y);
+	ns_vector_2i buffer_size(new_image_size.width + death_time_solo_annotater.telemetry.image_size().x,
+				 (new_image_size.height > death_time_solo_annotater.telemetry.image_size().y) ?
+				 new_image_size.height : death_time_solo_annotater.telemetry.image_size().y);
 
 	//we resize the image by an integer factor
 	//but it still needs to be resized by the video card
@@ -5909,33 +5909,32 @@ void ns_worm_learner::draw_worm_window_image(ns_image_standard & image){
 		(unsigned int)floor(death_time_solo_annotater.telemetry.image_size().y*gl_resize));
 	
 	worm_window.worm_image_size = ns_vector_2i(
-		(unsigned int)floor(new_prop.width*gl_resize),
-		(unsigned int)floor(new_prop.height*gl_resize));
+		(unsigned int)floor(new_image_size.width*gl_resize),
+		(unsigned int)floor(new_image_size.height*gl_resize));
 
-	worm_window.gl_image_size = ns_vector_2i(worm_window.worm_image_size.x + worm_window.telemetry_size.x,
-											worm_window.worm_image_size.y);
-	if (worm_window.gl_image_size.y < worm_window.telemetry_size.y)
-		worm_window.gl_image_size.y = worm_window.telemetry_size.y;
+	worm_window.gl_image_size = buffer_size;
 
 	//cerr << "Draw requests a worm window size of " << worm_window.image_size << "\n";
 
 	if (worm_window.gl_buffer_properties.width != worm_window.gl_image_size.x || worm_window.gl_buffer_properties.height != worm_window.gl_image_size.y
-		|| worm_window.gl_buffer_properties.components != new_prop.components){
+		|| worm_window.gl_buffer_properties.components != 3){
 		
 		if (worm_window.gl_buffer != 0){
 			delete[] worm_window.gl_buffer ;
 			worm_window.gl_buffer = 0;
 		}
 		
-		worm_window.gl_buffer = new ns_8_bit[new_prop.components*buffer_size.x*buffer_size.y];
+		worm_window.gl_buffer = new ns_8_bit[3*buffer_size.x*buffer_size.y];
 		
-		worm_window.gl_buffer_properties.components = new_prop.components;
+		worm_window.gl_buffer_properties.components = 3;
 		worm_window.gl_buffer_properties.width = buffer_size.x;
 		worm_window.gl_buffer_properties.height = buffer_size.y;
 	}
+	const unsigned long worm_image_height = (image.properties().height-ns_death_time_solo_posture_annotater_timepoint::bottom_border_height())/worm_window.pre_gl_downsample;
 	if (image.properties().components == 3) {
-		for (int _y = 0; _y < new_prop.height- death_time_solo_annotater.bottom_margin_position().y; _y++) {
-			for (unsigned int _x = 0; _x < new_prop.width; _x++) {
+	  //copy over the top border area of the image (which contains only text and metata) without rescaling
+		for (int _y = 0; _y< worm_image_height; _y++) {
+			for (unsigned int _x = 0; _x < new_image_size.width; _x++) {
 				worm_window.gl_buffer[3 * (worm_window.gl_buffer_properties.width*_y + _x)] =
 					image[(image.properties().height - 1 - _y*worm_window.pre_gl_downsample)][3 * _x*worm_window.pre_gl_downsample];
 				worm_window.gl_buffer[3 * (worm_window.gl_buffer_properties.width*_y + _x) + 1] =
@@ -5943,19 +5942,27 @@ void ns_worm_learner::draw_worm_window_image(ns_image_standard & image){
 				worm_window.gl_buffer[3 * (worm_window.gl_buffer_properties.width*_y + _x) + 2] =
 					image[(image.properties().height - 1 - _y*worm_window.pre_gl_downsample)][3 * _x*worm_window.pre_gl_downsample + 2];
 			}
+			//	for (unsigned int _x = new_image_size.width; _x < buffer_size.x; _x++)
+			//	  for (int c = 0; c < 3; c++)
+			//	    worm_window.gl_buffer[3 * (worm_window.gl_buffer_properties.width*_y + _x)+c] = 0; 
 		}
-		for (int _y = new_prop.height - death_time_solo_annotater.bottom_margin_position().y; _y < new_prop.height; _y++) {
-			for (unsigned int _x = 0; _x < new_prop.width; _x++) {
-				worm_window.gl_buffer[3 * (worm_window.gl_buffer_properties.width*_y + _x)] =
-					ns_rescale(image[(image.properties().height - 1 - _y*worm_window.pre_gl_downsample)][3 * _x*worm_window.pre_gl_downsample], worm_window.dynamic_range_rescale_factor);
+		//copy over the bottom area of the imate (which contains the image of the worm)
+	
+	for (int _y = worm_image_height; _y < new_image_size.height; _y++) {
+	  //cerr << image.properties().height - 1 - _y*worm_window.pre_gl_downsample << "," << 3 * new_image_size.width*worm_window.pre_gl_downsample << " ";
+			for (unsigned int _x = 0; _x < new_image_size.width; _x++) {
+		     
+			    worm_window.gl_buffer[3 * (worm_window.gl_buffer_properties.width*_y + _x)] = 
+					ns_rescale(image[image.properties().height - 1 - _y*worm_window.pre_gl_downsample][3 * _x*worm_window.pre_gl_downsample], worm_window.dynamic_range_rescale_factor);
 				worm_window.gl_buffer[3 * (worm_window.gl_buffer_properties.width*_y + _x) + 1] =
 					ns_rescale(image[(image.properties().height - 1 - _y*worm_window.pre_gl_downsample)][3 * _x*worm_window.pre_gl_downsample + 1], worm_window.dynamic_range_rescale_factor);
 				worm_window.gl_buffer[3 * (worm_window.gl_buffer_properties.width*_y + _x) + 2] =
 					ns_rescale(image[(image.properties().height - 1 - _y*worm_window.pre_gl_downsample)][3 * _x*worm_window.pre_gl_downsample + 2], worm_window.dynamic_range_rescale_factor);
 			}
 		}
+	
+	//	cout << "("<< image.properties().height << "," << image.properties().width << ")\n";
 	}
-
 	//b&w images
 	else if (image.properties().components == 1){
 		throw ns_ex("Err!");
@@ -5963,11 +5970,10 @@ void ns_worm_learner::draw_worm_window_image(ns_image_standard & image){
 	if (death_time_solo_annotater.telemetry.show()) {
 		try {
 			if (!death_time_solo_annotater.movement_quantification_data_loaded()) {
-				ns_acquire_lock_for_scope lock(persistant_sql_lock, __FILE__, __LINE__);
-				death_time_solo_annotater.load_movement_analysis(get_sql_connection());
-				lock.release();
+			  death_time_solo_annotater.load_movement_analysis(get_sql_connection());
+			
 			}
-			death_time_solo_annotater.draw_telemetry(ns_vector_2i(new_prop.width, 0),
+			death_time_solo_annotater.draw_telemetry(ns_vector_2i(new_image_size.width, 0),
 				death_time_solo_annotater.telemetry.image_size(),
 				ns_vector_2i(worm_window.gl_buffer_properties.width,
 					worm_window.gl_buffer_properties.height),
@@ -5975,7 +5981,7 @@ void ns_worm_learner::draw_worm_window_image(ns_image_standard & image){
 
 			//clear out bottom margin
 			for (int _y = death_time_solo_annotater.telemetry.image_size().y; _y < worm_window.gl_buffer_properties.height; _y++)
-				for (unsigned int _x = 3 * new_prop.width; _x < 3 * worm_window.gl_buffer_properties.width; _x++)
+				for (unsigned int _x = 3 * new_image_size.width; _x < 3 * worm_window.gl_buffer_properties.width; _x++)
 					worm_window.gl_buffer[3 * (worm_window.gl_buffer_properties.height- _y)*worm_window.gl_buffer_properties.width + _x] = 0;
 		
 	//		death_time_solo_annotater.draw_registration_debug(ns_vector_2i(new_prop.width, death_time_solo_annotater.telemetry.image_size().y),
@@ -5986,7 +5992,7 @@ void ns_worm_learner::draw_worm_window_image(ns_image_standard & image){
 		}
 		catch (ns_ex & ex) {
 			for (int _y = 0; _y < worm_window.gl_buffer_properties.height; _y++) 
-				for (unsigned int _x = 3*new_prop.width; _x < 3*worm_window.gl_buffer_properties.width; _x++) 
+				for (unsigned int _x = 3*new_image_size.width; _x < 3*worm_window.gl_buffer_properties.width; _x++) 
 					worm_window.gl_buffer[3 * worm_window.gl_buffer_properties.width*_y + _x] = 0;
 			cout << ex.text();
 		}
@@ -6724,7 +6730,7 @@ void ns_worm_learner::navigate_solo_worm_annotation(ns_death_time_solo_posture_a
 			break;
 		case ns_death_time_solo_posture_annotater::ns_step_graph:
 			death_time_solo_annotater.step_graph_type();
-			death_time_solo_annotater.display_current_frame();
+			//death_time_solo_annotater.display_current_frame();
 			death_time_solo_annotater.request_refresh();
 			break;
 		case ns_death_time_solo_posture_annotater::ns_write_quantification_to_disk: 
@@ -6779,9 +6785,9 @@ void ns_worm_learner::navigate_death_time_annotation(ns_image_series_annotater::
 		case ns_image_series_annotater::ns_stop: current_annotater->stop_fast_movement(); report_changes_made_to_screen(); break;
 		case ns_image_series_annotater::ns_save:{
 
-			ns_acquire_lock_for_scope lock(persistant_sql_lock, __FILE__, __LINE__);
+		  //ns_acquire_lock_for_scope lock(persistant_sql_lock, __FILE__, __LINE__);
 			save_death_time_annotations(get_sql_connection());
-			lock.release();
+			//lock.release();
 
 			break;
 		}
@@ -6822,10 +6828,12 @@ bool ns_a_is_above_or_left_of_b(const ns_vector_2i &a,const ns_vector_2i & b,int
 }
 
 ns_worm_learner::~ns_worm_learner(){
-	ns_safe_delete(main_window.gl_buffer);
-	ns_safe_delete(worm_window.gl_buffer);
-	ns_safe_delete(worm_detection_results);
-	model_specifications.resize(0);
+  if (main_window.gl_buffer != 0)
+    delete[] main_window.gl_buffer;
+  if (worm_window.gl_buffer != 0)
+    delete[] worm_window.gl_buffer;
+  ns_safe_delete(worm_detection_results);
+  model_specifications.resize(0);
 }
 
 void ns_worm_learner::train_from_data(const std::string & base_dir){
@@ -7494,7 +7502,7 @@ void ns_death_time_solo_posture_annotater::register_click(const ns_vector_2i & i
 					observation_limit);
 			}
 			if (switch_time) {
-				clear_cached_images();
+				clear_cached_images(false);
 				set_current_timepoint(requested_time, false);
 				{
 					ns_image_standard temp_buffer;

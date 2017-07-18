@@ -1,0 +1,458 @@
+;;;  utsushi.desc                               -*- emacs-lisp -*- (sort of)
+;;;  Copyright (C) 2015, 2016 Meeuwissen
+;;;
+;;;  License: GPL-3.0+
+;;;  Author : Olaf Meeuwissen
+;;;
+;;;  This file is part of the 'Utsushi' package.
+;;;  This package is free software: you can redistribute it and/or modify
+;;;  it under the terms of the GNU General Public License as published by
+;;;  the Free Software Foundation, either version 3 of the License or, at
+;;;  your option, any later version.
+;;;
+;;;    This program is distributed in the hope that it will be useful,
+;;;    but WITHOUT ANY WARRANTY; without even the implied warranty of
+;;;    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+;;;    GNU General Public License for more details.
+;;;
+;;;  You ought to have received a copy of the GNU General Public License
+;;;  along with this package.  If not, see <http://www.gnu.org/licenses/>.
+
+;;  Backend data
+;;
+:backend "utsushi"
+:url     "https://github.com/utsushi/utsushi"
+
+;;  Device and manufacturer information.
+;;
+:devicetype :scanner
+:mfg        "EPSON"
+:url        "http://www.epson.com/"
+
+;;  List of EPSON scanners and all-in-ones.
+
+:model     "DS-40"
+:interface "USB"
+:usbid     "0x04b8" "0x0152"
+:status    :good
+
+:model     "DS-510"
+:interface "USB"
+:usbid     "0x04b8" "0x014c"
+:status    :good
+
+:model     "DS-520"
+:interface "USB"
+:usbid     "0x04b8" "0x0154"
+:status    :good
+
+:model     "DS-560"
+:interface "USB"
+:usbid     "0x04b8" "0x0150"
+:status    :good
+
+:model     "DS-760"
+:interface "USB"
+:usbid     "0x04b8" "0x014d"
+:status    :good
+
+:model     "DS-780N"
+:interface "USB"
+:usbid     "0x04b8" "0x0164"
+:status    :good
+
+:model     "DS-860"
+:interface "USB"
+:usbid     "0x04b8" "0x014d"
+:status    :good
+
+:model     "DS-5500"
+:interface "USB"
+:usbid     "0x04b8" "0x0145"
+:status    :good
+
+:model     "DS-6500"
+:interface "USB"
+:usbid     "0x04b8" "0x0145"
+:status    :good
+
+:model     "DS-7500"
+:interface "USB"
+:usbid     "0x04b8" "0x0145"
+:status    :good
+
+:model     "DS-50000"
+:interface "USB"
+:usbid     "0x04b8" "0x0146"
+:status    :good
+
+:model     "DS-60000"
+:interface "USB"
+:usbid     "0x04b8" "0x0146"
+:status    :good
+
+:model     "DS-70000"
+:interface "USB"
+:usbid     "0x04b8" "0x0146"
+:status    :good
+
+:model     "EP-10VA"
+:interface "USB"
+:usbid     "0x04b8" "0x1108"
+:status    :good
+
+:model     "EP-808A"
+:interface "USB"
+:usbid     "0x04b8" "0x110a"
+:status    :good
+
+:model     "EP-978A3"
+:interface "USB"
+:usbid     "0x04b8" "0x1109"
+:status    :good
+
+:model     "ES-400"
+:interface "USB"
+:usbid     "0x04b8" "0x0156"
+:status    :good
+
+:model     "ET-2500"
+:interface "USB"
+:usbid     "0x04b8" "0x1105"
+:status    :good
+
+:model     "ET-2550"
+:interface "USB"
+:usbid     "0x04b8" "0x1106"
+:status    :good
+
+:model     "ET-4500"
+:interface "USB"
+:usbid     "0x04b8" "0x1107"
+:status    :good
+
+:model     "ET-4550"
+:interface "USB"
+:usbid     "0x04b8" "0x1101"
+:status    :good
+
+:model     "L220"
+:interface "USB"
+:usbid     "0x04b8" "0x08d1"
+:status    :good
+
+:model     "L360"
+:interface "USB"
+:usbid     "0x04b8" "0x08d1"
+:status    :good
+
+:model     "L365"
+:interface "USB"
+:usbid     "0x04b8" "0x08d2"
+:status    :good
+
+:model     "L366"
+:interface "USB"
+:usbid     "0x04b8" "0x08d2"
+:status    :good
+
+:model     "L455"
+:interface "USB"
+:usbid     "0x04b8" "0x08c2"
+:status    :good
+
+:model     "L565"
+:interface "USB"
+:usbid     "0x04b8" "0x08d3"
+:status    :good
+
+:model     "L566"
+:interface "USB"
+:usbid     "0x04b8" "0x08d3"
+:status    :good
+
+:model     "L655"
+:interface "USB"
+:usbid     "0x04b8" "0x1101"
+:status    :good
+
+:model     "PX-M7050"
+:interface "USB"
+:usbid     "0x04b8" "0x08bc"
+:status    :good
+
+:model     "PX-M7050FX"
+:interface "USB"
+:usbid     "0x04b8" "0x08cc"
+:status    :good
+
+:model     "PX-M840FX"
+:interface "USB"
+:usbid     "0x04b8" "0x08cd"
+:status    :good
+
+:model     "PX-M860F"
+:interface "USB"
+:usbid     "0x04b8" "0x08ce"
+:status    :good
+
+:model     "WF-6530"
+:interface "USB"
+:usbid     "0x04b8" "0x08cd"
+:status    :good
+
+:model     "WF-6590"
+:interface "USB"
+:usbid     "0x04b8" "0x08cf"
+:status    :good
+
+:model     "WF-8510"
+:interface "USB"
+:usbid     "0x04b8" "0x08bc"
+:status    :good
+
+:model     "WF-8590"
+:interface "USB"
+:usbid     "0x04b8" "0x08bc"
+:status    :good
+
+:model     "WF-R8590"
+:interface "USB"
+:usbid     "0x04b8" "0x08cc"
+:status    :good
+
+:model     "XP-220"
+:interface "USB"
+:usbid     "0x04b8" "0x08c0"
+:status    :good
+
+:model     "XP-230"
+:interface "USB"
+:usbid     "0x04b8" "0x1102"
+:status    :good
+
+:model     "XP-235"
+:interface "USB"
+:usbid     "0x04b8" "0x1102"
+:status    :good
+
+:model     "XP-322"
+:interface "USB"
+:usbid     "0x04b8" "0x1103"
+:status    :good
+
+:model     "XP-335"
+:interface "USB"
+:usbid     "0x04b8" "0x1103"
+:status    :good
+
+:model     "XP-430"
+:interface "USB"
+:usbid     "0x04b8" "0x1104"
+:status    :good
+
+:model     "XP-432"
+:interface "USB"
+:usbid     "0x04b8" "0x1104"
+:status    :good
+
+:model     "XP-435"
+:interface "USB"
+:usbid     "0x04b8" "0x1104"
+:status    :good
+
+:model     "XP-530"
+:interface "USB"
+:usbid     "0x04b8" "0x110c"
+:status    :good
+
+:model     "XP-830"
+:interface "USB"
+:usbid     "0x04b8" "0x110b"
+:status    :good
+
+:model     "XP-960"
+:interface "USB"
+:usbid     "0x04b8" "0x1109"
+:status    :good
+
+; These are models for which we don't know the model name yet.
+; Upstream releases have stopped providing the information we
+; need to fill out the :model fields :-(
+
+:model     "PID 0155"
+:interface "USB"
+:usbid     "0x04b8" "0x0155"
+:status    :good
+
+:model     "PID 0157"
+:interface "USB"
+:usbid     "0x04b8" "0x0157"
+:status    :good
+
+:model     "PID 0159"
+:interface "USB"
+:usbid     "0x04b8" "0x0159"
+:status    :good
+
+:model     "PID 015A"
+:interface "USB"
+:usbid     "0x04b8" "0x015a"
+:status    :good
+
+:model     "PID 015C"
+:interface "USB"
+:usbid     "0x04b8" "0x015c"
+:status    :good
+
+:model     "PID 015D"
+:interface "USB"
+:usbid     "0x04b8" "0x015d"
+:status    :good
+
+:model     "PID 015E"
+:interface "USB"
+:usbid     "0x04b8" "0x015e"
+:status    :good
+
+:model     "PID 015F"
+:interface "USB"
+:usbid     "0x04b8" "0x015f"
+:status    :good
+
+:model     "PID 0162"
+:interface "USB"
+:usbid     "0x04b8" "0x0162"
+:status    :good
+
+:model     "PID 0163"
+:interface "USB"
+:usbid     "0x04b8" "0x0163"
+:status    :good
+
+:model     "PID 110D"
+:interface "USB"
+:usbid     "0x04b8" "0x110d"
+:status    :good
+
+:model     "PID 110F"
+:interface "USB"
+:usbid     "0x04b8" "0x110f"
+:status    :good
+
+:model     "PID 1112"
+:interface "USB"
+:usbid     "0x04b8" "0x1112"
+:status    :good
+
+:model     "PID 1113"
+:interface "USB"
+:usbid     "0x04b8" "0x1113"
+:status    :good
+
+:model     "PID 1114"
+:interface "USB"
+:usbid     "0x04b8" "0x1114"
+:status    :good
+
+:model     "PID 1115"
+:interface "USB"
+:usbid     "0x04b8" "0x1115"
+:status    :good
+
+:model     "PID 1116"
+:interface "USB"
+:usbid     "0x04b8" "0x1116"
+:status    :good
+
+:model     "PID 1117"
+:interface "USB"
+:usbid     "0x04b8" "0x1117"
+:status    :good
+
+:model     "PID 1118"
+:interface "USB"
+:usbid     "0x04b8" "0x1118"
+:status    :good
+
+:model     "PID 1119"
+:interface "USB"
+:usbid     "0x04b8" "0x1119"
+:status    :good
+
+:model     "PID 111A"
+:interface "USB"
+:usbid     "0x04b8" "0x111a"
+:status    :good
+
+:model     "PID 111B"
+:interface "USB"
+:usbid     "0x04b8" "0x111b"
+:status    :good
+:comment   "EP-879A?"
+
+:model     "PID 111C"
+:interface "USB"
+:usbid     "0x04b8" "0x111c"
+:status    :good
+
+:model     "PID 111D"
+:interface "USB"
+:usbid     "0x04b8" "0x111d"
+:status    :good
+
+:model     "PID 111E"
+:interface "USB"
+:usbid     "0x04b8" "0x111e"
+:status    :good
+
+:model     "PID 111F"
+:interface "USB"
+:usbid     "0x04b8" "0x111f"
+:status    :good
+
+:model     "PID 1120"
+:interface "USB"
+:usbid     "0x04b8" "0x1120"
+:status    :good
+
+:model     "PID 1121"
+:interface "USB"
+:usbid     "0x04b8" "0x1121"
+:status    :good
+
+:model     "PID 1122"
+:interface "USB"
+:usbid     "0x04b8" "0x1122"
+:status    :good
+
+:model     "PID 1123"
+:interface "USB"
+:usbid     "0x04b8" "0x1123"
+:status    :good
+:comment   "EP-30VA?"
+
+:model     "PID 1125"
+:interface "USB"
+:usbid     "0x04b8" "0x1125"
+:status    :good
+
+:model     "PID 1126"
+:interface "USB"
+:usbid     "0x04b8" "0x1126"
+:status    :good
+
+:model     "PID 1127"
+:interface "USB"
+:usbid     "0x04b8" "0x1127"
+:status    :good
+
+:model     "PID 1128"
+:interface "USB"
+:usbid     "0x04b8" "0x1128"
+:status    :good
+
+:model     "PID 112B"
+:interface "USB"
+:usbid     "0x04b8" "0x112b"
+:status    :good

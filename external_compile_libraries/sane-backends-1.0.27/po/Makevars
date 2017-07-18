@@ -1,0 +1,45 @@
+#  Makevars -- snippet for inclusion in po/ -*- Makefile -*-
+#  Copyright (C) 2016  Olaf Meeuwissen and the SANE developers
+#
+#  This file is part of the SANE build infra-structure.  See the
+#  included LICENSE file for license information.
+
+#  Message domain to use.
+#  Normally this is the same as the $(PACKAGE_TARNAME), but note that
+#  gettext does not support that variable (last checked for 0.18.1).
+DOMAIN = $(PACKAGE)
+
+#  Copyright holder for the messages in the $(DOMAIN).pot file.
+#  This is the (set of) copyright holder(s) of files listed in the
+#  POTFILES.in file (insofar they contributed translatable strings).
+#  The translators are expected to transfer the copyright for their
+#  translations to the $(COPYRIGHT_HOLDER)(s), or to disclaim their
+#  copyright thereby putting their strings in the public domain.
+COPYRIGHT_HOLDER = The SANE developers
+
+#  Where to report problems with translatable strings, that is, the
+#  strings in $(DOMAIN).pot or those that really should be in there.
+MSGID_BUGS_ADDRESS = $(PACKAGE_BUGREPORT)
+
+#  Directory locations.
+#  The $(top_builddir) should be relative to the directory that holds
+#  this Makevars file.  The $(subdir) ought to be set such that a `cd
+#  $(top_builddir)/$(subdir)` has no effect (assuming no symlinks in
+#  the path).
+top_builddir = ..
+subdir = po
+
+#  Options to pass to xgettext and other gettext utilities.
+#  Additional options may also by specified using AM_XGETTEXT_OPTION
+#  in `$(top_srcdir)/configure.ac`.  See Makefile.in.in and Rules-*
+#  for variables available
+XGETTEXT_OPTIONS  = --keyword=SANE_I18N
+XGETTEXT_OPTIONS += --flag=SANE_I18N:1:no-c-format
+MSGMERGE_OPTIONS  = --width=75
+
+#  Locale categories, in addition to LC_MESSAGES, for which message
+#  catalogs are to be used.
+EXTRA_LOCALE_CATEGORIES =
+
+EXTRA_DIST  = README
+EXTRA_DIST += Rules-automake

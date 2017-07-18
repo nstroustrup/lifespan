@@ -5788,16 +5788,18 @@ inline ns_8_bit ns_rescale(const ns_8_bit & val,const float & f){
 }
 
 void ns_worm_learner::draw_image(const double x, const double y, ns_image_standard & image){
-
 	float	dynamic_stretch_factor = main_window.dynamic_range_rescale_factor;
 	ns_acquire_lock_for_scope lock(main_window.display_lock,__FILE__,__LINE__);
 	
-	ns_image_properties new_prop = image.properties();
-	new_prop.components = 3;
+	ns_image_properties new_image_size = image.properties();
+
+
+	cout << "im" << new_image_size.width << "," << new_image_size.height << " : ";
+	new_image_size.components = 3;
 	//if the image is larger than the display size
 	//it should be downsampled before being sent to the video card.
-	int resize_x = (int)floor((1.0*new_prop.width)/maximum_window_size.x);
-	int resize_y = (int)floor((1.0*new_prop.height)/maximum_window_size.y);
+	int resize_x = (int)floor((1.0*new_image_size.width)/maximum_window_size.x);
+	int resize_y = (int)floor((1.0*new_image_size.height)/maximum_window_size.y);
 	
 	if (resize_x >= resize_y)
 		main_window.pre_gl_downsample = resize_x;
@@ -5805,50 +5807,51 @@ void ns_worm_learner::draw_image(const double x, const double y, ns_image_standa
 	if (main_window.pre_gl_downsample < 1)
 		main_window.pre_gl_downsample = 1;
 	
-	new_prop.width/=main_window.pre_gl_downsample;
-	new_prop.height/=main_window.pre_gl_downsample;
+	new_image_size.width/=main_window.pre_gl_downsample;
+	new_image_size.height/=main_window.pre_gl_downsample;
 
 
 	double gl_resize(1);
-	if (new_prop.height > maximum_window_size.y)
-		gl_resize = ((double)maximum_window_size.y)/new_prop.height;
-	if (new_prop.width > maximum_window_size.x){
-		const double r(((double)maximum_window_size.x)/new_prop.width);
+	if (new_image_size.height > maximum_window_size.y)
+		gl_resize = ((double)maximum_window_size.y)/new_image_size.height;
+	if (new_image_size.width > maximum_window_size.x){
+		const double r(((double)maximum_window_size.x)/new_image_size.width);
 		if (r < gl_resize)
 			gl_resize = r;
 	}
-	main_window.gl_image_size.y= (unsigned int)floor(new_prop.height*gl_resize);
-	main_window.gl_image_size.x = (unsigned int)floor(new_prop.width*gl_resize);
+	main_window.gl_image_size.y= (unsigned int)floor(new_image_size.height*gl_resize);
+	main_window.gl_image_size.x = (unsigned int)floor(new_image_size.width*gl_resize);
+	cout << "gl" << 	main_window.gl_image_size.x << "," << 	main_window.gl_image_size.y << "\n ";
 
-	if (main_window.gl_buffer_properties.width != new_prop.width || main_window.gl_buffer_properties.height != new_prop.height || main_window.gl_buffer_properties.components != new_prop.components){
+	if (main_window.gl_buffer_properties.width != new_image_size.width || main_window.gl_buffer_properties.height != new_image_size.height || main_window.gl_buffer_properties.components != new_image_size.components){
 		
 		if (main_window.gl_buffer != 0){
 			delete[] main_window.gl_buffer ;
 			main_window.gl_buffer = 0;
 		}
 		
-		main_window.gl_buffer = new ns_8_bit[new_prop.components*new_prop.height*new_prop.width];
+		main_window.gl_buffer = new ns_8_bit[new_image_size.components*new_image_size.height*new_image_size.width];
 	
-		main_window.gl_buffer_properties = new_prop;
+		main_window.gl_buffer_properties = new_image_size;
 
-		area_handler.register_size_change(new_prop);
+		area_handler.register_size_change(new_image_size);
 	}
 	if (image.properties().components == 3){
 		for (unsigned int _x = 0; _x < main_window.gl_buffer_properties.width; _x++)
 		for (int _y = 0; _y < (int)main_window.gl_buffer_properties.height; _y++){
 				for (unsigned int c = 0; c < 3; c++){
-					main_window.gl_buffer [new_prop.width*3*_y + 3*_x + c] = ns_rescale(image[image.properties().height-1 - _y*main_window.pre_gl_downsample ][3*_x*main_window.pre_gl_downsample+c],dynamic_stretch_factor);
+					main_window.gl_buffer [new_image_size.width*3*_y + 3*_x + c] = ns_rescale(image[image.properties().height-1 - _y*main_window.pre_gl_downsample ][3*_x*main_window.pre_gl_downsample+c],dynamic_stretch_factor);
 				}
 		}
 	}
 
 	//b&w images
 	else if (image.properties().components == 1){
-		for (int _y = 0; _y < (int)new_prop.height; _y++){
-			for (unsigned int _x = 0; _x < new_prop.width; _x++){
-				main_window.gl_buffer [new_prop.width*3*_y + 3*_x + 0] =
-				main_window.gl_buffer [new_prop.width*3*_y + 3*_x + 1] =
-				main_window.gl_buffer [new_prop.width*3*_y + 3*_x + 2] = ns_rescale(image[image.properties().height-1 - _y*main_window.pre_gl_downsample ][_x*main_window.pre_gl_downsample],dynamic_stretch_factor);
+		for (int _y = 0; _y < (int)new_image_size.height; _y++){
+			for (unsigned int _x = 0; _x < new_image_size.width; _x++){
+				main_window.gl_buffer [new_image_size.width*3*_y + 3*_x + 0] =
+				main_window.gl_buffer [new_image_size.width*3*_y + 3*_x + 1] =
+				main_window.gl_buffer [new_image_size.width*3*_y + 3*_x + 2] = ns_rescale(image[image.properties().height-1 - _y*main_window.pre_gl_downsample ][_x*main_window.pre_gl_downsample],dynamic_stretch_factor);
 			}
 		}		
 	}
@@ -6665,7 +6668,8 @@ void ns_worm_learner::display_splash_image(){
 	#else
 	// note: using implicit string-literal concatenation after preprocessor substitution of NS_DATA_PATH
 	ns_load_image(NS_DATA_PATH "start.tif",im);
-	im.resample(ns_image_properties(800,600,3),current_image);
+	im.resample(ns_image_properties(600,800,3),current_image);
+	draw_image(-1,-1,current_image);
 	#endif
 }
 void ns_worm_learner::stop_death_time_annotation(){

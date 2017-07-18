@@ -101,6 +101,8 @@ void idle_worm_window_update_callback(void *);
 // http://seriss.com/people/erco/fltk/#OpenGlSimpleWidgets
 
 
+void request_rate_limited_window_redraw_from_main_thread();
+
 class ns_worm_terminal_main_window;
 class ns_worm_terminal_worm_window;
 
@@ -239,6 +241,7 @@ public:
 
 	// HANDLE WINDOW RESIZING
     void resize(int X,int Y,int W,int H) {
+      //cerr << "GL"<<W << "," << H << "\n";
         Fl_Gl_Window::resize(X,Y,W,H);
 		if (W != w() || H != h()){
 	//		cerr << W << "x" << H << " from " << w() << "x" << h() << "\n";
@@ -1925,25 +1928,43 @@ public:
     }
 
 	static ns_vector_2i image_window_size_difference(){
-		return ns_vector_2i(0,(int)menu_height()+(int)info_bar_height());
+	   float d(worm_learner.main_window.display_rescale_factor);
+	  if (!SCALE_FONTS_WITH_WINDOW_SIZE)
+	    d = 1;
+		return ns_vector_2i(0,d*(int)menu_height()+d*(int)info_bar_height());
 	}
-	void resize(int x, int y, int width, int height){
-		const float d(worm_learner.main_window.display_rescale_factor);
-		float menu_d(worm_learner.main_window.display_rescale_factor);
+
+  void get_window_size_needed(int & w, int & h, float & d, float & menu_d){
+	 d = worm_learner.main_window.display_rescale_factor;
+		menu_d = worm_learner.main_window.display_rescale_factor;
 		if (!SCALE_FONTS_WITH_WINDOW_SIZE)
 			menu_d = 1;
-		ns_acquire_lock_for_scope lock(worm_learner.main_window.display_lock,__FILE__,__LINE__);
+	     
 	//	worm_learner.main_window.image_size = ns_vector_2d(w_,h_);
 	//	worm_learner.main_window.specified_gl_image_size = (worm_learner.main_window.image_size+
 	//			image_window_size_difference());
 
-		int w_(worm_learner.main_window.gl_image_size.x),
-			h_(worm_learner.main_window.gl_image_size.y);
-		if (w_ == 0)
-			w_ = width;
-		if (h_ == 0)
-			h_ = height;
-		Fl_Window::resize(x,y,w_*d+image_window_size_difference().x*menu_d,h_*d+image_window_size_difference().y*menu_d);
+		w = worm_learner.main_window.gl_image_size.x*d,
+			h = worm_learner.main_window.gl_image_size.y*d+image_window_size_difference().y ;
+		if (w == 0)
+			w = 600;
+		if (h == 0)
+			h = 800;
+	    
+  }
+	void resize(int x, int y, int width, int height){
+	  //cerr << "W" << width << "," << height << " : ";
+		
+		ns_acquire_lock_for_scope lock(worm_learner.main_window.display_lock,__FILE__,__LINE__);
+		ns_vector_2i window_size;
+		float d,menu_d;
+		get_window_size_needed(window_size.x,window_size.y,d,menu_d);
+
+		int w_ = worm_learner.main_window.gl_image_size.x,
+			h_ = worm_learner.main_window.gl_image_size.y;
+
+		//cerr << "ww" << window_size.x << ","<< window_size.y << "\n";
+		Fl_Window::resize(x,y,window_size.x,window_size.y);
 		
 		gl_window->resize(0,menu_height()*menu_d,
 			w_,
@@ -1952,10 +1973,11 @@ public:
 		main_menu->resize(0,0,w_*d,menu_height()*menu_d);
 
 		int bottom_bar_height(h_*d+menu_height()*menu_d);
+		//cerr << "eb" << experiment_bar_width()*d << ","  << bottom_bar_height << "-" <<  bottom_bar_height+info_bar_height() << "\n";
 		experiment_name_bar->resize(		0,
 											bottom_bar_height,
 											experiment_bar_width()*d,
-											info_bar_height()*menu_d);
+											info_bar_height());
 		region_menu->resize(experiment_bar_width()*d,
 											bottom_bar_height,
 											region_name_bar_width()*d,
@@ -1981,6 +2003,8 @@ public:
 								 ns_death_event_annotation_group::window_height*menu_d);
 
 		lock.release();
+		if (w() != w_ || h() != h_)
+		  request_rate_limited_window_redraw_from_main_thread();
 
 	}
 	 
@@ -2098,24 +2122,42 @@ public:
 	static ns_vector_2i image_window_size_difference(){
 		return ns_vector_2i(0,(long)ns_death_event_solo_annotation_group::button_height);
 	}
-	void size(int w__, int h__) { resize(x(), y(), 0, 0); }
+	void size(int w__, int h__) { ns_worm_terminal_worm_window::resize(x(), y(), w__, h__); }
 	void resize(int w__, int h__) {
 		ns_worm_terminal_worm_window::resize(x(), y(), w__, h__);
 	}
+  void get_window_size_needed(int & w, int & h, float & d, float & menu_d){
+    d = worm_learner.worm_window.display_rescale_factor;
+    menu_d = worm_learner.worm_window.display_rescale_factor;
+    if (!SCALE_FONTS_WITH_WINDOW_SIZE)
+      menu_d = 1;
+    
+    //	worm_learner.main_window.image_size = ns_vector_2d(w_,h_);
+    //	worm_learner.main_window.specified_gl_image_size = (worm_learner.main_window.image_size+
+    //			image_window_size_difference());
+    
+    w = worm_learner.worm_window.gl_image_size.x*d,
+      h = worm_learner.worm_window.gl_image_size.y*d+image_window_size_difference().y ;
+    if (w == 0)
+      w = 600;
+    if (h == 0)
+      h = 800;
+    
+  }
 	void resize(int x, int y, int w__, int h__){
 
 		ns_acquire_lock_for_scope lock(worm_learner.worm_window.display_lock, __FILE__, __LINE__);
 		const int w_(worm_learner.worm_window.gl_image_size.x),
 				h_(worm_learner.worm_window.gl_image_size.y);
-		float menu_d(worm_learner.worm_window.display_rescale_factor);
-		if (!SCALE_FONTS_WITH_WINDOW_SIZE)
-			menu_d = 1;
-		float d(worm_learner.worm_window.display_rescale_factor);
+		ns_vector_2i window_size;
+		float d,menu_d;
+		get_window_size_needed(window_size.x,window_size.y,d,menu_d);
+
 
 	//	cout << "gl("<< h_*d
 	//		<< ") w(" << h_*d + image_window_size_difference().y*menu_d << ")\n";
 
-		Fl_Window::resize(x,y,w_*d+image_window_size_difference().x*menu_d,h_*d+image_window_size_difference().y*menu_d);
+		Fl_Window::resize(x,y,window_size.x,window_size.y);
 
 		gl_window->resize(0,0,w_*d,h_*d);
 		//xxxx
@@ -2252,11 +2294,14 @@ void ns_update_information_bar(const std::string & status){
 }
 
 void redraw_main_window(const unsigned long w, const unsigned long h,const bool resize){
+  //cerr << "req" << w << "," << h << "\n";
 	worm_learner.main_window.redraw_requested = false;
 	//Fl::awake();
 	Fl::lock();
 	if (resize){
-		current_window->size(w,h);	
+	
+	  
+	  current_window->resize(current_window->x(),current_window->y(),w,h);	
 	}
 	current_window->gl_window->damage(1);
 	current_window->gl_window->redraw();
@@ -2302,18 +2347,24 @@ void perform_screen_redraw_callback(void * a) {
   try{
 	if (debug_handlers) cout << "D";
 	try {
+	
+		ns_acquire_lock_for_scope lock(worm_learner.main_window.display_lock,__FILE__,__LINE__);
+		ns_vector_2i window_size;
+		float d,menu_d;
+		current_window->get_window_size_needed(window_size.x,window_size.y,d,menu_d);
+		lock.release();
 		Fl::lock();
-		ns_vector_2d cur_size(current_window->w(), current_window->h());
-		float menu_d(worm_learner.main_window.display_rescale_factor);
-		if (!SCALE_FONTS_WITH_WINDOW_SIZE)
-			menu_d = 1;
-		cur_size = cur_size - ns_vector_2i(0, (current_window->menu_height() + current_window->info_bar_height())*menu_d);
-		cur_size = cur_size / worm_learner.main_window.display_rescale_factor;
-		if (abs((int)(worm_learner.main_window.gl_image_size.x - cur_size.x)) > 0 && abs((int)(worm_learner.main_window.gl_image_size.y - cur_size.y)) > 0)
-			current_window->resize(current_window->x(), current_window->y(),0,0);
+		//	ns_vector_2d cur_size(current_window->w(), current_window->h());
+		//	float menu_d(worm_learner.main_window.display_rescale_factor);
+		//	if (!SCALE_FONTS_WITH_WINDOW_SIZE)
+		//		menu_d = 1;
+		//	cur_size = cur_size - ns_vector_2i(0, (current_window->menu_height() + current_window->info_bar_height())*menu_d);
+		//	cur_size = cur_size / worm_learner.main_window.display_rescale_factor;
+		//	if (abs((int)(worm_learner.main_window.gl_image_size.x - cur_size.x)) > 0 && abs((int)(worm_learner.main_window.gl_image_size.y - cur_size.y)) > 0)
+		//	current_window->resize(current_window->x(), current_window->y(),0,0);
 
 		if (worm_learner.main_window.redraw_requested)
-			redraw_main_window(worm_learner.main_window.gl_image_size.x, worm_learner.main_window.gl_image_size.y, true);
+			redraw_main_window(window_size.x, window_size.y, true);
 
 		if (worm_learner.worm_window.redraw_requested)
 			redraw_worm_window(worm_learner.worm_window.gl_image_size.x, worm_learner.worm_window.gl_image_size.y, true);
@@ -2368,22 +2419,33 @@ void report_changes_made_to_screen() {
 
 
 ns_64_bit last_callback_time(0);
-//ns_64_bit throttle_spf = 1000 / IDLE_THROTTLE_FPS;
 
-//ns_lock idle_rate_limiting_lock("overidle");
-//bool idle_rate_limiter = false;
 void idle_main_window_update_callback(void * force_redraw) {
   try{
-	if (debug_handlers) cout << "i";
+    /*ns_acquire_lock_for_scope dlock(worm_learner.main_window.display_lock,__FILE__,__LINE__);
+    ns_vector_2i main_window_requested_size;
+    float d,menu_d;
+    current_window->get_window_size_needed(main_window_requested_size.x,main_window_requested_size.y,d,menu_d);
+
+    dlock.release();
+
+    
+    const bool main_window_is_wrong_size(current_window->w() != main_window_requested_size.x || current_window->h() != main_window_requested_size.x);
+    */
+  if (debug_handlers) cout << "i";
 	{
 	
 		bool schedule_timer(false);
+
+
 		Fl::lock();
 		ns_image_series_annotater::ns_image_series_annotater_action a(worm_learner.current_annotater->fast_movement_requested());
 		if (a == ns_image_series_annotater::ns_fast_forward ||
 			a == ns_image_series_annotater::ns_fast_back ||
 			current_window->draw_animation || 
-			current_window->last_draw_animation)
+		    current_window->last_draw_animation //||
+		    // main_window_is_wrong_size
+)
 			schedule_timer = true;
 		Fl::unlock();
 
@@ -2410,20 +2472,24 @@ void idle_main_window_update_callback(void * force_redraw) {
 		last_callback_time = GetTime();
 		ns_64_bit last_interval = last_callback_time - last_time;
 
-		//allways call both functions together
+		//always call both functions together
 		if (worm_window->visible())
 			idle_worm_window_update_callback(force_redraw);
-
 		Fl::lock();
 		try {
-
+		      
+		  // if (main_window_is_wrong_size){
+		  //		current_window->size(main_window_requested_size.x,main_window_requested_size.y);
+		  //		current_window->redraw();
+		  //		current_window->damage(1);
+	     
+		  //  }
 			ns_handle_menu_bar_activity_request();
 			if (worm_learner.current_annotater->refresh_requested()) {
 				if (debug_handlers) cout << "A";
 				worm_learner.current_annotater->display_current_frame();
 				worm_learner.main_window.redraw_requested = true;
 			}
-
 
 			ns_image_series_annotater::ns_image_series_annotater_action a(worm_learner.current_annotater->fast_movement_requested());
 			if (a == ns_image_series_annotater::ns_fast_forward) {
@@ -2450,8 +2516,15 @@ void idle_main_window_update_callback(void * force_redraw) {
 			}
 			if (show_worm_window) {
 				show_worm_window = false;
-				worm_window->resize(worm_window->x(),worm_window->y(),worm_learner.worm_window.gl_image_size.x,
-					worm_learner.worm_window.gl_image_size.y);
+
+				ns_acquire_lock_for_scope lock(worm_learner.worm_window.display_lock, __FILE__, __LINE__);
+				ns_vector_2i window_size;
+				float d,menu_d;
+				worm_window->get_window_size_needed(window_size.x,window_size.y,d,menu_d);
+				lock.release();
+				
+				worm_window->resize(worm_window->x(),worm_window->y(),window_size.x,
+					window_size.y);
 				worm_window->show();
 				ns_set_menu_bar_activity(true);
 			}
@@ -2736,8 +2809,17 @@ int main() {
 		
 		
 		ns_worm_browser_output_debug(__LINE__,__FILE__,"Creating new window");
-		current_window = new ns_worm_terminal_main_window(worm_learner.current_image_properties().width,worm_learner.current_image_properties().height, "Worm Browser");
+
+		ns_acquire_lock_for_scope dlock(worm_learner.main_window.display_lock,__FILE__,__LINE__);
+		ns_vector_2i main_window_requested_size;
+		float dd,menu_d;
 		
+		dlock.release();
+
+		current_window = new ns_worm_terminal_main_window(1000,1000, "Worm Browser");
+		
+		current_window->get_window_size_needed(main_window_requested_size.x,main_window_requested_size.y,dd,menu_d);
+		current_window->size(main_window_requested_size.x,main_window_requested_size.y);
 		
 		ns_worm_browser_output_debug(__LINE__,__FILE__,"Loading occupied animation");
 		#ifdef _WIN32

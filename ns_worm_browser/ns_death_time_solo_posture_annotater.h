@@ -550,6 +550,7 @@ public:
 		}
 		else 
 			telemetry.show(true);
+		request_refresh();
 		return graph_contents;
 	}
 	ns_death_time_solo_posture_annotater_timepoint::ns_visualization_type step_visualization_type() {
@@ -557,7 +558,8 @@ public:
 		if (current_visualization_type == ns_death_time_solo_posture_annotater_timepoint::ns_movement_threshold_and_image)
 			current_visualization_type = ns_death_time_solo_posture_annotater_timepoint::ns_image;
 		else current_visualization_type = (ns_death_time_solo_posture_annotater_timepoint::ns_visualization_type)((int)current_visualization_type + 1);
-
+		
+		ns_acquire_lock_for_scope lock(image_buffer_access_lock,__FILE__, __LINE__);
 		for (unsigned int i = 0; i < timepoints.size(); i++) {
 			timepoints[i].set_visulaization_type(current_visualization_type);
 		}
@@ -568,7 +570,9 @@ public:
 
 		ns_image_standard temp_buffer;
 		timepoints[current_timepoint_id].load_image(1024, current_image, sql(), temp_buffer, 1);
+    
 		draw_metadata(&timepoints[current_timepoint_id], *current_image.im);
+		lock.release();
 		return current_visualization_type;
 	}
 
@@ -747,6 +751,9 @@ public:
 		this->close_worm();
 		stop_fast_movement();
 		current_visualization_type = visualization_type;
+		
+		graph_contents = ns_animal_telemetry::ns_movement_intensity;
+		telemetry.show(true);
 	
 		ns_region_metadata metadata;
 		metadata.region_id = region_info_id_;
@@ -886,6 +893,7 @@ public:
 			
 			request_refresh();
 			lock.release();
+		       
 
 		}
 		catch(ns_ex & ex){
@@ -945,7 +953,11 @@ public:
 	void load_movement_analysis(ns_sql & sql) {
 		if (current_region_data == 0)
 			return;
+		
+		ns_acquire_lock_for_scope lock(image_buffer_access_lock,__FILE__, __LINE__);
 		current_region_data->load_movement_analysis(current_region_data->metadata.region_id, sql, true);
+		
+		//we now need to update all fields that referred to the previous movement analysis object
 		current_worm = &current_region_data->movement_analyzer[	properties_for_all_animals.stationary_path_id.group_id].paths[properties_for_all_animals.stationary_path_id.path_id]; 
 	      
 			for (unsigned int i = 0; i < timepoints.size(); i++){
@@ -953,6 +965,15 @@ public:
 				timepoints[i].movement_analyzer = & current_region_data->movement_analyzer;  //*
 			       
 			}
+			for (unsigned int i = 0; i < previous_images.size(); i++) {
+			  previous_images[i].loaded = false;
+			  next_images[i].loaded = false;
+			}
+			
+			ns_image_standard temp_buffer;
+			timepoints[current_timepoint_id].load_image(1024, current_image, sql, temp_buffer, 1);
+		 
+			lock.release();
 	}
 	void output_worm_frames(const string &base_dir,const std::string & filename, ns_sql & sql){
 		const string bd(base_dir);

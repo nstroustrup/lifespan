@@ -56,7 +56,17 @@ public:
 	bool is_valid() const{
 		return data != 0;
 	}
-	~ns_simple_cache_data_handle() { check_in(); }
+	~ns_simple_cache_data_handle() { 
+	  try{
+	    check_in();
+	  }
+	  catch(ns_ex & ex){
+	    std::cerr << "Error in cache handle destructor: "<< ex.text()<<"\n";
+	  }
+	  catch(...){
+	    std::cerr << "Unknown error in cache handle destructor\n";
+	  }
+	}
 	void release() { check_in(); }
 
 	friend  data_t;
@@ -290,6 +300,22 @@ public:
 	}
 	void remove_old_images(unsigned long age_in_seconds, typename data_t::external_source_type & external_source) {
 		remove_old_images<false>(false,age_in_seconds, external_source);
+	}
+	~ns_simple_cache(){
+	  try{
+	    wait_for_all_current_operations_to_be_processed_and_get_delete_and_table_lock();
+	    if (locked){
+	      data_cache.clear();
+	      delete_lock.release();
+	      lock.release();
+	    }
+	  }
+	  catch(ns_ex & ex){
+	    std::cerr << "Error in cache handle destructor: "<< ex.text()<<"\n";
+	  }
+	  catch(...){
+	    std::cerr << "Unknown error in cache handle destructor\n";
+	  }
 	}
 
 

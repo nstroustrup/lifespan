@@ -2018,7 +2018,7 @@ void ns_time_path_solver_timepoint::load(const ns_64_bit worm_detection_results_
 	}
 }
 
-void ns_register_path_solver_load_error(unsigned long region_info_id,const std::string & expl, ns_sql & sql){
+void ns_register_path_solver_load_error(ns_64_bit region_info_id,const std::string & expl, ns_sql & sql){
 	ns_ex ex("For ");
 	sql << "SELECT r.name,s.id,s.name,e.name FROM sample_region_image_info as r,capture_samples as s,"
 			"experiments as e WHERE r.sample_id = s.id AND s.experiment_id = e.id AND r.id = " << region_info_id;

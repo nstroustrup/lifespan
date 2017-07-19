@@ -33,7 +33,7 @@ public:
 	unsigned long total_number_of_frames;
 	ns_movement_posture_visualization_summary vis_info;
 	ns_image_server_image vis_image;
-	unsigned long region_info_id,
+	ns_64_bit region_info_id,
 				  region_id,
 				  frame_id;
 	//returns true if a worm was picked and a change was made to the metadata
@@ -115,7 +115,7 @@ struct ns_death_timing_data_step_event_specification{
 	ns_death_timing_data_step_event_specification(const ns_death_time_annotation_time_interval & event_time_):event_time(event_time_),region_position(0,0),region_size(0,0),region_info_id(0),worm_id_in_path(0){}
 	ns_death_timing_data_step_event_specification(const ns_death_time_annotation_time_interval & interval,
 												  const ns_analyzed_image_time_path_element & e, 
-													const unsigned long region_info_id_, 
+													const ns_64_bit region_info_id_,
 													const ns_stationary_path_id & id, const unsigned long worm_id_in_path_):
 
 												event_time(interval),
@@ -127,7 +127,7 @@ struct ns_death_timing_data_step_event_specification{
 	ns_death_time_annotation_time_interval event_time;
 	ns_vector_2i region_position,
 				 region_size;
-	unsigned long region_info_id;
+	ns_64_bit region_info_id;
 	ns_stationary_path_id stationary_path_id;
 	unsigned long worm_id_in_path;
 
@@ -146,7 +146,7 @@ public:
 
 	ns_death_timing_data(const ns_movement_visualization_summary_entry & p,unsigned long region_id,const unsigned long worm_id_in_path_):position_data(p),
 		region_info_id(0),
-		source_region_id(region_id),specified(false){
+		source_region_id(region_id),specified(false), tentative_death_posture_relaxation_start_spec(false){
 			animal_specific_sticky_properties.animal_id_at_position = worm_id_in_path_;
 	}
 	
@@ -164,14 +164,17 @@ public:
 		apply_step_specification(fast_movement_cessation,e,ns_additional_worm_entry);
 	}
 	ns_death_time_annotation translation_cessation,
-				  movement_cessation,
-				  death_posture_relaxation_termination;
+		movement_cessation,
+		death_posture_relaxation_start,
+		death_posture_relaxation_termination;
+	bool tentative_death_posture_relaxation_start_spec;
 	
 	void output_event_times(std::ostream & o){
 		o << "Fast Movement Cessation: " << fast_movement_cessation << "\n"
-		  << "Translation: " << translation_cessation << "\n"
-		  << "Movement Cessation " << movement_cessation << "\n"
-		  << "Death Posture Relaxation " << death_posture_relaxation_termination << "\n";
+			<< "Translation: " << translation_cessation << "\n"
+			<< "Movement Cessation " << movement_cessation << "\n"
+			<< "Death Posture Relaxation Start" << death_posture_relaxation_start << "\n"
+		  << "Death Posture Relaxation End" << death_posture_relaxation_termination << "\n";
 	}
 
 	ns_death_time_annotation animal_specific_sticky_properties;
@@ -186,6 +189,8 @@ public:
 			annotations.push_back(movement_cessation);
 		if (death_posture_relaxation_termination.time.period_end != 0)
 			annotations.push_back(death_posture_relaxation_termination);
+		if (death_posture_relaxation_start.time.period_end != 0)
+			annotations.push_back(death_posture_relaxation_start);
 	}
 
 	/*void annotate_extra_worm(){
@@ -220,8 +225,9 @@ public:
 		const unsigned long total_time = last_path_frame_time - path_start_time;
 		
 		const float dt(size.x/(float)total_time);
-		
 		const unsigned long worm_arrival_time(fast_movement_cessation.time.period_end);
+		//we push death relaxation back in time as we find more data
+		unsigned long death_relaxation_start_time = worm_arrival_time;
 		for (unsigned int y = 0; y < size.y; y++){
 			unsigned int x;
 			ns_color_8 c;
@@ -235,9 +241,11 @@ public:
 				im[y+pos.y][3*(x+pos.x)+1] = c.y;
 				im[y+pos.y][3*(x+pos.x)+2] = c.z;
 			}
+
 			c = ns_movement_colors::color(ns_movement_slow)*scaling;
-			
 			if (translation_cessation.time.period_end != 0 && translation_cessation.time.period_end >= path_start_time){
+				
+				death_relaxation_start_time = translation_cessation.time.period_end;
 				if (translation_cessation.time.period_end > last_path_frame_time)
 					throw ns_ex("Invalid translation cessation time");
 				for (; x < (int)((translation_cessation.time.period_end - path_start_time)*dt); x++){
@@ -250,6 +258,8 @@ public:
 				c = ns_movement_colors::color(ns_movement_posture)*scaling;
 			}
 			if (movement_cessation.time.period_end != 0 && movement_cessation.time.period_end >= path_start_time){
+
+				death_relaxation_start_time = movement_cessation.time.period_end;
 				if (movement_cessation.time.period_end > last_path_frame_time)
 					throw ns_ex("Invalid Movement Cessation Time");
 				for (; x < (int)((movement_cessation.time.period_end- path_start_time)*dt); x++){
@@ -259,40 +269,42 @@ public:
 					im[y+pos.y][3*(x+pos.x)+1] = c.y;
 					im[y+pos.y][3*(x+pos.x)+2] = c.z;
 				}
-				c = ns_movement_colors::color(ns_movement_stationary)*scaling;			
+
+				c = ns_movement_colors::color(ns_movement_stationary)*scaling;
 				if (movement_cessation.excluded == ns_death_time_annotation::ns_censored_at_end_of_experiment)
 					c = ns_movement_colors::color(ns_movement_machine_excluded)*scaling;
-	
 			}
-			if (death_posture_relaxation_termination.time.period_end != 0 && death_posture_relaxation_termination.time.period_end >= path_start_time){
-
-				if (dt*(death_posture_relaxation_termination.time.period_start - path_start_time >= x))
-					x = dt*(death_posture_relaxation_termination.time.period_start - path_start_time);
-
-
-				if (death_posture_relaxation_termination.time.period_end > last_path_frame_time)
-					throw ns_ex("Invalid Death Posture Relaxation Termination Time!");
-				c = ns_movement_colors::color(ns_movement_death_posture_relaxation);
-				for (; x < (int)((death_posture_relaxation_termination.time.period_end - path_start_time)*dt); x++){
-					
-					if(y+pos.y >= im.properties().height || x+pos.x >= im.properties().width || im.properties().components != 3)
-						throw ns_ex("Yikes! 4");
-					im[y+pos.y][3*(x+pos.x)+0] = c.x;
-					im[y+pos.y][3*(x+pos.x)+1] = c.y;
-					im[y+pos.y][3*(x+pos.x)+2] = c.z;
-				}
-				
-				c = ns_movement_colors::color(ns_movement_stationary)*scaling;
-			}
+			//here the color is set by the value of the last specified event
 			for (; x < size.x; x++){
 				
 					if(y+pos.y >= im.properties().height || x+pos.x >= im.properties().width || im.properties().components != 3)
-						throw ns_ex("Yikes! 5");
+						throw ns_ex("Yikes! 6");
 					im[y+pos.y][3*(x+pos.x)+0] = c.x;
 					im[y+pos.y][3*(x+pos.x)+1] = c.y;
 					im[y+pos.y][3*(x+pos.x)+2] = c.z;
 			}
+		
+			if (y < size.y / 2 &&
+				death_posture_relaxation_termination.time.period_end != 0 && death_posture_relaxation_termination.time.period_end >= path_start_time) {
+
+				if (death_posture_relaxation_start.time.period_end != 0)
+					death_relaxation_start_time = death_posture_relaxation_start.time.period_end;
+				//draw animal as dead until death relaxation begins
+				if (death_relaxation_start_time > last_path_frame_time)
+					throw ns_ex("Invalid Death Posture Relaxation Start Time!");
+				c = ns_movement_colors::color(ns_movement_death_posture_relaxation)*scaling;
+				for (int x = (int)((death_relaxation_start_time - path_start_time)*dt); x < (int)((death_posture_relaxation_termination.time.period_start - path_start_time)*dt); x++) {
+					if (y + pos.y >= im.properties().height || x + pos.x >= im.properties().width || im.properties().components != 3)
+						throw ns_ex("Yikes! 7");
+					im[y + pos.y][3 * (x + pos.x) + 0] = c.x;
+					im[y + pos.y][3 * (x + pos.x) + 1] = c.y;
+					im[y + pos.y][3 * (x + pos.x) + 2] = c.z;
+				}
+
+			}
 		}
+
+		//highlight current time interval
 		unsigned long interval_start((current_interval.period_start-path_start_time)*dt),
 					  interval_end((current_interval.period_end-path_start_time)*dt);
 		//cerr << "Interval duration: " << current_interval.period_end - current_interval.period_start << " seconds; " 
@@ -315,14 +327,14 @@ public:
 		}
 	}
 
+	bool is_death_time_contracting(const unsigned long time) const{
+		return death_posture_relaxation_termination.time.period_end != 0 && death_posture_relaxation_start.time.period_end <= time && death_posture_relaxation_termination.time.period_end >= time;
+	}
+
 	ns_movement_state movement_state(const unsigned long time) const{
-		if (death_posture_relaxation_termination.time.period_end != 0 && death_posture_relaxation_termination.time.period_end <= time)
-			return ns_movement_stationary;
-		
+
 		if (movement_cessation.time.period_end != 0 && movement_cessation.time.period_end <= time){
-			if (death_posture_relaxation_termination.time.period_end != 0)
-				return ns_movement_death_posture_relaxation;
-			else return ns_movement_stationary;
+				return ns_movement_stationary;
 		}
 		if (translation_cessation.time.period_end != 0 && translation_cessation.time.period_end <= time)
 			return ns_movement_posture;
@@ -371,7 +383,13 @@ public:
 					death_posture_relaxation_termination = e;
 				else 
 					duplication_events++;
-				break;
+				break; 
+			case  ns_death_posture_relaxation_start:
+					if (death_posture_relaxation_start.time.period_end == 0)
+						death_posture_relaxation_start = e;
+					else
+						duplication_events++;
+					break;
 			case ns_no_movement_event:
 				break;
 			case ns_additional_worm_entry:
@@ -394,62 +412,96 @@ public:
 		a.type = movement_type;
 	}
 	
+	ns_death_time_annotation_time_interval last_specified_event_before_time(const unsigned long t, const ns_time_path_limits & path_observation_limits) {
+		if (movement_cessation.time.period_end != 0 && movement_cessation.time.period_end < t)
+			return movement_cessation.time;
+		if (translation_cessation.time.period_end != 0 && movement_cessation.time.period_end < t)
+			return translation_cessation.time;
+		if (fast_movement_cessation.time.period_end != 0)
+			return fast_movement_cessation.time;
+		return path_observation_limits.interval_before_first_observation;
+	}
 		//given the user has selected the specified time path element, update the annotations apropriately
-	void step_event(const ns_death_timing_data_step_event_specification & e,const ns_time_path_limits & observation_limits){
+	void step_event(const ns_death_timing_data_step_event_specification & e,const ns_time_path_limits & observation_limits, bool alternate_key_held){
 		//cerr << "V-------------------V\n";
 		//output_event_times(cerr);
-		if (e.event_time.period_end < fast_movement_cessation.time.period_end){
-			set_fast_movement_cessation_time(e);
-		}
-		if (e.event_time.period_end == fast_movement_cessation.time.period_end){
-			ns_zero_death_interval(death_posture_relaxation_termination.time);
-			//clear all data to indicate the first time point is fast moving
-			if (movement_cessation.time.period_end == fast_movement_cessation.time.period_end){
-				ns_zero_death_interval(movement_cessation.time);
-				ns_zero_death_interval(translation_cessation.time);
-				this->fast_movement_cessation.time = observation_limits.last_obsevation_of_plate;
+		if (!alternate_key_held) {
+			if (e.event_time.period_end < fast_movement_cessation.time.period_end) {
+				set_fast_movement_cessation_time(e);
+			}
+			if (e.event_time.period_end == fast_movement_cessation.time.period_end) {
+			//	ns_zero_death_interval(death_posture_relaxation_termination.time);
+				//clear all data to indicate the first time point is fast moving
+				if (movement_cessation.time.period_end == fast_movement_cessation.time.period_end) {
+					ns_zero_death_interval(movement_cessation.time);
+					ns_zero_death_interval(translation_cessation.time);
+					this->fast_movement_cessation.time = observation_limits.last_obsevation_of_plate;
 
+				}
+				//indicate the first timepoint is stationary
+				else if (translation_cessation.time.period_end == fast_movement_cessation.time.period_end) {
+					apply_step_specification(movement_cessation, e, ns_movement_cessation);
+					movement_cessation.time.period_start_was_not_observed = true;
+					ns_zero_death_interval(translation_cessation.time);
+				}
+				else {
+					//indicate the first timepoint is slow moving
+					apply_step_specification(translation_cessation, e, ns_translation_cessation);
+					translation_cessation.time.period_start_was_not_observed = true;
+				}
 			}
-			//indicate the first timepoint is stationary
-			else if (translation_cessation.time.period_end == fast_movement_cessation.time.period_end){
-				apply_step_specification(movement_cessation, e, ns_movement_cessation);
-				movement_cessation.time.period_start_was_not_observed = true;
-				ns_zero_death_interval(translation_cessation.time);
-			}
-			else{
-				//indicate the first timepoint is slow moving
+			else if (movement_cessation.time.period_end == 0 &&
+				//death_posture_relaxation_termination.time.period_end == 0 &&
+				(translation_cessation.time.period_end == 0 || e.event_time.period_end < translation_cessation.time.period_end)) {
 				apply_step_specification(translation_cessation, e, ns_translation_cessation);
-				translation_cessation.time.period_start_was_not_observed = true;
 			}
-		}
-		else if (movement_cessation.time.period_end == 0 &&
-			death_posture_relaxation_termination.time.period_end == 0 &&
-			(translation_cessation.time.period_end == 0 || e.event_time.period_end < translation_cessation.time.period_end)){
-			apply_step_specification(translation_cessation, e, ns_translation_cessation);
-		}
-		else if (e.event_time.period_end == translation_cessation.time.period_end){
+			else if (e.event_time.period_end == translation_cessation.time.period_end) {
 				ns_zero_death_interval(translation_cessation.time);
 				ns_zero_death_interval(movement_cessation.time);
+			//	ns_zero_death_interval(death_posture_relaxation_termination.time);
+			}
+			else if (//death_posture_relaxation_termination.time.period_end == 0 &&
+				(movement_cessation.time.period_end == 0 || e.event_time.period_end < movement_cessation.time.period_end)) {
+				apply_step_specification(movement_cessation, e, ns_movement_cessation);
+			}
+			else if (e.event_time.period_end == movement_cessation.time.period_end) {
+				ns_zero_death_interval(movement_cessation.time);
+			//	ns_zero_death_interval(death_posture_relaxation_termination.time);
+			}
+		}
+		else {
+			//the user is specifying the death time relaxation duration
+			if (death_posture_relaxation_termination.time.period_end == 0 ||
+				e.event_time.period_end > death_posture_relaxation_termination.time.period_end) {
+				apply_step_specification(death_posture_relaxation_termination, e, ns_death_posture_relaxation_termination);
+				if (death_posture_relaxation_start.time.period_end == 0) {
+					ns_death_timing_data_step_event_specification stp(e);
+					stp.event_time = last_specified_event_before_time(e.event_time.period_end, observation_limits);
+					apply_step_specification(death_posture_relaxation_start,stp, ns_death_posture_relaxation_start);
+					tentative_death_posture_relaxation_start_spec = true;
+				}
+			}
+			else  if (e.event_time.period_end == death_posture_relaxation_termination.time.period_end ||
+				      e.event_time.period_end == death_posture_relaxation_start.time.period_end) {
 				ns_zero_death_interval(death_posture_relaxation_termination.time);
-		}
-		else if (death_posture_relaxation_termination.time.period_end == 0 &&
-			(movement_cessation.time.period_end == 0 || e.event_time.period_end < movement_cessation.time.period_end)){
-			apply_step_specification(movement_cessation, e, ns_movement_cessation);
-		}
-		else if (e.event_time.period_end == movement_cessation.time.period_end){
-			ns_zero_death_interval(movement_cessation.time);
-			ns_zero_death_interval(death_posture_relaxation_termination.time);
-		}
-		else if (death_posture_relaxation_termination.time.period_end == 0 && 
-			e.event_time.period_end != death_posture_relaxation_termination.time.period_end){
-			apply_step_specification(death_posture_relaxation_termination,e,ns_death_posture_relaxation_termination);
-		}
-		else if (e.event_time.period_end == death_posture_relaxation_termination.time.period_end){
-			ns_zero_death_interval(death_posture_relaxation_termination.time);
+				ns_zero_death_interval(death_posture_relaxation_start.time);
+				tentative_death_posture_relaxation_start_spec = false;
+			}
+			else if (death_posture_relaxation_start.time.period_end == 0 ||
+				e.event_time.period_end < death_posture_relaxation_start.time.period_end) {
+				apply_step_specification(death_posture_relaxation_start, e, ns_death_posture_relaxation_start);
+				tentative_death_posture_relaxation_start_spec = false;
+			}
+			else {
+				long end_dist = death_posture_relaxation_termination.time.period_end - e.event_time.period_end;
+				long start_dist = e.event_time.period_end - death_posture_relaxation_start.time.period_end;
+				if (end_dist > start_dist || tentative_death_posture_relaxation_start_spec)
+					apply_step_specification(death_posture_relaxation_start, e, ns_death_posture_relaxation_start);
+				else
+					apply_step_specification(death_posture_relaxation_termination, e, ns_death_posture_relaxation_termination);
+			}
 		}
 
-	//	output_event_times(cerr);
-	//	cerr << "^-------------------^\n";
 	}
 };
 

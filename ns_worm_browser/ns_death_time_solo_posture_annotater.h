@@ -34,7 +34,7 @@ public:
 		throw ns_ex("N/A");
 	}
 	
-	static void render_image(const ns_visualization_type vis_type,const ns_registered_image_set & registered_images, ns_image_standard & output, const std::string & debug_label) {
+	static void render_image(const ns_visualization_type vis_type, const ns_registered_image_set & registered_images, ns_image_standard & output, const std::string & debug_label) {
 		const ns_image_standard_signed & movement_image(registered_images.movement_image_);
 		const ns_image_standard &image(registered_images.image);
 
@@ -68,7 +68,7 @@ public:
 			}
 		}
 		for (unsigned int y = 0; y < image.properties().height; y++) {
-		  //left border
+			//left border
 			for (unsigned int x = 0; x < ns_side_border_width; x++) {
 				output[y + ns_side_border_width][3 * x] =
 					output[y + ns_side_border_width][3 * x + 1] =
@@ -90,7 +90,7 @@ public:
 					if (registered_images.get_stabilized_worm_neighborhood_threshold(y, x)) {
 						long sum, count;
 						ns_analyzed_image_time_path::spatially_average_movement(y, x, ns_time_path_image_movement_analyzer::ns_spatially_averaged_movement_kernal_half_size, movement_image, sum, count);
-					
+
 						if (count == 0) t = 0;
 						else {
 							t = 255 * ((abs(sum / count) - min_mov) / mov_r);
@@ -111,7 +111,7 @@ public:
 					if (registered_images.get_stabilized_worm_neighborhood_threshold(y, x)) {
 						long sum, count;
 						ns_analyzed_image_time_path::spatially_average_movement(y, x, ns_time_path_image_movement_analyzer::ns_spatially_averaged_movement_kernal_half_size, movement_image, sum, count);
-						
+
 						if (abs(sum) < count*ns_time_path_image_movement_analyzer::ns_spatially_averaged_movement_threshold)
 							t = 0;
 						else {
@@ -131,12 +131,12 @@ public:
 					if (registered_images.get_stabilized_worm_neighborhood_threshold(y, x)) {
 						long sum, count;
 						ns_analyzed_image_time_path::spatially_average_movement(y, x, ns_time_path_image_movement_analyzer::ns_spatially_averaged_movement_kernal_half_size, movement_image, sum, count);
-						
+
 						if (count == 0)
 							f = 0;
 						else {
 							f = ((abs(sum / count) - min_mov) / mov_r);
-							movement_sum += abs(sum)/ (float)count;
+							movement_sum += abs(sum) / (float)count;
 						}
 					}
 					else f = 0;
@@ -165,7 +165,7 @@ public:
 
 					int r = image[y][x] * (1 - f) + 255 * f,  //goes up to 255 the more movement there is
 						bg = image[y][x] * (1 - f);  //goes down to zero the more movement there is.
-					output[y+ns_side_border_width][3 * (x + ns_side_border_width)] = r;
+					output[y + ns_side_border_width][3 * (x + ns_side_border_width)] = r;
 					output[y + ns_side_border_width][3 * (x + ns_side_border_width) + 1] =
 						output[y + ns_side_border_width][3 * (x + ns_side_border_width) + 2] = bg;
 				}
@@ -174,9 +174,9 @@ public:
 			}
 			//right border
 			for (unsigned int x = image.properties().width + ns_side_border_width; x < output.properties().width; x++) {
-				output[y][3 * x] =
-					output[y][3 * x + 1] =
-					output[y][3 * x + 2] = 0;
+				output[y+ ns_side_border_width][3 * x] =
+					output[y + ns_side_border_width][3 * x + 1] =
+					output[y + ns_side_border_width][3 * x + 2] = 0;
 			}
 		}
 		for (unsigned int y = image.properties().height + ns_side_border_width; y < output.properties().height; y++) {
@@ -322,7 +322,7 @@ public:
 						ns_death_timing_data_step_event_specification(
 									p->second.movement_analyzer[i].paths[0].cessation_of_fast_movement_interval(),
 									p->second.movement_analyzer[i].paths[0].element(p->second.movement_analyzer[i].paths[0].first_stationary_timepoint()),region_id,
-									p->second.by_hand_timing_data[i].animals[0].position_data.stationary_path_id,0),p->second.movement_analyzer[i].paths[0].observation_limits());
+									p->second.by_hand_timing_data[i].animals[0].position_data.stationary_path_id,0),p->second.movement_analyzer[i].paths[0].observation_limits(),false);
 				}
 				p->second.load_annotations(sql,false);
 			}
@@ -414,7 +414,7 @@ private:
 										bottom_margin_bottom.y + ns_death_time_solo_posture_annotater_timepoint::bottom_border_height()-bottom_offset);
 	
 		for (unsigned int y = bottom_margin_bottom.y; y < bottom_margin_top.y; y++)
-			for (unsigned int x = bottom_margin_bottom.x; x < bottom_margin_top.x; x++){
+			for (unsigned int x = bottom_margin_bottom.x; x < bottom_margin_top.x+ ns_death_time_solo_posture_annotater_timepoint::ns_side_border_width; x++){
 				im[y][3*x] = 
 				im[y][3*x+1] = 
 				im[y][3*x+2] = 0;
@@ -457,8 +457,10 @@ private:
 		const int num_lines(6);
 		std::string lines[num_lines];
 		ns_color_8 line_color[num_lines];
-		ns_movement_state cur_by_hand_state(current_by_hand_timing_data().animals[current_animal_id].movement_state(current_worm->element(current_element_id()).absolute_time));
-		ns_movement_state cur_machine_state(current_machine_timing_data->animals[0].movement_state(current_worm->element(current_element_id()).absolute_time));
+		const ns_movement_state cur_by_hand_state(current_by_hand_timing_data().animals[current_animal_id].movement_state(current_worm->element(current_element_id()).absolute_time));
+		const ns_movement_state cur_machine_state(current_machine_timing_data->animals[0].movement_state(current_worm->element(current_element_id()).absolute_time));
+		const bool by_hand_death_contracting(current_by_hand_timing_data().animals[current_animal_id].is_death_time_contracting(current_worm->element(current_element_id()).absolute_time));
+		const bool machine_death_contracting(current_machine_timing_data->animals[0].is_death_time_contracting(current_worm->element(current_element_id()).absolute_time));
 		lines[0]  = "Frame " + ns_to_string(current_element_id()+1) + " of " + ns_to_string(timepoints.size())+ " ";
 		lines[0] += current_worm->element(current_element_id()).element_before_fast_movement_cessation?"(B)":"(A)";
 		lines[0] += current_worm->element(current_element_id()).inferred_animal_location?"(I)":"";
@@ -480,9 +482,9 @@ private:
 		ns_vector_2i p(current_worm->path_region_position + current_worm->path_region_size/2);
 		lines[2] += " (" + ns_to_string(p.x) + "," + ns_to_string(p.y) + ")";
 
-		lines[3] = ("Machine:" + state_label(cur_machine_state));
+		lines[3] = "Machine:" + state_label(cur_machine_state) + (machine_death_contracting ? "(Contr/Expr)":"");
 		if (current_by_hand_timing_data().animals[current_animal_id].specified)
-			lines[4] += "Human: " + state_label(cur_by_hand_state);
+			lines[4] += "Human: " + state_label(cur_by_hand_state) + (by_hand_death_contracting ? "(Contr/Expr)" : "");
 		else lines[4] += "Human: Not Specified";
 		if (properties_for_all_animals.number_of_worms_at_location_marked_by_hand > 1){
 			lines [4] += " +";

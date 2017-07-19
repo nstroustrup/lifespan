@@ -1050,8 +1050,8 @@ ns_64_bit ns_processing_job_maintenance_processor::run_job(ns_sql & sql) {
 				ns_image_standard ima;
 				for (ns_64_bit i = start; i < stop && i < storyboard().manager.number_of_sub_images(); i++) {
 					image_server->add_subtext_to_current_event(std::string("Rendering division ") + ns_to_string(i) + "\n", &sql);
-					storyboard().storyboard.draw(i, ima, true, sql);
-					storyboard().manager.save_image_to_db_no_error_handling(i, specs[j], ima, sql);
+					storyboard().storyboard.draw((unsigned long)i, ima, true, sql);
+					storyboard().manager.save_image_to_db_no_error_handling((unsigned long)i, specs[j], ima, sql);
 				}
 			}
 			break;

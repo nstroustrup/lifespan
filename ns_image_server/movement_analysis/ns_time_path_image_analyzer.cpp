@@ -1639,7 +1639,7 @@ void ns_time_path_image_movement_analyzer::load_movement_data_from_disk(istream 
 		get_double(in, groups[group_id].paths[path_id].elements[element_id].measurements.denoised_spatial_averaged_movement_score);//25
 		if (in.fail()) 
 			throw ns_ex("Invalid Specification 25");
-		get_double(in, groups[group_id].paths[path_id].elements[element_id].measurements.total_intensity_in_previous_frame_scaled_to_current_frames_histogram);//26
+		get_int(in, groups[group_id].paths[path_id].elements[element_id].measurements.total_intensity_in_previous_frame_scaled_to_current_frames_histogram);//26
 		if (in.fail()) 
 			throw ns_ex("Invalid Specification 26");
 		get_int(in, groups[group_id].paths[path_id].elements[element_id].measurements.total_stabilized_area);//27
@@ -3577,17 +3577,17 @@ void ns_analyzed_image_time_path::denoise_movement_series_and_calculate_intensit
 		const int slope_kernel_half_width(8);
 		const int slope_kernel_width = slope_kernel_half_width * 2 + 1;
 		if (elements.size() >= slope_kernel_width) {
-			ns_linear_regression_model model;
-			std::vector<unsigned long > stabilized_vals(slope_kernel_width);
-			std::vector<unsigned long > foreground_vals(slope_kernel_width);
-			std::vector<unsigned long > region_vals(slope_kernel_width);
-			std::vector<unsigned long > times(slope_kernel_width);
+			std::vector<ns_64_bit > stabilized_vals(slope_kernel_width);
+			std::vector<ns_64_bit > foreground_vals(slope_kernel_width);
+			std::vector<ns_64_bit > region_vals(slope_kernel_width);
+			std::vector<ns_64_bit > times(slope_kernel_width);
 			for (unsigned int i = 0; i < slope_kernel_width; i++) {
 				foreground_vals[i] = elements[i].measurements.total_intensity_within_foreground;
 				stabilized_vals[i] = elements[i].measurements.total_intensity_within_stabilized;
 				region_vals[i] = elements[i].measurements.total_intensity_within_region;
 				times[i] = elements[i].absolute_time;
 			}
+			ns_linear_regression_model model;
 			ns_linear_regression_model_parameters foreground_params(model.fit(foreground_vals, times));
 			ns_linear_regression_model_parameters region_params(model.fit(region_vals, times));
 			ns_linear_regression_model_parameters stabilized_params(model.fit(stabilized_vals, times));
@@ -3635,7 +3635,7 @@ void ns_analyzed_image_time_path::denoise_movement_series_and_calculate_intensit
 		const bool use_median(true);
 		std::vector<double> normalization_factors(offset_size);
 		if (use_median) {
-			std::vector<std::vector<unsigned long> > values(offset_size);
+			std::vector<std::vector<ns_64_bit> > values(offset_size);
 			for (unsigned int i = 0; i < offset_size; i++) {
 				values[i].reserve(elements.size() / offset_size);
 			}
@@ -6729,8 +6729,8 @@ ns_time_path_posture_movement_solution ns_threshold_movement_posture_analyzer::r
 			unsigned long cur_t = path->element(t).absolute_time;
 
 			//find largest intensity change within in kernel to use as the "peak time".
-			ns_s64_bit max_val = 0;
-			unsigned long max_tt = path->element(t).measurements.change_in_total_stabilized_intensity;
+			ns_s64_bit max_val = path->element(t).measurements.change_in_total_stabilized_intensity;
+			ns_s64_bit max_tt = t;
 
 			//this could be done faster with a sliding window.
 			for (long tt = t; tt < path->element_count() && path->element(tt).absolute_time < cur_t + parameters.death_time_expansion_time_kernel_in_seconds; tt++) {

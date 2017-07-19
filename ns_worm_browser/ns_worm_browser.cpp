@@ -3054,7 +3054,7 @@ void ns_worm_learner::generate_single_frame_posture_image_pixel_data(const bool 
 	for (unsigned int i = 0; i < movement_results.samples.size(); i++){
 		cerr << "Sample " <<movement_results.samples[i].name() << " has " << movement_results.samples[i].regions.size() << " regions\n";
 		for (unsigned int j = 0; j < movement_results.samples[i].regions.size(); j++){
-			const unsigned long region_id(movement_results.samples[i].regions[j].metadata.region_id);
+			const ns_64_bit region_id(movement_results.samples[i].regions[j].metadata.region_id);
 			const ns_time_series_denoising_parameters time_series_denoising_parameters(ns_time_series_denoising_parameters::load_from_db(movement_results.samples[i].regions[j].metadata.region_id,sql()));
 
 			if (single_region && region_id != data_selector.current_region().region_id)
@@ -5770,10 +5770,12 @@ void ns_worm_learner::touch_worm_window_pixel_internal(const ns_button_press & p
 
 
 	if (press.click_type == ns_button_press::ns_up){
-		if (press.right_button || press.control_key_held)
+		if (press.control_key_held)
 			death_time_solo_annotater.register_click(ns_vector_2i(press.image_position.x,press.image_position.y),ns_image_series_annotater::ns_cycle_flags);
 		else if (press.shift_key_held)
 			death_time_solo_annotater.register_click(ns_vector_2i(press.image_position.x,press.image_position.y),ns_image_series_annotater::ns_annotate_extra_worm);
+		else if (press.right_button)
+			death_time_solo_annotater.register_click(ns_vector_2i(press.image_position.x, press.image_position.y), ns_image_series_annotater::ns_cycle_state_alt_key_held);
 		else
 			death_time_solo_annotater.register_click(ns_vector_2i(press.image_position.x,press.image_position.y),ns_image_series_annotater::ns_cycle_state);
 	}
@@ -5794,7 +5796,7 @@ void ns_worm_learner::draw_image(const double x, const double y, ns_image_standa
 	ns_image_properties new_image_size = image.properties();
 
 
-	cout << "im" << new_image_size.width << "," << new_image_size.height << " : ";
+	//cout << "im" << new_image_size.width << "," << new_image_size.height << " : ";
 	new_image_size.components = 3;
 	//if the image is larger than the display size
 	//it should be downsampled before being sent to the video card.
@@ -5821,7 +5823,7 @@ void ns_worm_learner::draw_image(const double x, const double y, ns_image_standa
 	}
 	main_window.gl_image_size.y= (unsigned int)floor(new_image_size.height*gl_resize);
 	main_window.gl_image_size.x = (unsigned int)floor(new_image_size.width*gl_resize);
-	cout << "gl" << 	main_window.gl_image_size.x << "," << 	main_window.gl_image_size.y << "\n ";
+	//cout << "gl" << 	main_window.gl_image_size.x << "," << 	main_window.gl_image_size.y << "\n ";
 
 	if (main_window.gl_buffer_properties.width != new_image_size.width || main_window.gl_buffer_properties.height != new_image_size.height || main_window.gl_buffer_properties.components != new_image_size.components){
 		
@@ -5858,8 +5860,9 @@ void ns_worm_learner::draw_image(const double x, const double y, ns_image_standa
 	area_handler.draw_boxes(main_window.gl_buffer ,image.properties(),main_window.pre_gl_downsample,main_window.image_zoom);
 
 	//now we handle the gl scaling
-	if (main_window.gl_image_size.x*main_window.display_rescale_factor > this->maximum_window_size.x ||
-		main_window.gl_image_size.y*main_window.display_rescale_factor > this->maximum_window_size.y){
+	if (main_window.display_rescale_factor <= 1 && 
+		(main_window.gl_image_size.x*main_window.display_rescale_factor > this->maximum_window_size.x ||
+		main_window.gl_image_size.y*main_window.display_rescale_factor > this->maximum_window_size.y)){
 		cerr << "Cannot resize, as the current window has hit the maximum size specified in the ns_worm_browser.ini file\n";
 		main_window.display_rescale_factor = floor(min(maximum_window_size.x/(double)main_window.gl_image_size.x,
 												maximum_window_size.y/(double)main_window.gl_image_size.y)*10)/10;
@@ -5933,9 +5936,11 @@ void ns_worm_learner::draw_worm_window_image(ns_image_standard & image){
 		worm_window.gl_buffer_properties.width = buffer_size.x;
 		worm_window.gl_buffer_properties.height = buffer_size.y;
 	}
-	const unsigned long worm_image_height = (image.properties().height-ns_death_time_solo_posture_annotater_timepoint::bottom_border_height())/worm_window.pre_gl_downsample;
+	const unsigned long worm_image_height = (new_image_size.height - death_time_solo_annotater.bottom_margin_position().y-1)/worm_window.pre_gl_downsample;
 	if (image.properties().components == 3) {
 	  //copy over the top border area of the image (which contains only text and metata) without rescaling
+
+
 		for (int _y = 0; _y< worm_image_height; _y++) {
 			for (unsigned int _x = 0; _x < new_image_size.width; _x++) {
 				worm_window.gl_buffer[3 * (worm_window.gl_buffer_properties.width*_y + _x)] =
@@ -5948,11 +5953,12 @@ void ns_worm_learner::draw_worm_window_image(ns_image_standard & image){
 			//	for (unsigned int _x = new_image_size.width; _x < buffer_size.x; _x++)
 			//	  for (int c = 0; c < 3; c++)
 			//	    worm_window.gl_buffer[3 * (worm_window.gl_buffer_properties.width*_y + _x)+c] = 0; 
+		//	worm_window.gl_buffer[3 * (worm_window.gl_buffer_properties.width*_y)+1] = 255;
 		}
 		//copy over the bottom area of the imate (which contains the image of the worm)
 	
-	for (int _y = worm_image_height; _y < new_image_size.height; _y++) {
 	  //cerr << image.properties().height - 1 - _y*worm_window.pre_gl_downsample << "," << 3 * new_image_size.width*worm_window.pre_gl_downsample << " ";
+	for (int _y = worm_image_height; _y < new_image_size.height; _y++) {
 			for (unsigned int _x = 0; _x < new_image_size.width; _x++) {
 		     
 			    worm_window.gl_buffer[3 * (worm_window.gl_buffer_properties.width*_y + _x)] = 
@@ -5962,6 +5968,7 @@ void ns_worm_learner::draw_worm_window_image(ns_image_standard & image){
 				worm_window.gl_buffer[3 * (worm_window.gl_buffer_properties.width*_y + _x) + 2] =
 					ns_rescale(image[(image.properties().height - 1 - _y*worm_window.pre_gl_downsample)][3 * _x*worm_window.pre_gl_downsample + 2], worm_window.dynamic_range_rescale_factor);
 			}
+		//	worm_window.gl_buffer[3 * (worm_window.gl_buffer_properties.width*_y)] = 255;
 		}
 	
 	//	cout << "("<< image.properties().height << "," << image.properties().width << ")\n";
@@ -5985,7 +5992,7 @@ void ns_worm_learner::draw_worm_window_image(ns_image_standard & image){
 			//clear out bottom margin
 			for (int _y = death_time_solo_annotater.telemetry.image_size().y; _y < worm_window.gl_buffer_properties.height; _y++)
 				for (unsigned int _x = 3 * new_image_size.width; _x < 3 * worm_window.gl_buffer_properties.width; _x++)
-					worm_window.gl_buffer[3 * (worm_window.gl_buffer_properties.height- _y)*worm_window.gl_buffer_properties.width + _x] = 0;
+					worm_window.gl_buffer[3 * (worm_window.gl_buffer_properties.height - _y-1)*worm_window.gl_buffer_properties.width + _x] = 0;
 		
 	//		death_time_solo_annotater.draw_registration_debug(ns_vector_2i(new_prop.width, death_time_solo_annotater.telemetry.image_size().y),
 		//		ns_vector_2i(worm_window.gl_buffer_properties.width,
@@ -6004,12 +6011,12 @@ void ns_worm_learner::draw_worm_window_image(ns_image_standard & image){
 	
 	
 	//now we handle the gl scaling
-	if (worm_window.gl_image_size.x*worm_window.display_rescale_factor > this->maximum_window_size.x ||
-		worm_window.gl_image_size.y*worm_window.display_rescale_factor > this->maximum_window_size.y){
+	if (worm_window.display_rescale_factor <= 1 && (worm_window.gl_image_size.x*worm_window.display_rescale_factor > this->maximum_window_size.x ||
+		worm_window.gl_image_size.y*worm_window.display_rescale_factor > this->maximum_window_size.y)){
 		cerr << "Cannot resize, as the current window has hit the maximum size specified in the ns_worm_browser.ini file\n";
 		worm_window.display_rescale_factor = floor(min(maximum_window_size.x/(double)worm_window.gl_image_size.x,
 											           maximum_window_size.y/(double)worm_window.gl_image_size.y)*10)/10;
-		cerr << worm_window.display_rescale_factor << " ";
+		//cerr << worm_window.display_rescale_factor << " ";
 	}
 
 
@@ -7529,10 +7536,12 @@ void ns_death_time_solo_posture_annotater::register_click(const ns_vector_2i & i
 	}
 	if (!click_handled_by_hand_bar_choice) {
 		switch (action) {
-		case ns_cycle_state:  current_by_hand_timing_data().animals[current_animal_id].step_event(
+		case ns_cycle_state:
+		case ns_cycle_state_alt_key_held:
+			current_by_hand_timing_data().animals[current_animal_id].step_event(
 			ns_death_timing_data_step_event_specification(
 				current_time_interval(), current_worm->element(current_element_id()),
-				properties_for_all_animals.region_info_id, properties_for_all_animals.stationary_path_id, current_animal_id), current_worm->observation_limits());
+				properties_for_all_animals.region_info_id, properties_for_all_animals.stationary_path_id, current_animal_id), current_worm->observation_limits(),action== ns_cycle_state_alt_key_held);
 			change_made = true;
 			break;
 		case ns_cycle_flags:
@@ -7562,7 +7571,7 @@ void ns_death_time_solo_posture_annotater::register_click(const ns_vector_2i & i
 				current_by_hand_timing_data().animals.rbegin()->step_event(
 					ns_death_timing_data_step_event_specification(
 						current_time_interval(), current_worm->element(current_element_id()),
-						properties_for_all_animals.region_info_id, properties_for_all_animals.stationary_path_id, new_animal_id), current_worm->observation_limits());
+						properties_for_all_animals.region_info_id, properties_for_all_animals.stationary_path_id, new_animal_id), current_worm->observation_limits(),false);
 				this->current_animal_id = new_animal_id;
 				unsigned long new_sticky_label = current_by_hand_timing_data().animals.size();
 				if (current_annotated_worm_count > new_sticky_label)

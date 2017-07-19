@@ -338,7 +338,7 @@ public:
 	}
 	virtual void display_current_frame()=0;
 	
-	typedef enum {ns_cycle_state,ns_censor,ns_annotate_extra_worm, ns_censor_all,ns_load_worm_details, ns_cycle_flags,ns_output_images,ns_increase_contrast,ns_decrease_contrast} ns_click_request;
+	typedef enum {ns_cycle_state, ns_cycle_state_alt_key_held,ns_censor,ns_annotate_extra_worm, ns_censor_all,ns_load_worm_details, ns_cycle_flags,ns_output_images,ns_increase_contrast,ns_decrease_contrast} ns_click_request;
 	virtual void register_click(const ns_vector_2i & image_position,const ns_click_request & action)=0;
 
 	virtual bool data_saved() const=0;

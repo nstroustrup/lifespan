@@ -156,7 +156,7 @@ private:
 			//if (!tp->division->events[i].annotations_specifiy_censoring)
 			//	continue;
 			ns_color_8 color(ns_annotation_flag_color(tp->division->events[i].event_annotation));
-			std::map<unsigned long,bool>::iterator p = excluded_regions.find(tp->division->events[i].event_annotation.region_info_id);
+			std::map<ns_64_bit,bool>::iterator p = excluded_regions.find(tp->division->events[i].event_annotation.region_info_id);
 			if (p == excluded_regions.end())
 				cerr << "Could not find reigon in excluded region list!\n";
 			else{
@@ -444,9 +444,9 @@ private:
 	mutable bool saved_;
 	ns_region_metadata strain_to_display;
 	ns_censor_masking censor_masking;
-	typedef std::map<unsigned long,bool> ns_event_display_spec_list;
+	typedef std::map<ns_64_bit,bool> ns_event_display_spec_list;
 	ns_event_display_spec_list display_events_from_region;
-	std::map<unsigned long,bool> excluded_regions;
+	std::map<ns_64_bit,bool> excluded_regions;
 public:
 	void set_resize_factor(const unsigned long resize_factor_){
 		resize_factor = resize_factor_;

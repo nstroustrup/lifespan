@@ -14,7 +14,7 @@ class ns_death_time_posture_solo_annotater_region_data {
 public:
  ns_death_time_posture_solo_annotater_region_data() :movement_data_loaded(false), annotation_file("","", ""), loading_time(0), loaded_path_data_successfully(false), movement_quantification_data_loaded(false){}
 	
-	void load_movement_analysis(const unsigned long region_id_, ns_sql & sql, const bool load_movement_quantification = false) {
+	void load_movement_analysis(const ns_64_bit region_id_, ns_sql & sql, const bool load_movement_quantification = false) {
 		if (!movement_data_loaded) {
 			solution.load_from_db(region_id_, sql, true);
 		}
@@ -193,8 +193,11 @@ private:
 				break;
 			}
 		}
-		float max_raw_score = scores[scores.size()-scores.size() / 50 -1];
-	
+		float max_raw_score = scores[scores.size() - scores.size() / 50 - 1];
+		if (max_raw_score == min_raw_score) {
+			min_raw_score -= .01;
+			max_raw_score += .01;
+		}
 		for (unsigned int i = 0; i < movement_vals.y.size(); i++) {
 			double d(path->element(i).measurements.death_time_posture_analysis_measure_v2());
 			if (d >= max_raw_score) d = log(max_raw_score - min_raw_score);
@@ -394,7 +397,10 @@ public:
 	}
 	ns_vector_2i image_size() const { 
 		if (!_show) return ns_vector_2i(0, 0);
-		return ns_vector_2i(300, 300); 
+		return largest_possible_image_size();
+	}	
+	ns_vector_2i largest_possible_image_size() const {
+		return ns_vector_2i(300, 300);
 	}
 	ns_vector_2i border() const {
 		return ns_vector_2i(25, 25);

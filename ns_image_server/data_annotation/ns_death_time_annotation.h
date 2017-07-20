@@ -181,7 +181,10 @@ struct ns_death_time_annotation{
 		annotation_source(ns_unknown),excluded(ns_not_excluded),number_of_worms_at_location_marked_by_hand(0),multiworm_censoring_strategy(ns_not_applicable),
 		number_of_worms_at_location_marked_by_machine(0),annotation_time(0),disambiguation_type(ns_single_worm), flag(ns_death_time_annotation_flag::none()),loglikelihood(1),animal_id_at_position(0),
 		missing_worm_return_strategy(ns_not_specified),volatile_matches_machine_detected_death(false),event_observation_type(ns_standard),
-		by_hand_annotation_integration_strategy(ns_only_machine_annotations),inferred_animal_location(false){}
+		by_hand_annotation_integration_strategy(ns_only_machine_annotations),inferred_animal_location(false){
+		volatile_time_at_death_contraction_start.period_end_was_not_observed = volatile_time_at_death_contraction_start.period_start_was_not_observed = true;
+		volatile_time_at_death_contraction_end = volatile_time_at_death_contraction_start;
+	}
 
 	ns_death_time_annotation(const ns_movement_event type_, const ns_64_bit region_id_, const ns_64_bit region_info_id_,
 		const ns_death_time_annotation_time_interval time_, const ns_vector_2i & pos, const ns_vector_2i & size_,const ns_exclusion_type excluded_,
@@ -194,7 +197,10 @@ struct ns_death_time_annotation{
 				number_of_worms_at_location_marked_by_machine(event_counts.machine_count),volatile_matches_machine_detected_death(false),
 				annotation_time(annotation_time_),annotation_source(source_type),annotation_source_details(annotation_details_),inferred_animal_location(inferred_animal_location_),
 				disambiguation_type(d),stationary_path_id(s_id),flag(ns_death_time_annotation_flag::none()),event_observation_type(event_observation_type_),
-				animal_is_part_of_a_complete_trace(animal_is_part_of_a_complete_trace_),longest_gap_without_observation(longest_gap_without_observation_),missing_worm_return_strategy(missing_worm_return_strategy_),animal_id_at_position(0),by_hand_annotation_integration_strategy(by_hand_strategy){}
+				animal_is_part_of_a_complete_trace(animal_is_part_of_a_complete_trace_),longest_gap_without_observation(longest_gap_without_observation_),missing_worm_return_strategy(missing_worm_return_strategy_),animal_id_at_position(0),by_hand_annotation_integration_strategy(by_hand_strategy){
+		volatile_time_at_death_contraction_start.period_end_was_not_observed = volatile_time_at_death_contraction_start.period_start_was_not_observed = true;
+		volatile_time_at_death_contraction_end = volatile_time_at_death_contraction_start;
+	}
 	
 	static std::string source_type_to_string(const ns_annotation_source_type & t);
 

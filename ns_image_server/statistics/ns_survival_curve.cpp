@@ -895,9 +895,16 @@ void ns_lifespan_experiment_set::out_simple_JMP_event_data(const ns_time_handing
 		o << ",";
 		o << a.volatile_duration_of_time_not_fast_moving/time_scaling_factor << ",";
 		o << a.longest_gap_without_observation/time_scaling_factor << ",";	
+		if (a.volatile_time_at_death_contraction_start.fully_unbounded())
+			o << (time_handling_behavior == ns_output_single_event_times ? "" : ",");
+		else
 		ns_output_JMP_time_interval(time_handling_behavior, a.volatile_time_at_death_contraction_start - metadata.time_at_which_animals_had_zero_age,
 			time_scaling_factor, o);
-		o << ",";
+		o << ","; 
+		
+		if (a.volatile_time_at_death_contraction_end.fully_unbounded())
+			o << (time_handling_behavior == ns_output_single_event_times ? "" : ",");
+		else
 		ns_output_JMP_time_interval(time_handling_behavior, a.volatile_time_at_death_contraction_end - metadata.time_at_which_animals_had_zero_age,
 			time_scaling_factor, o);
 		o << ",";

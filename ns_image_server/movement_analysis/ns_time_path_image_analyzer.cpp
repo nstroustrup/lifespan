@@ -6668,7 +6668,8 @@ ns_time_path_posture_movement_solution ns_threshold_movement_posture_analyzer::r
 	long last_time_point_at_which_slow_movement_was_observed(first_valid_event_index),
 		last_time_point_at_which_posture_changes_were_observed(first_valid_event_index),
 		time_point_at_which_death_time_expansion_peaked(first_valid_event_index),
-		time_point_at_which_death_time_expansion_started(first_valid_event_index);
+		time_point_at_which_death_time_expansion_started(first_valid_event_index),
+		time_point_at_which_death_time_expansion_stopped(first_valid_event_index);
 
 	unsigned long longest_gap_in_slow(0),longest_gap_in_posture(0),longest_gap_in_dead(0);
 
@@ -6772,13 +6773,24 @@ ns_time_path_posture_movement_solution ns_threshold_movement_posture_analyzer::r
 				found_death_time_expansion = true;
 				time_point_at_which_death_time_expansion_peaked = max_tt;
 				time_point_at_which_death_time_expansion_started = max_tt;
+				time_point_at_which_death_time_expansion_stopped = max_tt;
 				//push backwards in time until the animal stops growing
 			//	cerr << "*\n";
 				for (long tt = max_tt; tt >= 0; tt--) {
-				//	cout << path->element(tt).measurements.change_in_total_stabilized_intensity << "\n";
+					if (path->element(tt).excluded)
+						continue;
 					if (path->element(tt).measurements.change_in_total_stabilized_intensity > 0) {
 						time_point_at_which_death_time_expansion_started = tt;
 					}else
+						break;
+				}
+				for (long tt = max_tt; tt < path->element_count(); tt++) {
+					if (path->element(tt).excluded)
+						continue;
+					if (path->element(tt).measurements.change_in_total_stabilized_intensity > 0) {
+						time_point_at_which_death_time_expansion_stopped = tt;
+					}
+					else
 						break;
 				}
 			}
@@ -6828,7 +6840,7 @@ ns_time_path_posture_movement_solution ns_threshold_movement_posture_analyzer::r
 	solution.expanding.skipped = !found_death_time_expansion;
 	if (!solution.expanding.skipped) {
 		solution.expanding.start_index = time_point_at_which_death_time_expansion_started;
-		solution.expanding.end_index = time_point_at_which_death_time_expansion_peaked;
+		solution.expanding.end_index = time_point_at_which_death_time_expansion_stopped;
 	}
 
 	if (solution.dead.skipped &&

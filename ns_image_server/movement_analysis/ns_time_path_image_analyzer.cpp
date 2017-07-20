@@ -2360,6 +2360,7 @@ long ns_find_last_valid_observation_index(const long index,const ns_analyzed_ima
 }
 
 
+
 void calculate_state_transitions_in_the_presence_of_missing_states(
 	const ns_movement_state_time_interval_indicies & frame_before_first,
 	const ns_movement_state_observation_boundary_interval & slow_moving_interval,
@@ -2585,6 +2586,7 @@ void ns_analyzed_image_time_path::detect_death_times_and_generate_annotations_fr
 			else{
 				slow_moving_interval.exit_interval.period_end_index = movement_state_solution.moving.end_index;
 				slow_moving_interval.exit_interval.period_start_index = ns_find_last_valid_observation_index(movement_state_solution.moving.end_index,elements);
+				if (slow_moving_interval.exit_interval.period_start_index == -1) slow_moving_interval.exit_interval = frame_before_first;
 			}
 		}
 		if (movement_state_solution.slowing.skipped){
@@ -2602,7 +2604,8 @@ void ns_analyzed_image_time_path::detect_death_times_and_generate_annotations_fr
 				posture_changing_interval.exit_interval	= frame_after_last;
 			else{
 				posture_changing_interval.exit_interval.period_end_index = movement_state_solution.slowing.end_index;
-				posture_changing_interval.exit_interval.period_start_index = ns_find_last_valid_observation_index(movement_state_solution.slowing.end_index,elements);
+				posture_changing_interval.exit_interval.period_start_index = ns_find_last_valid_observation_index(movement_state_solution.slowing.end_index,elements); 
+				if (posture_changing_interval.exit_interval.period_start_index == -1) posture_changing_interval.exit_interval = frame_before_first;
 			}
 		}
 		if (movement_state_solution.dead.skipped){
@@ -2618,6 +2621,20 @@ void ns_analyzed_image_time_path::detect_death_times_and_generate_annotations_fr
 				dead_interval.entrance_interval = posture_changing_interval.exit_interval;
 
 			dead_interval.exit_interval = frame_after_last;
+		}
+		if (movement_state_solution.expanding.skipped)
+			expansion_interval.skipped = true;
+		else {
+			expansion_interval.skipped = false;
+
+			expansion_interval.entrance_interval.period_end_index = movement_state_solution.expanding.start_index;
+			expansion_interval.entrance_interval.period_start_index = ns_find_last_valid_observation_index(movement_state_solution.expanding.start_index, elements);
+			if (expansion_interval.entrance_interval.period_start_index == -1)expansion_interval.entrance_interval = frame_before_first;
+
+
+			expansion_interval.exit_interval.period_end_index = movement_state_solution.expanding.end_index;
+			expansion_interval.exit_interval.period_start_index = ns_find_last_valid_observation_index(movement_state_solution.expanding.end_index, elements);
+			if (expansion_interval.exit_interval.period_start_index == -1)expansion_interval.exit_interval = frame_before_first;
 		}
 	
 		state_intervals[ns_movement_slow] = slow_moving_interval;
@@ -2706,6 +2723,29 @@ void ns_analyzed_image_time_path::detect_death_times_and_generate_annotations_fr
 			elements[i].part_of_a_multiple_worm_disambiguation_group?ns_death_time_annotation::ns_part_of_a_mutliple_worm_disambiguation_cluster:ns_death_time_annotation::ns_single_worm,
 			path_id,part_of_a_full_trace,elements[i].inferred_animal_location,reason_to_be_censored,loglikelihood_of_solution,longest_skipped_interval_before_death)
 			);
+	}
+
+	if (!expansion_interval_including_missed_states.skipped) {
+		set.add(
+			ns_death_time_annotation(ns_death_posture_relaxation_start,
+				0, region_info_id,
+				ns_death_time_annotation_time_interval(state_entrance_interval_time(expansion_interval_including_missed_states)),
+				elements[expansion_interval_including_missed_states.entrance_interval.period_end_index].region_offset_in_source_image(),
+				elements[expansion_interval_including_missed_states.entrance_interval.period_end_index].worm_region_size(),
+				exclusion_type,
+				ns_death_time_annotation_event_count(1 + number_of_extra_worms_in_path, 0), current_time, ns_death_time_annotation::ns_lifespan_machine,
+				part_of_a_multiple_worm_disambiguation_group ? ns_death_time_annotation::ns_part_of_a_mutliple_worm_disambiguation_cluster : ns_death_time_annotation::ns_single_worm,
+				path_id, part_of_a_full_trace, elements[expansion_interval_including_missed_states.entrance_interval.period_end_index].inferred_animal_location, reason_to_be_censored, loglikelihood_of_solution, longest_skipped_interval_before_death));
+		set.add(
+			ns_death_time_annotation(ns_death_posture_relaxation_termination,
+				0, region_info_id,
+				ns_death_time_annotation_time_interval(state_exit_interval_time(expansion_interval_including_missed_states)),
+				elements[expansion_interval_including_missed_states.entrance_interval.period_end_index].region_offset_in_source_image(),
+				elements[expansion_interval_including_missed_states.entrance_interval.period_end_index].worm_region_size(),
+				exclusion_type,
+				ns_death_time_annotation_event_count(1 + number_of_extra_worms_in_path, 0), current_time, ns_death_time_annotation::ns_lifespan_machine,
+				part_of_a_multiple_worm_disambiguation_group ? ns_death_time_annotation::ns_part_of_a_mutliple_worm_disambiguation_cluster : ns_death_time_annotation::ns_single_worm,
+				path_id, part_of_a_full_trace, elements[expansion_interval_including_missed_states.entrance_interval.period_end_index].inferred_animal_location, reason_to_be_censored, loglikelihood_of_solution, longest_skipped_interval_before_death));
 	}
 	
 	if (posture_changing_interval_including_missed_states.skipped && dead_interval_including_missed_states.skipped)
@@ -2826,29 +2866,7 @@ void ns_analyzed_image_time_path::detect_death_times_and_generate_annotations_fr
 			path_id,part_of_a_full_trace,elements[i].inferred_animal_location,reason_to_be_censored,loglikelihood_of_solution,longest_skipped_interval_before_death));
 	}
 
-	if (!expansion_interval_including_missed_states.skipped) {
-		set.add(
-			ns_death_time_annotation(ns_death_posture_relaxation_start,
-				0, region_info_id,
-				ns_death_time_annotation_time_interval(state_entrance_interval_time(expansion_interval_including_missed_states)),
-				elements[expansion_interval_including_missed_states.entrance_interval.period_end_index].region_offset_in_source_image(),
-				elements[expansion_interval_including_missed_states.entrance_interval.period_end_index].worm_region_size(),
-				exclusion_type,
-				ns_death_time_annotation_event_count(1 + number_of_extra_worms_in_path, 0), current_time, ns_death_time_annotation::ns_lifespan_machine,
-				part_of_a_multiple_worm_disambiguation_group ? ns_death_time_annotation::ns_part_of_a_mutliple_worm_disambiguation_cluster : ns_death_time_annotation::ns_single_worm,
-				path_id, part_of_a_full_trace, elements[expansion_interval_including_missed_states.entrance_interval.period_end_index].inferred_animal_location, reason_to_be_censored, loglikelihood_of_solution, longest_skipped_interval_before_death));
-		set.add(
-			ns_death_time_annotation(ns_death_posture_relaxation_termination,
-				0, region_info_id,
-				ns_death_time_annotation_time_interval(state_exit_interval_time(expansion_interval_including_missed_states)),
-				elements[expansion_interval_including_missed_states.entrance_interval.period_end_index].region_offset_in_source_image(),
-				elements[expansion_interval_including_missed_states.entrance_interval.period_end_index].worm_region_size(),
-				exclusion_type,
-				ns_death_time_annotation_event_count(1 + number_of_extra_worms_in_path, 0), current_time, ns_death_time_annotation::ns_lifespan_machine,
-				part_of_a_multiple_worm_disambiguation_group ? ns_death_time_annotation::ns_part_of_a_mutliple_worm_disambiguation_cluster : ns_death_time_annotation::ns_single_worm,
-				path_id, part_of_a_full_trace, elements[expansion_interval_including_missed_states.entrance_interval.period_end_index].inferred_animal_location, reason_to_be_censored, loglikelihood_of_solution, longest_skipped_interval_before_death));
-	}
-	//const ns_death_time_annotation_time_interval death_exit_time(ns_death_time_annotation_time_interval(state_exit_interval_time(dead_interval)));
+	
 
 	//if the path ends before the end of the plate's observations
 	//output an annotation there.

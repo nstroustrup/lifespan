@@ -432,7 +432,8 @@ private:
 		//handle out of bound values
 		for (ns_animal_list_at_position::ns_animal_list::iterator p = current_by_hand_timing_data().animals.begin(); p != current_by_hand_timing_data().animals.end(); p++){
 			ns_crop_time(observation_limit,first_path_obs,last_path_obs,p->fast_movement_cessation.time);
-			ns_crop_time(observation_limit,first_path_obs,last_path_obs,p->death_posture_relaxation_termination.time);
+			ns_crop_time(observation_limit,first_path_obs,last_path_obs,p->death_posture_relaxation_termination_.time);
+			ns_crop_time(observation_limit, first_path_obs, last_path_obs, p->death_posture_relaxation_start.time);
 			ns_crop_time(observation_limit,first_path_obs,last_path_obs,p->movement_cessation.time);
 			ns_crop_time(observation_limit,first_path_obs,last_path_obs,p->translation_cessation.time);
 		}
@@ -840,7 +841,9 @@ public:
 					saved_ = false;
 				if (ns_fix_annotation(current_region_data->by_hand_timing_data[worm.group_id].animals[j].movement_cessation,*current_worm))
 					saved_ = false;
-				if (ns_fix_annotation(current_region_data->by_hand_timing_data[worm.group_id].animals[j].death_posture_relaxation_termination,*current_worm))
+				if (ns_fix_annotation(current_region_data->by_hand_timing_data[worm.group_id].animals[j].death_posture_relaxation_termination_,*current_worm))
+					saved_ = false;
+				if (ns_fix_annotation(current_region_data->by_hand_timing_data[worm.group_id].animals[j].death_posture_relaxation_start, *current_worm))
 					saved_ = false;
 			}
 			if (!saved_){

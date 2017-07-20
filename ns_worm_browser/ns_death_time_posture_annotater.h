@@ -166,7 +166,7 @@ public:
 	ns_death_time_annotation translation_cessation,
 		movement_cessation,
 		death_posture_relaxation_start,
-		death_posture_relaxation_termination;
+		death_posture_relaxation_termination_;
 	bool tentative_death_posture_relaxation_start_spec;
 	
 	void output_event_times(std::ostream & o){
@@ -174,7 +174,7 @@ public:
 			<< "Translation: " << translation_cessation << "\n"
 			<< "Movement Cessation " << movement_cessation << "\n"
 			<< "Death Posture Relaxation Start" << death_posture_relaxation_start << "\n"
-		  << "Death Posture Relaxation End" << death_posture_relaxation_termination << "\n";
+		  << "Death Posture Relaxation End" << death_posture_relaxation_termination_ << "\n";
 	}
 
 	ns_death_time_annotation animal_specific_sticky_properties;
@@ -187,8 +187,8 @@ public:
 			annotations.push_back(translation_cessation);
 		if (movement_cessation.time.period_end != 0)
 			annotations.push_back(movement_cessation);
-		if (death_posture_relaxation_termination.time.period_end != 0)
-			annotations.push_back(death_posture_relaxation_termination);
+		if (death_posture_relaxation_termination_.time.period_end != 0)
+			annotations.push_back(death_posture_relaxation_termination_);
 		if (death_posture_relaxation_start.time.period_end != 0)
 			annotations.push_back(death_posture_relaxation_start);
 	}
@@ -285,7 +285,7 @@ public:
 			}
 		
 			if (y < size.y / 2 &&
-				death_posture_relaxation_termination.time.period_end != 0 && death_posture_relaxation_termination.time.period_end >= path_start_time) {
+				death_posture_relaxation_termination_.time.period_end != 0 && death_posture_relaxation_termination_.time.period_end >= path_start_time) {
 
 				if (death_posture_relaxation_start.time.period_end != 0)
 					death_relaxation_start_time = death_posture_relaxation_start.time.period_end;
@@ -293,7 +293,7 @@ public:
 				if (death_relaxation_start_time > last_path_frame_time)
 					throw ns_ex("Invalid Death Posture Relaxation Start Time!");
 				c = ns_movement_colors::color(ns_movement_death_posture_relaxation)*scaling;
-				for (int x = (int)((death_relaxation_start_time - path_start_time)*dt); x < (int)((death_posture_relaxation_termination.time.period_start - path_start_time)*dt); x++) {
+				for (int x = (int)((death_relaxation_start_time - path_start_time)*dt); x < (int)((death_posture_relaxation_termination_.time.period_start - path_start_time)*dt); x++) {
 					if (y + pos.y >= im.properties().height || x + pos.x >= im.properties().width || im.properties().components != 3)
 						throw ns_ex("Yikes! 7");
 					im[y + pos.y][3 * (x + pos.x) + 0] = c.x;
@@ -328,7 +328,7 @@ public:
 	}
 
 	bool is_death_time_contracting(const unsigned long time) const{
-		return death_posture_relaxation_termination.time.period_end != 0 && death_posture_relaxation_start.time.period_end <= time && death_posture_relaxation_termination.time.period_end >= time;
+		return death_posture_relaxation_termination_.time.period_end != 0 && death_posture_relaxation_start.time.period_end <= time && death_posture_relaxation_termination_.time.period_end >= time;
 	}
 
 	ns_movement_state movement_state(const unsigned long time) const{
@@ -379,8 +379,8 @@ public:
 					duplication_events++;
 				break;
 			case  ns_death_posture_relaxation_termination:
-				if (death_posture_relaxation_termination.time.period_end == 0)
-					death_posture_relaxation_termination = e;
+				if (death_posture_relaxation_termination_.time.period_end == 0)
+					death_posture_relaxation_termination_ = e;
 				else 
 					duplication_events++;
 				break; 
@@ -471,9 +471,9 @@ public:
 		}
 		else {
 			//the user is specifying the death time relaxation duration
-			if (death_posture_relaxation_termination.time.period_end == 0 ||
-				e.event_time.period_end > death_posture_relaxation_termination.time.period_end) {
-				apply_step_specification(death_posture_relaxation_termination, e, ns_death_posture_relaxation_termination);
+			if (death_posture_relaxation_termination_.time.period_end == 0 ||
+				e.event_time.period_end > death_posture_relaxation_termination_.time.period_end) {
+				apply_step_specification(death_posture_relaxation_termination_, e, ns_death_posture_relaxation_termination);
 				if (death_posture_relaxation_start.time.period_end == 0) {
 					ns_death_timing_data_step_event_specification stp(e);
 					stp.event_time = last_specified_event_before_time(e.event_time.period_end, observation_limits);
@@ -481,9 +481,9 @@ public:
 					tentative_death_posture_relaxation_start_spec = true;
 				}
 			}
-			else  if (e.event_time.period_end == death_posture_relaxation_termination.time.period_end ||
+			else  if (e.event_time.period_end == death_posture_relaxation_termination_.time.period_end ||
 				      e.event_time.period_end == death_posture_relaxation_start.time.period_end) {
-				ns_zero_death_interval(death_posture_relaxation_termination.time);
+				ns_zero_death_interval(death_posture_relaxation_termination_.time);
 				ns_zero_death_interval(death_posture_relaxation_start.time);
 				tentative_death_posture_relaxation_start_spec = false;
 			}
@@ -493,12 +493,12 @@ public:
 				tentative_death_posture_relaxation_start_spec = false;
 			}
 			else {
-				long end_dist = death_posture_relaxation_termination.time.period_end - e.event_time.period_end;
+				long end_dist = death_posture_relaxation_termination_.time.period_end - e.event_time.period_end;
 				long start_dist = e.event_time.period_end - death_posture_relaxation_start.time.period_end;
 				if (end_dist > start_dist || tentative_death_posture_relaxation_start_spec)
 					apply_step_specification(death_posture_relaxation_start, e, ns_death_posture_relaxation_start);
 				else
-					apply_step_specification(death_posture_relaxation_termination, e, ns_death_posture_relaxation_termination);
+					apply_step_specification(death_posture_relaxation_termination_, e, ns_death_posture_relaxation_termination);
 			}
 		}
 
@@ -616,9 +616,12 @@ public:
 			
 			if (p->movement_cessation.time.period_end != 0)
 				set.add(p->movement_cessation);
-			
-			if (p->death_posture_relaxation_termination.time.period_end != 0)
-				set.add(p->death_posture_relaxation_termination);
+
+			if (p->death_posture_relaxation_start.time.period_end != 0)
+				set.add(p->death_posture_relaxation_start);
+
+			if (p->death_posture_relaxation_termination_.time.period_end != 0)
+				set.add(p->death_posture_relaxation_termination_);
 		
 		}
 

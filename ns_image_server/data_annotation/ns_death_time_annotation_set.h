@@ -65,12 +65,12 @@ public:
 template<class T>
 struct ns_dying_animal_description_group{
 	ns_dying_animal_description_group():death_annotation(0),last_slow_movement_annotation(0),last_fast_movement_annotation(0),
-									death_posture_relaxation_termination(0),stationary_worm_dissapearance(0){}
+									death_posture_relaxation_start(0), death_posture_relaxation_termination_(0),stationary_worm_dissapearance(0){}
 	T *death_annotation,
 								*last_slow_movement_annotation,
 								*last_fast_movement_annotation,
 								*death_posture_relaxation_start,
-								*death_posture_relaxation_termination,
+								*death_posture_relaxation_termination_,
 								*stationary_worm_dissapearance;
 	std::vector<T *> slow_moving_state_annotations,
 				   posture_changing_state_annotations,

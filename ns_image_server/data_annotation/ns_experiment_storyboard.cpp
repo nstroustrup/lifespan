@@ -801,8 +801,8 @@ bool ns_experiment_storyboard::load_events_from_annotation_compiler(const ns_loa
 				}
 				break;
 			case ns_death_posture_relaxation_termination:
-				if (d.machine.death_posture_relaxation_termination != 0) {
-					event_to_place_on_storyboard = *d.machine.death_posture_relaxation_termination;
+				if (d.machine.death_posture_relaxation_termination_ != 0) {
+					event_to_place_on_storyboard = *d.machine.death_posture_relaxation_termination_;
 					state_to_search = ns_stationary_worm_observed;
 					found_storyboard_event = true;
 				}

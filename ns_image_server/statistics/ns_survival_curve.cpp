@@ -799,20 +799,24 @@ void ns_lifespan_experiment_set::out_simple_JMP_header(const ns_time_handing_beh
 	o << ",Event Frequency,";
 	if (time_handling_behavior == ns_output_single_event_times){
 		o << 
-		 "Age at Death (" << time_units << ") Raw,"
+		 "Age at Death (" << time_units << "),"
 		 "Duration Not Fast Moving (" << time_units << "),"
 		 "Longest Gap in Measurement (" << time_units << "),"
-		 "Duration before death contraction end (" << time_units << "),";
+		 "Age at Death-Associated Posture Relaxation Start (" << time_units << "),"
+		 "Age at Death-Associated Posture Relaxation End (" << time_units << "),";
 	//	 "Age at Death (" << time_units << ") Additive Regression Model Residuals,"
 	//	 "Age at Death (" << time_units << ") Multiplicative Regression Model Residuals,";
 	}
 	else{
 		o <<
-		 "Age at Death (" << time_units << ") Raw Start,"
-		 "Age at Death (" << time_units << ") Raw End,"
+		 "Age at Death (" << time_units << ") Start,"
+		 "Age at Death (" << time_units << ") End,"
 		 "Duration Not Fast Moving (" << time_units << "),"
 		 "Longest Gap in Measurement (" << time_units << "),"
-		 "Duration before death contraction end (" << time_units << "),";
+		 "Age at Death-Associated Posture Relaxation Start Start(" << time_units << "),"
+			"Age at Death-Associated Posture Relaxation Start End(" << time_units << "),"
+		 "Age at Death-Associated Posture Relaxation End Start(" << time_units << "),"
+		"Age at Death-Associated Posture Relaxation End End(" << time_units << "),";
 	}
 		// "Age at Death (" << time_units << ") Multiplicative + Additive offset Regression Model Residuals,"
 	o << "Censored,Censored Reason,Event Observation Type,Annotation Source,Technique,Analysis Type";
@@ -890,8 +894,13 @@ void ns_lifespan_experiment_set::out_simple_JMP_event_data(const ns_time_handing
 							time_scaling_factor,o);
 		o << ",";
 		o << a.volatile_duration_of_time_not_fast_moving/time_scaling_factor << ",";
-		o << a.longest_gap_without_observation/time_scaling_factor << ",";
-		o << a.volatile_time_spent_before_end_of_death_time_contraction/time_scaling_factor << ",";
+		o << a.longest_gap_without_observation/time_scaling_factor << ",";	
+		ns_output_JMP_time_interval(time_handling_behavior, a.volatile_time_at_death_contraction_start - metadata.time_at_which_animals_had_zero_age,
+			time_scaling_factor, o);
+		o << ",";
+		ns_output_JMP_time_interval(time_handling_behavior, a.volatile_time_at_death_contraction_end - metadata.time_at_which_animals_had_zero_age,
+			time_scaling_factor, o);
+		o << ",";
 		//event_time/time_scaling_factor << ",";
 	
 	/*	if (output_raw_data_as_regression){

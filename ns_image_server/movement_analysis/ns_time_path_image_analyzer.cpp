@@ -6723,11 +6723,11 @@ ns_time_path_posture_movement_solution ns_threshold_movement_posture_analyzer::r
 		intensity_changes.reserve(50);
 		double max_intensity_change(-DBL_MAX);
 		unsigned long time_of_max_intensity_change(0);
+
 		//here we are calculate a running average rate of increase in intensity within the stablized region
 		//we then identify the largest increase after death, and call that the death time increase
 		for (long t = last_time_point_at_which_posture_changes_were_observed; t < path->element_count(); t++) {
 			unsigned long cur_t = path->element(t).absolute_time;
-
 			//find largest intensity change within in kernel to use as the "peak time".
 			ns_s64_bit max_val = path->element(t).measurements.change_in_total_stabilized_intensity;
 			ns_s64_bit max_tt = t;
@@ -6741,6 +6741,7 @@ ns_time_path_posture_movement_solution ns_threshold_movement_posture_analyzer::r
 				}
 			}
 
+			
 			ns_s64_bit total_intensity_change(0);
 			for (unsigned int i = 0; i < intensity_changes.size(); i++)
 				total_intensity_change += intensity_changes[i];
@@ -6752,12 +6753,25 @@ ns_time_path_posture_movement_solution ns_threshold_movement_posture_analyzer::r
 				time_of_max_intensity_change = max_tt;
 				found_death_time_expansion = true;
 				time_point_at_which_death_time_expansion_peaked = max_tt;
+				time_point_at_which_death_time_expansion_started = max_tt;
 				//push backwards in time until the animal stops growing
-				for (long tt = max_tt; tt >= 0 && path->element(tt).measurements.change_in_total_stabilized_intensity > 0; tt--)
-					time_point_at_which_death_time_expansion_started = tt;
+			//	cerr << "*\n";
+				for (long tt = max_tt; tt >= 0; tt--) {
+				//	cout << path->element(tt).measurements.change_in_total_stabilized_intensity << "\n";
+					if (path->element(tt).measurements.change_in_total_stabilized_intensity > 0) {
+						time_point_at_which_death_time_expansion_started = tt;
+					}else
+						break;
+				}
 			}
 			intensity_changes.resize(0);
 		}
+	/*	cerr << "Found death at " << ns_format_time_string_for_human(path->element(last_time_point_at_which_posture_changes_were_observed).absolute_time) << "\n";
+		if (found_death_time_expansion) {
+			cerr << "Found start at " << ns_format_time_string_for_human(path->element(time_point_at_which_death_time_expansion_started).absolute_time) << "\n";
+			cerr << "Found peak at " << ns_format_time_string_for_human(path->element(time_point_at_which_death_time_expansion_peaked).absolute_time) << "\n";
+		}
+		cerr << "\n";*/
 	}
 
 	ns_time_path_posture_movement_solution solution;

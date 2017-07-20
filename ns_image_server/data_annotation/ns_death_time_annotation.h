@@ -176,7 +176,7 @@ struct ns_death_time_annotation{
 
 	std::string static event_observation_label(const ns_event_observation_type & e);
 
-	ns_death_time_annotation():volatile_duration_of_time_not_fast_moving(0),longest_gap_without_observation(0),volatile_time_spent_before_end_of_death_time_contraction(0),
+	ns_death_time_annotation():volatile_duration_of_time_not_fast_moving(0),longest_gap_without_observation(0), volatile_time_at_death_contraction_start(0,0), volatile_time_at_death_contraction_end(0,0),
 		type(ns_no_movement_event),time(0,0),region_info_id(0),region_id(0),position(0,0),size(0,0),animal_is_part_of_a_complete_trace(false),
 		annotation_source(ns_unknown),excluded(ns_not_excluded),number_of_worms_at_location_marked_by_hand(0),multiworm_censoring_strategy(ns_not_applicable),
 		number_of_worms_at_location_marked_by_machine(0),annotation_time(0),disambiguation_type(ns_single_worm), flag(ns_death_time_annotation_flag::none()),loglikelihood(1),animal_id_at_position(0),
@@ -190,7 +190,7 @@ struct ns_death_time_annotation{
 		const double loglikelihood_=1,const unsigned long longest_gap_without_observation_ = 0, const ns_multiworm_censoring_strategy & cen_strat = ns_not_applicable, const ns_missing_worm_return_strategy & missing_worm_return_strategy_ = ns_not_specified, 
 		const ns_event_observation_type & event_observation_type_=ns_standard, const ns_by_hand_annotation_integration_strategy & by_hand_strategy = ns_only_machine_annotations):multiworm_censoring_strategy(cen_strat),loglikelihood(loglikelihood_),
 				type(type_),region_id(region_id_),time(time_),position(pos),size(size_),excluded(excluded_),region_info_id(region_info_id_),volatile_duration_of_time_not_fast_moving(0),
-				number_of_worms_at_location_marked_by_hand(event_counts.hand_count),volatile_time_spent_before_end_of_death_time_contraction(0),
+				number_of_worms_at_location_marked_by_hand(event_counts.hand_count),volatile_time_at_death_contraction_start(0,0), volatile_time_at_death_contraction_end(0,0),
 				number_of_worms_at_location_marked_by_machine(event_counts.machine_count),volatile_matches_machine_detected_death(false),
 				annotation_time(annotation_time_),annotation_source(source_type),annotation_source_details(annotation_details_),inferred_animal_location(inferred_animal_location_),
 				disambiguation_type(d),stationary_path_id(s_id),flag(ns_death_time_annotation_flag::none()),event_observation_type(event_observation_type_),
@@ -283,7 +283,8 @@ struct ns_death_time_annotation{
 	double loglikelihood;
 	bool inferred_animal_location;
 	unsigned long volatile_duration_of_time_not_fast_moving;
-	unsigned long volatile_time_spent_before_end_of_death_time_contraction;
+	ns_death_time_annotation_time_interval volatile_time_at_death_contraction_start,
+										   volatile_time_at_death_contraction_end;
 	bool volatile_matches_machine_detected_death;
 };
 

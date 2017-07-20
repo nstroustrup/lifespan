@@ -55,7 +55,7 @@ std::string ns_death_time_annotation::brief_description() const {
 	bool multip_worm_event(number_of_worms() > 0);
 
 	bool volt(volatile_duration_of_time_not_fast_moving ||
-		volatile_time_spent_before_end_of_death_time_contraction ||
+		!volatile_time_at_death_contraction_start.fully_unbounded() || !volatile_time_at_death_contraction_end.fully_unbounded() ||
 		volatile_matches_machine_detected_death);
 		
 	//bool has_sticky_properties();
@@ -1820,7 +1820,7 @@ class ns_dying_animal_description_generator{
 						group->last_fast_movement_annotation = & annotations[i];
 					break;
 				case ns_death_posture_relaxation_termination:
-						group->death_posture_relaxation_termination = & annotations[i];
+						group->death_posture_relaxation_termination_ = & annotations[i];
 					break;
 				case ns_death_posture_relaxation_start:
 						group->death_posture_relaxation_start= &annotations[i];
@@ -2141,7 +2141,7 @@ void ns_death_time_annotation_compiler_region::generate_survival_curve(ns_surviv
 				for (int by_hand = 0; by_hand < 2; by_hand++){
 
 					//add 1) death 2) slow movement cessation, 3) fast movement cessation and 3) death time contraction termination
-					const ns_death_time_annotation *a[4] = {0,0,0,0};
+					const ns_death_time_annotation *a[5] = {0,0,0,0,0};
 
 					bool matches_machine_detected_death(death.machine.death_annotation != 0);
 
@@ -2151,6 +2151,8 @@ void ns_death_time_annotation_compiler_region::generate_survival_curve(ns_surviv
 						a[0] = death.machine.death_annotation;
 						a[1] = death.machine.last_slow_movement_annotation;
 						a[2] = death.machine.last_fast_movement_annotation;
+						a[3] = death.machine.death_posture_relaxation_start;
+						a[4] = death.machine.death_posture_relaxation_termination_;
 					}
 					//add a by hand annotation, if required
 					else if (by_hand && (death_times_to_use == ns_death_time_annotation::ns_only_by_hand_annotations || 
@@ -2158,41 +2160,36 @@ void ns_death_time_annotation_compiler_region::generate_survival_curve(ns_surviv
 						a[0] = death.by_hand.death_annotation;
 						a[1] = death.by_hand.last_slow_movement_annotation;
 						a[2] = death.by_hand.last_fast_movement_annotation;
-						a[3] = death.by_hand.death_posture_relaxation_termination;
+						a[3] = death.by_hand.death_posture_relaxation_start;
+						a[4] = death.by_hand.death_posture_relaxation_termination_;
 					}
 					//add a by hand annotation, and if one doesn't exist, add a machine annotation
 					else if (!by_hand && (death_times_to_use == ns_death_time_annotation::ns_machine_annotations_if_no_by_hand)){
 						
-						if (death.by_hand.death_annotation != 0){
-							a[0] = death.by_hand.death_annotation;
-							a[3] = death.by_hand.death_posture_relaxation_termination;
-						}
-						else {
-							a[0] = death.machine.death_annotation;
-						}
+						if (death.by_hand.death_annotation != 0) 
+							 a[0] = death.by_hand.death_annotation;
+						else a[0] = death.machine.death_annotation;
 						
 						if (death.by_hand.last_slow_movement_annotation != 0)
-							a[1] = death.by_hand.last_slow_movement_annotation;
-						else 
-							a[1] = death.machine.last_slow_movement_annotation;
+							 a[1] = death.by_hand.last_slow_movement_annotation;
+						else a[1] = death.machine.last_slow_movement_annotation;
 
 						if (death.by_hand.last_fast_movement_annotation != 0)
-							a[2] = death.by_hand.last_fast_movement_annotation;
-						else
-							a[2] = death.machine.last_fast_movement_annotation;
-					/*	if (death.by_hand.death_annotation != 0 && death.machine.death_annotation == 0){
-							if (a[0] != 0 && a[0]->excluded == ns_death_time_annotation::ns_censored_at_end_of_experiment)
-								cerr << "WHA";
-							if (a[1] != 0 && a[1]->excluded == ns_death_time_annotation::ns_censored_at_end_of_experiment)
-								cerr << "WHA";
-							if (a[2] != 0 && a[2]->excluded == ns_death_time_annotation::ns_censored_at_end_of_experiment)
-								cerr << "WHA";
+							 a[2] = death.by_hand.last_fast_movement_annotation;
+						else a[2] = death.machine.last_fast_movement_annotation;
 
-						}*/
+						if (death.by_hand.death_posture_relaxation_start != 0)
+							a[3] = death.by_hand.death_posture_relaxation_start;
+						else a[3] = death.machine.death_posture_relaxation_start;
+
+						if (death.by_hand.death_posture_relaxation_termination_ != 0)
+							a[4] = death.by_hand.death_posture_relaxation_termination_;
+						else a[4] = death.machine.death_posture_relaxation_termination_;
+				
 					}
 					else continue;
 
-					for (unsigned int i = 0; i < 3; i++){
+					for (unsigned int i = 0; i < 5; i++){
 						if (a[i]!=0){
 							ns_death_time_annotation b(*a[i]);
 							ns_death_time_annotation properties_to_transfer(q->properties);
@@ -2234,10 +2231,8 @@ void ns_death_time_annotation_compiler_region::generate_survival_curve(ns_surviv
 								a[2]->time.best_estimate_event_time_for_possible_partially_unbounded_interval();
 
 							//we use this as debugging info in output file
-							if (a[3] != 0 && a[0] != 0)
-								b.volatile_time_spent_before_end_of_death_time_contraction = 
-								a[3]->time.best_estimate_event_time_for_possible_partially_unbounded_interval() - 
-								a[0]->time.best_estimate_event_time_for_possible_partially_unbounded_interval();
+							if (a[3] != 0 && a[0] != 0) b.volatile_time_at_death_contraction_start = a[3]->time;
+							if (a[4] != 0 && a[0] != 0) b.volatile_time_at_death_contraction_end = a[4]->time;
 
 							//regions can be re-analyzed. In this case,
 							//some locations can dissapear (as they no longer exist in the new analysis)

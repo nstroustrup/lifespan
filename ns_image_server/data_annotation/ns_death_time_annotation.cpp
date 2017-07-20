@@ -1271,7 +1271,9 @@ public:
 		if (e.type == ns_no_movement_event) return;
 		if (!ns_movement_event_is_a_state_transition_event(e.type))
 			return;
-		if (e.type == ns_stationary_worm_disappearance)
+		if (e.type == ns_stationary_worm_disappearance ||
+			e.type == ns_death_posture_relaxation_start ||
+			e.type == ns_death_posture_relaxation_termination)
 			return;
 	//	if (e.time.period_start_was_not_observed){
 	//		cerr << "Found an event whose start was not observed";

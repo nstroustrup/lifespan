@@ -338,7 +338,8 @@ private:
 					if (ns_to_lower(grid[event_type_row][i]) != "censored"){
 						throw ns_ex("If a \"censored\" column is specified for a strain, it must be on the right of the \"deaths\" column.");
 					}
-					else throw ns_ex("Unknown Event type: \"") << grid[event_type_row][i] << "\"";
+					else 
+						throw ns_ex("Unknown Event type: \"") << grid[event_type_row][i] << "\"";
 				}
 				data_column=i;
 				if (i+1<grid[event_type_row].size() && ns_to_lower(grid[event_type_row][i+1]) == "censored")

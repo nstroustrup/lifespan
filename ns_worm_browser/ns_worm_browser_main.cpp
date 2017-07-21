@@ -1036,6 +1036,7 @@ class ns_worm_terminal_main_menu_organizer : public ns_menu_organizer{
 	/*****************************
 	Configuration Tasks
 	*****************************/
+	static void show_extra_menus(const std::string & value);
 	static void do_not_overwrite_schedules(const std::string & value){worm_learner.overwrite_submitted_specification(false);}
 	static void overwrite_schedules(const std::string & value){worm_learner.overwrite_submitted_specification(true);}
 	static void do_not_overwrite_existing_masks(const std::string & value){worm_learner.overwrite_existing_masks(false);}
@@ -1148,7 +1149,7 @@ class ns_worm_terminal_main_menu_organizer : public ns_menu_organizer{
 	static void set_database(const std::string & data){
 		image_server.set_sql_database(data,false,worm_learner.get_sql_connection());
 		cerr << "Switching to database " << data << "\n";
-		ns_thread::sleep(15);
+		//ns_thread::sleep(15);
 		get_menu_handler()->update_experiment_choice(*get_menu_bar());
 	}
 	static void file_open(const std::string & data){
@@ -1229,24 +1230,21 @@ public:
 	/*****************************
 	Menu Specification
 	*****************************/
-
-	void update_experiment_choice(Fl_Menu_Bar & bar){
-		ns_acquire_for_scope<ns_sql> sql(image_server.new_sql_connection(__FILE__,__LINE__));
-		ns_acquire_lock_for_scope lock(menu_bar_processing_lock,__FILE__,__LINE__);
+	void redraw_menus(Fl_Menu_Bar & bar) {
 		bar.menu(NULL);
-		clear();
-		
-		
-		worm_learner.data_selector.load_experiment_names(sql());
-		worm_learner.data_selector.set_current_experiment(-1,sql());
+		clear();	
 		add_menus();
-
 		build_menus(bar);
 		bar.redraw();
-		
 		::update_region_choice_menu();
-		lock.release();
+	}
+	void update_experiment_choice(Fl_Menu_Bar & bar){
+		ns_sql & sql(worm_learner.get_sql_connection());
+		ns_acquire_lock_for_scope lock(menu_bar_processing_lock,__FILE__,__LINE__);
 
+		worm_learner.data_selector.load_experiment_names(sql);
+		worm_learner.data_selector.set_current_experiment(-1,sql);
+		redraw_menus(bar);
 	}
 
 	ns_worm_terminal_main_menu_organizer(){
@@ -1278,42 +1276,42 @@ public:
 		add(ns_menu_item_spec(file_save,"File/_Save Image",FL_CTRL+'s'));
 		add(ns_menu_item_spec(file_quit,"File/Quit",FL_CTRL+'q'));
 		
-		add(ns_menu_item_spec(file_open_xml,"&Plate Locations/_Submit Experiment Schedule"));
-		add(ns_menu_item_spec(save_current_areas,"Plate Locations/Define Scan Areas/(Open Preview Capture Image and Draw Scan Areas)",0,FL_MENU_INACTIVE));
-		add(ns_menu_item_spec(save_current_areas,"Plate Locations/Define Scan Areas/Save Selected Scan Areas to Disk"));
-		add(ns_menu_item_spec(clear_current_areas,"Plate Locations/Define Scan Areas/Clear Selected Scan Areas"));
+		add(ns_menu_item_spec(file_open_xml,"&Image Acquisition/_Submit Experiment Schedule"));
+		add(ns_menu_item_spec(save_current_areas,"Image Acquisition/Define Scan Areas/(Open Preview Capture Image and Draw Scan Areas)",0,FL_MENU_INACTIVE));
+		add(ns_menu_item_spec(save_current_areas,"Image Acquisition/Define Scan Areas/Save Selected Scan Areas to Disk"));
+		add(ns_menu_item_spec(clear_current_areas,"Image Acquisition/Define Scan Areas/Clear Selected Scan Areas"));
 
 		//add(ns_menu_item_spec(clipboard_copy,"Clipboard/Copy",FL_CTRL+'c'));
 		//add(ns_menu_item_spec(clipboard_paste,"Clipboard/Paste",FL_CTRL+'v'));
 
-		add(ns_menu_item_spec(masks_generate_composite,"Plate Locations/Define Sample Masks/Generate Experiment Mask Composite"));
-		add(ns_menu_item_spec(masks_generate_composite,"Plate Locations/Define Sample Masks/(Draw Plate Locations on Mask using Photoshop)",0,FL_MENU_INACTIVE));
-		add(ns_menu_item_spec(masks_process_composite,"Plate Locations/Define Sample Masks/Analyze Plate Locations Drawn on Experiment Mask Composite"));
-		add(ns_menu_item_spec(masks_submit_composite,"Plate Locations/Define Sample Masks/_Submit Analyzed Experiment Mask Composite to Cluster"));
-		add(ns_menu_item_spec(open_individual_mask,"Plate Locations/Define Sample Masks/Individual Sample Masks/Analyze Mask"));
+		add(ns_menu_item_spec(masks_generate_composite,"Image Acquisition/Define Sample Masks/Generate Experiment Mask Composite"));
+		add(ns_menu_item_spec(masks_generate_composite,"Image Acquisition/Define Sample Masks/(Draw Plate Locations on Mask using Photoshop)",0,FL_MENU_INACTIVE));
+		add(ns_menu_item_spec(masks_process_composite,"Image Acquisition/Define Sample Masks/Analyze Plate Locations Drawn on Experiment Mask Composite"));
+		add(ns_menu_item_spec(masks_submit_composite,"Image Acquisition/Define Sample Masks/_Submit Analyzed Experiment Mask Composite to Cluster"));
+		add(ns_menu_item_spec(open_individual_mask,"Image Acquisition/Define Sample Masks/Individual Sample Masks/Analyze Mask"));
 	//	add(ns_menu_item_spec(view_current_mask,"Plate Locations/Define Sample Masks/Individual Sample Masks/View Current Mask"));
 	//	add(ns_menu_item_spec(apply_mask_on_current,"Masks/Mask Analysis/Individual Masks/Apply Mask on Current Image"));
-		add(ns_menu_item_spec(submit_individual_mask_to_server,"Plate Locations/Define Sample Masks/Individual Sample Masks/Submit Analyzed Mask to Cluster"));
+		add(ns_menu_item_spec(submit_individual_mask_to_server,"Image Acquisition/Define Sample Masks/Individual Sample Masks/Submit Analyzed Mask to Cluster"));
 		
-		add(ns_menu_item_spec(start_storyboard_annotation_whole_experiment,"&Annotation/(Generate Storyboards Prior to Annotation)",0,FL_MENU_INACTIVE));
-		ns_menu_item_spec st_an(start_storyboard_annotation_whole_experiment,"Annotation/Browse Entire Experiment");
+		add(ns_menu_item_spec(start_storyboard_annotation_whole_experiment,"&Validation/(Generate Storyboards Prior to Annotation)",0,FL_MENU_INACTIVE));
+		ns_menu_item_spec st_an(start_storyboard_annotation_whole_experiment,"Validation/Browse Entire Experiment");
 		st_an.options.push_back(ns_menu_item_options("Immediately After Each Worm's Death"));
 		st_an.options.push_back(ns_menu_item_options("After All Worms Have Died"));
 		add(st_an);
-		ns_menu_item_spec st_an2(start_storyboard_annotation_plate,"Annotation/_Browse Single Plate");
+		ns_menu_item_spec st_an2(start_storyboard_annotation_plate,"Validation/_Browse Single Plate");
 		st_an2.options.push_back(ns_menu_item_options("Immediately After Each Worm's Death"));
 		st_an2.options.push_back(ns_menu_item_options("After All Worms Have Died"));
 		add(st_an2);
-		add(ns_menu_item_spec(stop_posture_annotation,"Annotation/Stop Annotation"));
+		add(ns_menu_item_spec(stop_posture_annotation,"Validation/Stop Annotation"));
 
 		add(ns_menu_item_spec(generate_survival_curves,"&Data Files/_Death Times/Generate Death Times for Current Experiment"));
 		add(ns_menu_item_spec(generate_survival_curves_for_experiment_group,"Data Files/Death Times/Generate Death Times for all Experiment in Experiment Group"));			 
 
 		add(ns_menu_item_spec(generate_area_movement,"Data Files/Movement Data/_Generate Movement State Time Series"));
 		//add(ns_menu_item_spec(generate_experiment_summary_movement_image_quantification_analysis_data,"Data/Movement/Generate Summary Time Path Image Analysis Quantification Data"));
-		add(ns_menu_item_spec(generate_experiment_detailed_movement_image_quantification_analysis_data,"Data Files/Movement Data/Posture Analysis Data/Machine Event Times"));
-		add(ns_menu_item_spec(generate_experiment_detailed_w_by_hand_movement_image_quantification_analysis_data,"Data Files/Movement Data/Posture Analysis Data/_By Hand Event Times"));
-		add(ns_menu_item_spec(generate_experiment_abbreviated_movement_image_quantification_analysis_data,"Data Files/Movement Data/Posture Analysis Data/Abbreviated"));
+		add(ns_menu_item_spec(generate_experiment_detailed_movement_image_quantification_analysis_data,"Data Files/Movement Data/Generate Posture Analysis Data/Machine Event Times"));
+		add(ns_menu_item_spec(generate_experiment_detailed_w_by_hand_movement_image_quantification_analysis_data,"Data Files/Movement Data/Generate Posture Analysis Data/_By Hand Event Times"));
+		add(ns_menu_item_spec(generate_experiment_abbreviated_movement_image_quantification_analysis_data,"Data Files/Movement Data/Generate Posture Analysis Data/Abbreviated"));
 	
 		ns_menu_item_spec st2(generate_single_frame_posture_image_pixel_data,"Data Files/Movement Data/Generate Single Frame Posture Image Data");
 		st2.options.push_back(ns_menu_item_options("Experiment"));
@@ -1323,19 +1321,19 @@ public:
 		add(ns_menu_item_spec(generate_timing_data_all_exp,"Data Files/Other Statistics/_Generate Scanner Timing Data for All Experiments in Group"));
 		add(ns_menu_item_spec(generate_region_stats,"Data Files/Other Statistics/Generate Image Statistics for all regions in current Experiment"));
 		add(ns_menu_item_spec(generate_region_stats_for_all_regions_in_group,"Data Files/Other Statistics/_Generate Image Statistics for all Regions in current Experiment Group"));
-		add(ns_menu_item_spec(generate_morphology_stats,"Data Files/Other Statistics/_Compile Worm Morphology Statistics for Current Experiment"));
-		add(ns_menu_item_spec(export_experiment_data,"Data Files/Transfer and Backup/Export Database Contents for Current Experiment"));
-		add(ns_menu_item_spec(import_experiment_data,"Data Files/Transfer and Backup/_Import Experiment from Backup"));
-		add(ns_menu_item_spec(create_experiment_from_filenames,"Data Files/Transfer and Backup/Database Repair/_Create a new experiment in the database from images on disk"));
-		add(ns_menu_item_spec(rebuild_db_sample_data_from_filenames,"Data Files/Transfer and Backup/Database Repair/Add missing sample images on disk into current experiment"));
-		add(ns_menu_item_spec(rebuild_db_region_data_from_filenames,"Data Files/Transfer and Backup/Database Repair/Add missing region images on disk into current experiment"));
+		add(ns_menu_item_spec(generate_morphology_stats,"Data Files/Other Statistics/Compile Worm Morphology Statistics for Current Experiment"));
 
 		//add(ns_menu_item_spec(generate_survival_curve_from_hand_annotations,"&Calibration/Generate Survival Curves from by hand annotations"));
 		add(ns_menu_item_spec(compare_machine_and_by_hand_annotations,"&Calibration/_Compare Storyboard annotations to fully-automated results"));
 		add(ns_menu_item_spec(generate_movement_image_analysis_optimization_data,"Calibration/_Use Storyboard Annotations to Create improved Posture Analysis Parameter Sets"));
 		add(ns_menu_item_spec(test_time_path_analysis_parameters, "Calibration/Test various Position Analysis Models"));
 
-		
+
+		add(ns_menu_item_spec(export_experiment_data, "&Backup/Backup Database Contents for Current Experiment"));
+		add(ns_menu_item_spec(import_experiment_data, "Backup/_Import Experiment from Backup"));
+		add(ns_menu_item_spec(create_experiment_from_filenames, "Backup/Database Repair/_Create a new experiment in the database from images on disk"));
+		add(ns_menu_item_spec(rebuild_db_sample_data_from_filenames, "Backup/Database Repair/Add missing sample images on disk into current experiment"));
+		add(ns_menu_item_spec(rebuild_db_region_data_from_filenames, "Backup/Database Repair/Add missing region images on disk into current experiment"));
 		//st4.options.push_back(ns_menu_item_options("Using Thermotolerance Parameter Range"));
 		//st4.options.push_back(ns_menu_item_options("Using Lifespan Parameter Range"));
 		//st4.options.push_back(ns_menu_item_options("Using Quiecent Lifespan Parameter Range"));
@@ -1343,74 +1341,75 @@ public:
 		
 		//add(ns_menu_item_spec(generate_worm_markov_posture_model_from_by_hand_annotations,"Calibration/Build Hidden Markov Posture Model From By Hand Annotations"));
 
-		
-		ns_menu_item_spec model_spec(specifiy_model,"&Testing/Worm Detection/Specify SVM Model");
-		for (unsigned int i = 0; i < worm_learner.model_specifications.size(); i++)
-			model_spec.options.push_back(ns_menu_item_options(worm_learner.model_specifications[i]().model_specification.model_name));
-	
-		add(model_spec);
-		add(ns_menu_item_spec(spatial_median,"Testing/Image Processing/Spatial Median Filter"));
-		//add(ns_menu_item_spec(difference_threshold,"Testing/Image Processing/Difference Threshold"));
-		//add(ns_menu_item_spec(adaptive_threshold,"Testing/Image Processing/Adaptive Threshold"));
-		//add(ns_menu_item_spec(movement_threshold,"Testing/Image Processing/Movement Threshold"));
-		//add(ns_menu_item_spec(movement_threshold_vis,"Testing/Image Processing/Movement Threshold (vis)"));
-		add(ns_menu_item_spec(two_stage_threshold,"Testing/Image Processing/Two Stage Threshold"));
-		add(ns_menu_item_spec(two_stage_threshold_vis,"Testing/Image Processing/_Two Stage Threshold (vis)"));
-		add(ns_menu_item_spec(remove_large_objects,"Testing/Image Processing/Remove Large Objects"));
-		add(ns_menu_item_spec(morph_manip,"Testing/Image Processing/Morphological Manipulations"));
-		add(ns_menu_item_spec(zhang_thinning,"Testing/Image Processing/_Zhang Thinning"));
-		add(ns_menu_item_spec(stretch_lossless,"Testing/Image Processing/Stretch Dynamic Range (Lossless)"));
-		add(ns_menu_item_spec(stretch_lossy,"Testing/Image Processing/_Stretch Dynamic Range (Lossy)" ));
-		add(ns_menu_item_spec(compress_dark,"Testing/Image Processing/Compress Dark Noise"));
-		add(ns_menu_item_spec(grayscale_from_blue,"Testing/Image Processing/Grayscale from Blue Chanel"));
-		add(ns_menu_item_spec(vertical_offset,"Testing/Image Processing/Calculate Vertical offset"));
-		add(ns_menu_item_spec(heat_map_overlay,"Testing/Image Processing/_Calculate heat map overlay"));
-		add(ns_menu_item_spec(test_resample,"Testing/Image Processing/Test Resample"));
-		add(ns_menu_item_spec(sharpen,"Testing/Image Processing/Sharpen"));
-		add(ns_menu_item_spec(calculate_erosion_gradient,"Testing/Image Processing/Calculate Erosion Gradient"));
-		
-		add(ns_menu_item_spec(show_objects,"Testing/Worm Detection/Show objects in image"));
-		add(ns_menu_item_spec(detect_worms,"Testing/Worm Detection/Detect Worms" ));
-		add(ns_menu_item_spec(show_region_edges,"Testing/Worm Detection/Show Region Edges" ));
-		add(ns_menu_item_spec(view_region_collage,"Testing/Worm Detection/View Region Collage"));
-		add(ns_menu_item_spec(view_spine_collage,"Testing/Worm Detection/View Spine Collage"));
-		add(ns_menu_item_spec(view_spine_collage_stats,"Testing/Worm Detection/View Spine Collage with stats"));
-		add(ns_menu_item_spec(view_reject_spine_collage,"Testing/Worm Detection/View Reject Spine Collage"));
-		add(ns_menu_item_spec(view_reject_spine_collage_stats,"Testing/Worm Detection/View Reject Spine Collage with stats"));
-		add(ns_menu_item_spec(output_feature_distributions,"Testing/Worm Detection/Output feature distributions"));
-		add(ns_menu_item_spec(calculate_slow_movement,"Testing/Worm Detection/Calculate Slow Movement" ));
+		if (worm_learner.show_testing_menus) {
+			ns_menu_item_spec model_spec(specifiy_model, "&Testing/Worm Detection/Specify SVM Model");
+			for (unsigned int i = 0; i < worm_learner.model_specifications.size(); i++)
+				model_spec.options.push_back(ns_menu_item_options(worm_learner.model_specifications[i]().model_specification.model_name));
 
-		add(ns_menu_item_spec(output_learning_set,"Testing/Machine Learning/Output Learning Image Set"));
-		add(ns_menu_item_spec(auto_output_learning_set,"Testing/Machine Learning/Auto Output Learning Image Set"));
-		add(ns_menu_item_spec(rethreshold_image_set,"Testing/Machine Learning/_Rethreshold Learning Image Set "));
-		add(ns_menu_item_spec(generate_training_set,"Testing/Machine Learning/Generate worm training set image"));
-		add(ns_menu_item_spec(process_training_set,"Testing/Machine Learning/_Process worm training set image"));
-		add(ns_menu_item_spec(generate_SVM_training_data,"Testing/Machine Learning/Generate SVM Training Data"));
-		add(ns_menu_item_spec(split_results,"Testing/Machine Learning/Split results into multiple regions"));
-		
-		add(ns_menu_item_spec(fix_headers_for_svm_training_set_images, "Testing/Machine Learning/Fix Scrambled Training Set Metadata"));
-		add(ns_menu_item_spec(analyze_svm_results,"Testing/Machine Learning/_Analyze SVM Results"));
-	//	add(ns_menu_item_spec(run_temporal_inference,"Testing/Machine Learning/Run temporal inference"));
-		add(ns_menu_item_spec(remove_duplicates_from_training_set,"Testing/Machine Learning/_Remove duplicates from training set"));
-		add(ns_menu_item_spec(generate_region_subset_time_series,"Testing/Machine Learning/Generate Region Subset time series"));
-		add(ns_menu_item_spec(load_region_as_new_experiment,"Testing/Machine Learning/_Load Region Subset time series as new experiment"));
-		add(ns_menu_item_spec(create_decimated_subset,"Testing/Machine Learning/Create decimated subset of directory"));
-		add(ns_menu_item_spec(translate_fscore,"Testing/Machine Learning/_translate f-score file"));
-		add(ns_menu_item_spec(generate_training_set_from_by_hand_annotations,"Testing/Machine Learning/Generate Training Set from By Hand Movement Annotations"));
-		
-		add(ns_menu_item_spec(analyze_worm_position,"Testing/Movement Analysis/Analyze worm positions for current region"));
+			add(model_spec);
+			add(ns_menu_item_spec(spatial_median, "Testing/Image Processing/Spatial Median Filter"));
+			//add(ns_menu_item_spec(difference_threshold,"Testing/Image Processing/Difference Threshold"));
+			//add(ns_menu_item_spec(adaptive_threshold,"Testing/Image Processing/Adaptive Threshold"));
+			//add(ns_menu_item_spec(movement_threshold,"Testing/Image Processing/Movement Threshold"));
+			//add(ns_menu_item_spec(movement_threshold_vis,"Testing/Image Processing/Movement Threshold (vis)"));
+			add(ns_menu_item_spec(two_stage_threshold, "Testing/Image Processing/Two Stage Threshold"));
+			add(ns_menu_item_spec(two_stage_threshold_vis, "Testing/Image Processing/_Two Stage Threshold (vis)"));
+			add(ns_menu_item_spec(remove_large_objects, "Testing/Image Processing/Remove Large Objects"));
+			add(ns_menu_item_spec(morph_manip, "Testing/Image Processing/Morphological Manipulations"));
+			add(ns_menu_item_spec(zhang_thinning, "Testing/Image Processing/_Zhang Thinning"));
+			add(ns_menu_item_spec(stretch_lossless, "Testing/Image Processing/Stretch Dynamic Range (Lossless)"));
+			add(ns_menu_item_spec(stretch_lossy, "Testing/Image Processing/_Stretch Dynamic Range (Lossy)"));
+			add(ns_menu_item_spec(compress_dark, "Testing/Image Processing/Compress Dark Noise"));
+			add(ns_menu_item_spec(grayscale_from_blue, "Testing/Image Processing/Grayscale from Blue Chanel"));
+			add(ns_menu_item_spec(vertical_offset, "Testing/Image Processing/Calculate Vertical offset"));
+			add(ns_menu_item_spec(heat_map_overlay, "Testing/Image Processing/_Calculate heat map overlay"));
+			add(ns_menu_item_spec(test_resample, "Testing/Image Processing/Test Resample"));
+			add(ns_menu_item_spec(sharpen, "Testing/Image Processing/Sharpen"));
+			add(ns_menu_item_spec(calculate_erosion_gradient, "Testing/Image Processing/Calculate Erosion Gradient"));
+
+			add(ns_menu_item_spec(show_objects, "Testing/Worm Detection/Show objects in image"));
+			add(ns_menu_item_spec(detect_worms, "Testing/Worm Detection/Detect Worms"));
+			add(ns_menu_item_spec(show_region_edges, "Testing/Worm Detection/Show Region Edges"));
+			add(ns_menu_item_spec(view_region_collage, "Testing/Worm Detection/View Region Collage"));
+			add(ns_menu_item_spec(view_spine_collage, "Testing/Worm Detection/View Spine Collage"));
+			add(ns_menu_item_spec(view_spine_collage_stats, "Testing/Worm Detection/View Spine Collage with stats"));
+			add(ns_menu_item_spec(view_reject_spine_collage, "Testing/Worm Detection/View Reject Spine Collage"));
+			add(ns_menu_item_spec(view_reject_spine_collage_stats, "Testing/Worm Detection/View Reject Spine Collage with stats"));
+			add(ns_menu_item_spec(output_feature_distributions, "Testing/Worm Detection/Output feature distributions"));
+			add(ns_menu_item_spec(calculate_slow_movement, "Testing/Worm Detection/Calculate Slow Movement"));
+
+			add(ns_menu_item_spec(output_learning_set, "Testing/Machine Learning/Output Learning Image Set"));
+			add(ns_menu_item_spec(auto_output_learning_set, "Testing/Machine Learning/Auto Output Learning Image Set"));
+			add(ns_menu_item_spec(rethreshold_image_set, "Testing/Machine Learning/_Rethreshold Learning Image Set "));
+			add(ns_menu_item_spec(generate_training_set, "Testing/Machine Learning/Generate worm training set image"));
+			add(ns_menu_item_spec(process_training_set, "Testing/Machine Learning/_Process worm training set image"));
+			add(ns_menu_item_spec(generate_SVM_training_data, "Testing/Machine Learning/Generate SVM Training Data"));
+			add(ns_menu_item_spec(split_results, "Testing/Machine Learning/Split results into multiple regions"));
+
+			add(ns_menu_item_spec(fix_headers_for_svm_training_set_images, "Testing/Machine Learning/Fix Scrambled Training Set Metadata"));
+			add(ns_menu_item_spec(analyze_svm_results, "Testing/Machine Learning/_Analyze SVM Results"));
+			//	add(ns_menu_item_spec(run_temporal_inference,"Testing/Machine Learning/Run temporal inference"));
+			add(ns_menu_item_spec(remove_duplicates_from_training_set, "Testing/Machine Learning/_Remove duplicates from training set"));
+			add(ns_menu_item_spec(generate_region_subset_time_series, "Testing/Machine Learning/Generate Region Subset time series"));
+			add(ns_menu_item_spec(load_region_as_new_experiment, "Testing/Machine Learning/_Load Region Subset time series as new experiment"));
+			add(ns_menu_item_spec(create_decimated_subset, "Testing/Machine Learning/Create decimated subset of directory"));
+			add(ns_menu_item_spec(translate_fscore, "Testing/Machine Learning/_translate f-score file"));
+			add(ns_menu_item_spec(generate_training_set_from_by_hand_annotations, "Testing/Machine Learning/Generate Training Set from By Hand Movement Annotations"));
+
+			add(ns_menu_item_spec(analyze_worm_position, "Testing/Movement Analysis/Analyze worm positions for current region"));
+		}
 	//	add(ns_menu_item_spec(compile_schedule_to_disk,"Config/Compile Submitted Capture Schedules to Disk"));
 	//	add(ns_menu_item_spec(submit_schedule_to_db,"Config/_Submit Capture Schedules to Database"));	
 		string version("Worm Browser v");
-		version = version + ns_to_string(image_server.software_version_major()) + "." + ns_to_string(image_server.software_version_minor()) + "." + ns_to_string(image_server.software_version_compile()) + " (2014)";
+		version = version + ns_to_string(image_server.software_version_major()) + "." + ns_to_string(image_server.software_version_minor()) + "." + ns_to_string(image_server.software_version_compile()) + " (2017)";
 		add(ns_menu_item_spec(set_database,string("&Config/") + version,0,FL_MENU_INACTIVE));
-		add(ns_menu_item_spec(set_database,string("Config/_Nicholas Stroustrup, Harvard Systems Biology"),0,FL_MENU_INACTIVE));
+		add(ns_menu_item_spec(set_database,string("Config/_Nicholas Stroustrup, CRG"),0,FL_MENU_INACTIVE));
 		//add(ns_menu_item_spec(set_database,string("Config/_ "),0,FL_MENU_INACTIVE));
 		ns_menu_item_spec db_spec(set_database,"&Config/_Set Database");
 		for (unsigned int i = 0; i < worm_learner.databases_available.size(); i++)
 			db_spec.options.push_back(worm_learner.databases_available[i]);
 		add(db_spec);
-
+		add(ns_menu_item_spec(show_extra_menus, "Config/Set Behavior/_Show Image Analysis Diagnostic Tools"));
 		add(ns_menu_item_spec(do_not_overwrite_schedules,"Config/Set Behavior/Do not overwrite existing Experiment Specifications"));
 		add(ns_menu_item_spec(overwrite_schedules,"Config/Set Behavior/_Overwrite existing Experiment Specifications"));
 		add(ns_menu_item_spec(do_not_overwrite_existing_masks,"Config/Set Behavior/Do not overwrite existing sample masks"));
@@ -3128,4 +3127,14 @@ ns_death_time_posture_solo_annotater_data_cache ns_death_time_solo_posture_annot
 void ns_quit(){
 	ns_acquire_lock_for_scope lock(worm_learner.main_window.display_lock,__FILE__,__LINE__);
 	exit(0);
+}
+
+
+void ns_worm_terminal_main_menu_organizer::show_extra_menus(const std::string & value) {
+	worm_learner.show_testing_menus = !worm_learner.show_testing_menus;
+
+
+	ns_acquire_lock_for_scope lock(menu_bar_processing_lock, __FILE__, __LINE__);
+	current_window->main_menu_handler->redraw_menus(*(current_window->main_menu));
+	lock.release();
 }

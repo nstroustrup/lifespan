@@ -559,7 +559,7 @@ public:
 		current_image_lock("ns_worm_learner::current_image"),
 		movement_data_is_strictly_decreasing_(false),overwrite_existing_mask_when_submitting(false),output_svg_spines(false),static_mask(0),generate_mp4_(false),
 		/*submit_capture_specification_to_db_when_recieved(false),*/overwrite_submitted_capture_specification(false),maximum_window_size(1024,768),
-		current_annotater(&death_time_annotater),storyboard_annotater(2),main_window("Main Window"), persistant_sql_connection(0), persistant_sql_lock("psl"),
+		current_annotater(&death_time_annotater),storyboard_annotater(2),main_window("Main Window"), persistant_sql_connection(0), persistant_sql_lock("psl"), show_testing_menus(false),
 				worm_window("Worm Window"){
 		storyboard_annotater.set_resize_factor(2);
 	}
@@ -685,7 +685,7 @@ public:
 	void rebuild_experiment_samples_from_disk(ns_64_bit experiment_id);
 	void rebuild_experiment_regions_from_disk(ns_64_bit experiment_id);
 
-
+	bool show_testing_menus;
 	//machine learning
 	void grayscale_from_blue();
 	bool start_death_time_annotation(const ns_behavior_mode m,const ns_experiment_storyboard_spec::ns_storyboard_flavor & f);

@@ -315,17 +315,17 @@ void analyze_worm_movement_across_frames(const ns_processing_job & job, ns_image
 		//log scale between .1 and .0001
 		for (unsigned int i = 0; i < 25; i++)
 			thresholds[i] = pow(10, -1 - (3.0*i / 25));
-		std::vector<double> hold_times(12);
+		std::vector<unsigned long> hold_times(12);
 		hold_times[0] = 0;
 		hold_times[1] = 60 * 15;
 		for (unsigned int i = 0; i < 10; i++)
 			hold_times[i + 2] = i * 60 * 60;
 
 		ns_acquire_for_scope < std:: ostream > o2(image_server->results_storage.time_path_image_analysis_quantification(sub, "optimization_stats", false, sql).output());
-		ns_analyzed_image_time_path::write_analysis_optimization_data_header(o2());
+		ns_analyzed_image_time_path::write_posture_analysis_optimization_data_header(o2());
 		o2() << "\n";
 		ns_parameter_optimization_results res(thresholds.size(),hold_times.size());
-		time_path_image_analyzer.write_analysis_optimization_data(2,thresholds, hold_times, metadata, o2(),res);
+		time_path_image_analyzer.write_posture_analysis_optimization_data(2,thresholds, hold_times, metadata, o2(),res);
 	}
 
 	//update db stats

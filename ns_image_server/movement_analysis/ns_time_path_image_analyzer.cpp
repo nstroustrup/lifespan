@@ -1688,7 +1688,8 @@ void ns_time_path_image_movement_analyzer::load_movement_data_from_disk(istream 
 			if (a == '\n')
 				break;
 	//		std::cerr << "E" << i << "'" << tmp << "' ";
-				if(in.fail() || !tmp.empty()) throw ns_ex("Invalid Specification");
+				if(in.fail() || !tmp.empty())
+					throw ns_ex("Invalid Specification");
 		}
 	//	std::cerr << "\n";
 
@@ -1801,19 +1802,19 @@ std::string ns_output_interval_difference(const unsigned long time, const ns_dea
 }
 
 
-void ns_analyzed_image_time_path::write_analysis_optimization_data_header(std::ostream & o){
+void ns_analyzed_image_time_path::write_posture_analysis_optimization_data_header(std::ostream & o){
 	o << "Experiment,Device,Plate Name,Animal Details,Group ID,Path ID,Excluded,Censored,Number of Worms in Clump,"
 		"Movement Threshold, Min Hold Time (Hours), Denoising Technique Used, "
 		"Visual Inspection Death Age (Days),Machine Death Age (Days), Visual Inspection Death Time (Date), Difference Between Machine and By Hand Death Times (Days), Sqrt(Difference Squared) (Days), Random Group";
 }
 
 std::vector< std::vector < unsigned long > > static_messy_death_time_matrix;
- void ns_analyzed_image_time_path::write_analysis_optimization_data(int software_version_number,const ns_stationary_path_id & id, const std::vector<double> & thresholds, const std::vector<double> & hold_times, const ns_region_metadata & m,const ns_time_series_denoising_parameters & denoising_parameters,std::ostream & o, ns_parameter_optimization_results & results) const{
+ void ns_analyzed_image_time_path::write_posture_analysis_optimization_data(int software_version_number,const ns_stationary_path_id & id, const std::vector<double> & thresholds, const std::vector<unsigned long> & hold_times, const ns_region_metadata & m,const ns_time_series_denoising_parameters & denoising_parameters,std::ostream & o, ns_parameter_optimization_results & results) const{
 
-	long death_time(by_hand_annotation_event_times[(int)ns_movement_cessation].period_end);
+	unsigned long death_time(by_hand_annotation_event_times[(int)ns_movement_cessation].period_end);
 	if (by_hand_annotation_event_times[(int)ns_movement_cessation].fully_unbounded())
 		return;
-	calculate_analysis_optimization_data(thresholds,hold_times,static_messy_death_time_matrix, software_version_number);
+	calculate_posture_analysis_optimization_data(thresholds,hold_times,static_messy_death_time_matrix, software_version_number);
 	const unsigned long random_group(rand()%2);
 	for (unsigned int i = 0; i < thresholds.size(); i++)
 		for (unsigned int j = 0; j < hold_times.size(); j++){
@@ -1835,8 +1836,63 @@ std::vector< std::vector < unsigned long > > static_messy_death_time_matrix;
 				<< err << "," << sqrt(err_sq) << "," << random_group << "\n";
 		}
 }
+ void ns_analyzed_image_time_path::write_expansion_analysis_optimization_data_header(std::ostream & o) {
+	 o << "Experiment,Device,Plate Name,Animal Details,Group ID,Path ID,Excluded,Censored,Number of Worms in Clump,"
+		 "Expansion Slope Threshold, Time Kernel Width (Days), "
+		 "Visual Inspection Death Age (Days),"
+		 "Visual Inspection Death Time (Date),"
+		 "Expansion Start Difference (Days), Expansion Stop Difference (Days), Average Difference (Days), Average Difference Squared (Days), Random Group";
+ }
+ std::vector< ns_death_time_expansion_info> expansion_intervals;
+ void ns_analyzed_image_time_path::write_expansion_analysis_optimization_data(const ns_stationary_path_id & id, const std::vector<double> & thresholds, const std::vector<unsigned long> & hold_times, const ns_region_metadata & m,  std::ostream & o, ns_parameter_optimization_results & results) const {
+	
+	 if (by_hand_annotation_event_times[(int)ns_movement_cessation].fully_unbounded() ||
+		 by_hand_annotation_event_times[(int)ns_death_posture_relaxation_start].fully_unbounded() ||
+		 by_hand_annotation_event_times[(int)ns_death_posture_relaxation_termination].fully_unbounded())
+		 return;
 
-void ns_analyzed_image_time_path::calculate_analysis_optimization_data(const std::vector<double> & thresholds, const std::vector<double> & hold_times, std::vector< std::vector < unsigned long > > & death_times, int software_version) const{
+	const unsigned long death_time(by_hand_annotation_event_times[(int)ns_movement_cessation].period_end);
+	
+	const unsigned long time_at_which_death_time_expansion_started = by_hand_annotation_event_times[(int)ns_death_posture_relaxation_start].period_end,
+				   time_at_which_death_time_expansion_stopped = by_hand_annotation_event_times[(int)ns_death_posture_relaxation_termination].period_end;
+
+	 expansion_intervals.resize(0);
+	 calculate_expansion_analysis_optimization_data(death_time,thresholds, hold_times, expansion_intervals);
+	 const unsigned long random_group(rand() % 2);
+
+	 for (unsigned int j = 0; j < hold_times.size(); j++) {
+		 for (unsigned int i = 0; i < thresholds.size(); i++) {
+			 ns_death_time_expansion_info & res(expansion_intervals[j*thresholds.size() + i]);
+			 if (!res.found_death_time_expansion)
+				 continue;
+			 const unsigned long exp_start = elements[res.time_point_at_which_death_time_expansion_started].absolute_time;
+			 const unsigned long exp_stop = elements[res.time_point_at_which_death_time_expansion_stopped].absolute_time;
+
+
+			 const double start_err(((double)exp_start - time_at_which_death_time_expansion_started) / (60.0*60.0*24.0)),
+				 stop_err(((double)exp_stop - time_at_which_death_time_expansion_stopped) / (60.0*60.0*24.0));
+
+			 const double start_err_sq = start_err*start_err,
+				 stop_err_sq = stop_err*stop_err;
+			 const double avg_err_sq = (start_err_sq + stop_err_sq) / 2;
+			 results.death_total_mean_square_error_in_hours[i][j] += avg_err_sq;
+
+			 o << m.experiment_name << "," << m.device << "," << m.plate_name() << "," << m.plate_type_summary()
+				 << "," << id.group_id << "," << id.path_id << ","
+				 << (censoring_and_flag_details.is_excluded() ? "1" : "0") << ","
+				 << (censoring_and_flag_details.is_censored() ? "1" : "0") << ","
+				 << censoring_and_flag_details.number_of_worms() << ","
+				 << thresholds[i] << "," << (hold_times[j]) / 60.0 / 60.0/24.0 << ","
+				 << (death_time - m.time_at_which_animals_had_zero_age) / (60.0*60.0 * 24) << ","
+				 << death_time << ","
+				 << sqrt(start_err_sq) << "," << sqrt(stop_err_sq) << ","
+				 << sqrt(avg_err_sq) << "," << avg_err_sq  << "," << random_group << "\n";
+		 }
+	 }
+ }
+
+ std::vector< std::vector < std::pair<unsigned long, unsigned long> > > static_messy_expansion_interval_matrix;
+void ns_analyzed_image_time_path::calculate_posture_analysis_optimization_data(const std::vector<double> & thresholds, const std::vector<unsigned long> & hold_times, std::vector< std::vector < unsigned long > > & death_times, int software_version) const{
 	//find first valid observation
 	unsigned long start_i(0);
 	for (start_i = 0; start_i < elements.size(); start_i++){
@@ -1887,7 +1943,19 @@ void ns_analyzed_image_time_path::calculate_analysis_optimization_data(const std
 			}
 	}
 }
-
+void ns_analyzed_image_time_path::calculate_expansion_analysis_optimization_data(const unsigned long actual_death_time,const std::vector<double> & thresholds, const std::vector<unsigned long> & hold_times, std::vector< ns_death_time_expansion_info>  & expansion_intervals) const {
+	long min_time(INT_MAX);
+	int death_index(0);
+	for (unsigned int i = 0; i < this->elements.size(); i++) {
+		long dt = elements[i].absolute_time - (long)actual_death_time;
+		if (dt < min_time) {
+			min_time = dt;
+			death_index = i;
+		}
+	}
+	std::vector<ns_s64_bit> tmp;
+	identify_expansion_time(death_index, thresholds, hold_times, expansion_intervals, tmp);
+}
 
 void ns_analyzed_image_time_path::calculate_movement_quantification_summary(){
 
@@ -2144,17 +2212,29 @@ void ns_time_path_image_movement_analyzer::write_summary_movement_quantification
 }*/
 
 
-void ns_time_path_image_movement_analyzer::write_analysis_optimization_data(int software_version,const std::vector<double> & thresholds, const std::vector<double> & hold_times, const ns_region_metadata & m,std::ostream & o, ns_parameter_optimization_results & results) const{
+void ns_time_path_image_movement_analyzer::write_posture_analysis_optimization_data(int software_version,const std::vector<double> & thresholds, const std::vector<unsigned long> & hold_times, const ns_region_metadata & m,std::ostream & o, ns_parameter_optimization_results & results) const{
 	srand(0);
 	for (unsigned int i = 0; i < groups.size(); i++){
 		for (unsigned int j = 0; j < groups[i].paths.size(); j++){	
 			if (ns_skip_low_density_paths && groups[i].paths[j].is_low_density_path() || groups[i].paths[j].excluded() || !groups[i].paths[j].by_hand_data_specified())
 					continue;
-			groups[i].paths[j].write_analysis_optimization_data(software_version,generate_stationary_path_id(i,j),thresholds,hold_times,m,denoising_parameters_used,o, results);
+			groups[i].paths[j].write_posture_analysis_optimization_data(software_version,generate_stationary_path_id(i,j),thresholds,hold_times,m,denoising_parameters_used,o, results);
 			results.count++;
 		}
 	}
 }
+
+void ns_time_path_image_movement_analyzer::write_expansion_analysis_optimization_data(const std::vector<double> & thresholds, const std::vector<unsigned long> & hold_times, const ns_region_metadata & m, std::ostream & o, ns_parameter_optimization_results & results) const {
+	for (unsigned int i = 0; i < groups.size(); i++) {
+		for (unsigned int j = 0; j < groups[i].paths.size(); j++) {
+			if (ns_skip_low_density_paths && groups[i].paths[j].is_low_density_path() || groups[i].paths[j].excluded() || !groups[i].paths[j].by_hand_data_specified())
+				continue;
+			groups[i].paths[j].write_expansion_analysis_optimization_data(generate_stationary_path_id(i, j), thresholds, hold_times, m,o, results);
+			results.count++;
+		}
+	}
+}
+
 void ns_time_path_image_movement_analyzer::write_detailed_movement_quantification_analysis_data(const ns_region_metadata & m, std::ostream & o, const bool only_output_elements_with_by_hand_data, const long specific_animal_id, const bool abbreviated_time_series)const{
 	 
 	for (unsigned long i = 0; i < groups.size(); i++){
@@ -6634,6 +6714,79 @@ ns_time_path_posture_movement_solution ns_threshold_movement_posture_analyzer::o
 unsigned long ns_threshold_movement_posture_analyzer::latest_possible_death_time(const ns_analyzed_image_time_path * path,const unsigned long last_observation_time) const{
 	return  last_observation_time - parameters.permanance_time_required_in_seconds;
 }
+
+void ns_analyzed_image_time_path::identify_expansion_time(const unsigned long death_index,
+	std::vector<double> thresholds,
+	std::vector<unsigned long> hold_times,
+	std::vector<ns_death_time_expansion_info> & results,
+	std::vector<ns_s64_bit> & intensity_changes) const {
+	results.resize(thresholds.size()*hold_times.size());
+	intensity_changes.reserve(50);
+	intensity_changes.resize(0);
+	double max_intensity_change(-DBL_MAX);
+	unsigned long time_of_max_intensity_change(0);
+
+	for (unsigned int ht = 0; ht < hold_times.size(); ht++) {
+		//here we are calculate a running average rate of increase in intensity within the stablized region
+		//we then identify the largest increase after death, and call that the death time increase
+		for (long t = death_index; t < element_count(); t++) {
+			unsigned long cur_t = element(t).absolute_time;
+			//find largest intensity change within in kernel to use as the "peak time".
+			ns_s64_bit max_val = element(t).measurements.change_in_total_stabilized_intensity;
+			ns_s64_bit max_tt = t;
+
+			//this could be done faster with a sliding window.
+			for (long tt = t; tt < element_count() && element(tt).absolute_time < cur_t + hold_times[ht]; tt++) {
+				intensity_changes.push_back(element(tt).measurements.change_in_total_stabilized_intensity);
+				if (max_val < element(tt).measurements.change_in_total_stabilized_intensity) {
+					max_val = element(tt).measurements.change_in_total_stabilized_intensity;
+					max_tt = tt;
+				}
+			}
+
+
+			ns_s64_bit total_intensity_change(0);
+			for (unsigned int i = 0; i < intensity_changes.size(); i++)
+				total_intensity_change += intensity_changes[i];
+			const double av_change = total_intensity_change / (double)intensity_changes.size();
+
+			for (unsigned int thresh = 0; thresh < thresholds.size(); thresh++) {
+				ns_death_time_expansion_info & result(results[ht*thresholds.size() + thresh]);
+				//if there's a large enough peak, declare the death time expansion identified.
+				if (av_change >= thresholds[thresh] && av_change > max_intensity_change) {
+					max_intensity_change = av_change;
+					time_of_max_intensity_change = max_tt;
+					result.found_death_time_expansion = true;
+					result.time_point_at_which_death_time_expansion_peaked = max_tt;
+					result.time_point_at_which_death_time_expansion_started = max_tt;
+					result.time_point_at_which_death_time_expansion_stopped = max_tt;
+					//push backwards in time until the animal stops growing
+					//	cerr << "*\n";
+					for (long tt = max_tt; tt >= 0; tt--) {
+						if (element(tt).excluded)
+							continue;
+						if (element(tt).measurements.change_in_total_stabilized_intensity > 0) {
+							result.time_point_at_which_death_time_expansion_started = tt;
+						}
+						else
+							break;
+					}
+					for (long tt = max_tt; tt < element_count(); tt++) {
+						if (element(tt).excluded)
+							continue;
+						if (element(tt).measurements.change_in_total_stabilized_intensity > 0) {
+							result.time_point_at_which_death_time_expansion_stopped = tt;
+						}
+						else
+							break;
+					}
+				}
+			}
+			intensity_changes.resize(0);
+		}
+	}
+}
+
 ns_time_path_posture_movement_solution ns_threshold_movement_posture_analyzer::run(const ns_analyzed_image_time_path * path, std::ostream * debug_output) const{
 
 	
@@ -6743,70 +6896,21 @@ ns_time_path_posture_movement_solution ns_threshold_movement_posture_analyzer::r
 	}
 	//identify time of death expansion
 	if (found_posture_change_cessation) {
-		vector<ns_s64_bit> intensity_changes;
-		intensity_changes.reserve(50);
-		double max_intensity_change(-DBL_MAX);
-		unsigned long time_of_max_intensity_change(0);
+		vector<double> thresholds(1, parameters.death_time_expansion_cutoff);
+		vector<unsigned long> hold_times(1,parameters.death_time_expansion_time_kernel_in_seconds);
+		vector<ns_death_time_expansion_info> results(1);	
+		vector<ns_s64_bit> tmp;
+			path->identify_expansion_time(last_time_point_at_which_posture_changes_were_observed,
+				thresholds,
+				hold_times,
+				results,
+				tmp);
 
-		//here we are calculate a running average rate of increase in intensity within the stablized region
-		//we then identify the largest increase after death, and call that the death time increase
-		for (long t = last_time_point_at_which_posture_changes_were_observed; t < path->element_count(); t++) {
-			unsigned long cur_t = path->element(t).absolute_time;
-			//find largest intensity change within in kernel to use as the "peak time".
-			ns_s64_bit max_val = path->element(t).measurements.change_in_total_stabilized_intensity;
-			ns_s64_bit max_tt = t;
+			found_death_time_expansion = results[0].found_death_time_expansion;
+			time_point_at_which_death_time_expansion_peaked = results[0].time_point_at_which_death_time_expansion_peaked;
+			time_point_at_which_death_time_expansion_started = results[0].time_point_at_which_death_time_expansion_started;
+			time_point_at_which_death_time_expansion_stopped = results[0].time_point_at_which_death_time_expansion_stopped;
 
-			//this could be done faster with a sliding window.
-			for (long tt = t; tt < path->element_count() && path->element(tt).absolute_time < cur_t + parameters.death_time_expansion_time_kernel_in_seconds; tt++) {
-				intensity_changes.push_back(path->element(tt).measurements.change_in_total_stabilized_intensity);
-				if (max_val < path->element(tt).measurements.change_in_total_stabilized_intensity) {
-					max_val = path->element(tt).measurements.change_in_total_stabilized_intensity;
-					max_tt = tt;
-				}
-			}
-
-			
-			ns_s64_bit total_intensity_change(0);
-			for (unsigned int i = 0; i < intensity_changes.size(); i++)
-				total_intensity_change += intensity_changes[i];
-			const double av_change = total_intensity_change / (double)intensity_changes.size();
-
-			//if there's a large enough peak, declare the death time expansion identified.
-			if (av_change >= parameters.death_time_expansion_cutoff && av_change > max_intensity_change) {
-				max_intensity_change = av_change;
-				time_of_max_intensity_change = max_tt;
-				found_death_time_expansion = true;
-				time_point_at_which_death_time_expansion_peaked = max_tt;
-				time_point_at_which_death_time_expansion_started = max_tt;
-				time_point_at_which_death_time_expansion_stopped = max_tt;
-				//push backwards in time until the animal stops growing
-			//	cerr << "*\n";
-				for (long tt = max_tt; tt >= 0; tt--) {
-					if (path->element(tt).excluded)
-						continue;
-					if (path->element(tt).measurements.change_in_total_stabilized_intensity > 0) {
-						time_point_at_which_death_time_expansion_started = tt;
-					}else
-						break;
-				}
-				for (long tt = max_tt; tt < path->element_count(); tt++) {
-					if (path->element(tt).excluded)
-						continue;
-					if (path->element(tt).measurements.change_in_total_stabilized_intensity > 0) {
-						time_point_at_which_death_time_expansion_stopped = tt;
-					}
-					else
-						break;
-				}
-			}
-			intensity_changes.resize(0);
-		}
-	/*	cerr << "Found death at " << ns_format_time_string_for_human(path->element(last_time_point_at_which_posture_changes_were_observed).absolute_time) << "\n";
-		if (found_death_time_expansion) {
-			cerr << "Found start at " << ns_format_time_string_for_human(path->element(time_point_at_which_death_time_expansion_started).absolute_time) << "\n";
-			cerr << "Found peak at " << ns_format_time_string_for_human(path->element(time_point_at_which_death_time_expansion_peaked).absolute_time) << "\n";
-		}
-		cerr << "\n";*/
 	}
 
 	ns_time_path_posture_movement_solution solution;

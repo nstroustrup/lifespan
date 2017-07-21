@@ -1702,12 +1702,12 @@ void ns_worm_learner::generate_scanner_lifespan_statistics(bool use_by_hand_cens
 
 };
 struct ns_parameter_set_optimization_record {
-	ns_parameter_set_optimization_record(std::vector<double> & thresholds, vector<double> & hold_times) :new_parameters_results(thresholds.size(), hold_times.size()), current_parameter_results(1,1){}
+	ns_parameter_set_optimization_record(std::vector<double> & thresholds, vector<unsigned long> & hold_times) :new_parameters_results(thresholds.size(), hold_times.size()), current_parameter_results(1,1){}
 	ns_parameter_optimization_results new_parameters_results;
 	ns_parameter_optimization_results current_parameter_results;
 	ns_threshold_movement_posture_analyzer_parameters best;
 	double mean_squared_error;
-	void find_best_parameter_set( std::vector<double> & thresholds, vector<double> & hold_times) {
+	void find_best_parameter_set( std::vector<double> & thresholds, vector<unsigned long> & hold_times) {
 		mean_squared_error = DBL_MAX;
 		for (unsigned int i = 0; i < thresholds.size(); i++) {
 			for (unsigned int j = 0; j < hold_times.size(); j++) {
@@ -1724,22 +1724,29 @@ struct ns_parameter_set_optimization_record {
 	}
 };
 
-void ns_worm_learner::output_movement_analysis_optimization_data(int software_version_number, const ns_parameter_set_range & range){
+
+void ns_worm_learner::output_movement_analysis_optimization_data(int software_version_number, const ns_parameter_set_range & range, bool run_posture,bool run_expansion){
 	ns_sql & sql(get_sql_connection());
 
 	unsigned int experiment_id = data_selector.current_experiment_id();
-	std::vector<double> thresholds;
+
+	//posture analysis
+	std::vector<double> posture_analysis_thresholds,
+		expansion_analysis_thresholds;
+	vector<unsigned long> posture_analysis_hold_times,
+		expansion_analysis_hold_times;
+
 	//old movement scores
 	if (software_version_number == 1) {
 		const double min_thresh(.0005);
 		const double max_thresh(.5);
 		const long number_of_thresholds(60);
 		const double log_dt(((log(max_thresh) - log(min_thresh)) / number_of_thresholds));
-		thresholds.resize(number_of_thresholds);
+		posture_analysis_thresholds.resize(number_of_thresholds);
 
 		double cur = min_thresh;
 		for (unsigned long i = 0; i < number_of_thresholds; i++) {
-			thresholds[i] = exp(log(min_thresh) + log_dt*i);
+			posture_analysis_thresholds[i] = exp(log(min_thresh) + log_dt*i);
 		}
 	}
 	else {
@@ -1748,72 +1755,87 @@ void ns_worm_learner::output_movement_analysis_optimization_data(int software_ve
 		const double max_thresh(20000);
 		const long number_of_thresholds(20);
 		const double log_dt(((log(max_thresh) - log(min_thresh)) / number_of_thresholds));
-		thresholds.resize(number_of_thresholds);
+		posture_analysis_thresholds.resize(number_of_thresholds);
 
 		double cur = min_thresh;
 		for (unsigned long i = 0; i < number_of_thresholds; i++) {
-			thresholds[i] = exp(log(min_thresh) + log_dt*i);
+			posture_analysis_thresholds[i] = exp(log(min_thresh) + log_dt*i);
 		}
 
 	}
-
-
+	
 	
 	//generate optimization training set 
 	const unsigned long near_zero(30);
 	const unsigned long thresh_num(20);
 	bool by_hand_range(false);
-	vector<double> hold_times;
 	if (range == ns_v2) {
 
-		hold_times.reserve(40);
-		hold_times.push_back(0);
+		posture_analysis_hold_times.reserve(40);
+		posture_analysis_hold_times.push_back(0);
 		for (unsigned int i = 0; i < 15; i++)
-			hold_times.push_back(i * 30 * 60);
+			posture_analysis_hold_times.push_back(i * 30 * 60);
 		for (unsigned int i = 0; i < 6; i++)
-			hold_times.push_back((i) * 2 * 60 * 60);
-		int p(hold_times.size());
+			posture_analysis_hold_times.push_back((i) * 2 * 60 * 60);
+		int p(posture_analysis_hold_times.size());
 		for (unsigned int i = 6; i < 14; i++)
-			hold_times.push_back(hold_times[p-1] +(i - 6) * 6 * 60 * 60);
+			posture_analysis_hold_times.push_back(posture_analysis_hold_times[p-1] +(i - 6) * 6 * 60 * 60);
 	}
 	if (range == ns_thermotolerance){
 		
-		hold_times.reserve(16);
-		hold_times.push_back(0);
+		posture_analysis_hold_times.reserve(16);
+		posture_analysis_hold_times.push_back(0);
 		for (unsigned int i = 0; i < 15; i++)
-			hold_times.push_back(i*45*60);
+			posture_analysis_hold_times.push_back(i*45*60);
 	}
 	else if (range ==  ns_quiecent){
 
-		hold_times.reserve(21);
+		posture_analysis_hold_times.reserve(21);
 		for (unsigned int i = 0; i < 6; i++)
-			hold_times.push_back((i)*2*60*60);
+			posture_analysis_hold_times.push_back((i)*2*60*60);
 
-		int p(hold_times.size());
+		int p(posture_analysis_hold_times.size());
 		for (unsigned int i = 6; i < 14; i++)
-			hold_times.push_back(p+(i-6)*6*60*60);
+			posture_analysis_hold_times.push_back(p+(i-6)*6*60*60);
 	}
 	else{
 		
 		
-		hold_times.reserve(21);
-		hold_times.push_back(0);
-		hold_times.push_back(60*30);
-		hold_times.push_back(60*60);
+		posture_analysis_hold_times.reserve(21);
+		posture_analysis_hold_times.push_back(0);
+		posture_analysis_hold_times.push_back(60*30);
+		posture_analysis_hold_times.push_back(60*60);
 		for (unsigned int i = 0; i < 11; i++)
-			hold_times[i+3] = (i+1)*2*60*60;
+			posture_analysis_hold_times.push_back((i+1)*2*60*60);
 		for (unsigned int i = 0; i < 6; i++)
-			hold_times[i+14] = (i+5)*6*60*60;
+			posture_analysis_hold_times.push_back((i+5)*6*60*60);
 	}
+
+
+	for (unsigned int i = 0; i < 8; i++) 
+		expansion_analysis_thresholds.push_back((2 * i + 2) * 100);
+	
+	for (unsigned int i = 0; i < 8; i++) 
+		expansion_analysis_hold_times.push_back((2 * i) * 60 * 60);
+	
+
+
 	ns_image_server_results_subject sub;
 	sub.experiment_id = experiment_id;
-	ns_acquire_for_scope<ostream> o2(image_server.results_storage.time_path_image_analysis_quantification(sub,"optimization_stats",true,sql).output());
-	ns_analyzed_image_time_path::write_analysis_optimization_data_header(o2());
+	ns_acquire_for_scope<ostream> posture_analysis_optimization_output, expansion_analysis_optimization_output;
+	if (run_posture) {
+		posture_analysis_optimization_output.attach(image_server.results_storage.time_path_image_analysis_quantification(sub, "posture_analysis_optimization_stats", true, sql).output());
+		ns_analyzed_image_time_path::write_posture_analysis_optimization_data_header(posture_analysis_optimization_output());
+	}
+	if (run_expansion) {
+		expansion_analysis_optimization_output.attach(image_server.results_storage.time_path_image_analysis_quantification(sub, "expansion_optimization_stats", true, sql).output());
+		ns_analyzed_image_time_path::write_expansion_analysis_optimization_data_header(expansion_analysis_optimization_output());
+	}
 	unsigned region_count(0);
 	for (unsigned int i = 0; i < data_selector.samples.size(); i++)
 		region_count+=data_selector.samples[i].regions.size();
 
-	map<std::string, ns_parameter_set_optimization_record> best_parameter_sets;
+	map<std::string, ns_parameter_set_optimization_record> best_posture_parameter_sets, best_expansion_parameter_sets;
 	
 	//	if (i>5)
 	//	break;
@@ -1839,7 +1861,6 @@ void ns_worm_learner::output_movement_analysis_optimization_data(int software_ve
 
 				for (unsigned int k = 0; k < 1; k++) {
 					const unsigned long region_id(data_selector.samples[i].regions[j].region_id);
-
 
 
 					ns_time_path_solution time_path_solution;
@@ -1873,23 +1894,49 @@ void ns_worm_learner::output_movement_analysis_optimization_data(int software_ve
 						metadata.load_from_db(region_id, "", sql);
 					}
 
-
-					o2() << "\n";
+					if (run_posture)
+					posture_analysis_optimization_output() << "\n";
+					if (run_expansion)
+						expansion_analysis_optimization_output() << "\n";
 					cerr << metadata.plate_name() << "\n";
-					map<std::string, ns_parameter_set_optimization_record>::iterator p = best_parameter_sets.find(data_selector.samples[i].regions[j].region_metadata->plate_type_summary());
-					if (p == best_parameter_sets.end())
-						p = best_parameter_sets.insert(best_parameter_sets.begin(), std::pair<std::string, ns_parameter_set_optimization_record>(data_selector.samples[i].regions[j].region_metadata->plate_type_summary(), ns_parameter_set_optimization_record(thresholds, hold_times)));
-
-					time_path_image_analyzer.write_analysis_optimization_data(software_version_number, thresholds, hold_times, metadata, o2(), p->second.new_parameters_results);
 
 					//get current parameters
 					ns_image_server::ns_posture_analysis_model_cache::const_handle_t posture_analysis_model_handle;
 					image_server.get_posture_analysis_model_for_region(region_id, posture_analysis_model_handle, sql);
 
-					vector<double> thresh, hold_t;
-					thresh.push_back(posture_analysis_model_handle().model_specification.threshold_parameters.stationary_cutoff);
-					hold_t.push_back(posture_analysis_model_handle().model_specification.threshold_parameters.permanance_time_required_in_seconds);
-					time_path_image_analyzer.write_analysis_optimization_data(software_version_number, thresh, hold_t, metadata, o2(), p->second.current_parameter_results);
+					if (run_posture) {
+						map<std::string, ns_parameter_set_optimization_record>::iterator p = best_posture_parameter_sets.find(data_selector.samples[i].regions[j].region_metadata->plate_type_summary());
+						if (p == best_posture_parameter_sets.end())
+							p = best_posture_parameter_sets.insert(best_posture_parameter_sets.begin(), 
+								std::pair<std::string, ns_parameter_set_optimization_record>(data_selector.samples[i].regions[j].region_metadata->plate_type_summary(),
+																								ns_parameter_set_optimization_record(posture_analysis_thresholds, posture_analysis_hold_times)));
+
+						time_path_image_analyzer.write_posture_analysis_optimization_data(software_version_number, posture_analysis_thresholds, posture_analysis_hold_times, metadata, posture_analysis_optimization_output(), p->second.new_parameters_results);
+
+
+						vector<double> thresh;
+						vector<unsigned long>hold_t;
+						thresh.push_back(posture_analysis_model_handle().model_specification.threshold_parameters.stationary_cutoff);
+						hold_t.push_back(posture_analysis_model_handle().model_specification.threshold_parameters.permanance_time_required_in_seconds);
+						time_path_image_analyzer.write_posture_analysis_optimization_data(software_version_number, thresh, hold_t, metadata, posture_analysis_optimization_output(), p->second.current_parameter_results);
+					}
+					if (run_expansion) {
+						map<std::string, ns_parameter_set_optimization_record>::iterator p = best_expansion_parameter_sets.find(data_selector.samples[i].regions[j].region_metadata->plate_type_summary());
+						if (p == best_expansion_parameter_sets.end())
+							p = best_expansion_parameter_sets.insert(best_expansion_parameter_sets.begin(), std::pair<std::string, ns_parameter_set_optimization_record>(data_selector.samples[i].regions[j].region_metadata->plate_type_summary(), ns_parameter_set_optimization_record(posture_analysis_thresholds, posture_analysis_hold_times)));
+
+						time_path_image_analyzer.write_expansion_analysis_optimization_data(expansion_analysis_thresholds, expansion_analysis_hold_times, metadata, expansion_analysis_optimization_output(), p->second.new_parameters_results);
+
+						//get current parameters
+						ns_image_server::ns_posture_analysis_model_cache::const_handle_t posture_analysis_model_handle;
+						image_server.get_posture_analysis_model_for_region(region_id, posture_analysis_model_handle, sql);
+
+						vector<double> thresh;
+						vector<unsigned long>hold_t;
+						thresh.push_back(posture_analysis_model_handle().model_specification.threshold_parameters.death_time_expansion_cutoff);
+						hold_t.push_back(posture_analysis_model_handle().model_specification.threshold_parameters.death_time_expansion_time_kernel_in_seconds);
+						time_path_image_analyzer.write_expansion_analysis_optimization_data(thresh, hold_t, metadata, expansion_analysis_optimization_output(), p->second.current_parameter_results);
+					}
 
 				}
 			}
@@ -1900,39 +1947,56 @@ void ns_worm_learner::output_movement_analysis_optimization_data(int software_ve
 		//if (i>5)
 	//	break;
 	}
+	std::string results_text;
+	for (unsigned int i = 0; i < 2; i++) {
+		map<std::string, ns_parameter_set_optimization_record> *best_parameter_sets;
+		std::string data_name;
+		if (i == 0) {
+			if (!run_posture)
+				continue;
+			best_parameter_sets = &best_posture_parameter_sets;
+			data_name = "Posture Analysis";
+		}
+		else {
+			if (!run_expansion)
+				continue;
+			best_parameter_sets = &best_expansion_parameter_sets;
+			data_name = "Expansion Analysis";
 
-	std::string results_text("===Automated Posture Analysis Calbiration Results===\n");
-	results_text += "Calculated at " + ns_format_time_string_for_human(ns_current_time()) + "\n\n";
-
-
-	for (map<std::string, ns_parameter_set_optimization_record>::iterator p = best_parameter_sets.begin(); p != best_parameter_sets.end(); p++) {
-		if (p->second.new_parameters_results.count == 0)
-			continue;
-		p->second.find_best_parameter_set(thresholds, hold_times);
-
-		std::string fname = p->first;
-		for (unsigned int i = 0; i < fname.size(); i++) {
-			if (!isalnum(fname[i]))
-				fname[i] = '_';
 		}
 
-		double current_msqerr = (p->second.current_parameter_results.death_total_mean_square_error_in_hours[0][0] / p->second.current_parameter_results.count);
-		double best_msqerr = p->second.mean_squared_error;
-		results_text += "**For plates of type " + p->first + "\n";
-		results_text += "The existing parameter set produced estimates that differed from by-hand annotations by\n " + ns_to_string_short(sqrt(current_msqerr),3) + " days on average (a mean squared error of " + ns_to_string_short(current_msqerr,3) + " days squared)\n";
-		results_text += "The best possible parameter set produced estimates that differed from by-hand annotations by\n" + ns_to_string_short(sqrt(best_msqerr),3) + " days on average (a mean squared error of " + ns_to_string_short(best_msqerr, 3) + " days squared)\n";
-		bool enough_worms = p->second.new_parameters_results.count < 50;
-		if (enough_worms)
-			results_text += "Only " + ns_to_string(p->second.new_parameters_results.count) + " individuals were annotated by hand.  It is recommended that you annotate more individuals of this type and re-run this analysis, to produce a more reliable parameter set.\n";
-		else results_text += ns_to_string(p->second.new_parameters_results.count) + " individuals were annotated by hand to produce these estimates.\n";
-		bool substantial_improvement = current_msqerr <= .8*best_msqerr;
-		if (enough_worms && substantial_improvement)
-			results_text += "A new parameter file named " + fname + " has been written to disk.\n  It is recommended that you use this model for subsequent analysis of this type of animals.\n";
-		results_text += "\n";
-		
-		ns_acquire_for_scope<ostream> o2(image_server.results_storage.optimized_posture_analysis_parameter_set(sub, fname, sql).output());
-		p->second.best.write(o2());
-		o2.release();
+		results_text += "===Automated " + data_name + " Calibration Results == \n";
+		results_text += "Calculated at " + ns_format_time_string_for_human(ns_current_time()) + "\n\n";
+
+		for (map<std::string, ns_parameter_set_optimization_record>::iterator p = best_parameter_sets->begin(); p != best_parameter_sets->end(); p++) {
+			if (p->second.new_parameters_results.count == 0)
+				continue;
+			p->second.find_best_parameter_set(posture_analysis_thresholds, posture_analysis_hold_times);
+
+			std::string fname = p->first;
+			for (unsigned int i = 0; i < fname.size(); i++) {
+				if (!isalnum(fname[i]))
+					fname[i] = '_';
+			}
+
+			double current_msqerr = (p->second.current_parameter_results.death_total_mean_square_error_in_hours[0][0] / p->second.current_parameter_results.count);
+			double best_msqerr = p->second.mean_squared_error;
+			results_text += "**For plates of type " + p->first + "\n";
+			results_text += "The existing parameter set produced estimates that differed from by-hand annotations by\n " + ns_to_string_short(sqrt(current_msqerr), 3) + " days on average (a mean squared error of " + ns_to_string_short(current_msqerr, 3) + " days squared)\n";
+			results_text += "The best possible parameter set produced estimates that differed from by-hand annotations by\n" + ns_to_string_short(sqrt(best_msqerr), 3) + " days on average (a mean squared error of " + ns_to_string_short(best_msqerr, 3) + " days squared)\n";
+			bool enough_worms = p->second.new_parameters_results.count >= 50;
+			if (enough_worms)
+				results_text += "Only " + ns_to_string(p->second.new_parameters_results.count) + " individuals were annotated by hand.\nThese results will not be meaningful until you annotate more individuals.\n";
+			else results_text += ns_to_string(p->second.new_parameters_results.count) + " individuals were annotated by hand to produce these estimates.\n";
+			bool substantial_improvement = current_msqerr <= .8*best_msqerr;
+			if (enough_worms && substantial_improvement)
+				results_text += "A new parameter file named " + fname + " has been written to disk.\n  It is recommended that you use this model for subsequent analysis of this type of animals.\n";
+			results_text += "\n";
+
+			ns_acquire_for_scope<ostream> posture_analysis_text_output(image_server.results_storage.optimized_posture_analysis_parameter_set(sub, fname, sql).output());
+			p->second.best.write(posture_analysis_text_output());
+			posture_analysis_text_output.release();
+		}
 	}
 	ns_acquire_for_scope<ostream> summary(image_server.results_storage.optimized_posture_analysis_parameter_set(sub, "optimization_summary", sql).output());
 	summary() << results_text;

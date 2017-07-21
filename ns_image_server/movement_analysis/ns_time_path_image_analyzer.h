@@ -420,6 +420,13 @@ struct ns_parameter_optimization_results {
 	std::vector<std::vector<double> > death_total_mean_square_error_in_hours; // x[movement,time]
 	unsigned long count;
 };
+
+struct ns_death_time_expansion_info {
+	unsigned long time_point_at_which_death_time_expansion_peaked,
+	 time_point_at_which_death_time_expansion_started,
+		time_point_at_which_death_time_expansion_stopped;
+	bool found_death_time_expansion;
+};
 class ns_analyzed_image_time_path {
 public:
 	ns_analyzed_image_time_path(ns_time_path_image_movement_analysis_memory_pool & memory_pool_, ns_64_bit unique_process_id_) :
@@ -468,9 +475,13 @@ public:
 	const ns_analyzed_image_time_path_element & element(const unsigned long i) const { return elements[i]; }
 
 	void write_detailed_movement_quantification_analysis_header(std::ostream & o);
-	static void write_analysis_optimization_data_header(std::ostream & o);
-	void write_analysis_optimization_data(int software_version_number,const ns_stationary_path_id & id, const std::vector<double> & thresholds, const std::vector<double> & hold_times, const ns_region_metadata & m, const ns_time_series_denoising_parameters & denoising_parameters, std::ostream & o, ns_parameter_optimization_results & results) const;
-	void calculate_analysis_optimization_data(const std::vector<double> & thresholds, const std::vector<double> & hold_times, std::vector< std::vector < unsigned long > > & death_times, int software_version) const;
+	static void write_posture_analysis_optimization_data_header(std::ostream & o);
+	static void write_expansion_analysis_optimization_data_header(std::ostream & o);
+	void write_posture_analysis_optimization_data(int software_version_number,const ns_stationary_path_id & id, const std::vector<double> & thresholds, const std::vector<unsigned long> & hold_times, const ns_region_metadata & m, const ns_time_series_denoising_parameters & denoising_parameters, std::ostream & o, ns_parameter_optimization_results & results) const;
+	void write_expansion_analysis_optimization_data(const ns_stationary_path_id & id, const std::vector<double> & thresholds, const std::vector<unsigned long> & hold_times, const ns_region_metadata & m, std::ostream & o, ns_parameter_optimization_results & results) const;
+
+	void calculate_posture_analysis_optimization_data(const std::vector<double> & thresholds, const std::vector<unsigned long> & hold_times, std::vector< std::vector < unsigned long > > & death_times, int software_version) const;
+	void calculate_expansion_analysis_optimization_data(const unsigned long actual_death_time, const std::vector<double> & thresholds, const std::vector<unsigned long> & hold_times, std::vector< ns_death_time_expansion_info > & expansion_intervals) const;
 
 	ns_vector_2i path_region_position,
 		path_region_size,
@@ -532,6 +543,14 @@ public:
 	}
 
 	static  void spatially_average_movement(const int y, const int x, const int k, const ns_image_standard_signed & im, long &averaged_sum, long &count);
+
+
+	void identify_expansion_time(const unsigned long death_index,
+		std::vector<double> thresholds,
+		std::vector<unsigned long> hold_times,
+		std::vector<ns_death_time_expansion_info> & results,
+		std::vector<ns_s64_bit> & intensity_changes) const;
+
 	long debug_number_images_written;
 private:
 
@@ -708,8 +727,9 @@ public:
 	//void write_summary_movement_quantification_analysis_data(const ns_region_metadata & m, std::ostream & o)const;
 
 	void write_detailed_movement_quantification_analysis_data(const ns_region_metadata & m, std::ostream & o,const bool only_output_elements_with_by_hand_data,const long specific_animal_id=-1, const bool abbreviated_time_series=false)const;
-	void write_analysis_optimization_data(int software_version_number,const std::vector<double> & thresholds, const std::vector<double> & hold_times, const ns_region_metadata & m,std::ostream & o, ns_parameter_optimization_results & results) const;
-	
+	void write_posture_analysis_optimization_data(int software_version_number,const std::vector<double> & thresholds, const std::vector<unsigned long> & hold_times, const ns_region_metadata & m,std::ostream & o, ns_parameter_optimization_results & results) const;
+	void write_expansion_analysis_optimization_data(const std::vector<double> & thresholds, const std::vector<unsigned long> & hold_times, const ns_region_metadata & m, std::ostream & o, ns_parameter_optimization_results & results) const;
+
 	void output_visualization(const std::string & base_directory) const;
 
 	void produce_death_time_annotations(ns_death_time_annotation_set & set) const;

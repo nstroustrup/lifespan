@@ -3022,6 +3022,15 @@ ns_image_storage_reciever_handle<ns_8_bit> ns_image_server_results_storage::mach
 	ns_dir::create_directory_recursive(path);
 	return ns_image_storage_reciever_handle<ns_image_storage_handler::ns_component>(new ns_image_storage_reciever_to_disk<ns_image_storage_handler::ns_component>(max_line_length, f.path(),ns_tiff,false));
 
+}	
+ns_image_server_results_file ns_image_server_results_storage::optimized_posture_analysis_parameter_set(ns_image_server_results_subject & spec, const std::string & type, ns_sql & sql) const {
+	spec.get_names(sql);
+	string dir, fname;
+	dir = time_path_image_analysis_quantification() + DIR_CHAR_STR + "optimal_posture_analysis_parameter_sets" ;
+
+	fname = type;
+	ns_add_image_suffix(fname, ns_csv);
+	return ns_image_server_results_file(results_directory, spec.experiment_name + DIR_CHAR_STR + dir, fname);
 }
 
 ns_image_server_results_file ns_image_server_results_storage::time_path_image_analysis_quantification(ns_image_server_results_subject & spec,const std::string & type, const bool store_in_results_directory,ns_sql & sql, bool abbreviated_time_series, bool compress_file_names) const{

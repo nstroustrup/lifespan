@@ -1021,13 +1021,13 @@ class ns_worm_terminal_main_menu_organizer : public ns_menu_organizer{
 	}
 	static void generate_movement_image_analysis_optimization_data(const std::string & value){
 	
-		if (value.find("Quiecent") != value.npos)
-			worm_learner.output_movement_analysis_optimization_data(2,ns_worm_learner::ns_quiecent);
-		else if (value.find("Lifespan") != value.npos)
-			worm_learner.output_movement_analysis_optimization_data(2,ns_worm_learner::ns_lifespan);
-		else 
-			worm_learner.output_movement_analysis_optimization_data(2,ns_worm_learner::ns_thermotolerance);
-		
+		//if (value.find("Quiecent") != value.npos)
+		//	worm_learner.output_movement_analysis_optimization_data(2,ns_worm_learner::ns_quiecent);
+		//else if (value.find("Lifespan") != value.npos)
+		//	worm_learner.output_movement_analysis_optimization_data(2,ns_worm_learner::ns_lifespan);
+		//else 
+		//	worm_learner.output_movement_analysis_optimization_data(2,ns_worm_learner::ns_thermotolerance);
+		worm_learner.output_movement_analysis_optimization_data(2, ns_worm_learner::ns_v2);
 	}
 
 	static void generate_training_set_from_by_hand_annotations(const std::string & value){worm_learner.generate_training_set_from_by_hand_annotation();}
@@ -1331,17 +1331,17 @@ public:
 		add(ns_menu_item_spec(rebuild_db_region_data_from_filenames,"Data Files/Transfer and Backup/Database Repair/Add missing region images on disk into current experiment"));
 
 		//add(ns_menu_item_spec(generate_survival_curve_from_hand_annotations,"&Calibration/Generate Survival Curves from by hand annotations"));
-		add(ns_menu_item_spec(compare_machine_and_by_hand_annotations,"&Calibration/Compare by-hand annotations to Machine"));
-		ns_menu_item_spec st4(generate_movement_image_analysis_optimization_data,"Calibration/Generate Threshold Posture Model Parameter Optimization File from By Hand Annotations");
+		add(ns_menu_item_spec(compare_machine_and_by_hand_annotations,"&Calibration/_Compare Storyboard annotations to fully-automated results"));
+		add(ns_menu_item_spec(generate_movement_image_analysis_optimization_data,"Calibration/_Use Storyboard Annotations to Create improved Posture Analysis Parameter Sets"));
+		add(ns_menu_item_spec(test_time_path_analysis_parameters, "Calibration/Test various Position Analysis Models"));
+
 		
-		st4.options.push_back(ns_menu_item_options("Using Thermotolerance Parameter Range"));
-		st4.options.push_back(ns_menu_item_options("Using Lifespan Parameter Range"));
-		st4.options.push_back(ns_menu_item_options("Using Quiecent Lifespan Parameter Range"));
-		add(st4);
+		//st4.options.push_back(ns_menu_item_options("Using Thermotolerance Parameter Range"));
+		//st4.options.push_back(ns_menu_item_options("Using Lifespan Parameter Range"));
+		//st4.options.push_back(ns_menu_item_options("Using Quiecent Lifespan Parameter Range"));
+		//add(st4);
 		
-		add(ns_menu_item_spec(generate_worm_markov_posture_model_from_by_hand_annotations,"Calibration/Build Hidden Markov Posture Model From By Hand Annotations"));
-		add(ns_menu_item_spec(test_time_path_analysis_parameters,"Calibration/Run time path solution parameter sweep"));
-	
+		//add(ns_menu_item_spec(generate_worm_markov_posture_model_from_by_hand_annotations,"Calibration/Build Hidden Markov Posture Model From By Hand Annotations"));
 
 		
 		ns_menu_item_spec model_spec(specifiy_model,"&Testing/Worm Detection/Specify SVM Model");

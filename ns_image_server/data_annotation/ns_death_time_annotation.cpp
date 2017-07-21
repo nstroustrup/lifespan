@@ -1610,7 +1610,7 @@ std::string ns_out_if_not_zero(const double d){
 		return "";
 	else return ns_to_string(d);
 };
-void ns_death_time_annotation_compiler::generate_animal_event_method_comparison(std::ostream & o) const{
+void ns_death_time_annotation_compiler::generate_animal_event_method_comparison(std::ostream & o, double & total_mean_squared_error, ns_64_bit & number_of_animals) const{
 	
 	ns_region_metadata::out_JMP_plate_identity_header(o);	
 	o << ",position_x,position_y,size_x,size_y,"
@@ -1686,6 +1686,10 @@ void ns_death_time_annotation_compiler::generate_animal_event_method_comparison(
 			else{
 				o << ((double)machine_death - (double)vis_death)/(60.0*60.0*24.0) << ","
 				<< ((double)machine_death - (double)vis_death)/(60.0*24.0) << "\n";
+
+				number_of_animals++; 
+				double m((machine_death - (double)vis_death) / 60.0);
+				total_mean_squared_error += m*m;
 			}
 		}
 	}

@@ -413,6 +413,13 @@ struct ns_time_path_image_movement_analysis_memory_pool{
 class ns_optical_flow_processor;
 class ns_time_path_image_movement_analyzer_thread_pool_persistant_data;
 
+struct ns_parameter_optimization_results {
+	ns_parameter_optimization_results(const int thresholds, const int times) :count(0) {
+		death_total_mean_square_error_in_hours.resize(thresholds, std::vector<double>(times, 0.0));
+	}
+	std::vector<std::vector<double> > death_total_mean_square_error_in_hours; // x[movement,time]
+	unsigned long count;
+};
 class ns_analyzed_image_time_path {
 public:
 	ns_analyzed_image_time_path(ns_time_path_image_movement_analysis_memory_pool & memory_pool_, ns_64_bit unique_process_id_) :
@@ -462,7 +469,7 @@ public:
 
 	void write_detailed_movement_quantification_analysis_header(std::ostream & o);
 	static void write_analysis_optimization_data_header(std::ostream & o);
-	void write_analysis_optimization_data(int software_version_number,const ns_stationary_path_id & id, const std::vector<double> & thresholds, const std::vector<double> & hold_times, const ns_region_metadata & m, const ns_time_series_denoising_parameters & denoising_parameters, std::ostream & o) const;
+	void write_analysis_optimization_data(int software_version_number,const ns_stationary_path_id & id, const std::vector<double> & thresholds, const std::vector<double> & hold_times, const ns_region_metadata & m, const ns_time_series_denoising_parameters & denoising_parameters, std::ostream & o, ns_parameter_optimization_results & results) const;
 	void calculate_analysis_optimization_data(const std::vector<double> & thresholds, const std::vector<double> & hold_times, std::vector< std::vector < unsigned long > > & death_times, int software_version) const;
 
 	ns_vector_2i path_region_position,
@@ -701,7 +708,7 @@ public:
 	//void write_summary_movement_quantification_analysis_data(const ns_region_metadata & m, std::ostream & o)const;
 
 	void write_detailed_movement_quantification_analysis_data(const ns_region_metadata & m, std::ostream & o,const bool only_output_elements_with_by_hand_data,const long specific_animal_id=-1, const bool abbreviated_time_series=false)const;
-	void write_analysis_optimization_data(int software_version_number,const std::vector<double> & thresholds, const std::vector<double> & hold_times, const ns_region_metadata & m,std::ostream & o) const;
+	void write_analysis_optimization_data(int software_version_number,const std::vector<double> & thresholds, const std::vector<double> & hold_times, const ns_region_metadata & m,std::ostream & o, ns_parameter_optimization_results & results) const;
 	
 	void output_visualization(const std::string & base_directory) const;
 

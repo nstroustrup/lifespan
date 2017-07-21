@@ -201,11 +201,13 @@ public:
 
 class ns_text_dialog{
 public:
+	ns_text_dialog() :w(600), h(400) {}
 	std::string text,title;
 	std::vector<std::string> grid_text;
+	unsigned long w, h;
 	bool wait_for_it;
 	void act(){
-		ns_text_display_window * win = new ns_text_display_window(600,400,title.c_str());
+		ns_text_display_window * win = new ns_text_display_window(w,h,title.c_str());
 		win->wait_for_it = &wait_for_it;
 		if(text.size() != 0)
 		win->set_text(text);

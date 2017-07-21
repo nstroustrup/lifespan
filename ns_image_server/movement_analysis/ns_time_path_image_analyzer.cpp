@@ -1804,12 +1804,12 @@ std::string ns_output_interval_difference(const unsigned long time, const ns_dea
 void ns_analyzed_image_time_path::write_analysis_optimization_data_header(std::ostream & o){
 	o << "Experiment,Device,Plate Name,Animal Details,Group ID,Path ID,Excluded,Censored,Number of Worms in Clump,"
 		"Movement Threshold, Min Hold Time (Hours), Denoising Technique Used, "
-		"Visual Inspection Death Age (Days),Machine Death Age (Days), Visual Inspection Death Time (Date), Difference Between Machine and By Hand Death Times (Days), Difference Squared, Random Group";
+		"Visual Inspection Death Age (Days),Machine Death Age (Days), Visual Inspection Death Time (Date), Difference Between Machine and By Hand Death Times (Days), Sqrt(Difference Squared) (Days), Random Group";
 }
 
 std::vector< std::vector < unsigned long > > static_messy_death_time_matrix;
-void ns_analyzed_image_time_path::write_analysis_optimization_data(int software_version_number,const ns_stationary_path_id & id, const std::vector<double> & thresholds, const std::vector<double> & hold_times, const ns_region_metadata & m,const ns_time_series_denoising_parameters & denoising_parameters,std::ostream & o) const{
-	
+ void ns_analyzed_image_time_path::write_analysis_optimization_data(int software_version_number,const ns_stationary_path_id & id, const std::vector<double> & thresholds, const std::vector<double> & hold_times, const ns_region_metadata & m,const ns_time_series_denoising_parameters & denoising_parameters,std::ostream & o, ns_parameter_optimization_results & results) const{
+
 	long death_time(by_hand_annotation_event_times[(int)ns_movement_cessation].period_end);
 	if (by_hand_annotation_event_times[(int)ns_movement_cessation].fully_unbounded())
 		return;
@@ -1817,7 +1817,11 @@ void ns_analyzed_image_time_path::write_analysis_optimization_data(int software_
 	const unsigned long random_group(rand()%2);
 	for (unsigned int i = 0; i < thresholds.size(); i++)
 		for (unsigned int j = 0; j < hold_times.size(); j++){
-			const double err(((double)static_messy_death_time_matrix[i][j] - death_time)/(60.0*60.0*24));
+
+			const double err(((double)static_messy_death_time_matrix[i][j] - death_time)/(60.0*60.0*24.0));
+			const double err_sq = err*err;
+			results.death_total_mean_square_error_in_hours[i][j] += err_sq;
+
 			o << m.experiment_name << "," << m.device << "," << m.plate_name() << "," << m.plate_type_summary() 
 				<< "," << id.group_id << "," << id.path_id << ","
 				<< (censoring_and_flag_details.is_excluded()?"1":"0") << ","
@@ -1828,7 +1832,7 @@ void ns_analyzed_image_time_path::write_analysis_optimization_data(int software_
 				<< (death_time - m.time_at_which_animals_had_zero_age)/(60.0*60.0*24)  << ","
 				<< (static_messy_death_time_matrix[i][j] - m.time_at_which_animals_had_zero_age)/(60.0*60.0*24)  << ","
 				<< death_time << ","
-				<< err << "," << sqrt(err*err) << "," << random_group << "\n";
+				<< err << "," << sqrt(err_sq) << "," << random_group << "\n";
 		}
 }
 
@@ -2140,13 +2144,14 @@ void ns_time_path_image_movement_analyzer::write_summary_movement_quantification
 }*/
 
 
-void ns_time_path_image_movement_analyzer::write_analysis_optimization_data(int software_version,const std::vector<double> & thresholds, const std::vector<double> & hold_times, const ns_region_metadata & m,std::ostream & o) const{
+void ns_time_path_image_movement_analyzer::write_analysis_optimization_data(int software_version,const std::vector<double> & thresholds, const std::vector<double> & hold_times, const ns_region_metadata & m,std::ostream & o, ns_parameter_optimization_results & results) const{
 	srand(0);
 	for (unsigned int i = 0; i < groups.size(); i++){
 		for (unsigned int j = 0; j < groups[i].paths.size(); j++){	
 			if (ns_skip_low_density_paths && groups[i].paths[j].is_low_density_path() || groups[i].paths[j].excluded() || !groups[i].paths[j].by_hand_data_specified())
 					continue;
-			groups[i].paths[j].write_analysis_optimization_data(software_version,generate_stationary_path_id(i,j),thresholds,hold_times,m,denoising_parameters_used,o);
+			groups[i].paths[j].write_analysis_optimization_data(software_version,generate_stationary_path_id(i,j),thresholds,hold_times,m,denoising_parameters_used,o, results);
+			results.count++;
 		}
 	}
 }

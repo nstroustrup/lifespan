@@ -49,6 +49,7 @@ ns_sql & ns_worm_learner::get_sql_connection() {
 		image_server.register_server_event(ns_image_server_event("Recovered from a lost MySQL connection."), persistant_sql_connection);
 
 	}
+	lock.release();
 	return *persistant_sql_connection;
 }
 
@@ -618,32 +619,32 @@ void ns_worm_learner::generate_scanner_report(unsigned long first_experiment_tim
 
 void ns_worm_learner::export_experiment_data(const unsigned long experiment_id){
 	
-	ns_acquire_for_scope<ns_sql> sql(image_server.new_sql_connection(__FILE__,__LINE__));
+	ns_sql & sql(get_sql_connection());
 	ns_image_server_results_subject sub;
 	sub.experiment_id = experiment_id;
-	std::string dir(image_server.results_storage.db_export_directory(sub,sql()));
+	std::string dir(image_server.results_storage.db_export_directory(sub,sql));
 	cout << "Writing experiment metadata to " << dir << "\n";
-	ns_write_experimental_data_in_database_to_file(experiment_id,image_server.results_storage.db_export_directory(sub,sql()),sql());
+	ns_write_experimental_data_in_database_to_file(experiment_id,image_server.results_storage.db_export_directory(sub,sql),sql);
 	cout << "Compressing data...";
 	ns_zip_experimental_data(dir,true);
 	cout << "\nDone.\n";
 }
 
 bool ns_worm_learner::import_experiment_data(const std::string & database_name,const std::string & directory, const bool reuse_database){
-	ns_acquire_for_scope<ns_sql> sql(image_server.new_sql_connection(__FILE__,__LINE__));
-	return ns_update_db_using_experimental_data_from_file(database_name,reuse_database,directory,sql());
+	ns_sql & sql(get_sql_connection());
+	return ns_update_db_using_experimental_data_from_file(database_name,reuse_database,directory,sql);
 }
 
 void ns_worm_learner::analyze_time_path(const unsigned long region_id){
-	ns_acquire_for_scope<ns_sql> sql(image_server.new_sql_connection(__FILE__,__LINE__));
+	ns_sql & sql(get_sql_connection());
 
-	ns_time_path_solver_parameters solver_parameters(ns_time_path_solver_parameters::default_parameters(region_id,sql(),true));
+	ns_time_path_solver_parameters solver_parameters(ns_time_path_solver_parameters::default_parameters(region_id,sql,true));
 	ns_time_path_solution time_path_solution;
 	ns_time_path_solver tp_solver;
-	tp_solver.load(region_id,sql());
-	tp_solver.solve(solver_parameters,time_path_solution,&sql());
+	tp_solver.load(region_id,sql);
+	tp_solver.solve(solver_parameters,time_path_solution,&sql);
 	time_path_solution.fill_gaps_and_add_path_prefixes(ns_time_path_solution::default_length_of_fast_moving_prefix());
-	time_path_solution.save_to_db(region_id,sql());
+	time_path_solution.save_to_db(region_id,sql);
 				
 	ns_image_server_results_subject results_subject;
 	results_subject.region_id = region_id;
@@ -651,13 +652,11 @@ void ns_worm_learner::analyze_time_path(const unsigned long region_id){
 
 	ns_acquire_for_scope<ostream> position_3d_file_output(
 	image_server.results_storage.animal_position_timeseries_3d(
-		results_subject,sql(),ns_image_server_results_storage::ns_3d_plot
+		results_subject,sql,ns_image_server_results_storage::ns_3d_plot
 	).output()
 	);
 	time_path_solution.output_visualization_csv(position_3d_file_output());
 	position_3d_file_output.release();
-	sql.release();
-
 	cout << time_path_solution.paths.size() << " stationary animals detected.\n";
 	cout << "Path lengths:\n";
 	for (unsigned int i = 0; i < time_path_solution.paths.size(); i++){
@@ -1544,65 +1543,88 @@ void ns_worm_learner::simulate_multiple_worm_clumps(const bool use_waiting_time_
 	o.release();
 }
 
+struct ns_machine_by_hand_comp {
+	ns_death_time_annotation_compiler death_time_annotation_compiler;
+};
 void ns_worm_learner::compare_machine_and_by_hand_annotations(){
 	if (!data_selector.experiment_selected())
 		throw ns_ex("No experiment selected.");
 	
-	ns_acquire_for_scope<ns_sql> sql(image_server.new_sql_connection(__FILE__,__LINE__));
+	ns_sql & sql(get_sql_connection());
 
 	load_current_experiment_movement_results(ns_death_time_annotation_set::ns_censoring_and_movement_transitions,data_selector.current_experiment_id());
 
+	map<std::string, ns_machine_by_hand_comp> per_strain_analysis;
+
 	
+
 	ns_death_time_annotation_compiler death_time_annotation_compiler;
 	for (unsigned int i = 0; i < movement_results.samples.size(); i++){
 		for (unsigned int j = 0; j < movement_results.samples[i].regions.size(); j++){
-				death_time_annotation_compiler.add(movement_results.samples[i].regions[j].death_time_annotation_set);
-				death_time_annotation_compiler.specifiy_region_metadata(movement_results.samples[i].regions[j].metadata.region_id,
-																	 movement_results.samples[i].regions[j].metadata);
+			//all strains
+			death_time_annotation_compiler.add(movement_results.samples[i].regions[j].death_time_annotation_set);
+			death_time_annotation_compiler.specifiy_region_metadata(movement_results.samples[i].regions[j].metadata.region_id,
+				movement_results.samples[i].regions[j].metadata);
+			
+			//per strain analysis
+			map<std::string, ns_machine_by_hand_comp>::iterator p = per_strain_analysis.find(movement_results.samples[i].regions[j].metadata.plate_type_summary());
+			if (p == per_strain_analysis.end()) {
+				p = per_strain_analysis.insert(per_strain_analysis.begin(), std::pair<std::string, ns_machine_by_hand_comp>(movement_results.samples[i].regions[j].metadata.plate_type_summary(), ns_machine_by_hand_comp()));
+				p->second.death_time_annotation_compiler.specifiy_region_metadata(movement_results.samples[i].regions[j].metadata.region_id,
+					movement_results.samples[i].regions[j].metadata);
+			}
+			p->second.death_time_annotation_compiler.add(movement_results.samples[i].regions[j].death_time_annotation_set);
 		}
 	}	
 	ns_hand_annotation_loader loader;
-
-	loader.load_experiment_annotations(ns_death_time_annotation_set::ns_censoring_and_movement_transitions,data_selector.current_experiment_id(),sql());
+	loader.load_experiment_annotations(ns_death_time_annotation_set::ns_censoring_and_movement_transitions,data_selector.current_experiment_id(),sql);
+	//all strains
 	death_time_annotation_compiler.add(loader.annotations);
+	//per strain
+	for (map<std::string, ns_machine_by_hand_comp>::iterator p = per_strain_analysis.begin(); p != per_strain_analysis.end(); p++) {
+		p->second.death_time_annotation_compiler.add(loader.annotations, ns_death_time_annotation_compiler::ns_do_not_create_regions);
+	}
+
+	//write all strain data to disk
 	ns_image_server_results_subject results_subject;
 	results_subject.experiment_id = data_selector.current_experiment_id();
-	
-	ns_acquire_for_scope<ostream> animal_data_file(image_server.results_storage.animal_event_data(results_subject,"automated_inspected_comparison",sql()).output());
-	
-	death_time_annotation_compiler.generate_animal_event_method_comparison(animal_data_file());
+	ns_acquire_for_scope<ostream> animal_data_file(image_server.results_storage.animal_event_data(results_subject,"automated_inspected_comparison",sql).output());
+	double overall_msqerr(0);
+	ns_64_bit overall_count(0);
+	death_time_annotation_compiler.generate_animal_event_method_comparison(animal_data_file(), overall_msqerr, overall_count);
+	overall_msqerr /= overall_count;
+	overall_msqerr /= (60 * 24 * 60 * 24);
 	animal_data_file.release();
 
-	/*
-	for (unsigned int i = 0; i < movement_results.samples.size(); i++){
-		for (unsigned int j = 0; j < movement_results.samples[i].regions.size(); j++){
-		results_subject.sample_name = movement_results.samples[i].name();
-		results_subject.sample_id = movement_results.samples[i].id();
-		results_subject.region_name = movement_results.samples[i].regions[j].metadata.region_name;
-		results_subject.region_id = movement_results.samples[i].regions[j].metadata.region_id;
-		ns_image_server_results_file o(image_server.results_storage.animal_position_timeseries_3d(results_subject,sql(),ns_image_server_results_storage::ns_3d_plot_with_annotations));
-		ns_acquire_for_scope<ostream> out(o.output());
+	std::string results_text("===Comparrison between Storyboard By-Hand Annotations and Fully-Automated Machine Results===\n");
+	results_text += "Calculated at " + ns_format_time_string_for_human(ns_current_time()) + "\n\n";
+	for (map<std::string, ns_machine_by_hand_comp>::iterator p = per_strain_analysis.begin(); p != per_strain_analysis.end(); p++) {
+		results_text += "**For plates of type " + p->first + " **\n";
+		double local_msqerr(0);
+		ns_64_bit local_count(0);
+		ofstream tmp;
+		p->second.death_time_annotation_compiler.generate_animal_event_method_comparison(tmp, local_msqerr, local_count);
 
-		//ns_acquire_for_scope<ostream> out_launcher(image_server.results_storage.animal_position_timeseries_3d(results_subject,sql(),true).output());
-		ns_time_path_image_movement_analyzer analyzer;
-		ns_time_path_solution solution;
-		solution.load_from_db(movement_results.samples[i].regions[j].metadata.region_id,sql());
-		analyzer.load_movement_data_from_db(movement_results.samples[i].regions[j].metadata.region_id,solution,sql());
-		analyzer.movement_description_series(ns_movement_data_source_type::ns_time_path_image_analysis_data).output_position_visualization_csv(out());
+		local_msqerr /= local_count;
+		local_msqerr /= (60*24*60*24);
 
-		ns_death_time_annotation_compiler::ns_region_list::const_iterator p(death_time_annotation_compiler.regions.find(movement_results.samples[i].regions[j].metadata.region_id));
-		if (p != death_time_annotation_compiler.regions.end()){
-			p->second.output_visualization_csv(out(),false);
-		}
-		image_server.results_storage.write_animal_position_timeseries_3d_launcher(results_subject,ns_image_server_results_storage::ns_3d_plot_with_annotations,sql());
+		results_text += "The machine differed from by-hand annotations by\n" + ns_to_string_short(sqrt(local_msqerr),3) + " days on average (mean squared error :" + ns_to_string_short(local_msqerr,3) + " days squared)\n";
 		
-		//movement_results.samples[i].regions[j].output_time_path_visualization_launcher(movement_results.samples[i].regions[j].region_id(),title, o.output_filename(),out_launcher());
-		out.release();
-		}
+		bool enough_worms = local_count < 50;
+		if (enough_worms)
+			results_text += "Only " + ns_to_string(local_count) + " individuals were annotated by hand.  It is recommended that you annotate more individuals of this type and re-run this analysis, to produce a more reliable parameter set.\n";
+		else results_text += ns_to_string(local_count) + " individuals were annotated by hand to produce these estimates.\n";
+		results_text += "\n";
 	}
-	*/
-	sql.release();
-	
+
+	results_text += "**For all plates in this experiment **\n";
+	results_text += "The machine differed from by-hand annotations by\n" + ns_to_string_short(sqrt(overall_msqerr),3) + " days on average (mean squared error :" + ns_to_string_short(overall_msqerr,3) + " square days\n";
+	ns_text_dialog td;
+	td.grid_text.push_back(results_text);
+	td.title = "Results";
+	td.w = 1000;
+	td.h = 400;
+	ns_run_in_main_thread_custom_wait<ns_text_dialog> b(&td);
 }
 
 
@@ -1679,9 +1701,32 @@ void ns_worm_learner::generate_scanner_lifespan_statistics(bool use_by_hand_cens
 	o.close();
 
 };
+struct ns_parameter_set_optimization_record {
+	ns_parameter_set_optimization_record(std::vector<double> & thresholds, vector<double> & hold_times) :new_parameters_results(thresholds.size(), hold_times.size()), current_parameter_results(1,1){}
+	ns_parameter_optimization_results new_parameters_results;
+	ns_parameter_optimization_results current_parameter_results;
+	ns_threshold_movement_posture_analyzer_parameters best;
+	double mean_squared_error;
+	void find_best_parameter_set( std::vector<double> & thresholds, vector<double> & hold_times) {
+		mean_squared_error = DBL_MAX;
+		for (unsigned int i = 0; i < thresholds.size(); i++) {
+			for (unsigned int j = 0; j < hold_times.size(); j++) {
+				if (new_parameters_results.count > 0 && new_parameters_results.death_total_mean_square_error_in_hours[i][j] < mean_squared_error) {
+					best.stationary_cutoff = thresholds[i];
+					best.permanance_time_required_in_seconds = hold_times[j];
+					mean_squared_error = new_parameters_results.death_total_mean_square_error_in_hours[i][j];
+				}
+			}
+		}
+		if (new_parameters_results.count > 0) {
+			mean_squared_error /= new_parameters_results.count;
+		}
+	}
+};
 
 void ns_worm_learner::output_movement_analysis_optimization_data(int software_version_number, const ns_parameter_set_range & range){
-	ns_acquire_for_scope<ns_sql> sql(image_server.new_sql_connection(__FILE__,__LINE__));
+	ns_sql & sql(get_sql_connection());
+
 	unsigned int experiment_id = data_selector.current_experiment_id();
 	std::vector<double> thresholds;
 	//old movement scores
@@ -1700,8 +1745,8 @@ void ns_worm_learner::output_movement_analysis_optimization_data(int software_ve
 	else {
 		//new movement scores
 		const double min_thresh(.1);
-		const double max_thresh(200000);
-		const long number_of_thresholds(60);
+		const double max_thresh(20000);
+		const long number_of_thresholds(20);
 		const double log_dt(((log(max_thresh) - log(min_thresh)) / number_of_thresholds));
 		thresholds.resize(number_of_thresholds);
 
@@ -1712,34 +1757,49 @@ void ns_worm_learner::output_movement_analysis_optimization_data(int software_ve
 
 	}
 
+
 	
 	//generate optimization training set 
 	const unsigned long near_zero(30);
 	const unsigned long thresh_num(20);
 	bool by_hand_range(false);
 	vector<double> hold_times;
+	if (range == ns_v2) {
+
+		hold_times.reserve(40);
+		hold_times.push_back(0);
+		for (unsigned int i = 0; i < 15; i++)
+			hold_times.push_back(i * 30 * 60);
+		for (unsigned int i = 0; i < 6; i++)
+			hold_times.push_back((i) * 2 * 60 * 60);
+		int p(hold_times.size());
+		for (unsigned int i = 6; i < 14; i++)
+			hold_times.push_back(hold_times[p-1] +(i - 6) * 6 * 60 * 60);
+	}
 	if (range == ns_thermotolerance){
 		
-		hold_times.resize(16);
-		hold_times[0] = 0;
+		hold_times.reserve(16);
+		hold_times.push_back(0);
 		for (unsigned int i = 0; i < 15; i++)
-			hold_times[i+1] = i*45*60;
+			hold_times.push_back(i*45*60);
 	}
 	else if (range ==  ns_quiecent){
 
-		hold_times.resize(21);
+		hold_times.reserve(21);
 		for (unsigned int i = 0; i < 6; i++)
-			hold_times[i] = (i)*2*60*60;
+			hold_times.push_back((i)*2*60*60);
+
+		int p(hold_times.size());
 		for (unsigned int i = 6; i < 14; i++)
-			hold_times[i] = hold_times[5]+(i-6)*6*60*60;
+			hold_times.push_back(p+(i-6)*6*60*60);
 	}
 	else{
 		
 		
-		hold_times.resize(21);
-		hold_times[0] = 0;
-		hold_times[1] = 60*30;
-		hold_times[2] = 60*60;
+		hold_times.reserve(21);
+		hold_times.push_back(0);
+		hold_times.push_back(60*30);
+		hold_times.push_back(60*60);
 		for (unsigned int i = 0; i < 11; i++)
 			hold_times[i+3] = (i+1)*2*60*60;
 		for (unsigned int i = 0; i < 6; i++)
@@ -1747,74 +1807,142 @@ void ns_worm_learner::output_movement_analysis_optimization_data(int software_ve
 	}
 	ns_image_server_results_subject sub;
 	sub.experiment_id = experiment_id;
-	ns_acquire_for_scope<ostream> o2(image_server.results_storage.time_path_image_analysis_quantification(sub,"optimization_stats",true,sql()).output());
+	ns_acquire_for_scope<ostream> o2(image_server.results_storage.time_path_image_analysis_quantification(sub,"optimization_stats",true,sql).output());
 	ns_analyzed_image_time_path::write_analysis_optimization_data_header(o2());
 	unsigned region_count(0);
 	for (unsigned int i = 0; i < data_selector.samples.size(); i++)
 		region_count+=data_selector.samples[i].regions.size();
 
+	map<std::string, ns_parameter_set_optimization_record> best_parameter_sets;
+	
+	//	if (i>5)
+	//	break;
+	
+
+
+//	hold_times.resize(2);
+	//thresholds.resize(2);
+
+
 	unsigned pos(0);
-	for (unsigned int i = 0; i < data_selector.samples.size(); i++){
-		for (unsigned int j = 0; j < data_selector.samples[i].regions.size(); j++){
-			cerr << ns_to_string_short((100.0*pos)/region_count) << "%...";
+	for (unsigned int i = 0; i < data_selector.samples.size(); i++) {
+		for (unsigned int j = 0; j < data_selector.samples[i].regions.size(); j++) {
+			cerr << ns_to_string_short((100.0*pos) / region_count) << "%...";
 			pos++;
 			if (data_selector.samples[i].regions[j].censored ||
 				data_selector.samples[i].regions[j].excluded)
 				continue;
-			try{
-			/*	ns_time_series_denoising_parameters::ns_movement_score_normalization_type norm_type[3] = 
-						{ns_time_series_denoising_parameters::ns_none,
-						ns_time_series_denoising_parameters::ns_subtract_out_median_of_end,
-						ns_time_series_denoising_parameters::ns_subtract_out_plate_median
-						};*/
+			try {
 
 				ns_time_series_denoising_parameters::ns_movement_score_normalization_type norm_type[1] =
 				{ ns_time_series_denoising_parameters::ns_none };
-				
-				for (unsigned int k = 0; k < 1; k++){
-					const unsigned long region_id(data_selector.samples[i].regions[j].region_id);
-					ns_time_path_solution time_path_solution;
-					time_path_solution.load_from_db(region_id,sql(),true);
 
-					ns_time_series_denoising_parameters denoising_parameters(ns_time_series_denoising_parameters::load_from_db(region_id,sql()));
+				for (unsigned int k = 0; k < 1; k++) {
+					const unsigned long region_id(data_selector.samples[i].regions[j].region_id);
+
+
+
+					ns_time_path_solution time_path_solution;
+					time_path_solution.load_from_db(region_id, sql, true);
+
+					ns_time_series_denoising_parameters denoising_parameters(ns_time_series_denoising_parameters::load_from_db(region_id, sql));
 					denoising_parameters.movement_score_normalization = norm_type[k];
 
 					ns_time_path_image_movement_analyzer time_path_image_analyzer;
 					ns_image_server::ns_posture_analysis_model_cache::const_handle_t handle;
-					image_server.get_posture_analysis_model_for_region(region_id, handle, sql());
+					image_server.get_posture_analysis_model_for_region(region_id, handle, sql);
 					ns_posture_analysis_model mod(handle().model_specification);
-					mod.threshold_parameters.use_v1_movement_score = software_version_number==1;
+					mod.threshold_parameters.use_v1_movement_score = software_version_number == 1;
 					handle.release();
 					ns_acquire_for_scope<ns_analyzed_image_time_path_death_time_estimator> death_time_estimator(
-					
-					ns_get_death_time_estimator_from_posture_analysis_model(mod));
 
-					time_path_image_analyzer.load_completed_analysis(region_id,time_path_solution,denoising_parameters,&death_time_estimator(),sql());
+						ns_get_death_time_estimator_from_posture_analysis_model(mod));
+
+					time_path_image_analyzer.load_completed_analysis(region_id, time_path_solution, denoising_parameters, &death_time_estimator(), sql);
 					death_time_estimator.release();
 					ns_region_metadata metadata;
-		
-					try{
+
+					try {
 						ns_hand_annotation_loader by_hand_region_annotations;
-						metadata = by_hand_region_annotations.load_region_annotations(ns_death_time_annotation_set::ns_censoring_and_movement_transitions,region_id,sql());
+						metadata = by_hand_region_annotations.load_region_annotations(ns_death_time_annotation_set::ns_censoring_and_movement_transitions, region_id, sql);
 						time_path_image_analyzer.add_by_hand_annotations(by_hand_region_annotations.annotations);
-				
+
 					}
-					catch(ns_ex & ex){
+					catch (ns_ex & ex) {
 						cerr << ex.text();
-						metadata.load_from_db(region_id,"",sql());
+						metadata.load_from_db(region_id, "", sql);
 					}
 
-				
+
 					o2() << "\n";
 					cerr << metadata.plate_name() << "\n";
-					time_path_image_analyzer.write_analysis_optimization_data(software_version_number,thresholds,hold_times,metadata,o2());
+					map<std::string, ns_parameter_set_optimization_record>::iterator p = best_parameter_sets.find(data_selector.samples[i].regions[j].region_metadata->plate_type_summary());
+					if (p == best_parameter_sets.end())
+						p = best_parameter_sets.insert(best_parameter_sets.begin(), std::pair<std::string, ns_parameter_set_optimization_record>(data_selector.samples[i].regions[j].region_metadata->plate_type_summary(), ns_parameter_set_optimization_record(thresholds, hold_times)));
+
+					time_path_image_analyzer.write_analysis_optimization_data(software_version_number, thresholds, hold_times, metadata, o2(), p->second.new_parameters_results);
+
+					//get current parameters
+					ns_image_server::ns_posture_analysis_model_cache::const_handle_t posture_analysis_model_handle;
+					image_server.get_posture_analysis_model_for_region(region_id, posture_analysis_model_handle, sql);
+
+					vector<double> thresh, hold_t;
+					thresh.push_back(posture_analysis_model_handle().model_specification.threshold_parameters.stationary_cutoff);
+					hold_t.push_back(posture_analysis_model_handle().model_specification.threshold_parameters.permanance_time_required_in_seconds);
+					time_path_image_analyzer.write_analysis_optimization_data(software_version_number, thresh, hold_t, metadata, o2(), p->second.current_parameter_results);
+
 				}
 			}
-			catch(ns_ex & ex){
+			catch (ns_ex & ex) {
 				std::cerr << "\n" << ex.text() << "\n";
 			}
 		}
+		//if (i>5)
+	//	break;
 	}
+
+	std::string results_text("===Automated Posture Analysis Calbiration Results===\n");
+	results_text += "Calculated at " + ns_format_time_string_for_human(ns_current_time()) + "\n\n";
+
+
+	for (map<std::string, ns_parameter_set_optimization_record>::iterator p = best_parameter_sets.begin(); p != best_parameter_sets.end(); p++) {
+		if (p->second.new_parameters_results.count == 0)
+			continue;
+		p->second.find_best_parameter_set(thresholds, hold_times);
+
+		std::string fname = p->first;
+		for (unsigned int i = 0; i < fname.size(); i++) {
+			if (!isalnum(fname[i]))
+				fname[i] = '_';
+		}
+
+		double current_msqerr = (p->second.current_parameter_results.death_total_mean_square_error_in_hours[0][0] / p->second.current_parameter_results.count);
+		double best_msqerr = p->second.mean_squared_error;
+		results_text += "**For plates of type " + p->first + "\n";
+		results_text += "The existing parameter set produced estimates that differed from by-hand annotations by\n " + ns_to_string_short(sqrt(current_msqerr),3) + " days on average (a mean squared error of " + ns_to_string_short(current_msqerr,3) + " days squared)\n";
+		results_text += "The best possible parameter set produced estimates that differed from by-hand annotations by\n" + ns_to_string_short(sqrt(best_msqerr),3) + " days on average (a mean squared error of " + ns_to_string_short(best_msqerr, 3) + " days squared)\n";
+		bool enough_worms = p->second.new_parameters_results.count < 50;
+		if (enough_worms)
+			results_text += "Only " + ns_to_string(p->second.new_parameters_results.count) + " individuals were annotated by hand.  It is recommended that you annotate more individuals of this type and re-run this analysis, to produce a more reliable parameter set.\n";
+		else results_text += ns_to_string(p->second.new_parameters_results.count) + " individuals were annotated by hand to produce these estimates.\n";
+		bool substantial_improvement = current_msqerr <= .8*best_msqerr;
+		if (enough_worms && substantial_improvement)
+			results_text += "A new parameter file named " + fname + " has been written to disk.\n  It is recommended that you use this model for subsequent analysis of this type of animals.\n";
+		results_text += "\n";
+		
+		ns_acquire_for_scope<ostream> o2(image_server.results_storage.optimized_posture_analysis_parameter_set(sub, fname, sql).output());
+		p->second.best.write(o2());
+		o2.release();
+	}
+	ns_acquire_for_scope<ostream> summary(image_server.results_storage.optimized_posture_analysis_parameter_set(sub, "optimization_summary", sql).output());
+	summary() << results_text;
+
+	ns_text_dialog td;
+	td.grid_text.push_back(results_text);
+	td.title = "Results";
+	td.w = 1000;
+	td.h = 400;
+	ns_run_in_main_thread_custom_wait<ns_text_dialog> b(&td);
 
 }
 

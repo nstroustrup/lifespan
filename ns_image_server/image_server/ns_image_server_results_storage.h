@@ -192,6 +192,8 @@ public:
 
 	ns_image_server_results_file time_path_image_analysis_quantification(ns_image_server_results_subject & spec,const std::string & type, const bool store_in_results_directory,ns_sql & sql, bool abbreviated_time_series=false, bool compress_file_names=true) const;
 
+	ns_image_server_results_file optimized_posture_analysis_parameter_set(ns_image_server_results_subject & spec, const std::string & type, ns_sql & sql) const;
+
 	ns_image_server_results_file movement_timeseries_plot(ns_image_server_results_subject & spec,const std::string & type, ns_sql & sql) const{	
 		spec.get_names(sql);
 		if (spec.region_id != 0)

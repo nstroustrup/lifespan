@@ -1702,24 +1702,34 @@ void ns_worm_learner::generate_scanner_lifespan_statistics(bool use_by_hand_cens
 
 };
 struct ns_parameter_set_optimization_record {
-	ns_parameter_set_optimization_record(std::vector<double> & thresholds, vector<unsigned long> & hold_times) :new_parameters_results(thresholds.size(), hold_times.size()), current_parameter_results(1,1){}
+	ns_parameter_set_optimization_record(std::vector<double> & thresholds, vector<unsigned long> & hold_times) :total_count(0),best_parameter_count(0),new_parameters_results(thresholds.size(), hold_times.size()), current_parameter_results(1,1){}
 	ns_parameter_optimization_results new_parameters_results;
 	ns_parameter_optimization_results current_parameter_results;
 	ns_threshold_movement_posture_analyzer_parameters best;
 	double mean_squared_error;
-	void find_best_parameter_set( std::vector<double> & thresholds, vector<unsigned long> & hold_times) {
+	ns_64_bit total_count;
+	unsigned long best_parameter_count;
+	void find_best_parameter_set( std::vector<double> & thresholds, vector<unsigned long> & hold_times, bool posture_not_expansion) {
 		mean_squared_error = DBL_MAX;
 		for (unsigned int i = 0; i < thresholds.size(); i++) {
 			for (unsigned int j = 0; j < hold_times.size(); j++) {
-				if (new_parameters_results.count > 0 && new_parameters_results.death_total_mean_square_error_in_hours[i][j] < mean_squared_error) {
-					best.stationary_cutoff = thresholds[i];
-					best.permanance_time_required_in_seconds = hold_times[j];
+				total_count += new_parameters_results.counts[i][j];
+				if (new_parameters_results.counts[i][j] > 0 && new_parameters_results.death_total_mean_square_error_in_hours[i][j] < mean_squared_error) {
+					if (posture_not_expansion) {
+						best.stationary_cutoff = thresholds[i];
+						best.permanance_time_required_in_seconds = hold_times[j];
+					}
+					else {
+						best.death_time_expansion_cutoff= thresholds[i];
+						best.death_time_expansion_time_kernel_in_seconds = hold_times[j];
+					}
+					best_parameter_count = new_parameters_results.counts[i][j];
 					mean_squared_error = new_parameters_results.death_total_mean_square_error_in_hours[i][j];
 				}
 			}
 		}
-		if (new_parameters_results.count > 0) {
-			mean_squared_error /= new_parameters_results.count;
+		if (best_parameter_count > 0) {
+			mean_squared_error /= best_parameter_count;
 		}
 	}
 };
@@ -1950,47 +1960,76 @@ void ns_worm_learner::output_movement_analysis_optimization_data(int software_ve
 	std::string results_text;
 	for (unsigned int i = 0; i < 2; i++) {
 		map<std::string, ns_parameter_set_optimization_record> *best_parameter_sets;
+		vector<double> * thresh;
+		vector<unsigned long> * hold;
 		std::string data_name;
 		if (i == 0) {
 			if (!run_posture)
 				continue;
-			best_parameter_sets = &best_posture_parameter_sets;
 			data_name = "Posture Analysis";
+			best_parameter_sets = &best_posture_parameter_sets;
+			thresh = &posture_analysis_thresholds;
+			hold = &posture_analysis_hold_times;
 		}
 		else {
 			if (!run_expansion)
 				continue;
-			best_parameter_sets = &best_expansion_parameter_sets;
 			data_name = "Expansion Analysis";
-
+			best_parameter_sets = &best_expansion_parameter_sets;
+			thresh = &expansion_analysis_thresholds;
+			hold = &expansion_analysis_hold_times;
 		}
 
 		results_text += "===Automated " + data_name + " Calibration Results == \n";
 		results_text += "Calculated at " + ns_format_time_string_for_human(ns_current_time()) + "\n\n";
 
 		for (map<std::string, ns_parameter_set_optimization_record>::iterator p = best_parameter_sets->begin(); p != best_parameter_sets->end(); p++) {
-			if (p->second.new_parameters_results.count == 0)
+
+			results_text += "**For plates of type " + p->first + "\n";		
+			p->second.find_best_parameter_set(*thresh, *hold, data_name=="Posture Analysis");
+			if (p->second.total_count == 0) {
+				results_text += "No parameter sets converged on a solution.\n\n";
 				continue;
-			p->second.find_best_parameter_set(posture_analysis_thresholds, posture_analysis_hold_times);
+			}
+	
 
 			std::string fname = p->first;
 			for (unsigned int i = 0; i < fname.size(); i++) {
 				if (!isalnum(fname[i]))
 					fname[i] = '_';
 			}
+			const bool current_parameters_converged(p->second.current_parameter_results.counts[0][0] > 0);
+			const bool best_parameters_converged(p->second.best_parameter_count > 0);
+			double current_msqerr;
+			if (current_parameters_converged)(p->second.current_parameter_results.death_total_mean_square_error_in_hours[0][0] / p->second.current_parameter_results.counts[0][0]);
+			const double best_msqerr = p->second.mean_squared_error;
 
-			double current_msqerr = (p->second.current_parameter_results.death_total_mean_square_error_in_hours[0][0] / p->second.current_parameter_results.count);
-			double best_msqerr = p->second.mean_squared_error;
-			results_text += "**For plates of type " + p->first + "\n";
-			results_text += "The existing parameter set produced estimates that differed from by-hand annotations by\n " + ns_to_string_short(sqrt(current_msqerr), 3) + " days on average (a mean squared error of " + ns_to_string_short(current_msqerr, 3) + " days squared)\n";
-			results_text += "The best possible parameter set produced estimates that differed from by-hand annotations by\n" + ns_to_string_short(sqrt(best_msqerr), 3) + " days on average (a mean squared error of " + ns_to_string_short(best_msqerr, 3) + " days squared)\n";
-			bool enough_worms = p->second.new_parameters_results.count >= 50;
-			if (enough_worms)
-				results_text += "Only " + ns_to_string(p->second.new_parameters_results.count) + " individuals were annotated by hand.\nThese results will not be meaningful until you annotate more individuals.\n";
-			else results_text += ns_to_string(p->second.new_parameters_results.count) + " individuals were annotated by hand to produce these estimates.\n";
-			bool substantial_improvement = current_msqerr <= .8*best_msqerr;
-			if (enough_worms && substantial_improvement)
-				results_text += "A new parameter file named " + fname + " has been written to disk.\n  It is recommended that you use this model for subsequent analysis of this type of animals.\n";
+			if (!current_parameters_converged)
+				results_text += "The existing parameter set never converged on a solution.\n";
+			else {
+				results_text += "The existing parameter set converged on a solution in " + ns_to_string_short((100.0 * p->second.current_parameter_results.counts[0][0]) / p->second.current_parameter_results.number_valid_worms,1) + "% of cases\n";
+				results_text += "The existing parameter set produced estimates that differed from by - hand annotations by\n " + ns_to_string_short(sqrt(current_msqerr), 3) + " days on average(a mean squared error of " + ns_to_string_short(current_msqerr, 3) + " days squared)\n";
+			}
+			if (!best_parameters_converged)
+				results_text += "The best possible parameter set never converged on a solution";
+			else {
+				results_text += "The best possible parameter set converged on a solution in " + ns_to_string_short((100.0 * p->second.best_parameter_count) / p->second.current_parameter_results.number_valid_worms, 1) + "% of cases\n";
+				results_text += "The best possible parameter set produced estimates that differed from by-hand annotations by\n" + ns_to_string_short(sqrt(best_msqerr), 3) + " days on average (a mean squared error of " + ns_to_string_short(best_msqerr, 3) + " days squared)\n";
+			}
+			bool enough_worms = p->second.new_parameters_results.number_valid_worms >= 50;
+			bool enough_convergences = 1.25*p->second.best_parameter_count >=p->second.new_parameters_results.number_valid_worms;
+			if (!enough_worms)
+				results_text += "Only " + ns_to_string(p->second.best_parameter_count) + " individuals were annotated by hand.\nThese results will not be meaningful until you annotate more individuals.\n";
+			else if (!enough_convergences) 
+				results_text += "The best parameter set did not converge in most cases.\nThese parameters are not recommended\n";
+			else results_text += ns_to_string(p->second.best_parameter_count) + " individuals were annotated by hand to produce these estimates.\n";
+			
+			
+			if (enough_convergences && enough_worms && current_parameters_converged && best_parameters_converged) {
+				bool substantial_improvement = current_msqerr <= .8*best_msqerr;
+				if (enough_worms && substantial_improvement)
+					results_text += "A new parameter file named " + fname + " has been written to disk.\n  It is recommended that you use this model for subsequent analysis of this type of animals.\n";
+			}
 			results_text += "\n";
 
 			ns_acquire_for_scope<ostream> posture_analysis_text_output(image_server.results_storage.optimized_posture_analysis_parameter_set(sub, fname, sql).output());
@@ -2000,7 +2039,7 @@ void ns_worm_learner::output_movement_analysis_optimization_data(int software_ve
 	}
 	ns_acquire_for_scope<ostream> summary(image_server.results_storage.optimized_posture_analysis_parameter_set(sub, "optimization_summary", sql).output());
 	summary() << results_text;
-
+	summary.release();
 	ns_text_dialog td;
 	td.grid_text.push_back(results_text);
 	td.title = "Results";

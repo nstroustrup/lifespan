@@ -1814,6 +1814,7 @@ std::vector< std::vector < unsigned long > > static_messy_death_time_matrix;
 	unsigned long death_time(by_hand_annotation_event_times[(int)ns_movement_cessation].period_end);
 	if (by_hand_annotation_event_times[(int)ns_movement_cessation].fully_unbounded())
 		return;
+	results.number_valid_worms++;
 	calculate_posture_analysis_optimization_data(thresholds,hold_times,static_messy_death_time_matrix, software_version_number);
 	const unsigned long random_group(rand()%2);
 	for (unsigned int i = 0; i < thresholds.size(); i++)
@@ -1822,6 +1823,7 @@ std::vector< std::vector < unsigned long > > static_messy_death_time_matrix;
 			const double err(((double)static_messy_death_time_matrix[i][j] - death_time)/(60.0*60.0*24.0));
 			const double err_sq = err*err;
 			results.death_total_mean_square_error_in_hours[i][j] += err_sq;
+			results.death_total_mean_square_error_in_hours[i][j] ++;
 
 			o << m.experiment_name << "," << m.device << "," << m.plate_name() << "," << m.plate_type_summary() 
 				<< "," << id.group_id << "," << id.path_id << ","
@@ -1857,6 +1859,7 @@ std::vector< std::vector < unsigned long > > static_messy_death_time_matrix;
 				   time_at_which_death_time_expansion_stopped = by_hand_annotation_event_times[(int)ns_death_posture_relaxation_termination].period_end;
 
 	 expansion_intervals.resize(0);
+	 results.number_valid_worms++;
 	 calculate_expansion_analysis_optimization_data(death_time,thresholds, hold_times, expansion_intervals);
 	 const unsigned long random_group(rand() % 2);
 
@@ -1876,6 +1879,7 @@ std::vector< std::vector < unsigned long > > static_messy_death_time_matrix;
 				 stop_err_sq = stop_err*stop_err;
 			 const double avg_err_sq = (start_err_sq + stop_err_sq) / 2;
 			 results.death_total_mean_square_error_in_hours[i][j] += avg_err_sq;
+			 results.counts[i][j] ++;
 
 			 o << m.experiment_name << "," << m.device << "," << m.plate_name() << "," << m.plate_type_summary()
 				 << "," << id.group_id << "," << id.path_id << ","
@@ -1947,7 +1951,7 @@ void ns_analyzed_image_time_path::calculate_expansion_analysis_optimization_data
 	long min_time(INT_MAX);
 	int death_index(0);
 	for (unsigned int i = 0; i < this->elements.size(); i++) {
-		long dt = elements[i].absolute_time - (long)actual_death_time;
+		long dt = abs((long)(elements[i].absolute_time - (long)actual_death_time));
 		if (dt < min_time) {
 			min_time = dt;
 			death_index = i;
@@ -2219,7 +2223,6 @@ void ns_time_path_image_movement_analyzer::write_posture_analysis_optimization_d
 			if (ns_skip_low_density_paths && groups[i].paths[j].is_low_density_path() || groups[i].paths[j].excluded() || !groups[i].paths[j].by_hand_data_specified())
 					continue;
 			groups[i].paths[j].write_posture_analysis_optimization_data(software_version,generate_stationary_path_id(i,j),thresholds,hold_times,m,denoising_parameters_used,o, results);
-			results.count++;
 		}
 	}
 }
@@ -2230,7 +2233,7 @@ void ns_time_path_image_movement_analyzer::write_expansion_analysis_optimization
 			if (ns_skip_low_density_paths && groups[i].paths[j].is_low_density_path() || groups[i].paths[j].excluded() || !groups[i].paths[j].by_hand_data_specified())
 				continue;
 			groups[i].paths[j].write_expansion_analysis_optimization_data(generate_stationary_path_id(i, j), thresholds, hold_times, m,o, results);
-			results.count++;
+			results.number_valid_worms++;
 		}
 	}
 }

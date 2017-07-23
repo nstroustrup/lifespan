@@ -414,11 +414,13 @@ class ns_optical_flow_processor;
 class ns_time_path_image_movement_analyzer_thread_pool_persistant_data;
 
 struct ns_parameter_optimization_results {
-	ns_parameter_optimization_results(const int thresholds, const int times) :count(0) {
+	ns_parameter_optimization_results(const int thresholds, const int times):number_valid_worms(0){
 		death_total_mean_square_error_in_hours.resize(thresholds, std::vector<double>(times, 0.0));
+		counts.resize(thresholds, std::vector<unsigned long>(times, 0));
 	}
 	std::vector<std::vector<double> > death_total_mean_square_error_in_hours; // x[movement,time]
-	unsigned long count;
+	std::vector<std::vector<unsigned long> > counts;
+	unsigned long number_valid_worms;
 };
 
 struct ns_death_time_expansion_info {

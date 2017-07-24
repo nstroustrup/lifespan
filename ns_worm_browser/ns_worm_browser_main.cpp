@@ -1020,10 +1020,9 @@ class ns_worm_terminal_main_menu_organizer : public ns_menu_organizer{
 		worm_learner.test_time_path_analysis_parameters(worm_learner.data_selector.current_region().region_id);
 	}
 	static void generate_movement_image_analysis_optimization_data(const std::string & value){
-		worm_learner.output_movement_analysis_optimization_data(2, ns_worm_learner::ns_v2,true,false);
-	}
-	static void generate_expansion_analysis_optimization_data(const std::string & value) {
-		worm_learner.output_movement_analysis_optimization_data(2, ns_worm_learner::ns_v2, false,true);
+		bool posture_req = value.find("Posture") != value.npos;
+		bool size_req = value.find("Size") != value.npos;
+		worm_learner.output_movement_analysis_optimization_data(2, ns_worm_learner::ns_v2,posture_req,size_req);
 	}
 
 	static void generate_training_set_from_by_hand_annotations(const std::string & value){worm_learner.generate_training_set_from_by_hand_annotation();}
@@ -1321,8 +1320,9 @@ public:
 
 		//add(ns_menu_item_spec(generate_survival_curve_from_hand_annotations,"&Calibration/Generate Survival Curves from by hand annotations"));
 		add(ns_menu_item_spec(compare_machine_and_by_hand_annotations,"&Calibration/_Compare Storyboard annotations to fully-automated results"));
-		add(ns_menu_item_spec(generate_movement_image_analysis_optimization_data,"Calibration/_Use Storyboard Annotations to Create improved Posture Analysis Parameter Sets"));
-		add(ns_menu_item_spec(generate_expansion_analysis_optimization_data, "Calibration/Use Storyboard Annotations to Create improved Expansion Analysis Parameter Sets"));
+		add(ns_menu_item_spec(generate_movement_image_analysis_optimization_data,"Calibration/_Use Storyboard Annotations to Create improved Analysis Parameter Sets/Death Time Posture Changes"));
+		add(ns_menu_item_spec(generate_movement_image_analysis_optimization_data, "Calibration/_Use Storyboard Annotations to Create improved Analysis Parameter Sets/Death Time Size Changes"));
+		add(ns_menu_item_spec(generate_movement_image_analysis_optimization_data, "Calibration/_Use Storyboard Annotations to Create improved Analysis Parameter Sets/Both Posture and Size Changes"));
 		add(ns_menu_item_spec(test_time_path_analysis_parameters, "Calibration/Test various Position Analysis Models"));
 
 

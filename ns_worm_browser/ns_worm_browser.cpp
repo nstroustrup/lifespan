@@ -1706,15 +1706,23 @@ struct ns_parameter_set_optimization_record {
 	ns_parameter_optimization_results new_parameters_results;
 	ns_parameter_optimization_results current_parameter_results;
 	ns_threshold_movement_posture_analyzer_parameters best;
-	double mean_squared_error;
+	double best_mean_squared_error;
 	ns_64_bit total_count;
 	unsigned long best_parameter_count;
 	void find_best_parameter_set( std::vector<double> & thresholds, vector<unsigned long> & hold_times, bool posture_not_expansion) {
-		mean_squared_error = DBL_MAX;
+		double best_weighted_mean_squared_error = DBL_MAX;
+		const ns_64_bit total_count_expected = new_parameters_results.number_valid_worms;
+
 		for (unsigned int i = 0; i < thresholds.size(); i++) {
 			for (unsigned int j = 0; j < hold_times.size(); j++) {
+				if (new_parameters_results.counts[i][j] == 0)
+					continue;
 				total_count += new_parameters_results.counts[i][j];
-				if (new_parameters_results.counts[i][j] > 0 && new_parameters_results.death_total_mean_square_error_in_hours[i][j] < mean_squared_error) {
+				//penalize for parameter combinations that do not converge
+				const double cur_msq = (new_parameters_results.death_total_mean_square_error_in_hours[i][j] / (double)new_parameters_results.counts[i][j]);
+				double weighted_msq = cur_msq + 5*cur_msq*(total_count_expected - new_parameters_results.counts[i][j]);
+			//	cout << cur_msq << " " << total_count_expected - new_parameters_results.counts[i][j] << " " << weighted_msq << "\n";
+				if (new_parameters_results.counts[i][j] > 0 && weighted_msq < best_weighted_mean_squared_error) {
 					if (posture_not_expansion) {
 						best.stationary_cutoff = thresholds[i];
 						best.permanance_time_required_in_seconds = hold_times[j];
@@ -1724,14 +1732,13 @@ struct ns_parameter_set_optimization_record {
 						best.death_time_expansion_time_kernel_in_seconds = hold_times[j];
 					}
 					best_parameter_count = new_parameters_results.counts[i][j];
-					mean_squared_error = new_parameters_results.death_total_mean_square_error_in_hours[i][j];
+					best_mean_squared_error = cur_msq;
+					best_weighted_mean_squared_error = weighted_msq;
 				}
 			}
 		}
-		if (best_parameter_count > 0) {
-			mean_squared_error /= best_parameter_count;
-		}
 	}
+	std::string filename;
 };
 
 
@@ -1822,11 +1829,11 @@ void ns_worm_learner::output_movement_analysis_optimization_data(int software_ve
 	}
 
 
-	for (unsigned int i = 0; i < 8; i++) 
-		expansion_analysis_thresholds.push_back((2 * i + 2) * 100);
+	for (unsigned int i = 0; i < 16; i++) 
+		expansion_analysis_thresholds.push_back(( i ) * 25);
 	
-	for (unsigned int i = 0; i < 8; i++) 
-		expansion_analysis_hold_times.push_back((2 * i) * 60 * 60);
+	for (unsigned int i = 0; i < 16; i++) 
+		expansion_analysis_hold_times.push_back((i) * 30 * 60);
 	
 
 
@@ -1859,6 +1866,8 @@ void ns_worm_learner::output_movement_analysis_optimization_data(int software_ve
 	unsigned pos(0);
 	for (unsigned int i = 0; i < data_selector.samples.size(); i++) {
 		for (unsigned int j = 0; j < data_selector.samples[i].regions.size(); j++) {
+		//	if (data_selector.samples[i].sample_name != "azure_a" || data_selector.samples[i].regions[j].region_name != "0")
+		//		continue;
 			cerr << ns_to_string_short((100.0*pos) / region_count) << "%...";
 			pos++;
 			if (data_selector.samples[i].regions[j].censored ||
@@ -1916,10 +1925,12 @@ void ns_worm_learner::output_movement_analysis_optimization_data(int software_ve
 
 					if (run_posture) {
 						map<std::string, ns_parameter_set_optimization_record>::iterator p = best_posture_parameter_sets.find(data_selector.samples[i].regions[j].region_metadata->plate_type_summary());
-						if (p == best_posture_parameter_sets.end())
-							p = best_posture_parameter_sets.insert(best_posture_parameter_sets.begin(), 
+						if (p == best_posture_parameter_sets.end()) {
+							p = best_posture_parameter_sets.insert(best_posture_parameter_sets.begin(),
 								std::pair<std::string, ns_parameter_set_optimization_record>(data_selector.samples[i].regions[j].region_metadata->plate_type_summary(),
-																								ns_parameter_set_optimization_record(posture_analysis_thresholds, posture_analysis_hold_times)));
+									ns_parameter_set_optimization_record(posture_analysis_thresholds, posture_analysis_hold_times)));
+							p->second.best = posture_analysis_model_handle().model_specification.threshold_parameters;   //set default parameters
+						}
 
 						time_path_image_analyzer.write_posture_analysis_optimization_data(software_version_number, posture_analysis_thresholds, posture_analysis_hold_times, metadata, posture_analysis_optimization_output(), p->second.new_parameters_results);
 
@@ -1932,14 +1943,12 @@ void ns_worm_learner::output_movement_analysis_optimization_data(int software_ve
 					}
 					if (run_expansion) {
 						map<std::string, ns_parameter_set_optimization_record>::iterator p = best_expansion_parameter_sets.find(data_selector.samples[i].regions[j].region_metadata->plate_type_summary());
-						if (p == best_expansion_parameter_sets.end())
+						if (p == best_expansion_parameter_sets.end()) {
 							p = best_expansion_parameter_sets.insert(best_expansion_parameter_sets.begin(), std::pair<std::string, ns_parameter_set_optimization_record>(data_selector.samples[i].regions[j].region_metadata->plate_type_summary(), ns_parameter_set_optimization_record(posture_analysis_thresholds, posture_analysis_hold_times)));
-
+							p->second.best = posture_analysis_model_handle().model_specification.threshold_parameters;   //set default parameters
+						}
 						time_path_image_analyzer.write_expansion_analysis_optimization_data(expansion_analysis_thresholds, expansion_analysis_hold_times, metadata, expansion_analysis_optimization_output(), p->second.new_parameters_results);
 
-						//get current parameters
-						ns_image_server::ns_posture_analysis_model_cache::const_handle_t posture_analysis_model_handle;
-						image_server.get_posture_analysis_model_for_region(region_id, posture_analysis_model_handle, sql);
 
 						vector<double> thresh;
 						vector<unsigned long>hold_t;
@@ -1957,6 +1966,7 @@ void ns_worm_learner::output_movement_analysis_optimization_data(int software_ve
 		//if (i>5)
 	//	break;
 	}
+
 	std::string results_text;
 	for (unsigned int i = 0; i < 2; i++) {
 		map<std::string, ns_parameter_set_optimization_record> *best_parameter_sets;
@@ -1973,7 +1983,7 @@ void ns_worm_learner::output_movement_analysis_optimization_data(int software_ve
 		}
 		else {
 			if (!run_expansion)
-				continue;
+				continue; 
 			data_name = "Expansion Analysis";
 			best_parameter_sets = &best_expansion_parameter_sets;
 			thresh = &expansion_analysis_thresholds;
@@ -1982,27 +1992,30 @@ void ns_worm_learner::output_movement_analysis_optimization_data(int software_ve
 
 		results_text += "===Automated " + data_name + " Calibration Results == \n";
 		results_text += "Calculated at " + ns_format_time_string_for_human(ns_current_time()) + "\n\n";
-
 		for (map<std::string, ns_parameter_set_optimization_record>::iterator p = best_parameter_sets->begin(); p != best_parameter_sets->end(); p++) {
 
 			results_text += "**For plates of type " + p->first + "\n";		
 			p->second.find_best_parameter_set(*thresh, *hold, data_name=="Posture Analysis");
+			if (p->second.new_parameters_results.number_valid_worms == 0) {
+
+				results_text += "No worms were annotated by hand.\n\n";
+				continue;
+			}
 			if (p->second.total_count == 0) {
 				results_text += "No parameter sets converged on a solution.\n\n";
 				continue;
 			}
 	
 
-			std::string fname = p->first;
-			for (unsigned int i = 0; i < fname.size(); i++) {
-				if (!isalnum(fname[i]))
-					fname[i] = '_';
+			p->second.filename= p->first;
+			for (unsigned int i = 0; i < p->second.filename.size(); i++) {
+				if (!isalnum(p->second.filename[i]))
+					p->second.filename[i] = '_';
 			}
 			const bool current_parameters_converged(p->second.current_parameter_results.counts[0][0] > 0);
 			const bool best_parameters_converged(p->second.best_parameter_count > 0);
-			double current_msqerr;
-			if (current_parameters_converged)(p->second.current_parameter_results.death_total_mean_square_error_in_hours[0][0] / p->second.current_parameter_results.counts[0][0]);
-			const double best_msqerr = p->second.mean_squared_error;
+			const double current_msqerr = (p->second.current_parameter_results.death_total_mean_square_error_in_hours[0][0] / p->second.current_parameter_results.counts[0][0]);
+			const double best_msqerr = p->second.best_mean_squared_error;
 
 			if (!current_parameters_converged)
 				results_text += "The existing parameter set never converged on a solution.\n";
@@ -2028,15 +2041,44 @@ void ns_worm_learner::output_movement_analysis_optimization_data(int software_ve
 			if (enough_convergences && enough_worms && current_parameters_converged && best_parameters_converged) {
 				bool substantial_improvement = current_msqerr <= .8*best_msqerr;
 				if (enough_worms && substantial_improvement)
-					results_text += "A new parameter file named " + fname + " has been written to disk.\n  It is recommended that you use this model for subsequent analysis of this type of animals.\n";
+					results_text += "A new parameter file named " + p->second.filename + " has been written to disk.\n  It is recommended that you use this model for subsequent analysis of this type of animals.\n";
 			}
 			results_text += "\n";
-
-			ns_acquire_for_scope<ostream> posture_analysis_text_output(image_server.results_storage.optimized_posture_analysis_parameter_set(sub, fname, sql).output());
-			p->second.best.write(posture_analysis_text_output());
-			posture_analysis_text_output.release();
 		}
 	}
+
+	//output best parameters to disk
+	if (run_posture && run_expansion) {
+		for (map<std::string, ns_parameter_set_optimization_record>::iterator expansion_p = best_expansion_parameter_sets.begin(); expansion_p != best_expansion_parameter_sets.end(); expansion_p++) {
+			//build parameter file with optimal posture and expansion parameters
+			map<std::string, ns_parameter_set_optimization_record>::iterator posture_p = best_posture_parameter_sets.find(expansion_p->first);
+			if (posture_p == best_posture_parameter_sets.end())
+				throw ns_ex("Could not find expansion index");
+			expansion_p->second.best.permanance_time_required_in_seconds = posture_p->second.best.permanance_time_required_in_seconds;
+			expansion_p->second.best.posture_cutoff = posture_p->second.best.posture_cutoff;
+			expansion_p->second.best.stationary_cutoff = posture_p->second.best.stationary_cutoff;
+			ns_acquire_for_scope<ostream> both_parameter_set(image_server.results_storage.optimized_posture_analysis_parameter_set(sub, expansion_p->second.filename, sql).output());
+			expansion_p->second.best.write(both_parameter_set());
+			both_parameter_set.release();
+		}
+	}
+	else {
+		map<std::string, ns_parameter_set_optimization_record> * best_parameter_sets;
+		if (run_posture) {
+			best_parameter_sets = &best_posture_parameter_sets;
+		}
+		else if (run_expansion) {
+			best_parameter_sets = &best_expansion_parameter_sets;
+		}	
+		for (map<std::string, ns_parameter_set_optimization_record>::iterator p = best_parameter_sets->begin(); p != best_parameter_sets->end(); p++) {
+			ns_acquire_for_scope<ostream> parameter_set_output(image_server.results_storage.optimized_posture_analysis_parameter_set(sub, p->second.filename, sql).output());
+			p->second.best.write(parameter_set_output());
+			parameter_set_output.release();
+		}
+	}
+
+
+
 	ns_acquire_for_scope<ostream> summary(image_server.results_storage.optimized_posture_analysis_parameter_set(sub, "optimization_summary", sql).output());
 	summary() << results_text;
 	summary.release();

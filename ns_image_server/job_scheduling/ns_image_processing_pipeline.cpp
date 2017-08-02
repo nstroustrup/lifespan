@@ -56,17 +56,35 @@ void ns_check_for_file_errors(ns_processing_job & job, ns_sql & sql){
 					if (reg.op_images_[j]!=0){
 						ns_image_server_image im;
 						try{
-							im.load_from_db(reg.op_images_[j],&sql);
-					
-							ns_image_storage_source_handle<ns_8_bit> h(image_server_const.image_storage.request_from_storage(im,&sql));
-							unsigned long internal_state;
-							long w(h.input_stream().properties().width*h.input_stream().properties().components);
-							if (w > buf.properties().width)
-								buf.resize(ns_image_stream_buffer_properties(w,1));
-							h.input_stream().send_lines(buf,1,internal_state);
-							try{
-								h.clear();
-							}catch(...){}
+							//first iteration try file
+							//second iteration look for jpeg2000 conversion
+							for (int k = 0; k < 2; k++) {
+								const bool tif_failed_try_jp2(k == 1);
+								im.load_from_db(reg.op_images_[j], &sql);
+
+								if (tif_failed_try_jp2) 
+									im.filename += ".jp2";
+
+								try {
+									ns_image_storage_source_handle<ns_8_bit> h(image_server_const.image_storage.request_from_storage(im, &sql));
+									unsigned long internal_state;
+									long w(h.input_stream().properties().width*h.input_stream().properties().components);
+									if (w > buf.properties().width)
+										buf.resize(ns_image_stream_buffer_properties(w, 1));
+									h.input_stream().send_lines(buf, 1, internal_state);
+									try {
+										h.clear();
+									}
+									catch (...) {}
+									if (tif_failed_try_jp2) 	//if we have found a jp2k compressed copy, update the database with the new filename.
+										im.save_to_db(im.id, &sql, false);
+									//We have successfully validated the file.
+									break;
+								}
+								catch (...) {
+									if (tif_failed_try_jp2) throw;
+								}
+							}
 						}
 						catch(ns_ex & ex){
 							reg.op_images_[j] = 0;
@@ -115,10 +133,18 @@ void ns_check_for_file_errors(ns_processing_job & job, ns_sql & sql){
 			if (im.id != 0){
 				im.load_from_db(im.id,&sql);
 				if (!image_server_const.image_storage.image_exists(im,&sql,true)){
-					problem = true;
-					found_problem = true;
-					const ns_64_bit event_id(image_server_const.register_server_event(ns_image_server_event("Large capture image cannot be found on disk:") << experiment_name << "::" << sample_name << "::" << ns_format_time_string(atol(res[i][1].c_str())),&sql));
-					im.mark_as_problem(&sql,event_id);
+					//look for jp2k
+					im.filename += ".jp2";
+					if (image_server_const.image_storage.image_exists(im, &sql, true)) {
+						im.save_to_db(im.id, &sql, false);
+						large_image_exists = true;
+					}
+					else {
+						problem = true;
+						found_problem = true;
+						const ns_64_bit event_id(image_server_const.register_server_event(ns_image_server_event("Large capture image cannot be found on disk:") << experiment_name << "::" << sample_name << "::" << ns_format_time_string(atol(res[i][1].c_str())), &sql));
+						im.mark_as_problem(&sql, event_id);
+					}
 				}
 				else large_image_exists = true;
 			}

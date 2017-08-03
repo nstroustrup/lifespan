@@ -520,11 +520,24 @@ ns_image_server_sql * ns_connect_to_available_sql_server(){
 #ifdef NS_USE_INTEL_IPP
 #include "ipp.h"
 #endif
+#include "ns_gaussian_pyramid.h"
+bool ns_test_ipp() {
+
+	ns_gaussian_pyramid p;
+	ns_image_standard im;
+	const unsigned long d(400);
+	im.init(ns_image_properties(d, d, 1));
+	for (int i = 0; i < d; i++)
+		for (int j = 0; j < d; j++)
+			im[i][j] = 0;
+	p.calculate(im,ns_vector_2i(0,0),ns_vector_2i(d,d));
+	return p.num_current_pyramid_levels > 0;
+}
 
 int main(int argc, char ** argv){
 
 	#ifdef NS_USE_INTEL_IPP
-	ippInit();
+	ippInit();	
 	#endif
 	
 	std::map<std::string,ns_cl_command> commands;
@@ -1056,6 +1069,7 @@ int main(int argc, char ** argv){
 		cout.setf(ios::dec);
 #endif
 
+
 		//first we check which port to open.
 		//we do this first because it also gives us an idea of how many parallel processes are running on this system
 		//and lets us obtain a unique system_parallel_process_id that we will subsequently report to the db when register_host() is called
@@ -1132,6 +1146,25 @@ int main(int argc, char ** argv){
 		}
 
 		image_server.clear_processing_status(*static_cast<ns_sql *>(&sql()));
+		
+
+#ifdef NS_USE_INTEL_IPP
+		if (image_server.act_as_processing_node()){
+			
+			ns_image_server_event t_event("Testing Intel Performance Primitives...");
+			if (sql().connected_to_central_database())
+				image_server.register_server_event(t_event, &sql());
+			else image_server.register_server_event_no_db(t_event);
+			ns_thread::sleep(1);
+			if (ns_test_ipp()) {
+				if (sql().connected_to_central_database())
+					image_server.add_subtext_to_current_event(" ",&sql());
+				else cerr << " ";
+			}
+		}
+		
+#endif
+		
 		image_server.register_server_event(ns_image_server_event("Clearing local image cache"), &sql());
 		image_server.image_storage.clear_local_cache();
 

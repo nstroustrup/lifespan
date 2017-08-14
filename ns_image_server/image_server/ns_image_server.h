@@ -157,6 +157,7 @@ public:
 	void check_for_sql_database_access(ns_image_server_sql * sql) const;
 
 	const std::string &current_sql_database() const{return *sql_database_choice;}
+	const std::string &current_local_buffer_database() const { return local_buffer_db; }
 
 	bool register_and_run_simulated_devices(ns_image_server_sql * sql);
 
@@ -413,7 +414,7 @@ public:
 	void start_autoscans_for_device(const std::string & device_name,ns_sql & sql);	
 	#endif
 
-	bool upgrade_tables(ns_sql & sql,const bool just_test_if_needed,const std::string & schema_name);
+	bool upgrade_tables(ns_sql_connection * sql,const bool just_test_if_needed,const std::string & schema_name);
 	std::ofstream * write_device_configuration_file() const;
 	std::ifstream * read_device_configuration_file() const;
 

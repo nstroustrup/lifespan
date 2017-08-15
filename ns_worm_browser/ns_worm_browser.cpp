@@ -1862,17 +1862,23 @@ void ns_worm_learner::output_movement_analysis_optimization_data(int software_ve
 //	hold_times.resize(2);
 	//thresholds.resize(2);
 
+	if (image_server.verbose_debug_output()) 
+		cout << "Considering " << data_selector.samples.size() << " samples.\n";
 
 	unsigned pos(0);
 	for (unsigned int i = 0; i < data_selector.samples.size(); i++) {
+		bool found_regions(false);
 		for (unsigned int j = 0; j < data_selector.samples[i].regions.size(); j++) {
-		//	if (data_selector.samples[i].sample_name != "azure_a" || data_selector.samples[i].regions[j].region_name != "0")
-		//		continue;
+			//	if (data_selector.samples[i].sample_name != "azure_a" || data_selector.samples[i].regions[j].region_name != "0")
+			//		continue;
 			cerr << ns_to_string_short((100.0*pos) / region_count) << "%...";
 			pos++;
 			if (data_selector.samples[i].regions[j].censored ||
 				data_selector.samples[i].regions[j].excluded)
 				continue;
+			found_regions = true;
+			if (image_server.verbose_debug_output())
+				cout << "\nConsidering " << data_selector.samples[i].sample_name << "::" << data_selector.samples[i].regions[j].region_name << "\n";
 			try {
 
 				ns_time_series_denoising_parameters::ns_movement_score_normalization_type norm_type[1] =
@@ -1914,7 +1920,7 @@ void ns_worm_learner::output_movement_analysis_optimization_data(int software_ve
 					}
 
 					if (run_posture)
-					posture_analysis_optimization_output() << "\n";
+						posture_analysis_optimization_output() << "\n";
 					if (run_expansion)
 						expansion_analysis_optimization_output() << "\n";
 					cerr << metadata.plate_name() << "\n";
@@ -1926,10 +1932,19 @@ void ns_worm_learner::output_movement_analysis_optimization_data(int software_ve
 					if (run_posture) {
 						map<std::string, ns_parameter_set_optimization_record>::iterator p = best_posture_parameter_sets.find(data_selector.samples[i].regions[j].region_metadata->plate_type_summary());
 						if (p == best_posture_parameter_sets.end()) {
+							if (image_server.verbose_debug_output())
+								cout << "Creating record for plate type " << data_selector.samples[i].regions[j].region_metadata->plate_type_summary() << "\n";
+
+
 							p = best_posture_parameter_sets.insert(best_posture_parameter_sets.begin(),
 								std::pair<std::string, ns_parameter_set_optimization_record>(data_selector.samples[i].regions[j].region_metadata->plate_type_summary(),
 									ns_parameter_set_optimization_record(posture_analysis_thresholds, posture_analysis_hold_times)));
 							p->second.best = posture_analysis_model_handle().model_specification.threshold_parameters;   //set default parameters
+						}
+						else {
+
+							if (image_server.verbose_debug_output())
+								cout << "Adding to record for plate type " << data_selector.samples[i].regions[j].region_metadata->plate_type_summary() << "\n";
 						}
 
 						time_path_image_analyzer.write_posture_analysis_optimization_data(software_version_number, posture_analysis_thresholds, posture_analysis_hold_times, metadata, posture_analysis_optimization_output(), p->second.new_parameters_results);
@@ -1958,11 +1973,14 @@ void ns_worm_learner::output_movement_analysis_optimization_data(int software_ve
 					}
 
 				}
+
 			}
 			catch (ns_ex & ex) {
 				std::cerr << "\n" << ex.text() << "\n";
 			}
 		}
+		if (!found_regions && image_server.verbose_debug_output())
+			cout << data_selector.samples[i].sample_name << " did not contain any valid plates.  Any that exist have been excluded or censored.\n";
 		//if (i>5)
 	//	break;
 	}
@@ -2008,10 +2026,16 @@ void ns_worm_learner::output_movement_analysis_optimization_data(int software_ve
 	
 
 			p->second.filename= p->first;
-			for (unsigned int i = 0; i < p->second.filename.size(); i++) {
+			if (image_server.verbose_debug_output()) 
+				cout << "Filename " << p->second.filename;
+			
+			for (unsigned int i = 0; i < p->second.filename.size(); i++) 
 				if (!isalnum(p->second.filename[i]))
 					p->second.filename[i] = '_';
-			}
+			
+			if (image_server.verbose_debug_output())
+				cout << " was fixed to " << p->second.filename << "\n";
+
 			const bool current_parameters_converged(p->second.current_parameter_results.counts[0][0] > 0);
 			const bool best_parameters_converged(p->second.best_parameter_count > 0);
 			const double current_msqerr = (p->second.current_parameter_results.death_total_mean_square_error_in_hours[0][0] / p->second.current_parameter_results.counts[0][0]);
@@ -4214,7 +4238,7 @@ void ns_worm_learner::upgrade_tables(){
 	
 	ns_acquire_for_scope<ns_sql> sql(image_server.new_sql_connection(__FILE__,__LINE__));
 	ns_alert_dialog d;
-	if (image_server.upgrade_tables(sql(),false,image_server.current_sql_database()))
+	if (image_server.upgrade_tables(&sql(),false,image_server.current_sql_database(),false))
 		d.text = "Schema update completed.";
 	else
 		d.text = "No update was needed.";

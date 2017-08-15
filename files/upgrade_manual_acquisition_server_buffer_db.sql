@@ -1,3 +1,2 @@
-ALTER TABLE `host_event_log` ADD COLUMN `node_id` INT NOT NULL DEFAULT '0' AFTER `sub_text`;
-ALTER TABLE `hosts` ADD COLUMN `system_hostname` CHAR(255) NOT NULL DEFAULT AFTER `time_of_last_successful_long_term_storage_write`, ADD COLUMN `additional_host_description` CHAR(255) NOT NULL DEFAULT '' AFTER `system_hostname`;
-ALTER TABLE `experiments` ADD COLUMN `mask_time` BIGINT(20) UNSIGNED NOT NULL DEFAULT '0' AFTER `number_of_regions_in_latest_storyboard_build`, ADD COLUMN `compression_type` CHAR(50) NOT NULL DEFAULT 'jp2k' AFTER `mask_time`, ADD COLUMN `compression_ratio` FLOAT NOT NULL DEFAULT '0.05' AFTER `compression_type`;
+ALTER TABLE buffered_host_event_log` ADD COLUMN `sub_text` MEDIUMTEXT NOT NULL AFTER `processing_duration`, ADD COLUMN `node_id` INT NOT NULL DEFAULT ‘0' AFTER `sub_text`;
+ALTER TABLE `buffered_experiments` ADD COLUMN `mask_time` BIGINT(20) UNSIGNED NOT NULL DEFAULT '0' AFTER `number_of_regions_in_latest_storyboard_build`, ADD COLUMN `compression_type` CHAR(50) NOT NULL DEFAULT 'jp2k' AFTER `mask_time`, ADD COLUMN `compression_ratio` FLOAT NOT NULL DEFAULT '0.05' AFTER `compression_type`;

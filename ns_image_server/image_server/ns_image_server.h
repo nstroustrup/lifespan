@@ -548,7 +548,11 @@ public:
 	}
 	void reset_empty_job_queue_check_count() { empty_job_queue_check_count = 0; }
 	void incremenent_empty_job_queue_check_count() { empty_job_queue_check_count++; }
-	bool empty_job_queue_check_count_is_exceeded() { return empty_job_queue_check_count>=number_of_times_to_check_empty_job_queue_before_stopping; }
+	bool empty_job_queue_check_count_is_exceeded() { 
+		if (number_of_times_to_check_empty_job_queue_before_stopping == 0)
+			return false;
+		return empty_job_queue_check_count>=number_of_times_to_check_empty_job_queue_before_stopping;
+	}
 
 
 	void update_processing_status(const std::string & processing_state, const ns_64_bit processing_job_id, const ns_64_bit processing_job_queue_id,ns_sql & sql) const;

@@ -834,159 +834,152 @@ bool ns_sql_column_exists(const std::string & table, const std::string & column,
 	sql->get_rows(res);
 	return !res.empty();
 }
-bool ns_image_server::upgrade_tables(ns_sql_connection * sql,const bool just_test_if_needed,const std::string & schema_name){
+bool ns_image_server::upgrade_tables(ns_sql_connection * sql, const bool just_test_if_needed, const std::string & schema_name, const bool updating_local_buffer) {
 	bool changes_made = false;
+	const std::string t_suf = updating_local_buffer ? "buffered_" : "";
+
+	sql->select_db(schema_name);
 
 	*sql << "SELECT COLUMN_TYPE FROM INFORMATION_SCHEMA.COLUMNS "
-			"WHERE table_name = 'captured_images' AND COLUMN_NAME = 'registration_horizontal_offset'"
-			"AND TABLE_SCHEMA = '" << schema_name << "'";
+		"WHERE table_name = '" << t_suf << "captured_images' AND COLUMN_NAME = 'registration_horizontal_offset'"
+		"AND TABLE_SCHEMA = '" << schema_name << "'";
 	ns_sql_result res;
 	sql->get_rows(res);
-	if (res.size() > 0 && res[0][0].find("unsigned") != res[0][0].npos){
+	if (res.size() > 0 && res[0][0].find("unsigned") != res[0][0].npos) {
 		if (just_test_if_needed)
 			return true;
 		cout << "Fixing " << schema_name << " registration horizontal record table\n";
-		*sql << "ALTER TABLE " << schema_name << ".captured_images CHANGE COLUMN `registration_horizontal_offset` "
-				"`registration_horizontal_offset` INT(10) NOT NULL DEFAULT '0' ";
+		*sql << "ALTER TABLE " << schema_name << "." << t_suf << "captured_images CHANGE COLUMN `registration_horizontal_offset` "
+			"`registration_horizontal_offset` INT(10) NOT NULL DEFAULT '0' ";
 		sql->send_query();
 		changes_made = true;
 	}
+	if (!updating_local_buffer) {
+		if (!ns_sql_column_exists("sample_region_image_info", "position_analysis_model", sql)) {
+			if (just_test_if_needed)
+				return true;
+			cout << "Adding position analysis model column to sample_region_image_info\n";
+			*sql << "ALTER TABLE sample_region_image_info "
+				"ADD COLUMN `position_analysis_model` TEXT NOT NULL AFTER `time_series_denoising_flag`";
+			sql->send_query();
 
-	*sql << "SELECT COLUMN_TYPE FROM INFORMATION_SCHEMA.COLUMNS "
-		"WHERE table_name = 'buffered_captured_images' AND COLUMN_NAME = 'registration_horizontal_offset'"
-		"AND TABLE_SCHEMA = 'image_server_buffer'";
-	sql->get_rows(res);
-	if (res.size() > 0 && res[0][0].find("unsigned") != res[0][0].npos){
-		if (just_test_if_needed)
-			return true;
-		cout << "Fixing buffered images registration horizontal record table\n";
-		*sql << "ALTER TABLE image_server_buffer.buffered_captured_images CHANGE COLUMN `registration_horizontal_offset` "
-				"`registration_horizontal_offset` INT(10) NOT NULL DEFAULT '0' ";
-		sql->send_query();
-		changes_made = true;
-	}
-	sql->select_db(schema_name);
-	if (!ns_sql_column_exists("sample_region_image_info","position_analysis_model",sql)){
-		if(just_test_if_needed)
-			return true;
-		cout << "Adding position analysis model column to sample_region_image_info\n";
-		*sql << "ALTER TABLE sample_region_image_info "
-			   "ADD COLUMN `position_analysis_model` TEXT NOT NULL AFTER `time_series_denoising_flag`";
-		sql->send_query();
+			changes_made = true;
+		}
 
-		changes_made = true;
-	}
-
-	//check to see if path_data has wrong bit depth
-	*sql << "SELECT COLUMN_TYPE FROM INFORMATION_SCHEMA.COLUMNS "
+		//check to see if path_data has wrong bit depth
+		*sql << "SELECT COLUMN_TYPE FROM INFORMATION_SCHEMA.COLUMNS "
 			"WHERE table_name = 'path_data' AND COLUMN_NAME = 'region_id'"
-			"AND TABLE_SCHEMA = '"<<schema_name<<"'";
-	sql->get_rows(res);
-	if (res.size() > 0 && res[0][0].find("bigint") == res[0][0].npos){
-		if (just_test_if_needed)
-			return true;
-		cout << "Fixing path id bit depths in path_data\n";
-		*sql << "ALTER TABLE `path_data`"
+			"AND TABLE_SCHEMA = '" << schema_name << "'";
+		sql->get_rows(res);
+		if (res.size() > 0 && res[0][0].find("bigint") == res[0][0].npos) {
+			if (just_test_if_needed)
+				return true;
+			cout << "Fixing path id bit depths in path_data\n";
+			*sql << "ALTER TABLE `path_data`"
 				"CHANGE COLUMN `region_id` `region_id` BIGINT UNSIGNED NOT NULL FIRST,"
 				"CHANGE COLUMN `image_id` `image_id` BIGINT UNSIGNED NOT NULL AFTER `path_id`,"
 				"CHANGE COLUMN `id` `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT AFTER `image_id`";
-		sql->send_query();
-		changes_made = true;
+			sql->send_query();
+			changes_made = true;
+		}
+
+		if (!ns_sql_column_exists("path_data", "flow_image_id", sql)) {
+			if (just_test_if_needed)
+				return true;
+			cout << "Adding flow record in path data\n";
+			*sql << " ALTER TABLE `path_data` ADD COLUMN `flow_image_id` BIGINT UNSIGNED NOT NULL DEFAULT '0' AFTER `id`";
+			sql->send_query();
+
+			changes_made = true;
+		}
 	}
 
-	if (!ns_sql_column_exists("path_data","flow_image_id",sql)){
-		if(just_test_if_needed)
-			return true;
-		cout << "Adding flow record in path data\n";
-		*sql << " ALTER TABLE `path_data` ADD COLUMN `flow_image_id` BIGINT UNSIGNED NOT NULL DEFAULT '0' AFTER `id`";
-		sql->send_query();
-
-		changes_made = true;
-	}
-
-	if (!ns_sql_column_exists("host_event_log", "sub_text", sql)) {
+	if (!ns_sql_column_exists(t_suf + "host_event_log", "sub_text", sql)) {
 		if (just_test_if_needed)
 			return true;
 		cout << "Adding column for additional subtext to host log \n";
-		*sql << "ALTER TABLE `host_event_log` "
-				"ADD COLUMN `sub_text` MEDIUMTEXT NOT NULL AFTER `processing_duration`";
+		*sql << "ALTER TABLE `" << t_suf << "host_event_log` "
+			"ADD COLUMN `sub_text` MEDIUMTEXT NOT NULL AFTER `processing_duration`";
 		sql->send_query();
 
 		changes_made = true;
 	}
-	if (!ns_sql_column_exists("host_event_log", "node_id", sql)) {
+	if (!ns_sql_column_exists(t_suf + "host_event_log", "node_id", sql)) {
 		if (just_test_if_needed)
 			return true;
 		cout << "Adding adding thread id column to host event log\n";
-		*sql << "ALTER TABLE `host_event_log` "
+		*sql << "ALTER TABLE `" << t_suf << "host_event_log` "
 			"ADD COLUMN `node_id` INT NOT NULL DEFAULT '0' AFTER `sub_text`";
 		sql->send_query();
 
 		changes_made = true;
 	}
-
-	if (!ns_sql_column_exists("hosts", "system_hostname",sql)) {
-		if (just_test_if_needed)
-			return true;
-		cout << "Adding system hostname and additional host description columns to hosts table\n";
-		*sql << " ALTER TABLE `hosts` "
-			"ADD COLUMN `system_hostname` CHAR(255) NOT NULL DEFAULT '' AFTER `time_of_last_successful_long_term_storage_write`, "
-			"ADD COLUMN `additional_host_description` CHAR(255) NOT NULL DEFAULT '' AFTER `system_hostname` ";
-		sql->send_query();
-		changes_made = true;
+	if (!updating_local_buffer) {
+		if (!ns_sql_column_exists("hosts", "system_hostname", sql)) {
+			if (just_test_if_needed)
+				return true;
+			cout << "Adding system hostname and additional host description columns to hosts table\n";
+			*sql << " ALTER TABLE `hosts` "
+				"ADD COLUMN `system_hostname` CHAR(255) NOT NULL DEFAULT '' AFTER `time_of_last_successful_long_term_storage_write`, "
+				"ADD COLUMN `additional_host_description` CHAR(255) NOT NULL DEFAULT '' AFTER `system_hostname` ";
+			sql->send_query();
+			changes_made = true;
+		}
 	}
-
-	if (!ns_sql_column_exists("experiments","mask_time",sql)) {
+	if (!ns_sql_column_exists(t_suf + "experiments", "mask_time", sql)) {
 		if (just_test_if_needed)
 			return true;
 		cout << "Adding additional metadata columns to experiment table\n";
-		*sql << "ALTER TABLE `experiments`"
+		*sql << "ALTER TABLE `" << t_suf << "experiments`"
 			"ADD COLUMN `mask_time` BIGINT(20) UNSIGNED NOT NULL DEFAULT '0' AFTER `number_of_regions_in_latest_storyboard_build`,"
 			"ADD COLUMN `compression_type` CHAR(50) NOT NULL DEFAULT 'jp2k' AFTER `mask_time`,"
 			"ADD COLUMN `compression_ratio` FLOAT NOT NULL DEFAULT '0.05' AFTER `compression_type`";
 		sql->send_query();
 		changes_made = true;
 	}
-	if (!ns_sql_column_exists("hosts", "system_parallel_process_id",sql) ){
-		if (just_test_if_needed)
-			return true;
-		cout << "Adding additional host HPC columns\n";
-		*sql << "ALTER TABLE `hosts` ADD COLUMN `system_parallel_process_id` INT UNSIGNED NOT NULL DEFAULT '0' AFTER `additional_host_description`";
-		sql->send_query();
-		changes_made = true;
-	}
+	if (!updating_local_buffer) {
+		if (!ns_sql_column_exists("hosts", "system_parallel_process_id", sql)) {
+			if (just_test_if_needed)
+				return true;
+			cout << "Adding additional host HPC columns\n";
+			*sql << "ALTER TABLE `hosts` ADD COLUMN `system_parallel_process_id` INT UNSIGNED NOT NULL DEFAULT '0' AFTER `additional_host_description`";
+			sql->send_query();
+			changes_made = true;
+		}
 
-	*sql << "SELECT table_name "
-		"FROM information_schema.tables "
-		"WHERE table_schema = '" << schema_name << "' "
-		" AND table_name = 'processing_node_status'";
-	res.clear();
-	sql->get_rows(res);
-	if (res.empty()) {
-		if (just_test_if_needed)
-			return true;
-		cout << "Adding additional host HPC columns\n";
-		*sql << "CREATE TABLE `processing_node_status` ("
-			"`host_id` BIGINT NULL,"
-			"`node_id` BIGINT NULL,"
-			"`current_processing_job_queue_id` BIGINT NULL,"
-			"`current_processing_job_id` BIGINT NULL,"
-			"`state` VARCHAR(20) NOT NULL DEFAULT '',"
-			"`current_output_event_id` BIGINT NULL,"
-			"`ts` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP"
-			")"
-			"COLLATE = 'utf8_general_ci'"
-			"ENGINE = MyISAM";
-		sql->send_query();
-		changes_made = true;
-	}
-	if (!ns_sql_column_exists("animal_storyboard", "minimum_distance_to_juxtipose_neighbors", sql)) {
-		if (just_test_if_needed)
-			return true;
-		cout << "Update storyboard column\n";
+
+		*sql << "SELECT table_name "
+			"FROM information_schema.tables "
+			"WHERE table_schema = '" << schema_name << "' "
+			" AND table_name = 'processing_node_status'";
+		res.clear();
+		sql->get_rows(res);
+		if (res.empty()) {
+			if (just_test_if_needed)
+				return true;
+			cout << "Adding additional host HPC columns\n";
+			*sql << "CREATE TABLE `processing_node_status` ("
+				"`host_id` BIGINT NULL,"
+				"`node_id` BIGINT NULL,"
+				"`current_processing_job_queue_id` BIGINT NULL,"
+				"`current_processing_job_id` BIGINT NULL,"
+				"`state` VARCHAR(20) NOT NULL DEFAULT '',"
+				"`current_output_event_id` BIGINT NULL,"
+				"`ts` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP"
+				")"
+				"COLLATE = 'utf8_general_ci'"
+				"ENGINE = MyISAM";
+			sql->send_query();
+			changes_made = true;
+		}
+		if (!ns_sql_column_exists("animal_storyboard", "minimum_distance_to_juxtipose_neighbors", sql)) {
+			if (just_test_if_needed)
+				return true;
+			cout << "Update storyboard column\n";
 			*sql << "ALTER TABLE animal_storyboard ADD COLUMN minimum_distance_to_juxtipose_neighbors INT NOT NULL DEFAULT 0 AFTER image_delay_time_after_event";
 			sql->send_query();
-		changes_made = true;
+			changes_made = true;
+		}
 	}
 	if (!changes_made && !just_test_if_needed){
 		cout << "The database appears up-to-date; no changes were made.\n";

@@ -623,7 +623,7 @@ int main(int argc, char ** argv){
 		"       synchronizing.\n"
 		<< "fix_orphaned_captured_images: Go through the volatile storage and fix database records for \n"
 		"       images orphaned by a previous bug in the lifespan machine software\n"
-		<< "update_sql [schema name]: update the sql database schema to match the most recent version. \n"
+		<< "update_sql [optional schema name]: update the sql database schema to match the most recent version. \n"
 		"       No changes are made if the schema is already up-to-data.  Schema can be specified\n"
 
 		<< "\n**Redundant, test, or debug functions**\n"
@@ -954,12 +954,12 @@ int main(int argc, char ** argv){
 		if (sql_update_requested) {
 			ns_acquire_for_scope<ns_sql> sql(image_server.new_sql_connection(__FILE__, __LINE__));
 			if (!no_schema_name_specified)
-				image_server.upgrade_tables(&sql(), false, schema_name);
+				image_server.upgrade_tables(&sql(), false, schema_name,schema_name=="image_server_buffer");
 			else {
-				image_server.upgrade_tables(&sql(), false, image_server.current_sql_database());
+				image_server.upgrade_tables(&sql(), false, image_server.current_sql_database(),false);
 				if (image_server.act_as_an_image_capture_server()) {
 					ns_acquire_for_scope <ns_local_buffer_connection> local_sql(image_server.new_local_buffer_connection(__FILE__, __LINE__));
-					image_server.upgrade_tables(&local_sql(), false, image_server.current_local_buffer_database());
+					image_server.upgrade_tables(&local_sql(), false, image_server.current_local_buffer_database(),true);
 					local_sql.release();
 				}
 			}
@@ -968,14 +968,14 @@ int main(int argc, char ** argv){
 		}		
 		//check old tables
 		ns_acquire_for_scope<ns_sql> sql_2(image_server.new_sql_connection(__FILE__, __LINE__));
-		if (image_server.upgrade_tables(&sql_2(), true, image_server.current_sql_database())) {
+		if (image_server.upgrade_tables(&sql_2(), true, image_server.current_sql_database(),false)) {
 			throw ns_ex("The current database schema is out of date.  Please run the command: ns_image_server update_sql");
 		}
 		sql_2.release();
 
 		if (image_server.act_as_an_image_capture_server()) {
 			ns_acquire_for_scope <ns_local_buffer_connection> local_sql(image_server.new_local_buffer_connection(__FILE__, __LINE__));
-			if (image_server.upgrade_tables(&local_sql(), true, image_server.current_local_buffer_database()))
+			if (image_server.upgrade_tables(&local_sql(), true, image_server.current_local_buffer_database(),true))
 				throw ns_ex("The current local buffer database schema is out of date.  Please run the command: ns_image_server update_sql");
 			local_sql.release();
 		}

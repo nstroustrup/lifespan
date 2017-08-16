@@ -573,7 +573,7 @@ class ns_processing_job{
 	      }
 	      else $res.= "Never";
 	      $res .= "</font>";
-	      if (!$time_path_solution_exists){
+	      if ($movement_analysis_rebuild_timestamp > 0 && !$time_path_solution_exists){
 		$res.="<BR><font size=\"-2\" color=\"#FF0000\">(time path solution appears lost) </font>";
 	      }
 	      $res.="</td></tr>\n";

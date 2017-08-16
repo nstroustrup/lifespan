@@ -436,8 +436,8 @@ foreach ($base_hosts as $base_host_name => $host){
 		$clrs = $table_colors[1];
 		$l = 0;
 		if (sizeof($devs) > 0){
-			echo "<tr><td bgcolor=\"$clrs[0]\">&nbsp;</td><td bgcolor=\"$clrs[0]\" colspan=4>";
-			echo "<table cellspacing = 0 cellpadding = 2 width=\"100%\"><tr><td>";
+			echo "<tr><td bgcolor=\"$clrs[0]\">&nbsp;</td><td bgcolor=\"$clrs[0]\" colspan=5>\n";
+			echo "<table cellspacing = 0 cellpadding = 2 width=\"100%\">\n<tr><td>";
 			$sorted_devs = array();
 			for ($j = 0; $j < sizeof($devs); $j++){
 			if (array_key_exists($devs[$j][1],$device_incubators))
@@ -481,7 +481,7 @@ foreach ($base_hosts as $base_host_name => $host){
 				//echo "<a href=\"view_hosts_and_devices.php?device_name=" . $devs[$j][1] . "\">[Edit]</a>";
 				if ($j != 0 && ($j+1)%3 == 0){
 					$clrs = $table_colors[$l%2];
-					echo "</td></tr><tr><td bgcolor=\"$clrs[0]\">";
+					echo "</td></tr>\n\t<tr><td bgcolor=\"$clrs[0]\">";
 					$l++;
 				}
 				else echo "</td><td bgcolor=\"$clrs[0]\">";
@@ -494,7 +494,7 @@ foreach ($base_hosts as $base_host_name => $host){
 			    $j+=$j%3;
 			  }
 			}
-		        echo "</td></tr></table></td><td bgcolor=\"$clrs[1]\"></td></tr>";
+		        echo "</td></tr></table></td></tr>";
 		}
 		if ($base_host_name != '' && !$show_host_nodes)
 			break;
@@ -536,12 +536,13 @@ foreach ($device_inventory as $incubator => $devices){
 	if ($incubator == '')
 		$incubator_display = "[No Incubator Specified]";
 	else $incubator_display = "Incubator $incubator";
-	echo "<tr><td bgcolor=\"$clrs[0]\" colspan = 4><b>$incubator_display</b></td><td colspan= 2 nowrap bgcolor = \"$clrs[0]\" align=\"right\"><input type=\"checkbox\" name=\"checkall\" onClick=\"ns_check_all(document.getElementById('incubator_form'),'incubator_$incubator',this.checked)\"></td></tr>\n";
+	echo "<tr><td bgcolor=\"$clrs[0]\" colspan = 5>\n\t<b>$incubator_display</b></td><td colspan= 2 nowrap bgcolor = \"$clrs[0]\" align=\"right\"><input type=\"checkbox\" name=\"checkall\" onClick=\"ns_check_all(document.getElementById('incubator_form'),'incubator_$incubator',this.checked)\"></td></tr>\n";
 	foreach ($devices as $device){
 		//if ($device[2] == 0) continue;
 		$dev =& $connected_devices[$device[0]];
 		$k++;
 		echo "\t<td bgcolor=\"$clrs[1]\">$device[0]</a></td>\n";
+	
 		echo "\t<td bgcolor=\"$clrs[1]\">";
 		if ($device[2] == 1){
 			if ($dev[8]==1)
@@ -558,7 +559,8 @@ foreach ($device_inventory as $incubator => $devices){
 		echo "\t<td bgcolor=\"$clrs[1]\">";
 		echo output_editable_field("device_locations[$device[0]]",$device[1],TRUE,'4',FALSE);
 		echo "</td>\n";
-		echo "\t<td bgcolor=\"$clrs[1]\">";
+		echo "<td bgcolor=\"$clrs[1]\">";
+	
 	if ($dev[3] != ""){
 			  echo "<span title=\"" . ns_clean_up_for_tooltip($dev[3]) . "\">";
 			  echo "<font color=\"red\">(Error)</font>";

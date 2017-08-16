@@ -66,7 +66,7 @@ if ($region_id != '' && $region_id != 'all')
 $events=array();
 
 if ($host_id != '' || $event_id != ''){
-  $query = "SELECT event, time, processing_job_op, host_id  FROM host_event_log";
+  $query = "SELECT event, time, processing_job_op, host_id,sub_text  FROM host_event_log";
   if ($host_id != '')
     $query.=" WHERE host_id=$host_id";
   else
@@ -155,6 +155,7 @@ for ($i = 0; $i < sizeof($events); $i++){
 	echo $events[$i][0];
 	if ($events[$i][2] != 0)
 	  echo "ns_image_processing_pipeline:: Calculating " .  $ns_processing_task_labels[$events[$i][2]];
+	//echo $events[$i][4];  
 	echo "</td><td bgcolor=\"$clrs[0]\">";
 	echo "<a href=\"view_hosts_log.php?host_id=$host_id&delete_before=" . $events[$i][1] . "\">[del]</a>";
 	echo"</td></tr>";

@@ -2,7 +2,28 @@
 require_once ('worm_environment.php');
 require_once('ns_experiment.php');
 $query = "SELECT id, k,v FROM constants ORDER BY k ASC";
-$sql->get_row($query,$constants);
+$sql->get_row($query,$all_constants);
+$pos = 0;
+$constants = array();
+$show_verbose_constants = false;
+
+if (array_key_exists("show_verbose_constants",$query_string))
+   $show_verbose_constants = true;
+for ($i = 0; $i < sizeof($all_constants); $i++){
+
+    if (!$show_verbose_constants){   
+    if(substr($all_constants[$i][1],0,20)=="duration_until_next_")
+       continue;
+    if (substr($all_constants[$i][1],0,5)=="last_" &&
+       substr($all_constants[$i][1],strlen($all_constants[$i][1])-17) =="_alert_submission")
+       continue;
+    if ($all_constants[$i][1]=="last_missed_scan_check_time")
+       continue;
+       }
+    $constants[$pos] = $all_constants[$i];
+    $pos++;
+}
+
 $reload = FALSE;
 if (ns_param_spec($_POST,'save')){
   $id = $_POST['id'];
@@ -28,6 +49,7 @@ if ($reload){
 
 $query = "SELECT label_short,label,exclude,next_flag_name_in_order, hidden, color, id, next_flag_id_in_order FROM annotation_flags";
 $sql->get_row($query,$flags);
+
 $root_flag_index = 0;
 $tail = "";
 $number_of_tails = 0;
@@ -80,7 +102,7 @@ if($number_of_tails != 1 || ns_param_spec($query_string,'fix_flags') && $query_s
   }
   $q = "commit";
   $sql->send_query($q);
-  //die("SDF");
+ 
   header("Location: cluster_configuration.php?already_set_tails=1\n\n");
  }
 
@@ -239,8 +261,10 @@ display_worm_page_header("Imaging Cluster Configuration");
 <a href="#constants">[Cluster Constants]</a> <a href="#flags">[Animal Annotation Flags]</a><br>
 <a name="constants">
 <H2>Cluster Constants</H2>
+<table width="0%" border=0 align="center">
+<tr><td>
 <?php
-echo "<table align=\"center\" border=0 cellspacing=1 cellpadding=1>\n";
+echo "<table align=\"center\" border=0 cellspacing=1 cellpadding=1 b>\n";
 echo "<tr><td bgcolor=\"#000000\">\n";
 echo "<table border=0 bgcolor=\"#FFFFFF\" cellspacing=0 cellpadding=3>\n";
 for ($i = 0; $i < sizeof($constants); $i++){
@@ -278,11 +302,21 @@ for ($i = 0; $i < sizeof($constants); $i++){
 </form>
 </td></tr>
 </table>
+</td></tr>
 </table>
+<div align="right">
+<?php if (!$show_verbose_constants){?>
+<a href="cluster_configuration.php?show_verbose_constants=1">[Show verbose constants]</a>
+<?php } else { ?>
+<a href="cluster_configuration.php">[Hide verbose constants]</a>
+<?php } ?>
+</div>
+</td></tr></table>
+</form>
 <BR><BR>
 <a name="flags">
 <H2>Animal Annotation Flags</H2>
-
+<table align="center" border=0><tr><td>
 <table align="center" border=0 cellspacing=0 cellpadding=1><tr><td bgcolor="#000000">
 <table border=0 bgcolor="#FFFFFF" cellspacing=0 cellpadding=0><tr><td>
 <table cellspacing=0 cellpadding=0 width="100%"><tr <?php echo $table_header_color ?>><td width=200>Short name</td><td width=400>Flag Label</td><td width=8>Color</td><td width=100><center>Exclude Animals<br>With Flag</center></td><td width=100><center>Hide Flag</center></td><td>&nbsp;</td></tr>
@@ -338,8 +372,9 @@ echo "<input type=\"checkbox\" name=\"hide\" value=\"1\"";
 </table>
 </tr></td>
 </table>
+<div align="right">
   <a href="cluster_configuration.php?fix_flags=1">[Reset Flag order]</a>
-
+</div></td></tr></table>
 <?php
 display_worm_page_footer();
 ?>

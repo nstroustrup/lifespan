@@ -268,7 +268,8 @@ $clrs = $table_colors[0];
        echo $queue[2];
        echo " $ft2</td>";
        echo "<td valign=\"top\" bgcolor=\"".$clrs[0] . "\">$ft1";
-       echo format_time($queue[11]);
+       if (!$job_is_missing)
+       echo format_time($job->time_submitted);
 
        echo " $ft2</td>";
 

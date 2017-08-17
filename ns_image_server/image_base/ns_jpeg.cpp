@@ -8,15 +8,18 @@ bool ns_jpeg_library_user::init_(false);
 METHODDEF(void) ns_jpeg_output_message (j_common_ptr cinfo){
 	char buffer[JMSG_LENGTH_MAX];
 	(*cinfo->err->format_message) (cinfo, buffer);
-	cerr << "ns_jpeg::jpeglib error: " << buffer << "\n";
+	if (ns_jpeg_library_user::verbose_output)
+		cerr << "ns_jpeg::jpeglib message: " << buffer << "\n";
 	
 }
 
 METHODDEF(void) ns_jpeg_error_exit (j_common_ptr cinfo){
 	char buffer[JMSG_LENGTH_MAX];
 	(*cinfo->err->format_message) (cinfo, buffer);
+	if (ns_jpeg_library_user::verbose_output)
 	std::cerr << "ns_jpeg::jpeglib error: " << buffer << "\n";
 }
+bool ns_jpeg_library_user::verbose_output = true;
 
 void ns_jpeg_library_user::init(){
 	jpeg_std_error(&error_manager_);

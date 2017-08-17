@@ -56,37 +56,43 @@ std::string ns_image_server_captured_image::directory(ns_image_server_sql * sql,
 }
 
 
-bool ns_image_server_captured_image::load_from_db(const ns_64_bit _id, ns_image_server_sql * con){
-		captured_images_id				= _id;
-		*con << "SELECT ci.sample_id, "
-			"ci.experiment_id, "
-			"ci.image_id, "
-			"cs.name,"
-			"exp.name, "
-			"ci.capture_time, "
-			"cs.device_name, "
-			"ci.small_image_id, "
-			"ci.never_delete_image"
-			<< " FROM "<< con->table_prefix() << "captured_images as ci,  "<< con->table_prefix() <<"capture_samples as cs, "<< con->table_prefix() <<"experiments as exp WHERE ci.id = " << captured_images_id  
-			<< " AND ci.experiment_id = exp.id"
-			<< " AND cs.id = ci.sample_id";
-	//	cerr << con->query() << "\n";
-	//	std::string foo(con->query());
-		ns_sql_result info;
-		con->get_rows(info);
-		if (info.size() == 0)
-			return false;
-		if (info.size() > 1)
-			throw ns_ex("Captured image doesn't have a unique id!");
-		sample_id						= ns_atoi64(info[0][0].c_str());
-		experiment_id					= ns_atoi64(info[0][1].c_str());
-		capture_images_image_id		 	= ns_atoi64(info[0][2].c_str());
-		sample_name						= info[0][3];
-		experiment_name					= info[0][4];
-		capture_time					= atol(info[0][5].c_str());
-		device_name						= info[0][6].c_str();
-		capture_images_small_image_id	= ns_atoi64(info[0][7].c_str());
-		never_delete_image				= (info[0][8] != "0");
+
+std::string ns_image_server_captured_image::sql_field_stub() {
+	return "ci.sample_id, "
+		"ci.experiment_id, "
+		"ci.image_id, "
+		"s.name,"
+		"exp.name, "
+		"ci.capture_time, "
+		"s.device_name, "
+		"ci.small_image_id, "
+		"ci.never_delete_image ";
+}
+
+bool ns_image_server_captured_image::load_from_db(const ns_64_bit _id, ns_image_server_sql * con) {
+	*con << "SELECT " << sql_field_stub() <<
+		" FROM " << con->table_prefix() << "captured_images as ci,  " << con->table_prefix() << "capture_samples as s, " << con->table_prefix() << "experiments as exp WHERE ci.id = " << captured_images_id
+		<< " AND ci.experiment_id = exp.id"
+		<< " AND cs.id = ci.sample_id";
+
+	ns_sql_result info;
+	con->get_rows(info);
+	if (info.size() == 0)
+		return false;
+	if (info.size() > 1)
+		throw ns_ex("Captured image doesn't have a unique id!");
+	return load_from_db_internal(_id, info[0]);
+}
+bool ns_image_server_captured_image::load_from_db_internal(const ns_64_bit _id, ns_sql_result_row & info){
+		sample_id						= ns_atoi64(info[0].c_str());
+		experiment_id					= ns_atoi64(info[1].c_str());
+		capture_images_image_id		 	= ns_atoi64(info[2].c_str());
+		sample_name						= info[3];
+		experiment_name					= info[4];
+		capture_time					= atol(info[5].c_str());
+		device_name						= info[6].c_str();
+		capture_images_small_image_id	= ns_atoi64(info[7].c_str());
+		never_delete_image				= (info[8] != "0");
 		return true;
 	}
 
@@ -283,43 +289,56 @@ bool ns_image_server_captured_image_region::from_filename(const std::string & fi
 	region_images_id = ns_atoi64(region_images_id_str.c_str());
 	return true;
 }
-bool ns_image_server_captured_image_region::load_from_db(const ns_64_bit _id, ns_image_server_sql * sql){
-	*sql << "SELECT s.capture_sample_image_id, si.name, s.image_id, "
-		   "s.region_info_id, s.worm_detection_results_id, s.worm_interpolation_results_id, s.worm_movement_id, "
-		   "s.problem,s.currently_under_processing, s.capture_time, "
-		   "s.op1_image_id, s.op2_image_id, s.op3_image_id, s.op4_image_id,"
-		   "s.op5_image_id, s.op6_image_id, s.op7_image_id, s.op8_image_id,"
-		   "s.op9_image_id, s.op10_image_id,s.op11_image_id,s.op12_image_id,"
-		   "s.op13_image_id,s.op14_image_id,s.op15_image_id,s.op16_image_id,"
-		   "s.op17_image_id,s.op18_image_id,s.op19_image_id,s.op20_image_id,"
-		   "s.op21_image_id,s.op22_image_id,s.op23_image_id,s.op24_image_id,"
-		   "s.op25_image_id,s.op26_image_id,s.op27_image_id,s.op28_image_id,"
-		   "s.op29_image_id,s.op30_image_id "
-		   "FROM "<< sql->table_prefix() << "sample_region_images as s, "<< sql->table_prefix() << "sample_region_image_info as si "
-		   "WHERE s.region_info_id = si.id AND "
-		   "s.id = " << _id << " LIMIT 1";
+
+
+std::string ns_image_server_captured_image_region::sql_stub(ns_image_server_sql * sql) {
+	return std::string("SELECT ri.id,ri.capture_sample_image_id, r.name, ri.image_id, "
+		"ri.region_info_id, ri.worm_detection_results_id, ri.worm_interpolation_results_id, ri.worm_movement_id, "
+		"ri.problem,ri.currently_under_processing, ri.capture_time, "
+		"ri.op1_image_id, ri.op2_image_id, ri.op3_image_id, ri.op4_image_id,"
+		"ri.op5_image_id, ri.op6_image_id, ri.op7_image_id, ri.op8_image_id,"
+		"ri.op9_image_id, ri.op10_image_id,ri.op11_image_id,ri.op12_image_id,"
+		"ri.op13_image_id,ri.op14_image_id,ri.op15_image_id,ri.op16_image_id,"
+		"ri.op17_image_id,ri.op18_image_id,ri.op19_image_id,ri.op20_image_id,"
+		"ri.op21_image_id,ri.op22_image_id,ri.op23_image_id,ri.op24_image_id,"
+		"ri.op25_image_id,ri.op26_image_id,ri.op27_image_id,ri.op28_image_id,"
+		"ri.op29_image_id,ri.op30_image_id ,") +
+		ns_image_server_captured_image_region::sql_field_stub()+
+		"FROM " + sql->table_prefix() + "sample_region_images as ri, " + sql->table_prefix() + "sample_region_image_info as r,"
+			+ sql->table_prefix() + "captured_images as ci,  " + sql->table_prefix() + "capture_samples as s, " + sql->table_prefix() + "experiments as exp "
+		"WHERE r.id = ri.region_info_id AND ci.id = ri.capture_sample_image_id AND s.id = r.sample_id AND exp.id = s.experiment_id ";
+
+}
+bool ns_image_server_captured_image_region::load_from_db(const ns_64_bit _id, ns_image_server_sql * sql) {
+	*sql << sql_stub(sql) << " AND ri.id = " << _id << " LIMIT 1";
 	ns_sql_result res;
 	sql->get_rows(res);
-	region_images_id = _id;
+	return load_from_db_internal(res[0]);
+}
+
+bool ns_image_server_captured_image_region::load_from_db_internal(ns_sql_result_row & res) {
+	
+	region_images_id = ns_atoi64(res[0].c_str());
 	if (res.size() == 0)
 		return false;
-	captured_images_id = ns_atoi64(res[0][0].c_str());
-	region_name = res[0][1];
-	region_images_image_id = ns_atoi64(res[0][2].c_str());
-	region_info_id = ns_atoi64(res[0][3].c_str());
-	region_detection_results_id = ns_atoi64(res[0][4].c_str());
-	region_interpolation_results_id = ns_atoi64(res[0][5].c_str());
-	movement_characterization_id = ns_atoi64(res[0][6].c_str());
-	problem_id = ns_atoi64(res[0][7].c_str());
-	processor_id = ns_atoi64(res[0][8].c_str());
-	capture_time = atol(res[0][9].c_str());
+	captured_images_id = ns_atoi64(res[1].c_str());
+	region_name = res[2];
+	region_images_image_id = ns_atoi64(res[3].c_str());
+	region_info_id = ns_atoi64(res[4].c_str());
+	region_detection_results_id = ns_atoi64(res[5].c_str());
+	region_interpolation_results_id = ns_atoi64(res[6].c_str());
+	movement_characterization_id = ns_atoi64(res[7].c_str());
+	problem_id = ns_atoi64(res[8].c_str());
+	processor_id = ns_atoi64(res[9].c_str());
+	capture_time = atol(res[10].c_str());
 	op_images_.resize(ns_process_last_task_marker);
 	op_images_[0] = region_images_image_id;
 	for (unsigned int i = 1; i < op_images_.size(); i++)  //op[0] is unprocessed image
-		op_images_[i] = ns_atoi64(res[0][9+i].c_str());
+		op_images_[i] = ns_atoi64(res[10+i].c_str());
+	ns_sql_result_row capture_res;
 
-	return ns_image_server_captured_image::load_from_db(captured_images_id, sql);
-
+	capture_res.insert(capture_res.begin(), res.begin() + (op_images_.size() + 11), res.end());
+	return ns_image_server_captured_image::load_from_db_internal(captured_images_id,capture_res);
 }
 
 std::string ns_image_server_captured_image_region::region_base_directory(const std::string & region_name,

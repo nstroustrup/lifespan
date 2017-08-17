@@ -59,7 +59,7 @@ public:
 	void set_resize_factor(const unsigned int i){
 		resize_factor=i;
 	}
-	void produce_mask_file(const unsigned int experiment_id,ns_image_stream_file_sink<ns_8_bit> & reciever, const unsigned long mask_time=0);
+	void produce_mask_file(const unsigned int experiment_id,ns_image_stream_file_sink<ns_8_bit> & reciever, ns_sql & sql, const unsigned long mask_time=0);
 
 	template<class source_t>
 	const std::vector<std::string> & decode_mask_file(source_t & mask_file){

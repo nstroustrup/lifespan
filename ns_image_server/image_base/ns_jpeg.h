@@ -11,9 +11,10 @@
 ///All objects using the global jpeg engine use ns_jpeg_library_user to coordinate usage
 ///
 class ns_jpeg_library_user{
+	public:
+	static bool verbose_output;
 	protected:
 	jpeg_error_mgr & error_manager(){if (!init_)init();return error_manager_;}
-	
 	private:
 		static jpeg_error_mgr error_manager_;
 		static void init();

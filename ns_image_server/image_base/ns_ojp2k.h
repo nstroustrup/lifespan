@@ -11,6 +11,7 @@ struct ns_ojp2k_initialization{
 	static void init();
 	static void cleanup();
 	static bool jp2k_initialized;
+	static bool verbose_output;
 };
 
 std::string ns_oj2k_xmp_filename(const std::string &filename);
@@ -144,7 +145,7 @@ public:
 			}
 		}
 		catch (ns_ex & ex) {
-			std::cerr << "Supressing exception in ns_ojp2k_image_input_file::close(): " << ex.text() << "\n";
+			if (ns_ojp2k_initialization::verbose_output) std::cerr << "Supressing exception in ns_ojp2k_image_input_file::close(): " << ex.text() << "\n";
 		}
 
 	}

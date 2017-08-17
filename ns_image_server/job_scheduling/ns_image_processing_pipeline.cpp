@@ -19,60 +19,141 @@ void ns_check_for_file_errors(ns_processing_job & job, ns_sql & sql){
 			im.mark_as_problem(&sql,event_id);
 		}
 	}
-	else if (job.region_id != 0){
+
+	else if (job.region_id != 0) {
+
 		sql << "SELECT id FROM sample_region_images WHERE region_info_id = " << job.region_id;
 		ns_sql_result res;
 		sql.get_rows(res);
-		unsigned long step(res.size()/10);
-		for (unsigned long i = 0; i < res.size(); i++){
+		std::set<ns_64_bit> sample_region_image_ids;
+		for (unsigned long i = 0; i < res.size(); i++)
+			sample_region_image_ids.insert(ns_atoi64(res[i][0].c_str()));
+
+		//first find any problem worm detection results
+		sql << ns_image_worm_detection_results::sql_select_stub() << ", sample_region_images as reg,sample_region_image_info as r WHERE reg.region_info_id = r.id AND r.id = " << job.region_id << " AND e.id = reg.worm_detection_results_id";
+		ns_sql_result detection_results_information;
+		sql.get_rows(detection_results_information);
+		const unsigned long number_of_detection_results(detection_results_information.size());
+		sql << ns_image_worm_detection_results::sql_select_stub() << ", sample_region_images as reg,sample_region_image_info as r WHERE reg.region_info_id = r.id AND r.id = " << job.region_id << " AND e.id = reg.worm_interpolation_results_id";
+		ns_sql_result interpolated_detection_results_information;
+		sql.get_rows(interpolated_detection_results_information);
+
+		//concatenate normal and interpolated records so we can do this in one pass
+		detection_results_information.reserve(number_of_detection_results + interpolated_detection_results_information.size());
+		detection_results_information.insert(detection_results_information.end(), interpolated_detection_results_information.begin(), interpolated_detection_results_information.end());
+
+		ns_image_worm_detection_results results;
+		std::set<ns_64_bit> result_ids_to_delete,
+			references_to_clear,
+			interpolated_references_to_clear,
+			detection_results_found,
+			interpolated_results_found;
+		for (unsigned long i = 0; i < detection_results_information.size(); i++) {
+			const bool interpolated(i >= number_of_detection_results);
+			ns_64_bit results_id = ns_atoi64(detection_results_information[i][0].c_str());
+			if (interpolated)
+				interpolated_results_found.insert(detection_results_found.begin(), results_id);
+			else
+				detection_results_found.insert(detection_results_found.begin(), results_id);
+			ns_64_bit source_image_id = ns_atoi64(detection_results_information[i][1].c_str());
+			try {
+				results.load_from_db_internal(false, interpolated, detection_results_information[i], sql, true);
+				std::set<ns_64_bit>::iterator p(sample_region_image_ids.find(results.source_image_id));
+				if (p == sample_region_image_ids.end())
+					result_ids_to_delete.insert(results.detection_results_id);
+			}
+			catch (...) {
+				result_ids_to_delete.insert(results_id);
+				if (interpolated)
+					interpolated_references_to_clear.insert(source_image_id);
+				else
+					references_to_clear.insert(source_image_id);
+			}
+		}
+		//now go through and delete any errors.
+		if (!result_ids_to_delete.empty()) {
+			sql << "DELETE FROM worm_detection_results WHERE id IN (";
+			for (std::set<ns_64_bit>::iterator p = result_ids_to_delete.begin(); p != result_ids_to_delete.end(); p++)
+				sql << *p << ",";
+			sql << "0)";
+			sql.send_query();
+		}
+		if (!references_to_clear.empty()) {
+			sql << "UPDATE sample_region_images SET worm_detection_results_id = 0 WHERE id IN (";
+			for (std::set<ns_64_bit>::iterator p = references_to_clear.begin(); p != references_to_clear.end(); p++)
+				sql << *p << ",";
+			sql << "0)";
+			sql.send_query();
+			references_to_clear.clear();
+		}
+
+		if (!interpolated_references_to_clear.empty()) {
+			sql << "UPDATE sample_region_images SET worm_interpolation_results_id = 0 WHERE id IN (";
+			for (std::set<ns_64_bit>::iterator p = interpolated_references_to_clear.begin(); p != interpolated_references_to_clear.end(); p++)
+				sql << *p << ",";
+			sql << "0)";
+			sql.send_query();
+			interpolated_references_to_clear.clear();
+		}
+
+		//now we check 
+		//1) for any images with missing detection or interpolated detection references
+		//2) each image to see it exists on disk
+		//3) each image to see if it has been replaced by a compressed copy
+		sql << ns_image_server_captured_image_region::sql_stub(&sql) << " AND r.id = " << job.region_id;
+		ns_sql_result region_results;
+		sql.get_rows(region_results);
+
+		unsigned long step(region_results.size() / 10);
+		for (unsigned long i = 0; i < region_results.size(); i++) {
 			if (i%step == 0)
 				image_server_const.add_subtext_to_current_event(ns_to_string(10 * (i / step)) + "%...", &sql);
 			ns_image_server_captured_image_region reg;
-			try{
-				reg.load_from_db(ns_atoi64(res[i][0].c_str()),&sql);
-				if (reg.region_detection_results_id != 0){
-					ns_image_worm_detection_results results;
-					results.detection_results_id = reg.region_detection_results_id;
-					try{
-						results.load_from_db(false,false,sql,true);
-					}
-					catch(ns_ex & ex){
-						image_server_const.add_subtext_to_current_event(ex.text()+ "\n", &sql);
-					}
+			try {
+				reg.load_from_db_internal(region_results[i]);
+
+				//check for missing detection or interpolated detection references
+				if (reg.region_detection_results_id != 0) {
+					std::set<ns_64_bit>::iterator p = detection_results_found.find(reg.region_detection_results_id);
+					if (p == detection_results_found.end())
+						references_to_clear.insert(references_to_clear.begin(), reg.region_images_id);
 				}
-				if (reg.region_interpolation_results_id != 0){
-					ns_image_worm_detection_results results;
-					results.detection_results_id = reg.region_interpolation_results_id;
-					try{
-						results.load_from_db(false,true,sql,true);
-					}
-					catch(ns_ex & ex){
-						image_server_const.add_subtext_to_current_event(ex.text() + "\n", &sql);
-					}
+				if (reg.region_interpolation_results_id != 0) {
+					std::set<ns_64_bit>::iterator p = interpolated_results_found.find(reg.region_interpolation_results_id);
+					if (p == interpolated_results_found.end())
+						interpolated_references_to_clear.insert(interpolated_references_to_clear.begin(), reg.region_images_id);
 				}
-				ns_image_stream_static_offset_buffer<ns_8_bit> buf(ns_image_stream_buffer_properties(10000,1));
-				for (unsigned long j = 0; j < reg.op_images_.size(); j++){
+
+				//check for missing or compressed images
+				ns_image_stream_static_offset_buffer<ns_8_bit> buf(ns_image_stream_buffer_properties(10000, 1));
+				for (unsigned long j = 0; j < reg.op_images_.size(); j++) {
 					bool changed = false;
-					if (reg.op_images_[j]!=0){
-						ns_image_server_image im;
-						try{
+					if (reg.op_images_[j] != 0) {
+						ns_image_server_image im_base;
+
+						im_base.load_from_db(reg.op_images_[j], &sql);
+						try {
 							//first iteration try file
 							//second iteration look for jpeg2000 conversion
 							for (int k = 0; k < 2; k++) {
 								const bool tif_failed_try_jp2(k == 1);
-								im.load_from_db(reg.op_images_[j], &sql);
+								ns_image_server_image im = im_base;
 
-								if (tif_failed_try_jp2) 
+								if (tif_failed_try_jp2)
 									im.filename += ".jp2";
 
 								try {
+									ns_ojp2k_initialization::verbose_output = false; 
+									ns_jpeg_library_user::verbose_output = false;
 									ns_image_storage_source_handle<ns_8_bit> h(image_server_const.image_storage.request_from_storage(im, &sql));
 									unsigned long internal_state;
 									long w(h.input_stream().properties().width*h.input_stream().properties().components);
 									if (w > buf.properties().width)
 										buf.resize(ns_image_stream_buffer_properties(w, 1));
-									h.input_stream().send_lines(buf, 1, internal_state);
+								//	h.input_stream().send_lines(buf, 1, internal_state);
 									try {
+										ns_ojp2k_initialization::verbose_output = false;
+										ns_jpeg_library_user::verbose_output = false;
 										h.clear();
 									}
 									catch (...) {}
@@ -86,27 +167,45 @@ void ns_check_for_file_errors(ns_processing_job & job, ns_sql & sql){
 								}
 							}
 						}
-						catch(ns_ex & ex){
+						catch (ns_ex & ex) {
 							reg.op_images_[j] = 0;
 							changed = true;
 						}
 					}
-					if (changed){
+					if (changed) {
 						reg.update_all_processed_image_records(sql);
-						if (reg.op_images_[0] == 0){
+						if (reg.op_images_[0] == 0) {
 							sql << "UPDATE sample_region_images SET problem=1 WHERE id = " << reg.region_images_id;
 							sql.send_query();
 						}
 					}
 				}
 			}
-			catch(ns_ex & ex){
+			catch (ns_ex & ex) {
 				image_server_const.add_subtext_to_current_event(ex.text() + "\n", &sql);
 				continue;
 			}
-
+		
+		}	
+		if (!references_to_clear.empty()) {
+			sql << "UPDATE sample_region_images SET worm_detection_results_id = 0 WHERE id IN (";
+			for (std::set<ns_64_bit>::iterator p = references_to_clear.begin(); p != references_to_clear.end(); p++)
+				sql << *p << ",";
+			sql << "0)";
+			sql.send_query();
+			references_to_clear.clear();
 		}
-		//throw ns_ex("Checking for region file errors has not been implemented yet");
+
+		if (!interpolated_references_to_clear.empty()) {
+			sql << "UPDATE sample_region_images SET worm_interpolation_results_id = 0 WHERE id IN (";
+			for (std::set<ns_64_bit>::iterator p = interpolated_references_to_clear.begin(); p != interpolated_references_to_clear.end(); p++)
+				sql << *p << ",";
+			sql << "0)";
+			sql.send_query();
+			interpolated_references_to_clear.clear();
+		}
+		ns_ojp2k_initialization::verbose_output = true;
+		ns_jpeg_library_user::verbose_output = true;
 	}
 	else if (job.sample_id != 0){
 		sql << "SELECT name,experiment_id FROM capture_samples WHERE id = " << job.sample_id;

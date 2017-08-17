@@ -623,6 +623,9 @@ public:
 
 	///Loades detected worm information from the database.  Data is loaded from the entry who's id is stored in ns_image_worm_detection_results::id
 	void load_from_db(const bool load_worm_shape,const bool images_comes_from_interpolated_annotations,ns_sql & sql,const bool delete_from_db_on_error=true );
+	void load_from_db_internal(const bool load_worm_shape, const bool images_comes_from_interpolated_annotations, ns_sql_result_row & result,ns_sql & sql, const bool delete_from_db_on_error = true);
+	static std::string sql_select_stub();
+
 
 	std::vector<ns_detected_worm_info> & replace_actual_worms_access(){
 		putative_worms.resize(0);

@@ -188,6 +188,8 @@ struct ns_image_server_captured_image{
 		sql->send_query("COMMIT");
 	}
 
+	static std::string sql_field_stub();
+	bool load_from_db_internal(const ns_64_bit _id, ns_sql_result_row & res);
 	virtual bool load_from_db(const ns_64_bit _id, ns_image_server_sql * con);
 	
 	virtual std::string directory(ns_image_server_sql * sql, const ns_processing_task & task = ns_unprocessed,const bool allow_blank_capture_image_id=false);  //returns the storage path for the image, given its information.
@@ -257,6 +259,8 @@ struct ns_image_server_captured_image_region : public ns_image_server_captured_i
 
 	std::string filename(ns_image_server_sql * sql);
 	bool load_from_db(const ns_64_bit _id, ns_image_server_sql * sql);
+	static std::string sql_stub(ns_image_server_sql * sql);
+	bool load_from_db_internal(ns_sql_result_row & res);
 	
 	std::string directory(ns_image_server_sql * sql, const ns_processing_task & task = ns_unprocessed);
 

@@ -1999,27 +1999,39 @@ void ns_image_worm_detection_results::save_data_to_disk(std::ofstream & out, con
 	}
 }
 
-void ns_image_worm_detection_results::load_from_db(const bool load_worm_postures,const bool images_comes_from_interpolated_annotations,ns_sql & sql,const bool delete_from_db_on_error){
+
+std::string ns_image_worm_detection_results::sql_select_stub() {
+	return  "SELECT e.id, e.source_image_id, e.capture_sample_id, e.bitmap_tiles_per_row, e.bitmap_tile_width, e.bitmap_tile_height, "
+		"e.number_of_worms, e.worm_movement_tags,e.data_storage_on_disk_id,e.number_of_interpolated_worm_areas "
+		"FROM worm_detection_results as e";
+}
+
+
+
+void ns_image_worm_detection_results::load_from_db(const bool load_worm_postures, const bool images_comes_from_interpolated_annotations, ns_sql & sql, const bool delete_from_db_on_error) {
 	if (detection_results_id == 0)
 		throw ns_ex("ns_image_worm_detection_results::Attempting to load from db with id=0.");
-	sql << "SELECT source_image_id, capture_sample_id, bitmap_tiles_per_row, bitmap_tile_width, bitmap_tile_height, "
-		<< "number_of_worms, worm_movement_tags,data_storage_on_disk_id,number_of_interpolated_worm_areas "
-		<< "FROM worm_detection_results WHERE id = " << detection_results_id;
+	sql << sql_select_stub() << " WHERE e.id = " << detection_results_id;
 	ns_sql_result data;
 	sql.get_rows(data);
-	if (data.size() == 0){
-		throw ns_ex("ns_image_worm_detection_resuls::Could not load specified result") << detection_results_id <<", as it does not exist in the db";
+	if (data.size() == 0) {
+		throw ns_ex("ns_image_worm_detection_resuls::Could not load specified result, ") << detection_results_id << ", as it does not exist in the db";
 	}
-	source_image_id = ns_atoi64(data[0][0].c_str());
-	capture_sample_id = ns_atoi64(data[0][1].c_str());
-	worm_collage.info().tiles_per_row = atol(data[0][2].c_str());
-	worm_collage.info().tile_width = atol(data[0][3].c_str());
-	worm_collage.info().tile_height = atol(data[0][4].c_str());
+	load_from_db_internal(load_worm_postures, images_comes_from_interpolated_annotations, data[0],sql, delete_from_db_on_error);
+}
 
-	unsigned int number_of_worms = atol(data[0][5].c_str()),
-				 number_of_interpolated_worm_areas = atol(data[0][8].c_str());
+void ns_image_worm_detection_results::load_from_db_internal(const bool load_worm_postures,const bool images_comes_from_interpolated_annotations, ns_sql_result_row & data, ns_sql & sql,const bool delete_from_db_on_error){
+	detection_results_id = ns_atoi64(data[0].c_str());
+	source_image_id = ns_atoi64(data[1].c_str());
+	capture_sample_id = ns_atoi64(data[2].c_str());
+	worm_collage.info().tiles_per_row = atol(data[3].c_str());
+	worm_collage.info().tile_width = atol(data[4].c_str());
+	worm_collage.info().tile_height = atol(data[5].c_str());
 
-	data_storage_on_disk.id = ns_atoi64(data[0][7].c_str());
+	unsigned int number_of_worms = atol(data[6].c_str()),
+				 number_of_interpolated_worm_areas = atol(data[9].c_str());
+
+	data_storage_on_disk.id = ns_atoi64(data[8].c_str());
 
 	if (data_storage_on_disk.id == 0){
 		throw ns_ex("Database storage of worm information is depreciated!");
@@ -2153,14 +2165,14 @@ void ns_image_worm_detection_results::load_from_db(const bool load_worm_postures
 	}
 
 	//if movement tags are unspecified, assume not_assigned.
-	if (data[0][6].size() != 0){
+	if (data[7].size() != 0){
 
 		unsigned long current_worm(0);
 		string cur_val;
-		for (unsigned int i = 0; i < data[0][6].size(); i++){
+		for (unsigned int i = 0; i < data[7].size(); i++){
 			if (current_worm >= actual_worms.size())
 				throw ns_ex("ns_image_worm_detection_results::Too many worm movement tags specified");
-			if (data[0][6][i]==','){
+			if (data[7][i]==','){
 				if (cur_val.size() == 0)
 					throw ns_ex("ns_image_worm_detection_results::No value specified for worm ") << current_worm;
 				actual_worms[current_worm]->movement_state = (ns_movement_state)atol(cur_val.c_str());
@@ -2168,7 +2180,7 @@ void ns_image_worm_detection_results::load_from_db(const bool load_worm_postures
 				current_worm++;
 				continue;
 			}
-			cur_val+=data[0][6][i];
+			cur_val+=data[7][i];
 		}
 		if (cur_val.size() != 0){
 			actual_worms[current_worm]->movement_state = (ns_movement_state)atol(cur_val.c_str());

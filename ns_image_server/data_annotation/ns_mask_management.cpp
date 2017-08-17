@@ -95,238 +95,249 @@ void ns_bulk_experiment_mask_manager::process_mask_file(ns_image_standard & mask
 
 
 
-void ns_bulk_experiment_mask_manager::produce_mask_file(const unsigned int experiment_id,ns_image_stream_file_sink<ns_8_bit> & reciever, const unsigned long mask_time){
-	ns_sql * sql = image_server.new_sql_connection(__FILE__,__LINE__);
-		
+void ns_bulk_experiment_mask_manager::produce_mask_file(const unsigned int experiment_id,ns_image_stream_file_sink<ns_8_bit> & reciever, ns_sql & sql, const unsigned long mask_time){
+
 	const unsigned long chunk_max_size(1024);
 	const unsigned label_margin_buffer(300);
+	if (image_server.verbose_debug_output())
+		cerr << "Loading sample info...\n";
+	sql << "SELECT name,id FROM capture_samples WHERE experiment_id=" << experiment_id << " AND censored = 0 ORDER BY name ASC";
+	ns_sql_result samples;
+	sql.get_rows(samples);
+	if (samples.size() == 0)
+		throw ns_ex("The specified experiment contains no samples");
+	std::vector<ns_image_buffered_random_access_input_image<ns_8_bit,ns_image_storage_source<ns_8_bit> > > images(0,ns_image_buffered_random_access_input_image<ns_8_bit,ns_image_storage_source<ns_8_bit> >(1024));
+	images.reserve(samples.size());
 
-	try{
-		*sql << "SELECT name,id FROM capture_samples WHERE experiment_id=" << experiment_id << " AND censored = 0 ORDER BY name ASC";
-		ns_sql_result samples;
-		sql->get_rows(samples);
-		if (samples.size() == 0)
-			throw ns_ex("The specified experiment contains no samples");
-		std::vector<ns_image_buffered_random_access_input_image<ns_8_bit,ns_image_storage_source<ns_8_bit> > > images(0,ns_image_buffered_random_access_input_image<ns_8_bit,ns_image_storage_source<ns_8_bit> >(1024));
-		images.reserve(samples.size());
+	std::vector<ns_image_storage_source_handle<ns_8_bit> > sources;
+	sources.reserve(samples.size());
+	bool start_verbosity = image_server.verbose_debug_output();
+	if (start_verbosity)
+		cerr << "Getting image ids...\n";
+	image_server.image_storage.set_verbosity(ns_image_storage_handler::ns_verbose);
 
-		std::vector<ns_image_storage_source_handle<ns_8_bit> > sources;
-		sources.reserve(samples.size());
-		image_server.image_storage.set_verbosity(ns_image_storage_handler::ns_verbose);
-		for (ns_sql_result::iterator p = samples.begin(); p != samples.end();){
-			try{
-				//image_id==0  images have already been deleted.
-				*sql << "SELECT image_id FROM captured_images WHERE sample_id = " << (*p)[1] << " and currently_being_processed=0 AND problem=0 AND censored=0 AND image_id != 0";
+	int counter(0);
+	for (ns_sql_result::iterator p = samples.begin(); p != samples.end();){
+		counter++;
+		if (start_verbosity) cerr << counter << " ";
+		try{
+			//image_id==0  images have already been deleted.
+			sql << "SELECT image_id FROM captured_images WHERE sample_id = " << (*p)[1] << " and currently_being_processed=0 AND problem=0 AND censored=0 AND image_id != 0";
+			if (mask_time != 0)
+				sql << " AND capture_time < " << mask_time;
+			sql << " ORDER BY capture_time DESC";
+			ns_sql_result im_id;
+			sql.get_rows(im_id);
+			if (im_id.size() < 2){	
+				ns_ex ex("Could not find a sufficient number of captured images for sample ");
+				ex << (*p)[0] << "(" << (*p)[1]  << ").";
 				if (mask_time != 0)
-					*sql << " AND capture_time < " << mask_time;
-				*sql << " ORDER BY capture_time DESC";
-				ns_sql_result im_id;
-				sql->get_rows(im_id);
-				if (im_id.size() < 2){	
-					ns_ex ex("Could not find a sufficient number of captured images for sample ");
-					ex << (*p)[0] << "(" << (*p)[1]  << ").";
-					if (mask_time != 0)
-					ex << "Note that the experiment has a mask time specified: " << ns_format_time_string_for_human(mask_time);
-					throw ex;
-				}
-
-				unsigned int s = (unsigned int)images.size();
-				bool found_valid_image=false;
-				//find an existing image to use as the mask
-				for (unsigned int i = 1; i < im_id.size(); i++){ //skip first as it's often currently being written to disk
-					ns_image_server_image im;
-					im.load_from_db(atoi(im_id[i][0].c_str()),sql);
-					if (im.filename.find("TEMP") != im.filename.npos)
-						continue;
-					try{
-						sources.resize(s+1,image_server.image_storage.request_from_storage(im,sql));
-						found_valid_image = true;
-						break;
-					}
-					catch(ns_ex & ex){
-						cerr << ex.text() << "\n";
-						if (sources.size() == s+1)
-							sources.pop_back();
-					}
-				}
-				if (!found_valid_image){
-					throw ns_ex("Could not find any good images for sample ") << (*p)[0] << "(" << (*p)[1] << ").";
-				}
-				images.resize(s+1,ns_image_buffered_random_access_input_image<ns_8_bit,ns_image_storage_source<ns_8_bit> >(100));
-				images[s].assign_buffer_source(sources[s].input_stream());
-				p++;
+				ex << "Note that the experiment has a mask time specified: " << ns_format_time_string_for_human(mask_time);
+				cerr << " Miss! ";
+				throw ex;
 			}
-			catch(ns_ex & ex){
-				cerr << "An error occurred in sample " << (*p)[0] << "(" << (*p)[1]  << "): " << ex.text() << "\n";
-				p = samples.erase(p);
-			}
-			catch(std::exception & ex){
-				cerr << "An error occurred in sample " << (*p)[0] << "(" << (*p)[1]  << "): " << ex.what() << "\n";
-				p = samples.erase(p);
-			}
-			catch(...){
-				cerr << "An unknown error occurred in sample " << (*p)[0] << "(" << (*p)[1]  << ")\n";
-				p = samples.erase(p);
-			}
-		}
-		if (samples.size() == 0)
-			throw ns_ex("No usable samples could be found in the experiment.");
-		image_server.image_storage.set_verbosity(ns_image_storage_handler::ns_standard);
 
-		//std::vector<ns_mask_collage_info> collage_info(images.size());
-		collage_info_manager.collage_info.resize(images.size());
-		if (images.size()==0)
-			throw ns_ex("No images loaded.");
-		ns_image_properties prop(images[0].properties());
-		prop.resolution/=resize_factor;
-		prop.width = 0;
-		prop.height = 0;
-		const unsigned long image_margin(50);
-		const ns_8_bit background_color(160);
-		for (unsigned int i = 0; i < images.size(); i++){
-			if (images[i].properties().components != prop.components)
-				throw ns_ex("Sample") << samples[i][0] << "(" << samples[i][1]  << ") has " << images[i].properties().components << " components, unlike other samples.";
-			if (images[i].properties().resolution/resize_factor != prop.resolution)
-				throw ns_ex("Sample") << samples[i][0] << "(" << samples[i][1]  << ") was taken at a resolution of " << images[i].properties().resolution << ",unlike other samples.";
-
-			if (prop.height < images[i].properties().height/resize_factor)
-				prop.height = images[i].properties().height/resize_factor;
-			collage_info_manager.collage_info[i].dimentions.x = images[i].properties().width/resize_factor;
-			collage_info_manager.collage_info[i].dimentions.y = images[i].properties().height/resize_factor;
-			collage_info_manager.collage_info[i].experiment_id = experiment_id;
-			collage_info_manager.collage_info[i].position.x = prop.width;
-			collage_info_manager.collage_info[i].position.y = label_margin_buffer;
-			collage_info_manager.collage_info[i].sample_name = samples[i][0];
-			collage_info_manager.collage_info[i].sample_id = ns_atoi64(samples[i][1].c_str());
-
-			prop.width+=images[i].properties().width/resize_factor;
-			prop.width+=image_margin;  //fifty pixel margin between samples
-		}
-		//cerr << "Prop height = " << prop.height << "\n";
-		prop.height += label_margin_buffer;
-
-		//load metadata into image
-		prop.description = collage_info_manager.to_string();
-
-
-			
-
-		ns_image_buffered_random_access_output_image<ns_8_bit> mask_file(chunk_max_size);
-		mask_file.prepare_to_recieve_image(prop);
-		mask_file.init_flush_recipient(reciever);
-
-		//cerr << "Creating image with size (" << mask_file.properties().width << "," << mask_file.properties().height << ")\n";
-			
-		ns_image_properties label_prop(prop);
-		label_prop.height = label_margin_buffer;
-		ns_acquire_lock_for_scope font_lock(font_server.default_font_lock, __FILE__, __LINE__);
-		ns_font & font(font_server.get_default_font());
-			
-		font.set_height(label_margin_buffer/3);
-		//cerr << "Font Size = " << label_margin_buffer/3 << "\n";
-		ns_image_standard label_im;
-		label_im.init(label_prop);	
-
-		for (unsigned int y = 0; y < label_prop.height; y++)
-			for (unsigned int x = 0; x <label_prop.width; x++)
-				label_im[y][x]=background_color;
-		for (unsigned int i = 0; i < images.size(); i++){
-			font.draw_grayscale(collage_info_manager.collage_info[i].position.x+50,
-								label_margin_buffer-label_margin_buffer/3,0,collage_info_manager.collage_info[i].sample_name,label_im);
-		}
-
-		for (unsigned int y = 0; y < label_prop.height; y++)
-			for (unsigned int x = 0; x < label_prop.width; x++)
-				mask_file[y][x] = label_im[y][x];
-					
-		mask_file.flush_buffer(label_prop.height,reciever);
-
-		ns_progress_reporter pr(prop.height,10);
-		for (unsigned int y = label_margin_buffer; y < prop.height;){
-			cerr << (100*y)/prop.height << "%";
-			//pr(y);
-			int chunk_size = prop.height - y;
-			if (chunk_size > chunk_max_size)
-				chunk_size = chunk_max_size;
-
-			for(unsigned int i = 0; i < images.size(); i++){
-					
-				if ((unsigned int)collage_info_manager.collage_info[i].position.y > y + (unsigned int)chunk_size ||
-					(unsigned int)collage_info_manager.collage_info[i].position.y+images[i].properties().height/resize_factor < y){
-					for (unsigned int _y = 0; _y < chunk_size; _y++)
-						for (unsigned int x = 0; x < images[i].properties().width/resize_factor; x++)
-							mask_file[y+_y][collage_info_manager.collage_info[i].position.x +x] = background_color;
+			unsigned int s = (unsigned int)images.size();
+			bool found_valid_image=false;
+			//find an existing image to use as the mask
+			for (unsigned int i = 1; i < im_id.size(); i++){ //skip first as it's often currently being written to disk
+				ns_image_server_image im;
+				im.load_from_db(atoi(im_id[i][0].c_str()),&sql);
+				if (im.filename.find("TEMP") != im.filename.npos)
 					continue;
+				try{
+					sources.resize(s+1,image_server.image_storage.request_from_storage(im,&sql));
+					found_valid_image = true;
+					break;
 				}
+				catch(ns_ex & ex){
+					cerr << ex.text() << "\n";
+					if (sources.size() == s+1)
+						sources.pop_back();
+				}
+			}
+			if (!found_valid_image){
+				throw ns_ex("Could not find any good images for sample ") << (*p)[0] << "(" << (*p)[1] << ").";
+			}
+			if (start_verbosity) cerr << " hit. ";
+			images.resize(s+1,ns_image_buffered_random_access_input_image<ns_8_bit,ns_image_storage_source<ns_8_bit> >(100));
+			images[s].assign_buffer_source(sources[s].input_stream());
+			p++;
+		}
+		catch(ns_ex & ex){
+			cerr << "An error occurred in sample " << (*p)[0] << "(" << (*p)[1]  << "): " << ex.text() << "\n";
+			p = samples.erase(p);
+		}
+		catch(std::exception & ex){
+			cerr << "An error occurred in sample " << (*p)[0] << "(" << (*p)[1]  << "): " << ex.what() << "\n";
+			p = samples.erase(p);
+		}
+		catch(...){
+			cerr << "An unknown error occurred in sample " << (*p)[0] << "(" << (*p)[1]  << ")\n";
+			p = samples.erase(p);
+		}
+	}
+	if (samples.size() == 0)
+		throw ns_ex("No usable samples could be found in the experiment.");
 
-				unsigned long start_offset = 0;
-				if (collage_info_manager.collage_info[i].position.y > y)
-					start_offset = collage_info_manager.collage_info[i].position.y-y;
+	if (!start_verbosity)
+	image_server.image_storage.set_verbosity(ns_image_storage_handler::ns_standard);
+
+	//std::vector<ns_mask_collage_info> collage_info(images.size());
+	collage_info_manager.collage_info.resize(images.size());
+	if (images.size()==0)
+		throw ns_ex("No images loaded.");
+	ns_image_properties prop(images[0].properties());
+	prop.resolution/=resize_factor;
+	prop.width = 0;
+	prop.height = 0;
+	const unsigned long image_margin(50);
+	const ns_8_bit background_color(160);
+	if (start_verbosity) cerr << "Prepping images...\n";
+	for (unsigned int i = 0; i < images.size(); i++){
+
+		if (start_verbosity) cerr << i << " ";
+		if (images[i].properties().components != prop.components)
+			throw ns_ex("Sample") << samples[i][0] << "(" << samples[i][1]  << ") has " << images[i].properties().components << " components, unlike other samples.";
+		if (images[i].properties().resolution/resize_factor != prop.resolution)
+			throw ns_ex("Sample") << samples[i][0] << "(" << samples[i][1]  << ") was taken at a resolution of " << images[i].properties().resolution << ",unlike other samples.";
+
+		if (prop.height < images[i].properties().height/resize_factor)
+			prop.height = images[i].properties().height/resize_factor;
+		collage_info_manager.collage_info[i].dimentions.x = images[i].properties().width/resize_factor;
+		collage_info_manager.collage_info[i].dimentions.y = images[i].properties().height/resize_factor;
+		collage_info_manager.collage_info[i].experiment_id = experiment_id;
+		collage_info_manager.collage_info[i].position.x = prop.width;
+		collage_info_manager.collage_info[i].position.y = label_margin_buffer;
+		collage_info_manager.collage_info[i].sample_name = samples[i][0];
+		collage_info_manager.collage_info[i].sample_id = ns_atoi64(samples[i][1].c_str());
+
+		prop.width+=images[i].properties().width/resize_factor;
+		prop.width+=image_margin;  //fifty pixel margin between samples
+	}
+	//cerr << "Prop height = " << prop.height << "\n";
+	prop.height += label_margin_buffer;
+
+	//load metadata into image
+	prop.description = collage_info_manager.to_string();
 
 
-				int stop_offset = (images[i].properties().height)/resize_factor-(y-collage_info_manager.collage_info[i].position.y);
-				if (stop_offset - start_offset > chunk_size)
-					stop_offset = start_offset + chunk_size;
+			
+	if (start_verbosity) cerr << "\nFlushing...\n";
+	ns_image_buffered_random_access_output_image<ns_8_bit> mask_file(chunk_max_size);
+	mask_file.prepare_to_recieve_image(prop);
+	mask_file.init_flush_recipient(reciever);
+
+	//cerr << "Creating image with size (" << mask_file.properties().width << "," << mask_file.properties().height << ")\n";
+			
+	ns_image_properties label_prop(prop);
+	label_prop.height = label_margin_buffer;
+
+	if (start_verbosity) cerr << "Drawing labels...\n";
+	ns_acquire_lock_for_scope font_lock(font_server.default_font_lock, __FILE__, __LINE__);
+	ns_font & font(font_server.get_default_font());
+			
+	font.set_height(label_margin_buffer/3);
+	//cerr << "Font Size = " << label_margin_buffer/3 << "\n";
+	ns_image_standard label_im;
+	label_im.init(label_prop);	
+
+	for (unsigned int y = 0; y < label_prop.height; y++)
+		for (unsigned int x = 0; x <label_prop.width; x++)
+			label_im[y][x]=background_color;
+	for (unsigned int i = 0; i < images.size(); i++){
+		font.draw_grayscale(collage_info_manager.collage_info[i].position.x+50,
+							label_margin_buffer-label_margin_buffer/3,0,collage_info_manager.collage_info[i].sample_name,label_im);
+	}
+
+	font_lock.release();
+	for (unsigned int y = 0; y < label_prop.height; y++)
+		for (unsigned int x = 0; x < label_prop.width; x++)
+			mask_file[y][x] = label_im[y][x];
+					
+
+	if (start_verbosity) cerr << "Drawing images...\n";
+	mask_file.flush_buffer(label_prop.height,reciever);
+
+	ns_progress_reporter pr(prop.height,10);
+	for (unsigned int y = label_margin_buffer; y < prop.height;){
+		cerr << (100*y)/prop.height << "%";
+		//pr(y);
+		int chunk_size = prop.height - y;
+		if (chunk_size > chunk_max_size)
+			chunk_size = chunk_max_size;
+
+		for(unsigned int i = 0; i < images.size(); i++){
+					
+			if ((unsigned int)collage_info_manager.collage_info[i].position.y > y + (unsigned int)chunk_size ||
+				(unsigned int)collage_info_manager.collage_info[i].position.y+images[i].properties().height/resize_factor < y){
+				for (unsigned int _y = 0; _y < chunk_size; _y++)
+					for (unsigned int x = 0; x < images[i].properties().width/resize_factor; x++)
+						mask_file[y+_y][collage_info_manager.collage_info[i].position.x +x] = background_color;
+				continue;
+			}
+
+			unsigned long start_offset = 0;
+			if (collage_info_manager.collage_info[i].position.y > y)
+				start_offset = collage_info_manager.collage_info[i].position.y-y;
+
+
+			int stop_offset = (images[i].properties().height)/resize_factor-(y-collage_info_manager.collage_info[i].position.y);
+			if (stop_offset - start_offset > chunk_size)
+				stop_offset = start_offset + chunk_size;
 
 				
-				for (unsigned int _y = 0; _y < start_offset; _y++)
-					for (unsigned int x = 0; x < images[i].properties().width/resize_factor; x++)
-						mask_file[y+_y][x] = background_color;
+			for (unsigned int _y = 0; _y < start_offset; _y++)
+				for (unsigned int x = 0; x < images[i].properties().width/resize_factor; x++)
+					mask_file[y+_y][x] = background_color;
 
 
 //				cerr << "image: " << i << " lines " << y+start_offset << " to " << y+stop_offset << "\n";
 //				cerr << "Collage position = " << collage_info_manager.collage_info[i].position.x << "," << collage_info_manager.collage_info[i].position.y << " to " <<
 //					collage_info_manager.collage_info[i].position.x + images[i].properties().width << "," <<  collage_info_manager.collage_info[i].position.y + images[i].properties().height << "\n";
 
-				for (int _y = start_offset; _y < stop_offset; _y++){
-					for (unsigned int x = 0; x < images[i].properties().width/resize_factor; x++){
-						if ((y+_y - collage_info_manager.collage_info[i].position.y)*resize_factor >= images[i].properties().height)
-							throw ns_ex("Yikes!");
-						if (collage_info_manager.collage_info[i].position.x + x > prop.width)
-							throw ns_ex("Yikes!");
-						ns_image_buffered_random_access_input_image<ns_8_bit,ns_image_storage_source<ns_8_bit> > & im(images[i]);
-						unsigned long y_read((y+_y - collage_info_manager.collage_info[i].position.y)*resize_factor),
-									x_read(resize_factor*x),
-									    y_write(y+_y),
-										x_write(collage_info_manager.collage_info[i].position.x + x);
-							ns_8_bit * read_line(im[y_read]);
-							ns_8_bit val(read_line[x_read]);
-							ns_8_bit * write_line(mask_file[y_write]);
-							write_line[x_write] = val;
-						//mask_file[y+_y][collage_info_manager.collage_info[i].position.x + x] = images[i][(y+_y - collage_info_manager.collage_info[i].position.y)*resize_factor][resize_factor*x];
-					}
-				}
-
-				for (int _y = stop_offset; _y < (int)chunk_size; _y++)
-					for (unsigned int x = 0; x < images[i].properties().width/resize_factor; x++)
-						mask_file[y + _y][collage_info_manager.collage_info[i].position.x + x] = background_color;;
-
-					
-				for (unsigned int _y = 0; _y < y+(int)chunk_size; _y++){
-					for (unsigned int x = 0; x < image_margin; x++){
-					mask_file[y + _y][collage_info_manager.collage_info[i].position.x + images[i].properties().width/resize_factor + x] = background_color;
-					}
+			for (int _y = start_offset; _y < stop_offset; _y++){
+				for (unsigned int x = 0; x < images[i].properties().width/resize_factor; x++){
+					if ((y+_y - collage_info_manager.collage_info[i].position.y)*resize_factor >= images[i].properties().height)
+						throw ns_ex("Yikes!");
+					if (collage_info_manager.collage_info[i].position.x + x > prop.width)
+						throw ns_ex("Yikes!");
+					ns_image_buffered_random_access_input_image<ns_8_bit,ns_image_storage_source<ns_8_bit> > & im(images[i]);
+					unsigned long y_read((y+_y - collage_info_manager.collage_info[i].position.y)*resize_factor),
+								x_read(resize_factor*x),
+									y_write(y+_y),
+									x_write(collage_info_manager.collage_info[i].position.x + x);
+						ns_8_bit * read_line(im[y_read]);
+						ns_8_bit val(read_line[x_read]);
+						ns_8_bit * write_line(mask_file[y_write]);
+						write_line[x_write] = val;
+					//mask_file[y+_y][collage_info_manager.collage_info[i].position.x + x] = images[i][(y+_y - collage_info_manager.collage_info[i].position.y)*resize_factor][resize_factor*x];
 				}
 			}
-			unsigned long flush_size(chunk_size);
-			if (prop.height < y+chunk_size)
-				flush_size =  prop.height - y;
+
+			for (int _y = stop_offset; _y < (int)chunk_size; _y++)
+				for (unsigned int x = 0; x < images[i].properties().width/resize_factor; x++)
+					mask_file[y + _y][collage_info_manager.collage_info[i].position.x + x] = background_color;;
+
 					
-		//	cerr << "flush_size: " << flush_size << "\n";;
-
-			mask_file.flush_buffer(flush_size,reciever);
-			y+=flush_size;
+			for (unsigned int _y = 0; _y < y+(int)chunk_size; _y++){
+				for (unsigned int x = 0; x < image_margin; x++){
+				mask_file[y + _y][collage_info_manager.collage_info[i].position.x + images[i].properties().width/resize_factor + x] = background_color;
+				}
+			}
 		}
-		font_lock.release();
-		reciever.finish_recieving_image();
-		pr(prop.height);
-	}
-	catch(...){
-		delete sql;
-		throw;
+		unsigned long flush_size(chunk_size);
+		if (prop.height < y+chunk_size)
+			flush_size =  prop.height - y;
+					
+	//	cerr << "flush_size: " << flush_size << "\n";;
 
+		mask_file.flush_buffer(flush_size,reciever);
+		y+=flush_size;
 	}
-	delete sql;
+	reciever.finish_recieving_image();
+	pr(prop.height);
+	
 }
 void ns_bulk_experiment_mask_manager::submit_masks_to_cluster(bool balk_on_overwrite) {
 	bool ex_not_ok = false;

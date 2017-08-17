@@ -60,17 +60,17 @@ void ns_worm_learner::produce_experiment_mask_file(const std::string & filename)
 	ns_image_standard mask_file;
 
 	ns_tiff_image_output_file<ns_8_bit> tiff_out;
-	ns_image_stream_file_sink<ns_8_bit> file_sink(filename,tiff_out,1.0,1024);
+	ns_image_stream_file_sink<ns_8_bit> file_sink(filename,tiff_out,1024, 1.0);
 
 	cerr << "writing: " << filename  << "\n";	
 	
-	ns_acquire_for_scope<ns_sql> sql(image_server.new_sql_connection(__FILE__,__LINE__));
-	sql() << "SELECT mask_time FROM experiments WHERE experiment_id = " << experiment_id;
-	unsigned long mask_time = sql().get_ulong_value();
+	ns_sql & sql = get_sql_connection();
+	sql << "SELECT mask_time FROM experiments WHERE id = " << experiment_id;
+	unsigned long mask_time = sql.get_ulong_value();
 	cerr << "Generating mask";
 	if (mask_time != 0)
 		cerr << " using images up until" << ns_format_time_string_for_human(mask_time);
-	mask_manager.produce_mask_file(experiment_id,file_sink,mask_time);
+	mask_manager.produce_mask_file(experiment_id,file_sink, sql,mask_time);
 }
 
 

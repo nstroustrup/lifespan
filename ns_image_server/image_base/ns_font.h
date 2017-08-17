@@ -156,8 +156,8 @@ public:
 			_x += render_glyph(text[i],previous_glyph_index);
 			if (draw && (
 				((x+_x+ face->glyph->bitmap_left) < 0 ||
-				(x+_x+face->glyph->bitmap.width+ face->glyph->bitmap_left) > (int)im.properties().width ||
-				(y - face->glyph->bitmap_top + face->glyph->bitmap.rows) > (int)im.properties().height ||
+				(x+_x+face->glyph->bitmap.width+ face->glyph->bitmap_left) >= (int)im.properties().width ||
+				(y - face->glyph->bitmap_top + face->glyph->bitmap.rows) >= (int)im.properties().height ||
 				(y - face->glyph->bitmap_top) < 0)))
 				continue;
 			if (dim.h < face->glyph->bitmap.rows)

@@ -29,7 +29,7 @@ for ($i = 0; $i < sizeof($loc); $i++){
   $query = "SELECT genotype FROM strain_aliases WHERE strain = \"" . $n . "\"";
   $sql->get_row($query,$l);
   if (sizeof($l) == 0){
-    $genotypes[$n] == "";
+    $genotypes[$n] = "";
   }
   else $genotypes[$n] = $l[0][0];
  }

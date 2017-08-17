@@ -39,6 +39,9 @@ if (ns_param_spec($_POST,'detail_level')){
     	$end_month = (int)$_POST['end_month'];
     	$end_year = (int)$_POST['end_year'];
   $mask_date = mktime($end_hour, $end_minute, 0, $end_month, $end_day, $end_year);
+   if ($end_month == 0 || $end_day==0 || $end_year == 0){
+      $mask_date = 0;
+      }
    $image_compression = $_POST['image_compression'];
    $image_compression_ratio = $_POST['image_compression_ratio'];
    $apply_vertical_image_registration = $_POST['apply_vertical_image_registration'] == "apply";
@@ -49,7 +52,7 @@ if (ns_param_spec($_POST,'detail_level')){
    $query = "UPDATE sample_region_image_info as r, capture_samples as s SET r.maximum_number_of_worms_per_plate=$maximum_number_of_worms WHERE r.sample_id = s.id AND s.experiment_id = $experiment_id";
    $sql->send_query($query);   
 
-      $query = "UPDATE experiments SET delete_captured_images_after_mask=" . ($delete_captured_images?"1":"0") . ", compression_type='$image_compression' WHERE id = $experiment_id";
+      $query = "UPDATE experiments SET delete_captured_images_after_mask=" . ($delete_captured_images?"1":"0") . ", compression_type='$image_compression',mask_time=$mask_date WHERE id = $experiment_id";
 
    $sql->send_query($query);
 
@@ -61,12 +64,7 @@ if (ns_param_spec($_POST,'detail_level')){
       $sql->send_query($query);
 
    }
-   if ($mask_date != 0){
-
-     $query =   "UPDATE experiments SET mask_time=$mask_date WHERE id = $experiment_id";
-     // die($query);
-     $sql->send_query($query);
-   }
+  
    header("Location: manage_experiment_analysis_configuration.php?$query_parameters\n\n");
 
  }

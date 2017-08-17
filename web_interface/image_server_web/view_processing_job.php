@@ -1756,7 +1756,7 @@ $finish = $NS_LAST_PROCESSING_JOB;
 
 				     for ($i = (int)$start; $i <= (int)$finish ; $i++){
 	if ($job_type == $IS_SAMPLE){
-		if ($i != $ns_processing_tasks['ns_process_unprocessed'] &&
+		if ($i != $ns_processing_tasks['ns_unprocessed'] &&
 		    $i !=$ns_processing_tasks['ns_process_resized_sample_image'])
 		continue;
 	}

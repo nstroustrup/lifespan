@@ -1568,8 +1568,7 @@ float ns_image_processing_pipeline::analyze_mask(ns_image_server_image & image, 
 			visualization.resample(nprop,visualization_small);
 			out = &visualization_small;
 		}
-
-		ns_image_server_image output_image = image.create_storage_for_processed_image(ns_process_analyze_mask,ns_tiff,&sql);
+		ns_image_server_image output_image = image.create_storage_for_processed_image(ns_process_analyze_mask,ns_jpeg,&sql);
 		bool had_to_use_local_storage;
 		ns_image_storage_reciever_handle<ns_component> visualization_output = image_server_const.image_storage.request_storage(
 																output_image,
@@ -1577,6 +1576,7 @@ float ns_image_processing_pipeline::analyze_mask(ns_image_server_image & image, 
 																had_to_use_local_storage,
 																false,
 																false);
+
 		out->pump(visualization_output.output_stream(),_image_chunk_size);
 		image.processed_output_storage->mark_as_finished_processing(&sql);
 		output_image.mark_as_finished_processing(&sql);

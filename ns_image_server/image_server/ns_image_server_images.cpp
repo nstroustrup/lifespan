@@ -72,8 +72,8 @@ std::string ns_image_server_captured_image::sql_field_stub() {
 bool ns_image_server_captured_image::load_from_db(const ns_64_bit _id, ns_image_server_sql * con) {
 	*con << "SELECT " << sql_field_stub() <<
 		" FROM " << con->table_prefix() << "captured_images as ci,  " << con->table_prefix() << "capture_samples as s, " << con->table_prefix() << "experiments as exp WHERE ci.id = " << captured_images_id
-		<< " AND ci.experiment_id = exp.id"
-		<< " AND cs.id = ci.sample_id";
+		<< " AND s.experiment_id = exp.id"
+		<< " AND s.id = ci.sample_id";
 
 	ns_sql_result info;
 	con->get_rows(info);
@@ -124,8 +124,11 @@ std::string ns_image_server_captured_image::get_filename(ns_image_server_sql * s
 	std::string temp(ns_format_base_image_filename(experiment_id,experiment_name,sample_id,sample_name,capture_time,captured_images_id, capture_images_image_id));
 	if (specified_16_bit)
 		temp += "=64bit";
-	if (small_image)
+	if (small_image) {
 		temp += "=small";
+		ns_add_image_suffix(temp, ns_jpeg);
+	}
+	else ns_add_image_suffix(temp, ns_tiff);
 	return temp;
 }
 

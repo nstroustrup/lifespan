@@ -111,6 +111,7 @@ public:
 
 	void connect_timer_sql_connection();
 
+
 	//the server is regularly poked; when a NS_CHECK_FOR_NEW_WORK command is received this function is run (on_timer()) is called also
 	void start_looking_for_new_work();
 
@@ -144,7 +145,6 @@ public:
 	}
 	void handle_delayed_exception();
 	~ns_image_server_dispatcher();
-	void clear_for_termination();
 
 	ns_buffered_capture_scheduler buffered_capture_scheduler;
 	void trigger_segfault_on_next_timer(){
@@ -155,6 +155,8 @@ public:
 	unsigned long time_of_last_scan_for_problems;
 
 private:
+
+	void clear_for_termination();
 	bool trigger_segfault;
 	void handle_central_connection_error(ns_ex & ex);	
 	void recieve_image_thread(ns_image_server_message & message);
@@ -187,11 +189,12 @@ private:
 
 	ns_ex * delayed_exception;
 	
-	void wait_for_local_jobs();
+	void wait_for_jobs_to_complete();
 	bool hotplug_devices(const bool rescan_bad_barcodes=true,const bool verbose=true);
 
 
 	ns_lock processing_lock;
+
 	ns_lock hotplug_lock;
 	bool hotplug_running;
 

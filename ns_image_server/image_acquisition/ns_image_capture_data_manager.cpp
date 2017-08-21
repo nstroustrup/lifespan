@@ -459,7 +459,7 @@ unsigned long ns_image_capture_data_manager::handle_pending_transfers(const stri
 			for (unsigned int i = 0; i < events.size(); i++){
 				if (!storage_handler->test_connection_to_long_term_storage(true))
 					break;
-				if (image_server.exit_requested)
+				if (image_server.exit_has_been_requested)
 					break;
 			
 				ns_image_server_event ev;

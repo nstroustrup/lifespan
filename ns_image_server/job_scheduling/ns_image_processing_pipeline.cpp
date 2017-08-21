@@ -2014,9 +2014,9 @@ void ns_image_processing_pipeline::make_video(const ns_64_bit experiment_id, con
 
 void ns_image_processing_pipeline::resize_sample_image(ns_image_server_captured_image & captured_image, ns_sql & sql){
 	captured_image.load_from_db(captured_image.captured_images_id,&sql);
-	ns_image_server_event ev("ns_image_processing_pipeline::Creating resized capture image ");
-	ev << captured_image.experiment_name << "::" << captured_image.sample_name << "::" << captured_image.capture_time;
-	image_server_const.register_server_event(ev,&sql);
+	//ns_image_server_event ev("ns_image_processing_pipeline::Creating resized capture image ");
+	//ev << captured_image.experiment_name << "::" << captured_image.sample_name << "::" << captured_image.capture_time;
+	//image_server_const.register_server_event(ev,&sql);
 	ns_high_precision_timer timer;
 	timer.start();
 //	image_server_const.performance_statistics.starting_job(ns_process_thumbnail);
@@ -2088,13 +2088,14 @@ void ns_image_processing_pipeline::apply_mask(ns_image_server_captured_image & c
 	timer.start();
 	
 	try {
+
+		captured_image.load_from_db(captured_image.captured_images_id, &sql);
 		ns_image_server_event ev("ns_image_processing_pipeline::Applying Mask");
-		ev << " on " << captured_image.filename(&sql);
+		ev << " on " << captured_image.experiment_name << "::" << captured_image.sample_name << "::" << ns_format_time_string_for_human(captured_image.capture_time);
 		ev.specifiy_event_subject(captured_image);
 		ev.specify_processing_job_operation(ns_process_apply_mask);
 		ns_64_bit event_id = image_server_const.register_server_event(ev, &sql);
 
-		captured_image.load_from_db(captured_image.captured_images_id, &sql);
 		bool delete_captured_image(false);
 		{
 			sql << "SELECT delete_captured_images_after_mask FROM experiments WHERE id = " << captured_image.experiment_id;
@@ -2108,14 +2109,14 @@ void ns_image_processing_pipeline::apply_mask(ns_image_server_captured_image & c
 				sql.get_rows(res);
 
 				if (res.size() == 0)
-					throw ns_ex("ns_image_processing_pipeline::apply_mask()::Could not find sample for specified captured image!") << captured_image.sample_id;
+					throw ns_ex("Could not find sample for specified captured image!") << captured_image.sample_id;
 
 				if (res[0][0] == "0") {
 					delete_captured_image = false;
-					image_server_const.register_server_event(ns_image_server_event("ns_image_processing_pipeline::apply_mask()::Since no images in this sample have been protected from deletion, this capture image will not be deleted."), &sql);
+					image_server_const.add_subtext_to_current_event("Since no images in this sample have been protected from deletion, this capture image will not be deleted.\n", &sql);
 				}
 				if (delete_captured_image && captured_image.capture_images_small_image_id == 0) {
-					image_server_const.register_server_event(ns_image_server_event("ns_image_processing_pipeline::apply_mask()::Attempting to create a small resized copy of the image before masking"), &sql);
+					image_server_const.add_subtext_to_current_event("Creating small thumbnail record of the captured image...\n", &sql);
 					try {
 						resize_sample_image(captured_image, sql);
 					}
@@ -2130,7 +2131,7 @@ void ns_image_processing_pipeline::apply_mask(ns_image_server_captured_image & c
 				}
 				if (captured_image.never_delete_image) {
 					delete_captured_image = false;
-					image_server_const.register_server_event(ns_image_server_event("ns_image_processing_pipeline::apply_mask()::Because this capture image is marked \"Never Delete\", it will not be deleted."), &sql);
+					image_server_const.add_subtext_to_current_event("Because this capture image is marked \"Never Delete\", it will not be deleted.\n", &sql);
 				}
 			}
 		}
@@ -2172,17 +2173,17 @@ void ns_image_processing_pipeline::apply_mask(ns_image_server_captured_image & c
 		profile_data_source.image_storage = &image_server_const.image_storage;
 
 		if (apply_vertical_image_registration) {
-			image_server_const.add_subtext_to_current_event(ns_image_server_event("Loading images..."), &sql);
+			image_server_const.add_subtext_to_current_event("Loading images...\n", &sql);
 			
 			get_reference_image(captured_image, reference_image, profile_data_source);
 			ns_image_server_image im;
 			im.id = captured_image.capture_images_image_id;
 			image_server.image_registration_profile_cache.get_unlinked_singleton(im, requested_image, profile_data_source);
 
-			image_server_const.add_subtext_to_current_event(ns_image_server_event("Aligning sample image to reference image..."), &sql);
+			image_server_const.add_subtext_to_current_event("Aligning sample image to reference image...", &sql);
 			offset = get_vertical_registration(reference_image, requested_image, profile_data_source);
 			reference_image.release();
-			cerr << offset << " ";
+			image_server_const.add_subtext_to_current_event((std::string("") + ns_to_string(offset.x) + "," + ns_to_string(offset.y) + "\n").c_str(),&sql);
 
 			sql << "UPDATE captured_images SET registration_horizontal_offset='" << offset.x << "', registration_vertical_offset='" << offset.y << "', registration_offset_calculated=1 WHERE id = " << captured_image.captured_images_id;
 			sql.send_query();
@@ -2376,7 +2377,7 @@ void ns_image_processing_pipeline::apply_mask(ns_image_server_captured_image & c
 		ev.specify_processing_duration(stop_time - start_time);
 		//		image_server_const.update_registered_server_event(event_id,ev);
 		ns_64_bit t(timer.stop());
-		cerr << "total time:" << (t / 1000 / 10)/100.0;
+	//	cerr << "total time:" << (t / 1000 / 10)/100.0;
 		image_server.register_job_duration(ns_process_apply_mask, t);
 	}
 	catch (...) {

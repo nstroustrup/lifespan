@@ -46,7 +46,7 @@ ns_thread_return_type timer_thread(void * inter){
 		ns_thread::sleep(interval);
 		unsigned int error_count(0);
 		unsigned long last_ping_time(0);
-		while(!image_server.exit_requested || image_server.server_is_processing_jobs){
+		while(!image_server.exit_happening_now){
 			unsigned long current_time = ns_current_time();
 			if (current_time - last_ping_time > interval){
 				last_ping_time = current_time;
@@ -149,7 +149,7 @@ void set_hostname_on_menu(const string & hostname){
 }
 #endif
 void ns_shutdown_dispatcher(){
-	cerr << "Attempting elegant shutdown...\n";
+	cerr << "Attempting controlled shutdown...\n";
 	#ifdef _WIN32 
 			ModifyMenu(toolbar_menu,ID_CONTEXTMENU_IMAGESERVER,MF_BYCOMMAND,MF_STRING | MF_DISABLED,"Shutting down...");
 			ModifyMenu(toolbar_menu,ID_CONTEXTMENU_STROUSTR,MF_BYCOMMAND,MF_STRING | MF_GRAYED,"Updating database, please be patient.");
@@ -189,7 +189,7 @@ LRESULT CALLBACK handle_windows_message(HWND hWnd, UINT message, WPARAM wParam, 
 						ns_window_hidden = !ns_window_hidden;
 					break;
 				case ID_CONTEXTMENU_QUIT:
-					if (!image_server.exit_requested || image_server.server_is_processing_jobs){
+					if (!image_server.exit_happening_now){
 						//if we throw an exception here, we'll start unwinding the stack and kick the foundation out of any
 						//processing job threads that are running during the shutdown
 						try{
@@ -326,7 +326,7 @@ ns_os_signal_handler_return_type exit_signal_handler(ns_os_signal_handler_signal
 #else
 ns_os_signal_handler_return_type exit_signal_handler(ns_os_signal_handler_signal signal,siginfo_t *info, void * context){
 #endif
-	if (!image_server.exit_requested){
+	if (!image_server.exit_has_been_requested){
 		try{
 		ns_shutdown_dispatcher();
 		image_server.os_signal_handler.set_signal_handler(ns_interrupt,exit_signal_handler);
@@ -1093,6 +1093,7 @@ int main(int argc, char ** argv){
 
 		ns_image_server_dispatcher dispatch(true);
 
+
 		const unsigned long dispatcher_offset_time(image_server.dispatcher_refresh_interval());
 
 		const bool try_multiple_ports(restarting_after_crash || image_server_const.allow_multiple_processes_per_system());
@@ -1334,7 +1335,7 @@ int main(int argc, char ** argv){
 		//otherwise we will re-register the host upon the timer thread noticing it isn't connected
 		if (sql().connected_to_central_database())
 			dispatch.connect_timer_sql_connection();
-
+		
 
 		sql.release();
 		unsigned int * timer_interval = new unsigned int(image_server.dispatcher_refresh_interval());
@@ -1365,19 +1366,17 @@ int main(int argc, char ** argv){
 			ns_thread dispatcher_thread(run_dispatcher,&rd);
 			windows_message_loop();
 
-			image_server.exit_requested = true;
+			image_server.exit_has_been_requested = true;
 			timer.block_on_finish();
 			dispatcher_thread.block_on_finish();
 			#else
 			dispatch.run();
-			image_server.exit_requested = true;
+			image_server.exit_has_been_requested = true;
 			timer.block_on_finish();
 			#endif
 		}
 
-		image_server.register_server_event(ns_image_server::ns_register_in_central_db_with_fallback, ns_image_server_event("Finished cleanup; waiting for pending jobs to complete."));
 		//cerr << "Clearing dispatcher\n";
-		dispatch.clear_for_termination();
 		#ifndef _WIN32
 		ns_socket::global_clean();
 		#endif

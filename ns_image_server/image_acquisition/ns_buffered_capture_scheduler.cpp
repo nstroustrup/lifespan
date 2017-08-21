@@ -720,7 +720,7 @@ void ns_buffered_capture_scheduler::run_pending_scans(const ns_image_server_devi
 		const bool handle_simulated_devices(image_server.register_and_run_simulated_devices(&sql));
 
 		for (unsigned int i = 0; i < devices.size(); i++){
-			if (image_server.exit_requested)
+			if (image_server.exit_has_been_requested)
 				break;
 			if (devices[i].simulated_device && !handle_simulated_devices)
 				continue;

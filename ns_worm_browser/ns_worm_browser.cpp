@@ -2548,6 +2548,7 @@ bool ns_interval_histogram_less(const ns_interval_histogram & a, const ns_interv
 
 ns_64_bit ns_worm_learner::create_experiment_from_directory_structure(const std::string & directory_name, const bool process_masks_locally){
 	std::string dname(directory_name),lname(image_server.long_term_storage_directory);
+
 	ns_to_lower(dname);
 	ns_to_lower(lname);
 
@@ -2556,14 +2557,13 @@ ns_64_bit ns_worm_learner::create_experiment_from_directory_structure(const std:
 	if (pos == dname.npos)
 		throw ns_ex("The specified directory does not seem to be a subdirectory of the long term storage directory");
 	
-	std::string experiment_name = directory_name.substr(image_server.long_term_storage_directory.size()+1);
-	if (experiment_name.size() == 0)
+	std::string experiment_name_and_partition = directory_name.substr(lname.size()+1);
+	if (experiment_name_and_partition.size() == 0)
 		throw ns_ex("The specified directory does not seem to be a subdirectory of the long term storage directory");
-			
 	std::vector<std::string> name_split;
-	ns_explode_slist(experiment_name,name_split);
+	ns_explode_slist(experiment_name_and_partition,name_split);
 	
-	std::string experiment_partition;
+	std::string experiment_name,experiment_partition;
 
 	if (name_split.size() > 2){
 		throw ns_ex("The specified directory does not seem to be at the right depth in the directory tree");
@@ -2573,6 +2573,8 @@ ns_64_bit ns_worm_learner::create_experiment_from_directory_structure(const std:
 		experiment_name = name_split[1];
 	}
 	else experiment_name = name_split[0];
+
+	ns_experiment_capture_specification::confirm_valid_name(experiment_name);
 
 	std::string experiment_base_path(image_server.long_term_storage_directory);
 	if (experiment_partition.size() > 0){
@@ -2945,6 +2947,8 @@ void ns_worm_learner::rebuild_experiment_regions_from_disk(ns_64_bit experiment_
 			ns_file_location_specification path(image_server.image_storage.get_path_for_region(region_info_id,&sql()));
 			std::string absolute_path = path.absolute_long_term_filename();
 
+			if (!ns_dir::file_exists(absolute_path))
+				continue;
 			if (!ns_dir::file_is_writeable(absolute_path + DIR_CHAR_STR + "temp.tif"))
 				throw ns_ex("The path ") << absolute_path << " is not writeable.  This is required to update database and rename image filenames accordingly.";
 			std::string::size_type pos = absolute_path.find(partition);

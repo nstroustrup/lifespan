@@ -727,9 +727,9 @@ void ns_handle_image_metadata_delete_action(ns_processing_job & job,ns_sql & sql
 			sql.send_query();
 
 
-			//delete sample time relationships
-			sql << "DELETE FROM sample_time_relationships WHERE sample_id = " << samples_to_delete[i];
-			sql.send_query();
+		//	//delete sample time relationships
+		//	sql << "DELETE FROM sample_time_relationships WHERE sample_id = " << samples_to_delete[i];
+		//	sql.send_query();
 			sql << "DELETE images FROM images, captured_images WHERE captured_images.sample_id = " << samples_to_delete[i]
 				<< " AND captured_images.image_id = images.id";
 			sql.send_query();

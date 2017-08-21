@@ -293,9 +293,11 @@ public:
 				if (death_relaxation_start_time > last_path_frame_time)
 					throw ns_ex("Invalid Death Posture Relaxation Start Time!");
 				c = ns_movement_colors::color(ns_movement_death_posture_relaxation)*scaling;
-				for (int x = (int)((death_relaxation_start_time - path_start_time)*dt); x < (int)((death_posture_relaxation_termination_.time.period_start - path_start_time)*dt); x++) {
-					if (y + pos.y >= im.properties().height || x + pos.x >= im.properties().width || im.properties().components != 3)
-						throw ns_ex("Yikes! 7");
+				for (int x = (death_relaxation_start_time - (ns_s64_bit)path_start_time)*dt; x < (death_posture_relaxation_termination_.time.period_start - (ns_s64_bit)path_start_time)*dt; x++) {
+					if (y + pos.y >= im.properties().height || x + pos.x >= im.properties().width || im.properties().components != 3) {
+						cout << "Out of bounds death relaxation time interval draw (" << x + pos.x << "," << y + pos.y << ") in an image (" << im.properties().width << "," << im.properties().height << "\n";
+						continue;
+					}
 					im[y + pos.y][3 * (x + pos.x) + 0] = c.x;
 					im[y + pos.y][3 * (x + pos.x) + 1] = c.y;
 					im[y + pos.y][3 * (x + pos.x) + 2] = c.z;

@@ -504,10 +504,16 @@ void ns_time_path_image_movement_analyzer::finish_up_and_write_to_long_term_stor
 
 		//write to long term storage
 		ns_acquire_lock_for_scope lock(shared_state->sql_lock, __FILE__, __LINE__, false);
-		if (groups[group_id].paths[path_id].output_reciever == 0) //save_movement_images() only uses sql during first round
+		bool lock_held(false);
+		if (groups[group_id].paths[path_id].output_reciever == 0) { //save_movement_images() only uses sql during first round
 			lock.get(__FILE__, __LINE__);
+			lock_held = true;
+		}
+		if (shared_state->sql == 0) throw ns_ex("Found shared state == 0");
+
 		groups[group_id].paths[path_id].save_movement_images(chunk, *shared_state->sql, ns_analyzed_image_time_path::ns_save_simple, ns_analyzed_image_time_path::ns_output_all_images, ns_analyzed_image_time_path::ns_long_term);
-		lock.release();
+		if (lock_held)
+			lock.release();
 
 		if (!ns_skip_low_density_paths || !groups[group_id].paths[path_id].is_low_density_path())
 			groups[group_id].paths[path_id].quantify_movement(chunk);

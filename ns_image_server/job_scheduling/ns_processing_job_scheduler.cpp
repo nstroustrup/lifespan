@@ -128,12 +128,12 @@ bool ns_processing_job_scheduler::run_a_job(ns_processing_job & job,ns_sql & sql
 
 		processor().mark_subject_as_busy(false,sql);
 
-		if (problem_id != 0)
+		if (problem_id == 0)
 			push_scheduler.report_job_as_finished(job,sql);
 
 		sql.send_query("COMMIT");
 
-		if (problem_id != 0) {
+		if (problem_id == 0) {
 			processor().handle_concequences_of_job_completion(sql);
 
 			if (processor().delete_job_after_processing())
@@ -144,7 +144,7 @@ bool ns_processing_job_scheduler::run_a_job(ns_processing_job & job,ns_sql & sql
 		}
 
 		processor.release(); 
-		if (problem_id != 0) 
+		if (problem_id == 0) 
 			image_server.register_job_duration(ns_performance_statistics_analyzer::ns_running_a_job,tp.stop());
 		
 

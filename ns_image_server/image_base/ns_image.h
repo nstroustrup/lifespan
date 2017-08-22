@@ -844,6 +844,10 @@ public:
 
 	///random pixel access
 	const inline ns_component * operator[](const unsigned long y)const{
+		#ifdef NS_DEBUG_IMAGE_ACCESS
+				if (y >= image_buffer.properties().height)
+					throw ns_ex("Out of Bounds!");
+		#endif
 		return image_buffer[y];
 	}
 	///random pixel access

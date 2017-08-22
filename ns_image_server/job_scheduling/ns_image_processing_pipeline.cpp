@@ -2091,11 +2091,11 @@ void ns_image_processing_pipeline::apply_mask(ns_image_server_captured_image & c
 
 		captured_image.load_from_db(captured_image.captured_images_id, &sql);
 		ns_image_server_event ev("ns_image_processing_pipeline::Applying Mask");
-		ev << " on " << captured_image.experiment_name << "::" << captured_image.sample_name << "::" << ns_format_time_string_for_human(captured_image.capture_time);
+		ev << " on " << captured_image.experiment_name << "::" << captured_image.sample_name;
 		ev.specifiy_event_subject(captured_image);
 		ev.specify_processing_job_operation(ns_process_apply_mask);
 		ns_64_bit event_id = image_server_const.register_server_event(ev, &sql);
-
+		image_server.add_subtext_to_current_event((std::string("Processing image collected at ") + ns_format_time_string_for_human(captured_image.capture_time) + "\n").c_str(), &sql);
 		bool delete_captured_image(false);
 		{
 			sql << "SELECT delete_captured_images_after_mask FROM experiments WHERE id = " << captured_image.experiment_id;
@@ -2183,7 +2183,7 @@ void ns_image_processing_pipeline::apply_mask(ns_image_server_captured_image & c
 			image_server_const.add_subtext_to_current_event("Aligning sample image to reference image...", &sql);
 			offset = get_vertical_registration(reference_image, requested_image, profile_data_source);
 			reference_image.release();
-			image_server_const.add_subtext_to_current_event((std::string("") + ns_to_string(offset.x) + "," + ns_to_string(offset.y) + "\n").c_str(),&sql);
+			image_server_const.add_subtext_to_current_event((std::string("") + ns_to_string(offset.x) + "," + ns_to_string(offset.y) + "\n\n").c_str(),&sql);
 
 			sql << "UPDATE captured_images SET registration_horizontal_offset='" << offset.x << "', registration_vertical_offset='" << offset.y << "', registration_offset_calculated=1 WHERE id = " << captured_image.captured_images_id;
 			sql.send_query();

@@ -181,12 +181,16 @@ public:
 
 	inline ns_component *  operator[](const unsigned long i){
 		#ifdef NS_DEBUG_IMAGE_ACCESS
-			if (i + offset >= this->_properties.height)
+			if (i + offset >= memory_properties.height)
 				throw ns_ex("Invalid line height: ") << i;
 		#endif
 		return buffer[(unsigned long)((long)i+offset)];
 	}
 	const inline ns_component *  operator[](const unsigned long i) const{
+		#ifdef NS_DEBUG_IMAGE_ACCESS
+				if (i + offset >= memory_properties.height)
+					throw ns_ex("Invalid line height: ") << i;
+		#endif
 		return buffer[(unsigned long)((long)i+offset)];
 	}
 

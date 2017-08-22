@@ -296,7 +296,7 @@ public:
 				for (int x = (death_relaxation_start_time - (ns_s64_bit)path_start_time)*dt; x < (death_posture_relaxation_termination_.time.period_start - (ns_s64_bit)path_start_time)*dt; x++) {
 					if (y + pos.y >= im.properties().height || x + pos.x >= im.properties().width || im.properties().components != 3) {
 						cout << "Out of bounds death relaxation time interval draw (" << x + pos.x << "," << y + pos.y << ") in an image (" << im.properties().width << "," << im.properties().height << "\n";
-						continue;
+						break;
 					}
 					im[y + pos.y][3 * (x + pos.x) + 0] = c.x;
 					im[y + pos.y][3 * (x + pos.x) + 1] = c.y;

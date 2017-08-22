@@ -189,132 +189,121 @@ public:
 	}
 	virtual void save_annotations(const ns_death_time_annotation_set & extra_annotations)const=0 ;
 	bool step_forward(ns_handle_error_handler error_handler,bool asynch=false){
-		image_buffer_access_lock.wait_to_acquire(__FILE__, __LINE__);
-		try{
-			if (sql.is_null())
-				sql.attach(image_server.new_sql_connection(__FILE__,__LINE__));
-	//		output_buffer_state();
-			if(number_of_timepoints() == 0 || current_timepoint_id == number_of_timepoints()-1){
-				stop_fast_movement();
-				image_buffer_access_lock.release();
-				return false;
+		ns_acquire_lock_for_scope lock(image_buffer_access_lock,__FILE__, __LINE__);
+	
+		if (sql.is_null())
+			sql.attach(image_server.new_sql_connection(__FILE__,__LINE__));
+//		output_buffer_state();
+		if(number_of_timepoints() == 0 || current_timepoint_id == number_of_timepoints()-1){
+			stop_fast_movement();
+			lock.release();
+			return false;
+		}
+		//grab the last image in previous buffer (we'll reuse the memory for the empty space in the next buffer)
+		ns_annotater_image_buffer_entry temp(previous_images[previous_images.size()-1]);
+		temp.loaded = false;
+
+		//shift the previous buffer backwards
+		for (unsigned int i = 0; i < previous_images.size()-1; i++)
+			previous_images[previous_images.size()-1-i] = previous_images[previous_images.size()-2-i];
+
+		previous_images[0] = next_images[0];
+
+		//and shift the next buffer forwards.
+		for (int i = 0; i < (int)next_images.size()-1; i++)
+			next_images[i] = next_images[i+1];
+		next_images[next_images.size()-1] = temp;
+
+		current_timepoint_id++;
+			
+		//now, everything is set except for old current image is still in current_image
+		//and the blank space for the desired new current image is in previous_images[0].
+			
+	//	output_buffer_state();
+		//if the next image is already loaded, we run the swap now and are done!
+		if (previous_images[0].loaded){
+			if (debug_handlers) cerr << "L";
+			draw_metadata(timepoint(current_timepoint_id),*previous_images[0].im);
+			ns_swap<ns_annotater_image_buffer_entry> s;
+			s(previous_images[0],current_image);
+		}
+		else{
+	//		cerr << "Loading " << current_timepoint_id << "\n";
+			if (asynch) {
+				if (debug_handlers) cerr << "A";
+				load_image_asynch(timepoint(current_timepoint_id), previous_images[0], error_handler, &current_image, &previous_images[0]);
 			}
-			//grab the last image in previous buffer (we'll reuse the memory for the empty space in the next buffer)
-			ns_annotater_image_buffer_entry temp(previous_images[previous_images.size()-1]);
-			temp.loaded = false;
-
-			//shift the previous buffer backwards
-			for (unsigned int i = 0; i < previous_images.size()-1; i++)
-				previous_images[previous_images.size()-1-i] = previous_images[previous_images.size()-2-i];
-
-			previous_images[0] = next_images[0];
-
-			//and shift the next buffer forwards.
-			for (int i = 0; i < (int)next_images.size()-1; i++)
-				next_images[i] = next_images[i+1];
-			next_images[next_images.size()-1] = temp;
-
-			current_timepoint_id++;
-			
-			//now, everything is set except for old current image is still in current_image
-			//and the blank space for the desired new current image is in previous_images[0].
-			
-		//	output_buffer_state();
-			//if the next image is already loaded, we run the swap now and are done!
-			if (previous_images[0].loaded){
-				if (debug_handlers) cerr << "L";
+			else{
+				if (debug_handlers) cerr << "Q";
+				timepoint(current_timepoint_id)->load_image(asynch_load_specification.bottom_border_size,previous_images[0],sql(),asynch_load_specification.temp_buffer,resize_factor);
 				draw_metadata(timepoint(current_timepoint_id),*previous_images[0].im);
 				ns_swap<ns_annotater_image_buffer_entry> s;
 				s(previous_images[0],current_image);
 			}
-			else{
-		//		cerr << "Loading " << current_timepoint_id << "\n";
-				if (asynch) {
-					if (debug_handlers) cerr << "A";
-					load_image_asynch(timepoint(current_timepoint_id), previous_images[0], error_handler, &current_image, &previous_images[0]);
-				}
-				else{
-					if (debug_handlers) cerr << "Q";
-					timepoint(current_timepoint_id)->load_image(asynch_load_specification.bottom_border_size,previous_images[0],sql(),asynch_load_specification.temp_buffer,resize_factor);
-					draw_metadata(timepoint(current_timepoint_id),*previous_images[0].im);
-					ns_swap<ns_annotater_image_buffer_entry> s;
-					s(previous_images[0],current_image);
-				}
-			}
-	//		output_buffer_state();
-	//		cerr << "---\n";
-			image_buffer_access_lock.release();
-			return true;
 		}
-		catch(...){
-			image_buffer_access_lock.release();
-			throw;
-		}
+//		output_buffer_state();
+//		cerr << "---\n";
+		image_buffer_access_lock.release();
+		return true;
 	}
-	bool step_back(ns_handle_error_handler error_handler,bool asynch=false){	
-		image_buffer_access_lock.wait_to_acquire(__FILE__, __LINE__);
+	bool step_back(ns_handle_error_handler error_handler,bool asynch=false){
+		ns_acquire_lock_for_scope lock(image_buffer_access_lock, __FILE__, __LINE__);
 	
-		try{
-			if (sql.is_null())
-				sql.attach(image_server.new_sql_connection(__FILE__,__LINE__));
-	//		output_buffer_state();
-			if(current_timepoint_id == 0){
-				stop_fast_movement();
-				image_buffer_access_lock.release();
-				return false;
+		if (sql.is_null())
+			sql.attach(image_server.new_sql_connection(__FILE__,__LINE__));
+//		output_buffer_state();
+		if(current_timepoint_id == 0){
+			stop_fast_movement();
+			lock.release();
+			return false;
+		}
+		//grab the last image in next buffer (we'll reuse the memory for the empty space in the previous buffer)
+		ns_annotater_image_buffer_entry temp(next_images[next_images.size()-1]);
+		temp.loaded = false;
+
+		//shift the previous buffer backwards
+		for (unsigned int i = 0; i <next_images.size()-1; i++)
+			next_images[next_images.size()-1-i] = next_images[next_images.size()-2-i];
+
+		next_images[0] = previous_images[0];
+
+		//and shift the next buffer forwards.
+		for (int i = 0; i < (int)previous_images.size()-1; i++)
+			previous_images[i] = previous_images[i+1];
+		previous_images[previous_images.size()-1] = temp;
+
+		current_timepoint_id--;
+			
+		//now, everything is set except for old current image is still in current_image
+		//and the blank space for the desired new current image is in next_images[0].
+			
+	//	output_buffer_state();
+		//if the next image is already loaded, we run the swap now and are done!
+		if (next_images[0].loaded){
+			if (debug_handlers) cerr << "L";
+			draw_metadata(timepoint(current_timepoint_id),*next_images[0].im);
+			ns_swap<ns_annotater_image_buffer_entry> s;
+			s(next_images[0],current_image);
+		}
+		else{
+			//cerr << "Loading " << current_timepoint_id << "\n";
+			if (asynch) {
+				load_image_asynch(timepoint(current_timepoint_id), next_images[0], error_handler, &current_image, &next_images[0]);
+				if (debug_handlers) cerr << "A";
 			}
-			//grab the last image in next buffer (we'll reuse the memory for the empty space in the previous buffer)
-			ns_annotater_image_buffer_entry temp(next_images[next_images.size()-1]);
-			temp.loaded = false;
+			else{
 
-			//shift the previous buffer backwards
-			for (unsigned int i = 0; i <next_images.size()-1; i++)
-				next_images[next_images.size()-1-i] = next_images[next_images.size()-2-i];
-
-			next_images[0] = previous_images[0];
-
-			//and shift the next buffer forwards.
-			for (int i = 0; i < (int)previous_images.size()-1; i++)
-				previous_images[i] = previous_images[i+1];
-			previous_images[previous_images.size()-1] = temp;
-
-			current_timepoint_id--;
-			
-			//now, everything is set except for old current image is still in current_image
-			//and the blank space for the desired new current image is in next_images[0].
-			
-		//	output_buffer_state();
-			//if the next image is already loaded, we run the swap now and are done!
-			if (next_images[0].loaded){
-				if (debug_handlers) cerr << "L";
+				if (debug_handlers) cerr << "Q";
+				timepoint(current_timepoint_id)->load_image(asynch_load_specification.bottom_border_size,next_images[0],sql(),asynch_load_specification.temp_buffer,resize_factor);
 				draw_metadata(timepoint(current_timepoint_id),*next_images[0].im);
 				ns_swap<ns_annotater_image_buffer_entry> s;
 				s(next_images[0],current_image);
 			}
-			else{
-				//cerr << "Loading " << current_timepoint_id << "\n";
-				if (asynch) {
-					load_image_asynch(timepoint(current_timepoint_id), next_images[0], error_handler, &current_image, &next_images[0]);
-					if (debug_handlers) cerr << "A";
-				}
-				else{
-
-					if (debug_handlers) cerr << "Q";
-					timepoint(current_timepoint_id)->load_image(asynch_load_specification.bottom_border_size,next_images[0],sql(),asynch_load_specification.temp_buffer,resize_factor);
-					draw_metadata(timepoint(current_timepoint_id),*next_images[0].im);
-					ns_swap<ns_annotater_image_buffer_entry> s;
-					s(next_images[0],current_image);
-				}
-			}
-	//		output_buffer_state();
-	//		cerr << "---\n";
-			image_buffer_access_lock.release();
-			return true;
 		}
-		catch(...){
-			image_buffer_access_lock.release();
-			throw;
-		}
+//		output_buffer_state();
+//		cerr << "---\n";
+		image_buffer_access_lock.release();
+		return true;
 	}
 	void clear_cached_images(bool lock=true){
 	  if(lock)

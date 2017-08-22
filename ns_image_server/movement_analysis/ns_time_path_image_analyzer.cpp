@@ -6735,10 +6735,13 @@ void ns_analyzed_image_time_path::identify_expansion_time(const unsigned long de
 	for (unsigned int ht = 0; ht < hold_times.size(); ht++) {
 		double max_intensity_change(-DBL_MAX);
 		unsigned long time_of_max_intensity_change(death_index);
+		bool found_valid_time(false);
 
 		//here we are calculate a running average rate of increase in intensity within the stablized region
 		//we then identify the largest increase after death, and call that the death time increase
 		for (long t = death_index; t < element_count(); t++) {
+			if (element(t).excluded)
+				continue;
 			unsigned long cur_t = element(t).absolute_time;
 			//find largest intensity change within in kernel to use as the "peak time".
 			ns_s64_bit max_val = element(t).measurements.change_in_total_stabilized_intensity;
@@ -6747,6 +6750,7 @@ void ns_analyzed_image_time_path::identify_expansion_time(const unsigned long de
 			unsigned long point_count(0);
 			//this could be done faster with a sliding window.
 			for (long tt = t; tt < element_count() && element(tt).absolute_time <= cur_t + hold_times[ht]; tt++) {
+				if (element(tt).excluded) continue;
 				total_intensity_change += element(tt).measurements.change_in_total_stabilized_intensity;
 				point_count++;
 				//	intensity_changes.push_back(element(tt).measurements.change_in_total_stabilized_intensity);
@@ -6756,11 +6760,14 @@ void ns_analyzed_image_time_path::identify_expansion_time(const unsigned long de
 				}
 			}
 
+			//max_tt is now set as the largest intensity change in the window
+			//total_intensity change/point_count is the average intensity change in the window.
 
-
-
+			if (point_count == 0)
+				continue;
+			found_valid_time = true;
 			const double av_change = total_intensity_change / point_count;
-			bool is_max_so_far(av_change > max_intensity_change);
+			const bool is_max_so_far(av_change > max_intensity_change);
 			if (is_max_so_far) {
 				max_intensity_change = av_change;
 				time_of_max_intensity_change = max_tt;
@@ -6770,9 +6777,14 @@ void ns_analyzed_image_time_path::identify_expansion_time(const unsigned long de
 		for (unsigned int thresh = 0; thresh < thresholds.size(); thresh++) {
 			ns_death_time_expansion_info & result(results[ht*thresholds.size() + thresh]);
 			//if there's a large enough peak, declare the death time expansion identified.
+			if (!found_valid_time) {
+				result.found_death_time_expansion = false;
+				continue;
+			}
+
 			if (max_intensity_change >= thresholds[thresh]) {
-		//		if (thresholds.size() > 1)
-		//			cerr << "Found " << thresholds[thresh] << " " << hold_times[ht] << "\n";
+				//		if (thresholds.size() > 1)
+				//			cerr << "Found " << thresholds[thresh] << " " << hold_times[ht] << "\n";
 				result.found_death_time_expansion = true;
 				result.time_point_at_which_death_time_expansion_peaked = time_of_max_intensity_change;
 				result.time_point_at_which_death_time_expansion_started = time_of_max_intensity_change;
@@ -6797,9 +6809,11 @@ void ns_analyzed_image_time_path::identify_expansion_time(const unsigned long de
 					else
 						break;
 				}
-				
+
 			}
-	//		intensity_changes.resize(0);
+			else {
+				result.found_death_time_expansion = false;
+			}
 		}
 	}
 }

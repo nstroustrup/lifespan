@@ -2522,10 +2522,10 @@ void idle_main_window_update_callback(void * force_redraw) {
 				ns_acquire_lock_for_scope lock(worm_learner.worm_window.display_lock, __FILE__, __LINE__);
 				worm_window->get_window_size_needed(window_size.x, window_size.y, d, menu_d);
 				lock.release();
-			}
+			
 			if (abs(worm_window->w() -  window_size.x) >= 2 || abs(worm_window->h() - window_size.y) >= 2)
 				worm_window->resize(worm_window->x(), worm_window->y(), window_size.x, window_size.y);
-
+			}
 
 			if (show_worm_window) {
 				show_worm_window = false;

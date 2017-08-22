@@ -201,6 +201,7 @@ public:
 			cerr << "No image is loaded for current frame";
 			return;
 		}
+		//size allocated here xxx
 		ns_image_properties prop(path_timepoint_element->image().properties());
 		if (prop.width < ns_minimum_width)
 			prop.width = ns_minimum_width;
@@ -414,8 +415,12 @@ private:
 										bottom_margin_bottom.y + ns_death_time_solo_posture_annotater_timepoint::bottom_border_height()-bottom_offset);
 	
 		for (unsigned int y = bottom_margin_bottom.y; y < bottom_margin_top.y; y++)
-			for (unsigned int x = bottom_margin_bottom.x; x < bottom_margin_top.x+ ns_death_time_solo_posture_annotater_timepoint::ns_side_border_width; x++){
-				im[y][3*x] = 
+			for (unsigned int x = bottom_margin_bottom.x; x < bottom_margin_top.x; x++){
+			  //if (y>=im.properties().height||x>=im.properties().width) {
+			  //cerr << "out of bounds: " << x << ","<< y << " " << im.properties().width << ","<< im.properties().height << "\n";
+			  //continue;
+			  //}
+			    im[y][3*x] = 
 				im[y][3*x+1] = 
 				im[y][3*x+2] = 0;
 			}

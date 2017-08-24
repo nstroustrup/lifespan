@@ -575,6 +575,7 @@ bool ns_image_server_time_path_inferred_worm_aggregator::create_images_for_solut
 
 
 	}
+	thread_pool.shutdown();
 	
 
 	for (unsigned int i = 0; i < shared_state.timepoints_to_remove.size(); i++) {
@@ -595,7 +596,6 @@ bool ns_image_server_time_path_inferred_worm_aggregator::create_images_for_solut
 		for (unsigned int i = 0; i < current_region_image->second.duplicates_of_this_time_point.size(); i++)
 			current_region_image->second.duplicates_of_this_time_point[i].remove_inferred_element_from_db(*shared_state.sql);
 	}
-
 	return shared_state.needs_to_be_rebuilt;
 }
 

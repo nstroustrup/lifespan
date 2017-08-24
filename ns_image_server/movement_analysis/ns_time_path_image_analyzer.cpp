@@ -357,7 +357,8 @@ struct ns_movement_analysis_shared_state {
 
 
 
-struct ns_time_path_image_movement_analyzer_thread_pool_persistant_data {
+class ns_time_path_image_movement_analyzer_thread_pool_persistant_data {
+public:
 	ns_time_path_image_movement_analyzer_thread_pool_persistant_data() :
 		fast_aligner(ns_analyzed_image_time_path::maximum_alignment_offset(),
 			ns_vector_2i(0,0),

@@ -398,11 +398,11 @@ void ns_image_server_dispatcher::handle_delayed_exception(){
 	}
 }
 void ns_image_server_dispatcher::wait_for_jobs_to_complete() {
-	image_server.register_server_event(ns_image_server::ns_register_in_central_db_with_fallback, ns_image_server_event("Waiting for running processing jobs to complete."));
 	ns_acquire_lock_for_scope lock(processing_lock, __FILE__, __LINE__);
 	if (processing_job_scheduler_thread.is_running())
 		processing_job_scheduler_thread.block_on_finish();
 	if (processing_thread_pool.initialized()) {
+		image_server.register_server_event(ns_image_server::ns_register_in_central_db_with_fallback, ns_image_server_event("Waiting for running processing jobs to complete."));
 		processing_thread_pool.wait_for_all_threads_to_become_idle();
 		processing_thread_pool.shutdown();
 	}
@@ -1126,20 +1126,21 @@ void ns_dispatcher_job_pool_job::operator()(ns_dispatcher_job_pool_persistant_da
 				persistant_data.sql = 0;
 			}
 		}
+		if (!image_server.exit_has_been_requested) {
+			try {
+				ns_image_server_push_job_scheduler push_scheduler;
+				bool action_performed = persistant_data.job_scheduler->run_a_job(job, *persistant_data.sql);
 
-		try {
-			ns_image_server_push_job_scheduler push_scheduler;
-			bool action_performed = persistant_data.job_scheduler->run_a_job(job, *persistant_data.sql);
-
-			stats.last_run_duration = ns_current_time() - stats.last_run_time - stagger_duration;
-			external_data->status_info.update_thread_stats(current_thread_state->second.internal_thread_id, stats);
+				stats.last_run_duration = ns_current_time() - stats.last_run_time - stagger_duration;
+				external_data->status_info.update_thread_stats(current_thread_state->second.internal_thread_id, stats);
 
 
-			image_server.update_processing_status("Idle", 0, 0, *persistant_data.sql);
-		}
-		catch (ns_ex & ex) {
-			image_server.register_server_event(ex, persistant_data.sql);
-			image_server.update_processing_status("Idle", 0, 0, *persistant_data.sql);
+				image_server.update_processing_status("Idle", 0, 0, *persistant_data.sql);
+			}
+			catch (ns_ex & ex) {
+				image_server.register_server_event(ex, persistant_data.sql);
+				image_server.update_processing_status("Idle", 0, 0, *persistant_data.sql);
+			}
 		}
 
 

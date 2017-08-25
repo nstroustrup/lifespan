@@ -27,6 +27,7 @@ public:
 		if (thread_needs_cleanup){
 			thread.block_on_finish();
 			thread_needs_cleanup=false;
+			thread_is_running = false;
 		}
 	}
 private:

@@ -58,7 +58,7 @@ try{
 	  die("");
 	}
 
-	if (ns_param_spec($query_string,'generate_sample_region_image_info']) && $query_string['generate_sample_region_image_info'] == 1){
+	if (ns_param_spec($query_string,'generate_sample_region_image_info') && $query_string['generate_sample_region_image_info'] == 1){
 
 	  if ($sample_id == '0' || $sample_id == '')
 	    throw ns_exception("No sample id specified for sample_region_image_generation.");
@@ -178,6 +178,7 @@ if (0){
 			//	var_dump($v);
 			if (strlen($v[0][1]) != 0)
 			  $mask_visualization_filename .=$v[0][1] . "/";
+			else $mask_visualization_filename ="";
 			$mask_visualization_filename .= $v[0][0] . "/";
 			$mask_visualization_filename .= $v[0][2];
 

@@ -167,7 +167,9 @@ void ns_jpeg_image_input_file<ns_component> ::start_decompression(){
 	jpeg_stdio_src(&cinfo, fp);
 
 	//std::cout << "Reading Header" << std::endl;
-	jpeg_read_header(&cinfo, TRUE);
+	const int ret = jpeg_read_header(&cinfo, TRUE);
+	if (ret != JPEG_HEADER_OK)
+		throw ns_ex("Could not open jpeg header");
 	//std::cout << "Starting Decompression" << std::endl;
 	jpeg_start_decompress(&cinfo);
 	

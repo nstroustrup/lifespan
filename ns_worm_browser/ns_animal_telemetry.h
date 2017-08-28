@@ -161,7 +161,9 @@ private:
 	ns_image_standard base_graph;
 	ns_graph graph;
 	ns_graph_specifics graph_specifics;
-	ns_graph_object movement_vals, smoothed_movement_vals,size_vals, slope_vals, time_axes;
+	vector<ns_graph_object> movement_vals, smoothed_movement_vals, size_vals, slope_vals;
+	vector <double> time_axis;
+	vector<long> segment_ids; //mapping from the current time in time_axis to the specicif segment (element of movement_vals, smoothed_movement_vals, etc)
 	ns_posture_analysis_model posture_analysis_model;
 	
 	void draw_base_graph(const ns_graph_contents & graph_contents) {
@@ -171,44 +173,113 @@ private:
 		ns_analyzed_image_time_path *path(&region_data->movement_analyzer.group(group_id).paths[0]);
 		if (path->element_count() < 1)
 			throw ns_ex("Time series is too short");
-		movement_vals.y.resize(path->element_count());
-		slope_vals.y.resize(path->element_count());
-		time_axes.x.resize(movement_vals.y.size());
-		size_vals.y.resize(movement_vals.y.size());
+
+		time_axis.resize(path->element_count());
+		segment_ids.resize(path->element_count(), -1);
+
+		//calculate the average time step duration, properly handling excluded time steps
+		ns_64_bit time_step(0);
+		unsigned long time_step_count(0);
+		unsigned long last_valid_time(0);
+		for (unsigned int i = 0; i < path->element_count(); i++) {
+			if (!path->element(i).excluded) {
+				if (last_valid_time > 0) {
+					time_step += (path->element(i).absolute_time - last_valid_time);
+					time_step_count++;
+				}
+				last_valid_time = path->element(i).absolute_time;
+			}
+		}
+
+		const unsigned long max_time_step_interval_to_connect_with_lines(4*time_step / time_step_count);
+
+		//count how many connected line segments we'll need to draw.
+		long number_of_separate_segments(1);
+		last_valid_time = 0;
+		for (unsigned int i = 0; i < path->element_count(); i++) {
+			if (path->element(i).excluded)
+				continue;
+			unsigned long current_time_step = (path->element(i).absolute_time - last_valid_time);
+			bool step_was_too_long(last_valid_time > 0 && current_time_step > max_time_step_interval_to_connect_with_lines);
+			if (step_was_too_long)
+				number_of_separate_segments++;
+			segment_ids[i] = number_of_separate_segments-1;
+			last_valid_time = path->element(i).absolute_time;
+		}
+
+		movement_vals.resize(number_of_separate_segments, ns_graph_object::ns_graph_dependant_variable);
+		slope_vals.resize(number_of_separate_segments, ns_graph_object::ns_graph_dependant_variable);
+		size_vals.resize(number_of_separate_segments, ns_graph_object::ns_graph_dependant_variable);
+		for (unsigned int i = 0; i < number_of_separate_segments; i++) {
+			movement_vals[i].x.resize(0);
+			movement_vals[i].x.reserve(path->element_count());
+			movement_vals[i].y.resize(0);
+			movement_vals[i].y.reserve(path->element_count());
+
+			slope_vals[i].x.resize(0);
+			slope_vals[i].x.reserve(path->element_count());
+			slope_vals[i].y.resize(0);
+			slope_vals[i].y.reserve(path->element_count());
+			size_vals[i].x.resize(0);
+			size_vals[i].x.reserve(path->element_count());
+			size_vals[i].y.resize(0);
+			size_vals[i].y.reserve(path->element_count());
+		}
+
 		float min_score(FLT_MAX), max_score(-FLT_MAX);
 		float min_intensity(FLT_MAX), max_intensity(-FLT_MAX);
 		float min_intensity_slope(0),  //we want to include a zero slope
 			max_intensity_slope(-FLT_MAX);
+
+		float min_raw_score, max_raw_score, second_min_raw_score;
 		float min_time(FLT_MAX), max_time(-FLT_MAX);
-		std::vector<float> scores(movement_vals.y.size());
+		
+		std::vector<double> scores;
+		scores.reserve(path->element_count());
+
 		//find lowest movement score.
-		for (unsigned int i = 0; i < movement_vals.y.size(); i++)
-			scores[i] = path->element(i).measurements.death_time_posture_analysis_measure_v2();
+		for (unsigned int i = 0; i < path->element_count(); i++) {
+			if (path->element(i).excluded)
+				continue;
+			scores.push_back(path->element(i).measurements.death_time_posture_analysis_measure_v2());
+		}
 		std::sort(scores.begin(), scores.end());
-		float min_raw_score = scores[scores.size() / 50];
-		float second_min_raw_score = min_raw_score *= 1.01; //default
+		min_raw_score = scores[scores.size() / 50];
+		second_min_raw_score = min_raw_score *= 1.01; //default
 		for (int i = scores.size() / 50; i < scores.size(); i++) {
 			if (scores[i] > min_raw_score) {
 				second_min_raw_score = scores[i];
 				break;
 			}
 		}
-		float max_raw_score = scores[scores.size() - scores.size() / 50 - 1];
+			max_raw_score = scores[scores.size() - scores.size() / 50 - 1];
 		if (max_raw_score == min_raw_score) {
 			min_raw_score -= .01;
 			max_raw_score += .01;
 		}
-		for (unsigned int i = 0; i < movement_vals.y.size(); i++) {
+
+		//now reuse scores memory for another purpose--storing normalized movement scores.
+		scores.resize(path->element_count());
+		//calculate normalized movement scores and find their min and max
+		for (unsigned int i = 0; i < path->element_count(); i++) {
+			if (path->element(i).excluded)
+				continue;
 			double d(path->element(i).measurements.death_time_posture_analysis_measure_v2());
 			if (d >= max_raw_score) d = log(max_raw_score - min_raw_score);
 			else if (d <= min_raw_score)
 				d = log(second_min_raw_score - min_raw_score); //can't be zero before we take the log
 			else d = log(d - min_raw_score);
 
-			movement_vals.y[i] = d;
+			scores[i] = d;
+
+			if (d < min_score) min_score = d;
+			if (d > max_score) max_score = d;
 		}
 
-		for (unsigned int i = 0; i < movement_vals.y.size(); i++) {
+		//find min max of other statistics
+		for (unsigned int i = 0; i < path->element_count(); i++) {
+			if (path->element(i).excluded)
+				continue;
 			const double t(path->element(i).relative_time);
 			if (t < min_time) min_time = t;
 			if (t > max_time) max_time = t;
@@ -216,14 +287,12 @@ private:
 				continue;
 			const double n(path->element(i).measurements.total_intensity_within_stabilized);
 			const double s(path->element(i).measurements.change_in_total_stabilized_intensity);
-			const double d(movement_vals.y[i]);
-			if (d < min_score) min_score = d;
-			if (d > max_score) max_score = d;
 			if (n < min_intensity) min_intensity = n;
 			if (n > max_intensity) max_intensity = n;
 			if (s < min_intensity_slope) min_intensity_slope = s;
 			if (s > max_intensity_slope) max_intensity_slope = s;
 		}
+
 		double threshold;
 		if (posture_analysis_model.threshold_parameters.stationary_cutoff >= max_raw_score)
 			threshold = max_raw_score - min_raw_score;
@@ -231,24 +300,37 @@ private:
 			threshold = second_min_raw_score - min_raw_score;
 		else threshold = posture_analysis_model.threshold_parameters.stationary_cutoff - min_raw_score;
 		threshold = log(threshold);
-		for (unsigned int i = 0; i < movement_vals.y.size(); i++) {
-			time_axes.x[i] = floor(path->element(i).relative_time / 6.0 / 60 / 24) / 10;
+
+
+		double min_rounded_time(DBL_MAX), max_rounded_time(DBL_MIN);
+		//calculate normalized scores and break up into independantly plotted segments
+		for (unsigned int i = 0; i < path->element_count(); i++) {
+			const long & current_segment = segment_ids[i];
+			const double time = floor(path->element(i).relative_time / 6.0 / 60 / 24) / 10;
+			if (time < min_rounded_time) min_rounded_time = time;
+			if (time > max_rounded_time) max_rounded_time = time;
+			time_axis[i] = time;
+			if (path->element(i).excluded || segment_ids[i] == -1)
+				continue;
 			//scale denoised movement score to a value between 0 and 1
 			//which on log scale becomes 0 and 1
-			
-			movement_vals.y[i] = (movement_vals.y[i] - min_score) / (max_score - min_score);
-			if (movement_vals.y[i] < 0) movement_vals.y[i] = 0;
-			if (movement_vals.y[i] > 1) movement_vals.y[i] = 1;
+
+			movement_vals[current_segment].x.push_back(time);
+			movement_vals[current_segment].y.push_back((scores[i] - min_score) / (max_score - min_score));
+			if (*movement_vals[current_segment].y.rbegin() < 0) *movement_vals[current_segment].y.rbegin() = 0;
+			if (*movement_vals[current_segment].y.rbegin() > 1) *movement_vals[current_segment].y.rbegin() = 1;
 
 			//scale intensity to a value between 0 and 1.
-			size_vals.y[i] = (path->element(i).measurements.total_intensity_within_stabilized - min_intensity) / (max_intensity-min_intensity) ;
-			if (size_vals.y[i] < 0) size_vals.y[i] = 0;
-			if (size_vals.y[i] > 1) size_vals.y[i] = 1;
+			size_vals[current_segment].x.push_back(time);
+			size_vals[current_segment].y.push_back((path->element(i).measurements.total_intensity_within_stabilized - min_intensity) / (max_intensity-min_intensity)) ;
+			if (*size_vals[current_segment].y.rbegin() < 0) *size_vals[current_segment].y.rbegin() = 0;
+			if (*size_vals[current_segment].y.rbegin() > 1) *size_vals[current_segment].y.rbegin() = 1;
 
 
-			slope_vals.y[i] = (path->element(i).measurements.change_in_total_stabilized_intensity - min_intensity_slope) / (max_intensity_slope - min_intensity_slope);
-			if (slope_vals.y[i] < 0) slope_vals.y[i] = 0;
-			if (slope_vals.y[i] > 1) slope_vals.y[i] = 1;
+			slope_vals[current_segment].y.push_back(time);
+			slope_vals[current_segment].y.push_back((path->element(i).measurements.change_in_total_stabilized_intensity - min_intensity_slope) / (max_intensity_slope - min_intensity_slope));
+			if (*slope_vals[current_segment].y.rbegin() < 0) *slope_vals[current_segment].y.rbegin() = 0;
+			if (*slope_vals[current_segment].y.rbegin() > 1) *slope_vals[current_segment].y.rbegin() = 1;
 		}
 
 		ns_graph_object threshold_object(ns_graph_object::ns_graph_horizontal_line);
@@ -265,56 +347,64 @@ private:
 
 
 
-		smoothed_movement_vals.y.resize(movement_vals.y.size());
-		for ( int i = 0; i < movement_vals.y.size(); i++) {
-			int di = i - 4;
-			int ddi = i + 4;
-			if (di < 0) di = 0;
-			if (ddi >= movement_vals.y.size()) ddi = movement_vals.y.size()-1;
-			float sum(0);
-			for (int j = di; j <= ddi; j++) 
-				sum += movement_vals.y[j];
-			smoothed_movement_vals.y[i] = sum / (ddi - di + 1);
+		smoothed_movement_vals.resize(movement_vals.size(), ns_graph_object::ns_graph_dependant_variable);
+		for (unsigned int j = 0; j < movement_vals.size(); j++) {
+			smoothed_movement_vals[j].x.resize(0);
+			smoothed_movement_vals[j].x.insert(smoothed_movement_vals[j].x.end(), movement_vals[j].x.begin(), movement_vals[j].x.end());
+			smoothed_movement_vals[j].y.resize(movement_vals[j].y.size());
+			for (int i = 0; i < movement_vals[j].y.size(); i++) {
+				int di = i - 4;
+				int ddi = i + 4;
+				if (di < 0) di = 0;
+				if (ddi >= movement_vals[j].y.size()) ddi = movement_vals[j].y.size() - 1;
+				float sum(0);
+				for (int k = di; k <= ddi; k++)
+					sum += movement_vals[j].y[k];
+				smoothed_movement_vals[j].y[i] = sum / (ddi - di + 1);
+			}
 		}
-
-
-		time_axes.x_label = "age (days)";
-		time_axes.properties.text.color = ns_color_8(255, 255, 255);
-		time_axes.properties.line.color = ns_color_8(255, 255, 255);
-		smoothed_movement_vals.y_label = "Movement score";
-		smoothed_movement_vals.properties.text.color = ns_color_8(255, 255, 255);
-		smoothed_movement_vals.properties.line.color = ns_color_8(255,255,255);
-		size_vals.properties.line.color = ns_color_8(125, 125, 255);
-		smoothed_movement_vals.properties.line.draw = size_vals.properties.line.draw = true;
-		smoothed_movement_vals.properties.line.width = size_vals.properties.line.width = 1;
-		smoothed_movement_vals.properties.point.draw = size_vals.properties.point.draw = false;
-
-		movement_vals.properties.line.draw = false;
-		movement_vals.properties.point.draw = true;
-		movement_vals.properties.point.width = 1;
-		movement_vals.properties.point.color = ns_color_8(200, 200, 200);
-		movement_vals.properties.point.edge_width = 1;
-
-		slope_vals.properties = smoothed_movement_vals.properties;
-		slope_vals.properties.line.color = ns_color_8(150, 250, 200);
 
 		threshold_object.properties.line.color = ns_color_8(150, 150, 150);
 		threshold_object.properties.line.draw = true;
 
 		zero_slope_object.properties.line.color = ns_color_8(150, 150, 150);
 		zero_slope_object.properties.line.draw = true;
+		for (unsigned int i = 0; i < number_of_separate_segments; i++) {
+			//time_axes[i].x_label = "age (days)";
+			//time_axes[i].properties.text.color = ns_color_8(255, 255, 255);
+			//time_axes[i].properties.line.color = ns_color_8(255, 255, 255);
+			smoothed_movement_vals[i].y_label = "Movement score";
+			smoothed_movement_vals[i].properties.text.color = ns_color_8(255, 255, 255);
+			smoothed_movement_vals[i].properties.line.color = ns_color_8(255, 255, 255);
+			size_vals[i].properties.line.color = ns_color_8(125, 125, 255);
+			smoothed_movement_vals[i].properties.line.draw = size_vals[i].properties.line.draw = true;
+			smoothed_movement_vals[i].properties.line.width = size_vals[i].properties.line.width = 1;
+			smoothed_movement_vals[i].properties.point.draw = size_vals[i].properties.point.draw = false;
 
-		graph.contents.push_back(movement_vals);
-		if (graph_contents == ns_movement_intensity_slope || graph_contents == ns_all) {
-			graph.contents.push_back(slope_vals);
-			graph.contents.push_back(zero_slope_object);
+			movement_vals[i].properties.line.draw = false;
+			movement_vals[i].properties.point.draw = true;
+			movement_vals[i].properties.point.width = 1;
+			movement_vals[i].properties.point.color = ns_color_8(200, 200, 200);
+			movement_vals[i].properties.point.edge_width = 1;
+
+			slope_vals[i].properties = smoothed_movement_vals[i].properties;
+			slope_vals[i].properties.line.color = ns_color_8(150, 250, 200);
+
+			graph.contents.push_back(movement_vals[i]);
+			if (graph_contents == ns_movement_intensity_slope || graph_contents == ns_all) {
+				graph.contents.push_back(slope_vals[i]);
+			}
+			graph.contents.push_back(smoothed_movement_vals[i]);
+			if (graph_contents == ns_movement_intensity || graph_contents == ns_all)
+				graph.contents.push_back(size_vals[i]);
+			//graph.contents.push_back(time_axes);
 		}
-		graph.contents.push_back(smoothed_movement_vals);
+		if (graph_contents == ns_movement_intensity_slope || graph_contents == ns_all) 
+			graph.contents.push_back(zero_slope_object);
 		graph.contents.push_back(threshold_object);
-		if (graph_contents == ns_movement_intensity || graph_contents == ns_all)
-		graph.contents.push_back(size_vals);
 
-		graph.contents.push_back(time_axes);
+
+		
 
 
 		graph.x_axis_properties.line.color = graph.y_axis_properties.line.color = ns_color_8(255, 255, 255);
@@ -323,8 +413,8 @@ private:
 		graph.area_properties.area_fill.color = ns_color_8(0, 0, 0);
 
 		ns_graph_axes axes;
-		axes.boundary(0) = floor( min_time / 6.0 / 60 / 24) / 10;
-		axes.boundary(1) = floor(max_time / 6.0 / 60 / 24) / 10;
+		axes.boundary(0) = min_rounded_time;
+		axes.boundary(1) = max_rounded_time;
 		axes.boundary(2) = 0;
 		axes.boundary(3) = 1;
 		ns_color_8 gray(50, 50, 50);
@@ -346,8 +436,13 @@ private:
 	}
 	void overlay_metadata(const ns_animal_telemetry::ns_graph_contents graph_contents,const unsigned long current_element, const ns_vector_2i & position, const ns_vector_2i & buffer_size, ns_8_bit * buffer) {
 		unsigned long x_score, y_score, x_size, y_size;
-		map_value_from_graph_onto_image(time_axes.x[current_element], movement_vals.y[current_element], x_score, y_score);
-		map_value_from_graph_onto_image(time_axes.x[current_element], size_vals.y[current_element], x_size, y_size);
+		long segment_id = segment_ids[current_element];
+		if (segment_id == -1)
+			return;
+		if (segment_id > movement_vals.size())
+			throw ns_ex("Invalid segment id!");
+		map_value_from_graph_onto_image(time_axis[current_element], movement_vals[segment_id].y[current_element], x_score, y_score);
+		map_value_from_graph_onto_image(time_axis[current_element], size_vals[segment_id].y[current_element], x_size, y_size);
 		for (int y = -2; y <= 2; y++)
 			for (int x = -2; x <= 2; x++) {
 				unsigned long p(map_pixel_from_image_onto_buffer(x_score+x+border().x, y_score+y+ border().y, position, buffer_size));
@@ -376,7 +471,7 @@ public:
 		smoothed_movement_vals.clear();
 		size_vals.clear();
 		slope_vals.clear();
-		time_axes.clear();
+		time_axis.clear();
 		ns_posture_analysis_model posture_analysis_model;
 	}
 	unsigned long get_graph_time_from_graph_position(const float x) { //x is in relative time
@@ -405,7 +500,7 @@ public:
 	ns_vector_2i border() const {
 		return ns_vector_2i(25, 25);
 	}
-	ns_animal_telemetry() :_show(false), last_graph_contents(ns_none), region_data(0), group_id(0),size_vals(ns_graph_object::ns_graph_dependant_variable), slope_vals(ns_graph_object::ns_graph_dependant_variable), smoothed_movement_vals(ns_graph_object::ns_graph_dependant_variable),movement_vals(ns_graph_object::ns_graph_dependant_variable), time_axes(ns_graph_object::ns_graph_independant_variable){}
+	ns_animal_telemetry() :_show(false), last_graph_contents(ns_none), region_data(0), group_id(0){}
 	void set_current_animal(const unsigned int & group_id_, ns_posture_analysis_model & mod,ns_death_time_posture_solo_annotater_region_data * region_data_) {
 		group_id = group_id_;
 		region_data = region_data_;

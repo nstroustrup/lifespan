@@ -78,6 +78,11 @@ function host_label($res_row){
 	 return $res_row[1] . ' @ ' . $res_row[3] . " " . ( (strlen($res_row[4])>0 )? (" (" . $res_row[5] . ")"): "");
 }
 $last_ping_index = 2;
+
+$query = "SHOW TABLE STATUS WHERE name='processing_job_queue'";
+$sql->get_row($query,$queue_size);
+$queue_size = $queue_size[0][4];
+
 $query = "SELECT id, name, last_ping,system_hostname,additional_host_description,system_parallel_process_id FROM hosts ORDER BY name";
 $sql->get_row($query,$hosts);
 $host_names = array();
@@ -86,6 +91,9 @@ for ($i = 0; $i < sizeof($hosts); $i++){
 	$host_names[$hosts[$i][0]] = host_label($hosts[$i]);
 	$host_info[$hosts[$i][0]] = $hosts[$i];
 }
+//echo "node status";
+//ob_flush();
+flush();
 $query = "SELECT host_id, node_id, current_processing_job_queue_id, current_processing_job_id, state, UNIX_TIMESTAMP(ts), current_output_event_id FROM processing_node_status ORDER BY ts DESC";
 $sql->get_row($query,$processing_node_status);
 
@@ -96,10 +104,18 @@ $regions_referenced = array();
 for ($i = 0; $i < sizeof($processing_node_status); $i++){
 	$processing_jobs_referenced[intval($processing_node_status[$i][3])] = 1;
 }
+//echo "loading queue...";
+//ob_flush();
+//flush();
+if (!array_key_exists("queue_lim",$query_string))
+   $queue_limit = 20;
+else $queue_limit = $query_string["queue_lim"];
 
-$query = "SELECT id, job_id,priority,experiment_id,capture_sample_id,sample_region_info_id,sample_region_id,image_id,processor_id,problem, captured_images_id,job_submission_time,paused FROM processing_job_queue ORDER BY priority DESC,id DESC LIMIT 1000";
+$query = "SELECT id, job_id,priority,experiment_id,capture_sample_id,sample_region_info_id,sample_region_id,image_id,processor_id,problem, captured_images_id,job_submission_time,paused FROM processing_job_queue ORDER BY priority DESC,id DESC LIMIT $queue_limit";
 $sql->get_row($query,$processing_job_queue);
-
+//echo "more info";
+//ob_flush;
+//flush();
 $region_images_referenced = array();
 for ($i = 0; $i < sizeof($processing_job_queue); $i++){
 	$processing_jobs_referenced[intval($processing_job_queue[$i][1])] = 1;
@@ -270,11 +286,14 @@ $clrs = $table_colors[0];
        echo "<td valign=\"top\" bgcolor=\"".$clrs[0] . "\">$ft1";
        if (!$job_is_missing)
        echo format_time($job->time_submitted);
-
        echo " $ft2</td>";
-
 	}
 ?>
+<tr <?php echo $table_header_color?>><td colspan=5>
+<div align="right"><?php
+echo "Showing " . $queue_limit . " of " . $queue_size . " items. ";
+if (sizeof($processing_job_queue) >= $queue_limit) echo "<a href=\"view_processing_queue_status.php?queue_lim=" . 5*$queue_limit . "\">[View more]</a>";
+?></div></td></tr>
 </tr></table></td></tr></table>
 <form action="view_processing_queue_status.php" method="post">
 <input name="delete_problem_jobs" type="submit" value="Delete problematic jobs">

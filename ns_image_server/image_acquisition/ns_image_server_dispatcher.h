@@ -189,9 +189,12 @@ private:
 
 	ns_ex * delayed_exception;
 	
-	void wait_for_jobs_to_complete();
 	bool hotplug_devices(const bool rescan_bad_barcodes=true,const bool verbose=true);
 
+
+	void wait_for_jobs_to_complete(); 
+	
+	static ns_thread_return_type shutdown_routine(void * d);
 
 	ns_lock processing_lock;
 

@@ -255,13 +255,25 @@ void ns_image_server_dispatcher::handle_remote_requests(){
 //	lock.release();
 }
 
+ns_thread_return_type ns_image_server_dispatcher::shutdown_routine(void * d) {
+	ns_image_server_dispatcher * dispatcher = static_cast<ns_image_server_dispatcher *>(d);
+	ns_acquire_for_scope<ns_sql> sql(image_server.new_sql_connection(__FILE__, __LINE__));
+	image_server.update_performance_statistics_to_db(sql());
+	sql.release();
+	dispatcher->wait_for_jobs_to_complete();
+	image_server.device_manager.wait_for_all_scans_to_complete();
+	image_server.device_manager.reset_all_devices();
+	image_server.wait_for_pending_threads();
+	image_server.ready_to_exit = true;
+	return 0;
+}
 void ns_image_server_dispatcher::run(){
 	try{
 		image_server.register_server_event(ns_image_server::ns_register_in_central_db_with_fallback,ns_image_server_event("Dispatcher refresh interval set to ",false) << image_server.dispatcher_refresh_interval() << " seconds.");
 		image_server.register_server_event(ns_image_server::ns_register_in_central_db_with_fallback,ns_image_server_event("Software Compilation Date: ") << __DATE__);
 		image_server.register_server_event(ns_image_server::ns_register_in_central_db_with_fallback,ns_image_server_event("Dispatcher started.",false));
 		image_server.reset_image_processing_run_data();
-		while(!image_server.exit_happening_now){
+		while(!image_server.ready_to_exit){
 			ns_socket_connection socket_connection;
 			try{
 				socket_connection = incomming_socket.accept();
@@ -289,8 +301,8 @@ void ns_image_server_dispatcher::run(){
 				continue;
 			}
 			ns_message_request req = pending_remote_requests.begin()->message.request();
-
-			if (image_server.processing_time_is_exceeded()) {
+		
+			if (!image_server.exit_has_been_requested && image_server.processing_time_is_exceeded()) {
 				image_server.register_server_event(ns_image_server::ns_register_in_central_db_with_fallback, ns_image_server_event("Processing time exceeded."));
 				image_server.exit_has_been_requested = true;
 			}
@@ -302,26 +314,30 @@ void ns_image_server_dispatcher::run(){
 
 			if (image_server.exit_has_been_requested && !image_server.handling_exit_request){
 				image_server.handling_exit_request = true; 
-				ns_acquire_for_scope<ns_sql> sql(image_server.new_sql_connection(__FILE__, __LINE__));
-				image_server.update_performance_statistics_to_db(sql());
-				sql.release();
-				wait_for_jobs_to_complete();
-				image_server.device_manager.wait_for_all_scans_to_complete();
-				image_server.device_manager.reset_all_devices();
-				image_server.wait_for_pending_threads();
-				image_server.exit_happening_now = true;
+				ns_thread shutdown_thread;
+				//this will wait for all jobs to finish and then set image_server.ready_to_exit flag to true.
+				shutdown_thread.run(shutdown_routine, this);
+				shutdown_thread.detach();
 			}
+			if (image_server.handling_exit_request) {
+				//discard all requests while server is shutting down.
+				if (!pending_remote_requests.empty()) {
+					pending_remote_requests.begin()->connection.close();
+					pending_remote_requests.pop_front();
+				}
+				lock.release();
+				continue;
+			}
+
 			//some jobs shouldn't have duplicates on the queue, as they only need to be run once in any short time interval
 		
-			if (!image_server.exit_has_been_requested
-				&&
-				(req == NS_CHECK_FOR_WORK ||
+			if (req == NS_CHECK_FOR_WORK ||
 				req ==	NS_HOTPLUG_NEW_DEVICES ||
 				req ==	NS_RESET_DEVICES ||
 				req ==	NS_RELOAD_MODELS ||
 				req ==	NS_LOCAL_CHECK_FOR_WORK ||
 				req ==	NS_TIMER
-				)){
+				){
 				list<ns_remote_dispatcher_request>::iterator p = pending_remote_requests.begin();
 				p++;
 				//if we find any duplicates, remove one of them and stop.
@@ -329,11 +345,6 @@ void ns_image_server_dispatcher::run(){
 					if (p->message.request() == req){
 						pending_remote_requests.begin()->connection.close();
 						pending_remote_requests.pop_front();
-						
-						//cerr << "Cancelling!\n";
-						//ns_image_server_event ev("ns_image_server_dispatcher::Falling behind in remote request queue.");
-						//ev.log = false;
-						//image_server.register_server_event(ev);
 						break;
 					}
 				}
@@ -342,7 +353,7 @@ void ns_image_server_dispatcher::run(){
 			//stop if an exit is requested /and/ no more jobs are running.
 			//this requirement that no more jobs are running allows the server to continue to update the db regarding
 			//processing node activity, etc, until the last job is finished.
-			if (!pending_remote_requests.empty() && !message_handling_thread.is_running() && !image_server.exit_has_been_requested ){
+			if (!pending_remote_requests.empty() && !message_handling_thread.is_running() ){
 				message_handling_thread.run(handle_dispatcher_request,this);
 			}
 					
@@ -358,6 +369,7 @@ void ns_image_server_dispatcher::run(){
 		image_server.register_server_event(ns_image_server::ns_register_in_central_db_with_fallback,ex);
 	}	
 
+	image_server.exit_happening_now = true;
 	try{		
 		//close all outstanding connections and clear the request queue
 		ns_acquire_lock_for_scope lock(message_handling_lock,__FILE__,__LINE__);

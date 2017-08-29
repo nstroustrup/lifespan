@@ -176,7 +176,8 @@ public:
 
 	///if true, the user (or the image server itself) has requested the image server node stop
 	bool exit_has_been_requested;
-	bool handling_exit_request;
+	bool handling_exit_request; 
+	bool ready_to_exit;
 	bool exit_happening_now;
 	///if true, the server will attempt to install new version of image server software when available
 	bool update_software;

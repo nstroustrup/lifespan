@@ -250,7 +250,9 @@ bool ns_processing_job_sample_processor::identify_subjects_of_job_specification(
 				ns_processing_job_queue_item item;
 				item.captured_images_id = ns_atoi64(res[i][0].c_str());
 				item.capture_sample_id = job.sample_id;
-				item.job_id = job.id;
+				item.job_id = job.id;	
+				if (job.is_a_multithreaded_job())
+					item.job_class = 2;
 				if (job.urgent) item.priority = ns_image_server_push_job_scheduler::ns_job_queue_urgent_priority;
 				else item.priority = ns_image_server_push_job_scheduler::ns_job_queue_capture_sample_priority;
 				subjects.push_back(item);
@@ -267,6 +269,8 @@ bool ns_processing_job_sample_processor::identify_subjects_of_job_specification(
 			item.captured_images_id = ns_atoi64(res[i][0].c_str());
 			item.capture_sample_id = job.sample_id;
 			item.job_id = job.id;
+			if (job.is_a_multithreaded_job())
+				item.job_class = 2;
 			if (job.urgent) item.priority = ns_image_server_push_job_scheduler::ns_job_queue_urgent_priority;
 			else item.priority = ns_image_server_push_job_scheduler::ns_job_queue_capture_sample_priority;
 			subjects.push_back(item);
@@ -302,6 +306,8 @@ bool ns_processing_job_region_processor::identify_subjects_of_job_specification(
 		item.sample_region_info_id = job.region_id;
 		item.sample_region_image_id = ns_atoi64(res[i][0].c_str());
 		item.job_id = job.id;
+		if (job.is_a_multithreaded_job())
+			item.job_class = 2;
 		if (job.urgent) item.priority = ns_image_server_push_job_scheduler::ns_job_queue_urgent_priority;
 		else item.priority = ns_image_server_push_job_scheduler::ns_job_queue_region_priority;
 		subjects.push_back(item);
@@ -325,6 +331,8 @@ bool ns_processing_job_whole_region_processor::identify_subjects_of_job_specific
 	item.job_id = job.id;
 	if (job.operations[(int)ns_process_compile_video] != 0)
 		item.job_class = 1;
+	else if (job.is_a_multithreaded_job())
+		item.job_class = 2;
 	if (job.urgent) item.priority = ns_image_server_push_job_scheduler::ns_job_queue_urgent_priority;
 	else item.priority = ns_image_server_push_job_scheduler::ns_job_queue_whole_region_priority;
 	subjects.push_back(item);
@@ -344,6 +352,8 @@ bool ns_processing_job_whole_sample_processor::identify_subjects_of_job_specific
 	item.job_id = job.id;
 	if (job.operations[(int)ns_process_compile_video] != 0)
 		item.job_class = 1; //only process one video per computer (because the code uses all processors effectively)
+	else if (job.is_a_multithreaded_job())
+		item.job_class = 2;
 	if (job.urgent) item.priority = ns_image_server_push_job_scheduler::ns_job_queue_urgent_priority;
 	else item.priority = ns_image_server_push_job_scheduler::ns_job_queue_whole_region_priority;
 	subjects.push_back(item);
@@ -359,9 +369,8 @@ bool ns_processing_job_maintenance_processor::identify_subjects_of_job_specifica
 	else if (job.maintenance_task == ns_maintenance_compress_stored_images)
 		item.priority = ns_image_server_push_job_scheduler::ns_job_queue_background_priority;
 	else item.priority = ns_image_server_push_job_scheduler::ns_job_queue_maintenance_priority;
-	//if (job.maintenance_task ==  ns_maintenance_rebuild_movement_data)
-	//	item.job_class = 1; //only process one video per computer (because the code uses lots of memory)
-//	item.save_to_db(sql);
+	if (job.is_a_multithreaded_job())
+			item.job_class = 2;
 	subjects.push_back(item);
 	return true;
 }
@@ -373,7 +382,9 @@ bool ns_processing_job_image_processor::identify_subjects_of_job_specification(s
 		
 	ns_processing_job_queue_item item;
 	item.job_id = job.id;
-	item.image_id = job.image_id;
+	item.image_id = job.image_id;	
+	if (job.is_a_multithreaded_job())
+		item.job_class = 2;
 	if (job.urgent) item.priority = ns_image_server_push_job_scheduler::ns_job_queue_urgent_priority;
 	else item.priority = ns_image_server_push_job_scheduler::ns_job_queue_image_priority;
 	subjects.push_back(item);

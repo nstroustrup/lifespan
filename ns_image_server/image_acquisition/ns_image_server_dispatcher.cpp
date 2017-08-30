@@ -1280,9 +1280,10 @@ bool ns_image_server_dispatcher::look_for_work(){
 			if (new_jobs.size() == 0 || image_server.exit_has_been_requested)
 				break;
 
-			//only run maintenence update once.
+			
 			bool already_found_update_queue_job(false);
 			for (std::vector<ns_processing_job>::iterator p = new_jobs.begin(); p != new_jobs.end(); ) {
+				//only run maintenence update once.
 				if (p->maintenance_task == ns_maintenance_update_processing_job_queue) {
 					if (already_found_update_queue_job) {
 						*work_sql_connection << "DELETE FROM processing_job_queue WHERE id=" << p->queue_entry_id;

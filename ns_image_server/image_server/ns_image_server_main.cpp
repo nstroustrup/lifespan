@@ -500,7 +500,7 @@ typedef enum {ns_none,ns_start, ns_stop, ns_help, ns_restart, ns_status, ns_hotp
 			  ns_restarting_after_a_crash,ns_trigger_segfault_in_main_thread,ns_trigger_segfault_in_dispatcher_thread, ns_run_pending_image_transfers,
 	      ns_clear_local_db_buffer_cleanly,ns_clear_local_db_buffer_dangerously,ns_simulate_central_db_connection_error,ns_fix_orphaned_captured_images,
 	ns_update_sql,ns_output_image_buffer_info,ns_stop_checking_central_db,ns_start_checking_central_db,ns_output_sql_debug, ns_additional_host_description, 
-	ns_max_run_time_in_seconds, ns_number_of_processing_cores, ns_idle_queue_check_limit, ns_max_memory_to_use,ns_ini_file_location,ns_max_number_of_jobs_to_process} ns_cl_command;
+	ns_max_run_time_in_seconds, ns_number_of_processing_cores, ns_idle_queue_check_limit, ns_max_memory_to_use,ns_ini_file_location, ns_ignore_multithreaded_jobs,ns_max_number_of_jobs_to_process} ns_cl_command;
 
 ns_image_server_sql * ns_connect_to_available_sql_server(){
 		try{
@@ -573,6 +573,7 @@ int main(int argc, char ** argv){
 	commands["number_of_processor_cores_to_use"] = ns_number_of_processing_cores;
 	commands["max_memory_to_use"] = ns_max_memory_to_use;
 	commands["idle_queue_check_limit"] = ns_idle_queue_check_limit;
+	commands["ignore_multicore_jobs"] = ns_ignore_multithreaded_jobs;
 	commands["ini_file_location"] = ns_ini_file_location;
 
 
@@ -599,8 +600,9 @@ int main(int argc, char ** argv){
 		"     number_of_times_to_check_empty_processing_job_queue_before_stopping\n"
 		<< "number_of_processor_cores_to_use [value] : specify the number of processing cores to use, overriding\n"
 		"      the value of number_of_processing_nodes specified in the ns_image_server.ini file\n"
-	  "max_memory_to_use [value]:  Specify an ideal memory allocation limit, in megabytes overriding the value \n"
+	    "max_memory_to_use [value]:  Specify an ideal memory allocation limit, in megabytes overriding the value \n"
 	        "      in ns_image_server.ini\n"
+		"ignore_multicore_jobs: Do not run multi-core jobs such as movement analysis\n"
 #ifndef _WIN32
 		 "daemon: run as a background process\n"
 #endif
@@ -684,11 +686,14 @@ int main(int argc, char ** argv){
 				ex << command_line_usage.text();
 				throw ex;
 			}
-
+			else if (p->second = ns_ignore_multithreaded_jobs) {
+				image_server.do_not_run_multithreaded_jobs = true;
+			}
 			//grab extra information for arguments that are longer than one argument
 			else if (p->second == ns_wrap_m4v) {
 				if (i + 1 >= argc) throw ns_ex("M4v filename must be specified");
 				input_filename = argv[i + 1];
+				i++;
 			}
 			else if (p->second == ns_update_sql) {
 				sql_update_requested = true;

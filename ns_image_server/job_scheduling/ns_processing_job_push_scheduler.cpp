@@ -398,7 +398,10 @@ void ns_image_server_push_job_scheduler::request_jobs(unsigned long number_of_jo
 
 		sql << ns_processing_job_queue_item::provide_stub() << " WHERE processor_id=0 AND problem=0 AND paused=0 ";
 		if (!image_server.compile_videos())
+			sql << " AND job_class != 1 ";
+		if (image_server.do_not_run_multithreaded_jobs) 
 			sql << " AND job_class = 0 ";
+		
 		if (first_in_first_out)
 			sql << "ORDER BY priority DESC, id ASC LIMIT " << number_of_jobs;
 		else
@@ -468,12 +471,25 @@ void ns_image_server_push_job_scheduler::request_jobs(unsigned long number_of_jo
 					ns_region_info_lookup::get_sample_info(jobs[q].sample_id, &sql, jobs[q].sample_name, jobs[q].experiment_name, d);
 				else if (jobs[q].experiment_id != 0)
 					ns_region_info_lookup::get_experiment_info(jobs[q].experiment_id, &sql, jobs[q].experiment_name);
+				
 			}
 			catch (...) {
 				//no need to lock for this update
 				sql << "UPDATE processing_job_queue SET processor_id=0, problem=1 WHERE id=" << queue_items[q].id;
 				sql.send_query();
 				throw;
+			}
+		}
+		if (image_server.do_not_run_multithreaded_jobs) {
+			//check to see if someone forgot to mark the job as being in a particular class.  If so, update it correctly and give it back.
+			for (std::vector<ns_processing_job>::iterator p = jobs.begin(); p != jobs.end();) {
+
+				if (p->is_a_multithreaded_job()) {
+					sql << "UPDATE processing_job_queue SET job_class = 2, processor_id=" << 0 << " WHERE id=" << p->id;
+					sql.send_query();
+					p = jobs.erase(p);
+				}
+				else p++;
 			}
 		}
 		return;		

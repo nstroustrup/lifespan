@@ -32,7 +32,7 @@ void ns_image_server_global_debug_handler(const ns_text_stream_t & t);
 
 ns_image_server::ns_image_server() : exit_has_been_requested(false),exit_happening_now(false), handling_exit_request(false), ready_to_exit(false), update_software(false),
 sql_lock("ns_is::sql"), server_event_lock("ns_is::server_event"), performance_stats_lock("ns_pfl"), simulator_scan_lock("ns_is::sim_scan"), local_buffer_sql_lock("ns_is::lb"), processing_run_counter_lock("ns_pcl"),
-_act_as_processing_node(true), cleared(false), 
+_act_as_processing_node(true), cleared(false), do_not_run_multithreaded_jobs(false),
 image_registration_profile_cache(1024 * 4), //allocate 4 gigabytes of disk space in which to store reference images for capture sample registration
 _verbose_debug_output(false), _cache_subdirectory("cache"), sql_database_choice(possible_sql_databases.end()), next_scan_for_problems_time(0),
 _terminal_window_scale_factor(1), _system_parallel_process_id(0), _allow_multiple_processes_per_system(false),sql_table_lock_manager(this), alert_handler_lock("ahl"),max_internal_thread_id(1), max_external_thread_id(1),worm_detection_model_cache(0),posture_analysis_model_cache(0),storyboard_cache(0){

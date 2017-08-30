@@ -669,7 +669,7 @@ int main(int argc, char ** argv){
 
 
 			//run as background daemon if requested.
-			if (std::string(argv[i]) == "daemon") {
+			if (command_str == "daemon") {
 #ifdef _WIN32 
 				throw ns_ex("The image server cannot explicity start as dameon under windows.");
 #else
@@ -686,7 +686,7 @@ int main(int argc, char ** argv){
 				ex << command_line_usage.text();
 				throw ex;
 			}
-			else if (p->second = ns_ignore_multithreaded_jobs) {
+			else if (p->second == ns_ignore_multithreaded_jobs) {
 				image_server.do_not_run_multithreaded_jobs = true;
 			}
 			//grab extra information for arguments that are longer than one argument

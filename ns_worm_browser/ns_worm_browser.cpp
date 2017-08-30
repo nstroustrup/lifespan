@@ -2740,7 +2740,7 @@ ns_64_bit ns_worm_learner::create_experiment_from_directory_structure(const std:
 }
 
 
-void ns_worm_learner::rebuild_experiment_samples_from_disk(ns_64_bit experiment_id){
+void ns_worm_learner::rebuild_experiment_samples_from_disk(const ns_64_bit experiment_id){
 	ns_acquire_for_scope<ns_sql> sql(image_server.new_sql_connection(__FILE__,__LINE__));
 
 	sql() << "SELECT name FROM experiments WHERE id = " << experiment_id;
@@ -2772,14 +2772,14 @@ void ns_worm_learner::rebuild_experiment_samples_from_disk(ns_64_bit experiment_
 		}
 
 		for (unsigned long j = 0; j < filenames.size(); j++){
-			ns_image_server_captured_image im;
+			ns_image_server_captured_image captured_image;
 			int offset(0);
-			im.from_filename(filenames[j],offset);
-			im.never_delete_image = true;
-			map<ns_64_bit,ns_capture_image_d>::const_iterator p = image_lookup.find(im.captured_images_id);
+			captured_image.from_filename(filenames[j],offset);
+			captured_image.never_delete_image = true;
+			map<ns_64_bit,ns_capture_image_d>::const_iterator p = image_lookup.find(captured_image.captured_images_id);
 			if (p != image_lookup.end()){
 				//if a captured image exists with the specified id, check to see if it points to the correct image record
-				if (p->second.image_id == im.capture_images_image_id){
+				if (p->second.image_id == captured_image.capture_images_image_id){
 					//check to see that the image record has the correct filename
 					sql() << "SELECT filename FROM images WHERE id = " << p->second.image_id;
 					ns_sql_result res3;
@@ -2792,34 +2792,35 @@ void ns_worm_learner::rebuild_experiment_samples_from_disk(ns_64_bit experiment_
 			number_of_additions++;
 			cout << filenames[j] << " appears to be missing a database entry.  A new record will be created.\n";
 
-			ns_image_server_image image;
-			image.capture_time = im.capture_time;
-			image.partition = image_server.image_storage.get_partition_for_experiment(experiment_id,&sql(),true);
-			image.filename = filenames[j];
-			image.path = path_str;
-			std::string::size_type pos = image.path.find(image.partition);
-			if (pos==image.path.npos)
+			ns_image_server_image captured_image_image;
+			captured_image_image.capture_time = captured_image.capture_time;
+			captured_image_image.partition = image_server.image_storage.get_partition_for_experiment(experiment_id,&sql(),true);
+			captured_image_image.filename = filenames[j];
+			captured_image_image.path = path_str;
+			std::string::size_type pos = captured_image_image.path.find(captured_image_image.partition);
+			if (pos== captured_image_image.path.npos)
 				throw ns_ex("Incorrect path identified: Images are not in a partition of the long term storage directory");
-			std::string relative_path = image.path.substr(pos+image.partition.size()+1);
-			image.path = relative_path;
-			image.save_to_db(0,&sql(),false);
-			im.capture_images_image_id = image.id;
-			im.specified_16_bit = false;
-			im.captured_images_id = 0;
-			im.experiment_name = experiment_name;
-			im.experiment_id = experiment_id;
-			im.sample_id = sample_id;
-			im.sample_name = sample_name;
-			im.save(&sql());
-			std::string new_filename = im.filename(&sql()) + "." + ns_dir::extract_extension(image.filename);
-			std::string old_filename = image.filename;
+			std::string relative_path = captured_image_image.path.substr(pos+ captured_image_image.partition.size()+1);
+			captured_image_image.path = relative_path;
+			captured_image_image.save_to_db(0,&sql(),false);
+
+			captured_image.capture_images_image_id = captured_image_image.id;
+			captured_image.specified_16_bit = false;
+			captured_image.captured_images_id = 0;
+			captured_image.experiment_name = experiment_name;
+			captured_image.experiment_id = experiment_id;
+			captured_image.sample_id = sample_id;
+			captured_image.sample_name = sample_name;
+			captured_image.save(&sql());
+			std::string new_filename = captured_image.filename(&sql()) + "." + ns_dir::extract_extension(captured_image_image.filename);
+			std::string old_filename = captured_image_image.filename;
 			bool success(ns_dir::move_file(path_str + DIR_CHAR_STR + old_filename,path_str + DIR_CHAR_STR + new_filename));
 			if (!success){
 				cerr << "Could not rename " << old_filename << " to " << new_filename << ".  If you run metadata repair on this experiment again, you will get duplicate entries.\n";
 				continue;
 			}
-			image.filename = new_filename;
-			image.save_to_db(image.id,&sql());
+			captured_image_image.filename = new_filename;
+			captured_image_image.save_to_db(captured_image_image.id,&sql());
 		}
 		if (number_of_additions == 0)
 			cout << "No database entries were identified as missing.\n";
@@ -2869,7 +2870,7 @@ void repair_missing_captured_images(const ns_64_bit experiment_id){
 }
 		
 
-void ns_worm_learner::rebuild_experiment_regions_from_disk(ns_64_bit experiment_id){
+void ns_worm_learner::rebuild_experiment_regions_from_disk(const ns_64_bit experiment_id){
 	ns_acquire_for_scope<ns_sql> sql(image_server.new_sql_connection(__FILE__,__LINE__));
 
 	sql() << "SELECT name FROM experiments WHERE id = " << experiment_id;
@@ -2925,17 +2926,17 @@ void ns_worm_learner::rebuild_experiment_regions_from_disk(ns_64_bit experiment_
 						filenames[l] == "." ||
 						filenames[l] == "..")
 						continue;
-					ns_image_server_captured_image_region reg;
+					ns_image_server_captured_image_region region_image;
 					try{
-						reg.from_filename(filenames[l]);
+						region_image.from_filename(filenames[l]);
 						ns_region_processed_image_disk_info dim;
-						dim.reg_im = reg;
-						dim.im.capture_time = reg.capture_time;
+						dim.reg_im = region_image;
+						dim.im.capture_time = region_image.capture_time;
 						dim.im.partition = partition;
 						dim.im.filename = filenames[l];
 						dim.im.path = relative_path;
 
-						existing_processed_task_images[j][reg.region_images_id] = dim;
+						existing_processed_task_images[j][region_image.region_images_id] = dim;
 					}
 					catch(...){
 
@@ -2943,7 +2944,7 @@ void ns_worm_learner::rebuild_experiment_regions_from_disk(ns_64_bit experiment_
 				}
 			}
 
-			
+			//now we look at each file and either link it up to an existing record or create a new record for it.
 			ns_file_location_specification path(image_server.image_storage.get_path_for_region(region_info_id,&sql()));
 			std::string absolute_path = path.absolute_long_term_filename();
 
@@ -2995,6 +2996,8 @@ void ns_worm_learner::rebuild_experiment_regions_from_disk(ns_64_bit experiment_
 				if (p2 == existing_captured_images.end()){
 					cout << "Creating a capture sample image record for the region image.\n";
 					ns_64_bit old_im_id(cap_im.captured_images_id);
+					cap_im.sample_id = sample_id;
+					cap_im.experiment_id = experiment_id;
 					cap_im.captured_images_id = 0;
 					cap_im.save(&sql());
 					region_image.captured_images_id = cap_im.captured_images_id;

@@ -25,6 +25,9 @@ function output_wrap($s,$interval=20){
     $lc = $c;
   }
 }
+$show_idle_threads = false;
+if (array_key_exists("show_idle_threads",$query_string))
+   $show_idle_threads = $query_string["show_idle_threads"] != "0";
 $refresh_time = @$query_string["rt"];
 if ($refresh_time == '')
   $refresh_time = 0;
@@ -74,10 +77,10 @@ $single_device = $host_id != 0;
 function host_label($res_row){
 	 return $res_row[1] . ' @ ' . $res_row[6] . ( (strlen($res_row[7])>0 )? (" (" . $res_row[7] . ":" . $res_row[8].")"): "");
 }
-$query = "SELECT id, name, last_ping,software_version_major,software_version_minor,software_version_compile,system_hostname,additional_host_description,system_parallel_process_id, ((UNIX_TIMESTAMP(NOW()) - last_ping) < $current_device_cutoff) FROM hosts ";
+$query = "SELECT id, name, last_ping,software_version_major,software_version_minor,software_version_compile,system_hostname,additional_host_description,system_parallel_process_id, ((UNIX_TIMESTAMP(NOW()) - last_ping) > $current_device_cutoff) FROM hosts ";
 if ($single_device)
   $query .= " WHERE id = $host_id";
-$query .=" ORDER BY ((UNIX_TIMESTAMP(NOW()) - last_ping) < $current_device_cutoff) DESC, name";
+$query .=" ORDER BY ((UNIX_TIMESTAMP(NOW()) - last_ping) > $current_device_cutoff) ASC, name";
 $sql->get_row($query,$hosts);
 //var_dump($hosts);
 ?>
@@ -92,10 +95,10 @@ echo "<BR>";
 for ($i = 0; $i < sizeof($hosts); $i++){
 	$host_is_online = $cur_time - $hosts[$i][2] < $current_device_cutoff;
 	if ($host_is_online || $single_device){
-	  $query = "SELECT DISTINCT node_id, state,current_output_event_id FROM processing_node_status WHERE host_id = " . $hosts[$i][0];
+	  $query = "SELECT DISTINCT node_id, state,current_output_event_id,node_id=0 FROM processing_node_status WHERE host_id = " . $hosts[$i][0];
 	  if ($node_id != -1)
 	    $query .= " AND node_id = $node_id";
-	  $query .=" ORDER BY state DESC, node_id";
+	  $query .=" ORDER BY node_id=0 DESC,state DESC, node_id";
 	  //echo $query;
 	  $sql->get_row($query,$node_ids);
 	}
@@ -117,20 +120,56 @@ for ($i = 0; $i < sizeof($hosts); $i++){
 	if ($single_device)
 	echo "<a href=\"view_cluster_status.php\">(view all hosts)</a>";
 	echo "</div></td></tr></table></td></tr>";
-$col = 0;
+$col = 0;   
+     //make sure we display main thread even if some client was dumb enough not to register it.
+     $main_thread_is_registered=false;
+  for ($j = 0; $j < sizeof($node_ids); $j++){
+      if ($node_ids[$j][0] == 0){
+      	 $main_thread_is_registered = true;
+	 break;
+  	 }
+  }
+  if (!$main_thread_is_registered){
+ 
+     $pp = sizeof($node_ids);
+     for ($j = $pp; $j>0; $j--)
+     	 $node_ids[$j] = $node_ids[$j-1];
+     $node_ids[0]= array(0,0,0);
+     $node_ids[0][0] = 0;
+     $node_ids[0][1] = "Simulated";
+     
+  }
   for ($j = 0; $j < sizeof($node_ids); $j++){
     $node_is_idle = $node_ids[$j][1] == "Idle";
- $node_i = $node_ids[$j][0];
+    $node_i = $node_ids[$j][0];
     if ($node_i == 0)
       $thread_name = "main";
     else 
       $thread_name = $node_i;
     
-    if ($node_is_idle){
- echo "<tr><td valign=\"top\" bgcolor=\"#CCCCCC\" width=\"0%\" id=\"rw\"> $thread_name </td><td bgcolor = \"#CCCCCC\" width=\"100%\">Thread is idle</td></tr>";
+   
+
+    if ($node_is_idle && !$show_idle_threads){
+    $col2 = $table_colors[$j%2][0];
+    $url = "<a href=\"view_cluster_status.php?h=" . $hosts[$i][0]. "&rt=".$refresh_time . "&show_idle_threads=1\"> [" . $thread_name . "] </a>";
+ echo "<tr><td valign=\"top\" bgcolor=\"$col2\" width=\"0%\" id=\"rw\"> $url </td><td bgcolor = \"$col2\" width=\"100%\"><font size=-1>Thread is idle</font></td></tr>";
  continue;
 }
-    $query = "SELECT time, event, processing_job_op, node_id, sub_text FROM host_event_log WHERE host_id = " . $hosts[$i][0] . " AND node_id = " . $node_ids[$j][0]. " ORDER BY time DESC";
+    $query = "SELECT time, event, processing_job_op, node_id, sub_text FROM host_event_log WHERE host_id = " . $hosts[$i][0] . " AND ";
+    if ($node_i == 0){
+       //we want to display output from /all/ threads not explicity registered in the main window.
+       $query .= " node_id NOT IN (";
+       for ($k = 0; $k < sizeof($node_ids); $k++){
+       	   if ($node_ids[$k][0] != 0)
+	      $query .= $node_ids[$k][0] . ",";
+       }
+       $query .= "-1) ";
+    }
+    else{
+	$query .=" node_id = " . $node_ids[$j][0];
+    }
+    $query.= " ORDER BY time DESC";
+    #die($query);
     if ($single_device)
       $limit = 200;
     if ($node_id != -1)
@@ -138,16 +177,13 @@ $col = 0;
     else $limit = 20;
     $query .=" LIMIT " . $limit;
     $sql->get_row($query, $host_events);
-    
-    $clrs = $table_colors[$j%2];
+    //var_dump($host_events);
     if ($j != 0) echo "</td></tr>";
     if ($node_i == 0){
-      $col2 = "#CCCCCC";
+      $col2 = $table_colors[0][0];
     }
     else{ 
-      if ($j % 2 == 0)
-      $col2 = "#EEEEEE";
-      else $col2 = "#CCEEEE";
+      $col2 = $table_colors[1][$j%2];
     }
     $thread_name = "<a href=\"view_cluster_status.php?h=" . $hosts[$i][0]. "&rt=".$refresh_time . "&n=".$node_ids[$j][0] . "\"> [" . $thread_name . "] </a>";
 
@@ -160,7 +196,7 @@ $col = 0;
       echo ">";
     $col = 1-$col;
     
-    for ($k = sizeof($host_events)-1; $k > 0; $k--){
+    for ($k = sizeof($host_events)-1; $k >= 0; $k--){
       
       echo "<b>" . format_time($host_events[$k][0]) . ": </b>";
       output_wrap($host_events[$k][1]);
@@ -174,6 +210,7 @@ $col = 0;
       }
      
     }
+//    var_dump($host_events);
     echo "</div></td></tr></table>";
 echo "<script type=\"text/javascript\">
     gotoBottom('foo".$sid."'); </script>";

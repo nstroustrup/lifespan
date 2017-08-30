@@ -73,7 +73,7 @@ bool ns_processing_job_scheduler::run_a_job(ns_processing_job & job,ns_sql & sql
 
 	if (job.maintenance_task == ns_maintenance_update_processing_job_queue){
 		image_server.register_server_event(ns_image_server_event("Updating job queue"),&sql);
-		image_server.update_processing_status("Updating Queue", 0, 0, sql);
+		image_server.update_processing_status("Updating Queue", 0, 0, &sql);
 		push_scheduler.report_job_as_finished(job,sql);
 		push_scheduler.discover_new_jobs(sql);
 		sql << "DELETE from processing_jobs WHERE id = " << job.id;
@@ -112,7 +112,7 @@ bool ns_processing_job_scheduler::run_a_job(ns_processing_job & job,ns_sql & sql
 			processor().flag_job_as_being_processed(sql);
 		sql.send_query("COMMIT");
 
-		image_server.update_processing_status("Processing Job", job.id,job.queue_entry_id, sql);
+		image_server.update_processing_status("Processing Job", job.id,job.queue_entry_id, &sql);
 
 		ns_64_bit problem_id;
 		try {
@@ -140,7 +140,7 @@ bool ns_processing_job_scheduler::run_a_job(ns_processing_job & job,ns_sql & sql
 				processor().delete_job(sql);
 			sql.send_query("COMMIT");
 
-			image_server.update_processing_status("Finished Job", job.id, job.queue_entry_id, sql);
+			image_server.update_processing_status("Finished Job", job.id, job.queue_entry_id, &sql);
 		}
 
 		processor.release(); 
@@ -170,7 +170,7 @@ bool ns_processing_job_scheduler::run_a_job(ns_processing_job & job,ns_sql & sql
 		//host_event log, and annotate the current job (and any associated images)
 		//with a reference to the error that occurred.
 		sql.clear_query();
-		image_server.update_processing_status("Handling Error", job.id, job.queue_entry_id, sql);
+		image_server.update_processing_status("Handling Error", job.id, job.queue_entry_id, &sql);
 		
 		processor().mark_subject_as_busy(false,sql);
 
@@ -202,7 +202,7 @@ bool ns_processing_job_scheduler::run_a_job(ns_processing_job & job,ns_sql & sql
 		ns_ex ex(e);
 		
 		sql.clear_query();
-		image_server.update_processing_status("Handling Error", job.id, job.queue_entry_id, sql);
+		image_server.update_processing_status("Handling Error", job.id, job.queue_entry_id, &sql);
 		
 		processor().mark_subject_as_busy(false,sql);
 		//we have found an error, handle it by registering it in the

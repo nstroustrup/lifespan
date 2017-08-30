@@ -496,12 +496,12 @@ public:
 
 	//ordered by the system thread id;
 	mutable std::map<ns_64_bit, ns_thread_output_state> thread_states;
-	mutable unsigned long max_internal_thread_id; //all threads get a unique thread id
 	mutable unsigned long max_external_thread_id; //threads that need it get a unique id to register output to disk and database
-	std::map<ns_64_bit, ns_thread_output_state>::iterator get_current_thread_state_info(const ns_64_bit thread_to_impersonate=0) const;
+	std::map<ns_64_bit, ns_thread_output_state>::iterator get_current_thread_state_info(const ns_64_bit internal_thread_id_to_impersonate=0) const;
 
-	ns_64_bit main_thread_id() { return _main_thread_id; }
-	void set_main_thread_id();
+	ns_64_bit main_thread_internal_id() { return _main_thread_internal_id; }
+	ns_64_bit main_thread_external_id() { return 0; }
+	void set_main_thread_internal_id();
 	std::string get_system_host_name() const {return system_host_name;}
 	void set_additional_host_description(const std::string & d) { additional_host_description = d; }
 	void set_image_processing_run_limits(const unsigned long maximum_runtime_in_seconds_, const unsigned long maximum_number_of_jobs_to_process_) { 
@@ -555,13 +555,13 @@ public:
 	}
 
 
-	void update_processing_status(const std::string & processing_state, const ns_64_bit processing_job_id, const ns_64_bit processing_job_queue_id,ns_sql & sql) const;
+	void update_processing_status(const std::string & processing_state, const ns_64_bit processing_job_id, const ns_64_bit processing_job_queue_id,ns_sql_connection * sql,const ns_64_bit impersonate_using_internal_thread_id = 0) const;
 	void clear_processing_status(ns_sql & sql) const;
 	const std::string & mail_from_address() const{return _mail_from;}
 
 	bool do_not_run_multithreaded_jobs;
 private:
-	ns_64_bit _main_thread_id;
+	ns_64_bit _main_thread_internal_id;
 	static void open_log_file(const ns_image_server::ns_image_server_exec_type & exec_type, ns_64_bit thread_id, const std::string & volatile_directory, const std::string & file_name, std::ofstream & out);
 	ns_performance_statistics_analyzer performance_statistics;
 	mutable ns_lock performance_stats_lock;

@@ -1138,21 +1138,19 @@ void ns_dispatcher_job_pool_job::operator()(ns_dispatcher_job_pool_persistant_da
 				persistant_data.sql = 0;
 			}
 		}
-		if (!image_server.exit_has_been_requested) {
-			try {
-				ns_image_server_push_job_scheduler push_scheduler;
-				bool action_performed = persistant_data.job_scheduler->run_a_job(job, *persistant_data.sql);
+		try {
+			ns_image_server_push_job_scheduler push_scheduler;
+			bool action_performed = persistant_data.job_scheduler->run_a_job(job, *persistant_data.sql);
 
-				stats.last_run_duration = ns_current_time() - stats.last_run_time - stagger_duration;
-				external_data->status_info.update_thread_stats(current_thread_state->second.internal_thread_id, stats);
+			stats.last_run_duration = ns_current_time() - stats.last_run_time - stagger_duration;
+			external_data->status_info.update_thread_stats(current_thread_state->second.internal_thread_id, stats);
 
 
-				image_server.update_processing_status("Idle", 0, 0, *persistant_data.sql);
-			}
-			catch (ns_ex & ex) {
-				image_server.register_server_event(ex, persistant_data.sql);
-				image_server.update_processing_status("Idle", 0, 0, *persistant_data.sql);
-			}
+			image_server.update_processing_status("Idle", 0, 0, persistant_data.sql);
+		}
+		catch (ns_ex & ex) {
+			image_server.register_server_event(ex, persistant_data.sql);
+			image_server.update_processing_status("Idle", 0, 0, persistant_data.sql);
 		}
 
 
@@ -1253,7 +1251,9 @@ bool ns_image_server_dispatcher::look_for_work(){
 			(processing_thread_pool.number_of_jobs_pending() > 0 ||
 				!processing_thread_pool.any_thread_is_idle())) {
 			processing_job_scheduler_thread.report_as_finished();
-			image_server.add_subtext_to_current_event(":", work_sql_connection,false,image_server.main_thread_id());
+			image_server.update_processing_status("Running on all cores", 0, 0, work_sql_connection, image_server.main_thread_internal_id());
+			image_server.add_subtext_to_current_event(":", work_sql_connection,false,image_server.main_thread_internal_id());
+			image_server.reset_empty_job_queue_check_count();
 			return false;
 		}
 		ns_image_server_push_job_scheduler push_scheduler;
@@ -1268,14 +1268,18 @@ bool ns_image_server_dispatcher::look_for_work(){
 			number_of_jobs_to_run = number_of_idle_processing_threads;
 		}
 		long number_of_jobs_left_before_max_is_reached = image_server.number_of_remaining_processing_jobs_before_max_is_hit();
-		if (number_of_jobs_left_before_max_is_reached <= 0)
+		if (number_of_jobs_left_before_max_is_reached <= 0) 
 			return false;
+		
 		if (number_of_jobs_to_run > number_of_jobs_left_before_max_is_reached)
 			number_of_jobs_to_run = number_of_jobs_left_before_max_is_reached;
 
 		std::vector<ns_processing_job> new_jobs;
 		while (true) {
 			new_jobs.resize(0);
+			if (!jobs.empty() && jobs[0].is_a_multithreaded_job()) //no new jobs while we wait for a multithreaded job
+				break;
+
 			push_scheduler.request_jobs(number_of_jobs_to_run-jobs.size(), new_jobs, *work_sql_connection, first_in_first_out_job_queue);
 			if (new_jobs.size() == 0 || image_server.exit_has_been_requested)
 				break;
@@ -1307,16 +1311,19 @@ bool ns_image_server_dispatcher::look_for_work(){
 		//no jobs and no work being done
 		if (jobs.size() == 0 && number_of_idle_processing_threads == processing_thread_pool.number_of_threads()) {
 			//image_server.server_is_processing_jobs = false;
-			image_server.add_subtext_to_current_event(".", work_sql_connection, false, image_server.main_thread_id());
+			image_server.update_processing_status("Not finding work.", 0, 0, work_sql_connection,image_server.main_thread_internal_id());
+			image_server.add_subtext_to_current_event(".", work_sql_connection, false, image_server.main_thread_internal_id());
 			image_server.incremenent_empty_job_queue_check_count();
 			
 			if (image_server.empty_job_queue_check_count_is_exceeded()) {
+				image_server.update_processing_status("Check count exceeded", 0, 0, work_sql_connection, image_server.main_thread_internal_id());
 				image_server.register_server_event(ns_ex("Idle image processing job queue count limit reached."), work_sql_connection);
 				image_server.shut_down_host();
 			}
 		}
 		if (jobs.size() == 0) 
 			return false;
+		image_server.reset_empty_job_queue_check_count();
 		//here is the logic that allows multithreaded jobs to run alone in the thread pool.
 		{
 			//if the next job is a singleton job
@@ -1328,6 +1335,7 @@ bool ns_image_server_dispatcher::look_for_work(){
 						*work_sql_connection << "UPDATE processing_job_queue SET processor_id=0 WHERE id=" << jobs[i].queue_entry_id;
 						work_sql_connection->send_query();
 					}
+					image_server.update_processing_status("Waiting for cores", 0, 0, work_sql_connection, image_server.main_thread_internal_id());
 					return false;
 				}
 				//if no other jobs are running, run the singleton job!

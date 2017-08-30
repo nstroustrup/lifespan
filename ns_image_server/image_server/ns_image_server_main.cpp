@@ -933,7 +933,7 @@ int main(int argc, char ** argv){
 				throw ns_ex("No image server found running at ") << image_server.dispatcher_ip() << ":" << image_server.dispatcher_port() << ".";
 			return 0;
 		}
-		image_server.set_main_thread_id();
+		image_server.set_main_thread_internal_id();
 
 		string splash;
 		splash += "=============ns_image_server==============\n";
@@ -1154,6 +1154,7 @@ int main(int argc, char ** argv){
 			if (!stored_ex.text().empty())
 				throw stored_ex;
 
+			image_server.update_processing_status("Starting...", 0, 0, &sql());
 			image_server.register_server_event(ns_image_server_event("Launching server..."), &sql(), true);
 			image_server.add_subtext_to_current_event(splash, &sql(), true);
 			image_server.add_subtext_to_current_event(quote, &sql(), true);
@@ -1338,8 +1339,9 @@ int main(int argc, char ** argv){
 
 		//connect the timer sql connection
 		//otherwise we will re-register the host upon the timer thread noticing it isn't connected
-		if (sql().connected_to_central_database())
+		if (sql().connected_to_central_database()) {
 			dispatch.connect_timer_sql_connection();
+		}
 		
 
 		sql.release();

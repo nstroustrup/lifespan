@@ -631,7 +631,7 @@ ns_64_bit ns_processing_job_maintenance_processor::run_job(ns_sql & sql) {
 
 		//	ns_movement_database_maintainer m;
 
-		ns_image_server_event event("Performing maintenance task '");
+		ns_image_server_event event("Performing task '");
 		event << ns_maintenance_task_to_string(job.maintenance_task);
 		if (job.maintenance_task != ns_maintenance_delete_files_from_disk_action) {
 			event << "' on "

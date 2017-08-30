@@ -35,7 +35,7 @@ sql_lock("ns_is::sql"), server_event_lock("ns_is::server_event"), performance_st
 _act_as_processing_node(true), cleared(false), do_not_run_multithreaded_jobs(false),
 image_registration_profile_cache(1024 * 4), //allocate 4 gigabytes of disk space in which to store reference images for capture sample registration
 _verbose_debug_output(false), _cache_subdirectory("cache"), sql_database_choice(possible_sql_databases.end()), next_scan_for_problems_time(0),
-_terminal_window_scale_factor(1), _system_parallel_process_id(0), _allow_multiple_processes_per_system(false),sql_table_lock_manager(this), alert_handler_lock("ahl"),max_internal_thread_id(1), max_external_thread_id(1),worm_detection_model_cache(0),posture_analysis_model_cache(0),storyboard_cache(0){
+_terminal_window_scale_factor(1), _system_parallel_process_id(0), _allow_multiple_processes_per_system(false),sql_table_lock_manager(this), alert_handler_lock("ahl"), max_external_thread_id(1),worm_detection_model_cache(0),posture_analysis_model_cache(0),storyboard_cache(0){
 
 	ns_socket::global_init();
 	ns_worm_detection_constants::init();
@@ -1794,19 +1794,19 @@ void ns_image_server::unregister_host(ns_image_server_sql * sql) {
 };
 
 void ns_image_server::clear_processing_status(ns_sql & sql) const {
-	sql << "DELETE FROM  processing_node_status WHERE " << " host_id = " << _host_id;
+	sql << "DELETE FROM  processing_node_status WHERE host_id = " << _host_id;
 	sql.send_query();
 }
-void ns_image_server::update_processing_status(const std::string & processing_state, const ns_64_bit processing_job_id, const ns_64_bit processing_job_queue_id,ns_sql & sql) const {
+void ns_image_server::update_processing_status(const std::string & processing_state, const ns_64_bit processing_job_id, const ns_64_bit processing_job_queue_id,ns_sql_connection * sql, const ns_64_bit impersonate_using_internal_thread_id) const {
 
-	std::map<ns_64_bit, ns_thread_output_state>::iterator current_thread_state = get_current_thread_state_info();
+	std::map<ns_64_bit, ns_thread_output_state>::iterator current_thread_state = get_current_thread_state_info(impersonate_using_internal_thread_id);
 	
-	sql << "DELETE FROM  processing_node_status WHERE " << " host_id = " << _host_id << " AND node_id = " << current_thread_state->second.internal_thread_id;
-	sql.send_query();
+	*sql << "DELETE FROM  processing_node_status WHERE " << " host_id = " << _host_id << " AND node_id = " << current_thread_state->second.external_thread_id;
+	sql->send_query();
 
-	sql << "INSERT INTO processing_node_status SET host_id = " << _host_id << ", node_id = " << current_thread_state->second.internal_thread_id << ", "
+	*sql << "INSERT INTO processing_node_status SET host_id = " << _host_id << ", node_id = " << current_thread_state->second.external_thread_id << ", "
 		   "state='" << processing_state << "', current_processing_job_queue_id = " << processing_job_queue_id << ", current_processing_job_id = " << processing_job_id << ", current_output_event_id = " << current_thread_state->second.last_event_sql_id;
-	sql.send_query();
+	sql->send_query();
 }
 void ns_image_server::register_host(ns_image_server_sql * sql, bool overwrite_current_entry, bool respect_existing_database_choice) {
 
@@ -2494,13 +2494,13 @@ void ns_image_server::add_subtext_to_current_event(const char * str, ns_image_se
 
 void  ns_image_server::add_subtext_to_current_event(const ns_image_server_event & s_event, ns_image_server_sql * sql,bool display_date,bool suppress_display, const ns_64_bit impersonate_using_internal_thread_id) const {
 	if (!display_date)
-		add_subtext_to_current_event(s_event.text(), sql);
+		add_subtext_to_current_event(s_event.text(), sql,suppress_display, impersonate_using_internal_thread_id);
 	else {
 		std::string time_str = ns_format_time_string(ns_current_time());
 		time_str+=std::string(": ");
 		time_str += s_event.text();
 		time_str += std::string("\n");
-		add_subtext_to_current_event(time_str, sql,suppress_display);
+		add_subtext_to_current_event(time_str, sql,suppress_display, impersonate_using_internal_thread_id);
 	}
 }
 ns_64_bit ns_image_server::register_server_event(const ns_register_type type,const ns_image_server_event & s_event)const{
@@ -2573,22 +2573,23 @@ ns_64_bit ns_image_server::register_server_event(const ns_ex & ex, ns_image_serv
 	return register_server_event(s_event,sql);
 
 }
-void ns_image_server::set_main_thread_id() {
-	_main_thread_id = ns_thread::current_thread_id();;
+void ns_image_server::set_main_thread_internal_id() {
+	_main_thread_internal_id = ns_thread::current_thread_id();
 }
-std::map<ns_64_bit, ns_thread_output_state>::iterator ns_image_server::get_current_thread_state_info(const ns_64_bit thread_id_to_impersonate) const {
+std::map<ns_64_bit, ns_thread_output_state>::iterator ns_image_server::get_current_thread_state_info(const ns_64_bit thread_internal_id_to_impersonate) const {
 	ns_acquire_lock_for_scope lock(server_event_lock, __FILE__, __LINE__);
-	ns_64_bit thread_id;
-	if (thread_id_to_impersonate == 0)
-		thread_id = ns_thread::current_thread_id();
-	else thread_id = thread_id_to_impersonate;
+	ns_64_bit system_thread_id;
+	if (thread_internal_id_to_impersonate == 0)
+		system_thread_id = ns_thread::current_thread_id();
+	else
+		system_thread_id = thread_internal_id_to_impersonate;
 
-	std::map<ns_64_bit, ns_thread_output_state>::iterator current_thread_state = thread_states.find(thread_id);
+	std::map<ns_64_bit, ns_thread_output_state>::iterator current_thread_state = thread_states.find(system_thread_id);
 
 	if (current_thread_state == thread_states.end()) {
-		current_thread_state = thread_states.insert(std::map<ns_64_bit, ns_thread_output_state>::value_type(thread_id, ns_thread_output_state())).first;
-		current_thread_state->second.internal_thread_id = image_server.max_internal_thread_id;
-		image_server.max_internal_thread_id++;
+		current_thread_state = thread_states.insert(std::map<ns_64_bit, ns_thread_output_state>::value_type(system_thread_id, ns_thread_output_state())).first;
+		current_thread_state->second.internal_thread_id = system_thread_id;
+		current_thread_state->second.external_thread_id = 0;
 	}
 	lock.release();
 	return current_thread_state;
@@ -2600,6 +2601,8 @@ void ns_image_server::log_current_thread_output_in_separate_file() const {
 	ns_acquire_lock_for_scope lock(server_event_lock, __FILE__, __LINE__);
 	try {
 		if (current_thread_state->second.external_thread_id == 0) {
+			if (current_thread_state->second.internal_thread_id == image_server.main_thread_internal_id())
+				throw ns_ex("Asking to register main thread output in separate file!");
 			current_thread_state->second.external_thread_id = max_external_thread_id;
 			max_external_thread_id++;
 		}

@@ -74,10 +74,10 @@ $single_device = $host_id != 0;
 function host_label($res_row){
 	 return $res_row[1] . ' @ ' . $res_row[6] . ( (strlen($res_row[7])>0 )? (" (" . $res_row[7] . ":" . $res_row[8].")"): "");
 }
-$query = "SELECT id, name, last_ping,software_version_major,software_version_minor,software_version_compile,system_hostname,additional_host_description,system_parallel_process_id FROM hosts";
+$query = "SELECT id, name, last_ping,software_version_major,software_version_minor,software_version_compile,system_hostname,additional_host_description,system_parallel_process_id, ((UNIX_TIMESTAMP(NOW()) - last_ping) < $current_device_cutoff) FROM hosts ";
 if ($single_device)
   $query .= " WHERE id = $host_id";
-$query .=" ORDER BY name";
+$query .=" ORDER BY ((UNIX_TIMESTAMP(NOW()) - last_ping) < $current_device_cutoff) DESC, name";
 $sql->get_row($query,$hosts);
 //var_dump($hosts);
 ?>
@@ -92,14 +92,15 @@ echo "<BR>";
 for ($i = 0; $i < sizeof($hosts); $i++){
 	$host_is_online = $cur_time - $hosts[$i][2] < $current_device_cutoff;
 	if ($host_is_online || $single_device){
-	  $query = "SELECT DISTINCT node_id FROM host_event_log WHERE host_id = " . $hosts[$i][0];
+	  $query = "SELECT DISTINCT node_id, state,current_output_event_id FROM processing_node_status WHERE host_id = " . $hosts[$i][0];
 	  if ($node_id != -1)
 	    $query .= " AND node_id = $node_id";
-	  $query .=" ORDER BY node_id";
+	  $query .=" ORDER BY state DESC, node_id";
 	  //echo $query;
 	  $sql->get_row($query,$node_ids);
 	}
 	else $node_ids = array();
+
 	?><a name="h<?php echo $hosts[$i][0]?>"><table class ="tw" bgcolor="#555555" cellspacing='0' cellpadding='1' width="100%"><tr><td>
 <table cellspacing='0' cellpadding='3' width="100%">
 <tr <?php echo $table_header_color?>><td colspan = 2>
@@ -118,6 +119,17 @@ for ($i = 0; $i < sizeof($hosts); $i++){
 	echo "</div></td></tr></table></td></tr>";
 $col = 0;
   for ($j = 0; $j < sizeof($node_ids); $j++){
+    $node_is_idle = $node_ids[$j][1] == "Idle";
+ $node_i = $node_ids[$j][0];
+    if ($node_i == 0)
+      $thread_name = "main";
+    else 
+      $thread_name = $node_i;
+    
+    if ($node_is_idle){
+ echo "<tr><td valign=\"top\" bgcolor=\"#CCCCCC\" width=\"0%\" id=\"rw\"> $thread_name </td><td bgcolor = \"#CCCCCC\" width=\"100%\">Thread is idle</td></tr>";
+ continue;
+}
     $query = "SELECT time, event, processing_job_op, node_id, sub_text FROM host_event_log WHERE host_id = " . $hosts[$i][0] . " AND node_id = " . $node_ids[$j][0]. " ORDER BY time DESC";
     if ($single_device)
       $limit = 200;
@@ -129,16 +141,13 @@ $col = 0;
     
     $clrs = $table_colors[$j%2];
     if ($j != 0) echo "</td></tr>";
-    $node_i = $node_ids[$j][0];
     if ($node_i == 0){
       $col2 = "#CCCCCC";
-      $thread_name = "main";
     }
     else{ 
       if ($j % 2 == 0)
       $col2 = "#EEEEEE";
       else $col2 = "#CCEEEE";
-      $thread_name = $node_i;
     }
     $thread_name = "<a href=\"view_cluster_status.php?h=" . $hosts[$i][0]. "&rt=".$refresh_time . "&n=".$node_ids[$j][0] . "\"> [" . $thread_name . "] </a>";
 

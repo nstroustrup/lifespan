@@ -12,6 +12,7 @@ struct ns_ojp2k_initialization{
 	static void cleanup();
 	static bool jp2k_initialized;
 	static bool verbose_output;
+	static int warning_output_counter;
 };
 
 std::string ns_oj2k_xmp_filename(const std::string &filename);

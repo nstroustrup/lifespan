@@ -29,8 +29,13 @@ void ns_load_xml_information_from_ojp2k_xmp(const std::string filename, ns_image
 		properties.resolution = xmp_tiff_data.xresolution;
 	}
 	else {
-		if (ns_ojp2k_initialization::verbose_output)
-			std::cerr << "Warning: Could not open ojp2k metadata file " << filename << ".  Continuing with defaults.";
+		if (ns_ojp2k_initialization::verbose_output) {
+			if (ns_ojp2k_initialization::warning_output_counter < 10)
+				std::cerr << "Warning: Could not open ojp2k metadata file " << filename << ".  Continuing with defaults.\n";
+			if (ns_ojp2k_initialization::warning_output_counter == 10)
+				std::cerr << "Too many warnings: all additional ojp2k metadata messages will be supressed.\n";
+			ns_ojp2k_initialization::warning_output_counter++;
+		}
 		properties.resolution = 3200;
 	}
 }
@@ -175,6 +180,7 @@ void ns_ojp2k_initialization::cleanup(){
 bool ns_ojp2k_initialization::jp2k_initialized = false;
 
 bool ns_ojp2k_initialization::verbose_output = true;
+int ns_ojp2k_initialization::warning_output_counter = 0;
 
 //from openjpeg mailing list https://groups.google.com/forum/#!msg/openjpeg/7RZRPmzdE_M/eQGojBtOAawJ
 #define JP2_XML 0x786D6C20

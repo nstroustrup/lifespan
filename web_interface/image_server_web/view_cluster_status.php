@@ -168,7 +168,7 @@ $col = 0;
     else{
 	$query .=" node_id = " . $node_ids[$j][0];
     }
-    $query.= " ORDER BY time DESC";
+    $query.= " ORDER BY time DESC, id DESC";
     #die($query);
     if ($single_device)
       $limit = 200;

@@ -392,7 +392,7 @@ function display_worm_page_footer(){
     <td bgcolor="#dbdbdb"><div align="right"><span class="style2"><?php echo format_time(time())?>
 <br>
 <br>
-				    Lifespan Machine web interface v.<?php echo $website_version?> <br> Nicholas Stroustrup (2013)<br>Harvard Systems Biology </span></div></td>
+				    Lifespan Machine web interface v.<?php echo $website_version?> <br> Nicholas Stroustrup (2017)<br>CRG Barcelona</span></div></td>
     <td bgcolor="#dbdbdb">&nbsp;</td>
   </tr>
 </table>

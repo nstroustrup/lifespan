@@ -639,7 +639,7 @@ class ns_processing_job{
 	   $res .='<font size="-1">(When Ready)</font>';
 
 	  if ($this->currently_under_processing)
-	    $res .= '<a href="view_hosts_log.php?host_id='.$this->processor_id.'&limit=50"><font size="-1">(Processing...)</font></a>';
+	    $res .= '<a href="view_cluster_status.php?h='.$this->processor_id.'"><font size="-1">(Processing...)</font></a>';
 	$res .="</div></td></tr></table>\n";
 	//End processer job header table
 	$res.="</td></tr>\n";

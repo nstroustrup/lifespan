@@ -114,8 +114,9 @@ for ($i = 0; $i < sizeof($hosts); $i++){
 	else echo host_label($hosts[$i]);
 	echo "</td><td><div align=\"right\">";
 	
-	if (!$single_device && !$host_is_online){
-	  echo "This host does not appear to be online.  <a href=\"view_cluster_status.php?h=" . $hosts[$i][0]. "&rt=".$refresh_time . "\">[View logs]</a>";
+	if (!$host_is_online){
+	  echo "This host does not appear to be online.  ";
+	  if (!$single_device) echo "<a href=\"view_cluster_status.php?h=" . $hosts[$i][0]. "&rt=".$refresh_time . "\">[View logs]</a>";
 	}
 	if ($single_device)
 	echo "<a href=\"view_cluster_status.php\">(view all hosts)</a>";
@@ -147,7 +148,7 @@ $col = 0;
     else 
       $thread_name = $node_i;
     
-   
+   $thread_status = $node_ids[$j][1];
 
     if ($node_is_idle && !$show_idle_threads){
     $col2 = $table_colors[$j%2][0];
@@ -185,9 +186,9 @@ $col = 0;
     else{ 
       $col2 = $table_colors[1][$j%2];
     }
-    $thread_name = "<a href=\"view_cluster_status.php?h=" . $hosts[$i][0]. "&rt=".$refresh_time . "&n=".$node_ids[$j][0] . "\"> [" . $thread_name . "] </a>";
+    $thread_name = "<a href=\"view_cluster_status.php?h=" . $hosts[$i][0]. "&rt=".$refresh_time . "&n=".$node_ids[$j][0] . "\"> [" . $thread_name . "] </a> <br><br><font size=-2>($thread_status)</font>";
 
-    echo "<tr><td valign=\"top\" bgcolor=\"".$col2 . "\" width=\"0%\" id=\"rw\"> $thread_name </td><td bgcolor = \"" . $col2 . "\" width=\"100%\">";
+    echo "<tr><td valign=\"top\" bgcolor=\"".$col2 . "\" width=\"0%\" id=\"rw\"><div align=\"center\" $thread_name </div></td><td bgcolor = \"" . $col2 . "\" width=\"100%\">";
       echo "<table cellpadding=0 border=0 cellspacing=0 width =\"100%\" id=\"tw\"><tr><td id=\"rw\">";
       echo "<div id=\"foo".$sid."\" class = \"ns_scroll\"";
       if ($node_id == -1)

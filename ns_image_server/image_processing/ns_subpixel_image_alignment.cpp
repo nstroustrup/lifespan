@@ -66,7 +66,7 @@ public:
 		if (br.y - initial_offset.y > im2.properties().height) br.y = im2.properties().height + initial_offset.y;
 		if (br.x - initial_offset.x > im1.properties().width) br.x = im1.properties().width + initial_offset.x;
 		if (br.y - initial_offset.y > im1.properties().height) br.y = im1.properties().height + initial_offset.y;
-		if (br.x <= tl.x + 2 || br.y <= tl.y + 2) { //the plus 2s reflect the fact we're running a 3 width kernel and ignoring the 1 pixel-wide boundaries
+		if (floor(br.x) <= ceil(tl.x) + 2 || floor(br.y) <= ceil(tl.y) + 2) { //the plus 2s reflect the fact we're running a 3 width kernel and ignoring the 1 pixel-wide boundaries
 													//cerr <<	"Invalid shift during gradient registration: (" << initial_offset.x << "," << initial_offset.y << ") {" << tl_ << ";" << br_ << "} [" << im1.properties().width << ", " << im1.properties().height << "]";
 			saturated_offset = true;
 			return initial_offset;

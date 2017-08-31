@@ -1182,7 +1182,7 @@ void ns_dispatcher_job_pool_job::operator()(ns_dispatcher_job_pool_persistant_da
 		throw;
 	}
 }
-
+//int debug_problem_counter = 0;
 //on the first call, this sets up the worker thread pool, fills it with jobs, and starts all the threads.
 //on subsequent calls, it looks to see if any threads are idle, and adds enough jobs to get them busy again.
 bool ns_image_server_dispatcher::look_for_work(){
@@ -1230,6 +1230,12 @@ bool ns_image_server_dispatcher::look_for_work(){
 	}
 
 	try {
+
+	//	debug_problem_counter++;
+	//	if (debug_problem_counter > 15) {
+	//		cout << "Testing shutdown\n";
+	//		image_server.shut_down_host();
+	//	}
 		const unsigned long number_of_idle_processing_threads(processing_thread_pool.number_of_idle_threads());
 		//image_server.server_is_processing_jobs = processing_thread_pool.number_of_threads() > 0 && number_of_idle_processing_threads < processing_thread_pool.number_of_threads();
 
@@ -1307,7 +1313,6 @@ bool ns_image_server_dispatcher::look_for_work(){
 			if (jobs.size() >= number_of_jobs_to_run)
 				break;
 		}
-
 		//no jobs and no work being done
 		if (jobs.size() == 0 && number_of_idle_processing_threads == processing_thread_pool.number_of_threads()) {
 			//image_server.server_is_processing_jobs = false;
@@ -1338,14 +1343,14 @@ bool ns_image_server_dispatcher::look_for_work(){
 					image_server.update_processing_status("Waiting for cores", 0, 0, work_sql_connection, image_server.main_thread_internal_id());
 					return false;
 				}
-				//if no other jobs are running, run the singleton job!
+				//release all other jobs
 				for (unsigned int i = 1; i < jobs.size(); i++) {
 					*work_sql_connection << "UPDATE processing_job_queue SET processor_id=0 WHERE id=" << jobs[i].queue_entry_id;
 					work_sql_connection->send_query();
 				}
 				jobs.resize(1);
 				processing_pool_external_data.status_info.lock.wait_to_acquire(__FILE__, __LINE__);
-				bool running_a_singleton_job = processing_pool_external_data.status_info.number_of_multi_threaded_jobs_running++;
+				processing_pool_external_data.status_info.number_of_multi_threaded_jobs_running++;
 				processing_pool_external_data.status_info.lock.release();
 			}
 			//if any singeton jobs are on the queue, but not at the first position, truncate the queue right before that job

@@ -576,7 +576,8 @@ bool ns_image_server_time_path_inferred_worm_aggregator::create_images_for_solut
 
 	}
 	thread_pool.shutdown();
-	
+
+	image_server_const.add_subtext_to_current_event("\n", &sql);
 
 	for (unsigned int i = 0; i < shared_state.timepoints_to_remove.size(); i++) {
 

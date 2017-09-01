@@ -1416,8 +1416,11 @@ bool ns_time_path_image_movement_analyzer::load_completed_analysis(const ns_64_b
 				groups[g].paths[p].death_time_annotation_set.events[i].region_info_id = region_info_id;
 			}
 	}
+	if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("Populating movement quantification from file"));
 	populate_movement_quantification_from_file(sql, exclude_movement_quantification);
 	ns_64_bit file_specified_analysis_id = this->analysis_id;
+
+	if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("Getting analysis id"));
 	obtain_analysis_id_and_save_movement_data(region_id, sql, ns_require_existing_record, ns_do_not_write_data);
 	if (file_specified_analysis_id != this->analysis_id)
 		throw ns_ex("Movement analysis ID specified on disk does not agree with the ID  specified in database.");
@@ -1426,7 +1429,8 @@ bool ns_time_path_image_movement_analyzer::load_completed_analysis(const ns_64_b
 
 	if (exclude_movement_quantification)
 		return found_path_info_in_db;
-	
+
+	if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("Denoising movement series and calculating slopes"));
 	for (unsigned long g = 0; g < groups.size(); g++)
 		for (unsigned long p = 0; p < groups[g].paths.size(); p++){
 			unsigned long number_of_valid_points(0);
@@ -1447,7 +1451,9 @@ bool ns_time_path_image_movement_analyzer::load_completed_analysis(const ns_64_b
 			groups[g].paths[p].denoise_movement_series_and_calculate_intensity_slopes(0,times_series_denoising_parameters);
 		}
 
+	if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("Normalizing scores"));
 	normalize_movement_scores_over_all_paths(e->software_version_number(),times_series_denoising_parameters);
+	if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("Calculating quantifications"));
 
 	for (unsigned long g = 0; g < groups.size(); g++)
 		for (unsigned long p = 0; p < groups[g].paths.size(); p++){
@@ -1470,6 +1476,7 @@ bool ns_time_path_image_movement_analyzer::load_completed_analysis(const ns_64_b
 			groups[g].paths[p].calculate_movement_quantification_summary();
 		}	
 
+	if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("Done"));
 
 	//generate_movement_description_series();
 	movement_analyzed = true;

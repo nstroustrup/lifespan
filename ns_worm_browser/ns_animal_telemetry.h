@@ -20,6 +20,8 @@ public:
 		}
 		if (movement_quantification_data_loaded)
 			return;
+
+		if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("Loading time series denoising parameters"));
 		const ns_time_series_denoising_parameters time_series_denoising_parameters(ns_time_series_denoising_parameters::load_from_db(region_id_, sql));
 		ns_image_server::ns_posture_analysis_model_cache::const_handle_t handle;
 		image_server.get_posture_analysis_model_for_region(region_id_, handle, sql);
@@ -27,6 +29,8 @@ public:
 			ns_get_death_time_estimator_from_posture_analysis_model(handle().model_specification
 			));
 		handle.release();
+
+		if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("Loading completed analysis"));
 		loaded_path_data_successfully = movement_analyzer.load_completed_analysis(region_id_, solution, time_series_denoising_parameters, &death_time_estimator(), sql, !load_movement_quantification);
 		death_time_estimator.release();
 		movement_data_loaded = true;
@@ -164,6 +168,7 @@ private:
 	vector<ns_graph_object> movement_vals, smoothed_movement_vals, size_vals, slope_vals;
 	vector <double> time_axis;
 	vector<long> segment_ids; //mapping from the current time in time_axis to the specicif segment (element of movement_vals, smoothed_movement_vals, etc)
+	vector<long> segment_offsets; //mapping from the current time in time_axis to the specicif segment (element of movement_vals, smoothed_movement_vals, etc)
 	ns_posture_analysis_model posture_analysis_model;
 	
 	void draw_base_graph(const ns_graph_contents & graph_contents) {
@@ -205,6 +210,16 @@ private:
 				number_of_separate_segments++;
 			segment_ids[i] = number_of_separate_segments-1;
 			last_valid_time = path->element(i).absolute_time;
+		}
+		segment_offsets.resize(number_of_separate_segments);
+		if (segment_offsets.size()>0)
+			segment_offsets[0] = 0;
+		unsigned long cur_seg_id(0);
+		for (unsigned int i = 0; i < path->element_count(); i++) {
+			if (segment_ids[i] != cur_seg_id) {
+				cur_seg_id++;
+				segment_offsets[cur_seg_id] = i;
+			}
 		}
 
 		movement_vals.resize(number_of_separate_segments, ns_graph_object::ns_graph_dependant_variable);
@@ -327,7 +342,7 @@ private:
 			if (*size_vals[current_segment].y.rbegin() > 1) *size_vals[current_segment].y.rbegin() = 1;
 
 
-			slope_vals[current_segment].y.push_back(time);
+			slope_vals[current_segment].x.push_back(time);
 			slope_vals[current_segment].y.push_back((path->element(i).measurements.change_in_total_stabilized_intensity - min_intensity_slope) / (max_intensity_slope - min_intensity_slope));
 			if (*slope_vals[current_segment].y.rbegin() < 0) *slope_vals[current_segment].y.rbegin() = 0;
 			if (*slope_vals[current_segment].y.rbegin() > 1) *slope_vals[current_segment].y.rbegin() = 1;
@@ -441,8 +456,11 @@ private:
 			return;
 		if (segment_id > movement_vals.size())
 			throw ns_ex("Invalid segment id!");
-		map_value_from_graph_onto_image(time_axis[current_element], movement_vals[segment_id].y[current_element], x_score, y_score);
-		map_value_from_graph_onto_image(time_axis[current_element], size_vals[segment_id].y[current_element], x_size, y_size);
+		long segment_element_id = current_element - segment_offsets[segment_id];
+		if (segment_element_id >= movement_vals[segment_id].y.size())
+			throw ns_ex("Out of element id");
+		map_value_from_graph_onto_image(time_axis[current_element], movement_vals[segment_id].y[segment_element_id], x_score, y_score);
+		map_value_from_graph_onto_image(time_axis[current_element], size_vals[segment_id].y[segment_element_id], x_size, y_size);
 		for (int y = -2; y <= 2; y++)
 			for (int x = -2; x <= 2; x++) {
 				unsigned long p(map_pixel_from_image_onto_buffer(x_score+x+border().x, y_score+y+ border().y, position, buffer_size));

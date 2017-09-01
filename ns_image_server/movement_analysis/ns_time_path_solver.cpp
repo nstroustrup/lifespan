@@ -744,8 +744,8 @@ void ns_time_path_solution::check_for_duplicate_events(){
 	for (unsigned int i = 0; i < timepoints.size(); i++){
 		for (unsigned int j = 0; j < timepoints[i].elements.size(); j++){
 			for (unsigned int k = j+1; k < timepoints[i].elements.size(); k++){
-				if (timepoints[i].elements[j].center == timepoints[i].elements[k].center 
-					&& !timepoints[i].elements[j].inferred_animal_location 
+				if (timepoints[i].elements[j].center == timepoints[i].elements[k].center
+					&& !timepoints[i].elements[j].inferred_animal_location
 					&& !timepoints[i].elements[k].inferred_animal_location//&&
 					//timepoints[i].elements[j].number_of_extra_worms_identified_at_location > 0 &&
 					//timepoints[i].elements[k].part_of_a_multiple_worm_disambiguation_cluster

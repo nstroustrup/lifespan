@@ -6284,8 +6284,9 @@ void ns_worm_learner::draw_worm_window_image(ns_image_standard & image){
 	if (death_time_solo_annotater.telemetry.show()) {
 		try {
 			if (!death_time_solo_annotater.movement_quantification_data_loaded()) {
+
+				if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("Loading movement quantification data"));
 			  death_time_solo_annotater.load_movement_analysis(get_sql_connection());
-			
 			}
 			death_time_solo_annotater.draw_telemetry(ns_vector_2i(new_image_size.width, 0),
 				death_time_solo_annotater.telemetry.image_size(),

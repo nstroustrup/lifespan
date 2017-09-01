@@ -274,8 +274,11 @@ public:
 				p->second.annotation_file = image_server.results_storage.hand_curated_death_times(sub,sql);
 				//this will work even if no path data can be loaded, but 
 				//p->loaded_path_data_successfully will be set to false
+
+				if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("Loading movement quantification data"));
 				p->second.load_movement_analysis(region_id,sql, load_movement_quantification_data);
-				
+
+				if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("Setting timing"));
 				p->second.by_hand_timing_data.resize(p->second.movement_analyzer.size());
 				p->second.machine_timing_data.resize(p->second.movement_analyzer.size());
 				for (unsigned int i = 0; i < p->second.movement_analyzer.size(); i++){
@@ -325,6 +328,8 @@ public:
 									p->second.movement_analyzer[i].paths[0].element(p->second.movement_analyzer[i].paths[0].first_stationary_timepoint()),region_id,
 									p->second.by_hand_timing_data[i].animals[0].position_data.stationary_path_id,0),p->second.movement_analyzer[i].paths[0].observation_limits(),false);
 				}
+
+				if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("Loading annotations 2"));
 				p->second.load_annotations(sql,false);
 			}
 			catch(...){
@@ -399,8 +404,7 @@ private:
 	      cerr << "Element " << current_element_id() << " does not exist/n";
 	      return;
 	    }
-	//	cerr << resize_factor << "\n";	
-		//no image!  
+
 		if (im.properties().height == 0 || im.properties().width == 0)
 			throw ns_ex("No worm image is loaded");
 		const ns_death_time_solo_posture_annotater_timepoint * tp(static_cast<const ns_death_time_solo_posture_annotater_timepoint * >(tp_a));
@@ -443,6 +447,7 @@ private:
 			ns_crop_time(observation_limit,first_path_obs,last_path_obs,p->translation_cessation.time);
 		}
 
+		if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("Drawing timing."));
 		current_machine_timing_data->animals[0].draw_movement_diagram(bottom_margin_bottom,
 												ns_vector_2i(current_worm->element(current_element_id()).image().properties().width,vis_height),
 												observation_limit,
@@ -650,7 +655,7 @@ public:
 		}
 
 		//load images for the worm.
-			
+
 		//data_cache.load_images_for_worm(properties_for_all_animals.stationary_path_id,current_timepoint_id+10,sql);
 		current_region_data->clear_images_for_worm(properties_for_all_animals.stationary_path_id);
 
@@ -664,7 +669,9 @@ public:
 
 	}
 	void draw_telemetry(const ns_vector_2i & position, const ns_vector_2i & graph_size, const ns_vector_2i & buffer_size, ns_8_bit * buffer) {
+		if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("Drawing telemetry."));
 		telemetry.draw(graph_contents,current_timepoint_id,  position, graph_size, buffer_size, buffer);
+		if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("Done with telemetry."));
 	}
 	void draw_registration_debug(const ns_vector_2i & position, const ns_vector_2i & buffer_size, ns_8_bit * buffer) {
 		if (current_timepoint_id == 0)
@@ -754,38 +761,52 @@ public:
 
 
 	void load_worm(const unsigned long region_info_id_, const ns_stationary_path_id & worm, const unsigned long current_time, const ns_death_time_solo_posture_annotater_timepoint::ns_visualization_type visualization_type, const ns_experiment_storyboard  * storyboard,ns_worm_learner * worm_learner_,ns_sql & sql){
+		if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("Clearing self."));
 		clear();
-	       	ns_image_series_annotater::clear();
+		if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("Clearing annotator."));
+	    ns_image_series_annotater::clear();
+		if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("Closing previous worm."));
 		this->close_worm();
+		if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("Stopping movement."));
 		stop_fast_movement();
 		current_visualization_type = visualization_type;
 		
 		graph_contents = ns_animal_telemetry::ns_movement_intensity;
+
+		if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("Showing telemetry"));
 		telemetry.show(true);
 	
 		ns_region_metadata metadata;
 		metadata.region_id = region_info_id_;
 		try{
+
+			if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("Finding Animal"));
 			const ns_experiment_storyboard_timepoint_element & e(storyboard->find_animal(region_info_id_,worm));
 			ns_acquire_lock_for_scope lock(image_buffer_access_lock,__FILE__,__LINE__);
 			worm_learner = worm_learner_;
 		
 			timepoints.resize(0);
-			if (current_region_data != 0)
+			if (current_region_data != 0) {
+
+				if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("Clearing images"));
 				current_region_data->clear_images_for_worm(properties_for_all_animals.stationary_path_id);
+			}
 	
 			properties_for_all_animals.region_info_id = region_info_id_;
 			//get movement information for current worm
 			try{
+
+				if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("Loading movement data"));
 				current_region_data = data_cache.get_region_movement_data(region_info_id_,sql,telemetry.show());
+				
 			}
 			catch(...){
 				metadata.load_from_db(region_info_id_,"",sql);
 				throw;
 			}
-			if (!current_region_data->loaded_path_data_successfully)
-					throw ns_ex("The movement anaylsis data required to inspect this worm is no longer in the database.  You might need to re-analyze movement for this region.");
-
+			if (!current_region_data->loaded_path_data_successfully) 
+				throw ns_ex("The movement anaylsis data required to inspect this worm is no longer in the database.  You might need to re-analyze movement for this region.");
+			
 			metadata = current_region_data->metadata;
 			if (worm.detection_set_id != 0 && current_region_data->movement_analyzer.db_analysis_id() != worm.detection_set_id)
 				throw ns_ex("This storyboard was built using an out-of-date movement analysis result.  Please rebuild the storyboard, so that it will reflect the most recent analysis.");
@@ -798,17 +819,20 @@ public:
 		       
 			current_animal_id = 0;
 
+
+			if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("Loading posture analysis model"));
 			ns_image_server::ns_posture_analysis_model_cache::const_handle_t handle;
 			image_server.get_posture_analysis_model_for_region(region_info_id_, handle, sql);
 			ns_posture_analysis_model mod(handle().model_specification);
 			mod.threshold_parameters.use_v1_movement_score = false;
 			handle.release();
 
+			if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("Setting animal for telemetry"));
 			telemetry.set_current_animal(worm.group_id,mod, current_region_data);
 
 
-		//	if (current_region_data->by_hand_timing_data[worm.group_id].animals.size() == 0)
-		//		cerr << "WHA";
+
+			if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("Setting fast movement cessation times and adding annotations"));
 			for (unsigned int i = 0; i < e.by_hand_movement_annotations_for_element.size(); i++){
 				unsigned long animal_id = e.by_hand_movement_annotations_for_element[i].annotation.animal_id_at_position;
 				const unsigned long current_number_of_animals(current_region_data->by_hand_timing_data[worm.group_id].animals.size());
@@ -834,6 +858,8 @@ public:
 				throw ns_ex("Group ID ") << worm.group_id << " is not present in machine timing data (" << current_region_data->machine_timing_data.size() << ") for region " << region_info_id_;
 			current_machine_timing_data = &current_region_data->machine_timing_data[worm.group_id];
 			current_animal_id = 0;
+
+			if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("Transferring sticky properties"));
 			//current_by_hand_timing_data->animals[current_animal_id].sticky_properties = current_machine_timing_data->animals[0].sticky_properties;
 			e.event_annotation.transfer_sticky_properties(properties_for_all_animals);
 			//current_by_hand_timing_data->animals[current_animal_id].sticky_propertes.annotation_source = ns_death_time_annotation::ns_posture_image;
@@ -851,7 +877,11 @@ public:
 				if (ns_fix_annotation(current_region_data->by_hand_timing_data[worm.group_id].animals[j].death_posture_relaxation_start, *current_worm))
 					saved_ = false;
 			}
+
+			if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("Done setting by hand annotations"));
 			if (!saved_){
+
+				if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("Updating events to storyboard"));
 				update_events_to_storyboard();
 				saved_ = true;
 			}
@@ -860,7 +890,8 @@ public:
 			for ( number_of_valid_elements = 0;  number_of_valid_elements < current_worm->element_count();  number_of_valid_elements++)
 				if ( current_worm->element( number_of_valid_elements).excluded)
 					break;
-		
+
+			if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("Loading timepoints"));
 			timepoints.resize(number_of_valid_elements);
 			if (number_of_valid_elements == 0)
 				throw ns_ex("This path has no valid elements!");
@@ -885,6 +916,7 @@ public:
 			{
 				ns_image_standard temp_buffer;
 
+				if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("Loading first image."));
 				timepoints[current_timepoint_id].load_image(1024,current_image,sql,temp_buffer,1);
 			}
 			if (previous_images.size() != max_buffer_size || next_images.size() != max_buffer_size) {
@@ -899,14 +931,19 @@ public:
 				for (unsigned int i = 0; i < max_buffer_size; i++)
 					next_images[i].im->init(current_image.im->properties());
 			}
+
+			if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("Drawing Metadata."));
 			draw_metadata(&timepoints[current_timepoint_id],*current_image.im);
-			
+
+			if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("Requesting Refresh."));
 			request_refresh();
 			lock.release();
 		       
 
 		}
 		catch(ns_ex & ex){
+
+			if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("Closing worm on error."));
 			close_worm();
 			cerr << "Error loading worm from region " << metadata.plate_name() << " : " << ex.text() << "\n";
 			ns_hide_worm_window();

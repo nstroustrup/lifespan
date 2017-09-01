@@ -1373,7 +1373,7 @@ int main(int argc, char ** argv){
 			ns_thread dispatcher_thread(run_dispatcher,&rd);
 			windows_message_loop();
 
-			image_server.exit_has_been_requested = true;
+	//		image_server.exit_has_been_requested = true;
 			timer.block_on_finish();
 			dispatcher_thread.block_on_finish();
 			#else

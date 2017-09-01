@@ -2722,8 +2722,9 @@ void refresh_main_window(){
 }
 #include <FL/Fl_File_Icon.H>
 // MAIN
+#include <assert.h>
 int main() {
-
+	//assert(false);
 	//ns_optical_flow::test();
 
 	ns_worm_browser_output_debug(__LINE__,__FILE__,"Launching worm browser");
@@ -2915,7 +2916,7 @@ struct ns_asynch_worm_launcher{
 			ns_sql *	worm_window_sql = image_server.new_sql_connection(__FILE__,__LINE__);
 		       
 			worm_learner.death_time_solo_annotater.load_worm(region_id,worm,current_time,worm_learner.solo_annotation_visualization_type,storyboard,&worm_learner,*worm_window_sql);
-
+			if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("Finished loading.  Displaying."));
 			worm_learner.death_time_solo_annotater.display_current_frame();
 
 			show_worm_window = true;

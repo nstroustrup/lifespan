@@ -145,11 +145,10 @@ public:
 					break;
 				}
 				else	job_access_lock.release();
-				//we retain the job lock
 			}
 
 			if (give_up_and_try_again) {
-				for (unsigned int j = 0; j < i; j++)
+				for (unsigned int j = 0; j <= i; j++)
 					thread_idle_locks[j]->release();
 				wait_after_jobs_finish.release();
 				ns_thread::sleep_milliseconds(1);

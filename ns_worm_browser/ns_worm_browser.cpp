@@ -70,7 +70,9 @@ void ns_worm_learner::produce_experiment_mask_file(const std::string & filename)
 	cerr << "Generating mask";
 	if (mask_time != 0)
 		cerr << " using images up until" << ns_format_time_string_for_human(mask_time);
-	mask_manager.produce_mask_file(experiment_id,file_sink, sql,mask_time);
+	const std::string metadata_output_filename(ns_bulk_experiment_mask_manager::metadata_filename(filename));
+
+	mask_manager.produce_mask_file(experiment_id, metadata_output_filename,file_sink, sql,mask_time);
 }
 
 
@@ -81,7 +83,12 @@ void ns_worm_learner::decode_experiment_mask_file(const std::string & filename, 
 
 	ns_image_buffered_random_access_input_image<ns_8_bit, ns_image_stream_file_source<ns_8_bit> > mask_file(1024);
 	mask_file.assign_buffer_source(source);
-	mask_manager.decode_mask_file(mask_file);
+	
+	ifstream metadata_file(ns_bulk_experiment_mask_manager::metadata_filename(filename).c_str());
+	ifstream * metadata_file_ref = 0;
+	if (!metadata_file.fail())
+		metadata_file_ref = &metadata_file;
+	mask_manager.decode_mask_file(mask_file,metadata_file_ref);
 	mask_file.clear();
 	ns_image_standard vis;
 	mask_manager.process_mask_file(vis);

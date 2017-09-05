@@ -59,18 +59,36 @@ public:
 	void set_resize_factor(const unsigned int i){
 		resize_factor=i;
 	}
-	void produce_mask_file(const unsigned int experiment_id,ns_image_stream_file_sink<ns_8_bit> & reciever, ns_sql & sql, const unsigned long mask_time=0);
-
+	void produce_mask_file(const unsigned int experiment_id, const std::string metadata_output_filename, ns_image_stream_file_sink<ns_8_bit> & reciever, ns_sql & sql, const unsigned long mask_time=0);
+	static std::string metadata_filename(const std::string & image_filename) {
+		std::string ret = image_filename;
+		ret += ".xmp";
+		return ret;
+	}
 	template<class source_t>
-	const std::vector<std::string> & decode_mask_file(source_t & mask_file){
+	const std::vector<std::string> & decode_mask_file(source_t & mask_file, std::ifstream * optional_metadata_file){
 
 		std::cout << "Processing Mask File...\n";
 		if (mask_file.properties().height == 0 || mask_file.properties().width <= 2*number_of_bytes_required_for_long)
 			throw ns_ex("Empty mask file!");
 		collage_info_manager.collage_info.resize(0);
 	
-
-		collage_info_manager.from_string(mask_file.properties().description);
+		try {
+			collage_info_manager.from_string(mask_file.properties().description);
+		}
+		catch (ns_ex & ex) {
+			if (optional_metadata_file == 0) 
+				throw ns_ex("Could not load metadata from image and no external file could be found: ") << ex.text();
+			std::string input;
+			while (true) {
+				char a = optional_metadata_file->get();
+				if (optional_metadata_file->fail())
+					break;
+				input.push_back(a);
+			}
+			collage_info_manager.from_string(input);
+			optional_metadata_file->close();
+		}
 		std::cout << collage_info_manager.collage_info.size() << " Regions found:";
 		for(unsigned long i = 0; i<(unsigned long)collage_info_manager.collage_info.size(); i++){
 			std::cout << "image: " << i << " sample_id(" << collage_info_manager.collage_info[i].sample_id << ")\n";

@@ -95,7 +95,12 @@ void ns_bulk_experiment_mask_manager::process_mask_file(ns_image_standard & mask
 
 
 
-void ns_bulk_experiment_mask_manager::produce_mask_file(const unsigned int experiment_id,ns_image_stream_file_sink<ns_8_bit> & reciever, ns_sql & sql, const unsigned long mask_time){
+void ns_bulk_experiment_mask_manager::produce_mask_file(const unsigned int experiment_id,const std::string metadata_output_filename,ns_image_stream_file_sink<ns_8_bit> & reciever, ns_sql & sql, const unsigned long mask_time){
+
+
+	ofstream metadata_output(metadata_output_filename.c_str());
+	if (metadata_output.fail())
+		throw ns_ex("Could not open metadata file ") << metadata_output_filename;
 
 	const unsigned long chunk_max_size(1024);
 	const unsigned label_margin_buffer(300);
@@ -220,8 +225,8 @@ void ns_bulk_experiment_mask_manager::produce_mask_file(const unsigned int exper
 
 	//load metadata into image
 	prop.description = collage_info_manager.to_string();
-
-
+	metadata_output << collage_info_manager.to_string();
+	metadata_output.close();
 			
 	if (start_verbosity) cerr << "\nFlushing...\n";
 	ns_image_buffered_random_access_output_image<ns_8_bit> mask_file(chunk_max_size);

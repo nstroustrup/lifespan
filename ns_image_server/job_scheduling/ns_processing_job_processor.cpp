@@ -526,6 +526,8 @@ ns_64_bit ns_processing_job_whole_region_processor::run_job(ns_sql & sql) {
 			);
 			pipeline->calculate_static_mask_and_heat_map(job.operations, region_image, sql);
 		}
+		else if (job.operations[(int)ns_process_subregion_label_mask])
+			throw ns_ex("Subregion label masks cannot be processed in this way!");
 		else throw ns_ex("ns_processing_job_scheduler::run_job_from_push_queue()::Unknown whole region job type.");
 	}
 	catch (ns_ex & ex) {
@@ -535,7 +537,7 @@ ns_64_bit ns_processing_job_whole_region_processor::run_job(ns_sql & sql) {
 }
 
 ns_64_bit ns_processing_job_whole_sample_processor::run_job(ns_sql & sql) {
-	try{
+	try {
 		ns_image_server_captured_image sample_image;
 		sample_image.sample_id = job.sample_id;
 		sample_image.experiment_id = job.experiment_id;
@@ -571,8 +573,8 @@ ns_64_bit ns_processing_job_whole_sample_processor::run_job(ns_sql & sql) {
 			sql);
 		}
 
-		else if (job.operations[(int)ns_process_heat_map] || job.operations[(int)ns_process_static_mask])
-			throw ns_ex("Cannot calculate heat map for an entire sample");
+		else if (job.operations[(int)ns_process_heat_map] || job.operations[(int)ns_process_static_mask] || job.operations[(int)ns_process_subregion_label_mask])
+			throw ns_ex("Cannot calculate heat map or subregion label mask for an entire sample");
 		else throw ns_ex("Unknown whole region job type");
 	}
 	catch (ns_ex & ex) {

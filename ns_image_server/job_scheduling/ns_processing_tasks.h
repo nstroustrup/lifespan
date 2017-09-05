@@ -31,7 +31,8 @@ typedef enum{
 	ns_process_movement_paths_visualition_with_mortality_overlay,
 	ns_process_movement_posture_visualization,
 	ns_process_movement_posture_aligned_visualization,
-	ns_process_unprocessed_backup,
+	ns_process_unprocessed_backup, 
+	ns_process_subregion_label_mask,
 	ns_process_last_task_marker,
 } ns_processing_task;
 

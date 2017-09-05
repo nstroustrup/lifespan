@@ -914,7 +914,19 @@ bool ns_image_server::upgrade_tables(ns_sql_connection * sql, const bool just_te
 
 		changes_made = true;
 	}
+	
 	if (!updating_local_buffer) {
+		std::string subregion_mask_column_name(ns_processing_step_db_column_name(ns_process_subregion_label_mask));
+		if (!ns_sql_column_exists(t_suf + "sample_region_image_info", subregion_mask_column_name, sql)) {
+			if (just_test_if_needed)
+				return true;
+			cout << "Adding adding subregion label mask id column to sample_region_image_info\n";
+			*sql << "ALTER TABLE `" << t_suf << "sample_region_image_info` "
+				"ADD COLUMN `" << subregion_mask_column_name << "` BIGINT(20) NOT NULL DEFAULT '0' AFTER `position_analysis_model`";
+			sql->send_query();
+
+			changes_made = true;
+		}
 		if (!ns_sql_column_exists("hosts", "system_hostname", sql)) {
 			if (just_test_if_needed)
 				return true;

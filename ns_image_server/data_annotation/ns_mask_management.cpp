@@ -93,141 +93,179 @@ void ns_bulk_experiment_mask_manager::process_mask_file(ns_image_standard & mask
 	}
 }
 
+void ns_bulk_experiment_mask_manager::produce_mask_file(const ns_mask_type & mask_type, const unsigned int experiment_id, const std::string metadata_output_filename, ns_image_stream_file_sink<ns_8_bit> & reciever, ns_sql & sql, const unsigned long mask_time ) {
 
-
-void ns_bulk_experiment_mask_manager::produce_mask_file(const unsigned int experiment_id,const std::string metadata_output_filename,ns_image_stream_file_sink<ns_8_bit> & reciever, ns_sql & sql, const unsigned long mask_time){
-
-
+	bool output_region_label_mask(mask_type == ns_subregion_label_mask);
 	ofstream metadata_output(metadata_output_filename.c_str());
 	if (metadata_output.fail())
 		throw ns_ex("Could not open metadata file ") << metadata_output_filename;
 
-	const unsigned long chunk_max_size(1024);
-	const unsigned label_margin_buffer(300);
+	const string subject_type = (output_region_label_mask) ? "region" : "sample";
 	if (image_server.verbose_debug_output())
 		cerr << "Loading sample info...\n";
-	sql << "SELECT name,id FROM capture_samples WHERE experiment_id=" << experiment_id << " AND censored = 0 ORDER BY name ASC";
-	ns_sql_result samples;
-	sql.get_rows(samples);
-	if (samples.size() == 0)
-		throw ns_ex("The specified experiment contains no samples");
-	std::vector<ns_image_buffered_random_access_input_image<ns_8_bit,ns_image_storage_source<ns_8_bit> > > images(0,ns_image_buffered_random_access_input_image<ns_8_bit,ns_image_storage_source<ns_8_bit> >(1024));
-	images.reserve(samples.size());
+	if (output_region_label_mask)
+		 sql << "SELECT r.name,r.id,s.id,s.name FROM sample_region_image_info as r, capture_samples as s WHERE r.sample_id = s.id AND s.experiment_id=" << experiment_id << " AND censored = 0 ORDER BY name ASC";
+	else sql << "SELECT name,id FROM capture_samples WHERE experiment_id=" << experiment_id << " AND censored = 0 ORDER BY name ASC";
+
+	ns_sql_result subjects;
+	sql.get_rows(subjects);
+	if (subjects.size() == 0)
+		throw ns_ex("The specified experiment contains no ") << subject_type;
+	std::vector<ns_image_buffered_random_access_input_image<ns_8_bit, ns_image_storage_source<ns_8_bit> > > images(0, ns_image_buffered_random_access_input_image<ns_8_bit, ns_image_storage_source<ns_8_bit> >(1024));
+	images.reserve(subjects.size());
 
 	std::vector<ns_image_storage_source_handle<ns_8_bit> > sources;
-	sources.reserve(samples.size());
+	sources.reserve(subjects.size());
 	bool start_verbosity = image_server.verbose_debug_output();
 	if (start_verbosity)
 		cerr << "Getting image ids...\n";
 	image_server.image_storage.set_verbosity(ns_image_storage_handler::ns_verbose);
 
 	int counter(0);
-	for (ns_sql_result::iterator p = samples.begin(); p != samples.end();){
+	for (ns_sql_result::iterator p = subjects.begin(); p != subjects.end();) {
 		counter++;
 		if (start_verbosity) cerr << counter << " ";
-		try{
+		try {
 			//image_id==0  images have already been deleted.
-			sql << "SELECT image_id FROM captured_images WHERE sample_id = " << (*p)[1] << " and currently_being_processed=0 AND problem=0 AND censored=0 AND image_id != 0";
+			if(output_region_label_mask)
+				sql << "SELECT image_id FROM sample_region_images WHERE region_info_id = " << (*p)[1] << " and problem=0 AND censored=0 AND image_id != 0";
+			else 
+				sql << "SELECT image_id FROM captured_images WHERE sample_id = " << (*p)[1] << " and currently_being_processed=0 AND problem=0 AND censored=0 AND image_id != 0";
+
 			if (mask_time != 0)
 				sql << " AND capture_time < " << mask_time;
 			sql << " ORDER BY capture_time DESC";
 			ns_sql_result im_id;
 			sql.get_rows(im_id);
-			if (im_id.size() < 2){	
-				ns_ex ex("Could not find a sufficient number of captured images for sample ");
-				ex << (*p)[0] << "(" << (*p)[1]  << ").";
+			if (im_id.size() < 2) {
+				ns_ex ex("Could not find a sufficient number of captured images for ");
+				ex << subject_type << " ";
+				ex << (*p)[0] << "(" << (*p)[1] << ").";
 				if (mask_time != 0)
-				ex << "Note that the experiment has a mask time specified: " << ns_format_time_string_for_human(mask_time);
+					ex << "Note that the experiment has a mask time specified: " << ns_format_time_string_for_human(mask_time);
 				cerr << " Miss! ";
 				throw ex;
 			}
 
 			unsigned int s = (unsigned int)images.size();
-			bool found_valid_image=false;
+			bool found_valid_image = false;
 			//find an existing image to use as the mask
-			for (unsigned int i = 1; i < im_id.size(); i++){ //skip first as it's often currently being written to disk
+			for (unsigned int i = 1; i < im_id.size(); i++) { //skip first as it's often currently being written to disk
 				ns_image_server_image im;
-				im.load_from_db(atoi(im_id[i][0].c_str()),&sql);
+				im.load_from_db(atoi(im_id[i][0].c_str()), &sql);
 				if (im.filename.find("TEMP") != im.filename.npos)
 					continue;
-				try{
-					sources.resize(s+1,image_server.image_storage.request_from_storage(im,&sql));
+				try {
+					sources.resize(s + 1, image_server.image_storage.request_from_storage(im, &sql));
 					found_valid_image = true;
 					break;
 				}
-				catch(ns_ex & ex){
+				catch (ns_ex & ex) {
 					cerr << ex.text() << "\n";
-					if (sources.size() == s+1)
+					if (sources.size() == s + 1)
 						sources.pop_back();
 				}
 			}
-			if (!found_valid_image){
-				throw ns_ex("Could not find any good images for sample ") << (*p)[0] << "(" << (*p)[1] << ").";
+			if (!found_valid_image) {
+				throw ns_ex("Could not find any good images for ") << subject_type << " " << (*p)[0] << "(" << (*p)[1] << ").";
 			}
 			if (start_verbosity) cerr << " hit. ";
-			images.resize(s+1,ns_image_buffered_random_access_input_image<ns_8_bit,ns_image_storage_source<ns_8_bit> >(100));
+			images.resize(s + 1, ns_image_buffered_random_access_input_image<ns_8_bit, ns_image_storage_source<ns_8_bit> >(100));
 			images[s].assign_buffer_source(sources[s].input_stream());
 			p++;
 		}
-		catch(ns_ex & ex){
-			cerr << "An error occurred in sample " << (*p)[0] << "(" << (*p)[1]  << "): " << ex.text() << "\n";
-			p = samples.erase(p);
+		catch (ns_ex & ex) {
+			cerr << "An error occurred in sample " << (*p)[0] << "(" << (*p)[1] << "): " << ex.text() << "\n";
+			p = subjects.erase(p);
 		}
-		catch(std::exception & ex){
-			cerr << "An error occurred in sample " << (*p)[0] << "(" << (*p)[1]  << "): " << ex.what() << "\n";
-			p = samples.erase(p);
+		catch (std::exception & ex) {
+			cerr << "An error occurred in sample " << (*p)[0] << "(" << (*p)[1] << "): " << ex.what() << "\n";
+			p = subjects.erase(p);
 		}
-		catch(...){
-			cerr << "An unknown error occurred in sample " << (*p)[0] << "(" << (*p)[1]  << ")\n";
-			p = samples.erase(p);
+		catch (...) {
+			cerr << "An unknown error occurred in sample " << (*p)[0] << "(" << (*p)[1] << ")\n";
+			p = subjects.erase(p);
 		}
 	}
-	if (samples.size() == 0)
+	if (subjects.size() == 0)
 		throw ns_ex("No usable samples could be found in the experiment.");
 
 	if (!start_verbosity)
-	image_server.image_storage.set_verbosity(ns_image_storage_handler::ns_standard);
+		image_server.image_storage.set_verbosity(ns_image_storage_handler::ns_standard);
 
 	//std::vector<ns_mask_collage_info> collage_info(images.size());
 	collage_info_manager.collage_info.resize(images.size());
-	if (images.size()==0)
+	if (images.size() == 0)
 		throw ns_ex("No images loaded.");
 	ns_image_properties prop(images[0].properties());
-	prop.resolution/=resize_factor;
+	prop.resolution /= resize_factor;
 	prop.width = 0;
 	prop.height = 0;
-	const unsigned long image_margin(50);
-	const ns_8_bit background_color(160);
+	unsigned long current_y(label_margin_buffer), current_x(0);
+	ns_64_bit last_sample_id(0);
 	if (start_verbosity) cerr << "Prepping images...\n";
-	for (unsigned int i = 0; i < images.size(); i++){
+	for (unsigned int i = 0; i < images.size(); i++) {
 
 		if (start_verbosity) cerr << i << " ";
 		if (images[i].properties().components != prop.components)
-			throw ns_ex("Sample") << samples[i][0] << "(" << samples[i][1]  << ") has " << images[i].properties().components << " components, unlike other samples.";
-		if (images[i].properties().resolution/resize_factor != prop.resolution)
-			throw ns_ex("Sample") << samples[i][0] << "(" << samples[i][1]  << ") was taken at a resolution of " << images[i].properties().resolution << ",unlike other samples.";
+			throw ns_ex(subject_type) << subjects[i][0] << "(" << subjects[i][1] << ") has " << images[i].properties().components << " components, unlike other samples.";
+		if (images[i].properties().resolution / resize_factor != prop.resolution)
+			throw ns_ex(subject_type) << subjects[i][0] << "(" << subjects[i][1] << ") was taken at a resolution of " << images[i].properties().resolution << ",unlike other samples.";
 
-		if (prop.height < images[i].properties().height/resize_factor)
-			prop.height = images[i].properties().height/resize_factor;
-		collage_info_manager.collage_info[i].dimentions.x = images[i].properties().width/resize_factor;
-		collage_info_manager.collage_info[i].dimentions.y = images[i].properties().height/resize_factor;
+		collage_info_manager.collage_info[i].dimentions.x = images[i].properties().width / resize_factor;
+		collage_info_manager.collage_info[i].dimentions.y = images[i].properties().height / resize_factor;
 		collage_info_manager.collage_info[i].experiment_id = experiment_id;
-		collage_info_manager.collage_info[i].position.x = prop.width;
-		collage_info_manager.collage_info[i].position.y = label_margin_buffer;
-		collage_info_manager.collage_info[i].sample_name = samples[i][0];
-		collage_info_manager.collage_info[i].sample_id = ns_atoi64(samples[i][1].c_str());
+		collage_info_manager.collage_info[i].position.x = current_x;
+		collage_info_manager.collage_info[i].position.y = current_y;
+		if (output_region_label_mask) {
+			collage_info_manager.collage_info[i].region_id = ns_atoi64(subjects[i][0].c_str());
+			collage_info_manager.collage_info[i].sample_name = subjects[i][2];
+			collage_info_manager.collage_info[i].sample_id = ns_atoi64(subjects[i][3].c_str());
+		}
+		else {
+			collage_info_manager.collage_info[i].sample_name = subjects[i][0];
+			collage_info_manager.collage_info[i].sample_id = ns_atoi64(subjects[i][1].c_str());
+		}
+		const unsigned long current_top(collage_info_manager.collage_info[i].dimentions.y + collage_info_manager.collage_info[i].position.y);
+		if (prop.height < current_top)
+			prop.height = current_top;
+		const unsigned long current_right(collage_info_manager.collage_info[i].dimentions.x + collage_info_manager.collage_info[i].position.x);
+		if (prop.width < current_right)
+			prop.width = current_right;
 
-		prop.width+=images[i].properties().width/resize_factor;
-		prop.width+=image_margin;  //fifty pixel margin between samples
+		if (output_region_label_mask) {  //all sample regions in the same column, one column per sample
+			ns_64_bit next_sample_id(0);
+			if (i + 1 < subjects.size() ) next_sample_id = ns_atoi64(subjects[i + 1][3].c_str());
+
+			if (next_sample_id == collage_info_manager.collage_info[i].sample_id)
+				current_y = current_top;
+			else {
+				current_x = current_right+ image_margin;
+				current_y = label_margin_buffer;
+			}
+		}
+		else { //all sample regions in separate column
+			current_x = current_right + image_margin;
+			current_y = label_margin_buffer;
+		}
 	}
 	//cerr << "Prop height = " << prop.height << "\n";
-	prop.height += label_margin_buffer;
+	prop.height += ns_bulk_experiment_mask_manager::label_margin_buffer;
 
-	//load metadata into image
+	//insert metadata into image
 	prop.description = collage_info_manager.to_string();
 	metadata_output << collage_info_manager.to_string();
 	metadata_output.close();
-			
+	render_mask_file(prop, images, reciever);
+}
+
+
+void ns_bulk_experiment_mask_manager::render_mask_file(const ns_image_properties & prop,std::vector<ns_image_buffered_random_access_input_image<ns_8_bit, ns_image_storage_source<ns_8_bit> > > & images, ns_image_stream_file_sink<ns_8_bit> & reciever) {
+
+
+	const ns_8_bit background_color(160);
+
+	bool start_verbosity = image_server.verbose_debug_output();
 	if (start_verbosity) cerr << "\nFlushing...\n";
 	ns_image_buffered_random_access_output_image<ns_8_bit> mask_file(chunk_max_size);
 	mask_file.prepare_to_recieve_image(prop);
@@ -236,7 +274,7 @@ void ns_bulk_experiment_mask_manager::produce_mask_file(const unsigned int exper
 	//cerr << "Creating image with size (" << mask_file.properties().width << "," << mask_file.properties().height << ")\n";
 			
 	ns_image_properties label_prop(prop);
-	label_prop.height = label_margin_buffer;
+	label_prop.height = ns_bulk_experiment_mask_manager::label_margin_buffer;
 
 	if (start_verbosity) cerr << "Drawing labels...\n";
 	ns_acquire_lock_for_scope font_lock(font_server.default_font_lock, __FILE__, __LINE__);
@@ -344,7 +382,55 @@ void ns_bulk_experiment_mask_manager::produce_mask_file(const unsigned int exper
 	pr(prop.height);
 	
 }
-void ns_bulk_experiment_mask_manager::submit_masks_to_cluster(bool balk_on_overwrite) {
+
+
+void ns_bulk_experiment_mask_manager::submit_subregion_label_masks_to_cluster(bool balk_on_overwrite) {
+	ns_acquire_for_scope<ns_sql> sql(image_server.new_sql_connection(__FILE__, __LINE__));
+	for (unsigned int i = 0; i < collage_info_manager.collage_info.size(); i++) {
+		if (collage_info_manager.collage_info[i].region_id == 0)
+			throw ns_ex() << "Region id 0 found.\n";
+
+		if (collage_info_manager.collage_info[i].region_id == 0)
+			throw ns_ex("Attempting to submit an experiment plate reigon mask as a subregion label mask!");
+
+		sql() << "SELECT " << ns_processing_step_db_column_name(ns_process_subregion_label_mask) << " FROM capture_sample_region_info WHERE id = " << collage_info_manager.collage_info[i].region_id;
+		ns_sql_result res;
+		sql().get_rows(res);
+		if (res.size() == 0)
+			throw ns_ex("Could not find region in db") << collage_info_manager.collage_info[i].region_id;
+		if (ns_atoi64(res[0][0].c_str()) != 0) {
+			if (balk_on_overwrite)
+				throw ns_ex("ns_bulk_experiment_mask_manager::submit_masks_to_cluster::A label mask already exists for specified sample: ") << collage_info_manager.collage_info[i].sample_id << ". To continue anyway, select the menu item Config/Set Behavior/Overwrite existing sample masks";
+		}
+	}
+
+	for (unsigned int i = 0; i < collage_info_manager.collage_info.size(); i++) {
+		ns_image_server_captured_image_region region_image;
+		region_image.region_info_id = collage_info_manager.collage_info[i].region_id;
+		ns_image_server_image mask_image = region_image.create_storage_for_processed_image(ns_process_subregion_label_mask, ns_tiff, &sql()); 
+	
+		sql() << "INSERT INTO image_masks SET image_id = " << mask_image.id << ", processed='0',resize_factor=" << resize_factor;
+		ns_64_bit mask_id = sql().send_query_get_id();
+
+		bool had_to_use_local_storage;
+		ns_image_storage_reciever_handle<ns_8_bit> image_storage = image_server.image_storage.request_storage(mask_image, ns_tiff, 1.0, 512, &sql(), had_to_use_local_storage, false, false);
+
+		//ns_image_standard decoded_image;
+		ns_image_storage_source_handle<ns_8_bit> in(image_server.image_storage.request_from_local_cache(scratch_filenames[i]));
+		in.input_stream().pump(image_storage.output_stream(), 512);
+		//decoded_image.pump(sender,512);
+		//c.close();
+
+		sql() << "INSERT INTO processing_jobs SET image_id=" << mask_image.id << ", mask_id=" << mask_id << ", "
+			<< "op" << (unsigned int)ns_process_analyze_mask << " = 1, time_submitted=" << ns_current_time() << ", urgent=1";
+		sql().send_query();
+		sql().send_query("COMMIT");
+
+		//		cerr << "\nDone.\n";
+	}
+}
+
+void ns_bulk_experiment_mask_manager::submit_plate_region_masks_to_cluster(bool balk_on_overwrite) {
 	bool ex_not_ok = false;
 	ns_acquire_for_scope<ns_sql> sql(image_server.new_sql_connection(__FILE__, __LINE__));
 	for (unsigned int i = 0; i < collage_info_manager.collage_info.size(); i++) {
@@ -353,6 +439,9 @@ void ns_bulk_experiment_mask_manager::submit_masks_to_cluster(bool balk_on_overw
 				cerr << "Sample id 0 found.\n";
 				continue;
 			}
+			if (collage_info_manager.collage_info[i].region_id != 0)
+				throw ns_ex("Attempting to submit a subregion label mask as an experiment plate reigon mask!");
+
 			sql() << "SELECT mask_id FROM capture_samples WHERE id = " << collage_info_manager.collage_info[i].sample_id;
 			ns_sql_result res;
 			sql().get_rows(res);

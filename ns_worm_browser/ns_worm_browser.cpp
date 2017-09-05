@@ -53,7 +53,7 @@ ns_sql & ns_worm_learner::get_sql_connection() {
 	return *persistant_sql_connection;
 }
 
-void ns_worm_learner::produce_experiment_mask_file(const std::string & filename){
+void ns_worm_learner::produce_mask_file(const ns_bulk_experiment_mask_manager::ns_mask_type mask_type, const std::string & filename){
 	if (data_selector.current_experiment_id() == 0)
 		throw ns_ex("ns_worm_learner::No experiment selected!");
 	int long experiment_id = data_selector.current_experiment_id();
@@ -72,11 +72,11 @@ void ns_worm_learner::produce_experiment_mask_file(const std::string & filename)
 		cerr << " using images up until" << ns_format_time_string_for_human(mask_time);
 	const std::string metadata_output_filename(ns_bulk_experiment_mask_manager::metadata_filename(filename));
 
-	mask_manager.produce_mask_file(experiment_id, metadata_output_filename,file_sink, sql,mask_time);
+	mask_manager.produce_mask_file(mask_type,experiment_id, metadata_output_filename,file_sink, sql,mask_time);
 }
 
 
-void ns_worm_learner::decode_experiment_mask_file(const std::string & filename, const std::string & output_vis_filename){
+void ns_worm_learner::decode_mask_file(const std::string & filename, const std::string & output_vis_filename){
 	ns_tiff_image_input_file<ns_8_bit> tiff;
 	tiff.open_file(filename);
 	ns_image_stream_file_source<ns_8_bit> source(tiff);
@@ -104,11 +104,11 @@ void ns_worm_learner::decode_experiment_mask_file(const std::string & filename, 
 	vis.clear();
 //	draw();
 }
-void ns_worm_learner::submit_experiment_mask_file_to_cluster(){
-	mask_manager.submit_masks_to_cluster(!overwrite_existing_mask_when_submitting);
+void ns_worm_learner::submit_mask_file_to_cluster(const ns_bulk_experiment_mask_manager::ns_mask_type mask_type){
+	if (mask_type == ns_bulk_experiment_mask_manager::ns_plate_region_mask)
+		mask_manager.submit_plate_region_masks_to_cluster(!overwrite_existing_mask_when_submitting);
+	else mask_manager.submit_subregion_label_masks_to_cluster(!overwrite_existing_mask_when_submitting);
 }
-
-
 
 void ns_worm_learner::resize_image(){
 	ns_resampler<ns_8_bit> rsp(75);

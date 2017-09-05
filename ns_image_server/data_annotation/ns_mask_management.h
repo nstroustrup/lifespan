@@ -9,10 +9,15 @@
 #include "ns_process_mask_regions.h"
 struct ns_mask_collage_info{
 	ns_64_bit experiment_id,
-				  sample_id;
+		sample_id,
+		region_id;
 	std::string sample_name;
 	ns_vector_2i position,
 				 dimentions;
+
+	ns_mask_collage_info() :experiment_id(0),
+		sample_id(0),
+		region_id(0) {}
 };
 
 class ns_mask_collage_info_manager{
@@ -24,6 +29,8 @@ public:
 			xml.start_group("image");
 			xml.add_tag("e_id",ns_to_string(collage_info[i].experiment_id));
 			xml.add_tag("s_id",ns_to_string(collage_info[i].sample_id));
+			if (collage_info[i].region_id != 0)
+				xml.add_tag("r_id",ns_to_string(collage_info[i].region_id));
 			xml.add_tag("x",collage_info[i].position.x);
 			xml.add_tag("y",collage_info[i].position.y);
 			xml.add_tag("w",collage_info[i].dimentions.x);
@@ -46,6 +53,8 @@ public:
 			collage_info[i].position.y = atol(reader.objects[i].tag("y").c_str());
 			collage_info[i].dimentions.x = atol(reader.objects[i].tag("w").c_str());
 			collage_info[i].dimentions.y = atol(reader.objects[i].tag("h").c_str());
+			collage_info[i].region_id = 0;
+			reader.objects[i].assign_if_present("r_id", collage_info[i].region_id);
 		}
 	}
 	std::vector<ns_mask_collage_info> collage_info;
@@ -59,7 +68,10 @@ public:
 	void set_resize_factor(const unsigned int i){
 		resize_factor=i;
 	}
-	void produce_mask_file(const unsigned int experiment_id, const std::string metadata_output_filename, ns_image_stream_file_sink<ns_8_bit> & reciever, ns_sql & sql, const unsigned long mask_time=0);
+
+	typedef enum { ns_plate_region_mask, ns_subregion_label_mask } ns_mask_type;
+
+	void produce_mask_file(const ns_mask_type & mask_type,const unsigned int experiment_id, const std::string metadata_output_filename, ns_image_stream_file_sink<ns_8_bit> & reciever, ns_sql & sql, const unsigned long mask_time=0);
 	static std::string metadata_filename(const std::string & image_filename) {
 		std::string ret = image_filename;
 		ret += ".xmp";
@@ -128,8 +140,12 @@ public:
 
 	void process_mask_file(ns_image_standard & mask_vis);
 
-	void submit_masks_to_cluster(bool balk_on_overwrite = true);
+	void submit_plate_region_masks_to_cluster(bool balk_on_overwrite = true);
 
+	void submit_subregion_label_masks_to_cluster(bool balk_on_overwrite = true);
+
+	void render_mask_file(const ns_image_properties & prop, std::vector<ns_image_buffered_random_access_input_image<ns_8_bit, ns_image_storage_source<ns_8_bit> > > & images, ns_image_stream_file_sink<ns_8_bit> & reciever);
+	typedef enum {label_margin_buffer = 300, chunk_max_size = 1024,image_margin=50} ns_mask_constants;
 private:
 	unsigned long resize_factor;
 	enum {number_of_bytes_required_for_long = sizeof(unsigned long)/sizeof(ns_8_bit), number_of_bytes_required_for_header_element = sizeof(ns_mask_collage_info)/sizeof(ns_8_bit)};

@@ -584,9 +584,9 @@ public:
 
 	ns_image_properties current_image_properties() const{return current_image.properties();}
 	//mask
-	void produce_experiment_mask_file(const std::string & filename);
-	void decode_experiment_mask_file(const std::string & filename, const std::string & output_vis_filename="");
-	void submit_experiment_mask_file_to_cluster();
+	void produce_mask_file(const ns_bulk_experiment_mask_manager::ns_mask_type mask_type,const std::string & filename);
+	void decode_mask_file(const std::string & filename, const std::string & output_vis_filename="");
+	void submit_mask_file_to_cluster(const ns_bulk_experiment_mask_manager::ns_mask_type mask_type);
 	void view_current_mask();
 	void apply_mask_on_current_image();
 	ns_mask_info send_mask_to_server(const ns_64_bit &sample_id);

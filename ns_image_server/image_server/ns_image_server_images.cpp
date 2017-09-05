@@ -355,7 +355,7 @@ std::string ns_image_server_captured_image_region::region_directory(const std::s
 																	  const ns_processing_task & task){
 	//heat maps represent one image per entire region (rather than one image per sample captured).
 	//thus are stored together in the experiment's base directory
-	if (task == ns_process_heat_map || task == ns_process_static_mask)
+	if (task == ns_process_heat_map || task == ns_process_static_mask || task==ns_process_subregion_label_mask)
 		return captured_image_directory + DIR_CHAR_STR + ns_processing_step_directory_d(task);
 	
 	//regions containing single detected objects are stored in subdirectories corresponding to whether they contain
@@ -414,7 +414,7 @@ const ns_image_server_image ns_image_server_captured_image_region::request_proce
 		throw ns_ex("Sample region image ") << region_info_id << " could not be found in the database.";
 	im.id = ns_atoi64(res[0][0].c_str());
 
-	if (task != ns_process_static_mask && task != ns_process_heat_map && im.id == 0)
+	if (task != ns_process_static_mask && task != ns_process_heat_map && task != ns_process_subregion_label_mask && im.id == 0)
 		throw ns_ex("ns_image_server_captured_image_region::Required image processing step, ") << ns_processing_task_to_string(task) << " has not yet been completed.";
 	
 	if (im.id != 0)
@@ -713,9 +713,9 @@ std::string ns_processing_step_directory_d(const ns_processing_task & task){
 		case ns_process_movement_paths_visualition_with_mortality_overlay: return "movement_path_vis_with_mortality";
 		case ns_process_movement_posture_visualization:return "movement_posture_vis";
 		case ns_process_movement_posture_aligned_visualization: return "movement_posture_aligned_vis";
-		case ns_process_unprocessed_backup: return("unprocessed_backup");
+		case ns_process_unprocessed_backup: return "unprocessed_backup";
 		case ns_process_analyze_mask:				throw ns_ex("ns_processing_step_directory::There is no standard directory name for the result of mask analysis");
-		
+		case ns_process_subregion_label_mask: return "subregion_mask";
 		default:									throw ns_ex("ns_processing_step_directory::Cannot find default directory for task:")  << ns_processing_task_to_string(task);
 	}
 }
@@ -734,7 +734,7 @@ std::string ns_create_operation_summary(const std::vector<char> operations){
 }
 
 std::string ns_processing_step_db_table_name(const ns_processing_task & t){
-	if (t == ns_process_heat_map || t == ns_process_static_mask)
+	if (t == ns_process_heat_map || t == ns_process_static_mask || t == ns_process_subregion_label_mask)
 		return "sample_region_image_info";
 	return "sample_region_images";
 }
@@ -788,6 +788,7 @@ std::string ns_processing_task_to_string(const ns_processing_task & t){
 		case ns_process_movement_posture_visualization:	return "Movement Animal Posture Visualization";
 		case ns_process_movement_posture_aligned_visualization: return "Aligned Movement Animal Posture Visualization";
 		case ns_process_unprocessed_backup:				return "Unprocessed Image Backup";
+		case ns_process_subregion_label_mask:			return "Subregion label mask";
 		default:										return "Unknown Task" + ns_to_string((int)t);
 	}
 }

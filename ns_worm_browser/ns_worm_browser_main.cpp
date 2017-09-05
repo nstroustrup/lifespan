@@ -810,27 +810,41 @@ class ns_worm_terminal_main_menu_organizer : public ns_menu_organizer{
 	Mask Management
 	*****************************/
 	static void masks_generate_composite(const std::string & value){
+		const bool subregion_label_mask(value.find("ubregion") != value.npos);
 		ns_file_chooser im_cc;
 		im_cc.save_file();
-		im_cc.title = "Save Image Mask";
+		im_cc.title = "Save Experiment Region Mask";
+		if (subregion_label_mask)
+			im_cc.title = "Save Subregion Label Mask";
 		im_cc.filters.push_back(ns_file_chooser_file_type("TIF","tif"));
-		im_cc.default_filename = worm_learner.data_selector.current_experiment_name() + "_mask.tif";
+		im_cc.default_filename = worm_learner.data_selector.current_experiment_name();
+		if (subregion_label_mask)
+			im_cc.default_filename += "_subregion_label_mask.tif";
+		else
+			im_cc.default_filename +="_experiment_mask.tif";
 		ns_run_in_main_thread<ns_file_chooser> run_mt(&im_cc);
-		if (im_cc.chosen)
-			worm_learner.produce_experiment_mask_file(im_cc.result);
+		if (im_cc.chosen) {
+			if (subregion_label_mask)
+				worm_learner.produce_mask_file(ns_bulk_experiment_mask_manager::ns_subregion_label_mask  ,im_cc.result);
+			else 
+				worm_learner.produce_mask_file(ns_bulk_experiment_mask_manager::ns_plate_region_mask, im_cc.result);
+
+		}
 	}
 	static void masks_process_composite(const std::string & value){
-		/*std::vector<dialog_file_type> foo;
-		foo.push_back(dialog_file_type("TIF (*.tif)","tif"));
-		std::string filename = open_file_dialog("Save Image",foo);*/
+		
 		ns_file_chooser im_cc;
-		//im_cc.save_file();
 		im_cc.title = "Load Image Mask";
 		im_cc.filters.push_back(ns_file_chooser_file_type("TIF","tif"));
 		ns_run_in_main_thread<ns_file_chooser> run_mt(&im_cc);
-		if (im_cc.chosen) worm_learner.decode_experiment_mask_file(im_cc.result);
+		if (im_cc.chosen) worm_learner.decode_mask_file(im_cc.result);
 	}
-	static void masks_submit_composite(const std::string & value){worm_learner.submit_experiment_mask_file_to_cluster();}
+	static void masks_submit_composite(const std::string & value){
+		const bool subregion_label_mask(value.find("ubregion") != value.npos); 
+		if (subregion_label_mask)
+			worm_learner.submit_mask_file_to_cluster(ns_bulk_experiment_mask_manager::ns_subregion_label_mask);
+		else worm_learner.submit_mask_file_to_cluster(ns_bulk_experiment_mask_manager::ns_plate_region_mask);
+	}
 
 	static void open_individual_mask(const std::string & value){
 		ns_file_chooser im_cc;
@@ -1321,8 +1335,13 @@ public:
 		//add(ns_menu_item_spec(generate_survival_curve_from_hand_annotations,"&Calibration/Generate Survival Curves from by hand annotations"));
 		add(ns_menu_item_spec(compare_machine_and_by_hand_annotations,"&Calibration/_Compare Storyboard annotations to fully-automated results"));
 		add(ns_menu_item_spec(generate_movement_image_analysis_optimization_data,"Calibration/_Use Storyboard Annotations to Create improved Analysis Parameter Sets/Death Time Posture Changes"));
-		add(ns_menu_item_spec(generate_movement_image_analysis_optimization_data, "Calibration/_Use Storyboard Annotations to Create improved Analysis Parameter Sets/Death Time Size Changes"));
-		add(ns_menu_item_spec(generate_movement_image_analysis_optimization_data, "Calibration/_Use Storyboard Annotations to Create improved Analysis Parameter Sets/Both Posture and Size Changes"));
+		add(ns_menu_item_spec(generate_movement_image_analysis_optimization_data, "Calibration/Use Storyboard Annotations to Create improved Analysis Parameter Sets/Death Time Size Changes"));
+		add(ns_menu_item_spec(generate_movement_image_analysis_optimization_data, "Calibration/Use Storyboard Annotations to Create improved Analysis Parameter Sets/Both Posture and Size Changes"));
+		add(ns_menu_item_spec(masks_generate_composite, "Calibration/_Define Subregions/Generate Subregion Mask Composite"));
+		add(ns_menu_item_spec(masks_generate_composite, "Calibration/_Define Subregions/(Draw Plate Locations on Subregion Mask using Photoshop)", 0, FL_MENU_INACTIVE));
+		add(ns_menu_item_spec(masks_process_composite, "Calibration/_Define Subregions/Analyze Subregion Labels Drawn on Subregion Mask Composite"));
+		add(ns_menu_item_spec(masks_submit_composite, "Calibration/_Define Subregions/_Submit Analyzed Subregion Mask Composite to Cluster"));
+
 		add(ns_menu_item_spec(test_time_path_analysis_parameters, "Calibration/Test various Position Analysis Models"));
 
 

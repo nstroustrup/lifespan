@@ -31,12 +31,17 @@ struct ns_time_element_link{
 
 struct ns_time_path_element{
 	ns_time_path_element():slowly_moving(false),inferred_animal_location(false),low_temporal_resolution(false),
-			element_before_fast_movement_cessation(false),part_of_a_multiple_worm_disambiguation_cluster(false),worm_(0),number_of_extra_worms_identified_at_location(false){}
+			element_before_fast_movement_cessation(false),part_of_a_multiple_worm_disambiguation_cluster(false),worm_(0), subregion_mask_region_id(-1),
+		subregion_mask_closest_neighbor_id(-1),
+		subregion_mask_closest_neighbor_offset(0, 0), number_of_extra_worms_identified_at_location(false){}
 	
 	ns_time_path_element(const ns_detected_worm_info * w):
 		region_position(w->region_position_in_source_image),region_size(w->region_size),
 			context_image_position(w->context_position_in_source_image),inferred_animal_location(false),
 			element_before_fast_movement_cessation(false),
+			subregion_mask_region_id(-1),
+		subregion_mask_closest_neighbor_id(-1),
+		subregion_mask_closest_neighbor_offset(0,0),
 			part_of_a_multiple_worm_disambiguation_cluster(w->part_of_a_multiple_worm_cluster),
 			context_image_size(w->context_image_size),center(w->region_position_in_source_image+w->region_size/2),slowly_moving(false),
 			low_temporal_resolution(false),worm_(w),context_image_position_in_region_vis_image(0,0),number_of_extra_worms_identified_at_location(0){
@@ -55,9 +60,15 @@ struct ns_time_path_element{
 	unsigned long number_of_extra_worms_identified_at_location;
 	bool part_of_a_multiple_worm_disambiguation_cluster;
 
+	long subregion_mask_region_id,
+		subregion_mask_closest_neighbor_id;
+	ns_vector_2i subregion_mask_closest_neighbor_offset;
+
+
 	ns_vector_2i context_image_position_in_region_vis_image;
 	bool inferred_animal_location,
 		 element_before_fast_movement_cessation;
+
 private:
 	const ns_detected_worm_info * worm_;
 };
@@ -109,7 +120,6 @@ public:
 	ns_time_path_element & element(const ns_time_element_link & e) { return timepoints[e.t_id].elements[e.index]; }
 
 	const ns_time_path_element & element(const ns_time_element_link & e) const { return timepoints[e.t_id].elements[e.index]; }
-
 	const unsigned long & time(const ns_time_element_link & e) const { return timepoints[e.t_id].time; }
 	unsigned long & time(const ns_time_element_link & e) { return timepoints[e.t_id].time; }
 
@@ -142,6 +152,7 @@ public:
 	void save_to_disk(std::ostream & o) const;
 	void load_from_disk(std::istream & o);
 	void check_for_duplicate_events();
+	bool identify_subregions_labels_from_subregion_mask(const ns_64_bit region_id, ns_sql & sql);
 
 private:
 

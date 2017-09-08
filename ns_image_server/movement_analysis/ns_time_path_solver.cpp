@@ -658,6 +658,59 @@ void ns_time_path_solution::load_from_db(const ns_64_bit region_id, ns_sql & sql
 		throw;
 	}
 }
+
+bool ns_time_path_solution::identify_subregions_labels_from_subregion_mask(const ns_64_bit region_id, ns_sql & sql) {
+	ns_image_server_captured_image_region region;
+	region.load_from_db(region_id, &sql);
+	ns_image_standard im;
+	ns_image_server_image mask_image_record;
+	
+	try {
+		mask_image_record = region.request_processed_image(ns_process_subregion_label_mask, sql);
+	}
+	catch (ns_ex & ex) {
+		return false;  //return false if no subregion mask was specified
+	}
+	ns_image_storage_source_handle<ns_8_bit> mask_image_source(image_server_const.image_storage.request_from_storage(mask_image_record, &sql));
+	mask_image_source.input_stream().pump(im, 1024);
+
+	//find centers
+	for (unsigned int y = 0; y < im.properties().height; y++) {
+		for (unsigned int x = 0; x < im.properties().width; x++) {
+			for (unsigned int i = 0; i < timepoints.size(); i++) {
+				for (unsigned int j = 0; j < timepoints[i].elements.size(); j++) {
+					if (ns_vector_2i(x, y) == timepoints[i].elements[j].center)
+						timepoints[i].elements[j].subregion_mask_region_id = im[y][x];
+				}
+			}
+		}
+	}
+
+	//find nearest neighbor
+	std::vector< std::vector<int> > min_distances;
+	for (unsigned int i = 0; i < timepoints.size(); i++)
+		min_distances[i].resize(timepoints[i].elements.size(), FLT_MAX);
+
+	for (unsigned int y = 0; y < im.properties().height; y++) {
+		for (unsigned int x = 0; x < im.properties().width; x++) {
+			const ns_8_bit cur_id = im[y][x];
+			for (unsigned int i = 0; i < timepoints.size(); i++) {
+				for (unsigned int j = 0; j < timepoints[i].elements.size(); j++) {
+					if (cur_id != timepoints[i].elements[j].subregion_mask_region_id) {
+						const int d((timepoints[i].elements[j].center - ns_vector_2i(x, y)).squared());
+						if (d < min_distances[i][j]) {
+							min_distances[i][j] = d;
+							timepoints[i].elements[j].subregion_mask_closest_neighbor_offset.x = x;
+							timepoints[i].elements[j].subregion_mask_closest_neighbor_offset.x = y;
+							timepoints[i].elements[j].subregion_mask_closest_neighbor_id = cur_id;
+						}
+					}
+				}
+			}
+		}
+	}
+	return true;
+}
 //it would be nice to use XML here but it is so verbose!
 void ns_time_path_solution::save_to_disk(ostream & o) const{
 	//output time points
@@ -686,12 +739,19 @@ void ns_time_path_solution::save_to_disk(ostream & o) const{
 //			if (timepoints[i].elements[j].element_before_fast_movement_cessation)
 //				cerr << "DKA";
 			int m = 2*(timepoints[i].elements[j].element_before_fast_movement_cessation?1:0) + (timepoints[i].elements[j].inferred_animal_location?1:0);
-			
+		
 	//		if (m != 0)
 	//			cerr << "WA";
 	//		if (m > 1)
 	//			cerr << "MA";
-			o << m << ",,,\n";
+			o << m << ",";
+			o << timepoints[i].elements[j].subregion_mask_region_id << ","
+				<< timepoints[i].elements[j].subregion_mask_closest_neighbor_id << ", "
+				<< timepoints[i].elements[j].subregion_mask_closest_neighbor_offset.x << ","
+				<< timepoints[i].elements[j].subregion_mask_closest_neighbor_offset.y << ",";
+				for (unsigned int i = 0; i < 5; i++)
+					o << ",";
+			o << "\n";
 		}
 	}
 	
@@ -728,18 +788,8 @@ void ns_time_path_solution::save_to_disk(ostream & o) const{
 			o << "," << path_groups[i].path_ids[j];
 		o << "\n";
 	}
-}/*
-class ns_get_int{
-	public:
-	template<class T>
-	inline void operator()(istream & in, T & d){
-		in >> tmp;
-		d = atol(tmp.c_str());
-	}
-	private:
-	string tmp;
-};
-*/
+}
+
 void ns_time_path_solution::check_for_duplicate_events(){
 	for (unsigned int i = 0; i < timepoints.size(); i++){
 		for (unsigned int j = 0; j < timepoints[i].elements.size(); j++){
@@ -953,8 +1003,26 @@ void ns_time_path_solution::load_from_disk(istream & in){
 					timepoints[timepoint_id].elements[s].inferred_animal_location = mm%2;
 					timepoints[timepoint_id].elements[s].element_before_fast_movement_cessation = (mm/2)%2;
 				}
+				timepoints[timepoint_id].elements[s].subregion_mask_region_id = -1;
+				timepoints[timepoint_id].elements[s].subregion_mask_closest_neighbor_id = -1;
+				timepoints[timepoint_id].elements[s].subregion_mask_closest_neighbor_offset = ns_vector_2i(0, 0);
+				
+				get_int(in, tmp);
+				if (!tmp.empty()) 
+					timepoints[timepoint_id].elements[s].subregion_mask_region_id = atol(tmp.c_str());
+				get_int(in, tmp);
+				if (!tmp.empty())
+					timepoints[timepoint_id].elements[s].subregion_mask_closest_neighbor_id = atol(tmp.c_str());
+				char delimeter = get_int(in, tmp);
+				if (delimeter == '\n')
+					continue;
+				if (!tmp.empty())
+					timepoints[timepoint_id].elements[s].subregion_mask_closest_neighbor_offset.x = atol(tmp.c_str()); 
+				if (!tmp.empty())
+					timepoints[timepoint_id].elements[s].subregion_mask_closest_neighbor_offset.y = atol(tmp.c_str());
 
-				for (unsigned int i = 0; i < 3; i++) get_int(in,tmp); //room for expansion
+				
+				for (unsigned int i = 0; i < 6; i++) get_int(in,tmp); //room for expansion
 				break;
 			}
 			case 'p':{

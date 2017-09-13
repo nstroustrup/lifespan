@@ -246,7 +246,7 @@ private:
 		float min_intensity_slope(0),  //we want to include a zero slope
 			max_intensity_slope(-FLT_MAX);
 
-		float min_raw_score, max_raw_score, second_min_raw_score;
+		float min_raw_score, max_raw_score, second_smallest_raw_score;
 		float min_time(FLT_MAX), max_time(-FLT_MAX);
 		
 		std::vector<double> scores;
@@ -256,22 +256,29 @@ private:
 		for (unsigned int i = 0; i < path->element_count(); i++) {
 			if (path->element(i).excluded)
 				continue;
-			scores.push_back(path->element(i).measurements.death_time_posture_analysis_measure_v2());
+			const double d(path->element(i).measurements.death_time_posture_analysis_measure_v2());
+			scores.push_back(d);
 		}
+		//add in threshold
+		scores.push_back(posture_analysis_model.threshold_parameters.stationary_cutoff);
+
 		std::sort(scores.begin(), scores.end());
 		min_raw_score = scores[scores.size() / 50];
-		second_min_raw_score = min_raw_score *= 1.01; //default
+		//we now want to find the second smallest score in the data set.  
+		//All data points whose value is equal to the smallest data point will be set to this value (as they are not allowed to be zero on log scale)
+		second_smallest_raw_score = min_raw_score *= 1.01; //default
 		for (int i = scores.size() / 50; i < scores.size(); i++) {
 			if (scores[i] > min_raw_score) {
-				second_min_raw_score = scores[i];
+				second_smallest_raw_score = scores[i];
 				break;
 			}
 		}
-			max_raw_score = scores[scores.size() - scores.size() / 50 - 1];
-		if (max_raw_score == min_raw_score) {
-			min_raw_score -= .01;
+		max_raw_score = scores[scores.size() - scores.size() / 50 - 1];
+		
+		//make sure the axis minimum and maximum are not equal.
+		if (second_smallest_raw_score == max_raw_score || min_raw_score == max_raw_score)
 			max_raw_score += .01;
-		}
+
 
 		//now reuse scores memory for another purpose--storing normalized movement scores.
 		scores.resize(path->element_count());
@@ -282,7 +289,7 @@ private:
 			double d(path->element(i).measurements.death_time_posture_analysis_measure_v2());
 			if (d >= max_raw_score) d = log(max_raw_score - min_raw_score);
 			else if (d <= min_raw_score)
-				d = log(second_min_raw_score - min_raw_score); //can't be zero before we take the log
+				d = log(second_smallest_raw_score - min_raw_score); //can't be zero before we take the log
 			else d = log(d - min_raw_score);
 
 			scores[i] = d;
@@ -310,11 +317,10 @@ private:
 
 		double threshold;
 		if (posture_analysis_model.threshold_parameters.stationary_cutoff >= max_raw_score)
-			threshold = max_raw_score - min_raw_score;
+			threshold = log(max_raw_score - min_raw_score);
 		else if (posture_analysis_model.threshold_parameters.stationary_cutoff <= min_raw_score)
-			threshold = second_min_raw_score - min_raw_score;
-		else threshold = posture_analysis_model.threshold_parameters.stationary_cutoff - min_raw_score;
-		threshold = log(threshold);
+			threshold = log(second_smallest_raw_score - min_raw_score);
+		else threshold = log(posture_analysis_model.threshold_parameters.stationary_cutoff - min_raw_score);
 
 
 		double min_rounded_time(DBL_MAX), max_rounded_time(DBL_MIN);

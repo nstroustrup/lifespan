@@ -37,6 +37,7 @@ void analyze_worm_movement_across_frames(const ns_processing_job & job, ns_image
 			tp_solver.load(job.region_id, sql);
 			ns_time_path_solver_parameters solver_parameters(ns_time_path_solver_parameters::default_parameters(job.region_id, sql));
 			tp_solver.solve(solver_parameters, time_path_solution, &sql);
+			time_path_solution.identify_subregions_labels_from_subregion_mask(job.region_id, sql);
 			time_path_solution.save_to_db(job.region_id, sql);
 		}
 	}
@@ -65,6 +66,8 @@ void analyze_worm_movement_across_frames(const ns_processing_job & job, ns_image
 			}
 
 			time_path_solution.fill_gaps_and_add_path_prefixes(prefix_length);
+
+			time_path_solution.identify_subregions_labels_from_subregion_mask(job.region_id, sql);
 
 			//unnecissary save, done for debug
 			//	time_path_solution.save_to_db(job.region_id,sql);

@@ -1,5 +1,5 @@
 //
-// "$Id: CodeEditor.h 9341 2012-04-13 14:45:18Z ianmacarthur $"
+// "$Id: CodeEditor.h 10672 2015-04-04 15:06:30Z matt $"
 //
 // Code editor widget for the Fast Light Tool Kit (FLTK).
 //
@@ -38,9 +38,6 @@ class CodeEditor : public Fl_Text_Editor {
   static const char * const code_types[];
 
 
-  // 'compare_keywords()' - Compare two keywords...
-  static int compare_keywords(const void *a, const void *b);
-
   // 'style_parse()' - Parse text and produce style data.
   static void style_parse(const char *text, char *style, int length);
 
@@ -74,10 +71,11 @@ class CodeViewer : public CodeEditor {
   protected:
 
   int handle(int ev) { return Fl_Text_Display::handle(ev); }
+  void draw();
 };
 
 #endif // !CodeEditor_h
 
 //
-// End of "$Id: CodeEditor.h 9341 2012-04-13 14:45:18Z ianmacarthur $".
+// End of "$Id: CodeEditor.h 10672 2015-04-04 15:06:30Z matt $".
 //

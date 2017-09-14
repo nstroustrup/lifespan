@@ -1,5 +1,5 @@
 //
-// "$Id: Fl_Printer.cxx 8864 2011-07-19 04:49:30Z greg.ercolano $"
+// "$Id: Fl_Printer.cxx 10610 2015-03-09 09:46:28Z manolo $"
 //
 // Encompasses platform-specific printing-support code and 
 // PostScript output code for the Fast Light Tool Kit (FLTK).
@@ -19,13 +19,9 @@
 
 #include <FL/Fl_Printer.H>
 
-#ifdef __APPLE__
-//#include "Fl_Quartz_Printer.mm"
-#elif defined(WIN32)
+#if defined(WIN32)
 #include "Fl_GDI_Printer.cxx"
 #endif
-
-#include "Fl_PostScript.cxx"
 
 // print dialog customization strings
 /** [this text may be customized at run-time] */
@@ -102,6 +98,18 @@ Fl_Printer::Fl_Printer(void) {
   Fl_Surface_Device::driver(printer->driver());
 }
 
+/**
+ Starts a print job.
+ Opens a platform-specific dialog window allowing the user to set several options including
+ the desired printer and the page orientation. Optionally, the user can also select a range of pages to  be
+ printed. This range is returned to the caller that is in charge of sending only these pages 
+ for printing.
+ 
+ @param[in] pagecount the total number of pages of the job (or 0 if you don't know the number of pages)
+ @param[out] frompage if non-null, *frompage is set to the first page the user wants printed
+ @param[out] topage if non-null, *topage is set to the last page the user wants printed
+ @return 0 if OK, non-zero if any error occurred or if the user cancelled the print request.
+ */
 int Fl_Printer::start_job(int pagecount, int *frompage, int *topage)
 {
   return printer->start_job(pagecount, frompage, topage);
@@ -189,5 +197,5 @@ Fl_Printer::~Fl_Printer(void)
 
 
 //
-// End of "$Id: Fl_Printer.cxx 8864 2011-07-19 04:49:30Z greg.ercolano $".
+// End of "$Id: Fl_Printer.cxx 10610 2015-03-09 09:46:28Z manolo $".
 //

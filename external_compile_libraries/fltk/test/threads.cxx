@@ -1,9 +1,9 @@
 //
-// "$Id: threads.cxx 8864 2011-07-19 04:49:30Z greg.ercolano $"
+// "$Id: threads.cxx 11094 2016-01-31 02:49:56Z AlbrechtS $"
 //
 // Threading example program for the Fast Light Tool Kit (FLTK).
 //
-// Copyright 1998-2010 by Bill Spitzak and others.
+// Copyright 1998-2016 by Bill Spitzak and others.
 //
 // This library is free software. Distribution and use rights are outlined in
 // the file "COPYING" which should have been included with this file.  If this
@@ -18,7 +18,7 @@
 
 #include <config.h>
 
-#if HAVE_PTHREAD || defined(WIN32)
+#if defined(HAVE_PTHREAD) || defined(WIN32)
 #  include <FL/Fl.H>
 #  include <FL/Fl_Double_Window.H>
 #  include <FL/Fl_Browser.H>
@@ -41,7 +41,7 @@ void magic_number_cb(void *p)
   w->redraw_label();
 }
 
-void* prime_func(void* p)
+extern "C" void* prime_func(void* p)
 {
   Fl_Browser* browser = (Fl_Browser*) p;
   Fl_Value_Output *value;
@@ -160,5 +160,5 @@ int main() {
 
 
 //
-// End of "$Id: threads.cxx 8864 2011-07-19 04:49:30Z greg.ercolano $".
+// End of "$Id: threads.cxx 11094 2016-01-31 02:49:56Z AlbrechtS $".
 //

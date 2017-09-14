@@ -1,9 +1,9 @@
 //
-// "$Id: Fl_Browser_.H 9126 2011-10-04 13:10:55Z manolo $"
+// "$Id: Fl_Browser_.H 11464 2016-03-29 11:34:10Z AlbrechtS $"
 //
 // Common browser header file for the Fast Light Tool Kit (FLTK).
 //
-// Copyright 1998-2010 by Bill Spitzak and others.
+// Copyright 1998-2016 by Bill Spitzak and others.
 //
 // This library is free software. Distribution and use rights are outlined in
 // the file "COPYING" which should have been included with this file.  If this
@@ -54,6 +54,25 @@
   useful if actually figuring out the size of an object requires
   accessing image data or doing stat() on a file or doing some
   other slow operation.
+
+  Keyboard navigation of browser items
+  ------------------------------------
+  The keyboard navigation of browser items is only possible if
+  visible_focus() is enabled. If disabled, the widget rejects keyboard focus;
+  Tab and Shift-Tab focus navigation will skip the widget.
+
+  In 'Select' and 'Normal' mode, the widget rejects keyboard focus;
+  no navigation keys are supported (other than scrollbar positioning).
+
+  In 'Hold' mode, the widget accepts keyboard focus, and Up/Down arrow
+  keys can navigate the selected item.
+
+  In 'Multi' mode, the widget accepts keyboard focus, and Up/Down arrow
+  keys navigate the focus box; Space toggles the current item's selection,
+  Enter selects only the current item (deselects all others).  If Shift
+  (or Ctrl) is combined with Up/Down arrow keys, the current item's
+  selection state is extended to the next item. In this way one can
+  extend a selection or de-selection.
 */
 class FL_EXPORT Fl_Browser_ : public Fl_Group {
   int position_;	// where user wants it scrolled to
@@ -300,7 +319,7 @@ public:
     If this value is zero (default), this widget will use the 
     Fl::scrollbar_size() value as the scrollbar's width.
   
-    \returns Scrollbar size in pixels, or 0 if the global Fl::scrollsize() is being used.
+    \returns Scrollbar size in pixels, or 0 if the global Fl::scrollbar_size() is being used.
     \see Fl::scrollbar_size(int)
   */
   int scrollbar_size() const {
@@ -365,5 +384,5 @@ public:
 #endif
 
 //
-// End of "$Id: Fl_Browser_.H 9126 2011-10-04 13:10:55Z manolo $".
+// End of "$Id: Fl_Browser_.H 11464 2016-03-29 11:34:10Z AlbrechtS $".
 //

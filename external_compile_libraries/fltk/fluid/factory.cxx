@@ -1,5 +1,5 @@
 //
-// "$Id: factory.cxx 8864 2011-07-19 04:49:30Z greg.ercolano $"
+// "$Id: factory.cxx 10611 2015-03-09 20:37:45Z AlbrechtS $"
 //
 // Widget factory code for the Fast Light Tool Kit (FLTK).
 //
@@ -36,32 +36,6 @@
 #include "Fl_Widget_Type.h"
 
 extern Fl_Pixmap *pixmap[];
-
-#if !HAVE_STRCASECMP
-//
-// 'strcasecmp()' - Do a case-insensitive compare...
-//
-
-static int
-strcasecmp(const char *s, const char *t) {
-  while (*s != '\0' && *t != '\0') {
-    if (tolower(*s) < tolower(*t))
-      return (-1);
-    else if (tolower(*s) > tolower(*t))
-      return (1);
-
-    s ++;
-    t ++;
-  }
-
-  if (*s == '\0' && *t == '\0')
-    return (0);
-  else if (*s != '\0')
-    return (1);
-  else
-    return (-1);
-}
-#endif // !HAVE_STRCASECMP
 
 ////////////////////////////////////////////////////////////////
 
@@ -193,7 +167,7 @@ static Fl_Round_Button_Type Fl_Round_Button_type;
 
 ////////////////////////////////////////////////////////////////
 
-extern int compile_only;
+extern int batch_mode;
 
 #include <FL/Fl_Browser.H>
 #include <FL/Fl_Check_Browser.H>
@@ -227,7 +201,7 @@ public:
     Fl_Browser* b = new Fl_Browser(x,y,w,h);
     // Fl_Browser::add calls fl_height(), which requires the X display open.
     // Avoid this when compiling so it works w/o a display:
-    if (!compile_only) {
+    if (!batch_mode) {
       char buffer[20];
       for (int i = 1; i <= 20; i++) {
 	sprintf(buffer,"Browser Line %d",i);
@@ -275,7 +249,7 @@ public:
     Fl_Check_Browser* b = new Fl_Check_Browser(x,y,w,h);
     // Fl_Check_Browser::add calls fl_height(), which requires the X display open.
     // Avoid this when compiling so it works w/o a display:
-    if (!compile_only) {
+    if (!batch_mode) {
       char buffer[20];
       for (int i = 1; i <= 20; i++) {
 	sprintf(buffer,"Browser Line %d",i);
@@ -311,7 +285,7 @@ public:
   virtual const char *alt_type_name() {return "fltk::TreeBrowser";}
   Fl_Widget *widget(int x,int y,int w,int h) {
     Fl_Tree* b = new Fl_Tree(x,y,w,h);
-    if (!compile_only) {
+    if (!batch_mode) {
       b->add("/A1/B1/C1");
       b->add("/A1/B1/C2");
       b->add("/A1/B2/C1");
@@ -350,7 +324,7 @@ public:
     Fl_File_Browser* b = new Fl_File_Browser(x,y,w,h);
     // Fl_File_Browser::add calls fl_height(), which requires the X display open.
     // Avoid this when compiling so it works w/o a display:
-    if (!compile_only) {
+    if (!batch_mode) {
       b->load(".");
     }
     return b;
@@ -666,7 +640,7 @@ public:
   virtual const char *alt_type_name() {return "fltk::HelpView";}
   Fl_Widget *widget(int x,int y,int w,int h) {
     Fl_Help_View *myo = new Fl_Help_View(x,y,w,h);
-    if (!compile_only) {
+    if (!batch_mode) {
       myo->value("<HTML><BODY><H1>Fl_Help_View Widget</H1>"
                  "<P>This is a Fl_Help_View widget.</P></BODY></HTML>");
     }
@@ -1118,8 +1092,8 @@ Fl_Type *Fl_Type_make(const char *tn) {
     Fl_Menu_Item *m = New_Menu+i;
     if (!m->user_data()) continue;
     Fl_Type *t = (Fl_Type*)(m->user_data());
-    if (!strcasecmp(tn,t->type_name())) {r = t->make(); break;}
-    if (!strcasecmp(tn,t->alt_type_name())) {r = t->make(); break;}
+    if (!fl_ascii_strcasecmp(tn,t->type_name())) {r = t->make(); break;}
+    if (!fl_ascii_strcasecmp(tn,t->alt_type_name())) {r = t->make(); break;}
   }
   reading_file = 0;
   return r;
@@ -1259,11 +1233,11 @@ static symbol table[] = {
 int lookup_symbol(const char *name, int &v, int numberok) {
   if (name[0]=='F' && name[1]=='L' && name[2]=='_') name += 3;
   for (int i=0; i < int(sizeof(table)/sizeof(*table)); i++)
-    if (!strcasecmp(name,table[i].name)) {v = table[i].value; return 1;}
+    if (!fl_ascii_strcasecmp(name,table[i].name)) {v = table[i].value; return 1;}
   if (numberok && ((v = atoi(name)) || !strcmp(name,"0"))) return 1;
   return 0;
 }
 
 //
-// End of "$Id: factory.cxx 8864 2011-07-19 04:49:30Z greg.ercolano $".
+// End of "$Id: factory.cxx 10611 2015-03-09 20:37:45Z AlbrechtS $".
 //

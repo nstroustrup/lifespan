@@ -1,5 +1,5 @@
 //
-// "$Id: Fl_Spinner.H 9706 2012-11-06 20:46:14Z matt $"
+// "$Id: Fl_Spinner.H 10300 2014-09-12 09:08:41Z AlbrechtS $"
 //
 // Spinner widget for the Fast Light Tool Kit (FLTK).
 //
@@ -43,7 +43,7 @@
   \image latex Fl_Spinner.png "Fl_Spinner widget" width=6cm
 */
 class FL_EXPORT Fl_Spinner : public Fl_Group {
-  
+ 
   double	value_;			// Current value
   double	minimum_;		// Minimum value
   double	maximum_;		// Maximum value
@@ -92,25 +92,26 @@ private:
 		    sb->update();
 		  }
 
+		  sb->set_changed();
 		  sb->do_callback();
 		}
   void		update() {
 		  char s[255];		// Value string
 
-                  if (format_[0]=='%'&&format_[1]=='.'&&format_[2]=='*') {  // precision argument
-                    // this code block is a simplified version of
-                    // Fl_Valuator::format() and works well (but looks ugly)
-                    int c = 0;
-                    char temp[64], *sp = temp;
-                    sprintf(temp, "%.12f", step_);
-                    while (*sp) sp++;
-                    sp--;
-                    while (sp>temp && *sp=='0') sp--;
-                    while (sp>temp && (*sp>='0' && *sp<='9')) { sp--; c++; }
+		  if (format_[0]=='%'&&format_[1]=='.'&&format_[2]=='*') {  // precision argument
+		    // this code block is a simplified version of
+		    // Fl_Valuator::format() and works well (but looks ugly)
+		    int c = 0;
+		    char temp[64], *sp = temp;
+		    sprintf(temp, "%.12f", step_);
+		    while (*sp) sp++;
+		    sp--;
+		    while (sp>temp && *sp=='0') sp--;
+		    while (sp>temp && (*sp>='0' && *sp<='9')) { sp--; c++; }
 		    sprintf(s, format_, c, value_);
-                  } else {
+		  } else {
 		    sprintf(s, format_, value_);
-                  }
+		  }
 		  input_.value(s);
 		}
 
@@ -171,9 +172,9 @@ private:
 		                      H / 2 + 2, H / 2);
 		}
   /**
-    Sets or returns the amount to change the value when the user clicks a button. 
-    Before setting step to a non-integer value, the spinner 
-    type() should be changed to floating point. 
+    Sets or returns the amount to change the value when the user clicks a button.
+    Before setting step to a non-integer value, the spinner
+    type() should be changed to floating point.
   */
   double	step() const { return (step_); }
   /** See double Fl_Spinner::step() const */
@@ -208,29 +209,29 @@ private:
 		  input_.textsize(s);
 		}
   /** Gets the numeric representation in the input field.
-   \see Fl_Spinner::type(uchar) 
+   \see Fl_Spinner::type(uchar)
   */
   uchar		type() const { return (input_.type()); }
   /** Sets the numeric representation in the input field.
    Valid values are FL_INT_INPUT and FL_FLOAT_INPUT.
    Also changes the format() template.
    Setting a new spinner type via a superclass pointer will not work.
-   \note  type is not a virtual function. 
+   \note  type is not a virtual function.
    */
-  void		type(uchar v) { 
-                  if (v==FL_FLOAT_INPUT) {
-                    format("%.*f");
-                  } else {
-                    format("%.0f");
-                  }
-                  input_.type(v); 
-                }
+  void		type(uchar v) {
+		  if (v==FL_FLOAT_INPUT) {
+		    format("%.*f");
+		  } else {
+		    format("%.0f");
+		  }
+		  input_.type(v);
+		}
   /** Gets the current value of the widget. */
   double	value() const { return (value_); }
   /**
     Sets the current value of the widget.
-    Before setting value to a non-integer value, the spinner 
-    type() should be changed to floating point. 
+    Before setting value to a non-integer value, the spinner
+    type() should be changed to floating point.
   */
   void		value(double v) { value_ = v; update(); }
   /**
@@ -241,10 +242,18 @@ private:
     Return the background color of the spinner widget's input field.
   */
   Fl_Color	color() const { return(input_.color()); }
+  /**
+    Change the selection color of the spinner widget's input field.
+  */
+  void		selection_color(Fl_Color val) { input_.selection_color(val); }
+  /**
+    Return the selection color of the spinner widget's input field.
+  */
+  Fl_Color	selection_color() const { return input_.selection_color(); }
 };
 
 #endif // !Fl_Spinner_H
 
 //
-// End of "$Id: Fl_Spinner.H 9706 2012-11-06 20:46:14Z matt $".
+// End of "$Id: Fl_Spinner.H 10300 2014-09-12 09:08:41Z AlbrechtS $".
 //

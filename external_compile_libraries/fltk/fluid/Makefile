@@ -1,9 +1,9 @@
 #
-# "$Id: Makefile 8864 2011-07-19 04:49:30Z greg.ercolano $"
+# "$Id: Makefile 11816 2016-07-17 19:51:54Z greg.ercolano $"
 #
 # FLUID makefile for the Fast Light Tool Kit (FLTK).
 #
-# Copyright 1998-2010 by Bill Spitzak and others.
+# Copyright 1998-2016 by Bill Spitzak and others.
 #
 # This library is free software. Distribution and use rights are outlined in
 # the file "COPYING" which should have been included with this file.  If this
@@ -18,6 +18,8 @@
 
 CPPFILES = \
 	CodeEditor.cxx \
+	ExternalCodeEditor_UNIX.cxx \
+	ExternalCodeEditor_WIN32.cxx \
 	Fl_Function_Type.cxx \
 	Fl_Group_Type.cxx \
 	Fl_Menu_Type.cxx \
@@ -48,16 +50,16 @@ all:	$(FLUID) fluid$(EXEEXT)
 fluid$(EXEEXT):		$(OBJECTS) $(LIBNAME) $(FLLIBNAME) \
 			$(IMGLIBNAME)
 	echo Linking $@...
-	$(CXX) $(ARCHFLAGS) $(LDFLAGS) -o $@ $(OBJECTS) $(LINKFLTKFORMS) $(LINKFLTKIMG) $(LDLIBS)
+	$(CXX) $(ARCHFLAGS) $(CXXFLAGS) $(LDFLAGS) -o $@ $(OBJECTS) $(LINKFLTKFORMS) $(LINKFLTKIMG) $(LDLIBS)
 	$(OSX_ONLY) $(INSTALL_BIN) fluid fluid.app/Contents/MacOS
 
 fluid-shared$(EXEEXT):	$(OBJECTS) ../src/$(DSONAME) ../src/$(FLDSONAME) \
 			../src/$(IMGDSONAME)
 	echo Linking $@...
-	$(CXX) $(ARCHFLAGS) $(LDFLAGS) -o $@ $(OBJECTS) $(LINKSHARED) $(LDLIBS)
+	$(CXX) $(ARCHFLAGS) $(CXXFLAGS) $(LDFLAGS) -o $@ $(OBJECTS) $(LINKSHARED) $(LDLIBS)
 
 clean:
-	-$(RM) *.o core.* *~ *.bck *.bck
+	-$(RM) *.o core.* *~ *.bck *.bak
 	-$(RM) core fluid$(EXEEXT) fluid-shared$(EXEEXT)
 	-$(RM) fluid.app/Contents/MacOS/fluid$(EXEEXT)
 
@@ -122,5 +124,5 @@ rebuild:
 	./fluid -c widget_panel.fl
 
 #
-# End of "$Id: Makefile 8864 2011-07-19 04:49:30Z greg.ercolano $".
+# End of "$Id: Makefile 11816 2016-07-17 19:51:54Z greg.ercolano $".
 #

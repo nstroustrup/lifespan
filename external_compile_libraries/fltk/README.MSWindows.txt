@@ -1,4 +1,4 @@
-README.MSWindows.txt - 2010-10-25 - Building FLTK under Microsoft Windows
+README.MSWindows.txt - 2016-10-16 - Building FLTK under Microsoft Windows
 -------------------------------------------------------------------------
 
 
@@ -25,7 +25,7 @@ README.MSWindows.txt - 2010-10-25 - Building FLTK under Microsoft Windows
     3.5   Testing FLTK
     3.6   Installing FLTK
     3.7   Creating new Projects
-  4   HOW TO BUILD FLTK USING VISUAL STUDIO 2010
+  4   HOW TO BUILD FLTK USING VISUAL STUDIO 2010 OR LATER
     4.1   Prerequisites
     4.2   Downloading and Unpacking
     4.3   Configuring FLTK
@@ -44,16 +44,17 @@ README.MSWindows.txt - 2010-10-25 - Building FLTK under Microsoft Windows
 FLTK 1.3 and later is officially supported on Windows (2000,) 2003,
 XP, and later.  Older Windows versions are not officially supported,
 but may still work.  The main reason is that the OS version needs
-to support UTF-8. FLTK 1.3 is known to work on Windows 7 and Vista.
+to support UTF-8. FLTK 1.3 is known to work on Windows Vista, Windows 7,
+Windows 8/8.1, and Windows 10.
 
 FLTK currently supports the following development
 environments on the Windows platform:
 
-    - Free Microsoft Visual C++ 2008 Express and Visual
-      C++ 2010 Express using the supplied workspace and
-      project files. Older and the commercial versions can
-      be used as well, if they can open the project files.
-      Be sure to get your service packs!
+    - Free Microsoft Visual C++ 2008 Express and Visual C++ 2010 Express
+      using the supplied workspace and project files. Older and the
+      commercial versions can be used as well, if they can open the project
+      files. Visual C++ 2015 Express/Community can be used with the
+      Visual C++ 2010 project files. Be sure to get your service packs!
 
       The project files can be found in the ide/ directory.
       Please read ide/README.IDE for more info about this.
@@ -214,9 +215,11 @@ in my dev directory:
  Configuring FLTK
 ------------------
 
-Stay in your FLTK source-code directory. Type:
+If you got FLTK via subversion then you need one extra step. Otherwise skip
+over this part. Stay in your FLTK source-code directory and type the
+following:
 
-  autoconf
+  NOCONFIGURE=1 ./autogen.sh
 
 Now configure your FLTK installation:
 
@@ -239,6 +242,24 @@ linking:
 :END_ADVANCED
 
 
+Known Problems:
+
+  There is a known incompatibility with some Windows subversion tools that
+  may not set the correct line endings for autoconf. If you get strange
+  error messages when running ./configure or make, you may need to convert
+  configh.in to "Unix line endings" (LF-only). These error messages are
+  unspecific, e.g. compilation errors like:
+
+     error: 'U32' does not name a type
+     error: 'bmibuffer' was not declared in this scope
+
+  You can fix the line endings with the MinGW/msys tool 'unix2dos' (u2d)
+  or with your favorite editor, if it allows to change the line endings,
+  then run autoconf and ./configure again.
+  For further information see this bug report:
+     http://www.fltk.org/newsgroups.php?gfltk.bugs+v:10197
+
+
  Building FLTK
 ---------------
 
@@ -248,12 +269,6 @@ Now this is easy. Stay in your FLTK source-code directory and type:
 
 The entire FLTK toolkit including many test programs will be built for you.
 No warnings should appear.
-
-(actually, as of Oct 25 2010, quite a lot of warnings related to suggested
-parentheses and others will appear, this is normal and will be fixed. The
-linker will also spit out a bunch of warnings for every program linked. This
-needs to be fixed. Lastly, there is no generator for man pages in a default
-MinGW installation, but you can install man and groff to fix this.)
 
 
  Testing FLTK
@@ -371,6 +386,9 @@ without adding link and include paths to the solution.
 
   copy the entire FL directory into the include path
 
+  add all files from ide\VisualC2008\FL to the FL directory copied above
+    (this is currently only one file: abi-version.h)
+
   copy all .lib files from the fltk lib directory to the VC lib directory
 
   copy fluid.exe in the fluid directory to the bin directory
@@ -414,16 +432,16 @@ is changed, the corresponding .cxx file will be recompiled.
 
 
 
- HOW TO BUILD FLTK USING VISUAL STUDIO 2010
-============================================
+ HOW TO BUILD FLTK USING VISUAL STUDIO 2010 OR LATER
+====================================================
 
 
  Prerequisites
 ---------------
 
-In order to build FLTK from within VisualStudio 2010, you need to install the
-VisualC developer environment from the Microsoft web site. The Express edition
-is free of charge and sufficient to develop FLTK applications:
+In order to build FLTK from within VisualStudio 2010 or later, you need to
+install the VisualC developer environment from the Microsoft web site. The
+Express edition is free of charge and sufficient to develop FLTK applications:
 
   http://www.microsoft.com/express/Downloads/
 
@@ -482,6 +500,9 @@ without adding link and include paths to the solution.
 
   copy the entire FL directory into the include path
 
+  add all files from ide\VisualC2010\FL to the FL directory copied above
+    (this is currently only one file: abi-version.h)
+
   copy all .lib files from the fltk lib directory to the VC lib directory
 
   copy fluid.exe in the fluid directory to the bin directory
@@ -535,7 +556,7 @@ is changed, the corresponding .cxx file will be recompiled.
 
 Windows has a flag that determines whether an application
 runs in the foreground with a console or in the background
-without a console. 
+without a console.
 
 If you're using gcc (i.e. MinGW or Cygwin), then use the
 linker option "-mwindows" to make your application run in

@@ -1,5 +1,5 @@
 //
-// "$Id: tree-as-container.cxx 9377 2012-04-22 13:40:02Z greg.ercolano $"
+// "$Id: tree-as-container.cxx 11731 2016-05-11 22:39:13Z greg.ercolano $"
 //
 //	Fl_Tree as a container of FLTK widgets. - erco 04/15/2012
 //
@@ -32,12 +32,12 @@ class MyData : public Fl_Group {
     Fl_Input *fields[MAX_FIELDS];
 public:
     MyData(int X,int Y,int W,int H) : Fl_Group(X,Y,W,H) {
-	static int colors[MAX_FIELDS] = {
+	static unsigned int colors[MAX_FIELDS] = {
 	    0xffffdd00, 0xffdddd00, 0xddffff00, 0xddffdd00, 0xddddff00
 	};
         for ( int t=0; t<MAX_FIELDS; t++ ) {
 	    fields[t] = new Fl_Input(X+t*FIELD_WIDTH,Y,FIELD_WIDTH,H);
-	    fields[t]->color(colors[t]);
+	    fields[t]->color(Fl_Color(colors[t]));
 	}
 	end();
     }
@@ -86,5 +86,5 @@ int main(int argc, char *argv[]) {
 }
 
 //
-// End of "$Id: tree-as-container.cxx 9377 2012-04-22 13:40:02Z greg.ercolano $".
+// End of "$Id: tree-as-container.cxx 11731 2016-05-11 22:39:13Z greg.ercolano $".
 //

@@ -1,9 +1,9 @@
 //
-// "$Id: threads.h 8864 2011-07-19 04:49:30Z greg.ercolano $"
+// "$Id: threads.h 11094 2016-01-31 02:49:56Z AlbrechtS $"
 //
 // Simple threading API for the Fast Light Tool Kit (FLTK).
 //
-// Copyright 1998-2010 by Bill Spitzak and others.
+// Copyright 1998-2016 by Bill Spitzak and others.
 //
 // This library is free software. Distribution and use rights are outlined in
 // the file "COPYING" which should have been included with this file.  If this
@@ -34,14 +34,17 @@
 #ifndef Threads_H
 #  define Threads_H
 
-#  if HAVE_PTHREAD_H
+#  ifdef HAVE_PTHREAD_H
 // Use POSIX threading...
 
 #    include <pthread.h>
 
 typedef pthread_t Fl_Thread;
+extern "C" {
+  typedef void *(Fl_Thread_Func)(void *);
+}
 
-static int fl_create_thread(Fl_Thread& t, void *(*f) (void *), void* p) {
+static int fl_create_thread(Fl_Thread& t, Fl_Thread_Func* f, void* p) {
   return pthread_create((pthread_t*)&t, 0, f, p);
 }
 
@@ -51,8 +54,11 @@ static int fl_create_thread(Fl_Thread& t, void *(*f) (void *), void* p) {
 #    include <process.h>
 
 typedef unsigned long Fl_Thread;
+extern "C" {
+  typedef void *(__cdecl Fl_Thread_Func)(void *);
+}
 
-static int fl_create_thread(Fl_Thread& t, void *(*f) (void *), void* p) {
+static int fl_create_thread(Fl_Thread& t, Fl_Thread_Func* f, void* p) {
   return t = (Fl_Thread)_beginthread((void( __cdecl * )( void * ))f, 0, p);
 }
 
@@ -60,13 +66,16 @@ static int fl_create_thread(Fl_Thread& t, void *(*f) (void *), void* p) {
 #    include <process.h>
 
 typedef unsigned long Fl_Thread;
+extern "C" {
+  typedef void *(__cdecl Fl_Thread_Func)(void *);
+}
 
-static int fl_create_thread(Fl_Thread& t, void *(*f) (void *), void* p) {
+static int fl_create_thread(Fl_Thread& t, Fl_Thread_Func* f, void* p) {
   return t = (Fl_Thread)_beginthread((void(* )( void * ))f, 32000, p);
 }
 #  endif // !HAVE_PTHREAD_H
 #endif // !Threads_h
 
 //
-// End of "$Id: threads.h 8864 2011-07-19 04:49:30Z greg.ercolano $".
+// End of "$Id: threads.h 11094 2016-01-31 02:49:56Z AlbrechtS $".
 //

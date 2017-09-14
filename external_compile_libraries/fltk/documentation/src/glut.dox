@@ -37,6 +37,7 @@ to compile:
 \li \p glutGet(GLUT_SCREEN_WIDTH_MM)
 \li \p glutGet(GLUT_WINDOW_NUM_CHILDREN)
 \li \p glutInitDisplayMode(GLUT_LUMINANCE)
+\li \p glutKeyboardUpFunc(void(*callback)(unsigned char key, int x, int y))
 \li \p glutLayerGet(GLUT_HAS_OVERLAY)
 \li \p glutLayerGet(GLUT_LAYER_IN_USE)
 \li \p glutPushWindow()
@@ -138,7 +139,7 @@ or make the window current.
 
 <tt>window->make_current()</tt> is the same as \p glutSetWindow(number).
 If the window has not had \p show() called on it yet, some functions
-that assumme an OpenGL context will not work. 
+that assume an OpenGL context will not work. 
 If you do \p show() the window, call \p make_current()
 again to set the context.
 
@@ -214,7 +215,7 @@ Fl_Glut_Window::Fl_Glut_Window(int w, int h, const char *title = 0)
 The first constructor takes 4 int arguments to create the window with
 a preset position and size.  The second constructor with 2 arguments
 will create the window with a preset size, but the window manager will
-choose the position according to it's own whims.
+choose the position according to its own whims.
 
 virtual Fl_Glut_Window::~Fl_Glut_Window()
 

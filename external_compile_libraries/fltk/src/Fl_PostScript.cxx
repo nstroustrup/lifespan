@@ -1,9 +1,9 @@
 //
-// "$Id: Fl_PostScript.cxx 9630 2012-06-28 08:38:14Z manolo $"
+// "$Id: Fl_PostScript.cxx 10645 2015-03-21 08:45:42Z manolo $"
 //
 // PostScript device support for the Fast Light Tool Kit (FLTK).
 //
-// Copyright 2010-2011 by Bill Spitzak and others.
+// Copyright 2010-2015 by Bill Spitzak and others.
 //
 // This library is free software. Distribution and use rights are outlined in
 // the file "COPYING" which should have been included with this file.  If this
@@ -16,6 +16,7 @@
 //     http://www.fltk.org/str.php
 //
 
+#include <FL/Fl_Printer.H>
 #include <config.h>
 #include <FL/Fl.H>
 #include <FL/fl_ask.H>
@@ -23,6 +24,7 @@
 #include <stdio.h>
 #include <FL/Fl_PostScript.H>
 #include <FL/Fl_Native_File_Chooser.H>
+#include <stdarg.h>
 #if defined(USE_X11)
 #include "Fl_Font.H"
 #if USE_XFT
@@ -94,7 +96,7 @@ int Fl_PostScript_File_Device::start_job (int pagecount, enum Fl_Paged_Device::P
   // Show native chooser
   if ( fnfc.show() ) return 1;
   Fl_PostScript_Graphics_Driver *ps = driver();
-  ps->output = fopen(fnfc.filename(), "w");
+  ps->output = fl_fopen(fnfc.filename(), "w");
   if(ps->output == NULL) return 2;
   ps->ps_filename_ = strdup(fnfc.filename());
   ps->start_postscript(pagecount, format, layout);
@@ -102,9 +104,11 @@ int Fl_PostScript_File_Device::start_job (int pagecount, enum Fl_Paged_Device::P
   return 0;
 }
 
-static int dont_close(FILE *f) 
-{
-  return 0;
+extern "C" {
+  static int dont_close(FILE *f)
+  {
+    return 0;
+  }
 }
 
 /**
@@ -129,12 +133,36 @@ int Fl_PostScript_File_Device::start_job (FILE *ps_output, int pagecount,
   return 0;
 }
 
+/** Don't use with this class. */
+int Fl_PostScript_File_Device::start_job(int pagecount, int* from, int* to)
+{
+  return 1;
+}
+
 /**
  @brief The destructor.
  */
 Fl_PostScript_File_Device::~Fl_PostScript_File_Device() {
   Fl_PostScript_Graphics_Driver *ps = driver();
   if (ps) delete ps;
+}
+
+/** Shields output PostScript data from modifications of the current locale.
+ It typically avoids PostScript errors caused if the current locale uses comma instead of dot
+ as "decimal point".
+ \param format  directives controlling output PostScript data
+ \return value returned by vfprintf() call
+ */
+int Fl_PostScript_Graphics_Driver::clocale_printf(const char *format, ...)
+{
+  char *saved_locale = setlocale(LC_NUMERIC, NULL);
+  setlocale(LC_NUMERIC, "C");
+  va_list args;
+  va_start(args, format);
+  int retval = vfprintf(output, format, args);
+  va_end(args);
+  setlocale(LC_NUMERIC, saved_locale);
+  return retval;
 }
 
 #ifndef FL_DOXYGEN
@@ -208,13 +236,15 @@ static const char * prolog =
 "/GL { setgray } bind def\n"
 "/SRGB { setrgbcolor } bind def\n"
 
+"/A85RLE { /ASCII85Decode filter /RunLengthDecode filter } bind def\n" // ASCII85Decode followed by RunLengthDecode filters
+
 //  color images 
 
 "/CI { GS /py exch def /px exch def /sy exch def /sx exch def\n"
 "translate \n"
 "sx sy scale px py 8 \n"
 "[ px 0 0 py neg 0 py ]\n"
-"currentfile /ASCIIHexDecode filter\n false 3"
+"currentfile A85RLE\n false 3"
 " colorimage GR\n"
 "} bind def\n"
 
@@ -226,7 +256,7 @@ static const char * prolog =
 
 
 "[ px 0 0 py neg 0 py ]\n"
-"currentfile /ASCIIHexDecode filter\n"
+"currentfile A85RLE\n"
 "image GR\n"
 "} bind def\n"
 
@@ -236,7 +266,7 @@ static const char * prolog =
 "translate \n"
 "sx sy scale px py true \n"
 "[ px 0 0 py neg 0 py ]\n"
-"currentfile /ASCIIHexDecode filter\n"
+"currentfile A85RLE\n"
 "imagemask GR\n"
 "} bind def\n"
 
@@ -287,7 +317,7 @@ static const char * prolog_2 =  // prolog relevant only if lang_level >1
 "/Height py def\n"
 "/BitsPerComponent 8 def\n"
 "/Interpolate inter def\n"
-"/DataSource currentfile /ASCIIHexDecode filter def\n"
+"/DataSource currentfile A85RLE def\n"
 "/MultipleDataSources false def\n"
 "/ImageMatrix [ px 0 0 py neg 0 py ] def\n"
 "/Decode [ 0 1 0 1 0 1 ] def\n"
@@ -307,7 +337,7 @@ static const char * prolog_2 =  // prolog relevant only if lang_level >1
 "/BitsPerComponent 8 def\n"
 
 "/Interpolate inter def\n"
-"/DataSource currentfile /ASCIIHexDecode filter def\n"
+"/DataSource currentfile A85RLE def\n"
 "/MultipleDataSources false def\n"
 "/ImageMatrix [ px 0 0 py neg 0 py ] def\n"
 "/Decode [ 0 1 ] def\n"
@@ -412,7 +442,7 @@ static const char * prolog_2_pixmap =  // prolog relevant only if lang_level == 
 "pixmap_w pixmap_h scale "
 "pixmap_sx pixmap_sy 8 "
 "pixmap_mat "
-"currentfile /ASCIIHexDecode filter "
+"currentfile A85RLE "
 "false 3 "
 "colorimage "
 "end "
@@ -430,7 +460,7 @@ static const char * prolog_2_pixmap =  // prolog relevant only if lang_level == 
 "pixmap_sx pixmap_sy\n"
 "true\n"
 "pixmap_mat\n"
-"currentfile /ASCIIHexDecode filter\n"
+"currentfile A85RLE\n"
 "imagemask\n"
 "GR\n"
 "} bind def\n"
@@ -452,7 +482,7 @@ static const char * prolog_3 = // prolog relevant only if lang_level >2
 "/Height py def\n"
 "/BitsPerComponent 8 def\n"
 "/Interpolate inter def\n"
-"/DataSource currentfile /ASCIIHexDecode filter def\n"
+"/DataSource currentfile A85RLE def\n"
 "/MultipleDataSources false def\n"
 "/ImageMatrix [ px 0 0 py neg 0 py ] def\n"
 
@@ -493,7 +523,7 @@ static const char * prolog_3 = // prolog relevant only if lang_level >2
 "/Height py def\n"
 "/BitsPerComponent 8 def\n"
 "/Interpolate inter def\n"
-"/DataSource currentfile /ASCIIHexDecode filter def\n"
+"/DataSource currentfile A85RLE def\n"
 "/MultipleDataSources false def\n"
 "/ImageMatrix [ px 0 0 py neg 0 py ] def\n"
 
@@ -652,7 +682,7 @@ void Fl_PostScript_Graphics_Driver::page(double pw, double ph, int media) {
   
   fprintf(output, "save\n");
   fprintf(output, "GS\n");
-  fprintf(output, "%g %g TR\n", (double)0 /*lm_*/ , ph_ /* - tm_*/);
+  clocale_printf( "%g %g TR\n", (double)0 /*lm_*/ , ph_ /* - tm_*/);
   fprintf(output, "1 -1 SC\n");
   line_style(0);
   fprintf(output, "GS\n");
@@ -701,7 +731,7 @@ void Fl_PostScript_Graphics_Driver::rect(int x, int y, int w, int h) {
 }
 
 void Fl_PostScript_Graphics_Driver::rectf(int x, int y, int w, int h) {
-  fprintf(output, "%g %g %i %i FR\n", x-0.5, y-0.5, w, h);
+  clocale_printf( "%g %g %i %i FR\n", x-0.5, y-0.5, w, h);
 }
 
 void Fl_PostScript_Graphics_Driver::line(int x1, int y1, int x2, int y2) {
@@ -831,7 +861,7 @@ void Fl_PostScript_Graphics_Driver::point(int x, int y){
   rectf(x,y,1,1);
 }
 
-static int dashes_flat[5][7]={
+static const int dashes_flat[5][7]={
 {-1,0,0,0,0,0,0},
 {3,1,-1,0,0,0,0},
 {1,1,-1,0,0,0,0},
@@ -841,7 +871,7 @@ static int dashes_flat[5][7]={
 
 
 //yeah, hack...
-static double dashes_cap[5][7]={
+static const double dashes_cap[5][7]={
 {-1,0,0,0,0,0,0},
 {2,2,-1,0,0,0,0},
 {0.01,1.99,-1,0,0,0,0},
@@ -890,16 +920,15 @@ void Fl_PostScript_Graphics_Driver::line_style(int style, int width, char* dashe
       dashes++;
     }
   }else{
-    int * ds; 
     if(style & 0x200){ // round and square caps, dash length need to be adjusted
-      double *dt = dashes_cap[style & 0xff];
+      const double *dt = dashes_cap[style & 0xff];
       while (*dt >= 0){
-	fprintf(output, "%g ",width * (*dt));
-	dt++;
+        clocale_printf("%g ",width * (*dt));
+        dt++;
       }
     }else{
       
-      ds = dashes_flat[style & 0xff];
+      const int *ds = dashes_flat[style & 0xff];
       while (*ds >= 0){
 	fprintf(output, "%i ",width * (*ds));
         ds++;
@@ -954,12 +983,16 @@ void Fl_PostScript_Graphics_Driver::font(int f, int s) {
     }
 #endif // USE_XFT
 #endif // USE_X11
-    fprintf(output,"%.1f FS\n", ps_size);
+    clocale_printf("%.1f FS\n", ps_size);
   }
 }
 
 double Fl_PostScript_Graphics_Driver::width(const char *s, int n) {
   return Fl_Display_Device::display_device()->driver()->width(s, n);
+}
+
+double Fl_PostScript_Graphics_Driver::width(unsigned u) {
+  return Fl_Display_Device::display_device()->driver()->width(u);
 }
 
 int Fl_PostScript_Graphics_Driver::height() {
@@ -985,13 +1018,13 @@ void Fl_PostScript_Graphics_Driver::color(unsigned char r, unsigned char g, unsi
   cr_ = r; cg_ = g; cb_ = b;
   if (r == g && g == b) {
     double gray = r/255.0;
-    fprintf(output, "%g GL\n", gray);
+    clocale_printf("%g GL\n", gray);
   } else {
     double fr, fg, fb;
     fr = r/255.0;
     fg = g/255.0;
     fb = b/255.0;
-    fprintf(output, "%g %g %g SRGB\n", fr , fg , fb);
+    clocale_printf("%g %g %g SRGB\n", fr , fg , fb);
   }
 }
 
@@ -1034,20 +1067,20 @@ static uchar *calc_mask(uchar *img, int w, int h, Fl_Color bg)
 }
 
 // write to PostScript a bitmap image of a UTF8 string
-static void transformed_draw_extra(const char* str, int n, double x, double y, int w, 
-      FILE *output, Fl_Graphics_Driver *driver, bool rtl) {
+void Fl_PostScript_Graphics_Driver::transformed_draw_extra(const char* str, int n, double x, double y, int w, bool rtl)
+{
   // scale for bitmask computation
 #if defined(USE_X11) && !USE_XFT
   float scale = 1; // don't scale because we can't expect to have scalable fonts
 #else
   float scale = 2;
 #endif
-  Fl_Fontsize old_size = driver->size();
-  Fl_Font fontnum = driver->font();
+  Fl_Fontsize old_size = size();
+  Fl_Font fontnum = Fl_Graphics_Driver::font();
   int w_scaled =  (int)(w * (scale + 0.5));
-  int h = (int)(driver->height() * scale);
+  int h = (int)(height() * scale);
   // create an offscreen image of the string
-  Fl_Color text_color = driver->color();
+  Fl_Color text_color = Fl_Graphics_Driver::color();
   Fl_Color bg_color = fl_contrast(FL_WHITE, text_color);
   Fl_Offscreen off = fl_create_offscreen(w_scaled, (int)(h+3*scale) );
   fl_begin_offscreen(off);
@@ -1068,26 +1101,25 @@ static void transformed_draw_extra(const char* str, int n, double x, double y, i
   // read (most of) the offscreen image
   uchar *img = fl_read_image(NULL, 1, 1, w2, h, 0);
   fl_end_offscreen();
-  driver->font(fontnum, old_size);
+  font(fontnum, old_size);
   fl_delete_offscreen(off);
   // compute the mask of what is not the background
   uchar *mask = calc_mask(img, w2, h, bg_color);
   delete[] img;
   // write the string image to PostScript as a scaled bitmask
   scale = w2 / float(w);
-  fprintf(output, "%g %g %g %g %d %d MI\n", x, y - h*0.77/scale, w2/scale, h/scale, w2, h);
+  clocale_printf("%g %g %g %g %d %d MI\n", x, y - h*0.77/scale, w2/scale, h/scale, w2, h);
   uchar *di;
   int wmask = (w2+7)/8;
+  void *rle85 = prepare_rle85();
   for (int j = h - 1; j >= 0; j--){
     di = mask + j * wmask;
     for (int i = 0; i < wmask; i++){
-      //if (!(i%80)) fprintf(output, "\n"); // don't have lines longer than 255 chars
-      fprintf(output, "%2.2x", *di );
+      write_rle85(*di, rle85);
       di++;
     }
-    fprintf(output,"\n");
   }
-  fprintf(output,">\n");
+  close_rle85(rle85); fputc('\n', output);
   delete[] mask;
 }
 
@@ -1121,10 +1153,11 @@ void Fl_PostScript_Graphics_Driver::transformed_draw(const char* str, int n, dou
   int w = (int)width(str, n);
   if (w == 0) return;
   if (Fl_Graphics_Driver::font() >= FL_FREE_FONT) {
-    transformed_draw_extra(str, n, x, y, w, output, this, false);
+    transformed_draw_extra(str, n, x, y, w, false);
     return;
     }
-  fprintf(output, "%d <", w);
+  fprintf(output, "%d <~", w);
+  void *data = prepare85();
   // transforms UTF8 encoding to our custom PostScript encoding as follows:
   // extract each unicode character
   // if unicode <= 0x17F, unicode and PostScript codes are identical
@@ -1145,26 +1178,28 @@ void Fl_PostScript_Graphics_Driver::transformed_draw(const char* str, int n, dou
       utf = code;
       }
     else { // unhandled character: draw all string as bitmap image
-      fprintf(output, "> pop pop\n"); // close and ignore the opened hex string
-      transformed_draw_extra(str, n, x, y, w, output, this, false);
+      fprintf(output, "~> pop pop\n"); // close and ignore the opened hex string
+      transformed_draw_extra(str, n, x, y, w, false);
       return;
     }
-    fprintf(output, "%4.4X", utf);
+    // 2 bytes per character, high-order byte first, encode that to ASCII85
+    uchar c[2]; c[1] = utf & 0xFF; c[0] = (utf & 0xFF00)>>8; write85(data, c, 2);
   }
-  fprintf(output, "> %g %g show_pos_width\n", x, y);
+  close85(data);
+  clocale_printf(" %g %g show_pos_width\n", x, y);
 }
 
 void Fl_PostScript_Graphics_Driver::rtl_draw(const char* str, int n, int x, int y) {
   int w = (int)width(str, n);
-  transformed_draw_extra(str, n, x - w, y, w, output, this, true);
+  transformed_draw_extra(str, n, x - w, y, w, true);
 }
 
 void Fl_PostScript_Graphics_Driver::concat(){
-  fprintf(output,"[%g %g %g %g %g %g] CT\n", fl_matrix->a , fl_matrix->b , fl_matrix->c , fl_matrix->d , fl_matrix->x , fl_matrix->y);
+  clocale_printf("[%g %g %g %g %g %g] CT\n", fl_matrix->a , fl_matrix->b , fl_matrix->c , fl_matrix->d , fl_matrix->x , fl_matrix->y);
 }
 
 void Fl_PostScript_Graphics_Driver::reconcat(){
-  fprintf(output, "[%g %g %g %g %g %g] RCT\n" , fl_matrix->a , fl_matrix->b , fl_matrix->c , fl_matrix->d , fl_matrix->x , fl_matrix->y);
+  clocale_printf("[%g %g %g %g %g %g] RCT\n" , fl_matrix->a , fl_matrix->b , fl_matrix->c , fl_matrix->d , fl_matrix->x , fl_matrix->y);
 }
 
 /////////////////  transformed (double) drawings ////////////////////////////////
@@ -1205,26 +1240,26 @@ void Fl_PostScript_Graphics_Driver::begin_polygon(){
 
 void Fl_PostScript_Graphics_Driver::vertex(double x, double y){
   if(shape_==POINTS){
-    fprintf(output,"%g %g MT\n", x , y);
+    clocale_printf("%g %g MT\n", x , y);
     gap_=1;
     return;
   }
   if(gap_){
-    fprintf(output,"%g %g MT\n", x , y);
+    clocale_printf("%g %g MT\n", x , y);
     gap_=0;
   }else
-    fprintf(output, "%g %g LT\n", x , y);
+    clocale_printf("%g %g LT\n", x , y);
 }
 
 void Fl_PostScript_Graphics_Driver::curve(double x, double y, double x1, double y1, double x2, double y2, double x3, double y3){
   if(shape_==NONE) return;
   if(gap_)
-    fprintf(output,"%g %g MT\n", x , y);
+    clocale_printf("%g %g MT\n", x , y);
   else
-    fprintf(output, "%g %g LT\n", x , y);
+    clocale_printf("%g %g LT\n", x , y);
   gap_=0;
   
-  fprintf(output, "%g %g %g %g %g %g curveto \n", x1 , y1 , x2 , y2 , x3 , y3);
+  clocale_printf("%g %g %g %g %g %g curveto \n", x1 , y1 , x2 , y2 , x3 , y3);
 }
 
 
@@ -1233,13 +1268,13 @@ void Fl_PostScript_Graphics_Driver::circle(double x, double y, double r){
     fprintf(output, "GS\n");
     concat();
     //    fprintf(output, "BP\n");
-    fprintf(output,"%g %g %g 0 360 arc\n", x , y , r);
+    clocale_printf("%g %g %g 0 360 arc\n", x , y , r);
     reconcat();
     //    fprintf(output, "ELP\n");
     fprintf(output, "GR\n");
   }else
     
-    fprintf(output, "%g %g %g 0 360 arc\n", x , y , r);
+    clocale_printf("%g %g %g 0 360 arc\n", x , y , r);
   
 }
 
@@ -1247,22 +1282,23 @@ void Fl_PostScript_Graphics_Driver::arc(double x, double y, double r, double sta
   if(shape_==NONE) return;
   gap_=0;
   if(start>a)
-    fprintf(output, "%g %g %g %g %g arc\n", x , y , r , -start, -a);
+    clocale_printf("%g %g %g %g %g arc\n", x , y , r , -start, -a);
   else
-    fprintf(output, "%g %g %g %g %g arcn\n", x , y , r , -start, -a);
+    clocale_printf("%g %g %g %g %g arcn\n", x , y , r , -start, -a);
   
 }
 
 void Fl_PostScript_Graphics_Driver::arc(int x, int y, int w, int h, double a1, double a2) {
+  if (w <= 1 || h <= 1) return;
   fprintf(output, "GS\n");
   //fprintf(output, "BP\n");
   begin_line();
-  fprintf(output, "%g %g TR\n", x + w/2.0 -0.5 , y + h/2.0 - 0.5);
-  fprintf(output, "%g %g SC\n", (w-1)/2.0 , (h-1)/2.0 );
+  clocale_printf("%g %g TR\n", x + w/2.0 -0.5 , y + h/2.0 - 0.5);
+  clocale_printf("%g %g SC\n", (w-1)/2.0 , (h-1)/2.0 );
   arc(0,0,1,a2,a1);
   //  fprintf(output, "0 0 1 %g %g arc\n" , -a1 , -a2);
-  fprintf(output, "%g %g SC\n", 2.0/(w-1) , 2.0/(h-1) );
-  fprintf(output, "%g %g TR\n", -x - w/2.0 +0.5 , -y - h/2.0 +0.5);
+  clocale_printf("%g %g SC\n", 2.0/(w-1) , 2.0/(h-1) );
+  clocale_printf("%g %g TR\n", -x - w/2.0 +0.5 , -y - h/2.0 +0.5);
   end_line();
   
   //  fprintf(output, "%g setlinewidth\n",  2/sqrt(w*h));
@@ -1275,8 +1311,8 @@ void Fl_PostScript_Graphics_Driver::arc(int x, int y, int w, int h, double a1, d
 void Fl_PostScript_Graphics_Driver::pie(int x, int y, int w, int h, double a1, double a2) {
   fprintf(output, "GS\n");
   begin_polygon();
-  fprintf(output, "%g %g TR\n", x + w/2.0 -0.5 , y + h/2.0 - 0.5);
-  fprintf(output, "%g %g SC\n", (w-1)/2.0 , (h-1)/2.0 );
+  clocale_printf("%g %g TR\n", x + w/2.0 -0.5 , y + h/2.0 - 0.5);
+  clocale_printf("%g %g SC\n", (w-1)/2.0 , (h-1)/2.0 );
   vertex(0,0);
   arc(0.0,0.0, 1, a2, a1);
   end_polygon();
@@ -1318,10 +1354,10 @@ void Fl_PostScript_Graphics_Driver::end_polygon(){
 void Fl_PostScript_Graphics_Driver::transformed_vertex(double x, double y){
   reconcat();
   if(gap_){
-    fprintf(output, "%g %g MT\n", x , y);
+    clocale_printf("%g %g MT\n", x , y);
     gap_=0;
   }else
-    fprintf(output, "%g %g LT\n", x , y);
+    clocale_printf("%g %g LT\n", x , y);
   concat();
 }
 
@@ -1335,7 +1371,7 @@ void Fl_PostScript_Graphics_Driver::push_clip(int x, int y, int w, int h) {
   fprintf(output, "CR\nCS\n");
   if(lang_level_<3)
     recover();
-  fprintf(output, "%g %g %i %i CL\n", clip_->x-0.5 , clip_->y-0.5 , clip_->w  , clip_->h);
+  clocale_printf("%g %g %i %i CL\n", clip_->x-0.5 , clip_->y-0.5 , clip_->w  , clip_->h);
   
 }
 
@@ -1356,7 +1392,7 @@ void Fl_PostScript_Graphics_Driver::pop_clip() {
   delete c;
   fprintf(output, "CR\nCS\n");
   if(clip_ && clip_->w >0)
-    fprintf(output, "%g %g %i %i CL\n", clip_->x - 0.5, clip_->y - 0.5, clip_->w  , clip_->h);
+    clocale_printf("%g %g %i %i CL\n", clip_->x - 0.5, clip_->y - 0.5, clip_->w  , clip_->h);
   // uh, -0.5 is to match screen clipping, for floats there should be something beter
   if(lang_level_<3)
     recover();
@@ -1407,7 +1443,6 @@ int Fl_PostScript_Graphics_Driver::not_clipped(int x, int y, int w, int h){
   return 0;
 }
 
-
 void Fl_PostScript_File_Device::margins(int *left, int *top, int *right, int *bottom) // to implement
 {
   Fl_PostScript_Graphics_Driver *ps = driver();
@@ -1436,7 +1471,7 @@ void Fl_PostScript_File_Device::origin(int x, int y)
   x_offset = x;
   y_offset = y;
   Fl_PostScript_Graphics_Driver *ps = driver();
-  fprintf(ps->output, "GR GR GS %d %d TR  %f %f SC %d %d TR %f rotate GS\n", 
+  ps->clocale_printf("GR GR GS %d %d TR  %f %f SC %d %d TR %f rotate GS\n",
 	  ps->left_margin, ps->top_margin, ps->scale_x, ps->scale_y, x, y, ps->angle);
 }
 
@@ -1446,7 +1481,7 @@ void Fl_PostScript_File_Device::scale (float s_x, float s_y)
   Fl_PostScript_Graphics_Driver *ps = driver();
   ps->scale_x = s_x;
   ps->scale_y = s_y;
-  fprintf(ps->output, "GR GR GS %d %d TR  %f %f SC %f rotate GS\n", 
+  ps->clocale_printf("GR GR GS %d %d TR  %f %f SC %f rotate GS\n",
 	  ps->left_margin, ps->top_margin, ps->scale_x, ps->scale_y, ps->angle);
 }
 
@@ -1454,7 +1489,7 @@ void Fl_PostScript_File_Device::rotate (float rot_angle)
 {
   Fl_PostScript_Graphics_Driver *ps = driver();
   ps->angle = - rot_angle;
-  fprintf(ps->output, "GR GR GS %d %d TR  %f %f SC %d %d TR %f rotate GS\n", 
+  ps->clocale_printf("GR GR GS %d %d TR  %f %f SC %d %d TR %f rotate GS\n",
 	  ps->left_margin, ps->top_margin, ps->scale_x, ps->scale_y, x_offset, y_offset, ps->angle);
 }
 
@@ -1516,14 +1551,17 @@ void Fl_PostScript_File_Device::end_job (void)
   Fl_Display_Device::display_device()->set_current();
 }
 
+#endif // FL_DOXYGEN
+
 #if ! (defined(__APPLE__) || defined(WIN32) )
+/** Starts a print job. */
 int Fl_PostScript_Printer::start_job(int pages, int *firstpage, int *lastpage) {
   enum Fl_Paged_Device::Page_Format format;
   enum Fl_Paged_Device::Page_Layout layout;
 
   // first test version for print dialog
   if (!print_panel) make_print_panel();
-  print_load();
+  printing_style style = print_load();
   print_selection->deactivate();
   print_all->setonly();
   print_all->do_callback();
@@ -1577,7 +1615,7 @@ int Fl_PostScript_Printer::start_job(int pages, int *firstpage, int *lastpage) {
     if (to < from) to = from;
     if (firstpage) *firstpage = from;
     if (lastpage) *lastpage = to;
-    pages = to - from + 1;
+    if (pages > 0) pages = to - from + 1;
   }
   
   if (print_output_mode[0]->value()) layout = Fl_Paged_Device::PORTRAIT;
@@ -1597,9 +1635,10 @@ int Fl_PostScript_Printer::start_job(int pages, int *firstpage, int *lastpage) {
   // Print: pipe the output into the lp command...
 
   char command[1024];
-  snprintf(command, sizeof(command), "lp -s -d %s -n %d -t '%s' -o media=%s",
-             printer, print_collate_button->value() ? 1 : (int)(print_copies->value() + 0.5),
-	     "FLTK", media);
+  if (style == SystemV) snprintf(command, sizeof(command), "lp -s -d %s -n %d -t '%s' -o media=%s",
+        printer, print_collate_button->value() ? 1 : (int)(print_copies->value() + 0.5), "FLTK", media);
+  else snprintf(command, sizeof(command), "lpr -h -P%s -#%d -T FLTK ",
+                printer, print_collate_button->value() ? 1 : (int)(print_copies->value() + 0.5));
 
   Fl_PostScript_Graphics_Driver *ps = driver();
   ps->output = popen(command, "w");
@@ -1614,8 +1653,7 @@ int Fl_PostScript_Printer::start_job(int pages, int *firstpage, int *lastpage) {
 
 #endif // ! (defined(__APPLE__) || defined(WIN32) )
 
-#endif // FL_DOXYGEN
 
 //
-// End of "$Id: Fl_PostScript.cxx 9630 2012-06-28 08:38:14Z manolo $".
+// End of "$Id: Fl_PostScript.cxx 10645 2015-03-21 08:45:42Z manolo $".
 //

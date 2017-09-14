@@ -1,5 +1,5 @@
 //
-// "$Id: Fl_Tree_Prefs.H 9706 2012-11-06 20:46:14Z matt $"
+// "$Id: Fl_Tree_Prefs.H 10723 2015-04-28 19:39:53Z greg.ercolano $"
 //
 
 #ifndef FL_TREE_PREFS_H
@@ -11,7 +11,7 @@
 // FL/Fl_Tree_Prefs.H
 //////////////////////
 //
-// Fl_Tree -- This file is part of the Fl_Tree widget for FLTK
+// Fl_Tree_Prefs -- This file is part of the Fl_Tree widget for FLTK
 // Copyright (C) 2009-2010 by Greg Ercolano.
 //
 // This library is free software. Distribution and use rights are outlined in
@@ -67,8 +67,10 @@ enum Fl_Tree_Connector {
 enum Fl_Tree_Select {
   FL_TREE_SELECT_NONE=0,	///< Nothing selected when items are clicked
   FL_TREE_SELECT_SINGLE=1,	///< Single item selected when item is clicked (default)
-  FL_TREE_SELECT_MULTI=2	///< Multiple items can be selected by clicking
+  FL_TREE_SELECT_MULTI=2,	///< Multiple items can be selected by clicking
   				///< with SHIFT, CTRL or mouse drags.
+  FL_TREE_SELECT_SINGLE_DRAGGABLE=3 ///< Single items may be selected, and they may be
+                                     ///< reordered by mouse drag.
 };
 
 #if FLTK_ABI_VERSION >= 10301
@@ -92,6 +94,11 @@ enum Fl_Tree_Item_Draw_Mode {
   FL_TREE_ITEM_HEIGHT_FROM_WIDGET=2	///< If widget() defined, widget()'s height controls item's height
 };
 #endif /*FLTK_ABI_VERSION*/
+
+#if FLTK_ABI_VERSION >= 10303
+class Fl_Tree_Item;
+typedef void (Fl_Tree_Item_Draw_Callback)(Fl_Tree_Item*, void*);
+#endif
 
 /// \class Fl_Tree_Prefs
 ///
@@ -125,6 +132,11 @@ class FL_EXPORT Fl_Tree_Prefs {
   Fl_Image *_openimage;			// the 'open' icon [+]
   Fl_Image *_closeimage;		// the 'close' icon [-]
   Fl_Image *_userimage;			// user's own icon
+#if FLTK_ABI_VERSION >= 10304
+  Fl_Image *_opendeimage;		// deactivated 'open' icon
+  Fl_Image *_closedeimage;		// deactivated 'close' icon
+  Fl_Image *_userdeimage;		// deactivated user icon
+#endif
   char _showcollapse;			// 1=show collapse icons, 0=don't
   char _showroot;			// show the root item as part of the tree
   Fl_Tree_Sort   _sortorder;		// none, ascening, descending, etc.
@@ -134,8 +146,15 @@ class FL_EXPORT Fl_Tree_Prefs {
   Fl_Tree_Item_Reselect_Mode _itemreselectmode;	// controls item selection callback() behavior
   Fl_Tree_Item_Draw_Mode     _itemdrawmode;	// controls how items draw label + widget()
 #endif /*FLTK_ABI_VERSION*/
+#if FLTK_ABI_VERSION >= 10303
+  Fl_Tree_Item_Draw_Callback *_itemdrawcallback;	// callback to handle drawing items (0=none)
+  void                       *_itemdrawuserdata;	// data for drawing items (0=none)
+#endif
 public:
   Fl_Tree_Prefs();
+#if FLTK_ABI_VERSION >= 10304
+  ~Fl_Tree_Prefs();
+#endif
   
   ////////////////////////////
   // Labels
@@ -329,7 +348,35 @@ public:
   ///
   inline void usericon(Fl_Image *val) {
     _userimage = val;
+#if FLTK_ABI_VERSION >= 10304
+    // Update deactivated version of icon..
+    if ( _userdeimage ) delete _userdeimage;
+    if ( _userimage ) {
+      _userdeimage = _userimage->copy();
+      _userdeimage->inactive();
+    } else {
+      _userdeimage = 0;
+    }
+#endif
   }
+
+#if FLTK_ABI_VERSION >= 10304
+  /// Return the deactivated version of the open icon, if any.
+  /// Returns 0 if none.
+  inline Fl_Image *opendeicon() const {
+    return _opendeimage;
+  }
+  /// Return the deactivated version of the close icon, if any.
+  /// Returns 0 if none.
+  inline Fl_Image *closedeicon() const {
+    return _closedeimage;
+  }
+  /// Return the deactivated version of the user icon, if any.
+  /// Returns 0 if none.
+  inline Fl_Image *userdeicon() const {
+    return _userdeimage;
+  }
+#endif
   
   ////////////////////////////
   // Options
@@ -412,11 +459,26 @@ public:
   inline void item_draw_mode(Fl_Tree_Item_Draw_Mode val) {
     _itemdrawmode = val;
   }
-#endif /*FLTK_ABI_VERSION*/
+#endif
+#if FLTK_ABI_VERSION >= 10303
+  void item_draw_callback(Fl_Tree_Item_Draw_Callback *cb, void *data=0) {
+    _itemdrawcallback = cb;
+    _itemdrawuserdata = data;
+  }
+  Fl_Tree_Item_Draw_Callback* item_draw_callback() const {
+    return(_itemdrawcallback);
+  }
+  void* item_draw_user_data() const {
+    return(_itemdrawuserdata);
+  }
+  void do_item_draw_callback(Fl_Tree_Item *o) const {
+    _itemdrawcallback(o, _itemdrawuserdata);
+  }
+#endif
 };
 
 #endif /*FL_TREE_PREFS_H*/
 
 //
-// End of "$Id: Fl_Tree_Prefs.H 9706 2012-11-06 20:46:14Z matt $".
+// End of "$Id: Fl_Tree_Prefs.H 10723 2015-04-28 19:39:53Z greg.ercolano $".
 //

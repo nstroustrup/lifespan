@@ -1,9 +1,9 @@
 /*
- * "$Id: flstring.h 9573 2012-06-06 03:38:02Z fabien $"
+ * "$Id: flstring.h 11094 2016-01-31 02:49:56Z AlbrechtS $"
  *
  * Common string header file for the Fast Light Tool Kit (FLTK).
  *
- * Copyright 1998-2010 by Bill Spitzak and others.
+ * Copyright 1998-2016 by Bill Spitzak and others.
  *
  * This library is free software. Distribution and use rights are outlined in
  * the file "COPYING" which should have been included with this file.  If this
@@ -39,7 +39,7 @@
 #    undef index
 #  endif /* index */
 
-#  if defined(WIN32) && !defined(__CYGWIN__)
+#  if defined(WIN32) && !defined(__CYGWIN__) && !defined(__MINGW32__)
 #    define strcasecmp(s,t)	_stricmp((s), (t))
 #    define strncasecmp(s,t,n)	_strnicmp((s), (t), (n))
 /* Visual C++ 2005 incorrectly displays a warning about the use of POSIX APIs
@@ -60,12 +60,12 @@ extern "C" {
 #  endif /* __cplusplus */
 
 FL_EXPORT extern int fl_snprintf(char *, size_t, const char *, ...);
-#  if !HAVE_SNPRINTF
+#  ifndef HAVE_SNPRINTF
 #    define snprintf fl_snprintf
 #  endif /* !HAVE_SNPRINTF */
 
 FL_EXPORT extern int fl_vsnprintf(char *, size_t, const char *, va_list ap);
-#  if !HAVE_VSNPRINTF
+#  ifndef HAVE_VSNPRINTF
 #    define vsnprintf fl_vsnprintf
 #  endif /* !HAVE_VSNPRINTF */
 
@@ -75,12 +75,12 @@ FL_EXPORT extern int fl_vsnprintf(char *, size_t, const char *, va_list ap);
  */
 
 FL_EXPORT extern size_t fl_strlcat(char *, const char *, size_t);
-#  if !HAVE_STRLCAT
+#  ifndef HAVE_STRLCAT
 #    define strlcat fl_strlcat
 #  endif /* !HAVE_STRLCAT */
 
 FL_EXPORT extern size_t fl_strlcpy(char *, const char *, size_t);
-#  if !HAVE_STRLCPY
+#  ifndef HAVE_STRLCPY
 #    define strlcpy fl_strlcpy
 #  endif /* !HAVE_STRLCPY */
 
@@ -97,5 +97,5 @@ FL_EXPORT extern int fl_ascii_strcasecmp(const char *s, const char *t);
 #endif /* !flstring_h */
 
 /*
- * End of "$Id: flstring.h 9573 2012-06-06 03:38:02Z fabien $".
+ * End of "$Id: flstring.h 11094 2016-01-31 02:49:56Z AlbrechtS $".
  */

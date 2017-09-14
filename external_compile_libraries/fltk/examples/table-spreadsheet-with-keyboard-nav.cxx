@@ -1,5 +1,5 @@
 //
-// "$Id: table-spreadsheet-with-keyboard-nav.cxx 8864 2011-07-19 04:49:30Z greg.ercolano $"
+// "$Id: table-spreadsheet-with-keyboard-nav.cxx 9838 2013-03-18 20:00:04Z greg.ercolano $"
 //
 //	Simple example of an interactive spreadsheet using Fl_Table.
 //	Uses Mr. Satan's technique of instancing an Fl_Input around.
@@ -290,6 +290,7 @@ void setrows_cb(Fl_Widget* w, void* v) {
 }
 
 int main() {
+  Fl::option(Fl::OPTION_ARROW_FOCUS, 1);		// we want arrow keys to navigate table's widgets
   Fl_Double_Window *win = new Fl_Double_Window(922, 382, "Fl_Table Spreadsheet with Keyboard Navigation");
   Spreadsheet* table = new Spreadsheet(20, 20, win->w()-80, win->h()-80);
   // Table rows
@@ -337,5 +338,5 @@ int main() {
 }
 
 //
-// End of "$Id: table-spreadsheet-with-keyboard-nav.cxx 8864 2011-07-19 04:49:30Z greg.ercolano $".
+// End of "$Id: table-spreadsheet-with-keyboard-nav.cxx 9838 2013-03-18 20:00:04Z greg.ercolano $".
 //

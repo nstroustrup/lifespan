@@ -1,9 +1,9 @@
 //
-// "$Id: CodeEditor.cxx 9341 2012-04-13 14:45:18Z ianmacarthur $"
+// "$Id: CodeEditor.cxx 11952 2016-09-20 12:57:18Z AlbrechtS $"
 //
 // Code editor widget for the Fast Light Tool Kit (FLTK).
 //
-// Copyright 1998-2010 by Bill Spitzak and others.
+// Copyright 1998-2016 by Bill Spitzak and others.
 //
 // This library is free software. Distribution and use rights are outlined in
 // the file "COPYING" which should have been included with this file.  If this
@@ -126,8 +126,10 @@ void CodeEditor::textsize(Fl_Fontsize s) {
 
 
 // 'compare_keywords()' - Compare two keywords...
-int CodeEditor::compare_keywords(const void *a, const void *b) {
-  return (strcmp(*((const char **)a), *((const char **)b)));
+extern "C" {
+  static int compare_keywords(const void *a, const void *b) {
+    return strcmp(*((const char **)a), *((const char **)b));
+  }
 }
 
 // 'style_parse()' - Parse text and produce style data.
@@ -177,7 +179,9 @@ void CodeEditor::style_parse(const char *text, char *style, int length) {
         // Might be a keyword...
 	for (temp = text, bufptr = buf;
 	     (islower(*temp) || *temp == '_') && bufptr < (buf + sizeof(buf) - 1);
-	     *bufptr++ = *temp++);
+	     *bufptr++ = *temp++) {
+	  // nothing
+	}
 
         if (!islower(*temp) && *temp != '_') {
 	  *bufptr = '\0';
@@ -303,6 +307,14 @@ void CodeEditor::style_update(int pos, int nInserted, int nDeleted,
   // style character and keep updating if we have a multi-line
   // comment character...
   start = editor->mBuffer->line_start(pos);
+  // the following code checks the style of the last character of the previous
+  // line. If it is a block comment, the previous line is interpreted as well.
+  int altStart = editor->mBuffer->prev_char(start);
+  if (altStart>0) {
+    altStart = editor->mBuffer->prev_char(altStart);
+    if (altStart>=0 && editor->mStyleBuffer->byte_at(start-2)=='C')
+      start = editor->mBuffer->line_start(altStart);
+  }
   end   = editor->mBuffer->line_end(pos + nInserted);
   text  = editor->mBuffer->text_range(start, end);
   style = editor->mStyleBuffer->text_range(start, end);
@@ -347,7 +359,7 @@ int CodeEditor::auto_indent(int, CodeEditor* e) {
   char *text = e->buffer()->text_range(start, pos);
   char *ptr;
 
-  for (ptr = text; isspace(*ptr); ptr ++);
+  for (ptr = text; isspace(*ptr); ptr ++) {/*empty*/}
   *ptr = '\0';  
   if (*text) {
     // use only a single 'insert' call to avoid redraw issues
@@ -415,6 +427,16 @@ CodeViewer::CodeViewer(int X, int Y, int W, int H, const char *L)
   cursor_style(CARET_CURSOR);
 }
 
+
+void CodeViewer::draw()
+{
+  // Tricking Fl_Text_Display into using bearable colors for this specific task
+  Fl_Color c = Fl::get_color(FL_SELECTION_COLOR);
+  Fl::set_color(FL_SELECTION_COLOR, fl_color_average(FL_BACKGROUND_COLOR, FL_FOREGROUND_COLOR, 0.9f));
+  CodeEditor::draw();
+  Fl::set_color(FL_SELECTION_COLOR, c);
+}
+
 //
-// End of "$Id: CodeEditor.cxx 9341 2012-04-13 14:45:18Z ianmacarthur $".
+// End of "$Id: CodeEditor.cxx 11952 2016-09-20 12:57:18Z AlbrechtS $".
 //

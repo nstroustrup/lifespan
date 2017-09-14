@@ -1,5 +1,5 @@
 //
-// "$Id: table-spreadsheet.cxx 8864 2011-07-19 04:49:30Z greg.ercolano $"
+// "$Id: table-spreadsheet.cxx 10835 2015-08-19 21:38:17Z greg.ercolano $"
 //
 //	Simple example of an interactive spreadsheet using Fl_Table.
 //	Uses Mr. Satan's technique of instancing an Fl_Input around.
@@ -52,10 +52,13 @@ public:
     input->callback(input_cb, (void*)this);
     input->when(FL_WHEN_ENTER_KEY_ALWAYS);		// callback triggered when user hits Enter
     input->maximum_size(5);
+    input->color(FL_YELLOW);
     for (int c = 0; c < MAX_COLS; c++)
       for (int r = 0; r < MAX_ROWS; r++)
 	values[r][c] = c + (r*MAX_COLS);		// initialize cells
     end();
+    row_edit = col_edit = 0;
+    set_selection(0,0,0,0);
   }
   ~Spreadsheet() { }
 
@@ -72,6 +75,7 @@ public:
   void start_editing(int R, int C) {
     row_edit = R;					// Now editing this row/col
     col_edit = C;
+    set_selection(R,C,R,C);				// Clear any previous multicell selection
     int X,Y,W,H;
     find_cell(CONTEXT_CELL, R,C, X,Y,W,H);		// Find X/Y/W/H of cell
     input->resize(X,Y,W,H);				// Move Fl_Input widget there
@@ -156,9 +160,9 @@ void Spreadsheet::draw_cell(TableContext context, int R,int C, int X,int Y,int W
       }
       // Background
       if ( C < cols()-1 && R < rows()-1 ) {
-	fl_draw_box(FL_THIN_UP_BOX, X,Y,W,H, FL_WHITE);
+	fl_draw_box(FL_THIN_UP_BOX, X,Y,W,H, is_selected(R,C) ? FL_YELLOW : FL_WHITE);
       } else {
-	fl_draw_box(FL_THIN_UP_BOX, X,Y,W,H, 0xbbddbb00);	// money green
+	fl_draw_box(FL_THIN_UP_BOX, X,Y,W,H, is_selected(R,C) ? 0xddffdd00 : 0xbbddbb00);	// money green
       }
       // Text
       fl_push_clip(X+3, Y+3, W-6, H-6);
@@ -184,6 +188,14 @@ void Spreadsheet::draw_cell(TableContext context, int R,int C, int X,int Y,int W
       return;
     }
 
+    case CONTEXT_RC_RESIZE:			// table resizing rows or columns
+      if ( input->visible() ) {
+        find_cell(CONTEXT_TABLE, row_edit, col_edit, X, Y, W, H);
+        input->resize(X,Y,W,H);
+        init_sizes();
+      }
+      return;
+
     default:
       return;
   }
@@ -206,11 +218,18 @@ void Spreadsheet::event_callback2() {
 
 	case FL_KEYBOARD:				// key press in table?
 	  if ( Fl::event_key() == FL_Escape ) exit(0);	// ESC closes app
-	  if (C == cols()-1 || R == rows()-1) return;	// no editing of totals column
 	  done_editing();				// finish any previous editing
-	  start_editing(R,C);				// start new edit
-	  if (Fl::event() == FL_KEYBOARD && Fl::e_text[0] != '\r') {
-	    input->handle(Fl::event());			// pass keypress to input widget
+	  if (C==cols()-1 || R==rows()-1) return;	// no editing of totals column
+	  switch ( Fl::e_text[0] ) {
+	    case '0': case '1': case '2': case '3':	// any of these should start editing new cell
+	    case '4': case '5': case '6': case '7':
+	    case '8': case '9': case '+': case '-':
+	      start_editing(R,C);			// start new edit
+	      input->handle(Fl::event());		// pass typed char to input
+	      break;
+	    case '\r': case '\n':			// let enter key edit the cell
+	      start_editing(R,C);			// start new edit
+	      break;
 	  }
 	  return;
       }
@@ -231,6 +250,11 @@ void Spreadsheet::event_callback2() {
 int main() {
   Fl_Double_Window *win = new Fl_Double_Window(862, 322, "Fl_Table Spreadsheet");
   Spreadsheet *table = new Spreadsheet(10, 10, win->w()-20, win->h()-20);
+#if FLTK_ABI_VERSION >= 10303
+  table->tab_cell_nav(1);		// enable tab navigation of table cells (instead of fltk widgets)
+#endif
+  table->tooltip("Use keyboard to navigate cells:\n"
+                 "Arrow keys or Tab/Shift-Tab");
   // Table rows
   table->row_header(1);
   table->row_header_width(70);
@@ -251,5 +275,5 @@ int main() {
 }
 
 //
-// End of "$Id: table-spreadsheet.cxx 8864 2011-07-19 04:49:30Z greg.ercolano $".
+// End of "$Id: table-spreadsheet.cxx 10835 2015-08-19 21:38:17Z greg.ercolano $".
 //

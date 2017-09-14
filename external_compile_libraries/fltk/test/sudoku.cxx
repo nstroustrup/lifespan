@@ -1,5 +1,5 @@
 //
-// "$Id: sudoku.cxx 8864 2011-07-19 04:49:30Z greg.ercolano $"
+// "$Id: sudoku.cxx 11535 2016-04-05 21:12:49Z AlbrechtS $"
 //
 // Sudoku game using the Fast Light Tool Kit (FLTK).
 //
@@ -90,6 +90,9 @@ class SudokuSound {
   // Private, OS-specific data...
 #ifdef __APPLE__
   AudioDeviceID device;
+#ifndef MAC_OS_X_VERSION_10_5
+#define MAC_OS_X_VERSION_10_5 1050
+#endif
 #  if MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_5
   AudioDeviceIOProcID audio_proc_id;
 #  endif
@@ -415,8 +418,9 @@ SudokuSound::audio_cb(AudioDeviceID device,
 }
 #endif // __APPLE__
 
+#define NOTE_DURATION 50
 
-// Play a note for 250ms...
+// Play a note for <NOTE_DURATION> ms...
 void SudokuSound::play(char note) {
   Fl::check();
 
@@ -426,7 +430,7 @@ void SudokuSound::play(char note) {
   remaining = sample_size * 2;
 
   // Wait for the sound to complete...
-  usleep(50000);
+  usleep(NOTE_DURATION*1000);
 
 #elif defined(WIN32)
   if (sample_size) {
@@ -434,8 +438,8 @@ void SudokuSound::play(char note) {
 
     waveOutWrite(device, header_ptr, sizeof(WAVEHDR));
 
-    Sleep(50);
-  } else Beep(frequencies[note - 'A'], 50);
+    Sleep(NOTE_DURATION);
+  } else Beep(frequencies[note - 'A'], NOTE_DURATION);
 
 #else
 #  ifdef HAVE_ALSA_ASOUNDLIB_H
@@ -445,7 +449,7 @@ void SudokuSound::play(char note) {
       snd_pcm_prepare(handle);
       snd_pcm_writei(handle, sample_data[note - 'A'], sample_size);
     }
-    usleep(50000);
+    usleep(NOTE_DURATION*1000);
     return;
   }
 #  endif // HAVE_ALSA_ASOUNDLIB_H
@@ -460,7 +464,7 @@ void SudokuSound::play(char note) {
   // Sound a tone for the given note...
   control.bell_percent  = 100;
   control.bell_pitch    = frequencies[note - 'A'];
-  control.bell_duration = 50;
+  control.bell_duration = NOTE_DURATION;
 
   XChangeKeyboardControl(fl_display,
                          KBBellPercent | KBBellPitch | KBBellDuration,
@@ -1019,7 +1023,7 @@ Sudoku::load_game() {
  
       sprintf(name, "readonly%d.%d", j, k);
       prefs_.get(name, val, 0);
-      cell->readonly(val);
+      cell->readonly(val != 0);
 
       if (val) cell->color(FL_GRAY);
       else {
@@ -1080,7 +1084,7 @@ Sudoku::new_game(time_t seed) {
 
   // Generate a new (valid) Sudoku grid...
   seed_ = seed;
-  srand(seed);
+  srand((unsigned int)seed);
 
   memset(grid_values_, 0, sizeof(grid_values_));
 
@@ -1171,7 +1175,7 @@ Sudoku::new_game(time_t seed) {
 // Return the next available value for a cell...
 int
 Sudoku::next_value(SudokuCell *c) {
-  int	j, k, m, n;
+  int	j = 0, k = 0, m = 0, n = 0;
 
 
   for (j = 0; j < 9; j ++) {
@@ -1333,5 +1337,5 @@ main(int argc, char *argv[]) {
 
 
 //
-// End of "$Id: sudoku.cxx 8864 2011-07-19 04:49:30Z greg.ercolano $".
+// End of "$Id: sudoku.cxx 11535 2016-04-05 21:12:49Z AlbrechtS $".
 //

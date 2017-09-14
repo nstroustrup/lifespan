@@ -1,11 +1,10 @@
 //
-// "$Id: Fl_Tree_Prefs.cxx 9706 2012-11-06 20:46:14Z matt $"
+// "$Id: Fl_Tree_Prefs.cxx 10723 2015-04-28 19:39:53Z greg.ercolano $"
 //
 
 #include <FL/Fl.H>
 #include <FL/Fl_Pixmap.H>
 #include <FL/Fl_Tree_Prefs.H>
-#include <string.h>		// strcmp
 
 //////////////////////
 // Fl_Tree_Prefs.cxx
@@ -28,7 +27,7 @@
 // INTERNAL: BUILT IN OPEN/STOW XPMS
 //    These can be replaced via prefs.openicon()/closeicon()
 //
-static const char *L_open_xpm[] = {
+static const char * const L_open_xpm[] = {
 #ifdef __APPLE__
   "11 11 2 1",
   ".  c None",
@@ -64,7 +63,7 @@ static const char *L_open_xpm[] = {
 };
 static Fl_Pixmap L_openpixmap(L_open_xpm);
 
-static const char *L_close_xpm[] = {
+static const char * const L_close_xpm[] = {
 #ifdef __APPLE__
   "11 11 2 1",
   ".  c None",
@@ -108,6 +107,16 @@ static Fl_Pixmap L_closepixmap(L_close_xpm);
 ///
 void Fl_Tree_Prefs::openicon(Fl_Image *val) {
   _openimage = val ? val : &L_openpixmap;
+#if FLTK_ABI_VERSION >= 10304
+  // Update deactivated version of icon..
+  if ( _opendeimage ) delete _opendeimage;
+  if ( _openimage ) {
+    _opendeimage = _openimage->copy();
+    _opendeimage->inactive();
+  } else {
+    _opendeimage = 0;
+  }
+#endif
 }
 
 /// Sets the icon to be used as the 'close' icon.
@@ -117,6 +126,16 @@ void Fl_Tree_Prefs::openicon(Fl_Image *val) {
 ///
 void Fl_Tree_Prefs::closeicon(Fl_Image *val) {
   _closeimage = val ? val : &L_closepixmap;
+#if FLTK_ABI_VERSION >= 10304
+  // Update deactivated version of icon..
+  if ( _closedeimage ) delete _closedeimage;
+  if ( _closeimage ) {
+    _closedeimage = _closeimage->copy();
+    _closedeimage->inactive();
+  } else {
+    _closedeimage = 0;
+  }
+#endif
 }
 
 /// Fl_Tree_Prefs constructor
@@ -146,6 +165,13 @@ Fl_Tree_Prefs::Fl_Tree_Prefs() {
   _openimage              = &L_openpixmap;
   _closeimage             = &L_closepixmap;
   _userimage              = 0;
+#if FLTK_ABI_VERSION >= 10304
+  _opendeimage = _openimage->copy();
+  _opendeimage->inactive();
+  _closedeimage = _closeimage->copy();
+  _closedeimage->inactive();
+  _userdeimage            = 0;
+#endif
   _showcollapse           = 1;
   _showroot               = 1;
   _connectorwidth         = 17;
@@ -156,16 +182,27 @@ Fl_Tree_Prefs::Fl_Tree_Prefs() {
   _itemreselectmode       = FL_TREE_SELECTABLE_ONCE;
   _itemdrawmode           = FL_TREE_ITEM_DRAW_DEFAULT;
 #endif
+#if FLTK_ABI_VERSION >= 10303
+  _itemdrawcallback       = 0;
+  _itemdrawuserdata       = 0;
+#endif
   // Let fltk's current 'scheme' affect defaults
-  if ( Fl::scheme() ) {
-    if ( strcmp(Fl::scheme(), "gtk+") == 0 ) {
-      _selectbox = _FL_GTK_THIN_UP_BOX;
-    } else if ( strcmp(Fl::scheme(), "plastic") == 0 ) {
-      _selectbox = _FL_PLASTIC_THIN_UP_BOX;
-    }
+  if (Fl::is_scheme("gtk+")) {
+    _selectbox = _FL_GTK_THIN_UP_BOX;
+  } else if (Fl::is_scheme("plastic")) {
+    _selectbox = _FL_PLASTIC_THIN_UP_BOX;
   }
 }
 
+#if FLTK_ABI_VERSION >= 10304
+/// Fl_Tree_Prefs destructor
+Fl_Tree_Prefs::~Fl_Tree_Prefs() {
+  if ( _opendeimage )  delete _opendeimage;
+  if ( _closedeimage ) delete _closedeimage;
+  if ( _userdeimage )  delete _userdeimage;
+}
+#endif
+
 //
-// End of "$Id: Fl_Tree_Prefs.cxx 9706 2012-11-06 20:46:14Z matt $".
+// End of "$Id: Fl_Tree_Prefs.cxx 10723 2015-04-28 19:39:53Z greg.ercolano $".
 //

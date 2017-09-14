@@ -1,13 +1,13 @@
 # data file for the Fltk User Interface Designer (fluid)
-version 1.0300 
-header_name {.h} 
+version 1.0304
+header_name {.h}
 code_name {.cxx}
 comment {//
-// "$Id: alignment_panel.fl 8864 2011-07-19 04:49:30Z greg.ercolano $"
+// "$Id: alignment_panel.fl 11952 2016-09-20 12:57:18Z AlbrechtS $"
 //
 // Setting and shell dialogs for the Fast Light Tool Kit (FLTK).
 //
-// Copyright 1998-2010 by Bill Spitzak and others.
+// Copyright 1998-2016 by Bill Spitzak and others.
 //
 // This library is free software. Distribution and use rights are outlined in
 // the file "COPYING" which should have been included with this file.  If this
@@ -20,50 +20,57 @@ comment {//
 //     http://www.fltk.org/str.php
 //
 } {in_source in_header
-} 
+}
 
 decl {\#include <FL/Fl_Text_Buffer.H>} {public local
-} 
+}
 
 decl {\#include <FL/Fl_Text_Display.H>} {public local
-} 
+}
 
 decl {\#include <FL/filename.H>} {public local
-} 
+}
 
 decl {\#include <FL/Fl_Preferences.H>} {private global
-} 
+}
 
 decl {\#include <FL/fl_ask.H>} {private global
-} 
+}
 
 decl {extern void load_history();} {public local
-} 
+}
 
 decl {extern void redraw_browser();} {public local
-} 
+}
 
 decl {extern int show_comments;} {public local
-} 
+}
+
+decl {extern int G_use_external_editor;} {public local
+}
+
+decl {extern char G_external_editor_command[512];} {public local
+}
 
 decl {extern int show_coredevmenus;} {public local
-} 
+}
 
 decl {extern struct Fl_Menu_Item *dbmanager_item;} {public local
-} 
+}
 
 decl {extern Fl_Preferences fluid_prefs;} {public local
-} 
+}
 
 decl {Fl_Text_Buffer *shell_run_buffer;} {public local
-} 
+}
 
-Function {make_project_window()} {} {
+Function {make_project_window()} {open
+} {
   Fl_Window project_window {
     label {Project Settings} open
-    xywh {393 460 399 252} type Double
+    xywh {396 475 399 252} type Double hide
     code0 {\#include <FL/Fl_Preferences.H>}
-    code1 {\#include <FL/Fl_Tooltip.H>} modal visible
+    code1 {\#include <FL/Fl_Tooltip.H>} modal
   } {
     Fl_Button {} {
       label Close
@@ -79,29 +86,29 @@ Function {make_project_window()} {} {
       } {
         Fl_Box {} {
           label {Use "name.ext" to set a file name or just ".ext" to set extension.}
-          xywh {100 49 236 49} align 144
+          xywh {20 49 340 49} align 148
         }
         Fl_Input header_file_input {
           label {Header File:}
           user_data 1 user_data_type {void*}
           callback header_input_cb
-          tooltip {The name of the generated header file.} xywh {99 103 272 20} box THIN_DOWN_BOX labelfont 1 when 1 textfont 4
+          tooltip {The name of the generated header file.} xywh {119 103 252 20} box THIN_DOWN_BOX labelfont 1 when 1 textfont 4
         }
         Fl_Input code_file_input {
           label {Code File:}
           user_data 1 user_data_type {void*}
           callback code_input_cb
-          tooltip {The name of the generated code file.} xywh {100 128 272 20} box THIN_DOWN_BOX labelfont 1 when 1 textfont 4
+          tooltip {The name of the generated code file.} xywh {119 128 252 20} box THIN_DOWN_BOX labelfont 1 when 1 textfont 4
         }
         Fl_Check_Button include_H_from_C_button {
           label {Include Header from Code}
           callback include_H_from_C_button_cb
-          tooltip {Include the header file from the code file.} xywh {100 153 272 20} down_box DOWN_BOX
+          tooltip {Include the header file from the code file.} xywh {117 153 272 20} down_box DOWN_BOX
         }
         Fl_Check_Button use_FL_COMMAND_button {
           label {Menu shortcuts use FL_COMMAND}
           callback use_FL_COMMAND_button_cb
-          tooltip {Replace FL_CTRL with FL_COMMAND when generating menu shortcut code.} xywh {100 176 272 20} down_box DOWN_BOX
+          tooltip {Replace FL_CTRL with FL_COMMAND when generating menu shortcut code.} xywh {117 176 272 20} down_box DOWN_BOX
         }
       }
       Fl_Group {} {
@@ -128,7 +135,7 @@ Function {make_project_window()} {} {
         }
         Fl_Input i18n_include_input {
           label {\#include:}
-          callback i18n_text_cb
+          callback i18n_text_cb selected
           tooltip {The include file for internationalization.} xywh {100 78 272 20} box THIN_DOWN_BOX labelfont 1 textfont 4
         }
         Fl_Input i18n_file_input {
@@ -149,23 +156,24 @@ Function {make_project_window()} {} {
       }
     }
   }
-} 
+}
 
 decl {extern void i18n_cb(Fl_Choice *,void *);} {public local
-} 
+}
 
 decl {void scheme_cb(Fl_Choice *, void *);} {public local
-} 
+}
 
 Function {make_settings_window()} {} {
   Fl_Window settings_window {
     label {GUI Settings} open
-    xywh {393 191 339 241} type Double non_modal visible
+    xywh {355 85 360 355} type Double hide resizable
+    code0 {o->size_range(o->w(), o->h());} non_modal
   } {
     Fl_Choice scheme_choice {
       label {Scheme: }
       callback scheme_cb open
-      xywh {116 10 115 25} down_box BORDER_BOX labelfont 1
+      xywh {140 10 115 25} down_box BORDER_BOX labelfont 1
       code0 {int s;}
       code1 {fluid_prefs.get("scheme", s, 0);}
       code2 {scheme_choice->value(s);}
@@ -187,19 +195,23 @@ Function {make_settings_window()} {} {
         label {GTK+}
         xywh {10 10 35 25}
       }
+      MenuItem {} {
+        label Gleam
+        xywh {20 20 35 25}
+      }
     }
     Fl_Group {} {open
-      xywh {116 43 220 126} labelfont 1 align 0
+      xywh {20 43 330 161} labelfont 1 align 0
     } {
       Fl_Box {} {
         label {Options: }
-        xywh {116 43 1 25} labelfont 1 align 4
+        xywh {140 43 1 25} labelfont 1 align 4
       }
       Fl_Check_Button tooltips_button {
         label {Show Tooltips}
         callback {Fl_Tooltip::enable(tooltips_button->value());
 fluid_prefs.set("show_tooltips", tooltips_button->value());}
-        xywh {116 43 113 25} down_box DOWN_BOX
+        xywh {138 43 113 25} down_box DOWN_BOX labelsize 12
         code0 {int b;}
         code1 {fluid_prefs.get("show_tooltips", b, 1);}
         code2 {tooltips_button->value(b);}
@@ -208,7 +220,7 @@ fluid_prefs.set("show_tooltips", tooltips_button->value());}
       Fl_Check_Button completion_button {
         label {Show Completion Dialogs}
         callback {fluid_prefs.set("show_completion_dialogs", completion_button->value());}
-        xywh {116 68 186 25} down_box DOWN_BOX
+        xywh {138 68 186 25} down_box DOWN_BOX labelsize 12
         code0 {int b;}
         code1 {fluid_prefs.get("show_completion_dialogs", b, 1);}
         code2 {completion_button->value(b);}
@@ -216,7 +228,7 @@ fluid_prefs.set("show_tooltips", tooltips_button->value());}
       Fl_Check_Button openlast_button {
         label {Open Previous File on Startup}
         callback {fluid_prefs.set("open_previous_file", openlast_button->value());}
-        xywh {116 93 214 25} down_box DOWN_BOX
+        xywh {138 93 214 25} down_box DOWN_BOX labelsize 12
         code0 {int b;}
         code1 {fluid_prefs.get("open_previous_file", b, 0);}
         code2 {openlast_button->value(b);}
@@ -224,7 +236,7 @@ fluid_prefs.set("show_tooltips", tooltips_button->value());}
       Fl_Check_Button prevpos_button {
         label {Remember Window Positions}
         callback {fluid_prefs.set("prev_window_pos", prevpos_button->value());}
-        xywh {116 118 209 25} down_box DOWN_BOX
+        xywh {138 118 209 25} down_box DOWN_BOX labelsize 12
         code0 {int b;}
         code1 {fluid_prefs.get("prev_window_pos", b, 1);}
         code2 {prevpos_button->value(b);}
@@ -234,7 +246,7 @@ fluid_prefs.set("show_tooltips", tooltips_button->value());}
         callback {show_comments = show_comments_button->value();
 fluid_prefs.set("show_comments", show_comments);
 redraw_browser();}
-        xywh {116 143 209 25} down_box DOWN_BOX
+        xywh {138 143 209 25} down_box DOWN_BOX labelsize 12
         code1 {fluid_prefs.get("show_comments", show_comments, 1);}
         code2 {show_comments_button->value(show_comments);}
       }
@@ -243,24 +255,52 @@ redraw_browser();}
       label {\# Recent Files: }
       callback {fluid_prefs.set("recent_files", recent_spinner->value());
 load_history();}
-      xywh {115 173 40 25} labelfont 1 when 1
+      xywh {140 173 40 25} labelfont 1 when 1
       code0 {int c;}
       code1 {fluid_prefs.get("recent_files", c, 5);}
       code2 {recent_spinner->maximum(10);}
       code3 {recent_spinner->value(c);}
     }
+    Fl_Group {} {open
+      xywh {10 210 337 95} box THIN_UP_BOX color 47 resizable
+    } {
+      Fl_Check_Button use_external_editor_button {
+        label {Use external editor?}
+        callback {G_use_external_editor = use_external_editor_button->value();
+fluid_prefs.set("use_external_editor", G_use_external_editor);
+redraw_browser();}
+        xywh {25 218 209 22} down_box DOWN_BOX labelsize 12
+        code1 {fluid_prefs.get("use_external_editor", G_use_external_editor, 0);}
+        code2 {use_external_editor_button->value(G_use_external_editor);}
+      }
+      Fl_Input editor_command_input {
+        label {Editor Command}
+        callback {strncpy(G_external_editor_command, editor_command_input->value(), sizeof(G_external_editor_command)-1);
+G_external_editor_command[sizeof(G_external_editor_command)-1] = 0;
+fluid_prefs.set("external_editor_command", G_external_editor_command);
+redraw_browser();} selected
+        tooltip {The editor command to open your external text editor.
+Include any necessary flags to ensure your editor does not background itself.
+Examples:
+    gvim -f
+    gedit
+ emacs} xywh {25 264 305 21} labelsize 12 align 5 when 1 textsize 12
+        code1 {fluid_prefs.get("external_editor_command", G_external_editor_command, "", sizeof(G_external_editor_command)-1);}
+        code2 {editor_command_input->value(G_external_editor_command);}
+      }
+    }
     Fl_Button {} {
       label Close
       callback {settings_window->hide();}
-      tooltip {Close this dialog.} xywh {266 205 64 25}
+      tooltip {Close this dialog.} xywh {285 320 64 25}
     }
   }
-} 
+}
 
 Function {make_shell_window()} {} {
   Fl_Window shell_window {
     label {Shell Command} open
-    xywh {741 195 365 125} type Double visible
+    xywh {761 190 365 125} type Double hide
   } {
     Fl_Input shell_command_input {
       label {Command:}
@@ -320,52 +360,52 @@ Function {make_shell_window()} {} {
       xywh {468 395 77 25}
     }
   }
-} 
+}
 
 Function {make_layout_window()} {} {
   Fl_Window grid_window {
     label {Layout Settings} open
-    xywh {760 427 285 245} type Double non_modal visible
+    xywh {812 369 310 245} type Double hide non_modal
   } {
     Fl_Input horizontal_input {
       label x
       user_data 1 user_data_type long
       callback grid_cb
-      tooltip {Horizontal grid spacing.} xywh {106 10 50 25} type Int box THIN_DOWN_BOX align 8
+      tooltip {Horizontal grid spacing.} xywh {116 10 50 25} type Int box THIN_DOWN_BOX align 8
       code0 {o->when(FL_WHEN_RELEASE|FL_WHEN_ENTER_KEY);}
     }
     Fl_Input vertical_input {
       label pixels
       user_data 2 user_data_type long
       callback grid_cb
-      tooltip {Vertical grid spacing.} xywh {166 10 50 25} type Int box THIN_DOWN_BOX align 8
+      tooltip {Vertical grid spacing.} xywh {179 10 50 25} type Int box THIN_DOWN_BOX align 8
       code0 {o->when(FL_WHEN_RELEASE|FL_WHEN_ENTER_KEY);}
     }
     Fl_Input snap_input {
       label {pixel snap}
       user_data 3 user_data_type long
       callback grid_cb
-      tooltip {Snap to grid within this many pixels.} xywh {106 45 50 25} type Int box THIN_DOWN_BOX align 8
+      tooltip {Snap to grid within this many pixels.} xywh {116 45 50 25} type Int box THIN_DOWN_BOX align 8
       code0 {o->when(FL_WHEN_RELEASE|FL_WHEN_ENTER_KEY);}
     }
     Fl_Check_Button guides_toggle {
       label {Show Guides}
       user_data 4 user_data_type long
       callback guides_cb
-      tooltip {Show distance and alignment guides in overlay} xywh {106 80 110 25} down_box DOWN_BOX
+      tooltip {Show distance and alignment guides in overlay} xywh {116 80 110 25} down_box DOWN_BOX
     }
     Fl_Button {} {
       label Close
       callback {grid_window->hide();}
-      tooltip {Close this dialog.} xywh {215 210 60 25}
+      tooltip {Close this dialog.} xywh {240 210 60 25}
     }
     Fl_Box {} {
       label {Grid:}
-      xywh {26 10 70 25} labelfont 1 align 24
+      xywh {47 10 70 25} labelfont 1 align 24
     }
     Fl_Box {} {
       label {Widget Size:}
-      xywh {-1 115 97 25} labelfont 1 align 24
+      xywh {10 115 107 25} labelfont 1 align 24
     }
     Fl_Group {} {open
       xywh {105 115 170 75}
@@ -373,64 +413,64 @@ Function {make_layout_window()} {} {
       Fl_Round_Button {def_widget_size[0]} {
         user_data 8 user_data_type long
         callback default_widget_size_cb
-        xywh {105 115 70 25} type Radio down_box ROUND_DOWN_BOX
+        xywh {115 115 70 25} type Radio down_box ROUND_DOWN_BOX
       }
       Fl_Box {} {
         label tiny
-        xywh {120 115 50 25} labelsize 8 align 20
+        xywh {130 115 50 25} labelsize 8 align 20
       }
       Fl_Round_Button {def_widget_size[1]} {
         user_data 11 user_data_type long
         callback default_widget_size_cb
-        xywh {180 115 70 25} type Radio down_box ROUND_DOWN_BOX
+        xywh {202 115 70 25} type Radio down_box ROUND_DOWN_BOX
       }
       Fl_Box {} {
         label small
-        xywh {195 115 50 25} labelsize 11 align 20
+        xywh {218 115 50 25} labelsize 11 align 20
       }
       Fl_Round_Button {def_widget_size[2]} {
         user_data 14 user_data_type long
         callback default_widget_size_cb
-        xywh {105 140 70 25} type Radio down_box ROUND_DOWN_BOX
+        xywh {115 140 70 25} type Radio down_box ROUND_DOWN_BOX
       }
       Fl_Box {} {
         label normal
-        xywh {120 140 50 25} align 20
+        xywh {130 140 50 25} align 20
       }
       Fl_Round_Button {def_widget_size[3]} {
         user_data 18 user_data_type long
         callback default_widget_size_cb
-        xywh {180 140 90 25} type Radio down_box ROUND_DOWN_BOX
+        xywh {202 140 90 25} type Radio down_box ROUND_DOWN_BOX
       }
       Fl_Box {} {
         label medium
-        xywh {195 140 68 25} labelsize 18 align 20
+        xywh {218 140 68 25} labelsize 18 align 20
       }
       Fl_Round_Button {def_widget_size[4]} {
         user_data 24 user_data_type long
         callback default_widget_size_cb
-        xywh {105 165 75 25} type Radio down_box ROUND_DOWN_BOX
+        xywh {115 165 75 25} type Radio down_box ROUND_DOWN_BOX
       }
       Fl_Box {} {
         label large
-        xywh {120 165 64 25} labelsize 24 align 20
+        xywh {130 165 64 25} labelsize 24 align 20
       }
       Fl_Round_Button {def_widget_size[5]} {
         user_data 32 user_data_type long
         callback default_widget_size_cb
-        xywh {180 165 95 25} type Radio down_box ROUND_DOWN_BOX
+        xywh {202 165 95 25} type Radio down_box ROUND_DOWN_BOX
       }
       Fl_Box {} {
         label huge
-        xywh {195 165 76 25} labelsize 32 align 20
+        xywh {218 165 76 25} labelsize 32 align 20
       }
     }
   }
-} 
+}
 
 decl {int opt[10][2];} {
   comment {Copy of all options in user and system mode} private local
-} 
+}
 
 Function {refreshUI()} {
   comment {Update the UI using the values in the opt array} private return_type void
@@ -439,8 +479,9 @@ Function {refreshUI()} {
 wVisibleFocus->value(opt[Fl::OPTION_VISIBLE_FOCUS][mode]);
 wArrowFocus->value(opt[Fl::OPTION_ARROW_FOCUS][mode]);
 wShowTooltips->value(opt[Fl::OPTION_SHOW_TOOLTIPS][mode]);
-wDNDText->value(opt[Fl::OPTION_DND_TEXT][mode]);} {}
-} 
+wDNDText->value(opt[Fl::OPTION_DND_TEXT][mode]);
+wGTKText->value(opt[Fl::OPTION_FNFC_USES_GTK][mode]);} {}
+}
 
 Function {readPrefs()} {
   comment {read all preferences and refresh the GUI} private return_type void
@@ -453,6 +494,7 @@ Function {readPrefs()} {
   opt_prefs.get("VisibleFocus", opt[Fl::OPTION_VISIBLE_FOCUS][1], 2);
   opt_prefs.get("DNDText", opt[Fl::OPTION_DND_TEXT][1], 2);
   opt_prefs.get("ShowTooltips", opt[Fl::OPTION_SHOW_TOOLTIPS][1], 2);
+  opt_prefs.get("FNFCUsesGTK", opt[Fl::OPTION_FNFC_USES_GTK ][1], 2);
 }
 {
   Fl_Preferences prefs(Fl_Preferences::USER, "fltk.org", "fltk");
@@ -461,9 +503,10 @@ Function {readPrefs()} {
   opt_prefs.get("VisibleFocus", opt[Fl::OPTION_VISIBLE_FOCUS][0], 2);
   opt_prefs.get("DNDText", opt[Fl::OPTION_DND_TEXT][0], 2);
   opt_prefs.get("ShowTooltips", opt[Fl::OPTION_SHOW_TOOLTIPS][0], 2);
+  opt_prefs.get("FNFCUsesGTK", opt[Fl::OPTION_FNFC_USES_GTK ][0], 2);
 }
 refreshUI();} {}
-} 
+}
 
 Function {writePrefs()} {
   comment {write all preferences using the array} private return_type void
@@ -480,6 +523,8 @@ Function {writePrefs()} {
   else opt_prefs.set("DNDText", opt[Fl::OPTION_DND_TEXT][1]);
   if (opt[Fl::OPTION_SHOW_TOOLTIPS][1]==2) opt_prefs.deleteEntry("ShowTooltips");
   else opt_prefs.set("ShowTooltips", opt[Fl::OPTION_SHOW_TOOLTIPS][1]);
+  if (opt[Fl::OPTION_FNFC_USES_GTK][1]==2) opt_prefs.deleteEntry("FNFCUsesGTK");
+  else opt_prefs.set("FNFCUsesGTK", opt[Fl::OPTION_FNFC_USES_GTK][1]);
 }
 {
   Fl_Preferences prefs(Fl_Preferences::USER, "fltk.org", "fltk");
@@ -492,8 +537,10 @@ Function {writePrefs()} {
   else opt_prefs.set("DNDText", opt[Fl::OPTION_DND_TEXT][0]);
   if (opt[Fl::OPTION_SHOW_TOOLTIPS][0]==2) opt_prefs.deleteEntry("ShowTooltips");
   else opt_prefs.set("ShowTooltips", opt[Fl::OPTION_SHOW_TOOLTIPS][0]);
+  if (opt[Fl::OPTION_FNFC_USES_GTK][0]==2) opt_prefs.deleteEntry("FNFCUsesGTK");
+  else opt_prefs.set("FNFCUsesGTK", opt[Fl::OPTION_FNFC_USES_GTK][0]);
 }} {}
-} 
+}
 
 Function {show_global_settings_window()} {open return_type void
 } {
@@ -508,14 +555,13 @@ fl_message(
 	"ALL users on this machine.\\n\\n"
 	"Please choose these settings carefully, or reset\\n"
 	"user and system settings to \\"default\\".");
-global_settings_window->show();} {selected
-  }
-} 
+global_settings_window->show();} {}
+}
 
 Function {make_global_settings_window()} {} {
   Fl_Window global_settings_window {
     label {FLTK Preferences} open
-    xywh {444 220 403 317} type Double color 50 visible
+    xywh {1147 190 400 378} type Double color 50 hide
   } {
     Fl_Group {} {
       label {Keyboard Focus Options} open
@@ -636,9 +682,42 @@ Default is on.} xywh {245 225 100 25} down_box BORDER_BOX
         }
       }
     }
+    Fl_Group {} {
+      label {Native File Chooser Options} open
+      xywh {10 269 380 66} box GTK_DOWN_BOX labelfont 2 align 21
+    } {
+      Fl_Choice wGTKText {
+        label {Native File Chooser uses GTK:}
+        callback {int mode = wUserOrSystem->value();
+opt[Fl::OPTION_FNFC_USES_GTK ][mode] = wGTKText->value();} open
+        tooltip {OPTION_FNFC_USES_GTK
+        
+If 'Native File Chooser uses GTK' is enabled, the Fl_Native_File_Chooser class
+calls the GTK open/save file dialogs when they are available on the platfom. If disabled, the Fl_Native_File_Chooser class
+always uses FLTK's own file dialog (i.e., Fl_File_Chooser) even if GTK is available.
+
+Default is on.} xywh {245 300 100 25} down_box BORDER_BOX
+      } {
+        MenuItem {} {
+          label off
+          user_data 0 user_data_type long
+          xywh {30 30 31 20}
+        }
+        MenuItem {} {
+          label on
+          user_data 1 user_data_type long
+          xywh {30 30 31 20} divider
+        }
+        MenuItem {} {
+          label default
+          user_data 2 user_data_type long
+          xywh {30 30 31 20}
+        }
+      }
+    }
     Fl_Choice wUserOrSystem {
       callback {refreshUI();} open
-      tooltip {Change settings for the current user, or default values for all users of this computer. Individual users can override system options, if they set their options to specific values (not 'default').} xywh {14 275 141 25} down_box BORDER_BOX
+      tooltip {Change settings for the current user, or default values for all users of this computer. Individual users can override system options, if they set their options to specific values (not 'default').} xywh {10 345 141 25} down_box BORDER_BOX
     } {
       MenuItem {} {
         label {User Settings}
@@ -654,21 +733,21 @@ Default is on.} xywh {245 225 100 25} down_box BORDER_BOX
     Fl_Button {} {
       label Cancel
       callback {global_settings_window->hide();}
-      xywh {230 275 75 25}
+      xywh {230 345 75 25}
     }
     Fl_Button {} {
       label OK
       callback {writePrefs();
 global_settings_window->hide();}
-      xywh {315 275 75 25}
+      xywh {315 345 75 25}
     }
   }
   code {readPrefs();
   Fl::option(Fl::OPTION_SHOW_TOOLTIPS,1); // make sure tooltips are on !} {}
-} 
+}
 
 comment {
 //
-// End of "$Id: alignment_panel.fl 8864 2011-07-19 04:49:30Z greg.ercolano $".
+// End of "$Id: alignment_panel.fl 11952 2016-09-20 12:57:18Z AlbrechtS $".
 //} {in_source in_header
-} 
+}

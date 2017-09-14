@@ -1,5 +1,5 @@
 //
-// "$Id: win32.H 9278 2012-03-12 11:55:50Z manolo $"
+// "$Id: win32.H 10312 2014-09-15 09:35:05Z ossman $"
 //
 // WIN32 header file for the Fast Light Tool Kit (FLTK).
 //
@@ -73,19 +73,25 @@ public:
   int wait_for_expose;
   HDC private_dc; // used for OpenGL
   HCURSOR cursor;
+  int custom_cursor;
   HDC saved_hdc;  // saves the handle of the DC currently loaded
   // static variables, static functions and member functions
   static Fl_X* first;
   static Fl_X* i(const Fl_Window* w) {return w->i;}
   static int fake_X_wm(const Fl_Window* w,int &X, int &Y,
 		                 int &bt,int &bx,int &by);
+  void make_fullscreen(int X, int Y, int W, int H);
   void setwindow(Fl_Window* wi) {w=wi; wi->i=this;}
   void flush() {w->flush();}
   void set_minmax(LPMINMAXINFO minmax);
   void mapraise();
+  static void set_default_icons(const Fl_RGB_Image*[], int);
+  static void set_default_icons(HICON, HICON);
+  void set_icons();
+  int set_cursor(Fl_Cursor);
+  int set_cursor(const Fl_RGB_Image*, int, int);
   static Fl_X* make(Fl_Window*);
 };
-extern FL_EXPORT HCURSOR fl_default_cursor;
 extern FL_EXPORT UINT fl_wake_msg;
 extern FL_EXPORT char fl_override_redirect; // hack into Fl_Window::make_xid()
 extern FL_EXPORT int fl_background_pixel;  // hack into Fl_Window::make_xid()
@@ -94,6 +100,8 @@ extern FL_EXPORT void fl_release_dc(HWND w, HDC dc);
 extern FL_EXPORT void fl_save_dc( HWND w, HDC dc);
 
 inline Window fl_xid(const Fl_Window* w) { Fl_X *temp = Fl_X::i(w); return temp ? temp->xid : 0; }
+
+extern FL_EXPORT void fl_open_display();
 
 #else
 FL_EXPORT Window fl_xid_(const Fl_Window* w);
@@ -151,5 +159,5 @@ inline void fl_open_callback(void (*)(const char *)) {}
 extern FL_EXPORT int fl_parse_color(const char* p, uchar& r, uchar& g, uchar& b);
 #endif // FL_DOXYGEN
 //
-// End of "$Id: win32.H 9278 2012-03-12 11:55:50Z manolo $".
+// End of "$Id: win32.H 10312 2014-09-15 09:35:05Z ossman $".
 //

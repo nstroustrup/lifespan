@@ -1,5 +1,5 @@
 //
-// "$Id: fl_ask.cxx 9373 2012-04-22 02:45:09Z fabien $"
+// "$Id: fl_ask.cxx 11842 2016-07-22 02:05:44Z greg.ercolano $"
 //
 // Standard dialog functions for the Fast Light Tool Kit (FLTK).
 //
@@ -15,6 +15,11 @@
 //
 //     http://www.fltk.org/str.php
 //
+
+/**
+ \file fl_ask.cxx
+ \brief Utility functions for common dialogs.
+ */
 
 // Implementation of fl_message, fl_ask, fl_choice, fl_input
 // The three-message fl_show_x functions are for forms compatibility
@@ -61,14 +66,13 @@ static char avoidRecursion = 0;
 // The first argument (Fl_Widget *) can either be an Fl_Button*
 // pointer to one of the buttons or an Fl_Window* pointer to the
 // message window (message_form).
-static void button_cb(Fl_Widget *, void *val) {
-  ret_val = (int) (fl_intptr_t)val;
+static void button_cb(Fl_Widget *, long val) {
+  ret_val = (int) val;
   message_form->hide();
 }
 
 static Fl_Window *makeform() {
  if (message_form) {
-   message_form->size(410,103);
    return message_form;
  }
  // make sure that the dialog does not become the child of some
@@ -77,7 +81,7 @@ static Fl_Window *makeform() {
  Fl_Group::current(0);
  // create a new top level window
  Fl_Window *w = message_form = new Fl_Window(410,103);
- message_form->callback(button_cb,(void *)0);
+  message_form->callback(button_cb);
  // w->clear_border();
  // w->box(FL_UP_BOX);
  (message = new Fl_Box(60, 25, 340, 20))
@@ -99,11 +103,7 @@ static Fl_Window *makeform() {
      else
        button[b] = new Fl_Button(x, 70, 90, 23);
      button[b]->align(FL_ALIGN_INSIDE|FL_ALIGN_WRAP);
-#if defined (__LP64__)
-     button[b]->callback(button_cb,(void *)(long long) b);
-#else
-     button[b]->callback(button_cb,(void *)b);
-#endif
+     button[b]->callback(button_cb, b);
    }
  }
  button[0]->shortcut(FL_Escape);
@@ -125,13 +125,15 @@ static Fl_Window *makeform() {
  *                  that is asked of them...
  */
 
-void resizeform() {
+static void resizeform() {
   int	i;
   int	message_w, message_h;
   int	text_height;
   int	button_w[3], button_h[3];
   int	x, w, h, max_w, max_h;
 	const int icon_size = 50;
+
+  message_form->size(410,103);
 
   fl_font(message->labelfont(), message->labelsize());
   message_w = message_h = 0;
@@ -208,6 +210,7 @@ static int innards(const char* fmt, va_list ap,
   avoidRecursion = 1;
 
   makeform();
+  message_form->size(410,103);
   char buffer[1024];
   if (!strcmp(fmt,"%s")) {
     message->label(va_arg(ap, const char*));
@@ -248,7 +251,9 @@ static int innards(const char* fmt, va_list ap,
   // deactivate Fl::grab(), because it is incompatible with modal windows
   Fl_Window* g = Fl::grab();
   if (g) Fl::grab(0);
+  Fl_Group *current_group = Fl_Group::current(); // make sure the dialog does not interfere with any active group
   message_form->show();
+  Fl_Group::current(current_group);
   while (message_form->shown()) Fl::wait();
   if (g) // regrab the previous popup menu, if there was one
     Fl::grab(g);
@@ -272,6 +277,7 @@ const char* fl_close= "Close";   ///< string pointer used in common dialogs, you
 // fltk functions:
 /**
    Emits a system beep message.
+ \param[in] type   The beep type from the \ref Fl_Beep enumeration.
    \note \#include <FL/fl_ask.H>
  */
 void fl_beep(int type) {
@@ -376,6 +382,10 @@ void fl_alert(const char *fmt, ...) {
    \param[in] fmt can be used as an sprintf-like format and variables for the message text
    \retval 0 if the no button is selected or another dialog box is still open
    \retval 1 if yes is selected
+
+   \deprecated fl_ask() is deprecated since it uses "Yes" and "No" for the buttons which
+               does not conform to the current FLTK Human Interface Guidelines.
+               Use fl_choice() with the appropriate verbs instead.
  */
 int fl_ask(const char *fmt, ...) {
 
@@ -392,20 +402,59 @@ int fl_ask(const char *fmt, ...) {
   return r;
 }
 
-/** Shows a dialog displaying the \p fmt message,
+/** Shows a dialog displaying the printf style \p fmt message,
     this dialog features up to 3 customizable choice buttons
 
    \note Common dialog boxes are application modal. No more than one common dialog box
     can be open at any time. Requests for additional dialog boxes are ignored.
    \note \#include <FL/fl_ask.H>
 
+   Three choices with printf() style formatting:
+   \code
+       int num_msgs = GetNumberOfMessages();
+       switch ( fl_choice("What to do with %d messages?", "Send", "Save", "Delete", num_msgs) ) {
+         case 0: .. // Send
+         case 1: .. // Save (default)
+         case 2: .. // Delete
+         ..
+       }
+   \endcode
+
+   Three choice example:
+   \image html  fl_choice_three.png
+   \image latex fl_choice_three.png  "fl_choice() three choices" width=4cm
+   \code
+       switch ( fl_choice("How many musketeers?", "One", "Two", "Three") ) {
+         case 0: .. // One
+         case 1: .. // Two (default)
+         case 2: .. // Three
+       }
+   \endcode
+
+   Two choice example:
+   \image html  fl_choice_two.png
+   \image latex fl_choice_two.png  "fl_choice() two choices" width=4cm
+   \code
+       switch ( fl_choice("Empty trash?", "Yes", "No", 0) ) {
+         case 0: .. // Yes
+         case 1: .. // No (default)
+       }
+   \endcode
+
+   One choice example:
+   \image html  fl_choice_one.png
+   \image latex fl_choice_one.png  "fl_choice() one choice" width=4cm
+   \code
+       fl_choice("All hope is lost.", "OK", 0, 0);   // "OK" default
+   \endcode
+
    \param[in] fmt can be used as an sprintf-like format and variables for the message text
    \param[in] b0 text label of button 0
-   \param[in] b1 text label of button 1
-   \param[in] b2 text label of button 2
-   \retval 0 if the first button with \p b0 text is selected or another dialog box is still open
-   \retval 1 if the second button with \p b1 text is selected
-   \retval 2 if the third button with \p b2 text is selected
+   \param[in] b1 text label of button 1 (can be 0)
+   \param[in] b2 text label of button 2 (can be 0)
+   \retval 0 if the first button with \p b0 text is pushed or another dialog box is still open
+   \retval 1 if the second button with \p b1 text is pushed
+   \retval 2 if the third button with \p b2 text is pushed
  */
 int fl_choice(const char*fmt,const char *b0,const char *b1,const char *b2,...){
 
@@ -430,6 +479,7 @@ Fl_Widget *fl_message_icon() {makeform(); return icon;}
 static const char* input_innards(const char* fmt, va_list ap,
 				 const char* defstr, uchar type) {
   makeform();
+  message_form->size(410,103);
   message->position(60,10);
   input->type(type);
   input->show();
@@ -566,5 +616,5 @@ void fl_message_title_default(const char *title) {
 /** @} */
 
 //
-// End of "$Id: fl_ask.cxx 9373 2012-04-22 02:45:09Z fabien $".
+// End of "$Id: fl_ask.cxx 11842 2016-07-22 02:05:44Z greg.ercolano $".
 //

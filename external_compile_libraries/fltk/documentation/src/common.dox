@@ -264,13 +264,6 @@ Figure 3-3 is the area that is not drawn by the frame types.
 You can define your own boxtypes by making a small function that draws
 the box and adding it to the table of boxtypes.
 
-<CENTER><TABLE WIDTH="80%" BORDER="1" CELLPADDING="5" CELLSPACING="0" BGCOLOR="#cccccc">
-<TR>
-	<TD><B>Note:</B>
-	<P>This interface has changed in FLTK 2.0!
-	</TD>
-</TR>
-</TABLE></CENTER>
 
 \par The Drawing Function
 
@@ -372,7 +365,7 @@ The @ sign may also be followed by the following optional
 
 \li +[1-9] or -[1-9] tweaks the scaling a little bigger or smaller.
 
-\li '$' flips the symbol horizontally, '%' flips it vertically.
+\li '$' flips the symbol horizontally, '\%' flips it vertically.
 
 \li [0-9] - rotates by a multiple of 45 degrees. '5' and '6' do no rotation
     while the others point in the direction of that key on a numeric keypad.
@@ -435,14 +428,6 @@ that draw them. The primary purpose of this is to use this to
 draw the labels in ways inaccessible through the
 fl_font() mechanism (e.g. <tt>FL_ENGRAVED_LABEL</tt>) or
 with program-generated letters or symbology.
-
-<CENTER><TABLE WIDTH="80%" BORDER="1" CELLPADDING="5" CELLSPACING="0" BGCOLOR="#cccccc">
-<TR>
-	<TD><B>Note:</B>
-	<P>This interface has changed in FLTK 2.0!
-	</TD>
-</TR>
-</TABLE></CENTER>
 
 \par Label Type Functions
 

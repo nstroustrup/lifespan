@@ -479,6 +479,15 @@ In FLTK, all strings, including filenames, are UTF-8 encoded. The utility functi
 fl_fopen() and fl_open() allow to open files potentially having non-ASCII names in a 
 cross-platform fashion, whereas the standard fopen()/open() functions fail to do so.
 
+\subsection osissues_wm_quit Responding to WM_QUIT
+
+FLTK will intercept WM_QUIT messages that are directed towards the
+thread that runs the main loop. These are converted to SIGTERM signals
+via \c raise(). This allows you to deal with outside termination
+requests with the same code on both Windows and UNIX systems.
+Other processes can send this message via \c PostThreadMessage() in
+order to request, rather than force your application to terminate.
+
 \subsection osissues_win32_messages Handling Other WIN32 Messages
 
 By default a single WNDCLASSEX called "FLTK" is
@@ -673,6 +682,52 @@ US keyboard will set \c FL_ALT in Fl::event_state(),
 set Fl::event_key() to 'y' and return the Yen symbol in
 Fl::event_text().
 
+Right Click simulation with Ctrl Click
+\par
+The Apple HIG guidelines indicate applications should support
+'Ctrl Click' to simulate 'Right Click' for e.g. context menus,
+so users with one-button mice and one-click trackpads can still
+access right-click features. However, paraphrasing 
+<A HREF="http://www.fltk.org/newsgroups.php?gfltk.coredev+v:14725">
+Manolo's comment on the fltk.coredev newsgroup</A>:
+\par
+<UL><LI>
+    <I>FLTK does /not/ support Ctrl-Click == Right Click itself because Mac OS
+    X event processing doesn't support this at the system level: the system
+    reports left-clicks with the ctrl modifier when the user ctrl-clicks, and
+    OS X system preferences don't allow changing this behavior. Therefore,
+    applications must handle simulation of Right Click with Ctrl Click
+    in the application code.</I>
+</LI></UL>
+\par
+Ian MacArthur provided the following handle() method code snippet
+showing an example of how to do this:
+\code
+    case FL_PUSH:
+    {
+	int btn = Fl::event_button();
+#ifdef __APPLE__
+	int ev_state = Fl::event_state();
+#endif
+	//
+	// Context menu can be called up in one of two ways: -
+	//     1 - right click, as normally used on Windows and Linux
+	//     2 - Ctrl + left click, as sometimes used on Mac
+	//
+#ifdef __APPLE__
+	// On apple, check right click, and ctrl+left click
+	if ((btn == FL_RIGHT_MOUSE) || (ev_state == (FL_CTRL | FL_BUTTON1)))
+#else
+	// On other platforms, only check right click as ctrl+left is used for selections
+	if (btn == FL_RIGHT_MOUSE)
+#endif
+	{
+	    // Did we right click on the object?..
+\endcode
+\par
+There is a thread about this subject on fltk.coredev (Aug 1-14, 2014)
+entitled "[RFC] Right click emulation for one button mouse on Mac".
+
 Apple "Quit" Event
 
 \par
@@ -707,18 +762,13 @@ Fl_Window *fl_find(Window xid)
 
 \par
 Returns the Fl_Window that corresponds to the given window reference,
-or \c NULL if not found. FLTK windows that are children of top-level
-windows share the \c Window of the top-level window.
+or \c NULL if not found.
 
 void fl_mac_set_about( Fl_Callback *cb, void *user_data, int shortcut) 
 
 \par
 Attaches the callback \c cb to the "About myprog" item of the system application menu.
 \c cb will be called with NULL first argument and \c user_data second argument.
-
-Fl_Mac_App_Menu class
-\par 
-The Fl_Mac_App_Menu class allows to localize the application menu.
 
 Fl_Sys_Menu_Bar class
 
@@ -727,8 +777,24 @@ The Fl_Sys_Menu_Bar class allows to build menu bars that, on Mac OS X, are
 placed in the system menu bar (at top-left of display), and, on other platforms,
 at a user-chosen location of a user-chosen window.
 
-\subsection osissues_quartz Drawing Things Using Quartz
 
+\subsection osissues_icon_osx Setting the icon of an application
+\li First, create a .icns file containing several copies of your icon of decreasing sizes.
+This can be done using the Preview application or the Icon Composer application
+available in "Graphics Tools for Xcode". To create a high resolution icon file,
+it is necessary to use the iconutil command-line utility.
+\li Put your .icns file in the Resources subdirectory of your application bundle.
+\li Add these two lines to the Info.plist file of your application bundle
+\verbatim
+<key>CFBundleIconFile</key>
+<string>foo.icns</string>
+\endverbatim
+replacing <tt>foo</tt> by your application name. If you use Xcode, just add your .icns file to your 
+application target.
+
+
+
+\subsection osissues_quartz Drawing Things Using Quartz
 All code inside Fl_Widget::draw()
 is expected to call Quartz drawing functions. The Quartz coordinate system 
 is flipped to match
@@ -737,10 +803,57 @@ left corner of the enclosing Fl_Window. The global variable
 \c fl_gc (of type \c CGContextRef) is the appropriate Quartz 2D drawing environment.
 Include FL/x.H to declare the \c fl_gc variable.
 
-Fl_Double_Window
+\subsection osissues_localize Internationalization
+All FLTK programs contain an application menu with, e.g., the About xxx, Hide xxx, and Quit xxx items.
+This menu can be internationalized/localized by any of two means.
+\li using the Fl_Mac_App_Menu class.
+\li using the standard Mac OS X localization procedure. Create a language-specific .lproj directory 
+(e.g., <tt>German.lproj</tt>) in the Resources subdirectory of the application bundle. 
+Create therein a <tt>Localizable.strings</tt> file that translates all menu items to this language. 
+The German <tt>Localizable.strings</tt> file, for example, contains:
+\verbatim
+"About %@" = "Über %@";
+"Print Front Window"="Frontfenster drucken";
+"Services" = "Dienste";
+"Hide %@"="%@ ausblenden";
+"Hide Others"="Andere ausblenden";
+"Show All"="Alle einblenden";
+"Quit %@"="%@ beenden";
+\endverbatim
+Set <tt>"Print Front Window" = "";</tt> therein so the application menu doesn't show a "Print Front Window" item.
+To localize the application name itself, create a file <tt>InfoPlist.strings</tt> in each .lproj directory
+and put <tt>CFBundleName = "localized name";</tt> in each such file.
 
-OS X double-buffers all windows automatically. On OS X,
-Fl_Window and Fl_Double_Window are handled
+\subsection osissues_retina OpenGL and 'retina' displays
+It is possible to have OpenGL produce graphics at the high pixel resolution allowed by the so-called 'retina' displays
+present on recent Apple hardware.
+For this, call 
+\verbatim
+Fl::use_high_res_GL(1); 
+\endverbatim
+before any Fl_Gl_Window is shown. Also, adapt your Fl_Gl_Window::draw() and Fl_Gl_Window::draw_overlay() methods replacing
+\verbatim
+glViewport(0, 0, w(), h());
+\endverbatim
+by
+\verbatim
+glViewport(0, 0, pixel_w(), pixel_h());
+\endverbatim
+making use of the Fl_Gl_Window::pixel_w() and Fl_Gl_Window::pixel_h() methods that return the width and height of
+the GL scene in pixels: if the Fl_Gl_Window is mapped on a retina display, these methods return twice as much as
+reported by Fl_Widget::w() and Fl_Widget::h(); if it's mapped on a regular display, they return the same values
+as w() and h(). These methods dynamically change their values if the window is moved into/out from a retina
+display. If Fl::use_high_res_GL(1) is not called, all Fl_Gl_Window 's are drawn at low resolution.
+These methods are synonyms of w() and h() on non-Mac OS X platforms, so the source code remains cross-platform.
+
+The Fl_Gl_Window::pixels_per_unit() method is useful when the OpenGL code depends on the pixel dimension
+of the GL scene. This occurs, e.g., if a window's handle() method uses Fl::event_x() and Fl::event_y()
+whose returned values should be multiplied by Fl_Gl_Window::pixels_per_unit() to obtain the adequate pixel units.
+This method may also be useful, for example, to adjust the width of a line in a high resolution GL scene.
+
+\subsection double_window Fl_Double_Window
+
+OS X double-buffers all windows automatically. On OS X, Fl_Window and Fl_Double_Window are handled
 internally in the same way.
 
 \subsection osissues_mac_files Mac File System Specifics

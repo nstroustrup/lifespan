@@ -1,5 +1,5 @@
 //
-// "$Id: unittests.cxx 8864 2011-07-19 04:49:30Z greg.ercolano $"
+// "$Id: unittests.cxx 10565 2015-02-09 18:04:31Z AlbrechtS $"
 //
 // Unit tests for the Fast Light Tool Kit (FLTK).
 //
@@ -88,11 +88,11 @@ private:
     nTest++;
   }
   static int nTest;
-  static UnitTest *fTest[200];
+  static UnitTest *fTest[];
 };
 
 int UnitTest::nTest = 0;
-UnitTest *UnitTest::fTest[];
+UnitTest *UnitTest::fTest[200];
 
 
 // The main window needs an additional drawing feature in order to support 
@@ -148,10 +148,11 @@ public:
 #include "unittest_rects.cxx"
 #include "unittest_circles.cxx"
 #include "unittest_text.cxx"
+#include "unittest_symbol.cxx"
 #include "unittest_images.cxx"
 #include "unittest_viewport.cxx"
 #include "unittest_scrollbarsize.cxx"
-
+#include "unittest_schemes.cxx"
 
 // callback whenever the browser value changes
 void Browser_CB(Fl_Widget*, void*) {
@@ -170,6 +171,8 @@ void Browser_CB(Fl_Widget*, void*) {
 // registered tests to the browser widget.
 int main(int argc, char **argv) {
   Fl::args(argc,argv);
+  Fl::get_system_colors();
+  Fl::scheme(Fl::scheme()); // init scheme before instantiating tests
   Fl::visual(FL_RGB);
   mainwin = new MainWindow(MAINWIN_W, MAINWIN_H, "Fltk Unit Tests");
   browser = new Fl_Hold_Browser(BROWSER_X, BROWSER_Y, BROWSER_W, BROWSER_H, "Unit Tests");
@@ -196,5 +199,5 @@ int main(int argc, char **argv) {
 }
 
 //
-// End of "$Id: unittests.cxx 8864 2011-07-19 04:49:30Z greg.ercolano $".
+// End of "$Id: unittests.cxx 10565 2015-02-09 18:04:31Z AlbrechtS $".
 //

@@ -1,5 +1,5 @@
 //
-// "$Id: colbrowser.cxx 8864 2011-07-19 04:49:30Z greg.ercolano $"
+// "$Id: colbrowser.cxx 11917 2016-09-03 07:45:31Z manolo $"
 //
 // X Color Browser demo program for the Fast Light Tool Kit (FLTK).
 //
@@ -62,8 +62,8 @@ int main(int argc, char *argv[])
   
   create_form_cl();
   
-#ifdef USING_XCODE
-  // Xcode apps do not set the current directory
+#ifdef __APPLE__
+  // search for rgb.txt within the bundle
   strcpy(dbname, argv[0]);
   char *slash = strrchr(dbname, '/');
   if (slash)
@@ -196,7 +196,7 @@ static int load_browser(char *fname)
 
 static int search_entry(int r, int g, int b)
 {
-  register RGBdb *db = rgbdb;
+  RGBdb *db = rgbdb;
   int i, j, diffr, diffg, diffb;
   unsigned int diff, mindiff;
   
@@ -336,5 +336,5 @@ static void create_form_cl(void)
 }
 
 //
-// End of "$Id: colbrowser.cxx 8864 2011-07-19 04:49:30Z greg.ercolano $".
+// End of "$Id: colbrowser.cxx 11917 2016-09-03 07:45:31Z manolo $".
 //

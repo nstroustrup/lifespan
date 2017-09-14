@@ -1,9 +1,9 @@
 //
-// "$Id: fl_font_xft.cxx 8864 2011-07-19 04:49:30Z greg.ercolano $"
+// "$Id: fl_font_xft.cxx 11094 2016-01-31 02:49:56Z AlbrechtS $"
 //
 // Xft font code for the Fast Light Tool Kit (FLTK).
 //
-// Copyright 2001-2011 Bill Spitzak and others.
+// Copyright 2001-2016 Bill Spitzak and others.
 //
 // This library is free software. Distribution and use rights are outlined in
 // the file "COPYING" which should have been included with this file.  If this
@@ -58,6 +58,8 @@
 
 #include <math.h>
 
+#define USE_OVERLAY 0
+
 // The predefined fonts that FLTK has:
 static Fl_Fontdesc built_in_table[] = {
 #if 1
@@ -101,8 +103,8 @@ Fl_Fontdesc* fl_fonts = built_in_table;
 
 Fl_XFont_On_Demand fl_xfont;
 void *fl_xftfont = 0;
-//const char* fl_encoding_ = "iso8859-1";
-const char* fl_encoding_ = "iso10646-1";
+//static const char* fl_encoding_ = "iso8859-1";
+static const char* fl_encoding_ = "iso10646-1";
 
 static void fl_xft_font(Fl_Xlib_Graphics_Driver *driver, Fl_Font fnum, Fl_Fontsize size, int angle) {
   if (fnum==-1) { // special case to stop font caching
@@ -153,7 +155,7 @@ static XftFont* fontopen(const char* name, Fl_Fontsize size, bool core, int angl
   fl_open_display();
 
   if(!is_xlfd) { // Not an XLFD - open as a XFT style name
-    XftFont *the_font; // the font we will return;
+    XftFont *the_font = NULL; // the font we will return;
     XftPattern *fnt_pat = XftPatternCreate(); // the pattern we will use for matching
     int slant = XFT_SLANT_ROMAN;
     int weight = XFT_WEIGHT_MEDIUM;
@@ -270,7 +272,10 @@ static XftFont* fontopen(const char* name, Fl_Fontsize size, bool core, int angl
     free(picked_name);
 #endif
 
-    if (!match_pat) {
+    // open the matched font
+    if (match_pat) the_font = XftFontOpenPattern(fl_display, match_pat);
+
+    if (!match_pat || !the_font) {
       // last chance, just open any font in the right size
       the_font = XftFontOpen (fl_display, fl_screen,
                         XFT_FAMILY, XftTypeString, "sans",
@@ -283,9 +288,6 @@ static XftFont* fontopen(const char* name, Fl_Fontsize size, bool core, int angl
       }
       return the_font;
     }
-
-    // open the matched font
-    the_font = XftFontOpenPattern(fl_display, match_pat);
 
 #if 0 // diagnostic to print the "full name" of the font we actually opened. This works.
     FcChar8 *picked_name2 =  FcNameUnparse(the_font->pattern);
@@ -673,9 +675,9 @@ void Fl_Xlib_Graphics_Driver::rtl_draw(const char* c, int n, int x, int y) {
   if (num_chars < n) n = num_chars; // limit drawing to usable characters in input array
   FcChar32 *ucs_txt = new FcChar32[n+1];
   FcChar32* pu;
-  int in, out, sz;
+  int out, sz;
   ucs_txt[n] = 0;
-  in = 0; out = n-1;
+  out = n-1;
   while ((out >= 0) && (utf_len > 0))
   {
     pu = &ucs_txt[out];
@@ -693,5 +695,5 @@ void Fl_Xlib_Graphics_Driver::rtl_draw(const char* c, int n, int x, int y) {
 #endif
 
 //
-// End of "$Id: fl_font_xft.cxx 8864 2011-07-19 04:49:30Z greg.ercolano $"
+// End of "$Id: fl_font_xft.cxx 11094 2016-01-31 02:49:56Z AlbrechtS $"
 //

@@ -1,9 +1,9 @@
 //
-// "$Id: Fl_Quartz_Printer.mm 9276 2012-03-12 09:39:17Z manolo $"
+// "$Id: Fl_Quartz_Printer.mm 11943 2016-09-13 11:51:24Z manolo $"
 //
 // Mac OS X-specific printing support (objective-c++) for the Fast Light Tool Kit (FLTK).
 //
-// Copyright 2010-2012 by Bill Spitzak and others.
+// Copyright 2010-2014 by Bill Spitzak and others.
 //
 // This library is free software. Distribution and use rights are outlined in
 // the file "COPYING" which should have been included with this file.  If this
@@ -23,6 +23,21 @@
 #include <FL/fl_ask.H>
 #include <FL/fl_draw.H>
 #import <Cocoa/Cocoa.h>
+
+typedef OSStatus (*PMSessionSetDocumentFormatGeneration_type)(
+                                     PMPrintSession   printSession,
+                                     CFStringRef      docFormat,
+                                     CFArrayRef       graphicsContextTypes,
+                                     CFTypeRef        options);
+typedef OSStatus (*PMSessionBeginDocumentNoDialog_type)(
+                               PMPrintSession    printSession,
+                               PMPrintSettings   printSettings,
+                               PMPageFormat      pageFormat);
+typedef OSStatus
+(*PMSessionGetGraphicsContext_type)(
+                            PMPrintSession   printSession,
+                            CFStringRef      graphicsContextType,
+                            void **          graphicsContext);
 
 extern void fl_quartz_restore_line_style_();
 
@@ -65,14 +80,16 @@ int Fl_System_Printer::start_job (int pagecount, int *frompage, int *topage)
     PMGetFirstPage(printSettings, &from32); 
     if (frompage) *frompage = (int)from32;
     PMGetLastPage(printSettings, &to32); 
-    if (topage) *topage = (int)to32;
-    if(topage && *topage > pagecount) *topage = pagecount;
+    if (topage) {
+      *topage = (int)to32;
+      if (*topage > pagecount && pagecount > 0) *topage = pagecount;
+    }
     status = PMSessionBeginCGDocumentNoDialog(printSession, printSettings, pageFormat);//from 10.4
   }
-  else {
+  else
 #endif
-    
-#if !__LP64__
+  {
+#if !defined(__LP64__) || !__LP64__
     Boolean accepted;
     status = PMCreateSession(&printSession);
     if (status != noErr) return 1;
@@ -112,14 +129,16 @@ int Fl_System_Printer::start_job (int pagecount, int *frompage, int *topage)
     CFStringRef mystring[1];
     mystring[0] = kPMGraphicsContextCoreGraphics;
     CFArrayRef array = CFArrayCreate(NULL, (const void **)mystring, 1, &kCFTypeArrayCallBacks);
+    PMSessionSetDocumentFormatGeneration_type PMSessionSetDocumentFormatGeneration =
+      (PMSessionSetDocumentFormatGeneration_type)Fl_X::get_carbon_function("PMSessionSetDocumentFormatGeneration");
     status = PMSessionSetDocumentFormatGeneration(printSession, kPMDocumentFormatDefault, array, NULL);
     CFRelease(array);
+    PMSessionBeginDocumentNoDialog_type PMSessionBeginDocumentNoDialog =
+      (PMSessionBeginDocumentNoDialog_type)Fl_X::get_carbon_function("PMSessionBeginDocumentNoDialog");
     status = PMSessionBeginDocumentNoDialog(printSession, printSettings, pageFormat);
 #endif //__LP64__
-    
-#if MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_5
   }
-#endif
+
   if (status != noErr) return 1;
   y_offset = x_offset = 0;
   this->set_current();
@@ -221,17 +240,18 @@ int Fl_System_Printer::start_page (void)
 {	
   OSStatus status = PMSessionBeginPageNoDialog(printSession, pageFormat, NULL);
 #if MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_4
-  if ( PMSessionGetCGGraphicsContext != NULL ) {
+  if ( &PMSessionGetCGGraphicsContext != NULL ) {
     status = PMSessionGetCGGraphicsContext(printSession, &fl_gc);
   }
-  else {
+  else
 #endif
-#if ! __LP64__
-    status = PMSessionGetGraphicsContext(printSession,NULL,(void **)&fl_gc);
+  {
+#if !defined(__LP64__) || !__LP64__
+    PMSessionGetGraphicsContext_type PMSessionGetGraphicsContext =
+      (PMSessionGetGraphicsContext_type)Fl_X::get_carbon_function("PMSessionGetGraphicsContext");
+    status = PMSessionGetGraphicsContext(printSession, NULL, (void **)&fl_gc);
 #endif
-#if MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_4
   }
-#endif
   PMRect pmRect;
   float win_scale_x, win_scale_y;
 
@@ -284,14 +304,40 @@ void Fl_System_Printer::end_job (void)
     fl_alert ("PM Session error %d", (int)status);
   }
   PMSessionEndDocumentNoDialog(printSession);
+#if !defined(__LP64__) || !__LP64__
+  if (fl_mac_os_version < 100500) {
+    PMRelease(printSettings);
+    PMRelease(pageFormat);
+    PMRelease(printSession);
+    }
+#endif
   Fl_Display_Device::display_device()->set_current();
   fl_gc = 0;
   Fl_Window *w = Fl::first_window();
   if (w) w->show();
 }
 
+// version that prints at high res if using a retina display
+void Fl_System_Printer::print_window_part(Fl_Window *win, int x, int y, int w, int h, int delta_x, int delta_y)
+{
+  Fl_Surface_Device *current = Fl_Surface_Device::surface();
+  Fl_Display_Device::display_device()->set_current();
+  Fl_Window *save_front = Fl::first_window();
+  win->show();
+  fl_gc = NULL;
+  Fl::check();
+  CGImageRef img = Fl_X::CGImage_from_window_rect(win, x, y, w, h);
+  if (save_front != win) save_front->show();
+  current->set_current();
+  CGRect rect = CGRectMake(delta_x, delta_y, w, h);
+  Fl_X::q_begin_image(rect, 0, 0, w, h);
+  CGContextDrawImage(fl_gc, rect, img);
+  Fl_X::q_end_image();
+  CFRelease(img);
+}
+
 #endif // __APPLE__
 
 //
-// End of "$Id: Fl_Quartz_Printer.mm 9276 2012-03-12 09:39:17Z manolo $".
+// End of "$Id: Fl_Quartz_Printer.mm 11943 2016-09-13 11:51:24Z manolo $".
 //

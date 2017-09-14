@@ -1,5 +1,5 @@
 //
-// "$Id: Fl_Help_View.H 9126 2011-10-04 13:10:55Z manolo $"
+// "$Id: Fl_Help_View.H 11761 2016-05-31 09:12:40Z manolo $"
 //
 // Help Viewer widget definitions.
 //
@@ -187,7 +187,7 @@ struct Fl_Help_Target {
      - macr micro middot
      - nbsp not Ntilde ntilde
      - Oacute oacute Ocirc ocirc Ograve ograve ordf ordm Oslash oslash Otilde otilde Ouml ouml
-     - para premil plusmn pound
+     - para permil plusmn pound
      - quot
      - raquo reg
      - sect shy sup1 sup2 sup3 szlig
@@ -260,7 +260,13 @@ class FL_EXPORT Fl_Help_View : public Fl_Group {	// Help viewer widget
   void		add_target(const char *n, int yy);
   static int	compare_targets(const Fl_Help_Target *t0, const Fl_Help_Target *t1);
   int		do_align(Fl_Help_Block *block, int line, int xx, int a, int &l);
+#if FLTK_ABI_VERSION >= 10303
+protected:
+#endif
   void		draw();
+#if FLTK_ABI_VERSION >= 10303
+private:
+#endif
   void		format();
   void		format_table(int *table_width, int *columns, const char *table);
   void		free_data();
@@ -269,9 +275,15 @@ class FL_EXPORT Fl_Help_View : public Fl_Group {	// Help viewer widget
   Fl_Color	get_color(const char *n, Fl_Color c);
   Fl_Shared_Image *get_image(const char *name, int W, int H);
   int		get_length(const char *l);
+#if FLTK_ABI_VERSION >= 10303
+public:
+#endif
   int		handle(int);
+#if FLTK_ABI_VERSION >= 10303
+private:
+#endif
 
-  void          hv_draw(const char *t, int x, int y);
+  void          hv_draw(const char *t, int x, int y, int entity_extra_length = 0);
   char          begin_selection();
   char          extend_selection();
   void          end_selection(int c=0);
@@ -383,5 +395,5 @@ public:
 #endif // !Fl_Help_View_H
 
 //
-// End of "$Id: Fl_Help_View.H 9126 2011-10-04 13:10:55Z manolo $".
+// End of "$Id: Fl_Help_View.H 11761 2016-05-31 09:12:40Z manolo $".
 //

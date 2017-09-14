@@ -1,5 +1,5 @@
 //
-// "$Id: Fl_Group.H 8864 2011-07-19 04:49:30Z greg.ercolano $"
+// "$Id: Fl_Group.H 10446 2014-11-10 22:09:11Z AlbrechtS $"
 //
 // Group header file for the Fast Light Tool Kit (FLTK).
 //
@@ -30,8 +30,13 @@
   The Fl_Group class is the FLTK container widget. It maintains
   an array of child widgets. These children can themselves be any widget
   including Fl_Group. The most important subclass of Fl_Group
-  is Fl_Window, however groups can also be used to control radio buttons 
+  is Fl_Window, however groups can also be used to control radio buttons
   or to enforce resize behavior.
+
+  The tab and arrow keys are used to move the focus between widgets of
+  this group, and to other groups. The only modifier grabbed is shift
+  (for shift-tab), so that ctrl-tab, alt-up, and such are free
+  for the app to use as shortcuts.
 */
 class FL_EXPORT Fl_Group : public Fl_Widget {
 
@@ -120,12 +125,14 @@ public:
     In these examples the gray area is the resizable:
 
     \image html resizebox1.png
+
+    <br>
     
     \image html resizebox2.png
     
     \image latex resizebox1.png "before resize"  width=4cm
     
-    \image latex resizebox2.png "after resize"   width=4cm
+    \image latex resizebox2.png "after resize"   width=4.85cm
 
     The resizable may be set to the group itself, in which case all the
     contents are resized. This is the default value for Fl_Group,
@@ -217,5 +224,5 @@ public:
 #endif
 
 //
-// End of "$Id: Fl_Group.H 8864 2011-07-19 04:49:30Z greg.ercolano $".
+// End of "$Id: Fl_Group.H 10446 2014-11-10 22:09:11Z AlbrechtS $".
 //

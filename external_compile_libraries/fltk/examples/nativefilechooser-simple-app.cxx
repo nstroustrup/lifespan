@@ -1,5 +1,5 @@
 //
-// "$Id: nativefilechooser-simple-app.cxx 8864 2011-07-19 04:49:30Z greg.ercolano $"
+// "$Id: nativefilechooser-simple-app.cxx 10005 2013-10-22 09:09:53Z manolo $"
 //
 //	An example of how to use Fl_Native_File_Chooser to open & save files.
 //
@@ -31,7 +31,7 @@ class Application : public Fl_Window {
   Fl_Native_File_Chooser *fc;
   // Does file exist?
   int exist(const char *filename) {
-    FILE *fp = fopen(filename, "r");
+    FILE *fp = fl_fopen(filename, "r");
     if (fp) { fclose(fp); return(1); }
     else    { return(0); }
   }
@@ -46,7 +46,7 @@ class Application : public Fl_Window {
   void save(const char *filename) {
     printf("Saving '%s'\n", filename);
     if ( !exist(filename) ) {
-      FILE *fp = fopen(filename, "w");				// create file if it doesn't exist
+      FILE *fp = fl_fopen(filename, "w");				// create file if it doesn't exist
       if ( fp ) {
         // A real app would do something useful here.
         fprintf(fp, "Hello world.\n");
@@ -148,5 +148,5 @@ int main(int argc, char *argv[]) {
 }
 
 //
-// End of "$Id: nativefilechooser-simple-app.cxx 8864 2011-07-19 04:49:30Z greg.ercolano $".
+// End of "$Id: nativefilechooser-simple-app.cxx 10005 2013-10-22 09:09:53Z manolo $".
 //

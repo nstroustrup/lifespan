@@ -83,6 +83,35 @@ LIB32=link.exe -lib
 # Name "fltk - Win32 Debug"
 # Begin Source File
 
+SOURCE="..\..\FL\abi-version.h"
+
+!IF  "$(CFG)" == "fltk - Win32 Release"
+
+USERDEP__ABI_V="..\..\abi-version.ide"	
+# Begin Custom Build - Creating FL\abi-version.h from abi-version.ide
+InputPath=..\..\FL\abi-version.h
+
+"..\..\FL\abi-version.h" : "..\..\abi-version.ide"
+	copy /Y ..\..\abi-version.ide ..\..\FL\abi-version.h
+
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "fltk - Win32 Debug"
+
+USERDEP__ABI_V="..\..\abi-version.ide"	
+# Begin Custom Build - Creating FL\abi-version.h from abi-version.ide
+InputPath=..\..\FL\abi-version.h
+
+"..\..\FL\abi-version.h" : "..\..\abi-version.ide"
+	copy /Y ..\..\abi-version.ide ..\..\FL\abi-version.h
+
+# End Custom Build
+
+!ENDIF 
+
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\src\xutf8\case.c
 # End Source File
 # Begin Source File
@@ -211,6 +240,10 @@ SOURCE=..\..\src\Fl_Color_Chooser.cxx
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\src\Fl_Copy_Surface.cxx
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\src\Fl_compose.cxx
 # End Source File
 # Begin Source File
@@ -323,11 +356,19 @@ SOURCE=..\..\src\fl_gtk.cxx
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\src\fl_gleam.cxx
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\src\Fl_Help_View.cxx
 # End Source File
 # Begin Source File
 
 SOURCE=..\..\src\Fl_Image.cxx
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\src\Fl_Image_Surface.cxx
 # End Source File
 # Begin Source File
 
@@ -435,6 +476,10 @@ SOURCE=..\..\src\Fl_Positioner.cxx
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\src\Fl_PostScript.cxx
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\src\Fl_Preferences.cxx
 # End Source File
 # Begin Source File
@@ -524,10 +569,6 @@ SOURCE=..\..\src\Fl_Slider.cxx
 # Begin Source File
 
 SOURCE=..\..\src\fl_symbols.cxx
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\src\Fl_Sys_Menu_Bar.cxx
 # End Source File
 # Begin Source File
 
@@ -632,6 +673,10 @@ SOURCE=..\..\src\Fl_Window_hotspot.cxx
 # Begin Source File
 
 SOURCE=..\..\src\Fl_Window_iconize.cxx
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\src\Fl_Window_shape.cxx
 # End Source File
 # Begin Source File
 

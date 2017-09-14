@@ -1,9 +1,9 @@
 //
-// "$Id: Fl_Input.cxx 9637 2012-07-24 04:37:22Z matt $"
+// "$Id: Fl_Input.cxx 11094 2016-01-31 02:49:56Z AlbrechtS $"
 //
 // Input widget for the Fast Light Tool Kit (FLTK).
 //
-// Copyright 1998-2011 by Bill Spitzak and others.
+// Copyright 1998-2016 by Bill Spitzak and others.
 //
 // This library is free software. Distribution and use rights are outlined in
 // the file "COPYING" which should have been included with this file.  If this
@@ -358,6 +358,11 @@ int Fl_Input::handle_key() {
       else replace(position(), del ? position()-del : mark(),
 	           Fl::event_text(), Fl::event_length());
     }
+#ifdef __APPLE__
+    if (Fl::compose_state) {
+      this->mark( this->position() - Fl::compose_state );
+      }
+#endif
     return 1;
   }
   
@@ -583,8 +588,16 @@ int Fl_Input::handle_key() {
 
 int Fl_Input::handle(int event) {
   static int dnd_save_position, dnd_save_mark, drag_start = -1, newpos;
-  static Fl_Widget *dnd_save_focus;
+  static Fl_Widget *dnd_save_focus = NULL;
   switch (event) {
+#ifdef __APPLE__
+    case FL_UNFOCUS:
+      if (Fl::compose_state) {
+	this->mark( this->position() );
+	Fl::reset_marked_text();
+      }
+      break;
+#endif
     case FL_FOCUS:
       switch (Fl::event_key()) {
         case FL_Right:
@@ -617,7 +630,8 @@ int Fl_Input::handle(int event) {
           && !Fl::event_state(FL_SHIFT)			// no shift?
           && !tab_nav()					// with tab navigation disabled?
 	  && input_type() == FL_MULTILINE_INPUT		// with a multiline input?
-          && (mark()==0 && position()==size())) {	// while entire field selected?
+	  && size() > 0                                 // non-empty field?
+          && ((mark()==0 && position()==size()) || (position()==0 && mark()==size()))) {// while entire field selected?
         // Set cursor to the end of the selection...
         if (mark() > position())
           position(mark());
@@ -662,8 +676,14 @@ int Fl_Input::handle(int event) {
                                               // save the position because sometimes we don't get DND_ENTER:
           dnd_save_position = position();
           dnd_save_mark = mark();
+	  dnd_save_focus = this;
           // drag the data:
-          copy(0); Fl::dnd();
+          copy(0);
+#ifdef __APPLE__
+          Fl_X::dnd(1);
+#else
+          Fl::dnd();
+#endif
           return 1;
         }
       }
@@ -693,17 +713,17 @@ int Fl_Input::handle(int event) {
       
     case FL_DND_ENTER:
       Fl::belowmouse(this); // send the leave events first
-      dnd_save_position = position();
-      dnd_save_mark = mark();
-      dnd_save_focus = Fl::focus();
       if (dnd_save_focus != this) {
+	dnd_save_position = position();
+	dnd_save_mark = mark();
+	dnd_save_focus = Fl::focus();
         Fl::focus(this);
         handle(FL_FOCUS);
       }
       // fall through:
     case FL_DND_DRAG: 
       //int p = mouse_position(X, Y, W, H);
-#if DND_OUT_XXXX
+#ifdef DND_OUT_XXXX
       if (Fl::focus()==this && (p>=dnd_save_position && p<=dnd_save_mark ||
                                 p>=dnd_save_mark && p<=dnd_save_position)) {
         position(dnd_save_position, dnd_save_mark);
@@ -719,19 +739,36 @@ int Fl_Input::handle(int event) {
       
     case FL_DND_LEAVE:
       position(dnd_save_position, dnd_save_mark);
-#if DND_OUT_XXXX
+#ifdef DND_OUT_XXXX
       if (!focused())
 #endif
-        if (dnd_save_focus != this) {
+        if (dnd_save_focus && dnd_save_focus != this) {
           Fl::focus(dnd_save_focus);
           handle(FL_UNFOCUS);
         }
 #if !(defined(__APPLE__) || defined(WIN32))
       Fl::first_window()->cursor(FL_CURSOR_MOVE);
 #endif
+      dnd_save_focus = NULL;
       return 1;
       
     case FL_DND_RELEASE:
+      if (dnd_save_focus == this) { // if the dragged text comes from the same widget
+	// remove the selected text
+	int old_position = position();
+	if (dnd_save_mark > dnd_save_position) {
+	  int tmp = dnd_save_mark;
+	  dnd_save_mark = dnd_save_position;
+	  dnd_save_position = tmp;
+	  }
+	replace(dnd_save_mark, dnd_save_position, NULL, 0);
+	if (old_position > dnd_save_position) position(old_position - (dnd_save_position - dnd_save_mark));
+	else position(old_position);
+	}
+      else if(dnd_save_focus) {
+	dnd_save_focus->handle(FL_UNFOCUS);
+	}
+      dnd_save_focus = NULL;
       take_focus();
       return 1;
       
@@ -766,12 +803,14 @@ Fl_Float_Input::Fl_Float_Input(int X,int Y,int W,int H,const char *l)
 : Fl_Input(X,Y,W,H,l) 
 {
   type(FL_FLOAT_INPUT);
+  clear_flag(MAC_USE_ACCENTS_MENU);
 }
 
 
 Fl_Int_Input::Fl_Int_Input(int X,int Y,int W,int H,const char *l)
 : Fl_Input(X,Y,W,H,l) {
   type(FL_INT_INPUT);
+  clear_flag(MAC_USE_ACCENTS_MENU);
 }
 
 
@@ -796,9 +835,19 @@ Fl_Multiline_Output::Fl_Multiline_Output(int X,int Y,int W,int H,const char *l)
 Fl_Secret_Input::Fl_Secret_Input(int X,int Y,int W,int H,const char *l)
 : Fl_Input(X,Y,W,H,l) {
   type(FL_SECRET_INPUT);
+  clear_flag(MAC_USE_ACCENTS_MENU);
 }
 
+int Fl_Secret_Input::handle(int event) {
+  int retval = Fl_Input::handle(event);
+#ifdef __APPLE__
+  if (event == FL_KEYBOARD && Fl::compose_state) {
+    this->mark( this->position() ); // don't underline marked text
+  }
+#endif
+  return retval;
+}
 
 //
-// End of "$Id: Fl_Input.cxx 9637 2012-07-24 04:37:22Z matt $".
+// End of "$Id: Fl_Input.cxx 11094 2016-01-31 02:49:56Z AlbrechtS $".
 //

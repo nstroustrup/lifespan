@@ -1,5 +1,5 @@
 //
-// "$Id: Fl_GDI_Printer.cxx 9325 2012-04-05 05:12:30Z fabien $"
+// "$Id: Fl_GDI_Printer.cxx 10713 2015-04-22 14:40:01Z manolo $"
 //
 // Support for WIN32 printing for the Fast Light Tool Kit (FLTK).
 //
@@ -55,6 +55,7 @@ static void WIN_SetupPrinterDeviceContext(HDC prHDC)
 int Fl_System_Printer::start_job (int pagecount, int *frompage, int *topage)
 // returns 0 iff OK
 {
+  if (pagecount == 0) pagecount = 10000;
   DWORD       commdlgerr;
   DOCINFO     di;
   char        docName [256];
@@ -67,7 +68,12 @@ int Fl_System_Printer::start_job (int pagecount, int *frompage, int *topage)
   pd.Flags = PD_RETURNDC | PD_USEDEVMODECOPIESANDCOLLATE | PD_NOSELECTION;
   pd.nMinPage = 1;
   pd.nMaxPage = pagecount;
-  if (PrintDlg (&pd) != 0) {
+  BOOL b = PrintDlg (&pd);
+  if (pd.hwndOwner) { // restore the correct state of mouse buttons and keyboard modifier keys (STR #3221)
+    WNDPROC windproc = (WNDPROC)GetWindowLongPtrW(pd.hwndOwner, GWLP_WNDPROC);
+    CallWindowProc(windproc, pd.hwndOwner, WM_ACTIVATEAPP, 1, 0);
+  }
+  if (b != 0) {
     hPr = pd.hDC;
     if (hPr != NULL) {
       strcpy (docName, "FLTK");
@@ -76,14 +82,14 @@ int Fl_System_Printer::start_job (int pagecount, int *frompage, int *topage)
       di.lpszDocName = (LPCSTR) docName;
       prerr = StartDoc (hPr, &di);
       if (prerr < 1) {
-	abortPrint = TRUE;
-	//fl_alert ("StartDoc error %d", prerr);
-	err = 1;
+        abortPrint = TRUE;
+        //fl_alert ("StartDoc error %d", prerr);
+        err = 1;
       }
     } else {
       commdlgerr = CommDlgExtendedError ();
       fl_alert ("Unable to create print context, error %lu",
-		(unsigned long) commdlgerr);
+                (unsigned long) commdlgerr);
       err = 1;
     }
   } else {
@@ -132,8 +138,11 @@ void Fl_System_Printer::absolute_printable_rect(int *x, int *y, int *w, int *h)
 {
   POINT         physPageSize;
   POINT         pixelsPerInch;
+  XFORM		transform;
     
   if (hPr == NULL) return;
+  GetWorldTransform(fl_gc, &transform);
+  ModifyWorldTransform(fl_gc, NULL, MWT_IDENTITY);
   SetWindowOrgEx(fl_gc, 0, 0, NULL);
   
   physPageSize.x = GetDeviceCaps(hPr, HORZRES);
@@ -152,11 +161,12 @@ void Fl_System_Printer::absolute_printable_rect(int *x, int *y, int *w, int *h)
   *x = left_margin;
   *y = top_margin;
   origin(x_offset, y_offset);
+  SetWorldTransform(fl_gc, &transform);
 }
 
 void Fl_System_Printer::margins(int *left, int *top, int *right, int *bottom)
 {
-  int x, y, w, h;
+  int x = 0, y = 0, w = 0, h = 0;
   absolute_printable_rect(&x, &y, &w, &h);
   if (left) *left = x;
   if (top) *top = y;
@@ -273,5 +283,5 @@ void Fl_System_Printer::untranslate (void)
 #endif // WIN32
 
 //
-// End of "$Id: Fl_GDI_Printer.cxx 9325 2012-04-05 05:12:30Z fabien $".
+// End of "$Id: Fl_GDI_Printer.cxx 10713 2015-04-22 14:40:01Z manolo $".
 //

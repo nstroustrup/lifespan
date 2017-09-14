@@ -1,5 +1,5 @@
 //
-// "$Id: Fl_get_key_mac.cxx 9303 2012-03-26 16:54:54Z manolo $"
+// "$Id: Fl_get_key_mac.cxx 10747 2015-06-10 10:53:25Z manolo $"
 //
 // MacOS keyboard state routines for the Fast Light Tool Kit (FLTK).
 //
@@ -164,6 +164,15 @@ enum {
   kVK_ISO_Section               = 0x0A
 };
 
+/* JIS keyboards only*/
+enum {
+  kVK_JIS_Yen                   = 0x5D,
+  kVK_JIS_Underscore            = 0x5E,
+  kVK_JIS_KeypadComma           = 0x5F,
+  kVK_JIS_Eisu                  = 0x66,
+  kVK_JIS_Kana                  = 0x68
+};
+
 #endif
 
 // convert an FLTK (X) keysym to a MacOS symbol:
@@ -181,12 +190,16 @@ static const struct {unsigned short vk, fltk;} vktab[] = {
   { kVK_ANSI_U, 'U' }, { kVK_ANSI_V, 'V' }, { kVK_ANSI_W, 'W' }, { kVK_ANSI_X, 'X' }, 
   { kVK_ANSI_Y, 'Y' }, { kVK_ANSI_Z, 'Z' }, 
   { kVK_ANSI_LeftBracket, '[' }, { kVK_ANSI_Backslash, '\\' }, { kVK_ANSI_RightBracket, ']' }, { kVK_ANSI_Grave, '`' },  
+  { kVK_VolumeDown, FL_Volume_Down}, { kVK_Mute, FL_Volume_Mute}, { kVK_VolumeUp, FL_Volume_Up},
   { kVK_Delete, FL_BackSpace }, { kVK_Tab, FL_Tab }, { kVK_ISO_Section, FL_Iso_Key }, { kVK_Return, FL_Enter }, /*{ 0x7F, FL_Pause },
-  { 0x7F, FL_Scroll_Lock },*/ { kVK_Escape, FL_Escape }, { kVK_Home, FL_Home }, { kVK_LeftArrow, FL_Left },
+  { 0x7F, FL_Scroll_Lock },*/ { kVK_Escape, FL_Escape }, 
+  { kVK_JIS_Kana, FL_Kana}, { kVK_JIS_Eisu, FL_Eisu}, { kVK_JIS_Yen, FL_Yen}, { kVK_JIS_Underscore, FL_JIS_Underscore},
+  { kVK_Home, FL_Home }, { kVK_LeftArrow, FL_Left },
   { kVK_UpArrow, FL_Up }, { kVK_RightArrow, FL_Right }, { kVK_DownArrow, FL_Down }, { kVK_PageUp, FL_Page_Up },
   { kVK_PageDown, FL_Page_Down },  { kVK_End, FL_End }, /*{ 0x7F, FL_Print }, { 0x7F, FL_Insert },*/
   { 0x6e, FL_Menu }, { kVK_Help, FL_Help }, { kVK_ANSI_KeypadClear, FL_Num_Lock },
   { kVK_ANSI_KeypadEnter, FL_KP_Enter }, { kVK_ANSI_KeypadMultiply, FL_KP+'*' }, { kVK_ANSI_KeypadPlus, FL_KP+'+'}, 
+  { kVK_JIS_KeypadComma, FL_KP+',' },
   { kVK_ANSI_KeypadMinus, FL_KP+'-' }, { kVK_ANSI_KeypadDecimal, FL_KP+'.' }, { kVK_ANSI_KeypadDivide, FL_KP+'/' }, 
   { kVK_ANSI_Keypad0, FL_KP+'0' }, { kVK_ANSI_Keypad1, FL_KP+'1' }, { kVK_ANSI_Keypad2, FL_KP+'2' }, { kVK_ANSI_Keypad3, FL_KP+'3' }, 
   { kVK_ANSI_Keypad4, FL_KP+'4' }, { kVK_ANSI_Keypad5, FL_KP+'5' }, { kVK_ANSI_Keypad6, FL_KP+'6' }, { kVK_ANSI_Keypad7, FL_KP+'7' }, 
@@ -195,6 +208,7 @@ static const struct {unsigned short vk, fltk;} vktab[] = {
   { kVK_F5, FL_F+5 }, { kVK_F6, FL_F+6 }, { kVK_F7, FL_F+7 }, { kVK_F8, FL_F+8 }, 
   { kVK_F9, FL_F+9 }, { kVK_F10, FL_F+10 }, { kVK_F11, FL_F+11 }, { kVK_F12, FL_F+12 }, 
   { kVK_F13, FL_F+13 }, { kVK_F14, FL_F+14 }, { kVK_F15, FL_F+15 }, { kVK_F16, FL_F+16 }, 
+  { kVK_F17, FL_F+17 }, { kVK_F18, FL_F+18 }, { kVK_F19, FL_F+19 }, { kVK_F20, FL_F+20 }, 
   { kVK_Shift, FL_Shift_L }, { kVK_RightShift, FL_Shift_R }, { kVK_Control, FL_Control_L }, { kVK_RightControl, FL_Control_R }, 
   { kVK_CapsLock, FL_Caps_Lock }, { kVK_Command, FL_Meta_L }, { 0x36, FL_Meta_R },
   { kVK_Option, FL_Alt_L }, { kVK_RightOption, FL_Alt_R }, { kVK_ForwardDelete, FL_Delete }
@@ -219,7 +233,7 @@ static int fltk2mac(int fltk) {
     if (vktab[c].fltk == fltk) return vktab[c].vk;
     if (vktab[c].fltk < fltk) a = c+1; else b = c;
   }
-  return 127;
+  return vktab[a].vk;
 }
 
 //: returns true, if that key was pressed during the last event
@@ -230,7 +244,7 @@ int Fl::event_key(int k) {
 //: returns true, if that key is pressed right now
 int Fl::get_key(int k) {
 #if MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_4
-  if(CGEventSourceKeyState != NULL) {
+  if (&CGEventSourceKeyState != NULL) {
     return (int)CGEventSourceKeyState(kCGEventSourceStateCombinedSessionState, fltk2mac(k) );
     }
   else 
@@ -261,5 +275,5 @@ int Fl::get_key(int k) {
 }
 
 //
-// End of "$Id: Fl_get_key_mac.cxx 9303 2012-03-26 16:54:54Z manolo $".
+// End of "$Id: Fl_get_key_mac.cxx 10747 2015-06-10 10:53:25Z manolo $".
 //

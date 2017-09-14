@@ -26,6 +26,7 @@
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
+				CommandLine="copy /Y &quot;$(SolutionDir)..\..\abi-version.ide&quot; &quot;$(SolutionDir)..\..\FL\abi-version.h&quot;"
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
@@ -97,6 +98,7 @@
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
+				CommandLine="copy /Y &quot;$(SolutionDir)..\..\abi-version.ide&quot; &quot;$(SolutionDir)..\..\FL\abi-version.h&quot;"
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
@@ -168,6 +170,7 @@
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
+				CommandLine="copy /Y &quot;$(SolutionDir)..\..\abi-version.ide&quot; &quot;$(SolutionDir)..\..\FL\abi-version.h&quot;"
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
@@ -239,6 +242,7 @@
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
+				CommandLine="copy /Y &quot;$(SolutionDir)..\..\abi-version.ide&quot; &quot;$(SolutionDir)..\..\FL\abi-version.h&quot;"
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
@@ -368,6 +372,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\FL\Fl_Copy_Surface.H"
+				>
+			</File>
+			<File
 				RelativePath="..\..\FL\Fl_Counter.H"
 				>
 			</File>
@@ -473,6 +481,10 @@
 			</File>
 			<File
 				RelativePath="..\..\FL\Fl_Image.H"
+				>
+			</File>
+			<File
+				RelativePath="..\..\FL\Fl_Image_Surface.H"
 				>
 			</File>
 			<File
@@ -2223,6 +2235,52 @@
 			</FileConfiguration>
 		</File>
 		<File
+			RelativePath="..\..\src\Fl_Copy_Surface.cxx"
+			>
+			<FileConfiguration
+				Name="Debug|Win32"
+				>
+				<Tool
+					Name="VCCLCompilerTool"
+					Optimization="0"
+					AdditionalIncludeDirectories=""
+					PreprocessorDefinitions=""
+					BrowseInformation="1"
+				/>
+			</FileConfiguration>
+			<FileConfiguration
+				Name="Release|Win32"
+				>
+				<Tool
+					Name="VCCLCompilerTool"
+					FavorSizeOrSpeed="0"
+					AdditionalIncludeDirectories=""
+					PreprocessorDefinitions=""
+				/>
+			</FileConfiguration>
+			<FileConfiguration
+				Name="Debug Cairo|Win32"
+				>
+				<Tool
+					Name="VCCLCompilerTool"
+					Optimization="0"
+					AdditionalIncludeDirectories=""
+					PreprocessorDefinitions=""
+					BrowseInformation="1"
+				/>
+			</FileConfiguration>
+			<FileConfiguration
+				Name="Release Cairo|Win32"
+				>
+				<Tool
+					Name="VCCLCompilerTool"
+					FavorSizeOrSpeed="0"
+					AdditionalIncludeDirectories=""
+					PreprocessorDefinitions=""
+				/>
+			</FileConfiguration>
+		</File>
+		<File
 			RelativePath="..\..\src\Fl_Counter.cxx"
 			>
 			<FileConfiguration
@@ -3193,6 +3251,10 @@
 			</FileConfiguration>
 		</File>
 		<File
+			RelativePath="..\..\src\fl_gleam.cxx"
+			>
+		</File>
+		<File
 			RelativePath="..\..\src\Fl_grab.cxx"
 			>
 			<FileConfiguration
@@ -3336,6 +3398,52 @@
 		</File>
 		<File
 			RelativePath="..\..\src\Fl_Image.cxx"
+			>
+			<FileConfiguration
+				Name="Debug|Win32"
+				>
+				<Tool
+					Name="VCCLCompilerTool"
+					Optimization="0"
+					AdditionalIncludeDirectories=""
+					PreprocessorDefinitions=""
+					BrowseInformation="1"
+				/>
+			</FileConfiguration>
+			<FileConfiguration
+				Name="Release|Win32"
+				>
+				<Tool
+					Name="VCCLCompilerTool"
+					FavorSizeOrSpeed="0"
+					AdditionalIncludeDirectories=""
+					PreprocessorDefinitions=""
+				/>
+			</FileConfiguration>
+			<FileConfiguration
+				Name="Debug Cairo|Win32"
+				>
+				<Tool
+					Name="VCCLCompilerTool"
+					Optimization="0"
+					AdditionalIncludeDirectories=""
+					PreprocessorDefinitions=""
+					BrowseInformation="1"
+				/>
+			</FileConfiguration>
+			<FileConfiguration
+				Name="Release Cairo|Win32"
+				>
+				<Tool
+					Name="VCCLCompilerTool"
+					FavorSizeOrSpeed="0"
+					AdditionalIncludeDirectories=""
+					PreprocessorDefinitions=""
+				/>
+			</FileConfiguration>
+		</File>
+		<File
+			RelativePath="..\..\src\Fl_Image_Surface.cxx"
 			>
 			<FileConfiguration
 				Name="Debug|Win32"
@@ -4448,6 +4556,52 @@
 		</File>
 		<File
 			RelativePath="..\..\src\Fl_Positioner.cxx"
+			>
+			<FileConfiguration
+				Name="Debug|Win32"
+				>
+				<Tool
+					Name="VCCLCompilerTool"
+					Optimization="0"
+					AdditionalIncludeDirectories=""
+					PreprocessorDefinitions=""
+					BrowseInformation="1"
+				/>
+			</FileConfiguration>
+			<FileConfiguration
+				Name="Release|Win32"
+				>
+				<Tool
+					Name="VCCLCompilerTool"
+					FavorSizeOrSpeed="0"
+					AdditionalIncludeDirectories=""
+					PreprocessorDefinitions=""
+				/>
+			</FileConfiguration>
+			<FileConfiguration
+				Name="Debug Cairo|Win32"
+				>
+				<Tool
+					Name="VCCLCompilerTool"
+					Optimization="0"
+					AdditionalIncludeDirectories=""
+					PreprocessorDefinitions=""
+					BrowseInformation="1"
+				/>
+			</FileConfiguration>
+			<FileConfiguration
+				Name="Release Cairo|Win32"
+				>
+				<Tool
+					Name="VCCLCompilerTool"
+					FavorSizeOrSpeed="0"
+					AdditionalIncludeDirectories=""
+					PreprocessorDefinitions=""
+				/>
+			</FileConfiguration>
+		</File>
+		<File
+			RelativePath="..\..\src\Fl_PostScript.cxx"
 			>
 			<FileConfiguration
 				Name="Debug|Win32"
@@ -6534,6 +6688,52 @@
 		</File>
 		<File
 			RelativePath="..\..\src\Fl_Window_iconize.cxx"
+			>
+			<FileConfiguration
+				Name="Debug|Win32"
+				>
+				<Tool
+					Name="VCCLCompilerTool"
+					Optimization="0"
+					AdditionalIncludeDirectories=""
+					PreprocessorDefinitions=""
+					BrowseInformation="1"
+				/>
+			</FileConfiguration>
+			<FileConfiguration
+				Name="Release|Win32"
+				>
+				<Tool
+					Name="VCCLCompilerTool"
+					FavorSizeOrSpeed="0"
+					AdditionalIncludeDirectories=""
+					PreprocessorDefinitions=""
+				/>
+			</FileConfiguration>
+			<FileConfiguration
+				Name="Debug Cairo|Win32"
+				>
+				<Tool
+					Name="VCCLCompilerTool"
+					Optimization="0"
+					AdditionalIncludeDirectories=""
+					PreprocessorDefinitions=""
+					BrowseInformation="1"
+				/>
+			</FileConfiguration>
+			<FileConfiguration
+				Name="Release Cairo|Win32"
+				>
+				<Tool
+					Name="VCCLCompilerTool"
+					FavorSizeOrSpeed="0"
+					AdditionalIncludeDirectories=""
+					PreprocessorDefinitions=""
+				/>
+			</FileConfiguration>
+		</File>
+		<File
+			RelativePath="..\..\src\Fl_Window_shape.cxx"
 			>
 			<FileConfiguration
 				Name="Debug|Win32"

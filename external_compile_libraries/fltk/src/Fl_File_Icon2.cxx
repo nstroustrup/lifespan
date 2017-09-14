@@ -1,5 +1,5 @@
 //
-// "$Id: Fl_File_Icon2.cxx 8864 2011-07-19 04:49:30Z greg.ercolano $"
+// "$Id: Fl_File_Icon2.cxx 12028 2016-10-14 16:35:44Z AlbrechtS $"
 //
 // Fl_File_Icon system icon routines.
 //
@@ -353,9 +353,10 @@ int Fl_File_Icon::load_image(const char *ifile)	// I - File to read from
 		temp;		// Temporary color
     const uchar *row;		// Pointer into image
 
+    const int extra_data = img->ld() ? (img->ld()-img->w()*img->d()) : 0;
 
     // Loop through grayscale or RGB image...
-    for (y = 0, row = (const uchar *)(*(img->data())); y < img->h(); y ++, row += img->ld())
+    for (y = 0, row = (const uchar *)(*(img->data())); y < img->h(); y ++, row += extra_data)
     {
       for (x = 0, startx = 0, c = (Fl_Color)-1;
            x < img->w();
@@ -426,7 +427,6 @@ int Fl_File_Icon::load_image(const char *ifile)	// I - File to read from
     int		red, green, blue;	// Red, green, and blue values
     int		x, y;			// X & Y in image
     int		startx;			// Starting X coord
-
 
     // Get the pixmap data...
     ptr = img->data();
@@ -570,9 +570,14 @@ int Fl_File_Icon::load_image(const char *ifile)	// I - File to read from
   img->release();
 
 #ifdef DEBUG
-  printf("Icon File \"%s\":\n", xpm);
+{
+  int i;
+  printf("Icon File \"%s\":\n", ifile);
   for (i = 0; i < num_data_; i ++)
+  {
     printf("    %d,\n", data_[i]);
+  }
+}
 #endif // DEBUG
 
   return 0;
@@ -582,7 +587,7 @@ int Fl_File_Icon::load_image(const char *ifile)	// I - File to read from
 /**
   Loads all system-defined icons. This call is useful when using the
   FileChooser widget and should be used when the application starts:
-  
+
   \code
   Fl_File_Icon::load_system_icons();
   \endcode
@@ -616,7 +621,7 @@ Fl_File_Icon::load_system_icons(void) {
 		  VERTEX, 7000, 5000, END, LINE, VERTEX, 3000, 4000,
 		  VERTEX, 7000, 4000, END, LINE, VERTEX, 3000, 3000,
 		  VERTEX, 7000, 3000, END, LINE, VERTEX, 3000, 2000,
-		  VERTEX, 7000, 2000, END, 
+		  VERTEX, 7000, 2000, END,
 		  END
 		};
   static short	image[] = {	// Image file icon
@@ -1009,5 +1014,5 @@ get_kde_val(char       *str,
 
 
 //
-// End of "$Id: Fl_File_Icon2.cxx 8864 2011-07-19 04:49:30Z greg.ercolano $".
+// End of "$Id: Fl_File_Icon2.cxx 12028 2016-10-14 16:35:44Z AlbrechtS $".
 //

@@ -1,5 +1,5 @@
 //
-// "$Id: fullscreen.cxx 9605 2012-06-14 15:09:46Z manolo $"
+// "$Id: fullscreen.cxx 11797 2016-06-22 08:46:02Z manolo $"
 //
 
 //
@@ -84,7 +84,7 @@ void shape_window::draw() {
     valid(1);
 //  printf("init\n");
     glLoadIdentity();
-    glViewport(0,0,w(),h());
+    glViewport(0,0,pixel_w(),pixel_h());
   }
   glClear(GL_COLOR_BUFFER_BIT);
   glColor3f(.5,.6,.7);
@@ -127,7 +127,7 @@ class fullscreen_window : public Fl_Single_Window {
   fullscreen_window(int W, int H, const char *t=0);
   int handle (int e);
   Fl_Toggle_Light_Button *b3;
-
+  Fl_Toggle_Light_Button *b4;
 };
 
 fullscreen_window::fullscreen_window(int W, int H, const char *t) : Fl_Single_Window(W, H, t) { 
@@ -170,24 +170,60 @@ void border_cb(Fl_Widget *o, void *p) {
 #endif
 }
 
-int px,py,pw,ph;
 Fl_Button *border_button;
 void fullscreen_cb(Fl_Widget *o, void *p) {
   Fl_Window *w = (Fl_Window *)p;
   int d = ((Fl_Button *)o)->value();
   if (d) {
-    px = w->x();
-    py = w->y();
-    pw = w->w();
-    ph = w->h();
     w->fullscreen();
-    w->override();
 #ifndef WIN32 // update our border state in case border was turned off
     border_button->value(w->border());
 #endif
   } else {
-    //w->fullscreen_off(px,py,pw,ph);
     w->fullscreen_off();
+  }
+}
+
+void allscreens_cb(Fl_Widget *o, void *p) {
+  Fl_Window *w = (Fl_Window *)p;
+  int d = ((Fl_Button *)o)->value();
+  if (d) {
+    int top, bottom, left, right;
+    int top_y, bottom_y, left_x, right_x;
+
+    int sx, sy, sw, sh;
+
+    top = bottom = left = right = 0;
+
+    Fl::screen_xywh(sx, sy, sw, sh, 0);
+    top_y = sy;
+    bottom_y = sy + sh;
+    left_x = sx;
+    right_x = sx + sw;
+
+    for (int i = 1;i < Fl::screen_count();i++) {
+      Fl::screen_xywh(sx, sy, sw, sh, i);
+      if (sy < top_y) {
+        top = i;
+        top_y = sy;
+      }
+      if ((sy + sh) > bottom_y) {
+        bottom = i;
+        bottom_y = sy + sh;
+      }
+      if (sx < left_x) {
+        left = i;
+        left_x = sx;
+      }
+      if ((sx + sw) > right_x) {
+        right = i;
+        right_x = sx + sw;
+      }
+    }
+
+    w->fullscreen_screens(top, bottom, left, right);
+  } else {
+    w->fullscreen_screens(-1, -1, -1, -1);
   }
 }
 
@@ -204,8 +240,10 @@ void update_screeninfo(Fl_Widget *b, void *p) {
     browser->add(line);
     for (int n = 0; n < Fl::screen_count(); n++) {
 	int x, y, w, h;
+        float dpih, dpiv;
 	Fl::screen_xywh(x, y, w, h, n);
-	sprintf(line, "Screen %d: %dx%d@%d,%d", n, w, h, x, y);
+        Fl::screen_dpi(dpih, dpiv, n);
+        sprintf(line, "Screen %d: %dx%d@%d,%d DPI:%.1fx%.1f", n, w, h, x, y, dpih, dpiv);
 	browser->add(line);
 	Fl::screen_work_area(x, y, w, h, n);
 	sprintf(line, "Work area %d: %dx%d@%d,%d", n, w, h, x, y);
@@ -219,7 +257,7 @@ void exit_cb(Fl_Widget *, void *) {
   exit(0);
 }
 
-#define NUMB 7
+#define NUMB 8
 
 int twowindow = 0;
 int initfull = 0;
@@ -231,6 +269,7 @@ int arg(int, char **argv, int &i) {
 
 int main(int argc, char **argv) {
 
+  Fl::use_high_res_GL(1);
   int i=0;
   if (Fl::args(argc,argv,i,arg) < argc)
     Fl::fatal("Options are:\n -2 = 2 windows\n -f = startup fullscreen\n%s",Fl::help);
@@ -284,6 +323,10 @@ int main(int argc, char **argv) {
   window.b3->callback(fullscreen_cb,w);
   y+=30;
 
+  window.b4 = new Fl_Toggle_Light_Button(50,y,window.w()-60,30,"All Screens");
+  window.b4->callback(allscreens_cb,w);
+  y+=30;
+
   Fl_Button eb(50,y,window.w()-60,30,"Exit");
   eb.callback(exit_cb);
   y+=30;
@@ -305,5 +348,5 @@ int main(int argc, char **argv) {
 }
 
 //
-// End of "$Id: fullscreen.cxx 9605 2012-06-14 15:09:46Z manolo $".
+// End of "$Id: fullscreen.cxx 11797 2016-06-22 08:46:02Z manolo $".
 //

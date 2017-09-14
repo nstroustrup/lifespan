@@ -1,9 +1,9 @@
 //
-// "$Id: screen_xywh.cxx 9299 2012-03-23 16:47:53Z manolo $"
+// "$Id: screen_xywh.cxx 11889 2016-08-23 16:38:10Z AlbrechtS $"
 //
 // Screen/monitor bounding box API for the Fast Light Tool Kit (FLTK).
 //
-// Copyright 1998-2010 by Bill Spitzak and others.
+// Copyright 1998-2016 by Bill Spitzak and others.
 //
 // This library is free software. Distribution and use rights are outlined in
 // the file "COPYING" which should have been included with this file.  If this
@@ -58,7 +58,7 @@ static BOOL CALLBACK screen_cb(HMONITOR mon, HDC, LPRECT r, LPARAM) {
   mi.cbSize = sizeof(mi);
 
 //  GetMonitorInfo(mon, &mi);
-//  (but we use our self-aquired function pointer instead)
+//  (but we use our self-acquired function pointer instead)
   if (fl_gmi(mon, &mi)) {
     screens[num_screens] = mi.rcMonitor;
 // If we also want to record the work area, we would also store mi.rcWork at this point
@@ -97,7 +97,7 @@ static void screen_init() {
       if (fl_gmi) {
         // We have GetMonitorInfoA, enumerate all the screens...
 //      EnumDisplayMonitors(0,0,screen_cb,0);
-//      (but we use our self-aquired function pointer instead)
+//      (but we use our self-acquired function pointer instead)
 //      NOTE: num_screens is incremented in screen_cb so we must first reset it here...
         num_screens = 0;
         fl_edm(0, 0, screen_cb, 0);
@@ -131,36 +131,79 @@ static void screen_init() {
     screens[i].width  = int(r.size.width);
     screens[i].height = int(r.size.height);
 //fprintf(stderr,"screen %d %dx%dx%dx%d\n",i,screens[i].x,screens[i].y,screens[i].width,screens[i].height);
-    if (CGDisplayScreenSize != NULL) {
+    if (&CGDisplayScreenSize != NULL) {
       CGSize s = CGDisplayScreenSize(displays[i]); // from 10.3
       dpi_h[i] = screens[i].width / (s.width/25.4);
       dpi_v[i] = screens[i].height / (s.height/25.4);
-      }
-    else {
+    } else {
       dpi_h[i] = dpi_v[i] = 75.;
-      }
+    }
   }
   num_screens = count;
 }
 
-#else
+#else // X11
 
 #if HAVE_XINERAMA
 #  include <X11/extensions/Xinerama.h>
 #endif
 typedef struct {
-   short x_org;
-   short y_org;
-   short width;
-   short height;
-  } FLScreenInfo;
+  short x_org;
+  short y_org;
+  short width;
+  short height;
+} FLScreenInfo;
 static FLScreenInfo screens[MAX_SCREENS];
 static float dpi[MAX_SCREENS][2];
 
+#define USE_XRANDR (HAVE_DLSYM && HAVE_DLFCN_H) // means attempt to dynamically load libXrandr.so
+#if USE_XRANDR
+#include <dlfcn.h>
+typedef struct {
+  int    width, height;
+  int    mwidth, mheight;
+} XRRScreenSize;
+typedef XRRScreenSize* (*XRRSizes_type)(Display *dpy, int screen, int *nsizes);
+#endif // USE_XRANDR
+
 static void screen_init() {
   if (!fl_display) fl_open_display();
-  // FIXME: Rewrite using RandR instead
+
+  int dpi_by_randr = 0;
+  float dpih = 0.0f, dpiv = 0.0f;
+
+#if USE_XRANDR
+
+  static XRRSizes_type XRRSizes_f = NULL;
+  if (!XRRSizes_f) {
+    void *libxrandr_addr = dlopen("libXrandr.so.2", RTLD_LAZY);
+    if (!libxrandr_addr) libxrandr_addr = dlopen("libXrandr.so", RTLD_LAZY);
+#   ifdef __APPLE_CC__ // allows testing on Darwin + X11
+    if (!libxrandr_addr) libxrandr_addr = dlopen("/opt/X11/lib/libXrandr.dylib", RTLD_LAZY);
+#   endif
+    if (libxrandr_addr) XRRSizes_f = (XRRSizes_type)dlsym(libxrandr_addr, "XRRSizes");
+  }
+  if (XRRSizes_f) {
+    int nscreens;
+    XRRScreenSize *ssize = XRRSizes_f(fl_display, fl_screen, &nscreens);
+
+    //for (int i=0; i<nscreens; i++)
+    //  printf("width=%d height=%d mwidth=%d mheight=%d\n",
+    //         ssize[i].width,ssize[i].height,ssize[i].mwidth,ssize[i].mheight);
+
+    if (nscreens > 0) { // Note: XRRSizes() *may* return nscreens == 0, see docs
+      int mm = ssize[0].mwidth;
+      dpih = mm ? ssize[0].width*25.4f/mm : 0.0f;
+      mm = ssize[0].mheight;
+      dpiv = mm ? ssize[0].height*25.4f/mm : 0.0f;
+      dpi_by_randr = 1;
+    }
+  }
+
+#endif // USE_XRANDR
+
 #if HAVE_XINERAMA
+
   if (XineramaIsActive(fl_display)) {
     XineramaScreenInfo *xsi = XineramaQueryScreens(fl_display, &num_screens);
     if (num_screens > MAX_SCREENS) num_screens = MAX_SCREENS;
@@ -172,33 +215,45 @@ static void screen_init() {
       screens[i].width = xsi[i].width;
       screens[i].height = xsi[i].height;
 
-      int mm = DisplayWidthMM(fl_display, fl_screen);
-      dpi[i][0] = mm ? screens[i].width*25.4f/mm : 0.0f;
-      mm = DisplayHeightMM(fl_display, fl_screen);
-      dpi[i][1] = mm ? screens[i].height*25.4f/mm : 0.0f;
+      if (dpi_by_randr) {
+	dpi[i][0] = dpih;
+	dpi[i][1] = dpiv;
+      } else {
+        int mm = DisplayWidthMM(fl_display, fl_screen);
+        dpi[i][0] = mm ? screens[i].width*25.4f/mm : 0.0f;
+        mm = DisplayHeightMM(fl_display, fl_screen);
+        dpi[i][1] = mm ? screens[i].height*25.4f/mm : 0.0f;
+      }
     }
     if (xsi) XFree(xsi);
-  } else 
-#endif
-  { // ! XineramaIsActive()
+  } else
+
+#endif // HAVE_XINERAMA
+
+  { // ! HAVE_XINERAMA || ! XineramaIsActive()
     num_screens = ScreenCount(fl_display);
     if (num_screens > MAX_SCREENS) num_screens = MAX_SCREENS;
-    
+
     for (int i=0; i<num_screens; i++) {
       screens[i].x_org = 0;
       screens[i].y_org = 0;
       screens[i].width = DisplayWidth(fl_display, i);
       screens[i].height = DisplayHeight(fl_display, i);
-  
-      int mm = DisplayWidthMM(fl_display, i);
-      dpi[i][0] = mm ? DisplayWidth(fl_display, i)*25.4f/mm : 0.0f;
-      mm = DisplayHeightMM(fl_display, i);
-      dpi[i][1] = mm ? DisplayHeight(fl_display, i)*25.4f/mm : 0.0f;
+
+      if (dpi_by_randr) {
+	dpi[i][0] = dpih;
+	dpi[i][1] = dpiv;
+      } else {
+	int mm = DisplayWidthMM(fl_display, i);
+	dpi[i][0] = mm ? screens[i].width*25.4f/mm : 0.0f;
+	mm = DisplayHeightMM(fl_display, fl_screen);
+	dpi[i][1] = mm ? screens[i].height*25.4f/mm : 0.0f;
+      }
     }
   }
 }
 
-#endif // WIN32
+#endif // ( WIN32 || __APPLE__ || ) X11
 
 #ifndef FL_DOXYGEN
 void Fl::call_screen_init() {
@@ -215,21 +270,6 @@ int Fl::screen_count() {
   return num_screens ? num_screens : 1;
 }
 
-static int find_screen_with_point(int mx, int my) {
-  int screen = 0;
-  if (num_screens < 0) screen_init();
-  
-  for (int i = 0; i < num_screens; i ++) {
-    int sx, sy, sw, sh;
-    Fl::screen_xywh(sx, sy, sw, sh, i);
-    if ((mx >= sx) && (mx < (sx+sw)) && (my >= sy) && (my < (sy+sh))) {
-      screen = i;
-      break;
-    }
-  }
-  return screen;
-}
-
 /**
   Gets the bounding box of a screen
   that contains the specified screen position \p mx, \p my
@@ -237,7 +277,7 @@ static int find_screen_with_point(int mx, int my) {
   \param[in] mx, my the absolute screen position
 */
 void Fl::screen_xywh(int &X, int &Y, int &W, int &H, int mx, int my) {
-  screen_xywh(X, Y, W, H, find_screen_with_point(mx, my));
+  screen_xywh(X, Y, W, H, screen_num(mx, my));
 }
 
 
@@ -248,7 +288,7 @@ void Fl::screen_xywh(int &X, int &Y, int &W, int &H, int mx, int my) {
  \param[in] mx, my the absolute screen position
  */
 void Fl::screen_work_area(int &X, int &Y, int &W, int &H, int mx, int my) {
-  screen_work_area(X, Y, W, H, find_screen_with_point(mx, my));
+  screen_work_area(X, Y, W, H, screen_num(mx, my));
 }
 
 /**
@@ -273,10 +313,9 @@ void Fl::screen_work_area(int &X, int &Y, int &W, int &H, int n) {
     Y = Fl::y();
     W = Fl::w();
     H = Fl::h();
-    }
-  else { // for other screens, work area is full screen,
+  } else { // for other screens, work area is full screen,
     screen_xywh(X, Y, W, H, n);
-    }
+  }
 #endif
 }
 
@@ -307,10 +346,10 @@ void Fl::screen_xywh(int &X, int &Y, int &W, int &H, int n) {
     H = GetSystemMetrics(SM_CYSCREEN);
   }
 #elif defined(__APPLE__)
-    X = screens[n].x;
-    Y = screens[n].y;
-    W = screens[n].width;
-    H = screens[n].height;
+  X = screens[n].x;
+  Y = screens[n].y;
+  W = screens[n].width;
+  H = screens[n].height;
 #else
   if (num_screens > 0) {
     X = screens[n].x_org;
@@ -319,17 +358,6 @@ void Fl::screen_xywh(int &X, int &Y, int &W, int &H, int n) {
     H = screens[n].height;
   }
 #endif // WIN32
-}
-
-static inline float fl_intersection(int x1, int y1, int w1, int h1,
-                        int x2, int y2, int w2, int h2) {
-  if(x1+w1 < x2 || x2+w2 < x1 || y1+h1 < y2 || y2+h2 < y1)
-    return 0.;
-  int int_left = x1 > x2 ? x1 : x2;
-  int int_right = x1+w1 > x2+w2 ? x2+w2 : x1+w1;
-  int int_top = y1 > y2 ? y1 : y2;
-  int int_bottom = y1+h1 > y2+h2 ? y2+h2 : y1+h1;
-  return (float)(int_right - int_left) * (int_bottom - int_top);
 }
 
 /**
@@ -341,21 +369,61 @@ static inline float fl_intersection(int x1, int y1, int w1, int h1,
   \see void screen_xywh(int &X, int &Y, int &W, int &H, int n)
   */
 void Fl::screen_xywh(int &X, int &Y, int &W, int &H, int mx, int my, int mw, int mh) {
+  screen_xywh(X, Y, W, H, screen_num(mx, my, mw, mh));
+}
+
+/**
+  Gets the screen number of a screen
+  that contains the specified screen position \p x, \p y
+  \param[in] x, y the absolute screen position
+*/
+int Fl::screen_num(int x, int y) {
+  int screen = 0;
+  if (num_screens < 0) screen_init();
+  
+  for (int i = 0; i < num_screens; i ++) {
+    int sx = 0, sy = 0, sw = 0, sh = 0;
+    Fl::screen_xywh(sx, sy, sw, sh, i);
+    if ((x >= sx) && (x < (sx+sw)) && (y >= sy) && (y < (sy+sh))) {
+      screen = i;
+      break;
+    }
+  }
+  return screen;
+}
+
+// Return the number of pixels common to the two rectangular areas
+static inline float fl_intersection(int x1, int y1, int w1, int h1,
+                                    int x2, int y2, int w2, int h2) {
+  if(x1+w1 < x2 || x2+w2 < x1 || y1+h1 < y2 || y2+h2 < y1)
+    return 0.;
+  int int_left = x1 > x2 ? x1 : x2;
+  int int_right = x1+w1 > x2+w2 ? x2+w2 : x1+w1;
+  int int_top = y1 > y2 ? y1 : y2;
+  int int_bottom = y1+h1 > y2+h2 ? y2+h2 : y1+h1;
+  return (float)(int_right - int_left) * (int_bottom - int_top);
+}
+
+/**
+  Gets the screen number for the screen
+  which intersects the most with the rectangle
+  defined by \p x, \p y, \p w, \p h.
+  \param[in] x, y, w, h the rectangle to search for intersection with
+  */
+int Fl::screen_num(int x, int y, int w, int h) {
   int best_screen = 0;
   float best_intersection = 0.;
-  for(int i = 0; i < Fl::screen_count(); i++) {
-    int sx, sy, sw, sh;
+  for (int i = 0; i < Fl::screen_count(); i++) {
+    int sx = 0, sy = 0, sw = 0, sh = 0;
     Fl::screen_xywh(sx, sy, sw, sh, i);
-    float sintersection = fl_intersection(mx, my, mw, mh, sx, sy, sw, sh);
-    if(sintersection > best_intersection) {
+    float sintersection = fl_intersection(x, y, w, h, sx, sy, sw, sh);
+    if (sintersection > best_intersection) {
       best_screen = i;
       best_intersection = sintersection;
     }
   }
-  screen_xywh(X, Y, W, H, best_screen);
+  return best_screen;
 }
-
-
 
 /**
  Gets the screen resolution in dots-per-inch for the given screen.
@@ -389,5 +457,5 @@ void Fl::screen_dpi(float &h, float &v, int n)
 
 
 //
-// End of "$Id: screen_xywh.cxx 9299 2012-03-23 16:47:53Z manolo $".
+// End of "$Id: screen_xywh.cxx 11889 2016-08-23 16:38:10Z AlbrechtS $".
 //

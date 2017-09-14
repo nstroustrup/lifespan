@@ -1,9 +1,9 @@
 //
-// "$Id: fl_draw.H 9463 2012-05-08 16:15:34Z greg.ercolano $"
+// "$Id: fl_draw.H 11977 2016-09-25 11:07:06Z AlbrechtS $"
 //
 // Portable drawing function header file for the Fast Light Tool Kit (FLTK).
 //
-// Copyright 1998-2011 by Bill Spitzak and others.
+// Copyright 1998-2016 by Bill Spitzak and others.
 //
 // This library is free software. Distribution and use rights are outlined in
 // the file "COPYING" which should have been included with this file.  If this
@@ -394,6 +394,24 @@ inline void fl_curve(double X0, double Y0, double X1, double Y1, double X2, doub
  \param[in] start,end angles of start and end of arc measured in degrees
  counter-clockwise from 3 o'clock. If \p end is less than \p start
  then it draws the arc in a clockwise direction.
+
+ Examples:
+ \code
+    // Draw an arc of points
+    fl_begin_points();
+    fl_arc(100.0, 100.0, 50.0, 0.0, 180.0);
+    fl_end_points();
+
+    // Draw arc with a line
+    fl_begin_line();
+    fl_arc(200.0, 100.0, 50.0, 0.0, 180.0);
+    fl_end_line();
+
+    // Draw filled arc
+    fl_begin_polygon();
+    fl_arc(300.0, 100.0, 50.0, 0.0, 180.0);
+    fl_end_polygon();
+ \endcode
  */
 inline void fl_arc(double x, double y, double r, double start, double end) {fl_graphics_driver->arc(x,y,r,start,end); }
 /**
@@ -513,11 +531,14 @@ FL_EXPORT int fl_height(int font, int size);
   draw the text at so it looks centered vertically in that box.
 */
 inline int  fl_descent() {return fl_graphics_driver->descent();}
-/** Returns the typographical width of a nul-terminated string */
+/** Returns the typographical width of a nul-terminated string
+    using the current font face and size. */
 FL_EXPORT double fl_width(const char* txt);
-/** Returns the typographical width of a sequence of \p n characters */
+/** Returns the typographical width of a sequence of \p n characters
+    using the current font face and size. */
 inline double fl_width(const char* txt, int n) {return fl_graphics_driver->width(txt, n);}
-/** Returns the typographical width of a single character.
+/** Returns the typographical width of a single character
+    using the current font face and size.
     \note if a valid fl_gc is NOT found then it uses the first window gc,
     or the screen gc if no fltk window is available when called. */
 inline double fl_width(unsigned int c)  {return fl_graphics_driver->width(c);}
@@ -584,8 +605,8 @@ FL_EXPORT const char *fl_local_to_mac_roman(const char *t, int n=-1);
 */
 FL_EXPORT void fl_draw(const char* str, int x, int y);
 /**
-  Draws a nul-terminated UTF-8 string starting at the given \p x, \p y location and 
-  rotating \p angle degrees counter-clockwise.
+  Draws a nul-terminated UTF-8 string starting at the given \p x, \p y
+  location and rotating \p angle degrees counter-clockwise.
   This version of fl_draw provides direct access to the text drawing
   function of the underlying OS and is supported by Xft, Win32 and MacOS
   fltk subsets.
@@ -596,8 +617,13 @@ FL_EXPORT void fl_draw(int angle, const char* str, int x, int y);
 */
 inline void fl_draw(const char* str, int n, int x, int y) {fl_graphics_driver->draw(str,n,x,y); }
 /**
-  Draws at the given \p x, \p y location a UTF-8 string of length \p n bytes 
+  Draws at the given \p x, \p y location a UTF-8 string of length \p n bytes
   rotating \p angle degrees counter-clockwise.
+
+  \note When using X11 (Unix, Linux, Cygwin et al.) this needs Xft to work.
+	Under plain X11 (w/o Xft) rotated text is not supported by FLTK.
+	A warning will be issued to stderr at runtime (only once) if you
+	use this method with an angle other than 0.
 */
 inline void fl_draw(int angle, const char* str, int n, int x, int y) {fl_graphics_driver->draw(angle,str,n,x,y); }
 /**
@@ -751,7 +777,8 @@ FL_EXPORT const char* fl_shortcut_label(unsigned int shortcut, const char **eom)
 FL_EXPORT unsigned int fl_old_shortcut(const char* s);
 FL_EXPORT void fl_overlay_rect(int x,int y,int w,int h);
 FL_EXPORT void fl_overlay_clear();
-FL_EXPORT void fl_cursor(Fl_Cursor, Fl_Color fg=FL_BLACK, Fl_Color bg=FL_WHITE);
+FL_EXPORT void fl_cursor(Fl_Cursor);
+FL_EXPORT void fl_cursor(Fl_Cursor, Fl_Color fg, Fl_Color bg=FL_WHITE);
 FL_EXPORT const char* fl_expand_text(const char* from, char* buf, int maxbuf,
                                      double maxw, int& n, double &width,
                                      int wrap, int draw_symbols = 0);
@@ -774,5 +801,5 @@ FL_EXPORT int fl_add_symbol(const char* name, void (*drawit)(Fl_Color), int scal
 #endif
 
 //
-// End of "$Id: fl_draw.H 9463 2012-05-08 16:15:34Z greg.ercolano $".
+// End of "$Id: fl_draw.H 11977 2016-09-25 11:07:06Z AlbrechtS $".
 //

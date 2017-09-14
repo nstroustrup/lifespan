@@ -1,5 +1,5 @@
 //
-// "$Id: fl_ask.H 8864 2011-07-19 04:49:30Z greg.ercolano $"
+// "$Id: fl_ask.H 10501 2014-12-20 15:00:27Z manolo $"
 //
 // Standard dialog header file for the Fast Light Tool Kit (FLTK).
 //
@@ -16,23 +16,31 @@
 //     http://www.fltk.org/str.php
 //
 
+/** \file fl_ask.H
+ API for common dialogs.
+ */
+
 #ifndef fl_ask_H
 #  define fl_ask_H
 
 #  include "Enumerations.H"
 
 class Fl_Widget;
-/** Different system beeps available. \relatesalso fl_beep(int) */
-enum {
-  FL_BEEP_DEFAULT = 0,
-  FL_BEEP_MESSAGE,
-  FL_BEEP_ERROR,
-  FL_BEEP_QUESTION,
-  FL_BEEP_PASSWORD,
-  FL_BEEP_NOTIFICATION
+
+/** Different system beeps available. 
+ \sa fl_beep(int) */
+enum Fl_Beep {
+  FL_BEEP_DEFAULT = 0,  ///< Default beep.
+  FL_BEEP_MESSAGE,  ///< Message beep.
+  FL_BEEP_ERROR,  ///< Error beep.
+  FL_BEEP_QUESTION,  ///< Question beep.
+  FL_BEEP_PASSWORD,  ///< Password beep.
+  FL_BEEP_NOTIFICATION  ///< Notification beep.
 };
 
 #  ifdef __GNUC__
+/* the GNUC-specific attribute appearing below in prototypes with a variable list of arguments
+ helps detection of mismatches between format string and argument list at compilation time */
 #    define __fl_attr(x) __attribute__ (x)
 #  else
 #    define __fl_attr(x)
@@ -70,5 +78,5 @@ extern FL_EXPORT const char* fl_close;
 #endif // !fl_ask_H
 
 //
-// End of "$Id: fl_ask.H 8864 2011-07-19 04:49:30Z greg.ercolano $".
+// End of "$Id: fl_ask.H 10501 2014-12-20 15:00:27Z manolo $".
 //

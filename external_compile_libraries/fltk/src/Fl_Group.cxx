@@ -1,5 +1,5 @@
 //
-// "$Id: Fl_Group.cxx 9637 2012-07-24 04:37:22Z matt $"
+// "$Id: Fl_Group.cxx 10945 2015-12-02 09:59:37Z manolo $"
 //
 // Group widget for the Fast Light Tool Kit (FLTK).
 //
@@ -122,8 +122,10 @@ static int send(Fl_Widget* o, int event) {
 }
 
 // translate the current keystroke into up/down/left/right for navigation:
-#define ctrl(x) (x^0x40)
 static int navkey() {
+  // The app may want these for hotkeys, check key state
+  if (Fl::event_state(FL_CTRL | FL_ALT | FL_META)) return 0;
+
   switch (Fl::event_key()) {
   case 0: // not an FL_KEYBOARD/FL_SHORTCUT event
     break;
@@ -875,5 +877,5 @@ Fl_Spinner::Fl_Spinner(int X, int Y, int W, int H, const char *L)
 
 
 //
-// End of "$Id: Fl_Group.cxx 9637 2012-07-24 04:37:22Z matt $".
+// End of "$Id: Fl_Group.cxx 10945 2015-12-02 09:59:37Z manolo $".
 //

@@ -43,7 +43,7 @@ RSC=rc.exe
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /MT /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /YX /FD /c
-# ADD CPP /nologo /MD /W3 /GX /Os /Ob2 /I "." /I "..\.." /I "..\..\zlib" /I "..\..\png" /I "..\..\jpeg" /D "FL_DLL" /D "FL_LIBRARY" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_CRT_SECURE_NO_DEPRECATE" /D "_CRT_NONSTDC_NO_DEPRECATE" /D "WIN32_LEAN_AND_MEAN" /D "VC_EXTRA_LEAN" /D "WIN32_EXTRA_LEAN" /YX /c
+# ADD CPP /nologo /MD /GX /Os /Ob2 /I "." /I "..\.." /I "..\..\zlib" /I "..\..\png" /I "..\..\jpeg" /D "FL_DLL" /D "FL_LIBRARY" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_CRT_SECURE_NO_DEPRECATE" /D "_CRT_NONSTDC_NO_DEPRECATE" /D "WIN32_LEAN_AND_MEAN" /D "VC_EXTRA_LEAN" /D "WIN32_EXTRA_LEAN" /YX /c
 # ADD BASE MTL /nologo /D "NDEBUG" /mktyplib203 /o /win32 "NUL"
 # ADD MTL /nologo /D "NDEBUG" /mktyplib203 /o /win32 "NUL"
 # ADD BASE RSC /l 0x409 /d "NDEBUG"
@@ -233,6 +233,10 @@ SOURCE=..\..\src\Fl_compose.cxx
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\src\Fl_Copy_Surface.cxx
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\src\Fl_Counter.cxx
 # End Source File
 # Begin Source File
@@ -341,11 +345,19 @@ SOURCE=..\..\src\fl_gtk.cxx
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\src\fl_gleam.cxx
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\src\Fl_Help_View.cxx
 # End Source File
 # Begin Source File
 
 SOURCE=..\..\src\Fl_Image.cxx
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\src\Fl_Image_Surface.cxx
 # End Source File
 # Begin Source File
 
@@ -453,6 +465,10 @@ SOURCE=..\..\src\Fl_Positioner.cxx
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\src\Fl_PostScript.cxx
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\src\Fl_Preferences.cxx
 # End Source File
 # Begin Source File
@@ -542,10 +558,6 @@ SOURCE=..\..\src\Fl_Slider.cxx
 # Begin Source File
 
 SOURCE=..\..\src\fl_symbols.cxx
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\src\Fl_Sys_Menu_Bar.cxx
 # End Source File
 # Begin Source File
 
@@ -650,6 +662,10 @@ SOURCE=..\..\src\Fl_Window_hotspot.cxx
 # Begin Source File
 
 SOURCE=..\..\src\Fl_Window_iconize.cxx
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\src\Fl_Window_shape.cxx
 # End Source File
 # Begin Source File
 

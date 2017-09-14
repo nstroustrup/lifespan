@@ -1,5 +1,5 @@
 //
-// "$Id: blocks.cxx 8864 2011-07-19 04:49:30Z greg.ercolano $"
+// "$Id: blocks.cxx 10127 2014-04-27 13:57:09Z manolo $"
 //
 // "Block Attack!" scrolling blocks game using the Fast Light Tool Kit (FLTK).
 //
@@ -139,6 +139,9 @@ class BlockSound {
   // Private, OS-specific data...
 #ifdef __APPLE__
   AudioDeviceID device;
+#ifndef MAC_OS_X_VERSION_10_5
+#define MAC_OS_X_VERSION_10_5 1050
+#endif
 #  if MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_5
   AudioDeviceIOProcID audio_proc_id;
 #  endif
@@ -1017,5 +1020,5 @@ BlockWindow::timeout_cb(BlockWindow *bw) {
 
 
 //
-// End of "$Id: blocks.cxx 8864 2011-07-19 04:49:30Z greg.ercolano $".
+// End of "$Id: blocks.cxx 10127 2014-04-27 13:57:09Z manolo $".
 //

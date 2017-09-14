@@ -1,5 +1,5 @@
 //
-// "$Id: demo.cxx 9736 2012-12-05 14:53:03Z manolo $"
+// "$Id: demo.cxx 11918 2016-09-03 08:14:43Z manolo $"
 //
 // Main demo program for the Fast Light Tool Kit (FLTK).
 //
@@ -44,6 +44,22 @@
 #include <FL/filename.H>
 #include <FL/x.H>
 
+/* Define a macro to decide if a trailing 'd' needs to be removed
+   from the executable file name. Current versions of Visual Studio
+   bundled IDE solutions add a 'd' to the executable file name
+   ('demod.exe') in Debug configurations that needs to be removed.
+   This is no longer true with CMake-generated IDE's starting with
+   FLTK 1.4, but in FLTK 1.3 the OLD behavior is still used.
+   The 'old' behavior obviously applied or still applies to
+   CodeWarrior (__MWERKS__).
+*/
+
+#if ( defined _MSC_VER || defined __MWERKS__ ) && defined _DEBUG
+# define DEBUG_EXE_WITH_D 1
+#else
+# define DEBUG_EXE_WITH_D 0
+#endif
+
 /* The form description */
 
 void doexit(Fl_Widget *, void *);
@@ -72,12 +88,15 @@ void create_the_forms() {
   choice->labelfont(FL_HELVETICA_BOLD);
   choice->add("none");
   choice->add("gtk+");
+  choice->add("gleam");
   choice->add("plastic");
   choice->callback((Fl_Callback *)doscheme);
   Fl::scheme(NULL);
   if (!Fl::scheme()) choice->value(0);
   else if (!strcmp(Fl::scheme(), "gtk+")) choice->value(1);
-  else choice->value(2);
+  else if (!strcmp(Fl::scheme(), "gleam")) choice->value(2);
+  else if (!strcmp(Fl::scheme(), "plastic")) choice->value(3);
+  else choice->value(0);
   obj = new Fl_Button(10,15,330,380); obj->type(FL_HIDDEN_BUTTON);
   obj->callback(doback);
   obj = but[0] = new Fl_Button( 30, 85,90,90);
@@ -223,7 +242,13 @@ void dobut(Fl_Widget *, long arg)
 #ifdef WIN32
     STARTUPINFO		suInfo;		// Process startup information
     PROCESS_INFORMATION	prInfo;		// Process information
-    
+
+# if DEBUG_EXE_WITH_D
+    const char *exe = "d.exe";		// exe name with trailing 'd'
+# else
+    const char *exe = ".exe";		// exe name w/o trailing 'd'
+# endif
+
     memset(&suInfo, 0, sizeof(suInfo));
     suInfo.cb = sizeof(suInfo);
     
@@ -236,22 +261,18 @@ void dobut(Fl_Widget *, long arg)
     // whilst leaving any additional parameters unchanged - this
     // is required to handle the correct conversion of cases such as : 
     // `../fluid/fluid valuators.fl' to '../fluid/fluid.exe valuators.fl'.
-    
+
     // skip leading spaces.
     char* start_command = copy_of_icommand;
-    while(*start_command == ' ') ++start_command;
-    
+    while (*start_command == ' ') ++start_command;
+
     // find the space between the command and parameters if one exists.
     char* start_parameters = strchr(start_command,' ');
-    
+
     char* command = new char[icommand_length+6]; // 6 for extra 'd.exe\0'
-    
+
     if (start_parameters==NULL) { // no parameters required.
-#  ifdef _DEBUG
-      sprintf(command, "%sd.exe", start_command);
-#  else
-      sprintf(command, "%s.exe", start_command);
-#  endif // _DEBUG
+      sprintf(command, "%s%s", start_command, exe);
     } else { // parameters required.
       // break the start_command at the intermediate space between
       // start_command and start_parameters.
@@ -259,11 +280,7 @@ void dobut(Fl_Widget *, long arg)
       // move start_paremeters to skip over the intermediate space.
       ++start_parameters;
       
-#  ifdef _DEBUG
-      sprintf(command, "%sd.exe %s", start_command, start_parameters);
-#  else
-      sprintf(command, "%s.exe %s", start_command, start_parameters);
-#  endif // _DEBUG
+      sprintf(command, "%s%s %s", start_command, exe, start_parameters);
     }
     
     CreateProcess(NULL, command, NULL, NULL, FALSE,
@@ -278,8 +295,8 @@ void dobut(Fl_Widget *, long arg)
     
     char command[2048], path[2048], app_path[2048];
     
-    // this neat litle block of code ensures that the current directory is set 
-    // to the location of the Demo application.
+    // this neat little block of code ensures that the current directory
+    // is set to the location of the Demo bundled application.
     CFBundleRef app = CFBundleGetMainBundle();
     CFURLRef url = CFBundleCopyBundleURL(app);    
     CFStringRef cc_app_path = CFURLCopyFileSystemPath(url, kCFURLPOSIXPathStyle);
@@ -289,13 +306,17 @@ void dobut(Fl_Widget *, long arg)
     if (*app_path) {
       char *n = strrchr(app_path, '/');
       if (n) {
-#if defined USING_XCODE
         *n = 0;
-#endif
         chdir(app_path);
       }
     }
     
+    char *name = new char[strlen(cmd) + 5];
+    strcpy(name, cmd);
+    if (arg) name[arg-cmd] = 0;
+    strcat(name, ".app");
+    // check whether app bundle exists
+    if ( ! fl_filename_isdir(name) ) strcpy(name, cmd);
     if (arg) {
       const char *fluidpath;
       *arg = 0;
@@ -305,15 +326,18 @@ void dobut(Fl_Widget *, long arg)
 #else
       strcpy(path, app_path); strcat(path, "/");
       fluidpath = "../fluid/fluid.app";
+      // check whether fluid bundle exists
+      if ( ! fl_filename_isdir(fluidpath) ) fluidpath = "../fluid";
 #endif
       if (strcmp(cmd, "../fluid/fluid")==0) {
 	sprintf(command, "open %s --args %s%s", fluidpath, path, arg+1);
       } else {
-	sprintf(command, "open %s.app --args %s%s", cmd, path, arg+1);
+	sprintf(command, "open %s --args %s%s", name, path, arg+1);
       }
     } else {
-      sprintf(command, "open %s.app", cmd);
+      sprintf(command, "open %s", name);
     }
+    delete[] name;
 //    puts(command);    
     system(command);
     
@@ -335,19 +359,19 @@ void doback(Fl_Widget *, void *) {pop_menu();}
 
 void doexit(Fl_Widget *, void *) {exit(0);}
 
-int load_the_menu(const char* fname)
+int load_the_menu(char* fname)
 /* Loads the menu file. Returns whether successful. */
 {
   FILE *fin = 0;
   char line[256], mname[64],iname[64],cname[64];
   int i, j;
   fin = fl_fopen(fname,"r");
-#if defined ( USING_XCODE )
+#if defined ( __APPLE__ )
   if (fin == NULL) {
     // mac os bundle menu detection:
     char* pos = strrchr(fname,'/');
     if (!pos) return 0;
-    *pos='\0';
+    *pos = '\0';
     pos = strrchr(fname,'/');
     if (!pos) return 0;
     strcpy(pos,"/Resources/demo.menu");
@@ -366,7 +390,7 @@ int load_the_menu(const char* fname)
       *d = *s++;
       if (!*d) break;
     }
-    // interprete the line
+    // interpret the line
     j = 0; i = 0;
     while (line[i] == ' ' || line[i] == '\t') i++;
     if (line[i] == '\n') continue;
@@ -375,8 +399,7 @@ int load_the_menu(const char* fname)
     mname[j] = '\0';
     if (line[i] == ':') i++;
     j = 0; 
-    while (line[i] != ':' && line[i] != '\n')
-    {
+    while (line[i] != ':' && line[i] != '\n') {
       if (line[i] == '\\') {
         i++;
         if (line[i] == 'n') iname[j++] = '\n';
@@ -400,13 +423,13 @@ int main(int argc, char **argv) {
   putenv((char *)"FLTK_DOCDIR=../documentation/html");
   char buf[FL_PATH_MAX];
   strcpy(buf, argv[0]);
-#if ( defined _MSC_VER || defined __MWERKS__ ) && defined _DEBUG
+#if DEBUG_EXE_WITH_D
   // MS_VisualC appends a 'd' to debugging executables. remove it.
   fl_filename_setext( buf, "" );
   buf[ strlen(buf)-1 ] = 0;
 #endif
   fl_filename_setext(buf,".menu");
-  const char *fname = buf;
+  char *fname = buf;
   int i = 0;
   if (!Fl::args(argc,argv,i) || i < argc-1)
     Fl::fatal("Usage: %s <switches> <menufile>\n%s",argv[0],Fl::help);
@@ -415,7 +438,7 @@ int main(int argc, char **argv) {
   create_the_forms();
   
   if (!load_the_menu(fname)) Fl::fatal("Can't open %s",fname);
-  if (buf!=fname)
+  if (buf != fname)
     strcpy(buf,fname);
   const char *c = fl_filename_name(buf);
   if (c > buf) {
@@ -429,6 +452,6 @@ int main(int argc, char **argv) {
 }
 
 //
-// End of "$Id: demo.cxx 9736 2012-12-05 14:53:03Z manolo $".
+// End of "$Id: demo.cxx 11918 2016-09-03 08:14:43Z manolo $".
 //
 

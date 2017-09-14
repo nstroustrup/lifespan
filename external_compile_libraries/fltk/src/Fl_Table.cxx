@@ -1,5 +1,5 @@
 //
-// "$Id: Fl_Table.cxx 9706 2012-11-06 20:46:14Z matt $"
+// "$Id: Fl_Table.cxx 11849 2016-07-29 09:23:44Z AlbrechtS $"
 //
 // Fl_Table -- A table widget
 //
@@ -131,6 +131,9 @@ Fl_Table::Fl_Table(int X, int Y, int W, int H, const char *l) : Fl_Group(X,Y,W,H
 #if FLTK_ABI_VERSION >= 10301
   _scrollbar_size   = 0;
 #endif  
+#if FLTK_ABI_VERSION >= 10303
+  flags_            = 0;	// TABCELLNAV off
+#endif
   box(FL_THIN_DOWN_FRAME);
   
   vscrollbar = new Fl_Scrollbar(x()+w()-Fl::scrollbar_size(), y(),
@@ -196,7 +199,7 @@ void Fl_Table::col_width(int col, int width)
   // Add column widths, even if none yet
   int now_size = (int)_colwidths.size();
   if ( col >= now_size ) {
-    _colwidths.size(col);
+    _colwidths.size(col+1);
     while (now_size < col) {
       _colwidths[now_size++] = width;
     }
@@ -488,14 +491,14 @@ void Fl_Table::recalc_dimensions() {
     int scrollsize = Fl::scrollbar_size();
 #endif
     // Second pass: Check for interference
-    if ( !hideh & hidev ) { hidev = (( table_h - tih + scrollsize ) <= 0 ); } 
-    if ( !hidev & hideh ) { hideh = (( table_w - tiw + scrollsize ) <= 0 ); } 
+    if ( !hideh && hidev ) { hidev = (( table_h - tih + scrollsize ) <= 0 ); }
+    if ( !hidev && hideh ) { hideh = (( table_w - tiw + scrollsize ) <= 0 ); }
     // Determine scrollbar visibility, trim ti[xywh]/to[xywh]
-    if ( hidev ) { vscrollbar->hide(); } 
+    if ( hidev ) { vscrollbar->hide(); }
     else { vscrollbar->show(); tiw -= scrollsize; tow -= scrollsize; }
-    if ( hideh ) { hscrollbar->hide(); } 
+    if ( hideh ) { hscrollbar->hide(); }
     else { hscrollbar->show(); tih -= scrollsize; toh -= scrollsize; }
-  } 
+  }
   // Resize the child table
   table->resize(tox, toy, tow, toh);
   table->init_sizes();
@@ -674,7 +677,7 @@ void Fl_Table::damage_zone(int r1, int c1, int r2, int c2, int r3, int c3) {
   redraw_range(R1, R2, C1, C2);
 }
 
-int Fl_Table::move_cursor(int R, int C) {
+int Fl_Table::move_cursor(int R, int C, int shiftselect) {
   if (select_row == -1) R++;
   if (select_col == -1) C++;
   R += select_row;
@@ -687,7 +690,7 @@ int Fl_Table::move_cursor(int R, int C) {
   damage_zone(current_row, current_col, select_row, select_col, R, C);
   select_row = R;
   select_col = C;
-  if (!Fl::event_state(FL_SHIFT)) {
+  if (!shiftselect || !Fl::event_state(FL_SHIFT)) {
     current_row = R;
     current_col = C;
   }
@@ -696,7 +699,11 @@ int Fl_Table::move_cursor(int R, int C) {
   return 1;
 }
 
-// #define DEBUG 1
+int Fl_Table::move_cursor(int R, int C) {
+  return move_cursor(R,C,1);
+}
+
+//#define DEBUG 1
 #ifdef DEBUG
 #include <FL/names.h>
 #define PRINTEVENT \
@@ -729,7 +736,9 @@ int Fl_Table::handle(int event) {
   int _event_x      = Fl::event_x();
   int _event_y      = Fl::event_y();
   int _event_key    = Fl::event_key();
+#if FLTK_ABI_VERSION >= 10303
   int _event_state  = Fl::event_state();
+#endif
   Fl_Widget *_focus = Fl::focus();
   switch ( event ) {
     case FL_PUSH:
@@ -746,8 +755,11 @@ int Fl_Table::handle(int event) {
           current_col = select_col = C;
           _selecting = CONTEXT_CELL;
         } else {
-          current_row = select_row = -1;
-          current_col = select_col = -1;
+	  // Clear selection if not resizing row/col
+	  if ( !resizeflag ) {
+            current_row = select_row = -1;
+            current_col = select_col = -1;
+	  }
         }
       }
       // A click on table with user's callback defined?
@@ -796,6 +808,7 @@ int Fl_Table::handle(int event) {
               ret = 1;
             } else {
               // Not resizing? Select the column
+	      if ( Fl::focus() != this && contains(Fl::focus()) ) return 0;	// STR #3018 - item 1
               current_col = select_col = C;
               current_row = 0;
               select_row = rows() - 1;
@@ -822,6 +835,7 @@ int Fl_Table::handle(int event) {
               ret = 1;
             } else {
               // Not resizing? Select the row
+	      if ( Fl::focus() != this && contains(Fl::focus()) ) return 0;	// STR #3018 - item 1
               current_row = select_row = R;
               current_col = 0;
               select_col = cols() - 1;
@@ -887,6 +901,8 @@ int Fl_Table::handle(int event) {
         if (_event_button == 1 && 
             _selecting == CONTEXT_CELL &&
             context == CONTEXT_CELL) {
+          // Dragging a cell selection?
+	  if ( _event_clicks ) break;			// STR #3018 - item 2
           if (select_row != R || select_col != C) {
             damage_zone(current_row, current_col, select_row, select_col, R, C);
           }
@@ -1020,12 +1036,17 @@ int Fl_Table::handle(int event) {
           ret = move_cursor(1, 0);
           break;
 	case FL_Tab:
+#if FLTK_ABI_VERSION >= 10303
+	  if ( !tab_cell_nav() ) break;		// not navigating cells? let fltk handle it (STR#2862)
 	  if ( _event_state & FL_SHIFT ) {
-            ret = move_cursor(0, -1);		// shift-tab -> left
+            ret = move_cursor(0, -1, 0);	// shift-tab -> left
 	  } else {
-	    ret = move_cursor(0, 1);		// tab -> right
+	    ret = move_cursor(0, 1, 0);		// tab -> right
 	  }
           break;
+#else
+          break;				// without tab_cell_nav(), Fl_Table should default to navigating widgets, not cells
+#endif
       }
       if (ret && Fl::focus() != this) {
         do_callback(CONTEXT_TABLE, -1, -1);
@@ -1268,8 +1289,8 @@ void Fl_Table::draw() {
         fl_rectf(tix, tiy + table_h, tiw, tih - table_h, color()); 
         if ( row_header() ) {
           // NOTE:
-          //     Careful with that lower corner; don't use tih; when eg. 
-          //     table->box(FL_THIN_UPFRAME) and hscrollbar hidden, 
+          //     Careful with that lower corner; don't use tih; when eg.
+          //     table->box(FL_THIN_UP_FRAME) and hscrollbar hidden,
           //     leaves a row of dead pixels.
           //
           fl_rectf(wix, tiy + table_h, row_header_width(), 
@@ -1293,5 +1314,5 @@ void Fl_Table::draw() {
 }
 
 //
-// End of "$Id: Fl_Table.cxx 9706 2012-11-06 20:46:14Z matt $".
+// End of "$Id: Fl_Table.cxx 11849 2016-07-29 09:23:44Z AlbrechtS $".
 //

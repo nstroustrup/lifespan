@@ -1,9 +1,9 @@
 //
-// "$Id: Fl_win32.cxx 9624 2012-06-21 08:52:29Z manolo $"
+// "$Id: Fl_win32.cxx 12028 2016-10-14 16:35:44Z AlbrechtS $"
 //
 // WIN32-specific code for the Fast Light Tool Kit (FLTK).
 //
-// Copyright 1998-2012 by Bill Spitzak and others.
+// Copyright 1998-2016 by Bill Spitzak and others.
 //
 // This library is free software. Distribution and use rights are outlined in
 // the file "COPYING" which should have been included with this file.  If this
@@ -36,6 +36,7 @@
 #include <stdlib.h>
 #include <sys/types.h>
 #include <time.h>
+#include <signal.h>
 #ifdef __CYGWIN__
 #  include <sys/time.h>
 #  include <unistd.h>
@@ -47,7 +48,7 @@
 // that makes fltk use easier as only fltk libs are now requested
 // This idea could be extended to fltk libs themselves, 
 // implementer should then care about DLL linkage flags ...
-#  if (_MSC_VER>=1310)
+#  if defined(_MSC_VER) && (_MSC_VER>=1310)
 #    pragma comment (lib, "comctl32.lib")
 #  endif
 #endif
@@ -58,8 +59,6 @@
 
 #include <ole2.h>
 #include <shellapi.h>
-
-#include "aimm.h"
 
 //
 // USE_ASYNC_SELECT - define it if you have WSAAsyncSelect()...
@@ -83,9 +82,15 @@
   for async mode proper operation, not mentioning the side effects...
 */
 
-static Fl_GDI_Graphics_Driver fl_gdi_driver;
-static Fl_Display_Device fl_gdi_display(&fl_gdi_driver);
-Fl_Display_Device *Fl_Display_Device::_display = &fl_gdi_display; // the platform display
+// Internal functions
+static void fl_clipboard_notify_target(HWND wnd);
+static void fl_clipboard_notify_untarget(HWND wnd);
+
+// Internal variables
+static HWND clipboard_wnd = 0;
+static HWND next_clipboard_wnd = 0;
+
+static bool initial_clipboard = true;
 
 // dynamic wsock dll handling api:
 #if defined(__CYGWIN__) && !defined(SOCKET)
@@ -120,27 +125,24 @@ static HMODULE get_wsock_mod() {
  * size and link dependencies.
  */
 static HMODULE s_imm_module = 0;
+typedef BOOL (WINAPI* flTypeImmAssociateContextEx)(HWND, HIMC, DWORD);
+static flTypeImmAssociateContextEx flImmAssociateContextEx = 0;
 typedef HIMC (WINAPI* flTypeImmGetContext)(HWND);
 static flTypeImmGetContext flImmGetContext = 0;
 typedef BOOL (WINAPI* flTypeImmSetCompositionWindow)(HIMC, LPCOMPOSITIONFORM);
 static flTypeImmSetCompositionWindow flImmSetCompositionWindow = 0;
 typedef BOOL (WINAPI* flTypeImmReleaseContext)(HWND, HIMC);
 static flTypeImmReleaseContext flImmReleaseContext = 0;
-typedef BOOL (WINAPI* flTypeImmIsIME)(HKL);
-static flTypeImmIsIME flImmIsIME = 0;
 
-static HMODULE get_imm_module() {
-  if (!s_imm_module) {
-    s_imm_module = LoadLibrary("IMM32.DLL");
-    if (!s_imm_module)
-      Fl::fatal("FLTK Lib Error: IMM32.DLL file not found!\n\n"
-        "Please check your input method manager library accessibility.");
-    flImmGetContext = (flTypeImmGetContext)GetProcAddress(s_imm_module, "ImmGetContext");
-    flImmSetCompositionWindow = (flTypeImmSetCompositionWindow)GetProcAddress(s_imm_module, "ImmSetCompositionWindow");
-    flImmReleaseContext = (flTypeImmReleaseContext)GetProcAddress(s_imm_module, "ImmReleaseContext");
-    flImmIsIME = (flTypeImmIsIME)GetProcAddress(s_imm_module, "ImmIsIME");
-  }
-  return s_imm_module;
+static void get_imm_module() {
+  s_imm_module = LoadLibrary("IMM32.DLL");
+  if (!s_imm_module)
+    Fl::fatal("FLTK Lib Error: IMM32.DLL file not found!\n\n"
+      "Please check your input method manager library accessibility.");
+  flImmAssociateContextEx = (flTypeImmAssociateContextEx)GetProcAddress(s_imm_module, "ImmAssociateContextEx");
+  flImmGetContext = (flTypeImmGetContext)GetProcAddress(s_imm_module, "ImmGetContext");
+  flImmSetCompositionWindow = (flTypeImmSetCompositionWindow)GetProcAddress(s_imm_module, "ImmSetCompositionWindow");
+  flImmReleaseContext = (flTypeImmReleaseContext)GetProcAddress(s_imm_module, "ImmReleaseContext");
 }
 
 // USE_TRACK_MOUSE - define NO_TRACK_MOUSE if you don't have
@@ -205,6 +207,9 @@ static Fl_Window *track_mouse_win=0;	// current TrackMouseEvent() window
 #  define WHEEL_DELTA 120	// according to MSDN.
 #endif
 
+#ifndef SM_CXPADDEDBORDER
+#  define SM_CXPADDEDBORDER (92) // STR #3061
+#endif
 
 //
 // WM_FLSELECT is the user-defined message that we get when one of
@@ -258,7 +263,9 @@ void fl_set_spot(int font, int size, int X, int Y, int W, int H, Fl_Window *win)
   Fl_Window* tw = win;
   while (tw->parent()) tw = tw->window(); // find top level window
 
-  get_imm_module();
+  if (!tw->shown())
+    return;
+
   HIMC himc = flImmGetContext(fl_xid(tw));
 
   if (himc) {
@@ -335,8 +342,19 @@ void* Fl::thread_message() {
   return r;
 }
 
-IActiveIMMApp *fl_aimm = NULL;
+extern int fl_send_system_handlers(void *e);
+
 MSG fl_msg;
+
+// A local helper function to flush any pending callback requests
+// from the awake ring-buffer
+static void process_awake_handler_requests(void) {
+  Fl_Awake_Handler func;
+  void *data;
+  while (Fl::get_awake_handler_(func, data) == 0) {
+    func(data);
+  }
+}
 
 // This is never called with time_to_wait < 0.0.
 // It *should* return negative on error, 0 if nothing happens before
@@ -400,24 +418,48 @@ int fl_wait(double time_to_wait) {
 
   // Execute the message we got, and all other pending messages:
   // have_message = PeekMessage(&fl_msg, NULL, 0, 0, PM_REMOVE);
-  have_message = PeekMessageW(&fl_msg, NULL, 0, 0, PM_REMOVE);
-  if (have_message > 0) {
-    while (have_message != 0 && have_message != -1) {
-      if (fl_msg.message == fl_wake_msg) {
-        // Used for awaking wait() from another thread
-	thread_message_ = (void*)fl_msg.wParam;
-        Fl_Awake_Handler func;
-        void *data;
-        while (Fl::get_awake_handler_(func, data)==0) {
-          func(data);
-        }
-      }
+  while ((have_message = PeekMessageW(&fl_msg, NULL, 0, 0, PM_REMOVE)) > 0) {
+    if (fl_send_system_handlers(&fl_msg))
+      continue;
 
-      TranslateMessage(&fl_msg);
-      DispatchMessageW(&fl_msg);
-      have_message = PeekMessageW(&fl_msg, NULL, 0, 0, PM_REMOVE);
+    // Let applications treat WM_QUIT identical to SIGTERM on *nix
+    if (fl_msg.message == WM_QUIT)
+      raise(SIGTERM);
+
+    if (fl_msg.message == fl_wake_msg) {
+      // Used for awaking wait() from another thread
+      thread_message_ = (void*)fl_msg.wParam;
+      process_awake_handler_requests();
     }
+
+    TranslateMessage(&fl_msg);
+    DispatchMessageW(&fl_msg);
   }
+
+  // The following conditional test:
+  //    (Fl::awake_ring_head_ != Fl::awake_ring_tail_)
+  // is a workaround / fix for STR #3143. This works, but a better solution
+  // would be to understand why the PostThreadMessage() messages are not
+  // seen by the main window if it is being dragged/ resized at the time.
+  // If a worker thread posts an awake callback to the ring buffer
+  // whilst the main window is unresponsive (if a drag or resize operation
+  // is in progress) we may miss the PostThreadMessage(). So here, we check if
+  // there is anything pending in the awake ring buffer and if so process
+  // it. This is not strictly thread safe (for speed it compares the head
+  // and tail indices without first locking the ring buffer) but is intended
+  // only as a fall-back recovery mechanism if the awake processing stalls.
+  // If the test erroneously returns true (may happen if we test the indices
+  // whilst they are being modified) we will call process_awake_handler_requests()
+  // unnecessarily, but this has no harmful consequences so is safe to do.
+  // Note also that if we miss the PostThreadMessage(), then thread_message_
+  // will not be updated, so this is not a perfect solution, but it does
+  // recover and process any pending awake callbacks.
+  // Normally the ring buffer head and tail indices will match and this
+  // comparison will do nothing. Addresses STR #3143
+  if (Fl::awake_ring_head_ != Fl::awake_ring_tail_) {
+    process_awake_handler_requests();
+  }
+
   Fl::flush();
 
   // This should return 0 if only timer events were handled:
@@ -434,6 +476,63 @@ int fl_ready() {
   fd_set fdt[3];
   memcpy(fdt, fdsets, sizeof fdt);
   return get_wsock_mod() ? s_wsock_select(0,&fdt[0],&fdt[1],&fdt[2],&t) : 0;
+}
+
+void fl_open_display() {
+  static char beenHereDoneThat = 0;
+
+  if (beenHereDoneThat)
+    return;
+
+  beenHereDoneThat = 1;
+
+  OleInitialize(0L);
+
+  get_imm_module();
+}
+
+class Fl_Win32_At_Exit {
+public:
+  Fl_Win32_At_Exit() { }
+  ~Fl_Win32_At_Exit() {
+    fl_free_fonts();        // do some WIN32 cleanup
+    fl_cleanup_pens();
+    OleUninitialize();
+    fl_brush_action(1);
+    fl_cleanup_dc_list();
+    // This is actually too late in the cleanup process to remove the
+    // clipboard notifications, but we have no earlier hook so we try
+    // to work around it anyway.
+    if (clipboard_wnd != NULL)
+      fl_clipboard_notify_untarget(clipboard_wnd);
+  }
+};
+static Fl_Win32_At_Exit win32_at_exit;
+
+static char im_enabled = 1;
+
+void Fl::enable_im() {
+  fl_open_display();
+
+  Fl_X* i = Fl_X::first;
+  while (i) {
+    flImmAssociateContextEx(i->xid, 0, IACE_DEFAULT);
+    i = i->next;
+  }
+
+  im_enabled = 1;
+}
+
+void Fl::disable_im() {
+  fl_open_display();
+
+  Fl_X* i = Fl_X::first;
+  while (i) {
+    flImmAssociateContextEx(i->xid, 0, 0);
+    i = i->next;
+  }
+
+  im_enabled = 0;
 }
 
 ////////////////////////////////////////////////////////////////
@@ -503,9 +602,9 @@ public:
     char *o;
     int lencount;
     // Predict size of \r\n conversion buffer
-    for ( i=in, lencount = inlen; lencount--; ) {
-      if ( *i == '\r' && *(i+1) == '\n' )	// leave \r\n untranslated
-	{ i+=2; outlen+=2; }
+    for (i = in, lencount = inlen; lencount > 0; lencount--) {
+      if ( *i == '\r' && *(i+1) == '\n' && lencount >= 2 )	// leave \r\n untranslated
+	{ i+=2; outlen+=2; lencount--; }
       else if ( *i == '\n' )			// \n by itself? leave room to insert \r
 	{ i++; outlen+=2; }
       else
@@ -514,9 +613,9 @@ public:
     // Alloc conversion buffer + NULL
     out = new char[outlen+1];
     // Handle \n -> \r\n conversion
-    for ( i=in, o=out, lencount = inlen; lencount--; ) {
-      if ( *i == '\r' && *(i+1) == '\n' )	// leave \r\n untranslated
-        { *o++ = *i++; *o++ = *i++; }
+    for (i = in, o=out, lencount = inlen; lencount > 0; lencount--) {
+      if ( *i == '\r' && *(i+1) == '\n' && lencount >= 2 )	// leave \r\n untranslated
+        { *o++ = *i++; *o++ = *i++; lencount--; }
       else if ( *i == '\n' )			// \n by itself? insert \r
         { *o++ = '\r'; *o++ = *i++; }
       else
@@ -531,9 +630,42 @@ public:
   const char* GetValue() const { return(out); }
 };
 
+void fl_update_clipboard(void) {
+  Fl_Window *w1 = Fl::first_window();
+  if (!w1)
+    return;
+
+  HWND hwnd = fl_xid(w1);
+
+  if (!OpenClipboard(hwnd))
+    return;
+
+  EmptyClipboard();
+
+  int utf16_len = fl_utf8toUtf16(fl_selection_buffer[1],
+                                 fl_selection_length[1], 0, 0);
+
+  HGLOBAL hMem = GlobalAlloc(GHND, utf16_len * 2 + 2); // moveable and zero'ed mem alloc.
+  LPVOID memLock = GlobalLock(hMem);
+
+  fl_utf8toUtf16(fl_selection_buffer[1], fl_selection_length[1],
+                 (unsigned short*) memLock, utf16_len + 1);
+
+  GlobalUnlock(hMem);
+  SetClipboardData(CF_UNICODETEXT, hMem);
+
+  CloseClipboard();
+
+  // In case Windows managed to lob of a WM_DESTROYCLIPBOARD during
+  // the above.
+  fl_i_own_selection[1] = 1;
+}
+
 // call this when you create a selection:
-void Fl::copy(const char *stuff, int len, int clipboard) {
+void Fl::copy(const char *stuff, int len, int clipboard, const char *type) {
   if (!stuff || len<0) return;
+  if (clipboard >= 2)
+    clipboard = 1; // Only on X11 do multiple clipboards make sense.
 
   // Convert \n -> \r\n (for old apps like Notepad, DOS)
   Lf2CrlfConvert buf(stuff, len);
@@ -548,35 +680,17 @@ void Fl::copy(const char *stuff, int len, int clipboard) {
   memcpy(fl_selection_buffer[clipboard], stuff, len);
   fl_selection_buffer[clipboard][len] = 0; // needed for direct paste
   fl_selection_length[clipboard] = len;
-  if (clipboard) {
-    // set up for "delayed rendering":
-    if (OpenClipboard(NULL)) {
-      // if the system clipboard works, use it
-      int utf16_len = fl_utf8toUtf16(fl_selection_buffer[clipboard], fl_selection_length[clipboard], 0, 0);
-      EmptyClipboard();
-      HGLOBAL hMem = GlobalAlloc(GHND, utf16_len * 2 + 2); // moveable and zero'ed mem alloc.
-      LPVOID memLock = GlobalLock(hMem);
-      fl_utf8toUtf16(fl_selection_buffer[clipboard], fl_selection_length[clipboard], (unsigned short*) memLock, utf16_len + 1);
-      GlobalUnlock(hMem);
-      SetClipboardData(CF_UNICODETEXT, hMem);
-      CloseClipboard();
-      GlobalFree(hMem);
-      fl_i_own_selection[clipboard] = 0;
-    } else {
-      // only if it fails, instruct paste() to use the internal buffers
-      fl_i_own_selection[clipboard] = 1;
-    }
-  }
+  fl_i_own_selection[clipboard] = 1;
+  if (clipboard)
+    fl_update_clipboard();
 }
 
 // Call this when a "paste" operation happens:
-void Fl::paste(Fl_Widget &receiver, int clipboard) {
-  if (!clipboard || fl_i_own_selection[clipboard]) {
+void Fl::paste(Fl_Widget &receiver, int clipboard, const char *type) {
+  if (!clipboard || (fl_i_own_selection[clipboard] && strcmp(type, Fl::clipboard_plain_text) == 0)) {
     // We already have it, do it quickly without window server.
     // Notice that the text is clobbered if set_selection is
     // called in response to FL_PASTE!
-
-    // Convert \r\n -> \n
     char *i = fl_selection_buffer[clipboard];
     if (i==0L) {
       Fl::e_text = 0; 
@@ -584,43 +698,209 @@ void Fl::paste(Fl_Widget &receiver, int clipboard) {
     }
     Fl::e_text = new char[fl_selection_length[clipboard]+1];
     char *o = Fl::e_text;
-    while (*i) {
+    while (*i) { // Convert \r\n -> \n
       if ( *i == '\r' && *(i+1) == '\n') i++;
       else *o++ = *i++;
     }
     *o = 0;
     Fl::e_length = (int) (o - Fl::e_text);
+    Fl::e_clipboard_type = Fl::clipboard_plain_text;
     receiver.handle(FL_PASTE);
     delete [] Fl::e_text;
     Fl::e_text = 0;
-  } else {
+  } else if (clipboard) {
+    HANDLE h;
     if (!OpenClipboard(NULL)) return;
-    HANDLE h = GetClipboardData(CF_UNICODETEXT);
-    if (h) {
-      wchar_t *memLock = (wchar_t*) GlobalLock(h);
-      size_t utf16_len = wcslen(memLock);
-      Fl::e_text = (char*) malloc (utf16_len * 4 + 1);
-      unsigned utf8_len = fl_utf8fromwc(Fl::e_text, (unsigned) (utf16_len * 4), memLock, (unsigned) utf16_len);
-      *(Fl::e_text + utf8_len) = 0;
-      LPSTR a,b;
-      a = b = Fl::e_text;
-      while (*a) { // strip the CRLF pairs ($%$#@^)
-        if (*a == '\r' && a[1] == '\n') a++;
-        else *b++ = *a++;
+    if (strcmp(type, Fl::clipboard_plain_text) == 0) { // we want plain text from clipboard
+      if ((h = GetClipboardData(CF_UNICODETEXT))) { // there's text in the clipboard
+	wchar_t *memLock = (wchar_t*) GlobalLock(h);
+	size_t utf16_len = wcslen(memLock);
+	Fl::e_text = new char[utf16_len * 4 + 1];
+	unsigned utf8_len = fl_utf8fromwc(Fl::e_text, (unsigned) (utf16_len * 4), memLock, (unsigned) utf16_len);
+	*(Fl::e_text + utf8_len) = 0;
+	GlobalUnlock(h);
+	LPSTR a,b;
+	a = b = Fl::e_text;
+	while (*a) { // strip the CRLF pairs ($%$#@^)
+	  if (*a == '\r' && a[1] == '\n') a++;
+	  else *b++ = *a++;
+	}
+	*b = 0;
+	Fl::e_length = (int) (b - Fl::e_text);
+	Fl::e_clipboard_type = Fl::clipboard_plain_text;  // indicates that the paste event is for plain UTF8 text
+	receiver.handle(FL_PASTE); // send the FL_PASTE event to the widget
+	delete[] Fl::e_text;
+	Fl::e_text = 0;
+	}
       }
-      *b = 0;
-      Fl::e_length = (int) (b - Fl::e_text);
-      receiver.handle(FL_PASTE);
-      GlobalUnlock(h);
-      free(Fl::e_text);
-      Fl::e_text = 0;
+      else if (strcmp(type, Fl::clipboard_image) == 0) { // we want an image from clipboard
+	uchar *rgb = NULL;
+	int width = 0, height = 0, depth = 0;
+	if ( (h = GetClipboardData(CF_DIB)) ) { // if there's a DIB in clipboard
+	  LPBITMAPINFO lpBI = (LPBITMAPINFO)GlobalLock(h) ;
+	  width = lpBI->bmiHeader.biWidth; // bitmap width & height
+	  height = lpBI->bmiHeader.biHeight;
+	  if ( (lpBI->bmiHeader.biBitCount == 24 || lpBI->bmiHeader.biBitCount == 32) && 
+	      lpBI->bmiHeader.biCompression == BI_RGB &&
+	      lpBI->bmiHeader.biClrUsed == 0) { // direct use of the DIB data if it's RGB or RGBA
+	    int linewidth; // row length
+	    depth = lpBI->bmiHeader.biBitCount/8; // 3 or 4
+	    if (depth == 3) linewidth = 4 * ((3*width + 3)/4); // row length: series of groups of 3 bytes, rounded to multiple of 4 bytes
+	    else linewidth = 4*width;
+	    rgb = new uchar[width * height * depth]; // will hold the image data
+	    uchar *p = rgb, *r, rr, gg, bb;
+	    for (int i=height-1; i>=0; i--) { // for each row, from last to first
+	      r = (uchar*)(lpBI->bmiColors) + i*linewidth; // beginning of pixel data for the ith row
+	      for (int j=0; j<width; j++) { // for each pixel in a row
+		bb = *r++; // BGR is in DIB
+		gg = *r++;
+		rr = *r++;
+		*p++ = rr; // we want RGB
+		*p++ = gg;
+		*p++ = bb;
+		if (depth == 4) *p++ = *r++; // copy alpha if present
+	      }
+	    }
+	  }
+	  else { // the system will decode a complex DIB
+	    void *pDIBBits = (void*)(lpBI->bmiColors); 
+	    if (lpBI->bmiHeader.biCompression == BI_BITFIELDS) pDIBBits = (void*)(lpBI->bmiColors + 3);
+	    else if (lpBI->bmiHeader.biClrUsed > 0) pDIBBits = (void*)(lpBI->bmiColors + lpBI->bmiHeader.biClrUsed);
+	    Fl_Offscreen off = fl_create_offscreen(width, height);
+	    fl_begin_offscreen(off);
+	    SetDIBitsToDevice(fl_gc, 0, 0, width, height, 0, 0, 0, height, pDIBBits, lpBI, DIB_RGB_COLORS);
+	    rgb = fl_read_image(NULL, 0, 0, width, height);
+	    depth = 3;
+	    fl_end_offscreen();
+	    fl_delete_offscreen(off);
+	  }
+	  GlobalUnlock(h);
+	}
+	else if ((h = GetClipboardData(CF_ENHMETAFILE))) { // if there's an enhanced metafile in clipboard
+	  ENHMETAHEADER header;
+	  GetEnhMetaFileHeader((HENHMETAFILE)h, sizeof(header), &header); // get structure containing metafile dimensions
+	  width = (header.rclFrame.right - header.rclFrame.left + 1); // in .01 mm units
+	  height = (header.rclFrame.bottom - header.rclFrame.top + 1);
+	  HDC hdc = GetDC(NULL); // get unit correspondance between .01 mm and screen pixels
+	  int hmm = GetDeviceCaps(hdc, HORZSIZE);
+	  int hdots = GetDeviceCaps(hdc, HORZRES);
+          int dhr = GetDeviceCaps(hdc, DESKTOPHORZRES); // true number of pixels on display
+	  ReleaseDC(NULL, hdc);
+          // Global display scaling factor: 1, 1.25, 1.5, 1.75, etc...
+          float scaling = dhr/float(hdots);
+	  float factor = (100.f * hmm) / hdots;
+	  width = (int)(width*scaling/factor); height = (int)(height*scaling/factor); // convert to screen pixel unit
+	  RECT rect = {0, 0, width, height};
+	  Fl_Offscreen off = fl_create_offscreen(width, height);
+	  fl_begin_offscreen(off);
+	  fl_color(FL_WHITE); fl_rectf(0,0,width, height); // draw white background
+	  PlayEnhMetaFile(fl_gc, (HENHMETAFILE)h, &rect); // draw metafile to offscreen buffer
+	  rgb = fl_read_image(NULL, 0, 0, width, height); // read pixels from offscreen buffer
+	  depth = 3;
+	  fl_end_offscreen();
+	  fl_delete_offscreen(off);
+	}
+	if (rgb) {
+	  Fl_RGB_Image *image = new Fl_RGB_Image(rgb, width, height, depth); // create new image from pixel data
+	  image->alloc_array = 1;
+	  Fl::e_clipboard_data = image;
+	  Fl::e_clipboard_type = Fl::clipboard_image;  // indicates that the paste event is for image data
+	  int done = receiver.handle(FL_PASTE); // send FL_PASTE event to widget
+	  Fl::e_clipboard_type = "";
+	  if (done == 0) { // if widget did not handle the event, delete the image
+	    Fl::e_clipboard_data = NULL;
+	    delete image;
+	  }
+	}
+      }
+     CloseClipboard();
     }
-    CloseClipboard();
+}
+
+int Fl::clipboard_contains(const char *type)
+{
+  int retval = 0;
+  if (!OpenClipboard(NULL)) return 0;
+  if (strcmp(type, Fl::clipboard_plain_text) == 0 || type[0] == 0) {
+    retval = IsClipboardFormatAvailable(CF_UNICODETEXT);
   }
+  else if (strcmp(type, Fl::clipboard_image) == 0) {
+    retval = IsClipboardFormatAvailable(CF_DIB) || IsClipboardFormatAvailable(CF_ENHMETAFILE);
+  }
+  CloseClipboard();
+  return retval;
+}
+
+static void fl_clipboard_notify_target(HWND wnd) {
+  if (clipboard_wnd)
+    return;
+
+  // We get one fake WM_DRAWCLIPBOARD immediately, which we therefore
+  // need to ignore.
+  initial_clipboard = true;
+
+  clipboard_wnd = wnd;
+  next_clipboard_wnd = SetClipboardViewer(wnd);
+}
+
+static void fl_clipboard_notify_untarget(HWND wnd) {
+  if (wnd != clipboard_wnd)
+    return;
+
+  // We might be called late in the cleanup where Windows has already
+  // implicitly destroyed our clipboard window. At that point we need
+  // to do some extra work to manually repair the clipboard chain.
+  if (IsWindow(wnd))
+    ChangeClipboardChain(wnd, next_clipboard_wnd);
+  else {
+    HWND tmp, head;
+
+    tmp = CreateWindow("STATIC", "Temporary FLTK Clipboard Window", 0,
+                       0, 0, 0, 0, HWND_MESSAGE, NULL, NULL, NULL);
+    if (tmp == NULL)
+      return;
+
+    head = SetClipboardViewer(tmp);
+    if (head == NULL)
+      ChangeClipboardChain(tmp, next_clipboard_wnd);
+    else {
+      SendMessage(head, WM_CHANGECBCHAIN, (WPARAM)wnd, (LPARAM)next_clipboard_wnd);
+      ChangeClipboardChain(tmp, head);
+    }
+
+    DestroyWindow(tmp);
+  }
+
+  clipboard_wnd = next_clipboard_wnd = 0;
+}
+
+void fl_clipboard_notify_retarget(HWND wnd) {
+  // The given window is getting destroyed. If it's part of the
+  // clipboard chain then we need to unregister it and find a
+  // replacement window.
+  if (wnd != clipboard_wnd)
+    return;
+
+  fl_clipboard_notify_untarget(wnd);
+
+  if (Fl::first_window())
+    fl_clipboard_notify_target(fl_xid(Fl::first_window()));
+}
+
+void fl_clipboard_notify_change() {
+  // untarget clipboard monitor if no handlers are registered
+  if (clipboard_wnd != NULL && fl_clipboard_notify_empty()) {
+    fl_clipboard_notify_untarget(clipboard_wnd);
+    return;
+  }
+
+  // if there are clipboard notify handlers but no window targeted
+  // target first window if available
+  if (clipboard_wnd == NULL && Fl::first_window())
+    fl_clipboard_notify_target(fl_xid(Fl::first_window()));
 }
 
 ////////////////////////////////////////////////////////////////
-char fl_is_ime = 0;
 void fl_get_codepage()
 {
   HKL hkl = GetKeyboardLayout(0);
@@ -628,14 +908,7 @@ void fl_get_codepage()
 
   GetLocaleInfo (LOWORD(hkl), LOCALE_IDEFAULTANSICODEPAGE, ld, 6);
   DWORD ccp = atol(ld);
-  fl_is_ime = 0;
-
   fl_codepage = ccp;
-  if (fl_aimm) {
-    fl_aimm->GetCodePageA(GetKeyboardLayout(0), &fl_codepage);
-  } else if (get_imm_module() && flImmIsIME(hkl)) {
-    fl_is_ime = 1;
-  }
 }
 
 HWND fl_capture;
@@ -856,7 +1129,6 @@ static LRESULT CALLBACK WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPar
 
   case WM_CLOSE: // user clicked close box
     Fl::handle(FL_CLOSE, window);
-    PostQuitMessage(0);
     return 0;
 
   case WM_SYNCPAINT :
@@ -882,6 +1154,7 @@ static LRESULT CALLBACK WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPar
     R = CreateRectRgn(0,0,0,0);
     int r = GetUpdateRgn(hWnd,R,0);
     if (r==NULLREGION && !redraw_whole_window) {
+      XDestroyRegion(R);
       break;
     }
 
@@ -942,6 +1215,10 @@ static LRESULT CALLBACK WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPar
     break;
 
   case WM_SETFOCUS:
+    if ((Fl::modal_) && (Fl::modal_ != window)) {
+      SetFocus(fl_xid(Fl::modal_));
+      return 0;
+    }
     Fl::handle(FL_FOCUS, window);
     break;
 
@@ -1191,36 +1468,29 @@ static LRESULT CALLBACK WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPar
     fl_i_own_selection[1] = 0;
     return 1;
 
-  case WM_RENDERALLFORMATS:
-    fl_i_own_selection[1] = 0;
-    // Windoze seems unhappy unless I do these two steps. Documentation
-    // seems to vary on whether opening the clipboard is necessary or
-    // is in fact wrong:
-    CloseClipboard();
-    OpenClipboard(NULL);
-    // fall through...
-  case WM_RENDERFORMAT: {
-    HANDLE h;
-
-//  int l = fl_utf_nb_char((unsigned char*)fl_selection_buffer[1], fl_selection_length[1]);
-    int l = fl_utf8toUtf16(fl_selection_buffer[1], fl_selection_length[1], NULL, 0); // Pass NULL buffer to query length required
-    h = GlobalAlloc(GHND, (l+1) * sizeof(unsigned short));
-    if (h) {
-      unsigned short *g = (unsigned short*) GlobalLock(h);
-//    fl_utf2unicode((unsigned char *)fl_selection_buffer[1], fl_selection_length[1], (xchar*)g);
-      l = fl_utf8toUtf16(fl_selection_buffer[1], fl_selection_length[1], g, (l+1));
-      g[l] = 0;
-      GlobalUnlock(h);
-      SetClipboardData(CF_UNICODETEXT, h);
-    }
-
-    // Windoze also seems unhappy if I don't do this. Documentation very
-    // unclear on what is correct:
-    if (fl_msg.message == WM_RENDERALLFORMATS) CloseClipboard();
-    return 1;}
   case WM_DISPLAYCHANGE: // occurs when screen configuration (number, position) changes
     Fl::call_screen_init();
     Fl::handle(FL_SCREEN_CONFIGURATION_CHANGED, NULL);
+    return 0;
+
+  case WM_CHANGECBCHAIN:
+    if ((hWnd == clipboard_wnd) && (next_clipboard_wnd == (HWND)wParam))
+      next_clipboard_wnd = (HWND)lParam;
+    else
+      SendMessage(next_clipboard_wnd, WM_CHANGECBCHAIN, wParam, lParam);
+    return 0;
+
+  case WM_DRAWCLIPBOARD:
+    // When the clipboard moves between two FLTK windows,
+    // fl_i_own_selection will temporarily be false as we are
+    // processing this message. Hence the need to use fl_find().
+    if (!initial_clipboard && !fl_find(GetClipboardOwner()))
+      fl_trigger_clipboard_notify(1);
+    initial_clipboard = false;
+
+    if (next_clipboard_wnd)
+      SendMessage(next_clipboard_wnd, WM_DRAWCLIPBOARD, wParam, lParam);
+
     return 0;
 
   default:
@@ -1243,42 +1513,46 @@ static LRESULT CALLBACK WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPar
 //   1   |  fix   |   yes
 //   2   |  size  |   yes
 
-int Fl_X::fake_X_wm(const Fl_Window* w,int &X,int &Y, int &bt,int &bx, int &by) {
-  int W, H, xoff, yoff, dx, dy;
+static int fake_X_wm_style(const Fl_Window* w,int &X,int &Y, int &bt,int &bx, int &by, DWORD style, DWORD styleEx,
+                     int w_maxw, int w_minw, int w_maxh, int w_minh, uchar w_size_range_set) {
+  int W = 0, H = 0, xoff = 0, yoff = 0, dx = 0, dy = 0;
   int ret = bx = by = bt = 0;
 
   int fallback = 1;
   if (!w->parent()) {
-    HWND hwnd = fl_xid(w);
-    if (hwnd) {
+    if (fl_xid(w) || style) {
       // The block below calculates the window borders by requesting the
       // required decorated window rectangle for a desired client rectangle.
       // If any part of the function above fails, we will drop to a 
       // fallback to get the best guess which is always available.
-      HWND hwnd = fl_xid(w);
-      // request the style flags of this window, as WIN32 sees them
-      LONG style = GetWindowLong(hwnd, GWL_STYLE);
-      LONG exstyle = GetWindowLong(hwnd, GWL_EXSTYLE);
+      
+	 if (!style) {
+	     HWND hwnd = fl_xid(w);
+          // request the style flags of this window, as WIN32 sees them
+          style = GetWindowLong(hwnd, GWL_STYLE);
+          styleEx = GetWindowLong(hwnd, GWL_EXSTYLE);
+	 }
+
       RECT r;
       r.left = w->x();
       r.top = w->y();
       r.right = w->x()+w->w();
       r.bottom = w->y()+w->h();
       // get the decoration rectangle for the desired client rectangle
-      BOOL ok = AdjustWindowRectEx(&r, style, FALSE, exstyle);
+      BOOL ok = AdjustWindowRectEx(&r, style, FALSE, styleEx);
       if (ok) {
         X = r.left;
         Y = r.top;
         W = r.right - r.left;
         H = r.bottom - r.top;
         bx = w->x() - r.left;
-        by = r.bottom - w->y() - w->h(); // height of the bootm frame
+        by = r.bottom - w->y() - w->h(); // height of the bottom frame
         bt = w->y() - r.top - by; // height of top caption bar
         xoff = bx;
         yoff = by + bt;
         dx = W - w->w();
         dy = H - w->h();
-        if (w->size_range_set && (w->maxw != w->minw || w->maxh != w->minh))
+        if (w_size_range_set && (w_maxw != w_minw || w_maxh != w_minh))
           ret = 2;
         else
           ret = 1;
@@ -1289,14 +1563,18 @@ int Fl_X::fake_X_wm(const Fl_Window* w,int &X,int &Y, int &bt,int &bx, int &by) 
   // This is the original (pre 1.1.7) routine to calculate window border sizes.
   if (fallback) {
     if (w->border() && !w->parent()) {
-      if (w->size_range_set && (w->maxw != w->minw || w->maxh != w->minh)) {
-        ret = 2;
-        bx = GetSystemMetrics(SM_CXSIZEFRAME);
-        by = GetSystemMetrics(SM_CYSIZEFRAME);
+      if (w_size_range_set && (w_maxw != w_minw || w_maxh != w_minh)) {
+	ret = 2;
+	bx = GetSystemMetrics(SM_CXSIZEFRAME);
+	by = GetSystemMetrics(SM_CYSIZEFRAME);
       } else {
-        ret = 1;
-        bx = GetSystemMetrics(SM_CXFIXEDFRAME);
-        by = GetSystemMetrics(SM_CYFIXEDFRAME);
+	ret = 1;
+	int padding = GetSystemMetrics(SM_CXPADDEDBORDER);
+	NONCLIENTMETRICS ncm;
+	ncm.cbSize = sizeof(NONCLIENTMETRICS);
+	SystemParametersInfo(SPI_GETNONCLIENTMETRICS, 0, &ncm, 0);
+	bx = GetSystemMetrics(SM_CXFIXEDFRAME) + (padding ? padding + ncm.iBorderWidth : 0);
+	by = GetSystemMetrics(SM_CYFIXEDFRAME) + (padding ? padding + ncm.iBorderWidth : 0);
       }
       bt = GetSystemMetrics(SM_CYCAPTION);
     }
@@ -1314,7 +1592,7 @@ int Fl_X::fake_X_wm(const Fl_Window* w,int &X,int &Y, int &bt,int &bx, int &by) 
   //Proceed to positioning the window fully inside the screen, if possible
   //Find screen that contains most of the window
   //FIXME: this ought to be the "work area" instead of the entire screen !
-  int scr_x, scr_y, scr_w, scr_h;
+  int scr_x = 0, scr_y = 0, scr_w = 0, scr_h = 0;
   Fl::screen_xywh(scr_x, scr_y, scr_w, scr_h, X, Y, W, H);
   //Make border's lower right corner visible
   if (scr_x+scr_w < X+W) X = scr_x+scr_w - W;
@@ -1333,11 +1611,14 @@ int Fl_X::fake_X_wm(const Fl_Window* w,int &X,int &Y, int &bt,int &bx, int &by) 
   Y+=yoff;
 
   if (w->fullscreen_active()) {
-    X = Y = 0;
     bx = by = bt = 0;
   }
 
   return ret;
+}
+
+int Fl_X::fake_X_wm(const Fl_Window* w,int &X,int &Y, int &bt,int &bx, int &by) {
+  return fake_X_wm_style(w, X, Y, bt, bx, by, 0, 0, w->maxw, w->minw, w->maxh, w->minh, w->size_range_set);
 }
 
 ////////////////////////////////////////////////////////////////
@@ -1387,19 +1668,42 @@ void Fl_Window::resize(int X,int Y,int W,int H) {
   }
 }
 
-static void make_fullscreen(Fl_Window *w, Window xid, int X, int Y, int W, int H) {
+void Fl_X::make_fullscreen(int X, int Y, int W, int H) {
+  int top, bottom, left, right;
   int sx, sy, sw, sh;
-  Fl::screen_xywh(sx, sy, sw, sh, X, Y, W, H);
+
+  top = w->fullscreen_screen_top;
+  bottom = w->fullscreen_screen_bottom;
+  left = w->fullscreen_screen_left;
+  right = w->fullscreen_screen_right;
+
+  if ((top < 0) || (bottom < 0) || (left < 0) || (right < 0)) {
+    top = Fl::screen_num(X, Y, W, H);
+    bottom = top;
+    left = top;
+    right = top;
+  }
+
+  Fl::screen_xywh(sx, sy, sw, sh, top);
+  Y = sy;
+  Fl::screen_xywh(sx, sy, sw, sh, bottom);
+  H = sy + sh - Y;
+  Fl::screen_xywh(sx, sy, sw, sh, left);
+  X = sx;
+  Fl::screen_xywh(sx, sy, sw, sh, right);
+  W = sx + sw - X;
+
   DWORD flags = GetWindowLong(xid, GWL_STYLE);
   flags = flags & ~(WS_THICKFRAME|WS_CAPTION);
   SetWindowLong(xid, GWL_STYLE, flags);
+
   // SWP_NOSENDCHANGING is so that we can override size limits
-  SetWindowPos(xid, HWND_TOP, sx, sy, sw, sh, SWP_NOSENDCHANGING | SWP_FRAMECHANGED);
+  SetWindowPos(xid, HWND_TOP, X, Y, W, H, SWP_NOSENDCHANGING | SWP_FRAMECHANGED);
 }
 
 void Fl_Window::fullscreen_x() {
   _set_fullscreen();
-  make_fullscreen(this, fl_xid(this), x(), y(), w(), h());
+  i->make_fullscreen(x(), y(), w(), h());
   Fl::handle(FL_FULLSCREEN, this);
 }
 
@@ -1477,12 +1781,13 @@ void fl_fix_focus(); // in Fl.cxx
 
 char fl_show_iconic;	// hack for Fl_Window::iconic()
 // int fl_background_pixel = -1; // color to use for background
-HCURSOR fl_default_cursor;
 UINT fl_wake_msg = 0;
 int fl_disable_transient_for; // secret method of removing TRANSIENT_FOR
 
 Fl_X* Fl_X::make(Fl_Window* w) {
   Fl_Group::current(0); // get rid of very common user bug: forgot end()
+
+  fl_open_display();
 
   // if the window is a subwindow and our parent is not mapped yet, we
   // mark this window visible, so that mapping the parent at a later
@@ -1523,10 +1828,10 @@ Fl_X* Fl_X::make(Fl_Window* w) {
     wcw.lpfnWndProc = (WNDPROC)WndProc;
     wcw.cbClsExtra = wcw.cbWndExtra = 0;
     wcw.hInstance = fl_display;
-    if (!w->icon())
+    if (!w->icon() && !w->icon_->count)
       w->icon((void *)LoadIcon(NULL, IDI_APPLICATION));
     wcw.hIcon = wcw.hIconSm = (HICON)w->icon();
-    wcw.hCursor = fl_default_cursor = LoadCursor(NULL, IDC_ARROW);
+    wcw.hCursor = LoadCursor(NULL, IDC_ARROW);
     //uchar r,g,b; Fl::get_color(FL_GRAY,r,g,b);
     //wc.hbrBackground = (HBRUSH)CreateSolidBrush(RGB(r,g,b));
     wcw.hbrBackground = NULL;
@@ -1566,8 +1871,14 @@ Fl_X* Fl_X::make(Fl_Window* w) {
       }
     }
     styleEx |= WS_EX_WINDOWEDGE | WS_EX_CONTROLPARENT;
-    int xwm = xp , ywm = yp , bt, bx, by;
-    switch (fake_X_wm(w, xwm, ywm, bt, bx, by)) {
+
+    int wintype = 0;
+    if (w->border() && !w->parent()) {
+      if (w->size_range_set && (w->maxw != w->minw || w->maxh != w->minh)) wintype = 2;
+	  else wintype = 1;
+    }
+
+    switch (wintype) {
       // No border (used for menus)
       case 0:
         style |= WS_POPUP;
@@ -1588,6 +1899,9 @@ Fl_X* Fl_X::make(Fl_Window* w) {
           style |= WS_MINIMIZEBOX;
         break;
     }
+
+    int xwm = xp , ywm = yp , bt, bx, by;
+    fake_X_wm_style(w, xwm, ywm, bt, bx, by, style, styleEx, w->maxw, w->minw, w->maxh, w->minh, w->size_range_set);
     if (by+bt) {
       wp += 2*bx;
       hp += 2*by+bt;
@@ -1618,7 +1932,8 @@ Fl_X* Fl_X::make(Fl_Window* w) {
   x->setwindow(w);
   x->region = 0;
   x->private_dc = 0;
-  x->cursor = fl_default_cursor;
+  x->cursor = LoadCursor(NULL, IDC_ARROW);
+  x->custom_cursor = 0;
   if (!fl_codepage) fl_get_codepage();
 
   WCHAR *lab = NULL;
@@ -1644,6 +1959,11 @@ Fl_X* Fl_X::make(Fl_Window* w) {
   );
   if (lab) free(lab);
 
+  x->next = Fl_X::first;
+  Fl_X::first = x;
+
+  x->set_icons();
+
   if (w->fullscreen_active()) {
   /* We need to make sure that the fullscreen is created on the
      default monitor, ie the desktop where the shortcut is located
@@ -1652,12 +1972,14 @@ Fl_X* Fl_X::make(Fl_Window* w) {
      monitor the window was placed on. */
     RECT rect;
     GetWindowRect(x->xid, &rect);
-    make_fullscreen(w, x->xid, rect.left, rect.top, 
-                    rect.right - rect.left, rect.bottom - rect.top);
+    x->make_fullscreen(rect.left, rect.top, 
+                       rect.right - rect.left, rect.bottom - rect.top);
   }
 
-  x->next = Fl_X::first;
-  Fl_X::first = x;
+  // Setup clipboard monitor target if there are registered handlers and
+  // no window is targeted.
+  if (!fl_clipboard_notify_empty() && clipboard_wnd == NULL)
+    fl_clipboard_notify_target(x->xid);
 
   x->wait_for_expose = 1;
   if (fl_show_iconic) {showit = 0; fl_show_iconic = 0;}
@@ -1668,24 +1990,22 @@ Fl_X* Fl_X::make(Fl_Window* w) {
     Fl::e_number = old_event;
     w->redraw(); // force draw to happen
   }
+
+  // Needs to be done before ShowWindow() to get the correct behaviour
+  // when we get WM_SETFOCUS.
+  if (w->modal()) {Fl::modal_ = w; fl_fix_focus();}
+
   // If we've captured the mouse, we dont want to activate any
   // other windows from the code, or we lose the capture.
   ShowWindow(x->xid, !showit ? SW_SHOWMINNOACTIVE :
 	     (Fl::grab() || (styleEx & WS_EX_TOOLWINDOW)) ? SW_SHOWNOACTIVATE : SW_SHOWNORMAL);
 
   // Register all windows for potential drag'n'drop operations
-  fl_OleInitialize();
   RegisterDragDrop(x->xid, flIDropTarget);
 
-  if (!fl_aimm) {
-    CoCreateInstance(CLSID_CActiveIMM, NULL, CLSCTX_INPROC_SERVER,
-		     IID_IActiveIMMApp, (void**) &fl_aimm);
-    if (fl_aimm) {
-      fl_aimm->Activate(TRUE);
-    }
-  }
+  if (!im_enabled)
+    flImmAssociateContextEx(x->xid, 0, 0);
 
-  if (w->modal()) {Fl::modal_ = w; fl_fix_focus();}
   return x;
 }
 
@@ -1867,6 +2187,328 @@ void Fl_Window::label(const char *name,const char *iname) {
 }
 
 ////////////////////////////////////////////////////////////////
+
+static HICON image_to_icon(const Fl_RGB_Image *image, bool is_icon,
+                           int hotx, int hoty) {
+  BITMAPV5HEADER bi;
+  HBITMAP bitmap, mask;
+  DWORD *bits;
+  HICON icon;
+
+  if (!is_icon) {
+    if ((hotx < 0) || (hotx >= image->w()))
+      return NULL;
+    if ((hoty < 0) || (hoty >= image->h()))
+      return NULL;
+  }
+
+  memset(&bi, 0, sizeof(BITMAPV5HEADER));
+
+  bi.bV5Size        = sizeof(BITMAPV5HEADER);
+  bi.bV5Width       = image->w();
+  bi.bV5Height      = -image->h(); // Negative for top-down
+  bi.bV5Planes      = 1;
+  bi.bV5BitCount    = 32;
+  bi.bV5Compression = BI_BITFIELDS;
+  bi.bV5RedMask     = 0x00FF0000;
+  bi.bV5GreenMask   = 0x0000FF00;
+  bi.bV5BlueMask    = 0x000000FF;
+  bi.bV5AlphaMask   = 0xFF000000;
+
+  HDC hdc;
+
+  hdc = GetDC(NULL);
+  bitmap = CreateDIBSection(hdc, (BITMAPINFO*)&bi, DIB_RGB_COLORS, (void**)&bits, NULL, 0);
+  ReleaseDC(NULL, hdc);
+
+  if (bits == NULL)
+    return NULL;
+
+  const uchar *i = (const uchar*)*image->data();
+  const int extra_data = image->ld() ? (image->ld()-image->w()*image->d()) : 0;
+
+  for (int y = 0; y < image->h(); y++) {
+    for (int x = 0; x < image->w(); x++) {
+      switch (image->d()) {
+      case 1:
+        *bits = (0xff<<24) | (i[0]<<16) | (i[0]<<8) | i[0];
+        break;
+      case 2:
+        *bits = (i[1]<<24) | (i[0]<<16) | (i[0]<<8) | i[0];
+        break;
+      case 3:
+        *bits = (0xff<<24) | (i[0]<<16) | (i[1]<<8) | i[2];
+        break;
+      case 4:
+        *bits = (i[3]<<24) | (i[0]<<16) | (i[1]<<8) | i[2];
+        break;
+      }
+      i += image->d();
+      bits++;
+    }
+    i += extra_data;
+  }
+
+  // A mask bitmap is still needed even though it isn't used
+  mask = CreateBitmap(image->w(),image->h(),1,1,NULL);
+  if (mask == NULL) {
+    DeleteObject(bitmap);
+    return NULL;
+  }
+
+  ICONINFO ii;
+
+  ii.fIcon    = is_icon;
+  ii.xHotspot = hotx;
+  ii.yHotspot = hoty;
+  ii.hbmMask  = mask;
+  ii.hbmColor = bitmap;
+
+  icon = CreateIconIndirect(&ii);
+
+  DeleteObject(bitmap);
+  DeleteObject(mask);
+
+  return icon;
+}
+
+////////////////////////////////////////////////////////////////
+
+static HICON default_big_icon = NULL;
+static HICON default_small_icon = NULL;
+
+static const Fl_RGB_Image *find_best_icon(int ideal_width, 
+                                          const Fl_RGB_Image *icons[],
+                                          int count) {
+  const Fl_RGB_Image *best;
+
+  best = NULL;
+
+  for (int i = 0;i < count;i++) {
+    if (best == NULL)
+      best = icons[i];
+    else {
+      if (best->w() < ideal_width) {
+        if (icons[i]->w() > best->w())
+          best = icons[i];
+      } else {
+        if ((icons[i]->w() >= ideal_width) &&
+            (icons[i]->w() < best->w()))
+          best = icons[i];
+      }
+    }
+  }
+
+  return best;
+}
+
+void Fl_X::set_default_icons(const Fl_RGB_Image *icons[], int count) {
+  const Fl_RGB_Image *best_big, *best_small;
+
+  if (default_big_icon != NULL)
+    DestroyIcon(default_big_icon);
+  if (default_small_icon != NULL)
+    DestroyIcon(default_small_icon);
+
+  default_big_icon = NULL;
+  default_small_icon = NULL;
+
+  best_big = find_best_icon(GetSystemMetrics(SM_CXICON), icons, count);
+  best_small = find_best_icon(GetSystemMetrics(SM_CXSMICON), icons, count);
+
+  if (best_big != NULL)
+    default_big_icon = image_to_icon(best_big, true, 0, 0);
+
+  if (best_small != NULL)
+    default_small_icon = image_to_icon(best_small, true, 0, 0);
+}
+
+void Fl_X::set_default_icons(HICON big_icon, HICON small_icon) {
+  if (default_big_icon != NULL)
+    DestroyIcon(default_big_icon);
+  if (default_small_icon != NULL)
+    DestroyIcon(default_small_icon);
+
+  default_big_icon = NULL;
+  default_small_icon = NULL;
+
+  if (big_icon != NULL)
+    default_big_icon = CopyIcon(big_icon);
+  if (small_icon != NULL)
+    default_small_icon = CopyIcon(small_icon);
+}
+
+void Fl_X::set_icons() {
+  HICON big_icon, small_icon;
+
+  // Windows doesn't copy the icons, so we have to "leak" them when
+  // setting, and clean up when we change to some other icons.
+  big_icon = (HICON)SendMessage(xid, WM_GETICON, ICON_BIG, 0);
+  if ((big_icon != NULL) && (big_icon != default_big_icon))
+    DestroyIcon(big_icon);
+  small_icon = (HICON)SendMessage(xid, WM_GETICON, ICON_SMALL, 0);
+  if ((small_icon != NULL) && (small_icon != default_small_icon))
+    DestroyIcon(small_icon);
+
+  big_icon = NULL;
+  small_icon = NULL;
+
+  if (w->icon_->count) {
+    const Fl_RGB_Image *best_big, *best_small;
+
+    best_big = find_best_icon(GetSystemMetrics(SM_CXICON),
+                              (const Fl_RGB_Image **)w->icon_->icons,
+                              w->icon_->count);
+    best_small = find_best_icon(GetSystemMetrics(SM_CXSMICON),
+                                (const Fl_RGB_Image **)w->icon_->icons,
+                                w->icon_->count);
+
+    if (best_big != NULL)
+      big_icon = image_to_icon(best_big, true, 0, 0);
+    if (best_small != NULL)
+      small_icon = image_to_icon(best_small, true, 0, 0);
+  } else {
+    if ((w->icon_->big_icon != NULL) || (w->icon_->small_icon != NULL)) {
+      big_icon = w->icon_->big_icon;
+      small_icon = w->icon_->small_icon;
+    } else {
+      big_icon = default_big_icon;
+      small_icon = default_small_icon;
+    }
+  }
+
+  SendMessage(xid, WM_SETICON, ICON_BIG, (LPARAM)big_icon);
+  SendMessage(xid, WM_SETICON, ICON_SMALL, (LPARAM)small_icon);
+}
+
+/** Sets the default window icons.
+
+  Convenience function to set the default icons using Windows'
+  native HICON icon handles.
+
+  The given icons are copied. You can free the icons immediately after
+  this call.
+
+  \param[in] big_icon default large icon for all windows
+                      subsequently created
+  \param[in] small_icon default small icon for all windows
+                        subsequently created
+
+  \see Fl_Window::default_icon(const Fl_RGB_Image *)
+  \see Fl_Window::default_icons(const Fl_RGB_Image *[], int)
+  \see Fl_Window::icon(const Fl_RGB_Image *)
+  \see Fl_Window::icons(const Fl_RGB_Image *[], int)
+  \see Fl_Window::icons(HICON, HICON)
+ */
+void Fl_Window::default_icons(HICON big_icon, HICON small_icon) {
+  Fl_X::set_default_icons(big_icon, small_icon);
+}
+
+/** Sets the window icons.
+
+  Convenience function to set this window's icons using Windows'
+  native HICON icon handles.
+
+  The given icons are copied. You can free the icons immediately after
+  this call.
+
+  \param[in] big_icon large icon for this window
+  \param[in] small_icon small icon for this windows
+
+  \see Fl_Window::default_icon(const Fl_RGB_Image *)
+  \see Fl_Window::default_icons(const Fl_RGB_Image *[], int)
+  \see Fl_Window::default_icons(HICON, HICON)
+  \see Fl_Window::icon(const Fl_RGB_Image *)
+  \see Fl_Window::icons(const Fl_RGB_Image *[], int)
+ */
+void Fl_Window::icons(HICON big_icon, HICON small_icon) {
+  free_icons();
+
+  if (big_icon != NULL)
+    icon_->big_icon = CopyIcon(big_icon);
+  if (small_icon != NULL)
+    icon_->small_icon = CopyIcon(small_icon);
+
+  if (i)
+    i->set_icons();
+}
+
+////////////////////////////////////////////////////////////////
+
+#ifndef IDC_HAND
+#  define IDC_HAND  MAKEINTRESOURCE(32649)
+#endif // !IDC_HAND
+
+int Fl_X::set_cursor(Fl_Cursor c) {
+  LPSTR n;
+  HCURSOR new_cursor;
+
+  if (c == FL_CURSOR_NONE)
+    new_cursor = NULL;
+  else {
+    switch (c) {
+    case FL_CURSOR_ARROW:   n = IDC_ARROW; break;
+    case FL_CURSOR_CROSS:   n = IDC_CROSS; break;
+    case FL_CURSOR_WAIT:    n = IDC_WAIT; break;
+    case FL_CURSOR_INSERT:  n = IDC_IBEAM; break;
+    case FL_CURSOR_HAND:    n = IDC_HAND; break;
+    case FL_CURSOR_HELP:    n = IDC_HELP; break;
+    case FL_CURSOR_MOVE:    n = IDC_SIZEALL; break;
+    case FL_CURSOR_N:
+    case FL_CURSOR_S:
+      // FIXME: Should probably have fallbacks for these instead
+    case FL_CURSOR_NS:      n = IDC_SIZENS; break;
+    case FL_CURSOR_NE:
+    case FL_CURSOR_SW:
+      // FIXME: Dito.
+    case FL_CURSOR_NESW:    n = IDC_SIZENESW; break;
+    case FL_CURSOR_E:
+    case FL_CURSOR_W:
+      // FIXME: Dito.
+    case FL_CURSOR_WE:      n = IDC_SIZEWE; break;
+    case FL_CURSOR_SE:
+    case FL_CURSOR_NW:
+      // FIXME: Dito.
+    case FL_CURSOR_NWSE:    n = IDC_SIZENWSE; break;
+    default:
+      return 0;
+    }
+
+    new_cursor = LoadCursor(NULL, n);
+    if (new_cursor == NULL)
+      return 0;
+  }
+
+  if ((cursor != NULL) && custom_cursor)
+    DestroyIcon(cursor);
+
+  cursor = new_cursor;
+  custom_cursor = 0;
+
+  SetCursor(cursor);
+
+  return 1;
+}
+
+int Fl_X::set_cursor(const Fl_RGB_Image *image, int hotx, int hoty) {
+  HCURSOR new_cursor;
+
+  new_cursor = image_to_icon(image, false, hotx, hoty);
+  if (new_cursor == NULL)
+    return 0;
+
+  if ((cursor != NULL) && custom_cursor)
+    DestroyIcon(cursor);
+
+  cursor = new_cursor;
+  custom_cursor = 1;
+
+  SetCursor(cursor);
+
+  return 1;
+}
+
+////////////////////////////////////////////////////////////////
 // Implement the virtual functions for the base Fl_Window class:
 
 // If the box is a filled rectangle, we can make the redisplay *look*
@@ -1899,8 +2541,8 @@ void Fl_Window::show() {
     //ShowWindow(i->xid,fl_capture?SW_SHOWNOACTIVATE:SW_RESTORE);
   }
 #ifdef USE_PRINT_BUTTON
-void preparePrintFront(void);
-preparePrintFront();
+  void preparePrintFront(void);
+  preparePrintFront();
 #endif
 }
 
@@ -2054,60 +2696,113 @@ FL_EXPORT Window fl_xid_(const Fl_Window *w) {
   return temp ? temp->xid : 0;
 }
 
+static RECT border_width_title_bar_height(Fl_Window *win, int &bx, int &by, int &bt, float *pscaling=0)
+{
+  RECT r = {0,0,0,0};
+  bx = by = bt = 0;
+  float scaling = 1;
+  if (win->shown() && !win->parent() && win->border() && win->visible()) {
+    static HMODULE dwmapi_dll = LoadLibrary("dwmapi.dll");
+    typedef HRESULT (WINAPI* DwmGetWindowAttribute_type)(HWND hwnd, DWORD dwAttribute, PVOID pvAttribute, DWORD cbAttribute);
+    static DwmGetWindowAttribute_type DwmGetWindowAttribute = dwmapi_dll ?
+    (DwmGetWindowAttribute_type)GetProcAddress(dwmapi_dll, "DwmGetWindowAttribute") : NULL;
+    int need_r = 1;
+    if (DwmGetWindowAttribute) {
+      const DWORD DWMWA_EXTENDED_FRAME_BOUNDS = 9;
+      if ( DwmGetWindowAttribute(fl_xid(win), DWMWA_EXTENDED_FRAME_BOUNDS, &r, sizeof(RECT)) == S_OK ) {
+        need_r = 0;
+        // Compute the global display scaling factor: 1, 1.25, 1.5, 1.75, etc...
+        // This factor can be set in Windows 10 by
+        // "Change the size of text, apps and other items" in display settings.
+        HDC hdc = GetDC(NULL);
+        int hr = GetDeviceCaps(hdc, HORZRES); // pixels visible to the app
+#ifndef DESKTOPHORZRES
+#define DESKTOPHORZRES 118
+#endif
+        int dhr = GetDeviceCaps(hdc, DESKTOPHORZRES); // true number of pixels on display
+        ReleaseDC(NULL, hdc);
+        scaling = dhr/float(hr); // display scaling factor
+        scaling = int(scaling * 100 + 0.5)/100.; // round to 2 digits after decimal point
+      }
+    }
+    if (need_r) {
+      GetWindowRect(fl_xid(win), &r);
+    }
+    bx = (r.right - r.left - int(win->w() * scaling))/2;
+    if (bx < 1) bx = 1;
+    by = bx;
+    bt = r.bottom - r.top - int(win->h() * scaling) - 2 * by;
+  }
+  if (pscaling) *pscaling = scaling;
+  return r;
+}
+
 int Fl_Window::decorated_w()
 {
-  if (!shown() || parent() || !border() || !visible()) return w();
-  int X, Y, bt, bx, by;
-  Fl_X::fake_X_wm(this, X, Y, bt, bx, by);
+  int bt, bx, by;
+  border_width_title_bar_height(this, bx, by, bt);
   return w() + 2 * bx;
 }
 
 int Fl_Window::decorated_h()
 {
-  if (!shown() || parent() || !border() || !visible()) return h();
-  int X, Y, bt, bx, by;
-  Fl_X::fake_X_wm(this, X, Y, bt, bx, by);
-  return h() + bt + 2 * by;
+  int bt, bx, by;
+  float scaling;
+  border_width_title_bar_height(this, bx, by, bt, &scaling);
+  return h() + bt/scaling + 2 * by;
 }
 
 void Fl_Paged_Device::print_window(Fl_Window *win, int x_offset, int y_offset)
 {
-  if (!win->shown() || win->parent() || !win->border() || !win->visible()) {
-    this->print_widget(win, x_offset, y_offset);
-    return;
+  draw_decorated_window(win, x_offset, y_offset, this);
+}
+
+void Fl_Paged_Device::draw_decorated_window(Fl_Window *win, int x_offset, int y_offset, Fl_Surface_Device *toset)
+{
+  int bt, bx, by; // border width and title bar height of window
+  float scaling;
+  RECT r = border_width_title_bar_height(win, bx, by, bt, &scaling);
+  if (bt) {
+    Fl_Display_Device::display_device()->set_current(); // make window current
+    win->show();
+    Fl::check();
+    win->make_current();
+    HDC save_gc = fl_gc;
+    fl_gc = GetDC(NULL); // get the screen device context
+    int ww = win->w() + 2 * bx;
+    int wh = win->h() + bt + 2 * by;
+    // capture the 4 window sides from screen
+    Window save_win = fl_window;
+    fl_window = NULL; // force use of read_win_rectangle() by fl_read_image()
+    uchar *top_image = fl_read_image(NULL, r.left, r.top, r.right - r.left + 1, bt + by);
+    uchar *left_image = bx ? fl_read_image(NULL, r.left, r.top, bx, wh) : NULL;
+    uchar *right_image = bx ? fl_read_image(NULL, r.right - bx, r.top, bx, wh) : NULL;
+    uchar *bottom_image = by ? fl_read_image(NULL, r.left, r.bottom-by, ww, by) : NULL;
+    fl_window = save_win;
+    ReleaseDC(NULL, fl_gc);  fl_gc = save_gc;
+    toset->set_current();
+    // draw the 4 window sides
+    //fl_draw_image(top_image, x_offset, y_offset, ww, bt + by, 3);
+    Fl_RGB_Image *top_r = new Fl_RGB_Image(top_image, r.right - r.left + 1, bt + by, 3);
+    top_r->alloc_array = 1;
+    if (scaling > 1) {
+      Fl_RGB_Scaling current = Fl_Image::RGB_scaling();
+      Fl_Image::RGB_scaling(FL_RGB_SCALING_BILINEAR);
+      Fl_RGB_Image *tmp_img = (Fl_RGB_Image*)top_r->copy(ww, (bt + by)/scaling);
+      Fl_Image::RGB_scaling(current);
+      delete top_r;
+      top_r = tmp_img;
+    }
+    top_r->draw(x_offset, y_offset);
+    delete top_r;
+    
+    if (left_image) { fl_draw_image(left_image, x_offset, y_offset, bx, wh, 3); delete left_image; }
+    if (right_image) { fl_draw_image(right_image, x_offset + win->w() + bx, y_offset, bx, wh, 3); delete right_image; }
+    if (bottom_image) { fl_draw_image(bottom_image, x_offset, y_offset + win->h() + bt + by, ww, by, 3); delete bottom_image; }
   }
-  int X, Y, bt, bx, by, ww, wh; // compute the window border sizes
-  Fl_X::fake_X_wm(win, X, Y, bt, bx, by);
-  ww = win->w() + 2 * bx;
-  wh = win->h() + bt + 2 * by;
-  Fl_Display_Device::display_device()->set_current(); // make window current
-  win->show();
-  Fl::check();
-  win->make_current();
-  HDC save_gc = fl_gc;
-  fl_gc = GetDC(NULL); // get the screen device context
-  // capture the 4 window sides from screen
-  RECT r; GetWindowRect(fl_window, &r);
-  uchar *top_image = fl_read_image(NULL, r.left, r.top, ww, bt + by);
-  uchar *left_image = fl_read_image(NULL, r.left, r.top, bx, wh);
-  uchar *right_image = fl_read_image(NULL, r.right - bx, r.top, bx, wh);
-  uchar *bottom_image = fl_read_image(NULL, r.left, r.bottom-by, ww, by);
-  ReleaseDC(NULL, fl_gc); fl_gc = save_gc;
-  this->set_current();
-  // print the 4 window sides
-  fl_draw_image(top_image, x_offset, y_offset, ww, bt + by, 3);
-  fl_draw_image(left_image, x_offset, y_offset, bx, wh, 3);
-  fl_draw_image(right_image, x_offset + win->w() + bx, y_offset, bx, wh, 3);
-  fl_draw_image(bottom_image, x_offset, y_offset + win->h() + bt + by, ww, by, 3);
-  delete[] top_image;
-  delete[] left_image;
-  delete[] right_image;
-  delete[] bottom_image;
-  // print the window inner part
-  this->print_widget(win, x_offset + bx, y_offset + bt + by);
-  fl_gc = GetDC(fl_xid(win));
-  ReleaseDC(fl_xid(win), fl_gc);
-}  
+  // draw the window inner part
+  this->print_widget(win, x_offset + bx, y_offset + (bt + by)/scaling);
+}
 
 #ifdef USE_PRINT_BUTTON
 // to test the Fl_Printer class creating a "Print front window" button in a separate window
@@ -2150,14 +2845,30 @@ void printFront(Fl_Widget *o, void *data)
   o->window()->show();
 }
 
+#include <FL/Fl_Copy_Surface.H>
+void copyFront(Fl_Widget *o, void *data)
+{
+  o->window()->hide();
+  Fl_Window *win = Fl::first_window();
+  if (!win) return;
+  Fl_Copy_Surface *surf = new Fl_Copy_Surface(win->decorated_w(), win->decorated_h());
+  surf->set_current();
+  surf->draw_decorated_window(win); // draw the window content
+  delete surf; // put the window on the clipboard
+  Fl_Display_Device::display_device()->set_current();
+  o->window()->show();
+}
+
 void preparePrintFront(void)
 {
   static BOOL first=TRUE;
   if(!first) return;
   first=FALSE;
-  static Fl_Window w(0,0,120,30);
-  static Fl_Button b(0,0,w.w(),w.h(), "Print front window");
-  b.callback(printFront);
+  static Fl_Window w(0,0,120,60);
+  static Fl_Button bp(0,0,w.w(),30, "Print front window");
+  bp.callback(printFront);
+  static Fl_Button bc(0,30,w.w(),30, "Copy front window");
+  bc.callback(copyFront);
   w.end();
   w.show();
 }
@@ -2166,5 +2877,5 @@ void preparePrintFront(void)
 #endif // FL_DOXYGEN
 
 //
-// End of "$Id: Fl_win32.cxx 9624 2012-06-21 08:52:29Z manolo $".
+// End of "$Id: Fl_win32.cxx 12028 2016-10-14 16:35:44Z AlbrechtS $".
 //

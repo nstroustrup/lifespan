@@ -1,5 +1,5 @@
 //
-// "$Id: tree-simple.cxx 8864 2011-07-19 04:49:30Z greg.ercolano $"
+// "$Id: tree-simple.cxx 10015 2013-11-06 20:12:08Z greg.ercolano $"
 //
 //	Simple Fl_Tree widget example. - erco 06/05/2010
 //
@@ -43,6 +43,13 @@ void TreeCallback(Fl_Widget *w, void *data) {
       break;
     case FL_TREE_REASON_CLOSED:
       // fprintf(stderr, "TreeCallback: Item '%s' closed\n", item->label());
+      break;
+#if FLTK_ABI_VERSION >= 10301
+    // To enable this callback, use tree->item_reselect_mode(FL_TREE_SELECTABLE_ALWAYS);
+    case FL_TREE_REASON_RESELECTED:
+      // fprintf(stderr, "TreeCallback: Item '%s' reselected\n", item->label());
+      break;
+#endif
     default:
       break;
   }
@@ -82,5 +89,5 @@ int main(int argc, char *argv[]) {
 }
 
 //
-// End of "$Id: tree-simple.cxx 8864 2011-07-19 04:49:30Z greg.ercolano $".
+// End of "$Id: tree-simple.cxx 10015 2013-11-06 20:12:08Z greg.ercolano $".
 //

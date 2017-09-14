@@ -1,5 +1,5 @@
 //
-// "$Id: Fl_Input_.cxx 9326 2012-04-05 14:30:19Z AlbrechtS $"
+// "$Id: Fl_Input_.cxx 11243 2016-02-27 15:14:42Z AlbrechtS $"
 //
 // Common input widget routines for the Fast Light Tool Kit (FLTK).
 //
@@ -339,10 +339,25 @@ void Fl_Input_::drawtext(int X, int Y, int W, int H) {
       int offset2;
       if (pp <= e) x2 = xpos + (float)expandpos(p, pp, buf, &offset2);
       else offset2 = (int) strlen(buf);
+#ifdef __APPLE__ // Mac OS: underline marked ( = selected + Fl::compose_state != 0) text 
+      if (Fl::compose_state) {
+        fl_color(textcolor());
+      }
+      else 
+#endif
+      {
       fl_color(selection_color());
       fl_rectf((int)(x1+0.5), Y+ypos, (int)(x2-x1+0.5), height);
       fl_color(fl_contrast(textcolor(), selection_color()));
+      }
       fl_draw(buf+offset1, offset2-offset1, x1, (float)(Y+ypos+desc));
+#ifdef __APPLE__ // Mac OS: underline marked ( = selected + Fl::compose_state != 0) text
+      if (Fl::compose_state) {
+        fl_color( fl_color_average(textcolor(), color(), 0.6) );
+        float width = fl_width(buf+offset1, offset2-offset1);
+        fl_line(x1, Y+ypos+height-1, x1+width, Y+ypos+height-1);
+      }
+#endif
       if (pp < e) {
 	fl_color(tc);
 	fl_draw(buf+offset2, (int) strlen(buf+offset2), x2, (float)(Y+ypos+desc));
@@ -357,7 +372,11 @@ void Fl_Input_::drawtext(int X, int Y, int W, int H) {
 
   CONTINUE2:
     // draw the cursor:
-    if (Fl::focus() == this && selstart == selend &&
+    if (Fl::focus() == this && (
+#ifdef __APPLE__
+				Fl::compose_state || 
+#endif
+				selstart == selend) &&
 	position() >= p-value() && position() <= e-value()) {
       fl_color(cursor_color());
       // cursor position may need to be recomputed (see STR #2486)
@@ -369,6 +388,9 @@ void Fl_Input_::drawtext(int X, int Y, int W, int H) {
       } else {
         fl_rectf((int)(xpos+curx+0.5), Y+ypos, 2, height);
       }
+#ifdef __APPLE__
+      Fl::insertion_point_location(xpos+curx, Y+ypos+height, height);
+#endif
     }
 
   CONTINUE:
@@ -397,25 +419,27 @@ void Fl_Input_::drawtext(int X, int Y, int W, int H) {
 
 /** \internal
   Simple function that determines if a character could be part of a word.
-  \todo This function is not ucs4-aware.
+  \todo This function is not UTF-8-aware.
 */
 static int isword(char c) {
-  return (c&128 || isalnum(c) || strchr("#%&-/@\\_~", c));
+  return (c&128 || isalnum(c) || strchr("#%-@_~", c));
 }
 
 /**
   Finds the end of a word.
 
-  This call calculates the end of a word based on the given 
-  index \p i. Calling this function repeatedly will move
-  forwards to the end of the text.
- 
+  Returns the index after the last byte of a word.
+  If the index is already at the end of a word, it will find the
+  end of the following word, so if you call it repeatedly you will
+  move forwards to the end of the text.
+
+  Note that this is inconsistent with line_end().
+
   \param [in] i starting index for the search
   \return end of the word
 */
 int Fl_Input_::word_end(int i) const {
   if (input_type() == FL_SECRET_INPUT) return size();
-  //while (i < size() && !isword(index(i))) i++;
   while (i < size() && !isword(index(i))) i++;
   while (i < size() && isword(index(i))) i++;
   return i;
@@ -424,17 +448,18 @@ int Fl_Input_::word_end(int i) const {
 /**
   Finds the start of a word.
 
-  This call calculates the start of a word based on the given 
-  index \p i. Calling this function repeatedly will move
-  backwards to the beginning of the text.
- 
+  Returns the index of the first byte of a word.
+  If the index is already at the beginning of a word, it will find the
+  beginning of the previous word, so if you call it repeatedly you will
+  move backwards to the beginning of the text.
+
+  Note that this is inconsistent with line_start().
+
   \param [in] i starting index for the search
-  \return start of the word
+  \return start of the word, or previous word
 */
 int Fl_Input_::word_start(int i) const {
   if (input_type() == FL_SECRET_INPUT) return 0;
-//   if (i >= size() || !isword(index(i)))
-//     while (i > 0 && !isword(index(i-1))) i--;
   while (i > 0 && !isword(index(i-1))) i--;
   while (i > 0 && isword(index(i-1))) i--;
   return i;
@@ -496,6 +521,20 @@ int Fl_Input_::line_start(int i) const {
   } else return j;
 }
 
+static int strict_word_start(const char *s, int i, int itype) {
+  if (itype == FL_SECRET_INPUT) return 0;
+  while (i > 0 && !isspace(s[i-1]))
+    i--;
+  return i;
+}
+
+static int strict_word_end(const char *s, int len, int i, int itype) {
+  if (itype == FL_SECRET_INPUT) return len;
+  while (i < len && !isspace(s[i]))
+    i++;
+  return i;
+}
+
 /** 
   Handles mouse clicks and mouse moves.
   \todo Add comment and parameters
@@ -549,16 +588,16 @@ void Fl_Input_::handle_mouse(int X, int Y, int /*W*/, int /*H*/, int drag) {
 	newpos = line_end(newpos);
 	newmark = line_start(newmark);
       } else {
-	newpos = word_end(newpos);
-	newmark = word_start(newmark);
+	newpos = strict_word_end(value(), size(), newpos, input_type());
+	newmark = strict_word_start(value(), newmark, input_type());
       }
     } else {
       if (Fl::event_clicks() > 1) {
 	newpos = line_start(newpos);
 	newmark = line_end(newmark);
       } else {
-	newpos = word_start(newpos);
-	newmark = word_end(newmark);
+	newpos = strict_word_start(value(), newpos, input_type());
+	newmark = strict_word_end(value(), size(), newmark, input_type());
       }
     }
     // if the multiple click does not increase the selection, revert
@@ -1100,6 +1139,7 @@ Fl_Input_::Fl_Input_(int X, int Y, int W, int H, const char* l)
   maximum_size_ = 32767;
   shortcut_ = 0;
   set_flag(SHORTCUT_LABEL);
+  set_flag(MAC_USE_ACCENTS_MENU);
   tab_nav(1);
 }
 
@@ -1173,7 +1213,7 @@ int Fl_Input_::static_value(const char* str, int len) {
       int i = 0;
       // find first different character:
       if (value_) {
-	for (; i<size_ && i<len && str[i]==value_[i]; i++);
+	for (; i<size_ && i<len && str[i]==value_[i]; i++) {/*empty*/}
 	if (i==size_ && i==len) return 0;
       }
       minimal_update(i);
@@ -1298,5 +1338,5 @@ unsigned int Fl_Input_::index(int i) const
 }
 
 //
-// End of "$Id: Fl_Input_.cxx 9326 2012-04-05 14:30:19Z AlbrechtS $".
+// End of "$Id: Fl_Input_.cxx 11243 2016-02-27 15:14:42Z AlbrechtS $".
 //

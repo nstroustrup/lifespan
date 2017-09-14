@@ -1,5 +1,5 @@
 #
-# "$Id: Makefile 8864 2011-07-19 04:49:30Z greg.ercolano $"
+# "$Id: Makefile 11994 2016-09-30 11:33:14Z AlbrechtS $"
 #
 # Top-level makefile for the Fast Light Tool Kit (FLTK).
 #
@@ -60,16 +60,17 @@ depend: makeinclude
 
 clean:
 	-$(RM) core *.o
-	for dir in $(DIRS); do\
+	for dir in examples $(DIRS); do\
 		echo "=== cleaning $$dir ===";\
 		(cd $$dir; $(MAKE) $(MFLAGS) clean) || exit 1;\
 	done
 
 distclean: clean
-	$(RM) config.*
+	$(RM) config.h config.log config.status
 	$(RM) fltk-config fltk.list makeinclude
 	$(RM) fltk.spec
 	$(RM) FL/Makefile
+	$(RM) FL/abi-version.h
 	$(RM) documentation/*.$(CAT1EXT)
 	$(RM) documentation/*.$(CAT3EXT)
 	$(RM) documentation/*.$(CAT6EXT)
@@ -90,7 +91,7 @@ fltk-config: configure configh.in fltk-config.in
 	touch config.h
 	chmod +x fltk-config
 
-makeinclude: configure configh.in makeinclude.in
+makeinclude: configure configh.in makeinclude.in config.guess config.sub
 	if test -f config.status; then \
 		./config.status --recheck; \
 		./config.status; \
@@ -100,8 +101,13 @@ makeinclude: configure configh.in makeinclude.in
 	touch config.h
 	chmod +x fltk-config
 
-configure: configure.in
+configure: configure.ac
 	autoconf
+
+config.guess config.sub:
+	-automake --add-missing 2> /dev/null
+	if [ ! -e config.sub   ]; then echo NOTE: Using frozen copy of config.sub;   cp misc/config.sub   . ; fi
+	if [ ! -e config.guess ]; then echo NOTE: Using frozen copy of config.guess; cp misc/config.guess . ; fi
 
 portable-dist:
 	epm -v -s fltk.xpm fltk
@@ -126,5 +132,5 @@ clang-changes:
 
 
 #
-# End of "$Id: Makefile 8864 2011-07-19 04:49:30Z greg.ercolano $".
+# End of "$Id: Makefile 11994 2016-09-30 11:33:14Z AlbrechtS $".
 #

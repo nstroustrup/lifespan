@@ -1,5 +1,5 @@
 //
-// "$Id: gl_start.cxx 8864 2011-07-19 04:49:30Z greg.ercolano $"
+// "$Id: gl_start.cxx 10548 2015-02-02 13:08:51Z manolo $"
 //
 // OpenGL context routines for the Fast Light Tool Kit (FLTK).
 //
@@ -35,6 +35,7 @@
 #include <FL/Fl_Window.H>
 #include <FL/x.H>
 #include <FL/fl_draw.H>
+#include <FL/gl.h>
 #include "Fl_Gl_Choice.H"
 
 static GLContext context;
@@ -60,14 +61,15 @@ void gl_start() {
     if (!gl_choice) Fl::gl_visual(0);
     context = fl_create_gl_context(Fl_Window::current(), gl_choice);
 #elif defined(__APPLE_QUARTZ__)
-    // warning: the Quartz version should probably use Core GL (CGL) instead of AGL
     context = fl_create_gl_context(Fl_Window::current(), gl_choice);
 #else
 #  error Unsupported platform
 #endif
   }
   fl_set_gl_context(Fl_Window::current(), context);
-#if !defined(WIN32) && !defined(__APPLE__)
+#ifdef __APPLE__
+  Fl_X::GLcontext_update(context); // supports window resizing
+#elif !defined(WIN32)
   glXWaitX();
 #endif
   if (pw != Fl_Window::current()->w() || ph != Fl_Window::current()->h()) {
@@ -109,7 +111,6 @@ int Fl::gl_visual(int mode, int *alist) {
 #elif defined(WIN32)
   gl_choice = c;
 #elif defined(__APPLE_QUARTZ__)
-  // warning: the Quartz version should probably use Core GL (CGL) instead of AGL
   gl_choice = c;
 #else
 #  error Unsupported platform
@@ -119,5 +120,5 @@ int Fl::gl_visual(int mode, int *alist) {
 #endif
 
 //
-// End of "$Id: gl_start.cxx 8864 2011-07-19 04:49:30Z greg.ercolano $".
+// End of "$Id: gl_start.cxx 10548 2015-02-02 13:08:51Z manolo $".
 //

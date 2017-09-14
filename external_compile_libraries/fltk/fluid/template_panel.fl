@@ -1,13 +1,13 @@
 # data file for the Fltk User Interface Designer (fluid)
-version 1.0300 
-header_name {.h} 
+version 1.0304
+header_name {.h}
 code_name {.cxx}
 comment {//
-// "$Id: template_panel.fl 8864 2011-07-19 04:49:30Z greg.ercolano $"
+// "$Id: template_panel.fl 12044 2016-10-17 18:21:11Z greg.ercolano $"
 //
 // FLUID template support for the Fast Light Tool Kit (FLTK).
 //
-// Copyright 1998-2010 by Bill Spitzak and others.
+// Copyright 1998-2016 by Bill Spitzak and others.
 //
 // This library is free software. Distribution and use rights are outlined in
 // the file "COPYING" which should have been included with this file.  If this
@@ -20,34 +20,47 @@ comment {//
 //     http://www.fltk.org/str.php
 //
 } {in_source in_header
-} 
+}
 
-decl {\#include <stdio.h>} {} 
+decl {\#include <stdio.h>} {private local
+}
 
-decl {\#include <stdlib.h>} {} 
+decl {\#include <stdlib.h>} {private local
+}
 
-decl {\#include "../src/flstring.h"} {} 
+decl {\#include "../src/flstring.h"} {private local
+}
 
-decl {\#include <errno.h>} {} 
+decl {\#include <errno.h>} {private local
+}
 
-decl {\#include <FL/filename.H>} {} 
+decl {\#include <FL/filename.H>} {private local
+}
 
-decl {\#include <FL/fl_ask.H>} {} 
+decl {\#include <FL/fl_ask.H>} {private local
+}
 
-decl {\#include <FL/Fl_Shared_Image.H>} {} 
+decl {\#include <FL/Fl_Shared_Image.H>} {private local
+}
 
-decl {\#include <FL/Fl_Preferences.H>} {} 
+decl {\#include <FL/Fl_Preferences.H>} {private local
+}
 
 declblock {\#if defined(WIN32) && !defined(__CYGWIN__)} {after {\#endif // WIN32 && !__CYGWIN__}
 } {
-  decl {\#include <io.h>} {}
-  decl {\#else} {}
-  decl {\#include <unistd.h>} {}
-} 
+  decl {\#include <io.h>} {private local
+  }
+  decl {\#else} {private local
+  }
+  decl {\#include <unistd.h>} {private local
+  }
+}
 
-decl {extern Fl_Preferences fluid_prefs;} {} 
+decl {extern Fl_Preferences fluid_prefs;} {private local
+}
 
-Function {make_template_panel()} {} {
+Function {make_template_panel()} {open
+} {
   Fl_Window template_panel {
     label {New/Save Template}
     callback {Fl_Shared_Image *img = (Fl_Shared_Image *)template_preview->image();
@@ -58,7 +71,7 @@ template_browser->deselect();
 template_name->value("");
 template_instance->value("");
 template_panel->hide();} open
-    xywh {340 237 460 355} type Double resizable modal visible
+    xywh {398 200 460 355} type Double hide resizable modal
   } {
     Fl_Browser template_browser {
       label {Available Templates:}
@@ -116,12 +129,12 @@ if (img) {
       callback {if (strlen(template_name->value())) {
   template_submit->activate();
   if (Fl::event_key() == FL_Enter) template_panel->hide();
-} else template_submit->deactivate();}
-      xywh {124 288 326 25} labelfont 1 when 3 textfont 4
+} else template_submit->deactivate();} selected
+      xywh {198 288 252 25} labelfont 1 when 3 textfont 4
     }
     Fl_Input template_instance {
       label {Instance Name:}
-      xywh {124 288 326 25} labelfont 1 textfont 4 hide
+      xywh {198 288 252 25} labelfont 1 textfont 4 hide
     }
     Fl_Group {} {
       xywh {10 323 440 25}
@@ -129,7 +142,7 @@ if (img) {
       Fl_Button template_delete {
         label {Delete Template}
         callback template_delete_cb
-        xywh {10 323 133 25}
+        xywh {10 323 143 25}
       }
       Fl_Box {} {
         xywh {153 323 126 25} resizable
@@ -157,7 +170,7 @@ template_panel->hide();}
       }
     }
   }
-} 
+}
 
 Function {template_clear()} {return_type void
 } {
@@ -170,9 +183,9 @@ for (i = 1; i <= template_browser->size(); i ++) {
 
 template_browser->deselect();
 template_browser->clear();} {}
-} 
+}
 
-Function {template_delete_cb(Fl_Button *, void *)} {selected return_type void
+Function {template_delete_cb(Fl_Button *, void *)} {return_type void
 } {
   code {int item = template_browser->value();
 if (item < 1) return;
@@ -191,7 +204,7 @@ if (unlink(flfile)) {
 
 template_browser->remove(item);
 template_browser->do_callback();} {}
-} 
+}
 
 Function {template_load()} {return_type void
 } {
@@ -225,10 +238,10 @@ for (i = 0; i < num_files; i ++) {
 }
 
 if (num_files > 0) free(files);} {}
-} 
+}
 
 comment {
 //
-// End of "$Id: template_panel.fl 8864 2011-07-19 04:49:30Z greg.ercolano $".
+// End of "$Id: template_panel.fl 12044 2016-10-17 18:21:11Z greg.ercolano $".
 //} {in_source in_header
-} 
+}

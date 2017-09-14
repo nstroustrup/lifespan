@@ -255,8 +255,8 @@ FLTK 1.3 is officially supported on Windows (2000,) 2003,
 XP, and later.  Older Windows versions prior to Windows 2000
 are not officially supported, but may still work.
 The main reason is that the OS version needs to support UTF-8.
-FLTK 1.3 is known to work on recent versions of
-Windows such as Windows 7 and Vista and has been reported to work
+FLTK 1.3 is known to work on recent versions of Windows such as
+Windows 7, Windows 8/8.1 and Windows 10 and has been reported to work
 in both 32-bit and 64-bit versions of these.
 
 FLTK currently supports the following development
@@ -267,8 +267,8 @@ environments can not be mixed
 with object files from any of the other environments!
 (They use incompatible C++ conventions internally.)
 
-Free Microsoft Visual C++ 2008 Express and Visual
-C++ 2010 Express using the supplied workspace and
+Free Microsoft Visual C++ 2008 Express and Visual C++ 2010 Express
+or later versions using the supplied workspace and
 project files. Older versions, and the commercial
 versions, can be used as well, if they can open
 the project files.
@@ -359,21 +359,10 @@ http://www.fltk.org/str.php [for reporting bugs] <br>
 http://www.fltk.org/software.php [source code]<br>
 http://www.fltk.org/newsgroups.php [newsgroup/forums]
 
-\par FTP
-http://ftp.easysw.com/pub/fltk [California, USA, via http]<br>
-ftp://ftp.easysw.com/pub/fltk [California, USA via ftp]<br>
-ftp://ftp2.easysw.com/pub/fltk [Maryland, USA]<br>
-ftp://ftp.funet.fi/pub/mirrors/ftp.easysw.com/pub/fltk [Espoo, Finland]<br>
-
 \par NNTP Newsgroups
-news://news.easysw.com/ [NNTP interface]<br>
+https://groups.google.com/forum/#!forum/fltkgeneral [Google Groups interface]
+news://fltk.org:1024/ [NNTP interface]<br>
 http://fltk.org/newsgroups.php [web interface]<br>
-
-Point your NNTP news reader at news.easysw.com. At minimum, you'll want to subscribe
-to the "fltk.general" group for general FLTK questions and answers.
-
-You can also use the web interface to the newsgroup; just go to the main http://fltk.org/
-page and click on "Forums".
 
 \section intro_reporting Reporting Bugs
 

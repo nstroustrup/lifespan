@@ -2742,15 +2742,23 @@ void ns_image_server::get_posture_analysis_model_for_region(const ns_64_bit regi
 	sql << "SELECT posture_analysis_model, posture_analysis_method FROM sample_region_image_info WHERE id = " << region_info_id;
 	ns_sql_result res;
 	sql.get_rows(res);
+
+	if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("get_posture_analysis_model_for_region::sql result obtained"));
 	if (res.size() == 0)
 		throw ns_ex("ns_image_server::get_posture_analysis_model_for_region()::Could not find region ") << region_info_id << " in db";
 	if (res[0][0].size() == 0)
 		throw ns_ex("ns_image_server::get_posture_analysis_model_for_region()::No posture analysis model was specified for region ")<< region_info_id;
 
+	if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("get_posture_analysis_model_for_region::sql result checked"));
 	ns_posture_analysis_model_entry_source source;
 	source.analysis_method = (ns_posture_analysis_model::method_from_string(res[0][1]));
+
+	if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("get_posture_analysis_model_for_region::method obtained"));
 	source.set_directory(long_term_storage_directory, posture_analysis_model_directory());
+
+	if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("get_posture_analysis_model_for_region::directory set"));
 	posture_analysis_model_cache.get_for_read(res[0][0], it, source);
+	if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("get_posture_analysis_model_for_region::gotten for read"));
 }
 
 
@@ -2762,6 +2770,8 @@ void ns_posture_analysis_model_entry_source::set_directory(const std::string lon
 	model_directory += DIR_CHAR;
 }
 void ns_posture_analysis_model_entry::load_from_external_source(const std::string & name_, ns_posture_analysis_model_entry_source & external_source) {
+
+	if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("ns_posture_analysis_model_entry::opening"));
 	name = name_;
 	model_specification.posture_analysis_method = external_source.analysis_method;
 	if (model_specification.posture_analysis_method == ns_posture_analysis_model::ns_hidden_markov) {
@@ -2778,11 +2788,20 @@ void ns_posture_analysis_model_entry::load_from_external_source(const std::strin
 		return;
 	}
 	if (model_specification.posture_analysis_method == ns_posture_analysis_model::ns_threshold) {
+		if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("ns_posture_analysis_model_entry::threshold"));
 		ifstream thresh((external_source.model_directory + name + "_threshold.csv").c_str());
-		if (thresh.fail())
+		if (thresh.fail()) {
+
+			if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("ns_posture_analysis_model_entry::error!"));
 			throw ns_ex("Could not load ") << external_source.model_directory + name + "_thresh.csv";
+		}
+
+		if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("ns_posture_analysis_model_entry::reading"));
 		model_specification.threshold_parameters.read(thresh);
+		if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("ns_posture_analysis_model_entry::done reading"));
 		thresh.close();
+		model_specification.threshold_parameters.write(cerr);
+		cerr << "\n";
 		return;
 	}
 	if (model_specification.posture_analysis_method == ns_posture_analysis_model::ns_not_specified)

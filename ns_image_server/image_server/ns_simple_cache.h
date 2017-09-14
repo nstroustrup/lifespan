@@ -6,7 +6,8 @@
 #include <type_traits>
 #include <map>
 #include <algorithm>
-
+#include <iostream>
+#include <memory>
 //#define NS_VERBOSE_IMAGE_CACHE
 
 #ifdef  NS_VERBOSE_IMAGE_CACHE
@@ -81,8 +82,7 @@ private:
 	bool unlinked_singleton;
 
 	void check_out(bool to_write, 
-		       ns_simple_cache_internal_object<data_type,locked> * o, 
-		       ns_simple_cache<data_type, cache_key_t,locked> *c){
+		       std::shared_ptr<ns_simple_cache_internal_object<data_type,locked> > & o){
 		if (unlinked_singleton) return;
 	  //not locked as the cache object will be locked while checking this object out
 	  obj = o;
@@ -94,8 +94,7 @@ private:
 	  obj->object_metadata_lock.release();
 	}
 	void check_out(bool to_write,
-		       ns_simple_cache_internal_object<const data_type,locked> * o,
-		       ns_simple_cache<const data_type, cache_key_t, locked> * c){
+		       std::shared_ptr<ns_simple_cache_internal_object<const data_type,locked> > & o){
 	  if (unlinked_singleton) return;
 	  obj_const = o;
 	  obj_const->object_metadata_lock.wait_to_acquire(__FILE__, __LINE__);
@@ -108,8 +107,8 @@ private:
 	
  
 	void check_in();
-	const ns_simple_cache_internal_object<const data_type, locked> * obj_const;
-	ns_simple_cache_internal_object<data_type, locked> * obj;
+	std::shared_ptr<const ns_simple_cache_internal_object<const data_type, locked> > obj_const;
+	std::shared_ptr<ns_simple_cache_internal_object<data_type, locked> > obj;
 
 	bool write;
 
@@ -256,8 +255,8 @@ public:
 			//get all write locks!
 			//is it really that simple? 
 			for (typename cache_t::iterator p = data_cache.begin(); p != data_cache.end(); p++) {
-				p->second.object_write_lock.wait_to_acquire(__FILE__, __LINE__);
-				p->second.object_write_lock.release();
+				p->second->object_write_lock.wait_to_acquire(__FILE__, __LINE__);
+				p->second->object_write_lock.release();
 			}
 			this->current_memory_usage_in_kb = 0;
 			data_cache.clear();
@@ -286,7 +285,7 @@ public:
 	void pause_everything_to_clean_up_internal_structures() {
 		wait_for_all_current_operations_to_be_processed_and_get_delete_and_table_lock();
 		for (typename cache_t::iterator p = data_cache.begin(); p != data_cache.end();) {
-			if (p->second.to_be_deleted)
+			if (p->second->to_be_deleted)
 				p = data_cache.erase(p);
 			else ++p;
 		}
@@ -326,7 +325,7 @@ private:
 	ns_64_bit current_memory_usage_in_kb;
 
 	typedef ns_simple_cache_internal_object<data_t, locked> internal_object_t;
-	typedef std::map<cache_key_t, internal_object_t > cache_t;
+	typedef std::map<cache_key_t, std::shared_ptr<internal_object_t> > cache_t;
 
 	cache_t data_cache;
 
@@ -365,7 +364,7 @@ private:
 			std::vector<ns_cache_object_sort_by_age<typename cache_t::iterator> > objects_sorted_by_age(data_cache.size());
 			unsigned long int i = 0;
 			for (typename cache_t::iterator p = data_cache.begin(); p != data_cache.end(); p++) {
-				objects_sorted_by_age[i] = ns_cache_object_sort_by_age<typename cache_t::iterator>(p->second.last_access, p);
+				objects_sorted_by_age[i] = ns_cache_object_sort_by_age<typename cache_t::iterator>(p->second->last_access, p);
 				i++;
 			}
 			std::sort(objects_sorted_by_age.begin(), objects_sorted_by_age.end(), ns_cache_object_sort_by_age<typename cache_t::iterator>());
@@ -380,13 +379,13 @@ private:
 						break;
 
 					typename cache_t::iterator p = objects_sorted_by_age[i].pair.second;
-					if (p->second.to_be_deleted) {
+					if (p->second->to_be_deleted) {
 						continue;
 					}
 					if (locked) {
 						object_write_requests_pending++;
 						lock.release();
-						bool is_in_use = !p->second.object_write_lock.try_to_acquire(__FILE__, __LINE__);
+						bool is_in_use = !p->second->object_write_lock.try_to_acquire(__FILE__, __LINE__);
 						lock.wait_to_acquire(__FILE__, __LINE__);
 						object_write_requests_pending--;
 						//skip objects that are in use
@@ -394,28 +393,28 @@ private:
 							continue;
 					}
 
-					if (age_in_seconds == 0 || p->second.last_access + age_in_seconds < current_time) {
+					if (age_in_seconds == 0 || p->second->last_access + age_in_seconds < current_time) {
 
 						poll_until_no_threads_are_reading_from_object(p);
 
-						current_memory_usage_in_kb -= p->second.data.size_in_memory_in_kbytes();
+						current_memory_usage_in_kb -= p->second->data.size_in_memory_in_kbytes();
 
 						if (!lock_all_and_clear_quickly) {
 							//we're going to do the cleanup while not locking the cache, so we flag the deletion to be done later.
 							action_taken_this_round = true;
-							p->second.to_be_deleted = true;
+							p->second->to_be_deleted = true;
 							if (locked) lock.release();
 						}
 
-						p->second.data.clean_up(external_source);
-						if (locked) p->second.object_write_lock.release();
+						p->second->data.clean_up(external_source);
+						if (locked) p->second->object_write_lock.release();
 						if (lock_all_and_clear_quickly)
 							data_cache.erase(p);
 						else
 							break;
 					}
 					else 
-						p->second.object_write_lock.release();
+						p->second->object_write_lock.release();
 				}
 
 				if (locked) {
@@ -456,12 +455,12 @@ private:
 
 	void poll_until_no_threads_are_reading_from_object(typename cache_t::iterator & p) {
 		while (true) {
-			p->second.object_metadata_lock.wait_to_acquire(__FILE__, __LINE__);
-			if (p->second.number_checked_out_by_any_threads == 0) {
-				p->second.object_metadata_lock.release();
+			p->second->object_metadata_lock.wait_to_acquire(__FILE__, __LINE__);
+			if (p->second->number_checked_out_by_any_threads == 0) {
+				p->second->object_metadata_lock.release();
 				break;
 			}
-			p->second.object_metadata_lock.release();
+			p->second->object_metadata_lock.release();
 			ns_thread::sleep_milliseconds(1);
 		}
 	}
@@ -510,11 +509,11 @@ private:
 				typename cache_t::iterator p;
 				//create a new cache entry for the new image, and reserve it for writing
 				//{
-				internal_object_t foo;
+				//internal_object_t foo;
 				const cache_key_t id_num = data_t::to_id(id);
-				p = data_cache.emplace(std::piecewise_construct, std::make_tuple(id_num), std::make_tuple()).first;
-
-				p->second.object_write_lock.wait_to_acquire(__FILE__, __LINE__); 
+				p = data_cache.emplace(std::make_pair(id_num,std::shared_ptr<internal_object_t>(new internal_object_t()))).first;
+			      
+				p->second->object_write_lock.wait_to_acquire(__FILE__, __LINE__); 
 				currently_have_table_lock = false;
 				setup_new_cache_object_and_handle_and_release_locks(id,handle,external_source,request_type,p);
 				return true;
@@ -535,8 +534,8 @@ private:
 				currently_have_table_lock = false;
 				bool could_not_get_object = false;
 				if (only_try_to_get)
-					could_not_get_object = !p->second.object_write_lock.try_to_acquire(__FILE__, __LINE__);  //this wont be given up until the object ns_simple_cache object is destructed!
-				else p->second.object_write_lock.wait_to_acquire(__FILE__, __LINE__);  //this wont be given up until the object ns_simple_cache object is destructed!
+					could_not_get_object = !p->second->object_write_lock.try_to_acquire(__FILE__, __LINE__);  //this wont be given up until the object ns_simple_cache object is destructed!
+				else p->second->object_write_lock.wait_to_acquire(__FILE__, __LINE__);  //this wont be given up until the object ns_simple_cache object is destructed!
 
 				if (!could_not_get_object && locked) {
 					//now we need to wait for any threads that are still reading.
@@ -555,7 +554,7 @@ private:
 				}
 				//if we find an old broken entry from a previous failed load.
 				//we will try to reload using this entry
-				if (p->second.to_be_deleted) {
+				if (p->second->to_be_deleted) {
 					std::cerr << "%";
 					currently_have_table_lock = false;
 					setup_new_cache_object_and_handle_and_release_locks(id, handle, external_source, request_type, p);
@@ -563,7 +562,7 @@ private:
 				}
 
 				//we have exclusive write access to a record no-one is reading!  We're done. 
-				handle->check_out(true, &(p->second), this);
+				handle->check_out(true, (p->second));
 				if (locked)lock.release();
 				return true;
 			}
@@ -582,8 +581,8 @@ private:
 
 					bool could_not_get_object = false;
 					if (only_try_to_get)
-						could_not_get_object = !p->second.object_write_lock.try_to_acquire(__FILE__, __LINE__);
-					else p->second.object_write_lock.wait_to_acquire(__FILE__, __LINE__);
+						could_not_get_object = !p->second->object_write_lock.try_to_acquire(__FILE__, __LINE__);
+					else p->second->object_write_lock.wait_to_acquire(__FILE__, __LINE__);
 
 					lock.wait_to_acquire(__FILE__, __LINE__);
 					object_write_requests_pending--;
@@ -596,7 +595,7 @@ private:
 
 				//if we find an old broken entry from a previous failed load.
 				//we will try to reload using this entry
-				if (p->second.to_be_deleted) {
+				if (p->second->to_be_deleted) {
 					std::cerr << "%";
 					currently_have_table_lock = false;
 					setup_new_cache_object_and_handle_and_release_locks(id, handle, external_source, request_type, p);
@@ -605,8 +604,8 @@ private:
 
 				//we have the write lock, so nobody else does!  check it out, and since we're 
 				//only looking for read access, give back the write lock.
-				handle->check_out(false, &p->second, this);
-				p->second.object_write_lock.release();
+				handle->check_out(false, p->second);
+				p->second->object_write_lock.release();
 				if (locked)lock.release();
 				return true;
 			}
@@ -624,15 +623,15 @@ private:
 		handle_t * handle,
 		typename data_t::external_source_type & external_source,
 		ns_request_type request_type, typename cache_t::iterator p) {
-		handle->check_out(true, &p->second, this);  //check it out for writing.
-		p->second.to_be_deleted = false;
+		handle->check_out(true, p->second);  //check it out for writing.
+		p->second->to_be_deleted = false;
 		lock.release();//release the lock so everything else can read and write other objects in the background while we load
 					   //this one in.
 		try {
-			p->second.data.load_from_external_source(id, external_source);
+			p->second->data.load_from_external_source(id, external_source);
 		}
 		catch (...) {
-			p->second.to_be_deleted = true;  //we can't delete this now, because we've already given up the main lock.  but we can flag it for deletion next time it's encountered
+			p->second->to_be_deleted = true;  //we can't delete this now, because we've already given up the main lock.  but we can flag it for deletion next time it's encountered
 			handle->check_in();
 			throw;
 		}
@@ -640,14 +639,14 @@ private:
 		std::cerr << "Inserting new image with size " << image_size << " into the cache.  \nCache status is currently " << current_memory_usage / 1024 << "/" << max_memory_usage / 1024 << "\n";
 #endif
 		//ok! We've loaded the data into the new position in the map.  populate it with interesting info.
-		p->second.last_access = ns_current_time();
-		current_memory_usage_in_kb += p->second.data.size_in_memory_in_kbytes();
+		p->second->last_access = ns_current_time();
+		current_memory_usage_in_kb += p->second->data.size_in_memory_in_kbytes();
 
 		if (request_type == ns_write)
 			return;  //we already have write access and everything loaded into cached_object, give it to the user.
 
 		//give up write access manually here, and pass the remaining object, no read only, on to the user
-		p->second.object_write_lock.release();
+		p->second->object_write_lock.release();
 		handle->write = false;
 		return;
 	}
@@ -672,7 +671,7 @@ private:
 					found = true;
 					break;
 				}
-				if (p->second.last_access <= oldest_in_memory->second.last_access) {
+				if (p->second->last_access <= oldest_in_memory->second->last_access) {
 					found = true;
 					oldest_in_memory = p;
 				}
@@ -687,7 +686,7 @@ private:
 				return;
 			}
 			//we have a write lock on a specific object, but it's been modified somehow and can't be found.  
-			if (locked && target_id != -1 && oldest_in_memory->second.id != target_id) {
+			if (locked && target_id != -1 && oldest_in_memory->second->id != target_id) {
 				lock.release();
 				throw ns_ex("The cache seems to have been corrupted!");
 			}
@@ -698,11 +697,11 @@ private:
 				if (locked) {
 					//if someone else is writing to it, there's a chance it could have been deleted, so we need to wait and then go back
 					//and load it again
-					if (oldest_in_memory->second.number_waiting_to_write > 0) {
-						target_id = oldest_in_memory->second.id;
-						oldest_in_memory->second.number_waiting_to_write++;
+					if (oldest_in_memory->second->number_waiting_to_write > 0) {
+						target_id = oldest_in_memory->second->id;
+						oldest_in_memory->second->number_waiting_to_write++;
 						lock.release();
-						oldest_in_memory->second.object_write_lock.wait_to_acquire(__FILE__, __LINE__);
+						oldest_in_memory->second->object_write_lock.wait_to_acquire(__FILE__, __LINE__);
 						continue;
 					}
 				}
@@ -710,10 +709,10 @@ private:
 			//ok we've finally found the oldest in memory and we hold its write lock.
 
 #ifdef NS_VERBOSE_IMAGE_CACHE
-			std::cerr << "Deleting image of size " << oldest_in_memory->second.size_in_memory / 1024 << " dated " << ns_format_time_string(oldest_in_memory->second.last_access) << "\n";
+			std::cerr << "Deleting image of size " << oldest_in_memory->second->size_in_memory / 1024 << " dated " << ns_format_time_string(oldest_in_memory->second->last_access) << "\n";
 #endif
-			current_memory_usage_in_kb -= oldest_in_memory->second.data.size_in_memory_in_kb();
-			oldest_in_memory().clean_up(external_source);
+			current_memory_usage_in_kb -= oldest_in_memory->second->data.size_in_memory_in_kb();
+			oldest_in_memory->second->clean_up(external_source);
 			data_cache.erase(oldest_in_memory);
 		}
 		lock.release();

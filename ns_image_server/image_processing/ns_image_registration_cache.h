@@ -131,8 +131,7 @@ struct ns_image_registration_profile_data_source {
 
 class ns_disk_buffered_image_registration_profile : public ns_image_registration_profile<ns_registration_disk_buffer>, public ns_simple_cache_data<ns_image_server_image, ns_image_registration_profile_data_source, ns_64_bit> {
 public:
-	ns_disk_buffered_image_registration_profile():whole_image_source(0),
-													downsampled_image_2_source(0){}
+	ns_disk_buffered_image_registration_profile(){}
 	ns_image_server_image image_record;
 
 	template<class a, class b, bool c>

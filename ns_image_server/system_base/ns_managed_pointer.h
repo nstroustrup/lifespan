@@ -1,5 +1,6 @@
 #ifndef NS_MANAGED_POINTER
 #define NS_MANAGED_POINTER
+/*
 #include <iostream>
 #include <map>
 #include "ns_lock.h"
@@ -93,4 +94,5 @@ std::map<handle_type, unsigned long> ns_managed_handle<handle_type,close_functio
 
 template<class handle_type,class close_function_object>
 ns_lock ns_managed_handle<handle_type,close_function_object>::ownership_count_lock("ns_mh::o");
+*/
 #endif

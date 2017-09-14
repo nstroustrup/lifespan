@@ -5622,6 +5622,11 @@ void ns_time_path_image_movement_analyzer::load_images_for_group(const unsigned 
 			}
 			groups[group_id].paths[j].output_image.load_from_db(groups[group_id].paths[j].output_image.id,&sql);
 			groups[group_id].paths[j].movement_image_storage = image_server_const.image_storage.request_from_storage(groups[group_id].paths[j].output_image,&sql);
+			cerr << group_id << " " << j <<( groups[group_id].paths[j].movement_image_storage.bound() ? "YES" : "NO" )<< "\n";
+			/*ns_image_storage_source<ns_8_bit> & tmp2 = 
+			unsigned long tmp = tmp2.init_send();
+			tmp--;
+			tmp++;*/
 			groups[group_id].paths[j].movement_image_storage_internal_state = groups[group_id].paths[j].movement_image_storage.input_stream().init_send();
 			if (load_flow_images) {
 				groups[group_id].paths[j].flow_movement_image_storage = image_server_const.image_storage.request_from_storage_n_bits<float>(groups[group_id].paths[j].flow_output_image, &sql, ns_image_storage_handler::ns_long_term_storage);

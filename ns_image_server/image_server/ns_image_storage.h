@@ -308,6 +308,7 @@ class ns_image_storage_source_handle{
 		void bind(ns_handle_pointer handle){
 		  source = handle;
 		}
+		bool bound() { return source != 0; }
 		~ns_image_storage_source_handle(){
 		  /*try{
 			pointer_manager.release(&source);

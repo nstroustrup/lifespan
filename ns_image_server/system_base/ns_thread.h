@@ -3,8 +3,8 @@
 
 #include "ns_ex.h"
 #include "ns_lock.h"
-//#include "ns_managed_pointer.h"
-
+#include <memory>
+#include <iostream>
 #include <map>
 #include <vector>
 /*******************************************
@@ -20,13 +20,16 @@ functionality on Windows, Linux, and OSX machines.
 	#include <windows.h>
 
 	struct ns_thread_handle_handle{
-	  HANDLE handle;
-	ns_thread_handle_handle(HANDLE & h):handle(h){}
-	  ~ns_thread_handle_handle{ 
-	    int ret = ::CloseHandle(h);
-	    if (ret == 0)
-	      throw ns_ex("Could not close thread.");
-	  }
+		HANDLE handle;
+		ns_thread_handle_handle(const HANDLE & h, bool close_on_destruct_=true):handle(h), close_on_destruct(close_on_destruct_){}
+		~ns_thread_handle_handle() {
+			if (!close_on_destruct)
+				return;
+			int ret = ::CloseHandle(handle);
+			if (ret == 0)
+				std::cerr << "Could not close thread.\n";
+		}
+		bool close_on_destruct;
 	};
 
 	struct ns_thread_handle{
@@ -34,19 +37,22 @@ functionality on Windows, Linux, and OSX machines.
 
 		HANDLE handle(){return handle_->handle;}
 
-	ns_thread_handle():have_handle(false):handle_(0){};
-	  void set_handle(const HANDLE & h){handle_ = new std::smart_ptr<ns_thread_handle_handle>(h);}
-	  //void set_unmanaged_handle(const HANDLE & h){handle_ = h;}
+	ns_thread_handle():handle_(0){};
+	  void set_handle(const HANDLE & h){
+		  handle_ = std::shared_ptr<ns_thread_handle_handle>(new ns_thread_handle_handle(h));
+	  }
+	  void set_unmanaged_handle(const HANDLE & h){
+		  handle_ = std::shared_ptr<ns_thread_handle_handle>(new ns_thread_handle_handle(h,false));
+	  }
 	  //	ns_thread_handle(const ns_thread_handle & h);
 	  void close(){handle_ = 0;}
 	  ~ns_thread_handle(){close();}
 
 	private:
 	  
-	  std::smart_ptr<ns_thread_handle_handle> handle_;
+	  std::shared_ptr<ns_thread_handle_handle> handle_;
 	
 	};
-
 	typedef DWORD ns_thread_return_type;
 
 #else

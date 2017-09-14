@@ -207,11 +207,7 @@ void ns_thread::sleep_milliseconds(const ns_64_bit & milliseconds){
 }
 
 #ifdef _WIN32 
-void ns_thread_handle_closer::operator()(const HANDLE & h){
-	int ret = ::CloseHandle(h);
-	if (ret == 0)
-		throw ns_ex("Could not close thread.");
-}
+
 #endif
 
 void ns_thread::detach(){

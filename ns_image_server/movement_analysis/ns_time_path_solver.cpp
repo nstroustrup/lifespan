@@ -2619,7 +2619,7 @@ void ns_time_path_solver::merge_overlapping_path_fragments(const unsigned long m
 	ns_time_path_solver_path_orderer paths_ordered_by_min_time;
 
 	
-	const unsigned long erase_constant(6666666666666);
+	const unsigned long erase_constant(6666666666);
 	for (std::vector<ns_time_path_solver_path>::iterator p = paths.begin(); p != paths.end();p++){
 		p->group_id = 0;
 	}

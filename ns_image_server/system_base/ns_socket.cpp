@@ -1,7 +1,6 @@
 #include "ns_socket.h"
 #include "ns_ex.h"
 #include <string.h>
-
 using namespace std;
 
 #ifdef __FreeBSD__

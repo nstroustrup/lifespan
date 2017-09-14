@@ -81,11 +81,12 @@ class ns_file_chooser{
 private:
 	bool set_filter_string(char *& filter_text){
 		bool should_delete(false);
-		//char * filter_text;
-		unsigned long size = 0;
+	       
 		if (filters.size() == 0){
-			filter_text = "All\t*.*";
-			size = 8;
+		  std::string a = "All\t*.*";
+		  filter_text = new char[a.size()+1];
+		  strcpy(filter_text,a.c_str());
+		  should_delete = true;
 		}
 		else{
 			std::string value;

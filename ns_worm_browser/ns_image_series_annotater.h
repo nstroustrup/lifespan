@@ -165,7 +165,7 @@ public:
 		return ns_none;
 	}
 
-	~ns_image_series_annotater(){sql.release();}
+	~ns_image_series_annotater(){clear_base();sql.release();}
 	const unsigned long image_bottom_border_size;
 
 	virtual void clear() {}

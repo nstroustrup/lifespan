@@ -2,7 +2,8 @@
 #define NS_THREAD
 
 #include "ns_ex.h"
-#include "ns_managed_pointer.h"
+#include "ns_lock.h"
+//#include "ns_managed_pointer.h"
 
 #include <map>
 #include <vector>
@@ -18,26 +19,32 @@ functionality on Windows, Linux, and OSX machines.
 	#include <winsock2.h>
 	#include <windows.h>
 
-	struct ns_thread_handle_closer{
-		void operator()(const HANDLE & h);
+	struct ns_thread_handle_handle{
+	  HANDLE handle;
+	ns_thread_handle_handle(HANDLE & h):handle(h){}
+	  ~ns_thread_handle_handle{ 
+	    int ret = ::CloseHandle(h);
+	    if (ret == 0)
+	      throw ns_ex("Could not close thread.");
+	  }
 	};
 
 	struct ns_thread_handle{
 		DWORD id;
 
-		HANDLE handle(){return handle_;}
+		HANDLE handle(){return handle_->handle;}
 
-		ns_thread_handle():have_handle(false){};
-		void set_handle(const HANDLE & h){have_handle = true;handle_manager.take(h);handle_ = h;}
-		void set_unmanaged_handle(const HANDLE & h){handle_ = h;}
-		ns_thread_handle(const ns_thread_handle & h);
-		void close(){if (have_handle){handle_manager.release(handle_);have_handle = false;}}
-		~ns_thread_handle(){close();}
+	ns_thread_handle():have_handle(false):handle_(0){};
+	  void set_handle(const HANDLE & h){handle_ = new std::smart_ptr<ns_thread_handle_handle>(h);}
+	  //void set_unmanaged_handle(const HANDLE & h){handle_ = h;}
+	  //	ns_thread_handle(const ns_thread_handle & h);
+	  void close(){handle_ = 0;}
+	  ~ns_thread_handle(){close();}
 
-		private:
-		ns_managed_handle<HANDLE,ns_thread_handle_closer> handle_manager;
-		HANDLE handle_;
-		bool have_handle;
+	private:
+	  
+	  std::smart_ptr<ns_thread_handle_handle> handle_;
+	
 	};
 
 	typedef DWORD ns_thread_return_type;

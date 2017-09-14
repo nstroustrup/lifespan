@@ -689,7 +689,7 @@ bool ns_time_path_solution::identify_subregions_labels_from_subregion_mask(const
 	//find nearest neighbor
 	std::vector< std::vector<int> > min_distances;
 	for (unsigned int i = 0; i < timepoints.size(); i++)
-		min_distances[i].resize(timepoints[i].elements.size(), FLT_MAX);
+		min_distances[i].resize(timepoints[i].elements.size(),INT_MAX);
 
 	for (unsigned int y = 0; y < im.properties().height; y++) {
 		for (unsigned int x = 0; x < im.properties().width; x++) {

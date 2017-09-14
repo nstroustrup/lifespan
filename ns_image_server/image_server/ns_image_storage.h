@@ -12,7 +12,8 @@
 #include "ns_thread.h"
 #include "ns_image_server_message.h"
 #include "ns_performance_statistics.h"
-#include "ns_managed_pointer.h"
+//#include "ns_managed_pointer.h"
+#include <memory>
 
 #define NS_DEFAULT_JPEG_COMPRESSION .8
 #define NS_DEFAULT_JP2K_COMPRESSION 1.0/30.0
@@ -244,20 +245,21 @@ private:
 template<class ns_component>
 class ns_image_storage_reciever_handle{
 	public:
-		ns_image_storage_reciever_handle(ns_image_storage_reciever<ns_component> * handle):reciever(handle){pointer_manager.take(handle);}
+  typedef std::shared_ptr<ns_image_storage_reciever<ns_component> > ns_handle_pointer;
+		ns_image_storage_reciever_handle(ns_handle_pointer &handle):reciever(handle){}
+
+ ns_image_storage_reciever_handle(ns_image_storage_reciever<ns_component> * handle):reciever(handle){}
 		ns_image_storage_reciever<ns_component> & output_stream(){ return *reciever;}
 
-		void bind(ns_image_storage_source<ns_component> * handle){
-			if (handle == reciever)
-				return;
-			pointer_manager.release(reciever);
-			reciever = handle;
-			pointer_manager.take(reciever);
+		void bind(ns_handle_pointer handle){
+		  handle = reciever;
+			      
 		}
 
 		//destructor
 		~ns_image_storage_reciever_handle(){
-			try{
+		  reciever = 0;
+		  /*	try{
 				pointer_manager.release(&reciever);
 				}
 			catch(ns_ex & ex){
@@ -266,9 +268,9 @@ class ns_image_storage_reciever_handle{
 			catch(...){
 				
 				std::cerr << "~ns_image_storage_reciever_handle()::Unknown Exception thrown\n";
-			}
+				}*/
 		}  //everything handled by reciever destructors.
-
+		/*
 		ns_image_storage_reciever_handle<ns_component> & operator=(const ns_image_storage_reciever_handle<ns_component> & r){
 			if (reciever == r.reciever)
 				return *this;
@@ -281,37 +283,33 @@ class ns_image_storage_reciever_handle{
 			reciever = r.reciever;
 			pointer_manager.take(reciever);
 		}
-
+		*/
 		void clear(){
-			pointer_manager.release(&reciever);
+		     
 			reciever = 0;
 		}
 private:
-	ns_image_storage_reciever<ns_component> * reciever;
-	ns_managed_pointer< ns_image_storage_reciever<ns_component> > pointer_manager;
+	ns_handle_pointer reciever;
+	
 };
 
 template<class ns_component>
 class ns_image_storage_source_handle{
+  typedef std::shared_ptr<ns_image_storage_source<ns_component> > ns_handle_pointer;
 	public:
-		ns_image_storage_source_handle(ns_image_storage_source<ns_component> * handle){
-			source = handle;
-			pointer_manager.take(source);
-		}
+ ns_image_storage_source_handle(ns_image_storage_source<ns_component> * s):source(s){}
+ ns_image_storage_source_handle(ns_handle_pointer & s):source(s){}
+		ns_image_storage_source_handle():source(0){}
+		
 		ns_image_storage_source<ns_component> & input_stream(){ return *source;}
 
 		const ns_image_storage_source<ns_component> & input_stream() const{ return *source;}
 
-		void bind(ns_image_storage_source<ns_component> * handle){
-			if (handle == source)
-				return;
-			pointer_manager.release(source);
-			source = handle;
-			pointer_manager.take(source);
+		void bind(ns_handle_pointer handle){
+		  source = handle;
 		}
-
 		~ns_image_storage_source_handle(){
-			try{
+		  /*try{
 			pointer_manager.release(&source);
 			}
 			catch(ns_ex & ex){
@@ -321,7 +319,9 @@ class ns_image_storage_source_handle{
 				
 				std::cerr << "~ns_image_storage_source_handle()::Unknown Exception thrown by ~ns_image_storage_source_handle()\n";
 			}
-		}
+		  */
+		  clear();
+		}/*
 		ns_image_storage_source_handle<ns_component> & operator=(const ns_image_storage_source_handle<ns_component> & r){
 			if (source == r.source)
 				return *this;
@@ -334,14 +334,14 @@ class ns_image_storage_source_handle{
 			source = r.source;
 			pointer_manager.take(source);
 			//cerr << "Storage Handle Copy Constructor!";
-		}
+			}*/
 		void clear(){
-			pointer_manager.release(&source);
+			source = 0;
 		}
 
 private:
-	ns_image_storage_source<ns_component> * source;
-	ns_managed_pointer< ns_image_storage_source<ns_component> > pointer_manager;
+		ns_handle_pointer source;
+	       
 };
 
 

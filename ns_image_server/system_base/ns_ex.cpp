@@ -1,6 +1,7 @@
 #ifndef NS_SINGLE_THREAD
 #include "ns_thread.h"
 #endif
+#include <iostream>
 #include "ns_ex.h"
 #include <time.h>
 
@@ -345,7 +346,7 @@ std::string ns_to_lower(const std::string & s){
 ns_global_debug_output_handler global_debug_output_handler = 0;
 void ns_global_debug(const ns_text_stream_t & t){
 	if (global_debug_output_handler == 0){
-		cerr << "Global Debug Handler Unset: " << t.text();
+	  std::cerr << "Global Debug Handler Unset: " << t.text();
 		return;
 	}
 	global_debug_output_handler(t);

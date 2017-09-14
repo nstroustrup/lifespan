@@ -238,17 +238,7 @@ bool ns_thread::still_running(){
 		throw ns_ex("ns_thread::still_running() called on a POSIX thread!");
 	#endif
 }
-#ifdef _WIN32 
-ns_thread_handle::ns_thread_handle(const ns_thread_handle & h){
-			id = h.id;
-			if (h.have_handle)
-				set_handle(h.handle_); 
-			else{
-				have_handle = false;
-				handle_ = h.handle_;
-			}
-		}
-#endif
+
 ns_64_bit ns_thread::current_thread_id() {
 #ifdef _WIN32
 	return GetCurrentThreadId();

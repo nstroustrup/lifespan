@@ -404,8 +404,8 @@ struct ns_menu_item_options{
 };
 typedef void (*ns_menu_action)(const std::string & data);
 struct ns_menu_item_spec{
-	ns_menu_item_spec(){}
-	ns_menu_item_spec(const ns_menu_action a,const std::string  t,const int s=0,const int f=0):
+  ns_menu_item_spec():flags(0),shortcut(0),action(0){}
+	ns_menu_item_spec(const ns_menu_action a,const std::string & t,const int s=0,const int f=0):
 		action(a),title(t),shortcut(s),flags(f){}
 
 	ns_menu_action action;

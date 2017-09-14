@@ -7157,6 +7157,9 @@ ns_worm_learner::~ns_worm_learner(){
     delete[] worm_window.gl_buffer;
   ns_safe_delete(worm_detection_results);
   model_specifications.resize(0);
+	ns_acquire_lock_for_scope lock(persistant_sql_lock, __FILE__, __LINE__);
+	delete persistant_sql_connection;
+	lock.release();
 }
 
 void ns_worm_learner::train_from_data(const std::string & base_dir){

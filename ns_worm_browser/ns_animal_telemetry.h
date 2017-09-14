@@ -511,7 +511,7 @@ public:
 		res.x = ((long)x - (long)graph_specifics.boundary.x - (long)border().x) / (graph_specifics.dx) + graph_specifics.axes.boundary(0) - graph_specifics.axes.axis_offset(0);
 
 		//y = base_graph.properties().height - graph_specifics.boundary.y - (unsigned int)(graph_specifics.dy*(y - graph_specifics.axes.boundary(2) + graph_specifics.axes.axis_offset(1)));
-		res.y = -((long)y - base_graph.properties().height + graph_specifics.boundary.y + border().y) / graph_specifics.dy + graph_specifics.axes.boundary(2) - graph_specifics.axes.axis_offset(1);
+		res.y = -((long)((long)y - (long)base_graph.properties().height + graph_specifics.boundary.y + border().y) / graph_specifics.dy + graph_specifics.axes.boundary(2) - graph_specifics.axes.axis_offset(1));
 		return res;
 	}
 	ns_vector_2i image_size() const { 

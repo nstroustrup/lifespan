@@ -104,7 +104,7 @@ void ns_bulk_experiment_mask_manager::produce_mask_file(const ns_mask_type & mas
 	if (image_server.verbose_debug_output())
 		cerr << "Loading sample info...\n";
 	if (output_region_label_mask)
-		 sql << "SELECT r.name,r.id,s.id,s.name FROM sample_region_image_info as r, capture_samples as s WHERE r.sample_id = s.id AND s.experiment_id=" << experiment_id << " AND censored = 0 ORDER BY name ASC";
+		 sql << "SELECT r.name,r.id,s.id,s.name FROM sample_region_image_info as r, capture_samples as s WHERE r.sample_id = s.id AND s.experiment_id=" << experiment_id << " AND r.censored = 0 AND s.censored=0 ORDER BY s.name ASC, r.name ASC";
 	else sql << "SELECT name,id FROM capture_samples WHERE experiment_id=" << experiment_id << " AND censored = 0 ORDER BY name ASC";
 
 	ns_sql_result subjects;
@@ -226,10 +226,10 @@ void ns_bulk_experiment_mask_manager::produce_mask_file(const ns_mask_type & mas
 			collage_info_manager.collage_info[i].sample_name = subjects[i][0];
 			collage_info_manager.collage_info[i].sample_id = ns_atoi64(subjects[i][1].c_str());
 		}
-		const unsigned long current_top(collage_info_manager.collage_info[i].dimentions.y + collage_info_manager.collage_info[i].position.y);
+		const unsigned long current_top(collage_info_manager.collage_info[i].dimentions.y + collage_info_manager.collage_info[i].position.y+image_margin);
 		if (prop.height < current_top)
 			prop.height = current_top;
-		const unsigned long current_right(collage_info_manager.collage_info[i].dimentions.x + collage_info_manager.collage_info[i].position.x);
+		const unsigned long current_right(collage_info_manager.collage_info[i].dimentions.x + collage_info_manager.collage_info[i].position.x+image_margin);
 		if (prop.width < current_right)
 			prop.width = current_right;
 
@@ -245,7 +245,7 @@ void ns_bulk_experiment_mask_manager::produce_mask_file(const ns_mask_type & mas
 			}
 		}
 		else { //all sample regions in separate column
-			current_x = current_right + image_margin;
+			current_x = current_right;
 			current_y = label_margin_buffer;
 		}
 	}
@@ -309,30 +309,35 @@ void ns_bulk_experiment_mask_manager::render_mask_file(const ns_image_properties
 		int chunk_size = prop.height - y;
 		if (chunk_size > chunk_max_size)
 			chunk_size = chunk_max_size;
-
+		for (unsigned int _y = 0; _y < chunk_size; _y++)
+		  for (unsigned int x = 0; x < prop.width; x++)
+		    mask_file[y+_y][x] = background_color;
 		for(unsigned int i = 0; i < images.size(); i++){
+		 
 					
 			if ((unsigned int)collage_info_manager.collage_info[i].position.y > y + (unsigned int)chunk_size ||
 				(unsigned int)collage_info_manager.collage_info[i].position.y+images[i].properties().height/resize_factor < y){
-				for (unsigned int _y = 0; _y < chunk_size; _y++)
-					for (unsigned int x = 0; x < images[i].properties().width/resize_factor; x++)
-						mask_file[y+_y][collage_info_manager.collage_info[i].position.x +x] = background_color;
+			  //for (unsigned int _y = 0; _y < chunk_size; _y++)
+			  //		for (unsigned int x = 0; x < images[i].properties().width/resize_factor; x++)
+			  //			mask_file[y+_y][collage_info_manager.collage_info[i].position.x +x] = background_color;
 				continue;
 			}
 
+			//find the first line of the current chunk (relative to y) in which data needs to be written for the current image
 			unsigned long start_offset = 0;
 			if (collage_info_manager.collage_info[i].position.y > y)
 				start_offset = collage_info_manager.collage_info[i].position.y-y;
-
-
-			int stop_offset = (images[i].properties().height)/resize_factor-(y-collage_info_manager.collage_info[i].position.y);
-			if (stop_offset - start_offset > chunk_size)
-				stop_offset = start_offset + chunk_size;
-
-				
+			//fill in the blank until that offset
 			for (unsigned int _y = 0; _y < start_offset; _y++)
 				for (unsigned int x = 0; x < images[i].properties().width/resize_factor; x++)
 					mask_file[y+_y][x] = background_color;
+
+			//find the last line of the current chunk in which data needs to be written for the current image
+			int stop_offset = (images[i].properties().height/resize_factor+collage_info_manager.collage_info[i].position.y)-y;
+			if (stop_offset > chunk_size)
+				stop_offset = chunk_size;
+
+		
 
 
 //				cerr << "image: " << i << " lines " << y+start_offset << " to " << y+stop_offset << "\n";

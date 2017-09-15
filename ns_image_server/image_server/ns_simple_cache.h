@@ -481,20 +481,20 @@ private:
 			handle->unlinked_singleton = true;
 			data_t * data = new data_t;
 			try {
-				if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("get_image::loading from external source"));
+			  //if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("get_image::loading from external source"));
 				data->load_from_external_source(id, external_source);
 
-				if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("get_image::loaded from external source"));
+				//	if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("get_image::loaded from external source"));
 			}
 			catch (...) {
 
-				if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("get_image::throwing exception!"));
+			  //if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("get_image::throwing exception!"));
 				delete data;
 				throw;
 			}
-			if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("get_image::assigning data"));
+			//if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("get_image::assigning data"));
 			handle->data = data;
-			if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("get_image::done."));
+			//if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("get_image::done."));
 			return true;
 		}
 
@@ -523,10 +523,10 @@ private:
 				p->second->object_write_lock.wait_to_acquire(__FILE__, __LINE__); 
 				currently_have_table_lock = false;
 
-				if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("get_image::calling setup_new_cache_object_and_handle_and_release_locks"));
+				//if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("get_image::calling setup_new_cache_object_and_handle_and_release_locks"));
 				setup_new_cache_object_and_handle_and_release_locks(id,handle,external_source,request_type,p);
 
-				if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("get_image::finished setup_new_cache_object_and_handle_and_release_locks"));
+				//if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("get_image::finished setup_new_cache_object_and_handle_and_release_locks"));
 				return true;
 			}
 
@@ -534,7 +534,7 @@ private:
 			//if (p->second.to_be_deleted)
 			//	read_only = false;
 
-			if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("get_image::found existing entry"));
+			//if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("get_image::found existing entry"));
 			if (request_type == ns_write) {
 
 				//if we want write access, we need to wait until anyone currently reading is finished
@@ -641,19 +641,19 @@ private:
 					   //this one in.
 		try {
 
-			if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("setup_new_cache_object_and_handle_and_release_locks::loading from external source"));
+		  //if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("setup_new_cache_object_and_handle_and_release_locks::loading from external source"));
 			p->second->data.load_from_external_source(id, external_source);
-			if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("setup_new_cache_object_and_handle_and_release_locks::done learning"));
+			//if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("setup_new_cache_object_and_handle_and_release_locks::done learning"));
 		}
 		catch (...) {
 
-			if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("setup_new_cache_object_and_handle_and_release_locks::exception!"));
+		  //if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("setup_new_cache_object_and_handle_and_release_locks::exception!"));
 			p->second->to_be_deleted = true;  //we can't delete this now, because we've already given up the main lock.  but we can flag it for deletion next time it's encountered
 
-			if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("setup_new_cache_object_and_handle_and_release_locks::checking in!"));
+			//if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("setup_new_cache_object_and_handle_and_release_locks::checking in!"));
 			handle->check_in();
 
-			if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("setup_new_cache_object_and_handle_and_release_locks::done checking in!"));
+			//if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("setup_new_cache_object_and_handle_and_release_locks::done checking in!"));
 			throw;
 		}
 #ifdef NS_VERBOSE_IMAGE_CACHE
@@ -665,18 +665,18 @@ private:
 
 		if (request_type == ns_write) {
 
-			if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("setup_new_cache_object_and_handle_and_release_locks::returning write"));
+		  //if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("setup_new_cache_object_and_handle_and_release_locks::returning write"));
 			return;  //we already have write access and everything loaded into cached_object, give it to the user.
 		}
 		//give up write access manually here, and pass the remaining object, no read only, on to the user
 
-		if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("setup_new_cache_object_and_handle_and_release_locks::releasing lock"));
+		//if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("setup_new_cache_object_and_handle_and_release_locks::releasing lock"));
 		p->second->object_write_lock.release();
 
-		if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("setup_new_cache_object_and_handle_and_release_locks::not returning write"));
+		//if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("setup_new_cache_object_and_handle_and_release_locks::not returning write"));
 
 		handle->write = false;
-		if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("setup_new_cache_object_and_handle_and_release_locks::returning"));
+		//if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("setup_new_cache_object_and_handle_and_release_locks::returning"));
 		return;
 	}
 

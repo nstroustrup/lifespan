@@ -149,6 +149,8 @@ public:
 		int _x = 0;
 		const int c(im.properties().components);
 		ns_font_output_dimension dim;
+		dim.h = 0;
+		dim.w = 0;
 
 		for (int i = 0; i < (int)text.size(); i++) {
 			if (text[i] >= 127 || text[i] <= 31)  //ignore invalid characters

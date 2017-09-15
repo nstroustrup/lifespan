@@ -316,6 +316,8 @@ bool ns_image_server_captured_image_region::load_from_db(const ns_64_bit _id, ns
 	*sql << sql_stub(sql) << " AND ri.id = " << _id << " LIMIT 1";
 	ns_sql_result res;
 	sql->get_rows(res);
+	if (res.size() == 0)
+		throw ns_ex("Could not find information about region ") << _id << " in the db.";
 	return load_from_db_internal(res[0]);
 }
 
@@ -336,11 +338,11 @@ bool ns_image_server_captured_image_region::load_from_db_internal(ns_sql_result_
 	capture_time = atol(res[10].c_str());
 	op_images_.resize(ns_process_last_task_marker);
 	op_images_[0] = region_images_image_id;
-	for (unsigned int i = 1; i < op_images_.size(); i++)  //op[0] is unprocessed image
+	for (unsigned int i = 1; i < op_images_.size()-1; i++)  //op[0] is unprocessed image
 		op_images_[i] = ns_atoi64(res[10+i].c_str());
 	ns_sql_result_row capture_res;
 
-	capture_res.insert(capture_res.begin(), res.begin() + (op_images_.size() + 11), res.end());
+	capture_res.insert(capture_res.begin(), res.begin() + (op_images_.size()-1 + 11), res.end());
 	return ns_image_server_captured_image::load_from_db_internal(captured_images_id,capture_res);
 }
 

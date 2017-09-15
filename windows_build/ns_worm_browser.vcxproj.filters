@@ -71,9 +71,6 @@
     <Filter Include="image_format_lib\jpeg\h">
       <UniqueIdentifier>{5c5ae8dc-bdb7-447b-ae18-3aab0ba7148e}</UniqueIdentifier>
     </Filter>
-    <Filter Include="misc_lib\OpticalFlow">
-      <UniqueIdentifier>{0de02400-2fb4-4fdc-b609-2b77e04f24c2}</UniqueIdentifier>
-    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\ns_image_server\system_base\ns_dir.cpp">
@@ -667,15 +664,6 @@
     <ClCompile Include="..\external_compile_libraries\jpeg-8d\wrtarga.c">
       <Filter>image_format_lib\jpeg</Filter>
     </ClCompile>
-    <ClCompile Include="..\external_libraries\OpticalFlow\mex\GaussianPyramid.cpp">
-      <Filter>misc_lib\OpticalFlow</Filter>
-    </ClCompile>
-    <ClCompile Include="..\external_libraries\OpticalFlow\mex\OpticalFlow.cpp">
-      <Filter>misc_lib\OpticalFlow</Filter>
-    </ClCompile>
-    <ClCompile Include="..\external_libraries\OpticalFlow\mex\Stochastic.cpp">
-      <Filter>misc_lib\OpticalFlow</Filter>
-    </ClCompile>
     <ClCompile Include="..\ns_image_server\image_processing\ns_image_registration_cache.cpp">
       <Filter>image_server</Filter>
     </ClCompile>
@@ -1148,33 +1136,6 @@
     </ClInclude>
     <ClInclude Include="..\external_compile_libraries\jpeg-8d\transupp.h">
       <Filter>image_format_lib\jpeg\h</Filter>
-    </ClInclude>
-    <ClInclude Include="..\external_libraries\OpticalFlow\mex\GaussianPyramid.h">
-      <Filter>misc_lib\OpticalFlow</Filter>
-    </ClInclude>
-    <ClInclude Include="..\external_libraries\OpticalFlow\mex\Image.h">
-      <Filter>misc_lib\OpticalFlow</Filter>
-    </ClInclude>
-    <ClInclude Include="..\external_libraries\OpticalFlow\mex\ImageIO.h">
-      <Filter>misc_lib\OpticalFlow</Filter>
-    </ClInclude>
-    <ClInclude Include="..\external_libraries\OpticalFlow\mex\ImageProcessing.h">
-      <Filter>misc_lib\OpticalFlow</Filter>
-    </ClInclude>
-    <ClInclude Include="..\external_libraries\OpticalFlow\mex\Matrix.h">
-      <Filter>misc_lib\OpticalFlow</Filter>
-    </ClInclude>
-    <ClInclude Include="..\external_libraries\OpticalFlow\mex\NoiseModel.h">
-      <Filter>misc_lib\OpticalFlow</Filter>
-    </ClInclude>
-    <ClInclude Include="..\external_libraries\OpticalFlow\mex\OpticalFlow.h">
-      <Filter>misc_lib\OpticalFlow</Filter>
-    </ClInclude>
-    <ClInclude Include="..\external_libraries\OpticalFlow\mex\Stochastic.h">
-      <Filter>misc_lib\OpticalFlow</Filter>
-    </ClInclude>
-    <ClInclude Include="..\external_libraries\OpticalFlow\mex\Vector.h">
-      <Filter>misc_lib\OpticalFlow</Filter>
     </ClInclude>
     <ClInclude Include="..\ns_image_server\image_processing\ns_optical_flow.h">
       <Filter>image_processing</Filter>

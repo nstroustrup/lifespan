@@ -356,6 +356,25 @@ void ns_refine_image_statistics(const ns_64_bit region_id, std::ostream & out,ns
 	ns_time_path_solution solution;
 	solution.load_from_db(region_id, sql, false);
 
+	//update the subregion id label for each detected object
+	{
+		solution.identify_subregions_labels_from_subregion_mask(region_id, sql);
+		solution.save_to_db(region_id, sql);
+
+		ns_image_server_results_subject results_subject;
+		results_subject.region_id = region_id;
+
+		ns_acquire_for_scope<std::ostream> position_3d_file_output(
+			image_server.results_storage.animal_position_timeseries_3d(
+				results_subject, sql, ns_image_server_results_storage::ns_3d_plot
+			).output()
+		);
+		solution.output_visualization_csv(position_3d_file_output());
+		position_3d_file_output.release();
+
+		image_server.results_storage.write_animal_position_timeseries_3d_launcher(results_subject, ns_image_server_results_storage::ns_3d_plot, sql);
+	}
+
 	ns_time_path_image_movement_analyzer analyzer;
 	ns_image_server::ns_posture_analysis_model_cache::const_handle_t posture_analysis_model_handle;
 	image_server.get_posture_analysis_model_for_region(region_id, posture_analysis_model_handle, sql);

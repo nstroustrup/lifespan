@@ -140,13 +140,14 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>_CRT_SECURE_NO_DEPRECATE;WIN32;NTDDI_VERSION=NTDDI_WINXPSP2;_WIN32_WINNT=0x501;WINVER=0x0501;TRILIBRARY;CPU86;NO_TIMER;ANSI_DECLARATORS;NS_DEFAULT_FONT="c:/windows/fonts/ARIAL.TTF";NS_INI_PATH="c:\\server\\ns_image_server.ini";ARCH_IS_LITTLE_ENDIAN;INCLUDE_STDAFX;_MBCS;NS_USE_INTEL_IPP;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_CRT_SECURE_NO_DEPRECATE;WIN32;NTDDI_VERSION=NTDDI_WINXPSP2;_WIN32_WINNT=0x501;WINVER=0x0501;TRILIBRARY;CPU86;NO_TIMER;ANSI_DECLARATORS;NS_DEFAULT_FONT="c:/windows/fonts/ARIAL.TTF";NS_INI_PATH="c:\\server\\ns_image_server.ini";ARCH_IS_LITTLE_ENDIAN;INCLUDE_STDAFX;_MBCS;NS_USE_INTEL_IPP;_WINSOCK_DEPRECATED_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
       <AdditionalOptions>/bigobj %(AdditionalOptions)</AdditionalOptions>
+      <SDLCheck>true</SDLCheck>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>DebugFastLink</GenerateDebugInformation>
-      <AdditionalDependencies>itkjpeg-4.10.lib;ITKFEM-4.10.lib;ITKCommon-4.10.lib;ITKIOImageBase-4.10.lib;itkvnl-4.10.lib;itkvcl-4.10.lib;ITKStatistics-4.10.lib;itkzlib-4.10.lib;itksys-4.10.lib;itknetlib-4.10.lib;itkv3p_netlib-4.10.lib;ITKVTK-4.10.lib;itkvnl_algo-4.10.lib;ITKVNLInstantiation-4.10.lib;ITKIOTIFF-4.10.lib;itktiff-4.10.lib;ITKIOVTK-4.10.lib;libmysql.lib;xvidcore.dll.a;freetype26d.lib;openjp2.lib;ITKGPUPDEDeformableRegistration-4.10.lib;ITKGPUImageFilterBase-4.10.lib;ITKGPUFiniteDifference-4.10.lib;ITKGPUCommon-4.10.lib;ITKGPUSmoothing-4.10.lib;OpenCL.lib;psapi.lib;comctl32.lib;freetype26d.lib;xvidcored.dll.a;glu32.lib;opengl32.lib;libmysql.lib;fltkx64.lib;fltkimagesx64.lib;fltkpngx64.lib;fltkformsx64.lib;fltkglx64.lib;itkjpeg-4.10.lib;ITKFEM-4.10.lib;ITKCommon-4.10.lib;ITKIOImageBase-4.10.lib;itkvnl-4.10.lib;itkvcl-4.10.lib;ITKStatistics-4.10.lib;itkzlib-4.10.lib;itksys-4.10.lib;itknetlib-4.10.lib;itkv3p_netlib-4.10.lib;ITKVTK-4.10.lib;itkvnl_algo-4.10.lib;ITKVNLInstantiation-4.10.lib;ITKIOTIFF-4.10.lib;itktiff-4.10.lib;ITKIOVTK-4.10.lib;openjp2.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>itkjpeg-4.10.lib;ITKFEM-4.10.lib;ITKCommon-4.10.lib;ITKIOImageBase-4.10.lib;itkvnl-4.10.lib;itkvcl-4.10.lib;ITKStatistics-4.10.lib;itkzlib-4.10.lib;itksys-4.10.lib;itknetlib-4.10.lib;itkv3p_netlib-4.10.lib;ITKVTK-4.10.lib;itkvnl_algo-4.10.lib;ITKVNLInstantiation-4.10.lib;ITKIOTIFF-4.10.lib;itktiff-4.10.lib;ITKIOVTK-4.10.lib;libmysql.lib;xvidcore.dll.a;freetype26d.lib;openjp2.lib;ITKGPUPDEDeformableRegistration-4.10.lib;ITKGPUImageFilterBase-4.10.lib;ITKGPUFiniteDifference-4.10.lib;ITKGPUCommon-4.10.lib;ITKGPUSmoothing-4.10.lib;OpenCL.lib;psapi.lib;comctl32.lib;xvidcored.dll.a;glu32.lib;opengl32.lib;fltk.lib;fltkimages.lib;fltkpng.lib;fltkforms.lib;fltkgl.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -187,18 +188,21 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
-      <WarningLevel>Level3</WarningLevel>
-      <Optimization>MaxSpeed</Optimization>
+      <WarningLevel>Level2</WarningLevel>
+      <Optimization>Full</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <PreprocessorDefinitions>_CRT_SECURE_NO_DEPRECATE;WIN32;NTDDI_VERSION=NTDDI_WINXPSP2;_WIN32_WINNT=0x501;WINVER=0x0501;TRILIBRARY;CPU86;NO_TIMER;ANSI_DECLARATORS;NS_DEFAULT_FONT="c:/windows/fonts/ARIAL.TTF";NS_INI_PATH="c:\\server\\ns_image_server.ini";ARCH_IS_LITTLE_ENDIAN;INCLUDE_STDAFX;_MBCS;NS_USE_INTEL_IPP;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_CRT_SECURE_NO_DEPRECATE;WIN32;NTDDI_VERSION=NTDDI_WINXPSP2;_WIN32_WINNT=0x501;WINVER=0x0501;TRILIBRARY;CPU86;NO_TIMER;ANSI_DECLARATORS;NS_DEFAULT_FONT="c:/windows/fonts/ARIAL.TTF";NS_INI_PATH="c:\\server\\ns_image_server.ini";ARCH_IS_LITTLE_ENDIAN;INCLUDE_STDAFX;_MBCS;NS_USE_INTEL_IPP;_WINSOCK_DEPRECATED_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <SDLCheck>false</SDLCheck>
+      <BasicRuntimeChecks>Default</BasicRuntimeChecks>
+      <ControlFlowGuard>false</ControlFlowGuard>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalDependencies>itkjpeg-4.10.lib;ITKFEM-4.10.lib;ITKCommon-4.10.lib;ITKIOImageBase-4.10.lib;itkvnl-4.10.lib;itkvcl-4.10.lib;ITKStatistics-4.10.lib;itkzlib-4.10.lib;itksys-4.10.lib;itknetlib-4.10.lib;itkv3p_netlib-4.10.lib;ITKVTK-4.10.lib;itkvnl_algo-4.10.lib;ITKVNLInstantiation-4.10.lib;ITKIOTIFF-4.10.lib;itktiff-4.10.lib;ITKIOVTK-4.10.lib;libmysql.lib;xvidcore.dll.a;freetype26d.lib;openjp2.lib;ITKGPUPDEDeformableRegistration-4.10.lib;ITKGPUImageFilterBase-4.10.lib;ITKGPUFiniteDifference-4.10.lib;ITKGPUCommon-4.10.lib;ITKGPUSmoothing-4.10.lib;psapi.lib;comctl32.lib;freetype26.lib;glu32.lib;opengl32.lib;fltkx64.lib;fltkimagesx64.lib;fltkpngx64.lib;fltkformsx64.lib;fltkglx64.lib;OpenCL.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>itkjpeg-4.10.lib;ITKFEM-4.10.lib;ITKCommon-4.10.lib;ITKIOImageBase-4.10.lib;itkvnl-4.10.lib;itkvcl-4.10.lib;ITKStatistics-4.10.lib;itkzlib-4.10.lib;itksys-4.10.lib;itknetlib-4.10.lib;itkv3p_netlib-4.10.lib;ITKVTK-4.10.lib;itkvnl_algo-4.10.lib;ITKVNLInstantiation-4.10.lib;ITKIOTIFF-4.10.lib;itktiff-4.10.lib;ITKIOVTK-4.10.lib;libmysql.lib;xvidcore.dll.a;freetype26d.lib;openjp2.lib;ITKGPUPDEDeformableRegistration-4.10.lib;ITKGPUImageFilterBase-4.10.lib;ITKGPUFiniteDifference-4.10.lib;ITKGPUCommon-4.10.lib;ITKGPUSmoothing-4.10.lib;psapi.lib;comctl32.lib;freetype26.lib;glu32.lib;opengl32.lib;fltk.lib;fltkimages.lib;fltkpng.lib;fltkforms.lib;fltkgl.lib;OpenCL.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <IgnoreSpecificDefaultLibraries>
       </IgnoreSpecificDefaultLibraries>
     </Link>
@@ -209,14 +213,14 @@
       <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <PreprocessorDefinitions>_CRT_SECURE_NO_DEPRECATE;WIN32;NTDDI_VERSION=NTDDI_WINXPSP2;_WIN32_WINNT=0x501;WINVER=0x0501;TRILIBRARY;CPU86;NO_TIMER;ANSI_DECLARATORS;NS_DEFAULT_FONT="c:/windows/fonts/ARIAL.TTF";NS_INI_PATH="c:\\server\\ns_image_server.ini";ARCH_IS_LITTLE_ENDIAN;INCLUDE_STDAFX;_MBCS;NS_USE_INTEL_IPP;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_CRT_SECURE_NO_DEPRECATE;WIN32;NTDDI_VERSION=NTDDI_WINXPSP2;_WIN32_WINNT=0x501;WINVER=0x0501;TRILIBRARY;CPU86;NO_TIMER;ANSI_DECLARATORS;NS_DEFAULT_FONT="c:/windows/fonts/ARIAL.TTF";NS_INI_PATH="c:\\server\\ns_image_server.ini";ARCH_IS_LITTLE_ENDIAN;INCLUDE_STDAFX;_MBCS;NS_USE_INTEL_IPP;_WINSOCK_DEPRECATED_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalDependencies>itkjpeg-4.10.lib;ITKFEM-4.10.lib;ITKCommon-4.10.lib;ITKIOImageBase-4.10.lib;itkvnl-4.10.lib;itkvcl-4.10.lib;ITKStatistics-4.10.lib;itkzlib-4.10.lib;itksys-4.10.lib;itknetlib-4.10.lib;itkv3p_netlib-4.10.lib;ITKVTK-4.10.lib;itkvnl_algo-4.10.lib;ITKVNLInstantiation-4.10.lib;ITKIOTIFF-4.10.lib;itktiff-4.10.lib;ITKIOVTK-4.10.lib;libmysql.lib;xvidcore.dll.a;freetype26d.lib;openjp2.lib;ITKGPUPDEDeformableRegistration-4.10.lib;ITKGPUImageFilterBase-4.10.lib;ITKGPUFiniteDifference-4.10.lib;ITKGPUCommon-4.10.lib;ITKGPUSmoothing-4.10.lib;psapi.lib;comctl32.lib;freetype26.lib;glu32.lib;opengl32.lib;fltkx64.lib;fltkimagesx64.lib;fltkpngx64.lib;fltkformsx64.lib;fltkglx64.lib;OpenCL.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>itkjpeg-4.10.lib;ITKFEM-4.10.lib;ITKCommon-4.10.lib;ITKIOImageBase-4.10.lib;itkvnl-4.10.lib;itkvcl-4.10.lib;ITKStatistics-4.10.lib;itkzlib-4.10.lib;itksys-4.10.lib;itknetlib-4.10.lib;itkv3p_netlib-4.10.lib;ITKVTK-4.10.lib;itkvnl_algo-4.10.lib;ITKVNLInstantiation-4.10.lib;ITKIOTIFF-4.10.lib;itktiff-4.10.lib;ITKIOVTK-4.10.lib;libmysql.lib;xvidcore.dll.a;freetype26d.lib;openjp2.lib;ITKGPUPDEDeformableRegistration-4.10.lib;ITKGPUImageFilterBase-4.10.lib;ITKGPUFiniteDifference-4.10.lib;ITKGPUCommon-4.10.lib;ITKGPUSmoothing-4.10.lib;psapi.lib;comctl32.lib;freetype26.lib;glu32.lib;opengl32.lib;fltk.lib;fltkimages.lib;fltkpng.lib;fltkforms.lib;fltkgl.lib;OpenCL.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <IgnoreSpecificDefaultLibraries>
       </IgnoreSpecificDefaultLibraries>
     </Link>
@@ -323,9 +327,6 @@
     <ClCompile Include="..\external_libraries\ctmf\ctmf.c" />
     <ClCompile Include="..\external_libraries\libhungarian\hungarian.c" />
     <ClCompile Include="..\external_libraries\libsvm\svm.cpp" />
-    <ClCompile Include="..\external_libraries\OpticalFlow\mex\GaussianPyramid.cpp" />
-    <ClCompile Include="..\external_libraries\OpticalFlow\mex\OpticalFlow.cpp" />
-    <ClCompile Include="..\external_libraries\OpticalFlow\mex\Stochastic.cpp" />
     <ClCompile Include="..\external_libraries\tinyxml\tinystr.cpp" />
     <ClCompile Include="..\external_libraries\tinyxml\tinyxml.cpp" />
     <ClCompile Include="..\external_libraries\tinyxml\tinyxmlerror.cpp" />
@@ -443,15 +444,6 @@
     <ClInclude Include="..\external_compile_libraries\jpeg-8d\transupp.h" />
     <ClInclude Include="..\external_compile_libraries\tiff-3.8.2\libtiff\tif_predict.h" />
     <ClInclude Include="..\external_libraries\libsvm\svm.h" />
-    <ClInclude Include="..\external_libraries\OpticalFlow\mex\GaussianPyramid.h" />
-    <ClInclude Include="..\external_libraries\OpticalFlow\mex\Image.h" />
-    <ClInclude Include="..\external_libraries\OpticalFlow\mex\ImageIO.h" />
-    <ClInclude Include="..\external_libraries\OpticalFlow\mex\ImageProcessing.h" />
-    <ClInclude Include="..\external_libraries\OpticalFlow\mex\Matrix.h" />
-    <ClInclude Include="..\external_libraries\OpticalFlow\mex\NoiseModel.h" />
-    <ClInclude Include="..\external_libraries\OpticalFlow\mex\OpticalFlow.h" />
-    <ClInclude Include="..\external_libraries\OpticalFlow\mex\Stochastic.h" />
-    <ClInclude Include="..\external_libraries\OpticalFlow\mex\Vector.h" />
     <ClInclude Include="..\external_libraries\tinyxml\tinystr.h" />
     <ClInclude Include="..\external_libraries\wm4_bspline\Wm4BandedMatrix.h" />
     <ClInclude Include="..\external_libraries\wm4_bspline\Wm4BSplineBasis.h" />

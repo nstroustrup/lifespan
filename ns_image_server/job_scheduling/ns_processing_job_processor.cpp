@@ -1168,21 +1168,23 @@ ns_64_bit ns_processing_job_image_processor::run_job(ns_sql & sql){
 	sql << "SELECT id FROM capture_samples WHERE mask_id = " << job.mask_id;
 	ns_sql_result res;
 	sql.get_rows(res);
-	vector<ns_ex> exceptions;
-	for (std::vector<ns_ex>::size_type i = 0; i < res.size(); i++){
-		try{
-			pipeline->generate_sample_regions_from_mask(ns_atoi64(res[i][0].c_str()),image_resolution,sql);
+	if (res.size() > 0) {
+		vector<ns_ex> exceptions;
+		for (std::vector<ns_ex>::size_type i = 0; i < res.size(); i++) {
+			try {
+				pipeline->generate_sample_regions_from_mask(ns_atoi64(res[i][0].c_str()), image_resolution, sql);
+			}
+			catch (ns_ex & ex) {
+				exceptions.push_back(ex);
+			}
 		}
-		catch(ns_ex & ex){
-			exceptions.push_back(ex);
+		if (!exceptions.empty()) {
+			ns_64_bit id;
+			for (std::vector<ns_ex>::size_type i = 0; i < exceptions.size(); i++) {
+				id = image_server->register_server_event(exceptions[i], &sql);
+			}
+			return id;
 		}
-	}
-	if (!exceptions.empty()) {
-		ns_64_bit id;
-		for (std::vector<ns_ex>::size_type i = 0; i < exceptions.size(); i++) {
-			id = image_server->register_server_event(exceptions[i], &sql);
-		}
-		return id;
 	}
 	
 	return 0;

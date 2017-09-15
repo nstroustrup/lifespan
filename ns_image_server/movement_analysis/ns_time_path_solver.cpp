@@ -661,36 +661,50 @@ void ns_time_path_solution::load_from_db(const ns_64_bit region_id, ns_sql & sql
 
 bool ns_time_path_solution::identify_subregions_labels_from_subregion_mask(const ns_64_bit region_id, ns_sql & sql) {
 	ns_image_server_captured_image_region region;
-	region.load_from_db(region_id, &sql);
+
+	if (timepoints.empty())
+		throw ns_ex("Empty time path solution!");
+	region.load_from_db(timepoints[0].sample_region_image_id, &sql);
 	ns_image_standard im;
 	ns_image_server_image mask_image_record;
+
+	sql << "SELECT m.resize_factor, m.image_id FROM image_masks as m, " << ns_processing_step_db_table_name(ns_process_subregion_label_mask) << " as r WHERE m.id = r.subregion_mask_id AND r.id = " << region_id;
+	ns_sql_result res;
+	sql.get_rows(res);
+	if (res.size() == 0)
+		return false;
+
+	const unsigned long resize_factor(atol(res[0][0].c_str()));
+	ns_image_server_image mask_im;
+	mask_im.load_from_db(ns_atoi64(res[0][1].c_str()), &sql);
 	
-	try {
-		mask_image_record = region.request_processed_image(ns_process_subregion_label_mask, sql);
-	}
-	catch (ns_ex & ex) {
-		return false;  //return false if no subregion mask was specified
-	}
-	ns_image_storage_source_handle<ns_8_bit> mask_image_source(image_server_const.image_storage.request_from_storage(mask_image_record, &sql));
+	ns_image_storage_source_handle<ns_8_bit> mask_image_source(image_server_const.image_storage.request_from_storage(mask_im, &sql));
 	mask_image_source.input_stream().pump(im, 1024);
 
 	//find centers
-	for (unsigned int y = 0; y < im.properties().height; y++) {
-		for (unsigned int x = 0; x < im.properties().width; x++) {
-			for (unsigned int i = 0; i < timepoints.size(); i++) {
-				for (unsigned int j = 0; j < timepoints[i].elements.size(); j++) {
-					if (ns_vector_2i(x, y) == timepoints[i].elements[j].center)
-						timepoints[i].elements[j].subregion_mask_region_id = im[y][x];
-				}
-			}
+	for (unsigned int i = 0; i < timepoints.size(); i++) {
+		for (unsigned int j = 0; j < timepoints[i].elements.size(); j++) {
+			unsigned int x = timepoints[i].elements[j].center.x / resize_factor,
+					y = timepoints[i].elements[j].center.y / resize_factor;
+			if (x >= im.properties().width ||
+				y >= im.properties().height)
+				throw ns_ex("Invalid animal center!");
+			timepoints[i].elements[j].subregion_mask_region_id = im[y][x];
 		}
 	}
 
 	//find nearest neighbor
-	std::vector< std::vector<int> > min_distances;
+	std::vector< std::vector<int> > min_distances(timepoints.size());
 	for (unsigned int i = 0; i < timepoints.size(); i++)
 		min_distances[i].resize(timepoints[i].elements.size(),INT_MAX);
 
+	for (unsigned int i = 0; i < timepoints.size(); i++) {
+		for (unsigned int j = 0; j < timepoints[i].elements.size(); j++) {
+			long center_x = timepoints[i].elements[j].center.x / resize_factor,
+				center_y = timepoints[i].elements[j].center.y / resize_factor;
+			fo
+		}
+	}
 	for (unsigned int y = 0; y < im.properties().height; y++) {
 		for (unsigned int x = 0; x < im.properties().width; x++) {
 			const ns_8_bit cur_id = im[y][x];

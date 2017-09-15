@@ -235,14 +235,15 @@ void ns_bulk_experiment_mask_manager::produce_mask_file(const ns_mask_type & mas
 
 		if (output_region_label_mask) {  //all sample regions in the same column, one column per sample
 			ns_64_bit next_sample_id(0);
-			if (i + 1 < subjects.size() ) next_sample_id = ns_atoi64(subjects[i + 1][3].c_str());
+			if (i + 1 < subjects.size() ) next_sample_id = ns_atoi64(subjects[i + 1][2].c_str());
 
-			if (next_sample_id == collage_info_manager.collage_info[i].sample_id)
+			if (next_sample_id == last_sample_id)
 				current_y = current_top;
 			else {
 				current_x = current_right+ image_margin;
 				current_y = label_margin_buffer;
 			}
+			last_sample_id = next_sample_id;
 		}
 		else { //all sample regions in separate column
 			current_x = current_right;
@@ -328,9 +329,9 @@ void ns_bulk_experiment_mask_manager::render_mask_file(const ns_image_properties
 			if (collage_info_manager.collage_info[i].position.y > y)
 				start_offset = collage_info_manager.collage_info[i].position.y-y;
 			//fill in the blank until that offset
-			for (unsigned int _y = 0; _y < start_offset; _y++)
+			/*for (unsigned int _y = 0; _y < start_offset; _y++)
 				for (unsigned int x = 0; x < images[i].properties().width/resize_factor; x++)
-					mask_file[y+_y][x] = background_color;
+					mask_file[y+_y][x] = background_color;*/
 
 			//find the last line of the current chunk in which data needs to be written for the current image
 			int stop_offset = (images[i].properties().height/resize_factor+collage_info_manager.collage_info[i].position.y)-y;
@@ -363,7 +364,7 @@ void ns_bulk_experiment_mask_manager::render_mask_file(const ns_image_properties
 				}
 			}
 
-			for (int _y = stop_offset; _y < (int)chunk_size; _y++)
+			/*for (int _y = stop_offset; _y < (int)chunk_size; _y++)
 				for (unsigned int x = 0; x < images[i].properties().width/resize_factor; x++)
 					mask_file[y + _y][collage_info_manager.collage_info[i].position.x + x] = background_color;;
 
@@ -372,7 +373,7 @@ void ns_bulk_experiment_mask_manager::render_mask_file(const ns_image_properties
 				for (unsigned int x = 0; x < image_margin; x++){
 				mask_file[y + _y][collage_info_manager.collage_info[i].position.x + images[i].properties().width/resize_factor + x] = background_color;
 				}
-			}
+			}*/
 		}
 		unsigned long flush_size(chunk_size);
 		if (prop.height < y+chunk_size)

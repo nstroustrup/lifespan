@@ -7955,6 +7955,20 @@ void ns_death_time_solo_posture_annotater::register_click(const ns_vector_2i & i
 
 
 }
+extern ns_menu_bar_request set_menu_bar_request;
+void ns_experiment_storyboard_annotater::load_random_worm() {
+	int a = rand() % divisions.size();
+	int b = rand() % divisions[a].division->events.size();
+	ns_experiment_storyboard_timepoint_element * worm(&divisions[a].division->events[b]);
+	cerr << "Launching " << a << " " << b << "\n";
+	ns_launch_worm_window_for_worm(worm->event_annotation.region_info_id, 
+		worm->event_annotation.stationary_path_id, 
+		worm->storyboard_absolute_time);
+	ns_thread::sleep_milliseconds(1000);
+	while (set_menu_bar_request != ns_activate) {
+		ns_thread::sleep_milliseconds(1000);
+	}
+}
 
 void ns_experiment_storyboard_annotater::register_click(const ns_vector_2i & image_position, const ns_click_request & action) {
 	if (divisions[current_timepoint_id].division->events.size() == 0)

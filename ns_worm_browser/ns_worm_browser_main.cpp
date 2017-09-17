@@ -649,6 +649,12 @@ class ns_worm_terminal_main_menu_organizer : public ns_menu_organizer{
 		ns_start_death_time_annotation(ns_worm_learner::ns_annotate_death_times_in_time_aligned_posture,ns_experiment_storyboard_spec::ns_number_of_flavors);
 	}	
 	static void start_storyboard_annotation(const string & flavor_str, const std::string & subject){
+
+		if (flavor_str.empty()) {
+			while (true) {
+				worm_learner.storyboard_annotater.load_random_worm();
+			}
+		}
 		ns_experiment_storyboard_spec::ns_storyboard_flavor flavor;
 		if (flavor_str.find("All") != flavor_str.npos)
 			flavor = ns_experiment_storyboard_spec::ns_inspect_for_multiworm_clumps;
@@ -1307,6 +1313,8 @@ public:
 		st_an.options.push_back(ns_menu_item_options("Immediately After Each Worm's Death"));
 		st_an.options.push_back(ns_menu_item_options("After All Worms Have Died"));
 		add(st_an);
+		add(ns_menu_item_spec(start_storyboard_annotation_whole_experiment, "&Validation/Test for storyboard memory bugs"));
+
 		ns_menu_item_spec st_an2(start_storyboard_annotation_plate,"Validation/_Browse Single Plate");
 		st_an2.options.push_back(ns_menu_item_options("Immediately After Each Worm's Death"));
 		st_an2.options.push_back(ns_menu_item_options("After All Worms Have Died"));
@@ -2923,6 +2931,7 @@ struct ns_asynch_worm_launcher{
 	ns_stationary_path_id worm;
 	const ns_experiment_storyboard * storyboard;
 	unsigned long current_time;
+	bool launched;
 	static ns_thread_return_type run_asynch(void * l){
 		ns_asynch_worm_launcher * launcher(static_cast<ns_asynch_worm_launcher *>(l));
 		launcher->launch();
@@ -2932,9 +2941,8 @@ struct ns_asynch_worm_launcher{
 	void launch(){
 		try{
 			//if (worm_window_sql == 0)
-			ns_sql *	worm_window_sql = image_server.new_sql_connection(__FILE__,__LINE__);
 		       
-			worm_learner.death_time_solo_annotater.load_worm(region_id,worm,current_time,worm_learner.solo_annotation_visualization_type,storyboard,&worm_learner,*worm_window_sql);
+			worm_learner.death_time_solo_annotater.load_worm(region_id,worm,current_time,worm_learner.solo_annotation_visualization_type,storyboard,&worm_learner);
 			if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("Finished loading.  Displaying."));
 			worm_learner.death_time_solo_annotater.display_current_frame();
 

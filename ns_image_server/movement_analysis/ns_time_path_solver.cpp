@@ -698,13 +698,13 @@ bool ns_time_path_solution::identify_subregions_labels_from_subregion_mask(const
 	for (unsigned int i = 0; i < timepoints.size(); i++)
 		min_distances[i].resize(timepoints[i].elements.size(),INT_MAX);
 
-	for (unsigned int i = 0; i < timepoints.size(); i++) {
+	/*for (unsigned int i = 0; i < timepoints.size(); i++) {
 		for (unsigned int j = 0; j < timepoints[i].elements.size(); j++) {
 			long center_x = timepoints[i].elements[j].center.x / resize_factor,
 				center_y = timepoints[i].elements[j].center.y / resize_factor;
 			fo
 		}
-	}
+	}*/
 	for (unsigned int y = 0; y < im.properties().height; y++) {
 		for (unsigned int x = 0; x < im.properties().width; x++) {
 			const ns_8_bit cur_id = im[y][x];

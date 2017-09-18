@@ -822,7 +822,7 @@ public:
 	ns_experiment_storyboard_annotater storyboard_annotater;
 	ns_image_series_annotater * current_annotater;
 	ns_death_time_solo_posture_annotater death_time_solo_annotater;
-
+	bool worm_launch_finished;
 	void save_current_area_selections();
 
 	

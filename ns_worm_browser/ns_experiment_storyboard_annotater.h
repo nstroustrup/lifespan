@@ -497,6 +497,7 @@ public:
 	void load_from_storyboard(const ns_region_metadata & strain_to_display_, const ns_censor_masking censor_masking_, ns_experiment_storyboard_spec & spec, ns_worm_learner * worm_learner_);
 
 	void register_click(const ns_vector_2i & image_position, const ns_click_request & action);
+	void load_random_worm();
 
 	void display_current_frame();
 

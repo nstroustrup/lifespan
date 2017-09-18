@@ -631,8 +631,8 @@ public:
 		current_machine_timing_data = 0;
 		current_timepoint_id = 0;
 		current_animal_id = 0;
-		if (!sql.is_null())
-			sql.release();
+	//	if (!sql.is_null())
+	//		sql.release();
 	}
 
 	static bool ns_fix_annotation(ns_death_time_annotation & a,ns_analyzed_image_time_path & p);
@@ -760,7 +760,12 @@ public:
 	}
 
 
-	void load_worm(const unsigned long region_info_id_, const ns_stationary_path_id & worm, const unsigned long current_time, const ns_death_time_solo_posture_annotater_timepoint::ns_visualization_type visualization_type, const ns_experiment_storyboard  * storyboard,ns_worm_learner * worm_learner_,ns_sql & sql){
+	void load_worm(const unsigned long region_info_id_, const ns_stationary_path_id & worm, const unsigned long current_time, const ns_death_time_solo_posture_annotater_timepoint::ns_visualization_type visualization_type, const ns_experiment_storyboard  * storyboard,ns_worm_learner * worm_learner_){
+		
+
+		if (sql.is_null())
+			sql.attach(image_server.new_sql_connection(__FILE__, __LINE__));
+
 		if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("Clearing self."));
 		clear();
 		if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("Clearing annotator."));
@@ -795,13 +800,14 @@ public:
 			properties_for_all_animals.region_info_id = region_info_id_;
 			//get movement information for current worm
 			try{
-
+				current_region_data = 0;
 				if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("Loading movement data"));
-				current_region_data = data_cache.get_region_movement_data(region_info_id_,sql,telemetry.show());
+				current_region_data = data_cache.get_region_movement_data(region_info_id_,sql(),telemetry.show());
 				
 			}
 			catch(...){
-				metadata.load_from_db(region_info_id_,"",sql);
+				metadata.load_from_db(region_info_id_,"",sql()); 
+				current_region_data = 0;
 				throw;
 			}
 			if (!current_region_data->loaded_path_data_successfully) 
@@ -822,7 +828,7 @@ public:
 
 			if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("Loading posture analysis model"));
 			ns_image_server::ns_posture_analysis_model_cache::const_handle_t handle;
-			image_server.get_posture_analysis_model_for_region(region_info_id_, handle, sql);
+			image_server.get_posture_analysis_model_for_region(region_info_id_, handle, sql());
 			ns_posture_analysis_model mod(handle().model_specification);
 			mod.threshold_parameters.use_v1_movement_score = false;
 			handle.release();
@@ -910,14 +916,13 @@ public:
 			if (current_image.im == 0)
 				current_image.im = new ns_image_standard();
 
-			this->sql.attach(&sql);
 
 			set_current_timepoint(current_time,true,true);
 			{
 				ns_image_standard temp_buffer;
 
 				if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("Loading first image."));
-				timepoints[current_timepoint_id].load_image(1024,current_image,sql,temp_buffer,1);
+				timepoints[current_timepoint_id].load_image(1024,current_image,sql(),temp_buffer,1);
 			}
 			if (previous_images.size() != max_buffer_size || next_images.size() != max_buffer_size) {
 				previous_images.resize(max_buffer_size);

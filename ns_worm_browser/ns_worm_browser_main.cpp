@@ -326,45 +326,46 @@ class ns_worm_gl_window : public Fl_Gl_Window {
 				 return 1;*/
 		}
 
-		try{
+		try {
 			int button(Fl::event_button());
-			if(button == FL_LEFT_MOUSE || button == FL_RIGHT_MOUSE){
-			
-			ns_button_press press;
-			press.right_button = false;
-			if (button == FL_RIGHT_MOUSE)
-				press.right_button = true;
+			if (button == FL_LEFT_MOUSE || button == FL_RIGHT_MOUSE) {
 
-			press.shift_key_held = Fl::event_key(FL_Shift_L) || Fl::event_key(FL_Shift_R);
-			press.control_key_held = Fl::event_key(FL_Control_L) || Fl::event_key(FL_Control_R);
-			press.screen_position = ns_vector_2i(Fl::event_x(),Fl::event_y())/worm_learner.worm_window.display_rescale_factor;
+				ns_button_press press;
+				press.right_button = false;
+				if (button == FL_RIGHT_MOUSE)
+					press.right_button = true;
 
-				switch(state){
-			
-					case FL_PUSH:{
-						press.click_type = ns_button_press::ns_down;
-						mouse_click_location = press.screen_position;
-						mouse_is_down = true;
-						worm_learner.touch_worm_window_pixel(press);		
-						report_changes_made_to_screen();
-						return 1;
-					}
-					case FL_RELEASE:{
-						press.click_type = ns_button_press::ns_up;
-						mouse_is_down = false;
+				press.shift_key_held = Fl::event_key(FL_Shift_L) || Fl::event_key(FL_Shift_R);
+				press.control_key_held = Fl::event_key(FL_Control_L) || Fl::event_key(FL_Control_R);
+				press.screen_position = ns_vector_2i(Fl::event_x(), Fl::event_y()) / worm_learner.worm_window.display_rescale_factor;
+
+				switch (state) {
+
+				case FL_PUSH: {
+					press.click_type = ns_button_press::ns_down;
+					mouse_click_location = press.screen_position;
+					mouse_is_down = true;
+					worm_learner.touch_worm_window_pixel(press);
+					report_changes_made_to_screen();
+					return 1;
+				}
+				case FL_RELEASE: {
+					press.click_type = ns_button_press::ns_up;
+					mouse_is_down = false;
+					worm_learner.touch_worm_window_pixel(press);
+					report_changes_made_to_screen();
+					return 1;
+				}
+				case FL_DRAG: {
+					press.click_type = ns_button_press::ns_drag;
+					if (mouse_is_down && (abs(mouse_click_location.x - press.screen_position.x) > 4 || abs(mouse_click_location.y - press.screen_position.y) > 4))
 						worm_learner.touch_worm_window_pixel(press);
-						report_changes_made_to_screen();
-						return 1;
-					}
-					case FL_DRAG:{
-						press.click_type = ns_button_press::ns_drag;
-						if (mouse_is_down && (abs(mouse_click_location.x-press.screen_position.x) > 4 || abs(mouse_click_location.y - press.screen_position.y) > 4))
-								worm_learner.touch_worm_window_pixel(press);
-						report_changes_made_to_screen();
-						return 1;
-					} 
+					report_changes_made_to_screen();
+					return 1;
+				}
 
 				}
+				throw ns_ex("Unhandled gl window mouse event");
 			}
 		}
 		catch(std::exception & exception){
@@ -649,6 +650,20 @@ class ns_worm_terminal_main_menu_organizer : public ns_menu_organizer{
 		ns_start_death_time_annotation(ns_worm_learner::ns_annotate_death_times_in_time_aligned_posture,ns_experiment_storyboard_spec::ns_number_of_flavors);
 	}	
 	static void start_storyboard_annotation(const string & flavor_str, const std::string & subject){
+
+		if (subject == "Testing") {
+			while (true) {
+				worm_learner.worm_launch_finished = false;
+				try {
+					worm_learner.storyboard_annotater.load_random_worm();
+				}
+				catch (ns_ex & ex) {
+					cerr << ex.text() << "\n";
+				}
+				while (!worm_learner.worm_launch_finished) ns_thread::sleep_milliseconds(100);
+				ns_thread::sleep_milliseconds(1000);
+			}
+		}
 		ns_experiment_storyboard_spec::ns_storyboard_flavor flavor;
 		if (flavor_str.find("All") != flavor_str.npos)
 			flavor = ns_experiment_storyboard_spec::ns_inspect_for_multiworm_clumps;
@@ -663,6 +678,9 @@ class ns_worm_terminal_main_menu_organizer : public ns_menu_organizer{
 	}
 	static void start_storyboard_annotation_whole_experiment(const std::string & value){
 		start_storyboard_annotation(value,"Experiment");
+	}
+	static void start_storyboard_annotation_testing(const std::string & value) {
+		start_storyboard_annotation("", "Testing");
 	}
 	static void start_storyboard_annotation_plate(const std::string & value){
 		start_storyboard_annotation(value,"Single Plate");
@@ -1311,7 +1329,8 @@ public:
 		st_an2.options.push_back(ns_menu_item_options("Immediately After Each Worm's Death"));
 		st_an2.options.push_back(ns_menu_item_options("After All Worms Have Died"));
 		add(st_an2);
-		add(ns_menu_item_spec(stop_posture_annotation,"Validation/Stop Annotation"));
+		add(ns_menu_item_spec(stop_posture_annotation,"Validation/Stop Annotation")); 
+		add(ns_menu_item_spec(start_storyboard_annotation_testing, "Validation/Test for memory errors"));
 
 		add(ns_menu_item_spec(generate_survival_curves,"&Data Files/_Death Times/Generate Death Times for Current Experiment"));
 		add(ns_menu_item_spec(generate_survival_curves_for_experiment_group,"Data Files/Death Times/Generate Death Times for all Experiment in Experiment Group"));			 
@@ -2543,19 +2562,24 @@ void idle_main_window_update_callback(void * force_redraw) {
 				lock.release();
 			
 			if (abs(worm_window->w() -  window_size.x) >= 2 || abs(worm_window->h() - window_size.y) >= 2)
+				ns_acquire_lock_for_scope lock(worm_learner.worm_window.display_lock, __FILE__, __LINE__);
 				worm_window->resize(worm_window->x(), worm_window->y(), window_size.x, window_size.y);
+				lock.release();
 			}
 
 			if (show_worm_window) {
+				ns_acquire_lock_for_scope lock(worm_learner.worm_window.display_lock, __FILE__, __LINE__);
 				show_worm_window = false;
-
-				worm_window->resize(worm_window->x(),worm_window->y(),window_size.x,window_size.y);
 				worm_window->show();
+				worm_window->resize(worm_window->x(), worm_window->y(), window_size.x, window_size.y);
+				lock.release();
 				ns_set_menu_bar_activity(true);
 			}
 			if (hide_worm_window) {
 				hide_worm_window = false;
+				ns_acquire_lock_for_scope lock(worm_learner.worm_window.display_lock, __FILE__, __LINE__);
 				worm_window->hide();
+				lock.release();
 			}
 			if (force_redraw)
 				demand_window_redraw_from_main_thread();
@@ -2930,25 +2954,27 @@ struct ns_asynch_worm_launcher{
 		return 0;
 	}
 	void launch(){
-		try{
-			//if (worm_window_sql == 0)
-			ns_sql *	worm_window_sql = image_server.new_sql_connection(__FILE__,__LINE__);
-		       
-			worm_learner.death_time_solo_annotater.load_worm(region_id,worm,current_time,worm_learner.solo_annotation_visualization_type,storyboard,&worm_learner,*worm_window_sql);
+		try{		       
+			ns_acquire_lock_for_scope lock(worm_learner.worm_window.display_lock, __FILE__, __LINE__);
+			worm_learner.death_time_solo_annotater.load_worm(region_id,worm,current_time,worm_learner.solo_annotation_visualization_type,storyboard,&worm_learner);
 			if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("Finished loading.  Displaying."));
 			worm_learner.death_time_solo_annotater.display_current_frame();
-
+			lock.release();
 			show_worm_window = true;
-			
+			worm_learner.worm_launch_finished = true;
+			cerr << "Add alerg dialog back in!\n";
 		}
 		catch(ns_ex & ex){
 			cerr << "Error loading worm info:" << ex.text();
 			worm_learner.death_time_solo_annotater.close_worm();
 			show_worm_window = false;
+		//	stop_death_time_annotation();
 			ns_set_menu_bar_activity(true);
-			ns_alert_dialog d;
-			d.text =  ex.text();
-			d.act();
+			//ns_alert_dialog d;
+			//d.text =  ex.text();
+			//d.act();
+			cerr << ex.text() << "\n";
+			worm_learner.worm_launch_finished = true;
 		}
 	}
 };

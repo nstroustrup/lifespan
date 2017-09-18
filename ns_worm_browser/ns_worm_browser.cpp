@@ -6189,7 +6189,7 @@ void ns_worm_learner::draw_worm_window_image(ns_image_standard & image){
 
 	ns_acquire_lock_for_scope lock(worm_window.display_lock,__FILE__,__LINE__);
 
-
+	
 	//if the image is an integer factor larger than the display size
 	//it should be downsampled before being sent to the video card.
 	worm_window.pre_gl_downsample = image.properties().width / (maximum_window_size.x- death_time_solo_annotater.telemetry.image_size().x);
@@ -6924,74 +6924,74 @@ bool ns_worm_learner::start_death_time_annotation(const ns_behavior_mode m, cons
 					type = ns_death_time_posture_annotater::ns_death_aligned_images;
 					break;
 			}
-	
-			death_time_annotater.load_region(data_selector.current_region().region_id,type,this);
+
+			death_time_annotater.load_region(data_selector.current_region().region_id, type, this);
 			death_time_annotater.display_current_frame();
 		}
-		
-			set_behavior_mode(m);
+
+		set_behavior_mode(m);
 	}
-	catch(...){
+	catch (...) {
 		stop_death_time_annotation();
 		throw;
 	}
-	
+
 	return true;
 }
 
 #ifdef _WIN32
-bool ns_load_image_from_resource(int resource_id,const std::string &filename){
+bool ns_load_image_from_resource(int resource_id, const std::string &filename) {
 	HRSRC hResource = ::FindResource(0, MAKEINTRESOURCE(resource_id), "BIN");
-	if (!hResource){
+	if (!hResource) {
 		ns_ex ex;
 		ex.append_windows_error();
 		throw ex;
 	}
 	HGLOBAL hresload = ::LoadResource(0, hResource);
-	if (hresload==NULL){
+	if (hresload == NULL) {
 		ns_ex ex;
 		ex.append_windows_error();
 		throw ex;
 	}
-    const void* pResourceData = ::LockResource(hresload);
-    if (!pResourceData){
+	const void* pResourceData = ::LockResource(hresload);
+	if (!pResourceData) {
 		ns_ex ex;
 		ex.append_windows_error();
 		throw ex;
 	}
-    DWORD imageSize = ::SizeofResource(0, hResource);
-    if (!imageSize){
+	DWORD imageSize = ::SizeofResource(0, hResource);
+	if (!imageSize) {
 		ns_ex ex;
 		ex.append_windows_error();
 		throw ex;
 	}
 	const char * buf(static_cast<const char *>(pResourceData));
-	ofstream out(filename.c_str(),ios_base::binary);
+	ofstream out(filename.c_str(), ios_base::binary);
 	if (out.fail())
 		throw ns_ex("Could not open file ") << filename << " for writing";
 	for (unsigned int i = 0; i < imageSize; i++)
-		out<<buf[i];
+		out << buf[i];
 	out.close();
 	return true;
 }
 #endif
 
-void ns_worm_learner::display_splash_image(){
+void ns_worm_learner::display_splash_image() {
 	ns_image_standard im;
-	#ifdef _WIN32
+#ifdef _WIN32
 	string tmp_filename("start_background.tif");
-	ns_load_image_from_resource(IDR_BIN1,tmp_filename);
-	ns_load_image(tmp_filename,im);
-	im.resample(ns_image_properties(600,800,3),current_image);
+	ns_load_image_from_resource(IDR_BIN1, tmp_filename);
+	ns_load_image(tmp_filename, im);
+	im.resample(ns_image_properties(600, 800, 3), current_image);
 	ns_dir::delete_file(tmp_filename);
-	#else
+#else
 	// note: using implicit string-literal concatenation after preprocessor substitution of NS_DATA_PATH
-	ns_load_image(NS_DATA_PATH "start.tif",im);
-	im.resample(ns_image_properties(600,800,3),current_image);
-	draw_image(-1,-1,current_image);
-	#endif
+	ns_load_image(NS_DATA_PATH "start.tif", im);
+	im.resample(ns_image_properties(600, 800, 3), current_image);
+	draw_image(-1, -1, current_image);
+#endif
 }
-void ns_worm_learner::stop_death_time_annotation(){
+void ns_worm_learner::stop_death_time_annotation() {
 	if (behavior_mode == ns_worm_learner::ns_draw_boxes)
 		return;
 	//request the user save; stop the close operation on cancel
@@ -7009,17 +7009,20 @@ void ns_worm_learner::stop_death_time_annotation(){
 
 }
 
-void ns_death_time_posture_annotater::display_current_frame(){
+void ns_death_time_posture_annotater::display_current_frame() {
 	refresh_requested_ = false;
-	ns_acquire_lock_for_scope lock(image_buffer_access_lock,__FILE__,__LINE__);
-	worm_learner->draw_image(-1,-1,*current_image.im);
+	ns_acquire_lock_for_scope lock(image_buffer_access_lock, __FILE__, __LINE__);
+	worm_learner->draw_image(-1, -1, *current_image.im);
 	lock.release();
 }
 
-void ns_death_time_solo_posture_annotater::display_current_frame(){
+void ns_death_time_solo_posture_annotater::display_current_frame() {
 	refresh_requested_ = false;
 	//ns_acquire_lock_for_scope lock(image_buffer_access_lock,__FILE__,__LINE__);
+
+
 	worm_learner->draw_worm_window_image(*current_image.im);
+
 	//lock.release();
 }
 
@@ -7946,7 +7949,6 @@ void ns_death_time_solo_posture_annotater::register_click(const ns_vector_2i & i
 	}
 	if (change_made) {
 		update_events_to_storyboard();
-		lock.release();
 		draw_metadata(&timepoints[current_timepoint_id], *current_image.im);
 		request_refresh();
 	}
@@ -7955,7 +7957,15 @@ void ns_death_time_solo_posture_annotater::register_click(const ns_vector_2i & i
 
 
 }
+void ns_experiment_storyboard_annotater::load_random_worm() {
+	unsigned int i = rand() % divisions.size();
+	unsigned int j = rand() % divisions[i].division->events.size();
 
+	ns_experiment_storyboard_timepoint_element * worm(&divisions[i].division->events[j]);
+
+	ns_launch_worm_window_for_worm(worm->event_annotation.region_info_id, worm->event_annotation.stationary_path_id, worm->storyboard_absolute_time);
+
+}
 void ns_experiment_storyboard_annotater::register_click(const ns_vector_2i & image_position, const ns_click_request & action) {
 	if (divisions[current_timepoint_id].division->events.size() == 0)
 		return;

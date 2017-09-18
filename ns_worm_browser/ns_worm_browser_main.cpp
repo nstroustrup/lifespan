@@ -2992,7 +2992,7 @@ bool ns_set_animation_state(bool new_state){
 	current_window->draw_animation = new_state;
 	return old_state;
 }
-typedef enum{ns_none,ns_activate,ns_deactivate} ns_menu_bar_request;
+//typedef enum{ns_none,ns_activate,ns_deactivate} ns_menu_bar_request;
 
 ns_menu_bar_request set_menu_bar_request;
 void ns_set_menu_bar_activity_internal(bool activate){

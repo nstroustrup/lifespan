@@ -631,8 +631,8 @@ public:
 		current_machine_timing_data = 0;
 		current_timepoint_id = 0;
 		current_animal_id = 0;
-		if (!sql.is_null())
-			sql.release();
+		//if (!sql.is_null())
+		//	sql.release();
 	}
 
 	static bool ns_fix_annotation(ns_death_time_annotation & a,ns_analyzed_image_time_path & p);
@@ -762,9 +762,11 @@ public:
 
 	void load_worm(const unsigned long region_info_id_, const ns_stationary_path_id & worm, const unsigned long current_time, const ns_death_time_solo_posture_annotater_timepoint::ns_visualization_type visualization_type, const ns_experiment_storyboard  * storyboard,ns_worm_learner * worm_learner_){
 		
-		if (this->sql.is_null())
-			this->sql.attach(image_server.new_sql_connection(__FILE__,__LINE__));
-
+	  if (sql.is_null()){
+	    cerr << "attaching";
+	  
+			sql.attach(image_server.new_sql_connection(__FILE__,__LINE__));
+	  }
 		if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("Clearing self."));
 		clear();
 		if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("Clearing annotator."));

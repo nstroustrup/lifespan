@@ -366,9 +366,9 @@ public:
 void ns_crop_time(const ns_time_path_limits & limits, const ns_death_time_annotation_time_interval & first_observation_in_path, const ns_death_time_annotation_time_interval & last_observation_in_path, ns_death_time_annotation_time_interval & target);
 
 class ns_worm_learner;
-class ns_death_time_solo_posture_annotater : public ns_image_series_annotater{
+class ns_death_time_solo_posture_annotater : public ns_image_series_annotater {
 private:
-	
+
 	ns_death_time_solo_posture_annotater_timepoint::ns_visualization_type current_visualization_type;
 	std::vector<ns_death_time_solo_posture_annotater_timepoint> timepoints;
 	static ns_death_time_posture_solo_annotater_data_cache data_cache;
@@ -376,49 +376,49 @@ private:
 	ns_analyzed_image_time_path * current_worm;
 	ns_death_time_annotation properties_for_all_animals;
 
-	unsigned long current_element_id()const {return current_timepoint_id;}
-	ns_death_time_annotation_time_interval current_time_interval(){
+	unsigned long current_element_id()const { return current_timepoint_id; }
+	ns_death_time_annotation_time_interval current_time_interval() {
 		if (current_timepoint_id == 0)
 			return current_worm->observation_limits().interval_before_first_observation;
-		return ns_death_time_annotation_time_interval(current_worm->element(current_timepoint_id-1).absolute_time,
-													  current_worm->element(current_timepoint_id).absolute_time);
+		return ns_death_time_annotation_time_interval(current_worm->element(current_timepoint_id - 1).absolute_time,
+			current_worm->element(current_timepoint_id).absolute_time);
 
 	}
-	ns_animal_list_at_position & current_by_hand_timing_data(){return current_region_data->by_hand_timing_data[properties_for_all_animals.stationary_path_id.group_id];}
+	ns_animal_list_at_position & current_by_hand_timing_data() { return current_region_data->by_hand_timing_data[properties_for_all_animals.stationary_path_id.group_id]; }
 	ns_animal_list_at_position * current_machine_timing_data;
 	unsigned long current_animal_id;
-	
-	static void draw_box(const ns_vector_2i & p, const ns_vector_2i & s, const ns_color_8 & c,ns_image_standard & im, const unsigned long thickness){
-		im.draw_line_color(p,p+ns_vector_2i(s.x,0),c,thickness);
-		im.draw_line_color(p,p+ns_vector_2i(0,s.y),c,thickness);
-		im.draw_line_color(p+s,p+ns_vector_2i(s.x,0),c,thickness);
-		im.draw_line_color(p+s,p+ns_vector_2i(0,s.y),c,thickness);
+
+	static void draw_box(const ns_vector_2i & p, const ns_vector_2i & s, const ns_color_8 & c, ns_image_standard & im, const unsigned long thickness) {
+		im.draw_line_color(p, p + ns_vector_2i(s.x, 0), c, thickness);
+		im.draw_line_color(p, p + ns_vector_2i(0, s.y), c, thickness);
+		im.draw_line_color(p + s, p + ns_vector_2i(s.x, 0), c, thickness);
+		im.draw_line_color(p + s, p + ns_vector_2i(0, s.y), c, thickness);
 	}
-	static std::string state_label(const ns_movement_state cur_state){
-		switch(cur_state){
-			case ns_movement_stationary:return "Dead";
-			case ns_movement_posture: return "Changing Posture";
-			case ns_movement_slow: return "Slow Moving";
-			case ns_movement_fast: return "Fast Moving";
-			case ns_movement_death_posture_relaxation: return "Death Posture Relaxation";
-			default: return std::string("Unknown:") + ns_to_string((int)cur_state);
+	static std::string state_label(const ns_movement_state cur_state) {
+		switch (cur_state) {
+		case ns_movement_stationary:return "Dead";
+		case ns_movement_posture: return "Changing Posture";
+		case ns_movement_slow: return "Slow Moving";
+		case ns_movement_fast: return "Fast Moving";
+		case ns_movement_death_posture_relaxation: return "Death Posture Relaxation";
+		default: return std::string("Unknown:") + ns_to_string((int)cur_state);
 		}
 	}
-	enum{bottom_offset=5};
-	
-	void draw_metadata(ns_annotater_timepoint * tp_a,ns_image_standard & im){
-	  if (current_worm == 0){
-	    cerr << "worm not loaded/n";
-	    return;
-	  }
-	  if (current_element_id() >= current_worm->element_count()){
-	      cerr << "Element " << current_element_id() << " does not exist/n";
-	      return;
-	    }
+	enum { bottom_offset = 5 };
+
+	void draw_metadata(ns_annotater_timepoint * tp_a, ns_image_standard & im) {
+		if (current_worm == 0) {
+			cerr << "worm not loaded/n";
+			return;
+		}
+		if (current_element_id() >= current_worm->element_count()) {
+			cerr << "Element " << current_element_id() << " does not exist/n";
+			return;
+		}
 
 		if (im.properties().height == 0 || im.properties().width == 0)
 			throw ns_ex("No worm image is loaded");
-		const ns_death_time_solo_posture_annotater_timepoint * tp(static_cast<const ns_death_time_solo_posture_annotater_timepoint * >(tp_a));
+		const ns_death_time_solo_posture_annotater_timepoint * tp(static_cast<const ns_death_time_solo_posture_annotater_timepoint *>(tp_a));
 		const unsigned long clear_thickness(5);
 		const unsigned long thickness_offset(3);
 		ns_acquire_lock_for_scope lock(font_server.default_font_lock, __FILE__, __LINE__);
@@ -426,56 +426,56 @@ private:
 		const unsigned long text_height(14);
 		font.set_height(text_height);
 		ns_vector_2i bottom_margin_bottom(bottom_margin_position());
-		ns_vector_2i bottom_margin_top(bottom_margin_bottom.x+current_worm->element(current_element_id()).image().properties().width + ns_death_time_solo_posture_annotater_timepoint::ns_side_border_width,
-										bottom_margin_bottom.y + ns_death_time_solo_posture_annotater_timepoint::bottom_border_height()-bottom_offset);
-	
+		ns_vector_2i bottom_margin_top(bottom_margin_bottom.x + current_worm->element(current_element_id()).image().properties().width + ns_death_time_solo_posture_annotater_timepoint::ns_side_border_width,
+			bottom_margin_bottom.y + ns_death_time_solo_posture_annotater_timepoint::bottom_border_height() - bottom_offset);
+
 		for (unsigned int y = bottom_margin_bottom.y; y < bottom_margin_top.y; y++)
-			for (unsigned int x = bottom_margin_bottom.x; x < bottom_margin_top.x; x++){
-			  //if (y>=im.properties().height||x>=im.properties().width) {
-			  //cerr << "out of bounds: " << x << ","<< y << " " << im.properties().width << ","<< im.properties().height << "\n";
-			  //continue;
-			  //}
-			    im[y][3*x] = 
-				im[y][3*x+1] = 
-				im[y][3*x+2] = 0;
+			for (unsigned int x = bottom_margin_bottom.x; x < bottom_margin_top.x; x++) {
+				//if (y>=im.properties().height||x>=im.properties().width) {
+				//cerr << "out of bounds: " << x << ","<< y << " " << im.properties().width << ","<< im.properties().height << "\n";
+				//continue;
+				//}
+				im[y][3 * x] =
+					im[y][3 * x + 1] =
+					im[y][3 * x + 2] = 0;
 			}
-				
-		
+
+
 		unsigned long vis_height(10);
 		const ns_time_path_limits observation_limit(current_worm->observation_limits());
-		ns_death_time_annotation_time_interval first_path_obs,last_path_obs;
-		last_path_obs.period_end = current_worm->element(current_worm->element_count()-1).absolute_time;
-		last_path_obs.period_start = current_worm->element(current_worm->element_count()-2).absolute_time;
+		ns_death_time_annotation_time_interval first_path_obs, last_path_obs;
+		last_path_obs.period_end = current_worm->element(current_worm->element_count() - 1).absolute_time;
+		last_path_obs.period_start = current_worm->element(current_worm->element_count() - 2).absolute_time;
 		first_path_obs.period_start = current_worm->element(0).absolute_time;
 		first_path_obs.period_end = current_worm->element(1).absolute_time;
 
 		//handle out of bound values
-		for (ns_animal_list_at_position::ns_animal_list::iterator p = current_by_hand_timing_data().animals.begin(); p != current_by_hand_timing_data().animals.end(); p++){
-			ns_crop_time(observation_limit,first_path_obs,last_path_obs,p->fast_movement_cessation.time);
-			ns_crop_time(observation_limit,first_path_obs,last_path_obs,p->death_posture_relaxation_termination_.time);
+		for (ns_animal_list_at_position::ns_animal_list::iterator p = current_by_hand_timing_data().animals.begin(); p != current_by_hand_timing_data().animals.end(); p++) {
+			ns_crop_time(observation_limit, first_path_obs, last_path_obs, p->fast_movement_cessation.time);
+			ns_crop_time(observation_limit, first_path_obs, last_path_obs, p->death_posture_relaxation_termination_.time);
 			ns_crop_time(observation_limit, first_path_obs, last_path_obs, p->death_posture_relaxation_start.time);
-			ns_crop_time(observation_limit,first_path_obs,last_path_obs,p->movement_cessation.time);
-			ns_crop_time(observation_limit,first_path_obs,last_path_obs,p->translation_cessation.time);
+			ns_crop_time(observation_limit, first_path_obs, last_path_obs, p->movement_cessation.time);
+			ns_crop_time(observation_limit, first_path_obs, last_path_obs, p->translation_cessation.time);
 		}
 
 		if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("Drawing timing."));
 		current_machine_timing_data->animals[0].draw_movement_diagram(bottom_margin_bottom,
-												ns_vector_2i(current_worm->element(current_element_id()).image().properties().width,vis_height),
-												observation_limit,
-												current_time_interval(),
-												im,0.8);
+			ns_vector_2i(current_worm->element(current_element_id()).image().properties().width, vis_height),
+			observation_limit,
+			current_time_interval(),
+			im, 0.8);
 		const unsigned long hand_bar_height(current_by_hand_timing_data().animals.size()*
 			ns_death_time_solo_posture_annotater_timepoint::ns_movement_bar_height);
-		
-		for (unsigned int i = 0; i < current_by_hand_timing_data().animals.size(); i++){
+
+		for (unsigned int i = 0; i < current_by_hand_timing_data().animals.size(); i++) {
 			current_by_hand_timing_data().animals[i].draw_movement_diagram(bottom_margin_bottom
-				+ns_vector_2i(0,(i+1)*ns_death_time_solo_posture_annotater_timepoint::ns_movement_bar_height),
-													ns_vector_2i(current_worm->element(current_element_id()).image().properties().width,vis_height),
-													observation_limit,
-													current_time_interval(),
-													im,(i==current_animal_id)?1.0:0.8);
+				+ ns_vector_2i(0, (i + 1)*ns_death_time_solo_posture_annotater_timepoint::ns_movement_bar_height),
+				ns_vector_2i(current_worm->element(current_element_id()).image().properties().width, vis_height),
+				observation_limit,
+				current_time_interval(),
+				im, (i == current_animal_id) ? 1.0 : 0.8);
 		}
-		
+
 		const int num_lines(6);
 		std::string lines[num_lines];
 		ns_color_8 line_color[num_lines];
@@ -483,33 +483,33 @@ private:
 		const ns_movement_state cur_machine_state(current_machine_timing_data->animals[0].movement_state(current_worm->element(current_element_id()).absolute_time));
 		const bool by_hand_death_contracting(current_by_hand_timing_data().animals[current_animal_id].is_death_time_contracting(current_worm->element(current_element_id()).absolute_time));
 		const bool machine_death_contracting(current_machine_timing_data->animals[0].is_death_time_contracting(current_worm->element(current_element_id()).absolute_time));
-		lines[0]  = "Frame " + ns_to_string(current_element_id()+1) + " of " + ns_to_string(timepoints.size())+ " ";
-		lines[0] += current_worm->element(current_element_id()).element_before_fast_movement_cessation?"(B)":"(A)";
-		lines[0] += current_worm->element(current_element_id()).inferred_animal_location?"(I)":"";
-		if (current_region_data->metadata.time_at_which_animals_had_zero_age != 0){
+		lines[0] = "Frame " + ns_to_string(current_element_id() + 1) + " of " + ns_to_string(timepoints.size()) + " ";
+		lines[0] += current_worm->element(current_element_id()).element_before_fast_movement_cessation ? "(B)" : "(A)";
+		lines[0] += current_worm->element(current_element_id()).inferred_animal_location ? "(I)" : "";
+		if (current_region_data->metadata.time_at_which_animals_had_zero_age != 0) {
 			lines[0] += "Day ";
 			lines[0] += ns_to_string_short((float)
-				(current_worm->element(current_element_id()).absolute_time-
-				current_region_data->metadata.time_at_which_animals_had_zero_age )/24.0/60/60,2);
+				(current_worm->element(current_element_id()).absolute_time -
+					current_region_data->metadata.time_at_which_animals_had_zero_age) / 24.0 / 60 / 60, 2);
 			lines[0] += " ";
 		}
-		lines[0]+= "Date: ";
-		lines[0]+= ns_format_time_string_for_human(current_worm->element(current_element_id()).absolute_time);
-		
+		lines[0] += "Date: ";
+		lines[0] += ns_format_time_string_for_human(current_worm->element(current_element_id()).absolute_time);
+
 		lines[1] = (current_region_data->metadata.plate_type_summary());
 
-	
+
 		lines[2] = current_region_data->metadata.sample_name + "::" + current_region_data->metadata.region_name + "::worm #" + ns_to_string(properties_for_all_animals.stationary_path_id.group_id);
 
-		ns_vector_2i p(current_worm->path_region_position + current_worm->path_region_size/2);
+		ns_vector_2i p(current_worm->path_region_position + current_worm->path_region_size / 2);
 		lines[2] += " (" + ns_to_string(p.x) + "," + ns_to_string(p.y) + ")";
 
-		lines[3] = "Machine:" + state_label(cur_machine_state) + (machine_death_contracting ? "(Contr/Expr)":"");
+		lines[3] = "Machine:" + state_label(cur_machine_state) + (machine_death_contracting ? "(Contr/Expr)" : "");
 		if (current_by_hand_timing_data().animals[current_animal_id].specified)
 			lines[4] += "Human: " + state_label(cur_by_hand_state) + (by_hand_death_contracting ? "(Contr/Expr)" : "");
 		else lines[4] += "Human: Not Specified";
-		if (properties_for_all_animals.number_of_worms_at_location_marked_by_hand > 1){
-			lines [4] += " +";
+		if (properties_for_all_animals.number_of_worms_at_location_marked_by_hand > 1) {
+			lines[4] += " +";
 			lines[4] += ns_to_string(properties_for_all_animals.number_of_worms_at_location_marked_by_hand);
 		}
 
@@ -517,16 +517,16 @@ private:
 			lines[5] = "Worm Excluded ";
 		if (properties_for_all_animals.flag.specified())
 			lines[5] += properties_for_all_animals.flag.label();
-		
 
-		line_color[0] = line_color[1] = line_color[2] = line_color[3] = line_color[4] = 
-			 ns_color_8(255,255,255);
+
+		line_color[0] = line_color[1] = line_color[2] = line_color[3] = line_color[4] =
+			ns_color_8(255, 255, 255);
 		line_color[5] = ns_annotation_flag_color(properties_for_all_animals);
 
-		ns_vector_2i text_pos(bottom_margin_bottom.x,bottom_margin_bottom.y+hand_bar_height+15+text_height);
+		ns_vector_2i text_pos(bottom_margin_bottom.x, bottom_margin_bottom.y + hand_bar_height + 15 + text_height);
 		for (unsigned int i = 0; i < num_lines; i++)
-			font.draw_color(text_pos.x,text_pos.y+i*(text_height+1),line_color[i],lines[i],im);
-		
+			font.draw_color(text_pos.x, text_pos.y + i*(text_height + 1), line_color[i], lines[i], im);
+
 		//unsigned long small_label_height(im.properties().height/80);
 		//font.set_height(small_label_height);
 
@@ -537,30 +537,30 @@ private:
 				  ns_color_8(60,60,60),im,2);
 
 		draw_box(ns_vector_2i(ns_death_time_solo_posture_annotater_timepoint::ns_side_border_width,0),
-				 ns_vector_2i(timepoints[current_element_id()].path_timepoint_element->image().properties().width, 
-				 timepoints[current_element_id()].path_timepoint_element->image().properties().height), 
+				 ns_vector_2i(timepoints[current_element_id()].path_timepoint_element->image().properties().width,
+				 timepoints[current_element_id()].path_timepoint_element->image().properties().height),
 				ns_color_8(60,60,60),im,2);
-	
+
 		draw_box(ns_vector_2i(ns_death_time_solo_posture_annotater_timepoint::ns_side_border_width,0),
-				 ns_vector_2i(timepoints[current_element_id()].path_timepoint_element->image().properties().width, 
-				 timepoints[current_element_id()].path_timepoint_element->image().properties().height), 
+				 ns_vector_2i(timepoints[current_element_id()].path_timepoint_element->image().properties().width,
+				 timepoints[current_element_id()].path_timepoint_element->image().properties().height),
 				ns_color_8(60,60,60),im,2);
 				*/
-	//	draw_box(timepoints[current_element_id()].path_timepoint_element->measurements.local_maximum_position, 
-	//			 timepoints[current_element_id()].path_timepoint_element->measurements.local_maximum_area,
-	//			ns_color_8(0,0,60),im,1);
+				//	draw_box(timepoints[current_element_id()].path_timepoint_element->measurements.local_maximum_position, 
+				//			 timepoints[current_element_id()].path_timepoint_element->measurements.local_maximum_area,
+				//			ns_color_8(0,0,60),im,1);
 
-//		font.set_height(im.properties().height/40);
-	//	font.draw_color(1,im.properties().height/39,ns_color_8(255,255,255),ns_format_time_string_for_human(tp->absolute_time),im);
+			//		font.set_height(im.properties().height/40);
+				//	font.draw_color(1,im.properties().height/39,ns_color_8(255,255,255),ns_format_time_string_for_human(tp->absolute_time),im);
 		lock.release();
-}
+	}
 
-	
+
 
 	ns_worm_learner * worm_learner;
 
 
-	enum {default_resize_factor=1,max_buffer_size = 15};
+	enum { default_resize_factor = 1, max_buffer_size = 15 };
 
 	mutable bool saved_;
 public:
@@ -572,18 +572,18 @@ public:
 			graph_contents = ns_animal_telemetry::ns_none;
 			telemetry.show(false);
 		}
-		else 
+		else
 			telemetry.show(true);
 		request_refresh();
 		return graph_contents;
 	}
 	ns_death_time_solo_posture_annotater_timepoint::ns_visualization_type step_visualization_type() {
-		
+
 		if (current_visualization_type == ns_death_time_solo_posture_annotater_timepoint::ns_movement_threshold_and_image)
 			current_visualization_type = ns_death_time_solo_posture_annotater_timepoint::ns_image;
 		else current_visualization_type = (ns_death_time_solo_posture_annotater_timepoint::ns_visualization_type)((int)current_visualization_type + 1);
-		
-		ns_acquire_lock_for_scope lock(image_buffer_access_lock,__FILE__, __LINE__);
+
+		ns_acquire_lock_for_scope lock(image_buffer_access_lock, __FILE__, __LINE__);
 		for (unsigned int i = 0; i < timepoints.size(); i++) {
 			timepoints[i].set_visulaization_type(current_visualization_type);
 		}
@@ -594,7 +594,7 @@ public:
 
 		ns_image_standard temp_buffer;
 		timepoints[current_timepoint_id].load_image(1024, current_image, sql(), temp_buffer, 1);
-    
+
 		draw_metadata(&timepoints[current_timepoint_id], *current_image.im);
 		lock.release();
 		return current_visualization_type;
@@ -602,48 +602,46 @@ public:
 
 	ns_animal_telemetry telemetry;
 	ns_animal_telemetry::ns_graph_contents graph_contents;
-	
-	typedef enum {ns_none,ns_forward, ns_back, ns_fast_forward, ns_fast_back,ns_stop,ns_save,ns_rewind_to_zero,ns_write_quantification_to_disk, ns_step_visualization, ns_step_graph,ns_number_of_annotater_actions} ns_image_series_annotater_action;
 
-	inline ns_annotater_timepoint * timepoint(const unsigned long i){return &timepoints[i];}
-	inline unsigned long number_of_timepoints(){return timepoints.size();}
-	
-	void set_resize_factor(const unsigned long resize_factor_){resize_factor = resize_factor_;}
-	bool data_saved()const{return saved_;}
-	ns_death_time_solo_posture_annotater():ns_image_series_annotater(default_resize_factor, ns_death_time_posture_annotater_timepoint::ns_bottom_border_height),
-		saved_(true), graph_contents(ns_animal_telemetry::ns_none),current_visualization_type(ns_death_time_solo_posture_annotater_timepoint::ns_image),current_region_data(0),current_worm(0),current_machine_timing_data(0){}
+	typedef enum { ns_none, ns_forward, ns_back, ns_fast_forward, ns_fast_back, ns_stop, ns_save, ns_rewind_to_zero, ns_write_quantification_to_disk, ns_step_visualization, ns_step_graph, ns_number_of_annotater_actions } ns_image_series_annotater_action;
 
-	typedef enum {ns_time_aligned_images,ns_death_aligned_images} ns_alignment_type;
+	inline ns_annotater_timepoint * timepoint(const unsigned long i) { return &timepoints[i]; }
+	inline unsigned long number_of_timepoints() { return timepoints.size(); }
 
-	bool load_annotations(){
-	//	for (u
-		saved_=true;
-	//	saved_ = !fix_censored_events_with_no_time_specified();
+	void set_resize_factor(const unsigned long resize_factor_) { resize_factor = resize_factor_; }
+	bool data_saved()const { return saved_; }
+	ns_death_time_solo_posture_annotater() :ns_image_series_annotater(default_resize_factor, ns_death_time_posture_annotater_timepoint::ns_bottom_border_height),
+		saved_(true), graph_contents(ns_animal_telemetry::ns_none), current_visualization_type(ns_death_time_solo_posture_annotater_timepoint::ns_image), current_region_data(0), current_worm(0), current_machine_timing_data(0) {}
+
+	typedef enum { ns_time_aligned_images, ns_death_aligned_images } ns_alignment_type;
+
+	bool load_annotations() {
+		//	for (u
+		saved_ = true;
+		//	saved_ = !fix_censored_events_with_no_time_specified();
 		return true;
 	}
 
-	void add_annotations_to_set(ns_death_time_annotation_set & set, std::vector<ns_death_time_annotation> & orphaned_events){
-		data_cache.add_annotations_to_set(set,orphaned_events);
+	void add_annotations_to_set(ns_death_time_annotation_set & set, std::vector<ns_death_time_annotation> & orphaned_events) {
+		data_cache.add_annotations_to_set(set, orphaned_events);
 	}
 
-	void save_annotations(const ns_death_time_annotation_set & set) const{
+	void save_annotations(const ns_death_time_annotation_set & set) const {
 		data_cache.save_annotations(set);
-	
+
 		ns_update_information_bar(string("Annotations saved at ") + ns_format_time_string_for_human(ns_current_time()));
-		saved_=true;
+		saved_ = true;
 	};
-	bool current_region_path_data_loaded(){
+	bool current_region_path_data_loaded() {
 		return current_region_data->loaded_path_data_successfully;
 	}
-	void close_worm(){
+	void close_worm() {
 		properties_for_all_animals = ns_death_time_annotation();
 		properties_for_all_animals.region_info_id = 0;
 		current_worm = 0;
 		current_machine_timing_data = 0;
 		current_timepoint_id = 0;
 		current_animal_id = 0;
-	//	if (!sql.is_null())
-	//		sql.release();
 	}
 	void clear_data_cache() {
 		data_cache.clear();
@@ -822,6 +820,7 @@ public:
 			catch(...){
 				metadata.load_from_db(region_info_id_,"",sql()); 
 				current_region_data = 0;
+
 				throw;
 			}
 			if (!current_region_data->loaded_path_data_successfully) 

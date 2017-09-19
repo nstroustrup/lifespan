@@ -48,10 +48,10 @@ class ns_image_series_annotater;
 
 typedef void (*ns_handle_error_handler)();
 struct ns_annotater_asynch_load_specification{
-	ns_sql * sql_;
+	ns_acquire_for_scope<ns_sql> sql_;
 public:
 	ns_annotater_asynch_load_specification():launch_lock("ns_dt_alnh"),fatal_error_handler(0),image(0),swap_1(0),swap_2(0),timepoint(0),sql_(0),swap_lock(0),annotater(0),bottom_border_size(0){}
-	~ns_annotater_asynch_load_specification(){ns_safe_delete(sql_);}
+  ~ns_annotater_asynch_load_specification(){sql_.release();}
 	
 	ns_lock launch_lock;
 	ns_lock * swap_lock;
@@ -63,9 +63,9 @@ public:
 	unsigned long bottom_border_size;
 	ns_annotater_timepoint * timepoint;
 	ns_sql & sql(){
-		if (sql_ == 0)
-			sql_ = image_server.new_sql_connection(__FILE__,__LINE__);
-		return *sql_;
+	  if (sql_.is_null())
+	    sql_.attach(image_server.new_sql_connection(__FILE__,__LINE__));
+	  return sql_();
 	}
 	
 	ns_handle_error_handler fatal_error_handler;
@@ -75,8 +75,8 @@ void report_changes_made_to_screen();
 
 class ns_image_series_annotater{
 protected:
-	virtual inline ns_annotater_timepoint * timepoint(const unsigned long i)=0;
-	virtual inline unsigned long number_of_timepoints()=0;
+  virtual inline ns_annotater_timepoint * timepoint(const unsigned long i){throw ns_ex("should be redefined!");}
+	virtual inline unsigned long number_of_timepoints(){throw ns_ex("should be redefined!");}
 	unsigned long resize_factor;
 	ns_lock image_buffer_access_lock;
 	ns_annotater_image_buffer_entry current_image;

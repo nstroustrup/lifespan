@@ -1342,6 +1342,8 @@ public:
 		st_an.options.push_back(ns_menu_item_options("Immediately After Each Worm's Death"));
 		st_an.options.push_back(ns_menu_item_options("After All Worms Have Died"));
 		add(st_an);
+	//	add(ns_menu_item_spec(start_storyboard_annotation_whole_experiment, "&Validation/Test for storyboard memory bugs"));
+
 		ns_menu_item_spec st_an2(start_storyboard_annotation_plate,"Validation/_Browse Single Plate");
 		st_an2.options.push_back(ns_menu_item_options("Immediately After Each Worm's Death"));
 		st_an2.options.push_back(ns_menu_item_options("After All Worms Have Died"));
@@ -1612,40 +1614,40 @@ struct ns_asynch_region_picker{
 };
 
 
-class ns_worm_terminal_region_menu_organizer : public ns_menu_organizer{
-	static void pick_region(const std::string & value){
+class ns_worm_terminal_region_menu_organizer : public ns_menu_organizer {
+	static void pick_region(const std::string & value) {
 		std::string *n(new std::string(value));
-		ns_thread t(ns_asynch_region_picker::run_asynch,n);
+		ns_thread t(ns_asynch_region_picker::run_asynch, n);
 		t.detach();
 	}
 public:
-	std::string region_menu_name(){return "File/_Select Current Region";}
-	void update_region_choice(Fl_Menu_Bar & bar){
+	std::string region_menu_name() { return "File/_Select Current Region"; }
+	void update_region_choice(Fl_Menu_Bar & bar) {
 		bar.menu(NULL);
 		clear();
-		if (!worm_learner.data_selector.experiment_selected()){
+		if (!worm_learner.data_selector.experiment_selected()) {
 			bar.deactivate();
 			return;
 		}
-		if (worm_learner.data_selector.samples.size() == 0){
+		if (worm_learner.data_selector.samples.size() == 0) {
 			bar.deactivate();
 			return;
 		}
 		if (!worm_learner.data_selector.region_selected())
-			if (!worm_learner.data_selector.select_default_sample_and_region()){
+			if (!worm_learner.data_selector.select_default_sample_and_region()) {
 				bar.deactivate();
 				return;
 			}
 		bar.activate();
-		ns_menu_item_spec spec(pick_region,worm_learner.data_selector.current_region().display_name);
+		ns_menu_item_spec spec(pick_region, worm_learner.data_selector.current_region().display_name);
 		string sep;
 
 		//identify devices with no regions that match the strain selection, so we can gray them out.
-		map<string,int> devices_with_valid_regions;
-		if (worm_learner.data_selector.strain_selected()){
-			for (unsigned int i = 0; i < worm_learner.data_selector.samples.size(); i++){
-				for (unsigned int j = 0; j < worm_learner.data_selector.samples[i].regions.size(); j++){
-					if (worm_learner.data_selector.samples[i].regions[j].region_metadata==&worm_learner.data_selector.current_strain()){
+		map<string, int> devices_with_valid_regions;
+		if (worm_learner.data_selector.strain_selected()) {
+			for (unsigned int i = 0; i < worm_learner.data_selector.samples.size(); i++) {
+				for (unsigned int j = 0; j < worm_learner.data_selector.samples[i].regions.size(); j++) {
+					if (worm_learner.data_selector.samples[i].regions[j].region_metadata == &worm_learner.data_selector.current_strain()) {
 						devices_with_valid_regions[worm_learner.data_selector.samples[i].device] = 0;
 						break;
 					}
@@ -1653,41 +1655,41 @@ public:
 			}
 		}
 
-		for (unsigned int i = 0; i < worm_learner.data_selector.samples.size(); i++){
-			
-			if (worm_learner.data_selector.strain_selected() ){
+		for (unsigned int i = 0; i < worm_learner.data_selector.samples.size(); i++) {
 
-				map<string,int>::const_iterator p =  devices_with_valid_regions.find(worm_learner.data_selector.samples[i].device);
+			if (worm_learner.data_selector.strain_selected()) {
 
-				if (p == devices_with_valid_regions.end()){
-					devices_with_valid_regions[worm_learner.data_selector.samples[i].device] = 1;	
-					spec.options.push_back(ns_menu_item_options(worm_learner.data_selector.samples[i].device,true));
+				map<string, int>::const_iterator p = devices_with_valid_regions.find(worm_learner.data_selector.samples[i].device);
+
+				if (p == devices_with_valid_regions.end()) {
+					devices_with_valid_regions[worm_learner.data_selector.samples[i].device] = 1;
+					spec.options.push_back(ns_menu_item_options(worm_learner.data_selector.samples[i].device, true));
 					continue;
 				}
 				if (p->second == 1)
 					continue;
-				
+
 				bool valid_regions_exist(false);
-				for (unsigned int j = 0; j < worm_learner.data_selector.samples[i].regions.size(); j++){
-					if (worm_learner.data_selector.samples[i].regions[j].region_metadata==&worm_learner.data_selector.current_strain()){
+				for (unsigned int j = 0; j < worm_learner.data_selector.samples[i].regions.size(); j++) {
+					if (worm_learner.data_selector.samples[i].regions[j].region_metadata == &worm_learner.data_selector.current_strain()) {
 						valid_regions_exist = true;
 						break;
 					}
 				}
-				if (!valid_regions_exist){
-					spec.options.push_back(ns_menu_item_options(worm_learner.data_selector.samples[i].device + "/" + worm_learner.data_selector.samples[i].sample_name,true));
+				if (!valid_regions_exist) {
+					spec.options.push_back(ns_menu_item_options(worm_learner.data_selector.samples[i].device + "/" + worm_learner.data_selector.samples[i].sample_name, true));
 					continue;
 				}
 			}
 
-			for (unsigned int j = 0; j < worm_learner.data_selector.samples[i].regions.size(); j++){
+			for (unsigned int j = 0; j < worm_learner.data_selector.samples[i].regions.size(); j++) {
 
 				if (worm_learner.data_selector.samples[i].regions[j].region_id == worm_learner.data_selector.current_region().region_id)
 					continue;
-				const bool unselected_strain(worm_learner.data_selector.strain_selected() && worm_learner.data_selector.samples[i].regions[j].region_metadata!=&worm_learner.data_selector.current_strain());
-				
-				spec.options.push_back(ns_menu_item_options(worm_learner.data_selector.samples[i].device + "/" + worm_learner.data_selector.samples[i].sample_name + "/" + worm_learner.data_selector.samples[i].regions[j].display_name,unselected_strain));
-			
+				const bool unselected_strain(worm_learner.data_selector.strain_selected() && worm_learner.data_selector.samples[i].regions[j].region_metadata != &worm_learner.data_selector.current_strain());
+
+				spec.options.push_back(ns_menu_item_options(worm_learner.data_selector.samples[i].device + "/" + worm_learner.data_selector.samples[i].sample_name + "/" + worm_learner.data_selector.samples[i].regions[j].display_name, unselected_strain));
+
 			}
 		}
 		add(spec);
@@ -1698,14 +1700,13 @@ public:
 					region_name_bar_width(),
 					info_bar_height());*/
 		if (worm_learner.current_behavior_mode() == ns_worm_learner::ns_annotate_death_times_in_time_aligned_posture)
-				ns_start_death_time_annotation(ns_worm_learner::ns_annotate_death_times_in_time_aligned_posture,worm_learner.current_storyboard_flavor);
+			ns_start_death_time_annotation(ns_worm_learner::ns_annotate_death_times_in_time_aligned_posture, worm_learner.current_storyboard_flavor);
 		else if (worm_learner.current_behavior_mode() == ns_worm_learner::ns_annotate_death_times_in_death_aligned_posture)
-				ns_start_death_time_annotation(ns_worm_learner::ns_annotate_death_times_in_death_aligned_posture,worm_learner.current_storyboard_flavor);
+			ns_start_death_time_annotation(ns_worm_learner::ns_annotate_death_times_in_death_aligned_posture, worm_learner.current_storyboard_flavor);
 		else if (worm_learner.current_behavior_mode() == ns_worm_learner::ns_annotate_death_times_in_region)
 			/*do nothing*/0;
 	}
 };
-
 void ns_handle_death_time_annotation_button(Fl_Widget * w, void * data);
 void ns_handle_death_time_solo_annotation_button(Fl_Widget * w, void * data);
 
@@ -2270,19 +2271,19 @@ void ns_specify_worm_details(const ns_64_bit region_id,const ns_stationary_path_
 }
 
 
-struct ns_asynch_annotation_saver{
-	static ns_thread_return_type run_asynch(void * l){
+struct ns_asynch_annotation_saver {
+	static ns_thread_return_type run_asynch(void * l) {
 		ns_asynch_annotation_saver launcher;
 		launcher.launch();
 		return 0;
 	}
-	void launch(){
-		try{
+	void launch() {
+		try {
 			ns_set_menu_bar_activity(false);
 			worm_learner.navigate_death_time_annotation(ns_image_series_annotater::ns_save);
 			ns_set_menu_bar_activity(true);
 		}
-		catch(ns_ex & ex){
+		catch (ns_ex & ex) {
 			cerr << "Error loading worm info:" << ex.text();
 			worm_learner.death_time_solo_annotater.close_worm();
 			show_worm_window = false;
@@ -2290,6 +2291,7 @@ struct ns_asynch_annotation_saver{
 		}
 	}
 };
+
 void ns_handle_death_time_annotation_button(Fl_Widget * w, void * data){
 	ns_image_series_annotater::ns_image_series_annotater_action action(*static_cast<ns_image_series_annotater::ns_image_series_annotater_action *>(data));
 	if (action == ns_image_series_annotater::ns_save){
@@ -2954,6 +2956,7 @@ struct ns_asynch_worm_launcher{
 	ns_stationary_path_id worm;
 	const ns_experiment_storyboard * storyboard;
 	unsigned long current_time;
+	bool launched;
 	static ns_thread_return_type run_asynch(void * l){
 		ns_asynch_worm_launcher * launcher(static_cast<ns_asynch_worm_launcher *>(l));
 		launcher->launch();
@@ -2961,12 +2964,11 @@ struct ns_asynch_worm_launcher{
 		return 0;
 	}
 	void launch(){
-		try{		       
-			ns_acquire_lock_for_scope lock(worm_learner.worm_window.display_lock, __FILE__, __LINE__);
+		try{
 			worm_learner.death_time_solo_annotater.load_worm(region_id,worm,current_time,worm_learner.solo_annotation_visualization_type,storyboard,&worm_learner);
 			if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("Finished loading.  Displaying."));
 			worm_learner.death_time_solo_annotater.display_current_frame();
-			lock.release();
+			//lock.release();
 			show_worm_window = true;
 			worm_learner.worm_launch_finished = true;
 		//	cerr << "Add alerg dialog back in!\n";
@@ -3017,7 +3019,7 @@ bool ns_set_animation_state(bool new_state){
 	current_window->draw_animation = new_state;
 	return old_state;
 }
-typedef enum{ns_none,ns_activate,ns_deactivate} ns_menu_bar_request;
+//typedef enum{ns_none,ns_activate,ns_deactivate} ns_menu_bar_request;
 
 ns_menu_bar_request set_menu_bar_request;
 void ns_set_menu_bar_activity_internal(bool activate){

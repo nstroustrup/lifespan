@@ -179,6 +179,8 @@ struct ns_area_box{
 };
 
 
+typedef enum { ns_none, ns_activate, ns_deactivate } ns_menu_bar_request;
+
 class ns_area_handler{
 public:
 	ns_area_handler():unfinished_box_exists(false),selected_box_exists(false),moved_since_last_click(false),created_new_box_in_current_click(false){current_unfinished_box = boxes.end(); selected_box = boxes.end();}

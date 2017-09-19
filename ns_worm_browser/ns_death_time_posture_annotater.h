@@ -169,6 +169,19 @@ public:
 		death_posture_relaxation_termination_;
 	bool tentative_death_posture_relaxation_start_spec;
 	
+
+	void clear_annotations() {
+		fast_movement_cessation.clear_movement_properties();
+		fast_movement_cessation.clear_sticky_properties();
+		translation_cessation.clear_movement_properties();
+		translation_cessation.clear_sticky_properties();
+		movement_cessation.clear_movement_properties();
+		movement_cessation.clear_sticky_properties();
+		death_posture_relaxation_start.clear_movement_properties();
+		death_posture_relaxation_start.clear_sticky_properties();
+		death_posture_relaxation_termination_.clear_movement_properties();
+		death_posture_relaxation_termination_.clear_sticky_properties();
+	}
 	void output_event_times(std::ostream & o){
 		o << "Fast Movement Cessation: " << fast_movement_cessation << "\n"
 			<< "Translation: " << translation_cessation << "\n"

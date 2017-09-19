@@ -474,7 +474,7 @@ public:
 	}
 	void overlay_worm_ids() { draw_group_ids = true; }
 
-	void specifiy_worm_details(const unsigned long region_id,const ns_stationary_path_id & worm, const ns_death_time_annotation & sticky_properties, std::vector<ns_death_time_annotation> & movement_event_times){
+	void specifiy_worm_details(const ns_64_bit region_id,const ns_stationary_path_id & worm, const ns_death_time_annotation & sticky_properties, std::vector<ns_death_time_annotation> & movement_event_times){
 		if (!worm.specified())
 			throw ns_ex("ns_experiment_storyboard_annotater::specifiy_worm_details()::Requesting specification with unspecified path id");
 		

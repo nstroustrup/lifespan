@@ -251,7 +251,7 @@ public:
     }
 
     // OPENGL WINDOW CONSTRUCTOR
-    ns_worm_terminal_gl_window(int X,int Y,int W,int H,const char*L=0) :Fl_Gl_Window(X,Y,W,H,L),mouse_is_down(false),mouse_click_location(0,0),have_focus(false) {
+    ns_worm_terminal_gl_window(int X,int Y,int W,int H,const char*L="worm window") :Fl_Gl_Window(X,Y,W,H,L),mouse_is_down(false),mouse_click_location(0,0),have_focus(false) {
         end();
     }
 };
@@ -316,14 +316,13 @@ class ns_worm_gl_window : public Fl_Gl_Window {
 				int a = Fl_Gl_Window::handle(state);
 				return a;
 			}
-	/*		case FL_DND_ENTER:
+			case FL_DND_ENTER:
             case FL_DND_RELEASE:
             case FL_DND_LEAVE:
             case FL_DND_DRAG:
                 return 1;
 			case FL_PASTE: 
-				ns_handle_drag_and_drop();
-				 return 1;*/
+			 return 1;
 		}
 
 		try {
@@ -365,7 +364,7 @@ class ns_worm_gl_window : public Fl_Gl_Window {
 				}
 
 				}
-				throw ns_ex("Unhandled gl window mouse event");
+			//	throw ns_ex("Unhandled gl window mouse event");
 			}
 		}
 		catch(std::exception & exception){
@@ -373,7 +372,13 @@ class ns_worm_gl_window : public Fl_Gl_Window {
 			cerr << ex.text() << "\n";
 			return 1;
 		}
+
 		//cerr << "Could not handle " << state << "\n";
+		if (state == FL_SHOW) {
+			show();
+			return 1;
+		}
+	//		cerr << "WHA";
 		int a = Fl_Gl_Window::handle(state);
 		return a;
 	}
@@ -381,12 +386,19 @@ class ns_worm_gl_window : public Fl_Gl_Window {
 public:
 	// HANDLE WINDOW RESIZING
     void resize(int X,int Y,int W,int H) {
-        Fl_Gl_Window::resize(X,Y,W,H);
-		if (W != w() || H != h()){
-			cerr << W << "x" << H << " from " << w() << "x" << h() << "\n";
-       		fix_viewport(W,H);
+		Fl::lock();
+		try {
+			Fl_Gl_Window::resize(X, Y, W, H);
+			if (W != w() || H != h()) {
+				cerr << W << "x" << H << " from " << w() << "x" << h() << "\n";
+				fix_viewport(W, H);
+			}
+		//	redraw();
+			Fl::unlock();
 		}
-        redraw();
+		catch (...) {
+			Fl::unlock();
+		}
     }
 
     // OPENGL WINDOW CONSTRUCTOR
@@ -588,6 +600,9 @@ std::string ns_get_input_string(const std::string title,const std::string defaul
 }
 
 void ns_quit();
+
+
+
 class ns_worm_terminal_main_menu_organizer : public ns_menu_organizer{
 
 	/*static void run_animation_trial(const std::string & value){
@@ -1217,6 +1232,7 @@ class ns_worm_terminal_main_menu_organizer : public ns_menu_organizer{
 		if (im_cc.chosen)
 			worm_learner.save_current_image(im_cc.result);
 	}
+	static void show_worm(const std::string & data);
 	static void file_open_16_bit_dark(const std::string & data){
 		/*std::vector<dialog_file_type> foo;
 		foo.push_back(dialog_file_type("TIF (*.tif)","tif"));
@@ -1301,6 +1317,7 @@ public:
 		//add(ns_menu_item_spec(file_open_16_bit_dark,"File/Open 16-bit Image (dark)"));
 		//add(ns_menu_item_spec(file_open_16_bit_light,"File/_Open 16-bit Image (light)"));
 		add(ns_menu_item_spec(file_save,"File/_Save Image",FL_CTRL+'s'));
+		//add(ns_menu_item_spec(show_worm, "File/Show worm window", FL_CTRL + 's'));
 		add(ns_menu_item_spec(file_quit,"File/Quit",FL_CTRL+'q'));
 		
 		add(ns_menu_item_spec(file_open_xml,"&Image Acquisition/_Submit Experiment Schedule"));
@@ -1330,7 +1347,7 @@ public:
 		st_an2.options.push_back(ns_menu_item_options("After All Worms Have Died"));
 		add(st_an2);
 		add(ns_menu_item_spec(stop_posture_annotation,"Validation/Stop Annotation")); 
-		add(ns_menu_item_spec(start_storyboard_annotation_testing, "Validation/Test for memory errors"));
+	//	add(ns_menu_item_spec(start_storyboard_annotation_testing, "Validation/Test for memory errors"));
 
 		add(ns_menu_item_spec(generate_survival_curves,"&Data Files/_Death Times/Generate Death Times for Current Experiment"));
 		add(ns_menu_item_spec(generate_survival_curves_for_experiment_group,"Data Files/Death Times/Generate Death Times for all Experiment in Experiment Group"));			 
@@ -2136,7 +2153,6 @@ public:
 		ns_vector_2i size(worm_learner.worm_window.gl_image_size.x, worm_learner.worm_window.gl_image_size.y + image_window_size_difference().y);
 	
         gl_window = new  ns_worm_gl_window(30, 30, size.x,size.y);
-
 		
 		annotation_group = new ns_death_event_solo_annotation_group(0,
 															  worm_learner.worm_window.gl_image_size.y,
@@ -2148,6 +2164,7 @@ public:
 		//annotation_group->hide();
 		
 	    end();
+		gl_window->show();
 		
 
 	//	ask_modal_question("Hi","1","2","3");
@@ -2181,7 +2198,7 @@ public:
   }
 	void resize(int x, int y, int w__, int h__){
 
-		ns_acquire_lock_for_scope lock(worm_learner.worm_window.display_lock, __FILE__, __LINE__);
+	//	ns_acquire_lock_for_scope lock(worm_learner.worm_window.display_lock, __FILE__, __LINE__);
 		const int w_(worm_learner.worm_window.gl_image_size.x),
 				h_(worm_learner.worm_window.gl_image_size.y);
 		ns_vector_2i window_size;
@@ -2196,14 +2213,14 @@ public:
 
 		gl_window->resize(0,0,w_*d,h_*d);
 		//xxxx
-	//	gl_window->redraw();
+		gl_window->redraw();
 		
 		annotation_group->resize(0,
 								 h_*d,
 								 ns_death_event_solo_annotation_group::all_buttons_width*d,
 								 ns_death_event_solo_annotation_group::button_height*menu_d);
 
-		lock.release();
+	//	lock.release();
 	}
 	private:
 		
@@ -2494,7 +2511,6 @@ void idle_main_window_update_callback(void * force_redraw) {
 			Fl::awake(schedule_repeating_callback, (void*)1);// Fl::repeat_timeout(1.0 / IDLE_THROTTLE_FPS, idle_main_window_update_callback);
 		}
 	}
-
 	//if (idle_rate_limiter)
 	//	return;
 
@@ -2511,17 +2527,11 @@ void idle_main_window_update_callback(void * force_redraw) {
 		ns_64_bit last_interval = last_callback_time - last_time;
 
 		//always call both functions together
-		if (worm_window->visible())
+		if (worm_window->visible()) {
+			Fl::unlock();
 			idle_worm_window_update_callback(force_redraw);
-		Fl::lock();
-		try {
-		      
-		  // if (main_window_is_wrong_size){
-		  //		current_window->size(main_window_requested_size.x,main_window_requested_size.y);
-		  //		current_window->redraw();
-		  //		current_window->damage(1);
-	     
-		  //  }
+			Fl::lock();
+		}
 			ns_handle_menu_bar_activity_request();
 			if (worm_learner.current_annotater->refresh_requested()) {
 				if (debug_handlers) cout << "A";
@@ -2537,7 +2547,6 @@ void idle_main_window_update_callback(void * force_redraw) {
 			else if (a == ns_image_series_annotater::ns_fast_back) {
 				worm_learner.current_annotater->step_back(ns_show_worm_display_error);
 				worm_learner.current_annotater->display_current_frame();
-				//worm_learner.draw();
 			}
 			//draw busy animation if requested
 			if (current_window->draw_animation) {
@@ -2550,7 +2559,6 @@ void idle_main_window_update_callback(void * force_redraw) {
 				current_window->last_draw_animation = false;
 				worm_learner.main_window.redraw_requested = true;
 				worm_learner.draw();
-				//		redraw_screen();
 			}
 			
 			
@@ -2570,8 +2578,10 @@ void idle_main_window_update_callback(void * force_redraw) {
 			if (show_worm_window) {
 				ns_acquire_lock_for_scope lock(worm_learner.worm_window.display_lock, __FILE__, __LINE__);
 				show_worm_window = false;
-				worm_window->show();
+				hide_worm_window = false;
+				worm_window->get_window_size_needed(window_size.x, window_size.y, d, menu_d);
 				worm_window->resize(worm_window->x(), worm_window->y(), window_size.x, window_size.y);
+				worm_window->show();
 				lock.release();
 				ns_set_menu_bar_activity(true);
 			}
@@ -2591,12 +2601,6 @@ void idle_main_window_update_callback(void * force_redraw) {
 		catch (...) {
 			Fl::unlock();
 		}
-		//idle_rate_limiter = false;
-	}
-	catch (...) {
-		//idle_rate_limiter = false;
-		throw;
-	}
   }
   catch(ns_ex & ex){
     cerr << "Idle Error: " << ex.text() << "\n";
@@ -2613,9 +2617,11 @@ void idle_worm_window_update_callback(void * force_redraw){
 	//double last_time = c_time;
 	//c_time =  GetTime() - init_time;
 	//cerr << "FPS = " << 1.0/(time-last_time) << "\n";
-	Fl::lock();
+	//Fl::lock();
 	try{
+		Fl::lock();
 		ns_vector_2d cur_size(worm_window->w(),worm_window->h());
+		Fl::unlock();
 		float menu_d(worm_learner.worm_window.display_rescale_factor);
 		if (!SCALE_FONTS_WITH_WINDOW_SIZE)
 			menu_d = 1;
@@ -2639,7 +2645,6 @@ void idle_worm_window_update_callback(void * force_redraw){
 				worm_learner.death_time_solo_annotater.display_current_frame();
 				something_done = true;
 			}
-		Fl::unlock();
 
 		if (force_redraw)
 			demand_window_redraw_from_main_thread();
@@ -2648,7 +2653,7 @@ void idle_worm_window_update_callback(void * force_redraw){
 		}
 	}
 	catch(...){
-		Fl::unlock();
+	//	Fl::unlock();
 	}
 }
 
@@ -2883,7 +2888,9 @@ int main() {
 		ns_worm_browser_output_debug(__LINE__,__FILE__,"Showing window");
 		current_window->show();
 		worm_window = new ns_worm_terminal_worm_window(100,100,"Inspect Worm");
-		worm_window->hide();
+
+		//worm_window->show();
+		//worm_window->hide();
 
 		worm_learner.draw();
 		
@@ -2962,7 +2969,7 @@ struct ns_asynch_worm_launcher{
 			lock.release();
 			show_worm_window = true;
 			worm_learner.worm_launch_finished = true;
-			cerr << "Add alerg dialog back in!\n";
+		//	cerr << "Add alerg dialog back in!\n";
 		}
 		catch(ns_ex & ex){
 			cerr << "Error loading worm info:" << ex.text();
@@ -2970,9 +2977,9 @@ struct ns_asynch_worm_launcher{
 			show_worm_window = false;
 		//	stop_death_time_annotation();
 			ns_set_menu_bar_activity(true);
-			//ns_alert_dialog d;
-			//d.text =  ex.text();
-			//d.act();
+			ns_alert_dialog d;
+			d.text =  ex.text();
+			d.act();
 			cerr << ex.text() << "\n";
 			worm_learner.worm_launch_finished = true;
 		}
@@ -3120,6 +3127,9 @@ void ask_if_schedule_should_be_submitted_to_db(bool & write_to_disk, bool & writ
 	return;*/
 }
 
+void ns_worm_terminal_main_menu_organizer::show_worm(const std::string & data) {
+	worm_window->show();
+}
  void ns_experiment_storyboard_annotater_timepoint::load_image(const unsigned long bottom_height,ns_annotater_image_buffer_entry & im,ns_sql & sql,ns_image_standard & temp_buffer,const unsigned long resize_factor_){
 	this->blacked_out_non_subject_animals = false;
 	if (division != 0){

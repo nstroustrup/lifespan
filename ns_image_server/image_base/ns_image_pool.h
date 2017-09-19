@@ -39,6 +39,9 @@ private:
 //#define NS_DEBUG_POOL
 template<class T, class dT = ns_default_resizer, bool is_locking=true>
 class ns_image_pool{
+private:
+	//dissalow copy constructor
+	ns_image_pool(const ns_image_pool & p);
 public:
 	ns_image_pool():number_checked_out(0),pre_allocated(0),min_stack_size_in_history(0),access_lock("al"){
 		clear_history();

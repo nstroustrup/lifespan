@@ -11,6 +11,9 @@ struct ns_animal_list_at_position {
 };
 
 class ns_death_time_posture_solo_annotater_region_data {
+private:
+	//disable copy constructor
+	ns_death_time_posture_solo_annotater_region_data(const ns_death_time_posture_solo_annotater_region_data &);
 public:
  ns_death_time_posture_solo_annotater_region_data() :movement_data_loaded(false), annotation_file("","", ""), loading_time(0), loaded_path_data_successfully(false), movement_quantification_data_loaded(false){}
 	
@@ -90,6 +93,7 @@ public:
 		orphaned_events.resize(0);
 		ns_timing_data_and_death_time_annotation_matcher <std::vector<ns_animal_list_at_position> > matcher;
 		bool could_load_by_hand(false);
+
 		if (load_by_hand) {
 			//load by hand annotations
 			ns_acquire_for_scope<std::istream> in(annotation_file.input());
@@ -107,14 +111,13 @@ public:
 				}
 			}
 		}
-
 		//load machine annotations
 		ns_machine_analysis_data_loader machine_annotations;
 		machine_annotations.load(ns_death_time_annotation_set::ns_censoring_and_movement_transitions, metadata.region_id, 0, 0, sql, true);
 		if (machine_annotations.samples.size() != 0 && machine_annotations.samples.begin()->regions.size() != 0) {
 			std::vector<ns_death_time_annotation> _unused_orphaned_events;
 			std::string _unused_error_message;
-			matcher.load_timing_data_from_set(machine_annotations.samples.begin()->regions.begin()->death_time_annotation_set, true,
+			matcher.load_timing_data_from_set((*machine_annotations.samples.begin()->regions.begin())->death_time_annotation_set, true,
 				machine_timing_data, _unused_orphaned_events, _unused_error_message);
 
 			return true;
@@ -297,7 +300,8 @@ private:
 			if (d < min_score) min_score = d;
 			if (d > max_score) max_score = d;
 		}
-
+		if (max_score == min_score)
+			max_score += .01;
 		//find min max of other statistics
 		for (unsigned int i = 0; i < path->element_count(); i++) {
 			if (path->element(i).excluded)
@@ -406,6 +410,7 @@ private:
 			movement_vals[i].properties.point.draw = true;
 			movement_vals[i].properties.point.width = 1;
 			movement_vals[i].properties.point.color = ns_color_8(200, 200, 200);
+			movement_vals[i].properties.point.edge_color = ns_color_8(200, 200, 200);
 			movement_vals[i].properties.point.edge_width = 1;
 
 			slope_vals[i].properties = smoothed_movement_vals[i].properties;

@@ -96,13 +96,13 @@ bool ns_machine_analysis_region_data::recalculate_from_saved_movement_quantifica
 		ns_acquire_for_scope<ns_analyzed_image_time_path_death_time_estimator> death_time_estimator(
 				ns_get_death_time_estimator_from_posture_analysis_model(posture_analysis_model_handle().model_specification));
 
-	time_path_image_analyzer.load_completed_analysis(region_id,time_path_solution,time_series_denoising_parameters, &death_time_estimator(),sql);
+	time_path_image_analyzer->load_completed_analysis(region_id,time_path_solution,time_series_denoising_parameters, &death_time_estimator(),sql);
 	death_time_estimator.release();
 	//generate annotations from quantification
 	
-	time_path_image_analyzer.produce_death_time_annotations(death_time_annotation_set);
+	time_path_image_analyzer->produce_death_time_annotations(death_time_annotation_set);
 	
-	time_path_image_analyzer.clear_annotations();
+	time_path_image_analyzer->clear_annotations();
 	//save annotations
 	ns_image_server_results_subject results_subject;
 	results_subject.region_id = region_id;
@@ -136,17 +136,18 @@ void ns_machine_analysis_sample_data::load(const ns_death_time_annotation_set::n
 	regions.reserve(reg.size());
 	for (unsigned int i = 0; i < reg.size(); i++){
 		try{
-			unsigned int s = regions.size();
+			const unsigned int s = regions.size();
 			regions.resize(s+1);
+			regions[s] = new ns_machine_analysis_region_data;
 			ns_64_bit region_id = ns_atoi64(reg[i][0].c_str());
-			regions[s].metadata = sample_metadata;
-			regions[s].metadata.load_only_region_info_from_db(region_id,"",sql);
-			regions[s].metadata.technique = "Lifespan Machine";
-			regions[s].load_from_db(annotation_type_to_load,loading_details,region_id,sql);
+			regions[s]->metadata = sample_metadata;
+			regions[s]->metadata.load_only_region_info_from_db(region_id,"",sql);
+			regions[s]->metadata.technique = "Lifespan Machine";
+			regions[s]->load_from_db(annotation_type_to_load,loading_details,region_id,sql);
 			//break;
 		}
 		catch(ns_ex & ex){
-			std::cerr << regions.rbegin()->metadata.sample_name << "::" << regions.rbegin()->metadata.region_name << ": " << ex.text() << "\n";
+			std::cerr << (*regions.rbegin())->metadata.sample_name << "::" << (*regions.rbegin())->metadata.region_name << ": " << ex.text() << "\n";
 			regions.pop_back();
 		}
 	}
@@ -178,11 +179,11 @@ void ns_machine_analysis_data_loader::load_just_survival(ns_lifespan_experiment_
 		samples[i].load(ns_death_time_annotation_set::ns_censoring_and_movement_transitions,metadata.sample_id,metadata,sql,region_id,load_excluded_regions);
 		ns_death_time_annotation_compiler compiler;
 		for (unsigned int j = 0 ; j < samples[i].regions.size(); j++){
-			samples[i].regions[j].metadata.genotype = genotypes.genotype_from_strain(samples[i].regions[j].metadata.strain,&sql);
-			compiler.add(samples[i].regions[j].death_time_annotation_set,samples[i].regions[j].metadata);
+			samples[i].regions[j]->metadata.genotype = genotypes.genotype_from_strain(samples[i].regions[j]->metadata.strain,&sql);
+			compiler.add(samples[i].regions[j]->death_time_annotation_set,samples[i].regions[j]->metadata);
 			if (load_by_hand_data){
 				ns_hand_annotation_loader hand_loader;
-				hand_loader.load_region_annotations(ns_death_time_annotation_set::ns_censoring_and_movement_transitions,samples[i].regions[j].metadata.region_id,sql);
+				hand_loader.load_region_annotations(ns_death_time_annotation_set::ns_censoring_and_movement_transitions,samples[i].regions[j]->metadata.region_id,sql);
 				compiler.add(hand_loader.annotations);
 			}
 		}
@@ -225,7 +226,7 @@ void ns_machine_analysis_data_loader::load(const ns_death_time_annotation_set::n
 	//		continue;
 		samples[i].load(annotation_types_to_load,metadata.sample_id,metadata,sql,region_id,load_excluded_regions,details);
 		for (unsigned int j = 0 ; j < samples[i].regions.size(); j++)	
-			samples[i].regions[j].metadata.genotype = genotypes.genotype_from_strain(samples[i].regions[j].metadata.strain,&sql);
+			samples[i].regions[j]->metadata.genotype = genotypes.genotype_from_strain(samples[i].regions[j]->metadata.strain,&sql);
 		total_number_of_regions_+=samples[i].regions.size();
 	//	break;
 	}

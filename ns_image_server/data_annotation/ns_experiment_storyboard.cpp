@@ -852,9 +852,9 @@ bool ns_experiment_storyboard::load_events_from_annotation_compiler(const ns_loa
 					if (!region_state_events_loaded) {
 						region_state_annotations.load(ns_death_time_annotation_set::ns_movement_states, r->metadata.region_id, 0, 0, sql, true, ns_machine_analysis_region_data::ns_exclude_fast_moving_animals);
 
-						for (unsigned long i = 0; i < region_state_annotations.samples.begin()->regions.begin()->death_time_annotation_set.size(); i++) {
+						for (unsigned long i = 0; i < (*region_state_annotations.samples.begin()->regions.begin())->death_time_annotation_set.size(); i++) {
 							//we add this to the temporary storage being used 
-							temporary_region_storage.add(region_state_annotations.samples.begin()->regions.begin()->death_time_annotation_set[i], false);
+							temporary_region_storage.add((*region_state_annotations.samples.begin()->regions.begin())->death_time_annotation_set[i], false);
 						}
 						region_state_events_loaded = true;
 					}
@@ -1420,22 +1420,22 @@ void ns_experiment_storyboard_compiled_event_set::load(const ns_experiment_story
 	map<ns_64_bit, ns_64_bit > total_events;
 	for (unsigned int i = 0; i < machine_annotations.samples.size(); i++) {
 		for (unsigned int j = 0; j < machine_annotations.samples[i].regions.size(); j++) {
-			const ns_64_bit & region_id = machine_annotations.samples[i].regions[j].metadata.region_id;
+			const ns_64_bit & region_id = machine_annotations.samples[i].regions[j]->metadata.region_id;
 			ns_64_bit current_movement_analysis_id = region_current_detection_set_ids[region_id];
 			map<ns_64_bit, ns_64_bit >::iterator count = total_events.insert(pair<ns_64_bit, ns_64_bit >(region_id, 0)).first;
 			count->second = 0;
-			for (unsigned int k = 0; k < machine_annotations.samples[i].regions[j].death_time_annotation_set.size(); k++) {
+			for (unsigned int k = 0; k < machine_annotations.samples[i].regions[j]->death_time_annotation_set.size(); k++) {
 
-				if (machine_annotations.samples[i].regions[j].death_time_annotation_set[k].stationary_path_id.detection_set_id != current_movement_analysis_id) {
-					problems[machine_annotations.samples[i].regions[j].metadata.region_id].push_back(machine_annotations.samples[i].regions[j].death_time_annotation_set[k].brief_description());
+				if (machine_annotations.samples[i].regions[j]->death_time_annotation_set[k].stationary_path_id.detection_set_id != current_movement_analysis_id) {
+					problems[machine_annotations.samples[i].regions[j]->metadata.region_id].push_back(machine_annotations.samples[i].regions[j]->death_time_annotation_set[k].brief_description());
 				}
 				count->second++;
 			}
 
 
-			all_events.add(machine_annotations.samples[i].regions[j].death_time_annotation_set);
-			all_events.specifiy_region_metadata(machine_annotations.samples[i].regions[j].metadata.region_id,
-				machine_annotations.samples[i].regions[j].metadata);
+			all_events.add(machine_annotations.samples[i].regions[j]->death_time_annotation_set);
+			all_events.specifiy_region_metadata(machine_annotations.samples[i].regions[j]->metadata.region_id,
+				machine_annotations.samples[i].regions[j]->metadata);
 		}
 	}
 	//display useful diatgnostic info when the file on disk does not match the database spec.

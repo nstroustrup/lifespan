@@ -503,7 +503,8 @@ struct ns_button_press{
 
 class ns_gl_window_data{
 public:
-	ns_gl_window_data(const string & window_name):gl_buffer(0),display_lock(string("ns_lock::display_") + window_name),redraw_requested(false),display_rescale_factor(1), dynamic_range_rescale_factor(1){}
+	ns_gl_window_data(const string & window_name):gl_buffer(0),display_lock(string("ns_lock::display_") + window_name),redraw_requested(false),display_rescale_factor(1),
+		dynamic_range_rescale_factor(1),worm_image_size(10,10),telemetry_size(10,10), gl_image_size(10,10),image_zoom(1), pre_gl_downsample(1){}
 	ns_vector_2i worm_image_size,
 		telemetry_size,
 		gl_image_size;

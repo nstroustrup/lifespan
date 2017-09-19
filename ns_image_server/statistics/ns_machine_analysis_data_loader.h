@@ -7,11 +7,17 @@
 #include <iostream>
 
 class ns_machine_analysis_region_data{
+private:
+	//disallow copy constructor
+	ns_machine_analysis_region_data(const ns_machine_analysis_region_data &);
 public:
 	
 	typedef enum {ns_load_all,ns_exclude_fast_moving_animals} ns_loading_details;
 
-	ns_machine_analysis_region_data():summary_series_generated_(false){}
+	ns_machine_analysis_region_data():summary_series_generated_(false), time_path_image_analyzer(new ns_time_path_image_movement_analyzer){}
+	~ns_machine_analysis_region_data() {
+		ns_safe_delete(time_path_image_analyzer);
+	}
 	ns_death_time_annotation_set death_time_annotation_set;
 	mutable ns_region_metadata metadata;
 	void calculate_survival(){}
@@ -32,7 +38,7 @@ public:
 		const ns_64_bit region_id,ns_sql & sql);
 	
 	ns_time_path_solution time_path_solution;
-	ns_time_path_image_movement_analyzer time_path_image_analyzer;
+	ns_time_path_image_movement_analyzer * time_path_image_analyzer;
 
 private:
 	mutable ns_worm_movement_summary_series cached_summary_series;
@@ -49,12 +55,12 @@ public:
 		const ns_machine_analysis_region_data::ns_loading_details & loading_details=ns_machine_analysis_region_data::ns_load_all);
 	ns_machine_analysis_sample_data(){}
 	ns_machine_analysis_sample_data(const ns_64_bit id):sample_id_(id){}
-	std::vector<ns_machine_analysis_region_data> regions;
+	std::vector<ns_machine_analysis_region_data *> regions;
 	ns_64_bit id() const {return sample_id_;}
 	const std::string & name() const {return sample_name_;}
 	const std::string & device_name() const {return device_name_;}
 	void set_id(const ns_64_bit id){sample_id_ =id;}
-	void clear(){sample_id_ = 0; device_name_.clear(); sample_name_.clear(); regions.clear();}
+	void clear() { sample_id_ = 0; device_name_.clear(); sample_name_.clear(); for (unsigned int i = 0; i < regions.size(); i++) ns_safe_delete(regions[i]); regions.clear(); }
 private:
 	std::string device_name_;
 	std::string sample_name_;

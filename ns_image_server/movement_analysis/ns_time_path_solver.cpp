@@ -1036,7 +1036,7 @@ void ns_time_path_solution::load_from_disk(istream & in){
 					timepoints[timepoint_id].elements[s].subregion_mask_closest_neighbor_offset.y = atol(tmp.c_str());
 
 				
-				for (unsigned int i = 0; i < 6; i++) get_int(in,tmp); //room for expansion
+				for (unsigned int i = 0; i < 7; i++) get_int(in,tmp); //room for expansion
 				break;
 			}
 			case 'p':{

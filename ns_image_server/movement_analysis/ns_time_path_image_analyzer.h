@@ -219,7 +219,7 @@ public:
 	bool excluded;
 
 	ns_analyzed_image_time_path_element_measurements measurements;
-
+	ns_plate_subregion_info subregion_info;
 
 	unsigned long absolute_time,
 				  relative_time;
@@ -665,12 +665,14 @@ struct ns_analyzed_image_time_path_group{
 
 struct ns_region_area {
 	ns_vector_2i pos, size;
+	ns_plate_subregion_info plate_subregion_info;
 	unsigned long time, worm_id, overlap_area_with_match;
 	ns_movement_state movement_state;
+	bool explicitly_by_hand_excluded;
 	void clear_stats() {
-		total_exclusion_time_in_seconds = total_inclusion_time_in_seconds = average_annotation_time_for_region = overlap_area_with_match = 0;
+		total_exclusion_time_in_seconds = total_inclusion_time_in_seconds = average_annotation_time_for_region = overlap_area_with_match = 0; explicitly_by_hand_excluded = false;
 	}
-	ns_region_area():total_exclusion_time_in_seconds(0), total_inclusion_time_in_seconds(0), average_annotation_time_for_region(0){}
+	ns_region_area():total_exclusion_time_in_seconds(0), total_inclusion_time_in_seconds(0), average_annotation_time_for_region(0),explicitly_by_hand_excluded(false){}
 	ns_64_bit total_exclusion_time_in_seconds, total_inclusion_time_in_seconds, average_annotation_time_for_region;
 };
 
@@ -718,7 +720,7 @@ public:
 		}
 			
 	}
-
+	void back_port_by_hand_annotations_to_solution_elements(ns_time_path_solution & sol);
 
 	typedef enum { ns_use_existing_record_if_possible, ns_force_creation_of_new_db_record,ns_require_existing_record } ns_analysis_db_options;
 	typedef enum { ns_do_not_write_data, ns_write_data } ns_data_write_options;
@@ -763,7 +765,7 @@ public:
 	bool try_to_rebuild_after_failure() const;
 	static ns_image_server_image get_movement_quantification_id(const ns_64_bit region_info_id,ns_sql & sql);
 
-	void guess_if_region_is_excluded_by_hand(std::vector<ns_region_area> & areas);
+	void match_plat_areas_to_paths(std::vector<ns_region_area> & areas);
 private:
 
 	unsigned long _number_of_invalid_images_encountered;

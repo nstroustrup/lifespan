@@ -2892,7 +2892,7 @@ int main() {
 		worm_window = new ns_worm_terminal_worm_window(100,100,"Inspect Worm");
 
 		//worm_window->show();
-		//worm_window->hide();
+		worm_window->hide();
 
 		worm_learner.draw();
 		

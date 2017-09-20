@@ -363,7 +363,8 @@ void ns_training_file_generator::generate_from_curated_set(const std::string & d
 																	training_set.objects[j].capture_time,	
 																	training_set.objects[j].object.region_position_in_source_image,	
 																	training_set.objects[j].object.region_size,
-																	training_set.objects[j].hand_annotation_data,metadata_out);
+																	training_set.objects[j].hand_annotation_data,
+																	ns_plate_subregion_info(),metadata_out);
 					metadata_out << "\n";
 				}
 				metadata_out.close();

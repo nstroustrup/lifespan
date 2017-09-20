@@ -1122,10 +1122,12 @@ void ns_detected_worm_stats::output_html_worm_summary(ostream & out){
 	out << "\t</table>\n";
 	out << "</td></tr></table>\n";
 }
-void ns_detected_worm_stats::output_csv_data(const ns_64_bit region_id, const unsigned long capture_time, const ns_vector_2i & position, const ns_vector_2i & size,const ns_object_hand_annotation_data & hand_data,ostream & out){
+void ns_detected_worm_stats::output_csv_data(const ns_64_bit region_id, const unsigned long capture_time, const ns_vector_2i & position, const ns_vector_2i & size,const ns_object_hand_annotation_data & hand_data, const ns_plate_subregion_info & subregion,ostream & out){
 	out << region_id << "," << capture_time << ","
 		<< position.x << "," << position.y << ","
-		<< size.x << "," << size.y << ",";
+		<< size.x << "," << size.y << ","
+		<< subregion.plate_subregion_id << "," << subregion.nearest_neighbor_subregion_id << ","
+		<< subregion.nearest_neighbor_subregion_distance.x << "," << subregion.nearest_neighbor_subregion_distance.y << ",";
 	hand_data.out_data(out);
 	for (unsigned int i = 0; i < (unsigned int)ns_stat_number_of_stats; i++){
 		out << "," << statistics[i];
@@ -1138,7 +1140,11 @@ void  ns_detected_worm_stats::output_csv_header(ostream & out){
 		<< "Position in Source Image X,"
 		<< "Position in Source Image Y,"
 		<< "Size in Source Image X,"
-		<< "Size in Source Image Y,";
+		<< "Size in Source Image Y,"
+		<< "Plate subregion id,"
+		<< "Plate subregion nearest neighbor id,"
+		<< "Plate subregion nearest neighbor distance X,"
+		<< "Plate subregion nearest neighbor distance Y,";
 	ns_object_hand_annotation_data::out_header(out);
 	for (unsigned int i = 0; i < (unsigned int)ns_stat_number_of_stats; i++)
 		out << "," << ns_classifier_abbreviation((ns_detected_worm_classifier)i);
@@ -2440,7 +2446,7 @@ void ns_image_worm_detection_results::output_feature_statistics(ostream & o){
 
 		putative_worms[i].generate_stats().output_csv_data(region_info_id,capture_time,
 																	putative_worms[i].region_position_in_source_image,
-																	putative_worms[i].region_size,putative_worms[i].hand_annotations,o);
+																	putative_worms[i].region_size,putative_worms[i].hand_annotations,ns_plate_subregion_info(),o);
 		o << "\n";
 	}
 }

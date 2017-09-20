@@ -204,7 +204,7 @@ void ns_image_server::calculate_experiment_disk_usage(const ns_64_bit experiment
 			s.processed_region_images += image_storage.get_region_images_size_on_disk(region_id,ns_process_heat_map,sql);
 			s.processed_region_images += image_storage.get_region_images_size_on_disk(region_id,ns_process_static_mask,sql);
 		}
-		cerr << ((100*i)/samples.size()) << "%...";
+		image_server.add_subtext_to_current_event(ns_to_string((100*i)/samples.size())+ "%...",&sql);
 		for (unsigned int j = 0; j < regions.size(); j++){
 			//don't redo duplicate regions
 			if (regions[j][1] == last_name)
@@ -2822,8 +2822,8 @@ void ns_posture_analysis_model_entry::load_from_external_source(const std::strin
 		model_specification.threshold_parameters.read(thresh);
 		if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("ns_posture_analysis_model_entry::done reading"));
 		thresh.close();
-		model_specification.threshold_parameters.write(cerr);
-		cerr << "\n";
+		//model_specification.threshold_parameters.write(cerr);
+		//cerr << "\n";
 		return;
 	}
 	if (model_specification.posture_analysis_method == ns_posture_analysis_model::ns_not_specified)

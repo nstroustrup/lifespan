@@ -1212,7 +1212,7 @@ void ns_time_path_image_movement_analyzer::load_from_solution(const ns_time_path
 				ns_death_time_annotation_event_count(1+e.number_of_extra_worms_identified_at_location,0),
 				current_time,ns_death_time_annotation::ns_lifespan_machine,
 				(e.part_of_a_multiple_worm_disambiguation_cluster)?ns_death_time_annotation::ns_part_of_a_mutliple_worm_disambiguation_cluster:ns_death_time_annotation::ns_single_worm,
-				ns_stationary_path_id(0,0,analysis_id),false,e.inferred_animal_location,
+				ns_stationary_path_id(0,0,analysis_id),false,e.inferred_animal_location, e.subregion_info,
 				expl)
 		);
 	}
@@ -2625,7 +2625,7 @@ void ns_analyzed_image_time_path::detect_death_times_and_generate_annotations_fr
 			ns_death_time_annotation_event_count(1+elements[end_index].number_of_extra_worms_observed_at_position,0),
 			current_time,ns_death_time_annotation::ns_lifespan_machine,
 			(elements[end_index].part_of_a_multiple_worm_disambiguation_group)?ns_death_time_annotation::ns_part_of_a_mutliple_worm_disambiguation_cluster:ns_death_time_annotation::ns_single_worm,
-			path_id,true,elements[end_index].inferred_animal_location,"low_density"));
+			path_id,true,elements[end_index].inferred_animal_location,elements[end_index].subregion_info,"low_density"));
 	}
 	ns_time_path_posture_movement_solution movement_state_solution(movement_death_time_estimator->operator()(this,true));
 
@@ -2808,7 +2808,7 @@ void ns_analyzed_image_time_path::detect_death_times_and_generate_annotations_fr
 		exclusion_type,
 		ns_death_time_annotation_event_count(1+number_of_extra_worms_in_path,0),current_time,ns_death_time_annotation::ns_lifespan_machine,
 		(part_of_a_multiple_worm_disambiguation_group)?ns_death_time_annotation::ns_part_of_a_mutliple_worm_disambiguation_cluster:ns_death_time_annotation::ns_single_worm,
-		path_id,part_of_a_full_trace,elements[first_valid_element_id.period_start_index].inferred_animal_location,reason_to_be_censored,loglikelihood_of_solution,longest_skipped_interval_before_death));
+		path_id,part_of_a_full_trace,elements[first_valid_element_id.period_start_index].inferred_animal_location, elements[first_valid_element_id.period_start_index].subregion_info,reason_to_be_censored,loglikelihood_of_solution,longest_skipped_interval_before_death));
 	
 	//observations are made at specific times (i.e. we see a fast moving worm at this time)
 	for (unsigned int i = slow_moving_interval_including_missed_states.entrance_interval.period_end_index; i < slow_moving_interval_including_missed_states.entrance_interval.period_end_index; i++){
@@ -2822,7 +2822,7 @@ void ns_analyzed_image_time_path::detect_death_times_and_generate_annotations_fr
 			elements[i].worm_region_size(),exclusion_type,
 			ns_death_time_annotation_event_count(1+elements[i].number_of_extra_worms_observed_at_position,0),current_time,ns_death_time_annotation::ns_lifespan_machine,
 			elements[i].part_of_a_multiple_worm_disambiguation_group?ns_death_time_annotation::ns_part_of_a_mutliple_worm_disambiguation_cluster:ns_death_time_annotation::ns_single_worm,
-			path_id,part_of_a_full_trace,elements[i].inferred_animal_location,reason_to_be_censored,loglikelihood_of_solution,longest_skipped_interval_before_death)
+			path_id,part_of_a_full_trace,elements[i].inferred_animal_location,elements[i].subregion_info,reason_to_be_censored,loglikelihood_of_solution,longest_skipped_interval_before_death)
 			);
 	}
 
@@ -2836,7 +2836,8 @@ void ns_analyzed_image_time_path::detect_death_times_and_generate_annotations_fr
 				exclusion_type,
 				ns_death_time_annotation_event_count(1 + number_of_extra_worms_in_path, 0), current_time, ns_death_time_annotation::ns_lifespan_machine,
 				part_of_a_multiple_worm_disambiguation_group ? ns_death_time_annotation::ns_part_of_a_mutliple_worm_disambiguation_cluster : ns_death_time_annotation::ns_single_worm,
-				path_id, part_of_a_full_trace, elements[expansion_interval_including_missed_states.entrance_interval.period_end_index].inferred_animal_location, reason_to_be_censored, loglikelihood_of_solution, longest_skipped_interval_before_death));
+				path_id, part_of_a_full_trace, elements[expansion_interval_including_missed_states.entrance_interval.period_end_index].inferred_animal_location, elements[expansion_interval_including_missed_states.entrance_interval.period_end_index].subregion_info,
+				reason_to_be_censored, loglikelihood_of_solution, longest_skipped_interval_before_death));
 		set.add(
 			ns_death_time_annotation(ns_death_posture_relaxation_termination,
 				0, region_info_id,
@@ -2846,7 +2847,7 @@ void ns_analyzed_image_time_path::detect_death_times_and_generate_annotations_fr
 				exclusion_type,
 				ns_death_time_annotation_event_count(1 + number_of_extra_worms_in_path, 0), current_time, ns_death_time_annotation::ns_lifespan_machine,
 				part_of_a_multiple_worm_disambiguation_group ? ns_death_time_annotation::ns_part_of_a_mutliple_worm_disambiguation_cluster : ns_death_time_annotation::ns_single_worm,
-				path_id, part_of_a_full_trace, elements[expansion_interval_including_missed_states.entrance_interval.period_end_index].inferred_animal_location, reason_to_be_censored, loglikelihood_of_solution, longest_skipped_interval_before_death));
+				path_id, part_of_a_full_trace, elements[expansion_interval_including_missed_states.entrance_interval.period_end_index].inferred_animal_location, elements[expansion_interval_including_missed_states.entrance_interval.period_end_index].subregion_info,reason_to_be_censored, loglikelihood_of_solution, longest_skipped_interval_before_death));
 	}
 	
 	if (posture_changing_interval_including_missed_states.skipped && dead_interval_including_missed_states.skipped)
@@ -2875,7 +2876,7 @@ void ns_analyzed_image_time_path::detect_death_times_and_generate_annotations_fr
 		exclusion_type,
 		ns_death_time_annotation_event_count(number_of_extra_worms_in_path+1,0),current_time,ns_death_time_annotation::ns_lifespan_machine,
 		part_of_a_multiple_worm_disambiguation_group?ns_death_time_annotation::ns_part_of_a_mutliple_worm_disambiguation_cluster:ns_death_time_annotation::ns_single_worm,
-		path_id,part_of_a_full_trace,elements[posture_changing_interval_including_missed_states.entrance_interval.period_end_index].inferred_animal_location,reason_to_be_censored,loglikelihood_of_solution,longest_skipped_interval_before_death));
+		path_id,part_of_a_full_trace,elements[posture_changing_interval_including_missed_states.entrance_interval.period_end_index].inferred_animal_location, elements[posture_changing_interval_including_missed_states.entrance_interval.period_end_index].subregion_info,reason_to_be_censored,loglikelihood_of_solution,longest_skipped_interval_before_death));
 	
 	
 	for (unsigned int i = posture_changing_interval_including_missed_states.entrance_interval.period_end_index; i < posture_changing_interval_including_missed_states.exit_interval.period_end_index; i++){
@@ -2889,7 +2890,7 @@ void ns_analyzed_image_time_path::detect_death_times_and_generate_annotations_fr
 			exclusion_type,
 			ns_death_time_annotation_event_count(1+elements[i].number_of_extra_worms_observed_at_position,0),current_time,ns_death_time_annotation::ns_lifespan_machine,
 			elements[i].part_of_a_multiple_worm_disambiguation_group?ns_death_time_annotation::ns_part_of_a_mutliple_worm_disambiguation_cluster:ns_death_time_annotation::ns_single_worm,
-			path_id,part_of_a_full_trace,elements[i].inferred_animal_location,reason_to_be_censored,loglikelihood_of_solution,longest_skipped_interval_before_death));
+			path_id,part_of_a_full_trace,elements[i].inferred_animal_location, elements[i].subregion_info,reason_to_be_censored,loglikelihood_of_solution,longest_skipped_interval_before_death));
 	}
 		
 	if (dead_interval_including_missed_states.skipped){
@@ -2923,7 +2924,7 @@ void ns_analyzed_image_time_path::detect_death_times_and_generate_annotations_fr
 					ns_death_time_annotation_event_count(1 + number_of_extra_worms_in_path, 0), current_time, ns_death_time_annotation::ns_lifespan_machine,
 					part_of_a_multiple_worm_disambiguation_group ? ns_death_time_annotation::ns_part_of_a_mutliple_worm_disambiguation_cluster : ns_death_time_annotation::ns_single_worm,
 					path_id, part_of_a_full_trace,
-					elements[i1].inferred_animal_location,
+					elements[i1].inferred_animal_location, elements[i1].subregion_info,
 					"Alive at experiment end", loglikelihood_of_solution, longest_skipped_interval_before_death));
 
 		}
@@ -2951,7 +2952,8 @@ void ns_analyzed_image_time_path::detect_death_times_and_generate_annotations_fr
 		exclusion_type,
 		ns_death_time_annotation_event_count(1+number_of_extra_worms_in_path,0),current_time,ns_death_time_annotation::ns_lifespan_machine,
 		part_of_a_multiple_worm_disambiguation_group?ns_death_time_annotation::ns_part_of_a_mutliple_worm_disambiguation_cluster:ns_death_time_annotation::ns_single_worm,
-		path_id,part_of_a_full_trace,elements[dead_interval_including_missed_states.entrance_interval.period_end_index].inferred_animal_location,reason_to_be_censored,loglikelihood_of_solution,longest_skipped_interval_before_death));
+		path_id,part_of_a_full_trace,elements[dead_interval_including_missed_states.entrance_interval.period_end_index].inferred_animal_location,
+			elements[dead_interval_including_missed_states.entrance_interval.period_end_index].subregion_info,reason_to_be_censored,loglikelihood_of_solution,longest_skipped_interval_before_death));
 	
 	for (unsigned int i = dead_interval_including_missed_states.entrance_interval.period_end_index; i < dead_interval_including_missed_states.exit_interval.period_end_index; i++){
 		if (elements[i].excluded) continue;
@@ -2964,7 +2966,8 @@ void ns_analyzed_image_time_path::detect_death_times_and_generate_annotations_fr
 			exclusion_type,
 			ns_death_time_annotation_event_count(elements[i].number_of_extra_worms_observed_at_position+1,0),current_time,ns_death_time_annotation::ns_lifespan_machine,
 			elements[i].part_of_a_multiple_worm_disambiguation_group?ns_death_time_annotation::ns_part_of_a_mutliple_worm_disambiguation_cluster:ns_death_time_annotation::ns_single_worm,
-			path_id,part_of_a_full_trace,elements[i].inferred_animal_location,reason_to_be_censored,loglikelihood_of_solution,longest_skipped_interval_before_death));
+			path_id,part_of_a_full_trace,elements[i].inferred_animal_location, elements[i].subregion_info,
+				reason_to_be_censored,loglikelihood_of_solution,longest_skipped_interval_before_death));
 	}
 
 	
@@ -2982,7 +2985,9 @@ void ns_analyzed_image_time_path::detect_death_times_and_generate_annotations_fr
 			ns_death_time_annotation::ns_not_excluded,
 			ns_death_time_annotation_event_count(1+number_of_extra_worms_in_path,0),current_time,ns_death_time_annotation::ns_lifespan_machine,
 			part_of_a_multiple_worm_disambiguation_group?ns_death_time_annotation::ns_part_of_a_mutliple_worm_disambiguation_cluster:ns_death_time_annotation::ns_single_worm,
-			path_id,part_of_a_full_trace,elements[last_valid_element_id.period_end_index].inferred_animal_location,"",loglikelihood_of_solution));
+			path_id,part_of_a_full_trace,elements[last_valid_element_id.period_end_index].inferred_animal_location,
+				elements[last_valid_element_id.period_end_index].subregion_info,
+				"",loglikelihood_of_solution));
 	}
 }
 
@@ -4741,6 +4746,7 @@ ns_analyzed_image_time_path_group::ns_analyzed_image_time_path_group(const ns_st
 				solution_.element(source_path.stationary_elements[ordered_time[j].index]).region_position;
 			path.elements[s].context_position_in_source_image = 
 				solution_.element(source_path.stationary_elements[ordered_time[j].index]).context_image_position;
+			path.elements[s].subregion_info = solution_.element(source_path.stationary_elements[ordered_time[j].index]).subregion_info;
 		  
 			//we'll subtract out the path location later 
 		//	path.elements[s].offset_from_path =  path.elements[s].context_position_in_source_image;
@@ -4762,7 +4768,7 @@ ns_analyzed_image_time_path_group::ns_analyzed_image_time_path_group(const ns_st
 					 ns_death_time_annotation::ns_not_excluded,
 					 ns_death_time_annotation_event_count(1+path.elements[j].number_of_extra_worms_observed_at_position,0),current_time,ns_death_time_annotation::ns_lifespan_machine,
 					 path.elements[j].part_of_a_multiple_worm_disambiguation_group?ns_death_time_annotation::ns_part_of_a_mutliple_worm_disambiguation_cluster:ns_death_time_annotation::ns_single_worm,
-					 ns_stationary_path_id(0,0,group_id.detection_set_id),false,
+					 ns_stationary_path_id(0,0,group_id.detection_set_id),false,false, path.elements[j].subregion_info,
 					 "PTS")
 					 );
 			}
@@ -5622,7 +5628,7 @@ void ns_time_path_image_movement_analyzer::load_images_for_group(const unsigned 
 			}
 			groups[group_id].paths[j].output_image.load_from_db(groups[group_id].paths[j].output_image.id,&sql);
 			groups[group_id].paths[j].movement_image_storage = image_server_const.image_storage.request_from_storage(groups[group_id].paths[j].output_image,&sql);
-			cerr << group_id << " " << j <<( groups[group_id].paths[j].movement_image_storage.bound() ? "YES" : "NO" )<< "\n";
+		//	cerr << group_id << " " << j <<( groups[group_id].paths[j].movement_image_storage.bound() ? "YES" : "NO" )<< "\n";
 			/*ns_image_storage_source<ns_8_bit> & tmp2 = 
 			unsigned long tmp = tmp2.init_send();
 			tmp--;
@@ -5687,6 +5693,18 @@ void ns_time_path_image_movement_analyzer::clear_images_for_group(const unsigned
 	}
 }
 
+void ns_time_path_image_movement_analyzer::back_port_by_hand_annotations_to_solution_elements(ns_time_path_solution & sol) {
+	for (unsigned int i = 0; i < groups.size(); i++) {
+		for (unsigned int j = 0; j < groups[i].paths.size(); j++) {
+			if (i >= sol.path_groups.size() || j >= sol.path_groups[i].path_ids.size())
+				throw ns_ex("Image time path and time path solution mismatch!");
+			ns_time_path & path(sol.paths[sol.path_groups[i].path_ids[j]]);
+			for (unsigned int k = 0; k < path.stationary_elements.size(); k++)
+				sol.timepoints[path.stationary_elements[k].t_id].elements[path.stationary_elements[k].index].volatile_by_hand_annotated_properties = groups[i].paths[j].censoring_and_flag_details;
+		}
+	}
+
+}
 
 void ns_time_path_image_movement_analyzer::reanalyze_stored_aligned_images(const ns_64_bit region_id,const ns_time_path_solution & solution_,const ns_time_series_denoising_parameters & times_series_denoising_parameters,const ns_analyzed_image_time_path_death_time_estimator * e,ns_sql & sql,const bool load_images_after_last_valid_sample,const bool recalculate_flow_images){
 
@@ -5969,11 +5987,13 @@ void ns_time_path_image_movement_analyzer::normalize_movement_scores_over_all_pa
 }
 
 
-void ns_time_path_image_movement_analyzer::guess_if_region_is_excluded_by_hand(std::vector<ns_region_area> & areas) {
+void ns_time_path_image_movement_analyzer::match_plat_areas_to_paths(std::vector<ns_region_area> & areas) {
 	for (unsigned int i = 0; i < areas.size(); i++) {
 		areas[i].worm_id = 0;
 		areas[i].movement_state = ns_movement_fast;
 		areas[i].clear_stats();
+		areas[i].plate_subregion_info = ns_plate_subregion_info();
+		areas[i].overlap_area_with_match = 0;
 	}
 	ns_64_bit average_path_duration(0), path_count(0);
 
@@ -5985,7 +6005,7 @@ void ns_time_path_image_movement_analyzer::guess_if_region_is_excluded_by_hand(s
 			path_count++;
 
 			for (unsigned int i = 0; i < areas.size(); i++) {
-				ns_vector_2i overlap_area = ns_rectangle_overlap_area(areas[i].pos, areas[i].pos + areas[i].size,
+				const ns_vector_2i overlap_area = ns_rectangle_overlap_area(areas[i].pos, areas[i].pos + areas[i].size,
 					groups[g].paths[p].path_region_position, groups[g].paths[p].path_region_position + groups[g].paths[p].path_region_size);
 				unsigned long oa = overlap_area.x*overlap_area.y;
 				if (oa == 0)

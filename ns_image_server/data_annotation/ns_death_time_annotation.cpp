@@ -129,6 +129,10 @@ std::string ns_death_time_annotation::to_string() const{
 	s[27] = ns_to_string(longest_gap_without_observation);
 	s[28] = ns_to_string((int)by_hand_annotation_integration_strategy);
 	s[29] = ns_to_string((int)inferred_animal_location);
+	s[30] = ns_to_string(subregion_info.plate_subregion_id);
+	s[31] = ns_to_string(subregion_info.nearest_neighbor_subregion_id);
+	s[32] = ns_to_string(subregion_info.nearest_neighbor_subregion_distance.x);
+	s[33] = ns_to_string(subregion_info.nearest_neighbor_subregion_distance.y);
 	string ret;
 	ret+=s[0];
 	for (unsigned int i = 1; i < s.size(); i++){
@@ -203,6 +207,11 @@ void ns_death_time_annotation::from_string(const std::string v){
 	longest_gap_without_observation = atol(s[27].c_str());
 	by_hand_annotation_integration_strategy = (ns_death_time_annotation::ns_by_hand_annotation_integration_strategy)atol(s[28].c_str());
 	inferred_animal_location = s[29] == "1";
+
+	subregion_info.plate_subregion_id = atoi(s[30].c_str());
+	subregion_info.nearest_neighbor_subregion_id = atoi(s[31].c_str());
+	subregion_info.nearest_neighbor_subregion_distance.x = atoi(s[32].c_str());
+	subregion_info.nearest_neighbor_subregion_distance.y = atoi(s[33].c_str());
 }
 
 std::string ns_death_time_annotation::source_type_to_string(const ns_annotation_source_type & t){
@@ -404,7 +413,7 @@ void ns_death_time_annotation_compiler_region::output_visualization_csv(std::ost
 				0,0,0,0,
 				false,false,
 				1,p->annotations[i].number_of_worms_at_location_marked_by_hand,
-				state
+				state,p->annotations[i].subregion_info,p->annotations[i]
 			);
 		}
 	}
@@ -459,8 +468,12 @@ void write_column_format_data(std::ostream & o, const ns_death_time_annotation &
 		<< a.longest_gap_without_observation << ","
 		<< (int)a.by_hand_annotation_integration_strategy << ","
 		<< (a.inferred_animal_location?"1":"0") << ","
+		<< a.subregion_info.plate_subregion_id << ","
+		<< a.subregion_info.nearest_neighbor_subregion_id << ","
+		<< a.subregion_info.nearest_neighbor_subregion_distance.x << ","
+		<< a.subregion_info.nearest_neighbor_subregion_distance.y << ","
 		// reserved for future use
-		<< ",,,,,"
+		<< ","
 		<< "\n";
 }
 void write_column_format_header(std::ostream & o){
@@ -469,7 +482,7 @@ void write_column_format_header(std::ostream & o){
 		 "Stationary Worm Path Id, Stationary Worm Detection Set ID,Annotation Start Time,Flag Id,Flag Label,"
 		 "Complete Trace,Number of Worms Annotated By machine,Number of Worms Annotated By Hand,"
 		 "Multiple worm cluster censoring strategy,Missing Worm Return Strategy,Extra Animal ID at position,Event Observation Type,Longest gap without observation,"
-		 "By Hand Annotation Integration Strategy,Inferred animal location,(Room For Expansion),(RFE),(RFE),(RFE),(RFE),(RFE)\n";
+		 "By Hand Annotation Integration Strategy,Inferred animal location,Subregion info id,Nearest neighbor subregion id,Nearest neighbor subregion X,Nearest neighbor subregion Y,(RFE),(RFE)\n";
 }
 	
 void ns_death_time_annotation_set::write_split_file_column_format(std::ostream & censored_and_transition_file, std::ostream & state_file)const{
@@ -707,17 +720,23 @@ void ns_death_time_annotation_set::read_column_format(const  ns_annotation_type_
 					e.by_hand_annotation_integration_strategy = (ns_death_time_annotation::ns_by_hand_annotation_integration_strategy)atol(val.c_str());
 
 					getline(i,val,',');
+					if (i.fail()) throw ns_ex("ns_death_time_annotation_set::read_column_format()::Unexpected EOF");
 					e.inferred_animal_location = (val=="1");
 
-					if (i.fail()) throw ns_ex("ns_death_time_annotation_set::read_column_format()::Unexpected EOF");
+
+				
 					getline(i,val,',');
 					if (i.fail()) throw ns_ex("ns_death_time_annotation_set::read_column_format()::Unexpected EOF");
+					e.subregion_info.plate_subregion_id = atol(val.c_str());
 					getline(i,val,',');
 					if (i.fail()) throw ns_ex("ns_death_time_annotation_set::read_column_format()::Unexpected EOF");
+					e.subregion_info.nearest_neighbor_subregion_id = atol(val.c_str());
 					getline(i,val,',');
 					if (i.fail()) throw ns_ex("ns_death_time_annotation_set::read_column_format()::Unexpected EOF");
+					e.subregion_info.nearest_neighbor_subregion_distance.x = atol(val.c_str());
 					getline(i,val,',');
 					if (i.fail()) throw ns_ex("ns_death_time_annotation_set::read_column_format()::Unexpected EOF");
+					e.subregion_info.nearest_neighbor_subregion_distance.y = atol(val.c_str());
 					getline(i,val,',');
 					if (i.fail()) throw ns_ex("ns_death_time_annotation_set::read_column_format()::Unexpected EOF");
 					getline(i,val,'\n');
@@ -747,6 +766,7 @@ void ns_death_time_annotation_set::read_column_format(const  ns_annotation_type_
 			e.multiworm_censoring_strategy = ns_death_time_annotation::ns_not_applicable;
 			e.missing_worm_return_strategy = ns_death_time_annotation::ns_not_specified;
 			e.animal_id_at_position = 0;
+			e.subregion_info = ns_plate_subregion_info();
 		}
 		
 	//	if (e.stationary_path_id.group_id == 28)

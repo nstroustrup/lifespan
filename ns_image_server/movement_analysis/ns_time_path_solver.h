@@ -31,17 +31,12 @@ struct ns_time_element_link{
 
 struct ns_time_path_element{
 	ns_time_path_element():slowly_moving(false),inferred_animal_location(false),low_temporal_resolution(false),
-			element_before_fast_movement_cessation(false),part_of_a_multiple_worm_disambiguation_cluster(false),worm_(0), subregion_mask_region_id(-1),
-		subregion_mask_closest_neighbor_id(-1),
-		subregion_mask_closest_neighbor_offset(0, 0), number_of_extra_worms_identified_at_location(false){}
+			element_before_fast_movement_cessation(false),part_of_a_multiple_worm_disambiguation_cluster(false),worm_(0),number_of_extra_worms_identified_at_location(false){}
 	
 	ns_time_path_element(const ns_detected_worm_info * w):
 		region_position(w->region_position_in_source_image),region_size(w->region_size),
 			context_image_position(w->context_position_in_source_image),inferred_animal_location(false),
 			element_before_fast_movement_cessation(false),
-			subregion_mask_region_id(-1),
-		subregion_mask_closest_neighbor_id(-1),
-		subregion_mask_closest_neighbor_offset(0,0),
 			part_of_a_multiple_worm_disambiguation_cluster(w->part_of_a_multiple_worm_cluster),
 			context_image_size(w->context_image_size),center(w->region_position_in_source_image+w->region_size/2),slowly_moving(false),
 			low_temporal_resolution(false),worm_(w),context_image_position_in_region_vis_image(0,0),number_of_extra_worms_identified_at_location(0){
@@ -59,11 +54,8 @@ struct ns_time_path_element{
 	bool worm_is_loaded()const{return worm_ != 0;}
 	unsigned long number_of_extra_worms_identified_at_location;
 	bool part_of_a_multiple_worm_disambiguation_cluster;
-
-	long subregion_mask_region_id,
-		subregion_mask_closest_neighbor_id;
-	ns_vector_2i subregion_mask_closest_neighbor_offset;
-
+	ns_plate_subregion_info subregion_info;
+	ns_death_time_annotation volatile_by_hand_annotated_properties;
 
 	ns_vector_2i context_image_position_in_region_vis_image;
 	bool inferred_animal_location,
@@ -102,16 +94,17 @@ public:
 	ns_time_path_solution() :detection_results(0), worms_loaded(false) {}
 	~ns_time_path_solution() { if (detection_results != 0)delete detection_results; detection_results = 0; }
 	static void output_visualization_csv_header(std::ostream & o) {
-		o << "t,t_abs,x,y,w,h,path_group_id,path_id,slowly_moving,low_temporal_resolution,hand_annotation,inferred,before_first_stationary,number_of_extra_worms,movement\n";
+		o << "t,t_abs,x,y,w,h,path_group_id,path_id,slowly_moving,low_temporal_resolution,hand_annotation,inferred,before_first_stationary,number_of_extra_worms,movement, plate_subregion_id, plate_nearest_neighbor_subregion_id, subregion_info,nearest_neighbor_distance_x,nearest_neighbor_distance_y,excluded_by_hand\n";
 	};
 	static void output_visualization_csv_data(std::ostream & o, const float relative_time, const unsigned long absolute_time, const ns_vector_2i & pos, const ns_vector_2i & size,
 		const long path_id, const long path_group_id, const bool slowly_moving,
 		const bool low_temporal_resolution, const bool by_hand_annotation, const bool inferred_worm, const bool before_first_stationary_measurement, const unsigned long number_of_extra_worms,
-		const ns_movement_state & movement) {
+		const ns_movement_state & movement, const ns_plate_subregion_info & subregion_info, const ns_death_time_annotation & by_hand_annotations) {
 		o << relative_time << "," << absolute_time << "," << pos.x << "," << pos.y << "," << size.x << "," << size.y << ","
 			<< path_id << "," << (path_group_id ? "1" : "0") << "," << (slowly_moving ? "1" : "0") << "," << (low_temporal_resolution ? "1" : "0") << "," << (by_hand_annotation ? "1" : "0") << ","
 			<< (inferred_worm ? "1" : "0") << "," << (before_first_stationary_measurement ? "1" : "0") << ","
-			<< number_of_extra_worms << "," << (int)movement << "\n";
+			<< number_of_extra_worms << "," << (int)movement << "," << subregion_info.plate_subregion_id << "," << subregion_info.nearest_neighbor_subregion_distance << "," << subregion_info.nearest_neighbor_subregion_distance.x << "," << subregion_info.nearest_neighbor_subregion_distance.y << "," 
+			<< (by_hand_annotations.is_excluded()?"1":"0") << "\n";
 	}
 	void output_visualization_csv(std::ostream & o);
 	void output_mathematica_file(std::ostream & o);

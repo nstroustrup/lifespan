@@ -666,8 +666,9 @@ ns_64_bit ns_processing_job_maintenance_processor::run_job(ns_sql & sql) {
 			sub.region_id = job.region_id;
 			ns_image_server_results_file f(image_server->results_storage.worm_morphology_timeseries(sub, sql, false));
 			ns_acquire_for_scope<ostream> o(f.output());
-
-			ns_refine_image_statistics(job.region_id, o(), sql);
+			const std::string skip_recalc_string = image_server->get_cluster_constant_value("skip_image_loading_during_morphology_stat_recalc", "false", &sql);
+			const bool recalc = skip_recalc_string != "true" &&  skip_recalc_string != "yes"  &&  skip_recalc_string != "1";
+			ns_refine_image_statistics(job.region_id, recalc,o(), sql);
 			o.release();
 		}
 		case ns_maintenance_recalc_image_stats: {

@@ -471,9 +471,9 @@ template<class ns_vector>
 //a1 is top left of a, a2 is bottom right
 bool ns_rectangle_intersect(const ns_vector &a1, const ns_vector &a2, const ns_vector & b1,const ns_vector & b2){
 	if(a1.x < b1.x && a2.x < b1.x) return false;
-	if(a1.x > b2.x && a2.x > b2.x) return false;
+	if(a1.x > b2.x) return false;
 	if(a1.y < b1.y && a2.y < b1.y) return false;
-	if(a1.y > b2.y && a2.y > b2.y) return false;
+	if(a1.y > b2.y) return false;
 	return true;
 }
 
@@ -483,11 +483,12 @@ template<class ns_vector>
 ns_vector ns_rectangle_overlap_area(const ns_vector &a1, const ns_vector &a2, const ns_vector & b1, const ns_vector & b2) {
 	if (!ns_rectangle_intersect(a1, a2, b1, b2))
 		return ns_vector(0,0);
-	ns_vector ds;
-	if (a2.x > b2.x)  ds.x = b2.x - a1.x;
-	else ds.x = a2.x - b1.x;
-	if (a2.y > b2.y)  ds.y = b2.y - a1.y;
-	else ds.y = a2.y - b1.y;
-	return ds;
+	ns_vector tl,br;
+	tl.x = (a1.x > b1.x) ? a1.x: b1.x;//furthest right
+	tl.y = (a1.y > b1.y) ? a1.y: b1.y;//furthest down
+	br.x = (a2.x < b2.x) ? a2.x: b2.x;//least right
+	br.y = (a2.y < b2.y) ? a2.y: b2.y;//least down
+	
+	return br - tl;
 }
 #endif

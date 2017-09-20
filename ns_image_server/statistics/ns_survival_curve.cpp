@@ -611,12 +611,15 @@ void ns_lifespan_experiment_set::out_detailed_JMP_header(const ns_time_handing_b
 		// "Age at Death (" << time_units << ") Multiplicative Regression Model Residuals Start,"
 		// "Age at Death (" << time_units << ") Multiplicative Regression Model Residuals End,";
 	}
-	o << "Censored,Censoring Reason,Censoring Strategy::Missing Worm Return strategy,Excluded,Event Observation Type,Size of Machine-Annotated Worm Cluster,Size of by-hand Annotated Worm Cluster,Event Type,Technique,Analysis Type,loglikelihood,Flags,"
+	o << "Duration Not fast moving (" << time_units << "), Censored,Censoring Reason,Censoring Strategy::Missing Worm Return strategy,Excluded,Event Observation Type,Size of Machine-Annotated Worm Cluster,Size of by-hand Annotated Worm Cluster,Event Type,Technique,Analysis Type,loglikelihood,Flags,"
 	#ifdef NS_OUTPUT_MULTIWORM_STATS
 	"Originated as a Mutliworm Disambiguation Result,"
 	#endif 
 	<< "By Hand Annotation Strategy,"
-	"Details" << terminator;
+	"Details,"
+	"Animal Center X,Animal Center Y,"
+	"Plate subregion id,Plate subregion nearest neighbor ID,Plate subregion nearest neighbor distance X,Plate subregion nearest neighbor distance Y"
+	<< terminator;
 }
 
 void ns_output_JMP_time_interval(const ns_lifespan_experiment_set::ns_time_handing_behavior & time_handling_behavior, 
@@ -787,7 +790,14 @@ void ns_lifespan_experiment_set::out_detailed_JMP_event_data(const ns_time_handi
 			<< (prop.events->from_multiple_worm_disambiguation?"multiple":"single") << ","
 			#endif
 			<< ns_death_time_annotation::by_hand_annotation_integration_strategy_label_short(a.by_hand_annotation_integration_strategy) << ","
-			<< metadata.details << terminator;
+			<< metadata.details <<","
+			<< a.position.x << ","
+			<< a.position.y << ","
+			<< a.subregion_info.plate_subregion_id << ","
+			<< a.subregion_info.nearest_neighbor_subregion_id << ","
+			<< a.subregion_info.nearest_neighbor_subregion_distance.x << ","
+			<< a.subregion_info.nearest_neighbor_subregion_distance.y
+			<< terminator;
 	}
 }
 

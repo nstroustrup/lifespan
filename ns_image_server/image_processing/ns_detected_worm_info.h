@@ -143,7 +143,7 @@ public:
 
 	///output summary information about the worm to a text file.
 	void output_html_worm_summary(std::ostream & out);
-	void output_csv_data(const ns_64_bit region_id, const unsigned long capture_time, const ns_vector_2i & position, const ns_vector_2i & size,const ns_object_hand_annotation_data & hand_data,std::ostream & out);
+	void output_csv_data(const ns_64_bit region_id, const unsigned long capture_time, const ns_vector_2i & position, const ns_vector_2i & size,const ns_object_hand_annotation_data & hand_data, const ns_plate_subregion_info & subregion,std::ostream & out);
 
 	static void output_csv_header(std::ostream & out);
 

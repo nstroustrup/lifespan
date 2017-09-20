@@ -658,7 +658,70 @@ void ns_time_path_solution::load_from_db(const ns_64_bit region_id, ns_sql & sql
 		throw;
 	}
 }
+bool ns_check_and_set(const ns_vector_2i & p2, const ns_vector_2i & p, const ns_image_standard & im, ns_plate_subregion_info & info, unsigned long & smallest_distance) {
+	const ns_8_bit id = im[p2.y][p2.x];
+	if (id == info.plate_subregion_id)
+		return false;
+	ns_vector_2i dd(p2 - p);
+	unsigned long d = dd.mag();
+	if (d < smallest_distance) {
+		smallest_distance = d;
+		info.nearest_neighbor_subregion_id = id;
+		info.nearest_neighbor_subregion_distance = dd;
+	}
+	return true;
+}
+ void ns_find_nearest_neighbor_label(const ns_vector_2i & p,ns_plate_subregion_info & info, const ns_image_standard & im) {
+	 long distance = 0;
+	 unsigned long min_neighbor_distance = ULONG_MAX;
+	 ns_vector_2i tl, br;
+	 info.nearest_neighbor_subregion_id = -1;
+	 info.nearest_neighbor_subregion_distance = ns_vector_2i(0, 0);
+	 while (true) {
+		 //spiral outwards from starting point, increasing the distance each time
+		 distance++;
+		 //explore the edge of a box centered around the point
+		 tl = br = p;
+		 tl.x -= distance;
+		 tl.y -= distance;
+		 br.x += distance;
+		 br.y += distance;
+		 //don't search along edges of the box outside the image
+		 bool top(tl.y >= 0),
+			 bottom(br.y < im.properties().height),
+			 left(tl.x >= 0),
+			 right(br.x < im.properties().width);
+		 if (!top && !bottom && !left && !right)
+			 break;
 
+		 if (tl.x < 0) tl.x = 0;
+		 if (tl.y < 0) tl.y = 0;
+		 if (br.x >= im.properties().width) br.x = im.properties().width - 1;
+		 if (br.y >= im.properties().height) br.y = im.properties().height - 1;
+
+		 if (top) 
+			 for (unsigned long x = tl.x; x <= br.x; x++)
+				 ns_check_and_set(ns_vector_2i(x, tl.y), p,im, info, min_neighbor_distance);
+		 if (left && right) 
+			 for (unsigned long y = tl.y; y <= br.y; y++) {
+				 ns_check_and_set(ns_vector_2i(tl.x, y), p, im, info, min_neighbor_distance);
+				 ns_check_and_set(ns_vector_2i(br.x, y), p, im, info, min_neighbor_distance);
+			 }
+		 else if (left) 
+			 for (unsigned long y = tl.y; y <= br.y; y++) 
+				 ns_check_and_set(ns_vector_2i(tl.x, y), p, im, info, min_neighbor_distance);
+		 else if (right) 
+			 for (unsigned long y = tl.y; y <= br.y; y++) 
+				 ns_check_and_set(ns_vector_2i(br.x, y), p, im, info, min_neighbor_distance);
+		 if (bottom)
+			 for (unsigned long x = tl.x; x <= br.x; x++)
+				 ns_check_and_set(ns_vector_2i(x, br.y), p, im, info, min_neighbor_distance);
+
+		 //we've found the nearest neighbor!
+		 if (min_neighbor_distance != ULONG_MAX)
+			 break;
+	 }
+}
 bool ns_time_path_solution::identify_subregions_labels_from_subregion_mask(const ns_64_bit region_id, ns_sql & sql) {
 	ns_image_server_captured_image_region region;
 
@@ -689,7 +752,7 @@ bool ns_time_path_solution::identify_subregions_labels_from_subregion_mask(const
 			if (x >= im.properties().width ||
 				y >= im.properties().height)
 				throw ns_ex("Invalid animal center!");
-			timepoints[i].elements[j].subregion_mask_region_id = im[y][x];
+			timepoints[i].elements[j].subregion_info.plate_subregion_id = im[y][x];
 		}
 	}
 
@@ -698,31 +761,32 @@ bool ns_time_path_solution::identify_subregions_labels_from_subregion_mask(const
 	for (unsigned int i = 0; i < timepoints.size(); i++)
 		min_distances[i].resize(timepoints[i].elements.size(),INT_MAX);
 
-	/*for (unsigned int i = 0; i < timepoints.size(); i++) {
+	for (unsigned int i = 0; i < timepoints.size(); i++) {
 		for (unsigned int j = 0; j < timepoints[i].elements.size(); j++) {
-			long center_x = timepoints[i].elements[j].center.x / resize_factor,
-				center_y = timepoints[i].elements[j].center.y / resize_factor;
-			fo
+			ns_vector_2i center(timepoints[i].elements[j].center.x / resize_factor,
+								timepoints[i].elements[j].center.y / resize_factor);
+			ns_find_nearest_neighbor_label(center, timepoints[i].elements[j].subregion_info, im);
 		}
-	}*/
+	}
+	/*
 	for (unsigned int y = 0; y < im.properties().height; y++) {
 		for (unsigned int x = 0; x < im.properties().width; x++) {
 			const ns_8_bit cur_id = im[y][x];
 			for (unsigned int i = 0; i < timepoints.size(); i++) {
 				for (unsigned int j = 0; j < timepoints[i].elements.size(); j++) {
-					if (cur_id != timepoints[i].elements[j].subregion_mask_region_id) {
+					if (cur_id != timepoints[i].elements[j].subregion_info.plate_subregion_id) {
 						const int d((timepoints[i].elements[j].center - ns_vector_2i(x, y)).squared());
 						if (d < min_distances[i][j]) {
 							min_distances[i][j] = d;
-							timepoints[i].elements[j].subregion_mask_closest_neighbor_offset.x = x;
-							timepoints[i].elements[j].subregion_mask_closest_neighbor_offset.x = y;
-							timepoints[i].elements[j].subregion_mask_closest_neighbor_id = cur_id;
+							timepoints[i].elements[j].subregion_info.nearest_neighbor_subregion_distance.x = x;
+							timepoints[i].elements[j].subregion_info.nearest_neighbor_subregion_distance.y = y;
+							timepoints[i].elements[j].subregion_info.nearest_neighbor_subregion_id = cur_id;
 						}
 					}
 				}
 			}
 		}
-	}
+	}*/
 	return true;
 }
 //it would be nice to use XML here but it is so verbose!
@@ -759,10 +823,10 @@ void ns_time_path_solution::save_to_disk(ostream & o) const{
 	//		if (m > 1)
 	//			cerr << "MA";
 			o << m << ",";
-			o << timepoints[i].elements[j].subregion_mask_region_id << ","
-				<< timepoints[i].elements[j].subregion_mask_closest_neighbor_id << ", "
-				<< timepoints[i].elements[j].subregion_mask_closest_neighbor_offset.x << ","
-				<< timepoints[i].elements[j].subregion_mask_closest_neighbor_offset.y << ",";
+			o << timepoints[i].elements[j].subregion_info.plate_subregion_id << ","
+				<< timepoints[i].elements[j].subregion_info.nearest_neighbor_subregion_id << ", "
+				<< timepoints[i].elements[j].subregion_info.nearest_neighbor_subregion_distance.x << ","
+				<< timepoints[i].elements[j].subregion_info.nearest_neighbor_subregion_distance.y << ",";
 				for (unsigned int i = 0; i < 5; i++)
 					o << ",";
 			o << "\n";
@@ -1017,23 +1081,23 @@ void ns_time_path_solution::load_from_disk(istream & in){
 					timepoints[timepoint_id].elements[s].inferred_animal_location = mm%2;
 					timepoints[timepoint_id].elements[s].element_before_fast_movement_cessation = (mm/2)%2;
 				}
-				timepoints[timepoint_id].elements[s].subregion_mask_region_id = -1;
-				timepoints[timepoint_id].elements[s].subregion_mask_closest_neighbor_id = -1;
-				timepoints[timepoint_id].elements[s].subregion_mask_closest_neighbor_offset = ns_vector_2i(0, 0);
+				timepoints[timepoint_id].elements[s].subregion_info.plate_subregion_id = -1;
+				timepoints[timepoint_id].elements[s].subregion_info.nearest_neighbor_subregion_id = -1;
+				timepoints[timepoint_id].elements[s].subregion_info.nearest_neighbor_subregion_distance = ns_vector_2i(0, 0);
 				
 				get_int(in, tmp);
 				if (!tmp.empty()) 
-					timepoints[timepoint_id].elements[s].subregion_mask_region_id = atol(tmp.c_str());
+					timepoints[timepoint_id].elements[s].subregion_info.plate_subregion_id = atol(tmp.c_str());
 				get_int(in, tmp);
 				if (!tmp.empty())
-					timepoints[timepoint_id].elements[s].subregion_mask_closest_neighbor_id = atol(tmp.c_str());
+					timepoints[timepoint_id].elements[s].subregion_info.nearest_neighbor_subregion_id = atol(tmp.c_str());
 				char delimeter = get_int(in, tmp);
 				if (delimeter == '\n')
 					continue;
 				if (!tmp.empty())
-					timepoints[timepoint_id].elements[s].subregion_mask_closest_neighbor_offset.x = atol(tmp.c_str()); 
+					timepoints[timepoint_id].elements[s].subregion_info.nearest_neighbor_subregion_distance.x = atol(tmp.c_str());
 				if (!tmp.empty())
-					timepoints[timepoint_id].elements[s].subregion_mask_closest_neighbor_offset.y = atol(tmp.c_str());
+					timepoints[timepoint_id].elements[s].subregion_info.nearest_neighbor_subregion_distance.y = atol(tmp.c_str());
 
 				
 				for (unsigned int i = 0; i < 7; i++) get_int(in,tmp); //room for expansion
@@ -2455,7 +2519,7 @@ void ns_time_path_solution::output_visualization_csv(ostream & o){
 			element(unassigned_points.stationary_elements[i]).inferred_animal_location,
 			element(unassigned_points.stationary_elements[i]).element_before_fast_movement_cessation,
 				0,0,
-				ns_movement_not_calculated);
+				ns_movement_not_calculated, element(unassigned_points.stationary_elements[i]).subregion_info, element(unassigned_points.stationary_elements[i]).volatile_by_hand_annotated_properties);
 	}
 	//output paths
 	for (unsigned int g = 0; g < path_groups.size(); g++){
@@ -2472,7 +2536,7 @@ void ns_time_path_solution::output_visualization_csv(ostream & o){
 					 1,
 					 (element(e).low_temporal_resolution ||
 						paths[path_groups[g].path_ids[i]].is_low_density_path),0,false,false,
-					 0,ns_movement_not_calculated
+					 0,ns_movement_not_calculated,element(e).subregion_info,element(e).volatile_by_hand_annotated_properties
 				);
 			}
 			for (unsigned int j = 0; j < paths[path_groups[g].path_ids[i]].stationary_elements.size(); j++){
@@ -2489,7 +2553,8 @@ void ns_time_path_solution::output_visualization_csv(ostream & o){
 						paths[path_groups[g].path_ids[i]].is_low_density_path),
 					0,element(e).inferred_animal_location,
 					element(e).element_before_fast_movement_cessation,
-					 0,ns_movement_not_calculated
+					 0,ns_movement_not_calculated,element(e).subregion_info,
+					element(e).volatile_by_hand_annotated_properties
 				);
 			}
 		}
@@ -2512,7 +2577,7 @@ void ns_time_path_solver::output_visualization_csv(ostream & o){
 				timepoints[i].elements[j].e.low_temporal_resolution,
 				false,
 				0,false,false,
-				ns_movement_not_calculated
+				ns_movement_not_calculated, ns_plate_subregion_info(),ns_death_time_annotation()
 				);
 		}
 	}

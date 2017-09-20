@@ -81,7 +81,7 @@ void ns_worm_movement_summary_series::generate_censoring_annotations(const ns_re
 			ns_death_time_annotation_event_count(estimated_number_of_worms_alive_at_measurement_end,0),ns_current_time(),
 			ns_death_time_annotation::ns_lifespan_machine,
 			ns_death_time_annotation::ns_single_worm,
-			ns_stationary_path_id(0,0, analysis_id),false,false,
+			ns_stationary_path_id(0,0, analysis_id),false,false,ns_plate_subregion_info(),
 			"Apparently Moving at end of experiment",
 			1,0,
 			this->multiworm_cluster_censoring_strategy,
@@ -135,7 +135,7 @@ void ns_worm_movement_summary_series::generate_censoring_annotations(const ns_re
 					 ns_death_time_annotation_event_count(missing_censored,0),ns_current_time(),
 					 ns_death_time_annotation::ns_lifespan_machine,
 					 ns_death_time_annotation::ns_single_worm,
-					 ns_stationary_path_id(0,0,analysis_id),false,false,
+					 ns_stationary_path_id(0,0,analysis_id),false,false, ns_plate_subregion_info(),
 					 "Worm Went Missing",
 					 1,0,
 					 this->multiworm_cluster_censoring_strategy,
@@ -721,7 +721,7 @@ void ns_worm_movement_description_series::output_position_visualization_csv(std:
 				timepoints[i].worms[j].movement == ns_movement_by_hand_excluded),0,
 				false,false,
 				0,
-				timepoints[i].worms[j].movement
+				timepoints[i].worms[j].movement,ns_plate_subregion_info(),ns_death_time_annotation()
 				);
 		}
 	}

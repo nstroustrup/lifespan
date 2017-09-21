@@ -403,7 +403,16 @@ void ns_refine_image_statistics(const ns_64_bit region_id, const bool recalculat
 		out << ",";
 	}
 	else {
-		out << "Position x, Position Y, Size X, Size Y,";
+		out << "Source Region ID,"
+			<< "Capture Time,"
+			<< "Position in Source Image X,"
+			<< "Position in Source Image Y,"
+			<< "Size in Source Image X,"
+			<< "Size in Source Image Y,"
+			<< "Plate subregion id,"
+			<< "Plate subregion nearest neighbor id,"
+			<< "Plate subregion nearest neighbor distance X,"
+			<< "Plate subregion nearest neighbor distance Y,";
 	}
 	metadata.out_JMP_plate_identity_header_short(out);
 	out << ",time spent included, time_spent_excluded,average_time, overlap with path match,Age (days), Stationary Worm ID, Movement State,explicitly_excluded\n";
@@ -484,7 +493,10 @@ void ns_refine_image_statistics(const ns_64_bit region_id, const bool recalculat
 					worm_stats.output_csv_data(region_id, t, areas[j].pos, areas[j].size, hd, areas[j].plate_subregion_info, out);
 				}
 				else {
+					out << region_id << "," << t << ",";
 					out << areas[j].pos.x << "," << areas[j].pos.y << "," << areas[j].size.x << "," << areas[j].size.y;
+					out << areas[j].plate_subregion_info.plate_subregion_id << "," << areas[j].plate_subregion_info.nearest_neighbor_subregion_id << "," << areas[j].plate_subregion_info.nearest_neighbor_subregion_distance.x << "," << areas[j].plate_subregion_info.nearest_neighbor_subregion_distance.y << ",";
+				
 				}
 				out << ",";
 				metadata.out_JMP_plate_identity_data_short(out);
@@ -492,7 +504,7 @@ void ns_refine_image_statistics(const ns_64_bit region_id, const bool recalculat
 	//			if (areas[j].total_exclusion_time_in_seconds == 0 || areas[j].total_exclusion_time_in_seconds < areas[j].total_inclusion_time_in_seconds)
 	//				out << "no";
 	//			else out << "yes";
-				out << "," << areas[j].overlap_area_with_match << ",";
+				out <<  areas[j].overlap_area_with_match << ",";
 				out << ((t - metadata.time_at_which_animals_had_zero_age) / 60.0 / 60.0 / 24) << ",";
 				out << areas[j].worm_id << "," << ns_movement_state_to_string_short(areas[j].movement_state) << ",";
 				out << (areas[j].explicitly_by_hand_excluded?"1" : "0");

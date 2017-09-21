@@ -495,7 +495,7 @@ void ns_refine_image_statistics(const ns_64_bit region_id, const bool recalculat
 				}
 				else {
 					out << region_id << "," << t << ",";
-					out << areas[j].pos.x << "," << areas[j].pos.y << "," << areas[j].size.x << "," << areas[j].size.y;
+					out << areas[j].pos.x << "," << areas[j].pos.y << "," << areas[j].size.x << "," << areas[j].size.y << ",";
 					out << areas[j].plate_subregion_info.plate_subregion_id << "," << areas[j].plate_subregion_info.nearest_neighbor_subregion_id << "," << areas[j].plate_subregion_info.nearest_neighbor_subregion_distance.x << "," << areas[j].plate_subregion_info.nearest_neighbor_subregion_distance.y;
 				
 				}

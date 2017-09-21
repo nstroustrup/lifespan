@@ -491,11 +491,12 @@ void ns_refine_image_statistics(const ns_64_bit region_id, const bool recalculat
 				if (recalculate_worm_morphology_from_images){
 					ns_detected_worm_stats worm_stats = worms[j]->generate_stats();
 					worm_stats.output_csv_data(region_id, t, areas[j].pos, areas[j].size, hd, areas[j].plate_subregion_info, out);
+
 				}
 				else {
 					out << region_id << "," << t << ",";
 					out << areas[j].pos.x << "," << areas[j].pos.y << "," << areas[j].size.x << "," << areas[j].size.y;
-					out << areas[j].plate_subregion_info.plate_subregion_id << "," << areas[j].plate_subregion_info.nearest_neighbor_subregion_id << "," << areas[j].plate_subregion_info.nearest_neighbor_subregion_distance.x << "," << areas[j].plate_subregion_info.nearest_neighbor_subregion_distance.y << ",";
+					out << areas[j].plate_subregion_info.plate_subregion_id << "," << areas[j].plate_subregion_info.nearest_neighbor_subregion_id << "," << areas[j].plate_subregion_info.nearest_neighbor_subregion_distance.x << "," << areas[j].plate_subregion_info.nearest_neighbor_subregion_distance.y;
 				
 				}
 				out << ",";

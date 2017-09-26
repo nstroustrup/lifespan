@@ -2,7 +2,7 @@
 require_once("worm_environment.php");
 
 function host_label($base_host_name,$system_host_name,$parallel_process_id){
-	 return $base_host_name + '@' + $system_host_name + $parallel_process_id;
+	 return (string)$base_host_name . '@' . (string)$system_host_name . (string) $parallel_process_id;
 }
 function ns_clean_up_for_tooltip($str){
   $out = "";
@@ -264,12 +264,12 @@ $sql->get_row($query,$hosts);
 
 $base_hosts = array();
 foreach ($hosts as $row){
-	$lab = host_label($row[11],$row[15],$row[16]);
-	$base_hosts[$lab] = array();
+	$lab = host_label($row[11],$row[15],$row[16]);	
+$base_hosts[$lab] = array();
 	$nodes_running[$lab][0] = 0;
 	$nodes_running[$lab][1] = 0;
 
-}
+}//var_dump($base_hosts);
 
 $current_time = ns_current_time();
 foreach ($hosts as $row){

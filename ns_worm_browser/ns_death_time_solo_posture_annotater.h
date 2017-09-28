@@ -563,6 +563,7 @@ private:
 	enum { default_resize_factor = 1, max_buffer_size = 15 };
 
 	mutable bool saved_;
+	float telemetry_zoom_factor;
 public:
 
 
@@ -611,7 +612,7 @@ public:
 	void set_resize_factor(const unsigned long resize_factor_) { resize_factor = resize_factor_; }
 	bool data_saved()const { return saved_; }
 	ns_death_time_solo_posture_annotater() :ns_image_series_annotater(default_resize_factor, ns_death_time_posture_annotater_timepoint::ns_bottom_border_height),
-		saved_(true), graph_contents(ns_animal_telemetry::ns_none), current_visualization_type(ns_death_time_solo_posture_annotater_timepoint::ns_image), current_region_data(0), current_worm(0), current_machine_timing_data(0) {}
+		saved_(true), graph_contents(ns_animal_telemetry::ns_none), current_visualization_type(ns_death_time_solo_posture_annotater_timepoint::ns_image), current_region_data(0), telemetry_zoom_factor(1), current_worm(0), current_machine_timing_data(0) {}
 
 	typedef enum { ns_time_aligned_images, ns_death_aligned_images } ns_alignment_type;
 
@@ -680,11 +681,7 @@ public:
 			current_timepoint_id++;
 
 	}
-	void draw_telemetry(const ns_vector_2i & position, const ns_vector_2i & graph_size, const ns_vector_2i & buffer_size, ns_8_bit * buffer) {
-		if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("Drawing telemetry."));
-		telemetry.draw(graph_contents,current_timepoint_id,  position, graph_size, buffer_size, buffer);
-		if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("Done with telemetry."));
-	}
+	void draw_telemetry(const ns_vector_2i & position, const ns_vector_2i & graph_size, const ns_vector_2i & buffer_size, ns_8_bit * buffer);
 	void draw_registration_debug(const ns_vector_2i & position, const ns_vector_2i & buffer_size, ns_8_bit * buffer) {
 		if (current_timepoint_id == 0)
 			return;
@@ -777,7 +774,6 @@ public:
 
 		if (sql.is_null())
 			sql.attach(image_server.new_sql_connection(__FILE__, __LINE__));
-
 		if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("Clearing self."));
 		clear();
 		if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("Clearing annotator."));
@@ -972,6 +968,8 @@ public:
 	}
 
 	void clear() {
+
+		telemetry_zoom_factor = 1;
 		clear_base();
 		saved_ = false;
 		timepoints.resize(0);

@@ -10,10 +10,8 @@ using namespace std;
 void ns_bulk_experiment_mask_manager::process_mask_file(ns_image_standard & mask_vis){
 	if (collage_info_manager.collage_info.size() == 0)
 		throw ns_ex("No mask file loaded.");
-	std::vector<unsigned int> starting_positions(collage_info_manager.collage_info.size());
-//	ns_image_buffered_random_access_input_image<ns_8_bit,ns_image_storage_source<ns_8_bit> > decoded_image(1024*1024);
+	std::vector<ns_vector_2i> starting_positions(collage_info_manager.collage_info.size());
 	ns_image_storage_source_handle<ns_8_bit> in(image_server.image_storage.request_from_local_cache(scratch_filenames[0]));
-//	decoded_image.assign_buffer_source(in.input_stream());
 
 
 	//determine the size of the merged visualization
@@ -22,41 +20,62 @@ void ns_bulk_experiment_mask_manager::process_mask_file(ns_image_standard & mask
 	prop.height = 0;
 	std::vector<ns_image_properties> output_sizes(collage_info_manager.collage_info.size());
 
+	ns_64_bit previous_sample_id = collage_info_manager.collage_info[0].sample_id;
+	ns_vector_2i cur_pos(0, 0);
 	for (unsigned int i = 0; i < collage_info_manager.collage_info.size(); i++){
 		output_sizes[i] = in.input_stream().properties();
 		output_sizes[i].width = collage_info_manager.collage_info[i].dimentions.x;
 		output_sizes[i].height =collage_info_manager.collage_info[i].dimentions.y;
-		starting_positions[i] = prop.width;
-		prop.width+=output_sizes[i].width;
-		if (prop.height < output_sizes[i].height)
-			prop.height = output_sizes[i].height;
-	}
-	unsigned int resize_factor = prop.width/1024;
-	//cerr << "Resize factor : " << resize_factor << "\n";
-	//if we need to resize, recalculate all the sizes
-	if (resize_factor > 1){
-		prop.width = 0;
-		prop.height = 0;
-		prop.resolution/=resize_factor;
-		for (unsigned int i = 0; i < collage_info_manager.collage_info.size(); i++){
-			output_sizes[i] = in.input_stream().properties();
-			output_sizes[i].width  = collage_info_manager.collage_info[i].dimentions.x/resize_factor;
-			output_sizes[i].height =collage_info_manager.collage_info[i].dimentions.y/resize_factor;
-			output_sizes[i].resolution/=resize_factor;
-//			cerr << "o[" << i << "]:" << output_sizes[i].width << "," << output_sizes[i].height << "\n";
-			starting_positions[i] = prop.width;
-			prop.width+=output_sizes[i].width;
-			if (prop.height < output_sizes[i].height)
-				prop.height = output_sizes[i].height;
+		if (prop.width < output_sizes[i].width + cur_pos.x)
+			prop.width = output_sizes[i].width + cur_pos.x;
+		if (prop.height < output_sizes[i].height + cur_pos.y)
+			prop.height = output_sizes[i].height + cur_pos.y;
+		starting_positions[i] = cur_pos;
+		if (i + 1 < collage_info_manager.collage_info.size() &&
+			collage_info_manager.collage_info[i + 1].sample_id != previous_sample_id) {
+			cur_pos.y = 0;
+			cur_pos.x = prop.width;
+			previous_sample_id = collage_info_manager.collage_info[i + 1].sample_id;
+		}
+		else {
+			cur_pos.y += output_sizes[i].height;
 		}
 	}
-	//cerr << "vis" << prop.width << "," << prop.height << "\n";
+	unsigned int resize_factor = 1;
+	if (prop.width > 50240) resize_factor = prop.width/50240;
+	if (resize_factor > 1) {
+		previous_sample_id = collage_info_manager.collage_info[0].sample_id;
+		cur_pos = ns_vector_2i(0, 0);
+		for (unsigned int i = 0; i < collage_info_manager.collage_info.size(); i++) {
+			output_sizes[i] = in.input_stream().properties();
+			output_sizes[i].width = collage_info_manager.collage_info[i].dimentions.x / resize_factor;
+			output_sizes[i].height = collage_info_manager.collage_info[i].dimentions.y / resize_factor;
+			output_sizes[i].resolution /= resize_factor;
+			if (prop.width < output_sizes[i].height + cur_pos.x)
+				prop.width = output_sizes[i].width + cur_pos.x;
+			if (prop.height < output_sizes[i].height + cur_pos.y)
+				prop.height = output_sizes[i].height + cur_pos.y;
+			starting_positions[i] = cur_pos;
+			if (i + 1 < collage_info_manager.collage_info.size() &&
+				collage_info_manager.collage_info[i + 1].sample_id != previous_sample_id) {
+				cur_pos.y = 0;
+				cur_pos.x = prop.width;
+				previous_sample_id = collage_info_manager.collage_info[i + 1].sample_id;
+			}
+			else {
+				cur_pos.y += output_sizes[i].height;
+			}
+		}
+	}
 
 	prop.components = 3;
 	mask_vis.prepare_to_recieve_image(prop);
 	ns_image_standard tmp,tmp2;
 	
-	vector<string> problems;
+	vector<string> problems;		
+	for (unsigned int y = 0; y < mask_vis.properties().height; y++)
+		for (unsigned int x = 0; x < 3*mask_vis.properties().width; x++)
+			mask_vis[y][x] = 0;
 	for (unsigned int i = 0;;){
 
 //		cerr << "Processing mask " << i << "...";
@@ -72,15 +91,16 @@ void ns_bulk_experiment_mask_manager::process_mask_file(ns_image_standard & mask
 			cerr << "\t" << ns_vector_2i(mask_analyzer.mask_info()[j]->stats.x_min,mask_analyzer.mask_info()[j]->stats.y_min) << " -> ";
 			cerr << "\t" << ns_vector_2i(mask_analyzer.mask_info()[j]->stats.x_max,mask_analyzer.mask_info()[j]->stats.y_max) << "\n";
 		}
+
 	//	decoded_image.clear();
 		//cerr << "Resampling mask\n";
 		tmp.resample(output_sizes[i],tmp2);
 		for (unsigned int y = 0; y < tmp2.properties().height; y++)
 			for (unsigned int x = 0; x < 3*tmp2.properties().width; x++)
-			mask_vis[y][3*starting_positions[i]+x] = tmp2[y][x];
-		for (unsigned int y = tmp2.properties().height; y < prop.height; y++)
+			mask_vis[y+starting_positions[i].y][3*starting_positions[i].x+x] = tmp2[y][x];
+	/*	for (unsigned int y = tmp2.properties().height + starting_positions[i].y; y < prop.height; y++)
 			for (unsigned int x = 0; x < 3*tmp2.properties().width; x++)
-				mask_vis[y][3*starting_positions[i]+x] = 0;
+				mask_vis[y ][3*starting_positions[i].x+x] = 0;*/
 		tmp.clear();
 		tmp2.clear();
 		i++;

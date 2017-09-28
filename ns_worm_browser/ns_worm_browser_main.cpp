@@ -870,7 +870,7 @@ class ns_worm_terminal_main_menu_organizer : public ns_menu_organizer{
 		im_cc.title = "Load Image Mask";
 		im_cc.filters.push_back(ns_file_chooser_file_type("TIF","tif"));
 		ns_run_in_main_thread<ns_file_chooser> run_mt(&im_cc);
-		if (im_cc.chosen) worm_learner.decode_mask_file(im_cc.result);
+		if (im_cc.chosen) worm_learner.decode_mask_file(im_cc.result,im_cc.result+"_vis.tif");
 	}
 	static void masks_submit_composite(const std::string & value){
 		const bool subregion_label_mask(value.find("ubregion") != value.npos); 

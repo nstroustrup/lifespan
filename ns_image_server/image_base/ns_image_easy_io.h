@@ -45,8 +45,8 @@ void ns_save_image(const std::string & filename, const ns_image_whole<ns_compone
 		ns_jpeg_image_output_file<ns_component> jpeg_out;	
 		if (compression_ratio == -1)
 			compression_ratio = .8;
-		ns_image_stream_file_sink<ns_component > file_sink(filename,jpeg_out,1024, compression_ratio);
-		image.pump(file_sink,1024);
+		ns_image_stream_file_sink<ns_component > file_sink(filename,jpeg_out,1, compression_ratio);
+		image.pump(file_sink,1);
 		return;
 	}
 	//save tiff
@@ -55,16 +55,16 @@ void ns_save_image(const std::string & filename, const ns_image_whole<ns_compone
 		if (sizeof(ns_component) == 1)
 			t = ns_tiff_compression_lzw;
 		ns_tiff_image_output_file<ns_component> tiff_out(t);
-		ns_image_stream_file_sink<ns_component> file_sink(filename,tiff_out,1024,1);
-		image.pump(file_sink,1024);
+		ns_image_stream_file_sink<ns_component> file_sink(filename,tiff_out,1,1);
+		image.pump(file_sink,1);
 		return;
 	}
 	if (extension == "jp2" || extension=="jpk"){
 		ns_ojp2k_image_output_file<ns_component> jp2k_out;
 		if (compression_ratio == -1)
 			compression_ratio = .05;
-		ns_image_stream_file_sink<ns_component> file_sink(filename,jp2k_out,1024, compression_ratio);
-		image.pump(file_sink,1024); 
+		ns_image_stream_file_sink<ns_component> file_sink(filename,jp2k_out,1, compression_ratio);
+		image.pump(file_sink,1); 
 		return;
 	}
 	throw ns_ex("ns_save_image::Unknown file extension: ") << extension;

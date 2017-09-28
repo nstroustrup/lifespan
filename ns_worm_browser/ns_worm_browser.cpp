@@ -5705,18 +5705,18 @@ void ns_worm_learner::save_current_image(const std::string & filename){
 	//open jpeg
 	if (extension == "jpg"){
 		ns_jpeg_image_output_file<ns_8_bit> jpeg_out;
-		ns_image_stream_file_sink<ns_8_bit > file_sink(filename,jpeg_out, NS_DEFAULT_JPEG_COMPRESSION,1024);
+		ns_image_stream_file_sink<ns_8_bit > file_sink(filename,jpeg_out, 1024,NS_DEFAULT_JPEG_COMPRESSION);
 		current_image.pump(file_sink,128);
 	}
 	//open tiff
 	else if (extension == "tif" || extension == "tiff"){
 		ns_tiff_image_output_file<ns_8_bit> tiff_out;
-		ns_image_stream_file_sink<ns_8_bit> file_sink(filename,tiff_out, 1.0,1024);
+		ns_image_stream_file_sink<ns_8_bit> file_sink(filename,tiff_out, 1024,1.0);
 		current_image.pump(file_sink,1024);
 	}
 	if (extension == "jp2"){
 		ns_ojp2k_image_output_file<ns_8_bit> jp2k_out;
-		ns_image_stream_file_sink<ns_8_bit > file_sink(filename,jp2k_out,NS_DEFAULT_JP2K_COMPRESSION,1024);
+		ns_image_stream_file_sink<ns_8_bit > file_sink(filename,jp2k_out, 1024,NS_DEFAULT_JP2K_COMPRESSION);
 		current_image.pump(file_sink,1024);
 	}
 
@@ -5845,7 +5845,6 @@ bool ns_worm_learner::register_worm_window_key_press(int key, const bool shift_k
 			worm_window.display_rescale_factor = .1;
 		return true;
 	}
-																
 	else if (key == FL_Left || key== 'a'){
 		ns_worm_learner::navigate_solo_worm_annotation(ns_death_time_solo_posture_annotater::ns_back,true);
 		return true;
@@ -5859,11 +5858,15 @@ bool ns_worm_learner::register_worm_window_key_press(int key, const bool shift_k
 		return true;
 	}
 	else if (shift_key_held && key == '=' || key == '+'){
-		death_time_solo_annotater.register_click(ns_vector_2i(0,0),ns_death_time_solo_posture_annotater::ns_increase_contrast);
+		if (control_key_held)
+			death_time_solo_annotater.register_click(ns_vector_2i(0, 0), ns_death_time_solo_posture_annotater::ns_time_zoom_in);
+		else death_time_solo_annotater.register_click(ns_vector_2i(0,0),ns_death_time_solo_posture_annotater::ns_increase_contrast);
 		return true;
 	}
 	else if (key == '-'){
-		death_time_solo_annotater.register_click(ns_vector_2i(0,0),ns_death_time_solo_posture_annotater::ns_decrease_contrast);
+		if (control_key_held)
+			death_time_solo_annotater.register_click(ns_vector_2i(0, 0), ns_death_time_solo_posture_annotater::ns_time_zoom_out);
+		else death_time_solo_annotater.register_click(ns_vector_2i(0,0),ns_death_time_solo_posture_annotater::ns_decrease_contrast);
 		return true;
 	}
 	else if (key == 'i') {
@@ -7792,6 +7795,20 @@ bool ns_death_time_solo_posture_annotater::ns_fix_annotation(ns_death_time_annot
 }
 
 
+void ns_death_time_solo_posture_annotater::draw_telemetry(const ns_vector_2i & position, const ns_vector_2i & graph_size, const ns_vector_2i & buffer_size, ns_8_bit * buffer) {
+	if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("Drawing telemetry."));
+	unsigned long path_start_time, path_stop_time;
+	telemetry.get_current_time_limits(path_start_time, path_stop_time);
+	unsigned long current_time = current_worm->element(current_element_id()).absolute_time;
+
+	const unsigned long start_time = path_start_time + (1.0 - 1.0 / telemetry_zoom_factor)*(current_time - path_start_time);
+	const unsigned long stop_time = current_time + (1.0 / telemetry_zoom_factor)*(path_stop_time - current_time);
+	cerr << path_start_time << "-" << path_stop_time << "; " << telemetry_zoom_factor << " ; " << start_time << "-" << stop_time << "\n";
+	telemetry.draw(graph_contents, current_timepoint_id, position, graph_size, buffer_size, buffer,start_time,stop_time);
+	
+	if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("Done with telemetry."));
+}
+
 void ns_death_time_solo_posture_annotater::register_click(const ns_vector_2i & image_position, const ns_click_request & action) {
 	ns_acquire_lock_for_scope lock(image_buffer_access_lock, __FILE__, __LINE__);
 	const unsigned long hand_bar_group_bottom(bottom_margin_position().y);
@@ -7808,6 +7825,7 @@ void ns_death_time_solo_posture_annotater::register_click(const ns_vector_2i & i
 			image_position.y < hand_bar_group_bottom + hand_bar_height);
 	bool change_made = false;
 	bool click_handled_by_hand_bar_choice(false);
+
 	if (action == ns_cycle_state && (click_in_bar_area || click_in_graph_area )) {
 		const unsigned long all_bar_id((image_position.y - hand_bar_group_bottom) / ns_death_time_solo_posture_annotater_timepoint::ns_movement_bar_height);
 
@@ -7856,6 +7874,16 @@ void ns_death_time_solo_posture_annotater::register_click(const ns_vector_2i & i
 	}
 	if (!click_handled_by_hand_bar_choice) {
 		switch (action) {
+		case  ns_time_zoom_in:
+				telemetry_zoom_factor *= 1.2;
+				change_made = true;
+				break;
+		case ns_time_zoom_out:
+				telemetry_zoom_factor /= 1.2;
+				if (telemetry_zoom_factor < 1)
+					telemetry_zoom_factor = 1;
+				change_made = true;
+				break;
 		case ns_cycle_state:
 		case ns_cycle_state_alt_key_held:
 			current_by_hand_timing_data().animals[current_animal_id].step_event(

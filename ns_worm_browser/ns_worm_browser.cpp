@@ -5826,7 +5826,7 @@ void ns_worm_learner::clear_areas(){
 
 void ns_worm_learner::touch_worm_window_pixel(const ns_button_press & press){
 	if (press.screen_position.x < 4|| press.screen_position.y < 4 ||
-		press.screen_position.x+4 >= worm_window.gl_image_size.x*worm_window.display_rescale_factor|| press.screen_position.y+4 >= worm_window.gl_image_size.y*worm_window.display_rescale_factor)
+		press.screen_position.x+4 >= worm_window.gl_image_size.x|| press.screen_position.y+4 >= worm_window.gl_image_size.y)
 		return;
 	float z = ((float)worm_window.pre_gl_downsample)/worm_window.image_zoom;
 	ns_button_press p(press);
@@ -6195,7 +6195,7 @@ void ns_worm_learner::draw_worm_window_image(ns_image_standard & image){
 	
 	//if the image is an integer factor larger than the display size
 	//it should be downsampled before being sent to the video card.
-	worm_window.pre_gl_downsample = image.properties().width / (maximum_window_size.x- death_time_solo_annotater.telemetry.image_size().x);
+	worm_window.pre_gl_downsample = image.properties().width / (maximum_window_size.x- death_time_solo_annotater.telemetry_size().x);
 	if (worm_window.pre_gl_downsample < 1)
 		worm_window.pre_gl_downsample = 1;
 
@@ -6205,9 +6205,9 @@ void ns_worm_learner::draw_worm_window_image(ns_image_standard & image){
 	new_image_size.width/=worm_window.pre_gl_downsample;
 	new_image_size.height/=worm_window.pre_gl_downsample;
 
-	ns_vector_2i buffer_size(new_image_size.width + death_time_solo_annotater.telemetry.image_size().x,
-				 (new_image_size.height > death_time_solo_annotater.telemetry.image_size().y) ?
-				 new_image_size.height : death_time_solo_annotater.telemetry.image_size().y);
+	ns_vector_2i buffer_size(new_image_size.width + death_time_solo_annotater.telemetry_size().x,
+				 (new_image_size.height > death_time_solo_annotater.telemetry_size().y) ?
+				 new_image_size.height : death_time_solo_annotater.telemetry_size().y);
 
 	//we resize the image by an integer factor
 	//but it still needs to be resized by the video card
@@ -6225,8 +6225,8 @@ void ns_worm_learner::draw_worm_window_image(ns_image_standard & image){
 	gl_resize = 1;
 
 	worm_window.telemetry_size = ns_vector_2i(
-		(unsigned int)floor(death_time_solo_annotater.telemetry.image_size().x*gl_resize),
-		(unsigned int)floor(death_time_solo_annotater.telemetry.image_size().y*gl_resize));
+		(unsigned int)floor(death_time_solo_annotater.telemetry_size().x*gl_resize),
+		(unsigned int)floor(death_time_solo_annotater.telemetry_size().y*gl_resize));
 	
 	worm_window.worm_image_size = ns_vector_2i(
 		(unsigned int)floor(new_image_size.width*gl_resize),
@@ -6250,7 +6250,7 @@ void ns_worm_learner::draw_worm_window_image(ns_image_standard & image){
 		worm_window.gl_buffer_properties.width = buffer_size.x;
 		worm_window.gl_buffer_properties.height = buffer_size.y;
 	}
-	const unsigned long worm_image_height = (new_image_size.height - death_time_solo_annotater.bottom_margin_position().y-1)/worm_window.pre_gl_downsample;
+	const unsigned long worm_image_height = (new_image_size.height - death_time_solo_annotater.bottom_margin_position().y*ns_death_time_solo_posture_annotater_timepoint::ns_resolution_increase_factor-1)/worm_window.pre_gl_downsample;
 	if (image.properties().components == 3) {
 	  //copy over the top border area of the image (which contains only text and metata) without rescaling
 
@@ -6284,6 +6284,13 @@ void ns_worm_learner::draw_worm_window_image(ns_image_standard & image){
 			}
 		//	worm_window.gl_buffer[3 * (worm_window.gl_buffer_properties.width*_y)] = 255;
 		}
+
+	for (int _y = new_image_size.height; _y < worm_window.gl_buffer_properties.height; _y++)
+		for (unsigned int _x = 0; _x < new_image_size.width; _x++) {
+			worm_window.gl_buffer[3 * (worm_window.gl_buffer_properties.width*_y + _x)] =
+				worm_window.gl_buffer[3 * (worm_window.gl_buffer_properties.width*_y + _x) + 1] =
+				worm_window.gl_buffer[3 * (worm_window.gl_buffer_properties.width*_y + _x) + 2] = 0;
+		}
 	
 	//	cout << "("<< image.properties().height << "," << image.properties().width << ")\n";
 	}
@@ -6298,14 +6305,16 @@ void ns_worm_learner::draw_worm_window_image(ns_image_standard & image){
 				if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("Loading movement quantification data"));
 			  death_time_solo_annotater.load_movement_analysis(get_sql_connection());
 			}
+		
+		
 			death_time_solo_annotater.draw_telemetry(ns_vector_2i(new_image_size.width, 0),
-				death_time_solo_annotater.telemetry.image_size(),
+				death_time_solo_annotater.telemetry_size(),
 				ns_vector_2i(worm_window.gl_buffer_properties.width,
 					worm_window.gl_buffer_properties.height),
 				worm_window.gl_buffer);
 
 			//clear out bottom margin
-			for (int _y = death_time_solo_annotater.telemetry.image_size().y; _y < worm_window.gl_buffer_properties.height; _y++)
+			for (int _y = death_time_solo_annotater.telemetry_size().y; _y < worm_window.gl_buffer_properties.height; _y++)
 				for (unsigned int _x = 3 * new_image_size.width; _x < 3 * worm_window.gl_buffer_properties.width; _x++)
 					worm_window.gl_buffer[3 * (worm_window.gl_buffer_properties.height - _y-1)*worm_window.gl_buffer_properties.width + _x] = 0;
 		
@@ -7804,19 +7813,19 @@ void ns_death_time_solo_posture_annotater::draw_telemetry(const ns_vector_2i & p
 	const unsigned long start_time = path_start_time + (1.0 - 1.0 / telemetry_zoom_factor)*(current_time - path_start_time);
 	const unsigned long stop_time = current_time + (1.0 / telemetry_zoom_factor)*(path_stop_time - current_time);
 	cerr << path_start_time << "-" << path_stop_time << "; " << telemetry_zoom_factor << " ; " << start_time << "-" << stop_time << "\n";
-	telemetry.draw(graph_contents, current_timepoint_id, position, graph_size, buffer_size, buffer,start_time,stop_time);
+	telemetry.draw(graph_contents, current_timepoint_id, position, graph_size, buffer_size, ns_death_time_solo_posture_annotater_timepoint::ns_resolution_increase_factor,buffer,start_time,stop_time);
 	
 	if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("Done with telemetry."));
 }
 
 void ns_death_time_solo_posture_annotater::register_click(const ns_vector_2i & image_position, const ns_click_request & action) {
 	ns_acquire_lock_for_scope lock(image_buffer_access_lock, __FILE__, __LINE__);
-	const unsigned long hand_bar_group_bottom(bottom_margin_position().y);
+	const unsigned long hand_bar_group_bottom(bottom_margin_position().y*ns_death_time_solo_posture_annotater_timepoint::ns_resolution_increase_factor);
 
-	const unsigned long hand_bar_height((current_by_hand_timing_data().animals.size() + 1)*ns_death_time_solo_posture_annotater_timepoint::ns_movement_bar_height);
+	const unsigned long hand_bar_height((current_by_hand_timing_data().animals.size() + 1)*ns_death_time_solo_posture_annotater_timepoint::ns_movement_bar_height*ns_death_time_solo_posture_annotater_timepoint::ns_resolution_increase_factor);
 
 	ns_vector_2i graph_tl(worm_learner->worm_window.worm_image_size.x, 0);
-	ns_vector_2i graph_br = graph_tl + telemetry.image_size();
+	ns_vector_2i graph_br = graph_tl + telemetry_size();
 
 	const bool click_in_graph_area(image_position.x >= graph_tl.x && image_position.x < graph_br.x &&
 		image_position.y >= graph_tl.y && image_position.y < graph_br.y);
@@ -7827,11 +7836,11 @@ void ns_death_time_solo_posture_annotater::register_click(const ns_vector_2i & i
 	bool click_handled_by_hand_bar_choice(false);
 
 	if (action == ns_cycle_state && (click_in_bar_area || click_in_graph_area )) {
-		const unsigned long all_bar_id((image_position.y - hand_bar_group_bottom) / ns_death_time_solo_posture_annotater_timepoint::ns_movement_bar_height);
+		const unsigned long all_bar_id((image_position.y - hand_bar_group_bottom) / (ns_death_time_solo_posture_annotater_timepoint::ns_movement_bar_height*ns_death_time_solo_posture_annotater_timepoint::ns_resolution_increase_factor));
 
 		if (all_bar_id == 0 || click_in_graph_area) {
 
-			ns_vector_2i bottom_margin_bottom(bottom_margin_position());
+			ns_vector_2i bottom_margin_bottom(bottom_margin_position()*ns_death_time_solo_posture_annotater_timepoint::ns_resolution_increase_factor);
 			const ns_time_path_limits observation_limit(current_worm->observation_limits());
 
 			bool switch_time(false);
@@ -7846,8 +7855,8 @@ void ns_death_time_solo_posture_annotater::register_click(const ns_vector_2i & i
 			}
 			else {
 				switch_time = true;
-				requested_time = current_machine_timing_data->animals[0].get_time_from_movement_diagram_position(image_position.x, bottom_margin_bottom,
-					ns_vector_2i(current_worm->element(current_element_id()).image().properties().width, 0),
+				requested_time = current_machine_timing_data->animals[0].get_time_from_movement_diagram_position(image_position.x, bottom_margin_bottom*ns_death_time_solo_posture_annotater_timepoint::ns_resolution_increase_factor,
+					ns_vector_2i(current_worm->element(current_element_id()).image().properties().width*ns_death_time_solo_posture_annotater_timepoint::ns_resolution_increase_factor, 0),
 					observation_limit);
 			}
 			if (switch_time) {

@@ -468,7 +468,8 @@ private:
 			graph.y_axis_properties.line.width = 1;
 		graph.x_axis_properties.line.color =
 			graph.y_axis_properties.line.color = gray;
-
+		graph.x_axis_properties.text_size *= 2;
+		graph.y_axis_properties.text_size *= 2;
 		graph.set_graph_display_options("", axes, base_graph.properties().width/(float)base_graph.properties().height);
 		graph_specifics = graph.draw(base_graph);
 	}
@@ -480,7 +481,8 @@ private:
 	inline unsigned long map_pixel_from_image_onto_buffer(const unsigned long &x, const unsigned long &y, const ns_vector_2i &position, const ns_vector_2i &buffer_size) {
 		return 3 * ((buffer_size.y - y - position.y-1)*buffer_size.x + x + position.x);
 	}
-	void overlay_metadata(const ns_animal_telemetry::ns_graph_contents graph_contents,const unsigned long current_element, const ns_vector_2i & position, const ns_vector_2i & buffer_size, ns_8_bit * buffer) {
+	ns_vector_2i border() const { return ns_vector_2i(25, 25); }
+	void overlay_metadata(const ns_animal_telemetry::ns_graph_contents graph_contents,const unsigned long current_element, const ns_vector_2i & position, const ns_vector_2i & buffer_size, const long marker_resize_factor,ns_8_bit * buffer) {
 		unsigned long x_score, y_score, x_size, y_size;
 		long segment_id = segment_ids[current_element];
 		if (segment_id == -1)
@@ -492,8 +494,8 @@ private:
 			throw ns_ex("Out of element id");
 		map_value_from_graph_onto_image(time_axis[current_element], movement_vals[segment_id].y[segment_element_id], x_score, y_score);
 		map_value_from_graph_onto_image(time_axis[current_element], size_vals[segment_id].y[segment_element_id], x_size, y_size);
-		for (int y = -2; y <= 2; y++)
-			for (int x = -2; x <= 2; x++) {
+		for (int y = -2* marker_resize_factor; y <= 2 * marker_resize_factor; y++)
+			for (int x = -2 * marker_resize_factor; x <= 2 * marker_resize_factor; x++) {
 				unsigned long p(map_pixel_from_image_onto_buffer(x_score+x+border().x, y_score+y+ border().y, position, buffer_size));
 				buffer[p] = 255;
 				buffer[p+1] = 0;
@@ -542,16 +544,7 @@ public:
 		res.y = -((long)((long)y - (long)base_graph.properties().height + graph_specifics.boundary.y + border().y) / graph_specifics.dy + graph_specifics.axes.boundary(2) - graph_specifics.axes.axis_offset(1));
 		return res;
 	}
-	ns_vector_2i image_size() const { 
-		if (!_show) return ns_vector_2i(0, 0);
-		return largest_possible_image_size();
-	}	
-	ns_vector_2i largest_possible_image_size() const {
-		return ns_vector_2i(300, 300);
-	}
-	ns_vector_2i border() const {
-		return ns_vector_2i(25, 25);
-	}
+	
 	ns_animal_telemetry() :_show(false), last_graph_contents(ns_none), region_data(0), group_id(0){}
 	void set_current_animal(const unsigned int & group_id_, ns_posture_analysis_model & mod,ns_death_time_posture_solo_annotater_region_data * region_data_) {
 		group_id = group_id_;
@@ -559,7 +552,7 @@ public:
 		base_graph.init(ns_image_properties(0, 0, 3));
 		posture_analysis_model = mod;
 	}
-	void draw(const ns_graph_contents graph_contents, const unsigned long element_id, const ns_vector_2i & position, const ns_vector_2i & graph_size, const ns_vector_2i & buffer_size, ns_8_bit * buffer, const unsigned long start_time=0, const unsigned long stop_time=UINT_MAX) {
+	void draw(const ns_graph_contents graph_contents, const unsigned long element_id, const ns_vector_2i & position, const ns_vector_2i & graph_size, const ns_vector_2i & buffer_size, unsigned long marker_resize_factor,ns_8_bit * buffer, const unsigned long start_time=0, const unsigned long stop_time=UINT_MAX) {
 		if (base_graph.properties().height == 0 || graph_contents != last_graph_contents || last_start_time != start_time || last_stop_time != stop_time) {
 			base_graph.use_more_memory_to_avoid_reallocations();
 			ns_image_properties prop;
@@ -596,7 +589,7 @@ public:
 				for (unsigned int c = 0; c < 3; c++) 
 					buffer[map_pixel_from_image_onto_buffer(x + border().x, y + border().y, position, buffer_size) + c] = base_graph[y][3 * x + c];
 			}
-			overlay_metadata(graph_contents,element_id- first_element, position, buffer_size, buffer);
+			overlay_metadata(graph_contents,element_id- first_element, position, buffer_size, marker_resize_factor,buffer);
 
 			//right margin
 			for (unsigned int x = base_graph.properties().width + border().x; x < graph_size.x; x++)

@@ -2798,8 +2798,8 @@ int main() {
 
 		worm_learner.maximum_window_size = image_server.max_terminal_window_size;
 		worm_learner.death_time_annotater.set_resize_factor(image_server.terminal_hand_annotation_resize_factor);
-		worm_learner.main_window.display_rescale_factor = 
-			worm_learner.worm_window.display_rescale_factor = image_server.terminal_window_scale_factor();
+		worm_learner.main_window.display_rescale_factor = image_server.terminal_window_scale_factor();
+		worm_learner.worm_window.display_rescale_factor = image_server.terminal_window_scale_factor() / ns_death_time_solo_posture_annotater_timepoint::ns_resolution_increase_factor;
 
 		//ns_update_sample_info(sql());
 		ns_worm_browser_output_debug(__LINE__,__FILE__,"Checking for new release");

@@ -109,7 +109,7 @@ public:
 			case ns_movement_threshold:
 				for (unsigned int x = 0; x < image.properties().width*ns_resolution_increase_factor; x++) {
 					ns_8_bit t;
-					if (registered_images.get_stabilized_worm_neighborhood_threshold(y/ ns_resolution_increase_factor, x)) {
+					if (registered_images.get_stabilized_worm_neighborhood_threshold(y/ ns_resolution_increase_factor, x / ns_resolution_increase_factor)) {
 						long sum, count;
 						ns_analyzed_image_time_path::spatially_average_movement(y/ ns_resolution_increase_factor, x/ ns_resolution_increase_factor, ns_time_path_image_movement_analyzer::ns_spatially_averaged_movement_kernal_half_size, movement_image, sum, count);
 
@@ -142,8 +142,8 @@ public:
 					}
 					else f = 0;
 
-					const int r = image[y][x] * (1 - f) + 255 * f,  //goes up to 255 the more movement there is
-						bg = image[y][x] * (1 - f);  //goes down to zero the more movement there is.
+					const int r = image[y / ns_resolution_increase_factor][x / ns_resolution_increase_factor] * (1 - f) + 255 * f,  //goes up to 255 the more movement there is
+						bg = image[y / ns_resolution_increase_factor][x / ns_resolution_increase_factor] * (1 - f);  //goes down to zero the more movement there is.
 					output[y + side_border][3 * (x + side_border)] = r;
 					output[y + side_border][3 * (x + side_border) + 1] =
 						output[y + side_border][3 * (x + side_border) + 2] = bg;
@@ -164,8 +164,8 @@ public:
 					}
 					else f = 0;
 
-					int r = image[y][x] * (1 - f) + 255 * f,  //goes up to 255 the more movement there is
-						bg = image[y][x] * (1 - f);  //goes down to zero the more movement there is.
+					int r = image[y / ns_resolution_increase_factor][x / ns_resolution_increase_factor] * (1 - f) + 255 * f,  //goes up to 255 the more movement there is
+						bg = image[y / ns_resolution_increase_factor][x / ns_resolution_increase_factor] * (1 - f);  //goes down to zero the more movement there is.
 					output[y + side_border][3 * (x + side_border)] = r;
 					output[y + side_border][3 * (x + side_border) + 1] =
 						output[y + side_border][3 * (x + side_border) + 2] = bg;
@@ -174,7 +174,7 @@ public:
 
 			}
 			//right border
-			for (unsigned int x = ns_resolution_increase_factor*image.properties().width + side_border; x < output.properties().width; x++) {
+			for (unsigned int x = ns_resolution_increase_factor*image.properties().width; x < output.properties().width; x++) {
 				output[y+ side_border][3 * x] =
 					output[y + side_border][3 * x + 1] =
 					output[y + side_border][3 * x + 2] = 0;

@@ -2247,6 +2247,7 @@ public:
 							Fl::event_key(FL_Alt_L) || Fl::event_key(FL_Alt_R)
 						)) {
 							report_changes_made_to_screen();
+							worm_learner.death_time_solo_annotater.request_refresh();
 
 							return 1;
 						}
@@ -2302,10 +2303,13 @@ void ns_handle_death_time_annotation_button(Fl_Widget * w, void * data){
 	worm_learner.navigate_death_time_annotation(action);
 }
 void ns_handle_death_time_solo_annotation_button(Fl_Widget * w, void * data){
+	
 	ns_death_time_solo_posture_annotater::ns_image_series_annotater_action * a = static_cast<ns_death_time_solo_posture_annotater::ns_image_series_annotater_action *>(data);
 	ns_death_time_solo_posture_annotater::ns_image_series_annotater_action action(*a);
 	//delete a;
 	worm_learner.navigate_solo_worm_annotation(action);
+	report_changes_made_to_screen();
+	worm_learner.storyboard_annotater.request_refresh();
 	
 	//Fl::focus(current_window->gl_window);
 }

@@ -7054,11 +7054,11 @@ void ns_worm_learner::navigate_solo_worm_annotation(ns_death_time_solo_posture_a
 		case ns_death_time_solo_posture_annotater::ns_none: break;
 		case ns_death_time_solo_posture_annotater::ns_forward: 
 			if(death_time_solo_annotater.step_forward(ns_hide_worm_window,asynch))
-				death_time_solo_annotater.request_refresh();
+				death_time_solo_annotater.request_refresh();// report_changes_made_to_screen();
 			break;
 		case ns_death_time_solo_posture_annotater::ns_back:	
 			if(death_time_solo_annotater.step_back(&ns_hide_worm_window,asynch)) 
-				death_time_solo_annotater.request_refresh();
+				death_time_solo_annotater.request_refresh();// report_changes_made_to_screen();
 			break;
 		case ns_death_time_solo_posture_annotater::ns_fast_forward: death_time_solo_annotater.fast_forward();break;
 		case ns_death_time_solo_posture_annotater::ns_fast_back:	death_time_solo_annotater.fast_back();break;
@@ -7066,12 +7066,12 @@ void ns_worm_learner::navigate_solo_worm_annotation(ns_death_time_solo_posture_a
 		case ns_death_time_solo_posture_annotater::ns_rewind_to_zero: break;
 		case ns_death_time_solo_posture_annotater::ns_step_visualization: 
 			solo_annotation_visualization_type = death_time_solo_annotater.step_visualization_type();
-			death_time_solo_annotater.request_refresh();
+		//	death_time_solo_annotater.request_refresh(); report_changes_made_to_screen();
 			break;
 		case ns_death_time_solo_posture_annotater::ns_step_graph:
 			death_time_solo_annotater.step_graph_type();
 			//death_time_solo_annotater.display_current_frame();
-			death_time_solo_annotater.request_refresh();
+		//	death_time_solo_annotater.request_refresh(); report_changes_made_to_screen();
 			break;
 		case ns_death_time_solo_posture_annotater::ns_write_quantification_to_disk: 
 			death_time_solo_annotater.register_click(ns_vector_2i(0,0),ns_death_time_solo_posture_annotater::ns_output_images); break;
@@ -7812,7 +7812,7 @@ void ns_death_time_solo_posture_annotater::draw_telemetry(const ns_vector_2i & p
 
 	const unsigned long start_time = path_start_time + (1.0 - 1.0 / telemetry_zoom_factor)*(current_time - path_start_time);
 	const unsigned long stop_time = current_time + (1.0 / telemetry_zoom_factor)*(path_stop_time - current_time);
-	cerr << path_start_time << "-" << path_stop_time << "; " << telemetry_zoom_factor << " ; " << start_time << "-" << stop_time << "\n";
+	//cerr << path_start_time << "-" << path_stop_time << "; " << telemetry_zoom_factor << " ; " << start_time << "-" << stop_time << "\n";
 	telemetry.draw(graph_contents, current_timepoint_id, position, graph_size, buffer_size, ns_death_time_solo_posture_annotater_timepoint::ns_resolution_increase_factor,buffer,start_time,stop_time);
 	
 	if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("Done with telemetry."));

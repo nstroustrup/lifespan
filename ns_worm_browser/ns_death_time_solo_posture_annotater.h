@@ -68,7 +68,8 @@ public:
 				output[y][x] = 0;
 			}
 		}
-		for (unsigned int y = 0; y < ns_resolution_increase_factor*image.properties().height; y++) {
+		for (unsigned int y = 0; y < ns_resolution_increase_factor*image.properties().height; y+= ns_resolution_increase_factor) {
+
 			//left border
 			for (unsigned int x = 0; x < side_border; x++) {
 				output[y + side_border][3 * x] =
@@ -78,19 +79,21 @@ public:
 			//middle
 			switch (vis_type) {
 			case ns_image:
-				for (unsigned int x = 0; x < ns_resolution_increase_factor*image.properties().width; x++) {
-					output[y + side_border][3 * (x + side_border)] =
-						output[y + side_border][3 * (x + side_border) + 1] =
-						output[y + side_border][3 * (x + side_border) + 2] = image[y/ ns_resolution_increase_factor][x/ ns_resolution_increase_factor];
+				for (unsigned int x = 0; x < image.properties().width; x++) {
+					ns_8_bit a = image[y / ns_resolution_increase_factor][x];
+					for (unsigned int xx = 0; xx < ns_resolution_increase_factor; xx++)
+					output[y + side_border][3 * (ns_resolution_increase_factor*x + xx + side_border)] =
+						output[y + side_border][3 * (ns_resolution_increase_factor*x + xx+ side_border) + 1] =
+						output[y + side_border][3 * (ns_resolution_increase_factor*x + xx+ side_border) + 2] = a;
 				}
 				break;
 			case ns_movement:
-				for (unsigned int x = 0; x < image.properties().width*ns_resolution_increase_factor; x++) {
+				for (unsigned int x = 0; x < image.properties().width; x++) {
 					ns_8_bit t;
-
-					if (registered_images.get_stabilized_worm_neighborhood_threshold(y/ ns_resolution_increase_factor, x/ ns_resolution_increase_factor)) {
+					if (registered_images.get_stabilized_worm_neighborhood_threshold(y/ ns_resolution_increase_factor, x)) {
 						long sum, count;
-						ns_analyzed_image_time_path::spatially_average_movement(y/ ns_resolution_increase_factor, x/ ns_resolution_increase_factor, ns_time_path_image_movement_analyzer::ns_spatially_averaged_movement_kernal_half_size, movement_image, sum, count);
+
+						ns_analyzed_image_time_path::spatially_average_movement(y/ ns_resolution_increase_factor, x, ns_time_path_image_movement_analyzer::ns_spatially_averaged_movement_kernal_half_size, movement_image, sum, count);
 
 						if (count == 0) t = 0;
 						else {
@@ -100,18 +103,18 @@ public:
 					}
 					else t = 0;
 
-
-					output[y + side_border][3 * (x + side_border)] =
-						output[y + side_border][3 * (x + side_border) + 1] =
-						output[y + side_border][3 * (x + side_border) + 2] = t;
+					for (unsigned int xx = 0; xx < ns_resolution_increase_factor; xx++)
+					output[y + side_border][3 * (ns_resolution_increase_factor*x+xx + side_border)] =
+						output[y + side_border][3 * (ns_resolution_increase_factor*x+xx + side_border) + 1] =
+						output[y + side_border][3 * (ns_resolution_increase_factor*x+xx + side_border) + 2] = t;
 				}
 				break;
 			case ns_movement_threshold:
-				for (unsigned int x = 0; x < image.properties().width*ns_resolution_increase_factor; x++) {
+				for (unsigned int x = 0; x < image.properties().width; x++) {
 					ns_8_bit t;
-					if (registered_images.get_stabilized_worm_neighborhood_threshold(y/ ns_resolution_increase_factor, x / ns_resolution_increase_factor)) {
+					if (registered_images.get_stabilized_worm_neighborhood_threshold(y/ ns_resolution_increase_factor, x )) {
 						long sum, count;
-						ns_analyzed_image_time_path::spatially_average_movement(y/ ns_resolution_increase_factor, x/ ns_resolution_increase_factor, ns_time_path_image_movement_analyzer::ns_spatially_averaged_movement_kernal_half_size, movement_image, sum, count);
+						ns_analyzed_image_time_path::spatially_average_movement(y/ ns_resolution_increase_factor, x, ns_time_path_image_movement_analyzer::ns_spatially_averaged_movement_kernal_half_size, movement_image, sum, count);
 
 						if (abs(sum) < count*ns_time_path_image_movement_analyzer::ns_spatially_averaged_movement_threshold)
 							t = 0;
@@ -121,17 +124,19 @@ public:
 						}
 					}
 					else t = 0;
-					output[y][3 * (x + side_border)] =
-						output[y + side_border][3 * (x + side_border) + 1] =
-						output[y + side_border][3 * (x + side_border) + 2] = t;
+
+					for (unsigned int xx = 0; xx < ns_resolution_increase_factor; xx++)
+					output[y][3 * (ns_resolution_increase_factor*x + side_border)] =
+						output[y + side_border][3 * (ns_resolution_increase_factor*x + xx + side_border) + 1] =
+						output[y + side_border][3 * (ns_resolution_increase_factor*x + xx+ side_border) + 2] = t;
 				}
 				break;
 			case ns_movement_and_image:
-				for (unsigned int x = 0; x < image.properties().width*ns_resolution_increase_factor; x++) {
+				for (unsigned int x = 0; x < image.properties().width; x++) {
 					float f;
-					if (registered_images.get_stabilized_worm_neighborhood_threshold(y/ ns_resolution_increase_factor, x/ ns_resolution_increase_factor)) {
+					if (registered_images.get_stabilized_worm_neighborhood_threshold(y/ ns_resolution_increase_factor, x)) {
 						long sum, count;
-						ns_analyzed_image_time_path::spatially_average_movement(y/ ns_resolution_increase_factor, x/ ns_resolution_increase_factor, ns_time_path_image_movement_analyzer::ns_spatially_averaged_movement_kernal_half_size, movement_image, sum, count);
+						ns_analyzed_image_time_path::spatially_average_movement(y/ ns_resolution_increase_factor, x, ns_time_path_image_movement_analyzer::ns_spatially_averaged_movement_kernal_half_size, movement_image, sum, count);
 
 						if (count == 0)
 							f = 0;
@@ -142,19 +147,21 @@ public:
 					}
 					else f = 0;
 
-					const int r = image[y / ns_resolution_increase_factor][x / ns_resolution_increase_factor] * (1 - f) + 255 * f,  //goes up to 255 the more movement there is
-						bg = image[y / ns_resolution_increase_factor][x / ns_resolution_increase_factor] * (1 - f);  //goes down to zero the more movement there is.
-					output[y + side_border][3 * (x + side_border)] = r;
-					output[y + side_border][3 * (x + side_border) + 1] =
-						output[y + side_border][3 * (x + side_border) + 2] = bg;
+					const int r = image[y / ns_resolution_increase_factor][x] * (1 - f) + 255 * f,  //goes up to 255 the more movement there is
+						bg = image[y / ns_resolution_increase_factor][x] * (1 - f);  //goes down to zero the more movement there is.
+					for (unsigned int xx = 0; xx < ns_resolution_increase_factor; xx++) {
+						output[y + side_border][3 * (ns_resolution_increase_factor*x+xx + side_border)] = r;
+						output[y + side_border][3 * (ns_resolution_increase_factor*x+xx + side_border) + 1] =
+							output[y + side_border][3 * (ns_resolution_increase_factor*x+xx + side_border) + 2] = bg;
+					}
 				}
 				break;
 			case ns_movement_threshold_and_image:
-				for (unsigned int x = 0; x < image.properties().width*ns_resolution_increase_factor; x++) {
+				for (unsigned int x = 0; x < image.properties().width; x++) {
 					float f;
-					if (registered_images.get_stabilized_worm_neighborhood_threshold(y/ ns_resolution_increase_factor, x/ ns_resolution_increase_factor)) {
+					if (registered_images.get_stabilized_worm_neighborhood_threshold(y/ ns_resolution_increase_factor, x)) {
 						long sum, count;
-						ns_analyzed_image_time_path::spatially_average_movement(y/ ns_resolution_increase_factor, x/ ns_resolution_increase_factor, ns_time_path_image_movement_analyzer::ns_spatially_averaged_movement_kernal_half_size, movement_image, sum, count);
+						ns_analyzed_image_time_path::spatially_average_movement(y/ ns_resolution_increase_factor, x, ns_time_path_image_movement_analyzer::ns_spatially_averaged_movement_kernal_half_size, movement_image, sum, count);
 						if (count == 0 || abs(sum) < count* ns_time_path_image_movement_analyzer::ns_spatially_averaged_movement_threshold)
 							f = 0;
 						else {
@@ -164,11 +171,13 @@ public:
 					}
 					else f = 0;
 
-					int r = image[y / ns_resolution_increase_factor][x / ns_resolution_increase_factor] * (1 - f) + 255 * f,  //goes up to 255 the more movement there is
-						bg = image[y / ns_resolution_increase_factor][x / ns_resolution_increase_factor] * (1 - f);  //goes down to zero the more movement there is.
-					output[y + side_border][3 * (x + side_border)] = r;
-					output[y + side_border][3 * (x + side_border) + 1] =
-						output[y + side_border][3 * (x + side_border) + 2] = bg;
+					int r = image[y / ns_resolution_increase_factor][x] * (1 - f) + 255 * f,  //goes up to 255 the more movement there is
+						bg = image[y / ns_resolution_increase_factor][x] * (1 - f);  //goes down to zero the more movement there is.
+					for (unsigned int xx = 0; xx < ns_resolution_increase_factor; xx++) {
+						output[y + side_border][3 * (ns_resolution_increase_factor*x+xx + side_border)] = r;
+						output[y + side_border][3 * (ns_resolution_increase_factor*x + xx + side_border) + 1] =
+							output[y + side_border][3 * (ns_resolution_increase_factor*x + xx + side_border) + 2] = bg;
+					}
 				}
 				break;
 
@@ -179,7 +188,14 @@ public:
 					output[y + side_border][3 * x + 1] =
 					output[y + side_border][3 * x + 2] = 0;
 			}
+
+			//now copy repeated lines
+			for (unsigned int yy = 1; yy < ns_resolution_increase_factor; yy++) {
+				for (unsigned int x = 0; x < output.properties().width; x++) 
+					output[y + side_border + yy][x] = output[y + side_border][x];
+			}
 		}
+
 		for (unsigned int y = ns_resolution_increase_factor*image.properties().height + side_border; y < output.properties().height; y++) {
 			for (unsigned int x = 0; x < output.properties().width; x++) {
 				output[y][3 * x] =

@@ -80,7 +80,7 @@ public:
 			switch (vis_type) {
 			case ns_image:
 				for (unsigned int x = 0; x < image.properties().width; x++) {
-					ns_8_bit a = image[y / ns_resolution_increase_factor][x];
+					const ns_8_bit a = image[y / ns_resolution_increase_factor][x];
 					for (unsigned int xx = 0; xx < ns_resolution_increase_factor; xx++)
 					output[y + side_border][3 * (ns_resolution_increase_factor*x + xx + side_border)] =
 						output[y + side_border][3 * (ns_resolution_increase_factor*x + xx+ side_border) + 1] =
@@ -191,7 +191,7 @@ public:
 
 			//now copy repeated lines
 			for (unsigned int yy = 1; yy < ns_resolution_increase_factor; yy++) {
-				for (unsigned int x = 0; x < output.properties().width; x++) 
+				for (unsigned int x = 0; x < 3*output.properties().width; x++) 
 					output[y + side_border + yy][x] = output[y + side_border][x];
 			}
 		}

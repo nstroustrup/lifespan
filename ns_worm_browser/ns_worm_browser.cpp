@@ -6196,7 +6196,7 @@ void ns_worm_learner::draw_worm_window_image(ns_image_standard & image){
 	//if the image is an integer factor larger than the display size
 	//it should be downsampled before being sent to the video card.
 	worm_window.pre_gl_downsample = image.properties().width / (maximum_window_size.x- death_time_solo_annotater.telemetry_size().x);
-	if (worm_window.pre_gl_downsample < 1)
+	//if (worm_window.pre_gl_downsample < 1)
 		worm_window.pre_gl_downsample = 1;
 
 	ns_image_properties new_image_size = image.properties();
@@ -6251,6 +6251,7 @@ void ns_worm_learner::draw_worm_window_image(ns_image_standard & image){
 		worm_window.gl_buffer_properties.height = buffer_size.y;
 	}
 	const unsigned long worm_image_height = (new_image_size.height - death_time_solo_annotater.bottom_margin_position().y*ns_death_time_solo_posture_annotater_timepoint::ns_resolution_increase_factor-1)/worm_window.pre_gl_downsample;
+	cout << "worm_image_height:" << worm_image_height << "\n";
 	if (image.properties().components == 3) {
 	  //copy over the top border area of the image (which contains only text and metata) without rescaling
 

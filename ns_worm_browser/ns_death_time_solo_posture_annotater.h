@@ -25,7 +25,7 @@ public:
 	unsigned long group_id;
 	ns_vector_2i image_pane_area;
 
-	enum {ns_movement_bar_height=15,ns_bottom_border_height_minus_hand_bars=115,ns_side_border_width=4, ns_minimum_width = 350,ns_resolution_increase_factor=2};
+	enum {ns_movement_bar_height=15,ns_bottom_border_height_minus_hand_bars=115,ns_side_border_width=4, ns_minimum_width = 350,ns_resolution_increase_factor=4};
 	
 	static int bottom_border_height(){return ((int)ns_bottom_border_height_minus_hand_bars + ns_movement_bar_height*(int)ns_death_time_annotation::maximum_number_of_worms_at_position);}
 

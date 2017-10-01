@@ -531,13 +531,14 @@ public:
 		c.add(set,ns_region_metadata());
 		if (c.regions.size() > 1)
 			throw ns_ex("ns_timing_data_and_death_time_annotation_matcher()::Found multiple regions in death time annotation set!");
+		if (c.regions.empty()) 
+			throw ns_ex("Region compilation yeilded an empty set");
 		if (timing_data.size() == 0)
 			throw ns_ex("Empty Data provided to annotation matcher");
 		std::map<unsigned long,typename timing_data_container::value_type::ns_animal_list *> group_lookup;
 		for (unsigned int i = 0; i < timing_data.size(); i++)
 			group_lookup[timing_data[i].stationary_path_id.group_id] = &timing_data[i].animals;
 		
-		//resize(c.regions.begin()->second.locations.size());
 		unsigned int location_id(0);
 		for (ns_death_time_annotation_compiler_region::ns_location_list::iterator p = c.regions.begin()->second.locations.begin(); p != c.regions.begin()->second.locations.end(); p++){
 			if (!p->properties.stationary_path_id.specified())

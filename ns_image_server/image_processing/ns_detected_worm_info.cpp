@@ -1200,7 +1200,7 @@ void ns_detected_worm_info::make_curvature_graph(ns_graph & graph){
 	curvature.properties.line.color=ns_color_8(150,150,150);
 	curvature.properties.line.opacity = 1.0;
 	curvature.properties.line.width= 1;
-	graph.contents.push_back(curvature);
+	graph.add_and_store(curvature);
 }
 ns_image_standard * ns_detected_worm_info::curvature_graph(){
 	ns_image_standard * im = new ns_image_standard;
@@ -1244,7 +1244,7 @@ void ns_detected_worm_info::make_width_graph(ns_graph &graph){
 	widths.properties.line.color=ns_color_8(150,150,150);
 	widths.properties.line.opacity = 1.0;
 	widths.properties.line.width= 1;
-	graph.contents.push_back(widths);
+	graph.add_and_store(widths);
 }
 
 void ns_detected_worm_info::width_graph(ns_svg & svg){

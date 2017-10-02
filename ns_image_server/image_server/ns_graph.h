@@ -182,6 +182,7 @@ public:
 		ns_graph_properties defaults;
 		title_properties.text_size = defaults.text_size*2;
 		set_graph_display_options();
+		stored_contents.reserve(10);
 	}
 	//returns the index of the global independant variable, if found.
 	int  check_input_data();
@@ -198,6 +199,7 @@ public:
 		area_properties=
 		title_properties = ns_graph_properties();
 		title.clear();
+		stored_contents.clear();
 		contents.clear();
 	}
 	///automatically generates a frequency distribution of the specified data
@@ -215,15 +217,24 @@ public:
 	void concatenate(const ns_graph & graph){}
 
 
-	std::vector<ns_graph_object> contents;
+	void add_and_store(const ns_graph_object & a) {
 
+		stored_contents.push_back(a);
+		contents.push_back(&(*stored_contents.rbegin()));
+	}	
+	void add_reference(ns_graph_object * a) {
+		contents.push_back(a);
+	}
 	ns_graph_properties y_axis_properties,
 						x_axis_properties,
 						area_properties,
 						title_properties;
 
+	std::vector<ns_graph_object *> contents;
 	private:
-
+	//references to all objects being plotted
+	//if the user wants, graph data can be stored
+	std::vector<ns_graph_object> stored_contents;
 	void plot_object(const ns_graph_object & y, const ns_graph_object & x,ns_svg & svg, const ns_graph_specifics & spec);
 	///plot_component takes two graph objects,
 	///"y" specifies the object that contains the dependant variable
@@ -234,8 +245,8 @@ public:
 
 	bool contains_data(){
 		for (unsigned int i = 0; i < contents.size(); i++){
-			if (contents[i].type == ns_graph_object::ns_graph_independant_variable && contents[i].y.size() != 0 ||
-				contents[i].type == ns_graph_object::ns_graph_dependant_variable && contents[i].y.size() != 0)
+			if (contents[i]->type == ns_graph_object::ns_graph_independant_variable && contents[i]->y.size() != 0 ||
+				contents[i]->type == ns_graph_object::ns_graph_dependant_variable && contents[i]->y.size() != 0)
 				return true;
 		}
 		return false;

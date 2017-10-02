@@ -220,13 +220,13 @@ void ns_movement_visualization_generator::create_survival_curve_for_capture_time
 	*/
 
 //	graph.contents.push_back(graph_x_axis);
-	graph.contents.push_back(censored_markers);
+	graph.add_and_store(censored_markers);
 	if (!strain_time.empty()){
-		graph.contents.push_back(strain_survival);
-		graph.contents.push_back(strain_marker);
+		graph.add_and_store(strain_survival);
+		graph.add_and_store(strain_marker);
 	}
-	graph.contents.push_back(plate_survival);
-	graph.contents.push_back(plate_marker);
+	graph.add_and_store(plate_survival);
+	graph.add_and_store(plate_marker);
 
 	
 	if (image.properties().height > 0){
@@ -426,13 +426,13 @@ void ns_movement_visualization_generator::create_area_graph_for_capture_time(con
 	ns_graph_object graph_x_axis(ns_graph_object::ns_graph_independant_variable);
 	make_x_axis(data,graph_x_axis,metadata);
 
-	graph.contents.push_back(graph_x_axis);
+	graph.add_and_store(graph_x_axis);
 	
 	for (int i = (int)worm_states_flat.size()-1; i >= 0; i--)
-		graph.contents.push_back(worm_states_sum[i]);
+		graph.add_and_store(worm_states_sum[i]);
 	if (marker_time != -1){
 		for (int i = 0; i < (int)current_position_markers.size(); i++)
-			graph.contents.push_back(current_position_markers[i]);
+			graph.add_and_store(current_position_markers[i]);
 	}
 	ns_graph_axes axes;
 	axes.tick(0) = 2;
@@ -562,13 +562,13 @@ void ns_movement_visualization_generator::create_scatter_proportion_graph_for_ca
 		total_graph.y_axis_properties.text_size= (unsigned long)(0.75*total_graph.y_axis_properties.text_size);
 	
 
-	states_graph.contents.push_back(graph_x_axis);
-	total_graph.contents.push_back(graph_x_axis);
-	states_graph.contents.push_back(number_of_worms_involving_multiple_worm_disambiguation);
+	states_graph.add_and_store(graph_x_axis);
+	total_graph.add_and_store(graph_x_axis);
+	states_graph.add_and_store(number_of_worms_involving_multiple_worm_disambiguation);
 
 	for (int i = (int)worm_states_percent.size()-1; i >= 0; i--)
-		states_graph.contents.push_back(worm_states_percent[i]);
-	total_graph.contents.push_back(total_worms);
+		states_graph.add_and_store(worm_states_percent[i]);
+	total_graph.add_and_store(total_worms);
 	ns_graph_axes states_axes;
 	states_axes.tick(0)=1;
 	states_axes.tick(2)=.1 ;

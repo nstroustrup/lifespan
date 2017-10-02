@@ -11,7 +11,7 @@ int  ns_graph::check_input_data(){
 	//see if an independant variable was specified for all input data
 	int global_independant_variable_id = -1;
 	for (unsigned int i = 0; i < contents.size(); i++){
-		if (contents[i].type == ns_graph_object::ns_graph_independant_variable){
+		if (contents[i]->type == ns_graph_object::ns_graph_independant_variable){
 			if (global_independant_variable_id == -1)
 				global_independant_variable_id = i;
 			else throw ns_ex("ns_graph::Multiple global independant variables specified!");
@@ -20,14 +20,14 @@ int  ns_graph::check_input_data(){
 	//if an independant variable was specified, disallow scatter data.
 	if (global_independant_variable_id != -1){
 		for (unsigned int i = 0; i < contents.size(); i++)
-			if (contents[i].type == ns_graph_object::ns_graph_dependant_variable && contents[i].x.size() != 0)
+			if (contents[i]->type == ns_graph_object::ns_graph_dependant_variable && contents[i]->x.size() != 0)
 				throw ns_ex("ns_graph::Cannot mix independant variables and scatter plots.");
 	}
 	//check to see all scatter data series are valid
 	else{
 		for (unsigned int i = 0; i < contents.size(); i++)
-			if (contents[i].type == ns_graph_object::ns_graph_dependant_variable && contents[i].x.size() != contents[i].y.size())
-				throw ns_ex("ns_graph:: Data series ") << contents[i].data_label << " has unmatched scatter data: size(x,y) = (" << (unsigned int)contents[i].x.size() << "," << (unsigned int)contents[i].y.size() << ")";
+			if (contents[i]->type == ns_graph_object::ns_graph_dependant_variable && contents[i]->x.size() != contents[i]->y.size())
+				throw ns_ex("ns_graph:: Data series ") << contents[i]->data_label << " has unmatched scatter data: size(x,y) = (" << (unsigned int)contents[i]->x.size() << "," << (unsigned int)contents[i]->y.size() << ")";
 	}
 	return global_independant_variable_id;
 }
@@ -65,21 +65,21 @@ void ns_graph::calculate_graph_specifics(const unsigned int width, const unsigne
 	else{
 		if ( global_independant_variable_id != -1){
 			//if there is a global independant x axis
-			for (unsigned int i = 0; i < contents[global_independant_variable_id].x.size(); i++){
-				if (contents[global_independant_variable_id].x[i] < axes[0])
-					axes[0] = contents[global_independant_variable_id].x[i];
-				if (contents[global_independant_variable_id].x[i] > axes[1])
-					axes[1] = contents[global_independant_variable_id].x[i];
+			for (unsigned int i = 0; i < contents[global_independant_variable_id]->x.size(); i++){
+				if (contents[global_independant_variable_id]->x[i] < axes[0])
+					axes[0] = contents[global_independant_variable_id]->x[i];
+				if (contents[global_independant_variable_id]->x[i] > axes[1])
+					axes[1] = contents[global_independant_variable_id]->x[i];
 			}
 		}
 		else{
 			//if using a scatter plot
 			for (unsigned int i = 0; i < contents.size(); i++){
-				for (unsigned int j = 0; j < contents[i].x.size(); j++){
-					if (contents[i].x[j] < axes[0])
-						axes[0] = contents[i].x[j];
-					if (contents[i].x[j] > axes[1])
-						axes[1] = contents[i].x[j];
+				for (unsigned int j = 0; j < contents[i]->x.size(); j++){
+					if (contents[i]->x[j] < axes[0])
+						axes[0] = contents[i]->x[j];
+					if (contents[i]->x[j] > axes[1])
+						axes[1] = contents[i]->x[j];
 				}
 			}
 		}
@@ -94,13 +94,13 @@ void ns_graph::calculate_graph_specifics(const unsigned int width, const unsigne
 	}
 	else{
 		for (unsigned int i = 0; i < contents.size(); i++){
-			for (unsigned int j = 0; j < contents[i].y.size(); j++){
-				if (contents[i].y[j] < 0 && !contents[i].properties.draw_negatives)
+			for (unsigned int j = 0; j < contents[i]->y.size(); j++){
+				if (contents[i]->y[j] < 0 && !contents[i]->properties.draw_negatives)
 					continue;
-				if (contents[i].y[j] < axes[2])
-					axes[2] = contents[i].y[j];
-				if (contents[i].y[j] > axes[3])
-					axes[3] = contents[i].y[j];
+				if (contents[i]->y[j] < axes[2])
+					axes[2] = contents[i]->y[j];
+				if (contents[i]->y[j] > axes[3])
+					axes[3] = contents[i]->y[j];
 			}
 		}
 		if (specified_axes.boundary_specified(2)) axes[2] = specified_axes.boundary(2);
@@ -176,7 +176,7 @@ ns_graph_specifics ns_graph::draw(ns_image_standard & image){
 	//check for an empty graph
 	bool have_contents = false;
 	for (unsigned int i = 0; i < contents.size(); i++){
-		if (contents[i].x.size() != 0 || contents[i].y.size() != 0){
+		if (contents[i]->x.size() != 0 || contents[i]->y.size() != 0){
 			have_contents = true;
 			break;
 		}
@@ -356,13 +356,13 @@ ns_graph_specifics ns_graph::draw(ns_image_standard & image){
 		for (unsigned int i = 0; i < contents.size(); i++){
 			if (i == spec.global_independant_variable_id)
 				continue;
-			plot_object(contents[i],contents[spec.global_independant_variable_id],image,spec);
+			plot_object(*contents[i],*contents[spec.global_independant_variable_id],image,spec);
 		}
 	}
 	//a scatter plot
 	else{
 		for (unsigned int i = 0; i < contents.size(); i++)
-			plot_object(contents[i],contents[i],image,spec);
+			plot_object(*contents[i],*contents[i],image,spec);
 	}
 	if (title_properties.text.draw){
 		ns_acquire_lock_for_scope font_lock(font_server.default_font_lock, __FILE__, __LINE__);
@@ -399,7 +399,7 @@ void ns_graph::draw(ns_svg & svg){
 	//check for an empty graph
 	bool have_contents = false;
 	for (unsigned int i = 0; i < contents.size(); i++){
-		if (contents[i].x.size() != 0 || contents[i].y.size() != 0){
+		if (contents[i]->x.size() != 0 || contents[i]->y.size() != 0){
 			have_contents = true;
 			break;
 		}
@@ -486,13 +486,13 @@ void ns_graph::draw(ns_svg & svg){
 		for (unsigned int i = 0; i < contents.size(); i++){
 			if (i == spec.global_independant_variable_id)
 				continue;
-			plot_object(contents[i],contents[spec.global_independant_variable_id],svg,spec);
+			plot_object(*contents[i],*contents[spec.global_independant_variable_id],svg,spec);
 		}
 	}
 	//a scatter plot
 	else{
 		for (unsigned int i = 0; i < contents.size(); i++)
-			plot_object(contents[i],contents[i],svg,spec);
+			plot_object(*contents[i],*contents[i],svg,spec);
 	}
 	
 	if (title_properties.text.draw)
@@ -996,8 +996,11 @@ ns_graph_axes ns_graph::add_frequency_distribution(const std::vector<const ns_gr
 	
 
 	unsigned int s = (unsigned int)contents.size();
-	contents.resize(s+1,ns_graph_object(ns_graph_object::ns_graph_independant_variable));
-	ns_graph_object & x_axis = contents[s];
+	
+	stored_contents.push_back(ns_graph_object(ns_graph_object::ns_graph_independant_variable));
+	
+	contents.resize(s+1,&(*stored_contents.rbegin()));
+	ns_graph_object & x_axis = *contents[s];
 	x_axis.x.resize(number_of_classes+1);
 
 	for (unsigned int i = 0 ; i < x_axis.x.size(); i++)
@@ -1005,8 +1008,9 @@ ns_graph_axes ns_graph::add_frequency_distribution(const std::vector<const ns_gr
 	double cat_max(0);
 	for (unsigned int j = 0; j < in.size(); j++){
 		s = (unsigned int)contents.size();
-		contents.resize(s+1,ns_graph_object(ns_graph_object::ns_graph_dependant_variable));
-		ns_graph_object & cur = contents[s];
+		stored_contents.push_back(ns_graph_object(ns_graph_object::ns_graph_dependant_variable));
+		contents.resize(s+1, &(*stored_contents.rbegin()));
+		ns_graph_object & cur = *contents[s];
 		cur.properties = in[j]->properties;
 		cur.y.resize(number_of_classes+1);
 		if (in[j]->y.size() == 0)

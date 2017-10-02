@@ -6251,7 +6251,7 @@ void ns_worm_learner::draw_worm_window_image(ns_image_standard & image){
 		worm_window.gl_buffer_properties.height = buffer_size.y;
 	}
 	const unsigned long worm_image_height = (new_image_size.height - death_time_solo_annotater.bottom_margin_position().y*ns_death_time_solo_posture_annotater_timepoint::ns_resolution_increase_factor-1)/worm_window.pre_gl_downsample;
-	cout << "worm_image_height:" << worm_image_height << "\n";
+	//cout << "worm_image_height:" << worm_image_height << "\n";
 	if (image.properties().components == 3) {
 	  //copy over the top border area of the image (which contains only text and metata) without rescaling
 
@@ -7807,13 +7807,32 @@ bool ns_death_time_solo_posture_annotater::ns_fix_annotation(ns_death_time_annot
 
 void ns_death_time_solo_posture_annotater::draw_telemetry(const ns_vector_2i & position, const ns_vector_2i & graph_size, const ns_vector_2i & buffer_size, ns_8_bit * buffer) {
 	if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("Drawing telemetry."));
-	unsigned long path_start_time, path_stop_time;
-	telemetry.get_current_time_limits(path_start_time, path_stop_time);
-	unsigned long current_time = current_worm->element(current_element_id()).absolute_time;
+	const unsigned long path_start_time = timepoints.begin()->path_timepoint_element->absolute_time, path_stop_time = timepoints.rbegin()->path_timepoint_element->absolute_time;
+	
 
-	const unsigned long start_time = path_start_time + (1.0 - 1.0 / telemetry_zoom_factor)*(current_time - path_start_time);
-	const unsigned long stop_time = current_time + (1.0 / telemetry_zoom_factor)*(path_stop_time - current_time);
-	//cerr << path_start_time << "-" << path_stop_time << "; " << telemetry_zoom_factor << " ; " << start_time << "-" << stop_time << "\n";
+	const unsigned long time_block_resolution = (path_stop_time - path_start_time) / 25;
+
+	const unsigned long current_time = current_worm->element(current_element_id()).absolute_time;
+
+	unsigned long start_time = path_start_time + (1.0 - 1.0 / telemetry_zoom_factor)*(current_time - path_start_time);
+	unsigned long stop_time = current_time + (1.0 / telemetry_zoom_factor)*(path_stop_time - current_time);
+
+	//lock to first timepoint when we're looking at the beginning of the path
+	const unsigned long center = (path_stop_time + path_start_time) / 2;
+	const unsigned long lock_at_zero_time = (center + path_start_time) / 2;
+	if (current_time< lock_at_zero_time)
+		start_time = path_start_time;
+	//gracefully scale up to the normal stop_time as we go from center/4 to center/2
+	else if (current_time < center)
+		start_time = path_start_time + ((float)(current_time - lock_at_zero_time) / (float)(center - lock_at_zero_time))*(start_time - path_start_time);
+
+	//round up or down to nearest time block resolution, so we don't have to update the graph to the screen so frequently.
+	start_time = (start_time / time_block_resolution) * time_block_resolution;
+
+	stop_time = ((unsigned long)(ceil(stop_time / (double)time_block_resolution))) * time_block_resolution;
+	if (stop_time > path_stop_time)stop_time = path_stop_time;
+	if (start_time < path_start_time)start_time = path_start_time;
+
 	telemetry.draw(graph_contents, current_timepoint_id, position, graph_size, buffer_size, ns_death_time_solo_posture_annotater_timepoint::ns_resolution_increase_factor,buffer,start_time,stop_time);
 	
 	if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("Done with telemetry."));

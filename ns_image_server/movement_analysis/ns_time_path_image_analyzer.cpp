@@ -2275,22 +2275,22 @@ public:
 	void set_marker(const unsigned long time,ns_graph & graph){
 		unsigned int marker_position = 0;
 		if (time == -1){
-			for (unsigned int i = 0; i < graph.contents[marker_id].y.size(); i++){
-				graph.contents[marker_id].y[i] = -1;
+			for (unsigned int i = 0; i < graph.contents[marker_id]->y.size(); i++){
+				graph.contents[marker_id]->y[i] = -1;
 				return;
 			}
 		}
 		unsigned int i;
-		for (i = 0; i < graph.contents[x_axis_id].x.size(); i++){
-			if (graph.contents[x_axis_id].x[i] >= (unsigned long)time)
+		for (i = 0; i < graph.contents[x_axis_id]->x.size(); i++){
+			if (graph.contents[x_axis_id]->x[i] >= (unsigned long)time)
 				break;
-			graph.contents[marker_id].y[i] = -1;
+			graph.contents[marker_id]->y[i] = -1;
 		}
-		if (i == graph.contents[x_axis_id].x.size())
+		if (i == graph.contents[x_axis_id]->x.size())
 			return;
-		graph.contents[marker_id].y[i] = graph.contents[y_axis_id].y[i];
-		for (i = i+1; i < graph.contents[marker_id].y.size(); i++)
-			graph.contents[marker_id].y[i] = -1;
+		graph.contents[marker_id]->y[i] = graph.contents[y_axis_id]->y[i];
+		for (i = i+1; i < graph.contents[marker_id]->y.size(); i++)
+			graph.contents[marker_id]->y[i] = -1;
 	}
 private:
 	enum{y_axis_id = 0,x_axis_id=1,marker_id=2};
@@ -2403,9 +2403,9 @@ void ns_make_path_movement_graph(const ns_analyzed_image_time_path & path,ns_gra
 
 
 
-	graph.contents.push_back(movement_ratios);
-	graph.contents.push_back(graph_x_axis);
-	graph.contents.push_back(marker);
+	graph.add_and_store(movement_ratios);
+	graph.add_and_store(graph_x_axis);
+	graph.add_and_store(marker);
 	//graph.contents.push_back(cutoff_stationary);
 //	graph.contents.push_back(cutoff_posture);
 	//graph.contents.push_back(transition_stationary);

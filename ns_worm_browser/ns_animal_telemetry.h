@@ -398,8 +398,8 @@ private:
 			smoothed_movement_vals[j].x.insert(smoothed_movement_vals[j].x.end(), movement_vals[j].x.begin(), movement_vals[j].x.end());
 			smoothed_movement_vals[j].y.resize(movement_vals[j].y.size());
 			for (int i = 0; i < movement_vals[j].y.size(); i++) {
-				int di = i - 4;
-				int ddi = i + 4;
+				int di = i - 2;
+				int ddi = i + 2;
 				if (di < 0) di = 0;
 				if (ddi >= movement_vals[j].y.size()) ddi = movement_vals[j].y.size() - 1;
 				float sum(0);
@@ -436,18 +436,18 @@ private:
 			slope_vals[i].properties = smoothed_movement_vals[i].properties;
 			slope_vals[i].properties.line.color = ns_color_8(150, 250, 200);
 
-			graph.contents.push_back(movement_vals[i]);
+			graph.add_reference(&movement_vals[i]);
 			if (graph_contents == ns_movement_intensity_slope || graph_contents == ns_all) {
-				graph.contents.push_back(slope_vals[i]);
+				graph.add_reference(&slope_vals[i]);
 			}
-			graph.contents.push_back(smoothed_movement_vals[i]);
+			graph.add_reference(&smoothed_movement_vals[i]);
 			if (graph_contents == ns_movement_intensity || graph_contents == ns_all)
-				graph.contents.push_back(size_vals[i]);
+				graph.add_reference(&size_vals[i]);
 			//graph.contents.push_back(time_axes);
 		}
 		if (graph_contents == ns_movement_intensity_slope || graph_contents == ns_all) 
-			graph.contents.push_back(zero_slope_object);
-		graph.contents.push_back(threshold_object);
+			graph.add_reference(&zero_slope_object);
+		graph.add_reference(&threshold_object);
 
 
 		

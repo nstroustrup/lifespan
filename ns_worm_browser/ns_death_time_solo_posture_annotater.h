@@ -25,7 +25,7 @@ public:
 	unsigned long group_id;
 	ns_vector_2i image_pane_area;
 
-	enum {ns_movement_bar_height=15,ns_bottom_border_height_minus_hand_bars=115,ns_side_border_width=4, ns_minimum_width = 350,ns_resolution_increase_factor=4};
+	enum {ns_movement_bar_height=15,ns_bottom_border_height_minus_hand_bars=115,ns_side_border_width=4, ns_minimum_width = 350,ns_resolution_increase_factor=2};
 	
 	static int bottom_border_height(){return ((int)ns_bottom_border_height_minus_hand_bars + ns_movement_bar_height*(int)ns_death_time_annotation::maximum_number_of_worms_at_position);}
 
@@ -795,6 +795,7 @@ public:
 
 	void load_worm(const ns_64_bit region_info_id_, const ns_stationary_path_id & worm, const unsigned long current_time, const ns_death_time_solo_posture_annotater_timepoint::ns_visualization_type visualization_type, const ns_experiment_storyboard  * storyboard,ns_worm_learner * worm_learner_){
 		
+		
 
 		if (sql.is_null())
 			sql.attach(image_server.new_sql_connection(__FILE__, __LINE__));
@@ -945,6 +946,8 @@ public:
 			}
 //			current_by_hand_timing_data->animals[current_animal_id].first_frame_time = timepoints[0].path_timepoint_element->absolute_time;
 
+
+			telemetry_zoom_factor = timepoints.size() / 250;
 
 			//allocate image buffer
 			

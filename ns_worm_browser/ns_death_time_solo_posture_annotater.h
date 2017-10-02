@@ -661,6 +661,8 @@ public:
 		return current_region_data->loaded_path_data_successfully;
 	}
 	void close_worm() {
+		if (current_region_data != 0)
+			current_region_data->clear_images_for_worm(properties_for_all_animals.stationary_path_id);
 		properties_for_all_animals = ns_death_time_annotation();
 		properties_for_all_animals.region_info_id = 0;
 		current_worm = 0;

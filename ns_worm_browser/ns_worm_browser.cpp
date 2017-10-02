@@ -2408,6 +2408,36 @@ void ns_find_new_paths(const ns_time_path_solution & baseline, const ns_time_pat
 		throw;
 	}
 }
+
+
+
+void ns_gaussian_kernel_smoother(const unsigned long time_step_resample_factor, const unsigned long kernel_width_in_fraction_of_all_points, const std::vector<ns_graph_object> & source, std::vector<ns_graph_object> & dest) {
+	dest.resize(source.size(), ns_graph_object::ns_graph_dependant_variable);
+	for (unsigned int j = 0; j < source.size(); j++) {
+		dest[j].x.resize(source[j].x.size()*time_step_resample_factor);
+		dest[j].y.resize(source[j].y.size()*time_step_resample_factor);
+
+		const double  min_time(*source[j].x.begin());
+		const double max_time(*source[j].x.rbegin());
+
+		const double average_kernel_std = (max_time - min_time) / (double)(source[j].x.size() / kernel_width_in_fraction_of_all_points); 
+		const unsigned long num_steps(source[j].x.size()*time_step_resample_factor);
+		for (unsigned int i = 0; i < num_steps; i++) {
+			double cur_t = ((double)i*(max_time - min_time)) / num_steps + min_time;
+			dest[j].x[i] = cur_t;
+			double sum(0);
+			double pdf_weight_sum(0);
+			for (unsigned int k = 0; k < source[j].x.size(); k++) {
+				const double pdf_weight = exp(-.5*(source[j].x[k] - cur_t)*(source[j].x[k] - cur_t) / (average_kernel_std* average_kernel_std));
+				pdf_weight_sum += pdf_weight;
+				sum += pdf_weight*source[j].y[k];
+			}
+			dest[j].y[i] = sum / pdf_weight_sum;
+		}
+	}
+}
+
+
 const unsigned long ns_location_not_matched(99999);
 void ns_match_locations(const std::vector<ns_vector_2i> baseline, const std::vector<ns_vector_2i> & target, vector<unsigned long> & target_match){
 	

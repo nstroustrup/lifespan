@@ -3,12 +3,14 @@
 #include "ns_time_path_image_analyzer.h"
 #include "ns_graph.h"
 
-
+#include "ns_bspline.h"
 struct ns_animal_list_at_position {
 	ns_stationary_path_id stationary_path_id;
 	typedef std::vector<ns_death_timing_data> ns_animal_list;  //positions can hold multiple animals
 	ns_animal_list animals;
 };
+
+void ns_gaussian_kernel_smoother(const unsigned long time_step_resample_factor, const unsigned long kernel_width_in_fraction_of_all_points,const std::vector<ns_graph_object> & source, std::vector<ns_graph_object> & dest);
 
 class ns_death_time_posture_solo_annotater_region_data {
 private:
@@ -175,7 +177,7 @@ private:
 	ns_image_standard base_graph;
 	ns_graph graph;
 	ns_graph_specifics graph_specifics;
-	vector<ns_graph_object> movement_vals, smoothed_movement_vals, size_vals, slope_vals;
+	vector<ns_graph_object> movement_vals, smoothed_movement_vals, size_vals, smoothed_size_vals,slope_vals;
 	vector <double> time_axis;
 	vector<long> segment_ids; //mapping from the current time in time_axis to the specicif segment (element of movement_vals, smoothed_movement_vals, etc)
 	vector<long> segment_offsets; //mapping from the current time in time_axis to the specicif segment (element of movement_vals, smoothed_movement_vals, etc)
@@ -392,66 +394,114 @@ private:
 
 
 
-		smoothed_movement_vals.resize(movement_vals.size(), ns_graph_object::ns_graph_dependant_variable);
-		for (unsigned int j = 0; j < movement_vals.size(); j++) {
-			smoothed_movement_vals[j].x.resize(0);
-			smoothed_movement_vals[j].x.insert(smoothed_movement_vals[j].x.end(), movement_vals[j].x.begin(), movement_vals[j].x.end());
-			smoothed_movement_vals[j].y.resize(movement_vals[j].y.size());
-			for (int i = 0; i < movement_vals[j].y.size(); i++) {
-				int di = i - 2;
-				int ddi = i + 2;
-				if (di < 0) di = 0;
-				if (ddi >= movement_vals[j].y.size()) ddi = movement_vals[j].y.size() - 1;
-				float sum(0);
-				for (int k = di; k <= ddi; k++)
-					sum += movement_vals[j].y[k];
-				smoothed_movement_vals[j].y[i] = sum / (ddi - di + 1);
+		
+		const unsigned long resample_factor(4);
+		const unsigned long kernel_width_in_fraction_of_whole_timeseries(4);
+
+		ns_gaussian_kernel_smoother(resample_factor, kernel_width_in_fraction_of_whole_timeseries, movement_vals, smoothed_movement_vals);
+		ns_gaussian_kernel_smoother(resample_factor, kernel_width_in_fraction_of_whole_timeseries, size_vals, smoothed_size_vals);
+
+
+		if (0) {
+			ns_bspline bspline;
+			for (unsigned int current_segment = 0; current_segment < movement_vals.size(); current_segment++) {
+
+				vector<ns_vector_2d> spline_fit_nodes(movement_vals[current_segment].x.size());
+
+				for (unsigned int i = 0; i < movement_vals[current_segment].x.size(); i++) {
+					spline_fit_nodes[i].x = movement_vals[current_segment].x[i];
+					spline_fit_nodes[i].y = movement_vals[current_segment].y[i];
+				}
+				bspline.calculate_with_standard_params(spline_fit_nodes, 2 * movement_vals[current_segment].x.size(), ns_bspline::ns_low);
+
+				smoothed_movement_vals[current_segment].x.resize(0);
+				smoothed_movement_vals[current_segment].y.resize(0);
+				//smoothed_movement_vals[current_segment].x.insert(smoothed_movement_vals[current_segment].x.end(), movement_vals[current_segment].x.begin(), movement_vals[current_segment].x.end());
+				smoothed_movement_vals[current_segment].x.reserve(bspline.positions.size());
+				smoothed_movement_vals[current_segment].y.reserve(bspline.positions.size());
+				for (int j = 0; j < bspline.positions.size(); j++) {
+					if (bspline.positions[j].x < *movement_vals[current_segment].x.begin() ||
+						bspline.positions[j].x > *movement_vals[current_segment].x.rbegin())
+						continue;
+					smoothed_movement_vals[current_segment].x.resize(smoothed_movement_vals[current_segment].x.size() + 1, bspline.positions[j].x);
+					smoothed_movement_vals[current_segment].y.resize(smoothed_movement_vals[current_segment].y.size() + 1, bspline.positions[j].y);
+					//	smoothed_movement_vals[current_segment].x[j] = ;
+					//	smoothed_movement_vals[current_segment].y[j] = bspline.positions[j].y;
+					if (*smoothed_movement_vals[current_segment].y.rbegin() > 1)
+						*smoothed_movement_vals[current_segment].y.rbegin() = 1;
+					if (*smoothed_movement_vals[current_segment].y.rbegin() < 0)
+						*smoothed_movement_vals[current_segment].y.rbegin() = 0;
+				}
 			}
 		}
-
+		if (0) {
+			smoothed_movement_vals.resize(movement_vals.size(), ns_graph_object::ns_graph_dependant_variable);
+			for (unsigned int j = 0; j < movement_vals.size(); j++) {
+				smoothed_movement_vals[j].x.resize(0);
+				smoothed_movement_vals[j].x.insert(smoothed_movement_vals[j].x.end(), movement_vals[j].x.begin(), movement_vals[j].x.end());
+				smoothed_movement_vals[j].y.resize(movement_vals[j].y.size());
+				for (int i = 0; i < movement_vals[j].y.size(); i++) {
+					int di = i - 2;
+					int ddi = i + 2;
+					if (di < 0) di = 0;
+					if (ddi >= movement_vals[j].y.size()) ddi = movement_vals[j].y.size() - 1;
+					float sum(0);
+					for (int k = di; k <= ddi; k++)
+						sum += movement_vals[j].y[k];
+					smoothed_movement_vals[j].y[i] = sum / (ddi - di + 1);
+				}
+			}
+		}
 		threshold_object.properties.line.color = ns_color_8(150, 150, 150);
 		threshold_object.properties.line.draw = true;
 
 		zero_slope_object.properties.line.color = ns_color_8(150, 150, 150);
 		zero_slope_object.properties.line.draw = true;
 		for (unsigned int i = 0; i < number_of_separate_segments; i++) {
-			//time_axes[i].x_label = "age (days)";
-			//time_axes[i].properties.text.color = ns_color_8(255, 255, 255);
-			//time_axes[i].properties.line.color = ns_color_8(255, 255, 255);
-			smoothed_movement_vals[i].y_label = "Movement score";
-			smoothed_movement_vals[i].properties.text.color = ns_color_8(255, 255, 255);
-			smoothed_movement_vals[i].properties.line.color = ns_color_8(255, 255, 255);
-			size_vals[i].properties.line.color = ns_color_8(125, 125, 255);
+
 			smoothed_movement_vals[i].properties.line.draw = size_vals[i].properties.line.draw = true;
 			smoothed_movement_vals[i].properties.line.width = size_vals[i].properties.line.width = 1;
 			smoothed_movement_vals[i].properties.point.draw = size_vals[i].properties.point.draw = false;
+			smoothed_size_vals[i].properties = smoothed_movement_vals[i].properties;
+
+			smoothed_movement_vals[i].properties.line.color = ns_color_8(255, 255, 255)/4*3;
+			smoothed_size_vals[i].properties.line.color = ns_color_8(125, 125, 255)/4*3;
+
 
 			movement_vals[i].properties.line.draw = false;
 			movement_vals[i].properties.point.draw = true;
 			movement_vals[i].properties.point.width = 1;
+			size_vals[i].properties = movement_vals[i].properties;
+
 			movement_vals[i].properties.point.color = ns_color_8(200, 200, 200);
 			movement_vals[i].properties.point.edge_color = ns_color_8(200, 200, 200);
 			movement_vals[i].properties.point.edge_width = 1;
 
+			size_vals[i].properties.point.color = ns_color_8(125, 125, 255);
+			size_vals[i].properties.point.edge_color = ns_color_8(125, 125, 255);
+			size_vals[i].properties.point.edge_width = 1;
+
 			slope_vals[i].properties = smoothed_movement_vals[i].properties;
 			slope_vals[i].properties.line.color = ns_color_8(150, 250, 200);
 
-			graph.add_reference(&movement_vals[i]);
-			if (graph_contents == ns_movement_intensity_slope || graph_contents == ns_all) {
-				graph.add_reference(&slope_vals[i]);
+			switch (graph_contents) {	//deliberate read-through between plots
+				case ns_all:
+				case ns_movement_intensity_slope:
+					graph.add_reference(&slope_vals[i]);
+				case ns_movement_intensity:
+					graph.add_reference(&size_vals[i]);
+					graph.add_reference(&smoothed_size_vals[i]);
+				case ns_movement:	
+					graph.add_reference(&movement_vals[i]);
+					graph.add_reference(&smoothed_movement_vals[i]);
+
 			}
-			graph.add_reference(&smoothed_movement_vals[i]);
-			if (graph_contents == ns_movement_intensity || graph_contents == ns_all)
-				graph.add_reference(&size_vals[i]);
-			//graph.contents.push_back(time_axes);
+		
 		}
 		if (graph_contents == ns_movement_intensity_slope || graph_contents == ns_all) 
 			graph.add_reference(&zero_slope_object);
+	
 		graph.add_reference(&threshold_object);
-
-
-		
-
 
 		graph.x_axis_properties.line.color = graph.y_axis_properties.line.color = ns_color_8(255, 255, 255);
 		graph.x_axis_properties.text.color = graph.y_axis_properties.text.color = ns_color_8(255, 255, 255);

@@ -722,7 +722,7 @@ void ns_smart_complex_segment_cluster_solver::choose_best_solution_for_each_worm
 						nodes[j] = solution_groups[i].solutions[s][w][j]->position;
 
 					
-					bspline.calculate_with_standard_params(nodes,(unsigned int)nodes.size()/NS_BSPLINE_OUTPUT_DOWNSAMPLE_RATE,true);
+					bspline.calculate_with_standard_params(nodes,(unsigned int)nodes.size()/NS_BSPLINE_OUTPUT_DOWNSAMPLE_RATE,ns_bspline::ns_high);
 					bspline.crop_ends(end_crop_fraction);
 					
 					

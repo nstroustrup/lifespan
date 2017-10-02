@@ -133,7 +133,7 @@ unsigned long ns_bspline::crop_ends(const double crop_fraction){
 	return new_start;
 }
 #define NS_BSPLINE_STANDARD_DEGREE 8
-void ns_bspline::calculate_with_standard_params(const std::vector<ns_vector_2d> & data,unsigned int output_size,const bool smoother){
+void ns_bspline::calculate_with_standard_params(const std::vector<ns_vector_2d> & data,unsigned int output_size,const ns_smoothness_level smoother){
 	if (data.size() == 0)
 		throw ns_ex("ns_bspline::calculate_with_standard_params()::Cannot calculate spine information with no data points!");
 	if (data.size() == 1)
@@ -148,20 +148,31 @@ void ns_bspline::calculate_with_standard_params(const std::vector<ns_vector_2d> 
 		ns_bspline_fitter_internal fitter;
 
 		float * dat = new float[2*data.size()];
-		try{
-			for (unsigned int i = 0; i < data.size(); i++){
-				dat[2*i] = (float)data[i].x;
-				dat[2*i+1] = (float)data[i].y;
+		try {
+			for (unsigned int i = 0; i < data.size(); i++) {
+				dat[2 * i] = (float)data[i].x;
+				dat[2 * i + 1] = (float)data[i].y;
 			}
 			unsigned long degree = NS_BSPLINE_STANDARD_DEGREE;
+			if (smoother == ns_bspline::ns_low)
+				degree = 2;
 			/*if (degree > 24)
 				degree = 24;
 			if (degree < 8)
 				degree = 8;*/
 			long control_point_ratio;
-			if (smoother)
-				control_point_ratio=75;
-			else control_point_ratio=10;
+			switch (smoother){
+			case ns_bspline::ns_high:
+					control_point_ratio = 75;
+					break;
+				case ns_bspline::ns_medium:
+					control_point_ratio = 10;
+					break;
+				case ns_bspline::ns_low:
+					control_point_ratio = 10 ;
+					break;
+				default: throw ns_ex("Unknown smoother level");
+			}
 			unsigned long component((unsigned long)data.size()/control_point_ratio);
 			if(component < 3*(degree/2))
 				component = 3*(degree/2);

@@ -387,7 +387,7 @@ void ns_worm_shape::from_segment_cluster_solution(const ns_segment_cluster_solut
 	unsigned long output_size(((unsigned long)nodes.size())/NS_BSPLINE_SELECTION_DOWNSAMPLE_RATE);
 	if (output_size < 2)
 		output_size = 2;
-	bspline.calculate_with_standard_params(nodes,output_size,false);	
+	bspline.calculate_with_standard_params(nodes,output_size, ns_bspline::ns_medium);
 	
 	const double frac_dist=((double)ns_worm_detection_constants::percent_distance_to_retract_spine_from_ends/(double)100);
 	unsigned long start_crop = bspline.crop_ends(frac_dist);

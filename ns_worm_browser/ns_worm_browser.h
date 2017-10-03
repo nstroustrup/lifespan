@@ -64,7 +64,8 @@ void ns_run_first_thermometer_experiment();
 
 void ns_to_lower(std::string & s);
 
-void ns_update_information_bar(const std::string & status);
+void ns_update_main_information_bar(const std::string & status);
+void ns_update_worm_information_bar(const std::string & status);
 void update_region_choice_menu();
 void update_strain_choice_menu();
 void update_exclusion_choice_menu();

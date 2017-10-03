@@ -3,6 +3,9 @@
 #include "ns_time_path_image_analyzer.h"
 #include "ns_graph.h"
 
+void ns_update_worm_information_bar(const std::string & status);
+void ns_update_main_information_bar(const std::string & status);
+
 #include "ns_bspline.h"
 struct ns_animal_list_at_position {
 	ns_stationary_path_id stationary_path_id;
@@ -106,7 +109,8 @@ public:
 				std::string error_message;
 				if (matcher.load_timing_data_from_set(set, false, by_hand_timing_data, orphaned_events, error_message)) {
 					if (error_message.size() != 0) {
-						ns_update_information_bar(error_message);
+						ns_update_worm_information_bar(error_message);
+						ns_update_main_information_bar(error_message);
 						could_load_by_hand = true;
 					}
 
@@ -163,6 +167,16 @@ private:
 class ns_animal_telemetry {
 public:
 	typedef enum { ns_none, ns_movement, ns_movement_intensity, ns_movement_intensity_slope, ns_all,ns_number_of_graph_types } ns_graph_contents;
+	static std::string graph_type_string(const ns_graph_contents c) {
+		switch (c) {
+		case ns_none: return "no data";
+		case ns_movement: return "movement scores (white)";
+		case ns_movement_intensity: "movement scores (white),total intensity (blue)";
+		case ns_movement_intensity_slope: return "movement scores (white), total intensity (blue), change in total intensity (green)";
+		case ns_all: return "all data";
+		default: throw ns_ex("ns_animal_telemetry::graph_type_string()::Unknown graph type");
+		}
+	}
 	void get_current_time_limits(unsigned long & start, unsigned long & stop) {
 		if (region_data == 0)
 			throw ns_ex("get_current_time_limits::No region data loaded");
@@ -184,7 +198,7 @@ private:
 	ns_posture_analysis_model posture_analysis_model;
 	
 	unsigned long number_of_valid_elements, first_element;
-	void draw_base_graph(const ns_graph_contents & graph_contents, unsigned long start_time=0, unsigned long stop_time=UINT_MAX) {
+	void draw_base_graph(const ns_graph_contents & graph_contents, const long marker_resize_factor, unsigned long start_time=0, unsigned long stop_time=UINT_MAX) {
 		if (graph_contents == ns_none)
 			return;
 		graph.clear();
@@ -353,7 +367,7 @@ private:
 		//calculate normalized scores and break up into independantly plotted segments
 		for (unsigned int i = 0; i < number_of_valid_elements; i++) {
 			const long & current_segment = segment_ids[i];
-			const double time = floor(path->element(i + first_element).relative_time / 6.0 / 60 / 24) / 10;
+			const double time = path->element(i + first_element).relative_time / 60.0 / 60 / 24;
 			if (time < min_rounded_time) min_rounded_time = time;
 			if (time > max_rounded_time) max_rounded_time = time;
 			time_axis[i] = time;
@@ -457,6 +471,10 @@ private:
 
 		zero_slope_object.properties.line.color = ns_color_8(150, 150, 150);
 		zero_slope_object.properties.line.draw = true;
+		const unsigned long desired_screen_marker_size(1);
+		unsigned long marker_size = desired_screen_marker_size /marker_resize_factor;
+		if (marker_size <desired_screen_marker_size)
+			marker_size = desired_screen_marker_size* marker_resize_factor;
 		for (unsigned int i = 0; i < number_of_separate_segments; i++) {
 
 			smoothed_movement_vals[i].properties.line.draw = size_vals[i].properties.line.draw = true;
@@ -470,16 +488,17 @@ private:
 
 			movement_vals[i].properties.line.draw = false;
 			movement_vals[i].properties.point.draw = true;
-			movement_vals[i].properties.point.width = 1;
 			size_vals[i].properties = movement_vals[i].properties;
 
 			movement_vals[i].properties.point.color = ns_color_8(200, 200, 200);
-			movement_vals[i].properties.point.edge_color = ns_color_8(200, 200, 200);
-			movement_vals[i].properties.point.edge_width = 1;
+			//movement_vals[i].properties.point.edge_color = ns_color_8(200, 200, 200);
+			movement_vals[i].properties.point.width = marker_size;
+			movement_vals[i].properties.point.edge_width = 0;
 
 			size_vals[i].properties.point.color = ns_color_8(125, 125, 255);
-			size_vals[i].properties.point.edge_color = ns_color_8(125, 125, 255);
-			size_vals[i].properties.point.edge_width = 1;
+			//size_vals[i].properties.point.edge_color = ns_color_8(125, 125, 255);
+			size_vals[i].properties.point.width = marker_size;
+			size_vals[i].properties.point.edge_width = 0;
 
 			slope_vals[i].properties = smoothed_movement_vals[i].properties;
 			slope_vals[i].properties.line.color = ns_color_8(150, 250, 200);
@@ -513,6 +532,31 @@ private:
 		axes.boundary(1) = max_rounded_time;
 		axes.boundary(2) = 0;
 		axes.boundary(3) = 1;
+		axes.tick(2) = .25;
+		axes.tick(3) = .125;
+		if (max_rounded_time - min_rounded_time > 10) {
+			axes.tick(1) = floor((max_rounded_time - min_rounded_time)/10.0);
+			axes.tick(0) = axes.tick(1) * 2;
+		}
+		else if (max_rounded_time - min_rounded_time < 10) {
+			axes.tick(0) = 1;
+			axes.tick(1) = .5;
+		}
+		else if (max_rounded_time - min_rounded_time > 5) {
+			axes.tick(0) = 1;
+			axes.tick(1) = .25;
+		}
+		else if (max_rounded_time - min_rounded_time > 2) {
+			axes.tick(0) = .5;
+			axes.tick(1) = .1;
+		}
+		else  {
+			axes.tick(0) = .25;
+			axes.tick(1) = .125;
+		}
+		for (int i = 0; i < 3; i++)
+		axes.tick_interval_specified(i) = true;
+
 		ns_color_8 gray(50, 50, 50);
 		graph.x_axis_properties.line.width = 
 			graph.y_axis_properties.line.width = 1;
@@ -520,6 +564,7 @@ private:
 			graph.y_axis_properties.line.color = gray;
 		graph.x_axis_properties.text_size *= 2;
 		graph.y_axis_properties.text_size *= 2;
+
 		graph.set_graph_display_options("", axes, base_graph.properties().width/(float)base_graph.properties().height);
 		graph_specifics = graph.draw(base_graph);
 	}
@@ -561,6 +606,7 @@ private:
 	}
 	ns_graph_contents last_graph_contents;
 	unsigned long last_start_time, last_stop_time;
+	float last_rescale_factor;
 public:
 	void clear() {
 		_show = false;
@@ -602,8 +648,8 @@ public:
 		base_graph.init(ns_image_properties(0, 0, 3));
 		posture_analysis_model = mod;
 	}
-	void draw(const ns_graph_contents graph_contents, const unsigned long element_id, const ns_vector_2i & position, const ns_vector_2i & graph_size, const ns_vector_2i & buffer_size, unsigned long marker_resize_factor,ns_8_bit * buffer, const unsigned long start_time=0, const unsigned long stop_time=UINT_MAX) {
-		if (base_graph.properties().height == 0 || graph_contents != last_graph_contents || last_start_time != start_time || last_stop_time != stop_time) {
+	void draw(const ns_graph_contents graph_contents, const unsigned long element_id, const ns_vector_2i & position, const ns_vector_2i & graph_size, const ns_vector_2i & buffer_size, const float marker_resize_factor, ns_8_bit * buffer, const unsigned long start_time=0, const unsigned long stop_time=UINT_MAX) {
+		if (base_graph.properties().height == 0 || graph_contents != last_graph_contents || last_start_time != start_time || last_stop_time != stop_time || last_rescale_factor != marker_resize_factor) {
 			base_graph.use_more_memory_to_avoid_reallocations();
 			ns_image_properties prop;
 			prop.components = 3;
@@ -613,10 +659,11 @@ public:
 
 			base_graph.init(prop);
 			try {
-				draw_base_graph(graph_contents,start_time,stop_time);
+				draw_base_graph(graph_contents, marker_resize_factor, start_time,stop_time);
 				last_graph_contents = graph_contents;
 				last_start_time = start_time;
 				last_stop_time = stop_time;
+				last_rescale_factor = marker_resize_factor;
 			}
 			catch (...) {
 				base_graph.init(ns_image_properties(0, 0, 3));

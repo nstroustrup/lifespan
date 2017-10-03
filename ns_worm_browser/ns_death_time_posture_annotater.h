@@ -6,8 +6,6 @@
 #include "ns_death_time_annotation.h"
 #include "ns_time_path_image_analyzer.h"
 
-void ns_update_information_bar(const std::string & status="-1");
-
 class ns_death_time_posture_annotater_timepoint : public ns_annotater_timepoint{
 private:
 
@@ -814,7 +812,8 @@ public:
 			throw ns_ex("Could not open output file.");
 		set.write(out());
 		out.release();
-		ns_update_information_bar(ns_to_string(set.events.size()) + " events saved at " + ns_format_time_string_for_human(ns_current_time()));
+		ns_update_main_information_bar(ns_to_string(set.events.size()) + " events saved at " + ns_format_time_string_for_human(ns_current_time()));
+		ns_update_worm_information_bar(ns_to_string(set.events.size()) + " events saved at " + ns_format_time_string_for_human(ns_current_time()));
 		saved_=true;
 	};
 

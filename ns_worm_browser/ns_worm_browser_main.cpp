@@ -374,10 +374,10 @@ class ns_worm_gl_window : public Fl_Gl_Window {
 		}
 
 		//cerr << "Could not handle " << state << "\n";
-		if (state == FL_SHOW) {
+	/*	if (state == FL_SHOW) {
 			show();
 			return 1;
-		}
+		}*/
 	//		cerr << "WHA";
 		int a = Fl_Gl_Window::handle(state);
 		return a;
@@ -1172,7 +1172,7 @@ class ns_worm_terminal_main_menu_organizer : public ns_menu_organizer{
 		sql.release();
 		update_region_choice_menu();
 		update_strain_choice_menu();
-		ns_update_information_bar();
+		ns_update_main_information_bar("");
 	}
 	
 	static void specifiy_model(const std::string & value){
@@ -1772,9 +1772,15 @@ public:
 		*goto_death_time_button,
 		*save_button,
 		*visualization_button,
-		*graph_button; 
-	enum{button_width=18,button_height=18,export_button_width=3*18,
-		 visualization_button_width=2*18, graph_button_width = 3 * 18,all_buttons_width=21*8};
+		*graph_button,
+		*zoom_in_button,
+		*zoom_out_button;
+	Fl_Output * info_bar;
+	enum{button_width=18,button_height=18,export_button_width=50,
+		 visualization_button_width=32, graph_button_width = 50,space_width=9};
+	static unsigned long all_buttons_width() {
+		return 5 * button_width + visualization_button_width + graph_button_width + export_button_width+ space_width;
+	}
 	int handle(int e){
 		//don't claim keystrokes--we want them to be passed on to the glwindow for navigation
 		switch(e){
@@ -1785,12 +1791,43 @@ public:
 		}
 		return Fl_Pack::handle(e);
 	}
-	ns_death_event_solo_annotation_group(int x,int y, int w, int h, bool add_save_button) : Fl_Pack(x,y,w,h) {
+
+	void resize(int x, int y, int w, int h) {
+
+		const int info_bar_x(all_buttons_width());
+
+		int bw = button_width,
+			vis_bw = visualization_button_width,
+			graph_bw = graph_button_width,
+			exp_bw = export_button_width;
+		const bool squished = (w < info_bar_x);
+		if (squished){
+			bw = vis_bw= graph_bw= exp_bw = w / 8;
+		}
+		back_button->resize(x, y, bw, h);
+		stop_button->resize(bw+x, y, bw, h);
+		forward_button->resize(3* bw+x, y, bw, h);
+		visualization_button->resize(3* bw + x, y, vis_bw, h);
+		graph_button->resize(3 * bw + vis_bw+ x, y, graph_bw, h);
+		save_button->resize(3 * bw + vis_bw+graph_bw + x, y, exp_bw, h);
+		zoom_out_button->resize(3 * bw + vis_bw + graph_bw+exp_bw + x, y, bw, h);
+		zoom_in_button->resize(4 * bw + vis_bw + graph_bw + exp_bw  + x, y, bw, h);
+		if (squished) {
+			info_bar->hide();
+		}
+		else {
+			info_bar->resize(info_bar_x + x, y, w - info_bar_x, h);
+			info_bar->show();
+		}
+		Fl_Pack::resize(x, y, w, h);
+	}
+	ns_death_event_solo_annotation_group(int x,int y, int w, int h) : Fl_Pack(x,y,w,h) {
 		type(Fl_Pack::HORIZONTAL);
-		spacing(0);
-		play_reverse_button = new Fl_Button(0*button_width,0,button_width,button_height,"@-2<<");
-		play_reverse_button->callback(ns_handle_death_time_solo_annotation_button,
-			new ns_death_time_solo_posture_annotater::ns_image_series_annotater_action(ns_death_time_solo_posture_annotater::ns_fast_back));
+	//	spacing(0);
+		//int button_width = 3;
+	//	play_reverse_button = new Fl_Button(0*button_width,0,button_width,button_height,"@-2<<");
+	//	play_reverse_button->callback(ns_handle_death_time_solo_annotation_button,
+	//		new ns_death_time_solo_posture_annotater::ns_image_series_annotater_action(ns_death_time_solo_posture_annotater::ns_fast_back));
 		back_button = new Fl_Button(1 * button_width, 0, button_width, button_height, "@-2<");
 		back_button->callback(ns_handle_death_time_solo_annotation_button,
 			new ns_death_time_solo_posture_annotater::ns_image_series_annotater_action(ns_death_time_solo_posture_annotater::ns_back));
@@ -1803,21 +1840,37 @@ public:
 		forward_button->callback(ns_handle_death_time_solo_annotation_button,
 			new ns_death_time_solo_posture_annotater::ns_image_series_annotater_action(ns_death_time_solo_posture_annotater::ns_forward));
 
-		play_forward_button = new Fl_Button(4 * button_width , 0, button_width, button_height, "@-2>>");
-		play_forward_button->callback(ns_handle_death_time_solo_annotation_button,
-			new ns_death_time_solo_posture_annotater::ns_image_series_annotater_action(ns_death_time_solo_posture_annotater::ns_fast_forward));
-		visualization_button = new Fl_Button(5 * button_width , 0, visualization_button_width, button_height, "Vis");
+		//play_forward_button = new Fl_Button(4 * button_width , 0, button_width, button_height, "@-2>>");
+	//	play_forward_button->callback(ns_handle_death_time_solo_annotation_button,
+		//	new ns_death_time_solo_posture_annotater::ns_image_series_annotater_action(ns_death_time_solo_posture_annotater::ns_fast_forward));
+		visualization_button = new Fl_Button(4 * button_width+ space_width, 0, visualization_button_width, button_height, "Vis");
 		visualization_button->callback(ns_handle_death_time_solo_annotation_button,
 			new ns_death_time_solo_posture_annotater::ns_image_series_annotater_action(ns_death_time_solo_posture_annotater::ns_step_visualization));
-		graph_button = new Fl_Button(5 * button_width+ visualization_button_width, 0, graph_button_width, button_height, "Plot");
+		graph_button = new Fl_Button(4 * button_width+ visualization_button_width + space_width, 0, graph_button_width, button_height, "Graph");
 		graph_button->callback(ns_handle_death_time_solo_annotation_button,
 			new ns_death_time_solo_posture_annotater::ns_image_series_annotater_action(ns_death_time_solo_posture_annotater::ns_step_graph));
 
-		save_button = new Fl_Button(5*button_width+ visualization_button_width+graph_button_width,0,3*button_width,button_height,"Export");
+		save_button = new Fl_Button(4*button_width+ visualization_button_width+graph_button_width + space_width,0, export_button_width,button_height,"Export");
 		save_button->  callback(ns_handle_death_time_solo_annotation_button,
 			new ns_death_time_solo_posture_annotater::ns_image_series_annotater_action(ns_death_time_solo_posture_annotater::ns_write_quantification_to_disk));
 
+		zoom_out_button = new Fl_Button(4 * button_width + visualization_button_width + graph_button_width + space_width+ export_button_width, 0, button_width, button_height, "-");
+		zoom_out_button->callback(ns_handle_death_time_solo_annotation_button,
+
+			new ns_death_time_solo_posture_annotater::ns_image_series_annotater_action(ns_death_time_solo_posture_annotater::ns_time_zoom_out_step));
+		zoom_in_button = new Fl_Button(5 * button_width + visualization_button_width + graph_button_width + space_width+ export_button_width, 0, button_width, button_height, "+");
+		zoom_in_button->callback(ns_handle_death_time_solo_annotation_button,
+			new ns_death_time_solo_posture_annotater::ns_image_series_annotater_action(ns_death_time_solo_posture_annotater::ns_time_zoom_in_step));
+
+		const int info_bar_x(all_buttons_width());
+		info_bar = new Fl_Output(info_bar_x,0,w- info_bar_x, button_height);
+		info_bar->value("");
+	//	info_bar->textsize(experiment_name_bar->textsize());
+		info_bar->textfont(FL_HELVETICA);
+		info_bar->deactivate();
+
 		end();
+
 	//	clear_visible_focus();
 
 	}
@@ -1869,8 +1922,8 @@ public:
 	static unsigned long menu_height() {return 23;}
 	static unsigned long info_bar_height(){return 24;}
 
-	static unsigned long experiment_bar_width(){return 145;}
-	static unsigned long region_name_bar_width(){return 75;}
+	static unsigned long experiment_bar_width(){return 200;}
+	static unsigned long region_name_bar_width(){return 125;}
 	static unsigned long exclusion_bar_width(){return 30;}
 	static unsigned long strain_bar_width(){return 140;}
 
@@ -1979,11 +2032,10 @@ public:
 		
     }
 
-	static ns_vector_2i image_window_size_difference(){
-	   float d(worm_learner.main_window.display_rescale_factor);
+	static ns_vector_2i image_window_size_difference(float menu_d){
 	  if (!SCALE_FONTS_WITH_WINDOW_SIZE)
-	    d = 1;
-		return ns_vector_2i(0,d*(int)menu_height()+d*(int)info_bar_height());
+		  menu_d = 1;
+		return ns_vector_2i(0,menu_d*(int)menu_height()+ menu_d*(int)info_bar_height());
 	}
 
   void get_window_size_needed(int & w, int & h, float & d, float & menu_d){
@@ -1997,7 +2049,7 @@ public:
 	//			image_window_size_difference());
 
 		w = worm_learner.main_window.gl_image_size.x*d,
-			h = worm_learner.main_window.gl_image_size.y*d+image_window_size_difference().y ;
+			h = worm_learner.main_window.gl_image_size.y*d+image_window_size_difference(worm_learner.main_window.display_rescale_factor).y ;
 		if (w == 0)
 			w = 600;
 		if (h == 0)
@@ -2141,25 +2193,21 @@ public:
 		delete annotation_group;
 	}
 
-	/*void update_information_bar(const std::string & status="-1"){
-		experiment_name_bar->value(worm_learner.data_selector.current_experiment_name().c_str());
-		cerr << "Selecting experiment " << worm_learner.data_selector.current_experiment_name().c_str() << "\n";
-		if (status != "-1")
-			info_bar->value(status.c_str());
-	}*/
+	void update_information_bar(const std::string & status){
+		annotation_group->info_bar->value(status.c_str());
+	}
     ns_worm_terminal_worm_window (int W,int H,const char*L=0) : Fl_Window(W,H,L), have_focus(false){
         // OpenGL window
 		begin();
 		
-		ns_vector_2i size(worm_learner.worm_window.gl_image_size.x, worm_learner.worm_window.gl_image_size.y + image_window_size_difference().y);
+		ns_vector_2i size(worm_learner.worm_window.gl_image_size.x, worm_learner.worm_window.gl_image_size.y + image_window_size_difference(worm_learner.worm_window.display_rescale_factor).y);
 	
         gl_window = new  ns_worm_gl_window(30, 30, size.x,size.y);
 		
 		annotation_group = new ns_death_event_solo_annotation_group(0,
 															  worm_learner.worm_window.gl_image_size.y,
-															  ns_death_event_solo_annotation_group::all_buttons_width,
-															  ns_death_event_solo_annotation_group::button_height,
-															  false);
+															  W,
+															  ns_death_event_solo_annotation_group::button_height);
 		resize(0, 0, 0, 0);
 		//annotation_group->deactivate();
 		//annotation_group->hide();
@@ -2171,8 +2219,8 @@ public:
 	//	ask_modal_question("Hi","1","2","3");
     }
 	
-	static ns_vector_2i image_window_size_difference(){
-		return ns_vector_2i(0,(long)ns_death_event_solo_annotation_group::button_height);
+	static ns_vector_2i image_window_size_difference(const float menu_d){
+		return ns_vector_2i(0,(long)menu_d*ns_death_event_solo_annotation_group::button_height);
 	}
 	void size(int w__, int h__) { ns_worm_terminal_worm_window::resize(x(), y(), w__, h__); }
 	void resize(int w__, int h__) {
@@ -2189,7 +2237,7 @@ public:
     //			image_window_size_difference());
     
     w = worm_learner.worm_window.gl_image_size.x*d,
-      h = worm_learner.worm_window.gl_image_size.y*d+image_window_size_difference().y;
+      h = worm_learner.worm_window.gl_image_size.y*d+image_window_size_difference(menu_d).y;
 //	cerr << w << "," << h << "\n";
     if (w == 0)
       w = 600;
@@ -2197,29 +2245,25 @@ public:
       h = 800;
     
   }
-	void resize(int x, int y, int w__, int h__){
+	void resize(int x, int y, int w_requested, int h_requested){
 
 	//	ns_acquire_lock_for_scope lock(worm_learner.worm_window.display_lock, __FILE__, __LINE__);
-		const int w_(worm_learner.worm_window.gl_image_size.x),
-				h_(worm_learner.worm_window.gl_image_size.y);
+	
 		ns_vector_2i window_size;
 		float d,menu_d;
 		get_window_size_needed(window_size.x,window_size.y,d,menu_d);
 
 
-	//	cout << "gl("<< h_*d
-	//		<< ") w(" << h_*d + image_window_size_difference().y*menu_d << ")\n";
+		Fl_Window::resize(x, y, window_size.x, window_size.y);
 
-		Fl_Window::resize(x,y,window_size.x,window_size.y);
+		gl_window->resize(0,0, worm_learner.worm_window.gl_image_size.x*d, worm_learner.worm_window.gl_image_size.y*d);
 
-		gl_window->resize(0,0,w_*d,h_*d);
-		//xxxx
 		gl_window->redraw();
 		
-		annotation_group->resize(0,
-								 h_*d,
-								 ns_death_event_solo_annotation_group::all_buttons_width*d,
-								 ns_death_event_solo_annotation_group::button_height*menu_d);
+		ns_vector_2i bar_pos(0, worm_learner.worm_window.gl_image_size.y*d), 
+			bar_size(window_size.x, ns_death_event_solo_annotation_group::button_height*menu_d);
+		
+		annotation_group->resize(bar_pos.x,bar_pos.y, bar_size.x, bar_size.y);
 
 	//	lock.release();
 	}
@@ -2240,19 +2284,19 @@ public:
 				//if (have_focus){
 					Fl::lock();
 					int c(Fl::event_key());
+					Fl::release();
 					if (c!=0){
 						if (worm_learner.register_worm_window_key_press(c,
 							Fl::event_key(FL_Shift_L) || Fl::event_key(FL_Shift_R),
 							Fl::event_key(FL_Control_L) || Fl::event_key(FL_Control_R),
 							Fl::event_key(FL_Alt_L) || Fl::event_key(FL_Alt_R)
 						)) {
-							report_changes_made_to_screen();
 							worm_learner.death_time_solo_annotater.request_refresh();
+							report_changes_made_to_screen();
 
 							return 1;
 						}
 					}
-					Fl::release();
 				//}
 				break;
 			}
@@ -2308,9 +2352,10 @@ void ns_handle_death_time_solo_annotation_button(Fl_Widget * w, void * data){
 	ns_death_time_solo_posture_annotater::ns_image_series_annotater_action action(*a);
 	//delete a;
 	worm_learner.navigate_solo_worm_annotation(action);
-	report_changes_made_to_screen();
 	worm_learner.storyboard_annotater.request_refresh();
-	
+	worm_learner.death_time_solo_annotater.request_refresh();
+	report_changes_made_to_screen();
+//	cerr << "WHA";
 	//Fl::focus(current_window->gl_window);
 }
 
@@ -2346,20 +2391,28 @@ void update_exclusion_choice_menu(){
 	current_window->update_exclusion_choice_menu();
 }
 
-void ns_update_information_bar(const std::string & status){
+void ns_update_main_information_bar(const std::string & status){
 	cerr << status;
 	current_window->update_information_bar(status);
 }
+void ns_update_worm_information_bar(const std::string & status) {
+//	cerr << status;
+	worm_window->update_information_bar(status);
+}
 
-void redraw_main_window(const unsigned long w, const unsigned long h,const bool resize){
+void redraw_main_window(){
   //cerr << "req" << w << "," << h << "\n";
 	worm_learner.main_window.redraw_requested = false;
+
+	ns_acquire_lock_for_scope lock(worm_learner.main_window.display_lock, __FILE__, __LINE__);
+	ns_vector_2i window_size;
+	float d, menu_d;
+	current_window->get_window_size_needed(window_size.x, window_size.y, d, menu_d);
+	lock.release();
 	//Fl::awake();
 	Fl::lock();
-	if (resize){
-	
-	  
-	  current_window->resize(current_window->x(),current_window->y(),w,h);	
+	if (abs(window_size.x-current_window->w())>=2 || abs(window_size.y - current_window->h()) >= 2){
+	  current_window->resize(current_window->x(),current_window->y(),window_size.x,window_size.y);	
 	}
 	current_window->gl_window->damage(1);
 	current_window->gl_window->redraw();
@@ -2368,7 +2421,7 @@ void redraw_main_window(const unsigned long w, const unsigned long h,const bool 
 }
 
 
-void redraw_worm_window(const unsigned long w, const unsigned long h,const bool resize){
+void redraw_worm_window(){
 	worm_learner.worm_window.redraw_requested = false;
 	ns_acquire_lock_for_scope lock(worm_learner.worm_window.display_lock, __FILE__, __LINE__);
 	ns_vector_2i window_size;
@@ -2376,7 +2429,7 @@ void redraw_worm_window(const unsigned long w, const unsigned long h,const bool 
 	worm_window->get_window_size_needed(window_size.x, window_size.y, d, menu_d);
 	lock.release();
 	Fl::lock();
-	if (resize){
+	if (abs(window_size.x - worm_window->w()) >= 2 || abs(window_size.y - worm_window->h()) >= 2){
 	//	cerr << "rww(" << h << ")\n";
 		worm_window->resize(worm_window->x(),worm_window->y(), window_size.x, window_size.y);
 	}
@@ -2409,28 +2462,13 @@ void perform_screen_redraw_callback(void * a) {
 	if (debug_handlers) cout << "D";
 	try {
 	
-		ns_acquire_lock_for_scope lock(worm_learner.main_window.display_lock,__FILE__,__LINE__);
-		ns_vector_2i window_size;
-		float d,menu_d;
-		current_window->get_window_size_needed(window_size.x,window_size.y,d,menu_d);
-		lock.release();
-		Fl::lock();
-		//	ns_vector_2d cur_size(current_window->w(), current_window->h());
-		//	float menu_d(worm_learner.main_window.display_rescale_factor);
-		//	if (!SCALE_FONTS_WITH_WINDOW_SIZE)
-		//		menu_d = 1;
-		//	cur_size = cur_size - ns_vector_2i(0, (current_window->menu_height() + current_window->info_bar_height())*menu_d);
-		//	cur_size = cur_size / worm_learner.main_window.display_rescale_factor;
-		//	if (abs((int)(worm_learner.main_window.gl_image_size.x - cur_size.x)) > 0 && abs((int)(worm_learner.main_window.gl_image_size.y - cur_size.y)) > 0)
-		//	current_window->resize(current_window->x(), current_window->y(),0,0);
 
 		if (worm_learner.main_window.redraw_requested)
-			redraw_main_window(window_size.x, window_size.y, true);
+			redraw_main_window();
 
-		if (worm_learner.worm_window.redraw_requested)
-			redraw_worm_window(worm_learner.worm_window.gl_image_size.x, worm_learner.worm_window.gl_image_size.y, true);
-	
-		Fl::unlock(); 
+		if (worm_learner.worm_window.redraw_requested) 
+			redraw_worm_window();
+		
 		redrawing_rate_limiter = false;
 	}
 	catch (...) {
@@ -2575,10 +2613,13 @@ void idle_main_window_update_callback(void * force_redraw) {
 				worm_window->get_window_size_needed(window_size.x, window_size.y, d, menu_d);
 				lock.release();
 			
-			if (abs(worm_window->w() -  window_size.x) >= 2 || abs(worm_window->h() - window_size.y) >= 2)
-				ns_acquire_lock_for_scope lock(worm_learner.worm_window.display_lock, __FILE__, __LINE__);
-				worm_window->resize(worm_window->x(), worm_window->y(), window_size.x, window_size.y);
-				lock.release();
+				if (abs(worm_window->w() - window_size.x) >= 2 || abs(worm_window->h() - window_size.y) >= 2) {
+					ns_vector_2i cur(worm_window->w(), worm_window->h());
+				//	cerr << "Cur:" << cur << "; des:" << window_size << "; diff:" << (cur - window_size) << "\n";
+					ns_acquire_lock_for_scope lock(worm_learner.worm_window.display_lock, __FILE__, __LINE__);
+					worm_window->resize(worm_window->x(), worm_window->y(), window_size.x, window_size.y);
+					lock.release();
+				}
 			}
 
 			if (show_worm_window) {
@@ -2803,7 +2844,7 @@ int main() {
 		worm_learner.maximum_window_size = image_server.max_terminal_window_size;
 		worm_learner.death_time_annotater.set_resize_factor(image_server.terminal_hand_annotation_resize_factor);
 		worm_learner.main_window.display_rescale_factor = image_server.terminal_window_scale_factor();
-		worm_learner.worm_window.display_rescale_factor = image_server.terminal_window_scale_factor() / ns_death_time_solo_posture_annotater_timepoint::ns_resolution_increase_factor;
+		worm_learner.worm_window.display_rescale_factor = image_server.terminal_window_scale_factor() / ns_death_time_solo_posture_annotater_timepoint::ns_resolution_increase_factor ;
 
 		//ns_update_sample_info(sql());
 		ns_worm_browser_output_debug(__LINE__,__FILE__,"Checking for new release");
@@ -3173,11 +3214,11 @@ void ns_worm_terminal_main_menu_organizer::show_worm(const std::string & data) {
 
 
  ns_vector_2i main_image_window_size_difference(){
-	 return ns_worm_terminal_main_window::image_window_size_difference ();
+	 return ns_worm_terminal_main_window::image_window_size_difference (worm_learner.main_window.display_rescale_factor);
  }
  
  ns_vector_2i worm_image_window_size_difference(){
-	 return ns_worm_terminal_worm_window::image_window_size_difference ();
+	 return ns_worm_terminal_worm_window::image_window_size_difference (worm_learner.main_window.display_rescale_factor);
  }
 
 

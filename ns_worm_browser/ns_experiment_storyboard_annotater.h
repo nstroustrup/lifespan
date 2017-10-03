@@ -466,7 +466,8 @@ public:
 		ns_acquire_for_scope<ns_sql> sql(image_server.new_sql_connection(__FILE__,__LINE__));
 		storyboard.save_by_hand_annotations(sql(),extra_annotations);
 		sql.release();
-		ns_update_information_bar("Annotations saved at " + ns_format_time_string_for_human(ns_current_time()));
+		ns_update_main_information_bar("Annotations saved at " + ns_format_time_string_for_human(ns_current_time()));
+		ns_update_worm_information_bar("Annotations saved at " + ns_format_time_string_for_human(ns_current_time()));
 		saved_=true;
 	};
 	void redraw_current_metadata(){

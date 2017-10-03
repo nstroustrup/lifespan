@@ -1,6 +1,13 @@
 #ifndef NS_TIME_SERIES_ANNOTATER_H
 #define NS_TIME_SERIES_ANNOTATER_H
 #include "ns_image.h"
+
+
+
+void ns_update_main_information_bar(const std::string & status);
+void ns_update_worm_information_bar(const std::string & status);
+
+
 extern bool debug_handlers;
 struct ns_annotater_image_buffer_entry{
 	ns_annotater_image_buffer_entry():loaded(false),im(0){}

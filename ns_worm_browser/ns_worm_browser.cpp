@@ -5899,12 +5899,17 @@ bool ns_worm_learner::register_worm_window_key_press(int key, const bool shift_k
 		else death_time_solo_annotater.register_click(ns_vector_2i(0,0),ns_death_time_solo_posture_annotater::ns_decrease_contrast);
 		return true;
 	}
-	else if (key == 'i') {
-		death_time_solo_annotater.telemetry.show(!death_time_solo_annotater.telemetry.show());
+	else if (key == 'g') {
+		death_time_solo_annotater.step_graph_type();
+
+		ns_update_worm_information_bar(string("Plotting ") + death_time_solo_annotater.graph_type_string());
 		return true;
 	}
 	else if (key == 'v') {
 		solo_annotation_visualization_type = death_time_solo_annotater.step_visualization_type();
+
+		ns_update_worm_information_bar(string("Showing ") + ns_death_time_solo_posture_annotater_timepoint::visulazation_type_string(solo_annotation_visualization_type));
+
 		return true;
 	}
 	return false;
@@ -6222,10 +6227,14 @@ void ns_worm_learner::draw_worm_window_image(ns_image_standard & image){
 
 	ns_acquire_lock_for_scope lock(worm_window.display_lock,__FILE__,__LINE__);
 
-	
+	ns_vector_2i telemetry_size;
+	if (!death_time_solo_annotater.telemetry.show())
+		telemetry_size = ns_vector_2i(0, 0);
+	else  telemetry_size = death_time_solo_annotater.telemetry_size();
+
 	//if the image is an integer factor larger than the display size
 	//it should be downsampled before being sent to the video card.
-	worm_window.pre_gl_downsample = image.properties().width / (maximum_window_size.x- death_time_solo_annotater.telemetry_size().x);
+	worm_window.pre_gl_downsample = image.properties().width / (maximum_window_size.x- telemetry_size.x);
 	//if (worm_window.pre_gl_downsample < 1)
 		worm_window.pre_gl_downsample = 1;
 
@@ -6235,9 +6244,11 @@ void ns_worm_learner::draw_worm_window_image(ns_image_standard & image){
 	new_image_size.width/=worm_window.pre_gl_downsample;
 	new_image_size.height/=worm_window.pre_gl_downsample;
 
-	ns_vector_2i buffer_size(new_image_size.width + death_time_solo_annotater.telemetry_size().x,
-				 (new_image_size.height > death_time_solo_annotater.telemetry_size().y) ?
-				 new_image_size.height : death_time_solo_annotater.telemetry_size().y);
+	
+
+	ns_vector_2i buffer_size(new_image_size.width + telemetry_size.x,
+				 (new_image_size.height > telemetry_size.y) ?
+				 new_image_size.height : telemetry_size.y);
 
 	//we resize the image by an integer factor
 	//but it still needs to be resized by the video card
@@ -6254,9 +6265,10 @@ void ns_worm_learner::draw_worm_window_image(ns_image_standard & image){
 	//don't do this, because it always ends up looking messy.
 	gl_resize = 1;
 
-	worm_window.telemetry_size = ns_vector_2i(
-		(unsigned int)floor(death_time_solo_annotater.telemetry_size().x*gl_resize),
-		(unsigned int)floor(death_time_solo_annotater.telemetry_size().y*gl_resize));
+
+		worm_window.telemetry_size = ns_vector_2i(
+		(unsigned int)floor(telemetry_size.x*gl_resize),
+		(unsigned int)floor(telemetry_size.y*gl_resize));
 	
 	worm_window.worm_image_size = ns_vector_2i(
 		(unsigned int)floor(new_image_size.width*gl_resize),
@@ -6329,6 +6341,19 @@ void ns_worm_learner::draw_worm_window_image(ns_image_standard & image){
 	else if (image.properties().components == 1){
 		throw ns_ex("Err!");
 	}
+
+
+	//now we handle the gl scaling
+	if (worm_window.display_rescale_factor <= 1 && (worm_window.gl_image_size.x*worm_window.display_rescale_factor > this->maximum_window_size.x ||
+		worm_window.gl_image_size.y*worm_window.display_rescale_factor > this->maximum_window_size.y)) {
+		cerr << "Cannot resize, as the current window has hit the maximum size specified in the ns_worm_browser.ini file\n";
+		worm_window.display_rescale_factor = floor(min(maximum_window_size.x / (double)worm_window.gl_image_size.x,
+			maximum_window_size.y / (double)worm_window.gl_image_size.y) * 10) / 10;
+		//cerr << worm_window.display_rescale_factor << " ";
+	}
+
+
+
 	if (death_time_solo_annotater.telemetry.show()) {
 		try {
 			if (!death_time_solo_annotater.movement_quantification_data_loaded()) {
@@ -6341,7 +6366,7 @@ void ns_worm_learner::draw_worm_window_image(ns_image_standard & image){
 			death_time_solo_annotater.draw_telemetry(ns_vector_2i(new_image_size.width, 0),
 				death_time_solo_annotater.telemetry_size(),
 				ns_vector_2i(worm_window.gl_buffer_properties.width,
-					worm_window.gl_buffer_properties.height),
+					worm_window.gl_buffer_properties.height), worm_window.display_rescale_factor,
 				worm_window.gl_buffer);
 
 			//clear out bottom margin
@@ -6365,15 +6390,6 @@ void ns_worm_learner::draw_worm_window_image(ns_image_standard & image){
 	}
 	
 	
-	//now we handle the gl scaling
-	if (worm_window.display_rescale_factor <= 1 && (worm_window.gl_image_size.x*worm_window.display_rescale_factor > this->maximum_window_size.x ||
-		worm_window.gl_image_size.y*worm_window.display_rescale_factor > this->maximum_window_size.y)){
-		cerr << "Cannot resize, as the current window has hit the maximum size specified in the ns_worm_browser.ini file\n";
-		worm_window.display_rescale_factor = floor(min(maximum_window_size.x/(double)worm_window.gl_image_size.x,
-											           maximum_window_size.y/(double)worm_window.gl_image_size.y)*10)/10;
-		//cerr << worm_window.display_rescale_factor << " ";
-	}
-
 
 	lock.release();
 	worm_window.redraw_screen();
@@ -6957,7 +6973,7 @@ bool ns_worm_learner::start_death_time_annotation(const ns_behavior_mode m, cons
 			death_time_annotater.clear();
 
 			unsigned long region_id = data_selector.current_region().region_id;
-			ns_update_information_bar(string("Annotating ") + data_selector.current_region().region_name);
+			ns_update_main_information_bar(string("Annotating ") + data_selector.current_region().region_name);
 			ns_death_time_posture_annotater::ns_alignment_type type;
 			switch(m){
 				case ns_worm_learner::ns_annotate_death_times_in_time_aligned_posture:
@@ -7045,7 +7061,8 @@ void ns_worm_learner::stop_death_time_annotation() {
 	set_behavior_mode(ns_worm_learner::ns_draw_boxes);
 	ns_hide_worm_window();
 	display_splash_image();
-	ns_update_information_bar("");
+	ns_update_main_information_bar("");
+	ns_update_worm_information_bar("");
 	death_time_solo_annotater.stop_fast_movement();
 	death_time_solo_annotater.clear();
 	death_time_solo_annotater.clear_data_cache();
@@ -7083,6 +7100,24 @@ void ns_experiment_storyboard_annotater::display_current_frame(){
 void ns_worm_learner::navigate_solo_worm_annotation(ns_death_time_solo_posture_annotater::ns_image_series_annotater_action action, bool asynch){
 	switch(action){
 		case ns_death_time_solo_posture_annotater::ns_none: break;
+
+		case ns_death_time_solo_posture_annotater::ns_time_zoom_in_step:
+			death_time_solo_annotater.telemetry_zoom_factor *= 1.2;
+			if (death_time_solo_annotater.telemetry_zoom_factor > ns_death_time_solo_posture_annotater::max_zoom_factor) {
+				death_time_solo_annotater.telemetry_zoom_factor = ns_death_time_solo_posture_annotater::max_zoom_factor;
+				ns_update_worm_information_bar(string("Can't zoom in any more than ") + ns_to_string(ns_death_time_solo_posture_annotater::max_zoom_factor) + "x");
+			}else
+				ns_update_worm_information_bar(ns_to_string_short(death_time_solo_annotater.telemetry_zoom_factor,1) + "x zoom");
+			break;
+		case ns_death_time_solo_posture_annotater::ns_time_zoom_out_step:
+			death_time_solo_annotater.telemetry_zoom_factor /= 1.2;
+			if (death_time_solo_annotater.telemetry_zoom_factor < 1) {
+				death_time_solo_annotater.telemetry_zoom_factor = 1;
+				ns_update_worm_information_bar(string("Can't zoom in any more than 1x "));
+			}
+			else
+				ns_update_worm_information_bar(ns_to_string_short(death_time_solo_annotater.telemetry_zoom_factor, 1) + "x zoom");
+			break;
 		case ns_death_time_solo_posture_annotater::ns_forward: 
 			if(death_time_solo_annotater.step_forward(ns_hide_worm_window,asynch))
 				death_time_solo_annotater.request_refresh();// report_changes_made_to_screen();
@@ -7097,12 +7132,20 @@ void ns_worm_learner::navigate_solo_worm_annotation(ns_death_time_solo_posture_a
 		case ns_death_time_solo_posture_annotater::ns_rewind_to_zero: break;
 		case ns_death_time_solo_posture_annotater::ns_step_visualization: 
 			solo_annotation_visualization_type = death_time_solo_annotater.step_visualization_type();
-		//	death_time_solo_annotater.request_refresh(); report_changes_made_to_screen();
+
+			ns_update_worm_information_bar(string("Rendering ") + ns_death_time_solo_posture_annotater_timepoint::visulazation_type_string(solo_annotation_visualization_type));
+
+
+			death_time_solo_annotater.display_current_frame();
+			//death_time_solo_annotater.request_refresh(); //report_changes_made_to_screen();
 			break;
 		case ns_death_time_solo_posture_annotater::ns_step_graph:
 			death_time_solo_annotater.step_graph_type();
+
+
+			ns_update_worm_information_bar(string("Plotting ") + death_time_solo_annotater.graph_type_string());
 			//death_time_solo_annotater.display_current_frame();
-		//	death_time_solo_annotater.request_refresh(); report_changes_made_to_screen();
+			//death_time_solo_annotater.request_refresh(); //report_changes_made_to_screen();
 			break;
 		case ns_death_time_solo_posture_annotater::ns_write_quantification_to_disk: 
 			death_time_solo_annotater.register_click(ns_vector_2i(0,0),ns_death_time_solo_posture_annotater::ns_output_images); break;
@@ -7835,8 +7878,16 @@ bool ns_death_time_solo_posture_annotater::ns_fix_annotation(ns_death_time_annot
 }
 
 
-void ns_death_time_solo_posture_annotater::draw_telemetry(const ns_vector_2i & position, const ns_vector_2i & graph_size, const ns_vector_2i & buffer_size, ns_8_bit * buffer) {
+void ns_death_time_solo_posture_annotater::draw_telemetry(const ns_vector_2i & position, const ns_vector_2i & graph_size, const ns_vector_2i & buffer_size, const float rescale_factor,ns_8_bit * buffer) {
 	if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("Drawing telemetry."));
+	if (telemetry_zoom_factor < 1) {
+		cerr << "Weird telemetry zoom factor: " << telemetry_zoom_factor << "\n";
+		telemetry_zoom_factor = 1;
+	}
+	if (telemetry_zoom_factor > max_zoom_factor) {
+		cerr << "Weird telemetry zoom factor: " << telemetry_zoom_factor << "\n";
+		telemetry_zoom_factor = max_zoom_factor;
+	}
 	const unsigned long path_start_time = timepoints.begin()->path_timepoint_element->absolute_time, path_stop_time = timepoints.rbegin()->path_timepoint_element->absolute_time;
 	
 
@@ -7863,7 +7914,7 @@ void ns_death_time_solo_posture_annotater::draw_telemetry(const ns_vector_2i & p
 	if (stop_time > path_stop_time)stop_time = path_stop_time;
 	if (start_time < path_start_time)start_time = path_start_time;
 
-	telemetry.draw(graph_contents, current_timepoint_id, position, graph_size, buffer_size, ns_death_time_solo_posture_annotater_timepoint::ns_resolution_increase_factor,buffer,start_time,stop_time);
+	telemetry.draw(graph_contents, current_timepoint_id, position, graph_size, buffer_size, ns_death_time_solo_posture_annotater_timepoint::ns_resolution_increase_factor/ rescale_factor,buffer,start_time,stop_time);
 	
 	if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("Done with telemetry."));
 }
@@ -7935,12 +7986,22 @@ void ns_death_time_solo_posture_annotater::register_click(const ns_vector_2i & i
 		switch (action) {
 		case  ns_time_zoom_in:
 				telemetry_zoom_factor *= 1.2;
+				if (telemetry_zoom_factor > max_zoom_factor){
+					telemetry_zoom_factor = max_zoom_factor;
+					ns_update_worm_information_bar(string("Can't zoom in any more than ") + ns_to_string(max_zoom_factor) + "x");
+				}
+				else
+					ns_update_worm_information_bar(ns_to_string_short(telemetry_zoom_factor, 1) + "x zoom");
 				change_made = true;
 				break;
 		case ns_time_zoom_out:
 				telemetry_zoom_factor /= 1.2;
-				if (telemetry_zoom_factor < 1)
-					telemetry_zoom_factor = 1;
+				if (telemetry_zoom_factor < 1){
+					telemetry_zoom_factor = 1;	
+					ns_update_worm_information_bar(string("Can't zoom in any more than 1x "));
+					}
+				else
+					ns_update_worm_information_bar(ns_to_string_short(telemetry_zoom_factor, 1) + "x zoom");
 				change_made = true;
 				break;
 		case ns_cycle_state:

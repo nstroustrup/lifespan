@@ -18,7 +18,17 @@ void ns_specify_worm_details(const ns_64_bit region_info_id,const ns_stationary_
 class ns_death_time_solo_posture_annotater_timepoint : public ns_annotater_timepoint{
 public:
 	typedef enum { ns_image, ns_movement, ns_movement_threshold, ns_movement_and_image, ns_movement_threshold_and_image } ns_visualization_type;
-
+	
+	static std::string visulazation_type_string(const ns_visualization_type & t) {
+		switch (t) {
+			case ns_image: return "brightfield image";
+			case ns_movement: return "movement quantification";
+			case ns_movement_threshold:return "thresholded movement quantification";
+			case ns_movement_and_image: return "movement quantification, superimposed on brightfield image";
+			case ns_movement_threshold_and_image: return "thresholded movement quantification, superimposed on brightfield image";
+			default: throw ns_ex("ns_death_time_solo_posture_annotater_timepoint::visulazation_type_string()::Unknown visualization type");
+		}
+	}
 	const ns_analyzed_image_time_path_element * path_timepoint_element;
 	ns_time_path_image_movement_analyzer * movement_analyzer;
 	unsigned long element_id;
@@ -60,7 +70,6 @@ public:
 			mov_r = max_mov - min_mov;
 		}
 		//cout << debug_label <<  "(" << max_mov << "," << min_mov << "; ";
-		float movement_sum(0);
 		const unsigned long side_border(ns_side_border_width*ns_resolution_increase_factor);
 		//top border
 		for (unsigned int y = 0; y < side_border; y++) {
@@ -98,7 +107,6 @@ public:
 						if (count == 0) t = 0;
 						else {
 							t = 255 * ((abs(sum / count) - min_mov) / mov_r);
-							movement_sum += abs(sum) / (float)count;
 						}
 					}
 					else t = 0;
@@ -120,13 +128,12 @@ public:
 							t = 0;
 						else {
 							t = 255 * ((abs(sum / count) - min_mov) / mov_r);
-							movement_sum += abs(sum) / (float)count;
 						}
 					}
 					else t = 0;
 
 					for (unsigned int xx = 0; xx < ns_resolution_increase_factor; xx++)
-					output[y][3 * (ns_resolution_increase_factor*x + side_border)] =
+						output[y + side_border][3 * (ns_resolution_increase_factor*x + xx+side_border)] =
 						output[y + side_border][3 * (ns_resolution_increase_factor*x + xx + side_border) + 1] =
 						output[y + side_border][3 * (ns_resolution_increase_factor*x + xx+ side_border) + 2] = t;
 				}
@@ -142,7 +149,6 @@ public:
 							f = 0;
 						else {
 							f = ((abs(sum / count) - min_mov) / mov_r);
-							movement_sum += abs(sum) / (float)count;
 						}
 					}
 					else f = 0;
@@ -166,7 +172,6 @@ public:
 							f = 0;
 						else {
 							f = ((abs(sum / count) - min_mov) / mov_r);
-							movement_sum += abs(sum) / (float)count;
 						}
 					}
 					else f = 0;
@@ -583,17 +588,20 @@ private:
 	ns_worm_learner * worm_learner;
 
 
-	enum { default_resize_factor = 1, max_buffer_size = 15 };
 
 	mutable bool saved_;
-	float telemetry_zoom_factor;
 public:
 
+	enum { default_resize_factor = 1, max_buffer_size = 15, max_zoom_factor = 40 };
+	float telemetry_zoom_factor;
 	ns_vector_2i telemetry_size() { return ns_vector_2i(500, 500)*ns_death_time_solo_posture_annotater_timepoint::ns_resolution_increase_factor; }
 
+	std::string graph_type_string() const {
+		return ns_animal_telemetry::graph_type_string(graph_contents);
+	}
 	ns_animal_telemetry::ns_graph_contents step_graph_type() {
 		graph_contents = (ns_animal_telemetry::ns_graph_contents)((int)graph_contents + 1);
-		if (graph_contents == ns_animal_telemetry::ns_number_of_graph_types) {
+		if (graph_contents == ns_animal_telemetry::ns_all) {
 			graph_contents = ns_animal_telemetry::ns_none;
 			telemetry.show(false);
 		}
@@ -628,7 +636,7 @@ public:
 	ns_animal_telemetry telemetry;
 	ns_animal_telemetry::ns_graph_contents graph_contents;
 
-	typedef enum { ns_none, ns_forward, ns_back, ns_fast_forward, ns_fast_back, ns_stop, ns_save, ns_rewind_to_zero, ns_write_quantification_to_disk, ns_step_visualization, ns_step_graph, ns_number_of_annotater_actions } ns_image_series_annotater_action;
+	typedef enum { ns_none, ns_forward, ns_back, ns_fast_forward, ns_fast_back, ns_stop, ns_save, ns_rewind_to_zero, ns_write_quantification_to_disk, ns_step_visualization, ns_step_graph, ns_time_zoom_in_step,ns_time_zoom_out_step, ns_number_of_annotater_actions } ns_image_series_annotater_action;
 
 	inline ns_annotater_timepoint * timepoint(const unsigned long i) { return &timepoints[i]; }
 	inline unsigned long number_of_timepoints() { return timepoints.size(); }
@@ -636,7 +644,7 @@ public:
 	void set_resize_factor(const unsigned long resize_factor_) { resize_factor = resize_factor_; }
 	bool data_saved()const { return saved_; }
 	ns_death_time_solo_posture_annotater() :ns_image_series_annotater(default_resize_factor, ns_death_time_posture_annotater_timepoint::ns_bottom_border_height),
-		saved_(true), graph_contents(ns_animal_telemetry::ns_none), current_visualization_type(ns_death_time_solo_posture_annotater_timepoint::ns_image), current_region_data(0), telemetry_zoom_factor(1), current_worm(0), current_machine_timing_data(0) {}
+		saved_(true), graph_contents(ns_animal_telemetry::ns_movement_intensity), current_visualization_type(ns_death_time_solo_posture_annotater_timepoint::ns_image), current_region_data(0), telemetry_zoom_factor(1), current_worm(0), current_machine_timing_data(0) {}
 
 	typedef enum { ns_time_aligned_images, ns_death_aligned_images } ns_alignment_type;
 
@@ -654,7 +662,8 @@ public:
 	void save_annotations(const ns_death_time_annotation_set & set) const {
 		data_cache.save_annotations(set);
 
-		ns_update_information_bar(string("Annotations saved at ") + ns_format_time_string_for_human(ns_current_time()));
+		ns_update_worm_information_bar(string("Annotations saved at ") + ns_format_time_string_for_human(ns_current_time()));
+		ns_update_main_information_bar(string("Annotations saved at ") + ns_format_time_string_for_human(ns_current_time()));
 		saved_ = true;
 	};
 	bool current_region_path_data_loaded() {
@@ -707,7 +716,7 @@ public:
 			current_timepoint_id++;
 
 	}
-	void draw_telemetry(const ns_vector_2i & position, const ns_vector_2i & graph_size, const ns_vector_2i & buffer_size, ns_8_bit * buffer);
+	void draw_telemetry(const ns_vector_2i & position, const ns_vector_2i & graph_size, const ns_vector_2i & buffer_size, const float rescale_factor,ns_8_bit * buffer);
 	void draw_registration_debug(const ns_vector_2i & position, const ns_vector_2i & buffer_size, ns_8_bit * buffer) {
 		if (current_timepoint_id == 0)
 			return;
@@ -811,10 +820,10 @@ public:
 		stop_fast_movement();
 		current_visualization_type = visualization_type;
 		
-		graph_contents = ns_animal_telemetry::ns_movement_intensity;
 
 		if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("Showing telemetry"));
-		telemetry.show(true);
+	
+		telemetry.show(graph_contents != ns_animal_telemetry::ns_none);
 	
 		ns_region_metadata metadata;
 		metadata.region_id = region_info_id_;
@@ -950,7 +959,8 @@ public:
 
 
 			telemetry_zoom_factor = timepoints.size() / 250;
-
+			if (telemetry_zoom_factor < .1)
+				telemetry_zoom_factor = 1;
 			//allocate image buffer
 			
 			if (current_image.im == 0)
@@ -1003,7 +1013,6 @@ public:
 		saved_ = false;
 		timepoints.resize(0);
 		telemetry.clear();
-		graph_contents = ns_animal_telemetry::ns_none;
 	//	data_cache.clear();
 		close_worm();
 	//	data_cache.clear();

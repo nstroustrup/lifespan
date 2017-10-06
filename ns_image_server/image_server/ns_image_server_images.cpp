@@ -71,22 +71,26 @@ std::string ns_image_server_captured_image::sql_field_stub() {
 
 bool ns_image_server_captured_image::load_from_db(const ns_64_bit _id, ns_image_server_sql * con) {
 	*con << "SELECT " << sql_field_stub() <<
-		" FROM " << con->table_prefix() << "captured_images as ci,  " << con->table_prefix() << "capture_samples as s, " << con->table_prefix() << "experiments as exp WHERE ci.id = " << captured_images_id
+		" FROM " << con->table_prefix() << "captured_images as ci,  " << con->table_prefix() << "capture_samples as s, " << con->table_prefix() << "experiments as exp WHERE ci.id = " << _id
 		<< " AND s.experiment_id = exp.id"
 		<< " AND s.id = ci.sample_id";
 
 	ns_sql_result info;
 	con->get_rows(info);
-	if (info.size() == 0)
-		return false;
+	if (info.size() == 0){
+	  //cout << "No CI\n";
+	  return false;
+	}
 	if (info.size() > 1)
 		throw ns_ex("Captured image doesn't have a unique id!");
 	return load_from_db_internal(_id, info[0]);
 }
 bool ns_image_server_captured_image::load_from_db_internal(const ns_64_bit _id, ns_sql_result_row & info){
+  captured_images_id = _id;
 		sample_id						= ns_atoi64(info[0].c_str());
 		experiment_id					= ns_atoi64(info[1].c_str());
 		capture_images_image_id		 	= ns_atoi64(info[2].c_str());
+		//cout << "CI: " << capture_images_image_id << "\n";
 		sample_name						= info[3];
 		experiment_name					= info[4];
 		capture_time					= atol(info[5].c_str());

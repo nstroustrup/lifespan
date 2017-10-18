@@ -289,7 +289,7 @@ bool ns_processing_job_region_processor::identify_subjects_of_job_specification(
 			i == ns_process_movement_coloring || i == ns_process_movement_mapping ||
 			i == ns_process_posture_vis || i == ns_process_region_vis) continue;
 		if (job.operations[i] == 1) {
-			if (found_one) {
+			if (!found_one) {
 				sql << " AND (";
 				found_one = true;
 			}

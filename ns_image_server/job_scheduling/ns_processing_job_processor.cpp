@@ -280,24 +280,29 @@ bool ns_processing_job_sample_processor::identify_subjects_of_job_specification(
 	return false;
 }
 
-
-bool ns_processing_job_region_processor::identify_subjects_of_job_specification(std::vector<ns_processing_job_queue_item> & subjects,ns_sql & sql){
-	sql << "SELECT id FROM sample_region_images WHERE region_info_id=" << job.region_id << " AND problem =0 AND censored = 0 AND currently_under_processing=0 AND (";
+bool ns_processing_job_region_processor::identify_subjects_of_job_specification(std::vector<ns_processing_job_queue_item> & subjects, ns_sql & sql) {
+	sql << "SELECT id FROM sample_region_images WHERE region_info_id=" << job.region_id << " AND problem =0 AND censored = 0 AND currently_under_processing=0";
+	bool found_one(false);
 	bool requested_constraint(false);
-	for (unsigned int i = 1; i < (int)ns_process_last_task_marker; i++){
-		if (i == ns_process_analyze_mask ||		 i == ns_process_compile_video ||
-			i == ns_process_movement_coloring || i == ns_process_movement_mapping || 
-			i == ns_process_posture_vis  || i == ns_process_region_vis) continue;
-		if (job.operations[i] == 1){
+	for (unsigned int i = 1; i < (int)ns_process_last_task_marker; i++) {
+		if (i == ns_process_analyze_mask || i == ns_process_compile_video ||
+			i == ns_process_movement_coloring || i == ns_process_movement_mapping ||
+			i == ns_process_posture_vis || i == ns_process_region_vis) continue;
+		if (job.operations[i] == 1) {
+			if (found_one) {
+				sql << " AND (";
+				found_one = true;
+			}
 			if (requested_constraint) sql << "OR ";
 			else requested_constraint = true;
 			if (i == (unsigned int)ns_process_movement_coloring_with_graph || i == (unsigned int)ns_process_movement_coloring_with_survival)
-				sql << " (sample_region_images.op" << i  << "_image_id=0 AND sample_region_images.op" << ns_process_movement_coloring << "_image_id != 0) ";
+				sql << " (sample_region_images.op" << i << "_image_id=0 AND sample_region_images.op" << ns_process_movement_coloring << "_image_id != 0) ";
 			else
-				sql<< " sample_region_images.op" << i  << "_image_id=0 ";
+				sql << " sample_region_images.op" << i << "_image_id=0 ";
 		}
 	}
-	sql<< ") ";
+	if (found_one)
+		sql << ")";
 	ns_sql_result res;
 	sql.get_rows(res);
 //	ns_sql_full_table_lock lock(sql,"processing_job_queue");

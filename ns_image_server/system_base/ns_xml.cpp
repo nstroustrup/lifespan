@@ -201,7 +201,7 @@ void ns_xml_object_reader::from_filename(const std::string & filename){
 void ns_xml_simple_object_reader::from_string(const std::string & s){
 	TiXmlDocument doc("in");
 	doc.LoadFile("");
-	if (0 != doc.Parse(s.c_str()))
+	if (0 == doc.Parse(s.c_str()))
 		throw ns_ex("ns_xml_object_reader::Failed to parse document:") << doc.Value() << " : " << doc.ErrorDesc();
 
 	convert_to_simple_objects(&doc,objects,0,0,0);

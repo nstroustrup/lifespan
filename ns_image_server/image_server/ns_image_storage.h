@@ -19,7 +19,6 @@
 #define NS_DEFAULT_JP2K_COMPRESSION 1.0/30.0
 #define NS_DEFAULT_JP2K_HD_COMPRESSION 1.0/16.0
 
-typedef enum { ns_no_special_permissions, ns_group_read } ns_output_file_permissions;
 
 std::string ns_shorten_filename(std::string name, const unsigned long limit=40);
 

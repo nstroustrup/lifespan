@@ -6,6 +6,11 @@
 
 #ifdef _WIN32 
 #include "shellapi.h"
+
+#include <experimental/filesystem>
+#include <filesystem>
+namespace ns_fs = std::experimental::filesystem::v1;
+
 #endif
 using namespace std;
 #ifndef _WIN32
@@ -602,11 +607,21 @@ const bool ns_dir::delete_folder_recursive(const string & d){
 	#endif
 }
 
-void ns_dir::set_permissions(const std::string & path, ns_fs::perms permision_setting) {
-	ns_fs::permissions(path.c_str(), permision_setting);
+void ns_dir::set_permissions(const std::string & path, ns_output_file_permissions permision_setting) {
+#ifdef _WIN32
+if (permision_setting == ns_output_file_permissions::ns_group_read)
+	ns_fs::permissions(path.c_str(), ns_fs::perms::owner_all | ns_fs::perms::group_read | ns_fs::perms::others_read);
+else
+	ns_fs::permissions(path.c_str(), ns_fs::perms::owner_all);
+#else
+	if (permispath.c_str()ion_setting == ns_output_file_permissions::ns_group_read)
+		chmod(path.c_str(), S_IRWXU | S_IRGRP | S_IROTH);
+	else
+		chmod(path.c_str(), S_IRWXU);
+#endif
 }
 
-bool ns_dir::try_to_set_permissions(const std::string & path, ns_fs::perms permision_setting) {
+bool ns_dir::try_to_set_permissions(const std::string & path, ns_output_file_permissions permision_setting) {
 	try { 
 		set_permissions(path, permision_setting);
 	}

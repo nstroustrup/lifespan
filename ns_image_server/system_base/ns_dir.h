@@ -6,6 +6,7 @@
 #include <vector>
 #include <string>
 
+
 //set up directory separators
 #ifdef _WIN32 
 
@@ -15,9 +16,6 @@
 	#define DIR_CHAR_STR "\\"
 	#define WRONG_DIR_CHAR '/'
 	#define WRONG_DIR_CHAR_STR "/"
-	#include <experimental/filesystem>
-	#include <filesystem>
-	namespace ns_fs = std::experimental::filesystem::v1;
 #else
 	#include <sys/types.h>
 	#include <dirent.h>
@@ -28,18 +26,17 @@
 	#define DIR_CHAR_STR "/"
 	#define WRONG_DIR_CHAR '\\'
 	#define WRONG_DIR_CHAR_STR "\\"
-	#include <filesystem>
-	namespace ns_fs = std::filesystem;
 #endif
 
 const std::string ALL_FILES("\n\n\n\n\n\t");
 const std::string DIRECTORIES("\n\n\n\n\t\t");
 
-
-
 //----This class should be used to generate a listing of the contents of a win32 directory----------------//
 class ns_dir{
     public:
+
+
+	typedef enum { ns_no_special_permissions, ns_group_read } ns_output_file_permissions;
 
 	//the constructor, which creates the dir_info object for the specified directory
 	ns_dir(const std::string & dir){load(dir);}
@@ -78,8 +75,8 @@ class ns_dir{
 	static const bool file_exists(const std::string & f);
 	static const bool file_is_writeable(const std::string & f);
 	static const bool rename_to_unique_filename(std::string & f);
-	static void set_permissions(const std::string & path, ns_fs::perms permisions);
-	static bool try_to_set_permissions(const std::string & path, ns_fs::perms permisions);
+	static void set_permissions(const std::string & path, ns_output_file_permissions permisions);
+	static bool try_to_set_permissions(const std::string & path, ns_output_file_permissions permisions);
 	static std::string format_path(const std::string & str);
 
 	static void convert_to_unix_slashes(std::string & str);

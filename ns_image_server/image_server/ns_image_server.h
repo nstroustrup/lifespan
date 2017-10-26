@@ -560,6 +560,7 @@ public:
 	const std::string & mail_from_address() const{return _mail_from;}
 
 	bool do_not_run_multithreaded_jobs;
+	bool output_group_readable_files() const{return _output_group_readable_files;}
 private:
 	ns_64_bit _main_thread_internal_id;
 	static void open_log_file(const ns_image_server::ns_image_server_exec_type & exec_type, ns_64_bit thread_id, const std::string & volatile_directory, const std::string & file_name, std::ofstream & out);
@@ -637,6 +638,7 @@ private:
 	bool _act_as_an_image_capture_server,
 		 _act_as_processing_node,
 		 _halt_on_new_software_release;
+	bool _output_group_readable_files;
 	bool _compile_videos;
 	bool server_pause_status;
 

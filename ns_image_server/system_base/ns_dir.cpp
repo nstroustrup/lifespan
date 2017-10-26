@@ -601,3 +601,17 @@ const bool ns_dir::delete_folder_recursive(const string & d){
 
 	#endif
 }
+
+void ns_dir::set_permissions(const std::string & path, ns_fs::perms permision_setting) {
+	ns_fs::permissions(path.c_str(), permision_setting);
+}
+
+bool ns_dir::try_to_set_permissions(const std::string & path, ns_fs::perms permision_setting) {
+	try { 
+		set_permissions(path, permision_setting);
+	}
+	catch (...) {
+		return false;
+	}
+	return true;
+}

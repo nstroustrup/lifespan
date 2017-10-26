@@ -3116,7 +3116,7 @@ void ns_handle_menu_bar_activity_request(){
 		return;
 	}
 	ns_set_menu_bar_activity_internal(set_menu_bar_request==ns_activate);
-	set_menu_bar_request = ns_none;
+	set_menu_bar_request = ns_menu_bar_request::ns_none;
 	menu_bar_processing_lock.release();
 }
 void ns_set_menu_bar_activity(bool activate){

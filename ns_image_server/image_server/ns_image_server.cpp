@@ -2011,6 +2011,7 @@ void ns_image_server::load_constants(const ns_image_server::ns_image_server_exec
 	constants.add_field("device_barcode_coordinates","-l 0in -t 10.3in -x 8in -y 2in", "The coordinates of the barcode adhered to the surface of each scanner");
 	constants.add_field("simulated_device_name", ".","For software debugging, an image acquisition server can simulate an attached device");
 	constants.add_field("device_names", "", "This can be used to explicitly specify scanner names on an image acquisition server.  These should be detected just fine automatically, and so in most cases this field can be left blank");
+	constants.add_field("output_files_with_all_read_permissions", "yes", "Generate files with 755 access permissions");
 
 	constants.start_specification_group(ns_ini_specification_group("Image Analysis Server Settings ","These settings control the behavior of image processing servers"));
 	constants.add_field("allow_multiple_processes_per_system", "no", "By default, only one ns_image_server process can run on each system.  If allow_multiple_process_per_system is set to yes then this constraint is removed.  In that case, be certain to specify a unique value of additional_host_description at the commandline for each ns_image_server process run on the same system, to prevent cache, image, and database corruption.");
@@ -2036,7 +2037,7 @@ void ns_image_server::load_constants(const ns_image_server::ns_image_server_exec
 	constants.add_field("server_timeout_interval","300","How long should a server wait before giving up on a dead network connection (in seconds)");
 	constants.add_field("log_filename","image_server_log.txt","Image acquisition and image processing servers keep a log file in the central SQL database.  However, to help diagnose crashes, a text file containing the same log information is stored on the local machine.  The log file is stored in the directory specified by the volatile_storage_directory option (described above), and its filename is specified by here.");
 	constants.add_field("maximum_memory_allocation_in_mb","3840","Movement analaysis benefits from access to multiple gigabytes of RAM.  This value should be set to approximately the size of system memory.  Larger values will cause sporadic crashes during movement analysis.");
-
+	
 	ns_ini terminal_constants;
 	terminal_constants.reject_incorrect_fields(reject_incorrect_fields);
 	terminal_constants.start_specification_group(ns_ini_specification_group("*** Worm Browser Configuration File ***","This file allows you to specify various configuration options that will determine the behavior of the worm browser software run on this machine.  It's behavior is also influenced by the settings in the ns_image_server configuration file."));
@@ -2102,11 +2103,12 @@ void ns_image_server::load_constants(const ns_image_server::ns_image_server_exec
 			}
 		}
 		else{
-			if (constants.field_specified("verbose_debug_output") && constants["verbose_debug_output"] == "true")
+			if (constants.field_specified("verbose_debug_output") && ns_to_bool(constants["verbose_debug_output"]))
 				_verbose_debug_output = true;
 		}
 
 		{
+			
 			string sql_server_tmp(constants["central_sql_hostname"]);
 			sql_server_addresses.resize(0);
 			//split the server names into an ordered list.
@@ -2148,6 +2150,15 @@ void ns_image_server::load_constants(const ns_image_server::ns_image_server_exec
 		local_buffer_ip = constants["local_buffer_sql_hostname"];
 		local_buffer_pwd = constants["local_buffer_sql_password"];
 		local_buffer_user = constants["local_buffer_sql_username"];
+
+		if (constants.field_specified("output_files_with_all_read_permissions")){
+			_output_group_readable_files = ns_to_bool(terminal_constants["output_files_with_all_read_permissions"]);
+			if (_output_group_readable_files) {
+				#ifndef _WIN32
+				umask(0755);
+				#endif
+			}
+		}
 
 		number_of_times_to_check_empty_job_queue_before_stopping = atol(constants["number_of_times_to_check_empty_processing_job_queue_before_stopping"].c_str());
 

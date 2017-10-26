@@ -497,15 +497,15 @@ ofstream * ns_image_storage_handler::request_metadata_output(ns_image_server_ima
 
 ns_image_storage_reciever_handle<ns_image_storage_handler::ns_component> ns_image_storage_handler::request_storage(ns_image_server_image & image, const ns_image_type & image_type, const float compression_ratio, const unsigned long max_line_length, ns_image_server_sql * sql, bool & had_to_use_local_storage, const bool report_to_db, const bool allow_volatile_storage) const{
 	std::string fname = get_storage_to_open(image, image_type, max_line_length, sql, had_to_use_local_storage, report_to_db, allow_volatile_storage);
-	return ns_image_storage_reciever_handle<ns_image_storage_handler::ns_component>(new ns_image_storage_reciever_to_disk<ns_image_storage_handler::ns_component>(max_line_length, fname, image_type, compression_ratio, had_to_use_local_storage));
+	return ns_image_storage_reciever_handle<ns_image_storage_handler::ns_component>(new ns_image_storage_reciever_to_disk<ns_image_storage_handler::ns_component>(max_line_length, fname, image_type, compression_ratio, had_to_use_local_storage, output_file_permissions));
 }
 ns_image_storage_reciever_handle<ns_16_bit> ns_image_storage_handler::request_storage_16_bit(ns_image_server_image & image, const ns_image_type & image_type, const float compression_ratio, const unsigned long max_line_length, ns_image_server_sql * sql, bool & had_to_use_local_storage, const bool report_to_db, const bool allow_volatile_storage) const{
 	std::string fname = get_storage_to_open(image, image_type, max_line_length, sql, had_to_use_local_storage, report_to_db, allow_volatile_storage);
-	return ns_image_storage_reciever_handle<ns_16_bit>(new ns_image_storage_reciever_to_disk<ns_16_bit>(max_line_length, fname, image_type,compression_ratio, had_to_use_local_storage));
+	return ns_image_storage_reciever_handle<ns_16_bit>(new ns_image_storage_reciever_to_disk<ns_16_bit>(max_line_length, fname, image_type,compression_ratio, had_to_use_local_storage, output_file_permissions));
 }
 ns_image_storage_reciever_handle<float> ns_image_storage_handler::request_storage_float(ns_image_server_image & image, const ns_image_type & image_type, const float compression_ratio, const unsigned long max_line_length, ns_image_server_sql * sql, bool & had_to_use_local_storage, const bool report_to_db, const bool allow_volatile_storage) const{
 	std::string fname = get_storage_to_open(image, image_type, max_line_length, sql, had_to_use_local_storage, report_to_db, allow_volatile_storage);
-	return ns_image_storage_reciever_handle<float>(new ns_image_storage_reciever_to_disk<float>(max_line_length, fname, image_type, compression_ratio, had_to_use_local_storage));
+	return ns_image_storage_reciever_handle<float>(new ns_image_storage_reciever_to_disk<float>(max_line_length, fname, image_type, compression_ratio, had_to_use_local_storage, output_file_permissions));
 }
 
 std::string ns_image_storage_handler::get_storage_to_open(ns_image_server_image & image, const ns_image_type & image_type, const unsigned long max_line_length, ns_image_server_sql * sql, bool & had_to_use_local_storage, const bool report_to_db, const bool allow_volatile_storage) const{
@@ -780,7 +780,7 @@ ns_image_storage_reciever_handle<ns_image_storage_handler::ns_component> ns_imag
 		ev.log = report_to_db;
 		ns_image_handler_register_server_event_to_central_db(ev);
 	}
-	return ns_image_storage_reciever_handle<ns_image_storage_handler::ns_component>(new ns_image_storage_reciever_to_disk<ns_image_storage_handler::ns_component>(max_line_length, output_filename, image_type,true));
+	return ns_image_storage_reciever_handle<ns_image_storage_handler::ns_component>(new ns_image_storage_reciever_to_disk<ns_image_storage_handler::ns_component>(max_line_length, output_filename, image_type,true, output_file_permissions));
 }
 
 ns_image_storage_reciever_handle<float> ns_image_storage_handler::request_local_cache_storage_float(const std::string & filename, const ns_image_type & image_type, const unsigned long max_line_length, const bool report_to_db) const{
@@ -804,7 +804,7 @@ ns_image_storage_reciever_handle<float> ns_image_storage_handler::request_local_
 		ev.log = report_to_db;
 		ns_image_handler_register_server_event_to_central_db(ev);
 	}
-	return ns_image_storage_reciever_handle<float>(new ns_image_storage_reciever_to_disk<float>(max_line_length, output_filename, image_type, true));
+	return ns_image_storage_reciever_handle<float>(new ns_image_storage_reciever_to_disk<float>(max_line_length, output_filename, image_type, true, output_file_permissions));
 }
 
 

@@ -614,7 +614,7 @@ if (permision_setting == ns_output_file_permissions::ns_group_read)
 else
 	ns_fs::permissions(path.c_str(), ns_fs::perms::owner_all);
 #else
-	if (permispath.c_str()ion_setting == ns_output_file_permissions::ns_group_read)
+	if (permision_setting == ns_output_file_permissions::ns_group_read)
 		chmod(path.c_str(), S_IRWXU | S_IRGRP | S_IROTH);
 	else
 		chmod(path.c_str(), S_IRWXU);

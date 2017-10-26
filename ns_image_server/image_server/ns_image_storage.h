@@ -66,13 +66,13 @@ image_t & ns_choose_image_source(const ns_image_type & type, image_t & jpeg, ima
 template<class ns_component>
 class ns_image_storage_reciever_to_disk : public ns_image_storage_reciever<ns_component> {
 public:
-	ns_image_storage_reciever_to_disk(const unsigned long max_block_height, const std::string & filename, const ns_image_type & image_type, const float compression_ratio,const bool volatile_file_ = false, const ns_output_file_permissions perm = ns_output_file_permissions::ns_no_special_permissions) :
+ ns_image_storage_reciever_to_disk(const unsigned long max_block_height, const std::string & filename, const ns_image_type & image_type, const float compression_ratio,const bool volatile_file_ = false, const ns_dir::ns_output_file_permissions perm = ns_dir::ns_no_special_permissions) :
 		ns_image_storage_reciever<ns_component>(max_block_height), volatile_file(volatile_file_), total(0),
 		file_sink(filename, ns_choose_image_source<ns_image_output_file<ns_component> >(image_type,jpeg_out, tiff_out, jp2k_out), max_block_height, compression_ratio), tiff_out(ns_get_tiff_compression_type(image_type))
 	{
 		ns_probe_for_illegal_character(filename);
-		if (perm == ns_output_file_permissions::ns_group_read)
-			ns_dir::try_to_set_permissions(filename, ns_fs::perms::owner_all | ns_fs::perms::group_read | ns_fs::perms::others_read);
+		if(perm != ns_dir::ns_no_special_permissions)
+			ns_dir::try_to_set_permissions(filename, perm);
 	}
 
 	ns_image_stream_static_buffer<ns_component> * provide_buffer(const ns_image_stream_buffer_properties & buffer_properties)

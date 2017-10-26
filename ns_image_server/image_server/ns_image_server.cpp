@@ -2157,6 +2157,7 @@ void ns_image_server::load_constants(const ns_image_server::ns_image_server_exec
 				#ifndef _WIN32
 				umask(0755);
 				#endif
+				image_storage.set_file_permissions_readable_by_other(true);
 			}
 		}
 

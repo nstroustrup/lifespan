@@ -2152,7 +2152,8 @@ void ns_image_server::load_constants(const ns_image_server::ns_image_server_exec
 		local_buffer_user = constants["local_buffer_sql_username"];
 
 		if (constants.field_specified("output_files_with_all_read_permissions")){
-			_output_group_readable_files = ns_to_bool(terminal_constants["output_files_with_all_read_permissions"]);
+	    
+			_output_group_readable_files = ns_to_bool(constants["output_files_with_all_read_permissions"]);
 			if (_output_group_readable_files) {
 				#ifndef _WIN32
 				umask(0755);

@@ -12,7 +12,7 @@ const string & ns_ini::operator[](const string & field){
 const string & ns_ini::get_value(const string & field){
 	map<string,ns_ini_entry>::iterator p = data.find(field);
 	if (p == data.end() || !(p->second.loaded))
-		throw ns_ex() << "The required variable \"" << field << "\" is not defined  the ini file. (" << filename << ")";
+		throw ns_ex() << "The required variable \"" << field << "\" is not defined in the ini file. (" << filename << ")";
 	else return p->second.value;
 }
 const bool ns_ini::field_specified(const std::string & field) const{

@@ -170,14 +170,6 @@ struct ns_image_server_captured_image{
 		}
 	}
 
-	void update_captured_image_image_info(const std::string & partition, const ns_image_type & image_type, ns_image_server_sql * sql){
-		std::string fname = filename(sql);
-		ns_add_image_suffix(fname,image_type);
-		*sql << "UPDATE " << sql->table_prefix() << "images SET filename = '" << sql->escape_string(fname) << "', path = '" << sql->escape_string(directory(sql)) << "', `partition`='" << sql->escape_string(partition) << "' ";
-		*sql << "WHERE id=" << this->capture_images_image_id;
-		sql->send_query();	
-	}
-
 	void mark_as_problem(ns_image_server_sql * sql, ns_64_bit problem_db_id){
 		*sql << "UPDATE " << sql->table_prefix() << "captured_images SET problem=" << problem_db_id << " WHERE id=" << captured_images_id;
 		sql->send_query();

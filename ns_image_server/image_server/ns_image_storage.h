@@ -71,6 +71,7 @@ public:
 		file_sink(filename, ns_choose_image_source<ns_image_output_file<ns_component> >(image_type,jpeg_out, tiff_out, jp2k_out), max_block_height, compression_ratio), tiff_out(ns_get_tiff_compression_type(image_type))
 	{
 		ns_probe_for_illegal_character(filename);
+
 		if(perm != ns_dir::ns_no_special_permissions)
 			ns_dir::try_to_set_permissions(filename, perm);
 	}

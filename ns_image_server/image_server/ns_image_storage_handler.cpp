@@ -318,12 +318,11 @@ ns_image_storage_reciever_handle<ns_image_storage_handler::ns_component> ns_imag
 	return request_storage(image, image_type, compression_ratio,max_line_length, sql,had_to_use_volatile_storage,false,allow_volatile_storage);
 }
 
-ns_image_storage_reciever_handle<ns_image_storage_handler::ns_component> ns_image_storage_handler::request_storage_ci(ns_image_server_captured_image & captured_image, const ns_image_type & image_type, const float compression_ratio, const unsigned long max_line_length, ns_image_server_sql * sql, bool & had_to_use_local_storage, const bool allow_volatile_storage) const{
-	ns_image_server_image image;
-	image.filename = captured_image.filename(sql);
-	image.path = captured_image.directory(sql);
-	image.partition = get_partition_for_experiment(captured_image.experiment_id,sql);
-	return request_storage(image, image_type, compression_ratio, max_line_length, sql,had_to_use_local_storage,false,allow_volatile_storage);
+ns_image_storage_reciever_handle<ns_image_storage_handler::ns_component> ns_image_storage_handler::request_storage_ci(ns_image_server_captured_image & captured_image, const ns_image_type & image_type, const float compression_ratio, const unsigned long max_line_length, ns_image_server_sql * sql, ns_image_server_image & output_image, bool & had_to_use_local_storage, const bool allow_volatile_storage) const{
+	output_image.filename = captured_image.filename(sql);
+	output_image.path = captured_image.directory(sql);
+	output_image.partition = get_partition_for_experiment(captured_image.experiment_id,sql);
+	return request_storage(output_image, image_type, compression_ratio, max_line_length, sql,had_to_use_local_storage,false,allow_volatile_storage);
 }
 
 bool ns_image_storage_handler::long_term_storage_was_recently_writeable(const unsigned long time_cutoff_in_seconds) const{

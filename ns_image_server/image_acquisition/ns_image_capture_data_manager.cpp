@@ -108,8 +108,10 @@ bool ns_image_capture_data_manager::transfer_data_to_long_term_storage(ns_image_
 		//	cerr << "Attempting to convert open 16 bit copy...\n";
 			ns_image_storage_source_handle<ns_16_bit> high_depth(storage_handler->request_from_storage_n_bits<ns_16_bit>(image,&sql,ns_image_storage_handler::ns_volatile_storage));
 			image.specified_16_bit = false;
-			
-			ns_image_storage_reciever_handle<ns_8_bit> low_depth(storage_handler->request_storage_ci(image,ns_tiff,1.0,1024,&sql,had_to_use_local_storage,true));
+			ns_image_server_image output_image;
+			ns_image_storage_reciever_handle<ns_8_bit> low_depth(storage_handler->request_storage_ci(image,ns_tiff,1.0,1024,&sql, output_image,had_to_use_local_storage,true));
+			output_image.id = image.capture_images_image_id;
+
 			ns_image_server_image small_image(image.make_small_image_storage(&sql));
 
 			bool had_to_use_local_storage_2;
@@ -139,8 +141,8 @@ bool ns_image_capture_data_manager::transfer_data_to_long_term_storage(ns_image_
 			string partition = storage_handler->get_partition_for_experiment(image.experiment_id,&sql);
 		//	cerr << "Commit\n";
 			
-			image.update_captured_image_image_info(partition,ns_tiff,&sql);
 			small_image.save_to_db(0,&sql);
+			output_image.save_to_db(output_image.id, &sql, false);
 			image.capture_images_small_image_id = small_image.id;
 			sql.send_query("COMMIT");
 
@@ -205,14 +207,15 @@ bool ns_image_capture_data_manager::transfer_data_to_long_term_storage(ns_image_
 
 		ns_image_storage_source_handle<ns_8_bit> in(storage_handler->request_from_storage(image,&sql));
 		try{
-			ns_image_storage_reciever_handle<ns_8_bit> out(storage_handler->request_storage_ci(image,ns_tiff,1.0,1024,&sql,had_to_use_local_storage,false));
-		
+			ns_image_server_image output_image;
+			ns_image_storage_reciever_handle<ns_8_bit> out(storage_handler->request_storage_ci(image,ns_tiff,1.0,1024,&sql,output_image,had_to_use_local_storage,false));
+			output_image.id = image.capture_images_image_id;
 			if (had_to_use_local_storage)
 				return had_to_use_local_storage;
 			in.input_stream().pump(out.output_stream(),1024);
 			storage_handler->delete_from_storage(image,ns_delete_volatile,&sql);
+			output_image.save_to_db(output_image.id, &sql, false);
 			string partition = storage_handler->get_partition_for_experiment(image.experiment_id,&sql);
-			image.update_captured_image_image_info(partition,ns_tiff,&sql);
 			sql.send_query("COMMIT");
 		}
 		catch(ns_ex & ex){

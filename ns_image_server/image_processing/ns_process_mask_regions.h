@@ -126,6 +126,7 @@ public:
 
 	///Loads the statistics for each region of a mask from the database
 	void load_from_db(ns_64_bit mask_id, ns_sql & sql){
+		clear();
 		sql << "SELECT mask_value, x_min, y_min, x_max, y_max, y_average, x_average, pixel_count FROM image_mask_regions WHERE mask_id=" << mask_id;
 		ns_sql_result region_data;
 		sql.get_rows(region_data);
@@ -650,23 +651,24 @@ class ns_image_stream_mask_splitter: public ns_image_stream_reciever<ns_image_st
 		}
 		ns_image_stream_buffer_properties bufp;
 
-		for (long _y = 0; _y < (long)height; _y++){
-			if ((_y + y + registration_offset.y) < 0
-			 || (_y + y + registration_offset.y) >= (long)mask->properties().height*(long)resize_factor)
-				continue;
 			//on each line, look at each region to see if that region is present on the current line
-			for (unsigned int i = 0; i < _mask_info.size(); i++)
-				if (_mask_info[i]->stats.pixel_count != 0 		
-					&& (_y + y) >= (int)_mask_info[i]->stats.y_min - registration_offset.y
-					&& (_y + y) <= (int)_mask_info[i]->stats.y_max - registration_offset.y){
+		for (unsigned int i = 0; i < _mask_info.size(); i++) {
+			if (_mask_info[i]->stats.pixel_count == 0)
+				continue;
 
-					bufp.width = (_mask_info[i]->stats.x_max-_mask_info[i]->stats.x_min+1)*_properties.components;
+			for (long _y = 0; _y < (long)height; _y++) {
+				if ((_y + y + registration_offset.y) < 0 || (_y + y + registration_offset.y) >= (long)mask->properties().height*(long)resize_factor)
+					continue;
+				if ((_y + y) >= (int)_mask_info[i]->stats.y_min - registration_offset.y
+					&& (_y + y) <= (int)_mask_info[i]->stats.y_max - registration_offset.y) {
+
+					bufp.width = (_mask_info[i]->stats.x_max - _mask_info[i]->stats.x_min + 1)*_properties.components;
 					bufp.height = 1;
 					ns_image_stream_static_buffer<ns_component> * buf = _mask_info[i]->reciever.output_stream().provide_buffer(bufp);
 
 					unsigned char i_c = ns_image_stream_reciever<ns_image_stream_static_buffer<ns_component> >::_properties.components,
 						m_c = mask->properties().components;
-					
+
 					//if registration_offset.x < 0, we copy source[y][ -registration_offset.x -> width+registration_offset.x]
 					// to destination[y][0 -> width+registration_offset.x]
 					//
@@ -677,33 +679,34 @@ class ns_image_stream_mask_splitter: public ns_image_stream_reciever<ns_image_st
 
 					long source_x_offset(0),
 						destination_x_offset(registration_offset.x);
-					if (registration_offset.x > 0){
+					if (registration_offset.x > 0) {
 						source_x_offset = -registration_offset.x;
 						destination_x_offset = 0;
-						for (int x = 0; x < registration_offset.x; x++){
-							(*buf)[0][x]=0;
+						for (int x = 0; x < registration_offset.x; x++) {
+							(*buf)[0][x] = 0;
 							_mask_info[i]->image_stats.histogram[0]++;
 						}
- 					}
-					//write out the current line, multipled by the mask
-					for (unsigned int x = abs(registration_offset.x); x < bufp.width; x++){
-
-					//	(*buf)[0][x]  = lines[_y][((*mask_info)[i].stats.x_min+x)]* (ns_component)((*mask)[y+_y][(*mask_info)[i].stats.x_min+x] == i);
-						(*buf)[0][x+destination_x_offset] = 
-								lines[_y][i_c*(_mask_info[i]->stats.x_min+source_x_offset)+x]* 
-									(ns_component)((*mask)[(y+_y + registration_offset.y)/resize_factor][(m_c*(_mask_info[i]->stats.x_min+destination_x_offset)+(x*m_c)/i_c)/resize_factor] == i);
-						//update image statistics for each region
-						_mask_info[i]->image_stats.histogram[(*buf)[0][x+destination_x_offset]]++;
 					}
-					if (registration_offset.x < 0){
-						for (int x = bufp.width+registration_offset.x; x < (long)bufp.width; x++){
-							(*buf)[0][x]=0;
+					//write out the current line, multipled by the mask
+					for (unsigned int x = abs(registration_offset.x); x < bufp.width; x++) {
+
+						//	(*buf)[0][x]  = lines[_y][((*mask_info)[i].stats.x_min+x)]* (ns_component)((*mask)[y+_y][(*mask_info)[i].stats.x_min+x] == i);
+						(*buf)[0][x + destination_x_offset] =
+							lines[_y][i_c*(_mask_info[i]->stats.x_min + source_x_offset) + x] *
+							(ns_component)((*mask)[(y + _y + registration_offset.y) / resize_factor][(m_c*(_mask_info[i]->stats.x_min + destination_x_offset) + (x*m_c) / i_c) / resize_factor] == i);
+						//update image statistics for each region
+						_mask_info[i]->image_stats.histogram[(*buf)[0][x + destination_x_offset]]++;
+					}
+					if (registration_offset.x < 0) {
+						for (int x = bufp.width + registration_offset.x; x < (long)bufp.width; x++) {
+							(*buf)[0][x] = 0;
 							_mask_info[i]->image_stats.histogram[0]++;
 						}
- 					}
-					_mask_info[i]->reciever.output_stream().recieve_lines(*buf,1);
+					}
+					_mask_info[i]->reciever.output_stream().recieve_lines(*buf, 1);
 					_mask_info[i]->lines_sent_to_reciever++;
 				}
+			}
 		}
 	
 		y+=height;
@@ -715,10 +718,13 @@ class ns_image_stream_mask_splitter: public ns_image_stream_reciever<ns_image_st
 		//some masks may extend below the source image due to vertical offset.  We mark them black.
 		for (unsigned int i = 0; i < _mask_info.size(); i++){
 			if (_mask_info[i]->stats.pixel_count != 0){
-//				cerr << "R"<<i<< " sent: " << _mask_info[i]->lines_sent_to_reciever << "\n";
-				const long overlap_height((long)_mask_info[i]->stats.y_max - source_image_properties.height -(long)registration_offset.y+1);
-//				cerr << "R"<<i<< " overlap: "<< overlap_height << "\n";
+				const long overlap_height((long)_mask_info[i]->stats.y_max - source_image_properties.height - (long)registration_offset.y + 1);
+
 				if (overlap_height > 0){
+				//	std::cerr << "R" << i << " sent: " << _mask_info[i]->lines_sent_to_reciever << "\n";
+				//	std::cerr << (long)_mask_info[i]->stats.y_max << "-" << (long)_mask_info[i]->stats.y_min << "(" << (_mask_info[i]->stats.y_max - (long)_mask_info[i]->stats.y_min + 1) << "; " << _mask_info[i]->reciever_image_properties.height << " ) " << " y: " << y << " , siph" << source_image_properties.height << " r" << (long)registration_offset.y << "\n";
+				//	std::cerr << "R" << i << " overlap: " << overlap_height << "\n";
+
 					long width = (_mask_info[i]->stats.x_max-_mask_info[i]->stats.x_min+1)*_properties.components;
 					long lines_sent = 0;
 					while(lines_sent < overlap_height){
@@ -751,6 +757,7 @@ class ns_image_stream_mask_splitter: public ns_image_stream_reciever<ns_image_st
 		//check for errors
 		bool error(false);
 		for (unsigned int i = 0; i < _mask_info.size(); i++){
+		//	std::cerr << i << "\n";
 			if (_mask_info[i]->lines_sent_to_reciever != _mask_info[i]->reciever_image_properties.height){
 					error = true;
 						ex << "Region "<< (int)i<< " was sent " <<  _mask_info[i]->lines_sent_to_reciever 

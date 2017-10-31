@@ -129,6 +129,7 @@ try{
     //$sql->send_query($query);
  //   $refresh_page = TRUE;
   }
+$refresh_page = FALSE;
 //die('');
   if ($refresh_page === TRUE){
     header("Location: experiment_overview.php?experiment_id=$experiment_id&start_position=$start_position&count=$count\n\n");

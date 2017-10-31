@@ -189,13 +189,16 @@ $sql->send_query($query);
 	if (!$show_hidden_experiments) $query .= "WHERE hidden = 0 ";
 	$query .="ORDER BY group_id,priority DESC, first_time_point DESC";
 	$sql->get_row($query,$experiments);
+
+#var_dump($experiments);
+	#echo "<BR><BR>XX<BR>";
 	$experiments_by_group = array();
 	for($i = 0; $i < sizeof($group_order); $i++){
 		$experiments_by_group[$group_order[$i]] = array();
 	}
-	foreach($experiments as &$r){
+	foreach($experiments as &$mr){
 
-	  		array_push($experiments_by_group[$r[16]], $r);
+	  		array_push($experiments_by_group[$mr[16]], $mr);
 	}
 //var_dump($experiments_by_group);
 	//	$query = "SELECT id, name, description, num_time_points, first_time_point, last_time_point FROM experiments WHERE hidden = '1'";
@@ -248,14 +251,14 @@ if ($show_plate_stats){
 		$query = "SELECT DISTINCT r.strain FROM capture_samples as s, sample_region_image_info as r WHERE r.sample_id = s.id AND s.experiment_id = $exp[0]";
 		$sql->get_row($query,$raw_experiment_strains);
 		$experiment_strains[$exp[0]] = array();
-
+		
 
 		$query =
 		$cur_strain_id = 0;
 
 		$total = array($OTHER_CENSOR=>0,$FOGGING =>0,
 			$EMPTY=>0,$CONTAMINATED=>0,
-			$EXCLUDED=>0,$GOOD=>0);
+			$EXCLUDED=>0,$GOOD=>0, $TOTAL=>0, $DESICCATION=>0, $STARVED=>0,$LARVAE=>0);
 		foreach($raw_experiment_strains as &$cur_strain){
 
 		  if ($cur_strain[0] != ''){
@@ -277,7 +280,7 @@ else
 			$cur_strain_id++;
 			$stats = array($OTHER_CENSOR=>0,$FOGGING =>0,
 				$EMPTY=>0,$CONTAMINATED=>0,
-				$EXCLUDED=>0,$GOOD=>0);
+				$EXCLUDED=>0,$GOOD=>0,$DESICCATION=>0,$STARVED=>0,$LARVAE=>0);
 
 
 
@@ -287,7 +290,7 @@ else
 			$sql->get_row($query,$res);
 			$stats[$TOTAL] = sizeof($res);
 			foreach ($res as $r){
-				$sp &= $sample_problems[$r[0]];
+				$sp = &$sample_problems[$r[0]];
 				if ($sp[0] || $r[2]){
 					if ($r[2]) $reason = $r[4];
 					else $reason = $sp[2];
@@ -310,7 +313,7 @@ else
 			}
 			$stats[$TOTAL]-=$stats[$EMPTY];
 
-			foreach($stats as $key=>&$value){
+			foreach($stats as $key=>$value){
 				$total[$key] += $value;
 			}
 		}
@@ -323,7 +326,11 @@ else
 
 }
 $file_size_totals = array(0,0,0,0,0,0);
+//var_dump($experiments);
+//echo "<BR><BR>";
 foreach($experiments as $file_sizes){
+//		    var_dump($file_sizes);
+//echo "<BR><BR>";
 	$file_size_totals[0] += $file_sizes[8];
 	$file_size_totals[1] += $file_sizes[9];
 	$file_size_totals[2] += $file_sizes[10];
@@ -472,8 +479,8 @@ echo $exps;
 //echo "<tr $table_header_color><td colspan = " . ($number_of_columns-1) ." valign='top'><font size=\"+1\">";
 //echo $experiment_groups[$group_order[$i]][1] . "</font></td></tr>";
 ?><tr <?php echo $table_header_color?>><td>Experiment Name</td>
-
 <?php
+$number_of_columns=0;
 if (!$show_plate_stats){
 ?>
 <td><center>Image Analysis</center></td>
@@ -482,7 +489,7 @@ if (!$show_plate_stats){
 <td><center>Comments</td><td>Devices</center></td>
 <td><center>Duration</center></td>
 <?php
-$number_of_columns = 9;
+$number_of_columns += 9;
 }
 if ($show_disk_usage){
 ?>
@@ -496,7 +503,7 @@ if ($show_disk_usage){
 <td><font size="-2"><center>Video</center></font></td>
 <?php
 
-$number_of_columns+= 8;
+$number_of_columns= +8;
 }
 if ($show_plate_stats){
 ?>
@@ -513,7 +520,7 @@ if ($show_plate_stats){
 <td><font size="-2"><center>Empty Slots</center></font></td>
 
 <?php
-$number_of_columns+= 10;} ?>
+$number_of_columns+=10;} ?>
 <td>&nbsp;</td></tr>
 
 
@@ -715,7 +722,10 @@ echo "</td>";
 		$ps =& $plate_statistics[$experiment_id];
 		echo "<td bgcolor=\"$clrs[1]\"  valign='top' nowrap><center><font size=\"-1\">";
 for ($ss = 0; $ss < sizeof($experiment_strains[$experiment_id]); $ss++){
-	echo $experiment_strains[$experiment_id][$ss] . " (<i>" . $strain_info[$experiment_strains[$experiment_id][$ss]] . "</i>)<BR>";
+	echo $experiment_strains[$experiment_id][$ss] . " (<i>";
+	if ($experiment_strains[$experiment_id][$ss]!= "(Unspecified)")
+	echo $strain_info[$experiment_strains[$experiment_id][$ss]];
+	echo "</i>)<BR>";
 }
 echo "</td>";
 echo "<td bgcolor=\"$clrs[0]\"  nowrap valign='top'><center><font size=\"-1\">";

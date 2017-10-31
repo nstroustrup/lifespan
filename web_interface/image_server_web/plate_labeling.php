@@ -40,9 +40,16 @@ try{
 		foreach($k as $r => $rv)
 			array_push($positions[$p],$r);
 	}
+//var_dump($positions_map);
 $strain_positions = $positions_map;
 $strain_condition_1_positions = $positions_map;
 $strain_condition_2_positions = $positions_map;
+$strain_condition_3_positions = $positions_map;
+$culturing_temperature_positions = $positions_map;
+$experiment_temperature_positions = $positions_map;
+$food_source_positions = $positions_map;
+$environment_condition_positions = $positions_map;
+//var_dump($strain_condition_3_positions);
 
   if ($load_from_device_name != ''){
 	$query = "SELECT r.name, RIGHT(s.name,1), r.strain, r.strain_condition_1, r.strain_condition_2, r.strain_condition_3, r.culturing_temperature,r.experiment_temperature,r.food_source,r.environmental_conditions FROM sample_region_image_info as r, capture_samples as s WHERE r.sample_id = s.id AND s.experiment_id = $experiment_id
@@ -204,6 +211,7 @@ if ($save){
     }
  }
 //die('');
+$refresh_page=FALSE;
   if ($refresh_page === TRUE){
     $s = $only_strain?"&only_strain=1":"";
     header("Location: plate_labeling.php?experiment_id=$experiment_id$s\n\n");
@@ -215,7 +223,7 @@ catch (ns_exception $e){
   die($e->text);
 }
 
-display_worm_page_header($experiment->name . " Plate Metadata for " . $experiment_name);
+display_worm_page_header(" Plate Metadata for " . $experiment_name);
 ?>
 <form action="<?php
 echo "plate_labeling.php?experiment_id=$experiment_id";

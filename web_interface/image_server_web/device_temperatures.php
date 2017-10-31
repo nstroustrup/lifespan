@@ -12,6 +12,7 @@ $only_strain = @$query_string['only_strain'];
 $incubators = array();
 $simple_table = @$query_string['simple_table']==1;
 try{
+$device_temperatures = array();
   if (ns_param_spec_true($_POST,'save')){
     //die(var_dump($devices_to_save));
     foreach($_POST as $key => $value){
@@ -45,14 +46,16 @@ try{
   foreach($devices as $d){
     $query = "SELECT experiment_temperature FROM sample_region_image_info WHERE sample_id = " . $d[1] . " LIMIT 1";
     $sql->get_row($query,$temperatures);
+    if (sizeof($temperatures)>0)
     $device_temperatures[$d[0]] = $temperatures[0][0];
+    else $device_temperatures[$d[0]] = "";
   }
 }
 catch (ns_exception $e){
   die($e->text);
 }
 
-display_worm_page_header($experiment->name . " Device Temperatures for " . $experiment_name);
+display_worm_page_header("Device Temperatures for " . $experiment_name);
 ?>
 <div align="center">
 <form action="<?php
@@ -63,7 +66,7 @@ echo "device_temperatures.php?experiment_id=$experiment_id";
 
   <tr>
 <?php echo "<td $table_header_color align=\"center\"><b>Incubator</b></td>";?>
-<td <?php echo $table_header_color?> align="center"><b>Device Name<?php echo $column_name?></b></td><td <?php echo $table_header_color?> align="center">Temperature</td></tr>
+<td <?php echo $table_header_color?> align="center"><b>Device Name</b></td><td <?php echo $table_header_color?> align="center">Temperature</td></tr>
 <?php
 $row_color = 0;
 	foreach($device_names as $d){

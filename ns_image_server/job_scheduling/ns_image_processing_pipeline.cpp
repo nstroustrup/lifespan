@@ -2093,7 +2093,7 @@ void ns_image_processing_pipeline::apply_mask(ns_image_server_captured_image & c
 		ns_image_server_event ev("ns_image_processing_pipeline::Applying Mask");
 		ev << " on " << captured_image.experiment_name << "::" << captured_image.sample_name;
 		ev.specifiy_event_subject(captured_image);
-		ev.specify_processing_job_operation(ns_process_apply_mask);
+	//	ev.specify_processing_job_operation(ns_process_apply_mask);
 		ns_64_bit event_id = image_server_const.register_server_event(ev, &sql);
 		image_server.add_subtext_to_current_event((std::string("Processing image collected at ") + ns_format_time_string_for_human(captured_image.capture_time) + "\n").c_str(), &sql);
 		bool delete_captured_image(false);

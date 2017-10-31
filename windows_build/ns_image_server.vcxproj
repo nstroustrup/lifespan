@@ -149,7 +149,7 @@
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>itkjpeg-4.10.lib;ITKFEM-4.10.lib;ITKCommon-4.10.lib;ITKIOImageBase-4.10.lib;itkvnl-4.10.lib;itkvcl-4.10.lib;ITKStatistics-4.10.lib;itkzlib-4.10.lib;itksys-4.10.lib;itknetlib-4.10.lib;itkv3p_netlib-4.10.lib;ITKVTK-4.10.lib;itkvnl_algo-4.10.lib;ITKVNLInstantiation-4.10.lib;ITKIOTIFF-4.10.lib;itktiff-4.10.lib;ITKIOVTK-4.10.lib;libmysql.lib;xvidcore.dll.a;freetype26d.lib;openjp2.lib;ITKGPUPDEDeformableRegistration-4.10.lib;ITKGPUImageFilterBase-4.10.lib;ITKGPUFiniteDifference-4.10.lib;ITKGPUCommon-4.10.lib;ITKGPUSmoothing-4.10.lib;OpenCL.lib;psapi.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>libmysql.lib;xvidcore.dll.a;freetype26d.lib;openjp2.lib;psapi.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <SubSystem>Console</SubSystem>
     </Link>
   </ItemDefinitionGroup>
@@ -214,7 +214,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalDependencies>itkjpeg-4.10.lib;ITKFEM-4.10.lib;ITKCommon-4.10.lib;ITKIOImageBase-4.10.lib;itkvnl-4.10.lib;itkvcl-4.10.lib;ITKStatistics-4.10.lib;itkzlib-4.10.lib;itksys-4.10.lib;itknetlib-4.10.lib;itkv3p_netlib-4.10.lib;ITKVTK-4.10.lib;itkvnl_algo-4.10.lib;ITKVNLInstantiation-4.10.lib;ITKIOTIFF-4.10.lib;itktiff-4.10.lib;ITKIOVTK-4.10.lib;libmysql.lib;xvidcore.dll.a;freetype26.lib;openjp2.lib;ITKGPUPDEDeformableRegistration-4.10.lib;ITKGPUImageFilterBase-4.10.lib;ITKGPUFiniteDifference-4.10.lib;ITKGPUCommon-4.10.lib;ITKGPUSmoothing-4.10.lib;OpenCL.lib;psapi.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>libmysql.lib;xvidcore.dll.a;freetype26.lib;openjp2.lib;psapi.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <LargeAddressAware>Yes</LargeAddressAware>
       <SubSystem>Console</SubSystem>
     </Link>
@@ -328,7 +328,6 @@
     <ClInclude Include="..\ns_image_server\image_processing\ns_movement_visualization_generator.h" />
     <ClInclude Include="..\ns_image_server\image_processing\ns_node_topology.h" />
     <ClInclude Include="..\ns_image_server\image_processing\ns_node_topology_primitives.h" />
-    <ClInclude Include="..\ns_image_server\image_processing\ns_optical_flow.h" />
     <ClInclude Include="..\ns_image_server\image_processing\ns_process_16_bit_images.h" />
     <ClInclude Include="..\ns_image_server\image_processing\ns_process_mask_regions.h" />
     <ClInclude Include="..\ns_image_server\image_processing\ns_region_growing_segmenter.h" />
@@ -567,7 +566,6 @@
     <ClCompile Include="..\ns_image_server\image_processing\ns_image_tools.cpp" />
     <ClCompile Include="..\ns_image_server\image_processing\ns_movement_visualization_generator.cpp" />
     <ClCompile Include="..\ns_image_server\image_processing\ns_node_topology.cpp" />
-    <ClCompile Include="..\ns_image_server\image_processing\ns_optical_flow.cpp" />
     <ClCompile Include="..\ns_image_server\image_processing\ns_segment_topology.cpp" />
     <ClCompile Include="..\ns_image_server\image_processing\ns_spatial_avg.cpp" />
     <ClCompile Include="..\ns_image_server\image_processing\ns_spine_drawer.cpp" />
@@ -640,7 +638,6 @@
     <None Include="..\external_libraries\wm4_bspline\Wm4Vector2.inl">
       <FileType>Document</FileType>
     </None>
-    <None Include="ClassDiagram.cd" />
     <None Include="server_icon.ico" />
     <None Include="server_notify_icon.ico" />
     <None Include="worm_icon.ico" />

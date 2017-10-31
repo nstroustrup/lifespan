@@ -517,9 +517,6 @@
     <ClInclude Include="..\external_compile_libraries\tiff-3.8.2\libtiff\tif_predict.h">
       <Filter>image_format_lib\tiff</Filter>
     </ClInclude>
-    <ClInclude Include="..\ns_image_server\image_processing\ns_optical_flow.h">
-      <Filter>image_processing</Filter>
-    </ClInclude>
     <ClInclude Include="..\ns_image_server\image_processing\ns_gaussian_pyramid.h">
       <Filter>image_processing</Filter>
     </ClInclude>
@@ -1111,9 +1108,6 @@
     <ClCompile Include="..\external_compile_libraries\tiff-3.8.2\libtiff\tif_fax3.c">
       <Filter>image_format_lib\tiff</Filter>
     </ClCompile>
-    <ClCompile Include="..\ns_image_server\image_processing\ns_optical_flow.cpp">
-      <Filter>image_processing</Filter>
-    </ClCompile>
     <ClCompile Include="..\ns_image_server\image_server\ns_sql_table_lock_manager.cpp">
       <Filter>image_server</Filter>
     </ClCompile>
@@ -1173,7 +1167,6 @@
     <None Include="..\external_libraries\wm4_bspline\Wm4Vector2.inl">
       <Filter>misc_lib\wm4_bspline</Filter>
     </None>
-    <None Include="ClassDiagram.cd" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="ns_image_server.rc">

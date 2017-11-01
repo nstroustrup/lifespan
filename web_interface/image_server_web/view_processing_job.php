@@ -1348,7 +1348,7 @@ Make A Video Job Start
 
 <form action="view_processing_job.php?<?php echo $query_parameters?>" method="post">
 
-<input type="hidden" name="op<?php echo $ns_processing_tasks[ns_process_compile_video];?>" value="1" >
+<input type="hidden" name="op<?php echo $ns_processing_tasks['ns_process_compile_video'];?>" value="1" >
 <table align="center" border="0" cellpadding="0" cellspacing="1" bgcolor="#000000"><tr><td>
 <table border="0" cellpadding="4" cellspacing="0" width="100%">
 <tr <?php echo $table_header_color?> ><td colspan=2><b>Create a Video</b></td></tr>

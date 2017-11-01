@@ -67,7 +67,7 @@ try{
     //$query = "LOCK TABLES capture_samples WRITE";
     //$sql->send_query($query);
     foreach ($sample_data as $key => $value){
-      $censoring_requested = $value['censored'];
+      $censoring_requested = @$value['censored'];
       $censored_reason = $value['censored_reason'];
 
       $was_censored = $censoring_requested || ($censored_reason != '' && $censored_reason != 'none');
@@ -101,7 +101,7 @@ try{
 
     // echo $key . "=" ;
 //var_dump($value); echo "<BR>";
-      $censoring_requested = $value['censored'];
+      @$censoring_requested = $value['censored'];
       $censored_reason = $value['censored_reason'];
 
       $was_censored = $censoring_requested || ($censored_reason != '' && $censored_reason != 'none');
@@ -121,7 +121,7 @@ try{
 		}
 	}
 
-      $query = "UPDATE sample_region_image_info SET censored = " . ($was_censored?"1":"0") . ", details='" . $value['details'] . "', strain='" . $value['strain'] . "',reason_censored='$censored_reason', strain_condition_1=  '" . $value['condition_1'] . "', strain_condition_2='" . $value['condition_2'] . "' WHERE id=" . $key;
+      $query = "UPDATE sample_region_image_info SET censored = " . ($was_censored?"1":"0") . ", details='" . $value['description'] . "', strain='" . $value['strain'] . "',reason_censored='$censored_reason', strain_condition_1=  '" . $value['condition_1'] . "', strain_condition_2='" . $value['condition_2'] . "' WHERE id=" . $key;
     //  echo $query . "<br>";
       $sql->send_query($query);
     }

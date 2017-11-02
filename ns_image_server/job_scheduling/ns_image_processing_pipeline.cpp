@@ -1787,7 +1787,7 @@ void ns_image_processing_pipeline::compile_video(ns_image_server_captured_image_
 				reg.timestamp_type = ns_video_region_specification::ns_no_timestamp;
 
 			bool grayscale = false;
-			if (i == (int)ns_process_thumbnail || i == (int)ns_unprocessed || i == (int)ns_process_threshold || i == (int)ns_process_spatial || i == (int)ns_process_dynamic_stretch)
+			if (i == (int)ns_process_thumbnail || i == (int)ns_unprocessed || i == (int)ns_process_threshold || i == (int)ns_process_spatial || i == (int)ns_process_lossy_stretch)
 				grayscale = true;
 
 			std::vector<ns_vector_2i> registration_offsets;
@@ -1900,7 +1900,7 @@ void ns_image_processing_pipeline::compile_video(ns_image_server_captured_image 
 			ns_64_bit event_id = image_server_const.register_server_event(ev,&sql);
 
 			bool grayscale = false;
-			if (i == (int)ns_process_thumbnail || i == (int)ns_unprocessed || i == (int)ns_process_threshold || i == (int)ns_process_spatial || i == (int)ns_process_dynamic_stretch)
+			if (i == (int)ns_process_thumbnail || i == (int)ns_unprocessed || i == (int)ns_process_threshold || i == (int)ns_process_spatial || i == (int)ns_process_lossy_stretch)
 				grayscale = true;
 
 			//calculate registration information if required

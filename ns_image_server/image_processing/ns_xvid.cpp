@@ -60,11 +60,11 @@ ns_xvid_parameters ns_xvid_encoder::default_parameters(){
 	params.ARG_STATS = 0;
 	params.ARG_DUMP = 0;
 	params.ARG_LUMIMASKING = 0;
-	params.ARG_BITRATE = 0;
+	params.ARG_BITRATE = 3500*1024;
 	params.ARG_SINGLE = 1;
 	params.ARG_PASS1 = 0;
 	params.ARG_PASS2 = 0;
-	params.ARG_QUALITY = ME_ELEMENTS - 1;
+	params.ARG_QUALITY = 0;
 	params.ARG_FRAMERATE = 25.00f;
 	params.ARG_MAXFRAMENR = ABS_MAXFRAMENR;
 	params.ARG_MAXKEYINTERVAL = 0;
@@ -72,7 +72,8 @@ ns_xvid_parameters ns_xvid_encoder::default_parameters(){
 	params.ARG_SAVEINDIVIDUAL = 0;
 	params.XDIM = 0;
 	params.YDIM = 0;
-	params.max_dimention = 0;
+	params.max_height = 0;
+	params.max_width = 0;
 	params.ARG_BQRATIO = 150;
 	params.ARG_BQOFFSET = 100;
 	params.ARG_MAXBFRAMES = 0;
@@ -83,7 +84,7 @@ ns_xvid_parameters ns_xvid_encoder::default_parameters(){
 	params.ARG_QTYPE = 0;
 	params.ARG_QMATRIX = 0;
 	params.ARG_GMC = 0;
-	params.ARG_INTERLACING = 0;
+	params.ARG_INTERLACING = 1;
 	params.ARG_QPEL = 0;
 	params.ARG_TURBO = 1;
 	params.ARG_VHQMODE = 1;
@@ -277,26 +278,29 @@ void ns_xvid_encoder::run(const vector<string> & input_files,  ns_xvid_parameter
 	
 	
 
-	if (p.XDIM == 0 && p.YDIM == 0 && p.max_dimention == 0){
+	if (p.XDIM == 0 && p.YDIM == 0 && p.max_height == 0 && p.max_width==0){
 		p.XDIM = spec.width;
 		p.YDIM = spec.height;
 	}
-	if (p.max_dimention != 0){
-		if (spec.width < p.max_dimention && spec.height < p.max_dimention){
+	if (p.max_height != 0 || p.max_width != 0){
+		if ((p.max_width== 0 || spec.width < p.max_width) && (p.max_height == 0  || spec.height < p.max_height)){
 			p.XDIM = spec.width;
 			p.YDIM = spec.height;
 		}
 		else{
-		
-			if (spec.width > spec.height)
-				p.XDIM = p.max_dimention;
-			else p.YDIM = p.max_dimention;
-
-			//if only one dimention is specified, resize the other one to maintain aspect ration
-			if (p.XDIM != 0 && p.YDIM == 0)
-				p.YDIM = (unsigned int)(spec.height*(((float)p.XDIM)/spec.width));
-			else if (p.XDIM == 0 && p.YDIM != 0)
-				p.XDIM = (unsigned int)(spec.width*(((float)p.YDIM)/spec.height));
+			ns_vector_2d resize_factors(1,1);
+			if (p.max_width != 0)
+				resize_factors.x = spec.width / (float)p.max_width;
+			if (p.max_height != 0)
+				resize_factors.y = spec.height / (float)p.max_height;
+			if (resize_factors.x > resize_factors.y) {
+				p.XDIM = p.max_width;
+				p.YDIM = (unsigned int)(spec.width / resize_factors.x);
+			}
+			else {
+				p.XDIM = (unsigned int)(spec.height / resize_factors.y);
+				p.YDIM = p.max_height;
+			}
 		}
 	}
 

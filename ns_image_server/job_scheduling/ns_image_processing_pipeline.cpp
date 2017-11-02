@@ -1785,9 +1785,14 @@ void ns_image_processing_pipeline::compile_video(ns_image_server_captured_image_
 			//labels already provided
 			if ((i == (int)ns_process_worm_detection || i == (int)ns_process_worm_detection_labels) && reg.timestamp_type == ns_video_region_specification::ns_date_timestamp)
 				reg.timestamp_type = ns_video_region_specification::ns_no_timestamp;
+
+			bool grayscale = false;
+			if (i == (int)ns_process_thumbnail || i == (int)ns_unprocessed || i == (int)ns_process_threshold || i == (int)ns_process_spatial || i == (int)ns_process_dynamic_stretch)
+				grayscale = true;
+
 			std::vector<ns_vector_2i> registration_offsets;
 			//registration_offsets.resize(1,ns_vector_2i(0,0));
-			ns_image_processing_pipeline::make_video(region_image.experiment_id,res,reg,registration_offsets,output_basename,sql);
+			ns_image_processing_pipeline::make_video(region_image.experiment_id, grayscale,res,reg,registration_offsets,output_basename,sql);
 			
 				
 			ns_image_server_image video_info;
@@ -1894,10 +1899,13 @@ void ns_image_processing_pipeline::compile_video(ns_image_server_captured_image 
 
 			ns_64_bit event_id = image_server_const.register_server_event(ev,&sql);
 
+			bool grayscale = false;
+			if (i == (int)ns_process_thumbnail || i == (int)ns_unprocessed || i == (int)ns_process_threshold || i == (int)ns_process_spatial || i == (int)ns_process_dynamic_stretch)
+				grayscale = true;
 
 			//calculate registration information if required
 			vector<ns_vector_2i> registration_offsets;
-			make_video(sample_image.experiment_id,files_to_compile,region_spec,registration_offsets,output_basename,sql);
+			make_video(sample_image.experiment_id,grayscale, files_to_compile,region_spec,registration_offsets,output_basename,sql);
 			
 			ns_image_server_image video_info;
 			video_info.path = relative_path;
@@ -1964,7 +1972,7 @@ void ns_image_processing_pipeline::wrap_m4v_stream(const string & m4v_filename, 
 	cout << "\n";
 }
 #ifndef NS_NO_XVID
-void ns_image_processing_pipeline::make_video(const ns_64_bit experiment_id, const vector< vector<string> > path_and_filenames, const ns_video_region_specification & region_spec, const vector<ns_vector_2i> registration_offsets, const string &output_basename, ns_sql & sql){
+void ns_image_processing_pipeline::make_video(const ns_64_bit experiment_id, bool grayscale, const vector< vector<string> > path_and_filenames, const ns_video_region_specification & region_spec, const vector<ns_vector_2i> registration_offsets, const string &output_basename, ns_sql & sql){
 	
 	ns_xvid_encoder xvid;	
 	vector<string> filenames;
@@ -1997,9 +2005,14 @@ void ns_image_processing_pipeline::make_video(const ns_64_bit experiment_id, con
 
 	ns_xvid_parameters param = ns_xvid_encoder::default_parameters();
 
-	param.max_dimention=1200;
+	//1080p
+	param.max_height = 1920;
+	param.max_width = 1440;
+
 	param.ARG_MAXKEYINTERVAL=12;
-	param.ARG_FRAMERATE=5;
+	param.ARG_FRAMERATE=10;
+	param.ARG_GREYSCALE = grayscale ? 1 : 0;
+
 	
 	string output_filename =  output_basename + ".m4v";
 

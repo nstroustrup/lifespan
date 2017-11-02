@@ -276,7 +276,7 @@ public:
 	void compile_video(ns_image_server_captured_image & sample_image, const std::vector<char> operations, const ns_video_region_specification & region_spec,ns_sql & sql);
 	///Creates a time-lapse video of the specified sample.  A video is made for each of the specified processing steps.
 	void compile_video_experiment(ns_image_server_captured_image & sample_image, const std::vector<char> operations, ns_sql & sql);
-	static void make_video(const ns_64_bit experiment_id, const std::vector< std::vector<std::string> > path_and_filenames, const ns_video_region_specification & region_spec, const std::vector<ns_vector_2i> registration_offsets, const std::string &output_basename, ns_sql & sql);
+	static void make_video(const ns_64_bit experiment_id, bool grayscale,const std::vector< std::vector<std::string> > path_and_filenames, const ns_video_region_specification & region_spec, const std::vector<ns_vector_2i> registration_offsets, const std::string &output_basename, ns_sql & sql);
 	#endif
 	static void wrap_m4v_stream(const std::string & m4v_filename, const std::string & output_basename, const long number_of_frames, const bool for_ppt,ns_sql & sql);
 	

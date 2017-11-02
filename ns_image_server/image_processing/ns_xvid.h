@@ -39,7 +39,8 @@ struct ns_xvid_parameters{
 	int ARG_SAVEINDIVIDUAL;
 	int XDIM;
 	int YDIM;
-	int max_dimention;
+	int max_height;
+	int max_width;
 	int ARG_BQRATIO;
 	int ARG_BQOFFSET;
 	int ARG_MAXBFRAMES;

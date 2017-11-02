@@ -206,9 +206,9 @@ ns_thread_return_type ns_file_loader_load_next(void * arg){
 	
 		file->load_next();
 
-	ns_thread thread;
-	thread.get_current_thread();
-	thread.detach();
+	//ns_thread thread;
+	//thread.get_current_thread();
+	//thread.detach();
 	return 0;
 }
 

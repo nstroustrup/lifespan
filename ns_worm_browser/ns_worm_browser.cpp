@@ -5917,8 +5917,8 @@ bool ns_worm_learner::register_worm_window_key_press(int key, const bool shift_k
 
 
 void ns_worm_learner::touch_main_window_pixel(const ns_button_press & press){
-	if (press.screen_position.x < 4|| press.screen_position.y < 4 ||
-		press.screen_position.x+4 >= main_window.gl_image_size.x*main_window.display_rescale_factor|| press.screen_position.y+4 >= main_window.gl_image_size.y*main_window.display_rescale_factor)
+	if (press.screen_position.x < 2|| press.screen_position.y < 2 ||
+		press.screen_position.x+2 >= main_window.gl_image_size.x*main_window.display_rescale_factor|| press.screen_position.y+2 >= main_window.gl_image_size.y*main_window.display_rescale_factor)
 		return;
 	float z = ((float)main_window.pre_gl_downsample)/(float)main_window.image_zoom/main_window.display_rescale_factor;
 	ns_button_press p(press);
@@ -5944,7 +5944,8 @@ bool ns_worm_learner::register_main_window_key_press(int key, const bool shift_k
 		main_window.redraw_screen();
 		return true;
 	}
-	else if (key == ']'){
+
+	if (key == ']'){
 		main_window.display_rescale_factor+=.1;
 		main_window.redraw_screen();
 		return true;
@@ -6060,7 +6061,7 @@ void ns_worm_learner::touch_main_window_pixel_internal(const ns_button_press & p
 						area_handler.click(ns_area_handler::ns_move_all_boxes,
 						press.image_distance_from_click_location,
 						press.screen_distance_from_click_location,
-						main_window.gl_buffer ,current_image,main_window.pre_gl_downsample,main_window.image_zoom);
+						main_window.gl_buffer ,current_image,main_window.pre_gl_downsample,1.0/main_window.display_rescale_factor);
 			else{
 				//Handle out of bounds locations
 				if (press.image_position.x < (unsigned int)c || press.image_position.x + (unsigned int)c >= w) return;
@@ -6068,11 +6069,11 @@ void ns_worm_learner::touch_main_window_pixel_internal(const ns_button_press & p
 			
 				switch(press.click_type){
 					case ns_button_press::ns_up:
-							area_handler.click(ns_area_handler::ns_deselect_handle,press.image_position,press.screen_position,main_window.gl_buffer ,current_image,main_window.pre_gl_downsample,main_window.image_zoom); break;
+							area_handler.click(ns_area_handler::ns_deselect_handle,press.image_position,press.screen_position,main_window.gl_buffer ,current_image,main_window.pre_gl_downsample, 1.0 / main_window.display_rescale_factor); break;
 						case ns_button_press::ns_down:
-							area_handler.click(ns_area_handler::ns_select_handle,press.image_position,press.screen_position,main_window.gl_buffer ,current_image,main_window.pre_gl_downsample,main_window.image_zoom); break;
+							area_handler.click(ns_area_handler::ns_select_handle,press.image_position,press.screen_position,main_window.gl_buffer ,current_image,main_window.pre_gl_downsample, 1.0 / main_window.display_rescale_factor); break;
 						case ns_button_press::ns_drag:
-							area_handler.click(ns_area_handler::ns_move_handle,press.image_position,press.screen_position,main_window.gl_buffer ,current_image,main_window.pre_gl_downsample,main_window.image_zoom); break;
+							area_handler.click(ns_area_handler::ns_move_handle,press.image_position,press.screen_position,main_window.gl_buffer ,current_image,main_window.pre_gl_downsample, 1.0 / main_window.display_rescale_factor); break;
 						break;
 				}
 			}
@@ -6206,7 +6207,7 @@ void ns_worm_learner::draw_image(const double x, const double y, ns_image_standa
 			}
 		}		
 	}
-	area_handler.draw_boxes(main_window.gl_buffer ,image.properties(),main_window.pre_gl_downsample,main_window.image_zoom);
+	area_handler.draw_boxes(main_window.gl_buffer ,image.properties(),main_window.pre_gl_downsample,1.0/main_window.display_rescale_factor);
 
 	//now we handle the gl scaling
 	if (main_window.display_rescale_factor <= 1 && 
@@ -7264,13 +7265,27 @@ const ns_svm_model_specification & ns_worm_learner::get_svm_model_specification(
 
 extern ns_worm_learner worm_learner;
 
+void ns_area_handler::undraw_all_boxes(ns_8_bit * screen_buffer, const ns_image_standard & background, const unsigned long image_scaling, const double pixel_scaling) const {
+	for (std::vector<ns_area_box>::const_iterator b = boxes.begin(); b != boxes.end(); b++) 
+		remove_box_from_screen_buffer(b, screen_buffer, background, image_scaling, pixel_scaling);
+}
 void ns_area_handler::click(const ns_handle_action & action,const ns_vector_2i & image_pos,const ns_vector_2i & screen_pos,ns_8_bit * screen_buffer, const ns_image_standard & background,const unsigned long image_scaling, const double pixel_scaling){
+	
+	if (last_pixel_scaling != pixel_scaling) {
+		undraw_all_boxes(screen_buffer, background, image_scaling, last_pixel_scaling);
+		for (std::vector<ns_area_box>::iterator b = boxes.begin(); b != boxes.end(); b++) {
+			b->screen_coords.top_left = (b->screen_coords.top_left*last_pixel_scaling)/pixel_scaling  ;
+			b->screen_coords.bottom_right = (b->screen_coords.bottom_right*last_pixel_scaling)/pixel_scaling;
+		}
+		draw_boxes(screen_buffer, background.properties(), image_scaling, pixel_scaling);
+	}	
+	last_pixel_scaling = pixel_scaling;
 	switch(action){
 		case ns_deselect_handle:{
 		//	cerr << "DESELECTING\n";
 			if (!moved_since_last_click && !created_new_box_in_current_click){
 				for (std::vector<ns_area_box>::iterator b = boxes.begin(); b != boxes.end();){
-					if ( (b->screen_coords.top_left - screen_pos).mag() < 4){
+					if ( (b->screen_coords.top_left - screen_pos).mag() < pixel_scaling*4){
 				//		cerr << "Removing Top Corner\n";
 						remove_box_from_screen_buffer(b,screen_buffer,background,image_scaling,pixel_scaling);
 						b = boxes.erase(b);
@@ -7283,7 +7298,7 @@ void ns_area_handler::click(const ns_handle_action & action,const ns_vector_2i &
 						created_new_box_in_current_click=false;
 						return;
 					}
-					else if ( !(b->screen_coords.bottom_right == ns_vector_2i(-1,-1)) && (b->screen_coords.bottom_right - screen_pos).mag() < 4){
+					else if ( !(b->screen_coords.bottom_right == ns_vector_2i(-1,-1)) && (b->screen_coords.bottom_right - screen_pos).mag() <  pixel_scaling * 4){
 						
 					//	cerr << "Removing Top Corner " << "\n";
 						remove_box_from_screen_buffer(b,screen_buffer,background,image_scaling,pixel_scaling);
@@ -7391,9 +7406,9 @@ void ns_area_handler::click(const ns_handle_action & action,const ns_vector_2i &
 			selected_box = boxes.end();
 			for (std::vector<ns_area_box>::iterator b = boxes.begin(); b != boxes.end();b++){
 				remove_box_from_screen_buffer(b,screen_buffer,background,image_scaling,pixel_scaling);
-				if(ns_a_is_above_or_left_of_b(b->image_coords.bottom_right+image_pos,ns_vector_2i(0,0),4) ||
+				if(ns_a_is_above_or_left_of_b(b->image_coords.bottom_right+image_pos,ns_vector_2i(0,0), pixel_scaling * 4) ||
 					ns_a_is_above_or_left_of_b(ns_vector_2i(background.properties().width,background.properties().height),
-						b->image_coords.top_left+image_pos,4))
+						b->image_coords.top_left+image_pos, pixel_scaling * 4))
 					continue;
 
 		    	moved_since_last_click = true;
@@ -7427,45 +7442,43 @@ void ns_area_handler::clear_boxes(){
 	current_unfinished_box = boxes.end();
 	selected_box = boxes.end();
 }
-void ns_draw_square_boxes(const ns_vector_2i & loc,ns_8_bit * screen_buffer,const ns_image_properties & properties,const unsigned long size,const double scaling){
+void ns_draw_square_boxes(const ns_vector_2i & loc,ns_8_bit * screen_buffer,const ns_image_properties & properties,const unsigned long size,const double image_scaling){
 	for (unsigned int y = 0; y < size; y++){
 		for (unsigned int x = 0; x < size; x++){
 				if (properties.height < (1 + loc.y+y))
 					throw ns_ex("Yikes!");
-				screen_buffer[0] = 0;
-
 				screen_buffer[properties.width*3*(properties.height-1 - loc.y-y)+3*(loc.x+x)] = 200;
 				screen_buffer[properties.width*3*(properties.height-1 - loc.y-y)+3*(loc.x+x)+1] = 0;
 				screen_buffer[properties.width*3*(properties.height-1 - loc.y-y)+3*(loc.x+x)+2] = 0;
 		}
 	}
 }
-void ns_restore_square_boxes(const ns_vector_2i & loc,ns_8_bit * screen_buffer,const ns_image_properties & properties,const unsigned long size,const double scaling, const ns_image_standard & background){
+void ns_restore_square_boxes(const ns_vector_2i & loc,ns_8_bit * screen_buffer,const ns_image_properties & properties,const unsigned long size,const double image_scaling, const ns_image_standard & background){
 
 	if (properties.components == 3){
 		for (unsigned int y = 0; y < size; y++){
 			for (unsigned int x = 0; x < size; x++){
 		
-				screen_buffer[properties.width*3*(properties.height-1 - y-loc.y)+3*(loc.x+x)] = background[(unsigned long)(scaling*(y+loc.y))][3*((unsigned long)(scaling*(loc.x+x)))];
-				screen_buffer[properties.width*3*(properties.height-1 - y-loc.y)+3*(loc.x+x)+1] = background[(unsigned long)(scaling*(y+loc.y))][(3*((unsigned long)(scaling*(loc.x+x))))+1];
-				screen_buffer[properties.width*3*(properties.height-1 - y-loc.y)+3*(loc.x+x)+2] = background[(unsigned long)(scaling*(y+loc.y))][(3*((unsigned long)(scaling*(loc.x+x))))+2];
+				screen_buffer[properties.width*3*(properties.height-1 - y-loc.y)+3*(loc.x+x)] = background[(unsigned long)(image_scaling*(y+loc.y))][3*((unsigned long)(image_scaling*(loc.x+x)))];
+				screen_buffer[properties.width*3*(properties.height-1 - y-loc.y)+3*(loc.x+x)+1] = background[(unsigned long)(image_scaling*(y+loc.y))][(3*((unsigned long)(image_scaling*(loc.x+x))))+1];
+				screen_buffer[properties.width*3*(properties.height-1 - y-loc.y)+3*(loc.x+x)+2] = background[(unsigned long)(image_scaling*(y+loc.y))][(3*((unsigned long)(image_scaling*(loc.x+x))))+2];
 			}
 		}
 	}
 	else{
 		for (unsigned int y = 0; y < size; y++){
 			for (unsigned int x = 0; x < size; x++){
-				screen_buffer[properties.width*3*(properties.height-1 - y-loc.y)+3*(loc.x+x)] = background[(unsigned long)(scaling*(y+loc.y))][(unsigned long)(scaling*(loc.x+x))];
-				screen_buffer[properties.width*3*(properties.height-1 - y-loc.y)+3*(loc.x+x)+1] = background[(unsigned long)(scaling*(y+loc.y))][(unsigned long)(scaling*(loc.x+x))];
-				screen_buffer[properties.width*3*(properties.height-1 - y-loc.y)+3*(loc.x+x)+2] = background[(unsigned long)(scaling*(y+loc.y))][(unsigned long)(scaling*(loc.x+x))];
+				screen_buffer[properties.width*3*(properties.height-1 - y-loc.y)+3*(loc.x+x)] = background[(unsigned long)(image_scaling*(y+loc.y))][(unsigned long)(image_scaling*(loc.x+x))];
+				screen_buffer[properties.width*3*(properties.height-1 - y-loc.y)+3*(loc.x+x)+1] = background[(unsigned long)(image_scaling*(y+loc.y))][(unsigned long)(image_scaling*(loc.x+x))];
+				screen_buffer[properties.width*3*(properties.height-1 - y-loc.y)+3*(loc.x+x)+2] = background[(unsigned long)(image_scaling*(y+loc.y))][(unsigned long)(image_scaling*(loc.x+x))];
 			}
 		}
 	}
 }
-void ns_area_handler::draw_boxes(ns_8_bit * screen_buffer,const ns_image_properties & properties_,const unsigned long scaling, const double pixel_scaling) const{
+void ns_area_handler::draw_boxes(ns_8_bit * screen_buffer,const ns_image_properties & properties_,const unsigned long image_scaling, const double pixel_scaling) const{
 	ns_image_properties properties(properties_);
-	properties.height/=scaling;
-	properties.width/=scaling;
+	properties.height/=image_scaling;
+	properties.width/=image_scaling;
 	const unsigned int h(properties.height),
 		w(properties.width),
 		c(properties.components);
@@ -7473,19 +7486,19 @@ void ns_area_handler::draw_boxes(ns_8_bit * screen_buffer,const ns_image_propert
 	int px(2*ceil(pixel_scaling));
 
 	for (unsigned int i = 0; i < boxes.size(); i++){
-		ns_vector_2i a(boxes[i].image_coords.top_left/scaling),
-			b(boxes[i].image_coords.bottom_right/scaling);
+		ns_vector_2i a(boxes[i].image_coords.top_left/image_scaling),
+			b(boxes[i].image_coords.bottom_right/image_scaling);
 	//	cerr << "prop: " << h << "x" << w << ":" << c << "\t scaling: " << scaling << ":" << a << " " << a << "\n";
-		ns_draw_square_boxes(a,screen_buffer,properties,2*px,scaling);
+		ns_draw_square_boxes(a,screen_buffer,properties,2*px,image_scaling);
 		if (!(boxes[i].image_coords.bottom_right == ns_vector_2i(-1,-1))){
-			ns_draw_square_boxes(ns_vector_2i(b.x-2*px,a.y),screen_buffer,properties,2*px,scaling);
-			ns_draw_square_boxes(ns_vector_2i(a.x,b.y-2*px),screen_buffer,properties,2*px,scaling);
-			ns_draw_square_boxes(b-ns_vector_2i(2*px,2*px),screen_buffer,properties,2*px,scaling);
+			ns_draw_square_boxes(ns_vector_2i(b.x-2*px,a.y),screen_buffer,properties,2*px,image_scaling);
+			ns_draw_square_boxes(ns_vector_2i(a.x,b.y-2*px),screen_buffer,properties,2*px, image_scaling);
+			ns_draw_square_boxes(b-ns_vector_2i(2*px,2*px),screen_buffer,properties,2*px, image_scaling);
 		}
 
 		if (boxes[i].image_coords.bottom_right == ns_vector_2i(-1,-1)){
 			
-			for (unsigned int y = a.y; y + px < h; y+=4*px){
+			for (unsigned int y = a.y; y + px < h; y+=2*px){
 				for (unsigned int y_ = 0; y_ < px; y_++){
 					for (unsigned int x = 0; x < px; x++){
 						screen_buffer[properties.width*3*((properties.height-1) - (y+y_))+3*(a.x+x)] = 200;
@@ -7495,7 +7508,7 @@ void ns_area_handler::draw_boxes(ns_8_bit * screen_buffer,const ns_image_propert
 				}
 			}
 			for (unsigned int y = 0; y < px; y++){
-				for (unsigned int x = a.x; x + px < w; x+=4*px){
+				for (unsigned int x = a.x; x + px < w; x+=2*px){
 					for (unsigned int x_ = 0; x_ < px; x_++){
 						screen_buffer[properties.width*3*((properties.height-1) - a.y-y)+3*(x+x_)] = 200;
 						screen_buffer[properties.width*3*((properties.height-1) - a.y-y)+3*(x+x_)+1] = 0;
@@ -7505,7 +7518,7 @@ void ns_area_handler::draw_boxes(ns_8_bit * screen_buffer,const ns_image_propert
 			}
 		}
 		else{
-			for (unsigned int y = a.y; y + px < b.y; y+=4*px){
+			for (unsigned int y = a.y; y + px < b.y; y+=2*px){
 				for (unsigned int y_ = 0; y_ < px; y_++){
 					for (unsigned int x = 0; x < px; x++){
 					screen_buffer[properties.width*3*((properties.height-1) - (y+y_))+3*(a.x+x)] = 200;
@@ -7519,7 +7532,7 @@ void ns_area_handler::draw_boxes(ns_8_bit * screen_buffer,const ns_image_propert
 				}
 			}
 			for (unsigned int y = 0; y < px; y++){
-				for (unsigned int x = a.x; x + px < b.x; x+=4*px){
+				for (unsigned int x = a.x; x + px < b.x; x+=2*px){
 					for (unsigned int x_ = 0; x_ < px; x_++){
 						screen_buffer[properties.width*3*((properties.height-1) - a.y-y)+3*(x+x_)] = 200;
 						screen_buffer[properties.width*3*((properties.height-1) - a.y-y)+3*(x+x_)+1] = 0;
@@ -7538,7 +7551,7 @@ void ns_area_handler::draw_boxes(ns_8_bit * screen_buffer,const ns_image_propert
 
 
 
-void ns_area_handler::remove_box_from_screen_buffer(const std::vector<ns_area_box>::iterator cur_box,ns_8_bit * screen_buffer, const ns_image_standard & background,const unsigned long image_scaling,const double pixel_scaling) const{
+void ns_area_handler::remove_box_from_screen_buffer(const std::vector<ns_area_box>::const_iterator cur_box,ns_8_bit * screen_buffer, const ns_image_standard & background,const unsigned long image_scaling,const double pixel_scaling) const{
 	
 	ns_vector_2i a(cur_box->image_coords.top_left/image_scaling),
 				 b(cur_box->image_coords.bottom_right/image_scaling);

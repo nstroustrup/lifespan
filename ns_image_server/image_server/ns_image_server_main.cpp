@@ -963,6 +963,7 @@ int main(int argc, char ** argv){
 			else {
 				image_server.upgrade_tables(&sql(), false, image_server.current_sql_database(),false);
 				if (image_server.act_as_an_image_capture_server()) {
+					image_server.set_up_local_buffer();
 					ns_acquire_for_scope <ns_local_buffer_connection> local_sql(image_server.new_local_buffer_connection(__FILE__, __LINE__));
 					image_server.upgrade_tables(&local_sql(), false, image_server.current_local_buffer_database(),true);
 					local_sql.release();
@@ -979,6 +980,7 @@ int main(int argc, char ** argv){
 		sql_2.release();
 
 		if (image_server.act_as_an_image_capture_server()) {
+			image_server.set_up_local_buffer();
 			ns_acquire_for_scope <ns_local_buffer_connection> local_sql(image_server.new_local_buffer_connection(__FILE__, __LINE__));
 			if (image_server.upgrade_tables(&local_sql(), true, image_server.current_local_buffer_database(),true))
 				throw ns_ex("The current local buffer database schema is out of date.  Please run the command: ns_image_server update_sql");
@@ -1295,7 +1297,6 @@ int main(int argc, char ** argv){
 
 		//search for devices
 		if (image_server.act_as_an_image_capture_server()){
-			image_server.set_up_local_buffer();
 			if (image_server.device_manager.load_last_known_device_configuration()){
 				cerr << "Last known configuration:\n";
 				image_server.device_manager.output_connected_devices(cerr);

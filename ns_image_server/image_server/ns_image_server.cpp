@@ -2559,11 +2559,21 @@ ns_64_bit ns_image_server::register_server_event(const ns_register_type type,con
 		}
 
 		if (sql.is_null())
-			sql.attach(new_local_buffer_connection_no_lock_or_retry(__FILE__,__LINE__));
+			try {
+				sql.attach(new_local_buffer_connection_no_lock_or_retry(__FILE__, __LINE__));
+		}
+		catch (ns_ex & ex) {
+			throw ns_ex("Error when falling back to local sql buffer: ") << ex.text() << ns_sql_fatal;
+		}
 	}
-	else
-		sql.attach(new_local_buffer_connection_no_lock_or_retry(__FILE__,__LINE__));
-
+	else {
+		try {
+			sql.attach(new_local_buffer_connection_no_lock_or_retry(__FILE__, __LINE__));
+		}
+		catch (ns_ex & ex) {
+			throw ns_ex("Error when connecting to local sql buffer: ") << ex.text() << ns_sql_fatal;
+		}
+	}
 	try{
 		return register_server_event(s_event,&sql());
 		sql.release();

@@ -11,14 +11,16 @@
 #include <iomanip>
 #include "ns_processing_job_push_scheduler.h"
 #ifndef NS_NO_XVID
+#ifndef NS_ONLY_IMAGE_ACQUISITION
 #include "ns_xvid.h"
 #endif
-#include <stdlib.h> 
+#endif
+#include <stdlib.h>
 #include "ns_high_precision_timer.h"
 #include "ns_sql.h"
 using namespace std;
 
-#ifdef _WIN32 
+#ifdef _WIN32
 void destroy_icons();
 #endif
 
@@ -34,10 +36,10 @@ void destroy_icons();
 
 
 void ns_image_server_dispatcher::init(const unsigned int port,const unsigned int socket_queue_length){
-  incomming_socket.listen(port,socket_queue_length); 
-  image_server.register_server_event(ns_image_server::ns_register_in_central_db_with_fallback, 
+  incomming_socket.listen(port,socket_queue_length);
+  image_server.register_server_event(ns_image_server::ns_register_in_central_db_with_fallback,
 	  ns_image_server_event("Dispatcher bound to ") << image_server.dispatcher_ip() << ":" << (int)port
-	  << " on " << image_server_const.get_system_host_name() 
+	  << " on " << image_server_const.get_system_host_name()
 	  << " ( " << image_server_const.get_additional_host_description() << " ):"
 	  << "p" << image_server_const.system_parallel_process_id());
 
@@ -78,7 +80,7 @@ bool ns_image_server_dispatcher::hotplug_devices(const bool rescan_bad_barcodes,
 		hotplug_running = false;
 		throw;
 	}
-	
+
 }
 
 void ns_image_server_dispatcher::handle_remote_requests(){
@@ -120,7 +122,7 @@ void ns_image_server_dispatcher::handle_remote_requests(){
 					break;
 
 				case NS_CHECK_FOR_WORK:
-					//don't accept outside requests for work if 
+					//don't accept outside requests for work if
 					//the server should run autonomously
 					if (image_server.run_autonomously()) {
 						socket_connection.close();
@@ -161,7 +163,9 @@ void ns_image_server_dispatcher::handle_remote_requests(){
 					break;
 				case NS_RELOAD_MODELS: {
 					socket_connection.close();
+					#ifndef NS_ONLY_IMAGE_ACQUISITION
 					image_server.clear_model_cache();
+					#endif
 					break;
 				}
 				case NS_SIMULATE_CENTRL_DB_CONNECTION_ERROR: {
@@ -215,7 +219,7 @@ void ns_image_server_dispatcher::handle_remote_requests(){
 					}
 					case NS_STOP_CHECKING_CENTRAL_DB:
 						actively_avoid_connecting_to_central_db = true;
-						break;							
+						break;
 					case NS_START_CHECKING_CENTRAL_DB:
 						actively_avoid_connecting_to_central_db = false;
 						break;
@@ -223,12 +227,12 @@ void ns_image_server_dispatcher::handle_remote_requests(){
 						throw ns_ex("Error: Quit Command should have been caught by dispatcher!");
 					default:
 						throw ns_ex("Could not process remote message:") << (unsigned long)message.request();
-				}	
+				}
 			}
 			catch(ns_ex & ex){
 				if (image_server.act_as_an_image_capture_server())
 					image_server.register_server_event(ns_image_server::ns_register_in_local_db,ex);
-				else 
+				else
 					image_server.register_server_event(ns_image_server::ns_register_in_central_db,ex);
 
 			}
@@ -236,7 +240,7 @@ void ns_image_server_dispatcher::handle_remote_requests(){
 				ns_ex ex(e);
 				if (image_server.act_as_an_image_capture_server())
 					image_server.register_server_event(ns_image_server::ns_register_in_local_db,ex);
-				else 
+				else
 					image_server.register_server_event(ns_image_server::ns_register_in_central_db,ex);
 			}
 		}
@@ -283,7 +287,7 @@ void ns_image_server_dispatcher::run(){
 				image_server.exit_has_been_requested = true;
 				throw;
 			}
-			
+
 			ns_acquire_lock_for_scope lock(message_handling_lock,__FILE__,__LINE__);
 
 			pending_remote_requests.push_front(ns_remote_dispatcher_request(socket_connection));
@@ -295,13 +299,13 @@ void ns_image_server_dispatcher::run(){
 			catch(ns_ex & ex){
 				lock.release();
 				image_server.register_server_event(ns_image_server::ns_register_in_central_db_with_fallback,ns_ex("Error during remote request: ") << ex.text());
-				
+
 				socket_connection = incomming_socket.accept();
 				socket_connection.close();
 				continue;
 			}
 			ns_message_request req = pending_remote_requests.begin()->message.request();
-		
+
 			if (!image_server.exit_has_been_requested && image_server.processing_time_is_exceeded()) {
 				image_server.register_server_event(ns_image_server::ns_register_in_central_db_with_fallback, ns_image_server_event("Processing time exceeded."));
 				image_server.exit_has_been_requested = true;
@@ -313,7 +317,7 @@ void ns_image_server_dispatcher::run(){
 			}
 
 			if (image_server.exit_has_been_requested && !image_server.handling_exit_request){
-				image_server.handling_exit_request = true; 
+				image_server.handling_exit_request = true;
 				ns_thread shutdown_thread;
 				//this will wait for all jobs to finish and then set image_server.ready_to_exit flag to true.
 				shutdown_thread.run(shutdown_routine, this);
@@ -330,7 +334,7 @@ void ns_image_server_dispatcher::run(){
 			}
 
 			//some jobs shouldn't have duplicates on the queue, as they only need to be run once in any short time interval
-		
+
 			if (req == NS_CHECK_FOR_WORK ||
 				req ==	NS_HOTPLUG_NEW_DEVICES ||
 				req ==	NS_RESET_DEVICES ||
@@ -356,7 +360,7 @@ void ns_image_server_dispatcher::run(){
 			if (!pending_remote_requests.empty() && !message_handling_thread.is_running() ){
 				message_handling_thread.run(handle_dispatcher_request,this);
 			}
-					
+
 			lock.release();
 		}
 
@@ -367,10 +371,10 @@ void ns_image_server_dispatcher::run(){
 	catch(std::exception & e){
 		ns_ex ex(e);
 		image_server.register_server_event(ns_image_server::ns_register_in_central_db_with_fallback,ex);
-	}	
+	}
 
 	image_server.exit_happening_now = true;
-	try{		
+	try{
 		//close all outstanding connections and clear the request queue
 		ns_acquire_lock_for_scope lock(message_handling_lock,__FILE__,__LINE__);
 		for(list<ns_remote_dispatcher_request>::iterator p = pending_remote_requests.begin(); p != pending_remote_requests.end();){
@@ -378,13 +382,13 @@ void ns_image_server_dispatcher::run(){
 			p->connection.close();
 			p = pending_remote_requests.erase(p);
 		}
-		
+
 		if(message_handling_thread.is_running()){
 			message_handling_thread.block_on_finish();
 		}
 		lock.release();
 		incomming_socket.close_socket();
-		
+
 
 		if (!currently_unable_to_connect_to_the_central_db) {
 			ns_acquire_for_scope<ns_sql> sql(image_server.new_sql_connection(__FILE__, __LINE__));
@@ -398,7 +402,7 @@ void ns_image_server_dispatcher::run(){
 	catch(std::exception & e){
 		ns_ex ex(e);
 		image_server.register_server_event(ns_image_server::ns_register_in_central_db_with_fallback,ex);
-	}		
+	}
 //	cerr << "Exiting Dispatcher Thread.";
 }
 
@@ -431,7 +435,7 @@ void ns_image_server_dispatcher::clear_for_termination(){
 
 	//ns_safe_delete(processing_thread);
 	ns_safe_delete(delayed_exception);
-	
+
 	ns_acquire_lock_for_scope work_lock(work_sql_management_lock,__FILE__,__LINE__);
 	ns_safe_delete(work_sql_connection);
 	work_lock.release();
@@ -470,7 +474,7 @@ void ns_image_server_dispatcher::start_looking_for_new_work(){
 }
 
 void ns_image_server_dispatcher::handle_central_connection_error(ns_ex & ex){
-	if (!currently_unable_to_connect_to_the_central_db){	
+	if (!currently_unable_to_connect_to_the_central_db){
 		image_server.register_server_event_no_db(ns_image_server_event("ns_image_server_dispatcher::Lost connection to the central SQL database.  (") << ex.text() << ") Waiting for the connection to be re-established...");
 		image_server.alert_handler.buffer_all_alerts_locally(false);
 		currently_unable_to_connect_to_the_central_db = true;
@@ -490,7 +494,7 @@ void ns_image_server_dispatcher::on_timer(){
 		char * a(0);
 		(*a)++;
 	}
-	
+
 	//first we handle all capture device management.  This doesn't require access to the central database
 	if (image_server.act_as_an_image_capture_server()){
 		try{
@@ -507,14 +511,14 @@ void ns_image_server_dispatcher::on_timer(){
 	}
 
 
-	
+
 	if (actively_avoid_connecting_to_central_db){
 		currently_unable_to_connect_to_the_central_db = true;
 		return;
 	}
 	else{
 		//we want to buffer all alerts locally and only submit them all at once after all
-		//tasks are completed.  This is because submitting alerts requires acquiring 
+		//tasks are completed.  This is because submitting alerts requires acquiring
 		//the cluster-wide alert table lock, and there is a possibility of this taking a long time.
 		//We don't want to delay any of the on_timer() operations, especially those involved
 		//in data acquisition.
@@ -536,11 +540,11 @@ void ns_image_server_dispatcher::on_timer(){
 			}
 
 			bool try_to_reestablish_connection = false;
-	
+
 
 				if (currently_unable_to_connect_to_the_central_db){
-			
-			
+
+
 					try_to_reestablish_connection = true;
 				}
 				else{
@@ -559,7 +563,7 @@ void ns_image_server_dispatcher::on_timer(){
 					try{
 						//if we've lost the connection, try to reconnect via conventional means
 						image_server.reconnect_sql_connection(timer_sql_connection);
-						timer_sql_connection->check_connection();	
+						timer_sql_connection->check_connection();
 						timer_sql_lock.release();
 						image_server.register_server_event(ns_image_server_event("Recovered from a lost MySQL connection."),timer_sql_connection);
 						image_server.register_host(timer_sql_connection);
@@ -589,14 +593,14 @@ void ns_image_server_dispatcher::on_timer(){
 		ns_sql_result h;
 		timer_sql_connection->get_rows(h);
 		if (h.size() == 0){
-			//image_server.load_constants(ns_image_server::ns_image_server_type);	
+			//image_server.load_constants(ns_image_server::ns_image_server_type);
 			image_server.register_server_event(ns_image_server_event("A record of this host was not found in the database ") << image_server.current_sql_database() << ". Creating a new one.",timer_sql_connection);
 			image_server.register_host(timer_sql_connection);
 			image_server.register_devices(false,timer_sql_connection);
 			image_server.alert_handler.buffer_all_alerts_locally(false);
 			return;
 		}
-	
+
 		unsigned long file_storage_space(0);
 		try{
 				file_storage_space = image_server.image_storage.free_space_in_volatile_storage_in_mb();
@@ -606,7 +610,7 @@ void ns_image_server_dispatcher::on_timer(){
 					ns_image_server_event("Could not establish free space on server: ") << ex.text() ,timer_sql_connection);
 		}
 		catch (...){
-				
+
 				image_server.register_server_event(
 					ns_image_server_event("Could not establish free space on server: Reason Unknown"),timer_sql_connection);
 		}
@@ -621,7 +625,7 @@ void ns_image_server_dispatcher::on_timer(){
 							   );
 				image_server.alert_handler.submit_locally_buffered_alert(alert);
 			}
-		
+
 			if (file_storage_space < 1024*16){
 				string text(image_server.host_name_out());
 				text += ": Low Disk Space: ";
@@ -649,15 +653,15 @@ void ns_image_server_dispatcher::on_timer(){
 		catch(ns_ex & ex){
 			image_server.register_server_event(ex,timer_sql_connection);
 		}
-	
+
 		bool shutdown_requested = (h[0][1] == "1");
 		const bool hotplug_requested = (h[0][3] == "1");
 		if (h[0][3] == "2"){
 			clean_clear_local_db_requested = true;
 		}
 		std::string database_requested = h[0][4];
-		
-	
+
+
 		//otherwise mark the host as still being online.
 		*timer_sql_connection << "UPDATE hosts SET last_ping=UNIX_TIMESTAMP(), shutdown_requested=0, hotplug_requested=0, long_term_storage_enabled= "
 			<< (image_server.image_storage.long_term_storage_was_recently_writeable()?"1":"0")
@@ -667,9 +671,9 @@ void ns_image_server_dispatcher::on_timer(){
 		timer_sql_connection->send_query();
 		timer_sql_connection->send_query("COMMIT");
 		if (clean_clear_local_db_requested){
-			clean_clear_local_db_requested = false;		
+			clean_clear_local_db_requested = false;
 			try{
-			
+
 				ns_acquire_for_scope<ns_local_buffer_connection> local_buffer_connection(image_server.new_local_buffer_connection(__FILE__,__LINE__));
 				ns_acquire_for_scope<ns_local_buffer_connection> sql(image_server.new_local_buffer_connection(__FILE__,__LINE__));
 				buffered_capture_scheduler.commit_local_changes_to_central_server(sql(),*timer_sql_connection);
@@ -687,13 +691,13 @@ void ns_image_server_dispatcher::on_timer(){
 		catch(ns_ex & ex){
 			image_server.register_server_event(ex,timer_sql_connection);
 		}
-		
+
 
 		map<std::string, ns_capture_device::ns_device_preview_type> preview_requested;
 		if (image_server.act_as_an_image_capture_server()){
 			ns_image_server_device_manager::ns_device_name_list devices;
 			try{
-		
+
 				image_server.device_manager.request_device_list(devices);
 				//pair<scanner id, type of preview scan requested (0=none,1=transparency unit, 2=reflective)
 				*timer_sql_connection << "SELECT name,preview_requested,pause_captures, simulated_device,autoscan_interval FROM devices WHERE host_id = " << image_server.host_id();
@@ -745,7 +749,7 @@ void ns_image_server_dispatcher::on_timer(){
 
 							}
 						}
-						int autoscan_interval(atoi(prev_res[i][4].c_str()));	
+						int autoscan_interval(atoi(prev_res[i][4].c_str()));
 						if (image_server.device_manager.set_autoscan_interval_and_balance(prev_res[i][0],autoscan_interval,timer_sql_connection)){
 							if (autoscan_interval > 0)
 								image_server.register_server_event(ns_image_server_event("Setting autoscan interval to ") << autoscan_interval << " on device " << prev_res[i][0],timer_sql_connection);
@@ -762,7 +766,7 @@ void ns_image_server_dispatcher::on_timer(){
 						image_server.register_server_event(ns_image_server_event("Error setting pause state: ") << "Unknown error!",timer_sql_connection);
 					}
 				}
-		
+
 			}
 			catch(ns_ex & ex){
 				image_server.register_server_event(ex,timer_sql_connection);
@@ -785,7 +789,7 @@ void ns_image_server_dispatcher::on_timer(){
 							continue;
 						if (devices[i].paused)
 							continue;
-					
+
 						if (preview_requested[devices[i].name] != ns_capture_device::ns_no_preview){
 							if (get_whole_scanner_preview(preview_requested[devices[i].name],devices[i].name))
 								ns_thread::sleep(4);//wait four seconds in between requesting scans to keep USB chatter sane.
@@ -813,7 +817,7 @@ void ns_image_server_dispatcher::on_timer(){
 				for (unsigned int i = 0; i < devices.size(); i++)
 					device_names[i] = devices[i].name;
 				buffered_capture_scheduler.image_capture_data_manager.handle_pending_transfers_to_long_term_storage(device_names);
-	
+
 			}
 			catch(ns_ex & ex){
 				image_server.register_server_event(ex,timer_sql_connection);
@@ -844,7 +848,7 @@ void ns_image_server_dispatcher::on_timer(){
 		catch(ns_ex & ex){
 			image_server.register_server_event(ex,timer_sql_connection);
 		}
-		
+
 		if (shutdown_requested)
 			image_server.shut_down_host();
 		if (!allow_processing)
@@ -852,7 +856,7 @@ void ns_image_server_dispatcher::on_timer(){
 
 		timer_sql_connection->send_query("COMMIT");
 
-		
+
 		//we've gotten everything we need done; we can now allow alerts to be submitted
 		image_server.alert_handler.buffer_all_alerts_locally(false);
 
@@ -871,7 +875,7 @@ void ns_image_server_dispatcher::on_timer(){
 		catch(...){
 			cerr << "Could not handle alerts for an unknown reason.\n";
 			return;
-		}	
+		}
 		try{
 			#ifdef NS_TRACK_PERFORMANCE_STATISTICS
 			image_server.performance_statistics.merge(ns_image_allocation_performance_stats);
@@ -938,7 +942,7 @@ void ns_image_server_dispatcher::on_timer(){
 
 
 bool ns_image_server_dispatcher::get_whole_scanner_preview(const ns_capture_device::ns_device_preview_type preview_type,const std::string & device_name){
-	
+
 	ns_capture_thread_arguments * ca = new ns_capture_thread_arguments;
 	try{
 		ca->capture_specification.volatile_storage = 0;
@@ -949,11 +953,11 @@ bool ns_image_server_dispatcher::get_whole_scanner_preview(const ns_capture_devi
 		sql().send_query("COMMIT");
 		ca->capture_specification.capture_parameters = image_server.capture_preview_parameters(preview_type,sql());
 		sql.release();
-		
+
 		image_server.register_server_event(ns_image_server::ns_register_in_central_db,ns_image_server_event("Starting preview capture on ") << device_name << "...");
 		//prepare to start capture in its own thread
 		ca->buffered_capture_scheduler = &buffered_capture_scheduler;
-		
+
 		//capture will need to mark job as done by setting time_at_finish
 		ca->device_name = device_name;
 		ca->capture_specification.capture_schedule_entry_id=0;
@@ -969,7 +973,7 @@ bool ns_image_server_dispatcher::get_whole_scanner_preview(const ns_capture_devi
 		//get directory for captured image.
 		string filename = ns_format_time_string(ns_current_time()) + "=" + device_name + "=preview.tif";
 		ca->capture_specification.volatile_storage = image_server.image_storage.request_miscellaneous_storage(filename);
-	
+
 		//capture thread will delete ca.
 		image_server.device_manager.run_capture_on_device(ca);
 
@@ -980,7 +984,7 @@ bool ns_image_server_dispatcher::get_whole_scanner_preview(const ns_capture_devi
 		ns_ex ex(exception);
 		ex << "Problem during preview: ";
 		//OK, something went wrong with the capture.
-		//Give up for now but swallow exception so that 
+		//Give up for now but swallow exception so that
 		//the dispatcher can try again later.
 		image_server.register_server_event(ns_image_server::ns_register_in_central_db,ex);
 		return false;
@@ -1050,7 +1054,7 @@ void ns_image_server_dispatcher::recieve_image_thread(ns_image_server_message & 
 		sql() << "UPDATE images SET filename = '" << sql().escape_string(image.filename) << "' WHERE id = " << image_id;
 		sql().send_query();
 	}
-	
+
 	//cerr << "Binding socket...\n";
 	ns_image_socket_reciever<ns_8_bit> reciever;
 	reciever.bind_socket(con);
@@ -1058,7 +1062,7 @@ void ns_image_server_dispatcher::recieve_image_thread(ns_image_server_message & 
 	//get access to image storage
 	bool had_to_use_local_storage;
 	ns_image_storage_reciever_handle<ns_8_bit> image_storage = image_server.image_storage.request_storage(image,ns_tiff,1.0,512,&sql(),had_to_use_local_storage,false,true);
-	
+
 	sql().disconnect();
 	sql.release();
 	//cerr << "\nRecieving Pump.\n";
@@ -1164,14 +1168,14 @@ void ns_dispatcher_job_pool_job::operator()(ns_dispatcher_job_pool_persistant_da
 		persistant_data.sql->send_query("COMMIT");
 		image_server.sql_table_lock_manager.unlock_all_tables(persistant_data.sql, __FILE__, __LINE__);
 
-
+		#ifndef NS_ONLY_IMAGE_ACQUISITION
 		try {
 			external_data->image_server->perform_experiment_maintenance(*persistant_data.sql);
 		}
 		catch (ns_ex & ex) {
 			external_data->image_server->register_server_event(ex, persistant_data.sql);
 		}
-
+	#endif
 	}
 	catch (...) {
 		if (multithreaded_job) {
@@ -1187,7 +1191,7 @@ void ns_dispatcher_job_pool_job::operator()(ns_dispatcher_job_pool_persistant_da
 //on subsequent calls, it looks to see if any threads are idle, and adds enough jobs to get them busy again.
 bool ns_image_server_dispatcher::look_for_work(){
 
-	
+
 	bool action_performed(false);
 	ns_acquire_lock_for_scope sql_lock(work_sql_management_lock,__FILE__,__LINE__);
 	if (work_sql_connection == 0){
@@ -1274,9 +1278,9 @@ bool ns_image_server_dispatcher::look_for_work(){
 			number_of_jobs_to_run = number_of_idle_processing_threads;
 		}
 		long number_of_jobs_left_before_max_is_reached = image_server.number_of_remaining_processing_jobs_before_max_is_hit();
-		if (number_of_jobs_left_before_max_is_reached <= 0) 
+		if (number_of_jobs_left_before_max_is_reached <= 0)
 			return false;
-		
+
 		if (number_of_jobs_to_run > number_of_jobs_left_before_max_is_reached)
 			number_of_jobs_to_run = number_of_jobs_left_before_max_is_reached;
 
@@ -1290,7 +1294,7 @@ bool ns_image_server_dispatcher::look_for_work(){
 			if (new_jobs.size() == 0 || image_server.exit_has_been_requested)
 				break;
 
-			
+
 			bool already_found_update_queue_job(false);
 			for (std::vector<ns_processing_job>::iterator p = new_jobs.begin(); p != new_jobs.end(); ) {
 				//only run maintenence update once.
@@ -1319,14 +1323,14 @@ bool ns_image_server_dispatcher::look_for_work(){
 			image_server.update_processing_status("Not finding work.", 0, 0, work_sql_connection,image_server.main_thread_internal_id());
 			image_server.add_subtext_to_current_event(".", work_sql_connection, false, image_server.main_thread_internal_id());
 			image_server.incremenent_empty_job_queue_check_count();
-			
+
 			if (image_server.empty_job_queue_check_count_is_exceeded()) {
 				image_server.update_processing_status("Check count exceeded", 0, 0, work_sql_connection, image_server.main_thread_internal_id());
 				image_server.register_server_event(ns_ex("Idle image processing job queue count limit reached."), work_sql_connection);
 				image_server.shut_down_host();
 			}
 		}
-		if (jobs.size() == 0) 
+		if (jobs.size() == 0)
 			return false;
 		image_server.reset_empty_job_queue_check_count();
 		//here is the logic that allows multithreaded jobs to run alone in the thread pool.
@@ -1372,7 +1376,7 @@ bool ns_image_server_dispatcher::look_for_work(){
 			for (unsigned int i = 0; i < jobs.size(); i++)
 				processing_thread_pool.add_job_while_pool_is_not_running(ns_dispatcher_job_pool_job(jobs[i], processing_pool_external_data));
 		else
-			for (unsigned int i = 0; i < jobs.size(); i++) 
+			for (unsigned int i = 0; i < jobs.size(); i++)
 				processing_thread_pool.add_job_while_pool_is_running(ns_dispatcher_job_pool_job(jobs[i], processing_pool_external_data));
 		if (first_run) {
 			processing_thread_pool.set_number_of_threads(image_server_const.maximum_number_of_processing_threads());
@@ -1406,7 +1410,7 @@ void ns_image_server_dispatcher::handle_memory_allocation_error(){
 	memory_allocation_error_count++;
 	image_server.image_storage.cache.clear_cache_without_cleanup();
 	if (memory_allocation_error_count > 5){
-		image_server.pause_host();	
+		image_server.pause_host();
 		ns_ex ex("The host has recently encountered too many memory errors.  The host will pause until futher notice.");
 		image_server.register_server_event(ns_image_server::ns_register_in_central_db,ex);
 	}
@@ -1483,30 +1487,30 @@ ns_thread_return_type ns_scan_for_problems(void * d){
 		return 0;
 	}
 
-	try{		
+	try{
 			unsigned long current_time = ns_current_time();
 			//image_server.register_server_event(ns_image_server::ns_register_in_central_db_with_fallback,ns_image_server_event("Checking for missed scans on cluster."));
-			
+
 			std::vector<std::string> devices_to_suppress,
 							 experiments_to_suppress;
 
 			image_server.get_alert_suppression_lists(devices_to_suppress,experiments_to_suppress,&sql());
 
 			string conditions_for_missed;
-			conditions_for_missed = 
+			conditions_for_missed =
 					"c.censored = 0 AND c.time_at_finish = 0 AND c.time_at_start = 0 "
 					"AND c.problem = 0 AND c.missed = 0 AND "
 					"c.scheduled_time < ";
 			conditions_for_missed += ns_to_string(current_time - 60*image_server.maximum_allowed_remote_scan_delay());
 
-			sql() << "SELECT c.id, c.scheduled_time, s.device_name, e.name FROM capture_schedule as c, capture_samples as s, experiments as e WHERE " 
+			sql() << "SELECT c.id, c.scheduled_time, s.device_name, e.name FROM capture_schedule as c, capture_samples as s, experiments as e WHERE "
 				<< conditions_for_missed << " AND c.sample_id = s.id AND s.experiment_id = e.id "
 				"AND c.scheduled_time > " << dispatcher->time_of_last_scan_for_problems << " ORDER BY c.scheduled_time";
 			ns_sql_result missed_schedule_events;
 			sql().get_rows(missed_schedule_events);
 
 			if (missed_schedule_events.size() > 0){
-		
+
 				//if there are missed scans, update them as missed
 
 				string summary_text("Scheduled image captures are being missed.");
@@ -1515,7 +1519,7 @@ ns_thread_return_type ns_scan_for_problems(void * d){
 				string unsuppressed_text;
 				for (unsigned int i = 0; i < missed_schedule_events.size(); i++){
 					string tmp(ns_format_time_string_for_human(
-						atol(missed_schedule_events[i][1].c_str())) 
+						atol(missed_schedule_events[i][1].c_str()))
 						+ " " + missed_schedule_events[i][2] + " " + missed_schedule_events[i][3]);
 					unsuppressed_text += tmp;
 
@@ -1526,15 +1530,15 @@ ns_thread_return_type ns_scan_for_problems(void * d){
 							suppressed_by_device = true;
 							break;
 						}
-					}		
-				
+					}
+
 					for (unsigned int j = 0; j < experiments_to_suppress.size(); j++){
 								if (missed_schedule_events[0][3] == experiments_to_suppress[j]){
 									suppressed_by_experiment = true;
 									break;
 								}
 					}
-				
+
 					if (suppressed_by_device)
 						unsuppressed_text += "(Suppressed by device request)";
 					if (suppressed_by_experiment)
@@ -1551,7 +1555,7 @@ ns_thread_return_type ns_scan_for_problems(void * d){
 				ns_image_server_event ev;
 				if (missed_schedule_events.size() == 1) ev << "The image cluster has missed a scheduled image capture:";
 				else ev << "The image cluster has missed " << (unsigned long)missed_schedule_events.size() << " scheduled image captures";
-				ev << unsuppressed_text; 
+				ev << unsuppressed_text;
 				image_server.register_server_event(ns_image_server::ns_register_in_central_db,ev);
 
 				sql() << "UPDATE capture_schedule as c SET missed = 1 WHERE " << conditions_for_missed;
@@ -1565,7 +1569,7 @@ ns_thread_return_type ns_scan_for_problems(void * d){
 							ns_alert::get_notification_type(ns_alert::ns_missed_capture,image_server.act_as_an_image_capture_server()),
 							ns_alert::ns_rate_limited);
 						image_server.alert_handler.submit_alert(alert,sql());
-					
+
 					}
 					catch(ns_ex & ex){
 						cerr << "Could not submit alert: " << summary_text << " : " << ex.text();
@@ -1590,12 +1594,12 @@ void ns_image_server_dispatcher::scan_for_problems(ns_sql & sql){
 							 experiments_to_suppress;
 
 	image_server.get_alert_suppression_lists(devices_to_suppress,experiments_to_suppress,&sql);
-		
+
 	image_server.device_manager.scan_and_report_problems(devices_to_suppress,experiments_to_suppress,sql);
 	//automatically search for new scanners
 	//if(!image_server.server_is_paused() && image_server.query_cluster_for_device_names())
 	//	run_hotplug(false,false);
-	
+
 	//look for missed scans anywhere on the cluster (these will start to accumulate if, for example, a node with attach devices crashes.)
 	unsigned long current_time = ns_current_time();
 	if (image_server.maximum_allowed_remote_scan_delay() == 0)

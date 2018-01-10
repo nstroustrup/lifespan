@@ -1,10 +1,10 @@
 #ifndef NS_PROCESSING_JOB_H
 #define NS_PROCESSING_JOB_H
-
+#ifndef NS_ONLY_IMAGE_ACQUISITION
 #include "ns_machine_analysis_data_loader.h"
 #include "ns_svm_model_specification.h"
-
-
+#endif
+#include "ns_processing_tasks.h"
 typedef enum{ns_maintenance_no_task,
 			 ns_maintenance_rebuild_sample_time_table,
 			 ns_maintenance_rebuild_worm_movement_table,
@@ -171,10 +171,13 @@ struct ns_processing_job{
 			processor_name;
 
 	std::vector<char> operations; //operations[i] = 1 means that the operation is requested
-
+#ifndef NS_ONLY_IMAGE_ACQUISITION
 	const ns_lifespan_curve_cache_entry * death_time_annotations;
 
 	typename ns_worm_detection_model_cache::const_handle_t model;
+#else
+void * death_time_annotations;
+#endif
 
 	static std::string provide_query_stub(){
 		return std::string("SELECT processing_jobs.id, processing_jobs.experiment_id, processing_jobs.sample_id, ")
@@ -223,7 +226,7 @@ struct ns_processing_job{
 			  << "] image_id[" << image_id << "] urgent[" << (urgent?"1":"0")
 			  << "] processor_id[" << processor_id << "] time_submitted[" << time_submitted
 			  << "] mask_id[" << mask_id
-			  << "] maintenance_task[" << (long)maintenance_task 
+			  << "] maintenance_task[" << (long)maintenance_task
 			  << "] delete_file_job_id[" << delete_file_job_id << "] video_add_timestamp[" << ((int)video_timestamp_type)
 			  << "] maintenance_flag[" << (long)maintenance_flag;
 		return t.text();
@@ -236,9 +239,9 @@ struct ns_processing_job{
 			  << "', image_id = '" << image_id << "', urgent='" << (urgent?"1":"0")
 			  << "', processor_id= '" << processor_id << "', time_submitted='" << time_submitted
 			  << "', mask_id = '" << mask_id
-			  << "', maintenance_task = '" << (long)maintenance_task 
-			  << "', subregion_position_x = '" << subregion_position.x << "', subregion_position_y = '" << subregion_position.y 
-			  << "', subregion_width = '" << subregion_size.x << "', subregion_height='" << subregion_size.y 
+			  << "', maintenance_task = '" << (long)maintenance_task
+			  << "', subregion_position_x = '" << subregion_position.x << "', subregion_position_y = '" << subregion_position.y
+			  << "', subregion_width = '" << subregion_size.x << "', subregion_height='" << subregion_size.y
 			  << "', delete_file_job_id = '" << delete_file_job_id << "', video_add_timestamp = '" << ((int)video_timestamp_type)
 			  << "', maintenance_flag = '" << (long)maintenance_flag
 			  << "', pending_another_jobs_completion = '" << pending_another_jobs_completion;

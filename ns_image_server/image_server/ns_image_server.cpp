@@ -5,11 +5,12 @@
 #include "ns_socket.h"
 #include "ns_thread.h"
 #include "ns_image_server_message.h"
-
 #ifndef NS_MINIMAL_SERVER_BUILD
 #include "ns_image_server_dispatcher.h"
+#ifndef NS_ONLY_IMAGE_ACQUISITION
 #include "ns_spatial_avg.h"
 #include "ns_time_path_solver_parameters.h"
+#endif
 #endif
 #include "ns_image_storage_handler.h"
 #include "ns_os_signal_handler.h"
@@ -33,12 +34,18 @@ void ns_image_server_global_debug_handler(const ns_text_stream_t & t);
 ns_image_server::ns_image_server() : exit_has_been_requested(false),exit_happening_now(false), handling_exit_request(false), ready_to_exit(false), update_software(false),
 sql_lock("ns_is::sql"), server_event_lock("ns_is::server_event"), performance_stats_lock("ns_pfl"), simulator_scan_lock("ns_is::sim_scan"), local_buffer_sql_lock("ns_is::lb"), processing_run_counter_lock("ns_pcl"),
 _act_as_processing_node(true), cleared(false), do_not_run_multithreaded_jobs(false),
+#ifndef NS_ONLY_IMAGE_ACQUISITION
 image_registration_profile_cache(1024 * 4), //allocate 4 gigabytes of disk space in which to store reference images for capture sample registration
+storyboard_cache(0),worm_detection_model_cache(0),posture_analysis_model_cache(0),
+#endif
 _verbose_debug_output(false), _cache_subdirectory("cache"), sql_database_choice(possible_sql_databases.end()), next_scan_for_problems_time(0),
-_terminal_window_scale_factor(1), _system_parallel_process_id(0), _allow_multiple_processes_per_system(false),sql_table_lock_manager(this), alert_handler_lock("ahl"), max_external_thread_id(1),worm_detection_model_cache(0),posture_analysis_model_cache(0),storyboard_cache(0){
+_terminal_window_scale_factor(1), _system_parallel_process_id(0), _allow_multiple_processes_per_system(false),sql_table_lock_manager(this),
+alert_handler_lock("ahl"), max_external_thread_id(1){
 
 	ns_socket::global_init();
+	#ifndef NS_ONLY_IMAGE_ACQUISITION
 	ns_worm_detection_constants::init();
+	#endif
 	ns_set_global_debug_output_handler(ns_image_server_global_debug_handler);
 	_software_version_compile = 1;
 	image_storage.cache.set_memory_allocation_limit_in_kb(maximum_image_cache_memory_size());
@@ -246,6 +253,8 @@ void ns_image_server::calculate_experiment_disk_usage(const ns_64_bit experiment
 
 
 #ifndef NS_MINIMAL_SERVER_BUILD
+
+#ifndef NS_ONLY_IMAGE_ACQUISITION
 class ns_get_automated_job_scheduler_lock_for_scope{
 public:
 	ns_get_automated_job_scheduler_lock_for_scope(const unsigned long second_delay_until_next_run , ns_sql & sql):current_time(0),next_run_time(0),lock_held(false){
@@ -509,6 +518,7 @@ void ns_image_server::perform_experiment_maintenance(ns_sql & sql) const{
 	automated_job_scheduler.scan_for_tasks(sql);
 }
 #endif
+#endif
 void ns_image_server::register_alerts_as_handled(){
 	alert_handler_thread.report_as_finished();
 }
@@ -585,7 +595,7 @@ void add_string_or_number(std::string & destination, const std::string & desired
 	}
 	else destination+=desired_string;
 }
-
+#ifndef NS_ONLY_IMAGE_ACQUISITION
 ns_64_bit ns_image_server::make_record_for_new_sample_mask(const ns_64_bit sample_id, ns_sql & sql){
 	sql << "SELECT name, experiment_id FROM capture_samples WHERE id = " << sample_id;
 	ns_sql_result res;
@@ -616,6 +626,7 @@ ns_64_bit ns_image_server::make_record_for_new_sample_mask(const ns_64_bit sampl
 	return id;
 
 }
+#endif
 void ns_image_server::check_for_sql_database_access(ns_image_server_sql * sql) const {
 	sql->select_db(*sql_database_choice);
 }
@@ -914,7 +925,7 @@ bool ns_image_server::upgrade_tables(ns_sql_connection * sql, const bool just_te
 
 		changes_made = true;
 	}
-	
+
 	if (!updating_local_buffer) {
 		std::string subregion_mask_column_name(ns_processing_step_db_column_name(ns_process_subregion_label_mask));
 		if (!ns_sql_column_exists(t_suf + "sample_region_image_info", subregion_mask_column_name, sql)) {
@@ -1822,7 +1833,7 @@ void ns_image_server::clear_processing_status(ns_sql & sql) const {
 void ns_image_server::update_processing_status(const std::string & processing_state, const ns_64_bit processing_job_id, const ns_64_bit processing_job_queue_id,ns_sql_connection * sql, const ns_64_bit impersonate_using_internal_thread_id) const {
 
 	std::map<ns_64_bit, ns_thread_output_state>::iterator current_thread_state = get_current_thread_state_info(impersonate_using_internal_thread_id);
-	
+
 	*sql << "DELETE FROM  processing_node_status WHERE " << " host_id = " << _host_id << " AND node_id = " << current_thread_state->second.external_thread_id;
 	sql->send_query();
 
@@ -1871,7 +1882,7 @@ void ns_image_server::register_host(ns_image_server_sql * sql, bool overwrite_cu
 				<< ", additional_host_description='"<< additional_host_description << "', system_parallel_process_id=" << system_parallel_process_id();
 				//if the user has requested a database change, we update the record in the new database (to, for example, prevent infinite looping between databases).
 				//on the initial startup, however, we want to respect the specification in the db, and switch databases if requested.
-			if (!respect_existing_database_choice) 
+			if (!respect_existing_database_choice)
 				*sql << ",database_used='" << *sql_database_choice << "'";
 			*sql << ",system_hostname = '" << system_host_name << "'";
 			*sql <<  " WHERE id='" << _host_id << "'";
@@ -2037,7 +2048,7 @@ void ns_image_server::load_constants(const ns_image_server::ns_image_server_exec
 	constants.add_field("server_timeout_interval","300","How long should a server wait before giving up on a dead network connection (in seconds)");
 	constants.add_field("log_filename","image_server_log.txt","Image acquisition and image processing servers keep a log file in the central SQL database.  However, to help diagnose crashes, a text file containing the same log information is stored on the local machine.  The log file is stored in the directory specified by the volatile_storage_directory option (described above), and its filename is specified by here.");
 	constants.add_field("maximum_memory_allocation_in_mb","3840","Movement analaysis benefits from access to multiple gigabytes of RAM.  This value should be set to approximately the size of system memory.  Larger values will cause sporadic crashes during movement analysis.");
-	
+
 	ns_ini terminal_constants;
 	terminal_constants.reject_incorrect_fields(reject_incorrect_fields);
 	terminal_constants.start_specification_group(ns_ini_specification_group("*** Worm Browser Configuration File ***","This file allows you to specify various configuration options that will determine the behavior of the worm browser software run on this machine.  It's behavior is also influenced by the settings in the ns_image_server configuration file."));
@@ -2108,7 +2119,7 @@ void ns_image_server::load_constants(const ns_image_server::ns_image_server_exec
 		}
 
 		{
-			
+
 			string sql_server_tmp(constants["central_sql_hostname"]);
 			sql_server_addresses.resize(0);
 			//split the server names into an ordered list.
@@ -2152,7 +2163,7 @@ void ns_image_server::load_constants(const ns_image_server::ns_image_server_exec
 		local_buffer_user = constants["local_buffer_sql_username"];
 
 		if (constants.field_specified("output_files_with_all_read_permissions")){
-	    
+
 			_output_group_readable_files = ns_to_bool(constants["output_files_with_all_read_permissions"]);
 			if (_output_group_readable_files) {
 				#ifndef _WIN32
@@ -2204,7 +2215,11 @@ void ns_image_server::load_constants(const ns_image_server::ns_image_server_exec
 		_scanner_list_command	= constants["device_list_command"];
 		_scanner_list_coord = constants["device_barcode_coordinates"];
 		_act_as_processing_node = ns_to_bool(constants["act_as_processing_node"]);
-		_halt_on_new_software_release = ns_to_bool(constants["halt_on_new_software_release"]);
+#ifdef NS_ONLY_IMAGE_ACQUISITION
+if (_act_as_processing_node)
+	throw ns_ex("This software was compiled with the NS_ONLY_IMAGE_ACQUISITION flag set, and so cannot process images.  In the image_server.ini file, act_as_processing_node must be set to false.");
+#endif
+	_halt_on_new_software_release = ns_to_bool(constants["halt_on_new_software_release"]);
 		_video_compiler_filename = constants["video_compiler_filename"];
 		_video_ppt_compiler_filename = constants["video_ppt_compiler_filename"];
 		_latest_release_path = constants["latest_release_path"];
@@ -2352,7 +2367,7 @@ void ns_image_server::shut_down_host(){
 		sql.send_query();
 		sql.send_query("COMMIT");
 }*/
-
+#ifndef NS_ONLY_IMAGE_ACQUISITION
 void ns_svm_model_specification::write_statistic_ranges(const std::string & filename, bool write_all_features) const{
 
 
@@ -2474,7 +2489,6 @@ void ns_svm_model_specification::read_excluded_stats(const std::string & filenam
 	for (unsigned int i = 0; i < included_statistics.size(); i++)
 		included_statistics[i] = !excluded_statistics[i];
 }
-
 void ns_principal_component_transformation_specification::read(const std::string & filename){
 	pc_vectors.resize(0);
 	ifstream in(filename.c_str());
@@ -2493,6 +2507,7 @@ void ns_principal_component_transformation_specification::read(const std::string
 	}
 	in.close();
 }
+#endif
 
 std::string ns_image_server::capture_preview_parameters(const ns_capture_device::ns_device_preview_type & type,ns_sql & sql){
 	string transparency_default("--mode=Gray --format=tiff --source=\"TPU8X10\" --resolution=300 --depth=8 -l 0in -t 0in -x 8.5in -y 10.5in"),
@@ -2559,11 +2574,21 @@ ns_64_bit ns_image_server::register_server_event(const ns_register_type type,con
 		}
 
 		if (sql.is_null())
-			sql.attach(new_local_buffer_connection_no_lock_or_retry(__FILE__,__LINE__));
+			try {
+				sql.attach(new_local_buffer_connection_no_lock_or_retry(__FILE__, __LINE__));
+		}
+		catch (ns_ex & ex) {
+			throw ns_ex("Error when falling back to local sql buffer: ") << ex.text() << ns_sql_fatal;
+		}
 	}
-	else
-		sql.attach(new_local_buffer_connection_no_lock_or_retry(__FILE__,__LINE__));
-
+	else {
+		try {
+			sql.attach(new_local_buffer_connection_no_lock_or_retry(__FILE__, __LINE__));
+		}
+		catch (ns_ex & ex) {
+			throw ns_ex("Error when connecting to local sql buffer: ") << ex.text() << ns_sql_fatal;
+		}
+	}
 	try{
 		return register_server_event(s_event,&sql());
 		sql.release();
@@ -2753,6 +2778,9 @@ void ns_image_server::set_up_model_directory(){
 	path = long_term_storage_directory +  DIR_CHAR_STR + position_analysis_model_directory();
 	ns_dir::create_directory_recursive(path);
 }
+
+#ifndef NS_ONLY_IMAGE_ACQUISITION
+#ifndef NS_MINIMAL_SERVER_BUILD
 void ns_image_server::load_all_worm_detection_models(std::vector<ns_worm_detection_model_cache::const_handle_t> & spec){
 	std::string path = long_term_storage_directory + DIR_CHAR_STR + worm_detection_model_directory();
 	ns_dir dir;
@@ -2772,7 +2800,6 @@ void ns_image_server::load_all_worm_detection_models(std::vector<ns_worm_detecti
 	spec.resize(count);
 }
 
-#ifndef NS_MINIMAL_SERVER_BUILD
 void ns_image_server::get_posture_analysis_model_for_region(const ns_64_bit region_info_id, typename ns_image_server::ns_posture_analysis_model_cache::const_handle_t & it, ns_sql & sql){
 	sql << "SELECT posture_analysis_model, posture_analysis_method FROM sample_region_image_info WHERE id = " << region_info_id;
 	ns_sql_result res;
@@ -2937,7 +2964,6 @@ void ns_svm_model_specification_entry::load_from_external_source(const std::stri
 }
 
 
-
 void ns_storyboard_cache_entry::load_from_external_source(const ns_experiment_storyboard_spec & specification, ns_sql & sql){
 	spec = specification;
 	name = spec.to_string();
@@ -2967,6 +2993,7 @@ void  ns_image_server::get_worm_detection_model(const std::string & name, typena
 	worm_detection_model_cache.get_for_read(name, it, source);
 }
 
+#endif
 
 #ifdef _WIN32
 //from example http://www.ddj.com/showArticle.jhtml?documentID=win0312d&pgno=4
@@ -3072,7 +3099,7 @@ ns_image_storage_reciever_handle<ns_8_bit> ns_image_server_results_storage::mach
 	ns_dir::create_directory_recursive(path);
 	return ns_image_storage_reciever_handle<ns_image_storage_handler::ns_component>(new ns_image_storage_reciever_to_disk<ns_image_storage_handler::ns_component>(max_line_length, f.path(),ns_tiff,false));
 
-}	
+}
 ns_image_server_results_file ns_image_server_results_storage::optimized_posture_analysis_parameter_set(ns_image_server_results_subject & spec, const std::string & type, ns_sql & sql) const {
 	spec.get_names(sql);
 	string dir, fname;

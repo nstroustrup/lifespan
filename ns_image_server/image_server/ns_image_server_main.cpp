@@ -8,7 +8,9 @@
 #include "ns_image_server.h"
 #include "ns_image_server_message.h"
 #include "ns_image_server_dispatcher.h"
+#ifndef NS_ONLY_IMAGE_ACQUISITION
 #include "ns_spatial_avg.h"
+#endif
 #include "ns_ini.h"
 #include <time.h>
 #include "ns_dir.h"
@@ -17,7 +19,7 @@
 #include "ns_thread_pool.h"
 
 
-#ifdef _WIN32 
+#ifdef _WIN32
 #include <windows.h>
 #include <windowsx.h>
 #include <shellapi.h>
@@ -39,7 +41,7 @@ ns_thread_return_type timer_thread(void * inter){
 	unsigned int * interval_p = reinterpret_cast<unsigned int *>(inter);
 	unsigned long interval = *interval_p;
 	delete interval_p;
-	
+
 	if (interval == 0)
 		interval = 15;
 	try{
@@ -91,7 +93,7 @@ ns_thread_return_type timer_thread(void * inter){
 
 
 
-#ifdef _WIN32 
+#ifdef _WIN32
 //from How To Obtain a Console Window Handle (HWND)
 //http://support.microsoft.com/kb/124103
 HWND GetConsoleHwnd(void)
@@ -150,17 +152,17 @@ void set_hostname_on_menu(const string & hostname){
 #endif
 void ns_shutdown_dispatcher(){
 	cerr << "Attempting controlled shutdown...\n";
-	#ifdef _WIN32 
+	#ifdef _WIN32
 			ModifyMenu(toolbar_menu,ID_CONTEXTMENU_IMAGESERVER,MF_BYCOMMAND,MF_STRING | MF_DISABLED,"Shutting down...");
 			ModifyMenu(toolbar_menu,ID_CONTEXTMENU_STROUSTR,MF_BYCOMMAND,MF_STRING | MF_GRAYED,"Updating database, please be patient.");
 	#endif
 	image_server.shut_down_host();
 }
 
-#ifdef _WIN32 
+#ifdef _WIN32
 
 void ns_show_popup_menu(HWND hWnd){
-HMENU submenu = GetSubMenu(toolbar_menu, 0); 
+HMENU submenu = GetSubMenu(toolbar_menu, 0);
 					POINT pt;
 					GetCursorPos(&pt);
 				//	ClientToScreen(hWnd, (LPPOINT) &pt);
@@ -181,7 +183,7 @@ LRESULT CALLBACK handle_windows_message(HWND hWnd, UINT message, WPARAM wParam, 
 			PostQuitMessage(0);
 			return 0;
 		case WM_COMMAND:{
-			WORD id = LOWORD(wParam); 
+			WORD id = LOWORD(wParam);
 			switch(id){
 				case ID_CONTEXTMENU_HIDE:
 					if (!ns_window_hidden)	ShowWindow(ns_window_to_hide,SW_HIDE);
@@ -231,11 +233,11 @@ LRESULT CALLBACK handle_windows_message(HWND hWnd, UINT message, WPARAM wParam, 
 					ns_show_popup_menu(hWnd);
 
 				case WM_RBUTTONUP:
-					
+
 				break;
 				case WM_RBUTTONDBLCLK:
 					printf("\a");
-			
+
 				break;
 			}
 			return 0;
@@ -254,13 +256,13 @@ struct run_dispatcher_t{
 ns_thread_return_type run_dispatcher(void * dispatcher){
 	run_dispatcher_t * d = static_cast<run_dispatcher_t *>(dispatcher);
 	d->dispatcher->run();
-	
+
 	SendMessage(d->window_to_close,WM_QUIT,0,0);
 	return true;
 }
 
 void windows_message_loop(){
-	
+
 	MSG msg;
 	BOOL bRet;
 	while((bRet = GetMessage(&msg, 0, 0, 0)) != 0){
@@ -300,10 +302,10 @@ void handle_icons(HINSTANCE hInstance, HWND current_window){
 	notify_icon_info.cbSize = sizeof(NOTIFYICONDATA);
 	notify_icon_info.hWnd = current_window;
 	notify_icon_info.uID = 100 ;
-	notify_icon_info.uFlags = NIF_MESSAGE | NIF_ICON | NIF_TIP ;	
-	notify_icon_info.uCallbackMessage = WM_USER + 1;  
+	notify_icon_info.uFlags = NIF_MESSAGE | NIF_ICON | NIF_TIP ;
+	notify_icon_info.uCallbackMessage = WM_USER + 1;
 	strcpy ( notify_icon_info.szTip, "Lifespan Machine Server");
- 
+
 	// save the pointer to the icon list and set the initial
 	// default icon.
 	notify_icon_info.hIcon = LoadIcon(hInstance,MAKEINTRESOURCE(113));
@@ -321,7 +323,7 @@ void handle_icons(HINSTANCE hInstance, HWND current_window){
 
 
 #endif
-#ifdef _WIN32 
+#ifdef _WIN32
 ns_os_signal_handler_return_type exit_signal_handler(ns_os_signal_handler_signal s){
 #else
 ns_os_signal_handler_return_type exit_signal_handler(ns_os_signal_handler_signal signal,siginfo_t *info, void * context){
@@ -351,7 +353,7 @@ public:
 		  image_server.register_server_event(ns_image_server::ns_register_in_central_db_with_fallback,ns_image_server_event("The Daemon is already running.\n"));
 		  return ns_ok;
 		}
-		  
+
 		//on linux, fork and return the apropriate options
 		ns_external_execute_options opts;
 		opts.take_stderr_handle = false;
@@ -387,7 +389,7 @@ public:
 			switch(req){
 				case NS_QUIT:{
 					stop_daemon = true;
-				   
+
 				}
 				case NS_NULL: break;
 				case NS_RELAUNCH_SERVER:
@@ -400,7 +402,7 @@ public:
 		socket.close_socket();
 		if (!restart_server){
 			image_server.register_server_event(ns_image_server::ns_register_in_central_db_with_fallback,ns_image_server_event("The Crash Daemon is shutting down"));
-				
+
 			exit(0);
 		}
 		else{
@@ -419,11 +421,11 @@ public:
   }
 	static void request_restart_from_daemon(){
 		send_message_to_daemon(NS_RELAUNCH_SERVER);
-	}	
+	}
 	static void request_daemon_shutdown(){
 		send_message_to_daemon(NS_QUIT);
 	}
-	
+
 	private:
 	static void send_message_to_daemon(const ns_message_request m){
 		ns_socket socket;
@@ -499,7 +501,7 @@ typedef enum {ns_none,ns_start, ns_stop, ns_help, ns_restart, ns_status, ns_hotp
 			  ns_reset_devices,ns_reload_models,ns_submit_experiment,ns_test_email,ns_test_alert, ns_test_rate_limited_alert,ns_wrap_m4v,
 			  ns_restarting_after_a_crash,ns_trigger_segfault_in_main_thread,ns_trigger_segfault_in_dispatcher_thread, ns_run_pending_image_transfers,
 	      ns_clear_local_db_buffer_cleanly,ns_clear_local_db_buffer_dangerously,ns_simulate_central_db_connection_error,ns_fix_orphaned_captured_images,
-	ns_update_sql,ns_output_image_buffer_info,ns_stop_checking_central_db,ns_start_checking_central_db,ns_output_sql_debug, ns_additional_host_description, 
+	ns_update_sql,ns_output_image_buffer_info,ns_stop_checking_central_db,ns_start_checking_central_db,ns_output_sql_debug, ns_additional_host_description,
 	ns_max_run_time_in_seconds, ns_number_of_processing_cores, ns_idle_queue_check_limit, ns_max_memory_to_use,ns_ini_file_location, ns_ignore_multithreaded_jobs,ns_max_number_of_jobs_to_process} ns_cl_command;
 
 ns_image_server_sql * ns_connect_to_available_sql_server(){
@@ -517,6 +519,7 @@ ns_image_server_sql * ns_connect_to_available_sql_server(){
 			return sql;
 		}
 }
+#ifndef NS_ONLY_IMAGE_ACQUISITION
 #ifdef NS_USE_INTEL_IPP
 #include "ipp.h"
 #endif
@@ -533,13 +536,14 @@ bool ns_test_ipp() {
 	p.calculate(im,ns_vector_2i(0,0),ns_vector_2i(d,d));
 	return p.num_current_pyramid_levels > 0;
 }
-
+#endif
 int main(int argc, char ** argv){
-
+	#ifndef NS_ONLY_IMAGE_ACQUISITION
 	#ifdef NS_USE_INTEL_IPP
-	ippInit();	
+	ippInit();
 	#endif
-	
+	#endif
+
 	std::map<std::string,ns_cl_command> commands;
 	commands["start"] = ns_start;
 	commands["stop"] = ns_stop;
@@ -561,7 +565,7 @@ int main(int argc, char ** argv){
 	commands["clear_local_db_buffer_cleanly"] = ns_clear_local_db_buffer_cleanly;
 	commands["clear_local_db_buffer_dangerously"] = ns_clear_local_db_buffer_dangerously;
 	commands["simulate_central_db_connection_error"] = ns_simulate_central_db_connection_error;
-	commands["fix_orphaned_captured_images"] = ns_fix_orphaned_captured_images;	
+	commands["fix_orphaned_captured_images"] = ns_fix_orphaned_captured_images;
 	commands["output_image_buffer_info"] = ns_output_image_buffer_info;
 	commands["start_checking_central_db"] = ns_start_checking_central_db;
 	commands["stop_checking_central_db"] = ns_stop_checking_central_db;
@@ -642,7 +646,7 @@ int main(int argc, char ** argv){
 		<< "simulate_central_db_connection_error: Simulate a broken connection to the central database.\n"
 		<< "output_image_buffer_info: Output information about the state of each scanner's locally \n"
 		"       buffered images.\n";
-	
+
 	std::string schema_name, ini_file_location;
 	bool no_schema_name_specified(false);
 	unsigned long max_run_time(0), max_job_num(0), number_of_processing_cores(-1), idle_queue_check_limit(-1), memory_allocation_limit(-1);
@@ -670,7 +674,7 @@ int main(int argc, char ** argv){
 
 			//run as background daemon if requested.
 			if (command_str == "daemon") {
-#ifdef _WIN32 
+#ifdef _WIN32
 				throw ns_ex("The image server cannot explicity start as dameon under windows.");
 #else
 				if (::daemon(1, 0) != 0)
@@ -970,7 +974,7 @@ int main(int argc, char ** argv){
 			}
 			sql.release();
 			return 0;
-		}		
+		}
 		//check old tables
 		ns_acquire_for_scope<ns_sql> sql_2(image_server.new_sql_connection(__FILE__, __LINE__));
 		if (image_server.upgrade_tables(&sql_2(), true, image_server.current_sql_database(),false)) {
@@ -1073,7 +1077,7 @@ int main(int argc, char ** argv){
 		}
 		std::cout << quote;
 
-#ifdef _WIN32 
+#ifdef _WIN32
 		if (image_server.hide_window()) {
 
 			HWND console_hwnd = GetConsoleHwnd();
@@ -1145,9 +1149,9 @@ int main(int argc, char ** argv){
 		catch (ns_ex & ex) {
 			//we want to wait to throw the error until after we've registered in the db, so that the error can be recorded there.
 			stored_ex = ex;
-		
+
 		}
-	
+
 
 		if (sql().connected_to_central_database()) {
 
@@ -1162,7 +1166,7 @@ int main(int argc, char ** argv){
 			if (image_server.new_software_release_available() && image_server.halt_on_new_software_release()) {
 
 				image_server.register_server_event(ns_image_server_event("A more recent version of server software was found running on the cluster.  This server is outdated and is halting now."), &sql());
-#ifdef _WIN32 
+#ifdef _WIN32
 				image_server.update_software = true;
 #endif
 				throw ns_ex("Updated software detected on the cluster.");
@@ -1170,11 +1174,11 @@ int main(int argc, char ** argv){
 		}
 
 		image_server.clear_processing_status(*static_cast<ns_sql *>(&sql()));
-		
+
 
 #ifdef NS_USE_INTEL_IPP
 		if (image_server.act_as_processing_node()){
-			
+
 			ns_image_server_event t_event("Testing Intel Performance Primitives...");
 			if (sql().connected_to_central_database())
 				image_server.register_server_event(t_event, &sql());
@@ -1186,9 +1190,9 @@ int main(int argc, char ** argv){
 				else cerr << " ";
 			}
 		}
-		
+
 #endif
-		
+
 		image_server.register_server_event(ns_image_server_event("Clearing local image cache"), &sql());
 		image_server.image_storage.clear_local_cache();
 
@@ -1291,7 +1295,7 @@ int main(int argc, char ** argv){
 
 		if (post_dispatcher_init_command == ns_trigger_segfault_in_dispatcher_thread)
 			dispatch.trigger_segfault_on_next_timer();
-		
+
 
 		//search for devices
 		if (image_server.act_as_an_image_capture_server()){
@@ -1305,7 +1309,7 @@ int main(int argc, char ** argv){
 			else image_server.device_manager.clear_device_list_and_identify_all_hardware();
 		}
 		else image_server.register_server_event(ns_image_server_event("Not searching for attached devices."),&sql());
-	
+
 		if (image_server.act_as_an_image_capture_server() && register_and_run_simulated_devices){
 			if (image_server.simulated_device_name().size() > 2)
 				image_server.device_manager.attach_simulated_device(image_server.simulated_device_name());
@@ -1315,7 +1319,7 @@ int main(int argc, char ** argv){
 
 		if (sql().connected_to_central_database())
 			image_server.register_devices(false,&sql());
-		
+
 		if (!image_server.act_as_processing_node()){
 			image_server.register_server_event(ns_image_server_event("Not acting as a processing node."),&sql());
 		//	image_server.image_storage.set_verbosity(ns_image_storage_handler::ns_verbose);
@@ -1329,7 +1333,7 @@ int main(int argc, char ** argv){
 		if (image_server.act_as_an_image_capture_server()){
 			bool success(image_server.process_priority.set_priority(ns_process_priority::ns_high));
 			if (!success){
-				image_server.register_server_event(ns_image_server_event(std::string("The server could not increase its scheduling priority.  "  
+				image_server.register_server_event(ns_image_server_event(std::string("The server could not increase its scheduling priority.  "
 					"Consider running ns_image_server with administrative privileges, or manually increasing priority to -10 using the command\n"
 					"renice -15 -p ") +  ns_to_string(ns_thread::ns_get_process_id())),&sql());
 			}
@@ -1342,12 +1346,12 @@ int main(int argc, char ** argv){
 		if (sql().connected_to_central_database()) {
 			dispatch.connect_timer_sql_connection();
 		}
-		
+
 
 		sql.release();
 		unsigned int * timer_interval = new unsigned int(image_server.dispatcher_refresh_interval());
-		
-		
+
+
 		if (post_dispatcher_init_command == ns_run_pending_image_transfers){
 			dispatch.buffered_capture_scheduler.image_capture_data_manager.handle_pending_transfers_to_long_term_storage_using_db_names();
 		}
@@ -1358,7 +1362,7 @@ int main(int argc, char ** argv){
 				ns_thread::sleep(dispatcher_offset_time);
 
 			ns_thread timer(timer_thread,reinterpret_cast<void *>(timer_interval));
-			#ifdef _WIN32 
+			#ifdef _WIN32
 			run_dispatcher_t rd;
 			rd.dispatcher =&dispatch;
 			rd.restarting_after_crash = restarting_after_crash;
@@ -1367,9 +1371,9 @@ int main(int argc, char ** argv){
 			rd.window_to_close = message_hwnd;
 			handle_icons(GetModuleHandle(NULL), message_hwnd);
 			set_hostname_on_menu(image_server.host_name_out());
-		
+
 			//set_terminate(ns_terminator);
- 
+
 			ns_thread dispatcher_thread(run_dispatcher,&rd);
 			windows_message_loop();
 
@@ -1387,7 +1391,7 @@ int main(int argc, char ** argv){
 		#ifndef _WIN32
 		ns_socket::global_clean();
 		#endif
-		
+
 		//if (is_master_node){
 		//	cerr << "Waiting for external processes...\n";
 		//	ns_request_shutdown_of_all_spawned_nodes(child_processes);
@@ -1396,17 +1400,17 @@ int main(int argc, char ** argv){
 		//	ns_image_server_crash_daemon::request_daemon_shutdown();
 		//	#endif
 		//}
-		
+
 		cerr << "Terminating...\n";
 		}
 	catch(ns_ex & ex){
-	  #ifdef _WIN32 
+	  #ifdef _WIN32
 		//if (!console_window_created)
 		//	ns_make_windows_console_window();
 		#endif
 
 		cerr << "Server Root Exception: " << ex.text() << "\n";
-		#ifdef _WIN32 
+		#ifdef _WIN32
 		//argv.clear();
 		for (unsigned int i = 5; i > 0; i--){
 			cerr << i << "...";
@@ -1417,7 +1421,7 @@ int main(int argc, char ** argv){
 		destroy_icons();
 		#endif
 	}
-	#ifdef _WIN32 	
+	#ifdef _WIN32
 		ns_socket::global_clean();
 		destroy_icons();
 	/*	if (image_server.update_software && image_server.handle_software_updates()){
@@ -1427,7 +1431,7 @@ int main(int argc, char ** argv){
 			catch(ns_ex & ex){
 				cerr << ex.text() << "\n";
 			}
-			
+
 		}*/
 	#endif
 	image_server.clear();

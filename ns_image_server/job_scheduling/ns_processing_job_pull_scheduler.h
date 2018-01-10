@@ -18,7 +18,7 @@ struct ns_processing_job_pull_finder{
 		selected_job = -1;
 
 		jobs.resize(0);
-		if (lock_row){	
+		if (lock_row){
 			sql.set_autocommit(false);
 			sql.send_query("BEGIN");
 		}
@@ -31,8 +31,8 @@ struct ns_processing_job_pull_finder{
 		if (job_order.size() != 0)
 			sql << ", " << job_order;
 		if (lock_row) sql << " FOR UPDATE";
-		ns_sql_result rows;	
-		sql.get_rows(rows);	
+		ns_sql_result rows;
+		sql.get_rows(rows);
 		jobs.resize(rows.size());
 		if (jobs.size() == 0)
 			return;
@@ -88,7 +88,7 @@ struct ns_processing_job_pull_finder{
 		}
 	}
 
-	
+
 	void mark_as_no_jobs_found(ns_sql & sql){
 		sql.send_query("COMMIT");
 	}
@@ -103,7 +103,7 @@ struct ns_processing_job_pull_finder{
 			throw ns_ex("ns_processing_job_finder::No data required for specified job.") << jobs[selected_job].id;
 		if (jobs[selected_job].id == 0)
 			throw ns_ex("ns_processing_job_finder::Getting data on un-specified job.");
-		if (lock_row){	
+		if (lock_row){
 			sql.set_autocommit(false);
 			sql.send_query("BEGIN");
 		}
@@ -161,16 +161,16 @@ struct ns_processing_job_pull_finder_manager{
 		single_images.job_order			= "";
 		single_images.data_columns		= "";
 		single_images.data_tables		="images";
-		single_images.data_conditions	<< "images.problem=0 AND images.currently_under_processing=0 ";	
+		single_images.data_conditions	<< "images.problem=0 AND images.currently_under_processing=0 ";
 		single_images.data_order		= "";
-		
+
 		experiments.job_conditions		<< "processing_jobs.image_id = 0 AND processing_jobs.region_id = 0 AND processing_jobs.sample_id = 0 AND maintenance_task = 0 ";
 		experiments.job_order			= "";
 		experiments.data_tables			=  "captured_images";
 		experiments.data_columns		=  "captured_images.id";
 		experiments.data_conditions		<< "captured_images.experiment_id = processing_jobs.experiment_id AND "
 										<< "captured_images.currently_being_processed = 0 "
-										<< "AND captured_images.problem = 0 ";	
+										<< "AND captured_images.problem = 0 ";
 		experiments.data_order			= "";
 
 		samples.job_conditions 			<< "processing_jobs.image_id = 0 AND maintenance_task = 0 "
@@ -180,7 +180,7 @@ struct ns_processing_job_pull_finder_manager{
 		samples.data_tables				=  "captured_images";
 		samples.data_columns			=  "captured_images.id";
 		samples.data_conditions			<< "captured_images.sample_id = processing_jobs.sample_id "
-							  			<< "AND captured_images.currently_being_processed = 0 ";	
+							  			<< "AND captured_images.currently_being_processed = 0 ";
 		samples.data_order				= "";
 
 		masks.job_conditions			<< "processing_jobs.image_id = 0 AND maintenance_task = 0 "
@@ -191,11 +191,11 @@ struct ns_processing_job_pull_finder_manager{
 		masks.data_columns				=  "captured_images.id";
 		masks.data_conditions			<< "captured_images.mask_applied = 0 "
 										<< "AND captured_images.sample_id = processing_jobs.sample_id "
-										<< "AND captured_images.problem = 0 "	
-										<< "AND captured_images.currently_being_processed = 0 ";	
+										<< "AND captured_images.problem = 0 "
+										<< "AND captured_images.currently_being_processed = 0 ";
 		masks.data_order				= "";
 
-		regions.job_conditions			<< "processing_jobs.image_id = 0 AND processing_jobs.region_id != 0 AND maintenance_task = 0 " 
+		regions.job_conditions			<< "processing_jobs.image_id = 0 AND processing_jobs.region_id != 0 AND maintenance_task = 0 "
 										<< "AND processing_jobs.op" << ns_to_string(ns_process_compile_video) << "=0 "
 										<< "AND processing_jobs.op" << ns_to_string(ns_process_heat_map) << " = 0 "
 										<< "AND processing_jobs.op" << ns_to_string(ns_process_static_mask) << " = 0 ";
@@ -210,7 +210,7 @@ struct ns_processing_job_pull_finder_manager{
 										<< "AND worm_movement.id = sample_region_images.worm_movement_id "
 										<< "AND worm_movement.currently_under_processing = 0 "
 										<< "AND sample_region_images.currently_under_processing = 0 "
-										<< "AND (";	
+										<< "AND (";
 		regions.data_order				= "";
 		regions.randomize_experiment_priority = true;
 
@@ -218,7 +218,7 @@ struct ns_processing_job_pull_finder_manager{
 			if (i == ns_process_analyze_mask ||
 				i == ns_process_compile_video ||
 				i == ns_process_movement_coloring ||
-				i == ns_process_movement_mapping || 
+				i == ns_process_movement_mapping ||
 				i == ns_process_posture_vis ||
 				i == ns_process_region_interpolation_vis ||
 				i == ns_process_region_vis)
@@ -252,7 +252,7 @@ struct ns_processing_job_pull_finder_manager{
 			whole_samples.job_conditions<< "processing_jobs.op" << ns_to_string(ns_process_compile_video) << " != 0 OR ";
 		whole_samples.job_conditions	<< "processing_jobs.op" << ns_to_string(ns_process_heat_map) << " != 0 OR "
 										<< "processing_jobs.op" << ns_to_string(ns_process_static_mask) << " != 0"
-		
+
 										<< ") AND processing_jobs.currently_under_processing = 0 AND processing_jobs.problem = 0 ";
 		whole_samples.job_order			= "";
 		whole_samples.data_tables		=  "captured_images";

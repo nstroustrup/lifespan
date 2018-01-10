@@ -1,11 +1,16 @@
 #ifndef NS_PROCESSING_JOB_PROCESSOR
 #define NS_PROCESSING_JOB_PROCESSOR
 #include "ns_processing_job_push_scheduler.h"
+#ifndef NS_ONLY_IMAGE_ACQUISITION
 #include "ns_image_processing_pipeline.h"
+#else
+typedef void ns_image_processing_pipeline;
+#endif
+#include "ns_image_server.h"
 
 class ns_processing_job_processor{
 public:
-	ns_processing_job_processor(const ns_processing_job & job_, ns_image_server & image_server_, ns_image_processing_pipeline & pipeline_):job(job_),image_server(&image_server_),pipeline(&pipeline_){}
+	ns_processing_job_processor(const ns_processing_job & job_, ns_image_server & image_server_, ns_image_processing_pipeline * pipeline_):job(job_),image_server(&image_server_),pipeline(pipeline_){}
 	ns_processing_job_processor(const ns_processing_job & job_,ns_image_server & image_server_):job(job_),image_server(&image_server_),pipeline(0){}
 	virtual ~ns_processing_job_processor() {};// derived classes produced by factory function will be cast as this base class, thus base needs a virtual delete function
 	virtual bool job_is_still_relevant(ns_sql & sql, std::string & reason_not_relevant)=0;
@@ -28,26 +33,18 @@ public:
 protected:
 	ns_processing_job job;
 	ns_image_server  * image_server;
+	#ifndef NS_ONLY_IMAGE_ACQUISITION
 	ns_image_processing_pipeline * pipeline;
+	#else
+	void * pipeline;
+	#endif
 	std::string busy_str(const bool busy){return (busy?ns_to_string(image_server->host_id()):"0");}
 };
-/*
-class  ns_processing_job_movement_processor: public ns_processing_job_processor{
-public:
-	ns_processing_job_movement_processor(const ns_processing_job & job_, ns_image_server & image_server_, ns_image_processing_pipeline & pipeline_):ns_processing_job_processor(job_,image_server_,pipeline_){}
-	ns_processing_job_movement_processor(const ns_processing_job & job_):ns_processing_job_processor(job_){}
-	bool job_is_still_relevant(ns_sql & sql, std::string & reason_not_relevant);
-	void mark_subject_as_busy(const bool busy,ns_sql & sql);
-	void mark_subject_as_problem(const unsigned long problem_id,ns_sql & sql);
-	bool identify_subjects_of_job_specification(std::vector<ns_processing_job_queue_item> & subjects,ns_sql & sql);
-	bool run_job(ns_sql & sql);
-	bool delete_job_after_processing(){return false;}
-	bool flag_job_as_being_processed_before_processing(){return false;}
-};
-*/
+
+#ifndef NS_ONLY_IMAGE_ACQUISITION
 class ns_processing_job_sample_processor : public ns_processing_job_processor{
 public:
-	ns_processing_job_sample_processor(const ns_processing_job & job_, ns_image_server & image_server_, ns_image_processing_pipeline & pipeline_):ns_processing_job_processor(job_,image_server_,pipeline_){}
+	ns_processing_job_sample_processor(const ns_processing_job & job_, ns_image_server & image_server_, ns_image_processing_pipeline * pipeline_):ns_processing_job_processor(job_,image_server_,pipeline_){}
 	ns_processing_job_sample_processor(const ns_processing_job & job_, ns_image_server & image_server_):ns_processing_job_processor(job_,image_server_){}
 	bool job_is_still_relevant(ns_sql & sql, std::string & reason_not_relevant);
 	void mark_subject_as_busy(const bool busy,ns_sql & sql);
@@ -63,7 +60,7 @@ private:
 
 class ns_processing_job_region_processor : public ns_processing_job_processor{
 public:
-	ns_processing_job_region_processor(const ns_processing_job & job_, ns_image_server & image_server_, ns_image_processing_pipeline & pipeline_):ns_processing_job_processor(job_,image_server_,pipeline_){}
+	ns_processing_job_region_processor(const ns_processing_job & job_, ns_image_server & image_server_, ns_image_processing_pipeline * pipeline_):ns_processing_job_processor(job_,image_server_,pipeline_){}
 	ns_processing_job_region_processor(const ns_processing_job & job_, ns_image_server & image_server_):ns_processing_job_processor(job_,image_server_){}
 	bool job_is_still_relevant(ns_sql & sql, std::string & reason_not_relevant);
 	void mark_subject_as_busy(const bool busy,ns_sql & sql);
@@ -76,7 +73,7 @@ public:
 };
 class ns_processing_job_whole_region_processor : public ns_processing_job_processor{
 public:
-	ns_processing_job_whole_region_processor(const ns_processing_job & job_, ns_image_server & image_server_, ns_image_processing_pipeline & pipeline_):ns_processing_job_processor(job_,image_server_,pipeline_){}
+	ns_processing_job_whole_region_processor(const ns_processing_job & job_, ns_image_server & image_server_, ns_image_processing_pipeline * pipeline_):ns_processing_job_processor(job_,image_server_,pipeline_){}
 	ns_processing_job_whole_region_processor(const ns_processing_job & job_, ns_image_server & image_server_):ns_processing_job_processor(job_,image_server_){}
 	bool job_is_still_relevant(ns_sql & sql, std::string & reason_not_relevant);
 	void mark_subject_as_busy(const bool busy,ns_sql & sql);
@@ -88,7 +85,7 @@ public:
 };
 class ns_processing_job_whole_sample_processor : public ns_processing_job_processor{
 public:
-	ns_processing_job_whole_sample_processor(const ns_processing_job & job_, ns_image_server & image_server_, ns_image_processing_pipeline & pipeline_):ns_processing_job_processor(job_,image_server_,pipeline_){}
+	ns_processing_job_whole_sample_processor(const ns_processing_job & job_, ns_image_server & image_server_, ns_image_processing_pipeline * pipeline_):ns_processing_job_processor(job_,image_server_,pipeline_){}
 	ns_processing_job_whole_sample_processor(const ns_processing_job & job_, ns_image_server & image_server_):ns_processing_job_processor(job_,image_server_){}
 	bool job_is_still_relevant(ns_sql & sql, std::string & reason_not_relevant);
 	void mark_subject_as_busy(const bool busy,ns_sql & sql);
@@ -98,9 +95,11 @@ public:
 	bool delete_job_after_processing(){return true;}
 	bool flag_job_as_being_processed_before_processing(){return true;}
 };
+#endif
+
 class ns_processing_job_maintenance_processor : public ns_processing_job_processor{
 public:
-	ns_processing_job_maintenance_processor(const ns_processing_job & job_, ns_image_server & image_server_, ns_image_processing_pipeline & pipeline_):ns_processing_job_processor(job_,image_server_,pipeline_){}
+	ns_processing_job_maintenance_processor(const ns_processing_job & job_, ns_image_server & image_server_, ns_image_processing_pipeline * pipeline_):ns_processing_job_processor(job_,image_server_,pipeline_){}
 	ns_processing_job_maintenance_processor(const ns_processing_job & job_, ns_image_server & image_server_):ns_processing_job_processor(job_,image_server_){}
 	bool job_is_still_relevant(ns_sql & sql, std::string & reason_not_relevant);
 	void mark_subject_as_busy(const bool busy,ns_sql & sql);
@@ -115,9 +114,11 @@ private:
 	bool delete_job_;
 	ns_processing_job parent_job;
 };
+
+#ifndef NS_ONLY_IMAGE_ACQUISITION
 class ns_processing_job_image_processor : public ns_processing_job_processor{
 public:
-	ns_processing_job_image_processor(const ns_processing_job & job_, ns_image_server & image_server_, ns_image_processing_pipeline & pipeline_):ns_processing_job_processor(job_,image_server_,pipeline_){}
+	ns_processing_job_image_processor(const ns_processing_job & job_, ns_image_server & image_server_, ns_image_processing_pipeline * pipeline_):ns_processing_job_processor(job_,image_server_,pipeline_){}
 	ns_processing_job_image_processor(const ns_processing_job & job_, ns_image_server & image_server_):ns_processing_job_processor(job_,image_server_){}
 	bool job_is_still_relevant(ns_sql & sql, std::string & reason_not_relevant);
 	void mark_subject_as_busy(const bool busy,ns_sql & sql);
@@ -127,16 +128,17 @@ public:
 	bool delete_job_after_processing(){return true;}
 	bool flag_job_as_being_processed_before_processing(){return true;}
 };
+#endif
 class ns_processing_job_processor_factory{
 	public:
-	static ns_processing_job_processor * generate(const ns_processing_job & job, 
-		ns_image_server & current_server_, 
-		ns_image_processing_pipeline & pipeline_){return generate(job,current_server_,&pipeline_);}
+	static ns_processing_job_processor * generate(const ns_processing_job & job,
+		ns_image_server & current_server_,
+		ns_image_processing_pipeline * pipeline_);//{return generate(job,current_server_,pipeline_);}
 	static ns_processing_job_processor * generate(const ns_processing_job & job,ns_image_server & current_server_){return generate(job,current_server_,0);}
 	private:
-	static ns_processing_job_processor * generate(const ns_processing_job & job, 
-		ns_image_server& current_server_, 
-		ns_image_processing_pipeline * pipeline_);
+	/*static ns_processing_job_processor * generate(const ns_processing_job & job,
+		ns_image_server& current_server_,
+		ns_image_processing_pipeline * pipeline_);*/
 };
 
 #endif

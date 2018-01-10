@@ -80,8 +80,10 @@ public:
 private:
 	std::vector<ns_processing_job> job_cache;
 	void get_processing_jobs_from_db(ns_sql & sql);
+	#ifndef NS_ONLY_IMAGE_ACQUISITION
 	std::map<unsigned long,ns_machine_analysis_data_loader> movement_record_cache;
-	
+	#endif
+
 };
 
 #endif

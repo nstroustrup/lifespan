@@ -18,9 +18,6 @@
 #include "ns_processing_job_push_scheduler.h"
 #include "ns_worm_training_set_image.h"
 
-void ns_handle_file_delete_request(ns_processing_job & job,ns_sql & sql);
-ns_processing_job ns_handle_file_delete_action(ns_processing_job & job,ns_sql & sql);
-void ns_handle_image_metadata_delete_action(ns_processing_job & job,ns_sql & sql);
 void ns_check_for_file_errors(ns_processing_job & job, ns_sql & sql);
 
 ///After an initial round of processing is completed, problems often crop up that necissiate later processing steps be recomputed.
@@ -240,7 +237,7 @@ public:
 	///given the source image, run() runs the processing steps specified in operations.  operations is a bit map with each entry corresponding to the step
 	///referred to by its ns_processing_task enum value.  Operations flagged as "1" are performed, operations flagged as "0" are skipped.
 	void process_region(const ns_image_server_captured_image_region & region_image, const std::vector<char> operations, ns_sql & sql, const ns_svm_model_specification & model, const ns_lifespan_curve_cache_entry & death_annotations);
-	
+
 	//returns the resolution of the sample.
 	float process_mask(ns_image_server_image & source_image, const ns_64_bit mask_id, ns_sql & sql);
 
@@ -249,10 +246,10 @@ public:
 	///and makes a visualzation of the regions to allow easy verification of mask correctness
 	//returns the mask resolution
 	float analyze_mask(ns_image_server_image & image, const unsigned int resize_factor, const ns_64_bit mask_id, ns_sql & sql);
-	
-	
+
+
 	static void generate_sample_regions_from_mask(ns_64_bit sample_id, const float capture_sample_image_resolution_in_dpi,ns_sql & sql);
-	
+
 	///used for debugging; frees all memory stored on the heap.
 	void clear_heap();
 	void calculate_static_mask_and_heat_map(const std::vector<char> operations, ns_image_server_captured_image_region & region_image, ns_sql & sql);
@@ -279,7 +276,7 @@ public:
 	static void make_video(const ns_64_bit experiment_id, bool grayscale,const std::vector< std::vector<std::string> > path_and_filenames, const ns_video_region_specification & region_spec, const std::vector<ns_vector_2i> registration_offsets, const std::string &output_basename, ns_sql & sql);
 	#endif
 	static void wrap_m4v_stream(const std::string & m4v_filename, const std::string & output_basename, const long number_of_frames, const bool for_ppt,ns_sql & sql);
-	
+
 	static bool preprocessed_step_required(const ns_processing_task & might_be_needed, const ns_processing_task & s);
 
 	//void characterize_movement(ns_worm_movement_measurement_set & record, const std::vector<char> & operations, ns_sql & sql);
@@ -297,7 +294,7 @@ public:
 	static void register_event(const ns_processing_task & task, const ns_image_properties & properties, const ns_image_server_event & source_event,const bool precomputed,ns_sql & sql);
 	static void register_event(const ns_processing_task & task, const ns_image_server_event & source_event,const bool precomputed,ns_sql & sql);
 
-	
+
 
 	ns_lifespan_curve_cache lifespan_curve_cache;
 private:
@@ -358,7 +355,7 @@ private:
 		ns_image_fast_registration_profile_cache::const_handle_t & reference_image,
 		ns_image_fast_registration_profile_cache::external_source_type & external_source);
 	bool check_for_precalculated_registration(const ns_image_server_captured_image & captured_image, ns_vector_2i & registration_offset, ns_sql & sql);
-	
+
 	ns_image_properties get_small_dimensions(const ns_image_properties & prop);
 
 	static void reason_through_precomputed_dependencies(std::vector<char> & operations,ns_precomputed_processing_step_images & precomputed_images);

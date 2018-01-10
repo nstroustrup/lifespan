@@ -10,25 +10,30 @@
 #include "ns_capture_device.h"
 #include "ns_performance_statistics.h"
 #include "ns_image_server_alerts.h"
+#ifndef NS_ONLY_IMAGE_ACQUISITION
+#include "ns_experiment_storyboard.h"
 #include "ns_svm_model_specification.h"
+#endif
 #include "ns_movement_state.h"
 #include "ns_sql_table_lock_manager.h"
 
+#ifndef NS_ONLY_IMAGE_ACQUISITION
 #ifndef NS_MINIMAL_SERVER_BUILD
 #include "ns_posture_analysis_models.h"
 #include "ns_image_server_automated_job_scheduler.h"
 #include "ns_time_path_solver_parameters.h"
-#include "ns_capture_device_manager.h"
+#endif
+#include "ns_image_registration_cache.h"
 #endif
 
-#include "ns_image_registration_cache.h"
-
+#ifndef NS_MINIMAL_SERVER_BUILD
+#include "ns_capture_device_manager.h"
+#endif
 #include <iostream>
 #include <fstream>
 #include "ns_image_server_results_storage.h"
 #include "ns_get_double.h"
 
-#include "ns_experiment_storyboard.h"
 
 ///attached scanners have both human-readable names as well as
 ///USB-assigned hardware addresses.
@@ -37,7 +42,7 @@ struct ns_device_name{
 		hardware_alias;
 };
 
-
+#ifndef NS_ONLY_IMAGE_ACQUISITION
 struct ns_posture_analysis_model_entry_source {
 	ns_posture_analysis_model::ns_posture_analysis_method analysis_method;
 	std::string model_directory;
@@ -58,7 +63,7 @@ private:
 	const std::string & id() const { return name; }
 	void clean_up(ns_posture_analysis_model_entry_source & external_source) {}
 };
-
+#endif
 class ns_thread_output_state{
 public:
 	ns_thread_output_state() :internal_thread_id(0), external_thread_id(0),last_event_sql_id(0),thread_specific_logfile(0) {}
@@ -74,13 +79,13 @@ void ns_write_experimental_data_in_database_to_file(const unsigned long experime
 void ns_zip_experimental_data(const std::string & output_directory,bool delete_original=false);
 bool ns_update_db_using_experimental_data_from_file(const std::string new_database,bool use_existing_database, const std::string & output_directory,ns_sql & sql);
 
-
+#ifndef NS_ONLY_IMAGE_ACQUISITION
 class  ns_storyboard_cache_entry : public ns_simple_cache_data<ns_experiment_storyboard_spec, ns_sql, std::string> {
 public:
 	ns_experiment_storyboard_spec spec;
 	ns_experiment_storyboard_manager manager;
 	ns_experiment_storyboard storyboard;
-	unsigned long creation_time; 
+	unsigned long creation_time;
 	template <class a, class b, bool c>
 		friend class ns_simple_cache;
 private:
@@ -91,7 +96,7 @@ private:
 	const std::string & id() const { return name; }
 	void clean_up(ns_sql & external_source);
 };
-
+#endif
 ///ns_image_server is the portal through which all aspects of an image server node communicates and coordinate with each other
 ///It provides access to all filesystem i/o and SQL connections, as well as managing image-capture devices and logging any errors encountered
 class ns_image_server{
@@ -99,7 +104,7 @@ public:
 	ns_image_server();
 	#ifndef NS_MINIMAL_SERVER_BUILD
 	ns_image_server_device_manager device_manager;
-	
+
 	#endif
 	///image server nodes check the cluster to see if they are running the latest version of the software,
 	///which is specified by (major).(minor).(software_version_compile).
@@ -136,12 +141,12 @@ public:
 	const bool halt_on_new_software_release(){return _halt_on_new_software_release;}
 
 	std::string default_partition()const{return "partition_000";}
-	
+
 	void register_devices(const bool verbose, ns_image_server_sql * sql);
 
 	void set_up_local_buffer();
 	void set_up_model_directory();
-	///Provides a live sql connection to the central database.  
+	///Provides a live sql connection to the central database.
 	ns_sql * new_sql_connection(const std::string & source_file, const unsigned int source_line, const unsigned int retry_count=10) const;
 	ns_sql *new_sql_connection_no_lock_or_retry(const std::string & source_file, const unsigned int source_line) const;
 
@@ -153,7 +158,7 @@ public:
 	void set_sql_database(const std::string & database_name,const bool update_host_registry_in_db,ns_sql & sql);
 	void switch_to_default_db();
 	void reconnect_sql_connection(ns_sql * sql);
-	
+
 	void check_for_sql_database_access(ns_image_server_sql * sql) const;
 
 	const std::string &current_sql_database() const{return *sql_database_choice;}
@@ -164,7 +169,7 @@ public:
 	///shuts down the current image server node.
 	void shut_down_host();
 	///pauses the current host such that it does not take new jobs
-	void pause_host(); 
+	void pause_host();
 	void pause_host(ns_image_server_sql * sql) const;
 
 
@@ -176,7 +181,7 @@ public:
 
 	///if true, the user (or the image server itself) has requested the image server node stop
 	bool exit_has_been_requested;
-	bool handling_exit_request; 
+	bool handling_exit_request;
 	bool ready_to_exit;
 	bool exit_happening_now;
 	///if true, the server will attempt to install new version of image server software when available
@@ -212,7 +217,7 @@ public:
 
 	const std::string & simulated_device_name(){return _simulated_device_name;}
 
-	#ifdef _WIN32 
+	#ifdef _WIN32
 	void set_console_window_title(const std::string & title="") const;
 	#endif
 
@@ -225,7 +230,7 @@ public:
 	///Image caches can quickly exceed Windows default virtual memory limits, so we
 	///specify the maximum amount of memory to be allocated before swapping out to disk
 	static unsigned long maximum_image_cache_memory_size() {return 1024*128; }//128 megabytes
-	
+
 	///Returns the ini-specified name of the subdirectory in which SVM model files are stored
 	static inline std::string position_analysis_model_directory() { return "models" DIR_CHAR_STR "position_analysis_models";}
 	static inline std::string worm_detection_model_directory() { return "models" DIR_CHAR_STR "worm_detection_models";}
@@ -271,7 +276,7 @@ public:
 	}
 
 	void toggle_central_mysql_server_connection_error_simulation()const;
-	
+
 
 	void calculate_experiment_disk_usage(const ns_64_bit experiment_id,ns_sql & sql) const;
 	void clear_old_server_events(ns_sql & sql);
@@ -290,7 +295,7 @@ public:
 
 	///returns a human-readible description of the sql server the image server is using.
 	std::string sql_info(ns_sql & sql){
-		if (sql_server_addresses.empty()) throw ns_ex("sql_info()::No sql sever specified"); 
+		if (sql_server_addresses.empty()) throw ns_ex("sql_info()::No sql sever specified");
 		return sql_user + std::string("@") + sql.hostname() + std::string(".") + *sql_database_choice;
 	}
 
@@ -325,8 +330,11 @@ public:
 	void clear(){
 		if(cleared)
 			return;
+
+		#ifndef NS_ONLY_IMAGE_ACQUISITION
 		image_registration_profile_cache.clear_cache_without_cleanup();
 		image_storage.cache.clear_cache_without_cleanup();
+		#endif
 		#ifndef NS_MINIMAL_SERVER_BUILD
 		device_manager.clear();
 		#endif
@@ -364,41 +372,41 @@ public:
 	//the path to the base directory where analyzed results are stored
 	std::string results_storage_directory;
 
+	void request_database_from_db_and_switch_to_it(ns_sql & sql, bool update_hosts_records_in_db);
+#ifndef NS_ONLY_IMAGE_ACQUISITION
 	typedef ns_simple_cache<ns_posture_analysis_model_entry, std::string, true> ns_posture_analysis_model_cache;
 
 	typedef ns_simple_cache<ns_storyboard_cache_entry, std::string, true> ns_storyboard_cache;
-
 
 
 #ifndef NS_MINIMAL_SERVER_BUILD
 	///Given the name of an SVM machine learning model specification, returns the
 	///model file as loaded from the default model directory on the central file server
 	void get_worm_detection_model(const std::string & name, ns_worm_detection_model_cache::const_handle_t & handle);
-	
+
 	void get_posture_analysis_model_for_region(const ns_64_bit region_info_id, typename ns_posture_analysis_model_cache::const_handle_t & it, ns_sql & sql);
 
 	void get_storyboard(const ns_experiment_storyboard_spec & spec, ns_storyboard_cache::const_handle_t & handle, ns_sql & sql);
 	void clean_up_storyboard_cache(bool remove_all, ns_sql & sql);
 
-	
+
 	ns_time_path_solver_parameters get_position_analysis_model(const std::string & model_name,bool create_default_if_does_not_exist=false,const ns_64_bit region_info_id_for_default=0, ns_sql * sql_for_default=0) const;
 	#endif
 	///Clear all SVM machine learning models from the model cache so they are
 	///reloaded from the disk
 	void clear_model_cache(){
 		worm_detection_model_cache.clear_cache_without_cleanup();
-#ifndef NS_MINIMAL_SERVER_BUILD
-		posture_analysis_model_cache.clear_cache_without_cleanup();
-#endif
+		#ifndef NS_MINIMAL_SERVER_BUILD
+				posture_analysis_model_cache.clear_cache_without_cleanup();
+		#endif
 	}
-
-	void request_database_from_db_and_switch_to_it(ns_sql & sql, bool update_hosts_records_in_db);
 
 	///Searches the default SVM machine learning model directory on the central file server and returns
 	///a list of all models present there
 	void load_all_worm_detection_models(std::vector<ns_worm_detection_model_cache::const_handle_t> & spec);
 
 	ns_64_bit make_record_for_new_sample_mask(const ns_64_bit sample_id, ns_sql & sql);
+	#endif
 
 	std::string capture_preview_parameters(const ns_capture_device::ns_device_preview_type & type,ns_sql & sql);
 
@@ -406,14 +414,16 @@ public:
 
 	std::string get_cluster_constant_value(const std::string & key, const std::string & default_value, ns_image_server_sql * sql)const;
 	void set_cluster_constant_value(const std::string & key, const std::string & value, ns_image_server_sql * sql, const int time_stamp=-1);
-	
+
+
 	#ifndef NS_MINIMAL_SERVER_BUILD
+		#ifndef NS_ONLY_IMAGE_ACQUISITION
 		void perform_experiment_maintenance(ns_sql & sql) const;
+		#endif
 		static void process_experiment_capture_schedule_specification(const std::string & input_file,std::vector<std::string> & warnings,const bool overwrite_previous_experiment=false,const bool submit_to_db=false,const std::string & summary_output_file="",const bool output_to_stdout = false);
 
-	void start_autoscans_for_device(const std::string & device_name,ns_sql & sql);	
+	void start_autoscans_for_device(const std::string & device_name,ns_sql & sql);
 	#endif
-
 	bool upgrade_tables(ns_sql_connection * sql,const bool just_test_if_needed,const std::string & schema_name, const bool updating_local_buffer);
 	std::ofstream * write_device_configuration_file() const;
 	std::ifstream * read_device_configuration_file() const;
@@ -428,9 +438,10 @@ public:
 	void register_alerts_as_handled();
 	unsigned long maximum_number_of_processing_threads() const{ return maximum_number_of_processing_threads_;}
 
-	
+
+#ifndef NS_ONLY_IMAGE_ACQUISITION
 	ns_simple_cache<ns_image_fast_registration_profile, ns_64_bit,true> image_registration_profile_cache;
-	
+#endif
 	ns_vector_2i max_terminal_window_size;
 	unsigned long terminal_hand_annotation_resize_factor;
 
@@ -445,7 +456,7 @@ public:
 	ns_64_bit register_server_event(const ns_image_server_event & s_event, ns_image_server_sql * sql,const bool no_display=false)const;
 	ns_64_bit register_server_event(const ns_ex & s_event, ns_image_server_sql * sql)const;
 	void register_server_event_no_db(const ns_image_server_event & s_event,bool no_double_endline=false)const;
-	
+
 	typedef enum{ns_register_in_local_db, ns_register_in_central_db, ns_register_in_central_db_with_fallback} ns_register_type;
 
 	ns_64_bit register_server_event(const ns_register_type type,const ns_image_server_event & s_event) const;
@@ -475,11 +486,11 @@ public:
 
 	void register_job_duration(const ns_processing_task action, const ns_64_bit microseconds)  {
 		ns_acquire_lock_for_scope lock(performance_stats_lock,__FILE__,__LINE__);
-		performance_statistics.register_job_duration(action, microseconds); 
+		performance_statistics.register_job_duration(action, microseconds);
 		lock.release();
 	}
 	void register_job_duration(const ns_performance_statistics_analyzer::ns_operation_state state, const ns_64_bit microseconds) {
-		ns_acquire_lock_for_scope lock(performance_stats_lock, __FILE__, __LINE__); 
+		ns_acquire_lock_for_scope lock(performance_stats_lock, __FILE__, __LINE__);
 		performance_statistics.register_job_duration(state, microseconds);
 		lock.release();
 	}
@@ -504,7 +515,7 @@ public:
 	void set_main_thread_internal_id();
 	std::string get_system_host_name() const {return system_host_name;}
 	void set_additional_host_description(const std::string & d) { additional_host_description = d; }
-	void set_image_processing_run_limits(const unsigned long maximum_runtime_in_seconds_, const unsigned long maximum_number_of_jobs_to_process_) { 
+	void set_image_processing_run_limits(const unsigned long maximum_runtime_in_seconds_, const unsigned long maximum_number_of_jobs_to_process_) {
 		maximum_runtime_in_seconds = maximum_runtime_in_seconds_;
 		maximum_number_of_jobs_to_process = maximum_number_of_jobs_to_process_;
 	}
@@ -526,14 +537,14 @@ public:
 	void increment_system_parallel_process_id() { _system_parallel_process_id++; }
 	const std::string & get_additional_host_description() const { return additional_host_description; }
 	bool processing_time_is_exceeded() const { return (maximum_runtime_in_seconds> 0) && ((ns_current_time() - processing_server_start_time) >= maximum_runtime_in_seconds); }
-	bool number_of_jobs_processed_is_exceeded() const { 
+	bool number_of_jobs_processed_is_exceeded() const {
 		ns_acquire_lock_for_scope lock(processing_run_counter_lock, __FILE__, __LINE__);
-		bool val = (maximum_number_of_jobs_to_process> 0) && (number_of_processing_jobs_run >= maximum_number_of_jobs_to_process); 
+		bool val = (maximum_number_of_jobs_to_process> 0) && (number_of_processing_jobs_run >= maximum_number_of_jobs_to_process);
 		lock.release();
 		return val;
 	}
-	void increment_job_processing_counter(unsigned long i = 1) { 
-		ns_acquire_lock_for_scope lock(processing_run_counter_lock, __FILE__, __LINE__); 
+	void increment_job_processing_counter(unsigned long i = 1) {
+		ns_acquire_lock_for_scope lock(processing_run_counter_lock, __FILE__, __LINE__);
 		number_of_processing_jobs_run += i;
 		lock.release();
 	}
@@ -548,7 +559,7 @@ public:
 	}
 	void reset_empty_job_queue_check_count() { empty_job_queue_check_count = 0; }
 	void incremenent_empty_job_queue_check_count() { empty_job_queue_check_count++; }
-	bool empty_job_queue_check_count_is_exceeded() { 
+	bool empty_job_queue_check_count_is_exceeded() {
 		if (number_of_times_to_check_empty_job_queue_before_stopping == 0)
 			return false;
 		return empty_job_queue_check_count>=number_of_times_to_check_empty_job_queue_before_stopping;
@@ -577,7 +588,7 @@ private:
 
 	//ns_lock alert_handler_lock;
 	ns_single_thread_coordinator alert_handler_thread;
-	
+
 	std::string host_name_suffix;
 	std::vector<std::string> sql_server_addresses;
 	std::vector<std::string> possible_sql_databases;
@@ -619,7 +630,7 @@ private:
 	bool _allow_multiple_processes_per_system;
 
 
-	unsigned long _maximum_memory_allocation_in_mb; 
+	unsigned long _maximum_memory_allocation_in_mb;
 
 	unsigned long next_scan_for_problems_time;
 	unsigned int _dispatcher_port;
@@ -648,13 +659,15 @@ private:
 	mutable std::ofstream event_log;
 	std::string _font_file;
 
+#ifndef NS_ONLY_IMAGE_ACQUISITION
 #ifndef NS_MINIMAL_SERVER_BUILD
 	///memory cache of all used SVM models
 	ns_worm_detection_model_cache worm_detection_model_cache;
-	
+
 	ns_posture_analysis_model_cache posture_analysis_model_cache;
 
 	ns_storyboard_cache storyboard_cache;
+#endif
 #endif
 
 
@@ -672,15 +685,17 @@ private:
 	///used to coordinate the simulator scan (to run test scans without accessing hardware) disk access
 	ns_lock simulator_scan_lock;
 
-	
+
 
 
 	unsigned int _software_version_compile;
-	
+
 	#ifndef NS_MINIMAL_SERVER_BUILD
+	#ifndef NS_ONLY_IMAGE_ACQUISITION
 	mutable ns_image_server_automated_job_scheduler automated_job_scheduler;
 	#endif
-	
+	#endif
+
 	bool cleared;
 };
 
@@ -698,7 +713,7 @@ extern const ns_image_server & image_server_const;
 ///if desired_string == "", then fall_back_prefix and fallback_int are appended to the destination std::string.
 void add_string_or_number(std::string & destination, const std::string & desired_string, const std::string & fallback_prefix, const ns_64_bit fallback_int);
 
-#ifdef _WIN32 
+#ifdef _WIN32
 void ns_update_software(const bool just_launch=false);
 #endif
 

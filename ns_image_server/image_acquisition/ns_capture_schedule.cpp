@@ -1,14 +1,19 @@
 #include "ns_capture_schedule.h"
 #include "ns_xml.h"
 #include <fstream>
+#ifndef NS_ONLY_IMAGE_ACQUISITION
 #include "ns_image_processing_pipeline.h"
+#else
+#endif
+#include "ns_processing_job_scheduler.h"
 using namespace std;
+#include <set>
 
 
 
 std::string ns_experiment_capture_specification::submit_schedule_to_db(std::vector<std::string> & warnings,ns_sql & sql,bool actually_write,bool overwrite_previous){
 	string debug;
-	if (!device_schedule_produced) 
+	if (!device_schedule_produced)
 		throw ns_ex("ns_experiment_capture_specification::submit_schedule_to_db()::The device schedule has not yet been compiled");
 	if (name.length() > 40)
 			throw ns_ex("To avoid lengthy filenames, experiment names must contain 40 characters or less.");
@@ -31,7 +36,7 @@ std::string ns_experiment_capture_specification::submit_schedule_to_db(std::vect
 					debug += warning + ".\n\n";
 				}
 				for (unsigned int k = 0; k < q->second.samples.size(); k++){
-					if (q->second.samples[k]->width < .75 || q->second.samples[k]->height < .75 || 
+					if (q->second.samples[k]->width < .75 || q->second.samples[k]->height < .75 ||
 						q->second.samples[k]->width > 2.5 || q->second.samples[k]->height > 10){
 						string warning;
 						warning+="Sample ";
@@ -62,7 +67,7 @@ std::string ns_experiment_capture_specification::submit_schedule_to_db(std::vect
 		incubator_assignments[res[i][0]] = res[i][1];
 		incubator_location_assignments[res[i][0]] = res[i][2];
 	}
-	
+
 	res.resize(0);
 	sql.clear_query();
 	sql.send_query("BEGIN");
@@ -72,7 +77,7 @@ std::string ns_experiment_capture_specification::submit_schedule_to_db(std::vect
 		sql << "INSERT INTO experiments SET name='" << sql.escape_string(name) << "',description='',`partition`='', time_stamp=0";
 		if (!actually_write){
 			experiment_id = 0;
-			debug+="Creating a new experiment named "; 
+			debug+="Creating a new experiment named ";
 			debug+= name + "\n";
 		}
 		else experiment_id = sql.send_query_get_id();
@@ -81,14 +86,14 @@ std::string ns_experiment_capture_specification::submit_schedule_to_db(std::vect
 		if (!overwrite_previous)
 			throw ns_ex("ns_experiment_capture_specification::submit_schedule_to_db::Experiment already exists and overwrite_previous set to false");
 		if (!actually_write){
-			debug+="Overwriting an existing experiment named "; 
+			debug+="Overwriting an existing experiment named ";
 			debug+= name + " with id = " + res[0][0] + "\n";
 		}
 		experiment_id = ns_atoi64(res[0][0].c_str());
 	}
-	
-	
-	
+
+
+
 	sql.clear_query();
 	res.resize(0);
 	try{
@@ -98,7 +103,7 @@ std::string ns_experiment_capture_specification::submit_schedule_to_db(std::vect
 			if(res.size() != 0){
 				if (!overwrite_previous)
 					throw ns_ex("ns_experiment_capture_specification::submit_schedule_to_db::Sample ") << samples[i].sample_name << " already exists and overwrite_previous set to false";
-				
+
 
 				samples[i].sample_id = ns_atoi64(res[0][0].c_str());
 				ns_processing_job job;
@@ -107,37 +112,37 @@ std::string ns_experiment_capture_specification::submit_schedule_to_db(std::vect
 							debug+="Deleting previous sample (id=" + ns_to_string(job.sample_id) + ").\n";
 				else ns_handle_image_metadata_delete_action(job,sql);
 			}
-			
+
 			sql << "INSERT INTO capture_samples SET experiment_id = " << ns_to_string(experiment_id) << ",name='" << sql.escape_string(samples[i].sample_name) << "'"
 				<< ",device_name='" << sql.escape_string(samples[i].device) << "',parameters='" << sql.escape_string(samples[i].capture_parameters()) << "'"
 				<< ",position_x=" << samples[i].x_position << ",position_y=" << samples[i].y_position
-				<< ",size_x=" << samples[i].width << ",size_y="<<samples[i].height 
-				<< ",incubator_name='" << sql.escape_string(incubator_assignments[samples[i].device]) 
+				<< ",size_x=" << samples[i].width << ",size_y="<<samples[i].height
+				<< ",incubator_name='" << sql.escape_string(incubator_assignments[samples[i].device])
 				<< "',incubator_location='" << sql.escape_string(incubator_location_assignments[samples[i].device])
 				<< "',desired_capture_duration_in_seconds=" <<samples[i].desired_minimum_capture_duration
 				<< ",description='',model_filename='',reason_censored='',image_resolution_dpi='" << samples[i].resolution
-				<< "',device_capture_period_in_seconds=" << capture_schedules[samples[i].internal_schedule_id].device_capture_period 
+				<< "',device_capture_period_in_seconds=" << capture_schedules[samples[i].internal_schedule_id].device_capture_period
 				<< ",number_of_consecutive_captures_per_sample=" << capture_schedules[samples[i].internal_schedule_id].number_of_consecutive_captures_per_sample
 				<< ", time_stamp=0";
 			if (!actually_write){
 				samples[i].sample_id = 0;
-				debug+="Creating a new sample: name:"; 
+				debug+="Creating a new sample: name:";
 				debug += samples[i].sample_name + ", device:" + samples[i].device + "\n\tcapture parameters: \"";
 				debug += samples[i].capture_parameters() + "\"\n";
 			}
 			else{
 				samples[i].sample_id = sql.send_query_get_id();
 			}
-			
+
 			sql.clear_query();
 			res.resize(0);
 		}
-		
+
 		sql.clear_query();
 		res.resize(0);
 
 
-		
+
 		for (unsigned long i = 0; i < capture_schedules.size(); i++){
 			unsigned long device_start_offset = 2*60;
 			unsigned long s_offset(0);
@@ -165,17 +170,17 @@ std::string ns_experiment_capture_specification::submit_schedule_to_db(std::vect
 				p->second.number_of_consecutive_captures_per_sample = p->second.sample_groups.begin()->second.schedule->number_of_consecutive_captures_per_sample;
 				if (p->second.effective_device_period == 0) throw ns_ex("Device period specified as zero!");
 				if (p->second.number_of_consecutive_captures_per_sample == 0) throw ns_ex("Number of consecutive_captures_per_sample specified as zero!");
-				
+
 				//find earliest start time, stop time
 				for (ns_device_capture_schedule::ns_sample_group_list::iterator q = p->second.sample_groups.begin(); q != p->second.sample_groups.end(); q++){
 					if (q->second.schedule->start_time != 0 && q->second.schedule->start_time < ns_current_time())
 						throw ns_ex("Start time specified is in the past") << q->second.schedule->start_time;
 					if (q->first->start_time != 0)
 						q->second.schedule->effective_start_time = q->first->start_time + device_start_offsets[device_name];
-					else 
+					else
 						q->second.schedule->effective_start_time = capture_schedules[i].start_time + device_start_offsets[device_name];
-					
-					q->second.schedule->effective_stop_time = q->second.schedule->effective_start_time + q->second.schedule->duration  + device_start_offsets[device_name]; 
+
+					q->second.schedule->effective_stop_time = q->second.schedule->effective_start_time + q->second.schedule->duration  + device_start_offsets[device_name];
 
 					if (q->second.schedule->effective_start_time < capture_schedules[i].start_time)
 						capture_schedules[i].start_time = q->second.schedule->effective_start_time;
@@ -191,11 +196,11 @@ std::string ns_experiment_capture_specification::submit_schedule_to_db(std::vect
 				}
 			}
 			std::set<string> incubators;
-			
+
 			for (ns_device_schedule_list::iterator device = device_schedules.begin(); device != device_schedules.end(); device++){
 				incubators.insert(incubator_assignments[device->second.device_name]);
 			}
-			
+
 			debug +=  string("Schedule Involves ") + ns_to_string(device_schedules.size()) + " devices in " + ns_to_string( incubators.size()) + " location";
 			if (incubators.size() != 1)
 				debug+="s";
@@ -207,9 +212,9 @@ std::string ns_experiment_capture_specification::submit_schedule_to_db(std::vect
 			debug += "\n";
 			for (ns_device_schedule_list::iterator device = device_schedules.begin(); device != device_schedules.end(); device++){
 				if (!actually_write){
-					debug+=string("\tDevice ") + device->second.device_name + " runs between " + 
-						ns_format_time_string_for_human(capture_schedules[i].start_time + device_start_offsets[device->second.device_name]) + 
-							" and " + 
+					debug+=string("\tDevice ") + device->second.device_name + " runs between " +
+						ns_format_time_string_for_human(capture_schedules[i].start_time + device_start_offsets[device->second.device_name]) +
+							" and " +
 							ns_format_time_string_for_human(capture_schedules[i].stop_time +  device_start_offsets[device->second.device_name]);
 					debug+=" with a capture period of " + ns_capture_schedule::time_string(device->second.effective_device_period) + "\n";
 				}
@@ -224,13 +229,13 @@ std::string ns_experiment_capture_specification::submit_schedule_to_db(std::vect
 			unsigned long number_of_captures(0);
 			for (ns_device_schedule_list::iterator device = device_schedules.begin(); device != device_schedules.end(); device++){
 				const string & device_name = device->first;
-				
+
 				ns_device_start_offset_list::iterator stop_time(device_stop_times.find(device_name));
 				if(stop_time == device_stop_times.end()){
 					device_stop_times[device_name] = 0;
 					stop_time = device_stop_times.find(device_name);
 				}
-				
+
 
 				if (!actually_write){
 					debug+=string("Schedule for device ") + device->second.device_name + ":\n";
@@ -256,7 +261,7 @@ std::string ns_experiment_capture_specification::submit_schedule_to_db(std::vect
 							}
 						}
 						else have_started = true;
-						if (current_sample_group->second.schedule->effective_start_time <= t+device->second.effective_device_period && 
+						if (current_sample_group->second.schedule->effective_start_time <= t+device->second.effective_device_period &&
 							current_sample_group->second.schedule->effective_stop_time >= t+device->second.effective_device_period)
 							break;
 						if (current_sample_group == loop_start_group && current_sample_id == loop_start_sample_id )
@@ -311,7 +316,7 @@ std::string ns_experiment_capture_specification::submit_schedule_to_db(std::vect
 		sql.send_query("UPDATE experiments SET time_stamp = NOW() WHERE time_stamp = 0");
 		sql.send_query("UPDATE capture_samples SET time_stamp = NOW() WHERE time_stamp = 0");
 		sql.send_query("UPDATE capture_schedule SET time_stamp = NOW() WHERE time_stamp = 0");
-		
+
 	}
 	catch(...){
 		sql.send_query("ROLLBACK");
@@ -319,7 +324,7 @@ std::string ns_experiment_capture_specification::submit_schedule_to_db(std::vect
 	}
 	return debug;
 }
-	
+
 
 void ns_sample_capture_specification::from_scan_area_string(const std::string & scan_area){
  	string temp;
@@ -449,10 +454,10 @@ void ns_experiment_capture_specification::produce_device_schedule(){
 			if (p->second.sample_groups.size() == 0) continue;
 			unsigned long device_capture_period(p->second.sample_groups.begin()->second.schedule->device_capture_period);
 			for (ns_device_capture_schedule::ns_sample_group_list::iterator q = p->second.sample_groups.begin(); q != p->second.sample_groups.end(); q++){
-				
+
 				if (q->second.schedule->device_capture_period != device_capture_period)
 					throw ns_ex("Device ") << p->second.device_name << " has multiple periods specified: " << q->second.schedule->device_capture_period << "," << device_capture_period;
-				
+
 				//assign names by sorting them by location
 				std::sort(q->second.samples.begin(),q->second.samples.end(),ns_sample_capture_specification_sorter());
 				char name = 'a';
@@ -496,7 +501,7 @@ void ns_experiment_capture_specification::save_to_xml(string & o)const{
 	xml.add_tag("name",name);
 	if (default_capture_configuration_parameters.size() != 0)
 		xml.add_tag("default_capture_configuration_parameters",default_capture_configuration_parameters);
-	
+
 	xml.add_tag("default_desired_minimum_capture_duration",default_desired_minimum_capture_duration);
 	if (default_sample_naming != ns_experiment_capture_specification::ns_none)
 		xml.add_tag("default_sample_naming","by_device");
@@ -508,13 +513,13 @@ void ns_experiment_capture_specification::save_to_xml(string & o)const{
 		xml.add_tag("name",samples[i].sample_name);
 		xml.add_tag("scan_area",samples[i].generate_scan_area_string());
 		if (samples[i].capture_configuration_parameters.size() != 0 &&
-			default_capture_configuration_parameters != 
+			default_capture_configuration_parameters !=
 			samples[i].capture_configuration_parameters
 			)
 			xml.add_tag("capture_configuration_parameters",samples[i].capture_configuration_parameters);
 		if (samples[i].desired_minimum_capture_duration!=0)
 			xml.add_tag("desired_minimum_capture_duration",samples[i].desired_minimum_capture_duration);
-		
+
 		xml.add_tag("device",samples[i].device);
 		xml.end_group();
 	}
@@ -583,11 +588,11 @@ void ns_experiment_capture_specification::load_from_xml_file(const string & file
 	load_from_xml(os);
 }
 void ns_experiment_capture_specification::confirm_valid_name(const string & name){
-			if (   name.find("=") != name.npos 
-				|| name.find("$") != name.npos 
+			if (   name.find("=") != name.npos
+				|| name.find("$") != name.npos
 				|| name.find("\\") != name.npos
-				|| name.find("/") != name.npos 
-				|| name.find(":") != name.npos 
+				|| name.find("/") != name.npos
+				|| name.find(":") != name.npos
 				|| name.find("?") != name.npos
 				|| name.find("\"") != name.npos
 				|| name.find("<") != name.npos
@@ -604,7 +609,7 @@ void ns_experiment_capture_specification::load_from_xml(const string & o){
 	for (unsigned int i = 0; i < xml.objects.size(); i++){
 		//Handle an Experiment Specification
 		if (xml.objects[i].name == "experiment"){
-		
+
 			name = xml.objects[i].tag("name");
 			confirm_valid_name(name);
 			if (xml.objects[i].tag_specified("default_capture_configuration_parameters"))
@@ -646,7 +651,7 @@ void ns_experiment_capture_specification::load_from_xml(const string & o){
 		else if (xml.objects[i].name == "schedule"){
 			long s = capture_schedules.size();
 			capture_schedules.resize(s+1,s);
-			
+
 			string set_type;
 			xml.objects[i].assign_if_present("samples_that_belong_to_schedule",set_type);
 			if (set_type.size()!=0){
@@ -672,7 +677,7 @@ void ns_experiment_capture_specification::load_from_xml(const string & o){
 		else throw ns_ex("Unkown experiment specification tag:") << xml.objects[i].name;
 	}
 
-	
+
 	cerr << "Loaded " << capture_schedules.size() << " schedules.\n";
 
 	produce_device_schedule();

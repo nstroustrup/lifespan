@@ -1,4 +1,5 @@
 #include "ns_vector_bitmap_interface.h"
+#ifndef NS_ONLY_IMAGE_ACQUISITION
 #include "ns_identify_contiguous_bitmap_regions.h"
 #ifndef NS_MINIMAL_SERVER_BUILD
 using namespace std;
@@ -33,7 +34,7 @@ ns_color_8 ns_hex_string_to_color(const std::string & c){
 //we are removing triangles from the mesh whose neighbors are invalid triangles.
 //to remove the triangle at index i in mesh[], set flag at index i in remove[]
 void ns_clear_neighboring_triangles(const int cur_triangle, const int cur_triangle_offending_side,
-								 const int neighbor_triangle, 
+								 const int neighbor_triangle,
 								 const std::vector<ns_triangle_d> & mesh,
 								 const int * neighbors,
 								 std::vector<char> & remove){
@@ -46,11 +47,11 @@ void ns_clear_neighboring_triangles(const int cur_triangle, const int cur_triang
 	//if an error has occurred, stop
 	if (neighbor_triangle == -1 || remove[neighbor_triangle])
 		return;
-	
+
 
 	//now, we collect enough information to see if there is an invalid neighbor
 
-	//the problem here is that the numbering between the two triangles aren't consistant, so 
+	//the problem here is that the numbering between the two triangles aren't consistant, so
 	//we have to rebuild the topology of the three, figuring out the shared side, the shared vertex,
 	//and which of the two shared vertex, along with the unique vertex of the current triangle,
 	//generated the offending side.
@@ -77,7 +78,7 @@ void ns_clear_neighboring_triangles(const int cur_triangle, const int cur_triang
 			cur_shared_vertex.push_back(i);
 		else cur_unique_vertex = i;
 	}
-	//make sure exactly two vertexes are shared between the triangles. 
+	//make sure exactly two vertexes are shared between the triangles.
 	//If this isn't the case, then the two triangles weren't really neighbors and we're sunk.
 	if (neighbor_shared_vertex.size() != 2 || cur_shared_vertex.size() != 2)
 		throw ns_ex("ns_clear_neighboring_triangles::Incorrect neighboring triangle!");
@@ -87,7 +88,7 @@ void ns_clear_neighboring_triangles(const int cur_triangle, const int cur_triang
 
 	//on the current triangle, find the shared point that generated the offending side with the unqiue current pixel
 	int cur_vertex_to_check = ns_third_point(cur_triangle_offending_side,cur_unique_vertex);
-	
+
 
 	//find the correspoinding point (the poitn that generated the offending side) on the neighbor triangle
 	int neighbor_vertex_to_check = -1;
@@ -106,12 +107,12 @@ void ns_clear_neighboring_triangles(const int cur_triangle, const int cur_triang
 	if (ns_neighboring_vertex(mesh[neighbor_triangle].vertex[neighbor_vertex_to_check],mesh[neighbor_triangle].vertex[neighbor_unique_vertex]))
 		ns_clear_neighboring_triangles(neighbor_triangle,
 										putative_bad_neighbor_side,
-										putuative_bad_neighbor_id , 
+										putuative_bad_neighbor_id ,
 										mesh,neighbors,remove);
 }
 
 void ns_process_hole_finding(ns_image_bitmap & temp, std::vector<ns_vector_2d> & holes){
-	
+
 	//at this point all holes should be white on a black background.
 	std::vector<ns_detected_object *> hole_objects;
 	ns_identify_contiguous_bitmap_regions(temp,hole_objects);
@@ -128,6 +129,7 @@ void ns_process_hole_finding(ns_image_bitmap & temp, std::vector<ns_vector_2d> &
 	for (unsigned int i = 0; i < hole_objects.size(); i++)
 		delete hole_objects[i];
 }
+#endif
 #endif
 //Let E be the set {0,1,2}
 //Let S be the set {i,j}
@@ -212,7 +214,8 @@ inline void ns_mean_smooth(const std::vector<T> & in, std::vector<T> & out){
 }
 
 #ifndef NS_MINIMAL_SERVER_BUILD
-template<class ns_component> 
+#ifndef NS_ONLY_IMAGE_ACQUISITION
+template<class ns_component>
 void ns_remove_small_holes_template(ns_image_whole<ns_component> & source, unsigned long max_size_to_remove, std::stack<ns_vector_2i> & flood_fill_stack,ns_image_bitmap & temp){
 	temp.prepare_to_recieve_image(source.properties());
 	const unsigned int w(temp.properties().width),
@@ -286,4 +289,5 @@ void ns_remove_small_holes(ns_image_whole<bool> & source, unsigned long max_size
 }
 
 
+#endif
 #endif

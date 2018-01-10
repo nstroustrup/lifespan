@@ -2152,8 +2152,6 @@ public:
 							Fl::event_key(FL_Control_L) || Fl::event_key(FL_Control_R),
 							Fl::event_key(FL_Alt_L) || Fl::event_key(FL_Alt_R)
 						)) {
-
-
 							Fl::release();
 							demand_window_redraw_from_main_thread();
 							return 1;

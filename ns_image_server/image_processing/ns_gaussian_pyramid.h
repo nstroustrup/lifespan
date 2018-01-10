@@ -1,6 +1,10 @@
 #ifndef NS_GAUSIAN_PYRAMID_H
 #define NS_GAUSIAN_PYRAMID_H
 #include "ns_subpixel_image_alignment.h"
+
+#ifndef NS_USE_INTEL_IPP
+XXX DO NOT COMPILE
+#else
 #include "ipp.h"
 #ifdef _MSC_VER
 #define finline                     __forceinline
@@ -351,4 +355,5 @@ private:
 	Ipp8u   *pPyrLStateBuf;
 	Ipp8u   *pPyrLBuffer;
 };
+#endif
 #endif

@@ -184,9 +184,9 @@ typedef enum { ns_none, ns_activate, ns_deactivate } ns_menu_bar_request;
 
 class ns_area_handler{
 public:
-	ns_area_handler():unfinished_box_exists(false),selected_box_exists(false),moved_since_last_click(false),created_new_box_in_current_click(false){current_unfinished_box = boxes.end(); selected_box = boxes.end();}
+	ns_area_handler():unfinished_box_exists(false),selected_box_exists(false),moved_since_last_click(false), last_pixel_scaling(0),created_new_box_in_current_click(false){current_unfinished_box = boxes.end(); selected_box = boxes.end();}
 	typedef enum {ns_select_handle,ns_move_handle,ns_deselect_handle,ns_move_all_boxes} ns_handle_action;
-
+	void undraw_all_boxes(ns_8_bit * screen_buffer, const ns_image_standard & background, const unsigned long image_scaling, const double pixel_scaling) const;
 	void click(const ns_handle_action & action,const ns_vector_2i & image_pos, const ns_vector_2i & screen_pos,ns_8_bit * screen_buffer, const ns_image_standard & background,const unsigned long scaling, const double pixel_scaling);
 	void output_boxes(std::ostream & out, const std::string & device_name,const float & resolution,const std::string & units);
 	void clear_boxes();
@@ -210,7 +210,8 @@ public:
 		
 	}
 private:
-	void remove_box_from_screen_buffer(const std::vector<ns_area_box>::iterator b, ns_8_bit * screen_buffer, const ns_image_standard & background,const unsigned long scaling, const double pixel_scaling) const;
+	double last_pixel_scaling;
+	void remove_box_from_screen_buffer(const std::vector<ns_area_box>::const_iterator b, ns_8_bit * screen_buffer, const ns_image_standard & background,const unsigned long scaling, const double pixel_scaling) const;
 	std::vector<ns_area_box>::iterator current_unfinished_box;
 	std::vector<ns_area_box>::iterator selected_box;
 	ns_box::ns_box_location cur_box_handle;

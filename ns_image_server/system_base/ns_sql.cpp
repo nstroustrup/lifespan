@@ -2,6 +2,7 @@
 #include "ns_thread.h"
 #include <string.h>
 #include <stdio.h>
+#include <algorithm>
 
 #ifdef _WIN32 
 #include <errmsg.h>
@@ -54,7 +55,13 @@ void ns_sql_connection::connect(const std::string & server_name, const std::stri
   }
   if (success == NULL){
 	    disconnect();
-		throw ns_ex() << "ns_sql_connection::Could not connect to server: " << latest_error() << ns_sql_fatal;
+		string blocked_password = password;  
+		for (int i = 0; i < blocked_password.size(); i++)
+			blocked_password[i] = '*';
+		if (password.empty())
+			blocked_password = "(Empty password)";
+	//	std::cout << "Current password: " << password.c_str() << "\n";;
+		throw ns_ex() << "ns_sql_connection::Could not connect to server with the credentials (username;password;hostname)=(" << user_id.c_str() << ";" << blocked_password << ";" << server_name.c_str() << "): " << latest_error() << ns_sql_fatal;
   }
 
   

@@ -354,29 +354,43 @@ public:
             const long border_s(20);
 			for (unsigned y = 0; y < ns_image_stream_reciever<ns_image_stream_static_buffer<ns_component> >::_properties.height; y++){
 				for (int x = ns_image_stream_reciever<ns_image_stream_static_buffer<ns_component> >::_properties.width-1; x >= 0 ; x--){
-					long y0((long)y-border_s),
-						 y1(y+border_s),
-						 x0((long)x-border_s),
-						 x1(x+border_s);
-					if (y0 < 0) y0 = 0;
-					if (y1 > (long)ns_image_stream_reciever<ns_image_stream_static_buffer<ns_component> >::_properties.height)
-						y1 =  (long)ns_image_stream_reciever<ns_image_stream_static_buffer<ns_component> >::_properties.height;
-					if (x0 < 0) x0 = 0;
-					if (x1 >  (long)ns_image_stream_reciever<ns_image_stream_static_buffer<ns_component> >::_properties.width)
-						x1 =  (long)ns_image_stream_reciever<ns_image_stream_static_buffer<ns_component> >::_properties.width;
-
-					
-					const ns_component cur_index((*mask_visualization_output)[y][x]);
 
 					bool found_diff(false);
-					if (cur_index != 0){
-						for (unsigned int dy = (unsigned int)y0; (unsigned int)dy < (unsigned int)y1 && !found_diff; dy++)
-							for (unsigned int dx = (unsigned int)x0; (unsigned int)dx < (unsigned int)x1; dx++){
-								if (im[dy][dx] !=  cur_index){
+					const ns_component cur_index((*mask_visualization_output)[y][x]);
+					if (cur_index != 0) {
+
+
+						long y0((long)y - border_s),
+							y1(y + border_s),
+							x0((long)x - border_s),
+							x1(x + border_s);
+
+						if (y0 < 0) {
+							y0 = 0;
+							found_diff = true;
+						}
+						if (y1 > (long)ns_image_stream_reciever<ns_image_stream_static_buffer<ns_component> >::_properties.height) {
+							y1 = (long)ns_image_stream_reciever<ns_image_stream_static_buffer<ns_component> >::_properties.height;
+							found_diff = true;
+						}
+						if (x0 < 0) {
+							x0 = 0;
+							found_diff = true;
+						}
+						if (x1 > (long)ns_image_stream_reciever<ns_image_stream_static_buffer<ns_component> >::_properties.width) {
+							x1 = (long)ns_image_stream_reciever<ns_image_stream_static_buffer<ns_component> >::_properties.width;
+							found_diff = true;
+						}
+
+						if (cur_index != 0) {
+							for (unsigned int dy = (unsigned int)y0; (unsigned int)dy < (unsigned int)y1 && !found_diff; dy++)
+								for (unsigned int dx = (unsigned int)x0; (unsigned int)dx < (unsigned int)x1; dx++) {
+									if (im[dy][dx] != cur_index) {
 										found_diff = true;
 										break;
+									}
 								}
-							}
+						}
 					}
 
 					if (found_diff){

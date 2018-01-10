@@ -1,6 +1,7 @@
 cmake_minimum_required(VERSION 2.8)
 project (ns_image_server)
 #include(CheckTypeSize)
+
 option (BUILD_WORM_BROWSER "Compile the worm browser")
 option (ONLY_IMAGE_ACQUISITION "Compile the image server with image processing disabled.")
 
@@ -31,8 +32,6 @@ file(GLOB_RECURSE image_processing_HEADERS "${PROJECT_SOURCE_DIR}/../ns_image_se
 
 file(GLOB_RECURSE movement_analysis_SOURCES "${PROJECT_SOURCE_DIR}/../ns_image_server/movement_analysis/*.cpp")
 file(GLOB_RECURSE movement_analysis_HEADERS "${PROJECT_SOURCE_DIR}/../ns_image_server/movement_analysis/*.h")
-
-else()
 
 endif()
 

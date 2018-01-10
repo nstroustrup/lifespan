@@ -1,7 +1,9 @@
 #include "ns_capture_schedule.h"
 #include "ns_xml.h"
 #include <fstream>
+#ifndef ONLY_IMAGE_ACQUISITION
 #include "ns_image_processing_pipeline.h"
+#endif
 using namespace std;
 
 

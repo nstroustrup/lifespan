@@ -2204,7 +2204,11 @@ void ns_image_server::load_constants(const ns_image_server::ns_image_server_exec
 		_scanner_list_command	= constants["device_list_command"];
 		_scanner_list_coord = constants["device_barcode_coordinates"];
 		_act_as_processing_node = ns_to_bool(constants["act_as_processing_node"]);
-		_halt_on_new_software_release = ns_to_bool(constants["halt_on_new_software_release"]);
+#ifdef NS_ONLY_IMAGE_ACQUISITION
+if (_act_as_processing_node)
+	throw ns_ex("This software was compiled with the NS_ONLY_IMAGE_ACQUISITION flag set, and so cannot process images.  In the image_server.ini file, act_as_processing_node must be set to false.")
+#endif
+	_halt_on_new_software_release = ns_to_bool(constants["halt_on_new_software_release"]);
 		_video_compiler_filename = constants["video_compiler_filename"];
 		_video_ppt_compiler_filename = constants["video_ppt_compiler_filename"];
 		_latest_release_path = constants["latest_release_path"];

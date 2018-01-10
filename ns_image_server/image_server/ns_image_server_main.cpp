@@ -519,7 +519,6 @@ ns_image_server_sql * ns_connect_to_available_sql_server(){
 }
 #ifdef NS_USE_INTEL_IPP
 #include "ipp.h"
-#endif
 #include "ns_gaussian_pyramid.h"
 bool ns_test_ipp() {
 
@@ -533,6 +532,7 @@ bool ns_test_ipp() {
 	p.calculate(im,ns_vector_2i(0,0),ns_vector_2i(d,d));
 	return p.num_current_pyramid_levels > 0;
 }
+#endif
 
 int main(int argc, char ** argv){
 

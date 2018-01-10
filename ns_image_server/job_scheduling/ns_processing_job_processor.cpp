@@ -22,7 +22,7 @@ ns_processing_job_processor * ns_processing_job_processor_factory::generate(cons
 			return new ns_processing_job_sample_processor(job,image_server);
 		else 	return new ns_processing_job_sample_processor(job,image_server,*pipeline);
 	}
-	
+#ifndef NS_ONLY_IMAGE_ACQUISITION
 	if (job.is_job_type(ns_processing_job::ns_movement_job) && job.movement_record_id != 0){
 		throw ns_ex("Depreciated!");
 		//	if (image_server==0)
@@ -41,7 +41,7 @@ ns_processing_job_processor * ns_processing_job_processor_factory::generate(cons
 			return new ns_processing_job_whole_region_processor(job,image_server);
 			else 	return new ns_processing_job_whole_region_processor(job,image_server,*pipeline);
 	}
-
+#endif
 	if (job.is_job_type(ns_processing_job::ns_whole_sample_job)){
 		if (pipeline == 0)
 			return new ns_processing_job_whole_sample_processor(job,image_server);
@@ -53,13 +53,13 @@ ns_processing_job_processor * ns_processing_job_processor_factory::generate(cons
 			return new ns_processing_job_maintenance_processor(job,image_server);
 			else 	return new ns_processing_job_maintenance_processor(job,image_server,*pipeline);
 	}
-
+#ifndef NS_ONLY_IMAGE_ACQUISITION
 	if (job.is_job_type(ns_processing_job::ns_image_job)){
 		if (pipeline == 0)
 			return new ns_processing_job_image_processor(job,image_server);
 			else 	return new ns_processing_job_image_processor(job,image_server,*pipeline);
 	}
-
+#endif
 	if (job.is_job_type(ns_processing_job::ns_whole_experiment_job) ||
 		job.is_job_type(ns_processing_job::ns_experiment_job))
 			throw ns_ex("ns_processing_job_processor_factory::generate()::Whole experiment and experiment jobs not implemented.");
@@ -153,7 +153,7 @@ void ns_processing_job_sample_processor::mark_subject_as_problem(ns_64_bit probl
 	im.mark_as_problem(&sql,problem_id);
 	//sql.send_query();
 }
-
+#ifndef NS_ONLY_IMAGE_ACQUISITION
 void ns_processing_job_region_processor::handle_concequences_of_job_completion(ns_sql & sql){
 	ns_image_server_push_job_scheduler push_scheduler;
 	ns_image_server_captured_image_region region_image(ns_get_region_image(job));
@@ -210,10 +210,8 @@ void ns_processing_job_whole_sample_processor::mark_subject_as_busy(const bool b
 void ns_processing_job_whole_sample_processor::mark_subject_as_problem(const ns_64_bit problem_id,ns_sql & sql){
 	return;
 }
-
-bool 
-	
-ns_processing_job_maintenance_processor::job_is_still_relevant(ns_sql & sql, std::string & reason_not_relevant){
+#endif
+bool ns_processing_job_maintenance_processor::job_is_still_relevant(ns_sql & sql, std::string & reason_not_relevant){
 	return true;
 }
 void ns_processing_job_maintenance_processor::mark_subject_as_busy(const bool busy,ns_sql & sql){
@@ -224,7 +222,7 @@ void ns_processing_job_maintenance_processor::mark_subject_as_problem(const ns_6
 	sql.send_query();
 	return;
 }
-
+#ifndef NS_ONLY_IMAGE_ACQUISITION
 bool ns_processing_job_image_processor::job_is_still_relevant(ns_sql & sql, std::string & reason_not_relevant){
 	return true;
 }
@@ -234,7 +232,7 @@ void ns_processing_job_image_processor::mark_subject_as_busy(const bool busy,ns_
 void ns_processing_job_image_processor::mark_subject_as_problem(const ns_64_bit problem_id,ns_sql & sql){
 	return;
 }
-
+#endif
 bool ns_processing_job_sample_processor::identify_subjects_of_job_specification(std::vector<ns_processing_job_queue_item> & subjects,ns_sql & sql){
 	if (job.operations[ns_process_apply_mask] != 0){
 		//check to see that the region has a mask
@@ -279,7 +277,7 @@ bool ns_processing_job_sample_processor::identify_subjects_of_job_specification(
 	}
 	return false;
 }
-
+#ifndef NS_ONLY_IMAGE_ACQUISITION
 bool ns_processing_job_region_processor::identify_subjects_of_job_specification(std::vector<ns_processing_job_queue_item> & subjects, ns_sql & sql) {
 	sql << "SELECT id FROM sample_region_images WHERE region_info_id=" << job.region_id << " AND problem =0 AND censored = 0 AND currently_under_processing=0";
 	bool found_one(false);
@@ -344,6 +342,7 @@ bool ns_processing_job_whole_region_processor::identify_subjects_of_job_specific
 	return true;
 
 }
+#endif
 bool ns_processing_job_whole_sample_processor::identify_subjects_of_job_specification(std::vector<ns_processing_job_queue_item> & subjects,ns_sql & sql){
 	sql << "SELECT id FROM captured_images WHERE sample_id=" << job.sample_id << " LIMIT 1";
 	ns_sql_result res;
@@ -432,6 +431,7 @@ bool ns_processing_job_movement_processor::run_job(ns_sql & sql){
 	pipeline->characterize_movement(movement_record, job.operations, sql);
 	return true;
 }*/
+#ifndef NS_ONLY_IMAGE_ACQUISITION
 ns_64_bit ns_processing_job_region_processor::run_job(ns_sql & sql){
 	try {
 		ns_image_server_captured_image_region region_image(ns_get_region_image(job));
@@ -540,7 +540,7 @@ ns_64_bit ns_processing_job_whole_region_processor::run_job(ns_sql & sql) {
 	}		
 	return 0;
 }
-
+#endif
 ns_64_bit ns_processing_job_whole_sample_processor::run_job(ns_sql & sql) {
 	try {
 		ns_image_server_captured_image sample_image;
@@ -663,7 +663,7 @@ ns_64_bit ns_processing_job_maintenance_processor::run_job(ns_sql & sql) {
 			ns_image_processing_pipeline::generate_sample_regions_from_mask(job.sample_id, atof(res[0][0].c_str()), sql);
 			break;
 		}
-
+		#ifndef NS_ONLY_IMAGE_ACQUISITION
 		case ns_maintenance_recalc_worm_morphology_statistics: {
 			if (job.region_id == 0)
 				throw ns_ex("Can only calculate worm morphology timeseries for each region individually");
@@ -780,6 +780,7 @@ ns_64_bit ns_processing_job_maintenance_processor::run_job(ns_sql & sql) {
 				m.rebuild_sample_time_relationship_table(sql);
 			break;*/
 		}
+#endif
 		case ns_maintenance_check_for_file_errors: {
 			ns_check_for_file_errors(job, sql);
 			break;
@@ -790,6 +791,7 @@ ns_64_bit ns_processing_job_maintenance_processor::run_job(ns_sql & sql) {
 			image_server->calculate_experiment_disk_usage(job.experiment_id, sql);
 			break;
 		}
+	#ifndef NS_ONLY_IMAGE_ACQUISITION
 		case ns_maintenance_compress_stored_images: {
 			std::vector<std::string> image_columns_to_convert;
 			image_columns_to_convert.push_back("image_id");
@@ -1075,7 +1077,7 @@ ns_64_bit ns_processing_job_maintenance_processor::run_job(ns_sql & sql) {
 			}
 			break;
 		}
-
+#endif
 		case ns_maintenance_delete_files_from_disk_request:
 			delete_job_ = false;
 			ns_handle_file_delete_request(job, sql);
@@ -1086,6 +1088,7 @@ ns_64_bit ns_processing_job_maintenance_processor::run_job(ns_sql & sql) {
 		case ns_maintenance_delete_images_from_database:
 			ns_handle_image_metadata_delete_action(job, sql);
 			break;
+#ifndef NS_ONLY_IMAGE_ACQUISITION
 		case ns_maintenance_generate_subregion_mask: {
 
 			ns_image_server_captured_image_region region_image;
@@ -1153,6 +1156,7 @@ ns_64_bit ns_processing_job_maintenance_processor::run_job(ns_sql & sql) {
 
 			break;
 		}
+		#endif
 		default: throw ns_ex("ns_processing_job_scheduler::Unknown maintenance task");
 		}
 	}

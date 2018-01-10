@@ -820,10 +820,10 @@ std::string ns_death_time_annotation::multiworm_censoring_strategy_label(const n
 }
 std::string ns_death_time_annotation::by_hand_annotation_integration_strategy_label_short(const ns_death_time_annotation::ns_by_hand_annotation_integration_strategy & s){
 	switch(s){
-	case ns_only_machine_annotations:	return "machine_events";
+	case ns_only_machine_annotations:	return "only_machine";
 	case ns_machine_annotations_if_no_by_hand: return "best_events";
-	case ns_only_by_hand_annotations:	return "hand_events";
-	case ns_machine_and_by_hand_annotations: return "both_events";
+	case ns_only_by_hand_annotations:	return "machine_or_by_hand";
+	case ns_machine_and_by_hand_annotations: return "machine_and_by_hand";
 	default: throw ns_ex("ns_death_time_annotation::by_hand_annotation_integration_strategy_label_short()::Unknown strategy: ") << (int)s;
 	}
 

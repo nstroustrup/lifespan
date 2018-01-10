@@ -3648,6 +3648,17 @@ void ns_worm_learner::compile_experiment_survival_and_movement_data(bool use_by_
 	cerr << "Loading Machine Annotations...\n";
 	load_current_experiment_movement_results(type_to_load,experiment_id);
 
+	const bool output_force_fast(false);
+	const bool output_all_censoring_strategies(false);
+	const bool output_alternative_censoring_timings(false);
+	std::vector<ns_death_time_annotation::ns_multiworm_censoring_strategy> censoring_strategies_to_use;
+	if (output_all_censoring_strategies)
+		for (unsigned int censoring_strategy = 0; censoring_strategy < (int)ns_death_time_annotation::ns_number_of_multiworm_censoring_strategies; censoring_strategy++)
+			censoring_strategies_to_use.push_back((ns_death_time_annotation::ns_multiworm_censoring_strategy)censoring_strategy);
+	else
+		censoring_strategies_to_use.push_back(ns_death_time_annotation::ns_include_multiple_worm_cluster_deaths);
+
+
 	//we explicitly check to see if any regions need to have their censoring recalulated.
 	//people were often forgetting to do this, so we now bug them about it.
 	std::vector<ns_64_bit> regions_needing_censoring_recalculation;
@@ -3724,7 +3735,8 @@ void ns_worm_learner::compile_experiment_survival_and_movement_data(bool use_by_
 				
 
 	if (vis == ns_movement_area_plot || vis == ns_movement_scatter_proportion_plot){
-		for (unsigned int censoring_strategy = 0; censoring_strategy < (int)ns_death_time_annotation::ns_number_of_multiworm_censoring_strategies; censoring_strategy++){
+		for (unsigned int k = 0; k < censoring_strategies_to_use.size(); k++) {
+			const int censoring_strategy = (int)censoring_strategies_to_use[k];
 			if (censoring_strategy == (int)ns_death_time_annotation::ns_by_hand_censoring)
 				continue;
 			for (unsigned int bhais = 0; bhais < 2; bhais++){
@@ -3736,14 +3748,16 @@ void ns_worm_learner::compile_experiment_survival_and_movement_data(bool use_by_
 					ns_include_unchanged,
 					results_subject,"grouped_by_plate","movement_timeseries",sql()).output());
 				ns_worm_movement_measurement_summary::out_header(movement_data_plate_file_with_incomplete[censoring_strategy][by_hand_annotation_integration_strategy[bhais]]());
-				movement_data_plate_file_without_incomplete[censoring_strategy][by_hand_annotation_integration_strategy[bhais]].attach(
-					image_server.results_storage.movement_timeseries_data(
-					by_hand_annotation_integration_strategy[bhais],
-					(ns_death_time_annotation::ns_multiworm_censoring_strategy)censoring_strategy,
-					ns_death_time_annotation::ns_censoring_minimize_missing_times,
-					ns_force_to_fast_moving,
-					results_subject,"grouped_by_plate","movement_timeseries",sql()).output());
-				ns_worm_movement_measurement_summary::out_header(movement_data_plate_file_without_incomplete[censoring_strategy][by_hand_annotation_integration_strategy[bhais]]());
+				if (output_force_fast) {
+					movement_data_plate_file_without_incomplete[censoring_strategy][by_hand_annotation_integration_strategy[bhais]].attach(
+						image_server.results_storage.movement_timeseries_data(
+							by_hand_annotation_integration_strategy[bhais],
+							(ns_death_time_annotation::ns_multiworm_censoring_strategy)censoring_strategy,
+							ns_death_time_annotation::ns_censoring_minimize_missing_times,
+							ns_force_to_fast_moving,
+							results_subject, "grouped_by_plate", "movement_timeseries", sql()).output());
+					ns_worm_movement_measurement_summary::out_header(movement_data_plate_file_without_incomplete[censoring_strategy][by_hand_annotation_integration_strategy[bhais]]());
+				}
 			}
 		}	
 		censoring_diagnostics_by_plate_machine.attach(image_server.results_storage.movement_timeseries_data(
@@ -3760,6 +3774,7 @@ void ns_worm_learner::compile_experiment_survival_and_movement_data(bool use_by_
 			results_subject,"grouped_by_plate","censoring_diagnostics",sql()).output());
 		ns_worm_movement_summary_series::output_censoring_diagnostic_header(censoring_diagnostics_by_plate_by_hand());
 		ns_worm_movement_summary_series::output_censoring_diagnostic_header(censoring_diagnostics_by_plate_machine());
+		if (output_alternative_censoring_timings) {
 		movement_data_plate_file_with_alternate_missing_return_strategy_1.attach(image_server.results_storage.movement_timeseries_data(
 			ns_death_time_annotation::ns_machine_annotations_if_no_by_hand,
 			ns_death_time_annotation::ns_merge_multiple_worm_clusters_and_missing_and_censor,
@@ -3767,13 +3782,14 @@ void ns_worm_learner::compile_experiment_survival_and_movement_data(bool use_by_
 			ns_include_unchanged,
 			results_subject,"grouped_by_plate","movement_timeseries",sql()).output());
 		ns_worm_movement_measurement_summary::out_header(movement_data_plate_file_with_alternate_missing_return_strategy_1());	
-		movement_data_plate_file_with_alternate_missing_return_strategy_2.attach(image_server.results_storage.movement_timeseries_data(
-			ns_death_time_annotation::ns_machine_annotations_if_no_by_hand,
-			ns_death_time_annotation::ns_merge_multiple_worm_clusters_and_missing_and_censor,
-			alternate_missing_return_strategy_2,
-			ns_include_unchanged,
-			results_subject,"grouped_by_plate","movement_timeseries",sql()).output());
+			movement_data_plate_file_with_alternate_missing_return_strategy_2.attach(image_server.results_storage.movement_timeseries_data(
+				ns_death_time_annotation::ns_machine_annotations_if_no_by_hand,
+				ns_death_time_annotation::ns_merge_multiple_worm_clusters_and_missing_and_censor,
+				alternate_missing_return_strategy_2,
+				ns_include_unchanged,
+				results_subject, "grouped_by_plate", "movement_timeseries", sql()).output());
 			ns_worm_movement_measurement_summary::out_header(movement_data_plate_file_with_alternate_missing_return_strategy_2());
+		}
 	}
 	
 	
@@ -3819,7 +3835,8 @@ void ns_worm_learner::compile_experiment_survival_and_movement_data(bool use_by_
 				
 				//generate movement series debugging telemetry for each by hand annotation strategy
 				for (unsigned int bhais = 0; bhais < 2; bhais++){
-					for (unsigned int censoring_strategy = 0; censoring_strategy < (int)ns_death_time_annotation::ns_number_of_multiworm_censoring_strategies; censoring_strategy++){
+					for (unsigned int k = 0;  k < censoring_strategies_to_use.size(); k++){
+						const int censoring_strategy = (int)censoring_strategies_to_use[k];
 						if (censoring_strategy == (int)ns_death_time_annotation::ns_by_hand_censoring)
 							continue;
 					
@@ -3842,6 +3859,7 @@ void ns_worm_learner::compile_experiment_survival_and_movement_data(bool use_by_
 							compiled_region,ns_force_to_fast_moving);
 						series.generate_censoring_annotations(movement_results.samples[i].regions[j]->metadata,0,set);
 						series.to_file(movement_results.samples[i].regions[j]->metadata,movement_data_plate_file_with_incomplete[censoring_strategy][by_hand_annotation_integration_strategy[bhais]]());
+						if (output_force_fast)
 						series.to_file(movement_results.samples[i].regions[j]->metadata,movement_data_plate_file_without_incomplete[censoring_strategy][by_hand_annotation_integration_strategy[bhais]]());
 
 						series.from_death_time_annotations(by_hand_annotation_integration_strategy[bhais],
@@ -3853,6 +3871,7 @@ void ns_worm_learner::compile_experiment_survival_and_movement_data(bool use_by_
 					
 						if (censoring_strategy == ns_death_time_annotation::ns_merge_multiple_worm_clusters_and_missing_and_censor){
 
+							if (output_alternative_censoring_timings) {
 							series.from_death_time_annotations(by_hand_annotation_integration_strategy[bhais],
 								(ns_death_time_annotation::ns_multiworm_censoring_strategy)censoring_strategy,
 								alternate_missing_return_strategy_1,
@@ -3860,14 +3879,14 @@ void ns_worm_learner::compile_experiment_survival_and_movement_data(bool use_by_
 							series.generate_censoring_annotations(movement_results.samples[i].regions[j]->metadata,0,set);
 							series.to_file(movement_results.samples[i].regions[j]->metadata,
 									movement_data_plate_file_with_alternate_missing_return_strategy_1());
+								series.from_death_time_annotations(by_hand_annotation_integration_strategy[bhais],
+									(ns_death_time_annotation::ns_multiworm_censoring_strategy)censoring_strategy,
+									alternate_missing_return_strategy_2,
+									compiled_region, ns_include_unchanged);
 
-							series.from_death_time_annotations(by_hand_annotation_integration_strategy[bhais],
-								(ns_death_time_annotation::ns_multiworm_censoring_strategy)censoring_strategy,
-								alternate_missing_return_strategy_2,
-								compiled_region,ns_include_unchanged);
-
-							series.to_file(movement_results.samples[i].regions[j]->metadata,
+								series.to_file(movement_results.samples[i].regions[j]->metadata,
 									movement_data_plate_file_with_alternate_missing_return_strategy_2());
+							}
 
 						}
 
@@ -3891,15 +3910,19 @@ void ns_worm_learner::compile_experiment_survival_and_movement_data(bool use_by_
 				p != movement_data_plate_file_with_incomplete[i].end();
 				p++)
 			p->second.release();
-			for (map<ns_death_time_annotation::ns_by_hand_annotation_integration_strategy , ns_acquire_for_scope<ostream> >::iterator p = 
+		if (output_force_fast) {
+			for (map<ns_death_time_annotation::ns_by_hand_annotation_integration_strategy, ns_acquire_for_scope<ostream> >::iterator p =
 				movement_data_plate_file_without_incomplete[i].begin();
 				p != movement_data_plate_file_without_incomplete[i].end();
 				p++)
-			p->second.release();
+				p->second.release();
+		}
 	}
-	
-	movement_data_plate_file_with_alternate_missing_return_strategy_1.release();
-	movement_data_plate_file_with_alternate_missing_return_strategy_2.release();
+
+	if (output_alternative_censoring_timings) {
+		movement_data_plate_file_with_alternate_missing_return_strategy_1.release();
+		movement_data_plate_file_with_alternate_missing_return_strategy_2.release();
+	}
 	censoring_diagnostics_by_plate_machine.release();
 	censoring_diagnostics_by_plate_by_hand.release();
 	
@@ -4104,8 +4127,13 @@ void ns_worm_learner::compile_experiment_survival_and_movement_data(bool use_by_
 		ns_death_time_annotation::ns_by_hand_annotation_integration_strategy by_hand_annotation_integration_strategy[2] = 
 		{ns_death_time_annotation::ns_machine_annotations_if_no_by_hand,ns_death_time_annotation::ns_only_machine_annotations};
 
+	
+
+
 		for (unsigned int bhais = 0; bhais < 2; bhais++){
-			for (unsigned int censoring_strategy = 0; censoring_strategy < (int)ns_death_time_annotation::ns_number_of_multiworm_censoring_strategies; censoring_strategy++){
+
+			for (int k = 0; k < censoring_strategies_to_use.size(); k++) {
+				int censoring_strategy = (int)censoring_strategies_to_use[k];
 				if (censoring_strategy == (int)ns_death_time_annotation::ns_by_hand_censoring)
 					continue;
 				cerr << "Computing data using censoring strategy " << 
@@ -4126,14 +4154,17 @@ void ns_worm_learner::compile_experiment_survival_and_movement_data(bool use_by_
 					ns_include_unchanged,
 					sub,
 					"strain_aggregates","movement_timeseries",sql()).output());
-				ns_acquire_for_scope<ostream> output_data_without_incomplete(image_server.results_storage.movement_timeseries_data(
-					by_hand_annotation_integration_strategy[bhais],
-					(ns_death_time_annotation::ns_multiworm_censoring_strategy)censoring_strategy,
-					default_missing_return_strategy,
-					ns_force_to_fast_moving,
-					sub,
-					"strain_aggregates","movement_timeseries",sql()).output());
-				if (output_data_with_incomplete.is_null() || output_data_without_incomplete.is_null())
+				ns_acquire_for_scope<ostream> output_data_without_incomplete;
+				if (output_force_fast) {
+					output_data_without_incomplete.attach(image_server.results_storage.movement_timeseries_data(
+						by_hand_annotation_integration_strategy[bhais],
+						(ns_death_time_annotation::ns_multiworm_censoring_strategy)censoring_strategy,
+						default_missing_return_strategy,
+						ns_force_to_fast_moving,
+						sub,
+						"strain_aggregates", "movement_timeseries", sql()).output());
+				}
+				if (output_data_with_incomplete.is_null() || (output_force_fast && output_data_without_incomplete.is_null()))
 					throw ns_ex("Could not open aggregate data file");
 
 				ns_acquire_for_scope<ostream> censoring_diagnostics(image_server.results_storage.movement_timeseries_data(
@@ -4146,28 +4177,30 @@ void ns_worm_learner::compile_experiment_survival_and_movement_data(bool use_by_
 				ns_worm_movement_summary_series::output_censoring_diagnostic_header(censoring_diagnostics());
 
 				ns_worm_movement_measurement_summary::out_header(output_data_with_incomplete());
+				if (output_force_fast)
 				ns_worm_movement_measurement_summary::out_header(output_data_without_incomplete());
 
 
 				ns_acquire_for_scope<ostream> output_data_alternate_missing_return_strategy_1;
 				ns_acquire_for_scope<ostream> output_data_alternate_missing_return_strategy_2;
 				if (censoring_strategy == ns_death_time_annotation::ns_merge_multiple_worm_clusters_and_missing_and_censor){
-				
+					if (output_alternative_censoring_timings) {
 					output_data_alternate_missing_return_strategy_1.attach(image_server.results_storage.movement_timeseries_data(
 					by_hand_annotation_integration_strategy[bhais],
 						(ns_death_time_annotation::ns_multiworm_censoring_strategy)censoring_strategy,
 					alternate_missing_return_strategy_1,
 					ns_include_unchanged,sub,
 					"strain_aggregates","movement_timeseries",sql()).output());
-
-					output_data_alternate_missing_return_strategy_2.attach(image_server.results_storage.movement_timeseries_data(
-					by_hand_annotation_integration_strategy[bhais],
-						(ns_death_time_annotation::ns_multiworm_censoring_strategy)censoring_strategy,
-					alternate_missing_return_strategy_2,
-					ns_include_unchanged,sub,
-					"strain_aggregates","movement_timeseries",sql()).output());
 					ns_worm_movement_measurement_summary::out_header(output_data_alternate_missing_return_strategy_1());
-					ns_worm_movement_measurement_summary::out_header(output_data_alternate_missing_return_strategy_2());
+					
+						output_data_alternate_missing_return_strategy_2.attach(image_server.results_storage.movement_timeseries_data(
+							by_hand_annotation_integration_strategy[bhais],
+							(ns_death_time_annotation::ns_multiworm_censoring_strategy)censoring_strategy,
+							alternate_missing_return_strategy_2,
+							ns_include_unchanged, sub,
+							"strain_aggregates", "movement_timeseries", sql()).output());
+						ns_worm_movement_measurement_summary::out_header(output_data_alternate_missing_return_strategy_2());
+					}
 				}
 		
 				if (1){
@@ -4183,14 +4216,14 @@ void ns_worm_learner::compile_experiment_survival_and_movement_data(bool use_by_
 						aggregated_metadata.sample_name.clear();
 						aggregated_metadata.time_at_which_animals_had_zero_age = 0;
 						ns_death_time_annotation_set set;
-
-						strain_series.from_death_time_annotations(
-						by_hand_annotation_integration_strategy[bhais],
-							(ns_death_time_annotation::ns_multiworm_censoring_strategy)censoring_strategy,
-							default_missing_return_strategy,
-							p->second,ns_force_to_fast_moving);
-						strain_series.to_file(aggregated_metadata,output_data_without_incomplete());
-
+						if (output_force_fast) {
+							strain_series.from_death_time_annotations(
+								by_hand_annotation_integration_strategy[bhais],
+								(ns_death_time_annotation::ns_multiworm_censoring_strategy)censoring_strategy,
+								default_missing_return_strategy,
+								p->second, ns_force_to_fast_moving);
+							strain_series.to_file(aggregated_metadata, output_data_without_incomplete());
+						}
 						strain_series.from_death_time_annotations(
 							by_hand_annotation_integration_strategy[bhais],
 					
@@ -4199,25 +4232,26 @@ void ns_worm_learner::compile_experiment_survival_and_movement_data(bool use_by_
 							p->second,ns_include_unchanged);
 						strain_series.to_file(aggregated_metadata,output_data_with_incomplete());
 
-						if (censoring_strategy == ns_death_time_annotation::ns_merge_multiple_worm_clusters_and_missing_and_censor){
-					//		strain_series.generate_censoring_diagnostic_file(aggregated_metadata,censoring_diagnostics());
+						if (censoring_strategy == ns_death_time_annotation::ns_merge_multiple_worm_clusters_and_missing_and_censor) {
+							//		strain_series.generate_censoring_diagnostic_file(aggregated_metadata,censoring_diagnostics());
+							if (output_alternative_censoring_timings) {
 							strain_series.from_death_time_annotations(
 								by_hand_annotation_integration_strategy[bhais],
-					
+
 								(ns_death_time_annotation::ns_multiworm_censoring_strategy)censoring_strategy,
 								alternate_missing_return_strategy_1,
-								p->second,ns_include_unchanged)	;
-								strain_series.to_file(aggregated_metadata,output_data_alternate_missing_return_strategy_1());
-							
-				//			strain_series.generate_censoring_diagnostic_file(aggregated_metadata,censoring_diagnostics());
+								p->second, ns_include_unchanged);
+							strain_series.to_file(aggregated_metadata, output_data_alternate_missing_return_strategy_1());
 
-							strain_series.from_death_time_annotations(
-								by_hand_annotation_integration_strategy[bhais],
-					
-								(ns_death_time_annotation::ns_multiworm_censoring_strategy)censoring_strategy,
-								alternate_missing_return_strategy_2,
-								p->second,ns_include_unchanged)	;
-								strain_series.to_file(aggregated_metadata,output_data_alternate_missing_return_strategy_2());
+							//			strain_series.generate_censoring_diagnostic_file(aggregated_metadata,censoring_diagnostics());
+								strain_series.from_death_time_annotations(
+									by_hand_annotation_integration_strategy[bhais],
+
+									(ns_death_time_annotation::ns_multiworm_censoring_strategy)censoring_strategy,
+									alternate_missing_return_strategy_2,
+									p->second, ns_include_unchanged);
+								strain_series.to_file(aggregated_metadata, output_data_alternate_missing_return_strategy_2());
+							}
 							
 					//		strain_series.generate_censoring_diagnostic_file(aggregated_metadata,censoring_diagnostics());
 						}
@@ -4226,6 +4260,7 @@ void ns_worm_learner::compile_experiment_survival_and_movement_data(bool use_by_
 					}
 				}
 				output_data_with_incomplete.release();
+				if (output_force_fast)
 				output_data_without_incomplete.release();
 			}
 

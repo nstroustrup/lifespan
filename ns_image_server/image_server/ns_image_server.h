@@ -20,8 +20,9 @@
 #include "ns_time_path_solver_parameters.h"
 #include "ns_capture_device_manager.h"
 #endif
-
+#ifndef NS_ONLY_IMAGE_ACQUISITION
 #include "ns_image_registration_cache.h"
+#endif
 
 #include <iostream>
 #include <fstream>

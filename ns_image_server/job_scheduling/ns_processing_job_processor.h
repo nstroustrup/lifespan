@@ -1,7 +1,13 @@
 #ifndef NS_PROCESSING_JOB_PROCESSOR
 #define NS_PROCESSING_JOB_PROCESSOR
 #include "ns_processing_job_push_scheduler.h"
+#ifndef NS_ONLY_IMAGE_ACQUISITION
 #include "ns_image_processing_pipeline.h"
+#else
+struct ns_image_processing_pipeline {
+
+	};
+#endif
 
 class ns_processing_job_processor{
 public:
@@ -61,6 +67,7 @@ private:
 	std::vector<ns_image_server_captured_image_region> output_regions;
 };
 
+#ifndef NS_ONLY_IMAGE_ACQUISITION
 class ns_processing_job_region_processor : public ns_processing_job_processor{
 public:
 	ns_processing_job_region_processor(const ns_processing_job & job_, ns_image_server & image_server_, ns_image_processing_pipeline & pipeline_):ns_processing_job_processor(job_,image_server_,pipeline_){}
@@ -86,6 +93,7 @@ public:
 	bool delete_job_after_processing(){return true;}
 	bool flag_job_as_being_processed_before_processing(){return true;}
 };
+#endif
 class ns_processing_job_whole_sample_processor : public ns_processing_job_processor{
 public:
 	ns_processing_job_whole_sample_processor(const ns_processing_job & job_, ns_image_server & image_server_, ns_image_processing_pipeline & pipeline_):ns_processing_job_processor(job_,image_server_,pipeline_){}
@@ -115,6 +123,8 @@ private:
 	bool delete_job_;
 	ns_processing_job parent_job;
 };
+
+#ifndef NS_ONLY_IMAGE_ACQUISITION
 class ns_processing_job_image_processor : public ns_processing_job_processor{
 public:
 	ns_processing_job_image_processor(const ns_processing_job & job_, ns_image_server & image_server_, ns_image_processing_pipeline & pipeline_):ns_processing_job_processor(job_,image_server_,pipeline_){}
@@ -127,6 +137,7 @@ public:
 	bool delete_job_after_processing(){return true;}
 	bool flag_job_as_being_processed_before_processing(){return true;}
 };
+#endif
 class ns_processing_job_processor_factory{
 	public:
 	static ns_processing_job_processor * generate(const ns_processing_job & job, 

@@ -213,13 +213,13 @@ void ns_check_for_file_errors(ns_processing_job & job, ns_sql & sql){
 		sql.get_rows(res);
 		if (res.size() == 0)
 			throw ns_ex("ns_check_for_file_errors()::Could not load sample ") << job.sample_id << " from db!";
-		const string sample_name(res[0][0]);
+		const std::string sample_name(res[0][0]);
 		ns_64_bit experiment_id = ns_atoi64( res[0][1].c_str());
 		sql << "SELECT name FROM experiments WHERE id = " << experiment_id;
 		sql.get_rows(res);
 		if (res.size() == 0)
 			throw ns_ex("ns_check_for_file_errors()::Could not load experiment ") << experiment_id << " from db!";
-		const string experiment_name(res[0][0]);
+		const std::string experiment_name(res[0][0]);
 
 		sql << "SELECT id,capture_time, image_id, small_image_id FROM captured_images WHERE problem = 0 AND currently_being_processed=0 AND sample_id = " << job.sample_id;
 		sql.get_rows(res);
@@ -348,7 +348,7 @@ void ns_get_experiment_cleanup_subjects(const ns_64_bit experiment_id, ns_sql_re
 }
 
 void ns_handle_file_delete_request(ns_processing_job & job, ns_sql & sql){
-	vector<ns_file_location_specification> files;
+	std::vector<ns_file_location_specification> files;
 
 	if (job.image_id != 0 &&					//older versions of the software do not respect the "ns_delete_everything_but_raw_data" flag.  
 													//to avoid the situation where old versions will delete all data for an experiment,
@@ -465,7 +465,7 @@ void ns_handle_file_delete_request(ns_processing_job & job, ns_sql & sql){
 
 ns_processing_job ns_handle_file_delete_action(ns_processing_job & job, ns_sql & sql){
 
-	vector<ns_file_location_specification> specs;
+	std::vector<ns_file_location_specification> specs;
 	ns_64_bit parent_job_id(0);
 	image_server_const.image_storage.get_file_deletion_requests(job.delete_file_job_id,parent_job_id,specs,sql);
 
@@ -545,8 +545,8 @@ ns_processing_job ns_handle_file_delete_action(ns_processing_job & job, ns_sql &
 }
 
 void ns_handle_image_metadata_delete_action(ns_processing_job & job,ns_sql & sql){
-	vector<ns_64_bit> regions_to_delete;
-	vector<ns_64_bit> samples_to_delete;
+	std::vector<ns_64_bit> regions_to_delete;
+	std::vector<ns_64_bit> samples_to_delete;
 	ns_64_bit experiment_to_delete(0);
 	bool autocommit_state = sql.autocommit_state();
 	sql.set_autocommit(false);
@@ -637,7 +637,7 @@ void ns_handle_image_metadata_delete_action(ns_processing_job & job,ns_sql & sql
 			if (job.maintenance_flag != ns_processing_job::ns_delete_entire_sample_region){
 				for (unsigned int task = 0; task < (unsigned int)ns_process_last_task_marker; task++){
 					if (!operations[task]) continue;
-					const string db_table(ns_processing_step_db_table_name(task));
+					const std::string db_table(ns_processing_step_db_table_name(task));
 					//if the data is processed for each time point in the image, delete each one
 					if (db_table ==  "sample_region_images"){
 						sql << "DELETE images FROM images,sample_region_images WHERE sample_region_images.region_info_id = " << regions_to_delete[i] << 
@@ -665,7 +665,7 @@ void ns_handle_image_metadata_delete_action(ns_processing_job & job,ns_sql & sql
 
 				//delete processed images
 				for (unsigned int task = 0; task < (unsigned int)ns_process_last_task_marker; task++){
-					const string db_table(ns_processing_step_db_table_name(task));
+					const std::string db_table(ns_processing_step_db_table_name(task));
 					//if the data is processed for each time point in the image, delete each one
 					if (db_table ==  "sample_region_images"){
 						sql << "DELETE images FROM images,sample_region_images WHERE sample_region_images.region_info_id = " << regions_to_delete[i] << 
@@ -775,7 +775,7 @@ bool ns_precomputed_processing_step_images::specify_image_id(const ns_processing
 
 
 
-void recalculate_dependencies(const ns_processing_task to_recalc, vector<char> & operations,ns_precomputed_processing_step_images & precomputed_images){
+void recalculate_dependencies(const ns_processing_task to_recalc, std::vector<char> & operations,ns_precomputed_processing_step_images & precomputed_images){
 	if(!precomputed_images.has_been_calculated(to_recalc)) return;
 	precomputed_images.remove_preprocessed_image(to_recalc);
 	for (unsigned int k = 0; k < operations.size(); k++){
@@ -785,7 +785,7 @@ void recalculate_dependencies(const ns_processing_task to_recalc, vector<char> &
 }
 
 
-bool attempt_to_preload(const ns_processing_task & task,ns_precomputed_processing_step_images & precomputed_images, vector<char> &operations, ns_image_standard &input,ns_sql & sql){
+bool attempt_to_preload(const ns_processing_task & task,ns_precomputed_processing_step_images & precomputed_images, std::vector<char> &operations, ns_image_standard &input,ns_sql & sql){
 	bool computation_needed(true);
 	if (!precomputed_images.is_provided(task))
 		return false;
@@ -819,8 +819,8 @@ void ns_precomputed_processing_step_images::load_from_db(ns_sql & sql){
 
 ///given the source image, run() runs the processing steps specified in operations.  operations is a bit map with each entry corresponding to the step
 ///referred to by its ns_processing_task enum value.  Operations flagged as "1" are performed, operations flagged as "0" are skipped.
-void ns_image_processing_pipeline::process_region(const ns_image_server_captured_image_region & region_im, const vector<char> operations, ns_sql & sql, const ns_svm_model_specification & model, const ns_lifespan_curve_cache_entry & death_annotations){
-	vector<char> ops = operations;
+void ns_image_processing_pipeline::process_region(const ns_image_server_captured_image_region & region_im, const std::vector<char> operations, ns_sql & sql, const ns_svm_model_specification & model, const ns_lifespan_curve_cache_entry & death_annotations){
+	std::vector<char> ops = operations;
 	ns_image_server_captured_image_region region_image(region_im);
 	
 	region_image.load_from_db(region_image.region_images_id,&sql);
@@ -843,14 +843,14 @@ void ns_image_processing_pipeline::process_region(const ns_image_server_captured
 	const bool report_file_activity_to_db(false);
 	bool had_to_use_volatile_storage;
 
-	string hd_compression_rate = image_server_const.get_cluster_constant_value("jp2k_hd_compression_rate", ns_to_string(NS_DEFAULT_JP2K_HD_COMPRESSION), &sql);
+	std::string hd_compression_rate = image_server_const.get_cluster_constant_value("jp2k_hd_compression_rate", ns_to_string(NS_DEFAULT_JP2K_HD_COMPRESSION), &sql);
 	float hd_compression_rate_f = atof(hd_compression_rate.c_str());
 	if (hd_compression_rate_f <= 0)
 		throw ns_ex("Invalid compression rate specified in jp2k_hd_compression_rate cluster constant: ") << hd_compression_rate_f;
 
 	ns_high_precision_timer tm;
 	try{
-		vector<char> operations = ops;
+		std::vector<char> operations = ops;
 		precomputed_images.load_from_db(sql);
 	/*	if (operations[ns_process_movement_paths_visualition_with_mortality_overlay] && 
 			precomputed_images.has_been_calculated(ns_process_movement_paths_visualization)){
@@ -965,7 +965,7 @@ void ns_image_processing_pipeline::process_region(const ns_image_server_captured
 					unprocessed_image.filename = ns_dir::extract_filename_without_extension(unprocessed_image.filename);
 					ns_add_image_suffix(unprocessed_image.filename, ns_jp2k);
 
-					string compression_rate = image_server_const.get_cluster_constant_value("jp2k_compression_rate", ns_to_string(NS_DEFAULT_JP2K_COMPRESSION), &sql);
+					std::string compression_rate = image_server_const.get_cluster_constant_value("jp2k_compression_rate", ns_to_string(NS_DEFAULT_JP2K_COMPRESSION), &sql);
 					float compression_rate_f = atof(compression_rate.c_str());
 					if (compression_rate_f <= 0)
 						throw ns_ex("Invalid compression rate specified in jp2k_compression_rate cluster constant: ") << compression_rate_f;
@@ -1285,7 +1285,7 @@ void ns_image_processing_pipeline::process_region(const ns_image_server_captured
 							
 								ti.pump(a_worm.output_stream(),_image_chunk_size);
 
-								ofstream * metadata_out(image_server_const.image_storage.request_metadata_output(a_worm_im,ns_csv,false,&sql));
+								std::ofstream * metadata_out(image_server_const.image_storage.request_metadata_output(a_worm_im,ns_csv,false,&sql));
 								try{
 									detected_worms().output_feature_statistics(*metadata_out);
 									metadata_out->close();
@@ -1401,7 +1401,7 @@ float ns_image_processing_pipeline::process_mask(ns_image_server_image & source_
 	
 	image_server_const.register_server_event(ns_image_server_event("ns_image_processing_pipeline::Processing Mask for image_id ") << source_image.id,&sql);
 	source_image.load_from_db(source_image.id,&sql);
-	string new_filename = ns_dir::extract_filename_without_extension(source_image.filename);
+	std::string new_filename = ns_dir::extract_filename_without_extension(source_image.filename);
 	new_filename += "_processed.jpg";
 	//create image for visualization
 	sql << "SELECT visualization_image_id,resize_factor FROM image_masks WHERE id = '" << mask_id <<"'";
@@ -1441,7 +1441,7 @@ struct ns_mask_region_sorter_element{
 	ns_vector_2i average,
 				 pos,
 				 size;
-	string name;
+	std::string name;
 	bool operator()(const ns_mask_region_sorter_element &l, const ns_mask_region_sorter_element & r){
 		if (l.average.y == r.average.y) return (l.average.x < l.average.x);
 		return l.average.y < r.average.y;
@@ -1457,14 +1457,14 @@ void ns_image_processing_pipeline::generate_sample_regions_from_mask(ns_64_bit s
 		throw ns_ex("ns_image_processing_pipeline::generate_sample_regions_from_mask()::Could not find sample id ") << sample_id << " in database";
 	if (res[0][0] == "0")
 		throw ns_ex("ns_image_processing_pipeline::generate_sample_regions_from_mask()::sample id ") << sample_id << " has no mask specified";
-	string mask_id = res[0][0];
+	std::string mask_id = res[0][0];
 	const float db_resolution_spec (atof(res[0][1].c_str()));
 	if (db_resolution_spec != capture_sample_image_resolution_in_dpi)
 		throw ns_ex("The database specification of the sample resolution: ") << db_resolution_spec << " does not match that of the mask: " << capture_sample_image_resolution_in_dpi;
 	
 	sql << "SELECT id, mask_value, x_min, y_min, x_max, y_max, x_average, y_average FROM image_mask_regions WHERE mask_id = " << mask_id << " ORDER BY mask_value ASC";
 	sql.get_rows(res);
-	vector<ns_mask_region_sorter_element> mask_regions(res.size());
+	std::vector<ns_mask_region_sorter_element> mask_regions(res.size());
 	std::map<ns_64_bit, ns_mask_region_sorter_element *> mask_finder;
 
 	//sort regions top to boytom based on their positions in the mask
@@ -1609,7 +1609,7 @@ void ns_image_processing_pipeline::clear_heap(){
 
 
 //this is almost always done elsewhere, as part of a movement analysis job!
-void ns_image_processing_pipeline::calculate_static_mask_and_heat_map(const vector<char> operations, ns_image_server_captured_image_region & region_image, ns_sql & sql){
+void ns_image_processing_pipeline::calculate_static_mask_and_heat_map(const std::vector<char> operations, ns_image_server_captured_image_region & region_image, ns_sql & sql){
 	throw ns_ex("Not implemented: run as a movement analysis job");
 	region_image.load_from_db(region_image.region_images_id,&sql);
 
@@ -1698,7 +1698,7 @@ void ns_image_processing_pipeline::calculate_static_mask_and_heat_map(const vect
 
 ///Creates a time-lapse video of the specified region.  A video is made for each of the specified processing steps.
 #ifndef NS_NO_XVID
-void ns_image_processing_pipeline::compile_video(ns_image_server_captured_image_region & region_image, const vector<char> operations,const ns_video_region_specification & region_spec, ns_sql & sql){
+void ns_image_processing_pipeline::compile_video(ns_image_server_captured_image_region & region_image, const std::vector<char> operations,const ns_video_region_specification & region_spec, ns_sql & sql){
 	unsigned long start_time = ns_current_time();
 	//load the region image to get region information
 	region_image.load_from_db(region_image.region_images_id,&sql);
@@ -1706,9 +1706,9 @@ void ns_image_processing_pipeline::compile_video(ns_image_server_captured_image_
 
 	//create a sample image to get output path information
 	ns_file_location_specification spec(image_server_const.image_storage.get_path_for_experiment(region_image.experiment_id,&sql));
-	string output_path = image_server_const.image_storage.get_absolute_path_for_video(spec,false);
+	std::string output_path = image_server_const.image_storage.get_absolute_path_for_video(spec,false);
 	
-	string relative_path(image_server_const.image_storage.get_relative_path_for_video(spec,false));
+	std::string relative_path(image_server_const.image_storage.get_relative_path_for_video(spec,false));
 
 	ns_dir::create_directory_recursive(output_path);
 	sql << "SELECT apply_vertical_image_registration FROM capture_samples WHERE id=" << region_image.sample_id;
@@ -1721,7 +1721,7 @@ void ns_image_processing_pipeline::compile_video(ns_image_server_captured_image_
 
 	//go through and create all requested movies
 	for (unsigned int i = 0; i < (unsigned int)ns_process_last_task_marker; i++){		
-		string relative_path_f(relative_path);
+		std::string relative_path_f(relative_path);
 		if (!operations[i])
 			continue;
 		if (i == ns_process_compile_video || 
@@ -1731,12 +1731,12 @@ void ns_image_processing_pipeline::compile_video(ns_image_server_captured_image_
 			i == ns_process_apply_mask)
 			continue;
 		//cerr << "Compiling " << ns_processing_task_to_string((ns_processing_task)i) << " (" << i << ")";
-		string process_output_path = output_path;
+		std::string process_output_path = output_path;
 		if (ns_processing_step_directory_d((ns_processing_task)i).size() != 0){
-			process_output_path += string(DIR_CHAR_STR);
+			process_output_path += std::string(DIR_CHAR_STR);
 			process_output_path +=ns_processing_step_directory_d((ns_processing_task)i);
 
-			relative_path_f += string(DIR_CHAR_STR);
+			relative_path_f += std::string(DIR_CHAR_STR);
 			relative_path_f +=ns_processing_step_directory_d((ns_processing_task)i);
 
 			ns_dir::create_directory_recursive(process_output_path);
@@ -1759,17 +1759,17 @@ void ns_image_processing_pipeline::compile_video(ns_image_server_captured_image_
 				image_server_const.register_server_event(ns_image_server_event("ns_image_processing_pipeline::Processing step ") << ns_processing_task_to_string((ns_processing_task)i) << " yielded no images.",&sql);
 				continue;
 			}
-			vector<string> filenames;
+			std::vector<std::string> filenames;
 			filenames.reserve(res.size());
 
-			string o_filename = region_image.experiment_name + "=" + region_image.sample_name + "=" + region_image.region_name + "=" + ns_processing_step_directory_d((ns_processing_task)i);
+			std::string o_filename = region_image.experiment_name + "=" + region_image.sample_name + "=" + region_image.region_name + "=" + ns_processing_step_directory_d((ns_processing_task)i);
 			if (region_spec.is_specified()){
 				o_filename += "=(";
 				o_filename += ns_to_string(region_spec.position_x) + "-" + ns_to_string(region_spec.width) + ",";
 				o_filename += ns_to_string(region_spec.position_y) + "-" + ns_to_string(region_spec.height) + ")";
 			}
 
-			string output_basename = process_output_path + DIR_CHAR_STR + o_filename;
+			std::string output_basename = process_output_path + DIR_CHAR_STR + o_filename;
 			ns_dir::convert_slashes(output_basename);
 
 
@@ -1813,14 +1813,14 @@ void ns_image_processing_pipeline::compile_video(ns_image_server_captured_image_
 
 
 ///Creates a time-lapse video of the specified sample.  A video is made for each of the specified processing steps.
-void ns_image_processing_pipeline::compile_video(ns_image_server_captured_image & sample_image, const vector<char> operations, const ns_video_region_specification & region_spec, ns_sql & sql){
+void ns_image_processing_pipeline::compile_video(ns_image_server_captured_image & sample_image, const std::vector<char> operations, const ns_video_region_specification & region_spec, ns_sql & sql){
 	unsigned long start_time = ns_current_time();
 	//load the region image to get region information
 	sample_image.load_from_db(sample_image.captured_images_id,&sql);
 
 	ns_file_location_specification spec(image_server_const.image_storage.get_path_for_experiment(sample_image.experiment_id,&sql));
-	string output_path = image_server_const.image_storage.get_absolute_path_for_video(spec,true);
-	string relative_path = image_server_const.image_storage.get_relative_path_for_video(spec,true);
+	std::string output_path = image_server_const.image_storage.get_absolute_path_for_video(spec,true);
+	std::string relative_path = image_server_const.image_storage.get_relative_path_for_video(spec,true);
 	ns_dir::create_directory_recursive(output_path);
 
 	//go through and create all requested movies
@@ -1878,7 +1878,7 @@ void ns_image_processing_pipeline::compile_video(ns_image_server_captured_image 
 			}
 			
 
-			string o_filename = sample_image.experiment_name + "=" + sample_image.sample_name;
+			std::string o_filename = sample_image.experiment_name + "=" + sample_image.sample_name;
 			
 			if (region_spec.is_specified()){
 				o_filename += "=(";
@@ -1887,7 +1887,7 @@ void ns_image_processing_pipeline::compile_video(ns_image_server_captured_image 
 			}
 
 
-			string output_basename = output_path + DIR_CHAR_STR + o_filename;
+			std::string output_basename = output_path + DIR_CHAR_STR + o_filename;
 			ns_dir::convert_slashes(output_basename);
 
 
@@ -1904,7 +1904,7 @@ void ns_image_processing_pipeline::compile_video(ns_image_server_captured_image 
 				grayscale = true;
 
 			//calculate registration information if required
-			vector<ns_vector_2i> registration_offsets;
+			std::vector<ns_vector_2i> registration_offsets;
 			make_video(sample_image.experiment_id,grayscale, files_to_compile,region_spec,registration_offsets,output_basename,sql);
 			
 			ns_image_server_image video_info;
@@ -1923,19 +1923,19 @@ void ns_image_processing_pipeline::compile_video(ns_image_server_captured_image 
 	}
 }
 ///Creates a time-lapse video of the specified sample.  A video is made for each of the specified processing steps.
-void ns_image_processing_pipeline::compile_video_experiment(ns_image_server_captured_image & sample_image, const vector<char> operations, ns_sql & sql){
+void ns_image_processing_pipeline::compile_video_experiment(ns_image_server_captured_image & sample_image, const std::vector<char> operations, ns_sql & sql){
 }
 #endif
 
-void ns_image_processing_pipeline::wrap_m4v_stream(const string & m4v_filename, const string & output_basename, const long number_of_frames,const bool for_ppt,ns_sql & sql){
+void ns_image_processing_pipeline::wrap_m4v_stream(const std::string & m4v_filename, const std::string & output_basename, const long number_of_frames,const bool for_ppt,ns_sql & sql){
 	//we have now produced a raw mpeg4 stream.
 	//compile it into mp4 movies at four different frame_rates
 	for (unsigned int j = 0; j < 5; j++){
 		
-		string output,
+		std::string output,
 			   error_output;
 		
-		string fps;
+		std::string fps;
 		switch(j){
 			case 0: fps="0.5"; break;
 			case 1: fps="1"; break;
@@ -1943,13 +1943,13 @@ void ns_image_processing_pipeline::wrap_m4v_stream(const string & m4v_filename, 
 			case 3: fps="10"; break;
 			case 4: fps="30"; break;
 		}
-		cout << fps << "fps...";
-		string vid_filename = output_basename + "=" + fps + "fps";
+		std::cout << fps << "fps...";
+		std::string vid_filename = output_basename + "=" + fps + "fps";
 	//if (!for_ppt)
 			vid_filename += ".mp4";
 	//	else vid_filename += ".wmv";
 		ns_dir::delete_file(vid_filename);
-		string param;
+		std::string param;
 		//if (!for_ppt)
 		param = image_server_const.video_compilation_parameters(m4v_filename,vid_filename,number_of_frames,fps,sql);
 		//else param = "-i " + m4v_filename + " -vcodec wmv2 -sameq -r " + fps + " " + vid_filename;
@@ -1969,21 +1969,21 @@ void ns_image_processing_pipeline::wrap_m4v_stream(const string & m4v_filename, 
 		image_server_const.set_console_window_title();
 		#endif
 	}
-	cout << "\n";
+	std::cout << "\n";
 }
 #ifndef NS_NO_XVID
-void ns_image_processing_pipeline::make_video(const ns_64_bit experiment_id, bool grayscale, const vector< vector<string> > path_and_filenames, const ns_video_region_specification & region_spec, const vector<ns_vector_2i> registration_offsets, const string &output_basename, ns_sql & sql){
+void ns_image_processing_pipeline::make_video(const ns_64_bit experiment_id, bool grayscale, const std::vector< std::vector<std::string> > path_and_filenames, const ns_video_region_specification & region_spec, const std::vector<ns_vector_2i> registration_offsets, const std::string &output_basename, ns_sql & sql){
 	
 	ns_xvid_encoder xvid;	
-	vector<string> filenames;
-	vector<string> labels;
+	std::vector<std::string> filenames;
+	std::vector<std::string> labels;
 	filenames.reserve(path_and_filenames.size());
 	labels.reserve(path_and_filenames.size());
 	if (path_and_filenames.size() > 0 && region_spec.timestamp_type != ns_video_region_specification::ns_no_timestamp && path_and_filenames[0].size() < 3)
 		throw ns_ex("ns_image_processing_pipeline::make_vide()::Timestamp requested, but no capture times provided.");
 
 	for (unsigned int j = 0; j < path_and_filenames.size(); j++){
-		string fn = image_server_const.image_storage.get_absolute_path_for_video_image(experiment_id,path_and_filenames[j][0],path_and_filenames[j][1],sql); 
+		std::string fn = image_server_const.image_storage.get_absolute_path_for_video_image(experiment_id,path_and_filenames[j][0],path_and_filenames[j][1],sql); 
 		ns_dir::convert_slashes(fn);
 		if (ns_dir::file_exists(fn))
 			filenames.push_back(fn);
@@ -2014,7 +2014,7 @@ void ns_image_processing_pipeline::make_video(const ns_64_bit experiment_id, boo
 	param.ARG_GREYSCALE = grayscale ? 1 : 0;
 
 	
-	string output_filename =  output_basename + ".m4v";
+	std::string output_filename =  output_basename + ".m4v";
 
 	xvid.run(filenames,param,output_filename,region_spec,labels,registration_offsets);
 	wrap_m4v_stream(output_filename,output_basename,filenames.size(),false,sql);
@@ -2094,7 +2094,7 @@ void ns_image_processing_pipeline::resize_region_image(ns_image_server_captured_
 
 }
 void ns_image_processing_pipeline::apply_mask(ns_image_server_captured_image & captured_image, 
-		vector<ns_image_server_captured_image_region> & output_regions, ns_sql & sql){
+		std::vector<ns_image_server_captured_image_region> & output_regions, ns_sql & sql){
 	
 	output_regions.resize(0);	
 	ns_high_precision_timer timer;
@@ -2220,13 +2220,13 @@ void ns_image_processing_pipeline::apply_mask(ns_image_server_captured_image & c
 		//the record in the sample_region_image table for each new masked region
 
 		//the record in the images table for each masked region
-		vector<ns_image_server_image> output_images;
+		std::vector<ns_image_server_image> output_images;
 		unsigned long mask_info_size = mask_splitter.mask_info()->size();
 		for (unsigned int i = 0; i < res.size(); i++) {
 			ns_64_bit	mask_region_info_id = ns_atoi64(res[i][0].c_str());
 			ns_64_bit 	mask_region_id = ns_atoi64(res[i][2].c_str());
 			int				mask_region_value = atol(res[i][3].c_str()); // if it could accidentally be < 0 (see below) it ought to be an int
-			string			mask_region_name = res[i][1];
+			std::string			mask_region_name = res[i][1];
 
 			if (mask_region_value < 0 || mask_region_value > mask_info_size)
 				throw ns_ex("ns_image_processing_pipeline::Invalid mask value specified in mask.");
@@ -2483,7 +2483,7 @@ bool ns_image_processing_pipeline::preprocessed_step_required(const ns_processin
 }
 
 
-void cancel_dependencies(const ns_processing_task to_cancel, vector<char> & operations,ns_precomputed_processing_step_images & precomputed_images){
+void cancel_dependencies(const ns_processing_task to_cancel, std::vector<char> & operations,ns_precomputed_processing_step_images & precomputed_images){
 	if(!precomputed_images.has_been_calculated(to_cancel)) return;
 	operations[to_cancel] = 0;
 	for (unsigned int k = 0; k < operations.size(); k++){
@@ -2492,7 +2492,7 @@ void cancel_dependencies(const ns_processing_task to_cancel, vector<char> & oper
 	}
 }
 
-bool identify_missing_dependencies(const ns_processing_task & task_required, vector<char> & operations,vector<char> & dependencies_checked,ns_precomputed_processing_step_images & precomputed_images){
+bool identify_missing_dependencies(const ns_processing_task & task_required, std::vector<char> & operations, std::vector<char> & dependencies_checked,ns_precomputed_processing_step_images & precomputed_images){
 
 
 	//the current task is required, mark it so.
@@ -2520,10 +2520,10 @@ bool identify_missing_dependencies(const ns_processing_task & task_required, vec
 	return current_task_is_missing || dependency_is_missing;
 }
 
-void ns_image_processing_pipeline::reason_through_precomputed_dependencies(vector<char> & operations,ns_precomputed_processing_step_images & precomputed_images){
+void ns_image_processing_pipeline::reason_through_precomputed_dependencies(std::vector<char> & operations,ns_precomputed_processing_step_images & precomputed_images){
 
 	//calculate operation dependencies
-	vector<char> dependencies_checked(operations.size(),0);
+	std::vector<char> dependencies_checked(operations.size(),0);
 	for (long i = (long)operations.size()-1; i >= (long)ns_process_spatial; --i){
 		if (operations[i]) identify_missing_dependencies((ns_processing_task)i,operations,dependencies_checked,precomputed_images);
 		
@@ -2725,7 +2725,7 @@ void ns_image_processing_pipeline::overlay_graph(const ns_64_bit region_id,ns_im
 
 
 ///Confirms that the requetsed operations are self consistant.
-void ns_image_processing_pipeline::analyze_operations(const vector<char> & operations){
+void ns_image_processing_pipeline::analyze_operations(const std::vector<char> & operations){
 	first_task = ns_process_last_task_marker;
 	last_task = (ns_processing_task)0;
 	for (unsigned int i = 0; i < operations.size(); i++)
@@ -2771,7 +2771,7 @@ void ns_image_processing_pipeline::analyze_operations(const vector<char> & opera
 
 
 //Confirmst that the specified operations are possible to calculate, and locates any steps that can be loaded from disk rather than re-computed.
-void ns_image_processing_pipeline::analyze_operations(const ns_image_server_captured_image_region & region_image,vector<char> & operations, ns_precomputed_processing_step_images & precomputed_images, ns_sql & sql){
+void ns_image_processing_pipeline::analyze_operations(const ns_image_server_captured_image_region & region_image,std::vector<char> & operations, ns_precomputed_processing_step_images & precomputed_images, ns_sql & sql){
 	
 	//Look to see if any of the processing steps have already been computed
 	sql << "SELECT ";
@@ -3024,7 +3024,7 @@ void ns_rerun_image_registration(const ns_64_bit region_id, ns_sql & sql){
 					task_image.id = ns_atoi64(res[i][4 + j].c_str());
 					if (task_image.id == 0)
 						continue;
-					cout << ns_processing_task_to_string(tasks[j]) << "...";
+					std::cout << ns_processing_task_to_string(tasks[j]) << "...";
 					ns_image_storage_source_handle<ns_8_bit> source(image_server_const.image_storage.request_from_storage(task_image, &sql));
 					source.input_stream().pump(buffer, 1024);
 					source.clear();
@@ -3039,12 +3039,12 @@ void ns_rerun_image_registration(const ns_64_bit region_id, ns_sql & sql){
 					buffer.pump(out_im.output_stream(),1024);
 				}
 				catch(ns_ex & ex){
-					cout << ex.text() << "\n";}
+					std::cout << ex.text() << "\n";}
 			}
 
 		}
 		catch(ns_ex & ex){
-			cout << ex.text() << "\n";
+			std::cout << ex.text() << "\n";
 		}
 	}
 }

@@ -1,10 +1,10 @@
 cmake_minimum_required(VERSION 2.8)
 project (ns_image_server)
 #include(CheckTypeSize)
-option (ADVANCED_MOVEMENT_QUANTIFICATION
-        "Use advanced movement quantitifiation" OFF) 
 option (BUILD_WORM_BROWSER
         "Compile the worm browser" OFF)
+option (ONLY_IMAGE_ACQUISITION)
+        "Compile the image server with image processing disabled." OFF)
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${PROJECT_SOURCE_DIR}/modules/")
 
@@ -26,13 +26,9 @@ file(GLOB_RECURSE image_base_HEADERS "${PROJECT_SOURCE_DIR}/../ns_image_server/i
 list(APPEND image_base_SOURCES "${PROJECT_SOURCE_DIR}/../ns_image_server/image_base/ns_libtiff_interface.c")
 
 
+if (ONLY_IMAGE_ACQUISITION)
 file(GLOB_RECURSE image_processing_SOURCES "${PROJECT_SOURCE_DIR}/../ns_image_server/image_processing/*.cpp")
 file(GLOB_RECURSE image_processing_HEADERS "${PROJECT_SOURCE_DIR}/../ns_image_server/image_processing/*.h")
-
-if(ADVANCED_MOVEMENT_QUANTIFICATION)
-message(ERROR "Advanced movement quantification not currently supported under linux")
-else()
- list(REMOVE_ITEM image_processing_SOURCES "${PROJECT_SOURCE_DIR}/../ns_image_server/image_processing/ns_optical_flow.cpp")
 endif()
 
 file(GLOB_RECURSE job_scheduling_SOURCES "${PROJECT_SOURCE_DIR}/../ns_image_server/job_scheduling/*.cpp")
@@ -89,10 +85,12 @@ set(NS_LN "")
 
 list(APPEND NS_INC ${ns_image_server_base_INCLUDE_DIRS})
 
+if (NOT ONLY_IMAGE_ACQUISITION)
 SET(IPP_STATIC 0)
 find_package(IPP REQUIRED)
 LIST(APPEND NS_INC ${IPP_INCLUDE_DIRS})
 LIST(APPEND NS_LN ${IPP_LIBRARIES})
+endif()
 
 find_package(MYSQL REQUIRED)
 LIST(APPEND NS_INC ${MYSQL_INCLUDE_DIR})
@@ -148,7 +146,13 @@ set(INI_FILE "${CMAKE_INSTALL_FULL_SYSCONFDIR}/ns_image_server.ini")
     set (CMAKE_CXX_STANDARD 11)
   endif ()
 
-add_definitions(-DTRILIBRARY -DNO_TIMER -DANSI_DECLARATORS -DNS_DEFAULT_FONT="${FONT_FILE}" -DNS_INI_PATH="${INI_FILE}" -DUSE_NEW_USB=1 -DNS_USE_INTEL_IPP -DNS_DATA_PATH="${CMAKE_INSTALL_FULL_DATADIR}/")
+add_definitions(-DTRILIBRARY -DNO_TIMER -DANSI_DECLARATORS -DNS_DEFAULT_FONT="${FONT_FILE}" -DNS_INI_PATH="${INI_FILE}" -DUSE_NEW_USB=1 -DNS_DATA_PATH="${CMAKE_INSTALL_FULL_DATADIR}/")
+
+if (ONLY_IMAGE_ACQUISITION)
+add_definitions(-DNS_ONLY_IMAGE_ACQUISITION)
+else()
+add_definitions(-DNS_USE_INTEL_IPP) 
+endif()
 
 set(CMAKE_INSTALL_RPATH ${NS_LN})
 set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)

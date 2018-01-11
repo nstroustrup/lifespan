@@ -55,6 +55,9 @@ else (LIBUSB_1_LIBRARIES AND LIBUSB_1_INCLUDE_DIRS)
       /usr/local/include
       /opt/local/include
       /sw/include
+        ../../../libs/include
+        ../../libs/include
+        ../../include
 	PATH_SUFFIXES
 	  libusb-1.0
   )
@@ -66,7 +69,11 @@ else (LIBUSB_1_LIBRARIES AND LIBUSB_1_INCLUDE_DIRS)
       /usr/lib
       /usr/local/lib
       /opt/local/lib
-      /sw/lib
+      /sw/lib  
+      ../../tools/libdmtx
+      ../../../libs/lib
+      ../../libs/lib
+      ../../lib
   )
 
   set(LIBUSB_1_INCLUDE_DIRS

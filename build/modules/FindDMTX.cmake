@@ -31,6 +31,9 @@ else (DMTX_LIBRARIES AND DMTX_INCLUDE_DIRS)
         /opt/local/include/libdmtx
         /sw/include/libdmtx
         ../../tools/libdmtx
+        ../../../libs/include
+        ../../libs/include
+        ../../include
   )
 
   # debian uses version suffixes
@@ -49,6 +52,9 @@ endif (WIN32)
       /opt/local/lib
       /sw/lib
       ../../tools/libdmtx
+      ../../../libs/lib
+      ../../libs/lib
+      ../../lib
   )
 
   if (DMTX_INCLUDE_DIRS AND DMTX_LIBRARIES)

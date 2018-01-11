@@ -3,7 +3,7 @@
 #include "ns_subpixel_image_alignment.h"
 
 #ifndef NS_USE_INTEL_IPP
-XXX DO NOT COMPILE
+#error MUST USE INTEL IPP UNTIL NEW GAUSSIAN PYRAMID CODE IS TESTED
 #else
 #include "ipp.h"
 #ifdef _MSC_VER

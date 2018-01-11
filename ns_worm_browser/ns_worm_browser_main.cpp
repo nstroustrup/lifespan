@@ -2806,7 +2806,6 @@ void ns_update_sample_info(ns_sql & sql){
 	}
 
 };
-#include "ns_optical_flow.h"
 void refresh_main_window_internal(void *) {
 	current_window->redraw();
 }

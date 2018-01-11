@@ -79,7 +79,7 @@ struct ns_capture_scan_statistics{
 
 class ns_capture_sample_image_statistics{
 public:
-	ns_64_bit sample_id;
+	unsigned long sample_id;
 	std::string experiment_name,
 		sample_name,
 		device_name;

@@ -2769,7 +2769,7 @@ ns_64_bit ns_worm_learner::create_experiment_from_directory_structure(const std:
 			ns_processing_job job;
 			job.image_id = samples[i].mask_image_record_id;
 			job.mask_id = samples[i].mask_id;
-			ns_processing_job_image_processor processor(job,image_server,pipeline);
+			ns_processing_job_image_processor processor(job,image_server,&pipeline);
 			processor.run_job(sql());
 		}
 	}

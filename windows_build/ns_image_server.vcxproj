@@ -203,7 +203,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <BufferSecurityCheck>false</BufferSecurityCheck>
-      <PreprocessorDefinitions>_CRT_SECURE_NO_DEPRECATE;WIN32;NTDDI_VERSION=NTDDI_WINXPSP2;_WIN32_WINNT=0x501;WINVER=0x0501;TRILIBRARY;CPU86;NO_TIMER;ANSI_DECLARATORS;NS_DEFAULT_FONT="c:/windows/fonts/ARIAL.TTF";NS_INI_PATH="c:\\server\\ns_image_server.ini";ARCH_IS_LITTLE_ENDIAN;INCLUDE_STDAFX;NS_USE_ITK_GPU;ONLY_IMAGE_ACQUISITION);%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_CRT_SECURE_NO_DEPRECATE;WIN32;NTDDI_VERSION=NTDDI_WINXPSP2;_WIN32_WINNT=0x501;WINVER=0x0501;TRILIBRARY;CPU86;NO_TIMER;ANSI_DECLARATORS;NS_DEFAULT_FONT="c:/windows/fonts/ARIAL.TTF";NS_INI_PATH="c:\\server\\ns_image_server.ini";ARCH_IS_LITTLE_ENDIAN;INCLUDE_STDAFX;NS_USE_ITK_GPU;NS_USE_INTEL_IPP;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <StringPooling>true</StringPooling>
       <EnableEnhancedInstructionSet>StreamingSIMDExtensions2</EnableEnhancedInstructionSet>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
@@ -285,9 +285,6 @@
     <ClInclude Include="..\external_compile_libraries\jpeg-8d\transupp.h" />
     <ClInclude Include="..\ns_image_server\data_annotation\ns_death_time_annotation.h" />
     <ClInclude Include="..\ns_image_server\data_annotation\ns_death_time_annotation_set.h" />
-    <ClInclude Include="..\ns_image_server\data_annotation\ns_experiment_storyboard.h" />
-    <ClInclude Include="..\ns_image_server\data_annotation\ns_machine_learning_training_set.h" />
-    <ClInclude Include="..\ns_image_server\data_annotation\ns_mask_management.h" />
     <ClInclude Include="..\ns_image_server\image_acquisition\ns_asynchronous_read.h" />
     <ClInclude Include="..\ns_image_server\image_acquisition\ns_barcode.h" />
     <ClInclude Include="..\ns_image_server\image_acquisition\ns_buffered_capture_scheduler.h" />
@@ -295,11 +292,14 @@
     <ClInclude Include="..\ns_image_server\image_acquisition\ns_capture_device.h" />
     <ClInclude Include="..\ns_image_server\image_acquisition\ns_capture_device_manager.h" />
     <ClInclude Include="..\ns_image_server\image_acquisition\ns_capture_schedule.h" />
+    <ClInclude Include="..\ns_image_server\image_acquisition\ns_difference_thresholder.h" />
     <ClInclude Include="..\ns_image_server\image_acquisition\ns_image_cache.h" />
     <ClInclude Include="..\ns_image_server\image_acquisition\ns_image_capture_data_manager.h" />
     <ClInclude Include="..\ns_image_server\image_acquisition\ns_image_server_alerts.h" />
     <ClInclude Include="..\ns_image_server\image_acquisition\ns_image_server_automated_job_scheduler.h" />
     <ClInclude Include="..\ns_image_server\image_acquisition\ns_image_server_dispatcher.h" />
+    <ClInclude Include="..\ns_image_server\image_acquisition\ns_process_16_bit_images.h" />
+    <ClInclude Include="..\ns_image_server\image_acquisition\ns_resampler.h" />
     <ClInclude Include="..\ns_image_server\image_acquisition\ns_usb.h" />
     <ClInclude Include="..\ns_image_server\image_base\ns_buffered_random_access_image.h" />
     <ClInclude Include="..\ns_image_server\image_base\ns_font.h" />
@@ -320,18 +320,17 @@
     <ClInclude Include="..\ns_image_server\image_processing\ns_complex_segment_cluster_solver.h" />
     <ClInclude Include="..\ns_image_server\image_processing\ns_detected_object.h" />
     <ClInclude Include="..\ns_image_server\image_processing\ns_detected_worm_info.h" />
-    <ClInclude Include="..\ns_image_server\image_processing\ns_difference_thresholder.h" />
     <ClInclude Include="..\ns_image_server\image_processing\ns_gaussian_pyramid.h" />
     <ClInclude Include="..\ns_image_server\image_processing\ns_identify_contiguous_bitmap_regions.h" />
+    <ClInclude Include="..\ns_image_server\image_processing\ns_image_processing_pipeline.h" />
     <ClInclude Include="..\ns_image_server\image_processing\ns_image_registration.h" />
     <ClInclude Include="..\ns_image_server\image_processing\ns_image_tools.h" />
+    <ClInclude Include="..\ns_image_server\image_processing\ns_mask_management.h" />
     <ClInclude Include="..\ns_image_server\image_processing\ns_movement_visualization_generator.h" />
     <ClInclude Include="..\ns_image_server\image_processing\ns_node_topology.h" />
     <ClInclude Include="..\ns_image_server\image_processing\ns_node_topology_primitives.h" />
-    <ClInclude Include="..\ns_image_server\image_processing\ns_process_16_bit_images.h" />
     <ClInclude Include="..\ns_image_server\image_processing\ns_process_mask_regions.h" />
     <ClInclude Include="..\ns_image_server\image_processing\ns_region_growing_segmenter.h" />
-    <ClInclude Include="..\ns_image_server\image_processing\ns_resampler.h" />
     <ClInclude Include="..\ns_image_server\image_processing\ns_segment_topology.h" />
     <ClInclude Include="..\ns_image_server\image_processing\ns_spatial_avg.h" />
     <ClInclude Include="..\ns_image_server\image_processing\ns_spine_drawer.h" />
@@ -361,16 +360,18 @@
     <ClInclude Include="..\ns_image_server\image_server\ns_progress_reporter.h" />
     <ClInclude Include="..\ns_image_server\image_server\ns_simple_image_cache.h" />
     <ClInclude Include="..\ns_image_server\image_server\ns_single_thread_coordinator.h" />
-    <ClInclude Include="..\ns_image_server\job_scheduling\ns_image_processing_pipeline.h" />
     <ClInclude Include="..\ns_image_server\job_scheduling\ns_processing_job.h" />
     <ClInclude Include="..\ns_image_server\job_scheduling\ns_processing_job_processor.h" />
     <ClInclude Include="..\ns_image_server\job_scheduling\ns_processing_job_pull_scheduler.h" />
     <ClInclude Include="..\ns_image_server\job_scheduling\ns_processing_job_push_scheduler.h" />
     <ClInclude Include="..\ns_image_server\job_scheduling\ns_processing_job_scheduler.h" />
     <ClInclude Include="..\ns_image_server\job_scheduling\ns_processing_tasks.h" />
+    <ClInclude Include="..\ns_image_server\movement_analysis\ns_experiment_storyboard.h" />
     <ClInclude Include="..\ns_image_server\movement_analysis\ns_hidden_markov_model.h" />
     <ClInclude Include="..\ns_image_server\movement_analysis\ns_hidden_markov_model_posture_analyzer.h" />
     <ClInclude Include="..\ns_image_server\movement_analysis\ns_image_server_time_path_inferred_worm_aggregator.h" />
+    <ClInclude Include="..\ns_image_server\movement_analysis\ns_machine_analysis_data_loader.h" />
+    <ClInclude Include="..\ns_image_server\movement_analysis\ns_movement_measurement.h" />
     <ClInclude Include="..\ns_image_server\movement_analysis\ns_time_path_image_analyzer.h" />
     <ClInclude Include="..\ns_image_server\movement_analysis\ns_time_path_posture_movement_solution.h" />
     <ClInclude Include="..\ns_image_server\movement_analysis\ns_time_path_solver.h" />
@@ -378,8 +379,6 @@
     <ClInclude Include="..\ns_image_server\statistics\ns_jmp_file.h" />
     <ClInclude Include="..\ns_image_server\statistics\ns_lifespan_statistics.h" />
     <ClInclude Include="..\ns_image_server\statistics\ns_linear_regression_model.h" />
-    <ClInclude Include="..\ns_image_server\statistics\ns_machine_analysis_data_loader.h" />
-    <ClInclude Include="..\ns_image_server\statistics\ns_movement_measurement.h" />
     <ClInclude Include="..\ns_image_server\statistics\ns_movement_state.h" />
     <ClInclude Include="..\ns_image_server\statistics\ns_normal_distribution.h" />
     <ClInclude Include="..\ns_image_server\statistics\ns_posture_analysis_models.h" />
@@ -531,17 +530,16 @@
     <ClCompile Include="..\external_compile_libraries\zlib\uncompr.c" />
     <ClCompile Include="..\external_compile_libraries\zlib\zutil.c" />
     <ClCompile Include="..\ns_image_server\data_annotation\ns_death_time_annotation.cpp" />
-    <ClCompile Include="..\ns_image_server\data_annotation\ns_experiment_storyboard.cpp" />
-    <ClCompile Include="..\ns_image_server\data_annotation\ns_machine_learning_training_set.cpp" />
-    <ClCompile Include="..\ns_image_server\data_annotation\ns_mask_management.cpp" />
     <ClCompile Include="..\ns_image_server\image_acquisition\ns_barcode.cpp">
       <CompileAs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">CompileAsCpp</CompileAs>
       <CompileAs Condition="'$(Configuration)|$(Platform)'=='Release (IPP DLL)|Win32'">CompileAsCpp</CompileAs>
     </ClCompile>
     <ClCompile Include="..\ns_image_server\image_acquisition\ns_buffered_capture_scheduler.cpp" />
+    <ClCompile Include="..\ns_image_server\image_acquisition\ns_captured_image_statistics_set.cpp" />
     <ClCompile Include="..\ns_image_server\image_acquisition\ns_capture_device.cpp" />
     <ClCompile Include="..\ns_image_server\image_acquisition\ns_capture_device_manager.cpp" />
     <ClCompile Include="..\ns_image_server\image_acquisition\ns_capture_schedule.cpp" />
+    <ClCompile Include="..\ns_image_server\image_acquisition\ns_difference_thresholder.cpp" />
     <ClCompile Include="..\ns_image_server\image_acquisition\ns_image_capture_data_manager.cpp" />
     <ClCompile Include="..\ns_image_server\image_acquisition\ns_image_server_alerts.cpp" />
     <ClCompile Include="..\ns_image_server\image_acquisition\ns_image_server_dispatcher.cpp" />
@@ -559,11 +557,12 @@
     <ClCompile Include="..\ns_image_server\image_processing\ns_bspline.cpp" />
     <ClCompile Include="..\ns_image_server\image_processing\ns_complex_segment_cluster_solver.cpp" />
     <ClCompile Include="..\ns_image_server\image_processing\ns_detected_worm_info.cpp" />
-    <ClCompile Include="..\ns_image_server\image_processing\ns_difference_thresholder.cpp" />
     <ClCompile Include="..\ns_image_server\image_processing\ns_heat_map_interpolation.cpp" />
     <ClCompile Include="..\ns_image_server\image_processing\ns_identify_contiguous_bitmap_regions.cpp" />
+    <ClCompile Include="..\ns_image_server\image_processing\ns_image_processing_pipeline.cpp" />
     <ClCompile Include="..\ns_image_server\image_processing\ns_image_registration_cache.cpp" />
     <ClCompile Include="..\ns_image_server\image_processing\ns_image_tools.cpp" />
+    <ClCompile Include="..\ns_image_server\image_processing\ns_mask_management.cpp" />
     <ClCompile Include="..\ns_image_server\image_processing\ns_movement_visualization_generator.cpp" />
     <ClCompile Include="..\ns_image_server\image_processing\ns_node_topology.cpp" />
     <ClCompile Include="..\ns_image_server\image_processing\ns_segment_topology.cpp" />
@@ -584,17 +583,16 @@
     <ClCompile Include="..\ns_image_server\image_server\ns_ini.cpp" />
     <ClCompile Include="..\ns_image_server\image_server\ns_simple_cache.cpp" />
     <ClCompile Include="..\ns_image_server\image_server\ns_sql_table_lock_manager.cpp" />
-    <ClCompile Include="..\ns_image_server\job_scheduling\ns_image_processing_pipeline.cpp" />
     <ClCompile Include="..\ns_image_server\job_scheduling\ns_processing_job_processor.cpp" />
     <ClCompile Include="..\ns_image_server\job_scheduling\ns_processing_job_push_scheduler.cpp" />
     <ClCompile Include="..\ns_image_server\job_scheduling\ns_processing_job_scheduler.cpp" />
     <ClCompile Include="..\ns_image_server\movement_analysis\ns_analyze_movement_over_time.cpp" />
+    <ClCompile Include="..\ns_image_server\movement_analysis\ns_experiment_storyboard.cpp" />
     <ClCompile Include="..\ns_image_server\movement_analysis\ns_hidden_markov_model_posture_analyzer.cpp" />
+    <ClCompile Include="..\ns_image_server\movement_analysis\ns_machine_analysis_data_loader.cpp" />
+    <ClCompile Include="..\ns_image_server\movement_analysis\ns_movement_measurement.cpp" />
     <ClCompile Include="..\ns_image_server\movement_analysis\ns_time_path_image_analyzer.cpp" />
     <ClCompile Include="..\ns_image_server\movement_analysis\ns_time_path_solver.cpp" />
-    <ClCompile Include="..\ns_image_server\statistics\ns_captured_image_statistics_set.cpp" />
-    <ClCompile Include="..\ns_image_server\statistics\ns_machine_analysis_data_loader.cpp" />
-    <ClCompile Include="..\ns_image_server\statistics\ns_movement_measurement.cpp" />
     <ClCompile Include="..\ns_image_server\statistics\ns_normal_distribution.cpp" />
     <ClCompile Include="..\ns_image_server\statistics\ns_survival_curve.cpp" />
     <ClCompile Include="..\ns_image_server\system_base\ns_dir.cpp" />

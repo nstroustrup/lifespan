@@ -88,15 +88,6 @@
     <ClCompile Include="..\ns_image_server\system_base\ns_thread.cpp">
       <Filter>system_base</Filter>
     </ClCompile>
-    <ClCompile Include="..\ns_image_server\statistics\ns_captured_image_statistics_set.cpp">
-      <Filter>statistics</Filter>
-    </ClCompile>
-    <ClCompile Include="..\ns_image_server\statistics\ns_machine_analysis_data_loader.cpp">
-      <Filter>statistics</Filter>
-    </ClCompile>
-    <ClCompile Include="..\ns_image_server\statistics\ns_movement_measurement.cpp">
-      <Filter>statistics</Filter>
-    </ClCompile>
     <ClCompile Include="..\ns_image_server\statistics\ns_normal_distribution.cpp">
       <Filter>statistics</Filter>
     </ClCompile>
@@ -111,9 +102,6 @@
     </ClCompile>
     <ClCompile Include="..\ns_image_server\movement_analysis\ns_time_path_solver.cpp">
       <Filter>movement_analysis</Filter>
-    </ClCompile>
-    <ClCompile Include="..\ns_image_server\job_scheduling\ns_image_processing_pipeline.cpp">
-      <Filter>job_scheduling</Filter>
     </ClCompile>
     <ClCompile Include="..\ns_image_server\job_scheduling\ns_processing_job_processor.cpp">
       <Filter>job_scheduling</Filter>
@@ -133,16 +121,10 @@
     <ClCompile Include="..\ns_image_server\image_processing\ns_detected_worm_info.cpp">
       <Filter>image_processing</Filter>
     </ClCompile>
-    <ClCompile Include="..\ns_image_server\image_processing\ns_difference_thresholder.cpp">
-      <Filter>image_processing</Filter>
-    </ClCompile>
     <ClCompile Include="..\ns_image_server\image_processing\ns_heat_map_interpolation.cpp">
       <Filter>image_processing</Filter>
     </ClCompile>
     <ClCompile Include="..\ns_image_server\image_processing\ns_identify_contiguous_bitmap_regions.cpp">
-      <Filter>image_processing</Filter>
-    </ClCompile>
-    <ClCompile Include="..\ns_image_server\image_processing\ns_image_tools.cpp">
       <Filter>image_processing</Filter>
     </ClCompile>
     <ClCompile Include="..\ns_image_server\image_processing\ns_movement_visualization_generator.cpp">
@@ -203,15 +185,6 @@
       <Filter>image_base</Filter>
     </ClCompile>
     <ClCompile Include="..\ns_image_server\data_annotation\ns_death_time_annotation.cpp">
-      <Filter>data_annotation</Filter>
-    </ClCompile>
-    <ClCompile Include="..\ns_image_server\data_annotation\ns_experiment_storyboard.cpp">
-      <Filter>data_annotation</Filter>
-    </ClCompile>
-    <ClCompile Include="..\ns_image_server\data_annotation\ns_machine_learning_training_set.cpp">
-      <Filter>data_annotation</Filter>
-    </ClCompile>
-    <ClCompile Include="..\ns_image_server\data_annotation\ns_mask_management.cpp">
       <Filter>data_annotation</Filter>
     </ClCompile>
     <ClCompile Include="..\ns_image_server\image_acquisition\ns_barcode.cpp">
@@ -676,6 +649,33 @@
     <ClCompile Include="..\ns_image_server\image_processing\ns_subpixel_image_alignment.cpp">
       <Filter>image_processing</Filter>
     </ClCompile>
+    <ClCompile Include="..\ns_image_server\image_acquisition\ns_difference_thresholder.cpp">
+      <Filter>image_acquisition</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ns_image_server\movement_analysis\ns_experiment_storyboard.cpp">
+      <Filter>movement_analysis</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ns_image_server\movement_analysis\ns_machine_learning_training_set.cpp">
+      <Filter>movement_analysis</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ns_image_server\image_acquisition\ns_captured_image_statistics_set.cpp">
+      <Filter>image_acquisition</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ns_image_server\image_processing\ns_image_processing_pipeline.cpp">
+      <Filter>image_processing</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ns_image_server\image_processing\ns_mask_management.cpp">
+      <Filter>image_processing</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ns_image_server\movement_analysis\ns_movement_measurement.cpp">
+      <Filter>movement_analysis</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ns_image_server\movement_analysis\ns_machine_analysis_data_loader.cpp">
+      <Filter>movement_analysis</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ns_image_server\image_processing\ns_image_tools.cpp">
+      <Filter>image_processing</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\ns_image_server\system_base\ns_dir.h">
@@ -714,12 +714,6 @@
     <ClInclude Include="..\ns_image_server\statistics\ns_linear_regression_model.h">
       <Filter>statistics</Filter>
     </ClInclude>
-    <ClInclude Include="..\ns_image_server\statistics\ns_machine_analysis_data_loader.h">
-      <Filter>statistics</Filter>
-    </ClInclude>
-    <ClInclude Include="..\ns_image_server\statistics\ns_movement_measurement.h">
-      <Filter>statistics</Filter>
-    </ClInclude>
     <ClInclude Include="..\ns_image_server\statistics\ns_movement_state.h">
       <Filter>statistics</Filter>
     </ClInclude>
@@ -749,9 +743,6 @@
     </ClInclude>
     <ClInclude Include="..\ns_image_server\movement_analysis\ns_time_path_solver.h">
       <Filter>movement_analysis</Filter>
-    </ClInclude>
-    <ClInclude Include="..\ns_image_server\job_scheduling\ns_image_processing_pipeline.h">
-      <Filter>job_scheduling</Filter>
     </ClInclude>
     <ClInclude Include="..\ns_image_server\job_scheduling\ns_processing_job.h">
       <Filter>job_scheduling</Filter>
@@ -783,16 +774,10 @@
     <ClInclude Include="..\ns_image_server\image_processing\ns_detected_worm_info.h">
       <Filter>image_processing</Filter>
     </ClInclude>
-    <ClInclude Include="..\ns_image_server\image_processing\ns_difference_thresholder.h">
-      <Filter>image_processing</Filter>
-    </ClInclude>
     <ClInclude Include="..\ns_image_server\image_processing\ns_identify_contiguous_bitmap_regions.h">
       <Filter>image_processing</Filter>
     </ClInclude>
     <ClInclude Include="..\ns_image_server\image_processing\ns_image_registration.h">
-      <Filter>image_processing</Filter>
-    </ClInclude>
-    <ClInclude Include="..\ns_image_server\image_processing\ns_image_tools.h">
       <Filter>image_processing</Filter>
     </ClInclude>
     <ClInclude Include="..\ns_image_server\image_processing\ns_movement_visualization_generator.h">
@@ -804,16 +789,10 @@
     <ClInclude Include="..\ns_image_server\image_processing\ns_node_topology_primitives.h">
       <Filter>image_processing</Filter>
     </ClInclude>
-    <ClInclude Include="..\ns_image_server\image_processing\ns_process_16_bit_images.h">
-      <Filter>image_processing</Filter>
-    </ClInclude>
     <ClInclude Include="..\ns_image_server\image_processing\ns_process_mask_regions.h">
       <Filter>image_processing</Filter>
     </ClInclude>
     <ClInclude Include="..\ns_image_server\image_processing\ns_region_growing_segmenter.h">
-      <Filter>image_processing</Filter>
-    </ClInclude>
-    <ClInclude Include="..\ns_image_server\image_processing\ns_resampler.h">
       <Filter>image_processing</Filter>
     </ClInclude>
     <ClInclude Include="..\ns_image_server\image_processing\ns_segment_topology.h">
@@ -889,15 +868,6 @@
       <Filter>data_annotation</Filter>
     </ClInclude>
     <ClInclude Include="..\ns_image_server\data_annotation\ns_death_time_annotation_set.h">
-      <Filter>data_annotation</Filter>
-    </ClInclude>
-    <ClInclude Include="..\ns_image_server\data_annotation\ns_experiment_storyboard.h">
-      <Filter>data_annotation</Filter>
-    </ClInclude>
-    <ClInclude Include="..\ns_image_server\data_annotation\ns_machine_learning_training_set.h">
-      <Filter>data_annotation</Filter>
-    </ClInclude>
-    <ClInclude Include="..\ns_image_server\data_annotation\ns_mask_management.h">
       <Filter>data_annotation</Filter>
     </ClInclude>
     <ClInclude Include="..\ns_image_server\image_acquisition\ns_asynchronous_read.h">
@@ -1137,11 +1107,32 @@
     <ClInclude Include="..\external_compile_libraries\jpeg-8d\transupp.h">
       <Filter>image_format_lib\jpeg\h</Filter>
     </ClInclude>
-    <ClInclude Include="..\ns_image_server\image_processing\ns_optical_flow.h">
-      <Filter>image_processing</Filter>
-    </ClInclude>
     <ClInclude Include="..\ns_worm_browser\ns_animal_telemetry.h">
       <Filter>worm_browser</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ns_image_server\image_acquisition\ns_difference_thresholder.h">
+      <Filter>image_acquisition</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ns_image_server\image_acquisition\ns_process_16_bit_images.h">
+      <Filter>image_acquisition</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ns_image_server\image_acquisition\ns_resampler.h">
+      <Filter>image_acquisition</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ns_image_server\movement_analysis\ns_machine_learning_training_set.h">
+      <Filter>movement_analysis</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ns_image_server\movement_analysis\ns_experiment_storyboard.h">
+      <Filter>movement_analysis</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ns_image_server\image_processing\ns_image_processing_pipeline.h">
+      <Filter>image_processing</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ns_image_server\image_processing\ns_mask_management.h">
+      <Filter>image_processing</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ns_image_server\image_processing\ns_image_tools.h">
+      <Filter>image_processing</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

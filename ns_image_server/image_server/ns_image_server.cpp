@@ -852,7 +852,7 @@ bool ns_image_server::upgrade_tables(ns_sql_connection * sql, const bool just_te
 	sql->select_db(schema_name);
 
 	*sql << "SELECT COLUMN_TYPE FROM INFORMATION_SCHEMA.COLUMNS "
-		"WHERE table_name = '" << t_suf << "captured_images' AND COLUMN_NAME = 'registration_horizontal_offset'"
+		"WHERE table_name = '" << t_suf << "captured_images' AND COLUMN_NAME = 'registration_horizontal_offset' "
 		"AND TABLE_SCHEMA = '" << schema_name << "'";
 	ns_sql_result res;
 	sql->get_rows(res);

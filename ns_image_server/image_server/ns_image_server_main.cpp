@@ -984,7 +984,11 @@ int main(int argc, char ** argv){
 
 		if (image_server.act_as_an_image_capture_server()) {
 			ns_acquire_for_scope <ns_local_buffer_connection> local_sql(image_server.new_local_buffer_connection(__FILE__, __LINE__));
-			if (image_server.upgrade_tables(&local_sql(), true, image_server.current_local_buffer_database(),true))
+			local_sql() << "Show tables";
+			ns_sql_result res;
+			local_sql().get_rows(res);
+			bool local_db_has_been_set_up = !res.empty();
+			if (local_db_has_been_set_up && image_server.upgrade_tables(&local_sql(), true, image_server.current_local_buffer_database(),true))
 				throw ns_ex("The current local buffer database schema is out of date.  Please run the command: ns_image_server update_sql");
 			local_sql.release();
 		}
@@ -1290,7 +1294,7 @@ int main(int argc, char ** argv){
 			(*a)++;
 		}
 		if (image_server_const.allow_multiple_processes_per_system() && image_server_const.get_additional_host_description().empty())
-			throw ns_ex("If allow_multiple_processes_per_system is set in the ns_image_server.ini file, a unique value of additional_host_description must be provided to each instance of ns_image_server.ini as a commandline argument!");
+			throw ns_ex("If allow_multiple_processes_per_system is set in the ns_image_server.ini file, a unique value of additional_host_description must be provided to each instance of ns_image_server as a commandline argument!");
 
 
 		if (post_dispatcher_init_command == ns_trigger_segfault_in_dispatcher_thread)

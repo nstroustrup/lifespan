@@ -34,7 +34,8 @@ void ns_get_default_tiff_parameters(const unsigned char component_size, ns_image
 struct ns_safe_tiff_client_data{
 	ns_safe_tiff_client_data(){
 		data.error_storage = 0;
-		data.file_descriptor = 0;
+		data.tiff_fd.fd = 0;
+		data.tiff_fd.h = 0;
 		data.store_errors = false;
 	}
 	~ns_safe_tiff_client_data(){

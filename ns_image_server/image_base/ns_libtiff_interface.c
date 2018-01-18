@@ -14,60 +14,37 @@
 #include "tif_unix_proconly.c"
 #endif
 
-static tsize_t ns_tiffReadProc(thandle_t fd, tdata_t buf, tsize_t size){
-	return _tiffReadProc(((struct ns_tiff_client_data *)fd)->file_descriptor,buf,size);
-}
-
-static tsize_t ns_tiffWriteProc(thandle_t fd, tdata_t buf, tsize_t size){
-	return _tiffWriteProc(((struct ns_tiff_client_data *)fd)->file_descriptor,buf,size);
-}
-
-static toff_t ns_tiffSeekProc(thandle_t fd, toff_t off, int whence){
-	return _tiffSeekProc(((struct ns_tiff_client_data *)fd)->file_descriptor, off,whence);
-}
-static int ns_tiffCloseProc(thandle_t fd){
-	return _tiffCloseProc(((struct ns_tiff_client_data *)fd)->file_descriptor);
-}
-static toff_t ns_tiffSizeProc(thandle_t fd){
-	return _tiffSizeProc(((struct ns_tiff_client_data *)fd)->file_descriptor);
-}
-static int ns_tiffMapProc(thandle_t fd, tdata_t* pbase, toff_t* psize){
-	return _tiffMapProc(((struct ns_tiff_client_data *)fd)->file_descriptor,pbase,psize);
-}
-
-static void ns_tiffUnmapProc(thandle_t fd, tdata_t base, toff_t size){
-	_tiffUnmapProc(((struct ns_tiff_client_data *)fd)->file_descriptor,base,size);
-}
-
-#ifdef _WIN32 
-static int ns_tiffDummyMapProc(thandle_t fd, tdata_t* pbase, toff_t* psize){
-	return _tiffDummyMapProc(((struct ns_tiff_client_data *)fd)->file_descriptor,pbase,psize);
-}
-static void ns_tiffDummyUnmapProc(thandle_t fd, tdata_t base, toff_t size){
-	_tiffDummyUnmapProc(((struct ns_tiff_client_data *)fd)->file_descriptor,base,size);
-}
-#endif
-
-TIFF* ns_tiff_fd_open(struct ns_tiff_client_data * client_data, const char* name, const char* mode){
-	TIFF * tif;
+TIFF* ns_tiff_fd_open(ns_tiff_client_data * client_data, const char* name, const char* mode){
+	TIFF* tif;
 	#ifdef _WIN32 
-	int fSuppressMap = (mode[1] == 'u' || (mode[1]!=0 && mode[2] == 'u'));
-
-	tif = TIFFClientOpen(name, mode, (thandle_t)client_data,
-			ns_tiffReadProc, ns_tiffWriteProc,
-			ns_tiffSeekProc, ns_tiffCloseProc, ns_tiffSizeProc,
-			fSuppressMap ? ns_tiffDummyMapProc : ns_tiffMapProc,
-			fSuppressMap ? ns_tiffDummyUnmapProc : ns_tiffUnmapProc);
+	int fSuppressMap;
+	int m;
+	fSuppressMap = 0;
+	for (m = 0; mode[m] != 0; m++)
+	{
+		if (mode[m] == 'u')
+		{
+			fSuppressMap = 1;
+			break;
+		}
+	}
+	tif = TIFFClientOpen(name, mode, client_data->tiff_fd.h, /* FIXME: WIN64 cast to pointer warning */
+			_tiffReadProc, _tiffWriteProc,
+			_tiffSeekProc, _tiffCloseProc, _tiffSizeProc,
+			fSuppressMap ? _tiffDummyMapProc : _tiffMapProc,
+			fSuppressMap ? _tiffDummyUnmapProc : _tiffUnmapProc);
 	#else
+	    
 		tif = TIFFClientOpen(name, mode,
-			(thandle_t) client_data,
-			ns_tiffReadProc, ns_tiffWriteProc,
-			ns_tiffSeekProc, ns_tiffCloseProc, ns_tiffSizeProc,
-			ns_tiffMapProc, ns_tiffUnmapProc);
+			client_data->tiff_fd.h,
+			_tiffReadProc, _tiffWriteProc,
+			_tiffSeekProc, _tiffCloseProc, _tiffSizeProc,
+			_tiffMapProc, _tiffUnmapProc);
+	
 
-	#endif
+	#endif	
 	if (tif)
-		TIFFSetFileno(tif, (int)client_data->file_descriptor);
+	tif->tif_fd = client_data->tiff_fd.fd;
 	return (tif);
 }
 
@@ -96,7 +73,7 @@ int ns_TIFFgetMode(const char* mode, const char* module)
 }
 
 
-TIFF* ns_tiff_open(const char* name, struct ns_tiff_client_data * client_data,const char* mode){
+TIFF* ns_tiff_open(const char* name, ns_tiff_client_data * client_data,const char* mode){
 #ifdef _WIN32 
 	static const char module[] = "TIFFOpen";
 
@@ -106,38 +83,26 @@ TIFF* ns_tiff_open(const char* name, struct ns_tiff_client_data * client_data,co
 
 	m = ns_TIFFgetMode(mode, module);
 
-	switch(m)
-	{
-	case O_RDONLY:
-		dwMode = OPEN_EXISTING;
-		break;
-	case O_RDWR:
-		dwMode = OPEN_ALWAYS;
-		break;
-	case O_RDWR|O_CREAT:
-		dwMode = OPEN_ALWAYS;
-		break;
-	case O_RDWR|O_TRUNC:
-		dwMode = CREATE_ALWAYS;
-		break;
-	case O_RDWR|O_CREAT|O_TRUNC:
-		dwMode = CREATE_ALWAYS;
-		break;
-	default:
-		return ((TIFF*)0);
+	switch (m) {
+	case O_RDONLY:			dwMode = OPEN_EXISTING; break;
+	case O_RDWR:			dwMode = OPEN_ALWAYS;   break;
+	case O_RDWR | O_CREAT:		dwMode = OPEN_ALWAYS;   break;
+	case O_RDWR | O_TRUNC:		dwMode = CREATE_ALWAYS; break;
+	case O_RDWR | O_CREAT | O_TRUNC:	dwMode = CREATE_ALWAYS; break;
+	default:			return ((TIFF*)0);
 	}
-	client_data->file_descriptor = (thandle_t)CreateFileA(name,
+	client_data->tiff_fd.fd = (thandle_t)CreateFileA(name,
 		(m == O_RDONLY)?GENERIC_READ:(GENERIC_READ | GENERIC_WRITE),
 		FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, dwMode,
 		(m == O_RDONLY)?FILE_ATTRIBUTE_READONLY:FILE_ATTRIBUTE_NORMAL,
 		NULL);
-	if (client_data->file_descriptor == INVALID_HANDLE_VALUE) {
+	if (client_data->tiff_fd.fd == INVALID_HANDLE_VALUE) {
 		TIFFErrorExt(0, module, "%s: Cannot open", name);
 		return ((TIFF *)0);
 	}
 	tif = ns_tiff_fd_open(client_data, name, mode);
 	if(!tif)
-		CloseHandle(client_data->file_descriptor);
+		CloseHandle(client_data->tiff_fd.fd);
 	return tif;
 #else
 	static const char module[] = "TIFFOpen";
@@ -153,18 +118,24 @@ TIFF* ns_tiff_open(const char* name, struct ns_tiff_client_data * client_data,co
         m |= O_BINARY;
 	#endif        
 	#ifdef _AM29K
-	client_data->file_descriptor = open(name, m);
+	client_data->tiff_fd.fd = open(name, m);
 	#else
-	client_data->file_descriptor = open(name, m, 0666);
+	client_data->tiff_fd.fd = open(name, m, 0666);
 	#endif
-	if (client_data->file_descriptor < 0) {
-		TIFFErrorExt(0, module, "%s: Cannot open", name);
+	if (client_data->tiff_fd.fd < 0) {
+		if (errno > 0 && strerror(errno) != NULL) {
+			TIFFErrorExt(0, module, "%s: %s", name, strerror(errno));
+		}
+		else {
+			TIFFErrorExt(0, module, "%s: Cannot open", name);
+		}
 		return ((TIFF *)0);
 	}
 
+
 	tif = ns_tiff_fd_open(client_data, name, mode);
 	if(!tif)
-		close(client_data->file_descriptor);
+		close(client_data->fd);
 	return tif;
 #endif
 }

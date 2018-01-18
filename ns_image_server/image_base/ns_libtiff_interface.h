@@ -1,7 +1,7 @@
 #ifndef NS_LIBTIFF_INTERFACE
 #define NS_LIBTIFF_INTERFACE
 
-#include "tiffio.h"
+#include "tiffiop.h"
 //#include <string.h>
 
 

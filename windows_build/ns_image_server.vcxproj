@@ -102,7 +102,7 @@
     <IncludePath>C:\server\ns_lifespan_machine_source\ns_image_server\image_server;C:\server\ns_lifespan_machine_source\external_compile_libraries\xvidcore\src;C:\server\ns_lifespan_machine_source\external_compile_libraries\tiff-3.8.2\libtiff;C:\server\ns_lifespan_machine_source\external_compile_libraries\zlib;C:\server\ns_lifespan_machine_source\external_compile_libraries\xvidcore-1.3.2\src;C:\server\ns_lifespan_machine_source\external_libraries\libsvm;C:\server\ns_lifespan_machine_source\external_compile_libraries\freetype-2.4.10\include;C:\server\ns_lifespan_machine_source\external_compile_libraries\jpeg-8d;C:\Program Files %28x86%29\MySQL\MySQL Connector C 6.0.2\include;C:\server\ns_lifespan_machine_source\external_libraries\triangle;C:\server\ns_lifespan_machine_source\external_libraries\wm4_bspline;C:\server\ns_lifespan_machine_source\external_libraries\tinyxml;C:\server\ns_lifespan_machine_source\external_compile_libraries\openjpeg-1.5.0\libopenjpeg;C:\server\ns_lifespan_machine_source\external_libraries\libhungarian;C:\server\ns_lifespan_machine_source\external_compile_libraries\libdmtx-0.7.4;C:\server\ns_lifespan_machine_source\external_libraries\ctmf;C:\server\ns_lifespan_machine_source\windows_build;C:\server\ns_lifespan_machine_source\ns_image_server\system_base;C:\server\ns_lifespan_machine_source\ns_image_server\statistics;C:\server\ns_lifespan_machine_source\ns_image_server\movement_analysis;C:\server\ns_lifespan_machine_source\ns_image_server\job_scheduling;C:\server\ns_lifespan_machine_source\ns_image_server\image_processing;C:\server\ns_lifespan_machine_source\ns_image_server\image_base;C:\server\ns_lifespan_machine_source\ns_image_server\image_acquisition;C:\server\ns_lifespan_machine_source\ns_image_server\data_annotation;C:\server\ns_lifespan_machine_source\ns_image_server\src;C:\server\ns_lifespan_machine_source\external_libraries\libtiff-proc;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <IncludePath>C:\server\ns_lifespan_machine_source\external_compile_libraries\tiff-3.8.2\libtiff;C:\server\ns_lifespan_machine_source\windows_build;C:\server\ns_lifespan_machine_source\external_compile_libraries\zlib;C:\server\ns_lifespan_machine_source\external_libraries\libsvm;C:\server\ns_lifespan_machine_source\external_compile_libraries\freetype-2.6\include;C:\server\ns_lifespan_machine_source\external_compile_libraries\jpeg-8d;C:\Program Files\MySQL\MySQL Connector C 6.1\include;C:\server\ns_lifespan_machine_source\external_libraries\triangle;C:\server\ns_lifespan_machine_source\external_libraries\wm4_bspline;C:\server\ns_lifespan_machine_source\external_libraries\tinyxml;C:\server\ns_lifespan_machine_source\external_libraries\libhungarian;C:\server\ns_lifespan_machine_source\external_compile_libraries\libdmtx-0.7.4;C:\server\ns_lifespan_machine_source\external_libraries\ctmf;C:\server\ns_lifespan_machine_source\ns_image_server\build\windows\ns_image_server;C:\server\ns_lifespan_machine_source\ns_image_server\system_base;C:\server\ns_lifespan_machine_source\ns_image_server\statistics;C:\server\ns_lifespan_machine_source\ns_image_server\movement_analysis;C:\server\ns_lifespan_machine_source\ns_image_server\job_scheduling;C:\server\ns_lifespan_machine_source\ns_image_server\image_processing;C:\server\ns_lifespan_machine_source\ns_image_server\image_base;C:\server\ns_lifespan_machine_source\ns_image_server\image_acquisition;C:\server\ns_lifespan_machine_source\ns_image_server\data_annotation;C:\server\ns_lifespan_machine_source\ns_image_server\;C:\server\ns_lifespan_machine_source\ns_image_server\image_server\;C:\server\ns_lifespan_machine_source\external_libraries\libtiff-proc;C:\server\ns_lifespan_machine_source\external_compile_libraries\xvidcore-1.3.4\src;C:\server\ns_lifespan_machine_source\external_compile_libraries\InsightToolkit-4.10.0\Modules\Registration\Common\include;C:\server\ns_lifespan_machine_source\external_compile_libraries\InsightToolkit-4.10.0\Modules\Core\Common\include;C:\server\ns_lifespan_machine_source\external_compile_libraries\InsightToolkit-4.10.0\Modules\IO\ImageBase\include;C:\server\ns_lifespan_machine_source\external_compile_libraries\InsightToolkit-4.10.0\bin\Modules\Core\Common;C:\server\ns_lifespan_machine_source\external_compile_libraries\InsightToolkit-4.10.0\bin\Modules\IO\ImageBase;C:\server\ns_lifespan_machine_source\external_compile_libraries\InsightToolkit-4.10.0\bin\Modules\ThirdParty\VNL\src\vxl\vcl;C:\server\ns_lifespan_machine_source\external_compile_libraries\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\vcl;C:\server\ns_lifespan_machine_source\external_compile_libraries\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\;C:\server\ns_lifespan_machine_source\external_compile_libraries\InsightToolkit-4.10.0\bin\Modules\ThirdParty\VNL\src\vxl\core;C:\server\ns_lifespan_machine_source\external_compile_libraries\InsightToolkit-4.10.0\bin\Modules\ThirdParty\KWSys\src\;C:\server\ns_lifespan_machine_source\external_compile_libraries\InsightToolkit-4.10.0\Modules\Registration\PDEDeformable\include;C:\server\ns_lifespan_machine_source\external_compile_libraries\InsightToolkit-4.10.0\Modules\Core\FiniteDifference\include;C:\server\ns_lifespan_machine_source\external_compile_libraries\InsightToolkit-4.10.0\Modules\Filtering\ImageFilterBase\include;C:\server\ns_lifespan_machine_source\external_compile_libraries\InsightToolkit-4.10.0\Modules\Core\ImageFunction\include;C:\server\ns_lifespan_machine_source\external_compile_libraries\InsightToolkit-4.10.0\Modules\Filtering\Smoothing\include;C:\server\ns_lifespan_machine_source\external_compile_libraries\InsightToolkit-4.10.0\Modules\Filtering\ImageIntensity\include;C:\server\ns_lifespan_machine_source\external_compile_libraries\InsightToolkit-4.10.0\Modules\Numerics\Statistics\include;C:\server\ns_lifespan_machine_source\external_compile_libraries\InsightToolkit-4.10.0\Modules\Filtering\ImageGrid\include;C:\server\ns_lifespan_machine_source\external_compile_libraries\InsightToolkit-4.10.0\Modules\IO\TIFF\include;C:\server\ns_lifespan_machine_source\external_compile_libraries\openjpeg-2.1.2\src\lib;C:\server\ns_lifespan_machine_source\external_compile_libraries\fftw-3.3.4;C:\server\ns_lifespan_machine_source\external_compile_libraries\InsightToolkit-4.10.0\Modules\Registration\GPUPDEDeformable\include;C:\server\ns_lifespan_machine_source\external_compile_libraries\InsightToolkit-4.10.0\Modules\Registration\GPUCommon\include;C:\server\ns_lifespan_machine_source\external_compile_libraries\InsightToolkit-4.10.0\Modules\Core\GPUCommon\include;C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v7.5\include;C:\server\ns_lifespan_machine_source\external_compile_libraries\InsightToolkit-4.10.0\Modules\Core\GPUFiniteDifference\include;C:\Program Files (x86)\IntelSWTools\compilers_and_libraries_2016.3.207\windows\ipp\include;C:\server\ns_lifespan_machine_source\external_compile_libraries;$(IncludePath)</IncludePath>
+    <IncludePath>C:\server\ns_lifespan_machine_source\external_compile_libraries\libtiff-4.0.9\libtiff;C:\server\ns_lifespan_machine_source\windows_build;C:\server\ns_lifespan_machine_source\external_compile_libraries\zlib;C:\server\ns_lifespan_machine_source\external_libraries\libsvm;C:\server\ns_lifespan_machine_source\external_compile_libraries\freetype-2.6\include;C:\server\ns_lifespan_machine_source\external_compile_libraries\jpeg-8d;C:\Program Files\MySQL\MySQL Connector C 6.1\include;C:\server\ns_lifespan_machine_source\external_libraries\triangle;C:\server\ns_lifespan_machine_source\external_libraries\wm4_bspline;C:\server\ns_lifespan_machine_source\external_libraries\tinyxml;C:\server\ns_lifespan_machine_source\external_libraries\libhungarian;C:\server\ns_lifespan_machine_source\external_compile_libraries\libdmtx-0.7.4;C:\server\ns_lifespan_machine_source\external_libraries\ctmf;C:\server\ns_lifespan_machine_source\ns_image_server\build\windows\ns_image_server;C:\server\ns_lifespan_machine_source\ns_image_server\system_base;C:\server\ns_lifespan_machine_source\ns_image_server\statistics;C:\server\ns_lifespan_machine_source\ns_image_server\movement_analysis;C:\server\ns_lifespan_machine_source\ns_image_server\job_scheduling;C:\server\ns_lifespan_machine_source\ns_image_server\image_processing;C:\server\ns_lifespan_machine_source\ns_image_server\image_base;C:\server\ns_lifespan_machine_source\ns_image_server\image_acquisition;C:\server\ns_lifespan_machine_source\ns_image_server\data_annotation;C:\server\ns_lifespan_machine_source\ns_image_server\;C:\server\ns_lifespan_machine_source\ns_image_server\image_server\;C:\server\ns_lifespan_machine_source\external_libraries\libtiff-proc;C:\server\ns_lifespan_machine_source\external_compile_libraries\xvidcore-1.3.4\src;C:\server\ns_lifespan_machine_source\external_compile_libraries\InsightToolkit-4.10.0\Modules\Registration\Common\include;C:\server\ns_lifespan_machine_source\external_compile_libraries\InsightToolkit-4.10.0\Modules\Core\Common\include;C:\server\ns_lifespan_machine_source\external_compile_libraries\InsightToolkit-4.10.0\Modules\IO\ImageBase\include;C:\server\ns_lifespan_machine_source\external_compile_libraries\InsightToolkit-4.10.0\bin\Modules\Core\Common;C:\server\ns_lifespan_machine_source\external_compile_libraries\InsightToolkit-4.10.0\bin\Modules\IO\ImageBase;C:\server\ns_lifespan_machine_source\external_compile_libraries\InsightToolkit-4.10.0\bin\Modules\ThirdParty\VNL\src\vxl\vcl;C:\server\ns_lifespan_machine_source\external_compile_libraries\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\vcl;C:\server\ns_lifespan_machine_source\external_compile_libraries\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\;C:\server\ns_lifespan_machine_source\external_compile_libraries\InsightToolkit-4.10.0\bin\Modules\ThirdParty\VNL\src\vxl\core;C:\server\ns_lifespan_machine_source\external_compile_libraries\InsightToolkit-4.10.0\bin\Modules\ThirdParty\KWSys\src\;C:\server\ns_lifespan_machine_source\external_compile_libraries\InsightToolkit-4.10.0\Modules\Registration\PDEDeformable\include;C:\server\ns_lifespan_machine_source\external_compile_libraries\InsightToolkit-4.10.0\Modules\Core\FiniteDifference\include;C:\server\ns_lifespan_machine_source\external_compile_libraries\InsightToolkit-4.10.0\Modules\Filtering\ImageFilterBase\include;C:\server\ns_lifespan_machine_source\external_compile_libraries\InsightToolkit-4.10.0\Modules\Core\ImageFunction\include;C:\server\ns_lifespan_machine_source\external_compile_libraries\InsightToolkit-4.10.0\Modules\Filtering\Smoothing\include;C:\server\ns_lifespan_machine_source\external_compile_libraries\InsightToolkit-4.10.0\Modules\Filtering\ImageIntensity\include;C:\server\ns_lifespan_machine_source\external_compile_libraries\InsightToolkit-4.10.0\Modules\Numerics\Statistics\include;C:\server\ns_lifespan_machine_source\external_compile_libraries\InsightToolkit-4.10.0\Modules\Filtering\ImageGrid\include;C:\server\ns_lifespan_machine_source\external_compile_libraries\InsightToolkit-4.10.0\Modules\IO\TIFF\include;C:\server\ns_lifespan_machine_source\external_compile_libraries\openjpeg-2.1.2\src\lib;C:\server\ns_lifespan_machine_source\external_compile_libraries\fftw-3.3.4;C:\server\ns_lifespan_machine_source\external_compile_libraries\InsightToolkit-4.10.0\Modules\Registration\GPUPDEDeformable\include;C:\server\ns_lifespan_machine_source\external_compile_libraries\InsightToolkit-4.10.0\Modules\Registration\GPUCommon\include;C:\server\ns_lifespan_machine_source\external_compile_libraries\InsightToolkit-4.10.0\Modules\Core\GPUCommon\include;C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v7.5\include;C:\server\ns_lifespan_machine_source\external_compile_libraries\InsightToolkit-4.10.0\Modules\Core\GPUFiniteDifference\include;C:\Program Files (x86)\IntelSWTools\compilers_and_libraries_2016.3.207\windows\ipp\include;C:\server\ns_lifespan_machine_source\external_compile_libraries;$(IncludePath)</IncludePath>
     <LibraryPath>C:\Program Files\MySQL\MySQL Connector C 6.1\lib;C:\server\ns_lifespan_machine_source\external_compile_libraries\xvidcore-1.3.4\build\win32\bin\x64;C:\server\ns_lifespan_machine_source\external_compile_libraries\freetype-2.6\objs\vc2010\x64;C:\Program Files\MySQL\MySQL Connector C 6.1\lib\vs12;C:\server\ns_lifespan_machine_source\external_compile_libraries\InsightToolkit-4.10.0\bin\lib\Debug;C:\server\ns_lifespan_machine_source\external_compile_libraries\openjpeg-v2.1.2-windows-x64\lib;C:\server\ns_lifespan_machine_source\external_compile_libraries\fftw-3.3.4;C:\server\ns_lifespan_machine_source\external_compile_libraries\InsightToolkit-4.10.0\Modules\Core\GPUCommon\include;C:\server\ns_lifespan_machine_source\external_compile_libraries\InsightToolkit-4.10.0\Modules\Registration\GPUPDEDeformable\include;C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v7.5\lib\x64;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -114,7 +114,7 @@
     <LibraryPath>C:\server\ns_lifespan_machine_source\external_compile_libraries\xvidcore\build\win32\bin;C:\Program Files %28x86%29\MySQL\MySQL Connector C 6.0.2\lib\opt;C:\server\ns_lifespan_machine_source\external_compile_libraries\freetype-2.4.10\objs\win32\vc2010;C:\server\ns_lifespan_machine_source\windows_build;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <IncludePath>C:\server\ns_lifespan_machine_source\ns_image_server;C:\server\ns_lifespan_machine_source\ns_image_server\image_server;C:\server\ns_lifespan_machine_source\external_compile_libraries\xvidcore-1.3.4\src;C:\server\ns_lifespan_machine_source\external_compile_libraries\tiff-3.8.2\libtiff;C:\server\ns_lifespan_machine_source\external_compile_libraries\zlib;C:\server\ns_lifespan_machine_source\external_libraries\libsvm;C:\server\ns_lifespan_machine_source\external_compile_libraries\freetype-2.6\include;C:\server\ns_lifespan_machine_source\external_compile_libraries\jpeg-8d;C:\Program Files\MySQL\MySQL Connector C 6.1\include;C:\server\ns_lifespan_machine_source\external_libraries\triangle;C:\server\ns_lifespan_machine_source\external_libraries\wm4_bspline;C:\server\ns_lifespan_machine_source\external_libraries\tinyxml;C:\server\ns_lifespan_machine_source\external_libraries\libhungarian;C:\server\ns_lifespan_machine_source\external_compile_libraries\libdmtx-0.7.4;C:\server\ns_lifespan_machine_source\external_libraries\ctmf;C:\server\ns_lifespan_machine_source\ns_image_server\build\windows\ns_image_server;C:\server\ns_lifespan_machine_source\ns_image_server\system_base;C:\server\ns_lifespan_machine_source\ns_image_server\statistics;C:\server\ns_lifespan_machine_source\ns_image_server\movement_analysis;C:\server\ns_lifespan_machine_source\ns_image_server\job_scheduling;C:\server\ns_lifespan_machine_source\ns_image_server\image_processing;C:\server\ns_lifespan_machine_source\ns_image_server\image_base;C:\server\ns_lifespan_machine_source\ns_image_server\image_acquisition;C:\server\ns_lifespan_machine_source\ns_image_server\data_annotation;C:\server\ns_lifespan_machine_source\ns_image_server\src;C:\server\ns_lifespan_machine_source\external_libraries\OpticalFlow\mex;C:\server\ns_lifespan_machine_source\external_libraries\libtiff-proc;C:\server\ns_lifespan_machine_source\windows_build;C:\server\ns_lifespan_machine_source\external_compile_libraries\InsightToolkit-4.10.0\Modules\Registration\Common\include;C:\server\ns_lifespan_machine_source\external_compile_libraries\InsightToolkit-4.10.0\Modules\Core\Common\include;C:\server\ns_lifespan_machine_source\external_compile_libraries\InsightToolkit-4.10.0\Modules\IO\ImageBase\include;C:\server\ns_lifespan_machine_source\external_compile_libraries\InsightToolkit-4.10.0\bin\Modules\Core\Common;C:\server\ns_lifespan_machine_source\external_compile_libraries\InsightToolkit-4.10.0\bin\Modules\IO\ImageBase;C:\server\ns_lifespan_machine_source\external_compile_libraries\InsightToolkit-4.10.0\bin\Modules\ThirdParty\VNL\src\vxl\vcl;C:\server\ns_lifespan_machine_source\external_compile_libraries\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\vcl;C:\server\ns_lifespan_machine_source\external_compile_libraries\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\;C:\server\ns_lifespan_machine_source\external_compile_libraries\InsightToolkit-4.10.0\bin\Modules\ThirdParty\VNL\src\vxl\core;C:\server\ns_lifespan_machine_source\external_compile_libraries\InsightToolkit-4.10.0\bin\Modules\ThirdParty\KWSys\src\;C:\server\ns_lifespan_machine_source\external_compile_libraries\InsightToolkit-4.10.0\Modules\Registration\PDEDeformable\include;C:\server\ns_lifespan_machine_source\external_compile_libraries\InsightToolkit-4.10.0\Modules\Core\FiniteDifference\include;C:\server\ns_lifespan_machine_source\external_compile_libraries\InsightToolkit-4.10.0\Modules\Filtering\ImageFilterBase\include;C:\server\ns_lifespan_machine_source\external_compile_libraries\InsightToolkit-4.10.0\Modules\Core\ImageFunction\include;C:\server\ns_lifespan_machine_source\external_compile_libraries\InsightToolkit-4.10.0\Modules\Filtering\Smoothing\include;C:\server\ns_lifespan_machine_source\external_compile_libraries\InsightToolkit-4.10.0\Modules\Filtering\ImageIntensity\include;C:\server\ns_lifespan_machine_source\external_compile_libraries\InsightToolkit-4.10.0\Modules\Numerics\Statistics\include;C:\server\ns_lifespan_machine_source\external_compile_libraries\InsightToolkit-4.10.0\Modules\Filtering\ImageGrid\include;C:\server\ns_lifespan_machine_source\external_compile_libraries\InsightToolkit-4.10.0\Modules\IO\TIFF\include;C:\server\InsightToolkit-4.10.0\Modules\IO\VTK\include;C:\server\ns_lifespan_machine_source\external_compile_libraries\openjpeg-2.1.2\src\lib;C:\server\ns_lifespan_machine_source\external_compile_libraries\fftw-3.3.4;C:\server\ns_lifespan_machine_source\external_compile_libraries\InsightToolkit-4.10.0\Modules\Registration\GPUPDEDeformable\include;C:\server\ns_lifespan_machine_source\external_compile_libraries\InsightToolkit-4.10.0\Modules\Registration\GPUCommon\include;C:\server\ns_lifespan_machine_source\external_compile_libraries\InsightToolkit-4.10.0\Modules\Core\GPUCommon\include;C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v7.5\include;C:\server\ns_lifespan_machine_source\external_compile_libraries\InsightToolkit-4.10.0\Modules\Core\GPUFiniteDifference\include;C:\Program Files (x86)\IntelSWTools\compilers_and_libraries_2016.3.207\windows\ipp\include;C:\server\ns_lifespan_machine_source\external_compile_libraries;$(IncludePath)</IncludePath>
+    <IncludePath>C:\server\ns_lifespan_machine_source\ns_image_server;C:\server\ns_lifespan_machine_source\ns_image_server\image_server;C:\server\ns_lifespan_machine_source\external_compile_libraries\xvidcore-1.3.4\src;C:\server\ns_lifespan_machine_source\external_compile_libraries\libtiff-4.0.9\libtiff;C:\server\ns_lifespan_machine_source\external_compile_libraries\zlib;C:\server\ns_lifespan_machine_source\external_libraries\libsvm;C:\server\ns_lifespan_machine_source\external_compile_libraries\freetype-2.6\include;C:\server\ns_lifespan_machine_source\external_compile_libraries\jpeg-8d;C:\Program Files\MySQL\MySQL Connector C 6.1\include;C:\server\ns_lifespan_machine_source\external_libraries\triangle;C:\server\ns_lifespan_machine_source\external_libraries\wm4_bspline;C:\server\ns_lifespan_machine_source\external_libraries\tinyxml;C:\server\ns_lifespan_machine_source\external_libraries\libhungarian;C:\server\ns_lifespan_machine_source\external_compile_libraries\libdmtx-0.7.4;C:\server\ns_lifespan_machine_source\external_libraries\ctmf;C:\server\ns_lifespan_machine_source\ns_image_server\build\windows\ns_image_server;C:\server\ns_lifespan_machine_source\ns_image_server\system_base;C:\server\ns_lifespan_machine_source\ns_image_server\statistics;C:\server\ns_lifespan_machine_source\ns_image_server\movement_analysis;C:\server\ns_lifespan_machine_source\ns_image_server\job_scheduling;C:\server\ns_lifespan_machine_source\ns_image_server\image_processing;C:\server\ns_lifespan_machine_source\ns_image_server\image_base;C:\server\ns_lifespan_machine_source\ns_image_server\image_acquisition;C:\server\ns_lifespan_machine_source\ns_image_server\data_annotation;C:\server\ns_lifespan_machine_source\ns_image_server\src;C:\server\ns_lifespan_machine_source\external_libraries\OpticalFlow\mex;C:\server\ns_lifespan_machine_source\external_libraries\libtiff-proc;C:\server\ns_lifespan_machine_source\windows_build;C:\server\ns_lifespan_machine_source\external_compile_libraries\InsightToolkit-4.10.0\Modules\Registration\Common\include;C:\server\ns_lifespan_machine_source\external_compile_libraries\InsightToolkit-4.10.0\Modules\Core\Common\include;C:\server\ns_lifespan_machine_source\external_compile_libraries\InsightToolkit-4.10.0\Modules\IO\ImageBase\include;C:\server\ns_lifespan_machine_source\external_compile_libraries\InsightToolkit-4.10.0\bin\Modules\Core\Common;C:\server\ns_lifespan_machine_source\external_compile_libraries\InsightToolkit-4.10.0\bin\Modules\IO\ImageBase;C:\server\ns_lifespan_machine_source\external_compile_libraries\InsightToolkit-4.10.0\bin\Modules\ThirdParty\VNL\src\vxl\vcl;C:\server\ns_lifespan_machine_source\external_compile_libraries\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\vcl;C:\server\ns_lifespan_machine_source\external_compile_libraries\InsightToolkit-4.10.0\Modules\ThirdParty\VNL\src\vxl\core\;C:\server\ns_lifespan_machine_source\external_compile_libraries\InsightToolkit-4.10.0\bin\Modules\ThirdParty\VNL\src\vxl\core;C:\server\ns_lifespan_machine_source\external_compile_libraries\InsightToolkit-4.10.0\bin\Modules\ThirdParty\KWSys\src\;C:\server\ns_lifespan_machine_source\external_compile_libraries\InsightToolkit-4.10.0\Modules\Registration\PDEDeformable\include;C:\server\ns_lifespan_machine_source\external_compile_libraries\InsightToolkit-4.10.0\Modules\Core\FiniteDifference\include;C:\server\ns_lifespan_machine_source\external_compile_libraries\InsightToolkit-4.10.0\Modules\Filtering\ImageFilterBase\include;C:\server\ns_lifespan_machine_source\external_compile_libraries\InsightToolkit-4.10.0\Modules\Core\ImageFunction\include;C:\server\ns_lifespan_machine_source\external_compile_libraries\InsightToolkit-4.10.0\Modules\Filtering\Smoothing\include;C:\server\ns_lifespan_machine_source\external_compile_libraries\InsightToolkit-4.10.0\Modules\Filtering\ImageIntensity\include;C:\server\ns_lifespan_machine_source\external_compile_libraries\InsightToolkit-4.10.0\Modules\Numerics\Statistics\include;C:\server\ns_lifespan_machine_source\external_compile_libraries\InsightToolkit-4.10.0\Modules\Filtering\ImageGrid\include;C:\server\ns_lifespan_machine_source\external_compile_libraries\InsightToolkit-4.10.0\Modules\IO\TIFF\include;C:\server\InsightToolkit-4.10.0\Modules\IO\VTK\include;C:\server\ns_lifespan_machine_source\external_compile_libraries\openjpeg-2.1.2\src\lib;C:\server\ns_lifespan_machine_source\external_compile_libraries\fftw-3.3.4;C:\server\ns_lifespan_machine_source\external_compile_libraries\InsightToolkit-4.10.0\Modules\Registration\GPUPDEDeformable\include;C:\server\ns_lifespan_machine_source\external_compile_libraries\InsightToolkit-4.10.0\Modules\Registration\GPUCommon\include;C:\server\ns_lifespan_machine_source\external_compile_libraries\InsightToolkit-4.10.0\Modules\Core\GPUCommon\include;C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v7.5\include;C:\server\ns_lifespan_machine_source\external_compile_libraries\InsightToolkit-4.10.0\Modules\Core\GPUFiniteDifference\include;C:\Program Files (x86)\IntelSWTools\compilers_and_libraries_2016.3.207\windows\ipp\include;C:\server\ns_lifespan_machine_source\external_compile_libraries;$(IncludePath)</IncludePath>
     <LibraryPath>C:\Program Files\MySQL\MySQL Connector C 6.1\lib;C:\server\ns_lifespan_machine_source\external_compile_libraries\xvidcore-1.3.4\build\win32\bin\x64;C:\server\ns_lifespan_machine_source\external_compile_libraries\freetype-2.6\objs\vc2010\x64;C:\server\ns_lifespan_machine_source\external_compile_libraries\InsightToolkit-4.10.0\bin\lib\Release;C:\server\ns_lifespan_machine_source\external_compile_libraries\openjpeg-v2.1.2-windows-x64\lib;C:\server\ns_lifespan_machine_source\external_compile_libraries\fftw-3.3.4;C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v7.5\lib\x64;C:\Program Files\NVIDIA Corporation\OpenCL;$(LibraryPath)</LibraryPath>
     <TargetName>$(ProjectName)_x64</TargetName>
   </PropertyGroup>
@@ -244,7 +244,6 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="..\external_compile_libraries\tiff-3.8.2\libtiff\tif_predict.h" />
     <ClInclude Include="..\external_libraries\libsvm\svm.h" />
     <ClInclude Include="..\external_libraries\tinyxml\tinystr.h" />
     <ClInclude Include="..\external_libraries\wm4_bspline\Wm4BandedMatrix.h" />
@@ -396,45 +395,123 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\external_compile_libraries\libdmtx-0.7.4\dmtx.c" />
-    <ClCompile Include="..\external_compile_libraries\tiff-3.8.2\libtiff\tif_aux.c" />
-    <ClCompile Include="..\external_compile_libraries\tiff-3.8.2\libtiff\tif_close.c" />
-    <ClCompile Include="..\external_compile_libraries\tiff-3.8.2\libtiff\tif_codec.c" />
-    <ClCompile Include="..\external_compile_libraries\tiff-3.8.2\libtiff\tif_color.c" />
-    <ClCompile Include="..\external_compile_libraries\tiff-3.8.2\libtiff\tif_compress.c" />
-    <ClCompile Include="..\external_compile_libraries\tiff-3.8.2\libtiff\tif_dir.c" />
-    <ClCompile Include="..\external_compile_libraries\tiff-3.8.2\libtiff\tif_dirinfo.c" />
-    <ClCompile Include="..\external_compile_libraries\tiff-3.8.2\libtiff\tif_dirread.c" />
-    <ClCompile Include="..\external_compile_libraries\tiff-3.8.2\libtiff\tif_dirwrite.c" />
-    <ClCompile Include="..\external_compile_libraries\tiff-3.8.2\libtiff\tif_dumpmode.c" />
-    <ClCompile Include="..\external_compile_libraries\tiff-3.8.2\libtiff\tif_error.c" />
-    <ClCompile Include="..\external_compile_libraries\tiff-3.8.2\libtiff\tif_extension.c" />
-    <ClCompile Include="..\external_compile_libraries\tiff-3.8.2\libtiff\tif_fax3.c" />
-    <ClCompile Include="..\external_compile_libraries\tiff-3.8.2\libtiff\tif_fax3sm.c" />
-    <ClCompile Include="..\external_compile_libraries\tiff-3.8.2\libtiff\tif_flush.c" />
-    <ClCompile Include="..\external_compile_libraries\tiff-3.8.2\libtiff\tif_getimage.c" />
-    <ClCompile Include="..\external_compile_libraries\tiff-3.8.2\libtiff\tif_jpeg.c" />
-    <ClCompile Include="..\external_compile_libraries\tiff-3.8.2\libtiff\tif_luv.c" />
-    <ClCompile Include="..\external_compile_libraries\tiff-3.8.2\libtiff\tif_lzw.c" />
-    <ClCompile Include="..\external_compile_libraries\tiff-3.8.2\libtiff\tif_next.c" />
-    <ClCompile Include="..\external_compile_libraries\tiff-3.8.2\libtiff\tif_ojpeg.c" />
-    <ClCompile Include="..\external_compile_libraries\tiff-3.8.2\libtiff\tif_open.c" />
-    <ClCompile Include="..\external_compile_libraries\tiff-3.8.2\libtiff\tif_packbits.c" />
-    <ClCompile Include="..\external_compile_libraries\tiff-3.8.2\libtiff\tif_pixarlog.c" />
-    <ClCompile Include="..\external_compile_libraries\tiff-3.8.2\libtiff\tif_predict.c" />
-    <ClCompile Include="..\external_compile_libraries\tiff-3.8.2\libtiff\tif_print.c" />
-    <ClCompile Include="..\external_compile_libraries\tiff-3.8.2\libtiff\tif_read.c" />
-    <ClCompile Include="..\external_compile_libraries\tiff-3.8.2\libtiff\tif_strip.c" />
-    <ClCompile Include="..\external_compile_libraries\tiff-3.8.2\libtiff\tif_swab.c" />
-    <ClCompile Include="..\external_compile_libraries\tiff-3.8.2\libtiff\tif_thunder.c" />
-    <ClCompile Include="..\external_compile_libraries\tiff-3.8.2\libtiff\tif_tile.c" />
-    <ClCompile Include="..\external_compile_libraries\tiff-3.8.2\libtiff\tif_version.c" />
-    <ClCompile Include="..\external_compile_libraries\tiff-3.8.2\libtiff\tif_warning.c" />
-    <ClCompile Include="..\external_compile_libraries\tiff-3.8.2\libtiff\tif_win32.c">
-      <CompileAs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Default</CompileAs>
-      <CompileAs Condition="'$(Configuration)|$(Platform)'=='Release (IPP DLL)|x64'">Default</CompileAs>
+    <ClCompile Include="..\external_compile_libraries\libtiff-4.0.9\libtiff\tif_aux.c">
+      <CompileAs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">CompileAsC</CompileAs>
     </ClCompile>
-    <ClCompile Include="..\external_compile_libraries\tiff-3.8.2\libtiff\tif_write.c" />
-    <ClCompile Include="..\external_compile_libraries\tiff-3.8.2\libtiff\tif_zip.c" />
+    <ClCompile Include="..\external_compile_libraries\libtiff-4.0.9\libtiff\tif_close.c">
+      <CompileAs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">CompileAsC</CompileAs>
+    </ClCompile>
+    <ClCompile Include="..\external_compile_libraries\libtiff-4.0.9\libtiff\tif_codec.c">
+      <CompileAs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">CompileAsC</CompileAs>
+    </ClCompile>
+    <ClCompile Include="..\external_compile_libraries\libtiff-4.0.9\libtiff\tif_color.c">
+      <CompileAs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">CompileAsC</CompileAs>
+    </ClCompile>
+    <ClCompile Include="..\external_compile_libraries\libtiff-4.0.9\libtiff\tif_compress.c">
+      <CompileAs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">CompileAsC</CompileAs>
+    </ClCompile>
+    <ClCompile Include="..\external_compile_libraries\libtiff-4.0.9\libtiff\tif_dir.c">
+      <CompileAs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">CompileAsC</CompileAs>
+    </ClCompile>
+    <ClCompile Include="..\external_compile_libraries\libtiff-4.0.9\libtiff\tif_dirinfo.c">
+      <CompileAs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">CompileAsC</CompileAs>
+    </ClCompile>
+    <ClCompile Include="..\external_compile_libraries\libtiff-4.0.9\libtiff\tif_dirread.c">
+      <CompileAs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">CompileAsC</CompileAs>
+    </ClCompile>
+    <ClCompile Include="..\external_compile_libraries\libtiff-4.0.9\libtiff\tif_dirwrite.c">
+      <CompileAs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">CompileAsC</CompileAs>
+    </ClCompile>
+    <ClCompile Include="..\external_compile_libraries\libtiff-4.0.9\libtiff\tif_dumpmode.c">
+      <CompileAs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">CompileAsC</CompileAs>
+    </ClCompile>
+    <ClCompile Include="..\external_compile_libraries\libtiff-4.0.9\libtiff\tif_error.c">
+      <CompileAs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">CompileAsC</CompileAs>
+    </ClCompile>
+    <ClCompile Include="..\external_compile_libraries\libtiff-4.0.9\libtiff\tif_extension.c">
+      <CompileAs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">CompileAsC</CompileAs>
+    </ClCompile>
+    <ClCompile Include="..\external_compile_libraries\libtiff-4.0.9\libtiff\tif_fax3.c">
+      <CompileAs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">CompileAsC</CompileAs>
+    </ClCompile>
+    <ClCompile Include="..\external_compile_libraries\libtiff-4.0.9\libtiff\tif_fax3sm.c">
+      <CompileAs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">CompileAsC</CompileAs>
+    </ClCompile>
+    <ClCompile Include="..\external_compile_libraries\libtiff-4.0.9\libtiff\tif_flush.c">
+      <CompileAs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">CompileAsC</CompileAs>
+    </ClCompile>
+    <ClCompile Include="..\external_compile_libraries\libtiff-4.0.9\libtiff\tif_getimage.c">
+      <CompileAs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">CompileAsC</CompileAs>
+    </ClCompile>
+    <ClCompile Include="..\external_compile_libraries\libtiff-4.0.9\libtiff\tif_jbig.c">
+      <CompileAs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">CompileAsC</CompileAs>
+    </ClCompile>
+    <ClCompile Include="..\external_compile_libraries\libtiff-4.0.9\libtiff\tif_jpeg.c">
+      <CompileAs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">CompileAsC</CompileAs>
+    </ClCompile>
+    <ClCompile Include="..\external_compile_libraries\libtiff-4.0.9\libtiff\tif_jpeg_12.c">
+      <CompileAs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">CompileAsC</CompileAs>
+    </ClCompile>
+    <ClCompile Include="..\external_compile_libraries\libtiff-4.0.9\libtiff\tif_luv.c">
+      <CompileAs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">CompileAsC</CompileAs>
+    </ClCompile>
+    <ClCompile Include="..\external_compile_libraries\libtiff-4.0.9\libtiff\tif_lzma.c">
+      <CompileAs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">CompileAsC</CompileAs>
+    </ClCompile>
+    <ClCompile Include="..\external_compile_libraries\libtiff-4.0.9\libtiff\tif_lzw.c">
+      <CompileAs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">CompileAsC</CompileAs>
+    </ClCompile>
+    <ClCompile Include="..\external_compile_libraries\libtiff-4.0.9\libtiff\tif_next.c">
+      <CompileAs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">CompileAsC</CompileAs>
+    </ClCompile>
+    <ClCompile Include="..\external_compile_libraries\libtiff-4.0.9\libtiff\tif_ojpeg.c">
+      <CompileAs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">CompileAsC</CompileAs>
+    </ClCompile>
+    <ClCompile Include="..\external_compile_libraries\libtiff-4.0.9\libtiff\tif_open.c">
+      <CompileAs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">CompileAsC</CompileAs>
+    </ClCompile>
+    <ClCompile Include="..\external_compile_libraries\libtiff-4.0.9\libtiff\tif_packbits.c">
+      <CompileAs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">CompileAsC</CompileAs>
+    </ClCompile>
+    <ClCompile Include="..\external_compile_libraries\libtiff-4.0.9\libtiff\tif_pixarlog.c">
+      <CompileAs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">CompileAsC</CompileAs>
+    </ClCompile>
+    <ClCompile Include="..\external_compile_libraries\libtiff-4.0.9\libtiff\tif_predict.c">
+      <CompileAs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">CompileAsC</CompileAs>
+    </ClCompile>
+    <ClCompile Include="..\external_compile_libraries\libtiff-4.0.9\libtiff\tif_print.c">
+      <CompileAs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">CompileAsC</CompileAs>
+    </ClCompile>
+    <ClCompile Include="..\external_compile_libraries\libtiff-4.0.9\libtiff\tif_read.c">
+      <CompileAs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">CompileAsC</CompileAs>
+    </ClCompile>
+    <ClCompile Include="..\external_compile_libraries\libtiff-4.0.9\libtiff\tif_strip.c">
+      <CompileAs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">CompileAsC</CompileAs>
+    </ClCompile>
+    <ClCompile Include="..\external_compile_libraries\libtiff-4.0.9\libtiff\tif_swab.c">
+      <CompileAs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">CompileAsC</CompileAs>
+    </ClCompile>
+    <ClCompile Include="..\external_compile_libraries\libtiff-4.0.9\libtiff\tif_thunder.c">
+      <CompileAs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">CompileAsC</CompileAs>
+    </ClCompile>
+    <ClCompile Include="..\external_compile_libraries\libtiff-4.0.9\libtiff\tif_tile.c">
+      <CompileAs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">CompileAsC</CompileAs>
+    </ClCompile>
+    <ClCompile Include="..\external_compile_libraries\libtiff-4.0.9\libtiff\tif_version.c">
+      <CompileAs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">CompileAsC</CompileAs>
+    </ClCompile>
+    <ClCompile Include="..\external_compile_libraries\libtiff-4.0.9\libtiff\tif_warning.c">
+      <CompileAs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">CompileAsC</CompileAs>
+    </ClCompile>
+    <ClCompile Include="..\external_compile_libraries\libtiff-4.0.9\libtiff\tif_win32.c">
+      <CompileAs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">CompileAsC</CompileAs>
+    </ClCompile>
+    <ClCompile Include="..\external_compile_libraries\libtiff-4.0.9\libtiff\tif_write.c">
+      <CompileAs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">CompileAsC</CompileAs>
+    </ClCompile>
+    <ClCompile Include="..\external_compile_libraries\libtiff-4.0.9\libtiff\tif_zip.c">
+      <CompileAs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">CompileAsC</CompileAs>
+    </ClCompile>
     <ClCompile Include="..\external_libraries\ctmf\ctmf.c" />
     <ClCompile Include="..\external_libraries\libhungarian\hungarian.c" />
     <ClCompile Include="..\external_libraries\libsvm\svm.cpp" />

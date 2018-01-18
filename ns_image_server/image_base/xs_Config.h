@@ -11,14 +11,14 @@
 // ====================================================================================================================
 #ifndef _xs_Types_
 #define _xs_Types_                  1
-    typedef signed char             int8;
-    typedef unsigned char           uint8;
-    typedef signed short            int16;
-    typedef unsigned short          uint16;
-    typedef int			            int32;
-    typedef unsigned int           uint32;
-    typedef float                   real32;
-    typedef double                  real64;
+    typedef signed char            xs_int8;
+    typedef unsigned char            xs_uint8;
+    typedef signed short             xs_int16;
+    typedef unsigned short           xs_uint16;
+    typedef int			             xs_int32;
+    typedef unsigned int           xs_uint32;
+    typedef float                    xs_real32;
+    typedef double                   xs_real64;
 #endif //_xs_Types_
 
 
@@ -55,13 +55,13 @@
 // ====================================================================================================================
 // Memory
 // ====================================================================================================================
-void* xs_PtrAlloc       (int32 count, int32 size=1);                      
-void* xs_PtrRealloc     (void* p, int32 count, int32 size=1);           
+void* xs_PtrAlloc       (xs_int32 count, xs_int32 size=1);
+void* xs_PtrRealloc     (void* p, xs_int32 count, xs_int32 size=1);
 bool  xs_PtrFree        (void* p);                                       
-void* xs_Memmove        (void* p1, void* p2, int32 count, int32 size=1);  
-void* xs_Memcpy         (void* p1, void* p2, int32 count, int32 size=1);   
-void* xs_Memset         (void* p,  int32 data, int32 count, int32 size=1);   
-void* xs_Memzero        (void* p,  int32 count, int32 size=1);   
+void* xs_Memmove        (void* p1, void* p2, xs_int32 count, xs_int32 size=1);
+void* xs_Memcpy         (void* p1, void* p2, xs_int32 count, xs_int32 size=1);
+void* xs_Memset         (void* p, xs_int32 data, xs_int32 count, xs_int32 size=1);
+void* xs_Memzero        (void* p, xs_int32 count, xs_int32 size=1);
 
 
 
@@ -73,18 +73,18 @@ void* xs_Memzero        (void* p,  int32 count, int32 size=1);
 #ifndef _xs_MemoryAlloc_
 #define _xs_MemoryAlloc_ 
 #include <stdlib.h>
-inline void* xs_PtrAlloc    (int32 count, int32 size)                    {return malloc(count*size);}
-inline void* xs_PtrRealloc  (void* p, int32 count, int32 size)           {return realloc(p, count*size);}
+inline void* xs_PtrAlloc    (xs_int32 count, xs_int32 size)                    {return malloc(count*size);}
+inline void* xs_PtrRealloc  (void* p, xs_int32 count, xs_int32 size)           {return realloc(p, count*size);}
 inline bool  xs_PtrFree     (void* p)                                    {free(p); return true;}
 #endif
 
 #ifndef _xs_MemoryMove_
 #define _xs_MemoryMove_ 
 #include <string.h>
-inline void* xs_Memmove (void* p1, void* p2, int32 count, int32 size)    {return memmove(p1,p2,count*size);}
-inline void* xs_Memcpy  (void* p1, void* p2, int32 count, int32 size)    {return memcpy(p1,p2,count*size);}
-inline void* xs_Memset  (void* p,  int32 data, int32 count, int32 size)  {return memset(p,data,count*size);}
-inline void* xs_Memzero (void* p,  int32 count, int32 size)              {return memset(p,0,count*size);}
+inline void* xs_Memmove (void* p1, void* p2, xs_int32 count, xs_int32 size)    {return memmove(p1,p2,count*size);}
+inline void* xs_Memcpy  (void* p1, void* p2, xs_int32 count, xs_int32 size)    {return memcpy(p1,p2,count*size);}
+inline void* xs_Memset  (void* p, xs_int32 data, xs_int32 count, xs_int32 size)  {return memset(p,data,count*size);}
+inline void* xs_Memzero (void* p, xs_int32 count, xs_int32 size)              {return memset(p,0,count*size);}
 #endif
 
 

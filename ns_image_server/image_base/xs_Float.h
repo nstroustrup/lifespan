@@ -70,7 +70,7 @@ public:
     // ====================================================================================================================
     //  Basic Conversion to Numbers
     // ====================================================================================================================
-    finline static  xs_real64    ToReal      (Fix f)        {return real64(f)/real64(1<<N);}
+    finline static  xs_real64    ToReal      (Fix f)        {return xs_real64(f)/xs_real64(1<<N);}
     finline static  xs_int32     ToInt       (Fix f)        {return f>>N;}
 
 

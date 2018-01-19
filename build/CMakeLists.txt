@@ -135,8 +135,7 @@ LIST(APPEND NS_INC "${PROJECT_SOURCE_DIR}/../external_libraries/libsvm"
 	       "${PROJECT_SOURCE_DIR}/../external_libraries/triangle"
 	       "${PROJECT_SOURCE_DIR}/../external_libraries/libhungarian"
 	       "${PROJECT_SOURCE_DIR}/../external_libraries/wm4_bspline"
-	       "${PROJECT_SOURCE_DIR}/../external_libraries/tinyxml"
-	       "${PROJECT_SOURCE_DIR}/../external_libraries/libtiff-proc")
+	       "${PROJECT_SOURCE_DIR}/../external_libraries/tinyxml")
 LIST(REMOVE_DUPLICATES NS_INC)
 LIST(REMOVE_DUPLICATES NS_LN)
 include(GNUInstallDirs)

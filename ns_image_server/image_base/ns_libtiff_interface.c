@@ -1,18 +1,14 @@
 #include "ns_libtiff_interface.h"
 #include <fcntl.h>
 
-//apologies for pulling in the OS-dependant tiff files as includes.
-//Unfortunately libtiff conflates file handling and error handling by storing
-//file descriptors in the client_data field by default.  Thus, to specify custon
-//client_data we need to reimplement all the OS-dependant file handling code.
-//Rather than rewriting this from scratch we just use wrappers to the extant code.
-//Because all of the _tiff functions are declared as static we pull them in as includes.
-#ifdef _WIN32 
-#include <Windows.h>
-#include "tif_win32_proconly.c"
-#else
-#include "tif_unix_proconly.c"
-#endif
+#include "tiffio.h"
+
+//global variable used to store pointers to internal TIFF library functions
+//This is done so we can declare our own TIFF error handlers using the TIFFlib C interface.
+
+TIFF * ref_tif = 0;
+int ns_DummyMapProc(thandle_t fd, void** pbase, toff_t* psize){return 0;}
+void _tiffDummyUnmapProc(thandle_t fd, void* base, toff_t size){}
 
 TIFF* ns_tiff_fd_open(ns_tiff_client_data * client_data, const char* name, const char* mode){
 	TIFF* tif;
@@ -28,26 +24,26 @@ TIFF* ns_tiff_fd_open(ns_tiff_client_data * client_data, const char* name, const
 			break;
 		}
 	}
-	tif = TIFFClientOpen(name, mode, client_data->tiff_fd.h, /* FIXME: WIN64 cast to pointer warning */
-			_tiffReadProc, _tiffWriteProc,
-			_tiffSeekProc, _tiffCloseProc, _tiffSizeProc,
-			fSuppressMap ? _tiffDummyMapProc : _tiffMapProc,
-			fSuppressMap ? _tiffDummyUnmapProc : _tiffUnmapProc);
+	tif = TIFFClientOpen(name, mode, client_data->tiff_fd.h, 
+			     TIFFGetReadProc(ref_tif), TIFFGetWriteProc(ref_tif),
+			     TIFFGetSeekProc(ref_tif), TIFFCloseProc(ref_tif), TIFFGetSizeProc(ref_tif),
+			     fSuppressMap ? ns_DummyMapProc : TIFFGetMapFileProc(ref_tif),
+			     fSuppressMap ? ns_DummyUnmapProc : TIFFGetUnmapFileProc(ref_tif));
 	#else
 	    
 		tif = TIFFClientOpen(name, mode,
 			client_data->tiff_fd.h,
-			_tiffReadProc, _tiffWriteProc,
-			_tiffSeekProc, _tiffCloseProc, _tiffSizeProc,
-			_tiffMapProc, _tiffUnmapProc);
+				     TIFFGetReadProc(ref_tif), TIFFGetWriteProc(ref_tif),
+				     TIFFGetSeekProc(ref_tif), TIFFGetCloseProc(ref_tif), TIFFGetSizeProc(ref_tif),
+				     TIFFGetMapFileProc(ref_tif), TIFFGetUnmapFileProc(ref_tif));
 	
 
 	#endif	
 	if (tif)
-	tif->tif_fd = client_data->tiff_fd.fd;
+	  TIFFSetFileno(tif, client_data->tiff_fd.fd);
+       
 	return (tif);
-}
-
+} 
 
 int ns_TIFFgetMode(const char* mode, const char* module)
 {
@@ -74,6 +70,13 @@ int ns_TIFFgetMode(const char* mode, const char* module)
 
 
 TIFF* ns_tiff_open(const char* name, ns_tiff_client_data * client_data,const char* mode){
+  //We attempt to load a file here, not to open anything
+  //but to get pointers to the internal TIFF library functions
+  //so we can use them for our own handlers.
+  if (ref_tif==0)
+    ref_tif = TIFFFdOpen(0,"tst.tif","w");
+ 
+  //printf("NS OPENING %s\n",name); 
 #ifdef _WIN32 
 	static const char module[] = "TIFFOpen";
 
@@ -112,8 +115,6 @@ TIFF* ns_tiff_open(const char* name, ns_tiff_client_data * client_data,const cha
 	m = ns_TIFFgetMode(mode, module);
 	if (m == -1)
 		return ((TIFF*)0);
-
-/* for cygwin and mingw */        
 	#ifdef O_BINARY
         m |= O_BINARY;
 	#endif        
@@ -123,19 +124,20 @@ TIFF* ns_tiff_open(const char* name, ns_tiff_client_data * client_data,const cha
 	client_data->tiff_fd.fd = open(name, m, 0666);
 	#endif
 	if (client_data->tiff_fd.fd < 0) {
-		if (errno > 0 && strerror(errno) != NULL) {
-			TIFFErrorExt(0, module, "%s: %s", name, strerror(errno));
-		}
-		else {
+	  //	if (errno > 0 && strerror(errno) != NULL) {
+	  //		TIFFErrorExt(0, module, "%s: %s", name, strerror(errno));
+	  //	}
+	  //	else {
 			TIFFErrorExt(0, module, "%s: Cannot open", name);
-		}
+	  //	}
 		return ((TIFF *)0);
 	}
 
 
 	tif = ns_tiff_fd_open(client_data, name, mode);
 	if(!tif)
-		close(client_data->fd);
+		close(client_data->tiff_fd.fd);
 	return tif;
 #endif
+ 
 }

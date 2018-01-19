@@ -3,12 +3,16 @@
 
 #include "tiffio.h"
 
+#ifdef _WIN32
+#include <Windows.h>
+#endif
+
 //global variable used to store pointers to internal TIFF library functions
 //This is done so we can declare our own TIFF error handlers using the TIFFlib C interface.
 
 TIFF * ref_tif = 0;
 int ns_DummyMapProc(thandle_t fd, void** pbase, toff_t* psize){return 0;}
-void _tiffDummyUnmapProc(thandle_t fd, void* base, toff_t size){}
+void ns_DummyUnmapProc(thandle_t fd, void* base, toff_t size){}
 
 TIFF* ns_tiff_fd_open(ns_tiff_client_data * client_data, const char* name, const char* mode){
 	TIFF* tif;
@@ -26,7 +30,7 @@ TIFF* ns_tiff_fd_open(ns_tiff_client_data * client_data, const char* name, const
 	}
 	tif = TIFFClientOpen(name, mode, client_data->tiff_fd.h, 
 			     TIFFGetReadProc(ref_tif), TIFFGetWriteProc(ref_tif),
-			     TIFFGetSeekProc(ref_tif), TIFFCloseProc(ref_tif), TIFFGetSizeProc(ref_tif),
+			     TIFFGetSeekProc(ref_tif), TIFFGetCloseProc(ref_tif), TIFFGetSizeProc(ref_tif),
 			     fSuppressMap ? ns_DummyMapProc : TIFFGetMapFileProc(ref_tif),
 			     fSuppressMap ? ns_DummyUnmapProc : TIFFGetUnmapFileProc(ref_tif));
 	#else
@@ -68,13 +72,18 @@ int ns_TIFFgetMode(const char* mode, const char* module)
 	return (m);
 }
 
-
 TIFF* ns_tiff_open(const char* name, ns_tiff_client_data * client_data,const char* mode){
   //We attempt to load a file here, not to open anything
   //but to get pointers to the internal TIFF library functions
   //so we can use them for our own handlers.
+	client_data->tiff_fd.fd = 0;
+	client_data->tiff_fd.h = 0;
   if (ref_tif==0)
-    ref_tif = TIFFFdOpen(0,"tst.tif","w");
+#ifdef _WIN32 
+    ref_tif = TIFFOpen("tst.tif","w");
+#else
+	  ref_tif = TIFFFdOpen(0, "tst.tif", "w");
+#endif
  
   //printf("NS OPENING %s\n",name); 
 #ifdef _WIN32 
@@ -94,18 +103,18 @@ TIFF* ns_tiff_open(const char* name, ns_tiff_client_data * client_data,const cha
 	case O_RDWR | O_CREAT | O_TRUNC:	dwMode = CREATE_ALWAYS; break;
 	default:			return ((TIFF*)0);
 	}
-	client_data->tiff_fd.fd = (thandle_t)CreateFileA(name,
+	client_data->tiff_fd.h = (thandle_t)CreateFileA(name,
 		(m == O_RDONLY)?GENERIC_READ:(GENERIC_READ | GENERIC_WRITE),
 		FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, dwMode,
 		(m == O_RDONLY)?FILE_ATTRIBUTE_READONLY:FILE_ATTRIBUTE_NORMAL,
 		NULL);
-	if (client_data->tiff_fd.fd == INVALID_HANDLE_VALUE) {
+	if (client_data->tiff_fd.h == INVALID_HANDLE_VALUE) {
 		TIFFErrorExt(0, module, "%s: Cannot open", name);
 		return ((TIFF *)0);
 	}
 	tif = ns_tiff_fd_open(client_data, name, mode);
 	if(!tif)
-		CloseHandle(client_data->tiff_fd.fd);
+		CloseHandle(client_data->tiff_fd.h);
 	return tif;
 #else
 	static const char module[] = "TIFFOpen";

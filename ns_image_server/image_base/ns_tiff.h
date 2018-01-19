@@ -9,6 +9,7 @@
 
 
 struct ns_tiff_info{
+	ns_tiff_info() :stripsize(0), number_of_strips(0), rows_per_strip(0), current_strip(0), strip_pos(0), strip_length(0), bytes_read_from_current_strip(0), rows_read_from_current_strip(0) {}
 	//information about strip dimentions
 	tmsize_t stripsize,
 				 number_of_strips,
@@ -250,7 +251,7 @@ class ns_tiff_image_output_file;
 
 ns_tiff_compression_type ns_get_tiff_compression_type(const ns_image_type & type);
 
-void ns_set_default_tiff_parameters(const ns_image_properties & p, const ns_tiff_compression_type & t,const unsigned long bits_per_sample, const unsigned long rows_per_strip,TIFF * file);
+void ns_set_default_tiff_parameters(const ns_image_properties & p, const ns_tiff_compression_type & t,const unsigned long bits_per_sample, const ns_64_bit rows_per_strip,TIFF * file);
 
 #define NS_TIFF_WIDTH ns_image_output_file<ns_component>::_properties.width*ns_image_output_file<ns_component>::_properties.components
 
@@ -385,13 +386,13 @@ public:
 	private:
 	friend void ns_set_default_tiff_parameters(const ns_image_properties & p, const ns_tiff_compression_type & t,const unsigned long bits_per_sample, const unsigned long rows_per_strip,TIFF * file);
 
-	unsigned long rows_per_strip;
+	ns_64_bit rows_per_strip;
 	ns_tiff_compression_type compression_type;
 	TIFF *image;
 	ns_component * output_buf;
-	unsigned int output_buffer_height;
-	unsigned int current_output_strip;
-	unsigned int lines_received;
+	ns_64_bit output_buffer_height;
+	ns_64_bit current_output_strip;
+	ns_64_bit lines_received;
 };
 
 

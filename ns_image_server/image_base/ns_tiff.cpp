@@ -200,7 +200,7 @@ public:
 	}
 };
 
-void ns_set_default_tiff_parameters(const ns_image_properties & p,const ns_tiff_compression_type & t,const unsigned long bits_per_sample, const unsigned long rows_per_strip,TIFF * image){
+void ns_set_default_tiff_parameters(const ns_image_properties & p,const ns_tiff_compression_type & t,const unsigned long bits_per_sample, const ns_64_bit rows_per_strip,TIFF * image){
 	
 	ns_set_tiff_field(image, TIFFTAG_IMAGEWIDTH, p.width);
 	ns_set_tiff_field(image, TIFFTAG_IMAGELENGTH, p.height);
@@ -320,7 +320,7 @@ void ns_get_default_tiff_parameters(const unsigned char component_size, ns_image
 	short photometric=0;
 	if (TIFFGetField(image, TIFFTAG_PHOTOMETRIC, &photometric) == 0)
 		ns_throw_tiff_exception(ns_ex("ns_tiff_image_input_stream::Image does not specify it's photometric.")<< ns_file_io);
-
+	tiff_info.rows_per_strip = 0;
 	if (TIFFGetField(image, TIFFTAG_ROWSPERSTRIP, &tiff_info.rows_per_strip) == 0)
 		ns_throw_tiff_exception(ns_ex("ns_tiff_image_input_stream::Image does not specify the number of rows per strip.")<< ns_file_io);
 	//else cerr << "Rows per strip: " << tiff_info.rows_per_strip << "\n";

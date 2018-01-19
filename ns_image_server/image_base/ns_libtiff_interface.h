@@ -7,11 +7,7 @@ typedef void* thandle_t;
 
 typedef union fd_as_handle_union
 {
-#ifdef _WIN32
-	thandle_t fd;
-#else
 	int fd;
-#endif
 	thandle_t h;
 } fd_as_handle_union_t;
 

@@ -416,7 +416,7 @@ void ns_barcode_encoder::encode(const string & filename, const vector<string> & 
 		encode(labels[i],images[i],20);
 		images_p[i] = &images[i];
 	}
-	ns_image_stream_file_sink<ns_8_bit> sink(filename,tiff_out,1.0,512);
+	ns_image_stream_file_sink<ns_8_bit> sink(filename,tiff_out,512,1.0);
 
 	if (tight_pack)
 		ns_compile_collage(images_p, sink, 512, 1, 255);

@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 14
-VisualStudioVersion = 14.0.25420.1
+# Visual Studio 15
+VisualStudioVersion = 15.0.26730.15
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ns_image_server", "ns_image_server.vcxproj", "{7BFA18F2-2160-438E-93F4-E2E2AB392DE3}"
 EndProject
@@ -84,7 +84,8 @@ Global
 		{CE96BC79-0218-4C95-B749-C4BBD4810026}.Release (IPP DLL)|x64.ActiveCfg = Release (IPP DLL)|Win32
 		{CE96BC79-0218-4C95-B749-C4BBD4810026}.Release|Win32.ActiveCfg = Release|Win32
 		{CE96BC79-0218-4C95-B749-C4BBD4810026}.Release|Win32.Build.0 = Release|Win32
-		{CE96BC79-0218-4C95-B749-C4BBD4810026}.Release|x64.ActiveCfg = Release|Win32
+		{CE96BC79-0218-4C95-B749-C4BBD4810026}.Release|x64.ActiveCfg = Release|x64
+		{CE96BC79-0218-4C95-B749-C4BBD4810026}.Release|x64.Build.0 = Release|x64
 		{565E562E-4F4A-46D7-B64F-6FBD0E77D480}.Debug|Win32.ActiveCfg = Debug|Win32
 		{565E562E-4F4A-46D7-B64F-6FBD0E77D480}.Debug|Win32.Build.0 = Debug|Win32
 		{565E562E-4F4A-46D7-B64F-6FBD0E77D480}.Debug|x64.ActiveCfg = Debug|x64
@@ -100,5 +101,8 @@ Global
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {22E880DF-29BF-4A15-B8F6-FC2488B0CCF9}
 	EndGlobalSection
 EndGlobal

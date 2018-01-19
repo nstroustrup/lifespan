@@ -154,7 +154,7 @@ public:
 		return s;
 	}
 };
-double ns_dir::get_file_size(const std::string filename) {
+ns_64_bit ns_dir::get_file_size(const std::string filename) {
 #ifdef _WIN32
 	//from https://stackoverflow.com/questions/8991192/check-filesize-without-opening-file-in-c
 	HANDLE hFile = CreateFile(filename.c_str(), GENERIC_READ,
@@ -179,7 +179,7 @@ double ns_dir::get_file_size(const std::string filename) {
 #endif
 }
 
-double ns_dir::get_directory_size(const std::string & path, const std::string & du_path, const bool recurse){
+ns_64_bit ns_dir::get_directory_size(const std::string & path, const std::string & du_path, const bool recurse){
 	if (!ns_dir::file_exists(path))
 		return 0;
 	ns_directory_size_calculator size_calculator;

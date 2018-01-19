@@ -114,7 +114,7 @@ ns_tiff_compression_type ns_get_tiff_compression_type(const ns_image_type & type
 template<>
 unsigned int ns_tiff_image_input_file<ns_8_bit>::readEncodedStrip(TIFF * image, const unsigned int current_strip, ns_8_bit * comp_buf,const unsigned int length){
 	
-	unsigned int r(TIFFReadEncodedStrip(image,current_strip,comp_buf,length));
+	tmsize_t r(TIFFReadEncodedStrip(image,current_strip,comp_buf,length));
 	if (client_data.exception_thrown()){
 		cerr << "12";
 		ns_throw_tiff_exception(client_data.ex());

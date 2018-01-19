@@ -1,9 +1,9 @@
 #ifndef NS_LIBTIFF_INTERFACE
 #define NS_LIBTIFF_INTERFACE
 
-#include "tiffiop.h"
+#include "tiffio.h"
 //#include <string.h>
-
+typedef void* thandle_t;
 
 typedef union fd_as_handle_union
 {

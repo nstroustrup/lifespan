@@ -11,15 +11,15 @@
 struct ns_tiff_info{
 	ns_tiff_info() :stripsize(0), number_of_strips(0), rows_per_strip(0), current_strip(0), strip_pos(0), strip_length(0), bytes_read_from_current_strip(0), rows_read_from_current_strip(0) {}
 	//information about strip dimentions
-	tmsize_t stripsize,
+	ns_64_bit stripsize,
 				 number_of_strips,
 				 rows_per_strip;
 	//information used during strip reading.
 	unsigned long current_strip,
 				 strip_pos,
 				 strip_length;
-	tmsize_t bytes_read_from_current_strip;
-	tmsize_t rows_read_from_current_strip;
+	ns_64_bit bytes_read_from_current_strip;
+	ns_64_bit rows_read_from_current_strip;
 };
 
 
@@ -150,7 +150,7 @@ public:
 			if (lines_read == ns_image_input_file<ns_component>::_properties.height)
 				ns_throw_tiff_exception(ns_ex("ns_tiff::read_line()::Attempting to read too many lines from file: Requested line ") << (lines_read+1) << " from an image with height " << ns_image_input_file<ns_component>::_properties.height);
 			
-			tmsize_t bytes_read;
+			ns_64_bit bytes_read;
 			if (strip_buffer == 0)
 				ns_throw_tiff_exception("Trying to read from a broken ns_tiff object!");
 			//read in another strip when strip buffer is empty
@@ -330,7 +330,7 @@ public:
 			if (output_buf != 0){
 				if (output_buffer_height != 0){
 					//std::cerr  << "Flusing out remaining " << output_buffer_height <<" lines into strip " << current_output_strip << "\n";
-					tmsize_t ret = TIFFWriteEncodedStrip(image,current_output_strip,output_buf,sizeof(ns_component)*NS_TIFF_WIDTH*output_buffer_height);
+					ns_64_bit ret = TIFFWriteEncodedStrip(image,current_output_strip,output_buf,sizeof(ns_component)*NS_TIFF_WIDTH*output_buffer_height);
 					
 						if (client_data.exception_thrown())
 							std::cerr << "ns_tiff_image_output_file::close_file() wants to throw an exception, but cannot: " << client_data.ex().text() << "\n";
@@ -362,7 +362,7 @@ public:
 		lines_received++;
 		if (output_buffer_height == rows_per_strip){
 		//	cerr << "Writing out strip " << current_output_strip << "\n";
-			tmsize_t ret = TIFFWriteEncodedStrip(image,current_output_strip,output_buf,sizeof(ns_component)*NS_TIFF_WIDTH*output_buffer_height);
+			ns_64_bit ret = TIFFWriteEncodedStrip(image,current_output_strip,output_buf,sizeof(ns_component)*NS_TIFF_WIDTH*output_buffer_height);
 			if (client_data.exception_thrown()){
 				std::cerr << "10";
 				throw client_data.ex();

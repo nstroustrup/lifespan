@@ -193,7 +193,7 @@ void ns_image_server_dispatcher::handle_remote_requests(){
 					socket_connection.close();
 					if (hotplug_devices()) {
 						try {
-							ns_acquire_for_scope<ns_local_buffer_connection> sql(image_server.new_local_buffer_connection(__FILE__, __LINE__));
+							ns_acquire_for_scope<ns_sql> sql(image_server.new_sql_connection(__FILE__, __LINE__));
 							image_server.register_devices(false, &sql());
 							sql.release();
 						}

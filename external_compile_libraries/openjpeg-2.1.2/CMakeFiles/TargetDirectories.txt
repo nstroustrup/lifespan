@@ -1,4 +1,0 @@
-/home/image_server/lifespan/external_compile_libraries/openjpeg-2.1.2/src/lib/openjp2/CMakeFiles/openjp2.dir
-/home/image_server/lifespan/external_compile_libraries/openjpeg-2.1.2/src/bin/jp2/CMakeFiles/opj_compress.dir
-/home/image_server/lifespan/external_compile_libraries/openjpeg-2.1.2/src/bin/jp2/CMakeFiles/opj_decompress.dir
-/home/image_server/lifespan/external_compile_libraries/openjpeg-2.1.2/src/bin/jp2/CMakeFiles/opj_dump.dir

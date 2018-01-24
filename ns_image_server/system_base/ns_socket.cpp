@@ -39,6 +39,8 @@ for Windows, Linux, and OSX machines.
 using namespace std;
 
 string ns_socket_connection::read(const unsigned long size){
+	if (size > 1024 * 1024 * 1024)
+		throw ns_ex("ns_socket_connection: ") << size << " bytes were requested from a socket.  This exceeds the gigabyte hard-coded limit set to prevent certain security vulnerabilities.";
 	char * buf = new char[size+1];
 	try{
 		unsigned long bytes_read = 0;

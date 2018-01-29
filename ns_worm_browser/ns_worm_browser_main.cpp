@@ -1208,6 +1208,8 @@ class ns_worm_terminal_main_menu_organizer : public ns_menu_organizer{
 		ns_run_in_main_thread<ns_image_file_chooser> run_mt(&im_cc);
 		if (im_cc.chosen){
 			worm_learner.load_file(im_cc.result);
+
+			worm_learner.current_clipboard_filename = im_cc.result;
 			worm_learner.draw();
 		}
 	}

@@ -847,6 +847,8 @@ public:
 	ns_lock persistant_sql_lock;
 
 	ns_death_time_solo_posture_annotater_timepoint::ns_visualization_type solo_annotation_visualization_type;
+
+	string current_clipboard_filename;
 private:
 	ns_image_standard animation_temp;
 	ns_death_time_annotation_set::ns_annotation_type_to_load last_annotation_type_loaded;
@@ -887,7 +889,6 @@ private:
 
 	bool movement_data_is_strictly_decreasing_;
 
-	string current_clipboard_filename;
 	ns_sql * persistant_sql_connection;
 
 };

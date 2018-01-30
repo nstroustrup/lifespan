@@ -22,6 +22,8 @@ void refresh_main_window_internal(void *);
 void refresh_worm_window_internal(void *);
 bool debug_handlers = false;
 
+#include <FL/Fl_Box.H>
+
 void ns_worm_browser_output_debug(const unsigned long line_number,const std::string & source, const std::string & message){
 	if (!output_debug_messages)
 		return;
@@ -150,31 +152,35 @@ class ns_worm_terminal_gl_window : public Fl_Gl_Window {
 			}
     }   
 	int handle(int state){
+		if (Fl_Gl_Window::handle(state) != 0)
+			return 1;
 		if (debug_handlers) cout << "g\n";
 		switch(state){
-		case FL_FOCUS: {
-			have_focus = true;
-			int a = Fl_Gl_Window::handle(state); 
-			//schedule_repeating_callback(0);
-			report_changes_made_to_screen();
-			return a; 
-		}
-		case FL_UNFOCUS: {
-			have_focus = false;
-			int a = Fl_Gl_Window::handle(state);
-		//	report_changes_made_to_screen();
-			return a;
-		}
-			case FL_DND_ENTER:
-            case FL_DND_RELEASE:
-            case FL_DND_LEAVE:
-            case FL_DND_DRAG:
+			case FL_FOCUS: {
+				have_focus = true;
+				int a = Fl_Gl_Window::handle(state); 
+				//schedule_repeating_callback(0);
 				report_changes_made_to_screen();
-                return 1;
-			case FL_PASTE: 
+				return a; 
+			}
+			case FL_UNFOCUS: {
+				have_focus = false;
+				int a = Fl_Gl_Window::handle(state);
+			//	report_changes_made_to_screen();
+				return a;
+			}
+			case FL_PUSH:
+			case FL_DRAG:
+			case FL_RELEASE:
+			case FL_DND_ENTER:
+			case FL_DND_RELEASE:
+			case FL_DND_LEAVE:
+			case FL_DND_DRAG:
+				return 1;
+			case FL_PASTE:
 				ns_handle_drag_and_drop();
 				report_changes_made_to_screen();
-				 return 1;
+				return 1;
 		}
 
 		try{
@@ -316,13 +322,6 @@ class ns_worm_gl_window : public Fl_Gl_Window {
 				int a = Fl_Gl_Window::handle(state);
 				return a;
 			}
-			case FL_DND_ENTER:
-            case FL_DND_RELEASE:
-            case FL_DND_LEAVE:
-            case FL_DND_DRAG:
-                return 1;
-			case FL_PASTE: 
-			 return 1;
 		}
 
 		try {
@@ -1914,6 +1913,7 @@ public:
 	Fl_Output * experiment_name_bar;
 	//Fl_Output * region_name_bar;
 	Fl_Output * info_bar;
+
 	//ns_dialog_window * dialog_window;
 //	Fl_Output * spacer_bar;
 	ns_worm_terminal_main_menu_organizer * main_menu_handler;
@@ -1942,6 +1942,7 @@ public:
 		ns_safe_delete(experiment_name_bar);
 		ns_safe_delete(info_bar);
 		ns_safe_delete(exclusion_menu);
+	//	ns_safe_delete(drag_and_drop_box);
 	}
 
 	void update_information_bar(const std::string & status="-1"){
@@ -1958,7 +1959,7 @@ public:
     ns_worm_terminal_main_window(int W,int H,const char*L=0) : Fl_Window(50,50,W,H,L), draw_animation(false),last_draw_animation(false),have_focus(false){
         // OpenGL window
         gl_window = new ns_worm_terminal_gl_window(0, menu_height(), w()-border_width(), h()-menu_height()-info_bar_height());
-
+	
     	main_menu = new Fl_Menu_Bar(0,0,W,menu_height());
 		
 	
@@ -2030,6 +2031,8 @@ public:
 		experiment_name_bar->value(worm_learner.data_selector.current_experiment_name().c_str());
 
 		info_bar->value("Welcome!");
+
+	//	drag_and_drop_box = new ns_dnd_handling_widget(0,0,W, H);
 	    end();
 		
     }
@@ -2071,7 +2074,7 @@ public:
 
 		//cerr << "ww" << window_size.x << ","<< window_size.y << "\n";
 		Fl_Window::resize(x,y,window_size.x,window_size.y);
-		
+	//	drag_and_drop_box->resize(0, 0, window_size.x, window_size.y);
 		gl_window->resize(0,menu_height()*menu_d,
 			w_*d,
 			h_*d);
@@ -2135,6 +2138,7 @@ public:
 		
 	int handle(int state) {
 
+		//cout << "MW" << state << "\n";
 		if (debug_handlers) cout << "m";
 
 		switch(state){ 
@@ -2163,7 +2167,20 @@ public:
 					Fl::release();
 				//}
 				break;
+
 			}
+			case FL_PUSH:
+			case FL_DRAG:
+			case FL_RELEASE:
+			case FL_DND_ENTER:
+			case FL_DND_RELEASE:
+			case FL_DND_LEAVE:
+			case FL_DND_DRAG:
+				return 1;
+			case FL_PASTE:
+				ns_handle_drag_and_drop();
+				report_changes_made_to_screen();
+				return 1;
 		
 		}
 	//	dialog_window->handle(state);

@@ -522,14 +522,13 @@ void ns_image_server::perform_experiment_maintenance(ns_sql & sql) const{
 void ns_image_server::register_alerts_as_handled(){
 	alert_handler_thread.report_as_finished();
 }
-#ifndef NS_MINIMAL_SERVER_BUILD
-void ns_image_server::process_experiment_capture_schedule_specification(const std::string & input_file,std::vector<std::string> & warnings, const bool overwrite_previous_experiment, const bool submit_to_db, const std::string & summary_output_file, const bool output_to_stdout){
-	warnings.resize(0);
-	ns_experiment_capture_specification spec;
-	spec.load_from_xml_file(input_file);
-	ns_acquire_for_scope<ns_sql> sql(image_server.new_sql_connection(__FILE__,__LINE__));
+#ifndef NS_MINIMAL_SERVER_BUILD	
+ void ns_image_server::submit_capture_schedule_specification(ns_experiment_capture_specification & spec, std::vector < std::string > & warnings, ns_sql & sql,const ns_experiment_capture_specification::ns_handle_existing_experiment & existing_experiment ,const bool submit_to_db,const std::string & summary_output_file,const bool output_to_stdout){
 
-	string summary(spec.submit_schedule_to_db(warnings,sql(),submit_to_db,overwrite_previous_experiment));
+	warnings.resize(0);
+
+
+	string summary(spec.submit_schedule_to_db(warnings,sql,submit_to_db, existing_experiment));
 	if (output_to_stdout && !submit_to_db){
 		cout << summary;
 	}
@@ -539,7 +538,6 @@ void ns_image_server::process_experiment_capture_schedule_specification(const st
 			throw ns_ex("Could not open ") << summary_output_file << " for output.";
 		o << summary;
 	}
-	sql.release();
 }
 #endif
 ofstream * ns_image_server::write_device_configuration_file() const{

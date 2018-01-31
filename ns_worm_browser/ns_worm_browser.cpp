@@ -4260,8 +4260,8 @@ void ns_worm_learner::compile_experiment_survival_and_movement_data(bool use_by_
 					}
 				}
 				output_data_with_incomplete.release();
-				if (output_force_fast)
-				output_data_without_incomplete.release();
+if (output_force_fast)
+output_data_without_incomplete.release();
 			}
 
 			//ns_make_collage(sample_graphs, current_image, 256,true,255,false,(float)(1.0/sample_graphs.size()));
@@ -4277,34 +4277,34 @@ void ns_worm_learner::compile_experiment_survival_and_movement_data(bool use_by_
 			draw_image(-1,-1,current_image);*/
 		}
 	}
-	
+
 	sql.release();
 }
-	
 
-void ns_worm_learner::calculate_image_statistics_for_experiment_sample(unsigned long experiment_id,ns_sql & sql,bool overwrite_extant){
+
+void ns_worm_learner::calculate_image_statistics_for_experiment_sample(unsigned long experiment_id, ns_sql & sql, bool overwrite_extant) {
 	sql << "SELECT id,name FROM capture_samples WHERE experiment_id = " << experiment_id;
 	ns_sql_result res;
 	sql.get_rows(res);
-	for (unsigned int i = 0; i < res.size(); i++){
+	for (unsigned int i = 0; i < res.size(); i++) {
 		cerr << "Processing sample " << res[i][1] << "\n";
 		sql << "SELECT id, image_id, image_statistics_id FROM captured_images WHERE sample_id = " << res[i][0] << " AND censored = 0 AND problem = 0 AND currently_being_processed = 0";
 		if (!overwrite_extant)
 			sql << " AND image_statistics_id = 0";
 		ns_sql_result res2;
 		sql.get_rows(res2);
-		for (unsigned int j = 0; j < res2.size(); j++){
-			cerr << (unsigned long)((100*j)/(float)res2.size()) << "%...";
+		for (unsigned int j = 0; j < res2.size(); j++) {
+			cerr << (unsigned long)((100 * j) / (float)res2.size()) << "%...";
 			ns_image_statistics stats;
 			unsigned long capture_sample_image_id(atol(res2[j][0].c_str()));
 			ns_image_server_image im;
 			im.id = atol(res2[j][1].c_str());
-			stats.calculate_statistics_from_image(im,sql);
+			stats.calculate_statistics_from_image(im, sql);
 			cerr << "(" << stats.image_statistics.mean << ")";
 			ns_64_bit previous_db_id(ns_atoi64(res2[j][2].c_str()));
 			ns_64_bit db_id(previous_db_id);
-			stats.submit_to_db(db_id,sql);
-			if (previous_db_id != db_id){
+			stats.submit_to_db(db_id, sql);
+			if (previous_db_id != db_id) {
 				sql << "UPDATE captured_images SET image_statistics_id=" << db_id << " WHERE id=" << capture_sample_image_id;
 				sql.send_query();
 			}
@@ -4313,24 +4313,24 @@ void ns_worm_learner::calculate_image_statistics_for_experiment_sample(unsigned 
 	}
 };
 
-void ns_worm_learner::upgrade_tables(){
-	
-	ns_acquire_for_scope<ns_sql> sql(image_server.new_sql_connection(__FILE__,__LINE__));
+void ns_worm_learner::upgrade_tables() {
+
+	ns_acquire_for_scope<ns_sql> sql(image_server.new_sql_connection(__FILE__, __LINE__));
 	ns_alert_dialog d;
-	if (image_server.upgrade_tables(&sql(),false,image_server.current_sql_database(),false))
+	if (image_server.upgrade_tables(&sql(), false, image_server.current_sql_database(), false))
 		d.text = "Schema update completed.";
 	else
 		d.text = "No update was needed.";
-		
+
 	sql.release();
-		
+
 	//d.act();
 	ns_run_in_main_thread<ns_alert_dialog> dd(&d);
 
 }
-void ns_worm_learner::handle_file_request(const string & fname){
+void ns_worm_learner::handle_file_request(const string & fname) {
 	string filename(fname);
-	if (filename.substr(0,8)=="file:///")
+	if (filename.substr(0, 8) == "file:///")
 		filename = fname.substr(8);
 
 	std::string ext = ns_tolower(ns_dir::extract_extension(filename));
@@ -4338,27 +4338,39 @@ void ns_worm_learner::handle_file_request(const string & fname){
 	current_clipboard_filename = filename;
 
 	cerr << "received " << filename << "(" << ext << ")\n";
-	if (ext == "m4v"){
+	if (ext == "m4v") {
 		std::string output_basename = ns_dir::extract_filename_without_extension(filename);
 		cerr << "Processing video " << filename << ": ";
-		ns_acquire_for_scope<ns_sql> sql(image_server.new_sql_connection(__FILE__,__LINE__));
-		ns_image_processing_pipeline::wrap_m4v_stream(filename,output_basename,25,!generate_mp4_,sql());
+		ns_acquire_for_scope<ns_sql> sql(image_server.new_sql_connection(__FILE__, __LINE__));
+		ns_image_processing_pipeline::wrap_m4v_stream(filename, output_basename, 25, !generate_mp4_, sql());
 		sql.release();
-		cerr<< " Done.\n";
+		cerr << " Done.\n";
 	}
-	else if (ext == "jpg" || ext == "tif" || ext == "jp2"){
+	else if (ext == "jpg" || ext == "tif" || ext == "jp2") {
 		load_file(filename);
 		draw();
 	}
-	else if (ext == "xml"){
+	else if (ext == "xml") {
 		string debug_filename(ns_dir::extract_filename_without_extension(filename) + "=summary.txt");
-		bool write_to_disk,write_to_db;
+		bool write_to_disk, write_to_db;
+
+		ns_experiment_capture_specification spec;
+		spec.load_from_xml_file(filename);
+		ns_sql & sql = get_sql_connection();
+		sql << "SELECT id FROM experiments WHERE name = '" << spec.name << "'";
+		ns_sql_result res;
+		sql.get_rows(res);
+		ns_experiment_capture_specification::ns_handle_existing_experiment handle_existing_experiment = ns_experiment_capture_specification::ns_append;
+		if (res.size() > 0){
+			handle_existing_experiment =  ask_if_existing_experiment_should_be_overwritten();
+			if (handle_existing_experiment == ns_experiment_capture_specification::ns_stop)
+				return;
+		}
 		ask_if_schedule_should_be_submitted_to_db(write_to_disk,write_to_db);
-	
 		if (write_to_disk || write_to_db){
 			vector<std::string> warnings;
 			try{
-				ns_image_server::process_experiment_capture_schedule_specification(filename,warnings,overwrite_submitted_capture_specification,write_to_db,debug_filename);
+				ns_image_server::submit_capture_schedule_specification(spec,warnings,sql,handle_existing_experiment,write_to_db,debug_filename);
 			}
 			catch(ns_ex & ex){
 				warnings.push_back(ex.text());
@@ -6084,6 +6096,9 @@ void ns_worm_learner::save_death_time_annotations(ns_sql & sql){
 void ns_worm_learner::touch_main_window_pixel_internal(const ns_button_press & press){
 	current_image_lock.wait_to_acquire(__FILE__,__LINE__);
 
+	if (press.click_type == ns_button_press::ns_down) {
+		last_button_press = press;
+	}
 
 	switch(behavior_mode){
 		case ns_worm_learner::ns_draw_boxes:{
@@ -6094,8 +6109,7 @@ void ns_worm_learner::touch_main_window_pixel_internal(const ns_button_press & p
 			if (press.image_position.y < (unsigned int)c || press.image_position.y +(unsigned int)c>= h) return;
 			if (press.control_key_held)
 						area_handler.click(ns_area_handler::ns_move_all_boxes,
-						press.image_distance_from_click_location,
-						press.screen_distance_from_click_location,
+						press, last_button_press,
 						main_window.gl_buffer ,current_image,main_window.pre_gl_downsample,1.0/main_window.display_rescale_factor);
 			else{
 				//Handle out of bounds locations
@@ -6104,11 +6118,11 @@ void ns_worm_learner::touch_main_window_pixel_internal(const ns_button_press & p
 			
 				switch(press.click_type){
 					case ns_button_press::ns_up:
-							area_handler.click(ns_area_handler::ns_deselect_handle,press.image_position,press.screen_position,main_window.gl_buffer ,current_image,main_window.pre_gl_downsample, 1.0 / main_window.display_rescale_factor); break;
+							area_handler.click(ns_area_handler::ns_deselect_handle,press, last_button_press,main_window.gl_buffer ,current_image,main_window.pre_gl_downsample, 1.0 / main_window.display_rescale_factor); break;
 						case ns_button_press::ns_down:
-							area_handler.click(ns_area_handler::ns_select_handle,press.image_position,press.screen_position,main_window.gl_buffer ,current_image,main_window.pre_gl_downsample, 1.0 / main_window.display_rescale_factor); break;
+							area_handler.click(ns_area_handler::ns_select_handle,press, last_button_press,main_window.gl_buffer ,current_image,main_window.pre_gl_downsample, 1.0 / main_window.display_rescale_factor); break;
 						case ns_button_press::ns_drag:
-							area_handler.click(ns_area_handler::ns_move_handle,press.image_position,press.screen_position,main_window.gl_buffer ,current_image,main_window.pre_gl_downsample, 1.0 / main_window.display_rescale_factor); break;
+							area_handler.click(ns_area_handler::ns_move_handle,press, last_button_press,main_window.gl_buffer ,current_image,main_window.pre_gl_downsample, 1.0 / main_window.display_rescale_factor); break;
 						break;
 				}
 			}
@@ -7304,7 +7318,7 @@ void ns_area_handler::undraw_all_boxes(ns_8_bit * screen_buffer, const ns_image_
 	for (std::vector<ns_area_box>::const_iterator b = boxes.begin(); b != boxes.end(); b++) 
 		remove_box_from_screen_buffer(b, screen_buffer, background, image_scaling, pixel_scaling);
 }
-void ns_area_handler::click(const ns_handle_action & action,const ns_vector_2i & image_pos,const ns_vector_2i & screen_pos,ns_8_bit * screen_buffer, const ns_image_standard & background,const unsigned long image_scaling, const double pixel_scaling){
+void ns_area_handler::click(const ns_handle_action & action, const ns_button_press & current_locations, ns_button_press & drag_start_locations,ns_8_bit * screen_buffer, const ns_image_standard & background,const unsigned long image_scaling, const double pixel_scaling){
 	
 	if (last_pixel_scaling != pixel_scaling) {
 		undraw_all_boxes(screen_buffer, background, image_scaling, last_pixel_scaling);
@@ -7320,7 +7334,7 @@ void ns_area_handler::click(const ns_handle_action & action,const ns_vector_2i &
 		//	cerr << "DESELECTING\n";
 			if (!moved_since_last_click && !created_new_box_in_current_click){
 				for (std::vector<ns_area_box>::iterator b = boxes.begin(); b != boxes.end();){
-					if ( (b->screen_coords.top_left - screen_pos).mag() < pixel_scaling*4){
+					if ( (b->screen_coords.top_left - current_locations.screen_position).mag() < pixel_scaling*4){
 				//		cerr << "Removing Top Corner\n";
 						remove_box_from_screen_buffer(b,screen_buffer,background,image_scaling,pixel_scaling);
 						b = boxes.erase(b);
@@ -7333,7 +7347,7 @@ void ns_area_handler::click(const ns_handle_action & action,const ns_vector_2i &
 						created_new_box_in_current_click=false;
 						return;
 					}
-					else if ( !(b->screen_coords.bottom_right == ns_vector_2i(-1,-1)) && (b->screen_coords.bottom_right - screen_pos).mag() <  pixel_scaling * 4){
+					else if ( !(b->screen_coords.bottom_right == ns_vector_2i(-1,-1)) && (b->screen_coords.bottom_right - current_locations.screen_position).mag() <  pixel_scaling * 4){
 						
 					//	cerr << "Removing Top Corner " << "\n";
 						remove_box_from_screen_buffer(b,screen_buffer,background,image_scaling,pixel_scaling);
@@ -7363,7 +7377,7 @@ void ns_area_handler::click(const ns_handle_action & action,const ns_vector_2i &
 		case ns_select_handle:{
 		//	cerr << "SELECTING\n";
 			for (std::vector<ns_area_box>::iterator b = boxes.begin(); b != boxes.end();b++){
-				ns_box::ns_box_location contact_location(b->screen_coords.corner_contact(screen_pos));
+				ns_box::ns_box_location contact_location(b->screen_coords.corner_contact(current_locations.screen_position));
 				switch(contact_location){
 				case ns_box::ns_none: continue;
 				case ns_box::ns_top_left:
@@ -7392,14 +7406,14 @@ void ns_area_handler::click(const ns_handle_action & action,const ns_vector_2i &
 				//if we have an unfinished box, finish it
 				if (unfinished_box_exists){
 					//reject invalid choices that might creep in
-					if (current_unfinished_box->screen_coords.top_left.x + 4 > screen_pos.x ||
-						current_unfinished_box->screen_coords.top_left.y + 4 > screen_pos.y){
+					if (current_unfinished_box->screen_coords.top_left.x + 4 > current_locations.screen_position.x ||
+						current_unfinished_box->screen_coords.top_left.y + 4 > current_locations.screen_position.y){
 						return;
 					}
 
 					remove_box_from_screen_buffer(current_unfinished_box,screen_buffer,background,image_scaling,pixel_scaling);
-					current_unfinished_box->image_coords.bottom_right = image_pos;
-					current_unfinished_box->screen_coords.bottom_right = screen_pos;
+					current_unfinished_box->image_coords.bottom_right = current_locations.image_position;
+					current_unfinished_box->screen_coords.bottom_right = current_locations.screen_position;
 					cur_box_handle = ns_box::ns_bottom_right;
 					created_new_box_in_current_click  = true;
 					selected_box = current_unfinished_box;
@@ -7409,8 +7423,8 @@ void ns_area_handler::click(const ns_handle_action & action,const ns_vector_2i &
 				}
 				else{
 					current_unfinished_box = boxes.insert(boxes.end(),ns_area_box());
-					current_unfinished_box->screen_coords.top_left = screen_pos;
-					current_unfinished_box->image_coords.top_left = image_pos;
+					current_unfinished_box->screen_coords.top_left = current_locations.screen_position;
+					current_unfinished_box->image_coords.top_left = current_locations.image_position;
 					current_unfinished_box->screen_coords.bottom_right = ns_vector_2i(-1,-1);
 					current_unfinished_box->image_coords.bottom_right = ns_vector_2i(-1,-1);
 					cur_box_handle = ns_box::ns_top_left;
@@ -7430,32 +7444,42 @@ void ns_area_handler::click(const ns_handle_action & action,const ns_vector_2i &
 			if (!selected_box_exists) return;
 			moved_since_last_click = true;
 			remove_box_from_screen_buffer(selected_box,screen_buffer,background,image_scaling,pixel_scaling);
-			selected_box->assign_and_correct_inversions(cur_box_handle,screen_pos,image_pos);
+			selected_box->assign_and_correct_inversions(cur_box_handle, current_locations.screen_position, current_locations.image_position);
 		
 			draw_boxes(screen_buffer,background.properties(),image_scaling,pixel_scaling);
 			
 			worm_learner.main_window.redraw_screen();
 			break;
 		}
-		case ns_move_all_boxes:{
+		case ns_move_all_boxes: {
+			ns_vector_2i image_diff = current_locations.image_position - drag_start_locations.image_position,
+				screen_diff = current_locations.screen_position - drag_start_locations.screen_position;
 			selected_box = boxes.end();
-			for (std::vector<ns_area_box>::iterator b = boxes.begin(); b != boxes.end();b++){
-				remove_box_from_screen_buffer(b,screen_buffer,background,image_scaling,pixel_scaling);
-				if(ns_a_is_above_or_left_of_b(b->image_coords.bottom_right+image_pos,ns_vector_2i(0,0), pixel_scaling * 4) ||
-					ns_a_is_above_or_left_of_b(ns_vector_2i(background.properties().width,background.properties().height),
-						b->image_coords.top_left+image_pos, pixel_scaling * 4))
-					continue;
+			bool a_box_is_out_of_bounds(false);
+			for (std::vector<ns_area_box>::iterator b = boxes.begin(); b != boxes.end(); b++) {
+				if (ns_a_is_above_or_left_of_b(b->image_coords.top_left + image_diff, ns_vector_2i(0, 0), pixel_scaling) ||
+					ns_a_is_above_or_left_of_b(ns_vector_2i(background.properties().width, background.properties().height),
+						b->image_coords.bottom_right + image_diff, pixel_scaling)) {
+					a_box_is_out_of_bounds = true;
+					break;
+				}
+			}
+			if (!a_box_is_out_of_bounds) {
+				for (std::vector<ns_area_box>::iterator b = boxes.begin(); b != boxes.end(); b++) {
+					remove_box_from_screen_buffer(b, screen_buffer, background, image_scaling, pixel_scaling);
+					moved_since_last_click = true;
+					b->image_coords.bottom_right += image_diff;
+					b->image_coords.top_left += image_diff;
+					b->screen_coords.bottom_right += screen_diff;
+					b->screen_coords.top_left += screen_diff;
 
-		    	moved_since_last_click = true;
-				b->image_coords.bottom_right+=image_pos;
-				b->image_coords.top_left+=image_pos;
-				b->screen_coords.bottom_right+=screen_pos;
-				b->screen_coords.top_left+=screen_pos;
-						
-			}	
-			
-			draw_boxes(screen_buffer,background.properties(),image_scaling,pixel_scaling);
-			worm_learner.main_window.redraw_screen();
+					drag_start_locations.image_position = current_locations.image_position;
+					drag_start_locations.screen_position = current_locations.screen_position;
+				}
+
+				draw_boxes(screen_buffer, background.properties(), image_scaling, pixel_scaling);
+				worm_learner.main_window.redraw_screen();
+			}
 			break;
 		}
 

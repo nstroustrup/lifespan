@@ -82,7 +82,7 @@ void ns_set_main_window_annotation_controls_activity(const bool active);
 std::string ns_extract_scanner_name_from_filename(const std::string & filename);
 
 //unsigned int ask_modal_question(const std::string & question,const string & response_1, const string & response_2, const string & response_3);
-
+ns_experiment_capture_specification::ns_handle_existing_experiment ask_if_existing_experiment_should_be_overwritten();
 void ask_if_schedule_should_be_submitted_to_db(bool & write_to_disk, bool & write_to_db);
 //typedef ns_image_whole<ns_8_bit,ns_image_stream_static_offset_buffer<ns_8_bit>,ns_image_stream_static_buffer<ns_8_bit> > ns_image_standard;
 
@@ -182,12 +182,23 @@ struct ns_area_box{
 
 typedef enum { ns_none, ns_activate, ns_deactivate } ns_menu_bar_request;
 
+struct ns_button_press {
+	typedef enum { ns_down, ns_up, ns_drag, ns_none } ns_click_type;
+	ns_click_type click_type;
+	bool right_button,
+		shift_key_held,
+		control_key_held;
+	ns_vector_2i screen_position,
+		image_position,
+		screen_distance_from_click_location,
+		image_distance_from_click_location;
+};
 class ns_area_handler{
 public:
 	ns_area_handler():unfinished_box_exists(false),selected_box_exists(false),moved_since_last_click(false), last_pixel_scaling(0),created_new_box_in_current_click(false){current_unfinished_box = boxes.end(); selected_box = boxes.end();}
 	typedef enum {ns_select_handle,ns_move_handle,ns_deselect_handle,ns_move_all_boxes} ns_handle_action;
 	void undraw_all_boxes(ns_8_bit * screen_buffer, const ns_image_standard & background, const unsigned long image_scaling, const double pixel_scaling) const;
-	void click(const ns_handle_action & action,const ns_vector_2i & image_pos, const ns_vector_2i & screen_pos,ns_8_bit * screen_buffer, const ns_image_standard & background,const unsigned long scaling, const double pixel_scaling);
+	void click(const ns_handle_action & action,const ns_button_press & current_locations,ns_button_press & drag_start_locations, ns_8_bit * screen_buffer, const ns_image_standard & background,const unsigned long scaling, const double pixel_scaling);
 	void output_boxes(std::ostream & out, const std::string & device_name,const float & resolution,const std::string & units);
 	void clear_boxes();
 	void draw_boxes(ns_8_bit * screen_buffer,const ns_image_properties & buffer_size,const unsigned long image_scaling, const double pixel_scaling) const;
@@ -493,17 +504,6 @@ public:
 };
 
 
-struct ns_button_press{
-	typedef enum{ns_down,ns_up,ns_drag} ns_click_type;
-	ns_click_type click_type;
-	bool right_button,
-		 shift_key_held,
-		 control_key_held;
-	ns_vector_2i screen_position,
-				 image_position,
-				 screen_distance_from_click_location,
-				 image_distance_from_click_location;
-};
 
 class ns_gl_window_data{
 public:
@@ -567,6 +567,7 @@ public:
 		current_annotater(&death_time_annotater),storyboard_annotater(2),main_window("Main Window"), persistant_sql_connection(0), persistant_sql_lock("psl"), show_testing_menus(false),
 				worm_window("Worm Window"){
 		storyboard_annotater.set_resize_factor(2);
+		last_button_press.click_type = ns_button_press::ns_none;
 	}
 
 	~ns_worm_learner();
@@ -852,6 +853,7 @@ public:
 private:
 	ns_image_standard animation_temp;
 	ns_death_time_annotation_set::ns_annotation_type_to_load last_annotation_type_loaded;
+	ns_button_press last_button_press;
 	void touch_main_window_pixel_internal(const ns_button_press & p);
 	void touch_worm_window_pixel_internal(const ns_button_press & p);
 

@@ -11,7 +11,7 @@ using namespace std;
 
 
 
-std::string ns_experiment_capture_specification::submit_schedule_to_db(std::vector<std::string> & warnings,ns_sql & sql,bool actually_write,bool overwrite_previous){
+std::string ns_experiment_capture_specification::submit_schedule_to_db(std::vector<std::string> & warnings,ns_sql & sql,bool actually_write, const ns_handle_existing_experiment & handle_existing){
 	string debug;
 	if (!device_schedule_produced)
 		throw ns_ex("ns_experiment_capture_specification::submit_schedule_to_db()::The device schedule has not yet been compiled");
@@ -73,6 +73,7 @@ std::string ns_experiment_capture_specification::submit_schedule_to_db(std::vect
 	sql.send_query("BEGIN");
 	sql << "SELECT id FROM experiments WHERE name='" << sql.escape_string(name) << "'";
 	sql.get_rows(res);
+	bool experiment_already_exists(false);
 	if(res.size() == 0){
 		sql << "INSERT INTO experiments SET name='" << sql.escape_string(name) << "',description='',`partition`='', time_stamp=0";
 		if (!actually_write){
@@ -83,10 +84,15 @@ std::string ns_experiment_capture_specification::submit_schedule_to_db(std::vect
 		else experiment_id = sql.send_query_get_id();
 	}
 	else{
-		if (!overwrite_previous)
-			throw ns_ex("ns_experiment_capture_specification::submit_schedule_to_db::Experiment already exists and overwrite_previous set to false");
+		if (handle_existing==ns_stop)
+			throw ns_ex("ns_experiment_capture_specification::submit_schedule_to_db::Experiment already exists and stopping behavior requested.");
+		experiment_already_exists = true;
 		if (!actually_write){
-			debug+="Overwriting an existing experiment named ";
+			if (handle_existing==ns_overwrite)
+				debug+="Overwriting an existing experiment named ";
+			else if(handle_existing == ns_append)
+				debug += "Appending to an existing experiment named ";
+			else throw ns_ex("Unknown handler option!");
 			debug+= name + " with id = " + res[0][0] + "\n";
 		}
 		experiment_id = ns_atoi64(res[0][0].c_str());
@@ -96,42 +102,74 @@ std::string ns_experiment_capture_specification::submit_schedule_to_db(std::vect
 
 	sql.clear_query();
 	res.resize(0);
+	unsigned long latest_scheduled_capture_across_all_samples(0);
 	try{
 		for (unsigned int i = 0; i < samples.size(); i++){
 			sql << "SELECT id, name, device_name,parameters FROM capture_samples WHERE experiment_id = " << experiment_id << " AND name='" << sql.escape_string(samples[i].sample_name) << "'";
 			sql.get_rows(res);
-			if(res.size() != 0){
-				if (!overwrite_previous)
-					throw ns_ex("ns_experiment_capture_specification::submit_schedule_to_db::Sample ") << samples[i].sample_name << " already exists and overwrite_previous set to false";
+			if (res.size() != 0) {
+				if (handle_existing == ns_stop)
+					throw ns_ex("ns_experiment_capture_specification::submit_schedule_to_db::Sample ") << samples[i].sample_name << " already exists and stopping behavior was requested";
 
 
 				samples[i].sample_id = ns_atoi64(res[0][0].c_str());
 				ns_processing_job job;
 				job.sample_id = samples[i].sample_id;
-				if (!actually_write)
-							debug+="Deleting previous sample (id=" + ns_to_string(job.sample_id) + ").\n";
-				else ns_handle_image_metadata_delete_action(job,sql);
+
+				if (handle_existing == ns_overwrite) {
+					if (!actually_write)
+						debug += "Deleting previous sample " + samples[i].sample_name + ".\n";
+					else ns_handle_image_metadata_delete_action(job, sql);
+				}
+				else {
+					if (!actually_write)
+						debug += "Appending to previous sample " + samples[i].sample_name + ".\n";
+
+				}
 			}
 
-			sql << "INSERT INTO capture_samples SET experiment_id = " << ns_to_string(experiment_id) << ",name='" << sql.escape_string(samples[i].sample_name) << "'"
-				<< ",device_name='" << sql.escape_string(samples[i].device) << "',parameters='" << sql.escape_string(samples[i].capture_parameters()) << "'"
-				<< ",position_x=" << samples[i].x_position << ",position_y=" << samples[i].y_position
-				<< ",size_x=" << samples[i].width << ",size_y="<<samples[i].height
-				<< ",incubator_name='" << sql.escape_string(incubator_assignments[samples[i].device])
-				<< "',incubator_location='" << sql.escape_string(incubator_location_assignments[samples[i].device])
-				<< "',desired_capture_duration_in_seconds=" <<samples[i].desired_minimum_capture_duration
-				<< ",description='',model_filename='',reason_censored='',image_resolution_dpi='" << samples[i].resolution
-				<< "',device_capture_period_in_seconds=" << capture_schedules[samples[i].internal_schedule_id].device_capture_period
-				<< ",number_of_consecutive_captures_per_sample=" << capture_schedules[samples[i].internal_schedule_id].number_of_consecutive_captures_per_sample
-				<< ", time_stamp=0";
-			if (!actually_write){
-				samples[i].sample_id = 0;
-				debug+="Creating a new sample: name:";
-				debug += samples[i].sample_name + ", device:" + samples[i].device + "\n\tcapture parameters: \"";
-				debug += samples[i].capture_parameters() + "\"\n";
+			if (handle_existing == ns_overwrite) {
+				sql << "INSERT INTO capture_samples SET experiment_id = " << ns_to_string(experiment_id) << ",name='" << sql.escape_string(samples[i].sample_name) << "'"
+					<< ",device_name='" << sql.escape_string(samples[i].device) << "',parameters='" << sql.escape_string(samples[i].capture_parameters()) << "'"
+					<< ",position_x=" << samples[i].x_position << ",position_y=" << samples[i].y_position
+					<< ",size_x=" << samples[i].width << ",size_y=" << samples[i].height
+					<< ",incubator_name='" << sql.escape_string(incubator_assignments[samples[i].device])
+					<< "',incubator_location='" << sql.escape_string(incubator_location_assignments[samples[i].device])
+					<< "',desired_capture_duration_in_seconds=" << samples[i].desired_minimum_capture_duration
+					<< ",description='',model_filename='',reason_censored='',image_resolution_dpi='" << samples[i].resolution
+					<< "',device_capture_period_in_seconds=" << capture_schedules[samples[i].internal_schedule_id].device_capture_period
+					<< ",number_of_consecutive_captures_per_sample=" << capture_schedules[samples[i].internal_schedule_id].number_of_consecutive_captures_per_sample
+					<< ", time_stamp=0";
+				if (!actually_write) {
+					samples[i].sample_id = 0;
+					debug += "Creating a new sample: name:";
+					debug += samples[i].sample_name + ", device:" + samples[i].device + "\n\tcapture parameters: \"";
+					debug += samples[i].capture_parameters() + "\"\n";
+				}
+				else {
+					samples[i].sample_id = sql.send_query_get_id();
+				}
 			}
-			else{
-				samples[i].sample_id = sql.send_query_get_id();
+
+			if (handle_existing == ns_append) {
+
+				sql << "SELECT scheduled_time FROM capture_schedule WHERE sample_id = " << samples[i].sample_id << " ORDER BY scheduled_time DESC LIMIT 1";
+				res.resize(0);
+				sql.get_rows(res);
+				if (res.size() == 0) {
+					std::string err = std::string("WARNING: Could not find any scheduled captures for sample id ") + ns_to_string(samples[i].sample_id);
+					debug += err + "\n";
+					warnings.push_back(err);
+				}
+				else {
+					samples[i].latest_existing_scheduled_scan_time = atol(res[0][0].c_str());
+					if (latest_scheduled_capture_across_all_samples < samples[i].latest_existing_scheduled_scan_time)
+						latest_scheduled_capture_across_all_samples = samples[i].latest_existing_scheduled_scan_time;
+					debug+= "The last scan idenfified for sample " + ns_to_string(samples[i].sample_id) + " was " + ns_format_time_string_for_human(samples[i].latest_existing_scheduled_scan_time) + "\n";
+
+				}
+
+
 			}
 
 			sql.clear_query();
@@ -141,9 +179,19 @@ std::string ns_experiment_capture_specification::submit_schedule_to_db(std::vect
 		sql.clear_query();
 		res.resize(0);
 
+		unsigned long longest_device_capture_period(0);
 
+		if (handle_existing == ns_append) {
+			for (unsigned long i = 0; i < capture_schedules.size(); i++) {
+			if (longest_device_capture_period < capture_schedules[i].device_capture_period)
+				longest_device_capture_period = capture_schedules[i].device_capture_period;
+			}
+			latest_scheduled_capture_across_all_samples += longest_device_capture_period;
+		//	debug += "Adding new scans to an existing experiment, starting at " + ns_to_string(latest_scheduled_capture_across_all_samples) + "\n";
+		}
 
 		for (unsigned long i = 0; i < capture_schedules.size(); i++){
+
 			unsigned long device_start_offset = 2*60;
 			unsigned long s_offset(0);
 			ns_device_schedule_list & device_schedules(capture_schedules[i].device_schedules);
@@ -158,7 +206,14 @@ std::string ns_experiment_capture_specification::submit_schedule_to_db(std::vect
 
 		for (unsigned int i = 0; i < capture_schedules.size(); i++){
 			//compile correct start and stop time for each device.
-			if (capture_schedules[i].start_time == 0) capture_schedules[i].start_time =  ns_current_time() + 2*60;
+			if (capture_schedules[i].start_time == 0) {
+				if (handle_existing == ns_append) {
+					debug += "Adding new scans to an existing experiment, starting at time " + ns_format_time_string_for_human(latest_scheduled_capture_across_all_samples) + "\n";
+					capture_schedules[i].start_time = latest_scheduled_capture_across_all_samples;
+				}
+				else
+					capture_schedules[i].start_time = ns_current_time() + 2 * 60;
+			}
 			capture_schedules[i].stop_time = 0;
 
 			ns_device_schedule_list & device_schedules(capture_schedules[i].device_schedules);
@@ -173,8 +228,8 @@ std::string ns_experiment_capture_specification::submit_schedule_to_db(std::vect
 
 				//find earliest start time, stop time
 				for (ns_device_capture_schedule::ns_sample_group_list::iterator q = p->second.sample_groups.begin(); q != p->second.sample_groups.end(); q++){
-					if (q->second.schedule->start_time != 0 && q->second.schedule->start_time < ns_current_time())
-						throw ns_ex("Start time specified is in the past") << q->second.schedule->start_time;
+					if (q->second.schedule->start_time != 0 && q->second.schedule->start_time < ns_current_time() && handle_existing != ns_append)
+						throw ns_ex("Start time specified is in the past ") << ns_format_time_string_for_human(q->second.schedule->start_time);
 					if (q->first->start_time != 0)
 						q->second.schedule->effective_start_time = q->first->start_time + device_start_offsets[device_name];
 					else
@@ -290,16 +345,31 @@ std::string ns_experiment_capture_specification::submit_schedule_to_db(std::vect
 
 					t+=dt_total;
 				}
-				sql << "UPDATE experiments SET num_time_points = " << number_of_captures << ", first_time_point=" << capture_schedules[i].start_time
-					<< ", last_time_point= " << capture_schedules[i].stop_time << " WHERE id=" << experiment_id;
+				if (handle_existing != ns_append) {
+
+					sql << "UPDATE experiments SET num_time_points = " << number_of_captures << ", first_time_point=" << capture_schedules[i].start_time
+						<< ", last_time_point= " << capture_schedules[i].stop_time << " WHERE id=" << experiment_id;
+				}
+				else {
+
+					sql << "UPDATE experiments SET num_time_points = num_time_points+" << number_of_captures
+						<< ", last_time_point= " << capture_schedules[i].stop_time << " WHERE id=" << experiment_id;
+
+				}
 				if (actually_write)
 					sql.send_query();
 				sql.clear_query();
 			}
 		}
-
+		
 		//start autoscans to keep scanners running after the end of the experiment
 		for (ns_device_start_offset_list::iterator p = device_stop_times.begin(); p != device_stop_times.end(); p++){
+			sql << "DELETE FROM autoscan_schedule WHERE device_name ='" << p->first << "'";
+			sql.send_query();
+
+			sql << "UPDATE devices SET autoscan_interval=0 WHERE device_name ='" << p->first << "'";
+			sql.send_query();
+
 			sql << "INSERT INTO autoscan_schedule SET device_name='" << p->first
 					<< "', autoscan_start_time=" << (p->second + device_interval_at_stop[p->first])
 					<< ", scan_interval = " << device_interval_at_stop[p->first];
@@ -313,6 +383,7 @@ std::string ns_experiment_capture_specification::submit_schedule_to_db(std::vect
 		}
 		sql.send_query("COMMIT");
 
+		//start any remote servers downloading the new records all at once.
 		sql.send_query("UPDATE experiments SET time_stamp = NOW() WHERE time_stamp = 0");
 		sql.send_query("UPDATE capture_samples SET time_stamp = NOW() WHERE time_stamp = 0");
 		sql.send_query("UPDATE capture_schedule SET time_stamp = NOW() WHERE time_stamp = 0");

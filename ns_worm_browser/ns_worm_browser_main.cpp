@@ -169,9 +169,9 @@ class ns_worm_terminal_gl_window : public Fl_Gl_Window {
 			//	report_changes_made_to_screen();
 				return a;
 			}
-			case FL_PUSH:
-			case FL_DRAG:
-			case FL_RELEASE:
+			//case FL_PUSH:
+			//case FL_DRAG:
+			//case FL_RELEASE:
 			case FL_DND_ENTER:
 			case FL_DND_RELEASE:
 			case FL_DND_LEAVE:
@@ -1465,8 +1465,6 @@ public:
 			db_spec.options.push_back(worm_learner.databases_available[i]);
 		add(db_spec);
 		add(ns_menu_item_spec(show_extra_menus, "Config/Set Behavior/_Show Image Analysis Diagnostic Tools"));
-		add(ns_menu_item_spec(do_not_overwrite_schedules,"Config/Set Behavior/Do not overwrite existing Experiment Specifications"));
-		add(ns_menu_item_spec(overwrite_schedules,"Config/Set Behavior/_Overwrite existing Experiment Specifications"));
 		add(ns_menu_item_spec(do_not_overwrite_existing_masks,"Config/Set Behavior/Do not overwrite existing sample masks"));
 		add(ns_menu_item_spec(overwrite_existing_masks,"Config/Set Behavior/_Overwrite existing sample masks"));
 		
@@ -2169,9 +2167,6 @@ public:
 				break;
 
 			}
-			case FL_PUSH:
-			case FL_DRAG:
-			case FL_RELEASE:
 			case FL_DND_ENTER:
 			case FL_DND_RELEASE:
 			case FL_DND_LEAVE:
@@ -3141,7 +3136,22 @@ void ns_set_menu_bar_activity(bool activate){
 	menu_bar_processing_lock.release();
 	report_changes_made_to_screen();
 }
-
+ns_experiment_capture_specification::ns_handle_existing_experiment ask_if_existing_experiment_should_be_overwritten() {
+	ns_choice_dialog c;
+	c.title = "An an experiment already exists with that name.  What do you want to do?";
+	c.option_1 = "Extend the current experiment";
+	c.option_2 = "Overwrite the current experiment";
+	c.option_3 = "Cancel (do nothing)";
+	ns_run_in_main_thread<ns_choice_dialog> b(&c);
+	switch (c.result) {
+		case 1:
+			return ns_experiment_capture_specification::ns_append;
+		case 2:
+			return ns_experiment_capture_specification::ns_overwrite;
+		case 3: return ns_experiment_capture_specification::ns_stop;
+		default: throw ns_ex("Unknown option!");
+	}
+}
 void ask_if_schedule_should_be_submitted_to_db(bool & write_to_disk, bool & write_to_db){
 	ns_choice_dialog c;
 	c.title = "What do you want to do with this experiment schedule?";
@@ -3152,42 +3162,6 @@ void ask_if_schedule_should_be_submitted_to_db(bool & write_to_disk, bool & writ
 	write_to_disk = c.result == 1;
 	write_to_db = c.result == 2;
 	return;
-	/*
-	//old behavior
-	write_to_disk = false;
-	write_to_db = false;
-
-	int ret;
-	ret = MessageBox(
-	0,
-	"Do you want to output a summary of this schedule to disk?",
-	"Schedule Submission",
-	MB_TASKMODAL | MB_YESNOCANCEL | MB_ICONQUESTION | MB_DEFBUTTON1 | MB_TOPMOST);
-	if (ret == IDCANCEL)
-		return;
-	if (ret == IDYES){
-		write_to_disk = true;
-		return;
-	}
-	ret = MessageBox(
-	0,
-	"Do you want to submit this schedule to run on the database?",
-	"Schedule Submission",
-	MB_TASKMODAL | MB_YESNOCANCEL | MB_ICONQUESTION | MB_DEFBUTTON1 | MB_TOPMOST);
-	
-	if (ret == IDCANCEL || ret == IDNO)
-		return;
-
-	ret = MessageBox(
-	0,
-	"Do you really want to submit this schedule to run on the database?",
-	"Schedule Submission",
-	MB_TASKMODAL | MB_YESNO | MB_ICONEXCLAMATION| MB_DEFBUTTON1 | MB_TOPMOST);
-	if (ret == IDYES){
-		write_to_db = true;
-		return;
-	}
-	return;*/
 }
 
 void ns_worm_terminal_main_menu_organizer::show_worm(const std::string & data) {

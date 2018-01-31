@@ -637,6 +637,7 @@ int main(int argc, char ** argv){
 		<< "       By default this only outputs a summary of the proposed experiment to stdout\n"
 		<< "       With sub-option 'u': actually submit the experiment specification to the database \n"
 		<< "       With sub-option 'f' (which implies 'u'): force overwriting of existing experiments\n"
+		<< "       With sub-option 'a' (which implies 'u'): extend current experiment using submitted schedule\n"
 		<< "test_email : send a test alert email from the current node\n"
 		<< "test_alert : send a test alert to be processed by the cluster\n"
 		<< "test_rate_limited_alert : send a test alert to be processed by the cluster\n"
@@ -658,8 +659,8 @@ int main(int argc, char ** argv){
 
 		//set default options for command line arguments
 		ns_cl_command command(ns_start);
-		bool upload_experiment_spec_to_db(false),
-			overwrite_existing_experiments(false);
+		bool upload_experiment_spec_to_db(false);
+		ns_experiment_capture_specification::ns_handle_existing_experiment schedule_submission_behavior;
 		std::string input_filename;
 		bool sql_update_requested(false);
 		ns_cl_command post_dispatcher_init_command(ns_none);
@@ -781,7 +782,9 @@ int main(int argc, char ** argv){
 				else if (i + 3 == argc) {
 					string opt(argv[i + 1]);
 					if (opt == "f" || opt.size() == 2 && (opt[0] == 'f' || opt[1] == 'f'))
-						overwrite_existing_experiments = true;
+						schedule_submission_behavior = ns_experiment_capture_specification::ns_overwrite;	
+					if (opt == "a" || opt.size() == 2 && (opt[0] == 'a' || opt[1] == 'a'))
+						schedule_submission_behavior = ns_experiment_capture_specification::ns_append;
 					if (opt == "u" || opt.size() == 2 && (opt[0] == 'u' || opt[1] == 'u'))
 						upload_experiment_spec_to_db = true;
 					input_filename = argv[i + 2];
@@ -903,14 +906,7 @@ int main(int argc, char ** argv){
 			break;
 		}
 		case ns_submit_experiment: {
-			std::vector<std::string> warnings;
-			ns_image_server::process_experiment_capture_schedule_specification(input_filename,
-				warnings,
-				overwrite_existing_experiments,
-				upload_experiment_spec_to_db,
-				std::string(""),
-				true);
-			return 0;
+			break; //we handle this later, after connecting to the db
 		}
 
 		case ns_wrap_m4v: {
@@ -981,6 +977,21 @@ int main(int argc, char ** argv){
 			throw ns_ex("The current database schema is out of date.  Please run the command: ns_image_server update_sql");
 		}
 		sql_2.release();
+
+		if (command == ns_submit_experiment) {
+			std::cout << "Attempting to submit an experiment schedule.\n";
+			std::vector<std::string> warnings;
+			ns_experiment_capture_specification spec;
+			spec.load_from_xml_file(input_filename);
+			ns_acquire_for_scope<ns_sql> sql(image_server.new_sql_connection(__FILE__, __LINE__));
+			ns_image_server::submit_capture_schedule_specification(spec,
+				warnings,sql(),
+				schedule_submission_behavior,
+				upload_experiment_spec_to_db,
+				std::string(""),
+				true);
+			return 0;
+		}
 
 		if (image_server.act_as_an_image_capture_server()) {
 			ns_acquire_for_scope <ns_local_buffer_connection> local_sql(image_server.new_local_buffer_connection(__FILE__, __LINE__));

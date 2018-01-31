@@ -33,6 +33,7 @@
 #include <fstream>
 #include "ns_image_server_results_storage.h"
 #include "ns_get_double.h"
+#include "ns_capture_schedule.h"
 
 
 ///attached scanners have both human-readable names as well as
@@ -420,9 +421,10 @@ public:
 		#ifndef NS_ONLY_IMAGE_ACQUISITION
 		void perform_experiment_maintenance(ns_sql & sql) const;
 		#endif
-		static void process_experiment_capture_schedule_specification(const std::string & input_file,std::vector<std::string> & warnings,const bool overwrite_previous_experiment=false,const bool submit_to_db=false,const std::string & summary_output_file="",const bool output_to_stdout = false);
 
-	void start_autoscans_for_device(const std::string & device_name,ns_sql & sql);
+		static void submit_capture_schedule_specification(ns_experiment_capture_specification & spec,std::vector < std::string > & warnings, ns_sql & sql, const ns_experiment_capture_specification::ns_handle_existing_experiment & existing_experiment = ns_experiment_capture_specification::ns_stop,const bool submit_to_db=false,const std::string & summary_output_file="",const bool output_to_stdout = false);
+
+		void start_autoscans_for_device(const std::string & device_name,ns_sql & sql);
 	#endif
 	bool upgrade_tables(ns_sql_connection * sql,const bool just_test_if_needed,const std::string & schema_name, const bool updating_local_buffer);
 	std::ofstream * write_device_configuration_file() const;

@@ -7,18 +7,18 @@
 
 
 struct ns_sample_capture_specification{
+	ns_sample_capture_specification() :sample_id(0), latest_existing_scheduled_scan_time(0), internal_schedule_id(-1) {}
 	ns_64_bit sample_id;
 	std::string sample_name,
 				capture_configuration_parameters,
 				device;
-				
+	unsigned long latest_existing_scheduled_scan_time;
 	long			resolution;
 	long desired_minimum_capture_duration;
 	double x_position,  //in inches
 			y_position,
 			width,
 			height;
-	ns_sample_capture_specification():internal_schedule_id(-1){}
 
 	std::string capture_parameters()const {
 		return capture_configuration_parameters + " " + scan_area_string() + " --resolution=" + ns_to_string(resolution);
@@ -108,6 +108,7 @@ class ns_capture_schedule{
 class ns_experiment_capture_specification{
 public:
 	typedef enum{ns_none,ns_by_device} ns_default_sample_naming;
+	typedef enum{ns_stop,ns_overwrite,ns_append} ns_handle_existing_experiment;
 
 	ns_experiment_capture_specification():experiment_id(0),default_sample_naming(ns_none),device_schedule_produced(false),image_resolution(-1){}
 	ns_64_bit experiment_id;
@@ -123,7 +124,7 @@ public:
 	
 	static void confirm_valid_name(const std::string & name);
 	
-	std::string submit_schedule_to_db(std::vector<std::string> & warnings,ns_sql & sql,bool actually_write=false,bool overwrite_previous=false);
+	std::string submit_schedule_to_db(std::vector<std::string> & warnings,ns_sql & sql,bool actually_write=false, const ns_handle_existing_experiment & handle_existing = ns_experiment_capture_specification::ns_stop);
 	void produce_device_schedule();
 	void check_samples_and_fill_in_defaults();
 

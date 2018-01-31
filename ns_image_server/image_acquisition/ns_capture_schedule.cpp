@@ -345,8 +345,8 @@ std::string ns_experiment_capture_specification::submit_schedule_to_db(std::vect
 
 					t+=dt_total;
 				}
-				if (handle_existing != ns_append) {
 
+				if (handle_existing != ns_append) {
 					sql << "UPDATE experiments SET num_time_points = " << number_of_captures << ", first_time_point=" << capture_schedules[i].start_time
 						<< ", last_time_point= " << capture_schedules[i].stop_time << " WHERE id=" << experiment_id;
 				}
@@ -363,13 +363,15 @@ std::string ns_experiment_capture_specification::submit_schedule_to_db(std::vect
 		}
 		
 		//start autoscans to keep scanners running after the end of the experiment
-		for (ns_device_start_offset_list::iterator p = device_stop_times.begin(); p != device_stop_times.end(); p++){
-			sql << "DELETE FROM autoscan_schedule WHERE device_name ='" << p->first << "'";
-			sql.send_query();
+		for (ns_device_start_offset_list::iterator p = device_stop_times.begin(); p != device_stop_times.end(); p++) {
+			if (actually_write) {
+				sql << "DELETE FROM autoscan_schedule WHERE device_name ='" << p->first << "'";
+				sql.send_query();
 
-			sql << "UPDATE devices SET autoscan_interval=0 WHERE device_name ='" << p->first << "'";
-			sql.send_query();
-
+				sql << "UPDATE devices SET autoscan_interval=0 WHERE name ='" << p->first << "'";
+				sql.send_query();
+				debug += "Stopping existing and previously scheduled autoscans on " + p->first + "\n";
+			}
 			sql << "INSERT INTO autoscan_schedule SET device_name='" << p->first
 					<< "', autoscan_start_time=" << (p->second + device_interval_at_stop[p->first])
 					<< ", scan_interval = " << device_interval_at_stop[p->first];

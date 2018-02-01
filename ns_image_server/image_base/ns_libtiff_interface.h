@@ -23,5 +23,10 @@ extern "C"
 #endif
 TIFF* ns_tiff_open(const char* name, ns_tiff_client_data * client_data,const char* mode);
 
+#ifdef __cplusplus
+extern "C"
+#endif
+void ns_setup_libtiff();
+
 #endif
 

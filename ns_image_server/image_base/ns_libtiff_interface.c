@@ -72,15 +72,29 @@ int ns_TIFFgetMode(const char* mode, const char* module)
 	return (m);
 }
 
+
+static void ns_initialization_tiff_error_handler(thandle_t client_data, const char * module, const char * fmt, va_list ap) {
+	printf("libtiff::Initialization Error: ");
+	printf(fmt, ap);
+	exit(1);
+}
+
+static void ns_initialization_tiff_warning_handler(const char* module, const char* fmt, va_list ap) {
+	printf("libtiff::Initialization Warning: ");
+	printf(fmt, ap);
+}
+
 void ns_setup_libtiff(){
 int fd;
   //We attempt to load a file here, not to open anything
   //but to get pointers to the internal TIFF library functions
   //so we can use them for our own handlers.
   if (ref_tif==0){
-
+	  TIFFSetErrorHandler(0);
+	  TIFFSetErrorHandlerExt(ns_initialization_tiff_error_handler);
+	  TIFFSetWarningHandler(ns_initialization_tiff_warning_handler);
 	#ifdef _WIN32
-		ref_tif = TIFFOpen("ns_image_server_tifflib.tif","rw");
+		ref_tif = TIFFOpen("nul","w");
 	#else
 		  fd = open("/dev/null",O_RDWR);
 		  if (fd == 0){

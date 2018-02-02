@@ -4360,7 +4360,7 @@ void ns_worm_learner::handle_file_request(const string & fname) {
 		sql << "SELECT id FROM experiments WHERE name = '" << spec.name << "'";
 		ns_sql_result res;
 		sql.get_rows(res);
-		ns_experiment_capture_specification::ns_handle_existing_experiment handle_existing_experiment = ns_experiment_capture_specification::ns_append;
+		ns_experiment_capture_specification::ns_handle_existing_experiment handle_existing_experiment = ns_experiment_capture_specification::ns_stop;
 		if (res.size() > 0){
 			handle_existing_experiment =  ask_if_existing_experiment_should_be_overwritten();
 			if (handle_existing_experiment == ns_experiment_capture_specification::ns_stop)

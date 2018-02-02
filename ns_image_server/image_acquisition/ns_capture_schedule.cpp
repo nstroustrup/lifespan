@@ -153,7 +153,7 @@ std::string ns_experiment_capture_specification::submit_schedule_to_db(std::vect
 
 			if (handle_existing == ns_append) {
 
-				sql << "SELECT scheduled_time FROM capture_schedule WHERE sample_id = " << samples[i].sample_id << " ORDER BY scheduled_time DESC LIMIT 1";
+				sql << "SELECT scheduled_time FROM capture_schedule WHERE sample_id = " << samples[i].sample_id << " AND censored = 0 ORDER BY scheduled_time DESC LIMIT 1";
 				res.resize(0);
 				sql.get_rows(res);
 				if (res.size() == 0) {
@@ -165,7 +165,7 @@ std::string ns_experiment_capture_specification::submit_schedule_to_db(std::vect
 					samples[i].latest_existing_scheduled_scan_time = atol(res[0][0].c_str());
 					if (latest_scheduled_capture_across_all_samples < samples[i].latest_existing_scheduled_scan_time)
 						latest_scheduled_capture_across_all_samples = samples[i].latest_existing_scheduled_scan_time;
-					debug+= "The last scan idenfified for sample " + ns_to_string(samples[i].sample_id) + " was " + ns_format_time_string_for_human(samples[i].latest_existing_scheduled_scan_time) + "\n";
+					debug+= "The last scan idenfified for sample " + samples[i].sample_name + " was " + ns_format_time_string_for_human(samples[i].latest_existing_scheduled_scan_time) + "\n";
 
 				}
 
@@ -203,6 +203,9 @@ std::string ns_experiment_capture_specification::submit_schedule_to_db(std::vect
 					s_offset = 0;
 			}
 		}
+		const unsigned long current_time = ns_current_time();
+		if (latest_scheduled_capture_across_all_samples < current_time + 2 * 60)
+			latest_scheduled_capture_across_all_samples = current_time + 2 * 60;
 
 		for (unsigned int i = 0; i < capture_schedules.size(); i++){
 			//compile correct start and stop time for each device.
@@ -212,7 +215,7 @@ std::string ns_experiment_capture_specification::submit_schedule_to_db(std::vect
 					capture_schedules[i].start_time = latest_scheduled_capture_across_all_samples;
 				}
 				else
-					capture_schedules[i].start_time = ns_current_time() + 2 * 60;
+					capture_schedules[i].start_time = current_time + 2 * 60;
 			}
 			capture_schedules[i].stop_time = 0;
 

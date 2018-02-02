@@ -244,7 +244,7 @@ class ns_worm_terminal_gl_window : public Fl_Gl_Window {
 	}
 	
 public:
-
+	
 	// HANDLE WINDOW RESIZING
     void resize(int X,int Y,int W,int H) {
       //cerr << "GL"<<W << "," << H << "\n";

@@ -2021,6 +2021,9 @@ void ns_worm_learner::output_movement_analysis_optimization_data(int software_ve
 
 			results_text += "**For plates of type " + p->first + "\n";		
 			p->second.find_best_parameter_set(*thresh, *hold, data_name=="Posture Analysis");
+			p->second.filename = p->first;
+			if (image_server.verbose_debug_output())
+				cout << "Filename " << p->second.filename;
 			if (p->second.new_parameters_results.number_valid_worms == 0) {
 
 				results_text += "No worms were annotated by hand.\n\n";
@@ -2032,9 +2035,6 @@ void ns_worm_learner::output_movement_analysis_optimization_data(int software_ve
 			}
 	
 
-			p->second.filename= p->first;
-			if (image_server.verbose_debug_output()) 
-				cout << "Filename " << p->second.filename;
 			
 			for (unsigned int i = 0; i < p->second.filename.size(); i++) 
 				if (!isalnum(p->second.filename[i]))
@@ -2081,10 +2081,13 @@ void ns_worm_learner::output_movement_analysis_optimization_data(int software_ve
 	//output best parameters to disk
 	if (run_posture && run_expansion) {
 		for (map<std::string, ns_parameter_set_optimization_record>::iterator expansion_p = best_expansion_parameter_sets.begin(); expansion_p != best_expansion_parameter_sets.end(); expansion_p++) {
-			//build parameter file with optimal posture and expansion parameters
+			//build parameter file with optimal posture and expansion parameters		
 			map<std::string, ns_parameter_set_optimization_record>::iterator posture_p = best_posture_parameter_sets.find(expansion_p->first);
 			if (posture_p == best_posture_parameter_sets.end())
 				throw ns_ex("Could not find expansion index");
+
+			if (posture_p->second.new_parameters_results.number_valid_worms == 0 && expansion_p->second.new_parameters_results.number_valid_worms == 0)
+				continue;
 			expansion_p->second.best.permanance_time_required_in_seconds = posture_p->second.best.permanance_time_required_in_seconds;
 			expansion_p->second.best.posture_cutoff = posture_p->second.best.posture_cutoff;
 			expansion_p->second.best.stationary_cutoff = posture_p->second.best.stationary_cutoff;
@@ -2102,6 +2105,8 @@ void ns_worm_learner::output_movement_analysis_optimization_data(int software_ve
 			best_parameter_sets = &best_expansion_parameter_sets;
 		}	
 		for (map<std::string, ns_parameter_set_optimization_record>::iterator p = best_parameter_sets->begin(); p != best_parameter_sets->end(); p++) {
+			if (p->second.new_parameters_results.number_valid_worms == 0)
+				continue;
 			ns_acquire_for_scope<ostream> parameter_set_output(image_server.results_storage.optimized_posture_analysis_parameter_set(sub, p->second.filename, sql).output());
 			p->second.best.write(parameter_set_output());
 			parameter_set_output.release();

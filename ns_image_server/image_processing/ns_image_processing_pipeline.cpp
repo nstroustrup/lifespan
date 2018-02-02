@@ -805,7 +805,7 @@ void ns_image_processing_pipeline::process_region(const ns_image_server_captured
 																	allow_use_of_volatile_storage);
 
 								ti.pump(a_worm.output_stream(),_image_chunk_size);
-
+								a_worm_im = region_image.create_storage_for_processed_image(ns_process_add_to_training_set, ns_csv, &sql);
 								ofstream * metadata_out(image_server_const.image_storage.request_metadata_output(a_worm_im,ns_csv,false,&sql));
 								try{
 									detected_worms().output_feature_statistics(*metadata_out);

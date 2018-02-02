@@ -85,7 +85,9 @@ static void ns_initialization_tiff_warning_handler(const char* module, const cha
 }
 
 void ns_setup_libtiff(){
-int fd;
+	#ifndef _WIN32
+		int fd;
+	#endif
   //We attempt to load a file here, not to open anything
   //but to get pointers to the internal TIFF library functions
   //so we can use them for our own handlers.
@@ -96,6 +98,7 @@ int fd;
 	#ifdef _WIN32
 		ref_tif = TIFFOpen("nul","w");
 	#else
+	  
 		  fd = open("/dev/null",O_RDWR);
 		  if (fd == 0){
 			   printf("Trying file\n");

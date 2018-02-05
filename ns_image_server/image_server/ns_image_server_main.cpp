@@ -638,6 +638,7 @@ int main(int argc, char ** argv){
 		<< "       With sub-option 'u': actually submit the experiment specification to the database \n"
 		<< "       With sub-option 'f' (which implies 'u'): force overwriting of existing experiments\n"
 		<< "       With sub-option 'a' (which implies 'u'): extend current experiment using submitted schedule\n"
+		<< "       Options combine, eg to upload an append request, specify the arguments submit_experiment au"
 		<< "test_email : send a test alert email from the current node\n"
 		<< "test_alert : send a test alert to be processed by the cluster\n"
 		<< "test_rate_limited_alert : send a test alert to be processed by the cluster\n"
@@ -772,22 +773,34 @@ int main(int argc, char ** argv){
 				}
 			}
 			else if (p->second == ns_submit_experiment) {
-
+				command = ns_submit_experiment;
 				if (i + 1 == argc) throw ns_ex("Output type and filename must be specified for schedule submission");
 
 				if (i + 2 == argc) {
 					input_filename = argv[i + 1];
 					i++; // "consume" the next argument so it doesn't get interpreted as a command-string.
 				}
-				else if (i + 3 == argc) {
-					string opt(argv[i + 1]);
-					if (opt == "f" || opt.size() == 2 && (opt[0] == 'f' || opt[1] == 'f'))
-						schedule_submission_behavior = ns_experiment_capture_specification::ns_overwrite;	
-					if (opt == "a" || opt.size() == 2 && (opt[0] == 'a' || opt[1] == 'a'))
+				else  {
+					input_filename = argv[i + 1];
+					string opt(argv[i + 2]);
+					bool found_good_option(false);
+					if (opt == "f" || opt.size() == 2 && (opt[0] == 'f' || opt[1] == 'f')) {
+						found_good_option = true;
+						schedule_submission_behavior = ns_experiment_capture_specification::ns_overwrite;
+					}
+					if (opt == "a" || opt.size() == 2 && (opt[0] == 'a' || opt[1] == 'a')) {
+						found_good_option = true;
 						schedule_submission_behavior = ns_experiment_capture_specification::ns_append;
-					if (opt == "u" || opt.size() == 2 && (opt[0] == 'u' || opt[1] == 'u'))
+					}
+					if (opt == "u" || opt.size() == 2 && (opt[0] == 'u' || opt[1] == 'u')) {
+						found_good_option = true;
 						upload_experiment_spec_to_db = true;
-					input_filename = argv[i + 2];
+					}
+					if ((opt[0] != 'f' && opt[0] != 'a' && opt[0] != 'u') ||
+						opt.size() == 2 && (opt[1] != 'f' && opt[1] != 'a' && opt[1] != 'u') ||
+						opt.size() > 2)
+						throw ns_ex("Unknown capture schedule submission flag: ") << opt;
+
 					i += 2; // "consume" the next  two arguments so they don't get interpreted as a command-string.
 				}
 			}

@@ -112,9 +112,9 @@ ns_tiff_compression_type ns_get_tiff_compression_type(const ns_image_type & type
 }
 
 template<>
-unsigned int ns_tiff_image_input_file<ns_8_bit>::readEncodedStrip(TIFF * image, const unsigned int current_strip, ns_8_bit * comp_buf,const unsigned int length){
+unsigned long ns_tiff_image_input_file<ns_8_bit>::readEncodedStrip(TIFF * image, const unsigned long current_strip, ns_8_bit * comp_buf,const unsigned long length){
 
-	tmsize_t r(TIFFReadEncodedStrip(image,current_strip,comp_buf,length));
+	unsigned long r(TIFFReadEncodedStrip(image,current_strip,comp_buf,length));
 	if (client_data.exception_thrown()){
 		cerr << "12";
 		ns_throw_tiff_exception(client_data.ex());
@@ -139,7 +139,7 @@ public:
 			ns_throw_tiff_exception(ns_ex("ns_long_string_tiff_encoder::Image Description is too long for storage: ") << (unsigned long)s.length() << " (Max = " << 2000*tag_series_size << ")");
 		std::string tmp;
 		bool halt(false);
-		for (unsigned int i = 0; i < tag_series_size && !halt; i++){
+		for (unsigned long i = 0; i < tag_series_size && !halt; i++){
 			std::string::size_type stop = 2000*(i+1);
 			if (stop > s.length()){
 				stop = s.length();
@@ -161,7 +161,7 @@ public:
 	}
 private:
 	static const int tag_series[];
-	static const unsigned int tag_series_size;
+	static const unsigned long tag_series_size;
 };
 
 const int ns_long_string_tifftag_encoder::tag_series[] = {
@@ -171,7 +171,7 @@ const int ns_long_string_tifftag_encoder::tag_series[] = {
 	TIFFTAG_ARTIST,
 	TIFFTAG_COPYRIGHT
 };
-const unsigned int ns_long_string_tifftag_encoder::tag_series_size = 5;
+const unsigned long ns_long_string_tifftag_encoder::tag_series_size = 5;
 class ns_long_string_xmp_encoder_tiff{
 public:
 	void write(const std::string & s, TIFF * image){
@@ -192,7 +192,7 @@ public:
 		//but it is important to set the high bits to zero in case a BYTE is returned.
 		if (TIFFGetField(image,TIFFTAG_XMLPACKET,&count,&dsc)){
 			//cerr << "\n";
-			for (unsigned int i = 0; i < (unsigned int)count; i++)
+			for (unsigned long i = 0; i < (unsigned long)count; i++)
 				xmp+=dsc[i];
 			ns_long_string_xmp_encoder::read(xmp,s);
 

@@ -122,13 +122,12 @@ std::string ns_experiment_capture_specification::submit_schedule_to_db(std::vect
 					else ns_handle_image_metadata_delete_action(job, sql);
 				}
 				else {
-					if (!actually_write)
+					if (handle_existing == ns_append && !actually_write)
 						debug += "Appending to previous sample " + samples[i].sample_name + ".\n";
-
 				}
 			}
 
-			if (handle_existing == ns_overwrite) {
+			if (handle_existing != ns_append) {
 				sql << "INSERT INTO capture_samples SET experiment_id = " << ns_to_string(experiment_id) << ",name='" << sql.escape_string(samples[i].sample_name) << "'"
 					<< ",device_name='" << sql.escape_string(samples[i].device) << "',parameters='" << sql.escape_string(samples[i].capture_parameters()) << "'"
 					<< ",position_x=" << samples[i].x_position << ",position_y=" << samples[i].y_position

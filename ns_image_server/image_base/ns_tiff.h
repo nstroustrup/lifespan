@@ -204,15 +204,16 @@ public:
 		return &(buffer[ns_image_input_file<ns_component>::_properties.components*x + component]);
 	}
 	//read in multiple lines
-	const unsigned int read_lines(ns_component ** buffer,const unsigned int n){
-		for (unsigned int i = 0; i < n; i++)
+	const unsigned long read_lines(ns_component ** buffer, const unsigned long n) {
+		for (unsigned long i = 0; i < n; i++)
 			read_line(buffer[i]);
 		//std::cerr << "\nlibtiff: Read " << lines_read << " lines.\n";
+		return n;
 	}
 private:
 
 	//instantiated for different component size specifications
-	unsigned int readEncodedStrip(TIFF * image, const unsigned int current_strip, ns_component * comp_buf,const unsigned int length);
+	unsigned long readEncodedStrip(TIFF * image, const unsigned long current_strip, ns_component * comp_buf,const unsigned long length);
 
 	TIFF *image;
 	ns_tiff_info tiff_info;
@@ -355,7 +356,7 @@ public:
 
 	//write a single line
 	bool write_line(const ns_component * buffer){
-		for (unsigned int i = 0; i < NS_TIFF_WIDTH; i++)
+		for (unsigned long i = 0; i < NS_TIFF_WIDTH; i++)
 			output_buf[output_buffer_height*NS_TIFF_WIDTH + i] = buffer[i];
 		//memcpy(&(output_buf[output_buffer_height*NS_TIFF_WIDTH]),buffer,sizeof(ns_component)*NS_TIFF_WIDTH);
 		output_buffer_height++;
@@ -375,7 +376,7 @@ public:
 		return true;
 	}
 	void write_lines(const ns_component ** buffer,const unsigned int n){
-		for (unsigned int i = 0; i < n; i++)
+		for (unsigned long i = 0; i < n; i++)
 			write_line(buffer[i]);
 	}
 
@@ -384,7 +385,7 @@ public:
 		return &(buffer[ns_image_output_file<ns_component>::_properties.components*x + component]);
 	}
 	private:
-	friend void ns_set_default_tiff_parameters(const ns_image_properties & p, const ns_tiff_compression_type & t,const unsigned long bits_per_sample, const unsigned long rows_per_strip,TIFF * file);
+	friend void ns_set_default_tiff_parameters(const ns_image_properties & p, const ns_tiff_compression_type & t,const unsigned int bits_per_sample, const unsigned long rows_per_strip,TIFF * file);
 
 	ns_64_bit rows_per_strip;
 	ns_tiff_compression_type compression_type;
@@ -397,10 +398,6 @@ public:
 
 
 template<>
-unsigned int ns_tiff_image_input_file<ns_8_bit>::readEncodedStrip(TIFF * image, const unsigned int current_strip, ns_8_bit * comp_buf,const unsigned int length);
-/*
-unsigned int ns_tiff_image_input_stream<ns_16_bit>::readEncodedStrip(TIFF * image, const unsigned int current_strip, ns_16_bit * comp_buf,const unsigned int length){
-	ns_8_bit * byte_buffer = reinterpret_cast<ns_8_bit *>(comp_buf);
-	return TIFFReadEncodedStrip(image,current_strip,byte_buffer,length*2);
-}*/
+unsigned long ns_tiff_image_input_file<ns_8_bit>::readEncodedStrip(TIFF * image, const unsigned long current_strip, ns_8_bit * comp_buf,const unsigned long length);
+
 #endif

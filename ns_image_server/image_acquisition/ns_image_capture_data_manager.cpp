@@ -101,6 +101,7 @@ bool ns_image_capture_data_manager::transfer_data_to_long_term_storage(ns_image_
 		throw ns_ex("transfer_data_to_long_term_storage() was passed an image with no captured image image id");
 	if (image.captured_images_id == 0)
 		throw ns_ex("transfer_data_to_long_term_storage() was passed an image with no captured image id");
+
 	bool had_to_use_local_storage(false);
 	if (image.specified_16_bit){
 		try{

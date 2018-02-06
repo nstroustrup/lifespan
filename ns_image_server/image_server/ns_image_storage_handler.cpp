@@ -598,8 +598,10 @@ ns_image_server_image ns_image_storage_handler::create_image_db_record_for_captu
 	string filename(image.filename_no_load_from_db(sql));
 	std::string extension = ns_dir::extract_extension(filename);
 
-	if (extension.size() == 0)
-		ns_add_image_suffix(filename,image_type);
+	if (extension.size() == 0) {
+		image_server.register_server_event(ns_image_server_event("Capture image didn't have an extension when one was expected:  ") << filename << " ( " << extension << " )",sql);
+		ns_add_image_suffix(filename, image_type);
+	}
 
 	std::string full_filename = dir + DIR_CHAR_STR + filename;
 	ns_dir::convert_slashes(full_filename);

@@ -363,6 +363,9 @@
     <ClCompile Include="..\ns_image_server\image_base\ns_ojp2k.cpp">
       <Filter>image_base</Filter>
     </ClCompile>
+    <ClCompile Include="..\ns_image_server\data_annotation\ns_death_time_annotation.cpp">
+      <Filter>data_annotation</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\ns_image_server\system_base\ns_dir.h" />
@@ -438,6 +441,12 @@
     <ClInclude Include="..\external_compile_libraries\jpeg-8d\transupp.h">
       <Filter>image_format_lib\jpeg\h</Filter>
     </ClInclude>
+    <ClInclude Include="..\ns_image_server\data_annotation\ns_death_time_annotation.h">
+      <Filter>data_annotation</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ns_image_server\data_annotation\ns_death_time_annotation_set.h">
+      <Filter>data_annotation</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="image_base">
@@ -466,6 +475,9 @@
     </Filter>
     <Filter Include="image_format_lib\tiff">
       <UniqueIdentifier>{1b1bca63-0ab5-4d76-a6bf-e0ca8c1c9e24}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="data_annotation">
+      <UniqueIdentifier>{a0b41bbe-0fb9-4656-8faa-409f1d8993db}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
 </Project>

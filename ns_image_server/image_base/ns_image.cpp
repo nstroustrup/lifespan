@@ -53,6 +53,8 @@ void debug_bitmap_output(ns_image_bitmap & bitmap,unsigned int _l){
 };
 
 void ns_add_image_suffix(string & str, const ns_image_type & type){
+	if (type == ns_tiff && str.find(".tif") != str.npos)
+		throw ns_ex("Adding extra ending: ") << str << type;
 	switch(type){
 		case ns_jpeg: str+=".jpg"; return;
 		case ns_tiff: str+=".tif"; return;

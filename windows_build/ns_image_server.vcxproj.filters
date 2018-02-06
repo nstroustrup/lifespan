@@ -5,9 +5,6 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
-    <Filter Include="data_annotation">
-      <UniqueIdentifier>{4026d5c2-0f0f-45d8-badc-d6d2c96806ed}</UniqueIdentifier>
-    </Filter>
     <Filter Include="image_acquisition">
       <UniqueIdentifier>{559424c1-4277-4218-bcd4-15b2ab07ade9}</UniqueIdentifier>
     </Filter>
@@ -68,14 +65,11 @@
     <Filter Include="image_format_lib\tiff">
       <UniqueIdentifier>{e1ae590f-1f64-4bee-ba15-98864e01afaf}</UniqueIdentifier>
     </Filter>
+    <Filter Include="data_annotation">
+      <UniqueIdentifier>{cfc2c5e5-9930-4713-8fc5-9c17f59bd58c}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\ns_image_server\data_annotation\ns_death_time_annotation.h">
-      <Filter>data_annotation</Filter>
-    </ClInclude>
-    <ClInclude Include="..\ns_image_server\data_annotation\ns_death_time_annotation_set.h">
-      <Filter>data_annotation</Filter>
-    </ClInclude>
     <ClInclude Include="..\ns_image_server\image_acquisition\ns_buffered_capture_scheduler.h">
       <Filter>image_acquisition</Filter>
     </ClInclude>
@@ -514,11 +508,14 @@
     <ClInclude Include="..\ns_image_server\image_acquisition\ns_captured_image_statistics_set.h">
       <Filter>image_acquisition</Filter>
     </ClInclude>
+    <ClInclude Include="..\ns_image_server\data_annotation\ns_death_time_annotation.h">
+      <Filter>data_annotation</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ns_image_server\data_annotation\ns_death_time_annotation_set.h">
+      <Filter>data_annotation</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\ns_image_server\data_annotation\ns_death_time_annotation.cpp">
-      <Filter>data_annotation</Filter>
-    </ClCompile>
     <ClCompile Include="..\ns_image_server\image_acquisition\ns_buffered_capture_scheduler.cpp">
       <Filter>image_acquisition</Filter>
     </ClCompile>
@@ -1122,6 +1119,9 @@
     </ClCompile>
     <ClCompile Include="..\external_compile_libraries\libtiff-4.0.9\libtiff\tif_pixarlog.c">
       <Filter>image_format_lib\tiff</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ns_image_server\data_annotation\ns_death_time_annotation.cpp">
+      <Filter>data_annotation</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

@@ -503,6 +503,7 @@
     <ClCompile Include="..\external_compile_libraries\zlib\trees.c" />
     <ClCompile Include="..\external_compile_libraries\zlib\uncompr.c" />
     <ClCompile Include="..\external_compile_libraries\zlib\zutil.c" />
+    <ClCompile Include="..\ns_image_server\data_annotation\ns_death_time_annotation.cpp" />
     <ClCompile Include="..\ns_image_server\image_acquisition\ns_barcode.cpp" />
     <ClCompile Include="..\ns_image_server\image_base\ns_font.cpp" />
     <ClCompile Include="..\ns_image_server\image_base\ns_image.cpp" />
@@ -529,6 +530,8 @@
     <ClInclude Include="..\external_compile_libraries\jpeg-8d\jpeglib.h" />
     <ClInclude Include="..\external_compile_libraries\jpeg-8d\jversion.h" />
     <ClInclude Include="..\external_compile_libraries\jpeg-8d\transupp.h" />
+    <ClInclude Include="..\ns_image_server\data_annotation\ns_death_time_annotation.h" />
+    <ClInclude Include="..\ns_image_server\data_annotation\ns_death_time_annotation_set.h" />
     <ClInclude Include="..\ns_image_server\image_base\ns_buffered_random_access_image.h" />
     <ClInclude Include="..\ns_image_server\image_base\ns_font.h" />
     <ClInclude Include="..\ns_image_server\image_base\ns_image.h" />

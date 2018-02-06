@@ -78,8 +78,10 @@ ns_thread_return_type ns_handle_drag_and_drop_asynch(void * request_text){
 			if (v()[i]==0) break;
 			cur+=v()[i];
 		}
-		if (cur.size() != 0)
+		if (cur.size() != 0){
 				worm_learner.handle_file_request(cur);
+				report_changes_made_to_screen();
+		}
 	//	dndlock.release();
 	}
 	catch(ns_ex & ex){

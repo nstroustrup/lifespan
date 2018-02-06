@@ -4335,14 +4335,19 @@ void ns_worm_learner::upgrade_tables() {
 }
 void ns_worm_learner::handle_file_request(const string & fname) {
 	string filename(fname);
+	//cout << fname << "\n";
 	if (filename.substr(0, 8) == "file:///")
 		filename = fname.substr(8);
-
+	if (filename.empty())
+	  return;
+	#ifndef _WIN32
+	filename = "/" + filename;
+        #endif
 	std::string ext = ns_tolower(ns_dir::extract_extension(filename));
 
 	current_clipboard_filename = filename;
 
-	cerr << "received " << filename << "(" << ext << ")\n";
+	cerr << "Received file: " << filename << "(" << ext << ")\n";
 	if (ext == "m4v") {
 		std::string output_basename = ns_dir::extract_filename_without_extension(filename);
 		cerr << "Processing video " << filename << ": ";
@@ -4352,8 +4357,10 @@ void ns_worm_learner::handle_file_request(const string & fname) {
 		cerr << " Done.\n";
 	}
 	else if (ext == "jpg" || ext == "tif" || ext == "jp2") {
-		load_file(filename);
+	  
+                load_file(filename,current_image);
 		draw();
+		//cout << "Loaded and drawn\n";
 	}
 	else if (ext == "xml") {
 		string debug_filename(ns_dir::extract_filename_without_extension(filename) + "=summary.txt");

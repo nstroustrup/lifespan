@@ -106,13 +106,13 @@ void ns_setup_libtiff(){
 		  }
 		  ref_tif = TIFFFdOpen(fd, "ns_image_server_tifflib.tif", "w");
 		  close(fd);
-		  printf("%p\n",(void*)TIFFGetReadProc(ref_tif));
+		  /*printf("%p\n",(void*)TIFFGetReadProc(ref_tif));
 		  printf("%p\n",(void*)TIFFGetWriteProc(ref_tif));
 		  printf("%p\n",(void*)TIFFGetSeekProc(ref_tif));
 		  printf("%p\n",(void*)TIFFGetCloseProc(ref_tif));
 		  printf("%p\n",(void*)TIFFGetSizeProc(ref_tif));
 		  printf("%p\n",(void*)TIFFGetMapFileProc(ref_tif));
-		  printf("%p\n",(void*)TIFFGetUnmapFileProc(ref_tif));
+		  printf("%p\n",(void*)TIFFGetUnmapFileProc(ref_tif));*/
 	#endif
 
 	}

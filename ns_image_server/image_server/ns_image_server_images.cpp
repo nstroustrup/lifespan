@@ -604,7 +604,7 @@ const ns_image_server_image ns_image_server_captured_image_region::create_storag
 	im.host_id = image_server_const.host_id();
 	im.capture_time = ns_current_time();
 	im.path = directory(sql,task);
-	im.filename = filename(sql) + filename_suffix;
+	im.filename = ns_dir::extract_filename_without_extension(filename(sql)) + filename_suffix;
 	im.partition = image_server_const.image_storage.get_partition_for_experiment(experiment_id,sql);
 	ns_add_image_suffix(im.filename,image_type);
 

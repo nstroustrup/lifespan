@@ -577,7 +577,7 @@ ns_death_time_annotation_time_interval ns_lifespan_device_normalization_statisti
 
 void ns_survival_timepoint_event::add(const ns_survival_timepoint_event_count & e){
 	//look for existing event types that match
-	for (unsigned int i = 0; i < events.size(); i++){
+	/*for (unsigned int i = 0; i < events.size(); i++){
 		if (events[i].number_of_worms_in_machine_worm_cluster == e.number_of_worms_in_machine_worm_cluster &&
 			events[i].from_multiple_worm_disambiguation == e.from_multiple_worm_disambiguation &&
 			events[i].number_of_worms_in_by_hand_worm_annotation == e.number_of_worms_in_by_hand_worm_annotation
@@ -586,11 +586,11 @@ void ns_survival_timepoint_event::add(const ns_survival_timepoint_event_count & 
 			&& (events[i].properties.excluded == e.properties.excluded || 
 				events[i].properties.is_excluded() && e.properties.is_excluded())){
 					events[i].events.insert(events[i].events.end(),e.events.begin(),e.events.end());
-			//	events[i].number_of_clusters_identified_by_machine+=e.number_of_clusters_identified_by_machine;
-			//	events[i].number_of_clusters_identified_by_hand+=e.number_of_clusters_identified_by_hand;
+				events[i].number_of_clusters_identified_by_machine+=e.number_of_clusters_identified_by_machine;
+				events[i].number_of_clusters_identified_by_hand+=e.number_of_clusters_identified_by_hand;
 			return;
 		}
-	}
+	}*/
 	//make a new event type if one doesn't exist
 	events.resize(events.size()+1,e);
 }
@@ -767,7 +767,7 @@ void ns_lifespan_experiment_set::out_detailed_JMP_event_data(const ns_time_handi
 		if (!properties.is_censored() && 
 			(prop.events->number_of_worms_in_by_hand_worm_annotation > 1||
 					ns_trust_machine_multiworm_data && prop.events->number_of_worms_in_machine_worm_cluster> 1)){
-			o << ns_death_time_annotation::multiworm_censoring_strategy_label(ns_death_time_annotation::ns_include_multiple_worm_cluster_deaths) << "::"
+			o << ns_death_time_annotation::multiworm_censoring_strategy_label(ns_death_time_annotation::ns_include_as_single_worm_deaths) << "::"
 				<< ns_death_time_annotation::missing_worm_return_strategy_label(properties.missing_worm_return_strategy) << ",";
 		}
 		//if we have a censoring annotation, output what strategy it was included as
@@ -831,13 +831,15 @@ void ns_lifespan_experiment_set::out_simple_JMP_header(const ns_time_handing_beh
 		// "Age at Death (" << time_units << ") Multiplicative + Additive offset Regression Model Residuals,"
 	o << "Censored,Censored Reason,Event Observation Type,Annotation Source,Technique,Analysis Type";
 	if (multiple_events)
-		o << ",Event Type";
+		o << ",Event Type, Special Flag";
 	o << terminator;
 }
 
 
 void ns_lifespan_experiment_set::out_simple_JMP_event_data(const ns_time_handing_behavior & time_handling_behavior, const ns_control_group_behavior & control_group_behavior,const ns_death_time_annotation::ns_by_hand_annotation_integration_strategy & by_hand_strategy,const ns_death_time_annotation::ns_multiworm_censoring_strategy & s, const ns_death_time_annotation::ns_missing_worm_return_strategy & w, std::ostream & o,  const ns_lifespan_device_normalization_statistics * regression_stats,const ns_region_metadata & metadata,const ns_metadata_worm_properties & prop,const double time_scaling_factor,const bool output_mulitple_events,const std::string & terminator, const bool output_raw_data_as_regression){
 	const ns_death_time_annotation & properties (prop.properties_override_set?prop.properties_override:prop.events->properties);
+	//if (by_hand_strategy == ns_death_time_annotation::ns_machine_annotations_if_no_by_hand && properties.stationary_path_id.group_id == 23)
+	//	cout << "Found it!";
 	if (properties.is_excluded())
 		return;
 	for (unsigned int i = 0; i < prop.events->events.size(); i++){
@@ -851,26 +853,37 @@ void ns_lifespan_experiment_set::out_simple_JMP_event_data(const ns_time_handing
 	//	const bool is_estimated_multiple_worm_death_event(a.is_censored() && a.type != ns_moving_worm_disappearance);
 	//	if (a.event_observation_type == ns_death_time_annotation::ns_induced_multiple_worm_death)
 	//		cerr << "RA";
-		if (!
-				(
-					(!a.is_censored() && a.multiworm_censoring_strategy == ns_death_time_annotation::ns_not_applicable) 
-					|| 
-					
+		if (a.excluded == ns_death_time_annotation::ns_censored_at_end_of_experiment)
+			cerr << "Found it!";
+	//	if (a.is_censored() && a.disambiguation_type != ns_death_time_annotation::ns_part_of_a_mutliple_worm_disambiguation_cluster)
+	//		cout << "Found it";
+		if (!a.is_censored() && a.multiworm_censoring_strategy == ns_death_time_annotation::ns_unknown_multiworm_cluster_strategy)
+			continue;
+		if (!(		
+					a.is_censored() && a.disambiguation_type != ns_death_time_annotation::ns_part_of_a_mutliple_worm_disambiguation_cluster
+					||
 					//animals that were stationary but alive at the end of an experiment
 					a.type == ns_movement_cessation && a.excluded == ns_death_time_annotation::ns_censored_at_end_of_experiment
 
 					||
-					a.multiworm_censoring_strategy == ns_death_time_annotation::ns_by_hand_censoring 
-					||
-					(	a.multiworm_censoring_strategy == s 
-						&& 
-						a.by_hand_annotation_integration_strategy == by_hand_strategy 
-						&& 
-						(	a.missing_worm_return_strategy == w 
-							|| 
-							a.missing_worm_return_strategy == ns_death_time_annotation::ns_not_specified
-						)
+					(
+						//animals explicitly entered as by-hand censored
+						a.multiworm_censoring_strategy == ns_death_time_annotation::ns_by_hand_censoring 
+						||
+						//events for which no sensoring strategy is needed
+						a.multiworm_censoring_strategy == ns_death_time_annotation::ns_no_strategy_needed_for_single_worm_object
+						||
+						//animals for which the specified censoring strategy was used
+						a.multiworm_censoring_strategy == s 
 					)
+					&& 
+					a.by_hand_annotation_integration_strategy == by_hand_strategy 
+					&& 
+					(	a.missing_worm_return_strategy == w 
+						|| 
+						a.missing_worm_return_strategy == ns_death_time_annotation::ns_not_specified
+					)
+					
 				)
 			)
 			continue;
@@ -918,65 +931,7 @@ void ns_lifespan_experiment_set::out_simple_JMP_event_data(const ns_time_handing
 		ns_output_JMP_time_interval(time_handling_behavior, a.volatile_time_at_death_contraction_end - metadata.time_at_which_animals_had_zero_age,
 			time_scaling_factor, o);
 		o << ",";
-		//event_time/time_scaling_factor << ",";
-	
-	/*	if (output_raw_data_as_regression){
-			ns_output_JMP_time_interval(time_handling_behavior,a.time - metadata.time_at_which_animals_had_zero_age,
-							time_scaling_factor,o);
-			o << ",";
-			ns_output_JMP_time_interval(time_handling_behavior,a.time - metadata.time_at_which_animals_had_zero_age,
-								time_scaling_factor,o);
-			o << ",";
-		}
-		else {
-			if (regression_stats == 0){
-				if (time_handling_behavior == ns_output_event_intervals)
-				o << ",,,,";
-				else o << ",,";
-			}
-			else {
-				if (regression_stats->additive_device_regression_coefficient != 0){
-					ns_death_time_annotation_time_interval 
-					reg(regression_stats->calculate_additive_device_regression_residual(a.time- metadata.time_at_which_animals_had_zero_age));
-					if (reg.fully_unbounded()){
-						cerr << "Additive Device Regression pushed death before time 0\n";
-						reg.period_end_was_not_observed = false;
-						reg.period_end = metadata.time_at_which_animals_had_zero_age; 
-					}
-					ns_output_JMP_time_interval(time_handling_behavior,reg,time_scaling_factor,o);
-				}
-				else if (time_handling_behavior == ns_output_event_intervals) o<<",";
-				o << ",";
-				if (regression_stats->multiplicative_device_regression_coefficient != 0)
-					ns_output_JMP_time_interval(time_handling_behavior,regression_stats->calculate_multiplicative_device_regression_residual(a.time- metadata.time_at_which_animals_had_zero_age),time_scaling_factor,o);
-				else if (time_handling_behavior == ns_output_event_intervals) o << ",";
-				o << ",";
-			}
-		}
-		*/
-
-		/*ns_output_JMP_time_interval(time_handling_behavior,a.time - metadata.time_at_which_animals_had_zero_age,
-							time_scaling_factor,o);
-
-		if (output_raw_data_as_regression){
-			o << event_time/time_scaling_factor << "," 
-				<< event_time/time_scaling_factor << "," 
-				<< event_time/time_scaling_factor << ",";
-		}
-		else if (regression_stats == 0)
-			o << ",,,";
-		else {
-			o << regression_stats->calculate_additive_device_regression_residual(event_time)/time_scaling_factor << ",";
-			if (regression_stats->multiplicative_device_regression_coefficient != 0)
-				o << regression_stats->calculate_multiplicative_device_regression_residual(event_time)/time_scaling_factor << ",";
-			else o << ",";
-			if(regression_stats->multiplicative_additive_device_regression_multiplicative_coefficient  != 0){
-				o << regression_stats->calculate_multiplicative_device_regression_residual_additive_offset(event_time)/time_scaling_factor << ",";
-			}
-			else o << ",";
-		}*/
-
-		
+			
 		o << (properties.is_censored()?"1":"0") << ",";
 		if (properties.is_censored())
 			o << properties.censor_description();
@@ -984,9 +939,10 @@ void ns_lifespan_experiment_set::out_simple_JMP_event_data(const ns_time_handing
 			<< ns_death_time_annotation::event_observation_label(a.event_observation_type) << ","
 			<< a.source_type_to_string(a.annotation_source) << ","
 			<< metadata.technique << ","
-			<< metadata.analysis_type;
+			<< metadata.analysis_type << ",";
 		if (output_mulitple_events)
-			o << "," << ns_metadata_worm_properties::event_type_to_string(prop.event_type);
+			o <<  ns_metadata_worm_properties::event_type_to_string(prop.event_type) << ",";
+		o << properties.flag.label();
 		o << "\n";
 	}
 }
@@ -1950,7 +1906,7 @@ void ns_survival_data::generate_risk_timeseries(const ns_movement_event & event_
 		for (unsigned int k = 0; k < e->events.size(); k++){
 			if (!e->events[k].properties.is_excluded() &&
 				!e->events[k].properties.is_censored()){
-				if (e->events[k].properties.multiworm_censoring_strategy == ns_death_time_annotation::ns_not_applicable ||
+				if (e->events[k].properties.multiworm_censoring_strategy == ns_death_time_annotation::ns_no_strategy_needed_for_single_worm_object ||
 					e->events[k].properties.multiworm_censoring_strategy == ns_death_time_annotation::default_censoring_strategy()){
 					for (unsigned int m = 0; m < e->events[k].events.size(); m++){
 						double event_time(0);
@@ -1968,6 +1924,8 @@ void ns_survival_data::generate_risk_timeseries(const ns_movement_event & event_
 						if (timepoint == timepoints.end())
 							throw ns_ex("Could not find timepoint for time") << e->events[k].events[m].time.best_estimate_event_time_within_interval();
 						const unsigned long index_id(timepoint-timepoints.begin());
+					//	if (/*risk_timeseries.data.number_of_events[index_id] += e->events[k].events[m].number_of_worms() > 1 &&*/ e->events[k].events[m].stationary_path_id.group_id==23)
+				//			cout << "found";
 						risk_timeseries.data.number_of_events[index_id]+=e->events[k].events[m].number_of_worms();//number_of_worms_in_annotation;
 						total_number_of_deaths+=e->events[k].events[m].number_of_worms();//number_of_worms_in_annotation;
 					}

@@ -820,10 +820,14 @@ void ns_worm_movement_summary_series::output_censoring_diagnostic_header(std::os
 		"Average Survival Time after Entering Clump, Average Survival Time after Not Entering Clump\n";
 }
 void ns_worm_movement_summary_series::generate_censoring_diagnostic_file(const ns_region_metadata & metadata,std::ostream & o){
-	if (this->multiworm_cluster_censoring_strategy == ns_death_time_annotation::ns_include_multiple_worm_cluster_deaths ||
-		this->multiworm_cluster_censoring_strategy == ns_death_time_annotation::ns_not_applicable)
+	if (this->multiworm_cluster_censoring_strategy == ns_death_time_annotation::ns_include_as_single_worm_deaths ||
+		this->multiworm_cluster_censoring_strategy == ns_death_time_annotation::ns_discard_multi_worm_clusters)
 					throw ns_ex("Censoring Diagnostics can be computed when clumps have been ignored or included as deaths, "
 									"but the answer will most likely be wrong, so we refuse to calculate it.");
+
+	if (this->multiworm_cluster_censoring_strategy == ns_death_time_annotation::ns_unknown_multiworm_cluster_strategy ||
+		this->multiworm_cluster_censoring_strategy == ns_death_time_annotation::ns_no_strategy_needed_for_single_worm_object)
+		throw ns_ex("Invalid censoring strategy requested");
 
 	for (unsigned int i = 0; i < multiple_worm_clump_details.size(); i++){
 		const ns_multiple_worm_description & d(multiple_worm_clump_details[i]);
@@ -921,30 +925,37 @@ void ns_worm_movement_summary_series::from_death_time_annotations(
 
 		ns_worm_movement_measurement_summary_timepoint_type timepoint_type(q->properties);
 		
-		ns_dying_animal_description_const d(q->generate_dying_animal_description_const(true));
-		bool use_machine_state_annotations(
-			by_hand_strategy == ns_death_time_annotation::ns_only_machine_annotations ||
-			d.by_hand.death_annotation == 0);
+		ns_dying_animal_description_set_const description_set;
+		q->generate_dying_animal_description_const(true, description_set);
+		//first we handle all the non-death and non-censoring events
+		for (unsigned int j = 0; j < description_set.descriptions.size(); j++) {
+			bool use_machine_state_annotations(
+				by_hand_strategy == ns_death_time_annotation::ns_only_machine_annotations ||
+				description_set.descriptions[j].by_hand.death_annotation == 0);
 
-		if (use_machine_state_annotations){
-			//add slow, posture changing animals
-			for (unsigned int i = 0; i < q->annotations.size(); i++){
-				if(q->annotations[i].type !=  ns_slow_moving_worm_observed &&
-					q->annotations[i].type !=  ns_posture_changing_worm_observed &&
-					q->annotations[i].type != ns_fast_moving_worm_observed )
-					continue;
-			
-				ns_worm_movement_measurement_summary & measurement_summary(all_timepoints[q->annotations[i].time.period_end]);
-				ns_worm_movement_measurement_summary_timepoint_data & measurement(measurement_summary.measurements[timepoint_type]);
-			
-				switch(q->annotations[i].type){
-					case ns_slow_moving_worm_observed: 
+			//only use one machine death annotation (the remainder will be by-hand annotations)
+			if (use_machine_state_annotations && j > 0)
+				continue;
+
+			if (use_machine_state_annotations) {
+				//add slow, posture changing animals
+				for (unsigned int i = 0; i < q->annotations.size(); i++) {
+					if (q->annotations[i].type != ns_slow_moving_worm_observed &&
+						q->annotations[i].type != ns_posture_changing_worm_observed &&
+						q->annotations[i].type != ns_fast_moving_worm_observed)
+						continue;
+
+					ns_worm_movement_measurement_summary & measurement_summary(all_timepoints[q->annotations[i].time.period_end]);
+					ns_worm_movement_measurement_summary_timepoint_data & measurement(measurement_summary.measurements[timepoint_type]);
+
+					switch (q->annotations[i].type) {
+					case ns_slow_moving_worm_observed:
 						if (patial_path_strategy == ns_force_to_fast_moving
 							&& !q->annotations[i].animal_is_part_of_a_complete_trace)
 							measurement.number_moving_fast++;
 						else
 							measurement.number_moving_slow++; break;
-					case ns_posture_changing_worm_observed: 
+					case ns_posture_changing_worm_observed:
 						if (patial_path_strategy == ns_force_to_fast_moving
 							&& !q->annotations[i].animal_is_part_of_a_complete_trace)
 							measurement.number_moving_fast++;
@@ -952,130 +963,138 @@ void ns_worm_movement_summary_series::from_death_time_annotations(
 							measurement.number_changing_posture++; break;
 					case ns_fast_moving_worm_observed:
 						measurement.number_moving_fast++; break;
+					}
 				}
 			}
-		}
-		else{
-			ns_death_time_annotation_time_interval
-						  start_slow,
-						  start_posture,
-						  start_death;
-			bool found_start_slow(false),
-				 found_start_posture(false),
-				 found_start_death(false);
-			if (d.by_hand.last_fast_movement_annotation != 0){
-				start_slow = d.by_hand.last_fast_movement_annotation->time;
-				found_start_slow = true;
-			}
-			else if (d.by_hand.last_fast_movement_annotation != 0){
-				start_slow = d.machine.last_fast_movement_annotation->time;
-				found_start_slow = true;
-			}
-			
-			if (d.by_hand.last_slow_movement_annotation != 0){
-				start_posture = d.by_hand.last_slow_movement_annotation->time;
-				found_start_posture = true;
-			}
-			else if (d.machine.last_slow_movement_annotation != 0){
-				start_posture = d.machine.last_slow_movement_annotation->time;
-				found_start_posture = true;
-			}
+			else {
+				ns_death_time_annotation_time_interval
+					start_slow,
+					start_posture,
+					start_death;
+				bool found_start_slow(false),
+					found_start_posture(false),
+					found_start_death(false);
+				ns_dying_animal_description_base<const ns_death_time_annotation> & d(description_set.descriptions[j]);
+				if (d.by_hand.last_fast_movement_annotation != 0) {
+					start_slow = d.by_hand.last_fast_movement_annotation->time;
+					found_start_slow = true;
+				}
+				else if (d.by_hand.last_fast_movement_annotation != 0) {
+					start_slow = d.machine.last_fast_movement_annotation->time;
+					found_start_slow = true;
+				}
 
-			if (d.by_hand.death_annotation != 0){
-				start_death = d.by_hand.death_annotation->time;
-				found_start_death = true;
-			}
-			else if (d.machine.death_annotation != 0){
-				start_death = d.machine.death_annotation->time;
-				found_start_death = true;
-			}
-			if (!found_start_death){
-				start_death.period_end = start_death.period_start = UINT_MAX;
-			}
-			if (!found_start_posture){
-				start_posture.period_end = start_posture.period_start = UINT_MAX;
-			}
-			if (!found_start_slow){
-				start_slow.period_end = start_slow.period_start = UINT_MAX;
-			}
-			//by hand annotation does not automatically generate state events
-			//so we need to reinterpret the state events generated by the machine.
-			for (unsigned int i = 0; i < q->annotations.size(); i++){
-				if(q->annotations[i].type !=  ns_slow_moving_worm_observed &&
-					q->annotations[i].type !=  ns_posture_changing_worm_observed &&
-					q->annotations[i].type != ns_fast_moving_worm_observed &&
-					q->annotations[i].type != ns_stationary_worm_observed)
-					continue;
-				ns_worm_movement_measurement_summary & measurement_summary(all_timepoints[q->annotations[i].time.period_end]);
-				ns_worm_movement_measurement_summary_timepoint_data & measurement(measurement_summary.measurements[timepoint_type]);
-			
-				if (q->annotations[i].time.period_end < start_slow.period_end)
-					measurement.number_moving_fast++;
-				else if (q->annotations[i].time.period_end < start_posture.period_end){
+				if (d.by_hand.last_slow_movement_annotation != 0) {
+					start_posture = d.by_hand.last_slow_movement_annotation->time;
+					found_start_posture = true;
+				}
+				else if (d.machine.last_slow_movement_annotation != 0) {
+					start_posture = d.machine.last_slow_movement_annotation->time;
+					found_start_posture = true;
+				}
+
+				if (d.by_hand.death_annotation != 0) {
+					start_death = d.by_hand.death_annotation->time;
+					found_start_death = true;
+				}
+				else if (d.machine.death_annotation != 0) {
+					start_death = d.machine.death_annotation->time;
+					found_start_death = true;
+				}
+				if (!found_start_death) {
+					start_death.period_end = start_death.period_start = UINT_MAX;
+				}
+				if (!found_start_posture) {
+					start_posture.period_end = start_posture.period_start = UINT_MAX;
+				}
+				if (!found_start_slow) {
+					start_slow.period_end = start_slow.period_start = UINT_MAX;
+				}
+				//by hand annotation does not automatically generate state events
+				//so we need to reinterpret the state events generated by the machine.
+				for (unsigned int i = 0; i < q->annotations.size(); i++) {
+					if (q->annotations[i].type != ns_slow_moving_worm_observed &&
+						q->annotations[i].type != ns_posture_changing_worm_observed &&
+						q->annotations[i].type != ns_fast_moving_worm_observed &&
+						q->annotations[i].type != ns_stationary_worm_observed)
+						continue;
+					ns_worm_movement_measurement_summary & measurement_summary(all_timepoints[q->annotations[i].time.period_end]);
+					ns_worm_movement_measurement_summary_timepoint_data & measurement(measurement_summary.measurements[timepoint_type]);
+
+					if (q->annotations[i].time.period_end < start_slow.period_end)
+						measurement.number_moving_fast++;
+					else if (q->annotations[i].time.period_end < start_posture.period_end) {
 						if (patial_path_strategy == ns_force_to_fast_moving
 							&& !q->annotations[i].animal_is_part_of_a_complete_trace)
 							measurement.number_moving_fast++;
 						else
 							measurement.number_moving_slow++;
-				}
-				else if (q->annotations[i].time.period_end < start_death.period_end){
+					}
+					else if (q->annotations[i].time.period_end < start_death.period_end) {
 						if (patial_path_strategy == ns_force_to_fast_moving
 							&& !q->annotations[i].animal_is_part_of_a_complete_trace)
 							measurement.number_moving_fast++;
 						else
-							measurement.number_changing_posture++; 
+							measurement.number_changing_posture++;
+					}
 				}
 			}
 		}
 
 		//now we need to add deaths and and censoring events.
-		if (d.machine.death_annotation == 0 || d.machine.death_annotation->annotation_source != ns_death_time_annotation::ns_lifespan_machine ||
-			d.machine.death_annotation->time.period_end_was_not_observed){
+		bool need_to_process_multiple_worms(description_set.descriptions.size() > 1);
+		if (!need_to_process_multiple_worms) {
+			ns_dying_animal_description_base<const ns_death_time_annotation> d(description_set.descriptions[0]);
+			if (d.machine.death_annotation == 0 || d.machine.death_annotation->annotation_source != ns_death_time_annotation::ns_lifespan_machine ||
+				d.machine.death_annotation->time.period_end_was_not_observed) {
+				continue;
+			}
 
-			continue;
-		}
-		ns_dying_animal_description_const::ns_group_type annotation_to_use;
-		if (by_hand_strategy == ns_death_time_annotation::ns_machine_annotations_if_no_by_hand && d.by_hand.death_annotation != 0)
-			annotation_to_use = d.by_hand;
-		
-		else
-			annotation_to_use = d.machine;
-		
+			need_to_process_multiple_worms = (d.by_hand.death_annotation != 0) && (d.by_hand.death_annotation->number_of_worms() > 1);
+			if (!need_to_process_multiple_worms) {
 
-		{
-			ns_multiple_worm_description clump;
-			q->properties.transfer_sticky_properties(clump.properties);
-			clump.time_of_death_machine = annotation_to_use.death_annotation->time.period_end;
-			if (annotation_to_use.last_fast_movement_annotation != 0)
-				clump.time_of_nucleation = annotation_to_use.last_fast_movement_annotation->time.period_end;
-			multiple_worm_clump_details.push_back(clump);
+				ns_dying_animal_description_group<const ns_death_time_annotation> annotation_to_use;
+
+				if (by_hand_strategy == ns_death_time_annotation::ns_machine_annotations_if_no_by_hand && d.by_hand.death_annotation != 0)
+					annotation_to_use = d.by_hand;
+				else 
+					annotation_to_use = d.machine;
+				{
+					ns_multiple_worm_description clump;
+					q->properties.transfer_sticky_properties(clump.properties);
+					clump.time_of_death_machine = annotation_to_use.death_annotation->time.period_end;
+					if (annotation_to_use.last_fast_movement_annotation != 0)
+						clump.time_of_nucleation = annotation_to_use.last_fast_movement_annotation->time.period_end;
+					multiple_worm_clump_details.push_back(clump);
+				}
+				const unsigned long number_of_animals(timepoint_type.number_of_worms(ns_worm_movement_measurement_summary_timepoint_type::ns_all));
+				if (number_of_animals <= 1) {
+					ns_death_time_annotation a(*annotation_to_use.death_annotation);
+					q->properties.transfer_sticky_properties(a);
+					ns_worm_movement_measurement_summary_timepoint_type t(a);
+					ns_worm_movement_measurement_summary_timepoint_data & timepoint(all_timepoints[a.time.period_end].measurements[t]);
+					timepoint.singleton_deaths.observed++;
+				}
+			}
 		}
-		const unsigned long number_of_animals(timepoint_type.number_of_worms(ns_worm_movement_measurement_summary_timepoint_type::ns_all));
-		if(number_of_animals <= 1){
-			ns_death_time_annotation a(*annotation_to_use.death_annotation);
-			q->properties.transfer_sticky_properties(a);
-			ns_worm_movement_measurement_summary_timepoint_type t(a);
-			ns_worm_movement_measurement_summary_timepoint_data & timepoint(all_timepoints[a.time.period_end].measurements[t]);
-			timepoint.singleton_deaths.observed++;
-		}
-		else{
+
+		if (need_to_process_multiple_worms){
 			ns_death_time_annotation_set set;
-			ns_multiple_worm_cluster_death_annotation_handler::generate_correct_annotations_for_multiple_worm_cluster(censoring_strategy,number_of_animals,q->properties,d,set,by_hand_strategy);
-			for (unsigned int i = 0; i < set.size(); i++){
+			ns_multiple_worm_cluster_death_annotation_handler::generate_correct_annotations_for_multiple_worm_cluster(censoring_strategy, q->properties, description_set, set, by_hand_strategy);
+			for (unsigned int i = 0; i < set.size(); i++) {
 				ns_worm_movement_measurement_summary_timepoint_type t(set[i]);
 				ns_worm_movement_measurement_summary & timepoint(all_timepoints[set[i].time.period_end]);
 				ns_worm_movement_measurement_summary_timepoint_data & measurement(timepoint.measurements[t]);
 				const unsigned long new_number_of_animals(t.number_of_worms(ns_worm_movement_measurement_summary_timepoint_type::ns_all));
 				if (set[i].is_censored())
-					timepoint.censoring_data.number_newly_censored_from_multiworm_clusters+=new_number_of_animals;
+					timepoint.censoring_data.number_newly_censored_from_multiworm_clusters += new_number_of_animals;
 				else if (set[i].event_observation_type == ns_death_time_annotation::ns_induced_multiple_worm_death)
-					measurement.estimated_multiple_deaths.observed+=new_number_of_animals;
+					measurement.estimated_multiple_deaths.observed += new_number_of_animals;
 				else if (set[i].event_observation_type == ns_death_time_annotation::ns_observed_multiple_worm_death)
-					measurement.observed_multiple_deaths.observed+=new_number_of_animals;
+					measurement.observed_multiple_deaths.observed += new_number_of_animals;
 				else measurement.singleton_deaths.observed += new_number_of_animals;
 			}
 		}
-
 	
 	}
 	for (ns_timepoints_sorted_by_time::iterator p = all_timepoints.begin(); p != all_timepoints.end(); p++){

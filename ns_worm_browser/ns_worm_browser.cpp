@@ -1077,7 +1077,7 @@ private:
 	unsigned long total_count;
 };
 
-typedef ns_death_time_compiler_random_picker<ns_dying_animal_description, ns_region_metadata> ns_random_picker_type;
+typedef ns_death_time_compiler_random_picker<ns_dying_animal_description_base<ns_death_time_annotation>, ns_region_metadata> ns_random_picker_type;
 typedef std::map<std::string,ns_random_picker_type > ns_compiler_random_picker_list;
 
 struct ns_lifespan_experiment_set_multiworm_simulation{
@@ -1130,7 +1130,6 @@ void ns_handle_pair(const ns_random_picker_type::return_type & d1, const ns_rand
 	ns_death_time_annotation_compiler_multiworm_simulation & worms){
 	
 	const ns_random_picker_type::return_type * mmax, * mmin;
-				
 	if (d1.first.machine.death_annotation->time.period_end > d2.first.machine.death_annotation->time.period_end){
 		mmax = &d1;
 		mmin = &d2;
@@ -1233,9 +1232,11 @@ void ns_worm_learner::simulate_multiple_worm_clumps(const bool use_waiting_time_
 					for (ns_death_time_annotation_compiler_region::ns_location_list::iterator q = p->second.locations.begin(); q != p->second.locations.end(); q++){
 						if (q->properties.excluded != ns_death_time_annotation::ns_not_excluded || q->properties.flag.event_should_be_excluded())
 							continue;
-						ns_dying_animal_description d(q->generate_dying_animal_description(false));
-						if (d.machine.death_annotation == 0 || d.machine.last_fast_movement_annotation == 0 || d.machine.last_slow_movement_annotation == 0)
+						ns_dying_animal_description_set description_set;
+						q->generate_dying_animal_description(false, description_set);
+						if (description_set.descriptions.empty() || description_set.descriptions[0].machine.death_annotation == 0 || description_set.descriptions[0].machine.last_fast_movement_annotation == 0 || description_set.descriptions[0].machine.last_slow_movement_annotation == 0)
 							continue;
+						ns_dying_animal_description_base<ns_death_time_annotation> d(description_set.descriptions[0]);
 						if (d.machine.last_fast_movement_annotation->time.period_end == d.machine.death_annotation->time.period_start)
 							continue;
 						if (d.machine.stationary_worm_dissapearance == 0 ){
@@ -1243,7 +1244,12 @@ void ns_worm_learner::simulate_multiple_worm_clumps(const bool use_waiting_time_
 							q->annotations.events.rbegin()->type = ns_stationary_worm_disappearance;
 							q->annotations.events.rbegin()->time.period_end = q->annotations.events.rbegin()->time.period_start
 								= d.machine.death_annotation->time.period_end + death_dissapearance_time; 
-							d = q->generate_dying_animal_description(false);
+
+							ns_dying_animal_description_set description_set_2;
+							q->generate_dying_animal_description(false,description_set_2);
+							if (description_set_2.descriptions.empty())
+								continue;
+							d = description_set_2.descriptions[0];
 						}
 						else if (d.machine.stationary_worm_dissapearance->time.period_end > d.machine.death_annotation->time.period_end + death_dissapearance_time){
 							d.machine.stationary_worm_dissapearance->time.period_end = d.machine.stationary_worm_dissapearance->time.period_start 
@@ -3661,7 +3667,7 @@ void ns_worm_learner::compile_experiment_survival_and_movement_data(bool use_by_
 		for (unsigned int censoring_strategy = 0; censoring_strategy < (int)ns_death_time_annotation::ns_number_of_multiworm_censoring_strategies; censoring_strategy++)
 			censoring_strategies_to_use.push_back((ns_death_time_annotation::ns_multiworm_censoring_strategy)censoring_strategy);
 	else
-		censoring_strategies_to_use.push_back(ns_death_time_annotation::ns_include_multiple_worm_cluster_deaths);
+		censoring_strategies_to_use.push_back(ns_death_time_annotation::ns_include_directly_observed_deaths_and_infer_the_rest);
 
 
 	//we explicitly check to see if any regions need to have their censoring recalulated.

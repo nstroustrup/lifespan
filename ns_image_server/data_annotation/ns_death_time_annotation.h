@@ -152,11 +152,13 @@ struct ns_death_time_annotation{
 
 	enum{maximum_number_of_worms_at_position=6};
 
-	typedef enum{	ns_not_applicable,
+	typedef enum{	ns_unknown_multiworm_cluster_strategy,
+				    ns_no_strategy_needed_for_single_worm_object,
+				    ns_discard_multi_worm_clusters,
 					ns_include_as_single_worm_deaths,
 					ns_right_censor_multiple_worm_clusters,
-					ns_interval_censor_multiple_worm_clusters,
-					ns_include_multiple_worm_cluster_deaths,
+					ns_include_directly_observed_deaths_and_infer_the_rest,
+					ns_include_only_directly_observed_deaths,
 					ns_by_hand_censoring,
 					ns_merge_multiple_worm_clusters_and_missing_and_censor,
 					ns_number_of_multiworm_censoring_strategies
@@ -186,7 +188,7 @@ struct ns_death_time_annotation{
 
 	ns_death_time_annotation():volatile_duration_of_time_not_fast_moving(0),longest_gap_without_observation(0), volatile_time_at_death_contraction_start(0,0), volatile_time_at_death_contraction_end(0,0),
 		type(ns_no_movement_event),time(0,0),region_info_id(0),region_id(0),position(0,0),size(0,0),animal_is_part_of_a_complete_trace(false),
-		annotation_source(ns_unknown),excluded(ns_not_excluded),number_of_worms_at_location_marked_by_hand(0),multiworm_censoring_strategy(ns_not_applicable),
+		annotation_source(ns_unknown),excluded(ns_not_excluded),number_of_worms_at_location_marked_by_hand(0),multiworm_censoring_strategy(ns_unknown_multiworm_cluster_strategy),
 		number_of_worms_at_location_marked_by_machine(0),annotation_time(0),disambiguation_type(ns_single_worm), flag(ns_death_time_annotation_flag::none()),loglikelihood(1),animal_id_at_position(0),
 		missing_worm_return_strategy(ns_not_specified),volatile_matches_machine_detected_death(false),event_observation_type(ns_standard),
 		by_hand_annotation_integration_strategy(ns_only_machine_annotations),inferred_animal_location(false){
@@ -198,7 +200,7 @@ struct ns_death_time_annotation{
 		const ns_death_time_annotation_time_interval time_, const ns_vector_2i & pos, const ns_vector_2i & size_, const ns_exclusion_type excluded_,
 		const ns_death_time_annotation_event_count & event_counts, const unsigned long annotation_time_, const ns_annotation_source_type source_type,
 		const ns_disambiguation_type & d, const ns_stationary_path_id & s_id, const bool animal_is_part_of_a_complete_trace_, const bool inferred_animal_location_, const ns_plate_subregion_info & subregion_info_, const std::string & annotation_details_ = "",
-		const double loglikelihood_ = 1, const unsigned long longest_gap_without_observation_ = 0, const ns_multiworm_censoring_strategy & cen_strat = ns_not_applicable, const ns_missing_worm_return_strategy & missing_worm_return_strategy_ = ns_not_specified,
+		const double loglikelihood_ = 1, const unsigned long longest_gap_without_observation_ = 0, const ns_multiworm_censoring_strategy & cen_strat = ns_unknown_multiworm_cluster_strategy, const ns_missing_worm_return_strategy & missing_worm_return_strategy_ = ns_not_specified,
 		const ns_event_observation_type & event_observation_type_ = ns_standard, const ns_by_hand_annotation_integration_strategy & by_hand_strategy = ns_only_machine_annotations) :multiworm_censoring_strategy(cen_strat), loglikelihood(loglikelihood_),
 		type(type_), region_id(region_id_), time(time_), position(pos), size(size_), excluded(excluded_), region_info_id(region_info_id_), volatile_duration_of_time_not_fast_moving(0),
 		number_of_worms_at_location_marked_by_hand(event_counts.hand_count), volatile_time_at_death_contraction_start(0, 0), volatile_time_at_death_contraction_end(0, 0),

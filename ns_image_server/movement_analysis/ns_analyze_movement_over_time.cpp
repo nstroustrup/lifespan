@@ -211,7 +211,7 @@ void analyze_worm_movement_across_frames(const ns_processing_job & job, ns_image
 		{ ns_death_time_annotation::ns_machine_annotations_if_no_by_hand,ns_death_time_annotation::ns_only_machine_annotations };
 
 		for (unsigned int bhais = 0; bhais < 2; bhais++) {
-			for (unsigned int censoring_strategy = 0; censoring_strategy < (int)ns_death_time_annotation::ns_number_of_multiworm_censoring_strategies; censoring_strategy++) {
+			for (unsigned int censoring_strategy = ns_death_time_annotation::ns_discard_multi_worm_clusters; censoring_strategy < (int)ns_death_time_annotation::ns_number_of_multiworm_censoring_strategies; censoring_strategy++) {
 				if (censoring_strategy == (int)ns_death_time_annotation::ns_by_hand_censoring)
 					continue;
 

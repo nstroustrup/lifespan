@@ -6,7 +6,7 @@
 //#include "ns_captured_image_statistics_set.h"
 #endif
 #include <set>
-
+#include <vector>
 class ns_death_time_annotation_set{
 public:
 	
@@ -77,18 +77,29 @@ struct ns_dying_animal_description_group{
 				   stationary_animal_state_annotations,
 				   movement_censored_state_annotations;
 };
-struct ns_dying_animal_description_const{
-	typedef ns_dying_animal_description_group<const ns_death_time_annotation> ns_group_type;
+
+//single locations can be annotated to hold multiple worms.  So we need a container corresponding to each location that holds annotations for each worm in the multiple worm clusters.
+template<class annotation_t>
+struct ns_dying_animal_description_base {
+	ns_dying_animal_description_base() : final_number_of_worms_by_hand(0), final_number_of_worms_by_machine(0) {}
+	typedef ns_dying_animal_description_group<annotation_t> ns_group_type;
 	ns_group_type
-		 by_hand,
-		 machine;
+		by_hand,
+		machine;
+	unsigned long final_number_of_worms_by_hand,
+		final_number_of_worms_by_machine;
 };
-struct ns_dying_animal_description{
-	typedef ns_dying_animal_description_group<ns_death_time_annotation> ns_group_type;
-	ns_group_type
-		 by_hand,
-		 machine;
+
+template<class annotation_t>
+struct ns_dying_animal_description_set_base {
+	typedef std::vector< ns_dying_animal_description_base<annotation_t> > description_set_type;
+	description_set_type descriptions;
+	unsigned long unassigned_multiple_worms;
 };
+
+typedef ns_dying_animal_description_set_base<ns_death_time_annotation> ns_dying_animal_description_set;
+typedef ns_dying_animal_description_set_base<const ns_death_time_annotation> ns_dying_animal_description_set_const;
+
 
 class ns_death_time_annotation_compiler_location{
 	void handle_sticky_properties(const ns_death_time_annotation & a);
@@ -103,8 +114,8 @@ public:
 	bool add_event(const ns_death_time_annotation & a);
 	void merge(const ns_death_time_annotation_compiler_location & location);
 
-	ns_dying_animal_description_const generate_dying_animal_description_const(const bool warn_on_movement_errors) const;
-	ns_dying_animal_description generate_dying_animal_description(const bool warn_on_movement_errors);
+	void generate_dying_animal_description_const(const bool warn_on_movement_errors, ns_dying_animal_description_set_const & descriptions) const;
+	void generate_dying_animal_description(const bool warn_on_movement_errors, ns_dying_animal_description_set & description);
 
 };
 //represents the set of all events that occur inside a region
@@ -179,16 +190,14 @@ public:
 	//we need the properties to make sure generated annotations have correct excluded, flag, etc information
 	static void generate_correct_annotations_for_multiple_worm_cluster(
 				const ns_death_time_annotation::ns_multiworm_censoring_strategy & censoring_strategy,
-				const unsigned long number_of_animals,
 				const ns_death_time_annotation & properties,
-				const ns_dying_animal_description_const & d, 
+				const ns_dying_animal_description_set_const & d, 
 				ns_death_time_annotation_set & set,
 				const ns_death_time_annotation::ns_by_hand_annotation_integration_strategy & death_times_to_use);
 	
 	static void generate_correct_annotations_for_multiple_worm_cluster(
-				const unsigned long number_of_animals,
 				const ns_death_time_annotation & properties,
-				const ns_dying_animal_description_const & d, 
+				const ns_dying_animal_description_set_const & d,
 				ns_death_time_annotation_set & set,
 				const ns_death_time_annotation::ns_by_hand_annotation_integration_strategy & death_times_to_use);
 };

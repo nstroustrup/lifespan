@@ -255,7 +255,7 @@ struct ns_worm_movement_summary_series{
 	void to_file(const ns_region_metadata & metadata,std::ostream & o) const;
 //	void from_file(std::istream & o);
 	void clear(){
-		multiworm_cluster_censoring_strategy = ns_death_time_annotation::ns_not_applicable;
+		multiworm_cluster_censoring_strategy = ns_death_time_annotation::ns_unknown_multiworm_cluster_strategy;
 		cached_number_of_worms_at_start = 0;
 		this->estimated_number_of_worms_alive_at_measurement_end = 0;
 		this->estimated_total_number_of_worms = 0;

@@ -750,7 +750,14 @@ bool ns_experiment_storyboard::load_events_from_annotation_compiler(const ns_loa
 
 			//first we find the event time for each worm, that is, the time for
 			//which we want to use its picture in the storyboard
-			ns_dying_animal_description_const d(q->generate_dying_animal_description_const(false));
+			ns_dying_animal_description_set_const descriptions;
+			q->generate_dying_animal_description_const(false,descriptions);
+			if (descriptions.descriptions.empty())
+				throw ns_ex("Encountered an empty descriptions set!");
+
+			//in multi-worm clumps, only the first machine death is used to place the item on the storyboard.
+			//the others can be seen by clicking on that first worm.
+			ns_dying_animal_description_base<const ns_death_time_annotation> &dd(descriptions.descriptions[0]);
 
 			ns_death_time_annotation event_to_place_on_storyboard;
 			bool found_storyboard_event(false);
@@ -762,9 +769,9 @@ bool ns_experiment_storyboard::load_events_from_annotation_compiler(const ns_loa
 
 			case ns_movement_cessation:
 
-				if (d.machine.death_annotation != 0) {
-					if (!d.machine.death_annotation->is_censored()) {
-						event_to_place_on_storyboard = *d.machine.death_annotation;
+				if (dd.machine.death_annotation != 0) {
+					if (!dd.machine.death_annotation->is_censored()) {
+						event_to_place_on_storyboard = *dd.machine.death_annotation;
 						state_to_search = ns_stationary_worm_observed;
 						found_storyboard_event = true;
 						break;
@@ -776,8 +783,8 @@ bool ns_experiment_storyboard::load_events_from_annotation_compiler(const ns_loa
 
 				}
 			case ns_translation_cessation:
-				if (d.machine.last_slow_movement_annotation != 0) {
-					event_to_place_on_storyboard = *d.machine.last_slow_movement_annotation;
+				if (dd.machine.last_slow_movement_annotation != 0) {
+					event_to_place_on_storyboard = *dd.machine.last_slow_movement_annotation;
 					state_to_search = ns_posture_changing_worm_observed;
 					found_storyboard_event = true;
 					break;
@@ -785,31 +792,31 @@ bool ns_experiment_storyboard::load_events_from_annotation_compiler(const ns_loa
 					//if a movement cessation isn't present.
 				}
 			case ns_fast_movement_cessation:
-				if (d.machine.last_fast_movement_annotation != 0) {
-					if (!d.machine.slow_moving_state_annotations.empty()) {
-						event_to_place_on_storyboard = *d.machine.last_fast_movement_annotation;
+				if (dd.machine.last_fast_movement_annotation != 0) {
+					if (!dd.machine.slow_moving_state_annotations.empty()) {
+						event_to_place_on_storyboard = *dd.machine.last_fast_movement_annotation;
 						state_to_search = ns_slow_moving_worm_observed;
 						found_storyboard_event = true;
 					}
 				}
 				break;
 			case ns_stationary_worm_disappearance:
-				if (d.machine.stationary_worm_dissapearance != 0) {
+				if (dd.machine.stationary_worm_dissapearance != 0) {
 					state_to_search = ns_stationary_worm_observed;
-					event_to_place_on_storyboard = *d.machine.stationary_worm_dissapearance;
+					event_to_place_on_storyboard = *dd.machine.stationary_worm_dissapearance;
 					found_storyboard_event = true;
 				}
 				break;
 			case ns_death_posture_relaxation_termination:
-				if (d.machine.death_posture_relaxation_termination_ != 0) {
-					event_to_place_on_storyboard = *d.machine.death_posture_relaxation_termination_;
+				if (dd.machine.death_posture_relaxation_termination_ != 0) {
+					event_to_place_on_storyboard = *dd.machine.death_posture_relaxation_termination_;
 					state_to_search = ns_stationary_worm_observed;
 					found_storyboard_event = true;
 				}
 				break; 
 			case ns_death_posture_relaxation_start:
-					if (d.machine.death_posture_relaxation_start != 0) {
-						event_to_place_on_storyboard = *d.machine.death_posture_relaxation_start;
+					if (dd.machine.death_posture_relaxation_start != 0) {
+						event_to_place_on_storyboard = *dd.machine.death_posture_relaxation_start;
 						state_to_search = ns_stationary_worm_observed;
 						found_storyboard_event = true;
 					}
@@ -1517,9 +1524,13 @@ bool ns_experiment_storyboard::create_storyboard_metadata_from_machine_annotatio
 				for (ns_death_time_annotation_compiler_region::ns_location_list::const_iterator q = r->second.locations.begin(); q !=  r->second.locations.end();q++){		
 					if (q->properties.is_excluded() || q->properties.is_censored())
 						continue;
-					ns_dying_animal_description_const d(q->generate_dying_animal_description_const(false));
-						if (d.machine.death_annotation != 0)
-							death_times.push_back(d.machine.death_annotation->time.period_end);
+					ns_dying_animal_description_set_const descriptions;
+					q->generate_dying_animal_description_const(false,descriptions);
+					if (descriptions.descriptions.empty())
+						throw ns_ex("Encountered an empty descriptions set!");
+
+						if (descriptions.descriptions[0].machine.death_annotation != 0)
+							death_times.push_back(descriptions.descriptions[0].machine.death_annotation->time.period_end);
 				}
 			}
 			std::sort(death_times.begin(), death_times.end());

@@ -1586,7 +1586,7 @@ void ns_death_time_annotation_compiler::generate_detailed_animal_data_file(const
 						<< ((set[i].is_excluded() || set[i].flag.event_should_be_excluded()) ? "1" : "0") << ","
 						<< set[i].flag.label() << ","
 						<< set[i].number_of_worms_at_location_marked_by_hand << ",";
-					
+
 					if (set[i].annotation_source == ns_death_time_annotation::ns_lifespan_machine)
 						o << ",," << (set[i].time.best_estimate_event_time_for_possible_partially_unbounded_interval() - p->second.metadata.time_at_which_animals_had_zero_age) / (60.0 * 60 * 24) << ",,,,";
 					else o << ",,,,,,";
@@ -1608,7 +1608,7 @@ void ns_death_time_annotation_compiler::generate_detailed_animal_data_file(const
 				}
 			}
 			else{
-				ns_dying_animal_description_base<const ns_death_time_annotation> d(animals.descriptions[0]);	
+				ns_dying_animal_description_base<const ns_death_time_annotation> d(animals.descriptions[0]);
 				p->second.metadata.out_JMP_plate_identity_data(o);
 				o << ",0,"
 					<< ((q->properties.is_excluded() || q->properties.flag.event_should_be_excluded()) ? "1" : "0") << ","
@@ -1805,7 +1805,7 @@ class ns_dying_animal_description_generator{
 		//However, it is entirely possibel that worms slow down multiple times, and so those are just ignored
 		//and the latest transition recorded.
 		std::set<unsigned long> animal_id_at_location;
-		
+
 		//find all animal_id_at_location and make a mapping from their ID into the appropriate description to be returned.
 		for (unsigned int i = 0; i < annotations.size(); ++i) {
 			animal_id_at_location.insert(animal_id_at_location.end(), annotations[i].animal_id_at_position);
@@ -1826,7 +1826,7 @@ class ns_dying_animal_description_generator{
 		unsigned long maximum_worm_count_by_hand_annotation(0);
 		//first we set all the death times
 		for (unsigned int i = 0; i < annotations.size(); ++i) {
-			
+
 			if (annotations[i].type != ns_movement_cessation)
 				continue;
 			if (annotations[i].annotation_source != ns_death_time_annotation::ns_lifespan_machine &&
@@ -1906,7 +1906,7 @@ class ns_dying_animal_description_generator{
 				!(annotations[i].stationary_path_id == reference_machine_animal.machine.death_annotation->stationary_path_id)) ||
 				annotations[i].annotation_source == ns_death_time_annotation::ns_unknown)
 				continue;
-			typename ns_dying_animal_description_group<annotation_t> * group;
+			ns_dying_animal_description_group<annotation_t> * group;
 			if (annotations[i].annotation_source == ns_death_time_annotation::ns_lifespan_machine)
 				group = &reference_machine_animal.machine;
 			else if (annotations[i].annotation_source != ns_death_time_annotation::ns_unknown)
@@ -1948,7 +1948,7 @@ class ns_dying_animal_description_generator{
 			if (description_set.descriptions[i].by_hand.death_annotation != 0)
 				by_hand_animals_annotated++;
 		}
-		if (!properties.is_censored() && description_set.descriptions.size() > 1) 
+		if (!properties.is_censored() && description_set.descriptions.size() > 1)
 			description_set.unassigned_multiple_worms = properties.number_of_worms() - by_hand_animals_annotated;
 		else description_set.unassigned_multiple_worms = 0;
 
@@ -2065,7 +2065,7 @@ void ns_multiple_worm_cluster_death_annotation_handler::generate_correct_annotat
 
 
 		ns_death_time_annotation death(*event_data.death_annotation);
-		
+
 		//we use this as debugging info in output file
 		if (event_data.last_fast_movement_annotation != 0)
 			death.volatile_duration_of_time_not_fast_moving =
@@ -2193,7 +2193,7 @@ void ns_multiple_worm_cluster_death_annotation_handler::generate_correct_annotat
 		set[i].by_hand_annotation_integration_strategy = death_times_to_use;
 		set[i].disambiguation_type = ns_death_time_annotation::ns_part_of_a_mutliple_worm_disambiguation_cluster;
 	}
-	
+
 }
 
 ns_death_time_annotation_time_interval ns_death_time_annotation_compiler_region::latest_interval() const{

@@ -427,6 +427,7 @@ public:
 		void start_autoscans_for_device(const std::string & device_name,ns_sql & sql);
 	#endif
 	bool upgrade_tables(ns_sql_connection * sql,const bool just_test_if_needed,const std::string & schema_name, const bool updating_local_buffer);
+	void create_and_configure_sql_database(bool local, const std::string & schema_specification_filename="");
 	std::ofstream * write_device_configuration_file() const;
 	std::ifstream * read_device_configuration_file() const;
 

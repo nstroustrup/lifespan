@@ -666,6 +666,7 @@ ns_sql * ns_image_server::new_sql_connection_no_lock_or_retry(const std::string 
 	ns_sql *con(0);
 	con = new ns_sql();
 	try{
+
 		for (std::vector<string>::size_type server_i=0;  server_i < sql_server_addresses.size(); server_i++){
 				//cycle through different possible connections
 				try{
@@ -1018,6 +1019,165 @@ bool ns_image_server::upgrade_tables(ns_sql_connection * sql, const bool just_te
 
 
 	return changes_made;
+}
+
+#ifdef _WIN32
+#include <iostream>
+#include <stdexcept>
+#include <string>
+#include <windows.h>
+#else
+
+#include <termios.h>
+#include <unistd.h>
+#include <stdio.h>
+#include <iostream>
+#include <string>
+
+int getch() {
+	int ch;
+	struct termios t_old, t_new;
+
+	tcgetattr(STDIN_FILENO, &t_old);
+	t_new = t_old;
+	t_new.c_lflag &= ~(ICANON | ECHO);
+	tcsetattr(STDIN_FILENO, TCSANOW, &t_new);
+
+	ch = getchar();
+
+	tcsetattr(STDIN_FILENO, TCSANOW, &t_old);
+	return ch;
+}
+
+
+#endif
+
+std::string get_hidden_password() {
+#ifdef _WIN32
+		string result;
+
+		// Set the console mode to no-echo, not-line-buffered input
+		DWORD mode, count;
+		HANDLE ih = GetStdHandle(STD_INPUT_HANDLE);
+		HANDLE oh = GetStdHandle(STD_OUTPUT_HANDLE);
+		if (!GetConsoleMode(ih, &mode))
+			throw runtime_error(
+				"getpassword: You must be connected to a console to use this function.\n"
+			);
+		SetConsoleMode(ih, mode & ~(ENABLE_ECHO_INPUT | ENABLE_LINE_INPUT));
+
+		// Get the password string
+		char c;
+		while (ReadConsoleA(ih, &c, 1, &count, NULL) && (c != '\r') && (c != '\n'))
+		{
+			if (c == '\b')
+			{
+				if (result.length())
+				{
+					WriteConsoleA(oh, "\b \b", 3, &count, NULL);
+					result.erase(result.end() - 1);
+				}
+			}
+			else
+			{
+				WriteConsoleA(oh, "*", 1, &count, NULL);
+				result.push_back(c);
+			}
+		}
+
+		// Restore the console mode
+		SetConsoleMode(ih, mode);
+
+		return result;
+#else
+		const char BACKSPACE = 127;
+		const char RETURN = 10;
+
+		string password;
+		unsigned char ch = 0;
+
+		while ((ch = getch()) != RETURN)
+		{
+			if (ch == BACKSPACE)
+			{
+				if (password.length() != 0)
+				{
+					password.resize(password.length() - 1);
+				}
+			}
+			else
+			{
+				password += ch;
+			}
+		}
+		cout << endl;
+		return password;
+	}
+
+#endif
+}
+
+void ns_image_server::create_and_configure_sql_database(bool local, const std::string & schema_specification_filename) {
+	if (local) {
+		if (local_buffer_ip.empty()) throw ns_ex("Please specifiy a local buffer ip in the ns_image_server.ini file");
+		if (local_buffer_user.empty()) throw ns_ex("Please specifiy a local buffer username in the ns_image_server.ini file");
+		if (local_buffer_pwd.empty()) throw ns_ex("Please specifiy a local buffer password in the ns_image_server.ini file");
+		if (local_buffer_db.empty()) throw ns_ex("Please specifiy a local buffer database name in the ns_image_server.ini file");
+	}
+	else {
+		if (sql_user.empty()) throw ns_ex("Please specifiy a sql username in the ns_image_server.ini file.");
+		if (sql_pwd.empty()) throw ns_ex("Please specifiy a sql password in the ns_image_server.ini file.");
+		if (sql_server_addresses.size() != 1 || sql_server_addresses[0].empty()) throw ns_ex("Please specifiy only one sql server address in the ns_image_server.ini file.");
+		if (possible_sql_databases.size() != 1 || possible_sql_databases[0].empty()) throw ns_ex("Please specifiy only one sql database in the ns_image_server.ini file.");
+	}
+	ifstream schema;
+	if (!local && !schema_specification_filename.empty()) {
+		schema.open(schema_specification_filename);
+		if (schema.fail()) {
+			throw ns_ex("Could not open the schema file specified at ") << schema_specification_filename;
+		}
+	}
+	const std::string username(local ? local_buffer_user : sql_user),
+		password(local ? local_buffer_pwd : sql_pwd),
+		db(local ? local_buffer_db : possible_sql_databases[0]),
+		hostname(local ? local_buffer_ip : sql_server_addresses[0]);
+	std::cout << "**Configuring database " << db << " on server " << hostname << "**";
+	std::cout << "Please enter sql server root username: ";
+	std::string root_username;
+	std::cin >> root_username;
+	std::cout << "\nPlease enter sql server root password: ";
+	std::string root_password = get_hidden_password();
+	
+	ns_sql_connection sql;
+	
+	sql.connect(hostname, root_username, root_password, 0);
+
+	sql << "CREATE USER ‘" << username << "’@’%’ identified by ‘" << password << "’";
+	sql.send_query();
+	sql << "CREATE USER ‘" << username << "’@’localhost’ identified by ‘" << password << "’";
+	sql.send_query();
+	
+	sql << "CREATE DATABASE " << db;
+	sql.send_query();
+	sql << "GRANT ALL on *.* TO ‘" << username << "’@’localhost’";
+	sql.send_query();	
+	sql << "GRANT ALL on *.* TO ‘" << username << "’@’localhost’ identified by ’" << password << "’";
+	sql.send_query();
+	sql << "GRANT ALL on *.* TO ‘" << username << "’@’%’";
+	sql.send_query();
+	sql << "GRANT ALL on *.* TO ‘" << username << "’@’%’ identified by ’" << password << "’";
+	sql.send_query();
+
+	if (!local && !schema_specification_filename.empty()) {
+		std::string line;
+		while (!schema.fail()) {
+			getline(schema,line);
+			sql << line;
+			sql.send_query();
+		}
+	}
+	schema.close();
+	sql.disconnect();
 }
 
 bool ns_open_db_table_file(const ns_sql_result & columns, ns_sql_result & data, const std::string & filename, const std::string & directory, std::ofstream & ff){

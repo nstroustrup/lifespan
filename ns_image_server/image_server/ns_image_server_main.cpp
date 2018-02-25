@@ -502,7 +502,7 @@ typedef enum {ns_none,ns_start, ns_stop, ns_help, ns_restart, ns_status, ns_hotp
 			  ns_restarting_after_a_crash,ns_trigger_segfault_in_main_thread,ns_trigger_segfault_in_dispatcher_thread, ns_run_pending_image_transfers,
 	      ns_clear_local_db_buffer_cleanly,ns_clear_local_db_buffer_dangerously,ns_simulate_central_db_connection_error,ns_fix_orphaned_captured_images,
 	ns_update_sql,ns_output_image_buffer_info,ns_stop_checking_central_db,ns_start_checking_central_db,ns_output_sql_debug, ns_additional_host_description,
-	ns_max_run_time_in_seconds, ns_number_of_processing_cores, ns_idle_queue_check_limit, ns_max_memory_to_use,ns_ini_file_location, ns_ignore_multithreaded_jobs,ns_max_number_of_jobs_to_process} ns_cl_command;
+	ns_max_run_time_in_seconds, ns_number_of_processing_cores, ns_idle_queue_check_limit, ns_max_memory_to_use,ns_ini_file_location, ns_ignore_multithreaded_jobs,ns_create_and_configure_sql_db,ns_max_number_of_jobs_to_process} ns_cl_command;
 
 ns_image_server_sql * ns_connect_to_available_sql_server(){
 		try{
@@ -579,6 +579,7 @@ int main(int argc, char ** argv){
 	commands["idle_queue_check_limit"] = ns_idle_queue_check_limit;
 	commands["ignore_multicore_jobs"] = ns_ignore_multithreaded_jobs;
 	commands["ini_file_location"] = ns_ini_file_location;
+	commands["create_and_configure_sql_db"] = ns_create_and_configure_sql_db;
 
 
 	ns_ex command_line_usage;
@@ -629,8 +630,9 @@ int main(int argc, char ** argv){
 		"       synchronizing.\n"
 		<< "fix_orphaned_captured_images: Go through the volatile storage and fix database records for \n"
 		"       images orphaned by a previous bug in the lifespan machine software\n"
-		<< "update_sql [optional schema name]: update the sql database schema to match the most recent version. \n"
-		"       No changes are made if the schema is already up-to-data.  Schema can be specified\n"
+		<< "update_sql [optional database name]: update the sql database schema to match the most recent version. \n"
+		"       No changes are made if the schema is already up-to-data.  A specific database name can be specified\n"
+		<< "create_and_configure_sql_db [schema filename]: Configure sql databases for first time use.\n"
 
 		<< "\n**Redundant, test, or debug functions**\n"
 		<< "submit_experiment: Test and submit an experiment specification XML file to the cluster\n"
@@ -649,7 +651,7 @@ int main(int argc, char ** argv){
 		<< "output_image_buffer_info: Output information about the state of each scanner's locally \n"
 		"       buffered images.\n";
 
-	std::string schema_name, ini_file_location;
+	std::string schema_name, ini_file_location, schema_filename;
 	bool no_schema_name_specified(false);
 	unsigned long max_run_time(0), max_job_num(0), number_of_processing_cores(-1), idle_queue_check_limit(-1), memory_allocation_limit(-1);
 
@@ -664,6 +666,7 @@ int main(int argc, char ** argv){
 		ns_experiment_capture_specification::ns_handle_existing_experiment schedule_submission_behavior;
 		std::string input_filename;
 		bool sql_update_requested(false);
+		bool schema_installation_requested(false);
 		ns_cl_command post_dispatcher_init_command(ns_none);
 		bool restarting_after_crash(false);
 
@@ -707,6 +710,15 @@ int main(int argc, char ** argv){
 					no_schema_name_specified = true;
 				else {
 					schema_name = argv[i + 1];
+					i++; // "consume" the next argument so it doesn't get interpreted as a command-string.
+				}
+			}
+			else if (p->second == ns_create_and_configure_sql_db) {
+				schema_installation_requested = true;
+				if (i + 1 == argc)  //default
+					;
+				else {
+					schema_filename = argv[i + 1];
 					i++; // "consume" the next argument so it doesn't get interpreted as a command-string.
 				}
 			}
@@ -969,6 +981,10 @@ int main(int argc, char ** argv){
 		ns_acquire_for_scope<ns_image_server_sql> sql;
 		//update table formats to newest version, if requested
 		image_server.os_signal_handler.set_signal_handler(ns_interrupt, exit_signal_handler);
+		if (schema_installation_requested) {
+			image_server.create_and_configure_sql_database(true, "");
+			image_server.create_and_configure_sql_database(false, schema_filename);
+		}
 		if (sql_update_requested) {
 			ns_acquire_for_scope<ns_sql> sql(image_server.new_sql_connection(__FILE__, __LINE__));
 			if (!no_schema_name_specified)

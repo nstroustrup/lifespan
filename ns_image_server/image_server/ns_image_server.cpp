@@ -522,7 +522,7 @@ void ns_image_server::perform_experiment_maintenance(ns_sql & sql) const{
 void ns_image_server::register_alerts_as_handled(){
 	alert_handler_thread.report_as_finished();
 }
-#ifndef NS_MINIMAL_SERVER_BUILD	
+#ifndef NS_MINIMAL_SERVER_BUILD
  void ns_image_server::submit_capture_schedule_specification(ns_experiment_capture_specification & spec, std::vector < std::string > & warnings, ns_sql & sql,const ns_experiment_capture_specification::ns_handle_existing_experiment & existing_experiment ,const bool submit_to_db,const std::string & summary_output_file,const bool output_to_stdout){
 
 	warnings.resize(0);
@@ -1053,7 +1053,7 @@ int getch() {
 #endif
 
 std::string get_hidden_password() {
-#ifdef _WIN32
+	#ifdef _WIN32
 		string result;
 
 		// Set the console mode to no-echo, not-line-buffered input
@@ -1089,32 +1089,26 @@ std::string get_hidden_password() {
 		SetConsoleMode(ih, mode);
 
 		return result;
-#else
+	#else
 		const char BACKSPACE = 127;
 		const char RETURN = 10;
 
 		string password;
 		unsigned char ch = 0;
 
-		while ((ch = getch()) != RETURN)
-		{
-			if (ch == BACKSPACE)
-			{
-				if (password.length() != 0)
-				{
+		while ((ch = getch()) != RETURN){
+			if (ch == BACKSPACE){
+				if (password.length() != 0){
 					password.resize(password.length() - 1);
 				}
 			}
-			else
-			{
+			else{
 				password += ch;
 			}
 		}
 		cout << endl;
 		return password;
-	}
-
-#endif
+	#endif
 }
 
 void ns_image_server::create_and_configure_sql_database(bool local, const std::string & schema_specification_filename) {
@@ -1147,20 +1141,20 @@ void ns_image_server::create_and_configure_sql_database(bool local, const std::s
 	std::cin >> root_username;
 	std::cout << "\nPlease enter sql server root password: ";
 	std::string root_password = get_hidden_password();
-	
+
 	ns_sql_connection sql;
-	
+
 	sql.connect(hostname, root_username, root_password, 0);
 
 	sql << "CREATE USER ‘" << username << "’@’%’ identified by ‘" << password << "’";
 	sql.send_query();
 	sql << "CREATE USER ‘" << username << "’@’localhost’ identified by ‘" << password << "’";
 	sql.send_query();
-	
+
 	sql << "CREATE DATABASE " << db;
 	sql.send_query();
 	sql << "GRANT ALL on *.* TO ‘" << username << "’@’localhost’";
-	sql.send_query();	
+	sql.send_query();
 	sql << "GRANT ALL on *.* TO ‘" << username << "’@’localhost’ identified by ’" << password << "’";
 	sql.send_query();
 	sql << "GRANT ALL on *.* TO ‘" << username << "’@’%’";

@@ -982,7 +982,8 @@ int main(int argc, char ** argv){
 		//update table formats to newest version, if requested
 		image_server.os_signal_handler.set_signal_handler(ns_interrupt, exit_signal_handler);
 		if (schema_installation_requested) {
-			image_server.create_and_configure_sql_database(true, "");
+			if (image_server.act_as_an_image_capture_server())
+				image_server.create_and_configure_sql_database(true, "");
 			image_server.create_and_configure_sql_database(false, schema_filename);
 		}
 		if (sql_update_requested) {

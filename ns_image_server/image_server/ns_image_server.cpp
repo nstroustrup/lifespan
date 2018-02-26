@@ -1095,8 +1095,10 @@ std::string get_hidden_password() {
 
 		string password;
 		unsigned char ch = 0;
-
-		while ((ch = getch()) != RETURN){
+		while (true){
+			ch = getch();
+			if (ch == RETURN)
+				break;
 			if (ch == BACKSPACE){
 				if (password.length() != 0){
 					password.resize(password.length() - 1);
@@ -1135,11 +1137,11 @@ void ns_image_server::create_and_configure_sql_database(bool local, const std::s
 		password(local ? local_buffer_pwd : sql_pwd),
 		db(local ? local_buffer_db : possible_sql_databases[0]),
 		hostname(local ? local_buffer_ip : sql_server_addresses[0]);
-	std::cout << "**Configuring database " << db << " on server " << hostname << "**";
-	std::cout << "Please enter sql server root username: ";
+	std::cout << "**Configuring database " << db << " on server " << hostname << "**\n";
+	std::cout << "Please enter sql server admin username: ";
 	std::string root_username;
-	std::cin >> root_username;
-	std::cout << "\nPlease enter sql server root password: ";
+	getline(cin,root_username);
+	std::cout << "Please enter sql server admin password: ";
 	std::string root_password = get_hidden_password();
 
 	ns_sql_connection sql;
@@ -1151,55 +1153,57 @@ void ns_image_server::create_and_configure_sql_database(bool local, const std::s
 	sql.get_rows(res);
 	bool found_db(false);
 	for (unsigned int i = 0; i < res.size(); i++) {
-		if (res[0][0] == db) {
+		if (res[i][0] == db) {
 			found_db = true;
 			break;
 		}
 	}
 	if (found_db) {
+		cout << "The database " << db << " already exists.  Do you want to delete it and create it again?\n"
+			"WARNING: This will delete all metadata not backed up to disk!\n"
+			"To delete, type y . To cancel and do nothing, type n : ";
 		while (true) {
-			cout << "The database " << db << " already exists.  Do you want to delete it and create it again?\n"
-				"WARNING: This will delete all metadata not backed up to disk!\n"
-				"To delete, type y . To cancel and do nothing, type n : ";
-			char a(cin.get());
+			string a;
+			getline(cin,a);
 			cout << "\n";
-			if (a == 'y') {
+			if (a == "y") {
+				cout << "Are you sure?  This will drop your database schema and erase all metadata that you have not already backed up to disk.\n"
+						"Only proceed if you have no data or really understand what you are doing.\n"
+						"To proceed, type y . To cancel and do nothing, type n : ";
 				while (true) {
-					cout << "This will drop your database scheme and erase all metadata not backed up to disk.\n"
-						"Only do this if you have no data or really understand what you are doing.\n";
-					"To delete, type y . To cancel and do nothing, type n : ";
-					char b(cin.get());
+					string b;
+					getline(cin,b);
 					cout << "\n";
-					if (b == 'y')
+					if (b == "y")
 						break;
-					if (b == 'n')
+					if (b == "n" || b == "q" || b == "c")
 						throw ns_ex("The request was cancelled by the user.");
-					cout << "Unknown response: " << b << "\n";
+					cout << "Unknown response.  Please type y or n :";
 				}
 				break;
 			}
-			if (a == 'n')
+			if (a == "n" || a == "q" || a == "c")
 				throw ns_ex("The request was cancelled by the user.");
-			cout << "Unknown response: " << a << "\n";
+			cout << "Unknown response.  Please type y or n :";
 		}
 		sql << "DROP SCHEMA " << db;
 		sql.send_query();
 	}
 
-	sql << "CREATE USER IF NOT EXISTS ‘" << username << "’@’%’ identified by ‘" << password << "’";
+	sql << "CREATE USER IF NOT EXISTS '" << username << "'@'%' identified by '" << password << "'";
 	sql.send_query();
-	sql << "CREATE USER IF NOT EXISTS ‘" << username << "’@’localhost’ identified by ‘" << password << "’";
+	sql << "CREATE USER IF NOT EXISTS '" << username << "'@'localhost' identified by '" << password << "'";
 	sql.send_query();
 
 	sql << "CREATE DATABASE " << db;
 	sql.send_query();
-	sql << "GRANT ALL on *.* TO ‘" << username << "’@’localhost’";
+	sql << "GRANT ALL on *.* TO '" << username << "'@'localhost'";
 	sql.send_query();
-	sql << "GRANT ALL on *.* TO ‘" << username << "’@’localhost’ identified by ’" << password << "’";
+	sql << "GRANT ALL on *.* TO '" << username << "'@'localhost' identified by '" << password << "'";
 	sql.send_query();
-	sql << "GRANT ALL on *.* TO ‘" << username << "’@’%’";
+	sql << "GRANT ALL on *.* TO '" << username << "'@'%'";
 	sql.send_query();
-	sql << "GRANT ALL on *.* TO ‘" << username << "’@’%’ identified by ’" << password << "’";
+	sql << "GRANT ALL on *.* TO '" << username << "'@'%' identified by '" << password << "'";
 	sql.send_query();
 	sql << "USE " << db;
 	sql.send_query();

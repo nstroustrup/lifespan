@@ -1152,9 +1152,49 @@ void ns_image_server::create_and_configure_sql_database(bool local, const std::s
 	
 	sql.connect(hostname, root_username, root_password, 0);
 
-	sql << "CREATE USER ‘" << username << "’@’%’ identified by ‘" << password << "’";
+	sql << "SHOW DATABASES";
+	ns_sql_result res;
+	sql.get_rows(res);
+	bool found_db(false);
+	for (unsigned int i = 0; i < res.size(); i++) {
+		if (res[0][0] == db) {
+			found_db = true;
+			break;
+		}
+	}
+	if (found_db) {
+		while (true) {
+			cout << "The database " << db << " already exists.  Do you want to delete it and create it again?\n"
+				"WARNING: This will delete all metadata not backed up to disk!\n"
+				"To delete, type y . To cancel and do nothing, type n : ";
+			char a(cin.get());
+			cout << "\n";
+			if (a == 'y') {
+				while (true) {
+					cout << "This will drop your database scheme and erase all metadata not backed up to disk.\n"
+						"Only do this if you have no data or really understand what you are doing.\n";
+					"To delete, type y . To cancel and do nothing, type n : ";
+					char b(cin.get());
+					cout << "\n";
+					if (b == 'y')
+						break;
+					if (b == 'n')
+						throw ns_ex("The request was cancelled by the user.");
+					cout << "Unknown response: " << b << "\n";
+				}
+				break;
+			}
+			if (a == 'n')
+				throw ns_ex("The request was cancelled by the user.");
+			cout << "Unknown response: " << a << "\n";
+		}
+		sql << "DROP SCHEMA " << db;
+		sql.send_query();
+	}
+
+	sql << "CREATE USER IF NOT EXISTS ‘" << username << "’@’%’ identified by ‘" << password << "’";
 	sql.send_query();
-	sql << "CREATE USER ‘" << username << "’@’localhost’ identified by ‘" << password << "’";
+	sql << "CREATE USER IF NOT EXISTS ‘" << username << "’@’localhost’ identified by ‘" << password << "’";
 	sql.send_query();
 	
 	sql << "CREATE DATABASE " << db;
@@ -1167,7 +1207,8 @@ void ns_image_server::create_and_configure_sql_database(bool local, const std::s
 	sql.send_query();
 	sql << "GRANT ALL on *.* TO ‘" << username << "’@’%’ identified by ’" << password << "’";
 	sql.send_query();
-
+	sql << "USE " << db;
+	sql.send_query();
 	if (!local && !schema_specification_filename.empty()) {
 		std::string line;
 		while (!schema.fail()) {

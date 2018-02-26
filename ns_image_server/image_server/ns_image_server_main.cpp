@@ -630,8 +630,8 @@ int main(int argc, char ** argv){
 		"       synchronizing.\n"
 		<< "fix_orphaned_captured_images: Go through the volatile storage and fix database records for \n"
 		"       images orphaned by a previous bug in the lifespan machine software\n"
-		<< "update_sql [optional database name]: update the sql database schema to match the most recent version. \n"
-		"       No changes are made if the schema is already up-to-data.  A specific database name can be specified\n"
+		<< "update_sql [optional database]: update the sql database schema to match the most recent version. \n"
+		"       No changes are made if the schema is already up-to-data. A database name can be specified\n"
 		<< "create_and_configure_sql_db [schema filename]: Configure sql databases for first time use.\n"
 
 		<< "\n**Redundant, test, or debug functions**\n"

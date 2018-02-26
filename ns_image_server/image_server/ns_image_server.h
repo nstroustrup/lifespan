@@ -148,19 +148,21 @@ public:
 	void set_up_local_buffer();
 	void set_up_model_directory();
 	///Provides a live sql connection to the central database.
-	ns_sql * new_sql_connection(const std::string & source_file, const unsigned int source_line, const unsigned int retry_count=10) const;
+	ns_sql * new_sql_connection(const std::string & source_file, const unsigned int source_line, const unsigned int retry_count=10,const bool select_default_database=true) const;
 	ns_sql *new_sql_connection_no_lock_or_retry(const std::string & source_file, const unsigned int source_line) const;
 
 	ns_sql_table_lock_manager sql_table_lock_manager;
 
-	ns_local_buffer_connection * new_local_buffer_connection(const std::string & source_file, const unsigned int source_line);
-	ns_local_buffer_connection * new_local_buffer_connection_no_lock_or_retry(const std::string & source_file, const unsigned int source_line) const;
+	ns_local_buffer_connection * new_local_buffer_connection(const std::string & source_file, const unsigned int source_line, const bool select_default_database = true);
+	ns_local_buffer_connection * new_local_buffer_connection_no_lock_or_retry(const std::string & source_file, const unsigned int source_line, const bool select_default_database = true) const;
 
 	void set_sql_database(const std::string & database_name,const bool update_host_registry_in_db,ns_sql & sql);
 	void switch_to_default_db();
+
 	void reconnect_sql_connection(ns_sql * sql);
 
 	void check_for_sql_database_access(ns_image_server_sql * sql) const;
+	void check_for_local_sql_database_access(ns_local_buffer_connection * sql) const;
 
 	const std::string &current_sql_database() const{return *sql_database_choice;}
 	const std::string &current_local_buffer_database() const { return local_buffer_db; }

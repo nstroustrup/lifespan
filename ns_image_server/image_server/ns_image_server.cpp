@@ -1,6 +1,5 @@
 
 #include "ns_image_server.h"
-
 #include "ns_barcode.h"
 #include "ns_socket.h"
 #include "ns_thread.h"
@@ -28,6 +27,7 @@ using namespace std;
 #include "zlib.h"
 #include "ns_image_server_automated_job_scheduler.h"
 //#include "ns_capture_device_manager.h"
+#include "image_server_db_schema.sql.h"
 
 void ns_image_server_global_debug_handler(const ns_text_stream_t & t);
 
@@ -628,6 +628,9 @@ ns_64_bit ns_image_server::make_record_for_new_sample_mask(const ns_64_bit sampl
 void ns_image_server::check_for_sql_database_access(ns_image_server_sql * sql) const {
 	sql->select_db(*sql_database_choice);
 }
+void ns_image_server::check_for_local_sql_database_access(ns_local_buffer_connection * sql) const {
+	sql->select_db(local_buffer_db);
+}
 void ns_image_server::reconnect_sql_connection(ns_sql * sql){
 	try{
 		sql->disconnect();
@@ -685,9 +688,9 @@ ns_sql * ns_image_server::new_sql_connection_no_lock_or_retry(const std::string 
 }
 
 
-ns_local_buffer_connection * ns_image_server::new_local_buffer_connection(const std::string & source_file, const unsigned int source_line){
+ns_local_buffer_connection * ns_image_server::new_local_buffer_connection(const std::string & source_file, const unsigned int source_line, const bool select_default_database){
 	ns_acquire_lock_for_scope lock(local_buffer_sql_lock,__FILE__,__LINE__);
-	ns_local_buffer_connection * buf(new_local_buffer_connection_no_lock_or_retry(source_file,source_line));
+	ns_local_buffer_connection * buf(new_local_buffer_connection_no_lock_or_retry(source_file,source_line, select_default_database));
 	lock.release();
 	return buf;
 }
@@ -765,11 +768,12 @@ void ns_image_server::set_up_local_buffer(){
 	ns_buffered_capture_scheduler::store_last_update_time_in_db(ns_synchronized_time(ns_buffered_capture_scheduler::ns_default_update_time,ns_buffered_capture_scheduler::ns_default_update_time),buf());
 	#endif
 }
-ns_local_buffer_connection * ns_image_server::new_local_buffer_connection_no_lock_or_retry(const std::string & source_file, const unsigned int source_line) const{
+ns_local_buffer_connection * ns_image_server::new_local_buffer_connection_no_lock_or_retry(const std::string & source_file, const unsigned int source_line, const bool select_default_database) const{
 	ns_local_buffer_connection * buf(new ns_local_buffer_connection);
 	try{
 		buf->connect(local_buffer_ip,local_buffer_user,local_buffer_pwd,0);
-		buf->select_db(local_buffer_db);
+		if (select_default_database)
+			buf->select_db(local_buffer_db);
 	}
 	catch(...){
 
@@ -1087,7 +1091,7 @@ std::string get_hidden_password() {
 
 		// Restore the console mode
 		SetConsoleMode(ih, mode);
-
+		cout << endl;
 		return result;
 	#else
 		const char BACKSPACE = 127;
@@ -1207,14 +1211,51 @@ void ns_image_server::create_and_configure_sql_database(bool local, const std::s
 	sql.send_query();
 	sql << "USE " << db;
 	sql.send_query();
-	if (!local && !schema_specification_filename.empty()) {
-		std::string line;
-		while (!schema.fail()) {
-			getline(schema,line);
-			sql << line;
-			sql.send_query();
+
+
+	if (!local) {
+		//upload schema from file
+		if (!schema_specification_filename.empty()) {
+			std::string line;
+			while (!schema.fail()) {
+				getline(schema, line);
+				sql << line;
+				sql.send_query();
+			}
 		}
+		else {
+			//upload schema from copy stored in header file
+			char cur[3];
+			char * res;
+			std::string ch;
+			bool in_quote = false;
+			for (unsigned long i = 0; i < image_server_db_schema_sql_len; i++) {
+
+				const char a = image_server_db_schema_sql[i];
+				if (a == '\'')
+					in_quote = !in_quote;
+				if (a == '\n' || a == '\r') {
+					if (ch.size() >= 2 && ch[0] == '-' && ch[1] == '-') {
+						ch.resize(0);
+						continue;
+					}
+					else continue;
+				}
+				if (!in_quote && a == ';') {
+					if (ch.empty())
+						continue;
+					cout << ch << "\n\n";
+					sql.send_query(ch);
+
+					ch.resize(0);
+					continue;
+				}
+				else ch += image_server_db_schema_sql[i];
+			}
+		}
+		sql.send_query("COMMIT");
 	}
+
 	schema.close();
 	sql.disconnect();
 }
@@ -1797,7 +1838,7 @@ void ns_write_experimental_data_in_database_to_file(const unsigned long experime
 	cout << "\n";
 }
 
-ns_sql * ns_image_server::new_sql_connection(const std::string & source_file, const unsigned int source_line, const unsigned int retry_count) const{
+ns_sql * ns_image_server::new_sql_connection(const std::string & source_file, const unsigned int source_line, const unsigned int retry_count, const bool select_default_database) const{
 	//if there's a problem with the sql server, handle it.  Don't just cycle through errors!
 	ns_acquire_lock_for_scope lock(sql_lock,source_file.c_str(),source_line);
 	ns_sql *con(0);
@@ -1867,7 +1908,8 @@ ns_sql * ns_image_server::new_sql_connection(const std::string & source_file, co
 		}
 
 		lock.release();
-		con->select_db(*sql_database_choice);
+		if (select_default_database)
+			con->select_db(*sql_database_choice);
 		return con;
 	}
 	catch(...){

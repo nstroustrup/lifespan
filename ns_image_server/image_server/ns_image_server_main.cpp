@@ -504,21 +504,6 @@ typedef enum {ns_none,ns_start, ns_stop, ns_help, ns_restart, ns_status, ns_hotp
 	ns_update_sql,ns_output_image_buffer_info,ns_stop_checking_central_db,ns_start_checking_central_db,ns_output_sql_debug, ns_additional_host_description,
 	ns_max_run_time_in_seconds, ns_number_of_processing_cores, ns_idle_queue_check_limit, ns_max_memory_to_use,ns_ini_file_location, ns_ignore_multithreaded_jobs,ns_create_and_configure_sql_db,ns_max_number_of_jobs_to_process} ns_cl_command;
 
-ns_image_server_sql * ns_connect_to_available_sql_server(){
-		try{
-			//open a db connection to run a initialization routines
-			return image_server.new_sql_connection(__FILE__,__LINE__,0);
-		}
-		catch(ns_ex & ex){
-		//	throw ns_ex("Could not contact sql database; the attempt generated the following message: ") << ex.text();
-			if (!image_server.act_as_an_image_capture_server())
-				throw ns_ex("Could not contact central database: ") << ex.text();
-			image_server.register_server_event_no_db(ns_image_server_event("Could not contact central database: ") << ex.text());
-			ns_image_server_sql * sql(image_server.new_local_buffer_connection(__FILE__,__LINE__));
-			image_server.register_server_event(ns_image_server_event("Could not contact central database: ") << ex.text() << ", falling back to local buffer.",sql);
-			return sql;
-		}
-}
 #ifndef NS_ONLY_IMAGE_ACQUISITION
 #ifdef NS_USE_INTEL_IPP
 #include "ipp.h"
@@ -978,35 +963,29 @@ int main(int argc, char ** argv){
 
 		std::vector<std::pair<std::string, std::string> > quotes;
 
-		ns_acquire_for_scope<ns_image_server_sql> sql;
 		//update table formats to newest version, if requested
 		image_server.os_signal_handler.set_signal_handler(ns_interrupt, exit_signal_handler);
 		if (schema_installation_requested) {
 			if (image_server.act_as_an_image_capture_server())
 				image_server.create_and_configure_sql_database(true, "");
 			image_server.create_and_configure_sql_database(false, schema_filename);
+			return 0;
 		}
 		if (sql_update_requested) {
 			ns_acquire_for_scope<ns_sql> sql(image_server.new_sql_connection(__FILE__, __LINE__));
 			if (!no_schema_name_specified)
-				image_server.upgrade_tables(&sql(), false, schema_name,schema_name=="image_server_buffer");
+				image_server.upgrade_tables(&sql(), false, schema_name, schema_name == "image_server_buffer");
 			else {
-				image_server.upgrade_tables(&sql(), false, image_server.current_sql_database(),false);
+				image_server.upgrade_tables(&sql(), false, image_server.current_sql_database(), false);
 				if (image_server.act_as_an_image_capture_server()) {
 					ns_acquire_for_scope <ns_local_buffer_connection> local_sql(image_server.new_local_buffer_connection(__FILE__, __LINE__));
-					image_server.upgrade_tables(&local_sql(), false, image_server.current_local_buffer_database(),true);
+					image_server.upgrade_tables(&local_sql(), false, image_server.current_local_buffer_database(), true);
 					local_sql.release();
 				}
 			}
 			sql.release();
 			return 0;
 		}
-		//check old tables
-		ns_acquire_for_scope<ns_sql> sql_2(image_server.new_sql_connection(__FILE__, __LINE__));
-		if (image_server.upgrade_tables(&sql_2(), true, image_server.current_sql_database(),false)) {
-			throw ns_ex("The current database schema is out of date.  Please run the command: ns_image_server update_sql");
-		}
-		sql_2.release();
 
 		if (command == ns_submit_experiment) {
 			std::cout << "Attempting to submit an experiment schedule.\n";
@@ -1015,26 +994,13 @@ int main(int argc, char ** argv){
 			spec.load_from_xml_file(input_filename);
 			ns_acquire_for_scope<ns_sql> sql(image_server.new_sql_connection(__FILE__, __LINE__));
 			ns_image_server::submit_capture_schedule_specification(spec,
-				warnings,sql(),
+				warnings, sql(),
 				schedule_submission_behavior,
 				upload_experiment_spec_to_db,
 				std::string(""),
 				true);
 			return 0;
 		}
-
-		if (image_server.act_as_an_image_capture_server()) {
-			ns_acquire_for_scope <ns_local_buffer_connection> local_sql(image_server.new_local_buffer_connection(__FILE__, __LINE__));
-			local_sql() << "Show tables";
-			ns_sql_result res;
-			local_sql().get_rows(res);
-			bool local_db_has_been_set_up = !res.empty();
-			if (local_db_has_been_set_up && image_server.upgrade_tables(&local_sql(), true, image_server.current_local_buffer_database(),true))
-				throw ns_ex("The current local buffer database schema is out of date.  Please run the command: ns_image_server update_sql");
-			local_sql.release();
-		}
-
-
 #ifndef _WIN32
 		//if running as an image capture server, launch a second process that moniters the first, and takes over if the first becomes unresponsive.
 		if (image_server_const.act_as_an_image_capture_server()) {
@@ -1083,20 +1049,75 @@ int main(int argc, char ** argv){
 		}
 	#endif
 
-			//don't act as an image capture server if we just want to copy over images.
-			if (post_dispatcher_init_command == ns_run_pending_image_transfers) {
-				image_server.override_ini_specified_image_capture_server_behavior(false);
+		//if we are acting as a capture server, we need to have access to the local sql buffer.
+		if (image_server.act_as_an_image_capture_server()) {
+			ns_acquire_for_scope <ns_local_buffer_connection> local_sql(image_server.new_local_buffer_connection(__FILE__, __LINE__, false));
+			//check for a missing local buffer database
+			try {
+				image_server.check_for_local_sql_database_access(&local_sql());
 			}
+			catch (ns_ex & ex) {
+				throw ns_ex("The local sql buffer schema cannot be accessed.  If this is the first time you are running the server, please run the command: ns_image_server create_and_configure_sql_db.");
+			}
+			//check for an empty local buffer database
+			local_sql() << "Show tables";
+			ns_sql_result res;
+			local_sql().get_rows(res);
+			if (!res.empty())  //we only check to upgrade local buffer db if it has already been created!  otherwise, we will create it in a later step.
+			{
+				//check for an out of date local buffer database
+				if (image_server.upgrade_tables(&local_sql(), true, image_server.current_local_buffer_database(), true))
+					throw ns_ex("The current local buffer database schema is out of date.  Please run the command: ns_image_server update_sql");
+			}
+			local_sql.release();
+		}
+		//don't act as an image capture server if we just want to copy over images.
+		if (post_dispatcher_init_command == ns_run_pending_image_transfers) {
+			image_server.override_ini_specified_image_capture_server_behavior(false);
+		}
 
-		if (sql.is_null())
-			sql.attach(ns_connect_to_available_sql_server());
+		
+		ns_acquire_for_scope<ns_image_server_sql> sql;
+		try {
+			sql.attach(image_server.new_sql_connection(__FILE__, __LINE__, 0, false));
+			//check for a missing central database
+			try {
+				image_server.check_for_sql_database_access(&sql());
+			}
+			catch (ns_ex & ex) {
+				throw ns_ex("The central sql database schema cannot be accessed.  If this is the first time you are running the server, please run the command: ns_image_server create_and_configure_sql_db.");
+			}
+		}
+		catch (ns_ex & ex) {
+			if (image_server.act_as_processing_node())
+				throw ns_ex("Could not contact central database: ") << ex.text();
+
+			//if the central database is not available, attempt to fallback to local database.
+			image_server.register_server_event_no_db(ns_image_server_event("Could not contact central database: ") << ex.text());
+			sql.attach(image_server.new_local_buffer_connection(__FILE__, __LINE__));
+			image_server.register_server_event(ns_image_server_event("Could not contact central database: ") << ex.text() << ", falling back to local buffer.", &sql());
+		}
+
 		if (sql().connected_to_central_database()) {
-			image_server.register_host(&sql(), true, true);  //we need to get the host id in order to be able to look for a request to change databases.
-			image_server.request_database_from_db_and_switch_to_it(*static_cast<ns_sql *>(&sql()),true);  //this registers host in the new db as well
+			//check for an empty central database
+			sql() << "Show tables";
+			ns_sql_result res;
+			sql().get_rows(res);
+			if (res.empty())
+				throw ns_ex("The central sql database schema is empty.  If this is the first time you are running the server, please run the command: ns_image_server create_and_configure_sql_db.");
+			//check old tables
+			if (image_server.upgrade_tables(&sql(), true, image_server.current_sql_database(), false))
+				throw ns_ex("The current central database schema is out of date.  Please run the command: ns_image_server update_sql");
+
+			
 		}
 
 		image_server.image_storage.refresh_experiment_partition_cache(&sql());
 		if (sql().connected_to_central_database()) {
+			//we are (finally!) connected to the central db!  Register this node.
+			image_server.register_host(&sql(), true, true);  //we need to get the host id in order to be able to look for a request to change databases.
+			image_server.request_database_from_db_and_switch_to_it(*static_cast<ns_sql *>(&sql()), true);  //this registers host in the new db as well
+
 			image_server.clear_performance_statistics(*static_cast<ns_sql *>(&sql()));
 			image_server.clear_old_server_events(*static_cast<ns_sql *>(&sql()));
 			image_server.load_quotes(quotes, *static_cast<ns_sql *>(&sql()));

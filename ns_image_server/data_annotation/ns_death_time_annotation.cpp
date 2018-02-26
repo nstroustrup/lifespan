@@ -2224,8 +2224,8 @@ void ns_death_time_annotation_compiler_region::generate_survival_curve(ns_surviv
 
 		//if (q->properties.number_of_worms() == 3)
 			//cerr << "WHA";
-		if (q->properties.stationary_path_id.group_id == 23)
-			cout << "found";
+		//if (q->properties.stationary_path_id.group_id == 23)
+		//	cout << "found";
 
 		ns_dying_animal_description_set_const description_set;
 		q->generate_dying_animal_description_const(warn_on_movement_problems, description_set);

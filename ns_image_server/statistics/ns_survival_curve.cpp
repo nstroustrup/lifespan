@@ -853,8 +853,8 @@ void ns_lifespan_experiment_set::out_simple_JMP_event_data(const ns_time_handing
 	//	const bool is_estimated_multiple_worm_death_event(a.is_censored() && a.type != ns_moving_worm_disappearance);
 	//	if (a.event_observation_type == ns_death_time_annotation::ns_induced_multiple_worm_death)
 	//		cerr << "RA";
-		if (a.excluded == ns_death_time_annotation::ns_censored_at_end_of_experiment)
-			cerr << "Found it!";
+	//	if (a.excluded == ns_death_time_annotation::ns_censored_at_end_of_experiment)
+	//		cerr << "Found it!";
 	//	if (a.is_censored() && a.disambiguation_type != ns_death_time_annotation::ns_part_of_a_mutliple_worm_disambiguation_cluster)
 	//		cout << "Found it";
 		if (!a.is_censored() && a.multiworm_censoring_strategy == ns_death_time_annotation::ns_unknown_multiworm_cluster_strategy)

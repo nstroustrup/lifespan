@@ -969,9 +969,8 @@ bool ns_image_storage_handler::delete_from_local_cache(const std::string & filen
 
 void ns_image_storage_handler::clear_local_cache()const{
 	if (!ns_dir::file_exists(volatile_storage_directory))
-		ns_image_handler_submit_alert_to_central_db(ns_alert::ns_volatile_storage_error,
-			"Could not access volatile storage",
-			std::string("ns_image_storage_handler::clear_local_cache::Could not access volatile storage when attempting clear the local cache: ") + volatile_storage_directory);
+		image_server.register_server_event(ns_image_server::ns_register_in_central_db_with_fallback, ns_ex(
+			"ns_image_storage_handler::clear_local_cache::Could not access volatile storage when attempting clear the local cache: ") << volatile_storage_directory);
 
 	std::string path = volatile_storage_directory + DIR_CHAR_STR + ns_image_server_cache_directory();
 	//make sure the path exists (so trying to load it does not fail;
@@ -981,7 +980,8 @@ void ns_image_storage_handler::clear_local_cache()const{
 	if (verbosity >= ns_deletion_events)
 		image_server_const.register_server_event_no_db(ns_image_server_event("Clearing Local cache ") << path);
 	for (unsigned long i = 0; i < (unsigned long)dir.files.size(); i++)
-		ns_dir::delete_file(path + DIR_CHAR + dir.files[i]);
+		if (dir.files[i].find(".txt") != dir.files[i].npos)
+			ns_dir::delete_file(path + DIR_CHAR + dir.files[i]);
 }
 
 

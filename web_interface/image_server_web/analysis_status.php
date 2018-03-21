@@ -25,7 +25,7 @@ foreach ($sample_info as $d){
     else array_push($done,$d[0]);
   }
   else
-    arrayy_push($empty,$d[0]);
+    array_push($empty,$d[0]);
 }
 if (sizeof($res) == 0)
   echo "All samples have a mask applied to more than 95% of captured images.<br>";
@@ -97,6 +97,7 @@ $operations = array();
 
 
       $sql->get_row($query,$op_counts);
+      if (sizeof($op_counts)>0){
       //var_dump($op_counts);
       $operations[0] = $op_counts[0][0];
       $r = 1;
@@ -111,8 +112,8 @@ $operations = array();
 	if ($operations[$i] == -1) $operations[$i] = 0;
 	$r++;
       }
-
-      $movement_info = array();
+      }
+      $movement_info = array();	
       for ($i=0; $i < sizeof($m); $i++){
 	$movement_info[$m[$i][0]] = $m[$i];
       }

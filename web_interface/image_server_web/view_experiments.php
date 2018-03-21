@@ -3,6 +3,13 @@ require_once('worm_environment.php');
 require_once('ns_experiment.php');
 require_once('ns_processing_job.php');
 
+
+function add_sep($str){
+if (strlen($str)>0)
+   return "::" . $str;
+else return "";
+}
+
 try{
 
 
@@ -248,7 +255,7 @@ if ($show_plate_stats){
 				$sample_problems[$r[0]] = array($r[1],$r[2],$r[3]);
 
 
-		$query = "SELECT DISTINCT r.strain FROM capture_samples as s, sample_region_image_info as r WHERE r.sample_id = s.id AND s.experiment_id = $exp[0]";
+		$query = "SELECT DISTINCT r.strain, r.strain_condition_1, r.food_source, r.environmental_conditions FROM capture_samples as s, sample_region_image_info as r WHERE r.sample_id = s.id AND s.experiment_id = $exp[0]";
 		$sql->get_row($query,$raw_experiment_strains);
 		$experiment_strains[$exp[0]] = array();
 		
@@ -262,19 +269,25 @@ if ($show_plate_stats){
 		foreach($raw_experiment_strains as &$cur_strain){
 
 		  if ($cur_strain[0] != ''){
-		    $query = "SELECT genotype FROM strain_aliases WHERE strain='{$cur_strain[0]}'";
-		    //  die($query);
-		    $sql->get_row($query,$r);
-		    if (sizeof($r) > 0)
-		      $strain_info[$cur_strain[0]] = $r[0][0];
-		    else $strain_info[$cur_strain[0]] = '';
-		    //  var_dump($strain_info);
-		  }
+		    if (!array_key_exists($cur_strain[0],$strain_info)){
+		       $query = "SELECT genotype FROM strain_aliases WHERE strain='{$cur_strain[0]}'";
+		  
+			$sql->get_row($query,$r);
+		    	if (sizeof($r) > 0)
+		      	$strain_info[$cur_strain[0]] = $r[0][0];
+		    	else $strain_info[$cur_strain[0]] = '';
+		   }
+		    }
+		   
 
 
-			if (strlen($cur_strain[0]) > 0)
-				array_push($experiment_strains[$exp[0]],$cur_strain[0]);
+			if (strlen($cur_strain[0]) > 0){
+				$rstr = $cur_strain[0] . add_sep($cur_strain[1]) . add_sep($cur_strain[2]) .add_sep( $cur_strain[3]);
+				array_push($experiment_strains[$exp[0]], $rstr);
+}
 else
+
+
 			array_push($experiment_strains[$exp[0]],"(Unspecified)");
 			$stats =& $plate_statistics[$exp[0]][$cur_strain_id];
 			$cur_strain_id++;
@@ -286,7 +299,7 @@ else
 
 
 
-			$query = "SELECT r.sample_id,r.id, r.censored, r.excluded_from_analysis, r.reason_censored FROM sample_region_image_info as r, capture_samples as s WHERE r.sample_id = s.id AND s.experiment_id=" . $exp[0] . " AND r.strain = '" . $cur_strain[0] . "'";
+			$query = "SELECT r.sample_id,r.id, r.censored, r.excluded_from_analysis, r.reason_censored FROM sample_region_image_info as r, capture_samples as s WHERE r.sample_id = s.id AND s.experiment_id=" . $exp[0] . " AND r.strain = '" . $cur_strain[0] . "' AND r.strain_condition_1= '" . $cur_strain[1] . "' AND r.food_source = '" . $cur_strain[2] . "' AND r.environmental_conditions = '" . $cur_strain[3] . "'";
 			$sql->get_row($query,$res);
 			$stats[$TOTAL] = sizeof($res);
 			foreach ($res as $r){
@@ -722,10 +735,10 @@ echo "</td>";
 		$ps =& $plate_statistics[$experiment_id];
 		echo "<td bgcolor=\"$clrs[1]\"  valign='top' nowrap><center><font size=\"-1\">";
 for ($ss = 0; $ss < sizeof($experiment_strains[$experiment_id]); $ss++){
-	echo $experiment_strains[$experiment_id][$ss] . " (<i>";
-	if ($experiment_strains[$experiment_id][$ss]!= "(Unspecified)")
-	echo $strain_info[$experiment_strains[$experiment_id][$ss]];
-	echo "</i>)<BR>";
+	echo $experiment_strains[$experiment_id][$ss];
+	if (array_key_exists($experiment_strains[$experiment_id][$ss],$strain_info))
+	echo "(<i>" . $strain_info[$experiment_strains[$experiment_id][$ss]] . "</i>)";
+	echo "<BR>";
 }
 echo "</td>";
 echo "<td bgcolor=\"$clrs[0]\"  nowrap valign='top'><center><font size=\"-1\">";

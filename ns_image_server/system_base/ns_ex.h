@@ -114,7 +114,7 @@ protected:
 };
 
 
-typedef enum { ns_standard, ns_file_io, ns_network_io, ns_fatal, ns_sql_fatal, ns_memory_allocation, ns_cache} ns_ex_type;
+typedef enum { ns_standard, ns_file_io, ns_network_io, ns_fatal, ns_sql_fatal, ns_memory_allocation, ns_cache,ns_do_not_flag_images_as_problem} ns_ex_type;
 std::string ns_ex_type_string(const ns_ex_type & ex);
 ns_ex_type ns_ex_type_from_string(const std::string & str);
 //#include <iostream>

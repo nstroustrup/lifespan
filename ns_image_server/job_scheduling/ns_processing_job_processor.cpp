@@ -427,6 +427,10 @@ ns_64_bit ns_processing_job_sample_processor::run_job(ns_sql & sql){
 		}
 	}
 	catch (ns_ex & ex) {
+		if (ex.type() == ns_do_not_flag_images_as_problem) {
+			image_server_const.register_server_event(ex, &sql);
+			return 0;
+		}
 		return image_server_const.register_server_event(ex, &sql);
 	}
 	return 0;

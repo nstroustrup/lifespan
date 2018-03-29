@@ -300,6 +300,7 @@ string ns_ex_type_string(const ns_ex_type & ex){
 		case ns_fatal: return "ns_fatal";
 		case ns_sql_fatal: return "ns_sql_fatal";
 		case ns_memory_allocation: return "ns_memory_allocation";
+		case ns_do_not_flag_images_as_problem: return "ns_do_not_flag_images_as_problem";
 		default: return "ns_ex_type_string::Unknown exception type!";
 	}
 }
@@ -317,6 +318,8 @@ ns_ex_type ns_ex_type_from_string(const string & str){
 		return ns_sql_fatal;
 	if(str == "ns_memory_allocation")
 		return ns_memory_allocation;
+	if (str == "ns_do_not_flag_images_as_problem")
+		return ns_do_not_flag_images_as_problem;
 	return ns_standard;
 }
 const string & ns_to_string(const string & a){

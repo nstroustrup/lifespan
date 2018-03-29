@@ -1011,8 +1011,8 @@ int main(int argc, char ** argv){
 				if (crash_daemon.start(image_server.server_crash_daemon_port()) == ns_image_server_crash_daemon::ns_ok)
 					break;
 				else {
-					if (sql.is_null())
-						sql.attach(ns_connect_to_available_sql_server());
+					ns_acquire_for_scope<ns_image_server_sql> sql;
+					sql.attach(ns_connect_to_available_sql_server());
 
 					if (sql().connected_to_central_database()) {
 					  image_server.alert_handler.initialize(image_server.mail_from_address(),*static_cast<ns_sql *>(&sql()));

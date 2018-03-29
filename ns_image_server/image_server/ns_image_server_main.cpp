@@ -1001,6 +1001,7 @@ int main(int argc, char ** argv){
 				true);
 			return 0;
 		}
+
 #ifndef _WIN32
 		//if running as an image capture server, launch a second process that moniters the first, and takes over if the first becomes unresponsive.
 		if (image_server_const.act_as_an_image_capture_server()) {
@@ -1012,8 +1013,12 @@ int main(int argc, char ** argv){
 					break;
 				else {
 					ns_acquire_for_scope<ns_image_server_sql> sql;
-					sql.attach(ns_connect_to_available_sql_server());
-
+					try {
+						sql.attach(image_server.new_sql_connection(__FILE__, __LINE__));
+					}
+					catch (...) {
+						sql.attach(image_server.new_local_buffer_connection(__FILE__, __LINE__, false));
+					}
 					if (sql().connected_to_central_database()) {
 					  image_server.alert_handler.initialize(image_server.mail_from_address(),*static_cast<ns_sql *>(&sql()));
 						std::string text("The image server node ");

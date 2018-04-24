@@ -7,6 +7,7 @@ function ns_get_filenames($filename,$path,$partition,&$url_filename,&$filesystem
 	global $DIR_CHAR,$NOT_DIR_CHAR;
 	if ($partition != '')
     		$basename = $partition . $DIR_CHAR;
+	else $basename = "";
   	$basename .= $path . $DIR_CHAR . $filename;
  	 $basename = str_replace($NOT_DIR_CHAR,$DIR_CHAR,$basename);
   	$url_filename = $ns_image_server_storage_directory . $DIR_CHAR . $basename;

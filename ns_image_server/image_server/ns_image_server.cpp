@@ -918,6 +918,9 @@ bool ns_image_server::upgrade_tables(ns_sql_connection * sql, const bool just_te
 
 		changes_made = true;
 	}
+
+
+
 	if (!ns_sql_column_exists(t_suf + "host_event_log", "node_id", sql)) {
 		if (just_test_if_needed)
 			return true;
@@ -961,6 +964,19 @@ bool ns_image_server::upgrade_tables(ns_sql_connection * sql, const bool just_te
 			sql->send_query();
 			changes_made = true;
 		}
+
+		if (!ns_sql_column_exists(t_suf + "hosts", "dispatcher_refresh_interval", sql)) {
+			if (just_test_if_needed)
+				return true;
+			cout << "Adding column for dispatcher refresh interval\n";
+			*sql << "ALTER TABLE `" << t_suf << "hosts` "
+				"ADD COLUMN `dispatcher_refresh_interval` INT NOT NULL DEFAULT '0' AFTER `database_used`";
+
+			sql->send_query();
+
+			changes_made = true;
+		}
+
 	}
 	if (!ns_sql_column_exists(t_suf + "experiments", "mask_time", sql)) {
 		if (just_test_if_needed)
@@ -2061,7 +2077,7 @@ bool ns_image_server::new_software_release_available(ns_sql & sql){
 }
 
 void ns_image_server::unregister_host(ns_image_server_sql * sql) {
-	*sql << "UPDATE hosts SET last_ping = 0 WHERE id = " << host_id();
+	*sql << "UPDATE hosts SET last_ping = 0, dispatcher_refresh_interval=0 WHERE id = " << host_id();
 	sql->send_query();
 };
 
@@ -2105,13 +2121,12 @@ void ns_image_server::register_host(ns_image_server_sql * sql, bool overwrite_cu
 			<< ", software_version_compile=" << software_version_compile()<< ",database_used='" << *sql_database_choice
 			<< "', time_of_last_successful_long_term_storage_write=0,"
 			<< "system_hostname = '" << system_host_name << "',"
-			<< "additional_host_description='"<< additional_host_description << "', system_parallel_process_id=" << system_parallel_process_id();
+			<< "additional_host_description='"<< additional_host_description << "', system_parallel_process_id=" << system_parallel_process_id()<< ", dispatcher_refresh_interval = " << _dispatcher_refresh_interval;
 		_host_id = sql->send_query_get_id();
 	}
 	else if (h.size() != 1)
 		throw ns_ex() << (int)h.size() << " hosts found with current hostname!";
 	else{
-
 		_host_id = atoi(h[0][0].c_str());
 		if (overwrite_current_entry){
 			*sql << "UPDATE hosts SET ip='" << host_ip << "', port='" << _dispatcher_port
@@ -2123,7 +2138,7 @@ void ns_image_server::register_host(ns_image_server_sql * sql, bool overwrite_cu
 				//on the initial startup, however, we want to respect the specification in the db, and switch databases if requested.
 			if (!respect_existing_database_choice)
 				*sql << ",database_used='" << *sql_database_choice << "'";
-			*sql << ",system_hostname = '" << system_host_name << "'";
+			*sql << ",system_hostname = '" << system_host_name << "',dispatcher_refresh_interval=" << _dispatcher_refresh_interval;
 			*sql <<  " WHERE id='" << _host_id << "'";
 			sql->send_query();
 		}
@@ -2592,20 +2607,6 @@ void ns_image_server::shut_down_host(){
 
 }
 
-/*void ns_image_server::delete_stored_image(const unsigned long image_id, ns_sql & sql){
-		sql << "SELECT path, filename FROM images WHERE id = " << image_id;
-		ns_sql_result res;
-		sql.get_rows(res);
-		if (res.size() != 0){
-			ns_image_server_image im;
-			im.path = res[0][0];
-			im.filename = res[0][1];
-			image_storage.delete_from_storage(im,sql);
-		}
-		sql << "DELETE FROM images WHERE id = " << image_id;
-		sql.send_query();
-		sql.send_query("COMMIT");
-}*/
 #ifndef NS_ONLY_IMAGE_ACQUISITION
 void ns_svm_model_specification::write_statistic_ranges(const std::string & filename, bool write_all_features) const{
 

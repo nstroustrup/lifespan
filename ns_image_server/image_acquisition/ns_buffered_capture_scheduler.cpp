@@ -519,8 +519,18 @@ void ns_buffered_capture_scheduler::update_local_buffer_from_central_server(ns_i
 	central_db << "SELECT k,v FROM constants WHERE time_stamp > FROM_UNIXTIME(" << time_of_last_update_from_central_db.remote_time << ")";
 	ns_sql_result cres;
 	central_db.get_rows(cres);
-	if (cres.size() > 0){
-		std::cerr << "Updating " << cres.size() << " constants in local buffer\n";
+	std::vector<std::string> notable_constants;
+	for (unsigned int i = 0; i < cres.size(); i++) {
+		if (cres[i][0].find("duration_until_next_") == cres[i][0].npos &&
+			cres[i][0].find("_alert_submission") == cres[i][0].npos &&
+			cres[i][0] != "last_missed_scan_check_time")
+			notable_constants.push_back(cres[i][0] + "=" + cres[i][1]);
+	}
+
+	if (notable_constants.size()){
+		std::cerr << "Updating constants in local buffer:\n";
+		for (unsigned int i = 0; i < notable_constants.size(); i++)
+			std::cerr << notable_constants[i] << "\n";
 	}
 	for (unsigned int i = 0; i < cres.size(); i++)
 		image_server.set_cluster_constant_value(local_buffer.escape_string(cres[i][0]),local_buffer.escape_string(cres[i][1]),&local_buffer,update_start_time.local_time);

@@ -527,7 +527,7 @@ void ns_buffered_capture_scheduler::update_local_buffer_from_central_server(ns_i
 			notable_constants.push_back(cres[i][0] + "=" + cres[i][1]);
 	}
 
-	if (notable_constants.size()){
+	if (!notable_constants.empty()){
 		std::cerr << "Updating constants in local buffer:\n";
 		for (unsigned int i = 0; i < notable_constants.size(); i++)
 			std::cerr << notable_constants[i] << "\n";

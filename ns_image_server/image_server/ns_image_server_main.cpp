@@ -648,7 +648,7 @@ int main(int argc, char ** argv){
 		//set default options for command line arguments
 		ns_cl_command command(ns_start);
 		bool upload_experiment_spec_to_db(false);
-		ns_experiment_capture_specification::ns_handle_existing_experiment schedule_submission_behavior;
+		ns_experiment_capture_specification::ns_handle_existing_experiment schedule_submission_behavior = ns_experiment_capture_specification::ns_stop;
 		std::string input_filename;
 		bool sql_update_requested(false);
 		bool schema_installation_requested(false);
@@ -780,17 +780,16 @@ int main(int argc, char ** argv){
 				else  {
 					input_filename = argv[i + 1];
 					string opt(argv[i + 2]);
-					bool found_good_option(false);
 					if (opt == "f" || opt.size() == 2 && (opt[0] == 'f' || opt[1] == 'f')) {
-						found_good_option = true;
+					
 						schedule_submission_behavior = ns_experiment_capture_specification::ns_overwrite;
 					}
 					if (opt == "a" || opt.size() == 2 && (opt[0] == 'a' || opt[1] == 'a')) {
-						found_good_option = true;
+					
 						schedule_submission_behavior = ns_experiment_capture_specification::ns_append;
 					}
 					if (opt == "u" || opt.size() == 2 && (opt[0] == 'u' || opt[1] == 'u')) {
-						found_good_option = true;
+						
 						upload_experiment_spec_to_db = true;
 					}
 					if ((opt[0] != 'f' && opt[0] != 'a' && opt[0] != 'u') ||

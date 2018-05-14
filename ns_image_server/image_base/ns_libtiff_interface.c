@@ -15,6 +15,9 @@ int ns_DummyMapProc(thandle_t fd, void** pbase, toff_t* psize){return 0;}
 void ns_DummyUnmapProc(thandle_t fd, void* base, toff_t size){}
 
 TIFF* ns_tiff_fd_open(ns_tiff_client_data * client_data, const char* name, const char* mode){
+	client_data->tiff_fd.h = 0;
+	client_data->tiff_fd.fd = 0;
+	client_data->error_storage = 0;
 	TIFF* tif;
 	#ifdef _WIN32
 	int fSuppressMap;
@@ -98,7 +101,7 @@ void ns_setup_libtiff(){
 	#ifdef _WIN32
 		ref_tif = TIFFOpen("nul","w");
 	#else
-	  
+
 		  fd = open("/dev/null",O_RDWR);
 		  if (fd == 0){
 			   printf("Trying file\n");
@@ -122,6 +125,7 @@ TIFF* ns_tiff_open(const char* name, ns_tiff_client_data * client_data,const cha
 
 	client_data->tiff_fd.fd = 0;
 	client_data->tiff_fd.h = 0;
+	client_data->error_storage = 0;
   //printf("NS OPENING %s\n",name);
 #ifdef _WIN32
 	static const char module[] = "TIFFOpen";

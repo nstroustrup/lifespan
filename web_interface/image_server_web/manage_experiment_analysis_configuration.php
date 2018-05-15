@@ -27,6 +27,10 @@ if (ns_param_spec($_POST,'detail_level')){
      $external_detail_spec = TRUE;
  }
 
+if (ns_param_spec($_POST,'set_as_default'))
+   $set_as_default = $_POST['set_as_default']=="yes";
+else $set_as_default = FALSE;
+
  if (ns_param_spec($query_string,'set_denoising_options') && $query_string['set_denoising_options']==1){
    $denoising_flag = $_POST['time_series_median'];
 
@@ -249,6 +253,12 @@ $strain = $exps[$i][1];
      $query = "UPDATE sample_region_image_info as i, capture_samples as s SET posture_analysis_model ='$model_name',posture_analysis_method='$posture_analysis_method' WHERE i.sample_id = s.id AND s.experiment_id = $experiment_id";
      // die($query);
      $sql->send_query($query);
+     if ($set_as_default){
+     	$query = "UPDATE constants SET v='$posture_analysis_method' WHERE k='default_posture_analysis_method'";
+     	$sql->send_query($query);
+     	$query = "UPDATE constants SET v='$model_name' WHERE k='default_posture_analysis_model'";
+     	$sql->send_query($query);
+     }
    }
    else{
      $posture_analysis_method = $_POST['posture_analysis_method'];
@@ -283,6 +293,11 @@ $strain = $exps[$i][1];
     $model_name = $_POST['single_position_model_name'];
      $query = "UPDATE sample_region_image_info as i, capture_samples as s SET position_analysis_model ='$model_name' WHERE i.sample_id = s.id AND s.experiment_id = $experiment_id";
       $sql->send_query($query);
+
+       if ($set_as_default){
+        $query = "UPDATE constants SET v='$model_name' WHERE k='default_position_analysis_model'";
+        $sql->send_query($query);
+     }
    }
    else{
      var_dump($_POST);
@@ -320,6 +335,10 @@ $strain = $exps[$i][1];
      $query = "UPDATE sample_region_image_info as i, capture_samples as s SET worm_detection_model ='$model_name' WHERE i.sample_id = s.id AND s.experiment_id = $experiment_id";
 
    $sql->send_query($query);
+      if ($set_as_default){
+        $query = "UPDATE constants SET v='$model_name' WHERE k='default_worm_detection_model'";
+        $sql->send_query($query);
+     }
    }
    else{
      foreach($_POST as $k => $v){
@@ -527,7 +546,8 @@ output_editable_field("image_compression_ratio",$image_compression_ratio,TRUE,4)
   ?>
 	<?php }?>
 
-<tr><td bgcolor="<?php echo $table_colors[0][0] ?>" colspan=2>
+<tr><td valign="top" bgcolor=" <?php echo $table_colors[0][0]?>"><?php if ($is_single_posture_model){?><input type="checkbox" name="set_as_default" value="yes"><font size="-2">Set as default for
+ all future experiments</font><?php } ?></td><td bgcolor="<?php echo $table_colors[0][0] ?>" colspan=1>
 					  <div align="right"><input name="set_posture_models" type="submit" value="Set Posture Analysis Models" <?php if ($number_of_regions == 0) echo "disabled";?>>  <?php if ($number_of_regions == 0) echo "<br><font size=\"-2\">These options cannot be set before plate region mask is submitted.</font>"?>
 	</div>
 	</td></tr>
@@ -570,7 +590,7 @@ output_editable_field("image_compression_ratio",$image_compression_ratio,TRUE,4)
   ?>
 	<?php }?>
 
-<tr><td bgcolor="<?php echo $table_colors[0][0] ?>" colspan=2>
+<tr><td valign="top" bgcolor=" <?php echo $table_colors[0][0]?>"><?php if ($is_single_detection_model){?><input type="checkbox" name="set_as_default" value="yes"><font size="-2">Set as default for all future experiments</font><?php } ?></td><td bgcolor="<?php echo $table_colors[0][0] ?>">
 					  <div align="right"><input name="set_detection_models" type="submit" value="Set Worm Detection Models" <?php if ($number_of_regions == 0) echo "disabled";?>> <?php if ($number_of_regions == 0) echo "<br><font size=\"-2\">These options cannot be set before plate region mask is submitted.</font>"?>
 	</div>
 	</td></tr>
@@ -614,7 +634,8 @@ output_editable_field("image_compression_ratio",$image_compression_ratio,TRUE,4)
   ?>
 	<?php }?>
 
-<tr><td bgcolor="<?php echo $table_colors[0][0] ?>" colspan=2>
+<tr><td valign="top" bgcolor=" <?php echo $table_colors[0][0]?>"><input type="checkbox" name="set_as_default" value="yes"><font size="-2">Set as default for
+ all future experiments</font></td><td bgcolor="<?php echo $table_colors[0][0] ?>" colspan=2>
 					  <div align="right"><input name="set_position_models" type="submit" value="Set Position Models" <?php if ($number_of_regions == 0) echo "disabled";?>> <?php if ($number_of_regions == 0) echo "<br><font size=\"-2\">These options cannot be set before plate region mask is submitted.</font>"?>
 	</div>
 	</td></tr>

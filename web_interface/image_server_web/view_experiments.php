@@ -97,9 +97,10 @@ try{
 	if (ns_param_spec($_POST,'save')){
 		$experiment_group_id = $_POST['experiment_group_id'];
 		$id = $_POST['id'];
-		$name = addslashes($_POST['name']);
+		//if ($array_key_exists('name',$_POST))
+		//$name = addslashes($_POST['name']);
 		$comments = ($_POST['comments']);
-		$delete_captured = $_POST['delete_captured_after_mask'];
+		//$delete_captured = $_POST['delete_captured_after_mask'];
 		$query = "UPDATE experiments SET description='$comments', group_id = $experiment_group_id WHERE id=$id";
 	//die($query);
 		$sql->send_query($query);

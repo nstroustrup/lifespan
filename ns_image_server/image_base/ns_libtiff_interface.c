@@ -171,12 +171,8 @@ TIFF* ns_tiff_open(const char* name, ns_tiff_client_data * client_data,const cha
 	client_data->tiff_fd.fd = open(name, m, 0666);
 	#endif
 	if (client_data->tiff_fd.fd < 0) {
-	  //	if (errno > 0 && strerror(errno) != NULL) {
-	  //		TIFFErrorExt(0, module, "%s: %s", name, strerror(errno));
-	  //	}
-	  //	else {
+			client_data->tiff_fd.fd = 0;
 			TIFFErrorExt(0, module, "%s: Cannot open", name);
-	  //	}
 		return ((TIFF *)0);
 	}
 

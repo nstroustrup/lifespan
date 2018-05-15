@@ -1005,6 +1005,9 @@ void ns_image_processing_pipeline::generate_sample_regions_from_mask(ns_64_bit s
 		mask_regions[i].name = ns_to_string(i);
 	}
 
+	std::string default_posture_analysis_model = image_server.get_cluster_constant_value("default_posture_analysis_model", "2017_07_20=wildtype_v2", &sql);
+	std::string default_posture_analysis_method = image_server.get_cluster_constant_value("default_posture_analysis_method", "thresh", &sql);
+	std::string default_worm_detection_model = image_server.get_cluster_constant_value("default_worm_detection_model", "mixed_genotype_high_24_plus_fscore_features", &sql);
 	//check to see if any existing regions match the current mask
 	//if there is one pre-existing, use it.  Otherwise, create a new one.
 	for (unsigned long i = 0; i < mask_regions.size(); i++){
@@ -1034,9 +1037,9 @@ void ns_image_processing_pipeline::generate_sample_regions_from_mask(ns_64_bit s
 				"experiment_temperature = '',"
 				"food_source = '',"
 				"environmental_conditions = '',"
-				"posture_analysis_model = '',"
-				"posture_analysis_method = '',"
-				"worm_detection_model = '',"
+				"posture_analysis_model = '" << default_posture_analysis_model << "',"
+				"posture_analysis_method = '"<< default_posture_analysis_method <<"',"
+				"worm_detection_model = '"<< default_worm_detection_model <<"',"
 				"position_analysis_model = '',"
 				"strain=''";
 
@@ -1621,6 +1624,7 @@ void ns_image_processing_pipeline::apply_mask(ns_image_server_captured_image & c
 	ns_high_precision_timer timer;
 	timer.start();
 
+
 	captured_image.load_from_db(captured_image.captured_images_id, &sql);
 	ns_image_server_event ev("ns_image_processing_pipeline::Applying Mask");
 	ev << " on " << captured_image.experiment_name << "::" << captured_image.sample_name;
@@ -1629,6 +1633,10 @@ void ns_image_processing_pipeline::apply_mask(ns_image_server_captured_image & c
 	ns_64_bit event_id = image_server_const.register_server_event(ev, &sql);
 	image_server.add_subtext_to_current_event((std::string("Processing image collected at ") + ns_format_time_string_for_human(captured_image.capture_time) + "\n").c_str(), &sql);
 	bool delete_captured_image(false);
+	ns_image_type output_file_type;
+	float hd_compression_rate_f = 0;
+	
+
 	{
 		sql << "SELECT delete_captured_images_after_mask FROM experiments WHERE id = " << captured_image.experiment_id;
 		ns_sql_result res;
@@ -1636,18 +1644,28 @@ void ns_image_processing_pipeline::apply_mask(ns_image_server_captured_image & c
 		if (res.size() != 1)
 			throw ns_ex("ns_image_processing_pipeline::apply_mask()::Could not load experiment data from db (") << captured_image.experiment_id << ")";
 		delete_captured_image = res[0][0] != "0";
+
+		sql << "SELECT first_frames_are_protected, compression_type FROM capture_samples WHERE id=" << captured_image.sample_id;
+		sql.get_rows(res);
+
+		if (res.size() == 0)
+			throw ns_ex("Could not find sample for specified captured image!") << captured_image.sample_id;
+
+		if (res[0][0] == "0") {
+			delete_captured_image = false;
+			image_server_const.add_subtext_to_current_event("Since no images in this sample have been protected from deletion, this capture image will not be deleted.\n", &sql);
+		}
+		
+		if (res[0][1] == "lzw") {
+			output_file_type = ns_tiff;
+			hd_compression_rate_f = 1.0;
+		}
+		else if (res[0][1] == "" || res[0][1] == "jp2k")  //jp2k by default!
+			output_file_type = ns_jp2k;
+		else throw ns_ex("Unknown compression type specified for experiment images:") << res[0][1];
+
 		if (delete_captured_image) {
-			sql << "SELECT first_frames_are_protected FROM capture_samples WHERE id=" << captured_image.sample_id;
-			sql.get_rows(res);
-
-			if (res.size() == 0)
-				throw ns_ex("Could not find sample for specified captured image!") << captured_image.sample_id;
-
-			if (res[0][0] == "0") {
-				delete_captured_image = false;
-				image_server_const.add_subtext_to_current_event("Since no images in this sample have been protected from deletion, this capture image will not be deleted.\n", &sql);
-			}
-			if (delete_captured_image && captured_image.capture_images_small_image_id == 0) {
+			if (captured_image.capture_images_small_image_id == 0) {
 				image_server_const.add_subtext_to_current_event("Creating small thumbnail record of the captured image...\n", &sql);
 				try {
 					resize_sample_image(captured_image, sql);
@@ -1666,7 +1684,17 @@ void ns_image_processing_pipeline::apply_mask(ns_image_server_captured_image & c
 				image_server_const.add_subtext_to_current_event("Because this capture image is marked \"Never Delete\", it will not be deleted.\n", &sql);
 			}
 		}
+	
+			throw ns_ex("Invalid compression rate specified in jp2k_hd_compression_rate cluster constant: ") << hd_compression_rate_f;
+		if (output_file_type == ns_jp2k) {
+			std::string hd_compression_rate = image_server_const.get_cluster_constant_value("jp2k_hd_compression_rate", ns_to_string(NS_DEFAULT_JP2K_HD_COMPRESSION), &sql);
+			hd_compression_rate_f = atof(hd_compression_rate.c_str());
+			if (hd_compression_rate_f <= 0)
+				throw ns_ex("Invalid compression rate specified in jp2k_hd_compression_rate cluster constant: ") << hd_compression_rate_f;
+		}
+
 	}
+	
 
 
 	unsigned long start_time = ns_current_time();
@@ -1804,7 +1832,12 @@ void ns_image_processing_pipeline::apply_mask(ns_image_server_captured_image & c
 			//create a new image for the region_image image
 			output_image.partition = image_server_const.image_storage.get_partition_for_experiment(new_region_image.experiment_id, &sql);
 			output_image.path = new_region_image.directory(&sql);
-			output_image.filename = new_region_image.filename(&sql) + ".tif";
+
+			
+			
+			output_image.filename = new_region_image.filename(&sql);
+			ns_add_image_suffix(output_image.filename, output_file_type);
+
 			sql << "INSERT INTO images SET filename = '" << sql.escape_string(output_image.filename) << "', path = '" << sql.escape_string(output_image.path)
 				<< "', creation_time=" << captured_image.capture_time << ", host_id = " << image_server_const.host_id() << ", `partition` = '" << output_image.partition << "' ";
 			output_image.id = sql.send_query_get_id();
@@ -1815,7 +1848,7 @@ void ns_image_processing_pipeline::apply_mask(ns_image_server_captured_image & c
 		}
 		//get storage for the output image.
 		bool had_to_use_volatile_storage;
-		(*mask_splitter.mask_info())[mask_region_value]->reciever = image_server_const.image_storage.request_storage(output_image, ns_tiff, 1.0, _image_chunk_size, &sql, had_to_use_volatile_storage, false, false);
+		(*mask_splitter.mask_info())[mask_region_value]->reciever = image_server_const.image_storage.request_storage(output_image, output_file_type, hd_compression_rate_f, _image_chunk_size, &sql, had_to_use_volatile_storage, false, false);
 		(*mask_splitter.mask_info())[mask_region_value]->reciever_provided = true;
 		output_images.push_back(output_image);
 	}

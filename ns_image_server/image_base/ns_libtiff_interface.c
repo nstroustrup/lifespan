@@ -5,6 +5,8 @@
 
 #ifdef _WIN32
 #include <Windows.h>
+#else
+#include <stdlib.h>
 #endif
 
 //global variable used to store pointers to internal TIFF library functions

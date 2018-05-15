@@ -42,6 +42,7 @@ if ($host_id != ''){
 }
 
 $show_host_nodes = @$query_string['show_host_nodes']=='1';
+$show_offline_nodes = @$query_string['show_offline_nodes'];
 $device_name = @$query_string['device_name'];
 $highlight_host_id = @$query_string['highlight_host_id'];
 $selected_devices = @$_POST['selected_devices'];
@@ -259,23 +260,31 @@ die("");
  }
 
 
-$query = "SELECT id, name, ip, last_ping, comments, long_term_storage_enabled, port,software_version_major,software_version_minor,software_version_compile, pause_requested, base_host_name, database_used,available_space_in_volatile_storage_in_mb,time_of_last_successful_long_term_storage_write,system_hostname,additional_host_description,system_parallel_process_id FROM hosts ORDER BY pause_requested,name";
+$query = "SELECT id, name, ip, last_ping, comments, long_term_storage_enabled, port,software_version_major,software_version_minor,software_version_compile, pause_requested, base_host_name, database_used,available_space_in_volatile_storage_in_mb,time_of_last_successful_long_term_storage_write,system_hostname,additional_host_description,system_parallel_process_id, dispatcher_refresh_interval";
+$query .=",UNIX_TIMESTAMP(NOW()) - last_ping < 2*dispatcher_refresh_interval";
+$query .=" FROM hosts ORDER BY pause_requested,name";
 $sql->get_row($query,$hosts);
 
+//initialize some lookup tables
 $base_hosts = array();
+$nodes_running = array();
+$devices_attached= array();
+$base_hostname_lookup = array();
 foreach ($hosts as $row){
 	$lab = host_label($row[11],$row[15],$row[16]);	
-$base_hosts[$lab] = array();
+	$base_hosts[$lab] = array();
 	$nodes_running[$lab][0] = 0;
 	$nodes_running[$lab][1] = 0;
+	$devices_attached[$lab] = 0;
+	$base_hostname_lookup[$row[0]] = $lab;
+}
 
-}//var_dump($base_hosts);
-
+//fill in some lookup tables
 $current_time = ns_current_time();
 foreach ($hosts as $row){
 	$lab = host_label($row[11],$row[15],$row[16]);
 	array_push($base_hosts[$lab],$row);
-	$current = $current_time - $row[3] < $current_device_cutoff;
+	$current = $row[18]==1;
 	if ($current)
 		$nodes_running[$lab][0]++;
 	$nodes_running[$lab][1]++;
@@ -295,7 +304,10 @@ $connected_devices = array();
 for ($i = 0; $i < sizeof($devices); $i++){
 	$devices_identified[$devices[$i][1]] = 1;
 	$connected_devices[$devices[$i][1]] = $devices[$i];
+	$devices_attached[$base_hostname_lookup[$devices[$i][0]]]++;
 }
+
+
 
 $query = "SELECT device_name, incubator_location, incubator_name FROM device_inventory";
 $sql->get_row($query,$device_inventory_q);
@@ -334,13 +346,16 @@ foreach ($devices_identified as $name => $info){
 display_worm_page_header("Hosts and Devices","<a href=\"view_experiments.php\">[Back to Experiment Index]</a>",TRUE,"");
 ?>
 <table border="0" cellspacing="15"><TR><TD valign="top">
-<form action="view_hosts_and_devices.php?<?php echo "show_host_nodes=" . ($show_host_nodes?"1":"0")?>" method="post">
+<form action="view_hosts_and_devices.php?<?php echo "show_host_nodes=" . ($show_host_nodes?"1":"0") . "&" . ($show_offline_nodes?"1":"0");?>" method="post">
 <span class="style1">Image Capture and Processing Servers</span><br>
 <table border = 0><TR><td width="100%">
 <?php
 if ($show_host_nodes)
 		echo "<a href=\"view_hosts_and_devices.php?show_host_nodes=0\">[Hide Individual Nodes]</a>";
 	else    echo "<a href=\"view_hosts_and_devices.php?show_host_nodes=1\">[Show Individual Nodes]</a>";
+if ($show_offline_nodes)
+                echo "<a href=\"view_hosts_and_devices.php?show_offline_nodes=0\">[Hide Offline Nodes]</a>";
+        else    echo "<a href=\"view_hosts_and_devices.php?show_offline_nodes=1\">[Show Offline Nodes]</a>";
 ?></td><td nowrap>
 <input name="pause_all" type="submit" value="Pause All Nodes">
 <input name="pause_none" type="submit" value="Un-Pause All Nodes"></td></TR></table>
@@ -358,6 +373,11 @@ if ($show_host_nodes)
 $cur_time = ns_current_time();
 $k = 0;
 foreach ($base_hosts as $base_host_name => $host){
+	//var_dump($nodes_running);
+	//var_dump($devices_attached[$base_host_name]);
+	//die("");
+	if ($nodes_running[$base_host_name][0] == 0 && $devices_attached[$base_host_name]==0 && $show_offline_nodes==0)
+	continue;
 	for ($i = 0; $i < sizeof($host); $i++){
 		$clrs = $table_colors[$k%2];
 		$edit_host = ($host_id == $host[$i][0]);

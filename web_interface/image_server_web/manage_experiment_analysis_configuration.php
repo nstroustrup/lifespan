@@ -59,7 +59,7 @@ if (ns_param_spec($_POST,'detail_level')){
    $query = "UPDATE capture_samples SET apply_vertical_image_registration=" . ($apply_vertical_image_registration?"1":"0"). " WHERE experiment_id = $experiment_id";
    // die($query);
    $sql->send_query($query);
-   if ($image_compression != 'lzw'){
+   if ($image_compression != 'lzw' && $image_compression_ratio !== '' && $image_compression_ratio !== 0){
       $query = "UPDATE experiments SET compression_ratio=$image_compression_ratio WHERE id = $experiment_id";
       $sql->send_query($query);
 
@@ -414,7 +414,7 @@ catch(ns_exception $ex){
 					echo "/";
 					output_editable_field("end_year",$y,TRUE,4);
 ?>
-<?php if ($image_compression == 'Lossless'){?>
+<?php if ($image_compression == 'lzw'){?>
 <input type="hidden" name="image_compression_ratio" value="<?php echo $image_compression_ratio?>">
 <?php }
 ?>
@@ -423,7 +423,7 @@ catch(ns_exception $ex){
 
 <select name="image_compression">
 <option value="lzw"<?php if ($image_compression == 'lzw') echo "selected"?> >Lossless</option>
-<option value="jp2k" <?php if ($image_compression == 'jp2k') echo "selected"?> >Openjpeg2000 (recommended)</option>
+<option value="jp2k" <?php if ($image_compression == 'jp2k') echo "selected"?> >jpeg2000 (recommended)</option>
 </select></td></tr>
 <?php if ($image_compression != 'lzw'){?>
 <tr><td bgcolor="<?php echo $table_colors[0][0] ?>">Compression ratio</td><td bgcolor="<?php echo $table_colors[0][1] ?>">

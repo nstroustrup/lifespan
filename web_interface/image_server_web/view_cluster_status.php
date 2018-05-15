@@ -65,9 +65,9 @@ function gotoBottom(id){
    div.scrollTop = div.scrollHeight;
 }</script>";
 
+$show_offline_hosts = @$query_string["show_offline_hosts"]==1;
 display_worm_page_header("Cluster Activity","<a href=\"view_experiments.php\">[Back to Experiment Index]</a>",FALSE,$header_text);
 
-$current_device_cutoff = 60*10;
 $host_id = @$query_string["h"];
 if (array_key_exists("n",$query_string))
   $node_id = $query_string["n"];
@@ -77,23 +77,33 @@ $single_device = $host_id != 0;
 function host_label($res_row){
 	 return $res_row[1] . ' @ ' . $res_row[6] . ( (strlen($res_row[7])>0 )? (" (" . $res_row[7] . ":" . $res_row[8].")"): "");
 }
-$query = "SELECT id, name, last_ping,software_version_major,software_version_minor,software_version_compile,system_hostname,additional_host_description,system_parallel_process_id, ((UNIX_TIMESTAMP(NOW()) - last_ping) > $current_device_cutoff) FROM hosts ";
+$query = "SELECT id, name, last_ping,software_version_major,software_version_minor,software_version_compile,system_hostname,additional_host_description,system_parallel_process_id, ((UNIX_TIMESTAMP(NOW()) - last_ping) > dispatcher_refresh_interval) FROM hosts ";
 if ($single_device)
   $query .= " WHERE id = $host_id";
-$query .=" ORDER BY ((UNIX_TIMESTAMP(NOW()) - last_ping) > $current_device_cutoff) ASC, name";
+$query .=" ORDER BY ((UNIX_TIMESTAMP(NOW()) - last_ping) > 2*dispatcher_refresh_interval) ASC, name";
 $sql->get_row($query,$hosts);
 //var_dump($hosts);
 ?>
 <?php
 $cur_time = ns_current_time();
 $sid = 0;
-echo "Go to host: ";
+
+echo "Hosts:";
 for ($i = 0; $i < sizeof($hosts); $i++){
-  echo "<a href=\"#h" . $hosts[$i][0] . "\">[".host_label($hosts[$i])."]</a> ";
+    $host_is_online = $hosts[$i][9]==0;
+    if ($show_offline_hosts || $host_is_online)
+       echo "<a href=\"#h" . $hosts[$i][0] . "\">[".host_label($hosts[$i])."]</a>&nbsp;&nbsp;";
 }
 echo "<BR>";
+echo "<a href=\"view_cluster_status.php?show_offline_hosts=";
+if ($show_offline_hosts) echo "0\">[Hide";
+else echo "1\">[Show";
+echo " Offline Hosts]</a>";
 for ($i = 0; $i < sizeof($hosts); $i++){
-	$host_is_online = $cur_time - $hosts[$i][2] < $current_device_cutoff;
+    
+	$host_is_online = $hosts[$i][9]==0;
+	if (!$host_is_online && !$show_offline_hosts)
+	   continue;
 	if ($host_is_online || $single_device){
 	  $query = "SELECT DISTINCT node_id, state,current_output_event_id,node_id=0 FROM processing_node_status WHERE host_id = " . $hosts[$i][0];
 	  if ($node_id != -1)
@@ -228,7 +238,7 @@ if ($refresh_time ==0)
 else if ($refresh_time < 2)
   $r = 0;
 else $r = $refresh_time-2;
-	echo "<a href=\"view_cluster_status.php?h=" . $host_id. "&rt=" . $r. "\">(monitor in real time)</a>";
+	echo "<a href=\"view_cluster_status.php?h=" . $host_id. "&rt=" . $r. "&show_offline_hosts=".($show_offline_hosts?"1":"0")."\">[Monitor in real time]</a>";
 ?>
    <script type="text/javascript">
 

@@ -3,7 +3,7 @@
 #include "ns_image.h"
 #ifdef _WIN32
 #define OPJ_STATIC
-#include "openjp2/openjpeg.h"
+#include "openjpeg.h"
 #else
 #include "openjpeg-2.3/openjpeg.h"
 #endif

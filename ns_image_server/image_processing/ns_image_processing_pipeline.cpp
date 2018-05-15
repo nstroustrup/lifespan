@@ -1008,6 +1008,7 @@ void ns_image_processing_pipeline::generate_sample_regions_from_mask(ns_64_bit s
 	std::string default_posture_analysis_model = image_server.get_cluster_constant_value("default_posture_analysis_model", "2017_07_20=wildtype_v2", &sql);
 	std::string default_posture_analysis_method = image_server.get_cluster_constant_value("default_posture_analysis_method", "thresh", &sql);
 	std::string default_worm_detection_model = image_server.get_cluster_constant_value("default_worm_detection_model", "mixed_genotype_high_24_plus_fscore_features", &sql);
+	std::string default_position_analysis_model = image_server.get_cluster_constant_value("default_position_analysis_model", "", &sql);
 	//check to see if any existing regions match the current mask
 	//if there is one pre-existing, use it.  Otherwise, create a new one.
 	for (unsigned long i = 0; i < mask_regions.size(); i++){
@@ -1040,7 +1041,7 @@ void ns_image_processing_pipeline::generate_sample_regions_from_mask(ns_64_bit s
 				"posture_analysis_model = '" << default_posture_analysis_model << "',"
 				"posture_analysis_method = '"<< default_posture_analysis_method <<"',"
 				"worm_detection_model = '"<< default_worm_detection_model <<"',"
-				"position_analysis_model = '',"
+				"position_analysis_model = '"<< default_position_analysis_model<<"',"
 				"strain=''";
 
 			sql.send_query();

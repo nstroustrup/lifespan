@@ -24,6 +24,8 @@ bool debug_handlers = false;
 
 #include <FL/Fl_Box.H>
 
+
+
 void ns_worm_browser_output_debug(const unsigned long line_number,const std::string & source, const std::string & message){
 	if (!output_debug_messages)
 		return;
@@ -2832,6 +2834,8 @@ void refresh_main_window(){
 // MAIN
 #include <assert.h>
 int main() {
+
+
 	//assert(false);
 	//ns_optical_flow::test();
 

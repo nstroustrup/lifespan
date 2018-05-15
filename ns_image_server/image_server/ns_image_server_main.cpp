@@ -529,6 +529,7 @@ int main(int argc, char ** argv){
 	#endif
 	#endif
 
+
 	std::map<std::string,ns_cl_command> commands;
 	commands["start"] = ns_start;
 	commands["stop"] = ns_stop;

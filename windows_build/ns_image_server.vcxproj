@@ -519,7 +519,9 @@
     <ClCompile Include="..\external_libraries\tinyxml\tinyxml.cpp" />
     <ClCompile Include="..\external_libraries\tinyxml\tinyxmlerror.cpp" />
     <ClCompile Include="..\external_libraries\tinyxml\tinyxmlparser.cpp" />
-    <ClCompile Include="..\external_libraries\triangle\triangle.cpp" />
+    <ClCompile Include="..\external_libraries\triangle\triangle.cpp">
+      <RuntimeLibrary Condition="'$(Configuration)|$(Platform)'=='Release|x64'">MultiThreadedDebug</RuntimeLibrary>
+    </ClCompile>
     <ClCompile Include="..\external_libraries\wm4_bspline\Wm4BSplineBasis.cpp" />
     <ClCompile Include="..\external_libraries\wm4_bspline\Wm4BSplineCurve2.cpp" />
     <ClCompile Include="..\external_libraries\wm4_bspline\Wm4BSplineCurveFit.cpp" />
@@ -530,7 +532,9 @@
     <ClCompile Include="..\external_libraries\wm4_bspline\Wm4Integrate1.cpp" />
     <ClCompile Include="..\external_libraries\wm4_bspline\Wm4IntpBSplineUniform.cpp" />
     <ClCompile Include="..\external_libraries\wm4_bspline\Wm4IntpBSplineUniform2.cpp" />
-    <ClCompile Include="..\external_libraries\wm4_bspline\Wm4Math.cpp" />
+    <ClCompile Include="..\external_libraries\wm4_bspline\Wm4Math.cpp">
+      <RuntimeLibrary Condition="'$(Configuration)|$(Platform)'=='Release|x64'">MultiThreadedDebugDLL</RuntimeLibrary>
+    </ClCompile>
     <ClCompile Include="..\external_libraries\wm4_bspline\Wm4Memory.cpp" />
     <ClCompile Include="..\external_libraries\wm4_bspline\Wm4SingleCurve2.cpp" />
     <ClCompile Include="..\external_libraries\wm4_bspline\Wm4System.cpp" />

@@ -1638,14 +1638,21 @@ void ns_image_processing_pipeline::apply_mask(ns_image_server_captured_image & c
 	
 
 	{
-		sql << "SELECT delete_captured_images_after_mask FROM experiments WHERE id = " << captured_image.experiment_id;
+		sql << "SELECT delete_captured_images_after_mask, compression_type  FROM experiments WHERE id = " << captured_image.experiment_id;
 		ns_sql_result res;
 		sql.get_rows(res);
 		if (res.size() != 1)
 			throw ns_ex("ns_image_processing_pipeline::apply_mask()::Could not load experiment data from db (") << captured_image.experiment_id << ")";
 		delete_captured_image = res[0][0] != "0";
+		if (res[0][1] == "lzw") {
+			output_file_type = ns_tiff;
+			hd_compression_rate_f = 1.0;
+		}
+		else if (res[0][1] == "" || res[0][1] == "jp2k")  //jp2k by default!
+			output_file_type = ns_jp2k;
+		else throw ns_ex("Unknown compression type specified for experiment images:") << res[0][1];
 
-		sql << "SELECT first_frames_are_protected, compression_type FROM capture_samples WHERE id=" << captured_image.sample_id;
+		sql << "SELECT first_frames_are_protected FROM capture_samples WHERE id=" << captured_image.sample_id;
 		sql.get_rows(res);
 
 		if (res.size() == 0)
@@ -1656,13 +1663,7 @@ void ns_image_processing_pipeline::apply_mask(ns_image_server_captured_image & c
 			image_server_const.add_subtext_to_current_event("Since no images in this sample have been protected from deletion, this capture image will not be deleted.\n", &sql);
 		}
 		
-		if (res[0][1] == "lzw") {
-			output_file_type = ns_tiff;
-			hd_compression_rate_f = 1.0;
-		}
-		else if (res[0][1] == "" || res[0][1] == "jp2k")  //jp2k by default!
-			output_file_type = ns_jp2k;
-		else throw ns_ex("Unknown compression type specified for experiment images:") << res[0][1];
+		
 
 		if (delete_captured_image) {
 			if (captured_image.capture_images_small_image_id == 0) {
@@ -1685,7 +1686,6 @@ void ns_image_processing_pipeline::apply_mask(ns_image_server_captured_image & c
 			}
 		}
 	
-			throw ns_ex("Invalid compression rate specified in jp2k_hd_compression_rate cluster constant: ") << hd_compression_rate_f;
 		if (output_file_type == ns_jp2k) {
 			std::string hd_compression_rate = image_server_const.get_cluster_constant_value("jp2k_hd_compression_rate", ns_to_string(NS_DEFAULT_JP2K_HD_COMPRESSION), &sql);
 			hd_compression_rate_f = atof(hd_compression_rate.c_str());

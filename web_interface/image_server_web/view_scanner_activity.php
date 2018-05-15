@@ -1,25 +1,55 @@
 <?php
 require_once ('worm_environment.php');
 require_once('ns_experiment.php');
+$device_whitelist = array();
+$all_one_row = false;
+if (array_key_exists('all_one_row',$query_string))
+   $all_one_row = $query_string['all_one_row'] != '0';
+if (array_key_exists('device_whitelist',$query_string)){
+   $device_whitelist = explode(';',$query_string['device_whitelist']);
+}
 $query = "SELECT d.name,i.incubator_name,i.incubator_location FROM devices AS d "
 	 ."LEFT JOIN device_inventory AS i "
-	 ."ON d.name = i.device_name WHERE d.simulated_device = 0 ORDER BY i.incubator_name DESC, d.name  ASC";
+	 ."ON d.name = i.device_name WHERE d.simulated_device = 0 ";
+
+if (sizeof($device_whitelist)!=0){
+   $query .= " AND ( ";
+   foreach($device_whitelist as $d){
+   	      $query .= " d.name = '" . $d . "' OR ";
+   }
+   $query .= " 0 = 1 )";
+}
+$query .= " ORDER BY i.incubator_name DESC, d.name  ASC";
 $sql->get_row($query,$devices);
+//var_dump($query);
+//var_dump($devices);
 $schedule_future = array();
 $schedule_past = array();
 $devices_per_incubator=array();
-for ($i = 0; $i < sizeof($devices); $i++)
+
+for ($i = 0; $i < sizeof($devices); $i++){
+ if (sizeof($device_whitelist)!=0 && !in_array($devices[$i][0],$device_whitelist))
+           continue;
  	$devices_per_incubator[$devices[$i][1]] = 0;
-for ($i = 0; $i < sizeof($devices); $i++)
+}
+
+for ($i = 0; $i < sizeof($devices); $i++){
+ if (sizeof($device_whitelist)!=0 && !in_array($devices[$i][0],$device_whitelist))
+           continue;
   $devices_per_incubator[$devices[$i][1]] = $devices_per_incubator[$devices[$i][1]] + 1;
+}
 
 $schedule_future = array();
 $schedule_past = array();
+$device_index = array();
 for ($i = 0; $i < sizeof($devices); $i++){
+	if (sizeof($device_whitelist)!=0 && !in_array($devices[$i][0],$device_whitelist))
+	   continue;
 	$device_index[$devices[$i][0]] = $i;
 	$schedule_future[$i] = array();
 	$schedule_past[$i] = array();
 }
+
 $number_past = @(int)$query_string['number_past'];
 if (!ns_param_spec_true($query_string,'number_past'))
 	$number_past = 5;
@@ -41,17 +71,27 @@ $query .= " AND (c.time_at_start != 0 || c.censored=0)";
 
   $sql->get_row($query_future,$fut);
   $sql->get_row($query_past,$past);
- foreach ($fut as &$f)
-   $schedule_future[$device_index[$f[8]]] = array();
- foreach ($past as &$f)
+ foreach ($fut as &$f){
+ if (sizeof($device_whitelist)!=0 && !in_array($f[8],$device_whitelist))
+           continue;
+ if (!array_key_exists($f[8],$device_index))
+	$device_index[$f[8]] = sizeof($device_index);
+  $schedule_future[$device_index[$f[8]]] = array();
 
-   $schedule_past[$device_index[$f[8]]] = array();
-
-
-  foreach ($fut as &$f)
+}
+ foreach ($past as &$f){
+ if (array_key_exists($f[8],$device_index))
+ 	 $schedule_past[$device_index[$f[8]]] = array();
+}
+  foreach ($fut as &$f){
+ if (sizeof($device_whitelist)!=0 && !in_array($f[8],$device_whitelist))
+           continue;
 	array_push($schedule_future[$device_index[$f[8]]],$f);
-  foreach ($past as &$f)
+  }
+foreach ($past as &$f){
+  	  if (array_key_exists($f[8],$device_index))
 	array_push($schedule_past[$device_index[$f[8]]],$f);
+}
 //$schedule_future[$i]
 //echo $query_future . "<br>";
 //  flush();
@@ -231,7 +271,7 @@ echo "<font size=\"+2\">" . $name . "</font></a>";
 //echo $incubator_pos . "/" . floor($devices_per_incubator[$devices[$i][1]]/3);
 $first_column_size = ceil($devices_per_incubator[$devices[$i][1]]/3);
 $second_column_size = ceil(($devices_per_incubator[$devices[$i][1]] - $first_column_size)/2);
-  if ($incubator_pos != 1 && (
+  if ($all_one_row || $incubator_pos != 1 && (
 	$incubator_pos == $first_column_size ||
       	($incubator_pos == $first_column_size + $second_column_size))){
     echo "</td><TD valign=\"top\" bgcolor=\"{$table_colors[1][0]}\">";

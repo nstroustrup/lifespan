@@ -367,7 +367,7 @@ if ($show_offline_nodes)
 <tr <?php echo $table_header_color?>><td>Host Name</td>
 <td>Location</td>
 <td>Last Ping</td>
-<td>Comments</td>
+<td>Details</td>
 <td>&nbsp;</td></tr>
 <?php
 $cur_time = ns_current_time();
@@ -397,7 +397,7 @@ foreach ($base_hosts as $base_host_name => $host){
 		echo "<a href=\"view_hosts_log.php?host_id={$host[$i][0]}&limit=50\">[log]</a></td>";
 		//echo "<td bgcolor=\"$clrs[1]\">{$host[$i][7]}.{$host[$i][8]}.{$host[$i][9]}</td>";
 		echo "<td bgcolor=\"$clrs[1]\">";
-		echo $hosts[$i][15] . "<br>" . $host[$i][2] . ":" . $host[$i][6];
+		echo $host[$i][15] . "<br>" . $host[$i][2] . ":" . $host[$i][6];
 		echo "</td><td bgcolor=\"$clrs[0]\">";
 		echo format_time($host[$i][3]);
 		echo "</td><td bgcolor=\"$clrs[1]\" nowrap>";

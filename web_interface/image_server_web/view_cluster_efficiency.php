@@ -33,14 +33,17 @@ foreach ($stats as $s)
 
 $cluster_total_average = array();
 $cluster_total_rate = 0;
-for ($i = 0; $i < sizeof($NS_LAST_PROCESSING_JOB); $i++)
+for ($i = 0; $i <$NS_LAST_PROCESSING_JOB; $i++)
   $cluster_rate[$i] = 0;
 
 for ($i = 0; $i < sizeof($hosts); $i++){
 
   foreach($host_stats[$i] as $task => $speed){
-    if ($speed->count != 0)
+    if ($speed->count != 0){
+       if (!array_key_exists($task,$cluster_rate))
+       $cluster_rate[$task] = 0;
       $cluster_rate[$task] += 1.0/$speed->count;
+      }
   }
   
   foreach($host_stats[$i] as $task => $stat){
@@ -72,7 +75,7 @@ $units = array(30=>'ms',31=>'ms');
 <?php 
 $i = 0;
 foreach($operations_specified as $task){
-	echo "<td bgcolor=\"$clrs[$i]\"><center>";
+	echo "<td ><center>";
 	if ($task >= $NS_LAST_PROCESSING_JOB)
 		echo $ns_operation_state_labels[$task-$NS_LAST_PROCESSING_JOB - 1];
 	else echo $ns_processing_task_labels[$task];

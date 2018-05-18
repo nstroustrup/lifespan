@@ -64,8 +64,7 @@ TIFF* TIFFOpen(const char* name, ns_tiff_client_data * client_data,const char* m
 
 template<class ns_component>
 class ns_tiff_image_input_file: public ns_image_input_file<ns_component>{
-	ns_safe_tiff_client_data client_data;
-	
+
 public:
 
 	ns_tiff_image_input_file():strip_buffer(0){ns_initialize_libtiff();}
@@ -156,15 +155,17 @@ public:
 			//read in another strip when strip buffer is empty
 			if (tiff_info.rows_read_from_current_strip == tiff_info.rows_per_strip){
 				bytes_read = TIFFReadEncodedStrip(image,tiff_info.current_strip,strip_buffer,tiff_info.stripsize);
+				if (client_data.exception_thrown())
+					throw client_data.ex();
 				tiff_info.current_strip++;
 				tiff_info.rows_read_from_current_strip = 0;
 				//cerr << "Read in strip" << tiff_info.current_strip << "\n";
 			}
 			
-			if (client_data.exception_thrown()){
+			/*if (client_data.exception_thrown()){
 				std::cerr << "5";
 				ns_throw_tiff_exception(client_data.ex());
-			}
+			}*/
 
 		//	std::cerr << "Outputting line " << tiff_info.rows_read_from_current_strip << " from buffered strip " << tiff_info.current_strip << "\n";
 			//read from the buffer
@@ -211,7 +212,7 @@ public:
 		return n;
 	}
 private:
-
+	ns_safe_tiff_client_data client_data;
 	//instantiated for different component size specifications
 	unsigned long readEncodedStrip(TIFF * image, const unsigned long current_strip, ns_component * comp_buf,const unsigned long length);
 

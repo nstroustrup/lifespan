@@ -16,6 +16,14 @@ typedef struct ns_tiff_client_data_{
 
 	void * error_storage;
 	int store_errors;
+
+	TIFFReadWriteProc ReadProc;
+	TIFFReadWriteProc WriteProc;
+	TIFFSeekProc SeekProc;
+	TIFFCloseProc CloseProc;
+	TIFFSizeProc SizeProc;
+	TIFFMapFileProc MapFileProc;
+	TIFFUnmapFileProc UnmapFileProc;
 } ns_tiff_client_data;
 
 #ifdef __cplusplus

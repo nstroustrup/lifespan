@@ -16,12 +16,44 @@ TIFF * ref_tif = 0;
 int ns_DummyMapProc(thandle_t fd, void** pbase, toff_t* psize){return 0;}
 void ns_DummyUnmapProc(thandle_t fd, void* base, toff_t size){}
 
+
+tmsize_t ns_ReadProc(thandle_t client_data, void*b, tmsize_t c) {
+	ns_tiff_client_data * cd = (ns_tiff_client_data *)(client_data);
+	return ((cd->ReadProc))(cd->tiff_fd.fd, b, c);
+}
+tmsize_t ns_WriteProc(thandle_t client_data, void*b, tmsize_t c) {
+		ns_tiff_client_data * cd = (ns_tiff_client_data *)(client_data);
+		return ((cd->WriteProc))(cd->tiff_fd.fd, b, c);
+	}
+toff_t ns_SeekProc(thandle_t client_data, toff_t b, int c) {
+	ns_tiff_client_data * cd = (ns_tiff_client_data *)(client_data);
+	return ((cd->SeekProc))(cd->tiff_fd.fd,b,c);
+}
+int ns_CloseProc(thandle_t client_data) {
+	ns_tiff_client_data * cd = (ns_tiff_client_data *)(client_data);
+	return ((cd->CloseProc))(cd->tiff_fd.fd);
+}
+toff_t ns_SizeProc(thandle_t client_data) {
+	ns_tiff_client_data * cd = (ns_tiff_client_data *)(client_data);
+	return ((cd->SizeProc))(cd->tiff_fd.fd);
+}
+int ns_MapFileProc(thandle_t client_data, void** base, toff_t* size) {
+	ns_tiff_client_data * cd = (ns_tiff_client_data *)(client_data);
+	return ((cd->MapFileProc))(cd->tiff_fd.fd,base,size);
+}
+void ns_UnmapFileProc(thandle_t client_data, void* base, toff_t size) {
+	ns_tiff_client_data * cd = (ns_tiff_client_data *)(client_data);
+	if (cd->UnmapFileProc == 0)
+		return;
+	((cd->UnmapFileProc))(cd->tiff_fd.fd,base,size);
+}
+
 TIFF* ns_tiff_fd_open(ns_tiff_client_data * client_data, const char* name, const char* mode){
 	TIFF* tif;
-	#ifdef _WIN32
-	int fSuppressMap;
 	int m;
-	fSuppressMap = 0;
+	int fSuppressMap = 0;
+	#ifdef _WIN32
+	
 	for (m = 0; mode[m] != 0; m++)
 	{
 		if (mode[m] == 'u')
@@ -30,21 +62,25 @@ TIFF* ns_tiff_fd_open(ns_tiff_client_data * client_data, const char* name, const
 			break;
 		}
 	}
-	tif = TIFFClientOpen(name, mode, client_data->tiff_fd.h,
-			     TIFFGetReadProc(ref_tif), TIFFGetWriteProc(ref_tif),
-			     TIFFGetSeekProc(ref_tif), TIFFGetCloseProc(ref_tif), TIFFGetSizeProc(ref_tif),
-			     fSuppressMap ? ns_DummyMapProc : TIFFGetMapFileProc(ref_tif),
-			     fSuppressMap ? ns_DummyUnmapProc : TIFFGetUnmapFileProc(ref_tif));
-	#else
-
-		tif = TIFFClientOpen(name, mode,
-			client_data->tiff_fd.h,
-				     TIFFGetReadProc(ref_tif), TIFFGetWriteProc(ref_tif),
-				     TIFFGetSeekProc(ref_tif), TIFFGetCloseProc(ref_tif), TIFFGetSizeProc(ref_tif),
-				     TIFFGetMapFileProc(ref_tif), TIFFGetUnmapFileProc(ref_tif));
-
-
 	#endif
+	client_data->ReadProc = TIFFGetReadProc(ref_tif);
+	client_data->WriteProc = TIFFGetWriteProc(ref_tif);
+	client_data->SeekProc = TIFFGetSeekProc(ref_tif);
+	client_data->CloseProc = TIFFGetCloseProc(ref_tif);
+	client_data->SizeProc = TIFFGetSizeProc(ref_tif);
+	client_data->MapFileProc = fSuppressMap ? ns_DummyMapProc : TIFFGetMapFileProc(ref_tif);
+	client_data->UnmapFileProc = fSuppressMap ? ns_DummyUnmapProc : TIFFGetUnmapFileProc(ref_tif);
+
+	tif = TIFFClientOpen(name, mode, client_data, 
+		ns_ReadProc,
+		ns_WriteProc,
+		ns_SeekProc,
+		ns_CloseProc,
+		ns_SizeProc,
+		ns_MapFileProc,
+		ns_UnmapFileProc
+	);
+	
 	if (tif)
 	  TIFFSetFileno(tif, client_data->tiff_fd.fd);
 
@@ -125,6 +161,14 @@ TIFF* ns_tiff_open(const char* name, ns_tiff_client_data * client_data,const cha
 	client_data->tiff_fd.fd = 0;
 	client_data->tiff_fd.h = 0;
 	client_data->error_storage = 0;
+	client_data->ReadProc = 0;
+	client_data->WriteProc = 0;
+	client_data->SeekProc = 0;
+	client_data->CloseProc = 0;
+	client_data->SizeProc = 0;
+	client_data->MapFileProc = 0;
+	client_data->UnmapFileProc = 0;
+
   //printf("NS OPENING %s\n",name);
 #ifdef _WIN32
 	static const char module[] = "TIFFOpen";

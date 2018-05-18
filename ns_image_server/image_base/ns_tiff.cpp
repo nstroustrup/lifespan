@@ -7,7 +7,7 @@ void ns_throw_tiff_exception(const ns_ex & ex){
 }
 using namespace std;
 static void ns_tiff_error_handler(thandle_t client_data,const char * module, const char * fmt, va_list ap){
-	ns_tiff_client_data * cd(static_cast<ns_tiff_client_data *>(client_data));
+	ns_tiff_client_data * cd(reinterpret_cast<ns_tiff_client_data *>(client_data));
 	ns_ex ex("libtiff::");
 	char buf[1024];
 	if (module != NULL){
@@ -273,7 +273,7 @@ void ns_set_default_tiff_parameters(const ns_image_properties & p,const ns_tiff_
 
 
 void ns_get_default_tiff_parameters(const unsigned char component_size, ns_image_properties & properties,ns_tiff_info & tiff_info,TIFF * image){
-
+	ns_tiff_client_data * cd(reinterpret_cast<ns_tiff_client_data *>(TIFFClientdata(image)));
 	short bitsize=0;
 	if (TIFFGetField(image, TIFFTAG_BITSPERSAMPLE, &bitsize) == 0)
 		ns_throw_tiff_exception(ns_ex("ns_tiff_image_input_stream::Image did not specify its bitsize.")<< ns_file_io);

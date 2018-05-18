@@ -1,8 +1,7 @@
 <?php
 require_once("ns_exception.php");
 require_once("ns_image_server_website.ini");
-$website_version = "1.12";
-
+$website_version = "1.15";
 define("NS_SPATIAL_NORM", 1);
 define("NS_TEMPORAL_NORM", 2);
 define("NS_BROWSE", 3);

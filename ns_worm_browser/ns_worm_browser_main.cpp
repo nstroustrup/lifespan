@@ -2834,15 +2834,7 @@ void refresh_main_window(){
 // MAIN
 #include <assert.h>
 int main() {
-	try {
-		ns_image_whole<ns_16_bit> im;
-		ns_load_image("D:\\Dropbox (CRG ADV)\\personnel\\Students\\Olivier Martin\\data\\2018_04_26_pi_test_10=25=dreary_a=513=1525769239=2018-05-08=08-47=0=0=64bit.tif", im);
-	}
-	catch (ns_ex & ex) {
-		cout << ex.text() << "\n";
-	}
-	//assert(false);
-	//ns_optical_flow::test();
+	
 
 	ns_worm_browser_output_debug(__LINE__,__FILE__,"Launching worm browser");
 	init_time = GetTime();

@@ -67,7 +67,7 @@ class ns_tiff_image_input_file: public ns_image_input_file<ns_component>{
 
 public:
 
-	ns_tiff_image_input_file():strip_buffer(0){ns_initialize_libtiff();}
+	ns_tiff_image_input_file():strip_buffer(0),image(0){ns_initialize_libtiff();}
 	//~ns_image_input_file(){close();}
 	//open and close files
 
@@ -224,27 +224,32 @@ private:
 	unsigned long lines_read;
 
 	void close_file(){
-		if (strip_buffer != 0){
-			try{
+		
+		try {
+			if (image != 0) {
 				TIFFClose(image);
+				image = 0;
+			}
+			if (strip_buffer != 0) {
 				_TIFFfree(strip_buffer);
 				strip_buffer = 0;
 			}
-			catch(ns_ex & ex){
-				strip_buffer = 0;
-				std::cerr << "ns_tiff_image_input_file::close_file wants to throw an exception, but cannot: " << ex.text();
-			}
-			catch(std::exception e){
-				strip_buffer = 0;
-				ns_ex ex(e);
-				std::cerr << "ns_tiff_image_input_file::close_file wants to throw an exception, but cannot: " << ex.text();
-			}
-			catch(...){
-				strip_buffer = 0;
-				std::cerr << "ns_tiff_image_input_file::close_file wants to throw an exception, but cannot: Unknown Error!";
-			}
+		}
+		catch(ns_ex & ex){
+			strip_buffer = 0;
+			std::cerr << "ns_tiff_image_input_file::close_file wants to throw an exception, but cannot: " << ex.text();
+		}
+		catch(std::exception e){
+			strip_buffer = 0;
+			ns_ex ex(e);
+			std::cerr << "ns_tiff_image_input_file::close_file wants to throw an exception, but cannot: " << ex.text();
+		}
+		catch(...){
+			strip_buffer = 0;
+			std::cerr << "ns_tiff_image_input_file::close_file wants to throw an exception, but cannot: Unknown Error!";
 		}
 	}
+	
 };
 
 typedef enum {ns_tiff_compression_none,ns_tiff_compression_lzw,ns_tiff_compression_zip,ns_tiff_compression_jp2000} ns_tiff_compression_type;

@@ -40,7 +40,7 @@ storyboard_cache(0),worm_detection_model_cache(0),posture_analysis_model_cache(0
 #endif
 _verbose_debug_output(false), _cache_subdirectory("cache"), sql_database_choice(possible_sql_databases.end()), next_scan_for_problems_time(0),
 _terminal_window_scale_factor(1), _system_parallel_process_id(0), _allow_multiple_processes_per_system(false),sql_table_lock_manager(this),
-alert_handler_lock("ahl"), max_external_thread_id(1){
+alert_handler_lock("ahl"), max_external_thread_id(1),currently_experiencing_a_disk_storage_emergency(false),verbose_disk_storage_reporting(false), last_verbose_disk_storage_reporting_time(0){
 
 	ns_socket::global_init();
 	#ifndef NS_ONLY_IMAGE_ACQUISITION
@@ -2302,6 +2302,7 @@ void ns_image_server::load_constants(const ns_image_server::ns_image_server_exec
 	constants.add_field("server_timeout_interval","300","How long should a server wait before giving up on a dead network connection (in seconds)");
 	constants.add_field("log_filename","image_server_log.txt","Image acquisition and image processing servers keep a log file in the central SQL database.  However, to help diagnose crashes, a text file containing the same log information is stored on the local machine.  The log file is stored in the directory specified by the volatile_storage_directory option (described above), and its filename is specified by here.");
 	constants.add_field("maximum_memory_allocation_in_mb","3840","Movement analaysis benefits from access to multiple gigabytes of RAM.  This value should be set to approximately the size of system memory.  Larger values will cause sporadic crashes during movement analysis.");
+	constants.add_field("verbose_local_storage_space_reporting", "false", "Regularly report the disk space available currently available to the host");
 
 	ns_ini terminal_constants;
 	terminal_constants.reject_incorrect_fields(reject_incorrect_fields);
@@ -2415,6 +2416,10 @@ void ns_image_server::load_constants(const ns_image_server::ns_image_server_exec
 		local_buffer_ip = constants["local_buffer_sql_hostname"];
 		local_buffer_pwd = constants["local_buffer_sql_password"];
 		local_buffer_user = constants["local_buffer_sql_username"];
+
+		if (constants.field_specified("verbose_local_storage_space_reporting")) {
+			verbose_disk_storage_reporting = ns_to_bool(constants["verbose_local_storage_space_reporting"]);
+		}
 
 		if (constants.field_specified("output_files_with_all_read_permissions")){
 

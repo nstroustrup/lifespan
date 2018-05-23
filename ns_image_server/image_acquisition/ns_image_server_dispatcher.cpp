@@ -601,16 +601,38 @@ void ns_image_server_dispatcher::on_timer(){
 			return;
 		}
 
-		unsigned long file_storage_space(0);
+		unsigned long file_storage_space_in_mb(999999);  //keep high so that default action is to keep 
 		try{
-				file_storage_space = image_server.image_storage.free_space_in_volatile_storage_in_mb();
+			file_storage_space_in_mb = image_server.image_storage.free_space_in_volatile_storage_in_mb();
+			if (file_storage_space_in_mb < 2 * 1024) {
+				const bool previous_state = image_server.currently_experiencing_a_disk_storage_emergency;
+				image_server.currently_experiencing_a_disk_storage_emergency = true;
+				if (previous_state == false)
+				image_server.register_server_event(
+					ns_image_server_event("There is than 2 GB left on drive!  All scans will be paused to prevent system instability.  Free up disk space to continue!  Only ") << file_storage_space_in_mb << " mb" << " are available.", timer_sql_connection);
+			}
+			else {
+				const bool previous_state = image_server.currently_experiencing_a_disk_storage_emergency;
+				image_server.currently_experiencing_a_disk_storage_emergency = false;
+				if (previous_state == true)
+					image_server.register_server_event(
+						ns_image_server_event("Scans resuming after an increase in available disk space to ") << file_storage_space_in_mb << " mb", timer_sql_connection);
+			}
+			if (image_server.verbose_disk_storage_reporting) {
+				const unsigned long current_time = ns_current_time();
+				if (current_time - image_server.last_verbose_disk_storage_reporting_time > 60 * 2) {
+					image_server.register_server_event(
+						ns_image_server_event("Current disk space: ") << file_storage_space_in_mb << " mb", timer_sql_connection);
+					image_server.last_verbose_disk_storage_reporting_time = current_time;
+				}
+			}
+
 		}
 		catch(ns_ex & ex){
 				image_server.register_server_event(
 					ns_image_server_event("Could not establish free space on server: ") << ex.text() ,timer_sql_connection);
 		}
 		catch (...){
-
 				image_server.register_server_event(
 					ns_image_server_event("Could not establish free space on server: Reason Unknown"),timer_sql_connection);
 		}
@@ -626,16 +648,21 @@ void ns_image_server_dispatcher::on_timer(){
 				image_server.alert_handler.submit_locally_buffered_alert(alert);
 			}
 
-			if (file_storage_space < 1024*16){
+			if (file_storage_space_in_mb < 1024*16){
 				string text(image_server.host_name_out());
 				text += ": Low Disk Space: ";
-				if (file_storage_space > 1024){
-					text += ns_to_string(file_storage_space/1024);
+				if (file_storage_space_in_mb > 1024){
+					text += ns_to_string(file_storage_space_in_mb /1024);
 					text += "Gb Remaining";
 				}
 				else{
-					text += ns_to_string(file_storage_space);
+					text += ns_to_string(file_storage_space_in_mb);
 					text += "Mb Remaining";
+				}
+
+				if (image_server.currently_experiencing_a_disk_storage_emergency) {
+					text += ". To prevent system instability, the server hase stopped all new scans! Free up space to continue.";
+
 				}
 					ns_alert alert(text,
 							   text,
@@ -645,6 +672,7 @@ void ns_image_server_dispatcher::on_timer(){
 							   );
 				image_server.alert_handler.submit_locally_buffered_alert(alert);
 			}
+
 
 			if (image_server.scan_for_problems_now())
 				scan_for_problems(*timer_sql_connection);
@@ -666,7 +694,7 @@ void ns_image_server_dispatcher::on_timer(){
 		*timer_sql_connection << "UPDATE hosts SET last_ping=UNIX_TIMESTAMP(), shutdown_requested=0, hotplug_requested=0, long_term_storage_enabled= "
 			<< (image_server.image_storage.long_term_storage_was_recently_writeable()?"1":"0")
 			<< ", time_of_last_successful_long_term_storage_write=" << image_server.image_storage.time_of_last_successful_long_term_storage_write()
-			<< ", available_space_in_volatile_storage_in_mb = " << file_storage_space;
+			<< ", available_space_in_volatile_storage_in_mb = " << file_storage_space_in_mb;
 		*timer_sql_connection << " WHERE id = " << image_server.host_id();
 		timer_sql_connection->send_query();
 		timer_sql_connection->send_query("COMMIT");

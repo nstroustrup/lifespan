@@ -577,6 +577,9 @@ public:
 
 	bool do_not_run_multithreaded_jobs;
 	bool output_group_readable_files() const{return _output_group_readable_files;}
+	bool currently_experiencing_a_disk_storage_emergency;
+	bool verbose_disk_storage_reporting;
+	unsigned long last_verbose_disk_storage_reporting_time;
 private:
 	ns_64_bit _main_thread_internal_id;
 	static void open_log_file(const ns_image_server::ns_image_server_exec_type & exec_type, ns_64_bit thread_id, const std::string & volatile_directory, const std::string & file_name, std::ofstream & out);

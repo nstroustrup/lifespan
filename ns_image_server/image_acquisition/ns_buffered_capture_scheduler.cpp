@@ -523,7 +523,8 @@ void ns_buffered_capture_scheduler::update_local_buffer_from_central_server(ns_i
 	for (unsigned int i = 0; i < cres.size(); i++) {
 		if (cres[i][0].find("duration_until_next_") == cres[i][0].npos &&
 			cres[i][0].find("_alert_submission") == cres[i][0].npos &&
-			cres[i][0] != "last_missed_scan_check_time")
+			cres[i][0] != "last_missed_scan_check_time" &&
+			cres[i][0].find("job_discovery_lock") == cres[i][0].npos)
 			notable_constants.push_back(cres[i][0] + "=" + cres[i][1]);
 	}
 
@@ -730,6 +731,8 @@ void ns_buffered_capture_scheduler::run_pending_scans(const ns_image_server_devi
 		const bool handle_simulated_devices(image_server.register_and_run_simulated_devices(&sql));
 
 		for (unsigned int i = 0; i < devices.size(); i++){
+			if (image_server.currently_experiencing_a_disk_storage_emergency)
+				break; 
 			if (image_server.exit_has_been_requested)
 				break;
 			if (devices[i].simulated_device && !handle_simulated_devices)

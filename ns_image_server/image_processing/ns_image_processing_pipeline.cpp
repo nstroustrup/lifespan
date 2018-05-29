@@ -148,7 +148,7 @@ void ns_check_for_file_errors(ns_processing_job & job, ns_sql & sql){
 									ns_ojp2k_initialization::verbose_output = false;
 									ns_jpeg_library_user::verbose_output = false;
 									ns_image_storage_source_handle<ns_8_bit> h(image_server_const.image_storage.request_from_storage(im, &sql));
-									unsigned long internal_state;
+									//unsigned long internal_state;
 									long w(h.input_stream().properties().width*h.input_stream().properties().components);
 									if (w > buf.properties().width)
 										buf.resize(ns_image_stream_buffer_properties(w, 1));
@@ -1703,8 +1703,21 @@ void ns_image_processing_pipeline::apply_mask(ns_image_server_captured_image & c
 	sql << "SELECT capture_samples.mask_id, image_masks.image_id, capture_samples.apply_vertical_image_registration,image_masks.resize_factor FROM capture_samples, image_masks WHERE image_masks.id = capture_samples.mask_id AND capture_samples.id = " << captured_image.sample_id;
 	ns_sql_result res;
 	sql.get_rows(res);
-	if (res.size() == 0)
-		throw ns_ex("ns_image_processing_pipeline::Specified sample does not exist in database during mask application.");
+	if (res.size() == 0) {
+
+		sql << "SELECT capture_samples.mask_id FROM capture_samples WHERE capture_samples.id = " << captured_image.sample_id;
+		ns_sql_result res2;
+		sql.get_rows(res2);
+		if (res2.size() == 0)
+			throw ns_ex("ns_image_processing_pipeline::Specified sample, ") << captured_image.sample_name << "'(" << captured_image.sample_id << ") does not exist in database during mask application.";
+
+		sql << "SELECT capture_samples.mask_id FROM image_masks WHERE image_masks.id = " << res2[0][0];
+		ns_sql_result res3;
+		sql.get_rows(res3);
+		if (res3.size() == 0)
+			throw ns_ex("ns_image_processing_pipeline::The mask specified for sample ") << captured_image.sample_name << "'(" << captured_image.sample_id << ") with the id" << res2[0][0] << " is missing from the database.";
+		throw ns_ex("ns_image_processing_pipeline::An unspecified error has occurred when trying to locate the mask db record for '") << captured_image.sample_name << "'(" << captured_image.sample_id << ")";
+	}
 	if (res[0][0] == "" || res[0][0] == "0")
 		throw ns_ex("ns_image_processing_pipeline::Specified sample '") << captured_image.sample_name << "'(" << captured_image.sample_id << ") does have mask set.";
 	ns_64_bit mask_id = ns_atoi64(res[0][0].c_str()),
@@ -1744,7 +1757,7 @@ void ns_image_processing_pipeline::apply_mask(ns_image_server_captured_image & c
 		image_server_const.add_subtext_to_current_event("Aligning sample image to reference image...", &sql);
 		offset = get_vertical_registration(reference_image, requested_image, profile_data_source);
 		reference_image.release();
-		image_server_const.add_subtext_to_current_event((std::string("") + ns_to_string(offset.x) + "," + ns_to_string(offset.y) + "\n\n").c_str(), &sql);
+		image_server_const.add_subtext_to_current_event((std::string("Found an offset of (") + ns_to_string(offset.x) + "," + ns_to_string(offset.y) + ")...").c_str(), &sql);
 
 		sql << "UPDATE captured_images SET registration_horizontal_offset='" << offset.x << "', registration_vertical_offset='" << offset.y << "', registration_offset_calculated=1 WHERE id = " << captured_image.captured_images_id;
 		sql.send_query();
@@ -1897,6 +1910,7 @@ void ns_image_processing_pipeline::apply_mask(ns_image_server_captured_image & c
 			sql.send_query();
 		}
 
+		image_server_const.add_subtext_to_current_event("Done.\n", &sql);
 	}
 	catch (ns_ex & ex) {
 		sql.clear_query();

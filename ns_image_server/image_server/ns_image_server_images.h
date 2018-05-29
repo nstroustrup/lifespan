@@ -131,7 +131,7 @@ struct ns_image_server_captured_image{
 
 	static ns_vector_2i small_image_maximum_dimensions(){return ns_vector_2i(1000,10000);}
 
-	virtual std::string filename(ns_image_server_sql * sql){return get_filename(sql,false);}
+	virtual std::string filename(ns_image_server_sql * sql, bool no_filetype_suffix=false){return get_filename(sql,false,false, no_filetype_suffix);}
 
 	virtual std::string filename_no_load_from_db(ns_image_server_sql * sql){return get_filename(sql,false,true);}
 
@@ -216,7 +216,7 @@ struct ns_image_server_captured_image{
 	const ns_image_server_image request_processed_image(const ns_processing_task & task, ns_sql & sql){ return ns_image_server_image();}
 
 	private:
-		std::string get_filename(ns_image_server_sql * sql,const bool small_image, bool do_not_load_data=false);
+		std::string get_filename(ns_image_server_sql * sql,const bool small_image, bool do_not_load_data=false, bool no_filetype_suffix=false);
 };
 
 

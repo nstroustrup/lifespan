@@ -118,7 +118,7 @@ std::string ns_format_base_image_filename(const ns_64_bit experiment_id,const st
 			 + ns_to_string(sample_id) + "=" +ns_to_string(capture_time) + "=" + ns_format_time_string(capture_time) + "="
 			 + ns_to_string(captured_images_id)  + "=" + ns_to_string(capture_images_image_id));
 }
-std::string ns_image_server_captured_image::get_filename(ns_image_server_sql * sql,const bool small_image, bool do_not_load_data){
+std::string ns_image_server_captured_image::get_filename(ns_image_server_sql * sql,const bool small_image, bool do_not_load_data, bool no_filetype_suffix){
 	if (!do_not_load_data && captured_images_id == 0)
 		throw ns_ex("ns_image_server_captured_image::Could not create filename with unspecified captured_images_id.");
 	//if not specified, collect information needed to create filename.
@@ -132,9 +132,11 @@ std::string ns_image_server_captured_image::get_filename(ns_image_server_sql * s
 		temp += "=64bit";
 	if (small_image) {
 		temp += "=small";
+		if (!no_filetype_suffix)
 		ns_add_image_suffix(temp, ns_jpeg);
 	}
-	else ns_add_image_suffix(temp, ns_tiff);
+	else if (!no_filetype_suffix)
+		ns_add_image_suffix(temp, ns_tiff);
 	return temp;
 }
 
@@ -268,7 +270,7 @@ std::string ns_image_server_captured_image_region::filename(ns_image_server_sql 
 	if (experiment_id == 0 || region_name == "" || experiment_name == "" || sample_name == "")// || device_name == "")
 		if (!load_from_db(region_images_id, sql))
 			throw ns_ex("ns_image_server_captured_image_region::Filename information for image id ") << region_images_id << " not specified and not present in database.";
-	return ns_image_server_captured_image::filename(sql) + "=" + region_name + "=" + ns_to_string(region_images_id);
+	return ns_image_server_captured_image::filename(sql,true) + "=" + region_name + "=" + ns_to_string(region_images_id);
 }
 
 

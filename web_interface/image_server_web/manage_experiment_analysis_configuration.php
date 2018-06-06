@@ -32,11 +32,14 @@ if (ns_param_spec($_POST,'set_as_default'))
 else $set_as_default = FALSE;
 
  if (ns_param_spec($query_string,'set_denoising_options') && $query_string['set_denoising_options']==1){
+ $no_region_info = FALSE;
+   if (!array_key_exists('time_series_median',$_POST) &&
+       !array_key_exists('maximum_number_of_worms',$_POST)){
+       $no_region_info = TRUE;
+   }else{
    $denoising_flag = $_POST['time_series_median'];
-
-  
-   $number_of_stationary_images = @$_POST['number_of_stationary_images'];
-
+   $number_of_stationary_images = $_POST['number_of_stationary_images'];
+   }
     	$end_minute = (int)$_POST['end_minute'];
     	$end_hour = (int)$_POST['end_hour'];
     	$end_day = (int)$_POST['end_day'];
@@ -48,19 +51,22 @@ else $set_as_default = FALSE;
       }
    $image_compression = $_POST['image_compression'];
    $image_compression_ratio = $_POST['image_compression_ratio'];
+   $conversion_16_bit_upper_bound = $_POST['conversion_16_bit_upper_bound'];
+   $conversion_16_bit_lower_bound = $_POST['conversion_16_bit_lower_bound'];
+   
    $apply_vertical_image_registration = $_POST['apply_vertical_image_registration'] == "apply";
-   $maximum_number_of_worms = $_POST['maximum_number_of_worms'];
+   $maximum_number_of_worms = @$_POST['maximum_number_of_worms'];
    $delete_captured_images = $_POST['delete_captured_images'] == "delete";
    //  die($_POST['delete_captured_images']);
-
-   $query = "UPDATE sample_region_image_info as r, capture_samples as s SET r.maximum_number_of_worms_per_plate=$maximum_number_of_worms WHERE r.sample_id = s.id AND s.experiment_id = $experiment_id";
-   $sql->send_query($query);   
-
+   if (!$no_region_info){
+      $query = "UPDATE sample_region_image_info as r, capture_samples as s SET r.maximum_number_of_worms_per_plate=$maximum_number_of_worms WHERE r.sample_id = s.id AND s.experiment_id = $experiment_id";
+      $sql->send_query($query);   
+   }
       $query = "UPDATE experiments SET delete_captured_images_after_mask=" . ($delete_captured_images?"1":"0") . ", compression_type='$image_compression',mask_time=$mask_date WHERE id = $experiment_id";
 
    $sql->send_query($query);
 
-   $query = "UPDATE capture_samples SET apply_vertical_image_registration=" . ($apply_vertical_image_registration?"1":"0"). " WHERE experiment_id = $experiment_id";
+   $query = "UPDATE capture_samples SET apply_vertical_image_registration=" . ($apply_vertical_image_registration?"1":"0"). ", conversion_16_bit_low_bound=".(string)((int)$conversion_16_bit_lower_bound).",conversion_16_bit_high_bound=".(string)((int)$conversion_16_bit_upper_bound) ." WHERE experiment_id = $experiment_id";
    // die($query);
    $sql->send_query($query);
    if ($image_compression != 'lzw' && $image_compression_ratio !== '' && $image_compression_ratio !== 0){
@@ -90,9 +96,11 @@ else $set_as_default = FALSE;
      header("Location: manage_experiment_analysis_configuration.php?$query_parameters\n\n");
    }
  }
- $query = "SELECT apply_vertical_image_registration FROM capture_samples WHERE experiment_id = " . $experiment_id;
+ $query = "SELECT apply_vertical_image_registration, conversion_16_bit_low_bound,conversion_16_bit_high_bound FROM capture_samples WHERE experiment_id = " . $experiment_id;
  $sql->get_row($query,$vir);
  $apply_vertical_image_registration = $vir[0][0];
+$conversion_16_bit_lower_bound = $vir[0][1];
+$conversion_16_bit_upper_bound = $vir[0][2];
  //var_dump($vir);
  //die();
  $query = "SELECT mask_time, compression_type,compression_ratio FROM experiments WHERE id=$experiment_id";
@@ -138,12 +146,17 @@ else $set_as_default = FALSE;
    ." FROM sample_region_image_info as r, capture_samples as s "
    ."WHERE r.sample_id = s.id AND s.experiment_id = " . $experiment_id . " AND r.censored = 0";
  $sql->get_row($query,$exps);
+
  $number_of_regions = sizeof($exps);
- //die($exps[0][8]);
+if ($number_of_regions>0){
  $time_series_denoising_flag = $exps[0][9];
  $maximum_number_of_worms = $exps[0][10];
  $number_of_stationary_images = $exps[0][11];
-
+}else{
+$time_series_denoising_flag = "";
+$maximum_number_of_worms = "";
+$number_of_stationary_images="";
+}
 $posture_analysis_method = '';
  $experiment_strains = array();
  for ($i = 0; $i < sizeof($exps); $i++){
@@ -389,12 +402,15 @@ catch(ns_exception $ex){
 
 <tr><td bgcolor="<?php echo $table_colors[1][0] ?>">Time Series Denoising</td><td bgcolor="<?php echo $table_colors[1][1] ?>">
 
-<select name="time_series_median" style="width: 245px">
+<select name="time_series_median" style="width: 245px"
 <?php
-
+    if($number_of_regions==0) echo " disabled ";
+    echo ">";
     foreach($ns_denoising_option_labels as $l => $v){
       echo "<option value=\"" . $v . "\" ";
-      if($time_series_denoising_flag == $v) echo "selected";
+      if($number_of_regions > 0 && $time_series_denoising_flag == $v) echo "selected ";
+      if ($number_of_regions == 0)
+      	 echo "disabled ";
       echo ">";
       echo  $l . "</option>\n";
     }
@@ -416,9 +432,9 @@ catch(ns_exception $ex){
 </select></td></tr>
 
 <tr><td bgcolor="<?php echo $table_colors[0][0] ?>">Maximum Number of Worms per Plate</td><td bgcolor="<?php echo $table_colors[0][1] ?>">
-	<?php output_editable_field("maximum_number_of_worms",$maximum_number_of_worms,true,5);?></td></tr>
+	<?php output_editable_field("maximum_number_of_worms",$maximum_number_of_worms,$number_of_regions>0,5);?></td></tr>
 		<!--
-	<tr><td bgcolor="<?php echo $table_colors[1][0] ?>">Number of images used to detect stationary plate features <br>(0 for automatic)</td><td bgcolor="<?php echo $table_colors[1][1] ?>"><?php output_editable_field("number_of_stationary_images",$number_of_stationary_images,true,5);?>
+	<tr><td bgcolor="<?php echo $table_colors[1][0] ?>">Number of images used to detect stationary plate features <br>(0 for automatic)</td><td bgcolor="<?php echo $table_colors[1][1] ?>"><?php output_editable_field("number_of_stationary_images",$number_of_stationary_images,$number_of_regions>0,5);?>
 </td></tr>-->
 		<tr><td bgcolor="<?php echo $table_colors[0][0] ?>">Date and time of images to use <br> when generating plate region mask</td><td bgcolor="<?php echo $table_colors[0][1]?>">
 <?php
@@ -447,8 +463,14 @@ catch(ns_exception $ex){
 <?php if ($image_compression != 'lzw'){?>
 <tr><td bgcolor="<?php echo $table_colors[0][0] ?>">Compression ratio</td><td bgcolor="<?php echo $table_colors[0][1] ?>">
 <?php 
-output_editable_field("image_compression_ratio",$image_compression_ratio,TRUE,4);?></tr>
+output_editable_field("image_compression_ratio",$image_compression_ratio,TRUE,4);?></td></tr>
 <?php } ?>
+<tr><td bgcolor="<?php echo $table_colors[1][0] ?>">16 to 8 bit coversion range</td><td bgcolor="<?php echo $table_colors[1][1] ?>">
+<?php
+output_editable_field("conversion_16_bit_lower_bound",$conversion_16_bit_lower_bound,TRUE,4);
+echo "-";
+output_editable_field("conversion_16_bit_upper_bound",$conversion_16_bit_upper_bound,TRUE,4);
+?></td></tr>
 <tr><td bgcolor="<?php echo $table_colors[0][0] ?>" colspan=2>
 	<div align="right"><input name="set_denoising_options" type="submit" value="Set Analysis Options">
 	</div>
@@ -546,7 +568,7 @@ output_editable_field("image_compression_ratio",$image_compression_ratio,TRUE,4)
   ?>
 	<?php }?>
 
-<tr><td valign="top" bgcolor=" <?php echo $table_colors[0][0]?>"><?php if ($is_single_posture_model){?><input type="checkbox" name="set_as_default" value="yes"><font size="-2">Set as default for
+<tr><td valign="top" bgcolor=" <?php echo $table_colors[0][0]?>"><?php if ($is_single_posture_model){?><input type="checkbox" name="set_as_default" value="yes" <?php if ($number_of_regions==0) echo "disabled"?>><font size="-2">Set as default for
  all future experiments</font><?php } ?></td><td bgcolor="<?php echo $table_colors[0][0] ?>" colspan=1>
 					  <div align="right"><input name="set_posture_models" type="submit" value="Set Posture Analysis Models" <?php if ($number_of_regions == 0) echo "disabled";?>>  <?php if ($number_of_regions == 0) echo "<br><font size=\"-2\">These options cannot be set before plate region mask is submitted.</font>"?>
 	</div>
@@ -590,7 +612,7 @@ output_editable_field("image_compression_ratio",$image_compression_ratio,TRUE,4)
   ?>
 	<?php }?>
 
-<tr><td valign="top" bgcolor=" <?php echo $table_colors[0][0]?>"><?php if ($is_single_detection_model){?><input type="checkbox" name="set_as_default" value="yes"><font size="-2">Set as default for all future experiments</font><?php } ?></td><td bgcolor="<?php echo $table_colors[0][0] ?>">
+<tr><td valign="top" bgcolor=" <?php echo $table_colors[0][0]?>"><?php if ($is_single_detection_model){?><input type="checkbox" name="set_as_default" value="yes"  <?php if ($number_of_regions==0) echo "disabled"?>><font size="-2">Set as default for all future experiments</font><?php } ?></td><td bgcolor="<?php echo $table_colors[0][0] ?>">
 					  <div align="right"><input name="set_detection_models" type="submit" value="Set Worm Detection Models" <?php if ($number_of_regions == 0) echo "disabled";?>> <?php if ($number_of_regions == 0) echo "<br><font size=\"-2\">These options cannot be set before plate region mask is submitted.</font>"?>
 	</div>
 	</td></tr>
@@ -634,7 +656,7 @@ output_editable_field("image_compression_ratio",$image_compression_ratio,TRUE,4)
   ?>
 	<?php }?>
 
-<tr><td valign="top" bgcolor=" <?php echo $table_colors[0][0]?>"><input type="checkbox" name="set_as_default" value="yes"><font size="-2">Set as default for
+<tr><td valign="top" bgcolor=" <?php echo $table_colors[0][0]?>"><input type="checkbox" name="set_as_default" value="yes"  <?php if ($number_of_regions==0) echo "disabled"?>><font size="-2">Set as default for
  all future experiments</font></td><td bgcolor="<?php echo $table_colors[0][0] ?>" colspan=2>
 					  <div align="right"><input name="set_position_models" type="submit" value="Set Position Models" <?php if ($number_of_regions == 0) echo "disabled";?>> <?php if ($number_of_regions == 0) echo "<br><font size=\"-2\">These options cannot be set before plate region mask is submitted.</font>"?>
 	</div>

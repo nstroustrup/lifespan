@@ -105,8 +105,8 @@ public:
 			throw ns_ex("Unspecified 16 bit conversion bounds!") << conversion_16_bit_bounds.x << "," << conversion_16_bit_bounds.y;
 		if (conversion_16_bit_bounds.y - conversion_16_bit_bounds.x < 128)
 			throw ns_ex("It never makes sense to set the 16 to 8 bit conversion range to less than 128!");
-			if (conversion_16_bit_bounds.y > 255 || conversion_16_bit_bounds.x > 255)
-				throw ns_ex("Crop range bounds must have a value in the range 0-255 ");
+		if (conversion_16_bit_bounds.y > 255 || conversion_16_bit_bounds.x > 255)
+			throw ns_ex("Crop range bounds must have a value in the range 0-255 ");
 		crop_lower_value = conversion_16_bit_bounds.x;	//this is set but subsequently ignored
 		crop_upper_value = conversion_16_bit_bounds.y;
 		crop_value_specified = true;

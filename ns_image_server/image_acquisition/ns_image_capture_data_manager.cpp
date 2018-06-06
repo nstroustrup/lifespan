@@ -293,7 +293,7 @@ void ns_image_capture_data_manager::transfer_image_to_long_term_storage_locked(n
 	sql.get_rows(res2);
 	if (res2.size() == 0)
 		throw ns_ex("Could not identify sample ") << sample_id;
-	ns_vector_2<ns_16_bit> conversion_16_bit_bounds(atoi(res2[0][1].c_str()), atoi(res2[0][1].c_str()));
+	ns_vector_2<ns_16_bit> conversion_16_bit_bounds(atoi(res2[0][0].c_str()), atoi(res2[0][1].c_str()));
 	if (conversion_16_bit_bounds.y == 0) {
 		conversion_16_bit_bounds.x = 0;  //DEFAULT crop bounds
 		conversion_16_bit_bounds.y = 200;  //DEFAULT crop bounds

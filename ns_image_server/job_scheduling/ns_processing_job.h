@@ -64,6 +64,7 @@ struct ns_processing_job{
 		urgent(false),
 		pending_another_jobs_completion(0),
 		video_timestamp_type(ns_no_timestamp),
+		generate_video_at_high_res(false),
 		death_time_annotations(0){operations.resize((unsigned int)ns_process_last_task_marker);}
 		typedef enum{ns_no_timestamp,ns_date_timestamp,ns_age_timestamp} ns_timestamp_type;
 	typedef enum {ns_experiment_job, ns_sample_job, ns_region_job, ns_image_job, ns_movement_job, ns_whole_region_job, ns_whole_sample_job, ns_whole_experiment_job, ns_maintenance_job,ns_no_job_type} ns_job_type;
@@ -156,6 +157,7 @@ struct ns_processing_job{
 
 	ns_vector_2i subregion_position,
 				 subregion_size;
+	bool generate_video_at_high_res;
 	unsigned long subregion_start_time,
 				  subregion_stop_time,
 		pending_another_jobs_completion;
@@ -185,7 +187,7 @@ void * death_time_annotations;
 				+ "processing_jobs.urgent, processing_jobs.processor_id, processing_jobs.time_submitted, processing_jobs.mask_id, "
 				+ "processing_jobs.maintenance_task,subregion_position_x,subregion_position_y,subregion_width,subregion_height, "
 				+ "subregion_start_time,subregion_stop_time, processing_jobs.delete_file_job_id, processing_jobs.video_add_timestamp, "
-				+ "maintenance_flag, pending_another_jobs_completion ,"
+				+ "processing_jobs.maintenance_flag, processing_jobs.pending_another_jobs_completion , processing_jobs.generate_video_at_high_res,"
 
 				+ "processing_jobs.op0, processing_jobs.op1, processing_jobs.op2, processing_jobs.op3, processing_jobs.op4, processing_jobs.op5, processing_jobs.op6, "
  				+ "processing_jobs.op7, processing_jobs.op8, processing_jobs.op9, processing_jobs.op10, processing_jobs.op11, "
@@ -216,9 +218,10 @@ void * death_time_annotations;
 		video_timestamp_type = (ns_processing_job::ns_timestamp_type)(atol(res[17].c_str()));
 		maintenance_flag = (ns_maintenance_flag)atol(res[18].c_str());
 		pending_another_jobs_completion = atol(res[19].c_str());
+		generate_video_at_high_res = atol(res[20].c_str())==1;
 		operations.resize((int)ns_process_last_task_marker);
 		for (unsigned int i = 0; i < operations.size(); i++)
-			operations[i] = (res[i+20] == "1");
+			operations[i] = (res[i+21] == "1");
 	}
 	std::string description() const{
 		ns_text_stream_t t;

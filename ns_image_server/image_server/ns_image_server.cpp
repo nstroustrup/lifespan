@@ -1027,11 +1027,22 @@ bool ns_image_server::upgrade_tables(ns_sql_connection * sql, const bool just_te
 		if (!ns_sql_column_exists("animal_storyboard", "minimum_distance_to_juxtipose_neighbors", sql)) {
 			if (just_test_if_needed)
 				return true;
-			cout << "Update storyboard column\n";
+			cout << "Updating storyboard column\n";
 			*sql << "ALTER TABLE animal_storyboard ADD COLUMN minimum_distance_to_juxtipose_neighbors INT NOT NULL DEFAULT 0 AFTER image_delay_time_after_event";
 			sql->send_query();
 			changes_made = true;
 		}
+
+		if (!ns_sql_column_exists("processing_jobs", "generate_video_at_high_res", sql)) {
+			if (just_test_if_needed)
+				return true;
+			cout << "Updating processing jobs column\n";
+			*sql << "ALTER TABLE `processing_jobs` ADD COLUMN `generate_video_at_high_res` INT(10) UNSIGNED NOT NULL DEFAULT '0' AFTER `pending_another_jobs_completion` ";
+			sql->send_query();
+			changes_made = true;
+		}
+
+
 	}
 	if (!changes_made && !just_test_if_needed){
 		cout << "The database appears up-to-date; no changes were made.\n";

@@ -53,14 +53,50 @@ using namespace std;
 #define SWAP(a) ( (((a)&0x000000ff)<<24) | (((a)&0x0000ff00)<<8) | \
 				  (((a)&0x00ff0000)>>8)  | (((a)&0xff000000)>>24) )
 
+struct ns_dimensions_to_vid_type {
+	ns_dimensions_to_vid_type(int x_, int y_, int type_) :x(x_), y(y_), type(type_) {}
+	int x, y, type;
+};
+
+void ns_xvid_parameters::choose_bitrate_to_match_resolution(const long width, const long height, const bool hd) {
+
+	map<int, int> bitrates_in_kbps;
+	bitrates_in_kbps[360] = hd ? 5000 : 1000;
+	bitrates_in_kbps[480] = hd ? 15000 : 3000;
+	bitrates_in_kbps[720] = hd ? 30000 : 5000;
+	bitrates_in_kbps[1080] = hd ? 50000 : 8000;
+	bitrates_in_kbps[1440] = 10 * 1024;
+	bitrates_in_kbps[2160] = 45 * 1024;
+
+	vector<ns_dimensions_to_vid_type> dim_mapping;
+	dim_mapping.push_back(ns_dimensions_to_vid_type(640, 360, 360));
+	dim_mapping.push_back(ns_dimensions_to_vid_type(854, 480, 480));
+	dim_mapping.push_back(ns_dimensions_to_vid_type(1280, 720, 720));
+	dim_mapping.push_back(ns_dimensions_to_vid_type(1920, 1080, 1080));
+	dim_mapping.push_back(ns_dimensions_to_vid_type(2560, 1440, 1440));
+	dim_mapping.push_back(ns_dimensions_to_vid_type(3840, 2160, 2160));
+
+	int dim_i = 0;
+	for (int i = 0; i < dim_mapping.size(); i++) {
+		if (width*height >= dim_mapping[i].x*dim_mapping[i].y)
+			dim_i = dim_mapping[i].type;
+	}
+	if (dim_i + 1 < dim_mapping.size())
+		dim_i++;
+	if (bitrates_in_kbps.find(dim_i) == bitrates_in_kbps.end())
+		throw ns_ex("ns_xvid_parameters::default_parameters()::Could not deduce bitrate for video with dimensions ") << width << " " << height;
+	ARG_BITRATE = bitrates_in_kbps[dim_i]*1024;
+}
 
 ns_xvid_parameters ns_xvid_encoder::default_parameters(){
+
+
 	ns_xvid_parameters 	params;
 	params.NUM_ZONES = 0;
 	params.ARG_STATS = 0;
 	params.ARG_DUMP = 0;
 	params.ARG_LUMIMASKING = 0;
-	params.ARG_BITRATE = 3500*1024;
+	params.ARG_BITRATE = 5000*1024;
 	params.ARG_SINGLE = 1;
 	params.ARG_PASS1 = 0;
 	params.ARG_PASS2 = 0;
@@ -74,7 +110,7 @@ ns_xvid_parameters ns_xvid_encoder::default_parameters(){
 	params.YDIM = 0;
 	params.max_height = 0;
 	params.max_width = 0;
-	params.ARG_BQRATIO = 150;
+	params.ARG_BQRATIO = 120;
 	params.ARG_BQOFFSET = 100;
 	params.ARG_MAXBFRAMES = 0;
 	params.ARG_PACKED = 0;
@@ -295,14 +331,15 @@ void ns_xvid_encoder::run(const vector<string> & input_files,  ns_xvid_parameter
 				resize_factors.y = spec.height / (float)p.max_height;
 			if (resize_factors.x > resize_factors.y) {
 				p.XDIM = p.max_width;
-				p.YDIM = (unsigned int)(spec.width / resize_factors.x);
+				p.YDIM = (unsigned int)(spec.height / resize_factors.x);
 			}
 			else {
-				p.XDIM = (unsigned int)(spec.height / resize_factors.y);
+				p.XDIM = (unsigned int)(spec.width / resize_factors.y);
 				p.YDIM = p.max_height;
 			}
 		}
 	}
+	
 
 	
 
@@ -311,6 +348,9 @@ void ns_xvid_encoder::run(const vector<string> & input_files,  ns_xvid_parameter
 
 	p.XDIM -= p.XDIM%2; //Round to even dimentions, otherwise the encoder chokes.
 	p.YDIM -= p.YDIM%2;
+
+	p.choose_bitrate_to_match_resolution(p.XDIM, p.YDIM, region_spec.output_at_high_definition);
+	cout << "Using bitrate " << round((10 * p.ARG_BITRATE / 1024)) / 10240.0  << " mbps (" << p.ARG_BITRATE << ")\n";
 
 	ns_vector_2d text_resample_factor(spec.width/(double)p.XDIM,spec.height/(double)p.YDIM);
 

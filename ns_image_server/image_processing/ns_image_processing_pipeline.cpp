@@ -1381,7 +1381,7 @@ void ns_image_processing_pipeline::compile_video(ns_image_server_captured_image 
 			unsigned long height(0);
 			for (unsigned int j = 0; j < res.size(); j++){
 				//try to use small copies if available
-				if (res[j][0] != ""){
+				if (res[j][0] != "" && !region_spec.output_at_high_definition){
 					files_to_compile[height][0] = res[j][0];
 					files_to_compile[height][1] = res[j][1];
 				}
@@ -1530,9 +1530,16 @@ void ns_image_processing_pipeline::make_video(const ns_64_bit experiment_id, boo
 
 	ns_xvid_parameters param = ns_xvid_encoder::default_parameters();
 
-	//1080p
-	param.max_height = 1920;
-	param.max_width = 1440;
+	if (region_spec.output_at_high_definition) {
+		//1440p
+		param.max_height = 1440;
+		param.max_width = 2560;
+	}
+	else {
+		//1080p
+		param.max_height = 1920;
+		param.max_width = 1080;
+	}
 
 	param.ARG_MAXKEYINTERVAL=12;
 	param.ARG_FRAMERATE=10;

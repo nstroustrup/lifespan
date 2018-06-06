@@ -526,7 +526,8 @@ ns_64_bit ns_processing_job_whole_region_processor::run_job(ns_sql & sql) {
 					job.subregion_start_time,
 					job.subregion_stop_time,
 					(ns_video_region_specification::ns_timestamp_type)((int)job.video_timestamp_type),
-					zero_time),
+					zero_time,
+					job.generate_video_at_high_res),
 				sql);
 #else
 			throw ns_ex("The NS_NO_XVID flag was set, so xvid support has been disabled");
@@ -580,7 +581,8 @@ ns_64_bit ns_processing_job_whole_sample_processor::run_job(ns_sql & sql) {
 					job.subregion_start_time,
 					job.subregion_stop_time,
 					(ns_video_region_specification::ns_timestamp_type)((int)job.video_timestamp_type),
-					zero_time),
+					zero_time,
+					job.generate_video_at_high_res),
 
 #else
 

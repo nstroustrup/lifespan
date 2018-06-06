@@ -61,6 +61,8 @@ struct ns_xvid_parameters{
 	unsigned char qmatrix_intra[64];
 	unsigned char qmatrix_inter[64];
 	bool use_assembler;
+
+	void choose_bitrate_to_match_resolution(const long width, const long height, const bool hd);
 };
 
 ///Results from a single round of xvid encoding
@@ -75,9 +77,9 @@ struct ns_xvid_encoder_results{
 
 struct ns_video_region_specification{
 	typedef enum{ns_no_timestamp,ns_date_timestamp,ns_age_timestamp} ns_timestamp_type;
-	ns_video_region_specification():position_x(0),position_y(0),width(0),height(0),time_at_which_population_had_zero_age(0),timestamp_type(ns_no_timestamp){}
-	ns_video_region_specification(const long px,const long py,const long w,const long h, const unsigned long t_start, const unsigned long t_stop, const ns_timestamp_type & timestamp_t, const unsigned long zero_time):
-		position_x(px),position_y(py),width(w),height(h),start_time(t_start),stop_time(t_stop),label_position_x(0),label_position_y(0),label_size(0),timestamp_type(timestamp_t),time_at_which_population_had_zero_age(zero_time){}
+	ns_video_region_specification():position_x(0),position_y(0),width(0),height(0),time_at_which_population_had_zero_age(0),timestamp_type(ns_no_timestamp), output_at_high_definition(false){}
+	ns_video_region_specification(const long px,const long py,const long w,const long h, const unsigned long t_start, const unsigned long t_stop, const ns_timestamp_type & timestamp_t, const unsigned long zero_time, const bool output_at_high_definition_):
+		position_x(px),position_y(py),width(w),height(h),start_time(t_start),stop_time(t_stop),label_position_x(0),label_position_y(0),label_size(0),timestamp_type(timestamp_t),time_at_which_population_had_zero_age(zero_time), output_at_high_definition(output_at_high_definition_){}
 	long position_x,
 		position_y,
 		width,
@@ -89,6 +91,7 @@ struct ns_video_region_specification{
 	long label_position_x,
 		 label_position_y,
 		 label_size;
+	bool output_at_high_definition;
 	bool is_specified() const{return position_x>0 || position_y>0 || width>0 || height>0;}
 	bool label_info_is_specified() const{return label_size > 0;}
 };

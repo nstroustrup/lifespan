@@ -500,7 +500,7 @@ if (!$show_plate_stats){
 <td><center>Image Analysis</center></td>
 <td><center>Capture<br>Schedule</center></td>
 <td><center>Annotate Plate Information</center></td>
-<td><center>Comments</td><td>Devices</center></td>
+<td><center>Comments</center></td><td><center>Devices</center></td>
 <td><center>Duration</center></td>
 <?php
 $number_of_columns += 9;
@@ -554,7 +554,7 @@ $number_of_columns+=10;} ?>
 
 	$edit = $edit_id==$experiment_id;
 	echo "<tr><td bgcolor=\"$clrs[0]\"  valign='top'><font size=\"+1\">";
-echo "<a name=\"" . $experiment[1] . "\">";
+echo "<a name=\"" . $experiment[1] . "\"></a>";
 	output_editable_field("name",$experiment[1],FALSE,35);
 	echo "</font></td>";
 if (!$show_plate_stats){

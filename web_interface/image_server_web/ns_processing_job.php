@@ -219,7 +219,8 @@ class ns_processing_job{
 	  $subregion_position_y,
 	  $subregion_width,
 	  $subregion_height,
-	  $maintenance_flag;
+	  $maintenance_flag,
+	  $generate_video_at_high_res;
 
 	function ns_processing_job(){
 		$this->operations = array();
@@ -245,6 +246,7 @@ class ns_processing_job{
 		$this->subregion_height = 0;
 		$this->subregion_start_time = 0;
 		$this->subregion_stop_time = 0;
+		$this->generate_video_at_high_res = false;
 		global $NS_LAST_PROCESSING_JOB;
 		$this->operations = array_fill(0,$NS_LAST_PROCESSING_JOB+1,0);
 		$this->processed_by_push_scheduler = FALSE;
@@ -258,7 +260,7 @@ class ns_processing_job{
 	    . 'processing_jobs.urgent, processing_jobs.paused,processing_jobs.processor_id, processing_jobs.time_submitted, processing_jobs.mask_id, processing_jobs.maintenance_task, processing_jobs.job_name, ' //5-11
 		                . 'processing_jobs.problem, processing_jobs.currently_under_processing, processed_by_push_scheduler, '//12-14
 
-	    .'subregion_position_x,subregion_position_y,subregion_width,subregion_height,subregion_start_time,subregion_stop_time,delete_file_job_id,video_add_timestamp,maintenance_flag,pending_another_jobs_completion,' //12-24
+	    .'subregion_position_x,subregion_position_y,subregion_width,subregion_height,subregion_start_time,subregion_stop_time,delete_file_job_id,video_add_timestamp,maintenance_flag,pending_another_jobs_completion,generate_video_at_high_res,' //12-24
 				. 'processing_jobs.op0, processing_jobs.op1, processing_jobs.op2, processing_jobs.op3, processing_jobs.op4, processing_jobs.op5, processing_jobs.op6, '
  				. 'processing_jobs.op7, processing_jobs.op8, processing_jobs.op9, processing_jobs.op10, processing_jobs.op11, processing_jobs.op12, processing_jobs.op13,'
 		  . 'processing_jobs.op14, processing_jobs.op15, processing_jobs.op16, processing_jobs.op17, processing_jobs.op18, processing_jobs.op19, processing_jobs.op20, processing_jobs.op21, processing_jobs.op22, processing_jobs.op23, processing_jobs.op24, processing_jobs.op25,processing_jobs.op26, processing_jobs.op27, processing_jobs.op28 ';
@@ -293,8 +295,9 @@ class ns_processing_job{
 	  $this->video_timestamp_type = (int)$res[22];
 	  $this->maintenance_flag = (int)$res[23];
 	  $this->pending_another_jobs_completion = (int)$res[24];
+	  $this->generate_video_at_high_res = (int)$res[25];
 	  for ($i = 1; $i <= $NS_LAST_PROCESSING_JOB; $i++)
-	    $this->operations[$i] = (int)$res[25+$i];
+	    $this->operations[$i] = (int)$res[26+$i];
 	}
 
 	function save_to_db($sql){
@@ -308,7 +311,7 @@ class ns_processing_job{
 		else $query = "UPDATE ";
 		$query .= "processing_jobs SET experiment_id = ".(string)((int)$this->experiment_id).", sample_id = ".(string)((int)$this->sample_id).", region_id = ".(string)((int)$this->region_id).", "
 		  . "image_id = ".(string)((int)$this->image_id).", urgent=".(string)((int)$this->urgent)."., paused=".(string)((int)$this->paused).", processor_id=".(string)((int)$this->processor_id).", time_submitted=".(string)((int)$this->time_submitted).", mask_id =".(string)((int)$this->mask_id).", maintenance_task=".(string)((int)$this->maintenance_task).","
-		  . "subregion_position_x=".(string)((int)$this->subregion_position_x).",subregion_position_y=".(string)((int)$this->subregion_position_y).",subregion_width=".(string)((int)$this->subregion_width).",subregion_height=".(string)((int)$this->subregion_height) . ",subregion_start_time=".(string)((int)$this->subregion_start_time) .",subregion_stop_time=".(string)((int)$this->subregion_stop_time)
+		  . "subregion_position_x=".(string)((int)$this->subregion_position_x).",subregion_position_y=".(string)((int)$this->subregion_position_y).",subregion_width=".(string)((int)$this->subregion_width).",subregion_height=".(string)((int)$this->subregion_height) . ",subregion_start_time=".(string)((int)$this->subregion_start_time) .",subregion_stop_time=".(string)((int)$this->subregion_stop_time).",generate_video_at_high_res=".(string)((int)$this->generate_video_at_high_res)
 		  .",maintenance_flag=".(string)((int)$this->maintenance_flag)."";
 		for ($i = 0; $i <= $NS_LAST_PROCESSING_JOB; $i++)
 		  $query .= ", op$i=".(string)((int)$this->operations[$i]);
@@ -648,6 +651,7 @@ class ns_processing_job{
 	    $res .= "<tr><td colspan=\"$number_of_columns\">\n<font size=\"-1\">Compile Video";
 		if ($this->subregion_position_x != 0 || $this->subregion_position_y != 0 || $this->subregion_width != 0 || $this->subregion_height != 0){
 				echo "<br>Position: ({$this->subregion_position_x},{$this->subregion_position_y})<br>Size: (" . $this->subregion_width . "," .$this->subregion_height . ")";
+				echo ($this->generate_video_at_high_res?"High Resolution":"Low Resolution");
 			}
 	   $res.="</font>\n</td></tr>\n";
 	  }

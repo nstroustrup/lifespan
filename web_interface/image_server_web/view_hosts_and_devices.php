@@ -393,8 +393,8 @@ foreach ($base_hosts as $base_host_name => $host){
 
 		if ($current) echo "</b>";
 		if ($highlight_host_id == $host[$i][0]) echo "</i>";
-
-		echo "<a href=\"view_hosts_log.php?host_id={$host[$i][0]}&limit=50\">[log]</a></td>";
+		echo "&nbsp;<font size=-1><a href=\"view_cluster_status.php?h={$host[$i][0]}&show_offline_hosts=1\">[log]</a>";
+		echo "<a href=\"view_hosts_log.php?host_id={$host[$i][0]}&limit=50\">[raw log]</a></font></td>";
 		//echo "<td bgcolor=\"$clrs[1]\">{$host[$i][7]}.{$host[$i][8]}.{$host[$i][9]}</td>";
 		echo "<td bgcolor=\"$clrs[1]\">";
 		echo $host[$i][15] . "<br>" . $host[$i][2] . ":" . $host[$i][6];

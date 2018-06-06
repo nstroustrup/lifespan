@@ -234,6 +234,10 @@ $sql->send_query($query);
 	header("Location: view_experiments.php\n\n");
 	}
 
+$query = "SELECT count(*) from alerts WHERE UNIX_TIMESTAMP(NOW()) - time < 24*60*60 AND acknowledged=0";
+$sql->get_value($query,$res);
+$number_of_alerts = $res[0];
+
 $OTHER_CENSOR = 0;
 $FOGGING = 1;
 $EMPTY = 2;
@@ -375,23 +379,28 @@ Forward any questions to <?php echo $contact_name . " at <a href=\"mailto:" . $c
 															   <a href="view_hosts_and_devices.php">Capture Devices and Image Servers</a>
 	</td>
 	<td bgcolor="<?php echo $table_colors[0][1]?>">View all running hardware and software</td></tr>
-	<tr>
-	<td bgcolor="<?php echo $table_colors[1][0]?>">
-	<a href="view_scanner_activity.php">Image Capture Device Activity</a>
-	</td>
-	<td bgcolor="<?php echo $table_colors[1][1]?>">View recent capture device activity </td></tr>
+ <tr>
+        <td bgcolor="<?php echo $table_colors[1][0]?>">
+        <a href="view_alerts.php">View Alerts</a>
+        </td>
+        <td bgcolor="<?php echo $table_colors[1][1]?>"><?php if ($number_of_alerts>0) echo "<font color=\"#FF0000\"><b>$number_of_alerts alerts today</b></font>"; else echo "View error messages produced by the cluster";?></td></tr>
 	<tr>
 	<td bgcolor="<?php echo $table_colors[0][0]?>">
+	<a href="view_scanner_activity.php">Image Capture Device Activity</a>
+	</td>
+	<td bgcolor="<?php echo $table_colors[0][1]?>">View recent capture device activity </td></tr>
+	<tr>
+	<td bgcolor="<?php echo $table_colors[1][0]?>">
 	<a href="ns_view_sample_images.php?all_running_experiments=1"> View Recently Captured Images</a>
 	</td>
-<td  bgcolor="<?php echo $table_colors[0][1]?>">Inspect all images captured by the image server
+<td  bgcolor="<?php echo $table_colors[1][1]?>">Inspect all images captured by the image server
 </td>
 </tr>
 	<tr>
-	<td bgcolor="<?php echo $table_colors[1][0]?>">
+	<td bgcolor="<?php echo $table_colors[0][0]?>">
 	<a href="manage_experiment_groups.php"> Manage Experiment Groups</a>
 	</td>
-	<td bgcolor="<?php echo $table_colors[1][1]?>">Add or modify experiment groups</td></tr>
+	<td bgcolor="<?php echo $table_colors[0][1]?>">Add or modify experiment groups</td></tr>
 </table></td></tr></table>
 </td><td valign="top">
 <span class="style1">Image Analysis</span><br>

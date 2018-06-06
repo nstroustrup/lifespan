@@ -5,7 +5,17 @@
 #include "ns_resampler.h"
 
 typedef enum{ns_features_are_dark,ns_features_are_light} ns_feature_intensity;
-///Takes a 16 bit image as input and fills the 8-bit output from vales [0-set_crop_value] of the input.
+///Takes a 16 bit image as input and maps each 16 bit pixel with values between (256*lower,256*upper) to
+//an 8 bit pixel with values between (0,255).  
+//Any 16bit pixels darker than 256*lower or brighter than 256*upper are cropped at 256*lower and 256*upper and 
+//represented as 0 and 255 in the final 8 bit image.
+//It will never make sense to set upper and lower closer together than 128, as this will take less than 2^8 bits 
+//from each 16 bit pixel.
+
+//CURRENTLY THE LOWER BOUND IS NOT USED, and is always assumed at 0 regardless of specification!
+//This is because the worms almost always contain pixels with value 0, and so the value is almost always ignored. 
+//
+
 template<ns_feature_intensity features, class storage_buffer>
 class ns_image_process_16_bit : public ns_image_stream_reciever<ns_image_stream_static_buffer<ns_16_bit> >, ns_image_stream_sender<ns_8_bit,ns_image_process_16_bit<features, storage_buffer>,unsigned long>{
 public:	
@@ -17,7 +27,7 @@ public:
 															  small_image_output_buffer(0),
 															  resampler_binding(max_line_block_height),
 															  resampler(max_line_block_height),
-															  crop_value(0), crop_value_specified(false),resample_image_to_output(false){}
+															  crop_upper_value(0), crop_lower_value(0), crop_value_specified(false),resample_image_to_output(false){}
 	ns_image_statistics image_statistics;
 	unsigned long init_send() { return 0; }
 	unsigned long init_send_const() const { return 0; }
@@ -29,14 +39,14 @@ public:
 		ns_image_stream_buffer_properties prop;
 		prop.height = lines_to_send;
 		prop.width = buffer.properties().width;
-		//if we also want to output a resampled copy, send data on to the resampler and the reciever
+		//if we also want to output a resampled copy, send data on to the resampler and the reciever.
 		if (resample_image_to_output){
 			ns_resampler<ns_8_bit>::storage_type * rbuf(resampler_binding.provide_buffer(prop));
 			if (features== ns_features_are_dark){
 				for (unsigned int y = 0; y < lines_to_send; y++)
 					for (unsigned int x = 0; x < buffer.properties().width; x++){
 						unsigned long c = buffer[y][x];
-						c = (255*c)/crop_value;
+						c = (255*c)/ crop_upper_value;			//description of conversion bounds provided at the top of this file.   Requested crop lower value is ignored and assumed to be zero.
 						c/=256;
 						if (c > 255)
 							c = 255;
@@ -49,7 +59,7 @@ public:
 				for (unsigned int y = 0; y < lines_to_send; y++)
 					for (unsigned int x = 0; x < buffer.properties().width; x++){
 						unsigned long c = USHRT_MAX-buffer[y][x];
-						c = (255*c)/crop_value;
+						c = (255*c)/ crop_upper_value;
 						c/=256;
 						if (c > 255)
 							c = 255;
@@ -67,7 +77,7 @@ public:
 				for (unsigned int y = 0; y < lines_to_send; y++)
 					for (unsigned int x = 0; x < buffer.properties().width; x++){
 						unsigned long c = buffer[y][x];
-						c = (255*c)/crop_value;
+						c = (255*c)/ crop_upper_value;  //description of conversion bounds provided at the top of this file.   Requested crop lower value is ignored and assumed to be zero.
 						c/=256;
 						if (c > 255)
 							c = 255;
@@ -79,7 +89,7 @@ public:
 				for (unsigned int y = 0; y < lines_to_send; y++)
 					for (unsigned int x = 0; x < buffer.properties().width; x++){
 						unsigned long c = USHRT_MAX-buffer[y][x];
-						c = (255*c)/crop_value;
+						c = (255*c)/ crop_upper_value;  //description of what conversion bounds mean at the top of this file
 						c/=256;
 						if (c > 255)
 							c = 255;
@@ -89,10 +99,16 @@ public:
 			}
 		}
 	}
-	void set_crop_value(const ns_vector_2<ns_16_bit> & conversion_16_bit_bounds){
+	//description of what conversion bounds mean at the top of this file
+	void set_crop_range(const ns_vector_2<ns_16_bit> & conversion_16_bit_bounds){
 		if (conversion_16_bit_bounds.y == 0)
 			throw ns_ex("Unspecified 16 bit conversion bounds!") << conversion_16_bit_bounds.x << "," << conversion_16_bit_bounds.y;
-		crop_value = conversion_16_bit_bounds.y;
+		if (conversion_16_bit_bounds.y - conversion_16_bit_bounds.x < 128)
+			throw ns_ex("It never makes sense to set the 16 to 8 bit conversion range to less than 128!");
+			if (conversion_16_bit_bounds.y > 255 || conversion_16_bit_bounds.x > 255)
+				throw ns_ex("Crop range bounds must have a value in the range 0-255 ");
+		crop_lower_value = conversion_16_bit_bounds.x;	//this is set but subsequently ignored
+		crop_upper_value = conversion_16_bit_bounds.y;
 		crop_value_specified = true;
 	}
 	
@@ -170,7 +186,7 @@ private:
 	ns_resampler<ns_8_bit> resampler;
 	ns_image_stream_binding< ns_resampler<ns_8_bit>, ns_image_storage_reciever<ns_8_bit> > resampler_binding;
 	ns_image_storage_reciever_handle<ns_8_bit> * small_image_output_buffer;
-	ns_16_bit crop_value;
+	ns_16_bit crop_upper_value, crop_lower_value;
 	bool crop_value_specified;
 	ns_image_stream_static_buffer<ns_16_bit> buffer;
 	unsigned int _max_line_block_height;

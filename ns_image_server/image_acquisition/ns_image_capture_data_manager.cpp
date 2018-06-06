@@ -122,7 +122,7 @@ bool ns_image_capture_data_manager::transfer_data_to_long_term_storage(ns_image_
 			ns_image_process_16_bit<ns_features_are_light, ns_image_stream_static_offset_buffer<ns_16_bit> > processor(1024);
 
 			processor.set_small_image_output(small_image_output);
-			processor.set_crop_value(conversion_16_bit_bounds);
+			processor.set_crop_range(conversion_16_bit_bounds);
 			
 			ns_image_stream_binding< ns_image_process_16_bit<ns_features_are_light, ns_image_stream_static_offset_buffer<ns_16_bit> >,
 									 ns_image_storage_reciever<ns_8_bit> > binding(processor,low_depth.output_stream(),1024);

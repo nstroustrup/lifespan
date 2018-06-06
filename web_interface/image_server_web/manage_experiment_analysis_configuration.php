@@ -52,8 +52,13 @@ else $set_as_default = FALSE;
    $image_compression = $_POST['image_compression'];
    $image_compression_ratio = $_POST['image_compression_ratio'];
    $conversion_16_bit_upper_bound = $_POST['conversion_16_bit_upper_bound'];
+
    $conversion_16_bit_lower_bound = $_POST['conversion_16_bit_lower_bound'];
-   
+   if ($conversion_16_bit_upper_bound > 255 || $conversion_16_bit_lower_bound > 256){
+      throw new ns_exception("All 16 bit conversion range values must fall between 0 and 256");
+   }
+   if ($conversion_16_bit_upper_bound != 0 && ($conversion_16_bit_upper_bound - $conversion_16_bit_lower_bound < 128))
+      throw new ns_exception("The conversion range maps 16 pixels between (256*lower,256*upper) to 8 bit pixels (0,255).  So it is never sensible to set the upper bound below 128, the lower bound above 128, or the upper and lower bounds closer together than 128");   
    $apply_vertical_image_registration = $_POST['apply_vertical_image_registration'] == "apply";
    $maximum_number_of_worms = @$_POST['maximum_number_of_worms'];
    $delete_captured_images = $_POST['delete_captured_images'] == "delete";
@@ -465,12 +470,12 @@ catch(ns_exception $ex){
 <?php 
 output_editable_field("image_compression_ratio",$image_compression_ratio,TRUE,4);?></td></tr>
 <?php } ?>
-<tr><td bgcolor="<?php echo $table_colors[1][0] ?>">16 to 8 bit coversion range</td><td bgcolor="<?php echo $table_colors[1][1] ?>">
+<tr><td bgcolor="<?php echo $table_colors[1][0] ?>">16 to 8 bit conversion range</td><td bgcolor="<?php echo $table_colors[1][1] ?>">
 <?php
-output_editable_field("conversion_16_bit_lower_bound",$conversion_16_bit_lower_bound,TRUE,4);
+output_editable_field("conversion_16_bit_lower_bound",$conversion_16_bit_lower_bound,FALSE,4);
 echo "-";
 output_editable_field("conversion_16_bit_upper_bound",$conversion_16_bit_upper_bound,TRUE,4);
-?></td></tr>
+?>&nbsp;<font size="-2">(darkest - brightest) on an 8 bit scale</font> </td></tr>
 <tr><td bgcolor="<?php echo $table_colors[0][0] ?>" colspan=2>
 	<div align="right"><input name="set_denoising_options" type="submit" value="Set Analysis Options">
 	</div>

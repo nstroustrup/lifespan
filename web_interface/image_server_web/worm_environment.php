@@ -1,7 +1,28 @@
 <?php
 require_once("ns_exception.php");
 require_once("ns_image_server_website.ini");
+
+if (isset($ns_image_server_rainbow_colors))
+if ($ns_image_server_rainbow_colors){
+$daily_colors =
+array(
+array("#E5EFFF","#D2E2EF","#0000EE","#000055","#EE0000"),
+array("#FFFFCD","#FFF3B3","#774400","#441100",""),
+array("#ffedeb","#ffd6d1","#990000","#550000","",""),
+array("#e7fef4","#d3fdeb","#005555","#001111","","","",""),
+array("#e0e1ff","#ccceff","#0022CC","002233",""),
+array("#f3dbff","#e8bdff","#770077","#220022",""),
+array("#ffd1dc","#ffc2d0","#AA0033","#330011",""));
+$ccc = date("N")-1;
+$table_colors =
+array(array("#F5F5F5",$daily_colors[$ccc][1]), array("#FFFFFF",$daily_colors[$ccc][0]));
+$ns_image_server_standard_link_color = $daily_colors[$ccc][2];
+$ns_image_server_visited_link_color = $daily_colors[$ccc][3];
+}
+
+
 $website_version = "1.15";
+
 define("NS_SPATIAL_NORM", 1);
 define("NS_TEMPORAL_NORM", 2);
 define("NS_BROWSE", 3);
@@ -279,7 +300,7 @@ function ns_output_database_selector($name,$db_choice,$submit_immediately=TRUE){
 }
 
 function display_worm_page_header($title, $link = "<a href=\"view_experiments.php\">[Back to Experiment Index]</a>",$display_db_choice=FALSE,$extra_header_text=""){
-	global $db_name;
+	global $db_name,$ns_image_server_standard_link_color,$ns_image_server_visited_link_color;
 	?><!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
 <html>
 <head>
@@ -306,8 +327,9 @@ function display_worm_page_header($title, $link = "<a href=\"view_experiments.ph
 }
   a {
     text-decoration: none;
+    color: <?php echo $ns_image_server_standard_link_color;?>;
 }
-  a:visited {color: #000055;}
+  a:visited {color: <?php echo $ns_image_server_visited_link_color?>;}
 body {
 	background-color: #555566;
 }
@@ -391,7 +413,7 @@ function display_worm_page_footer(){
     <td bgcolor="#dbdbdb"><div align="right"><span class="style2"><?php echo format_time(time())?>
 <br>
 <br>
-				    Lifespan Machine web interface v.<?php echo $website_version?> <br> Nicholas Stroustrup (2017)<br>CRG Barcelona</span></div></td>
+				    Lifespan Machine web interface v.<?php echo $website_version?> <br> Nicholas Stroustrup (2018)<br>CRG Barcelona</span></div></td>
     <td bgcolor="#dbdbdb">&nbsp;</td>
   </tr>
 </table>

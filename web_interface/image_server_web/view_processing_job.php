@@ -734,7 +734,9 @@ for ($i = 0; $i < sizeof($jobs); $i++){
 	}
       }
     }
-    $lock_cs = "LOCK TABLES capture_schedule WRITE";
+    //echo "FOUND " . sizeof($sample_ids) . " SAMPLES";
+	//die();
+	$lock_cs = "LOCK TABLES capture_schedule WRITE";
     $unlock_cs = "UNLOCK TABLES";
 
     $sql->send_query($lock_cs);
@@ -744,7 +746,7 @@ for ($i = 0; $i < sizeof($jobs); $i++){
       $sql->send_query($query);
     }
     $sql->send_query($unlock_cs);
-
+    //die();
     foreach($device_names as $device_name=>$d){
       $query = "DELETE FROM autoscan_schedule WHERE device_name ='" . $device_name . "'";
       //echo $query . "<br>";
@@ -850,6 +852,8 @@ for ($i = 0; $i < sizeof($jobs); $i++){
       $jobs[$i]->subregion_height = @$_POST['subregion_height'];
       $jobs[$i]->subregion_start_time = @$_POST['subregion_start_time'];
       $jobs[$i]->subregion_stop_time = @$_POST['subregion_stop_time'];
+      $jobs[$i]->generate_video_at_high_res = @$_POST['generate_video_at_high_res'];
+   
     //  echo "Submitting job " . $i . "<BR>";
       $jobs[$i]->save_to_db($sql);
       $jobs[$i]->load_from_db($jobs[$i]->id,$sql);
@@ -1445,6 +1449,20 @@ else{
 				      <td>h</td><td><input size=4 name="subregion_height" value="<?php echo $jobs[0]->subregion_height;?>"></td>
 				      <td>t_stop</td>
 				      <td><input size=10 name="subregion_stop_time" value="<?php echo $jobs[0]->subregion_stop_time;?>"></td></tr>
+<tr><td colspan="2"><select name="generate_video_at_high_res"> 
+                                       <?php
+
+   echo "<option value=\"0\"";
+   if ($jobs[0]->generate_video_at_high_res == 0)
+     echo " selected";
+   echo">Low</option>";
+
+ echo "<option value=\"1\"";
+   if ($jobs[0]->generate_video_at_high_res == 1)
+     echo " selected";
+   echo">High</option>";
+   echo " </select>";?>
+&nbsp; Definition</td></tr>
 
 				  </table>
 

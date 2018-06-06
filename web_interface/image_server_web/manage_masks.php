@@ -57,7 +57,6 @@ try{
 	  header("Location: manage_masks.php?mask_id=$mask_id\n\n");
 	  die("");
 	}
-
 	if (ns_param_spec($query_string,'generate_sample_region_image_info') && $query_string['generate_sample_region_image_info'] == 1){
 
 	  if ($sample_id == '0' || $sample_id == '')
@@ -154,8 +153,9 @@ if (0){
 
 		//if the mask has not been processed, submit a job to do it.
 		if ($mask_visualization_image_id == 0){
-			$vis_message = "The current mask has not yet been analyzed.  It has been submitted to the cluster for processing.";
+			$vis_message = "The current mask has not yet been analyzed.  Make sure you have an image processing server running.  If the mask is not automatically analyzed, click the link \"(Re)Generate Region information\" to try again.";
 			//don't resubmit a job.  Check to see if its already been submitted
+			/*
 			$query = "SELECT id FROM processing_jobs WHERE image_id = $mask_image_id";
 			$sql->get_row($query,$res);
 			if (sizeof($res) == 0){
@@ -169,13 +169,14 @@ if (0){
 				$job->save_to_db($sql);
 				ns_update_job_queue($sql);
 
-			}
+			}*/
 		}
 		else{
 			$query = "SELECT `path`, `partition`,`filename`, `id` FROM images WHERE images.id = {$mask_visualization_image_id}";
 
 			$sql->get_row($query,$v);
 			//	var_dump($v);
+			$mask_visualization_filename = "";
 			if (strlen($v[0][1]) != 0)
 			  $mask_visualization_filename .=$v[0][1] . "/";
 			else $mask_visualization_filename ="";

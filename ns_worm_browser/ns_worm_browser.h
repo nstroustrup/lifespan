@@ -776,7 +776,7 @@ public:
 			ns_image_stream_binding< ns_image_process_16_bit<features, ns_image_stream_static_offset_buffer<ns_16_bit> >,
 									 ns_image_standard > binding(processor,image,512);
 			if (features == ns_features_are_light)
-				processor.set_crop_value(200);
+			  processor.set_crop_range(ns_vector_2<ns_16_bit>(0,200));
 
 			file_source.pump(binding,512);
 		}

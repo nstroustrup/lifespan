@@ -17,13 +17,13 @@ public:
 															  small_image_output_buffer(0),
 															  resampler_binding(max_line_block_height),
 															  resampler(max_line_block_height),
-															  crop_value(64),resample_image_to_output(false){}
+															  crop_value(0), crop_value_specified(false),resample_image_to_output(false){}
 	ns_image_statistics image_statistics;
 	unsigned long init_send() { return 0; }
 	unsigned long init_send_const() const { return 0; }
 	unsigned long seek_to_beginning() { return 0; }
 	void finish_send(){}
-
+	
 	template<class storage_buffer_2>
 	void send_lines(storage_buffer_2 & output, const unsigned int lines_to_send, unsigned long & unusued_external_state){
 		ns_image_stream_buffer_properties prop;
@@ -89,8 +89,11 @@ public:
 			}
 		}
 	}
-	void set_crop_value(const ns_16_bit & highest_input_value){
-		crop_value = highest_input_value;
+	void set_crop_value(const ns_vector_2<ns_16_bit> & conversion_16_bit_bounds){
+		if (conversion_16_bit_bounds.y == 0)
+			throw ns_ex("Unspecified 16 bit conversion bounds!") << conversion_16_bit_bounds.x << "," << conversion_16_bit_bounds.y;
+		crop_value = conversion_16_bit_bounds.y;
+		crop_value_specified = true;
 	}
 	
 	template<class reciever_t>
@@ -168,6 +171,7 @@ private:
 	ns_image_stream_binding< ns_resampler<ns_8_bit>, ns_image_storage_reciever<ns_8_bit> > resampler_binding;
 	ns_image_storage_reciever_handle<ns_8_bit> * small_image_output_buffer;
 	ns_16_bit crop_value;
+	bool crop_value_specified;
 	ns_image_stream_static_buffer<ns_16_bit> buffer;
 	unsigned int _max_line_block_height;
 };

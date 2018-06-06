@@ -957,7 +957,7 @@ int main(int argc, char ** argv){
 		splash += " ==                                    ==\n";
 		splash += " ==        Nicholas Stroustrup         ==\n";
 		splash += " ==    Center for Genomic Regulation   ==\n";
-		splash += " ==             BCN 2017               ==\n";
+		splash += " ==          Barcelona, 2018           ==\n";
 		splash += " ========================================\n";
 		std::cout << splash;
 

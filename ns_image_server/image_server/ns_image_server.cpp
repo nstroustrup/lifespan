@@ -989,6 +989,26 @@ bool ns_image_server::upgrade_tables(ns_sql_connection * sql, const bool just_te
 		sql->send_query();
 		changes_made = true;
 	}
+	if (!ns_sql_column_exists(t_suf + "capture_samples", "conversion_16_bit_low_bound", sql)) {
+		if (just_test_if_needed)
+			return true;
+		cout << "Updating capture samples column\n";
+		*sql << "ALTER TABLE `" << t_suf << "capture_samples` "
+			"ADD COLUMN `conversion_16_bit_low_bound` BIGINT UNSIGNED NOT NULL DEFAULT '0' AFTER `number_of_consecutive_captures_per_sample`";
+		sql->send_query();
+		changes_made = true;
+	}
+	if (!ns_sql_column_exists(t_suf + "capture_samples", "conversion_16_bit_high_bound", sql)) {
+		if (just_test_if_needed)
+			return true;
+		cout << "Updating capture samples column\n";
+		*sql << "ALTER TABLE `" << t_suf << "capture_samples` "
+			"ADD COLUMN `conversion_16_bit_high_bound` BIGINT UNSIGNED NOT NULL DEFAULT '0' AFTER `conversion_16_bit_low_bound`";
+		sql->send_query();
+		changes_made = true;
+	}
+
+
 	if (!updating_local_buffer) {
 		if (!ns_sql_column_exists("hosts", "system_parallel_process_id", sql)) {
 			if (just_test_if_needed)
@@ -1041,8 +1061,6 @@ bool ns_image_server::upgrade_tables(ns_sql_connection * sql, const bool just_te
 			sql->send_query();
 			changes_made = true;
 		}
-
-
 	}
 	if (!changes_made && !just_test_if_needed){
 		cout << "The database appears up-to-date; no changes were made.\n";

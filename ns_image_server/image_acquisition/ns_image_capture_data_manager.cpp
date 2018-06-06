@@ -94,8 +94,9 @@ void ns_image_capture_data_manager::register_capture_stop(ns_image_capture_speci
 }
 
 bool ns_image_capture_data_manager::transfer_data_to_long_term_storage(ns_image_server_captured_image & image,
-									ns_64_bit & time_during_transfer_to_long_term_storage,
-									ns_64_bit & time_during_deletion_from_local_storage,
+	ns_64_bit & time_during_transfer_to_long_term_storage,
+	ns_64_bit & time_during_deletion_from_local_storage,
+	const ns_vector_2<ns_16_bit> & conversion_16_bit_bounds,
 									ns_sql & sql){
 	if (image.capture_images_image_id == 0)
 		throw ns_ex("transfer_data_to_long_term_storage() was passed an image with no captured image image id");
@@ -121,7 +122,7 @@ bool ns_image_capture_data_manager::transfer_data_to_long_term_storage(ns_image_
 			ns_image_process_16_bit<ns_features_are_light, ns_image_stream_static_offset_buffer<ns_16_bit> > processor(1024);
 
 			processor.set_small_image_output(small_image_output);
-			processor.set_crop_value(200);
+			processor.set_crop_value(conversion_16_bit_bounds);
 			
 			ns_image_stream_binding< ns_image_process_16_bit<ns_features_are_light, ns_image_stream_static_offset_buffer<ns_16_bit> >,
 									 ns_image_storage_reciever<ns_8_bit> > binding(processor,low_depth.output_stream(),1024);
@@ -264,11 +265,12 @@ void ns_image_capture_data_manager::transfer_image_to_long_term_storage(const st
 void ns_image_capture_data_manager::transfer_image_to_long_term_storage_locked(ns_64_bit capture_schedule_entry_id, ns_image_server_captured_image & image, ns_sql & sql){
 
 	//First we check what state the current image is in
-	sql << "SELECT transferred_to_long_term_storage FROM capture_schedule WHERE id = " << capture_schedule_entry_id;
+	sql << "SELECT transferred_to_long_term_storage, sample_id FROM capture_schedule WHERE id = " << capture_schedule_entry_id;
 	ns_sql_result res;
 	sql.get_rows(res);
 	if (res.size()==0)
 		throw ns_ex("ns_image_capture_data_manager::transfer_image_to_long_term_storage()::Could not find capture schedule id " ) << capture_schedule_entry_id << " in the db.";
+	ns_64_bit sample_id = ns_atois64(res[0][1].c_str());
 	//cerr << "Coordinating Transfer\n";
 	ns_capture_image_status transfer_status((ns_capture_image_status)atoi(res[0][0].c_str()));
 	switch(transfer_status){
@@ -285,12 +287,23 @@ void ns_image_capture_data_manager::transfer_image_to_long_term_storage_locked(n
 		default:
 			throw ns_ex("ns_image_capture_data_manager::transfer_image_to_long_term_storage()::Requested transfer subject is in unknown transfer state:") << (int)transfer_status;
 	}
+
+	sql << "SELECT conversion_16_bit_low_bound, conversion_16_bit_high_bound FROM capture_samples WHERE id = " << sample_id;
+	ns_sql_result res2;
+	sql.get_rows(res2);
+	if (res2.size() == 0)
+		throw ns_ex("Could not identify sample ") << sample_id;
+	ns_vector_2<ns_16_bit> conversion_16_bit_bounds(atoi(res2[0][1].c_str()), atoi(res2[0][1].c_str()));
+	if (conversion_16_bit_bounds.y == 0) {
+		conversion_16_bit_bounds.x = 0;  //DEFAULT crop bounds
+		conversion_16_bit_bounds.y = 200;  //DEFAULT crop bounds
+	}
 	
 	ns_64_bit time_during_transfer_to_long_term_storage;
 	ns_64_bit time_during_deletion_from_local_storage;
 
 	bool had_to_use_local_storage;
-	had_to_use_local_storage = transfer_data_to_long_term_storage(image,time_during_transfer_to_long_term_storage,time_during_deletion_from_local_storage,sql);
+	had_to_use_local_storage = transfer_data_to_long_term_storage(image,time_during_transfer_to_long_term_storage,time_during_deletion_from_local_storage, conversion_16_bit_bounds,sql);
 	
 	transfer_status = ns_transferred_to_long_term_storage;
 	if (had_to_use_local_storage)

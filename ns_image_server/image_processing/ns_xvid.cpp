@@ -353,13 +353,12 @@ void ns_xvid_encoder::run(const vector<string> & input_files,  ns_xvid_parameter
 	cout << "Using bitrate " << round((10 * p.ARG_BITRATE / 1024)) / 10240.0  << " mbps (" << p.ARG_BITRATE << ")\n";
 
 	ns_vector_2d text_resample_factor(spec.width/(double)p.XDIM,spec.height/(double)p.YDIM);
-
+	const int text_boundary_buffer(3);
 	{
 		ns_acquire_lock_for_scope font_lock(font_server.default_font_lock, __FILE__, __LINE__);
 		ns_font * font(0);
 		if (labels.size() > 0)
 			font = &font_server.get_default_font();
-
 
 		if (!spec.label_info_is_specified() && labels.size() > 0) {
 			spec.label_size = spec.height / 50;
@@ -370,8 +369,13 @@ void ns_xvid_encoder::run(const vector<string> & input_files,  ns_xvid_parameter
 				if (w < ww)
 					w = ww;
 			}
-			spec.label_position_x = spec.width - (3 * w) / 2;
-			spec.label_position_y = spec.height - 3 * spec.label_size / 2;
+			spec.label_position_x = spec.width - (3 * w) / 2 - text_boundary_buffer;
+			spec.label_position_y = spec.height - 3 * spec.label_size / 2 - text_boundary_buffer;
+			if (spec.label_position_x < text_boundary_buffer)
+				spec.label_position_x = text_boundary_buffer;
+			if (spec.label_position_y < text_boundary_buffer)
+				spec.label_position_y = text_boundary_buffer;
+
 		}
 		font_lock.release();
 	}
@@ -445,6 +449,7 @@ void ns_xvid_encoder::run(const vector<string> & input_files,  ns_xvid_parameter
 		ns_image_standard sub_region_temp;
 
 		ns_image_standard	  resampled_temp;
+		resampled_temp.use_more_memory_to_avoid_reallocations();
 		do {
 		//	cerr << "Running Loop\n";
 			const char *type;
@@ -509,7 +514,32 @@ void ns_xvid_encoder::run(const vector<string> & input_files,  ns_xvid_parameter
 
 					if (subregion->properties().width == p.XDIM && subregion->properties().height == p.YDIM) {
 						if (font != 0) {
-							font->draw(spec.label_position_x, spec.label_position_y, ns_color_8(255, 255, 255), labels[input_num], *subregion);
+
+							ns_64_bit label_background_color = 0;
+							ns_64_bit area(0);
+							ns_font_output_dimension d = font->text_size(labels[input_num]);
+							long c(subregion->properties().components);
+							for (int y = spec.label_position_y+ text_boundary_buffer; y > 0 && y >= spec.label_position_y - d.h - text_boundary_buffer; y--)
+								for (int x = c*(spec.label_position_x - text_boundary_buffer); x < c*(spec.label_position_x + d.w + text_boundary_buffer); x++) {
+									label_background_color += (*subregion)[y][x];
+									area++;
+								}
+							if (area != 0) label_background_color /= area;
+							
+							ns_64_bit label_color = 255;
+							if (label_background_color > 128) {
+								label_color = 0;
+								label_background_color = 255;
+							}
+							else label_background_color = 0;
+							//darken/lighten background
+							for (int y = spec.label_position_y + text_boundary_buffer; y > 0 && y >= spec.label_position_y - d.h - text_boundary_buffer; y--)
+								for (int x = c*(spec.label_position_x - text_boundary_buffer); x < c*(spec.label_position_x + d.w + text_boundary_buffer); x++) {
+									(*subregion)[y][x] = (label_background_color + (*subregion)[y][x]) / 2;
+								}
+
+
+							font->draw(spec.label_position_x, spec.label_position_y, ns_color_8(label_color, label_color, label_color), labels[input_num], *subregion);
 						}
 						in_buffer = subregion->to_raw_buf(false);
 
@@ -518,9 +548,32 @@ void ns_xvid_encoder::run(const vector<string> & input_files,  ns_xvid_parameter
 						subregion->resample(ns_image_properties(p.YDIM, p.XDIM, subregion->properties().components), resampled_temp);
 						if (font != 0) {
 							font->set_height(spec.label_size / text_resample_factor.y);
+
+							ns_64_bit label_background_color = 0;
+							ns_64_bit area(0);
+							ns_font_output_dimension d = font->text_size(labels[input_num]);
+							long c(subregion->properties().components);
+							for (int y = spec.label_position_y / text_resample_factor.y+text_boundary_buffer; y > 0 && y >= (spec.label_position_y)/ text_resample_factor.y-d.h-text_boundary_buffer; y--)
+								for (int x = c*(spec.label_position_x / text_resample_factor.x - text_boundary_buffer); x < c*(spec.label_position_x / text_resample_factor.x + d.w + text_boundary_buffer); x++) {
+									label_background_color += (*subregion)[y][x];
+									area++;
+								}
+							if (area != 0) label_background_color /= area;
+							ns_64_bit label_color = 255;
+							if (label_background_color > 128) {
+								label_color = 0;
+								label_background_color = 255;
+							}
+							else label_background_color = 0;
+							//darken/lighten background
+							for (int y = spec.label_position_y / text_resample_factor.y + text_boundary_buffer; y > 0 && y >= (spec.label_position_y) / text_resample_factor.y - d.h - text_boundary_buffer; y--)
+								for (int x = c*(spec.label_position_x / text_resample_factor.x - text_boundary_buffer); x < c*(spec.label_position_x / text_resample_factor.x + d.w + text_boundary_buffer); x++) {
+									resampled_temp[y][x] = (label_background_color + resampled_temp[y][x]) / 2;
+								}
+						
 							font->draw(spec.label_position_x / text_resample_factor.x,
 								spec.label_position_y / text_resample_factor.y,
-								ns_color_8(255, 255, 255),
+								ns_color_8(label_color, label_color, label_color),
 								labels[input_num],
 								resampled_temp);
 						}

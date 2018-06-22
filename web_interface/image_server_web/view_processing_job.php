@@ -499,7 +499,7 @@ $region_strain_condition_2 = array();
       $jobs[$i]->load_from_db($jobs[$i]->id,$sql);
     }
   }
-  if ($jobs[0]->id != 0)
+  if (sizeof($jobs)>0 && $jobs[0]->id != 0)
     $page_title = "Inspect";
 
 /*
@@ -562,8 +562,9 @@ $region_strain_condition_2 = array();
   }
   if($specified_all_experiments)
 	$back_url = "view_experiments.php";
-  else $back_url =" manage_samples.php?experiment_id={$jobs[0]->experiment_id}&hide_sample_jobs=1&hide_region_jobs=1";
-
+  else {
+  if (sizeof($jobs) > 0) $back_url =" manage_samples.php?experiment_id={$jobs[0]->experiment_id}&hide_sample_jobs=1&hide_region_jobs=1";
+}
   $refresh_url = 'view_processing_job.php?';
   foreach($query_string as $k => $v)
 	$refresh_url.= $k . '=' .$v. '&';
@@ -1081,7 +1082,7 @@ for ($i = 0; $i < sizeof($jobs); $i++){
   else $page_title = "Create New";
   $page_title .= " Processing Job";
   if (sizeof($jobs) == 0)
-    die("No Jobs or job subjects could be found matching the specifications.");
+    die("No uncensored jobs or job subjects could be found matching the specifications.");
   //$jobs[0]->get_names($sql);
 
 

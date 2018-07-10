@@ -978,7 +978,21 @@ int main(int argc, char ** argv){
 			else {
 				image_server.upgrade_tables(&sql(), false, image_server.current_sql_database(), false);
 				if (image_server.act_as_an_image_capture_server()) {
-					ns_acquire_for_scope <ns_local_buffer_connection> local_sql(image_server.new_local_buffer_connection(__FILE__, __LINE__));
+					ns_acquire_for_scope <ns_local_buffer_connection> local_sql(image_server.new_local_buffer_connection(__FILE__, __LINE__, false));
+					bool local_buffer_exists(false);
+					try {
+						image_server.check_for_local_sql_database_access(&local_sql());
+						//check for an empty local buffer database
+						local_sql() << "Show tables";
+						ns_sql_result res;
+						local_sql().get_rows(res);
+						local_buffer_exists = !res.empty();
+						local_sql.release();
+					}
+					catch (ns_ex & ex) {
+						local_buffer_exists = false;
+					}
+					if (local_buffer_exists)
 					image_server.upgrade_tables(&local_sql(), false, image_server.current_local_buffer_database(), true);
 					local_sql.release();
 				}

@@ -335,13 +335,24 @@ void ns_handle_image_metadata_delete_action(ns_processing_job & job,ns_sql & sql
 	while (true) {
 		ns_sql_table_lock lock(image_server.sql_table_lock_manager.obtain_table_lock("constants", &sql, true, __FILE__, __LINE__));
 		std::string lock_holder_time_string(image_server.get_cluster_constant_value("image_metadata_deletion_lock", ns_to_string(0), &sql));
+		
+		std::string current_time_string;
+		sql << "SELECT UNIX_TIMESTAMP(NOW())";
+		current_time_string = sql.get_value();
 
 		const unsigned long lock_holder_time(atol(lock_holder_time_string.c_str()));
-		const unsigned long current_time(ns_current_time());
+		const unsigned long current_time(atol(current_time_string.c_str()));
+
 		//if nobody has the lock, or the lock has expired after 5 minutes
-		if (lock_holder_time == 0 || (current_time > lock_holder_time && current_time - lock_holder_time > 5 * 60)) {
+		const bool expired_lock((current_time > lock_holder_time && current_time - lock_holder_time > 10 * 60));
+		const bool invalid_lock((current_time < lock_holder_time && lock_holder_time - current_time > 10 * 60));
+		if (lock_holder_time == 0 || expired_lock || invalid_lock) {
 			image_server.set_cluster_constant_value("image_metadata_deletion_lock", ns_to_string(current_time), &sql);
 			lock.release(__FILE__, __LINE__);
+			if (expired_lock)
+				image_server.add_subtext_to_current_event("Seizing an expired lock.", &sql);
+			if (invalid_lock)
+				image_server.add_subtext_to_current_event("Invalidating a lock apparently claimed in the future.", &sql);
 			break;
 		}
 		else {

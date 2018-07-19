@@ -1642,11 +1642,17 @@ void ns_image_server_dispatcher::scan_for_problems(ns_sql & sql){
 
 			const unsigned long last_missed_scan_check_time = atol(image_server.get_cluster_constant_value("last_missed_scan_check_time","0",&sql).c_str());
 
-			if (last_missed_scan_check_time + 60*2 > ns_current_time()){
+
+			std::string current_time_string;
+			sql << "SELECT UNIX_TIMESTAMP(NOW())";
+			current_time_string = sql.get_value();
+			const unsigned long current_time(atol(current_time_string.c_str()));
+
+			if (last_missed_scan_check_time + 60*2 > current_time){
 				lock.release(__FILE__, __LINE__);
 			}
 			else{
-				image_server.set_cluster_constant_value("last_missed_scan_check_time",ns_to_string(ns_current_time()),&sql);
+				image_server.set_cluster_constant_value("last_missed_scan_check_time",ns_to_string(current_time),&sql);
 				lock.release(__FILE__, __LINE__);
 				time_of_last_scan_for_problems = last_missed_scan_check_time;
 				schedule_error_check_thread.run(ns_scan_for_problems,this);

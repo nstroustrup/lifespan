@@ -312,8 +312,13 @@ void ns_image_server_push_job_scheduler::discover_new_jobs(ns_sql & sql){
 	ns_sql_table_lock lock(image_server.sql_table_lock_manager.obtain_table_lock("constants", &sql, true, __FILE__, __LINE__));
 	std::string lock_grab_time( image_server.get_cluster_constant_value("processing_job_discovery_lock",ns_to_string(0),&sql));
 	
+
+	std::string current_time_string;
+	sql << "SELECT UNIX_TIMESTAMP(NOW())";
+	current_time_string = sql.get_value();
+	const unsigned long current_time(atol(current_time_string.c_str()));
+
 	const unsigned long time_of_last_job_discovery_lock(atol(lock_grab_time.c_str()));
-	const unsigned long current_time(ns_current_time());
 	//if nobody has the lock, or the lock has expired
 	if (time_of_last_job_discovery_lock == 0 || (current_time > time_of_last_job_discovery_lock &&
 		current_time - time_of_last_job_discovery_lock > 10*60)){

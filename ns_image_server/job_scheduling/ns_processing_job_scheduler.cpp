@@ -331,7 +331,7 @@ void ns_handle_image_metadata_delete_action(ns_processing_job & job,ns_sql & sql
 
 	//we only want one node submitting deletion requests, because they are long queries
 	//and it's possible to crash a standard mysql sever by submitting too many simultaneously
-	
+	int number_of_cycles(0);
 	while (true) {
 		ns_sql_table_lock lock(image_server.sql_table_lock_manager.obtain_table_lock("constants", &sql, true, __FILE__, __LINE__));
 		std::string lock_holder_time_string(image_server.get_cluster_constant_value("image_metadata_deletion_lock", ns_to_string(0), &sql));
@@ -346,12 +346,16 @@ void ns_handle_image_metadata_delete_action(ns_processing_job & job,ns_sql & sql
 		}
 		else {
 			lock.release(__FILE__, __LINE__);
-			image_server.add_subtext_to_current_event("Waiting for another node to finish deletion task.",&sql);
+			if (number_of_cycles==0)
+				image_server.add_subtext_to_current_event("Waiting for another node to finish deletion task...",&sql);
+			else image_server.add_subtext_to_current_event(".", &sql);
+			number_of_cycles++;
 			ns_thread::sleep(image_server_const.dispatcher_refresh_interval());
 		}
 	}
 	try {
-
+		if (number_of_cycles>0)
+			image_server.add_subtext_to_current_event("Running.\n", &sql);
 		vector<ns_64_bit> regions_to_delete;
 		vector<ns_64_bit> samples_to_delete;
 		ns_64_bit experiment_to_delete(0);

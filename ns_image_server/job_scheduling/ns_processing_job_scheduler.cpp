@@ -344,7 +344,7 @@ void ns_handle_image_metadata_delete_action(ns_processing_job & job,ns_sql & sql
 		const unsigned long current_time(atol(current_time_string.c_str()));
 
 		//if nobody has the lock, or the lock has expired after 5 minutes
-		const bool expired_lock((current_time > lock_holder_time && current_time - lock_holder_time > 10 * 60));
+		const bool expired_lock(lock_holder_time!= 0 && (current_time > lock_holder_time && current_time - lock_holder_time > 10 * 60));
 		const bool invalid_lock((current_time < lock_holder_time && lock_holder_time - current_time > 10 * 60));
 		if (lock_holder_time == 0 || expired_lock || invalid_lock) {
 			image_server.set_cluster_constant_value("image_metadata_deletion_lock", ns_to_string(current_time), &sql);

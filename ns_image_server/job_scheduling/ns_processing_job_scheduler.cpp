@@ -328,215 +328,245 @@ void ns_get_experiment_cleanup_subjects(const ns_64_bit experiment_id, ns_sql_re
 
 
 void ns_handle_image_metadata_delete_action(ns_processing_job & job,ns_sql & sql){
-	vector<ns_64_bit> regions_to_delete;
-	vector<ns_64_bit> samples_to_delete;
-	ns_64_bit experiment_to_delete(0);
-	bool autocommit_state = sql.autocommit_state();
-	sql.set_autocommit(false);
-	sql.send_query("BEGIN");
-	std::vector<char> operations;
-	operations.reserve(job.operations.size());
-	operations.insert(operations.end(), job.operations.begin(), job.operations.end());
-	try{
-		if (job.image_id != 0 &&		//older versions of the software do not respect the "ns_delete_everything_but_raw_data" flag.
-										//to avoid the situation where old versions will delete all data for an experiment,
-										//jobs with this flag set also have image_id set to an arbitrary value
-										//which will cause older versions of the software to simply try to delete that single image
-										//rather than an entire experiment.
-										//So here, we check that experiment_id = 0, to identify legit image deletion tasks
-			job.experiment_id == 0){
-			sql << "DELETE FROM images WHERE id = " << job.image_id;
-			sql.send_query();
+
+	//we only want one node submitting deletion requests, because they are long queries
+	//and it's possible to crash a standard mysql sever by submitting too many simultaneously
+	
+	while (true) {
+		ns_sql_table_lock lock(image_server.sql_table_lock_manager.obtain_table_lock("constants", &sql, true, __FILE__, __LINE__));
+		std::string lock_holder_time_string(image_server.get_cluster_constant_value("image_metadata_deletion_lock", ns_to_string(0), &sql));
+
+		const unsigned long lock_holder_time(atol(lock_holder_time_string.c_str()));
+		const unsigned long current_time(ns_current_time());
+		//if nobody has the lock, or the lock has expired after 5 minutes
+		if (lock_holder_time == 0 || (current_time > lock_holder_time && current_time - lock_holder_time > 5 * 60)) {
+			image_server.set_cluster_constant_value("image_metadata_deletion_lock", ns_to_string(current_time), &sql);
+			lock.release(__FILE__, __LINE__);
+			break;
 		}
-		else if (job.region_id != 0)
-			regions_to_delete.push_back(job.region_id);
-		else if (job.sample_id != 0){
-			if (operations[ns_unprocessed]){
-				if (job.maintenance_flag == ns_processing_job::ns_only_delete_processed_captured_images){
-					sql << "DELETE images FROM images, captured_images WHERE captured_images.sample_id = " << job.sample_id
-						<< " AND captured_images.image_id = images.id "
-						<< " AND " << ns_get_file_deletion_arguments::captured_file_specification("captured_images");
-					sql.send_query();
-					sql << "UPDATE captured_images SET image_id = 0 WHERE sample_id=" << job.sample_id
-						<< " AND " << ns_get_file_deletion_arguments::captured_file_specification("captured_images");
-					sql.send_query();
-				}
-				else if (job.maintenance_flag == ns_processing_job::ns_delete_censored_images){
-					sql << "DELETE images FROM images, captured_images WHERE captured_images.sample_id = " << job.sample_id
+		else {
+			lock.release(__FILE__, __LINE__);
+			image_server.add_subtext_to_current_event("Waiting for another node to finish deletion task.",&sql);
+			ns_thread::sleep(image_server_const.dispatcher_refresh_interval());
+		}
+	}
+	try {
+
+		vector<ns_64_bit> regions_to_delete;
+		vector<ns_64_bit> samples_to_delete;
+		ns_64_bit experiment_to_delete(0);
+		bool autocommit_state = sql.autocommit_state();
+		sql.set_autocommit(false);
+		sql.send_query("BEGIN");
+		std::vector<char> operations;
+		operations.reserve(job.operations.size());
+		operations.insert(operations.end(), job.operations.begin(), job.operations.end());
+		try {
+			if (job.image_id != 0 &&		//older versions of the software do not respect the "ns_delete_everything_but_raw_data" flag.
+											//to avoid the situation where old versions will delete all data for an experiment,
+											//jobs with this flag set also have image_id set to an arbitrary value
+											//which will cause older versions of the software to simply try to delete that single image
+											//rather than an entire experiment.
+											//So here, we check that experiment_id = 0, to identify legit image deletion tasks
+				job.experiment_id == 0) {
+				sql << "DELETE FROM images WHERE id = " << job.image_id;
+				sql.send_query();
+			}
+			else if (job.region_id != 0)
+				regions_to_delete.push_back(job.region_id);
+			else if (job.sample_id != 0) {
+				if (operations[ns_unprocessed]) {
+					if (job.maintenance_flag == ns_processing_job::ns_only_delete_processed_captured_images) {
+						sql << "DELETE images FROM images, captured_images WHERE captured_images.sample_id = " << job.sample_id
+							<< " AND captured_images.image_id = images.id "
+							<< " AND " << ns_get_file_deletion_arguments::captured_file_specification("captured_images");
+						sql.send_query();
+						sql << "UPDATE captured_images SET image_id = 0 WHERE sample_id=" << job.sample_id
+							<< " AND " << ns_get_file_deletion_arguments::captured_file_specification("captured_images");
+						sql.send_query();
+					}
+					else if (job.maintenance_flag == ns_processing_job::ns_delete_censored_images) {
+						sql << "DELETE images FROM images, captured_images WHERE captured_images.sample_id = " << job.sample_id
 							<< " AND captured_images.image_id = images.id "
 							<< " AND " << ns_get_file_deletion_arguments::censored_file_specification("captured_images");
-					sql.send_query();
-					sql << "UPDATE captured_images SET image_id = 0 WHERE sample_id=" << job.sample_id
-						<< " AND " <<  ns_get_file_deletion_arguments::censored_file_specification("captured_images");
-					sql.send_query();
-				}
-				else if (operations[ns_process_thumbnail]){
-					sql << "DELETE images FROM images, captured_images WHERE captured_images.sample_id = " << job.sample_id
+						sql.send_query();
+						sql << "UPDATE captured_images SET image_id = 0 WHERE sample_id=" << job.sample_id
+							<< " AND " << ns_get_file_deletion_arguments::censored_file_specification("captured_images");
+						sql.send_query();
+					}
+					else if (operations[ns_process_thumbnail]) {
+						sql << "DELETE images FROM images, captured_images WHERE captured_images.sample_id = " << job.sample_id
 							<< " AND captured_images.small_image_id = images.id "
 							<< " AND " << ns_get_file_deletion_arguments::small_captured_file_specification("captured_images");
 						sql.send_query();
 						sql << "UPDATE captured_images SET small_image_id = 0 WHERE sample_id=" << job.sample_id
 							<< " AND " << ns_get_file_deletion_arguments::small_captured_file_specification("captured_images");
 						sql.send_query();
+					}
+					else throw ns_ex("Requesting to delete unprocessed sample images with no flag specified");
 				}
-				else throw ns_ex("Requesting to delete unprocessed sample images with no flag specified");
+				else {
+					for (unsigned int task = 0; task < (unsigned int)ns_process_last_task_marker; task++)
+						if (operations[task]) throw ns_ex("Full sample image deletion specified with operations flagged!");
+					samples_to_delete.push_back(job.sample_id);
+					//check for malformed request
+				}
 			}
-			else{
-				for (unsigned int task = 0; task < (unsigned int)ns_process_last_task_marker; task++)
-					if (operations[task]) throw ns_ex("Full sample image deletion specified with operations flagged!");
-				samples_to_delete.push_back(job.sample_id);
-				//check for malformed request
+			else if (job.experiment_id != 0) {
+				//delete all data!
+				if (job.maintenance_flag != ns_processing_job::ns_delete_everything_but_raw_data) {
+					experiment_to_delete = job.experiment_id;
+					sql << "SELECT id FROM capture_samples WHERE experiment_id = " << experiment_to_delete;
+					ns_sql_result res;
+					sql.get_rows(res);
+					for (unsigned long i = 0; i < res.size(); i++)
+						samples_to_delete.push_back(ns_atoi64(res[i][0].c_str()));
+				}
+				//delete everything but unprocessed data
+				else {
+					ns_sql_result regions;
+					//note that this /changes/ the options specificied to those required of a cleanup.
+					//so that later in this function we'll delete files according to those options.
+					ns_get_experiment_cleanup_subjects(job.experiment_id, regions, operations, sql);
+					for (unsigned long i = 0; i < regions.size(); i++)
+						regions_to_delete.push_back(ns_atoi64(regions[i][0].c_str()));
+				}
 			}
-		}
-		else if (job.experiment_id != 0){
-			//delete all data!
-			if (job.maintenance_flag != ns_processing_job::ns_delete_everything_but_raw_data) {
-				experiment_to_delete = job.experiment_id;
-				sql << "SELECT id FROM capture_samples WHERE experiment_id = " << experiment_to_delete;
+			for (unsigned long i = 0; i < samples_to_delete.size(); i++) {
+				sql << "SELECT id FROM sample_region_image_info WHERE sample_id = " << samples_to_delete[i];
 				ns_sql_result res;
 				sql.get_rows(res);
-				for (unsigned long i = 0; i < res.size(); i++)
-					samples_to_delete.push_back(ns_atoi64(res[i][0].c_str()));
+				for (unsigned int i = 0; i < res.size(); i++)
+					regions_to_delete.push_back(ns_atoi64(res[i][0].c_str()));
 			}
-			//delete everything but unprocessed data
-			else {
-				ns_sql_result regions;
-				//note that this /changes/ the options specificied to those required of a cleanup.
-				//so that later in this function we'll delete files according to those options.
-				ns_get_experiment_cleanup_subjects(job.experiment_id, regions, operations, sql);
-				for (unsigned long i = 0; i < regions.size(); i++)
-					regions_to_delete.push_back(ns_atoi64(regions[i][0].c_str()));
-			}
-		}
-		for (unsigned long i = 0; i < samples_to_delete.size(); i++){
-			sql << "SELECT id FROM sample_region_image_info WHERE sample_id = " << samples_to_delete[i];
-			ns_sql_result res;
-			sql.get_rows(res);
-			for (unsigned int i = 0; i < res.size(); i++)
-				regions_to_delete.push_back(ns_atoi64(res[i][0].c_str()));
-		}
-		for (unsigned long i = 0; i < regions_to_delete.size(); i++){
-			//unless the job is flagged as deleting the entire sample region, just delete individual images
-			if (job.maintenance_flag != ns_processing_job::ns_delete_entire_sample_region){
-				for (unsigned int task = 0; task < (unsigned int)ns_process_last_task_marker; task++){
-					if (!operations[task]) continue;
-					const string db_table(ns_processing_step_db_table_name(task));
-					//if the data is processed for each time point in the image, delete each one
-					if (db_table ==  "sample_region_images"){
-						sql << "DELETE images FROM images,sample_region_images WHERE sample_region_images.region_info_id = " << regions_to_delete[i] <<
-							" AND images.id = sample_region_images." << ns_processing_step_db_column_name(task);
-					//	cerr << sql.query() << "\n";
-						sql.send_query();
-						sql << "UPDATE sample_region_images SET " << ns_processing_step_db_column_name(task) << " = 0 WHERE region_info_id = " << regions_to_delete[i];
-						sql.send_query();
-					}
-					//if the data is processed once for the entire region, delete it.
-					else{
-						sql << "DELETE images FROM images, sample_region_image_info WHERE sample_region_image_info.id = " << regions_to_delete[i] <<
+			for (unsigned long i = 0; i < regions_to_delete.size(); i++) {
+				//unless the job is flagged as deleting the entire sample region, just delete individual images
+				if (job.maintenance_flag != ns_processing_job::ns_delete_entire_sample_region) {
+					for (unsigned int task = 0; task < (unsigned int)ns_process_last_task_marker; task++) {
+						if (!operations[task]) continue;
+						const string db_table(ns_processing_step_db_table_name(task));
+						//if the data is processed for each time point in the image, delete each one
+						if (db_table == "sample_region_images") {
+							sql << "DELETE images FROM images,sample_region_images WHERE sample_region_images.region_info_id = " << regions_to_delete[i] <<
+								" AND images.id = sample_region_images." << ns_processing_step_db_column_name(task);
+							//	cerr << sql.query() << "\n";
+							sql.send_query();
+							sql << "UPDATE sample_region_images SET " << ns_processing_step_db_column_name(task) << " = 0 WHERE region_info_id = " << regions_to_delete[i];
+							sql.send_query();
+						}
+						//if the data is processed once for the entire region, delete it.
+						else {
+							sql << "DELETE images FROM images, sample_region_image_info WHERE sample_region_image_info.id = " << regions_to_delete[i] <<
 								" AND images.id = sample_region_image_info." << ns_processing_step_db_column_name(task);
-						sql.send_query();
-						sql << "UPDATE sample_region_image_info SET " << ns_processing_step_db_column_name(task) << " = 0 WHERE id = " << regions_to_delete[i];
-						sql.send_query();
+							sql.send_query();
+							sql << "UPDATE sample_region_image_info SET " << ns_processing_step_db_column_name(task) << " = 0 WHERE id = " << regions_to_delete[i];
+							sql.send_query();
+						}
 					}
 				}
-			}
-			//if the job is flagged to delete the entire region, do it.
-			else{
-				//check for malformed request
-				for (unsigned int task = 0; task < (unsigned int)ns_process_last_task_marker; task++)
-					if (operations[task]) throw ns_ex("Full region image deletion specified with operations flagged!");
+				//if the job is flagged to delete the entire region, do it.
+				else {
+					//check for malformed request
+					for (unsigned int task = 0; task < (unsigned int)ns_process_last_task_marker; task++)
+						if (operations[task]) throw ns_ex("Full region image deletion specified with operations flagged!");
 
-				//delete processed images
-				for (unsigned int task = 0; task < (unsigned int)ns_process_last_task_marker; task++){
-					const string db_table(ns_processing_step_db_table_name(task));
-					//if the data is processed for each time point in the image, delete each one
-					if (db_table ==  "sample_region_images"){
-						sql << "DELETE images FROM images,sample_region_images WHERE sample_region_images.region_info_id = " << regions_to_delete[i] <<
-							" AND images.id = sample_region_images." << ns_processing_step_db_column_name(task);
-					//	cerr << sql.query() << "\n";
-						sql.send_query();
-					}
-					//if the data is processed once for the entire region, delete it.
-					else{
-						sql << "DELETE images FROM images, sample_region_image_info WHERE sample_region_image_info.id = " << regions_to_delete[i] <<
+					//delete processed images
+					for (unsigned int task = 0; task < (unsigned int)ns_process_last_task_marker; task++) {
+						const string db_table(ns_processing_step_db_table_name(task));
+						//if the data is processed for each time point in the image, delete each one
+						if (db_table == "sample_region_images") {
+							sql << "DELETE images FROM images,sample_region_images WHERE sample_region_images.region_info_id = " << regions_to_delete[i] <<
+								" AND images.id = sample_region_images." << ns_processing_step_db_column_name(task);
+							//	cerr << sql.query() << "\n";
+							sql.send_query();
+						}
+						//if the data is processed once for the entire region, delete it.
+						else {
+							sql << "DELETE images FROM images, sample_region_image_info WHERE sample_region_image_info.id = " << regions_to_delete[i] <<
 								" AND images.id = sample_region_image_info." << ns_processing_step_db_column_name(task);
-						sql.send_query();
+							sql.send_query();
+						}
 					}
+					//delete associated movement data
+					sql << "DELETE worm_detection_results FROM worm_detection_results, sample_region_images WHERE "
+						<< "sample_region_images.region_info_id = " << regions_to_delete[i]
+						<< " AND worm_detection_results_id = worm_detection_results.id";
+					sql.send_query();
+					sql << "DELETE worm_detection_results FROM worm_detection_results, sample_region_images WHERE "
+						<< "sample_region_images.region_info_id = " << regions_to_delete[i]
+						<< " AND worm_interpolation_results_id = worm_detection_results.id";
+					sql.send_query();
+					sql << "DELETE worm_movement FROM worm_movement,sample_region_images WHERE "
+						<< "sample_region_images.region_info_id = " << regions_to_delete[i]
+						<< " AND worm_movement.id = sample_region_images.worm_movement_id";
+					sql.send_query();
+
+					sql << "DELETE i FROM image_statistics as i,sample_region_images as r "
+						<< "WHERE r.region_info_id = " << regions_to_delete[i] << " AND r.image_statistics_id = i.id";
+					sql.send_query();
+					//delete movement info
+					sql << "DELETE FROM worm_movement WHERE region_info_id = " << regions_to_delete[i];
+					sql.send_query();
+					//delete time points
+					sql << "DELETE from sample_region_images WHERE region_info_id = " << regions_to_delete[i];
+					sql.send_query();
+					sql << "DELETE FROM sample_region_image_info WHERE id = " << regions_to_delete[i];
+					sql.send_query();
 				}
-				//delete associated movement data
-				sql << "DELETE worm_detection_results FROM worm_detection_results, sample_region_images WHERE "
-					<< "sample_region_images.region_info_id = " << regions_to_delete[i]
-					<< " AND worm_detection_results_id = worm_detection_results.id";
-				sql.send_query();
-				sql << "DELETE worm_detection_results FROM worm_detection_results, sample_region_images WHERE "
-					<< "sample_region_images.region_info_id = " << regions_to_delete[i]
-					<< " AND worm_interpolation_results_id = worm_detection_results.id";
-				sql.send_query();
-				sql << "DELETE worm_movement FROM worm_movement,sample_region_images WHERE "
-					<< "sample_region_images.region_info_id = " << regions_to_delete[i]
-					<< " AND worm_movement.id = sample_region_images.worm_movement_id";
+			}
+			for (unsigned long i = 0; i < samples_to_delete.size(); i++) {
+				//delete masks associated with each sample
+				sql << "SELECT mask_id FROM capture_samples WHERE id = " << samples_to_delete[i];
+				ns_sql_result res;
+				sql.get_rows(res);
+				for (unsigned long j = 0; j < res.size(); j++) {
+					sql << "DELETE images FROM images, image_masks WHERE image_masks.id = " << res[j][0]
+						<< " AND images.id = image_masks.image_id";
+					sql.send_query();
+					sql << "DELETE FROM image_mask_regions WHERE mask_id = " << res[j][0];
+					sql.send_query();
+					sql << "DELETE FROM image_masks WHERE id = " << res[j][0];
+					sql.send_query();
+				}
+
+				sql << "DELETE i FROM image_statistics as i,captured_images as c "
+					<< "WHERE c.sample_id = " << samples_to_delete[i] << " AND c.image_statistics_id = i.id";
 				sql.send_query();
 
-				sql << "DELETE i FROM image_statistics as i,sample_region_images as r "
-					<< "WHERE r.region_info_id = " << regions_to_delete[i] << " AND r.image_statistics_id = i.id";
+
+				//	//delete sample time relationships
+				//	sql << "DELETE FROM sample_time_relationships WHERE sample_id = " << samples_to_delete[i];
+				//	sql.send_query();
+				sql << "DELETE images FROM images, captured_images WHERE captured_images.sample_id = " << samples_to_delete[i]
+					<< " AND captured_images.image_id = images.id";
 				sql.send_query();
-				//delete movement info
-				sql << "DELETE FROM worm_movement WHERE region_info_id = " << regions_to_delete[i];
+				sql << "DELETE FROM captured_images WHERE sample_id = " << samples_to_delete[i];
 				sql.send_query();
-				//delete time points
-				sql << "DELETE from sample_region_images WHERE region_info_id = " << regions_to_delete[i];
+				sql << "DELETE FROM capture_schedule WHERE sample_id = " << samples_to_delete[i];
 				sql.send_query();
-				sql << "DELETE FROM sample_region_image_info WHERE id = " << regions_to_delete[i];
+				sql << "DELETE FROM capture_samples WHERE id = " << samples_to_delete[i];
 				sql.send_query();
 			}
-		}
-		for (unsigned long i = 0; i < samples_to_delete.size(); i++){
-			//delete masks associated with each sample
-			sql << "SELECT mask_id FROM capture_samples WHERE id = " << samples_to_delete[i];
-			ns_sql_result res;
-			sql.get_rows(res);
-			for (unsigned long j = 0; j < res.size(); j++){
-				sql << "DELETE images FROM images, image_masks WHERE image_masks.id = " << res[j][0]
-					<< " AND images.id = image_masks.image_id";
-				sql.send_query();
-				sql << "DELETE FROM image_mask_regions WHERE mask_id = " << res[j][0];
-				sql.send_query();
-				sql << "DELETE FROM image_masks WHERE id = " << res[j][0];
+			if (experiment_to_delete != 0) {
+				sql << "DELETE FROM experiments WHERE id = " << experiment_to_delete;
 				sql.send_query();
 			}
-
-			sql << "DELETE i FROM image_statistics as i,captured_images as c "
-				<< "WHERE c.sample_id = " << samples_to_delete[i] << " AND c.image_statistics_id = i.id";
-			sql.send_query();
-
-
-		//	//delete sample time relationships
-		//	sql << "DELETE FROM sample_time_relationships WHERE sample_id = " << samples_to_delete[i];
-		//	sql.send_query();
-			sql << "DELETE images FROM images, captured_images WHERE captured_images.sample_id = " << samples_to_delete[i]
-				<< " AND captured_images.image_id = images.id";
-			sql.send_query();
-			sql << "DELETE FROM captured_images WHERE sample_id = " << samples_to_delete[i];
-			sql.send_query();
-			sql << "DELETE FROM capture_schedule WHERE sample_id = " << samples_to_delete[i];
-			sql.send_query();
-			sql << "DELETE FROM capture_samples WHERE id = " << samples_to_delete[i];
-			sql.send_query();
+			//	throw ns_ex("YOIKS!");
+			sql.send_query("COMMIT");
 		}
-		if (experiment_to_delete != 0){
-			sql << "DELETE FROM experiments WHERE id = " << experiment_to_delete;
-			sql.send_query();
+		catch (...) {
+			sql.clear_query();
+			sql.send_query("ROLLBACK");
+			sql.set_autocommit(autocommit_state);
+			throw;
 		}
-	//	throw ns_ex("YOIKS!");
-		sql.send_query("COMMIT");
-	}
-	catch(...){
-		sql.clear_query();
-		sql.send_query("ROLLBACK");
 		sql.set_autocommit(autocommit_state);
+	}
+	catch (...) {
+		image_server.set_cluster_constant_value("image_metadata_deletion_lock", "0", &sql);
 		throw;
 	}
-	sql.set_autocommit(autocommit_state);
+	image_server.set_cluster_constant_value("image_metadata_deletion_lock", "0", &sql);
 }
 
 

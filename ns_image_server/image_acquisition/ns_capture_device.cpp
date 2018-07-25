@@ -124,7 +124,8 @@ public:
 					info.vendor = current_line.substr(pos + 7, 6);
 				pos = current_line.find("product=");
 				if (pos != current_line.npos)
-					info.product = current_line.substr(pos + 7, 6);
+					info.product = current_line.substr(pos + 8, 6);
+
 				if (!info.address.empty())
 					scanner_names.push_back(info);
 

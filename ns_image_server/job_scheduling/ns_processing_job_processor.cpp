@@ -204,7 +204,7 @@ bool ns_processing_job_whole_region_processor::job_is_still_relevant(ns_sql & sq
 void ns_processing_job_whole_region_processor::mark_subject_as_busy(const bool busy,ns_sql & sql){
 	ns_64_bit s = 0;
 	if (busy) s = image_server->host_id();
-	sql << "UPDATE processing_jobs SET processor_id = " << s << " WHERE id = " << job.id;
+	sql << "UPDATE processing_jobs SET currently_under_processing = " << s << " WHERE id = " << job.id;
 	sql.send_query();
 	return;
 }
@@ -229,7 +229,7 @@ bool ns_processing_job_maintenance_processor::job_is_still_relevant(ns_sql & sql
 void ns_processing_job_maintenance_processor::mark_subject_as_busy(const bool busy,ns_sql & sql){
 	ns_64_bit s = 0;
 	if (busy) s = image_server->host_id();
-	sql << "UPDATE processing_jobs SET processor_id = " << s << " WHERE id = " << job.id;
+	sql << "UPDATE processing_jobs SET currently_under_processing = " << s << " WHERE id = " << job.id;
 	sql.send_query();
 	return;
 }

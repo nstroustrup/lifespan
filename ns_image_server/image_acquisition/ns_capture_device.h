@@ -110,6 +110,9 @@ struct ns_device_summary{
 				  next_autoscan_time;
 };
 
+struct ns_device_hardware_info {
+	std::string vendor, product, address;
+};
 struct ns_device_hardware_location{
 	int bus,device_id;
 };

@@ -1072,7 +1072,7 @@ bool ns_image_server_device_manager::hotplug_new_devices(const bool rescan_bad_b
 
 	try{
 		bool changes_made(false);
-		std::vector<std::string> all_hardware;
+		std::vector<ns_device_hardware_info> all_hardware;
 		if(verbose)
 			image_server.register_server_event(ns_image_server::ns_register_in_local_db,ns_image_server_event("Looking for hardware changes (hotplug)..."));
 		pause_to_keep_usb_sane();
@@ -1084,9 +1084,14 @@ bool ns_image_server_device_manager::hotplug_new_devices(const bool rescan_bad_b
 
 		//prepare to match up each hardware address to a known scanner
 		map<std::string,ns_image_server_device_manager_device *> hardware_address_assignments;
-		for (unsigned int i = 0; i < all_hardware.size(); i++){
-		 	ns_format_device_address(all_hardware[i]);
-			hardware_address_assignments[all_hardware[i]] = 0;
+		for (unsigned int i = 0; i < all_hardware.size(); i++) {
+			if (all_hardware[i].vendor != "0x04b8") {	//only use epson scanners, to prevent attempts at scanning from random devices	
+				if (verbose)
+					image_server.register_server_event(ns_image_server::ns_register_in_local_db, ns_image_server_event("Skipping device from unknown vendor:") << all_hardware[i].vendor << " " << all_hardware[i].product << " " << all_hardware[i].address);
+				continue;
+			}
+			ns_format_device_address(all_hardware[i].address);
+			hardware_address_assignments[all_hardware[i].address] = 0;
 		}
 		cerr << hardware_address_assignments.size() << " devices are currently detected.\n";
 

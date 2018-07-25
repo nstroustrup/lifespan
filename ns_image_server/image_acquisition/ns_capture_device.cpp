@@ -9,13 +9,12 @@
 #include "ns_usb.h"
 using namespace std;
 
-
 #define capture_buffer_size 1024*1024
 class ns_scanner_list_compiler{
 public:
 	ns_scanner_list_compiler():delayed_ex_thrown(false){}
 
-	void get_scanner_list(const string & scanner_command, vector<string> & scanner_names){	
+	void get_scanner_list(const string & scanner_command, vector<ns_device_hardware_info> & scanner_names){
 		
 		ns_external_execute exec;
 		string output;
@@ -111,17 +110,25 @@ public:
 		}
 		string current_line;
 		for (unsigned int i = 0; i < output.size(); i++){
-			if (output[i] == '\n'){
-			  //std::cout << current_line << "\n";
-			  if(current_line.find("descriptor: Pipe error") == current_line.npos){
-			
-				string::size_type pos = current_line.find_last_of(" ");
-				if (pos != current_line.npos){
-					scanner_names.push_back(current_line.substr(pos+1));
+			if (output[i] == '\n') {
+				if (current_line.find("descriptor: Pipe error") == current_line.npos) {
+					current_line = "";
+					continue;
 				}
-    
-			  }
-			  current_line="";
+				ns_device_hardware_info info;
+				string::size_type pos = current_line.find_last_of(" ");
+				if (pos != current_line.npos)
+					info.address = current_line.substr(pos + 1);
+				pos = current_line.find_last_of("vendor=");
+				if (pos != current_line.npos)
+					info.vendor = current_line.substr(pos + 1, 6);
+				pos = current_line.find_last_of("product=");
+				if (pos != current_line.npos)
+					info.product = current_line.substr(pos + 1, 6);
+				if (!info.address.empty())
+					scanner_names.push_back(info);
+
+				current_line = "";
 			}
 			else current_line+=output[i];
 		}
@@ -136,7 +143,7 @@ private:
 	bool delayed_ex_thrown;
 };
 
-void ns_get_scanner_hardware_address_list(vector<string> & scanner_names){
+void ns_get_scanner_hardware_address_list(vector<ns_device_hardware_info> & scanner_names){
 	ns_scanner_list_compiler comp;
 	comp.get_scanner_list(image_server.scanner_list_command(),scanner_names);
 }

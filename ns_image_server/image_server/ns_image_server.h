@@ -156,7 +156,7 @@ public:
 	ns_local_buffer_connection * new_local_buffer_connection(const std::string & source_file, const unsigned int source_line, const bool select_default_database = true);
 	ns_local_buffer_connection * new_local_buffer_connection_no_lock_or_retry(const std::string & source_file, const unsigned int source_line, const bool select_default_database = true) const;
 
-	void set_sql_database(const std::string & database_name,const bool update_host_registry_in_db,ns_sql & sql);
+	void set_sql_database(const std::string & database_name,const bool update_host_registry_in_db, ns_image_server_sql * sql);
 	void switch_to_default_db();
 
 	void reconnect_sql_connection(ns_sql * sql);
@@ -572,7 +572,7 @@ public:
 
 
 	void update_processing_status(const std::string & processing_state, const ns_64_bit processing_job_id, const ns_64_bit processing_job_queue_id,ns_sql_connection * sql,const ns_64_bit impersonate_using_internal_thread_id = 0) const;
-	void clear_processing_status(ns_sql & sql) const;
+	void clear_processing_status(ns_image_server_sql * sql) const;
 	const std::string & mail_from_address() const{return _mail_from;}
 
 	bool do_not_run_multithreaded_jobs;

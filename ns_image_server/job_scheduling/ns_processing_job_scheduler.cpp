@@ -74,7 +74,7 @@ bool ns_processing_job_scheduler::run_a_job(ns_processing_job & job,ns_sql & sql
 	ns_image_server_push_job_scheduler push_scheduler;
 
 	//refresh flag labels from db
-	ns_death_time_annotation_flag::get_flags_from_db(sql);
+	ns_death_time_annotation_flag::get_flags_from_db(&sql);
 
 	if (job.maintenance_task == ns_maintenance_update_processing_job_queue){
 		image_server.register_server_event(ns_image_server_event("Updating job queue"),&sql);

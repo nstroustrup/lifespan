@@ -1292,41 +1292,60 @@ void ns_experiment_storyboard::draw(const unsigned long sub_image_id,ns_image_st
 		cur_division.load_images(use_color,sql);
 	
 		for (unsigned int j = 0; j < cur_division.events.size(); j++){
-			try{
-				if (cur_division.events[j].image_image_size().x <
-					cur_division.events[j].image.properties().width ||
-					cur_division.events[j].image_image_size().y <
-					cur_division.events[j].image.properties().height
-				
-				){
-					throw ns_ex("There is a disagreement between the annotation (") 
-						<< cur_division.events[j].image_image_size().x << ","
+			try {
+				ns_vector_2i copy_size(cur_division.events[j].image_image_size());
+				const ns_vector_2i storyboard_space_size(cur_division.events[j].image_image_size());
+				if (cur_division.events[j].image_image_size().x >
+					cur_division.events[j].image.properties().width)
+					copy_size.x = cur_division.events[j].image.properties().width;
+				if (
+					cur_division.events[j].image_image_size().y >
+					cur_division.events[j].image.properties().height)
+					copy_size.y = cur_division.events[j].image.properties().height;
+
+				if (copy_size.x != storyboard_space_size.x || copy_size.y != storyboard_space_size.y){
+					ns_ex ex("There is a disagreement between the annotation (");
+					ex	<< cur_division.events[j].image_image_size().x << ","
 						<< cur_division.events[j].image_image_size().y
 						<< ") and the actual size of the region image "
 						<< cur_division.events[j].image.properties().width << ","
 						<< cur_division.events[j].image.properties().height;
+					image_server.add_subtext_to_current_event(ex.text(),&sql);				
 				}
+
 				const ns_vector_2i p((cur_division.events[j].position_on_time_point + cur_division.position_on_storyboard));
 				if(use_color){
-					for (unsigned int y = 0; y < cur_division.events[j].image.properties().height; y++){
-						for (unsigned int x = 0; x < 3* cur_division.events[j].image.properties().width; x++){
-							if (y+p.y >= im.properties().height)
-								throw ns_ex("Out of bounds y position encountered while generating storyboard:") << y+p.y << "/" << im.properties().height;
-							if (x+3*p.x >= 3*im.properties().width)
-								throw ns_ex("Out of bounds y position encountered while generating storyboard:") << x+p.x << "/" << im.properties().width;
+					for (unsigned int y = 0; y < copy_size.y; y++){
+						for (unsigned int x = 0; x < 3* copy_size.x; x++){
+						//	if (y+p.y >= im.properties().height)
+						//		throw ns_ex("Out of bounds y position encountered while generating storyboard:") << y+p.y << "/" << im.properties().height;
+						//	if (x+3*p.x >= 3*im.properties().width)
+						//		throw ns_ex("Out of bounds y position encountered while generating storyboard:") << x+p.x << "/" << im.properties().width;
 							im[y+p.y][x+3*p.x] = cur_division.events[j].image[y][x];
 						}
+						for (unsigned int x = 3 * copy_size.x; x < 3 * storyboard_space_size.x; x++)
+							im[y + p.y][x + 3 * p.x] = 0;
+					}
+					for (unsigned int y = copy_size.y; y < storyboard_space_size.y; y++) {
+						for (unsigned int x = 0; x < 3 * storyboard_space_size.x; x++)
+							im[y + p.y][x + 3 * p.x] = 0;
 					}
 				}
 				else{
-					for (unsigned int y = 0; y < cur_division.events[j].image.properties().height; y++){
-						for (unsigned int x = 0; x < cur_division.events[j].image.properties().width; x++){
+					for (unsigned int y = 0; y < copy_size.y; y++){
+						for (unsigned int x = 0; x < copy_size.x; x++){
 					//		if (y+p.y >= im.properties().height)
 				//				throw ns_ex("YIKES");
 				//			if (x+p.x >= im.properties().width)
 				//				throw ns_ex("YIKES");
 							im[y+p.y][x+p.x] = cur_division.events[j].image[y][x];
 						}
+						for (unsigned int x = copy_size.x; x < storyboard_space_size.x; x++)
+							im[y + p.y][x + p.x] = 0;
+					}	
+					for (unsigned int y = copy_size.y; y < storyboard_space_size.y; y++) {
+						for (unsigned int x = 0; x < storyboard_space_size.x; x++)
+							im[y + p.y][x + p.x] = 0;
 					}
 				}
 			}
@@ -1419,7 +1438,8 @@ void ns_experiment_storyboard_compiled_event_set::load(const ns_experiment_story
 		}
 	}
 
-
+	if (experiment_ids.empty())
+		throw ns_ex("No events were present in this region");
 	ns_machine_analysis_data_loader machine_annotations;
 	machine_annotations.load(ns_death_time_annotation_set::ns_censoring_and_movement_transitions,
 		spec.region_id, spec.sample_id, experiment_ids[0], sql, true, ns_machine_analysis_region_data::ns_exclude_fast_moving_animals);

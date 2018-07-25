@@ -393,7 +393,7 @@ void ns_image_server_dispatcher::run(){
 		if (!currently_unable_to_connect_to_the_central_db) {
 			ns_acquire_for_scope<ns_sql> sql(image_server.new_sql_connection(__FILE__, __LINE__));
 			image_server.unregister_host(&sql());
-			image_server.clear_processing_status(*static_cast<ns_sql *>(&sql()));
+			image_server.clear_processing_status(&sql());
 		}
 	}
 	catch(ns_ex & ex){
@@ -931,7 +931,7 @@ void ns_image_server_dispatcher::on_timer(){
 						processing_thread_pool.wait_for_all_threads_to_become_idle();
 						processing_thread_pool.shutdown();
 					}
-					image_server.set_sql_database(database_requested,true,*timer_sql_connection);
+					image_server.set_sql_database(database_requested,true,timer_sql_connection);
 					if (work_sql_connection!=0)
 						work_sql_connection->select_db(image_server.current_sql_database());
 					if (timer_sql_connection!=0)
@@ -1642,11 +1642,17 @@ void ns_image_server_dispatcher::scan_for_problems(ns_sql & sql){
 
 			const unsigned long last_missed_scan_check_time = atol(image_server.get_cluster_constant_value("last_missed_scan_check_time","0",&sql).c_str());
 
-			if (last_missed_scan_check_time + 60*2 > ns_current_time()){
+
+			std::string current_time_string;
+			sql << "SELECT UNIX_TIMESTAMP(NOW())";
+			current_time_string = sql.get_value();
+			const unsigned long current_time(atol(current_time_string.c_str()));
+
+			if (last_missed_scan_check_time + 60*2 > current_time){
 				lock.release(__FILE__, __LINE__);
 			}
 			else{
-				image_server.set_cluster_constant_value("last_missed_scan_check_time",ns_to_string(ns_current_time()),&sql);
+				image_server.set_cluster_constant_value("last_missed_scan_check_time",ns_to_string(current_time),&sql);
 				lock.release(__FILE__, __LINE__);
 				time_of_last_scan_for_problems = last_missed_scan_check_time;
 				schedule_error_check_thread.run(ns_scan_for_problems,this);

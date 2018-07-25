@@ -791,7 +791,7 @@ void ns_image_server::request_database_from_db_and_switch_to_it(ns_sql & sql, bo
 	if (res.size() == 0)
 		return;
 	try{
-		set_sql_database(res[0][0], update_hosts_records_in_db,sql);
+		set_sql_database(res[0][0], update_hosts_records_in_db,&sql);
 	}
 	catch(ns_ex & ex){
 		register_server_event(ex,&sql);
@@ -802,13 +802,13 @@ void ns_image_server::request_database_from_db_and_switch_to_it(ns_sql & sql, bo
 void ns_image_server::switch_to_default_db() {
 	sql_database_choice = possible_sql_databases.begin();
 }
-void ns_image_server::set_sql_database(const std::string & database_name,const bool update_hosts_records_in_db, ns_sql & sql){
+void ns_image_server::set_sql_database(const std::string & database_name,const bool update_hosts_records_in_db, ns_image_server_sql * sql){
 	if (possible_sql_databases.size() == 0)
 		throw ns_ex("ns_image_server::set_sql_database()::No possible databases specified in ini file!");
 
-	sql << "SHOW DATABASES";
+	*sql << "SHOW DATABASES";
 	ns_sql_result database;
-	sql.get_rows(database);
+	sql->get_rows(database);
 	bool found(false);
 	for (unsigned int i = 0; i < database.size(); i++){
 		if (database_name == database[i][0]){
@@ -821,10 +821,10 @@ void ns_image_server::set_sql_database(const std::string & database_name,const b
 	}
 
 	if (update_hosts_records_in_db){
-		register_server_event(ns_image_server_event("Switching to database ") << database_name,&sql);
-		sql << "UPDATE hosts SET database_used='" << database_name << "' WHERE id = " << host_id();
-		sql.send_query();
-		unregister_host(&sql);
+		register_server_event(ns_image_server_event("Switching to database ") << database_name,sql);
+		*sql << "UPDATE hosts SET database_used='" << database_name << "' WHERE id = " << host_id();
+		sql->send_query();
+		unregister_host(sql);
 		clear_processing_status(sql);
 	}
 	image_server.sql_lock.wait_to_acquire(__FILE__, __LINE__);
@@ -833,12 +833,12 @@ void ns_image_server::set_sql_database(const std::string & database_name,const b
 		p = possible_sql_databases.insert(possible_sql_databases.end(),database_name);
 	}
 	sql_database_choice = p;
-	sql.select_db(database_name);
+	sql->select_db(database_name);
 	ns_death_time_annotation_flag::get_flags_from_db(sql);
 	image_server.sql_lock.release();
 	if (update_hosts_records_in_db){
-		image_server.register_host(&sql,true,false);
-		image_server.register_devices(false,&sql);
+		image_server.register_host(sql,true,false);
+		image_server.register_devices(false,sql);
 	}
 }
 
@@ -2110,9 +2110,9 @@ void ns_image_server::unregister_host(ns_image_server_sql * sql) {
 	sql->send_query();
 };
 
-void ns_image_server::clear_processing_status(ns_sql & sql) const {
-	sql << "DELETE FROM  processing_node_status WHERE host_id = " << _host_id;
-	sql.send_query();
+void ns_image_server::clear_processing_status(ns_image_server_sql * sql) const {
+	*sql << "DELETE FROM  processing_node_status WHERE host_id = " << _host_id;
+	sql->send_query();
 }
 void ns_image_server::update_processing_status(const std::string & processing_state, const ns_64_bit processing_job_id, const ns_64_bit processing_job_queue_id,ns_sql_connection * sql, const ns_64_bit impersonate_using_internal_thread_id) const {
 
@@ -2274,6 +2274,8 @@ bool ns_to_bool(const std::string & s){
 	return (s == "yes" || s == "Yes" || s == "YES" || s == "true" || s == "True" || s == "TRUE" ||
 			s == "y" || s == "Y" || s == "1");
 }
+
+
 void ns_image_server::load_constants(const ns_image_server::ns_image_server_exec_type & exec_type, const std::string & ini_file_path, const bool reject_incorrect_fields){
 	ns_ini constants;
 	constants.reject_incorrect_fields(reject_incorrect_fields);

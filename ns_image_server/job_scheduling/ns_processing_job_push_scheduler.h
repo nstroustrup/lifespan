@@ -19,7 +19,8 @@ public:
 		progress(0),
 		job_id(0),
 		movement_record_id(0),
-		job_class(0){}
+		job_class(0),
+		paused(false){}
 
 	ns_64_bit id,
 				  job_id,
@@ -35,7 +36,7 @@ public:
 				  progress,
 				  movement_record_id,
 				  job_class; //certain jobs cannot be performed by certain types of hosts (ie movie compilation on linux hosts).  Job classes warn incapable clients off of inappropriate jobs
-
+	bool paused;
 	void save_to_db(ns_sql & sql,const bool lock);
 	static std::string provide_stub();
 	void from_result(std::vector<std::string> & result);
@@ -45,7 +46,7 @@ public:
 class ns_image_server_push_job_scheduler{
 
 public:
-	void report_sample_region_image(std::vector<ns_image_server_captured_image_region> region_images, ns_sql & sql,const ns_64_bit job_to_exclude=0,const ns_processing_job::ns_job_type &job_type_to_exclude=ns_processing_job::ns_no_job_type);
+	void report_sample_region_image(const bool job_is_paused, std::vector<ns_image_server_captured_image_region> region_images, ns_sql & sql,const ns_64_bit job_to_exclude=0,const ns_processing_job::ns_job_type &job_type_to_exclude=ns_processing_job::ns_no_job_type);
 	void report_capture_sample_image(std::vector<ns_image_server_captured_image> captured_images, ns_sql & sql);
 	void report_new_job(const ns_processing_job & job,ns_sql & sql);
 	void report_new_job_and_mark_it_so(const ns_processing_job & job,ns_sql & sql);

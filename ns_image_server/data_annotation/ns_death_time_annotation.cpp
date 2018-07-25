@@ -2508,12 +2508,12 @@ void ns_death_time_annotation_compiler::normalize_times_to_zero_age(){
 
 ns_lock ns_death_time_annotation_flag::flag_lock("flag");
 
-void ns_death_time_annotation_flag::get_flags_from_db(ns_sql & sql){
+void ns_death_time_annotation_flag::get_flags_from_db(ns_image_server_sql * sql){
 
 
-	sql << "SELECT id, label_short, label, exclude, next_flag_name_in_order, hidden, color FROM annotation_flags";
+	*sql << "SELECT id, label_short, label, exclude, next_flag_name_in_order, hidden, color FROM annotation_flags";
 	ns_sql_result res;
-	sql.get_rows(res);
+	sql->get_rows(res);
 	ns_acquire_lock_for_scope lock(flag_lock,__FILE__,__LINE__);
 	cached_flags_by_short_label.clear();
 	const bool no_flags_in_database(res.empty());
@@ -2554,9 +2554,9 @@ void ns_death_time_annotation_flag::get_flags_from_db(ns_sql & sql){
 			if (v[i].label_short.empty())
 				continue;	//don't include ns_none
 			//update db with default flags if they aren't present.
-			sql <<  "INSERT INTO annotation_flags SET label_short='" <<v[i].label_short
+			*sql <<  "INSERT INTO annotation_flags SET label_short='" <<v[i].label_short
 				<< "',label='"<<v[i].cached_label << "',exclude=" << (v[i].cached_excluded?"1":"0") << ",next_flag_name_in_order='" << v[i].next_flag_name_in_order << "'";
-			sql.send_query();
+			sql->send_query();
 		}
 		else{
 			//accidentally setting default flag colors to zero can make it look

@@ -502,7 +502,7 @@ typedef enum {ns_none,ns_start, ns_stop, ns_help, ns_restart, ns_status, ns_hotp
 			  ns_restarting_after_a_crash,ns_trigger_segfault_in_main_thread,ns_trigger_segfault_in_dispatcher_thread, ns_run_pending_image_transfers,
 	      ns_clear_local_db_buffer_cleanly,ns_clear_local_db_buffer_dangerously,ns_simulate_central_db_connection_error,ns_fix_orphaned_captured_images,
 	ns_update_sql,ns_output_image_buffer_info,ns_stop_checking_central_db,ns_start_checking_central_db,ns_output_sql_debug, ns_additional_host_description,
-	ns_max_run_time_in_seconds, ns_number_of_processing_cores, ns_idle_queue_check_limit, ns_max_memory_to_use,ns_ini_file_location, ns_ignore_multithreaded_jobs,ns_create_and_configure_sql_db,ns_max_number_of_jobs_to_process} ns_cl_command;
+	ns_max_run_time_in_seconds, ns_number_of_processing_cores, ns_idle_queue_check_limit, ns_max_memory_to_use,ns_ini_file_location, ns_ignore_multithreaded_jobs,ns_create_and_configure_sql_db,ns_override_sql_db,ns_max_number_of_jobs_to_process} ns_cl_command;
 
 #ifndef NS_ONLY_IMAGE_ACQUISITION
 #ifdef NS_USE_INTEL_IPP
@@ -561,6 +561,7 @@ int main(int argc, char ** argv){
 	commands["max_number_of_jobs_to_process"] = ns_max_number_of_jobs_to_process;
 	commands["output_sql_debug"] = ns_output_sql_debug;
 	commands["number_of_processor_cores_to_use"] = ns_number_of_processing_cores;
+	commands["override_sql_db"] = ns_override_sql_db;
 	commands["max_memory_to_use"] = ns_max_memory_to_use;
 	commands["idle_queue_check_limit"] = ns_idle_queue_check_limit;
 	commands["ignore_multicore_jobs"] = ns_ignore_multithreaded_jobs;
@@ -618,6 +619,8 @@ int main(int argc, char ** argv){
 		"       images orphaned by a previous bug in the lifespan machine software\n"
 		<< "update_sql [optional database]: update the sql database schema to match the most recent version. \n"
 		"       No changes are made if the schema is already up-to-data. A database name can be specified\n"
+		<< "override_sql_db [database]: explictly specify the database to use, overriding the \n"
+		"        central_sql_databases value in the ns_image_server.ini file"
 		<< "create_and_configure_sql_db [schema filename]: Configure sql databases for first time use.\n"
 
 		<< "\n**Redundant, test, or debug functions**\n"
@@ -651,6 +654,7 @@ int main(int argc, char ** argv){
 		bool upload_experiment_spec_to_db(false);
 		ns_experiment_capture_specification::ns_handle_existing_experiment schedule_submission_behavior = ns_experiment_capture_specification::ns_stop;
 		std::string input_filename;
+		std::string override_sql_db;
 		bool sql_update_requested(false);
 		bool schema_installation_requested(false);
 		ns_cl_command post_dispatcher_init_command(ns_none);
@@ -689,6 +693,11 @@ int main(int argc, char ** argv){
 				if (i + 1 >= argc) throw ns_ex("M4v filename must be specified");
 				input_filename = argv[i + 1];
 				i++;
+			}
+			else if (p->second == ns_override_sql_db) {
+					if (i + 1 >= argc) throw ns_ex("database name must be specified");
+					override_sql_db = argv[i + 1];
+					i++;
 			}
 			else if (p->second == ns_update_sql) {
 				sql_update_requested = true;
@@ -978,7 +987,21 @@ int main(int argc, char ** argv){
 			else {
 				image_server.upgrade_tables(&sql(), false, image_server.current_sql_database(), false);
 				if (image_server.act_as_an_image_capture_server()) {
-					ns_acquire_for_scope <ns_local_buffer_connection> local_sql(image_server.new_local_buffer_connection(__FILE__, __LINE__));
+					ns_acquire_for_scope <ns_local_buffer_connection> local_sql(image_server.new_local_buffer_connection(__FILE__, __LINE__, false));
+					bool local_buffer_exists(false);
+					try {
+						image_server.check_for_local_sql_database_access(&local_sql());
+						//check for an empty local buffer database
+						local_sql() << "Show tables";
+						ns_sql_result res;
+						local_sql().get_rows(res);
+						local_buffer_exists = !res.empty();
+						local_sql.release();
+					}
+					catch (ns_ex & ex) {
+						local_buffer_exists = false;
+					}
+					if (local_buffer_exists)
 					image_server.upgrade_tables(&local_sql(), false, image_server.current_local_buffer_database(), true);
 					local_sql.release();
 				}
@@ -1102,6 +1125,7 @@ int main(int argc, char ** argv){
 			sql.attach(image_server.new_local_buffer_connection(__FILE__, __LINE__));
 			image_server.register_server_event(ns_image_server_event("Could not contact central database: ") << ex.text() << ", falling back to local buffer.", &sql());
 		}
+		
 
 		if (sql().connected_to_central_database()) {
 			//check for an empty central database
@@ -1110,6 +1134,11 @@ int main(int argc, char ** argv){
 			sql().get_rows(res);
 			if (res.empty())
 				throw ns_ex("The central sql database schema is empty.  If this is the first time you are running the server, please run the command: ns_image_server create_and_configure_sql_db.");
+			
+			//switch to differed db if specified at commandline
+			if (!override_sql_db.empty())
+				image_server.set_sql_database(override_sql_db, true, &sql());
+
 			//check old tables
 			if (image_server.upgrade_tables(&sql(), true, image_server.current_sql_database(), false))
 				throw ns_ex("The current central database schema is out of date.  Please run the command: ns_image_server update_sql");
@@ -1128,7 +1157,7 @@ int main(int argc, char ** argv){
 			image_server.load_quotes(quotes, *static_cast<ns_sql *>(&sql()));
 			image_server.alert_handler.initialize(image_server.mail_from_address(),*static_cast<ns_sql *>(&sql()));
 			image_server.alert_handler.reset_all_alert_time_limits(*static_cast<ns_sql *>(&sql()));
-			ns_death_time_annotation_flag::get_flags_from_db(*static_cast<ns_sql *>(&sql()));
+			ns_death_time_annotation_flag::get_flags_from_db(&sql());
 		}
 
 		const bool register_and_run_simulated_devices(image_server.register_and_run_simulated_devices(&sql()));
@@ -1244,7 +1273,7 @@ int main(int argc, char ** argv){
 			}
 		}
 
-		image_server.clear_processing_status(*static_cast<ns_sql *>(&sql()));
+		image_server.clear_processing_status(&sql());
 
 
 #ifdef NS_USE_INTEL_IPP

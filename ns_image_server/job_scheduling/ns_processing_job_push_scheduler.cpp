@@ -15,7 +15,7 @@ void ns_processing_job_queue_item::save_to_db(ns_sql & sql,const bool lock=true)
 	sql << "priority=" << priority<< ", experiment_id="<< experiment_id << ", job_name='', "
 		<< "capture_sample_id=" << capture_sample_id<< ", captured_images_id=" << captured_images_id << ", sample_region_info_id=" << sample_region_info_id << ", "
 		<< "sample_region_id=" << sample_region_image_id <<", image_id=" << image_id << ", processor_id="<<processor_id << ", "
-		<< "problem=" << problem << ", job_id=" << job_id << ", progress=" << progress << ", movement_record_id=" << movement_record_id << ", job_class = " << job_class;
+		<< "problem=" << problem << ", job_id=" << job_id << ", progress=" << progress << ", movement_record_id=" << movement_record_id << ", job_class = " << job_class << ", paused=" << (paused?"1":"0");
 	if (id != 0)
 		sql << " WHERE id = " << id;
 	if (id != 0 && lock) {
@@ -27,7 +27,7 @@ void ns_processing_job_queue_item::save_to_db(ns_sql & sql,const bool lock=true)
 		sql.send_query();
 }
 std::string ns_processing_job_queue_item::provide_stub(){
-	return "SELECT id, job_id, priority, experiment_id, capture_sample_id, captured_images_id, sample_region_info_id, sample_region_id, image_id, processor_id, problem, progress, movement_record_id, job_class FROM processing_job_queue ";
+	return "SELECT id, job_id, priority, experiment_id, capture_sample_id, captured_images_id, sample_region_info_id, sample_region_id, image_id, processor_id, problem, progress, movement_record_id, job_class, paused FROM processing_job_queue ";
 }
 void ns_processing_job_queue_item::from_result(std::vector<std::string> & result){
 		id = ns_atoi64(result[0].c_str());
@@ -44,10 +44,12 @@ void ns_processing_job_queue_item::from_result(std::vector<std::string> & result
 		progress= ns_atoi64(result[11].c_str());
 		movement_record_id= ns_atoi64(result[12].c_str());
 		job_class= ns_atoi64(result[13].c_str());
+		paused = result[14] != "0";
 }
 
 
-void ns_image_server_push_job_scheduler::report_sample_region_image(std::vector<ns_image_server_captured_image_region> region_images, ns_sql & sql, const ns_64_bit job_to_exclude,const ns_processing_job::ns_job_type &job_type_to_exclude){
+void ns_image_server_push_job_scheduler::report_sample_region_image(const bool job_is_paused, std::vector<ns_image_server_captured_image_region> region_images, ns_sql & sql, const ns_64_bit job_to_exclude,const ns_processing_job::ns_job_type &job_type_to_exclude){
+	
 	//make sure we have all the jobs
 	get_processing_jobs_from_db(sql);
 	//make sure we have all the info for the submitted regions
@@ -79,30 +81,31 @@ void ns_image_server_push_job_scheduler::report_sample_region_image(std::vector<
 		}
 		for (unsigned int i = 0; i < region_images.size(); i++){
 		//	cerr << "(" << jobs[j].region_id<< "," <<  region_images[i].region_info_id  << ")";
-			if (region_images[i].region_info_id == job_cache[j].region_id){
+			if (region_images[i].region_info_id == job_cache[j].region_id) {
 				//the current region is the direct subject of a region job
-				if (job_cache[j].is_job_type(ns_processing_job::ns_region_job) && !exculde_region_jobs){
+				if (job_cache[j].is_job_type(ns_processing_job::ns_region_job) && !exculde_region_jobs) {
 					//see if the requested job has operations not yet performed on the region.
-					bool processing_requested=false;
-					for (unsigned int k = 0; k < job_cache[j].operations.size(); k++){
-						if (region_images[i].op_images_[k] < job_cache[j].operations[k]){
+					bool processing_requested = false;
+					for (unsigned int k = 0; k < job_cache[j].operations.size(); k++) {
+						if (region_images[i].op_images_[k] < job_cache[j].operations[k]) {
 							processing_requested = true;
 							break;
 						}
 					}
 					if (!processing_requested)
 						continue;
-					
+
 					//No need for a lock here!  We are simply inserting records for new jobs
 					ns_processing_job_queue_item queue_item;
 					queue_item.job_id = job_cache[j].id;
-					queue_item.priority=ns_job_queue_region_priority;
+					queue_item.priority = ns_job_queue_region_priority;
 					queue_item.sample_region_image_id = region_images[i].region_images_id;
 					queue_item.sample_region_info_id = region_images[i].region_info_id;
-					queue_item.save_to_db(sql,false);
+					queue_item.paused = job_is_paused;
+					queue_item.save_to_db(sql, false);
 				}
 				//the current region is the indirect subject of a movement job that may now be complete.
-				if (job_cache[j].is_job_type(ns_processing_job::ns_movement_job) && !exculde_movement_jobs){
+			/*	if (job_cache[j].is_job_type(ns_processing_job::ns_movement_job) && !exculde_movement_jobs){
 					sql << "SELECT region_id_short_1, region_id_short_2, region_id_long, id FROM worm_movement WHERE "
 						<< "calculated=0 AND ("
 						<< "region_id_short_1=" << region_images[i].region_images_id << " OR "
@@ -152,13 +155,14 @@ void ns_image_server_push_job_scheduler::report_sample_region_image(std::vector<
 						queue_item.movement_record_id = ns_atoi64(res[k][3].c_str());
 						queue_item.priority = ns_job_queue_movement_priority;
 						queue_item.save_to_db(sql,false);
-					}
-				}
+					
+			}}*/
 			}
 		}
 		
 	}
 	sql.send_query("COMMIT");
+	
 }
 void ns_image_server_push_job_scheduler::report_capture_sample_image(std::vector<ns_image_server_captured_image> captured_images, ns_sql & sql){
 //make sure we have all the jobs
@@ -195,6 +199,7 @@ void ns_image_server_push_job_scheduler::report_capture_sample_image(std::vector
 				if (job_cache[j].operations[ns_process_thumbnail])  //resized images are calculated automatically, don't recalculate them
 					continue;
 				ns_processing_job_queue_item queue_item;
+				queue_item.paused = job_cache[j].paused;
 				queue_item.job_id = job_cache[j].id;
 				queue_item.priority=ns_job_queue_capture_sample_priority;
 				queue_item.capture_sample_id = captured_images[i].sample_id;
@@ -312,8 +317,13 @@ void ns_image_server_push_job_scheduler::discover_new_jobs(ns_sql & sql){
 	ns_sql_table_lock lock(image_server.sql_table_lock_manager.obtain_table_lock("constants", &sql, true, __FILE__, __LINE__));
 	std::string lock_grab_time( image_server.get_cluster_constant_value("processing_job_discovery_lock",ns_to_string(0),&sql));
 	
+
+	std::string current_time_string;
+	sql << "SELECT UNIX_TIMESTAMP(NOW())";
+	current_time_string = sql.get_value();
+	const unsigned long current_time(atol(current_time_string.c_str()));
+
 	const unsigned long time_of_last_job_discovery_lock(atol(lock_grab_time.c_str()));
-	const unsigned long current_time(ns_current_time());
 	//if nobody has the lock, or the lock has expired
 	if (time_of_last_job_discovery_lock == 0 || (current_time > time_of_last_job_discovery_lock &&
 		current_time - time_of_last_job_discovery_lock > 10*60)){

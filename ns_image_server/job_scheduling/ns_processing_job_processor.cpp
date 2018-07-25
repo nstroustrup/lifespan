@@ -142,10 +142,10 @@ bool ns_processing_job_sample_processor::job_is_still_relevant(ns_sql & sql, std
 	return true;
 }
 
-void ns_processing_job_sample_processor::handle_concequences_of_job_completion(ns_sql & sql){
+void ns_processing_job_sample_processor::handle_concequences_of_job_completion(const bool job_is_paused, ns_sql & sql){
 	if (output_regions.size()){
 		ns_image_server_push_job_scheduler push_scheduler;
-		push_scheduler.report_sample_region_image(output_regions,sql);
+		push_scheduler.report_sample_region_image(job_is_paused,output_regions,sql);
 	}
 }
 
@@ -160,10 +160,11 @@ void ns_processing_job_sample_processor::mark_subject_as_problem(ns_64_bit probl
 	//sql.send_query();
 }
 
-void ns_processing_job_region_processor::handle_concequences_of_job_completion(ns_sql & sql){
-	ns_image_server_push_job_scheduler push_scheduler;
-	ns_image_server_captured_image_region region_image(ns_get_region_image(job));
-	push_scheduler.report_sample_region_image(std::vector<ns_image_server_captured_image_region>(1,region_image),sql,job.id,ns_processing_job::ns_region_job);
+void ns_processing_job_region_processor::handle_concequences_of_job_completion(const bool job_is_paused, ns_sql & sql){
+	//only needed for old movement jobs
+	//ns_image_server_push_job_scheduler push_scheduler;
+	//ns_image_server_captured_image_region region_image(ns_get_region_image(job));
+	//push_scheduler.report_sample_region_image(job_is_paused, std::vector<ns_image_server_captured_image_region>(1,region_image),sql,job.id,ns_processing_job::ns_region_job);
 }
 void ns_processing_job_region_processor::mark_subject_as_problem(const ns_64_bit problem_id,ns_sql & sql){
 	ns_image_server_captured_image_region reg;
@@ -201,6 +202,10 @@ bool ns_processing_job_whole_region_processor::job_is_still_relevant(ns_sql & sq
 	return true;
 }
 void ns_processing_job_whole_region_processor::mark_subject_as_busy(const bool busy,ns_sql & sql){
+	ns_64_bit s = 0;
+	if (busy) s = image_server->host_id();
+	sql << "UPDATE processing_jobs SET currently_under_processing = " << s << " WHERE id = " << job.id;
+	sql.send_query();
 	return;
 }
 void ns_processing_job_whole_region_processor::mark_subject_as_problem(const ns_64_bit problem_id,ns_sql & sql){
@@ -222,6 +227,10 @@ bool ns_processing_job_maintenance_processor::job_is_still_relevant(ns_sql & sql
 	return true;
 }
 void ns_processing_job_maintenance_processor::mark_subject_as_busy(const bool busy,ns_sql & sql){
+	ns_64_bit s = 0;
+	if (busy) s = image_server->host_id();
+	sql << "UPDATE processing_jobs SET currently_under_processing = " << s << " WHERE id = " << job.id;
+	sql.send_query();
 	return;
 }
 void ns_processing_job_maintenance_processor::mark_subject_as_problem(const ns_64_bit problem_id,ns_sql & sql){
@@ -1082,10 +1091,10 @@ ns_64_bit ns_processing_job_maintenance_processor::run_job(ns_sql & sql) {
 			for (unsigned int j = 0; j < specs.size(); j++) {
 				ns_image_server::ns_storyboard_cache::const_handle_t storyboard;
 				image_server->get_storyboard(specs[j], storyboard, sql);
-				image_server->register_server_event(ns_image_server_event("Rendering a type ") << (j + 1) << " storyboard, divisions " << start + 1 << "-" << stop + 1 << " of " << storyboard().storyboard.divisions.size() << " (job " << job.id << ")\n", &sql);
+				image_server->register_server_event(ns_image_server_event("Rendering a type ") << (j + 1) << " storyboard, divisions " << start + 1 << "-" << stop + 1 << " of " << storyboard().storyboard.divisions.size() << " (job " << job.id << ")", &sql);
 				ns_image_standard ima;
 				for (ns_64_bit i = start; i < stop && i < storyboard().manager.number_of_sub_images(); i++) {
-					image_server->add_subtext_to_current_event(std::string("Rendering division ") + ns_to_string(i) + "\n", &sql);
+					image_server->add_subtext_to_current_event(std::string("\nRendering division ") + ns_to_string(i) + "\n", &sql);
 					storyboard().storyboard.draw((unsigned long)i, ima, true, sql);
 					storyboard().manager.save_image_to_db_no_error_handling((unsigned long)i, specs[j], ima, sql);
 				}

@@ -91,7 +91,7 @@ struct ns_death_time_annotation_flag{
 	}
 	bool specified() const{return !label_short.empty();}
 
-	static void get_flags_from_db(ns_sql & sql);
+	static void get_flags_from_db(ns_image_server_sql * sql);
 	
 	ns_color_8 flag_color() const;
 

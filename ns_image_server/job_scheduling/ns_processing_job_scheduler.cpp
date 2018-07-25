@@ -142,7 +142,7 @@ bool ns_processing_job_scheduler::run_a_job(ns_processing_job & job,ns_sql & sql
 		sql.send_query("COMMIT");
 
 		if (problem_id == 0) {
-			processor().handle_concequences_of_job_completion(sql);
+			processor().handle_concequences_of_job_completion(job.paused,sql);
 
 			if (processor().delete_job_after_processing())
 				processor().delete_job(sql);

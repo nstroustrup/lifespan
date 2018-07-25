@@ -19,7 +19,7 @@ public:
 	virtual bool identify_subjects_of_job_specification(std::vector<ns_processing_job_queue_item> & subjects,ns_sql & sql)=0;
 	//returns 0 if the job is successfully performed.  otherwise, a 64bit database id to the event describing the error is returned.
 	virtual ns_64_bit run_job(ns_sql & sql)=0;
-	virtual void handle_concequences_of_job_completion(ns_sql & sql){};
+	virtual void handle_concequences_of_job_completion(const bool job_is_paused,ns_sql & sql){};
 	virtual bool flag_job_as_being_processed_before_processing()=0;
 	virtual void flag_job_as_being_processed(ns_sql & sql){
 		sql << "UPDATE processing_jobs SET currently_under_processing=" << image_server->host_id() << " WHERE id=" << job.id;
@@ -51,7 +51,7 @@ public:
 	void mark_subject_as_problem(const ns_64_bit problem_id,ns_sql & sql);
 	bool identify_subjects_of_job_specification(std::vector<ns_processing_job_queue_item> & subjects,ns_sql & sql);
 	ns_64_bit run_job(ns_sql & sql);
-	void handle_concequences_of_job_completion(ns_sql & sql);
+	void handle_concequences_of_job_completion(const bool job_is_paused,ns_sql & sql);
 	bool delete_job_after_processing(){return false;}
 	bool flag_job_as_being_processed_before_processing(){return false;}
 private:
@@ -67,7 +67,7 @@ public:
 	void mark_subject_as_problem(const ns_64_bit problem_id,ns_sql & sql);
 	bool identify_subjects_of_job_specification(std::vector<ns_processing_job_queue_item> & subjects,ns_sql & sql);
 	ns_64_bit run_job(ns_sql & sql);
-	void handle_concequences_of_job_completion(ns_sql & sql);
+	void handle_concequences_of_job_completion(const bool job_is_paused, ns_sql & sql);
 	bool delete_job_after_processing(){return false;}
 	bool flag_job_as_being_processed_before_processing(){return false;}
 };

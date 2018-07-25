@@ -23,6 +23,10 @@ else if (ns_param_spec($query_string,'host_id'))
      $host_id = $query_string['host_id'];
 else $host_id = '';
 
+$cur_time = 0;
+$query = "SELECT UNIX_TIMESTAMP(NOW())";
+$sql->get_value($query,$cur_time);
+
 if ($host_id != ''){
    //we need this to apply commands to all processes running on a node 
    //which each get a separate id but share the same base host name and 
@@ -280,13 +284,18 @@ foreach ($hosts as $row){
 }
 
 //fill in some lookup tables
-$current_time = ns_current_time();
+$current_time = $cur_time;
 foreach ($hosts as $row){
 	$lab = host_label($row[11],$row[15],$row[16]);
 	array_push($base_hosts[$lab],$row);
-	$current = $row[18]==1;
-	if ($current)
+	
+	$current = $row[19]>0;
+	//echo "BA" . $row[0];
+	if ($current){
 		$nodes_running[$lab][0]++;
+	//	echo "WHA " . $lab;
+	}
+	echo "\n";
 	$nodes_running[$lab][1]++;
 }
 
@@ -370,7 +379,6 @@ if ($show_offline_nodes)
 <td>Details</td>
 <td>&nbsp;</td></tr>
 <?php
-$cur_time = ns_current_time();
 $k = 0;
 foreach ($base_hosts as $base_host_name => $host){
 	//var_dump($nodes_running);

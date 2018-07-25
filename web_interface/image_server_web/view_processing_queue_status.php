@@ -298,7 +298,7 @@ if (sizeof($processing_job_queue) >= $queue_limit) echo "<a href=\"view_processi
 <form action="view_processing_queue_status.php" method="post">
 <input name="delete_problem_jobs" type="submit" value="Delete problematic jobs">
 <input name="pause" type="submit" value="Pause All Jobs" >
-<input name="unpause" type="submit" value="Reume All Jobs" >
+<input name="unpause" type="submit" value="Resume All Jobs" >
 <input name="delete_all_jobs" type="submit" value="Delete all Jobs" onClick="javascript: return confirm('Are you sure you want to delete all pending processing jo\
 bs?')">
 </form>

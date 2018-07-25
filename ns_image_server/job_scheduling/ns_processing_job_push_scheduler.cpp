@@ -81,28 +81,28 @@ void ns_image_server_push_job_scheduler::report_sample_region_image(const bool j
 		}
 		for (unsigned int i = 0; i < region_images.size(); i++){
 		//	cerr << "(" << jobs[j].region_id<< "," <<  region_images[i].region_info_id  << ")";
-			if (region_images[i].region_info_id == job_cache[j].region_id){
+			if (region_images[i].region_info_id == job_cache[j].region_id) {
 				//the current region is the direct subject of a region job
-				if (job_cache[j].is_job_type(ns_processing_job::ns_region_job) && !exculde_region_jobs){
+				if (job_cache[j].is_job_type(ns_processing_job::ns_region_job) && !exculde_region_jobs) {
 					//see if the requested job has operations not yet performed on the region.
-					bool processing_requested=false;
-					for (unsigned int k = 0; k < job_cache[j].operations.size(); k++){
-						if (region_images[i].op_images_[k] < job_cache[j].operations[k]){
+					bool processing_requested = false;
+					for (unsigned int k = 0; k < job_cache[j].operations.size(); k++) {
+						if (region_images[i].op_images_[k] < job_cache[j].operations[k]) {
 							processing_requested = true;
 							break;
 						}
 					}
 					if (!processing_requested)
 						continue;
-					
+
 					//No need for a lock here!  We are simply inserting records for new jobs
 					ns_processing_job_queue_item queue_item;
 					queue_item.job_id = job_cache[j].id;
-					queue_item.priority=ns_job_queue_region_priority;
+					queue_item.priority = ns_job_queue_region_priority;
 					queue_item.sample_region_image_id = region_images[i].region_images_id;
 					queue_item.sample_region_info_id = region_images[i].region_info_id;
 					queue_item.paused = job_is_paused;
-					queue_item.save_to_db(sql,false);
+					queue_item.save_to_db(sql, false);
 				}
 				//the current region is the indirect subject of a movement job that may now be complete.
 			/*	if (job_cache[j].is_job_type(ns_processing_job::ns_movement_job) && !exculde_movement_jobs){
@@ -148,15 +148,15 @@ void ns_image_server_push_job_scheduler::report_sample_region_image(const bool j
 						//	cerr << "No good at all.\n";
 							continue;
 						}
-						
+
 						ns_processing_job_queue_item queue_item;
 						//No need to lock here!  We are only inserting records
 						queue_item.job_id = job_cache[j].id;
 						queue_item.movement_record_id = ns_atoi64(res[k][3].c_str());
 						queue_item.priority = ns_job_queue_movement_priority;
 						queue_item.save_to_db(sql,false);
-					}*/
-				}
+					
+			}}*/
 			}
 		}
 		

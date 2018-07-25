@@ -136,8 +136,8 @@ bool ns_processing_job_scheduler::run_a_job(ns_processing_job & job,ns_sql & sql
 
 		processor().mark_subject_as_busy(false,sql);
 
-		if (problem_id == 0)
-			push_scheduler.report_job_as_finished(job,sql);
+		//if (problem_id == 0)
+		push_scheduler.report_job_as_finished(job,sql);
 
 		sql.send_query("COMMIT");
 

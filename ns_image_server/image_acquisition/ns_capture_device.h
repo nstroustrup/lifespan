@@ -181,6 +181,6 @@ private:
 };
 
 
-void ns_get_scanner_hardware_address_list(std::vector<std::string> & scaner_names);
+void ns_get_scanner_hardware_address_list(std::vector<ns_device_hardware_info> & scaner_names);
 
 #endif

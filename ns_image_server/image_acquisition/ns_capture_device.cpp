@@ -111,7 +111,7 @@ public:
 		string current_line;
 		for (unsigned int i = 0; i < output.size(); i++){
 			if (output[i] == '\n') {
-				if (current_line.find("descriptor: Pipe error") == current_line.npos) {
+				if (current_line.find("descriptor: Pipe error") != current_line.npos) {
 					current_line = "";
 					continue;
 				}
@@ -119,12 +119,12 @@ public:
 				string::size_type pos = current_line.find_last_of(" ");
 				if (pos != current_line.npos)
 					info.address = current_line.substr(pos + 1);
-				pos = current_line.find_last_of("vendor=");
+				pos = current_line.find("vendor=");
 				if (pos != current_line.npos)
-					info.vendor = current_line.substr(pos + 1, 6);
-				pos = current_line.find_last_of("product=");
+					info.vendor = current_line.substr(pos + 7, 6);
+				pos = current_line.find("product=");
 				if (pos != current_line.npos)
-					info.product = current_line.substr(pos + 1, 6);
+					info.product = current_line.substr(pos + 7, 6);
 				if (!info.address.empty())
 					scanner_names.push_back(info);
 

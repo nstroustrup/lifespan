@@ -1,17 +1,28 @@
--- --------------------------------------------------------
--- Host:                         mysqlsrv02.linux.crg.es
--- Server version:               5.1.73 - Source distribution
--- Server OS:                    redhat-linux-gnu
--- HeidiSQL Version:             9.4.0.5125
--- --------------------------------------------------------
+-- MySQL dump 10.14  Distrib 5.5.56-MariaDB, for Linux (x86_64)
+--
+-- Host: mysqlsrv02.linux.crg.es    Database: image_server
+-- ------------------------------------------------------
+-- Server version	5.1.73
 
 /*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
+/*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
+/*!40101 SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION */;
 /*!40101 SET NAMES utf8 */;
+/*!40103 SET @OLD_TIME_ZONE=@@TIME_ZONE */;
+/*!40103 SET TIME_ZONE='+00:00' */;
+/*!40014 SET @OLD_UNIQUE_CHECKS=@@UNIQUE_CHECKS, UNIQUE_CHECKS=0 */;
 /*!40014 SET @OLD_FOREIGN_KEY_CHECKS=@@FOREIGN_KEY_CHECKS, FOREIGN_KEY_CHECKS=0 */;
 /*!40101 SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='NO_AUTO_VALUE_ON_ZERO' */;
+/*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
 
--- Dumping structure for table image_server_archive_2017.alerts
-CREATE TABLE IF NOT EXISTS `alerts` (
+--
+-- Table structure for table `alerts`
+--
+
+DROP TABLE IF EXISTS `alerts`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `alerts` (
   `host_id` int(10) unsigned NOT NULL,
   `time` int(10) unsigned NOT NULL,
   `text` text NOT NULL,
@@ -23,11 +34,17 @@ CREATE TABLE IF NOT EXISTS `alerts` (
   `detailed_text` text NOT NULL,
   `detailed_recipients` text,
   PRIMARY KEY (`id`)
-) ENGINE=MyISAM AUTO_INCREMENT=5929 DEFAULT CHARSET=latin1;
+) ENGINE=MyISAM AUTO_INCREMENT=9090 DEFAULT CHARSET=latin1;
+/*!40101 SET character_set_client = @saved_cs_client */;
 
--- Data exporting was unselected.
--- Dumping structure for table image_server_archive_2017.animal_storyboard
-CREATE TABLE IF NOT EXISTS `animal_storyboard` (
+--
+-- Table structure for table `animal_storyboard`
+--
+
+DROP TABLE IF EXISTS `animal_storyboard`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `animal_storyboard` (
   `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
   `region_id` int(10) unsigned NOT NULL DEFAULT '0',
   `sample_id` int(10) unsigned NOT NULL DEFAULT '0',
@@ -45,11 +62,17 @@ CREATE TABLE IF NOT EXISTS `animal_storyboard` (
   `minimum_distance_to_juxtipose_neighbors` int(11) NOT NULL DEFAULT '0',
   PRIMARY KEY (`id`),
   KEY `subject` (`region_id`,`sample_id`,`experiment_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=21136 DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB AUTO_INCREMENT=6554 DEFAULT CHARSET=latin1;
+/*!40101 SET character_set_client = @saved_cs_client */;
 
--- Data exporting was unselected.
--- Dumping structure for table image_server_archive_2017.annotation_flags
-CREATE TABLE IF NOT EXISTS `annotation_flags` (
+--
+-- Table structure for table `annotation_flags`
+--
+
+DROP TABLE IF EXISTS `annotation_flags`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `annotation_flags` (
   `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
   `label_short` text NOT NULL,
   `label` text NOT NULL,
@@ -59,21 +82,33 @@ CREATE TABLE IF NOT EXISTS `annotation_flags` (
   `color` varchar(6) NOT NULL DEFAULT '000000',
   `next_flag_name_in_order` text NOT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=MyISAM AUTO_INCREMENT=15 DEFAULT CHARSET=latin1;
+) ENGINE=MyISAM AUTO_INCREMENT=14 DEFAULT CHARSET=latin1;
+/*!40101 SET character_set_client = @saved_cs_client */;
 
--- Data exporting was unselected.
--- Dumping structure for table image_server_archive_2017.automated_job_scheduling_data
-CREATE TABLE IF NOT EXISTS `automated_job_scheduling_data` (
+--
+-- Table structure for table `automated_job_scheduling_data`
+--
+
+DROP TABLE IF EXISTS `automated_job_scheduling_data`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `automated_job_scheduling_data` (
   `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
   `currently_running_host_id` int(11) NOT NULL DEFAULT '0',
   `acquisition_time` int(10) unsigned NOT NULL DEFAULT '0',
   `next_run_time` int(10) unsigned NOT NULL DEFAULT '0',
   PRIMARY KEY (`id`)
 ) ENGINE=MEMORY AUTO_INCREMENT=2 DEFAULT CHARSET=latin1;
+/*!40101 SET character_set_client = @saved_cs_client */;
 
--- Data exporting was unselected.
--- Dumping structure for table image_server_archive_2017.autoscan_schedule
-CREATE TABLE IF NOT EXISTS `autoscan_schedule` (
+--
+-- Table structure for table `autoscan_schedule`
+--
+
+DROP TABLE IF EXISTS `autoscan_schedule`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `autoscan_schedule` (
   `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
   `device_name` varchar(256) NOT NULL DEFAULT '0',
   `autoscan_start_time` int(10) unsigned NOT NULL DEFAULT '0',
@@ -81,37 +116,17 @@ CREATE TABLE IF NOT EXISTS `autoscan_schedule` (
   `scan_interval` int(10) unsigned NOT NULL DEFAULT '0',
   PRIMARY KEY (`id`),
   KEY `lookup` (`device_name`,`autoscan_completed_time`,`autoscan_start_time`)
-) ENGINE=MyISAM AUTO_INCREMENT=4488 DEFAULT CHARSET=latin1;
+) ENGINE=MyISAM AUTO_INCREMENT=4363 DEFAULT CHARSET=latin1;
+/*!40101 SET character_set_client = @saved_cs_client */;
 
--- Data exporting was unselected.
--- Dumping structure for table image_server_archive_2017.captured_images
-CREATE TABLE IF NOT EXISTS `captured_images` (
-  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
-  `image_id` int(10) unsigned NOT NULL DEFAULT '0',
-  `processing_host_id` int(10) unsigned NOT NULL DEFAULT '0',
-  `last_modified` int(10) unsigned NOT NULL DEFAULT '0',
-  `experiment_id` int(10) unsigned NOT NULL DEFAULT '0',
-  `sample_id` int(10) unsigned NOT NULL DEFAULT '0',
-  `capture_time` bigint(20) unsigned NOT NULL DEFAULT '0',
-  `currently_being_processed` int(10) unsigned NOT NULL DEFAULT '0' COMMENT 'Set nonzero if the current image is currently checked out for processing',
-  `mask_applied` tinyint(3) unsigned NOT NULL DEFAULT '0',
-  `problem` int(10) unsigned NOT NULL DEFAULT '0',
-  `registration_vertical_offset` int(11) NOT NULL DEFAULT '0',
-  `registration_horizontal_offset` int(10) NOT NULL DEFAULT '0',
-  `registration_offset_calculated` tinyint(3) unsigned NOT NULL DEFAULT '0',
-  `censored` tinyint(1) NOT NULL DEFAULT '0',
-  `image_statistics_id` bigint(20) unsigned NOT NULL DEFAULT '0',
-  `small_image_id` int(10) unsigned NOT NULL DEFAULT '0',
-  `never_delete_image` tinyint(1) NOT NULL DEFAULT '0',
-  PRIMARY KEY (`id`),
-  KEY `image_id_reverse_lookup` (`image_id`),
-  KEY `time` (`sample_id`,`capture_time`),
-  KEY `job_search` (`sample_id`,`currently_being_processed`,`mask_applied`,`problem`,`small_image_id`,`censored`,`image_id`) USING BTREE
-) ENGINE=InnoDB AUTO_INCREMENT=6596929 DEFAULT CHARSET=latin1;
+--
+-- Table structure for table `capture_samples`
+--
 
--- Data exporting was unselected.
--- Dumping structure for table image_server_archive_2017.capture_samples
-CREATE TABLE IF NOT EXISTS `capture_samples` (
+DROP TABLE IF EXISTS `capture_samples`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `capture_samples` (
   `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
   `parameters` text NOT NULL,
   `name` varchar(32) NOT NULL,
@@ -150,14 +165,22 @@ CREATE TABLE IF NOT EXISTS `capture_samples` (
   `desired_capture_duration_in_seconds` int(10) unsigned NOT NULL DEFAULT '0',
   `device_capture_period_in_seconds` int(10) unsigned NOT NULL DEFAULT '0',
   `number_of_consecutive_captures_per_sample` int(10) unsigned NOT NULL DEFAULT '0',
+  `conversion_16_bit_low_bound` bigint(20) unsigned NOT NULL DEFAULT '0',
+  `conversion_16_bit_high_bound` bigint(20) unsigned NOT NULL DEFAULT '0',
   PRIMARY KEY (`id`),
   KEY `text_find` (`parameters`(400)),
   KEY `device_lookup` (`id`,`device_name`)
-) ENGINE=InnoDB AUTO_INCREMENT=31547 DEFAULT CHARSET=latin1 ROW_FORMAT=DYNAMIC COMMENT='different samples imaged on the scanner with different param';
+) ENGINE=InnoDB AUTO_INCREMENT=706 DEFAULT CHARSET=latin1 ROW_FORMAT=DYNAMIC COMMENT='different samples imaged on the scanner with different param';
+/*!40101 SET character_set_client = @saved_cs_client */;
 
--- Data exporting was unselected.
--- Dumping structure for table image_server_archive_2017.capture_schedule
-CREATE TABLE IF NOT EXISTS `capture_schedule` (
+--
+-- Table structure for table `capture_schedule`
+--
+
+DROP TABLE IF EXISTS `capture_schedule`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `capture_schedule` (
   `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
   `experiment_id` int(10) unsigned NOT NULL DEFAULT '0',
   `scheduled_time` bigint(20) unsigned NOT NULL DEFAULT '0',
@@ -192,47 +215,123 @@ CREATE TABLE IF NOT EXISTS `capture_schedule` (
   KEY `image_reverse_lookup` (`captured_image_id`),
   KEY `shed` (`scheduled_time`,`sample_id`),
   KEY `device_lookup` (`scheduled_time`,`time_at_start`,`sample_id`,`experiment_id`,`missed`,`problem`,`time_at_finish`,`censored`) USING BTREE
-) ENGINE=InnoDB AUTO_INCREMENT=12858257 DEFAULT CHARSET=latin1 COMMENT='InnoDB free: 121856 kB';
+) ENGINE=InnoDB AUTO_INCREMENT=260689 DEFAULT CHARSET=latin1 COMMENT='InnoDB free: 121856 kB';
+/*!40101 SET character_set_client = @saved_cs_client */;
 
--- Data exporting was unselected.
--- Dumping structure for table image_server_archive_2017.constants
-CREATE TABLE IF NOT EXISTS `constants` (
+--
+-- Table structure for table `captured_images`
+--
+
+DROP TABLE IF EXISTS `captured_images`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `captured_images` (
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `image_id` int(10) unsigned NOT NULL DEFAULT '0',
+  `processing_host_id` int(10) unsigned NOT NULL DEFAULT '0',
+  `last_modified` int(10) unsigned NOT NULL DEFAULT '0',
+  `experiment_id` int(10) unsigned NOT NULL DEFAULT '0',
+  `sample_id` int(10) unsigned NOT NULL DEFAULT '0',
+  `capture_time` bigint(20) unsigned NOT NULL DEFAULT '0',
+  `currently_being_processed` int(10) unsigned NOT NULL DEFAULT '0' COMMENT 'Set nonzero if the current image is currently checked out for processing',
+  `mask_applied` tinyint(3) unsigned NOT NULL DEFAULT '0',
+  `problem` int(10) unsigned NOT NULL DEFAULT '0',
+  `registration_vertical_offset` int(11) NOT NULL DEFAULT '0',
+  `registration_horizontal_offset` int(10) NOT NULL DEFAULT '0',
+  `registration_offset_calculated` tinyint(3) unsigned NOT NULL DEFAULT '0',
+  `censored` tinyint(1) NOT NULL DEFAULT '0',
+  `image_statistics_id` bigint(20) unsigned NOT NULL DEFAULT '0',
+  `small_image_id` int(10) unsigned NOT NULL DEFAULT '0',
+  `never_delete_image` tinyint(1) NOT NULL DEFAULT '0',
+  PRIMARY KEY (`id`),
+  KEY `image_id_reverse_lookup` (`image_id`),
+  KEY `time` (`sample_id`,`capture_time`),
+  KEY `job_search` (`sample_id`,`currently_being_processed`,`mask_applied`,`problem`,`small_image_id`,`censored`,`image_id`) USING BTREE
+) ENGINE=InnoDB AUTO_INCREMENT=128366 DEFAULT CHARSET=latin1;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `constants`
+--
+
+DROP TABLE IF EXISTS `constants`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `constants` (
   `k` text NOT NULL COMMENT 'key',
   `v` text NOT NULL COMMENT 'value',
   `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
   `time_stamp` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=200 DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB AUTO_INCREMENT=174 DEFAULT CHARSET=latin1;
+/*!40101 SET character_set_client = @saved_cs_client */;
 
--- Data exporting was unselected.
--- Dumping structure for table image_server_archive_2017.daily_quotes
-CREATE TABLE IF NOT EXISTS `daily_quotes` (
+--
+-- Table structure for table `daily_quotes`
+--
+
+DROP TABLE IF EXISTS `daily_quotes`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `daily_quotes` (
   `quote` text,
   `stock` tinyint(3) unsigned NOT NULL DEFAULT '0',
   `author` text NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+/*!40101 SET character_set_client = @saved_cs_client */;
 
--- Data exporting was unselected.
--- Dumping structure for table image_server_archive_2017.delete_file_jobs
-CREATE TABLE IF NOT EXISTS `delete_file_jobs` (
+--
+-- Table structure for table `delete_file_jobs`
+--
+
+DROP TABLE IF EXISTS `delete_file_jobs`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `delete_file_jobs` (
   `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
   `confirmed` int(10) unsigned NOT NULL DEFAULT '0',
   `parent_job_id` int(10) unsigned NOT NULL DEFAULT '0' COMMENT 'points to the file deletion specification job that produced this deletion job',
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=46 DEFAULT CHARSET=latin1 ROW_FORMAT=DYNAMIC;
+) ENGINE=InnoDB DEFAULT CHARSET=latin1 ROW_FORMAT=DYNAMIC;
+/*!40101 SET character_set_client = @saved_cs_client */;
 
--- Data exporting was unselected.
--- Dumping structure for table image_server_archive_2017.delete_file_specifications
-CREATE TABLE IF NOT EXISTS `delete_file_specifications` (
+--
+-- Table structure for table `delete_file_specifications`
+--
+
+DROP TABLE IF EXISTS `delete_file_specifications`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `delete_file_specifications` (
   `delete_job_id` int(10) unsigned DEFAULT NULL,
   `relative_directory` text NOT NULL,
   `filename` text NOT NULL,
   `partition` text NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+/*!40101 SET character_set_client = @saved_cs_client */;
 
--- Data exporting was unselected.
--- Dumping structure for table image_server_archive_2017.devices
-CREATE TABLE IF NOT EXISTS `devices` (
+--
+-- Table structure for table `device_inventory`
+--
+
+DROP TABLE IF EXISTS `device_inventory`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `device_inventory` (
+  `device_name` varchar(23) NOT NULL,
+  `incubator_name` varchar(45) NOT NULL,
+  `incubator_location` varchar(10) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `devices`
+--
+
+DROP TABLE IF EXISTS `devices`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `devices` (
   `name` varchar(256) NOT NULL,
   `comments` text NOT NULL,
   `host_id` int(10) unsigned NOT NULL DEFAULT '0',
@@ -251,18 +350,32 @@ CREATE TABLE IF NOT EXISTS `devices` (
   `next_autoscan_time` int(10) unsigned NOT NULL DEFAULT '0',
   KEY `name_lookup` (`name`(5),`in_recognized_error_state`) USING BTREE
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1 ROW_FORMAT=DYNAMIC COMMENT='InnoDB free: 6144 kB';
+/*!40101 SET character_set_client = @saved_cs_client */;
 
--- Data exporting was unselected.
--- Dumping structure for table image_server_archive_2017.device_inventory
-CREATE TABLE IF NOT EXISTS `device_inventory` (
-  `device_name` varchar(23) NOT NULL,
-  `incubator_name` varchar(45) NOT NULL DEFAULT 'unknown',
-  `incubator_location` varchar(10) NOT NULL DEFAULT '?'
-) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+--
+-- Table structure for table `experiment_groups`
+--
 
--- Data exporting was unselected.
--- Dumping structure for table image_server_archive_2017.experiments
-CREATE TABLE IF NOT EXISTS `experiments` (
+DROP TABLE IF EXISTS `experiment_groups`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `experiment_groups` (
+  `group_id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `group_name` text NOT NULL,
+  `hidden` tinyint(3) unsigned NOT NULL,
+  `group_order` int(10) unsigned NOT NULL,
+  PRIMARY KEY (`group_id`)
+) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=latin1;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `experiments`
+--
+
+DROP TABLE IF EXISTS `experiments`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `experiments` (
   `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
   `name` text NOT NULL,
   `description` text NOT NULL,
@@ -291,48 +404,17 @@ CREATE TABLE IF NOT EXISTS `experiments` (
   `compression_type` char(50) NOT NULL DEFAULT 'jp2k',
   `compression_ratio` float NOT NULL DEFAULT '0.05',
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=1100 DEFAULT CHARSET=latin1 ROW_FORMAT=DYNAMIC;
+) ENGINE=InnoDB AUTO_INCREMENT=43 DEFAULT CHARSET=latin1 ROW_FORMAT=DYNAMIC;
+/*!40101 SET character_set_client = @saved_cs_client */;
 
--- Data exporting was unselected.
--- Dumping structure for table image_server_archive_2017.experiment_groups
-CREATE TABLE IF NOT EXISTS `experiment_groups` (
-  `group_id` int(10) unsigned NOT NULL AUTO_INCREMENT,
-  `group_name` text NOT NULL,
-  `hidden` tinyint(3) unsigned NOT NULL,
-  `group_order` int(10) unsigned NOT NULL,
-  PRIMARY KEY (`group_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=20 DEFAULT CHARSET=latin1;
+--
+-- Table structure for table `host_event_log`
+--
 
--- Data exporting was unselected.
--- Dumping structure for table image_server_archive_2017.hosts
-CREATE TABLE IF NOT EXISTS `hosts` (
-  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
-  `ip` varchar(15) NOT NULL DEFAULT '',
-  `comments` text NOT NULL,
-  `last_ping` int(10) unsigned NOT NULL DEFAULT '0',
-  `name` varchar(18) NOT NULL DEFAULT '',
-  `long_term_storage_enabled` tinyint(1) NOT NULL DEFAULT '0',
-  `port` int(10) unsigned NOT NULL DEFAULT '0',
-  `software_version_major` int(10) unsigned NOT NULL DEFAULT '0',
-  `software_version_minor` int(10) unsigned NOT NULL DEFAULT '0',
-  `software_version_compile` int(10) unsigned NOT NULL DEFAULT '0',
-  `shutdown_requested` tinyint(1) NOT NULL DEFAULT '0',
-  `launch_from_screen_saver` tinyint(1) unsigned NOT NULL DEFAULT '0',
-  `pause_requested` tinyint(1) NOT NULL DEFAULT '0',
-  `hotplug_requested` tinyint(1) unsigned NOT NULL DEFAULT '0',
-  `base_host_name` varchar(18) NOT NULL DEFAULT '',
-  `database_used` text NOT NULL,
-  `available_space_in_volatile_storage_in_mb` bigint(20) unsigned NOT NULL DEFAULT '0',
-  `time_of_last_successful_long_term_storage_write` bigint(20) unsigned NOT NULL,
-  `system_hostname` char(255) NOT NULL DEFAULT '',
-  `additional_host_description` char(255) NOT NULL DEFAULT '',
-  `system_parallel_process_id` int(10) unsigned NOT NULL DEFAULT '0',
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=592 DEFAULT CHARSET=latin1;
-
--- Data exporting was unselected.
--- Dumping structure for table image_server_archive_2017.host_event_log
-CREATE TABLE IF NOT EXISTS `host_event_log` (
+DROP TABLE IF EXISTS `host_event_log`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `host_event_log` (
   `host_id` int(10) unsigned NOT NULL DEFAULT '0',
   `event` text NOT NULL,
   `time` int(10) unsigned NOT NULL DEFAULT '0',
@@ -357,37 +439,51 @@ CREATE TABLE IF NOT EXISTS `host_event_log` (
   KEY `host_index` (`host_id`,`time`),
   KEY `sub_events` (`parent_event_id`,`time`),
   KEY `duration` (`processing_duration`)
-) ENGINE=MyISAM AUTO_INCREMENT=45836685 DEFAULT CHARSET=latin1 COMMENT='InnoDB free: 204800 kB';
+) ENGINE=MyISAM AUTO_INCREMENT=47281985 DEFAULT CHARSET=latin1 COMMENT='InnoDB free: 204800 kB';
+/*!40101 SET character_set_client = @saved_cs_client */;
 
--- Data exporting was unselected.
--- Dumping structure for table image_server_archive_2017.images
-CREATE TABLE IF NOT EXISTS `images` (
-  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
-  `filename` text NOT NULL,
-  `host_id` int(10) unsigned NOT NULL DEFAULT '0',
-  `creation_time` bigint(20) unsigned NOT NULL DEFAULT '0',
-  `path` text NOT NULL COMMENT 'directory of storage',
-  `currently_under_processing` int(10) unsigned NOT NULL DEFAULT '0' COMMENT 'set nonzero if image is currently checked out by a processing node',
-  `problem` bigint(20) unsigned NOT NULL DEFAULT '0',
-  `partition` text NOT NULL,
-  PRIMARY KEY (`id`),
-  KEY `host_lookup` (`host_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=260671993 DEFAULT CHARSET=latin1 ROW_FORMAT=DYNAMIC;
+--
+-- Table structure for table `hosts`
+--
 
--- Data exporting was unselected.
--- Dumping structure for table image_server_archive_2017.image_masks
-CREATE TABLE IF NOT EXISTS `image_masks` (
-  `image_id` int(10) unsigned NOT NULL DEFAULT '0',
+DROP TABLE IF EXISTS `hosts`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `hosts` (
   `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
-  `processed` tinyint(1) NOT NULL DEFAULT '0',
-  `visualization_image_id` int(10) unsigned NOT NULL DEFAULT '0',
-  `resize_factor` int(10) unsigned NOT NULL DEFAULT '1',
+  `ip` varchar(15) NOT NULL DEFAULT '',
+  `comments` text NOT NULL,
+  `last_ping` int(10) unsigned NOT NULL DEFAULT '0',
+  `name` varchar(18) NOT NULL DEFAULT '',
+  `long_term_storage_enabled` tinyint(1) NOT NULL DEFAULT '0',
+  `port` int(10) unsigned NOT NULL DEFAULT '0',
+  `software_version_major` int(10) unsigned NOT NULL DEFAULT '0',
+  `software_version_minor` int(10) unsigned NOT NULL DEFAULT '0',
+  `software_version_compile` int(10) unsigned NOT NULL DEFAULT '0',
+  `shutdown_requested` tinyint(1) NOT NULL DEFAULT '0',
+  `launch_from_screen_saver` tinyint(1) unsigned NOT NULL DEFAULT '0',
+  `pause_requested` tinyint(1) NOT NULL DEFAULT '0',
+  `hotplug_requested` tinyint(1) unsigned NOT NULL DEFAULT '0',
+  `base_host_name` varchar(18) NOT NULL DEFAULT '',
+  `database_used` text NOT NULL,
+  `dispatcher_refresh_interval` int(11) NOT NULL DEFAULT '0',
+  `available_space_in_volatile_storage_in_mb` bigint(20) unsigned NOT NULL DEFAULT '0',
+  `time_of_last_successful_long_term_storage_write` bigint(20) unsigned NOT NULL,
+  `system_hostname` char(255) NOT NULL DEFAULT '',
+  `additional_host_description` char(255) NOT NULL DEFAULT '',
+  `system_parallel_process_id` int(10) unsigned NOT NULL DEFAULT '0',
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=15520 DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB AUTO_INCREMENT=1106 DEFAULT CHARSET=latin1;
+/*!40101 SET character_set_client = @saved_cs_client */;
 
--- Data exporting was unselected.
--- Dumping structure for table image_server_archive_2017.image_mask_regions
-CREATE TABLE IF NOT EXISTS `image_mask_regions` (
+--
+-- Table structure for table `image_mask_regions`
+--
+
+DROP TABLE IF EXISTS `image_mask_regions`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `image_mask_regions` (
   `mask_id` int(10) unsigned NOT NULL DEFAULT '0',
   `x_min` int(10) unsigned NOT NULL DEFAULT '0',
   `y_min` int(10) unsigned NOT NULL DEFAULT '0',
@@ -400,11 +496,34 @@ CREATE TABLE IF NOT EXISTS `image_mask_regions` (
   `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
   PRIMARY KEY (`id`),
   KEY `mask` (`mask_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=2405 DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB AUTO_INCREMENT=1099 DEFAULT CHARSET=latin1;
+/*!40101 SET character_set_client = @saved_cs_client */;
 
--- Data exporting was unselected.
--- Dumping structure for table image_server_archive_2017.image_statistics
-CREATE TABLE IF NOT EXISTS `image_statistics` (
+--
+-- Table structure for table `image_masks`
+--
+
+DROP TABLE IF EXISTS `image_masks`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `image_masks` (
+  `image_id` int(10) unsigned NOT NULL DEFAULT '0',
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `processed` tinyint(1) NOT NULL DEFAULT '0',
+  `visualization_image_id` int(10) unsigned NOT NULL DEFAULT '0',
+  `resize_factor` int(10) unsigned NOT NULL DEFAULT '1',
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=374 DEFAULT CHARSET=latin1;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `image_statistics`
+--
+
+DROP TABLE IF EXISTS `image_statistics`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `image_statistics` (
   `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
   `histogram` blob NOT NULL,
   `intensity_average` float NOT NULL DEFAULT '0',
@@ -429,11 +548,38 @@ CREATE TABLE IF NOT EXISTS `image_statistics` (
   `non_worm_object_intensity_mean` float NOT NULL DEFAULT '0',
   `non_worm_object_intensity_variance` float NOT NULL DEFAULT '0',
   PRIMARY KEY (`id`)
-) ENGINE=MyISAM AUTO_INCREMENT=18295130 DEFAULT CHARSET=latin1 ROW_FORMAT=DYNAMIC;
+) ENGINE=MyISAM AUTO_INCREMENT=15974715 DEFAULT CHARSET=latin1 ROW_FORMAT=DYNAMIC;
+/*!40101 SET character_set_client = @saved_cs_client */;
 
--- Data exporting was unselected.
--- Dumping structure for table image_server_archive_2017.path_data
-CREATE TABLE IF NOT EXISTS `path_data` (
+--
+-- Table structure for table `images`
+--
+
+DROP TABLE IF EXISTS `images`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `images` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `filename` text NOT NULL,
+  `host_id` int(10) unsigned NOT NULL DEFAULT '0',
+  `creation_time` bigint(20) unsigned NOT NULL DEFAULT '0',
+  `path` text NOT NULL COMMENT 'directory of storage',
+  `currently_under_processing` int(10) unsigned NOT NULL DEFAULT '0' COMMENT 'set nonzero if image is currently checked out by a processing node',
+  `problem` bigint(20) unsigned NOT NULL DEFAULT '0',
+  `partition` text NOT NULL,
+  PRIMARY KEY (`id`),
+  KEY `host_lookup` (`host_id`)
+) ENGINE=InnoDB AUTO_INCREMENT=3061501 DEFAULT CHARSET=latin1 ROW_FORMAT=DYNAMIC;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `path_data`
+--
+
+DROP TABLE IF EXISTS `path_data`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `path_data` (
   `region_id` bigint(20) unsigned NOT NULL,
   `group_id` int(10) unsigned NOT NULL,
   `path_id` int(10) unsigned NOT NULL,
@@ -442,21 +588,85 @@ CREATE TABLE IF NOT EXISTS `path_data` (
   `flow_image_id` bigint(20) unsigned NOT NULL DEFAULT '0',
   PRIMARY KEY (`id`),
   KEY `reg_id` (`region_id`,`group_id`,`path_id`) USING BTREE
-) ENGINE=InnoDB AUTO_INCREMENT=1634845 DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB AUTO_INCREMENT=72526 DEFAULT CHARSET=latin1;
+/*!40101 SET character_set_client = @saved_cs_client */;
 
--- Data exporting was unselected.
--- Dumping structure for table image_server_archive_2017.performance_statistics
-CREATE TABLE IF NOT EXISTS `performance_statistics` (
+--
+-- Table structure for table `performance_statistics`
+--
+
+DROP TABLE IF EXISTS `performance_statistics`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `performance_statistics` (
   `host_id` int(10) unsigned NOT NULL DEFAULT '0',
   `operation` int(10) unsigned NOT NULL,
   `mean` float NOT NULL,
   `variance` float NOT NULL,
   `count` int(10) unsigned NOT NULL
 ) ENGINE=MEMORY DEFAULT CHARSET=latin1;
+/*!40101 SET character_set_client = @saved_cs_client */;
 
--- Data exporting was unselected.
--- Dumping structure for table image_server_archive_2017.processing_jobs
-CREATE TABLE IF NOT EXISTS `processing_jobs` (
+--
+-- Table structure for table `processing_job_log`
+--
+
+DROP TABLE IF EXISTS `processing_job_log`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `processing_job_log` (
+  `host_id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `job_id` int(10) unsigned NOT NULL DEFAULT '0',
+  `time_start` bigint(20) unsigned NOT NULL DEFAULT '0',
+  `time_stop` bigint(20) unsigned NOT NULL DEFAULT '0',
+  `experiment_id` int(10) unsigned NOT NULL DEFAULT '0',
+  `sample_id` int(10) unsigned NOT NULL DEFAULT '0',
+  `region_id` int(10) unsigned NOT NULL DEFAULT '0',
+  `image_id` int(10) unsigned NOT NULL DEFAULT '0',
+  `processor_id` int(10) unsigned NOT NULL,
+  `problem` int(10) unsigned NOT NULL,
+  PRIMARY KEY (`host_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `processing_job_queue`
+--
+
+DROP TABLE IF EXISTS `processing_job_queue`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `processing_job_queue` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `priority` int(10) unsigned NOT NULL DEFAULT '0',
+  `experiment_id` int(10) unsigned NOT NULL DEFAULT '0',
+  `capture_sample_id` int(10) unsigned NOT NULL DEFAULT '0',
+  `sample_region_info_id` int(10) unsigned NOT NULL DEFAULT '0',
+  `sample_region_id` int(10) unsigned NOT NULL DEFAULT '0',
+  `image_id` int(10) unsigned NOT NULL DEFAULT '0',
+  `processor_id` int(10) unsigned NOT NULL DEFAULT '0',
+  `problem` bigint(20) unsigned NOT NULL DEFAULT '0',
+  `progress` int(10) unsigned NOT NULL DEFAULT '0',
+  `job_id` int(10) unsigned NOT NULL DEFAULT '0',
+  `movement_record_id` int(10) unsigned NOT NULL DEFAULT '0',
+  `captured_images_id` int(10) unsigned NOT NULL DEFAULT '0',
+  `job_name` varchar(128) NOT NULL,
+  `job_submission_time` int(10) unsigned NOT NULL DEFAULT '0',
+  `job_class` int(10) unsigned NOT NULL DEFAULT '0',
+  `paused` int(10) unsigned NOT NULL DEFAULT '0',
+  PRIMARY KEY (`id`),
+  KEY `priority_index` (`priority`,`problem`,`job_class`,`processor_id`) USING BTREE
+) ENGINE=MyISAM AUTO_INCREMENT=10258057 DEFAULT CHARSET=latin1;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `processing_jobs`
+--
+
+DROP TABLE IF EXISTS `processing_jobs`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `processing_jobs` (
   `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
   `experiment_id` bigint(20) unsigned NOT NULL DEFAULT '0',
   `sample_id` bigint(20) unsigned NOT NULL DEFAULT '0',
@@ -514,52 +724,19 @@ CREATE TABLE IF NOT EXISTS `processing_jobs` (
   `maintenance_flag` int(10) unsigned NOT NULL DEFAULT '0',
   `paused` int(10) unsigned NOT NULL DEFAULT '0',
   `pending_another_jobs_completion` int(11) NOT NULL DEFAULT '0',
+  `generate_video_at_high_res` int(10) unsigned NOT NULL DEFAULT '0',
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=283495 DEFAULT CHARSET=latin1 ROW_FORMAT=DYNAMIC COMMENT='InnoDB free: 92160 kB; InnoDB free: 309248 kB';
+) ENGINE=InnoDB AUTO_INCREMENT=6454 DEFAULT CHARSET=latin1 ROW_FORMAT=DYNAMIC COMMENT='InnoDB free: 92160 kB; InnoDB free: 309248 kB';
+/*!40101 SET character_set_client = @saved_cs_client */;
 
--- Data exporting was unselected.
--- Dumping structure for table image_server_archive_2017.processing_job_log
-CREATE TABLE IF NOT EXISTS `processing_job_log` (
-  `host_id` int(10) unsigned NOT NULL AUTO_INCREMENT,
-  `job_id` int(10) unsigned NOT NULL DEFAULT '0',
-  `time_start` bigint(20) unsigned NOT NULL DEFAULT '0',
-  `time_stop` bigint(20) unsigned NOT NULL DEFAULT '0',
-  `experiment_id` int(10) unsigned NOT NULL DEFAULT '0',
-  `sample_id` int(10) unsigned NOT NULL DEFAULT '0',
-  `region_id` int(10) unsigned NOT NULL DEFAULT '0',
-  `image_id` int(10) unsigned NOT NULL DEFAULT '0',
-  `processor_id` int(10) unsigned NOT NULL,
-  `problem` int(10) unsigned NOT NULL,
-  PRIMARY KEY (`host_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+--
+-- Table structure for table `processing_node_status`
+--
 
--- Data exporting was unselected.
--- Dumping structure for table image_server_archive_2017.processing_job_queue
-CREATE TABLE IF NOT EXISTS `processing_job_queue` (
-  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
-  `priority` int(10) unsigned NOT NULL DEFAULT '0',
-  `experiment_id` int(10) unsigned NOT NULL DEFAULT '0',
-  `capture_sample_id` int(10) unsigned NOT NULL DEFAULT '0',
-  `sample_region_info_id` int(10) unsigned NOT NULL DEFAULT '0',
-  `sample_region_id` int(10) unsigned NOT NULL DEFAULT '0',
-  `image_id` int(10) unsigned NOT NULL DEFAULT '0',
-  `processor_id` int(10) unsigned NOT NULL DEFAULT '0',
-  `problem` bigint(20) unsigned NOT NULL DEFAULT '0',
-  `progress` int(10) unsigned NOT NULL DEFAULT '0',
-  `job_id` int(10) unsigned NOT NULL DEFAULT '0',
-  `movement_record_id` int(10) unsigned NOT NULL DEFAULT '0',
-  `captured_images_id` int(10) unsigned NOT NULL DEFAULT '0',
-  `job_name` varchar(128) NOT NULL,
-  `job_submission_time` int(10) unsigned NOT NULL DEFAULT '0',
-  `job_class` int(10) unsigned NOT NULL DEFAULT '0',
-  `paused` int(10) unsigned NOT NULL DEFAULT '0',
-  PRIMARY KEY (`id`),
-  KEY `priority_index` (`priority`,`problem`,`job_class`,`processor_id`) USING BTREE
-) ENGINE=MyISAM AUTO_INCREMENT=9904590 DEFAULT CHARSET=latin1;
-
--- Data exporting was unselected.
--- Dumping structure for table image_server_archive_2017.processing_node_status
-CREATE TABLE IF NOT EXISTS `processing_node_status` (
+DROP TABLE IF EXISTS `processing_node_status`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `processing_node_status` (
   `host_id` bigint(20) DEFAULT NULL,
   `node_id` bigint(20) DEFAULT NULL,
   `current_processing_job_queue_id` bigint(20) DEFAULT NULL,
@@ -568,63 +745,16 @@ CREATE TABLE IF NOT EXISTS `processing_node_status` (
   `current_output_event_id` bigint(20) DEFAULT NULL,
   `ts` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8;
+/*!40101 SET character_set_client = @saved_cs_client */;
 
--- Data exporting was unselected.
--- Dumping structure for table image_server_archive_2017.sample_region_images
-CREATE TABLE IF NOT EXISTS `sample_region_images` (
-  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
-  `region_info_id` int(10) unsigned NOT NULL DEFAULT '0',
-  `capture_time` int(10) unsigned NOT NULL DEFAULT '0',
-  `image_id` int(10) unsigned NOT NULL DEFAULT '0',
-  `op1_image_id` int(10) unsigned NOT NULL DEFAULT '0',
-  `op2_image_id` int(10) unsigned NOT NULL DEFAULT '0',
-  `op3_image_id` int(10) unsigned NOT NULL DEFAULT '0',
-  `last_modified` int(10) unsigned DEFAULT NULL,
-  `op4_image_id` int(11) NOT NULL DEFAULT '0',
-  `op5_image_id` int(10) unsigned NOT NULL DEFAULT '0',
-  `op6_image_id` int(10) unsigned NOT NULL DEFAULT '0',
-  `op7_image_id` int(10) unsigned NOT NULL DEFAULT '0',
-  `op8_image_id` int(10) unsigned NOT NULL DEFAULT '0',
-  `op9_image_id` int(10) unsigned NOT NULL DEFAULT '0',
-  `op10_image_id` int(10) unsigned NOT NULL DEFAULT '0',
-  `op11_image_id` int(10) unsigned NOT NULL DEFAULT '0',
-  `op12_image_id` int(10) unsigned NOT NULL DEFAULT '0',
-  `op13_image_id` int(10) unsigned NOT NULL DEFAULT '0',
-  `op14_image_id` int(10) unsigned NOT NULL DEFAULT '0',
-  `op15_image_id` int(10) unsigned NOT NULL DEFAULT '0',
-  `op16_image_id` int(10) unsigned NOT NULL DEFAULT '0',
-  `op17_image_id` int(10) unsigned NOT NULL DEFAULT '0',
-  `op18_image_id` int(10) unsigned NOT NULL DEFAULT '0',
-  `op19_image_id` int(10) unsigned NOT NULL DEFAULT '0',
-  `op20_image_id` int(10) unsigned NOT NULL DEFAULT '0',
-  `op21_image_id` int(10) unsigned NOT NULL DEFAULT '0',
-  `op22_image_id` int(10) unsigned NOT NULL DEFAULT '0',
-  `op23_image_id` int(10) unsigned NOT NULL DEFAULT '0',
-  `op24_image_id` int(10) unsigned NOT NULL DEFAULT '0',
-  `op25_image_id` int(10) unsigned NOT NULL DEFAULT '0',
-  `op26_image_id` int(10) unsigned NOT NULL DEFAULT '0',
-  `op27_image_id` int(10) unsigned NOT NULL DEFAULT '0',
-  `op28_image_id` int(10) unsigned NOT NULL DEFAULT '0',
-  `op29_image_id` int(10) unsigned NOT NULL DEFAULT '0',
-  `op30_image_id` int(10) unsigned NOT NULL DEFAULT '0',
-  `capture_sample_image_id` int(10) unsigned NOT NULL DEFAULT '0' COMMENT 'a link back to the capture sample image from which this region was cut',
-  `problem` bigint(20) unsigned NOT NULL DEFAULT '0',
-  `worm_detection_results_id` int(10) unsigned NOT NULL DEFAULT '0',
-  `worm_interpolation_results_id` int(10) unsigned NOT NULL DEFAULT '0',
-  `currently_under_processing` bigint(20) NOT NULL DEFAULT '0',
-  `worm_movement_id` int(10) unsigned NOT NULL DEFAULT '0',
-  `vertical_image_registration_applied` tinyint(3) unsigned NOT NULL DEFAULT '0',
-  `censored` tinyint(1) NOT NULL DEFAULT '0',
-  `image_statistics_id` bigint(20) unsigned NOT NULL DEFAULT '0',
-  `make_training_set_image_from_frame` int(10) unsigned NOT NULL DEFAULT '0',
-  PRIMARY KEY (`id`),
-  KEY `job_lookup` (`region_info_id`,`problem`,`currently_under_processing`),
-  KEY `movement_index` (`region_info_id`,`worm_movement_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=19364157 DEFAULT CHARSET=latin1 ROW_FORMAT=DYNAMIC;
+--
+-- Table structure for table `sample_region_image_aligned_path_images`
+--
 
--- Data exporting was unselected.
--- Dumping structure for table image_server_archive_2017.sample_region_image_aligned_path_images
-CREATE TABLE IF NOT EXISTS `sample_region_image_aligned_path_images` (
+DROP TABLE IF EXISTS `sample_region_image_aligned_path_images`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `sample_region_image_aligned_path_images` (
   `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
   `region_info_id` int(10) unsigned NOT NULL DEFAULT '0',
   `frame_index` int(10) unsigned NOT NULL DEFAULT '0',
@@ -632,10 +762,16 @@ CREATE TABLE IF NOT EXISTS `sample_region_image_aligned_path_images` (
   PRIMARY KEY (`id`),
   KEY `region_lookup` (`region_info_id`,`frame_index`)
 ) ENGINE=MyISAM AUTO_INCREMENT=571487 DEFAULT CHARSET=latin1;
+/*!40101 SET character_set_client = @saved_cs_client */;
 
--- Data exporting was unselected.
--- Dumping structure for table image_server_archive_2017.sample_region_image_info
-CREATE TABLE IF NOT EXISTS `sample_region_image_info` (
+--
+-- Table structure for table `sample_region_image_info`
+--
+
+DROP TABLE IF EXISTS `sample_region_image_info`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `sample_region_image_info` (
   `mask_region_id` int(10) unsigned NOT NULL DEFAULT '0',
   `details` text NOT NULL,
   `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
@@ -700,11 +836,76 @@ CREATE TABLE IF NOT EXISTS `sample_region_image_info` (
   `op30_image_id` bigint(20) NOT NULL DEFAULT '0',
   PRIMARY KEY (`id`),
   KEY `experiment` (`mask_region_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=56782 DEFAULT CHARSET=latin1 ROW_FORMAT=DYNAMIC COMMENT='InnoDB free: 6144 kB';
+) ENGINE=InnoDB AUTO_INCREMENT=1096 DEFAULT CHARSET=latin1 ROW_FORMAT=DYNAMIC COMMENT='InnoDB free: 6144 kB';
+/*!40101 SET character_set_client = @saved_cs_client */;
 
--- Data exporting was unselected.
--- Dumping structure for table image_server_archive_2017.sample_time_relationships
-CREATE TABLE IF NOT EXISTS `sample_time_relationships` (
+--
+-- Table structure for table `sample_region_images`
+--
+
+DROP TABLE IF EXISTS `sample_region_images`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `sample_region_images` (
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `region_info_id` int(10) unsigned NOT NULL DEFAULT '0',
+  `capture_time` int(10) unsigned NOT NULL DEFAULT '0',
+  `image_id` int(10) unsigned NOT NULL DEFAULT '0',
+  `op1_image_id` int(10) unsigned NOT NULL DEFAULT '0',
+  `op2_image_id` int(10) unsigned NOT NULL DEFAULT '0',
+  `op3_image_id` int(10) unsigned NOT NULL DEFAULT '0',
+  `last_modified` int(10) unsigned DEFAULT NULL,
+  `op4_image_id` int(11) NOT NULL DEFAULT '0',
+  `op5_image_id` int(10) unsigned NOT NULL DEFAULT '0',
+  `op6_image_id` int(10) unsigned NOT NULL DEFAULT '0',
+  `op7_image_id` int(10) unsigned NOT NULL DEFAULT '0',
+  `op8_image_id` int(10) unsigned NOT NULL DEFAULT '0',
+  `op9_image_id` int(10) unsigned NOT NULL DEFAULT '0',
+  `op10_image_id` int(10) unsigned NOT NULL DEFAULT '0',
+  `op11_image_id` int(10) unsigned NOT NULL DEFAULT '0',
+  `op12_image_id` int(10) unsigned NOT NULL DEFAULT '0',
+  `op13_image_id` int(10) unsigned NOT NULL DEFAULT '0',
+  `op14_image_id` int(10) unsigned NOT NULL DEFAULT '0',
+  `op15_image_id` int(10) unsigned NOT NULL DEFAULT '0',
+  `op16_image_id` int(10) unsigned NOT NULL DEFAULT '0',
+  `op17_image_id` int(10) unsigned NOT NULL DEFAULT '0',
+  `op18_image_id` int(10) unsigned NOT NULL DEFAULT '0',
+  `op19_image_id` int(10) unsigned NOT NULL DEFAULT '0',
+  `op20_image_id` int(10) unsigned NOT NULL DEFAULT '0',
+  `op21_image_id` int(10) unsigned NOT NULL DEFAULT '0',
+  `op22_image_id` int(10) unsigned NOT NULL DEFAULT '0',
+  `op23_image_id` int(10) unsigned NOT NULL DEFAULT '0',
+  `op24_image_id` int(10) unsigned NOT NULL DEFAULT '0',
+  `op25_image_id` int(10) unsigned NOT NULL DEFAULT '0',
+  `op26_image_id` int(10) unsigned NOT NULL DEFAULT '0',
+  `op27_image_id` int(10) unsigned NOT NULL DEFAULT '0',
+  `op28_image_id` int(10) unsigned NOT NULL DEFAULT '0',
+  `op29_image_id` int(10) unsigned NOT NULL DEFAULT '0',
+  `op30_image_id` int(10) unsigned NOT NULL DEFAULT '0',
+  `capture_sample_image_id` int(10) unsigned NOT NULL DEFAULT '0' COMMENT 'a link back to the capture sample image from which this region was cut',
+  `problem` bigint(20) unsigned NOT NULL DEFAULT '0',
+  `worm_detection_results_id` int(10) unsigned NOT NULL DEFAULT '0',
+  `worm_interpolation_results_id` int(10) unsigned NOT NULL DEFAULT '0',
+  `currently_under_processing` tinyint(1) NOT NULL DEFAULT '0',
+  `worm_movement_id` int(10) unsigned NOT NULL DEFAULT '0',
+  `vertical_image_registration_applied` tinyint(3) unsigned NOT NULL DEFAULT '0',
+  `censored` tinyint(1) NOT NULL DEFAULT '0',
+  `image_statistics_id` bigint(20) unsigned NOT NULL DEFAULT '0',
+  `make_training_set_image_from_frame` int(10) unsigned NOT NULL DEFAULT '0',
+  PRIMARY KEY (`id`),
+  KEY `job_lookup` (`region_info_id`,`problem`,`currently_under_processing`),
+  KEY `movement_index` (`region_info_id`,`worm_movement_id`)
+) ENGINE=InnoDB AUTO_INCREMENT=383482 DEFAULT CHARSET=latin1 ROW_FORMAT=DYNAMIC;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `sample_time_relationships`
+--
+
+DROP TABLE IF EXISTS `sample_time_relationships`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `sample_time_relationships` (
   `time` bigint(20) unsigned NOT NULL DEFAULT '0',
   `previous_short` bigint(20) unsigned NOT NULL DEFAULT '0',
   `previous_long` bigint(20) unsigned NOT NULL DEFAULT '0' COMMENT 'previous long-interval time point',
@@ -713,10 +914,16 @@ CREATE TABLE IF NOT EXISTS `sample_time_relationships` (
   `sample_id` bigint(20) unsigned NOT NULL DEFAULT '0',
   KEY `sample_time` (`sample_id`,`time`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+/*!40101 SET character_set_client = @saved_cs_client */;
 
--- Data exporting was unselected.
--- Dumping structure for table image_server_archive_2017.strain_aliases
-CREATE TABLE IF NOT EXISTS `strain_aliases` (
+--
+-- Table structure for table `strain_aliases`
+--
+
+DROP TABLE IF EXISTS `strain_aliases`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `strain_aliases` (
   `strain` text NOT NULL,
   `genotype` text NOT NULL,
   `conditions` text NOT NULL,
@@ -724,11 +931,17 @@ CREATE TABLE IF NOT EXISTS `strain_aliases` (
   `used_in_cluster` tinyint(1) NOT NULL DEFAULT '0',
   PRIMARY KEY (`id`),
   KEY `s` (`used_in_cluster`,`strain`(15)) USING BTREE
-) ENGINE=MyISAM AUTO_INCREMENT=12194 DEFAULT CHARSET=latin1;
+) ENGINE=MyISAM AUTO_INCREMENT=12178 DEFAULT CHARSET=latin1;
+/*!40101 SET character_set_client = @saved_cs_client */;
 
--- Data exporting was unselected.
--- Dumping structure for table image_server_archive_2017.worm_detection_results
-CREATE TABLE IF NOT EXISTS `worm_detection_results` (
+--
+-- Table structure for table `worm_detection_results`
+--
+
+DROP TABLE IF EXISTS `worm_detection_results`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `worm_detection_results` (
   `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
   `source_image_id` bigint(20) unsigned NOT NULL DEFAULT '0',
   `capture_sample_id` bigint(20) unsigned NOT NULL DEFAULT '0',
@@ -750,11 +963,17 @@ CREATE TABLE IF NOT EXISTS `worm_detection_results` (
   `data_storage_on_disk_id` bigint(20) unsigned NOT NULL COMMENT 'Worm segment info can be stored in this db, or alternatively saved to disk with filename information provided by the image table row number worm_segment_information_id ',
   PRIMARY KEY (`id`),
   KEY `reverse_sample_lookup` (`capture_sample_id`)
-) ENGINE=MyISAM AUTO_INCREMENT=22400523 DEFAULT CHARSET=latin1 CHECKSUM=1 COMMENT='myISAM';
+) ENGINE=MyISAM AUTO_INCREMENT=11517007 DEFAULT CHARSET=latin1 CHECKSUM=1 COMMENT='myISAM';
+/*!40101 SET character_set_client = @saved_cs_client */;
 
--- Data exporting was unselected.
--- Dumping structure for table image_server_archive_2017.worm_movement
-CREATE TABLE IF NOT EXISTS `worm_movement` (
+--
+-- Table structure for table `worm_movement`
+--
+
+DROP TABLE IF EXISTS `worm_movement`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `worm_movement` (
   `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
   `sample_id` int(10) unsigned NOT NULL DEFAULT '0',
   `region_info_id` int(10) unsigned NOT NULL DEFAULT '0',
@@ -780,8 +999,15 @@ CREATE TABLE IF NOT EXISTS `worm_movement` (
   PRIMARY KEY (`id`),
   KEY `region_time` (`region_info_id`,`time`)
 ) ENGINE=MyISAM AUTO_INCREMENT=428056 DEFAULT CHARSET=latin1;
+/*!40101 SET character_set_client = @saved_cs_client */;
+/*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 
--- Data exporting was unselected.
-/*!40101 SET SQL_MODE=IFNULL(@OLD_SQL_MODE, '') */;
-/*!40014 SET FOREIGN_KEY_CHECKS=IF(@OLD_FOREIGN_KEY_CHECKS IS NULL, 1, @OLD_FOREIGN_KEY_CHECKS) */;
+/*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
+/*!40014 SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS */;
+/*!40014 SET UNIQUE_CHECKS=@OLD_UNIQUE_CHECKS */;
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
+/*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
+/*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
+/*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
+
+-- Dump completed on 2018-07-26 12:06:02

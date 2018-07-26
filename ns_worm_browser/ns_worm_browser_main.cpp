@@ -1192,7 +1192,7 @@ class ns_worm_terminal_main_menu_organizer : public ns_menu_organizer{
 	*****************************/
 	
 	static void set_database(const std::string & data){
-		image_server.set_sql_database(data,false,worm_learner.get_sql_connection());
+		image_server.set_sql_database(data,false,&worm_learner.get_sql_connection());
 		cerr << "Switching to database " << data << "\n";
 		//ns_thread::sleep(15);
 		get_menu_handler()->update_experiment_choice(*get_menu_bar());
@@ -2874,14 +2874,14 @@ int main() {
 			
 			ns_worm_browser_output_debug(__LINE__,__FILE__,"Getting flags from db");
 			ns_acquire_for_scope<ns_sql> sql(image_server.new_sql_connection(__FILE__,__LINE__));
-			ns_death_time_annotation_flag::get_flags_from_db(sql());
+			ns_death_time_annotation_flag::get_flags_from_db(&sql());
 
 	
 			ns_worm_browser_output_debug(__LINE__,__FILE__,"Refreshing partition cache");
 			image_server.image_storage.refresh_experiment_partition_cache(&sql());
 			
 			ns_worm_browser_output_debug(__LINE__,__FILE__,"Getting flags from db again");
-			ns_death_time_annotation_flag::get_flags_from_db(sql());
+			ns_death_time_annotation_flag::get_flags_from_db(&sql());
 
 			cerr << "Loading the experiment list...";
 			worm_learner.data_selector.load_experiment_names(sql());

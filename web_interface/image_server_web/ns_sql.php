@@ -7,7 +7,7 @@
 			$this->name = $sql_name;
 			$this->pwd = $sql_pwd;
 			$this->db = $sql_db;
-			echo $sql_db;
+			//echo $sql_db;
 			$this->link = mysqli_connect($this->server, $this->name, $this->pwd, $this->db);
 			if ($this->link === FALSE) 
 			  throw new ns_exception("Could not connect : " . mysqli_error($this->link));

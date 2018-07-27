@@ -629,6 +629,7 @@ if (sizeof($unregistered_device_inventory) > 0){
 	$incubator = "<b>[Undocumented Attached Devices]</b>";
 	echo "<tr><td bgcolor=\"$clrs[0]\" colspan = 6>$incubator</td></tr>\n";
 }
+$clrs = $table_colors[0]
 foreach ($unregistered_device_inventory as $device){
 	$clrs = $table_colors[$k%2];
 	$dev =& $unregistered_device_inventory[$device[0]];

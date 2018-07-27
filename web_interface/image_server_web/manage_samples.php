@@ -402,6 +402,7 @@ if ($hide_censored)
   $query.=" AND r.censored = 0 ";
 $query .= " ORDER BY s.id,r.name";
 $sql->get_row($query,$all_results);
+//var_dump($all_results);
 $all_region_job_results = array();
 if ($show_region_jobs){
   $query = $job->provide_query_stub();
@@ -410,20 +411,25 @@ if ($show_region_jobs){
   $sjobs = array();
   $sql->get_row($query,$all_region_job_results);
 }
-$current_region_job_index = 0;
+
+#echo sizeof($all_results) . "<BR>";
+	$current_region_job_index = 0;
     $start_range = 0;
-    if (sizeof($all_results) > 0)
+    if (sizeof($all_results) > 0) 
         $cur_sample_id = $all_results[0][16];
-    for ($i = 0; $i < sizeof($all_results); $i++){
-      #echo $cur_sample_id . ": ";
-      if ($all_results[$i][16] != $cur_sample_id || $i+1 == sizeof($all_results)){
+    for ($i = 0; $i < sizeof($all_results)+1; $i++){
+      //echo $i . " " . $cur_sample_id . ": ";
+      if ($i == sizeof($all_results) || $all_results[$i][16] != $cur_sample_id){
 	$rrr =&$regions[ $cur_sample_id ];
+	
 	$stop = $i-1;
-	if ($i+1 == sizeof($all_results))
-	  $stop = $i;
+	//echo $cur_sample_id . " " . $start_range . " " . $stop . "<BR>";
 	$rrr = array_slice($all_results,$start_range,$stop-$start_range+1);
-	$cur_sample_id = $all_results[$i][16];
-	$start_range = $i;
+	//echo "<BR>";
+	if ($i != sizeof($all_results)){
+	   $cur_sample_id = $all_results[$i][16];
+		       $start_range = $i;
+	}
 	//get jobs that apply to individual samples
 	for ($k = 0; $k < sizeof( $rrr ); $k++){
 	  $cur_region =& $rrr[$k];
@@ -947,6 +953,8 @@ echo "<a href=\"view_processing_queue_status.php\">[View Running Processing Jobs
 		         echo "<tr>";
                         echo "<td bgcolor=\"$clrs[0]\" nowrap valign=\"top\" colspan = 4>";
 			echo "No Regions identified in this sample";
+			//var_dump($cur_sample_id);
+			//var_dump($regions);
 			echo "</td></tr>";
 		}else 
 		for ($k = 0; $k < sizeof($regions[$cur_sample_id]); $k++){

@@ -411,11 +411,10 @@ if ($show_region_jobs){
   $sjobs = array();
   $sql->get_row($query,$all_region_job_results);
 }
-
-#echo sizeof($all_results) . "<BR>";
-	$current_region_job_index = 0;
+    $current_region_job_index = 0;
     $start_range = 0;
-    if (sizeof($all_results) > 0) 
+ 
+   if (sizeof($all_results) > 0) {
         $cur_sample_id = $all_results[0][16];
     for ($i = 0; $i < sizeof($all_results)+1; $i++){
       //echo $i . " " . $cur_sample_id . ": ";
@@ -487,6 +486,7 @@ if ($show_region_jobs){
 	}
       }
     }
+}
     //var_dump($region_jobs);
   ksort($all_animal_type_values);
   ksort($environment_condition_values);

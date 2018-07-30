@@ -208,7 +208,7 @@ $clrs = $table_colors[0];
 <?php
 	$cur_time = ns_current_time();
 	if (sizeof($processing_job_queue) == 0){
-	 echo "<tr><td valign=\"top\" bgcolor=\"".$clrs[0] . "\"> There do not appear to be any items on the job queue</td></tr>";
+	 echo "<tr><td valign=\"top\" bgcolor=\"".$clrs[0] . "\" colspan=5> There do not appear to be any items on the job queue</td></tr>";
 }
 
 	for ($i = 0; $i < sizeof($processing_job_queue); $i++){
@@ -291,7 +291,7 @@ $clrs = $table_colors[0];
 ?>
 <tr <?php echo $table_header_color?>><td colspan=5>
 <div align="right"><?php
-echo "Showing " . $queue_limit . " of " . $queue_size . " items. ";
+echo "Showing " . min($queue_limit,$queue_size) . " of " . $queue_size . " items. ";
 if (sizeof($processing_job_queue) >= $queue_limit) echo "<a href=\"view_processing_queue_status.php?queue_lim=" . 5*$queue_limit . "\">[View more]</a>";
 ?></div></td></tr>
 </tr></table></td></tr></table>

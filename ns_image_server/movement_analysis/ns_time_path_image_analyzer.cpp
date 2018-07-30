@@ -2793,8 +2793,7 @@ void ns_analyzed_image_time_path::detect_death_times_and_generate_annotations_fr
 	//	slow_movement_entrance_interval = time_path_limits.interval_before_first_observation;
 	//else slow_movement_entrance_interval = state_entrance_interval_time(slow_moving_interval);
 	
-	//if (path_id.group_id == 28)
-	//	cerr << "MA";
+	
 	ns_death_time_annotation::ns_exclusion_type exclusion_type(ns_death_time_annotation::ns_not_excluded);
 	if (!reason_to_be_censored.empty()){
 		exclusion_type = ns_death_time_annotation::ns_censored;
@@ -2811,7 +2810,8 @@ void ns_analyzed_image_time_path::detect_death_times_and_generate_annotations_fr
 		path_id,part_of_a_full_trace,elements[first_valid_element_id.period_start_index].inferred_animal_location, elements[first_valid_element_id.period_start_index].subregion_info,reason_to_be_censored,loglikelihood_of_solution,longest_skipped_interval_before_death));
 	
 	//observations are made at specific times (i.e. we see a fast moving worm at this time)
-	for (unsigned int i = slow_moving_interval_including_missed_states.entrance_interval.period_end_index; i < slow_moving_interval_including_missed_states.entrance_interval.period_end_index; i++){
+	for (unsigned int i = slow_moving_interval_including_missed_states.entrance_interval.period_end_index; i < slow_moving_interval_including_missed_states.exit_interval.period_end_index; i++){
+
 		if (elements[i].excluded) continue;
 
 		set.add(

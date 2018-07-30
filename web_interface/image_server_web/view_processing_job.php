@@ -85,6 +85,10 @@ try{
 	$image_id = $specified_job->image_id;
 	$all_samples = FALSE;
 	$all_regions = FALSE;
+	$query = "SELECT name FROM sample_region_image_info WHERE id = " . $region_id;
+	$sql->get_row($query,$results);
+	if (sizeof($results)>0)
+	$region_name_hash[$region_id] = $results[0][0];
   }
 else{
 	$experiment_id = $specified_experiment_id;

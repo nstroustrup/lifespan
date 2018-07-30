@@ -274,9 +274,8 @@ function delete_mask($mask_id, &$sql){
 }
 
 function ns_display_megabytes($i,$display_mb=FALSE){
-	if ($display_mb===TRUE) $mb = "Mb";
 	if ($i === 0) return "";
-	if ($i < 1024) return ("$i" . $mb);
+	if ($i < 1024) return ("$i" . "Mb");
 	if ($i < 1024*1024) return round($i/1024,1) . "Gb";
 	return round($i/(1024*1024),1) . "Tb";
 }

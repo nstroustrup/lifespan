@@ -270,7 +270,7 @@ $clrs = $table_colors[0];
        echo "<td valign=\"top\" bgcolor=\"".$clrs[0] . "\">";
        echo $ft1;
        if ($job_is_busy)
-       	echo "<a href=\"view_hosts_log.php?host_id=" . $host_id . "\">(Busy)</a>";
+       	echo "<a href=\"view_cluster_status.php?h=" . $host_id . "&view_offline_hosts=1\">(Busy)</a>";
        if ($job_is_problem)
        	echo "<a href=\"view_hosts_log.php?event_id=" . $queue[9] . "\">(Problem)</a>";
        if ($job_is_paused)

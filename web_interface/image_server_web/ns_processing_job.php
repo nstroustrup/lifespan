@@ -699,7 +699,7 @@ class ns_processing_job{
 	  $res = "";
 	  if ($this->operations[$ns_processing_tasks["ns_process_compile_video"]] != 0){
 		    $vid = 1;
-		    $res .= "Compile Video";
+		    $res .= "Compile Video: ";
 	  }
 
 	  if ($this->maintenance_task != 0){

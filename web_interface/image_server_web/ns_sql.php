@@ -9,7 +9,7 @@
 			$this->db = $sql_db;
 			//echo $sql_db;
 			$this->link = mysqli_connect($this->server, $this->name, $this->pwd, $this->db);
-			if ($this->link === FALSE) 
+			if ($this->link === FALSE)
 			  throw new ns_exception("Could not connect : " . mysqli_error($this->link));
 		}
 
@@ -20,7 +20,10 @@
 			$this->disconnect();
 			$this->connect($this->server,$this->name,$this->pwd,$this->db);
 		}
-		
+		function escape_string($text){
+			return mysqli_real_escape_string($this->link,$text);
+		}
+
 		//place sql results in a 2x2 matrix $result.
 		function get_row(&$query,&$result, $debug = FALSE){
 			$result = array();
@@ -31,7 +34,7 @@
 			while($row = mysqli_fetch_row($res1)){
 				if ($debug)
 					echo ("Getting row.<BR>");
-				$result[$i] = $row;																																																																			
+				$result[$i] = $row;
 				$i = $i+1;
 			}
 			if ($debug)
@@ -48,7 +51,7 @@
 				$result = $res[0];
 			 else throw new ns_exception("Query returned $size results: $query.  Only one expected.");
 		}
-		
+
 		function get_value(&$query,&$result,$debug=FALSE){
 			$this->get_single_row($query,$res,$debug);
 			$result = $res[0];
@@ -62,8 +65,8 @@
 			$res1 = mysqli_query($this->link, $query) or die("Query failed : $query<br>\n" . mysqli_error($this->link));
 			if ($res1 != TRUE && $res1 != FALSE)
 				throw new ns_exception("Query returned results: $query");
-		}		
-		
+		}
+
 		function send_query_get_id(&$query, $debug = FALSE){
 			$this->send_query($query,$debug);
 			$query2 = "SELECT @@identity";

@@ -230,31 +230,31 @@ $region_strain_condition_2 = array();
      $conditions_string = '';
      //  die ($censored_string);
      if ($strain_specified)
-       $conditions_string .= "STRCMP(LOWER(ri.strain),LOWER('".mysqli_real_escape_string($strain_specification)."'))=0 AND ";
-     
+       $conditions_string .= "STRCMP(LOWER(ri.strain),LOWER('".$sql->escape_string($strain_specification)."'))=0 AND ";
+
      if ($condition_1_specified)
-       $conditions_string .= "STRCMP(LOWER(ri.strain_condition_1),LOWER('".mysqli_real_escape_string($condition_1)."'))=0 AND ";
+       $conditions_string .= "STRCMP(LOWER(ri.strain_condition_1),LOWER('".$sql->escape_string($condition_1)."'))=0 AND ";
 
       if ($condition_2_specified)
-	$conditions_string.= "STRCMP(LOWER(ri.strain_condition_2),LOWER('".mysqli_real_escape_string($condition_2)."'))=0 AND ";
-    
+	$conditions_string.= "STRCMP(LOWER(ri.strain_condition_2),LOWER('".$sql->escape_string($condition_2)."'))=0 AND ";
+
       if ($condition_3_specified)
-	$conditions_string .= "STRCMP(LOWER(ri.strain_condition_3),LOWER('".mysqli_real_escape_string($condition_3)."'))=0 AND ";
+	$conditions_string .= "STRCMP(LOWER(ri.strain_condition_3),LOWER('".$sql->escape_string($condition_3)."'))=0 AND ";
 
       if ($device_specified)
-	$conditions_string .= "STRCMP(LOWER(s.device_name),LOWER('".mysqli_real_escape_string($device)."'))=0 AND ";
+	$conditions_string .= "STRCMP(LOWER(s.device_name),LOWER('".$sql->escape_string($device)."'))=0 AND ";
 
       if ($culturing_temperature_specified)
-	$conditions_string .= "STRCMP(LOWER(ri.culturing_temperature),LOWER('".mysqli_real_escape_string($culturing_temperature)."'))=0 AND ";
+	$conditions_string .= "STRCMP(LOWER(ri.culturing_temperature),LOWER('".$sql->escape_string($culturing_temperature)."'))=0 AND ";
 
       if ($experiment_temperature_specified)
-	$conditions_string .= "STRCMP(LOWER(ri.experiment_temperature),LOWER('".mysqli_real_escape_string($experiment_temperature)."'))=0 AND ";
+	$conditions_string .= "STRCMP(LOWER(ri.experiment_temperature),LOWER('".$sql->escape_string($experiment_temperature)."'))=0 AND ";
 
       if ($food_source_specified)
-	$conditions_string .= "STRCMP(LOWER(ri.food_source),LOWER('".mysqli_real_escape_string($food_source)."'))=0 AND ";
+	$conditions_string .= "STRCMP(LOWER(ri.food_source),LOWER('".$sql->escape_string($food_source)."'))=0 AND ";
 
       if ($environment_conditions_specified)
-	$conditions_string .= "STRCMP(LOWER(ri.environmental_conditions),LOWER('".mysqli_real_escape_string($environment_conditions)."'))=0 AND ";
+	$conditions_string .= "STRCMP(LOWER(ri.environmental_conditions),LOWER('".$sql->escape_string($environment_conditions)."'))=0 AND ";
 
 
       $query = "SELECT ri.id, s.id,s.experiment_id, ri.name, ri.time_at_which_animals_had_zero_age,ri.time_of_last_valid_sample, ri.strain, ri.strain_condition_1,ri.strain_condition_2, ri.strain_condition_3, ri.culturing_temperature,ri.experiment_temperature,ri.food_source,ri.environmental_conditions FROM sample_region_image_info as ri, capture_samples as s WHERE $censored_string  $conditions_string ri.sample_id=" . $cur_sample . " AND ri.sample_id = s.id";
@@ -384,7 +384,7 @@ $region_strain_condition_2 = array();
     $sql->get_row($query,$smp_name);
     if (sizeof($smp_name) == 0)
       die("No sample name found for region");
-     
+
     $region_start_times[$region_id] = $smp_name[0][3];
     $region_end_times[$region_id] = $smp_name[0][4];
     $region_name_hash[$region_id] = $smp_name[0][2];
@@ -397,7 +397,7 @@ $region_strain_condition_2 = array();
         $region_experiment_temperature[$region_id] = $smp_name[0][10];
         $region_food_source[$region_id] = $smp_name[0][11];
         $region_environment_conditions[$region_id] = $smp_name[0][12];
-    
+
 
 
 
@@ -638,14 +638,14 @@ $region_strain_condition_2 = array();
 
 
     $vals = array();
-    if ($set_strain) array_push($vals,"strain='" .mysql_real_escape_string($strain)."'");
-    if ($set_strain_condition_1) array_push($vals,"strain_condition_1='" .mysql_real_escape_string($strain_condition_1)."'");
-    if ($set_strain_condition_2) array_push($vals,"strain_condition_2='" .mysql_real_escape_string($strain_condition_2)."'");
-    if ($set_strain_condition_3) array_push($vals,"strain_condition_3='" .mysql_real_escape_string($strain_condition_3)."'");
-    if ($set_culturing_temperature) array_push($vals,"culturing_temperature='" .mysql_real_escape_string($culturing_temperature)."'");
-    if ($set_experiment_temperature) array_push($vals,"experiment_temperature='" .mysql_real_escape_string($experiment_temperature)."'");
-    if ($set_food_source) array_push($vals,"food_source='" .mysql_real_escape_string($food_source)."'");
-    if ($set_environment_conditions) array_push($vals,"environmental_conditions='" .mysql_real_escape_string($environment_conditions)."'");
+    if ($set_strain) array_push($vals,"strain='" .$sql->escape_string($strain)."'");
+    if ($set_strain_condition_1) array_push($vals,"strain_condition_1='" .$sql->escape_string($strain_condition_1)."'");
+    if ($set_strain_condition_2) array_push($vals,"strain_condition_2='" .$sql->escape_string($strain_condition_2)."'");
+    if ($set_strain_condition_3) array_push($vals,"strain_condition_3='" .$sql->escape_string($strain_condition_3)."'");
+    if ($set_culturing_temperature) array_push($vals,"culturing_temperature='" .$sql->escape_string($culturing_temperature)."'");
+    if ($set_experiment_temperature) array_push($vals,"experiment_temperature='" .$sql->escape_string($experiment_temperature)."'");
+    if ($set_food_source) array_push($vals,"food_source='" .$sql->escape_string($food_source)."'");
+    if ($set_environment_conditions) array_push($vals,"environmental_conditions='" .$sql->escape_string($environment_conditions)."'");
     if ($set_start_time) array_push($vals,"time_at_which_animals_had_zero_age='$start_time'");
     if ($set_end_time_date)   array_push($vals,"time_of_last_valid_sample='$end_time_date'");
 
@@ -855,7 +855,7 @@ for ($i = 0; $i < sizeof($jobs); $i++){
       $jobs[$i]->subregion_start_time = @$_POST['subregion_start_time'];
       $jobs[$i]->subregion_stop_time = @$_POST['subregion_stop_time'];
       $jobs[$i]->generate_video_at_high_res = @$_POST['generate_video_at_high_res'];
-   
+
     //  echo "Submitting job " . $i . "<BR>";
       $jobs[$i]->save_to_db($sql);
       $jobs[$i]->load_from_db($jobs[$i]->id,$sql);
@@ -1098,7 +1098,7 @@ for ($i = 0; $i < sizeof($jobs); $i++){
     $target_text = '';
     for ($i = 0; $i < sizeof($jobs); $i++){
       if ($jobs[$i]->experiment_id != $last_experiment_id){
-	
+
 	if (!$out_first_experiment){
 	  if ($jobs[$i]->sample_id != 0) $target_text .= "<font size=\"+1\"> ]</font>";
 	  $target_text.="<BR>";
@@ -1451,7 +1451,7 @@ else{
 				      <td>h</td><td><input size=4 name="subregion_height" value="<?php echo $jobs[0]->subregion_height;?>"></td>
 				      <td>t_stop</td>
 				      <td><input size=10 name="subregion_stop_time" value="<?php echo $jobs[0]->subregion_stop_time;?>"></td></tr>
-<tr><td colspan="2"><select name="generate_video_at_high_res"> 
+<tr><td colspan="2"><select name="generate_video_at_high_res">
                                        <?php
 
    echo "<option value=\"0\"";

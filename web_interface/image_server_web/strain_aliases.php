@@ -87,7 +87,7 @@ if (ns_param_spec($_POST,'edit') && $_POST['edit'] =='1'){
     else
       $query = "UPDATE strain_aliases ";
 
-    $query .= "SET strain='" . mysql_real_escape_string($d[0]) . "', genotype='".mysql_real_escape_string($d[1])."', conditions='".mysql_real_escape_string($d[2])."'";
+    $query .= "SET strain='" . mysqli_real_escape_string($sql->link,($d[0]) . "', genotype='".mysqli_real_escape_string($sql->link,($d[1])."', conditions='".mysqli_real_escape_string($sql->link,($d[2])."'";
 
     if (!$insert) $query .= " WHERE id = $id ";
     //       echo $query . "<BR>";
@@ -102,8 +102,8 @@ if (ns_param_spec($_POST,'edit') && $_POST['edit'] =='1'){
 	 //		var_dump($known_strains_by_id);
 	 //		echo "<BR>$id<br>";
 	 $query = "UPDATE sample_region_image_info as r, capture_samples as s "
-	   . "SET r.strain = '" . mysql_real_escape_string($d[0]) .
-	   "' WHERE r.strain='" . mysql_real_escape_string($known_strains_by_id[$id])
+	   . "SET r.strain = '" . mysqli_real_escape_string($sql->link,($d[0]) .
+	   "' WHERE r.strain='" . mysqli_real_escape_string($sql->link,($known_strains_by_id[$id])
 	   . "' AND r.sample_id = s.id AND s.experiment_id = $experiment_id";
 	 $sql->send_query($query);
        }

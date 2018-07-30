@@ -2217,28 +2217,29 @@ void ns_time_path_solver::load_detection_results(ns_64_bit region_id,ns_sql & sq
 		sql << "SELECT worm_detection_results_id,capture_time, id FROM sample_region_images WHERE region_info_id = " 
 			<< region_id;
 		sql.get_rows(res);
-		ns_global_debug(ns_text_stream_t("ns_time_path_solver::load():Images in region: ")<<res.size());
+		image_server.add_subtext_to_current_event( (ns_text_stream_t("ns_time_path_solver::No valid images were found in this region.  Some additional information:\n"
+																	 "Total number of images in region: ")<<res.size() << "\n").text(),&sql);
 
 		sql << "SELECT worm_detection_results_id,capture_time, id FROM sample_region_images WHERE region_info_id = " 
 			<< region_id << " AND worm_detection_results_id != 0";
 		sql.get_rows(res);
-		ns_global_debug(ns_text_stream_t("ns_time_path_solver::load():Images with worm detection complete: ")<<res.size());
+		image_server.add_subtext_to_current_event((ns_text_stream_t("Number of images with worm detection completed: ")<<res.size() << "\n").text(), &sql);
 
 		sql << "SELECT worm_detection_results_id,capture_time, id FROM sample_region_images WHERE region_info_id = " 
 			<< region_id << " AND worm_detection_results_id != 0 AND problem = 0";
 		sql.get_rows(res);
-		ns_global_debug(ns_text_stream_t("ns_time_path_solver::load():Images without problem flag: ")<<res.size());
+		image_server.add_subtext_to_current_event((ns_text_stream_t("Number of images without problem flag: ")<<res.size() << "\n").text(), &sql);
 
 		sql << "SELECT worm_detection_results_id,capture_time, id FROM sample_region_images WHERE region_info_id = " 
 			<< region_id << " AND worm_detection_results_id != 0 AND problem = 0 AND currently_under_processing = 0";
 		sql.get_rows(res);
-		ns_global_debug(ns_text_stream_t("ns_time_path_solver::load():Images not being processed ")<<res.size());
+		image_server.add_subtext_to_current_event((ns_text_stream_t("Number of images not being processed ")<<res.size() << "\n").text(), &sql);
 
 		sql << "SELECT worm_detection_results_id,capture_time, id FROM sample_region_images WHERE region_info_id = " 
 		<< region_id << " AND worm_detection_results_id != 0 AND problem = 0 AND currently_under_processing = 0 "
 		<< "AND censored = 0";
 		sql.get_rows(res);
-		ns_global_debug(ns_text_stream_t("ns_time_path_solver::load():Images not censored ")<<res.size());
+		image_server.add_subtext_to_current_event((ns_text_stream_t("Number of images not censored: ")<<res.size() << "\n").text(), &sql);
 	}
 	timepoints.reserve(time_point_result.size());
 	set<long> times;

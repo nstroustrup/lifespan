@@ -633,15 +633,29 @@ void ns_movement_visualization_generator::create_time_path_analysis_visualizatio
 
 	std::vector<const ns_death_time_annotation *> representative_state_event_for_location(compiler_region.locations.size(),0);
 	for (unsigned int i = 0; i < compiler_region.locations.size(); i++){
+	//	ofstream out("c:\\server\\pos_debug.csv");
+	//	out << "j,animal_id,event_type,time_start,time_end, desired_time, match\n";
+	//	bool found(false);
 		for (unsigned int j = 0; j < compiler_region.locations[i].annotations.size(); j++){
+	//		if (!found && compiler_region.locations[i].annotations[j].stationary_path_id.group_id == 23) {
+	//			found = true;
+	//			cout << "Found";
+	//		}
+	//		out << j << "," << compiler_region.locations[i].annotations[j].stationary_path_id.group_id  << "," << compiler_region.locations[i].annotations[j].type << "," << compiler_region.locations[i].annotations[j].time.period_start << "," << compiler_region.locations[i].annotations[j].time.period_end << "," << region_image.capture_time << ",";
 			if (ns_movement_event_is_a_state_observation(compiler_region.locations[i].annotations[j].type) && 
 								compiler_region.locations[i].annotations[j].time.period_end == region_image.capture_time){
+	//			out << "YES";
 				if (representative_state_event_for_location[i] != 0){
 					cerr << "Found multiple state events for a time!\n";
 				}
 				else representative_state_event_for_location[i] = &compiler_region.locations[i].annotations[j];
 			}
+	//		else out << "No";
+	//		out << "\n";
 		}
+	//	out.close();
+	//	if (representative_state_event_for_location[i] == 0)
+	//		cerr << "Could not find representitive state event for location";
 	}
 	
 	std::vector<const ns_death_time_annotation *> fast_moving_animal_matches(detected_worms.size(),0);
@@ -661,28 +675,36 @@ void ns_movement_visualization_generator::create_time_path_analysis_visualizatio
 	std::vector<ns_death_time_annotation_compiler_region::ns_location_list::const_iterator> location_matches(detected_worms.size(),compiler_region.locations.end());
 	unsigned long unmatched_detected_worms(0);
 	for (unsigned long w = 0; w < detected_worms.size(); w++){
-		for (unsigned int i = 0; i < representative_state_event_for_location.size(); i++){
+		double min_dist(1000000);
+		double min_size_diff(1000000);
+		for (unsigned int i = 0; i < representative_state_event_for_location.size(); i++) {
 			if (representative_state_event_for_location[i] == 0)
 				continue;
+			double d1((detected_worms[w]->region_position_in_source_image - representative_state_event_for_location[i]->position).mag());
+			if (d1 < min_dist)min_dist = d1;
+			double d2((detected_worms[w]->region_size - representative_state_event_for_location[i]->size).mag());
+			if (d2 < min_size_diff)min_size_diff = d2;
 			if (detected_worms[w]->region_size == representative_state_event_for_location[i]->size &&
-				detected_worms[w]->region_position_in_source_image == representative_state_event_for_location[i]->position){
-					if(location_matches[w] != compiler_region.locations.end()){
-						cerr << "Found multiple locations that match detected worm!\n";
-					}
-					else{
-						//for debugging
-						locations_matched[i] = 1;
-						locations_with_matches++;
-						//for real use
-						location_matches[w] = compiler_region.locations.begin()+i;
-					}
+				detected_worms[w]->region_position_in_source_image == representative_state_event_for_location[i]->position) {
+				if (location_matches[w] != compiler_region.locations.end()) {
+					image_server_const.add_subtext_to_current_event("Found multiple locations that match detected worm!\n,",&sql);
+				}
+				else {
+					//for debugging
+					locations_matched[i] = 1;
+					locations_with_matches++;
+					//for real use
+					location_matches[w] = compiler_region.locations.begin() + i;
+				}
 			}
 		}
-		if (fast_moving_animal_matches[w] == 0 && location_matches[w]== compiler_region.locations.end())
+		if (fast_moving_animal_matches[w] == 0 && location_matches[w] == compiler_region.locations.end()) {
+		//	cout << min_dist << " " << min_size_diff << "\n";
 			unmatched_detected_worms++;
+		}
 	}
 	if (unmatched_detected_worms > 0)
-		cerr << "Could not match up " << unmatched_detected_worms << " of " << detected_worms.size() << " animals.\n";
+		image_server_const.add_subtext_to_current_event((ns_ex() << "Could not match up " << unmatched_detected_worms << " of " << detected_worms.size() << " animals.\n").text(),&sql);
 	
 	for (unsigned long w = 0; w < detected_worms.size(); w++){
 		const ns_death_time_annotation_compiler_region::ns_location_list::const_iterator location(location_matches[w]);

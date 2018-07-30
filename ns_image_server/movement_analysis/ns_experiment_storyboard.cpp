@@ -793,11 +793,11 @@ bool ns_experiment_storyboard::load_events_from_annotation_compiler(const ns_loa
 				}
 			case ns_fast_movement_cessation:
 				if (dd.machine.last_fast_movement_annotation != 0) {
-					if (!dd.machine.slow_moving_state_annotations.empty()) {
+			//		if (!dd.machine.slow_moving_state_annotations.empty()) {
 						event_to_place_on_storyboard = *dd.machine.last_fast_movement_annotation;
 						state_to_search = ns_slow_moving_worm_observed;
 						found_storyboard_event = true;
-					}
+			//		}
 				}
 				break;
 			case ns_stationary_worm_disappearance:
@@ -2007,8 +2007,19 @@ ns_ex ns_experiment_storyboard::compare(const ns_experiment_storyboard & s){
 	if (s.divisions.size() < stop)
 		stop = s.divisions.size();
 	for (unsigned int i = 0; i < stop; i++){
-		if (s.divisions[i].events.size() != divisions[i].events.size())
+		if (s.divisions[i].events.size() != divisions[i].events.size()) {
 			ex << "Storyboards have different number of events in division " << i << ":" << divisions[i].events.size() << " vs " << s.divisions[i].events.size();
+			/*ofstream out("c:\\server\\ev_debug.csv");
+			out << "source,description\n";
+			for (unsigned int j = 0; j < s.divisions[i].events.size(); j++) {
+				out << "s," << s.divisions[i].events[j].event_annotation.brief_description() << "\n";
+			}
+
+			for (unsigned int j = 0; j < divisions[i].events.size(); j++)
+				out << "o," << divisions[i].events[j].event_annotation.brief_description() << "\n";
+			out.close();
+			cout << "WHA";*/
+		}
 		else{
 			for (unsigned int j = 0; j < divisions[i].events.size(); j++){
 				if (divisions[i].events[j].event_annotation.time.period_start !=

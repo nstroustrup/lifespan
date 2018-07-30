@@ -56,7 +56,15 @@ void analyze_worm_movement_across_frames(const ns_processing_job & job, ns_image
 
 			ns_time_path_solver tp_solver;
 			tp_solver.load(job.region_id, sql);
+
+			if (tp_solver.empty())
+				throw ns_ex("The specified region does not appear to have any valid timepoints.  Has worm detection been run on any images?");
+
 			tp_solver.solve(solver_parameters, time_path_solution, &sql);
+
+			if (time_path_solution.timepoints.empty())
+				throw ns_ex("The time path solver did not produce any valid timepoints.  Do any uncensored images have worm detection computed?");
+
 			if (log_output)
 				image_server->register_server_event(ns_image_server_event("Filling gaps and adding path prefixes."), &sql);
 			std::string prefix_length_str = image_server->get_cluster_constant_value("path_prefix_length_in_frames", ns_to_string(ns_time_path_solution::default_length_of_fast_moving_prefix()), &sql);
@@ -64,7 +72,6 @@ void analyze_worm_movement_across_frames(const ns_processing_job & job, ns_image
 			if (prefix_length_str.length() > 0) {
 				prefix_length = atol(prefix_length_str.c_str());
 			}
-
 			time_path_solution.fill_gaps_and_add_path_prefixes(prefix_length);
 
 			time_path_solution.identify_subregions_labels_from_subregion_mask(job.region_id, sql);
@@ -108,6 +115,8 @@ void analyze_worm_movement_across_frames(const ns_processing_job & job, ns_image
 		//return true;
 	}
 
+	if (time_path_solution.timepoints.empty())
+		throw ns_ex("The specified region does not appear to have any valid timepoints.  Has worm detection been run on any images?");
 
 	ns_time_path_image_movement_analyzer time_path_image_analyzer;
 	ns_image_server::ns_posture_analysis_model_cache::const_handle_t posture_analysis_model_handle;

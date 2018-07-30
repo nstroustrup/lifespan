@@ -372,7 +372,7 @@ public:
 
 	ns_time_path_solver():detection_results(new ns_worm_detection_results_set){}
 	~ns_time_path_solver(){if (detection_results != 0) delete detection_results; detection_results = 0;}
-
+	bool empty() const { return timepoints.empty(); }
 	static void load_worm_detection_ids(const ns_64_bit region_id, ns_sql & sql, unsigned long & time_of_last_valid_sample, ns_sql_result & res);
 private:
 	//all measurement times, each containing the objects detected at that time

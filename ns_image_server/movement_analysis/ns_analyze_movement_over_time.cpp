@@ -12,7 +12,20 @@
 
 
 
-
+void invalidate_stored_data_depending_on_movement_analysis(const ns_processing_job & job,ns_sql & sql,bool & already_performed) {
+	if (already_performed)
+		return;
+	//delete storyboards and movement vis for region, as they are all now out of date.
+	sql << "UPDATE sample_region_images SET " << ns_processing_step_db_column_name(ns_process_movement_paths_visualization) << "=0, " << ns_processing_step_db_column_name(ns_process_movement_paths_visualition_with_mortality_overlay) << "=0 "
+		<< " WHERE region_info_id = " << job.region_id;
+	sql.send_query();
+	sql << "SELECT s.experiment_id FROM capture_samples as s, sample_region_image_info as r WHERE s.id = r.sample_id AND r.id = " << job.region_id;
+	std::string res;
+	res = sql.get_value();
+	sql << "DELETE FROM animal_storyboard WHERE (experiment_id = " << res << " AND region_id = 0) OR region_id = " << job.region_id;
+	sql.send_query();
+	already_performed = true;
+}
 void analyze_worm_movement_across_frames(const ns_processing_job & job, ns_image_server * image_server, ns_sql & sql, bool log_output) {
 	if (job.region_id == 0)
 		throw ns_ex("Movement data can be rebuilt only for regions.");
@@ -23,9 +36,9 @@ void analyze_worm_movement_across_frames(const ns_processing_job & job, ns_image
 	ns_image_server_results_subject results_subject;
 	results_subject.region_id = job.region_id;
 
-
+	bool invalidated_old_data(false);
 	const bool skip_inferred_worm_analysis(image_server->get_cluster_constant_value("skip_inferred_worm_analysis", "false", &sql) != "false");
-
+	
 	ns_time_path_solution time_path_solution;
 	if (skip_inferred_worm_analysis) {
 		try {
@@ -39,6 +52,7 @@ void analyze_worm_movement_across_frames(const ns_processing_job & job, ns_image
 			tp_solver.solve(solver_parameters, time_path_solution, &sql);
 			time_path_solution.identify_subregions_labels_from_subregion_mask(job.region_id, sql);
 			time_path_solution.save_to_db(job.region_id, sql);
+			invalidate_stored_data_depending_on_movement_analysis(job, sql, invalidated_old_data);
 		}
 	}
 	else if (job.maintenance_task == ns_maintenance_rebuild_movement_from_stored_images ||
@@ -75,9 +89,7 @@ void analyze_worm_movement_across_frames(const ns_processing_job & job, ns_image
 			time_path_solution.fill_gaps_and_add_path_prefixes(prefix_length);
 
 			time_path_solution.identify_subregions_labels_from_subregion_mask(job.region_id, sql);
-
-			//unnecissary save, done for debug
-			//	time_path_solution.save_to_db(job.region_id,sql);
+			
 			if (log_output)
 				image_server->register_server_event(ns_image_server_event("Caching image data for inferred worm positions."), &sql);
 			ns_image_server_time_path_inferred_worm_aggregator ag;
@@ -103,6 +115,8 @@ void analyze_worm_movement_across_frames(const ns_processing_job & job, ns_image
 		//worm_tracker.track_moving_worms(tracking_parameters,time_path_solution);
 		time_path_solution.save_to_db(job.region_id, sql);
 
+		invalidate_stored_data_depending_on_movement_analysis(job, sql, invalidated_old_data);
+
 		ns_acquire_for_scope<std::ostream> position_3d_file_output(
 			image_server->results_storage.animal_position_timeseries_3d(
 				results_subject, sql, ns_image_server_results_storage::ns_3d_plot
@@ -112,7 +126,8 @@ void analyze_worm_movement_across_frames(const ns_processing_job & job, ns_image
 		position_3d_file_output.release();
 
 		image_server->results_storage.write_animal_position_timeseries_3d_launcher(results_subject, ns_image_server_results_storage::ns_3d_plot, sql);
-		//return true;
+		
+	
 	}
 
 	if (time_path_solution.timepoints.empty())
@@ -152,6 +167,8 @@ void analyze_worm_movement_across_frames(const ns_processing_job & job, ns_image
 					throw ns_ex("Could not fix the error in this region: ") << ex.text();
 
 				time_path_solution.save_to_db(job.region_id, sql);
+
+				invalidate_stored_data_depending_on_movement_analysis(job, sql, invalidated_old_data);
 				ns_acquire_for_scope<std::ostream> position_3d_file_output(
 					image_server->results_storage.animal_position_timeseries_3d(
 						results_subject, sql, ns_image_server_results_storage::ns_3d_plot
@@ -181,6 +198,8 @@ void analyze_worm_movement_across_frames(const ns_processing_job & job, ns_image
 		time_path_image_analyzer.obtain_analysis_id_and_save_movement_data(job.region_id, sql,
 			ns_time_path_image_movement_analyzer::ns_require_existing_record,
 			ns_time_path_image_movement_analyzer::ns_write_data);
+
+		invalidate_stored_data_depending_on_movement_analysis(job, sql, invalidated_old_data);
 	}
 	else {
 		//load in previously calculated image quantification from disk for re-analysis

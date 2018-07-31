@@ -996,7 +996,6 @@ int main(int argc, char ** argv){
 						ns_sql_result res;
 						local_sql().get_rows(res);
 						local_buffer_exists = !res.empty();
-						local_sql.release();
 					}
 					catch (ns_ex & ex) {
 						local_buffer_exists = false;

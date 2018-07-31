@@ -81,7 +81,7 @@ public:
 	///segfaults if the specified image does not have the RGB colorspace
 	ns_font_output_dimension draw_color(const int x, const int y, const ns_color_8 & color, const std::string & text, ns_image_standard & im, const bool draw=true){
 		
-	
+
 
 		if (im.properties().components != 3)
 			throw ns_ex("ns_font::Drawing color on a B&W image");

@@ -38,7 +38,7 @@ struct ns_graph_properties{
 						  text_decimal_places((unsigned int)-1),
 						  line_hold_order(ns_first),
 						  draw_vertical_lines(ns_no_line),
-						  draw_negatives(true),draw_tick_marks(true){}
+						  draw_negatives(true),draw_tick_marks(true), tick_mark_rescale_factor(1){}
 	ns_graph_color_set line;
 	ns_graph_color_set point;
 	ns_graph_color_set area_fill;
@@ -46,6 +46,7 @@ struct ns_graph_properties{
 
 	bool draw_negatives;
 	bool draw_tick_marks;
+	double tick_mark_rescale_factor;
 
 	unsigned int text_decimal_places;
 	int text_size;
@@ -64,7 +65,7 @@ struct ns_graph_properties{
 ///Vertical lines are drawn as a vertical line positioned at x=x[0].
 ///Stars are drawn as an asterisk at position (x[0],y[0])
 struct ns_graph_object{
-	void clear() { y.clear(); x.clear(); data_label.clear(); x_label.clear(); y_label.clear(); hyperlinks.clear();}
+	void clear() { y.clear(); x.clear(); data_label.clear(); hyperlinks.clear();}
 	typedef enum{ ns_graph_none, ns_graph_independant_variable, ns_graph_dependant_variable, ns_graph_vertical_line, ns_graph_star,ns_graph_horizontal_line} ns_graph_object_type;
 
 	ns_graph_object(const ns_graph_object_type & _type):type(_type){}
@@ -76,7 +77,6 @@ struct ns_graph_object{
 	//can be hyperlinked to outside sources.
 	std::vector<std::string> hyperlinks;
 	std::string data_label;
-	std::string x_label,y_label;
 };
 
 /*
@@ -201,6 +201,8 @@ public:
 		title.clear();
 		stored_contents.clear();
 		contents.clear();
+		x_axis_label.clear();
+		y_axis_label.clear();
 	}
 	///automatically generates a frequency distribution of the specified data
 	ns_graph_axes add_frequency_distribution(const ns_graph_object & in, const bool crop_outliers=true);
@@ -229,7 +231,7 @@ public:
 						x_axis_properties,
 						area_properties,
 						title_properties;
-
+	std::string x_axis_label, y_axis_label;
 	std::vector<ns_graph_object *> contents;
 	private:
 	//references to all objects being plotted

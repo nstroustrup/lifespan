@@ -61,11 +61,11 @@ void ns_movement_visualization_generator::create_survival_curve_for_capture_time
 	if (censored_size < strain_last_death)
 		censored_size = strain_last_death;
 	censored_markers.y.resize(censored_size+1+1,-1);
-	censored_markers.x.resize(censored_size+1+1,-1);
+	censored_markers.x.resize(censored_size+1+1,0);
 	plate_marker.y.resize(1,-1);
-	plate_marker.x.resize(1,-1);
+	plate_marker.x.resize(1,0);
 	strain_marker.y.resize(1,-1);
-	strain_marker.x.resize(1,-1);
+	strain_marker.x.resize(1,0);
 
 
 	
@@ -93,31 +93,27 @@ void ns_movement_visualization_generator::create_survival_curve_for_capture_time
 					total_strain_censored(strain.data.total_number_of_censoring_events),
 					total_plate_censored(plate.data.total_number_of_censoring_events),
 					number_of_strain_deaths((strain_marker_index<strain_time.size())?strain.data.cumulative_number_of_deaths[strain_marker_index]:0),
-					number_of_plate_deaths((plate_marker_index<plate_time.size())?plate.data.cumulative_number_of_deaths[plate_marker_index]:0);
+					number_of_plate_deaths((plate_marker_index<plate_time.size())?plate.data.cumulative_number_of_deaths[plate_marker_index]:0),
+					number_of_plate_censored((plate_marker_index<plate_time.size()) ? plate.data.cumlative_number_of_censoring_events[plate_marker_index] : 0);
+	const unsigned long number_plate_alive = total_plate_deaths + total_plate_censored - number_of_plate_deaths - number_of_plate_censored;
 
 	const double plate_fraction_surviving((plate_marker_index<plate_time.size())?plate.data.probability_of_surviving_up_to_interval[plate_marker_index]:0),
 			strain_fraction_surviving((strain_marker_index<strain_time.size())?strain.data.probability_of_surviving_up_to_interval[strain_marker_index]:0);
-	unsigned long number_of_strain_censored(0),
-				  number_of_plate_censored(0);
+	unsigned long number_of_strain_censored(0);
 	if (strain_marker_index<= strain_last_death && !strain_time.empty()){
 		for (unsigned int i = 0; i <= strain_marker_index; i++)
 			number_of_strain_censored+=strain.data.number_of_censoring_events[i];
 	}
-	if (plate_marker_index<= plate_last_death){
-		for (unsigned int i = 0; i <= plate_marker_index; i++)
-			number_of_plate_censored+=plate.data.number_of_censoring_events[i];
-	}
-
 
 	plate_survival.y[0] = strain_survival.y[0] = 1;
 	censored_markers.x[0] = plate_marker.x[0] = strain_marker.x[0] = plate_survival.x[0] = strain_survival.x[0] = 0;
 
+	plate_marker.x[0] = (marker_time - metadata.time_at_which_animals_had_zero_age) / 60.0 / 60.0 / 24.0;
 	for (unsigned int i = 0; i < plate_survival.y.size()-1; i++){
 		plate_survival.y[i+1] = plate.data.probability_of_surviving_up_to_interval[i];
 		if (plate_survival.y[i] <= 0)
 			plate_survival.y[i+1] = -1;
 		plate_survival.x[i+1] = (plate_time[i]-metadata.time_at_which_animals_had_zero_age)/60.0/60.0/24.0;
-		plate_marker.x[0] = (marker_time-metadata.time_at_which_animals_had_zero_age)/60.0/60.0/24.0;
 		censored_markers.x[i+1] = (plate_time[i]-metadata.time_at_which_animals_had_zero_age)/60.0/60.0/24.0;
 		if (i == plate_marker_index)
 			plate_marker.y[0] = plate.data.probability_of_surviving_up_to_interval[i];
@@ -201,33 +197,62 @@ void ns_movement_visualization_generator::create_survival_curve_for_capture_time
 
 	ns_graph_object graph_x_axis(ns_graph_object::ns_graph_independant_variable);
 
-	/*
-	unsigned long index_at_which_all_plate_animals_are_dead(strain_survival.y.size());
-	for (unsigned int i = 0; i < strain_survival.y.size(); i++){
-		if (strain_survival.y[i] < .001){
-			index_at_which_all_plate_animals_are_dead = i;
-		}
-	}
-	index_at_which_all_plate_animals_are_dead=(5*index_at_which_all_plate_animals_are_dead)/4;
-	if (index_at_which_all_plate_animals_are_dead>strain_survival.y.size())
-		index_at_which_all_plate_animals_are_dead = strain_survival.y.size();
+	bool add_strain = false && !strain_time.empty();
+	ns_graph_axes axes;
+	double max_event_time = *plate_survival.x.rbegin();
+	if (*censored_markers.x.rbegin() > max_event_time)
+		max_event_time = *censored_markers.x.rbegin();
+	if (add_strain && *strain_survival.x.rbegin() > max_event_time)
+		max_event_time = *strain_survival.x.rbegin();
+	double time_step = 1;
+	if (max_event_time < 40)
+		time_step = 10;
+	if (max_event_time < 20)
+		time_step = 5;
+	if (max_event_time < 10)
+		time_step = 2;
+	if (max_event_time < 5)
+		time_step = 1;
+	if (max_event_time < 2)
+		time_step = .25;
+	if (max_event_time < 1)
+		time_step = .1;
+	axes.boundary(0) = 0;
+	axes.boundary(1) = ceil(max_event_time / time_step)*time_step;
+	axes.boundary(2) = 0;
+	axes.boundary(3) = 1;
+	axes.tick(0) = time_step;
+	axes.tick(1) = time_step / 2;
+	axes.tick(2) = 0.5;
+	axes.tick(3) = 0.;
 
-	graph_x_axis.x.resize(index_at_which_all_plate_animals_are_dead );
-	strain_survival.y.resize(index_at_which_all_plate_animals_are_dead );
-	strain_marker.y.resize(index_at_which_all_plate_animals_are_dead );
-	plate_survival.y.resize(index_at_which_all_plate_animals_are_dead );
-	plate_marker.y.resize(index_at_which_all_plate_animals_are_dead );
-	*/
+	if (plate_marker.x[0] > axes.boundary(1))
+		plate_marker.x[0] = axes.boundary(1);
+	if (strain_marker.x[0] > axes.boundary(1))
+		strain_marker.x[0] = axes.boundary(1);
 
-//	graph.contents.push_back(graph_x_axis);
+
 	graph.add_and_store(censored_markers);
-	if (!strain_time.empty()){
+	
+	if (add_strain){
 		graph.add_and_store(strain_survival);
 		graph.add_and_store(strain_marker);
 	}
 	graph.add_and_store(plate_survival);
 	graph.add_and_store(plate_marker);
 
+	graph.x_axis_label = "Time (days)";
+	graph.y_axis_label = "S";
+	graph.x_axis_properties.text.draw = true;
+	graph.y_axis_properties.text.draw = true;
+	graph.x_axis_properties.draw_tick_marks = true;
+	graph.y_axis_properties.draw_tick_marks = true;
+	graph.x_axis_properties.text_size = image.properties().height / 10;
+	graph.y_axis_properties.text_size = image.properties().height / 10;
+	graph.x_axis_properties.tick_mark_rescale_factor = 2;
+	graph.y_axis_properties.tick_mark_rescale_factor = 2;
+	graph.y_axis_properties.text_decimal_places = 1;
+	graph.set_graph_display_options("", axes);
 	
 	if (image.properties().height > 0){
 		const unsigned long number_of_lines(7);
@@ -253,27 +278,24 @@ void ns_movement_visualization_generator::create_survival_curve_for_capture_time
 		text += ns_to_string_short(age,2) + units;
 		font.draw_color(8,line_num*image.properties().height/(number_of_lines-1),ns_color_8(255,255,255),text,image);
 		line_num++;
-		text = "Plate Survival: ";
-		text += ns_to_string_short(plate_fraction_surviving,2);
+		text = "Survival: ";
+		text += ns_to_string_short(plate_fraction_surviving*100,0);
+		text += "%";
 		font.draw_color(8,line_num*image.properties().height/(number_of_lines-1),ns_color_8(255,255,255),text,image);
 		line_num++;
-		text = "Plate Dead: ";
-		text += ns_to_string( number_of_strain_deaths);
-		text += "/";
-		text += ns_to_string( total_strain_deaths);
-		font.draw_color(8,line_num*image.properties().height/(number_of_lines-1),ns_color_8(255,255,255),text,image);
+		text = "# Alive: ";
+		text += ns_to_string(number_plate_alive);
+		font.draw_color(8, line_num*image.properties().height / (number_of_lines - 1), ns_color_8(255, 255, 255), text, image);
 		line_num++;
-		text = "Plate Censored: ";
-		text += ns_to_string( number_of_strain_censored);
-		text += "/";
-		text += ns_to_string( total_strain_censored);
-		font.draw_color(8,line_num*image.properties().height/(number_of_lines-1),ns_color_8(255,255,255),text,image);
+		text = "# Dead: ";
+		text += ns_to_string( number_of_plate_deaths);
+		font.draw_color(8, line_num*image.properties().height / (number_of_lines - 1), ns_color_8(255, 255, 255), text, image);
 		line_num++;
-		if (!strain_time.empty()){
-			text = "Strain Survival: ";
-			text += ns_to_string_short(strain_fraction_surviving,2);
-			font.draw_color(8,line_num*image.properties().height/(number_of_lines-1),ns_color_8(255,255,255),text,image);
-		}
+		text = "# Censored: ";
+		text += ns_to_string(number_of_plate_censored);
+		font.draw_color(8, line_num*image.properties().height / (number_of_lines - 1), ns_color_8(255, 255, 255), text, image);
+		line_num++;
+
 		font_lock.release();
 	}
 

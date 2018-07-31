@@ -565,11 +565,12 @@ void ns_image_processing_pipeline::process_region(const ns_image_server_captured
 				region_image.load_from_db(region_image.region_images_id,&sql);
 
 				register_event(ns_process_movement_paths_visualition_with_mortality_overlay,dynamic_stretch.properties(),parent_event,false,sql);
-		/*
-				ns_image_server_image vis_image(region_image.request_processed_image(ns_process_movement_paths_visualization,sql));
-				ns_image_storage_source_handle<ns_8_bit> image_file(image_server_const.image_storage.request_from_storage(vis_image,&sql));
-
-				image_file.input_stream().pump(underlay,_image_chunk_size);*/
+				
+				const ns_death_time_annotation_compiler & compiler(death_annotations.get_region_data(ns_death_time_annotation_set::ns_all_annotations, region_image.region_info_id, sql));
+				ns_death_time_annotation_compiler::ns_region_list::const_iterator p(compiler.regions.find(region_image.region_info_id));
+				if (p == compiler.regions.end())
+					throw ns_ex("Could not find region ") << region_image.region_info_id << " in db!";
+				//compiler.generate_survival_statistics();
 				ns_region_metadata metadata;
 				metadata.load_from_db(region_image.region_info_id,"",sql);
 				overlay_graph(region_image.region_info_id,paths_visualization,region_image.capture_time,metadata,death_annotations,sql);
@@ -2125,12 +2126,14 @@ void ns_lifespan_curve_cache_entry::clean()const{
 }
 const ns_death_time_annotation_compiler & ns_lifespan_curve_cache_entry::get_region_data(const ns_death_time_annotation_set::ns_annotation_type_to_load & a,const ns_64_bit id,ns_sql & sql) const{
 	//check to see if local data is up to date
-	sql << "SELECT latest_movement_rebuild_timestamp FROM sample_region_image_info WHERE id = " << id;
+	sql << "SELECT latest_movement_rebuild_timestamp, latest_by_hand_annotation_timestamp FROM sample_region_image_info WHERE id = " << id;
 	ns_sql_result res;
 	sql.get_rows(res);
 	if (res.empty())
 		throw ns_ex("ns_lifespan_curve_cache_entry::get_region_data()::Could not find region ") << id << " in db";
-	unsigned long region_timestamp(atol(res[0][0].c_str()));
+	const unsigned long rebuild_timestamp(atol(res[0][0].c_str()));
+	const unsigned long annotation_timestamp(atol(res[0][1].c_str()));
+	const unsigned long region_timestamp = (rebuild_timestamp > annotation_timestamp) ? rebuild_timestamp : annotation_timestamp;
 	ns_region_raw_cache::iterator p = region_raw_data_cache.find(id);
 	bool rebuild(false);
 	if (p == region_raw_data_cache.end()){
@@ -2212,7 +2215,7 @@ void ns_image_processing_pipeline::overlay_graph(const ns_64_bit region_id,ns_im
 
 	metadata_overlay_prop = lifespan_curve_image_prop;
 	metadata_overlay_prop.height/=3;
-	metadata_overlay_prop.width/=2;
+	metadata_overlay_prop.width/=3;
 
 	const unsigned int dw(image.properties().width),
 						dh(image.properties().height);

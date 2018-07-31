@@ -286,7 +286,8 @@ struct ns_multi_event_survival_statistics{
 struct ns_survival_data_with_censoring_timeseries{
 	void resize(unsigned long i, const double v);
 	void resize(unsigned long i);
-	std::vector<unsigned long> cumulative_number_of_deaths,
+	std::vector<unsigned long> cumlative_number_of_censoring_events,
+							   cumulative_number_of_deaths,
 							   number_of_animals_at_risk,
 							   number_of_events,
 							   number_of_censoring_events;

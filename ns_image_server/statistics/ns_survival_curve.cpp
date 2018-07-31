@@ -1422,8 +1422,14 @@ void ns_lifespan_experiment_set::generage_aggregate_risk_timeseries(const ns_reg
 	
 	ns_survival_data aggregate_set;
 	for (unsigned int i = 0; i <this->curves.size(); i++){
-		if(mm.device_regression_match_description() != curves[i].metadata.device_regression_match_description() || mm.device != curves[i].metadata.device)
+		if (mm.device_regression_match_description() != curves[i].metadata.device_regression_match_description() || mm.device != curves[i].metadata.device) {
+		//	cout << mm.device_regression_match_description() << "\n";
+		//	cout << curves[i].metadata.device_regression_match_description() << "\n";
+		//	cout << mm.device << "\n";
+		//	cout << curves[i].metadata.device << "\n";
 			continue;
+
+		}
 		//add all events except for excluded objects
 		for (unsigned long j = 0; j < curves[i].timepoints.size(); j++){
 		//	for (unsigned int k = 0; k < curves[i].timepoints[j].deaths.events.size(); k++)
@@ -1806,6 +1812,7 @@ void ns_survival_data::generate_survival_statistics(const ns_survival_data_with_
 void ns_survival_data_with_censoring_timeseries::calculate_risks_and_cumulatives(){
 	//calculate risk of death in first interval
 	cumulative_number_of_deaths[0] = number_of_events[0];
+	cumlative_number_of_censoring_events[0] = number_of_censoring_events[0];
 	if (number_of_animals_at_risk[0] == 0)
 		risk_of_death_in_interval[0] = 0;
 	else risk_of_death_in_interval[0] = number_of_events[0]/(double)number_of_animals_at_risk[0];
@@ -1831,12 +1838,14 @@ void ns_survival_data_with_censoring_timeseries::calculate_risks_and_cumulatives
 															  + log(1.0-risk_of_death_in_interval[i]);
 
 		cumulative_number_of_deaths[i] = number_of_events[i]+cumulative_number_of_deaths[i-1];
+		cumlative_number_of_censoring_events[i] = number_of_censoring_events[i] + cumlative_number_of_censoring_events[i - 1];
 	}
 }
 
 
 void ns_survival_data_with_censoring_timeseries::resize(unsigned long i, const double v){
 	cumulative_number_of_deaths.resize(i,v);
+	cumlative_number_of_censoring_events.resize(i, v);
 	number_of_animals_at_risk.resize(i,v);
 	number_of_events.resize(i,v);
 	number_of_censoring_events.resize(i,v);
@@ -1846,6 +1855,7 @@ void ns_survival_data_with_censoring_timeseries::resize(unsigned long i, const d
 }
 void ns_survival_data_with_censoring_timeseries::resize(unsigned long i){
 	cumulative_number_of_deaths.resize(i);
+	cumlative_number_of_censoring_events.resize(i);
 	number_of_animals_at_risk.resize(i);
 	number_of_events.resize(i);
 	number_of_censoring_events.resize(i);

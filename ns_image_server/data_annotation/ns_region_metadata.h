@@ -71,9 +71,9 @@ struct ns_region_metadata{
 	unsigned long movement_rebuild_timestamp, by_hand_annotation_timestamp;
 
 	const std::string device_regression_match_description() const{
-		std::string s(genotype);
-		if (genotype.empty())
-			s = strain;
+		std::string s(strain);
+	//	if (genotype.empty())
+		//	s = strain;
 		if (strain_condition_1.empty() && strain_condition_2.empty())
 			return s;
 		if (strain_condition_1.empty())

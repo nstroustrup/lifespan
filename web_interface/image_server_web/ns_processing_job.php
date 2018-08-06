@@ -114,6 +114,8 @@ function ns_maintenance_task_order($is_region,$is_sample,$is_experiment){
     array_push($r,$ns_maintenance_tasks['ns_maintenance_generate_subregion_mask']);
     array_push($r,$ns_maintenance_tasks['ns_maintenance_recalc_image_stats']);
     array_push($r,$ns_maintenance_tasks['ns_maintenance_recalc_worm_morphology_statistics']);
+    array_push($r,$ns_maintenance_tasks['ns_maintenance_generate_movement_posture_visualization']);
+
     return $r;
   }
   if ($is_sample || $is_experiment){
@@ -137,8 +139,8 @@ $ns_maintenance_task_labels = array(0=>'No Task',
 				    7=>'Analyze Worm Movement Using Cached Images',
 				    8=>'Re-calculate Censoring and Death Times',
 				    9=>'Recalculate Censoring',
-				    10=>'Generate Time-Aligned Posture Visualization',
-				    11=>'Generate Death-Aligned Visualization',
+				    10=>'Generate Posture Visualization',
+				    11=>'Generate Death-Aligned Posture Visualization',
 				    12=>'Generate Sample Regions From the Sample Mask',
 				    13=>'Delete Images from the Database',
 				    14=>'Check for missing or broken files',
@@ -510,7 +512,7 @@ class ns_processing_job{
 	    $display[16]=$ns_processing_tasks['ns_process_movement_paths_visualization'];
 	    $display[17]=$ns_processing_tasks['ns_process_movement_paths_visualization_with_mortality_overlay'];
 	    $display[18]=$ns_processing_tasks['ns_process_movement_posture_visualization'];
-	    $display[18]=$ns_processing_tasks['ns_process_movement_posture_aligned_visualization'];
+	    $display[19]=$ns_processing_tasks['ns_process_movement_posture_aligned_visualization'];
 
 	  }
 

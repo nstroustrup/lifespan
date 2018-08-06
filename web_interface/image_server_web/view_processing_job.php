@@ -20,7 +20,8 @@ $ns_processing_tasks['ns_process_worm_detection_labels'],
 $ns_processing_tasks['ns_process_compress_unprocessed'],
 $ns_processing_tasks['ns_process_add_to_training_set'],
 $ns_processing_tasks['ns_process_movement_paths_visualization'],
-				$ns_processing_tasks['ns_process_movement_paths_visualization_with_mortality_overlay']);
+				$ns_processing_tasks['ns_process_movement_paths_visualization_with_mortality_overlay'],
+				$ns_processing_tasks['ns_process_movement_posture_visualization']);
 try{
 
 
@@ -1312,7 +1313,7 @@ Schedule an Image Processing Job Begin
 	}
 else{
   /*	if ($i == $ns_processing_tasks['ns_process_analyze_mask'] ||  $i==$ns_processing_tasks['ns_process_resized_sample_image'] || $i==$ns_processing_tasks['ns_process_region_vis'] || $i==$ns_processing_tasks['ns_process_region_interpolation_vis'] || $i==$ns_processing_tasks['ns_process_interpolation_vis'] || $i==$ns_processing_tasks['ns_process_movement_coloring'] ||  $i==$ns_processing_tasks['ns_process_movement_posture_aligned_visualization'] || $i==$ns_processing_tasks['ns_process_movement_posture_visualization'] || $i==$ns_processing_tasks['ns_process_movement_mapping'] || $i==$ns_processing_tasks['ns_process_temporal_interpolation'] || $i==$ns_processing_tasks['ns_process_movement_coloring_with_graph']  || $i==$ns_processing_tasks['ns_process_movement_coloring_with_survival'] || $i==$ns_processing_tasks['ns_process_posture_vis']) continue;*/
-  if ($jobs[0]->operations[$i]==0 && array_search($i,$region_processing_jobs_to_display) === FALSE)
+  if ($jobs[0]->operations[$i]==0 && array_search($i,$region_processing_jobs_to_display) === FALSE || $i == $ns_processing_tasks['ns_process_movement_posture_visualization'])
     continue;
 }
   $cc++;

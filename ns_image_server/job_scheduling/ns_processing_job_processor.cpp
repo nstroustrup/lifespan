@@ -786,12 +786,13 @@ ns_64_bit ns_processing_job_maintenance_processor::run_job(ns_sql & sql) {
 			metadata = by_hand_region_annotations.load_region_annotations(ns_death_time_annotation_set::ns_censoring_and_movement_transitions, job.region_id, sql);
 			analyzer.add_by_hand_annotations(by_hand_region_annotations.annotations);
 			image_server_const.add_subtext_to_current_event("\nGenerating visualization...", &sql);
-			analyzer.generate_movement_posture_visualizations(false, job.region_id, solution, sql);
+			analyzer.generate_movement_posture_visualizations(false, job.region_id, solution,true, sql);
 			image_server->register_job_duration(ns_process_movement_posture_visualization, tm.stop());
 			break;
 		}
 		case ns_maintenance_generate_movement_posture_aligned_visualization: {
-			ns_high_precision_timer tm;
+			throw ns_ex("Depreciated");
+			/*ns_high_precision_timer tm;
 			tm.start();
 			ns_time_path_solution solution;
 			solution.load_from_db(job.region_id, sql, true);
@@ -807,7 +808,7 @@ ns_64_bit ns_processing_job_maintenance_processor::run_job(ns_sql & sql) {
 			death_time_estimator.release();
 			analyzer.generate_death_aligned_movement_posture_visualizations(false, job.region_id, ns_movement_cessation, solution, sql);
 			image_server->register_job_duration(ns_process_movement_posture_aligned_visualization, tm.stop());
-			break;
+			break;*/
 		}
 
 

@@ -6388,10 +6388,17 @@ void ns_time_path_image_movement_analyzer::generate_death_aligned_movement_postu
 	*/
 }
 
-void ns_time_path_image_movement_analyzer::generate_movement_posture_visualizations(const bool include_graphs,const ns_64_bit region_id, const ns_time_path_solution & solution,ns_sql & sql){
+void ns_time_path_image_movement_analyzer::generate_movement_posture_visualizations(const bool include_graphs,const ns_64_bit region_id, const ns_time_path_solution & solution, bool generate_plate_worm_composite_images, ns_sql & sql ){
 	const unsigned long thickness(3);
 
 	ns_marker_manager marker_manager;
+
+	ns_image_standard image_loading_temp,image_loading_temp_2, composit_temp;
+
+	string compression_rate = image_server_const.get_cluster_constant_value("jp2k_compression_rate", ns_to_string(NS_DEFAULT_JP2K_COMPRESSION), &sql);
+	float compression_rate_f = atof(compression_rate.c_str());
+	if (compression_rate_f <= 0)
+		throw ns_ex("Invalid compression rate: ") << compression_rate_f;
 
 	const ns_vector_2i graph_dimensions(include_graphs ? ns_vector_2i(300, 200) : ns_vector_2i(0, 0));
 	generate_movement_description_series();
@@ -6446,10 +6453,10 @@ void ns_time_path_image_movement_analyzer::generate_movement_posture_visualizati
 		}
 		groups[g].paths[0].output_image.load_from_db(groups[g].paths[0].output_image.id, &sql);
 		path_image_source.push_back(image_server_const.image_storage.request_from_storage(groups[g].paths[0].output_image, &sql));
+		groups[g].paths[0].initialize_movement_image_loading_no_flow(path_image_source[g], false);
 		bool scale_images(true);
 		if (scale_images) {
 			//find lightest and darkest picture in all images, to get normalization factors for the visualization
-			groups[g].paths[0].initialize_movement_image_loading_no_flow(path_image_source[g], false);
 			for (unsigned int j = 0; j < groups[g].paths[0].elements.size(); j++) {
 				groups[g].paths[0].load_movement_images_no_flow(ns_analyzed_time_image_chunk(j, j + 1), path_image_source[g]);
 				const ns_image_standard &image(groups[g].paths[0].element(j).registered_images->image);
@@ -6485,6 +6492,25 @@ void ns_time_path_image_movement_analyzer::generate_movement_posture_visualizati
 		}
 	}
 
+	map<unsigned long, ns_64_bit> movement_paths_visualization_overlay;
+	if (generate_plate_worm_composite_images) {
+		sql << "SELECT capture_time," << ns_processing_step_db_column_name(ns_process_movement_paths_visualition_with_mortality_overlay) << " FROM sample_region_images WHERE region_info_id = " << region_id;
+		ns_sql_result res;
+		sql.get_rows(res);
+		if (res.size() == 0) {
+			image_server.add_subtext_to_current_event("No Movement Paths with Mortality Overlay Visualization Images have been created; the composite will not be generated.", &sql);
+			generate_plate_worm_composite_images = false;
+		}
+		else {
+			for (unsigned int i = 0; i < res.size(); i++) 
+				movement_paths_visualization_overlay[atol(res[i][0].c_str())] = ns_atoi64(res[i][1].c_str());
+		}
+	}
+
+
+
+
+
 	//make movement 
 	if (include_graphs){
 		for (unsigned int i = 0; i < groups.size(); i++){
@@ -6504,180 +6530,223 @@ void ns_time_path_image_movement_analyzer::generate_movement_posture_visualizati
 	image_server.add_subtext_to_current_event("\nGenerating visualization...", &sql);
 	//now go through each measurement time for the solution
 	 long last_r(-5);
-	for (unsigned long t = 0; t < solution.timepoints.size(); t++){
+	 for (unsigned long t = 0; t < solution.timepoints.size(); t++) {
 		 long cur_r = (100 * t) / solution.timepoints.size();
-		if (cur_r - last_r >= 5) {
-			image_server_const.add_subtext_to_current_event(ns_to_string(cur_r) + "%...", &sql);
-			last_r = cur_r;
-		}
+		 if (cur_r - last_r >= 5) {
+			 image_server_const.add_subtext_to_current_event(ns_to_string(cur_r) + "%...", &sql);
+			 last_r = cur_r;
+		 }
 
-		ns_movement_posture_visualization_summary vis_summary;
-		vis_summary.region_id = region_id;
-
-
-		//init output image
-		for (unsigned long y = 0; y < prop.height; y++)
-			for (unsigned long x = 0; x < 3*prop.width; x++)
-				output_image[y][x] = 0;
-		bool image_to_output(false);
-
-		const unsigned long time(solution.timepoints[t].time);
-		//go through each path
-		for (unsigned int g = 0; g < groups.size(); g++){
-			if (!series.items[g].should_be_displayed) continue;
-			const unsigned long path_id(0);
-			ns_analyzed_image_time_path & path(groups[g].paths[path_id]);
-			unsigned long & i(current_path_timepoint_i[g]);
+		 ns_movement_posture_visualization_summary vis_summary;
+		 vis_summary.region_id = region_id;
 
 
-			//draw colored line around worm
-			const ns_vector_2i & p(series.items[g].position_on_visualization_grid);
-			const ns_vector_2i & s(series.items[g].final_image_size);
-			const ns_vector_2i & bc(series.items[g].visulazation_border_to_crop);
-			ns_color_8 c(63, 63, 63);
-			ns_movement_colors colors;
-			if (path.element(path.first_stationary_timepoint()).absolute_time == time)
-				c = colors.color(ns_movement_slow);
-			output_image.draw_line_color_thick(p, p + ns_vector_2i(s.x - bc.x, 0), c, thickness);
-			output_image.draw_line_color_thick(p, p + ns_vector_2i(0, s.y - bc.y), c, thickness);
-			output_image.draw_line_color_thick(p + s - bc, p + ns_vector_2i(s.x - bc.x, 0), c, thickness);
-			output_image.draw_line_color_thick(p + s - bc, p + ns_vector_2i(0, s.y - bc.y), c, thickness);
+		 //init output image
+		 for (unsigned long y = 0; y < prop.height; y++)
+			 for (unsigned long x = 0; x < 3 * prop.width; x++)
+				 output_image[y][x] = 0;
+		 bool image_to_output(false);
 
-			unsigned best_frame;
-			if (time < path.elements[0].absolute_time)
-				continue;
-			if (i >= path.elements.size())
-				best_frame = path.elements.size() - 1;
-			else {
-				//find most up to date frame for the path;
-				for (best_frame = i; best_frame < path.elements.size() && path.elements[best_frame].absolute_time < time; best_frame++);
-				if (best_frame == path.elements.size())
-					best_frame = path.elements.size() - 1;
-				if (best_frame == 0 && path.elements[best_frame].absolute_time > time)
-					continue;
-				if (path.elements[best_frame].absolute_time > time)
-					best_frame--;
-
-				//now load frames until done
-				if (best_frame > i + 1)
-					image_server_const.add_subtext_to_current_event(std::string("Skipping") + ns_to_string(best_frame - i) + " frames from path " + ns_to_string(g) + "\n", &sql);
+		 const unsigned long time(solution.timepoints[t].time);
+		 //go through each path
+		 for (unsigned int g = 0; g < groups.size(); g++) {
+			 if (!series.items[g].should_be_displayed) continue;
+			 const unsigned long path_id(0);
+			 ns_analyzed_image_time_path & path(groups[g].paths[path_id]);
+			 unsigned long & i(current_path_timepoint_i[g]);
 
 
-				for (; i < best_frame;) {
-					//	cerr << "Clearing p"<<g<< " " << i << "\n";
-					if (i != 0)
-						path.elements[i - 1].clear_movement_images();
-					++i;
-					ns_analyzed_time_image_chunk chunk(i, i + 1);
-					//	cerr << "loading p"<<g<< " " << i << "\n";
-					path.load_movement_images_no_flow(chunk, path_image_source[g]);
-				}
-			}
-			//transfer over movement visualzation to the correct place on the grid.
-			const ns_image_standard &image(path.element(i).registered_images->image);
-		//	path.element(i).registered_images->image.pump(image, 1024);
-			//c = ns_movement_colors::color(path.explicitly_recognized_movement_state(time));
-		
-			if (image.properties().height == 0)
-				throw ns_ex("Registered images not loaded! Path ") << g << " i " << i;
+			 //draw colored line around worm
+			 const ns_vector_2i & p(series.items[g].position_on_visualization_grid);
+			 const ns_vector_2i & s(series.items[g].final_image_size);
+			 const ns_vector_2i & bc(series.items[g].visulazation_border_to_crop);
+			 ns_color_8 c(63, 63, 63);
+			 ns_movement_colors colors;
+			 if (path.element(path.first_stationary_timepoint()).absolute_time == time)
+				 c = colors.color(ns_movement_slow);
+			 output_image.draw_line_color_thick(p, p + ns_vector_2i(s.x - bc.x, 0), c, thickness);
+			 output_image.draw_line_color_thick(p, p + ns_vector_2i(0, s.y - bc.y), c, thickness);
+			 output_image.draw_line_color_thick(p + s - bc, p + ns_vector_2i(s.x - bc.x, 0), c, thickness);
+			 output_image.draw_line_color_thick(p + s - bc, p + ns_vector_2i(0, s.y - bc.y), c, thickness);
+
+			 unsigned best_frame;
+			 if (time < path.elements[0].absolute_time)
+				 continue;
+			 if (i >= path.elements.size())
+				 best_frame = path.elements.size() - 1;
+			 else {
+				 //find most up to date frame for the path;
+				 for (best_frame = i; best_frame < path.elements.size() && path.elements[best_frame].absolute_time < time; best_frame++);
+				 if (best_frame == path.elements.size())
+					 best_frame = path.elements.size() - 1;
+				 if (best_frame == 0 && path.elements[best_frame].absolute_time > time)
+					 continue;
+				 if (path.elements[best_frame].absolute_time > time)
+					 best_frame--;
+
+				 //now load frames until done
+				 if (best_frame > i + 1)
+					 image_server_const.add_subtext_to_current_event(std::string("Skipping") + ns_to_string(best_frame - i) + " frames from path " + ns_to_string(g) + "\n", &sql);
 
 
-			string::size_type ps(vis_summary.worms.size());
-			vis_summary.worms.resize(ps+1);
-			vis_summary.worms[ps].path_in_source_image.position = path.path_region_position-bc/2;
-			vis_summary.worms[ps].path_in_source_image.size= path.path_region_size;
+				 for (; i < best_frame;) {
+					 //	cerr << "Clearing p"<<g<< " " << i << "\n";
+					 if (i != 0)
+						 path.elements[i - 1].clear_movement_images();
+					 ++i;
+					 ns_analyzed_time_image_chunk chunk(i, i + 1);
+					 //	cerr << "loading p"<<g<< " " << i << "\n";
+					 path.load_movement_images_no_flow(chunk, path_image_source[g]);
+				 }
+			 }
+			 //transfer over movement visualzation to the correct place on the grid.
+			 const ns_image_standard &image(path.element(i).registered_images->image);
+			 //	path.element(i).registered_images->image.pump(image, 1024);
+				 //c = ns_movement_colors::color(path.explicitly_recognized_movement_state(time));
 
-			vis_summary.worms[ps].worm_in_source_image.position = path.elements[i].region_offset_in_source_image() - bc / 2;
-			vis_summary.worms[ps].worm_in_source_image.size = path.elements[i].worm_region_size();
-
-			vis_summary.worms[ps].path_in_visualization.position = p;
-			vis_summary.worms[ps].path_in_visualization.size= s-bc;
-
-			if (include_graphs){
-				vis_summary.worms[ps].metadata_in_visualizationA.position = series.items[g].metadata_position_on_visualization_grid;
-				vis_summary.worms[ps].metadata_in_visualizationA.size = ns_vector_2i(graph_prop.width,graph_prop.height);
-			}
-			else vis_summary.worms[ps].metadata_in_visualizationA.position = vis_summary.worms[ps].metadata_in_visualizationA.size = ns_vector_2i(0,0);
-
-			vis_summary.worms[ps].stationary_path_id.path_id = path_id;
-			vis_summary.worms[ps].stationary_path_id.group_id = g;
-			vis_summary.worms[ps].stationary_path_id.detection_set_id = analysis_id;
-			vis_summary.worms[ps].path_time.period_start = path.elements[i].absolute_time;
-			vis_summary.worms[ps].path_time.period_end = path.elements.rbegin()->absolute_time;
-			vis_summary.worms[ps].image_time = path.elements[i].absolute_time;
-
-			
-			//ns_vector_2i region_offset(path.elements[i].region_offset_in_source_image()-path.elements[i].context_offset_in_source_image());
-			for (unsigned int y = 0; y < vis_summary.worms[ps].path_in_visualization.size.y; y++){
-				for (unsigned int x = 0; x < 3*vis_summary.worms[ps].path_in_visualization.size.x; x++){
-					output_image[y+vis_summary.worms[ps].path_in_visualization.position.y]
-					[x+ 3*vis_summary.worms[ps].path_in_visualization.position.x] = (ns_8_bit)(pixel_scale_factors[g].second*(image[y+bc.y/2][x/3+bc.x / 2]- pixel_scale_factors[g].first));
-				}
-			}
-			int height(10);
-
-			ns_death_time_annotation_time_interval current_time_interval;
-				if (t == 0)
-					current_time_interval= groups[g].paths[0].observation_limits().interval_before_first_observation;
-				else current_time_interval = ns_death_time_annotation_time_interval(
-											solution.timepoints[t-1].time,
-											solution.timepoints[t].time);
+			 if (image.properties().height == 0)
+				 throw ns_ex("Registered images not loaded! Path ") << g << " i " << i;
 
 
-				if (group_to_timing_data_map[g] != 0) {
-					const unsigned long number_of_animals_annotated_at_position(group_to_timing_data_map[g]->size());
+			 string::size_type ps(vis_summary.worms.size());
+			 vis_summary.worms.resize(ps + 1);
+			 vis_summary.worms[ps].path_in_source_image.position = path.path_region_position - bc / 2;
+			 vis_summary.worms[ps].path_in_source_image.size = path.path_region_size;
 
-					for (unsigned int k = 0; k < number_of_animals_annotated_at_position; k++) {
-						ns_death_time_annotation_time_interval first_path_obs, last_path_obs;
-						last_path_obs.period_end = groups[g].paths[0].element(groups[g].paths[0].element_count() - 1).absolute_time;
-						last_path_obs.period_start = groups[g].paths[0].element(groups[g].paths[0].element_count() - 2).absolute_time;
-						first_path_obs.period_start = groups[g].paths[0].element(0).absolute_time;
-						first_path_obs.period_end = groups[g].paths[0].element(1).absolute_time;
+			 vis_summary.worms[ps].worm_in_source_image.position = path.elements[i].region_offset_in_source_image() - bc / 2;
+			 vis_summary.worms[ps].worm_in_source_image.size = path.elements[i].worm_region_size();
 
-						ns_crop_time(groups[g].paths[0].observation_limits(), first_path_obs, last_path_obs, (*group_to_timing_data_map[g])[k].fast_movement_cessation.time);
-						ns_crop_time(groups[g].paths[0].observation_limits(), first_path_obs, last_path_obs, (*group_to_timing_data_map[g])[k].death_posture_relaxation_termination_.time);
-						ns_crop_time(groups[g].paths[0].observation_limits(), first_path_obs, last_path_obs, (*group_to_timing_data_map[g])[k].death_posture_relaxation_start.time);
-						ns_crop_time(groups[g].paths[0].observation_limits(), first_path_obs, last_path_obs, (*group_to_timing_data_map[g])[k].movement_cessation.time);
-						ns_crop_time(groups[g].paths[0].observation_limits(), first_path_obs, last_path_obs, (*group_to_timing_data_map[g])[k].translation_cessation.time);
-						(*group_to_timing_data_map[g])[k].draw_movement_diagram(
-							vis_summary.worms[ps].path_in_visualization.position + ns_vector_2i(0, vis_summary.worms[ps].path_in_visualization.size.y - (number_of_animals_annotated_at_position - k)*height),
-							ns_vector_2i(vis_summary.worms[ps].path_in_visualization.size.x, height),
-							groups[g].paths[0].observation_limits(), current_time_interval, output_image, 1,3,false);
-					}
-				}
+			 vis_summary.worms[ps].path_in_visualization.position = p;
+			 vis_summary.worms[ps].path_in_visualization.size = s - bc;
 
-			if (include_graphs){
-				marker_manager.set_marker(time,path_movement_graphs[g]);
-				path_movement_graphs[g].draw(graph_temp);
+			 if (include_graphs) {
+				 vis_summary.worms[ps].metadata_in_visualizationA.position = series.items[g].metadata_position_on_visualization_grid;
+				 vis_summary.worms[ps].metadata_in_visualizationA.size = ns_vector_2i(graph_prop.width, graph_prop.height);
+			 }
+			 else vis_summary.worms[ps].metadata_in_visualizationA.position = vis_summary.worms[ps].metadata_in_visualizationA.size = ns_vector_2i(0, 0);
 
-				for (unsigned int y = 0; y < vis_summary.worms[ps].metadata_in_visualizationA.size.y; y++){
-					for (unsigned int x = 0; x < 3*vis_summary.worms[ps].metadata_in_visualizationA.size.x; x++){
-						output_image[y+vis_summary.worms[ps].metadata_in_visualizationA.position.y]
-						[x+ 3*vis_summary.worms[ps].metadata_in_visualizationA.position.x] = graph_temp[y][x];
-					}
-				}
-			}
+			 vis_summary.worms[ps].stationary_path_id.path_id = path_id;
+			 vis_summary.worms[ps].stationary_path_id.group_id = g;
+			 vis_summary.worms[ps].stationary_path_id.detection_set_id = analysis_id;
+			 vis_summary.worms[ps].path_time.period_start = path.elements[i].absolute_time;
+			 vis_summary.worms[ps].path_time.period_end = path.elements.rbegin()->absolute_time;
+			 vis_summary.worms[ps].image_time = path.elements[i].absolute_time;
 
 
-		
-		}
-		string metadata;
-		vis_summary.to_xml(metadata);
-		output_image.set_description(metadata);
-		ns_image_server_captured_image_region reg;
-		reg.region_images_id = solution.timepoints[t].sample_region_image_id;
-		ns_image_server_image im(reg.create_storage_for_processed_image(ns_process_movement_posture_visualization,ns_tiff,&sql));
-		try{
-			bool had_to_use_volatile_storage;
-			ns_image_storage_reciever_handle<ns_8_bit> r(image_server_const.image_storage.request_storage(im,ns_tiff,1.0,1024,&sql,had_to_use_volatile_storage,false,false));
-			output_image.pump(r.output_stream(),1024);
-			im.mark_as_finished_processing(&sql);
-		}
-		catch(ns_ex & ex){
-			im.mark_as_finished_processing(&sql);
-			throw ex;
-		}
-	}
+			 //ns_vector_2i region_offset(path.elements[i].region_offset_in_source_image()-path.elements[i].context_offset_in_source_image());
+			 for (unsigned int y = 0; y < vis_summary.worms[ps].path_in_visualization.size.y; y++) {
+				 for (unsigned int x = 0; x < 3 * vis_summary.worms[ps].path_in_visualization.size.x; x++) {
+					 output_image[y + vis_summary.worms[ps].path_in_visualization.position.y]
+						 [x + 3 * vis_summary.worms[ps].path_in_visualization.position.x] = (ns_8_bit)(pixel_scale_factors[g].second*(image[y + bc.y / 2][x / 3 + bc.x / 2] - pixel_scale_factors[g].first));
+				 }
+			 }
+			 int height(10);
+
+			 ns_death_time_annotation_time_interval current_time_interval;
+			 if (t == 0)
+				 current_time_interval = groups[g].paths[0].observation_limits().interval_before_first_observation;
+			 else current_time_interval = ns_death_time_annotation_time_interval(
+				 solution.timepoints[t - 1].time,
+				 solution.timepoints[t].time);
+
+
+			 if (group_to_timing_data_map[g] != 0) {
+				 const unsigned long number_of_animals_annotated_at_position(group_to_timing_data_map[g]->size());
+
+				 for (unsigned int k = 0; k < number_of_animals_annotated_at_position; k++) {
+					 ns_death_time_annotation_time_interval first_path_obs, last_path_obs;
+					 last_path_obs.period_end = groups[g].paths[0].element(groups[g].paths[0].element_count() - 1).absolute_time;
+					 last_path_obs.period_start = groups[g].paths[0].element(groups[g].paths[0].element_count() - 2).absolute_time;
+					 first_path_obs.period_start = groups[g].paths[0].element(0).absolute_time;
+					 first_path_obs.period_end = groups[g].paths[0].element(1).absolute_time;
+
+					 ns_crop_time(groups[g].paths[0].observation_limits(), first_path_obs, last_path_obs, (*group_to_timing_data_map[g])[k].fast_movement_cessation.time);
+					 ns_crop_time(groups[g].paths[0].observation_limits(), first_path_obs, last_path_obs, (*group_to_timing_data_map[g])[k].death_posture_relaxation_termination_.time);
+					 ns_crop_time(groups[g].paths[0].observation_limits(), first_path_obs, last_path_obs, (*group_to_timing_data_map[g])[k].death_posture_relaxation_start.time);
+					 ns_crop_time(groups[g].paths[0].observation_limits(), first_path_obs, last_path_obs, (*group_to_timing_data_map[g])[k].movement_cessation.time);
+					 ns_crop_time(groups[g].paths[0].observation_limits(), first_path_obs, last_path_obs, (*group_to_timing_data_map[g])[k].translation_cessation.time);
+					 (*group_to_timing_data_map[g])[k].draw_movement_diagram(
+						 vis_summary.worms[ps].path_in_visualization.position + ns_vector_2i(0, vis_summary.worms[ps].path_in_visualization.size.y - (number_of_animals_annotated_at_position - k)*height),
+						 ns_vector_2i(vis_summary.worms[ps].path_in_visualization.size.x, height),
+						 groups[g].paths[0].observation_limits(), current_time_interval, output_image, 1, 3, false);
+				 }
+			 }
+
+			 if (include_graphs) {
+				 marker_manager.set_marker(time, path_movement_graphs[g]);
+				 path_movement_graphs[g].draw(graph_temp);
+
+				 for (unsigned int y = 0; y < vis_summary.worms[ps].metadata_in_visualizationA.size.y; y++) {
+					 for (unsigned int x = 0; x < 3 * vis_summary.worms[ps].metadata_in_visualizationA.size.x; x++) {
+						 output_image[y + vis_summary.worms[ps].metadata_in_visualizationA.position.y]
+							 [x + 3 * vis_summary.worms[ps].metadata_in_visualizationA.position.x] = graph_temp[y][x];
+					 }
+				 }
+			 }
+
+
+
+		 }
+		 string metadata;
+		 vis_summary.to_xml(metadata);
+		 output_image.set_description(metadata);
+		 ns_image_server_captured_image_region reg;
+		 reg.region_images_id = solution.timepoints[t].sample_region_image_id;
+		 ns_image_server_image im(reg.create_storage_for_processed_image(ns_process_movement_posture_visualization, ns_tiff, &sql));
+		 try {
+			 bool had_to_use_volatile_storage;
+			 ns_image_storage_reciever_handle<ns_8_bit> r(image_server_const.image_storage.request_storage(im, ns_tiff, compression_rate_f, 1024, &sql, had_to_use_volatile_storage, false, false));
+			 output_image.pump(r.output_stream(), 1024);
+			 r.clear();
+			 im.mark_as_finished_processing(&sql);
+		 }
+		 catch (ns_ex & ex) {
+			 im.mark_as_finished_processing(&sql);
+			 throw ex;
+		 }
+
+		 if (generate_plate_worm_composite_images) {
+			 map<unsigned long, ns_64_bit>::iterator movement_paths_vis = movement_paths_visualization_overlay.find(time);
+			 if (movement_paths_vis != movement_paths_visualization_overlay.end() &&
+				 movement_paths_vis->second != 0) {
+				 try {
+					 ns_image_server_image im;
+					 im.load_from_db(movement_paths_vis->second, &sql);
+					 ns_image_storage_source_handle<ns_8_bit> in(image_server_const.image_storage.request_from_storage(im, &sql));
+					 image_loading_temp.use_more_memory_to_avoid_reallocations();
+					 in.input_stream().pump(image_loading_temp, 4096);
+					 ns_image_properties plate_new_properties(image_loading_temp.properties());
+					 plate_new_properties.width = (plate_new_properties.width*output_image.properties().height) / plate_new_properties.height;
+					 plate_new_properties.height = output_image.properties().height;
+
+
+					 image_loading_temp.resample(plate_new_properties, image_loading_temp_2);
+
+					 ns_image_properties composit_prop(output_image.properties());
+					 composit_prop.width += image_loading_temp_2.properties().width;
+					 composit_temp.resize(composit_prop);
+
+					 for (unsigned int y = 0; y < composit_prop.height; y++) {
+						 for (unsigned x = 0; x < 3 * plate_new_properties.width; x++)
+							 composit_temp[y][x] = image_loading_temp_2[y][x];
+						 for (unsigned x = 0; x < 3 * output_image.properties().width; x++)
+							 composit_temp[y][3 * (plate_new_properties.width) + x] = output_image[y][x];
+					 }
+					 ns_image_server_image im2(reg.create_storage_for_processed_image(ns_process_movement_posture_aligned_visualization, ns_tiff, &sql));
+					 bool had_to_use_volatile_storage;
+					 ns_image_storage_reciever_handle<ns_8_bit> r2(image_server_const.image_storage.request_storage(im2, ns_tiff, compression_rate_f, 1024, &sql, had_to_use_volatile_storage, false, false));
+					 composit_temp.pump(r2.output_stream(), 1024);
+					 r2.clear();
+					 im2.mark_as_finished_processing(&sql);
+				 }
+				 catch (ns_ex & ex) {
+					 image_server_const.add_subtext_to_current_event("\nCould not generate composite image: " + ex.text(), &sql);
+				 }
+			 }
+		 }
+
+	 }
+	 image_server_const.add_subtext_to_current_event("\nDone", &sql);
 };
 
 

@@ -2640,5 +2640,26 @@ void ns_death_time_annotation_flag::step_event(){
 	if (this->cached_hidden)
 		step_event();
 }
+
+void ns_zero_death_interval(ns_death_time_annotation_time_interval & e) {
+	e.period_start = e.period_end = 0;
+	e.period_end_was_not_observed = false;
+	e.period_start_was_not_observed = false;
+}
+void ns_crop_time(const ns_time_path_limits & limits, const ns_death_time_annotation_time_interval & first_observation_in_path, const ns_death_time_annotation_time_interval & last_observation_in_path, ns_death_time_annotation_time_interval & target) {
+	if (target.period_end == 0)
+		return;
+	//only crop to the beginning if the animal didn't become stationary in the first frame!
+	if (!limits.interval_before_first_observation.period_start_was_not_observed
+		&&
+		(target.period_start <= limits.interval_before_first_observation.period_start ||
+			target.period_end <= limits.interval_before_first_observation.period_end))
+		target = limits.interval_before_first_observation;
+
+	if (!limits.last_obsevation_of_plate.period_end_was_not_observed &&
+		target.period_end >= last_observation_in_path.period_end)
+		target = last_observation_in_path;
+}
+
 //ns_death_time_annotation_flag::ns_flag_cache cached_flags_by_id;
 ns_death_time_annotation_flag::ns_flag_cache_by_short_label ns_death_time_annotation_flag::cached_flags_by_short_label;

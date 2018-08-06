@@ -1193,7 +1193,7 @@ void ns_worm_movement_description_series::calculate_visualization_grid(const ns_
 				throw ns_ex("ns_worm_movement_description_series::calculate_visualization_grid()::Inconsistant path labeling!  Path id ")
 					<< timepoints[t].worms[i].path_id.group_id << " found in description series with " << items.size() << " groups specified.";
 			ns_worm_movement_description_series_element & item(items[timepoints[t].worms[i].path_id.group_id]);
-			if (!item.sticky_properties.is_censored()  && !item.sticky_properties.is_excluded() &&
+			if (!item.sticky_properties.is_censored()  && !item.sticky_properties.is_excluded() && (item.animal_alive_at_end_of_observation || item.animal_death_was_observed) &&
 				!item.should_be_displayed){
 				item.should_be_displayed = true;
 				output_group_count++;

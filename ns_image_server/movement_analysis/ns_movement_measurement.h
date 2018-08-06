@@ -299,11 +299,13 @@ struct ns_worm_movement_measurement_description_timepoint{
 };
 
 struct ns_worm_movement_description_series_element{
-	ns_worm_movement_description_series_element() :final_image_size(0, 0), path_id(-1, -1, 0), should_be_displayed(false), position_on_visualization_grid(0,0), metadata_position_on_visualization_grid(0,0){}
+	ns_worm_movement_description_series_element() :final_image_size(0, 0), path_id(-1, -1, 0), should_be_displayed(false), animal_death_was_observed(false), animal_alive_at_end_of_observation(false),position_on_visualization_grid(0,0), metadata_position_on_visualization_grid(0,0){}
 	ns_vector_2i final_image_size;
 	ns_stationary_path_id path_id;
 	bool should_be_displayed;
 	ns_death_time_annotation sticky_properties;
+	bool animal_death_was_observed;
+	bool animal_alive_at_end_of_observation;
 	ns_vector_2i visulazation_border_to_crop;
 
 	ns_vector_2i position_on_visualization_grid;

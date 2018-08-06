@@ -6051,6 +6051,9 @@ void ns_time_path_image_movement_analyzer::generate_movement_description_series(
 		description_series.items[i].final_image_size.x = prop.width;
 		description_series.items[i].final_image_size.y = prop.height;
 		description_series.items[i].sticky_properties = groups[i].paths[0].censoring_and_flag_details;
+		description_series.items[i].animal_death_was_observed = groups[i].paths[0].animal_died();
+		description_series.items[i].animal_alive_at_end_of_observation = !description_series.items[i].animal_death_was_observed &&
+			groups[i].paths[0].observation_limits().last_obsevation_of_plate.period_start == groups[i].paths[0].observation_limits().interval_after_last_observation.period_start;
 	}
 
 
@@ -6390,14 +6393,14 @@ void ns_time_path_image_movement_analyzer::generate_movement_posture_visualizati
 
 	ns_marker_manager marker_manager;
 
-	const ns_vector_2i graph_dimensions(include_graphs?ns_vector_2i(300,200):ns_vector_2i(0,0));
+	const ns_vector_2i graph_dimensions(include_graphs ? ns_vector_2i(300, 200) : ns_vector_2i(0, 0));
 	generate_movement_description_series();
 	ns_worm_movement_description_series series = description_series;
 	series.calculate_visualization_grid(graph_dimensions);
 	if (series.items.size() != groups.size())
 		throw ns_ex("calculate_visualization_grid() returned an inconsistant result");
 
-	
+
 	vector<ns_image_storage_source_handle<ns_8_bit> > path_image_source;
 	vector<ns_graph> path_movement_graphs(groups.size());
 	path_image_source.reserve(groups.size());
@@ -6532,6 +6535,9 @@ void ns_time_path_image_movement_analyzer::generate_movement_posture_visualizati
 			const ns_vector_2i & s(series.items[g].final_image_size);
 			const ns_vector_2i & bc(series.items[g].visulazation_border_to_crop);
 			ns_color_8 c(63, 63, 63);
+			ns_movement_colors colors;
+			if (path.element(path.first_stationary_timepoint()).absolute_time == time)
+				c = colors.color(ns_movement_slow);
 			output_image.draw_line_color_thick(p, p + ns_vector_2i(s.x - bc.x, 0), c, thickness);
 			output_image.draw_line_color_thick(p, p + ns_vector_2i(0, s.y - bc.y), c, thickness);
 			output_image.draw_line_color_thick(p + s - bc, p + ns_vector_2i(s.x - bc.x, 0), c, thickness);
@@ -6636,7 +6642,7 @@ void ns_time_path_image_movement_analyzer::generate_movement_posture_visualizati
 						(*group_to_timing_data_map[g])[k].draw_movement_diagram(
 							vis_summary.worms[ps].path_in_visualization.position + ns_vector_2i(0, vis_summary.worms[ps].path_in_visualization.size.y - (number_of_animals_annotated_at_position - k)*height),
 							ns_vector_2i(vis_summary.worms[ps].path_in_visualization.size.x, height),
-							groups[g].paths[0].observation_limits(), current_time_interval, output_image, 1);
+							groups[g].paths[0].observation_limits(), current_time_interval, output_image, 1,3,false);
 					}
 				}
 

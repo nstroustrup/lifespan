@@ -440,6 +440,9 @@ public:
 	}
 	ns_64_bit unique_process_id;
 	~ns_analyzed_image_time_path();
+	bool animal_died() const {
+		return !state_intervals[(int)ns_movement_stationary].skipped;
+	}
 	unsigned long number_of_elements_not_processed_correctly() const;
 	void denoise_movement_series_and_calculate_intensity_slopes(const unsigned long change_time_in_seconds,const ns_time_series_denoising_parameters &);
 

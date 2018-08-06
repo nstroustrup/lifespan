@@ -2969,9 +2969,9 @@ int main() {
 	
 		//worm_learner.data_selector.select_region("hare_a::0");
 	//	ns_start_death_time_annotation(ns_worm_learner::ns_annotate_storyboard_experiment);
-
+		/*
 		ns_time_path_solution solution;
-		ns_64_bit region_id(385);
+		ns_64_bit region_id(374);//385);
 		image_server.add_subtext_to_current_event("Loading data from disk...", &worm_learner.get_sql_connection());
 		solution.load_from_db(region_id, worm_learner.get_sql_connection(), true);
 		ns_time_path_image_movement_analyzer analyzer;
@@ -2991,7 +2991,7 @@ int main() {
 		image_server.add_subtext_to_current_event("\nGenerating visualization...", &worm_learner.get_sql_connection());
 		analyzer.generate_movement_posture_visualizations(false, region_id, solution, worm_learner.get_sql_connection());
 
-
+		*/
 		
 		ns_worm_browser_output_debug(__LINE__,__FILE__,"Entering idle loop");
 

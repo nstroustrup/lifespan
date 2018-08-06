@@ -278,15 +278,18 @@ class ns_detected_worm_info;
 struct ns_worm_movement_measurement_description{
 	ns_worm_movement_measurement_description(const ns_detected_worm_info * w=0,
 											 const ns_movement_state & m=ns_movement_not_calculated, 
-											 const ns_vector_2i & pos=ns_vector_2i(0,0),
-											 const ns_vector_2i & siz = ns_vector_2i(0,0),
-											 const long path_id_ = -1):
-												worm_(w),movement(m),region_position(pos),region_size(siz),path_id(path_id_){}
+											 const ns_vector_2i & region_pos=ns_vector_2i(0,0),
+											 const ns_vector_2i & region_siz = ns_vector_2i(0,0),
+											const ns_vector_2i & context_pos = ns_vector_2i(0, 0),
+											const ns_vector_2i & context_siz = ns_vector_2i(0, 0),
+											 const ns_stationary_path_id path_id_ = ns_stationary_path_id(-1,-1,0)):
+												worm_(w),movement(m),region_position(region_pos),region_size(region_siz), context_position(context_pos), context_size(context_siz), path_id(path_id_){}
 	bool worm_specified() const {return worm_ != 0;}
 	const ns_detected_worm_info & worm() const {return *worm_;}
-	long path_id;
+	ns_stationary_path_id path_id;
 	ns_movement_state movement;
 	ns_vector_2i region_position,region_size;
+	ns_vector_2i context_position, context_size;
 private:
 	const ns_detected_worm_info * worm_;
 };
@@ -295,22 +298,26 @@ struct ns_worm_movement_measurement_description_timepoint{
 	std::vector<ns_worm_movement_measurement_description> worms;
 };
 
+struct ns_worm_movement_description_series_element{
+	ns_worm_movement_description_series_element() :final_image_size(0, 0), path_id(-1, -1, 0), should_be_displayed(false), position_on_visualization_grid(0,0), metadata_position_on_visualization_grid(0,0){}
+	ns_vector_2i final_image_size;
+	ns_stationary_path_id path_id;
+	bool should_be_displayed;
+	ns_death_time_annotation sticky_properties;
+	ns_vector_2i visulazation_border_to_crop;
+
+	ns_vector_2i position_on_visualization_grid;
+	ns_vector_2i metadata_position_on_visualization_grid;
+};
 struct ns_worm_movement_description_series{
-	std::vector<ns_worm_movement_measurement_description_timepoint> timepoints;
+	std::vector<ns_worm_movement_measurement_description_timepoint> timepoints;  //information on worms in each image over the timecourse 
+	std::vector<ns_worm_movement_description_series_element> items;				 //each position on the grid in all images
 
-	std::vector<ns_vector_2i> group_region_position_in_source_image;
-	std::vector<ns_vector_2i> group_region_sizes;
-	std::vector<ns_vector_2i> group_context_position_in_source_image;
-	std::vector<ns_vector_2i> group_context_sizes;
-	mutable std::vector<char> group_should_be_displayed;
-
-	void calculate_visualization_grid(const ns_vector_2i & extra_space_for_metadata = ns_vector_2i(0,0)) const ;
+	void calculate_visualization_grid(const ns_vector_2i & extra_space_for_metadata = ns_vector_2i(0,0)) ;
 	void output_position_visualization_csv(std::ostream & o) const;
 
 	private:
-	mutable std::vector<ns_vector_2i> group_positions_on_visualization_grid;
 	mutable ns_vector_2i visualization_grid_dimensions;
-	mutable std::vector<ns_vector_2i> metadata_positions_on_visualization_grid;
 	mutable ns_vector_2i metadata_dimensions;
 	friend class ns_movement_summarizer;
 	friend class ns_time_path_image_movement_analyzer;

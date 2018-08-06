@@ -7,11 +7,6 @@ void ns_update_worm_information_bar(const std::string & status);
 void ns_update_main_information_bar(const std::string & status);
 
 #include "ns_bspline.h"
-struct ns_animal_list_at_position {
-	ns_stationary_path_id stationary_path_id;
-	typedef std::vector<ns_death_timing_data> ns_animal_list;  //positions can hold multiple animals
-	ns_animal_list animals;
-};
 
 void ns_gaussian_kernel_smoother(const unsigned long time_step_resample_factor, const unsigned long kernel_width_in_fraction_of_all_points,const std::vector<ns_graph_object> & source, std::vector<ns_graph_object> & dest);
 

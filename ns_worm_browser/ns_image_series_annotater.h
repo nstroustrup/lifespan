@@ -96,11 +96,11 @@ protected:
 	bool refresh_requested_;
 	void output_buffer_state(){
 		for (unsigned int i = 0; i < previous_images.size(); i++)
-			cerr << previous_images[previous_images.size()-1-i].im << ( previous_images[previous_images.size()-1-i].loaded?"+":"-") << " ";
-		cerr << " | " << current_image.im << (current_image.loaded?"+":"-") << " | ";
+			std::cerr << previous_images[previous_images.size()-1-i].im << ( previous_images[previous_images.size()-1-i].loaded?"+":"-") << " ";
+		std::cerr << " | " << current_image.im << (current_image.loaded?"+":"-") << " | ";
 		for (unsigned int i = 0; i < next_images.size(); i++)
-			cerr << next_images[i].im << (next_images[i].loaded?"+":"-") << " ";
-		cerr << "\n";
+			std::cerr << next_images[i].im << (next_images[i].loaded?"+":"-") << " ";
+		std::cerr << "\n";
 	}
 	
 	ns_annotater_asynch_load_specification asynch_load_specification;
@@ -114,7 +114,7 @@ protected:
 		spec.timepoint->load_image(spec.bottom_border_size,*spec.image,spec.sql(),spec.temp_buffer,spec.annotater->resize_factor);
 		}
 		catch(ns_ex & ex){
-			cerr << "Error: " << ex.text() << "\n";
+			std::cerr << "Error: " << ex.text() << "\n";
 			if (spec.fatal_error_handler != 0)
 				(*spec.fatal_error_handler)();
 #ifdef _WIN32
@@ -229,7 +229,7 @@ public:
 	//	output_buffer_state();
 		//if the next image is already loaded, we run the swap now and are done!
 		if (previous_images[0].loaded){
-			if (debug_handlers) cerr << "L";
+			if (debug_handlers) std::cerr << "L";
 			draw_metadata(timepoint(current_timepoint_id),*previous_images[0].im);
 			ns_swap<ns_annotater_image_buffer_entry> s;
 			s(previous_images[0],current_image);
@@ -237,11 +237,11 @@ public:
 		else{
 	//		cerr << "Loading " << current_timepoint_id << "\n";
 			if (asynch) {
-				if (debug_handlers) cerr << "A";
+				if (debug_handlers) std::cerr << "A";
 				load_image_asynch(timepoint(current_timepoint_id), previous_images[0], error_handler, &current_image, &previous_images[0]);
 			}
 			else{
-				if (debug_handlers) cerr << "Q";
+				if (debug_handlers) std::cerr << "Q";
 				timepoint(current_timepoint_id)->load_image(asynch_load_specification.bottom_border_size,previous_images[0],sql(),asynch_load_specification.temp_buffer,resize_factor);
 				draw_metadata(timepoint(current_timepoint_id),*previous_images[0].im);
 				ns_swap<ns_annotater_image_buffer_entry> s;
@@ -287,7 +287,7 @@ public:
 	//	output_buffer_state();
 		//if the next image is already loaded, we run the swap now and are done!
 		if (next_images[0].loaded){
-			if (debug_handlers) cerr << "L";
+			if (debug_handlers) std::cerr << "L";
 			draw_metadata(timepoint(current_timepoint_id),*next_images[0].im);
 			ns_swap<ns_annotater_image_buffer_entry> s;
 			s(next_images[0],current_image);
@@ -296,11 +296,11 @@ public:
 			//cerr << "Loading " << current_timepoint_id << "\n";
 			if (asynch) {
 				load_image_asynch(timepoint(current_timepoint_id), next_images[0], error_handler, &current_image, &next_images[0]);
-				if (debug_handlers) cerr << "A";
+				if (debug_handlers) std::cerr << "A";
 			}
 			else{
 
-				if (debug_handlers) cerr << "Q";
+				if (debug_handlers) std::cerr << "Q";
 				timepoint(current_timepoint_id)->load_image(asynch_load_specification.bottom_border_size,next_images[0],sql(),asynch_load_specification.temp_buffer,resize_factor);
 				draw_metadata(timepoint(current_timepoint_id),*next_images[0].im);
 				ns_swap<ns_annotater_image_buffer_entry> s;

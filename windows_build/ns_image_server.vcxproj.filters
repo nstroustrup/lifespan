@@ -514,6 +514,9 @@
     <ClInclude Include="..\ns_image_server\data_annotation\ns_death_time_annotation_set.h">
       <Filter>data_annotation</Filter>
     </ClInclude>
+    <ClInclude Include="..\ns_image_server\data_annotation\ns_annotation_handling_for_visualization.h">
+      <Filter>data_annotation</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\ns_image_server\image_acquisition\ns_buffered_capture_scheduler.cpp">

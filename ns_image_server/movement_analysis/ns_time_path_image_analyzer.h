@@ -744,7 +744,7 @@ public:
 		return description_series;
 	}
 	
-	void generate_movement_posture_visualizations(const bool include_motion_graphs,const ns_64_bit region_id,const ns_time_path_solution & solution,ns_sql & sql);
+	void generate_movement_posture_visualizations(const bool include_motion_graphs,const ns_64_bit region_id, const ns_time_path_solution & solution,ns_sql & sql);
 
 	void generate_death_aligned_movement_posture_visualizations(const bool include_motion_graphs,const ns_64_bit region_id,const ns_movement_event & event_to_align, const ns_time_path_solution & solution,ns_sql & sql);
 

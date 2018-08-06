@@ -478,6 +478,7 @@
     <ClInclude Include="..\external_libraries\wm4_bspline\Wm4TStringHashTable.h" />
     <ClInclude Include="..\external_libraries\wm4_bspline\Wm4TTuple.h" />
     <ClInclude Include="..\external_libraries\wm4_bspline\Wm4Vector2.h" />
+    <ClInclude Include="..\ns_image_server\data_annotation\ns_annotation_handling_for_visualization.h" />
     <ClInclude Include="..\ns_image_server\data_annotation\ns_death_time_annotation.h" />
     <ClInclude Include="..\ns_image_server\data_annotation\ns_death_time_annotation_set.h" />
     <ClInclude Include="..\ns_image_server\image_acquisition\ns_asynchronous_read.h" />

@@ -1,6 +1,7 @@
 #include "ns_movement_measurement.h"
 #include "ns_vector_bitmap_interface.h"
 #include "ns_time_path_solver.h"
+#include "ns_time_path_image_analyzer.h"
 #include <vector>
 #include <algorithm>
 
@@ -716,7 +717,7 @@ void ns_worm_movement_description_series::output_position_visualization_csv(std:
 				timepoints[i].time,
 				timepoints[i].worms[j].region_position + timepoints[i].worms[j].region_size/2,
 				timepoints[i].worms[j].region_size,
-				timepoints[i].worms[j].path_id, 0,
+				timepoints[i].worms[j].path_id.path_id, timepoints[i].worms[j].path_id.group_id,
 				0,(timepoints[i].worms[j].movement == ns_movement_machine_excluded || 
 				timepoints[i].worms[j].movement == ns_movement_by_hand_excluded),0,
 				false,false,
@@ -1178,25 +1179,23 @@ void ns_worm_movement_summary_series::from_death_time_annotations(const ns_death
 	
 }
 
-void ns_worm_movement_description_series::calculate_visualization_grid(const ns_vector_2i & extra_space_for_metadata) const{
+void ns_worm_movement_description_series::calculate_visualization_grid(const ns_vector_2i & extra_space_for_metadata) {
 	
 	const bool include_metadata(extra_space_for_metadata.x > 0);
 
-	const vector<ns_vector_2i> & sizes(group_context_sizes);
-
 
 	//identify paths that should be included in the visualization
-	group_should_be_displayed.resize(sizes.size(),0);
 	unsigned long output_group_count(0);
 	for (unsigned int t = 0; t < timepoints.size(); t++){
 		for (unsigned int i = 0; i < timepoints[t].worms.size(); i++){
-			if (timepoints[t].worms[i].path_id == -1) continue;
-			if (timepoints[t].worms[i].path_id >= group_should_be_displayed.size())
+			if (timepoints[t].worms[i].path_id.group_id == -1) continue;
+			if (timepoints[t].worms[i].path_id.group_id >= items.size())
 				throw ns_ex("ns_worm_movement_description_series::calculate_visualization_grid()::Inconsistant path labeling!  Path id ")
-					<< timepoints[t].worms[i].path_id << " found in description series with " << group_should_be_displayed.size() << " groups specified.";
-			if (/*timepoints[t].worms[i].movement != ns_movement_fast && */
-				group_should_be_displayed[timepoints[t].worms[i].path_id] == 0){
-				group_should_be_displayed[timepoints[t].worms[i].path_id] = 1;
+					<< timepoints[t].worms[i].path_id.group_id << " found in description series with " << items.size() << " groups specified.";
+			ns_worm_movement_description_series_element & item(items[timepoints[t].worms[i].path_id.group_id]);
+			if (!item.sticky_properties.is_censored()  && !item.sticky_properties.is_excluded() &&
+				!item.should_be_displayed){
+				item.should_be_displayed = true;
 				output_group_count++;
 			}
 		}
@@ -1204,10 +1203,8 @@ void ns_worm_movement_description_series::calculate_visualization_grid(const ns_
 	
 	if (output_group_count == 0)
 		throw ns_ex("Region Contained No Paths");
-	group_positions_on_visualization_grid.resize(group_context_sizes.size());
 	if (include_metadata){
 		metadata_dimensions = extra_space_for_metadata;
-		metadata_positions_on_visualization_grid.resize(group_context_sizes.size());
 	}
 
 	const unsigned long worms_per_row((unsigned long)ceil(1.3*sqrt((double)output_group_count)));
@@ -1217,20 +1214,23 @@ void ns_worm_movement_description_series::calculate_visualization_grid(const ns_
 	ns_vector_2i cur_pos(border,border);
 
 	unsigned long paths_placed(0);
-	for (unsigned int i = 0; i < sizes.size(); i++){
-		if(!group_should_be_displayed[i]){
-			metadata_positions_on_visualization_grid[i] = ns_vector_2i(0,0);
-			group_positions_on_visualization_grid[i] = ns_vector_2i(0,0);
+	for (unsigned int i = 0; i < items.size(); i++){
+		items[i].visulazation_border_to_crop = ns_analyzed_image_time_path::maximum_alignment_offset();
+		
+		if(!items[i].should_be_displayed){
+			if (include_metadata)
+			items[i].metadata_position_on_visualization_grid= ns_vector_2i(0,0);
+			items[i].position_on_visualization_grid= ns_vector_2i(0,0);
 			continue;
 		}
 	//	cerr << group_position[i] << " by " << sizes[i] << "\n";
-		group_positions_on_visualization_grid[i] = cur_pos;
+		items[i].position_on_visualization_grid = cur_pos;
 		if (include_metadata)
-			metadata_positions_on_visualization_grid[i] = cur_pos + ns_vector_2i(0,sizes[i].y);
+			items[i].metadata_position_on_visualization_grid = cur_pos + ns_vector_2i(0, items[i].final_image_size.y);
 
-		ns_vector_2i item_size(sizes[i]);
+		ns_vector_2i item_size(items[i].final_image_size - items[i].visulazation_border_to_crop);
 		if (include_metadata){
-			if (sizes[i].x < metadata_dimensions.x)
+			if (item_size.x < metadata_dimensions.x)
 				item_size.x = metadata_dimensions.x;
 			item_size.y += metadata_dimensions.y;
 		}

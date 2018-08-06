@@ -11,6 +11,7 @@
 #include "ns_high_precision_timer.h"
 #include "ns_experiment_storyboard.h"
 #include "ns_analyze_movement_over_time.h"
+#include "ns_hand_annotation_loader.h"
 #define IDLE_THROTTLE_FPS 40
 #define SCALE_FONTS_WITH_WINDOW_SIZE 0
 
@@ -2968,6 +2969,29 @@ int main() {
 	
 		//worm_learner.data_selector.select_region("hare_a::0");
 	//	ns_start_death_time_annotation(ns_worm_learner::ns_annotate_storyboard_experiment);
+
+		ns_time_path_solution solution;
+		ns_64_bit region_id(385);
+		image_server.add_subtext_to_current_event("Loading data from disk...", &worm_learner.get_sql_connection());
+		solution.load_from_db(region_id, worm_learner.get_sql_connection(), true);
+		ns_time_path_image_movement_analyzer analyzer;
+		const ns_time_series_denoising_parameters time_series_denoising_parameters(ns_time_series_denoising_parameters::load_from_db(region_id, worm_learner.get_sql_connection()));
+
+		ns_image_server::ns_posture_analysis_model_cache::const_handle_t posture_analysis_model_handle;
+		image_server.get_posture_analysis_model_for_region(region_id, posture_analysis_model_handle, worm_learner.get_sql_connection());
+
+		ns_acquire_for_scope<ns_analyzed_image_time_path_death_time_estimator> death_time_estimator(
+			ns_get_death_time_estimator_from_posture_analysis_model(posture_analysis_model_handle().model_specification));
+		analyzer.load_completed_analysis(region_id, solution, time_series_denoising_parameters, &death_time_estimator(), worm_learner.get_sql_connection());
+		death_time_estimator.release();
+		ns_region_metadata metadata;
+		ns_hand_annotation_loader by_hand_region_annotations;
+		metadata = by_hand_region_annotations.load_region_annotations(ns_death_time_annotation_set::ns_censoring_and_movement_transitions, region_id, worm_learner.get_sql_connection());
+		analyzer.add_by_hand_annotations(by_hand_region_annotations.annotations);
+		image_server.add_subtext_to_current_event("\nGenerating visualization...", &worm_learner.get_sql_connection());
+		analyzer.generate_movement_posture_visualizations(false, region_id, solution, worm_learner.get_sql_connection());
+
+
 		
 		ns_worm_browser_output_debug(__LINE__,__FILE__,"Entering idle loop");
 

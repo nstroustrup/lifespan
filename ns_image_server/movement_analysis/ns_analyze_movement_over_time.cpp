@@ -12,6 +12,7 @@
 
 
 
+
 void invalidate_stored_data_depending_on_movement_analysis(const ns_processing_job & job,ns_sql & sql,bool & already_performed) {
 	if (already_performed)
 		return;
@@ -409,6 +410,7 @@ void ns_refine_image_statistics(const ns_64_bit region_id, const bool recalculat
 
 	ns_region_metadata metadata;
 	ns_hand_annotation_loader by_hand_region_annotations;
+
 	metadata = by_hand_region_annotations.load_region_annotations(ns_death_time_annotation_set::ns_censoring_and_movement_transitions, region_id, sql);
 
 	analyzer.add_by_hand_annotations(by_hand_region_annotations.annotations);

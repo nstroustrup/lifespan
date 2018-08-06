@@ -11,6 +11,7 @@
 #include "ns_subpixel_image_alignment.h"
 #include "ns_fl_modal_dialogs.h"
 #include "ns_animal_telemetry.h"
+#include "ns_annotation_handling_for_visualization.h"
 void ns_hide_worm_window();
 
 void ns_specify_worm_details(const ns_64_bit region_info_id,const ns_stationary_path_id & worm, const ns_death_time_annotation & sticky_properties, std::vector<ns_death_time_annotation> & event_times);
@@ -307,60 +308,8 @@ public:
 			if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("Loading movement quantification data"));
 			data.load_movement_analysis(region_id, sql, load_movement_quantification_data);
 			
-			if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("Setting timing"));
-			data.by_hand_timing_data.resize(0);
-			data.machine_timing_data.resize(0);
-			data.by_hand_timing_data.resize(data.movement_analyzer.size());
-			data.machine_timing_data.resize(data.movement_analyzer.size());
-			for (unsigned int i = 0; i < data.movement_analyzer.size(); i++){
-				ns_stationary_path_id path_id;
-				path_id.detection_set_id = data.movement_analyzer.db_analysis_id();
-				path_id.group_id = i;
-				path_id.path_id = 0;
-				data.by_hand_timing_data[i].stationary_path_id = path_id;
-				data.machine_timing_data[i].stationary_path_id = path_id;
-
-				data.by_hand_timing_data[i].animals.resize(1);
-				data.by_hand_timing_data[i].animals[0].set_fast_movement_cessation_time(
-					ns_death_timing_data_step_event_specification(
-					data.movement_analyzer[i].paths[0].cessation_of_fast_movement_interval(),
-					data.movement_analyzer[i].paths[0].element(data.movement_analyzer[i].paths[0].first_stationary_timepoint()),
-										region_id,path_id,0));
-				data.by_hand_timing_data[i].animals[0].animal_specific_sticky_properties.animal_id_at_position = 0;
-				data.machine_timing_data[i].animals.resize(1);
-				data.machine_timing_data[i].animals[0].set_fast_movement_cessation_time(
-					ns_death_timing_data_step_event_specification(
-					data.movement_analyzer[i].paths[0].cessation_of_fast_movement_interval(),
-					data.movement_analyzer[i].paths[0].element(data.movement_analyzer[i].paths[0].first_stationary_timepoint()),
-										region_id,path_id,0));
-				data.machine_timing_data[i].animals[0].animal_specific_sticky_properties.animal_id_at_position = 0;
-				data.by_hand_timing_data[i].animals[0].position_data.stationary_path_id = path_id;
-				data.by_hand_timing_data[i].animals[0].position_data.path_in_source_image.position = data.movement_analyzer[i].paths[0].path_region_position;
-				data.by_hand_timing_data[i].animals[0].position_data.path_in_source_image.size = data.movement_analyzer[i].paths[0].path_region_size;
-				data.by_hand_timing_data[i].animals[0].position_data.worm_in_source_image.position = data.movement_analyzer[i].paths[0].element(data.movement_analyzer[i].paths[0].first_stationary_timepoint()).region_offset_in_source_image();
-				data.by_hand_timing_data[i].animals[0].position_data.worm_in_source_image.size = data.movement_analyzer[i].paths[0].element(data.movement_analyzer[i].paths[0].first_stationary_timepoint()).worm_region_size();
-
-				data.by_hand_timing_data[i].animals[0].animal_specific_sticky_properties.stationary_path_id = data.by_hand_timing_data[i].animals[0].position_data.stationary_path_id;
-				//data.by_hand_timing_data[i].animals[0].worm_id_in_path = 0;
-					//data.by_hand_timing_data[i].sticky_properties.annotation_source = ns_death_time_annotation::ns_lifespan_machine;
-				//data.by_hand_timing_data[i].sticky_properties.position = data.movement_analyzer[i].paths[0].path_region_position;
-			//	data.by_hand_timing_data[i].sticky_properties.size = data.movement_analyzer[i].paths[0].path_region_size;
-
-			//	data.by_hand_timing_data[i].stationary_path_id = data.by_hand_timing_data[i].position_data.stationary_path_id;
-
-				data.by_hand_timing_data[i].animals[0].region_info_id = region_id;
-				data.machine_timing_data[i].animals[0] =
-					data.by_hand_timing_data[i].animals[0];
-
-				//by default specify the beginnnig of the path as the translation cessation time.
-				if (data.by_hand_timing_data[i].animals[0].translation_cessation.time.period_end==0)
-		//			for (int k = 0; k < 2; k++)
-					data.by_hand_timing_data[i].animals[0].step_event(
-						ns_death_timing_data_step_event_specification(
-									data.movement_analyzer[i].paths[0].cessation_of_fast_movement_interval(),
-									data.movement_analyzer[i].paths[0].element(data.movement_analyzer[i].paths[0].first_stationary_timepoint()),region_id,
-									data.by_hand_timing_data[i].animals[0].position_data.stationary_path_id,0),data.movement_analyzer[i].paths[0].observation_limits(),false);
-			}
+			ns_timing_data_configurator configurator;
+			configurator(region_id,data.movement_analyzer, data.machine_timing_data, data.by_hand_timing_data);
 
 			if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("Loading annotations 2"));
 			data.load_annotations(sql,false);
@@ -387,7 +336,6 @@ public:
 		return true;
 	}
 };
-void ns_crop_time(const ns_time_path_limits & limits, const ns_death_time_annotation_time_interval & first_observation_in_path, const ns_death_time_annotation_time_interval & last_observation_in_path, ns_death_time_annotation_time_interval & target);
 
 class ns_worm_learner;
 class ns_death_time_solo_posture_annotater : public ns_image_series_annotater {

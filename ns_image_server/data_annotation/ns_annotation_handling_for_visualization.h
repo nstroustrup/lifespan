@@ -548,7 +548,7 @@ public:
 	void save_death_timing_data_to_set(const timing_data_container & timing_data, const std::vector<ns_death_time_annotation> & orphaned_events, ns_death_time_annotation_set & set, const bool include_flags_and_censoring) {
 		unsigned long current_time(ns_current_time());
 		if (set.size() > 20)
-			cout << "Many annotations specified!\n";
+		  std::cout << "Many annotations specified!\n";
 		for (typename timing_data_container::const_iterator p = timing_data.begin(); p != timing_data.end(); ++p) {
 			if (p->specified == false)
 				continue;

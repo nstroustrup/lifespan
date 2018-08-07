@@ -1,6 +1,5 @@
--- MySQL dump 10.14  Distrib 5.5.56-MariaDB, for Linux (x86_64)
+-- MySQL dump 10.14  Distrib 5.5.58-MariaDB, for Linux (x86_64)
 --
--- Host: mysqlsrv02.linux.crg.es    Database: image_server
 -- ------------------------------------------------------
 -- Server version	5.1.73
 
@@ -28,13 +27,13 @@ CREATE TABLE `alerts` (
   `text` text NOT NULL,
   `recipients` text NOT NULL,
   `acknowledged` tinyint(1) NOT NULL DEFAULT '0',
-  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
   `email_sender_host_id` int(10) unsigned NOT NULL DEFAULT '0',
   `critical_alert` tinyint(1) NOT NULL DEFAULT '0',
   `detailed_text` text NOT NULL,
   `detailed_recipients` text,
   PRIMARY KEY (`id`)
-) ENGINE=MyISAM AUTO_INCREMENT=9090 DEFAULT CHARSET=latin1;
+) ENGINE=MyISAM AUTO_INCREMENT=9106 DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -45,12 +44,12 @@ DROP TABLE IF EXISTS `animal_storyboard`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `animal_storyboard` (
-  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
-  `region_id` int(10) unsigned NOT NULL DEFAULT '0',
-  `sample_id` int(10) unsigned NOT NULL DEFAULT '0',
-  `experiment_id` int(10) unsigned NOT NULL DEFAULT '0',
-  `image_id` int(10) unsigned NOT NULL DEFAULT '0',
-  `metadata_id` int(10) unsigned NOT NULL DEFAULT '0',
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `region_id` bigint(20) unsigned NOT NULL DEFAULT '0',
+  `sample_id` bigint(20) unsigned NOT NULL DEFAULT '0',
+  `experiment_id` bigint(20) unsigned NOT NULL DEFAULT '0',
+  `image_id` bigint(20) unsigned NOT NULL DEFAULT '0',
+  `metadata_id` bigint(20) unsigned NOT NULL DEFAULT '0',
   `using_by_hand_annotations` int(10) unsigned NOT NULL DEFAULT '0',
   `strain` text NOT NULL,
   `movement_event_used` int(10) unsigned NOT NULL DEFAULT '0',
@@ -62,7 +61,7 @@ CREATE TABLE `animal_storyboard` (
   `minimum_distance_to_juxtipose_neighbors` int(11) NOT NULL DEFAULT '0',
   PRIMARY KEY (`id`),
   KEY `subject` (`region_id`,`sample_id`,`experiment_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=6554 DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB AUTO_INCREMENT=7380 DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -93,7 +92,7 @@ DROP TABLE IF EXISTS `automated_job_scheduling_data`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `automated_job_scheduling_data` (
-  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
   `currently_running_host_id` int(11) NOT NULL DEFAULT '0',
   `acquisition_time` int(10) unsigned NOT NULL DEFAULT '0',
   `next_run_time` int(10) unsigned NOT NULL DEFAULT '0',
@@ -109,14 +108,14 @@ DROP TABLE IF EXISTS `autoscan_schedule`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `autoscan_schedule` (
-  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
   `device_name` varchar(256) NOT NULL DEFAULT '0',
   `autoscan_start_time` int(10) unsigned NOT NULL DEFAULT '0',
   `autoscan_completed_time` int(10) unsigned NOT NULL DEFAULT '0',
   `scan_interval` int(10) unsigned NOT NULL DEFAULT '0',
   PRIMARY KEY (`id`),
   KEY `lookup` (`device_name`,`autoscan_completed_time`,`autoscan_start_time`)
-) ENGINE=MyISAM AUTO_INCREMENT=4363 DEFAULT CHARSET=latin1;
+) ENGINE=MyISAM AUTO_INCREMENT=4378 DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -127,14 +126,14 @@ DROP TABLE IF EXISTS `capture_samples`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `capture_samples` (
-  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
   `parameters` text NOT NULL,
   `name` varchar(32) NOT NULL,
-  `experiment_id` int(10) unsigned NOT NULL DEFAULT '0',
+  `experiment_id` bigint(20) unsigned NOT NULL DEFAULT '0',
   `description` text NOT NULL,
-  `mask_id` int(10) unsigned NOT NULL DEFAULT '0',
+  `mask_id` bigint(20) unsigned NOT NULL DEFAULT '0',
   `device_id` varchar(12) NOT NULL DEFAULT '',
-  `problem` tinyint(1) NOT NULL DEFAULT '0',
+  `problem` bigint(20) NOT NULL DEFAULT '0',
   `device_name` varchar(23) NOT NULL DEFAULT '0',
   `model_filename` text NOT NULL,
   `long_capture_interval` int(10) unsigned NOT NULL DEFAULT '50',
@@ -155,7 +154,7 @@ CREATE TABLE `capture_samples` (
   `size_processed_region_images` int(10) unsigned NOT NULL DEFAULT '0',
   `size_metadata` int(10) unsigned NOT NULL DEFAULT '0',
   `size_calculation_time` int(10) unsigned NOT NULL DEFAULT '0',
-  `op0_video_id` int(10) unsigned NOT NULL DEFAULT '0',
+  `op0_video_id` bigint(20) unsigned NOT NULL DEFAULT '0',
   `reason_censored` text NOT NULL,
   `incubator_name` text NOT NULL,
   `incubator_location` text NOT NULL,
@@ -170,7 +169,7 @@ CREATE TABLE `capture_samples` (
   PRIMARY KEY (`id`),
   KEY `text_find` (`parameters`(400)),
   KEY `device_lookup` (`id`,`device_name`)
-) ENGINE=InnoDB AUTO_INCREMENT=706 DEFAULT CHARSET=latin1 ROW_FORMAT=DYNAMIC COMMENT='different samples imaged on the scanner with different param';
+) ENGINE=InnoDB AUTO_INCREMENT=764 DEFAULT CHARSET=latin1 ROW_FORMAT=DYNAMIC COMMENT='different samples imaged on the scanner with different param';
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -182,12 +181,12 @@ DROP TABLE IF EXISTS `capture_schedule`;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `capture_schedule` (
   `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
-  `experiment_id` int(10) unsigned NOT NULL DEFAULT '0',
+  `experiment_id` bigint(20) unsigned NOT NULL DEFAULT '0',
   `scheduled_time` bigint(20) unsigned NOT NULL DEFAULT '0',
   `time_at_start` bigint(20) unsigned NOT NULL DEFAULT '0',
   `time_at_finish` bigint(20) unsigned NOT NULL DEFAULT '0',
   `problem` bigint(20) unsigned NOT NULL DEFAULT '0',
-  `sample_id` int(10) unsigned NOT NULL DEFAULT '0',
+  `sample_id` bigint(20) unsigned NOT NULL DEFAULT '0',
   `captured_image_id` bigint(20) unsigned NOT NULL DEFAULT '0' COMMENT 'Points to the captured_image entry that resulted from the scan',
   `missed` tinyint(1) NOT NULL DEFAULT '0',
   `time_at_imaging_start` bigint(20) unsigned NOT NULL DEFAULT '0',
@@ -215,7 +214,7 @@ CREATE TABLE `capture_schedule` (
   KEY `image_reverse_lookup` (`captured_image_id`),
   KEY `shed` (`scheduled_time`,`sample_id`),
   KEY `device_lookup` (`scheduled_time`,`time_at_start`,`sample_id`,`experiment_id`,`missed`,`problem`,`time_at_finish`,`censored`) USING BTREE
-) ENGINE=InnoDB AUTO_INCREMENT=260689 DEFAULT CHARSET=latin1 COMMENT='InnoDB free: 121856 kB';
+) ENGINE=InnoDB AUTO_INCREMENT=299584 DEFAULT CHARSET=latin1 COMMENT='InnoDB free: 121856 kB';
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -226,16 +225,16 @@ DROP TABLE IF EXISTS `captured_images`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `captured_images` (
-  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
-  `image_id` int(10) unsigned NOT NULL DEFAULT '0',
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `image_id` bigint(20) unsigned NOT NULL DEFAULT '0',
   `processing_host_id` int(10) unsigned NOT NULL DEFAULT '0',
   `last_modified` int(10) unsigned NOT NULL DEFAULT '0',
-  `experiment_id` int(10) unsigned NOT NULL DEFAULT '0',
-  `sample_id` int(10) unsigned NOT NULL DEFAULT '0',
+  `experiment_id` bigint(20) unsigned NOT NULL DEFAULT '0',
+  `sample_id` bigint(20) unsigned NOT NULL DEFAULT '0',
   `capture_time` bigint(20) unsigned NOT NULL DEFAULT '0',
   `currently_being_processed` int(10) unsigned NOT NULL DEFAULT '0' COMMENT 'Set nonzero if the current image is currently checked out for processing',
   `mask_applied` tinyint(3) unsigned NOT NULL DEFAULT '0',
-  `problem` int(10) unsigned NOT NULL DEFAULT '0',
+  `problem` bigint(20) unsigned NOT NULL DEFAULT '0',
   `registration_vertical_offset` int(11) NOT NULL DEFAULT '0',
   `registration_horizontal_offset` int(10) NOT NULL DEFAULT '0',
   `registration_offset_calculated` tinyint(3) unsigned NOT NULL DEFAULT '0',
@@ -247,7 +246,7 @@ CREATE TABLE `captured_images` (
   KEY `image_id_reverse_lookup` (`image_id`),
   KEY `time` (`sample_id`,`capture_time`),
   KEY `job_search` (`sample_id`,`currently_being_processed`,`mask_applied`,`problem`,`small_image_id`,`censored`,`image_id`) USING BTREE
-) ENGINE=InnoDB AUTO_INCREMENT=128366 DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB AUTO_INCREMENT=138178 DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -288,11 +287,11 @@ DROP TABLE IF EXISTS `delete_file_jobs`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `delete_file_jobs` (
-  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
   `confirmed` int(10) unsigned NOT NULL DEFAULT '0',
-  `parent_job_id` int(10) unsigned NOT NULL DEFAULT '0' COMMENT 'points to the file deletion specification job that produced this deletion job',
+  `parent_job_id` bigint(20) unsigned NOT NULL DEFAULT '0' COMMENT 'points to the file deletion specification job that produced this deletion job',
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=latin1 ROW_FORMAT=DYNAMIC;
+) ENGINE=InnoDB AUTO_INCREMENT=478 DEFAULT CHARSET=latin1 ROW_FORMAT=DYNAMIC;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -303,7 +302,7 @@ DROP TABLE IF EXISTS `delete_file_specifications`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `delete_file_specifications` (
-  `delete_job_id` int(10) unsigned DEFAULT NULL,
+  `delete_job_id` bigint(20) unsigned DEFAULT NULL,
   `relative_directory` text NOT NULL,
   `filename` text NOT NULL,
   `partition` text NOT NULL
@@ -334,12 +333,12 @@ DROP TABLE IF EXISTS `devices`;
 CREATE TABLE `devices` (
   `name` varchar(256) NOT NULL,
   `comments` text NOT NULL,
-  `host_id` int(10) unsigned NOT NULL DEFAULT '0',
+  `host_id` bigint(20) unsigned NOT NULL DEFAULT '0',
   `preview_requested` int(10) unsigned NOT NULL DEFAULT '0',
-  `barcode_image_id` int(10) unsigned NOT NULL DEFAULT '0',
+  `barcode_image_id` bigint(20) unsigned NOT NULL DEFAULT '0',
   `in_recognized_error_state` int(10) unsigned NOT NULL DEFAULT '0',
   `error_text` text NOT NULL,
-  `id` int(11) NOT NULL DEFAULT '0',
+  `id` bigint(20) NOT NULL DEFAULT '0',
   `unknown_identity` tinyint(1) NOT NULL DEFAULT '0',
   `simulated_device` tinyint(1) NOT NULL DEFAULT '0',
   `pause_captures` tinyint(1) NOT NULL DEFAULT '0',
@@ -376,7 +375,7 @@ DROP TABLE IF EXISTS `experiments`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `experiments` (
-  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
   `name` text NOT NULL,
   `description` text NOT NULL,
   `first_time_point` bigint(20) unsigned NOT NULL DEFAULT '0',
@@ -404,7 +403,7 @@ CREATE TABLE `experiments` (
   `compression_type` char(50) NOT NULL DEFAULT 'jp2k',
   `compression_ratio` float NOT NULL DEFAULT '0.05',
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=43 DEFAULT CHARSET=latin1 ROW_FORMAT=DYNAMIC;
+) ENGINE=InnoDB AUTO_INCREMENT=48 DEFAULT CHARSET=latin1 ROW_FORMAT=DYNAMIC;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -439,7 +438,7 @@ CREATE TABLE `host_event_log` (
   KEY `host_index` (`host_id`,`time`),
   KEY `sub_events` (`parent_event_id`,`time`),
   KEY `duration` (`processing_duration`)
-) ENGINE=MyISAM AUTO_INCREMENT=47281985 DEFAULT CHARSET=latin1 COMMENT='InnoDB free: 204800 kB';
+) ENGINE=MyISAM AUTO_INCREMENT=47466066 DEFAULT CHARSET=latin1 COMMENT='InnoDB free: 204800 kB';
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -450,7 +449,7 @@ DROP TABLE IF EXISTS `hosts`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `hosts` (
-  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
   `ip` varchar(15) NOT NULL DEFAULT '',
   `comments` text NOT NULL,
   `last_ping` int(10) unsigned NOT NULL DEFAULT '0',
@@ -484,19 +483,19 @@ DROP TABLE IF EXISTS `image_mask_regions`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `image_mask_regions` (
-  `mask_id` int(10) unsigned NOT NULL DEFAULT '0',
+  `mask_id` bigint(20) unsigned NOT NULL DEFAULT '0',
   `x_min` int(10) unsigned NOT NULL DEFAULT '0',
   `y_min` int(10) unsigned NOT NULL DEFAULT '0',
   `x_max` int(10) unsigned NOT NULL DEFAULT '0',
   `y_max` int(10) unsigned NOT NULL DEFAULT '0',
-  `pixel_count` int(10) unsigned NOT NULL DEFAULT '0',
+  `pixel_count` bigint(20) unsigned NOT NULL DEFAULT '0',
   `y_average` int(10) unsigned NOT NULL DEFAULT '0',
   `x_average` int(10) unsigned NOT NULL DEFAULT '0',
   `mask_value` int(10) unsigned NOT NULL COMMENT 'the pixel value of this region in the mask image',
-  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
   PRIMARY KEY (`id`),
   KEY `mask` (`mask_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=1099 DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB AUTO_INCREMENT=1166 DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -507,13 +506,13 @@ DROP TABLE IF EXISTS `image_masks`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `image_masks` (
-  `image_id` int(10) unsigned NOT NULL DEFAULT '0',
-  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `image_id` bigint(20) unsigned NOT NULL DEFAULT '0',
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
   `processed` tinyint(1) NOT NULL DEFAULT '0',
-  `visualization_image_id` int(10) unsigned NOT NULL DEFAULT '0',
+  `visualization_image_id` bigint(20) unsigned NOT NULL DEFAULT '0',
   `resize_factor` int(10) unsigned NOT NULL DEFAULT '1',
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=374 DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB AUTO_INCREMENT=393 DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -524,7 +523,7 @@ DROP TABLE IF EXISTS `image_statistics`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `image_statistics` (
-  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
   `histogram` blob NOT NULL,
   `intensity_average` float NOT NULL DEFAULT '0',
   `intensity_entropy` float NOT NULL DEFAULT '0',
@@ -548,7 +547,7 @@ CREATE TABLE `image_statistics` (
   `non_worm_object_intensity_mean` float NOT NULL DEFAULT '0',
   `non_worm_object_intensity_variance` float NOT NULL DEFAULT '0',
   PRIMARY KEY (`id`)
-) ENGINE=MyISAM AUTO_INCREMENT=15974715 DEFAULT CHARSET=latin1 ROW_FORMAT=DYNAMIC;
+) ENGINE=MyISAM AUTO_INCREMENT=16006990 DEFAULT CHARSET=latin1 ROW_FORMAT=DYNAMIC;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -569,7 +568,7 @@ CREATE TABLE `images` (
   `partition` text NOT NULL,
   PRIMARY KEY (`id`),
   KEY `host_lookup` (`host_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=3061501 DEFAULT CHARSET=latin1 ROW_FORMAT=DYNAMIC;
+) ENGINE=InnoDB AUTO_INCREMENT=3202728 DEFAULT CHARSET=latin1 ROW_FORMAT=DYNAMIC;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -588,7 +587,7 @@ CREATE TABLE `path_data` (
   `flow_image_id` bigint(20) unsigned NOT NULL DEFAULT '0',
   PRIMARY KEY (`id`),
   KEY `reg_id` (`region_id`,`group_id`,`path_id`) USING BTREE
-) ENGINE=InnoDB AUTO_INCREMENT=72526 DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB AUTO_INCREMENT=75465 DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -605,28 +604,6 @@ CREATE TABLE `performance_statistics` (
   `variance` float NOT NULL,
   `count` int(10) unsigned NOT NULL
 ) ENGINE=MEMORY DEFAULT CHARSET=latin1;
-/*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Table structure for table `processing_job_log`
---
-
-DROP TABLE IF EXISTS `processing_job_log`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!40101 SET character_set_client = utf8 */;
-CREATE TABLE `processing_job_log` (
-  `host_id` int(10) unsigned NOT NULL AUTO_INCREMENT,
-  `job_id` int(10) unsigned NOT NULL DEFAULT '0',
-  `time_start` bigint(20) unsigned NOT NULL DEFAULT '0',
-  `time_stop` bigint(20) unsigned NOT NULL DEFAULT '0',
-  `experiment_id` int(10) unsigned NOT NULL DEFAULT '0',
-  `sample_id` int(10) unsigned NOT NULL DEFAULT '0',
-  `region_id` int(10) unsigned NOT NULL DEFAULT '0',
-  `image_id` int(10) unsigned NOT NULL DEFAULT '0',
-  `processor_id` int(10) unsigned NOT NULL,
-  `problem` int(10) unsigned NOT NULL,
-  PRIMARY KEY (`host_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -656,7 +633,7 @@ CREATE TABLE `processing_job_queue` (
   `paused` int(10) unsigned NOT NULL DEFAULT '0',
   PRIMARY KEY (`id`),
   KEY `priority_index` (`priority`,`problem`,`job_class`,`processor_id`) USING BTREE
-) ENGINE=MyISAM AUTO_INCREMENT=10258057 DEFAULT CHARSET=latin1;
+) ENGINE=MyISAM AUTO_INCREMENT=10286354 DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -719,14 +696,14 @@ CREATE TABLE `processing_jobs` (
   `subregion_height` int(10) unsigned NOT NULL DEFAULT '0',
   `subregion_start_time` int(10) unsigned NOT NULL DEFAULT '0',
   `subregion_stop_time` int(10) unsigned NOT NULL DEFAULT '0',
-  `delete_file_job_id` int(10) unsigned NOT NULL DEFAULT '0',
+  `delete_file_job_id` bigint(20) unsigned NOT NULL DEFAULT '0',
   `video_add_timestamp` tinyint(1) NOT NULL DEFAULT '0',
   `maintenance_flag` int(10) unsigned NOT NULL DEFAULT '0',
   `paused` int(10) unsigned NOT NULL DEFAULT '0',
   `pending_another_jobs_completion` int(11) NOT NULL DEFAULT '0',
   `generate_video_at_high_res` int(10) unsigned NOT NULL DEFAULT '0',
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=6454 DEFAULT CHARSET=latin1 ROW_FORMAT=DYNAMIC COMMENT='InnoDB free: 92160 kB; InnoDB free: 309248 kB';
+) ENGINE=InnoDB AUTO_INCREMENT=7727 DEFAULT CHARSET=latin1 ROW_FORMAT=DYNAMIC COMMENT='InnoDB free: 92160 kB; InnoDB free: 309248 kB';
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -755,10 +732,10 @@ DROP TABLE IF EXISTS `sample_region_image_aligned_path_images`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `sample_region_image_aligned_path_images` (
-  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
-  `region_info_id` int(10) unsigned NOT NULL DEFAULT '0',
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `region_info_id` bigint(20) unsigned NOT NULL DEFAULT '0',
   `frame_index` int(10) unsigned NOT NULL DEFAULT '0',
-  `image_id` int(10) unsigned NOT NULL DEFAULT '0',
+  `image_id` bigint(20) unsigned NOT NULL DEFAULT '0',
   PRIMARY KEY (`id`),
   KEY `region_lookup` (`region_info_id`,`frame_index`)
 ) ENGINE=MyISAM AUTO_INCREMENT=571487 DEFAULT CHARSET=latin1;
@@ -772,16 +749,15 @@ DROP TABLE IF EXISTS `sample_region_image_info`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `sample_region_image_info` (
-  `mask_region_id` int(10) unsigned NOT NULL DEFAULT '0',
+  `mask_region_id` bigint(20) unsigned NOT NULL DEFAULT '0',
   `details` text NOT NULL,
-  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
   `name` text NOT NULL,
   `sample_id` int(10) unsigned NOT NULL DEFAULT '0',
   `mask_id` int(10) unsigned NOT NULL DEFAULT '0',
   `subregion_mask_id` bigint(20) NOT NULL DEFAULT '0',
-  `temporal_interpolation_performed` int(10) unsigned NOT NULL DEFAULT '0',
-  `op21_image_id` int(10) unsigned NOT NULL DEFAULT '0',
-  `op22_image_id` int(10) unsigned NOT NULL DEFAULT '0',
+  `op21_image_id` bigint(20) unsigned NOT NULL DEFAULT '0',
+  `op22_image_id` bigint(20) unsigned NOT NULL DEFAULT '0',
   `censored` tinyint(1) NOT NULL DEFAULT '0',
   `reason_censored` text NOT NULL,
   `time_at_which_animals_had_zero_age` int(10) unsigned NOT NULL DEFAULT '0',
@@ -795,29 +771,27 @@ CREATE TABLE `sample_region_image_info` (
   `environmental_conditions` text NOT NULL,
   `excluded_from_analysis` tinyint(1) unsigned NOT NULL DEFAULT '0',
   `time_of_last_valid_sample` int(10) unsigned NOT NULL DEFAULT '0',
-  `movement_file_triplet_id` int(10) unsigned NOT NULL DEFAULT '0',
-  `movement_file_triplet_interpolated_id` int(10) unsigned NOT NULL DEFAULT '0',
-  `movement_file_time_path_id` int(10) unsigned NOT NULL DEFAULT '0',
-  `movement_file_time_path_image_id` int(10) unsigned NOT NULL DEFAULT '0',
   `path_movement_images_are_cached` int(11) NOT NULL DEFAULT '0',
-  `time_path_solution_id` int(10) unsigned NOT NULL DEFAULT '0',
+  `time_path_solution_id` bigint(20) unsigned NOT NULL DEFAULT '0',
   `movement_image_analysis_quantification_id` int(10) unsigned NOT NULL DEFAULT '0',
   `analysis_scheduling_state` int(10) unsigned NOT NULL DEFAULT '0',
-  `op0_video_id` int(10) unsigned NOT NULL DEFAULT '0',
-  `op2_video_id` int(10) unsigned NOT NULL DEFAULT '0',
-  `op3_video_id` int(10) unsigned NOT NULL DEFAULT '0',
-  `op4_video_id` int(10) unsigned NOT NULL DEFAULT '0',
-  `op5_video_id` int(10) unsigned NOT NULL DEFAULT '0',
-  `op6_video_id` int(10) unsigned NOT NULL DEFAULT '0',
-  `op7_video_id` int(10) unsigned NOT NULL DEFAULT '0',
-  `op8_video_id` int(10) unsigned NOT NULL DEFAULT '0',
-  `op17_video_id` int(10) unsigned NOT NULL DEFAULT '0',
-  `op20_video_id` int(10) unsigned NOT NULL DEFAULT '0',
-  `op24_video_id` int(10) unsigned NOT NULL DEFAULT '0',
-  `op25_video_id` int(10) unsigned NOT NULL DEFAULT '0',
-  `op26_video_id` int(10) unsigned NOT NULL DEFAULT '0',
-  `op27_video_id` int(10) unsigned NOT NULL DEFAULT '0',
+  `op0_video_id` bigint(20) unsigned NOT NULL DEFAULT '0',
+  `op2_video_id` bigint(20) unsigned NOT NULL DEFAULT '0',
+  `op3_video_id` bigint(20) unsigned NOT NULL DEFAULT '0',
+  `op4_video_id` bigint(20) unsigned NOT NULL DEFAULT '0',
+  `op5_video_id` bigint(20) unsigned NOT NULL DEFAULT '0',
+  `op6_video_id` bigint(20) unsigned NOT NULL DEFAULT '0',
+  `op7_video_id` bigint(20) unsigned NOT NULL DEFAULT '0',
+  `op8_video_id` bigint(20) unsigned NOT NULL DEFAULT '0',
+  `op17_video_id` bigint(20) unsigned NOT NULL DEFAULT '0',
+  `op20_video_id` bigint(20) unsigned NOT NULL DEFAULT '0',
+  `op24_video_id` bigint(20) unsigned NOT NULL DEFAULT '0',
+  `op25_video_id` bigint(20) unsigned NOT NULL DEFAULT '0',
+  `op26_video_id` bigint(20) unsigned NOT NULL DEFAULT '0',
+  `op27_video_id` bigint(20) unsigned NOT NULL DEFAULT '0',
+  `op28_video_id` bigint(20) unsigned NOT NULL DEFAULT '0',
   `number_of_frames_used_to_mask_stationary_objects` int(10) unsigned NOT NULL DEFAULT '0',
+  `asdf` bigint(20) unsigned NOT NULL DEFAULT '0',
   `maximum_number_of_worms_per_plate` int(10) unsigned NOT NULL DEFAULT '100',
   `latest_movement_rebuild_timestamp` int(10) unsigned NOT NULL DEFAULT '0',
   `last_timepoint_in_latest_movement_rebuild` int(10) unsigned NOT NULL DEFAULT '0',
@@ -836,7 +810,7 @@ CREATE TABLE `sample_region_image_info` (
   `op30_image_id` bigint(20) NOT NULL DEFAULT '0',
   PRIMARY KEY (`id`),
   KEY `experiment` (`mask_region_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=1096 DEFAULT CHARSET=latin1 ROW_FORMAT=DYNAMIC COMMENT='InnoDB free: 6144 kB';
+) ENGINE=InnoDB AUTO_INCREMENT=1163 DEFAULT CHARSET=latin1 ROW_FORMAT=DYNAMIC COMMENT='InnoDB free: 6144 kB';
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -847,73 +821,55 @@ DROP TABLE IF EXISTS `sample_region_images`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `sample_region_images` (
-  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
-  `region_info_id` int(10) unsigned NOT NULL DEFAULT '0',
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `region_info_id` bigint(20) unsigned NOT NULL DEFAULT '0',
   `capture_time` int(10) unsigned NOT NULL DEFAULT '0',
-  `image_id` int(10) unsigned NOT NULL DEFAULT '0',
-  `op1_image_id` int(10) unsigned NOT NULL DEFAULT '0',
-  `op2_image_id` int(10) unsigned NOT NULL DEFAULT '0',
-  `op3_image_id` int(10) unsigned NOT NULL DEFAULT '0',
-  `last_modified` int(10) unsigned DEFAULT NULL,
-  `op4_image_id` int(11) NOT NULL DEFAULT '0',
-  `op5_image_id` int(10) unsigned NOT NULL DEFAULT '0',
-  `op6_image_id` int(10) unsigned NOT NULL DEFAULT '0',
-  `op7_image_id` int(10) unsigned NOT NULL DEFAULT '0',
-  `op8_image_id` int(10) unsigned NOT NULL DEFAULT '0',
-  `op9_image_id` int(10) unsigned NOT NULL DEFAULT '0',
-  `op10_image_id` int(10) unsigned NOT NULL DEFAULT '0',
-  `op11_image_id` int(10) unsigned NOT NULL DEFAULT '0',
-  `op12_image_id` int(10) unsigned NOT NULL DEFAULT '0',
-  `op13_image_id` int(10) unsigned NOT NULL DEFAULT '0',
-  `op14_image_id` int(10) unsigned NOT NULL DEFAULT '0',
-  `op15_image_id` int(10) unsigned NOT NULL DEFAULT '0',
-  `op16_image_id` int(10) unsigned NOT NULL DEFAULT '0',
-  `op17_image_id` int(10) unsigned NOT NULL DEFAULT '0',
-  `op18_image_id` int(10) unsigned NOT NULL DEFAULT '0',
-  `op19_image_id` int(10) unsigned NOT NULL DEFAULT '0',
-  `op20_image_id` int(10) unsigned NOT NULL DEFAULT '0',
-  `op21_image_id` int(10) unsigned NOT NULL DEFAULT '0',
-  `op22_image_id` int(10) unsigned NOT NULL DEFAULT '0',
-  `op23_image_id` int(10) unsigned NOT NULL DEFAULT '0',
-  `op24_image_id` int(10) unsigned NOT NULL DEFAULT '0',
-  `op25_image_id` int(10) unsigned NOT NULL DEFAULT '0',
-  `op26_image_id` int(10) unsigned NOT NULL DEFAULT '0',
-  `op27_image_id` int(10) unsigned NOT NULL DEFAULT '0',
-  `op28_image_id` int(10) unsigned NOT NULL DEFAULT '0',
-  `op29_image_id` int(10) unsigned NOT NULL DEFAULT '0',
-  `op30_image_id` int(10) unsigned NOT NULL DEFAULT '0',
-  `capture_sample_image_id` int(10) unsigned NOT NULL DEFAULT '0' COMMENT 'a link back to the capture sample image from which this region was cut',
+  `image_id` bigint(20) unsigned NOT NULL DEFAULT '0',
+  `op1_image_id` bigint(20) unsigned NOT NULL DEFAULT '0',
+  `op2_image_id` bigint(20) unsigned NOT NULL DEFAULT '0',
+  `op3_image_id` bigint(20) unsigned NOT NULL DEFAULT '0',
+  `last_modified` bigint(20) unsigned DEFAULT NULL,
+  `op4_image_id` bigint(20) NOT NULL DEFAULT '0',
+  `op5_image_id` bigint(20) unsigned NOT NULL DEFAULT '0',
+  `op6_image_id` bigint(20) unsigned NOT NULL DEFAULT '0',
+  `op7_image_id` bigint(20) unsigned NOT NULL DEFAULT '0',
+  `op8_image_id` bigint(20) unsigned NOT NULL DEFAULT '0',
+  `op9_image_id` bigint(20) unsigned NOT NULL DEFAULT '0',
+  `op10_image_id` bigint(20) unsigned NOT NULL DEFAULT '0',
+  `op11_image_id` bigint(20) unsigned NOT NULL DEFAULT '0',
+  `op12_image_id` bigint(20) unsigned NOT NULL DEFAULT '0',
+  `op13_image_id` bigint(20) unsigned NOT NULL DEFAULT '0',
+  `op14_image_id` bigint(20) unsigned NOT NULL DEFAULT '0',
+  `op15_image_id` bigint(20) unsigned NOT NULL DEFAULT '0',
+  `op16_image_id` bigint(20) unsigned NOT NULL DEFAULT '0',
+  `op17_image_id` bigint(20) unsigned NOT NULL DEFAULT '0',
+  `op18_image_id` bigint(20) unsigned NOT NULL DEFAULT '0',
+  `op19_image_id` bigint(20) unsigned NOT NULL DEFAULT '0',
+  `op20_image_id` bigint(20) unsigned NOT NULL DEFAULT '0',
+  `op21_image_id` bigint(20) unsigned NOT NULL DEFAULT '0',
+  `op22_image_id` bigint(20) unsigned NOT NULL DEFAULT '0',
+  `op23_image_id` bigint(20) unsigned NOT NULL DEFAULT '0',
+  `op24_image_id` bigint(20) unsigned NOT NULL DEFAULT '0',
+  `op25_image_id` bigint(20) unsigned NOT NULL DEFAULT '0',
+  `op26_image_id` bigint(20) unsigned NOT NULL DEFAULT '0',
+  `op27_image_id` bigint(20) unsigned NOT NULL DEFAULT '0',
+  `op28_image_id` bigint(20) unsigned NOT NULL DEFAULT '0',
+  `op29_image_id` bigint(20) unsigned NOT NULL DEFAULT '0',
+  `op30_image_id` bigint(20) unsigned NOT NULL DEFAULT '0',
+  `capture_sample_image_id` bigint(20) unsigned NOT NULL DEFAULT '0' COMMENT 'a link back to the capture sample image from which this region was cut',
   `problem` bigint(20) unsigned NOT NULL DEFAULT '0',
-  `worm_detection_results_id` int(10) unsigned NOT NULL DEFAULT '0',
-  `worm_interpolation_results_id` int(10) unsigned NOT NULL DEFAULT '0',
-  `currently_under_processing` tinyint(1) NOT NULL DEFAULT '0',
-  `worm_movement_id` int(10) unsigned NOT NULL DEFAULT '0',
+  `worm_detection_results_id` bigint(20) unsigned NOT NULL DEFAULT '0',
+  `worm_interpolation_results_id` bigint(20) unsigned NOT NULL DEFAULT '0',
+  `currently_under_processing` int(11) NOT NULL DEFAULT '0',
+  `worm_movement_id` bigint(20) unsigned NOT NULL DEFAULT '0',
   `vertical_image_registration_applied` tinyint(3) unsigned NOT NULL DEFAULT '0',
   `censored` tinyint(1) NOT NULL DEFAULT '0',
   `image_statistics_id` bigint(20) unsigned NOT NULL DEFAULT '0',
-  `make_training_set_image_from_frame` int(10) unsigned NOT NULL DEFAULT '0',
+  `make_training_set_image_from_frame` bigint(20) unsigned NOT NULL DEFAULT '0',
   PRIMARY KEY (`id`),
   KEY `job_lookup` (`region_info_id`,`problem`,`currently_under_processing`),
   KEY `movement_index` (`region_info_id`,`worm_movement_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=383482 DEFAULT CHARSET=latin1 ROW_FORMAT=DYNAMIC;
-/*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Table structure for table `sample_time_relationships`
---
-
-DROP TABLE IF EXISTS `sample_time_relationships`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!40101 SET character_set_client = utf8 */;
-CREATE TABLE `sample_time_relationships` (
-  `time` bigint(20) unsigned NOT NULL DEFAULT '0',
-  `previous_short` bigint(20) unsigned NOT NULL DEFAULT '0',
-  `previous_long` bigint(20) unsigned NOT NULL DEFAULT '0' COMMENT 'previous long-interval time point',
-  `next_long` bigint(20) unsigned NOT NULL DEFAULT '0' COMMENT 'next long-interval time point',
-  `next_short` bigint(20) unsigned NOT NULL DEFAULT '0' COMMENT 'next short-interval time point',
-  `sample_id` bigint(20) unsigned NOT NULL DEFAULT '0',
-  KEY `sample_time` (`sample_id`,`time`)
-) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB AUTO_INCREMENT=400272 DEFAULT CHARSET=latin1 ROW_FORMAT=DYNAMIC;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -963,42 +919,7 @@ CREATE TABLE `worm_detection_results` (
   `data_storage_on_disk_id` bigint(20) unsigned NOT NULL COMMENT 'Worm segment info can be stored in this db, or alternatively saved to disk with filename information provided by the image table row number worm_segment_information_id ',
   PRIMARY KEY (`id`),
   KEY `reverse_sample_lookup` (`capture_sample_id`)
-) ENGINE=MyISAM AUTO_INCREMENT=11517007 DEFAULT CHARSET=latin1 CHECKSUM=1 COMMENT='myISAM';
-/*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Table structure for table `worm_movement`
---
-
-DROP TABLE IF EXISTS `worm_movement`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!40101 SET character_set_client = utf8 */;
-CREATE TABLE `worm_movement` (
-  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
-  `sample_id` int(10) unsigned NOT NULL DEFAULT '0',
-  `region_info_id` int(10) unsigned NOT NULL DEFAULT '0',
-  `time` int(10) unsigned NOT NULL DEFAULT '0',
-  `number_total` int(10) unsigned NOT NULL DEFAULT '0',
-  `number_moving_fast` int(10) unsigned NOT NULL DEFAULT '0',
-  `number_moving_slow` int(10) unsigned NOT NULL DEFAULT '0',
-  `number_changing_posture` int(10) unsigned NOT NULL DEFAULT '0',
-  `number_stationary` int(10) unsigned NOT NULL DEFAULT '0',
-  `region_id_short_1` int(10) unsigned NOT NULL DEFAULT '0',
-  `region_id_short_2` int(10) unsigned NOT NULL DEFAULT '0',
-  `region_id_long` int(10) unsigned NOT NULL DEFAULT '0',
-  `calculated` tinyint(1) NOT NULL DEFAULT '0',
-  `currently_under_processing` tinyint(1) NOT NULL DEFAULT '0',
-  `problem` bigint(20) unsigned NOT NULL DEFAULT '0',
-  `region_id_previous_short` int(10) unsigned NOT NULL DEFAULT '0',
-  `region_id_previous_long` int(10) unsigned NOT NULL DEFAULT '0',
-  `interp_number_total` int(10) unsigned NOT NULL DEFAULT '0',
-  `interp_number_moving_fast` int(10) unsigned NOT NULL DEFAULT '0',
-  `interp_number_moving_slow` int(10) unsigned NOT NULL DEFAULT '0',
-  `interp_number_changing_posture` int(10) unsigned NOT NULL DEFAULT '0',
-  `interp_number_stationary` int(10) unsigned NOT NULL DEFAULT '0',
-  PRIMARY KEY (`id`),
-  KEY `region_time` (`region_info_id`,`time`)
-) ENGINE=MyISAM AUTO_INCREMENT=428056 DEFAULT CHARSET=latin1;
+) ENGINE=MyISAM AUTO_INCREMENT=11533146 DEFAULT CHARSET=latin1 CHECKSUM=1 COMMENT='myISAM';
 /*!40101 SET character_set_client = @saved_cs_client */;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 
@@ -1010,4 +931,4 @@ CREATE TABLE `worm_movement` (
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2018-07-26 12:06:02
+-- Dump completed on 2018-08-07 12:17:07

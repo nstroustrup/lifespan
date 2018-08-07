@@ -982,6 +982,11 @@ int main(int argc, char ** argv){
 		}
 		if (sql_update_requested) {
 			ns_acquire_for_scope<ns_sql> sql(image_server.new_sql_connection(__FILE__, __LINE__));
+
+			if (!override_sql_db.empty()) {
+				no_schema_name_specified = false;
+				schema_name = override_sql_db;
+			}
 			if (!no_schema_name_specified)
 				image_server.upgrade_tables(&sql(), false, schema_name, schema_name == "image_server_buffer");
 			else {

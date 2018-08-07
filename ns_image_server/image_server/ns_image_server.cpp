@@ -882,7 +882,7 @@ bool ns_image_server::upgrade_tables(ns_sql_connection * sql, const bool just_te
 
 		//check to see if path_data has wrong bit depth
 		*sql << "SELECT COLUMN_TYPE FROM INFORMATION_SCHEMA.COLUMNS "
-			"WHERE table_name = 'path_data' AND COLUMN_NAME = 'region_id'"
+			"WHERE table_name = 'path_data' AND COLUMN_NAME = 'region_id' "
 			"AND TABLE_SCHEMA = '" << schema_name << "'";
 		sql->get_rows(res);
 		if (res.size() > 0 && res[0][0].find("bigint") == res[0][0].npos) {
@@ -906,6 +906,222 @@ bool ns_image_server::upgrade_tables(ns_sql_connection * sql, const bool just_te
 
 			changes_made = true;
 		}
+		if (!ns_sql_column_exists("sample_region_image_info", "op28_video_id", sql)) {
+			if (just_test_if_needed)
+				return true;
+			cout << "Updating sample region image info table\n";
+			*sql <<
+				"ALTER TABLE `sample_region_image_info` "
+				"CHANGE COLUMN `mask_region_id` `mask_region_id` BIGINT UNSIGNED NOT NULL DEFAULT '0' FIRST,"
+				"CHANGE COLUMN `id` `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT AFTER `details`,"
+				"CHANGE COLUMN `op21_image_id` `op21_image_id` BIGINT UNSIGNED NOT NULL DEFAULT '0' AFTER `subregion_mask_id`,"
+				"CHANGE COLUMN `op22_image_id` `op22_image_id` BIGINT UNSIGNED NOT NULL DEFAULT '0' AFTER `op21_image_id`,"
+				"CHANGE COLUMN `time_path_solution_id` `time_path_solution_id` BIGINT UNSIGNED NOT NULL DEFAULT '0' AFTER `path_movement_images_are_cached`,"
+				"CHANGE COLUMN `op0_video_id` `op0_video_id` BIGINT UNSIGNED NOT NULL DEFAULT '0' AFTER `analysis_scheduling_state`,"
+				"CHANGE COLUMN `op2_video_id` `op2_video_id` BIGINT UNSIGNED NOT NULL DEFAULT '0' AFTER `op0_video_id`,"
+				"CHANGE COLUMN `op3_video_id` `op3_video_id` BIGINT UNSIGNED NOT NULL DEFAULT '0' AFTER `op2_video_id`,"
+				"CHANGE COLUMN `op4_video_id` `op4_video_id` BIGINT UNSIGNED NOT NULL DEFAULT '0' AFTER `op3_video_id`,"
+				"CHANGE COLUMN `op5_video_id` `op5_video_id` BIGINT UNSIGNED NOT NULL DEFAULT '0' AFTER `op4_video_id`,"
+				"CHANGE COLUMN `op6_video_id` `op6_video_id` BIGINT UNSIGNED NOT NULL DEFAULT '0' AFTER `op5_video_id`,"
+				"CHANGE COLUMN `op7_video_id` `op7_video_id` BIGINT UNSIGNED NOT NULL DEFAULT '0' AFTER `op6_video_id`,"
+				"CHANGE COLUMN `op8_video_id` `op8_video_id` BIGINT UNSIGNED NOT NULL DEFAULT '0' AFTER `op7_video_id`,"
+				"CHANGE COLUMN `op17_video_id` `op17_video_id` BIGINT UNSIGNED NOT NULL DEFAULT '0' AFTER `op8_video_id`,"
+				"CHANGE COLUMN `op20_video_id` `op20_video_id` BIGINT UNSIGNED NOT NULL DEFAULT '0' AFTER `op17_video_id`,"
+				"CHANGE COLUMN `op24_video_id` `op24_video_id` BIGINT UNSIGNED NOT NULL DEFAULT '0' AFTER `op20_video_id`,"
+				"CHANGE COLUMN `op25_video_id` `op25_video_id` BIGINT UNSIGNED NOT NULL DEFAULT '0' AFTER `op24_video_id`,"
+				"CHANGE COLUMN `op26_video_id` `op26_video_id` BIGINT UNSIGNED NOT NULL DEFAULT '0' AFTER `op25_video_id`,"
+				"CHANGE COLUMN `op27_video_id` `op27_video_id` BIGINT UNSIGNED NOT NULL DEFAULT '0' AFTER `op26_video_id`,"
+				"ADD COLUMN `op28_video_id` BIGINT UNSIGNED NOT NULL DEFAULT '0' AFTER `op27_video_id`,"
+				"CHANGE COLUMN `op30_image_id` `op30_image_id` BIGINT UNSIGNED NOT NULL DEFAULT '0' AFTER `position_analysis_model`";
+			sql->send_query();
+
+			changes_made = true;
+		}
+		*sql << "SELECT COLUMN_TYPE FROM INFORMATION_SCHEMA.COLUMNS "
+			"WHERE table_name = 'sample_region_images' AND COLUMN_NAME = 'id' "
+			"AND TABLE_SCHEMA = '" << schema_name << "'";
+		sql->get_rows(res);
+		if (res.size() > 0 && res[0][0].find("bigint") == res[0][0].npos) {
+			if (just_test_if_needed)
+				return true;
+			cout << "Updating multiple table columns to 64 bit integer keys.\n";
+			*sql <<
+				"ALTER TABLE `sample_region_images`"
+				"CHANGE COLUMN `id` `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT FIRST,"
+				"CHANGE COLUMN `region_info_id` `region_info_id` BIGINT UNSIGNED NOT NULL DEFAULT '0' AFTER `id`,"
+				"CHANGE COLUMN `capture_time` `capture_time` INT UNSIGNED NOT NULL DEFAULT '0' AFTER `region_info_id`,"
+				"CHANGE COLUMN `image_id` `image_id` BIGINT UNSIGNED NOT NULL DEFAULT '0' AFTER `capture_time`,"
+				"CHANGE COLUMN `op1_image_id` `op1_image_id` BIGINT UNSIGNED NOT NULL DEFAULT '0' AFTER `image_id`,"
+				"CHANGE COLUMN `op2_image_id` `op2_image_id` BIGINT UNSIGNED NOT NULL DEFAULT '0' AFTER `op1_image_id`,"
+				"CHANGE COLUMN `op3_image_id` `op3_image_id` BIGINT UNSIGNED NOT NULL DEFAULT '0' AFTER `op2_image_id`,"
+				"CHANGE COLUMN `last_modified` `last_modified` BIGINT UNSIGNED NULL DEFAULT NULL AFTER `op3_image_id`,"
+				"CHANGE COLUMN `op4_image_id` `op4_image_id` BIGINT NOT NULL DEFAULT '0' AFTER `last_modified`,"
+				"CHANGE COLUMN `op5_image_id` `op5_image_id` BIGINT UNSIGNED NOT NULL DEFAULT '0' AFTER `op4_image_id`,"
+				"CHANGE COLUMN `op6_image_id` `op6_image_id` BIGINT UNSIGNED NOT NULL DEFAULT '0' AFTER `op5_image_id`,"
+				"CHANGE COLUMN `op7_image_id` `op7_image_id` BIGINT UNSIGNED NOT NULL DEFAULT '0' AFTER `op6_image_id`,"
+				"CHANGE COLUMN `op8_image_id` `op8_image_id` BIGINT UNSIGNED NOT NULL DEFAULT '0' AFTER `op7_image_id`,"
+				"CHANGE COLUMN `op9_image_id` `op9_image_id` BIGINT UNSIGNED NOT NULL DEFAULT '0' AFTER `op8_image_id`,"
+				"CHANGE COLUMN `op10_image_id` `op10_image_id` BIGINT UNSIGNED NOT NULL DEFAULT '0' AFTER `op9_image_id`,"
+				"CHANGE COLUMN `op11_image_id` `op11_image_id` BIGINT UNSIGNED NOT NULL DEFAULT '0' AFTER `op10_image_id`,"
+				"CHANGE COLUMN `op12_image_id` `op12_image_id` BIGINT UNSIGNED NOT NULL DEFAULT '0' AFTER `op11_image_id`,"
+				"CHANGE COLUMN `op13_image_id` `op13_image_id` BIGINT UNSIGNED NOT NULL DEFAULT '0' AFTER `op12_image_id`,"
+				"CHANGE COLUMN `op14_image_id` `op14_image_id` BIGINT UNSIGNED NOT NULL DEFAULT '0' AFTER `op13_image_id`,"
+				"CHANGE COLUMN `op15_image_id` `op15_image_id` BIGINT UNSIGNED NOT NULL DEFAULT '0' AFTER `op14_image_id`,"
+				"CHANGE COLUMN `op16_image_id` `op16_image_id` BIGINT UNSIGNED NOT NULL DEFAULT '0' AFTER `op15_image_id`,"
+				"CHANGE COLUMN `op17_image_id` `op17_image_id` BIGINT UNSIGNED NOT NULL DEFAULT '0' AFTER `op16_image_id`,"
+				"CHANGE COLUMN `op18_image_id` `op18_image_id` BIGINT UNSIGNED NOT NULL DEFAULT '0' AFTER `op17_image_id`,"
+				"CHANGE COLUMN `op19_image_id` `op19_image_id` BIGINT UNSIGNED NOT NULL DEFAULT '0' AFTER `op18_image_id`,"
+				"CHANGE COLUMN `op20_image_id` `op20_image_id` BIGINT UNSIGNED NOT NULL DEFAULT '0' AFTER `op19_image_id`,"
+				"CHANGE COLUMN `op21_image_id` `op21_image_id` BIGINT UNSIGNED NOT NULL DEFAULT '0' AFTER `op20_image_id`,"
+				"CHANGE COLUMN `op22_image_id` `op22_image_id` BIGINT UNSIGNED NOT NULL DEFAULT '0' AFTER `op21_image_id`,"
+				"CHANGE COLUMN `op23_image_id` `op23_image_id` BIGINT UNSIGNED NOT NULL DEFAULT '0' AFTER `op22_image_id`,"
+				"CHANGE COLUMN `op24_image_id` `op24_image_id` BIGINT UNSIGNED NOT NULL DEFAULT '0' AFTER `op23_image_id`,"
+				"CHANGE COLUMN `op25_image_id` `op25_image_id` BIGINT UNSIGNED NOT NULL DEFAULT '0' AFTER `op24_image_id`,"
+				"CHANGE COLUMN `op26_image_id` `op26_image_id` BIGINT UNSIGNED NOT NULL DEFAULT '0' AFTER `op25_image_id`,"
+				"CHANGE COLUMN `op27_image_id` `op27_image_id` BIGINT UNSIGNED NOT NULL DEFAULT '0' AFTER `op26_image_id`,"
+				"CHANGE COLUMN `op28_image_id` `op28_image_id` BIGINT UNSIGNED NOT NULL DEFAULT '0' AFTER `op27_image_id`,"
+				"CHANGE COLUMN `op29_image_id` `op29_image_id` BIGINT UNSIGNED NOT NULL DEFAULT '0' AFTER `op28_image_id`,"
+				"CHANGE COLUMN `op30_image_id` `op30_image_id` BIGINT UNSIGNED NOT NULL DEFAULT '0' AFTER `op29_image_id`,"
+				"CHANGE COLUMN `capture_sample_image_id` `capture_sample_image_id` BIGINT UNSIGNED NOT NULL DEFAULT '0' COMMENT 'a link back to the capture sample image from which this region was cut' AFTER `op30_image_id`,"
+				"CHANGE COLUMN `worm_detection_results_id` `worm_detection_results_id` BIGINT UNSIGNED NOT NULL DEFAULT '0' AFTER `problem`,"
+				"CHANGE COLUMN `worm_interpolation_results_id` `worm_interpolation_results_id` BIGINT UNSIGNED NOT NULL DEFAULT '0' AFTER `worm_detection_results_id`,"
+				"CHANGE COLUMN `currently_under_processing` `currently_under_processing` INT NOT NULL DEFAULT '0' AFTER `worm_interpolation_results_id`,"
+				"CHANGE COLUMN `worm_movement_id` `worm_movement_id` BIGINT UNSIGNED NOT NULL DEFAULT '0' AFTER `currently_under_processing`,"
+				"CHANGE COLUMN `make_training_set_image_from_frame` `make_training_set_image_from_frame` BIGINT UNSIGNED NOT NULL DEFAULT '0' AFTER `image_statistics_id`";
+				sql->send_query();
+
+				*sql << "ALTER TABLE `animal_storyboard`"
+					"CHANGE COLUMN `id` `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT FIRST,"
+					"CHANGE COLUMN `region_id` `region_id` BIGINT UNSIGNED NOT NULL DEFAULT '0' AFTER `id`,"
+					"CHANGE COLUMN `sample_id` `sample_id` BIGINT UNSIGNED NOT NULL DEFAULT '0' AFTER `region_id`,"
+					"CHANGE COLUMN `experiment_id` `experiment_id` BIGINT UNSIGNED NOT NULL DEFAULT '0' AFTER `sample_id`,"
+					"CHANGE COLUMN `image_id` `image_id` BIGINT UNSIGNED NOT NULL DEFAULT '0' AFTER `experiment_id`,"
+					"CHANGE COLUMN `metadata_id` `metadata_id` BIGINT UNSIGNED NOT NULL DEFAULT '0' AFTER `image_id`";
+				sql->send_query();
+					
+				*sql << "ALTER TABLE `automated_job_scheduling_data`"
+					"CHANGE COLUMN `id` `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT FIRST";
+				sql->send_query();
+
+				*sql << "ALTER TABLE `alerts`"
+					"CHANGE COLUMN `id` `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT AFTER `acknowledged`";
+				sql->send_query();
+
+				*sql << "ALTER TABLE `sample_region_image_aligned_path_images`"
+					"CHANGE COLUMN `id` `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT FIRST,"
+					"CHANGE COLUMN `region_info_id` `region_info_id` BIGINT UNSIGNED NOT NULL DEFAULT '0' AFTER `id`,"
+					"CHANGE COLUMN `image_id` `image_id` BIGINT UNSIGNED NOT NULL DEFAULT '0' AFTER `frame_index`";
+				sql->send_query();
+
+				*sql << "ALTER TABLE `autoscan_schedule`"
+					"CHANGE COLUMN `id` `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT FIRST";
+				sql->send_query();
+
+				*sql << "ALTER TABLE `captured_images`"
+					"CHANGE COLUMN `id` `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT FIRST,"
+					"CHANGE COLUMN `image_id` `image_id` BIGINT UNSIGNED NOT NULL DEFAULT '0' AFTER `id`,"
+					"CHANGE COLUMN `experiment_id` `experiment_id` BIGINT UNSIGNED NOT NULL DEFAULT '0' AFTER `last_modified`,"
+					"CHANGE COLUMN `sample_id` `sample_id` BIGINT UNSIGNED NOT NULL DEFAULT '0' AFTER `experiment_id`,"
+					"CHANGE COLUMN `problem` `problem` BIGINT UNSIGNED NOT NULL DEFAULT '0' AFTER `mask_applied`";
+				sql->send_query();
+
+				*sql << "ALTER TABLE `capture_samples`"
+					"CHANGE COLUMN `id` `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT FIRST,"
+					"CHANGE COLUMN `experiment_id` `experiment_id` BIGINT UNSIGNED NOT NULL DEFAULT '0' AFTER `name`,"
+					"CHANGE COLUMN `mask_id` `mask_id` BIGINT UNSIGNED NOT NULL DEFAULT '0' AFTER `description`,"
+					"CHANGE COLUMN `problem` `problem` BIGINT NOT NULL DEFAULT '0' AFTER `device_id`,"
+					"CHANGE COLUMN `op0_video_id` `op0_video_id` BIGINT UNSIGNED NOT NULL DEFAULT '0' AFTER `size_calculation_time`";
+				sql->send_query();
+
+				*sql << "ALTER TABLE `capture_schedule`"
+					"CHANGE COLUMN `experiment_id` `experiment_id` BIGINT UNSIGNED NOT NULL DEFAULT '0' AFTER `id`,"
+					"CHANGE COLUMN `sample_id` `sample_id` BIGINT UNSIGNED NOT NULL DEFAULT '0' AFTER `problem`";
+				sql->send_query();
+
+				*sql << "ALTER TABLE `delete_file_jobs`"
+					"CHANGE COLUMN `id` `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT FIRST,"
+					"CHANGE COLUMN `parent_job_id` `parent_job_id` BIGINT UNSIGNED NOT NULL DEFAULT '0' COMMENT 'points to the file deletion specification job that produced this deletion job' AFTER `confirmed`";
+				sql->send_query();
+
+				*sql << "ALTER TABLE `delete_file_specifications`"
+					"CHANGE COLUMN `delete_job_id` `delete_job_id` BIGINT UNSIGNED NULL DEFAULT NULL FIRST";
+				sql->send_query();
+
+				*sql << "ALTER TABLE `devices`"
+					"CHANGE COLUMN `host_id` `host_id` BIGINT UNSIGNED NOT NULL DEFAULT '0' AFTER `comments`,"
+					"CHANGE COLUMN `barcode_image_id` `barcode_image_id` BIGINT UNSIGNED NOT NULL DEFAULT '0' AFTER `preview_requested`,"
+					"CHANGE COLUMN `id` `id` BIGINT NOT NULL DEFAULT '0' AFTER `error_text`";
+				sql->send_query();
+
+				*sql << "ALTER TABLE `hosts`"
+					"CHANGE COLUMN `id` `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT FIRST";
+				sql->send_query();
+
+				*sql << "ALTER TABLE `experiments`"
+					"CHANGE COLUMN `id` `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT FIRST";
+				sql->send_query();
+
+				*sql << "ALTER TABLE `image_masks`"
+					"CHANGE COLUMN `image_id` `image_id` BIGINT UNSIGNED NOT NULL DEFAULT '0' FIRST,"
+					"CHANGE COLUMN `id` `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT AFTER `image_id`,"
+					"CHANGE COLUMN `visualization_image_id` `visualization_image_id` BIGINT UNSIGNED NOT NULL DEFAULT '0' AFTER `processed`";
+				sql->send_query();
+
+				*sql << "ALTER TABLE `image_mask_regions`"
+					"CHANGE COLUMN `mask_id` `mask_id` BIGINT UNSIGNED NOT NULL DEFAULT '0' FIRST,"
+					"CHANGE COLUMN `pixel_count` `pixel_count` BIGINT UNSIGNED NOT NULL DEFAULT '0' AFTER `y_max`,"
+					"CHANGE COLUMN `id` `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT AFTER `mask_value`";
+				sql->send_query();
+
+				*sql << "ALTER TABLE `image_statistics`"
+					"CHANGE COLUMN `id` `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT FIRST";
+				sql->send_query();
+
+				*sql << "ALTER TABLE `processing_jobs`"
+					"CHANGE COLUMN `delete_file_job_id` `delete_file_job_id` BIGINT UNSIGNED NOT NULL DEFAULT '0' AFTER `subregion_stop_time`";
+				sql->send_query();
+
+
+				changes_made = true;
+		}
+
+		*sql << "SHOW TABLES IN " << schema_name;
+		sql->get_rows(res);
+		if (res.size() > 0) {
+			bool found(false);
+			for (unsigned int i = 0; i < res.size(); i++) {
+				if (res[i][0] == "sample_time_relationships") {
+					if (just_test_if_needed)
+						return true;
+					if (!found) cout << "Dropping Unused tables...";
+					*sql << "DROP TABLE `sample_time_relationships`";
+					sql->send_query();
+					changes_made = true;
+					found = true;
+				}
+				else if (res[i][0] == "worm_movement") {
+					if (just_test_if_needed)
+						return true;
+					if (!found) cout << "Dropping Unused tables....";
+					*sql << "DROP TABLE `worm_movement`";
+					sql->send_query();
+					changes_made = true;
+					found = true;
+
+				}
+				else if (res[i][0] == "processing_job_log") {
+					if (just_test_if_needed)
+						return true;
+					if (!found) cout << "Dropping Unused tables.....";
+					*sql << "DROP TABLE `processing_job_log`";
+					sql->send_query();
+					changes_made = true;
+					found = true;
+
+				}
+			}
+		}
+
 	}
 
 	if (!ns_sql_column_exists(t_suf + "host_event_log", "sub_text", sql)) {

@@ -1194,8 +1194,8 @@ ns_64_bit ns_processing_job_maintenance_processor::run_job(ns_sql & sql) {
 
 			sql << "UPDATE sample_region_images SET currently_under_processing=0 WHERE region_info_id = " << region_image.region_info_id;
 			sql.send_query();
-			sql << "UPDATE worm_movement SET problem=0,calculated=0 WHERE region_info_id = " << region_image.region_info_id;
-			sql.send_query();
+			//sql << "UPDATE worm_movement SET problem=0,calculated=0 WHERE region_info_id = " << region_image.region_info_id;
+			//sql.send_query();
 			sql.send_query("COMMIT");
 
 			break;

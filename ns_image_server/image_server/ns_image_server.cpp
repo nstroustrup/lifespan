@@ -944,7 +944,7 @@ bool ns_image_server::upgrade_tables(ns_sql_connection * sql, const bool just_te
 		if (res.size() > 0 && res[0][0].find("bigint") == res[0][0].npos) {
 			if (just_test_if_needed)
 				return true;
-			cout << "Updating multiple table columns to 64 bit integer keys.\n";
+			cout << "Updating multiple table columns to 64 bit integer keys.\n  This may take a while, up to several hours for large databases. 0%...";
 			*sql <<
 				"ALTER TABLE `sample_region_images`"
 				"CHANGE COLUMN `id` `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT FIRST,"
@@ -990,6 +990,7 @@ bool ns_image_server::upgrade_tables(ns_sql_connection * sql, const bool just_te
 				"CHANGE COLUMN `make_training_set_image_from_frame` `make_training_set_image_from_frame` BIGINT UNSIGNED NOT NULL DEFAULT '0' AFTER `image_statistics_id`";
 				sql->send_query();
 
+				cout << "25%...";
 				*sql << "ALTER TABLE `animal_storyboard`"
 					"CHANGE COLUMN `id` `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT FIRST,"
 					"CHANGE COLUMN `region_id` `region_id` BIGINT UNSIGNED NOT NULL DEFAULT '0' AFTER `id`,"
@@ -1017,6 +1018,7 @@ bool ns_image_server::upgrade_tables(ns_sql_connection * sql, const bool just_te
 					"CHANGE COLUMN `id` `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT FIRST";
 				sql->send_query();
 
+				cout << "30%...";
 				*sql << "ALTER TABLE `captured_images`"
 					"CHANGE COLUMN `id` `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT FIRST,"
 					"CHANGE COLUMN `image_id` `image_id` BIGINT UNSIGNED NOT NULL DEFAULT '0' AFTER `id`,"
@@ -1033,11 +1035,13 @@ bool ns_image_server::upgrade_tables(ns_sql_connection * sql, const bool just_te
 					"CHANGE COLUMN `op0_video_id` `op0_video_id` BIGINT UNSIGNED NOT NULL DEFAULT '0' AFTER `size_calculation_time`";
 				sql->send_query();
 
+				cout << "50%...";
 				*sql << "ALTER TABLE `capture_schedule`"
 					"CHANGE COLUMN `experiment_id` `experiment_id` BIGINT UNSIGNED NOT NULL DEFAULT '0' AFTER `id`,"
 					"CHANGE COLUMN `sample_id` `sample_id` BIGINT UNSIGNED NOT NULL DEFAULT '0' AFTER `problem`";
 				sql->send_query();
 
+				cout << "75%...";
 				*sql << "ALTER TABLE `delete_file_jobs`"
 					"CHANGE COLUMN `id` `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT FIRST,"
 					"CHANGE COLUMN `parent_job_id` `parent_job_id` BIGINT UNSIGNED NOT NULL DEFAULT '0' COMMENT 'points to the file deletion specification job that produced this deletion job' AFTER `confirmed`";
@@ -1072,6 +1076,7 @@ bool ns_image_server::upgrade_tables(ns_sql_connection * sql, const bool just_te
 					"CHANGE COLUMN `pixel_count` `pixel_count` BIGINT UNSIGNED NOT NULL DEFAULT '0' AFTER `y_max`,"
 					"CHANGE COLUMN `id` `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT AFTER `mask_value`";
 				sql->send_query();
+				cout << "90%...";
 
 				*sql << "ALTER TABLE `image_statistics`"
 					"CHANGE COLUMN `id` `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT FIRST";
@@ -1081,6 +1086,7 @@ bool ns_image_server::upgrade_tables(ns_sql_connection * sql, const bool just_te
 					"CHANGE COLUMN `delete_file_job_id` `delete_file_job_id` BIGINT UNSIGNED NOT NULL DEFAULT '0' AFTER `subregion_stop_time`";
 				sql->send_query();
 
+				cout << "100%...Done.\n";
 
 				changes_made = true;
 		}

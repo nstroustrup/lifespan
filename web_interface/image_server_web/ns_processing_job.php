@@ -59,7 +59,7 @@ $ns_processing_task_labels = array(0 =>'Unprocessed',
 				   25=>'Movement Paths Visualization',
 				   26=>'Movement Paths Vis with Mortality Overlay',
 				   27=>'Movement Posture Visualization',
-				   28=>'Movement Posture Aligned Visualization');
+				   28=>'Plate and Individual Visualization');
 
 $NS_LAST_PROCESSING_JOB = 28;
 

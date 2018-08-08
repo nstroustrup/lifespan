@@ -102,7 +102,7 @@ private:
 	
 
 	
-	void draw_metadata(ns_annotater_timepoint * tp_a,ns_image_standard & im){
+	void draw_metadata(ns_annotater_timepoint * tp_a,ns_image_standard & im, double external_rescale_factor){
 //		return;
 	//	cerr << resize_factor << "\n";
 		ns_experiment_storyboard_annotater_timepoint * tp(static_cast<ns_experiment_storyboard_annotater_timepoint * >(tp_a));
@@ -470,8 +470,8 @@ public:
 		ns_update_worm_information_bar("Annotations saved at " + ns_format_time_string_for_human(ns_current_time()));
 		saved_=true;
 	};
-	void redraw_current_metadata(){
-		draw_metadata(&divisions[current_timepoint_id],*current_image.im);
+	void redraw_current_metadata(double external_resize_factor){
+		draw_metadata(&divisions[current_timepoint_id],*current_image.im, external_resize_factor);
 	}
 	void overlay_worm_ids() { draw_group_ids = true; }
 
@@ -495,9 +495,9 @@ public:
 
 	}
 
-	void load_from_storyboard(const ns_region_metadata & strain_to_display_, const ns_censor_masking censor_masking_, ns_experiment_storyboard_spec & spec, ns_worm_learner * worm_learner_);
+	void load_from_storyboard(const ns_region_metadata & strain_to_display_, const ns_censor_masking censor_masking_, ns_experiment_storyboard_spec & spec, ns_worm_learner * worm_learner_, double external_rescale_factor);
 
-	void register_click(const ns_vector_2i & image_position, const ns_click_request & action);
+	void register_click(const ns_vector_2i & image_position, const ns_click_request & action, double external_rescale_factor);
 	void load_random_worm();
 
 	void display_current_frame();

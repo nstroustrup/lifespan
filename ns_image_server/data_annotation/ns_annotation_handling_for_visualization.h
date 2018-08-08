@@ -130,93 +130,123 @@ public:
 		const float dt(size.x / (float)total_time);
 		return x_pos / dt + path_start_time;
 	}
-	void draw_movement_diagram(const ns_vector_2i & pos, const ns_vector_2i & size, const ns_time_path_limits & path_observation_limits, const ns_death_time_annotation_time_interval & current_interval, ns_image_standard & im, const float & scaling, const int current_interval_marker_min_width=0,const bool dotted_marker=true) {
+	typedef enum { ns_narrow_marker, ns_wide_dotted_marker,ns_highlight_up_until_current_time } ns_current_position_marker;
+	typedef enum { ns_draw_relative_to_path, ns_draw_relative_to_plate} ns_draw_relative_spec;
+	void draw_movement_diagram(const ns_vector_2i & pos, const ns_vector_2i & size, const ns_time_path_limits & path_observation_limits, const ns_death_time_annotation_time_interval & current_interval, ns_image_standard & im, const float & scaling, const int current_interval_marker_min_width = 0, const ns_current_position_marker marker_type = ns_narrow_marker, const ns_draw_relative_spec draw_spec = ns_draw_relative_to_path) {
 		if (path_observation_limits.last_obsevation_of_plate.period_end <= path_observation_limits.first_obsevation_of_plate.period_start)
 			throw ns_ex("draw_movement_diagram()::Invalid path duration");
 
-		const unsigned long path_start_time(path_observation_limits.interval_before_first_observation.period_end);
-		const unsigned long last_path_frame_time(path_observation_limits.interval_after_last_observation.period_start);
+		ns_death_time_annotation_time_interval start_interval, stop_interval;
+		unsigned long path_start_time_t, last_path_frame_time_t;
+		if (draw_spec == ns_draw_relative_to_path) {
+			start_interval = path_observation_limits.interval_before_first_observation;
+			stop_interval = path_observation_limits.interval_after_last_observation;
+			path_start_time_t = start_interval.period_end;
+			last_path_frame_time_t = stop_interval.period_start;
+		}
+		else {
+			start_interval = path_observation_limits.first_obsevation_of_plate;
+			stop_interval = path_observation_limits.last_obsevation_of_plate;
+			path_start_time_t = start_interval.period_start;
+			last_path_frame_time_t = stop_interval.period_end;
+		}
+		const unsigned long path_start_time(path_start_time_t);
+		const unsigned long last_path_frame_time(last_path_frame_time_t);
 		const unsigned long total_time = last_path_frame_time - path_start_time;
+		const float pre_current_time_scaling((marker_type == ns_highlight_up_until_current_time) ? 0.5 : 1);
 
 		const float dt(size.x / (float)total_time);
 		const unsigned long worm_arrival_time(fast_movement_cessation.time.period_end);
 		//we push death relaxation back in time as we find more data
 		unsigned long death_relaxation_start_time = worm_arrival_time;
-		for (unsigned int y = 0; y < size.y; y++) {
-			unsigned int x;
-			ns_color_8 c;
-			c = ns_movement_colors::color(ns_movement_fast)*scaling;
-			if (worm_arrival_time < path_start_time)
-				throw ns_ex("Invalid time of additional worm entry into cluster");
-			for (x = 0; x < (worm_arrival_time - path_start_time)*dt; x++) {
-				if (y + pos.y >= im.properties().height || x + pos.x >= im.properties().width || im.properties().components != 3)
-					throw ns_ex("Yikes! 1");
-				im[y + pos.y][3 * (x + pos.x) + 0] = c.x;
-				im[y + pos.y][3 * (x + pos.x) + 1] = c.y;
-				im[y + pos.y][3 * (x + pos.x) + 2] = c.z;
+
+		unsigned int x;
+		ns_color_8 c;
+		c = ns_movement_colors::color(ns_movement_fast)*scaling;
+		if (worm_arrival_time < path_start_time)
+			throw ns_ex("Invalid time of additional worm entry into cluster");
+		for (x = 0; x < (worm_arrival_time - path_start_time)*dt; x++) {
+			if (x + pos.x >= im.properties().width || im.properties().components != 3)
+				throw ns_ex("Yikes! 1");
+			const float cur_scale = (x / dt + path_start_time < current_interval.period_start) ? 1 : pre_current_time_scaling;
+			for (unsigned int y = 0; y < size.y; y++) {
+				im[y + pos.y][3 * (x + pos.x) + 0] = c.x*cur_scale;
+				im[y + pos.y][3 * (x + pos.x) + 1] = c.y*cur_scale;
+				im[y + pos.y][3 * (x + pos.x) + 2] = c.z*cur_scale;
 			}
+		}
 
-			c = ns_movement_colors::color(ns_movement_slow)*scaling;
-			if (translation_cessation.time.period_end != 0 && translation_cessation.time.period_end >= path_start_time) {
+		c = ns_movement_colors::color(ns_movement_slow)*scaling;
+		if (translation_cessation.time.period_end != 0 && translation_cessation.time.period_end >= path_start_time) {
 
-				death_relaxation_start_time = translation_cessation.time.period_end;
-				if (translation_cessation.time.period_end > last_path_frame_time)
-					throw ns_ex("Invalid translation cessation time");
-				for (; x < (int)((translation_cessation.time.period_end - path_start_time)*dt); x++) {
-					if (y + pos.y >= im.properties().height || x + pos.x >= im.properties().width || im.properties().components != 3)
-						throw ns_ex("Yikes! 2");
-					im[y + pos.y][3 * (x + pos.x) + 0] = c.x;
-					im[y + pos.y][3 * (x + pos.x) + 1] = c.y;
-					im[y + pos.y][3 * (x + pos.x) + 2] = c.z;
+			death_relaxation_start_time = translation_cessation.time.period_end;
+			if (translation_cessation.time.period_end > last_path_frame_time)
+				throw ns_ex("Invalid translation cessation time");
+			for (; x < (int)((translation_cessation.time.period_end - path_start_time)*dt); x++) {
+				if (pos.x >= im.properties().width || im.properties().components != 3)
+					throw ns_ex("Yikes! 2");
+				const float cur_scale = (x / dt + path_start_time < current_interval.period_start) ? 1 : pre_current_time_scaling;
+
+				for (unsigned int y = 0; y < size.y; y++) {
+					im[y + pos.y][3 * (x + pos.x) + 0] = c.x*cur_scale;
+					im[y + pos.y][3 * (x + pos.x) + 1] = c.y*cur_scale;
+					im[y + pos.y][3 * (x + pos.x) + 2] = c.z*cur_scale;
 				}
-				c = ns_movement_colors::color(ns_movement_posture)*scaling;
 			}
-			if (movement_cessation.time.period_end != 0 && movement_cessation.time.period_end >= path_start_time) {
+			c = ns_movement_colors::color(ns_movement_posture)*scaling;
+		}
+		if (movement_cessation.time.period_end != 0 && movement_cessation.time.period_end >= path_start_time) {
 
-				death_relaxation_start_time = movement_cessation.time.period_end;
-				if (movement_cessation.time.period_end > last_path_frame_time)
-					throw ns_ex("Invalid Movement Cessation Time");
-				for (; x < (int)((movement_cessation.time.period_end - path_start_time)*dt); x++) {
-					if (y + pos.y >= im.properties().height || x + pos.x >= im.properties().width || im.properties().components != 3)
-						throw ns_ex("Yikes! 3");
-					im[y + pos.y][3 * (x + pos.x) + 0] = c.x;
-					im[y + pos.y][3 * (x + pos.x) + 1] = c.y;
-					im[y + pos.y][3 * (x + pos.x) + 2] = c.z;
+			death_relaxation_start_time = movement_cessation.time.period_end;
+			if (movement_cessation.time.period_end > last_path_frame_time)
+				throw ns_ex("Invalid Movement Cessation Time");
+			for (; x < (int)((movement_cessation.time.period_end - path_start_time)*dt); x++) {
+				if (x + pos.x >= im.properties().width || im.properties().components != 3)
+					throw ns_ex("Yikes! 3");
+				const float cur_scale = (x / dt + path_start_time < current_interval.period_start) ? 1 : pre_current_time_scaling;
+				for (unsigned int y = 0; y < size.y; y++) {
+					im[y + pos.y][3 * (x + pos.x) + 0] = c.x*cur_scale;
+					im[y + pos.y][3 * (x + pos.x) + 1] = c.y*cur_scale;
+					im[y + pos.y][3 * (x + pos.x) + 2] = c.z*cur_scale;
 				}
-
-				c = ns_movement_colors::color(ns_movement_stationary)*scaling;
-				if (movement_cessation.excluded == ns_death_time_annotation::ns_censored_at_end_of_experiment)
-					c = ns_movement_colors::color(ns_movement_machine_excluded)*scaling;
-			}
-			//here the color is set by the value of the last specified event
-			for (; x < size.x; x++) {
-
-				if (y + pos.y >= im.properties().height || x + pos.x >= im.properties().width || im.properties().components != 3)
-					throw ns_ex("Yikes! 6");
-				im[y + pos.y][3 * (x + pos.x) + 0] = c.x;
-				im[y + pos.y][3 * (x + pos.x) + 1] = c.y;
-				im[y + pos.y][3 * (x + pos.x) + 2] = c.z;
 			}
 
-			if (y < size.y / 2 &&
-				death_posture_relaxation_termination_.time.period_end != 0 && death_posture_relaxation_termination_.time.period_end >= path_start_time) {
+			c = ns_movement_colors::color(ns_movement_stationary)*scaling;
+			if (movement_cessation.excluded == ns_death_time_annotation::ns_censored_at_end_of_experiment)
+				c = ns_movement_colors::color(ns_movement_machine_excluded)*scaling;
+		}
+		//here the color is set by the value of the last specified event
+		for (; x < size.x; x++) {
 
-				if (death_posture_relaxation_start.time.period_end != 0)
-					death_relaxation_start_time = death_posture_relaxation_start.time.period_end;
-				//draw animal as dead until death relaxation begins
-				if (death_relaxation_start_time > last_path_frame_time)
-					throw ns_ex("Invalid Death Posture Relaxation Start Time!");
-				c = ns_movement_colors::color(ns_movement_death_posture_relaxation)*scaling;
-				for (int x = (death_relaxation_start_time - (ns_s64_bit)path_start_time)*dt; x < (death_posture_relaxation_termination_.time.period_start - (ns_s64_bit)path_start_time)*dt; x++) {
-					if (y + pos.y >= im.properties().height || x + pos.x >= im.properties().width || im.properties().components != 3) {
-						std::cout << "Out of bounds death relaxation time interval draw (" << x + pos.x << "," << y + pos.y << ") in an image (" << im.properties().width << "," << im.properties().height << "\n";
-						break;
-					}
-					im[y + pos.y][3 * (x + pos.x) + 0] = c.x;
-					im[y + pos.y][3 * (x + pos.x) + 1] = c.y;
-					im[y + pos.y][3 * (x + pos.x) + 2] = c.z;
+			if (x + pos.x >= im.properties().width || im.properties().components != 3)
+				throw ns_ex("Yikes! 6");
+			const float cur_scale = (x / dt + path_start_time < current_interval.period_start) ? 1 : pre_current_time_scaling;
+			for (unsigned int y = 0; y < size.y; y++) {
+				im[y + pos.y][3 * (x + pos.x) + 0] = c.x*cur_scale;
+				im[y + pos.y][3 * (x + pos.x) + 1] = c.y*cur_scale;
+				im[y + pos.y][3 * (x + pos.x) + 2] = c.z*cur_scale;
+			}
+		}
+
+		if (death_posture_relaxation_termination_.time.period_end != 0 && death_posture_relaxation_termination_.time.period_end >= path_start_time) {
+
+			if (death_posture_relaxation_start.time.period_end != 0)
+				death_relaxation_start_time = death_posture_relaxation_start.time.period_end;
+			//draw animal as dead until death relaxation begins
+			if (death_relaxation_start_time > last_path_frame_time)
+				throw ns_ex("Invalid Death Posture Relaxation Start Time!");
+			c = ns_movement_colors::color(ns_movement_death_posture_relaxation)*scaling;
+			for (int x = (death_relaxation_start_time - (ns_s64_bit)path_start_time)*dt; x < (death_posture_relaxation_termination_.time.period_start - (ns_s64_bit)path_start_time)*dt; x++) {
+				if (x + pos.x >= im.properties().width || im.properties().components != 3) {
+					std::cout << "Out of bounds death relaxation time interval draw (" << x + pos.x << ") in an image (" << im.properties().width << "," << im.properties().height << "\n";
+					break;
 				}
-
+				const float cur_scale = (x / dt + path_start_time < current_interval.period_start) ? 1 : pre_current_time_scaling;
+				for (unsigned int y = 0; y < size.y / 2; y++) {
+					im[y + pos.y][3 * (x + pos.x) + 0] = c.x*cur_scale;
+					im[y + pos.y][3 * (x + pos.x) + 1] = c.y*cur_scale;
+					im[y + pos.y][3 * (x + pos.x) + 2] = c.z*cur_scale;
+				}
 			}
 		}
 
@@ -235,7 +265,18 @@ public:
 				!current_interval.period_end_was_not_observed &&
 				current_interval.period_start >= path_start_time &&
 				current_interval.period_end <= last_path_frame_time) {
-				if (!dotted_marker) {
+
+				if (marker_type == ns_highlight_up_until_current_time) {
+					for (unsigned long x = interval_start; x < interval_end; x++) {
+						if (y + pos.y >= im.properties().height || x + pos.x >= im.properties().width || im.properties().components != 3)
+							throw ns_ex("Yikes! 6");
+
+						im[pos.y + y][3 * (x + pos.x)] = (1) ? lighten(im[pos.y + y][3 * (x + pos.x)]) : im[pos.y + y][3 * (x + pos.x)];
+						im[pos.y + y][3 * (x + pos.x) + 1] = (1) ? lighten(im[pos.y + y][3 * (x + pos.x) + 1]) : im[pos.y + y][3 * (x + pos.x) + 1];
+						im[pos.y + y][3 * (x + pos.x) + 2] = (1) ? lighten(im[pos.y + y][3 * (x + pos.x) + 2]) : im[pos.y + y][3 * (x + pos.x) + 2];
+					}
+				}
+				else if (marker_type == ns_wide_dotted_marker) {
 					for (unsigned long x = interval_start; x < interval_end; x++) {
 						if (y + pos.y >= im.properties().height || x + pos.x >= im.properties().width || im.properties().components != 3)
 							throw ns_ex("Yikes! 6");
@@ -254,13 +295,21 @@ public:
 						im[pos.y + y][3 * (x + pos.x) + 1] = (1) ? lighten(im[pos.y + y][3 * (x + pos.x) + 1]) : im[pos.y + y][3 * (x + pos.x) + 1];
 						im[pos.y + y][3 * (x + pos.x) + 2] = (1) ? lighten(im[pos.y + y][3 * (x + pos.x) + 2]) : im[pos.y + y][3 * (x + pos.x) + 2];
 					}
-					im[pos.y + y][3 * (interval_end + pos.x)] = (y % 2) ? 255 : 0;
-					im[pos.y + y][3 * (interval_end + pos.x) + 1] = (y % 2) ? 255 : 0;
-					im[pos.y + y][3 * (interval_end + pos.x) + 2] = (y % 2) ? 255 : 0;
+
+					int bar_start = interval_end;
+					if (bar_start > current_interval_marker_min_width)
+						bar_start -= current_interval_marker_min_width;
+					else bar_start = 0;
+					for (unsigned int x = bar_start; x < interval_end; x++) {
+						im[pos.y + y][3 * (x + pos.x)] = 40;
+						im[pos.y + y][3 * (x + pos.x) + 1] = 40;
+						im[pos.y + y][3 * (x + pos.x) + 2] = 40;
+					}
 				}
 			}
 		}
 	}
+		
 
 	bool is_death_time_contracting(const unsigned long time) const {
 		return death_posture_relaxation_termination_.time.period_end != 0 && death_posture_relaxation_start.time.period_end <= time && death_posture_relaxation_termination_.time.period_end >= time;
@@ -573,7 +622,7 @@ public:
 };
 class ns_timing_data_configurator{
 public:
-	void operator()(const unsigned long region_id,ns_time_path_image_movement_analyzer & movement_analyzer, std::vector<ns_animal_list_at_position> & machine_timing_data, std::vector < ns_animal_list_at_position> & by_hand_timing_data) {
+	void operator()(const ns_64_bit region_id,ns_time_path_image_movement_analyzer & movement_analyzer, std::vector<ns_animal_list_at_position> & machine_timing_data, std::vector < ns_animal_list_at_position> & by_hand_timing_data) {
 		if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("Setting timing"));
 		by_hand_timing_data.resize(0);
 		machine_timing_data.resize(0);

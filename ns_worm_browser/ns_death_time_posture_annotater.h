@@ -131,7 +131,7 @@ private:
 		im.draw_line_color(p+s,p+ns_vector_2i(s.x,0),c,thickness);
 		im.draw_line_color(p+s,p+ns_vector_2i(0,s.y),c,thickness);
 	}
-	void draw_metadata(ns_annotater_timepoint * tp_a,ns_image_standard & im){
+	void draw_metadata(ns_annotater_timepoint * tp_a,ns_image_standard & im, double external_resize_factor){
 		throw ns_ex("Not implemented");
 		/*
 	//	cerr << resize_factor << "\n";
@@ -291,7 +291,7 @@ public:
 		saved_ = false;
 
 	}
-	void load_region(const unsigned long region_info_id_,const ns_alignment_type alignment_type_,ns_worm_learner * worm_learner_){
+	void load_region(const unsigned long region_info_id_,const ns_alignment_type alignment_type_,ns_worm_learner * worm_learner_, double external_rescale_factor){
 		stop_fast_movement();
 		clear();
 		ns_acquire_lock_for_scope lock(image_buffer_access_lock,__FILE__,__LINE__);
@@ -444,12 +444,12 @@ public:
 		annotation_file = image_server.results_storage.hand_curated_death_times(sub,sql());
 		load_annotations();
 		
-		draw_metadata(&timepoints[current_timepoint_id],*current_image.im);
+		draw_metadata(&timepoints[current_timepoint_id],*current_image.im,external_rescale_factor);
 
 		request_refresh();
 		lock.release();
 	}
-	void register_click(const ns_vector_2i & image_position,const ns_click_request & action){
+	void register_click(const ns_vector_2i & image_position,const ns_click_request & action, double external_rescale_factor){
 		throw ns_ex("not implemented");
 		/*
 		ns_acquire_lock_for_scope lock(image_buffer_access_lock,__FILE__,__LINE__);

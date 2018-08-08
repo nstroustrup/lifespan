@@ -5949,19 +5949,19 @@ bool ns_worm_learner::register_worm_window_key_press(int key, const bool shift_k
 		return true;
 	}
 	else if (key == 's' && control_key_held){
-		death_time_solo_annotater.register_click(ns_vector_2i(0,0),ns_death_time_solo_posture_annotater::ns_output_images);
+		death_time_solo_annotater.register_click(ns_vector_2i(0,0),ns_death_time_solo_posture_annotater::ns_output_images,worm_window.display_rescale_factor);
 		return true;
 	}
 	else if (shift_key_held && key == '=' || key == '+'){
 		if (control_key_held)
-			death_time_solo_annotater.register_click(ns_vector_2i(0, 0), ns_death_time_solo_posture_annotater::ns_time_zoom_in);
-		else death_time_solo_annotater.register_click(ns_vector_2i(0,0),ns_death_time_solo_posture_annotater::ns_increase_contrast);
+			death_time_solo_annotater.register_click(ns_vector_2i(0, 0), ns_death_time_solo_posture_annotater::ns_time_zoom_in, worm_window.display_rescale_factor);
+		else death_time_solo_annotater.register_click(ns_vector_2i(0,0),ns_death_time_solo_posture_annotater::ns_increase_contrast, worm_window.display_rescale_factor);
 		return true;
 	}
 	else if (key == '-'){
 		if (control_key_held)
-			death_time_solo_annotater.register_click(ns_vector_2i(0, 0), ns_death_time_solo_posture_annotater::ns_time_zoom_out);
-		else death_time_solo_annotater.register_click(ns_vector_2i(0,0),ns_death_time_solo_posture_annotater::ns_decrease_contrast);
+			death_time_solo_annotater.register_click(ns_vector_2i(0, 0), ns_death_time_solo_posture_annotater::ns_time_zoom_out, worm_window.display_rescale_factor);
+		else death_time_solo_annotater.register_click(ns_vector_2i(0,0),ns_death_time_solo_posture_annotater::ns_decrease_contrast, worm_window.display_rescale_factor);
 		return true;
 	}
 	else if (key == 'g') {
@@ -5971,7 +5971,7 @@ bool ns_worm_learner::register_worm_window_key_press(int key, const bool shift_k
 		return true;
 	}
 	else if (key == 'v') {
-		solo_annotation_visualization_type = death_time_solo_annotater.step_visualization_type();
+		solo_annotation_visualization_type = death_time_solo_annotater.step_visualization_type(worm_window.display_rescale_factor);
 
 		ns_update_worm_information_bar(string("Showing ") + ns_death_time_solo_posture_annotater_timepoint::visulazation_type_string(solo_annotation_visualization_type));
 
@@ -6152,13 +6152,13 @@ void ns_worm_learner::touch_main_window_pixel_internal(const ns_button_press & p
 		case ns_worm_learner::ns_annotate_storyboard_experiment:{
 			if (press.click_type == ns_button_press::ns_up){
 				if (press.shift_key_held)
-					current_annotater->register_click(ns_vector_2i(press.image_position.x,press.image_position.y),ns_image_series_annotater::ns_annotate_extra_worm);
+					current_annotater->register_click(ns_vector_2i(press.image_position.x,press.image_position.y),ns_image_series_annotater::ns_annotate_extra_worm,worm_window.display_rescale_factor);
 				else if (press.control_key_held)
-					current_annotater->register_click(ns_vector_2i(press.image_position.x,press.image_position.y),ns_image_series_annotater::ns_censor_all);
+					current_annotater->register_click(ns_vector_2i(press.image_position.x,press.image_position.y),ns_image_series_annotater::ns_censor_all, worm_window.display_rescale_factor);
 				else if (press.right_button || press.control_key_held)
-					current_annotater->register_click(ns_vector_2i(press.image_position.x,press.image_position.y),ns_image_series_annotater::ns_censor);
+					current_annotater->register_click(ns_vector_2i(press.image_position.x,press.image_position.y),ns_image_series_annotater::ns_censor, worm_window.display_rescale_factor);
 				else
-					current_annotater->register_click(ns_vector_2i(press.image_position.x,press.image_position.y),ns_image_series_annotater::ns_load_worm_details);
+					current_annotater->register_click(ns_vector_2i(press.image_position.x,press.image_position.y),ns_image_series_annotater::ns_load_worm_details, worm_window.display_rescale_factor);
 			
 			}
 			break;
@@ -6169,11 +6169,11 @@ void ns_worm_learner::touch_main_window_pixel_internal(const ns_button_press & p
 		case ns_worm_learner::ns_annotate_death_times_in_death_aligned_posture:{
 			if (press.click_type == ns_button_press::ns_up){
 				if (press.right_button || press.control_key_held)
-					current_annotater->register_click(ns_vector_2i(press.image_position.x,press.image_position.y),ns_image_series_annotater::ns_censor);
+					current_annotater->register_click(ns_vector_2i(press.image_position.x,press.image_position.y),ns_image_series_annotater::ns_censor, worm_window.display_rescale_factor);
 				else if (press.shift_key_held)
-					current_annotater->register_click(ns_vector_2i(press.image_position.x,press.image_position.y),ns_image_series_annotater::ns_annotate_extra_worm);
+					current_annotater->register_click(ns_vector_2i(press.image_position.x,press.image_position.y),ns_image_series_annotater::ns_annotate_extra_worm, worm_window.display_rescale_factor);
 				else
-					current_annotater->register_click(ns_vector_2i(press.image_position.x,press.image_position.y),ns_image_series_annotater::ns_cycle_state);
+					current_annotater->register_click(ns_vector_2i(press.image_position.x,press.image_position.y),ns_image_series_annotater::ns_cycle_state, worm_window.display_rescale_factor);
 			}
 			break;
 		}								
@@ -6188,13 +6188,13 @@ void ns_worm_learner::touch_worm_window_pixel_internal(const ns_button_press & p
 
 	if (press.click_type == ns_button_press::ns_up){
 		if (press.control_key_held)
-			death_time_solo_annotater.register_click(ns_vector_2i(press.image_position.x,press.image_position.y),ns_image_series_annotater::ns_cycle_flags);
+			death_time_solo_annotater.register_click(ns_vector_2i(press.image_position.x,press.image_position.y),ns_image_series_annotater::ns_cycle_flags, worm_window.display_rescale_factor);
 		else if (press.shift_key_held)
-			death_time_solo_annotater.register_click(ns_vector_2i(press.image_position.x,press.image_position.y),ns_image_series_annotater::ns_annotate_extra_worm);
+			death_time_solo_annotater.register_click(ns_vector_2i(press.image_position.x,press.image_position.y),ns_image_series_annotater::ns_annotate_extra_worm, worm_window.display_rescale_factor);
 		else if (press.right_button)
-			death_time_solo_annotater.register_click(ns_vector_2i(press.image_position.x, press.image_position.y), ns_image_series_annotater::ns_cycle_state_alt_key_held);
+			death_time_solo_annotater.register_click(ns_vector_2i(press.image_position.x, press.image_position.y), ns_image_series_annotater::ns_cycle_state_alt_key_held, worm_window.display_rescale_factor);
 		else
-			death_time_solo_annotater.register_click(ns_vector_2i(press.image_position.x,press.image_position.y),ns_image_series_annotater::ns_cycle_state);
+			death_time_solo_annotater.register_click(ns_vector_2i(press.image_position.x,press.image_position.y),ns_image_series_annotater::ns_cycle_state, worm_window.display_rescale_factor);
 	}
 	current_image_lock.release();
 }
@@ -6883,7 +6883,7 @@ void ns_worm_learner::update_worm_window_display(){
 	glDrawPixels(worm_window.gl_buffer_properties.width, worm_window.gl_buffer_properties.height,GL_RGB,GL_UNSIGNED_BYTE,worm_window.gl_buffer );
 	lock.release();
 }
-void ns_experiment_storyboard_annotater::load_from_storyboard(const ns_region_metadata & strain_to_display_, const ns_censor_masking censor_masking_, ns_experiment_storyboard_spec & spec, ns_worm_learner * worm_learner_) {
+void ns_experiment_storyboard_annotater::load_from_storyboard(const ns_region_metadata & strain_to_display_, const ns_censor_masking censor_masking_, ns_experiment_storyboard_spec & spec, ns_worm_learner * worm_learner_, double external_rescale_factor) {
 	stop_fast_movement();
 	clear();
 	ns_acquire_lock_for_scope lock(image_buffer_access_lock, __FILE__, __LINE__);
@@ -6985,7 +6985,7 @@ void ns_experiment_storyboard_annotater::load_from_storyboard(const ns_region_me
 	current_timepoint_id = 0;
 
 	divisions[current_timepoint_id].load_image(0, current_image, sql, asynch_load_specification.temp_buffer, resize_factor);
-	draw_metadata(&divisions[current_timepoint_id], *current_image.im);
+	draw_metadata(&divisions[current_timepoint_id], *current_image.im,external_rescale_factor);
 	this->saved_ = true;
 	request_refresh();
 	lock.release();
@@ -7032,7 +7032,7 @@ bool ns_worm_learner::start_death_time_annotation(const ns_behavior_mode m, cons
 
 				c2 = (ns_experiment_storyboard_annotater::ns_censor_masking)((int)c);
 				
-				storyboard_annotater.load_from_storyboard(metadata,c2,subject,this);
+				storyboard_annotater.load_from_storyboard(metadata,c2,subject,this, worm_window.display_rescale_factor);
 				storyboard_annotater.display_current_frame();
 				set_behavior_mode(m);
 		}
@@ -7052,7 +7052,7 @@ bool ns_worm_learner::start_death_time_annotation(const ns_behavior_mode m, cons
 					break;
 			}
 
-			death_time_annotater.load_region(data_selector.current_region().region_id, type, this);
+			death_time_annotater.load_region(data_selector.current_region().region_id, type, this,worm_window.display_rescale_factor);
 			death_time_annotater.display_current_frame();
 		}
 
@@ -7187,11 +7187,11 @@ void ns_worm_learner::navigate_solo_worm_annotation(ns_death_time_solo_posture_a
 				ns_update_worm_information_bar(ns_to_string_short(death_time_solo_annotater.telemetry_zoom_factor, 1) + "x zoom");
 			break;
 		case ns_death_time_solo_posture_annotater::ns_forward: 
-			if(death_time_solo_annotater.step_forward(ns_hide_worm_window,asynch))
+			if(death_time_solo_annotater.step_forward(ns_hide_worm_window, worm_window.display_rescale_factor,asynch))
 				death_time_solo_annotater.request_refresh();// report_changes_made_to_screen();
 			break;
 		case ns_death_time_solo_posture_annotater::ns_back:	
-			if(death_time_solo_annotater.step_back(&ns_hide_worm_window,asynch)) 
+			if(death_time_solo_annotater.step_back(&ns_hide_worm_window, worm_window.display_rescale_factor,asynch))
 				death_time_solo_annotater.request_refresh();// report_changes_made_to_screen();
 			break;
 		case ns_death_time_solo_posture_annotater::ns_fast_forward: death_time_solo_annotater.fast_forward();break;
@@ -7199,7 +7199,7 @@ void ns_worm_learner::navigate_solo_worm_annotation(ns_death_time_solo_posture_a
 		case ns_death_time_solo_posture_annotater::ns_stop: death_time_solo_annotater.stop_fast_movement();break;
 		case ns_death_time_solo_posture_annotater::ns_rewind_to_zero: break;
 		case ns_death_time_solo_posture_annotater::ns_step_visualization: 
-			solo_annotation_visualization_type = death_time_solo_annotater.step_visualization_type();
+			solo_annotation_visualization_type = death_time_solo_annotater.step_visualization_type(worm_window.display_rescale_factor);
 
 			ns_update_worm_information_bar(string("Rendering ") + ns_death_time_solo_posture_annotater_timepoint::visulazation_type_string(solo_annotation_visualization_type));
 
@@ -7216,7 +7216,7 @@ void ns_worm_learner::navigate_solo_worm_annotation(ns_death_time_solo_posture_a
 			//death_time_solo_annotater.request_refresh(); //report_changes_made_to_screen();
 			break;
 		case ns_death_time_solo_posture_annotater::ns_write_quantification_to_disk: 
-			death_time_solo_annotater.register_click(ns_vector_2i(0,0),ns_death_time_solo_posture_annotater::ns_output_images); break;
+			death_time_solo_annotater.register_click(ns_vector_2i(0,0),ns_death_time_solo_posture_annotater::ns_output_images, worm_window.display_rescale_factor); break;
 		default: throw ns_ex("Unkown death time annotater action");
 	}
 }
@@ -7234,12 +7234,12 @@ void ns_worm_learner::navigate_death_time_annotation(ns_image_series_annotater::
 	switch(action){
 		case ns_image_series_annotater::ns_none: break;
 		case ns_image_series_annotater::ns_forward: 
-			if (current_annotater->step_forward(ns_throw_error, asynch)) {
+			if (current_annotater->step_forward(ns_throw_error, worm_window.display_rescale_factor, asynch)) {
 				current_annotater->request_refresh(); report_changes_made_to_screen();
 			}
 			break;
 		case ns_image_series_annotater::ns_back:	
-			if (current_annotater->step_back(ns_throw_error, asynch)) {
+			if (current_annotater->step_back(ns_throw_error, worm_window.display_rescale_factor, asynch)) {
 				current_annotater->request_refresh(); report_changes_made_to_screen();
 			}
 			break;
@@ -7990,7 +7990,7 @@ void ns_death_time_solo_posture_annotater::draw_telemetry(const ns_vector_2i & p
 	if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("Done with telemetry."));
 }
 
-void ns_death_time_solo_posture_annotater::register_click(const ns_vector_2i & image_position, const ns_click_request & action) {
+void ns_death_time_solo_posture_annotater::register_click(const ns_vector_2i & image_position, const ns_click_request & action, double external_rescale_factor) {
 	ns_acquire_lock_for_scope lock(image_buffer_access_lock, __FILE__, __LINE__);
 	const unsigned long hand_bar_group_bottom(bottom_margin_position().y*ns_death_time_solo_posture_annotater_timepoint::ns_resolution_increase_factor);
 
@@ -8169,8 +8169,8 @@ void ns_death_time_solo_posture_annotater::register_click(const ns_vector_2i & i
 		}
 	}
 	if (change_made) {
-		update_events_to_storyboard();
-		draw_metadata(&timepoints[current_timepoint_id], *current_image.im);
+		update_events_to_storyboard(external_rescale_factor);
+		draw_metadata(&timepoints[current_timepoint_id], *current_image.im, external_rescale_factor);
 		request_refresh();
 	}
 	else
@@ -8187,7 +8187,7 @@ void ns_experiment_storyboard_annotater::load_random_worm() {
 	ns_launch_worm_window_for_worm(worm->event_annotation.region_info_id, worm->event_annotation.stationary_path_id, worm->storyboard_absolute_time);
 
 }
-void ns_experiment_storyboard_annotater::register_click(const ns_vector_2i & image_position, const ns_click_request & action) {
+void ns_experiment_storyboard_annotater::register_click(const ns_vector_2i & image_position, const ns_click_request & action, double external_rescale_factor) {
 	if (divisions[current_timepoint_id].division->events.size() == 0)
 		return;
 	ns_acquire_lock_for_scope lock(image_buffer_access_lock, __FILE__, __LINE__);
@@ -8281,7 +8281,7 @@ void ns_experiment_storyboard_annotater::register_click(const ns_vector_2i & ima
 		}
 	}
 	saved_ = false;
-	draw_metadata(&divisions[current_timepoint_id], *current_image.im);
+	draw_metadata(&divisions[current_timepoint_id], *current_image.im, external_rescale_factor);
 	request_refresh();
 
 	lock.release();

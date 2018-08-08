@@ -6443,7 +6443,7 @@ void ns_time_path_image_movement_analyzer::generate_movement_posture_visualizati
 
 	image_server.add_subtext_to_current_event("\nCalculating intensity normalization stats...", &sql);
 	//initialize path movement image source for first frame
-	std::vector<std::pair<ns_8_bit,ns_8_bit> > pixel_ranges(groups.size(),std::pair<ns_8_bit, ns_8_bit>(255,0));
+	std::vector<ns_histogram<ns_64_bit,ns_8_bit> > pixel_ranges(groups.size());
 	std::vector<std::pair<float,float> > pixel_scale_factors(groups.size());
 	for (unsigned int g = 0; g < groups.size(); g++) {
 
@@ -6462,19 +6462,17 @@ void ns_time_path_image_movement_analyzer::generate_movement_posture_visualizati
 				const ns_image_standard &image(groups[g].paths[0].element(j).registered_images->image);
 				for (unsigned int y = 0; y < image.properties().height; y++) {
 					for (unsigned int x = 0; x < image.properties().width; x++) {
-						if (image[y][x] < pixel_ranges[g].first)
-							pixel_ranges[g].first = image[y][x];
-						if (image[y][x] > pixel_ranges[g].second)
-							pixel_ranges[g].second = image[y][x];
+						pixel_ranges[g].increment(image[y][x]);
 					}
 				}
 				groups[g].paths[0].elements[j].clear_movement_images();
 			}
-			pixel_scale_factors[g].first = pixel_ranges[g].first;
-			if (pixel_ranges[g].second == pixel_ranges[g].first)
+			pixel_scale_factors[g].first = pixel_ranges[g].average_of_ntile(1,100,true);
+			ns_8_bit top = pixel_ranges[g].average_of_ntile(99, 100,true);
+			if (pixel_scale_factors[g].first == top)
 				pixel_scale_factors[g].second = 1;
 			else
-				pixel_scale_factors[g].second = 255 / (pixel_ranges[g].second - pixel_ranges[g].first);
+				pixel_scale_factors[g].second = 252 / (top - pixel_scale_factors[g].first);
 
 			//reset images to prepare for the visualization generation
 			path_image_source[g].clear();
@@ -6562,8 +6560,8 @@ void ns_time_path_image_movement_analyzer::generate_movement_posture_visualizati
 			 const ns_vector_2i & bc(series.items[g].visulazation_border_to_crop);
 			 ns_color_8 c(63, 63, 63);
 			 ns_movement_colors colors;
-			 if (path.element(path.first_stationary_timepoint()).absolute_time == time)
-				 c = colors.color(ns_movement_slow);
+			 //if (path.element(path.first_stationary_timepoint()).absolute_time == time)
+			 //	c = colors.color(ns_movement_slow);
 			 output_image.draw_line_color_thick(p, p + ns_vector_2i(s.x - bc.x, 0), c, thickness);
 			 output_image.draw_line_color_thick(p, p + ns_vector_2i(0, s.y - bc.y), c, thickness);
 			 output_image.draw_line_color_thick(p + s - bc, p + ns_vector_2i(s.x - bc.x, 0), c, thickness);
@@ -6632,12 +6630,17 @@ void ns_time_path_image_movement_analyzer::generate_movement_posture_visualizati
 			 vis_summary.worms[ps].path_time.period_end = path.elements.rbegin()->absolute_time;
 			 vis_summary.worms[ps].image_time = path.elements[i].absolute_time;
 
-
+			
 			 //ns_vector_2i region_offset(path.elements[i].region_offset_in_source_image()-path.elements[i].context_offset_in_source_image());
 			 for (unsigned int y = 0; y < vis_summary.worms[ps].path_in_visualization.size.y; y++) {
 				 for (unsigned int x = 0; x < 3 * vis_summary.worms[ps].path_in_visualization.size.x; x++) {
+					 //scale pixel and crop between 0 and 255
+					 float p(image[y + bc.y / 2][x / 3 + bc.x / 2]);
+					 p = (p > pixel_scale_factors[g].first) ? (p - pixel_scale_factors[g].first) : 0;
+					 p = (p*pixel_scale_factors[g].second > 255) ?  255 : p*pixel_scale_factors[g].second;
+					 
 					 output_image[y + vis_summary.worms[ps].path_in_visualization.position.y]
-						 [x + 3 * vis_summary.worms[ps].path_in_visualization.position.x] = (ns_8_bit)(pixel_scale_factors[g].second*(image[y + bc.y / 2][x / 3 + bc.x / 2] - pixel_scale_factors[g].first));
+						 [x + 3 * vis_summary.worms[ps].path_in_visualization.position.x] = (ns_8_bit)(round(p));
 				 }
 			 }
 			 int height(10);
@@ -6668,7 +6671,7 @@ void ns_time_path_image_movement_analyzer::generate_movement_posture_visualizati
 					 (*group_to_timing_data_map[g])[k].draw_movement_diagram(
 						 vis_summary.worms[ps].path_in_visualization.position + ns_vector_2i(0, vis_summary.worms[ps].path_in_visualization.size.y - (number_of_animals_annotated_at_position - k)*height),
 						 ns_vector_2i(vis_summary.worms[ps].path_in_visualization.size.x, height),
-						 groups[g].paths[0].observation_limits(), current_time_interval, output_image, 1, 3, false);
+						 groups[g].paths[0].observation_limits(), current_time_interval, output_image, 1, 3, ns_death_timing_data::ns_highlight_up_until_current_time,ns_death_timing_data::ns_draw_relative_to_plate);
 				 }
 			 }
 
@@ -6732,7 +6735,7 @@ void ns_time_path_image_movement_analyzer::generate_movement_posture_visualizati
 						 for (unsigned x = 0; x < 3 * output_image.properties().width; x++)
 							 composit_temp[y][3 * (plate_new_properties.width) + x] = output_image[y][x];
 					 }
-					 ns_image_server_image im2(reg.create_storage_for_processed_image(ns_process_movement_posture_aligned_visualization, ns_tiff, &sql));
+					 ns_image_server_image im2(reg.create_storage_for_processed_image(ns_process_movement_plate_and_individual_visualization, ns_tiff, &sql));
 					 bool had_to_use_volatile_storage;
 					 ns_image_storage_reciever_handle<ns_8_bit> r2(image_server_const.image_storage.request_storage(im2, ns_tiff, compression_rate_f, 1024, &sql, had_to_use_volatile_storage, false, false));
 					 composit_temp.pump(r2.output_stream(), 1024);

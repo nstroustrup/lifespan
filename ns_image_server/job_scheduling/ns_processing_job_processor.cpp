@@ -465,7 +465,7 @@ ns_64_bit ns_processing_job_region_processor::run_job(ns_sql & sql){
 			job.operations[ns_process_movement_paths_visualization] ||
 			job.operations[ns_process_movement_paths_visualition_with_mortality_overlay] ||
 			job.operations[ns_process_movement_posture_visualization] ||
-			job.operations[ns_process_movement_posture_aligned_visualization]) {
+			job.operations[ns_process_movement_plate_and_individual_visualization]) {
 
 			job.death_time_annotations = &pipeline->lifespan_curve_cache.get_experiment_data(job.experiment_id, sql);
 		}
@@ -787,11 +787,11 @@ ns_64_bit ns_processing_job_maintenance_processor::run_job(ns_sql & sql) {
 			analyzer.add_by_hand_annotations(by_hand_region_annotations.annotations);
 			image_server_const.add_subtext_to_current_event("\nGenerating visualization...", &sql);
 			analyzer.generate_movement_posture_visualizations(false, job.region_id, solution,true, sql);
-			image_server->register_job_duration(ns_process_movement_posture_visualization, tm.stop());
+			image_server->register_job_duration(ns_process_movement_plate_and_individual_visualization, tm.stop());
 			break;
 		}
-		case ns_maintenance_generate_movement_posture_aligned_visualization: {
-			throw ns_ex("Depreciated");
+		case ns_maintenance_plate_and_individual_visualization: {
+			throw ns_ex("Depreciated"); //automatically generated when movement_posture_visulization is generated
 			/*ns_high_precision_timer tm;
 			tm.start();
 			ns_time_path_solution solution;

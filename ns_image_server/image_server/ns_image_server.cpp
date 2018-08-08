@@ -239,7 +239,7 @@ void ns_image_server::calculate_experiment_disk_usage(const ns_64_bit experiment
 			r.processed_region_images += image_storage.get_region_images_size_on_disk(region_id,ns_process_movement_paths_visualization,sql);
 			r.processed_region_images += image_storage.get_region_images_size_on_disk(region_id,ns_process_movement_paths_visualition_with_mortality_overlay,sql);
 			r.processed_region_images += image_storage.get_region_images_size_on_disk(region_id,ns_process_movement_posture_visualization,sql);
-			r.processed_region_images += image_storage.get_region_images_size_on_disk(region_id,ns_process_movement_posture_aligned_visualization,sql);
+			r.processed_region_images += image_storage.get_region_images_size_on_disk(region_id, ns_process_movement_plate_and_individual_visualization,sql);
 			r.processed_region_images += image_storage.get_region_images_size_on_disk(region_id,ns_process_unprocessed_backup,sql);
 			s = s + r;
 			//cerr << r.unprocessed_region_images + r.processed_region_images + r.metadata << "] ";
@@ -988,107 +988,107 @@ bool ns_image_server::upgrade_tables(ns_sql_connection * sql, const bool just_te
 				"CHANGE COLUMN `currently_under_processing` `currently_under_processing` INT NOT NULL DEFAULT '0' AFTER `worm_interpolation_results_id`,"
 				"CHANGE COLUMN `worm_movement_id` `worm_movement_id` BIGINT UNSIGNED NOT NULL DEFAULT '0' AFTER `currently_under_processing`,"
 				"CHANGE COLUMN `make_training_set_image_from_frame` `make_training_set_image_from_frame` BIGINT UNSIGNED NOT NULL DEFAULT '0' AFTER `image_statistics_id`";
-				sql->send_query();
+			sql->send_query();
 
-				cout << "25%...";
-				*sql << "ALTER TABLE `animal_storyboard`"
-					"CHANGE COLUMN `id` `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT FIRST,"
-					"CHANGE COLUMN `region_id` `region_id` BIGINT UNSIGNED NOT NULL DEFAULT '0' AFTER `id`,"
-					"CHANGE COLUMN `sample_id` `sample_id` BIGINT UNSIGNED NOT NULL DEFAULT '0' AFTER `region_id`,"
-					"CHANGE COLUMN `experiment_id` `experiment_id` BIGINT UNSIGNED NOT NULL DEFAULT '0' AFTER `sample_id`,"
-					"CHANGE COLUMN `image_id` `image_id` BIGINT UNSIGNED NOT NULL DEFAULT '0' AFTER `experiment_id`,"
-					"CHANGE COLUMN `metadata_id` `metadata_id` BIGINT UNSIGNED NOT NULL DEFAULT '0' AFTER `image_id`";
-				sql->send_query();
-					
-				*sql << "ALTER TABLE `automated_job_scheduling_data`"
-					"CHANGE COLUMN `id` `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT FIRST";
-				sql->send_query();
+			cout << "25%...";
+			*sql << "ALTER TABLE `animal_storyboard`"
+				"CHANGE COLUMN `id` `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT FIRST,"
+				"CHANGE COLUMN `region_id` `region_id` BIGINT UNSIGNED NOT NULL DEFAULT '0' AFTER `id`,"
+				"CHANGE COLUMN `sample_id` `sample_id` BIGINT UNSIGNED NOT NULL DEFAULT '0' AFTER `region_id`,"
+				"CHANGE COLUMN `experiment_id` `experiment_id` BIGINT UNSIGNED NOT NULL DEFAULT '0' AFTER `sample_id`,"
+				"CHANGE COLUMN `image_id` `image_id` BIGINT UNSIGNED NOT NULL DEFAULT '0' AFTER `experiment_id`,"
+				"CHANGE COLUMN `metadata_id` `metadata_id` BIGINT UNSIGNED NOT NULL DEFAULT '0' AFTER `image_id`";
+			sql->send_query();
 
-				*sql << "ALTER TABLE `alerts`"
-					"CHANGE COLUMN `id` `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT AFTER `acknowledged`";
-				sql->send_query();
+			*sql << "ALTER TABLE `automated_job_scheduling_data`"
+				"CHANGE COLUMN `id` `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT FIRST";
+			sql->send_query();
 
-				*sql << "ALTER TABLE `sample_region_image_aligned_path_images`"
-					"CHANGE COLUMN `id` `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT FIRST,"
-					"CHANGE COLUMN `region_info_id` `region_info_id` BIGINT UNSIGNED NOT NULL DEFAULT '0' AFTER `id`,"
-					"CHANGE COLUMN `image_id` `image_id` BIGINT UNSIGNED NOT NULL DEFAULT '0' AFTER `frame_index`";
-				sql->send_query();
+			*sql << "ALTER TABLE `alerts`"
+				"CHANGE COLUMN `id` `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT AFTER `acknowledged`";
+			sql->send_query();
 
-				*sql << "ALTER TABLE `autoscan_schedule`"
-					"CHANGE COLUMN `id` `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT FIRST";
-				sql->send_query();
+			*sql << "ALTER TABLE `sample_region_image_aligned_path_images`"
+				"CHANGE COLUMN `id` `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT FIRST,"
+				"CHANGE COLUMN `region_info_id` `region_info_id` BIGINT UNSIGNED NOT NULL DEFAULT '0' AFTER `id`,"
+				"CHANGE COLUMN `image_id` `image_id` BIGINT UNSIGNED NOT NULL DEFAULT '0' AFTER `frame_index`";
+			sql->send_query();
 
-				cout << "30%...";
-				*sql << "ALTER TABLE `captured_images`"
-					"CHANGE COLUMN `id` `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT FIRST,"
-					"CHANGE COLUMN `image_id` `image_id` BIGINT UNSIGNED NOT NULL DEFAULT '0' AFTER `id`,"
-					"CHANGE COLUMN `experiment_id` `experiment_id` BIGINT UNSIGNED NOT NULL DEFAULT '0' AFTER `last_modified`,"
-					"CHANGE COLUMN `sample_id` `sample_id` BIGINT UNSIGNED NOT NULL DEFAULT '0' AFTER `experiment_id`,"
-					"CHANGE COLUMN `problem` `problem` BIGINT UNSIGNED NOT NULL DEFAULT '0' AFTER `mask_applied`";
-				sql->send_query();
+			*sql << "ALTER TABLE `autoscan_schedule`"
+				"CHANGE COLUMN `id` `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT FIRST";
+			sql->send_query();
 
-				*sql << "ALTER TABLE `capture_samples`"
-					"CHANGE COLUMN `id` `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT FIRST,"
-					"CHANGE COLUMN `experiment_id` `experiment_id` BIGINT UNSIGNED NOT NULL DEFAULT '0' AFTER `name`,"
-					"CHANGE COLUMN `mask_id` `mask_id` BIGINT UNSIGNED NOT NULL DEFAULT '0' AFTER `description`,"
-					"CHANGE COLUMN `problem` `problem` BIGINT NOT NULL DEFAULT '0' AFTER `device_id`,"
-					"CHANGE COLUMN `op0_video_id` `op0_video_id` BIGINT UNSIGNED NOT NULL DEFAULT '0' AFTER `size_calculation_time`";
-				sql->send_query();
+			cout << "30%...";
+			*sql << "ALTER TABLE `captured_images`"
+				"CHANGE COLUMN `id` `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT FIRST,"
+				"CHANGE COLUMN `image_id` `image_id` BIGINT UNSIGNED NOT NULL DEFAULT '0' AFTER `id`,"
+				"CHANGE COLUMN `experiment_id` `experiment_id` BIGINT UNSIGNED NOT NULL DEFAULT '0' AFTER `last_modified`,"
+				"CHANGE COLUMN `sample_id` `sample_id` BIGINT UNSIGNED NOT NULL DEFAULT '0' AFTER `experiment_id`,"
+				"CHANGE COLUMN `problem` `problem` BIGINT UNSIGNED NOT NULL DEFAULT '0' AFTER `mask_applied`";
+			sql->send_query();
 
-				cout << "50%...";
-				*sql << "ALTER TABLE `capture_schedule`"
-					"CHANGE COLUMN `experiment_id` `experiment_id` BIGINT UNSIGNED NOT NULL DEFAULT '0' AFTER `id`,"
-					"CHANGE COLUMN `sample_id` `sample_id` BIGINT UNSIGNED NOT NULL DEFAULT '0' AFTER `problem`";
-				sql->send_query();
+			*sql << "ALTER TABLE `capture_samples`"
+				"CHANGE COLUMN `id` `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT FIRST,"
+				"CHANGE COLUMN `experiment_id` `experiment_id` BIGINT UNSIGNED NOT NULL DEFAULT '0' AFTER `name`,"
+				"CHANGE COLUMN `mask_id` `mask_id` BIGINT UNSIGNED NOT NULL DEFAULT '0' AFTER `description`,"
+				"CHANGE COLUMN `problem` `problem` BIGINT NOT NULL DEFAULT '0' AFTER `device_id`,"
+				"CHANGE COLUMN `op0_video_id` `op0_video_id` BIGINT UNSIGNED NOT NULL DEFAULT '0' AFTER `size_calculation_time`";
+			sql->send_query();
 
-				cout << "75%...";
-				*sql << "ALTER TABLE `delete_file_jobs`"
-					"CHANGE COLUMN `id` `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT FIRST,"
-					"CHANGE COLUMN `parent_job_id` `parent_job_id` BIGINT UNSIGNED NOT NULL DEFAULT '0' COMMENT 'points to the file deletion specification job that produced this deletion job' AFTER `confirmed`";
-				sql->send_query();
+			cout << "50%...";
+			*sql << "ALTER TABLE `capture_schedule`"
+				"CHANGE COLUMN `experiment_id` `experiment_id` BIGINT UNSIGNED NOT NULL DEFAULT '0' AFTER `id`,"
+				"CHANGE COLUMN `sample_id` `sample_id` BIGINT UNSIGNED NOT NULL DEFAULT '0' AFTER `problem`";
+			sql->send_query();
 
-				*sql << "ALTER TABLE `delete_file_specifications`"
-					"CHANGE COLUMN `delete_job_id` `delete_job_id` BIGINT UNSIGNED NULL DEFAULT NULL FIRST";
-				sql->send_query();
+			cout << "75%...";
+			*sql << "ALTER TABLE `delete_file_jobs`"
+				"CHANGE COLUMN `id` `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT FIRST,"
+				"CHANGE COLUMN `parent_job_id` `parent_job_id` BIGINT UNSIGNED NOT NULL DEFAULT '0' COMMENT 'points to the file deletion specification job that produced this deletion job' AFTER `confirmed`";
+			sql->send_query();
 
-				*sql << "ALTER TABLE `devices`"
-					"CHANGE COLUMN `host_id` `host_id` BIGINT UNSIGNED NOT NULL DEFAULT '0' AFTER `comments`,"
-					"CHANGE COLUMN `barcode_image_id` `barcode_image_id` BIGINT UNSIGNED NOT NULL DEFAULT '0' AFTER `preview_requested`,"
-					"CHANGE COLUMN `id` `id` BIGINT NOT NULL DEFAULT '0' AFTER `error_text`";
-				sql->send_query();
+			*sql << "ALTER TABLE `delete_file_specifications`"
+				"CHANGE COLUMN `delete_job_id` `delete_job_id` BIGINT UNSIGNED NULL DEFAULT NULL FIRST";
+			sql->send_query();
 
-				*sql << "ALTER TABLE `hosts`"
-					"CHANGE COLUMN `id` `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT FIRST";
-				sql->send_query();
+			*sql << "ALTER TABLE `devices`"
+				"CHANGE COLUMN `host_id` `host_id` BIGINT UNSIGNED NOT NULL DEFAULT '0' AFTER `comments`,"
+				"CHANGE COLUMN `barcode_image_id` `barcode_image_id` BIGINT UNSIGNED NOT NULL DEFAULT '0' AFTER `preview_requested`,"
+				"CHANGE COLUMN `id` `id` BIGINT NOT NULL DEFAULT '0' AFTER `error_text`";
+			sql->send_query();
 
-				*sql << "ALTER TABLE `experiments`"
-					"CHANGE COLUMN `id` `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT FIRST";
-				sql->send_query();
+			*sql << "ALTER TABLE `hosts`"
+				"CHANGE COLUMN `id` `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT FIRST";
+			sql->send_query();
 
-				*sql << "ALTER TABLE `image_masks`"
-					"CHANGE COLUMN `image_id` `image_id` BIGINT UNSIGNED NOT NULL DEFAULT '0' FIRST,"
-					"CHANGE COLUMN `id` `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT AFTER `image_id`,"
-					"CHANGE COLUMN `visualization_image_id` `visualization_image_id` BIGINT UNSIGNED NOT NULL DEFAULT '0' AFTER `processed`";
-				sql->send_query();
+			*sql << "ALTER TABLE `experiments`"
+				"CHANGE COLUMN `id` `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT FIRST";
+			sql->send_query();
 
-				*sql << "ALTER TABLE `image_mask_regions`"
-					"CHANGE COLUMN `mask_id` `mask_id` BIGINT UNSIGNED NOT NULL DEFAULT '0' FIRST,"
-					"CHANGE COLUMN `pixel_count` `pixel_count` BIGINT UNSIGNED NOT NULL DEFAULT '0' AFTER `y_max`,"
-					"CHANGE COLUMN `id` `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT AFTER `mask_value`";
-				sql->send_query();
-				cout << "90%...";
+			*sql << "ALTER TABLE `image_masks`"
+				"CHANGE COLUMN `image_id` `image_id` BIGINT UNSIGNED NOT NULL DEFAULT '0' FIRST,"
+				"CHANGE COLUMN `id` `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT AFTER `image_id`,"
+				"CHANGE COLUMN `visualization_image_id` `visualization_image_id` BIGINT UNSIGNED NOT NULL DEFAULT '0' AFTER `processed`";
+			sql->send_query();
 
-				*sql << "ALTER TABLE `image_statistics`"
-					"CHANGE COLUMN `id` `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT FIRST";
-				sql->send_query();
+			*sql << "ALTER TABLE `image_mask_regions`"
+				"CHANGE COLUMN `mask_id` `mask_id` BIGINT UNSIGNED NOT NULL DEFAULT '0' FIRST,"
+				"CHANGE COLUMN `pixel_count` `pixel_count` BIGINT UNSIGNED NOT NULL DEFAULT '0' AFTER `y_max`,"
+				"CHANGE COLUMN `id` `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT AFTER `mask_value`";
+			sql->send_query();
+			cout << "90%...";
 
-				*sql << "ALTER TABLE `processing_jobs`"
-					"CHANGE COLUMN `delete_file_job_id` `delete_file_job_id` BIGINT UNSIGNED NOT NULL DEFAULT '0' AFTER `subregion_stop_time`";
-				sql->send_query();
+			*sql << "ALTER TABLE `image_statistics`"
+				"CHANGE COLUMN `id` `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT FIRST";
+			sql->send_query();
 
-				cout << "100%...Done.\n";
+			*sql << "ALTER TABLE `processing_jobs`"
+				"CHANGE COLUMN `delete_file_job_id` `delete_file_job_id` BIGINT UNSIGNED NOT NULL DEFAULT '0' AFTER `subregion_stop_time`";
+			sql->send_query();
 
-				changes_made = true;
+			cout << "100%...Done.\n";
+
+			changes_made = true;
 		}
 
 		*sql << "SHOW TABLES IN " << schema_name;
@@ -1492,8 +1492,6 @@ void ns_image_server::create_and_configure_sql_database(bool local, const std::s
 		}
 		else {
 			//upload schema from copy stored in header file
-			char cur[3];
-			char * res;
 			std::string ch;
 			bool in_quote = false;
 			for (unsigned long i = 0; i < image_server_db_schema_sql_len; i++) {

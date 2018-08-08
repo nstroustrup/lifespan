@@ -14,7 +14,7 @@
 #include "ns_annotation_handling_for_visualization.h"
 void ns_hide_worm_window();
 
-void ns_specify_worm_details(const ns_64_bit region_info_id,const ns_stationary_path_id & worm, const ns_death_time_annotation & sticky_properties, std::vector<ns_death_time_annotation> & event_times);
+void ns_specify_worm_details(const ns_64_bit region_info_id,const ns_stationary_path_id & worm, const ns_death_time_annotation & sticky_properties, std::vector<ns_death_time_annotation> & event_times,double external_rescale_factor);
 
 class ns_death_time_solo_posture_annotater_timepoint : public ns_annotater_timepoint{
 public:
@@ -378,7 +378,7 @@ private:
 	}
 	enum { bottom_offset = 5 };
 
-	void draw_metadata(ns_annotater_timepoint * tp_a, ns_image_standard & im) {
+	void draw_metadata(ns_annotater_timepoint * tp_a, ns_image_standard & im, double external_window_rescale_factor) {
 		if (current_worm == 0) {
 			cerr << "worm not loaded/n";
 			return;
@@ -439,7 +439,7 @@ private:
 			ns_vector_2i(current_worm->element(current_element_id()).image().properties().width*ns_death_time_solo_posture_annotater_timepoint::ns_resolution_increase_factor, vis_height),
 			observation_limit,
 			current_time_interval(),
-			im, 0.8);
+			im, 0.8, ceil(1/external_window_rescale_factor));
 		const unsigned long hand_bar_height(current_by_hand_timing_data().animals.size()*
 			ns_death_time_solo_posture_annotater_timepoint::ns_movement_bar_height);
 
@@ -449,7 +449,7 @@ private:
 				ns_vector_2i(current_worm->element(current_element_id()).image().properties().width*ns_death_time_solo_posture_annotater_timepoint::ns_resolution_increase_factor, vis_height),
 				observation_limit,
 				current_time_interval(),
-				im, (i == current_animal_id) ? 1.0 : 0.8);
+				im, (i == current_animal_id) ? 1.0 : 0.8, ceil(1/external_window_rescale_factor));
 		}
 
 		const int num_lines(6);
@@ -558,7 +558,7 @@ public:
 		request_refresh();
 		return graph_contents;
 	}
-	ns_death_time_solo_posture_annotater_timepoint::ns_visualization_type step_visualization_type() {
+	ns_death_time_solo_posture_annotater_timepoint::ns_visualization_type step_visualization_type(double external_rescale_factor) {
 
 		if (current_visualization_type == ns_death_time_solo_posture_annotater_timepoint::ns_movement_threshold_and_image)
 			current_visualization_type = ns_death_time_solo_posture_annotater_timepoint::ns_image;
@@ -576,7 +576,7 @@ public:
 		ns_image_standard temp_buffer;
 		timepoints[current_timepoint_id].load_image(1024, current_image, sql(), temp_buffer, 1);
 
-		draw_metadata(&timepoints[current_timepoint_id], *current_image.im);
+		draw_metadata(&timepoints[current_timepoint_id], *current_image.im, external_rescale_factor);
 		lock.release();
 		return current_visualization_type;
 	}
@@ -752,7 +752,7 @@ public:
 	}
 
 
-	void load_worm(const ns_64_bit region_info_id_, const ns_stationary_path_id & worm, const unsigned long current_time, const ns_death_time_solo_posture_annotater_timepoint::ns_visualization_type visualization_type, const ns_experiment_storyboard  * storyboard,ns_worm_learner * worm_learner_){
+	void load_worm(const ns_64_bit region_info_id_, const ns_stationary_path_id & worm, const unsigned long current_time, const ns_death_time_solo_posture_annotater_timepoint::ns_visualization_type visualization_type, const ns_experiment_storyboard  * storyboard,ns_worm_learner * worm_learner_, const double external_rescale_factor){
 		
 		
 
@@ -883,7 +883,7 @@ public:
 			if (!saved_){
 
 				if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("Updating events to storyboard"));
-				update_events_to_storyboard();
+				update_events_to_storyboard(external_rescale_factor);
 				saved_ = true;
 			}
 			//initialize worm timing data
@@ -936,7 +936,7 @@ public:
 			}
 
 			if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("Drawing Metadata."));
-			draw_metadata(&timepoints[current_timepoint_id],*current_image.im);
+			draw_metadata(&timepoints[current_timepoint_id],*current_image.im, external_rescale_factor);
 
 			if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("Requesting Refresh."));
 			request_refresh();
@@ -1085,11 +1085,11 @@ public:
 	std::vector<ns_death_time_annotation> click_event_cache;
 	
 
-	void register_click(const ns_vector_2i & image_position, const ns_click_request & action);
+	void register_click(const ns_vector_2i & image_position, const ns_click_request & action, double external_rescale_factor);
 
 	void display_current_frame();
 	private:
-	void update_events_to_storyboard(){
+	void update_events_to_storyboard(double external_rescale_factor){
 		properties_for_all_animals.annotation_time = ns_current_time();
 		current_by_hand_timing_data().animals[current_animal_id].specified = true;
 		click_event_cache.resize(0);
@@ -1097,7 +1097,7 @@ public:
 			current_by_hand_timing_data().animals[i].generate_event_timing_data(click_event_cache);
 			current_by_hand_timing_data().animals[i].specified = true;
 		}
-		ns_specify_worm_details(properties_for_all_animals.region_info_id,properties_for_all_animals.stationary_path_id,properties_for_all_animals,click_event_cache);
+		ns_specify_worm_details(properties_for_all_animals.region_info_id,properties_for_all_animals.stationary_path_id,properties_for_all_animals,click_event_cache,external_rescale_factor);
 	}
 		
 	ns_alignment_type alignment_type;

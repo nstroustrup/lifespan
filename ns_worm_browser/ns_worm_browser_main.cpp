@@ -2326,9 +2326,9 @@ public:
 };
 
 
-void ns_specify_worm_details(const ns_64_bit region_id,const ns_stationary_path_id & worm, const ns_death_time_annotation & sticky_properties, std::vector<ns_death_time_annotation> & event_times){
+void ns_specify_worm_details(const ns_64_bit region_id,const ns_stationary_path_id & worm, const ns_death_time_annotation & sticky_properties, std::vector<ns_death_time_annotation> & event_times,double external_rescale_factor){
 	worm_learner.storyboard_annotater.specifiy_worm_details(region_id,worm,sticky_properties,event_times);
-	worm_learner.storyboard_annotater.redraw_current_metadata();
+	worm_learner.storyboard_annotater.redraw_current_metadata(external_rescale_factor);
 	worm_learner.storyboard_annotater.request_refresh();
 }
 
@@ -2602,11 +2602,11 @@ void idle_main_window_update_callback(void * force_redraw) {
 
 			ns_image_series_annotater::ns_image_series_annotater_action a(worm_learner.current_annotater->fast_movement_requested());
 			if (a == ns_image_series_annotater::ns_fast_forward) {
-				worm_learner.current_annotater->step_forward(ns_show_worm_display_error);
+				worm_learner.current_annotater->step_forward(ns_show_worm_display_error,worm_learner.worm_window.display_rescale_factor);
 				worm_learner.current_annotater->display_current_frame();
 			}
 			else if (a == ns_image_series_annotater::ns_fast_back) {
-				worm_learner.current_annotater->step_back(ns_show_worm_display_error);
+				worm_learner.current_annotater->step_back(ns_show_worm_display_error, worm_learner.worm_window.display_rescale_factor);
 				worm_learner.current_annotater->display_current_frame();
 			}
 			//draw busy animation if requested
@@ -2696,16 +2696,16 @@ void idle_worm_window_update_callback(void * force_redraw){
 	
 		ns_image_series_annotater::ns_image_series_annotater_action a(worm_learner.death_time_solo_annotater.fast_movement_requested());
 		if (a == ns_image_series_annotater::ns_fast_forward){
-			worm_learner.death_time_solo_annotater.step_forward(ns_hide_worm_window);
+			worm_learner.death_time_solo_annotater.step_forward(ns_hide_worm_window, worm_learner.worm_window.display_rescale_factor);
 			worm_learner.death_time_solo_annotater.display_current_frame();
 			something_done = true;
 		}
 		else if (a==ns_image_series_annotater::ns_fast_back){
-			worm_learner.death_time_solo_annotater.step_back(ns_hide_worm_window);
+			worm_learner.death_time_solo_annotater.step_back(ns_hide_worm_window, worm_learner.worm_window.display_rescale_factor);
 			worm_learner.death_time_solo_annotater.display_current_frame();
 			something_done = true;
 		}
-		else if (worm_learner.death_time_solo_annotater.refresh_requested()) {
+		else if (worm_learner.death_time_solo_annotater.refresh_requested(), worm_learner.worm_window.display_rescale_factor) {
 				worm_learner.death_time_solo_annotater.display_current_frame();
 				something_done = true;
 			}
@@ -3048,7 +3048,7 @@ struct ns_asynch_worm_launcher{
 	}
 	void launch(){
 		try{
-			worm_learner.death_time_solo_annotater.load_worm(region_id,worm,current_time,worm_learner.solo_annotation_visualization_type,storyboard,&worm_learner);
+			worm_learner.death_time_solo_annotater.load_worm(region_id,worm,current_time,worm_learner.solo_annotation_visualization_type,storyboard,&worm_learner, worm_learner.worm_window.display_rescale_factor);
 			if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("Finished loading.  Displaying."));
 			worm_learner.death_time_solo_annotater.display_current_frame();
 			//lock.release();

@@ -2046,7 +2046,7 @@ bool ns_image_processing_pipeline::preprocessed_step_required(const ns_processin
 			 return s == ns_process_lossy_stretch;
 
 		case ns_process_movement_posture_visualization:
-		case ns_process_movement_posture_aligned_visualization:
+		case ns_process_movement_plate_and_individual_visualization:
 		case ns_process_unprocessed_backup:
 				return false;
 

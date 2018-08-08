@@ -546,7 +546,7 @@ const ns_image_server_image ns_image_server_captured_image_region::create_storag
 
 	im.host_id = image_server_const.host_id();
 	im.capture_time = ns_current_time();
-	im.path = directory(&sql,ns_process_movement_posture_aligned_visualization);
+	im.path = directory(&sql, ns_process_movement_plate_and_individual_visualization);
 	if (experiment_id == 0 || experiment_name.size() == 0 || sample_id == 0 || sample_name.size() == 0 || region_name.size() == 0){
 		if (region_info_id == 0){
 			if (region_info_id == 0)
@@ -722,7 +722,7 @@ std::string ns_processing_step_directory_d(const ns_processing_task & task){
 		case ns_process_movement_paths_visualization: return "movement_path_vis";
 		case ns_process_movement_paths_visualition_with_mortality_overlay: return "movement_path_vis_with_mortality";
 		case ns_process_movement_posture_visualization:return "movement_posture_vis";
-		case ns_process_movement_posture_aligned_visualization: return "movement_posture_aligned_vis";
+		case ns_process_movement_plate_and_individual_visualization: return "plate_and_individual";
 		case ns_process_unprocessed_backup: return "unprocessed_backup";
 		case ns_process_analyze_mask:				throw ns_ex("ns_processing_step_directory::There is no standard directory name for the result of mask analysis");
 		case ns_process_subregion_label_mask: return "subregion_mask";
@@ -796,7 +796,7 @@ std::string ns_processing_task_to_string(const ns_processing_task & t){
 		case ns_process_movement_paths_visualization:	return "Movement Path Visualization";
 		case ns_process_movement_paths_visualition_with_mortality_overlay:	return "Movement Path Visualization with Mortality Overlay";
 		case ns_process_movement_posture_visualization:	return "Movement Animal Posture Visualization";
-		case ns_process_movement_posture_aligned_visualization: return "Aligned Movement Animal Posture Visualization";
+		case ns_process_movement_plate_and_individual_visualization: return "Plate and Individual Visualization";
 		case ns_process_unprocessed_backup:				return "Unprocessed Image Backup";
 		case ns_process_subregion_label_mask:			return "Subregion label mask";
 		default:										return "Unknown Task" + ns_to_string((int)t);

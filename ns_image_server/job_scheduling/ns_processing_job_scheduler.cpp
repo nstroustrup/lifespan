@@ -34,8 +34,8 @@ std::string ns_maintenance_task_to_string(const ns_maintenance_task & task){
 			return "Generate Movement Posture Visualization";
 		case ns_maintenance_recalculate_censoring:
 			return "Recalculate Censoring";
-		case ns_maintenance_generate_movement_posture_aligned_visualization:
-			return "Generate Movement Posture Aligned Visualization";
+		case ns_maintenance_plate_and_individual_visualization:
+			return "Generate Plate and individual visualization";
 		case ns_maintenance_generate_sample_regions_from_mask:
 			return "Generate Sample Regions from Mask";
 		case ns_maintenance_delete_images_from_database:

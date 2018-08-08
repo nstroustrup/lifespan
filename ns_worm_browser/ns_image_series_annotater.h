@@ -57,7 +57,7 @@ typedef void (*ns_handle_error_handler)();
 struct ns_annotater_asynch_load_specification{
 	ns_acquire_for_scope<ns_sql> sql_;
 public:
-	ns_annotater_asynch_load_specification():launch_lock("ns_dt_alnh"),fatal_error_handler(0),image(0),swap_1(0),swap_2(0),timepoint(0),sql_(0),swap_lock(0),annotater(0),bottom_border_size(0){}
+	ns_annotater_asynch_load_specification():launch_lock("ns_dt_alnh"),fatal_error_handler(0),image(0),swap_1(0),swap_2(0),timepoint(0),sql_(0),swap_lock(0),annotater(0),bottom_border_size(0), external_rescale_factor(1){}
   ~ns_annotater_asynch_load_specification(){sql_.release();}
 	
 	ns_lock launch_lock;
@@ -69,6 +69,7 @@ public:
 	ns_image_standard temp_buffer;
 	unsigned long bottom_border_size;
 	ns_annotater_timepoint * timepoint;
+	double external_rescale_factor;
 	ns_sql & sql(){
 	  if (sql_.is_null())
 	    sql_.attach(image_server.new_sql_connection(__FILE__,__LINE__));
@@ -91,7 +92,7 @@ protected:
 	std::vector<ns_annotater_image_buffer_entry> next_images;
 	ns_image_series_annotater(const unsigned long resize_factor_, const unsigned long bottom_border_size):image_buffer_access_lock("ns_da_ib"),resize_factor(resize_factor_),image_bottom_border_size(bottom_border_size){}
 	
-	virtual void draw_metadata(ns_annotater_timepoint * tp,ns_image_standard & im)=0;
+	virtual void draw_metadata(ns_annotater_timepoint * tp,ns_image_standard & im, double external_rescale_factor)=0;
 	
 	bool refresh_requested_;
 	void output_buffer_state(){
@@ -125,7 +126,7 @@ protected:
 			return 0;
 #endif
 		}
-		spec.annotater->draw_metadata(spec.timepoint,*spec.image->im);
+		spec.annotater->draw_metadata(spec.timepoint,*spec.image->im, spec.external_rescale_factor);
 		if (spec.swap_1 != 0 && spec.swap_2 != 0){
 			ns_swap<ns_annotater_image_buffer_entry > s;
 			s(*spec.swap_1,*spec.swap_2);
@@ -138,7 +139,7 @@ protected:
 	}	
 
 
-	void load_image_asynch(ns_annotater_timepoint * source_timepoint,ns_annotater_image_buffer_entry & destination_image, ns_handle_error_handler error_handler,ns_annotater_image_buffer_entry * swap_2=0,ns_annotater_image_buffer_entry * swap_1=0){
+	void load_image_asynch(ns_annotater_timepoint * source_timepoint,ns_annotater_image_buffer_entry & destination_image, ns_handle_error_handler error_handler,double window_rescale_factor,ns_annotater_image_buffer_entry * swap_2=0,ns_annotater_image_buffer_entry * swap_1=0){
 
 		ns_acquire_lock_for_scope lock(asynch_load_specification.launch_lock,__FILE__,__LINE__);
 		asynch_load_specification.image = &destination_image;
@@ -149,6 +150,7 @@ protected:
 		asynch_load_specification.annotater = this;
 		asynch_load_specification.bottom_border_size = image_bottom_border_size;
 		asynch_load_specification.fatal_error_handler =  error_handler;
+		asynch_load_specification.external_rescale_factor = window_rescale_factor;
 		ns_thread thread(run_asynch_load,&asynch_load_specification);
 		thread.detach();
 		lock.release();
@@ -195,7 +197,7 @@ public:
 		image_buffer_access_lock.release();
 	}
 	virtual void save_annotations(const ns_death_time_annotation_set & extra_annotations)const=0 ;
-	bool step_forward(ns_handle_error_handler error_handler,bool asynch=false){
+	bool step_forward(ns_handle_error_handler error_handler, double external_rescale_factor, bool asynch=false){
 		ns_acquire_lock_for_scope lock(image_buffer_access_lock,__FILE__, __LINE__);
 	
 		if (sql.is_null())
@@ -230,7 +232,7 @@ public:
 		//if the next image is already loaded, we run the swap now and are done!
 		if (previous_images[0].loaded){
 			if (debug_handlers) std::cerr << "L";
-			draw_metadata(timepoint(current_timepoint_id),*previous_images[0].im);
+			draw_metadata(timepoint(current_timepoint_id),*previous_images[0].im,external_rescale_factor);
 			ns_swap<ns_annotater_image_buffer_entry> s;
 			s(previous_images[0],current_image);
 		}
@@ -238,12 +240,12 @@ public:
 	//		cerr << "Loading " << current_timepoint_id << "\n";
 			if (asynch) {
 				if (debug_handlers) std::cerr << "A";
-				load_image_asynch(timepoint(current_timepoint_id), previous_images[0], error_handler, &current_image, &previous_images[0]);
+				load_image_asynch(timepoint(current_timepoint_id), previous_images[0], error_handler,external_rescale_factor, &current_image, &previous_images[0]);
 			}
 			else{
 				if (debug_handlers) std::cerr << "Q";
 				timepoint(current_timepoint_id)->load_image(asynch_load_specification.bottom_border_size,previous_images[0],sql(),asynch_load_specification.temp_buffer,resize_factor);
-				draw_metadata(timepoint(current_timepoint_id),*previous_images[0].im);
+				draw_metadata(timepoint(current_timepoint_id),*previous_images[0].im,external_rescale_factor);
 				ns_swap<ns_annotater_image_buffer_entry> s;
 				s(previous_images[0],current_image);
 			}
@@ -253,7 +255,7 @@ public:
 		image_buffer_access_lock.release();
 		return true;
 	}
-	bool step_back(ns_handle_error_handler error_handler,bool asynch=false){
+	bool step_back(ns_handle_error_handler error_handler, double external_rescale_factor, bool asynch=false){
 		ns_acquire_lock_for_scope lock(image_buffer_access_lock, __FILE__, __LINE__);
 	
 		if (sql.is_null())
@@ -288,21 +290,21 @@ public:
 		//if the next image is already loaded, we run the swap now and are done!
 		if (next_images[0].loaded){
 			if (debug_handlers) std::cerr << "L";
-			draw_metadata(timepoint(current_timepoint_id),*next_images[0].im);
+			draw_metadata(timepoint(current_timepoint_id),*next_images[0].im,external_rescale_factor);
 			ns_swap<ns_annotater_image_buffer_entry> s;
 			s(next_images[0],current_image);
 		}
 		else{
 			//cerr << "Loading " << current_timepoint_id << "\n";
 			if (asynch) {
-				load_image_asynch(timepoint(current_timepoint_id), next_images[0], error_handler, &current_image, &next_images[0]);
+				load_image_asynch(timepoint(current_timepoint_id), next_images[0], error_handler,external_rescale_factor, &current_image, &next_images[0]);
 				if (debug_handlers) std::cerr << "A";
 			}
 			else{
 
 				if (debug_handlers) std::cerr << "Q";
 				timepoint(current_timepoint_id)->load_image(asynch_load_specification.bottom_border_size,next_images[0],sql(),asynch_load_specification.temp_buffer,resize_factor);
-				draw_metadata(timepoint(current_timepoint_id),*next_images[0].im);
+				draw_metadata(timepoint(current_timepoint_id),*next_images[0].im,external_rescale_factor);
 				ns_swap<ns_annotater_image_buffer_entry> s;
 				s(next_images[0],current_image);
 			}
@@ -335,7 +337,7 @@ public:
 	virtual void display_current_frame()=0;
 	
 	typedef enum {ns_cycle_state, ns_cycle_state_alt_key_held,ns_censor,ns_annotate_extra_worm, ns_censor_all,ns_load_worm_details, ns_cycle_flags,ns_output_images,ns_increase_contrast,ns_decrease_contrast,ns_time_zoom_in,ns_time_zoom_out} ns_click_request;
-	virtual void register_click(const ns_vector_2i & image_position,const ns_click_request & action)=0;
+	virtual void register_click(const ns_vector_2i & image_position,const ns_click_request & action, double external_rescale_factor)=0;
 
 	virtual bool data_saved() const=0;
 	

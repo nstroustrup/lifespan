@@ -14,11 +14,11 @@ void exit_with_help()
 	"Usage: svm-train [options] training_set_file [model_file]\n"
 	"options:\n"
 	"-s svm_type : set type of SVM (default 0)\n"
-	"	0 -- C-SVC\n"
-	"	1 -- nu-SVC\n"
+	"	0 -- C-SVC		(multi-class classification)\n"
+	"	1 -- nu-SVC		(multi-class classification)\n"
 	"	2 -- one-class SVM\n"
-	"	3 -- epsilon-SVR\n"
-	"	4 -- nu-SVR\n"
+	"	3 -- epsilon-SVR	(regression)\n"
+	"	4 -- nu-SVR		(regression)\n"
 	"-t kernel_type : set type of kernel function (default 2)\n"
 	"	0 -- linear: u'*v\n"
 	"	1 -- polynomial: (gamma*u'*v + coef0)^degree\n"
@@ -65,7 +65,7 @@ static int max_line_len;
 static char* readline(FILE *input)
 {
 	int len;
-	
+
 	if(fgets(line,max_line_len,input) == NULL)
 		return NULL;
 
@@ -92,7 +92,7 @@ int main(int argc, char **argv)
 
 	if(error_msg)
 	{
-		fprintf(stderr,"Error: %s\n",error_msg);
+		fprintf(stderr,"ERROR: %s\n",error_msg);
 		exit(1);
 	}
 
@@ -103,8 +103,12 @@ int main(int argc, char **argv)
 	else
 	{
 		model = svm_train(&prob,&param);
-		svm_save_model(model_file_name,model);
-		svm_destroy_model(model);
+		if(svm_save_model(model_file_name,model))
+		{
+			fprintf(stderr, "can't save model to file %s\n", model_file_name);
+			exit(1);
+		}
+		svm_free_and_destroy_model(&model);
 	}
 	svm_destroy_param(&param);
 	free(prob.y);
@@ -273,7 +277,8 @@ void parse_command_line(int argc, char **argv, char *input_file_name, char *mode
 
 void read_problem(const char *filename)
 {
-	int elements, max_index, inst_max_index, i, j;
+	int max_index, inst_max_index, i;
+	size_t elements, j;
 	FILE *fp = fopen(filename,"r");
 	char *endptr;
 	char *idx, *val, *label;
@@ -317,9 +322,12 @@ void read_problem(const char *filename)
 		inst_max_index = -1; // strtol gives 0 if wrong format, and precomputed kernel has <index> start from 0
 		readline(fp);
 		prob.x[i] = &x_space[j];
-		label = strtok(line," \t");
+		label = strtok(line," \t\n");
+		if(label == NULL) // empty line
+			exit_input_error(i+1);
+
 		prob.y[i] = strtod(label,&endptr);
-		if(endptr == label)
+		if(endptr == label || *endptr != '\0')
 			exit_input_error(i+1);
 
 		while(1)

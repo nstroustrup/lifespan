@@ -2872,6 +2872,7 @@ void ns_svm_model_specification::write_statistic_ranges(const std::string & file
 		throw ns_ex("ns_detected_worm_stats::Could not open range file ") << filename;
 	out << "Feature\tMin\tMax\tAvg\tSTD\tWorm Avg\n";
 	for (unsigned int i = 0; i < (unsigned int)ns_stat_number_of_stats; i++){
+		if (included_statistics.size() <= i || statistics_ranges.size() <= i) throw ns_ex("Yikes");
 		if (write_all_features || (included_statistics[i]!=0 && statistics_ranges[i].specified)){
 			out << i <<"\t" << statistics_ranges[i].min << "\t" << statistics_ranges[i].max << "\t"
 			<< statistics_ranges[i].avg << "\t" << statistics_ranges[i].std

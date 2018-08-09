@@ -5252,6 +5252,9 @@ void ns_worm_learner::process_contiguous_regions(){
 	if (thresholded_image.properties().height == 0)
 		two_stage_threshold();
 
+	plate_image_stats.absolute_intensity_stats.calculate(detection_brightfield, false);
+	plate_image_stats.relative_intensity_stats.calculate(detection_spatial_median, true);
+
 	std::string debug_file("");		
 	worm_detection_results = worm_detector.run(0,0,detection_brightfield,thresholded_image,
 		detection_spatial_median,
@@ -5259,7 +5262,7 @@ void ns_worm_learner::process_contiguous_regions(){
 		ns_worm_detection_constants::get(ns_worm_detection_constant::minimum_worm_region_area,current_image.properties().resolution),
 		ns_worm_detection_constants::get(ns_worm_detection_constant::maximum_worm_region_area,current_image.properties().resolution),
 		ns_worm_detection_constants::get(ns_worm_detection_constant::maximum_region_diagonal,current_image.properties().resolution),
-		(*model_specification)().model_specification,1000,0,debug_file,ns_detected_worm_info::ns_vis_both);
+		(*model_specification)().model_specification,1000,0,debug_file,ns_detected_worm_info::ns_vis_both, plate_image_stats);
 
 	cerr << "min object size: " << 
 	ns_worm_detection_constants::get(ns_worm_detection_constant::minimum_worm_region_area,current_image.properties().resolution) << "; max object size: " << 
@@ -7277,6 +7280,11 @@ void ns_worm_learner::output_distributions_of_detected_objects(const std::string
 		worm_stats[i] = worms[i]->generate_stats();
 	for (unsigned int i = 0; i < non_worms.size(); i++)
 		non_worm_stats[i] = non_worms[i]->generate_stats();
+
+	ofstream out((current_filename + DIR_CHAR_STR + "plate_stats.csv").c_str());
+	out << "absolute," << plate_image_stats.absolute_intensity_stats.minimum_intensity << "," << plate_image_stats.absolute_intensity_stats.average_intensity << "," << plate_image_stats.absolute_intensity_stats.maximum_intensity << "\n";
+	out << "relative," << plate_image_stats.relative_intensity_stats.minimum_intensity << "," << plate_image_stats.relative_intensity_stats.average_intensity << "," << plate_image_stats.relative_intensity_stats.maximum_intensity << "\n";
+	out.close();
 	
 	ns_detected_worm_stats::draw_feature_frequency_distributions(worm_stats, non_worm_stats,current_filename,directory);
 }

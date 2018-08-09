@@ -1436,25 +1436,26 @@ public:
 			add(ns_menu_item_spec(view_reject_spine_collage, "Testing/Worm Detection/View Reject Spine Collage"));
 			add(ns_menu_item_spec(view_reject_spine_collage_stats, "Testing/Worm Detection/View Reject Spine Collage with stats"));
 			add(ns_menu_item_spec(output_feature_distributions, "Testing/Worm Detection/Output feature distributions"));
-			add(ns_menu_item_spec(calculate_slow_movement, "Testing/Worm Detection/Calculate Slow Movement"));
+			//add(ns_menu_item_spec(calculate_slow_movement, "Testing/Worm Detection/Calculate Slow Movement"));
 
-			add(ns_menu_item_spec(output_learning_set, "Testing/Machine Learning/Output Learning Image Set"));
-			add(ns_menu_item_spec(auto_output_learning_set, "Testing/Machine Learning/Auto Output Learning Image Set"));
-			add(ns_menu_item_spec(rethreshold_image_set, "Testing/Machine Learning/_Rethreshold Learning Image Set "));
-			add(ns_menu_item_spec(generate_training_set, "Testing/Machine Learning/Generate worm training set image"));
-			add(ns_menu_item_spec(process_training_set, "Testing/Machine Learning/_Process worm training set image"));
-			add(ns_menu_item_spec(generate_SVM_training_data, "Testing/Machine Learning/Generate SVM Training Data"));
-			add(ns_menu_item_spec(split_results, "Testing/Machine Learning/Split results into multiple regions"));
+		
+			add(ns_menu_item_spec(generate_SVM_training_data, "Testing/Worm Detection Model Generation/Process annoated images to produce SVM Training Data"));
+			add(ns_menu_item_spec(analyze_svm_results, "Testing/Worm Detection Model Generation/_Analyze SVM Training Results"));
+			add(ns_menu_item_spec(generate_training_set_from_by_hand_annotations, "Testing/Worm Detection Model Generation/_Generate Training Set from By Hand Movement Annotations"));
 
-			add(ns_menu_item_spec(fix_headers_for_svm_training_set_images, "Testing/Machine Learning/Fix Scrambled Training Set Metadata"));
-			add(ns_menu_item_spec(analyze_svm_results, "Testing/Machine Learning/_Analyze SVM Results"));
+			add(ns_menu_item_spec(split_results, "Testing/Worm Detection Model Etc/Split results into multiple regions"));
+			add(ns_menu_item_spec(output_learning_set, "Testing/Worm Detection Model Etc/Output Learning Image Set"));
+			add(ns_menu_item_spec(auto_output_learning_set, "Testing/Worm Detection Model Etc/Auto Output Learning Image Set"));
+			add(ns_menu_item_spec(rethreshold_image_set, "Testing/Worm Detection Model Etc/_Rethreshold Learning Image Set "));
+			add(ns_menu_item_spec(generate_training_set, "Testing/Worm Detection Model Etc/Generate worm training set image"));
+			add(ns_menu_item_spec(process_training_set, "Testing/Worm Detection Model Etc/_Process worm training set image"));
+			add(ns_menu_item_spec(fix_headers_for_svm_training_set_images, "Testing/Worm Detection Model Etc/Fix Scrambled Training Set Metadata"));
 			//	add(ns_menu_item_spec(run_temporal_inference,"Testing/Machine Learning/Run temporal inference"));
-			add(ns_menu_item_spec(remove_duplicates_from_training_set, "Testing/Machine Learning/_Remove duplicates from training set"));
-			add(ns_menu_item_spec(generate_region_subset_time_series, "Testing/Machine Learning/Generate Region Subset time series"));
-			add(ns_menu_item_spec(load_region_as_new_experiment, "Testing/Machine Learning/_Load Region Subset time series as new experiment"));
-			add(ns_menu_item_spec(create_decimated_subset, "Testing/Machine Learning/Create decimated subset of directory"));
-			add(ns_menu_item_spec(translate_fscore, "Testing/Machine Learning/_translate f-score file"));
-			add(ns_menu_item_spec(generate_training_set_from_by_hand_annotations, "Testing/Machine Learning/Generate Training Set from By Hand Movement Annotations"));
+			add(ns_menu_item_spec(remove_duplicates_from_training_set, "Testing/Worm Detection Model Etc/_Remove duplicates from training set"));
+			add(ns_menu_item_spec(generate_region_subset_time_series, "Testing/Worm Detection Model Etc/Generate Region Subset time series"));
+			add(ns_menu_item_spec(load_region_as_new_experiment, "Testing/Worm Detection Model Etc/_Load Region Subset time series as new experiment"));
+			add(ns_menu_item_spec(create_decimated_subset, "Testing/Worm Detection Model Etc/Create decimated subset of directory"));
+			add(ns_menu_item_spec(translate_fscore, "Testing/Worm Detection Model Etc/_translate f-score file"));
 
 			add(ns_menu_item_spec(analyze_worm_position, "Testing/Movement Analysis/Analyze worm positions for current region"));
 		}

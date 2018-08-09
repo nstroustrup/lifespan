@@ -329,8 +329,8 @@ ns_detected_worm_stats ns_detected_worm_info::generate_stats() const{
 
 
 
-	stats[ns_stat_absolute_intensity_containing_image_region_average] = whole_image_stats.whole_image_region_stats.absolute_intensity_stats.average_intensity;
-	stats[ns_stat_relative_intensity_containing_image_region_average] = whole_image_stats.whole_image_region_stats.relative_intensity_stats.average_intensity;
+	stats[ns_stat_absolute_intensity_containing_image_region_average] =whole_image_stats.whole_image_region_stats.absolute_intensity_stats.average_intensity;  //136;
+	stats[ns_stat_relative_intensity_containing_image_region_average] =whole_image_stats.whole_image_region_stats.relative_intensity_stats.average_intensity; //3.2;
 
 	stats[ns_stat_absolute_intensity_normalized_average] = 0;
 	stats[ns_stat_relative_intensity_normalized_average] = 0;
@@ -1122,7 +1122,7 @@ void ns_detected_worm_stats::output_html_worm_summary(ostream & out){
 	out << "\t</table>\n";
 	out << "</td></tr></table>\n";
 }
-void ns_detected_worm_stats::output_csv_data(const ns_64_bit region_id, const unsigned long capture_time, const ns_vector_2i & position, const ns_vector_2i & size,const ns_object_hand_annotation_data & hand_data, const ns_plate_subregion_info & subregion,ostream & out){
+void ns_detected_worm_stats::output_csv_data(const ns_64_bit region_id, const unsigned long capture_time, const ns_vector_2i & position, const ns_vector_2i & size,const ns_object_hand_annotation_data & hand_data, const ns_plate_subregion_info & subregion,ostream & out) const{
 	out << region_id << "," << capture_time << ","
 		<< position.x << "," << position.y << ","
 		<< size.x << "," << size.y << ","
@@ -1310,6 +1310,9 @@ bool ns_detected_worm_info::is_a_worm(const ns_svm_model_specification & model){
 			svm_node * node = stats.produce_vector();
 
 			double val = svm_predict(model.model,node);
+			double probs[2];
+			svm_predict_probability(model.model, node, probs);
+			std::cout << val << "," << probs[1] << "," << probs[2] << "\n";
 			stats.delete_vector(node);
 			//cerr << val << "\n";
 			is_a_worm_ = (val > 0);
@@ -2540,7 +2543,7 @@ void ns_detected_worm_stats::draw_feature_frequency_distributions(const std::vec
 			std::string fn = freq_base_dir + "\\" + ns_classifier_abbreviation((ns_detected_worm_classifier)s) + ".tif";
 
 			ns_tiff_image_output_file<ns_8_bit> im_out;
-			ns_image_stream_file_sink<ns_8_bit > file_sink(fn,im_out,1.0,128);
+			ns_image_stream_file_sink<ns_8_bit > file_sink(fn,im_out,128,1.0);
 			freq_graph.pump(file_sink,128);
 		}
 		catch(ns_ex & ex){

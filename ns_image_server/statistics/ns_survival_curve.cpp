@@ -150,7 +150,7 @@ void ns_region_metadata::load_only_region_info_from_db(const ns_64_bit region_in
 	ns_sql_result res;
 	sql.get_rows(res);
 	if (res.size() == 0)
-		throw ns_ex("Could not load metadata for region") << region_info_id;
+		throw ns_ex("Could not load metadata for region ") << region_info_id;
 	region_id = region_info_id;
 	sample_id = ns_atoi64(res[0][0].c_str());
 	region_name = res[0][1];

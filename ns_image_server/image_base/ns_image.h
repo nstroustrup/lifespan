@@ -505,7 +505,7 @@ public:
 		ns_64_bit mean(0);
 		for (unsigned int i = ignore_zero?1:0; i < length; i++)
 			mean+=hist[i]*(storage_type)i;
-		return (double)(mean/(ns_64_bit)c_area);
+		return (double)(mean/(double)c_area);
 	}
 	double variance(double mean_=-1,bool ignore_zero = false) const{
 		storage_type c_area = N;

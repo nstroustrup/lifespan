@@ -143,7 +143,7 @@ public:
 
 	///output summary information about the worm to a text file.
 	void output_html_worm_summary(std::ostream & out);
-	void output_csv_data(const ns_64_bit region_id, const unsigned long capture_time, const ns_vector_2i & position, const ns_vector_2i & size,const ns_object_hand_annotation_data & hand_data, const ns_plate_subregion_info & subregion,std::ostream & out);
+	void output_csv_data(const ns_64_bit region_id, const unsigned long capture_time, const ns_vector_2i & position, const ns_vector_2i & size,const ns_object_hand_annotation_data & hand_data, const ns_plate_subregion_info & subregion,std::ostream & out) const;
 
 	static void output_csv_header(std::ostream & out);
 
@@ -185,7 +185,7 @@ struct ns_worm_context_image{
 ///stores such information.
 struct ns_whole_image_region_intensity_stats{
 	ns_whole_image_region_intensity_stats():minimum_intensity(0),maximum_intensity(0),average_intensity(0){}
-	unsigned long minimum_intensity,
+	double minimum_intensity,
 				  maximum_intensity,
 				  average_intensity;
 	bool operator==(const ns_whole_image_region_intensity_stats & i) const{

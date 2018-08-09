@@ -64,7 +64,7 @@ struct ns_svm_model_specification{
 		#ifndef NS_USE_TINYSVM
 	~ns_svm_model_specification(){
 		if (model != 0){
-			svm_destroy_model(model);
+			svm_free_and_destroy_model(&model);
 			model = 0;
 		}
 		statistics_ranges.clear();

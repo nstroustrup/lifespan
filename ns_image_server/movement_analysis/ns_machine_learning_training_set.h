@@ -42,6 +42,7 @@ public:
 
 class ns_training_file_generator{
 public:
+	friend class ns_worm_detection_model_training_set_processor_pool_job;
 	void generate_from_curated_set(const std::string & directory, const ns_svm_model_specification & model_specification, bool use_training_collages,ns_sql * sql_for_looking_up_genotypes);
 
 	void plot_errors_on_freq(const std::string & results_filename);

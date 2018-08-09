@@ -660,7 +660,7 @@ void ns_time_path_image_movement_analyzer::process_raw_images(const ns_64_bit re
 		//we can limit memory usage to just one region (and miminize paging and disk thrashing)
 		ns_thread_pool<ns_time_path_image_movement_analyzer_thread_pool_job, 
 					   ns_time_path_image_movement_analyzer_thread_pool_persistant_data> thread_pool;
-		thread_pool.set_number_of_threads(image_server_const.maximum_number_of_processing_threads()*3);
+		thread_pool.set_number_of_threads(image_server_const.maximum_number_of_processing_threads());
 		thread_pool.prepare_pool_to_run();
 
 		//xxx debug only

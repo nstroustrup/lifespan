@@ -6,6 +6,7 @@
 #include "ns_worm_detector.h"
 #include "ns_difference_thresholder.h"
 #include "ns_worm_training_set_image.h"
+#include "ns_thread_pool.h"
 
 using namespace std;
 
@@ -223,18 +224,25 @@ void ns_calc_max_min_by_cropping_outliers(const std::vector<ns_detected_worm_sta
 	mmax = 0;
 	std = 0;
 	avg = 0;
+	if (stats.size() == 0)
+		throw ns_ex("Yikes!");
 	std::vector<double> d(stats.size());
-	for (unsigned int i = 0; i < stats.size(); i++)
+	for (unsigned int i = 0; i < stats.size(); i++) {
+		if (stat_id >= stats[i]->size())throw ns_ex("Yikes!");
 		d[i] = (*stats[i])[stat_id];
+	}
 	std::sort(d.begin(),d.end());
-	long c((long)d.size()/20);
+	const long c((long)d.size()/20);
 	long count = 0;
 	for (long i = c; i < (long)d.size()-c; i++){
+		if (i < 0 || i > d.size()) throw ns_ex("Yikes!");
 		avg+=d[i];
 		count++;
 	}
 	if (count == 0) return;
+
 	mmin = d[c];
+	if ((long)d.size() - c < 0 || (long)d.size() - c > d.size()) throw ns_ex("Yikes");
 	mmax = d[(long)d.size()-c];
 	avg/=count;
 	for (int i = c; i < (int)d.size()-c; i++){
@@ -285,6 +293,121 @@ void ns_training_file_generator::repair_xml_metadata(const std::string & directo
 	}
 }
 
+struct ns_worm_detection_model_training_set_processor_pool_shared_data {
+
+	ns_worm_detection_model_training_set_processor_pool_shared_data():training_generator_lock("tg"), log_lock("ll"), number_of_files_processed(0) {}
+
+
+	ns_image_pool<ns_image_standard, ns_overallocation_resizer> image_pool;
+	unsigned long number_of_files_processed;
+	ns_training_file_generator * training_file_generator;
+	const ns_svm_model_specification * spec;
+	std::string feature_dir, source_dir, vis_path;
+	unsigned long number_of_files_to_process;
+	ofstream * log;
+	ns_lock training_generator_lock;
+	ns_lock log_lock;
+};
+class ns_worm_detection_model_training_set_processor_pool_persistant_data {
+public:
+};
+
+struct ns_worm_detection_model_training_set_processor_pool_job {
+	ns_worm_detection_model_training_set_processor_pool_job() {}
+	ns_worm_detection_model_training_set_processor_pool_job(const std::string filename_to_process_, ns_worm_detection_model_training_set_processor_pool_shared_data &shared_data_):filename_to_process(filename_to_process_),shared_data(&shared_data_) {}
+
+	std::string filename_to_process; 
+	ns_worm_detection_model_training_set_processor_pool_shared_data *shared_data;
+
+	void operator()(ns_worm_detection_model_training_set_processor_pool_persistant_data & persistant_data) {
+		std::string collage_fname = shared_data->source_dir + DIR_CHAR_STR + filename_to_process;
+		ns_acquire_lock_for_scope llock(shared_data->log_lock, __FILE__, __LINE__);
+		*shared_data->log << ns_format_time_string_for_human(ns_current_time()) << "\t" << filename_to_process << ":: ";
+		cerr << ns_format_time_string_for_human(ns_current_time()) << "\t" << filename_to_process << ":: ";
+		shared_data->log->flush();
+		llock.release();
+		try {
+
+			ns_annotated_training_set training_set;
+			{
+				ns_image_standard * collage = shared_data->image_pool.get();
+				collage->use_more_memory_to_avoid_reallocations(true);
+				ns_load_image(collage_fname, *collage);
+				ns_worm_training_set_image::decode(*collage, training_set);
+				shared_data->image_pool.release(collage);
+			}
+
+			std::string metadata_filename = shared_data->feature_dir + DIR_CHAR_STR + ns_dir::extract_filename(ns_dir::extract_filename_without_extension(collage_fname)) + "_tr.txt";
+			ofstream metadata_out(metadata_filename.c_str());
+			//write the quantitiative statistics calculated for each worm, visual inspection if needed.  This file format is not needed by the SVM
+			ns_detected_worm_stats::output_csv_header(metadata_out);
+			metadata_out << "\n";
+			for (unsigned int j = 0; j < training_set.objects.size(); j++) {
+				training_set.objects[j].object.generate_stats().output_csv_data(training_set.objects[j].region_info_id,
+					training_set.objects[j].capture_time,
+					training_set.objects[j].object.region_position_in_source_image,
+					training_set.objects[j].object.region_size,
+					training_set.objects[j].hand_annotation_data,
+					ns_plate_subregion_info(), metadata_out);
+				metadata_out << "\n";
+			}
+			metadata_out.close();
+			cerr << "Found " << training_set.worms.size() << " worms, " << training_set.non_worms.size() << " non-worms, and " << training_set.censored_worms.size() << " censored worms out of " << training_set.objects.size() << " objects.\n";
+
+			//for each tye of object, add its statistics and info to a big list
+			for (unsigned int j = 0; j < training_set.worms.size(); j++) {
+				std::string jpg_filename = ns_dir::extract_filename_without_extension(filename_to_process) + "_" + ns_to_string(j);
+				std::string rel_fname = std::string("vis") + DIR_CHAR_STR + "worms" + DIR_CHAR_STR + jpg_filename;
+				std::string abs_fname = shared_data->vis_path + DIR_CHAR_STR + "worms" + DIR_CHAR_STR + jpg_filename;
+				ns_acquire_lock_for_scope plock(shared_data->training_generator_lock, __FILE__, __LINE__);
+				shared_data->training_file_generator->add_object_to_training_set(*shared_data->spec, true, collage_fname, rel_fname + ".jpg", training_set.worms[j]->object, training_set.worms[j]->region_info_id);
+				plock.release();
+				ns_save_image(abs_fname + ".jpg", training_set.worms[j]->object.context_image().absolute_grayscale);
+				ns_save_image(abs_fname + "_rel.jpg", training_set.worms[j]->object.context_image().relative_grayscale);
+			}
+			for (unsigned int j = 0; j < training_set.non_worms.size(); j++) {
+				std::string jpg_filename = ns_dir::extract_filename_without_extension(filename_to_process) + "_" + ns_to_string(j);
+				std::string rel_fname = std::string("vis") + DIR_CHAR_STR + "non_worms" + DIR_CHAR_STR + jpg_filename;
+				std::string abs_fname = shared_data->vis_path + DIR_CHAR_STR + "non_worms" + DIR_CHAR_STR + jpg_filename;
+				ns_acquire_lock_for_scope plock(shared_data->training_generator_lock, __FILE__, __LINE__);
+				shared_data->training_file_generator->add_object_to_training_set(*shared_data->spec, false, collage_fname, rel_fname + ".jpg", training_set.non_worms[j]->object, training_set.non_worms[j]->region_info_id);
+				plock.release();
+				ns_save_image(abs_fname + ".jpg", training_set.non_worms[j]->object.context_image().absolute_grayscale);
+				ns_save_image(abs_fname + "_rel.jpg", training_set.non_worms[j]->object.context_image().relative_grayscale);
+			}
+			for (unsigned int j = 0; j < training_set.censored_worms.size(); j++) {
+				std::string jpg_filename = ns_dir::extract_filename_without_extension(filename_to_process) + "_" + ns_to_string(j);
+				std::string rel_fname = std::string("vis") + DIR_CHAR_STR + "censored" + DIR_CHAR_STR + jpg_filename;
+				std::string abs_fname = shared_data->vis_path + DIR_CHAR_STR + "censored" + DIR_CHAR_STR + jpg_filename;
+				ns_acquire_lock_for_scope plock(shared_data->training_generator_lock, __FILE__, __LINE__);
+				shared_data->training_file_generator->censored_object_filenames.push_back(rel_fname + ".jpg");
+				plock.release();
+				ns_save_image(abs_fname + ".jpg", training_set.censored_worms[j]->object.context_image().absolute_grayscale);
+				ns_save_image(abs_fname + "_rel.jpg", training_set.censored_worms[j]->object.context_image().relative_grayscale);
+			}
+			llock.get(__FILE__, __LINE__);
+			*shared_data->log << "Processed.\n";
+			shared_data->log->flush();
+			llock.release();
+			cerr << "Processed.\n";
+		}
+		catch (ns_ex & ex) {
+			ns_acquire_lock_for_scope llock(shared_data->log_lock, __FILE__, __LINE__);
+			*shared_data->log << "Error: " << ex.text() << "\n";
+			shared_data->log->flush();
+			cerr << "Error: " << ex.text() << "\n";
+			llock.release();
+		}
+		//ns_acquire_lock_for_scope llock(persistant_data.log_lock, __FILE__, __LINE__);
+		llock.get(__FILE__, __LINE__);
+		shared_data->number_of_files_processed++;
+		cerr << ((shared_data->number_of_files_processed * 1000) / shared_data->number_of_files_to_process) / 10.0 << "%...";
+		llock.release();
+	}
+};
+
+
+
 void ns_training_file_generator::generate_from_curated_set(const std::string & directory, const  ns_svm_model_specification & model_specification, bool use_training_collages=true,ns_sql * sql_for_looking_up_genotypes=0){
 	std::string source_dir = ns_dir::extract_path(directory);
 	cerr << "Loading training set images from " << directory << "...\n";
@@ -320,8 +443,9 @@ void ns_training_file_generator::generate_from_curated_set(const std::string & d
 		//training_basename =  base_dir + DIR_CHAR_STR + "all_pca_test";
 		//test_basename = base_dir + DIR_CHAR_STR + "all_pca_train";
 	}
-
 	//reset all ranges to zero (we are going to recalculate the ranges from raw data)
+
+	//spec.statistics_ranges.resize(ns_stat_number_of_stats);
 	for (unsigned int s = 0; s < (unsigned int) ns_stat_number_of_stats; s++){
 		spec.statistics_ranges[s].max = 0;
 		spec.statistics_ranges[s].min = 0;
@@ -330,82 +454,43 @@ void ns_training_file_generator::generate_from_curated_set(const std::string & d
 		spec.statistics_ranges[s].worm_avg = 0;
 		spec.statistics_ranges[s].specified = false;
 	}
-		
+
+
+	
 
 	if (use_training_collages){
 		std::string log_filename = analysis_dir + DIR_CHAR_STR + "log.txt";
 		ofstream log(log_filename.c_str());
 		if (log.fail())
 			throw ns_ex("Could not open logfile ") << log_filename;
-		ns_progress_reporter pr(dir.files.size(),10);
-		for (unsigned int i = 0; i < dir.files.size(); i++){	
-			cerr << i/(double)dir.files.size() << " : ";
-			std::string collage_fname = source_dir + DIR_CHAR_STR + dir.files[i];
-			log << ns_format_time_string_for_human(ns_current_time())  << "\t" << dir.files[i] << ":: ";
-			cerr << ns_format_time_string_for_human(ns_current_time())  << "\t" << dir.files[i] << ":: ";
-			log.flush();
-			try{
-			
-				ns_image_standard collage;
-				ns_load_image(collage_fname,collage);
 
+		ns_worm_detection_model_training_set_processor_pool_shared_data shared_data;
+		shared_data.training_file_generator = this;
+		shared_data.number_of_files_processed = 0;
+		shared_data.spec = &spec;
+		shared_data.feature_dir = feature_dir;
+		shared_data.source_dir = source_dir;
+		shared_data.vis_path = vis_path;
+		shared_data.number_of_files_to_process = dir.files.size();
+		shared_data.log = &log;
 
-				ns_annotated_training_set training_set;
-				ns_worm_training_set_image::decode(collage,training_set);
-				
-				std::string metadata_filename = feature_dir + DIR_CHAR_STR + ns_dir::extract_filename(ns_dir::extract_filename_without_extension(collage_fname)) + "_tr.txt";
-				ofstream metadata_out(metadata_filename.c_str());
-				//write the quantitiative statistics calculated for each worm, visual inspection if needed.  This file format is not needed by the SVM
-				ns_detected_worm_stats::output_csv_header(metadata_out);
-				metadata_out << "\n";
-				for (unsigned int j = 0; j < training_set.objects.size(); j++){
-					training_set.objects[j].object.generate_stats().output_csv_data(training_set.objects[j].region_info_id,	
-																	training_set.objects[j].capture_time,	
-																	training_set.objects[j].object.region_position_in_source_image,	
-																	training_set.objects[j].object.region_size,
-																	training_set.objects[j].hand_annotation_data,
-																	ns_plate_subregion_info(),metadata_out);
-					metadata_out << "\n";
-				}
-				metadata_out.close();
-				cerr << "Found " << training_set.worms.size() << " worms, " << training_set.non_worms.size() << " non-worms, and " << training_set.censored_worms.size() << " censored worms out of " << training_set.objects.size() << " objects.\n";
+		ns_thread_pool<ns_worm_detection_model_training_set_processor_pool_job,
+			ns_worm_detection_model_training_set_processor_pool_persistant_data> thread_pool;
+		thread_pool.set_number_of_threads(image_server_const.maximum_number_of_processing_threads() * 2);
+		thread_pool.prepare_pool_to_run();
 
-				//for each tye of object, add its statistics and info to a big list
-				for (unsigned int j = 0; j < training_set.worms.size(); j++){
-					std::string jpg_filename = ns_dir::extract_filename_without_extension(dir.files[i]) + "_"+ ns_to_string(j);
-					std::string rel_fname = std::string("vis")	+ DIR_CHAR_STR + "worms" + DIR_CHAR_STR + jpg_filename;
-					std::string abs_fname =	vis_path			+ DIR_CHAR_STR + "worms" + DIR_CHAR_STR + jpg_filename;
-					add_object_to_training_set(spec,true,collage_fname,rel_fname + ".jpg",training_set.worms[j]->object,training_set.worms[j]->region_info_id);	
-					ns_save_image(abs_fname + ".jpg",training_set.worms[j]->object.absolute_grayscale());
-					ns_save_image(abs_fname + "_rel.jpg",training_set.worms[j]->object.relative_grayscale());
-				}	
-				for (unsigned int j = 0; j < training_set.non_worms.size(); j++){
-					std::string jpg_filename = ns_dir::extract_filename_without_extension(dir.files[i]) + "_"+ ns_to_string(j);
-					std::string rel_fname = std::string("vis")	+ DIR_CHAR_STR + "non_worms" + DIR_CHAR_STR  + jpg_filename;
-					std::string abs_fname =			vis_path	+ DIR_CHAR_STR + "non_worms" + DIR_CHAR_STR  + jpg_filename;
-					add_object_to_training_set(spec,false,collage_fname,rel_fname + ".jpg",training_set.non_worms[j]->object,training_set.non_worms[j]->region_info_id);	
-					ns_save_image(abs_fname + ".jpg",training_set.non_worms[j]->object.absolute_grayscale());
-					ns_save_image(abs_fname + "_rel.jpg",training_set.non_worms[j]->object.relative_grayscale());
-				}
-				for (unsigned int j = 0; j < training_set.censored_worms.size(); j++){
-					std::string jpg_filename = ns_dir::extract_filename_without_extension(dir.files[i])  + "_"+ ns_to_string(j);
-					std::string rel_fname = std::string("vis")	+ DIR_CHAR_STR + "censored" + DIR_CHAR_STR  + jpg_filename;
-					std::string abs_fname = vis_path			+ DIR_CHAR_STR + "censored" + DIR_CHAR_STR  + jpg_filename;
-					censored_object_filenames.push_back(rel_fname + ".jpg");
-					ns_save_image(abs_fname + ".jpg",training_set.censored_worms[j]->object.absolute_grayscale());
-					ns_save_image(abs_fname + "_rel.jpg",training_set.censored_worms[j]->object.relative_grayscale());
-				}
-				log << "Processed.\n";
-				log.flush();
-				cerr << "Processed.\n";
-			}
-			catch(ns_ex & ex){
-				log << "Error: " << ex.text() << "\n";
-				log.flush();
-				cerr <<"Error: " << ex.text() << "\n";
-			}
+		for (unsigned int i = 0; i < dir.files.size(); i++)
+			thread_pool.add_job_while_pool_is_not_running(
+				ns_worm_detection_model_training_set_processor_pool_job(dir.files[i], shared_data));
+
+		thread_pool.run_pool();
+		thread_pool.wait_for_all_threads_to_become_idle();
+		thread_pool.shutdown();
+		ns_worm_detection_model_training_set_processor_pool_job job;
+		ns_ex ex;
+		while (thread_pool.get_next_error(job, ex) > 0) {
+			log << "Error: " << job.filename_to_process << ": " << ex.text() << "\n";
 		}
-		pr(dir.files.size());
 		log.close();
 	}
 	
@@ -603,6 +688,29 @@ void ns_training_file_generator::generate_from_curated_set(const std::string & d
 	
 	output_training_set_including_stats(worm_stats, non_worm_stats, stats_to_use,spec, training_set_base_dir ,strain_specific_directory, "high_24_plus_fscore_features");
 
+	std::vector<ns_detected_worm_classifier> stats_to_avoid;
+	stats_to_avoid.push_back(ns_stat_relative_intensity_skew);
+	stats_to_avoid.push_back(ns_stat_absolute_intensity_skew);
+	stats_to_avoid.push_back(ns_stat_absolute_intensity_containing_image_region_average);
+	stats_to_avoid.push_back(ns_stat_relative_intensity_containing_image_region_average);
+	stats_to_avoid.push_back(ns_stat_absolute_intensity_normalized_average);
+	stats_to_avoid.push_back(ns_stat_relative_intensity_normalized_average);
+	stats_to_avoid.push_back(ns_stat_absolute_intensity_normalized_max);
+	stats_to_avoid.push_back(ns_stat_relative_intensity_normalized_max);
+	stats_to_avoid.push_back(ns_stat_absolute_intensity_normalized_spine_average);
+	stats_to_avoid.push_back(ns_stat_relative_intensity_normalized_spine_average);
+	for (unsigned int i = 0; i < stats_to_avoid.size(); i++) {
+		std::vector<ns_detected_worm_classifier>::iterator p = find(stats_to_use.begin(), stats_to_use.end(), stats_to_avoid[i]);
+		if (p != stats_to_use.end()) {
+			cerr << "erasing...";
+			stats_to_use.erase(p);
+		}
+	}
+		
+	output_training_set_including_stats(worm_stats, non_worm_stats, stats_to_use, spec, training_set_base_dir, strain_specific_directory, "high_24_plus_fscore_features_without_reg_i");
+
+
+
 	//unnormalized relative intensity
 	for (ns_detected_worm_classifier c = ns_stat_relative_intensity_average; c<=ns_stat_relative_intensity_containing_image_region_average; c = (ns_detected_worm_classifier)((int)c+1)) stats_to_use.push_back(c);
 	//normalized absolute intensity
@@ -611,7 +719,7 @@ void ns_training_file_generator::generate_from_curated_set(const std::string & d
 
 
 
-	cout << "\nOutputing Worm Rap Sheets...";
+	cout << "\nWriting Worm Rap Sheets...";
 	std::string html_filename = analysis_dir + DIR_CHAR_STR + "worm_stats.html";
 	ofstream html(html_filename.c_str());
 	if (html.fail())
@@ -626,7 +734,7 @@ void ns_training_file_generator::generate_from_curated_set(const std::string & d
 	html.close();
 
 	
-	cout << "\nOutputing Worm Summary";
+	cout << "\nWriting Worm Summary";
 	html_filename = analysis_dir + DIR_CHAR_STR + "annotation_summary.html";
 	html.open(html_filename.c_str());
 	if (html.fail())
@@ -660,12 +768,14 @@ void ns_training_file_generator::generate_from_curated_set(const std::string & d
 		unsigned int wi = 0;
 		for (unsigned int i = 0; i < worm_stats.size(); i++){
 			html << "<td><img src=\"" << worm_stats[i].debug_filename << "\" border = 0>";
+			if (s >= worm_stats[i].statistics.size()) throw ns_ex("Yikes");
 			html << worm_stats[i].statistics[s] << "</td>";
 			if (wi != 0 && wi%h_w == 0)
 				html<< "</tr>\n<tr>";
 			wi++;
 		}
 		for (unsigned int i = ((unsigned int)non_worm_stats.size()*4)/5; i < non_worm_stats.size(); i++){
+			if (s >= non_worm_stats[i].statistics.size()) throw ns_ex("Yikes");
 			html << "<td><img src=\"" << non_worm_stats[i].debug_filename << "\" border = 0>";
 			html << non_worm_stats[i].statistics[s] << "</td>";
 			if (wi != 0 && wi%h_w == 0)
@@ -687,32 +797,37 @@ void ns_training_file_generator::generate_from_curated_set(const std::string & d
 	rd << "\n";
 	for (unsigned int i = 0; i < worm_stats.size(); i++){
 		rd << "1,";
-		for (unsigned int s = 0; s < (unsigned int) ns_stat_number_of_stats; s++)
-			rd << worm_stats[i][(ns_detected_worm_classifier)s] << ",";
+		for (unsigned int s = 0; s < (unsigned int)ns_stat_number_of_stats; s++) {
+			if (s >= worm_stats[i].statistics.size()) throw ns_ex("Yikes");
+				rd << worm_stats[i][(ns_detected_worm_classifier)s] << ",";
+		}
 		rd << "\n";
 	}
 	for (unsigned int i = 0; i < non_worm_stats.size(); i++){
 		rd << "0,";
-		for (unsigned int s = 0; s < (unsigned int) ns_stat_number_of_stats; s++)
+		for (unsigned int s = 0; s < (unsigned int)ns_stat_number_of_stats; s++) {
+			if (s >= non_worm_stats[i].statistics.size()) throw ns_ex("Yikes");
 			rd << non_worm_stats[i][(ns_detected_worm_classifier)s] << ",";
+		}
 		rd << "\n";
 	}
 	rd.close();
 	if(worm_stats.size() == 0 || non_worm_stats.size() == 0)
 		throw ns_ex("Lacking data for one class of objects: ") << (unsigned long)worm_stats.size() << " worms, " << (unsigned long)non_worm_stats.size() << " non worms.";
-	cerr << "Drawing feature distributions...\n";
-	ns_detected_worm_stats::draw_feature_frequency_distributions(worm_stats, non_worm_stats,"training_set",analysis_dir + "\\freq");
+	//cerr << "Drawing feature distributions...\n";
+	//ns_detected_worm_stats::draw_feature_frequency_distributions(worm_stats, non_worm_stats,"training_set",analysis_dir + "\\freq");
 	cerr << "Outputting matlab data set\n";
 
 	//output data sets for matlab
 	std::string output_filename = analysis_dir + DIR_CHAR_STR + "training_set_matlab.m";
 	ofstream output_matlab(output_filename.c_str());
 	output_matlab << "%ns_image_server feature sets\n";
-	output_matlab << "%Nicholas Stroustrup, 2017\n\n";
+	output_matlab << "%Nicholas Stroustrup, 2018\n\n";
 	for (unsigned int s = 0; s < (unsigned int) ns_stat_number_of_stats; s++){
 		unsigned int nl = 0;
 		output_matlab << ns_classifier_abbreviation((ns_detected_worm_classifier)s) << "_false = [";
 		for (unsigned int i = 0; i < non_worm_stats.size(); i++){
+			if (s >= non_worm_stats[i].statistics.size()) throw ns_ex("Yikes");
 			output_matlab << " " << non_worm_stats[i].scaled_statistic((ns_detected_worm_classifier)s);
 			if (nl == 100){
 				nl = 0;
@@ -725,6 +840,7 @@ void ns_training_file_generator::generate_from_curated_set(const std::string & d
 		output_matlab << ns_classifier_abbreviation((ns_detected_worm_classifier)s) << "_true = [";
 		nl = 0;
 		for (unsigned int i = 0; i < worm_stats.size(); i++){
+			if (s >= worm_stats[i].statistics.size()) throw ns_ex("Yikes");
 				output_matlab << " " << worm_stats[i].scaled_statistic((ns_detected_worm_classifier)s);
 			if (nl == 100){
 				nl = 0;
@@ -1193,13 +1309,29 @@ void ns_training_file_generator::mark_duplicates_in_training_set(const std::stri
 void ns_training_file_generator::lookup_genotypes(ns_sql & sql){
 	std::map<std::string,int> genotypes_found;
 	for (unsigned int i = 0; i < worm_stats.size(); i++){
-		if (worm_stats[i].metadata.region_id!=0)
-			worm_stats[i].metadata.load_from_db(worm_stats[i].metadata.region_id,"",sql);
+		
+		try {
+			if (worm_stats[i].metadata.region_id != 0) 
+			worm_stats[i].metadata.load_from_db(worm_stats[i].metadata.region_id, "", sql);
+		}
+		catch (ns_ex & ex) {
+			//metadata is not strictly required.
+			cerr << ex.text() << "\n";
+
+		}
+		
 		genotypes_found[worm_stats[i].metadata.device_regression_match_description()] = 1;
 	}
 	for (unsigned int i = 0; i < non_worm_stats.size(); i++){
-		if (non_worm_stats[i].metadata.region_id!=0)
-			non_worm_stats[i].metadata.load_from_db(non_worm_stats[i].metadata.region_id,"",sql);
+		try {
+			if (non_worm_stats[i].metadata.region_id!=0)
+				non_worm_stats[i].metadata.load_from_db(non_worm_stats[i].metadata.region_id,"",sql);
+		}
+		catch (ns_ex & ex) {
+			//metadata is not strictly required.
+			cerr << ex.text() << "\n";
+
+		}
 		genotypes_found[non_worm_stats[i].metadata.device_regression_match_description()] = 1;
 	}
 
@@ -1446,9 +1578,10 @@ void ns_training_file_generator::re_threshold_image(ns_image_standard & im,std::
 void ns_training_file_generator::output_training_set_including_stats(std::vector<ns_detected_worm_stats> & worm_stats, std::vector<ns_detected_worm_stats> & non_worm_stats, const std::vector<ns_detected_worm_classifier> & included_stats, const ns_svm_model_specification & model_base, const std::string & base_directory,const std::string & genotype_specific_directory,const std::string & base_filename){
 	if (worm_stats.size() == 0)
 		return;
-	ns_svm_model_specification model = model_base;
+	ns_svm_model_specification model= model_base;
 	vector<string> genotypes_to_output;
-	genotypes_to_output.push_back("");//all genotypes
+	if (find(genotypes_in_set.begin(), genotypes_in_set.end(),"") == genotypes_in_set.end())
+		genotypes_to_output.push_back("");//all genotypes
 	genotypes_to_output.insert(genotypes_to_output.end(),genotypes_in_set.begin(),genotypes_in_set.end());
 
 	for (unsigned int g = 0; g < genotypes_to_output.size(); g++){
@@ -1470,10 +1603,12 @@ void ns_training_file_generator::output_training_set_including_stats(std::vector
 			   training_metadata = basename + "_metadata_train.txt";
 
 		//all worms use the same model pointer, so we can just modify the first.
-		for (unsigned int i = 0; i < worm_stats[0].model().included_statistics.size(); i++)
+		for (unsigned int i = 0; i < model.included_statistics.size(); i++)
 			model.included_statistics[i] = 0;
-		for (unsigned int i = 0; i < included_stats.size(); i++)
+		for (unsigned int i = 0; i < included_stats.size(); i++) {
+			if (included_stats[i] >= model.included_statistics.size()) throw ns_ex("Yikes");
 			model.included_statistics[included_stats[i]] = 1;
+		}
 	
 		model.write_statistic_ranges(basename + "_range.txt");
 	
@@ -1499,6 +1634,8 @@ void ns_training_file_generator::output_training_set_including_stats(std::vector
 		included_set.close();
 
 		for (unsigned int i = 0; i < worm_stats.size(); i++){
+			//switch to new temporary model
+			worm_stats[i].specifiy_model(model);
 			if (genotypes_to_output[g]!="" &&			//only output requested genotype
 				genotypes_to_output[g] != worm_stats[i].metadata.device_regression_match_description())
 				continue;
@@ -1513,14 +1650,17 @@ void ns_training_file_generator::output_training_set_including_stats(std::vector
 				test_filenames_set << "+" << worm_stats[i].debug_filename << "\n";
 				test_metadata_set << worm_stats[i].metadata.device_regression_match_description() << "\n";
 			}
+			//switch back to the previous model
+			worm_stats[i].specifiy_model(model_base);
 		}	
-		for (unsigned int i = 0; i < non_worm_stats.size(); i++){
-			if (genotypes_to_output[g]!="" &&			//only output requested genotype
+		for (unsigned int i = 0; i < non_worm_stats.size(); i++) {
+			//switch to new temporary model
+			non_worm_stats[i].specifiy_model(model);
+			if (genotypes_to_output[g] != "" &&			//only output requested genotype
 				genotypes_to_output[g] != non_worm_stats[i].metadata.device_regression_match_description())
 				continue;
 
-			non_worm_stats[i].specifiy_model(model);
-			if (i < non_worm_test_set_start_index){
+			if (i < non_worm_test_set_start_index) {
 				output_image_stats(training_set, false, non_worm_stats[i]);
 				training_filenames_set << "-" << non_worm_stats[i].debug_filename << "\n";
 				training_metadata_set << non_worm_stats[i].metadata.device_regression_match_description() << "\n";
@@ -1530,6 +1670,8 @@ void ns_training_file_generator::output_training_set_including_stats(std::vector
 				test_filenames_set << "-" << non_worm_stats[i].debug_filename << "\n";
 				test_metadata_set << non_worm_stats[i].metadata.device_regression_match_description() << "\n";
 			}
+			//switch back to the previous model
+			non_worm_stats[i].specifiy_model(model_base);
 		}
 	}
 
@@ -1539,8 +1681,10 @@ void ns_training_file_generator::output_training_set_including_stats(std::vector
 void ns_training_file_generator::output_training_set_excluding_stats(std::vector<ns_detected_worm_stats> & worm_stats, std::vector<ns_detected_worm_stats> & non_worm_stats, const std::vector<ns_detected_worm_classifier> & excluded_stats, const ns_svm_model_specification & model, const std::string & base_directory,const std::string & genotype_specific_directory,const std::string & base_filename){
 	vector<char> use_stat(model.included_statistics.size(),1);
 
-	for (unsigned int i = 0; i < excluded_stats.size(); i++)
+	for (unsigned int i = 0; i < excluded_stats.size(); i++) {
+		if (excluded_stats[i] >= use_stat.size()) throw ns_ex("Yikes");
 		use_stat[excluded_stats[i]] = 0;
+	}
 
 	vector<ns_detected_worm_classifier> included_stats;
 	for (unsigned int i = 0; i < use_stat.size(); i++){

@@ -52,12 +52,14 @@ bool ns_learning_results_decision::load(istream & filenames, istream & metadata,
 bool ns_learning_results_decision::load_model_data(istream &data_set, istream & filenames, istream & metadata_f, bool & is_a_worm){
 	//load filename
 	filenames >> filename;
-	if (filenames.fail()) return false;
+	if (filenames.fail()) 
+		return false;
 	stat.debug_filename = filename;
 
 	//load metadata
-	metadata_f >> metadata.genotype;
-	if (metadata_f.fail()) return false;
+	getline(metadata_f, metadata.genotype);
+	if (metadata_f.fail()) 
+		return false;
 
 	std::string is_a_worm_str;
 	data_set >> is_a_worm_str;
@@ -1626,10 +1628,12 @@ void ns_training_file_generator::output_training_set_including_stats(std::vector
 		if (included_set.fail())
 			throw ns_ex("Could not open exclusion file for writing:") << included_name;
 
-		for (unsigned int i = 0; i < included_stats.size(); i++)
-			included_set << included_stats[i] << "\t" 
-			<< ns_classifier_abbreviation(included_stats[i]) << "\t" 
-			<< ns_classifier_label(included_stats[i]) << "\n";
+		for (unsigned int i = 0; i < model.included_statistics.size(); i++) {
+			if (model.included_statistics[i] == 1)
+				included_set << i << "\t"
+				<< ns_classifier_abbreviation((ns_detected_worm_classifier)i) << "\t"
+				<< ns_classifier_label((ns_detected_worm_classifier)i) << "\n";
+		}
 
 		included_set.close();
 

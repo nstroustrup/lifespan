@@ -1066,12 +1066,12 @@ void ns_training_file_generator::plot_errors_on_freq(const std::string & results
 	training_summary_file.close();
 	ns_learning_results_decision_set results_set;
 	results_set.from_decisions(decisions,"");
-	cerr << "Generating Test Set Distributions...\n";
-	cerr << "Writing to " << test_dir << "...\n";
-	results_set.produce_frequency_distribution(test_dir);
-	cerr << "Generating Training Set Distributions...\n";
-	cerr << "Writing to " << train_dir << "...\n";
-	training_set.produce_frequency_distribution(train_dir);
+	//cerr << "Generating Test Set Distributions...\n";
+	//cerr << "Writing to " << test_dir << "...\n";
+	//results_set.produce_frequency_distribution(test_dir);
+	//cerr << "Generating Training Set Distributions...\n";
+	//cerr << "Writing to " << train_dir << "...\n";
+	//training_set.produce_frequency_distribution(train_dir);
 	cerr << "Done.\n";
 }
 

@@ -1312,7 +1312,7 @@ bool ns_detected_worm_info::is_a_worm(const ns_svm_model_specification & model){
 			double val = svm_predict(model.model,node);
 			double probs[2];
 			svm_predict_probability(model.model, node, probs);
-			std::cout << val << "," << probs[1] << "," << probs[2] << "\n";
+			//std::cout << val << "," << probs[1] << "," << probs[2] << "\n";
 			stats.delete_vector(node);
 			//cerr << val << "\n";
 			is_a_worm_ = (val > 0);

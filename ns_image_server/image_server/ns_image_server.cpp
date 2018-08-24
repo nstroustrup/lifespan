@@ -30,7 +30,7 @@ using namespace std;
 
 void ns_image_server_global_debug_handler(const ns_text_stream_t & t);
 
-ns_image_server::ns_image_server():event_log_open(false),exit_requested(false),update_software(false), 
+ns_image_server::ns_image_server():event_log_open(false),exit_requested(false),update_software(false),
 	sql_lock("ns_is::sql"),server_event_lock("ns_is::server_event"),simulator_scan_lock("ns_is::sim_scan"),local_buffer_sql_lock("ns_is::lb"),
 	_act_as_processing_node(true),cleared(false),current_sql_server_address_id(0),
 	image_registration_profile_cache(1024*4), //allocate 4 gigabytes of disk space in which to store reference images for capture sample registration
@@ -67,7 +67,7 @@ void ns_image_server::toggle_central_mysql_server_connection_error_simulation()c
 }
 
 std::string  ns_image_server::video_compilation_parameters(const std::string & input_file, const std::string & output_file, const unsigned long number_of_frames, const std::string & fps, ns_sql & sql){
-	//for x264	
+	//for x264
 	string p(get_cluster_constant_value("video_compilation_parameters","--crf=10",&sql));
 	unsigned long distance_between_keyframes(250);
 	if (4*number_of_frames <= distance_between_keyframes)
@@ -92,13 +92,13 @@ bool ns_image_server::register_and_run_simulated_devices(ns_image_server_sql * s
 void ns_image_server::start_autoscans_for_device(const std::string & device_name, ns_sql & sql){
 
 	sql<< "SELECT id, scan_interval FROM autoscan_schedule WHERE device_name = '" << device_name
-						  << "' AND autoscan_start_time <= " << ns_current_time() 
+						  << "' AND autoscan_start_time <= " << ns_current_time()
 						  << " AND autoscan_completed_time = 0 ORDER BY autoscan_start_time ASC";
 	ns_sql_result res;
 	sql.get_rows(res);
 	if (res.size() > 1)
 		image_server.register_server_event(ns_image_server_event("Multiple autoscan schedules were specified for device ") << device_name,&sql);
-	
+
 	for (string::size_type i = 0; i < res.size(); i++){
 		const long interval(atol(res[i][1].c_str()));
 		image_server.device_manager.set_autoscan_interval(device_name,interval);
@@ -167,12 +167,12 @@ void ns_image_server::calculate_experiment_disk_usage(const unsigned long experi
 	if(experiment.size() == 0)
 		throw ns_ex("ns_image_server::calculate_experiment_disk_usage()::Could not find experiment ") << experiment_id << " in the database";
 	image_server.register_server_event(ns_image_server_event("ns_image_server::calculate_experiment_disk_usage()::Calculating disk usage for experiment ") << experiment[0][0] << "(" << experiment_id << ")",&sql);
-	
+
 
 	sql << "SELECT id, name FROM capture_samples WHERE experiment_id = " << experiment_id << " ORDER BY name ASC";
 	ns_sql_result samples;
 	sql.get_rows(samples);
-	
+
 	ns_image_data_disk_size full_experiment;
 	full_experiment.video = image_storage.get_experiment_video_size_on_disk(experiment_id,sql);
 
@@ -209,7 +209,7 @@ void ns_image_server::calculate_experiment_disk_usage(const unsigned long experi
 			r.unprocessed_region_images = image_storage.get_region_images_size_on_disk(region_id,ns_unprocessed,sql);
 			//grab any old-style images stored in the base directory of the region
 			r.unprocessed_region_images += image_storage.get_region_images_size_on_disk(region_id,ns_process_last_task_marker,sql);
-			
+
 			r.metadata = image_storage.get_region_metadata_size_on_disk(region_id,sql);
 
 			r.processed_region_images += image_storage.get_region_images_size_on_disk(region_id,ns_process_spatial,sql);
@@ -290,7 +290,7 @@ private:
 			sql << "SELECT currently_running_host_id, acquisition_time, next_run_time,UNIX_TIMESTAMP() FROM automated_job_scheduling_data";
 			ns_sql_result res;
 			sql.get_rows(res);
-			
+
 			if(res.size() == 0){
 				sql << "INSERT INTO automated_job_scheduling_data SET currently_running_host_id = 0";
 				sql.send_query();
@@ -309,7 +309,7 @@ private:
 			if (next_run_time == 0){
 				get_ownership(second_delay_until_next_run,sql);
 				lock.unlock();
-				return; 
+				return;
 			}
 			if (current_running_id != 0 && cur_time - acquisition_time >= image_server.automated_job_timeout_in_seconds()){
 				get_ownership(second_delay_until_next_run,sql);
@@ -323,7 +323,7 @@ private:
 				return;
 			}
 			lock.unlock();
-			
+
 		//	ns_thread::sleep(2);
 		//	counter++;
 		//	if (counter == 30)
@@ -340,7 +340,7 @@ private:
 		current_time = sql.get_integer_value();
 		next_run_time = current_time + second_delay_until_next_run;
 
-		sql << "UPDATE automated_job_scheduling_data SET currently_running_host_id = " << id() 
+		sql << "UPDATE automated_job_scheduling_data SET currently_running_host_id = " << id()
 			<< ", acquisition_time = " << current_time
 			<< ", next_run_time = " << next_run_time;
 
@@ -349,7 +349,7 @@ private:
 	}
 };
 void ns_image_server_automated_job_scheduler::scan_for_tasks(ns_sql & sql){
-	
+
 	ns_get_automated_job_scheduler_lock_for_scope lock(image_server.automated_job_interval(),sql);
 	if (!lock.run_requested()){
 		lock.release(sql);
@@ -395,7 +395,7 @@ void ns_image_server_automated_job_scheduler::identify_experiments_needing_captu
 		if (samples.size() == 0)
 			throw ns_ex("Could not find sample ") << specific_sample_id << " in the db";
 	}
-	
+
 	for (unsigned int i = 0; i < sample_ids.size(); i++){
 		const ns_64_bit sample_id(sample_ids[i]);
 		sql << "SELECT id, never_delete_image FROM captured_images WHERE image_id != 0 AND problem = 0 "
@@ -422,7 +422,7 @@ void ns_image_server_automated_job_scheduler::identify_experiments_needing_captu
 
 
 void ns_image_server_automated_job_scheduler::calculate_capture_schedule_boundaries(ns_sql & sql){
-	
+
 	image_server.register_server_event(ns_image_server_event("Calculating Experiment Boundaries"),&sql);
 
 	sql << "SELECT experiment_id,count(*),min(scheduled_time),"
@@ -450,7 +450,7 @@ void ns_image_server_automated_job_scheduler::identify_regions_needing_static_ma
 	bool announced(false);
 	for (unsigned int i = 0; i < regions.size(); i++){
 		//check to see if the region has enough of the first few images with median filters specified
-		sql << "SELECT " << ns_processing_step_db_column_name(ns_process_spatial)  << " FROM sample_region_images WHERE region_info_id = " << regions[i][0] << " AND " 
+		sql << "SELECT " << ns_processing_step_db_column_name(ns_process_spatial)  << " FROM sample_region_images WHERE region_info_id = " << regions[i][0] << " AND "
 			<< " currently_under_processing=0 AND problem = 0 ORDER BY capture_time ASC LIMIT " << (3*number_of_frames_needed_for_static_mask/2);
 		sql.get_rows(region_images);
 		unsigned long count(0);
@@ -458,7 +458,7 @@ void ns_image_server_automated_job_scheduler::identify_regions_needing_static_ma
 			if (region_images[j][0] != "0")
 				count++;
 		}
-		
+
 		if (count < number_of_frames_needed_for_static_mask)
 			continue;
 		if (!announced){
@@ -487,7 +487,7 @@ void ns_image_server_automated_job_scheduler::register_static_mask_completion(co
 void ns_image_server_automated_job_scheduler::schedule_detection_jobs_for_region(const unsigned long region_id,ns_sql & sql){
 	ns_processing_job job;
 	job.region_id = region_id;
-	job.time_submitted = ns_current_time(); 
+	job.time_submitted = ns_current_time();
 	job.operations[(int)ns_process_worm_detection] = true;
 	job.operations[(int)ns_process_worm_detection_labels] = true;
 	job.save_to_db(sql);
@@ -508,7 +508,7 @@ void ns_image_server::process_experiment_capture_schedule_specification(const st
 	ns_experiment_capture_specification spec;
 	spec.load_from_xml_file(input_file);
 	ns_acquire_for_scope<ns_sql> sql(image_server.new_sql_connection(__FILE__,__LINE__));
-	
+
 	string summary(spec.submit_schedule_to_db(warnings,sql(),submit_to_db,overwrite_previous_experiment));
 	if (output_to_stdout && !submit_to_db){
 		cout << summary;
@@ -548,7 +548,7 @@ void ns_image_server::get_cluster_constant_lock(ns_image_server_sql * sql){
 std::string ns_image_server::get_cluster_constant_value_locked(const std::string & key, const std::string & default_value,ns_image_server_sql * sql){
 	*sql << "LOCK TABLES " << sql->table_prefix()<< "constants WRITE";
 	sql->send_query();
-	
+
 	try{
 		return get_cluster_constant_value(key,default_value,sql);
 	}
@@ -635,7 +635,7 @@ void ns_image_server::reconnect_sql_connection(ns_sql * sql){
 		sql->disconnect();
 	}
 	catch(...){}
-	
+
 	ns_acquire_lock_for_scope lock(sql_lock,__FILE__,__LINE__);
 
 	//Look through all possible paths to the server until one is found to work.
@@ -653,7 +653,7 @@ void ns_image_server::reconnect_sql_connection(ns_sql * sql){
 		}
 		catch(ns_ex & ex){
 			er = ex;
-			
+
 		}
 	}
 	if (!er.text().empty()){
@@ -675,10 +675,10 @@ ns_sql * ns_image_server::new_sql_connection_no_lock_or_retry(const std::string 
 				try{
 					con->connect(sql_server_addresses[server_id],sql_user,sql_pwd,0);
 					current_sql_server_address_id = server_id;
-				
+
 					con->select_db(*sql_database_choice);
 					return con;
-				}	
+				}
 				catch(...){}
 		}
 	}
@@ -727,10 +727,10 @@ void ns_image_server::set_up_local_buffer(){
 	const unsigned long number_of_tables(7);
 	const std::string table_names[number_of_tables] = {"capture_schedule",
 								  "captured_images",
-								  "images", 
-								  "experiments", 
-								  "capture_samples", 
-								  "constants", 
+								  "images",
+								  "experiments",
+								  "capture_samples",
+								  "constants",
 								  "host_event_log"};
 
 	std::vector<char> table_found_in_buffer(number_of_tables,0);
@@ -748,7 +748,7 @@ void ns_image_server::set_up_local_buffer(){
 	if (buffer_tables.size() != 0){
 		for (unsigned int i = 0; i < number_of_tables; i++){
 			if (!table_found_in_buffer[i]){
-				throw ns_ex("ns_image_server::set_up_local_buffer()::An incomplete local buffer schema is present.  Table buffered_") 
+				throw ns_ex("ns_image_server::set_up_local_buffer()::An incomplete local buffer schema is present.  Table buffered_")
 					<< table_names[i] << " was not found.  Drop all tables to allow an automatic rebuild of the buffer schema.";
 			}
 		}
@@ -765,7 +765,7 @@ void ns_image_server::set_up_local_buffer(){
 		ns_add_buffer_suffix_to_table_create(table_names[i],create);
 		buf().send_query(create);
 	}
-	
+
 	#ifndef NS_MINIMAL_SERVER_BUILD
 	ns_buffered_capture_scheduler::store_last_update_time_in_db(ns_synchronized_time(ns_buffered_capture_scheduler::ns_default_update_time,ns_buffered_capture_scheduler::ns_default_update_time),buf());
 	#endif
@@ -811,7 +811,7 @@ void ns_image_server::set_sql_database(const std::string & database_name,const b
 		sql_database_choice = possible_sql_databases.begin();
 		return;
 	}
-	
+
 	ns_acquire_for_scope<ns_sql> sql(new_sql_connection(__FILE__,__LINE__));
 	sql() << "SHOW DATABASES";
 	ns_sql_result database;
@@ -831,7 +831,7 @@ void ns_image_server::set_sql_database(const std::string & database_name,const b
 		register_server_event(ns_image_server_event("Switching to database ") << database_name,&sql());
 		sql() << "UPDATE hosts SET database_used='" << database_name << "' WHERE id = " << host_id();
 		sql().send_query();
-		image_server.unregister_host();	
+		image_server.unregister_host();
 	}
 	std::vector<std::string>::const_iterator p = std::find(possible_sql_databases.begin(),possible_sql_databases.end(),database_name);
 	image_server.sql_lock.wait_to_acquire(__FILE__,__LINE__);
@@ -865,21 +865,40 @@ bool ns_image_server::upgrade_tables(ns_sql & sql,const bool just_test_if_needed
 	if (res.size() > 0 && res[0][0].find("unsigned") != res[0][0].npos){
 		if (just_test_if_needed)
 			return true;
-		sql << "ALTER TABLE image_server.captured_images CHANGE COLUMN `registration_horizontal_offset` " 
+		sql << "ALTER TABLE image_server.captured_images CHANGE COLUMN `registration_horizontal_offset` "
 				"`registration_horizontal_offset` INT(10) NOT NULL DEFAULT '0' ";
 		sql.send_query();
 		changes_made = true;
 	}
 
-	sql << "SELECT COLUMN_TYPE FROM INFORMATION_SCHEMA.COLUMNS "
-		"WHERE table_name = 'buffered_captured_images' AND COLUMN_NAME = 'registration_horizontal_offset'"
-		"AND TABLE_SCHEMA = 'image_server_buffer'";
+	//check to see if this mysql instance has an image_server_buffer database
+	sql << "SELECT COLUMN_NAME, COLUMN_TYPE FROM INFORMATION_SCHEMA.COLUMNS "
+		"WHERE table_name = 'buffered_capture_samples' AND TABLE_SCHEMA = 'image_server_buffer'";
 	sql.get_rows(res);
-	if (res.size() > 0 && res[0][0].find("unsigned") != res[0][0].npos){
+	if (res.size() > 0){
+
+		//add columns to local buffer
+		sql << "SELECT COLUMN_TYPE FROM INFORMATION_SCHEMA.COLUMNS "
+				"WHERE table_name = 'buffered_capture_samples' AND COLUMN_NAME = 'conversion_16_bit_low_bound'"
+				"AND TABLE_SCHEMA = 'image_server_buffer'";
+		sql.get_rows(res);
+		if (res.size() == 0) {
+			if (just_test_if_needed)
+				return true;
+			sql << "ALTER TABLE image_server_buffer.buffered_capture_samples "
+				"ADD COLUMN `conversion_16_bit_low_bound` BIGINT UNSIGNED NOT NULL DEFAULT '0' AFTER `time_series_denoising_flag`, "
+				"ADD COLUMN `conversion_16_bit_high_bound`  BIGINT UNSIGNED NOT NULL DEFAULT '0' AFTER `conversion_16_bit_low_bound`";
+			sql.send_query();
+			changes_made = true;
+		}
+	}
+	//add columns to main database
+	if (!ns_sql_column_exists("capture_samples", "conversion_16_bit_low_bound", sql)) {
 		if (just_test_if_needed)
 			return true;
-		sql << "ALTER TABLE image_server_buffer.buffered_captured_images CHANGE COLUMN `registration_horizontal_offset` " 
-				"`registration_horizontal_offset` INT(10) NOT NULL DEFAULT '0' ";
+		sql << "ALTER TABLE capture_samples "
+			"ADD COLUMN `conversion_16_bit_low_bound` BIGINT UNSIGNED NOT NULL DEFAULT '0' AFTER `time_series_denoising_flag`, "
+			"ADD COLUMN `conversion_16_bit_high_bound`  BIGINT UNSIGNED NOT NULL DEFAULT '0' AFTER `conversion_16_bit_low_bound`";
 		sql.send_query();
 		changes_made = true;
 	}
@@ -922,7 +941,7 @@ std::string ns_preserve_quotes(const std::string & s){
 	return r;
 }
 bool ns_write_db_table(const ns_sql_result & columns, ns_sql_result & data, const std::string & filename, const std::string & directory){
-	
+
 	ofstream ff;
 	if (!ns_open_db_table_file(columns,data,filename,directory,ff))
 		return false;
@@ -963,12 +982,12 @@ void ns_gzip_file(std::string & f1, std::string f2){
 		//gzbuffer(gzFile,chunk_size);
 		while(true){
 			in.read(buf,chunk_size);
-			unsigned long s(in.gcount());	
+			unsigned long s(in.gcount());
 			if (!gzwrite(gf,buf,s))
 				throw ns_ex("ns_gzip_file()::Could not write to gzip file");
 			if (in.fail())
 				break;
-		
+
 		}
 	}
 	catch(...){
@@ -982,14 +1001,14 @@ void ns_gzip_file(std::string & f1, std::string f2){
 void ns_zip_file(FILE * source, FILE * dest){
 
 	const unsigned long chunk_size(8*1024*1024);
-	
+
 	unsigned char * in = new unsigned char[chunk_size];
 	unsigned char * out = new unsigned char[chunk_size];
 	try{
 		int ret, flush;
 		unsigned have;
 		z_stream strm;
-			// allocate deflate state 
+			// allocate deflate state
 		strm.zalloc = Z_NULL;
 		strm.zfree = Z_NULL;
 		strm.opaque = Z_NULL;
@@ -1004,15 +1023,15 @@ void ns_zip_file(FILE * source, FILE * dest){
 			}
 			flush = feof(source) ? Z_FINISH : Z_NO_FLUSH;
 			strm.next_in = in;
-		
+
 		// run deflate() on input until output buffer not full, finish
-		//	compression if all of source has been read in 
+		//	compression if all of source has been read in
 			do {
 				strm.avail_out = chunk_size;
 				strm.next_out = out;
-				ret = deflate(&strm, flush);   // no bad return value 
+				ret = deflate(&strm, flush);   // no bad return value
 				if (ret == Z_STREAM_ERROR)
-					throw ns_ex("Error in deflate");//state not clobbered 
+					throw ns_ex("Error in deflate");//state not clobbered
 				have = chunk_size - strm.avail_out;
 				if (fwrite(out, 1, have, dest) != have || ferror(dest)) {
 					(void)deflateEnd(&strm);
@@ -1021,12 +1040,12 @@ void ns_zip_file(FILE * source, FILE * dest){
 			} while (strm.avail_out == 0);
 			if (strm.avail_in != 0)
 				throw ns_ex("Data left over");
-				// done when last data in file processed 
+				// done when last data in file processed
 		} while (flush != Z_FINISH);
 		if (ret != Z_STREAM_END)
 				throw ns_ex("Stream not ended!");
-			// clean up and return 
-		(void)deflateEnd(&strm);	
+			// clean up and return
+		(void)deflateEnd(&strm);
 		delete [] in;
 		delete [] out;
 	}
@@ -1040,7 +1059,7 @@ void ns_zip_experimental_data(const std::string & output_directory,bool delete_o
 	ns_dir dir;
 	std::vector<std::string> files;
 	dir.load_masked(output_directory,"csv",files);
-	 
+
 
 	for (unsigned int i = 0; i < files.size(); i++){
 		if (ns_dir::extract_extension(files[i]) == "gz")
@@ -1207,7 +1226,7 @@ bool ns_update_db_using_experimental_data_from_file(const std::string new_databa
 		new_database.find("\"") != new_database.npos||
 		new_database.find(";") != new_database.npos||
 		new_database.find(":") != new_database.npos)
-		throw ns_ex("The database name you suggested ") << new_database << 
+		throw ns_ex("The database name you suggested ") << new_database <<
 		" contains a character such as "<< "=&%$#-+@!'\";:";
 
 	std::string current_database;
@@ -1225,7 +1244,7 @@ bool ns_update_db_using_experimental_data_from_file(const std::string new_databa
 	}
 	if (database_exists && !use_existing_database)
 		return false;
-	
+
 	ns_dir dir;
 	std::vector<std::string> files;
 	dir.load_masked(output_directory,"csv.gz",files);
@@ -1240,7 +1259,7 @@ bool ns_update_db_using_experimental_data_from_file(const std::string new_databa
 		vector<std::string> create_commands(tables.size());
 		for (unsigned int i = 0; i < tables.size(); i++)
 				ns_get_table_create(tables[i][0],create_commands[i],sql);
-		
+
 		sql << "CREATE DATABASE " << new_database << "";
 		sql.send_query();
 		sql << "USE " << new_database << "";
@@ -1282,7 +1301,7 @@ bool ns_update_db_using_experimental_data_from_file(const std::string new_databa
 				table_name == "path_data" ||
 				table_name == "worm_detection_results" ||
 				table_name == "sample_region_image_info" ||
-				table_name == "sample_region_images" || 
+				table_name == "sample_region_images" ||
 				table_name == "image_masks"
 
 				)
@@ -1337,7 +1356,7 @@ void ns_write_experimental_data_in_database_to_file(const unsigned long experime
 	sql << "SELECT * from capture_schedule WHERE experiment_id = " << experiment_id;
 	sql.get_rows(capture_schedule_data);
 	ns_write_db_table(capture_schedule_columns,capture_schedule_data,"capture_schedule.csv",output_directory);
-	
+
 	ns_sql_result sample_region_image_info_columns,
 				 sample_region_image_info_data;
 	sql << "SHOW COLUMNS IN sample_region_image_info";
@@ -1512,7 +1531,7 @@ ns_sql * ns_image_server::new_sql_connection(const std::string & source_file, co
 
 				alert_text += sql_user + "@" + sql_server_addresses[server_id] + "):: ";
 				alert_text += source_file + "::" + ns_to_string(source_line);
-				
+
 				if (retry_count > 0){
 					ns_image_server_event sev;
 					sev << alert_text << " : " << ex.text() << "..." << ns_ts_sql_error;
@@ -1527,12 +1546,12 @@ ns_sql * ns_image_server::new_sql_connection(const std::string & source_file, co
 					catch(ns_ex & ex2){
 						ns_image_server_event sev2;
 						sev2 << "Exception trying to send alert: " << ex2.text() << ns_ts_sql_error;
-						register_server_event_no_db(sev2);					
+						register_server_event_no_db(sev2);
 					}
 					catch(...){
 						ns_image_server_event sev2;
 						sev2 << "Unknown exception trying to send alert."  << ns_ts_sql_error;
-						register_server_event_no_db(sev2);	
+						register_server_event_no_db(sev2);
 					}
 				}
 				if (retry_count == 0)
@@ -1561,13 +1580,13 @@ ns_sql * ns_image_server::new_sql_connection(const std::string & source_file, co
 
 //look for existing device name, create if not found
 void ns_image_server::register_device(const ns_device_summary & device,ns_sql & con){
-	
+
 	con << "SELECT host_id FROM devices WHERE name='" << device.name << "'";
 	ns_sql_result device_info;
 	con.get_rows(device_info);
 	if (device_info.size() > 1)
 		throw ns_ex() << static_cast<unsigned long>(device_info.size()) << " devices named " << device.name << " were found!";
-	
+
 	//if the device does not exist in database, register it.
 	if (device_info.size() == 0){
 		con << "INSERT INTO devices SET host_id ='" << image_server.host_id() << "', name='" << device.name << "',"
@@ -1585,7 +1604,7 @@ void ns_image_server::register_device(const ns_device_summary & device,ns_sql & 
 			<< ", autoscan_interval=" << device.autoscan_interval
 			<< " WHERE name='" << device.name << "'";
 			con.send_query();
-		}		
+		}
 	}
 }
 
@@ -1654,7 +1673,7 @@ ns_thread_return_type alert_handler_start(void * a){
 			cerr << "alert_handler_start::Could not register an unknown error due to an unknown error!\n";
 		}
 	}
-	
+
 	try{
 		image_server.register_alerts_as_handled();
 	}
@@ -1667,7 +1686,7 @@ ns_thread_return_type alert_handler_start(void * a){
 		}
 		catch(...){
 			cerr << "alert_handler_start::Could not register the error " << ex.text() << ": due to an unknown error\n";
-	
+
 		}
 		return 0;
 	}
@@ -1697,7 +1716,7 @@ bool ns_image_server::new_software_release_available(ns_sql & sql){
 		<< " software_version_compile > " << software_version_compile() << ")";
 	ns_sql_result res;
 	sql.get_rows(res);
-	return (res.size() > 0);	
+	return (res.size() > 0);
 }
 
 void ns_image_server::unregister_host() {
@@ -1707,7 +1726,7 @@ void ns_image_server::unregister_host() {
 	sql.release();
 };
 void ns_image_server::register_host(bool overwrite_current_entry){
-	
+
 	//log in to the server, register the host, get its database id, and update the filed ip address.
 
 	ns_acquire_for_scope<ns_sql> sql(new_sql_connection(__FILE__,__LINE__));
@@ -1725,20 +1744,20 @@ void ns_image_server::register_host(bool overwrite_current_entry){
 	sql().get_rows(h);
 
 	if (h.size() == 0){
-		sql()<< "INSERT INTO hosts SET name='" << host_name << "', base_host_name='" << base_host_name << "', ip='" << host_ip << "', port='" << _dispatcher_port 
+		sql()<< "INSERT INTO hosts SET name='" << host_name << "', base_host_name='" << base_host_name << "', ip='" << host_ip << "', port='" << _dispatcher_port
 			<< "', long_term_storage_enabled='" << long_term_storage_ << "', comments='', "
 			<< "software_version_major=" << software_version_major() << ", software_version_minor=" << software_version_minor()
-			<< ", software_version_compile=" << software_version_compile()<< ",database_used='" << *sql_database_choice 
+			<< ", software_version_compile=" << software_version_compile()<< ",database_used='" << *sql_database_choice
 			<< "', time_of_last_successful_long_term_storage_write=0";
 		_host_id = sql().send_query_get_id();
 	}
 	else if (h.size() != 1)
 		throw ns_ex() << (int)h.size() << " hosts found with current hostname!";
 	else{
-			
+
 		_host_id = atoi(h[0][0].c_str());
 		if (overwrite_current_entry){
-			sql() << "UPDATE hosts SET ip='" << host_ip << "', port='" << _dispatcher_port 
+			sql() << "UPDATE hosts SET ip='" << host_ip << "', port='" << _dispatcher_port
 				<< "', long_term_storage_enabled='" << long_term_storage_ << "', "
 				<< "software_version_major=" << software_version_major() << ", software_version_minor=" << software_version_minor()
 				<< ", software_version_compile=" << software_version_compile() << ",database_used='" << *sql_database_choice << "'" <<
@@ -1754,7 +1773,7 @@ void ns_image_server::update_device_status_in_db(ns_sql & sql) const{
 	ns_image_server_device_manager::ns_device_name_list devices;
 	image_server.device_manager.request_device_list(devices);
 	for (unsigned int i = 0; i < devices.size(); ++i){
-		sql << "UPDATE devices SET currently_scanning=" << (devices[i].currently_scanning?"1":"0") 
+		sql << "UPDATE devices SET currently_scanning=" << (devices[i].currently_scanning?"1":"0")
 			<< ", last_capture_start_time=" << devices[i].last_capture_start_time
 			<< ", pause_captures=" << devices[i].paused << ", autoscan_interval="<<devices[i].autoscan_interval
 			<< ", last_autoscan_time=" << devices[i].last_autoscan_time
@@ -1771,7 +1790,7 @@ void ns_image_server::register_devices(const bool verbose){
 	ns_image_server_device_manager::ns_device_name_list connected_devices;
 	device_manager.request_device_list(connected_devices);
 
-	//we want to remember specified information about devices, so we download it from the db before clearing the db. 
+	//we want to remember specified information about devices, so we download it from the db before clearing the db.
 	sql() << "SELECT name, pause_captures,autoscan_interval, next_autoscan_time FROM devices WHERE host_id = " << image_server.host_id();
 	ns_sql_result device_state;
 	sql().get_rows(device_state);
@@ -1804,7 +1823,7 @@ void ns_image_server::register_devices(const bool verbose){
 	std::string devices_registered;
 
 	for (unsigned int i = 0; i < connected_devices.size(); i++){
-		register_device(connected_devices[i],sql());	
+		register_device(connected_devices[i],sql());
 		devices_registered += connected_devices[i].name + ",";
 	}
 	ns_image_server_event ev("Registering devices ");
@@ -1812,11 +1831,11 @@ void ns_image_server::register_devices(const bool verbose){
 
 	if (verbose)image_server.register_server_event(ev,&sql());
 	sql.release();
-	
+
 	#endif
 }
 bool ns_to_bool(const std::string & s){
-	return (s == "yes" || s == "Yes" || s == "YES" || s == "true" || s == "True" || s == "TRUE" || 
+	return (s == "yes" || s == "Yes" || s == "YES" || s == "true" || s == "True" || s == "TRUE" ||
 			s == "y" || s == "Y" || s == "1");
 }
 void ns_image_server::load_constants(const ns_image_server::ns_image_server_exec_type & exec_type, const ns_multiprocess_control_options & opt,const bool reject_incorrect_fields){
@@ -1824,7 +1843,7 @@ void ns_image_server::load_constants(const ns_image_server::ns_image_server_exec
 	constants.reject_incorrect_fields(reject_incorrect_fields);
 	//register ini file constants
 	constants.start_specification_group(ns_ini_specification_group("*** Lifespan Machine Image Server Configuration File ***","This file allows you to specify various configuration options that will determine the behavior of all lifespan machine software running on this machine, including image acquisition servers, image analysis servers, and the worm browser."));
-	
+
 	constants.start_specification_group(ns_ini_specification_group("Important Configuration Parameters for this machine","These parameters need to be set correctly for the server to function."));
 	constants.add_field("host_name", "ns_server","Each instance of the image acquisition and image analysis servers needs to have a unique name to identify it.  Thus, host_name should be set to a different value on every LINUX or Windows machine running the software.  Use a name that you'll recognize, such as linux_server_on_my_desk, bob, or lab_desktop_1");
 	constants.add_field("long_term_storage_directory","","All image server software must be able to access a central directory used to store images.  This is often located on a NAS or institutional file server.  This directory should be mounted as a path on the machine running the server.  Set this parameter to the location of that directory");
@@ -1836,7 +1855,7 @@ void ns_image_server::load_constants(const ns_image_server::ns_image_server_exec
 	constants.add_field("central_sql_username","image_server","The username with which the software should log into the central SQL server");
 	constants.add_field("central_sql_password","","The password with which the software should log into the central SQL server");
 	constants.add_field("central_sql_databases","image_server","The name of the database set up on the SQL server for the image server.  It's possible to specify multiple independent databases, each separated by a colon, but this is not needed in simple installations.");
-	
+
 	constants.start_specification_group(ns_ini_specification_group("Access to the local SQL database","Image acquisition servers use a local SQL database to store metadata pending its transfer to the central SQL database.  This lets acquisition servers continue to operate correctly through network disruptions, sql database crashes, etc.  These parameters need to be set to match the account set up on the machine's local sql database, to allow the server to log in"));
 	constants.add_field("local_buffer_sql_hostname","localhost","The IP address or DNS name of the computer running the local SQL buffer.  This is only needed for image capture servers, and in all but exceptional cases should be set to localhost");
 	constants.add_field("local_buffer_sql_username","image_server","The username with which the software should log into the local SQL buffer");
@@ -1850,7 +1869,7 @@ void ns_image_server::load_constants(const ns_image_server::ns_image_server_exec
 	constants.add_field("device_barcode_coordinates","-l 0in -t 10.3in -x 8in -y 2in", "The coordinates of the barcode adhered to the surface of each scanner");
 	constants.add_field("simulated_device_name", ".","For software debugging, an image acquisition server can simulate an attached device");
 	constants.add_field("device_names", "", "This can be used to explicitly specify scanner names on an image acquisition server.  These should be detected just fine automatically, and so in most cases this field can be left blank");
-	
+
 	constants.start_specification_group(ns_ini_specification_group("Image Analysis Server Settings ","These settings control the behavior of image processing servers"));
 	constants.add_field("act_as_processing_node","yes","Should the server run image processing jobs requested by the user via the website? (yes / no)");
 	constants.add_field("nodes_per_machine", "1","A single computer can run multiple copies of the image processing server simultaneously, which allows many jobs to be processed in parallel.  Set this value to the number of parallel servers you want to run on this machine.  This can usually be set to the number of physical cores on the machine's processor, or the number of GB of RAM on the machine; whichever is smaller.");
@@ -1858,10 +1877,10 @@ void ns_image_server::load_constants(const ns_image_server::ns_image_server_exec
 	constants.add_field("compile_videos","no","Should the server process videos? (yes / no)");
 	constants.add_field("video_compiler_filename","./x264.exe","Path to the x264 transcoder program required to generate videos.  Only needed on image processing servers.  If you don't have this, set compile_videos to no");
 	constants.add_field("video_ppt_compiler_filename","./ffmpeg.exe","Path to the ffmpeg transcoder required to generate videos. Only needed on image processing servers.  If you don't have this, set compile_videos to no");
-	constants.add_field("halt_on_new_software_release","no", "Should the server shut down if a new version of the software is detected running on the cluster? (yes / no)");	
+	constants.add_field("halt_on_new_software_release","no", "Should the server shut down if a new version of the software is detected running on the cluster? (yes / no)");
 	constants.add_field("latest_release_path","image_server_software/image_server_win32.exe", "Image acquisition servers can be set to automatically update if new versions of the software is identified as running on the cluster.  This is the path name where the new software can be found.");
 	constants.add_field("run_autonomously","yes","should the server automatically poll the MySQL database for new scans/jobs (yes) or should it only do this when a command is received from an external source (no).  Most configurations set this to yes.");
-	
+
 
 	constants.start_specification_group(ns_ini_specification_group("Other Settings","These settings control the behavior of image acquisition and image processing servers"));
 	constants.add_field("verbose_debug_output","false","If this option is set to true, the image server and worm browser will generate detailed debug information while running various steps of image acquisition and image processing.  An file containing this output will be written to the volatile_storage directory.");
@@ -1873,7 +1892,7 @@ void ns_image_server::load_constants(const ns_image_server::ns_image_server_exec
 	constants.add_field("server_timeout_interval","300","How long should a server wait before giving up on a dead network connection (in seconds)");
 	constants.add_field("log_filename","image_server_log.txt","Image acquisition and image processing servers keep a log file in the central SQL database.  However, to help diagnose crashes, a text file containing the same log information is stored on the local machine.  The log file is stored in the directory specified by the volatile_storage_directory option (described above), and its filename is specified by here.");
 	constants.add_field("maximum_memory_allocation_in_mb","3840","Movement analaysis benefits from access to multiple gigabytes of RAM.  This value should be set to approximately the size of system memory.  Larger values will cause sporadic crashes during movement analysis.");
-	
+
 	ns_ini terminal_constants;
 	terminal_constants.reject_incorrect_fields(reject_incorrect_fields);
 	terminal_constants.start_specification_group(ns_ini_specification_group("*** Worm Browser Configuration File ***","This file allows you to specify various configuration options that will determine the behavior of the worm browser software run on this machine.  It's behavior is also influenced by the settings in the ns_image_server configuration file."));
@@ -1900,7 +1919,7 @@ void ns_image_server::load_constants(const ns_image_server::ns_image_server_exec
 			in.close();
 			ini_directory = ns_dir::extract_path(ini_filename);
 			constants.load(ini_filename);
-		}	
+		}
 		else if (ns_dir::file_exists("c:\\ns_image_server_ini.forward")){
 			ifstream in("c:\\ns_image_server_ini.forward");
 			std::string ini_filename;
@@ -1923,10 +1942,10 @@ void ns_image_server::load_constants(const ns_image_server::ns_image_server_exec
 			max_terminal_window_size.y = atol(terminal_constants["max_height"].c_str());
 			terminal_hand_annotation_resize_factor = atol(terminal_constants["hand_annotation_resize_factor"].c_str());
 			mask_upload_database = terminal_constants["mask_upload_database"];
-			mask_upload_hostname = terminal_constants["mask_upload_hostname"];	
+			mask_upload_hostname = terminal_constants["mask_upload_hostname"];
 			if (terminal_constants.field_specified("verbose_debug_output") && terminal_constants["verbose_debug_output"] == "true" ){
 				_verbose_debug_output = true;
-			}		
+			}
 			if (terminal_constants.field_specified("window_scale_factor")){
 				_terminal_window_scale_factor = atof(terminal_constants["window_scale_factor"].c_str());
 			}
@@ -1935,7 +1954,7 @@ void ns_image_server::load_constants(const ns_image_server::ns_image_server_exec
 			if (constants.field_specified("verbose_debug_output") && constants["verbose_debug_output"] == "true")
 				_verbose_debug_output = true;
 		}
-		
+
 		{
 			string sql_server_tmp(constants["central_sql_hostname"]);
 			sql_server_addresses.resize(0);
@@ -1977,9 +1996,9 @@ void ns_image_server::load_constants(const ns_image_server::ns_image_server_exec
 		local_buffer_db = constants["local_buffer_sql_database"];
 		local_buffer_ip = constants["local_buffer_sql_hostname"];
 		local_buffer_pwd = constants["local_buffer_sql_password"];
-		local_buffer_user = constants["local_buffer_sql_username"]; 
+		local_buffer_user = constants["local_buffer_sql_username"];
 
-	
+
 
 		for (unsigned int i = 0; i < possible_sql_databases.size(); i++){
 			if (local_buffer_db == possible_sql_databases[i])
@@ -1995,7 +2014,7 @@ void ns_image_server::load_constants(const ns_image_server::ns_image_server_exec
 		_dispatcher_port		= opt.port(atoi(constants["dispatcher_port"].c_str()));
 		_act_as_an_image_capture_server = ( ns_to_bool(constants["act_as_image_capture_server"]) && opt.manage_capture_devices);
 		_compile_videos = ( ns_to_bool(constants["compile_videos"]) && opt.compile_videos );
-	
+
 		long_term_storage_directory	= ns_dir::format_path(constants["long_term_storage_directory"]);
 		results_storage_directory	= ns_dir::format_path(constants["results_storage_directory"]);
 		if (constants.field_specified("maximum_memory_allocation_in_mb")){
@@ -2063,7 +2082,7 @@ void ns_image_server::load_constants(const ns_image_server::ns_image_server_exec
 		ex2 << ini_filename << ":" << ex.text();
 		throw ns_ex(ex2);
 	}
-	
+
 		//	cerr << "LOOP";
 	//set output directories for ther server
 	image_storage.set_directories(volatile_storage_directory, long_term_storage_directory);
@@ -2107,16 +2126,16 @@ void ns_image_server::load_constants(const ns_image_server::ns_image_server_exec
 	event_log_open = true;
 	//Obtain local network information
 	_ethernet_interface = constants["ethernet_interface"];
-	
+
 
 	ns_socket socket;
 	host_ip = socket.get_local_ip_address(_ethernet_interface);
 }
 void ns_image_server::pause_host(){
-	
+
 	image_server.server_pause_status = true;
 	ns_acquire_for_scope<ns_sql> sql(image_server.new_sql_connection(__FILE__,__LINE__));
-	
+
 	sql() << "UPDATE hosts SET pause_requested=1 WHERE id="<<image_server.host_id();
 	sql().send_query();
 	sql.release();
@@ -2144,7 +2163,7 @@ void ns_image_server::get_alert_suppression_lists(std::vector<std::string> & dev
 		}
 }
 
-#ifdef _WIN32 
+#ifdef _WIN32
 void ns_image_server::set_console_window_title(const string & title) const{
 	string t(title);
 	if (t.size() == 0){
@@ -2162,7 +2181,7 @@ void ns_image_server::shut_down_host(){
 	//shut down the dispatcher
 	if (!send_message_to_running_server(NS_QUIT))
 		throw ns_ex("Could not submit shutdown command to ") << image_server.dispatcher_ip() << ":" << image_server.dispatcher_port() << ".";
-		
+
 }
 
 /*void ns_image_server::delete_stored_image(const unsigned long image_id, ns_sql & sql){
@@ -2181,7 +2200,7 @@ void ns_image_server::shut_down_host(){
 }*/
 
 void ns_svm_model_specification::write_statistic_ranges(const std::string & filename, bool write_all_features){
-	
+
 
 	ofstream out(filename.c_str());
 	if (out.fail())
@@ -2189,13 +2208,13 @@ void ns_svm_model_specification::write_statistic_ranges(const std::string & file
 	out << "Feature\tMin\tMax\tAvg\tSTD\tWorm Avg\n";
 	for (unsigned int i = 0; i < (unsigned int)ns_stat_number_of_stats; i++){
 		if (write_all_features || (included_statistics[i]!=0 && statistics_ranges[i].specified)){
-			out << i <<"\t" << statistics_ranges[i].min << "\t" << statistics_ranges[i].max << "\t" 
-			<< statistics_ranges[i].avg << "\t" << statistics_ranges[i].std 
+			out << i <<"\t" << statistics_ranges[i].min << "\t" << statistics_ranges[i].max << "\t"
+			<< statistics_ranges[i].avg << "\t" << statistics_ranges[i].std
 			<< "\t" << statistics_ranges[i].worm_avg << "\t\t\\\\" << ns_classifier_label((ns_detected_worm_classifier)i) <<"\n";
 		}
 	}
 		out.close();
-}	
+}
 void ns_svm_model_specification::read_statistic_ranges(const std::string & filename){
 	if (statistics_ranges.size() == 0)
 		statistics_ranges.resize((unsigned int)ns_stat_number_of_stats);
@@ -2256,13 +2275,13 @@ void ns_svm_model_specification::read_included_stats(const std::string & filenam
 	string stat_str;
 	int state(0);
 	while(true){
-		char a; 
+		char a;
 		a = in.get();
 		if (in.fail())
 			break;
 		if (state == 0){
 			if (!isspace(a))
-				stat_str+=a;	
+				stat_str+=a;
 			else{
 				if (stat_str.size() == 0)
 					continue;  //skip leading whitespace
@@ -2330,7 +2349,7 @@ std::string ns_image_server::capture_preview_parameters(const ns_capture_device:
 			throw ns_ex("ns_image_server::capture_preview_parameters():Requesting capture command for a no_preview request.");
 		case ns_capture_device::ns_transparency_preview:
 			return get_cluster_constant_value("transparency_preview_parameters",transparency_default,&sql);
-		case ns_capture_device::ns_reflective_preview:	
+		case ns_capture_device::ns_reflective_preview:
 			return get_cluster_constant_value("reflective_preview_parameters",transparency_default,&sql);
 		default: throw ns_ex("ns_image_server::capture_preview_parameters():Unknown preview request type: ) ") << (unsigned int)type;
 	}
@@ -2367,7 +2386,7 @@ ns_64_bit ns_image_server::register_server_event(const ns_register_type type,con
 		if (sql.is_null())
 			sql.attach(new_local_buffer_connection_no_lock_or_retry(__FILE__,__LINE__));
 	}
-	else 
+	else
 		sql.attach(new_local_buffer_connection_no_lock_or_retry(__FILE__,__LINE__));
 
 	try{
@@ -2391,12 +2410,12 @@ ns_64_bit ns_image_server::register_server_event(const ns_register_type type,con
 
 void ns_image_server::register_server_event_no_db(const ns_image_server_event & s_event,bool no_double_endline){
 	ns_acquire_lock_for_scope lock(server_event_lock,__FILE__,__LINE__);
-	if (s_event.text().size() != 0){	
+	if (s_event.text().size() != 0){
 		if (!no_double_endline)
 			cerr <<"\n";
 		s_event.print(cerr);
 		//cerr << "\n";
-		s_event.print(event_log);	
+		s_event.print(event_log);
 		if (!no_double_endline)
 			event_log << "\n";
 		event_log.flush();
@@ -2417,7 +2436,7 @@ ns_64_bit ns_image_server::register_server_event(const ns_image_server_event & s
 	try{
 		if (!no_display){
 			ns_acquire_lock_for_scope lock(server_event_lock,__FILE__,__LINE__);
-			if (s_event.text().size() != 0){	
+			if (s_event.text().size() != 0){
 
 				cerr <<"\n";
 				s_event.print(cerr);
@@ -2448,7 +2467,7 @@ ns_64_bit ns_image_server::register_server_event(const ns_image_server_event & s
 					*sql << ", error=1";
 				event_id = sql->send_query_get_id();
 			}
-					
+
 			catch(ns_ex & ex){
 				event_id = 1;
 				ns_image_server_event ev("ns_image_server::register_server_event()::Could not access ") ;
@@ -2466,7 +2485,7 @@ ns_64_bit ns_image_server::register_server_event(const ns_image_server_event & s
 			}
 		}
 		else event_id = 1;
-		
+
 		if (!no_display){
 			ns_acquire_lock_for_scope lock(server_event_lock,__FILE__,__LINE__);
 			s_event.print(event_log);
@@ -2533,7 +2552,7 @@ std::map<std::string,ns_posture_analysis_model>::iterator model = posture_analys
 	path+=DIR_CHAR;
 	if (model == posture_analysis_models.end()){
 		try{
-			
+
 			ns_posture_analysis_model & spec = posture_analysis_models[name];
 			spec.posture_analysis_method = m;
 
@@ -2541,7 +2560,7 @@ std::map<std::string,ns_posture_analysis_model>::iterator model = posture_analys
 				ifstream moving((path + name + "_moving.csv").c_str());
 				if (moving.fail())
 					throw ns_ex("Could not load ") << path + name + "_moving.csv";
-				
+
 				ifstream dead((path + name + "_dead.csv").c_str());
 				if (dead.fail())
 					throw ns_ex("Could not load ") << path + name + "_dead.csv";
@@ -2569,7 +2588,7 @@ std::map<std::string,ns_posture_analysis_model>::iterator model = posture_analys
 				posture_analysis_models.erase(model);
 			throw;
 		}
-		
+
 	}
 	return posture_analysis_models[name];
 }
@@ -2618,7 +2637,7 @@ ns_time_path_solver_parameters ns_image_server::get_position_analysis_model(cons
 	p.short_capture_interval_in_seconds = ini.get_integer_value("short_capture_interval_in_seconds");
 	p.number_of_consecutive_sample_captures = ini.get_integer_value("number_of_consecutive_sample_captures");
 	p.number_of_samples_per_device = ini.get_integer_value("number_of_samples_per_device");
-	
+
 	p.min_stationary_object_path_fragment_duration_in_seconds = ini.get_integer_value("min_stationary_object_path_fragment_duration_in_seconds");
 	p.stationary_object_path_fragment_window_length_in_seconds = ini.get_integer_value("stationary_object_path_fragment_window_length_in_seconds");
 	p.stationary_object_path_fragment_max_movement_distance = ini.get_integer_value("stationary_object_path_fragment_max_movement_distance");
@@ -2649,7 +2668,7 @@ const ns_svm_model_specification & ns_image_server::get_worm_detection_model(con
 			spec.read_included_stats(path + name + "_included_stats.txt");
 			spec.pca_spec.read(path + name + "_pca_spec.txt");
 			spec.model_name = name;
-			
+
 			#ifdef NS_USE_MACHINE_LEARNING
 				std::string fn = path + name + "_model.txt";
 				#ifdef NS_USE_TINYSVM
@@ -2675,7 +2694,7 @@ const ns_svm_model_specification & ns_image_server::get_worm_detection_model(con
 }
 
 
-#ifdef _WIN32 
+#ifdef _WIN32
 //from example http://www.ddj.com/showArticle.jhtml?documentID=win0312d&pgno=4
 void ns_update_software(const bool just_launch){
 
@@ -2724,7 +2743,7 @@ void ns_update_software(const bool just_launch){
 
     //Execute the command
     PROCESS_INFORMATION procInfo;
-    STARTUPINFO startInfo;        
+    STARTUPINFO startInfo;
     memset(&startInfo, 0, sizeof(startInfo));
     startInfo.dwFlags = STARTF_FORCEOFFFEEDBACK | CREATE_NEW_PROCESS_GROUP;
     CreateProcess(0, const_cast<char *>(command.c_str()), 0, 0, FALSE, NORMAL_PRIORITY_CLASS, 0, 0,
@@ -2736,7 +2755,7 @@ void ns_wrap_m4v_stream(const std::string & m4v_filename, const std::string & ou
 	//we have now produced a raw mpeg4 stream.
 	//compile it into mp4 movies at four different frame_rates
 	for (unsigned int j = 0; j < 5; j++){
-		
+
 		std::string output,
 			   error_output;
 		std::string param = "-add " + m4v_filename;
@@ -2752,7 +2771,7 @@ void ns_wrap_m4v_stream(const std::string & m4v_filename, const std::string & ou
 		ns_dir::delete_file(vid_filename);
 		param += " -mpeg4 -fps " + fps + " " + vid_filename;
 
-		
+
 		ns_external_execute_options opt;
 		opt.binary = true;
 		ns_external_execute exec;
@@ -2781,7 +2800,7 @@ ns_image_storage_reciever_handle<ns_8_bit> ns_image_server_results_storage::mach
 
 }
 
-ns_image_server_results_file ns_image_server_results_storage::time_path_image_analysis_quantification(ns_image_server_results_subject & spec,const std::string & type, const bool store_in_results_directory,ns_sql & sql, bool abbreviated_time_series){	
+ns_image_server_results_file ns_image_server_results_storage::time_path_image_analysis_quantification(ns_image_server_results_subject & spec,const std::string & type, const bool store_in_results_directory,ns_sql & sql, bool abbreviated_time_series){
 		spec.get_names(sql);
 		string fname(""),dir("");
 		string abbreviated;

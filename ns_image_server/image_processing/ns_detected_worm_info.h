@@ -621,13 +621,13 @@ public:
 	}
 	///returns the set of all contiguous regions classified as non-worms
 	// const std::vectoconr<ns_detected_worm_info *> & non_worm_list() {return not_worms;}
-	 const std::vector<const ns_detected_worm_info *> &non_worm_list() const{
-		return * reinterpret_cast<const std::vector<const ns_detected_worm_info *> *> (&not_worms);
+	 const std::vector< ns_detected_worm_info *> &non_worm_list() const{
+		return not_worms;
 	 }
 
 	 	///returns the set of all contiguous regions classified as non-worms
-	const  std::vector<const ns_interpolated_worm_area> & interpolated_worm_area_list(){
-		return * reinterpret_cast<const std::vector<const ns_interpolated_worm_area> *> (&interpolated_worm_areas);
+	const  std::vector< ns_interpolated_worm_area> & interpolated_worm_area_list(){
+		return interpolated_worm_areas;
 	 }
 
 	 void mark_all_as_interpolated(const bool interpolated = true){

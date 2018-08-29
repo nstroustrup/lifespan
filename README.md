@@ -16,7 +16,8 @@ Copyright 2018
 Reservation of Rights
 All Rights Reserved
 
-Major Revisions
+**Major Revisions**
+
 2018.08.01: version 2 is declared stable
 
 2017.08.02: version 2 beta is ready for testing

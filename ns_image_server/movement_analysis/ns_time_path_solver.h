@@ -106,7 +106,12 @@ public:
 			<< number_of_extra_worms << "," << (int)movement << "," << subregion_info.plate_subregion_id << "," << subregion_info.nearest_neighbor_subregion_distance << "," << subregion_info.nearest_neighbor_subregion_distance.x << "," << subregion_info.nearest_neighbor_subregion_distance.y << "," 
 			<< (by_hand_annotations.is_excluded()?"1":"0") << "\n";
 	}
-	void output_visualization_csv(std::ostream & o);
+	//output worm positions in comma separated value format
+	void output_visualization_csv(std::ostream & o) const;
+
+	//output worm positions in WCON format
+	void output_visualization_wcon(std::ostream & o) const;
+
 	void output_mathematica_file(std::ostream & o);
 	bool worms_loaded;
 	bool paths_loaded()const { return paths.size() != 0; }

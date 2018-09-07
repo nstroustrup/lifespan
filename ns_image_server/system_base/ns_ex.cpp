@@ -326,6 +326,13 @@ const string & ns_to_string(const string & a){
 	return a;
 }
 string ns_to_string(const char * a){
+	string ret;
+	unsigned long i = 0;
+	while (true) {
+		if (a[i] == 0) break;
+		ret.push_back(a[i]);
+		i++;
+	}
 	return a;
 }
 #ifdef _WIN32 

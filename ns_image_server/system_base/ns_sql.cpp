@@ -288,15 +288,19 @@ void ns_sql_connection::get_rows(std::vector< std::vector<std::string> > & resul
 
 std::string ns_sql_connection::escape_string(const std::string & str){
 	char * escaped_string = new char[str.length()*2 + 1];
-	ns_mysql_header::mysql_real_escape_string(&mysql,escaped_string,str.c_str(),(unsigned long)str.length());
-	std::string ret(escaped_string);
+	const unsigned long escaped_length(
+		ns_mysql_header::mysql_real_escape_string(&mysql,escaped_string,str.c_str(),(unsigned long)str.length()));
+	std::string ret;
+	ret.resize(escaped_length);
+	for (unsigned long i = 0; i < escaped_length; i++)
+		ret[i] = escaped_string[i];
 	delete[] escaped_string;
 	return ret;
 }
 
 ns_sql_connection & ns_sql_connection::write_data(const char * buffer, const unsigned long length){	
 	char * escaped_string = new char[length*2 + 1];
-	const unsigned int escaped_length(mysql_real_escape_string(&mysql,escaped_string,buffer,length));
+	const unsigned long escaped_length(mysql_real_escape_string(&mysql,escaped_string,buffer,length));
 	current_query.write_data(escaped_string, escaped_length);
 	delete[] escaped_string;
 	return *this;

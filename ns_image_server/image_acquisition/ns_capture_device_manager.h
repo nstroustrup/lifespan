@@ -116,6 +116,7 @@ private:
 
 	ns_device_list devices; //all image capture devices connected to the host
 	std::vector<ns_image_server_device_manager_device *> devices_pending_deletion; //all image capture devices connected to the host
+	std::vector<ns_image_server_device_manager_device *> deleted_devices; //all image capture devices that were deleted from host
 	static std::string autoscan_parameters(ns_sql & sql);
 };
 

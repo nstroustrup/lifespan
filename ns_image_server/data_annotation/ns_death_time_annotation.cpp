@@ -1,4 +1,5 @@
 #include "ns_death_time_annotation_set.h"
+#include "ns_time_path_solver_parameters.h"
 #ifndef NS_ONLY_IMAGE_ACQUISITION
 #include "ns_time_path_solver.h"
 #endif

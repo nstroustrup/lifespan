@@ -5,19 +5,6 @@
 #include "ns_vector_bitmap_interface.h"
 #include "ns_time_path_solver_parameters.h"
 
-struct ns_time_path_limits{
-	ns_time_path_limits(){}
-	ns_time_path_limits(const ns_death_time_annotation_time_interval & before, const ns_death_time_annotation_time_interval & end,
-						const ns_death_time_annotation_time_interval & first_plate,const ns_death_time_annotation_time_interval & last_plate):
-													interval_before_first_observation(before),
-													interval_after_last_observation(end),
-													first_obsevation_of_plate(first_plate),
-													last_obsevation_of_plate(last_plate){}
-	ns_death_time_annotation_time_interval interval_before_first_observation,
-											 interval_after_last_observation,
-											 first_obsevation_of_plate,
-											 last_obsevation_of_plate;
-};
 
 struct ns_worm_detection_results_set{
 	std::vector<ns_image_worm_detection_results> results;

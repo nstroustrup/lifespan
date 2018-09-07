@@ -40,11 +40,8 @@ void ns_table_format_processor::sql_get_column_names(const std::string & table_n
 	ns_sql_result res;
 	sql->get_rows(res);
 	column_names.resize(res.size());
-	for (unsigned int i = 0; i < res.size(); i++) {
-		column_names[i].resize(res[i].size());
-		for (unsigned int j = 0; j < res[i].size(); j++)
-			column_names[i] = res[i][j];
-	}
+	for (unsigned int i = 0; i < res.size(); i++)
+		column_names[i] = res[i][0];
 
 	if (column_names.size() == 0)
 		throw ns_ex("No column names received for table ") << table_name << "!";

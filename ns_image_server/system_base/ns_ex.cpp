@@ -333,7 +333,7 @@ string ns_to_string(const char * a){
 		ret.push_back(a[i]);
 		i++;
 	}
-	return a;
+	return ret;
 }
 #ifdef _WIN32 
 void ns_ex::append_windows_error(){

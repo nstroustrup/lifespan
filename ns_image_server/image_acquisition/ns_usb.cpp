@@ -7,7 +7,7 @@
 #ifndef _WIN32
 #ifdef USE_NEW_USB
 #include <libusb-1.0/libusb.h>
-#else 
+#else
 #include <usb.h>
 #endif
 #endif
@@ -41,7 +41,7 @@ void ns_usb_context::release_context(){
 #else
   //don't need to do anything
 #endif
-	#endif	
+	#endif
   context = 0;
 }
 ns_usb_context::~ns_usb_context(){
@@ -49,10 +49,10 @@ ns_usb_context::~ns_usb_context(){
 }
 
 bool ns_usb_control::reset_device(int bus,int device_id){
-	#ifdef _WIN32 
+	#ifdef _WIN32
 	return false;
 	#else
-	
+
 	#ifdef USE_NEW_USB
 	libusb_device **devices;
 	int r;
@@ -68,7 +68,7 @@ bool ns_usb_control::reset_device(int bus,int device_id){
 	    libusb_device *d;
 	    libusb_device *requested_device(0);
 	    int i = 0;
-	    
+
 	    while ((d= devices[i++]) != NULL) {
 	      struct libusb_device_descriptor desc;
 	      unsigned long bus_number(libusb_get_bus_number(d));
@@ -79,8 +79,8 @@ bool ns_usb_control::reset_device(int bus,int device_id){
 	      else
 		libusb_unref_device(d);//don't hold onto devices that aren't used
 	    }
-	    
-	    
+
+
 	    if(requested_device==0){
 	      libusb_free_device_list(devices,0);
 	      lock.release();
@@ -90,7 +90,7 @@ bool ns_usb_control::reset_device(int bus,int device_id){
 	    int err = libusb_open(requested_device,&device_handle);
 	    if (err != 0)
 	      throw ns_ex("ns_usb_control::Could not open device: ") << err;
-	    
+
 	    err = libusb_reset_device(device_handle);
 	    if (err){
 	      libusb_close(device_handle);
@@ -111,12 +111,12 @@ bool ns_usb_control::reset_device(int bus,int device_id){
 	  usb_context.release_context();
 	  throw;
 	}
-	
+
 	libusb_free_device_list(devices, 0);
 	lock.release();
 	return true;
 #else
-	
+
 	ns_acquire_lock_for_scope lock(usb_context.libusb_lock,__FILE__,__LINE__);
 	usb_find_busses();
 	usb_find_devices();
@@ -137,7 +137,7 @@ bool ns_usb_control::reset_device(int bus,int device_id){
 			}
 		}
 	}
-     
+
 
 	if(!device){
 		lock.release();

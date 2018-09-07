@@ -76,10 +76,10 @@ struct ns_object_hand_annotation_data{
 			 "Identified as a small larvae";
 	}
 	void out_data(std::ostream & o)const{
-		o << (identified_as_a_worm_by_human?"1":"0") << "," << 
-			(identified_as_a_worm_by_machine?"1":"0") << "," << 
-			(identified_as_a_mangled_worm?"1":"0") << "," << 
-			(identified_as_misdisambiguated_multiple_worms?"1":"0") << "," << 
+		o << (identified_as_a_worm_by_human?"1":"0") << "," <<
+			(identified_as_a_worm_by_machine?"1":"0") << "," <<
+			(identified_as_a_mangled_worm?"1":"0") << "," <<
+			(identified_as_misdisambiguated_multiple_worms?"1":"0") << "," <<
 			(identified_as_small_larvae?"1":"0");
 	}
 };
@@ -100,22 +100,22 @@ public:
 	///even if its stats are good.
 	bool not_a_worm;
 
-	
+
 	static void draw_feature_frequency_distributions(const std::vector<ns_detected_worm_stats> & worm_stats, const std::vector<ns_detected_worm_stats> & non_worm_stats,const std::string & label,const std::string &output_directory);
 
 	///returns the number of features calculated for each worm
-	unsigned int size() const {return ns_stat_number_of_stats;} 
+	unsigned int size() const {return ns_stat_number_of_stats;}
 
 	///returns the unscaled value of the feature requested.
-	inline double& operator[](const ns_detected_worm_classifier & val) {return statistics[(unsigned int)val];}	
+	inline double& operator[](const ns_detected_worm_classifier & val) {return statistics[(unsigned int)val];}
 	///returns the unscaled value of the feature requested.
 	inline const double &operator[] (const ns_detected_worm_classifier & i)  const{return statistics[(unsigned int)i];}
 	///returns the unscaled value of the feature requested.
-	inline double& operator[](const unsigned int & val) {return statistics[val];}	
+	inline double& operator[](const unsigned int & val) {return statistics[val];}
 	///returns the unscaled value of the feature requested.
 	inline const double &operator[] (const unsigned int &i)  const{return statistics[i];}
-	
-	///returns the value of the feature requested, scaled such that 
+
+	///returns the value of the feature requested, scaled such that
 	///the feature's standard deviation and mean are ~1.  Uses feature
 	///std and average from the specifiedns_svm_model_specification model
 	double transformed_statistic(const ns_detected_worm_classifier & val) const;
@@ -125,9 +125,9 @@ public:
 	///max and min from the specifiedns_svm_model_specification model
 	double scaled_statistic(const ns_detected_worm_classifier & val) const;
 
-	///returns a std::string specifying the set of calculated features to be used by third-party machine learning software 
+	///returns a std::string specifying the set of calculated features to be used by third-party machine learning software
 	std::string parameter_string() const;
-	
+
 	void from_string(std::istream & str);
 	void from_normalized_string(std::istream & str);
 
@@ -161,7 +161,7 @@ void debug_bitmap_output(ns_image_bitmap & bitmap,unsigned int _l);
 class ns_image_worm_detection_results;
 
 //all the information needed to classify a worm (intensity values, thresholding of worm and cluster,
-//etc, is stored in a worm context image.  These images can be annotated by hand to form 
+//etc, is stored in a worm context image.  These images can be annotated by hand to form
 //gold standard sets etc.
 
 struct ns_worm_context_image{
@@ -169,7 +169,7 @@ struct ns_worm_context_image{
 	ns_image_standard combined_image;
 	static void generate(const bool part_of_a_worm_cluster, const ns_vector_2i & worm_cluster_bitmap_offset_in_context_image,
 						const ns_image_standard & relative_grayscale, const ns_image_standard & absolute_grayscale,
-						const ns_image_bitmap & worm_cluster_bitmap, const ns_image_bitmap & worm_bitmap, ns_image_standard & output);	
+						const ns_image_bitmap & worm_cluster_bitmap, const ns_image_bitmap & worm_bitmap, ns_image_standard & output);
 	void split(ns_image_standard & relative_grayscale, ns_image_standard & absolute_grayscale,
 						ns_image_bitmap & worm_cluster_bitmap, ns_image_bitmap & worm_bitmap);
 
@@ -179,7 +179,7 @@ struct ns_worm_context_image{
 };
 
 
-///Certain object features need to be normalized to statistics calculated over the entire image 
+///Certain object features need to be normalized to statistics calculated over the entire image
 ///in which they are found (average image pixel intensity, for example).  ns_image_region_stats
 ///stores such information.
 struct ns_whole_image_region_intensity_stats{
@@ -258,7 +258,7 @@ public:
 
 	///Returns feature statistics pertaining to the object, to be used in classification
 	ns_detected_worm_stats generate_stats() const ;
-	
+
 	///Returns the bitmap assiciated with the object.  White pixels are part of the object; black pixels are background.
 	inline ns_image_bitmap & bitmap(){
 		if (_bitmap == 0)
@@ -272,18 +272,18 @@ public:
 		return *_bitmap;
 	}
 
-	///Returns the bitmap white pixels around the outside edge of the object. 
+	///Returns the bitmap white pixels around the outside edge of the object.
 	inline ns_image_bitmap & edge_bitmap(){return *_edge_bitmap;}
-	///Returns the bitmap white pixels around the outside edge of the object. 
+	///Returns the bitmap white pixels around the outside edge of the object.
 	inline const ns_image_bitmap & edge_bitmap() const {return *_edge_bitmap;}
 
-	
+
 	inline ns_image_bitmap & bitmap_of_worm_cluster(){return *_bitmap_of_worm_cluster;}
 	inline const ns_image_bitmap & bitmap_of_worm_cluster() const {return *_bitmap_of_worm_cluster;}
 
 	inline ns_worm_context_image & context_image(){return *_worm_context_image;}
 	inline const  ns_worm_context_image & context_image() const{return *_worm_context_image;}
-	
+
 
 	///Returns the grayscale image assiciated with the object.
 	inline ns_image_standard & relative_grayscale(){return *_relative_grayscale;}
@@ -313,25 +313,25 @@ public:
 	typedef enum {ns_large_source_grayscale_images_provided,ns_individual_worm_source_grayscale_images_provided} ns_grayscale_image_type;
 	///from_segment_cluster_solution() takes a std::vector of potential worms
 	///and appends any objects classified as worms by the machine learning algorithm
-	///to the provided worms std::vector.  objects are appended at the position specified by offest.  
+	///to the provided worms std::vector.  objects are appended at the position specified by offest.
 	///The number of objects classified as worms is returned.
 	///This is a bit convolutied (apologies) but isstructured as such
 	///to avoid unneccisary repeated constructor calls to ns_detected_worm_info objects.
-	static unsigned int from_segment_cluster_solution(ns_detected_object & region, 
-									std::vector<ns_detected_worm_info> & worms, 
-									unsigned int offset, std::vector<std::vector<ns_detected_worm_info *> > & mutually_exclusive_groups, 
+	static unsigned int from_segment_cluster_solution(ns_detected_object & region,
+									std::vector<ns_detected_worm_info> & worms,
+									unsigned int offset, std::vector<std::vector<ns_detected_worm_info *> > & mutually_exclusive_groups,
 									const ns_image_standard & relative_grayscale_image,
-									const ns_image_standard & absolute_grayscale_image, 
+									const ns_image_standard & absolute_grayscale_image,
 									const ns_grayscale_image_type & type,
 									const ns_visualization_type generate_visualization=ns_vis_raster);
 
-	///Single contiguous regions can of course contain multiple worms, and 
+	///Single contiguous regions can of course contain multiple worms, and
 	///the region bitmap must be divvied up between all the spines.
 	///calculate_bitmap_corresponding_to_spine_segment() decides which pixels of the overall bitmap
 	///should be assigned to the specified spine.
 	static void calculate_bitmap_corresponding_to_worm_shape(const ns_worm_shape & worm_shape, ns_image_bitmap & bitmap);
-	
-	///Single contiguous regions can of course contain multiple worms, and 
+
+	///Single contiguous regions can of course contain multiple worms, and
 	///the region bitmap must be divvied up between all the spines.
 	///calculate_bitmap_corresponding_to_spine_segment() decides which pixels of the overall bitmap
 	///should be assigned to the specified spine.
@@ -342,7 +342,7 @@ public:
 	bool is_a_worm();
 
 
-	
+
 	~ns_detected_worm_info();
 	void copy(const ns_detected_worm_info & wi);
 
@@ -361,7 +361,7 @@ public:
 
 	void accept_images(ns_image_bitmap * bitmap,ns_image_bitmap * edge_bitmap, ns_image_standard * relative_grayscale, ns_image_standard * absolute_grayscale){
 		if (_bitmap != 0)
-			delete _bitmap;	
+			delete _bitmap;
 		if (_edge_bitmap != 0)
 			delete _edge_bitmap;
 		if (_absolute_grayscale != 0)
@@ -373,13 +373,13 @@ public:
 		_absolute_grayscale = absolute_grayscale;
 		_relative_grayscale = relative_grayscale;
 	}
-	
+
 
 	//void set_bitmap_offset_in_context_image(const ns_vector_2i & v){bitmap_offset_in_context_image = v;}
 	//void set_bitmap_size_in_context_image(const ns_vector_2i & v){bitmap_size_in_context_image = v;}
 	inline ns_vector_2i get_region_offset_in_context_image()const{return region_position_in_source_image-context_position_in_source_image;}
 private:
-	
+
 	void crop_images_to_region_size(const ns_vector_2i & region_offset_in_context_image);
 
 		///the _worm_context_image is larger than the _bitmap image;
@@ -438,7 +438,7 @@ public:
 	~ns_worm_collage_storage(){clear();}
 	void clear();
 	static ns_vector_2i context_border_size(){return ns_vector_2i(50,50);}
-		
+
 private:
 	std::vector<ns_worm_context_image *> context_images;
 	std::vector<ns_image_standard *> absolute_region_images,
@@ -482,21 +482,21 @@ public:
 	void clear();
 
 	std::map<std::string,unsigned long> give_worm_rejection_reasons() const;
-	
+
 	///process_regions() takes a set of contiguous regions (each of which may contain multiple worms)
-	///and loads them into ns_image_worm_detection_results structures in preparation for classification 
+	///and loads them into ns_image_worm_detection_results structures in preparation for classification
 	///into worm/non-worm categories.
 	///Ownership of contiguous regions are taken by the ns_image_worm_detection object and so the regions std::vector is cleared.
-	void process_segment_cluster_solutions(std::vector<ns_detected_object *> & objects, const ns_image_standard &relative_grayscale_source, 
+	void process_segment_cluster_solutions(std::vector<ns_detected_object *> & objects, const ns_image_standard &relative_grayscale_source,
 			const ns_image_standard & absolute_grayscale_source,  const ns_detected_worm_info::ns_visualization_type visualization_type, const unsigned long maximum_number_of_worms=0);
 
-	///Certain object features need to be normalized to statistics calculated over the entire image 
+	///Certain object features need to be normalized to statistics calculated over the entire image
 	///in which they are found (average image pixel intensity, for example).  calculate_image_region_stats()
 	///calculates such information if necissary, stores it in the provided stats object, and then provides
 	///the statistics to each detected object so that each object can normalize it's features.
 	void calculate_image_region_stats();
 
-	
+
 	void set_whole_image_region_stats(const ns_whole_image_region_stats & stats);
 
 	///Once contiguous regions are loaded into an ns_image_worm_detection object, they are sorted into worm and non-worm classes
@@ -513,7 +513,7 @@ public:
 	///is set to zero, a new entry is made in the database.
 
 	void clear_images();
-	
+
 	void output_feature_statistics(std::ostream & o);
 
 	void load_images_from_db(ns_image_server_captured_image_region & region, ns_sql & sql, bool interpolated=false, bool only_load_context_absolute_grayscale=false);
@@ -521,7 +521,7 @@ public:
 	///Creates a visualzation of object detection and worm classification.  The grayscale source image is drawn
 	///with detected worms and non-worms are overlaid in color, with the additional option of drawing crosses over identified worms.
 	void create_visualization(const unsigned int cross_height, const unsigned int cross_thickness, ns_image_standard & image, const std::string & data_label = "", const bool mark_crosshairs = true, const bool draw_labels = true, const bool draw_non_worms = true);
-	
+
 	///During object detection, an visualzation of an object's Delauny triangular mesh and spine is made.
 	///create_spine_visualizations() makes a collage of each worm's visualization.
 	void create_spine_visualizations(ns_image_standard  & reciever);
@@ -559,30 +559,30 @@ public:
 
 
 	///returns the grayscale image of the specified contiguous region
-	template<class whole_image> 
+	template<class whole_image>
 	void get_putative_worm_image(const unsigned int worm_id, whole_image & reciever){make_worm_image(putative_worms[worm_id],reciever);}
-	
+
 	///returns an image of the specified contiguous region to be used for making
 	///test and training sets to train machine learning classifiers
-	template<class whole_image> 
+	template<class whole_image>
 	void generate_putative_training_set_visualization(const unsigned int worm_id,whole_image & reciever){putative_worms[worm_id].generate_training_set_visualization(reciever);}
-	
+
 	///returns the grayscale image of the specified worm-classified contiguous region
-	template<class whole_image> 
-	void get_actual_worm_image(const unsigned int worm_id, whole_image & reciever){make_worm_image(*actual_worms[worm_id],reciever);}			
-	
+	template<class whole_image>
+	void get_actual_worm_image(const unsigned int worm_id, whole_image & reciever){make_worm_image(*actual_worms[worm_id],reciever);}
+
 	///returns an image of the specified worm-classified contiguous region to be used for making
 	///test and training sets to train machine learning classifiers
-	template<class whole_image> 	
+	template<class whole_image>
 	void generate_actual_training_set_visualization(const unsigned int worm_id,whole_image & reciever){actual_worms[worm_id]->generate_training_set_visualization(reciever);}
 
 	///returns the grayscale image of the specified non-worm-classified contiguous region
-	template<class whole_image> 
-	void get_non_worm_image(const unsigned int worm_id, whole_image & reciever){make_worm_image(*not_worms[worm_id],reciever);}	
+	template<class whole_image>
+	void get_non_worm_image(const unsigned int worm_id, whole_image & reciever){make_worm_image(*not_worms[worm_id],reciever);}
 
 	///returns an image of the specified non-worm-classified contiguous region to be used for making
 	///test and training sets to train machine learning classifiers
-	template<class whole_image> 
+	template<class whole_image>
 	void generate_non_worm_training_set_visualization(const unsigned int worm_id,whole_image & reciever){not_worms[worm_id]->generate_training_set_visualization(reciever);}
 
 	//returns the feature statistics calculated for the specified contiguous-region
@@ -613,10 +613,10 @@ public:
 
 
 	///returns the set of all contiguous regions classified as worms
-	
+
 	//const std::vector<ns_detected_worm_info *> & actual_worm_list() {return actual_worms;}
-	const std::vector<const ns_detected_worm_info *> & actual_worm_list() const{
-		return * reinterpret_cast<const std::vector<const ns_detected_worm_info *> *> (&actual_worms);
+	const std::vector< ns_detected_worm_info *> & actual_worm_list() const{
+		return actual_worms;
 
 	}
 	///returns the set of all contiguous regions classified as non-worms
@@ -660,7 +660,7 @@ public:
 		}
 	}
 private:
-	
+
     ns_image_server_image data_storage_on_disk;
 	void save(ns_image_server_captured_image_region & source_region,const bool interpolated, const bool save_to_disk, const bool only_output_movement_tags,ns_sql & sql);
 
@@ -671,7 +671,7 @@ private:
 
 	///The set of all contiguous regions detected in an image
 	std::vector<ns_detected_worm_info> putative_worms;
-	
+
 	///The set of all detected contiguous regions classified that have been classified as worms
 	std::vector<ns_detected_worm_info * > actual_worms;
 
@@ -696,7 +696,7 @@ private:
 
 	friend class ns_nearest_neighbor_map;
 	friend class ns_worm_training_set_image;
-	
+
 	void add_data_to_db_query(ns_sql & sql);
 
 };

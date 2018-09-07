@@ -1,4 +1,4 @@
-#include "ns_image_server_images.h"	
+#include "ns_image_server_images.h"
 #include "ns_detected_worm_info.h"
 #include "ns_image_statistics.h"
 
@@ -6,8 +6,8 @@ using namespace std;
 
 #ifndef NS_MINIMAL_SERVER_BUILD
 
-void ns_summarize_stats(const std::vector<const ns_detected_worm_info *> & worms,ns_image_object_statistics & stats){
-	
+void ns_summarize_stats(const std::vector<ns_detected_worm_info *> & worms,ns_image_object_statistics & stats){
+
 	ns_detected_worm_stats w_stats;
 	stats.count = worms.size();
 	for (unsigned int i = 0; i < worms.size(); i++){
@@ -16,13 +16,13 @@ void ns_summarize_stats(const std::vector<const ns_detected_worm_info *> & worms
 			stats.length_mean			+=w_stats[ns_stat_spine_length];
 			stats.width_mean			+=w_stats[ns_stat_average_width];
 
-			stats.absolute_intensity.mean		+=w_stats[ns_stat_absolute_intensity_average];	
+			stats.absolute_intensity.mean		+=w_stats[ns_stat_absolute_intensity_average];
 			stats.absolute_intensity.variance	+=w_stats[ns_stat_absolute_intensity_variance]*w_stats[ns_stat_absolute_intensity_variance];
 			stats.absolute_intensity.bottom_percentile_average	+=w_stats[ns_stat_absolute_intensity_dark_pixel_average];
 			stats.absolute_intensity.entropy	+=w_stats[ns_stat_absolute_intensity_roughness_1];
 			stats.absolute_intensity.top_percentile_average =0;
 
-			stats.relative_intensity.mean		+=w_stats[ns_stat_relative_intensity_average];	
+			stats.relative_intensity.mean		+=w_stats[ns_stat_relative_intensity_average];
 			stats.relative_intensity.variance	+=w_stats[ns_stat_relative_intensity_variance]*w_stats[ns_stat_relative_intensity_variance];
 			stats.relative_intensity.bottom_percentile_average	+=w_stats[ns_stat_relative_intensity_dark_pixel_average];
 			stats.relative_intensity.entropy	+=w_stats[ns_stat_relative_intensity_roughness_1];
@@ -32,14 +32,14 @@ void ns_summarize_stats(const std::vector<const ns_detected_worm_info *> & worms
 			stats.length_variance		+=w_stats[ns_stat_spine_length]*w_stats[ns_stat_spine_length];
 			stats.width_variance		+=w_stats[ns_stat_average_width]*w_stats[ns_stat_average_width];
 		}
-	
+
 		if (stats.count > 0){
 			stats.area_variance		/=stats.count;
 			stats.length_variance		/=stats.count;
 			stats.width_variance		/=stats.count;
 			stats.absolute_intensity.variance /=stats.count;
 			stats.relative_intensity.variance /=stats.count;
-		
+
 			stats.area_mean			/=stats.count;
 			stats.length_mean			/=stats.count;
 			stats.width_mean			/=stats.count;
@@ -57,7 +57,7 @@ void ns_summarize_stats(const std::vector<const ns_detected_worm_info *> & worms
 			stats.length_variance		= sqrt(stats.length_variance);
 			stats.width_variance		= sqrt(stats.width_variance);
 			stats.absolute_intensity.variance = sqrt(stats.absolute_intensity.variance);
-			stats.relative_intensity.variance = sqrt(stats.relative_intensity.variance);	
+			stats.relative_intensity.variance = sqrt(stats.relative_intensity.variance);
 	}
 }
 void ns_image_server_captured_image_region::summarize_stats(ns_image_worm_detection_results * wi,ns_image_statistics * stats,bool calculate_non_worm){
@@ -67,7 +67,7 @@ void ns_image_server_captured_image_region::summarize_stats(ns_image_worm_detect
 }
 
 void ns_image_server_captured_image_region::register_worm_detection(ns_image_worm_detection_results * wi, const bool interpolated,ns_sql & sql,const bool calculate_stats){
-		
+
 	ns_image_statistics stats;
 	if (calculate_stats){
 		//save a summary of the current image to the image_statistics table
@@ -81,7 +81,7 @@ void ns_image_server_captured_image_region::register_worm_detection(ns_image_wor
 		else stats.db_id = ns_atoi64(res[0][0].c_str());
 		stats.submit_to_db(stats.db_id,sql,false,true);
 	}
-	
+
 	ns_sql_result res;
 	//save a detailed summary of each worm to disk
 
@@ -116,7 +116,7 @@ void ns_image_server_captured_image_region::register_worm_detection(ns_image_wor
 		}
 		sql << "SELECT id FROM worm_movement WHERE region_id_short_2 = " << region_images_id;
 		ns_sql_result b;
-		sql.get_rows(b);		
+		sql.get_rows(b);
 		for (unsigned int i = 0; i < (unsigned int)b.size(); i++){
 			sql << "UPDATE worm_movement SET calculated = 0 WHERE id=" << b[i][0];
 			sql.send_query();
@@ -142,8 +142,8 @@ std::string ns_image_server_captured_image::experiment_directory(const std::stri
 	return path;
 }
 
-std::string ns_image_server_captured_image::captured_image_directory_d(const std::string & sample_name,const ns_64_bit sample_id,const std::string & experiment_directory, const bool small_images, const ns_processing_task & task){	
-	
+std::string ns_image_server_captured_image::captured_image_directory_d(const std::string & sample_name,const ns_64_bit sample_id,const std::string & experiment_directory, const bool small_images, const ns_processing_task & task){
+
 	string path(ns_sample_directory(sample_name,sample_id,experiment_directory));
 	path += DIR_CHAR_STR;
 	if (small_images)
@@ -196,7 +196,7 @@ bool ns_image_server_captured_image::load_from_db(const ns_64_bit _id, ns_image_
 			"cs.device_name, "
 			"ci.small_image_id, "
 			"ci.never_delete_image"
-			<< " FROM "<< con->table_prefix() << "captured_images as ci,  "<< con->table_prefix() <<"capture_samples as cs, "<< con->table_prefix() <<"experiments as exp WHERE ci.id = " << captured_images_id  
+			<< " FROM "<< con->table_prefix() << "captured_images as ci,  "<< con->table_prefix() <<"capture_samples as cs, "<< con->table_prefix() <<"experiments as exp WHERE ci.id = " << captured_images_id
 			<< " AND ci.experiment_id = exp.id"
 			<< " AND cs.id = ci.sample_id";
 	//	cerr << con->query() << "\n";
@@ -228,10 +228,10 @@ std::string ns_sample_directory(const std::string & sample_name,const ns_64_bit 
 
 std::string ns_format_base_image_filename(const ns_64_bit experiment_id,const std::string & experiment_name,
 										  const ns_64_bit sample_id, const std::string & sample_name,
-										  const unsigned long capture_time, const ns_64_bit captured_images_id, 
+										  const unsigned long capture_time, const ns_64_bit captured_images_id,
 										  const ns_64_bit capture_images_image_id){
 
-	return ns_shorten_filename(experiment_name) + std::string("=" + ns_to_string(experiment_id) + "=" + sample_name + "=" 
+	return ns_shorten_filename(experiment_name) + std::string("=" + ns_to_string(experiment_id) + "=" + sample_name + "="
 			 + ns_to_string(sample_id) + "=" +ns_to_string(capture_time) + "=" + ns_format_time_string(capture_time) + "="
 			 + ns_to_string(captured_images_id)  + "=" + ns_to_string(capture_images_image_id));
 }
@@ -239,7 +239,7 @@ std::string ns_image_server_captured_image::get_filename(ns_image_server_sql * s
 	if (!do_not_load_data && captured_images_id == 0)
 		throw ns_ex("ns_image_server_captured_image::Could not create filename with unspecified captured_images_id.");
 	//if not specified, collect information needed to create filename.
-	if (!do_not_load_data && 
+	if (!do_not_load_data &&
 		(sample_id == 0 || experiment_id == 0 || capture_time == 0 || //capture_images_image_id == 0 ||
 		sample_name == "" || experiment_name == ""))
 			if (!ns_image_server_captured_image::load_from_db(captured_images_id,sql))
@@ -308,7 +308,7 @@ bool ns_image_server_captured_image::from_filename(const std::string & fn, int &
 
 	for (offset = 0; offset < (int)filename.size(); offset++){
 		char a = filename[offset];
-		
+
 		if (a == '='){
 			//one problem that cropped up was experiment names containing
 			//equals signs.  We get around this with the following hack:
@@ -329,7 +329,7 @@ bool ns_image_server_captured_image::from_filename(const std::string & fn, int &
 			}
 		}
 		else (*strings[state])+=a;
-		
+
 	}
 	offset++;
 	//old naming system
@@ -390,7 +390,7 @@ bool ns_image_server_captured_image_region::from_filename(const std::string & fi
 	int offset = 0;
 	if (!ns_image_server_captured_image::from_filename(filename,offset))
 		return false;
-	
+
 	unsigned char state=0;
 	std::string region_images_id_str;
 
@@ -464,7 +464,7 @@ std::string ns_image_server_captured_image_region::region_directory(const std::s
 	//thus are stored together in the experiment's base directory
 	if (task == ns_process_heat_map || task == ns_process_static_mask)
 		return captured_image_directory + DIR_CHAR_STR + ns_processing_step_directory_d(task);
-	
+
 	//regions containing single detected objects are stored in subdirectories corresponding to whether they contain
 	//worms, dirt (anything that isn't a worm), or an unsorted object
 	if (task == ns_process_add_to_training_set){
@@ -504,7 +504,7 @@ std::string ns_image_server_captured_image_region::directory(ns_image_server_sql
 
 const ns_image_server_image ns_image_server_captured_image_region::request_processed_image(const ns_processing_task & task, ns_sql & sql){
 	ns_image_server_image im;
-	
+
 	//no database information is stored for training set images.
 //	if (task == ns_process_add_to_training_set)
 	//	throw ns_ex("ns_image_server_captured_image_region::Data on training set images is not stored.");
@@ -523,7 +523,7 @@ const ns_image_server_image ns_image_server_captured_image_region::request_proce
 
 	if (task != ns_process_static_mask && task != ns_process_heat_map && im.id == 0)
 		throw ns_ex("ns_image_server_captured_image_region::Required image processing step, ") << ns_processing_task_to_string(task) << " has not yet been completed.";
-	
+
 	if (im.id != 0)
 		im.load_from_db(im.id,&sql);
 
@@ -543,7 +543,7 @@ void ns_image_server_captured_image_region::wait_for_finished_processing_and_tak
 			sql.set_autocommit(true);
 			throw ns_ex("ns_image_server_captured_image_region::Could not wait for finished processing on non-existant image");
 		}
-		if (res[0][0] == "0"){		
+		if (res[0][0] == "0"){
 			sql << "UPDATE sample_region_images SET currently_under_processing = 1 WHERE id=" << region_images_id;
 			sql.send_query();
 			sql.send_query("COMMIT");
@@ -589,7 +589,7 @@ void ns_image_server_captured_image_region::create_storage_for_worm_results(ns_i
 void ns_image_server_captured_image_region::delete_processed_image(const ns_processing_task & task, const ns_file_deletion_type type, ns_image_server_sql * sql){
 	ns_image_server_image im;
 	std::string db_table_name;
-	
+
 	ns_64_bit db_table_row_id = region_images_id;
 	{
 		const std::string base_db_table_name(ns_processing_step_db_table_name(task));
@@ -597,7 +597,7 @@ void ns_image_server_captured_image_region::delete_processed_image(const ns_proc
 			db_table_row_id = region_info_id;
 		db_table_name = sql->table_prefix() + base_db_table_name;
 	}
-	
+
 	//no database information is stored for training set images.
 	if (task == ns_process_add_to_training_set)
 		im.id = 0;
@@ -611,7 +611,7 @@ void ns_image_server_captured_image_region::delete_processed_image(const ns_proc
 		*sql << "DELETE FROM "<< sql->table_prefix() << "images WHERE id=" << im.id << "\n";
 		sql->send_query();
 	}
-	
+
 	*sql << "UPDATE " << db_table_name << " SET " << ns_processing_step_db_column_name(task) << "=0 WHERE id = " << db_table_row_id;
 	sql->send_query();
 }
@@ -629,7 +629,7 @@ const ns_image_server_image ns_image_server_captured_image_region::create_storag
 		db_id = atol(res[0][0].c_str());
 		im.load_from_db(atol(res[0][1].c_str()),&sql);
 	}
-	
+
 	//delete the old file if it exists
 	if (im.id != 0)
 		image_server.image_storage.delete_from_storage(im,ns_delete_both_volatile_and_long_term,&sql);
@@ -648,7 +648,7 @@ const ns_image_server_image ns_image_server_captured_image_region::create_storag
 			ns_region_info_lookup::get_region_info(region_info_id,&sql,region_name,sample_name,d,experiment_name,d);
 		}
 	}
-			
+
 	im.filename = ns_format_base_image_filename(experiment_id,experiment_name,sample_id,sample_name,0,0,0)
 					+ "=" + region_name + "=" + ns_to_string(region_info_id)
 					+ "=" + ns_to_string(alignment_type) + "=" + filename_suffix + "=" + ns_to_string(frame_index);
@@ -656,7 +656,7 @@ const ns_image_server_image ns_image_server_captured_image_region::create_storag
 	im.partition = image_server.image_storage.get_partition_for_experiment(experiment_id,&sql);
 	ns_add_image_suffix(im.filename,image_type);
 
-	
+
 	im.save_to_db(im.id,&sql,true);
 	if (db_id==0)
 		sql << "INSERT INTO ";
@@ -680,7 +680,7 @@ const ns_image_server_image ns_image_server_captured_image_region::create_storag
 			db_table_row_id = region_info_id;
 		db_table_name = sql->table_prefix() + base_db_table_name;
 	}
-	
+
 	*sql << "SELECT " << ns_processing_step_db_column_name(task) << " FROM " << db_table_name << " WHERE id = " << db_table_row_id;
 	ns_sql_result res;
 	sql->get_rows(res);
@@ -770,7 +770,7 @@ void ns_image_server_image::mark_as_finished_processing(ns_image_server_sql * sq
 	switch(t){
 		case ns_unprocessed:
 		case ns_process_spatial:
-		case ns_process_threshold:  
+		case ns_process_threshold:
 		case ns_process_worm_detection:
 		case ns_process_worm_detection_labels:
 		case ns_process_region_vis:
@@ -806,14 +806,14 @@ std::string ns_processing_step_directory_d(const ns_processing_task & task){
 		case ns_process_static_mask:				return "static_mask";
 		case ns_process_temporal_interpolation:		return "temporal_interpolation";
 		case ns_process_movement_coloring_with_survival:return "movement_survival";
-			
+
 		case ns_process_movement_paths_visualization: return "movement_path_vis";
 		case ns_process_movement_paths_visualition_with_mortality_overlay: return "movement_path_vis_with_mortality";
 		case ns_process_movement_posture_visualization:return "movement_posture_vis";
 		case ns_process_movement_posture_aligned_visualization: return "movement_posture_aligned_vis";
 		case ns_process_unprocessed_backup: return("unprocessed_backup");
 		case ns_process_analyze_mask:				throw ns_ex("ns_processing_step_directory::There is no standard directory name for the result of mask analysis");
-		
+
 		default:									throw ns_ex("ns_processing_step_directory::Cannot find default directory for task:")  << ns_processing_task_to_string(task);
 	}
 }
@@ -823,7 +823,7 @@ std::string ns_create_operation_summary(const std::vector<char> operations){
 	std::string output = "(";
 	for (unsigned int i = 0; i < operations.size(); i++){
 		if (operations[i]){
-			output+= ns_processing_task_to_string((ns_processing_task)i); 
+			output+= ns_processing_task_to_string((ns_processing_task)i);
 			if (i != operations.size()-1)
 				output+=",";
 		}
@@ -847,7 +847,7 @@ std::string ns_processing_step_db_column_name(const ns_processing_task & t){
 
 	if (t == ns_process_last_task_marker)
 		throw ns_ex("ns_processing_step_db_column_name::ns_process_last_task_marker is not a valid processing task.");
-	
+
 	return std::string("op") + ns_to_string((unsigned int)t) + "_image_id";
 }
 std::string ns_processing_step_db_column_name(const unsigned int & t){

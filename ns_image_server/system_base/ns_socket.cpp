@@ -368,12 +368,13 @@ void ns_socket::listen(const unsigned int port, const unsigned int connection_bu
 		if (listen_socket == INVALID_SOCKET)
 			   throw ns_ex("Could not create socket for listening.");
 		char buf[100];
+		ns_acquire_lock_for_scope lock(gethostname_lock,__FILE__,__LINE__);
 		if ( gethostname (buf,100) == SOCKET_ERROR)
 				throw ns_ex("Could not resolve current host name");
 		hostent *host = gethostbyname(buf);
 		if (host == NULL)
 				throw ns_ex("Could not resolve host name entity");
-
+		lock.release();
 		sockaddr_in saddr;
 		int size = sizeof(struct sockaddr_in);
 		memset(&saddr, 0, size);
@@ -444,7 +445,7 @@ ns_socket_connection ns_socket::accept(){
 void ns_socket::build_interface_list(std::vector<ns_interface_info> & interfaces){
 	#ifdef _WIN32 
 		char localhostname[1000];
-	//	gethostname_lock.wait_to_acquire(__FILE__,__LINE__);
+		gethostname_lock.wait_to_acquire(__FILE__,__LINE__);
 		try{
 			if (gethostname(localhostname, 1000) == SOCKET_ERROR)
 				throw ns_ex() << "Error getting local hostname";
@@ -461,10 +462,10 @@ void ns_socket::build_interface_list(std::vector<ns_interface_info> & interfaces
 		//cerr << "Done.\n";		
 		}
 		catch(...){
-	//		gethostname_lock.release();
+			gethostname_lock.release();
 			throw;
 		}
-		//gethostname_lock.release();
+		gethostname_lock.release();
 	#else
 		// from http://stackoverflow.com/questions/4139405/how-to-know-ip-address-for-interfaces-in-c
 		// works on linux and OS X
@@ -516,8 +517,6 @@ const string ns_socket::get_local_ip_address(const std::string & interface_name)
 
 
 ns_socket_connection::~ns_socket_connection(){
-//	if (this->is_open)
-//		close();
 }
 
 ns_socket_connection ns_socket::connect(const string & address, const unsigned int port){
@@ -525,8 +524,9 @@ ns_socket_connection ns_socket::connect(const string & address, const unsigned i
 	#ifdef _WIN32 
 
 	 	hostent     *host_ent;
-
+		ns_acquire_lock_for_scope lock(gethostname_lock,__FILE__,__LINE__);
 		host_ent = gethostbyname(address.c_str());
+		lock.release();
 		if (host_ent == NULL)
 			throw ns_ex() << "Could not parse address: \"" << address << "\"";
 		//cerr << "Connecting to socket...\n";
@@ -549,8 +549,9 @@ ns_socket_connection ns_socket::connect(const string & address, const unsigned i
 		return ns_socket_connection(handle);
 
 	#else
-
+		ns_acquire_lock_for_scope lock(gethostname_lock,__FILE__,__LINE__);
 		hostent * he = gethostbyname(address.c_str());
+		lock.release();
 		if (he == NULL)
 			throw ns_ex("Could not parse address.");
 

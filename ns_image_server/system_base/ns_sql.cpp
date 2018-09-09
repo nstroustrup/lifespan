@@ -20,7 +20,6 @@ using namespace std;
 
 ns_query & ns_query::write_data(const char * buffer, const unsigned int length){
 
-
 	unsigned int begin = (unsigned int)str.size();
 	str.resize(begin+length);
 	for (unsigned int i = 0; i < length; i++)
@@ -33,7 +32,17 @@ bool ns_sql_connection::thread_safe(){return ns_mysql_header::mysql_thread_safe(
 
 ns_sql_connection::~ns_sql_connection(){disconnect();}
 
+ns_acquire_lock_for_scope ns_sql_connection::get_lock(const char * file, unsigned long line) {
+	
+	switch (local_locking_behavior) {
+	case ns_no_locking: return ns_acquire_lock_for_scope(local_lock, file, line,false);
+	case ns_global_locking: return ns_acquire_lock_for_scope(global_sql_lock, file, line);
+	case ns_thread_locking: return ns_acquire_lock_for_scope(local_lock, file, line);
+	}
+	throw ns_ex("Unknown locking behavior!");
+}
 void ns_sql_connection::connect(const std::string & server_name, const std::string & user_id, const std::string & password, const unsigned int retry_count){
+	ns_acquire_lock_for_scope lock(get_lock(__FILE__, __LINE__));
 	_server_name = server_name;
 	_user_id = user_id;
 	_password = password;
@@ -63,25 +72,30 @@ void ns_sql_connection::connect(const std::string & server_name, const std::stri
 	//	std::cout << "Current password: " << password.c_str() << "\n";;
 		throw ns_ex() << "ns_sql_connection::Could not connect to server with the credentials (username;password;hostname)=(" << user_id.c_str() << ";" << blocked_password << ";" << server_name.c_str() << "): " << latest_error() << ns_sql_fatal;
   }
-
-  
+  lock.release();
 }
 
 void ns_sql_connection::disconnect(){
+	ns_acquire_lock_for_scope lock(get_lock(__FILE__, __LINE__));
   if (mysql_internal_data_allocated){
 	 ns_mysql_header::mysql_close(&mysql);
 	 mysql_internal_data_allocated = false;
   }
   ns_mysql_header::mysql_thread_end();
+  lock.release();
 }
 
 void ns_sql_connection::select_db(const std::string & db_name){
+  ns_acquire_lock_for_scope lock(get_lock(__FILE__, __LINE__));
   if (mysql_select_db(&mysql,db_name.c_str()))
     throw ns_ex() << "ns_sql_connection::Could not select database: " << db_name << ns_sql_fatal;
+  lock.release();
 }
 
 void ns_sql_connection::set_autocommit(const bool & commit_){
 	// TODO: why are we both calling mysql_autocommit and then sending a SET AUTOCOMMIT query??
+
+	ns_acquire_lock_for_scope lock(get_lock(__FILE__, __LINE__));
 	ns_mysql_header::my_bool res = ns_mysql_header::mysql_autocommit(&mysql, (ns_mysql_header::my_bool)commit_);
 	
 	simulate_errors_if_requested();
@@ -92,15 +106,20 @@ void ns_sql_connection::set_autocommit(const bool & commit_){
 	commit = commit_;
 	if (res != 0)
 		throw ns_ex("ns_sql_connection::Could not set autocommit state.") << ns_sql_fatal;
-
+	lock.release();
 }
 
 
 std::string ns_sql_connection::latest_error(){
-	return ns_mysql_header::mysql_error(&mysql);
+
+	ns_acquire_lock_for_scope lock(get_lock(__FILE__, __LINE__));
+	const char * a = ns_mysql_header::mysql_error(&mysql);
+	lock.release();
+	return a;
 }
 
 void ns_mysql_real_query(ns_mysql_header::MYSQL *mysql, const char *stmt_str, unsigned long length){
+
 	int res(ns_mysql_header::mysql_real_query(mysql,stmt_str, length));
 	const char * prob(ns_mysql_header::mysql_error(mysql));
 	switch(res){
@@ -132,6 +151,8 @@ void ns_sql_connection::check_connection(){
 
 
 void ns_sql_connection::send_query(const std::string & query){
+
+	ns_acquire_lock_for_scope lock(get_lock(__FILE__, __LINE__));
 	try{
 		#ifdef USE_IMAGE_SERVER_PERFORMANCE_STATISTICS
 		ns_high_precision_timer tp;
@@ -197,7 +218,7 @@ void ns_sql_connection::send_query(const std::string & query){
 		current_query.clear();
 		throw;
 	}
-
+	lock.release();
 }
 void ns_sql_connection::send_query(){
 	if (current_query.to_str().size() == 0)
@@ -209,6 +230,8 @@ void ns_sql_connection::send_query(){
 
 //should handle binary data correctly.
 void ns_sql_connection::get_rows(const std::string & query, std::vector< std::vector<std::string> > & result){
+
+	ns_acquire_lock_for_scope lock(get_lock(__FILE__, __LINE__));
 	try{
 		result.resize(0);
 		//removed semicolon
@@ -276,6 +299,7 @@ void ns_sql_connection::get_rows(const std::string & query, std::vector< std::ve
 		current_query.clear();
 		throw;
 	}
+	lock.release();
 }
 
 void ns_sql_connection::get_rows(std::vector< std::vector<std::string> > & result){
@@ -283,28 +307,38 @@ void ns_sql_connection::get_rows(std::vector< std::vector<std::string> > & resul
 		throw ns_ex("ns_sql_connection::Attempting to send an empty cached query.");
 	this->get_rows(current_query.to_str(),result);
 	current_query.clear();
-
 }
 
 std::string ns_sql_connection::escape_string(const std::string & str){
+
+	ns_acquire_lock_for_scope lock(get_lock(__FILE__, __LINE__));
 	char * escaped_string = new char[str.length()*2 + 1];
-	ns_mysql_header::mysql_real_escape_string(&mysql,escaped_string,str.c_str(),(unsigned long)str.length());
-	std::string ret(escaped_string);
+	const unsigned long escaped_length(
+		ns_mysql_header::mysql_real_escape_string(&mysql,escaped_string,str.c_str(),(unsigned long)str.length()));
+	std::string ret;
+	ret.resize(escaped_length);
+	for (unsigned long i = 0; i < escaped_length; i++)
+		ret[i] = escaped_string[i];
 	delete[] escaped_string;
+	lock.release();
 	return ret;
 }
 
 ns_sql_connection & ns_sql_connection::write_data(const char * buffer, const unsigned long length){	
+
+	ns_acquire_lock_for_scope lock(get_lock(__FILE__, __LINE__));
 	char * escaped_string = new char[length*2 + 1];
-	const unsigned int escaped_length(mysql_real_escape_string(&mysql,escaped_string,buffer,length));
+	const unsigned long escaped_length(mysql_real_escape_string(&mysql,escaped_string,buffer,length));
 	current_query.write_data(escaped_string, escaped_length);
 	delete[] escaped_string;
+	lock.release();
 	return *this;
 }
 
 //get a single row from the db
 //should be binary safe
 void ns_sql_connection::get_single_row(const std::string & query,std::vector<std::string> &res){
+	ns_acquire_lock_for_scope lock(get_lock(__FILE__, __LINE__));
 	try{
 		res.clear(); 
 		#ifdef USE_IMAGE_SERVER_PERFORMANCE_STATISTICS
@@ -366,6 +400,7 @@ void ns_sql_connection::get_single_row(const std::string & query,std::vector<std
 		current_query.clear();
 		throw;
 	}
+	lock.release();
 }
 void ns_sql_connection::get_single_row(std::vector<std::string> &res){
 	if (current_query.to_str().size() == 0)
@@ -392,6 +427,11 @@ int ns_sql_connection::get_integer_value(const std::string & query){
 	return atoi(get_value(query).c_str());
 }
 
+void ns_sql_connection::clear_query() {
+	current_query.clear();
+}
+
+
 int ns_sql_connection::get_integer_value(){
 	if (current_query.to_str().size() == 0)
 		throw ns_ex("ns_sql_connection::Attempting to send an empty cached query.");
@@ -411,7 +451,10 @@ unsigned long ns_sql_connection::get_ulong_value(){
 
 ns_64_bit ns_sql_connection::send_query_get_id(const std::string & query){
 	this->send_query(query);
+
+	ns_acquire_lock_for_scope lock(get_lock(__FILE__, __LINE__));
 	const ns_64_bit id(ns_mysql_header::mysql_insert_id(&mysql));
+	lock.release();
 	if (id == 0)
 		throw ns_ex("Requesting a column ID from an insert without an AUTO_INCREMENT column!");
 	return id;
@@ -427,8 +470,11 @@ void ns_sql_full_table_lock::lock(const ns_table_list & tables_to_lock){
 		throw ns_ex("ns_sql_full_table_lock::lock()::Query not cleared before attempting Lock");
 	if (tables_to_lock.size() == 0)
 		throw ns_ex("ns_sql_full_table_lock::lock()::No tables specified");
+
+	ns_acquire_lock_for_scope lock(sql->get_lock(__FILE__, __LINE__));
 	final_autocommit_state = sql->autocommit_state();
 	sql->set_autocommit(false);
+	lock.release();
 	sql->send_query("BEGIN");
 	*sql << "LOCK TABLES "<< tables_to_lock[0].table_name << " ";
 	*sql << (tables_to_lock[0].write?"WRITE":"READ");
@@ -440,10 +486,13 @@ void ns_sql_full_table_lock::lock(const ns_table_list & tables_to_lock){
 	locked = true;
 }
 void ns_sql_full_table_lock::lock(const std::string & table_to_lock,const bool & write){
+
+	ns_acquire_lock_for_scope lock(sql->get_lock(__FILE__, __LINE__));
 	if(sql->query().size())
 		throw ns_ex("ns_sql_full_table_lock::lock()::Query not cleared before attempting Lock");
 	final_autocommit_state = sql->autocommit_state();
 	sql->set_autocommit(false);
+	lock.release();
 	sql->send_query("BEGIN");
 	*sql << "LOCK TABLES " << table_to_lock << " ";
 	if (write) *sql << "WRITE";
@@ -451,11 +500,15 @@ void ns_sql_full_table_lock::lock(const std::string & table_to_lock,const bool &
 	sql->send_query();
 	locked = true;
 }
+
 void ns_sql_full_table_lock::unlock(){
 	sql->clear_query();
 	sql->send_query("COMMIT");
 	sql->send_query("UNLOCK TABLES");
+
+	ns_acquire_lock_for_scope lock(sql->get_lock(__FILE__, __LINE__));
 	sql->set_autocommit(final_autocommit_state);
+	lock.release();
 	locked = false;
 }
 
@@ -488,5 +541,7 @@ std::string ns_sql_connection::unreachable_hostname(){
 	lock.release();
 	return r;
 }
+
+ns_lock ns_sql_connection::global_sql_lock("gssql");
 
 std::string ns_sql_connection::unreachable_host = "";

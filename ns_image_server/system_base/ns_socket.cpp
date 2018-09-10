@@ -519,6 +519,7 @@ const string ns_socket::get_local_ip_address(const std::string & interface_name)
 ns_socket_connection::~ns_socket_connection(){
 }
 
+ns_lock gethostname_lock("ghl");
 ns_socket_connection ns_socket::connect(const string & address, const unsigned int port){
 
 	#ifdef _WIN32 

@@ -308,13 +308,15 @@ void ns_sql_connection::get_rows(std::vector< std::vector<std::string> > & resul
 	this->get_rows(current_query.to_str(),result);
 	current_query.clear();
 }
-
+ns_lock escape_string_lock("lk");
 std::string ns_sql_connection::escape_string(const std::string & str){
 
 	ns_acquire_lock_for_scope lock(get_lock(__FILE__, __LINE__));
 	char * escaped_string = new char[str.length()*2 + 1];
+	//ns_acquire_lock_for_scope lock(escape_string_lock,__FILE__,__LINE__);
 	const unsigned long escaped_length(
 		ns_mysql_header::mysql_real_escape_string(&mysql,escaped_string,str.c_str(),(unsigned long)str.length()));
+	lock.release();
 	std::string ret;
 	ret.resize(escaped_length);
 	for (unsigned long i = 0; i < escaped_length; i++)

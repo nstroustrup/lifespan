@@ -87,12 +87,13 @@ void ns_image_server_dispatcher::handle_remote_requests(){
 	srand(ns_current_time());
 	//empty the queue of pending messages
 	while(true){
+		ns_acquire_lock_for_scope lock(message_handling_lock,__FILE__,__LINE__);
 		if (pending_remote_requests.empty() || image_server.exit_happening_now){
 			message_handling_thread.report_as_finished();
-
+			lock.release();
 			return;
 		}
-		ns_acquire_lock_for_scope lock(message_handling_lock,__FILE__,__LINE__);
+		//ns_acquire_lock_for_scope lock(message_handling_lock,__FILE__,__LINE__);
 		ns_remote_dispatcher_request req(*pending_remote_requests.rbegin());
 		pending_remote_requests.pop_back();
 		lock.release();

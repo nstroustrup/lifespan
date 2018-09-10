@@ -7,7 +7,7 @@ option (ONLY_IMAGE_ACQUISITION "Compile the image server with image processing d
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${PROJECT_SOURCE_DIR}/modules/")
 
-set(CMAKE_BUILD_TYPE Release)
+set(CMAKE_BUILD_TYPE Debug)
 
 file(GLOB_RECURSE image_server_SOURCES "${PROJECT_SOURCE_DIR}/../ns_image_server/image_server//*.cpp")
 file(GLOB_RECURSE image_server_HEADERS "${PROJECT_SOURCE_DIR}/../ns_image_server/image_server//*.h")
@@ -143,11 +143,13 @@ include(GNUInstallDirs)
 set(FONT_FILE "${CMAKE_INSTALL_FULL_DATADIR}/default_font.ttf")
 set(INI_FILE "${CMAKE_INSTALL_FULL_SYSCONFDIR}/ns_image_server.ini")
 
-  if (CMAKE_VERSION VERSION_LESS "3.1")
+if (CMAKE_VERSION VERSION_LESS "3.1")
       set (CMAKE_CXX_FLAGS "--std=c++11 ${CMAKE_CXX_FLAGS}")
-  else ()
+else ()
     set (CMAKE_CXX_STANDARD 11)
-  endif ()
+endif ()
+
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-psabi")
 
 add_definitions(-DTRILIBRARY -DNO_TIMER -DANSI_DECLARATORS -DNS_DEFAULT_FONT="${FONT_FILE}" -DNS_INI_PATH="${INI_FILE}" -DUSE_NEW_USB=1 -DNS_DATA_PATH="${CMAKE_INSTALL_FULL_DATADIR}/")
 

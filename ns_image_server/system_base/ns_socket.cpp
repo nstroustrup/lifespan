@@ -445,7 +445,7 @@ ns_socket_connection ns_socket::accept(){
 void ns_socket::build_interface_list(std::vector<ns_interface_info> & interfaces){
 	#ifdef _WIN32 
 		char localhostname[1000];
-		ns_acquire_lock_for_scope lock(gethostame_lock,__FILE__,__LINE__);
+		ns_acquire_lock_for_scope lock(gethostname_lock,__FILE__,__LINE__);
 	
 			if (gethostname(localhostname, 1000) == SOCKET_ERROR)
 				throw ns_ex() << "Error getting local hostname";

@@ -33,11 +33,12 @@ bool ns_sql_connection::thread_safe(){return ns_mysql_header::mysql_thread_safe(
 ns_sql_connection::~ns_sql_connection(){disconnect();}
 
 ns_acquire_lock_for_scope ns_sql_connection::get_lock(const char * file, unsigned long line) {
-	
+	if (!mysql_internal_data_allocated)
+		throw ns_ex("Unallocated SQL data!");
 	switch (local_locking_behavior) {
-	case ns_no_locking: return ns_acquire_lock_for_scope(local_lock, file, line,false);
-	case ns_global_locking: return ns_acquire_lock_for_scope(global_sql_lock, file, line);
-	case ns_thread_locking: return ns_acquire_lock_for_scope(local_lock, file, line);
+		case ns_no_locking: return ns_acquire_lock_for_scope(local_lock, file, line,false);
+		case ns_global_locking: return ns_acquire_lock_for_scope(global_sql_lock, file, line);
+		case ns_thread_locking: return ns_acquire_lock_for_scope(local_lock, file, line);
 	}
 	throw ns_ex("Unknown locking behavior!");
 }
@@ -76,7 +77,7 @@ void ns_sql_connection::connect(const std::string & server_name, const std::stri
 }
 
 void ns_sql_connection::disconnect(){
-	ns_acquire_lock_for_scope lock(get_lock(__FILE__, __LINE__));
+  ns_acquire_lock_for_scope lock(get_lock(__FILE__, __LINE__));
   if (mysql_internal_data_allocated){
 	 ns_mysql_header::mysql_close(&mysql);
 	 mysql_internal_data_allocated = false;
@@ -115,12 +116,12 @@ std::string ns_sql_connection::latest_error(){
 
 	ns_acquire_lock_for_scope lock(get_lock(__FILE__, __LINE__));
 	const char * a = ns_mysql_header::mysql_error(&mysql);
+	std::string err(a);
 	lock.release();
-	return a;
+	return err;
 }
 
 void ns_mysql_real_query(ns_mysql_header::MYSQL *mysql, const char *stmt_str, unsigned long length){
-
 	int res(ns_mysql_header::mysql_real_query(mysql,stmt_str, length));
 	const char * prob(ns_mysql_header::mysql_error(mysql));
 	switch(res){

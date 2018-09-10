@@ -32,9 +32,10 @@ bool ns_sql_connection::thread_safe(){return ns_mysql_header::mysql_thread_safe(
 
 ns_sql_connection::~ns_sql_connection(){disconnect();}
 
-ns_acquire_lock_for_scope ns_sql_connection::get_lock(const char * file, unsigned long line) {
-	if (!mysql_internal_data_allocated)
+ns_acquire_lock_for_scope ns_sql_connection::get_lock(const char * file, unsigned long line,bool check_for_allocation) {
+	if (check_for_allocation && !mysql_internal_data_allocated)
 		throw ns_ex("Unallocated SQL data!");
+	//local_locking_behavior = ns_global_locking;
 	switch (local_locking_behavior) {
 		case ns_no_locking: return ns_acquire_lock_for_scope(local_lock, file, line,false);
 		case ns_global_locking: return ns_acquire_lock_for_scope(global_sql_lock, file, line);
@@ -43,7 +44,7 @@ ns_acquire_lock_for_scope ns_sql_connection::get_lock(const char * file, unsigne
 	throw ns_ex("Unknown locking behavior!");
 }
 void ns_sql_connection::connect(const std::string & server_name, const std::string & user_id, const std::string & password, const unsigned int retry_count){
-	ns_acquire_lock_for_scope lock(get_lock(__FILE__, __LINE__));
+	ns_acquire_lock_for_scope lock(get_lock(__FILE__, __LINE__,false));
 	_server_name = server_name;
 	_user_id = user_id;
 	_password = password;

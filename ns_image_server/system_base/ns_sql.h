@@ -160,7 +160,7 @@ class ns_sql_connection{
    ns_mysql_header::MYSQL mysql;
    bool mysql_internal_data_allocated;
 
-   ns_acquire_lock_for_scope get_lock(const char * file, unsigned long line);
+   ns_acquire_lock_for_scope get_lock(const char * file, unsigned long line, bool check_for_allocation=true);
 };
 
 struct ns_table_to_lock{

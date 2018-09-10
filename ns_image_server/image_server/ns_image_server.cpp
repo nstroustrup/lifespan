@@ -668,6 +668,7 @@ void ns_image_server::reconnect_sql_connection(ns_sql * sql){
 ns_sql * ns_image_server::new_sql_connection_no_lock_or_retry(const std::string & source_file, const unsigned int source_line) const{
 	ns_sql *con(0);
 	con = new ns_sql();
+	//con->local_locking_behavior = ns_thread_locking;
 	try{
 
 		for (std::vector<string>::size_type server_i=0;  server_i < sql_server_addresses.size(); server_i++){
@@ -842,10 +843,17 @@ void ns_image_server::set_sql_database(const std::string & database_name,const b
 	}
 }
 
+bool ns_sql_column_exists(const char * table, const char * column, ns_sql_connection * sql){
+	*sql << "SHOW COLUMNS FROM " << table << " WHERE field = '" << column << "'";
+	ns_sql_result res;
+	sql->get_rows(res);
+	return !res.empty();
+}
 bool ns_sql_column_exists(const std::string & table, const std::string & column,ns_sql_connection * sql){
 	*sql << "SHOW COLUMNS FROM " << table << " WHERE field = '" << column << "'";
 	ns_sql_result res;
 	sql->get_rows(res);
+	
 	return !res.empty();
 }
 bool ns_image_server::upgrade_tables(ns_sql_connection * sql, const bool just_test_if_needed, const std::string & schema_name, const bool updating_local_buffer) {
@@ -2109,7 +2117,7 @@ ns_sql * ns_image_server::new_sql_connection(const std::string & source_file, co
 	ns_sql *con(0);
 	unsigned long try_count(0);
 	con = new ns_sql();
-	//con->local_locking_behavior = ns_sql_connection::ns_global_locking;
+	//con->local_locking_behavior = ns_sql_connection::ns_thread_locking;
 	unsigned long start_address_id = 0;
 
 	try{

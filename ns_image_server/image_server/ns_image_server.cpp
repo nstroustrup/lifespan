@@ -33,7 +33,7 @@ void ns_image_server_global_debug_handler(const ns_text_stream_t & t);
 
 ns_image_server::ns_image_server() : exit_has_been_requested(false),exit_happening_now(false), handling_exit_request(false), ready_to_exit(false), update_software(false),
 sql_lock("ns_is::sql"), server_event_lock("ns_is::server_event"), performance_stats_lock("ns_pfl"), simulator_scan_lock("ns_is::sim_scan"), local_buffer_sql_lock("ns_is::lb"), processing_run_counter_lock("ns_pcl"),
-_act_as_processing_node(true), cleared(false), do_not_run_multithreaded_jobs(false),
+_act_as_processing_node(true), exit_lock("ns_is::el"),cleared(false), do_not_run_multithreaded_jobs(false),
 #ifndef NS_ONLY_IMAGE_ACQUISITION
 image_registration_profile_cache(1024 * 4), //allocate 4 gigabytes of disk space in which to store reference images for capture sample registration
 storyboard_cache(0),worm_detection_model_cache(0),posture_analysis_model_cache(0),
@@ -2109,7 +2109,7 @@ ns_sql * ns_image_server::new_sql_connection(const std::string & source_file, co
 	ns_sql *con(0);
 	unsigned long try_count(0);
 	con = new ns_sql();
-
+	//con->local_locking_behavior = ns_sql_connection::ns_global_locking;
 	unsigned long start_address_id = 0;
 
 	try{
@@ -2856,7 +2856,9 @@ void ns_image_server::set_console_window_title(const string & title) const{
 
 
 void ns_image_server::shut_down_host(){
+	exit_lock.wait_to_acquire(__FILE__,__LINE__);
 	exit_has_been_requested = true;
+	exit_lock.release();
 	//shut down the dispatcher
 	if (!send_message_to_running_server(NS_QUIT))
 		throw ns_ex("Could not submit shutdown command to ") << image_server.dispatcher_ip() << ":" << image_server.dispatcher_port() << ".";

@@ -115,7 +115,11 @@ ns_image_server_device_manager::~ns_image_server_device_manager(){
 	for (unsigned int i = 0; i < devices_pending_deletion.size(); i++){
 		delete devices_pending_deletion[i];
 	}
-	devices_pending_deletion.clear();
+	devices_pending_deletion.clear(); 
+	for (unsigned int i = 0; i < deleted_devices.size(); i++) {
+		delete deleted_devices[i];
+	}
+	deleted_devices.clear();
 	lock.release();
 }
 
@@ -524,6 +528,7 @@ void ns_image_server_device_manager::remove_device(const std::string & name){
 		p->second->pending_deletion = true;
 		devices_pending_deletion.push_back(p->second);
 	}
+	else deleted_devices.push_back(p->second);
 	devices.erase(p);
 	lock.release();
 }
@@ -1408,73 +1413,67 @@ void ns_image_server_device_manager::output_connected_devices(ostream & o){
 }
 bool ns_image_server_device_manager::load_last_known_device_configuration(){
 
-	ifstream * in(image_server.read_device_configuration_file());
-	if (in->fail()){
-		delete in;
+	ns_acquire_for_scope<ifstream> in(image_server.read_device_configuration_file());
+	if (in().fail()){
+		in.release();
 		return false;
 	}
 	string file_specified_last_boot_time;
-	try{
-		while(true){
-			char first(in->get());
-			if (in->fail())
-				break;
-			//allow comments
-			if (first == '#'){
-				while(!in->fail() && first != '\n')
-					first = in->get();
-				if (in->fail())
-					throw ns_ex("ns_image_server::load_last_known_device_configuration()::Invalid syntax");
-				else
-					continue;
-			}
-			if (first == '!'){
-				while(true){
-					char a = in->get();
-					if (in->fail())
-						throw ns_ex("ns_image_server::load_last_known_device_configuration()::Invalid syntax");
-					if (a=='\n') break;
-					file_specified_last_boot_time += a;
-				}
-
-				continue;
-			}
-			std::string hardware,name;
-			*in >> hardware;
-			if (in->fail()){
-				add_device(name,hardware);
-				break;
-			}
-			hardware = string() + first + hardware;
-			*in >> name;
-			if (in->fail())
+	while(true){
+		char first(in().get());
+		if (in().fail())
+			break;
+		//allow comments
+		if (first == '#'){
+			while(in().fail() && first != '\n')
+				first = in().get();
+			if (in().fail())
 				throw ns_ex("ns_image_server::load_last_known_device_configuration()::Invalid syntax");
-			if (name.size() < 3 || hardware.size() < 4)
-				throw ns_ex("Unknown device specification: \"") << name << "\" \"" << hardware << "\"";
-			add_device(name,hardware);
+			else
+				continue;
+		}
+		if (first == '!'){
 			while(true){
-				char a(in->get());
-				if (in->fail() || a == '\n')
-					break;
+				char a = in().get();
+				if (in().fail())
+					throw ns_ex("ns_image_server::load_last_known_device_configuration()::Invalid syntax");
+				if (a=='\n') break;
+				file_specified_last_boot_time += a;
 			}
-		}
-		in->close();
-		string boot_time(ns_system_boot_time_str());
-		if (file_specified_last_boot_time != boot_time){
-			ns_image_server_event ev("A reboot appears to have occurred (system log: ");
-			ev << boot_time;
-			ev << ").  Rebuilding device list.";
-			image_server.register_server_event_no_db(ev);
-			return false;
-		}
 
-		delete in;
-		return true;
+			continue;
+		}
+		std::string hardware,name;
+		in() >> hardware;
+		if (in().fail()){
+			add_device(name,hardware);
+			break;
+		}
+		hardware = string() + first + hardware;
+		in() >> name;
+		if (in().fail())
+			throw ns_ex("ns_image_server::load_last_known_device_configuration()::Invalid syntax");
+		if (name.size() < 3 || hardware.size() < 4)
+			throw ns_ex("Unknown device specification: \"") << name << "\" \"" << hardware << "\"";
+		add_device(name,hardware);
+		while(true){
+			char a(in().get());
+			if (in().fail() || a == '\n')
+				break;
+		}
 	}
-	catch(...){
-		delete in;
+	in().close();
+	in.release();
+	string boot_time(ns_system_boot_time_str());
+	if (file_specified_last_boot_time != boot_time){
+		ns_image_server_event ev("A reboot appears to have occurred (system log: ");
+		ev << boot_time;
+		ev << ").  Rebuilding device list.";
+		image_server.register_server_event_no_db(ev);
 		return false;
 	}
+
+	return true;
 }
 void ns_image_server_device_manager::clear_device_list_and_identify_all_hardware(){
 	//clear device information

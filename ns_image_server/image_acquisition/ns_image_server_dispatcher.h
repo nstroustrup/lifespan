@@ -179,6 +179,7 @@ private:
 
 	ns_lock work_sql_management_lock;
 	ns_lock timer_sql_management_lock;
+
 	std::list<ns_remote_dispatcher_request> pending_remote_requests;
 
 	bool currently_unable_to_connect_to_the_central_db;

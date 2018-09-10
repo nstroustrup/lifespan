@@ -98,6 +98,7 @@ void ns_sql_connection::set_autocommit(const bool & commit_){
 	ns_acquire_lock_for_scope lock(get_lock(__FILE__, __LINE__));
 	ns_mysql_header::my_bool res = ns_mysql_header::mysql_autocommit(&mysql, (ns_mysql_header::my_bool)commit_);
 	
+	lock.release();
 	simulate_errors_if_requested();
 	if (!commit_)
 		this->send_query("SET AUTOCOMMIT = 0");
@@ -106,7 +107,7 @@ void ns_sql_connection::set_autocommit(const bool & commit_){
 	commit = commit_;
 	if (res != 0)
 		throw ns_ex("ns_sql_connection::Could not set autocommit state.") << ns_sql_fatal;
-	lock.release();
+	
 }
 
 
@@ -313,10 +314,8 @@ std::string ns_sql_connection::escape_string(const std::string & str){
 
 	ns_acquire_lock_for_scope lock(get_lock(__FILE__, __LINE__));
 	char * escaped_string = new char[str.length()*2 + 1];
-	//ns_acquire_lock_for_scope lock(escape_string_lock,__FILE__,__LINE__);
 	const unsigned long escaped_length(
 		ns_mysql_header::mysql_real_escape_string(&mysql,escaped_string,str.c_str(),(unsigned long)str.length()));
-	lock.release();
 	std::string ret;
 	ret.resize(escaped_length);
 	for (unsigned long i = 0; i < escaped_length; i++)

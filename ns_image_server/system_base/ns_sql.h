@@ -141,6 +141,7 @@ class ns_sql_connection{
   const std::string & hostname() const { return _server_name; }
 
   friend class ns_sql_full_table_lock;
+  ns_sql_connection(const ns_sql_connection &) = delete;
  private:
   static std::string unreachable_host;
   void simulate_errors_if_requested() const;

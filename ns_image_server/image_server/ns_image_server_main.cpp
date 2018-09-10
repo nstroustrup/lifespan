@@ -48,7 +48,13 @@ ns_thread_return_type timer_thread(void * inter){
 		ns_thread::sleep(interval);
 		unsigned int error_count(0);
 		unsigned long last_ping_time(0);
-		while(!image_server.exit_happening_now){
+		while(true){
+			image_server.exit_lock.wait_to_acquire(__FILE__,__LINE__);
+				if (image_server.exit_happening_now){
+					image_server.exit_lock.release();
+					break;
+				}
+			image_server.exit_lock.release();
 			unsigned long current_time = ns_current_time();
 			if (current_time - last_ping_time > interval){
 				last_ping_time = current_time;

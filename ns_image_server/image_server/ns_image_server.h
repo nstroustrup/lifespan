@@ -440,6 +440,7 @@ public:
 
 	ns_alert_handler alert_handler;
 	ns_lock alert_handler_lock;
+	ns_lock exit_lock;
 	void register_alerts_as_handled();
 	unsigned long maximum_number_of_processing_threads() const{ return maximum_number_of_processing_threads_;}
 

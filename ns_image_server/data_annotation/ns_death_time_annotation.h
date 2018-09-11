@@ -308,4 +308,18 @@ typedef enum {ns_include_unchanged,ns_force_to_fast_moving} ns_animals_that_slow
 std::string ns_animals_that_slow_but_do_not_die_handling_strategy_label(const ns_animals_that_slow_but_do_not_die_handling_strategy & s);
 std::string ns_animals_that_slow_but_do_not_die_handling_strategy_label_short(const ns_animals_that_slow_but_do_not_die_handling_strategy & s);
 
+struct ns_time_path_limits {
+	ns_time_path_limits() {}
+	ns_time_path_limits(const ns_death_time_annotation_time_interval & before, const ns_death_time_annotation_time_interval & end,
+		const ns_death_time_annotation_time_interval & first_plate, const ns_death_time_annotation_time_interval & last_plate) :
+		interval_before_first_observation(before),
+		interval_after_last_observation(end),
+		first_obsevation_of_plate(first_plate),
+		last_obsevation_of_plate(last_plate) {}
+	ns_death_time_annotation_time_interval interval_before_first_observation,
+		interval_after_last_observation,
+		first_obsevation_of_plate,
+		last_obsevation_of_plate;
+};
+
 #endif

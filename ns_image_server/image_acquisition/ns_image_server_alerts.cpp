@@ -299,6 +299,7 @@ void ns_alert_handler::submit_rate_limited_alert(const ns_alert & alert,ns_sql &
 	}
 }
 void ns_explode_list(const std::string & s, vector<std::string> & vals){
+	vals.resize(0);
 	string cur;
 	for (unsigned int i = 0; i < s.size(); i++){
 			if (s[i] == ';'){
@@ -343,8 +344,10 @@ void ns_alert_handler::handle_alerts(ns_sql & sql){
 	sql.send_query("COMMIT");
 
 	//process alerts
-	for (unsigned int a = 0; a < res.size(); a++){
-		vector<string> summary_recipients,
+	for (unsigned long a = 0; a < res.size(); a++){
+		if (res[a].size() < 6)
+			cout << "UNEXPECTED ALERT DB RESPONSE: " << res[a].size() << "\n";
+		std::vector<std::string> summary_recipients,
 					   detailed_recipients;
 		ns_explode_list(res[a][2],summary_recipients);
 		ns_explode_list(res[a][3],detailed_recipients);

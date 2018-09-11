@@ -33,7 +33,7 @@ void ns_image_server_global_debug_handler(const ns_text_stream_t & t);
 
 ns_image_server::ns_image_server() : exit_has_been_requested(false),exit_happening_now(false), handling_exit_request(false), ready_to_exit(false), update_software(false),
 sql_lock("ns_is::sql"), server_event_lock("ns_is::server_event"), performance_stats_lock("ns_pfl"), simulator_scan_lock("ns_is::sim_scan"), local_buffer_sql_lock("ns_is::lb"), processing_run_counter_lock("ns_pcl"),
-_act_as_processing_node(true), cleared(false), do_not_run_multithreaded_jobs(false),
+_act_as_processing_node(true), exit_lock("ns_is::el"),cleared(false), do_not_run_multithreaded_jobs(false),
 #ifndef NS_ONLY_IMAGE_ACQUISITION
 image_registration_profile_cache(1024 * 4), //allocate 4 gigabytes of disk space in which to store reference images for capture sample registration
 storyboard_cache(0),worm_detection_model_cache(0),posture_analysis_model_cache(0),
@@ -668,6 +668,7 @@ void ns_image_server::reconnect_sql_connection(ns_sql * sql){
 ns_sql * ns_image_server::new_sql_connection_no_lock_or_retry(const std::string & source_file, const unsigned int source_line) const{
 	ns_sql *con(0);
 	con = new ns_sql();
+	//con->local_locking_behavior = ns_thread_locking;
 	try{
 
 		for (std::vector<string>::size_type server_i=0;  server_i < sql_server_addresses.size(); server_i++){
@@ -842,10 +843,17 @@ void ns_image_server::set_sql_database(const std::string & database_name,const b
 	}
 }
 
+bool ns_sql_column_exists(const char * table, const char * column, ns_sql_connection * sql){
+	*sql << "SHOW COLUMNS FROM " << table << " WHERE field = '" << column << "'";
+	ns_sql_result res;
+	sql->get_rows(res);
+	return !res.empty();
+}
 bool ns_sql_column_exists(const std::string & table, const std::string & column,ns_sql_connection * sql){
 	*sql << "SHOW COLUMNS FROM " << table << " WHERE field = '" << column << "'";
 	ns_sql_result res;
 	sql->get_rows(res);
+	
 	return !res.empty();
 }
 bool ns_image_server::upgrade_tables(ns_sql_connection * sql, const bool just_test_if_needed, const std::string & schema_name, const bool updating_local_buffer) {
@@ -2109,7 +2117,7 @@ ns_sql * ns_image_server::new_sql_connection(const std::string & source_file, co
 	ns_sql *con(0);
 	unsigned long try_count(0);
 	con = new ns_sql();
-
+	//con->local_locking_behavior = ns_sql_connection::ns_thread_locking;
 	unsigned long start_address_id = 0;
 
 	try{
@@ -2856,7 +2864,9 @@ void ns_image_server::set_console_window_title(const string & title) const{
 
 
 void ns_image_server::shut_down_host(){
+	exit_lock.wait_to_acquire(__FILE__,__LINE__);
 	exit_has_been_requested = true;
+	exit_lock.release();
 	//shut down the dispatcher
 	if (!send_message_to_running_server(NS_QUIT))
 		throw ns_ex("Could not submit shutdown command to ") << image_server.dispatcher_ip() << ":" << image_server.dispatcher_port() << ".";

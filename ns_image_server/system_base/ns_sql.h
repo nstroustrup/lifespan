@@ -141,6 +141,7 @@ class ns_sql_connection{
   const std::string & hostname() const { return _server_name; }
 
   friend class ns_sql_full_table_lock;
+  ns_sql_connection(const ns_sql_connection &) = delete;
  private:
   static std::string unreachable_host;
   void simulate_errors_if_requested() const;
@@ -159,7 +160,7 @@ class ns_sql_connection{
    ns_mysql_header::MYSQL mysql;
    bool mysql_internal_data_allocated;
 
-   ns_acquire_lock_for_scope get_lock(const char * file, unsigned long line);
+   ns_acquire_lock_for_scope get_lock(const char * file, unsigned long line, bool check_for_allocation=true);
 };
 
 struct ns_table_to_lock{

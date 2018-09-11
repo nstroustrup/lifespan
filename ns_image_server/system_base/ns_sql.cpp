@@ -32,17 +32,19 @@ bool ns_sql_connection::thread_safe(){return ns_mysql_header::mysql_thread_safe(
 
 ns_sql_connection::~ns_sql_connection(){disconnect();}
 
-ns_acquire_lock_for_scope ns_sql_connection::get_lock(const char * file, unsigned long line) {
-	
+ns_acquire_lock_for_scope ns_sql_connection::get_lock(const char * file, unsigned long line,bool check_for_allocation) {
+	if (check_for_allocation && !mysql_internal_data_allocated)
+		throw ns_ex("Unallocated SQL data!");
+	//local_locking_behavior = ns_global_locking;
 	switch (local_locking_behavior) {
-	case ns_no_locking: return ns_acquire_lock_for_scope(local_lock, file, line,false);
-	case ns_global_locking: return ns_acquire_lock_for_scope(global_sql_lock, file, line);
-	case ns_thread_locking: return ns_acquire_lock_for_scope(local_lock, file, line);
+		case ns_no_locking: return ns_acquire_lock_for_scope(local_lock, file, line,false);
+		case ns_global_locking: return ns_acquire_lock_for_scope(global_sql_lock, file, line);
+		case ns_thread_locking: return ns_acquire_lock_for_scope(local_lock, file, line);
 	}
 	throw ns_ex("Unknown locking behavior!");
 }
 void ns_sql_connection::connect(const std::string & server_name, const std::string & user_id, const std::string & password, const unsigned int retry_count){
-	ns_acquire_lock_for_scope lock(get_lock(__FILE__, __LINE__));
+	ns_acquire_lock_for_scope lock(get_lock(__FILE__, __LINE__,false));
 	_server_name = server_name;
 	_user_id = user_id;
 	_password = password;
@@ -76,7 +78,7 @@ void ns_sql_connection::connect(const std::string & server_name, const std::stri
 }
 
 void ns_sql_connection::disconnect(){
-	ns_acquire_lock_for_scope lock(get_lock(__FILE__, __LINE__));
+  ns_acquire_lock_for_scope lock(get_lock(__FILE__, __LINE__));
   if (mysql_internal_data_allocated){
 	 ns_mysql_header::mysql_close(&mysql);
 	 mysql_internal_data_allocated = false;
@@ -98,6 +100,7 @@ void ns_sql_connection::set_autocommit(const bool & commit_){
 	ns_acquire_lock_for_scope lock(get_lock(__FILE__, __LINE__));
 	ns_mysql_header::my_bool res = ns_mysql_header::mysql_autocommit(&mysql, (ns_mysql_header::my_bool)commit_);
 	
+	lock.release();
 	simulate_errors_if_requested();
 	if (!commit_)
 		this->send_query("SET AUTOCOMMIT = 0");
@@ -106,7 +109,7 @@ void ns_sql_connection::set_autocommit(const bool & commit_){
 	commit = commit_;
 	if (res != 0)
 		throw ns_ex("ns_sql_connection::Could not set autocommit state.") << ns_sql_fatal;
-	lock.release();
+	
 }
 
 
@@ -114,12 +117,12 @@ std::string ns_sql_connection::latest_error(){
 
 	ns_acquire_lock_for_scope lock(get_lock(__FILE__, __LINE__));
 	const char * a = ns_mysql_header::mysql_error(&mysql);
+	std::string err(a);
 	lock.release();
-	return a;
+	return err;
 }
 
 void ns_mysql_real_query(ns_mysql_header::MYSQL *mysql, const char *stmt_str, unsigned long length){
-
 	int res(ns_mysql_header::mysql_real_query(mysql,stmt_str, length));
 	const char * prob(ns_mysql_header::mysql_error(mysql));
 	switch(res){
@@ -308,7 +311,7 @@ void ns_sql_connection::get_rows(std::vector< std::vector<std::string> > & resul
 	this->get_rows(current_query.to_str(),result);
 	current_query.clear();
 }
-
+ns_lock escape_string_lock("lk");
 std::string ns_sql_connection::escape_string(const std::string & str){
 
 	ns_acquire_lock_for_scope lock(get_lock(__FILE__, __LINE__));

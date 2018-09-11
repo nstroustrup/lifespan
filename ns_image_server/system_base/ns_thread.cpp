@@ -965,8 +965,9 @@ void ns_lock::release(ns_mutex_handle & mutex){
 
 void ns_lock::release(){	
 	//if (currently_holding){
-		release(mutex_handle);		 
 		currently_holding = false;
+		release(mutex_handle);		 
+		
 //	}
 }
 

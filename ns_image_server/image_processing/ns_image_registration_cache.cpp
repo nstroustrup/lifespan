@@ -23,8 +23,9 @@ void ns_image_fast_registration_profile::load_from_external_source(const ns_imag
 	//compress everything in the cache as tiff
 	local_cache_filename = data_source.image_storage->add_to_local_cache(image_record, ns_tiff_lzw,data_source.sql);
 	ns_image_storage_source_handle<ns_8_bit> source(data_source.image_storage->request_from_local_cache(local_cache_filename, false));
+	properties = source.input_stream().properties();
 	pyramid = new ns_gaussian_pyramid();
-	pyramid->recieve_and_calculate(source, (int)ns_registration_downsample_factor);
+	pyramid->recieve_and_calculate(source, (int)ns_registration_downsample_factor,histogram);
 }
 void ns_image_fast_registration_profile::clean_up(ns_image_fast_registration_profile_data_source & data_source) {
 	pyramid->clear();

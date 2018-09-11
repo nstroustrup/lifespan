@@ -4,7 +4,7 @@ using namespace std;
 #include "ns_buffered_random_access_image.h"
 using namespace std;
 
-void ns_histogram_sql_converter::insert_histogram(const ns_histogram_type & histogram,ns_sql & sql){
+void ns_histogram_sql_converter::insert_histogram(const ns_histogram_type & histogram,ns_image_server_sql * sql){
 	char h[4*128];
 	for (unsigned int i = 0; i < 128; i++){
 		unsigned long s(histogram[2*i]+histogram[2*i+1]);
@@ -13,7 +13,7 @@ void ns_histogram_sql_converter::insert_histogram(const ns_histogram_type & hist
 		h[4*i+2] = static_cast<char>(s>>16 & 0x000000FF);
 		h[4*i+3] = static_cast<char>(s>>24 & 0x000000FF);
 	}
-	sql.write_data(&(h[0]),4*128);
+	sql->write_data(&(h[0]),4*128);
 }
 void ns_histogram_sql_converter::extract_histogram(const string & data, std::vector<unsigned long> & histogram){
 	if (data.size() != 4*128) throw ns_ex("Improper histogram data size");
@@ -71,46 +71,46 @@ void ns_image_statistics::calculate_statistics_from_histogram(){
 	image_statistics.top_percentile_average = c_sum/(double)percentile;
 }
 
-bool ns_image_statistics::submit_to_db(ns_64_bit & id,ns_sql & sql,bool include_image_stats,bool include_worm_stats){
+bool ns_image_statistics::submit_to_db(ns_64_bit & id, ns_image_server_sql * sql,bool include_image_stats,bool include_worm_stats){
 	bool made_new_db_entry=false;
 	if (id != 0){
 		//check to see that the record does exist.  If not, we'll make a new one.
-		sql << "SELECT id FROM image_statistics WHERE id = " << id;
+		*sql << "SELECT id FROM " << sql->table_prefix() << "image_statistics WHERE id = " << id;
 		ns_sql_result res;
-		sql.get_rows(res);
+		sql->get_rows(res);
 		if (res.size() == 0)
 			id = 0;
 	}
 	if (id == 0){
-		sql << "INSERT INTO image_statistics SET ";
+		*sql << "INSERT INTO " << sql->table_prefix() << "image_statistics SET ";
 		made_new_db_entry = true;
 	}
 	else{
-		sql << "UPDATE image_statistics SET ";
+		*sql << "UPDATE " << sql->table_prefix() << "image_statistics SET ";
 	}
 	if (include_image_stats){
-		sql << "size_x='"<<size.x << "',size_y='" << size.y << "',intensity_average='" << image_statistics.mean << "', intensity_entropy='" << image_statistics.entropy << "', intensity_std='"<<sqrt(image_statistics.variance) << "',"
+		*sql << "size_x='"<<size.x << "',size_y='" << size.y << "',intensity_average='" << image_statistics.mean << "', intensity_entropy='" << image_statistics.entropy << "', intensity_std='"<<sqrt(image_statistics.variance) << "',"
 			<< "intensity_top_percentile='" << image_statistics.top_percentile_average << "', intensity_bottom_percentile='" << image_statistics.bottom_percentile_average << "', "
 			<< "histogram='";
 		
 		ns_histogram_sql_converter::insert_histogram(histogram,sql);
-		sql << "' ";
-		if (include_worm_stats) sql << ",";
+		*sql << "' ";
+		if (include_worm_stats) *sql << ",";
 	}
 	if (include_worm_stats){
-		sql << "worm_count='"<<worm_statistics.count<<"',worm_area_mean='"<<worm_statistics.area_mean<<"',worm_area_variance='"<<worm_statistics.area_variance<<"',"
+		*sql << "worm_count='"<<worm_statistics.count<<"',worm_area_mean='"<<worm_statistics.area_mean<<"',worm_area_variance='"<<worm_statistics.area_variance<<"',"
 		    << "worm_length_mean='"<<worm_statistics.length_mean<<"',worm_length_variance='"<<worm_statistics.length_variance<<"',worm_width_mean='"<<worm_statistics.width_mean<<"',"
 			<< "worm_width_variance='"<<worm_statistics.width_variance<<"',worm_intensity_mean='"<<worm_statistics.absolute_intensity.mean<< "',worm_intensity_variance='"<<worm_statistics.absolute_intensity.variance<<"',"
 			<< "non_worm_object_count='"<<non_worm_statistics.count<<"',"
 			<< "non_worm_object_area_mean='"<<non_worm_statistics.area_mean<<"',non_worm_object_area_variance='"<<non_worm_statistics.area_variance<<"',"
 			<< "non_worm_object_intensity_mean='"<<non_worm_statistics.absolute_intensity.mean<<"',non_worm_object_intensity_variance='"<<non_worm_statistics.absolute_intensity.variance<<"' ";
-		if (!include_image_stats) sql << ", histogram=''"; // histogram is a NOT NULL column with no default value so we have to provide an empty one.
+		if (!include_image_stats) *sql << ", histogram=''"; // histogram is a NOT NULL column with no default value so we have to provide an empty one.
 	}
 	if (id == 0)
-		db_id = id = sql.send_query_get_id();
+		db_id = id = sql->send_query_get_id();
 	else{
-		sql << "WHERE id = " << id;
-		sql.send_query();
+		*sql << "WHERE id = " << id;
+		sql->send_query();
 		db_id = id;
 	}
 	return made_new_db_entry;

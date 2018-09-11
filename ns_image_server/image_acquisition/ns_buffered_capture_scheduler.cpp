@@ -1,4 +1,5 @@
 #include "ns_buffered_capture_scheduler.h"
+#include "ns_processing_job_push_scheduler.h"
 #include <set>
 
 
@@ -284,6 +285,21 @@ void ns_buffered_capture_scheduler::commit_all_local_schedule_changes_to_central
 		central_db << "WHERE id = " << updated_data[i][0];
 		central_db.send_query();
 	}
+
+	ns_acquire_lock_for_scope job_lock(captured_image_list_lock,__FILE__,__LINE__);
+	if (!newly_captured_images_for_which_to_schedule_jobs.empty()) {
+		try {
+			//report new image to database (as it might be ready for processing)
+			ns_image_server_push_job_scheduler job_scheduler;
+
+			job_scheduler.report_capture_sample_image(newly_captured_images_for_which_to_schedule_jobs, central_db);
+		}
+		catch (ns_ex & ex) {
+			image_server.register_server_event(ns_image_server_event("Problem encountered reporting possible jobs resulting from the current capture: ") << ex.text(), &local_buffer_sql);
+			throw ex;
+		}
+	}
+	captured_image_list_lock.release();
 
 }
 

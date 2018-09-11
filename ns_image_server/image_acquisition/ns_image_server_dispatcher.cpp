@@ -845,6 +845,9 @@ void ns_image_server_dispatcher::on_timer(){
 				for (unsigned int i = 0; i < devices.size(); i++)
 					device_names[i] = devices[i].name;
 				buffered_capture_scheduler.image_capture_data_manager.handle_pending_transfers_to_long_term_storage(device_names);
+				std::vector<ns_image_server_captured_image> captured_images;
+				buffered_capture_scheduler.image_capture_data_manager.get_captured_images_to_report(captured_images);
+				buffered_capture_scheduler.report_captured_images(captured_images);
 
 			}
 			catch(ns_ex & ex){

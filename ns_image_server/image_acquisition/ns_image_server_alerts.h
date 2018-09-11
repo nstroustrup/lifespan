@@ -76,7 +76,7 @@ public:
 	void buffer_all_alerts_locally(const bool delayed){buffer_all_alerts_locally_ = delayed;}
 	void submit_buffered_alerts(ns_sql & sql);
 
-	void reset_alert_time_limit(const ns_alert::ns_alert_type a,ns_sql & sql);
+	void reset_alert_time_limit(const ns_alert::ns_alert_type a, ns_image_server_sql * sql);
 
 	void submit_desperate_alert(const std::string & text) const;
 

@@ -15,7 +15,7 @@ public:
 	typedef std::vector<unsigned long> ns_histogram_type;
 	
 #ifndef NS_NO_SQL
-	static void insert_histogram(const ns_histogram_type & histogram,ns_sql & sql);
+	static void insert_histogram(const ns_histogram_type & histogram,ns_image_server_sql * sql);
 #endif
 	static void extract_histogram(const std::string & data, std::vector<unsigned long> & histogram);
 };
@@ -136,7 +136,7 @@ public:
 	void calculate_statistics_from_histogram();
 	
 #ifndef NS_NO_SQL
-	bool submit_to_db(ns_64_bit & id,ns_sql & sql,bool include_image_stats=true,bool include_worm_stats=true);
+	bool submit_to_db(ns_64_bit & id, ns_image_server_sql * sql,bool include_image_stats=true,bool include_worm_stats=true);
 	void calculate_statistics_from_image(ns_image_server_image & im,ns_sql & sql);
 	void from_sql_result(const ns_sql_result_row & res);
 #endif

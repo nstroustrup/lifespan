@@ -1776,6 +1776,27 @@ void ns_image_processing_pipeline::apply_mask(ns_image_server_captured_image & c
 		image_server.image_registration_profile_cache.get_unlinked_singleton(im, requested_image, profile_data_source);
 	}
 
+	//upload statistics on the captured image to the db
+	sql << "SELECT image_statistics_id FROM captured_images WHERE id = " << captured_image.captured_images_id;
+	ns_sql_result res;
+	sql.get_rows(res);
+	if (res.size() == 0)
+		throw ns_ex("Could not load captured_image from db");
+	{
+		ns_64_bit stats_id(ns_atoi64(res[0][0].c_str()));
+		ns_image_statistics image_statistics;
+		image_statistics.size.x = requested_image().properties.width;
+		image_statistics.size.y = requested_image().properties.height;
+		const ns_histogram<unsigned int, ns_8_bit> & hist(requested_image().histogram);
+		image_statistics.histogram.resize(hist.size());
+		for (unsigned int i = 0; i < hist.size(); i++)
+			image_statistics.histogram[i] = hist[i];
+		image_statistics.calculate_statistics_from_histogram();
+		image_statistics.submit_to_db(stats_id, &sql);
+		sql << "UPDATE captured_images SET image_statistics_id= " << stats_id << " WHERE id = " << captured_image.captured_images_id;
+		sql.send_query();
+	}
+
 	mask_splitter.mask_info()->load_from_db(mask_id, sql);
 
 	ns_image_server_image mask_image_info;

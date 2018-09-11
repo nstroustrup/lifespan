@@ -144,11 +144,11 @@ string ns_alert::alert_type_label(const ns_alert::ns_alert_type & a){
 }
 void ns_alert_handler::reset_all_alert_time_limits(ns_sql & sql){
 	for (unsigned int i = 0; i < (ns_alert::ns_alert_type)ns_alert::ns_number_of_alert_types; ++i)
-		reset_alert_time_limit((ns_alert::ns_alert_type)i,sql);
+		reset_alert_time_limit((ns_alert::ns_alert_type)i,&sql);
 }
 
-void ns_alert_handler::reset_alert_time_limit(const ns_alert::ns_alert_type a,ns_sql & sql){
-	ns_sql_table_lock lock = image_server.sql_table_lock_manager.obtain_table_lock("constants", &sql, true, __FILE__, __LINE__);
+void ns_alert_handler::reset_alert_time_limit(const ns_alert::ns_alert_type a, ns_image_server_sql * sql){
+	ns_sql_table_lock lock = image_server.sql_table_lock_manager.obtain_table_lock(sql->table_prefix + "constants", sql, true, __FILE__, __LINE__);
 	try{
 
 	
@@ -157,12 +157,12 @@ void ns_alert_handler::reset_alert_time_limit(const ns_alert::ns_alert_type a,ns
 		string last_time_key;
 		last_action_time_key_name(a,last_time_key);
 
-		image_server.set_cluster_constant_value(duration_key,ns_to_string(initial_alert_delays[(unsigned long)a]),&sql);
-		image_server.set_cluster_constant_value(last_time_key,"0",&sql);
+		image_server.set_cluster_constant_value(duration_key,ns_to_string(initial_alert_delays[(unsigned long)a]),sql);
+		image_server.set_cluster_constant_value(last_time_key,"0",sql);
 		lock.release(__FILE__, __LINE__);
 	}
 	catch(...){
-		sql.clear_query();
+		sql->clear_query();
 		lock.release(__FILE__, __LINE__);
 		throw;
 	}

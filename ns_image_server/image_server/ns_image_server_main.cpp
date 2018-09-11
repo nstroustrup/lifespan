@@ -1452,14 +1452,26 @@ int main(int argc, char ** argv){
 		}
 
 
-		sql.release();
 		unsigned int * timer_interval = new unsigned int(image_server.dispatcher_refresh_interval());
 
 
 		if (post_dispatcher_init_command == ns_run_pending_image_transfers){
 			dispatch.buffered_capture_scheduler.image_capture_data_manager.handle_pending_transfers_to_long_term_storage_using_db_names();
+			//try to update info to central db
+			if (sql().connected_to_central_database()) {
+				std::vector<ns_image_server_captured_image> captured_images;
+				dispatch.buffered_capture_scheduler.image_capture_data_manager.get_captured_images_to_report(captured_images);
+				dispatch.buffered_capture_scheduler.report_captured_images(captured_images);
+				ns_acquire_for_scope<ns_local_buffer_connection> local_buffer_connection(image_server.new_local_buffer_connection(__FILE__, __LINE__));
+				ns_acquire_for_scope<ns_sql> sql2(image_server.new_sql_connection(__FILE__, __LINE__, 0, false));
+				dispatch.buffered_capture_scheduler.commit_local_changes_to_central_server(local_buffer_connection(), sql2());
+				local_buffer_connection.release();
+				sql2.release();
+
+			}
 		}
-		else{
+		sql.release();
+		{
 
 			const unsigned long dispatcher_offset_time(image_server.dispatcher_refresh_interval());
 			if (dispatcher_offset_time > 0)
@@ -1490,20 +1502,12 @@ int main(int argc, char ** argv){
 			timer.block_on_finish();
 			#endif
 		}
+		//just leak this; the whole process is shutting down anyway.
+		//delete timer_interval;
 
-		//cerr << "Clearing dispatcher\n";
 		#ifndef _WIN32
 		ns_socket::global_clean();
 		#endif
-
-		//if (is_master_node){
-		//	cerr << "Waiting for external processes...\n";
-		//	ns_request_shutdown_of_all_spawned_nodes(child_processes);
-		//	ns_wait_for_all_spawned_nodes(child_processes);
-		//	#ifndef _WIN32
-		//	ns_image_server_crash_daemon::request_daemon_shutdown();
-		//	#endif
-		//}
 
 		cerr << "Terminating...\n";
 		}

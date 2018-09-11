@@ -45,14 +45,15 @@ private:
 class ns_image_capture_data_manager{
 public:
 	typedef enum{ns_not_finished,ns_on_local_server_in_16bit,ns_on_local_server_in_8bit,ns_transferred_to_long_term_storage} ns_capture_image_status;
+	typedef enum { ns_try_to_transfer_to_long_term_storage, ns_convert_and_compress_locally } ns_transfer_behavior;
 
-	ns_image_capture_data_manager(ns_image_storage_handler & storage_handler_):check_sql_lock("icdm::sql"),check_sql(0),device_transfer_state_lock("icdm::dev"),storage_handler(&storage_handler_),pending_transfers_lock("ns_icd::transfer"){}
+	ns_image_capture_data_manager(ns_image_storage_handler & storage_handler_):check_sql_lock("icdm::sql"), captured_image_list_lock("icdm::im"),check_sql(0),device_transfer_state_lock("icdm::dev"),storage_handler(&storage_handler_),pending_transfers_lock("ns_icd::transfer"){}
 	
 	void initialize_capture_start(ns_image_capture_specification & capture_specification, ns_local_buffer_connection & local_buffer_sql);
 
 	void register_capture_stop(ns_image_capture_specification & capture_specification, const ns_64_bit problem_id, ns_local_buffer_connection & local_buffer_sql);
 	
-	void transfer_image_to_long_term_storage(const std::string & device_name,ns_64_bit capture_schedule_entry_id,ns_image_server_captured_image & image, ns_sql & sql);
+	void transfer_image_to_long_term_storage(const std::string & device_name,ns_64_bit capture_schedule_entry_id,ns_image_server_captured_image & image, ns_transfer_behavior & behavior, ns_local_buffer_connection & sql);
 
 	bool handle_pending_transfers_to_long_term_storage(const std::vector<std::string> & device_names);
 	
@@ -61,22 +62,28 @@ public:
 	void wait_for_transfer_finish();
 	~ns_image_capture_data_manager();
 	ns_transfer_status_debugger transfer_status_debugger;
+	void get_captured_images_to_report(std::vector<ns_image_server_captured_image> & im) {
+		captured_image_list_lock.wait_to_acquire(__FILE__, __LINE__);
+		im = newly_captured_images_for_which_to_schedule_jobs;
+		captured_image_list_lock.release();
+	}
 private:
 
-	ns_sql * check_sql;
+	ns_local_buffer_connection * check_sql;
 	bool transfer_in_progress_for_device(const std::string & device);
 
-	void transfer_image_to_long_term_storage_locked(ns_64_bit capture_schedule_entry_id, ns_image_server_captured_image & image, ns_sql & sql);
+	void transfer_image_to_long_term_storage_locked(ns_64_bit capture_schedule_entry_id, ns_image_server_captured_image & image, ns_transfer_behavior & behavior,ns_local_buffer_connection & sql);
 
 	static ns_thread_return_type thread_start_handle_pending_transfers_to_long_term_storage(void * thread_arguments);
 
-	unsigned long handle_pending_transfers(const std::string & device_name);
+	unsigned long handle_pending_transfers(const std::string & device_name, ns_transfer_behavior & behavior);
 
 	bool transfer_data_to_long_term_storage(ns_image_server_captured_image & image,
 									unsigned long long & time_during_transfer_to_long_term_storage,
 									unsigned long long & time_during_deletion_from_local_storage, 
 									const ns_vector_2<ns_16_bit> & conversion_16_bit_bounds,
-									ns_sql & sql);
+									ns_transfer_behavior & behavior,
+									ns_local_buffer_connection & sql);
 
 	ns_single_thread_coordinator pending_transfers_thread;
 	ns_lock pending_transfers_lock;
@@ -86,5 +93,7 @@ private:
 	std::map<std::string, bool> device_transfer_state;
 	ns_lock device_transfer_state_lock;
 	ns_lock check_sql_lock;
+	std::vector<ns_image_server_captured_image> newly_captured_images_for_which_to_schedule_jobs;
+	ns_lock captured_image_list_lock;
 };
 #endif

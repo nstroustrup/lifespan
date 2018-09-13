@@ -153,7 +153,7 @@ bool ns_image_capture_data_manager::transfer_data_to_long_term_storage(ns_image_
 			//we no longer calculate image statistics here, as that data is not cached locally.
 			//instead it is now calculated during mask application.
 	
-			sql << "UPDATE captured_images SET small_image_id=" << small_image.id << " WHERE id = " << image.captured_images_id;
+			sql << "UPDATE buffered_captured_images SET small_image_id=" << small_image.id << " WHERE id = " << image.captured_images_id;
 			sql.send_query();
 
 			sql.send_query("COMMIT");

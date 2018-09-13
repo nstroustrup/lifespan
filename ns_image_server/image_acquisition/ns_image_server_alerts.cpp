@@ -148,7 +148,7 @@ void ns_alert_handler::reset_all_alert_time_limits(ns_sql & sql){
 }
 
 void ns_alert_handler::reset_alert_time_limit(const ns_alert::ns_alert_type a, ns_image_server_sql * sql){
-	ns_sql_table_lock lock = image_server.sql_table_lock_manager.obtain_table_lock(sql->table_prefix + "constants", sql, true, __FILE__, __LINE__);
+	ns_sql_table_lock lock = image_server.sql_table_lock_manager.obtain_table_lock(sql->table_prefix() + "constants", sql, true, __FILE__, __LINE__);
 	try{
 
 	

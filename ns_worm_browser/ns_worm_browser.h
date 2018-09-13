@@ -803,12 +803,35 @@ public:
 			current_filename = filename;
 		}
 		//open tiff
-		else if (extension == "tif" || extension == "tiff"){
+		else if (extension == "tif" || extension == "tiff") {
 			ns_tiff_image_input_file<ns_8_bit> tiff_in;
-			tiff_in.open_file(filename);
-			ns_image_stream_file_source<ns_8_bit > file_source(tiff_in);
-			file_source.pump(image,128);
-			current_filename = filename;
+			bool loaded_16 = false;
+			try {
+				tiff_in.open_file(filename);
+			}
+			catch (ns_ex & ex) {
+
+				try {
+					ns_tiff_image_input_file<ns_16_bit> tiff_in;
+					tiff_in.open_file(filename);
+					ns_image_stream_file_source<ns_16_bit > file_source(tiff_in);
+					ns_image_whole<ns_16_bit> b;
+					file_source.pump(b, 1024);
+					image.resize(b.properties());
+					for (unsigned int y = 0; y < b.properties().height; y++)
+						for (unsigned int x = 0; x < b.properties().width; x++)
+							image[y][x] = b[y][x] / 256;
+					loaded_16 = true;
+				}
+				catch (ns_ex & ex_16_bit) {
+					throw ex;
+				}
+			}
+			if (!loaded_16) {
+				ns_image_stream_file_source<ns_8_bit > file_source(tiff_in);
+				file_source.pump(image, 128);
+				current_filename = filename;
+			}
 		}
 	}
 	std::string worm_visualization_directory(){

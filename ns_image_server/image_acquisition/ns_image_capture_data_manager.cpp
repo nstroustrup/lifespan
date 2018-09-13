@@ -153,7 +153,7 @@ bool ns_image_capture_data_manager::transfer_data_to_long_term_storage(ns_image_
 			//we no longer calculate image statistics here, as that data is not cached locally.
 			//instead it is now calculated during mask application.
 	
-			sql << "UPDATE captured_images SET small_image_id=" << small_image.id << " WHERE id = " << image.captured_images_id;
+			sql << "UPDATE buffered_captured_images SET small_image_id=" << small_image.id << " WHERE id = " << image.captured_images_id;
 			sql.send_query();
 
 			sql.send_query("COMMIT");
@@ -433,8 +433,8 @@ unsigned long ns_image_capture_data_manager::handle_pending_transfers(const stri
 		*check_sql << "SELECT cs.id, cs.captured_image_id, cs.scheduled_time, "
 			"cs.sample_id, cs.transferred_to_long_term_storage "
 			 << " FROM buffered_capture_schedule as cs, buffered_capture_samples as s "
-			 << "WHERE cs.device_name = '" << device_name
-			 << "' AND c.id = cs.sample_id"
+			 << "WHERE s.device_name = '" << device_name
+			 << "' AND s.id = cs.sample_id"
 			 << " AND cs.time_at_start != 0"
 			 << " AND cs.time_at_finish != 0"
 			 << " AND cs.problem = 0"
@@ -483,9 +483,9 @@ unsigned long ns_image_capture_data_manager::handle_pending_transfers(const stri
 
 					if(problem_id == 0)
 						problem_id = 1;
-					sql() << "UPDATE capture_schedule SET problem = " << problem_id << " WHERE id = " << capture_schedule_id;
+					sql() << "UPDATE buffered_capture_schedule SET problem = " << problem_id << " WHERE id = " << capture_schedule_id;
 					sql().send_query();	
-					sql() << "UPDATE captured_images SET problem = " << problem_id << " WHERE id = " << im.captured_images_id;
+					sql() << "UPDATE buffered_captured_images SET problem = " << problem_id << " WHERE id = " << im.captured_images_id;
 					sql().send_query();
 					sql().send_query("COMMIT");
 				}
@@ -494,9 +494,9 @@ unsigned long ns_image_capture_data_manager::handle_pending_transfers(const stri
 					ns_64_bit problem_id(image_server.register_server_event(ns_ex("ns_image_capture_data_manager::handle_pending_transfers()::Unknown Transfer Problem"),&sql()));
 					if(problem_id == 0)
 						problem_id = 1;
-					sql() << "UPDATE capture_schedule SET problem = " << problem_id << " WHERE id = " << capture_schedule_id;
+					sql() << "UPDATE buffered_capture_schedule SET problem = " << problem_id << " WHERE id = " << capture_schedule_id;
 					sql().send_query();	
-					sql() << "UPDATE captured_images SET problem = " << problem_id << " WHERE id = " << im.captured_images_id;
+					sql() << "UPDATE buffered_captured_images SET problem = " << problem_id << " WHERE id = " << im.captured_images_id;
 					sql().send_query();
 					sql().send_query("COMMIT");
 				}

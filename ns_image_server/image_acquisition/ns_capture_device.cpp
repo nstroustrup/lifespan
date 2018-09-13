@@ -328,19 +328,19 @@ void ns_capture_device::capture(ns_image_capture_specification & c){
 				i = exec.read_stdout(buf,capture_buffer_size);
 				
 				if (total_bytes_read == 0){
-					c.speed_regulator.register_start();
+			//		c.speed_regulator.register_start();
 					c.time_at_imaging_start = ns_current_time();
 					total_clock.start();
 				}
 				else
 					c.time_spent_reading_from_device += read_clock.stop();
 				
-				c.speed_regulator.register_data_as_received(i);
+			//	c.speed_regulator.register_data_as_received(i);
 				total_bytes_read += i;
 				if (i == 0){
 					c.total_time_during_read = 	total_clock.stop();
 					c.time_at_imaging_stop = ns_current_time();
-					c.speed_regulator.register_stop();
+			//		c.speed_regulator.register_stop();
 					break;
 				}
 				if (c.volatile_storage != 0){
@@ -348,7 +348,7 @@ void ns_capture_device::capture(ns_image_capture_specification & c){
 					c.volatile_storage->write(buf,i);
 					c.time_spent_writing_to_disk += write_clock.stop();
 				}
-				c.total_time_spent_during_programmed_delay += c.speed_regulator.run_delay_if_necessary();
+		//		c.total_time_spent_during_programmed_delay += c.speed_regulator.run_delay_if_necessary();
 			
 				if (counter >= 50){
 					counter = 0;

@@ -97,7 +97,7 @@ public:
 	enum {ns_default_update_time=413096400};
 	//time_of_last_update_from_central_db must be set to the past to trigger an update when an image server starts.
 	//however, mysql timestamp collumns can't handle '0' values and so we chose something larger
-	ns_buffered_capture_scheduler():image_capture_data_manager(image_server.image_storage),time_of_last_update_from_central_db(ns_default_update_time,ns_default_update_time),buffer_capture_scheduler_lock("ns_buffer_capture_scheduler_lock")
+	ns_buffered_capture_scheduler():image_capture_data_manager(image_server.image_storage),time_of_last_update_from_central_db(ns_default_update_time,ns_default_update_time),buffer_capture_scheduler_lock("ns_buffer_capture_scheduler_lock"),captured_image_list_lock("cill")
 	{}
 
 

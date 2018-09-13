@@ -62,8 +62,8 @@ void ns_initialize_libtiff();
 
 TIFF* TIFFOpen(const char* name, ns_tiff_client_data * client_data,const char* mode);
 
-template<class ns_component>
-class ns_tiff_image_input_file: public ns_image_input_file<ns_component>{
+template<class ns_component, bool low_memory_single_line_reads=false>
+class ns_tiff_image_input_file: public ns_image_input_file<ns_component, low_memory_single_line_reads>{
 
 public:
 
@@ -75,7 +75,6 @@ public:
 
 	void open_file(const std::string & filename){
 		try{
-
 			//Normally, we'd just want to handle errors by throwing an exception from our
 			//custom TIFFError handler.  However, in TIFFOpen(), libtiff calls this error handler BEFORE
 			//cleaning up its temporary files and releasing file handles.
@@ -93,24 +92,36 @@ public:
 			if (image == NULL)
 				ns_throw_tiff_exception(ns_ex("TIFFOpen returned NULL"));
 
-			ns_get_default_tiff_parameters(sizeof(ns_component),ns_image_input_file<ns_component>::_properties,tiff_info,image);
+			ns_get_default_tiff_parameters(sizeof(ns_component),ns_image_input_file<ns_component, low_memory_single_line_reads>::_properties,tiff_info,image);
 			if (client_data.exception_thrown()){
 				std::cerr << "2";
 				ns_throw_tiff_exception(client_data.ex());
 			}
 
-			if (ns_image_input_file<ns_component>::_properties.width == 0 ||
-				ns_image_input_file<ns_component>::_properties.height == 0 ||
-				ns_image_input_file<ns_component>::_properties.components == 0){
+			if (ns_image_input_file<ns_component, low_memory_single_line_reads>::_properties.width == 0 ||
+				ns_image_input_file<ns_component, low_memory_single_line_reads>::_properties.height == 0 ||
+				ns_image_input_file<ns_component, low_memory_single_line_reads>::_properties.components == 0){
 					ns_throw_tiff_exception(ns_ex("ns_tiff_image_input_stream::open_file()::Specified file has no pixels: (")
-						<< ns_image_input_file<ns_component>::_properties.width << ","
-						<< ns_image_input_file<ns_component>::_properties.height << ","
-						<< ns_image_input_file<ns_component>::_properties.components << ")");
+						<< ns_image_input_file<ns_component, low_memory_single_line_reads>::_properties.width << ","
+						<< ns_image_input_file<ns_component, low_memory_single_line_reads>::_properties.height << ","
+						<< ns_image_input_file<ns_component, low_memory_single_line_reads>::_properties.components << ")");
 			}
 
-			strip_buffer = (ns_component *)_TIFFmalloc(sizeof(ns_component)*tiff_info.stripsize);
-			if (strip_buffer == 0)
-				ns_throw_tiff_exception(ns_ex("ns_tiff_image_input_file::Count not allocate strip buffer of length ") << tiff_info.stripsize << " for image of size (w,h,c)= (" << ns_image_input_file<ns_component>::_properties.width << "," << ns_image_input_file<ns_component>::_properties.height << "," << ns_image_input_file<ns_component>::_properties.components << ")");
+			if (!low_memory_single_line_reads) {
+				strip_buffer = (ns_component *)_TIFFmalloc(sizeof(ns_component)*tiff_info.stripsize);
+				if (strip_buffer == 0)
+					ns_throw_tiff_exception(ns_ex("ns_tiff_image_input_file::Count not allocate strip buffer of length ") << tiff_info.stripsize << " for image of size (w,h,c)= (" << ns_image_input_file<ns_component, low_memory_single_line_reads>::_properties.width << "," << ns_image_input_file<ns_component, low_memory_single_line_reads>::_properties.height << "," << ns_image_input_file<ns_component, low_memory_single_line_reads>::_properties.components << ")");
+			}
+			else {
+				unsigned long s = TIFFScanlineSize(image);
+				if (s != ns_image_input_file<ns_component, low_memory_single_line_reads>::_properties.width*ns_image_input_file<ns_component, low_memory_single_line_reads>::_properties.components * sizeof(ns_component))
+					throw ns_ex("Unexpected strip size: ") << s;
+				strip_buffer = (ns_component *)_TIFFmalloc(s);	
+				if (strip_buffer == 0)
+					ns_throw_tiff_exception(ns_ex("ns_tiff_image_input_file::Count not allocate scanline buffer of length ") << s << " for image of size (w,h,c)= (" << ns_image_input_file<ns_component, low_memory_single_line_reads>::_properties.width << "," << ns_image_input_file<ns_component, low_memory_single_line_reads>::_properties.height << "," << ns_image_input_file<ns_component, low_memory_single_line_reads>::_properties.components << ")");
+
+			}
+
 			if (client_data.exception_thrown()){
 				std::cerr << "4";
 				ns_throw_tiff_exception(client_data.ex());
@@ -146,32 +157,36 @@ public:
 	//read in a single line
 	bool read_line(ns_component * buffer){
 		try{
-			if (lines_read == ns_image_input_file<ns_component>::_properties.height)
-				ns_throw_tiff_exception(ns_ex("ns_tiff::read_line()::Attempting to read too many lines from file: Requested line ") << (lines_read+1) << " from an image with height " << ns_image_input_file<ns_component>::_properties.height);
+			if (lines_read == ns_image_input_file<ns_component, low_memory_single_line_reads>::_properties.height)
+				ns_throw_tiff_exception(ns_ex("ns_tiff::read_line()::Attempting to read too many lines from file: Requested line ") << (lines_read+1) << " from an image with height " << ns_image_input_file<ns_component, low_memory_single_line_reads>::_properties.height);
 			
 			ns_64_bit bytes_read;
 			if (strip_buffer == 0)
 				ns_throw_tiff_exception("Trying to read from a broken ns_tiff object!");
-			//read in another strip when strip buffer is empty
-			if (tiff_info.rows_read_from_current_strip == tiff_info.rows_per_strip){
-				bytes_read = TIFFReadEncodedStrip(image,tiff_info.current_strip,strip_buffer,tiff_info.stripsize);
+
+			if (!low_memory_single_line_reads) {
+				//read in another strip when strip buffer is empty
+				if (tiff_info.rows_read_from_current_strip == tiff_info.rows_per_strip) {
+					bytes_read = TIFFReadEncodedStrip(image, tiff_info.current_strip, strip_buffer, tiff_info.stripsize);
+					if (client_data.exception_thrown())
+						throw client_data.ex();
+					tiff_info.current_strip++;
+					tiff_info.rows_read_from_current_strip = 0;
+
+				}
+				//read from the buffer
+				memcpy(buffer, &(strip_buffer[tiff_info.rows_read_from_current_strip*ns_image_input_file<ns_component, low_memory_single_line_reads>::_properties.width*ns_image_input_file<ns_component, low_memory_single_line_reads>::_properties.components]),
+					ns_image_input_file<ns_component, low_memory_single_line_reads>::_properties.width*ns_image_input_file<ns_component, low_memory_single_line_reads>::_properties.components * sizeof(ns_component));
+				tiff_info.rows_read_from_current_strip++;
+			}
+			else {
+				bytes_read = TIFFReadScanline(image, strip_buffer, lines_read);
 				if (client_data.exception_thrown())
 					throw client_data.ex();
-				tiff_info.current_strip++;
-				tiff_info.rows_read_from_current_strip = 0;
-				//cerr << "Read in strip" << tiff_info.current_strip << "\n";
+				memcpy(buffer, strip_buffer,ns_image_input_file<ns_component, low_memory_single_line_reads>::_properties.width*ns_image_input_file<ns_component, low_memory_single_line_reads>::_properties.components * sizeof(ns_component));
 			}
-			
-			/*if (client_data.exception_thrown()){
-				std::cerr << "5";
-				ns_throw_tiff_exception(client_data.ex());
-			}*/
-
-		//	std::cerr << "Outputting line " << tiff_info.rows_read_from_current_strip << " from buffered strip " << tiff_info.current_strip << "\n";
-			//read from the buffer
-			memcpy(buffer,&(strip_buffer[tiff_info.rows_read_from_current_strip*ns_image_input_file<ns_component>::_properties.width*ns_image_input_file<ns_component>::_properties.components]),
-				ns_image_input_file<ns_component>::_properties.width*ns_image_input_file<ns_component>::_properties.components*sizeof(ns_component));
-			tiff_info.rows_read_from_current_strip++;
+		
+		
 			lines_read++;
 			return true;
 
@@ -202,7 +217,7 @@ public:
 
 	//read a position/component from the specified buffer.
 	ns_component * operator()(const unsigned long x, const  unsigned int component, ns_component * buffer)const{
-		return &(buffer[ns_image_input_file<ns_component>::_properties.components*x + component]);
+		return &(buffer[ns_image_input_file<ns_component, low_memory_single_line_reads>::_properties.components*x + component]);
 	}
 	//read in multiple lines
 	const unsigned long read_lines(ns_component ** buffer, const unsigned long n) {

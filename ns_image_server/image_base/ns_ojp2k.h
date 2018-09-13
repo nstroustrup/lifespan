@@ -59,8 +59,8 @@ struct ns_jp2k_data {
 
 void ns_load_xml_information_from_ojp2k_xmp(const std::string filename, ns_image_properties & prop);
 
-template<class ns_component>
-class ns_ojp2k_image_input_file : public ns_image_input_file<ns_component>{
+template<class ns_component, bool low_memory_single_line_reads=false>
+class ns_ojp2k_image_input_file : public ns_image_input_file<ns_component, low_memory_single_line_reads>{
 protected:
 	ns_jp2k_data * data;
 	unsigned long lines_read, lines_sent, input_buffer_size, total_lines_sent;
@@ -115,7 +115,7 @@ public:
 		this->properties.width = data->image->x1 - data->image->x0;
 		this->properties.height = data->image->y1 - data->image->y0;
 		this->properties.components = data->image->numcomps;
-		ns_image_input_file<ns_component>::_properties = this->properties;
+		ns_image_input_file<ns_component,low_memory_single_line_reads>::_properties = this->properties;
 
 		if (data->image->comps[0].prec / 8 != sizeof(ns_component))
 			throw ns_ex("Attempting to load an ") << data->image->comps[0].prec << " bit image into a " << sizeof(ns_component) * 8 << " bit data structure!";
@@ -212,7 +212,7 @@ public:
 
 //ns_8_bit_jp2k_image_output_file contains all the code to interact
 //with the openjpeg library
-#define NS_OPJEG_WIDTH ns_image_output_file<ns_component>::_properties.width*ns_image_output_file<ns_component>::_properties.components
+#define NS_OPJEG_WIDTH ns_image_output_file<ns_component,low_memory_single_line_reads>::_properties.width*ns_image_output_file<ns_component>::_properties.components
 
 
 struct ns_jp2k_output_data {

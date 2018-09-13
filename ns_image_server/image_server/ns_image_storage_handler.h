@@ -162,8 +162,8 @@ public:
 	
 	typedef enum {ns_volatile_storage,ns_long_term_storage,ns_volatile_and_long_term_storage} ns_storage_location;
 
-	template<class ns_comp>
-	ns_image_storage_source_handle<ns_comp> request_from_storage_n_bits(ns_image_server_captured_image & captured_image, ns_image_server_sql * sql,const ns_storage_location &location)const{
+	template<class ns_comp,bool low_memory_single_line_reads = false>
+	ns_image_storage_source_handle<ns_comp, low_memory_single_line_reads> request_from_storage_n_bits(ns_image_server_captured_image & captured_image, ns_image_server_sql * sql,const ns_storage_location &location)const{
 		ns_image_server_image im;
 		im.id = captured_image.capture_images_image_id;
 		//cerr << "loading image info...";
@@ -171,7 +171,7 @@ public:
 	//	im.load_from_db(region_image.region_images_image_id,sql);
 	//	cerr << "loading image...";
 
-		return request_from_storage_n_bits<ns_comp>(im,sql,location);
+		return request_from_storage_n_bits<ns_comp, low_memory_single_line_reads>(im,sql,location);
 	}
 	unsigned long free_space_in_volatile_storage_in_mb() const{
 		return ns_dir::get_free_disk_space(volatile_storage_directory);
@@ -191,8 +191,8 @@ public:
 	}
 
 
-	template<class ns_comp>
-	ns_image_storage_source_handle<ns_comp> request_from_storage_n_bits(ns_image_server_image & image, ns_image_server_sql * sql,const ns_storage_location & location) const{
+	template<class ns_comp, bool low_memory_single_line_reads = false >
+	ns_image_storage_source_handle<ns_comp, low_memory_single_line_reads> request_from_storage_n_bits(ns_image_server_image & image, ns_image_server_sql * sql,const ns_storage_location & location) const{
 		ns_ex stored_error[3];
 	
 		ns_file_location_specification file_location(look_up_image_location_no_extension_alteration(image,sql));
@@ -205,9 +205,9 @@ public:
 				try{
 					if (verbosity >= ns_standard)
 						ns_image_handler_register_server_event(ns_image_server_event("ns_image_storage_handler::Opening VT ") << file_location.absolute_volatile_filename() << " for input." << ns_ts_minor_event,sql);
-					ns_image_storage_source_from_disk<ns_comp> * tmp;
-					tmp = new ns_image_storage_source_from_disk<ns_comp>(file_location.absolute_volatile_filename(),true);
-					return ns_image_storage_source_handle<ns_comp>(tmp);
+					ns_image_storage_source_from_disk<ns_comp, low_memory_single_line_reads> * tmp;
+					tmp = new ns_image_storage_source_from_disk<ns_comp, low_memory_single_line_reads>(file_location.absolute_volatile_filename(),true);
+					return ns_image_storage_source_handle<ns_comp, low_memory_single_line_reads>(tmp);
 				}
 				catch(ns_ex & ex){
 					//if we are allowed to search for the image in long term storage, look there.
@@ -227,7 +227,7 @@ public:
 				try{
 					if (ns_dir::file_exists(file_location.absolute_long_term_filename())){
 					//	ns_image_handler_register_server_event(ns_image_server_event("ns_image_storage_handler::Opening LT ",false) << display_filename << " for input." << ns_ts_minor_event);
-						return ns_image_storage_source_handle<ns_comp>(new ns_image_storage_source_from_disk<ns_comp>(file_location.absolute_long_term_filename(),false));
+						return ns_image_storage_source_handle<ns_comp, low_memory_single_line_reads>(new ns_image_storage_source_from_disk<ns_comp, low_memory_single_line_reads>(file_location.absolute_long_term_filename(),false));
 					}
 				}
 				catch(ns_ex & ex){

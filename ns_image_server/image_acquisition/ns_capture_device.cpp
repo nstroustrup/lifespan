@@ -304,7 +304,7 @@ void ns_capture_device::capture(ns_image_capture_specification & c){
 	string result;
 	string error;
 	char * buf = new char[capture_buffer_size];
-	unsigned int counter = 50;
+	unsigned int counter = 50*1024;
 	char b('-');
 	if(this->name.size() > 0)
 		b=this->name[0];
@@ -350,7 +350,7 @@ void ns_capture_device::capture(ns_image_capture_specification & c){
 				}
 		//		c.total_time_spent_during_programmed_delay += c.speed_regulator.run_delay_if_necessary();
 			
-				if (counter >= 50){
+				if (counter >= 50*1024){
 					counter = 0;
 					cerr << '<' << b << '>';
 				}

@@ -25,8 +25,8 @@ class ns_jpeg_library_user{
 ///
 ///decodes image information from jpeg files
 ///
-template<class ns_component>
-class ns_jpeg_image_input_file: public ns_image_input_file<ns_component>, private ns_jpeg_library_user{
+template<class ns_component, bool low_memory_single_line_reads = false>
+class ns_jpeg_image_input_file: public ns_image_input_file<ns_component, low_memory_single_line_reads>, private ns_jpeg_library_user{
 public:
 
 	ns_jpeg_image_input_file():fp(0),_open(false){cinfo.err = &error_manager();}
@@ -42,7 +42,7 @@ public:
 	const unsigned int read_lines(ns_component ** buffer, const unsigned int n);
 	~ns_jpeg_image_input_file(){ try{if (_open) close();}catch(...){std::cerr << "~ns_jpeg_image_input_file() attempted to throw an exception!";}}
 
-	ns_component * operator()(const unsigned long x, const unsigned int component, ns_component * buffer) const{return &(buffer[x*ns_image_input_file<ns_component>::_properties.components + component]);}
+	ns_component * operator()(const unsigned long x, const unsigned int component, ns_component * buffer) const{return &(buffer[x*ns_image_input_file<ns_component,low_memory_single_line_reads>::_properties.components + component]);}
 	J_COLOR_SPACE color_space(){return _color_space;}
 private:
 	void close_file();
@@ -91,8 +91,8 @@ private:
 
 
 //***********************ns_jpeg_image_input_filemember functions****************************
-template<class ns_component>
-void ns_jpeg_image_input_file<ns_component> ::open_file(const std::string & filename){
+template<class ns_component, bool low_memory_single_line_reads>
+void ns_jpeg_image_input_file<ns_component,low_memory_single_line_reads> ::open_file(const std::string & filename){
 
 	fp = fopen(filename.c_str(), "rb");
 	if (fp == NULL)
@@ -100,18 +100,18 @@ void ns_jpeg_image_input_file<ns_component> ::open_file(const std::string & file
 	start_decompression();
 }
 
-template<class ns_component>
-void ns_jpeg_image_input_file<ns_component> ::open_mem(const void *){
+template<class ns_component, bool low_memory_single_line_reads>
+void ns_jpeg_image_input_file<ns_component, low_memory_single_line_reads> ::open_mem(const void *){
 	throw ns_ex() << ns_file_io << "ns_jpeg_image_input_file::Opening from memory is not supported.";
 }
 
-template<class ns_component>
-void ns_jpeg_image_input_file<ns_component> ::close(){
+template<class ns_component, bool low_memory_single_line_reads>
+void ns_jpeg_image_input_file<ns_component, low_memory_single_line_reads> ::close(){
 	open_filename.clear();
 	close_file();
 }
-template<class ns_component>
-void ns_jpeg_image_input_file<ns_component> ::close_file(){
+template<class ns_component, bool low_memory_single_line_reads>
+void ns_jpeg_image_input_file<ns_component, low_memory_single_line_reads> ::close_file(){
 	if (_open){
     	_open = false;
 		try{
@@ -134,8 +134,8 @@ void ns_jpeg_image_input_file<ns_component> ::close_file(){
 
 
 
-template<class ns_component>
-bool ns_jpeg_image_input_file<ns_component> ::read_line(ns_component * buffer){
+template<class ns_component, bool low_memory_single_line_reads>
+bool ns_jpeg_image_input_file<ns_component, low_memory_single_line_reads> ::read_line(ns_component * buffer){
 	int lines_read = 0;
 	ns_component * buf[1];
 	buf[0] = buffer;
@@ -145,13 +145,19 @@ bool ns_jpeg_image_input_file<ns_component> ::read_line(ns_component * buffer){
 	return true;
 }
 template<>
-bool ns_jpeg_image_input_file<ns_16_bit> ::read_line(ns_16_bit * buffer);
+bool ns_jpeg_image_input_file<ns_16_bit,false> ::read_line(ns_16_bit * buffer);
 
 template<>
-bool ns_jpeg_image_input_file<float> ::read_line(float * buffer);
+bool ns_jpeg_image_input_file<float,false> ::read_line(float * buffer);
 
-template<class ns_component>
-const unsigned int  ns_jpeg_image_input_file<ns_component> ::read_lines(ns_component ** buffer, const unsigned int n){
+template<>
+bool ns_jpeg_image_input_file<ns_16_bit, true> ::read_line(ns_16_bit * buffer);
+
+template<>
+bool ns_jpeg_image_input_file<float, true> ::read_line(float * buffer);
+
+template<class ns_component, bool low_memory_single_line_reads>
+const unsigned int  ns_jpeg_image_input_file<ns_component, low_memory_single_line_reads> ::read_lines(ns_component ** buffer, const unsigned int n){
 	unsigned int lines_read = 0;
 	unsigned int left;
 	while (lines_read < n)
@@ -159,8 +165,8 @@ const unsigned int  ns_jpeg_image_input_file<ns_component> ::read_lines(ns_compo
 	return lines_read;
 }
 
-template<class ns_component>
-void ns_jpeg_image_input_file<ns_component> ::start_decompression(){
+template<class ns_component, bool low_memory_single_line_reads>
+void ns_jpeg_image_input_file<ns_component, low_memory_single_line_reads> ::start_decompression(){
 	//std::cout << "Creating Decompression." << std::endl;
 	jpeg_create_decompress(&cinfo);
 	//std::cout << "Initializing Stdio" << std::endl;
@@ -175,9 +181,9 @@ void ns_jpeg_image_input_file<ns_component> ::start_decompression(){
 	
 	_open = true;
 
-	ns_image_input_file<ns_component>::_properties.width = cinfo.output_width;
-	ns_image_input_file<ns_component>::_properties.height = cinfo.output_height;
-	ns_image_input_file<ns_component>::_properties.components = cinfo.output_components;
+	ns_image_input_file<ns_component, low_memory_single_line_reads>::_properties.width = cinfo.output_width;
+	ns_image_input_file<ns_component, low_memory_single_line_reads>::_properties.height = cinfo.output_height;
+	ns_image_input_file<ns_component, low_memory_single_line_reads>::_properties.components = cinfo.output_components;
 	_color_space = cinfo.out_color_space;
 }
 

@@ -51,7 +51,7 @@ struct ns_image_properties{
 ///
 ///this is a simple image structure that reads data from a file.
 ///
-template<class ns_component>
+template<class ns_component, bool low_memory_single_line_reads = false>
 class ns_image_input_file{
 public:
 	//~ns_image_input_file(){close();}
@@ -266,10 +266,10 @@ private:
 ///ns_image_stream_file_sourcewraps an ns_image_input_file and allows it to act as an
 ///image_stream_sender.
 ///
-template<class ns_component>
-  class ns_image_stream_file_source : public ns_image_stream_sender<ns_component, ns_image_stream_file_source<ns_component>, unsigned long> {
+template<class ns_component, bool low_memory_single_line_reads = false>
+  class ns_image_stream_file_source : public ns_image_stream_sender<ns_component, ns_image_stream_file_source<ns_component, low_memory_single_line_reads>, unsigned long> {
 public:
-	ns_image_stream_file_source(ns_image_input_file<ns_component> & input_file):/*lines_sent(0),*/ns_image_stream_sender<ns_component, ns_image_stream_file_source<ns_component>,unsigned long >(input_file.properties(),this)
+	ns_image_stream_file_source(ns_image_input_file<ns_component, low_memory_single_line_reads> & input_file):/*lines_sent(0),*/ns_image_stream_sender<ns_component, ns_image_stream_file_source<ns_component, low_memory_single_line_reads>,unsigned long >(input_file.properties(),this)
 		{file = &input_file;}
 	typedef ns_image_stream_static_buffer<ns_component> storage_type;
 	typedef ns_component component_type;
@@ -292,7 +292,7 @@ public:
 
 protected:
 //	unsigned long lines_sent;
-	ns_image_input_file<ns_component> * file;
+	ns_image_input_file<ns_component, low_memory_single_line_reads> * file;
 };
 ///
 ///ns_image_stream_file_sink wraps an ns_image_output_file and allows it to

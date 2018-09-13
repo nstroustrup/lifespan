@@ -812,9 +812,9 @@ public:
 			catch (ns_ex & ex) {
 
 				try {
-					ns_tiff_image_input_file<ns_16_bit> tiff_in;
+					ns_tiff_image_input_file<ns_16_bit,true> tiff_in;
 					tiff_in.open_file(filename);
-					ns_image_stream_file_source<ns_16_bit > file_source(tiff_in);
+					ns_image_stream_file_source<ns_16_bit,true> file_source(tiff_in);
 					ns_image_whole<ns_16_bit> b;
 					file_source.pump(b, 1024);
 					image.resize(b.properties());

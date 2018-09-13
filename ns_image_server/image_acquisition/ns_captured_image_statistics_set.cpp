@@ -123,7 +123,7 @@ void ns_capture_sample_region_data::load_from_db(const ns_64_bit region_id_,
 					timepoints[pos].statistics.calculate_statistics_from_image(unpr_im,sql);
 				}
 				ns_64_bit stats_db_id = ns_atoi64(res[i][7].c_str());
-				bool made_new_database_entry( timepoints[pos].statistics.submit_to_db(stats_db_id,sql,false,true) );
+				bool made_new_database_entry( timepoints[pos].statistics.submit_to_db(stats_db_id,&sql,false,true) );
 				if (made_new_database_entry){
 					sql << "UPDATE sample_region_images SET image_statistics_id = " << stats_db_id << " WHERE id = " << im.region_images_id;
 					sql.send_query();

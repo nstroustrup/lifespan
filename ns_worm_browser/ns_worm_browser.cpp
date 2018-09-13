@@ -4314,7 +4314,7 @@ void ns_worm_learner::calculate_image_statistics_for_experiment_sample(unsigned 
 			cerr << "(" << stats.image_statistics.mean << ")";
 			ns_64_bit previous_db_id(ns_atoi64(res2[j][2].c_str()));
 			ns_64_bit db_id(previous_db_id);
-			stats.submit_to_db(db_id, sql);
+			stats.submit_to_db(db_id, &sql);
 			if (previous_db_id != db_id) {
 				sql << "UPDATE captured_images SET image_statistics_id=" << db_id << " WHERE id=" << capture_sample_image_id;
 				sql.send_query();

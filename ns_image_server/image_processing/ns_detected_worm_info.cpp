@@ -1852,7 +1852,7 @@ void ns_image_worm_detection_results::save(ns_image_server_captured_image_region
 		if (res.empty())
 			cur_id = 0;
 		else cur_id = ns_atoi64(res[0][0].c_str());
-		stats.submit_to_db(cur_id, sql, false, true);
+		stats.submit_to_db(cur_id, &sql, false, true);
 		need_to_update_stat_id = stats.db_id != cur_id;
 	}
 

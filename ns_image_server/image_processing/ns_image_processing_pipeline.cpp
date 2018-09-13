@@ -1778,7 +1778,7 @@ void ns_image_processing_pipeline::apply_mask(ns_image_server_captured_image & c
 
 	//upload statistics on the captured image to the db
 	sql << "SELECT image_statistics_id FROM captured_images WHERE id = " << captured_image.captured_images_id;
-	ns_sql_result res;
+	
 	sql.get_rows(res);
 	if (res.size() == 0)
 		throw ns_ex("Could not load captured_image from db");
@@ -1925,7 +1925,7 @@ void ns_image_processing_pipeline::apply_mask(ns_image_server_captured_image & c
 		for (unsigned int i = 0; i < output_regions.size(); i++) {
 			(*mask_splitter.mask_info())[output_regions[i].mask_color]->image_stats.calculate_statistics_from_histogram();
 			ns_64_bit image_stats_db_id(0);
-			(*mask_splitter.mask_info())[output_regions[i].mask_color]->image_stats.submit_to_db(image_stats_db_id, sql, true, false);
+			(*mask_splitter.mask_info())[output_regions[i].mask_color]->image_stats.submit_to_db(image_stats_db_id, &sql, true, false);
 			sql << "UPDATE sample_region_images SET currently_under_processing=0, image_statistics_id=" << image_stats_db_id << " WHERE id= " << output_regions[i].region_images_id;
 			sql.send_query();
 		}
@@ -1977,7 +1977,7 @@ void ns_image_processing_pipeline::apply_mask(ns_image_server_captured_image & c
 
 	sample_image_statistics.calculate_statistics_from_histogram();
 	ns_64_bit sample_stats_db_id(0);
-	sample_image_statistics.submit_to_db(sample_stats_db_id, sql);
+	sample_image_statistics.submit_to_db(sample_stats_db_id, &sql);
 	sql << "UPDATE captured_images SET mask_applied=1, image_statistics_id=" << sample_stats_db_id << " WHERE id= " << captured_image.captured_images_id;
 	sql.send_query();
 	sql.send_query("COMMIT");

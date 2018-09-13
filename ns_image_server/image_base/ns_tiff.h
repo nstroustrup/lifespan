@@ -110,7 +110,7 @@ public:
 
 			strip_buffer = (ns_component *)_TIFFmalloc(sizeof(ns_component)*tiff_info.stripsize);
 			if (strip_buffer == 0)
-				ns_throw_tiff_exception(ns_ex("ns_tiff_image_input_file::Count not allocate strip buffer!"));
+				ns_throw_tiff_exception(ns_ex("ns_tiff_image_input_file::Count not allocate strip buffer of length ") << tiff_info.stripsize << " for image of size (w,h,c)= (" << ns_image_input_file<ns_component>::_properties.width << "," << ns_image_input_file<ns_component>::_properties.height << "," << ns_image_input_file<ns_component>::_properties.components << ")");
 			if (client_data.exception_thrown()){
 				std::cerr << "4";
 				ns_throw_tiff_exception(client_data.ex());

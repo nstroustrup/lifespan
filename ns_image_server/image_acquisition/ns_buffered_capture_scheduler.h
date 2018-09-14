@@ -29,10 +29,11 @@ private:
 
 struct ns_buffered_capture_schedule_table_info{
 	long id_column,
-				  problem_column,
-				  image_id_column,
-				  timestamp_column,
-				  time_at_finish_column;
+		problem_column,
+		image_id_column,
+		timestamp_column,
+		time_at_finish_column,
+		transfer_status_column;
 	void load_if_needed(ns_image_server_sql * sql){
 		if (!table_format.loaded())
 			load(sql);
@@ -46,6 +47,7 @@ struct ns_buffered_capture_schedule_table_info{
 		spec.push_back(ns_table_column_spec("problem",&problem_column));
 		spec.push_back(ns_table_column_spec("time_stamp",&timestamp_column));
 		spec.push_back(ns_table_column_spec("time_at_finish",&time_at_finish_column));
+		spec.push_back(ns_table_column_spec("transferred_to_long_term_storage", &transfer_status_column));
 		
 		table_format.get_column_name_indicies(spec);
 	}

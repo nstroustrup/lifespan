@@ -3042,7 +3042,7 @@ void ns_image_server::add_subtext_to_current_event(const char * str, ns_image_se
 	if (sql != 0) {
 		std::map<ns_64_bit, ns_thread_output_state>::iterator current_thread_state = get_current_thread_state_info(impersonate_using_internal_thread_id);
 
-		*sql << "UPDATE host_event_log SET sub_text = CONCAT(sub_text,'" << sql->escape_string(str) << "') WHERE id = " << current_thread_state->second.last_event_sql_id;
+		*sql << "UPDATE " << sql->table_prefix() << "host_event_log SET sub_text = CONCAT(sub_text,'" << sql->escape_string(str) << "') WHERE id = " << current_thread_state->second.last_event_sql_id;
 		sql->send_query();
 	}
 	if (!suppress_display)

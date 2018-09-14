@@ -7,7 +7,7 @@ option (ONLY_IMAGE_ACQUISITION "Compile the image server with image processing d
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${PROJECT_SOURCE_DIR}/modules/")
 
-set(CMAKE_BUILD_TYPE Debug)
+set(CMAKE_BUILD_TYPE Release)
 
 file(GLOB_RECURSE image_server_SOURCES "${PROJECT_SOURCE_DIR}/../ns_image_server/image_server//*.cpp")
 file(GLOB_RECURSE image_server_HEADERS "${PROJECT_SOURCE_DIR}/../ns_image_server/image_server//*.h")

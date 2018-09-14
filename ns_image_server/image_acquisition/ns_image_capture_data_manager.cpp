@@ -468,6 +468,7 @@ unsigned long ns_image_capture_data_manager::handle_pending_transfers(const stri
 				ns_64_bit capture_schedule_id = ns_atoi64(events[i][0].c_str());
 				try{
 					transfer_image_to_long_term_storage_locked(capture_schedule_id,im, behavior,sql());
+					image_server.add_subtext_to_current_event(ns_image_server_event("Finished image transfer."),&sql());
 				}
 				catch(ns_ex & ex){
 					cerr << "Error processing capture: " << ex.text() << "\n";

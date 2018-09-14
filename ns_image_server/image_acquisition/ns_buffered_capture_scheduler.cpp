@@ -230,18 +230,23 @@ void ns_buffered_capture_scheduler::commit_all_local_schedule_changes_to_central
 				<< ", problem = " << mappings[i].problem_id << ", time_stamp = FROM_UNIXTIME("<< new_timestamp
 				<<") WHERE id = " << updated_data[i][buffered_capture_schedule.id_column];
 			local_buffer_sql.send_query();
-			local_buffer_sql << "DELETE FROM buffered_captured_images WHERE id = " << mappings[i].old_captured_image.captured_images_id;
+			local_buffer_sql << "UPDATE buffered_captured_images SET id = " << mappings[i].captured_image.captured_images_id  << " WHERE id = " << mappings[i].old_captured_image.captured_images_id;
 			local_buffer_sql.send_query();
-			local_buffer_sql << "DELETE FROM buffered_images WHERE id = " << mappings[i].old_image.id;
+			local_buffer_sql << "UPDATE buffered_images SET id = " << mappings[i].image.id <<" WHERE id = " << mappings[i].old_image.id;
 			local_buffer_sql.send_query();
-			local_buffer_sql << "DELETE FROM buffered_host_event_log WHERE id = " << mappings[i].old_problem_id;
+			local_buffer_sql << "UPDATE buffered_host_event_log SET id = " << mappings[i].problem_id << " WHERE id = " << mappings[i].old_problem_id;
 			local_buffer_sql.send_query();
 		}
 		if (updated_data[i][buffered_capture_schedule.time_at_finish_column] != "0" && 
 			atol(updated_data[i][buffered_capture_schedule.transfer_status_column].c_str()) == (long)ns_image_capture_data_manager::ns_transferred_to_long_term_storage){
 			local_buffer_sql << "DELETE FROM buffered_capture_schedule WHERE id = " << updated_data[i][buffered_capture_schedule.id_column];
 			local_buffer_sql.send_query();
-		//	local_buffer_sql.clear_query();
+			local_buffer_sql << "DELETE FROM buffered_captured_images WHERE id = " << mappings[i].old_captured_image.captured_images_id;
+			local_buffer_sql.send_query();
+			local_buffer_sql << "DELETE FROM buffered_images WHERE id = " << mappings[i].old_image.id;
+			local_buffer_sql.send_query();
+			local_buffer_sql << "DELETE FROM buffered_host_event_log WHERE id = " << mappings[i].old_problem_id;
+			local_buffer_sql.send_query();
 			}
 		}
 		catch(ns_ex & ex){

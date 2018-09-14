@@ -82,7 +82,9 @@ public:
 			//So, we set the custom error handler to store errors rather than throw them.
 			client_data.clear();
 			client_data.data.store_errors = true;
-			image = ns_tiff_open(filename.c_str(),&client_data.data,"r");
+			if (low_memory_single_line_reads)
+			image = ns_tiff_open(filename.c_str(),&client_data.data,"rCm");
+			else image = ns_tiff_open(filename.c_str(),&client_data.data,"r");
 			if (client_data.exception_thrown()){
 				std::cerr << "1";
 				ns_throw_tiff_exception(client_data.ex());

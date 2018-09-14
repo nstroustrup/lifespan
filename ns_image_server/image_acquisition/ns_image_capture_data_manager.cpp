@@ -92,7 +92,7 @@ void ns_image_capture_data_manager::register_capture_stop(ns_image_capture_speci
 		sql.send_query("COMMIT");
 	}
 }
-
+#define NS_TRANSFER_BUFFER_HEIGHT 2
 bool ns_image_capture_data_manager::transfer_data_to_long_term_storage(ns_image_server_captured_image & image,
 	ns_64_bit & time_during_transfer_to_long_term_storage,
 	ns_64_bit & time_during_deletion_from_local_storage,
@@ -114,27 +114,27 @@ bool ns_image_capture_data_manager::transfer_data_to_long_term_storage(ns_image_
 			ns_image_storage_source_handle<ns_16_bit,true> high_depth(storage_handler->request_from_storage_n_bits<ns_16_bit, true>(image,&sql,ns_image_storage_handler::ns_volatile_storage));
 			image.specified_16_bit = false;
 			ns_image_server_image output_image;
-			ns_image_storage_reciever_handle<ns_8_bit> low_depth(storage_handler->request_storage_ci(image,ns_tiff,1.0,32,&sql, output_image,had_to_use_local_storage,true));
+			ns_image_storage_reciever_handle<ns_8_bit> low_depth(storage_handler->request_storage_ci(image,ns_tiff,1.0,NS_TRANSFER_BUFFER_HEIGHT,&sql, output_image,had_to_use_local_storage,true));
 			output_image.id = image.capture_images_image_id;
 
 			ns_image_server_image small_image(image.make_small_image_storage(&sql));
 
 			bool had_to_use_local_storage_2;
-			ns_image_storage_reciever_handle<ns_8_bit> small_image_output(storage_handler->request_storage(small_image,ns_jpeg, NS_DEFAULT_JPEG_COMPRESSION, 32,&sql,had_to_use_local_storage_2,false,true));
+			ns_image_storage_reciever_handle<ns_8_bit> small_image_output(storage_handler->request_storage(small_image,ns_jpeg, NS_DEFAULT_JPEG_COMPRESSION, NS_TRANSFER_BUFFER_HEIGHT,&sql,had_to_use_local_storage_2,false,true));
 
-			ns_image_process_16_bit<ns_features_are_light, ns_image_stream_static_offset_buffer<ns_16_bit> > processor(32);
+			ns_image_process_16_bit<ns_features_are_light, ns_image_stream_static_offset_buffer<ns_16_bit> > processor(NS_TRANSFER_BUFFER_HEIGHT);
 
 			processor.set_small_image_output(small_image_output);
 			processor.set_crop_range(conversion_16_bit_bounds);
 			
 			ns_image_stream_binding< ns_image_process_16_bit<ns_features_are_light, ns_image_stream_static_offset_buffer<ns_16_bit> >,
-									 ns_image_storage_reciever<ns_8_bit> > binding(processor,low_depth.output_stream(),32);
+									 ns_image_storage_reciever<ns_8_bit> > binding(processor,low_depth.output_stream(),NS_TRANSFER_BUFFER_HEIGHT);
 			
 		//	cerr << "Attempting to write to 8 bit copy...\n";
 			ns_high_precision_timer hptimer;
 			hptimer.start();
 			//cerr << "pump\n";
-			high_depth.input_stream().pump(binding,32);
+			high_depth.input_stream().pump(binding,NS_TRANSFER_BUFFER_HEIGHT);
 		//	cerr << "done\n";
 			time_during_transfer_to_long_term_storage = hptimer.stop();
 			image.specified_16_bit = true;
@@ -201,11 +201,11 @@ bool ns_image_capture_data_manager::transfer_data_to_long_term_storage(ns_image_
 		ns_image_storage_source_handle<ns_8_bit> in(storage_handler->request_from_storage(image,&sql));
 		try{
 			ns_image_server_image output_image;
-			ns_image_storage_reciever_handle<ns_8_bit> out(storage_handler->request_storage_ci(image,ns_tiff,1.0,32,&sql,output_image,had_to_use_local_storage,false));
+			ns_image_storage_reciever_handle<ns_8_bit> out(storage_handler->request_storage_ci(image,ns_tiff,1.0,NS_TRANSFER_BUFFER_HEIGHT,&sql,output_image,had_to_use_local_storage,false));
 			output_image.id = image.capture_images_image_id;
 			if (had_to_use_local_storage)
 				return had_to_use_local_storage;
-			in.input_stream().pump(out.output_stream(),32);
+			in.input_stream().pump(out.output_stream(),NS_TRANSFER_BUFFER_HEIGHT);
 			storage_handler->delete_from_storage(image,ns_delete_volatile,&sql);
 			output_image.save_to_db(output_image.id, &sql, false);
 			string partition = storage_handler->get_partition_for_experiment(image.experiment_id,&sql);

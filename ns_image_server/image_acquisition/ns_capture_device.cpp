@@ -9,7 +9,7 @@
 #include "ns_usb.h"
 using namespace std;
 
-#define capture_buffer_size 1024*1024
+#define capture_buffer_size 1024*512
 class ns_scanner_list_compiler{
 public:
 	ns_scanner_list_compiler():delayed_ex_thrown(false){}
@@ -350,7 +350,7 @@ void ns_capture_device::capture(ns_image_capture_specification & c){
 				}
 		//		c.total_time_spent_during_programmed_delay += c.speed_regulator.run_delay_if_necessary();
 			
-				if (counter >= 50*1024){
+				if (counter*capture_buffer_size >= 50*1024*1024){
 					counter = 0;
 					cerr << '<' << b << '>';
 				}

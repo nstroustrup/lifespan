@@ -404,7 +404,7 @@ ns_thread_return_type ns_image_capture_data_manager::thread_start_handle_pending
 
 
 unsigned long ns_image_capture_data_manager::handle_pending_transfers(const string & device_name,ns_transfer_behavior & behavior){
-			
+			unsigned long start_time = ns_current_time();
 	//cerr << "\nHandling Pending Transfers\n";
 	//return 0;
 	try{
@@ -468,7 +468,7 @@ unsigned long ns_image_capture_data_manager::handle_pending_transfers(const stri
 				ns_64_bit capture_schedule_id = ns_atoi64(events[i][0].c_str());
 				try{
 					transfer_image_to_long_term_storage_locked(capture_schedule_id,im, behavior,sql());
-					image_server.add_subtext_to_current_event(ns_image_server_event("Finished image transfer."),&sql());
+					image_server.register_server_event(ns_image_server_event("Finished image transfer after ") << (ns_current_time()-start_time) << " seconds",&sql());
 				}
 				catch(ns_ex & ex){
 					cerr << "Error processing capture: " << ex.text() << "\n";

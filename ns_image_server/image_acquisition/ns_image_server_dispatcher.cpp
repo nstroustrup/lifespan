@@ -541,10 +541,22 @@ void ns_image_server_dispatcher::on_timer(){
 		(*a)++;
 	}
 
+	ns_image_server_device_manager::ns_device_name_list devices;
+
 	//first we handle all capture device management.  This doesn't require access to the central database
 	if (image_server.act_as_an_image_capture_server()){
+
 		try{
 			run_device_capture_management();
+
+			image_server.device_manager.request_device_list(devices);
+			std::vector<std::string> device_names(devices.size());
+			for (unsigned int i = 0; i < devices.size(); i++)
+				device_names[i] = devices[i].name;
+			buffered_capture_scheduler.image_capture_data_manager.handle_pending_transfers_to_long_term_storage(device_names);
+			std::vector<ns_image_server_captured_image> captured_images;
+			buffered_capture_scheduler.image_capture_data_manager.get_captured_images_to_report(captured_images);
+			buffered_capture_scheduler.report_captured_images(captured_images);
 		}
 		catch(ns_ex & ex){
 			try{
@@ -769,10 +781,7 @@ void ns_image_server_dispatcher::on_timer(){
 
 		map<std::string, ns_capture_device::ns_device_preview_type> preview_requested;
 		if (image_server.act_as_an_image_capture_server()){
-			ns_image_server_device_manager::ns_device_name_list devices;
 			try{
-
-				image_server.device_manager.request_device_list(devices);
 				//pair<scanner id, type of preview scan requested (0=none,1=transparency unit, 2=reflective)
 				*timer_sql_connection << "SELECT name,preview_requested,pause_captures, simulated_device,autoscan_interval FROM devices WHERE host_id = " << image_server.host_id();
 				ns_sql_result prev_res;
@@ -891,14 +900,6 @@ void ns_image_server_dispatcher::on_timer(){
 			try{
 				if (hotplug_requested)
 					hotplug_devices();
-				std::vector<std::string> device_names(devices.size());
-				for (unsigned int i = 0; i < devices.size(); i++)
-					device_names[i] = devices[i].name;
-				buffered_capture_scheduler.image_capture_data_manager.handle_pending_transfers_to_long_term_storage(device_names);
-				std::vector<ns_image_server_captured_image> captured_images;
-				buffered_capture_scheduler.image_capture_data_manager.get_captured_images_to_report(captured_images);
-				buffered_capture_scheduler.report_captured_images(captured_images);
-
 			}
 			catch(ns_ex & ex){
 				image_server.register_server_event(ex,timer_sql_connection);

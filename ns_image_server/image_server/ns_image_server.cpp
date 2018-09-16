@@ -886,7 +886,7 @@ bool ns_image_server::upgrade_tables(ns_sql & sql,const bool just_test_if_needed
 			if (just_test_if_needed)
 				return true;
 			sql << "ALTER TABLE image_server_buffer.buffered_capture_samples "
-				"ADD COLUMN `conversion_16_bit_low_bound` BIGINT UNSIGNED NOT NULL DEFAULT '0' AFTER `time_series_denoising_flag`, "
+				"ADD COLUMN `conversion_16_bit_low_bound` BIGINT UNSIGNED NOT NULL DEFAULT '0' AFTER `number_of_consecutive_captures_per_sample`, "
 				"ADD COLUMN `conversion_16_bit_high_bound`  BIGINT UNSIGNED NOT NULL DEFAULT '0' AFTER `conversion_16_bit_low_bound`";
 			sql.send_query();
 			changes_made = true;
@@ -897,7 +897,7 @@ bool ns_image_server::upgrade_tables(ns_sql & sql,const bool just_test_if_needed
 		if (just_test_if_needed)
 			return true;
 		sql << "ALTER TABLE capture_samples "
-			"ADD COLUMN `conversion_16_bit_low_bound` BIGINT UNSIGNED NOT NULL DEFAULT '0' AFTER `time_series_denoising_flag`, "
+			"ADD COLUMN `conversion_16_bit_low_bound` BIGINT UNSIGNED NOT NULL DEFAULT '0' AFTER `number_of_consecutive_captures_per_sample`, "
 			"ADD COLUMN `conversion_16_bit_high_bound`  BIGINT UNSIGNED NOT NULL DEFAULT '0' AFTER `conversion_16_bit_low_bound`";
 		sql.send_query();
 		changes_made = true;

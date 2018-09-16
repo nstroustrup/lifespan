@@ -559,7 +559,7 @@ std::string ns_image_storage_handler::get_storage_to_open(ns_image_server_image 
 
 				throw ns_ex("ns_image_storage_handler::request_storage(ns_image_server_image)::Volatile storage location is not writeable: ") << file_location.absolute_volatile_filename() << ns_file_io;
 			}
-			if (verbosity >= ns_standard){
+			if (verbosity > ns_standard){
 				ns_image_server_event ev("ns_image_storage_handler::Forced to open VT ");
 				ev << file_location.absolute_volatile_filename() << " for output.";
 				ev.log = report_to_db;
@@ -698,7 +698,7 @@ ofstream * ns_image_storage_handler::request_miscellaneous_storage(const std::st
 				std::string("ns_image_storage_handler::request_miscellaneous_storage::Could not access volatile storage when attempting to write ") + filename);
 			throw ns_ex("ns_image_storage_handler::request_miscellaneous_storage()::Could not open requested position in long term storage: ") << fname << ns_network_io;
 		}
-		if (verbosity >= ns_standard)
+		if (verbosity > ns_standard)
 			ns_image_handler_register_server_event_to_central_db(ns_image_server_event("ns_image_storage_handler::Opening ",false) << fname << " for binary output." << ns_ts_minor_event);
 	}
 	catch(...){
@@ -729,7 +729,7 @@ ofstream * ns_image_storage_handler::request_volatile_binary_output(const std::s
 
 			throw ns_ex("ns_image_storage_handler::request_volatile_binary_output()::Could not open requested position in volatile storage: ") << fname << ns_file_io;
 		}
-		if (verbosity >= ns_standard)
+		if (verbosity > ns_standard)
 			ns_image_handler_register_server_event_to_central_db(ns_image_server_event("ns_image_storage_handler::Opening ",false) << fname << " for binary output." << ns_ts_minor_event);
 	}
 	catch(...){
@@ -745,7 +745,7 @@ ifstream * ns_image_storage_handler::request_from_volatile_storage_raw(const std
 	ns_dir::convert_slashes(input_filename);
 
 	if (ns_dir::file_exists(input_filename)){
-		if (verbosity >= ns_standard)
+		if (verbosity > ns_standard)
 			ns_image_handler_register_server_event_to_central_db(ns_image_server_event("ns_image_storage_handler::Opening raw VT ") << input_filename << " for input." << ns_ts_minor_event);
 		ifstream * in(new ifstream(input_filename.c_str(), ios::in | ios::binary));
 		if (in->fail()){
@@ -778,7 +778,7 @@ ns_image_storage_reciever_handle<ns_image_storage_handler::ns_component> ns_imag
 
 		throw ns_ex("ns_image_storage_handler::request_local_cache_storage()::Volitile storage location is not writeable: ") << output_filename << ns_file_io;
 	}
-	if (verbosity >= ns_standard && report_to_db){
+	if (verbosity > ns_standard && report_to_db){
 		ns_image_server_event ev("ns_image_storage_handler::Opening ");
 		ev << output_filename << " for output.";
 		ev.log = report_to_db;
@@ -802,7 +802,7 @@ ns_image_storage_reciever_handle<float> ns_image_storage_handler::request_local_
 
 		throw ns_ex("ns_image_storage_handler::request_local_cache_storage()::Volitile storage location is not writeable: ") << output_filename << ns_file_io;
 	}
-	if (verbosity >= ns_standard && report_to_db) {
+	if (verbosity > ns_standard && report_to_db) {
 		ns_image_server_event ev("ns_image_storage_handler::Opening ");
 		ev << output_filename << " for output.";
 		ev.log = report_to_db;
@@ -876,7 +876,7 @@ ns_image_storage_source_handle<ns_image_storage_handler::ns_component> ns_image_
 	ns_dir::convert_slashes(input_filename);
 
 	if (ns_dir::file_exists(input_filename)){
-		if (verbosity >= ns_standard && report_to_db)
+		if (verbosity > ns_standard && report_to_db)
 			ns_image_handler_register_server_event_to_central_db(ns_image_server_event("ns_image_storage_handler::Opening ",false) << input_filename << " for input." << ns_ts_minor_event);
 		return ns_image_storage_source_handle<ns_image_storage_handler::ns_component>(new ns_image_storage_source_from_disk<ns_image_storage_handler::ns_component>(input_filename,true));
 
@@ -895,7 +895,7 @@ ns_image_storage_source_handle<float> ns_image_storage_handler::request_from_loc
 	ns_dir::convert_slashes(input_filename);
 
 	if (ns_dir::file_exists(input_filename)) {
-		if (verbosity >= ns_standard && report_to_db)
+		if (verbosity > ns_standard && report_to_db)
 			ns_image_handler_register_server_event_to_central_db(ns_image_server_event("ns_image_storage_handler::Opening ", false) << input_filename << " for input." << ns_ts_minor_event);
 		return ns_image_storage_source_handle<float>(new ns_image_storage_source_from_disk<float>(input_filename, true));
 
@@ -915,7 +915,7 @@ ns_image_storage_source_handle<ns_image_storage_handler::ns_component> ns_image_
 	ns_dir::convert_slashes(input_filename);
 
 	if (ns_dir::file_exists(input_filename)){
-		if (verbosity >= ns_standard && report_in_db)
+		if (verbosity > ns_standard && report_in_db)
 			ns_image_handler_register_server_event_to_central_db(ns_image_server_event("ns_image_storage_handler::Opening VT ") << input_filename << " for input." << ns_ts_minor_event);
 		return ns_image_storage_source_handle<ns_image_storage_handler::ns_component>(new ns_image_storage_source_from_disk<ns_image_storage_handler::ns_component>(input_filename,true));
 

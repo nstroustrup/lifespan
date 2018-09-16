@@ -203,7 +203,7 @@ public:
 			volatile_storage_directory.size() != 0 && ns_dir::file_exists(file_location.volatile_directory)){	
 			if (ns_dir::file_exists(file_location.absolute_volatile_filename())){
 				try{
-					if (verbosity >= ns_standard)
+					if (verbosity > ns_standard)
 						ns_image_handler_register_server_event(ns_image_server_event("ns_image_storage_handler::Opening VT ") << file_location.absolute_volatile_filename() << " for input." << ns_ts_minor_event,sql);
 					ns_image_storage_source_from_disk<ns_comp, low_memory_single_line_reads> * tmp;
 					tmp = new ns_image_storage_source_from_disk<ns_comp, low_memory_single_line_reads>(file_location.absolute_volatile_filename(),true);

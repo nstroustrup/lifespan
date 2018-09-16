@@ -253,7 +253,7 @@ void ns_image_capture_data_manager::transfer_image_to_long_term_storage(const st
 	}
 }
 
-void ns_image_capture_data_manager::transfer_image_to_long_term_storage_locked(ns_64_bit capture_schedule_entry_id, ns_image_server_captured_image & image, ns_transfer_behavior & behavior, ns_local_buffer_connection & sql) {
+bool ns_image_capture_data_manager::transfer_image_to_long_term_storage_locked(ns_64_bit capture_schedule_entry_id, ns_image_server_captured_image & image, ns_transfer_behavior & behavior, ns_local_buffer_connection & sql) {
 
 	//First we check what state the current image is in
 	sql << "SELECT transferred_to_long_term_storage, sample_id FROM buffered_capture_schedule WHERE id = " << capture_schedule_entry_id;
@@ -280,7 +280,7 @@ void ns_image_capture_data_manager::transfer_image_to_long_term_storage_locked(n
 	}
 	if (behavior == ns_convert_and_compress_locally && transfer_status == ns_on_local_server_in_8bit) {
 		transfer_status_debugger.set_status(image.device_name, ns_transfer_status("Waiting to transfer locally cached 8 bit image"));
-		return;	//give up; there is nothing useful to do with 8 bit images until we can transfer them to the long term storage.
+		return false;	//give up; there is nothing useful to do with 8 bit images until we can transfer them to the long term storage.
 	}
 
 	sql << "SELECT conversion_16_bit_low_bound, conversion_16_bit_high_bound FROM buffered_capture_samples WHERE id = " << sample_id;
@@ -336,6 +336,7 @@ void ns_image_capture_data_manager::transfer_image_to_long_term_storage_locked(n
 		newly_captured_images_for_which_to_schedule_jobs.push_back(image);
 		captured_image_list_lock.release();
 	}
+	return true;
 }
 
 struct ns_hptlts_arguments{
@@ -439,9 +440,11 @@ unsigned long ns_image_capture_data_manager::handle_pending_transfers(const stri
 			 << " AND cs.time_at_start != 0"
 			 << " AND cs.time_at_finish != 0"
 			 << " AND cs.problem = 0"
-			 << " AND (cs.transferred_to_long_term_storage = " << (int)ns_on_local_server_in_16bit
-			 << "      || cs.transferred_to_long_term_storage = " << (int)ns_on_local_server_in_8bit << ") ";
-	//	std::string q(check_sql->query());
+			 << " AND (cs.transferred_to_long_term_storage = " << (int)ns_on_local_server_in_16bit;
+		if (behavior != ns_convert_and_compress_locally)
+			*check_sql << " || cs.transferred_to_long_term_storage = " << (int)ns_on_local_server_in_8bit << ") ";
+		else *check_sql << ")";
+		//	std::string q(check_sql->query());
 		ns_sql_result events;
 		check_sql->get_rows(events);
 		sql_lock.release();
@@ -460,15 +463,17 @@ unsigned long ns_image_capture_data_manager::handle_pending_transfers(const stri
 					ev << "Processing a pending image transfer to long term storage: " << device_name << "@" << ns_format_time_string_for_human(atol(events[i][2].c_str()));
 				else if (behavior == ns_convert_and_compress_locally)
 					ev << "No access to long term storage; compressing captured image and caching locally: " << device_name << "@" << ns_format_time_string_for_human(atol(events[i][2].c_str()));
-
+				else ev << "Unknown behavior specified: " << (int)behavior;
 				image_server.register_server_event(ev,&sql());
 				ns_image_server_captured_image im;
 				im.captured_images_id = ns_atoi64(events[i][1].c_str());
 				im.load_from_db(im.captured_images_id,&sql());
 				ns_64_bit capture_schedule_id = ns_atoi64(events[i][0].c_str());
 				try{
-					transfer_image_to_long_term_storage_locked(capture_schedule_id,im, behavior,sql());
-					image_server.register_server_event(ns_image_server_event("Finished image transfer after ") << (ns_current_time()-start_time) << " seconds",&sql());
+					const bool did_something = transfer_image_to_long_term_storage_locked(capture_schedule_id,im, behavior,sql());
+					if (did_something)
+						image_server.register_server_event(ns_image_server_event("Finished image transfer after ") << (ns_current_time()-start_time) << " seconds",&sql());
+					else std::cerr << "Wasted time on a useless transfer\n";
 				}
 				catch(ns_ex & ex){
 					cerr << "Error processing capture: " << ex.text() << "\n";

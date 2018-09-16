@@ -78,7 +78,7 @@ void ns_sql_connection::connect(const std::string & server_name, const std::stri
 }
 
 void ns_sql_connection::disconnect(){
-  ns_acquire_lock_for_scope lock(get_lock(__FILE__, __LINE__));
+  ns_acquire_lock_for_scope lock(get_lock(__FILE__, __LINE__,false));
   if (mysql_internal_data_allocated){
 	 ns_mysql_header::mysql_close(&mysql);
 	 mysql_internal_data_allocated = false;

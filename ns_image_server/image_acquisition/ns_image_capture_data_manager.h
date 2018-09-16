@@ -72,7 +72,7 @@ private:
 	ns_local_buffer_connection * check_sql;
 	bool transfer_in_progress_for_device(const std::string & device);
 
-	void transfer_image_to_long_term_storage_locked(ns_64_bit capture_schedule_entry_id, ns_image_server_captured_image & image, ns_transfer_behavior & behavior,ns_local_buffer_connection & sql);
+	bool transfer_image_to_long_term_storage_locked(ns_64_bit capture_schedule_entry_id, ns_image_server_captured_image & image, ns_transfer_behavior & behavior,ns_local_buffer_connection & sql);
 
 	static ns_thread_return_type thread_start_handle_pending_transfers_to_long_term_storage(void * thread_arguments);
 

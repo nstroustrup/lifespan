@@ -31,7 +31,7 @@ using namespace std;
 
 void ns_image_server_global_debug_handler(const ns_text_stream_t & t);
 
-ns_image_server::ns_image_server() : exit_has_been_requested(false),exit_happening_now(false), handling_exit_request(false), ready_to_exit(false), update_software(false),
+ns_image_server::ns_image_server() : exit_has_been_requested(false),exit_happening_now(false), handling_exit_request(false), ready_to_exit(true), update_software(false),
 sql_lock("ns_is::sql"), server_event_lock("ns_is::server_event"), performance_stats_lock("ns_pfl"), simulator_scan_lock("ns_is::sim_scan"), local_buffer_sql_lock("ns_is::lb"), processing_run_counter_lock("ns_pcl"),
 _act_as_processing_node(true), exit_lock("ns_is::el"),cleared(false), do_not_run_multithreaded_jobs(false),
 #ifndef NS_ONLY_IMAGE_ACQUISITION
@@ -791,6 +791,15 @@ void ns_image_server::request_database_from_db_and_switch_to_it(ns_sql & sql, bo
 	sql.get_rows(res);
 	if (res.size() == 0)
 		return;
+	//nothing needs doing if we are already at the correct database.
+	ns_acquire_lock_for_scope lock(sql_lock,__FILE__, __LINE__);
+	if (*sql_database_choice == res[0][0]) {
+		lock.release();
+		return;
+	}
+	lock.release();
+
+
 	try{
 		set_sql_database(res[0][0], update_hosts_records_in_db,&sql);
 	}
@@ -828,7 +837,7 @@ void ns_image_server::set_sql_database(const std::string & database_name,const b
 		unregister_host(sql);
 		clear_processing_status(sql);
 	}
-	image_server.sql_lock.wait_to_acquire(__FILE__, __LINE__);
+	sql_lock.wait_to_acquire(__FILE__, __LINE__);
 	std::vector<std::string>::const_iterator p = std::find(possible_sql_databases.begin(),possible_sql_databases.end(),database_name);
 	if (p == possible_sql_databases.end()){
 		p = possible_sql_databases.insert(possible_sql_databases.end(),database_name);
@@ -836,10 +845,10 @@ void ns_image_server::set_sql_database(const std::string & database_name,const b
 	sql_database_choice = p;
 	sql->select_db(database_name);
 	ns_death_time_annotation_flag::get_flags_from_db(sql);
-	image_server.sql_lock.release();
+	sql_lock.release();
 	if (update_hosts_records_in_db){
-		image_server.register_host(sql,true,false);
-		image_server.register_devices(false,sql);
+		register_host(sql,true,false);
+		register_devices(false,sql);
 	}
 }
 

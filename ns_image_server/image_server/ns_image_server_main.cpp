@@ -653,7 +653,7 @@ int main(int argc, char ** argv){
 	try {
 
 		ns_sql::load_sql_library();
-
+		
 
 		//set default options for command line arguments
 		ns_cl_command command(ns_start);
@@ -1303,6 +1303,11 @@ int main(int argc, char ** argv){
 
 #endif
 
+		if (image_server.act_as_an_image_capture_server()) {
+			if (!image_server.mail_path().empty() && !ns_dir::file_exists(image_server.mail_path()))
+				throw ns_ex("The mail program ") << image_server.mail_path() << " does not appear to exist.  In the ns_image_server.ini configuration file, please set mail_path your POSIX mail program.  To disable alerts, set mail_path as blank (no value).";
+		}
+
 		image_server.register_server_event(ns_image_server_event("Clearing local image cache"), &sql());
 		image_server.image_storage.clear_local_cache();
 
@@ -1406,7 +1411,6 @@ int main(int argc, char ** argv){
 		if (post_dispatcher_init_command == ns_trigger_segfault_in_dispatcher_thread)
 			dispatch.trigger_segfault_on_next_timer();
 
-
 		//search for devices
 		if (image_server.act_as_an_image_capture_server()){
 			image_server.set_up_local_buffer();
@@ -1428,7 +1432,7 @@ int main(int argc, char ** argv){
 			image_server.device_manager.save_last_known_device_configuration();
 
 		if (sql().connected_to_central_database())
-			image_server.register_devices(false,&sql());
+			image_server.register_devices(false, &sql());
 
 		if (!image_server.act_as_processing_node()){
 			image_server.register_server_event(ns_image_server_event("Not acting as a processing node."),&sql());

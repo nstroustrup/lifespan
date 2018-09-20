@@ -1646,7 +1646,7 @@ ns_thread_return_type ns_scan_for_problems(void * d){
 
 				ns_image_server_event ev;
 				if (missed_schedule_events.size() == 1) ev << "The image cluster has missed a scheduled image capture:";
-				else ev << "The image cluster has missed " << (unsigned long)missed_schedule_events.size() << " scheduled image captures";
+				else ev << "The image cluster has missed " << (unsigned long)missed_schedule_events.size() << " scheduled image captures\n";
 				ev << unsuppressed_text;
 				image_server.register_server_event(ns_image_server::ns_register_in_central_db,ev);
 

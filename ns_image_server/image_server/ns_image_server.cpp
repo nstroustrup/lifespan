@@ -2758,11 +2758,13 @@ if (_act_as_processing_node)
 		std::string specified_simulated_device_name(constants["simulated_device_name"]);
 		if (specified_simulated_device_name == "" || specified_simulated_device_name== ".")
 			specified_simulated_device_name = "sim";
-		_simulated_device_name = base_host_name + "_" + image_server.system_host_name + "_" + specified_simulated_device_name;
+		_simulated_device_name = specified_simulated_device_name;
 		for (unsigned int i = 0; i < _simulated_device_name.size(); i++){
 			if (!isalpha(_simulated_device_name[i]) && !isdigit(_simulated_device_name[i]))
 				_simulated_device_name[i] = '_';
 		}
+		if (specified_simulated_device_name.length() > 23)
+			throw ns_ex("Simulated device name is too large.");
 		_maximum_allowed_local_scan_delay = 0;
 		_maximum_allowed_remote_scan_delay = 0;
 		if (_simulated_device_name.size() < 2)

@@ -270,7 +270,7 @@ ns_wcon_data_element_member_type ns_wcon_rich_data_record_element::additional_js
 	switch (i) {
 	case 0:
 	case 1:
-		return ns_double;
+		return ns_wcon_double;
 	case 2:
 	case 3:
 	case 4:
@@ -278,8 +278,8 @@ ns_wcon_data_element_member_type ns_wcon_rich_data_record_element::additional_js
 	case 5:
 	case 6:
 		return ns_string;
-	case 7: return ns_subclass;
-	default: return ns_unknown;
+	case 7: return ns_wcon_subclass;
+	default: return ns_wcon_unknown;
 	}
 }
 

@@ -229,7 +229,7 @@ struct ns_wcon_file_list_entry {
 };
 
 //supported data types that can be stored in data fields of a WCON record element
-typedef enum { ns_unknown,ns_double, ns_string, ns_vector_double, ns_vector_string, ns_subclass} ns_wcon_data_element_member_type;
+typedef enum { ns_wcon_unknown,ns_wcon_double, ns_wcon_string, ns_wcon_vector_double, ns_wcon_vector_string, ns_wcon_subclass} ns_wcon_data_element_member_type;
 
 //implements the data handled by a minimal WCON writer/parser
 class ns_wcon_default_data_record_element {
@@ -256,7 +256,7 @@ public:
 
 	static int number_of_additional_json_fields() { return 0; }
 	static std::string additional_json_field_name(const int &i) {return "";}
-	static ns_wcon_data_element_member_type additional_json_field_type(const int &i) {return ns_unknown;}
+	static ns_wcon_data_element_member_type additional_json_field_type(const int &i) {return ns_wcon_unknown;}
 
 	std::string get_additional_json_field_value_string(const int &i) const { return ""; }
 	const double get_additional_json_field_value_double(const int &i) const { return 0; }
@@ -1151,19 +1151,19 @@ ns_wcon_units::ns_units ns_wcon_units::from_string(const std::string & str) {
 	 for (int k = 0; k < timepoint_data_t::number_of_additional_json_fields(); k++) {
 		 ns_wcon_data_element_member_type type = timepoint_data_t::additional_json_field_type(k);
 		 switch (type) {
-		 case ns_unknown:
+		 case ns_wcon_unknown:
 			 std::cerr << "Encountered an unknown field type for spec" << k << "\n"; break;
 		 case ns_string:
 			 for (std::vector<std::string>::size_type i = 0; i < data.size(); i++)
 				 tmp_s[i] = data[i].get_additional_json_field_value_string(k);
 			 j[data[0].additional_json_field_name(k)] = tmp_s;
 			 break;
-		 case ns_double:
+		 case ns_wcon_double:
 			 for (std::vector<double>::size_type i = 0; i < data.size(); i++)
 				 tmp[i] = data[i].get_additional_json_field_value_double(k);
 			 j[data[0].additional_json_field_name(k)] = tmp;
 			 break;
-		 case ns_vector_double: {
+		 case ns_wcon_vector_double: {
 			 std::vector<nlohmann::json> j2;
 			 j2.reserve(data.size());
 			 for (std::vector<double>::size_type i = 0; i < data.size(); i++)
@@ -1171,7 +1171,7 @@ ns_wcon_units::ns_units ns_wcon_units::from_string(const std::string & str) {
 			 j[data[0].additional_json_field_name(k)] = j2;
 			 break;
 		 }
-		 case ns_vector_string: {
+		 case ns_wcon_vector_string: {
 			 std::vector<nlohmann::json> j2;
 			 j2.reserve(data.size());
 			 for (std::vector<double>::size_type i = 0; i < data.size(); i++)
@@ -1179,7 +1179,7 @@ ns_wcon_units::ns_units ns_wcon_units::from_string(const std::string & str) {
 			 j[data[0].additional_json_field_name(k)] = j2;
 			 break;
 		 }
-		 case ns_subclass: {
+		 case ns_wcon_subclass: {
 			 std::vector<nlohmann::json> j2;
 			 j2.reserve(data.size());
 			 for (std::vector<double>::size_type i = 0; i < data.size(); i++)

@@ -8,13 +8,14 @@ class ns_email_sender{
 public:
 	ns_email_sender():delayed_ex_thrown(false){}
 
-	void send_email(const string & sendmail_text){	
+	void send_email(const string & sendmail_text, bool verbose){	
 		unsigned long capture_buffer_size(100);
 		ns_external_execute exec;
 
 		ns_asynchronous_read_info<ns_email_sender> read_info;
 		ns_external_execute_options opt;
 		opt.take_stdin_handle = true;
+		std::cerr << "Running command " << image_server.mail_path() << " " << sendmail_text << "\n";
 		exec.run(image_server.mail_path().c_str(),"",opt);
 		exec.start_timeout(15);
 		exec.write_stdin(const_cast<char *>(sendmail_text.c_str()),(unsigned long)sendmail_text.length());
@@ -41,6 +42,7 @@ public:
 
 		if (asynchronous_read.result().size() != 0){
 			string res = asynchronous_read.result();
+			if (verbose) cerr << res << "\n";
 			if (res.size() != 0)
 				throw ns_ex("Error sending email:") << res;
 		}		
@@ -87,7 +89,7 @@ void ns_alert_handler::submit_not_rate_limited_alert(const ns_alert & alert, ns_
 	image_server.register_server_event(ns_image_server_event("Submitting Alert: ") << alert.detailed_text,&sql);
 }
 
-void ns_alert_handler::email_alert(const string & text, vector<string> & recips, const bool report_to_db){
+void ns_alert_handler::email_alert(const string & text, vector<string> & recips, const bool report_to_db, const bool verbose){
 	
 	recipient_lock.wait_to_acquire(__FILE__,__LINE__);
 	if (recipients.size() == 0){
@@ -108,7 +110,7 @@ void ns_alert_handler::email_alert(const string & text, vector<string> & recips,
 	out += "(via " + image_server.host_name_out() +")";
 	out+=text;
 	ns_email_sender email_sender;
-	email_sender.send_email(out);
+	email_sender.send_email(out,verbose);
 	#else
 	string command("echo \"\n");
 	for (unsigned int i = 0; i < text.size(); i++){
@@ -119,6 +121,7 @@ void ns_alert_handler::email_alert(const string & text, vector<string> & recips,
 	command += "\n\" | " + image_server.mail_path() + " -s \"" + subject + "\" ";
 	for (unsigned int i = 0; i < recips.size(); i++)
 		command += recips[i] + " ";
+	if (verbose) std::cerr << "Running command: " << command << "\n";
 	system(command.c_str());
 	#endif
 
@@ -437,7 +440,7 @@ ns_alert_handler::ns_alert_handler():
 	initial_alert_delays[(unsigned long)ns_alert::ns_low_disk_space_warning] = 5;
 }
 
-void ns_alert_handler::submit_desperate_alert(const string & text) const{
+void ns_alert_handler::submit_desperate_alert(const string & text, const bool verbose) const{
 	const unsigned long current_time(ns_current_time());
 	if (current_time > 	time_of_last_desperate_alert_submission+
 						60*duration_until_next_desperate_alert_submission + 
@@ -456,6 +459,6 @@ void ns_alert_handler::submit_desperate_alert(const string & text) const{
 		vector<string> r(recipients.size());
 		for (unsigned int i = 0; i < recipients.size(); i++)
 			r[i] = recipients[i].email;
-		image_server.alert_handler.email_alert(txt,r,false);
+		image_server.alert_handler.email_alert(txt,r,false,verbose);
 	}
 }

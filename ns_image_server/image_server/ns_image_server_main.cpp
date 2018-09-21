@@ -635,7 +635,7 @@ int main(int argc, char ** argv){
 		<< "       With sub-option 'u': actually submit the experiment specification to the database \n"
 		<< "       With sub-option 'f' (which implies 'u'): force overwriting of existing experiments\n"
 		<< "       With sub-option 'a' (which implies 'u'): extend current experiment using submitted schedule\n"
-		<< "       Options combine, eg to upload an append request, specify the arguments submit_experiment au"
+		<< "       Options combine, e.g. au\n"
 		<< "test_email : send a test alert email from the current node\n"
 		<< "test_alert : send a test alert to be processed by the cluster\n"
 		<< "test_rate_limited_alert : send a test alert to be processed by the cluster\n"
@@ -1331,13 +1331,17 @@ int main(int argc, char ** argv){
 		}
 
 		case ns_test_email: {
+			std::cout << "Trying to send a test alert email...";
 			std::string text("Image server node ");
 			text += image_server.host_name_out();
-			text += " has succesfully sent an email.";
-			ns_acquire_for_scope<ns_sql> sql(image_server.new_sql_connection(__FILE__, __LINE__));
-			image_server.alert_handler.initialize(image_server.mail_from_address(),sql());
-			image_server.alert_handler.submit_desperate_alert(text);
-			sql.release();
+			text += " has succesfully sent an email."; 
+			{
+				ns_acquire_for_scope<ns_sql> sql(image_server.new_sql_connection(__FILE__, __LINE__));
+				image_server.alert_handler.initialize(image_server.mail_from_address(), sql());
+				image_server.alert_handler.submit_desperate_alert(text,true);
+				sql.release();
+			}
+			std::cout << "Done.  Check to see if an email was recieved.\n";
 			return 0;
 		}
 		case ns_test_alert: {

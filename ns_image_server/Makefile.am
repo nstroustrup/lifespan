@@ -152,7 +152,7 @@ AM_CPPFLAGS = -Iimage_server -Istatistics -Isystem_base \
 			   -I/usr/include/freetype2 -I/usr/local/include/freetype2 -I/usr/freetype2 \
 			   $(PRE_DEF) \
 			   $(DEPS_CFLAGS) 
-AM_CXXFLAGS = -g $(NS_CXXFLAGS)	
+AM_CXXFLAGS = -g $(NS_CXXFLAGS)	-D$(NS_USB_1)
 AM_CFLAGS = -O3 -pthread
 
 AM_LDFLAGS=$(MYSQL_LDFLAGS) $(DEPS_LIBS) -lpthread $(NS_LDFLAGS)

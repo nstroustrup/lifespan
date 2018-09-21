@@ -56,11 +56,11 @@ AC_SEARCH_LIBS(libusb_init,[usb-1.0], NS_USB_1=1,NS_USB_1=0)
 if test "$NS_USB_1" = "0"
 then
 AC_SEARCH_LIBS(usb_init,usb, [],AC_MSG_ERROR([Could not either libusb or libusb-1.0.  Are either installed?],[1]))
-AC_DEFINE(NS_USB_1,0,[Use usb-1.0 library instead of usb-0.1])
+AC_DEFINE(NS_USB_1,0,[Using usb-0.1])
 else
-AC_DEFINE(NS_USB_1,1,[Use usb-1.0 library instead of usb-0.1])
+AC_DEFINE(NS_USB_1,1,[Using usb-1.0])
 fi
-
+AC_SUBST(NS_USB_1,"NS_USB_1=$NS_USB_1")
 # worm browser build and fltk path 
 AC_ARG_ENABLE([browser],[AS_HELP_STRING([--enable-browser[=path-to-fltk]], [build worm browser (requires FLTK libraries, which path can be optionally specified if nonstandard)])], [], [enable_browser=no])
 

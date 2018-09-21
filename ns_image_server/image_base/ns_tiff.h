@@ -1,6 +1,7 @@
 #ifndef NS_TIFF
 #define NS_TIFF
 #include <stdio.h>
+#include <cstdarg>
 #include "tiffio.h"
 #include "ns_libtiff_interface.h"
 #include "ns_image.h"

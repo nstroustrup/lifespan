@@ -1153,7 +1153,7 @@ ns_wcon_units::ns_units ns_wcon_units::from_string(const std::string & str) {
 		 switch (type) {
 		 case ns_wcon_unknown:
 			 std::cerr << "Encountered an unknown field type for spec" << k << "\n"; break;
-		 case ns_string:
+		 case ns_wcon_string:
 			 for (std::vector<std::string>::size_type i = 0; i < data.size(); i++)
 				 tmp_s[i] = data[i].get_additional_json_field_value_string(k);
 			 j[data[0].additional_json_field_name(k)] = tmp_s;

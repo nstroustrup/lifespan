@@ -444,12 +444,13 @@ void ns_buffered_capture_scheduler::update_local_buffer_from_central_server(ns_i
 			ns_sql_result experiment_data;
 			ns_get_all_column_data_from_table("experiments",experiments.column_names,experiment_where_clause,experiment_data,&central_db);
 		
-			std::cerr << "Updating local buffer with information about " << capture_sample_data.size() << " samples\n";
+			if (capture_sample_data.size() > 0)
+				image_server.register_server_event(ns_image_server_event("Caching ") << capture_sample_data.size() << " samples in the local db.",&central_db);
 			//local_buffer_db.send_query("DELETE FROM buffered_capture_samples");
 			if (capture_samples.time_stamp_column_id == -1)
 					throw ns_ex("Could not find capture sample time stamp column!");
 			long r(-5);
-			for(unsigned int i = 0; i < capture_sample_data.size(); i++){
+			for (unsigned int i = 0; i < capture_sample_data.size(); i++) {
 				long r1 = (100 * i) / capture_sample_data.size();
 				if (r1 - r >= 5) {
 					image_server.add_subtext_to_current_event(ns_to_string(r1) + "%...", &central_db);
@@ -457,21 +458,22 @@ void ns_buffered_capture_scheduler::update_local_buffer_from_central_server(ns_i
 				}
 
 				std::string values;
-				
+
 				values += "`";
 				values += capture_samples.column_names[0] + "`='" + local_buffer.escape_string(capture_sample_data[i][0]) + "'";
-				for (unsigned int j = 1; j < capture_samples.column_names.size(); j++){
+				for (unsigned int j = 1; j < capture_samples.column_names.size(); j++) {
 					if (j == capture_samples.time_stamp_column_id)	//we need to update the local time stamp here, so that if there might be a clock asynchrony between the
 						continue;									//central server and local server that would allow remote timestamps to be in the future according to local
 																	//which would trigger the local server to update the central in the next check, ad infinitum.
-					values += std::string(",`") +  capture_samples.column_names[j] + "`='" + local_buffer.escape_string(capture_sample_data[i][j]) + "'";
+					values += std::string(",`") + capture_samples.column_names[j] + "`='" + local_buffer.escape_string(capture_sample_data[i][j]) + "'";
 				}
 				values += std::string(",`time_stamp`=FROM_UNIXTIME(") + ns_to_string(new_timestamp) + ")";
 				local_buffer << "INSERT INTO buffered_capture_samples SET " << values
-							 << " ON DUPLICATE KEY UPDATE " << values;
+					<< " ON DUPLICATE KEY UPDATE " << values;
 				local_buffer.send_query();
 			}
-			std::cerr << "Done.\n";
+			if (capture_sample_data.size() > 0)
+				image_server.add_subtext_to_current_event("Done.", &central_db);
 			//local_buffer.send_query("DELETE FROM buffered_experiments");
 			for(unsigned int i = 0; i < experiment_data.size(); i++){
 				std::string values;
@@ -489,12 +491,13 @@ void ns_buffered_capture_scheduler::update_local_buffer_from_central_server(ns_i
 				local_buffer.send_query();
 			}
 		}
-		std::cerr << "Updating local buffer with information about " << new_schedule.size() << " schedule time points...\n";
+		if (new_schedule.size() > 0)
+		image_server.register_server_event(ns_image_server_event("Caching ") << new_schedule.size() << " scheduled time points in the local db...", &central_db);
 		long last_displayed_percent = -5;
 		for (unsigned int i = 0; i < new_schedule.size(); i++){
 			const long percent((100*i)/new_schedule.size());
 				if (percent >= last_displayed_percent+5){
-					std::cerr << percent << "%...";
+					image_server.add_subtext_to_current_event(ns_to_string(percent) + "%...", &central_db);
 					last_displayed_percent = percent;
 				}
 			std::string all_values;
@@ -523,7 +526,8 @@ void ns_buffered_capture_scheduler::update_local_buffer_from_central_server(ns_i
 						 << " ON DUPLICATE KEY UPDATE " << update_values;
 			local_buffer.send_query();
 		}
-		std::cerr << "Done.\n";
+		if (new_schedule.size() > 0)
+			image_server.add_subtext_to_current_event("Done", &central_db);
 	}
 	//if no changes to the schedule were made, look to see find changes made to any capture samples
 	else{
@@ -534,19 +538,20 @@ void ns_buffered_capture_scheduler::update_local_buffer_from_central_server(ns_i
 			" AND time_stamp < FROM_UNIXTIME(" + ns_to_string(update_start_time.remote_time) +") "
 				,capture_sample_data,&central_db);
 		if (capture_sample_data.size() > 0){
-			std::cerr << "Copying over " << capture_sample_data.size() << " samples\n";
+			image_server.register_server_event(ns_image_server_event("Caching ") << capture_sample_data.size() << " samples in the local db...",&central_db);
 			//local_buffer_db.send_query("DELETE FROM buffered_capture_samples");
-			for(unsigned int i = 0; i < capture_sample_data.size(); i++){
+			for (unsigned int i = 0; i < capture_sample_data.size(); i++) {
 				std::string values;
 				values += "`";
 				values += capture_samples.column_names[0] + "`='" + local_buffer.escape_string(capture_sample_data[i][0]) + "'";
 				for (unsigned int j = 1; j < capture_samples.column_names.size(); j++)
-					values += std::string(",`") +  capture_samples.column_names[j] + "`='" + local_buffer.escape_string(capture_sample_data[i][j]) + "'";
+					values += std::string(",`") + capture_samples.column_names[j] + "`='" + local_buffer.escape_string(capture_sample_data[i][j]) + "'";
 
 				local_buffer << "INSERT INTO buffered_capture_samples SET " << values
-								<< " ON DUPLICATE KEY UPDATE " << values;
+					<< " ON DUPLICATE KEY UPDATE " << values;
 				local_buffer.send_query();
 			}
+			image_server.add_subtext_to_current_event("Done.", &central_db);
 		}
 	}
 		
@@ -568,9 +573,11 @@ void ns_buffered_capture_scheduler::update_local_buffer_from_central_server(ns_i
 	}
 
 	if (!notable_constants.empty()){
-		std::cerr << "Updating constants in local buffer:\n";
+		ns_image_server_event ev("Updating constants in local buffer :\n");
+		
 		for (unsigned int i = 0; i < notable_constants.size(); i++)
-			std::cerr << notable_constants[i] << "\n";
+			ev << "  " << notable_constants[i] << "\n";
+		image_server.register_server_event(ev, &central_db);
 	}
 	for (unsigned int i = 0; i < cres.size(); i++)
 		image_server.set_cluster_constant_value(local_buffer.escape_string(cres[i][0]),local_buffer.escape_string(cres[i][1]),&local_buffer,update_start_time.local_time);

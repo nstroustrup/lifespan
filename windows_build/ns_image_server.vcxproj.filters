@@ -502,9 +502,6 @@
     <ClInclude Include="..\ns_image_server\image_processing\ns_image_processing_pipeline.h">
       <Filter>image_processing</Filter>
     </ClInclude>
-    <ClInclude Include="..\ns_image_server\image_processing\ns_image_tools.h">
-      <Filter>image_processing</Filter>
-    </ClInclude>
     <ClInclude Include="..\ns_image_server\image_acquisition\ns_captured_image_statistics_set.h">
       <Filter>image_acquisition</Filter>
     </ClInclude>
@@ -1000,9 +997,6 @@
     <ClCompile Include="..\ns_image_server\image_processing\ns_image_processing_pipeline.cpp">
       <Filter>image_processing</Filter>
     </ClCompile>
-    <ClCompile Include="..\ns_image_server\image_processing\ns_image_tools.cpp">
-      <Filter>image_processing</Filter>
-    </ClCompile>
     <ClCompile Include="..\ns_image_server\image_acquisition\ns_captured_image_statistics_set.cpp">
       <Filter>image_acquisition</Filter>
     </ClCompile>
@@ -1125,6 +1119,9 @@
     </ClCompile>
     <ClCompile Include="..\ns_image_server\data_annotation\ns_death_time_annotation.cpp">
       <Filter>data_annotation</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ns_image_server\image_base\ns_image_tools.cpp">
+      <Filter>image_base</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

@@ -138,6 +138,8 @@ std::string ns_experiment_capture_specification::submit_schedule_to_db(std::vect
 					<< ",description='',model_filename='',reason_censored='',image_resolution_dpi='" << samples[i].resolution
 					<< "',device_capture_period_in_seconds=" << capture_schedules[samples[i].internal_schedule_id].device_capture_period
 					<< ",number_of_consecutive_captures_per_sample=" << capture_schedules[samples[i].internal_schedule_id].number_of_consecutive_captures_per_sample
+					<< ",conversion_16_bit_low_bound=" << samples[i].conversion_16_bit_low_bound
+					<< ",conversion_16_bit_high_bound=" << samples[i].conversion_16_bit_high_bound
 					<< ", time_stamp=0";
 				if (!actually_write) {
 					samples[i].sample_id = 0;
@@ -716,6 +718,8 @@ void ns_experiment_capture_specification::load_from_xml(const string & o){
 				samples[s].width = ns_sample_capture_specification::get_inches(xml.objects[i].tag("width"));
 				samples[s].height = ns_sample_capture_specification::get_inches(xml.objects[i].tag("height"));
 			}
+			xml.objects[i].assign_if_present("conversion_16_bit_low_bound", samples[s].conversion_16_bit_low_bound);
+			xml.objects[i].assign_if_present("conversion_16_bit_high_bound", samples[s].conversion_16_bit_high_bound);
 			xml.objects[i].assign_if_present("capture_configuration_parameters",samples[s].capture_configuration_parameters);
 			std::string cap_dur;
 			if (!xml.objects[i].assign_if_present("desired_minimum_capture_duration",cap_dur))

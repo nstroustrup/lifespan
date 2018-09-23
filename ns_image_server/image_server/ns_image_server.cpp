@@ -2756,8 +2756,8 @@ if (_act_as_processing_node)
 
 	//	_local_exec_path = constants["local_exec_path"];
 		std::string specified_simulated_device_name(constants["simulated_device_name"]);
-		if (specified_simulated_device_name == "" || specified_simulated_device_name== ".")
-			specified_simulated_device_name = "sim";
+		if (specified_simulated_device_name== ".")
+			specified_simulated_device_name = "";
 		_simulated_device_name = specified_simulated_device_name;
 		for (unsigned int i = 0; i < _simulated_device_name.size(); i++){
 			if (!isalpha(_simulated_device_name[i]) && !isdigit(_simulated_device_name[i]))

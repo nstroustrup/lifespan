@@ -30,7 +30,7 @@ private:
 struct ns_buffered_capture_schedule_table_info{
 	long id_column,
 		problem_column,
-		image_id_column,
+		captured_image_id_column,
 		timestamp_column,
 		time_at_finish_column,
 		transfer_status_column;
@@ -43,7 +43,7 @@ struct ns_buffered_capture_schedule_table_info{
 		std::vector<ns_table_column_spec> spec;
 		spec.push_back(ns_table_column_spec("id",&id_column));
 		spec.push_back(ns_table_column_spec("problem",&problem_column));
-		spec.push_back(ns_table_column_spec("captured_image_id",&image_id_column));
+		spec.push_back(ns_table_column_spec("captured_image_id",&captured_image_id_column));
 		spec.push_back(ns_table_column_spec("problem",&problem_column));
 		spec.push_back(ns_table_column_spec("time_stamp",&timestamp_column));
 		spec.push_back(ns_table_column_spec("time_at_finish",&time_at_finish_column));

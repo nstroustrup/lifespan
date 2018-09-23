@@ -61,17 +61,17 @@ void ns_get_all_column_data_from_table(const std::string & table_name, const std
 
 struct ns_db_key_mapping{
 	ns_ex error;
-	ns_db_key_mapping():problem_time(0),problem_minor(false),problem_id(0),old_problem_id(0){}
-	ns_image_server_captured_image captured_image,
-								   old_captured_image;
-	ns_image_server_image image,
-						  old_image;
+	ns_db_key_mapping():problem_time(0),problem_minor(false),central_problem_id(0),local_problem_id(0){}
+	ns_image_server_captured_image central_captured_image,
+								   local_captured_image;
+	ns_image_server_image central_image,
+						  local_image;
 	
 	std::string problem_text;
 	unsigned long problem_time;
 	bool problem_minor;
-	ns_64_bit problem_id,
-				  old_problem_id;
+	ns_64_bit central_problem_id,
+				  local_problem_id;
 };
 
 void ns_buffered_capture_scheduler::clear_local_cache(ns_local_buffer_connection & sql){
@@ -106,10 +106,21 @@ void ns_buffered_capture_scheduler::commit_all_local_non_schedule_changes_to_cen
 }
 
 
+
 void ns_buffered_capture_scheduler::commit_all_local_schedule_changes_to_central_db(const ns_synchronized_time & update_start_time,ns_local_buffer_connection & local_buffer_sql, ns_sql & central_db){
 	if (time_of_last_update_from_central_db.local_time == ns_default_update_time) 
 		get_last_update_time(local_buffer_sql);
 	buffered_capture_schedule.load_if_needed(&local_buffer_sql);
+
+
+	//we need to copy all locally cached schedule and captured image data to the central db
+	//The central and locally cached capture_schedule rows have identical ids, as we copied the former from the latter.
+	//However, the locally cached captured_images and images have unique ids specific to the local cache.
+	//Thus, when we update the central db, we need to translate these local ids to the central ids,
+	//creating new records in the central db when necissary.
+	//Note that this is a one way process--we never update the local db with any central ids.  Central ids may already be taken in the local db,
+	//used when new images are created during image capture.
+	//keeping things uni-directional avoids several issues.
 
 	ns_sql_result updated_data;
 
@@ -123,129 +134,135 @@ void ns_buffered_capture_scheduler::commit_all_local_schedule_changes_to_central
 		std::string("WHERE ") + altered_data_condition + " AND uploaded_to_central_db != 3",
 		updated_data,&local_buffer_sql);
 
+	//first, set up mappings between local db records and central db records
+	//if central db records do not exist for images, create new ones.
 	std::vector<ns_db_key_mapping> mappings(updated_data.size());
-	if (updated_data.size() > 8)
+	if (updated_data.size() > 8) // don't report routine entry updates involving only a small number of rows
 		image_server.register_server_event(ns_image_server_event("ns_buffered_capture_scheduler::Committing ") << updated_data.size() << " recorded capture events to the central database.",&central_db);
 	std::vector<ns_ex *> errors;
-	for (unsigned long i = 0; i < updated_data.size(); i++){
-		try{
-			ns_64_bit captured_image_id = ns_atoi64(updated_data[i][buffered_capture_schedule.image_id_column].c_str());
-			ns_64_bit problem_id = ns_atoi64(updated_data[i][buffered_capture_schedule.problem_column].c_str());
-		
-			ns_64_bit central_captured_image_id(0), 
-						  central_problem_id(0);
-			if (captured_image_id != 0 || problem_id != 0){
-				central_db << "SELECT captured_image_id,problem FROM capture_schedule WHERE id = " << updated_data[i][buffered_capture_schedule.id_column];
-				ns_sql_result res;
-				central_db.get_rows(res);
-				if (res.size() == 0)
-					throw ns_ex("Could not find capture schedule entry in central db for sample id " ) << updated_data[i][buffered_capture_schedule.id_column] << " finishing at time " << updated_data[i][buffered_capture_schedule.time_at_finish_column];
-				central_captured_image_id = ns_atoi64(res[0][0].c_str());
-				central_problem_id = ns_atoi64(res[0][1].c_str());
-			}
+	{
+		for (unsigned long i = 0; i < updated_data.size(); i++) {
+			try {
+				mappings[i].local_captured_image.captured_images_id = ns_atoi64(updated_data[i][buffered_capture_schedule.captured_image_id_column].c_str());
+				mappings[i].local_problem_id = ns_atoi64(updated_data[i][buffered_capture_schedule.problem_column].c_str());
 
-			const bool need_to_make_new_capture_image(captured_image_id != 0 && central_captured_image_id != captured_image_id);
-			//we need to make new entries in the central database for any new images or events
-			if (need_to_make_new_capture_image){
-				mappings[i].captured_image.load_from_db(captured_image_id,&local_buffer_sql);
-				mappings[i].old_captured_image = mappings[i].captured_image;
-				mappings[i].old_image = mappings[i].image;
-				if (mappings[i].captured_image.capture_images_image_id != 0)
-					mappings[i].image.load_from_db(mappings[i].captured_image.capture_images_image_id,&local_buffer_sql);
+				mappings[i].central_captured_image.captured_images_id = 0;
+				mappings[i].central_image.id = 0;
+				mappings[i].central_problem_id = 0;
+				if (mappings[i].local_captured_image.captured_images_id != 0 || mappings[i].local_problem_id) {
+					//load local image info
+					mappings[i].local_captured_image.load_from_db(mappings[i].local_captured_image.captured_images_id, &local_buffer_sql);
+					if (mappings[i].local_captured_image.capture_images_image_id != 0)
+						mappings[i].local_image.load_from_db(mappings[i].local_captured_image.capture_images_image_id, &local_buffer_sql);
 
-
-			}
-			else{
-				mappings[i].old_image = mappings[i].image;
-				mappings[i].old_captured_image = mappings[i].captured_image;
-				mappings[i].captured_image.captured_images_id = central_captured_image_id;
-			}
-
-			bool need_to_make_new_problem(problem_id != 0 && central_problem_id != problem_id);
-			if (need_to_make_new_problem){
-				local_buffer_sql << "SELECT id,event,time,minor FROM buffered_host_event_log WHERE id = " << updated_data[i][buffered_capture_schedule.problem_column];
-				ns_sql_result res;
-				local_buffer_sql.get_rows(res);
-				mappings[i].old_problem_id = mappings[i].problem_id;
-				if (res.size() == 0){
-					mappings[i].problem_id = image_server.register_server_event(ns_ex("Could not find problem id ") << updated_data[i][buffered_capture_schedule.problem_column] << " in local database buffer!",&central_db);
-					need_to_make_new_problem=false;
+					//look in central db to see if a record already exists for the captured_image associated with the local schedule entry
+					central_db << "SELECT captured_image_id,problem FROM capture_schedule WHERE id = " << updated_data[i][buffered_capture_schedule.id_column];
+					ns_sql_result res;
+					central_db.get_rows(res);
+					if (res.size() == 0)
+						throw ns_ex("Could not find capture schedule entry in central db for sample id ") << updated_data[i][buffered_capture_schedule.id_column] << " finishing at time " << updated_data[i][buffered_capture_schedule.time_at_finish_column];
+					mappings[i].central_captured_image.captured_images_id = ns_atoi64(res[0][0].c_str());
+					mappings[i].central_problem_id = ns_atoi64(res[0][1].c_str());
 				}
-				else{
-					mappings[i].problem_text = res[0][1];
-					mappings[i].problem_time = atol(res[0][2].c_str());
-					mappings[i].problem_minor = res[0][3] != "0";
+
+
+				//if a captured image record is stored locally, find or create the central records for it
+				if (mappings[i].local_captured_image.captured_images_id != 0) {
+					const bool need_to_make_new_capture_image_in_central_db(mappings[i].central_captured_image.captured_images_id == 0);
+					bool need_to_make_new_image_in_central_db(true);
+					//if possible, load image info in central db.
+					if (!need_to_make_new_capture_image_in_central_db) {
+						mappings[i].central_captured_image.load_from_db(mappings[i].central_captured_image.captured_images_id, &central_db);
+						if (mappings[i].central_captured_image.capture_images_image_id != 0) {
+							try {
+								mappings[i].central_image.load_from_db(mappings[i].central_captured_image.capture_images_image_id, &central_db);
+								need_to_make_new_image_in_central_db = false;
+							}
+							catch (ns_ex & ex) {
+								image_server.register_server_event(ex, &central_db);
+							}
+						}
+					}
+					else {
+						mappings[i].central_captured_image = mappings[i].local_captured_image;
+					}
+					if (need_to_make_new_image_in_central_db) {
+						//otherwise, prepare to make new entries in central db
+						mappings[i].central_image = mappings[i].local_image;
+						mappings[i].central_image.save_to_db(0, &central_db, false);
+						mappings[i].central_captured_image.capture_images_image_id = mappings[i].central_image.id;
+					}
+					if (need_to_make_new_capture_image_in_central_db) {
+						mappings[i].central_captured_image.captured_images_id = 0;
+						mappings[i].central_captured_image.save(&central_db);
+					}
+				}
+
+				if (mappings[i].central_problem_id == 0) {
+					local_buffer_sql << "SELECT id,event,time,minor FROM buffered_host_event_log WHERE id = " << updated_data[i][buffered_capture_schedule.problem_column];
+					ns_sql_result res;
+					local_buffer_sql.get_rows(res);
+					if (res.size() == 0) {
+						mappings[i].central_problem_id = image_server.register_server_event(ns_ex("Could not find problem id ") << updated_data[i][buffered_capture_schedule.problem_column] << " in local database buffer!", &central_db);
+					}
+					else {
+
+						mappings[i].problem_text = res[0][1];
+						mappings[i].problem_time = atol(res[0][2].c_str());
+						mappings[i].problem_minor = res[0][3] != "0";
+
+						ns_image_server_event ev;
+						ev << mappings[i].problem_text;
+						if (mappings[i].problem_minor) ev << ns_ts_minor_event;
+						ev.set_time(mappings[i].problem_time);
+						mappings[i].central_problem_id = image_server.register_server_event(ev, &central_db);
+					}
 				}
 			}
-			else{
-				mappings[i].old_problem_id = mappings[i].problem_id;
-				mappings[i].problem_id = central_problem_id;
+			catch (ns_ex & ex) {
+				mappings[i].error << "Error while making mapping: " << ex.text();
+				errors.push_back(&mappings[i].error);
 			}
-		
-			if (need_to_make_new_capture_image && mappings[i].image.id != 0){
-				mappings[i].image.id = 0;
-				mappings[i].image.save_to_db(0,&central_db,false);
-				mappings[i].captured_image.capture_images_image_id = mappings[i].image.id;
-			}
-			if (need_to_make_new_capture_image){
-				mappings[i].captured_image.captured_images_id = 0;
-				mappings[i].captured_image.save(&central_db);
-			}
-			if (need_to_make_new_problem){
-				mappings[i].old_problem_id = mappings[i].problem_id;
-				ns_image_server_event ev;
-				ev << mappings[i].problem_text;
-				if (mappings[i].problem_minor) ev << ns_ts_minor_event;
-				ev.set_time(mappings[i].problem_time);
-				mappings[i].problem_id = image_server.register_server_event(ev,&central_db);
-			}
-		}
-		catch(ns_ex & ex){
-			mappings[i].error << "Error while making mapping: " << ex.text();
-			errors.push_back(&mappings[i].error);
 		}
 	}
 
+	//at this stage, we have all local and central db records matched up in the mappings object.
+	//we go through and update the central records based on the local ones.
 	for (unsigned long i = 0; i < updated_data.size(); i++){
 		if (mappings[i].error.text().size() > 0)
 			continue;
 		try{
 		  central_db << "Update capture_schedule SET ";
 		for (unsigned int j = 0; j < buffered_capture_schedule.table_format.column_names.size(); ++j){
-			if (j == buffered_capture_schedule.id_column 
-				|| j == buffered_capture_schedule.image_id_column || 
-				j == buffered_capture_schedule.problem_column || j == 
-				buffered_capture_schedule.timestamp_column) continue;
+			if (j == buffered_capture_schedule.id_column ||
+				j == buffered_capture_schedule.captured_image_id_column ||
+				j == buffered_capture_schedule.problem_column || 
+				j == buffered_capture_schedule.timestamp_column) 
+				continue;
 			central_db  << "`" << buffered_capture_schedule.table_format.column_names[j] << "`='" << central_db.escape_string(updated_data[i][j]) << "',";
 		}
-		central_db << "captured_image_id = " << mappings[i].captured_image.captured_images_id 
-				   << ", problem = " << mappings[i].problem_id;
-		//we set the timestamp as old so that it does not trigger a re-download when the server tries to update its cache
+		central_db << "captured_image_id = " << mappings[i].central_captured_image.captured_images_id 
+				   << ", problem = " << mappings[i].central_problem_id;
+		//we set the central db record timestamp as old so that it does not trigger a re-download when the server tries to update its cache
 		central_db << ", time_stamp=FROM_UNIXTIME("<< new_timestamp <<") ";
-		central_db << " WHERE id = " << updated_data[i][0];
+		central_db << " WHERE id = " << updated_data[i][buffered_capture_schedule.id_column];
 		central_db.send_query();
-		if (mappings[i].old_captured_image.captured_images_id != mappings[i].captured_image.captured_images_id ||
-			mappings[i].old_problem_id != mappings[i].problem_id){
-			local_buffer_sql << "UPDATE buffered_capture_schedule SET captured_image_id = " << mappings[i].captured_image.captured_images_id 
-				<< ", problem = " << mappings[i].problem_id << ", time_stamp = FROM_UNIXTIME("<< new_timestamp
+		//set the local db record timestamp as old also
+		local_buffer_sql << "UPDATE buffered_capture_schedule SET time_stamp = FROM_UNIXTIME("<< new_timestamp
 				<<") WHERE id = " << updated_data[i][buffered_capture_schedule.id_column];
-			local_buffer_sql.send_query();
-			local_buffer_sql << "UPDATE buffered_captured_images SET id = " << mappings[i].captured_image.captured_images_id  << " WHERE id = " << mappings[i].old_captured_image.captured_images_id;
-			local_buffer_sql.send_query();
-			local_buffer_sql << "UPDATE buffered_images SET id = " << mappings[i].image.id <<" WHERE id = " << mappings[i].old_image.id;
-			local_buffer_sql.send_query();
-			local_buffer_sql << "UPDATE buffered_host_event_log SET id = " << mappings[i].problem_id << " WHERE id = " << mappings[i].old_problem_id;
-			local_buffer_sql.send_query();
-		}
+		
+		//if the capture is completed (eg. time_at_finish is set) and we have transfered the image and all metadata to the central db
+		//(eg the transfer status column is set appropriately)
+		//then delete the local copy to keep the cache small and fast.
 		if (updated_data[i][buffered_capture_schedule.time_at_finish_column] != "0" && 
 			atol(updated_data[i][buffered_capture_schedule.transfer_status_column].c_str()) == (long)ns_image_capture_data_manager::ns_transferred_to_long_term_storage){
 			local_buffer_sql << "DELETE FROM buffered_capture_schedule WHERE id = " << updated_data[i][buffered_capture_schedule.id_column];
 			local_buffer_sql.send_query();
-			local_buffer_sql << "DELETE FROM buffered_captured_images WHERE id = " << mappings[i].old_captured_image.captured_images_id;
+			local_buffer_sql << "DELETE FROM buffered_captured_images WHERE id = " << mappings[i].local_captured_image.captured_images_id;
 			local_buffer_sql.send_query();
-			local_buffer_sql << "DELETE FROM buffered_images WHERE id = " << mappings[i].old_image.id;
+			local_buffer_sql << "DELETE FROM buffered_images WHERE id = " << mappings[i].local_image.id;
 			local_buffer_sql.send_query();
-			local_buffer_sql << "DELETE FROM buffered_host_event_log WHERE id = " << mappings[i].old_problem_id;
+			local_buffer_sql << "DELETE FROM buffered_host_event_log WHERE id = " << mappings[i].local_problem_id;
 			local_buffer_sql.send_query();
 			}
 		}

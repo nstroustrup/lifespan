@@ -774,7 +774,7 @@ void ns_process_inferred_worms_for_timepoint(ns_time_path_timepoint * timepoint,
 				ns_tiff, 1.0, 1024, shared_state.sql,
 				had_to_use_volatile_storage,
 				false,
-				false);
+				ns_image_storage_handler::ns_forbid_volatile);
 			lock.release();
 			worm_collage.pump(region_bitmap_o.output_stream(), 1024);
 			break;

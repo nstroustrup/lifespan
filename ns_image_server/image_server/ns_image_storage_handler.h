@@ -66,11 +66,13 @@ public:
 	void set_directories(const std::string & _volatile_storage_directory, const std::string & _long_term_storage_directory);
 	void update_volatile_storage_directory_for_parallel_processes(unsigned long system_parallel_process_id);
 
-	ns_image_storage_reciever_handle<ns_component> request_storage(ns_image_server_captured_image_region & captured_image_region, const ns_image_type & image_type, const float compression_ratio, const unsigned long max_line_length, ns_image_server_sql * sql, const bool allow_volatile_storage) const;
-	ns_image_storage_reciever_handle<ns_component> request_storage_ci(ns_image_server_captured_image & captured_image, const ns_image_type & image_type, const float compression_ratio, const unsigned long max_line_length, ns_image_server_sql * sql, ns_image_server_image & output_image, bool & had_to_use_local_storage, const bool allow_volatile_storage) const;
-	ns_image_storage_reciever_handle<ns_component> request_storage(ns_image_server_image & image, const ns_image_type & image_type, const float compression_ratio,const unsigned long max_line_length, ns_image_server_sql * sql, bool & had_to_use_volatile_storage, const bool report_to_db, const bool allow_volatile_storage) const;
-	ns_image_storage_reciever_handle<ns_16_bit> request_storage_16_bit(ns_image_server_image & image, const ns_image_type & image_type, const float compression_ratio, const unsigned long max_line_length, ns_image_server_sql * sql, bool & had_to_use_volatile_storage, const bool report_to_db, const bool allow_volatile_storage) const;
-	ns_image_storage_reciever_handle<float> request_storage_float(ns_image_server_image & image, const ns_image_type & image_type, const float compression_ratio, const unsigned long max_line_length, ns_image_server_sql * sql, bool & had_to_use_volatile_storage, const bool report_to_db, const bool allow_volatile_storage) const;
+	typedef enum { ns_forbid_volatile, ns_allow_volatile, ns_require_volatile } ns_volatile_storage_behavior;
+
+	ns_image_storage_reciever_handle<ns_component> request_storage(ns_image_server_captured_image_region & captured_image_region, const ns_image_type & image_type, const float compression_ratio, const unsigned long max_line_length, ns_image_server_sql * sql, const ns_volatile_storage_behavior volatile_storage_behavior) const;
+	ns_image_storage_reciever_handle<ns_component> request_storage_ci(ns_image_server_captured_image & captured_image, const ns_image_type & image_type, const float compression_ratio, const unsigned long max_line_length, ns_image_server_sql * sql, ns_image_server_image & output_image, bool & had_to_use_local_storage, const ns_volatile_storage_behavior volatile_storage_behavior) const;
+	ns_image_storage_reciever_handle<ns_component> request_storage(ns_image_server_image & image, const ns_image_type & image_type, const float compression_ratio,const unsigned long max_line_length, ns_image_server_sql * sql, bool & had_to_use_volatile_storage, const bool report_to_db, const ns_volatile_storage_behavior volatile_storage_behavior) const;
+	ns_image_storage_reciever_handle<ns_16_bit> request_storage_16_bit(ns_image_server_image & image, const ns_image_type & image_type, const float compression_ratio, const unsigned long max_line_length, ns_image_server_sql * sql, bool & had_to_use_volatile_storage, const bool report_to_db, const ns_volatile_storage_behavior volatile_storage_behavior) const;
+	ns_image_storage_reciever_handle<float> request_storage_float(ns_image_server_image & image, const ns_image_type & image_type, const float compression_ratio, const unsigned long max_line_length, ns_image_server_sql * sql, bool & had_to_use_volatile_storage, const bool report_to_db, const ns_volatile_storage_behavior volatile_storage_behavior) const;
 
 
 	bool long_term_storage_was_recently_writeable(const unsigned long time_cutoff_in_seconds = 0) const;
@@ -313,7 +315,7 @@ public:
 	}
 	std::string movement_file_directory(ns_64_bit region_info_id,ns_image_server_sql * sql, std::string & absolute_directory_prefix) const;
 private:
-	std::string get_storage_to_open(ns_image_server_image & image, const ns_image_type & image_type, const unsigned long max_line_length, ns_image_server_sql * sql, bool & had_to_use_local_storage, const bool report_to_db, const bool allow_volatile_storage) const;
+	std::string get_storage_to_open(ns_image_server_image & image, const ns_image_type & image_type, const unsigned long max_line_length, ns_image_server_sql * sql, bool & had_to_use_local_storage, const bool report_to_db, const ns_volatile_storage_behavior volatile_storage_behavior) const;
 	
 	ns_dir::ns_output_file_permissions output_file_permissions;
 	ns_file_location_specification look_up_image_location(ns_image_server_image & image,ns_image_server_sql * sql,const ns_image_type & image_type, const bool alter_extension=true) const;

@@ -5570,7 +5570,7 @@ ns_mask_info ns_worm_learner::send_mask_to_server(const ns_64_bit & sample_id){
 	ns_image_server_image image;
 	image.load_from_db(mask_info.image_id, &sql());
 	bool had_to_use_local_storage;
-	ns_image_storage_reciever_handle<ns_8_bit> image_storage = image_server.image_storage.request_storage(image, ns_tiff, 1.0,512, &sql(), had_to_use_local_storage, false, false);
+	ns_image_storage_reciever_handle<ns_8_bit> image_storage = image_server.image_storage.request_storage(image, ns_tiff, 1.0,512, &sql(), had_to_use_local_storage, false, ns_image_storage_handler::ns_forbid_volatile);
 
 	//ns_image_standard decoded_image;
 	current_mask.pump(image_storage.output_stream(), 512);

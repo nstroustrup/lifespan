@@ -104,7 +104,12 @@ bool ns_image_capture_data_manager::transfer_data_to_long_term_storage(ns_image_
 		throw ns_ex("transfer_data_to_long_term_storage() was passed an image with no captured image image id");
 	if (image.captured_images_id == 0)
 		throw ns_ex("transfer_data_to_long_term_storage() was passed an image with no captured image id");
-
+	ns_image_storage_handler::ns_volatile_storage_behavior volatile_storage_transfer;
+	switch (behavior) {
+		case ns_try_to_transfer_to_long_term_storage: volatile_storage_transfer = ns_image_storage_handler::ns_allow_volatile; break;
+		case ns_convert_and_compress_locally: volatile_storage_transfer = ns_image_storage_handler::ns_require_volatile; break;
+		default: throw ns_ex("transfer_data_to_long_term_storage()::Unknown transfer behavior: " ) << (int)behavior;
+	}
 	bool had_to_use_local_storage(false);
 	if (image.specified_16_bit){
 		try{
@@ -114,13 +119,16 @@ bool ns_image_capture_data_manager::transfer_data_to_long_term_storage(ns_image_
 			ns_image_storage_source_handle<ns_16_bit,true> high_depth(storage_handler->request_from_storage_n_bits<ns_16_bit, true>(image,&sql,ns_image_storage_handler::ns_volatile_storage));
 			image.specified_16_bit = false;
 			ns_image_server_image output_image;
-			ns_image_storage_reciever_handle<ns_8_bit> low_depth(storage_handler->request_storage_ci(image,ns_tiff,1.0,NS_TRANSFER_BUFFER_HEIGHT,&sql, output_image,had_to_use_local_storage,true));
+			ns_image_storage_reciever_handle<ns_8_bit> low_depth(storage_handler->request_storage_ci(image,ns_tiff,1.0,NS_TRANSFER_BUFFER_HEIGHT,&sql, output_image,had_to_use_local_storage, volatile_storage_transfer));
 			output_image.id = image.capture_images_image_id;
-
+			if (had_to_use_local_storage) {	//make sure the small output image ends up in the same place as the high res image
+				behavior = ns_convert_and_compress_locally;
+				volatile_storage_transfer = ns_image_storage_handler::ns_require_volatile;
+			}
 			ns_image_server_image small_image(image.make_small_image_storage(&sql));
 
 			bool had_to_use_local_storage_2;
-			ns_image_storage_reciever_handle<ns_8_bit> small_image_output(storage_handler->request_storage(small_image,ns_jpeg, NS_DEFAULT_JPEG_COMPRESSION, NS_TRANSFER_BUFFER_HEIGHT,&sql,had_to_use_local_storage_2,false,true));
+			ns_image_storage_reciever_handle<ns_8_bit> small_image_output(storage_handler->request_storage(small_image,ns_jpeg, NS_DEFAULT_JPEG_COMPRESSION, NS_TRANSFER_BUFFER_HEIGHT,&sql,had_to_use_local_storage_2,false, volatile_storage_transfer));
 
 			ns_image_process_16_bit<ns_features_are_light, ns_image_stream_static_offset_buffer<ns_16_bit> > processor(NS_TRANSFER_BUFFER_HEIGHT);
 
@@ -130,22 +138,18 @@ bool ns_image_capture_data_manager::transfer_data_to_long_term_storage(ns_image_
 			ns_image_stream_binding< ns_image_process_16_bit<ns_features_are_light, ns_image_stream_static_offset_buffer<ns_16_bit> >,
 									 ns_image_storage_reciever<ns_8_bit> > binding(processor,low_depth.output_stream(),NS_TRANSFER_BUFFER_HEIGHT);
 			
-		//	cerr << "Attempting to write to 8 bit copy...\n";
+
 			ns_high_precision_timer hptimer;
 			hptimer.start();
-			//cerr << "pump\n";
 			high_depth.input_stream().pump(binding,NS_TRANSFER_BUFFER_HEIGHT);
-		//	cerr << "done\n";
 			time_during_transfer_to_long_term_storage = hptimer.stop();
+			//now delete the original 16 bit image
 			image.specified_16_bit = true;
 			hptimer.start();
-		//	cerr << "Delete";
 			storage_handler->delete_from_storage(image,ns_delete_volatile,&sql);
 			time_during_deletion_from_local_storage = hptimer.stop();
 			image.specified_16_bit = false;
 			string partition = storage_handler->get_partition_for_experiment(image.experiment_id,&sql);
-		//	cerr << "Commit\n";
-			
 			small_image.save_to_db(0,&sql);
 			output_image.save_to_db(output_image.id, &sql, false);
 			image.capture_images_small_image_id = small_image.id;
@@ -200,15 +204,48 @@ bool ns_image_capture_data_manager::transfer_data_to_long_term_storage(ns_image_
 
 		ns_image_storage_source_handle<ns_8_bit> in(storage_handler->request_from_storage(image,&sql));
 		try{
+
+			//first transfer full res image
 			ns_image_server_image output_image;
-			ns_image_storage_reciever_handle<ns_8_bit> out(storage_handler->request_storage_ci(image,ns_tiff,1.0,NS_TRANSFER_BUFFER_HEIGHT,&sql,output_image,had_to_use_local_storage,false));
+			ns_image_storage_reciever_handle<ns_8_bit> out(0);
+			try {
+				out = storage_handler->request_storage_ci(image, ns_tiff, 1.0, NS_TRANSFER_BUFFER_HEIGHT, &sql, output_image, had_to_use_local_storage, ns_image_storage_handler::ns_forbid_volatile);
+			}
+			catch (ns_ex & ex) {
+				if (had_to_use_local_storage) {  //give up if long term storage is not available
+					behavior = ns_convert_and_compress_locally;
+					return true;
+				}
+				throw ex;
+			}
 			output_image.id = image.capture_images_image_id;
-			if (had_to_use_local_storage)
-				return had_to_use_local_storage;
 			in.input_stream().pump(out.output_stream(),NS_TRANSFER_BUFFER_HEIGHT);
+
+			//now load small image
+			ns_image_server_image small_image;
+			small_image.load_from_db(image.capture_images_small_image_id, &sql);
+
+			ns_image_storage_reciever_handle<ns_8_bit> small_image_output(0);
+
+			ns_image_storage_source_handle<ns_8_bit> small_in(storage_handler->request_from_storage(small_image, &sql));
+			try {
+				small_image_output = storage_handler->request_storage(small_image, ns_jpeg, NS_DEFAULT_JPEG_COMPRESSION, NS_TRANSFER_BUFFER_HEIGHT, &sql, had_to_use_local_storage, false, ns_image_storage_handler::ns_forbid_volatile);
+			}
+			catch (ns_ex & ex) {
+				if (had_to_use_local_storage) {  //give up if long term storage is not available
+					behavior = ns_convert_and_compress_locally;
+					return true;
+				}
+				throw ex;
+			}
+			small_in.input_stream().pump(small_image_output.output_stream(), NS_TRANSFER_BUFFER_HEIGHT);
+			
+			//now delete local images
+			storage_handler->delete_from_storage(small_image, ns_delete_volatile, &sql);
 			storage_handler->delete_from_storage(image,ns_delete_volatile,&sql);
 			output_image.save_to_db(output_image.id, &sql, false);
-			string partition = storage_handler->get_partition_for_experiment(image.experiment_id,&sql);
+
+
 			sql.send_query("COMMIT");
 		}
 		catch(ns_ex & ex){

@@ -360,7 +360,7 @@ void ns_image_processing_pipeline::process_region(const ns_image_server_captured
 	ns_precomputed_processing_step_images precomputed_images;
 	analyze_operations(region_image,ops,precomputed_images,sql);
 
-	const bool allow_use_of_volatile_storage(false);
+	ns_image_storage_handler::ns_volatile_storage_behavior volatile_behavior(ns_image_storage_handler::ns_forbid_volatile);
 	const bool report_file_activity_to_db(false);
 	bool had_to_use_volatile_storage;
 
@@ -459,7 +459,7 @@ void ns_image_processing_pipeline::process_region(const ns_image_server_captured
 							spatial_image_type, (spatial_image_type==ns_jp2k)? hd_compression_rate_f:1.0, _image_chunk_size, &sql,
 							had_to_use_volatile_storage,
 							report_file_activity_to_db,
-							allow_use_of_volatile_storage);
+							volatile_behavior);
 						spatial_average.pump(r.output_stream(), _image_chunk_size);
 
 					//	r.output_stream().init(ns_image_properties(0, 0, 0));
@@ -492,7 +492,7 @@ void ns_image_processing_pipeline::process_region(const ns_image_server_captured
 						throw ns_ex("Invalid compression rate specified in jp2k_compression_rate cluster constant: ") << compression_rate_f;
 					bool b;
 					ns_image_storage_reciever_handle<ns_8_bit> im_dest(image_server_const.image_storage.request_storage(
-						unprocessed_image, ns_jp2k, compression_rate_f, 1024, &sql, b, false, false));
+						unprocessed_image, ns_jp2k, compression_rate_f, 1024, &sql, b, false, volatile_behavior));
 					unprocessed.pump(im_dest.output_stream(), 1024);
 					unprocessed_image.save_to_db(unprocessed_image.id, &sql);
 					image_server_const.image_storage.delete_from_storage(old_im, ns_delete_long_term, &sql);
@@ -520,7 +520,7 @@ void ns_image_processing_pipeline::process_region(const ns_image_server_captured
 																ns_jpeg, NS_DEFAULT_JPEG_COMPRESSION, _image_chunk_size,&sql,
 																had_to_use_volatile_storage,
 																report_file_activity_to_db,
-																allow_use_of_volatile_storage);
+																volatile_behavior);
 					dynamic_stretch.pump(r.output_stream(),_image_chunk_size);
 					output_image.mark_as_finished_processing(&sql);
 
@@ -554,7 +554,7 @@ void ns_image_processing_pipeline::process_region(const ns_image_server_captured
 														ns_tiff, 1.0,1024,&sql,
 																	had_to_use_volatile_storage,
 																	report_file_activity_to_db,
-																	allow_use_of_volatile_storage));
+																	volatile_behavior));
 					paths_visualization.pump(out_im_f.output_stream(),1024);
 
 					out_im.mark_as_finished_processing(&sql);
@@ -582,7 +582,7 @@ void ns_image_processing_pipeline::process_region(const ns_image_server_captured
 													NS_DEFAULT_JPEG_COMPRESSION, 1024,&sql,
 													had_to_use_volatile_storage,
 													report_file_activity_to_db,
-													allow_use_of_volatile_storage));
+													volatile_behavior));
 				paths_visualization.pump(out_im_f.output_stream(),1024);
 
 				out_im.mark_as_finished_processing(&sql);
@@ -609,7 +609,7 @@ void ns_image_processing_pipeline::process_region(const ns_image_server_captured
 															ns_tiff, 1.0, _image_chunk_size,&sql,
 																had_to_use_volatile_storage,
 																report_file_activity_to_db,
-																allow_use_of_volatile_storage);
+																volatile_behavior);
 				thresholded.pump(r.output_stream(),_image_chunk_size);
 				output_image.mark_as_finished_processing(&sql);
 
@@ -706,7 +706,7 @@ void ns_image_processing_pipeline::process_region(const ns_image_server_captured
 																ns_jpeg, NS_DEFAULT_JPEG_COMPRESSION, _image_chunk_size,&sql,
 															had_to_use_volatile_storage,
 															report_file_activity_to_db,
-															allow_use_of_volatile_storage);
+															volatile_behavior);
 					small_im.pump(r.output_stream(),_image_chunk_size);
 					output_image.mark_as_finished_processing(&sql);
 
@@ -722,7 +722,7 @@ void ns_image_processing_pipeline::process_region(const ns_image_server_captured
 																ns_jpeg, NS_DEFAULT_JPEG_COMPRESSION,  _image_chunk_size,&sql,
 															had_to_use_volatile_storage,
 															report_file_activity_to_db,
-															allow_use_of_volatile_storage);
+															volatile_behavior);
 					temporary_image.pump(d_vis_o.output_stream(),_image_chunk_size);
 					d_vis.mark_as_finished_processing(&sql);
 
@@ -741,7 +741,7 @@ void ns_image_processing_pipeline::process_region(const ns_image_server_captured
 																ns_tiff, 1.0,_image_chunk_size,&sql,
 															had_to_use_volatile_storage,
 															report_file_activity_to_db,
-															allow_use_of_volatile_storage);
+															volatile_behavior);
 					worm_collage.pump(region_bitmap_o.output_stream(),_image_chunk_size);
 					region_bitmap.mark_as_finished_processing(&sql);
 				}
@@ -758,7 +758,7 @@ void ns_image_processing_pipeline::process_region(const ns_image_server_captured
 																ns_tiff, 1.0, _image_chunk_size,&sql,
 															had_to_use_volatile_storage,
 															report_file_activity_to_db,
-															allow_use_of_volatile_storage);
+															volatile_behavior);
 					comp_out.pump(a_vis_o.output_stream(),_image_chunk_size);
 
 					a_vis.mark_as_finished_processing(&sql);
@@ -776,7 +776,7 @@ void ns_image_processing_pipeline::process_region(const ns_image_server_captured
 																ns_tiff, 1.0, _image_chunk_size,&sql,
 															had_to_use_volatile_storage,
 															report_file_activity_to_db,
-															allow_use_of_volatile_storage);
+															volatile_behavior);
 					comp_out.pump(r_vis_o.output_stream(),_image_chunk_size);
 					r_vis.mark_as_finished_processing(&sql);
 				}
@@ -803,7 +803,7 @@ void ns_image_processing_pipeline::process_region(const ns_image_server_captured
 																		ns_tiff, 1.0, _image_chunk_size,&sql,
 																	had_to_use_volatile_storage,
 																	report_file_activity_to_db,
-																	allow_use_of_volatile_storage);
+																	volatile_behavior);
 
 								ti.pump(a_worm.output_stream(),_image_chunk_size);
 								a_worm_im = region_image.create_storage_for_processed_image(ns_process_add_to_training_set, ns_csv, &sql);
@@ -855,7 +855,7 @@ void ns_image_processing_pipeline::process_region(const ns_image_server_captured
 																ns_jpeg, NS_DEFAULT_JPEG_COMPRESSION,_image_chunk_size,&sql,
 																had_to_use_volatile_storage,
 																report_file_activity_to_db,
-																allow_use_of_volatile_storage);
+																volatile_behavior);
 				temporary_image.pump(r.output_stream(),_image_chunk_size);
 				output_image.mark_as_finished_processing(&sql);
 			}
@@ -875,7 +875,7 @@ void ns_image_processing_pipeline::process_region(const ns_image_server_captured
 																ns_jpeg, NS_DEFAULT_JPEG_COMPRESSION, _image_chunk_size,&sql,
 																had_to_use_volatile_storage,
 																report_file_activity_to_db,
-																allow_use_of_volatile_storage);
+																volatile_behavior);
 				temporary_image.pump(r.output_stream(),_image_chunk_size);
 				output_image.mark_as_finished_processing(&sql);
 
@@ -898,7 +898,7 @@ void ns_image_processing_pipeline::process_region(const ns_image_server_captured
 																ns_jpeg, NS_DEFAULT_JPEG_COMPRESSION,_image_chunk_size,&sql,
 																had_to_use_volatile_storage,
 																report_file_activity_to_db,
-																allow_use_of_volatile_storage);
+																volatile_behavior);
 				temporary_image.pump(r.output_stream(),_image_chunk_size);
 				output_image.mark_as_finished_processing(&sql);
 
@@ -1101,7 +1101,7 @@ float ns_image_processing_pipeline::analyze_mask(ns_image_server_image & image, 
 																ns_jpeg, NS_DEFAULT_JPEG_COMPRESSION,_image_chunk_size,&sql,
 																had_to_use_local_storage,
 																false,
-																false);
+			ns_image_storage_handler::ns_forbid_volatile);
 
 		out->pump(visualization_output.output_stream(),_image_chunk_size);
 		image.processed_output_storage->mark_as_finished_processing(&sql);
@@ -1189,7 +1189,7 @@ void ns_image_processing_pipeline::calculate_static_mask_and_heat_map(const vect
 		ns_image_server_image a_vis = region_image.create_storage_for_processed_image(ns_process_heat_map,ns_tiff,&sql);
 		ns_image_storage_reciever_handle<ns_component> a_vis_o = image_server_const.image_storage.request_storage(
 													a_vis,
-													ns_tiff, 1.0, _image_chunk_size,&sql,had_to_use_local_storage,false,false);
+													ns_tiff, 1.0, _image_chunk_size,&sql,had_to_use_local_storage,false, ns_image_storage_handler::ns_forbid_volatile);
 		heat_map.pump(a_vis_o.output_stream(),_image_chunk_size);
 		a_vis.mark_as_finished_processing(&sql);
 		image_server.register_job_duration(ns_process_heat_map,tm.stop());
@@ -1205,7 +1205,7 @@ void ns_image_processing_pipeline::calculate_static_mask_and_heat_map(const vect
 		ns_image_server_image b_vis = region_image.create_storage_for_processed_image(ns_process_static_mask,ns_tiff,&sql);
 		ns_image_storage_reciever_handle<ns_component> b_vis_o = image_server_const.image_storage.request_storage(
 												b_vis,
-												ns_tiff, 1.0, _image_chunk_size,&sql,had_to_use_local_storage,false,false);
+												ns_tiff, 1.0, _image_chunk_size,&sql,had_to_use_local_storage,false, ns_image_storage_handler::ns_forbid_volatile);
 		static_mask.pump(b_vis_o.output_stream(),_image_chunk_size);
 		b_vis.mark_as_finished_processing(&sql);
 		image_server.register_job_duration(ns_process_static_mask,tm.stop());
@@ -1571,7 +1571,7 @@ void ns_image_processing_pipeline::resize_sample_image(ns_image_server_captured_
 
 		ns_image_server_image small_image(captured_image.make_small_image_storage(&sql));
 		bool had_to_use_volatile_storage;
-		ns_image_storage_reciever_handle<ns_8_bit> small_image_output(image_server_const.image_storage.request_storage(small_image,ns_jpeg, NS_DEFAULT_JPEG_COMPRESSION, 1024,&sql,had_to_use_volatile_storage,false,false));
+		ns_image_storage_reciever_handle<ns_8_bit> small_image_output(image_server_const.image_storage.request_storage(small_image,ns_jpeg, NS_DEFAULT_JPEG_COMPRESSION, 1024,&sql,had_to_use_volatile_storage,false, ns_image_storage_handler::ns_forbid_volatile));
 
 
 		ns_resampler<ns_8_bit> resampler(_image_chunk_size);
@@ -1609,7 +1609,7 @@ void ns_image_processing_pipeline::resize_region_image(ns_image_server_captured_
 	ns_image_server_image small_image(region_image.create_storage_for_processed_image(ns_process_thumbnail,ns_jpeg,&sql));
 
 	bool had_to_use_volatile_storage;
-	ns_image_storage_reciever_handle<ns_8_bit> small_image_output(image_server_const.image_storage.request_storage(small_image,ns_jpeg, NS_DEFAULT_JPEG_COMPRESSION, 1024,&sql,had_to_use_volatile_storage,false,false));
+	ns_image_storage_reciever_handle<ns_8_bit> small_image_output(image_server_const.image_storage.request_storage(small_image,ns_jpeg, NS_DEFAULT_JPEG_COMPRESSION, 1024,&sql,had_to_use_volatile_storage,false, ns_image_storage_handler::ns_forbid_volatile));
 
 
 	ns_resampler<ns_8_bit> resampler(_image_chunk_size);
@@ -1891,7 +1891,7 @@ void ns_image_processing_pipeline::apply_mask(ns_image_server_captured_image & c
 		}
 		//get storage for the output image.
 		bool had_to_use_volatile_storage;
-		(*mask_splitter.mask_info())[mask_region_value]->reciever = image_server_const.image_storage.request_storage(output_image, output_file_type, hd_compression_rate_f, _image_chunk_size, &sql, had_to_use_volatile_storage, false, false);
+		(*mask_splitter.mask_info())[mask_region_value]->reciever = image_server_const.image_storage.request_storage(output_image, output_file_type, hd_compression_rate_f, _image_chunk_size, &sql, had_to_use_volatile_storage, false, ns_image_storage_handler::ns_forbid_volatile);
 		(*mask_splitter.mask_info())[mask_region_value]->reciever_provided = true;
 		output_images.push_back(output_image);
 	}
@@ -2596,7 +2596,7 @@ void ns_rerun_image_registration(const ns_64_bit region_id, ns_sql & sql){
 				//cerr << "Creating backup...";
 				ns_image_server_image backup_image = region_image.create_storage_for_processed_image(ns_process_unprocessed_backup,ns_tiff,&sql);
 				bool had_to_use_volatile_storage;
-				ns_image_storage_reciever_handle<ns_8_bit> out_im(image_server_const.image_storage.request_storage(backup_image,ns_tiff,1.0,1024,&sql,had_to_use_volatile_storage,false,false));
+				ns_image_storage_reciever_handle<ns_8_bit> out_im(image_server_const.image_storage.request_storage(backup_image,ns_tiff,1.0,1024,&sql,had_to_use_volatile_storage,false, ns_image_storage_handler::ns_forbid_volatile));
 				ns_image_storage_source_handle<ns_8_bit> full_res(image_profile().full_res_image(profile_data_source));
 				full_res.input_stream().pump(out_im.output_stream(),1024);
 				out_im.clear();
@@ -2610,7 +2610,7 @@ void ns_rerun_image_registration(const ns_64_bit region_id, ns_sql & sql){
 			ns_image_server_image dest_im;
 			dest_im.id = unprocessed_id;
 			bool had_to_use_volatile_storage;
-			ns_image_storage_reciever_handle<ns_8_bit> out_im(image_server_const.image_storage.request_storage(dest_im,ns_tiff,1.0,1024,&sql,had_to_use_volatile_storage,false,false));
+			ns_image_storage_reciever_handle<ns_8_bit> out_im(image_server_const.image_storage.request_storage(dest_im,ns_tiff,1.0,1024,&sql,had_to_use_volatile_storage,false, ns_image_storage_handler::ns_forbid_volatile));
 			//now fix the registration of all derived images.
 			buffer.pump(out_im.output_stream(),1024);
 			out_im.clear();
@@ -2632,7 +2632,7 @@ void ns_rerun_image_registration(const ns_64_bit region_id, ns_sql & sql){
 						type = ns_jpeg;
 						compression = .8;
 					}
-					ns_image_storage_reciever_handle<ns_8_bit> out_im(image_server_const.image_storage.request_storage(task_image,type, compression,1024,&sql,had_to_use_volatile_storage,false,false));
+					ns_image_storage_reciever_handle<ns_8_bit> out_im(image_server_const.image_storage.request_storage(task_image,type, compression,1024,&sql,had_to_use_volatile_storage,false, ns_image_storage_handler::ns_forbid_volatile));
 					buffer.pump(out_im.output_stream(),1024);
 				}
 				catch(ns_ex & ex){

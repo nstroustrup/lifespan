@@ -2120,7 +2120,7 @@ void ns_experiment_storyboard_manager::save_image_to_db_no_error_handling(const 
 	get_default_storage_base_filenames(sub_image_id, image_record, ns_tiff_lzw, spec, sql);
 	///cout << "Writing " << image_record.filename << " to " << image_record.id  << "\n";
 	image_record.save_to_db(image_record.id, &sql);
-	ns_image_storage_reciever_handle<ns_8_bit> h(image_server.image_storage.request_storage(image_record, ns_tiff, 1.0, 1024, &sql, had_to_use_volatile, true, false));
+	ns_image_storage_reciever_handle<ns_8_bit> h(image_server.image_storage.request_storage(image_record, ns_tiff, 1.0, 1024, &sql, had_to_use_volatile, true,ns_image_storage_handler::ns_forbid_volatile));
 	im.pump(h.output_stream(), 1024);
 }
 
@@ -2132,7 +2132,7 @@ void ns_experiment_storyboard_manager::save_image_to_db(const unsigned long sub_
 		throw ns_ex("ns_experiment_storyboard_manager::save_image_to_db()::Metadata has not been established");
 	bool had_to_use_volatile;
 	try {
-		ns_image_storage_reciever_handle<ns_8_bit> h(image_server.image_storage.request_storage(sub_images[sub_image_id], ns_tiff, 1.0, 1024, &sql, had_to_use_volatile, true, false));
+		ns_image_storage_reciever_handle<ns_8_bit> h(image_server.image_storage.request_storage(sub_images[sub_image_id], ns_tiff, 1.0, 1024, &sql, had_to_use_volatile, true, ns_image_storage_handler::ns_forbid_volatile));
 		im.pump(h.output_stream(), 1024);
 	}
 	catch (ns_ex & ex) {
@@ -2150,7 +2150,7 @@ void ns_experiment_storyboard_manager::save_image_to_db(const unsigned long sub_
 			<< " AND storyboard_sub_image_number = " << sub_image_id;
 		sql.send_query();
 		//try to open the new image.
-		ns_image_storage_reciever_handle<ns_8_bit> h(image_server.image_storage.request_storage(sub_images[sub_image_id], ns_tiff, 1.0, 1024, &sql, had_to_use_volatile, true, false));
+		ns_image_storage_reciever_handle<ns_8_bit> h(image_server.image_storage.request_storage(sub_images[sub_image_id], ns_tiff, 1.0, 1024, &sql, had_to_use_volatile, true, ns_image_storage_handler::ns_forbid_volatile));
 		im.pump(h.output_stream(), 1024);
 		//if this fails, it will throw the error.
 	}

@@ -309,20 +309,20 @@ void ns_image_storage_handler::set_directories(const std::string & _volatile_sto
 		throw ns_ex("ns_image_storage_handler::Volatile storage must exist!") << ns_file_io;
 }
 
-ns_image_storage_reciever_handle<ns_image_storage_handler::ns_component> ns_image_storage_handler::request_storage(ns_image_server_captured_image_region & captured_image_region, const ns_image_type & image_type, const float compression_ratio, const unsigned long max_line_length, ns_image_server_sql * sql, const bool allow_volatile_storage) const{
+ns_image_storage_reciever_handle<ns_image_storage_handler::ns_component> ns_image_storage_handler::request_storage(ns_image_server_captured_image_region & captured_image_region, const ns_image_type & image_type, const float compression_ratio, const unsigned long max_line_length, ns_image_server_sql * sql, const ns_volatile_storage_behavior volatile_storage_behavior) const{
 	ns_image_server_image image;
 	image.filename = captured_image_region.filename(sql);
 	image.path = captured_image_region.directory(sql);
 	image.partition = get_partition_for_experiment(captured_image_region.experiment_id,sql);
 	bool had_to_use_volatile_storage;
-	return request_storage(image, image_type, compression_ratio,max_line_length, sql,had_to_use_volatile_storage,false,allow_volatile_storage);
+	return request_storage(image, image_type, compression_ratio,max_line_length, sql,had_to_use_volatile_storage,false,volatile_storage_behavior);
 }
 
-ns_image_storage_reciever_handle<ns_image_storage_handler::ns_component> ns_image_storage_handler::request_storage_ci(ns_image_server_captured_image & captured_image, const ns_image_type & image_type, const float compression_ratio, const unsigned long max_line_length, ns_image_server_sql * sql, ns_image_server_image & output_image, bool & had_to_use_local_storage, const bool allow_volatile_storage) const{
+ns_image_storage_reciever_handle<ns_image_storage_handler::ns_component> ns_image_storage_handler::request_storage_ci(ns_image_server_captured_image & captured_image, const ns_image_type & image_type, const float compression_ratio, const unsigned long max_line_length, ns_image_server_sql * sql, ns_image_server_image & output_image, bool & had_to_use_local_storage, const ns_volatile_storage_behavior volatile_storage_behavior) const{
 	output_image.filename = captured_image.filename(sql);
 	output_image.path = captured_image.directory(sql);
 	output_image.partition = get_partition_for_experiment(captured_image.experiment_id,sql);
-	return request_storage(output_image, image_type, compression_ratio, max_line_length, sql,had_to_use_local_storage,false,allow_volatile_storage);
+	return request_storage(output_image, image_type, compression_ratio, max_line_length, sql,had_to_use_local_storage,false,volatile_storage_behavior);
 }
 
 bool ns_image_storage_handler::long_term_storage_was_recently_writeable(const unsigned long time_cutoff_in_seconds) const{
@@ -494,29 +494,29 @@ ofstream * ns_image_storage_handler::request_metadata_output(ns_image_server_ima
 
 
 
-ns_image_storage_reciever_handle<ns_image_storage_handler::ns_component> ns_image_storage_handler::request_storage(ns_image_server_image & image, const ns_image_type & image_type, const float compression_ratio, const unsigned long max_line_length, ns_image_server_sql * sql, bool & had_to_use_local_storage, const bool report_to_db, const bool allow_volatile_storage) const{
-	std::string fname = get_storage_to_open(image, image_type, max_line_length, sql, had_to_use_local_storage, report_to_db, allow_volatile_storage);
+ns_image_storage_reciever_handle<ns_image_storage_handler::ns_component> ns_image_storage_handler::request_storage(ns_image_server_image & image, const ns_image_type & image_type, const float compression_ratio, const unsigned long max_line_length, ns_image_server_sql * sql, bool & had_to_use_local_storage, const bool report_to_db, const ns_volatile_storage_behavior volatile_storage_behavior) const{
+	std::string fname = get_storage_to_open(image, image_type, max_line_length, sql, had_to_use_local_storage, report_to_db, volatile_storage_behavior);
 	if (fname.find(".tif.tif") != fname.npos) {
 		throw ns_ex("Trying to write an image with the suffix .tif.tif!");
 	}
 	return ns_image_storage_reciever_handle<ns_image_storage_handler::ns_component>(new ns_image_storage_reciever_to_disk<ns_image_storage_handler::ns_component>(max_line_length, fname, image_type, compression_ratio, had_to_use_local_storage, output_file_permissions));
 }
-ns_image_storage_reciever_handle<ns_16_bit> ns_image_storage_handler::request_storage_16_bit(ns_image_server_image & image, const ns_image_type & image_type, const float compression_ratio, const unsigned long max_line_length, ns_image_server_sql * sql, bool & had_to_use_local_storage, const bool report_to_db, const bool allow_volatile_storage) const{
-	std::string fname = get_storage_to_open(image, image_type, max_line_length, sql, had_to_use_local_storage, report_to_db, allow_volatile_storage);
+ns_image_storage_reciever_handle<ns_16_bit> ns_image_storage_handler::request_storage_16_bit(ns_image_server_image & image, const ns_image_type & image_type, const float compression_ratio, const unsigned long max_line_length, ns_image_server_sql * sql, bool & had_to_use_local_storage, const bool report_to_db, const ns_volatile_storage_behavior volatile_storage_behavior) const{
+	std::string fname = get_storage_to_open(image, image_type, max_line_length, sql, had_to_use_local_storage, report_to_db, volatile_storage_behavior);
 	return ns_image_storage_reciever_handle<ns_16_bit>(new ns_image_storage_reciever_to_disk<ns_16_bit>(max_line_length, fname, image_type,compression_ratio, had_to_use_local_storage, output_file_permissions));
 }
-ns_image_storage_reciever_handle<float> ns_image_storage_handler::request_storage_float(ns_image_server_image & image, const ns_image_type & image_type, const float compression_ratio, const unsigned long max_line_length, ns_image_server_sql * sql, bool & had_to_use_local_storage, const bool report_to_db, const bool allow_volatile_storage) const{
-	std::string fname = get_storage_to_open(image, image_type, max_line_length, sql, had_to_use_local_storage, report_to_db, allow_volatile_storage);
+ns_image_storage_reciever_handle<float> ns_image_storage_handler::request_storage_float(ns_image_server_image & image, const ns_image_type & image_type, const float compression_ratio, const unsigned long max_line_length, ns_image_server_sql * sql, bool & had_to_use_local_storage, const bool report_to_db, const ns_volatile_storage_behavior volatile_storage_behavior) const{
+	std::string fname = get_storage_to_open(image, image_type, max_line_length, sql, had_to_use_local_storage, report_to_db, volatile_storage_behavior);
 	return ns_image_storage_reciever_handle<float>(new ns_image_storage_reciever_to_disk<float>(max_line_length, fname, image_type, compression_ratio, had_to_use_local_storage, output_file_permissions));
 }
 
-std::string ns_image_storage_handler::get_storage_to_open(ns_image_server_image & image, const ns_image_type & image_type, const unsigned long max_line_length, ns_image_server_sql * sql, bool & had_to_use_local_storage, const bool report_to_db, const bool allow_volatile_storage) const{
+std::string ns_image_storage_handler::get_storage_to_open(ns_image_server_image & image, const ns_image_type & image_type, const unsigned long max_line_length, ns_image_server_sql * sql, bool & had_to_use_local_storage, const bool report_to_db, const ns_volatile_storage_behavior volatile_storage_behavior) const{
 
 	ns_ex stored_error[3];
 	ns_file_location_specification file_location(look_up_image_location(image,sql,image_type));
 
 	//try to store image in long-term storage
-	if (long_term_storage_directory.size() != 0 && long_term_storage_is_accessible(file_location,__FILE__,__LINE__)){
+	if (volatile_storage_behavior != ns_require_volatile && long_term_storage_directory.size() != 0 && long_term_storage_is_accessible(file_location,__FILE__,__LINE__)){
 		try{
 			//make sure location is writeable
 			ns_dir::create_directory_recursive(file_location.absolute_long_term_directory());
@@ -543,9 +543,10 @@ std::string ns_image_storage_handler::get_storage_to_open(ns_image_server_image 
 	}
 
 	//if all else fails, store the data in volatile storage
-	if (!allow_volatile_storage)
+	if (volatile_storage_behavior == ns_forbid_volatile) {
+		had_to_use_local_storage = true;
 		throw ns_ex("ns_image_storage_handler::request_storage()::Could not access long term storage and volatile storage was forbidden") << ns_network_io;
-
+	}
 	if (volatile_storage_directory.size() != 0 && ns_dir::file_exists(file_location.volatile_directory)){
 
 		try{

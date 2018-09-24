@@ -383,6 +383,7 @@
     <ClCompile Include="..\ns_image_server\image_base\ns_font.cpp" />
     <ClCompile Include="..\ns_image_server\image_base\ns_image.cpp" />
     <ClCompile Include="..\ns_image_server\image_base\ns_image_socket.cpp" />
+    <ClCompile Include="..\ns_image_server\image_base\ns_image_tools.cpp" />
     <ClCompile Include="..\ns_image_server\image_base\ns_jpeg.cpp" />
     <ClCompile Include="..\ns_image_server\image_base\ns_libtiff_interface.c" />
     <ClCompile Include="..\ns_image_server\image_base\ns_ojp2k.cpp" />
@@ -397,7 +398,6 @@
     <ClCompile Include="..\ns_image_server\image_processing\ns_identify_contiguous_bitmap_regions.cpp" />
     <ClCompile Include="..\ns_image_server\image_processing\ns_image_processing_pipeline.cpp" />
     <ClCompile Include="..\ns_image_server\image_processing\ns_image_registration_cache.cpp" />
-    <ClCompile Include="..\ns_image_server\image_processing\ns_image_tools.cpp" />
     <ClCompile Include="..\ns_image_server\image_processing\ns_mask_management.cpp" />
     <ClCompile Include="..\ns_image_server\image_processing\ns_movement_visualization_generator.cpp" />
     <ClCompile Include="..\ns_image_server\image_processing\ns_node_topology.cpp" />
@@ -519,7 +519,6 @@
     <ClInclude Include="..\ns_image_server\image_processing\ns_identify_contiguous_bitmap_regions.h" />
     <ClInclude Include="..\ns_image_server\image_processing\ns_image_processing_pipeline.h" />
     <ClInclude Include="..\ns_image_server\image_processing\ns_image_registration.h" />
-    <ClInclude Include="..\ns_image_server\image_processing\ns_image_tools.h" />
     <ClInclude Include="..\ns_image_server\image_processing\ns_mask_management.h" />
     <ClInclude Include="..\ns_image_server\image_processing\ns_movement_visualization_generator.h" />
     <ClInclude Include="..\ns_image_server\image_processing\ns_node_topology.h" />

@@ -519,7 +519,7 @@ unsigned long ns_image_capture_data_manager::handle_pending_transfers(const stri
 						if (i == 0)
 							duration = ns_current_time() - current_time;  //count all the initial mysql queries towards the time spent in the first transfer
 						else duration = ns_current_time() - start_time;
-						image_server.register_server_event(ns_image_server_event("Finished image transfer after ") << (ns_current_time() - duration) << " seconds", &sql());
+						image_server.register_server_event(ns_image_server_event("Finished image transfer after ") << duration << " seconds", &sql());
 					}
 					else std::cerr << "Wasted time on a useless transfer\n";
 				}

@@ -574,7 +574,7 @@ int main(int argc, char ** argv){
 	commands["ignore_multicore_jobs"] = ns_ignore_multithreaded_jobs;
 	commands["ini_file_location"] = ns_ini_file_location;
 	commands["create_and_configure_sql_db"] = ns_create_and_configure_sql_db;
-	commands["simulate_long_term_storage_connection_error"] = ns_create_and_configure_sql_db;
+	commands["simulate_long_term_storage_connection_error"] = ns_simulate_long_term_storage_connection_error;
 
 	ns_ex command_line_usage;
 

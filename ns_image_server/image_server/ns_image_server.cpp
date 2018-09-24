@@ -76,6 +76,10 @@ void ns_image_server::toggle_central_mysql_server_connection_error_simulation()c
 	else ns_sql_connection::simulate_unreachable_mysql_server(sql_server_addresses[0],false);
 }
 
+void ns_image_server::toggle_long_term_storage_server_connection_error_simulation() const {
+	image_storage.simulate_long_term_storage_errors = !image_storage.simulate_long_term_storage_errors;
+}
+
 std::string  ns_image_server::video_compilation_parameters(const std::string & input_file, const std::string & output_file, const unsigned long number_of_frames, const std::string & fps, ns_sql & sql)const{
 	//for x264
 	string p(get_cluster_constant_value("video_compilation_parameters","--crf=10",&sql));

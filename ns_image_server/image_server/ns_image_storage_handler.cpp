@@ -349,11 +349,13 @@ bool ns_image_storage_handler::test_connection_to_long_term_storage(const bool t
 		ns_acquire_lock_for_scope lock(request_storage_lock,__FILE__,__LINE__);
 		bool writeable(ns_dir::file_is_writeable(long_term_storage_directory + DIR_CHAR_STR + fname));
 		lock.release();
+		if (simulate_long_term_storage_errors) writeable = false;
 		last_check_showed_write_access_to_long_term_storage = writeable;
 		if (writeable)
 			time_of_last_successful_write_check = ns_current_time();
 		return writeable;
 	}
+	if (simulate_long_term_storage_errors) return false;
 	return ns_dir::file_exists(long_term_storage_directory);
 }
 
@@ -370,7 +372,7 @@ bool ns_image_storage_handler::image_exists(ns_image_server_image & image, ns_im
 		   v = volatile_storage_directory + fname;
 	ns_dir::convert_slashes(lt);
 	ns_dir::convert_slashes(v);
-	return ns_dir::file_exists(lt) || (!only_long_term_storage && ns_dir::file_exists(v));
+	return (ns_dir::file_exists(lt) && !simulate_long_term_storage_errors) || (!only_long_term_storage && ns_dir::file_exists(v));
 }
 
 bool ns_image_storage_handler::assign_unique_filename(ns_image_server_image & image, ns_image_server_sql * sql) const{
@@ -433,7 +435,7 @@ ifstream * ns_image_storage_handler::request_metadata_from_disk(ns_image_server_
 	ns_file_location_specification spec(look_up_image_location_no_extension_alteration (image, sql));
 
 	//try to store image in long-term storage
-	if (long_term_storage_directory.size() == 0 || !ns_dir::file_exists(spec.long_term_directory)){
+	if (simulate_long_term_storage_errors || long_term_storage_directory.size() == 0 || !ns_dir::file_exists(spec.long_term_directory)){
 		ns_image_handler_submit_alert(ns_alert::ns_long_term_storage_error,
 			"Could not access long term storage.",
 			std::string("ns_image_storage_handler::request_metadata_from_disk()::Could not access long term storage while attempting to read") + spec.relative_directory + DIR_CHAR_STR + spec.filename,
@@ -463,7 +465,7 @@ ofstream * ns_image_storage_handler::request_metadata_output(ns_image_server_ima
 
 	ns_probe_for_illegal_character(spec.absolute_long_term_filename());
 	//try to store image in long-term storage
-	if (long_term_storage_directory.size() != 0 && ns_dir::file_exists(spec.long_term_directory)){
+	if (!simulate_long_term_storage_errors && long_term_storage_directory.size() != 0 && ns_dir::file_exists(spec.long_term_directory)){
 
 		ns_dir::create_directory_recursive(spec.absolute_long_term_directory());
 		if (!ns_dir::file_is_writeable(spec.absolute_long_term_filename())){
@@ -516,7 +518,7 @@ std::string ns_image_storage_handler::get_storage_to_open(ns_image_server_image 
 	ns_file_location_specification file_location(look_up_image_location(image,sql,image_type));
 
 	//try to store image in long-term storage
-	if (volatile_storage_behavior != ns_require_volatile && long_term_storage_directory.size() != 0 && long_term_storage_is_accessible(file_location,__FILE__,__LINE__)){
+	if (volatile_storage_behavior != ns_require_volatile && !simulate_long_term_storage_errors && long_term_storage_directory.size() != 0 && long_term_storage_is_accessible(file_location,__FILE__,__LINE__)){
 		try{
 			//make sure location is writeable
 			ns_dir::create_directory_recursive(file_location.absolute_long_term_directory());
@@ -663,7 +665,7 @@ ofstream * ns_image_storage_handler::request_binary_output_for_captured_image(co
 					std::string("ns_image_storage_handler::request_binary_output::Could not access volatile storage when attempting to write ") + full_filename,
 					sql);
 
-		else if (!volatile_storage && !ns_dir::file_exists(long_term_storage_directory))
+		else if ( !volatile_storage && (long_term_storage_directory.empty() || simulate_long_term_storage_errors ||  !ns_dir::file_exists(long_term_storage_directory)))
 			ns_image_handler_submit_alert(ns_alert::ns_volatile_storage_error,
 					"Could not access volatile storage.",
 					std::string("ns_image_storage_handler::request_binary_output::Could not access volatile storage when attempting to write ") + full_filename,
@@ -692,7 +694,7 @@ ofstream * ns_image_storage_handler::request_miscellaneous_storage(const std::st
 
 	ofstream * output = new ofstream(fname.c_str(), ios_base::binary);
 	try{
-		if (output->fail()){
+		if (simulate_long_term_storage_errors || output->fail()){
 			ns_image_handler_submit_alert_to_central_db(
 				ns_alert::ns_long_term_storage_error,
 				"Could not access long term storage",
@@ -850,13 +852,13 @@ std::string ns_image_storage_handler::add_to_local_cache(ns_image_server_image &
 		cache_filename += "." + extension;
 		output_filename += "." + extension;
 
-			//	ns_imag_handler_register_server_event(ns_image_server_event("ns_image_storage_handler::Opening LT ",false) << display_filename << " for input." << ns_ts_minor_event);
-			if (!ns_dir::copy_file(file_location.absolute_long_term_filename(), output_filename))
-				throw ns_ex("Could not find file ") << file_location.absolute_long_term_filename();
-			return cache_filename;
+		//	ns_imag_handler_register_server_event(ns_image_server_event("ns_image_storage_handler::Opening LT ",false) << display_filename << " for input." << ns_ts_minor_event);
+		if (simulate_long_term_storage_errors || !ns_dir::copy_file(file_location.absolute_long_term_filename(), output_filename))
+			throw ns_ex("Could not find file ") << file_location.absolute_long_term_filename();
+		return cache_filename;
 
 
-		}
+	}
 	catch (ns_ex & ex) {
 
 		*sql << "UPDATE " << sql->table_prefix() << "images SET problem=1 WHERE id = " << image.id;
@@ -1012,7 +1014,7 @@ void ns_image_storage_handler::delete_file_specification(const ns_file_location_
 			if (!ns_dir::delete_folder_recursive(spec.absolute_volatile_directory()))
 				throw ns_ex("ns_image_storage_handler::delete_directory()::Could not delete directory ") << spec.absolute_volatile_directory() << ns_file_io;
 		}
-		if ((type == ns_delete_long_term || type == ns_delete_both_volatile_and_long_term) &&
+		if (!simulate_long_term_storage_errors && (type == ns_delete_long_term || type == ns_delete_both_volatile_and_long_term) &&
 			 ns_dir::file_exists(spec.absolute_long_term_directory())){
 			if (!ns_dir::delete_folder_recursive(spec.absolute_long_term_directory()))
 				throw ns_ex("ns_image_storage_handler::delete_directory()::Could not delete directory ") << spec.absolute_long_term_directory()<< ns_file_io;
@@ -1027,7 +1029,7 @@ void ns_image_storage_handler::delete_file_specification(const ns_file_location_
 				throw ns_ex("ns_image_storage_handler::delete_directory()::Could not delete file") << spec.absolute_volatile_filename() << ns_file_io;
 
 		}
-		if ((type == ns_delete_long_term || type == ns_delete_both_volatile_and_long_term) &&
+		if (!simulate_long_term_storage_errors && (type == ns_delete_long_term || type == ns_delete_both_volatile_and_long_term) &&
 			ns_dir::file_exists(spec.absolute_long_term_filename())){
 			if (verbosity >= ns_deletion_events)
 				ns_image_handler_register_server_event_to_central_db(ns_image_server_event("Deleting file ") << spec.absolute_long_term_filename());
@@ -1053,7 +1055,7 @@ bool ns_image_storage_handler::delete_from_storage(ns_image_server_image & image
 			return false;
 	}
 
-	if ((type == ns_delete_long_term || type == ns_delete_both_volatile_and_long_term) &&
+	if (!simulate_long_term_storage_errors && (type == ns_delete_long_term || type == ns_delete_both_volatile_and_long_term) &&
 		long_term_storage_directory.size() != 0 && ns_dir::file_exists(file_location.long_term_directory)){
 
 		if (verbosity >= ns_deletion_events)

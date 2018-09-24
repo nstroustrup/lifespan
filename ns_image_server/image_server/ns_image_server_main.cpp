@@ -508,7 +508,8 @@ typedef enum {ns_none,ns_start, ns_stop, ns_help, ns_restart, ns_status, ns_hotp
 			  ns_restarting_after_a_crash,ns_trigger_segfault_in_main_thread,ns_trigger_segfault_in_dispatcher_thread, ns_run_pending_image_transfers,
 	      ns_clear_local_db_buffer_cleanly,ns_clear_local_db_buffer_dangerously,ns_simulate_central_db_connection_error,ns_fix_orphaned_captured_images,
 	ns_update_sql,ns_output_image_buffer_info,ns_stop_checking_central_db,ns_start_checking_central_db,ns_output_sql_debug, ns_additional_host_description,
-	ns_max_run_time_in_seconds, ns_number_of_processing_cores, ns_idle_queue_check_limit, ns_max_memory_to_use,ns_ini_file_location, ns_ignore_multithreaded_jobs,ns_create_and_configure_sql_db,ns_override_sql_db,ns_max_number_of_jobs_to_process} ns_cl_command;
+	ns_max_run_time_in_seconds, ns_number_of_processing_cores, ns_idle_queue_check_limit, ns_max_memory_to_use,ns_ini_file_location, ns_ignore_multithreaded_jobs,ns_create_and_configure_sql_db,ns_override_sql_db, 
+	ns_simulate_long_term_storage_connection_error, ns_max_number_of_jobs_to_process} ns_cl_command;
 
 #ifndef NS_ONLY_IMAGE_ACQUISITION
 #ifdef NS_USE_INTEL_IPP
@@ -573,7 +574,7 @@ int main(int argc, char ** argv){
 	commands["ignore_multicore_jobs"] = ns_ignore_multithreaded_jobs;
 	commands["ini_file_location"] = ns_ini_file_location;
 	commands["create_and_configure_sql_db"] = ns_create_and_configure_sql_db;
-
+	commands["simulate_long_term_storage_connection_error"] = ns_create_and_configure_sql_db;
 
 	ns_ex command_line_usage;
 
@@ -598,11 +599,11 @@ int main(int argc, char ** argv){
 		"     number_of_times_to_check_empty_processing_job_queue_before_stopping\n"
 		<< "number_of_processor_cores_to_use [value] : specify the number of processing cores to use, overriding\n"
 		"      the value of number_of_processing_nodes specified in the ns_image_server.ini file\n"
-	    "max_memory_to_use [value]:  Specify an ideal memory allocation limit, in megabytes overriding the value \n"
-	        "      in ns_image_server.ini\n"
+		"max_memory_to_use [value]:  Specify an ideal memory allocation limit, in megabytes overriding the value \n"
+		"      in ns_image_server.ini\n"
 		"ignore_multicore_jobs: Do not run multi-core jobs such as movement analysis\n"
 #ifndef _WIN32
-		 "daemon: run as a background process\n"
+		"daemon: run as a background process\n"
 #endif
 
 		<< "\n**Advanced control functions**\n"
@@ -643,8 +644,9 @@ int main(int argc, char ** argv){
 		<< "trigger_segfault: Trigger a segfault to test the crash daemon\n"
 		<< "trigger_dispatcher_segfault: Trigger a segfault in the dispatcher to test the crash daemon\n"
 		<< "simulate_central_db_connection_error: Simulate a broken connection to the central database.\n"
+		<< "simulate_long_term_storage_connection_error: Simulate a lost connection to long term file storage.\n"
 		<< "output_image_buffer_info: Output information about the state of each scanner's locally \n"
-		"       buffered images.\n";
+			"       buffered images.\n";
 
 	std::string schema_name, ini_file_location, schema_filename;
 	bool no_schema_name_specified(false);
@@ -874,6 +876,11 @@ int main(int argc, char ** argv){
 		}
 		case ns_simulate_central_db_connection_error: {
 			if (!image_server.send_message_to_running_server(NS_SIMULATE_CENTRL_DB_CONNECTION_ERROR))
+				cerr << "No image server found running at " << image_server.dispatcher_ip() << ":" << image_server.dispatcher_port() << ".";
+			return 0;
+		}
+		case ns_simulate_long_term_storage_connection_error: {
+			if (!image_server.send_message_to_running_server(NS_SIMULATE_LONG_TERM_STORAGE_ERROR))
 				cerr << "No image server found running at " << image_server.dispatcher_ip() << ":" << image_server.dispatcher_port() << ".";
 			return 0;
 		}

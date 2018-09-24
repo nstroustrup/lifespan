@@ -181,6 +181,16 @@ void ns_image_server_dispatcher::handle_remote_requests(){
 					image_server.toggle_central_mysql_server_connection_error_simulation();
 					break;
 				}
+				case NS_SIMULATE_LONG_TERM_STORAGE_ERROR: {
+					ns_acquire_for_scope<ns_local_buffer_connection> local_buffer_connection(image_server.new_local_buffer_connection(__FILE__, __LINE__));
+					if (!image_server_const.image_storage.simulate_long_term_storage_errors)
+						image_server.register_server_event(ns_image_server_event("Simulating a lost connection to long term storage"),&local_buffer_connection());
+					else
+						image_server_const.register_server_event(ns_image_server_event("Simulating a recovery of the connection to long term storage"), &local_buffer_connection());
+					image_server.toggle_long_term_storage_server_connection_error_simulation();
+					local_buffer_connection.release();
+					break;
+				}
 				case NS_OUTPUT_IMAGE_BUFFER_INFO: {
 					this->buffered_capture_scheduler.image_capture_data_manager.transfer_status_debugger.print_status();
 					break;

@@ -57,11 +57,11 @@ public:
 	  output_file_permissions = readable ?ns_dir::ns_group_read: ns_dir::ns_no_special_permissions;
 	}
 
-	ns_image_storage_handler():network_lock("ns_ish::network"),
+	ns_image_storage_handler() :network_lock("ns_ish::network"),
 		request_storage_lock("ns_ish::storage"),
 		experiment_partition_cache_lock("ns_ish::partition"),
-		cache(512*1024),experiment_partition_cache_update_period(5*60),last_check_showed_write_access_to_long_term_storage(false),time_of_last_successful_write_check(0),
-		experiment_partition_cache_last_update_time(0),verbosity(ns_standard){}
+		cache(512 * 1024), experiment_partition_cache_update_period(5 * 60), last_check_showed_write_access_to_long_term_storage(false), time_of_last_successful_write_check(0),
+		experiment_partition_cache_last_update_time(0), verbosity(ns_standard), simulate_long_term_storage_errors(false) {}
 
 	void set_directories(const std::string & _volatile_storage_directory, const std::string & _long_term_storage_directory);
 	void update_volatile_storage_directory_for_parallel_processes(unsigned long system_parallel_process_id);
@@ -179,9 +179,9 @@ public:
 		return ns_dir::get_free_disk_space(volatile_storage_directory);
 	}
 	bool long_term_storage_is_accessible(ns_file_location_specification file_location, const char * file, const unsigned long line) const{
-		if (!ns_dir::file_exists(file_location.long_term_directory)){
+		if (simulate_long_term_storage_errors || !ns_dir::file_exists(file_location.long_term_directory)){
 			ns_thread::sleep(10);
-			if (!ns_dir::file_exists(file_location.long_term_directory)){
+			if (simulate_long_term_storage_errors || !ns_dir::file_exists(file_location.long_term_directory)){
 				ns_image_handler_submit_alert_to_central_db(
 					ns_alert::ns_long_term_storage_error,
 					"Could not access long term storage",
@@ -223,10 +223,11 @@ public:
 			if(!long_term_storage_is_accessible(file_location,__FILE__,__LINE__))
 				throw ns_ex("Could not access long term storage.");
 			
-
 			//try and get the data from long term storage
 			if (long_term_storage_directory.size() != 0 && ns_dir::file_exists(file_location.long_term_directory)){	
 				try{
+
+					if (simulate_long_term_storage_errors) throw ns_ex("Simulated error");
 					if (ns_dir::file_exists(file_location.absolute_long_term_filename())){
 					//	ns_image_handler_register_server_event(ns_image_server_event("ns_image_storage_handler::Opening LT ",false) << display_filename << " for input." << ns_ts_minor_event);
 						return ns_image_storage_source_handle<ns_comp, low_memory_single_line_reads>(new ns_image_storage_source_from_disk<ns_comp, low_memory_single_line_reads>(file_location.absolute_long_term_filename(),false));
@@ -314,9 +315,10 @@ public:
 		}
 	}
 	std::string movement_file_directory(ns_64_bit region_info_id,ns_image_server_sql * sql, std::string & absolute_directory_prefix) const;
+	mutable bool simulate_long_term_storage_errors;
 private:
 	std::string get_storage_to_open(ns_image_server_image & image, const ns_image_type & image_type, const unsigned long max_line_length, ns_image_server_sql * sql, bool & had_to_use_local_storage, const bool report_to_db, const ns_volatile_storage_behavior volatile_storage_behavior) const;
-	
+
 	ns_dir::ns_output_file_permissions output_file_permissions;
 	ns_file_location_specification look_up_image_location(ns_image_server_image & image,ns_image_server_sql * sql,const ns_image_type & image_type, const bool alter_extension=true) const;
 	ns_file_location_specification look_up_image_location_no_extension_alteration(ns_image_server_image & image, ns_image_server_sql * sql) const;

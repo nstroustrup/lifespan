@@ -278,8 +278,8 @@ public:
 		_act_as_an_image_capture_server = act_as_a_capture_server;
 	}
 
-	void toggle_central_mysql_server_connection_error_simulation()const;
-
+	void toggle_central_mysql_server_connection_error_simulation() const;
+	void toggle_long_term_storage_server_connection_error_simulation() const;
 
 	void calculate_experiment_disk_usage(const ns_64_bit experiment_id,ns_sql & sql) const;
 	void clear_old_server_events(ns_sql & sql);

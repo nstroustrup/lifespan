@@ -224,38 +224,49 @@ void ns_buffered_capture_scheduler::commit_all_local_schedule_changes_to_central
 		if (mappings[i].error.text().size() > 0)
 			continue;
 		try{
-		  central_db << "Update capture_schedule SET ";
-		for (unsigned int j = 0; j < buffered_capture_schedule.table_format.column_names.size(); ++j){
-			if (j == buffered_capture_schedule.id_column ||
-				j == buffered_capture_schedule.captured_image_id_column ||
-				j == buffered_capture_schedule.problem_column || 
-				j == buffered_capture_schedule.timestamp_column) 
-				continue;
-			central_db  << "`" << buffered_capture_schedule.table_format.column_names[j] << "`='" << central_db.escape_string(updated_data[i][j]) << "',";
-		}
-		central_db << "captured_image_id = " << mappings[i].central_captured_image.captured_images_id 
-				   << ", problem = " << mappings[i].central_problem_id;
-		//we set the central db record timestamp as old so that it does not trigger a re-download when the server tries to update its cache
-		central_db << ", time_stamp=FROM_UNIXTIME("<< new_timestamp <<") ";
-		central_db << " WHERE id = " << updated_data[i][buffered_capture_schedule.id_column];
-		central_db.send_query();
-		//set the local db record timestamp as old also
-		local_buffer_sql << "UPDATE buffered_capture_schedule SET time_stamp = FROM_UNIXTIME("<< new_timestamp
-				<<") WHERE id = " << updated_data[i][buffered_capture_schedule.id_column];
-		local_buffer_sql.send_query();
-		//if the capture is completed (eg. time_at_finish is set) and we have transfered the image and all metadata to the central db
-		//(eg the transfer status column is set appropriately)
-		//then delete the local copy to keep the cache small and fast.
-		if (updated_data[i][buffered_capture_schedule.time_at_finish_column] != "0" && 
-			atol(updated_data[i][buffered_capture_schedule.transfer_status_column].c_str()) == (long)ns_image_capture_data_manager::ns_transferred_to_long_term_storage){
-			local_buffer_sql << "DELETE FROM buffered_capture_schedule WHERE id = " << updated_data[i][buffered_capture_schedule.id_column];
+
+
+			{
+			//update central_db with any changes to the locally cached image.
+			const ns_64_bit central_id = mappings[i].central_image.id;
+			mappings[i].central_image = mappings[i].local_image;
+			mappings[i].central_image.save_to_db(central_id, &central_db);
+
+			}
+
+			//update capture schedule
+			central_db << "Update capture_schedule SET ";
+			for (unsigned int j = 0; j < buffered_capture_schedule.table_format.column_names.size(); ++j){
+				if (j == buffered_capture_schedule.id_column ||
+					j == buffered_capture_schedule.captured_image_id_column ||
+					j == buffered_capture_schedule.problem_column || 
+					j == buffered_capture_schedule.timestamp_column) 
+					continue;
+				central_db  << "`" << buffered_capture_schedule.table_format.column_names[j] << "`='" << central_db.escape_string(updated_data[i][j]) << "',";
+			}
+			central_db << "captured_image_id = " << mappings[i].central_captured_image.captured_images_id 
+					   << ", problem = " << mappings[i].central_problem_id;
+			//we set the central db record timestamp as old so that it does not trigger a re-download when the server tries to update its cache
+			central_db << ", time_stamp=FROM_UNIXTIME("<< new_timestamp <<") ";
+			central_db << " WHERE id = " << updated_data[i][buffered_capture_schedule.id_column];
+			central_db.send_query();
+			//set the local db record timestamp as old also
+			local_buffer_sql << "UPDATE buffered_capture_schedule SET time_stamp = FROM_UNIXTIME("<< new_timestamp
+					<<") WHERE id = " << updated_data[i][buffered_capture_schedule.id_column];
 			local_buffer_sql.send_query();
-			local_buffer_sql << "DELETE FROM buffered_captured_images WHERE id = " << mappings[i].local_captured_image.captured_images_id;
-			local_buffer_sql.send_query();
-			local_buffer_sql << "DELETE FROM buffered_images WHERE id = " << mappings[i].local_image.id;
-			local_buffer_sql.send_query();
-			local_buffer_sql << "DELETE FROM buffered_host_event_log WHERE id = " << mappings[i].local_problem_id;
-			local_buffer_sql.send_query();
+			//if the capture is completed (eg. time_at_finish is set) and we have transfered the image and all metadata to the central db
+			//(eg the transfer status column is set appropriately)
+			//then delete the local copy to keep the cache small and fast.
+			if (updated_data[i][buffered_capture_schedule.time_at_finish_column] != "0" && 
+				atol(updated_data[i][buffered_capture_schedule.transfer_status_column].c_str()) == (long)ns_image_capture_data_manager::ns_transferred_to_long_term_storage){
+				local_buffer_sql << "DELETE FROM buffered_capture_schedule WHERE id = " << updated_data[i][buffered_capture_schedule.id_column];
+				local_buffer_sql.send_query();
+				local_buffer_sql << "DELETE FROM buffered_captured_images WHERE id = " << mappings[i].local_captured_image.captured_images_id;
+				local_buffer_sql.send_query();
+				local_buffer_sql << "DELETE FROM buffered_images WHERE id = " << mappings[i].local_image.id;
+				local_buffer_sql.send_query();
+				local_buffer_sql << "DELETE FROM buffered_host_event_log WHERE id = " << mappings[i].local_problem_id;
+				local_buffer_sql.send_query();
 			}
 		}
 		catch(ns_ex & ex){

@@ -222,26 +222,31 @@ bool ns_image_capture_data_manager::transfer_data_to_long_term_storage(ns_image_
 			in.input_stream().pump(out.output_stream(),NS_TRANSFER_BUFFER_HEIGHT);
 
 			//now load small image
-			ns_image_server_image small_image;
-			small_image.load_from_db(image.capture_images_small_image_id, &sql);
+			try{
+				ns_image_server_image small_image;
+				small_image.load_from_db(image.capture_images_small_image_id, &sql);
 
-			ns_image_storage_reciever_handle<ns_8_bit> small_image_output(0);
+				ns_image_storage_reciever_handle<ns_8_bit> small_image_output(0);
 
-			ns_image_storage_source_handle<ns_8_bit> small_in(storage_handler->request_from_storage(small_image, &sql));
-			try {
-				small_image_output = storage_handler->request_storage(small_image, ns_jpeg, NS_DEFAULT_JPEG_COMPRESSION, NS_TRANSFER_BUFFER_HEIGHT, &sql, had_to_use_local_storage, false, ns_image_storage_handler::ns_forbid_volatile);
+				ns_image_storage_source_handle<ns_8_bit> small_in(storage_handler->request_from_storage(small_image, &sql));
+				try {
+					small_image_output = storage_handler->request_storage(small_image, ns_jpeg, NS_DEFAULT_JPEG_COMPRESSION, NS_TRANSFER_BUFFER_HEIGHT, &sql, had_to_use_local_storage, false, ns_image_storage_handler::ns_forbid_volatile);
+				}
+				catch (ns_ex & ex) {
+					if (had_to_use_local_storage) {  //give up if long term storage is not available
+						behavior = ns_convert_and_compress_locally;
+						return true;
+					}
+					throw ex;
+				}
+				small_in.input_stream().pump(small_image_output.output_stream(), NS_TRANSFER_BUFFER_HEIGHT);
+
+				//now delete local images
+				storage_handler->delete_from_storage(small_image, ns_delete_volatile, &sql);
 			}
 			catch (ns_ex & ex) {
-				if (had_to_use_local_storage) {  //give up if long term storage is not available
-					behavior = ns_convert_and_compress_locally;
-					return true;
-				}
-				throw ex;
+				image_server_const.register_server_event(ex, &sql);
 			}
-			small_in.input_stream().pump(small_image_output.output_stream(), NS_TRANSFER_BUFFER_HEIGHT);
-			
-			//now delete local images
-			storage_handler->delete_from_storage(small_image, ns_delete_volatile, &sql);
 			storage_handler->delete_from_storage(image,ns_delete_volatile,&sql);
 			output_image.save_to_db(output_image.id, &sql, false);
 

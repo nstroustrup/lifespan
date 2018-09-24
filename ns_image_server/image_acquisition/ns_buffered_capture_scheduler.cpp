@@ -250,7 +250,7 @@ void ns_buffered_capture_scheduler::commit_all_local_schedule_changes_to_central
 		//set the local db record timestamp as old also
 		local_buffer_sql << "UPDATE buffered_capture_schedule SET time_stamp = FROM_UNIXTIME("<< new_timestamp
 				<<") WHERE id = " << updated_data[i][buffered_capture_schedule.id_column];
-		
+		local_buffer_sql.send_query();
 		//if the capture is completed (eg. time_at_finish is set) and we have transfered the image and all metadata to the central db
 		//(eg the transfer status column is set appropriately)
 		//then delete the local copy to keep the cache small and fast.
@@ -427,7 +427,7 @@ void ns_buffered_capture_scheduler::update_local_buffer_from_central_server(ns_i
 	if (new_schedule.size() != 0){
 		if (new_schedule.size() > 4)
 			image_server.register_server_event(ns_image_server_event("ns_buffered_capture_scheduler::") 
-				<< new_schedule.size() << " new capture schedule entries found.  Updating local buffer.",&central_db);
+				<< new_schedule.size() << " new capture schedule entries found.  Updating local buffer...",&central_db);
 		
 		//if samples or experiments have changed or added, update them.
 		//we need to do this *before* updating the capture schedule,
@@ -473,7 +473,7 @@ void ns_buffered_capture_scheduler::update_local_buffer_from_central_server(ns_i
 				local_buffer.send_query();
 			}
 			if (capture_sample_data.size() > 0)
-				image_server.add_subtext_to_current_event("Done.", &central_db);
+				image_server.add_subtext_to_current_event("Done.\n", &central_db);
 			//local_buffer.send_query("DELETE FROM buffered_experiments");
 			for(unsigned int i = 0; i < experiment_data.size(); i++){
 				std::string values;
@@ -527,7 +527,7 @@ void ns_buffered_capture_scheduler::update_local_buffer_from_central_server(ns_i
 			local_buffer.send_query();
 		}
 		if (new_schedule.size() > 0)
-			image_server.add_subtext_to_current_event("Done", &central_db);
+			image_server.add_subtext_to_current_event("Done.\n", &central_db);
 	}
 	//if no changes to the schedule were made, look to see find changes made to any capture samples
 	else{
@@ -551,7 +551,7 @@ void ns_buffered_capture_scheduler::update_local_buffer_from_central_server(ns_i
 					<< " ON DUPLICATE KEY UPDATE " << values;
 				local_buffer.send_query();
 			}
-			image_server.add_subtext_to_current_event("Done.", &central_db);
+			image_server.add_subtext_to_current_event("Done.\n", &central_db);
 		}
 	}
 		

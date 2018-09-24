@@ -447,7 +447,7 @@ ns_thread_return_type ns_image_capture_data_manager::thread_start_handle_pending
 
 
 unsigned long ns_image_capture_data_manager::handle_pending_transfers(const string & device_name,ns_transfer_behavior & behavior){
-			unsigned long start_time = ns_current_time();
+			
 	//cerr << "\nHandling Pending Transfers\n";
 	//return 0;
 	try{
@@ -470,7 +470,7 @@ unsigned long ns_image_capture_data_manager::handle_pending_transfers(const stri
 			return 1;
 		}
 	
-		unsigned long current_time = ns_current_time();
+		const unsigned long current_time = ns_current_time();
 
 		//We don't have to worry about concurrency problems, as a device is owned by only one cluster node.
 		check_sql->send_query("BEGIN");
@@ -495,6 +495,7 @@ unsigned long ns_image_capture_data_manager::handle_pending_transfers(const stri
 		if (events.size() > 0){
 			ns_acquire_for_scope<ns_local_buffer_connection> sql(image_server.new_local_buffer_connection(__FILE__,__LINE__));
 			for (unsigned int i = 0; i < events.size(); i++){
+				const unsigned long start_time = ns_current_time();
 				if (!storage_handler->test_connection_to_long_term_storage(true))
 					behavior = ns_convert_and_compress_locally;
 				if (image_server.exit_has_been_requested)
@@ -513,8 +514,13 @@ unsigned long ns_image_capture_data_manager::handle_pending_transfers(const stri
 				ns_64_bit capture_schedule_id = ns_atoi64(events[i][0].c_str());
 				try{
 					const bool did_something = transfer_image_to_long_term_storage_locked(capture_schedule_id,im, behavior,sql());
-					if (did_something)
-						image_server.register_server_event(ns_image_server_event("Finished image transfer after ") << (ns_current_time()-start_time) << " seconds",&sql());
+					if (did_something) {
+						unsigned long duration;
+						if (i == 0)
+							duration = ns_current_time() - current_time;  //count all the initial mysql queries towards the time spent in the first transfer
+						else duration = ns_current_time() - start_time;
+						image_server.register_server_event(ns_image_server_event("Finished image transfer after ") << (ns_current_time() - duration) << " seconds", &sql());
+					}
 					else std::cerr << "Wasted time on a useless transfer\n";
 				}
 				catch(ns_ex & ex){

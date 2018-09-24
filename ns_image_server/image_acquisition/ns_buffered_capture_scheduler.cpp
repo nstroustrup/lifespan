@@ -61,15 +61,12 @@ void ns_get_all_column_data_from_table(const std::string & table_name, const std
 
 struct ns_db_key_mapping{
 	ns_ex error;
-	ns_db_key_mapping():problem_time(0),problem_minor(false),central_problem_id(0),local_problem_id(0){}
+	ns_db_key_mapping():central_problem_id(0),local_problem_id(0){}
 	ns_image_server_captured_image central_captured_image,
 								   local_captured_image;
 	ns_image_server_image central_image,
 						  local_image;
 	
-	std::string problem_text;
-	unsigned long problem_time;
-	bool problem_minor;
 	ns_64_bit central_problem_id,
 				  local_problem_id;
 };
@@ -198,7 +195,7 @@ void ns_buffered_capture_scheduler::commit_all_local_schedule_changes_to_central
 					}
 				}
 
-				if (mappings[i].central_problem_id == 0) {
+				if (mappings[i].local_problem_id != 0 && mappings[i].central_problem_id == 0) {
 					local_buffer_sql << "SELECT id,event,time,minor FROM buffered_host_event_log WHERE id = " << updated_data[i][buffered_capture_schedule.problem_column];
 					ns_sql_result res;
 					local_buffer_sql.get_rows(res);
@@ -206,15 +203,10 @@ void ns_buffered_capture_scheduler::commit_all_local_schedule_changes_to_central
 						mappings[i].central_problem_id = image_server.register_server_event(ns_ex("Could not find problem id ") << updated_data[i][buffered_capture_schedule.problem_column] << " in local database buffer!", &central_db);
 					}
 					else {
-
-						mappings[i].problem_text = res[0][1];
-						mappings[i].problem_time = atol(res[0][2].c_str());
-						mappings[i].problem_minor = res[0][3] != "0";
-
 						ns_image_server_event ev;
-						ev << mappings[i].problem_text;
-						if (mappings[i].problem_minor) ev << ns_ts_minor_event;
-						ev.set_time(mappings[i].problem_time);
+						ev << res[0][1];
+						if (res[0][3] != "0") ev << ns_ts_minor_event;
+						ev.set_time(atol(res[0][2].c_str()));
 						mappings[i].central_problem_id = image_server.register_server_event(ev, &central_db);
 					}
 				}

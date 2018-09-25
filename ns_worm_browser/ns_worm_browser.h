@@ -589,6 +589,9 @@ public:
 	void generate_scanner_lifespan_statistics(bool use_by_hand_censoring,const std::vector<unsigned long> & experiment_ids, const std::string & output_filname);
 
 	ns_image_properties current_image_properties() const{return current_image.properties();}
+
+	void repair_captured_image_transfer_errors(unsigned long experiment_id);
+
 	//mask
 	void produce_mask_file(const ns_bulk_experiment_mask_manager::ns_mask_type mask_type,const std::string & filename);
 	void decode_mask_file(const std::string & filename, const std::string & output_vis_filename="");

@@ -2110,6 +2110,7 @@ void ns_worm_learner::output_movement_analysis_optimization_data(int software_ve
 		else if (run_expansion) {
 			best_parameter_sets = &best_expansion_parameter_sets;
 		}	
+		else throw ns_ex("Err");
 		for (map<std::string, ns_parameter_set_optimization_record>::iterator p = best_parameter_sets->begin(); p != best_parameter_sets->end(); p++) {
 			if (p->second.new_parameters_results.number_valid_worms == 0)
 				continue;
@@ -3104,6 +3105,61 @@ void ns_worm_learner::rebuild_experiment_regions_from_disk(const ns_64_bit exper
 		}
 	}
 	sql.release();
+}
+
+void ns_worm_learner::repair_captured_image_transfer_errors(unsigned long experiment_id) {
+	ns_acquire_for_scope<ns_sql> sql(image_server.new_sql_connection(__FILE__, __LINE__));
+	sql() << "SELECT id, name FROM capture_samples WHERE experiment_id =" << experiment_id;
+	ns_sql_result sample_ids;
+	sql().get_rows(sample_ids);
+	for (unsigned int j = 0; j < sample_ids.size(); j++) {
+		const ns_64_bit sample_id = ns_atoi64(sample_ids[j][0].c_str());
+		std::cerr << "Considering sample " << sample_ids[j][1] << "\n";
+		const ns_file_location_specification spec = image_server.image_storage.get_path_for_sample(sample_id, &sql());
+		std::string dir_name = spec.absolute_long_term_filename() + "\\captured_images\\";
+		std::cerr << "Directory " << dir_name << "\n";
+		const string exp("2018_09_24_TT_microfluidics=63=chewie_a=917=1537885660=2018-09-25=16-27");
+		ns_dir dirs(dir_name);
+		std::cerr << "Contains " << dirs.files.size() << " files\n";
+		bool changed = false;
+		for (int i = 0; i < dirs.files.size(); i++) {
+			std::string filename = dirs.files[i];
+			if (filename.find(".tif") == filename.npos)
+				continue;
+			if (filename.find(".tif.tif") != filename.npos) {
+				std::string new_filename = filename.substr(0, filename.find(".tif.tif") + 4);
+				std::cerr << new_filename;
+				std::cerr << "Moving " << filename << " to " << new_filename;
+				ns_dir::move_file(dir_name + filename, dir_name + new_filename);
+				filename = new_filename;
+				changed = true;
+			}
+
+			string old_f = filename.substr(0, exp.size());
+			sql() << "SELECT i.id, i.filename, c.id FROM captured_images as c, images as i WHERE  i.id = c.image_id && c.sample_id = " << sample_id << " && INSTR(i.filename, '" << old_f << "')";
+			//cerr << sql().query();
+			ns_sql_result res;
+			sql().get_rows(res);
+			if (res.empty())
+				throw ns_ex("Could not load record for ") << old_f;
+			if (res.size() > 1)
+				throw ns_ex("multimatchfor ") << old_f;
+			if (filename != res[0][1]) {
+				changed = true;
+				cerr << "Renaming " << res[0][1] << " to " << filename << "\n";
+				sql() << "UPDATE images SET filename = '" << filename << "',problem=0, partition='partition_000'  WHERE id = " << res[0][0];
+				sql().send_query();
+				sql() << "UPDATE captured_images SET problem=0 WHERE id = " << res[0][2];
+				sql().send_query();
+				//cerr << sql().query() << "\n";
+				//sql().clear_query();
+			}
+			//else cerr << res[0][0] << " " << res[0][2] << " looks fine.\n";
+		}
+		if (!changed)
+			std::cerr << "No issues were detected.\n";
+	}
+	std::cerr << "Done\n";
 }
 void ns_worm_learner::test_time_path_analysis_parameters(unsigned long region_id){
 	ns_acquire_for_scope<ns_sql> sql(image_server.new_sql_connection(__FILE__,__LINE__));

@@ -44,10 +44,10 @@ private:
 
 class ns_image_capture_data_manager{
 public:
-	typedef enum{ns_not_finished,ns_on_local_server_in_16bit,ns_on_local_server_in_8bit,ns_transferred_to_long_term_storage} ns_capture_image_status;
+	typedef enum{ns_not_finished,ns_on_local_server_in_16bit,ns_on_local_server_in_8bit,ns_transferred_to_long_term_storage,ns_fatal_problem} ns_capture_image_status;
 	typedef enum { ns_try_to_transfer_to_long_term_storage, ns_convert_and_compress_locally } ns_transfer_behavior;
 
-	ns_image_capture_data_manager(ns_image_storage_handler & storage_handler_):check_sql_lock("icdm::sql"), captured_image_list_lock("icdm::im"),check_sql(0),device_transfer_state_lock("icdm::dev"),storage_handler(&storage_handler_),pending_transfers_lock("ns_icd::transfer"){}
+	ns_image_capture_data_manager(ns_image_storage_handler & storage_handler_):check_sql_lock("icdm::sql"),check_sql(0),device_transfer_state_lock("icdm::dev"),storage_handler(&storage_handler_),pending_transfers_lock("ns_icd::transfer"){}
 	
 	void initialize_capture_start(ns_image_capture_specification & capture_specification, ns_local_buffer_connection & local_buffer_sql);
 
@@ -62,11 +62,7 @@ public:
 	void wait_for_transfer_finish();
 	~ns_image_capture_data_manager();
 	ns_transfer_status_debugger transfer_status_debugger;
-	void get_captured_images_to_report(std::vector<ns_image_server_captured_image> & im) {
-		captured_image_list_lock.wait_to_acquire(__FILE__, __LINE__);
-		im = newly_captured_images_for_which_to_schedule_jobs;
-		captured_image_list_lock.release();
-	}
+	
 private:
 
 	ns_local_buffer_connection * check_sql;
@@ -93,7 +89,5 @@ private:
 	std::map<std::string, bool> device_transfer_state;
 	ns_lock device_transfer_state_lock;
 	ns_lock check_sql_lock;
-	std::vector<ns_image_server_captured_image> newly_captured_images_for_which_to_schedule_jobs;
-	ns_lock captured_image_list_lock;
 };
 #endif

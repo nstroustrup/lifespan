@@ -337,7 +337,7 @@ void ns_image_server_push_job_scheduler::discover_new_jobs(ns_sql & sql){
 	}
 	
 	try{
-		ns_thread::sleep(5); //wait for 10 seconds before re-loading to allow job submission to finish.
+		ns_thread::sleep(5); //wait for 5 seconds before re-loading to allow job submission to finish.
 		sql << ns_processing_job::provide_query_stub() << " FROM processing_jobs WHERE processed_by_push_scheduler = 0 AND currently_under_processing = 0 AND problem =0";// FOR UPDATE";
 		sql.get_rows(pending_jobs);
 		std::vector<ns_processing_job> p_jobs(pending_jobs.size());

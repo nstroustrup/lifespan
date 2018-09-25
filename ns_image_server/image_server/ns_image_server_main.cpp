@@ -1480,9 +1480,6 @@ int main(int argc, char ** argv){
 			dispatch.buffered_capture_scheduler.image_capture_data_manager.handle_pending_transfers_to_long_term_storage_using_db_names();
 			//try to update info to central db
 			if (sql().connected_to_central_database()) {
-				std::vector<ns_image_server_captured_image> captured_images;
-				dispatch.buffered_capture_scheduler.image_capture_data_manager.get_captured_images_to_report(captured_images);
-				dispatch.buffered_capture_scheduler.report_captured_images(captured_images);
 				ns_acquire_for_scope<ns_local_buffer_connection> local_buffer_connection(image_server.new_local_buffer_connection(__FILE__, __LINE__));
 				ns_acquire_for_scope<ns_sql> sql2(image_server.new_sql_connection(__FILE__, __LINE__, 0, false));
 				dispatch.buffered_capture_scheduler.commit_local_changes_to_central_server(local_buffer_connection(), sql2());

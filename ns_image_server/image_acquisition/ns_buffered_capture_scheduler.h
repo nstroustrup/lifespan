@@ -99,7 +99,7 @@ public:
 	enum {ns_default_update_time=413096400};
 	//time_of_last_update_from_central_db must be set to the past to trigger an update when an image server starts.
 	//however, mysql timestamp collumns can't handle '0' values and so we chose something larger
-	ns_buffered_capture_scheduler():image_capture_data_manager(image_server.image_storage),time_of_last_update_from_central_db(ns_default_update_time,ns_default_update_time),buffer_capture_scheduler_lock("ns_buffer_capture_scheduler_lock"),captured_image_list_lock("cill")
+	ns_buffered_capture_scheduler():image_capture_data_manager(image_server.image_storage),time_of_last_update_from_central_db(ns_default_update_time,ns_default_update_time),buffer_capture_scheduler_lock("ns_buffer_capture_scheduler_lock")
 	{}
 
 
@@ -116,16 +116,7 @@ public:
 
 	void get_last_update_time(ns_local_buffer_connection & local_buffer_sql);
 	static void store_last_update_time_in_db(const ns_synchronized_time & time,ns_local_buffer_connection & sql);
-	void report_captured_image(const ns_image_server_captured_image & im) {
-		captured_image_list_lock.wait_to_acquire(__FILE__, __LINE__);
-		newly_captured_images_for_which_to_schedule_jobs.push_back(im);
-		captured_image_list_lock.release();
-	}
-	void report_captured_images(const std::vector<ns_image_server_captured_image> & images) {
-		captured_image_list_lock.wait_to_acquire(__FILE__, __LINE__);
-		newly_captured_images_for_which_to_schedule_jobs.insert(newly_captured_images_for_which_to_schedule_jobs.end(), images.begin(), images.end());
-		captured_image_list_lock.release();
-	}
+	
 private:
 	ns_image_server_device_manager * device_manager;
 
@@ -140,8 +131,6 @@ private:
 	ns_table_format_processor experiments,
 							  capture_samples;
 	ns_lock buffer_capture_scheduler_lock;
-	std::vector<ns_image_server_captured_image> newly_captured_images_for_which_to_schedule_jobs;
-	ns_lock captured_image_list_lock;
 		
 };
 

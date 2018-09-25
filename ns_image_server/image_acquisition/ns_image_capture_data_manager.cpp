@@ -373,11 +373,6 @@ bool ns_image_capture_data_manager::transfer_image_to_long_term_storage_locked(n
 
 	sql.send_query("COMMIT");
 	
-	if (!had_to_use_local_storage){
-		captured_image_list_lock.wait_to_acquire(__FILE__, __LINE__);
-		newly_captured_images_for_which_to_schedule_jobs.push_back(image);
-		captured_image_list_lock.release();
-	}
 	return true;
 }
 

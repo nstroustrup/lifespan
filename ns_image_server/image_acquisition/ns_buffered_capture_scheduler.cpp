@@ -189,8 +189,12 @@ void ns_buffered_capture_scheduler::commit_all_local_schedule_changes_to_central
 						mappings[i].central_image.save_to_db(0, &central_db, false);
 						mappings[i].central_captured_image.capture_images_image_id = mappings[i].central_image.id;
 					}
+					std::cerr << "Saving captured image " << mappings[i].central_captured_image.captured_images_id << " with image_id " << mappings[i].central_captured_image.capture_images_image_id << "\n";
 					if (need_to_make_new_capture_image_in_central_db) {
 						mappings[i].central_captured_image.captured_images_id = 0;
+						mappings[i].central_captured_image.save(&central_db);
+					}
+					else {
 						mappings[i].central_captured_image.save(&central_db);
 					}
 				}

@@ -129,7 +129,7 @@ void ns_buffered_capture_scheduler::commit_all_local_schedule_changes_to_central
 	const unsigned long new_timestamp(time_of_last_update_from_central_db.remote_time);
 
 	ns_get_all_column_data_from_table("buffered_capture_schedule",buffered_capture_schedule.table_format.column_names, 
-		std::string("WHERE ") + altered_data_condition + " AND uploaded_to_central_db ==0",
+		std::string("WHERE ") + altered_data_condition + " AND uploaded_to_central_db =0",
 		updated_data,&local_buffer_sql);
 
 	//first, set up mappings between local db records and central db records
@@ -252,7 +252,7 @@ void ns_buffered_capture_scheduler::commit_all_local_schedule_changes_to_central
 			//we set the central db record timestamp as old so that it does not trigger a re-download when the server tries to update its cache
 			central_db << ", time_stamp=FROM_UNIXTIME("<< new_timestamp <<") ";
 			central_db << " WHERE id = " << updated_data[i][buffered_capture_schedule.id_column];
-			std::cerr << central_db.query() << "\n";
+			//std::cerr << central_db.query() << "\n";
 			central_db.send_query();
 
 			//set the local db record timestamp as old also

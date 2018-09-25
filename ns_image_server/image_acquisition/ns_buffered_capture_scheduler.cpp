@@ -129,7 +129,7 @@ void ns_buffered_capture_scheduler::commit_all_local_schedule_changes_to_central
 	const unsigned long new_timestamp(time_of_last_update_from_central_db.remote_time);
 
 	ns_get_all_column_data_from_table("buffered_capture_schedule",buffered_capture_schedule.table_format.column_names, 
-		std::string("WHERE ") + altered_data_condition + " AND (uploaded_to_central_db = " + ns_to_string((int)ns_image_capture_data_manager::ns_on_local_server_in_8bit) +  " || uploaded_to_central_db = " + ns_to_string((int)ns_image_capture_data_manager::ns_on_local_server_in_16bit) + ")",
+		std::string("WHERE ") + altered_data_condition + " AND uploaded_to_central_db ==0",
 		updated_data,&local_buffer_sql);
 
 	//first, set up mappings between local db records and central db records
@@ -156,7 +156,7 @@ void ns_buffered_capture_scheduler::commit_all_local_schedule_changes_to_central
 						mappings[i].local_image.load_from_db(mappings[i].local_captured_image.capture_images_image_id, &local_buffer_sql);
 
 					//look in central db to see if a record already exists for the captured_image associated with the local schedule entry
-					central_db << "SELECT captured_image_id,problem,uploaded_to_central_db FROM capture_schedule WHERE id = " << updated_data[i][buffered_capture_schedule.id_column];
+					central_db << "SELECT captured_image_id,problem,transferred_to_long_term_storage FROM capture_schedule WHERE id = " << updated_data[i][buffered_capture_schedule.id_column];
 					ns_sql_result res;
 					central_db.get_rows(res);
 					if (res.size() == 0)
@@ -290,14 +290,12 @@ void ns_buffered_capture_scheduler::commit_all_local_schedule_changes_to_central
 			try {
 				{
 				ns_64_bit local_problem_id = image_server.register_server_event(ns_ex("Could not update central db: ") << mappings[i].error.text(), &local_buffer_sql);
-				local_buffer_sql << "UPDATE buffered_capture_schedule SET uploaded_to_central_db=" << ((int)ns_image_capture_data_manager::ns_fatal_problem)
-					<< ",problem=" << local_problem_id << ", time_stamp = FROM_UNIXTIME(" << new_timestamp << ") WHERE id = " << updated_data[i][buffered_capture_schedule.id_column];
+				local_buffer_sql << "UPDATE buffered_capture_schedule SET uploaded_to_central_db="<< local_problem_id << ", time_stamp = FROM_UNIXTIME(" << new_timestamp << ") WHERE id = " << updated_data[i][buffered_capture_schedule.id_column];
 				local_buffer_sql.send_query();
 				}
 				{
 					ns_64_bit central_problem_id = image_server.register_server_event(ns_ex("Could not update central db: ") << mappings[i].error.text(), &central_db);
-					central_db << "UPDATE capture_schedule SET uploaded_to_central_db=" << ((int)ns_image_capture_data_manager::ns_fatal_problem)
-						<< ",problem=" << central_problem_id << ", time_stamp = FROM_UNIXTIME(" << new_timestamp << ") WHERE id = " << updated_data[i][buffered_capture_schedule.id_column];
+					central_db << "UPDATE capture_schedule SET uploaded_to_central_db=" << central_problem_id << ", time_stamp = FROM_UNIXTIME(" << new_timestamp << ") WHERE id = " << updated_data[i][buffered_capture_schedule.id_column];
 					central_db.send_query();
 				}
 			 }

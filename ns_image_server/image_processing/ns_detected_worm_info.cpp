@@ -1276,8 +1276,10 @@ bool ns_detected_worm_info::is_a_worm(){
 }
 
 bool ns_detected_worm_info::is_a_worm(const ns_svm_model_specification & model){
-
 	#ifdef NS_USE_MACHINE_LEARNING
+
+	if (model.flag == ns_svm_model_specification::ns_accept_all_objects)
+		return true;
 		#ifdef ALLOW_ALL_SPINE_PERMUTATIONS
 		return true;
 		#endif

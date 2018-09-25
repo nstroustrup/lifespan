@@ -2965,6 +2965,7 @@ void ns_svm_model_specification::read_included_stats(const std::string & filenam
 	unsigned long statistics_used(0);
 	string stat_str;
 	int state(0);
+	bool no_flags_found(false);
 	while(true){
 		char a;
 		a = in.get();
@@ -2976,6 +2977,16 @@ void ns_svm_model_specification::read_included_stats(const std::string & filenam
 			else{
 				if (stat_str.size() == 0)
 					continue;  //skip leading whitespace
+
+				if (!no_flags_found) {  //special flags can be specified in the included statistics flag.
+										//if one is found, set the flag and stop looking for any range info.
+					if (stat_str == "ACCEPT_ALL_OBJECTS") {
+						cerr << stat_str << "\n";
+						this->flag = ns_svm_model_specification::ns_accept_all_objects;
+						return;
+					}
+					no_flags_found = true;
+				}
 				int stat_specified = atol(stat_str.c_str());  //we've read in the entire number
 				if (stat_specified >= included_statistics.size())
 					throw ns_ex("ns_model_specification::Invalid statistic specified ") << stat_specified;

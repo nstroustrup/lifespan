@@ -41,7 +41,7 @@ struct ns_principal_component_transformation_specification{
 ///ns_model_specification contains all the information needed to specify the model file for a SVM model, including
 ///statistic normalization data and all support vectors.
 struct ns_svm_model_specification{
-	typedef enum ns_special_flag {ns_none,ns_accept_all_objects};
+	typedef enum {ns_none,ns_accept_all_objects} ns_special_flag;
 	ns_special_flag flag;
 	ns_svm_model_specification():statistics_ranges(ns_stat_number_of_stats),included_statistics(ns_stat_number_of_stats,0), flag(ns_svm_model_specification::ns_none){
 	#ifdef NS_USE_MACHINE_LEARNING

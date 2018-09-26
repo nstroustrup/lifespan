@@ -970,7 +970,7 @@ public:
 	void rename_output_file(const string & name){
 
 		image_server.image_storage.request_from_volatile_storage(temp_output_filename).input_stream().pump(
-		image_server.image_storage.request_volatile_storage<ns_8_bit>(name,1024,false).output_stream(),1024);
+		image_server.image_storage.request_volatile_storage<ns_8_bit>(name,1024,ns_tiff_lzw,false).output_stream(),1024);
 		image_server.image_storage.delete_from_volatile_storage(temp_output_filename);
 	}
 

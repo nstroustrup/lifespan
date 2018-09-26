@@ -44,7 +44,7 @@ private:
 
 class ns_image_capture_data_manager{
 public:
-	typedef enum{ns_not_finished,ns_on_local_server_in_16bit,ns_on_local_server_in_8bit,ns_transferred_to_long_term_storage,ns_fatal_problem} ns_capture_image_status;
+	typedef enum{ns_not_finished,ns_on_local_server_in_16bit,ns_on_local_server_in_8bit,ns_transfer_complete, ns_fatal_problem,ns_transferred_to_long_term_storage} ns_capture_image_status;
 	typedef enum { ns_try_to_transfer_to_long_term_storage, ns_convert_and_compress_locally } ns_transfer_behavior;
 
 	ns_image_capture_data_manager(ns_image_storage_handler & storage_handler_):check_sql_lock("icdm::sql"),check_sql(0),device_transfer_state_lock("icdm::dev"),storage_handler(&storage_handler_),pending_transfers_lock("ns_icd::transfer"){}
@@ -68,7 +68,7 @@ private:
 	ns_local_buffer_connection * check_sql;
 	bool transfer_in_progress_for_device(const std::string & device);
 
-	bool transfer_image_to_long_term_storage_locked(ns_64_bit capture_schedule_entry_id, ns_image_server_captured_image & image, ns_transfer_behavior & behavior,ns_local_buffer_connection & sql);
+	bool transfer_image_to_long_term_storage_locked(ns_64_bit capture_schedule_entry_id, ns_image_server_captured_image & image, const ns_64_bit sample_id, const ns_capture_image_status & transfer_status,ns_transfer_behavior & behavior,ns_local_buffer_connection & sql);
 
 	static ns_thread_return_type thread_start_handle_pending_transfers_to_long_term_storage(void * thread_arguments);
 

@@ -191,6 +191,7 @@ struct ns_image_server_captured_image{
 	static std::string captured_image_directory_d(const std::string & sample_name,const ns_64_bit sample_id,const std::string & experiment_directory, const bool small_images, const ns_processing_task & task=ns_unprocessed);
 
 	ns_image_server_image make_small_image_storage(ns_image_server_sql * sql);
+	ns_image_server_image make_large_image_storage(ns_image_server_sql * sql);
 
 	//if a processing operation is being applied to the image,
 	//the output will be written to this record in the images sql table.

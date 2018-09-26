@@ -187,8 +187,8 @@ public:
 			im[prop.height/2][x] = white;
 		for (unsigned int y = 0; y < prop.height; y++)
 			im[y][800] = white;
-
-		ns_image_storage_reciever_handle<ns_component> out(image_server.image_storage.request_volatile_storage<ns_component>(filename,1024,false));
+		
+		ns_image_storage_reciever_handle<ns_component> out(image_server.image_storage.request_volatile_storage<ns_component>(filename,1024,ns_tiff_uncompressed));
 		im.pump(out.output_stream(),1024);
 	}
 };

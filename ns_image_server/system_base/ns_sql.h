@@ -144,7 +144,7 @@ class ns_sql_connection{
   ns_sql_connection(const ns_sql_connection &) = delete;
  private:
   static std::string unreachable_host;
-  void simulate_errors_if_requested() const;
+  void simulate_errors_if_requested();
   bool should_simulate_as_unreachable(const std::string & host) const;
   ns_lock local_lock;
   static ns_lock global_sql_lock;

@@ -33,7 +33,10 @@ struct ns_buffered_capture_schedule_table_info{
 		captured_image_id_column,
 		timestamp_column,
 		time_at_finish_column,
-		transfer_status_column;
+		transfer_status_column,
+		experiment_id_column,
+		sample_id_column,
+		time_at_imaging_start_column;
 	void load_if_needed(ns_image_server_sql * sql){
 		if (!table_format.loaded())
 			load(sql);
@@ -48,6 +51,9 @@ struct ns_buffered_capture_schedule_table_info{
 		spec.push_back(ns_table_column_spec("time_stamp",&timestamp_column));
 		spec.push_back(ns_table_column_spec("time_at_finish",&time_at_finish_column));
 		spec.push_back(ns_table_column_spec("transferred_to_long_term_storage", &transfer_status_column));
+		spec.push_back(ns_table_column_spec("experiment_id", &experiment_id_column));
+		spec.push_back(ns_table_column_spec("sample_id", &sample_id_column));
+		spec.push_back(ns_table_column_spec("time_at_imaging_start", &time_at_imaging_start_column));
 		
 		table_format.get_column_name_indicies(spec);
 	}
@@ -63,7 +69,8 @@ struct ns_capture_schedule_table_info{
 		 censored_column,
 		 transferred_to_long_term_storage_column,
 		 time_during_transfer_to_long_term_storage_column,
-		 time_during_deletion_from_local_storage_column;
+		 time_during_deletion_from_local_storage_column,
+		 captured_image_id_column;
 
 	void load_if_needed(ns_image_server_sql * sql){
 		if (!table_format.loaded())
@@ -82,7 +89,8 @@ struct ns_capture_schedule_table_info{
 		spec.push_back(ns_table_column_spec("transferred_to_long_term_storage",&transferred_to_long_term_storage_column));
 		spec.push_back(ns_table_column_spec("time_during_transfer_to_long_term_storage",&time_during_transfer_to_long_term_storage_column));
 		spec.push_back(ns_table_column_spec("time_during_deletion_from_local_storage",&time_during_deletion_from_local_storage_column));
-		spec.push_back(ns_table_column_spec("time_stamp",&time_stamp_column));
+		spec.push_back(ns_table_column_spec("time_stamp", &time_stamp_column));
+		spec.push_back(ns_table_column_spec("captured_image_id",&captured_image_id_column));
 		table_format.get_column_name_indicies(spec);
 	}
 	ns_table_format_processor table_format;

@@ -319,9 +319,7 @@ ns_image_storage_reciever_handle<ns_image_storage_handler::ns_component> ns_imag
 }
 
 ns_image_storage_reciever_handle<ns_image_storage_handler::ns_component> ns_image_storage_handler::request_storage_ci(ns_image_server_captured_image & captured_image, const ns_image_type & image_type, const float compression_ratio, const unsigned long max_line_length, ns_image_server_sql * sql, ns_image_server_image & output_image, bool & had_to_use_local_storage, const ns_volatile_storage_behavior volatile_storage_behavior) const{
-	output_image.filename = captured_image.filename(sql);
-	output_image.path = captured_image.directory(sql);
-	output_image.partition = get_partition_for_experiment(captured_image.experiment_id,sql);
+	output_image = captured_image.make_large_image_storage(sql);
 	return request_storage(output_image, image_type, compression_ratio, max_line_length, sql,had_to_use_local_storage,false,volatile_storage_behavior);
 }
 
@@ -1147,7 +1145,12 @@ void ns_image_storage_handler::refresh_experiment_partition_cache(ns_image_serve
 	if (current_time - experiment_partition_cache_last_update_time >= experiment_partition_cache_update_period)
 		refresh_experiment_partition_cache_int(sql,true);
 }
-
+bool ns_image_storage_handler::move_file(const ns_file_location_specification & source, const ns_file_location_specification & dest,bool volatile_storage) {
+	if (volatile_storage)
+		return ns_dir::move_file(source.absolute_volatile_filename(), dest.absolute_volatile_filename());
+	else
+		return ns_dir::move_file(source.absolute_long_term_filename(), dest.absolute_long_term_filename());
+}
 ns_file_location_specification ns_image_storage_handler::get_file_specification_for_image(ns_image_server_image & image,ns_image_server_sql * sql) const{
 	return this->look_up_image_location_no_extension_alteration(image,sql);
 }

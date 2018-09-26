@@ -105,7 +105,7 @@ public:
 	std::ofstream * request_volatile_binary_output(const std::string & filename);
 
 	template<class ns_bit_depth>
-	ns_image_storage_reciever_handle<ns_bit_depth>  request_volatile_storage(const std::string & filename, const unsigned long max_line_length, const bool report_to_db = true) const{
+	ns_image_storage_reciever_handle<ns_bit_depth>  request_volatile_storage(const std::string & filename, const unsigned long max_line_length, const ns_image_type & image_type,const bool report_to_db = true) const{
 		std::string dir = volatile_storage_directory + DIR_CHAR_STR + ns_image_server_scratch_directory();
 
 		std::string fname = dir + DIR_CHAR_STR + filename;
@@ -120,7 +120,7 @@ public:
 
 		if (verbosity >= ns_verbose)
 			ns_image_handler_register_server_event_to_central_db(ns_image_server_event("ns_image_storage_handler::Opening ") << fname << " for output.");
-		return ns_image_storage_reciever_handle<ns_bit_depth>(new ns_image_storage_reciever_to_disk<ns_bit_depth>(max_line_length, fname,ns_get_image_type(fname),true));
+		return ns_image_storage_reciever_handle<ns_bit_depth>(new ns_image_storage_reciever_to_disk<ns_bit_depth>(max_line_length, fname,image_type,true));
 	}
 
 	
@@ -269,7 +269,7 @@ public:
 	void refresh_experiment_partition_cache(ns_image_server_sql * sql);
 
 	ns_file_location_specification get_file_specification_for_image(ns_image_server_image & image,ns_image_server_sql * sql) const;
-	
+	bool move_file(const ns_file_location_specification & source, const ns_file_location_specification & dest,bool volatile_storage);
 	ns_image_server_image get_region_movement_metadata_info(ns_64_bit region_info_id,const std::string & data_source,ns_sql & sql) const;
 
 	ns_file_location_specification get_path_for_region(ns_64_bit region_image_info_id,ns_image_server_sql * sql, const ns_processing_task task= ns_unprocessed) const;

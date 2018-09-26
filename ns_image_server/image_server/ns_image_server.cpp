@@ -2981,7 +2981,7 @@ void ns_svm_model_specification::read_included_stats(const std::string & filenam
 				if (!no_flags_found) {  //special flags can be specified in the included statistics flag.
 										//if one is found, set the flag and stop looking for any range info.
 					if (stat_str == "ACCEPT_ALL_OBJECTS") {
-						cerr << stat_str << "\n";
+						//cerr << stat_str << "\n";
 						this->flag = ns_svm_model_specification::ns_accept_all_objects;
 						return;
 					}

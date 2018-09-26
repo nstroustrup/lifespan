@@ -524,11 +524,13 @@ void ns_sql_full_table_lock::unlock(){
 	lock.release();
 }
 
-void ns_sql_connection::simulate_errors_if_requested() const{
+void ns_sql_connection::simulate_errors_if_requested() {
 	if (!NS_INCLUDE_ERROR_SIMULATION)
 		return;
-	if (should_simulate_as_unreachable(_server_name))
+	if (should_simulate_as_unreachable(_server_name)) {
+		disconnect();
 		throw ns_ex("ns_sql_connection::Simulating a lost connection to ") << _server_name;
+	}
 }
 
 bool ns_sql_connection::should_simulate_as_unreachable(const std::string & host) const{

@@ -274,7 +274,12 @@ void ns_image_capture_data_manager::transfer_image_to_long_term_storage(const st
 	set_device_transfer_state(true,device_name);
 	device_lock.release();
 	try{
-		transfer_image_to_long_term_storage_locked(capture_schedule_entry_id,image,behavior,sql);
+		sql << "SELECT sample_id, transferred_to_long_term_storage FROM capture_schedule WHERE id = " << capture_schedule_entry_id;
+		ns_sql_result res;
+		sql.get_rows(res);
+		if (res.empty())
+			throw ns_ex("ns_image_capture_data_manager::transfer_image_to_long_term_storage()::Could not find capture schedule id ") << capture_schedule_entry_id << " in db.";
+		transfer_image_to_long_term_storage_locked(capture_schedule_entry_id,image,ns_atoi64(res[0][0].c_str()),(ns_image_capture_data_manager::ns_capture_image_status)atol(res[0][1].c_str()),behavior,sql);
 		device_lock.get(__FILE__,__LINE__);
 		set_device_transfer_state(false,device_name);
 		device_lock.release();
@@ -295,22 +300,26 @@ void ns_image_capture_data_manager::transfer_image_to_long_term_storage(const st
 	}
 }
 
-bool ns_image_capture_data_manager::transfer_image_to_long_term_storage_locked(ns_64_bit capture_schedule_entry_id, ns_image_server_captured_image & image, ns_transfer_behavior & behavior, ns_local_buffer_connection & sql) {
+bool ns_image_capture_data_manager::transfer_image_to_long_term_storage_locked(ns_64_bit capture_schedule_entry_id, ns_image_server_captured_image & image, const ns_64_bit sample_id, const ns_capture_image_status & initial_transfer_status,ns_transfer_behavior & behavior, ns_local_buffer_connection & sql) {
 
-	//First we check what state the current image is in
-	sql << "SELECT transferred_to_long_term_storage, sample_id FROM buffered_capture_schedule WHERE id = " << capture_schedule_entry_id;
-	ns_sql_result res;
-	sql.get_rows(res);
-	if (res.size() == 0)
-		throw ns_ex("ns_image_capture_data_manager::transfer_image_to_long_term_storage()::Could not find capture schedule id ") << capture_schedule_entry_id << " in the db.";
-	ns_64_bit sample_id = ns_atois64(res[0][1].c_str());
-	//cerr << "Coordinating Transfer\n";
-	ns_capture_image_status transfer_status((ns_capture_image_status)atoi(res[0][0].c_str()));
-	switch (transfer_status) {
+	switch (initial_transfer_status) {
 	case ns_not_finished:
 		throw ns_ex("ns_image_capture_data_manager::transfer_image_to_long_term_storage()::Transfer requested on image whose capture has not yet finished.");
-	case ns_transferred_to_long_term_storage:
+	case ns_transferred_to_long_term_storage: {
+		if (behavior == ns_try_to_transfer_to_long_term_storage) {
+			//the final step in image transfer is to rename the image according to its central db id numbers.
+			//this is done by the capture schedule updator, so we keep updating the timestamp
+			//of the capture schedule so the capture schedule updator will keep trying to do the operation.
+			//note we only do this if 
+			sql << "UPDATE buffered_capture_schedule SET time_stamp = 0 WHERE id = " << capture_schedule_entry_id;
+			sql.send_query();
+		}
+		return false;
+	}
+	case ns_transfer_complete:
 		throw ns_ex("ns_image_capture_data_manager::transfer_image_to_long_term_storage()::Transfer requested on image that has already been transferred.");
+	case ns_fatal_problem:
+		break; //everyone deserves a second chance
 	case ns_on_local_server_in_16bit:
 		image.specified_16_bit = true;
 		break;
@@ -318,13 +327,13 @@ bool ns_image_capture_data_manager::transfer_image_to_long_term_storage_locked(n
 		image.specified_16_bit = false;
 		break;
 	default:
-		throw ns_ex("ns_image_capture_data_manager::transfer_image_to_long_term_storage()::Requested transfer subject is in unknown transfer state:") << (int)transfer_status;
+		throw ns_ex("ns_image_capture_data_manager::transfer_image_to_long_term_storage()::Requested transfer subject is in unknown transfer state:") << (int)initial_transfer_status;
 	}
-	if (behavior == ns_convert_and_compress_locally && transfer_status == ns_on_local_server_in_8bit) {
+	if (behavior == ns_convert_and_compress_locally && initial_transfer_status == ns_on_local_server_in_8bit) {
 		transfer_status_debugger.set_status(image.device_name, ns_transfer_status("Waiting to transfer locally cached 8 bit image"));
 		return false;	//give up; there is nothing useful to do with 8 bit images until we can transfer them to the long term storage.
 	}
-
+	ns_capture_image_status final_transfer_status = initial_transfer_status;
 	sql << "SELECT conversion_16_bit_low_bound, conversion_16_bit_high_bound FROM buffered_capture_samples WHERE id = " << sample_id;
 	ns_sql_result res2;
 	sql.get_rows(res2);
@@ -342,16 +351,16 @@ bool ns_image_capture_data_manager::transfer_image_to_long_term_storage_locked(n
 	bool had_to_use_local_storage;
 	had_to_use_local_storage = transfer_data_to_long_term_storage(image, time_during_transfer_to_long_term_storage, time_during_deletion_from_local_storage, conversion_16_bit_bounds, behavior, sql);
 
-	transfer_status = ns_transferred_to_long_term_storage;
+	final_transfer_status = ns_transferred_to_long_term_storage;
 	if (had_to_use_local_storage) {
-		transfer_status = ns_on_local_server_in_8bit;
+		final_transfer_status = ns_on_local_server_in_8bit;
 		transfer_status_debugger.set_status(image.device_name, ns_transfer_status("Converted to 8 bit and stored locally"));
 	}
 	else
 		transfer_status_debugger.set_status(image.device_name,ns_transfer_status("Successfully transferred image to long term storage"));
 	
 
-	sql << "UPDATE buffered_capture_schedule SET transferred_to_long_term_storage = " << (int)transfer_status;
+	sql << "UPDATE buffered_capture_schedule SET transferred_to_long_term_storage = " << (int)final_transfer_status;
 	if (!had_to_use_local_storage){
 		sql //<< ", problem = 0"
 			<< ", time_during_transfer_to_long_term_storage = '" << time_during_transfer_to_long_term_storage
@@ -367,7 +376,7 @@ bool ns_image_capture_data_manager::transfer_image_to_long_term_storage_locked(n
 	}
 
 	//mark capture sample being finished if its transfer is complete
-	if (had_to_use_local_storage)
+	if (final_transfer_status == ns_transfer_complete)
 		image.save(&sql,ns_image_server_captured_image::ns_mark_as_busy);
 	else image.save(&sql,ns_image_server_captured_image::ns_mark_as_not_busy);
 
@@ -478,8 +487,10 @@ unsigned long ns_image_capture_data_manager::handle_pending_transfers(const stri
 			 << " AND cs.time_at_finish != 0"
 			 << " AND cs.problem = 0"
 			 << " AND (cs.transferred_to_long_term_storage = " << (int)ns_on_local_server_in_16bit;
-		if (behavior != ns_convert_and_compress_locally)
-			*check_sql << " || cs.transferred_to_long_term_storage = " << (int)ns_on_local_server_in_8bit << ") ";
+		if (behavior != ns_convert_and_compress_locally) {
+			*check_sql << " || cs.transferred_to_long_term_storage = " << (int)ns_on_local_server_in_8bit
+					   << " || cs.transferred_to_long_term_storage = " << (int)ns_transferred_to_long_term_storage << ") ";
+		} 
 		else *check_sql << ")";
 		//	std::string q(check_sql->query());
 		ns_sql_result events;
@@ -491,24 +502,29 @@ unsigned long ns_image_capture_data_manager::handle_pending_transfers(const stri
 			ns_acquire_for_scope<ns_local_buffer_connection> sql(image_server.new_local_buffer_connection(__FILE__,__LINE__));
 			for (unsigned int i = 0; i < events.size(); i++){
 				const unsigned long start_time = ns_current_time();
+				const ns_capture_image_status transfer_status = (ns_capture_image_status)atol(events[i][4].c_str());
+				const ns_64_bit sample_id = ns_atoi64(events[i][3].c_str());
 				if (!storage_handler->test_connection_to_long_term_storage(true))
 					behavior = ns_convert_and_compress_locally;
 				if (image_server.exit_has_been_requested)
 					break;
-			
-				ns_image_server_event ev;
-				if (behavior == ns_try_to_transfer_to_long_term_storage)
-					ev << "Processing a pending image transfer to long term storage: " << device_name << "@" << ns_format_time_string_for_human(atol(events[i][2].c_str()));
-				else if (behavior == ns_convert_and_compress_locally)
-					ev << "No access to long term storage; compressing captured image and caching locally: " << device_name << "@" << ns_format_time_string_for_human(atol(events[i][2].c_str()));
-				else ev << "Unknown behavior specified: " << (int)behavior;
-				image_server.register_server_event(ev,&sql());
+				bool handling_already_transferred_but_not_rename_file(transfer_status == ns_transferred_to_long_term_storage);
+
+				if (!handling_already_transferred_but_not_rename_file) {  //only output message for the initial transfer or conversion to 8 bit.
+					ns_image_server_event ev;
+					if (behavior == ns_try_to_transfer_to_long_term_storage)
+						ev << "Processing a pending image transfer to long term storage: " << device_name << "@" << ns_format_time_string_for_human(atol(events[i][2].c_str()));
+					else if (behavior == ns_convert_and_compress_locally)
+						ev << "No access to long term storage; compressing captured image and caching locally: " << device_name << "@" << ns_format_time_string_for_human(atol(events[i][2].c_str()));
+					else ev << "Unknown behavior specified: " << (int)behavior;
+					image_server.register_server_event(ev, &sql());
+				}
 				ns_image_server_captured_image im;
 				im.captured_images_id = ns_atoi64(events[i][1].c_str());
 				im.load_from_db(im.captured_images_id,&sql());
 				ns_64_bit capture_schedule_id = ns_atoi64(events[i][0].c_str());
 				try{
-					const bool did_something = transfer_image_to_long_term_storage_locked(capture_schedule_id,im, behavior,sql());
+					const bool did_something = transfer_image_to_long_term_storage_locked(capture_schedule_id,im, sample_id,transfer_status, behavior,sql());
 					if (did_something) {
 						unsigned long duration;
 						if (i == 0)
@@ -516,7 +532,7 @@ unsigned long ns_image_capture_data_manager::handle_pending_transfers(const stri
 						else duration = ns_current_time() - start_time;
 						image_server.register_server_event(ns_image_server_event("Finished image transfer after ") << duration << " seconds", &sql());
 					}
-					else std::cerr << "Wasted time on a useless transfer\n";
+					else if (!handling_already_transferred_but_not_rename_file)std::cerr << "Wasted time on a useless transfer\n";
 				}
 				catch(ns_ex & ex){
 					cerr << "Error processing capture: " << ex.text() << "\n";

@@ -83,6 +83,57 @@ bool ns_image_server_dispatcher::hotplug_devices(const bool rescan_bad_barcodes,
 
 }
 
+ns_thread_return_type ns_image_server_dispatcher::handle_local_cache_cleanup_request(void * d) {
+	try {
+		ns_image_server_dispatcher * dispatcher(static_cast<ns_image_server_dispatcher *>(d));
+		ns_image_server_event ev("Performing a ");
+		switch (dispatcher->local_cache_cleanup_request_being_processed) {
+		case ns_no_cleanup: throw ns_ex("No cleaup requested");
+		case ns_cleanup_clean: ev << " clean"; break;
+		case ns_cleanup_dirty: ev << " dirty"; break;
+		default: ev << " unknown ("<<(int)dispatcher->local_cache_cleanup_request_being_processed <<")"; break;
+		}
+		ev << " local buffer database cleanup...";
+		image_server.register_server_event(ns_image_server::ns_register_in_central_db_with_fallback, ev);
+
+		ns_acquire_for_scope<ns_local_buffer_connection> local_buffer_connection(image_server.new_local_buffer_connection(__FILE__, __LINE__));
+		image_server.register_server_event(ns_image_server_event("Waiting for scans and transfers to complete...."),&local_buffer_connection());
+		dispatcher->buffered_capture_scheduler.image_capture_data_manager.pause_transfers(true);
+		dispatcher->buffered_capture_scheduler.pause_local_db_updates(true);
+		try {
+
+			if (dispatcher->local_cache_cleanup_request_being_processed == ns_cleanup_clean) {
+				ns_acquire_for_scope<ns_sql> central_sql(image_server.new_sql_connection(__FILE__, __LINE__));
+				dispatcher->buffered_capture_scheduler.commit_local_changes_to_central_server(local_buffer_connection(), central_sql());
+				central_sql.release();
+			}
+			dispatcher->buffered_capture_scheduler.clear_local_cache(local_buffer_connection());
+			local_buffer_connection.release();
+			dispatcher->buffered_capture_scheduler.image_capture_data_manager.pause_transfers(false);
+			dispatcher->buffered_capture_scheduler.pause_local_db_updates(false);
+		}
+		catch (...) {
+			dispatcher->buffered_capture_scheduler.image_capture_data_manager.pause_transfers(false);
+			dispatcher->buffered_capture_scheduler.pause_local_db_updates(false);
+			throw;
+		}
+	}
+	catch (ns_ex & ex) {
+		try {
+			image_server.register_server_event(ns_image_server::ns_register_in_central_db_with_fallback,ex);
+		}
+		catch (...) {
+			try {
+				image_server.register_server_event_no_db(ns_image_server_event(ex.text()));
+			}
+			catch (...) {
+				std::cerr << ex.text() << "\n";
+			}
+		}
+	}
+	return 0;
+}
+
 void ns_image_server_dispatcher::handle_remote_requests(){
 	srand(ns_current_time());
 	//empty the queue of pending messages
@@ -155,15 +206,14 @@ void ns_image_server_dispatcher::handle_remote_requests(){
 					break;
 				}
 				case NS_CLEAR_DB_BUF_CLEAN:
-					clean_clear_local_db_requested = true;
+					local_cache_cleanup_request = ns_cleanup_clean;
 					break;
 				case NS_CLEAR_DB_BUF_DIRTY:
+					local_cache_cleanup_request = ns_cleanup_dirty;
 					try {
 
-						ns_acquire_for_scope<ns_local_buffer_connection> local_buffer_connection(image_server.new_local_buffer_connection(__FILE__, __LINE__));
 						ns_acquire_for_scope<ns_local_buffer_connection> sql(image_server.new_local_buffer_connection(__FILE__, __LINE__));
 						this->buffered_capture_scheduler.clear_local_cache(sql());
-						local_buffer_connection.release();
 						sql.release();
 					}
 					catch (ns_ex & ex) {
@@ -584,7 +634,7 @@ void ns_image_server_dispatcher::on_timer(){
 		currently_unable_to_connect_to_the_central_db = true;
 		return;
 	}
-	else{
+	else {
 		//we want to buffer all alerts locally and only submit them all at once after all
 		//tasks are completed.  This is because submitting alerts requires acquiring
 		//the cluster-wide alert table lock, and there is a possibility of this taking a long time.
@@ -592,14 +642,14 @@ void ns_image_server_dispatcher::on_timer(){
 		//in data acquisition.
 		image_server.alert_handler.buffer_all_alerts_locally(true);
 		ns_try_to_acquire_lock_for_scope timer_sql_lock(timer_sql_management_lock);
-		if (!timer_sql_lock.try_to_get(__FILE__,__LINE__))
+		if (!timer_sql_lock.try_to_get(__FILE__, __LINE__))
 			return; //if we can't get the lock, it's because the another thread is already trying to reconnect.  Just give up and let the other thread deal with it.
-		try{
-			if (timer_sql_connection == 0){
-				try{
-					timer_sql_connection = image_server.new_sql_connection(__FILE__,__LINE__,0);
+		try {
+			if (timer_sql_connection == 0) {
+				try {
+					timer_sql_connection = image_server.new_sql_connection(__FILE__, __LINE__, 0);
 				}
-				catch(ns_ex & ex){
+				catch (ns_ex & ex) {
 					handle_central_connection_error(ex);
 					timer_sql_lock.release();
 					return;
@@ -610,49 +660,62 @@ void ns_image_server_dispatcher::on_timer(){
 			bool try_to_reestablish_connection = false;
 
 
-				if (currently_unable_to_connect_to_the_central_db){
+			if (currently_unable_to_connect_to_the_central_db) {
 
 
+				try_to_reestablish_connection = true;
+			}
+			else {
+				try {
+					timer_sql_connection->clear_query();
+					timer_sql_connection->check_connection();
+					image_server.check_for_sql_database_access(timer_sql_connection);
+				}
+				catch (ns_ex ex) {
+					handle_central_connection_error(ex);
 					try_to_reestablish_connection = true;
 				}
-				else{
-					try{
-						timer_sql_connection->clear_query();
-						timer_sql_connection->check_connection();
-						image_server.check_for_sql_database_access(timer_sql_connection);
-					}
-					catch(ns_ex ex){
-						handle_central_connection_error(ex);
-						try_to_reestablish_connection = true;
-					}
-				}
+			}
 
-				if (try_to_reestablish_connection ){
-					try{
-						//if we've lost the connection, try to reconnect via conventional means
-						image_server.reconnect_sql_connection(timer_sql_connection);
-						timer_sql_connection->check_connection();
-						timer_sql_lock.release();
-						image_server.register_server_event(ns_image_server_event("Recovered from a lost MySQL connection."),timer_sql_connection);
-						image_server.register_host(timer_sql_connection);
-						image_server.alert_handler.buffer_all_alerts_locally(false);
-						currently_unable_to_connect_to_the_central_db = false;
-						return;
-					}
-					catch(ns_ex & ex){
-						//ns_safe_delete(timer_sql_connection);
-						//handle_central_connection_error(ex);
-						timer_sql_lock.release();
-						return;
-					}
+			if (try_to_reestablish_connection) {
+				try {
+					//if we've lost the connection, try to reconnect via conventional means
+					image_server.reconnect_sql_connection(timer_sql_connection);
+					timer_sql_connection->check_connection();
+					timer_sql_lock.release();
+					image_server.register_server_event(ns_image_server_event("Recovered from a lost MySQL connection."), timer_sql_connection);
+					image_server.register_host(timer_sql_connection);
+					image_server.alert_handler.buffer_all_alerts_locally(false);
+					currently_unable_to_connect_to_the_central_db = false;
+					return;
 				}
-				timer_sql_lock.release();
+				catch (ns_ex & ex) {
+					//ns_safe_delete(timer_sql_connection);
+					//handle_central_connection_error(ex);
+					timer_sql_lock.release();
+					return;
+				}
 			}
-			catch(...){
-				timer_sql_lock.release();
-				throw;
+			timer_sql_lock.release();
+		}
+		catch (...) {
+			timer_sql_lock.release();
+			throw;
+		}
+	}
+
+	if (!currently_unable_to_connect_to_the_central_db) {
+		try {
+			//update the db at 10 second intervals, if needed
+			if (buffered_capture_scheduler.time_since_last_db_update().local_time >= image_server.local_buffer_commit_frequency_in_seconds()) {
+					ns_acquire_for_scope<ns_local_buffer_connection> local_buffer_connection(image_server.new_local_buffer_connection(__FILE__, __LINE__));
+					buffered_capture_scheduler.update_local_buffer_from_central_server(devices, local_buffer_connection(), *timer_sql_connection);
 			}
-			}
+		}
+		catch (ns_ex & ex) {
+			image_server.register_server_event(ns_image_server::ns_register_in_central_db_with_fallback, ex);
+		}
+	}
 
 
 	try{
@@ -753,7 +816,7 @@ void ns_image_server_dispatcher::on_timer(){
 		bool shutdown_requested = (h[0][1] == "1");
 		const bool hotplug_requested = (h[0][3] == "1");
 		if (h[0][3] == "2"){
-			clean_clear_local_db_requested = true;
+			local_cache_cleanup_request = ns_cleanup_clean;
 		}
 		std::string database_requested = h[0][4];
 
@@ -766,20 +829,13 @@ void ns_image_server_dispatcher::on_timer(){
 		*timer_sql_connection << " WHERE id = " << image_server.host_id();
 		timer_sql_connection->send_query();
 		timer_sql_connection->send_query("COMMIT");
-		if (clean_clear_local_db_requested){
-			clean_clear_local_db_requested = false;
-			try{
-
-				ns_acquire_for_scope<ns_local_buffer_connection> local_buffer_connection(image_server.new_local_buffer_connection(__FILE__,__LINE__));
-				ns_acquire_for_scope<ns_local_buffer_connection> sql(image_server.new_local_buffer_connection(__FILE__,__LINE__));
-				buffered_capture_scheduler.commit_local_changes_to_central_server(sql(),*timer_sql_connection);
-				buffered_capture_scheduler.clear_local_cache(sql());
-				sql.release();
-				local_buffer_connection.release();
-			}
-			catch(ns_ex & ex){
-				image_server.register_server_event_no_db(ns_image_server_event(ex.text()));
-			}
+		if (local_cache_cleanup_request != ns_no_cleanup){
+			//move request to temporary variable, to prevent this request from being run multiple times
+			local_cache_cleanup_request_being_processed = local_cache_cleanup_request;
+			local_cache_cleanup_request = ns_no_cleanup;
+			ns_thread thread;
+			thread.run(handle_local_cache_cleanup_request, this);
+			thread.detach();
 		}
 		try{
 			image_server.image_storage.refresh_experiment_partition_cache(timer_sql_connection);
@@ -1752,29 +1808,7 @@ void ns_image_server_dispatcher::run_device_capture_management(){
 		device_management_lock.release();
 		return;
 	}
-	if (!currently_unable_to_connect_to_the_central_db){
-		try{
-			//update the db at 10 second intervals, if needed
-			if (buffered_capture_scheduler.time_since_last_db_update().local_time >= image_server.local_buffer_commit_frequency_in_seconds()){
-				ns_acquire_for_scope<ns_sql> sql;
-				bool can_connect_to_central_db(true);
-				try{
-					sql.attach(image_server.new_sql_connection(__FILE__,__LINE__,0));
-				}
-				catch(...){
-					can_connect_to_central_db = false;
-				}
-				if (can_connect_to_central_db){
-
-					buffered_capture_scheduler.update_local_buffer_from_central_server(devices,local_buffer_connection(),sql());
-
-				}
-			}
-		}
-		catch(ns_ex & ex){
-			image_server.register_server_event(ns_image_server::ns_register_in_central_db_with_fallback,ex);
-		}
-	}
+	
 
 	buffered_capture_scheduler.run_pending_scans(devices,local_buffer_connection());
 

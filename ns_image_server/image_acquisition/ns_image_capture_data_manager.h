@@ -47,7 +47,7 @@ public:
 	typedef enum{ns_not_finished,ns_on_local_server_in_16bit,ns_on_local_server_in_8bit,ns_transfer_complete, ns_fatal_problem,ns_transferred_to_long_term_storage} ns_capture_image_status;
 	typedef enum { ns_try_to_transfer_to_long_term_storage, ns_convert_and_compress_locally } ns_transfer_behavior;
 
-	ns_image_capture_data_manager(ns_image_storage_handler & storage_handler_):check_sql_lock("icdm::sql"),check_sql(0),device_transfer_state_lock("icdm::dev"),storage_handler(&storage_handler_),pending_transfers_lock("ns_icd::transfer"){}
+	ns_image_capture_data_manager(ns_image_storage_handler & storage_handler_):check_sql_lock("icdm::sql"),check_sql(0),device_transfer_state_lock("icdm::dev"),storage_handler(&storage_handler_),pending_transfers_lock("ns_icd::transfer"),paused(false){}
 	
 	void initialize_capture_start(ns_image_capture_specification & capture_specification, ns_local_buffer_connection & local_buffer_sql);
 
@@ -62,9 +62,13 @@ public:
 	void wait_for_transfer_finish();
 	~ns_image_capture_data_manager();
 	ns_transfer_status_debugger transfer_status_debugger;
+	void pause_transfers(bool pause) {
+		wait_for_transfer_finish();
+		this->paused = pause;
+	}
 	
 private:
-
+	bool paused;
 	ns_local_buffer_connection * check_sql;
 	bool transfer_in_progress_for_device(const std::string & device);
 

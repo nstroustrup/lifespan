@@ -100,7 +100,7 @@ public:
 	//note that initial compression of raw tifs is always performed regardless of allow_processing value.
 	ns_image_server_dispatcher(const bool _allow_processing):
 	  allow_processing(_allow_processing),delayed_exception(0),processing_lock("ns_isd::processing"),first_device_capture_run(true),
-		  message_handling_lock("ns_isd::message"),memory_allocation_error_count(0),clean_clear_local_db_requested(false),
+		  message_handling_lock("ns_isd::message"),memory_allocation_error_count(0), local_cache_cleanup_request(ns_no_cleanup),
 		  hotplug_lock("ns_isd::hotplug"),device_capture_management_lock("ns_dml"),time_of_last_scan_for_problems(0),hotplug_running(false),work_sql_connection(0),currently_unable_to_connect_to_the_central_db(false),actively_avoid_connecting_to_central_db(false),timer_sql_connection(0),work_sql_management_lock("ns_isd::work_sql"),timer_sql_management_lock("ns_isd::timer_sql"),trigger_segfault(false){}
 
 	void init(const unsigned int port,const unsigned int socket_queue_length);
@@ -154,8 +154,10 @@ public:
 	ns_single_thread_coordinator schedule_error_check_thread;
 	unsigned long time_of_last_scan_for_problems;
 
+	typedef enum { ns_no_cleanup, ns_cleanup_clean, ns_cleanup_dirty } ns_local_cache_cleanup;
 private:
 
+	static ns_thread_return_type handle_local_cache_cleanup_request(void * d);
 	void clear_for_termination();
 	bool trigger_segfault;
 	void handle_central_connection_error(ns_ex & ex);	
@@ -165,8 +167,7 @@ private:
 	void register_succesful_operation();
 	unsigned long memory_allocation_error_count;
 	bool allow_processing;
-
-	bool clean_clear_local_db_requested;
+	ns_local_cache_cleanup local_cache_cleanup_request, local_cache_cleanup_request_being_processed;
 	
 	ns_thread_pool<ns_dispatcher_job_pool_job, ns_dispatcher_job_pool_persistant_data> processing_thread_pool;
 	ns_dispatcher_job_pool_external_data processing_pool_external_data;

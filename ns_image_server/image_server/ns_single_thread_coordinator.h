@@ -24,15 +24,18 @@ public:
 	}
 	//to be called by asynchronous thread when it is done.
 	void report_as_finished(){
-		thread_status_lock.wait_to_acquire(__FILE__,__LINE__);
+	//	thread_status_lock.wait_to_acquire(__FILE__,__LINE__);
 		thread_is_running=false;
-		thread_status_lock.release();
+	//	thread_status_lock.release();
 	}
 
 	//for other threads to check if the asynchronous thread is still running
-	bool is_running() const{
-		
-		thread_status_lock.wait_to_acquire(__FILE__,__LINE__);
+	bool is_running(bool do_not_block=false) const{
+		if (do_not_block) {
+			if (!thread_status_lock.try_to_acquire(__FILE__, __LINE__))
+				return true;
+		}
+		else thread_status_lock.wait_to_acquire(__FILE__,__LINE__);
 		bool cur_state = thread_is_running;
 		thread_status_lock.release();
 		return cur_state;

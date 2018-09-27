@@ -125,13 +125,13 @@ void ns_buffered_capture_scheduler::commit_all_local_schedule_changes_to_central
 	ns_sql_result updated_data;
 
 	const std::string altered_data_condition(
-		std::string("time_stamp= 0 || (time_stamp > FROM_UNIXTIME(") + ns_to_string(time_of_last_update_from_central_db.local_time) +
-					") AND time_stamp <= FROM_UNIXTIME(" + ns_to_string(update_start_time.local_time) + ")) ");
+		std::string("(time_stamp= 0 || (time_stamp > FROM_UNIXTIME(") + ns_to_string(time_of_last_update_from_central_db.local_time) +
+					") AND time_stamp <= FROM_UNIXTIME(" + ns_to_string(update_start_time.local_time) + "))) ");
 
 	const unsigned long new_timestamp(time_of_last_update_from_central_db.remote_time);
 
 	ns_get_all_column_data_from_table("buffered_capture_schedule",buffered_capture_schedule.table_format.column_names, 
-		std::string("WHERE ") + altered_data_condition + " AND uploaded_to_central_db =0",
+		std::string("WHERE ") + altered_data_condition + " AND uploaded_to_central_db =0 AND transferred_to_long_term_storage != "+ ns_to_string( (int)ns_image_capture_data_manager::ns_fatal_problem),
 		updated_data,&local_buffer_sql);
 
 	//first, set up mappings between local db records and central db records
@@ -170,9 +170,18 @@ void ns_buffered_capture_scheduler::commit_all_local_schedule_changes_to_central
 					central_db << "SELECT captured_image_id,problem,transferred_to_long_term_storage FROM capture_schedule WHERE id = " << updated_data[i][buffered_capture_schedule.id_column];
 					ns_sql_result res;
 					central_db.get_rows(res);
-					if (res.size() == 0)
-						throw ns_ex("Could not find capture schedule entry in central db for sample id ") << updated_data[i][buffered_capture_schedule.id_column] << " finishing at time " << updated_data[i][buffered_capture_schedule.time_at_finish_column];
-
+					if (res.size() == 0) {
+						ns_ex ex("Could not find capture schedule entry in central db for sample id ");
+						ex << updated_data[i][buffered_capture_schedule.id_column] << " finishing at time " << updated_data[i][buffered_capture_schedule.time_at_finish_column] << " . ";
+						central_db << "SELECT name FROM experiments WHERE id = " << updated_data[i][buffered_capture_schedule.experiment_id_column];
+						ns_sql_result res2;
+						central_db.get_rows(res2);
+						if (res2.empty())
+							ex << "This is probably due to the experiment being completely deleted. ";
+						else ex << "Something has deleted schedule records from the central db. ";
+						ex << "To remove these errors, use the ns_image_server command line options clear_local_db_buffer_cleanly or clear_local_db_buffer_dangerously\n";
+						throw ex;
+					}
 					mappings[i].central_captured_image.captured_images_id = ns_atoi64(res[0][0].c_str());
 					mappings[i].central_problem_id = ns_atoi64(res[0][1].c_str());
 					mappings[i].central_transfer_status = (ns_image_capture_data_manager::ns_capture_image_status)atol(res[0][2].c_str());
@@ -486,6 +495,10 @@ void ns_buffered_capture_scheduler::update_local_buffer_from_central_server(ns_i
 		return;
 
 	ns_acquire_lock_for_scope lock(buffer_capture_scheduler_lock,__FILE__,__LINE__);
+	if (pause_local_central_db_updates) {
+		lock.release();
+		return;
+	}
 
 	local_buffer.clear_query();
 	central_db.clear_query();
@@ -896,11 +909,15 @@ bool ns_buffered_capture_scheduler::run_pending_scans(const std::string & device
 
 void ns_buffered_capture_scheduler::run_pending_scans(const ns_image_server_device_manager::ns_device_name_list & devices, ns_local_buffer_connection & sql){
 		
+	if (pause_local_central_db_updates)
+		return;
 	try{
 				
 		const bool handle_simulated_devices(image_server.register_and_run_simulated_devices(&sql));
 
 		for (unsigned int i = 0; i < devices.size(); i++){
+			if (pause_local_central_db_updates)
+				break;
 			if (image_server.currently_experiencing_a_disk_storage_emergency)
 				break; 
 			if (image_server.exit_has_been_requested)

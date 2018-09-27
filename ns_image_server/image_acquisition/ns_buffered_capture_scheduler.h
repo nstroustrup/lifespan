@@ -107,7 +107,7 @@ public:
 	enum {ns_default_update_time=413096400};
 	//time_of_last_update_from_central_db must be set to the past to trigger an update when an image server starts.
 	//however, mysql timestamp collumns can't handle '0' values and so we chose something larger
-	ns_buffered_capture_scheduler():image_capture_data_manager(image_server.image_storage),time_of_last_update_from_central_db(ns_default_update_time,ns_default_update_time),buffer_capture_scheduler_lock("ns_buffer_capture_scheduler_lock")
+	ns_buffered_capture_scheduler():image_capture_data_manager(image_server.image_storage),time_of_last_update_from_central_db(ns_default_update_time,ns_default_update_time), pause_local_central_db_updates(false),buffer_capture_scheduler_lock("ns_buffer_capture_scheduler_lock")
 	{}
 
 
@@ -124,7 +124,11 @@ public:
 
 	void get_last_update_time(ns_local_buffer_connection & local_buffer_sql);
 	static void store_last_update_time_in_db(const ns_synchronized_time & time,ns_local_buffer_connection & sql);
-	
+	void pause_local_db_updates(bool pause) {
+		buffer_capture_scheduler_lock.wait_to_acquire(__FILE__, __LINE__);
+		pause_local_central_db_updates = pause;
+		buffer_capture_scheduler_lock.release();
+	}
 private:
 	ns_image_server_device_manager * device_manager;
 
@@ -139,6 +143,7 @@ private:
 	ns_table_format_processor experiments,
 							  capture_samples;
 	ns_lock buffer_capture_scheduler_lock;
+	bool pause_local_central_db_updates;
 		
 };
 

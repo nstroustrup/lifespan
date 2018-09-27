@@ -477,7 +477,7 @@ unsigned long ns_image_capture_data_manager::handle_pending_transfers(const stri
 		const unsigned long current_time = ns_current_time();
 
 		//We don't have to worry about concurrency problems, as a device is owned by only one cluster node.
-		check_sql->send_query("BEGIN");
+		//check_sql->send_query("BEGIN");
 		*check_sql << "SELECT cs.id, cs.captured_image_id, cs.scheduled_time, "
 			"cs.sample_id, cs.transferred_to_long_term_storage "
 			 << " FROM buffered_capture_schedule as cs, buffered_capture_samples as s "
@@ -495,6 +495,7 @@ unsigned long ns_image_capture_data_manager::handle_pending_transfers(const stri
 		//	std::string q(check_sql->query());
 		ns_sql_result events;
 		check_sql->get_rows(events);
+		//check_sql->send_query("COMMIT");
 		sql_lock.release();
 		//do not use check_sql after this lock is released!
 
@@ -631,6 +632,8 @@ bool ns_image_capture_data_manager::handle_pending_transfers_to_long_term_storag
 }
 
 bool ns_image_capture_data_manager::handle_pending_transfers_to_long_term_storage(const std::vector<std::string> & device_names ){
+	if (this->paused)
+		return false;
 	//cerr << "Handling transfer for " << device_name << "\n";
 	//NOTE! we originally checked to see if we're connected to long term storage here,
 	//but one failure mode is that the function connected_to_long_term_storage()
@@ -643,7 +646,7 @@ bool ns_image_capture_data_manager::handle_pending_transfers_to_long_term_storag
 	//first we check to see if any other threads are looking for pending jobs
 	ns_acquire_lock_for_scope pt_lock(pending_transfers_lock,__FILE__,__LINE__);
 	
-	if (pending_transfers_thread.is_running()){
+	if (pending_transfers_thread.is_running(true)){
 		pt_lock.release();
 		return false;
 	}

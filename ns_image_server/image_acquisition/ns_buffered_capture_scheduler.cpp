@@ -323,7 +323,7 @@ void ns_buffered_capture_scheduler::commit_all_local_schedule_changes_to_central
 					ns_file_location_specification source(image_server.image_storage.get_file_specification_for_image(mappings[i].local_small_image, &central_db));
 					if (!image_server.image_storage.move_file(source, destination, false))
 						throw ns_ex("Could not find image in long term storage, to update name with central db data");
-					mappings[i].local_transfer_status == ns_image_capture_data_manager::ns_transfer_complete;
+					mappings[i].local_transfer_status = ns_image_capture_data_manager::ns_transfer_complete;
 				}
 				else mappings[i].central_small_image = mappings[i].local_small_image;
 				mappings[i].central_small_image.save_to_db(tmp_id, &central_db, mark_images_as_busy);
@@ -448,6 +448,7 @@ void ns_buffered_capture_scheduler::commit_all_local_schedule_changes_to_central
 			ns_image_server_push_job_scheduler job_scheduler;
 
 			job_scheduler.report_capture_sample_image(newly_captured_images_for_which_to_schedule_jobs, central_db);
+			newly_captured_images_for_which_to_schedule_jobs.resize(0);
 		}
 		catch (ns_ex & ex) {
 			image_server.register_server_event(ns_image_server_event("Problem encountered while reporting captured images: ") << ex.text(), &local_buffer_sql);

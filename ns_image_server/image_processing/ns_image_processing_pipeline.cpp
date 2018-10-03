@@ -2055,7 +2055,7 @@ bool ns_image_processing_pipeline::preprocessed_step_required(const ns_processin
 
 		case ns_process_movement_coloring:
 		case ns_process_movement_mapping:
-		case ns_process_posture_vis: return s==ns_process_lossy_stretch;
+		case ns_process_posture_vis: return s== ns_process_worm_detection;
 
 		case ns_process_movement_coloring_with_graph:
 		case ns_process_movement_coloring_with_survival: return s == ns_process_movement_coloring;
@@ -2064,7 +2064,7 @@ bool ns_image_processing_pipeline::preprocessed_step_required(const ns_processin
 			 return s == ns_process_movement_paths_visualization;
 
 		case ns_process_movement_paths_visualization:
-			 return s == ns_process_lossy_stretch;
+			 return s == ns_process_worm_detection;
 
 		case ns_process_movement_posture_visualization:
 		case ns_process_movement_plate_and_individual_visualization:

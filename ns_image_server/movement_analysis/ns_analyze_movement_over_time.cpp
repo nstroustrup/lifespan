@@ -388,6 +388,8 @@ time_path_image_analyzer.write_posture_analysis_optimization_data(2, thresholds,
 void ns_refine_image_statistics(const ns_64_bit region_id, const bool recalculate_worm_morphology_from_images, std::ostream & out, ns_sql & sql) {
 
 	ns_worm_morphology_data_integrator morphology_data_integrator;
+
+	image_server.add_subtext_to_current_event("Loading metadata...", &sql);
 	morphology_data_integrator.load_data_and_annotations_from_db(region_id, sql);
 
 	//update the subregion id label for each detected object
@@ -431,12 +433,28 @@ void ns_refine_image_statistics(const ns_64_bit region_id, const bool recalculat
 	}
 	morphology_data_integrator.metadata.out_JMP_plate_identity_header_short(out);
 	out << ",time spent included, time_spent_excluded,average_time, overlap with path match,Age (days), Stationary Worm ID, Movement State,explicitly_excluded\n";
+	unsigned int cur_pos = 0;
+	double last_percent = 0;
 
+	image_server.add_subtext_to_current_event("\nCalculating morphometric data...", &sql);
 	for (auto t = morphology_data_integrator.timepoints.begin(); t != morphology_data_integrator.timepoints.end(); t++) {
-		if (recalculate_worm_morphology_from_images && !t->empty())
+		const double percent = floor((20 * cur_pos) / morphology_data_integrator.timepoints.size()) / 20;
+		if (percent >= last_percent + .05) {
+			image_server.add_subtext_to_current_event(ns_to_string((int)(100 * percent)) + "%...", &sql);
+			last_percent = percent;
+		}
+		cur_pos++;
+		if (recalculate_worm_morphology_from_images && !t->empty()) {
 			t->begin()->load_images_for_all_worms_at_current_timepoint(sql);
+
+		}
 		for (auto w = t->begin(); w != t->end(); w++) {
+			if (!w->image_data_identified) {
+				std::cerr << "Match not found\n";
+				continue;
+			}
 			try {
+				const std::string movement_state_string(ns_movement_state_to_string_short(w->movement_state()));
 				if (recalculate_worm_morphology_from_images) {
 					ns_detected_worm_stats worm_stats = w->worm_image_info->generate_stats();
 					ns_object_hand_annotation_data hd; //output nothing here
@@ -457,15 +475,19 @@ void ns_refine_image_statistics(const ns_64_bit region_id, const bool recalculat
 				//			else out << "yes";
 				out << w->region_area.overlap_area_with_match << ",";
 				out << ((w->time - morphology_data_integrator.metadata.time_at_which_animals_had_zero_age) / 60.0 / 60.0 / 24) << ",";
-				out << w->id.group_id << "," << ns_movement_state_to_string_short(w->movement_state()) << ",";
+				out << w->id.group_id << "," << movement_state_string << ",";
 				out << (w->by_hand_annotation().is_excluded() ? "1" : "0");
-				out << "\n";
 			}
 			catch (ns_ex & ex) {
 				image_server.add_subtext_to_current_event(ex.text(), &sql);
 			}
+			out << "\n";
 		}
+		if (recalculate_worm_morphology_from_images && !t->empty())
+			t->begin()->clear_images_for_all_worms_at_current_timepoint();
 	}
+
+	image_server.add_subtext_to_current_event("Done.\n", &sql);
 }
 
 

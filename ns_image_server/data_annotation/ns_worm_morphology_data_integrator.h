@@ -7,22 +7,29 @@
 #include "ns_time_path_image_analyzer.h"
 
 struct ns_worm_morphology_data_integrator_timepoint {
-	ns_worm_morphology_data_integrator_timepoint() :time(0), region(0), worm_image_info(0), solution_path_info(0), solution_element(0), analyzed_image_time_path(0), analyzed_image_time_path_element(0){}
+	ns_worm_morphology_data_integrator_timepoint() :time(0), region(0), worm_image_info(0), solution_path_info(0), solution_element(0), analyzed_image_time_path(0), analyzed_image_time_path_element(0),results(0), interpolated_results(0),image_data_identified(false){}
 	unsigned long time;
+	bool image_data_identified;
 	ns_stationary_path_id id; //each worm that becomes stationationary is given an ID  
 
 	const ns_death_time_annotation & by_hand_annotation()const { return solution_element->volatile_by_hand_annotated_properties; }
 	//loads images for *all worms in the current timepoint*/
 	void load_images_for_all_worms_at_current_timepoint(ns_sql & sql) {
 		if (region == 0) throw ns_ex("Images have not yet been matched up.");
+		if (results == 0) throw ns_ex("Results have not yet been loaded");
 		results->load_images_from_db(*region, sql, false, false);
+		if (interpolated_results != 0 && interpolated_results->detection_results_id != 0)
+			interpolated_results->load_images_from_db(*region, sql, true, false);
+
 	}
 	void clear_images_for_all_worms_at_current_timepoint() {
-		if (region == 0) throw ns_ex("Images have not yet been matched up.");
+		if (region == 0) throw ns_ex("Images have not yet been matched up."); if (results == 0) throw ns_ex("Results have not yet been loaded");
 		results->clear_images();
+		if (interpolated_results != 0 && interpolated_results->detection_results_id != 0)
+			interpolated_results->clear_images();
 	}
 	ns_movement_state movement_state() const {
-		if (id.group_id == 0)
+		if (id.group_id == -1)
 			return ns_movement_fast;
 		if (analyzed_image_time_path == 0)
 			throw ns_ex("Encountered an unspecified image time path!");
@@ -36,6 +43,7 @@ struct ns_worm_morphology_data_integrator_timepoint {
 	ns_image_server_captured_image_region * region;
 	//holds information about the worm detection process that detected the worm
 	ns_image_worm_detection_results * results;
+	ns_image_worm_detection_results * interpolated_results;
 
 	//holds information about the stationary worm detection process for all worms on the plate
 	ns_time_path * solution_path_info;
@@ -119,13 +127,14 @@ public:
 	}
 	void match_images_with_solution(ns_sql & sql) {
 
-		sql << "SELECT id, worm_detection_results_id, capture_time FROM sample_region_images WHERE region_info_id = " << region_info_id << " AND worm_detection_results_id != 0 ORDER BY capture_time";
+		sql << "SELECT id, worm_detection_results_id,worm_interpolation_results_id, capture_time FROM sample_region_images WHERE region_info_id = " << region_info_id << " AND worm_detection_results_id != 0 ORDER BY capture_time";
 		ns_sql_result res;
 		sql.get_rows(res);
 		if (res.empty())
 			throw ns_ex("Could not find any valid timepoints in region ") << region_info_id;
 		int r(-5);
 		worm_detection_results.resize(res.size());
+		interpolated_worm_detection_results.resize(res.size());
 		region_image_records.resize(res.size());
 		if (res.size() != timepoints.size())
 			throw ns_ex("Cannot load image data for all time path solution timepoints!");
@@ -137,19 +146,33 @@ public:
 				r = r1;
 			}
 
-			unsigned long t = atol(res[i][2].c_str());
+			unsigned long t = atol(res[i][3].c_str());
+
+			ns_image_server_captured_image_region * region = &region_image_records[i];
+			region->load_from_db(ns_atoi64(res[i][0].c_str()), &sql);
 
 
 			ns_image_worm_detection_results & results = worm_detection_results[i];
 			results.detection_results_id = ns_atoi64(res[i][1].c_str());
-			ns_image_server_captured_image_region * region = &region_image_records[i];
 			results.load_from_db(true, false, sql, false);
-			region->load_from_db(ns_atoi64(res[i][0].c_str()), &sql);
-			const std::vector<const ns_detected_worm_info *> worms = results.actual_worm_list();
-			std::vector<ns_region_area> areas(worms.size());
-			for (unsigned int j = 0; j < worms.size(); j++) {
-				areas[j].pos = worms[j]->region_position_in_source_image;
-				areas[j].size = worms[j]->region_size;
+
+			ns_image_worm_detection_results & interpolated_results = interpolated_worm_detection_results[i];
+			interpolated_results.detection_results_id = ns_atoi64(res[i][2].c_str());
+			if (interpolated_results.detection_results_id != 0)
+				interpolated_results.load_from_db(true, true, sql, false);
+
+			const std::vector<const ns_detected_worm_info *> real_worms = results.actual_worm_list();
+			std::vector<const ns_detected_worm_info *> all_worms;
+			all_worms.insert(all_worms.begin(),real_worms.begin(), real_worms.end());
+			if (interpolated_results.detection_results_id != 0) {
+				const std::vector<const ns_detected_worm_info *> interpolated_worms = interpolated_results.actual_worm_list();
+				all_worms.insert(all_worms.end(), interpolated_worms.begin(), interpolated_worms.end());
+			}
+
+			std::vector<ns_region_area> areas(all_worms.size());
+			for (unsigned int j = 0; j < all_worms.size(); j++) {
+				areas[j].pos = all_worms[j]->region_position_in_source_image;
+				areas[j].size = all_worms[j]->region_size;
 				areas[j].time = t;
 			}
 			ns_image_server::ns_posture_analysis_model_cache::const_handle_t posture_analysis_model_handle;
@@ -178,17 +201,30 @@ public:
 				for (unsigned int i = 0; i < areas.size(); i++) {
 					bool match_found(false);
 					unsigned long pos;
+					double min_dist(DBL_MAX), min_size_diff(DBL_MAX);
 					for (pos = 0; pos < solution.timepoints[t1].elements.size(); pos++) {
+						const double dist = (solution.timepoints[t1].elements[pos].region_position - areas[i].pos).mag();
+						const double size_diff = fabs(solution.timepoints[t1].elements[pos].region_size.mag() - areas[i].size.mag());
+						if (dist < min_dist)
+							min_dist = dist; 
+						if (size_diff < min_size_diff)
+							min_size_diff = size_diff;
 						if (solution.timepoints[t1].elements[pos].region_position == areas[i].pos &&
 							solution.timepoints[t1].elements[pos].region_size == areas[i].size) {
 							areas[i].plate_subregion_info = solution.timepoints[t1].elements[pos].subregion_info;
 							areas[i].explicitly_by_hand_excluded = solution.timepoints[t1].elements[pos].volatile_by_hand_annotated_properties.is_excluded();
 							timepoints[t1][pos].region_area = areas[i];
-							timepoints[t1][pos].worm_image_info = worms[i];
+							timepoints[t1][pos].worm_image_info = all_worms[i];
 							timepoints[t1][pos].region = region;
+							timepoints[t1][pos].results = &results;
+							timepoints[t1][pos].interpolated_results = &interpolated_results;
+							timepoints[t1][pos].image_data_identified = true;
 							match_found = true;
+							break;
 						}
 					}
+					if (!match_found)
+						std::cerr << "Could not match worm area. Min dist = " << min_dist << "; min size diff = " << min_size_diff << "\n";
 				}
 			}
 		}
@@ -196,7 +232,7 @@ public:
 	
 
 	ns_time_path_solution solution;
-	std::vector<ns_image_worm_detection_results> worm_detection_results;
+	std::vector<ns_image_worm_detection_results> worm_detection_results, interpolated_worm_detection_results;
 	std::vector<ns_image_server_captured_image_region> region_image_records;
 
 

@@ -5,6 +5,10 @@ project (ns_image_server)
 option (BUILD_WORM_BROWSER "Compile the worm browser")
 option (ONLY_IMAGE_ACQUISITION "Compile the image server with image processing disabled.")
 
+if (ONLY_IMAGE_ACQUISITION)
+   set(BUILD_WORM_BROWSER OFF)
+endif()
+
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${PROJECT_SOURCE_DIR}/modules/")
 
 set(CMAKE_BUILD_TYPE Release)

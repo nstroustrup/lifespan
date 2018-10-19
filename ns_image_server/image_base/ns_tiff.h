@@ -62,6 +62,8 @@ void ns_initialize_libtiff();
 
 TIFF* TIFFOpen(const char* name, ns_tiff_client_data * client_data,const char* mode);
 
+void * ns_low_mem_allocate(tmsize_t mem);
+
 template<class ns_component, bool low_memory_single_line_reads=false>
 class ns_tiff_image_input_file: public ns_image_input_file<ns_component, low_memory_single_line_reads>{
 
@@ -108,11 +110,11 @@ public:
 						<< ns_image_input_file<ns_component, low_memory_single_line_reads>::_properties.height << ","
 						<< ns_image_input_file<ns_component, low_memory_single_line_reads>::_properties.components << ")");
 			}
-
+			
 			if (!low_memory_single_line_reads) {
-				strip_buffer = (ns_component *)_TIFFmalloc(sizeof(ns_component)*tiff_info.stripsize);
+				strip_buffer = (ns_component *)ns_low_mem_allocate(sizeof(ns_component)*tiff_info.stripsize);
 				if (strip_buffer == 0)
-					ns_throw_tiff_exception(ns_ex("ns_tiff_image_input_file::Count not allocate strip buffer of length ") << tiff_info.stripsize << " for image of size (w,h,c)= (" << ns_image_input_file<ns_component, low_memory_single_line_reads>::_properties.width << "," << ns_image_input_file<ns_component, low_memory_single_line_reads>::_properties.height << "," << ns_image_input_file<ns_component, low_memory_single_line_reads>::_properties.components << ")");
+					ns_throw_tiff_exception(ns_ex("ns_tiff_image_input_file::Could not allocate low-mem strip buffer of length ") << tiff_info.stripsize << " for image of size (w,h,c)= (" << ns_image_input_file<ns_component, low_memory_single_line_reads>::_properties.width << "," << ns_image_input_file<ns_component, low_memory_single_line_reads>::_properties.height << "," << ns_image_input_file<ns_component, low_memory_single_line_reads>::_properties.components << ")");
 			}
 			else {
 				unsigned long s = TIFFScanlineSize(image);
@@ -120,7 +122,7 @@ public:
 					throw ns_ex("Unexpected strip size: ") << s;
 				strip_buffer = (ns_component *)_TIFFmalloc(s);	
 				if (strip_buffer == 0)
-					ns_throw_tiff_exception(ns_ex("ns_tiff_image_input_file::Count not allocate scanline buffer of length ") << s << " for image of size (w,h,c)= (" << ns_image_input_file<ns_component, low_memory_single_line_reads>::_properties.width << "," << ns_image_input_file<ns_component, low_memory_single_line_reads>::_properties.height << "," << ns_image_input_file<ns_component, low_memory_single_line_reads>::_properties.components << ")");
+					ns_throw_tiff_exception(ns_ex("ns_tiff_image_input_file::Could not allocate scanline buffer of length ") << s << " for image of size (w,h,c)= (" << ns_image_input_file<ns_component, low_memory_single_line_reads>::_properties.width << "," << ns_image_input_file<ns_component, low_memory_single_line_reads>::_properties.height << "," << ns_image_input_file<ns_component, low_memory_single_line_reads>::_properties.components << ")");
 
 			}
 

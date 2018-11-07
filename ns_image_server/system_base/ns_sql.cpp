@@ -65,6 +65,7 @@ void ns_sql_connection::connect(const std::string & server_name, const std::stri
 		ns_thread::sleep(10);
   }
   if (success == NULL){
+    const std::string l_error(latest_error(false));
 	    disconnect();
 		string blocked_password = password;  
 		for (int i = 0; i < blocked_password.size(); i++)
@@ -72,7 +73,7 @@ void ns_sql_connection::connect(const std::string & server_name, const std::stri
 		if (password.empty())
 			blocked_password = "(Empty password)";
 	//	std::cout << "Current password: " << password.c_str() << "\n";;
-		throw ns_ex() << "ns_sql_connection::Could not connect to server with the credentials (username;password;hostname)=(" << user_id.c_str() << ";" << blocked_password << ";" << server_name.c_str() << "): " << latest_error() << ns_sql_fatal;
+		throw ns_ex() << "ns_sql_connection::Could not connect to server with the credentials (username;password;hostname)=(" << user_id.c_str() << ";" << blocked_password << ";" << server_name.c_str() << "): " << l_error << ns_sql_fatal;
   }
   lock.release();
 }
@@ -113,12 +114,13 @@ void ns_sql_connection::set_autocommit(const bool & commit_){
 }
 
 
-std::string ns_sql_connection::latest_error(){
+std::string ns_sql_connection::latest_error(const bool lock_needed){
 
-	ns_acquire_lock_for_scope lock(get_lock(__FILE__, __LINE__));
+  ns_acquire_lock_for_scope lock(get_lock(__FILE__, __LINE__,lock_needed));
 	const char * a = ns_mysql_header::mysql_error(&mysql);
 	std::string err(a);
-	lock.release();
+	if (lock_needed)
+	  lock.release();
 	return err;
 }
 

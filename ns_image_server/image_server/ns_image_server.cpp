@@ -695,7 +695,15 @@ ns_sql * ns_image_server::new_sql_connection_no_lock_or_retry(const std::string 
 
 ns_local_buffer_connection * ns_image_server::new_local_buffer_connection(const std::string & source_file, const unsigned int source_line, const bool select_default_database){
 	ns_acquire_lock_for_scope lock(local_buffer_sql_lock,__FILE__,__LINE__);
-	ns_local_buffer_connection * buf(new_local_buffer_connection_no_lock_or_retry(source_file,source_line, select_default_database));
+	ns_local_buffer_connection * buf;
+	try{
+	  buf = (new_local_buffer_connection_no_lock_or_retry(source_file,source_line, select_default_database));
+	}
+	catch(ns_ex & ex){
+	  ns_ex ex2("Problem connecting to local buffer:");
+	  ex2 << ex.text() << ns_sql_fatal;
+	  throw ex2;
+	}
 	lock.release();
 	return buf;
 }

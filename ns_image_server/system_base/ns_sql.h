@@ -156,7 +156,7 @@ class ns_sql_connection{
 			_password;
 	unsigned int _retry_count;
 
-	std::string latest_error();
+	std::string latest_error(const bool lock_needed=true);
    ns_mysql_header::MYSQL mysql;
    bool mysql_internal_data_allocated;
 

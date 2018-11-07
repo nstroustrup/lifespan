@@ -704,7 +704,7 @@ void ns_image_server_dispatcher::on_timer(){
 		}
 	}
 
-	if (!currently_unable_to_connect_to_the_central_db) {
+	if (image_server.act_as_an_image_capture_server() && !currently_unable_to_connect_to_the_central_db) {
 		try {
 			//update the db at 10 second intervals, if needed
 			if (buffered_capture_scheduler.time_since_last_db_update().local_time >= image_server.local_buffer_commit_frequency_in_seconds()) {

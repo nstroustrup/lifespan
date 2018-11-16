@@ -1474,7 +1474,16 @@ bool ns_image_server_device_manager::load_last_known_device_configuration(){
 	}
 	in().close();
 	in.release();
-	string boot_time(ns_system_boot_time_str());
+	const string boot_time(ns_system_boot_time_str());
+	//Some systems, in particularly the current version of raspberry pi, always report
+	//their boot time as 1970-01-01 01:00 .  In this case, we always must recheck all scanners
+	const string bad_time("1970-01-01");
+	if (boot_time.find(bad_time) != boot_time.npos ||
+		file_specified_last_boot_time.find(bad_time) != file_specified_last_boot_time.npos) {
+		ns_image_server_event ev("Could not identify the time of the last system reboot.  Rebuilding device list.");
+		image_server.register_server_event_no_db(ev);
+		return false;
+	}
 	if (file_specified_last_boot_time != boot_time){
 		ns_image_server_event ev("A reboot appears to have occurred (system log: ");
 		ev << boot_time;

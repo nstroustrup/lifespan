@@ -77,6 +77,8 @@ Follow steps 3 and 9 as if you were installing the Pi from scratch. The default 
 
 If you want to SSH in the Rasberry Pi without having to use a computer screen to figure out the IP address, please note that the IP address written to a file located in the home directory (`/home/pi/ip.txt`) every minute. Just plug-in the Pi, wait a little and get the IP address by plugging it the SD card to another compute.
 
+Finally, think of updating the lifespan machine code before you run it the first time and then from time to time. Instructions are provided in the corresponding section.
+
 ### From scratch
 
 #### Step 1: Installing the OS on the Raspberry Pi
@@ -386,6 +388,17 @@ sudo ns_image_server
 ```
 
 If you are running your Rapsberry Pi using SSH. Think of using `screen` to not have the image server dependant on your computer being turned on. 
+
+## Update
+
+Pull the updated source code using `git pull` in the command line. You may need to type `git stash` before. Finally, build the software using `cmake` as specified below.
+
+```
+cd build 
+cmake . -DONLY_IMAGE_ACQUISITION=1
+sudo make install 
+cd ..
+```
 
 ## Setting-up scanners
 

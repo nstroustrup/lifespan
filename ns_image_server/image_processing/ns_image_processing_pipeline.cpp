@@ -338,9 +338,29 @@ void ns_precomputed_processing_step_images::load_from_db(ns_sql & sql){
 }
 
 
+void ns_get_worm_detection_model_for_job(ns_64_bit region_id, ns_worm_detection_model_cache::const_handle_t & model, ns_sql & sql) {
+	std::string model_name;
+	
+	sql << "SELECT worm_detection_model FROM sample_region_image_info WHERE "
+		<< "sample_region_image_info.id = " << region_id;
+	ns_sql_result res;
+	sql.get_rows(res);
+	if (res.size() == 0)
+		throw ns_ex("ns_processing_job_scheduler::The specified job refers to a region with an invalid sample reference: ") << region_id;
+	model_name = res[0][0];
+	
+	//else throw ns_ex("ns_processing_job_scheduler::Not enough information specified to get model filename for job");
+
+	if (model_name == "")
+		throw ns_ex("ns_processing_job_scheduler::The specified job refers to a sample with no model file specified");
+
+	image_server.get_worm_detection_model(model_name, model);
+	if (!model.is_valid())
+		throw ns_ex("ns_processing_job_scheduler::run_job_from_push_queue()::Attempting to run task on region without specifying model");
+}
 ///given the source image, run() runs the processing steps specified in operations.  operations is a bit map with each entry corresponding to the step
 ///referred to by its ns_processing_task enum value.  Operations flagged as "1" are performed, operations flagged as "0" are skipped.
-void ns_image_processing_pipeline::process_region(const ns_image_server_captured_image_region & region_im, const vector<char> operations, ns_sql & sql, const ns_svm_model_specification & model, const ns_lifespan_curve_cache_entry & death_annotations){
+void ns_image_processing_pipeline::process_region(const ns_image_server_captured_image_region & region_im, const vector<char> operations, ns_sql & sql){
 	vector<char> ops = operations;
 	ns_image_server_captured_image_region region_image(region_im);
 
@@ -500,7 +520,7 @@ void ns_image_processing_pipeline::process_region(const ns_image_server_captured
 			}
 
 			//lossy stretch of dynamic range
-			if (operations[ns_process_lossy_stretch]){
+			if (operations[ns_process_lossy_stretch] || operations[ns_process_movement_paths_visualization]){
 				if (!attempt_to_preload(ns_process_lossy_stretch,precomputed_images,operations,dynamic_stretch,sql)){
 
 					register_event(ns_process_lossy_stretch,dynamic_stretch.properties(),parent_event,false,sql);
@@ -534,18 +554,19 @@ void ns_image_processing_pipeline::process_region(const ns_image_server_captured
 						if (!attempt_to_preload(ns_process_lossy_stretch,precomputed_images,operations,dynamic_stretch,sql))
 							throw ns_ex("Could not load or recreate the movement paths visualization!");
 					}
-					//throw ns_ex("Depreciated!");
-					//dynamic_stretch.load_from_db(region_image.region_images_id,sql);
+					
 
 					register_event(ns_process_movement_paths_visualization,dynamic_stretch.properties(),parent_event,false,sql);
 
+					//first load data for whole experiment
+					ns_annotation_region_data_id annotation_data(ns_death_time_annotation_set::ns_all_annotations, region_image.experiment_id);
+					ns_experiment_surival_data_cache::const_handle_t annotation_handle;
+					image_server.survival_data_cache.get_for_read(annotation_data, annotation_handle,sql);
+					
+					ns_death_time_annotation_compiler::ns_region_list::const_iterator p(annotation_handle().get_annotations_for_region(region_image.region_info_id));
+					
+					//now generate image
 					ns_movement_visualization_generator gen;
-					const ns_death_time_annotation_compiler & compiler(death_annotations.get_region_data(ns_death_time_annotation_set::ns_all_annotations,region_image.region_info_id,sql));
-					ns_death_time_annotation_compiler::ns_region_list::const_iterator p(compiler.regions.find(region_image.region_info_id));
-					if (p == compiler.regions.end())
-						throw ns_ex("Could not find region ") << region_image.region_info_id << " in db!";
-					//extract annotations for just this timepoint
-					ns_death_time_annotation_set annotations;
 					gen.create_time_path_analysis_visualization(region_image, p->second,dynamic_stretch, paths_visualization,sql);
 
 					ns_image_server_image out_im(region_image.create_storage_for_processed_image(ns_process_movement_paths_visualization,ns_tiff,&sql));
@@ -565,15 +586,12 @@ void ns_image_processing_pipeline::process_region(const ns_image_server_captured
 				region_image.load_from_db(region_image.region_images_id,&sql);
 
 				register_event(ns_process_movement_paths_visualition_with_mortality_overlay,dynamic_stretch.properties(),parent_event,false,sql);
-				
-				const ns_death_time_annotation_compiler & compiler(death_annotations.get_region_data(ns_death_time_annotation_set::ns_all_annotations, region_image.region_info_id, sql));
-				ns_death_time_annotation_compiler::ns_region_list::const_iterator p(compiler.regions.find(region_image.region_info_id));
-				if (p == compiler.regions.end())
-					throw ns_ex("Could not find region ") << region_image.region_info_id << " in db!";
+				ns_annotation_region_data_id annotation_data(ns_death_time_annotation_set::ns_all_annotations, region_image.experiment_id);
+				ns_experiment_surival_data_cache::const_handle_t annotation_handle;
+				image_server.survival_data_cache.get_for_read(annotation_data, annotation_handle, sql);
+
 				//compiler.generate_survival_statistics();
-				ns_region_metadata metadata;
-				metadata.load_from_db(region_image.region_info_id,"",sql);
-				overlay_graph(region_image.region_info_id,paths_visualization,region_image.capture_time,metadata,death_annotations,sql);
+				overlay_graph(region_image.region_info_id,paths_visualization,region_image.capture_time,annotation_handle(),sql);
 
 
 				ns_image_server_image out_im(region_image.create_storage_for_processed_image(ns_process_movement_paths_visualition_with_mortality_overlay,ns_jpeg,&sql));
@@ -661,8 +679,8 @@ void ns_image_processing_pipeline::process_region(const ns_image_server_captured
 						image_server_const.add_subtext_to_current_event("Using a static mask.\n", &sql);
 						image_server.image_storage.cache.get_for_read(static_mask_image, static_mask, data_source);
 					}
-
-
+					ns_worm_detection_model_cache::const_handle_t model;
+					ns_get_worm_detection_model_for_job(region_image.region_info_id, model, sql);
 
 					const unsigned long worm_count_max(atol(res[0][0].c_str()));
 					detected_worms.attach(worm_detector.run(region_image.region_info_id, region_image.capture_time,
@@ -673,7 +691,7 @@ void ns_image_processing_pipeline::process_region(const ns_image_server_captured
 						ns_worm_detection_constants::get(ns_worm_detection_constant::minimum_worm_region_area, spatial_average.properties().resolution),
 						ns_worm_detection_constants::get(ns_worm_detection_constant::maximum_worm_region_area, spatial_average.properties().resolution),
 						ns_worm_detection_constants::get(ns_worm_detection_constant::maximum_region_diagonal, spatial_average.properties().resolution),
-						model,
+						model().model_specification,
 						worm_count_max,
 						&sql,
 						"",
@@ -844,9 +862,11 @@ void ns_image_processing_pipeline::process_region(const ns_image_server_captured
 
 				register_event(ns_process_worm_detection_with_graph,temporary_image.properties(),parent_event,false,sql);
 
-				ns_region_metadata metadata;
-				metadata.load_from_db(region_image.region_info_id,"",sql);
-				overlay_graph(region_image.region_info_id,temporary_image,region_image.capture_time,metadata,death_annotations,sql);
+				ns_annotation_region_data_id annotation_data(ns_death_time_annotation_set::ns_all_annotations, region_image.experiment_id);
+				ns_experiment_surival_data_cache::const_handle_t annotation_handle;
+				image_server.survival_data_cache.get_for_read(annotation_data, annotation_handle, sql);
+
+				overlay_graph(region_image.region_info_id,temporary_image,region_image.capture_time,annotation_handle(),sql);
 				ns_image_server_image output_image;
 
 				output_image = region_image.create_storage_for_processed_image(ns_process_worm_detection_with_graph,ns_jpeg,&sql);
@@ -864,9 +884,11 @@ void ns_image_processing_pipeline::process_region(const ns_image_server_captured
 					throw ns_ex("Could not load worm coloring for ns_process_movement_coloring_with_graph.");
 				register_event(ns_process_movement_coloring_with_graph,temporary_image.properties(),parent_event,false,sql);
 
-				ns_region_metadata metadata;
-				metadata.load_from_db(region_image.region_info_id,"",sql);
-				overlay_graph(region_image.region_info_id,temporary_image,region_image.capture_time,metadata,death_annotations,sql);
+				ns_annotation_region_data_id annotation_data(ns_death_time_annotation_set::ns_all_annotations, region_image.experiment_id);
+				ns_experiment_surival_data_cache::const_handle_t annotation_handle;
+				image_server.survival_data_cache.get_for_read(annotation_data, annotation_handle, sql);
+
+				overlay_graph(region_image.region_info_id,temporary_image,region_image.capture_time,annotation_handle(),sql);
 
 				ns_image_server_image output_image;
 				output_image = region_image.create_storage_for_processed_image(ns_process_movement_coloring_with_graph,ns_jpeg,&sql);
@@ -887,9 +909,11 @@ void ns_image_processing_pipeline::process_region(const ns_image_server_captured
 
 				register_event(ns_process_movement_coloring_with_survival,temporary_image.properties(),parent_event,false,sql);
 
-				ns_region_metadata metadata;
-				metadata.load_from_db(region_image.region_info_id,"",sql);
-				overlay_graph(region_image.region_info_id,temporary_image,region_image.capture_time,metadata,death_annotations,sql);
+				ns_annotation_region_data_id annotation_data(ns_death_time_annotation_set::ns_all_annotations, region_image.experiment_id);
+				ns_experiment_surival_data_cache::const_handle_t annotation_handle;
+				image_server.survival_data_cache.get_for_read(annotation_data, annotation_handle, sql);
+
+				overlay_graph(region_image.region_info_id,temporary_image,region_image.capture_time,annotation_handle(),sql);
 
 				ns_image_server_image output_image;
 				output_image = region_image.create_storage_for_processed_image(ns_process_movement_coloring_with_survival,ns_jpeg,&sql);
@@ -2014,11 +2038,13 @@ void ns_image_processing_pipeline::register_event(const ns_processing_task & tas
 
 bool ns_image_processing_pipeline::detection_calculation_required(const ns_processing_task & s){
 	return  s == ns_process_worm_detection ||
-			s == ns_process_worm_detection_labels ||
-			s == ns_process_region_vis ||
-			s == ns_process_accept_vis ||
-			s == ns_process_reject_vis ||
-			s == ns_process_add_to_training_set;
+		s == ns_process_worm_detection_labels ||
+		s == ns_process_region_vis ||
+		s == ns_process_accept_vis ||
+		s == ns_process_reject_vis ||
+		s == ns_process_add_to_training_set ||
+		s == ns_process_movement_paths_visualization ||
+		s == ns_process_movement_paths_visualition_with_mortality_overlay;
 }
 
 bool ns_image_processing_pipeline::preprocessed_step_required(const ns_processing_task & might_be_needed, const ns_processing_task & task_to_perform){
@@ -2141,12 +2167,8 @@ void ns_image_processing_pipeline::reason_through_precomputed_dependencies(vecto
 	}
 };
 
-void ns_lifespan_curve_cache_entry::clean()const{
-	if (region_raw_data_cache.size() > 1)
-		region_raw_data_cache.clear();
-}
-const ns_death_time_annotation_compiler & ns_lifespan_curve_cache_entry::get_region_data(const ns_death_time_annotation_set::ns_annotation_type_to_load & a,const ns_64_bit id,ns_sql & sql) const{
-	//check to see if local data is up to date
+
+bool ns_lifespan_curve_cache_entry_data::check_to_see_if_cached_is_most_recent(const ns_64_bit & id, ns_sql & sql) {
 	sql << "SELECT latest_movement_rebuild_timestamp, latest_by_hand_annotation_timestamp FROM sample_region_image_info WHERE id = " << id;
 	ns_sql_result res;
 	sql.get_rows(res);
@@ -2155,79 +2177,111 @@ const ns_death_time_annotation_compiler & ns_lifespan_curve_cache_entry::get_reg
 	const unsigned long rebuild_timestamp(atol(res[0][0].c_str()));
 	const unsigned long annotation_timestamp(atol(res[0][1].c_str()));
 	const unsigned long region_timestamp = (rebuild_timestamp > annotation_timestamp) ? rebuild_timestamp : annotation_timestamp;
-	ns_region_raw_cache::iterator p = region_raw_data_cache.find(id);
-	bool rebuild(false);
-	if (p == region_raw_data_cache.end()){
-		region_raw_data_cache.clear(); //only keep one cached copy lying around.  these things use a lot of memory!
-		p = region_raw_data_cache.insert(ns_region_raw_cache::value_type(id,ns_lifespan_curve_cache_entry_data())).first;
-		p->second.region_compilation_timestamp = region_timestamp;
-		rebuild = true;
-	}
-	if (p->second.region_compilation_timestamp < region_timestamp)
-		rebuild = true;
-	if (rebuild){
-		ns_machine_analysis_data_loader machine_loader;
-		machine_loader.load(a,id,0,0,sql);
-		for (unsigned int i = 0; i < machine_loader.samples.size(); i++){
-			for (unsigned int j = 0; j < machine_loader.samples[i].regions.size(); j++){
-				p->second.compiler.add(machine_loader.samples[i].regions[j]->death_time_annotation_set,machine_loader.samples[i].regions[j]->metadata);
-				//hand annotations are already loaded
-				ns_hand_annotation_loader hand;
-				hand.load_region_annotations(ns_death_time_annotation_set::ns_censoring_data,
-					machine_loader.samples[i].regions[j]->metadata.region_id,
-					machine_loader.samples[i].regions[j]->metadata.experiment_id,
-					machine_loader.samples[i].regions[j]->metadata.experiment_name,
-					machine_loader.samples[i].regions[j]->metadata,
-					sql);
-		//		cached_risk_timeseries_metadata = machine_loader.samples[i].regions[j].metadata;
-				p->second.compiler.add(hand.annotations);
-			}
-		}
 
-		//this->cached_strain_risk_timeseries =
-	}
-
-	return p->second.compiler;
+	return this->region_compilation_timestamp >= region_timestamp;
 }
 
-const ns_lifespan_curve_cache_entry & ns_lifespan_curve_cache::get_experiment_data(const ns_64_bit id, ns_sql & sql){
+void ns_lifespan_curve_cache_entry_data::load(const ns_annotation_region_data_id & id, ns_sql & sql) {
+	//check to see if local data is up to date
+	sql << "SELECT latest_movement_rebuild_timestamp, latest_by_hand_annotation_timestamp FROM sample_region_image_info WHERE id = " << id.id;
+	ns_sql_result res;
+	sql.get_rows(res);
+	if (res.empty())
+		throw ns_ex("ns_lifespan_curve_cache_entry::get_region_data()::Could not find region ") << id.id << " in db";
+	const unsigned long rebuild_timestamp(atol(res[0][0].c_str()));
+	const unsigned long annotation_timestamp(atol(res[0][1].c_str()));
+	const unsigned long region_timestamp = (rebuild_timestamp > annotation_timestamp) ? rebuild_timestamp : annotation_timestamp;
+
+	
+	region_compilation_timestamp = region_timestamp;
+
+	ns_machine_analysis_data_loader machine_loader;
+	machine_loader.load(id.annotations,metadata.region_id,0,0,sql);
+	for (unsigned int i = 0; i < machine_loader.samples.size(); i++){
+		for (unsigned int j = 0; j < machine_loader.samples[i].regions.size(); j++){
+			compiler.add(machine_loader.samples[i].regions[j]->death_time_annotation_set,machine_loader.samples[i].regions[j]->metadata);
+			//hand annotations are already loaded
+			ns_hand_annotation_loader hand;
+			hand.load_region_annotations(ns_death_time_annotation_set::ns_censoring_data,
+				machine_loader.samples[i].regions[j]->metadata.region_id,
+				machine_loader.samples[i].regions[j]->metadata.experiment_id,
+				machine_loader.samples[i].regions[j]->metadata.experiment_name,
+				machine_loader.samples[i].regions[j]->metadata,
+				sql);
+			compiler.add(hand.annotations);
+		}
+	}
+}
+
+const ns_lifespan_curve_cache_entry_data & ns_lifespan_curve_cache_entry::get_region_entry(const ns_64_bit & region_id) const {
+	ns_region_raw_cache::const_iterator region_annotations = region_raw_data_cache.find(region_id);
+	if (region_annotations == region_raw_data_cache.end())
+		throw ns_ex("ns_lifespan_curve_cache_entry::could not find region ") << region_id << " in region_raw_data_cache.";
+	return region_annotations->second;
+
+}
+ns_death_time_annotation_compiler::ns_region_list::const_iterator ns_lifespan_curve_cache_entry::get_annotations_for_region(const ns_64_bit & region_id) const {
+	const ns_death_time_annotation_compiler & compiler(get_region_entry(region_id).compiler);
+	ns_death_time_annotation_compiler::ns_region_list::const_iterator p(compiler.regions.find(region_id));
+	if (p == compiler.regions.end())
+		throw ns_ex("Could not find region ") << region_id << " in death time annotation compiler.";
+	return p;
+}
+//get_region_data
+void ns_lifespan_curve_cache_entry::load_from_external_source(const ns_annotation_region_data_id & id, ns_sql & sql) {
 	//first we check all the regions to make sure all the data is loaded.
 	sql << "SELECT r.id, r.latest_movement_rebuild_timestamp, r.latest_by_hand_annotation_timestamp "
-			"FROM sample_region_image_info as r, capture_samples as s "
-			"WHERE r.sample_id = s.id AND s.experiment_id = " << id;
+		"FROM sample_region_image_info as r, capture_samples as s "
+		"WHERE  r.censored=0 AND r.sample_id = s.id AND s.experiment_id = " << id.id;
 	ns_sql_result res;
 	sql.get_rows(res);
 	bool reload_experiment_data(false);
-	for (unsigned int i = 0; i < res.size(); i++){
+	for (unsigned int i = 0; i < res.size(); i++) {
 		const ns_64_bit region_id(ns_atoi64(res[i][0].c_str()));
 		const unsigned long latest_machine_timestamp(atol(res[i][1].c_str()));
 		const unsigned long latest_hand_timestamp(atol(res[i][2].c_str()));
-		ns_lifespan_region_timestamp_cache::iterator p = timestamp_cache.find(region_id);
-		if (p==timestamp_cache.end() ||
-			p->second.latest_movement_rebuild_timestamp != latest_machine_timestamp||
-			p->second.latest_by_hand_annotation_timestamp != latest_hand_timestamp){
+		ns_region_raw_cache::iterator p = region_raw_data_cache.find(region_id);
+		if (p == region_raw_data_cache.end()) {
+			p = region_raw_data_cache.insert(ns_region_raw_cache::value_type(region_id, ns_lifespan_curve_cache_entry_data())).first;
 			reload_experiment_data = true;
-			timestamp_cache[region_id].latest_movement_rebuild_timestamp = latest_machine_timestamp;
-			timestamp_cache[region_id].latest_by_hand_annotation_timestamp = latest_hand_timestamp;
+		}
+		else if (
+			p->second.latest_movement_rebuild_timestamp != latest_machine_timestamp ||
+			p->second.latest_by_hand_annotation_timestamp != latest_hand_timestamp) {
+			reload_experiment_data = true;
+		}
+
+		if (reload_experiment_data) {
+			p->second.metadata.load_from_db(region_id, "", sql);
+
+			p->second.latest_movement_rebuild_timestamp = latest_machine_timestamp;
+			p->second.latest_by_hand_annotation_timestamp = latest_hand_timestamp;
+			p->second.load(id, sql);
+
+			ns_lifespan_experiment_set set;
+			p->second.compiler.generate_survival_curve_set(set, ns_death_time_annotation::ns_machine_annotations_if_no_by_hand, true, false);
+			
+
+			set.generage_aggregate_risk_timeseries(p->second.metadata, p->second.risk_timeseries, p->second.risk_timeseries_time);
+
+			//here we should identify all possible strain-level risk time series by identifying all values of 
+			//p->second.metadata
+			//and then running the following code for each;
+			/*
+				lifespan_curve.cached_strain_risk_timeseries_metadata = m;
+				ns_machine_analysis_data_loader machine_loader;
+				ns_lifespan_experiment_set experiment_set;
+				machine_loader.load_just_survival(experiment_set, 0, 0, m.experiment_id, sql, false, true);
+				experiment_set.generage_aggregate_risk_timeseries(m, lifespan_curve.cached_strain_risk_timeseries, lifespan_curve.cached_strain_risk_timeseries_time);
+				lifespan_curve.cached_strain_risk_timeseries_metadata = m;
+			*/
 		}
 	}
-	ns_lifespan_curve_cache_storage::iterator p(data_cache.find(id));
-	if (p == data_cache.end()){
-		reload_experiment_data = true;
-		p = data_cache.insert(ns_lifespan_curve_cache_storage::value_type(id,ns_lifespan_curve_cache_entry())).first;
-	}
-	if (reload_experiment_data){
-
-		//experiment_set.generate_common_time_set(p->second.survival_curves_on_common_time);
-		//p->second.survival_curves_on_common_time.generate_survival_statistics();
-		return p->second;
-	}
-	else return p->second;
 }
 
 
 void ns_image_processing_pipeline::overlay_graph(const ns_64_bit region_id,ns_image_whole<ns_component> & image, unsigned long start_time,
-	const ns_region_metadata & m, const ns_lifespan_curve_cache_entry & lifespan_curve, ns_sql & sql){
+	const ns_lifespan_curve_cache_entry & lifespan_curve, ns_sql & sql){
 
 	ns_image_properties lifespan_curve_image_prop,metadata_overlay_prop;
 	lifespan_curve_image_prop.width  = (unsigned int)(image.properties().width*(1-1/sqrt(2.0f)));
@@ -2252,28 +2306,10 @@ void ns_image_processing_pipeline::overlay_graph(const ns_64_bit region_id,ns_im
 	ns_movement_visualization_generator vis_gen;
 	ns_image_standard metadata_overlay;
 	metadata_overlay.prepare_to_recieve_image(metadata_overlay_prop);
+	const ns_lifespan_curve_cache_entry_data & plate_data = lifespan_curve.get_region_entry(region_id);
 
-	if (lifespan_curve.cached_risk_timeseries_metadata.region_id != m.region_id){
-		const ns_death_time_annotation_compiler & compiler(lifespan_curve.get_region_data(ns_death_time_annotation_set::ns_all_annotations,region_id,sql));
-		ns_lifespan_experiment_set set;
-		compiler.generate_survival_curve_set(set,ns_death_time_annotation::ns_machine_annotations_if_no_by_hand,true,false);
-	//	set.generate_survival_statistics();
-		set.generage_aggregate_risk_timeseries(m,lifespan_curve.cached_plate_risk_timeseries,lifespan_curve.cached_risk_timeseries_time);
-		lifespan_curve.cached_risk_timeseries_metadata = m;
-	}
-	if (lifespan_curve.cached_strain_risk_timeseries_metadata.device_regression_match_description() != m.device_regression_match_description()){
-			lifespan_curve.cached_strain_risk_timeseries_metadata = m;
-			ns_machine_analysis_data_loader machine_loader;
-			ns_lifespan_experiment_set experiment_set;
-			machine_loader.load_just_survival(experiment_set,0,0,m.experiment_id,sql,false,true);
-			experiment_set.generage_aggregate_risk_timeseries(m,lifespan_curve.cached_strain_risk_timeseries,lifespan_curve.cached_strain_risk_timeseries_time);
-		lifespan_curve.cached_strain_risk_timeseries_metadata = m;
-
-	}
-
-
-	vis_gen.create_survival_curve_for_capture_time	(start_time,m,lifespan_curve.cached_plate_risk_timeseries,lifespan_curve.cached_strain_risk_timeseries,
-													 lifespan_curve.cached_risk_timeseries_time,lifespan_curve.cached_strain_risk_timeseries_time,"Survival",true,optimize_for_small_graph,metadata_overlay,graph);
+	vis_gen.create_survival_curve_for_capture_time	(start_time,plate_data.metadata, plate_data.risk_timeseries,lifespan_curve.cached_strain_risk_timeseries,
+																	plate_data.risk_timeseries_time,lifespan_curve.cached_strain_risk_timeseries_time,"Survival",true,optimize_for_small_graph,metadata_overlay,graph);
 	lifespan_curve_graph.init(lifespan_curve_image_prop);
 	graph.draw(lifespan_curve_graph);
 

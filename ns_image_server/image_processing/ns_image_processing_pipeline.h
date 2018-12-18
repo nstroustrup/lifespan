@@ -17,6 +17,7 @@
 #include "ns_image_registration_cache.h"
 #include "ns_processing_job_push_scheduler.h"
 #include "ns_worm_training_set_image.h"
+#include "ns_experiment_surival_data_cache.h"
 
 void ns_check_for_file_errors(ns_processing_job & job, ns_sql & sql);
 
@@ -184,39 +185,6 @@ class ns_experiment_video_manager{
 	std::vector<ns_experiment_video_frame> frames;
 };
 
-struct ns_lifespan_curve_region_timestamp_cache_entry{
-	unsigned long latest_movement_rebuild_timestamp;
-	unsigned long latest_by_hand_annotation_timestamp;
-};
-struct ns_lifespan_curve_cache_entry_data{
-	unsigned long region_compilation_timestamp;
-	ns_death_time_annotation_compiler compiler;
-};
-class ns_lifespan_curve_cache_entry{
-public:
-	mutable ns_survival_data_with_censoring cached_plate_risk_timeseries;
-	mutable ns_survival_data_with_censoring cached_strain_risk_timeseries;
-	mutable std::vector<unsigned long> cached_risk_timeseries_time;
-	mutable std::vector<unsigned long> cached_strain_risk_timeseries_time;
-	mutable ns_region_metadata cached_risk_timeseries_metadata;
-	mutable ns_region_metadata cached_strain_risk_timeseries_metadata;
-
-	const ns_death_time_annotation_compiler & get_region_data(const ns_death_time_annotation_set::ns_annotation_type_to_load & a,const ns_64_bit id,ns_sql & sql) const;
-private:
-	typedef std::map<ns_64_bit,ns_lifespan_curve_cache_entry_data> ns_region_raw_cache;
-	void clean() const;
-	mutable ns_region_raw_cache region_raw_data_cache;
-};
-
-class ns_lifespan_curve_cache{
-	typedef std::map<ns_64_bit,ns_lifespan_curve_cache_entry> ns_lifespan_curve_cache_storage;
-	typedef std::map<ns_64_bit,ns_lifespan_curve_region_timestamp_cache_entry> ns_lifespan_region_timestamp_cache;
-
-	ns_lifespan_curve_cache_storage data_cache;
-	ns_lifespan_region_timestamp_cache timestamp_cache;
-	public:
-	const ns_lifespan_curve_cache_entry & get_experiment_data(const ns_64_bit id, ns_sql & sql);
-};
 
 
 ///ns_image_processing_pipline takes images and performs a series of image-processing steps on them.
@@ -236,7 +204,7 @@ public:
 
 	///given the source image, run() runs the processing steps specified in operations.  operations is a bit map with each entry corresponding to the step
 	///referred to by its ns_processing_task enum value.  Operations flagged as "1" are performed, operations flagged as "0" are skipped.
-	void process_region(const ns_image_server_captured_image_region & region_image, const std::vector<char> operations, ns_sql & sql, const ns_svm_model_specification & model, const ns_lifespan_curve_cache_entry & death_annotations);
+	void process_region(const ns_image_server_captured_image_region & region_image, const std::vector<char> operations, ns_sql & sql);
 
 	//returns the resolution of the sample.
 	float process_mask(ns_image_server_image & source_image, const ns_64_bit mask_id, ns_sql & sql);
@@ -296,7 +264,6 @@ public:
 
 
 
-	ns_lifespan_curve_cache lifespan_curve_cache;
 private:
 	///Each time the pipeline is run, the first and last operations of the requested operation set are calculated and stored here.
 	ns_processing_task first_task,last_task;
@@ -337,7 +304,7 @@ private:
 	///_image_chunk_size specifies the number of image lines that are sent in a single step.
 	unsigned long _image_chunk_size;
 
-	void overlay_graph(const ns_64_bit region_id,ns_image_whole<ns_component> & image, unsigned long start_time, const ns_region_metadata & m, const ns_lifespan_curve_cache_entry & lifespan_data,ns_sql & sql);
+	void overlay_graph(const ns_64_bit region_id,ns_image_whole<ns_component> & image, unsigned long start_time,const ns_lifespan_curve_cache_entry & lifespan_data,ns_sql & sql);
 
 	///Confirms that the requetsed operations are self consistant.
 	void analyze_operations(const std::vector<char> & operations);

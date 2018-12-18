@@ -13,6 +13,7 @@
 #ifndef NS_ONLY_IMAGE_ACQUISITION
 #include "ns_experiment_storyboard.h"
 #include "ns_svm_model_specification.h"
+#include "ns_experiment_surival_data_cache.h"
 #endif
 #include "ns_movement_state.h"
 #include "ns_sql_table_lock_manager.h"
@@ -34,6 +35,7 @@
 #include "ns_image_server_results_storage.h"
 #include "ns_get_double.h"
 #include "ns_capture_schedule.h"
+
 
 
 ///attached scanners have both human-readable names as well as
@@ -447,6 +449,7 @@ public:
 
 #ifndef NS_ONLY_IMAGE_ACQUISITION
 	ns_simple_cache<ns_image_fast_registration_profile, ns_64_bit,true> image_registration_profile_cache;
+	ns_experiment_surival_data_cache survival_data_cache;
 #endif
 	ns_vector_2i max_terminal_window_size;
 	unsigned long terminal_hand_annotation_resize_factor;
@@ -676,6 +679,8 @@ private:
 	ns_posture_analysis_model_cache posture_analysis_model_cache;
 
 	ns_storyboard_cache storyboard_cache;
+
+
 #endif
 #endif
 

@@ -490,7 +490,7 @@ void ns_image_processing_pipeline::process_region(const ns_image_server_captured
 				}
 			}
 
-			if (!unprocessed_loaded && (precomputed_images.worm_detection_needs_to_be_performed || operations[ns_process_compress_unprocessed])) {
+			if (!unprocessed_loaded && (precomputed_images.worm_detection_needs_to_be_redone_now || operations[ns_process_compress_unprocessed])) {
 				ns_image_server_image unprocessed_image(region_image.request_processed_image(ns_unprocessed, sql));
 				ns_image_storage_source_handle<ns_8_bit> unprocessed_image_file(image_server_const.image_storage.request_from_storage(unprocessed_image, &sql));
 				unprocessed_image_file.input_stream().pump(unprocessed, _image_chunk_size);
@@ -642,7 +642,7 @@ void ns_image_processing_pipeline::process_region(const ns_image_server_captured
 			//2)The spatial average has been previously loaded into spatial_average
 
 
-			if (precomputed_images.worm_detection_needs_to_be_performed){
+			if (precomputed_images.worm_detection_needs_to_be_redone_now){
 
 				register_event(ns_process_worm_detection,spatial_average.properties(),parent_event,false,sql);
 				image_server_const.register_server_event(ns_image_server_event("ns_image_processing_pipeline::Detecting Worms...") << ns_ts_minor_event,&sql);
@@ -2036,15 +2036,17 @@ void ns_image_processing_pipeline::register_event(const ns_processing_task & tas
 	image_server_const.register_server_event(log_to_db,&sql);
 }
 
-bool ns_image_processing_pipeline::detection_calculation_required(const ns_processing_task & s){
+bool ns_image_processing_pipeline::worm_detection_needs_to_be_redone(const ns_processing_task & s){
 	return  s == ns_process_worm_detection ||
 		s == ns_process_worm_detection_labels ||
 		s == ns_process_region_vis ||
 		s == ns_process_accept_vis ||
 		s == ns_process_reject_vis ||
-		s == ns_process_add_to_training_set ||
-		s == ns_process_movement_paths_visualization ||
-		s == ns_process_movement_paths_visualition_with_mortality_overlay;
+		s == ns_process_add_to_training_set;
+}
+
+bool ns_image_processing_pipeline::worm_detection_needs_to_be_loadable(const ns_processing_task & s) {
+	return preprocessed_step_required(ns_process_worm_detection, s);
 }
 
 bool ns_image_processing_pipeline::preprocessed_step_required(const ns_processing_task & might_be_needed, const ns_processing_task & task_to_perform){
@@ -2151,9 +2153,9 @@ void ns_image_processing_pipeline::reason_through_precomputed_dependencies(vecto
 	//decide whether worm detection needs to be done
 	for (unsigned int i = (unsigned int)ns_process_spatial; i < operations.size(); i++){
 		if (operations[i] &&
-			detection_calculation_required((ns_processing_task)i) &&
+			worm_detection_needs_to_be_redone((ns_processing_task)i) &&
 			!precomputed_images.is_provided((ns_processing_task)i))
-			precomputed_images.worm_detection_needs_to_be_performed = true;
+			precomputed_images.worm_detection_needs_to_be_redone_now = true;
 	}
 
 	//movement color images cannot be processed in this step, so we have to ignore any requests that require it

@@ -30,7 +30,7 @@ struct ns_precomputed_processing_step_images{
 		loaded(false),
 		images((unsigned int)ns_process_last_task_marker),
 		exists((unsigned int)ns_process_last_task_marker,false),
-		worm_detection_needs_to_be_performed(false){}
+		worm_detection_needs_to_be_redone_now(false), worm_detection_needs_to_be_loadable(false){}
 
 	///specifies the database entry id for the precomputed image corresponding to the specified processing step
 	bool specify_image_id(const ns_processing_task & i, const ns_64_bit id,ns_sql & sql);
@@ -60,7 +60,8 @@ struct ns_precomputed_processing_step_images{
 		ns_image_storage_source_handle<ns_component> precomp = image_server.image_storage.request_from_storage(images[i],&sql);
 		precomp.input_stream().pump(image,512);
 	}
-	bool worm_detection_needs_to_be_performed;
+	bool worm_detection_needs_to_be_redone_now;
+	bool worm_detection_needs_to_be_loadable;
 private:
 	std::vector<ns_image_server_image> images;
 	std::vector<bool> exists;
@@ -251,7 +252,8 @@ public:
 
 	///Several processing steps require as a precondition that worm detection to be performed.  Returns true if the
 	///specified processing step has this requirement, and has not already been calculated
-	static bool detection_calculation_required(const ns_processing_task & s);
+	static bool worm_detection_needs_to_be_redone(const ns_processing_task & s);
+	static bool worm_detection_needs_to_be_loadable(const ns_processing_task & s);
 
 
 	///Takes the image and applies the appropriate mask to make a series of region images.  The resulting images are saved to disk

@@ -435,15 +435,6 @@ ns_64_bit ns_processing_job_region_processor::run_job(ns_sql & sql){
 
 		if (job.operations[ns_process_thumbnail])
 			pipeline->resize_region_image(region_image, sql);
-
-		bool detection_calculation_required(false);
-		for (unsigned int i = 0; i < job.operations.size(); i++) {
-			if (job.operations[i] && ns_image_processing_pipeline::detection_calculation_required((ns_processing_task)i)) {
-				detection_calculation_required = true;
-				break;
-			}
-		}
-
 		
 		pipeline->process_region(region_image, job.operations, sql);
 	}

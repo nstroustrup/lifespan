@@ -7209,8 +7209,13 @@ void ns_death_time_solo_posture_annotater::display_current_frame() {
 	refresh_requested_ = false;
 	//ns_acquire_lock_for_scope lock(image_buffer_access_lock,__FILE__,__LINE__);
 
-
+	ns_acquire_lock_for_scope lock(image_buffer_access_lock, __FILE__, __LINE__);
+	if (current_image.im == 0) {
+		lock.release();
+		return;
+	}
 	worm_learner->draw_worm_window_image(*current_image.im);
+	lock.release();
 
 	//lock.release();
 }

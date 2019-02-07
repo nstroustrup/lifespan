@@ -16,6 +16,7 @@
 #include "ns_processing_job_processor.h"
 #include "hungarian.h"
 #include "ns_analyze_movement_over_time.h"
+#include <set>
 using namespace std;
 
 void ns_to_lower(std::string & s){
@@ -3898,7 +3899,7 @@ void ns_worm_learner::compile_experiment_survival_and_movement_data(bool use_by_
 				ns_death_time_annotation_compiler compiled_region;
 				compiled_region.add(movement_results.samples[i].regions[j]->death_time_annotation_set,movement_results.samples[i].regions[j]->metadata);
 				compiled_region.add(by_hand_annotations.annotations,ns_death_time_annotation_compiler::ns_do_not_create_regions);
-				compiled_region.normalize_times_to_zero_age();
+				//compiled_region.normalize_times_to_zero_age();
 				
 				//generate movement series debugging telemetry for each by hand annotation strategy
 				for (unsigned int bhais = 0; bhais < 2; bhais++){
@@ -4178,158 +4179,178 @@ void ns_worm_learner::compile_experiment_survival_and_movement_data(bool use_by_
 	
 	
 	if (vis == ns_movement_area_plot || vis == ns_movement_scatter_proportion_plot){
+		for (unsigned int separate_scanners_i = 0; separate_scanners_i <= 1; separate_scanners_i++) { //output aggregates twice separating by device or not.
+			const bool separate_scanners = separate_scanners_i == 1;
 		
-		cerr << "Generating Strain Aggregates\n";
-		std::string title(movement_results.experiment_name());
-		const unsigned long marker_pos(0);
-		survival_curve_compiler.normalize_times_to_zero_age();
-		//sort by strain
-		std::map<std::string, ns_death_time_annotation_compiler> regions_sorted_by_strain;
-		for (ns_death_time_annotation_compiler::ns_region_list::iterator p = survival_curve_compiler.regions.begin(); p != survival_curve_compiler.regions.end();p++){
-			ns_death_time_annotation_compiler & c(regions_sorted_by_strain[p->second.metadata.strain + "-" + p->second.metadata.strain_condition_1 + "-" + p->second.metadata.strain_condition_2]);
-			c.regions.insert(c.regions.end(),ns_death_time_annotation_compiler::ns_region_list::value_type(p->first,p->second));
-			c.specifiy_region_metadata(p->second.metadata.region_id,p->second.metadata);
-		}
+			cerr << "Generating Strain Aggregates\n";
+			std::string title(movement_results.experiment_name());
+			const unsigned long marker_pos(0);
+			//survival_curve_compiler.normalize_times_to_zero_age();
+			//sort by strain
+			std::map<std::string, ns_death_time_annotation_compiler> regions_sorted_by_strain;
+			std::map<std::string, std::set<unsigned long> > time_at_age_zero_for_all_aggregated_regions;
+			for (ns_death_time_annotation_compiler::ns_region_list::iterator p = survival_curve_compiler.regions.begin(); p != survival_curve_compiler.regions.end();p++){
+				std::string key = p->second.metadata.strain + "-" + p->second.metadata.strain_condition_1 + "-" + p->second.metadata.strain_condition_2;
+				if (separate_scanners) key += "-" + p->second.metadata.device;
+				ns_death_time_annotation_compiler & c(regions_sorted_by_strain[key]);
+				c.regions.insert(c.regions.end(),ns_death_time_annotation_compiler::ns_region_list::value_type(p->first,p->second));
+				c.specifiy_region_metadata(p->second.metadata.region_id,p->second.metadata);
 
-		ns_death_time_annotation::ns_by_hand_annotation_integration_strategy by_hand_annotation_integration_strategy[2] = 
-		{ns_death_time_annotation::ns_machine_annotations_if_no_by_hand,ns_death_time_annotation::ns_only_machine_annotations};
+				std::set<unsigned long> & t(time_at_age_zero_for_all_aggregated_regions[key]);
+				t.insert(t.end(), p->second.metadata.time_at_which_animals_had_zero_age);
+			}
 
-	
+			ns_death_time_annotation::ns_by_hand_annotation_integration_strategy by_hand_annotation_integration_strategy[2] = 
+			{ns_death_time_annotation::ns_machine_annotations_if_no_by_hand,ns_death_time_annotation::ns_only_machine_annotations};
 
 
-		for (unsigned int bhais = 0; bhais < 2; bhais++){
+			for (unsigned int bhais = 0; bhais < 2; bhais++){  //output aggregates twice with different by hand integration strategies
 
-			for (int k = 0; k < censoring_strategies_to_use.size(); k++) {
-				int censoring_strategy = (int)censoring_strategies_to_use[k];
-				if (censoring_strategy == (int)ns_death_time_annotation::ns_by_hand_censoring)
-					continue;
-				cerr << "Computing data using censoring strategy " << 
-				
-					ns_death_time_annotation::multiworm_censoring_strategy_label((ns_death_time_annotation::ns_multiworm_censoring_strategy)censoring_strategy) << "...\n";
-			/*	ns_worm_movement_summary_series series_with_incomplete;
-				ns_worm_movement_summary_series series_without_incomplete;
-				series_with_incomplete.from_death_time_annotations((ns_death_time_annotation::ns_multiworm_censoring_strategy)censoring_strategy,survival_curve_compiler,false);
-				series_without_incomplete.from_death_time_annotations((ns_death_time_annotation::ns_multiworm_censoring_strategy)censoring_strategy,survival_curve_compiler,true);
-				*/
-				ns_image_server_results_subject sub;
-				sub.experiment_id = movement_results.experiment_id();
-	
-				ns_acquire_for_scope<ostream> output_data_with_incomplete(image_server.results_storage.movement_timeseries_data(
-					by_hand_annotation_integration_strategy[bhais],
-					(ns_death_time_annotation::ns_multiworm_censoring_strategy)censoring_strategy,
-					default_missing_return_strategy,
-					ns_include_unchanged,
-					sub,
-					"strain_aggregates","movement_timeseries",sql()).output());
-				ns_acquire_for_scope<ostream> output_data_without_incomplete;
-				if (output_force_fast) {
-					output_data_without_incomplete.attach(image_server.results_storage.movement_timeseries_data(
+				for (int k = 0; k < censoring_strategies_to_use.size(); k++) {	//output aggregates for each censoring strategy.
+					int censoring_strategy = (int)censoring_strategies_to_use[k];
+					if (censoring_strategy == (int)ns_death_time_annotation::ns_by_hand_censoring)
+						continue;
+					cerr << "Computing data using censoring strategy " <<
+
+						ns_death_time_annotation::multiworm_censoring_strategy_label((ns_death_time_annotation::ns_multiworm_censoring_strategy)censoring_strategy) << "...\n";
+					/*	ns_worm_movement_summary_series series_with_incomplete;
+						ns_worm_movement_summary_series series_without_incomplete;
+						series_with_incomplete.from_death_time_annotations((ns_death_time_annotation::ns_multiworm_censoring_strategy)censoring_strategy,survival_curve_compiler,false);
+						series_without_incomplete.from_death_time_annotations((ns_death_time_annotation::ns_multiworm_censoring_strategy)censoring_strategy,survival_curve_compiler,true);
+						*/
+					ns_image_server_results_subject sub;
+					sub.experiment_id = movement_results.experiment_id();
+					std::string subdirectory = separate_scanners ? "strain_aggregates_per_scanner" : "strain_aggregates";
+					ns_acquire_for_scope<ostream> output_data_with_incomplete(image_server.results_storage.movement_timeseries_data(
 						by_hand_annotation_integration_strategy[bhais],
 						(ns_death_time_annotation::ns_multiworm_censoring_strategy)censoring_strategy,
 						default_missing_return_strategy,
-						ns_force_to_fast_moving,
+						ns_include_unchanged,
 						sub,
-						"strain_aggregates", "movement_timeseries", sql()).output());
-				}
-				if (output_data_with_incomplete.is_null() || (output_force_fast && output_data_without_incomplete.is_null()))
-					throw ns_ex("Could not open aggregate data file");
-
-				ns_acquire_for_scope<ostream> censoring_diagnostics(image_server.results_storage.movement_timeseries_data(
-					by_hand_annotation_integration_strategy[bhais],
-					ns_death_time_annotation::ns_merge_multiple_worm_clusters_and_missing_and_censor,
-					default_missing_return_strategy,
-					ns_include_unchanged,
-					sub,"strain_aggregates","censoring_diagnostics",sql()).output());
-
-				ns_worm_movement_summary_series::output_censoring_diagnostic_header(censoring_diagnostics());
-
-				ns_worm_movement_measurement_summary::out_header(output_data_with_incomplete());
-				if (output_force_fast)
-				ns_worm_movement_measurement_summary::out_header(output_data_without_incomplete());
-
-
-				ns_acquire_for_scope<ostream> output_data_alternate_missing_return_strategy_1;
-				ns_acquire_for_scope<ostream> output_data_alternate_missing_return_strategy_2;
-				if (censoring_strategy == ns_death_time_annotation::ns_merge_multiple_worm_clusters_and_missing_and_censor){
-					if (output_alternative_censoring_timings) {
-					output_data_alternate_missing_return_strategy_1.attach(image_server.results_storage.movement_timeseries_data(
-					by_hand_annotation_integration_strategy[bhais],
-						(ns_death_time_annotation::ns_multiworm_censoring_strategy)censoring_strategy,
-					alternate_missing_return_strategy_1,
-					ns_include_unchanged,sub,
-					"strain_aggregates","movement_timeseries",sql()).output());
-					ns_worm_movement_measurement_summary::out_header(output_data_alternate_missing_return_strategy_1());
-					
-						output_data_alternate_missing_return_strategy_2.attach(image_server.results_storage.movement_timeseries_data(
+						subdirectory , "movement_timeseries", sql()).output());
+					ns_acquire_for_scope<ostream> output_data_without_incomplete;
+					if (output_force_fast) {
+						output_data_without_incomplete.attach(image_server.results_storage.movement_timeseries_data(
 							by_hand_annotation_integration_strategy[bhais],
-							(ns_death_time_annotation::ns_multiworm_censoring_strategy)censoring_strategy,
-							alternate_missing_return_strategy_2,
-							ns_include_unchanged, sub,
-							"strain_aggregates", "movement_timeseries", sql()).output());
-						ns_worm_movement_measurement_summary::out_header(output_data_alternate_missing_return_strategy_2());
-					}
-				}
-		
-				if (1){
-					for (std::map<std::string, ns_death_time_annotation_compiler>::iterator p = regions_sorted_by_strain.begin(); p != regions_sorted_by_strain.end(); p++){
-						const std::string & strain_name(p->first);
-						ns_worm_movement_summary_series strain_series;
-						ns_region_metadata aggregated_metadata(p->second.regions.begin()->second.metadata);
-						aggregated_metadata.device.clear();
-						aggregated_metadata.incubator_location.clear();
-						aggregated_metadata.region_name.clear();
-						aggregated_metadata.region_id = 0;
-						aggregated_metadata.sample_id = 0;
-						aggregated_metadata.sample_name.clear();
-						aggregated_metadata.time_at_which_animals_had_zero_age = 0;
-						ns_death_time_annotation_set set;
-						if (output_force_fast) {
-							strain_series.from_death_time_annotations(
-								by_hand_annotation_integration_strategy[bhais],
-								(ns_death_time_annotation::ns_multiworm_censoring_strategy)censoring_strategy,
-								default_missing_return_strategy,
-								p->second, ns_force_to_fast_moving);
-							strain_series.to_file(aggregated_metadata, output_data_without_incomplete());
-						}
-						strain_series.from_death_time_annotations(
-							by_hand_annotation_integration_strategy[bhais],
-					
 							(ns_death_time_annotation::ns_multiworm_censoring_strategy)censoring_strategy,
 							default_missing_return_strategy,
-							p->second,ns_include_unchanged);
-						strain_series.to_file(aggregated_metadata,output_data_with_incomplete());
+							ns_force_to_fast_moving,
+							sub,
+							subdirectory, "movement_timeseries", sql()).output());
+					}
+					if (output_data_with_incomplete.is_null() || (output_force_fast && output_data_without_incomplete.is_null()))
+						throw ns_ex("Could not open aggregate data file");
 
-						if (censoring_strategy == ns_death_time_annotation::ns_merge_multiple_worm_clusters_and_missing_and_censor) {
-							//		strain_series.generate_censoring_diagnostic_file(aggregated_metadata,censoring_diagnostics());
-							if (output_alternative_censoring_timings) {
+					ns_acquire_for_scope<ostream> censoring_diagnostics(image_server.results_storage.movement_timeseries_data(
+						by_hand_annotation_integration_strategy[bhais],
+						ns_death_time_annotation::ns_merge_multiple_worm_clusters_and_missing_and_censor,
+						default_missing_return_strategy,
+						ns_include_unchanged,
+						sub, subdirectory, "censoring_diagnostics", sql()).output());
+
+					ns_worm_movement_summary_series::output_censoring_diagnostic_header(censoring_diagnostics());
+
+					ns_worm_movement_measurement_summary::out_header(output_data_with_incomplete());
+					if (output_force_fast)
+						ns_worm_movement_measurement_summary::out_header(output_data_without_incomplete());
+
+
+					ns_acquire_for_scope<ostream> output_data_alternate_missing_return_strategy_1;
+					ns_acquire_for_scope<ostream> output_data_alternate_missing_return_strategy_2;
+					if (censoring_strategy == ns_death_time_annotation::ns_merge_multiple_worm_clusters_and_missing_and_censor) {
+						if (output_alternative_censoring_timings) {
+							output_data_alternate_missing_return_strategy_1.attach(image_server.results_storage.movement_timeseries_data(
+								by_hand_annotation_integration_strategy[bhais],
+								(ns_death_time_annotation::ns_multiworm_censoring_strategy)censoring_strategy,
+								alternate_missing_return_strategy_1,
+								ns_include_unchanged, sub,
+								subdirectory, "movement_timeseries", sql()).output());
+							ns_worm_movement_measurement_summary::out_header(output_data_alternate_missing_return_strategy_1());
+
+							output_data_alternate_missing_return_strategy_2.attach(image_server.results_storage.movement_timeseries_data(
+								by_hand_annotation_integration_strategy[bhais],
+								(ns_death_time_annotation::ns_multiworm_censoring_strategy)censoring_strategy,
+								alternate_missing_return_strategy_2,
+								ns_include_unchanged, sub,
+								subdirectory, "movement_timeseries", sql()).output());
+							ns_worm_movement_measurement_summary::out_header(output_data_alternate_missing_return_strategy_2());
+						}
+					}
+					//go through each strain and output all death times annotated for that strain.
+					if (1) {
+						for (std::map<std::string, ns_death_time_annotation_compiler>::iterator p = regions_sorted_by_strain.begin(); p != regions_sorted_by_strain.end(); p++) {
+							const std::string & strain_name(p->first);
+							ns_worm_movement_summary_series strain_series;
+							ns_region_metadata aggregated_metadata(p->second.regions.begin()->second.metadata);
+							if (!separate_scanners) {
+								aggregated_metadata.device.clear();
+								aggregated_metadata.incubator_location.clear();
+							}
+							aggregated_metadata.region_name.clear();
+							aggregated_metadata.region_id = 0;
+							aggregated_metadata.sample_id = 0;
+							aggregated_metadata.sample_name.clear();
+							std::map<std::string, std::set<unsigned long> >::const_iterator zero_time_lookup = time_at_age_zero_for_all_aggregated_regions.find(p->first);
+							if (zero_time_lookup == time_at_age_zero_for_all_aggregated_regions.end())
+								throw ns_ex("Error in time lookup!");
+							const unsigned long number_of_start_times = zero_time_lookup->second.size();
+							if (number_of_start_times == 0)
+								throw ns_ex("Error in time lookup (2)!");
+							//cout << p->first << " " << number_of_start_times << "\n";
+							if (number_of_start_times > 1) {
+								aggregated_metadata.time_at_which_animals_had_zero_age = 0;
+							}
+
+
+							ns_death_time_annotation_set set;
+							if (output_force_fast) {
+								strain_series.from_death_time_annotations(
+									by_hand_annotation_integration_strategy[bhais],
+									(ns_death_time_annotation::ns_multiworm_censoring_strategy)censoring_strategy,
+									default_missing_return_strategy,
+									p->second, ns_force_to_fast_moving);
+								strain_series.to_file(aggregated_metadata, output_data_without_incomplete());
+							}
 							strain_series.from_death_time_annotations(
 								by_hand_annotation_integration_strategy[bhais],
 
 								(ns_death_time_annotation::ns_multiworm_censoring_strategy)censoring_strategy,
-								alternate_missing_return_strategy_1,
+								default_missing_return_strategy,
 								p->second, ns_include_unchanged);
-							strain_series.to_file(aggregated_metadata, output_data_alternate_missing_return_strategy_1());
+							strain_series.to_file(aggregated_metadata, output_data_with_incomplete());
 
-							//			strain_series.generate_censoring_diagnostic_file(aggregated_metadata,censoring_diagnostics());
-								strain_series.from_death_time_annotations(
-									by_hand_annotation_integration_strategy[bhais],
+							if (censoring_strategy == ns_death_time_annotation::ns_merge_multiple_worm_clusters_and_missing_and_censor) {
+								//		strain_series.generate_censoring_diagnostic_file(aggregated_metadata,censoring_diagnostics());
+								if (output_alternative_censoring_timings) {
+									strain_series.from_death_time_annotations(
+										by_hand_annotation_integration_strategy[bhais],
 
-									(ns_death_time_annotation::ns_multiworm_censoring_strategy)censoring_strategy,
-									alternate_missing_return_strategy_2,
-									p->second, ns_include_unchanged);
-								strain_series.to_file(aggregated_metadata, output_data_alternate_missing_return_strategy_2());
+										(ns_death_time_annotation::ns_multiworm_censoring_strategy)censoring_strategy,
+										alternate_missing_return_strategy_1,
+										p->second, ns_include_unchanged);
+									strain_series.to_file(aggregated_metadata, output_data_alternate_missing_return_strategy_1());
+
+									//			strain_series.generate_censoring_diagnostic_file(aggregated_metadata,censoring_diagnostics());
+									strain_series.from_death_time_annotations(
+										by_hand_annotation_integration_strategy[bhais],
+
+										(ns_death_time_annotation::ns_multiworm_censoring_strategy)censoring_strategy,
+										alternate_missing_return_strategy_2,
+										p->second, ns_include_unchanged);
+									strain_series.to_file(aggregated_metadata, output_data_alternate_missing_return_strategy_2());
+								}
+
+								//		strain_series.generate_censoring_diagnostic_file(aggregated_metadata,censoring_diagnostics());
 							}
-							
-					//		strain_series.generate_censoring_diagnostic_file(aggregated_metadata,censoring_diagnostics());
+							//output_plot_prop.release();
+							//output_plot_area.release();
 						}
-						//output_plot_prop.release();
-						//output_plot_area.release();
 					}
-				}
-				output_data_with_incomplete.release();
-if (output_force_fast)
-output_data_without_incomplete.release();
+					output_data_with_incomplete.release();
+					if (output_force_fast)
+						output_data_without_incomplete.release();
 			}
+				}
 
 			//ns_make_collage(sample_graphs, current_image, 256,true,255,false,(float)(1.0/sample_graphs.size()));
 

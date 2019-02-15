@@ -1288,9 +1288,9 @@ int main(int argc, char ** argv){
 #endif
 				throw ns_ex("Updated software detected on the cluster.");
 			}
+			image_server.clear_processing_status(&sql());
 		}
 
-		image_server.clear_processing_status(&sql());
 
 
 #ifdef NS_USE_INTEL_IPP

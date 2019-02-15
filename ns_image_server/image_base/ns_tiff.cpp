@@ -1,7 +1,17 @@
 #include "ns_tiff.h"
 #include <fstream>
 #include "ns_xmp_encoder.h"
+#include "ns_thread.h"
 
+void * ns_low_mem_allocate(tmsize_t mem) {
+	void * buf;
+	for (int i = 0; i < 10; i++) {
+		buf = _TIFFmalloc(mem);
+		if (buf != 0) return buf;
+		ns_thread::sleep_milliseconds(100);
+	}
+	return 0;
+}
 void ns_throw_tiff_exception(const ns_ex & ex){
 	throw ns_ex(ex.text());
 }

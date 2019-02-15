@@ -174,7 +174,33 @@ public:
 	~ns_gaussian_pyramid() { clear(); }
 
 	template< class sender_t >
-	void recieve_and_calculate(sender_t & source,const int min_downsample) {
+	void recieve_and_calculate(sender_t & source, const int min_downsample) {
+		ns_image_properties prop(source.input_stream().properties());
+		prop.width /= min_downsample;
+		prop.height /= min_downsample;
+		allocate(prop);
+		ns_image_stream_buffer_properties p;
+		p.height = 1;
+		p.width = source.input_stream().properties().width;
+
+		ns_image_stream_static_buffer<ns_8_bit> buffer(p);
+		unsigned long source_state = source.input_stream().init_send();
+		for (unsigned int y = 0; y < _properties.height; y++) {
+			//get line to use
+			source.input_stream().send_lines(buffer, 1, source_state);
+			for (unsigned int x = 0; x < _properties.width; x++) {
+				image_scaled[0].val(y, x) = buffer[0][x*min_downsample] / 255.f;
+			}
+			//throw away next lines as req by downsample factor
+			for (int i = 0; i < min_downsample - 1 && min_downsample*y + i < source.input_stream().properties().height; i++)
+				source.input_stream().send_lines(buffer, 1, source_state);
+		}
+		source.input_stream().finish_send();
+		calculate();
+	}
+
+	template< class sender_t >
+	void recieve_and_calculate(sender_t & source,const int min_downsample, ns_histogram<unsigned int,ns_8_bit> & hist) {
 		ns_image_properties prop(source.input_stream().properties());
 		prop.width /= min_downsample;
 		prop.height /= min_downsample;
@@ -188,8 +214,10 @@ public:
 		for (unsigned int y = 0; y < _properties.height; y++) {
 			//get line to use
 			source.input_stream().send_lines(buffer, 1, source_state);
-			for (unsigned int x = 0; x < _properties.width; x++)
+			for (unsigned int x = 0; x < _properties.width; x++) {
+				hist.increment(buffer[0][x*min_downsample]);
 				image_scaled[0].val(y, x) = buffer[0][x*min_downsample] / 255.f;
+			}
 			//throw away next lines as req by downsample factor
 			for (int i = 0; i < min_downsample - 1 && min_downsample*y+i < source.input_stream().properties().height; i++)
 				source.input_stream().send_lines(buffer, 1, source_state);

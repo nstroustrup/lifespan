@@ -35,6 +35,13 @@ ns_image_server_image ns_image_server_captured_image::make_small_image_storage(n
 	image.partition = image_server_const.image_storage.get_partition_for_experiment(experiment_id,sql);
 	return image;
 }
+ns_image_server_image ns_image_server_captured_image::make_large_image_storage(ns_image_server_sql * sql) {
+	ns_image_server_image image;
+	image.filename = filename(sql);
+	image.path = directory(sql);
+	image.partition = image_server_const.image_storage.get_partition_for_experiment(experiment_id, sql);
+	return image;
+}
 
 std::string ns_image_server_captured_image::small_image_directory(ns_image_server_sql * sql){
 	if (captured_images_id == 0)

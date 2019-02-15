@@ -589,6 +589,9 @@ public:
 	void generate_scanner_lifespan_statistics(bool use_by_hand_censoring,const std::vector<unsigned long> & experiment_ids, const std::string & output_filname);
 
 	ns_image_properties current_image_properties() const{return current_image.properties();}
+
+	void repair_captured_image_transfer_errors(unsigned long experiment_id);
+
 	//mask
 	void produce_mask_file(const ns_bulk_experiment_mask_manager::ns_mask_type mask_type,const std::string & filename);
 	void decode_mask_file(const std::string & filename, const std::string & output_vis_filename="");
@@ -803,12 +806,35 @@ public:
 			current_filename = filename;
 		}
 		//open tiff
-		else if (extension == "tif" || extension == "tiff"){
+		else if (extension == "tif" || extension == "tiff") {
 			ns_tiff_image_input_file<ns_8_bit> tiff_in;
-			tiff_in.open_file(filename);
-			ns_image_stream_file_source<ns_8_bit > file_source(tiff_in);
-			file_source.pump(image,128);
-			current_filename = filename;
+			bool loaded_16 = false;
+			try {
+				tiff_in.open_file(filename);
+			}
+			catch (ns_ex & ex) {
+
+				try {
+					ns_tiff_image_input_file<ns_16_bit,true> tiff_in;
+					tiff_in.open_file(filename);
+					ns_image_stream_file_source<ns_16_bit,true> file_source(tiff_in);
+					ns_image_whole<ns_16_bit> b;
+					file_source.pump(b, 1024);
+					image.resize(b.properties());
+					for (unsigned int y = 0; y < b.properties().height; y++)
+						for (unsigned int x = 0; x < b.properties().width; x++)
+							image[y][x] = b[y][x] / 256;
+					loaded_16 = true;
+				}
+				catch (ns_ex & ex_16_bit) {
+					throw ex;
+				}
+			}
+			if (!loaded_16) {
+				ns_image_stream_file_source<ns_8_bit > file_source(tiff_in);
+				file_source.pump(image, 128);
+				current_filename = filename;
+			}
 		}
 	}
 	std::string worm_visualization_directory(){

@@ -48,6 +48,11 @@ file(GLOB_RECURSE statistics_HEADERS "${PROJECT_SOURCE_DIR}/../ns_image_server/s
 file(GLOB_RECURSE system_base_SOURCES "${PROJECT_SOURCE_DIR}/../ns_image_server/system_base/*.cpp")
 file(GLOB_RECURSE system_base_HEADERS "${PROJECT_SOURCE_DIR}/../ns_image_server/system_base/*.h")
 
+set(ns_external_HEADER_DIRS "")
+list (APPEND ns_external_HEADER_DIRS "${PROJECT_SOURCE_DIR}/../external_compile_libraries/wcon_cpp"
+"${PROJECT_SOURCE_DIR}/../external_compile_libraries/json/single_include")
+ 
+
 set (ns_image_server_base_HEADERS "")
 list(APPEND ns_image_server_base_HEADERS ${image_server_HEADERS} ${image_acquisition_HEADERS} ${image_base_HEADERS} ${image_processing_HEADERS} ${job_scheduling_HEADERS} ${movement_analysis_HEADERS} ${statistics_HEADERS}  ${system_base_HEADERS} ${data_annotation_HEADERS})
 
@@ -59,6 +64,7 @@ foreach (_headerFile ${ns_image_server_base_HEADERS})
     get_filename_component(_dir ${_headerFile} PATH)
     list (APPEND ns_image_server_base_INCLUDE_DIRS ${_dir})
 endforeach()
+list(APPEND ns_image_server_base_INCLUDE_DIRS ${ns_external_HEADER_DIRS})
 
 set (ns_external_SOURCES  "")
 if (NOT ONLY_IMAGE_ACQUISITION)
@@ -147,11 +153,13 @@ include(GNUInstallDirs)
 set(FONT_FILE "${CMAKE_INSTALL_FULL_DATADIR}/default_font.ttf")
 set(INI_FILE "${CMAKE_INSTALL_FULL_SYSCONFDIR}/ns_image_server.ini")
 
-  if (CMAKE_VERSION VERSION_LESS "3.1")
+if (CMAKE_VERSION VERSION_LESS "3.1")
       set (CMAKE_CXX_FLAGS "--std=c++11 ${CMAKE_CXX_FLAGS}")
-  else ()
+else ()
     set (CMAKE_CXX_STANDARD 11)
-  endif ()
+endif ()
+
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-psabi")
 
 add_definitions(-DTRILIBRARY -DNO_TIMER -DANSI_DECLARATORS -DNS_DEFAULT_FONT="${FONT_FILE}" -DNS_INI_PATH="${INI_FILE}" -DUSE_NEW_USB=1 -DNS_DATA_PATH="${CMAKE_INSTALL_FULL_DATADIR}/")
 

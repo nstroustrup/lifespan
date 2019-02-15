@@ -92,85 +92,77 @@ void ns_image_capture_data_manager::register_capture_stop(ns_image_capture_speci
 		sql.send_query("COMMIT");
 	}
 }
-
+#define NS_TRANSFER_BUFFER_HEIGHT 2
 bool ns_image_capture_data_manager::transfer_data_to_long_term_storage(ns_image_server_captured_image & image,
 	ns_64_bit & time_during_transfer_to_long_term_storage,
 	ns_64_bit & time_during_deletion_from_local_storage,
 	const ns_vector_2<ns_16_bit> & conversion_16_bit_bounds,
-									ns_sql & sql){
+	ns_transfer_behavior & behavior,
+	ns_local_buffer_connection & sql){
+
 	if (image.capture_images_image_id == 0)
 		throw ns_ex("transfer_data_to_long_term_storage() was passed an image with no captured image image id");
 	if (image.captured_images_id == 0)
 		throw ns_ex("transfer_data_to_long_term_storage() was passed an image with no captured image id");
-
+	ns_image_storage_handler::ns_volatile_storage_behavior volatile_storage_transfer;
+	switch (behavior) {
+		case ns_try_to_transfer_to_long_term_storage: volatile_storage_transfer = ns_image_storage_handler::ns_allow_volatile; break;
+		case ns_convert_and_compress_locally: volatile_storage_transfer = ns_image_storage_handler::ns_require_volatile; break;
+		default: throw ns_ex("transfer_data_to_long_term_storage()::Unknown transfer behavior: " ) << (int)behavior;
+	}
 	bool had_to_use_local_storage(false);
 	if (image.specified_16_bit){
 		try{
 			sql.send_query("COMMIT");
-		//	cerr << "Attempting to convert open 16 bit copy...\n";
-			ns_image_storage_source_handle<ns_16_bit> high_depth(storage_handler->request_from_storage_n_bits<ns_16_bit>(image,&sql,ns_image_storage_handler::ns_volatile_storage));
+			//Note here that the second template argument, true, requests that the 16 bit images be loaded in a single line at a time, substantially lowering
+			//the total memory consumption of the lifespan machine software for embedded applications.
+			ns_image_storage_source_handle<ns_16_bit,true> high_depth(storage_handler->request_from_storage_n_bits<ns_16_bit, true>(image,&sql,ns_image_storage_handler::ns_volatile_storage));
 			image.specified_16_bit = false;
 			ns_image_server_image output_image;
-			ns_image_storage_reciever_handle<ns_8_bit> low_depth(storage_handler->request_storage_ci(image,ns_tiff,1.0,1024,&sql, output_image,had_to_use_local_storage,true));
+			ns_image_storage_reciever_handle<ns_8_bit> low_depth(storage_handler->request_storage_ci(image,ns_tiff,1.0,NS_TRANSFER_BUFFER_HEIGHT,&sql, output_image,had_to_use_local_storage, volatile_storage_transfer));
 			output_image.id = image.capture_images_image_id;
-
+			if (had_to_use_local_storage) {	//make sure the small output image ends up in the same place as the high res image
+				behavior = ns_convert_and_compress_locally;
+				volatile_storage_transfer = ns_image_storage_handler::ns_require_volatile;
+			}
 			ns_image_server_image small_image(image.make_small_image_storage(&sql));
 
 			bool had_to_use_local_storage_2;
-			ns_image_storage_reciever_handle<ns_8_bit> small_image_output(storage_handler->request_storage(small_image,ns_jpeg, NS_DEFAULT_JPEG_COMPRESSION, 1024,&sql,had_to_use_local_storage_2,false,true));
+			ns_image_storage_reciever_handle<ns_8_bit> small_image_output(storage_handler->request_storage(small_image,ns_jpeg, NS_DEFAULT_JPEG_COMPRESSION, NS_TRANSFER_BUFFER_HEIGHT,&sql,had_to_use_local_storage_2,false, volatile_storage_transfer));
 
-			ns_image_process_16_bit<ns_features_are_light, ns_image_stream_static_offset_buffer<ns_16_bit> > processor(1024);
+			ns_image_process_16_bit<ns_features_are_light, ns_image_stream_static_offset_buffer<ns_16_bit> > processor(NS_TRANSFER_BUFFER_HEIGHT);
 
 			processor.set_small_image_output(small_image_output);
 			processor.set_crop_range(conversion_16_bit_bounds);
 			
 			ns_image_stream_binding< ns_image_process_16_bit<ns_features_are_light, ns_image_stream_static_offset_buffer<ns_16_bit> >,
-									 ns_image_storage_reciever<ns_8_bit> > binding(processor,low_depth.output_stream(),1024);
+									 ns_image_storage_reciever<ns_8_bit> > binding(processor,low_depth.output_stream(),NS_TRANSFER_BUFFER_HEIGHT);
 			
-		//	cerr << "Attempting to write to 8 bit copy...\n";
+
 			ns_high_precision_timer hptimer;
 			hptimer.start();
-			//cerr << "pump\n";
-			high_depth.input_stream().pump(binding,1024);
-		//	cerr << "done\n";
+			high_depth.input_stream().pump(binding,NS_TRANSFER_BUFFER_HEIGHT);
 			time_during_transfer_to_long_term_storage = hptimer.stop();
+			//now delete the original 16 bit image
 			image.specified_16_bit = true;
 			hptimer.start();
-		//	cerr << "Delete";
 			storage_handler->delete_from_storage(image,ns_delete_volatile,&sql);
 			time_during_deletion_from_local_storage = hptimer.stop();
 			image.specified_16_bit = false;
 			string partition = storage_handler->get_partition_for_experiment(image.experiment_id,&sql);
-		//	cerr << "Commit\n";
-			
 			small_image.save_to_db(0,&sql);
 			output_image.save_to_db(output_image.id, &sql, false);
 			image.capture_images_small_image_id = small_image.id;
 			sql.send_query("COMMIT");
+			
+			//we no longer calculate image statistics here, as that data is not cached locally.
+			//instead it is now calculated during mask application.
+	
+			sql << "UPDATE buffered_captured_images SET small_image_id=" << small_image.id << " WHERE id = " << image.captured_images_id;
+			sql.send_query();
 
-	//		cerr << "Done\n";
-			sql << "SELECT image_statistics_id FROM captured_images WHERE id = " << image.captured_images_id;
-			ns_sql_result res;
-			sql.get_rows(res);
-			if (res.size() != 0){
-				ns_64_bit stats_id(ns_atoi64(res[0][0].c_str()));
-				processor.image_statistics.calculate_statistics_from_histogram();
-				processor.image_statistics.submit_to_db(stats_id,sql);
-				sql << "UPDATE captured_images SET small_image_id=" << small_image.id << ", image_statistics_id= " << stats_id << " WHERE id = " << image.captured_images_id;
-				sql.send_query();
-			}
-			else{
-				sql << "UPDATE captured_images SET small_image_id=" << small_image.id << " WHERE id = " << image.captured_images_id;
-				sql.send_query();
-
-				cerr << "Could not find capture sample image id " << image.capture_images_image_id << " in database. Sample image statistics were not recorded.";
-
-			}
 			sql.send_query("COMMIT");
 
-
-
-			
 			if (had_to_use_local_storage_2 != had_to_use_local_storage){
 				image_server.register_server_event(
 					ns_image_server_event("ns_image_capture_data_manager::transfer_data_to_long_term_storage()::"
@@ -202,22 +194,63 @@ bool ns_image_capture_data_manager::transfer_data_to_long_term_storage(ns_image_
 		}
 	}
 	else {
-		cerr << "Attempting to move 8 bit copy (2)...\n";
+		if (behavior == ns_convert_and_compress_locally)
+			throw ns_ex("Cannot transfer an 8 bit image when convert_and_compress_locally is specified");
 		
-		if (!storage_handler->test_connection_to_long_term_storage(true))
+		if (!storage_handler->test_connection_to_long_term_storage(true)) {
+			behavior = ns_convert_and_compress_locally;
 			return true;
+		}
 
 		ns_image_storage_source_handle<ns_8_bit> in(storage_handler->request_from_storage(image,&sql));
 		try{
+
+			//first transfer full res image
 			ns_image_server_image output_image;
-			ns_image_storage_reciever_handle<ns_8_bit> out(storage_handler->request_storage_ci(image,ns_tiff,1.0,1024,&sql,output_image,had_to_use_local_storage,false));
+			ns_image_storage_reciever_handle<ns_8_bit> out(0);
+			try {
+				out = storage_handler->request_storage_ci(image, ns_tiff, 1.0, NS_TRANSFER_BUFFER_HEIGHT, &sql, output_image, had_to_use_local_storage, ns_image_storage_handler::ns_forbid_volatile);
+			}
+			catch (ns_ex & ex) {
+				if (had_to_use_local_storage) {  //give up if long term storage is not available
+					behavior = ns_convert_and_compress_locally;
+					return true;
+				}
+				throw ex;
+			}
 			output_image.id = image.capture_images_image_id;
-			if (had_to_use_local_storage)
-				return had_to_use_local_storage;
-			in.input_stream().pump(out.output_stream(),1024);
+			in.input_stream().pump(out.output_stream(),NS_TRANSFER_BUFFER_HEIGHT);
+
+			//now load small image
+			try{
+				ns_image_server_image small_image;
+				small_image.load_from_db(image.capture_images_small_image_id, &sql);
+
+				ns_image_storage_reciever_handle<ns_8_bit> small_image_output(0);
+
+				ns_image_storage_source_handle<ns_8_bit> small_in(storage_handler->request_from_storage(small_image, &sql));
+				try {
+					small_image_output = storage_handler->request_storage(small_image, ns_jpeg, NS_DEFAULT_JPEG_COMPRESSION, NS_TRANSFER_BUFFER_HEIGHT, &sql, had_to_use_local_storage, false, ns_image_storage_handler::ns_forbid_volatile);
+				}
+				catch (ns_ex & ex) {
+					if (had_to_use_local_storage) {  //give up if long term storage is not available
+						behavior = ns_convert_and_compress_locally;
+						return true;
+					}
+					throw ex;
+				}
+				small_in.input_stream().pump(small_image_output.output_stream(), NS_TRANSFER_BUFFER_HEIGHT);
+
+				//now delete local images
+				storage_handler->delete_from_storage(small_image, ns_delete_volatile, &sql);
+			}
+			catch (ns_ex & ex) {
+				image_server_const.register_server_event(ex, &sql);
+			}
 			storage_handler->delete_from_storage(image,ns_delete_volatile,&sql);
 			output_image.save_to_db(output_image.id, &sql, false);
-			string partition = storage_handler->get_partition_for_experiment(image.experiment_id,&sql);
+
+
 			sql.send_query("COMMIT");
 		}
 		catch(ns_ex & ex){
@@ -230,7 +263,7 @@ bool ns_image_capture_data_manager::transfer_data_to_long_term_storage(ns_image_
 }
 
 
-void ns_image_capture_data_manager::transfer_image_to_long_term_storage(const std::string & device_name,ns_64_bit capture_schedule_entry_id, ns_image_server_captured_image & image, ns_sql & sql){
+void ns_image_capture_data_manager::transfer_image_to_long_term_storage(const std::string & device_name,ns_64_bit capture_schedule_entry_id, ns_image_server_captured_image & image, ns_transfer_behavior & behavior, ns_local_buffer_connection & sql){
 	ns_acquire_lock_for_scope device_lock(device_transfer_state_lock,__FILE__,__LINE__);
 	if (device_transfer_in_progress(device_name)){
 		transfer_status_debugger.set_status(device_name,ns_transfer_status("Device was busy"));
@@ -241,7 +274,12 @@ void ns_image_capture_data_manager::transfer_image_to_long_term_storage(const st
 	set_device_transfer_state(true,device_name);
 	device_lock.release();
 	try{
-		transfer_image_to_long_term_storage_locked(capture_schedule_entry_id,image,sql);
+		sql << "SELECT sample_id, transferred_to_long_term_storage FROM capture_schedule WHERE id = " << capture_schedule_entry_id;
+		ns_sql_result res;
+		sql.get_rows(res);
+		if (res.empty())
+			throw ns_ex("ns_image_capture_data_manager::transfer_image_to_long_term_storage()::Could not find capture schedule id ") << capture_schedule_entry_id << " in db.";
+		transfer_image_to_long_term_storage_locked(capture_schedule_entry_id,image,ns_atoi64(res[0][0].c_str()),(ns_image_capture_data_manager::ns_capture_image_status)atol(res[0][1].c_str()),behavior,sql);
 		device_lock.get(__FILE__,__LINE__);
 		set_device_transfer_state(false,device_name);
 		device_lock.release();
@@ -262,33 +300,41 @@ void ns_image_capture_data_manager::transfer_image_to_long_term_storage(const st
 	}
 }
 
-void ns_image_capture_data_manager::transfer_image_to_long_term_storage_locked(ns_64_bit capture_schedule_entry_id, ns_image_server_captured_image & image, ns_sql & sql){
+bool ns_image_capture_data_manager::transfer_image_to_long_term_storage_locked(ns_64_bit capture_schedule_entry_id, ns_image_server_captured_image & image, const ns_64_bit sample_id, const ns_capture_image_status & initial_transfer_status,ns_transfer_behavior & behavior, ns_local_buffer_connection & sql) {
 
-	//First we check what state the current image is in
-	sql << "SELECT transferred_to_long_term_storage, sample_id FROM capture_schedule WHERE id = " << capture_schedule_entry_id;
-	ns_sql_result res;
-	sql.get_rows(res);
-	if (res.size()==0)
-		throw ns_ex("ns_image_capture_data_manager::transfer_image_to_long_term_storage()::Could not find capture schedule id " ) << capture_schedule_entry_id << " in the db.";
-	ns_64_bit sample_id = ns_atois64(res[0][1].c_str());
-	//cerr << "Coordinating Transfer\n";
-	ns_capture_image_status transfer_status((ns_capture_image_status)atoi(res[0][0].c_str()));
-	switch(transfer_status){
-		case ns_not_finished:
-			throw ns_ex("ns_image_capture_data_manager::transfer_image_to_long_term_storage()::Transfer requested on image whose capture has not yet finished.");
-		case ns_transferred_to_long_term_storage:
-			throw ns_ex("ns_image_capture_data_manager::transfer_image_to_long_term_storage()::Transfer requested on image that has already been transferred.");
-		case ns_on_local_server_in_16bit:
-			image.specified_16_bit = true;
-			break;
-		case ns_on_local_server_in_8bit:
-			image.specified_16_bit = false;
-			break;
-		default:
-			throw ns_ex("ns_image_capture_data_manager::transfer_image_to_long_term_storage()::Requested transfer subject is in unknown transfer state:") << (int)transfer_status;
+	switch (initial_transfer_status) {
+	case ns_not_finished:
+		throw ns_ex("ns_image_capture_data_manager::transfer_image_to_long_term_storage()::Transfer requested on image whose capture has not yet finished.");
+	case ns_transferred_to_long_term_storage: {
+		if (behavior == ns_try_to_transfer_to_long_term_storage) {
+			//the final step in image transfer is to rename the image according to its central db id numbers.
+			//this is done by the capture schedule updator, so we keep updating the timestamp
+			//of the capture schedule so the capture schedule updator will keep trying to do the operation.
+			//note we only do this if 
+			sql << "UPDATE buffered_capture_schedule SET time_stamp = 0 WHERE id = " << capture_schedule_entry_id;
+			sql.send_query();
+		}
+		return false;
 	}
-
-	sql << "SELECT conversion_16_bit_low_bound, conversion_16_bit_high_bound FROM capture_samples WHERE id = " << sample_id;
+	case ns_transfer_complete:
+		throw ns_ex("ns_image_capture_data_manager::transfer_image_to_long_term_storage()::Transfer requested on image that has already been transferred.");
+	case ns_fatal_problem:
+		break; //everyone deserves a second chance
+	case ns_on_local_server_in_16bit:
+		image.specified_16_bit = true;
+		break;
+	case ns_on_local_server_in_8bit:
+		image.specified_16_bit = false;
+		break;
+	default:
+		throw ns_ex("ns_image_capture_data_manager::transfer_image_to_long_term_storage()::Requested transfer subject is in unknown transfer state:") << (int)initial_transfer_status;
+	}
+	if (behavior == ns_convert_and_compress_locally && initial_transfer_status == ns_on_local_server_in_8bit) {
+		transfer_status_debugger.set_status(image.device_name, ns_transfer_status("Waiting to transfer locally cached 8 bit image"));
+		return false;	//give up; there is nothing useful to do with 8 bit images until we can transfer them to the long term storage.
+	}
+	ns_capture_image_status final_transfer_status = initial_transfer_status;
+	sql << "SELECT conversion_16_bit_low_bound, conversion_16_bit_high_bound FROM buffered_capture_samples WHERE id = " << sample_id;
 	ns_sql_result res2;
 	sql.get_rows(res2);
 	if (res2.size() == 0)
@@ -298,66 +344,45 @@ void ns_image_capture_data_manager::transfer_image_to_long_term_storage_locked(n
 		conversion_16_bit_bounds.x = 0;  //DEFAULT crop bounds
 		conversion_16_bit_bounds.y = 200;  //DEFAULT crop bounds
 	}
-	
+
 	ns_64_bit time_during_transfer_to_long_term_storage;
 	ns_64_bit time_during_deletion_from_local_storage;
 
 	bool had_to_use_local_storage;
-	had_to_use_local_storage = transfer_data_to_long_term_storage(image,time_during_transfer_to_long_term_storage,time_during_deletion_from_local_storage, conversion_16_bit_bounds,sql);
-	
-	transfer_status = ns_transferred_to_long_term_storage;
-	if (had_to_use_local_storage)
-		transfer_status = ns_on_local_server_in_8bit;
+	had_to_use_local_storage = transfer_data_to_long_term_storage(image, time_during_transfer_to_long_term_storage, time_during_deletion_from_local_storage, conversion_16_bit_bounds, behavior, sql);
+
+	final_transfer_status = ns_transferred_to_long_term_storage;
+	if (had_to_use_local_storage) {
+		final_transfer_status = ns_on_local_server_in_8bit;
+		transfer_status_debugger.set_status(image.device_name, ns_transfer_status("Converted to 8 bit and stored locally"));
+	}
 	else
 		transfer_status_debugger.set_status(image.device_name,ns_transfer_status("Successfully transferred image to long term storage"));
 	
 
-	sql << "UPDATE capture_schedule SET transferred_to_long_term_storage = " << (int)transfer_status;
+	sql << "UPDATE buffered_capture_schedule SET transferred_to_long_term_storage = " << (int)final_transfer_status;
 	if (!had_to_use_local_storage){
-		sql << ", problem = 0"
+		sql //<< ", problem = 0"
 			<< ", time_during_transfer_to_long_term_storage = '" << time_during_transfer_to_long_term_storage
 			<< "', time_during_deletion_from_local_storage = '" << time_during_deletion_from_local_storage << "'";
 	}
-	else sql << ", problem = 1";
+	//else sql << ", problem = 1";
 	sql <<" WHERE id = " << capture_schedule_entry_id;
 	sql.send_query();
 
 	if (!had_to_use_local_storage){	
-		image_server.alert_handler.reset_alert_time_limit(ns_alert::ns_long_term_storage_error,sql);
-		image_server.alert_handler.reset_alert_time_limit(ns_alert::ns_volatile_storage_error,sql);
+		image_server.alert_handler.reset_alert_time_limit(ns_alert::ns_long_term_storage_error,&sql);
+		image_server.alert_handler.reset_alert_time_limit(ns_alert::ns_volatile_storage_error,&sql);
 	}
 
 	//mark capture sample being finished if its transfer is complete
-	if (had_to_use_local_storage)
+	if (final_transfer_status == ns_transfer_complete)
 		image.save(&sql,ns_image_server_captured_image::ns_mark_as_busy);
 	else image.save(&sql,ns_image_server_captured_image::ns_mark_as_not_busy);
 
 	sql.send_query("COMMIT");
-	//Capture images are collected in sets of three time points
-	//T=0, T= short_interval, and T= long_interval.
-	//Such information is stored in the sample_time_relationships db.
-	//We update the info here.
-	/*try{
-		ns_movement_database_maintainer db_maintainer;
-		//cerr << capture_specification.image.sample_id << " ";
-		//cerr << capture_specification.image.capture_time << "\n";
-		db_maintainer.build_sample_time_relationship_table_from_captured_images(image.sample_id,image.capture_time,sql);
-	}
-	catch(ns_ex & ex){
-		image_server.register_server_event(ns_image_server_event("Problem encountered during db_maintaner update after capture: ") << ex.text() << "\n");
-	}*/
-	if (!had_to_use_local_storage){
-		try{
-			//report new image to database (as it might be ready for processing)
-			ns_image_server_push_job_scheduler job_scheduler;
-
-			job_scheduler.report_capture_sample_image(vector<ns_image_server_captured_image>(1,image),sql);
-		}
-		catch(ns_ex & ex){
-			image_server.register_server_event(ns_image_server_event("Problem encountered reporting possible jobs resulting from the current capture: ") << ex.text() << "\n",&sql);
-			throw ex;
-		}
-	}
+	
+	return true;
 }
 
 struct ns_hptlts_arguments{
@@ -382,35 +407,37 @@ ns_thread_return_type ns_image_capture_data_manager::thread_start_handle_pending
 	ns_hptlts_arguments * arg(static_cast<ns_hptlts_arguments *>(thread_arguments));
 	ns_thread_return_type ret = 0;
 	
-	if (arg->capture_data_manager->storage_handler->test_connection_to_long_term_storage(true)){
-		for (unsigned int i = 0; i < arg->device_names.size(); i++){
-			try{
-		
-				ns_acquire_lock_for_scope device_lock(arg->capture_data_manager->device_transfer_state_lock,__FILE__,__LINE__);
-				if (arg->capture_data_manager->device_transfer_in_progress(arg->device_names[i])){
-					device_lock.release();
-					
-					arg->capture_data_manager->transfer_status_debugger.set_status(arg->device_names[i],ns_transfer_status("Transfer already in progress"));
-					continue;
-				}
-				arg->capture_data_manager->set_device_transfer_state(true,arg->device_names[i]);
-				device_lock.release();
+	ns_transfer_behavior transfer_behavior = ns_try_to_transfer_to_long_term_storage;
+	if (!arg->capture_data_manager->storage_handler->test_connection_to_long_term_storage(true))
+		transfer_behavior = ns_convert_and_compress_locally;
 
-				unsigned long ret(arg->capture_data_manager->handle_pending_transfers(arg->device_names[i]));
-				if (ret == 1) //sql error.  Stop trying for this round.
-					break;
-			}
-			catch(ns_ex & ex){
-				cerr << "\nns_image_capture_data_manager::thread_start_handle_pending_transfers_to_long_term_storage()::" << ex.text() << "\n";
-			}
-			catch(...){
-				cerr << "\nns_image_capture_data_manager::thread_start_handle_pending_transfers_to_long_term_storage():: error!\n";
-			}
-	
+	for (unsigned int i = 0; i < arg->device_names.size(); i++){
+		try{
+		
 			ns_acquire_lock_for_scope device_lock(arg->capture_data_manager->device_transfer_state_lock,__FILE__,__LINE__);
-			arg->capture_data_manager->set_device_transfer_state(false,arg->device_names[i]);
+			if (arg->capture_data_manager->device_transfer_in_progress(arg->device_names[i])){
+				device_lock.release();
+					
+				arg->capture_data_manager->transfer_status_debugger.set_status(arg->device_names[i],ns_transfer_status("Transfer already in progress"));
+				continue;
+			}
+			arg->capture_data_manager->set_device_transfer_state(true,arg->device_names[i]);
 			device_lock.release();
+
+			unsigned long ret(arg->capture_data_manager->handle_pending_transfers(arg->device_names[i], transfer_behavior));
+			if (ret == 1) //sql error.  Stop trying for this round.
+				break;
 		}
+		catch(ns_ex & ex){
+			cerr << "\nns_image_capture_data_manager::thread_start_handle_pending_transfers_to_long_term_storage()::" << ex.text() << "\n";
+		}
+		catch(...){
+			cerr << "\nns_image_capture_data_manager::thread_start_handle_pending_transfers_to_long_term_storage():: error!\n";
+		}
+	
+		ns_acquire_lock_for_scope device_lock(arg->capture_data_manager->device_transfer_state_lock,__FILE__,__LINE__);
+		arg->capture_data_manager->set_device_transfer_state(false,arg->device_names[i]);
+		device_lock.release();
 	}
 	
 
@@ -423,71 +450,90 @@ ns_thread_return_type ns_image_capture_data_manager::thread_start_handle_pending
 }
 
 
-unsigned long ns_image_capture_data_manager::handle_pending_transfers(const string & device_name){
-	
-	if (!storage_handler->test_connection_to_long_term_storage(true))
-		return 0;
+unsigned long ns_image_capture_data_manager::handle_pending_transfers(const string & device_name,ns_transfer_behavior & behavior){
+			
 	//cerr << "\nHandling Pending Transfers\n";
 	//return 0;
 	try{
-		//we want to avoid opening lots of sql connections, so we do the initial check for pending captures
+		//we want to avoid opening lots of sql connections, so we do the initial check for pending transfers
 		//on a shared connection.  Only if we find images needing to be transferred do we make a new sql connection.
 		ns_acquire_lock_for_scope sql_lock(check_sql_lock,__FILE__,__LINE__);
 		if (check_sql != 0){
 			try{
 				check_sql->clear_query();
 				check_sql->check_connection();
-				
 			}
 			catch(...){
 				ns_safe_delete(check_sql);
 			}
 		}
 		if (check_sql==0)
-			check_sql = image_server.new_sql_connection_no_lock_or_retry(__FILE__,__LINE__);
+			check_sql = image_server.new_local_buffer_connection_no_lock_or_retry(__FILE__,__LINE__);
 		if (check_sql == 0){
 			sql_lock.release();
 			return 1;
 		}
 	
-		unsigned long current_time = ns_current_time();
+		const unsigned long current_time = ns_current_time();
 
 		//We don't have to worry about concurrency problems, as a device is owned by only one cluster node.
-		check_sql->send_query("BEGIN");
-		*check_sql << "SELECT capture_schedule.id, capture_schedule.captured_image_id, capture_schedule.scheduled_time, capture_schedule.sample_id, capture_schedule.transferred_to_long_term_storage "
-			 << " FROM capture_schedule, capture_samples "
-			 << "WHERE capture_samples.device_name = '" << device_name
-			 << "' AND capture_samples.id = capture_schedule.sample_id"
-			 << " AND capture_schedule.time_at_start != 0"
-			 << " AND capture_schedule.time_at_finish != 0"
-			 << " AND capture_schedule.problem = 0"
-			 << " AND (capture_schedule.transferred_to_long_term_storage = " << (int)ns_on_local_server_in_16bit
-			 << "      || capture_schedule.transferred_to_long_term_storage = " << (int)ns_on_local_server_in_8bit << ") ";
-	//	std::string q(check_sql->query());
+		//check_sql->send_query("BEGIN");
+		*check_sql << "SELECT cs.id, cs.captured_image_id, cs.scheduled_time, "
+			"cs.sample_id, cs.transferred_to_long_term_storage "
+			 << " FROM buffered_capture_schedule as cs, buffered_capture_samples as s "
+			 << "WHERE s.device_name = '" << device_name
+			 << "' AND s.id = cs.sample_id"
+			 << " AND cs.time_at_start != 0"
+			 << " AND cs.time_at_finish != 0"
+			 << " AND cs.problem = 0"
+			 << " AND (cs.transferred_to_long_term_storage = " << (int)ns_on_local_server_in_16bit;
+		if (behavior != ns_convert_and_compress_locally) {
+			*check_sql << " || cs.transferred_to_long_term_storage = " << (int)ns_on_local_server_in_8bit
+					   << " || cs.transferred_to_long_term_storage = " << (int)ns_transferred_to_long_term_storage << ") ";
+		} 
+		else *check_sql << ")";
+		//	std::string q(check_sql->query());
 		ns_sql_result events;
 		check_sql->get_rows(events);
+		//check_sql->send_query("COMMIT");
 		sql_lock.release();
 		//do not use check_sql after this lock is released!
 
 		if (events.size() > 0){
-			ns_acquire_for_scope<ns_sql> sql(image_server.new_sql_connection(__FILE__,__LINE__));
-	//		cerr << q << "\n";
-	//		cerr << "Found " << events.size() << " pending captures\n";
+			ns_acquire_for_scope<ns_local_buffer_connection> sql(image_server.new_local_buffer_connection(__FILE__,__LINE__));
 			for (unsigned int i = 0; i < events.size(); i++){
+				const unsigned long start_time = ns_current_time();
+				const ns_capture_image_status transfer_status = (ns_capture_image_status)atol(events[i][4].c_str());
+				const ns_64_bit sample_id = ns_atoi64(events[i][3].c_str());
 				if (!storage_handler->test_connection_to_long_term_storage(true))
-					break;
+					behavior = ns_convert_and_compress_locally;
 				if (image_server.exit_has_been_requested)
 					break;
-			
-				ns_image_server_event ev;
-				ev << "Processing a pending image transfer to long term storage: " << device_name << "@" << ns_format_time_string_for_human(atol(events[i][2].c_str()));
-				image_server.register_server_event(ev,&sql());
+				bool handling_already_transferred_but_not_rename_file(transfer_status == ns_transferred_to_long_term_storage);
+
+				if (!handling_already_transferred_but_not_rename_file) {  //only output message for the initial transfer or conversion to 8 bit.
+					ns_image_server_event ev;
+					if (behavior == ns_try_to_transfer_to_long_term_storage)
+						ev << "Processing a pending image transfer to long term storage: " << device_name << "@" << ns_format_time_string_for_human(atol(events[i][2].c_str()));
+					else if (behavior == ns_convert_and_compress_locally)
+						ev << "No access to long term storage; compressing captured image and caching locally: " << device_name << "@" << ns_format_time_string_for_human(atol(events[i][2].c_str()));
+					else ev << "Unknown behavior specified: " << (int)behavior;
+					image_server.register_server_event(ev, &sql());
+				}
 				ns_image_server_captured_image im;
 				im.captured_images_id = ns_atoi64(events[i][1].c_str());
 				im.load_from_db(im.captured_images_id,&sql());
 				ns_64_bit capture_schedule_id = ns_atoi64(events[i][0].c_str());
 				try{
-					transfer_image_to_long_term_storage_locked(capture_schedule_id,im,sql());
+					const bool did_something = transfer_image_to_long_term_storage_locked(capture_schedule_id,im, sample_id,transfer_status, behavior,sql());
+					if (did_something) {
+						unsigned long duration;
+						if (i == 0)
+							duration = ns_current_time() - current_time;  //count all the initial mysql queries towards the time spent in the first transfer
+						else duration = ns_current_time() - start_time;
+						image_server.register_server_event(ns_image_server_event("Finished image transfer after ") << duration << " seconds", &sql());
+					}
+					else if (!handling_already_transferred_but_not_rename_file)std::cerr << "Wasted time on a useless transfer\n";
 				}
 				catch(ns_ex & ex){
 					cerr << "Error processing capture: " << ex.text() << "\n";
@@ -504,9 +550,9 @@ unsigned long ns_image_capture_data_manager::handle_pending_transfers(const stri
 
 					if(problem_id == 0)
 						problem_id = 1;
-					sql() << "UPDATE capture_schedule SET problem = " << problem_id << " WHERE id = " << capture_schedule_id;
+					sql() << "UPDATE buffered_capture_schedule SET problem = " << problem_id << " WHERE id = " << capture_schedule_id;
 					sql().send_query();	
-					sql() << "UPDATE captured_images SET problem = " << problem_id << " WHERE id = " << im.captured_images_id;
+					sql() << "UPDATE buffered_captured_images SET problem = " << problem_id << " WHERE id = " << im.captured_images_id;
 					sql().send_query();
 					sql().send_query("COMMIT");
 				}
@@ -515,9 +561,9 @@ unsigned long ns_image_capture_data_manager::handle_pending_transfers(const stri
 					ns_64_bit problem_id(image_server.register_server_event(ns_ex("ns_image_capture_data_manager::handle_pending_transfers()::Unknown Transfer Problem"),&sql()));
 					if(problem_id == 0)
 						problem_id = 1;
-					sql() << "UPDATE capture_schedule SET problem = " << problem_id << " WHERE id = " << capture_schedule_id;
+					sql() << "UPDATE buffered_capture_schedule SET problem = " << problem_id << " WHERE id = " << capture_schedule_id;
 					sql().send_query();	
-					sql() << "UPDATE captured_images SET problem = " << problem_id << " WHERE id = " << im.captured_images_id;
+					sql() << "UPDATE buffered_captured_images SET problem = " << problem_id << " WHERE id = " << im.captured_images_id;
 					sql().send_query();
 					sql().send_query("COMMIT");
 				}
@@ -586,6 +632,8 @@ bool ns_image_capture_data_manager::handle_pending_transfers_to_long_term_storag
 }
 
 bool ns_image_capture_data_manager::handle_pending_transfers_to_long_term_storage(const std::vector<std::string> & device_names ){
+	if (this->paused)
+		return false;
 	//cerr << "Handling transfer for " << device_name << "\n";
 	//NOTE! we originally checked to see if we're connected to long term storage here,
 	//but one failure mode is that the function connected_to_long_term_storage()
@@ -598,7 +646,7 @@ bool ns_image_capture_data_manager::handle_pending_transfers_to_long_term_storag
 	//first we check to see if any other threads are looking for pending jobs
 	ns_acquire_lock_for_scope pt_lock(pending_transfers_lock,__FILE__,__LINE__);
 	
-	if (pending_transfers_thread.is_running()){
+	if (pending_transfers_thread.is_running(true)){
 		pt_lock.release();
 		return false;
 	}

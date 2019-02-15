@@ -1123,6 +1123,17 @@ class ns_worm_terminal_main_menu_organizer : public ns_menu_organizer{
 			return;
 		worm_learner.rebuild_experiment_samples_from_disk(worm_learner.data_selector.current_experiment_id());
 	}
+	static void repair_captured_image_transfer_errors(const std::string & value) {
+		ns_choice_dialog c;
+		c.title = "Repairing experiment metadata from disk may corrupt any existing database contents for this experiment.\nYou should back up the database prior to attempting this.";
+		c.option_1 = "Continue";
+		c.option_2 = "Cancel";
+		ns_run_in_main_thread<ns_choice_dialog> b(&c);
+		if (c.result != 1)
+			return;
+		worm_learner.repair_captured_image_transfer_errors(worm_learner.data_selector.current_experiment_id());
+
+	}
 	static void rebuild_db_region_data_from_filenames(const std::string & value){
 		ns_choice_dialog c;
 		c.title = "Rebuilding experiment metadata from disk may corrupt any existing database contents for this experiment.\nYou should back up the database prior to attempting this.";
@@ -1394,6 +1405,7 @@ public:
 		add(ns_menu_item_spec(create_experiment_from_filenames, "Backup/Database Repair/_Create a new experiment in the database from images on disk"));
 		add(ns_menu_item_spec(rebuild_db_sample_data_from_filenames, "Backup/Database Repair/Add missing sample images on disk into current experiment"));
 		add(ns_menu_item_spec(rebuild_db_region_data_from_filenames, "Backup/Database Repair/Add missing region images on disk into current experiment"));
+		add(ns_menu_item_spec(repair_captured_image_transfer_errors, "Backup/Database Repair/Fix captured image transfer errors"));
 		//st4.options.push_back(ns_menu_item_options("Using Thermotolerance Parameter Range"));
 		//st4.options.push_back(ns_menu_item_options("Using Lifespan Parameter Range"));
 		//st4.options.push_back(ns_menu_item_options("Using Quiecent Lifespan Parameter Range"));
@@ -2878,7 +2890,7 @@ int main() {
 			ns_acquire_for_scope<ns_sql> sql(image_server.new_sql_connection(__FILE__,__LINE__));
 			ns_death_time_annotation_flag::get_flags_from_db(&sql());
 
-	
+			
 			ns_worm_browser_output_debug(__LINE__,__FILE__,"Refreshing partition cache");
 			image_server.image_storage.refresh_experiment_partition_cache(&sql());
 			

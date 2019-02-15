@@ -970,7 +970,7 @@ public:
 	void rename_output_file(const string & name){
 
 		image_server.image_storage.request_from_volatile_storage(temp_output_filename).input_stream().pump(
-		image_server.image_storage.request_volatile_storage<ns_8_bit>(name,1024,false).output_stream(),1024);
+		image_server.image_storage.request_volatile_storage<ns_8_bit>(name,1024,ns_tiff_lzw,false).output_stream(),1024);
 		image_server.image_storage.delete_from_volatile_storage(temp_output_filename);
 	}
 
@@ -1098,7 +1098,6 @@ bool ns_image_server_device_manager::hotplug_new_devices(const bool rescan_bad_b
 			ns_format_device_address(all_hardware[i].address);
 			hardware_address_assignments[all_hardware[i].address] = 0;
 		}
-		cerr << hardware_address_assignments.size() << " devices are currently detected.\n";
 
 		//check to see if any devices have been removed from the cluster,
 		//and update the local registry
@@ -1112,7 +1111,6 @@ bool ns_image_server_device_manager::hotplug_new_devices(const bool rescan_bad_b
 			try{
 
 				unsigned int dd = 0;
-				cerr << pre_existing_devices.size() << " devices previously recorded as attached.\n";
 				//match up each hardware address to a known scanner
 				for (vector<ns_image_server_device_manager_device *>::iterator device = pre_existing_devices.begin(); device != pre_existing_devices.end();++device){
 				//	cerr << dd << "/" << pre_existing_devices.size() << "\n";
@@ -1120,7 +1118,7 @@ bool ns_image_server_device_manager::hotplug_new_devices(const bool rescan_bad_b
 					//simulated scanners don't need to get matched up to hardware addresses
 					if ((*device)->device.is_simulated_device()){
 						devices.insert(ns_device_list::value_type((*device)->device.name,*device));
-						cerr << "Device " << (*device)->device.name << " remains connected as a simulated device.\n";
+						//cerr << "Device " << (*device)->device.name << " remains connected as a simulated device.\n";
 						continue;
 					}
 					map<std::string,ns_image_server_device_manager_device *>::iterator hardware_assignment(hardware_address_assignments.find((*device)->device.hardware_alias));
@@ -1130,21 +1128,21 @@ bool ns_image_server_device_manager::hotplug_new_devices(const bool rescan_bad_b
 						if ((*device)->device.unknown_identity() && rescan_bad_barcodes){
 							if (
 								(*device)->currently_scanning){
-								cerr << "Unknown device should be re-identified, but doing so is impossible as it is currently running.\n";
+								//cerr << "Unknown device should be re-identified, but doing so is impossible as it is currently running.\n";
 								hardware_assignment->second = *device;
 								std::pair<ns_device_list::iterator,bool> r (devices.insert(ns_device_list::value_type((*device)->device.name,*device)));
 								if (!r.second)
 									throw ns_ex("Very bad error: Unknown device \"") <<  (*device)->device.name << " connected at " << (*device)->device.hardware_alias << " was almost duplicated in the device map.  Shut down the server and debug!";
 							}
 							else{
-								cerr << "Unknown device " << (*device)->device.name << " remains connected at " << (*device)->device.hardware_alias << " but it's barcode will be scanned anyway.\n";
+								//cerr << "Unknown device " << (*device)->device.name << " remains connected at " << (*device)->device.hardware_alias << " but it's barcode will be scanned anyway.\n";
 								(*device)->device.set_default_unidentified_name();
 								devices_to_identify.push_back(*device);
 								hardware_assignment->second = *device;
 							}
 						}
 						else{
-							cerr << "Device " << (*device)->device.name << " remains connected at " << (*device)->device.hardware_alias << ".\n";
+							//cerr << "Device " << (*device)->device.name << " remains connected at " << (*device)->device.hardware_alias << ".\n";
 							hardware_assignment->second = *device;
 							std::pair<ns_device_list::iterator,bool> r(devices.insert(ns_device_list::value_type((*device)->device.name,*device)));
 							if (!r.second)
@@ -1153,7 +1151,7 @@ bool ns_image_server_device_manager::hotplug_new_devices(const bool rescan_bad_b
 					}
 					//if the scanner doens't have an extant hardware address, move it to the orphaned list.
 					else{
-						cerr << "Device " << (*device)->device.name << " appears to have been disconnected.\n";
+						//cerr << "Device " << (*device)->device.name << " appears to have been disconnected.\n";
 						orphaned_devices.push_back(*device);
 						changes_made = true;
 					}
@@ -1177,7 +1175,7 @@ bool ns_image_server_device_manager::hotplug_new_devices(const bool rescan_bad_b
 		//cerr << "handling orphans\n";
 		//handle orphaned devices
 		for (unsigned int i = 0; i < orphaned_devices.size(); ++i){
-			events_to_submit.push_back(ns_image_server_event("Device ") << orphaned_devices[i]->device.name << " appears to have been unplugged.  Removing it from the local registry...");
+			events_to_submit.push_back(ns_image_server_event("Device ") << orphaned_devices[i]->device.name << " appears to have been unplugged.  Removing it from the registry.");
 			//a scanner probably wont be both disconnected and still scanning
 			//but one can imagine an error state in which this is the case.
 			//thus we handle it by moving the scanner to the devices_pending_deletion purgatory
@@ -1209,9 +1207,8 @@ bool ns_image_server_device_manager::hotplug_new_devices(const bool rescan_bad_b
 
 			ns_image_server_device_manager_device * dev(new ns_image_server_device_manager_device("",p->first,ns_capture_device::ns_unknown_identity));
 			
-			dev->device.set_default_unidentified_name();
-			cerr << "Don't know anything about " << dev->device.name << ", looking for barcode...\n";
-	
+			dev->device.set_default_unidentified_name();	
+		
 			//make sure nobody grabs the current scanner before we're done with it.
 			dev->device.last_capture_failure_text = "Device has not had barcode scanned yet";
 			dev->device.error_state_has_been_recognized = true;
@@ -1239,15 +1236,22 @@ bool ns_image_server_device_manager::hotplug_new_devices(const bool rescan_bad_b
 void ns_image_server_device_manager::identify_new_devices(std::vector<ns_image_server_device_manager_device *> & unidentified_devices){
 	
 	ns_ex stored_ex;
-	ns_image_server_event e;
+	ns_image_server_event ev;
 	if (unidentified_devices.size() > 0)
-		e << (unsigned long)unidentified_devices.size() << " new devices found.  Requesting identification...\n";
-	image_server.register_server_event(ns_image_server::ns_register_in_local_db,e);
+		ev << "Requesting barcodes from " << (unsigned long)unidentified_devices.size() << " hardware addresses:\n";
 
 	std::vector<ns_scanner_ider> scanner_identifiers(unidentified_devices.size());
 
 	ns_acquire_lock_for_scope lock(device_list_access_lock,__FILE__,__LINE__);
-	
+	for (unsigned int i = 0; i < scanner_identifiers.size(); i++) {
+		ev << " " << unidentified_devices[i]->device.hardware_alias << "\n";
+	}
+	lock.release();
+
+	image_server.register_server_event(ns_image_server::ns_register_in_local_db, ev);
+
+	lock.get(__FILE__, __LINE__);
+	ev.clear_text();
 	//request barcode from scanner
 	for (unsigned int i = 0; i < scanner_identifiers.size(); i++){
 		try{
@@ -1256,17 +1260,19 @@ void ns_image_server_device_manager::identify_new_devices(std::vector<ns_image_s
 				unidentified_devices[i]->device.send_hardware_reset();
 			}
 			catch(ns_ex & ex){
-				cerr << ex.text() << "\n";
+				ev << ex.text() << "\n";
 			}
 		}
 		catch(ns_ex & ex){
-			image_server.register_server_event(ns_image_server::ns_register_in_local_db,ex);
+			ev << ex.text() << "\n";
 		}
 		pause_to_keep_usb_sane();
 		scanner_identifiers[i].read_barcode(*unidentified_devices[i]);
 	}
 	lock.release();
-	
+
+	image_server.register_server_event(ns_image_server::ns_register_in_local_db, ev);
+
 	bool finished_reading_barcodes(false);
 	while(!finished_reading_barcodes){
 		finished_reading_barcodes = true;
@@ -1285,16 +1291,15 @@ void ns_image_server_device_manager::identify_new_devices(std::vector<ns_image_s
 				//in the usb drivers).  We give each scanner 3 tries to work.
 
 				if (scanner_identifiers[i].number_of_failed_capture_attempts()){
-					if (scanner_identifiers[i].number_of_failed_capture_attempts() < 3){
-						image_server.register_server_event(ns_image_server::ns_register_in_local_db,ns_image_server_event( "Barcode read on device ") << 
-							unidentified_devices[i]->device.hardware_alias << " (Attempt #" << scanner_identifiers[i].number_of_failed_capture_attempts() 
-							<< ") produced an error: " << scanner_identifiers[i].error());
+					if (scanner_identifiers[i].number_of_failed_capture_attempts() < 2){
+						image_server.register_server_event(ns_image_server::ns_register_in_local_db, ns_image_server_event("Could not read barcode from address") <<
+							unidentified_devices[i]->device.hardware_alias << ": " << scanner_identifiers[i].error() << "\nRetrying...");
 						finished_reading_barcodes = false;
 						scanner_identifiers[i].read_barcode(*unidentified_devices[i]);
 						//keep USB sane
 					}
 					else {
-						image_server.register_server_event(ns_image_server::ns_register_in_local_db,ns_image_server_event("Giving up on device ") << 	unidentified_devices[i]->device.hardware_alias);
+						image_server.register_server_event(ns_image_server::ns_register_in_local_db,ns_image_server_event("Could not read barcode from address ") << 	unidentified_devices[i]->device.hardware_alias);
 					}
 				}
 			}
@@ -1330,8 +1335,12 @@ void ns_image_server_device_manager::identify_new_devices(std::vector<ns_image_s
 		else{
 			//the scanner didn't produce an intelligible response, so we give up
 
-			ns_image_server_event ev(unidentified_devices[i]->device.hardware_alias);
-			ev << " did not produce a legible barcode (" << scanner_identifiers[i].device_name() << "):" << scanner_identifiers[i].error();
+			ns_image_server_event ev("The device at ");
+			ev << unidentified_devices[i]->device.hardware_alias;
+			ev << " did not produce a legible barcode";
+			if (scanner_identifiers[i].error().empty())
+				ev << ". The barcode was \"" << scanner_identifiers[i].device_name() << "\"";
+			else ev << ", instead producing the error: " << scanner_identifiers[i].error();
 			try{
 				image_server.register_server_event(ns_image_server::ns_register_in_local_db,ev);
 			}
@@ -1404,13 +1413,14 @@ void ns_image_server_device_manager::save_last_known_device_configuration(){
 		throw;
 	}
 }
-void ns_image_server_device_manager::output_connected_devices(ostream & o){
-	ns_acquire_lock_for_scope lock(device_list_access_lock,__FILE__,__LINE__);
-	for (ns_device_list::iterator p = devices.begin(); p != devices.end(); ++p){
-		o << p->second->device.name << "\t@" <<p->second->device.hardware_alias<< "\n";
+void ns_image_server_device_manager::output_connected_devices(ostream & o) {
+	ns_acquire_lock_for_scope lock(device_list_access_lock, __FILE__, __LINE__);
+	for (ns_device_list::iterator p = devices.begin(); p != devices.end(); ++p) {
+		o << p->second->device.name << "\t@" << p->second->device.hardware_alias << "\n";
 	}
 	lock.release();
 }
+
 bool ns_image_server_device_manager::load_last_known_device_configuration(){
 
 	ns_acquire_for_scope<ifstream> in(image_server.read_device_configuration_file());
@@ -1425,7 +1435,7 @@ bool ns_image_server_device_manager::load_last_known_device_configuration(){
 			break;
 		//allow comments
 		if (first == '#'){
-			while(in().fail() && first != '\n')
+			while (!in().fail() && first != '\n') 
 				first = in().get();
 			if (in().fail())
 				throw ns_ex("ns_image_server::load_last_known_device_configuration()::Invalid syntax");
@@ -1464,7 +1474,16 @@ bool ns_image_server_device_manager::load_last_known_device_configuration(){
 	}
 	in().close();
 	in.release();
-	string boot_time(ns_system_boot_time_str());
+	const string boot_time(ns_system_boot_time_str());
+	//Some systems, in particularly the current version of raspberry pi, always report
+	//their boot time as 1970-01-01 01:00 .  In this case, we always must recheck all scanners
+	const string bad_time("1970-01-01");
+	if (boot_time.find(bad_time) != boot_time.npos ||
+		file_specified_last_boot_time.find(bad_time) != file_specified_last_boot_time.npos) {
+		ns_image_server_event ev("Could not identify the time of the last system reboot.  Rebuilding device list.");
+		image_server.register_server_event_no_db(ev);
+		return false;
+	}
 	if (file_specified_last_boot_time != boot_time){
 		ns_image_server_event ev("A reboot appears to have occurred (system log: ");
 		ev << boot_time;

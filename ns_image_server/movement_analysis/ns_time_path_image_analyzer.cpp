@@ -4929,12 +4929,12 @@ void ns_analyzed_image_time_path::save_movement_images(const ns_analyzed_time_im
 					output_image.save_to_db(output_image.id, &sql);
 				if (output_image.filename == ".tif")
 					throw ns_ex("Invalid filename");
-				output_reciever = new ns_image_storage_reciever_handle<ns_8_bit>(image_server_const.image_storage.request_storage(output_image, ns_tiff_lzw, 1.0, save_output_buffer_height, &sql, had_to_use_volatile_storage, false, false));
+				output_reciever = new ns_image_storage_reciever_handle<ns_8_bit>(image_server_const.image_storage.request_storage(output_image, ns_tiff_lzw, 1.0, save_output_buffer_height, &sql, had_to_use_volatile_storage, false, ns_image_storage_handler::ns_forbid_volatile));
 			}
 			if (save_flow_image) {
 				if (ns_fix_filename_suffix(output_image.filename, ns_tiff_zip))
 					output_image.save_to_db(output_image.id, &sql);
-				flow_output_reciever = new ns_image_storage_reciever_handle<float>(image_server_const.image_storage.request_storage_float(flow_output_image, ns_tiff_zip, 1.0, save_output_buffer_height, &sql, had_to_use_volatile_storage, false, false));
+				flow_output_reciever = new ns_image_storage_reciever_handle<float>(image_server_const.image_storage.request_storage_float(flow_output_image, ns_tiff_zip, 1.0, save_output_buffer_height, &sql, had_to_use_volatile_storage, false, ns_image_storage_handler::ns_forbid_volatile));
 			}
 		}
 	}
@@ -6698,7 +6698,7 @@ void ns_time_path_image_movement_analyzer::generate_movement_posture_visualizati
 		 ns_image_server_image im(reg.create_storage_for_processed_image(ns_process_movement_posture_visualization, ns_tiff, &sql));
 		 try {
 			 bool had_to_use_volatile_storage;
-			 ns_image_storage_reciever_handle<ns_8_bit> r(image_server_const.image_storage.request_storage(im, ns_tiff, compression_rate_f, 1024, &sql, had_to_use_volatile_storage, false, false));
+			 ns_image_storage_reciever_handle<ns_8_bit> r(image_server_const.image_storage.request_storage(im, ns_tiff, compression_rate_f, 1024, &sql, had_to_use_volatile_storage, false, ns_image_storage_handler::ns_forbid_volatile));
 			 output_image.pump(r.output_stream(), 1024);
 			 r.clear();
 			 im.mark_as_finished_processing(&sql);
@@ -6737,7 +6737,7 @@ void ns_time_path_image_movement_analyzer::generate_movement_posture_visualizati
 					 }
 					 ns_image_server_image im2(reg.create_storage_for_processed_image(ns_process_movement_plate_and_individual_visualization, ns_tiff, &sql));
 					 bool had_to_use_volatile_storage;
-					 ns_image_storage_reciever_handle<ns_8_bit> r2(image_server_const.image_storage.request_storage(im2, ns_tiff, compression_rate_f, 1024, &sql, had_to_use_volatile_storage, false, false));
+					 ns_image_storage_reciever_handle<ns_8_bit> r2(image_server_const.image_storage.request_storage(im2, ns_tiff, compression_rate_f, 1024, &sql, had_to_use_volatile_storage, false, ns_image_storage_handler::ns_forbid_volatile));
 					 composit_temp.pump(r2.output_stream(), 1024);
 					 r2.clear();
 					 im2.mark_as_finished_processing(&sql);

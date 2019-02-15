@@ -9,7 +9,7 @@
 #include "ns_usb.h"
 using namespace std;
 
-#define capture_buffer_size 1024*1024
+#define capture_buffer_size 1024*512
 class ns_scanner_list_compiler{
 public:
 	ns_scanner_list_compiler():delayed_ex_thrown(false){}
@@ -187,8 +187,8 @@ public:
 			im[prop.height/2][x] = white;
 		for (unsigned int y = 0; y < prop.height; y++)
 			im[y][800] = white;
-
-		ns_image_storage_reciever_handle<ns_component> out(image_server.image_storage.request_volatile_storage<ns_component>(filename,1024,false));
+		
+		ns_image_storage_reciever_handle<ns_component> out(image_server.image_storage.request_volatile_storage<ns_component>(filename,1024,ns_tiff_uncompressed));
 		im.pump(out.output_stream(),1024);
 	}
 };
@@ -304,7 +304,7 @@ void ns_capture_device::capture(ns_image_capture_specification & c){
 	string result;
 	string error;
 	char * buf = new char[capture_buffer_size];
-	unsigned int counter = 50;
+	unsigned int counter = 50*1024;
 	char b('-');
 	if(this->name.size() > 0)
 		b=this->name[0];
@@ -328,19 +328,19 @@ void ns_capture_device::capture(ns_image_capture_specification & c){
 				i = exec.read_stdout(buf,capture_buffer_size);
 				
 				if (total_bytes_read == 0){
-					c.speed_regulator.register_start();
+			//		c.speed_regulator.register_start();
 					c.time_at_imaging_start = ns_current_time();
 					total_clock.start();
 				}
 				else
 					c.time_spent_reading_from_device += read_clock.stop();
 				
-				c.speed_regulator.register_data_as_received(i);
+			//	c.speed_regulator.register_data_as_received(i);
 				total_bytes_read += i;
 				if (i == 0){
 					c.total_time_during_read = 	total_clock.stop();
 					c.time_at_imaging_stop = ns_current_time();
-					c.speed_regulator.register_stop();
+			//		c.speed_regulator.register_stop();
 					break;
 				}
 				if (c.volatile_storage != 0){
@@ -348,9 +348,9 @@ void ns_capture_device::capture(ns_image_capture_specification & c){
 					c.volatile_storage->write(buf,i);
 					c.time_spent_writing_to_disk += write_clock.stop();
 				}
-				c.total_time_spent_during_programmed_delay += c.speed_regulator.run_delay_if_necessary();
+		//		c.total_time_spent_during_programmed_delay += c.speed_regulator.run_delay_if_necessary();
 			
-				if (counter >= 50){
+				if (counter*capture_buffer_size >= 50*1024*1024){
 					counter = 0;
 					cerr << '<' << b << '>';
 				}

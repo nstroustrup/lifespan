@@ -1276,8 +1276,10 @@ bool ns_detected_worm_info::is_a_worm(){
 }
 
 bool ns_detected_worm_info::is_a_worm(const ns_svm_model_specification & model){
-
 	#ifdef NS_USE_MACHINE_LEARNING
+
+	if (model.flag == ns_svm_model_specification::ns_accept_all_objects)
+		return true;
 		#ifdef ALLOW_ALL_SPINE_PERMUTATIONS
 		return true;
 		#endif
@@ -1852,7 +1854,7 @@ void ns_image_worm_detection_results::save(ns_image_server_captured_image_region
 		if (res.empty())
 			cur_id = 0;
 		else cur_id = ns_atoi64(res[0][0].c_str());
-		stats.submit_to_db(cur_id, sql, false, true);
+		stats.submit_to_db(cur_id, &sql, false, true);
 		need_to_update_stat_id = stats.db_id != cur_id;
 	}
 

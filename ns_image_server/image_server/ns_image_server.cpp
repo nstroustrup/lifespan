@@ -31,16 +31,16 @@ using namespace std;
 
 void ns_image_server_global_debug_handler(const ns_text_stream_t & t);
 
-ns_image_server::ns_image_server() : exit_has_been_requested(false),exit_happening_now(false), handling_exit_request(false), ready_to_exit(false), update_software(false),
+ns_image_server::ns_image_server() : exit_has_been_requested(false),exit_happening_now(false), handling_exit_request(false), ready_to_exit(true), update_software(false),
 sql_lock("ns_is::sql"), server_event_lock("ns_is::server_event"), performance_stats_lock("ns_pfl"), simulator_scan_lock("ns_is::sim_scan"), local_buffer_sql_lock("ns_is::lb"), processing_run_counter_lock("ns_pcl"),
-_act_as_processing_node(true), cleared(false), do_not_run_multithreaded_jobs(false),
+_act_as_processing_node(true), exit_lock("ns_is::el"),cleared(false), do_not_run_multithreaded_jobs(false),
 #ifndef NS_ONLY_IMAGE_ACQUISITION
 image_registration_profile_cache(1024 * 4), //allocate 4 gigabytes of disk space in which to store reference images for capture sample registration
 storyboard_cache(0),worm_detection_model_cache(0),posture_analysis_model_cache(0),
 #endif
 _verbose_debug_output(false), _cache_subdirectory("cache"), sql_database_choice(possible_sql_databases.end()), next_scan_for_problems_time(0),
 _terminal_window_scale_factor(1), _system_parallel_process_id(0), _allow_multiple_processes_per_system(false),sql_table_lock_manager(this),
-alert_handler_lock("ahl"), max_external_thread_id(1),currently_experiencing_a_disk_storage_emergency(false),verbose_disk_storage_reporting(false), last_verbose_disk_storage_reporting_time(0){
+alert_handler_lock("ahl"), max_external_thread_id(1),currently_experiencing_a_disk_storage_emergency(false),verbose_disk_storage_reporting(false), last_verbose_disk_storage_reporting_time(0), survival_data_cache(1){
 
 	ns_socket::global_init();
 	#ifndef NS_ONLY_IMAGE_ACQUISITION
@@ -74,6 +74,10 @@ void ns_image_server::toggle_central_mysql_server_connection_error_simulation()c
 	if (ns_sql_connection::unreachable_hostname().empty())
 		ns_sql_connection::simulate_unreachable_mysql_server(sql_server_addresses[0],true);
 	else ns_sql_connection::simulate_unreachable_mysql_server(sql_server_addresses[0],false);
+}
+
+void ns_image_server::toggle_long_term_storage_server_connection_error_simulation() const {
+	image_storage.simulate_long_term_storage_errors = !image_storage.simulate_long_term_storage_errors;
 }
 
 std::string  ns_image_server::video_compilation_parameters(const std::string & input_file, const std::string & output_file, const unsigned long number_of_frames, const std::string & fps, ns_sql & sql)const{
@@ -668,6 +672,7 @@ void ns_image_server::reconnect_sql_connection(ns_sql * sql){
 ns_sql * ns_image_server::new_sql_connection_no_lock_or_retry(const std::string & source_file, const unsigned int source_line) const{
 	ns_sql *con(0);
 	con = new ns_sql();
+	//con->local_locking_behavior = ns_thread_locking;
 	try{
 
 		for (std::vector<string>::size_type server_i=0;  server_i < sql_server_addresses.size(); server_i++){
@@ -690,7 +695,15 @@ ns_sql * ns_image_server::new_sql_connection_no_lock_or_retry(const std::string 
 
 ns_local_buffer_connection * ns_image_server::new_local_buffer_connection(const std::string & source_file, const unsigned int source_line, const bool select_default_database){
 	ns_acquire_lock_for_scope lock(local_buffer_sql_lock,__FILE__,__LINE__);
-	ns_local_buffer_connection * buf(new_local_buffer_connection_no_lock_or_retry(source_file,source_line, select_default_database));
+	ns_local_buffer_connection * buf;
+	try{
+	  buf = (new_local_buffer_connection_no_lock_or_retry(source_file,source_line, select_default_database));
+	}
+	catch(ns_ex & ex){
+	  ns_ex ex2("Problem connecting to local buffer:");
+	  ex2 << ex.text() << ns_sql_fatal;
+	  throw ex2;
+	}
 	lock.release();
 	return buf;
 }
@@ -790,6 +803,15 @@ void ns_image_server::request_database_from_db_and_switch_to_it(ns_sql & sql, bo
 	sql.get_rows(res);
 	if (res.size() == 0)
 		return;
+	//nothing needs doing if we are already at the correct database.
+	ns_acquire_lock_for_scope lock(sql_lock,__FILE__, __LINE__);
+	if (*sql_database_choice == res[0][0]) {
+		lock.release();
+		return;
+	}
+	lock.release();
+
+
 	try{
 		set_sql_database(res[0][0], update_hosts_records_in_db,&sql);
 	}
@@ -827,7 +849,7 @@ void ns_image_server::set_sql_database(const std::string & database_name,const b
 		unregister_host(sql);
 		clear_processing_status(sql);
 	}
-	image_server.sql_lock.wait_to_acquire(__FILE__, __LINE__);
+	sql_lock.wait_to_acquire(__FILE__, __LINE__);
 	std::vector<std::string>::const_iterator p = std::find(possible_sql_databases.begin(),possible_sql_databases.end(),database_name);
 	if (p == possible_sql_databases.end()){
 		p = possible_sql_databases.insert(possible_sql_databases.end(),database_name);
@@ -835,17 +857,24 @@ void ns_image_server::set_sql_database(const std::string & database_name,const b
 	sql_database_choice = p;
 	sql->select_db(database_name);
 	ns_death_time_annotation_flag::get_flags_from_db(sql);
-	image_server.sql_lock.release();
+	sql_lock.release();
 	if (update_hosts_records_in_db){
-		image_server.register_host(sql,true,false);
-		image_server.register_devices(false,sql);
+		register_host(sql,true,false);
+		register_devices(false,sql);
 	}
 }
 
+bool ns_sql_column_exists(const char * table, const char * column, ns_sql_connection * sql){
+	*sql << "SHOW COLUMNS FROM " << table << " WHERE field = '" << column << "'";
+	ns_sql_result res;
+	sql->get_rows(res);
+	return !res.empty();
+}
 bool ns_sql_column_exists(const std::string & table, const std::string & column,ns_sql_connection * sql){
 	*sql << "SHOW COLUMNS FROM " << table << " WHERE field = '" << column << "'";
 	ns_sql_result res;
 	sql->get_rows(res);
+	
 	return !res.empty();
 }
 bool ns_image_server::upgrade_tables(ns_sql_connection * sql, const bool just_test_if_needed, const std::string & schema_name, const bool updating_local_buffer) {
@@ -2109,7 +2138,7 @@ ns_sql * ns_image_server::new_sql_connection(const std::string & source_file, co
 	ns_sql *con(0);
 	unsigned long try_count(0);
 	con = new ns_sql();
-
+	//con->local_locking_behavior = ns_sql_connection::ns_thread_locking;
 	unsigned long start_address_id = 0;
 
 	try{
@@ -2739,13 +2768,15 @@ if (_act_as_processing_node)
 
 	//	_local_exec_path = constants["local_exec_path"];
 		std::string specified_simulated_device_name(constants["simulated_device_name"]);
-		if (specified_simulated_device_name == "" || specified_simulated_device_name== ".")
-			specified_simulated_device_name = "sim";
-		_simulated_device_name = base_host_name + "_" + image_server.system_host_name + "_" + specified_simulated_device_name;
+		if (specified_simulated_device_name== ".")
+			specified_simulated_device_name = "";
+		_simulated_device_name = specified_simulated_device_name;
 		for (unsigned int i = 0; i < _simulated_device_name.size(); i++){
 			if (!isalpha(_simulated_device_name[i]) && !isdigit(_simulated_device_name[i]))
 				_simulated_device_name[i] = '_';
 		}
+		if (specified_simulated_device_name.length() > 23)
+			throw ns_ex("Simulated device name is too large.");
 		_maximum_allowed_local_scan_delay = 0;
 		_maximum_allowed_remote_scan_delay = 0;
 		if (_simulated_device_name.size() < 2)
@@ -2856,7 +2887,9 @@ void ns_image_server::set_console_window_title(const string & title) const{
 
 
 void ns_image_server::shut_down_host(){
+	exit_lock.wait_to_acquire(__FILE__,__LINE__);
 	exit_has_been_requested = true;
+	exit_lock.release();
 	//shut down the dispatcher
 	if (!send_message_to_running_server(NS_QUIT))
 		throw ns_ex("Could not submit shutdown command to ") << image_server.dispatcher_ip() << ":" << image_server.dispatcher_port() << ".";
@@ -2940,6 +2973,7 @@ void ns_svm_model_specification::read_included_stats(const std::string & filenam
 	unsigned long statistics_used(0);
 	string stat_str;
 	int state(0);
+	bool no_flags_found(false);
 	while(true){
 		char a;
 		a = in.get();
@@ -2951,6 +2985,16 @@ void ns_svm_model_specification::read_included_stats(const std::string & filenam
 			else{
 				if (stat_str.size() == 0)
 					continue;  //skip leading whitespace
+
+				if (!no_flags_found) {  //special flags can be specified in the included statistics flag.
+										//if one is found, set the flag and stop looking for any range info.
+					if (stat_str == "ACCEPT_ALL_OBJECTS") {
+						//cerr << stat_str << "\n";
+						this->flag = ns_svm_model_specification::ns_accept_all_objects;
+						return;
+					}
+					no_flags_found = true;
+				}
 				int stat_specified = atol(stat_str.c_str());  //we've read in the entire number
 				if (stat_specified >= included_statistics.size())
 					throw ns_ex("ns_model_specification::Invalid statistic specified ") << stat_specified;
@@ -3032,7 +3076,7 @@ void ns_image_server::add_subtext_to_current_event(const char * str, ns_image_se
 	if (sql != 0) {
 		std::map<ns_64_bit, ns_thread_output_state>::iterator current_thread_state = get_current_thread_state_info(impersonate_using_internal_thread_id);
 
-		*sql << "UPDATE host_event_log SET sub_text = CONCAT(sub_text,'" << sql->escape_string(str) << "') WHERE id = " << current_thread_state->second.last_event_sql_id;
+		*sql << "UPDATE " << sql->table_prefix() << "host_event_log SET sub_text = CONCAT(sub_text,'" << sql->escape_string(str) << "') WHERE id = " << current_thread_state->second.last_event_sql_id;
 		sql->send_query();
 	}
 	if (!suppress_display)

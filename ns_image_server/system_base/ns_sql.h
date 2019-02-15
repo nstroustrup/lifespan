@@ -1,6 +1,7 @@
 #ifndef NS_SQL
 #define NS_SQL
 #include "ns_ex.h"
+#include "ns_thread.h"
 #ifdef _WIN32
 //#include <winsock2.h>
 #include <sys/locking.h>
@@ -74,9 +75,14 @@ private:
 //This class encapsulates mySQL behavior
 class ns_sql_connection{
  public:
-	 ns_sql_connection():commit(true),_retry_count(0),mysql_internal_data_allocated(false){}
-  ns_sql_connection(const std::string & server_name, const std::string & user_id, const std::string & password, const unsigned int retry_count):commit(true),mysql_internal_data_allocated(false)
+
+	 typedef enum { ns_no_locking, ns_global_locking, ns_thread_locking } ns_locking_behavior;
+
+	 ns_sql_connection():commit(true),_retry_count(0),mysql_internal_data_allocated(false), local_locking_behavior(ns_no_locking),local_lock("lsqll"){}
+	 ns_sql_connection(const std::string & server_name, const std::string & user_id, const std::string & password, const unsigned int retry_count):local_locking_behavior(ns_no_locking),commit(true),mysql_internal_data_allocated(false)
     { connect(server_name, user_id, password, retry_count);}
+
+	 ns_locking_behavior local_locking_behavior;
 
   //connects to a remote SQL server.
   void connect(const std::string & server_name, const std::string & user_id, const std::string & password, const unsigned int retry_count);
@@ -128,16 +134,20 @@ class ns_sql_connection{
   void set_autocommit(const bool & commit_);
   bool autocommit_state() const {return commit;}
 
-  void clear_query(){current_query.clear();}
+  void clear_query();
 
   ~ns_sql_connection();
 
   const std::string & hostname() const { return _server_name; }
+
+  friend class ns_sql_full_table_lock;
+  ns_sql_connection(const ns_sql_connection &) = delete;
  private:
   static std::string unreachable_host;
-  void simulate_errors_if_requested() const;
+  void simulate_errors_if_requested();
   bool should_simulate_as_unreachable(const std::string & host) const;
-  
+  ns_lock local_lock;
+  static ns_lock global_sql_lock;
    ns_query current_query;
    bool commit;
 
@@ -146,9 +156,11 @@ class ns_sql_connection{
 			_password;
 	unsigned int _retry_count;
 
-	std::string latest_error();
+	std::string latest_error(const bool lock_needed=true);
    ns_mysql_header::MYSQL mysql;
    bool mysql_internal_data_allocated;
+
+   ns_acquire_lock_for_scope get_lock(const char * file, unsigned long line, bool check_for_allocation=true);
 };
 
 struct ns_table_to_lock{

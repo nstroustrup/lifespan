@@ -29,10 +29,14 @@ private:
 
 struct ns_buffered_capture_schedule_table_info{
 	long id_column,
-				  problem_column,
-				  image_id_column,
-				  timestamp_column,
-				  time_at_finish_column;
+		problem_column,
+		captured_image_id_column,
+		timestamp_column,
+		time_at_finish_column,
+		transfer_status_column,
+		experiment_id_column,
+		sample_id_column,
+		time_at_imaging_start_column;
 	void load_if_needed(ns_image_server_sql * sql){
 		if (!table_format.loaded())
 			load(sql);
@@ -42,10 +46,14 @@ struct ns_buffered_capture_schedule_table_info{
 		std::vector<ns_table_column_spec> spec;
 		spec.push_back(ns_table_column_spec("id",&id_column));
 		spec.push_back(ns_table_column_spec("problem",&problem_column));
-		spec.push_back(ns_table_column_spec("captured_image_id",&image_id_column));
+		spec.push_back(ns_table_column_spec("captured_image_id",&captured_image_id_column));
 		spec.push_back(ns_table_column_spec("problem",&problem_column));
 		spec.push_back(ns_table_column_spec("time_stamp",&timestamp_column));
 		spec.push_back(ns_table_column_spec("time_at_finish",&time_at_finish_column));
+		spec.push_back(ns_table_column_spec("transferred_to_long_term_storage", &transfer_status_column));
+		spec.push_back(ns_table_column_spec("experiment_id", &experiment_id_column));
+		spec.push_back(ns_table_column_spec("sample_id", &sample_id_column));
+		spec.push_back(ns_table_column_spec("time_at_imaging_start", &time_at_imaging_start_column));
 		
 		table_format.get_column_name_indicies(spec);
 	}
@@ -61,7 +69,8 @@ struct ns_capture_schedule_table_info{
 		 censored_column,
 		 transferred_to_long_term_storage_column,
 		 time_during_transfer_to_long_term_storage_column,
-		 time_during_deletion_from_local_storage_column;
+		 time_during_deletion_from_local_storage_column,
+		 captured_image_id_column;
 
 	void load_if_needed(ns_image_server_sql * sql){
 		if (!table_format.loaded())
@@ -80,7 +89,8 @@ struct ns_capture_schedule_table_info{
 		spec.push_back(ns_table_column_spec("transferred_to_long_term_storage",&transferred_to_long_term_storage_column));
 		spec.push_back(ns_table_column_spec("time_during_transfer_to_long_term_storage",&time_during_transfer_to_long_term_storage_column));
 		spec.push_back(ns_table_column_spec("time_during_deletion_from_local_storage",&time_during_deletion_from_local_storage_column));
-		spec.push_back(ns_table_column_spec("time_stamp",&time_stamp_column));
+		spec.push_back(ns_table_column_spec("time_stamp", &time_stamp_column));
+		spec.push_back(ns_table_column_spec("captured_image_id",&captured_image_id_column));
 		table_format.get_column_name_indicies(spec);
 	}
 	ns_table_format_processor table_format;
@@ -97,7 +107,7 @@ public:
 	enum {ns_default_update_time=413096400};
 	//time_of_last_update_from_central_db must be set to the past to trigger an update when an image server starts.
 	//however, mysql timestamp collumns can't handle '0' values and so we chose something larger
-	ns_buffered_capture_scheduler():image_capture_data_manager(image_server.image_storage),time_of_last_update_from_central_db(ns_default_update_time,ns_default_update_time),buffer_capture_scheduler_lock("ns_buffer_capture_scheduler_lock")
+	ns_buffered_capture_scheduler():image_capture_data_manager(image_server.image_storage),time_of_last_update_from_central_db(ns_default_update_time,ns_default_update_time), pause_local_central_db_updates(false),buffer_capture_scheduler_lock("ns_buffer_capture_scheduler_lock")
 	{}
 
 
@@ -114,7 +124,11 @@ public:
 
 	void get_last_update_time(ns_local_buffer_connection & local_buffer_sql);
 	static void store_last_update_time_in_db(const ns_synchronized_time & time,ns_local_buffer_connection & sql);
-
+	void pause_local_db_updates(bool pause) {
+		buffer_capture_scheduler_lock.wait_to_acquire(__FILE__, __LINE__);
+		pause_local_central_db_updates = pause;
+		buffer_capture_scheduler_lock.release();
+	}
 private:
 	ns_image_server_device_manager * device_manager;
 
@@ -129,6 +143,7 @@ private:
 	ns_table_format_processor experiments,
 							  capture_samples;
 	ns_lock buffer_capture_scheduler_lock;
+	bool pause_local_central_db_updates;
 		
 };
 

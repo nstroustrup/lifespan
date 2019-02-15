@@ -8,6 +8,8 @@
 #include "ns_heat_map_interpolation.h"
 #include "ns_captured_image_statistics_set.h"
 #include "ns_image_server_time_path_inferred_worm_aggregator.h"
+#include "ns_worm_morphology_data_integrator.h"
+
 
 
 
@@ -383,51 +385,36 @@ time_path_image_analyzer.write_posture_analysis_optimization_data(2, thresholds,
 //This function
 //1) Recalculates the subregion information based on the latest subregion mask (eg. are worms on the agar lawn or not?
 //2)  Recalculates the movement state data including by hand annotations of worm death times and /importantly/ excluding objects excluded by the worm browser.
-void ns_refine_image_statistics(const ns_64_bit region_id, const bool recalculate_worm_morphology_from_images,std::ostream & out, ns_sql & sql) {
+void ns_refine_image_statistics(const ns_64_bit region_id, const bool recalculate_worm_morphology_from_images, std::ostream & out, ns_sql & sql) {
 
-	ns_time_path_solution solution;
-	solution.load_from_db(region_id, sql, false);
+	ns_worm_morphology_data_integrator morphology_data_integrator;
+
+	image_server.add_subtext_to_current_event("Loading metadata...", &sql);
+	morphology_data_integrator.load_data_and_annotations_from_db(region_id, sql);
 
 	//update the subregion id label for each detected object
-	
-	solution.identify_subregions_labels_from_subregion_mask(region_id, sql);
-	solution.save_to_db(region_id, sql);
+	{
+		morphology_data_integrator.solution.identify_subregions_labels_from_subregion_mask(region_id, sql);
+		morphology_data_integrator.solution.save_to_db(region_id, sql);
 
-	ns_image_server_results_subject results_subject;
-	results_subject.region_id = region_id;
+		ns_image_server_results_subject results_subject;
+		results_subject.region_id = region_id;
 
-	//load the movement image analyzer and use it to collate the by hand annotations
-	ns_time_path_image_movement_analyzer analyzer;
-	ns_image_server::ns_posture_analysis_model_cache::const_handle_t posture_analysis_model_handle;
-	image_server.get_posture_analysis_model_for_region(region_id, posture_analysis_model_handle, sql);
+		ns_acquire_for_scope<std::ostream> position_3d_file_output(
+			image_server.results_storage.animal_position_timeseries_3d(
+				results_subject, sql, ns_image_server_results_storage::ns_3d_plot
+			).output()
+		);
+		morphology_data_integrator.solution.output_visualization_csv(position_3d_file_output());
+		position_3d_file_output.release();
 
-	ns_acquire_for_scope<ns_analyzed_image_time_path_death_time_estimator> death_time_estimator(
-		ns_get_death_time_estimator_from_posture_analysis_model(posture_analysis_model_handle().model_specification));
+		image_server.results_storage.write_animal_position_timeseries_3d_launcher(results_subject, ns_image_server_results_storage::ns_3d_plot, sql);
+	}
+	//now move on to processing the morphology data
+	//first we load all image data
+	morphology_data_integrator.match_images_with_solution(sql);
 
-	const ns_time_series_denoising_parameters time_series_denoising_parameters(ns_time_series_denoising_parameters::load_from_db(region_id, sql));
-
-	analyzer.load_completed_analysis(region_id, solution, time_series_denoising_parameters, &death_time_estimator(), sql, true);
-
-	ns_region_metadata metadata;
-	ns_hand_annotation_loader by_hand_region_annotations;
-
-	metadata = by_hand_region_annotations.load_region_annotations(ns_death_time_annotation_set::ns_censoring_and_movement_transitions, region_id, sql);
-
-	analyzer.add_by_hand_annotations(by_hand_region_annotations.annotations);
-
-	//move the by hand annotations back to annotate each element on the time path solution
-	//and output the time path solution visualiaztion complete with by hand annotations
-	analyzer.back_port_by_hand_annotations_to_solution_elements(solution);
-
-	ns_acquire_for_scope<std::ostream> position_3d_file_output(
-		image_server.results_storage.animal_position_timeseries_3d(
-			results_subject, sql, ns_image_server_results_storage::ns_3d_plot
-		).output()
-	);
-	solution.output_visualization_csv(position_3d_file_output());
-	position_3d_file_output.release();
-
-	image_server.results_storage.write_animal_position_timeseries_3d_launcher(results_subject, ns_image_server_results_storage::ns_3d_plot, sql);
+	//now we output image data, recalculating morphology stats if requested
 	if (recalculate_worm_morphology_from_images) {
 		ns_detected_worm_stats::output_csv_header(out);
 		out << ",";
@@ -444,108 +431,63 @@ void ns_refine_image_statistics(const ns_64_bit region_id, const bool recalculat
 			<< "Plate subregion nearest neighbor distance X,"
 			<< "Plate subregion nearest neighbor distance Y,";
 	}
-	metadata.out_JMP_plate_identity_header_short(out);
+	morphology_data_integrator.metadata.out_JMP_plate_identity_header_short(out);
 	out << ",time spent included, time_spent_excluded,average_time, overlap with path match,Age (days), Stationary Worm ID, Movement State,explicitly_excluded\n";
+	unsigned int cur_pos = 0;
+	double last_percent = 0;
 
-
-
-	sql << "SELECT id, worm_detection_results_id, capture_time FROM sample_region_images WHERE region_info_id = " << region_id << " AND worm_detection_results_id != 0 ORDER BY capture_time";
-	ns_sql_result res;
-	sql.get_rows(res);
-	if (res.empty())
-		throw ns_ex("Could not find any valid timepoints in region ") << region_id;
-	int r(-5);
-	for (unsigned int i = 0; i < res.size(); i++) {
-		int r1 = (100 * i) / res.size();
-		if (r1 - r >= 5) {
-			image_server.add_subtext_to_current_event(ns_to_string(r1) + "%...", &sql);
-			r = r1;
+	image_server.add_subtext_to_current_event("\nCalculating morphometric data...", &sql);
+	for (auto t = morphology_data_integrator.timepoints.begin(); t != morphology_data_integrator.timepoints.end(); t++) {
+		const double percent = floor((20 * cur_pos) / morphology_data_integrator.timepoints.size()) / 20;
+		if (percent >= last_percent + .05) {
+			image_server.add_subtext_to_current_event(ns_to_string((int)(100 * percent)) + "%...", &sql);
+			last_percent = percent;
 		}
-		try {
+		cur_pos++;
+		if (recalculate_worm_morphology_from_images && !t->empty()) {
+			t->begin()->load_images_for_all_worms_at_current_timepoint(sql);
 
-			unsigned long t = atol(res[i][2].c_str());
-
-
-			ns_image_worm_detection_results results;
-			results.detection_results_id = ns_atoi64(res[i][1].c_str());
-			results.load_from_db(true, false, sql, false);
-			ns_image_server_captured_image_region region;
-			region.load_from_db(ns_atoi64(res[i][0].c_str()), &sql);
-			if (recalculate_worm_morphology_from_images)
-				results.load_images_from_db(region, sql, false, false);
-			const std::vector<const ns_detected_worm_info *> worms = results.actual_worm_list();
-			std::vector<ns_region_area> areas(worms.size());
-			for (unsigned int j = 0; j < worms.size(); j++) {
-				areas[j].pos = worms[j]->region_position_in_source_image;
-				areas[j].size = worms[j]->region_size;
-				areas[j].time = t;
+		}
+		for (auto w = t->begin(); w != t->end(); w++) {
+			if (!w->image_data_identified) {
+				std::cerr << "Match not found\n";
+				continue;
 			}
-
-			//we need to do this so that the analyzer object can generate estimates of the movement state of objects over time
-			const ns_time_series_denoising_parameters time_series_denoising_parameters(ns_time_series_denoising_parameters::load_from_db(region_id, sql));
-			ns_acquire_for_scope<ns_analyzed_image_time_path_death_time_estimator> death_time_estimator(
-				ns_get_death_time_estimator_from_posture_analysis_model(posture_analysis_model_handle().model_specification));
-			analyzer.reanalyze_with_different_movement_estimator(time_series_denoising_parameters, &death_time_estimator());
-			
-			ns_object_hand_annotation_data hd;
-			analyzer.match_plat_areas_to_paths(areas);
-			//make path id lookup table
-
-			//look for subregion info using time path solution
-			unsigned long t1;
-			for (t1 = 0; t1 < solution.timepoints.size(); t1++) {
-				if (solution.timepoints[t1].time == t)
-					break;
-			}
-			if (t1 < solution.timepoints.size()) {
-				for (unsigned int i = 0; i < areas.size(); i++) {
-					bool match_found(false);
-					unsigned long pos;
-					for (pos = 0; pos < solution.timepoints[t1].elements.size(); pos++) {
-						if (solution.timepoints[t1].elements[pos].region_position == areas[i].pos &&
-							solution.timepoints[t1].elements[pos].region_size == areas[i].size) {
-							areas[i].plate_subregion_info = solution.timepoints[t1].elements[pos].subregion_info;
-							areas[i].explicitly_by_hand_excluded = solution.timepoints[t1].elements[pos].volatile_by_hand_annotated_properties.is_excluded();
-		//					if (areas[i].explicitly_by_hand_excluded)
-		//						std::cerr << ",";
-							match_found = true;
-						}
-					}
-				//	if (!match_found)
-		//				std::cerr << "!";
-				}
-			}
-
-
-			for (unsigned int j = 0; j < worms.size(); j++) {
-				if (recalculate_worm_morphology_from_images){
-					ns_detected_worm_stats worm_stats = worms[j]->generate_stats();
-					worm_stats.output_csv_data(region_id, t, areas[j].pos, areas[j].size, hd, areas[j].plate_subregion_info, out);
+			try {
+				const std::string movement_state_string(ns_movement_state_to_string_short(w->movement_state()));
+				if (recalculate_worm_morphology_from_images) {
+					ns_detected_worm_stats worm_stats = w->worm_image_info->generate_stats();
+					ns_object_hand_annotation_data hd; //output nothing here
+					worm_stats.output_csv_data(region_id, w->time, w->solution_element->region_position, w->solution_element->region_size, hd, w->solution_element->subregion_info, out);
 
 				}
 				else {
-					out << region_id << "," << t << ",";
-					out << areas[j].pos.x << "," << areas[j].pos.y << "," << areas[j].size.x << "," << areas[j].size.y << ",";
-					out << areas[j].plate_subregion_info.plate_subregion_id << "," << areas[j].plate_subregion_info.nearest_neighbor_subregion_id << "," << areas[j].plate_subregion_info.nearest_neighbor_subregion_distance.x << "," << areas[j].plate_subregion_info.nearest_neighbor_subregion_distance.y;
-				
+					out << region_id << "," << w->time << ",";
+					out << w->solution_element->region_position.x << "," << w->solution_element->region_position.y << "," << w->solution_element->region_size.x << "," << w->solution_element->region_size.y << ",";
+					out << w->solution_element->subregion_info.plate_subregion_id << "," << w->solution_element->subregion_info.nearest_neighbor_subregion_id << "," << w->solution_element->subregion_info.nearest_neighbor_subregion_distance.x << "," << w->solution_element->subregion_info.nearest_neighbor_subregion_distance.y;
+
 				}
 				out << ",";
-				metadata.out_JMP_plate_identity_data_short(out);
-				out << "," << areas[j].total_inclusion_time_in_seconds << "," << areas[j].total_exclusion_time_in_seconds << "," << areas[j].average_annotation_time_for_region << ",";
-	//			if (areas[j].total_exclusion_time_in_seconds == 0 || areas[j].total_exclusion_time_in_seconds < areas[j].total_inclusion_time_in_seconds)
-	//				out << "no";
-	//			else out << "yes";
-				out <<  areas[j].overlap_area_with_match << ",";
-				out << ((t - metadata.time_at_which_animals_had_zero_age) / 60.0 / 60.0 / 24) << ",";
-				out << areas[j].worm_id << "," << ns_movement_state_to_string_short(areas[j].movement_state) << ",";
-				out << (areas[j].explicitly_by_hand_excluded?"1" : "0");
-				out << "\n";
+				morphology_data_integrator.metadata.out_JMP_plate_identity_data_short(out);
+				out << "," << w->region_area.total_inclusion_time_in_seconds << "," << w->region_area.total_exclusion_time_in_seconds << "," << w->region_area.average_annotation_time_for_region << ",";
+				//			if (areas[j].total_exclusion_time_in_seconds == 0 || areas[j].total_exclusion_time_in_seconds < areas[j].total_inclusion_time_in_seconds)
+				//				out << "no";
+				//			else out << "yes";
+				out << w->region_area.overlap_area_with_match << ",";
+				out << ((w->time - morphology_data_integrator.metadata.time_at_which_animals_had_zero_age) / 60.0 / 60.0 / 24) << ",";
+				out << w->id.group_id << "," << movement_state_string << ",";
+				out << (w->by_hand_annotation().is_excluded() ? "1" : "0");
 			}
+			catch (ns_ex & ex) {
+				image_server.add_subtext_to_current_event(ex.text(), &sql);
+			}
+			out << "\n";
 		}
-		catch (ns_ex & ex) {
-			image_server.add_subtext_to_current_event(ex.text(), &sql);
-		}
+		if (recalculate_worm_morphology_from_images && !t->empty())
+			t->begin()->clear_images_for_all_worms_at_current_timepoint();
 	}
+
+	image_server.add_subtext_to_current_event("Done.\n", &sql);
 }
 
 
@@ -854,7 +796,7 @@ void ns_process_inferred_worms_for_timepoint(ns_time_path_timepoint * timepoint,
 				ns_tiff, 1.0, 1024, shared_state.sql,
 				had_to_use_volatile_storage,
 				false,
-				false);
+				ns_image_storage_handler::ns_forbid_volatile);
 			lock.release();
 			worm_collage.pump(region_bitmap_o.output_stream(), 1024);
 			break;

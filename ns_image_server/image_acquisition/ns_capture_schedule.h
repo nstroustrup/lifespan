@@ -7,7 +7,7 @@
 
 
 struct ns_sample_capture_specification{
-	ns_sample_capture_specification() :sample_id(0), latest_existing_scheduled_scan_time(0), internal_schedule_id(-1) {}
+	ns_sample_capture_specification() :sample_id(0), latest_existing_scheduled_scan_time(0), internal_schedule_id(-1), conversion_16_bit_low_bound(0), conversion_16_bit_high_bound(0){}
 	ns_64_bit sample_id;
 	std::string sample_name,
 				capture_configuration_parameters,
@@ -19,6 +19,7 @@ struct ns_sample_capture_specification{
 			y_position,
 			width,
 			height;
+	ns_64_bit conversion_16_bit_low_bound, conversion_16_bit_high_bound;
 
 	std::string capture_parameters()const {
 		return capture_configuration_parameters + " " + scan_area_string() + " --resolution=" + ns_to_string(resolution);

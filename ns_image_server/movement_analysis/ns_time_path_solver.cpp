@@ -3,6 +3,7 @@
 #include "hungarian.h"
 #include "ns_linear_regression_model.h"
 #include "ns_ini.h"
+#include "ns_wcon.h"
 using namespace std;
 
 
@@ -2504,7 +2505,10 @@ void ns_time_path_solution::output_mathematica_file(std::ostream & o){
 	o << ",BoxRatios->{1,1,1}}];";
 }
 
-void ns_time_path_solution::output_visualization_csv(ostream & o){
+void ns_time_path_solution::output_visualization_wcon(std::ostream & o)const {
+
+}
+void ns_time_path_solution::output_visualization_csv(ostream & o) const{
 	ns_time_path_solution::output_visualization_csv_header(o);
 	//output unassigned points
 	for (unsigned int i = 0; i< unassigned_points.stationary_elements.size(); i++){
@@ -2526,7 +2530,7 @@ void ns_time_path_solution::output_visualization_csv(ostream & o){
 	for (unsigned int g = 0; g < path_groups.size(); g++){
 		for (unsigned int i = 0; i < path_groups[g].path_ids.size(); i++){
 			for (unsigned int j = 0; j < paths[path_groups[g].path_ids[i]].moving_elements.size(); j++){
-				ns_time_element_link & e(paths[path_groups[g].path_ids[i]].moving_elements[j]);
+				const ns_time_element_link & e(paths[path_groups[g].path_ids[i]].moving_elements[j]);
 				ns_time_path_solution::output_visualization_csv_data(o,
 					 ((float)(time(e)- timepoints[0].time))/60.0/60.0/24.0,
 					 time(e),
@@ -2541,7 +2545,7 @@ void ns_time_path_solution::output_visualization_csv(ostream & o){
 				);
 			}
 			for (unsigned int j = 0; j < paths[path_groups[g].path_ids[i]].stationary_elements.size(); j++){
-				ns_time_element_link & e(paths[path_groups[g].path_ids[i]].stationary_elements[j]);
+				const ns_time_element_link & e(paths[path_groups[g].path_ids[i]].stationary_elements[j]);
 				ns_time_path_solution::output_visualization_csv_data(o,
 					 ((float)(time(e)- timepoints[0].time))/60.0/60.0/24.0,
 					 time(e),

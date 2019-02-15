@@ -13,6 +13,7 @@
 #ifndef NS_ONLY_IMAGE_ACQUISITION
 #include "ns_experiment_storyboard.h"
 #include "ns_svm_model_specification.h"
+#include "ns_experiment_surival_data_cache.h"
 #endif
 #include "ns_movement_state.h"
 #include "ns_sql_table_lock_manager.h"
@@ -34,6 +35,7 @@
 #include "ns_image_server_results_storage.h"
 #include "ns_get_double.h"
 #include "ns_capture_schedule.h"
+
 
 
 ///attached scanners have both human-readable names as well as
@@ -278,8 +280,8 @@ public:
 		_act_as_an_image_capture_server = act_as_a_capture_server;
 	}
 
-	void toggle_central_mysql_server_connection_error_simulation()const;
-
+	void toggle_central_mysql_server_connection_error_simulation() const;
+	void toggle_long_term_storage_server_connection_error_simulation() const;
 
 	void calculate_experiment_disk_usage(const ns_64_bit experiment_id,ns_sql & sql) const;
 	void clear_old_server_events(ns_sql & sql);
@@ -440,12 +442,14 @@ public:
 
 	ns_alert_handler alert_handler;
 	ns_lock alert_handler_lock;
+	ns_lock exit_lock;
 	void register_alerts_as_handled();
 	unsigned long maximum_number_of_processing_threads() const{ return maximum_number_of_processing_threads_;}
 
 
 #ifndef NS_ONLY_IMAGE_ACQUISITION
 	ns_simple_cache<ns_image_fast_registration_profile, ns_64_bit,true> image_registration_profile_cache;
+	ns_experiment_surival_data_cache survival_data_cache;
 #endif
 	ns_vector_2i max_terminal_window_size;
 	unsigned long terminal_hand_annotation_resize_factor;
@@ -675,6 +679,8 @@ private:
 	ns_posture_analysis_model_cache posture_analysis_model_cache;
 
 	ns_storyboard_cache storyboard_cache;
+
+
 #endif
 #endif
 

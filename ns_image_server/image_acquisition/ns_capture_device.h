@@ -23,7 +23,8 @@ struct ns_image_capture_device_speed_regulator_byte_record{
 };
 class ns_image_capture_device_speed_regulator{
 public:
-	ns_image_capture_device_speed_regulator():decile_times(10,0){}
+	ns_image_capture_device_speed_regulator():decile_times(10,0), total_number_of_expected_bytes(0), desired_scan_duration(0),
+		bytes_read_so_far(0), pending_delay(0), previous_pending_delay(0), delay_time_injected(0), packets_received(0) {}
 	void initialize_for_capture(const unsigned long total_number_of_expected_bytes_, 
 								const unsigned long desired_scan_duration_);  //in seconds
 	void register_data_as_received(unsigned long bytes);

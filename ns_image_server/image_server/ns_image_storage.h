@@ -148,12 +148,14 @@ private:
 
 #pragma warning(disable: 4355) //our use of this in constructor is valid, so we suppress the error message
 //generalized Image Sources
-template<class ns_component>
-class ns_image_storage_source : public ns_image_stream_sender<ns_component,ns_image_storage_source<ns_component>,unsigned long>{
+template<class ns_component, bool low_memory_single_line_reads = false>
+class ns_image_storage_source : public ns_image_stream_sender<ns_component,ns_image_storage_source<ns_component, low_memory_single_line_reads>,unsigned long>{
 public:
-  typedef ns_image_stream_sender<ns_component,ns_image_storage_source<ns_component>,unsigned long> sender_t;
-	ns_image_storage_source(const ns_image_properties & properties):
-  ns_image_stream_sender<ns_component,ns_image_storage_source<ns_component>, typename sender_t::internal_state_t>(properties,this){}
+  typedef ns_image_stream_sender<ns_component,ns_image_storage_source<ns_component, low_memory_single_line_reads>,unsigned long> sender_t;
+
+  ns_image_storage_source(const ns_image_properties & properties):
+	ns_image_stream_sender<ns_component,ns_image_storage_source<ns_component, low_memory_single_line_reads>, typename sender_t::internal_state_t>(properties,this){}
+
   virtual void send_lines(ns_image_stream_static_buffer<ns_component>				 & lines, unsigned int count, typename sender_t::internal_state_t & state)=0;
   virtual void send_lines(ns_image_stream_static_offset_buffer<ns_component>		 & lines, unsigned int count, typename sender_t::internal_state_t & state)=0;
   virtual void send_lines(ns_image_stream_sliding_offset_buffer<ns_component>		 & lines, unsigned int count, typename sender_t::internal_state_t & state)=0;
@@ -165,19 +167,19 @@ public:
 };
 #pragma warning(default: 4355)
 
-template<class ns_component>
-class ns_image_storage_source_from_disk : public ns_image_storage_source<ns_component>{
+template<class ns_component, bool low_memory_single_line_reads=false>
+class ns_image_storage_source_from_disk : public ns_image_storage_source<ns_component, low_memory_single_line_reads>{
 public:
-  typedef typename ns_image_storage_source<ns_component>::sender_t sender_t;
+  typedef typename ns_image_storage_source<ns_component, low_memory_single_line_reads>::sender_t sender_t;
 
 	ns_image_storage_source_from_disk(const std::string & filename,const bool volatile_file_=false):
 	volatile_file(volatile_file_),total(0),
-		_source( ns_choose_image_source<ns_image_input_file<ns_component> >(ns_get_image_type(filename),jpeg_in,tiff_in,jp2k_in) ),
-		ns_image_storage_source<ns_component>(ns_image_properties(0,0,0)){
+		_source( ns_choose_image_source<ns_image_input_file<ns_component, low_memory_single_line_reads> >(ns_get_image_type(filename),jpeg_in,tiff_in,jp2k_in) ),
+		ns_image_storage_source<ns_component, low_memory_single_line_reads>(ns_image_properties(0,0,0)){
 
-		target = &(ns_choose_image_source<ns_image_input_file<ns_component> >(ns_get_image_type(filename),jpeg_in,tiff_in,jp2k_in));
+		target = &(ns_choose_image_source<ns_image_input_file<ns_component, low_memory_single_line_reads> >(ns_get_image_type(filename),jpeg_in,tiff_in,jp2k_in));
 		target->open_file(filename);
-		ns_image_storage_source<ns_component>::_properties = target->properties();
+		ns_image_storage_source<ns_component, low_memory_single_line_reads>::_properties = target->properties();
 	}
 
 	//closing of files handled by their destructors
@@ -195,21 +197,21 @@ protected:
 	}
 	typename sender_t::internal_state_t init_send(){return _source.init_send();}
 private:
-	ns_jpeg_image_input_file<ns_component> jpeg_in;
-	ns_tiff_image_input_file<ns_component> tiff_in;
-	ns_ojp2k_image_input_file<ns_component> jp2k_in;
-	ns_image_stream_file_source<ns_component> _source;
-	ns_image_input_file<ns_component> * target;
+	ns_jpeg_image_input_file<ns_component, low_memory_single_line_reads> jpeg_in;
+	ns_tiff_image_input_file<ns_component, low_memory_single_line_reads> tiff_in;
+	ns_ojp2k_image_input_file<ns_component, low_memory_single_line_reads> jp2k_in;
+	ns_image_stream_file_source<ns_component, low_memory_single_line_reads> _source;
+	ns_image_input_file<ns_component, low_memory_single_line_reads> * target;
 	ns_high_precision_timer tp;
 	bool volatile_file;
 	unsigned long long total;
 };
 
-template<class ns_component>
-class ns_image_storage_source_from_net :  public ns_image_storage_source<ns_component>{
+template<class ns_component, bool low_memory_single_line_reads=false>
+class ns_image_storage_source_from_net :  public ns_image_storage_source<ns_component, low_memory_single_line_reads>{
 public:
-  typedef typename ns_image_storage_source<ns_component>::sender_t sender_t;
-	ns_image_storage_source_from_net(ns_socket_connection & connection):_connection(connection),ns_image_storage_source<ns_component>(ns_image_properties(0,0,0)){
+  typedef typename ns_image_storage_source<ns_component, low_memory_single_line_reads>::sender_t sender_t;
+	ns_image_storage_source_from_net(ns_socket_connection & connection):_connection(connection),ns_image_storage_source<ns_component, low_memory_single_line_reads>(ns_image_properties(0,0,0)){
 		reciever.bind_socket(_connection);
 	}
 
@@ -235,7 +237,7 @@ public:
 private:
 	void init_send(){
 		reciever.init_send();
-		ns_image_storage_source<ns_component>::_properties = reciever.properties();
+		ns_image_storage_source<ns_component, low_memory_single_line_reads>::_properties = reciever.properties();
 	}
 	void finish_send(){
 		reciever.finish_send();
@@ -296,17 +298,17 @@ private:
 	
 };
 
-template<class ns_component>
+template<class ns_component, bool low_memory_single_line_reads = false>
 class ns_image_storage_source_handle{
-  typedef std::shared_ptr<ns_image_storage_source<ns_component> > ns_handle_pointer;
+  typedef std::shared_ptr<ns_image_storage_source<ns_component, low_memory_single_line_reads> > ns_handle_pointer;
 	public:
- ns_image_storage_source_handle(ns_image_storage_source<ns_component> * s):source(s){}
+ ns_image_storage_source_handle(ns_image_storage_source<ns_component, low_memory_single_line_reads> * s):source(s){}
  ns_image_storage_source_handle(ns_handle_pointer & s):source(s){}
 		ns_image_storage_source_handle():source(0){}
 		
-		ns_image_storage_source<ns_component> & input_stream(){ return *source;}
+		ns_image_storage_source<ns_component, low_memory_single_line_reads> & input_stream(){ return *source;}
 
-		const ns_image_storage_source<ns_component> & input_stream() const{ return *source;}
+		const ns_image_storage_source<ns_component, low_memory_single_line_reads> & input_stream() const{ return *source;}
 
 		void bind(ns_handle_pointer handle){
 		  source = handle;

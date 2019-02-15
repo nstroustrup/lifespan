@@ -565,9 +565,6 @@
     <ClCompile Include="..\ns_image_server\movement_analysis\ns_machine_analysis_data_loader.cpp">
       <Filter>movement_analysis</Filter>
     </ClCompile>
-    <ClCompile Include="..\ns_image_server\image_processing\ns_image_tools.cpp">
-      <Filter>image_processing</Filter>
-    </ClCompile>
     <ClCompile Include="..\external_compile_libraries\libtiff-4.0.9\libtiff\tif_read.c">
       <Filter>image_format_lib\tiff</Filter>
     </ClCompile>
@@ -684,6 +681,9 @@
     </ClCompile>
     <ClCompile Include="..\external_compile_libraries\libtiff-4.0.9\libtiff\tif_print.c">
       <Filter>image_format_lib\tiff</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ns_image_server\image_base\ns_image_tools.cpp">
+      <Filter>image_base</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -1135,9 +1135,6 @@
       <Filter>image_processing</Filter>
     </ClInclude>
     <ClInclude Include="..\ns_image_server\image_processing\ns_mask_management.h">
-      <Filter>image_processing</Filter>
-    </ClInclude>
-    <ClInclude Include="..\ns_image_server\image_processing\ns_image_tools.h">
       <Filter>image_processing</Filter>
     </ClInclude>
     <ClInclude Include="..\ns_image_server\data_annotation\ns_annotation_handling_for_visualization.h">

@@ -648,6 +648,7 @@ private:
 	friend class ns_size_data_accessor;
 	friend class ns_intensity_data_accessor;
 	friend class ns_movement_data_accessor;
+	friend class ns_worm_morphology_data_integrator;
 	//we are allocating a ton of path_aligned images for each element.
 	//we keep a pool to cut down on the time spent calling malloc()
 	ns_time_path_image_movement_analysis_memory_pool * memory_pool;
@@ -769,6 +770,7 @@ public:
 	static ns_image_server_image get_movement_quantification_id(const ns_64_bit region_info_id,ns_sql & sql);
 
 	void match_plat_areas_to_paths(std::vector<ns_region_area> & areas);
+	friend class ns_worm_morphology_data_integrator;
 private:
 
 	unsigned long _number_of_invalid_images_encountered;

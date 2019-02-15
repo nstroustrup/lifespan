@@ -1,0 +1,262 @@
+#### *** Lifespan Machine Image Server Configuration File *** ####
+# This file allows you to specify various configuration options that will
+# determine the behavior of all lifespan machine software running on this
+# machine, including image acquisition servers, image analysis servers, and
+# the worm browser.
+number_of_times_to_check_empty_processing_job_queue_before_stopping = 0
+
+allow_multiple_processes_per_system = no
+
+mail_from = 
+
+#### Important Configuration Parameters for this machine ####
+# These parameters need to be set correctly for the server to function.
+
+# host_name: Each instance of the image acquisition and image analysis
+# servers needs to have a unique name to identify it.  Thus, host_name should
+# be set to a different value on every LINUX or Windows machine running the
+# software.  Use a name that you'll recognize, such as
+# linux_server_on_my_desk, bob, or lab_desktop_1
+
+host_name = raspberry
+
+# long_term_storage_directory: All image server software must be able to
+# access a central directory used to store images.  This is often located on
+# a NAS or institutional file server.  This directory should be mounted as a
+# path on the machine running the server.  Set this parameter to the location
+# of that directory
+
+long_term_storage_directory = /mnt/isis2/lifespan_machine
+
+# results_storage_directory: All image server software must be able to access
+# a central directory used to store processed statistical data, including
+# survival curves, descriptions of worm movement, etc.  This is often located
+# on a NAS or institutional file server.  This directory should be mounted as
+# a path on the machine running the server.  Set this parameter to the
+# location of that directory
+
+results_storage_directory = /mnt/isis2/lifespan_machine/results
+
+# volatile_storage_directory: The image acquisition server and image analysis
+# servers need to store temporary files on the local machine.  Set this
+# parameter to the location of that directory; it can be anywhere you like. 
+# For image acquisition servers, this is the local buffer for captured images
+# pending transfer to the long term storage directory, so you should locate
+# the directory on a drive with a couple hundred 100 GB of free space.
+
+volatile_storage_directory = /home/pi/volatile_storage
+
+
+#### Access to the central SQL database ####
+# These parameters need to be set to match the account set up on your central
+# sql database, to allow the server to log in.
+
+# central_sql_hostname: The IP address or DNS name of the computer running
+# the central SQL server
+
+central_sql_hostname = localhost
+
+# central_sql_username: The username with which the software should log into
+# the central SQL server
+
+central_sql_username = image_server
+
+# central_sql_password: The password with which the software should log into
+# the central SQL server
+
+central_sql_password = lifespan2018
+
+# central_sql_databases: The name of the database set up on the SQL server
+# for the image server.  It's possible to specify multiple independent
+# databases, each separated by a colon, but this is not needed in simple
+# installations.
+
+central_sql_databases = image_server
+
+#### Access to the local SQL database ####
+# Image acquisition servers use a local SQL database to store metadata
+# pending its transfer to the central SQL database.  This lets acquisition
+# servers continue to operate correctly through network disruptions, sql
+# database crashes, etc.  These parameters need to be set to match the
+# account set up on the machine's local sql database, to allow the server to
+# log in
+
+# local_buffer_sql_hostname: The IP address or DNS name of the computer
+# running the local SQL buffer.  This is only needed for image capture
+# servers, and in all but exceptional cases should be set to localhost
+
+local_buffer_sql_hostname = localhost
+
+# local_buffer_sql_username: The username with which the software should log
+# into the local SQL buffer
+
+local_buffer_sql_username = image_server
+
+# local_buffer_sql_database: The name of the local SQL buffer database
+
+local_buffer_sql_database = image_server_buffer
+
+# local_buffer_sql_password: The password with which the software should log
+# into the local SQL buffer
+
+local_buffer_sql_password = lifespan2018
+
+#### Image Acquisition Server Settings  ####
+# These settings control the behavior of image acquisition servers
+
+# act_as_image_capture_server: Should the server try to control attached
+# scanners? (yes / no)
+
+act_as_image_capture_server = yes
+
+# device_capture_command: the path to the SANE component scanimage, with
+# which scans can be started
+
+device_capture_command = /usr/local/bin/scanimage
+
+# device_list_command: the path to the SANE component sane-find-scanners,
+# with which scanners can be identified
+
+device_list_command = /usr/local/bin/sane-find-scanner
+
+# device_barcode_coordinates: The coordinates of the barcode adhered to the
+# surface of each scanner
+
+device_barcode_coordinates = -l 0in -t 10.3in -x 8in -y 2in
+
+# simulated_device_name: For software debugging, an image acquisition server
+# can simulate an attached device
+
+simulated_device_name = .
+
+# device_names: This can be used to explicitly specify scanner names on an
+# image acquisition server.  These should be detected just fine
+# automatically, and so in most cases this field can be left blank
+
+device_names = 
+
+#### Image Analysis Server Settings  ####
+# These settings control the behavior of image processing servers
+
+# act_as_processing_node: Should the server run image processing jobs
+# requested by the user via the website? (yes / no)
+
+act_as_processing_node = no
+
+# nodes_per_machine: A single computer can run multiple copies of the image
+# processing server simultaneously, which allows many jobs to be processed in
+# parallel.  Set this value to the number of parallel servers you want to run
+# on this machine.  This can usually be set to the number of physical cores
+# on the machine's processor, or the number of GB of RAM on the machine;
+# whichever is smaller.
+
+nodes_per_machine = 1
+
+# hide_window: On windows, specifies whether the server should start
+# minimized.  (yes / no )
+
+hide_window = no
+
+# compile_videos: Should the server process videos? (yes / no)
+
+compile_videos = no
+
+# video_compiler_filename: Path to the x264 transcoder program required to
+# generate videos.  Only needed on image processing servers.  If you don't
+# have this, set compile_videos to no
+
+video_compiler_filename = ./x264.exe
+
+# video_ppt_compiler_filename: Path to the ffmpeg transcoder required to
+# generate videos. Only needed on image processing servers.  If you don't
+# have this, set compile_videos to no
+
+video_ppt_compiler_filename = ./ffmpeg.exe
+
+# halt_on_new_software_release: Should the server shut down if a new version
+# of the software is detected running on the cluster? (yes / no)
+
+halt_on_new_software_release = no
+
+# latest_release_path: Image acquisition servers can be set to automatically
+# update if new versions of the software is identified as running on the
+# cluster.  This is the path name where the new software can be found.
+
+latest_release_path = image_server_software/image_server_win32.exe
+
+# run_autonomously: should the server automatically poll the MySQL database
+# for new scans/jobs (yes) or should it only do this when a command is
+# received from an external source (no).  Most configurations set this to
+# yes.
+
+run_autonomously = yes
+
+#### Other Settings ####
+# These settings control the behavior of image acquisition and image
+# processing servers
+
+# verbose_debug_output: If this option is set to true, the image server and
+# worm browser will generate detailed debug information while running various
+# steps of image acquisition and image processing.  An file containing this
+# output will be written to the volatile_storage directory.
+
+verbose_debug_output = false
+
+# dispatcher_refresh_interval: How often should image acquisition servers
+# check for pending scans?  (in seconds).  Also specifies how often analysis
+# servers will check for new jobs.
+
+dispatcher_refresh_interval = 6000
+
+# mail_path: Each copy of the image server running on the cluster
+# occasionally checks for errors occurring in other nodes, for example missed
+# scans or low disk space.  If problems are discovered, the image server can
+# send users an email notifying them of the problem.  To activate this
+# feature, set mail_path to the POSIX mail program on the local system.
+
+mail_path = 
+
+# ethernet_interface: This field should be left blank if you want the server
+# to access the network through the default network interface.  If you have
+# multiple network interfaces and want to use a specific one, specify it
+# here.
+
+ethernet_interface = 
+
+# dispatcher_port: Image acquisition and image processing servers open a
+# TCP/IP port on the local machine through which control commands can be
+# sent.  dispatcher_port determines the specific port on which the dispatcher
+# should listen for remote requests.
+
+dispatcher_port = 1043
+
+# server_crash_daemon_port: : To provide some protection against server
+# crashes, an image acquisition server running under linux launches a
+# persistent second thread that checks whether the image acquisition server
+# has crashed.  In the event of a crash, the crash_daemon launches a new
+# instance of the image acquisition server.  Often, the crashed copy retains
+# a lock its TCP/IP port, requiring that the crash daemon use a second port
+# instead, specified here.
+
+server_crash_daemon_port = 1042
+
+# server_timeout_interval: How long should a server wait before giving up on
+# a dead network connection (in seconds)
+
+server_timeout_interval = 300
+
+# log_filename: Image acquisition and image processing servers keep a log
+# file in the central SQL database.  However, to help diagnose crashes, a
+# text file containing the same log information is stored on the local
+# machine.  The log file is stored in the directory specified by the
+# volatile_storage_directory option (described above), and its filename is
+# specified by here.
+
+log_filename = image_server_log.txt
+
+# maximum_memory_allocation_in_mb: Movement analaysis benefits from access to
+# multiple gigabytes of RAM.  This value should be set to approximately the
+# size of system memory.  Larger values will cause sporadic crashes during
+# movement analysis.
+
+maximum_memory_allocation_in_mb = 3840

@@ -664,7 +664,7 @@ void ns_worm_movement_summary_series::from_file(std::istream & i){
 */
 
 void ns_worm_movement_measurement_summary::out_header(std::ostream & o){
-	o << "Strain,Genotype,Strain Condition 1,Strain Condition 2,Genotype::Condition,Plate Name,Time (Seconds), Time (Hours),Time (Days),";
+	o << "Strain,Genotype,Strain Condition 1,Strain Condition 2,Genotype::Condition,Plate Name,Device, Date, Age (Seconds), Age (Days),";
 	o << "Total Animals Observed,";
 	ns_worm_movement_measurement_summary_timepoint_data::out_header("",o,',');
 	o << "Total Excluded Animals,";
@@ -678,9 +678,10 @@ void ns_worm_movement_measurement_summary::to_file(const ns_region_metadata & me
 		<< ((metadata.strain_condition_1.size()>0)?(string("::") + metadata.strain_condition_1):"")
 		<< ((metadata.strain_condition_2.size()>0)?(string("::") + metadata.strain_condition_2):"")
 		<< "," << metadata.plate_name()
-	<< "," << time
-	<< "," << time/(60.0*60)
-	<< "," << time/(60.0*60*24) << ",";
+		<< "," << metadata.device
+	<< "," << ns_format_time_string(time)
+	<< "," << (time - metadata.time_at_which_animals_had_zero_age) 
+	<< "," << (time- metadata.time_at_which_animals_had_zero_age) / (60.0 * 60 * 24) << ",";
 	o << all_measurement_types_total.number_alive() + all_measurement_types_total.number_cumulative_deaths() 
 		+ censoring_data.cumulative_number_censored_from_multiworm_clusters << ",";
 	

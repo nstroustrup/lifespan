@@ -76,9 +76,9 @@ public:
 	void buffer_all_alerts_locally(const bool delayed){buffer_all_alerts_locally_ = delayed;}
 	void submit_buffered_alerts(ns_sql & sql);
 
-	void reset_alert_time_limit(const ns_alert::ns_alert_type a,ns_sql & sql);
+	void reset_alert_time_limit(const ns_alert::ns_alert_type a, ns_image_server_sql * sql);
 
-	void submit_desperate_alert(const std::string & text) const;
+	void submit_desperate_alert(const std::string & text, const bool verbose=false) const;
 
 	void reset_all_alert_time_limits(ns_sql & sql);
 	void handle_alerts(ns_sql & sql);
@@ -111,7 +111,7 @@ public:
 	
 	ns_sql_table_lock get_locked_submission_information_for_alert(const ns_alert::ns_alert_type a, unsigned long & duration_until_next_submission, unsigned long & time_of_last_submission, ns_sql & sql);
 
-	void email_alert(const std::string & text, std::vector<std::string> & recipients, const bool report_to_db);
+	void email_alert(const std::string & text, std::vector<std::string> & recipients, const bool report_to_db, const bool verbose=false);
 	std::vector<ns_alert_recipient> recipients;
 	std::string from_field;
 	std::vector<unsigned long> initial_alert_delays;

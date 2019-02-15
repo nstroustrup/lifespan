@@ -93,6 +93,8 @@ const bool ns_dir::copy_file(const string & source, const string & destination){
 }
 
 const bool ns_dir::move_file(const string & source, const string & destination){
+	if (source == destination)
+		return true;
 #ifdef _WIN32 
 	return MoveFile(source.c_str(),destination.c_str()) != 0;
 #else

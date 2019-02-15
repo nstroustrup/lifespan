@@ -374,14 +374,14 @@ void ns_socket::listen(const unsigned int port, const unsigned int connection_bu
 		hostent *host = gethostbyname(buf);
 		if (host == NULL)
 				throw ns_ex("Could not resolve host name entity");
-		lock.release();
+		
 		sockaddr_in saddr;
 		int size = sizeof(struct sockaddr_in);
 		memset(&saddr, 0, size);
 
 		saddr.sin_family = host->h_addrtype;  //host address
-		saddr.sin_port = htons(port);    //port in host byte order
-
+		saddr.sin_port = htons(port);    //port in nost byte order
+		lock.release();
 		if ( bind(listen_socket, const_cast<const sockaddr *>(reinterpret_cast	<sockaddr * >(&saddr)),size)
 				 == INVALID_SOCKET)
 				throw ns_ex("Could not bind socket to port ") << port;
@@ -445,8 +445,8 @@ ns_socket_connection ns_socket::accept(){
 void ns_socket::build_interface_list(std::vector<ns_interface_info> & interfaces){
 	#ifdef _WIN32 
 		char localhostname[1000];
-		gethostname_lock.wait_to_acquire(__FILE__,__LINE__);
-		try{
+		ns_acquire_lock_for_scope lock(gethostname_lock,__FILE__,__LINE__);
+	
 			if (gethostname(localhostname, 1000) == SOCKET_ERROR)
 				throw ns_ex() << "Error getting local hostname";
 
@@ -459,13 +459,8 @@ void ns_socket::build_interface_list(std::vector<ns_interface_info> & interfaces
 					memcpy(&addr, ent->h_addr_list[i], sizeof(in_addr));
 					interfaces.push_back(ns_interface_info(ns_to_string(i),inet_ntoa(addr)));
 			}
-		//cerr << "Done.\n";		
-		}
-		catch(...){
-			gethostname_lock.release();
-			throw;
-		}
-		gethostname_lock.release();
+			lock.release();
+
 	#else
 		// from http://stackoverflow.com/questions/4139405/how-to-know-ip-address-for-interfaces-in-c
 		// works on linux and OS X
@@ -517,10 +512,9 @@ const string ns_socket::get_local_ip_address(const std::string & interface_name)
 
 
 ns_socket_connection::~ns_socket_connection(){
-//	if (this->is_open)
-//		close();
 }
 
+ns_lock gethostname_lock("ghl");
 ns_socket_connection ns_socket::connect(const string & address, const unsigned int port){
 
 	#ifdef _WIN32 
@@ -528,7 +522,7 @@ ns_socket_connection ns_socket::connect(const string & address, const unsigned i
 	 	hostent     *host_ent;
 		ns_acquire_lock_for_scope lock(gethostname_lock,__FILE__,__LINE__);
 		host_ent = gethostbyname(address.c_str());
-		lock.release();
+		
 		if (host_ent == NULL)
 			throw ns_ex() << "Could not parse address: \"" << address << "\"";
 		//cerr << "Connecting to socket...\n";
@@ -538,7 +532,7 @@ ns_socket_connection ns_socket::connect(const string & address, const unsigned i
 		//cerr << "Done.\n";
 		saddr.sin_family = host_ent->h_addrtype;
 		saddr.sin_port = htons(port);
-
+		lock.release();
 		//create socket
 		ns_socket_handle handle = socket(host_ent->h_addrtype, SOCK_STREAM, 0);
 		if (handle == INVALID_SOCKET)
@@ -553,7 +547,7 @@ ns_socket_connection ns_socket::connect(const string & address, const unsigned i
 	#else
 		ns_acquire_lock_for_scope lock(gethostname_lock,__FILE__,__LINE__);
 		hostent * he = gethostbyname(address.c_str());
-		lock.release();
+		//lock.release();
 		if (he == NULL)
 			throw ns_ex("Could not parse address.");
 
@@ -562,13 +556,14 @@ ns_socket_connection ns_socket::connect(const string & address, const unsigned i
 		servaddr.sin_family = AF_INET;
 		servaddr.sin_port = htons(port);
         servaddr.sin_addr = *((struct in_addr *)he->h_addr);
-
+		lock.release();
 		errno = 0;
 		ns_socket_handle sockfd = socket(AF_INET, SOCK_STREAM, 0);
 		if (sockfd == -1)
 			throw ns_ex("Could not create socket for remote connect:") << strerror(errno);
 
 		int res = ::connect(sockfd, (struct sockaddr *)&servaddr, sizeof(servaddr));
+		
 		if (res != 0)
 			throw ns_ex("Could not open socket:") << strerror(errno);
 		return ns_socket_connection(sockfd);

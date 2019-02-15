@@ -248,6 +248,8 @@ public:
 	static ns_64_bit to_id(const ns_image_server_image & im) { return im.id; }
 	ns_image_storage_source_handle<ns_8_bit> full_res_image(ns_image_fast_registration_profile_data_source & data_source)const;
 	void delete_cached_file(ns_image_fast_registration_profile_data_source & data_source) const ;
+	ns_histogram<unsigned int, ns_8_bit> histogram;
+	ns_image_properties properties;
 private:
 	ns_64_bit size_in_memory_in_kbytes() const;
 	mutable std::string local_cache_filename;

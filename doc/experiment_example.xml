@@ -1,0 +1,33 @@
+<?xml version="1.0">
+<experiment>
+	<name>experiment_1</name>
+	<default_capture_configuration_parameters>--mode=Gray --format=tiff --source="TPU8X10" --depth=16</default_capture_configuration_parameters>
+	<default_sample_naming>by_device</default_sample_naming>
+	<capture_resolution>3200</capture_resolution>
+	<default_desired_minimum_capture_duration>10m</default_desired_minimum_capture_duration>
+</experiment>
+
+<sample><device>drac</device><scan_area>0.166667in,0.393333in,2.01667in,8.65667in</scan_area></sample>
+<sample><device>drac</device><scan_area>1.94667in,1.42in,2.09333in,8.54in</scan_area></sample>
+<sample><device>drac</device><scan_area>3.84333in,0.383333in,2.01667in,8.61667in</scan_area></sample>
+<sample><device>drac</device><scan_area>5.63in,1.37333in,2.13667in,8.58667in</scan_area></sample>
+
+<sample><device>berimbau</device><scan_area>0.166667in,0.393333in,2.01667in,8.65667in</scan_area></sample>
+<sample><device>berimbau</device><scan_area>1.94667in,1.42in,2.09333in,8.54in</scan_area></sample>
+<sample><device>berimbau</device><scan_area>3.84333in,0.383333in,2.01667in,8.61667in</scan_area></sample>
+<sample><device>berimbau</device><scan_area>5.63in,1.37333in,2.13667in,8.58667in</scan_area></sample>
+
+<sample><device>jacquard</device><scan_area>0.166667in,0.393333in,2.01667in,8.65667in</scan_area></sample>
+<sample><device>jacquard</device><scan_area>1.94667in,1.42in,2.09333in,8.54in</scan_area></sample>
+<sample><device>jacquard</device><scan_area>3.84333in,0.383333in,2.01667in,8.61667in</scan_area></sample>
+<sample><device>jacquard</device><scan_area>5.63in,1.37333in,2.13667in,8.58667in</scan_area></sample>
+
+<schedule>
+	<sample_set_type>all</sample_set_type>
+	<duration>30d</duration>
+	<device_capture_period>15m</device_capture_period>
+	<number_of_consecutive_captures_per_sample>1</number_of_consecutive_captures_per_sample>
+	<samples_that_belong_to_schedule>all</samples_that_belong_to_schedule>
+</schedule>
+
+</xml>

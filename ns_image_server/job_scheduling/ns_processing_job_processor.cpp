@@ -71,28 +71,6 @@ ns_processing_job_processor * ns_processing_job_processor_factory::generate(cons
 	throw ns_ex("ns_processing_job_processor_factory::generate()::Unknown job type requested");
 }
 
-#ifndef NS_ONLY_IMAGE_ACQUISITION
-void ns_get_worm_detection_model_for_job(ns_processing_job & job, ns_image_server & image_server,ns_sql & sql){
-	std::string model_name;
-	if (job.region_id== 0){
-		throw ns_ex("No region id provided!");
-	}
-	else {
-		sql << "SELECT worm_detection_model FROM sample_region_image_info WHERE "
-			<< "sample_region_image_info.id = " << job.region_id;
-		ns_sql_result res;
-		sql.get_rows(res);
-		if (res.size() == 0)
-			throw ns_ex("ns_processing_job_scheduler::The specified job refers to a region with an invalid sample reference: ") << job.region_id;
-		model_name = res[0][0];
-	}
-	//else throw ns_ex("ns_processing_job_scheduler::Not enough information specified to get model filename for job");
-
-	if (model_name == "")
-		throw ns_ex("ns_processing_job_scheduler::The specified job refers to a sample with no model file specified");
-
-	image_server.get_worm_detection_model(model_name, job.model);
-}
 
 ns_image_server_captured_image_region ns_get_region_image(const ns_processing_job &job){
 	ns_image_server_captured_image_region region_image;
@@ -222,7 +200,6 @@ void ns_processing_job_whole_sample_processor::mark_subject_as_problem(const ns_
 	return;
 }
 
-#endif
 bool ns_processing_job_maintenance_processor::job_is_still_relevant(ns_sql & sql, std::string & reason_not_relevant){
 	return true;
 }
@@ -458,37 +435,8 @@ ns_64_bit ns_processing_job_region_processor::run_job(ns_sql & sql){
 
 		if (job.operations[ns_process_thumbnail])
 			pipeline->resize_region_image(region_image, sql);
-
-		//load cached graph if necessary.
-		if (job.operations[ns_process_worm_detection_with_graph] ||
-			job.operations[ns_process_movement_coloring_with_graph] ||
-			job.operations[ns_process_movement_paths_visualization] ||
-			job.operations[ns_process_movement_paths_visualition_with_mortality_overlay] ||
-			job.operations[ns_process_movement_posture_visualization] ||
-			job.operations[ns_process_movement_plate_and_individual_visualization]) {
-
-			job.death_time_annotations = &pipeline->lifespan_curve_cache.get_experiment_data(job.experiment_id, sql);
-		}
-
-		bool detection_calculation_required(false);
-		for (unsigned int i = 0; i < job.operations.size(); i++) {
-			if (job.operations[i] && ns_image_processing_pipeline::detection_calculation_required((ns_processing_task)i)) {
-				detection_calculation_required = true;
-				break;
-			}
-		}
-
-		if (detection_calculation_required) {
-			ns_get_worm_detection_model_for_job(job, *image_server, sql);
-			if (!job.model.is_valid())
-				throw ns_ex("ns_processing_job_scheduler::run_job_from_push_queue()::Attempting to run task on region without specifying model");
-		}
-		if (job.death_time_annotations != 0)
-			pipeline->process_region(region_image, job.operations, sql, job.model().model_specification, *job.death_time_annotations);
-		else {
-			ns_lifespan_curve_cache_entry s;
-			pipeline->process_region(region_image, job.operations, sql, job.model().model_specification, s);
-		}
+		
+		pipeline->process_region(region_image, job.operations, sql);
 	}
 	catch (ns_ex & ex) {
 		return image_server_const.register_server_event(ex, &sql);
@@ -939,7 +887,7 @@ ns_64_bit ns_processing_job_maintenance_processor::run_job(ns_sql & sql) {
 							throw ns_ex("Invalid compression rate: ") << compression_rate_f;
 
 						ns_image_storage_reciever_handle<ns_8_bit> im_dest(image_server->image_storage.request_storage(
-							im, ns_jp2k, compression_rate_f, 2048, &sql, b, false, false));
+							im, ns_jp2k, compression_rate_f, 2048, &sql, b, false, ns_image_storage_handler::ns_forbid_volatile));
 						image.pump(im_dest.output_stream(), 2048);
 						im.save_to_db(im.id, &sql);
 						image_server->image_storage.delete_from_storage(old_im, ns_delete_long_term, &sql);
@@ -1176,7 +1124,7 @@ ns_64_bit ns_processing_job_maintenance_processor::run_job(ns_sql & sql) {
 			ns_image_server_image a_vis = region_image.create_storage_for_processed_image(ns_process_heat_map, ns_tiff, &sql);
 			ns_image_storage_reciever_handle<ns_8_bit> a_vis_o = image_server->image_storage.request_storage(
 				a_vis,
-				ns_tiff, 1.0, 1024, &sql, had_to_use_local_storage, false, false);
+				ns_tiff, 1.0, 1024, &sql, had_to_use_local_storage, false, ns_image_storage_handler::ns_forbid_volatile);
 			heat_map.pump(a_vis_o.output_stream(), 1024);
 			a_vis.mark_as_finished_processing(&sql);
 
@@ -1188,7 +1136,7 @@ ns_64_bit ns_processing_job_maintenance_processor::run_job(ns_sql & sql) {
 			ns_image_server_image b_vis = region_image.create_storage_for_processed_image(ns_process_static_mask, ns_tiff, &sql);
 			ns_image_storage_reciever_handle<ns_8_bit> b_vis_o = image_server->image_storage.request_storage(
 				b_vis,
-				ns_tiff, 1.0, 1024, &sql, had_to_use_local_storage, false, false);
+				ns_tiff, 1.0, 1024, &sql, had_to_use_local_storage, false, ns_image_storage_handler::ns_forbid_volatile);
 			static_mask.pump(b_vis_o.output_stream(), 1024);
 			b_vis.mark_as_finished_processing(&sql);
 

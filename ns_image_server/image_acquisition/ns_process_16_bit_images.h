@@ -27,7 +27,7 @@ public:
 															  small_image_output_buffer(0),
 															  resampler_binding(max_line_block_height),
 															  resampler(max_line_block_height),
-															  crop_upper_value(0), crop_lower_value(0), crop_value_specified(false),resample_image_to_output(false){}
+															  crop_upper_value(256*255), crop_lower_value(0),resample_image_to_output(false){}
 	ns_image_statistics image_statistics;
 	unsigned long init_send() { return 0; }
 	unsigned long init_send_const() const { return 0; }
@@ -40,16 +40,18 @@ public:
 		prop.height = lines_to_send;
 		prop.width = buffer.properties().width;
 		//if we also want to output a resampled copy, send data on to the resampler and the reciever.
+		const ns_32_bit crop_diff((ns_32_bit)(crop_upper_value - crop_lower_value));
 		if (resample_image_to_output){
 			ns_resampler<ns_8_bit>::storage_type * rbuf(resampler_binding.provide_buffer(prop));
 			if (features== ns_features_are_dark){
 				for (unsigned int y = 0; y < lines_to_send; y++)
 					for (unsigned int x = 0; x < buffer.properties().width; x++){
-						unsigned long c = buffer[y][x];
-						c = (255*c)/ crop_upper_value;			//description of conversion bounds provided at the top of this file.   Requested crop lower value is ignored and assumed to be zero.
-						c/=256;
-						if (c > 255)
-							c = 255;
+						ns_32_bit c = buffer[y][x];
+						
+						c = (c <= crop_lower_value)? 0 : 
+							(c >= crop_upper_value) ? 255 :
+							(256*(c- crop_lower_value))/ (crop_diff);			//description of conversion bounds provided at the top of this file.   Requested crop lower value is ignored and assumed to be zero.
+						
 						output[y][x] = (ns_8_bit)(c);
 						*(rbuf)[y][x] = (ns_8_bit)(c);
 						image_statistics.histogram[(ns_8_bit)(c)]++;
@@ -58,11 +60,11 @@ public:
 			else{
 				for (unsigned int y = 0; y < lines_to_send; y++)
 					for (unsigned int x = 0; x < buffer.properties().width; x++){
-						unsigned long c = USHRT_MAX-buffer[y][x];
-						c = (255*c)/ crop_upper_value;
-						c/=256;
-						if (c > 255)
-							c = 255;
+						ns_32_bit c = USHRT_MAX-buffer[y][x];
+						c = (c <= crop_lower_value) ? 0 :
+							(c >= crop_upper_value) ? 255 :
+							(256 * (c - crop_lower_value)) / (crop_diff);			//description of conversion bounds provided at the top of this file.   Requested crop lower value is ignored and assumed to be zero.
+
 						output[y][x] = (ns_8_bit)(255-c);
 		
 						(*rbuf)[y][x] = (ns_8_bit)(255-c);
@@ -76,11 +78,11 @@ public:
 			if (features== ns_features_are_dark){
 				for (unsigned int y = 0; y < lines_to_send; y++)
 					for (unsigned int x = 0; x < buffer.properties().width; x++){
-						unsigned long c = buffer[y][x];
-						c = (255*c)/ crop_upper_value;  //description of conversion bounds provided at the top of this file.   Requested crop lower value is ignored and assumed to be zero.
-						c/=256;
-						if (c > 255)
-							c = 255;
+						ns_32_bit c = buffer[y][x];
+						c = (c <= crop_lower_value) ? 0 :
+							(c >= crop_upper_value) ? 255 :
+							(256 * (c - crop_lower_value)) / (crop_diff);			//description of conversion bounds provided at the top of this file.   Requested crop lower value is ignored and assumed to be zero.
+
 						output[y][x] = (ns_8_bit)(c);
 						image_statistics.histogram[(ns_8_bit)(c)]++;
 					}
@@ -88,11 +90,11 @@ public:
 			else{
 				for (unsigned int y = 0; y < lines_to_send; y++)
 					for (unsigned int x = 0; x < buffer.properties().width; x++){
-						unsigned long c = USHRT_MAX-buffer[y][x];
-						c = (255*c)/ crop_upper_value;  //description of what conversion bounds mean at the top of this file
-						c/=256;
-						if (c > 255)
-							c = 255;
+						ns_32_bit c = USHRT_MAX-buffer[y][x];
+						c = (c <= crop_lower_value) ? 0 :
+							(c >= crop_upper_value) ? 255 :
+							(256 * (c - crop_lower_value)) / (crop_diff);			//description of conversion bounds provided at the top of this file.   Requested crop lower value is ignored and assumed to be zero.
+
 						output[y][x] = (ns_8_bit)(255-c);
 						image_statistics.histogram[(ns_8_bit)(255-c)]++;
 				}
@@ -107,9 +109,8 @@ public:
 			throw ns_ex("It never makes sense to set the 16 to 8 bit conversion range to less than 128!");
 		if (conversion_16_bit_bounds.y > 255 || conversion_16_bit_bounds.x > 255)
 			throw ns_ex("Crop range bounds must have a value in the range 0-255 ");
-		crop_lower_value = conversion_16_bit_bounds.x;	//this is set but subsequently ignored
-		crop_upper_value = conversion_16_bit_bounds.y;
-		crop_value_specified = true;
+		crop_lower_value = 256*conversion_16_bit_bounds.x;
+		crop_upper_value = 256*conversion_16_bit_bounds.y;
 	}
 	
 	template<class reciever_t>
@@ -186,8 +187,7 @@ private:
 	ns_resampler<ns_8_bit> resampler;
 	ns_image_stream_binding< ns_resampler<ns_8_bit>, ns_image_storage_reciever<ns_8_bit> > resampler_binding;
 	ns_image_storage_reciever_handle<ns_8_bit> * small_image_output_buffer;
-	ns_16_bit crop_upper_value, crop_lower_value;
-	bool crop_value_specified;
+	ns_32_bit crop_upper_value, crop_lower_value;
 	ns_image_stream_static_buffer<ns_16_bit> buffer;
 	unsigned int _max_line_block_height;
 };

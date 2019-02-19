@@ -1096,6 +1096,7 @@ void ns_time_path_image_movement_analyzer::process_raw_images(const ns_64_bit re
 			for (unsigned int j = 0; j < groups[i].paths.size(); j++){
 						if (ns_skip_low_density_paths && groups[i].paths[j].is_low_density_path())
 								continue;
+				//THIS IS WHERE QUANTIFICATION IS ANALYZED AND DEATH TIMES ARE IDENTIFIED AND ANNOTATIONS ARE GENERATED
 				groups[i].paths[j].analyze_movement(e,ns_stationary_path_id(i,j,analysis_id),last_timepoint_in_analysis_);
 				groups[i].paths[j].calculate_movement_quantification_summary();
 			}

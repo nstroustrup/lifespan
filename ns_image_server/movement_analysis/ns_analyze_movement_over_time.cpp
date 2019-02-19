@@ -228,6 +228,7 @@ void analyze_worm_movement_across_frames(const ns_processing_job & job, ns_image
 		metadata.load_from_db(job.region_id, "", sql);
 	}
 
+	//this is where death time annotations are written to disk
 	ns_death_time_annotation_set set;
 	time_path_image_analyzer.produce_death_time_annotations(set);
 	ns_death_time_annotation_compiler compiler;
@@ -355,11 +356,11 @@ void analyze_worm_movement_across_frames(const ns_processing_job & job, ns_image
 		for (unsigned int i = 0; i < 10; i++)
 			hold_times[i + 2] = i * 60 * 60;
 
-ns_acquire_for_scope < std::ostream > o2(image_server->results_storage.time_path_image_analysis_quantification(sub, "optimization_stats", false, sql).output());
-ns_analyzed_image_time_path::write_posture_analysis_optimization_data_header(o2());
-o2() << "\n";
-ns_parameter_optimization_results res(thresholds.size(), hold_times.size());
-time_path_image_analyzer.write_posture_analysis_optimization_data(2, thresholds, hold_times, metadata, o2(), res);
+		ns_acquire_for_scope < std::ostream > o2(image_server->results_storage.time_path_image_analysis_quantification(sub, "optimization_stats", false, sql).output());
+		ns_analyzed_image_time_path::write_posture_analysis_optimization_data_header(o2());
+		o2() << "\n";
+		ns_parameter_optimization_results res(thresholds.size(), hold_times.size());
+		time_path_image_analyzer.write_posture_analysis_optimization_data(2, thresholds, hold_times, metadata, o2(), res);
 	}
 
 	//update db stats

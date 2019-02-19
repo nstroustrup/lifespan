@@ -28,6 +28,7 @@ typedef enum{ns_maintenance_no_task,
 			 ns_maintenance_rerun_image_registration,
 			 ns_maintenance_recalc_image_stats,
 			 ns_maintenance_recalc_worm_morphology_statistics,
+			 ns_maintenance_delete_movement_data,
 			 ns_maintenance_last_task
 		} ns_maintenance_task;
 

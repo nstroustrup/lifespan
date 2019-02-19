@@ -650,6 +650,44 @@ ns_64_bit ns_processing_job_maintenance_processor::run_job(ns_sql & sql) {
 			ns_refine_image_statistics(job.region_id, recalc,o(), sql);
 			o.release();
 		}
+		case ns_maintenance_delete_movement_data:{
+			std::vector<ns_64_bit> regions;
+			if (job.region_id != 0) {
+				regions.push_back(job.region_id);
+			}
+			else if (job.sample_id != 0) {
+				sql << "SELECT r.id FROM sample_region_image_info as r WHERE r.sample_id = " << job.sample_id;
+				ns_sql_result res;
+				sql.get_rows(res);
+				for (unsigned int i = 0; i < res.size(); i++) {
+					ns_64_bit r_id = ns_atoi64(res[i][0].c_str());
+					if (r_id != 0)
+						regions.push_back(r_id);
+				}
+			}
+			else if (job.experiment_id != 0) {
+				sql << "SELECT r.id FROM sample_region_image_info as r, capture_samples as s WHERE r.sample_id = s.id AND s.experiment_id = " << job.experiment_id;
+				ns_sql_result res;
+				sql.get_rows(res);
+				for (unsigned int i = 0; i < res.size(); i++) {
+					ns_64_bit r_id = ns_atoi64(res[i][0].c_str());
+					if (r_id != 0)
+						regions.push_back(r_id);
+				}
+			}
+			if (regions.empty())
+				throw ns_ex("No region, sample, or experiment specified");
+			for (unsigned int i = 0; i < regions.size(); i++) {
+				const ns_64_bit region_id = regions[i];
+				try {
+					ns_delete_movement_analysis(region_id, true, sql);
+				}
+				catch (ns_ex & ex) {
+					image_server_const.register_server_event(ex, &sql);
+				}
+			}
+			break;
+		}
 		case ns_maintenance_recalc_image_stats: {
 
 			ns_image_server_results_subject sub;

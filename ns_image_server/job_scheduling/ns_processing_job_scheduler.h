@@ -9,6 +9,7 @@
 //#include "ns_processing_job_processor.h"
 
 
+void ns_delete_movement_analysis(const ns_64_bit region_id, bool delete_files, ns_sql & sql);
 void ns_handle_image_metadata_delete_action(ns_processing_job & job,ns_sql & sql);
 void ns_handle_file_delete_request(ns_processing_job & job,ns_sql & sql);
 ns_processing_job ns_handle_file_delete_action(ns_processing_job & job,ns_sql & sql);

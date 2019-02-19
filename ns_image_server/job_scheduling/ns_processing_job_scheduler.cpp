@@ -62,6 +62,8 @@ std::string ns_maintenance_task_to_string(const ns_maintenance_task & task){
 			return "Recalculate Image Statistics";
 		case ns_maintenance_recalc_worm_morphology_statistics:
 			return "Compile worm morphology statistics";
+		case ns_maintenance_delete_movement_data:
+			return "Delete movement analysis";
 		case ns_maintenance_last_task: throw ns_ex("ns_maintenance_task_to_string::last_task does not have a std::string representation");
 		default:
 			throw ns_ex("ns_maintenance_task_to_string::Unknown Maintenance task");
@@ -326,6 +328,52 @@ void ns_get_experiment_cleanup_subjects(const ns_64_bit experiment_id, ns_sql_re
 	}
 }
 
+void ns_delete_movement_analysis(const ns_64_bit region_id, bool delete_files,ns_sql & sql) {
+	sql << "SELECT time_path_solution_id, movement_image_analysis_quantification_id FROM sample_region_image_info WHERE id = " << region_id;
+	ns_sql_result ids;
+	sql.get_rows(ids);
+	if (ids.empty())
+		throw ns_ex("ns_delete_movement_analysis_metadata()::Could not find region id ") << region_id;
+	ns_64_bit time_path_solution_id = ns_atoi64(ids[0][0].c_str()),
+		movement_image_analysis_quantification_id = ns_atoi64(ids[0][0].c_str());
+	if (time_path_solution_id != 0 && delete_files) {
+		ns_image_server_image im;
+		im.id = time_path_solution_id;
+		image_server.image_storage.delete_from_storage(im, ns_delete_both_volatile_and_long_term, &sql);
+	}
+	if (movement_image_analysis_quantification_id != 0) {
+		//delete all the path images
+		if (delete_files) {
+			sql << "SELECT id, image_id, flow_image_id, group_id FROM path_data WHERE region_id = " << region_id;
+			ns_sql_result paths;
+			sql.get_rows(paths);
+			for (unsigned int i = 0; i < paths.size(); i++) {
+				for (unsigned int j = 1; j <= 2; j++) {
+					ns_image_server_image im;
+					im.id = ns_atoi64(paths[i][j].c_str());
+					if (im.id != 0)
+						image_server.image_storage.delete_from_storage(im, ns_delete_both_volatile_and_long_term, &sql);
+				}
+			}
+		}
+		sql << "DELETE FROM path_data WHERE region_id = " << region_id;
+		sql.send_query();
+		//delete the record for all the movement analysis
+		if (delete_files) {
+			ns_image_server_image im;
+			im.id = movement_image_analysis_quantification_id;
+			image_server.image_storage.delete_from_storage(im, ns_delete_both_volatile_and_long_term, &sql);
+		}
+	}
+
+	sql << "UPDATE sample_region_image_info SET latest_movement_rebuild_timestamp =0, "
+		"last_timepoint_in_latest_movement_rebuild=0, "
+		"latest_by_hand_annotation_timestamp=0, "
+		"number_of_timepoints_in_latest_movement_rebuild=0, "
+		"time_path_solution_id = 0, movement_image_analysis_quantification_id = 0"
+		" WHERE id = " << region_id;
+	sql.send_query();
+}
 
 void ns_handle_image_metadata_delete_action(ns_processing_job & job,ns_sql & sql){
 

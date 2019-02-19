@@ -41,7 +41,7 @@ public:
 		const std::vector<ns_detected_object *>::size_type s(detected_objects.objects.size());
 		hande_static_mask(detected_objects,spatial_median_image, static_mask);
 
-		image_server_const.add_subtext_to_current_event(ns_to_string(s - detected_objects.objects.size()) + "objects were removed by the static mask.\n", sql_for_debug_output);
+		image_server_const.add_subtext_to_current_event(ns_to_string(s - detected_objects.objects.size()) + " objects were removed by the static mask.\n", sql_for_debug_output);
 	
 		detected_objects.convert_bitmaps_into_node_graphs(spatial_median_image.properties().resolution, debug_filename_output);
 		detected_objects.calculate_segment_topologies_from_node_graphs(do_multiple_worm_disambiguation);

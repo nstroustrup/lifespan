@@ -87,8 +87,9 @@ $ns_maintenance_tasks = array('ns_maintenance_no_task'=>0,
 			      'ns_maintenance_generate_subregion_mask'=>19,
 			      'ns_maintenance_rerun_image_registration'=>20,
 			      'ns_maintenance_recalc_image_stats'=>21,
-			      'ns_maintenance_recalc_worm_morphology_statistics'=>22  
-			      );
+			      'ns_maintenance_recalc_worm_morphology_statistics'=>22,
+			      'ns_maintenance_delete_movement_data'=>23 
+);
 
 $ns_denoising_option_labels = array(
 		       "No normalization of worm movement scores"=>0,
@@ -111,6 +112,7 @@ function ns_maintenance_task_order($is_region,$is_sample,$is_experiment){
     array_push($r,$ns_maintenance_tasks['ns_maintenance_rerun_image_registration']);
     array_push($r,$ns_maintenance_tasks['ns_maintenance_check_for_file_errors']);
     array_push($r,$ns_maintenance_tasks['ns_maintenance_rebuild_movement_from_stored_images']);
+    array_push($r,$ns_maintenance_tasks['ns_maintenance_delete_movement_data']);
     array_push($r,$ns_maintenance_tasks['ns_maintenance_generate_subregion_mask']);
     array_push($r,$ns_maintenance_tasks['ns_maintenance_recalc_image_stats']);
     array_push($r,$ns_maintenance_tasks['ns_maintenance_recalc_worm_morphology_statistics']);
@@ -151,7 +153,8 @@ $ns_maintenance_task_labels = array(0=>'No Task',
 				    19=>'Generate Subregion Mask',
 				    20=>'Re-Run Image Registration',
 				    21=>'Re-Calculate Image Statistics',
-				    22=>'Compile Worm Morphology Statistics'
+				    22=>'Compile Worm Morphology Statistics',
+				    23=>'Delete Worm Movement Analysis'
 			      );
 $NS_LAST_MAINTENANCE_TASK = 22;
 

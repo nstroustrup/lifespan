@@ -838,8 +838,7 @@ void ns_lifespan_experiment_set::out_simple_JMP_header(const ns_time_handing_beh
 
 void ns_lifespan_experiment_set::out_simple_JMP_event_data(const ns_time_handing_behavior & time_handling_behavior, const ns_control_group_behavior & control_group_behavior,const ns_death_time_annotation::ns_by_hand_annotation_integration_strategy & by_hand_strategy,const ns_death_time_annotation::ns_multiworm_censoring_strategy & s, const ns_death_time_annotation::ns_missing_worm_return_strategy & w, std::ostream & o,  const ns_lifespan_device_normalization_statistics * regression_stats,const ns_region_metadata & metadata,const ns_metadata_worm_properties & prop,const double time_scaling_factor,const bool output_mulitple_events,const std::string & terminator, const bool output_raw_data_as_regression){
 	const ns_death_time_annotation & properties (prop.properties_override_set?prop.properties_override:prop.events->properties);
-	//if (by_hand_strategy == ns_death_time_annotation::ns_machine_annotations_if_no_by_hand && properties.stationary_path_id.group_id == 23)
-	//	cout << "Found it!";
+	
 	if (properties.is_excluded())
 		return;
 	for (unsigned int i = 0; i < prop.events->events.size(); i++){
@@ -848,15 +847,7 @@ void ns_lifespan_experiment_set::out_simple_JMP_event_data(const ns_time_handing
 		//of the interval during which the animal dies
 		if (properties.is_censored() && time_handling_behavior == ns_output_event_intervals)
 			a.time.period_end_was_not_observed = true;
-	//if (a.type == ns_movement_cessation && a.excluded == ns_death_time_annotation::ns_censored_at_end_of_experiment)
-	//	cerr << "WHA";
-	//	const bool is_estimated_multiple_worm_death_event(a.is_censored() && a.type != ns_moving_worm_disappearance);
-	//	if (a.event_observation_type == ns_death_time_annotation::ns_induced_multiple_worm_death)
-	//		cerr << "RA";
-	//	if (a.excluded == ns_death_time_annotation::ns_censored_at_end_of_experiment)
-	//		cerr << "Found it!";
-	//	if (a.is_censored() && a.disambiguation_type != ns_death_time_annotation::ns_part_of_a_mutliple_worm_disambiguation_cluster)
-	//		cout << "Found it";
+	
 		if (!a.is_censored() && a.multiworm_censoring_strategy == ns_death_time_annotation::ns_unknown_multiworm_cluster_strategy)
 			continue;
 		if (!(		

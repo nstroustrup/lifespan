@@ -72,7 +72,7 @@ public:
 		fitter = new BSplineCurveFit<float>(2, input_count, data, degree,control_point_number);
 	}
 
-	void generate_bspline(ns_bspline& bspline){
+	void generate_bspline(ns_bspline& bspline, const int output_size=0){
 		Vector2f * cp;
 		const float * control_points = fitter->GetControlData();
 
@@ -83,7 +83,7 @@ public:
 		}
 		
 		try{
-			bspline.calculate_intersecting_all_points(degree_,true,false,control_point_number_,static_cast<void *>(cp),input_count_);
+			bspline.calculate_intersecting_all_points(degree_,true,false,control_point_number_,static_cast<void *>(cp),output_size);
 			delete[] cp;
 		}
 		catch(...){
@@ -142,74 +142,94 @@ void ns_bspline::calculate_with_standard_params(const std::vector<ns_vector_2d> 
 		calculate_intersecting_all_points((unsigned int)data.size()-1,true,false,data,output_size);
 		return;
 	}
-//	unsigned int count (1000);
-//	unsigned long fit_start = ns_current_time();
-//	for (unsigned int i = 0; i < count; i++){
-		ns_bspline_fitter_internal fitter;
 
-		float * dat = new float[2*data.size()];
-		try {
-			for (unsigned int i = 0; i < data.size(); i++) {
-				dat[2 * i] = (float)data[i].x;
-				dat[2 * i + 1] = (float)data[i].y;
-			}
-			unsigned long degree = NS_BSPLINE_STANDARD_DEGREE;
-			if (smoother == ns_bspline::ns_low)
-				degree = 2;
-			/*if (degree > 24)
-				degree = 24;
-			if (degree < 8)
-				degree = 8;*/
-			long control_point_ratio;
-			switch (smoother){
-			case ns_bspline::ns_high:
-					control_point_ratio = 75;
-					break;
-				case ns_bspline::ns_medium:
-					control_point_ratio = 10;
-					break;
-				case ns_bspline::ns_low:
-					control_point_ratio = 10 ;
-					break;
-				default: throw ns_ex("Unknown smoother level");
-			}
-			unsigned long component((unsigned long)data.size()/control_point_ratio);
-			if(component < 3*(degree/2))
-				component = 3*(degree/2);
-			if (data.size() < 12){
-				degree = (unsigned long)data.size()-3;
-				component = (unsigned long)data.size()-1;
-			}
-		//	cerr << "\nDegree: " << degree << "\n";
-			//if (data.size() < 12)
-			//	cerr << "d:" << degree << " c:" << component << " dta: " << data.size() << "\n";
-			fitter.calculate(degree,component,(unsigned long)data.size(),dat);
-			fitter.generate_bspline(*this);
-			delete[] dat;
-		}
-		catch(...){
-			delete[] dat;	
-			throw;
-		}
-//	}
-//	unsigned long fit_stop = ns_current_time();
-//	cerr << "Fitting: " << fit_stop - fit_start;
+	ns_bspline_fitter_internal fitter;
 
-/*	unsigned long degree_start = ns_current_time();
-	for (unsigned int i = 0; i < count; i++){
-		if (output_size < 2)
-			output_size = 2;
-		if (data.size() <= 8){
-			calculate_intersecting_all_points((unsigned int)data.size()-1,true,false,data,output_size);
-			return;
+	float * dat = new float[2*data.size()];
+	try {
+		for (unsigned int i = 0; i < data.size(); i++) {
+			dat[2 * i] = (float)data[i].x;
+			dat[2 * i + 1] = (float)data[i].y;
 		}
-		calculate_intersecting_all_points((unsigned int)data.size()-8,true,false,data,output_size);
+		calculate_with_standard_params(dat, data.size(), output_size, smoother);
+		delete[] dat;
 	}
-	unsigned long degree_stop = ns_current_time();
-	cerr << "High Degree: " << degree_stop - degree_start << "\n";*/
+	catch(...){
+		delete[] dat;	
+		throw;
+	}
 
 }
+void ns_bspline::calculate_with_standard_params(const std::vector<double> & x, const std::vector<double> & y, unsigned int output_size, const ns_smoothness_level smoother) {
+	if (x.size() != y.size()) throw ns_ex("ns_bspline::calculate_with_standard_params()::x and y size mismatch!");
+	if (x.size() == 0)
+		throw ns_ex("ns_bspline::calculate_with_standard_params()::Cannot calculate spine information with no data points!");
+	if (x.size() == 1)
+		throw ns_ex("ns_bspline::calculate_with_standard_params()::Cannot calculate spine information for a single data point!");
+	if (x.size() < 4) {
+		calculate_intersecting_all_points((unsigned int)x.size() - 1, true, false, x,y, output_size);
+		return;
+	}
 
+	ns_bspline_fitter_internal fitter;
+
+	float * dat = new float[2 * x.size()];
+	try {
+		for (unsigned int i = 0; i < x.size(); i++) {
+			dat[2 * i] = (float)x[i];
+			dat[2 * i + 1] = (float)y[i];
+		}
+		calculate_with_standard_params(dat, x.size(), output_size, smoother);
+		delete[] dat;
+	}
+	catch (...) {
+		delete[] dat;
+		throw;
+	}
+
+}
+void ns_bspline::calculate_with_standard_params(const float * dat, const unsigned long data_size, unsigned int output_size, const ns_smoothness_level smoother) {
+	
+	ns_bspline_fitter_internal fitter;
+
+	
+	unsigned long degree = NS_BSPLINE_STANDARD_DEGREE;
+	if (smoother == ns_bspline::ns_low )
+		degree = 2;
+	if (smoother == smoother == ns_bspline::ns_very_low)
+		degree = 2;
+	/*if (degree > 24)
+		degree = 24;
+	if (degree < 8)
+		degree = 8;*/
+	long control_point_ratio;
+	switch (smoother) {
+	case ns_bspline::ns_high:
+		control_point_ratio = 75;
+		break;
+	case ns_bspline::ns_medium:
+		control_point_ratio = 10;
+		break;
+	case ns_bspline::ns_low:
+		control_point_ratio = 10;
+		break;
+	case ns_bspline::ns_very_low:
+		control_point_ratio = 3;
+		break;
+	default: throw ns_ex("Unknown smoother level");
+	}
+	unsigned long component((unsigned long)data_size / control_point_ratio);
+	if (component < 3 * (degree / 2))
+		component = 3 * (degree / 2);
+	if (data_size < 12) {
+		degree = (unsigned long)data_size - 3;
+		component = (unsigned long)data_size- 1;
+	}
+
+	fitter.calculate(degree, component, (unsigned long)data_size, dat);
+	fitter.generate_bspline(*this, output_size);
+
+}
 
 void ns_bspline::calculate_intersecting_all_points(const unsigned int degree, const bool open_spline, const bool connect_spline_endpoints, const unsigned long data_count, const void * d, unsigned int output_size = 0){
 	const Vector2f * data = static_cast<const Vector2f *>(d);
@@ -239,6 +259,22 @@ void ns_bspline::calculate_intersecting_all_points(const unsigned int degree, co
 	}
 	catch(...){
 		delete[] dat;	
+		throw;
+	}
+	delete[] dat;
+}
+void ns_bspline::calculate_intersecting_all_points(const unsigned int degree, const bool open_spline, const bool connect_spline_endpoints, const std::vector<double> & x, const std::vector<double> & y, unsigned int output_size = 0) {
+	if (x.size() != y.size()) throw ns_ex("ns_bspline::calculate_with_standard_params()::x and y size mismatch!");
+	Vector2f * dat = new Vector2f[x.size()];
+	try {
+		for (unsigned int i = 0; i < x.size(); i++) {
+			dat[i].X() = (float)x[i];
+			dat[i].Y() = (float)y[i];
+		}
+		calculate_intersecting_all_points(degree, open_spline, connect_spline_endpoints, (const unsigned int)x.size(), dat, output_size);
+	}
+	catch (...) {
+		delete[] dat;
 		throw;
 	}
 	delete[] dat;

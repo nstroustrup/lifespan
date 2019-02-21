@@ -9,7 +9,8 @@ void ns_update_main_information_bar(const std::string & status);
 #include "ns_bspline.h"
 
 void ns_gaussian_kernel_smoother(const unsigned long time_step_resample_factor, const unsigned long kernel_width_in_fraction_of_all_points,const std::vector<ns_graph_object> & source, std::vector<ns_graph_object> & dest);
-
+typedef enum{ns_band,ns_connect_to_bottom} ns_extrema_plot_type;
+void ns_calculate_running_extrema(const ns_extrema_plot_type & plot_type, const unsigned long time_step_resample_factor, const unsigned long kernel_width_in_fraction_of_all_points, const std::vector<ns_graph_object> & source, std::vector<ns_graph_object> & dest, std::vector<double> temp1, std::vector<double> temp2);
 class ns_death_time_posture_solo_annotater_region_data {
 private:
 	//disable copy constructor
@@ -183,20 +184,22 @@ private:
 	bool _show;
 	ns_death_time_posture_solo_annotater_region_data *region_data;
 	unsigned long group_id;
-	ns_image_standard base_graph;
-	ns_graph graph;
-	ns_graph_specifics graph_specifics;
+	ns_image_standard base_graph_top, base_graph_bottom;
+	ns_graph graph_top, graph_bottom;
+	ns_graph_specifics graph_top_specifics, graph_bottom_specifics;
 	vector<ns_graph_object> movement_vals, smoothed_movement_vals, size_vals, smoothed_size_vals,slope_vals;
 	vector <double> time_axis;
 	vector<long> segment_ids; //mapping from the current time in time_axis to the specicif segment (element of movement_vals, smoothed_movement_vals, etc)
 	vector<long> segment_offsets; //mapping from the current time in time_axis to the specicif segment (element of movement_vals, smoothed_movement_vals, etc)
 	ns_posture_analysis_model posture_analysis_model;
+	std::vector<double> temp1, temp2;
 	
 	unsigned long number_of_valid_elements, first_element;
-	void draw_base_graph(const ns_graph_contents & graph_contents, const long marker_resize_factor, unsigned long start_time=0, unsigned long stop_time=UINT_MAX) {
+	void draw_base_graph(const ns_graph_contents & graph_contents, const long marker_resize_factor, unsigned long start_time = 0, unsigned long stop_time = UINT_MAX) {
 		if (graph_contents == ns_none)
 			return;
-		graph.clear();
+		graph_top.clear();
+		graph_bottom.clear();
 		ns_analyzed_image_time_path *path(&region_data->movement_analyzer.group(group_id).paths[0]);
 		if (path->element_count() < 1)
 			throw ns_ex("Time series is too short");
@@ -225,12 +228,12 @@ private:
 		}
 		if (number_of_valid_elements == 0 || first_element == path->element_count())
 			throw ns_ex("No data to plot");
-		number_of_valid_elements = number_of_valid_elements +1 - first_element;
+		number_of_valid_elements = number_of_valid_elements + 1 - first_element;
 
 		time_axis.resize(number_of_valid_elements);
 		segment_ids.resize(number_of_valid_elements, -1);
 
-		const unsigned long max_time_step_interval_to_connect_with_lines(4*time_step / time_step_count);
+		const unsigned long max_time_step_interval_to_connect_with_lines(4 * time_step / time_step_count);
 
 		//count how many connected line segments we'll need to draw.
 		long number_of_separate_segments(1);
@@ -242,14 +245,14 @@ private:
 			bool step_was_too_long(last_valid_time > 0 && current_time_step > max_time_step_interval_to_connect_with_lines);
 			if (step_was_too_long)
 				number_of_separate_segments++;
-			segment_ids[i] = number_of_separate_segments-1;
+			segment_ids[i] = number_of_separate_segments - 1;
 			last_valid_time = path->element(i + first_element).absolute_time;
 		}
 		segment_offsets.resize(number_of_separate_segments);
-		if (segment_offsets.size()>0)
+		if (segment_offsets.size() > 0)
 			segment_offsets[0] = 0;
 		unsigned long cur_seg_id(0);
-		for (unsigned int i = 0; i <number_of_valid_elements; i++) {
+		for (unsigned int i = 0; i < number_of_valid_elements; i++) {
 			if (segment_ids[i] != cur_seg_id) {
 				cur_seg_id++;
 				segment_offsets[cur_seg_id] = i;
@@ -277,12 +280,12 @@ private:
 
 		float min_score(FLT_MAX), max_score(-FLT_MAX);
 		float min_intensity(FLT_MAX), max_intensity(-FLT_MAX);
-		float min_intensity_slope(0),  //we want to include a zero slope
-			max_intensity_slope(-FLT_MAX);
+		ns_s64_bit min_intensity_slope(INT32_MAX),  //we want to include a zero slope
+			max_intensity_slope(-INT32_MAX);
 
 		float min_raw_score, max_raw_score, second_smallest_raw_score;
 		float min_time(FLT_MAX), max_time(-FLT_MAX);
-		
+
 		std::vector<double> scores;
 		scores.reserve(number_of_valid_elements);
 
@@ -308,7 +311,7 @@ private:
 			}
 		}
 		max_raw_score = scores[scores.size() - scores.size() / 50 - 1];
-		
+
 		//make sure the axis minimum and maximum are not equal.
 		if (second_smallest_raw_score == max_raw_score || min_raw_score == max_raw_score)
 			max_raw_score += .01;
@@ -340,15 +343,19 @@ private:
 			const double t(path->element(i + first_element).relative_time);
 			if (t < min_time) min_time = t;
 			if (t > max_time) max_time = t;
-			if (i < path->first_stationary_timepoint())
-				continue;
 			const double n(path->element(i + first_element).measurements.total_intensity_within_stabilized);
 			const double s(path->element(i + first_element).measurements.change_in_total_stabilized_intensity);
+			cout << t / (60.0 * 60 * 24) << "," << s << "\n";
+			if (i < path->first_stationary_timepoint())
+				continue;
 			if (n < min_intensity) min_intensity = n;
 			if (n > max_intensity) max_intensity = n;
 			if (s < min_intensity_slope) min_intensity_slope = s;
 			if (s > max_intensity_slope) max_intensity_slope = s;
 		}
+		cout << "\n";
+
+		ns_s64_bit intensity_slope_largest = (max_intensity_slope > -min_intensity_slope) ? max_intensity_slope: -min_intensity_slope;
 
 		double threshold;
 		if (posture_analysis_model.threshold_parameters.stationary_cutoff >= max_raw_score)
@@ -378,89 +385,66 @@ private:
 
 			//scale intensity to a value between 0 and 1.
 			size_vals[current_segment].x.push_back(time);
-			size_vals[current_segment].y.push_back((path->element(i + first_element).measurements.total_intensity_within_stabilized - min_intensity) / (max_intensity-min_intensity)) ;
+			size_vals[current_segment].y.push_back((path->element(i + first_element).measurements.total_intensity_within_stabilized - min_intensity) / (max_intensity - min_intensity));
 			if (*size_vals[current_segment].y.rbegin() < 0) *size_vals[current_segment].y.rbegin() = 0;
 			if (*size_vals[current_segment].y.rbegin() > 1) *size_vals[current_segment].y.rbegin() = 1;
 
-
+			//scale slope so that a slope of 0 is at .5 and the max devation from zero is either at -1 or 1
 			slope_vals[current_segment].x.push_back(time);
-			slope_vals[current_segment].y.push_back((path->element(i + first_element).measurements.change_in_total_stabilized_intensity - min_intensity_slope) / (max_intensity_slope - min_intensity_slope));
+			slope_vals[current_segment].y.push_back(.5*(path->element(i + first_element).measurements.change_in_total_stabilized_intensity  / (float)(intensity_slope_largest)+1));
 			if (*slope_vals[current_segment].y.rbegin() < 0) *slope_vals[current_segment].y.rbegin() = 0;
 			if (*slope_vals[current_segment].y.rbegin() > 1) *slope_vals[current_segment].y.rbegin() = 1;
 		}
 
 		ns_graph_object threshold_object(ns_graph_object::ns_graph_horizontal_line);
-		double th((threshold- min_score)/(max_score - min_score));
-		if (th< 0) th = 0;
+		double th((threshold - min_score) / (max_score - min_score));
+		if (th < 0) th = 0;
 		if (th > 1) th = 1;
 		threshold_object.y.push_back(th);
 
 
-		double zero_slope_value = (0 - min_intensity_slope) / (max_intensity_slope - min_intensity_slope);
+		double zero_slope_value = .5;
 
 		ns_graph_object zero_slope_object(ns_graph_object::ns_graph_horizontal_line);
 		zero_slope_object.y.push_back(zero_slope_value);
 
 
 
-		
+
 		const unsigned long resample_factor(4);
-		const unsigned long kernel_width_in_fraction_of_whole_timeseries(4);
+		const unsigned long kernel_absolute_width(5);
 
-		ns_gaussian_kernel_smoother(resample_factor, kernel_width_in_fraction_of_whole_timeseries, movement_vals, smoothed_movement_vals);
-		ns_gaussian_kernel_smoother(resample_factor, kernel_width_in_fraction_of_whole_timeseries, size_vals, smoothed_size_vals);
-
-
-		if (0) {
-			ns_bspline bspline;
-			for (unsigned int current_segment = 0; current_segment < movement_vals.size(); current_segment++) {
-
-				vector<ns_vector_2d> spline_fit_nodes(movement_vals[current_segment].x.size());
-
-				for (unsigned int i = 0; i < movement_vals[current_segment].x.size(); i++) {
-					spline_fit_nodes[i].x = movement_vals[current_segment].x[i];
-					spline_fit_nodes[i].y = movement_vals[current_segment].y[i];
-				}
-				bspline.calculate_with_standard_params(spline_fit_nodes, 2 * movement_vals[current_segment].x.size(), ns_bspline::ns_low);
-
-				smoothed_movement_vals[current_segment].x.resize(0);
-				smoothed_movement_vals[current_segment].y.resize(0);
-				//smoothed_movement_vals[current_segment].x.insert(smoothed_movement_vals[current_segment].x.end(), movement_vals[current_segment].x.begin(), movement_vals[current_segment].x.end());
-				smoothed_movement_vals[current_segment].x.reserve(bspline.positions.size());
-				smoothed_movement_vals[current_segment].y.reserve(bspline.positions.size());
-				for (int j = 0; j < bspline.positions.size(); j++) {
-					if (bspline.positions[j].x < *movement_vals[current_segment].x.begin() ||
-						bspline.positions[j].x > *movement_vals[current_segment].x.rbegin())
-						continue;
-					smoothed_movement_vals[current_segment].x.resize(smoothed_movement_vals[current_segment].x.size() + 1, bspline.positions[j].x);
-					smoothed_movement_vals[current_segment].y.resize(smoothed_movement_vals[current_segment].y.size() + 1, bspline.positions[j].y);
-					//	smoothed_movement_vals[current_segment].x[j] = ;
-					//	smoothed_movement_vals[current_segment].y[j] = bspline.positions[j].y;
-					if (*smoothed_movement_vals[current_segment].y.rbegin() > 1)
-						*smoothed_movement_vals[current_segment].y.rbegin() = 1;
-					if (*smoothed_movement_vals[current_segment].y.rbegin() < 0)
-						*smoothed_movement_vals[current_segment].y.rbegin() = 0;
-				}
+		ns_calculate_running_extrema(ns_connect_to_bottom, resample_factor, kernel_absolute_width, movement_vals, smoothed_movement_vals, temp1, temp2);
+		ns_calculate_running_extrema(ns_band,resample_factor, kernel_absolute_width, size_vals, smoothed_size_vals, temp1, temp2);
+		for (unsigned int i = 0; i < smoothed_movement_vals.size(); i++){
+			for (unsigned int j = 0; j < smoothed_movement_vals[i].y.size(); j++) {
+				if (smoothed_movement_vals[i].y[j] > 1)
+					smoothed_movement_vals[i].y[j] = 1;
+				if (smoothed_movement_vals[i].y[j] < 0)
+					smoothed_movement_vals[i].y[j] = 0;
+			}
+			for (unsigned int j = 0; j < smoothed_movement_vals[i].y_min.size(); j++) {
+				if (smoothed_movement_vals[i].y_min[j] < 0)
+					smoothed_movement_vals[i].y_min[j] = 0;
+				if (smoothed_movement_vals[i].y_min[j] > 1)
+					smoothed_movement_vals[i].y_min[j] = 1;
+			}
+		}	
+		for (unsigned int i = 0; i < smoothed_size_vals.size(); i++) {
+			for (unsigned int j = 0; j < smoothed_size_vals[i].y.size(); j++) {
+				if (smoothed_size_vals[i].y[j] > 1)
+					smoothed_size_vals[i].y[j] = 1;
+				if (smoothed_size_vals[i].y[j] < 0)
+					smoothed_size_vals[i].y[j] = 0;
+			}
+			for (unsigned int j = 0; j < smoothed_size_vals[i].y_min.size(); j++) {
+				if (smoothed_size_vals[i].y_min[j] > 1)
+					smoothed_size_vals[i].y_min[j] = 1;
+				if (smoothed_size_vals[i].y_min[j] < 0)
+					smoothed_size_vals[i].y_min[j] = 0;
 			}
 		}
-		if (0) {
-			smoothed_movement_vals.resize(movement_vals.size(), ns_graph_object::ns_graph_dependant_variable);
-			for (unsigned int j = 0; j < movement_vals.size(); j++) {
-				smoothed_movement_vals[j].x.resize(0);
-				smoothed_movement_vals[j].x.insert(smoothed_movement_vals[j].x.end(), movement_vals[j].x.begin(), movement_vals[j].x.end());
-				smoothed_movement_vals[j].y.resize(movement_vals[j].y.size());
-				for (int i = 0; i < movement_vals[j].y.size(); i++) {
-					int di = i - 2;
-					int ddi = i + 2;
-					if (di < 0) di = 0;
-					if (ddi >= movement_vals[j].y.size()) ddi = movement_vals[j].y.size() - 1;
-					float sum(0);
-					for (int k = di; k <= ddi; k++)
-						sum += movement_vals[j].y[k];
-					smoothed_movement_vals[j].y[i] = sum / (ddi - di + 1);
-				}
-			}
-		}
+
 		threshold_object.properties.line.color = ns_color_8(150, 150, 150);
 		threshold_object.properties.line.draw = true;
 
@@ -472,20 +456,28 @@ private:
 			marker_size = desired_screen_marker_size* marker_resize_factor;
 		for (unsigned int i = 0; i < number_of_separate_segments; i++) {
 
-			smoothed_movement_vals[i].properties.line.draw = size_vals[i].properties.line.draw = true;
+			/*smoothed_movement_vals[i].properties.line.draw = size_vals[i].properties.line.draw = true;
 			smoothed_movement_vals[i].properties.line.width = size_vals[i].properties.line.width = 1;
 			smoothed_movement_vals[i].properties.point.draw = size_vals[i].properties.point.draw = false;
 			smoothed_size_vals[i].properties = smoothed_movement_vals[i].properties;
 
-			smoothed_movement_vals[i].properties.line.color = ns_color_8(255, 255, 255)/4*3;
-			smoothed_size_vals[i].properties.line.color = ns_color_8(125, 125, 255)/4*3;
-
+			smoothed_movement_vals[i].properties.line.color = ns_color_8(200, 200, 200);
+			smoothed_size_vals[i].properties.line.color = ns_color_8(100, 100, 225);
+			*/
+			smoothed_movement_vals[i].properties.fill_between_y_and_ymin = true;
+			smoothed_movement_vals[i].properties.area_fill.draw = true;
+			smoothed_movement_vals[i].properties.area_fill.opacity = .5;
+			smoothed_movement_vals[i].properties.line.draw = false;
+			smoothed_movement_vals[i].properties.point.draw = false;
+			smoothed_size_vals[i].properties = smoothed_movement_vals[i].properties;
+			smoothed_movement_vals[i].properties.area_fill.color = ns_color_8(100, 100, 100);
+			smoothed_size_vals[i].properties.area_fill.color = ns_color_8(75, 75, 150);
 
 			movement_vals[i].properties.line.draw = false;
 			movement_vals[i].properties.point.draw = true;
 			size_vals[i].properties = movement_vals[i].properties;
 
-			movement_vals[i].properties.point.color = ns_color_8(200, 200, 200);
+			movement_vals[i].properties.point.color = ns_color_8(225, 225, 225);
 			//movement_vals[i].properties.point.edge_color = ns_color_8(200, 200, 200);
 			movement_vals[i].properties.point.width = marker_size;
 			movement_vals[i].properties.point.edge_width = 0;
@@ -495,32 +487,38 @@ private:
 			size_vals[i].properties.point.width = marker_size;
 			size_vals[i].properties.point.edge_width = 0;
 
-			slope_vals[i].properties = smoothed_movement_vals[i].properties;
+			slope_vals[i].properties.point.draw = true;
+			slope_vals[i].properties.line.draw = true;
 			slope_vals[i].properties.line.color = ns_color_8(150, 250, 200);
+			slope_vals[i].properties.point.color = ns_color_8(150, 250, 200);
 
 			switch (graph_contents) {	//deliberate read-through between plots
 				case ns_all:
 				case ns_movement_intensity_slope:
-					graph.add_reference(&slope_vals[i]);
 				case ns_movement_intensity:
-					graph.add_reference(&size_vals[i]);
-					graph.add_reference(&smoothed_size_vals[i]);
+					graph_bottom.add_reference(&smoothed_size_vals[i]);
+				case ns_movement:
+					graph_top.add_reference(&smoothed_movement_vals[i]);
+				}
+			switch (graph_contents) {	//deliberate read-through between plots
+				case ns_all:
+				case ns_movement_intensity_slope:
+					graph_bottom.add_reference(&slope_vals[i]);
+				case ns_movement_intensity:
+					graph_bottom.add_reference(&size_vals[i]);
 				case ns_movement:	
-					graph.add_reference(&movement_vals[i]);
-					graph.add_reference(&smoothed_movement_vals[i]);
-
+					graph_top.add_reference(&movement_vals[i]);
 			}
-		
 		}
 		if (graph_contents == ns_movement_intensity_slope || graph_contents == ns_all) 
-			graph.add_reference(&zero_slope_object);
+			graph_bottom.add_reference(&zero_slope_object);
 	
-		graph.add_reference(&threshold_object);
+		graph_top.add_reference(&threshold_object);
 
-		graph.x_axis_properties.line.color = graph.y_axis_properties.line.color = ns_color_8(255, 255, 255);
-		graph.x_axis_properties.text.color = graph.y_axis_properties.text.color = ns_color_8(255, 255, 255);
-		graph.x_axis_properties.text_size = graph.y_axis_properties.text_size = 10;
-		graph.area_properties.area_fill.color = ns_color_8(0, 0, 0);
+		graph_top.x_axis_properties.line.color = graph_top.y_axis_properties.line.color = ns_color_8(255, 255, 255);
+		graph_top.x_axis_properties.text.color = graph_top.y_axis_properties.text.color = ns_color_8(255, 255, 255);
+		graph_top.x_axis_properties.text_size = graph_top.y_axis_properties.text_size = 10;
+		graph_top.area_properties.area_fill.color = ns_color_8(0, 0, 0);
 
 		ns_graph_axes axes;
 		axes.boundary(0) = min_rounded_time;
@@ -553,27 +551,38 @@ private:
 		axes.tick_interval_specified(i) = true;
 
 		ns_color_8 gray(50, 50, 50);
-		graph.x_axis_properties.line.width = 
-			graph.y_axis_properties.line.width = 1;
-		graph.x_axis_properties.line.color =
-			graph.y_axis_properties.line.color = gray;
-		graph.x_axis_properties.text_size *= 2;
-		graph.y_axis_properties.text_size *= 2;
+		graph_top.x_axis_properties.line.width = 
+			graph_top.y_axis_properties.line.width = 1;
+		graph_top.x_axis_properties.line.color =
+			graph_top.y_axis_properties.line.color = gray;
+		graph_top.x_axis_properties.text_size *= 2;
+		graph_top.y_axis_properties.text_size *= 2;
 
-		graph.set_graph_display_options("", axes, base_graph.properties().width/(float)base_graph.properties().height);
-		graph_specifics = graph.draw(base_graph);
+		graph_bottom.x_axis_properties = graph_top.x_axis_properties;
+		graph_bottom.y_axis_properties = graph_top.y_axis_properties;
+		graph_bottom.area_properties = graph_top.area_properties;
+
+
+		graph_top.set_graph_display_options("", axes, base_graph_top.properties().width/(float)base_graph_top.properties().height);
+		graph_bottom.set_graph_display_options("", axes, base_graph_bottom.properties().width / (float)base_graph_bottom.properties().height);
+		graph_top_specifics = graph_top.draw(base_graph_top);
+		graph_bottom_specifics = graph_bottom.draw(base_graph_bottom);
 	}
-	inline void map_value_from_graph_onto_image(const float &x, const float &y, unsigned long & x1, unsigned long & y1) {
-		x1 = graph_specifics.boundary.x + (unsigned int)(graph_specifics.dx*(x - graph_specifics.axes.boundary(0) + graph_specifics.axes.axis_offset(0)));
+	inline void map_value_from_top_graph_onto_image(const float &x, const float &y, unsigned long & x1, unsigned long & y1) {
+		x1 = graph_top_specifics.boundary.x + (unsigned int)(graph_top_specifics.dx*(x - graph_top_specifics.axes.boundary(0) + graph_top_specifics.axes.axis_offset(0)));
+		y1 = base_graph_top.properties().height - graph_top_specifics.boundary.y - (unsigned int)(graph_top_specifics.dy*(y - graph_top_specifics.axes.boundary(2) + graph_top_specifics.axes.axis_offset(1)));
+	}
 
-		y1 = base_graph.properties().height - graph_specifics.boundary.y - (unsigned int)(graph_specifics.dy*(y - graph_specifics.axes.boundary(2) + graph_specifics.axes.axis_offset(1)));
+	inline void map_value_from_bottom_graph_onto_image(const float &x, const float &y, unsigned long & x1, unsigned long & y1) {
+		x1 = graph_top_specifics.boundary.x + (unsigned int)(graph_top_specifics.dx*(x - graph_top_specifics.axes.boundary(0) + graph_top_specifics.axes.axis_offset(0)));
+		y1 = base_graph_top.properties().height + border().y + base_graph_bottom.properties().height - graph_bottom_specifics.boundary.y - (unsigned int)(graph_bottom_specifics.dy*(y - graph_bottom_specifics.axes.boundary(2) + graph_bottom_specifics.axes.axis_offset(1)));
 	}
 	inline unsigned long map_pixel_from_image_onto_buffer(const unsigned long &x, const unsigned long &y, const ns_vector_2i &position, const ns_vector_2i &buffer_size) {
 		return 3 * ((buffer_size.y - y - position.y-1)*buffer_size.x + x + position.x);
 	}
 	ns_vector_2i border() const { return ns_vector_2i(25, 25); }
 	void overlay_metadata(const ns_animal_telemetry::ns_graph_contents graph_contents,const unsigned long current_element, const ns_vector_2i & position, const ns_vector_2i & buffer_size, const long marker_resize_factor,ns_8_bit * buffer) {
-		unsigned long x_score, y_score, x_size, y_size;
+		unsigned long x_score, y_score, x_size, y_size, x_slope, y_slope;
 		long segment_id = segment_ids[current_element];
 		if (segment_id == -1)
 			return;
@@ -582,16 +591,23 @@ private:
 		long segment_element_id = current_element - segment_offsets[segment_id];
 		if (segment_element_id >= movement_vals[segment_id].y.size())
 			throw ns_ex("Out of element id");
-		map_value_from_graph_onto_image(time_axis[current_element], movement_vals[segment_id].y[segment_element_id], x_score, y_score);
-		map_value_from_graph_onto_image(time_axis[current_element], size_vals[segment_id].y[segment_element_id], x_size, y_size);
+		map_value_from_top_graph_onto_image(time_axis[current_element], movement_vals[segment_id].y[segment_element_id], x_score, y_score);
+		map_value_from_bottom_graph_onto_image(time_axis[current_element], size_vals[segment_id].y[segment_element_id], x_size, y_size);
+		map_value_from_bottom_graph_onto_image(time_axis[current_element], slope_vals[segment_id].y[segment_element_id], x_slope, y_slope);
 		for (int y = -2* marker_resize_factor; y <= 2 * marker_resize_factor; y++)
 			for (int x = -2 * marker_resize_factor; x <= 2 * marker_resize_factor; x++) {
 				unsigned long p(map_pixel_from_image_onto_buffer(x_score+x+border().x, y_score+y+ border().y, position, buffer_size));
 				buffer[p] = 255;
 				buffer[p+1] = 0;
 				buffer[p+2] = 0;
-				if (graph_contents == ns_animal_telemetry::ns_all || graph_contents == ns_animal_telemetry::ns_movement_intensity) {
+				if (graph_contents == ns_animal_telemetry::ns_all || graph_contents == ns_animal_telemetry::ns_movement_intensity || graph_contents == ns_animal_telemetry::ns_movement_intensity_slope) {
 					p = map_pixel_from_image_onto_buffer(x_size + x + border().x, y_size + y + border().y, position, buffer_size);
+					buffer[p] = 255;
+					buffer[p + 1] = 0;
+					buffer[p + 2] = 0;
+				}
+				if ( graph_contents == ns_animal_telemetry::ns_movement_intensity_slope) {
+					p = map_pixel_from_image_onto_buffer(x_slope + x + border().x, y_slope + y + border().y, position, buffer_size);
 					buffer[p] = 255;
 					buffer[p + 1] = 0;
 					buffer[p + 2] = 0;
@@ -607,8 +623,10 @@ public:
 		_show = false;
 		region_data = 0;
 		group_id = 0;
-		base_graph.clear();
-		graph.clear();
+		base_graph_top.clear();
+		base_graph_bottom.clear();
+		graph_top.clear();
+		graph_bottom.clear();
 		last_graph_contents = ns_none;
 		movement_vals.clear();
 		smoothed_movement_vals.clear();
@@ -621,18 +639,32 @@ public:
 	}
 	unsigned long get_graph_time_from_graph_position(const float x) { //x is in relative time
 		ns_analyzed_image_time_path *path(&region_data->movement_analyzer.group(group_id).paths[0]);
-
-		unsigned long dT(path->element(first_element+number_of_valid_elements-1).absolute_time - path->element(first_element).absolute_time);
-		float dt((path->element(first_element+number_of_valid_elements-1).relative_time - path->element(first_element).relative_time) / 60.0 / 60.0 / 24.0);
-		return ((x - path->element(first_element).relative_time / 60.0 / 60.0 / 24.0) / dt)*dT + path->element(first_element).absolute_time;
+		long min_i(0);
+		float min_dt(100000);
+		unsigned long x_seconds = x * 60 * 60 * 24 + path->element(0).absolute_time;
+		for (unsigned int i = 0; i < path->element_count(); i++) {
+			const bool g(path->element(i).absolute_time >= x_seconds);
+			const float dt = (path->element(i).absolute_time >= x_seconds) ? (path->element(i).absolute_time - x_seconds) : (x_seconds - path->element(i).absolute_time);
+			if (dt < min_dt) {
+				min_dt = dt;
+				min_i = i;
+			}
+			if (g) break;
+		}
+		return path->element(min_i).absolute_time;
+		//unsigned long dT(path->element(first_element+number_of_valid_elements-1).absolute_time - path->element(first_element).absolute_time);
+		//float dt((path->element(first_element+number_of_valid_elements-1).relative_time - path->element(first_element).relative_time) / 60.0 / 60.0 / 24.0);
+		//return ((x - path->element(first_element).relative_time / 60.0 / 60.0 / 24.0) / dt)*dT + path->element(first_element).absolute_time;
 
 	}
-	ns_vector_2i get_graph_value_from_click_position(const unsigned long &x, const unsigned long & y) const{
-		ns_vector_2i res;
-		res.x = ((long)x - (long)graph_specifics.boundary.x - (long)border().x) / (graph_specifics.dx) + graph_specifics.axes.boundary(0) - graph_specifics.axes.axis_offset(0);
+	//currently does not return a correct y value.
+	ns_vector_2d get_graph_value_from_click_position_(const unsigned long &x, const unsigned long & y) const{
+		ns_vector_2d res;
+		res.x = ((long)x - (long)graph_top_specifics.boundary.x - (long)border().x) / (graph_top_specifics.dx) + graph_top_specifics.axes.boundary(0) - graph_top_specifics.axes.axis_offset(0);
 
+		//cout << x << " " << res.x << "\n";
 		//y = base_graph.properties().height - graph_specifics.boundary.y - (unsigned int)(graph_specifics.dy*(y - graph_specifics.axes.boundary(2) + graph_specifics.axes.axis_offset(1)));
-		res.y = -((long)((long)y - (long)base_graph.properties().height + graph_specifics.boundary.y + border().y) / graph_specifics.dy + graph_specifics.axes.boundary(2) - graph_specifics.axes.axis_offset(1));
+		res.y = 0;// -((long)((long)y - (long)base_graph.properties().height + graph_specifics.boundary.y + border().y) / graph_specifics.dy + graph_specifics.axes.boundary(2) - graph_specifics.axes.axis_offset(1));
 		return res;
 	}
 	
@@ -640,19 +672,22 @@ public:
 	void set_current_animal(const unsigned int & group_id_, ns_posture_analysis_model & mod,ns_death_time_posture_solo_annotater_region_data * region_data_) {
 		group_id = group_id_;
 		region_data = region_data_;
-		base_graph.init(ns_image_properties(0, 0, 3));
+		base_graph_top.init(ns_image_properties(0, 0, 3));
+		base_graph_bottom.init(ns_image_properties(0, 0, 3));
 		posture_analysis_model = mod;
 	}
 	void draw(const ns_graph_contents graph_contents, const unsigned long element_id, const ns_vector_2i & position, const ns_vector_2i & graph_size, const ns_vector_2i & buffer_size, const float marker_resize_factor, ns_8_bit * buffer, const unsigned long start_time=0, const unsigned long stop_time=UINT_MAX) {
-		if (base_graph.properties().height == 0 || graph_contents != last_graph_contents || last_start_time != start_time || last_stop_time != stop_time || last_rescale_factor != marker_resize_factor) {
-			base_graph.use_more_memory_to_avoid_reallocations();
+		if (base_graph_top.properties().height == 0 || graph_contents != last_graph_contents || last_start_time != start_time || last_stop_time != stop_time || last_rescale_factor != marker_resize_factor) {
+			base_graph_top.use_more_memory_to_avoid_reallocations();
+			base_graph_bottom.use_more_memory_to_avoid_reallocations();
 			ns_image_properties prop;
 			prop.components = 3;
-			prop.width = graph_size.x- 2*border().x;
-			prop.height = graph_size.y - 2*border().y;
+			prop.width = graph_size.x- 3*border().x;
+			prop.height = graph_size.y/2 - 3*border().y;
 
 
-			base_graph.init(prop);
+			base_graph_top.init(prop);
+			base_graph_bottom.init(prop);
 			try {
 				draw_base_graph(graph_contents, marker_resize_factor, start_time,stop_time);
 				last_graph_contents = graph_contents;
@@ -661,7 +696,8 @@ public:
 				last_rescale_factor = marker_resize_factor;
 			}
 			catch (...) {
-				base_graph.init(ns_image_properties(0, 0, 3));
+				base_graph_top.init(ns_image_properties(0, 0, 3));
+				base_graph_bottom.init(ns_image_properties(0, 0, 3));
 				throw;
 			}
 		}
@@ -670,26 +706,49 @@ public:
 			for (unsigned int x = 0; x < graph_size.x; x++)
 				for (unsigned int c = 0; c < 3; c++) 
 					buffer[map_pixel_from_image_onto_buffer(x, y, position, buffer_size) + c] = 0;
-		
-		for (unsigned int y = 0; y < base_graph.properties().height; y++) {
+		//TOP GRAPH
+		for (unsigned int y = 0; y < base_graph_top.properties().height; y++) {
 			//left margin
 			for (unsigned int x = 0; x < border().x; x++)
 				for (unsigned int c = 0; c < 3; c++)
 					buffer[map_pixel_from_image_onto_buffer(x, y + border().y, position, buffer_size) + c] = 0;
 			//graph
-			for (unsigned int x = 0; x < base_graph.properties().width; x++) {
+			for (unsigned int x = 0; x < base_graph_top.properties().width; x++) {
 				for (unsigned int c = 0; c < 3; c++) 
-					buffer[map_pixel_from_image_onto_buffer(x + border().x, y + border().y, position, buffer_size) + c] = base_graph[y][3 * x + c];
+					buffer[map_pixel_from_image_onto_buffer(x + border().x, y + border().y, position, buffer_size) + c] = base_graph_top[y][3 * x + c];
 			}
 			overlay_metadata(graph_contents,element_id- first_element, position, buffer_size, marker_resize_factor,buffer);
 
 			//right margin
-			for (unsigned int x = base_graph.properties().width + border().x; x < graph_size.x; x++)
+			for (unsigned int x = base_graph_top.properties().width + border().x; x < graph_size.x; x++)
 				for (unsigned int c = 0; c < 3; c++)
 					buffer[map_pixel_from_image_onto_buffer(x, y + border().y, position, buffer_size) + c] = 0;
+		}//middle margin
+		for (unsigned int y = border().y + base_graph_bottom.properties().height; y < 2*border().y + base_graph_bottom.properties().height; y++)
+			for (unsigned int x = 0; x < graph_size.x; x++)
+				for (unsigned int c = 0; c < 3; c++)
+					buffer[map_pixel_from_image_onto_buffer(x, y, position, buffer_size) + c] = 0;
+		const long bottom_graph_y_offset(2 * border().y + base_graph_bottom.properties().height);
+		//BOTTOM GRAPH
+		for (unsigned int y = 0; y < base_graph_bottom.properties().height; y++) {
+			//left margin
+			for (unsigned int x = 0; x < border().x; x++)
+				for (unsigned int c = 0; c < 3; c++)
+					buffer[map_pixel_from_image_onto_buffer(x, y + bottom_graph_y_offset, position, buffer_size) + c] = 0;
+			//graph
+			for (unsigned int x = 0; x < base_graph_bottom.properties().width; x++) {
+				for (unsigned int c = 0; c < 3; c++)
+					buffer[map_pixel_from_image_onto_buffer(x + border().x, y + bottom_graph_y_offset, position, buffer_size) + c] = base_graph_bottom[y][3 * x + c];
+			}
+			overlay_metadata(graph_contents, element_id - first_element, position, buffer_size, marker_resize_factor, buffer);
+
+			//right margin
+			for (unsigned int x = base_graph_bottom.properties().width + border().x; x < graph_size.x; x++)
+				for (unsigned int c = 0; c < 3; c++)
+					buffer[map_pixel_from_image_onto_buffer(x, y + bottom_graph_y_offset, position, buffer_size) + c] = 0;
 		}
 		//top margin
-		for (unsigned int y = border().y+ base_graph.properties().height; y < graph_size.y; y++)
+		for (unsigned int y = bottom_graph_y_offset + base_graph_bottom.properties().height; y < graph_size.y; y++)
 			for (unsigned int x = 0; x < graph_size.x; x++)
 				for (unsigned int c = 0; c < 3; c++)
 					buffer[map_pixel_from_image_onto_buffer(x, y, position, buffer_size) + c] = 0;

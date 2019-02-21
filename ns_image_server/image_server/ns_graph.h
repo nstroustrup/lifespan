@@ -38,12 +38,13 @@ struct ns_graph_properties{
 						  text_decimal_places((unsigned int)-1),
 						  line_hold_order(ns_first),
 						  draw_vertical_lines(ns_no_line),
-						  draw_negatives(true),draw_tick_marks(true), tick_mark_rescale_factor(1){}
+						  draw_negatives(true),draw_tick_marks(true), tick_mark_rescale_factor(1), fill_between_y_and_ymin(false){}
 	ns_graph_color_set line;
 	ns_graph_color_set point;
 	ns_graph_color_set area_fill;
 	ns_graph_color_set text;
 
+	bool fill_between_y_and_ymin;
 	bool draw_negatives;
 	bool draw_tick_marks;
 	double tick_mark_rescale_factor;
@@ -72,6 +73,7 @@ struct ns_graph_object{
 	ns_graph_object_type type;
 	ns_graph_properties properties;
 	std::vector<double> y;
+	std::vector<double> y_min;
 	std::vector<double> x;
 	//when outputted to svg, data points
 	//can be hyperlinked to outside sources.

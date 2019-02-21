@@ -5,10 +5,11 @@
 
 class ns_bspline{
 public:
-	typedef enum {ns_low,ns_medium,ns_high} ns_smoothness_level;
+	typedef enum {ns_very_low,ns_low,ns_medium,ns_high} ns_smoothness_level;
 	void calculate_with_standard_params(const std::vector<ns_vector_2d> & data,unsigned int output_size,const ns_smoothness_level smoother);
+	void calculate_with_standard_params(const std::vector<double> & x, const std::vector<double> & y, unsigned int output_size, const ns_smoothness_level smoother);
 	void calculate_intersecting_all_points(const unsigned int degree, const bool open_spline, const bool connect_spline_endpoints, const std::vector<ns_vector_2d> & data,unsigned int output_size);
-//void calculate_best_fit(const unsigned int degree, const bool open_spline, const bool connect_spline_endpoints, const std::vector<ns_vector_2d> & data,unsigned int output_size);
+	void calculate_intersecting_all_points(const unsigned int degree, const bool open_spline, const bool connect_spline_endpoints, const std::vector<double> & x, const std::vector<double> & y, unsigned int output_size);
 	void calculate_intersecting_all_points(const unsigned int degree, const bool open_spline, const bool connect_spline_endpoints, const unsigned long data_count, const void * data, unsigned int output_size);
 	
 	//returns the number of nodes that were cropped off the front of the positions array.
@@ -21,6 +22,8 @@ public:
 	double length;
 	const unsigned int degree_used(){return degree_used_;}
 private:
+
+	void calculate_with_standard_params(const float * dat, const unsigned long data_size, unsigned int output_size, const ns_smoothness_level smoother);
 	unsigned int degree_used_;
 };
 

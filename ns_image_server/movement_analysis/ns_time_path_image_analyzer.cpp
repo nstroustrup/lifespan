@@ -3699,32 +3699,41 @@ void ns_analyzed_image_time_path::denoise_movement_series_and_calculate_intensit
 		ns_intensity_data_accessor acc2(elements);
 		i(kernel_width,acc2);*/
 
+		const int start_i = this->first_stationary_timepoint();  //do not use frames before worm arrives to calculate slope, as the worm's appearence will produce a very large spurious slope.
+		cout << start_i;
 		//use a kernal to calculate slope
-		const int slope_kernel_half_width(8);
+		const int slope_kernel_half_width(4);
 		const int slope_kernel_width = slope_kernel_half_width * 2 + 1;
-		if (elements.size() >= slope_kernel_width) {
+
+		if (elements.size() >= slope_kernel_width+ start_i) {
+
+			for (unsigned int i = 0; i < start_i; i++) {
+				elements[i].measurements.change_in_total_foreground_intensity = 0;// units: per hour
+				elements[i].measurements.change_in_total_region_intensity = 0; // units/hour
+				elements[i].measurements.change_in_total_stabilized_intensity = 0; // units/hour
+			}
 			std::vector<ns_64_bit > stabilized_vals(slope_kernel_width);
 			std::vector<ns_64_bit > foreground_vals(slope_kernel_width);
 			std::vector<ns_64_bit > region_vals(slope_kernel_width);
 			std::vector<ns_64_bit > times(slope_kernel_width);
 			for (unsigned int i = 0; i < slope_kernel_width; i++) {
-				foreground_vals[i] = elements[i].measurements.total_intensity_within_foreground;
-				stabilized_vals[i] = elements[i].measurements.total_intensity_within_stabilized;
-				region_vals[i] = elements[i].measurements.total_intensity_within_region;
-				times[i] = elements[i].absolute_time;
+				foreground_vals[i] = elements[i+ start_i].measurements.total_intensity_within_foreground;
+				stabilized_vals[i] = elements[i + start_i].measurements.total_intensity_within_stabilized;
+				region_vals[i] = elements[i + start_i].measurements.total_intensity_within_region;
+				times[i] = elements[i + start_i].absolute_time;
 			}
 			ns_linear_regression_model model;
 			ns_linear_regression_model_parameters foreground_params(model.fit(foreground_vals, times));
 			ns_linear_regression_model_parameters region_params(model.fit(region_vals, times));
 			ns_linear_regression_model_parameters stabilized_params(model.fit(stabilized_vals, times));
 			for (unsigned int i = 0; i < slope_kernel_half_width; i++) {
-				elements[i].measurements.change_in_total_foreground_intensity = foreground_params.slope * 60 * 60; // units: per hour
-				elements[i].measurements.change_in_total_region_intensity = region_params.slope * 60 * 60; // units/hour
-				elements[i].measurements.change_in_total_stabilized_intensity = stabilized_params.slope * 60 * 60; // units/hour
+				elements[i + start_i].measurements.change_in_total_foreground_intensity = foreground_params.slope * 60 * 60; // units: per hour
+				elements[i + start_i].measurements.change_in_total_region_intensity = region_params.slope * 60 * 60; // units/hour
+				elements[i + start_i].measurements.change_in_total_stabilized_intensity = stabilized_params.slope * 60 * 60; // units/hour
 
 			}
 			int pos = 0;
-			for (unsigned int i = slope_kernel_half_width; ; i++) {
+			for (unsigned int i = slope_kernel_half_width+start_i; ; i++) {
 				//calculate slope of current kernal
 				foreground_params = model.fit(foreground_vals, times);
 				region_params = model.fit(region_vals, times);

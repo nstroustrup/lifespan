@@ -102,6 +102,16 @@ void ns_graph::calculate_graph_specifics(const unsigned int width, const unsigne
 				if (contents[i]->y[j] > axes[3])
 					axes[3] = contents[i]->y[j];
 			}
+			if (contents[i]->properties.fill_between_y_and_ymin) {
+				for (unsigned int j = 0; j < contents[i]->y_min.size(); j++) {
+					if (contents[i]->y_min[j] < 0 && !contents[i]->properties.draw_negatives)
+						continue;
+					if (contents[i]->y_min[j] < axes[2])
+						axes[2] = contents[i]->y_min[j];
+					if (contents[i]->y_min[j] > axes[3])
+						axes[3] = contents[i]->y_min[j];
+				}
+			}
 		}
 		if (specified_axes.boundary_specified(2)) axes[2] = specified_axes.boundary(2);
 		if (specified_axes.boundary_specified(3)) axes[3] = specified_axes.boundary(3);
@@ -563,6 +573,8 @@ void ns_graph::plot_object(const ns_graph_object & y, const ns_graph_object & x,
 	else if (y.type == ns_graph_object::ns_graph_dependant_variable){
 		//fill area under the curve
 		if (y.properties.area_fill.draw && y.y.size() != 0){
+			if (y.properties.fill_between_y_and_ymin && y.y_min.size() != y.y.size())
+				throw ns_ex("ns_graph()::y and y_min are not the same length.");
 
 			double x_min = x.x[0],
 				   x_max = x.x[x.x.size()-1]+spec.axes.axis_offset(0);
@@ -608,7 +620,15 @@ void ns_graph::plot_object(const ns_graph_object & y, const ns_graph_object & x,
 				if (h-border.y < dy*(y.y[index]-axes.boundary(2)))
 					throw ns_ex("Something went wrong in graph logic.  Graph height: ") << h << ", border: " << border.y <<
 					", dy: " << dy << ", boundary(2): " << axes.boundary(2) << " y.y[" << index << "]: " << y.y[index];
-				int bottom(spec.x_axis_pos+(unsigned int)(spec.dy*spec.axes.axis_offset(1))); // Again if it could be < 0 (below) it needs to be signed.
+				int bottom;
+				if (!y.properties.fill_between_y_and_ymin)
+					bottom = spec.x_axis_pos + (unsigned int)(spec.dy*spec.axes.axis_offset(1)); // Again if it could be < 0 (below) it needs to be signed.
+				else {
+					bottom = (int)(h - border.y) - (int)(dy*(y.y_min[index] - axes.boundary(2) + spec.axes.axis_offset(1)));
+					if (h - border.y < dy*(y.y_min[index] - axes.boundary(2)))
+						throw ns_ex("Something went wrong in graph logic.  Graph height: ") << h << ", border: " << border.y <<
+						", dy: " << dy << ", boundary(2): " << axes.boundary(2) << " y.y[" << index << "]: " << y.y[index];
+				}
 				if (top > bottom){
 					unsigned int tmp = bottom;
 					bottom = top;

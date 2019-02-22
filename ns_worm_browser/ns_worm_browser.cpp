@@ -1756,10 +1756,22 @@ struct ns_parameter_set_optimization_record {
 };
 
 
-void ns_worm_learner::output_movement_analysis_optimization_data(int software_version_number, const ns_parameter_set_range & range, bool run_posture,bool run_expansion){
+void ns_worm_learner::output_movement_analysis_optimization_data(int software_version_number, const ns_optimization_subject & subject, const ns_parameter_set_range & range, bool run_posture,bool run_expansion){
 	ns_sql & sql(get_sql_connection());
 
-	unsigned int experiment_id = data_selector.current_experiment_id();
+	ns_64_bit experiment_id = data_selector.current_experiment_id();
+	ns_64_bit plate_id;
+	std::string device_name;
+	if (subject == ns_plate || subject == ns_device) {
+		ns_experiment_region_chooser_region selected_region;
+		if (data_selector.region_selected())
+			selected_region = data_selector.current_region();
+		else throw ns_ex("No device or plate selected");
+		if (subject == ns_plate)
+			plate_id = (selected_region.region_id);
+		else if (subject == ns_device)
+			device_name = data_selector.current_sample().device;
+	}
 
 	//posture analysis
 	std::vector<double> posture_analysis_thresholds,
@@ -1853,6 +1865,10 @@ void ns_worm_learner::output_movement_analysis_optimization_data(int software_ve
 
 	ns_image_server_results_subject sub;
 	sub.experiment_id = experiment_id;
+	if (plate_id)
+		sub.region_id = plate_id;
+	if (!device_name.empty())
+		sub.device_name = device_name;
 	ns_acquire_for_scope<ostream> posture_analysis_optimization_output, expansion_analysis_optimization_output;
 	if (run_posture) {
 		posture_analysis_optimization_output.attach(image_server.results_storage.time_path_image_analysis_quantification(sub, "posture_analysis_optimization_stats", true, sql).output());
@@ -1881,10 +1897,12 @@ void ns_worm_learner::output_movement_analysis_optimization_data(int software_ve
 
 	unsigned pos(0);
 	for (unsigned int i = 0; i < data_selector.samples.size(); i++) {
+		if (!device_name.empty() && data_selector.samples[i].device != device_name)
+			continue;
 		bool found_regions(false);
 		for (unsigned int j = 0; j < data_selector.samples[i].regions.size(); j++) {
-			//	if (data_selector.samples[i].sample_name != "azure_a" || data_selector.samples[i].regions[j].region_name != "0")
-			//		continue;
+				if (plate_id != 0 && data_selector.samples[i].regions[j].region_id != plate_id)
+					continue;
 			cerr << ns_to_string_short((100.0*pos) / region_count) << "%...";
 			pos++;
 			if (data_selector.samples[i].regions[j].censored ||

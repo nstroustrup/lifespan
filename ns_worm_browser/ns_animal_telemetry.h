@@ -345,7 +345,7 @@ private:
 			if (t > max_time) max_time = t;
 			const double n(path->element(i + first_element).measurements.total_intensity_within_stabilized);
 			const double s(path->element(i + first_element).measurements.change_in_total_stabilized_intensity);
-			cout << t / (60.0 * 60 * 24) << "," << s << "\n";
+			//cout << t / (60.0 * 60 * 24) << "," << s << "\n";
 			if (i < path->first_stationary_timepoint())
 				continue;
 			if (n < min_intensity) min_intensity = n;
@@ -353,7 +353,7 @@ private:
 			if (s < min_intensity_slope) min_intensity_slope = s;
 			if (s > max_intensity_slope) max_intensity_slope = s;
 		}
-		cout << "\n";
+		//cout << "\n";
 
 		ns_s64_bit intensity_slope_largest = (max_intensity_slope > -min_intensity_slope) ? max_intensity_slope: -min_intensity_slope;
 

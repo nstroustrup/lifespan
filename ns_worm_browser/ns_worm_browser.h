@@ -661,8 +661,8 @@ public:
 	bool import_experiment_data(const std::string & database_name,const std::string & directory, const bool reuse_database);
 	
 	typedef enum{ns_lifespan,ns_thermotolerance,ns_quiecent ,ns_v2} ns_parameter_set_range;
-
-	void output_movement_analysis_optimization_data(int software_version_number,const ns_parameter_set_range & range, bool run_posture, bool run_expansion);
+	typedef enum{ns_whole_experiment,ns_device,ns_plate} ns_optimization_subject;
+	void output_movement_analysis_optimization_data(int software_version_number, const ns_optimization_subject & subject, const ns_parameter_set_range & range, bool run_posture, bool run_expansion);
 
 	typedef enum{ns_quantification_summary,ns_quantification_detailed,ns_quantification_detailed_with_by_hand, ns_build_worm_markov_posture_model_from_by_hand_annotations,ns_quantification_abbreviated_detailed} ns_movement_quantification_type;
 	void generate_experiment_movement_image_quantification_analysis_data(ns_movement_quantification_type  detail_level);

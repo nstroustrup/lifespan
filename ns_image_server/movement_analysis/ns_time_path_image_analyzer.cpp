@@ -2238,6 +2238,10 @@ void ns_time_path_image_movement_analyzer::write_posture_analysis_optimization_d
 		for (unsigned int j = 0; j < groups[i].paths.size(); j++){	
 			if (ns_skip_low_density_paths && groups[i].paths[j].is_low_density_path() || groups[i].paths[j].excluded() || !groups[i].paths[j].by_hand_data_specified())
 					continue;
+			if (groups[i].paths[j].censoring_and_flag_details.flag.specified() && ( groups[i].paths[j].censoring_and_flag_details.flag.event_should_be_excluded() || 
+				groups[i].paths[j].censoring_and_flag_details.flag.label_short == "2ND_WORM_ERR" ||
+				groups[i].paths[j].censoring_and_flag_details.flag.label_short == "STILL_ALIVE"))
+				continue;
 			groups[i].paths[j].write_posture_analysis_optimization_data(software_version,generate_stationary_path_id(i,j),thresholds,hold_times,m,denoising_parameters_used,o, results);
 		}
 	}
@@ -3700,7 +3704,7 @@ void ns_analyzed_image_time_path::denoise_movement_series_and_calculate_intensit
 		i(kernel_width,acc2);*/
 
 		const int start_i = this->first_stationary_timepoint();  //do not use frames before worm arrives to calculate slope, as the worm's appearence will produce a very large spurious slope.
-		cout << start_i;
+		//cout << start_i;
 		//use a kernal to calculate slope
 		const int slope_kernel_half_width(4);
 		const int slope_kernel_width = slope_kernel_half_width * 2 + 1;

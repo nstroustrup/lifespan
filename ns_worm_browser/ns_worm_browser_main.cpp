@@ -1071,9 +1071,24 @@ class ns_worm_terminal_main_menu_organizer : public ns_menu_organizer{
 		worm_learner.test_time_path_analysis_parameters(worm_learner.data_selector.current_region().region_id);
 	}
 	static void generate_movement_image_analysis_optimization_data(const std::string & value){
+
+		ns_choice_dialog c;
+		c.title = "What subject should be used?";
+		c.option_1 = "Current Plate";
+		c.option_2 = "Current Device";
+		c.option_3 = "All Devices";
+		ns_run_in_main_thread<ns_choice_dialog> b(&c);
+		ns_worm_learner::ns_optimization_subject sub;
+		switch(c.result) {
+		case 1: sub = ns_worm_learner::ns_plate; break;
+		case 2: sub = ns_worm_learner::ns_device; break;
+		case 3: sub = ns_worm_learner::ns_whole_experiment; break;
+		default: throw ns_ex("Unknown option");
+		}
+
 		bool posture_req = value.find("Posture") != value.npos;
 		bool size_req = value.find("Size") != value.npos;
-		worm_learner.output_movement_analysis_optimization_data(2, ns_worm_learner::ns_v2,posture_req,size_req);
+		worm_learner.output_movement_analysis_optimization_data(2, sub,ns_worm_learner::ns_v2,posture_req,size_req);
 	}
 
 	static void generate_training_set_from_by_hand_annotations(const std::string & value){worm_learner.generate_training_set_from_by_hand_annotation();}

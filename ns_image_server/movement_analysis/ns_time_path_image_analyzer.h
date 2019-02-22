@@ -156,6 +156,14 @@ struct ns_registered_image_set{
 	bool get_region_threshold(const int y, const int x) const { return (worm_region_threshold[y][x]&region_mask)!=0;}
 	bool get_worm_neighborhood_threshold(const int y, const int x) const { return (worm_region_threshold[y][x]&worm_neighborhood_mask)!=0;}
 	bool get_stabilized_worm_neighborhood_threshold(const int y, const int x) const { return (worm_region_threshold[y][x] & stabilized_worm_neighborhood_mask) != 0; }
+	bool get_stabilized_worm_neighborhood_threshold_edge(const int y, const int x) const { 
+		if (!get_stabilized_worm_neighborhood_threshold(y,x)) return false;
+		if (y > 1 && !get_stabilized_worm_neighborhood_threshold(y - 1, x)) return true;
+		if (x > 1 && !get_stabilized_worm_neighborhood_threshold(y, x - 1)) return true;
+		if (y + 1 < worm_region_threshold.properties().height && !get_stabilized_worm_neighborhood_threshold(y+1,x)) return true;
+		if (x + 1 < worm_region_threshold.properties().width && !get_stabilized_worm_neighborhood_threshold(y, x+1)) return true;
+		return false;
+	}
 	bool mask(const int y, const int x) const { return get_worm_neighborhood_threshold(y, x); }
 	bool get_worm_threshold(const int y, const int x)const { return (worm_region_threshold[y][x]&worm_mask)!=0;}
 	void set_thresholds(const int y, const int x, const bool region,const bool worm, const bool worm_neighborhood, const bool stabilized_worm_neighborhood) {
@@ -683,7 +691,7 @@ struct ns_region_area {
 struct ns_movement_analysis_shared_state;
 class ns_time_path_image_movement_analyzer {
 public:
-	enum { ns_spatially_averaged_movement_threshold = 10, ns_spatially_averaged_movement_kernal_half_size=2};
+	enum { ns_spatially_averaged_movement_threshold = 4, ns_spatially_averaged_movement_kernal_half_size=2};
 	ns_time_path_image_movement_analyzer():paths_loaded_from_solution(false),
 		movement_analyzed(false),region_info_id(0),last_timepoint_in_analysis_(0), _number_of_invalid_images_encountered(0),
 		number_of_timepoints_in_analysis_(0),image_db_info_loaded(false),externally_specified_plate_observation_interval(0,ULONG_MAX){}

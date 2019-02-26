@@ -461,6 +461,11 @@ private:
 		}
 
 		if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("Drawing timing."));
+		if (!current_machine_timing_data->animals[0].death_posture_relaxation_start.time.period_start_was_not_observed)
+			cerr << "s:" << (current_machine_timing_data->animals[0].death_posture_relaxation_start.time.period_start - observation_limit.first_obsevation_of_plate.period_end) / 60.0 / 60.0 / 24.0 << "\n";
+		if (!current_machine_timing_data->animals[0].death_posture_relaxation_termination_.time.period_start_was_not_observed)
+			cerr << "e:" << (current_machine_timing_data->animals[0].death_posture_relaxation_termination_.time.period_start - observation_limit.first_obsevation_of_plate.period_end) / 60.0 / 60.0 / 24.0 << "\n";
+
 		current_machine_timing_data->animals[0].draw_movement_diagram(bottom_margin_bottom,
 			ns_vector_2i(current_worm->element(current_element_id()).image().properties().width*ns_death_time_solo_posture_annotater_timepoint::ns_resolution_increase_factor, vis_height),
 			observation_limit,

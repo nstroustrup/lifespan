@@ -1756,7 +1756,7 @@ struct ns_parameter_set_optimization_record {
 };
 
 
-void ns_worm_learner::output_movement_analysis_optimization_data(int software_version_number, const ns_optimization_subject & subject, const ns_parameter_set_range & range, bool run_posture,bool run_expansion){
+void ns_worm_learner::output_movement_analysis_optimization_data(const ns_optimization_subject & subject, const ns_parameter_set_range & range, bool run_posture,bool run_expansion){
 	ns_sql & sql(get_sql_connection());
 
 	ns_64_bit experiment_id = data_selector.current_experiment_id();
@@ -1778,9 +1778,9 @@ void ns_worm_learner::output_movement_analysis_optimization_data(int software_ve
 		expansion_analysis_thresholds;
 	vector<unsigned long> posture_analysis_hold_times,
 		expansion_analysis_hold_times;
-
+	const bool v1_parameters = false;
 	//old movement scores
-	if (software_version_number == 1) {
+	if (v1_parameters == "1") {
 		const double min_thresh(.0005);
 		const double max_thresh(.5);
 		const long number_of_thresholds(60);
@@ -1879,8 +1879,15 @@ void ns_worm_learner::output_movement_analysis_optimization_data(int software_ve
 		ns_analyzed_image_time_path::write_expansion_analysis_optimization_data_header(expansion_analysis_optimization_output());
 	}
 	unsigned region_count(0);
-	for (unsigned int i = 0; i < data_selector.samples.size(); i++)
-		region_count+=data_selector.samples[i].regions.size();
+	for (unsigned int i = 0; i < data_selector.samples.size(); i++) {
+		if (!device_name.empty() && data_selector.samples[i].device != device_name)
+			continue;
+		for (unsigned int j = 0; j < data_selector.samples[i].regions.size(); j++) {
+			if (plate_id != 0 && data_selector.samples[i].regions[j].region_id != plate_id)
+				continue;
+			region_count++;
+		}
+	}
 
 	map<std::string, ns_parameter_set_optimization_record> best_posture_parameter_sets, best_expansion_parameter_sets;
 	
@@ -1911,6 +1918,7 @@ void ns_worm_learner::output_movement_analysis_optimization_data(int software_ve
 			found_regions = true;
 			if (image_server.verbose_debug_output())
 				cout << "\nConsidering " << data_selector.samples[i].sample_name << "::" << data_selector.samples[i].regions[j].region_name << "\n";
+			std::string posture_model_used = "";
 			try {
 
 				ns_time_series_denoising_parameters::ns_movement_score_normalization_type norm_type[1] =
@@ -1929,8 +1937,16 @@ void ns_worm_learner::output_movement_analysis_optimization_data(int software_ve
 					ns_time_path_image_movement_analyzer time_path_image_analyzer;
 					ns_image_server::ns_posture_analysis_model_cache::const_handle_t handle;
 					image_server.get_posture_analysis_model_for_region(region_id, handle, sql);
+
+					if (posture_model_used == "")
+						posture_model_used = time_path_image_analyzer.posture_model_version_used;
+					else if (posture_model_used != time_path_image_analyzer.posture_model_version_used)
+						throw ns_ex("Not all regions are using the same posture analysis version!  Please run the  \"Analyze Worm Movement Using Cached Images\" for all regions.");
+
 					ns_posture_analysis_model mod(handle().model_specification);
-					mod.threshold_parameters.use_v1_movement_score = software_version_number == 1;
+					mod.threshold_parameters.use_v1_movement_score = time_path_image_analyzer.posture_model_version_used == "1";
+					mod.threshold_parameters.version_flag = time_path_image_analyzer.posture_model_version_used;
+
 					handle.release();
 					ns_acquire_for_scope<ns_analyzed_image_time_path_death_time_estimator> death_time_estimator(
 
@@ -1962,6 +1978,18 @@ void ns_worm_learner::output_movement_analysis_optimization_data(int software_ve
 					image_server.get_posture_analysis_model_for_region(region_id, posture_analysis_model_handle, sql);
 
 					if (run_posture) {
+						map<std::string, ns_parameter_set_optimization_record>::iterator p_all = best_posture_parameter_sets.find("all");
+						if (p_all == best_posture_parameter_sets.end()) {
+							if (image_server.verbose_debug_output())
+								cout << "Creating record for all plate types\n";
+
+
+							p_all = best_posture_parameter_sets.insert(best_posture_parameter_sets.begin(),
+								std::pair<std::string, ns_parameter_set_optimization_record>("all",
+									ns_parameter_set_optimization_record(posture_analysis_thresholds, posture_analysis_hold_times)));
+							p_all->second.best = posture_analysis_model_handle().model_specification.threshold_parameters;   //set default parameters
+						}
+
 						map<std::string, ns_parameter_set_optimization_record>::iterator p = best_posture_parameter_sets.find(data_selector.samples[i].regions[j].region_metadata->plate_type_summary());
 						if (p == best_posture_parameter_sets.end()) {
 							if (image_server.verbose_debug_output())
@@ -1972,6 +2000,7 @@ void ns_worm_learner::output_movement_analysis_optimization_data(int software_ve
 								std::pair<std::string, ns_parameter_set_optimization_record>(data_selector.samples[i].regions[j].region_metadata->plate_type_summary(),
 									ns_parameter_set_optimization_record(posture_analysis_thresholds, posture_analysis_hold_times)));
 							p->second.best = posture_analysis_model_handle().model_specification.threshold_parameters;   //set default parameters
+							
 						}
 						else {
 
@@ -1979,14 +2008,14 @@ void ns_worm_learner::output_movement_analysis_optimization_data(int software_ve
 								cout << "Adding to record for plate type " << data_selector.samples[i].regions[j].region_metadata->plate_type_summary() << "\n";
 						}
 
-						time_path_image_analyzer.write_posture_analysis_optimization_data(software_version_number, posture_analysis_thresholds, posture_analysis_hold_times, metadata, posture_analysis_optimization_output(), p->second.new_parameters_results);
-
-
+						time_path_image_analyzer.write_posture_analysis_optimization_data(time_path_image_analyzer.posture_model_version_used, posture_analysis_thresholds, posture_analysis_hold_times, metadata, posture_analysis_optimization_output(), p->second.new_parameters_results, &(p_all->second.new_parameters_results));
+						
+						//include existing model file
 						vector<double> thresh;
 						vector<unsigned long>hold_t;
 						thresh.push_back(posture_analysis_model_handle().model_specification.threshold_parameters.stationary_cutoff);
 						hold_t.push_back(posture_analysis_model_handle().model_specification.threshold_parameters.permanance_time_required_in_seconds);
-						time_path_image_analyzer.write_posture_analysis_optimization_data(software_version_number, thresh, hold_t, metadata, posture_analysis_optimization_output(), p->second.current_parameter_results);
+						time_path_image_analyzer.write_posture_analysis_optimization_data(time_path_image_analyzer.posture_model_version_used, thresh, hold_t, metadata, posture_analysis_optimization_output(), p->second.current_parameter_results,&(p_all->second.current_parameter_results));
 					}
 					if (run_expansion) {
 						map<std::string, ns_parameter_set_optimization_record>::iterator p = best_expansion_parameter_sets.find(data_selector.samples[i].regions[j].region_metadata->plate_type_summary());
@@ -1994,14 +2023,21 @@ void ns_worm_learner::output_movement_analysis_optimization_data(int software_ve
 							p = best_expansion_parameter_sets.insert(best_expansion_parameter_sets.begin(), std::pair<std::string, ns_parameter_set_optimization_record>(data_selector.samples[i].regions[j].region_metadata->plate_type_summary(), ns_parameter_set_optimization_record(posture_analysis_thresholds, posture_analysis_hold_times)));
 							p->second.best = posture_analysis_model_handle().model_specification.threshold_parameters;   //set default parameters
 						}
-						time_path_image_analyzer.write_expansion_analysis_optimization_data(expansion_analysis_thresholds, expansion_analysis_hold_times, metadata, expansion_analysis_optimization_output(), p->second.new_parameters_results);
+						map<std::string, ns_parameter_set_optimization_record>::iterator p_all = best_expansion_parameter_sets.find("all");
+						if (p_all == best_expansion_parameter_sets.end()) {
+							if (image_server.verbose_debug_output())
+								cout << "Creating record for all plate types\n";
+							p_all = best_expansion_parameter_sets.insert(best_expansion_parameter_sets.begin(), std::pair<std::string, ns_parameter_set_optimization_record>("all", ns_parameter_set_optimization_record(posture_analysis_thresholds, posture_analysis_hold_times)));
+							p_all->second.best = posture_analysis_model_handle().model_specification.threshold_parameters;   //set default parameters
+						}
+						time_path_image_analyzer.write_expansion_analysis_optimization_data(expansion_analysis_thresholds, expansion_analysis_hold_times, metadata, expansion_analysis_optimization_output(), p->second.new_parameters_results, &(p_all->second.new_parameters_results));
 
 
 						vector<double> thresh;
 						vector<unsigned long>hold_t;
 						thresh.push_back(posture_analysis_model_handle().model_specification.threshold_parameters.death_time_expansion_cutoff);
 						hold_t.push_back(posture_analysis_model_handle().model_specification.threshold_parameters.death_time_expansion_time_kernel_in_seconds);
-						time_path_image_analyzer.write_expansion_analysis_optimization_data(thresh, hold_t, metadata, expansion_analysis_optimization_output(), p->second.current_parameter_results);
+						time_path_image_analyzer.write_expansion_analysis_optimization_data(thresh, hold_t, metadata, expansion_analysis_optimization_output(), p->second.current_parameter_results, &(p_all->second.current_parameter_results));
 					}
 
 				}
@@ -2440,56 +2476,6 @@ void ns_find_new_paths(const ns_time_path_solution & baseline, const ns_time_pat
 	}
 }
 
-//adapted from https://people.cs.uct.ac.za/~ksmith/articles/sliding_window_minimum.html#sliding-window-minimum-algorithm
-void ns_sliding_window_min(const std::vector<double> & data, int half_K, std::vector<double> & output) {
-	const int K(half_K + half_K + 1);
-	output.resize(data.size());
-	std::deque< std::pair<double, int> > window;
-	for (int i = 0; i < half_K; i++) {
-		while (!window.empty() && window.back().first >= data[i])
-			window.pop_back();
-		window.push_back(std::make_pair(data[i], i));
-	}
-
-	for (int i = half_K; i < data.size(); i++) {
-		while (!window.empty() && window.back().first >= data[i])
-			window.pop_back();
-		window.push_back(std::make_pair(data[i], i));
-
-		while (window.front().second <= i - K)
-			window.pop_front();
-		output[i-half_K] = window.front().first;
-	}
-	for (int i = data.size(); i < data.size() + half_K;  i++) {
-		while (window.front().second <= i - K)
-			window.pop_front();
-		output[i - half_K] = window.front().first;
-	}
-}
-void ns_sliding_window_max(const std::vector<double> & data, int half_K, std::vector<double> & output) {
-	const int K(half_K + half_K + 1);
-	output.resize(data.size());
-	std::deque< std::pair<double, int> > window;
-	for (int i = 0; i < half_K; i++) {
-		while (!window.empty() && window.back().first <= data[i])
-			window.pop_back();
-		window.push_back(std::make_pair(data[i], i));
-	}
-	for (int i = half_K; i < data.size(); i++) {
-		while (!window.empty() && window.back().first <= data[i])
-			window.pop_back();
-		window.push_back(std::make_pair(data[i], i));
-
-		while (window.front().second <= i - K)
-			window.pop_front();
-		output[i] = window.front().first;
-	}
-	for (int i = data.size(); i < data.size() + half_K; i++) {
-		while (window.front().second <= i - K)
-			window.pop_front();
-		output[i - half_K] = window.front().first;
-	}
-}
 
 void ns_calculate_running_extrema(const ns_extrema_plot_type & plot_type, const unsigned long time_step_resample_factor, const unsigned long kernel_absolute_width, const std::vector<ns_graph_object> & source, std::vector<ns_graph_object> & dest, std::vector<double> temp1, std::vector<double> temp2 ) {
 	dest.resize(source.size(), ns_graph_object::ns_graph_dependant_variable);

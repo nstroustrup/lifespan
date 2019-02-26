@@ -1088,7 +1088,7 @@ class ns_worm_terminal_main_menu_organizer : public ns_menu_organizer{
 
 		bool posture_req = value.find("Posture") != value.npos;
 		bool size_req = value.find("Size") != value.npos;
-		worm_learner.output_movement_analysis_optimization_data(2, sub,ns_worm_learner::ns_v2,posture_req,size_req);
+		worm_learner.output_movement_analysis_optimization_data(sub,ns_worm_learner::ns_v2,posture_req,size_req);
 	}
 
 	static void generate_training_set_from_by_hand_annotations(const std::string & value){worm_learner.generate_training_set_from_by_hand_annotation();}

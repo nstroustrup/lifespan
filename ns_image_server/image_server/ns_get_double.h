@@ -56,5 +56,17 @@ class ns_get_double{
 		}
 	private:
 	std::string tmp;
+}; 
+class ns_get_string {
+public:
+	inline char operator()(std::istream & in, std::string & d) {
+		d.resize(0);
+		while (true) {
+			char a = in.get();
+			if (a == ',' || a == '\n' || in.fail())
+				return a;
+			else d += a;
+		}
+	}
 };
 #endif

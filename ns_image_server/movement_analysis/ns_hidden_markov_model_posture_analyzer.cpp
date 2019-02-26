@@ -412,9 +412,8 @@ void ns_threshold_movement_posture_analyzer_parameters::read(std::istream & i){
 	}
 	 if (tmp != "software_version")
 		throw ns_ex("ns_threshold_movement_posture_analyzer_parameters::read()::Syntax error 4");
-	 int a;
-	 i >> a;
-	 use_v1_movement_score = a == 1;
+	 i >> version_flag;
+	 use_v1_movement_score = version_flag == "1";
 	 if (use_v1_movement_score)
 		 return;
 	 getline(i, tmp, '\n');
@@ -432,7 +431,7 @@ void ns_threshold_movement_posture_analyzer_parameters::write(std::ostream & o)c
 	o << "posture_cutoff, " << posture_cutoff << "\n"
 		"stationary_cutoff, " << stationary_cutoff << "\n"
 		"hold_time_seconds, " << permanance_time_required_in_seconds << "\n"
-		"software_version, " << (use_v1_movement_score ? "1" : "2") << "\n"
+		"software_version, " <<  version_flag << "\n"
 		"death_time_expansion_cutoff, " << death_time_expansion_cutoff << "\n"
 		"death_time_expansion_time_kernel, " << death_time_expansion_time_kernel_in_seconds << "\n";
 }

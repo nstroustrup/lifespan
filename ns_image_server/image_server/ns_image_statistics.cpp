@@ -167,3 +167,54 @@ void ns_image_statistics::from_sql_result(const ns_sql_result_row & res){
 	non_worm_statistics.absolute_intensity.mean= atof(res[19].c_str());
 	non_worm_statistics.absolute_intensity.variance= atof(res[20].c_str());
 }
+
+//adapted from https://people.cs.uct.ac.za/~ksmith/articles/sliding_window_minimum.html#sliding-window-minimum-algorithm
+void ns_sliding_window_min(const std::vector<double> & data, int half_K, std::vector<double> & output) {
+	const int K(half_K + half_K + 1);
+	output.resize(data.size());
+	std::deque< std::pair<double, int> > window;
+	for (int i = 0; i < half_K; i++) {
+		while (!window.empty() && window.back().first >= data[i])
+			window.pop_back();
+		window.push_back(std::make_pair(data[i], i));
+	}
+
+	for (int i = half_K; i < data.size(); i++) {
+		while (!window.empty() && window.back().first >= data[i])
+			window.pop_back();
+		window.push_back(std::make_pair(data[i], i));
+
+		while (window.front().second <= i - K)
+			window.pop_front();
+		output[i - half_K] = window.front().first;
+	}
+	for (int i = data.size(); i < data.size() + half_K; i++) {
+		while (window.front().second <= i - K)
+			window.pop_front();
+		output[i - half_K] = window.front().first;
+	}
+}
+void ns_sliding_window_max(const std::vector<double> & data, int half_K, std::vector<double> & output) {
+	const int K(half_K + half_K + 1);
+	output.resize(data.size());
+	std::deque< std::pair<double, int> > window;
+	for (int i = 0; i < half_K; i++) {
+		while (!window.empty() && window.back().first <= data[i])
+			window.pop_back();
+		window.push_back(std::make_pair(data[i], i));
+	}
+	for (int i = half_K; i < data.size(); i++) {
+		while (!window.empty() && window.back().first <= data[i])
+			window.pop_back();
+		window.push_back(std::make_pair(data[i], i));
+
+		while (window.front().second <= i - K)
+			window.pop_front();
+		output[i] = window.front().first;
+	}
+	for (int i = data.size(); i < data.size() + half_K; i++) {
+		while (window.front().second <= i - K)
+			window.pop_front();
+		output[i - half_K] = window.front().first;
+	}
+}

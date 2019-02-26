@@ -114,7 +114,7 @@ public:
 	unsigned int software_version_major(){return 2;}
 	///image server nodes check the cluster to see if they are running the latest version of the software,
 	///which is specified by (major).(minor).(software_version_compile).
-	unsigned int software_version_minor(){return 0;}
+	unsigned int software_version_minor(){return 1;}
 	///image server nodes check the cluster to see if they are running the latest version of the software,
 	///which is specified by (major).(minor).(software_version_compile).
 	unsigned int software_version_compile(){return _software_version_compile;}

@@ -155,6 +155,7 @@ struct ns_threshold_movement_posture_analyzer_parameters{
 
 	unsigned long death_time_expansion_time_kernel_in_seconds;
 	bool use_v1_movement_score;
+	std::string version_flag;
 	static ns_threshold_movement_posture_analyzer_parameters default_parameters(const unsigned long experiment_duration_in_seconds);
 	void read(std::istream & i);
 	void write(std::ostream & o)const;
@@ -177,5 +178,6 @@ struct ns_posture_analysis_model{
 
 	static ns_posture_analysis_model dummy();
 	ns_posture_analysis_method posture_analysis_method;
+	std::string name;
 };
 #endif

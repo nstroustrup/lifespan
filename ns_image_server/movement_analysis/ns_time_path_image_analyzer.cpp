@@ -6,6 +6,8 @@
 #include "ns_thread_pool.h"
 #include "ns_linear_regression_model.h"
 #include "ns_annotation_handling_for_visualization.h"
+#include "ns_image_statistics.h"
+#include <queue>
 
 #ifdef NS_CALCULATE_OPTICAL_FLOW
 #include "ns_optical_flow.h"
@@ -632,6 +634,8 @@ bool ns_time_path_image_movement_analyzer::try_to_rebuild_after_failure() const 
 
 
 void ns_time_path_image_movement_analyzer::process_raw_images(const ns_64_bit region_id,const ns_time_path_solution & solution_, const ns_time_series_denoising_parameters & times_series_denoising_parameters,const ns_analyzed_image_time_path_death_time_estimator * e,ns_sql & sql, const long group_number,const bool write_status_to_db){
+	if (e->software_version_number() != NS_CURRENT_POSTURE_MODEL_VERSION)
+		throw ns_ex("This software, which is running posture analysis version ") << NS_CURRENT_POSTURE_MODEL_VERSION << ", cannot use the incompatible posture analysis parameter set " << e->name << ", which is version " << e->software_version_number();
 	region_info_id = region_id; 
 	obtain_analysis_id_and_save_movement_data(region_id, sql, ns_force_creation_of_new_db_record,ns_do_not_write_data);
 	if (analysis_id == 0)
@@ -1408,7 +1412,7 @@ bool ns_time_path_image_movement_analyzer::load_completed_analysis(const ns_64_b
 	load_from_solution(solution_);
 	crop_path_observation_times(externally_specified_plate_observation_interval);
 	bool found_path_info_in_db = load_movement_image_db_info(region_info_id,sql);
-
+	
 
 	
 	for (unsigned long g = 0; g < groups.size(); g++){
@@ -1420,6 +1424,11 @@ bool ns_time_path_image_movement_analyzer::load_completed_analysis(const ns_64_b
 	}
 	if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("Populating movement quantification from file"));
 	populate_movement_quantification_from_file(sql, exclude_movement_quantification);
+
+	if (posture_model_version_used != e->software_version_number())
+		throw ns_ex("This region's movement analysis was run using posture analysis version ") << posture_model_version_used << ".  This is incompatible with the time series denoising parameter file you have specified, " << e->name << " which is v " << e->software_version_number() << ".  You can fix this by running the job \"Analyze Worm Movement using Cached Images\" which will preserve all by hand annotations.";
+
+
 	ns_64_bit file_specified_analysis_id = this->analysis_id;
 
 	if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("Getting analysis id"));
@@ -1566,9 +1575,20 @@ void ns_time_path_image_movement_analyzer::load_movement_data_from_disk(istream 
 
 	ns_get_int get_int;
 	ns_get_double get_double;
+	ns_get_string get_string;
 	get_int(in,this->analysis_id);
 	if (in.fail())
 		throw ns_ex("Empty Specification!");
+	bool version_specified = false;
+	std::string tmp;
+	get_string(in, tmp);
+	if (tmp == "v:") {
+		get_string(in, posture_model_version_used);
+		version_specified = true;
+	} 
+	if (!version_specified)
+		posture_model_version_used = "2";
+
 	if (skip_movement_data)
 		return;
 		
@@ -1579,10 +1599,14 @@ void ns_time_path_image_movement_analyzer::load_movement_data_from_disk(istream 
 			}
 		}
 	}
-
+	bool first_read = true;
 	while(true){
 		unsigned long group_id,path_id,element_id;
-		get_int(in,group_id); //1
+		if (first_read && !version_specified) 
+			group_id = atoi(tmp.c_str());	//if version wasn't specified, we have already loaded the first integer while looking for the version
+		else get_int(in, group_id); //1
+		
+		first_read = false;
 		if(in.fail()) break;
 
 		get_int(in,path_id);//2
@@ -1738,7 +1762,7 @@ void ns_time_path_image_movement_analyzer::get_processing_stats_from_solution(co
 
 
 void ns_time_path_image_movement_analyzer::save_movement_data_to_disk(ostream & o) const{
-	o << this->analysis_id << "\n";
+	o << this->analysis_id << ",v:,"<< posture_model_version_used<<"\n";
 	for (unsigned long i = 0; i < groups.size(); i++){
 		for (unsigned long j = 0; j < groups[i].paths.size(); j++){
 			for (unsigned long k = 0; k < groups[i].paths[j].elements.size(); k++){
@@ -1825,12 +1849,14 @@ void ns_analyzed_image_time_path::write_posture_analysis_optimization_data_heade
 }
 
 std::vector< std::vector < unsigned long > > static_messy_death_time_matrix;
- void ns_analyzed_image_time_path::write_posture_analysis_optimization_data(int software_version_number,const ns_stationary_path_id & id, const std::vector<double> & thresholds, const std::vector<unsigned long> & hold_times, const ns_region_metadata & m,const ns_time_series_denoising_parameters & denoising_parameters,std::ostream & o, ns_parameter_optimization_results & results) const{
+ void ns_analyzed_image_time_path::write_posture_analysis_optimization_data(const std::string & software_version_number,const ns_stationary_path_id & id, const std::vector<double> & thresholds, const std::vector<unsigned long> & hold_times, const ns_region_metadata & m,const ns_time_series_denoising_parameters & denoising_parameters,std::ostream & o, ns_parameter_optimization_results & results, ns_parameter_optimization_results * results_2) const{
 
 	unsigned long death_time(by_hand_annotation_event_times[(int)ns_movement_cessation].period_end);
 	if (by_hand_annotation_event_times[(int)ns_movement_cessation].fully_unbounded())
 		return;
 	results.number_valid_worms++;
+	if (results_2 != 0)
+		results_2->number_valid_worms++;
 	calculate_posture_analysis_optimization_data(thresholds,hold_times,static_messy_death_time_matrix, software_version_number);
 	const unsigned long random_group(rand()%2);
 	for (unsigned int i = 0; i < thresholds.size(); i++)
@@ -1840,6 +1866,10 @@ std::vector< std::vector < unsigned long > > static_messy_death_time_matrix;
 			const double err_sq = err*err;
 			results.death_total_mean_square_error_in_hours[i][j] += err_sq;
 			results.counts[i][j] ++;
+			if (results_2 != 0) {
+				results_2->death_total_mean_square_error_in_hours[i][j] += err_sq;
+				results_2->counts[i][j] ++;
+			}
 
 			o << m.experiment_name << "," << m.device << "," << m.plate_name() << "," << m.plate_type_summary() 
 				<< "," << id.group_id << "," << id.path_id << ","
@@ -1862,7 +1892,7 @@ std::vector< std::vector < unsigned long > > static_messy_death_time_matrix;
 		 "Expansion Start Difference (Days), Expansion Stop Difference (Days), Average Difference (Days), Average Difference Squared (Days), Random Group";
  }
  std::vector< ns_death_time_expansion_info> expansion_intervals;
- void ns_analyzed_image_time_path::write_expansion_analysis_optimization_data(const ns_stationary_path_id & id, const std::vector<double> & thresholds, const std::vector<unsigned long> & hold_times, const ns_region_metadata & m,  std::ostream & o, ns_parameter_optimization_results & results) const {
+ void ns_analyzed_image_time_path::write_expansion_analysis_optimization_data(const ns_stationary_path_id & id, const std::vector<double> & thresholds, const std::vector<unsigned long> & hold_times, const ns_region_metadata & m,  std::ostream & o, ns_parameter_optimization_results & results, ns_parameter_optimization_results * results_2) const {
 	
 	 if (by_hand_annotation_event_times[(int)ns_movement_cessation].fully_unbounded() ||
 		 by_hand_annotation_event_times[(int)ns_death_posture_relaxation_start].fully_unbounded() ||
@@ -1874,6 +1904,8 @@ std::vector< std::vector < unsigned long > > static_messy_death_time_matrix;
 	const unsigned long time_at_which_death_time_expansion_started = by_hand_annotation_event_times[(int)ns_death_posture_relaxation_start].period_end,
 				   time_at_which_death_time_expansion_stopped = by_hand_annotation_event_times[(int)ns_death_posture_relaxation_termination].period_end;
 	 results.number_valid_worms++;
+	 if (results_2 != 0)
+		 results_2->number_valid_worms++;
 	 expansion_intervals.resize(0);
 	 //results.number_valid_worms++;
 	 calculate_expansion_analysis_optimization_data(death_time,thresholds, hold_times, expansion_intervals);
@@ -1896,6 +1928,10 @@ std::vector< std::vector < unsigned long > > static_messy_death_time_matrix;
 			 const double avg_err_sq = (start_err_sq + stop_err_sq) / 2;
 			 results.death_total_mean_square_error_in_hours[i][j] += avg_err_sq;
 			 results.counts[i][j] ++;
+			 if (results_2 != 0) {
+				 results_2->death_total_mean_square_error_in_hours[i][j] += avg_err_sq;
+				 results_2->counts[i][j] ++;
+			 }
 
 			 o << m.experiment_name << "," << m.device << "," << m.plate_name() << "," << m.plate_type_summary()
 				 << "," << id.group_id << "," << id.path_id << ","
@@ -1912,7 +1948,7 @@ std::vector< std::vector < unsigned long > > static_messy_death_time_matrix;
  }
 
  std::vector< std::vector < std::pair<unsigned long, unsigned long> > > static_messy_expansion_interval_matrix;
-void ns_analyzed_image_time_path::calculate_posture_analysis_optimization_data(const std::vector<double> & thresholds, const std::vector<unsigned long> & hold_times, std::vector< std::vector < unsigned long > > & death_times, int software_version) const{
+void ns_analyzed_image_time_path::calculate_posture_analysis_optimization_data(const std::vector<double> & thresholds, const std::vector<unsigned long> & hold_times, std::vector< std::vector < unsigned long > > & death_times, const std::string & software_version) const{
 	//find first valid observation
 	unsigned long start_i(0);
 	for (start_i = 0; start_i < elements.size(); start_i++){
@@ -1932,7 +1968,7 @@ void ns_analyzed_image_time_path::calculate_posture_analysis_optimization_data(c
 		
 		if (elements[t].excluded) continue;
 
-		double r((software_version==1)?elements[t].measurements.death_time_posture_analysis_measure_v1():
+		double r((software_version=="1")?elements[t].measurements.death_time_posture_analysis_measure_v1():
 									   elements[t].measurements.death_time_posture_analysis_measure_v2());
 		const unsigned long &cur_time (elements[t].absolute_time);
 		//keep on pushing the last posture time and last sationary
@@ -2232,7 +2268,7 @@ void ns_time_path_image_movement_analyzer::write_summary_movement_quantification
 }*/
 
 
-void ns_time_path_image_movement_analyzer::write_posture_analysis_optimization_data(int software_version,const std::vector<double> & thresholds, const std::vector<unsigned long> & hold_times, const ns_region_metadata & m,std::ostream & o, ns_parameter_optimization_results & results) const{
+void ns_time_path_image_movement_analyzer::write_posture_analysis_optimization_data(const std::string & software_version,const std::vector<double> & thresholds, const std::vector<unsigned long> & hold_times, const ns_region_metadata & m,std::ostream & o, ns_parameter_optimization_results & results, ns_parameter_optimization_results * results_2) const{
 	srand(0);
 	for (unsigned int i = 0; i < groups.size(); i++){
 		for (unsigned int j = 0; j < groups[i].paths.size(); j++){	
@@ -2242,17 +2278,17 @@ void ns_time_path_image_movement_analyzer::write_posture_analysis_optimization_d
 				groups[i].paths[j].censoring_and_flag_details.flag.label_short == "2ND_WORM_ERR" ||
 				groups[i].paths[j].censoring_and_flag_details.flag.label_short == "STILL_ALIVE"))
 				continue;
-			groups[i].paths[j].write_posture_analysis_optimization_data(software_version,generate_stationary_path_id(i,j),thresholds,hold_times,m,denoising_parameters_used,o, results);
+			groups[i].paths[j].write_posture_analysis_optimization_data(software_version,generate_stationary_path_id(i,j),thresholds,hold_times,m,denoising_parameters_used,o, results,results_2);
 		}
 	}
 }
 
-void ns_time_path_image_movement_analyzer::write_expansion_analysis_optimization_data(const std::vector<double> & thresholds, const std::vector<unsigned long> & hold_times, const ns_region_metadata & m, std::ostream & o, ns_parameter_optimization_results & results) const {
+void ns_time_path_image_movement_analyzer::write_expansion_analysis_optimization_data(const std::vector<double> & thresholds, const std::vector<unsigned long> & hold_times, const ns_region_metadata & m, std::ostream & o, ns_parameter_optimization_results & results, ns_parameter_optimization_results * results_2) const {
 	for (unsigned int i = 0; i < groups.size(); i++) {
 		for (unsigned int j = 0; j < groups[i].paths.size(); j++) {
 			if (ns_skip_low_density_paths && groups[i].paths[j].is_low_density_path() || groups[i].paths[j].excluded() || !groups[i].paths[j].by_hand_data_specified())
 				continue;
-			groups[i].paths[j].write_expansion_analysis_optimization_data(generate_stationary_path_id(i, j), thresholds, hold_times, m,o, results);
+			groups[i].paths[j].write_expansion_analysis_optimization_data(generate_stationary_path_id(i, j), thresholds, hold_times, m,o, results,results_2);
 		}
 	}
 }
@@ -5723,6 +5759,8 @@ void ns_time_path_image_movement_analyzer::back_port_by_hand_annotations_to_solu
 
 void ns_time_path_image_movement_analyzer::reanalyze_stored_aligned_images(const ns_64_bit region_id,const ns_time_path_solution & solution_,const ns_time_series_denoising_parameters & times_series_denoising_parameters,const ns_analyzed_image_time_path_death_time_estimator * e,ns_sql & sql,const bool load_images_after_last_valid_sample,const bool recalculate_flow_images){
 
+	if (e->software_version_number() != NS_CURRENT_POSTURE_MODEL_VERSION)
+		throw ns_ex("This software, which is running posture analysis version ") << NS_CURRENT_POSTURE_MODEL_VERSION << ", cannot use the incompatible posture analysis parameter set " << e->name << ", which is version " << e->software_version_number();
 
 	#ifndef NS_CALCULATE_OPTICAL_FLOW
 	if (recalculate_flow_images)
@@ -5766,11 +5804,12 @@ void ns_time_path_image_movement_analyzer::reanalyze_stored_aligned_images(const
 
 		//this will set the analysis id based on the file contents
 		populate_movement_quantification_from_file(sql,false);
+		posture_model_version_used = NS_CURRENT_POSTURE_MODEL_VERSION;
 		ns_64_bit file_specified_analysis_id = this->analysis_id;
 		//xxxxxx disabled for debug
 		obtain_analysis_id_and_save_movement_data(region_id, sql, ns_require_existing_record, ns_do_not_write_data);
-		//if (file_specified_analysis_id != this->analysis_id)
-		//	throw ns_ex("Movement analysis ID specified on disk does not agree with the ID  specified in database.");
+		if (file_specified_analysis_id != this->analysis_id)
+			throw ns_ex("Movement analysis ID specified on disk does not agree with the ID  specified in database.");
 		if (analysis_id == 0)
 			throw ns_ex("Could not obtain analysis id!");
 
@@ -5911,7 +5950,7 @@ void ns_time_path_image_movement_analyzer::acquire_region_image_specifications(c
 	}
 }
 
-void ns_time_path_image_movement_analyzer::normalize_movement_scores_over_all_paths(const int software_version, const ns_time_series_denoising_parameters & param){
+void ns_time_path_image_movement_analyzer::normalize_movement_scores_over_all_paths(const std::string & software_version, const ns_time_series_denoising_parameters & param){
 	if (param.movement_score_normalization == ns_time_series_denoising_parameters::ns_none ||
 		param.movement_score_normalization == ns_time_series_denoising_parameters::ns_subtract_out_device_median)
 		return;
@@ -5942,7 +5981,7 @@ void ns_time_path_image_movement_analyzer::normalize_movement_scores_over_all_pa
 
 			std::vector<double> values(elements.size()-start);
 			for (unsigned int k = start; k < elements.size(); k++){
-				if (software_version==1)
+				if (software_version=="1")
 				values[k-start] = elements[k].measurements.death_time_posture_analysis_measure_v1();
 				else
 					values[k - start] = elements[k].measurements.death_time_posture_analysis_measure_v2();
@@ -5976,13 +6015,14 @@ void ns_time_path_image_movement_analyzer::normalize_movement_scores_over_all_pa
 			else
 				median = (medians_to_use[medians_to_use.size()/2]+medians_to_use[medians_to_use.size()/2-1])/2.0;
 		}
+		const bool v1(software_version == "1");
 		for (unsigned int i = 0; i < groups.size(); i++){
 			for (unsigned int j = 0; j < groups[i].paths.size(); j++){
 				if (ns_skip_low_density_paths && groups[i].paths[j].is_low_density_path())
 						continue; 	
 
 				for (unsigned int k = 0; k < groups[i].paths[j].elements.size(); k++)
-					(software_version==1?groups[i].paths[j].elements[k].measurements.death_time_posture_analysis_measure_v1(): groups[i].paths[j].elements[k].measurements.death_time_posture_analysis_measure_v2()) -=median;
+					(v1 ?groups[i].paths[j].elements[k].measurements.death_time_posture_analysis_measure_v1(): groups[i].paths[j].elements[k].measurements.death_time_posture_analysis_measure_v2()) -=median;
 			}
 		}
 	}
@@ -5994,7 +6034,7 @@ void ns_time_path_image_movement_analyzer::normalize_movement_scores_over_all_pa
 				if (ns_skip_low_density_paths && groups[i].paths[j].is_low_density_path())
 						continue;
 				for (unsigned int k = 0; k < groups[i].paths[j].elements.size(); k++)
-					(software_version == 1 ? groups[i].paths[j].elements[k].measurements.death_time_posture_analysis_measure_v1() : groups[i].paths[j].elements[k].measurements.death_time_posture_analysis_measure_v2()) -=medians[m_pos];
+					(software_version == "1" ? groups[i].paths[j].elements[k].measurements.death_time_posture_analysis_measure_v1() : groups[i].paths[j].elements[k].measurements.death_time_posture_analysis_measure_v2()) -=medians[m_pos];
 				m_pos++;
 			}
 		}
@@ -6944,39 +6984,47 @@ void ns_analyzed_image_time_path::identify_expansion_time(const unsigned long de
 	std::vector<ns_death_time_expansion_info> & results,
 	std::vector<ns_s64_bit> & intensity_changes) const {
 	results.resize(thresholds.size()*hold_times.size());
-//	intensity_changes.reserve(50);
-//	intensity_changes.resize(0);
 
 	for (unsigned int ht = 0; ht < hold_times.size(); ht++) {
 		double max_intensity_change(-DBL_MAX);
 		unsigned long time_of_max_intensity_change(death_index);
 		bool found_valid_time(false);
+		unsigned long half_hold_time = hold_times[ht] / 2;
 
+		
 		//here we are calculate a running average rate of increase in intensity within the stablized region
 		//we then identify the largest increase after death, and call that the death time increase
 		for (long t = death_index; t < element_count(); t++) {
 			if (element(t).excluded)
 				continue;
 			unsigned long cur_t = element(t).absolute_time;
+
+			long left_i(death_index), right_i(death_index);
+
+			//this could be done faster with a sliding window.
+			//find the apropriate sized time window 
+			for (long i = t-1; i >= 0; i--) {
+				unsigned long dt = cur_t - elements[i].absolute_time;
+				if (dt < half_hold_time)
+					left_i = i;
+				else break;
+			}
+			for (long i = t+1; i < element_count(); i++) {
+				unsigned long dt = elements[i].absolute_time - cur_t;
+				if (dt < half_hold_time)
+					right_i = i;
+				else break;
+			}
+
 			//find largest intensity change within in kernel to use as the "peak time".
-			ns_s64_bit max_val = element(t).measurements.change_in_total_stabilized_intensity;
-			ns_s64_bit max_tt = t;
 			ns_s64_bit total_intensity_change(0);
 			unsigned long point_count(0);
-			//this could be done faster with a sliding window.
-			for (long tt = t; tt < element_count() && element(tt).absolute_time <= cur_t + hold_times[ht]; tt++) {
+
+			for (long tt = left_i; tt <= right_i; tt++) {
 				if (element(tt).excluded) continue;
 				total_intensity_change += element(tt).measurements.change_in_total_stabilized_intensity;
 				point_count++;
-				//	intensity_changes.push_back(element(tt).measurements.change_in_total_stabilized_intensity);
-				if (max_val < element(tt).measurements.change_in_total_stabilized_intensity) {
-					max_val = element(tt).measurements.change_in_total_stabilized_intensity;
-					max_tt = tt;
-				}
 			}
-
-			//max_tt is now set as the largest intensity change in the window
-			//total_intensity change/point_count is the average intensity change in the window.
 
 			if (point_count == 0)
 				continue;
@@ -6984,8 +7032,8 @@ void ns_analyzed_image_time_path::identify_expansion_time(const unsigned long de
 			const double av_change = total_intensity_change / point_count;
 			const bool is_max_so_far(av_change > max_intensity_change);
 			if (is_max_so_far) {
-				max_intensity_change = av_change;
-				time_of_max_intensity_change = max_tt;
+				max_intensity_change = av_change; 
+				time_of_max_intensity_change = t;
 			}
 		}
 
@@ -7217,13 +7265,18 @@ ns_time_path_posture_movement_solution ns_threshold_movement_posture_analyzer::r
 
 
 ns_analyzed_image_time_path_death_time_estimator * ns_get_death_time_estimator_from_posture_analysis_model(const ns_posture_analysis_model & m){
+	ns_analyzed_image_time_path_death_time_estimator * p;
 	if (m.posture_analysis_method == ns_posture_analysis_model::ns_hidden_markov){
-		return new ns_time_path_movement_markov_solver(m.hmm_posture_estimator);
+		p = new ns_time_path_movement_markov_solver(m.hmm_posture_estimator);
 	}
 	else if (m.posture_analysis_method == ns_posture_analysis_model::ns_threshold){
-		return new ns_threshold_movement_posture_analyzer(m.threshold_parameters);
+		p = new ns_threshold_movement_posture_analyzer(m.threshold_parameters);
 	}
 	else if (m.posture_analysis_method == ns_posture_analysis_model::ns_not_specified)
 		throw ns_ex("ns_get_death_time_estimator_from_posture_analysis_model()::No posture analysis method specified.");
-	throw ns_ex("ns_get_death_time_estimator_from_posture_analysis_model()::Unknown posture analysis method!");
+	else
+		throw ns_ex("ns_get_death_time_estimator_from_posture_analysis_model()::Unknown posture analysis method!");
+
+	p->name = m.name;
+	return p;
 }

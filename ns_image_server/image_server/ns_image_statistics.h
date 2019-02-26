@@ -163,4 +163,7 @@ public:
 class ns_detected_worm_info;
 void ns_summarize_stats(const std::vector<const ns_detected_worm_info *> & worms, ns_image_object_statistics & stats);
 
+
+void ns_sliding_window_min(const std::vector<double> & data, int half_K, std::vector<double> & output);
+void ns_sliding_window_max(const std::vector<double> & data, int half_K, std::vector<double> & output);
 #endif

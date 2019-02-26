@@ -8,7 +8,7 @@
 #include "ns_subpixel_image_alignment.h"
 #include "ns_image_pool.h"
 
-
+#define NS_CURRENT_POSTURE_MODEL_VERSION "2.1"
 #undef NS_CALCULATE_OPTICAL_FLOW
 #define NS_USE_FAST_IMAGE_REGISTRATION
 #undef NS_CALCULATE_SLOW_IMAGE_REGISTRATION
@@ -490,10 +490,10 @@ public:
 	void write_detailed_movement_quantification_analysis_header(std::ostream & o);
 	static void write_posture_analysis_optimization_data_header(std::ostream & o);
 	static void write_expansion_analysis_optimization_data_header(std::ostream & o);
-	void write_posture_analysis_optimization_data(int software_version_number,const ns_stationary_path_id & id, const std::vector<double> & thresholds, const std::vector<unsigned long> & hold_times, const ns_region_metadata & m, const ns_time_series_denoising_parameters & denoising_parameters, std::ostream & o, ns_parameter_optimization_results & results) const;
-	void write_expansion_analysis_optimization_data(const ns_stationary_path_id & id, const std::vector<double> & thresholds, const std::vector<unsigned long> & hold_times, const ns_region_metadata & m, std::ostream & o, ns_parameter_optimization_results & results) const;
-
-	void calculate_posture_analysis_optimization_data(const std::vector<double> & thresholds, const std::vector<unsigned long> & hold_times, std::vector< std::vector < unsigned long > > & death_times, int software_version) const;
+	void write_posture_analysis_optimization_data(const std::string & software_version_number,const ns_stationary_path_id & id, const std::vector<double> & thresholds, const std::vector<unsigned long> & hold_times, const ns_region_metadata & m, const ns_time_series_denoising_parameters & denoising_parameters, std::ostream & o, ns_parameter_optimization_results & results,ns_parameter_optimization_results * results_2) const;
+	void write_expansion_analysis_optimization_data(const ns_stationary_path_id & id, const std::vector<double> & thresholds, const std::vector<unsigned long> & hold_times, const ns_region_metadata & m, std::ostream & o, ns_parameter_optimization_results & results, ns_parameter_optimization_results * results_2) const;
+	
+	void calculate_posture_analysis_optimization_data(const std::vector<double> & thresholds, const std::vector<unsigned long> & hold_times, std::vector< std::vector < unsigned long > > & death_times, const std::string & software_version) const;
 	void calculate_expansion_analysis_optimization_data(const unsigned long actual_death_time, const std::vector<double> & thresholds, const std::vector<unsigned long> & hold_times, std::vector< ns_death_time_expansion_info > & expansion_intervals) const;
 
 	ns_vector_2i path_region_position,
@@ -694,7 +694,7 @@ public:
 	enum { ns_spatially_averaged_movement_threshold = 4, ns_spatially_averaged_movement_kernal_half_size=2};
 	ns_time_path_image_movement_analyzer():paths_loaded_from_solution(false),
 		movement_analyzed(false),region_info_id(0),last_timepoint_in_analysis_(0), _number_of_invalid_images_encountered(0),
-		number_of_timepoints_in_analysis_(0),image_db_info_loaded(false),externally_specified_plate_observation_interval(0,ULONG_MAX){}
+		number_of_timepoints_in_analysis_(0),image_db_info_loaded(false),externally_specified_plate_observation_interval(0,ULONG_MAX),posture_model_version_used(NS_CURRENT_POSTURE_MODEL_VERSION){}
 
 	~ns_time_path_image_movement_analyzer(){
 		groups.clear();//do this first, ensuring all memory is returned to the pools
@@ -743,8 +743,8 @@ public:
 	//void write_summary_movement_quantification_analysis_data(const ns_region_metadata & m, std::ostream & o)const;
 
 	void write_detailed_movement_quantification_analysis_data(const ns_region_metadata & m, std::ostream & o,const bool only_output_elements_with_by_hand_data,const long specific_animal_id=-1, const bool abbreviated_time_series=false)const;
-	void write_posture_analysis_optimization_data(int software_version_number,const std::vector<double> & thresholds, const std::vector<unsigned long> & hold_times, const ns_region_metadata & m,std::ostream & o, ns_parameter_optimization_results & results) const;
-	void write_expansion_analysis_optimization_data(const std::vector<double> & thresholds, const std::vector<unsigned long> & hold_times, const ns_region_metadata & m, std::ostream & o, ns_parameter_optimization_results & results) const;
+	void write_posture_analysis_optimization_data(const std::string & software_version_number,const std::vector<double> & thresholds, const std::vector<unsigned long> & hold_times, const ns_region_metadata & m,std::ostream & o, ns_parameter_optimization_results & results, ns_parameter_optimization_results * results_2=0) const;
+	void write_expansion_analysis_optimization_data(const std::vector<double> & thresholds, const std::vector<unsigned long> & hold_times, const ns_region_metadata & m, std::ostream & o, ns_parameter_optimization_results & results, ns_parameter_optimization_results * results_2=0) const;
 
 	void output_visualization(const std::string & base_directory) const;
 
@@ -779,6 +779,7 @@ public:
 
 	void match_plat_areas_to_paths(std::vector<ns_region_area> & areas);
 	friend class ns_worm_morphology_data_integrator;
+	std::string posture_model_version_used;
 private:
 
 	unsigned long _number_of_invalid_images_encountered;
@@ -814,7 +815,7 @@ private:
 
 	const ns_time_path_solution * solution;
 	void generate_movement_description_series();
-	void normalize_movement_scores_over_all_paths(const int software_version,const ns_time_series_denoising_parameters &);
+	void normalize_movement_scores_over_all_paths(const std::string & software_version,const ns_time_series_denoising_parameters &);
 	ns_worm_movement_description_series description_series;
 
 	ns_time_series_denoising_parameters denoising_parameters_used;

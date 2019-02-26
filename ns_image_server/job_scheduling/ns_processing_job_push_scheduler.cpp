@@ -332,7 +332,7 @@ void ns_image_server_push_job_scheduler::discover_new_jobs(ns_sql & sql){
 	}
 	else{
 		lock.release(__FILE__, __LINE__);
-		image_server.add_subtext_to_current_event("/nDeferring to another node that is currently updating jobs.", &sql);
+		image_server.add_subtext_to_current_event("\nDeferring to another node that is currently updating jobs.", &sql);
 		return;
 	}
 	

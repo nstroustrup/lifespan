@@ -360,7 +360,7 @@ void analyze_worm_movement_across_frames(const ns_processing_job & job, ns_image
 		ns_analyzed_image_time_path::write_posture_analysis_optimization_data_header(o2());
 		o2() << "\n";
 		ns_parameter_optimization_results res(thresholds.size(), hold_times.size());
-		time_path_image_analyzer.write_posture_analysis_optimization_data(2, thresholds, hold_times, metadata, o2(), res);
+		time_path_image_analyzer.write_posture_analysis_optimization_data(NS_CURRENT_POSTURE_MODEL_VERSION, thresholds, hold_times, metadata, o2(), res);
 	}
 
 	//update db stats

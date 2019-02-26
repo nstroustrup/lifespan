@@ -3362,6 +3362,7 @@ void ns_image_server::get_posture_analysis_model_for_region(const ns_64_bit regi
 	if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("get_posture_analysis_model_for_region::directory set"));
 	posture_analysis_model_cache.get_for_read(res[0][0], it, source);
 	if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("get_posture_analysis_model_for_region::gotten for read"));
+
 }
 
 
@@ -3386,6 +3387,7 @@ void ns_posture_analysis_model_entry::load_from_external_source(const std::strin
 		if (dead.fail())
 			throw ns_ex("Could not load ") << external_source.model_directory + name + "_dead.csv";
 		model_specification.hmm_posture_estimator.read(moving, dead);
+		model_specification.name = name_;
 		dead.close();
 		moving.close();
 		return;

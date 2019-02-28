@@ -1717,42 +1717,80 @@ void ns_worm_learner::generate_scanner_lifespan_statistics(bool use_by_hand_cens
 };
 struct ns_parameter_set_optimization_record {
 	ns_parameter_set_optimization_record(std::vector<double> & thresholds, vector<unsigned long> & hold_times) :total_count(0),best_parameter_count(0),new_parameters_results(thresholds.size(), hold_times.size()), current_parameter_results(1,1){}
+	
+	
 	ns_parameter_optimization_results new_parameters_results;
 	ns_parameter_optimization_results current_parameter_results;
 	ns_threshold_movement_posture_analyzer_parameters best;
-	double best_mean_squared_error;
+	double smallest_mean_squared_error;
 	ns_64_bit total_count;
 	unsigned long best_parameter_count;
-	void find_best_parameter_set( std::vector<double> & thresholds, vector<unsigned long> & hold_times, bool posture_not_expansion) {
-		double best_weighted_mean_squared_error = DBL_MAX;
-		const ns_64_bit total_count_expected = new_parameters_results.number_valid_worms;
+	std::string filename;
 
+	ns_ex find_best_parameter_set(std::vector<double> & thresholds, vector<unsigned long> & hold_times, bool posture_not_expansion) {
+		const double minimum_convergence_fraction(0.9);
+		const double how_much_deviation_from_best_mean_square_error_to_tolerate_for_better_convergence(.9);
+
+		//double best_weighted_mean_squared_error = DBL_MAX;
+		const ns_64_bit total_count_expected = new_parameters_results.number_valid_worms;
+		const ns_64_bit min_counts_considered = new_parameters_results.number_valid_worms*minimum_convergence_fraction;
+		ns_64_bit max_number_of_counts(0), min_number_of_counts(total_count_expected);
 		for (unsigned int i = 0; i < thresholds.size(); i++) {
 			for (unsigned int j = 0; j < hold_times.size(); j++) {
-				if (new_parameters_results.counts[i][j] == 0)
+				if (new_parameters_results.counts[i][j] > max_number_of_counts)
+					max_number_of_counts = new_parameters_results.counts[i][j];
+				if (new_parameters_results.counts[i][j] < min_number_of_counts && new_parameters_results.counts[i][j] >= min_counts_considered)
+						min_number_of_counts = new_parameters_results.counts[i][j];
+			}
+		}
+		if (max_number_of_counts / (double)new_parameters_results.number_valid_worms < minimum_convergence_fraction)
+			return ns_ex("No parameters execeeded the minimum convergence threshold of ") << minimum_convergence_fraction * 100 << "% of worms";
+
+		//we find the best parameter set for each number of worms for whom the analysis provided a death time.
+		//(note: the complexity here is that some parameters do not yeild a death time for all animals, and we must balance this with the quality of analysis for the worms that worked)
+		std::vector<double> best_mean_squared_error_by_count(max_number_of_counts-min_number_of_counts+1, DBL_MAX);
+		std::vector<std::pair<double,unsigned long> > best_parameter_set_by_count(max_number_of_counts - min_number_of_counts +1);
+		double overall_smallest_mean_squared_error = DBL_MAX;
+		unsigned long overall_smallest_mean_squared_error_count = 0;
+		for (unsigned int i = 0; i < thresholds.size(); i++) {
+			for (unsigned int j = 0; j < hold_times.size(); j++) {
+				if (new_parameters_results.counts[i][j] < min_counts_considered)
 					continue;
 				total_count += new_parameters_results.counts[i][j];
 				//penalize for parameter combinations that do not converge
 				const double cur_msq = (new_parameters_results.death_total_mean_square_error_in_hours[i][j] / (double)new_parameters_results.counts[i][j]);
-				double weighted_msq = cur_msq + 5*cur_msq*(total_count_expected - new_parameters_results.counts[i][j]);
-			//	cout << cur_msq << " " << total_count_expected - new_parameters_results.counts[i][j] << " " << weighted_msq << "\n";
-				if (new_parameters_results.counts[i][j] > 0 && weighted_msq < best_weighted_mean_squared_error) {
-					if (posture_not_expansion) {
-						best.stationary_cutoff = thresholds[i];
-						best.permanance_time_required_in_seconds = hold_times[j];
-					}
-					else {
-						best.death_time_expansion_cutoff= thresholds[i];
-						best.death_time_expansion_time_kernel_in_seconds = hold_times[j];
-					}
-					best_parameter_count = new_parameters_results.counts[i][j];
-					best_mean_squared_error = cur_msq;
-					best_weighted_mean_squared_error = weighted_msq;
+				//	cout << cur_msq << " " << total_count_expected - new_parameters_results.counts[i][j] << " " << weighted_msq << "\n";
+				const unsigned long count_index = new_parameters_results.counts[i][j] - min_number_of_counts;
+				if (cur_msq < best_mean_squared_error_by_count[count_index]) {
+					best_mean_squared_error_by_count[count_index] = cur_msq;
+					best_parameter_set_by_count[count_index] = std::pair<double, unsigned long>(thresholds[i], hold_times[j]);
+				}
+				if (cur_msq < overall_smallest_mean_squared_error) {
+					overall_smallest_mean_squared_error = cur_msq;
+					overall_smallest_mean_squared_error_count = new_parameters_results.counts[i][j];
 				}
 			}
 		}
+		
+		//now we have the best parameter sets for each number of converged answers.  we balance the strength of the parameter set against the number of convergence.
+		for (unsigned long i = overall_smallest_mean_squared_error_count; i <= max_number_of_counts; i++) {
+			if (how_much_deviation_from_best_mean_square_error_to_tolerate_for_better_convergence*best_mean_squared_error_by_count[i - min_number_of_counts] <= overall_smallest_mean_squared_error) {
+				if (posture_not_expansion) {
+					best.stationary_cutoff = best_parameter_set_by_count[i - min_number_of_counts].first;
+					best.permanance_time_required_in_seconds = best_parameter_set_by_count[i - min_number_of_counts].second;
+				}
+				else {
+					best.death_time_expansion_cutoff = best_parameter_set_by_count[i - min_number_of_counts].first;
+					best.death_time_expansion_time_kernel_in_seconds = best_parameter_set_by_count[i - min_number_of_counts].second;
+				}
+				smallest_mean_squared_error = best_mean_squared_error_by_count[i - min_number_of_counts];
+				best_parameter_count = i;
+				total_count = i;
+			}
+
+		}
+		return ns_ex();
 	}
-	std::string filename;
 };
 
 
@@ -1776,7 +1814,7 @@ void ns_worm_learner::output_movement_analysis_optimization_data(const ns_optimi
 	//posture analysis
 	std::vector<double> posture_analysis_thresholds,
 		expansion_analysis_thresholds;
-	vector<unsigned long> posture_analysis_hold_times,
+	vector<unsigned long> posture_analysis_hold_times, //in seconds
 		expansion_analysis_hold_times;
 	const bool v1_parameters = false;
 	//old movement scores
@@ -1795,8 +1833,8 @@ void ns_worm_learner::output_movement_analysis_optimization_data(const ns_optimi
 	else {
 		//new movement scores
 		const double min_thresh(.1);
-		const double max_thresh(20000);
-		const long number_of_thresholds(20);
+		const double max_thresh(2000);
+		const long number_of_thresholds(40);
 		const double log_dt(((log(max_thresh) - log(min_thresh)) / number_of_thresholds));
 		posture_analysis_thresholds.resize(number_of_thresholds);
 
@@ -1824,7 +1862,7 @@ void ns_worm_learner::output_movement_analysis_optimization_data(const ns_optimi
 		for (unsigned int i = 6; i < 14; i++)
 			posture_analysis_hold_times.push_back(posture_analysis_hold_times[p-1] +(i - 6) * 6 * 60 * 60);
 	}
-	if (range == ns_thermotolerance){
+	else if (range == ns_thermotolerance){
 		
 		posture_analysis_hold_times.reserve(16);
 		posture_analysis_hold_times.push_back(0);
@@ -1900,7 +1938,7 @@ void ns_worm_learner::output_movement_analysis_optimization_data(const ns_optimi
 	//thresholds.resize(2);
 
 	if (image_server.verbose_debug_output()) 
-		cout << "Considering " << data_selector.samples.size() << " samples.\n";
+		cout << "Considering " << region_count << " regions.\n";
 
 	unsigned pos(0);
 	for (unsigned int i = 0; i < data_selector.samples.size(); i++) {
@@ -2081,7 +2119,7 @@ void ns_worm_learner::output_movement_analysis_optimization_data(const ns_optimi
 		for (map<std::string, ns_parameter_set_optimization_record>::iterator p = best_parameter_sets->begin(); p != best_parameter_sets->end(); p++) {
 
 			results_text += "**For plates of type " + p->first + "\n";		
-			p->second.find_best_parameter_set(*thresh, *hold, data_name=="Posture Analysis");
+			ns_ex convergence_problem = p->second.find_best_parameter_set(*thresh, *hold, data_name=="Posture Analysis");
 			p->second.filename = p->first;
 			if (image_server.verbose_debug_output())
 				cout << "Filename " << p->second.filename;
@@ -2094,8 +2132,6 @@ void ns_worm_learner::output_movement_analysis_optimization_data(const ns_optimi
 				results_text += "No parameter sets converged on a solution.\n\n";
 				continue;
 			}
-	
-
 			
 			for (unsigned int i = 0; i < p->second.filename.size(); i++) 
 				if (!isalnum(p->second.filename[i]))
@@ -2107,16 +2143,19 @@ void ns_worm_learner::output_movement_analysis_optimization_data(const ns_optimi
 			const bool current_parameters_converged(p->second.current_parameter_results.counts[0][0] > 0);
 			const bool best_parameters_converged(p->second.best_parameter_count > 0);
 			const double current_msqerr = (p->second.current_parameter_results.death_total_mean_square_error_in_hours[0][0] / p->second.current_parameter_results.counts[0][0]);
-			const double best_msqerr = p->second.best_mean_squared_error;
+			const double best_msqerr = p->second.smallest_mean_squared_error;
 
-			if (!current_parameters_converged)
+			if (!convergence_problem.text().empty()) {
+				results_text += convergence_problem.text() + "\n";
+			}
+			else if(!current_parameters_converged)
 				results_text += "The existing parameter set never converged on a solution.\n";
 			else {
 				results_text += "The existing parameter set converged on a solution in " + ns_to_string_short((100.0 * p->second.current_parameter_results.counts[0][0]) / p->second.current_parameter_results.number_valid_worms,1) + "% of cases\n";
 				results_text += "The existing parameter set produced estimates that differed from by - hand annotations by\n " + ns_to_string_short(sqrt(current_msqerr), 3) + " days on average(a mean squared error of " + ns_to_string_short(current_msqerr, 3) + " days squared)\n";
 			}
 			if (!best_parameters_converged)
-				results_text += "The best possible parameter set never converged on a solution";
+				results_text += "The best possible parameter set never converged on a solution\n";
 			else {
 				results_text += "The best possible parameter set converged on a solution in " + ns_to_string_short((100.0 * p->second.best_parameter_count) / p->second.current_parameter_results.number_valid_worms, 1) + "% of cases\n";
 				results_text += "The best possible parameter set produced estimates that differed from by-hand annotations by\n" + ns_to_string_short(sqrt(best_msqerr), 3) + " days on average (a mean squared error of " + ns_to_string_short(best_msqerr, 3) + " days squared)\n";

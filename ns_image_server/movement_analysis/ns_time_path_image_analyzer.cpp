@@ -1847,11 +1847,11 @@ void ns_analyzed_image_time_path::write_posture_analysis_optimization_data_heade
 		"Movement Threshold, Min Hold Time (Hours), Denoising Technique Used, "
 		"Visual Inspection Death Age (Days),Machine Death Age (Days), Visual Inspection Death Time (Date), Difference Between Machine and By Hand Death Times (Days), Sqrt(Difference Squared) (Days), Random Group";
 }
-
 std::vector< std::vector < unsigned long > > static_messy_death_time_matrix;
  void ns_analyzed_image_time_path::write_posture_analysis_optimization_data(const std::string & software_version_number,const ns_stationary_path_id & id, const std::vector<double> & thresholds, const std::vector<unsigned long> & hold_times, const ns_region_metadata & m,const ns_time_series_denoising_parameters & denoising_parameters,std::ostream & o, ns_parameter_optimization_results & results, ns_parameter_optimization_results * results_2) const{
 
-	unsigned long death_time(by_hand_annotation_event_times[(int)ns_movement_cessation].period_end);
+	
+	const unsigned long by_hand_death_time(by_hand_annotation_event_times[(int)ns_movement_cessation].period_end);
 	if (by_hand_annotation_event_times[(int)ns_movement_cessation].fully_unbounded())
 		return;
 	results.number_valid_worms++;
@@ -1862,7 +1862,7 @@ std::vector< std::vector < unsigned long > > static_messy_death_time_matrix;
 	for (unsigned int i = 0; i < thresholds.size(); i++)
 		for (unsigned int j = 0; j < hold_times.size(); j++){
 
-			const double err(((double)static_messy_death_time_matrix[i][j] - death_time)/(60.0*60.0*24.0));
+			const double err(((double)static_messy_death_time_matrix[i][j] - by_hand_death_time)/(60.0*60.0*24.0));
 			const double err_sq = err*err;
 			results.death_total_mean_square_error_in_hours[i][j] += err_sq;
 			results.counts[i][j] ++;
@@ -1878,9 +1878,9 @@ std::vector< std::vector < unsigned long > > static_messy_death_time_matrix;
 				<< censoring_and_flag_details.number_of_worms() << ","
 				<< thresholds[i] << "," << (hold_times[j])/60.0/60.0 << "," 
 				<< denoising_parameters.to_string() << ","
-				<< (death_time - m.time_at_which_animals_had_zero_age)/(60.0*60.0*24)  << ","
+				<< (by_hand_death_time - m.time_at_which_animals_had_zero_age)/(60.0*60.0*24)  << ","
 				<< (static_messy_death_time_matrix[i][j] - m.time_at_which_animals_had_zero_age)/(60.0*60.0*24)  << ","
-				<< death_time << ","
+				<< by_hand_death_time << ","
 				<< err << "," << sqrt(err_sq) << "," << random_group << "\n";
 		}
 }
@@ -1961,8 +1961,12 @@ void ns_analyzed_image_time_path::calculate_posture_analysis_optimization_data(c
 	thresholds.size(),
 	std::vector<unsigned long>(hold_times.size(),elements[start_i].absolute_time));
 
-	death_times.resize(0);
-	death_times.resize(thresholds.size(),std::vector<unsigned long>(hold_times.size(),0));
+	
+	death_times.resize(thresholds.size());
+	for (unsigned long i = 0; i < thresholds.size(); i++) {
+		death_times[i].resize(0);
+		death_times[i].resize(hold_times.size(), 0);
+	}
 
 	for (long t = start_i; t < elements.size(); t++){
 		

@@ -135,6 +135,7 @@ std::string ns_death_time_annotation::to_string() const{
 	s[31] = ns_to_string(subregion_info.nearest_neighbor_subregion_id);
 	s[32] = ns_to_string(subregion_info.nearest_neighbor_subregion_distance.x);
 	s[33] = ns_to_string(subregion_info.nearest_neighbor_subregion_distance.y);
+	s[34] = ns_to_string((int)event_explicitness);
 	string ret;
 	ret+=s[0];
 	for (unsigned int i = 1; i < s.size(); i++){
@@ -145,6 +146,7 @@ std::string ns_death_time_annotation::to_string() const{
 }
 void ns_death_time_annotation::from_string(const std::string v){
 	std::vector<std::string> s(1);
+	s.reserve(35);
 	for (unsigned int i = 0; i < v.size(); i++){
 		if (v[i] == ',')
 			s.resize(s.size()+1);
@@ -214,6 +216,7 @@ void ns_death_time_annotation::from_string(const std::string v){
 	subregion_info.nearest_neighbor_subregion_id = atoi(s[31].c_str());
 	subregion_info.nearest_neighbor_subregion_distance.x = atoi(s[32].c_str());
 	subregion_info.nearest_neighbor_subregion_distance.y = atoi(s[33].c_str());
+	event_explicitness = (ns_event_explicitness)atoi(s[34].c_str());
 }
 
 std::string ns_death_time_annotation::source_type_to_string(const ns_annotation_source_type & t){
@@ -475,8 +478,8 @@ void write_column_format_data(std::ostream & o, const ns_death_time_annotation &
 		<< a.subregion_info.nearest_neighbor_subregion_id << ","
 		<< a.subregion_info.nearest_neighbor_subregion_distance.x << ","
 		<< a.subregion_info.nearest_neighbor_subregion_distance.y << ","
+		<< (int)a.event_explicitness << ","
 		// reserved for future use
-		<< ","
 		<< "\n";
 }
 void write_column_format_header(std::ostream & o){
@@ -485,7 +488,7 @@ void write_column_format_header(std::ostream & o){
 		 "Stationary Worm Path Id, Stationary Worm Detection Set ID,Annotation Start Time,Flag Id,Flag Label,"
 		 "Complete Trace,Number of Worms Annotated By machine,Number of Worms Annotated By Hand,"
 		 "Multiple worm cluster censoring strategy,Missing Worm Return Strategy,Extra Animal ID at position,Event Observation Type,Longest gap without observation,"
-		 "By Hand Annotation Integration Strategy,Inferred animal location,Subregion info id,Nearest neighbor subregion id,Nearest neighbor subregion X,Nearest neighbor subregion Y,(RFE),(RFE)\n";
+		 "By Hand Annotation Integration Strategy,Inferred animal location,Subregion info id,Nearest neighbor subregion id,Nearest neighbor subregion X,Nearest neighbor subregion Y,Event Explictness,(RFE)\n";
 }
 
 void ns_death_time_annotation_set::write_split_file_column_format(std::ostream & censored_and_transition_file, std::ostream & state_file)const{
@@ -741,6 +744,7 @@ void ns_death_time_annotation_set::read_column_format(const  ns_annotation_type_
 					if (i.fail()) throw ns_ex("ns_death_time_annotation_set::read_column_format()::Unexpected EOF");
 					e.subregion_info.nearest_neighbor_subregion_distance.y = atol(val.c_str());
 					getline(i,val,',');
+					e.event_explicitness = (ns_death_time_annotation::ns_event_explicitness)atoi(val.c_str());
 					if (i.fail()) throw ns_ex("ns_death_time_annotation_set::read_column_format()::Unexpected EOF");
 					getline(i,val,'\n');
 					if (i.fail()) throw ns_ex("ns_death_time_annotation_set::read_column_format()::Unexpected EOF");
@@ -2641,10 +2645,11 @@ void ns_death_time_annotation_flag::step_event(){
 		step_event();
 }
 
-void ns_zero_death_interval(ns_death_time_annotation_time_interval & e) {
-	e.period_start = e.period_end = 0;
-	e.period_end_was_not_observed = false;
-	e.period_start_was_not_observed = false;
+void ns_zero_death_interval(ns_death_time_annotation & e) {
+	e.time.period_start = e.time.period_end = 0;
+	e.time.period_end_was_not_observed = false;
+	e.time.period_start_was_not_observed = false;
+	e.event_explicitness = ns_death_time_annotation::ns_not_explicit;
 }
 void ns_crop_time(const ns_time_path_limits & limits, const ns_death_time_annotation_time_interval & first_observation_in_path, const ns_death_time_annotation_time_interval & last_observation_in_path, ns_death_time_annotation_time_interval & target) {
 	if (target.period_end == 0)

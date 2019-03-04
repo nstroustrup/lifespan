@@ -186,12 +186,14 @@ struct ns_death_time_annotation{
 
 	std::string static event_observation_label(const ns_event_observation_type & e);
 
+	typedef enum { ns_unknown_explicitness,ns_not_explicit, ns_explicitly_observed, ns_explicitly_not_observed } ns_event_explicitness;
+
 	ns_death_time_annotation():volatile_duration_of_time_not_fast_moving(0),longest_gap_without_observation(0), volatile_time_at_death_contraction_start(0,0), volatile_time_at_death_contraction_end(0,0),
 		type(ns_no_movement_event),time(0,0),region_info_id(0),region_id(0),position(0,0),size(0,0),animal_is_part_of_a_complete_trace(false),
 		annotation_source(ns_unknown),excluded(ns_not_excluded),number_of_worms_at_location_marked_by_hand(0),multiworm_censoring_strategy(ns_unknown_multiworm_cluster_strategy),
 		number_of_worms_at_location_marked_by_machine(0),annotation_time(0),disambiguation_type(ns_single_worm), flag(ns_death_time_annotation_flag::none()),loglikelihood(1),animal_id_at_position(0),
 		missing_worm_return_strategy(ns_not_specified),volatile_matches_machine_detected_death(false),event_observation_type(ns_standard),
-		by_hand_annotation_integration_strategy(ns_only_machine_annotations),inferred_animal_location(false){
+		by_hand_annotation_integration_strategy(ns_only_machine_annotations),inferred_animal_location(false), event_explicitness(ns_unknown_explicitness){
 		volatile_time_at_death_contraction_start.period_end_was_not_observed = volatile_time_at_death_contraction_start.period_start_was_not_observed = true;
 		volatile_time_at_death_contraction_end = volatile_time_at_death_contraction_start;
 	}
@@ -207,7 +209,7 @@ struct ns_death_time_annotation{
 		number_of_worms_at_location_marked_by_machine(event_counts.machine_count), volatile_matches_machine_detected_death(false), subregion_info(subregion_info_),
 				annotation_time(annotation_time_),annotation_source(source_type),annotation_source_details(annotation_details_),inferred_animal_location(inferred_animal_location_),
 				disambiguation_type(d),stationary_path_id(s_id),flag(ns_death_time_annotation_flag::none()),event_observation_type(event_observation_type_),
-				animal_is_part_of_a_complete_trace(animal_is_part_of_a_complete_trace_),longest_gap_without_observation(longest_gap_without_observation_),missing_worm_return_strategy(missing_worm_return_strategy_),animal_id_at_position(0),by_hand_annotation_integration_strategy(by_hand_strategy){
+				animal_is_part_of_a_complete_trace(animal_is_part_of_a_complete_trace_),longest_gap_without_observation(longest_gap_without_observation_),missing_worm_return_strategy(missing_worm_return_strategy_),animal_id_at_position(0),by_hand_annotation_integration_strategy(by_hand_strategy), event_explicitness(ns_unknown_explicitness){
 		volatile_time_at_death_contraction_start.period_end_was_not_observed = volatile_time_at_death_contraction_start.period_start_was_not_observed = true;
 		volatile_time_at_death_contraction_end = volatile_time_at_death_contraction_start;
 	}
@@ -263,6 +265,7 @@ struct ns_death_time_annotation{
 	void clear_movement_properties(){
 		type = ns_no_movement_event;
 		time.period_end = time.period_start = 0;
+		event_explicitness = ns_unknown_explicitness;
 	}
 	//sticky properties
 	ns_exclusion_type excluded;
@@ -302,6 +305,8 @@ struct ns_death_time_annotation{
 	ns_death_time_annotation_time_interval volatile_time_at_death_contraction_start,
 										   volatile_time_at_death_contraction_end;
 	bool volatile_matches_machine_detected_death;
+
+	ns_event_explicitness event_explicitness;
 };
 
 typedef enum {ns_include_unchanged,ns_force_to_fast_moving} ns_animals_that_slow_but_do_not_die_handling_strategy;

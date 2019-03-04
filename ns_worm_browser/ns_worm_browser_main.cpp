@@ -340,7 +340,7 @@ class ns_worm_gl_window : public Fl_Gl_Window {
 
 				press.shift_key_held = Fl::event_key(FL_Shift_L) || Fl::event_key(FL_Shift_R);
 				press.control_key_held = Fl::event_key(FL_Control_L) || Fl::event_key(FL_Control_R);
-				press.screen_position = ns_vector_2i(Fl::event_x(), Fl::event_y()) / worm_learner.worm_window.display_rescale_factor;
+				press.screen_position = ns_vector_2i(Fl::event_x(), Fl::event_y()) /worm_learner.worm_window.display_rescale_factor;
 
 				switch (state) {
 

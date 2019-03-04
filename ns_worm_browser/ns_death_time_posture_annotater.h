@@ -196,7 +196,6 @@ private:
 	//	font.draw_color(1,im.properties().height/39,ns_color_8(255,255,255),ns_format_time_string_for_human(tp->absolute_time),im);
 	*/
 	}
-	
 	typedef std::vector<ns_death_timing_data> ns_timing_data;
 	ns_timing_data timing_data;
 
@@ -211,7 +210,7 @@ private:
 
 	mutable bool saved_;
 public:
-	
+
 	void set_resize_factor(const unsigned long resize_factor_){resize_factor = resize_factor_;}
 	bool data_saved()const{return saved_;}
  ns_death_time_posture_annotater():ns_image_series_annotater(default_resize_factor, ns_death_time_posture_annotater_timepoint::ns_bottom_border_height),annotation_file("","",""),saved_(true){}

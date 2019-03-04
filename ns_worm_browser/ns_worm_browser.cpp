@@ -6454,12 +6454,17 @@ void ns_worm_learner::draw_worm_window_image(ns_image_standard & image){
 
 	new_image_size.width/=worm_window.pre_gl_downsample;
 	new_image_size.height/=worm_window.pre_gl_downsample;
-
 	
 
 	ns_vector_2i buffer_size(new_image_size.width + telemetry_size.x,
 				 (new_image_size.height > telemetry_size.y) ?
 				 new_image_size.height : telemetry_size.y);
+
+
+	//we align the bottom of the worm image and metadata region with the bottom of the telemetry graph.
+	//this can create a gap a the top, whose size we need to track
+	worm_image_offset_due_to_telemetry_graph_spacing = ns_vector_2i(0, buffer_size.y - new_image_size.height);
+	death_time_solo_annotater.worm_image_offset_due_to_telemetry_graph_spacing = worm_image_offset_due_to_telemetry_graph_spacing;
 
 	//we resize the image by an integer factor
 	//but it still needs to be resized by the video card
@@ -6518,14 +6523,9 @@ void ns_worm_learner::draw_worm_window_image(ns_image_standard & image){
 				worm_window.gl_buffer[3 * (worm_window.gl_buffer_properties.width*_y + _x) + 2] =
 					image[(image.properties().height - 1 - _y*worm_window.pre_gl_downsample)][3 * _x*worm_window.pre_gl_downsample + 2];
 			}
-			//	for (unsigned int _x = new_image_size.width; _x < buffer_size.x; _x++)
-			//	  for (int c = 0; c < 3; c++)
-			//	    worm_window.gl_buffer[3 * (worm_window.gl_buffer_properties.width*_y + _x)+c] = 0; 
-		//	worm_window.gl_buffer[3 * (worm_window.gl_buffer_properties.width*_y)+1] = 255;
+	
 		}
 		//copy over the bottom area of the imate (which contains the image of the worm)
-	
-	  //cerr << image.properties().height - 1 - _y*worm_window.pre_gl_downsample << "," << 3 * new_image_size.width*worm_window.pre_gl_downsample << " ";
 	for (int _y = worm_image_height; _y < new_image_size.height; _y++) {
 			for (unsigned int _x = 0; _x < new_image_size.width; _x++) {
 		     
@@ -8081,6 +8081,10 @@ bool ns_death_time_solo_posture_annotater::ns_fix_annotation(ns_death_time_annot
 		cerr << "Could not repair the provided event time, as it occurred at a time during which no observation was made.\n";
 		return false;
 	}
+	if ((a.type == ns_death_posture_relaxation_start || a.type == ns_death_posture_relaxation_termination) && (a.time.period_start != 0 || a.time.period_end != 0)) {
+		a.event_explicitness = ns_death_time_annotation::ns_explicitly_observed;
+		return true;
+	}
 	if (a.time.period_start > a.time.period_end){
 		for (unsigned int i = 0; i < p.element_count(); i++){
 			if (p.element(i).absolute_time == a.time.period_start){
@@ -8145,33 +8149,39 @@ void ns_death_time_solo_posture_annotater::draw_telemetry(const ns_vector_2i & p
 
 void ns_death_time_solo_posture_annotater::register_click(const ns_vector_2i & image_position, const ns_click_request & action, double external_rescale_factor) {
 	ns_acquire_lock_for_scope lock(image_buffer_access_lock, __FILE__, __LINE__);
-	const unsigned long hand_bar_group_bottom(bottom_margin_position().y*ns_death_time_solo_posture_annotater_timepoint::ns_resolution_increase_factor);
+	const unsigned long hand_bar_group_bottom(bottom_margin_position().y*ns_death_time_solo_posture_annotater_timepoint::ns_resolution_increase_factor+ worm_image_offset_due_to_telemetry_graph_spacing.y);
 
-	const unsigned long hand_bar_height((current_by_hand_timing_data().animals.size() + 1)*ns_death_time_solo_posture_annotater_timepoint::ns_movement_bar_height*ns_death_time_solo_posture_annotater_timepoint::ns_resolution_increase_factor);
-
+	const unsigned long hand_bar_height(
+		(current_by_hand_timing_data().animals.size() + 1)*ns_death_time_solo_posture_annotater_timepoint::ns_movement_bar_height*ns_death_time_solo_posture_annotater_timepoint::ns_resolution_increase_factor);
+	
 	ns_vector_2i graph_tl(worm_learner->worm_window.worm_image_size.x, 0);
 	ns_vector_2i graph_br = graph_tl + telemetry_size();
 
 	const bool click_in_graph_area(image_position.x >= graph_tl.x && image_position.x < graph_br.x &&
 		image_position.y >= graph_tl.y && image_position.y < graph_br.y);
 
-		const bool click_in_bar_area(image_position.y >= hand_bar_group_bottom &&
-			image_position.y < hand_bar_group_bottom + hand_bar_height);
+	const bool click_in_bar_area(image_position.y - worm_image_offset_due_to_telemetry_graph_spacing.y >= hand_bar_group_bottom &&
+		image_position.y - worm_image_offset_due_to_telemetry_graph_spacing.y < hand_bar_group_bottom + hand_bar_height);
+	
 	bool change_made = false;
 	bool click_handled_by_hand_bar_choice(false);
 
-	if (action == ns_cycle_state && (click_in_bar_area || click_in_graph_area )) {
+	const ns_vector_2i bottom_margin_bottom(bottom_margin_position()*ns_death_time_solo_posture_annotater_timepoint::ns_resolution_increase_factor);
+	const ns_time_path_limits observation_limit(current_worm->observation_limits());
+
+	if (action == ns_cycle_state && (click_in_bar_area || click_in_graph_area)) {
 		const unsigned long all_bar_id((image_position.y - hand_bar_group_bottom) / (ns_death_time_solo_posture_annotater_timepoint::ns_movement_bar_height*ns_death_time_solo_posture_annotater_timepoint::ns_resolution_increase_factor));
+		//std::cerr << "by: " << (image_position.y - hand_bar_group_bottom) << "\n";
 
 		if (all_bar_id == 0 || click_in_graph_area) {
 
-			ns_vector_2i bottom_margin_bottom(bottom_margin_position()*ns_death_time_solo_posture_annotater_timepoint::ns_resolution_increase_factor);
-			const ns_time_path_limits observation_limit(current_worm->observation_limits());
+
 
 			bool switch_time(false);
 			unsigned long requested_time;
+			bool clicked_on_expansion_button(false);
 			if (click_in_graph_area) {
-				const ns_vector_2d graph_position(telemetry.get_graph_value_from_click_position_(image_position.x-graph_tl.x, image_position.y- graph_tl.y));
+				const ns_vector_2d graph_position(telemetry.get_graph_value_from_click_position_(image_position.x - graph_tl.x, image_position.y - graph_tl.y));
 				//cerr << graph_position << "\n";
 				if (graph_position.x >= 0) {
 					switch_time = true;
@@ -8179,17 +8189,17 @@ void ns_death_time_solo_posture_annotater::register_click(const ns_vector_2i & i
 				}
 			}
 			else {
-				switch_time = true;
-				requested_time = current_machine_timing_data->animals[0].get_time_from_movement_diagram_position(image_position.x, bottom_margin_bottom*ns_death_time_solo_posture_annotater_timepoint::ns_resolution_increase_factor,
+				requested_time = current_machine_timing_data->animals[0].get_time_from_movement_diagram_position(image_position.x, bottom_margin_bottom,
 					ns_vector_2i(current_worm->element(current_element_id()).image().properties().width*ns_death_time_solo_posture_annotater_timepoint::ns_resolution_increase_factor, 0),
-					observation_limit);
+					observation_limit, clicked_on_expansion_button);
+				switch_time = !clicked_on_expansion_button;
 			}
 			if (switch_time) {
 				clear_cached_images(false);
 				set_current_timepoint(requested_time, false);
 				{
 					ns_image_standard temp_buffer;
-					timepoints[current_timepoint_id].load_image(1024, current_image, sql(), temp_buffer,1);
+					timepoints[current_timepoint_id].load_image(1024, current_image, sql(), temp_buffer, 1);
 				}
 				change_made = true;
 			}
@@ -8197,7 +8207,7 @@ void ns_death_time_solo_posture_annotater::register_click(const ns_vector_2i & i
 		}
 		else {
 			const unsigned long hand_bar_id = all_bar_id - 1;
-			if (hand_bar_id > current_by_hand_timing_data().animals.size())
+			if (hand_bar_id >= current_by_hand_timing_data().animals.size())
 				throw ns_ex("Invalid hand bar");
 			if (hand_bar_id != current_animal_id) {
 				current_animal_id = hand_bar_id;
@@ -8229,12 +8239,27 @@ void ns_death_time_solo_posture_annotater::register_click(const ns_vector_2i & i
 				change_made = true;
 				break;
 		case ns_cycle_state:
-		case ns_cycle_state_alt_key_held:
-			current_by_hand_timing_data().animals[current_animal_id].step_event(
-			ns_death_timing_data_step_event_specification(
-				current_time_interval(), current_worm->element(current_element_id()),
-				properties_for_all_animals.region_info_id, properties_for_all_animals.stationary_path_id, current_animal_id), current_worm->observation_limits(),action== ns_cycle_state_alt_key_held);
+		case ns_cycle_state_alt_key_held: {
+			unsigned long requested_time;
+			bool clicked_on_expansion_button(false);
+			if (click_in_bar_area) {
+				requested_time = current_machine_timing_data->animals[current_animal_id].get_time_from_movement_diagram_position(image_position.x, bottom_margin_bottom,
+					ns_vector_2i(current_worm->element(current_element_id()).image().properties().width*ns_death_time_solo_posture_annotater_timepoint::ns_resolution_increase_factor, movement_vis_bar_height),
+					observation_limit, clicked_on_expansion_button);
+			}
+			
+			if (clicked_on_expansion_button)
+				current_by_hand_timing_data().animals[current_animal_id].step_death_posture_relaxation_explicitness(ns_death_timing_data_step_event_specification(
+					current_time_interval(), current_worm->element(current_element_id()),
+					properties_for_all_animals.region_info_id, properties_for_all_animals.stationary_path_id, current_animal_id));
+			else {
+				current_by_hand_timing_data().animals[current_animal_id].step_event(
+					ns_death_timing_data_step_event_specification(
+						current_time_interval(), current_worm->element(current_element_id()),
+						properties_for_all_animals.region_info_id, properties_for_all_animals.stationary_path_id, current_animal_id), current_worm->observation_limits(), action == ns_cycle_state_alt_key_held);
+			}
 			change_made = true;
+		}
 			break;
 		case ns_cycle_flags:
 			step_error_label(properties_for_all_animals);

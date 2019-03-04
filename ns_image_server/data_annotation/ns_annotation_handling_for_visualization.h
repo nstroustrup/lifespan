@@ -7,7 +7,7 @@
 
 void ns_crop_time(const ns_time_path_limits & limits, const ns_death_time_annotation_time_interval & first_observation_in_path, const ns_death_time_annotation_time_interval & last_observation_in_path, ns_death_time_annotation_time_interval & target);
 
-void ns_zero_death_interval(ns_death_time_annotation_time_interval & e);
+void ns_zero_death_interval(ns_death_time_annotation & e);
 std::ostream & operator << (std::ostream & o, const ns_death_time_annotation & a);
 
 struct ns_death_timing_data_step_event_specification {
@@ -93,46 +93,57 @@ public:
 
 	ns_death_time_annotation animal_specific_sticky_properties;
 
+	static bool useful_information_in_annotation(const ns_death_time_annotation & a) {
+		return a.time.period_end != 0 || a.event_explicitness != ns_death_time_annotation::ns_unknown_explicitness;
+	}
 	void generate_event_timing_data(std::vector<ns_death_time_annotation> & annotations) {
 
 		if (animal_specific_sticky_properties.animal_id_at_position != 0)
 			annotations.push_back(fast_movement_cessation);
-		if (translation_cessation.time.period_end != 0)
+		if (useful_information_in_annotation(translation_cessation))
 			annotations.push_back(translation_cessation);
-		if (movement_cessation.time.period_end != 0)
+		if (useful_information_in_annotation(movement_cessation))
 			annotations.push_back(movement_cessation);
-		if (death_posture_relaxation_termination_.time.period_end != 0)
+		if (useful_information_in_annotation(death_posture_relaxation_termination_))
 			annotations.push_back(death_posture_relaxation_termination_);
-		if (death_posture_relaxation_start.time.period_end != 0)
+		if (useful_information_in_annotation(death_posture_relaxation_start))
 			annotations.push_back(death_posture_relaxation_start);
 	}
 
-	/*void annotate_extra_worm(){
-	if (sticky_properties.number_of_worms_at_location_marked_by_hand == 0)
-	sticky_properties.number_of_worms_at_location_marked_by_hand = 2;
-	else if (sticky_properties.number_of_worms_at_location_marked_by_hand == ns_death_time_annotation::maximum_number_of_worms_at_position)
-	sticky_properties.number_of_worms_at_location_marked_by_hand = 1;
-	else if (sticky_properties.number_of_worms_at_location_marked_by_hand == 1)
-	sticky_properties.number_of_worms_at_location_marked_by_hand = 0;
-	else sticky_properties.number_of_worms_at_location_marked_by_hand++;
-	}*/
+
 	static ns_8_bit lighten(const ns_8_bit & a) {
 		if (a*1.75 >= 255)
 			return 255;
 		return (ns_8_bit)(a*1.75);
 	};
 
-	unsigned long get_time_from_movement_diagram_position(const unsigned long x_pos, const ns_vector_2i & pos, const ns_vector_2i & size, const ns_time_path_limits & path_observation_limits) {
+	typedef enum { no_expansion_button_border = 4 } ns_expansion_button_properties;
+	unsigned long get_time_from_movement_diagram_position(const unsigned long x_pos, const ns_vector_2i & pos, const ns_vector_2i & size, const ns_time_path_limits & path_observation_limits, bool & expansion_button_pressed) {
+		std::cerr << x_pos << " " << pos.x << " " << size.x << " " << size.y << " " << no_expansion_button_border << " " << (pos.x + size.x + no_expansion_button_border-size.y) << " " << (pos.x + size.x + no_expansion_button_border) << "\n";
+		if (x_pos >= pos.x+( size.x - size.y)+ no_expansion_button_border &&
+			x_pos <= pos.x + size.x + no_expansion_button_border ) { //the button has a width of size.y
+			expansion_button_pressed = true;
+			return 0;
+		}
+		else expansion_button_pressed = false;
 		const unsigned long path_start_time(path_observation_limits.interval_before_first_observation.period_end);
 		const unsigned long last_path_frame_time(path_observation_limits.interval_after_last_observation.period_start);
 		const unsigned long total_time = last_path_frame_time - path_start_time;
 
-		const float dt(size.x / (float)total_time);
-		return x_pos / dt + path_start_time;
+		const unsigned long expansion_button_margin_size = (no_expansion_button_border + size.y);
+		const float dt((size.x- expansion_button_margin_size) / (float)total_time);
+		return (x_pos - pos.x) / dt + path_start_time;
 	}
 	typedef enum { ns_narrow_marker, ns_wide_dotted_marker,ns_highlight_up_until_current_time } ns_current_position_marker;
 	typedef enum { ns_draw_relative_to_path, ns_draw_relative_to_plate} ns_draw_relative_spec;
-	void draw_movement_diagram(const ns_vector_2i & pos, const ns_vector_2i & size, const ns_time_path_limits & path_observation_limits, const ns_death_time_annotation_time_interval & current_interval, ns_image_standard & im, const float & scaling, const int current_interval_marker_min_width = 0, const ns_current_position_marker marker_type = ns_narrow_marker, const ns_draw_relative_spec draw_spec = ns_draw_relative_to_path) {
+	void draw_movement_diagram(const ns_vector_2i & pos, const ns_vector_2i & total_size, const ns_time_path_limits & path_observation_limits, const ns_death_time_annotation_time_interval & current_interval, ns_image_standard & im, const float & scaling, const int current_interval_marker_min_width = 0, const ns_current_position_marker marker_type = ns_narrow_marker, const ns_draw_relative_spec draw_spec = ns_draw_relative_to_path) {
+		const unsigned long no_expansion_button_width(total_size.y);
+		const unsigned long no_expansion_button_border(no_expansion_button_border);
+		const unsigned long right_hand_margin(no_expansion_button_width + no_expansion_button_border);
+
+
+		const ns_vector_2i size(total_size.x - right_hand_margin, total_size.y);
+
 		if (path_observation_limits.last_obsevation_of_plate.period_end <= path_observation_limits.first_obsevation_of_plate.period_start)
 			throw ns_ex("draw_movement_diagram()::Invalid path duration");
 
@@ -236,7 +247,18 @@ public:
 			if (death_relaxation_start_time > last_path_frame_time)
 				throw ns_ex("Invalid Death Posture Relaxation Start Time!");
 			c = ns_movement_colors::color(ns_movement_death_posture_relaxation)*scaling;
-			for (int x = (death_relaxation_start_time - (ns_s64_bit)path_start_time)*dt; x < (death_posture_relaxation_termination_.time.period_start - (ns_s64_bit)path_start_time)*dt; x++) {
+
+			//make sure there is a minimum width to draw
+			long start_pos((death_relaxation_start_time - (ns_s64_bit)path_start_time)*dt),
+				stop_pos((death_posture_relaxation_termination_.time.period_start - (ns_s64_bit)path_start_time)*dt);
+			if (stop_pos - start_pos < 4) {
+				if (start_pos > 2)
+					start_pos -= 2;
+				if (stop_pos + 2 < size.x) {
+					stop_pos += 2;
+				}
+			}
+			for (int x = start_pos; x < stop_pos; x++) {
 				if (x + pos.x >= im.properties().width || im.properties().components != 3) {
 					std::cout << "Out of bounds death relaxation time interval draw (" << x + pos.x << ") in an image (" << im.properties().width << "," << im.properties().height << "\n";
 					break;
@@ -249,6 +271,43 @@ public:
 				}
 			}
 		}
+		//draw death relaxation button (empty box if not specified, filled if specified)
+		ns_color_8 edge_color = ns_movement_colors::color(ns_movement_death_posture_relaxation)*scaling;
+		ns_color_8 center_color;
+
+		switch (death_posture_relaxation_termination_.event_explicitness) {
+		case ns_death_time_annotation::ns_not_specified:
+		case ns_death_time_annotation::ns_not_explicit:
+		case ns_death_time_annotation::ns_explicitly_not_observed:
+			center_color = ns_color_8(0, 0, 0)*scaling; break;
+		case ns_death_time_annotation::ns_explicitly_observed:
+			center_color = ns_movement_colors::color(ns_movement_death_posture_relaxation)*scaling; break;
+		default: throw ns_ex("Uknown event explicit state");
+		}
+		const unsigned int button_left = size.x + no_expansion_button_border + pos.x;
+		for (unsigned long y = 0; y < no_expansion_button_width; y++) {
+			for (unsigned long x = 0 ; x < no_expansion_button_width; x++) {
+				if (y < 4 || y + 4 > no_expansion_button_width ||
+					x < 4 || x + 4 > no_expansion_button_width) {
+					im[y + pos.y][3 * (x + button_left) + 0] = edge_color.x;
+					im[y + pos.y][3 * (x + button_left) + 1] = edge_color.y;
+					im[y + pos.y][3 * (x + button_left) + 2] = edge_color.z;
+				}
+				//draw an x for explicitly not observed
+				else if (death_posture_relaxation_termination_.event_explicitness == ns_death_time_annotation::ns_explicitly_not_observed &&
+					(x  == y || x == no_expansion_button_width - y-1)) {
+					im[y + pos.y][3 * (x + button_left) + 0] = edge_color.x;
+					im[y + pos.y][3 * (x + button_left) + 1] = edge_color.y;
+					im[y + pos.y][3 * (x + button_left) + 2] = edge_color.z;
+				}
+				else {
+					im[y + pos.y][3 * (x + button_left) + 0] = center_color.x;
+					im[y + pos.y][3 * (x + button_left) + 1] = center_color.y;
+					im[y + pos.y][3 * (x + button_left) + 2] = center_color.z;
+				}
+			}
+		}
+		
 
 		//highlight current time interval
 		unsigned long interval_start((current_interval.period_start - path_start_time)*dt),
@@ -339,13 +398,6 @@ public:
 
 		animal_specific_sticky_properties.annotation_time = e.annotation_time;
 
-		/*	if (e.flag.specified())
-		animal_specific_sticky_properties.flag = e.flag;
-		if (e.is_excluded())
-		animal_specific_sticky_properties.excluded = e.excluded;
-		if (animal_specific_sticky_properties.number_of_worms_at_location_marked_by_hand < e.number_of_worms_at_location_marked_by_hand)
-		animal_specific_sticky_properties.number_of_worms_at_location_marked_by_hand = e.number_of_worms_at_location_marked_by_hand;
-		*/
 		switch (e.type) {
 		case ns_fast_movement_cessation:
 			fast_movement_cessation = e;
@@ -394,6 +446,7 @@ public:
 		a.annotation_source = ns_death_time_annotation::ns_posture_image;
 		a.animal_id_at_position = e.worm_id_in_path;
 		a.type = movement_type;
+		a.event_explicitness = ns_death_time_annotation::ns_explicitly_observed;
 	}
 
 	ns_death_time_annotation_time_interval last_specified_event_before_time(const unsigned long t, const ns_time_path_limits & path_observation_limits) {
@@ -404,6 +457,28 @@ public:
 		if (fast_movement_cessation.time.period_end != 0)
 			return fast_movement_cessation.time;
 		return path_observation_limits.interval_before_first_observation;
+	}
+	void step_death_posture_relaxation_explicitness(const ns_death_timing_data_step_event_specification & e) {
+		const ns_death_time_annotation::ns_event_explicitness cur_exp(death_posture_relaxation_termination_.event_explicitness);
+		apply_step_specification(death_posture_relaxation_start, e, ns_death_posture_relaxation_start);
+		apply_step_specification(death_posture_relaxation_termination_, e, ns_death_posture_relaxation_termination);
+
+		switch (cur_exp) {
+		case ns_death_time_annotation::ns_unknown_explicitness:  //deliberate pass-through
+		case ns_death_time_annotation::ns_not_explicit:
+			death_posture_relaxation_termination_.event_explicitness = ns_death_time_annotation::ns_explicitly_observed; break;
+		case ns_death_time_annotation::ns_explicitly_observed:
+			death_posture_relaxation_termination_.event_explicitness = ns_death_time_annotation::ns_explicitly_not_observed; break;
+		case ns_death_time_annotation::ns_explicitly_not_observed: {
+			death_posture_relaxation_termination_.event_explicitness = ns_death_time_annotation::ns_not_explicit; 
+			ns_death_time_annotation_time_interval t(0, 0);
+			death_posture_relaxation_termination_.time = t;
+			death_posture_relaxation_start.time = t;
+			break;
+		}
+		default: throw ns_ex("step_death_posture_relaxation_explicitness()::Unkown state!");
+		}
+		death_posture_relaxation_start.event_explicitness = death_posture_relaxation_termination_.event_explicitness;
 	}
 	//given the user has selected the specified time path element, update the annotations apropriately
 	void step_event(const ns_death_timing_data_step_event_specification & e, const ns_time_path_limits & observation_limits, bool alternate_key_held) {
@@ -417,21 +492,24 @@ public:
 				//	ns_zero_death_interval(death_posture_relaxation_termination.time);
 				//clear all data to indicate the first time point is fast moving
 				if (movement_cessation.time.period_end == fast_movement_cessation.time.period_end) {
-					ns_zero_death_interval(movement_cessation.time);
-					ns_zero_death_interval(translation_cessation.time);
+					ns_zero_death_interval(movement_cessation);
+					ns_zero_death_interval(translation_cessation);
 					this->fast_movement_cessation.time = observation_limits.last_obsevation_of_plate;
+					fast_movement_cessation.event_explicitness = ns_death_time_annotation::ns_explicitly_observed;
 
 				}
 				//indicate the first timepoint is stationary
 				else if (translation_cessation.time.period_end == fast_movement_cessation.time.period_end) {
 					apply_step_specification(movement_cessation, e, ns_movement_cessation);
 					movement_cessation.time.period_start_was_not_observed = true;
-					ns_zero_death_interval(translation_cessation.time);
+					movement_cessation.event_explicitness = ns_death_time_annotation::ns_not_explicit;
+					ns_zero_death_interval(translation_cessation);
 				}
 				else {
 					//indicate the first timepoint is slow moving
 					apply_step_specification(translation_cessation, e, ns_translation_cessation);
 					translation_cessation.time.period_start_was_not_observed = true;
+					translation_cessation.event_explicitness = ns_death_time_annotation::ns_not_explicit;
 				}
 			}
 			else if (movement_cessation.time.period_end == 0 &&
@@ -440,8 +518,8 @@ public:
 				apply_step_specification(translation_cessation, e, ns_translation_cessation);
 			}
 			else if (e.event_time.period_end == translation_cessation.time.period_end) {
-				ns_zero_death_interval(translation_cessation.time);
-				ns_zero_death_interval(movement_cessation.time);
+				ns_zero_death_interval(translation_cessation);
+				ns_zero_death_interval(movement_cessation);
 				//	ns_zero_death_interval(death_posture_relaxation_termination.time);
 			}
 			else if (//death_posture_relaxation_termination.time.period_end == 0 &&
@@ -449,7 +527,7 @@ public:
 				apply_step_specification(movement_cessation, e, ns_movement_cessation);
 			}
 			else if (e.event_time.period_end == movement_cessation.time.period_end) {
-				ns_zero_death_interval(movement_cessation.time);
+				ns_zero_death_interval(movement_cessation);
 				//	ns_zero_death_interval(death_posture_relaxation_termination.time);
 			}
 		}
@@ -467,8 +545,8 @@ public:
 			}
 			else  if (e.event_time.period_end == death_posture_relaxation_termination_.time.period_end ||
 				e.event_time.period_end == death_posture_relaxation_start.time.period_end) {
-				ns_zero_death_interval(death_posture_relaxation_termination_.time);
-				ns_zero_death_interval(death_posture_relaxation_start.time);
+				ns_zero_death_interval(death_posture_relaxation_termination_);
+				ns_zero_death_interval(death_posture_relaxation_start);
 				tentative_death_posture_relaxation_start_spec = false;
 			}
 			else if (death_posture_relaxation_start.time.period_end == 0 ||
@@ -538,59 +616,7 @@ public:
 			}
 			location_id++;
 		}
-		/*
-		unsigned long duplication_events(0);
-		for (unsigned int i = 0; i < set.events.size(); i++){
-
-		const unsigned long permitted_offset_distance(10);
-		const unsigned long pod_sq(permitted_offset_distance*permitted_offset_distance);
-		unsigned long min_dist(UINT_MAX);
-		ns_vector_2i event_center((set.events[i].position+set.events[i].size/2));
-
-		timing_data_container::iterator best_match(timing_data.end());
-		for (timing_data_container::iterator p =timing_data.begin() ; p != timing_data.end(); ++p){
-
-		//first try to search by explictly specified path id
-		if (set.events[i].stationary_path_id.specified()
-		&& set.events[i].stationary_path_id == p->position_data.stationary_path_id){
-		best_match = p;
-		break;
-		}
-		else{
-		//otherwise search by position
-		unsigned long dist((p->position_data.worm_in_source_image.position-set.events[i].position).squared());
-		if (dist < min_dist){
-		min_dist = dist;
-		if (dist < pod_sq)
-		best_match = p;
-		}
-		}
-		}
-		if (best_match != timing_data.end()){
-		duplication_events+=best_match->add_annotation(set.events[i],ignore_unuseful_annotations);
-
-		}
-
-		else{
-		orphaned_events.push_back(set.events[i]);
-		}
-		}
-
-		//		in.release();
-		if (orphaned_events.size() > 0 || duplication_events){
-		string error_message("During load, ");
-		error_message += ns_to_string(orphaned_events.size()) + " orphaned and ";
-		error_message += ns_to_string(duplication_events) + " duplicates found.";
-		unsigned long censored_count(0),extra_count(0);
-		for (unsigned int i = 0; i < orphaned_events.size(); i++){
-		if (orphaned_events[i].is_excluded())
-		censored_count++;
-		if (orphaned_events[i].number_of_worms_at_location_marked_by_hand > 0)
-		extra_count++;
-		}
-		error_message+= ns_to_string(censored_count) + " of the orphans are censored annotations and " + ns_to_string(extra_count) + " are of multiple worm annotations";
-
-		}*/
+		
 		return true;
 	}
 
@@ -601,16 +627,16 @@ public:
 		for (typename timing_data_container::const_iterator p = timing_data.begin(); p != timing_data.end(); ++p) {
 			if (p->specified == false)
 				continue;
-			if (p->translation_cessation.time.period_end != 0)
+			if (ns_death_timing_data::useful_information_in_annotation(p->translation_cessation))
 				set.add(p->translation_cessation);
 
-			if (p->movement_cessation.time.period_end != 0)
+			if (ns_death_timing_data::useful_information_in_annotation(p->movement_cessation))
 				set.add(p->movement_cessation);
 
-			if (p->death_posture_relaxation_start.time.period_end != 0)
+			if (ns_death_timing_data::useful_information_in_annotation(p->death_posture_relaxation_start))
 				set.add(p->death_posture_relaxation_start);
 
-			if (p->death_posture_relaxation_termination_.time.period_end != 0)
+			if (ns_death_timing_data::useful_information_in_annotation(p->death_posture_relaxation_termination_))
 				set.add(p->death_posture_relaxation_termination_);
 
 		}

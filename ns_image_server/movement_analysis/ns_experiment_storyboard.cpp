@@ -1620,6 +1620,8 @@ void ns_experiment_storyboard::save_by_hand_annotations(ns_sql & sql,const ns_de
 				
 				ns_death_time_annotation a(divisions[i].events[j].by_hand_movement_annotations_for_element[k].annotation);
 				a.stationary_path_id = divisions[i].events[j].event_annotation.stationary_path_id;
+				a.annotation_source = ns_death_time_annotation::ns_storyboard;
+				a.annotation_source_details = "Worm Terminal::Storyboard Annotation";
 				p->second.add(a);
 			}
 			

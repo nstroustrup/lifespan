@@ -125,10 +125,10 @@ private:
 	unsigned long number_of_samples;
 };
 class ns_analyzed_image_time_path;
+
 struct ns_emperical_posture_quantification_value_estimator{
-	ns_emperical_cdf_generator<double> raw_moving_cdf,
-							   dead_cdf,
-							   processed_moving_cdf;
+	std::map<ns_hmm_movement_state, ns_analyzed_image_time_path_element_measurements > observed_values;
+
 	inline double fraction_of_moving_values_less_than(const double & d) const{
 		//alive if most alive animals move less than you
 		return processed_moving_cdf.fraction_values_lower(d);

@@ -476,6 +476,7 @@ public:
 	ns_movement_state best_guess_movement_state(const unsigned long & t) const;
 	ns_death_time_annotation_time_interval by_hand_death_time() const;
 	ns_movement_state by_hand_movement_state(const unsigned long & t) const;
+	ns_hmm_movement_state by_hand_hmm_movement_state(const unsigned long & t) const;
 	void add_death_time_events_to_set(ns_death_time_annotation_set & set) const;
 	const ns_death_time_annotation_set & death_time_annotations() const { return death_time_annotation_set; }
 

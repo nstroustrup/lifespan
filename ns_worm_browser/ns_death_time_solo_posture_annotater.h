@@ -403,7 +403,6 @@ private:
 		}
 	}
 	enum { bottom_offset = 5, movement_vis_bar_height = 10 * ns_death_time_solo_posture_annotater_timepoint::ns_resolution_increase_factor};
-
 	void draw_metadata(ns_annotater_timepoint * tp_a, ns_image_standard & im, double external_window_rescale_factor) {
 		if (current_worm == 0) {
 			cerr << "worm not loaded/n";
@@ -667,6 +666,8 @@ public:
 			current_timepoint_id++;
 
 	}
+
+	unsigned long last_time_at_current_telementry_zoom() const;
 	void draw_telemetry(const ns_vector_2i & position, const ns_vector_2i & graph_size, const ns_vector_2i & buffer_size, const float rescale_factor,ns_8_bit * buffer);
 	void draw_registration_debug(const ns_vector_2i & position, const ns_vector_2i & buffer_size, ns_8_bit * buffer) {
 		if (current_timepoint_id == 0)
@@ -908,17 +909,51 @@ public:
 			}
 //			current_by_hand_timing_data->animals[current_animal_id].first_frame_time = timepoints[0].path_timepoint_element->absolute_time;
 
-
-			telemetry_zoom_factor = timepoints.size() / 250;
-			if (telemetry_zoom_factor < .1)
-				telemetry_zoom_factor = 1;
-			//allocate image buffer
+			
+			
 			
 			if (current_image.im == 0)
 				current_image.im = new ns_image_standard();
 
+			
+			set_current_timepoint(current_time, true, true);
+			telemetry_zoom_factor = timepoints.size() / 250;
+			if (telemetry_zoom_factor < 1)
+				telemetry_zoom_factor = 1;
+			{
+				unsigned long latest_death_time = 0;
+				//make sure the death time is shown on the graph
+				for (unsigned int i = 0; i < current_region_data->machine_timing_data[worm.group_id].animals.size(); i++) {
+					if (current_region_data->machine_timing_data[worm.group_id].animals[i].movement_cessation.time.period_end > latest_death_time) {
+						latest_death_time = current_region_data->machine_timing_data[worm.group_id].animals[i].movement_cessation.time.period_end;
+						cerr << "m:" << latest_death_time << "\n";
+					}
+				}
+				for (unsigned int i = 0; i < current_region_data->by_hand_timing_data[worm.group_id].animals.size(); i++) {
+					if (current_region_data->by_hand_timing_data[worm.group_id].animals[i].movement_cessation.time.period_end > latest_death_time) {
+						latest_death_time = current_region_data->by_hand_timing_data[worm.group_id].animals[i].movement_cessation.time.period_end;
+						cerr << "h:" << latest_death_time << "\n";
+					}
+				}
+				cerr << "h:" << latest_death_time << "\n";
+				if (last_time_at_current_telementry_zoom() < latest_death_time) {
+					unsigned zoom_timepoint(0);
+					for (unsigned int zoom_timepoint = 0; zoom_timepoint < timepoints.size(); zoom_timepoint++) {
+						if (timepoints[zoom_timepoint].path_timepoint_element->absolute_time >= latest_death_time)
+							break;
+					}
+					zoom_timepoint = zoom_timepoint + 0.25*(timepoints.size() - zoom_timepoint);
+					cout << zoom_timepoint << "\n";
+					if (zoom_timepoint != 0)
+						telemetry_zoom_factor = timepoints.size() / zoom_timepoint;
+				}
 
-			set_current_timepoint(current_time,true,true);
+				if (telemetry_zoom_factor > timepoints.size() / 250)
+					telemetry_zoom_factor = timepoints.size() / 250;
+				if (telemetry_zoom_factor < 1)
+					telemetry_zoom_factor = 1;
+			}
+
 			{
 				ns_image_standard temp_buffer;
 

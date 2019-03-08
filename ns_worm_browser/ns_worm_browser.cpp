@@ -2244,7 +2244,7 @@ void ns_write_emperical_posture_model(const std::string & path_and_base_filename
 
 }
 
-void ns_worm_learner::generate_experiment_movement_image_quantification_analysis_data(ns_movement_quantification_type  detail_level){
+void ns_worm_learner::generate_experiment_movement_image_quantification_analysis_data(ns_movement_quantification_type  detail_level, const ns_optimization_subject & subject){
 	unsigned int experiment_id = data_selector.current_experiment_id();
 	const std::string experiment_name(data_selector.current_experiment_name());
 	ns_acquire_for_scope<ns_sql> sql(image_server.new_sql_connection(__FILE__,__LINE__));
@@ -6167,6 +6167,7 @@ bool ns_worm_learner::register_main_window_key_press(int key, const bool shift_k
 	}
 	else if (key == 'i') {
 		storyboard_annotater.overlay_worm_ids();
+		storyboard_annotater.display_current_frame();
 		main_window.redraw_screen();
 		return true;
 	}
@@ -8105,6 +8106,10 @@ bool ns_death_time_solo_posture_annotater::ns_fix_annotation(ns_death_time_annot
 	return false;
 }
 
+unsigned long ns_death_time_solo_posture_annotater::last_time_at_current_telementry_zoom() const {
+	const unsigned long path_stop_time = timepoints.rbegin()->path_timepoint_element->absolute_time, current_time(current_worm->element(current_element_id()).absolute_time);
+	return current_time + (1.0 / telemetry_zoom_factor)*(path_stop_time - current_time);
+}
 
 void ns_death_time_solo_posture_annotater::draw_telemetry(const ns_vector_2i & position, const ns_vector_2i & graph_size, const ns_vector_2i & buffer_size, const float rescale_factor,ns_8_bit * buffer) {
 	if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("Drawing telemetry."));
@@ -8116,7 +8121,8 @@ void ns_death_time_solo_posture_annotater::draw_telemetry(const ns_vector_2i & p
 		cerr << "Weird telemetry zoom factor: " << telemetry_zoom_factor << "\n";
 		telemetry_zoom_factor = max_zoom_factor;
 	}
-	const unsigned long path_start_time = timepoints.begin()->path_timepoint_element->absolute_time, path_stop_time = timepoints.rbegin()->path_timepoint_element->absolute_time;
+	const unsigned long path_start_time = timepoints.begin()->path_timepoint_element->absolute_time, 
+					    path_stop_time = timepoints.rbegin()->path_timepoint_element->absolute_time;
 	
 
 	const unsigned long time_block_resolution = (path_stop_time - path_start_time) / 25;
@@ -8124,7 +8130,7 @@ void ns_death_time_solo_posture_annotater::draw_telemetry(const ns_vector_2i & p
 	const unsigned long current_time = current_worm->element(current_element_id()).absolute_time;
 
 	unsigned long start_time = path_start_time + (1.0 - 1.0 / telemetry_zoom_factor)*(current_time - path_start_time);
-	unsigned long stop_time = current_time + (1.0 / telemetry_zoom_factor)*(path_stop_time - current_time);
+	unsigned long stop_time = last_time_at_current_telementry_zoom();
 
 	//lock to first timepoint when we're looking at the beginning of the path
 	const unsigned long center = (path_stop_time + path_start_time) / 2;

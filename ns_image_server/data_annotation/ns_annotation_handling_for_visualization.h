@@ -168,8 +168,8 @@ public:
 
 		const float dt(size.x / (float)total_time);
 		const unsigned long worm_arrival_time(fast_movement_cessation.time.period_end);
-		//we push death relaxation back in time as we find more data
-		unsigned long death_relaxation_start_time = worm_arrival_time;
+		//we push death relaxation start forward in time as we find more data
+		//unsigned long death_relaxation_start_time = worm_arrival_time;
 
 		unsigned int x;
 		ns_color_8 c;
@@ -190,7 +190,7 @@ public:
 		c = ns_movement_colors::color(ns_movement_slow)*scaling;
 		if (translation_cessation.time.period_end != 0 && translation_cessation.time.period_end >= path_start_time) {
 
-			death_relaxation_start_time = translation_cessation.time.period_end;
+			//death_relaxation_start_time = translation_cessation.time.period_end;
 			if (translation_cessation.time.period_end > last_path_frame_time)
 				throw ns_ex("Invalid translation cessation time");
 			for (; x < (int)((translation_cessation.time.period_end - path_start_time)*dt); x++) {
@@ -208,7 +208,7 @@ public:
 		}
 		if (movement_cessation.time.period_end != 0 && movement_cessation.time.period_end >= path_start_time) {
 
-			death_relaxation_start_time = movement_cessation.time.period_end;
+			//death_relaxation_start_time = movement_cessation.time.period_end;
 			if (movement_cessation.time.period_end > last_path_frame_time)
 				throw ns_ex("Invalid Movement Cessation Time");
 			for (; x < (int)((movement_cessation.time.period_end - path_start_time)*dt); x++) {
@@ -240,9 +240,11 @@ public:
 		}
 
 		if (death_posture_relaxation_termination_.time.period_end != 0 && death_posture_relaxation_termination_.time.period_end >= path_start_time) {
-
+		//	std::cout << death_posture_relaxation_start.time.period_end << " " << death_posture_relaxation_termination_.time.period_end << "\n";
+			unsigned long death_relaxation_start_time;
 			if (death_posture_relaxation_start.time.period_end != 0)
 				death_relaxation_start_time = death_posture_relaxation_start.time.period_end;
+			else death_relaxation_start_time = death_posture_relaxation_termination_.time.period_end;
 			//draw animal as dead until death relaxation begins
 			if (death_relaxation_start_time > last_path_frame_time)
 				throw ns_ex("Invalid Death Posture Relaxation Start Time!");
@@ -250,7 +252,8 @@ public:
 
 			//make sure there is a minimum width to draw
 			long start_pos((death_relaxation_start_time - (ns_s64_bit)path_start_time)*dt),
-				stop_pos((death_posture_relaxation_termination_.time.period_start - (ns_s64_bit)path_start_time)*dt);
+				stop_pos((death_posture_relaxation_termination_.time.period_end - (ns_s64_bit)path_start_time)*dt);
+		//	std::cout << start_pos << "," << stop_pos << " -> ";
 			if (stop_pos - start_pos < 4) {
 				if (start_pos > 2)
 					start_pos -= 2;
@@ -258,6 +261,7 @@ public:
 					stop_pos += 2;
 				}
 			}
+		//	std::cout << start_pos << "," << stop_pos << "\n";
 			for (int x = start_pos; x < stop_pos; x++) {
 				if (x + pos.x >= im.properties().width || im.properties().components != 3) {
 					std::cout << "Out of bounds death relaxation time interval draw (" << x + pos.x << ") in an image (" << im.properties().width << "," << im.properties().height << "\n";
@@ -459,9 +463,13 @@ public:
 		return path_observation_limits.interval_before_first_observation;
 	}
 	void step_death_posture_relaxation_explicitness(const ns_death_timing_data_step_event_specification & e) {
+		const ns_death_time_annotation_time_interval start_time = death_posture_relaxation_start.time;
+		const ns_death_time_annotation_time_interval stop_time = death_posture_relaxation_termination_.time;
 		const ns_death_time_annotation::ns_event_explicitness cur_exp(death_posture_relaxation_termination_.event_explicitness);
 		apply_step_specification(death_posture_relaxation_start, e, ns_death_posture_relaxation_start);
 		apply_step_specification(death_posture_relaxation_termination_, e, ns_death_posture_relaxation_termination);
+		death_posture_relaxation_start.time = start_time;
+		death_posture_relaxation_termination_.time = stop_time;
 
 		switch (cur_exp) {
 		case ns_death_time_annotation::ns_unknown_explicitness:  //deliberate pass-through
@@ -683,12 +691,6 @@ public:
 			by_hand_timing_data[i].animals[0].position_data.worm_in_source_image.size = movement_analyzer[i].paths[0].element(movement_analyzer[i].paths[0].first_stationary_timepoint()).worm_region_size();
 
 			by_hand_timing_data[i].animals[0].animal_specific_sticky_properties.stationary_path_id = by_hand_timing_data[i].animals[0].position_data.stationary_path_id;
-			//by_hand_timing_data[i].animals[0].worm_id_in_path = 0;
-			//by_hand_timing_data[i].sticky_properties.annotation_source = ns_death_time_annotation::ns_lifespan_machine;
-			//by_hand_timing_data[i].sticky_properties.position = movement_analyzer[i].paths[0].path_region_position;
-			//	by_hand_timing_data[i].sticky_properties.size = movement_analyzer[i].paths[0].path_region_size;
-
-			//	by_hand_timing_data[i].stationary_path_id = by_hand_timing_data[i].position_stationary_path_id;
 
 			by_hand_timing_data[i].animals[0].region_info_id = region_id;
 			machine_timing_data[i].animals[0] =

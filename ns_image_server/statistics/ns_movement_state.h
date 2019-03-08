@@ -50,4 +50,18 @@ std::string ns_movement_event_to_label(const ns_movement_event & t);
 bool ns_movement_event_is_a_state_transition_event(const ns_movement_event & t);	
 bool ns_movement_event_is_a_state_observation(const ns_movement_event & t);	
 ns_movement_state ns_movement_event_state(const ns_movement_event & e);
+
+typedef enum {
+	ns_hmm_missing,
+	ns_hmm_moving_vigorously,
+	ns_hmm_moving_weakly,
+	ns_hmm_moving_weakly_expanding,
+	ns_hmm_moving_weakly_post_expansion,
+	ns_hmm_not_moving_alive,
+	ns_hmm_not_moving_expanding,
+	ns_hmm_not_moving_dead,
+	ns_hmm_unknown_state
+} ns_hmm_movement_state;
+std::string ns_hmm_movement_state_to_string(const ns_hmm_movement_state & t);
+ns_hmm_movement_state ns_hmm_movement_state_from_string(const std::string & s);
 #endif

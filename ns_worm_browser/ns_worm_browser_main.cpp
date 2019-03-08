@@ -1055,17 +1055,37 @@ class ns_worm_terminal_main_menu_organizer : public ns_menu_organizer{
 	}
 
 
-	static void generate_experiment_detailed_w_by_hand_movement_image_quantification_analysis_data(const std::string & value){worm_learner.generate_experiment_movement_image_quantification_analysis_data(ns_worm_learner::ns_quantification_detailed_with_by_hand);	}
-	static void generate_experiment_abbreviated_movement_image_quantification_analysis_data(const std::string & value){worm_learner.generate_experiment_movement_image_quantification_analysis_data(ns_worm_learner::ns_quantification_abbreviated_detailed);	}
+	static void generate_experiment_detailed_w_by_hand_movement_image_quantification_analysis_data(const std::string & value){worm_learner.generate_experiment_movement_image_quantification_analysis_data(ns_worm_learner::ns_quantification_detailed_with_by_hand, ns_worm_learner::ns_whole_experiment);	}
+	static void generate_experiment_abbreviated_movement_image_quantification_analysis_data(const std::string & value){worm_learner.generate_experiment_movement_image_quantification_analysis_data(ns_worm_learner::ns_quantification_abbreviated_detailed, ns_worm_learner::ns_whole_experiment);	}
 	
 	static void generate_single_frame_posture_image_pixel_data(const std::string & value){
 		worm_learner.generate_single_frame_posture_image_pixel_data((value.find("Plate") != std::string::npos));
 	}
-	static void generate_worm_markov_posture_model_from_by_hand_annotations(const std::string & value){worm_learner.generate_experiment_movement_image_quantification_analysis_data(ns_worm_learner::ns_build_worm_markov_posture_model_from_by_hand_annotations);	}
+	static void generate_worm_markov_posture_model_from_by_hand_annotations(const std::string & value){
+
+		ns_choice_dialog c;
+		c.title = "What subject should be used?";
+		c.option_1 = "Current Plate";
+		c.option_2 = "Current Device";
+		c.option_3 = "All Devices";
+		ns_run_in_main_thread<ns_choice_dialog> b(&c);
+		ns_worm_learner::ns_optimization_subject sub;
+		switch (c.result) {
+		case 1: sub = ns_worm_learner::ns_plate; break;
+		case 2: sub = ns_worm_learner::ns_device; break;
+		case 3: sub = ns_worm_learner::ns_whole_experiment; break;
+		default: throw ns_ex("Unknown option");
+		}
+
+		bool posture_req = value.find("Posture") != value.npos;
+		bool size_req = value.find("Size") != value.npos;
+		worm_learner.generate_experiment_movement_image_quantification_analysis_data(ns_worm_learner::ns_build_worm_markov_posture_model_from_by_hand_annotations,sub);	
 	
-	static void generate_experiment_detailed_movement_image_quantification_analysis_data(const std::string & value){worm_learner.generate_experiment_movement_image_quantification_analysis_data(ns_worm_learner::ns_quantification_detailed);	}
+	}
 	
-	static void generate_experiment_summary_movement_image_quantification_analysis_data(const std::string & value){worm_learner.generate_experiment_movement_image_quantification_analysis_data(ns_worm_learner::ns_quantification_summary);	}
+	static void generate_experiment_detailed_movement_image_quantification_analysis_data(const std::string & value){worm_learner.generate_experiment_movement_image_quantification_analysis_data(ns_worm_learner::ns_quantification_detailed, ns_worm_learner::ns_whole_experiment);	}
+	
+	static void generate_experiment_summary_movement_image_quantification_analysis_data(const std::string & value){worm_learner.generate_experiment_movement_image_quantification_analysis_data(ns_worm_learner::ns_quantification_summary, ns_worm_learner::ns_whole_experiment);	}
 	
 	static void test_time_path_analysis_parameters(const std::string & value){
 		worm_learner.test_time_path_analysis_parameters(worm_learner.data_selector.current_region().region_id);
@@ -1426,7 +1446,7 @@ public:
 		//st4.options.push_back(ns_menu_item_options("Using Quiecent Lifespan Parameter Range"));
 		//add(st4);
 		
-		//add(ns_menu_item_spec(generate_worm_markov_posture_model_from_by_hand_annotations,"Calibration/Build Hidden Markov Posture Model From By Hand Annotations"));
+		add(ns_menu_item_spec(generate_worm_markov_posture_model_from_by_hand_annotations,"Calibration/Build Hidden Markov Posture Model From By Hand Annotations"));
 
 		if (worm_learner.show_testing_menus) {
 			ns_menu_item_spec model_spec(specifiy_model, "&Testing/Worm Detection/Specify SVM Model");

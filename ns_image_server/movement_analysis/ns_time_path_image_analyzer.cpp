@@ -2673,6 +2673,8 @@ void ns_analyzed_image_time_path::detect_death_times_and_generate_annotations_fr
 			(elements[end_index].part_of_a_multiple_worm_disambiguation_group)?ns_death_time_annotation::ns_part_of_a_mutliple_worm_disambiguation_cluster:ns_death_time_annotation::ns_single_worm,
 			path_id,true,elements[end_index].inferred_animal_location,elements[end_index].subregion_info,"low_density"));
 	}
+	//in most cases movement_death_time_estimator is the class 
+	//ns_threshold_movement_posture_analyzer
 	ns_time_path_posture_movement_solution movement_state_solution(movement_death_time_estimator->operator()(this,true));
 
 	//Some movement detection algorithms need a significant amount of time after an animal has died
@@ -3144,6 +3146,10 @@ ns_death_time_annotation_time_interval ns_analyzed_image_time_path::by_hand_deat
 	if (!by_hand_annotation_event_times[ns_movement_cessation].period_end_was_not_observed)
 		return by_hand_annotation_event_times[ns_movement_cessation];
 	else return ns_death_time_annotation_time_interval::unobserved_interval();
+}
+
+ns_hmm_movement_state by_hand_hmm_movement_state(const unsigned long & t) const {
+
 }
 ns_movement_state ns_analyzed_image_time_path::by_hand_movement_state( const unsigned long & t) const{
 	

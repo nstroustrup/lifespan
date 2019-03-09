@@ -293,15 +293,15 @@ std::string ns_hmm_movement_state_to_string(const ns_hmm_movement_state & t) {
 		return ns_hmm_missing;
 	if (s == "moving weakly")
 		return ns_hmm_moving_weakly ;
-	if (s == "moving weakly, expanding")
+	if (s == "moving weakly; expanding")
 		return ns_hmm_moving_weakly_expanding;
-	if (s == "moving weakly, post expansion" )
+	if (s == "moving weakly; post expansion" )
 		return ns_hmm_moving_weakly_post_expansion;
-	if (s == "not moving, alive")
+	if (s == "not moving; alive")
 		return ns_hmm_not_moving_alive;
-	if (s == "not moving, expanding")
+	if (s == "not moving; expanding")
 		return ns_hmm_not_moving_expanding;
-	if (s == "not moving, dead")
+	if (s == "not moving; dead")
 		return ns_hmm_not_moving_dead;
 	if (s == "unknown")
 		return ns_hmm_unknown_state;

@@ -2464,7 +2464,37 @@ void ns_worm_learner::generate_experiment_movement_image_quantification_analysis
 		ns_acquire_for_scope<ostream> all_observations(image_server.results_storage.time_path_image_analysis_quantification(sub, "hmm_obs", true, sql()).output());
 	
 		aggregate_value_estimator.write_observation_data(all_observations(), experiment_name);
+
 		all_observations.release();
+		/*Test observation i/o
+		ns_emperical_posture_quantification_value_estimator in;
+		ns_acquire_for_scope<istream> all_observations2(image_server.results_storage.time_path_image_analysis_quantification(sub, "hmm_obs", true, sql()).input());
+		in.read_observation_data(all_observations2());
+		{
+			if (aggregate_value_estimator.normalization_stats.size() != in.normalization_stats.size())
+				throw ns_ex("ERR");
+			auto p2 = aggregate_value_estimator.normalization_stats.begin();
+			for (auto p = in.normalization_stats.begin(); p != in.normalization_stats.end(); p++) {
+				if (!(p->first == p2->first))
+					throw ns_ex("Yikes");
+				if (fabs(p->second.path_mean.denoised_movement_score - p2->second.path_mean.denoised_movement_score) > .00001)
+					throw ns_ex("Yikes!");
+				p2++;
+			}
+			if (aggregate_value_estimator.observed_values.size() != in.observed_values.size())
+				throw ns_ex("ERR");
+		}
+		{
+			auto p2 = aggregate_value_estimator.observed_values.begin();
+			for (auto p = in.observed_values.begin(); p != in.observed_values.end(); p++) {
+				if (!(p->first == p2->first))
+					throw ns_ex("Yikes");
+				for (unsigned int i = 0; i < p->second.size(); i++)
+					if (fabs(p->second[i].measurement.denoised_movement_score - p2->second[i].measurement.denoised_movement_score) > .00001)
+							throw ns_ex("Yikes!");
+				p2++;
+			}
+		}*/
 		if (value_estimators.size() > 1) {
 			for (std::map<string, ns_emperical_posture_quantification_value_estimator>::iterator p = value_estimators.begin(); p != value_estimators.end(); p++) {
 				ns_acquire_for_scope<ostream> obs(image_server.results_storage.time_path_image_analysis_quantification(sub, "hmm_obs=" + p->first, true, sql()).output());

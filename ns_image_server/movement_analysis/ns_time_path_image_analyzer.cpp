@@ -3205,7 +3205,7 @@ ns_hmm_movement_state ns_analyzed_image_time_path::by_hand_hmm_movement_state(co
 		//if the start and finish of the expansion was marked
 		if (!by_hand_annotation_event_times[ns_death_posture_relaxation_start].period_end_was_not_observed &&
 			!by_hand_annotation_event_times[ns_death_posture_relaxation_termination].period_end_was_not_observed) {
-			cerr << "WH";
+			
 			if (t > by_hand_annotation_event_times[ns_death_posture_relaxation_start].period_end &&
 				t <= by_hand_annotation_event_times[ns_death_posture_relaxation_termination].period_end)
 				return ns_hmm_moving_weakly_expanding;
@@ -3223,7 +3223,7 @@ ns_hmm_movement_state ns_analyzed_image_time_path::by_hand_hmm_movement_state(co
 	//the animal hasn't stopped expanding yet
 	if (t < by_hand_annotation_event_times[ns_death_posture_relaxation_termination].period_end) {
 
-		cerr << "2";
+		
 		//if the animal started expanding right after death (eg the start was not annotated), it is still expanding
 		if (by_hand_annotation_event_times[(int)ns_death_posture_relaxation_start].period_end_was_not_observed)
 			return ns_hmm_not_moving_expanding;

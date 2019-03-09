@@ -152,16 +152,14 @@ void ns_emperical_posture_quantification_value_estimator::read_observation_data(
 			else if (tmp == "v")
 				stats.path_variance.read(in, tmp_d, tmp_b);
 			else if (tmp == "a") {
-				getline(in,tmp, ',');
+				getline(in,tmp, '\n');
 				stats.source.from_string(tmp);
 			}
 		}
 		else if (tmp == "d") { //reading in a data point
 			getline(in, tmp, ',');
-			int state_i = atoi(tmp.c_str());
-			if (state_i >= ns_hmm_unknown_state)
-				throw ns_ex("Malformed state record");
-			ns_hmm_movement_state state((ns_hmm_movement_state)state_i);
+			
+			ns_hmm_movement_state state(ns_hmm_movement_state_from_string(tmp));
 			std::vector<ns_hmm_emission> & observations = observed_values[state];
 			observations.resize(observations.size() + 1);
 			ns_hmm_emission & e(*observations.rbegin());

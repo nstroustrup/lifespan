@@ -78,7 +78,7 @@ struct ns_death_time_annotation_flag{
 	ns_death_time_annotation_flag():label_is_cached(false),cached_hidden(false),cached_excluded(false),cached_color(0,0,0){}
 	ns_death_time_annotation_flag(const std::string & label_short_, const std::string &label_long_="", const bool &  excluded_=false, const std::string & next_flag_name_in_order_="", const std::string & color_="000000"):
 	label_short(label_short_),cached_label(label_long_),cached_excluded(excluded_),label_is_cached(!label_long_.empty() || excluded_),next_flag_name_in_order(next_flag_name_in_order_),cached_hidden(false),cached_color(ns_hex_string_to_color<ns_color_8>(color_)){}
-	//unsigned long id;
+
 	std::string label_short;
 	std::string label() const;
 	void step_event();
@@ -100,7 +100,6 @@ struct ns_death_time_annotation_flag{
 
 	static ns_death_time_annotation_flag none(){
 		return ns_death_time_annotation_flag();
-		//return ns_death_time_annotation_flag("","",false,first_default_flag_short_label());
 	}
 	static ns_death_time_annotation_flag extra_worm_from_multiworm_disambiguation();
 
@@ -188,12 +187,33 @@ struct ns_death_time_annotation{
 
 	typedef enum { ns_unknown_explicitness,ns_not_explicit, ns_explicitly_observed, ns_explicitly_not_observed } ns_event_explicitness;
 
-	ns_death_time_annotation():volatile_duration_of_time_not_fast_moving(0),longest_gap_without_observation(0), volatile_time_at_death_contraction_start(0,0), volatile_time_at_death_contraction_end(0,0),
-		type(ns_no_movement_event),time(0,0),region_info_id(0),region_id(0),position(0,0),size(0,0),animal_is_part_of_a_complete_trace(false),
-		annotation_source(ns_unknown),excluded(ns_not_excluded),number_of_worms_at_location_marked_by_hand(0),multiworm_censoring_strategy(ns_unknown_multiworm_cluster_strategy),
-		number_of_worms_at_location_marked_by_machine(0),annotation_time(0),disambiguation_type(ns_single_worm), flag(ns_death_time_annotation_flag::none()),loglikelihood(1),animal_id_at_position(0),
-		missing_worm_return_strategy(ns_not_specified),volatile_matches_machine_detected_death(false),event_observation_type(ns_standard),
-		by_hand_annotation_integration_strategy(ns_only_machine_annotations),inferred_animal_location(false), event_explicitness(ns_unknown_explicitness){
+	ns_death_time_annotation():
+		volatile_duration_of_time_not_fast_moving(0),
+		longest_gap_without_observation(0), 
+		volatile_time_at_death_contraction_start(0,0),
+		volatile_time_at_death_contraction_end(0,0),
+		type(ns_no_movement_event),
+		time(0,0),
+		region_info_id(0),
+		region_id(0),
+		position(0,0),
+		size(0,0),
+		animal_is_part_of_a_complete_trace(false),
+		annotation_source(ns_unknown),
+		excluded(ns_not_excluded),
+		number_of_worms_at_location_marked_by_hand(0),
+		multiworm_censoring_strategy(ns_unknown_multiworm_cluster_strategy),
+		number_of_worms_at_location_marked_by_machine(0),
+		annotation_time(0),
+		disambiguation_type(ns_single_worm), 
+		flag(),
+		loglikelihood(1),
+		animal_id_at_position(0),
+		missing_worm_return_strategy(ns_not_specified),
+		volatile_matches_machine_detected_death(false),
+		event_observation_type(ns_standard),
+		by_hand_annotation_integration_strategy(ns_only_machine_annotations),
+		inferred_animal_location(false), event_explicitness(ns_unknown_explicitness){
 		volatile_time_at_death_contraction_start.period_end_was_not_observed = volatile_time_at_death_contraction_start.period_start_was_not_observed = true;
 		volatile_time_at_death_contraction_end = volatile_time_at_death_contraction_start;
 	}

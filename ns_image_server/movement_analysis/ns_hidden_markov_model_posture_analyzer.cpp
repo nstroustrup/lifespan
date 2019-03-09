@@ -189,8 +189,7 @@ ns_time_path_posture_movement_solution ns_time_path_movement_markov_solver::esti
 	return solution;
 }
 
-//ns_time_path_posture_movement_solution										estimate_posture_movement_states(const std::vector<double> & movement_ratio, const std::vector<double> & tm, bool output_loglikelihood_series, ns_sequential_hidden_markov_solution & solution,std::ostream * debug_output=0) 
-ns_time_path_posture_movement_solution ns_time_path_movement_markov_solver::estimate_posture_movement_states(const std::vector<double> & movement_ratio, const std::vector<double> & tm, bool output_loglikelihood_series, ns_sequential_hidden_markov_solution & markov_solution, std::ostream * debug_output)const{
+/ns_time_path_posture_movement_solution ns_time_path_movement_markov_solver::estimate_posture_movement_states(const std::vector<double> & movement_ratio, const std::vector<double> & tm, bool output_loglikelihood_series, ns_sequential_hidden_markov_solution & markov_solution, std::ostream * debug_output)const{
 /*	for (unsigned int i = 0; i < movement_ratio.size(); i++)
 		if (movement_ratio[i] <= 0)
 			throw ns_ex("ns_movement_markov_solver()::solve()::Cannot handle negative ratios!");*/
@@ -224,115 +223,139 @@ ns_time_path_posture_movement_solution ns_time_path_movement_markov_solver::esti
 	return sol;
 }
 
-void ns_emperical_posture_quantification_value_estimator::read(std::istream & moving_cdf_in,std::istream & dead_cdf_in){
-	raw_moving_cdf.read(moving_cdf_in);
-	processed_moving_cdf = raw_moving_cdf;
-	dead_cdf.read(dead_cdf_in);
+void ns_emperical_posture_quantification_value_estimator::read_observation_file(std::ostream & out, std::ostream & dead_cdf_out, std::ostream * vis, const std::string & experiment_name) const {
+	out << "HMM training data from " << experiment_name << ",\n";
+	//first write normalization stats
+	for (std::map<ns_stationary_path_id, ns_hmm_emission_normalization_stats >::const_iterator p = normalization_stats.begin(); p != normalization_stats.end(); p++) {
+		out << p->first.detection_set_id << ","
+			<< p->first.group_id << ","
+			<< p->first.path_id << ",";
+		out << "m,";
+		p->second.path_mean.write(out, ns_vector_2d(0, 0), false);
+		out << "\n";
+		out << p->first.detection_set_id << ","
+			<< p->first.group_id << ","
+			<< p->first.path_id << ",";
+		out << "v,";
+		p->second.path_variance.write(out, ns_vector_2d(0, 0), false);
+		out << "\n";
+		out << p->first.detection_set_id << ","
+			<< p->first.group_id << ","
+			<< p->first.path_id << ",";
+		out << "a," << p->second.source.to_string() << "\n";
+	}
+	for (std::map<ns_hmm_movement_state, std::vector<ns_hmm_emission> >::const_iterator p = observed_values.begin(); p != observed_values.end(); p++) {
+		for (unsigned int i = 0; i < p->second.size(); i++) {
+			<< p->second[i].measurement.detection_set_id << ","
+				<< p->second[i].measurement.group_id << ","
+				<< p->second[i].measurement.path_id << ","
+				<< "d," << (int)p->first << ","
+				p->second[i].measurement.write(out, ns_vector_2i(0, 0), false);
+			out << "\n";
+		}
+	}
+	if (vis != 0)
+		write_visualization(*vis, experiment_name);
 }
 
-void ns_emperical_posture_quantification_value_estimator::write_samples(std::ostream & o, const std::string & experiment_name){
+void ns_emperical_posture_quantification_value_estimator::read_observation_file(std::istream & in){
+	string tmp;
+	getline(in, tmp, "\n");
+	getline(in, tmp, "\n");
+	if (tmp != "path_stats")
+		throw ns_ex("Invalid output");
+	//read normalization stats
+	ns_vector_2d tmp_d;
+	bool tmp_b;
+	while (true) {
+		getline(in, tmp, ",");
+		if (tmp == "measurements")
+			break;
+		ns_stationary_path_id id;
+		id.detection_set_id = ns_atoi64(tmp.c_str());
+		getline(in, tmp, ",");
+		id.group_id = ns_atoi64(tmp.c_str());
+		getline(in, tmp, ",");
+		id.path_id = ns_atoi64(tmp.c_str());
 
-	const std::vector<double> & moving(raw_moving_cdf.samples()),
-							  & dead(dead_cdf.samples());
-	if (experiment_name.size() > 0)
-		o << "Experiment_name,";
-	o << "Worm State,Movement Score\n";
-	if (experiment_name.size() > 0){
-		for (unsigned int i = 0; i < moving.size(); i++)
-			o << experiment_name << ",Alive," << moving[i] << "\n";
-		for (unsigned int i = 0; i < dead.size(); i++)
-			o << experiment_name << ",Dead," << dead[i] << "\n";
+		getline(in, tmp, ",");
+		if (tmp == "m" || tmp == "v" || tmp == "a") { //reading in a normalization stat
+			ns_hmm_emission_normalization_stats & stats = normalization_stats[id];
+			
+			if (tmp == "m")
+				stats.mean.read(in, tmp_d, tmp_b);
+			else if (tmp == "v")
+				stats.variance.read(in, tmp_d, tmp_b);
+			else if (tmp == "a") {
+				getline(tmp, "\n");
+				stats.source.from_string(tmp);
+			}
+		}
+		else if (tmp == "d") { //reading in a data point
+			getline(in, tmp, ",");
+			int state_i = atoi(tmp.c_str());
+			if (state_i >= ns_hmm_unknown_state)
+				throw ns_ex("Malformed state record");
+			ns_hmm_movement_state state((ns_hmm_movement_state)state_i);
+			std::vector<ns_hmm_emission> & observations = observed_values[state_i];
+			observations.resize(observations.size() + 1);
+			ns_hmm_emission & e(*observations.rbegin());
+			e.source = id;
+			e.measurement.read(in, tmp_d, tmp_b);
+		}
+		else throw ns_ex("Malformed file");
+		if (in.fail())
+			throw ns_ex("Malformed file");
 	}
-	else{
-		for (unsigned int i = 0; i < moving.size(); i++)
-			o << "Alive," << moving[i] << "\n";
-		for (unsigned int i = 0; i < dead.size(); i++)
-			o << "dead," << dead[i] << "\n";
-	}
+	if (vis != 0)
+		write_visualization(*vis, experiment_name);
 }
-void ns_emperical_posture_quantification_value_estimator::write(std::ostream & moving_cdf_out,std::ostream & dead_cdf_out,std::ostream * vis, const std::string & experiment_name) const{
-	raw_moving_cdf.write(moving_cdf_out);
-	dead_cdf.write(dead_cdf_out);
-	if (vis !=0)
-		write_visualization(*vis,experiment_name);
-}
+
 
 void ns_emperical_posture_quantification_value_estimator::write_visualization(std::ostream & o, const std::string & experiment_name)const{
-	const std::vector<double> & m(raw_moving_cdf.ntile_values()),
-							  & d(dead_cdf.ntile_values()),
-							  & ud(processed_moving_cdf.ntile_values());
-	int s(m.size());
-	if (m.size() < d.size())
-		s = d.size();
-	if (s < ud.size())
-		s = ud.size();
-
-	int d_i(0),m_i(0),ud_i(0);
-	if (experiment_name.size() != 0)
-		o << "Experiment,";
-	o << "Quantile,Fraction of Moving Animals, Fraction of Dead Animals, Fraction of Moving Animals with values less than 25 removed,"
-		"Quantile value in distribution of Alive Animal Movement Scores,"
-		"Quantile value in distribution of Moving Animal Movement Scores with values less than 25 removed,"
-		"Quantile value in distribution of Dead Animal Movement Scores\n";
-	for(int i = 0; i < s-1; i++){
-		const double cur_p = i/(double)s,
-					 m_p(m_i/(double)m.size()),
-					 d_p(d_i/(double)d.size()),
-					 ud_p(ud_i/(double)ud.size());
-		
-		if (experiment_name.size() != 0)
-			o << experiment_name << ",";
-		o << i << ",";//<< cur_p << ",";
-		if (m_i+1 < m.size() && m_p >= cur_p)
-			o << m_p;
-		o << ",";
-		if (ud_i+1 < ud.size() && ud_p >= cur_p)
-			o << ud_p;
-		o << ",";
-		if (d_i+1 < d.size() && d_p >= cur_p)
-			o << d_p;
-		o << ",";
-		if (m_i+1 < m.size() && m_p >= cur_p){
-			o << m[m_i];
-			m_i++;
-		}
-		o << ",";
-		if (ud_i+1 < ud.size() && ud_p >= cur_p){
-			o << ud[ud_i];
-			ud_i++;
-		}
-		o << ",";
-		if (d_i+1 < d.size() && d_p >= cur_p){
-			o << d[d_i];
-			d_i++;
-		}
-		o << "\n";
-		
-	}
-
 }
-bool ns_emperical_posture_quantification_value_estimator::add_by_hand_data_to_sample_set(int software_version, ns_analyzed_image_time_path * path){
+bool ns_emperical_posture_quantification_value_estimator::add_by_hand_data_to_sample_set(const std::string &software_version, const ns_death_time_annotation & properties,const ns_analyzed_image_time_path * path){
 	if (path->by_hand_data_specified()){
-		for (unsigned int i = 0; i < path->element_count(); i++){
-			ns_movement_state s(path->by_hand_movement_state(path->element(i).absolute_time));
-			if ((s == ns_movement_fast ||
-				s == ns_movement_slow ||
-				s == ns_movement_posture || 
-				path->by_hand_death_time().period_end == path->element(i).absolute_time) 
-				) //this is a tricky condition and worth explaining
-																			  //the time at which an animal dies is the frame after
-																			  //it last moved.  Since the measurement scores
-																			  //describe movement between a frame and frames previous
-																			  //the frame at which it first moves is the last frame
-																			  //that has a high movement score.  Thus, we include
-																			  //the movement score at the death time in the moving 
-																			  //animal set.
-				{
-				raw_moving_cdf.add_sample((software_version==1)?path->element(i).measurements.death_time_posture_analysis_measure_v1(): path->element(i).measurements.death_time_posture_analysis_measure_v2());
-			}
-			if (s == ns_movement_stationary ||
-				s == ns_movement_death_posture_relaxation)
-				dead_cdf.add_sample((software_version == 1) ? path->element(i).measurements.death_time_posture_analysis_measure_v1() : path->element(i).measurements.death_time_posture_analysis_measure_v2());
+		ns_analyzed_image_time_path_element_measurements path_mean, path_mean_square,path_variance;
+		path_mean.zero();
+		path_variance.zero();
+		unsigned long n(0);
+		for (unsigned int i = 0; i < path->element_count(); i++) {
+			if (path->element(i).excluded)
+				continue;
+
+			path_mean = path_mean + path->element(i).measurements;
+			ns_analyzed_image_time_path_element_measurements a(path->element(i).measurements);
+			a.square();
+			if (a.total_intensity_within_region < path->element(i).measurements.total_intensity_within_region)
+				throw ns_ex("ns_emperical_posture_quantification_value_estimator::add_by_hand_data_to_sample_set()::Integer Overflow!");
+			path_mean_square = path_mean_square + a;
+			n++;
+		}
+		if (n != 0) {
+			path_mean = path_mean / n;
+			path_mean_square = path_mean_square / n;
+			ns_analyzed_image_time_path_element_measurements a(path_mean);
+			a.square();
+			// Var(x) = E(x^2) - (E(x))^2
+			path_variance = path_mean_square - a;
+		}
+
+		for (unsigned int i = 0; i < path->element_count(); i++) {
+			if (path->element(i).excluded)
+				continue;
+			const ns_hmm_movement_state s(path->by_hand_hmm_movement_state(path->element(i).absolute_time));
+			if (s == ns_hmm_unknown_state)
+				return false;
+			std::vector<ns_hmm_emission> & v(observed_values[s]);
+			v.resize(v.size() + 1);
+			ns_hmm_emission & e = *v.rbegin();
+			e.measurement = path->element(i).measurements;
+			e.path_id = properties.stationary_path_id;
+			ns_hmm_emission_normalization_stats & stats = normalization_stats[e.path_id];
+			stats.path_mean = path_mean;
+			stats.path_variance = path_variance;
+			stats.source = properties;
 		}
 		return true;
 	}

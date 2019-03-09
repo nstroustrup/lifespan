@@ -68,9 +68,13 @@ struct ns_analyzed_image_time_path_element_measurements{
 	void square_root();
 
 	ns_analyzed_image_time_path_element_measurements() { zero(); }
+
+	void write(ostream & out,const ns_vector_2d & registration_offset, const bool & saturated_offset) const;
+	void read(istream & in, ns_vector_2d & registration_offset, bool & saturated_offset);
 };
 
 ns_analyzed_image_time_path_element_measurements operator+(const ns_analyzed_image_time_path_element_measurements & a,const ns_analyzed_image_time_path_element_measurements & b);
+ns_analyzed_image_time_path_element_measurements operator-(const ns_analyzed_image_time_path_element_measurements & a, const ns_analyzed_image_time_path_element_measurements & b);
 ns_analyzed_image_time_path_element_measurements operator/(const ns_analyzed_image_time_path_element_measurements & a,const int & d);
 
 
@@ -566,6 +570,7 @@ public:
 		std::vector<ns_s64_bit> & intensity_changes) const;
 
 	long debug_number_images_written;
+	const ns_death_time_annotation & sticky_properties() const { return censoring_and_flag_details; }
 private:
 
 	ns_image_whole<unsigned long> stabilized_worm_region_temp;

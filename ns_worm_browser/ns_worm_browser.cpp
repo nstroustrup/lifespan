@@ -2427,18 +2427,17 @@ void ns_worm_learner::generate_experiment_movement_image_quantification_analysis
 					bool added_data(false);
 					for (unsigned int g = 0; g < movement_results.samples[i].regions[j]->time_path_image_analyzer->size(); g++){
 						for (unsigned int p = 0; p < movement_results.samples[i].regions[j]->time_path_image_analyzer->group(g).paths.size(); p++){
-							aggregate_value_estimator.add_by_hand_data_to_sample_set(2,&movement_results.samples[i].regions[j]->time_path_image_analyzer->group(g).paths[p]);
-							value_estimators[movement_results.samples[i].regions[j]->metadata.device_regression_match_description()].add_by_hand_data_to_sample_set(2, &movement_results.samples[i].regions[j]->time_path_image_analyzer->group(g).paths[p]);
-					
+							ns_death_time_annotation a(movement_results.samples[i].regions[j]->time_path_image_analyzer->sticky_properties());
+							a.stationary_path_id = movement_results.samples[i].regions[j]->time_path_image_analyzer->stationary_path_id;
+							a.stationary_path_id.group_id = g;
+							a.stationary_path_id.path_id = p;
+							aggregate_value_estimator.add_by_hand_data_to_sample_set(NS_CURRENT_POSTURE_MODEL_VERSION, a, &movement_results.samples[i].regions[j]->time_path_image_analyzer->group(g).paths[p]);
+							value_estimators[movement_results.samples[i].regions[j]->metadata.device_regression_match_description()].add_by_hand_data_to_sample_set(NS_CURRENT_POSTURE_MODEL_VERSION, a, &movement_results.samples[i].regions[j]->time_path_image_analyzer->group(g).paths[p]);
 						}
 					}
-				//	if (added_data)
-				//	break;
 				}
 				else{
 					throw ns_ex("No longer implemented");
-					//movement_results.samples[i].regions[j].time_path_image_analyzer.write_summary_movement_quantification_analysis_data(
-				//													movement_results.samples[i].regions[j].metadata,o_all());
 				}
 				movement_results.samples[i].regions[j]->time_path_image_analyzer->clear();
 			}

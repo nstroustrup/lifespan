@@ -1571,6 +1571,115 @@ void ns_time_path_image_movement_analyzer::obtain_analysis_id_and_save_movement_
 }
 
 
+void ns_analyzed_image_time_path_element_measurements::read(istream & in, ns_vector_2d & registration_offset,bool & saturated_offset)  {
+	get_int(in, interframe_time_scaled_movement_sum);//5										
+	if (in.fail()) throw ns_ex("Invalid Specification 5");
+	get_int(in, movement_alternate_worm_sum);//6												
+	if (in.fail()) throw ns_ex("Invalid Specification 6");
+	get_double(in, change_in_total_region_intensity);//7										
+	if (in.fail()) throw ns_ex("Invalid Specification 7");
+	get_double(in, change_in_total_foreground_intensity);//8								  
+	if (in.fail()) throw ns_ex("Invalid Specification 8");
+	get_int(in, total_foreground_area);//9														
+	if (in.fail()) throw ns_ex("Invalid Specification 9");
+	get_int(in, total_intensity_within_foreground);//10										
+	if (in.fail()) throw ns_ex("Invalid Specification 10");
+	get_int(in, total_region_area);//11														
+	if (in.fail()) throw ns_ex("Invalid Specification 11");
+	get_int(in, total_intensity_within_region);//12
+	if (in.fail()) throw ns_ex("Invalid Specification 12");
+	get_int(in, total_alternate_worm_area);//13
+	if (in.fail()) throw ns_ex("Invalid Specification 13");
+	get_int(in, total_intensity_within_alternate_worm);//14
+	if (in.fail()) throw ns_ex("Invalid Specification 14");
+	int t;
+	get_int(in, t);
+	if (in.fail()) throw ns_ex("Invalid Specification 15");
+	saturated_offset = (t != 0);//15
+
+	get_double(in, registration_offset.x);//16
+	if (in.fail())
+		throw ns_ex("Invalid Specification 15");
+	get_double(in, registration_offset.y);//17
+	if (in.fail())
+		throw ns_ex("Invalid Specification 17");
+	get_int(in, movement_sum);//18
+	if (in.fail())
+		throw ns_ex("Invalid Specification 18");
+	get_double(in, denoised_movement_score);//19
+	if (in.fail())
+		throw ns_ex("Invalid Specification 19");
+	get_double(in, movement_score);//20
+	if (in.fail())
+		throw ns_ex("Invalid Specification 20");
+	get_int(in, total_intensity_within_stabilized);//21
+	if (in.fail())
+		throw ns_ex("Invalid Specification 21");
+	get_double(in, spatial_averaged_movement_sum);//22
+	if (in.fail())
+		throw ns_ex("Invalid Specification 22");
+	get_double(in, interframe_scaled_spatial_averaged_movement_sum);//23
+	if (in.fail())
+		throw ns_ex("Invalid Specification 23");
+	get_double(in, spatial_averaged_movement_score);//24
+	if (in.fail())
+		throw ns_ex("Invalid Specification 24");
+	get_double(in, denoised_spatial_averaged_movement_score);//25
+	if (in.fail())
+		throw ns_ex("Invalid Specification 25");
+	get_int(in, total_intensity_in_previous_frame_scaled_to_current_frames_histogram);//26
+	if (in.fail())
+		throw ns_ex("Invalid Specification 26");
+	get_int(in, total_stabilized_area);//27
+	if (in.fail())
+		throw ns_ex("Invalid Specification 27");
+	get_int(in, change_in_total_stabilized_intensity);//28
+	if (in.fail())
+		throw ns_ex("Invalid Specification 28");
+	string tmp;
+	char a = get_int(in, tmp);
+	if (in.fail())
+		throw ns_ex("Invalid Specification 29");
+	if (a == '\n') {
+		//old style records
+#ifdef NS_CALCULATE_OPTICAL_FLOW
+		raw_flow_magnitude.zero();
+		scaled_flow_dx.zero();
+		scaled_flow_dy.zero();
+		raw_flow_dx.zero();
+		raw_flow_dy.zero();
+#endif
+		return;
+	}
+	if (!tmp.empty()) {
+		//throw ns_ex("Badly formed input file!");
+		cerr << "Badly formed input file: " << tmp << "\n";
+	}
+#ifdef NS_CALCULATE_OPTICAL_FLOW
+	scaled_flow_magnitude.read(in);
+	raw_flow_magnitude.read(in);
+	scaled_flow_dx.read(in);
+	scaled_flow_dy.read(in);
+	raw_flow_dx.read(in);
+	raw_flow_dy.read(in);
+	/*
+	for (unsigned int i = 0; i < 6; i++)
+	for (unsigned int j = 0; j < 6; j++){
+	get_int(in,tmp);
+	if (in.fail()) throw ns_ex("Invalid Specification") << 27 +6*i+j;
+	}*/
+#endif
+
+	//open for future use
+	for (unsigned int i = 0; i < 9; i++) {
+		char a = get_int(in, tmp);
+		if (a == '\n')
+			break;
+		//		std::cerr << "E" << i << "'" << tmp << "' ";
+		if (in.fail() || !tmp.empty())
+			throw ns_ex("Invalid Specification");
+	}
+}
 void ns_time_path_image_movement_analyzer::load_movement_data_from_disk(istream & in, bool skip_movement_data){
 
 	ns_get_int get_int;
@@ -1624,113 +1733,7 @@ void ns_time_path_image_movement_analyzer::load_movement_data_from_disk(istream 
 			throw ns_ex("ns_time_path_image_movement_analyzer::load_movement_data_from_disk()::Element is too large ") << path_id;									
 		get_int(in,groups[group_id].paths[path_id].elements[element_id].absolute_time);//4																			
 		if(in.fail()) throw ns_ex("Invalid Specification 4");																										
-		get_int(in,groups[group_id].paths[path_id].elements[element_id].measurements.interframe_time_scaled_movement_sum);//5										
-		if(in.fail()) throw ns_ex("Invalid Specification 5");																										
-		get_int(in,groups[group_id].paths[path_id].elements[element_id].measurements.movement_alternate_worm_sum);//6												
-		if(in.fail()) throw ns_ex("Invalid Specification 6");																										
-		get_double(in,groups[group_id].paths[path_id].elements[element_id].measurements.change_in_total_region_intensity);//7										
-		if(in.fail()) throw ns_ex("Invalid Specification 7");																										
-		get_double(in,groups[group_id].paths[path_id].elements[element_id].measurements.change_in_total_foreground_intensity);//8								  
-		if(in.fail()) throw ns_ex("Invalid Specification 8");																										
-		get_int(in,groups[group_id].paths[path_id].elements[element_id].measurements.total_foreground_area);//9														
-		if(in.fail()) throw ns_ex("Invalid Specification 9");																										
-		get_int(in,groups[group_id].paths[path_id].elements[element_id].measurements.total_intensity_within_foreground);//10										
-		if(in.fail()) throw ns_ex("Invalid Specification 10");																										
-		get_int(in,groups[group_id].paths[path_id].elements[element_id].measurements.total_region_area);//11														
-		if(in.fail()) throw ns_ex("Invalid Specification 11");																										
-		get_int(in,groups[group_id].paths[path_id].elements[element_id].measurements.total_intensity_within_region);//12
-		if(in.fail()) throw ns_ex("Invalid Specification 12");
-		get_int(in,groups[group_id].paths[path_id].elements[element_id].measurements.total_alternate_worm_area);//13
-		if(in.fail()) throw ns_ex("Invalid Specification 13");
-		get_int(in,groups[group_id].paths[path_id].elements[element_id].measurements.total_intensity_within_alternate_worm);//14
-		if(in.fail()) throw ns_ex("Invalid Specification 14");
-		int t;
-		get_int(in,t);
-		if(in.fail()) throw ns_ex("Invalid Specification 15");
-		groups[group_id].paths[path_id].elements[element_id].saturated_offset = (t!=0);//15
-
-		get_double(in,groups[group_id].paths[path_id].elements[element_id].registration_offset.x);//16
-		if(in.fail()) 
-			throw ns_ex("Invalid Specification 15");
-		get_double(in,groups[group_id].paths[path_id].elements[element_id].registration_offset.y);//17
-		if(in.fail()) 
-			throw ns_ex("Invalid Specification 17");
-		get_int(in,groups[group_id].paths[path_id].elements[element_id].measurements.movement_sum);//18
-		if(in.fail()) 
-			throw ns_ex("Invalid Specification 18");
-		get_double(in,groups[group_id].paths[path_id].elements[element_id].measurements.denoised_movement_score);//19
-		if(in.fail()) 
-			throw ns_ex("Invalid Specification 19");
-		get_double(in,groups[group_id].paths[path_id].elements[element_id].measurements.movement_score);//20
-		if(in.fail()) 
-			throw ns_ex("Invalid Specification 20");
-		get_int(in,groups[group_id].paths[path_id].elements[element_id].measurements.total_intensity_within_stabilized);//21
-		if(in.fail()) 
-			throw ns_ex("Invalid Specification 21");
-		get_double(in, groups[group_id].paths[path_id].elements[element_id].measurements.spatial_averaged_movement_sum);//22
-		if (in.fail()) 
-			throw ns_ex("Invalid Specification 22");
-		get_double(in, groups[group_id].paths[path_id].elements[element_id].measurements.interframe_scaled_spatial_averaged_movement_sum);//23
-		if (in.fail()) 
-			throw ns_ex("Invalid Specification 23");
-		get_double(in, groups[group_id].paths[path_id].elements[element_id].measurements.spatial_averaged_movement_score);//24
-		if (in.fail()) 
-			throw ns_ex("Invalid Specification 24");
-		get_double(in, groups[group_id].paths[path_id].elements[element_id].measurements.denoised_spatial_averaged_movement_score);//25
-		if (in.fail()) 
-			throw ns_ex("Invalid Specification 25");
-		get_int(in, groups[group_id].paths[path_id].elements[element_id].measurements.total_intensity_in_previous_frame_scaled_to_current_frames_histogram);//26
-		if (in.fail()) 
-			throw ns_ex("Invalid Specification 26");
-		get_int(in, groups[group_id].paths[path_id].elements[element_id].measurements.total_stabilized_area);//27
-		if (in.fail())
-			throw ns_ex("Invalid Specification 27");
-		get_int(in, groups[group_id].paths[path_id].elements[element_id].measurements.change_in_total_stabilized_intensity);//28
-		if (in.fail())
-			throw ns_ex("Invalid Specification 28");
-		string tmp;
-		char a = get_int(in, tmp);
-		if (in.fail()) 
-			throw ns_ex("Invalid Specification 29");
-		if (a == '\n') {
-			//old style records
-	#ifdef NS_CALCULATE_OPTICAL_FLOW
-			groups[group_id].paths[path_id].elements[element_id].measurements.raw_flow_magnitude.zero();
-			groups[group_id].paths[path_id].elements[element_id].measurements.scaled_flow_dx.zero();
-			groups[group_id].paths[path_id].elements[element_id].measurements.scaled_flow_dy.zero();
-			groups[group_id].paths[path_id].elements[element_id].measurements.raw_flow_dx.zero();
-			groups[group_id].paths[path_id].elements[element_id].measurements.raw_flow_dy.zero();
-#endif
-			continue;
-		}
-		if (!tmp.empty()) {
-			//throw ns_ex("Badly formed input file!");
-			cerr << "Badly formed input file: " << tmp << "\n";
-		}
-		#ifdef NS_CALCULATE_OPTICAL_FLOW
-		groups[group_id].paths[path_id].elements[element_id].measurements.scaled_flow_magnitude.read(in);
-		groups[group_id].paths[path_id].elements[element_id].measurements.raw_flow_magnitude.read(in);
-		groups[group_id].paths[path_id].elements[element_id].measurements.scaled_flow_dx.read(in);
-		groups[group_id].paths[path_id].elements[element_id].measurements.scaled_flow_dy.read(in);
-		groups[group_id].paths[path_id].elements[element_id].measurements.raw_flow_dx.read(in);
-		groups[group_id].paths[path_id].elements[element_id].measurements.raw_flow_dy.read(in);
-	/*
-		for (unsigned int i = 0; i < 6; i++)
-		  for (unsigned int j = 0; j < 6; j++){
-		    get_int(in,tmp);
-		    if (in.fail()) throw ns_ex("Invalid Specification") << 27 +6*i+j;
-		  }*/
-#endif
-
-		//open for future use
-		for (unsigned int i = 0; i < 9; i++){
-			char a = get_int(in,tmp);
-			if (a == '\n')
-				break;
-	//		std::cerr << "E" << i << "'" << tmp << "' ";
-				if(in.fail() || !tmp.empty())
-					throw ns_ex("Invalid Specification");
-		}
+		groups[group_id].paths[path_id].elements[element_id].read(in, groups[group_id].paths[path_id].elements[element_id].registration_offset, groups[group_id].paths[path_id].elements[element_id].saturated_offset);
 	//	std::cerr << "\n";
 
 	}
@@ -1760,7 +1763,44 @@ void ns_time_path_image_movement_analyzer::get_processing_stats_from_solution(co
 
 
 
+void ns_analyzed_image_time_path_element_measurements::write(ostream & out,const ns_vector_2d & offset, const bool & saturated_offset) const {
+	out <<interframe_time_scaled_movement_sum << ","//5
+		<<movement_alternate_worm_sum << ","//6
+		<<change_in_total_region_intensity << ","//7
+		<<change_in_total_foreground_intensity << ","//8
+		<<total_foreground_area << ","//9
+		<<total_intensity_within_foreground << ","//10
+		<<total_region_area << ","//11
+		<<total_intensity_within_region << ","//12
+		<<total_alternate_worm_area << ","//13
+		<<total_intensity_within_alternate_worm << ","//14
+		<< (saturated_offset ? "1" : "0") << ","//15
+		<< offset.x << ","//16
+		<< offset.y << ","//17
+		<< movement_sum << ","//18
+		<< denoised_movement_score << ","//19
+		<< movement_score << ","//20
+		<< total_intensity_within_stabilized << ","//21
+		<< spatial_averaged_movement_sum << ","//22
+		<< interframe_scaled_spatial_averaged_movement_sum << ","//23
+		<< spatial_averaged_movement_score << ","//24
+		<< denoised_spatial_averaged_movement_score << ","//25
+		<< total_intensity_in_previous_frame_scaled_to_current_frames_histogram << ","//26
+		<< total_stabilized_area << ","//27
+		<< change_in_total_stabilized_intensity;//28
+		#ifdef NS_CALCULATE_OPTICAL_FLOW
+		o << ","; //deliberately left blank to mark old record format
+		scaled_flow_magnitude.write(o); o << ",";
+		raw_flow_magnitude.write(o); o << ",";
+		scaled_flow_dx.write(o); o << ",";
+		scaled_flow_dy.write(o); o << ",";
+		raw_flow_dx.write(o); o << ",";
+		raw_flow_dy.write(o);
+		#endif
 
+	for (unsigned int i = 0; i < 9; i++)
+		out << ",";
+}
 void ns_time_path_image_movement_analyzer::save_movement_data_to_disk(ostream & o) const{
 	o << this->analysis_id << ",v:,"<< posture_model_version_used<<"\n";
 	for (unsigned long i = 0; i < groups.size(); i++){
@@ -1769,45 +1809,8 @@ void ns_time_path_image_movement_analyzer::save_movement_data_to_disk(ostream & 
 				o << i << ","//1
 					<< j << ","//2
 					<< k << ","//3
-					<< groups[i].paths[j].elements[k].absolute_time << ","//4 
-					<< groups[i].paths[j].elements[k].measurements.interframe_time_scaled_movement_sum << ","//5
-					<< groups[i].paths[j].elements[k].measurements.movement_alternate_worm_sum << ","//6
-					<< groups[i].paths[j].elements[k].measurements.change_in_total_region_intensity << ","//7
-					<< groups[i].paths[j].elements[k].measurements.change_in_total_foreground_intensity << ","//8
-					<< groups[i].paths[j].elements[k].measurements.total_foreground_area << ","//9
-					<< groups[i].paths[j].elements[k].measurements.total_intensity_within_foreground << ","//10
-					<< groups[i].paths[j].elements[k].measurements.total_region_area << ","//11
-					<< groups[i].paths[j].elements[k].measurements.total_intensity_within_region << ","//12
-					<< groups[i].paths[j].elements[k].measurements.total_alternate_worm_area << ","//13
-					<< groups[i].paths[j].elements[k].measurements.total_intensity_within_alternate_worm << ","//14
-					<< (groups[i].paths[j].elements[k].saturated_offset ? "1" : "0") << ","//15
-					<< groups[i].paths[j].elements[k].registration_offset.x << ","//16
-					<< groups[i].paths[j].elements[k].registration_offset.y << ","//17
-					<< groups[i].paths[j].elements[k].measurements.movement_sum << ","//18
-					<< groups[i].paths[j].elements[k].measurements.denoised_movement_score << ","//19
-					<< groups[i].paths[j].elements[k].measurements.movement_score << ","//20
-					<< groups[i].paths[j].elements[k].measurements.total_intensity_within_stabilized << ","//21
-					<< groups[i].paths[j].elements[k].measurements.spatial_averaged_movement_sum << ","//22
-					<< groups[i].paths[j].elements[k].measurements.interframe_scaled_spatial_averaged_movement_sum << ","//23
-					<< groups[i].paths[j].elements[k].measurements.spatial_averaged_movement_score << ","//24
-					<< groups[i].paths[j].elements[k].measurements.denoised_spatial_averaged_movement_score << ","//25
-					<< groups[i].paths[j].elements[k].measurements.total_intensity_in_previous_frame_scaled_to_current_frames_histogram << ","//26
-					<< groups[i].paths[j].elements[k].measurements.total_stabilized_area << ","//27
-					<< groups[i].paths[j].elements[k].measurements.change_in_total_stabilized_intensity;//28
-
-			    #ifdef NS_CALCULATE_OPTICAL_FLOW
-				o << ","; //deliberately left blank to mark old record format
-       				groups[i].paths[j].elements[k].measurements.scaled_flow_magnitude.write(o); o << ",";
-				groups[i].paths[j].elements[k].measurements.raw_flow_magnitude.write(o); o << ",";
-				groups[i].paths[j].elements[k].measurements.scaled_flow_dx.write(o); o << ",";
-				groups[i].paths[j].elements[k].measurements.scaled_flow_dy.write(o); o << ",";
-				groups[i].paths[j].elements[k].measurements.raw_flow_dx.write(o); o << ",";
-				groups[i].paths[j].elements[k].measurements.raw_flow_dy.write(o);
-				#endif
-				for (unsigned int i = 0; i < 9; i++)
-					o << ",";
-
-
+					<< groups[i].paths[j].elements[k].absolute_time << ",";//4
+				groups[i].paths[j].elements[k].measurements.write(o,groups[i].paths[j].elements[k].registration_offset, groups[i].paths[j].elements[k].saturated_offset);
 				o <<"\n";
 			}
 		}
@@ -5479,6 +5482,36 @@ ns_analyzed_image_time_path_element_measurements operator+(const ns_analyzed_ima
 
 	ret.registration_displacement.x = a.registration_displacement.x+b.registration_displacement.x;
 	ret.registration_displacement.y = a.registration_displacement.y+b.registration_displacement.y;
+	return ret;
+}
+ns_analyzed_image_time_path_element_measurements operator-(const ns_analyzed_image_time_path_element_measurements & a, const ns_analyzed_image_time_path_element_measurements & b) {
+	ns_analyzed_image_time_path_element_measurements ret;
+	ret.interframe_time_scaled_movement_sum = a.interframe_time_scaled_movement_sum - b.interframe_time_scaled_movement_sum;
+	ret.movement_sum = a.movement_sum - b.movement_sum;
+	ret.movement_alternate_worm_sum = a.movement_alternate_worm_sum - b.movement_alternate_worm_sum;
+	ret.total_foreground_area = a.total_foreground_area - b.total_foreground_area;
+	ret.total_stabilized_area = a.total_stabilized_area - b.total_stabilized_area;
+	ret.total_region_area = a.total_region_area - b.total_region_area;
+	ret.total_intensity_within_region = a.total_intensity_within_region - b.total_intensity_within_region;
+	ret.total_intensity_within_stabilized = a.total_intensity_within_stabilized - b.total_intensity_within_stabilized;
+	ret.total_intensity_within_foreground = a.total_intensity_within_foreground - b.total_intensity_within_foreground;
+	ret.total_intensity_in_previous_frame_scaled_to_current_frames_histogram = a.total_intensity_in_previous_frame_scaled_to_current_frames_histogram - b.total_intensity_in_previous_frame_scaled_to_current_frames_histogram;
+	ret.total_alternate_worm_area = a.total_alternate_worm_area - b.total_alternate_worm_area;
+	ret.total_intensity_within_alternate_worm = a.total_intensity_within_alternate_worm - b.total_intensity_within_alternate_worm;
+
+	ret.change_in_total_foreground_intensity = a.change_in_total_foreground_intensity - b.change_in_total_foreground_intensity;
+	ret.change_in_total_region_intensity = a.change_in_total_region_intensity - b.change_in_total_region_intensity;
+	ret.change_in_total_stabilized_intensity = a.change_in_total_stabilized_intensity - b.change_in_total_stabilized_intensity;
+
+	ret.movement_score = a.movement_score - b.movement_score;
+	ret.denoised_movement_score = a.denoised_movement_score - b.denoised_movement_score;
+	ret.spatial_averaged_movement_sum = a.spatial_averaged_movement_sum - b.spatial_averaged_movement_sum;
+	ret.interframe_scaled_spatial_averaged_movement_sum = a.interframe_scaled_spatial_averaged_movement_sum - b.interframe_scaled_spatial_averaged_movement_sum;
+	ret.spatial_averaged_movement_score = a.spatial_averaged_movement_score - b.spatial_averaged_movement_score;
+	ret.denoised_spatial_averaged_movement_score = a.denoised_spatial_averaged_movement_score - b.denoised_spatial_averaged_movement_score;
+
+	ret.registration_displacement.x = a.registration_displacement.x - b.registration_displacement.x;
+	ret.registration_displacement.y = a.registration_displacement.y - b.registration_displacement.y;
 	return ret;
 }
 

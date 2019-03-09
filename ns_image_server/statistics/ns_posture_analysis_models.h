@@ -7,35 +7,33 @@
 template<class T>
 class ns_emperical_cdf_generator{
 public:
-	void add_sample(const T & v){
-		samples_.push_back(v);
-		number_of_samples++;
-	}
-	ns_emperical_cdf_generator():number_of_samples(0){}
-	void clear_samples(){samples_.clear();}
-	void generate_ntiles_from_samples(unsigned long N){
-		if (samples_.size() == 0)
-			throw ns_ex("ns_emperical_cdf_generator::generate_ntiles()::No samples provided!"); 
-		std::sort(samples_.begin(),samples_.end());
-		if (samples_.size() <= N)
-			N = samples_.size();
+	template<class T, class accessor_t>
+	void generate_ntiles_from_samples(unsigned long Number_of_Ntiles, std::vector<T> & values, accessor_t accessor;) {
+		if (values.size() == 0)
+			throw ns_ex("ns_emperical_cdf_generator::generate_ntiles()::No samples provided!");
+		typedef std::result_of<accessor()> TT;
+
+		std::vector<TT> sorted_values(values.size());
+		for (unsigned long i = 0; i < values.size(); i++) 
+			sorted_values[i] = accessor(values[i]);
+		std::sort(samples.begin(),samples.end());
+		if (samples.size() <= Number_of_Ntiles)
+			Number_of_Ntiles = samples.size();
 		
 		ntiles.resize(N+1);
-		float step(samples_.size()/(float)N);
-		for (unsigned int i = 0; i < N; i++){
+		float step(samples.size()/(float)Number_of_Ntiles);
+		for (unsigned int i = 0; i < Number_of_Ntiles; i++){
 			const float id(step*i);
 			const long idi((long)id);
 			//linear interpolation to find better estimate of ntile for sparse data
-			if (idi == samples_.size()-1)
-				ntiles[i] = samples_[idi];
+			if (idi == samples.size()-1)
+				ntiles[i] = samples[idi];
 			else{
 				const float fid(id-idi);
-				ntiles[i] = static_cast<T>(samples_[idi]*(1.0-fid)+samples_[idi+1]*fid);
+				ntiles[i] = static_cast<T>(samples[idi]*(1.0-fid)+samples[idi+1]*fid);
 			}
 		}
-		ntiles[N] = samples_[samples_.size()-1];
-		//samples_.clear();
-//		calculate_equality_map();
+		ntiles[N] = samples[samples.size()-1];
 	}
 	inline double fraction_values_lower(const double & d) const{
 			//ntiles can have the same value, e.g deciles of [0,0,0,0,5,5,5,8,8,8]
@@ -50,10 +48,6 @@ public:
 		const ns_64_bit greater_ntile(p-ntiles.begin());
 		if (greater_ntile == 0)
 			return 0.0;
-		/*
-		if (d == ntile[greater_ntile])
-			return greater_ntile/(double)ntiles.size();
-			*/
 		const ns_64_bit lesser_ntile(greater_ntile-1);//lesser_equality_map[greater_ntile-1]);
 
 		//calculate the fraction of the distance between neighboring ntiles
@@ -102,46 +96,34 @@ public:
 	//	calculate_equality_map();
 	}
 	const std::vector<T> & ntile_values()const{return ntiles;}
-	const std::vector<T> & samples()const{return samples_;}
 
-	template<class T2>
-	double remove_mixture(const ns_emperical_cdf_generator<T2> & g, const T absolute_bottom = 0){
-		if (samples_.size() == 0)
-			throw ns_ex("remove_mixture()::Removing mixtures requires samples.");
-		T cutoff_value(3*g.ntiles[g.ntiles.size()/2]);
-		if (cutoff_value < absolute_bottom)
-			cutoff_value = absolute_bottom;
-		for (typename std::vector<T>::iterator p = samples_.begin(); p != samples_.end();){
-			if (*p <= cutoff_value)
-				p = samples_.erase(p);
-			else p++;
-		}
-		return 0;
-	}
 private:
-	std::vector<T> samples_;
 	std::vector<T> ntiles;
 	std::vector<double> ntile_numbers;
 	unsigned long number_of_samples;
 };
 class ns_analyzed_image_time_path;
-
+struct ns_hmm_emission {
+	ns_analyzed_image_time_path_element_measurements measurement;
+	ns_stationary_path_id path_id;
+};
+struct ns_hmm_emission_normalization_stats {
+	ns_analyzed_image_time_path_element_measurements path_mean, path_variance;
+	ns_death_time_annotation source;
+};
+struct ns_hmm_emission_probability_estimator {
+	ns_ecdf ns_emperical_cdf_generator
+};
 struct ns_emperical_posture_quantification_value_estimator{
-	std::map<ns_hmm_movement_state, ns_analyzed_image_time_path_element_measurements > observed_values;
+	std::map<ns_hmm_movement_state, std::vector<ns_hmm_emission> > observed_values;
+	std::map<ns_stationary_path_id, ns_hmm_emission_normalization_stats > normalization_stats;
 
-	inline double fraction_of_moving_values_less_than(const double & d) const{
-		//alive if most alive animals move less than you
-		return processed_moving_cdf.fraction_values_lower(d);
-	}
-	inline double fraction_of_dead_samples_greater_than(const double & d) const{
-		//dead if most dead animals move more than you
-		return 1.0-dead_cdf.fraction_values_lower(d);
-	}
-	void read(std::istream & moving_cdf_in,std::istream & dead_cdf_in);
-	void write(std::ostream & moving_cdf_out,std::ostream & dead_cdf_out,std::ostream * visualization_file, const std::string & experiment_name = "") const;
-	bool add_by_hand_data_to_sample_set(int software_version,ns_analyzed_image_time_path * path);
+	std::map<ns_hmm_movement_state, std::vector<ns_hmm_emission> > observed_values;
+
+	void read_observation_data(std::istream & moving_cdf_in,std::istream & in);
+	void write_observation_data(std::ostream & moving_cdf_out,std::ostream & out,std::ostream * visualization_file, const std::string & experiment_name = "") const;
+	bool add_by_hand_data_to_sample_set(const std::string &software_version, const ns_death_time_annotation & properties,const ns_analyzed_image_time_path * path);
 	void generate_estimators_from_samples();
-	void write_samples(std::ostream & o,const std::string & experiment_name="");
 	static ns_emperical_posture_quantification_value_estimator dummy();
 private:
 	void write_visualization(std::ostream & o,const std::string & experiment_name="") const;

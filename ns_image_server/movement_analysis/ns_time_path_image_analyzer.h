@@ -7,6 +7,7 @@
 #include "ns_optical_flow_quantification.h"
 #include "ns_subpixel_image_alignment.h"
 #include "ns_image_pool.h"
+#include "ns_analyzed_image_time_path_element_measurements.h"
 
 #define NS_CURRENT_POSTURE_MODEL_VERSION "2.1"
 #undef NS_CALCULATE_OPTICAL_FLOW
@@ -15,67 +16,6 @@
 
 
 ns_analyzed_image_time_path_death_time_estimator * ns_get_death_time_estimator_from_posture_analysis_model(const ns_posture_analysis_model & m);
-
-struct ns_analyzed_image_time_path_element_measurements{
-
-	//This is the quantification used to identify death times in old versions of the lifespan machine
-	inline const double & death_time_posture_analysis_measure_v1() const{return denoised_movement_score;}
-	inline double & death_time_posture_analysis_measure_v1 ()     {return denoised_movement_score;}
-	
-	//This is the quantification used to identify death times in the current version
-	inline const double & death_time_posture_analysis_measure_v2() const{ return denoised_spatial_averaged_movement_score; }
-	inline double & death_time_posture_analysis_measure_v2() { return denoised_spatial_averaged_movement_score; }
-
-
-	ns_64_bit interframe_time_scaled_movement_sum,
-				  movement_sum,
-				  movement_alternate_worm_sum,
-				  total_foreground_area,
-				total_stabilized_area,
-				total_region_area,
-				total_intensity_within_region,
-				total_intensity_within_stabilized,
-				total_intensity_within_foreground,
-				total_intensity_in_previous_frame_scaled_to_current_frames_histogram,
-				total_alternate_worm_area,
-				total_intensity_within_alternate_worm;
-
-	ns_s64_bit change_in_total_foreground_intensity,
-		change_in_total_region_intensity,
-		change_in_total_stabilized_intensity;
-
-
-	double
-		movement_score,
-		denoised_movement_score,
-		spatial_averaged_movement_sum,
-		interframe_scaled_spatial_averaged_movement_sum,
-		spatial_averaged_movement_score,
-		denoised_spatial_averaged_movement_score;
-
-	ns_vector_2d registration_displacement;
-
-	double mean_intensity_within_foreground() const { return total_intensity_within_foreground / (double)total_foreground_area; }
-	double mean_intensity_within_region() const { return total_intensity_within_region / (double)total_region_area; }
-	double mean_intensity_within_stabilized() const { return total_intensity_within_stabilized / (double)total_stabilized_area; }
-	double mean_intensity_within_alternate_worm() const { return total_intensity_within_alternate_worm / (double)total_alternate_worm_area; }
-
-	mutable std::vector<double> posture_quantification_extra_debug_fields;
-
-	void zero();
-
-	void square();
-	void square_root();
-
-	ns_analyzed_image_time_path_element_measurements() { zero(); }
-
-	void write(ostream & out,const ns_vector_2d & registration_offset, const bool & saturated_offset) const;
-	void read(istream & in, ns_vector_2d & registration_offset, bool & saturated_offset);
-};
-
-ns_analyzed_image_time_path_element_measurements operator+(const ns_analyzed_image_time_path_element_measurements & a,const ns_analyzed_image_time_path_element_measurements & b);
-ns_analyzed_image_time_path_element_measurements operator-(const ns_analyzed_image_time_path_element_measurements & a, const ns_analyzed_image_time_path_element_measurements & b);
-ns_analyzed_image_time_path_element_measurements operator/(const ns_analyzed_image_time_path_element_measurements & a,const int & d);
 
 
 struct ns_path_aligned_image_set{
@@ -554,7 +494,7 @@ public:
 	ns_death_time_annotation_time_interval state_exit_interval_time(const ns_movement_state_observation_boundary_interval & e) const;
 
 	unsigned long first_stationary_timepoint() const{return first_stationary_timepoint_;}
-	ns_death_time_annotation_time_interval cessation_of_fast_movement_interval(){
+	ns_death_time_annotation_time_interval cessation_of_fast_movement_interval() const{
 		if (first_stationary_timepoint_== 0)
 			return time_path_limits.interval_before_first_observation;
 		return ns_death_time_annotation_time_interval(elements[first_stationary_timepoint_-1].absolute_time,elements[first_stationary_timepoint_].absolute_time);

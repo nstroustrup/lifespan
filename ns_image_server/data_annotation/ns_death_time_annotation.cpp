@@ -277,11 +277,11 @@ std::string ns_hmm_movement_state_to_string(const ns_hmm_movement_state & t) {
 	case ns_hmm_moving_vigorously: return "moving vigorously";
 	case ns_hmm_missing: return "missing";
 	case ns_hmm_moving_weakly: return "moving weakly";
-	case ns_hmm_moving_weakly_expanding: return "moving weakly, expanding";
-	case ns_hmm_moving_weakly_post_expansion: "moving weakly, post expansion";
-	case ns_hmm_not_moving_alive: return "not moving, alive";
-	case ns_hmm_not_moving_expanding: return "not moving, expanding";
-	case ns_hmm_not_moving_dead: return "not moving, dead";
+	case ns_hmm_moving_weakly_expanding: return "moving weakly; expanding";
+	case ns_hmm_moving_weakly_post_expansion: "moving weakly; post expansion";
+	case ns_hmm_not_moving_alive: return "not moving; alive";
+	case ns_hmm_not_moving_expanding: return "not moving; expanding";
+	case ns_hmm_not_moving_dead: return "not moving; dead";
 	case ns_hmm_unknown_state :return "unknown";
 	default: throw ns_ex("ns_hmm_movement_state_to_string():Unknown hmm movement state");
 	}
@@ -298,9 +298,9 @@ std::string ns_hmm_movement_state_to_string(const ns_hmm_movement_state & t) {
 	if (s == "moving weakly, post expansion" )
 		return ns_hmm_moving_weakly_post_expansion;
 	if (s == "not moving, alive")
-		return ns_hmm_not_moving_alive: ;
+		return ns_hmm_not_moving_alive;
 	if (s == "not moving, expanding")
-		return ns_hmm_not_moving_expanding: ;
+		return ns_hmm_not_moving_expanding;
 	if (s == "not moving, dead")
 		return ns_hmm_not_moving_dead;
 	if (s == "unknown")

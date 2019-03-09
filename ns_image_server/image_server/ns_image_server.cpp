@@ -3383,12 +3383,8 @@ void ns_posture_analysis_model_entry::load_from_external_source(const std::strin
 		if (moving.fail())
 			throw ns_ex("Could not load ") << external_source.model_directory + name + "_moving.csv";
 
-		ifstream dead((external_source.model_directory + name + "_dead.csv").c_str());
-		if (dead.fail())
-			throw ns_ex("Could not load ") << external_source.model_directory + name + "_dead.csv";
-		model_specification.hmm_posture_estimator.read(moving, dead);
+		model_specification.hmm_posture_estimator.read(moving);
 		model_specification.name = name_;
-		dead.close();
 		moving.close();
 		return;
 	}

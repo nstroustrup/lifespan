@@ -4,11 +4,12 @@
 #include "ns_get_double.h"
 #include <algorithm>
 #include <iostream>
+#include "ns_analyzed_image_time_path_element_measurements.h"
 template<class T>
 class ns_emperical_cdf_generator{
 public:
-	template<class T, class accessor_t>
-	void generate_ntiles_from_samples(unsigned long Number_of_Ntiles, std::vector<T> & values, accessor_t accessor;) {
+	template<class accessor_t>
+	void generate_ntiles_from_samples(unsigned long Number_of_Ntiles, std::vector<T> & values, accessor_t accessor) {
 		if (values.size() == 0)
 			throw ns_ex("ns_emperical_cdf_generator::generate_ntiles()::No samples provided!");
 		typedef std::result_of<accessor()> TT;
@@ -112,17 +113,18 @@ struct ns_hmm_emission_normalization_stats {
 	ns_death_time_annotation source;
 };
 struct ns_hmm_emission_probability_estimator {
-	ns_ecdf ns_emperical_cdf_generator
+	//ns_emperical_cdf_generator ecdf;
 };
 struct ns_emperical_posture_quantification_value_estimator{
 	std::map<ns_hmm_movement_state, std::vector<ns_hmm_emission> > observed_values;
 	std::map<ns_stationary_path_id, ns_hmm_emission_normalization_stats > normalization_stats;
 
-	std::map<ns_hmm_movement_state, std::vector<ns_hmm_emission> > observed_values;
 
-	void read_observation_data(std::istream & moving_cdf_in,std::istream & in);
-	void write_observation_data(std::ostream & moving_cdf_out,std::ostream & out,std::ostream * visualization_file, const std::string & experiment_name = "") const;
+	void read_observation_data(std::istream & in);
+	void write_observation_data(std::ostream & out,const std::string & experiment_name = "") const;
 	bool add_by_hand_data_to_sample_set(const std::string &software_version, const ns_death_time_annotation & properties,const ns_analyzed_image_time_path * path);
+	void read(std::istream & i);
+	void write(std::ostream & o)const;
 	void generate_estimators_from_samples();
 	static ns_emperical_posture_quantification_value_estimator dummy();
 private:

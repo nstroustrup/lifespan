@@ -1572,6 +1572,9 @@ void ns_time_path_image_movement_analyzer::obtain_analysis_id_and_save_movement_
 
 
 void ns_analyzed_image_time_path_element_measurements::read(istream & in, ns_vector_2d & registration_offset,bool & saturated_offset)  {
+	ns_get_int get_int;
+	ns_get_double get_double;
+	ns_get_string get_string;
 	get_int(in, interframe_time_scaled_movement_sum);//5										
 	if (in.fail()) throw ns_ex("Invalid Specification 5");
 	get_int(in, movement_alternate_worm_sum);//6												
@@ -1733,7 +1736,7 @@ void ns_time_path_image_movement_analyzer::load_movement_data_from_disk(istream 
 			throw ns_ex("ns_time_path_image_movement_analyzer::load_movement_data_from_disk()::Element is too large ") << path_id;									
 		get_int(in,groups[group_id].paths[path_id].elements[element_id].absolute_time);//4																			
 		if(in.fail()) throw ns_ex("Invalid Specification 4");																										
-		groups[group_id].paths[path_id].elements[element_id].read(in, groups[group_id].paths[path_id].elements[element_id].registration_offset, groups[group_id].paths[path_id].elements[element_id].saturated_offset);
+		groups[group_id].paths[path_id].elements[element_id].measurements.read(in, groups[group_id].paths[path_id].elements[element_id].registration_offset, groups[group_id].paths[path_id].elements[element_id].saturated_offset);
 	//	std::cerr << "\n";
 
 	}
@@ -1762,7 +1765,35 @@ void ns_time_path_image_movement_analyzer::get_processing_stats_from_solution(co
 
 
 
+void ns_analyzed_image_time_path_element_measurements::write_header(ostream & out) {
+	out << "interframe_time_scaled_movement_sum"
+		",movement_alternate_worm_sum"
+		",change_in_total_region_intensity"
+		",change_in_total_foreground_intensity"
+		",total_foreground_area"
+		",total_intensity_within_foreground"
+		",total_region_area "
+		",total_intensity_within_region"
+		",total_alternate_worm_area "
+		",total_intensity_within_alternate_worm "
+		",(saturated_offset"
+		",offset.x "
+		",offset.y"
+		",movement_sum "
+		",denoised_movement_score "
+		",movement_score "
+		",total_intensity_within_stabilized"
+		",spatial_averaged_movement_sum "
+		",interframe_scaled_spatial_averaged_movement_sum "
+		",spatial_averaged_movement_score "
+		",denoised_spatial_averaged_movement_score "
+		",total_intensity_in_previous_frame_scaled_to_current_frames_histogram"
+		",total_stabilized_area "
+		",change_in_total_stabilized_intensity,";
 
+	for (unsigned int i = 0; i < 9; i++)
+		out << "blank,";
+}
 void ns_analyzed_image_time_path_element_measurements::write(ostream & out,const ns_vector_2d & offset, const bool & saturated_offset) const {
 	out <<interframe_time_scaled_movement_sum << ","//5
 		<<movement_alternate_worm_sum << ","//6
@@ -3151,8 +3182,58 @@ ns_death_time_annotation_time_interval ns_analyzed_image_time_path::by_hand_deat
 	else return ns_death_time_annotation_time_interval::unobserved_interval();
 }
 
-ns_hmm_movement_state by_hand_hmm_movement_state(const unsigned long & t) const {
+ns_hmm_movement_state ns_analyzed_image_time_path::by_hand_hmm_movement_state(const unsigned long & t) const {
+	//if the worm never arrives, give up
+	ns_death_time_annotation_time_interval fast_movement_end(cessation_of_fast_movement_interval());
 
+	if (!by_hand_annotation_event_times[(int)ns_fast_movement_cessation].period_end_was_not_observed)
+		fast_movement_end = by_hand_annotation_event_times[(int)ns_fast_movement_cessation];
+
+	//if the worm hasn't arrived yet, it's missing.
+	if (t <= fast_movement_end.period_end)
+		return ns_hmm_missing;
+
+	//if the worm hasn't slowed down yet, it's moving weakly
+	if (by_hand_annotation_event_times[(int)ns_translation_cessation].period_end_was_not_observed ||
+		t <= by_hand_annotation_event_times[(int)ns_translation_cessation].period_end)
+		return ns_hmm_moving_vigorously;
+
+
+	//if the worm hasn't stopped moving yet, it's moving weakly
+	if (by_hand_annotation_event_times[(int)ns_movement_cessation].period_end_was_not_observed ||
+		t <= by_hand_annotation_event_times[(int)ns_movement_cessation].period_end) {
+		//if the start and finish of the expansion was marked
+		if (!by_hand_annotation_event_times[ns_death_posture_relaxation_start].period_end_was_not_observed &&
+			!by_hand_annotation_event_times[ns_death_posture_relaxation_termination].period_end_was_not_observed) {
+			cerr << "WH";
+			if (t > by_hand_annotation_event_times[ns_death_posture_relaxation_start].period_end &&
+				t <= by_hand_annotation_event_times[ns_death_posture_relaxation_termination].period_end)
+				return ns_hmm_moving_weakly_expanding;
+			else return ns_hmm_moving_weakly;
+		}
+		//if only the end of the expansion was marked, we assume that it started at the final time of movement.
+		return ns_hmm_moving_weakly;
+	}
+	//the animal has stopped moving
+
+	//if the animal never expanded, it's dead
+	if (by_hand_annotation_event_times[ns_death_posture_relaxation_termination].period_end_was_not_observed)
+		return ns_hmm_not_moving_dead;
+
+	//the animal hasn't stopped expanding yet
+	if (t < by_hand_annotation_event_times[ns_death_posture_relaxation_termination].period_end) {
+
+		cerr << "2";
+		//if the animal started expanding right after death (eg the start was not annotated), it is still expanding
+		if (by_hand_annotation_event_times[(int)ns_death_posture_relaxation_start].period_end_was_not_observed)
+			return ns_hmm_not_moving_expanding;
+		//if the animal hasn't started expanding yet, it's alive
+		if (t < by_hand_annotation_event_times[ns_death_posture_relaxation_start].period_end)
+			return ns_hmm_not_moving_alive;
+		//otherwise it is expanding
+		return ns_hmm_not_moving_expanding;
+	}
+	return ns_hmm_not_moving_dead;
 }
 ns_movement_state ns_analyzed_image_time_path::by_hand_movement_state( const unsigned long & t) const{
 	

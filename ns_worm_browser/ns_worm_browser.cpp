@@ -2227,30 +2227,32 @@ void ns_worm_learner::output_movement_analysis_optimization_data(const ns_optimi
 	ns_run_in_main_thread_custom_wait<ns_text_dialog> b(&td);
 
 }
-
-void ns_write_emperical_posture_model(const std::string & path_and_base_filename, const std::string &experiment_name,const std::string & strain,ns_emperical_posture_quantification_value_estimator & e){
-	
-	ofstream sample_file((path_and_base_filename + "="+strain+"=samples.csv").c_str());
-	e.write_samples(sample_file,experiment_name);
-	sample_file.close();
-	e.generate_estimators_from_samples();
-	ofstream moving_file((path_and_base_filename + "="+strain+ "=model_moving.csv").c_str());
-	ofstream dead_file((path_and_base_filename + "="+strain+ "=model_dead.csv").c_str());
-	ofstream visualization_file((path_and_base_filename + "="+strain+ "=model_visualization.csv").c_str());
-	e.write(moving_file,dead_file, &visualization_file,experiment_name);
-	moving_file.close();
-	dead_file.close();
-	visualization_file.close();
-
-}
-
 void ns_worm_learner::generate_experiment_movement_image_quantification_analysis_data(ns_movement_quantification_type  detail_level, const ns_optimization_subject & subject){
-	unsigned int experiment_id = data_selector.current_experiment_id();
+
 	const std::string experiment_name(data_selector.current_experiment_name());
 	ns_acquire_for_scope<ns_sql> sql(image_server.new_sql_connection(__FILE__,__LINE__));
+
+	ns_64_bit experiment_id = data_selector.current_experiment_id();
+	ns_64_bit plate_id;
+	std::string device_name;
+	if (subject == ns_plate || subject == ns_device) {
+		ns_experiment_region_chooser_region selected_region;
+		if (data_selector.region_selected())
+			selected_region = data_selector.current_region();
+		else throw ns_ex("No device or plate selected");
+		if (subject == ns_plate)
+			plate_id = (selected_region.region_id);
+		else if (subject == ns_device)
+			device_name = data_selector.current_sample().device;
+	}
+
+	ns_image_server_results_subject sub;
+	sub.experiment_id = experiment_id;
+	if (plate_id)
+		sub.region_id = plate_id;
+	if (!device_name.empty())
+		sub.device_name = device_name;
 	
-	ns_image_server_results_subject sub_e;
-	sub_e.experiment_id = experiment_id;
 	ns_acquire_for_scope<ostream> o_all;
 	
 	ns_region_metadata m;
@@ -2272,7 +2274,7 @@ void ns_worm_learner::generate_experiment_movement_image_quantification_analysis
 					suffix[i] = '_';
 			}
 		}
-		o_all.attach(image_server.results_storage.time_path_image_analysis_quantification(sub_e,"detailed" + suffix,true,sql(),detail_level==ns_quantification_abbreviated_detailed,false).output());
+		o_all.attach(image_server.results_storage.time_path_image_analysis_quantification(sub,"detailed" + suffix,true,sql(),detail_level==ns_quantification_abbreviated_detailed,false).output());
 	//	ns_analyzed_image_time_path::write_summary_movement_quantification_analysis_header(o_all());
 		//o_all() <<"\n";
 
@@ -2328,15 +2330,28 @@ void ns_worm_learner::generate_experiment_movement_image_quantification_analysis
 		detail_level == ns_quantification_abbreviated_detailed){		
 		//since there is less data here, we calculate it on the fly.
 		bool header_written(false);
+		if (plate_id == 0)
 		movement_results.load(ns_death_time_annotation_set::ns_censoring_and_movement_transitions,0,0,experiment_id,sql(),false);
+		else movement_results.load(ns_death_time_annotation_set::ns_censoring_and_movement_transitions, plate_id, 0, experiment_id, sql(), false);
 		unsigned long region_count(0);
-		for (unsigned int i = 0; i < movement_results.samples.size(); i++)
-			region_count+=movement_results.samples[i].regions.size();
+		for (unsigned int i = 0; i < movement_results.samples.size(); i++) {
+			if (!device_name.empty() && movement_results.samples[i].device_name() != device_name)
+				continue;
+			for (unsigned int j = 0; j < movement_results.samples[i].regions.size(); j++) {
+				if (plate_id != 0 && plate_id != movement_results.samples[i].regions[j]->metadata.region_id)
+					continue;
+				region_count++;
+			}
+		}
 
 		unsigned long regions_processed(0);
 
 		for (unsigned int i = 0; i < movement_results.samples.size(); i++){
+			if (!device_name.empty() && movement_results.samples[i].device_name() != device_name)
+				continue;
 			for (unsigned int j = 0; j < movement_results.samples[i].regions.size(); j++){
+				if (plate_id != 0 && plate_id != movement_results.samples[i].regions[j]->metadata.region_id)
+					continue;
 				cerr << 100*regions_processed/region_count << "%";
 				regions_processed++;
 
@@ -2377,10 +2392,10 @@ void ns_worm_learner::generate_experiment_movement_image_quantification_analysis
 				ns_posture_analysis_model dummy_model(ns_posture_analysis_model::dummy());
 				const ns_posture_analysis_model * posture_analysis_model(&dummy_model); 
 				ns_image_server::ns_posture_analysis_model_cache::const_handle_t handle;
-				if (detail_level != ns_build_worm_markov_posture_model_from_by_hand_annotations){
+				//if (detail_level != ns_build_worm_markov_posture_model_from_by_hand_annotations){
 					image_server.get_posture_analysis_model_for_region(movement_results.samples[i].regions[j]->metadata.region_id, handle, sql());
 					posture_analysis_model = &handle().model_specification;
-				}
+				//}
 				ns_acquire_for_scope<ns_analyzed_image_time_path_death_time_estimator> death_time_estimator(
 					ns_get_death_time_estimator_from_posture_analysis_model(
 					handle().model_specification));
@@ -2397,7 +2412,7 @@ void ns_worm_learner::generate_experiment_movement_image_quantification_analysis
 				movement_results.samples[i].regions[j]->time_path_image_analyzer->add_by_hand_annotations(by_hand_annotations.annotations);
 				if (detail_level==ns_quantification_abbreviated_detailed){
 					if (!header_written){
-						o_all.attach(image_server.results_storage.time_path_image_analysis_quantification(sub_e,"detailed",true,sql(),true).output());
+						o_all.attach(image_server.results_storage.time_path_image_analysis_quantification(sub,"detailed",true,sql(),true).output());
 						if (movement_results.samples[i].regions[j]->time_path_image_analyzer->size() > 0){
 							movement_results.samples[i].regions[j]->time_path_image_analyzer->group(0).paths[0].write_detailed_movement_quantification_analysis_header(o_all());
 							o_all() <<"\n";
@@ -2412,7 +2427,7 @@ void ns_worm_learner::generate_experiment_movement_image_quantification_analysis
 				else if (detail_level == ns_quantification_detailed_with_by_hand){
 				
 					if (!header_written){
-						o_all.attach(image_server.results_storage.time_path_image_analysis_quantification(sub_e,"detailed_with_by_hand",true,sql()).output());
+						o_all.attach(image_server.results_storage.time_path_image_analysis_quantification(sub,"detailed_with_by_hand",true,sql()).output());
 						if (movement_results.samples[i].regions[j]->time_path_image_analyzer->size() > 0){
 							movement_results.samples[i].regions[j]->time_path_image_analyzer->group(0).paths[0].write_detailed_movement_quantification_analysis_header(o_all());
 							o_all() <<"\n";
@@ -2427,8 +2442,10 @@ void ns_worm_learner::generate_experiment_movement_image_quantification_analysis
 					bool added_data(false);
 					for (unsigned int g = 0; g < movement_results.samples[i].regions[j]->time_path_image_analyzer->size(); g++){
 						for (unsigned int p = 0; p < movement_results.samples[i].regions[j]->time_path_image_analyzer->group(g).paths.size(); p++){
-							ns_death_time_annotation a(movement_results.samples[i].regions[j]->time_path_image_analyzer->sticky_properties());
-							a.stationary_path_id = movement_results.samples[i].regions[j]->time_path_image_analyzer->stationary_path_id;
+							ns_death_time_annotation a(movement_results.samples[i].regions[j]->time_path_image_analyzer->group(g).paths[p].sticky_properties());
+							if (a.is_excluded() || a.is_censored())
+								continue;
+							a.stationary_path_id.detection_set_id = movement_results.samples[i].regions[j]->time_path_image_analyzer->db_analysis_id();
 							a.stationary_path_id.group_id = g;
 							a.stationary_path_id.path_id = p;
 							aggregate_value_estimator.add_by_hand_data_to_sample_set(NS_CURRENT_POSTURE_MODEL_VERSION, a, &movement_results.samples[i].regions[j]->time_path_image_analyzer->group(g).paths[p]);
@@ -2444,19 +2461,17 @@ void ns_worm_learner::generate_experiment_movement_image_quantification_analysis
 		}
 	}	
 	if (detail_level == ns_build_worm_markov_posture_model_from_by_hand_annotations){
-		//TODO: Surely there's a better place to write these files?
-		#ifdef _WIN32
-		std::string base_path("c:\\");
-		#else
-		std::string base_path("/");
-		#endif
-		base_path+=experiment_name;
-		for (std::map<string,ns_emperical_posture_quantification_value_estimator>::iterator p = value_estimators.begin(); p!=value_estimators.end(); p++){
-			if (!p->second.raw_moving_cdf.samples().empty() &&
-				!p->second.dead_cdf.samples().empty())
-			ns_write_emperical_posture_model(base_path,p->first,experiment_name,p->second);
+		ns_acquire_for_scope<ostream> all_observations(image_server.results_storage.time_path_image_analysis_quantification(sub, "hmm_obs", true, sql()).output());
+	
+		aggregate_value_estimator.write_observation_data(all_observations(), experiment_name);
+		all_observations.release();
+		if (value_estimators.size() > 1) {
+			for (std::map<string, ns_emperical_posture_quantification_value_estimator>::iterator p = value_estimators.begin(); p != value_estimators.end(); p++) {
+				ns_acquire_for_scope<ostream> obs(image_server.results_storage.time_path_image_analysis_quantification(sub, "hmm_obs=" + p->first, true, sql()).output());
+				p->second.write_observation_data(obs(), experiment_name + "=" + p->first);
+				obs.release();
+			}
 		}
-		ns_write_emperical_posture_model(base_path,"all",experiment_name,aggregate_value_estimator);
 	}
 	
 	o_all.release();

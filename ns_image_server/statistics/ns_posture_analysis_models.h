@@ -18,7 +18,7 @@ struct ns_hmm_emission_normalization_stats {
 class ns_emission_probabiliy_model;
 
 struct ns_emperical_posture_quantification_value_estimator{
-	friend ns_time_path_movement_markov_solver;
+	friend class ns_time_path_movement_markov_solver;
 	bool add_observation(const std::string &software_version, const ns_death_time_annotation & properties, const ns_analyzed_image_time_path * path);
 	void build_estimator_from_observations();
 

@@ -19,7 +19,7 @@ public:
 	ns_time_path_posture_movement_solution estimate_posture_movement_states(int software_value,const ns_analyzed_image_time_path * source_path, ns_analyzed_image_time_path * output_path = 0,std::ostream * debug_output=0) const;
 	ns_time_path_posture_movement_solution estimate_posture_movement_states(const std::vector<double> & movement_ratio, const std::vector<double> & tm, bool output_loglikelihood_series, ns_sequential_hidden_markov_solution & solution,std::ostream * debug_output=0) const;
 	const ns_emperical_posture_quantification_value_estimator & estimator;
-	std::string software_version_number() const { return "2"; }
+	std::string software_version_number() const { return "2.1"; }
 	unsigned long latest_possible_death_time(const ns_analyzed_image_time_path * path,
 		const unsigned long last_observation_time) const{return  last_observation_time; }
 };

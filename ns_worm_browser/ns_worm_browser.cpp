@@ -2448,53 +2448,51 @@ void ns_worm_learner::generate_experiment_movement_image_quantification_analysis
 							a.stationary_path_id.detection_set_id = movement_results.samples[i].regions[j]->time_path_image_analyzer->db_analysis_id();
 							a.stationary_path_id.group_id = g;
 							a.stationary_path_id.path_id = p;
-							aggregate_value_estimator.add_by_hand_data_to_sample_set(NS_CURRENT_POSTURE_MODEL_VERSION, a, &movement_results.samples[i].regions[j]->time_path_image_analyzer->group(g).paths[p]);
-							value_estimators[movement_results.samples[i].regions[j]->metadata.device_regression_match_description()].add_by_hand_data_to_sample_set(NS_CURRENT_POSTURE_MODEL_VERSION, a, &movement_results.samples[i].regions[j]->time_path_image_analyzer->group(g).paths[p]);
+							aggregate_value_estimator.add_observation(NS_CURRENT_POSTURE_MODEL_VERSION, a, &movement_results.samples[i].regions[j]->time_path_image_analyzer->group(g).paths[p]);
+							value_estimators[movement_results.samples[i].regions[j]->metadata.device_regression_match_description()].add_observation(NS_CURRENT_POSTURE_MODEL_VERSION, a, &movement_results.samples[i].regions[j]->time_path_image_analyzer->group(g).paths[p]);
 						}
 					}
 				}
 				else{
 					throw ns_ex("No longer implemented");
 				}
-				movement_results.samples[i].regions[j]->time_path_image_analyzer->clear();
+				//movement_results.samples[i].regions[j]->time_path_image_analyzer->clear();
 			}
 		}
 	}	
 	if (detail_level == ns_build_worm_markov_posture_model_from_by_hand_annotations){
 		ns_acquire_for_scope<ostream> all_observations(image_server.results_storage.time_path_image_analysis_quantification(sub, "hmm_obs", true, sql()).output());
 	
+		aggregate_value_estimator.build_estimator_from_observations();
+
+		ns_acquire_for_scope<ostream> both_parameter_set(image_server.results_storage.optimized_posture_analysis_parameter_set(sub, "all_hmm", sql()).output());
+		aggregate_value_estimator.write(both_parameter_set());
+		both_parameter_set.release();
+
 		aggregate_value_estimator.write_observation_data(all_observations(), experiment_name);
 
 		all_observations.release();
-		/*Test observation i/o
-		ns_emperical_posture_quantification_value_estimator in;
-		ns_acquire_for_scope<istream> all_observations2(image_server.results_storage.time_path_image_analysis_quantification(sub, "hmm_obs", true, sql()).input());
-		in.read_observation_data(all_observations2());
-		{
-			if (aggregate_value_estimator.normalization_stats.size() != in.normalization_stats.size())
-				throw ns_ex("ERR");
-			auto p2 = aggregate_value_estimator.normalization_stats.begin();
-			for (auto p = in.normalization_stats.begin(); p != in.normalization_stats.end(); p++) {
-				if (!(p->first == p2->first))
-					throw ns_ex("Yikes");
-				if (fabs(p->second.path_mean.denoised_movement_score - p2->second.path_mean.denoised_movement_score) > .00001)
-					throw ns_ex("Yikes!");
-				p2++;
+
+		for (unsigned int i = 0; i < movement_results.samples.size(); i++) {
+			if (!device_name.empty() && movement_results.samples[i].device_name() != device_name)
+				continue;
+			for (unsigned int j = 0; j < movement_results.samples[i].regions.size(); j++) {
+				if (plate_id != 0 && plate_id != movement_results.samples[i].regions[j]->metadata.region_id)
+					continue;
+
+				ns_time_path_movement_markov_solver markov_solver(aggregate_value_estimator);
+				const ns_time_series_denoising_parameters time_series_denoising_parameters(ns_time_series_denoising_parameters::load_from_db(movement_results.samples[i].regions[j]->metadata.region_id, sql()));
+
+		/*		movement_results.samples[i].regions[j]->time_path_image_analyzer->load_completed_analysis(
+					movement_results.samples[i].regions[j]->metadata.region_id,
+					movement_results.samples[i].regions[j]->time_path_solution,
+					time_series_denoising_parameters,
+					&markov_solver,
+					sql(),
+					false);*/
+				movement_results.samples[i].regions[j]->time_path_image_analyzer->reanalyze_with_different_movement_estimator(time_series_denoising_parameters, &markov_solver);
 			}
-			if (aggregate_value_estimator.observed_values.size() != in.observed_values.size())
-				throw ns_ex("ERR");
 		}
-		{
-			auto p2 = aggregate_value_estimator.observed_values.begin();
-			for (auto p = in.observed_values.begin(); p != in.observed_values.end(); p++) {
-				if (!(p->first == p2->first))
-					throw ns_ex("Yikes");
-				for (unsigned int i = 0; i < p->second.size(); i++)
-					if (fabs(p->second[i].measurement.denoised_movement_score - p2->second[i].measurement.denoised_movement_score) > .00001)
-							throw ns_ex("Yikes!");
-				p2++;
-			}
-		}*/
 		if (value_estimators.size() > 1) {
 			for (std::map<string, ns_emperical_posture_quantification_value_estimator>::iterator p = value_estimators.begin(); p != value_estimators.end(); p++) {
 				ns_acquire_for_scope<ostream> obs(image_server.results_storage.time_path_image_analysis_quantification(sub, "hmm_obs=" + p->first, true, sql()).output());

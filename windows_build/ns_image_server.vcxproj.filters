@@ -68,6 +68,9 @@
     <Filter Include="data_annotation">
       <UniqueIdentifier>{cfc2c5e5-9930-4713-8fc5-9c17f59bd58c}</UniqueIdentifier>
     </Filter>
+    <Filter Include="misc_lib\gmm">
+      <UniqueIdentifier>{ebf0afe3-8595-473b-b43a-cdb0faa4cc8e}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\ns_image_server\image_acquisition\ns_buffered_capture_scheduler.h">
@@ -513,6 +516,9 @@
     </ClInclude>
     <ClInclude Include="..\ns_image_server\data_annotation\ns_annotation_handling_for_visualization.h">
       <Filter>data_annotation</Filter>
+    </ClInclude>
+    <ClInclude Include="..\external_libraries\gmm\gmm.h">
+      <Filter>misc_lib\gmm</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -1122,6 +1128,9 @@
     </ClCompile>
     <ClCompile Include="..\ns_image_server\image_base\ns_image_tools.cpp">
       <Filter>image_base</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_libraries\gmm\gmm.cpp">
+      <Filter>misc_lib\gmm</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

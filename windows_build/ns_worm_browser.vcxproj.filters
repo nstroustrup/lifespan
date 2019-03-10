@@ -71,6 +71,9 @@
     <Filter Include="image_format_lib\jpeg\h">
       <UniqueIdentifier>{5c5ae8dc-bdb7-447b-ae18-3aab0ba7148e}</UniqueIdentifier>
     </Filter>
+    <Filter Include="misc_lib\gmm">
+      <UniqueIdentifier>{42d6dbb3-30d3-4698-b2de-b38c6e671681}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\ns_image_server\system_base\ns_dir.cpp">
@@ -685,6 +688,9 @@
     <ClCompile Include="..\ns_image_server\image_base\ns_image_tools.cpp">
       <Filter>image_base</Filter>
     </ClCompile>
+    <ClCompile Include="..\external_libraries\gmm\gmm.cpp">
+      <Filter>misc_lib\gmm</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\ns_image_server\system_base\ns_dir.h">
@@ -1139,6 +1145,9 @@
     </ClInclude>
     <ClInclude Include="..\ns_image_server\data_annotation\ns_annotation_handling_for_visualization.h">
       <Filter>data_annotation</Filter>
+    </ClInclude>
+    <ClInclude Include="..\external_libraries\gmm\gmm.h">
+      <Filter>misc_lib\gmm</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

@@ -89,19 +89,41 @@ void ns_build_state_transition_matrix(std::vector<std::vector<double> > & m) {
 		for (unsigned int j = 0; j < (int)ns_hmm_unknown_state; j++)
 			sum += m[i][j];
 		for (unsigned int j = 0; j < (int)ns_hmm_unknown_state; j++)
-			m[i][j] = log( m[i][j] / (double)sum);
+			m[i][j] =  m[i][j] / (double)sum;
 	}
 }
 
+ns_hmm_movement_state most_probable_state(const std::vector<double> & d) {
+	ns_hmm_movement_state s((ns_hmm_movement_state)0);
+	double p(d[0]);
+	for (unsigned int i = 1; i < d.size(); i++)
+		if (d[i] > p) {
+			s = (ns_hmm_movement_state)i;
+			p = d[i];
+		}
+	return s;
+}
 ns_time_path_posture_movement_solution ns_time_path_movement_markov_solver::estimate_posture_movement_states(int software_version,const ns_analyzed_image_time_path * path, ns_analyzed_image_time_path * output_path, std::ostream * debug_output)const{
-	
+
+	ns_time_path_posture_movement_solution solution;
+	bool found_start_time(false);
 	unsigned long start_time_i(0);
+	std::vector<unsigned long> path_indices;
+	for (unsigned int i = start_time_i; i < path->element_count(); i++) {
+		if (!path->element(i).excluded) {
+			if (!found_start_time) {
+				start_time_i = i;
+				found_start_time = true;
+			}
+			path_indices.push_back(i);
+		}
+	}
 	
 	const int number_of_states((int)ns_hmm_unknown_state);
 	std::vector<std::vector<double> > a;
 	ns_build_state_transition_matrix(a);
-	unsigned long fbdone = 0;
-	unsigned long mstat(number_of_states), nobs(path->element_count());
+	unsigned long fbdone = 0, nobs(path_indices.size());
+	unsigned long mstat(number_of_states);
 	unsigned long lrnrm;
 	std::vector<std::vector<double> > alpha(nobs,std::vector<double>(mstat,0)), 
 									  beta(nobs, std::vector<double>(mstat, 0)),
@@ -112,13 +134,15 @@ ns_time_path_posture_movement_solution ns_time_path_movement_markov_solver::esti
 	
 	{
 		std::vector<double> emission_log_probabilities;
-		estimator.probability_for_each_state(path->element(start_time_i).measurements, emission_log_probabilities);
+		estimator.probability_for_each_state(path->element(path_indices[0]).measurements, emission_log_probabilities);
 		int i, j, t;
 		double sum, asum, bsum;
 		for (i = 0; i < mstat; i++) alpha[0][i] = emission_log_probabilities[i];
 		arnrm[0] = 0;
 		for (t = 1; t < nobs; t++) {
-			estimator.probability_for_each_state(path->element(t).measurements, emission_log_probabilities);
+			if (path->element(t).excluded)
+				continue;
+			estimator.probability_for_each_state(path->element(path_indices[t]).measurements, emission_log_probabilities);
 			asum = 0;
 			for (j = 0; j < mstat; j++) {
 				sum = 0.;
@@ -136,7 +160,7 @@ ns_time_path_posture_movement_solution ns_time_path_movement_markov_solver::esti
 		brnrm[nobs - 1] = 0;
 		for (t = nobs - 2; t >= 0; t--) {
 
-			estimator.probability_for_each_state(path->element(t + 1).measurements, emission_log_probabilities);
+			estimator.probability_for_each_state(path->element(path_indices[t + 1]).measurements, emission_log_probabilities);
 			bsum = 0.;
 			for (i = 0; i < mstat; i++) {
 				sum = 0.;
@@ -160,26 +184,94 @@ ns_time_path_posture_movement_solution ns_time_path_movement_markov_solver::esti
 			for (i = 0; i < mstat; i++) pstate[t][i] /= sum;
 		}
 		fbdone = 1;
-		loglikelihood = log(lhood) + lrnrm * log(BIGI);
+		solution.loglikelihood_of_solution = log(lhood) + lrnrm * log(BIGI);
 	}
-	ns_time_path_posture_movement_solution solution;
+	if (pstate.size() == 0)
+		throw ns_ex("No states!");
+	//now find transition of times between states
+	typedef std::pair<ns_hmm_movement_state, unsigned long> ns_movement_transition;
+	std::vector<ns_movement_transition > movement_transitions;
+	movement_transitions.push_back(ns_movement_transition(most_probable_state(pstate[0]), 0));
+	for (unsigned int i = 1; i < pstate.size(); i++) {
+		const ns_hmm_movement_state s = most_probable_state(pstate[i]);
+		if (s != movement_transitions.rbegin()->first)
+			movement_transitions.push_back(ns_movement_transition(s, i));
+	}
+	solution.moving.start_index = path_indices[0];
+	ns_movement_state m = ns_movement_fast;
+	int expanding_state = 0;
+	solution.expanding.skipped = true;
+	solution.moving.skipped = false;
+	solution.moving.end_index = *path_indices.rbegin();
+	//go through each of the state transitions and annotate what has happened in the solution.
+	for (unsigned int i = 0; i < movement_transitions.size(); i++) {
+		//look for movement transitions
+		if (m == ns_movement_fast && (movement_transitions[i].first != ns_hmm_missing && movement_transitions[i].first != ns_hmm_moving_vigorously)) {
+			if (i != 0) {
+				solution.moving.skipped = false;
+				solution.moving.end_index = path_indices[movement_transitions[i].second - 1];
+			}
+			else solution.moving.skipped = true;
+			m = ns_movement_slow;
+			solution.slowing.start_index = path_indices[movement_transitions[i].second];
+			solution.slowing.skipped = false;
+			solution.slowing.end_index = *path_indices.rbegin();
+		}
+		if (m == ns_movement_slow && (
+			movement_transitions[i].first != ns_hmm_moving_weakly &&
+			movement_transitions[i].first != ns_hmm_moving_weakly_expanding &&
+			movement_transitions[i].first != ns_hmm_moving_weakly_post_expansion)) {
+			if (path_indices[i] != solution.slowing.start_index)
+				solution.slowing.end_index = path_indices[movement_transitions[i].second - 1];
+			else solution.slowing.skipped = true;
+			m = ns_movement_stationary;
+			solution.dead.start_index = path_indices[movement_transitions[i].second];
+			solution.dead.skipped = false;
+			solution.dead.end_index = *path_indices.rbegin();
+		}
+		//now we handle expansions
+		switch (expanding_state) {
+		case 0:
+			if (movement_transitions[i].first == ns_hmm_moving_weakly_expanding ||
+				movement_transitions[i].first == ns_hmm_not_moving_expanding) {
+				solution.expanding.skipped = false;
+				solution.expanding.start_index = path_indices[movement_transitions[i].second];
+				solution.expanding.end_index = *path_indices.rbegin();
+				expanding_state = 1;
+			}
+			if (movement_transitions[i].first == ns_hmm_moving_weakly_post_expansion)
+				throw ns_ex("Unexpected pre-expansion state!");
+			break;
+		case 1:
+			if (movement_transitions[i].first != ns_hmm_moving_weakly_expanding &&
+				movement_transitions[i].first != ns_hmm_not_moving_expanding) {
+				solution.expanding.end_index = path_indices[movement_transitions[i].second - 1];
+				expanding_state = 2;
+			}
+			break;
+		case 2: if (movement_transitions[i].first != ns_hmm_moving_weakly_post_expansion &&
+			movement_transitions[i].first != ns_hmm_not_moving_dead)
+			throw ns_ex("Unexpected post-expansion state!");
+		}
+	}
+
 	return solution;
 }
 
-ns_time_path_posture_movement_solution ns_time_path_movement_markov_solver::estimate_posture_movement_states(const std::vector<double> & movement_ratio, const std::vector<double> & tm, bool output_loglikelihood_series, ns_sequential_hidden_markov_solution & markov_solution, std::ostream * debug_output)const{
-/*	for (unsigned int i = 0; i < movement_ratio.size(); i++)
-		if (movement_ratio[i] <= 0)
-			throw ns_ex("ns_movement_markov_solver()::solve()::Cannot handle negative ratios!");*/
+ns_time_path_posture_movement_solution ns_time_path_movement_markov_solver::estimate_posture_movement_states(const std::vector<double> & movement_ratio, const std::vector<double> & tm, bool output_loglikelihood_series, ns_sequential_hidden_markov_solution & markov_solution, std::ostream * debug_output)const {
+	/*	for (unsigned int i = 0; i < movement_ratio.size(); i++)
+			if (movement_ratio[i] <= 0)
+				throw ns_ex("ns_movement_markov_solver()::solve()::Cannot handle negative ratios!");*/
 
 	ns_time_path_posture_movement_solution sol;
-	ns_sequential_hidden_markov_state_estimator<3,ns_posture_change_markov_likelihood_estimator> markov_estimator(debug_output);
+	ns_sequential_hidden_markov_state_estimator<3, ns_posture_change_markov_likelihood_estimator> markov_estimator(debug_output);
 
-	markov_estimator.run(markov_solution,movement_ratio,tm,ns_posture_change_markov_likelihood_estimator(estimator,0),output_loglikelihood_series);
+	markov_estimator.run(markov_solution, movement_ratio, tm, ns_posture_change_markov_likelihood_estimator(estimator, 0), output_loglikelihood_series);
 	sol.loglikelihood_of_solution = markov_solution.cumulative_solution_loglikelihood;
 	sol.moving.skipped = markov_solution.state_was_skipped(0);
 	sol.slowing.skipped = markov_solution.state_was_skipped(1);
 	sol.dead.skipped = markov_solution.state_was_skipped(2);
-	if (!sol.moving.skipped){
+	if (!sol.moving.skipped) {
 		sol.moving.start_index = markov_solution.state_start_indices[0];
 		if (!sol.slowing.skipped)
 			sol.moving.end_index = markov_solution.state_start_indices[1];
@@ -187,43 +279,44 @@ ns_time_path_posture_movement_solution ns_time_path_movement_markov_solver::esti
 			sol.moving.end_index = markov_solution.state_start_indices[2];
 		else sol.moving.end_index = movement_ratio.size();
 	}
-	if (!sol.slowing.skipped){
+	if (!sol.slowing.skipped) {
 		sol.slowing.start_index = markov_solution.state_start_indices[1];
 		if (!sol.dead.skipped)
 			sol.slowing.end_index = markov_solution.state_start_indices[2];
 		else sol.slowing.end_index = movement_ratio.size();
-	}	
-	if (!sol.dead.skipped){
+	}
+	if (!sol.dead.skipped) {
 		sol.dead.start_index = markov_solution.state_start_indices[2];
 		sol.dead.end_index = movement_ratio.size();
 	}
 	return sol;
 }
-
 template<class accessor_t>
 class ns_emission_probabiliy_sub_model {
 public:
+	template<class data_accessor_t>
 	void build_from_data(const std::vector<ns_hmm_emission> & observations) {
-		accessor_t accessor;
+		data_accessor_t data_accessor;
+		
 		unsigned long number_of_non_zeros(0);
 		double * data = new double[observations.size()];
 		for (unsigned long i = 0; i < observations.size(); i++) {
-			const auto v = accessor(observations[i]);
-			if (!accessor.is_zero(observations[i])) {
+			const auto v = data_accessor(observations[i]);
+			if (!data_accessor.is_zero(observations[i])) {
 				data[number_of_non_zeros] = v;
 				number_of_non_zeros++;
 			}
 		}
-		log_zero_probability = log(1.0 - (number_of_non_zeros / (double)observations.size()));
-		log_not_zero_probability = log(number_of_non_zeros / (double)observations.size());
+		
+		zero_probability = 1.0 - (number_of_non_zeros / (double)observations.size());
 		
 		
-		double start_weights[3] = { 1,1,1 };
+		double start_weights[3] = { 1/3.0,1 / 3.0,1 / 3.0 };
 		double start_means[3] = { -1,0,1 };
 		double start_variance[3] = { 1,1,1 };
-		GMM gmm(3, start_weights, start_means, start_variance,1000, 1e-5);
+		GMM gmm(3, start_weights, start_means, start_variance,1000, 1e-5,false);
 		gmm.estimate(data, number_of_non_zeros);
-		for (unsigned int i = 0; i < 3) {
+		for (unsigned int i = 0; i < 3; i++) {
 			gmm_weights[i] = gmm.getMixCoefficient(i);
 			gmm_means[i] = gmm.getMean(i);
 			gmm_stdev[i] = sqrt(gmm.getVar(i));
@@ -234,22 +327,20 @@ public:
 		const double val = accessor(e);
 		const bool is_zero(accessor.is_zero(e));
 		if (is_zero) 
-			return log_zero_probability;
-		double p = log_not_zero_probability;
+			return zero_probability;
+		double p = 0;
 		for (unsigned int i = 0; i < 3; i++) 
-			p*=ns_likelihood_of_normal_zcore((val - gmm_means[i]) / gmm_stdev[i]);
-		return p;
+			p+=gmm_weights[i]*ns_likelihood_of_normal_zcore((val - gmm_means[i]) / gmm_stdev[i]);
+		return p*(1-zero_probability);
 	}
 	void write(std::ostream & o) const {
-		o << log_zero_probability << "," << log_not_zero_probability;
+		o << zero_probability ;
 		for (unsigned int i = 0; i < 3; i++) 
-			o << "," << gmm_weights[i] << "," << gmm_means[i] << "," << gmm_stdev[3];
+			o << "," << gmm_weights[i] << "," << gmm_means[i] << "," << gmm_stdev[i];
 	}
-	void read(std::istream & i) {
+	void read(std::istream & in) {
 		ns_get_double get_double;
-		get_double(in, log_zero_probability);
-		if (in.fail()) throw ns_ex("ns_emission_probabiliy_model():read():invalid format");
-		get_double(in, log_not_zero_probability);
+		get_double(in, zero_probability);
 		if (in.fail()) throw ns_ex("ns_emission_probabiliy_model():read():invalid format");
 		for (unsigned int i = 0; i < 3; i++) {
 			get_double(in, gmm_weights[i]);
@@ -262,7 +353,7 @@ public:
 	}
 private:
 	
-	double log_zero_probability, log_not_zero_probability;
+	double zero_probability;
 	double gmm_weights[3],
 		gmm_means[3],
 		gmm_stdev[3];
@@ -272,9 +363,17 @@ struct ns_intensity_accessor {
 		return e.change_in_total_stabilized_intensity;
 	}	
 	bool is_zero(const ns_analyzed_image_time_path_element_measurements & e) const {
-		return e.change_in_total_stabilized_intensity != 0;
+		return e.change_in_total_stabilized_intensity == 0;
 	}
 }; 
+struct ns_intensity_emission_accessor {
+	double operator()(const ns_hmm_emission & e) const {
+		return e.measurement.change_in_total_stabilized_intensity;
+	}
+	bool is_zero(const ns_hmm_emission & e) const {
+		return e.measurement.change_in_total_stabilized_intensity == 0;
+	}
+};
 struct ns_movement_accessor {
 	double operator()(const ns_analyzed_image_time_path_element_measurements & e) const {
 		return e.death_time_posture_analysis_measure_v2();
@@ -283,11 +382,19 @@ struct ns_movement_accessor {
 		return abs(e.spatial_averaged_movement_sum) < .01;
 	}
 };
+struct ns_movement_emission_accessor {
+	double operator()(const ns_hmm_emission & e) const {
+		return e.measurement.death_time_posture_analysis_measure_v2();
+	}
+	bool is_zero(const ns_hmm_emission & e) const {
+		return abs(e.measurement.spatial_averaged_movement_sum) < .01;
+	}
+};
 class ns_emission_probabiliy_model{
 public:
 	void build_from_data(const std::vector<ns_hmm_emission> & observations) {
-		movement.build_from_data(observations);
-		intensity.build_from_data(observations);
+		movement.build_from_data<ns_movement_emission_accessor>(observations);
+		intensity.build_from_data< ns_intensity_emission_accessor>(observations);
 	}
 	double point_emission_probability(const ns_analyzed_image_time_path_element_measurements & e) const {
 		return movement.point_emission_probability(e) * intensity.point_emission_probability(e);
@@ -297,18 +404,21 @@ public:
 		movement.write(o);
 		o << "\ni,";
 		intensity.write(o);
-		o << "\n";
 	}
 	void read(std::istream & i) {
 		std::string tmp;
 		getline(i, tmp, ',');
 		if (i.fail())
 			throw ns_ex("ns_emission_probabiliy_model()::Bad model file");
+		int r= 0;
 		while (!i.fail()) {
 			if (tmp == "m")
 				movement.read(i);
 			else if (tmp == "i")
 				intensity.read(i);
+			r++;
+			if (r == 2)
+				break;
 		}
 	}
 	ns_emission_probabiliy_sub_model<ns_movement_accessor> movement;
@@ -369,8 +479,23 @@ void ns_emperical_posture_quantification_value_estimator::write_observation_data
 }
 
 void ns_emperical_posture_quantification_value_estimator::read(std::istream & i) {
+	std::string tmp;
+	while (true) {
+		getline(i,tmp, ',');
+		ns_hmm_movement_state s = ns_hmm_movement_state_from_string(tmp);
+		auto p2 = emission_probability_models.find(s);
+		if (p2 == emission_probability_models.end())
+			p2 = emission_probability_models.insert(emission_probability_models.end(),
+				std::map < ns_hmm_movement_state, ns_emission_probabiliy_model *>::value_type(s, new ns_emission_probabiliy_model));
+		p2->second->read(i);
+	}
 }
 void ns_emperical_posture_quantification_value_estimator::write(std::ostream & o)const {
+	for (auto p = emission_probability_models.begin(); p != emission_probability_models.end(); p++) {
+		o << ns_hmm_movement_state_to_string(p->first) << ",";
+		p->second->write(o);
+		o << "\n";
+	}
 }
 
 void ns_emperical_posture_quantification_value_estimator::read_observation_data(std::istream & in){
@@ -421,8 +546,11 @@ void ns_emperical_posture_quantification_value_estimator::read_observation_data(
 
 void ns_emperical_posture_quantification_value_estimator::build_estimator_from_observations() {
 	for (auto p = observed_values.begin(); p != observed_values.end(); p++) {
-		ns_emission_probabiliy_model * model = emission_probability_models[p->first];
-		model->build_from_data(p->second);
+		auto p2 = emission_probability_models.find(p->first);
+		if (p2 == emission_probability_models.end())
+			p2 = emission_probability_models.insert(emission_probability_models.end(),
+				std::map < ns_hmm_movement_state, ns_emission_probabiliy_model *>::value_type(p->first, new ns_emission_probabiliy_model ));
+		p2->second->build_from_data(p->second);
 	}
 }
 void ns_emperical_posture_quantification_value_estimator::write_visualization(std::ostream & o, const std::string & experiment_name)const{

@@ -2,6 +2,7 @@
 #include "ns_time_path_image_analyzer.h"
 #include "ns_normal_distribution.h"
 #include "ns_posture_analysis_models.h"
+#include "gmm.h"
 	
 
 double inline ns_catch_infinity(const double & d){
@@ -42,12 +43,126 @@ double inline ns_truncate_positive(const double & d){
 double inline ns_truncate_negatives(const double & d){
 	return (d>=0?d:0);
 }
+//m[i][j] is the log probabilitiy that an individual in state i transitions to state j.
+void ns_build_state_transition_matrix(std::vector<std::vector<double> > & m) {
+	m.resize((int)ns_hmm_unknown_state);
+	for (unsigned int i = 0; i < (int)ns_hmm_unknown_state; i++) {
+		m[i].resize(0);
+		m[i].resize((int)ns_hmm_unknown_state, 0);
+		m[i][i] = 1;
+	}
+	//if there are any loops anywhere here, the approach will not function
+	//because we set all the transition probabilities equal and this works
+	//only because the all state transitions are irreversable.
+	m[ns_hmm_missing][ns_hmm_moving_vigorously] = 1;
+	m[ns_hmm_missing][ns_hmm_moving_weakly] = 1;
+	m[ns_hmm_missing][ns_hmm_moving_weakly_expanding] = 1;
+	m[ns_hmm_missing][ns_hmm_not_moving_alive] = 1;
+	m[ns_hmm_missing][ns_hmm_not_moving_expanding] = 1;
+	m[ns_hmm_missing][ns_hmm_not_moving_dead] = 1;
 
+	m[ns_hmm_moving_vigorously][ns_hmm_moving_weakly] = 1;
+	m[ns_hmm_moving_vigorously][ns_hmm_moving_weakly_expanding] = 1;
+	m[ns_hmm_moving_vigorously][ns_hmm_not_moving_alive] = 1;
+	m[ns_hmm_moving_vigorously][ns_hmm_not_moving_expanding] = 1;
+	m[ns_hmm_moving_vigorously][ns_hmm_not_moving_dead] = 1;
+
+	m[ns_hmm_moving_weakly][ns_hmm_moving_weakly_expanding] = 1;
+	m[ns_hmm_moving_weakly][ns_hmm_not_moving_alive] = 1;
+	m[ns_hmm_moving_weakly][ns_hmm_not_moving_expanding] = 1;
+	m[ns_hmm_moving_weakly][ns_hmm_not_moving_dead] = 1;
+
+	m[ns_hmm_moving_weakly_expanding][ns_hmm_moving_weakly_post_expansion] = 1;
+	m[ns_hmm_moving_weakly_expanding][ns_hmm_not_moving_expanding] = 1;
+	m[ns_hmm_moving_weakly_expanding][ns_hmm_not_moving_dead] = 1;
+
+	m[ns_hmm_moving_weakly_post_expansion][ns_hmm_not_moving_dead] = 1;
+
+	m[ns_hmm_not_moving_expanding][ns_hmm_not_moving_dead] = 1;
+
+	m[ns_hmm_not_moving_alive][ns_hmm_not_moving_expanding] = 1;
+	m[ns_hmm_not_moving_alive][ns_hmm_not_moving_dead] = 1;
+
+	//normalize all transition probabilities
+	for (unsigned int i = 0; i < (int)ns_hmm_unknown_state; i++) {
+		unsigned int sum = 0;
+		for (unsigned int j = 0; j < (int)ns_hmm_unknown_state; j++)
+			sum += m[i][j];
+		for (unsigned int j = 0; j < (int)ns_hmm_unknown_state; j++)
+			m[i][j] = log( m[i][j] / (double)sum);
+	}
+}
 
 ns_time_path_posture_movement_solution ns_time_path_movement_markov_solver::estimate_posture_movement_states(int software_version,const ns_analyzed_image_time_path * path, ns_analyzed_image_time_path * output_path, std::ostream * debug_output)const{
 	
-	ns_time_path_posture_movement_solution solution;
+	unsigned long start_time_i(0);
+	
+	const int number_of_states((int)ns_hmm_unknown_state);
+	std::vector<std::vector<double> > a;
+	ns_build_state_transition_matrix(a);
+	unsigned long fbdone = 0;
+	unsigned long mstat(number_of_states), nobs(path->element_count());
+	unsigned long lrnrm;
+	std::vector<std::vector<double> > alpha(nobs,std::vector<double>(mstat,0)), 
+									  beta(nobs, std::vector<double>(mstat, 0)),
+									  pstate(nobs, std::vector<double>(mstat, 0));
+	std::vector<unsigned long> arnrm(nobs,0), brnrm(nobs,0);
 
+	double BIG(1.e20), BIGI(1. / BIG), lhood;
+	
+	{
+		std::vector<double> emission_log_probabilities;
+		estimator.probability_for_each_state(path->element(start_time_i).measurements, emission_log_probabilities);
+		int i, j, t;
+		double sum, asum, bsum;
+		for (i = 0; i < mstat; i++) alpha[0][i] = emission_log_probabilities[i];
+		arnrm[0] = 0;
+		for (t = 1; t < nobs; t++) {
+			estimator.probability_for_each_state(path->element(t).measurements, emission_log_probabilities);
+			asum = 0;
+			for (j = 0; j < mstat; j++) {
+				sum = 0.;
+				for (i = 0; i < mstat; i++) sum += alpha[t - 1][i] * a[i][j] * emission_log_probabilities[j];
+				alpha[t][j] = sum;
+				asum += sum;
+			}
+			arnrm[t] = arnrm[t - 1];
+			if (asum < BIGI) {
+				++arnrm[t];
+				for (j = 0; j < mstat; j++) alpha[t][j] *= BIG;
+			}
+		}
+		for (i = 0; i < mstat; i++) beta[nobs - 1][i] = 1.;
+		brnrm[nobs - 1] = 0;
+		for (t = nobs - 2; t >= 0; t--) {
+
+			estimator.probability_for_each_state(path->element(t + 1).measurements, emission_log_probabilities);
+			bsum = 0.;
+			for (i = 0; i < mstat; i++) {
+				sum = 0.;
+				for (j = 0; j < mstat; j++) sum += a[i][j] * emission_log_probabilities[j] * beta[t + 1][j];
+				beta[t][i] = sum;
+				bsum += sum;
+			}
+			brnrm[t] = brnrm[t + 1];
+			if (bsum < BIGI) {
+				++brnrm[t];
+				for (j = 0; j < mstat; j++) beta[t][j] *= BIG;
+			}
+		}
+		lhood = 0.;
+		for (i = 0; i < mstat; i++) lhood += alpha[0][i] * beta[0][i];
+		lrnrm = arnrm[0] + brnrm[0];
+		while (lhood < BIGI) { lhood *= BIG; lrnrm++; }
+		for (t = 0; t < nobs; t++) {
+			sum = 0.;
+			for (i = 0; i < mstat; i++) sum += (pstate[t][i] = alpha[t][i] * beta[t][i]);
+			for (i = 0; i < mstat; i++) pstate[t][i] /= sum;
+		}
+		fbdone = 1;
+		loglikelihood = log(lhood) + lrnrm * log(BIGI);
+	}
+	ns_time_path_posture_movement_solution solution;
 	return solution;
 }
 
@@ -84,6 +199,138 @@ ns_time_path_posture_movement_solution ns_time_path_movement_markov_solver::esti
 	}
 	return sol;
 }
+
+template<class accessor_t>
+class ns_emission_probabiliy_sub_model {
+public:
+	void build_from_data(const std::vector<ns_hmm_emission> & observations) {
+		accessor_t accessor;
+		unsigned long number_of_non_zeros(0);
+		double * data = new double[observations.size()];
+		for (unsigned long i = 0; i < observations.size(); i++) {
+			const auto v = accessor(observations[i]);
+			if (!accessor.is_zero(observations[i])) {
+				data[number_of_non_zeros] = v;
+				number_of_non_zeros++;
+			}
+		}
+		log_zero_probability = log(1.0 - (number_of_non_zeros / (double)observations.size()));
+		log_not_zero_probability = log(number_of_non_zeros / (double)observations.size());
+		
+		
+		double start_weights[3] = { 1,1,1 };
+		double start_means[3] = { -1,0,1 };
+		double start_variance[3] = { 1,1,1 };
+		GMM gmm(3, start_weights, start_means, start_variance,1000, 1e-5);
+		gmm.estimate(data, number_of_non_zeros);
+		for (unsigned int i = 0; i < 3) {
+			gmm_weights[i] = gmm.getMixCoefficient(i);
+			gmm_means[i] = gmm.getMean(i);
+			gmm_stdev[i] = sqrt(gmm.getVar(i));
+		}
+	}
+	double point_emission_probability(const ns_analyzed_image_time_path_element_measurements & e) const {
+		accessor_t accessor;
+		const double val = accessor(e);
+		const bool is_zero(accessor.is_zero(e));
+		if (is_zero) 
+			return log_zero_probability;
+		double p = log_not_zero_probability;
+		for (unsigned int i = 0; i < 3; i++) 
+			p*=ns_likelihood_of_normal_zcore((val - gmm_means[i]) / gmm_stdev[i]);
+		return p;
+	}
+	void write(std::ostream & o) const {
+		o << log_zero_probability << "," << log_not_zero_probability;
+		for (unsigned int i = 0; i < 3; i++) 
+			o << "," << gmm_weights[i] << "," << gmm_means[i] << "," << gmm_stdev[3];
+	}
+	void read(std::istream & i) {
+		ns_get_double get_double;
+		get_double(in, log_zero_probability);
+		if (in.fail()) throw ns_ex("ns_emission_probabiliy_model():read():invalid format");
+		get_double(in, log_not_zero_probability);
+		if (in.fail()) throw ns_ex("ns_emission_probabiliy_model():read():invalid format");
+		for (unsigned int i = 0; i < 3; i++) {
+			get_double(in, gmm_weights[i]);
+			if (in.fail()) throw ns_ex("ns_emission_probabiliy_model():read():invalid format");
+			get_double(in, gmm_means[i]);
+			if (in.fail()) throw ns_ex("ns_emission_probabiliy_model():read():invalid format");
+			get_double(in, gmm_stdev[i]);
+			if (in.fail()) throw ns_ex("ns_emission_probabiliy_model():read():invalid format");
+		}
+	}
+private:
+	
+	double log_zero_probability, log_not_zero_probability;
+	double gmm_weights[3],
+		gmm_means[3],
+		gmm_stdev[3];
+};
+struct ns_intensity_accessor {
+	double operator()(const ns_analyzed_image_time_path_element_measurements & e) const {
+		return e.change_in_total_stabilized_intensity;
+	}	
+	bool is_zero(const ns_analyzed_image_time_path_element_measurements & e) const {
+		return e.change_in_total_stabilized_intensity != 0;
+	}
+}; 
+struct ns_movement_accessor {
+	double operator()(const ns_analyzed_image_time_path_element_measurements & e) const {
+		return e.death_time_posture_analysis_measure_v2();
+	}
+	bool is_zero(const ns_analyzed_image_time_path_element_measurements & e) const {
+		return abs(e.spatial_averaged_movement_sum) < .01;
+	}
+};
+class ns_emission_probabiliy_model{
+public:
+	void build_from_data(const std::vector<ns_hmm_emission> & observations) {
+		movement.build_from_data(observations);
+		intensity.build_from_data(observations);
+	}
+	double point_emission_probability(const ns_analyzed_image_time_path_element_measurements & e) const {
+		return movement.point_emission_probability(e) * intensity.point_emission_probability(e);
+	}
+	void write(std::ostream & o) const {
+		o << "m" << ",";
+		movement.write(o);
+		o << "\ni,";
+		intensity.write(o);
+		o << "\n";
+	}
+	void read(std::istream & i) {
+		std::string tmp;
+		getline(i, tmp, ',');
+		if (i.fail())
+			throw ns_ex("ns_emission_probabiliy_model()::Bad model file");
+		while (!i.fail()) {
+			if (tmp == "m")
+				movement.read(i);
+			else if (tmp == "i")
+				intensity.read(i);
+		}
+	}
+	ns_emission_probabiliy_sub_model<ns_movement_accessor> movement;
+	ns_emission_probabiliy_sub_model<ns_intensity_accessor> intensity;
+
+};
+
+//Adapted from forward/backward algorithm in Numerical Recipies in in C++
+
+void ns_emperical_posture_quantification_value_estimator::probability_for_each_state(const ns_analyzed_image_time_path_element_measurements & e, std::vector<double> & d) const {
+	d.resize(0);
+	d.resize((int)ns_hmm_unknown_state,0);
+	double sum(0);
+	for (auto p = emission_probability_models.begin(); p != emission_probability_models.end(); p++) {
+		const double tmp(p->second->point_emission_probability(e));
+		d[p->first] = tmp;
+		sum += tmp;
+	}
+	for (unsigned int i = 0; i < d.size(); i++)
+		d[i] = d[i] / sum;
+}
+	
 
 void ns_emperical_posture_quantification_value_estimator::write_observation_data(std::ostream & out, const std::string & experiment_name) const {
 	out << "region_id,group_id,path_id,data_type,hmm_movement_state,";
@@ -172,10 +419,16 @@ void ns_emperical_posture_quantification_value_estimator::read_observation_data(
 	}
 }
 
-
+void ns_emperical_posture_quantification_value_estimator::build_estimator_from_observations() {
+	for (auto p = observed_values.begin(); p != observed_values.end(); p++) {
+		ns_emission_probabiliy_model * model = emission_probability_models[p->first];
+		model->build_from_data(p->second);
+	}
+}
 void ns_emperical_posture_quantification_value_estimator::write_visualization(std::ostream & o, const std::string & experiment_name)const{
 }
-bool ns_emperical_posture_quantification_value_estimator::add_by_hand_data_to_sample_set(const std::string &software_version, const ns_death_time_annotation & properties,const ns_analyzed_image_time_path * path){
+
+bool ns_emperical_posture_quantification_value_estimator::add_observation(const std::string &software_version, const ns_death_time_annotation & properties,const ns_analyzed_image_time_path * path){
 	if (path->by_hand_data_specified()){
 		ns_analyzed_image_time_path_element_measurements path_mean, path_mean_square,path_variance;
 		path_mean.zero();

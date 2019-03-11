@@ -2473,6 +2473,9 @@ void ns_worm_learner::generate_experiment_movement_image_quantification_analysis
 
 		all_observations.release();
 
+
+		ns_acquire_for_scope<ostream> performance_stats_output(image_server.results_storage.time_path_image_analysis_quantification(sub, "hmm_performance", true, sql()).output());
+
 		for (unsigned int i = 0; i < movement_results.samples.size(); i++) {
 			if (!device_name.empty() && movement_results.samples[i].device_name() != device_name)
 				continue;
@@ -2490,9 +2493,44 @@ void ns_worm_learner::generate_experiment_movement_image_quantification_analysis
 					&markov_solver,
 					sql(),
 					false);*/
-				movement_results.samples[i].regions[j]->time_path_image_analyzer->reanalyze_with_different_movement_estimator(time_series_denoising_parameters, &markov_solver);
+				ns_movement_analysis_optimizatiom_stats stats;
+				movement_results.samples[i].regions[j]->time_path_image_analyzer->reanalyze_with_different_movement_estimator(time_series_denoising_parameters, &markov_solver,&stats);
+				
+				performance_stats_output ()<< "Experiment,Device,Plate Name,Animal Details,Group ID,Path ID,Excluded,Censored,Number of Worms in Clump";
+				for (unsigned int j = 0; j < ns_movement_analysis_optimizatiom_stats_record::number_of_states; j++) {
+					const std::string state = ns_movement_state_to_string(ns_movement_analysis_optimizatiom_stats_record::states[j]);
+					performance_stats_output() << "," << state << " Identified by hand, " << 
+						state << " By Hand Death Age (Days)," << state << " Identified by machine," << state << " Machine Death Age (Days), " << state << " Difference Between Machine and By Hand Death Times (Days), " << state << " Difference Squared (Days)";
+				}
+				performance_stats_output() << "\n";
+					
+				for (unsigned int i = 0; i < stats.animals.size(); i++) {
+					ns_region_metadata & m = movement_results.samples[i].regions[j]->metadata;
+					ns_acquire_for_scope<ostream> all_observations(image_server.results_storage.time_path_image_analysis_quantification(sub, "hmm_obs", true, sql()).output());
+					performance_stats_output() << m.experiment_name << "," << m.device << "," << m.plate_name() << "," << m.plate_type_summary()
+						<< "," << stats.animals[i].stationary_path_id.group_id << "," << stats.animals[i].stationary_path_id.path_id << ","
+						<< (movement_results.samples[i].regions[j]->time_path_image_analyzer->censoring_and_flag_details.is_excluded() ? "1" : "0") << ","
+						<< (movement_results.samples[i].regions[j]->time_path_image_analyzer->censoring_and_flag_details.is_censored() ? "1" : "0") << ","
+						<< movement_results.samples[i].regions[j]->time_path_image_analyzer->censoring_and_flag_details.number_of_worms();
+					for (unsigned int j = 0; j < ns_movement_analysis_optimizatiom_stats_record::number_of_states; j++) {
+						ns_movement_analysis_optimizatiom_stats_sub_record & res =
+							stats.animals[i].measurements[ns_movement_analysis_optimizatiom_stats_record::states[j]];
+						performance_stats_output() << ","
+							<< (res.by_hand_identified ? "1" : "0") << ","
+							<< (res.by_hand_identified ? ns_to_string((res.by_hand.best_estimate_event_time_within_interval() - m.time_at_which_animals_had_zero_age) / 60.0 / 60.0 / 24.0) : "") << ","
+							<< (res.machine_identified ? "1" : "0") << ","
+							<< (res.machine_identified ? ns_to_string((res.machine.best_estimate_event_time_within_interval() - m.time_at_which_animals_had_zero_age) / 60.0 / 60.0 / 24.0) : "") << ",";
+						if (res.machine_identified && res.by_hand_identified) {
+							const double r = abs((double)res.machine.best_estimate_event_time_within_interval() - (double)res.by_hand.best_estimate_event_time_within_interval());
+							performance_stats_output() << r << "," << r * r;
+						}
+						else performance_stats_output() << ",";
+					}
+					cout << "\n";
+				}
 			}
 		}
+		performance_stats_output().clear();
 		if (value_estimators.size() > 1) {
 			for (std::map<string, ns_emperical_posture_quantification_value_estimator>::iterator p = value_estimators.begin(); p != value_estimators.end(); p++) {
 				ns_acquire_for_scope<ostream> obs(image_server.results_storage.time_path_image_analysis_quantification(sub, "hmm_obs=" + p->first, true, sql()).output());

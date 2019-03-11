@@ -633,7 +633,21 @@ struct ns_region_area {
 	ns_region_area():total_exclusion_time_in_seconds(0), total_inclusion_time_in_seconds(0), average_annotation_time_for_region(0),explicitly_by_hand_excluded(false){}
 	ns_64_bit total_exclusion_time_in_seconds, total_inclusion_time_in_seconds, average_annotation_time_for_region;
 };
-
+struct ns_movement_analysis_optimizatiom_stats_sub_record{
+	ns_death_time_annotation_time_interval by_hand, machine;
+	bool by_hand_identified, machine_identified;
+	ns_death_time_annotation properties;
+};
+struct ns_movement_analysis_optimizatiom_stats_record{
+	enum { number_of_states = 5 };
+	static const ns_movement_state states[number_of_states];
+	typedef std::map<ns_movement_state, ns_movement_analysis_optimizatiom_stats_sub_record> ns_record_list;
+	ns_record_list measurements;
+	ns_stationary_path_id id;
+};
+struct ns_movement_analysis_optimizatiom_stats{
+	std::vector<ns_movement_analysis_optimizatiom_stats_record> animals;
+};
 struct ns_movement_analysis_shared_state;
 class ns_time_path_image_movement_analyzer {
 public:
@@ -662,7 +676,7 @@ public:
 	void reanalyze_stored_aligned_images(const ns_64_bit region_id,const ns_time_path_solution & solution_,const ns_time_series_denoising_parameters &,const ns_analyzed_image_time_path_death_time_estimator * e,ns_sql & sql,const bool load_images_after_last_valid_sample, const bool recalculate_flow_images);
 	bool load_completed_analysis(const ns_64_bit region_id,const ns_time_path_solution & solution_, const ns_time_series_denoising_parameters &,const ns_analyzed_image_time_path_death_time_estimator * e,ns_sql & sql, bool exclude_movement_quantification=false);
 	
-	void reanalyze_with_different_movement_estimator(const ns_time_series_denoising_parameters &,const ns_analyzed_image_time_path_death_time_estimator * e);
+	void reanalyze_with_different_movement_estimator(const ns_time_series_denoising_parameters &,const ns_analyzed_image_time_path_death_time_estimator * e, ns_movement_analysis_optimizatiom_stats * s=0);
 
 	//provide access to group images
 	void load_images_for_group(const unsigned long group_id, const unsigned long number_of_images_to_load,ns_sql & sql,const bool load_images_after_last_valid_sample,const bool load_flow_images);

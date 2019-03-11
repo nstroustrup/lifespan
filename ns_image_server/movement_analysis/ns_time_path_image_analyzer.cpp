@@ -1378,8 +1378,13 @@ ns_image_server_image ns_time_path_image_movement_analyzer::get_movement_quantif
 	return im;
 }
 
+const ns_movement_state ns_movement_analysis_optimizatiom_stats_record::states[ns_movement_analysis_optimizatiom_stats_record::number_of_states] = { ns_movement_stationary,
+															ns_movement_posture,
+															ns_movement_slow,
+															ns_movement_fast,
+															ns_movement_death_posture_relaxation };
+
 void ns_time_path_image_movement_analyzer::populate_movement_quantification_from_file(ns_sql & sql,const bool skip_movement_data){
-	
 	
 	ns_image_server_image im = get_movement_quantification_id(this->region_info_id,sql);
 	ifstream * i(image_server_const.image_storage.request_metadata_from_disk(im,false,&sql));
@@ -1394,7 +1399,7 @@ void ns_time_path_image_movement_analyzer::populate_movement_quantification_from
 	}
 };
 
-void ns_time_path_image_movement_analyzer::reanalyze_with_different_movement_estimator(const ns_time_series_denoising_parameters &,const ns_analyzed_image_time_path_death_time_estimator * e){
+void ns_time_path_image_movement_analyzer::reanalyze_with_different_movement_estimator(const ns_time_series_denoising_parameters &,const ns_analyzed_image_time_path_death_time_estimator * e, ns_movement_analysis_optimizatiom_stats * s = 0){
 	if (region_info_id == 0)
 		throw ns_ex("Attempting to reanalyze an unloaded image!");
 	
@@ -1404,6 +1409,35 @@ void ns_time_path_image_movement_analyzer::reanalyze_with_different_movement_est
 				continue;
 			groups[g].paths[p].analyze_movement(e,ns_stationary_path_id(g,p,analysis_id),last_timepoint_in_analysis_);
 			groups[g].paths[p].calculate_movement_quantification_summary();
+
+			//record stats to evaluate the performance compared to by hand results
+			if (s != 0) {
+				const int number_of_states = 5;
+				ns_movement_state states_to_record[number_of_states] = { 
+														ns_movement_stationary,
+														ns_movement_posture,
+														ns_movement_slow,
+														ns_movement_fast,
+														ns_movement_death_posture_relaxation 
+				};
+				for (unsigned int i = 0; i < number_of_states; i++){
+						const ns_movement_state_observation_boundary_interval & machine_result(groups[g].paths[p].state_intervals[(int)states_to_record[i]]);
+						const ns_death_time_annotation_time_interval & by_hand_result = groups[g].paths[p].by_hand_annotation_event_times[(int)states_to_record[i]];
+						if (!groups[g].paths[p].by_hand_data_specified())
+							continue;
+
+						s->animals.resize(s->animals.size() + 1);
+						ns_movement_analysis_optimizatiom_stats_sub_record & result = s->animals.rbegin()->measurements[states_to_record[i]];
+
+						result.by_hand_identified = !by_hand_result.fully_unbounded();
+						if (result.by_hand_identified)
+							result.by_hand = by_hand_result;
+
+						result.machine_identified = !machine_result.skipped;
+						if (result.machine_identified) 
+								result.machine = groups[g].paths[p].state_entrance_interval_time(machine_result);
+					}
+			}
 		}
 }
 bool ns_time_path_image_movement_analyzer::load_completed_analysis(const ns_64_bit region_id,const ns_time_path_solution & solution_,  const ns_time_series_denoising_parameters & times_series_denoising_parameters, const ns_analyzed_image_time_path_death_time_estimator * e,ns_sql & sql, bool exclude_movement_quantification){

@@ -103,7 +103,7 @@ ns_hmm_movement_state most_probable_state(const std::vector<double> & d) {
 		}
 	return s;
 }
-ns_time_path_posture_movement_solution ns_time_path_movement_markov_solver::estimate_posture_movement_states(int software_version,const ns_analyzed_image_time_path * path, ns_analyzed_image_time_path * output_path, std::ostream * debug_output)const{
+ns_time_path_posture_movement_solution ns_time_path_movement_markov_solver::estimate_posture_movement_states(int software_version, const ns_analyzed_image_time_path * path, ns_analyzed_image_time_path * output_path, std::ostream * debug_output)const {
 
 	ns_time_path_posture_movement_solution solution;
 	bool found_start_time(false);
@@ -118,10 +118,62 @@ ns_time_path_posture_movement_solution ns_time_path_movement_markov_solver::esti
 			path_indices.push_back(i);
 		}
 	}
-	
+
 	const int number_of_states((int)ns_hmm_unknown_state);
 	std::vector<std::vector<double> > a;
 	ns_build_state_transition_matrix(a);
+
+	std::vector<unsigned long>optimal_path_state(path_indices.size(), 0);
+	double optimal_path_log_probability;
+	//std::cerr << "Start:\n";
+	{
+		unsigned long fbdone = 0, nobs(path_indices.size());
+		unsigned long mstat(number_of_states);
+		unsigned long lrnrm;
+		std::vector<std::vector<double> > probabilitiy_of_path(nobs, std::vector<double>(mstat, 0));
+		std::vector< std::vector<unsigned long> > previous_state(nobs, std::vector<unsigned long>(mstat, 0));
+		std::vector<double> emission_log_probabilities;
+		estimator.probability_for_each_state(path->element(path_indices[0]).measurements, emission_log_probabilities);
+		int i, j, t;
+		double max_p, max_prev_i;
+		for (i = 0; i < mstat; i++) probabilitiy_of_path[0][i] = emission_log_probabilities[i];
+		for (t = 1; t < nobs; t++) {
+			if (path->element(t).excluded)
+				continue;
+			estimator.probability_for_each_state(path->element(path_indices[t]).measurements, emission_log_probabilities);
+
+			for (j = 0; j < mstat; j++) { //probability of moving from i at time t-1 to j now
+				max_p = -DBL_MAX;
+				max_prev_i = 0;
+				for (i = 0; i < mstat; i++) {
+					const double cur = probabilitiy_of_path[t - 1][i] + log(a[i][j] * emission_log_probabilities[j]);
+					if (cur > max_p) {
+						max_p = cur;
+						max_prev_i = i;
+					}
+				}
+			//	std::cerr << max_prev_i << " " << max_p << "\n";
+				probabilitiy_of_path[t][j] = max_p;
+				previous_state[t][j] = max_prev_i;
+			}
+		}
+		*optimal_path_state.rbegin() = 0;
+		optimal_path_log_probability = -DBL_MAX;
+		for (j = 0; j < mstat; j++) {
+			if (probabilitiy_of_path[nobs - 1][j] > optimal_path_log_probability) {
+				optimal_path_log_probability = probabilitiy_of_path[nobs - 1][j];
+				*optimal_path_state.rbegin() = j;
+			}
+		}
+		for (t = nobs - 1; t >= 1; t--)
+			optimal_path_state[t - 1] = previous_state[t][optimal_path_state[t]];
+	}
+
+	//std::cerr << "stop\n";
+	solution.loglikelihood_of_solution = optimal_path_log_probability;
+
+	/*
+	//forward backward
 	unsigned long fbdone = 0, nobs(path_indices.size());
 	unsigned long mstat(number_of_states);
 	unsigned long lrnrm;
@@ -186,14 +238,16 @@ ns_time_path_posture_movement_solution ns_time_path_movement_markov_solver::esti
 		fbdone = 1;
 		solution.loglikelihood_of_solution = log(lhood) + lrnrm * log(BIGI);
 	}
-	if (pstate.size() == 0)
-		throw ns_ex("No states!");
+	*/
+	
+	if (optimal_path_state.empty())
+		throw ns_ex("Empty path state!");
 	//now find transition of times between states
 	typedef std::pair<ns_hmm_movement_state, unsigned long> ns_movement_transition;
 	std::vector<ns_movement_transition > movement_transitions;
-	movement_transitions.push_back(ns_movement_transition(most_probable_state(pstate[0]), 0));
-	for (unsigned int i = 1; i < pstate.size(); i++) {
-		const ns_hmm_movement_state s = most_probable_state(pstate[i]);
+	movement_transitions.push_back(ns_movement_transition((ns_hmm_movement_state)optimal_path_state[0], 0));
+	for (unsigned int i = 1; i < optimal_path_state.size(); i++) {
+		const ns_hmm_movement_state s = (ns_hmm_movement_state)optimal_path_state[i];
 		if (s != movement_transitions.rbegin()->first)
 			movement_transitions.push_back(ns_movement_transition(s, i));
 	}

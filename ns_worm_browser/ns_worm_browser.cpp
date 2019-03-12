@@ -2454,7 +2454,7 @@ void ns_worm_learner::generate_experiment_movement_image_quantification_analysis
 				else{
 					throw ns_ex("No longer implemented");
 				}
-				//movement_results.samples[i].regions[j]->time_path_image_analyzer->clear();
+				movement_results.samples[i].regions[j]->time_path_image_analyzer->clear();
 			}
 		}
 	}	

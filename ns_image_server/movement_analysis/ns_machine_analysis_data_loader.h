@@ -14,11 +14,14 @@ public:
 	
 	typedef enum {ns_load_all,ns_exclude_fast_moving_animals} ns_loading_details;
 
-	ns_machine_analysis_region_data():summary_series_generated_(false), time_path_image_analyzer(new ns_time_path_image_movement_analyzer){}
+	ns_machine_analysis_region_data():summary_series_generated_(false), time_path_image_analyzer(new ns_time_path_image_movement_analyzer), contains_a_by_hand_death_time_annotation(false){}
 	~ns_machine_analysis_region_data() {
 		ns_safe_delete(time_path_image_analyzer);
 	}
 	ns_death_time_annotation_set death_time_annotation_set;
+	ns_death_time_annotation_compiler by_hand_annotations;
+	bool contains_a_by_hand_death_time_annotation;
+
 	mutable ns_region_metadata metadata;
 	void calculate_survival(){}
 	const ns_worm_movement_summary_series & summary_series(const ns_death_time_annotation::ns_by_hand_annotation_integration_strategy & by_hand_strategy_,const ns_death_time_annotation::ns_multiworm_censoring_strategy & cs,

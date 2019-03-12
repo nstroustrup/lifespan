@@ -419,6 +419,8 @@ public:
 	//best_guess_movement_state simply makes the best guess as to a worm's state at the specificied time
 	ns_movement_state best_guess_movement_state(const unsigned long & t) const;
 	ns_death_time_annotation_time_interval by_hand_death_time() const;
+	ns_death_time_annotation_time_interval machine_event_time(const ns_movement_event & e, bool & skipped) const;
+
 	ns_movement_state by_hand_movement_state(const unsigned long & t) const;
 	ns_hmm_movement_state by_hand_hmm_movement_state(const unsigned long & t) const;
 	void add_death_time_events_to_set(ns_death_time_annotation_set & set) const;
@@ -636,14 +638,14 @@ struct ns_region_area {
 struct ns_movement_analysis_optimizatiom_stats_sub_record{
 	ns_death_time_annotation_time_interval by_hand, machine;
 	bool by_hand_identified, machine_identified;
-	ns_death_time_annotation properties;
 };
 struct ns_movement_analysis_optimizatiom_stats_record{
 	enum { number_of_states = 5 };
-	static const ns_movement_state states[number_of_states];
-	typedef std::map<ns_movement_state, ns_movement_analysis_optimizatiom_stats_sub_record> ns_record_list;
+	static const ns_movement_event states[number_of_states];
+	typedef std::map<ns_movement_event, ns_movement_analysis_optimizatiom_stats_sub_record> ns_record_list;
 	ns_record_list measurements;
 	ns_stationary_path_id id;
+	ns_death_time_annotation properties;
 };
 struct ns_movement_analysis_optimizatiom_stats{
 	std::vector<ns_movement_analysis_optimizatiom_stats_record> animals;

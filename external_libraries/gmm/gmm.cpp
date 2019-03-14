@@ -62,8 +62,13 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <iostream>
 #include <iomanip>
+#ifndef _WIN32
+#include "gsl/gsl_math.h"
+#include "gsl/gsl_sf_log.h"
+#else
 #include "gsl_math.h"
 #include "specfunc/gsl_sf_log.h"
+#endif
 #include <cmath>
 #include <limits>
 #include <ctime>

@@ -636,7 +636,7 @@ bool ns_emperical_posture_quantification_value_estimator::add_observation(const 
 			// Var(x) = E(x^2) - (E(x))^2
 			path_variance = path_mean_square - a;
 		}
-
+		
 		for (unsigned int i = 0; i < path->element_count(); i++) {
 			if (path->element(i).excluded)
 				continue;

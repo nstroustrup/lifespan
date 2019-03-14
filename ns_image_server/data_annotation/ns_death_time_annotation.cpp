@@ -1061,10 +1061,6 @@ ns_death_time_annotation_compiler_location::ns_death_time_annotation_compiler_lo
 }
 
 
-bool operator <(const ns_stationary_path_id & a, const ns_stationary_path_id & b){
-	if (a.group_id != b.group_id) return a.group_id < b.group_id;
-	return a.path_id < b.path_id;
-}
 
 bool ns_death_time_annotation_compiler_location::add_event(const ns_death_time_annotation & a){
 	ns_death_time_annotation_set::iterator p(annotations.events.insert(annotations.end(),a));
@@ -1434,6 +1430,12 @@ bool operator ==(const ns_stationary_path_id & a, const ns_stationary_path_id & 
 	return a.group_id == b.group_id
 		&& a.path_id == b.path_id
 		&& a.detection_set_id == b.detection_set_id;
+}
+
+bool operator <(const ns_stationary_path_id & a, const ns_stationary_path_id & b) {
+	if (a.detection_set_id != b.detection_set_id) return a.detection_set_id < b.detection_set_id;
+	if (a.group_id != b.group_id) return a.group_id < b.group_id;
+	return a.path_id < b.path_id;
 }
 
 ns_death_time_annotation::ns_multiworm_censoring_strategy ns_death_time_annotation::default_censoring_strategy(){

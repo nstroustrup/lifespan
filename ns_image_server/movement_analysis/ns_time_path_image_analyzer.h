@@ -649,6 +649,9 @@ struct ns_movement_analysis_optimizatiom_stats_record{
 };
 struct ns_movement_analysis_optimizatiom_stats{
 	std::vector<ns_movement_analysis_optimizatiom_stats_record> animals;
+	ns_64_bit region_id;
+	static void write_header(std::ostream & o);
+	void write_data(std::ostream & o, const ns_region_metadata & metadata);
 };
 struct ns_movement_analysis_shared_state;
 class ns_time_path_image_movement_analyzer {
@@ -676,9 +679,10 @@ public:
 	//three ways to populate the movement quantification data
 	void process_raw_images(const ns_64_bit region_id,const ns_time_path_solution & solution_,const ns_time_series_denoising_parameters &,const ns_analyzed_image_time_path_death_time_estimator * e,ns_sql & sql, const long group_number=-1,const bool write_status_to_db=false);
 	void reanalyze_stored_aligned_images(const ns_64_bit region_id,const ns_time_path_solution & solution_,const ns_time_series_denoising_parameters &,const ns_analyzed_image_time_path_death_time_estimator * e,ns_sql & sql,const bool load_images_after_last_valid_sample, const bool recalculate_flow_images);
-	bool load_completed_analysis(const ns_64_bit region_id,const ns_time_path_solution & solution_, const ns_time_series_denoising_parameters &,const ns_analyzed_image_time_path_death_time_estimator * e,ns_sql & sql, bool exclude_movement_quantification=false);
+	bool load_completed_analysis(const ns_64_bit region_id, const ns_time_path_solution & solution_, const ns_time_series_denoising_parameters &, const ns_analyzed_image_time_path_death_time_estimator * e, ns_sql & sql, bool exclude_movement_quantification = false);
 	
-	void reanalyze_with_different_movement_estimator(const ns_time_series_denoising_parameters &,const ns_analyzed_image_time_path_death_time_estimator * e, ns_movement_analysis_optimizatiom_stats * s=0);
+	void reanalyze_with_different_movement_estimator(const ns_time_series_denoising_parameters &,const ns_analyzed_image_time_path_death_time_estimator * e);
+
 
 	//provide access to group images
 	void load_images_for_group(const unsigned long group_id, const unsigned long number_of_images_to_load,ns_sql & sql,const bool load_images_after_last_valid_sample,const bool load_flow_images);
@@ -742,6 +746,8 @@ public:
 	void match_plat_areas_to_paths(std::vector<ns_region_area> & areas);
 	friend class ns_worm_morphology_data_integrator;
 	std::string posture_model_version_used;
+
+	void calculate_optimzation_stats_for_current_estimator(ns_movement_analysis_optimizatiom_stats & s);
 private:
 
 	unsigned long _number_of_invalid_images_encountered;
@@ -771,6 +777,8 @@ private:
 	void get_output_image_storage_locations(const ns_64_bit region_id,ns_sql & sql,const bool create_only_flow);
 	bool load_movement_image_db_info(const ns_64_bit region_id,ns_sql & sql);
 	void generate_images_from_region_visualization();
+
+
 	bool paths_loaded_from_solution;
 	std::vector<ns_analyzed_image_time_path_group> groups;
 	std::vector<ns_analyzed_image_specification> region_image_specifications;

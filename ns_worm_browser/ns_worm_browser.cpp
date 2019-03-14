@@ -2227,6 +2227,40 @@ void ns_worm_learner::output_movement_analysis_optimization_data(const ns_optimi
 	ns_run_in_main_thread_custom_wait<ns_text_dialog> b(&td);
 
 }
+
+
+void ns_test_parameter_set_on_region(const unsigned long region_id,
+								const ns_emperical_posture_quantification_value_estimator & estimator, 
+								const ns_death_time_annotation_compiler & by_hand_annotations, 
+								const ns_time_series_denoising_parameters & time_series_denoising_parameters,ns_time_path_image_movement_analyzer & time_path_image_analyzer, ns_time_path_solution & time_path_solution,ns_sql & sql,
+								ns_movement_analysis_optimizatiom_stats & output_stats) {
+
+
+	ns_time_path_movement_markov_solver markov_solver(estimator);
+
+	//we might need to load everything again, if it has been cleared to reduce memory usage
+	if (time_path_image_analyzer.size() == 0) {
+
+		time_path_image_analyzer.add_by_hand_annotations(by_hand_annotations);
+		time_path_image_analyzer.load_completed_analysis(
+			region_id,
+			time_path_solution,
+			time_series_denoising_parameters,
+			&markov_solver,
+			sql,
+			false);
+		time_path_image_analyzer.add_by_hand_annotations(by_hand_annotations);
+		time_path_image_analyzer.calculate_optimzation_stats_for_current_estimator(output_stats);
+
+	}
+	else {
+		time_path_image_analyzer.add_by_hand_annotations(by_hand_annotations);
+		time_path_image_analyzer.reanalyze_with_different_movement_estimator(time_series_denoising_parameters, &markov_solver);
+		time_path_image_analyzer.calculate_optimzation_stats_for_current_estimator(output_stats);
+	}
+
+}
+
 void ns_worm_learner::generate_experiment_movement_image_quantification_analysis_data(ns_movement_quantification_type  detail_level, const ns_optimization_subject & subject){
 
 	const std::string experiment_name(data_selector.current_experiment_name());
@@ -2259,9 +2293,7 @@ void ns_worm_learner::generate_experiment_movement_image_quantification_analysis
 
 	if (detail_level == ns_quantification_summary){
 		throw ns_ex("No longer implemented");
-		//o_all.attach(image_server.results_storage.time_path_image_analysis_quantification(sub_e,"summary",true,sql()).output());
-	//	ns_analyzed_image_time_path::write_summary_movement_quantification_analysis_header(o_all());
-	//	o_all() <<"\n";
+
 	}
 	else if (detail_level == ns_quantification_detailed || detail_level == ns_quantification_abbreviated_detailed){
 		std::string suffix;
@@ -2272,12 +2304,20 @@ void ns_worm_learner::generate_experiment_movement_image_quantification_analysis
 			
 		}
 		o_all.attach(image_server.results_storage.time_path_image_analysis_quantification(sub,"detailed" + suffix,true,sql(),detail_level==ns_quantification_abbreviated_detailed,false).output());
-	//	ns_analyzed_image_time_path::write_summary_movement_quantification_analysis_header(o_all());
-		//o_all() <<"\n";
+	
 
 	}
-	//sorted by strain
-	std::map<string,ns_emperical_posture_quantification_value_estimator> value_estimators;
+	//when generating an HMM data set, first we need to load all the worms with by hand annotations
+	//and generate an output set with the measurements corresponding to each HMM state.  
+	//We do that here.  Later, we will then use this set to build an HMM model.
+
+	//hmm_observation_storage_and_model_generators are calculated for each type of plate in the experiment.
+	std::map<std::string,ns_emperical_posture_quantification_value_estimator> hmm_observation_storage_and_model_generators;
+	std::map<std::string, ns_region_metadata> metadata_cache;
+
+	//useful data is cached for each region considered
+	std::map <ns_64_bit, ns_time_series_denoising_parameters> time_series_denoising_parameters_cache;
+
 	if (detail_level == ns_quantification_detailed){
 		bool header_written(false);
 		//if we're loading detailed information, there is so much data we load it from files created during movement analysis.
@@ -2342,6 +2382,9 @@ void ns_worm_learner::generate_experiment_movement_image_quantification_analysis
 
 		unsigned long regions_processed(0);
 		
+		//when generating an HMM data set, first we need to load all the worms with by hand annotations
+		//and generate an output set with the measurements corresponding to each HMM state.  
+		//We do that here.  Later, we will then use this set to build an HMM model.
 		for (unsigned int i = 0; i < movement_results.samples.size(); i++){
 			if (!device_name.empty() && movement_results.samples[i].device_name() != device_name)
 				continue;
@@ -2384,19 +2427,21 @@ void ns_worm_learner::generate_experiment_movement_image_quantification_analysis
 					if (!found_hand_movement_annotation)
 						continue;
 				}
+
 				movement_results.samples[i].regions[j]->contains_a_by_hand_death_time_annotation = true;
 				movement_results.samples[i].regions[j]->time_path_solution.load_from_db(movement_results.samples[i].regions[j]->metadata.region_id,sql(),true);
 				ns_posture_analysis_model dummy_model(ns_posture_analysis_model::dummy());
 				const ns_posture_analysis_model * posture_analysis_model(&dummy_model); 
 				ns_image_server::ns_posture_analysis_model_cache::const_handle_t handle;
-				//if (detail_level != ns_build_worm_markov_posture_model_from_by_hand_annotations){
 					image_server.get_posture_analysis_model_for_region(movement_results.samples[i].regions[j]->metadata.region_id, handle, sql());
 					posture_analysis_model = &handle().model_specification;
-				//}
+				
 				ns_acquire_for_scope<ns_analyzed_image_time_path_death_time_estimator> death_time_estimator(
 					ns_get_death_time_estimator_from_posture_analysis_model(
 					handle().model_specification));
 				const ns_time_series_denoising_parameters time_series_denoising_parameters(ns_time_series_denoising_parameters::load_from_db(movement_results.samples[i].regions[j]->metadata.region_id,sql()));
+
+				time_series_denoising_parameters_cache[movement_results.samples[i].regions[j]->metadata.region_id] = time_series_denoising_parameters;
 
 				movement_results.samples[i].regions[j]->time_path_image_analyzer->load_completed_analysis(
 					movement_results.samples[i].regions[j]->metadata.region_id,
@@ -2443,11 +2488,14 @@ void ns_worm_learner::generate_experiment_movement_image_quantification_analysis
 							ns_death_time_annotation a(movement_results.samples[i].regions[j]->time_path_image_analyzer->group(g).paths[p].sticky_properties());
 							if (a.is_excluded() || a.is_censored())
 								continue;
+
+							const std::string plate_type_summary(movement_results.samples[i].regions[j]->metadata.plate_type_summary("-", true));
+							metadata_cache[plate_type_summary] = movement_results.samples[i].regions[j]->metadata;
 							a.stationary_path_id.detection_set_id = movement_results.samples[i].regions[j]->time_path_image_analyzer->db_analysis_id();
 							a.stationary_path_id.group_id = g;
 							a.stationary_path_id.path_id = p;
-							value_estimators["all"].add_observation(NS_CURRENT_POSTURE_MODEL_VERSION, a, &movement_results.samples[i].regions[j]->time_path_image_analyzer->group(g).paths[p]);
-							value_estimators[movement_results.samples[i].regions[j]->metadata.plate_type_summary("-",true)].add_observation(NS_CURRENT_POSTURE_MODEL_VERSION, a, &movement_results.samples[i].regions[j]->time_path_image_analyzer->group(g).paths[p]);
+							hmm_observation_storage_and_model_generators["all"].add_observation(NS_CURRENT_POSTURE_MODEL_VERSION, a, &movement_results.samples[i].regions[j]->time_path_image_analyzer->group(g).paths[p]);
+							hmm_observation_storage_and_model_generators[plate_type_summary].add_observation(NS_CURRENT_POSTURE_MODEL_VERSION, a, &movement_results.samples[i].regions[j]->time_path_image_analyzer->group(g).paths[p]);
 						}
 					}
 				}
@@ -2461,7 +2509,8 @@ void ns_worm_learner::generate_experiment_movement_image_quantification_analysis
 
 	if (detail_level == ns_build_worm_markov_posture_model_from_by_hand_annotations) {
 
-		for (std::map<string, ns_emperical_posture_quantification_value_estimator>::iterator p = value_estimators.begin(); p != value_estimators.end(); p++) {
+		//for each type of plate, build an estimator from the observations collected.
+		for (std::map<string, ns_emperical_posture_quantification_value_estimator>::iterator p = hmm_observation_storage_and_model_generators.begin(); p != hmm_observation_storage_and_model_generators.end(); p++) {
 			p->second.build_estimator_from_observations(); 
 			ns_acquire_for_scope<ostream> both_parameter_set(image_server.results_storage.optimized_posture_analysis_parameter_set(sub, std::string("hmm=")+ p->first, sql()).output());
 			p->second.write(both_parameter_set());
@@ -2471,9 +2520,8 @@ void ns_worm_learner::generate_experiment_movement_image_quantification_analysis
 			both_parameter_set.release();
 
 		}
-
-		std::map<std::string, ns_movement_analysis_optimizatiom_stats> optimization_stats;
-		std::map<ns_64_bit, ns_region_metadata> metadata_cache;
+		//go through and calculate the optimization stats for each region
+		std::map<std::string, ns_movement_analysis_optimizatiom_stats> optimization_stats_for_each_plate_type;
 		for (unsigned int i = 0; i < movement_results.samples.size(); i++) {
 			if (!device_name.empty() && movement_results.samples[i].device_name() != device_name)
 				continue;
@@ -2482,87 +2530,47 @@ void ns_worm_learner::generate_experiment_movement_image_quantification_analysis
 					continue;
 				if (!movement_results.samples[i].regions[j]->contains_a_by_hand_death_time_annotation)
 					continue;
-				const ns_time_series_denoising_parameters time_series_denoising_parameters(ns_time_series_denoising_parameters::load_from_db(movement_results.samples[i].regions[j]->metadata.region_id, sql()));
-				//we might need to load everything again, if it has been cleared to reduce memory usage
-				if (movement_results.samples[i].regions[j]->time_path_image_analyzer->size() == 0) {
-					ns_image_server::ns_posture_analysis_model_cache::const_handle_t handle;
-					ns_posture_analysis_model dummy_model(ns_posture_analysis_model::dummy());
-					const ns_posture_analysis_model * posture_analysis_model(&dummy_model);
-					image_server.get_posture_analysis_model_for_region(movement_results.samples[i].regions[j]->metadata.region_id, handle, sql());
-					posture_analysis_model = &handle().model_specification;
-					
-					ns_acquire_for_scope<ns_analyzed_image_time_path_death_time_estimator> old_death_time_estimator(
-						ns_get_death_time_estimator_from_posture_analysis_model(
-							handle().model_specification));
-
-					movement_results.samples[i].regions[j]->time_path_image_analyzer->load_completed_analysis(
-						movement_results.samples[i].regions[j]->metadata.region_id,
-						movement_results.samples[i].regions[j]->time_path_solution,
-						time_series_denoising_parameters,
-						&old_death_time_estimator(),
-						sql(),
-						false);
-				}
-				metadata_cache[movement_results.samples[i].regions[j]->metadata.region_id] = movement_results.samples[i].regions[j]->metadata;
-
-
-				std::string v[2] = { "all",movement_results.samples[i].regions[j]->metadata.plate_type_summary("-",true) };
-				for (unsigned int vv = 0; vv < 2; vv++) {
-					auto p = value_estimators.find(v[vv]);
-					if (p != value_estimators.end()) {
-						ns_time_path_movement_markov_solver markov_solver(p->second);
-						movement_results.samples[i].regions[j]->time_path_image_analyzer->reanalyze_with_different_movement_estimator(time_series_denoising_parameters, &markov_solver, &optimization_stats[p->first]);
-
+				const ns_time_series_denoising_parameters time_series_denoising_parameters(time_series_denoising_parameters_cache[movement_results.samples[i].regions[j]->metadata.region_id]);
+				const std::string plate_type_summary(movement_results.samples[i].regions[j]->metadata.plate_type_summary("-", true));
+				//calculate the stats using an estimator built on all plate types, and also for the current plate's type
+				for (std::map<string, ns_emperical_posture_quantification_value_estimator>::iterator p = hmm_observation_storage_and_model_generators.begin(); p != hmm_observation_storage_and_model_generators.end(); p++) {
+					cout << p->first << " " << plate_type_summary << " ";
+					if (p->first == "all" || p->first == plate_type_summary) {
+						cout << "WRITTEN";
+						ns_test_parameter_set_on_region(movement_results.samples[i].regions[j]->metadata.region_id, p->second, movement_results.samples[i].regions[j]->by_hand_annotations,
+							time_series_denoising_parameters, *movement_results.samples[i].regions[j]->time_path_image_analyzer, movement_results.samples[i].regions[j]->time_path_solution, sql(), optimization_stats_for_each_plate_type[p->first]);
 					}
+					cout << "\n";
 				}
 			}
 		}
-
-
-		for (std::map<string, ns_emperical_posture_quantification_value_estimator>::iterator p = value_estimators.begin(); p != value_estimators.end(); p++) {
-
-			ns_acquire_for_scope<ostream>  performance_stats_output(image_server.results_storage.time_path_image_analysis_quantification(sub, std::string("hmm_performance=")+p->first, true, sql()).output());
-			performance_stats_output() << "Experiment,Device,Plate Name,Animal Details,Group ID,Path ID,Excluded,Censored,Number of Worms in Clump";
-			for (unsigned int j = 0; j < ns_movement_analysis_optimizatiom_stats_record::number_of_states; j++) {
-				const std::string state = ns_movement_event_to_string(ns_movement_analysis_optimizatiom_stats_record::states[j]);
-				performance_stats_output() << "," << state << " identified by hand?, " << state << " identified by machine?," <<
-					state << " time by hand (days)," << state << " time by machine (days), " << state << " Difference Between Machine and By Hand Event Times (Days), " << state << " Difference Squared (Days)";
-			}
-			performance_stats_output() << "\n";
-			const ns_movement_analysis_optimizatiom_stats & stats(optimization_stats[p->first]);
-
-			for (unsigned int k = 0; k < stats.animals.size(); k++) {
-				const ns_region_metadata m = metadata_cache[stats.animals[k].properties.region_info_id];
-				//ns_acquire_for_scope<ostream> all_observations(image_server.results_storage.time_path_image_analysis_quantification(sub, "hmm_obs", false, sql()).output());
-				performance_stats_output() << m.experiment_name << "," << m.device << "," << m.plate_name() << "," << m.plate_type_summary("-")
-					<< "," << stats.animals[k].id.group_id << "," << stats.animals[k].id.path_id << ","
-					<< (stats.animals[k].properties.is_excluded() ? "1" : "0") << ","
-					<< (stats.animals[k].properties.is_censored() ? "1" : "0") << ","
-					<< stats.animals[k].properties.number_of_worms();
-				for (unsigned int s = 0; s < ns_movement_analysis_optimizatiom_stats_record::number_of_states; s++) {
-					auto p = stats.animals[k].measurements.find(ns_movement_analysis_optimizatiom_stats_record::states[s]);
-					if (p == stats.animals[k].measurements.end())
-						throw ns_ex("Could not find requested state ") << ns_movement_event_to_string(ns_movement_analysis_optimizatiom_stats_record::states[s]);
-					performance_stats_output() << ","
-						<< (p->second.by_hand_identified ? "y" : "n") << ","
-						<< (p->second.machine_identified ? "y" : "n") << ","
-						<< (p->second.by_hand_identified ? ns_to_string((p->second.by_hand.best_estimate_event_time_for_possible_partially_unbounded_interval() - m.time_at_which_animals_had_zero_age) / 60.0 / 60.0 / 24.0) : "") << ","
-						<< (p->second.machine_identified ? ns_to_string((p->second.machine.best_estimate_event_time_for_possible_partially_unbounded_interval() - m.time_at_which_animals_had_zero_age) / 60.0 / 60.0 / 24.0) : "") << ",";
-					if (p->second.machine_identified && p->second.by_hand_identified) {
-						const double r = abs(((double)p->second.machine.best_estimate_event_time_for_possible_partially_unbounded_interval() - (double)p->second.by_hand.best_estimate_event_time_for_possible_partially_unbounded_interval()) / 60.0 / 60.0 / 24.0);
-						performance_stats_output() << r << "," << r * r;
-					}
-					else performance_stats_output() << ",";
-				}
-				performance_stats_output() << "\n";
-			}
+		//write all the different plate type stats to disk
+		for (auto p = optimization_stats_for_each_plate_type.begin(); p != optimization_stats_for_each_plate_type.end(); p++) {
+			ns_acquire_for_scope<ostream>  performance_stats_output(image_server.results_storage.time_path_image_analysis_quantification(sub, std::string("hmm_performance=") + p->first, true, sql()).output());
+			p->second.write_header(performance_stats_output());
+			p->second.write_data(performance_stats_output(),metadata_cache[p->first]);
 			performance_stats_output.release();
 		}
-
 	}
 	
 	o_all.release();
 	sql.release();
+}
+
+void ns_worm_learner::calculate_hmm_from_files(const std::string & path) {
+	ns_emperical_posture_quantification_value_estimator estimator;
+	ns_dir dir;
+	std::vector<std::string> files;
+	dir.load_masked(path,".csv", files);
+	for (unsigned int i = 0; i < files.size(); i++) {
+		std::ifstream in((path + DIR_CHAR_STR + files[i]).c_str());
+		estimator.read_observation_data(in);
+	}
+	estimator.build_estimator_from_observations();
+	std::ofstream o(path + DIR_CHAR_STR + "hmm_model_file.csv");
+	estimator.write(o);
+	o.close();
+
 }
 
 void ns_find_new_paths(const ns_time_path_solution & baseline, const ns_time_path_solution & target, vector<char> & target_path_is_new_this_round){

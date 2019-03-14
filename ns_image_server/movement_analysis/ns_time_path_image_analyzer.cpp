@@ -1398,50 +1398,64 @@ void ns_time_path_image_movement_analyzer::populate_movement_quantification_from
 	}
 };
 
-void ns_time_path_image_movement_analyzer::reanalyze_with_different_movement_estimator(const ns_time_series_denoising_parameters &, const ns_analyzed_image_time_path_death_time_estimator * e, ns_movement_analysis_optimizatiom_stats * s) {
+void ns_time_path_image_movement_analyzer::calculate_optimzation_stats_for_current_estimator(ns_movement_analysis_optimizatiom_stats & s) {
+	for (unsigned long g = 0; g < groups.size(); g++)
+		for (unsigned long p = 0; p < groups[g].paths.size(); p++) {
+			if (ns_skip_low_density_paths && groups[g].paths[p].is_low_density_path())
+				continue;
+
+			//record stats to evaluate the performance compared to by hand results
+
+			if (!groups[g].paths[p].by_hand_data_specified())
+				continue;
+			s.animals.resize(s.animals.size() + 1);
+			for (unsigned int i = 0; i < ns_movement_analysis_optimizatiom_stats_record::number_of_states; i++) {
+				const ns_movement_event st = ns_movement_analysis_optimizatiom_stats_record::states[i];
+				bool machine_skipped;
+				const ns_death_time_annotation_time_interval machine_result = groups[g].paths[p].machine_event_time(st, machine_skipped);
+				const ns_death_time_annotation_time_interval & by_hand_result = groups[g].paths[p].by_hand_annotation_event_times[st];
+
+
+
+				s.animals.rbegin()->properties = groups[g].paths[p].censoring_and_flag_details;
+				s.animals.rbegin()->properties.stationary_path_id = ns_stationary_path_id(g, p, this->analysis_id);
+				s.animals.rbegin()->id = ns_stationary_path_id(g, p, this->analysis_id);
+				s.animals.rbegin()->properties.region_info_id = this->region_info_id;
+				ns_movement_analysis_optimizatiom_stats_sub_record * result = &(s.animals.rbegin()->measurements[st]);
+
+				result->by_hand_identified = !by_hand_result.fully_unbounded();
+				if (result->by_hand_identified)
+					result->by_hand = by_hand_result;
+
+				result->machine_identified = !machine_skipped;
+				if (result->machine_identified)
+					result->machine = machine_result;
+
+			}
+
+		}
+}
+void ns_time_path_image_movement_analyzer::reanalyze_with_different_movement_estimator(const ns_time_series_denoising_parameters &, const ns_analyzed_image_time_path_death_time_estimator * e) {
 	if (region_info_id == 0)
 		throw ns_ex("Attempting to reanalyze an unloaded image!");
 
-	for (unsigned long g = 0; g < groups.size(); g++)
+	if (posture_model_version_used != e->software_version_number())
+		throw ns_ex("This region's movement analysis was run using posture analysis version ") << posture_model_version_used << ".  This is incompatible with the time series denoising parameter file you have specified, " << e->name << " which is v " << e->software_version_number() << ".  You can fix this by running the job \"Analyze Worm Movement using Cached Images\" which will preserve all by hand annotations.";
+
+
+	for (unsigned long g = 0; g < groups.size(); g++) {
 		for (unsigned long p = 0; p < groups[g].paths.size(); p++) {
 			if (ns_skip_low_density_paths && groups[g].paths[p].is_low_density_path())
 				continue;
 			groups[g].paths[p].analyze_movement(e, ns_stationary_path_id(g, p, analysis_id), last_timepoint_in_analysis_);
 			groups[g].paths[p].calculate_movement_quantification_summary();
 
-			//record stats to evaluate the performance compared to by hand results
-			if (s != 0) {
-				if (!groups[g].paths[p].by_hand_data_specified())
-					continue;
-				s->animals.resize(s->animals.size() + 1);
-				for (unsigned int i = 0; i < ns_movement_analysis_optimizatiom_stats_record::number_of_states; i++) {
-					const ns_movement_event st = ns_movement_analysis_optimizatiom_stats_record::states[i];
-					bool machine_skipped;
-					const ns_death_time_annotation_time_interval machine_result = groups[g].paths[p].machine_event_time(st, machine_skipped);
-					const ns_death_time_annotation_time_interval & by_hand_result = groups[g].paths[p].by_hand_annotation_event_times[st];
-					
-
-
-					s->animals.rbegin()->properties = groups[g].paths[p].censoring_and_flag_details;
-					s->animals.rbegin()->properties.stationary_path_id = ns_stationary_path_id(g, p, this->analysis_id);
-					s->animals.rbegin()->id = ns_stationary_path_id(g, p, this->analysis_id);
-					s->animals.rbegin()->properties.region_info_id = this->region_info_id;
-					ns_movement_analysis_optimizatiom_stats_sub_record * result = &(s->animals.rbegin()->measurements[st]);
-
-					result->by_hand_identified = !by_hand_result.fully_unbounded();
-					if (result->by_hand_identified)
-						result->by_hand = by_hand_result;
-
-					result->machine_identified = !machine_skipped;
-					if (result->machine_identified) 
-						result->machine = machine_result;
-					
-				}
-			}
 		}
+	}
 }
 
-bool ns_time_path_image_movement_analyzer::load_completed_analysis(const ns_64_bit region_id,const ns_time_path_solution & solution_,  const ns_time_series_denoising_parameters & times_series_denoising_parameters, const ns_analyzed_image_time_path_death_time_estimator * e,ns_sql & sql, bool exclude_movement_quantification){
+bool ns_time_path_image_movement_analyzer::load_completed_analysis(const ns_64_bit region_id,const ns_time_path_solution & solution_,  const ns_time_series_denoising_parameters & times_series_denoising_parameters, 
+															const ns_analyzed_image_time_path_death_time_estimator * e,ns_sql & sql, bool exclude_movement_quantification){
 	region_info_id = region_id;
 	externally_specified_plate_observation_interval = get_externally_specified_last_measurement(region_id,sql);
 	load_from_solution(solution_);
@@ -1522,7 +1536,11 @@ bool ns_time_path_image_movement_analyzer::load_completed_analysis(const ns_64_b
 			groups[g].paths[p].calculate_movement_quantification_summary();
 		}	
 
+	
+
 	if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("Done"));
+
+
 
 	//generate_movement_description_series();
 	movement_analyzed = true;
@@ -3545,6 +3563,43 @@ void ns_output_subimage(const ns_image_standard & im,const long offset,ns_image_
 	for (long y = 0; y < prop.height; y++)
 		for (unsigned int x = 0; x < prop.width*prop.components; x++)
 			out[y][x] = im[y+offset][x/prop_i.components];
+}
+
+void ns_movement_analysis_optimizatiom_stats::write_header(std::ostream & o) {
+	o << "Experiment,Device,Plate Name,Animal Details,Group ID,Path ID,Excluded,Censored,Number of Worms in Clump";
+	for (unsigned int j = 0; j < ns_movement_analysis_optimizatiom_stats_record::number_of_states; j++) {
+		const std::string state = ns_movement_event_to_string(ns_movement_analysis_optimizatiom_stats_record::states[j]);
+		o << "," << state << " identified by hand?, " << state << " identified by machine?," <<
+			state << " time by hand (days)," << state << " time by machine (days), " << state << " Difference Between Machine and By Hand Event Times (Days), " << state << " Difference Squared (Days)";
+	}
+	o << "\n";
+}
+void ns_movement_analysis_optimizatiom_stats::write_data(std::ostream & o, const ns_region_metadata & m) {
+
+	for (unsigned int k = 0; k < animals.size(); k++) {
+		//ns_acquire_for_scope<ostream> all_observations(image_server.results_storage.time_path_image_analysis_quantification(sub, "hmm_obs", false, sql()).output());
+		o << m.experiment_name << "," << m.device << "," << m.plate_name() << "," << m.plate_type_summary("-")
+			<< "," << animals[k].id.group_id << "," << animals[k].id.path_id << ","
+			<< (animals[k].properties.is_excluded() ? "1" : "0") << ","
+			<< (animals[k].properties.is_censored() ? "1" : "0") << ","
+			<< animals[k].properties.number_of_worms();
+		for (unsigned int s = 0; s < ns_movement_analysis_optimizatiom_stats_record::number_of_states; s++) {
+			auto state_p = animals[k].measurements.find(ns_movement_analysis_optimizatiom_stats_record::states[s]);
+			if (state_p == animals[k].measurements.end())
+				throw ns_ex("Could not find requested state ") << ns_movement_event_to_string(ns_movement_analysis_optimizatiom_stats_record::states[s]);
+			o << ","
+				<< (state_p->second.by_hand_identified ? "y" : "n") << ","
+				<< (state_p->second.machine_identified ? "y" : "n") << ","
+				<< (state_p->second.by_hand_identified ? ns_to_string((state_p->second.by_hand.best_estimate_event_time_for_possible_partially_unbounded_interval() - m.time_at_which_animals_had_zero_age) / 60.0 / 60.0 / 24.0) : "") << ","
+				<< (state_p->second.machine_identified ? ns_to_string((state_p->second.machine.best_estimate_event_time_for_possible_partially_unbounded_interval() - m.time_at_which_animals_had_zero_age) / 60.0 / 60.0 / 24.0) : "") << ",";
+			if (state_p->second.machine_identified && state_p->second.by_hand_identified) {
+				const double r = abs(((double)state_p->second.machine.best_estimate_event_time_for_possible_partially_unbounded_interval() - (double)state_p->second.by_hand.best_estimate_event_time_for_possible_partially_unbounded_interval()) / 60.0 / 60.0 / 24.0);
+				o << r << "," << r * r;
+			}
+			else o << ",";
+		}
+		o << "\n";
+	}
 }
 
 void ns_time_path_image_movement_analyzer::add_by_hand_annotations(const ns_death_time_annotation_compiler & annotations){

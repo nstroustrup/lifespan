@@ -2363,7 +2363,8 @@ void ns_worm_learner::generate_experiment_movement_image_quantification_analysis
 	else if (detail_level == ns_quantification_summary  || 
 		detail_level == ns_quantification_detailed_with_by_hand ||  
 		detail_level == ns_build_worm_markov_posture_model_from_by_hand_annotations || 
-		detail_level == ns_quantification_abbreviated_detailed){		
+		detail_level == ns_quantification_abbreviated_detailed){	
+		cout << "Loading time path image analysis data...";
 		//since there is less data here, we calculate it on the fly.
 		bool header_written(false);
 		if (plate_id == 0)
@@ -2509,20 +2510,23 @@ void ns_worm_learner::generate_experiment_movement_image_quantification_analysis
 			}
 		}
 	}	
-
+	cout << "\n";
 	if (detail_level == ns_build_worm_markov_posture_model_from_by_hand_annotations) {
-
+		cout << "Compiling state emission data...";
 		//for each type of plate, build an estimator from the observations collected.
+		for (std::map<string, ns_emperical_posture_quantification_value_estimator>::iterator p = hmm_observation_storage_and_model_generators.begin(); p != hmm_observation_storage_and_model_generators.end(); p++) {
+			ns_acquire_for_scope<ostream> all_observations(image_server.results_storage.time_path_image_analysis_quantification(sub, std::string("hmm_obs=") + p->first, true, sql()).output());
+			p->second.write_observation_data(all_observations(), experiment_name);
+			all_observations.release();
+		}
+		cout << "\nBuilding HMM Models...";
 		for (std::map<string, ns_emperical_posture_quantification_value_estimator>::iterator p = hmm_observation_storage_and_model_generators.begin(); p != hmm_observation_storage_and_model_generators.end(); p++) {
 			p->second.build_estimator_from_observations(); 
 			ns_acquire_for_scope<ostream> both_parameter_set(image_server.results_storage.optimized_posture_analysis_parameter_set(sub, std::string("hmm=")+ p->first, sql()).output());
 			p->second.write(both_parameter_set());
-			ns_acquire_for_scope<ostream> all_observations(image_server.results_storage.time_path_image_analysis_quantification(sub, std::string("hmm_obs=")+p->first,true, sql()).output());
-			p->second.write_observation_data(all_observations(), experiment_name);
-			all_observations.release();
 			both_parameter_set.release();
-
 		}
+		cout << "\nTesting HMM models on current experiment...";
 		//go through and calculate the optimization stats for each region
 		std::map<std::string, ns_movement_analysis_optimizatiom_stats> optimization_stats_for_each_plate_type;
 		for (unsigned int i = 0; i < movement_results.samples.size(); i++) {
@@ -2547,6 +2551,7 @@ void ns_worm_learner::generate_experiment_movement_image_quantification_analysis
 				}
 			}
 		}
+		cout << "\nWriting HMM model test results to disk.\n";
 		//write all the different plate type stats to disk
 		for (auto p = optimization_stats_for_each_plate_type.begin(); p != optimization_stats_for_each_plate_type.end(); p++) {
 			ns_acquire_for_scope<ostream>  performance_stats_output(image_server.results_storage.time_path_image_analysis_quantification(sub, std::string("hmm_performance=") + p->first, true, sql()).output());
@@ -2554,7 +2559,7 @@ void ns_worm_learner::generate_experiment_movement_image_quantification_analysis
 			auto m = metadata_cache.find(p->second.region_id);
 			if (m == metadata_cache.end())
 				throw ns_ex("Metadata mixup");
-			p->second.write_data(performance_stats_output(),m->second);
+			p->second.write_data(performance_stats_output(),metadata_cache);
 			performance_stats_output.release();
 		}
 	}

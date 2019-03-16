@@ -3574,11 +3574,14 @@ void ns_movement_analysis_optimizatiom_stats::write_header(std::ostream & o) {
 	}
 	o << "\n";
 }
-void ns_movement_analysis_optimizatiom_stats::write_data(std::ostream & o, const ns_region_metadata & m) {
+void ns_movement_analysis_optimizatiom_stats::write_data(std::ostream & o, const std::map<ns_64_bit,ns_region_metadata> & metadata_cache) {
 
 	for (unsigned int k = 0; k < animals.size(); k++) {
+		auto m = metadata_cache.find(animals[k].properties.region_info_id);
+		if (m == metadata_cache.end())
+			throw ns_ex("Could not find metadata for region ") << animals[k].properties.region_info_id;
 		//ns_acquire_for_scope<ostream> all_observations(image_server.results_storage.time_path_image_analysis_quantification(sub, "hmm_obs", false, sql()).output());
-		o << m.experiment_name << "," << m.device << "," << m.plate_name() << "," << m.plate_type_summary("-")
+		o << m->second.experiment_name << "," << m->second.device << "," << m->second.plate_name() << "," << m->second.plate_type_summary("-")
 			<< "," << animals[k].id.group_id << "," << animals[k].id.path_id << ","
 			<< (animals[k].properties.is_excluded() ? "1" : "0") << ","
 			<< (animals[k].properties.is_censored() ? "1" : "0") << ","
@@ -3590,8 +3593,8 @@ void ns_movement_analysis_optimizatiom_stats::write_data(std::ostream & o, const
 			o << ","
 				<< (state_p->second.by_hand_identified ? "y" : "n") << ","
 				<< (state_p->second.machine_identified ? "y" : "n") << ","
-				<< (state_p->second.by_hand_identified ? ns_to_string((state_p->second.by_hand.best_estimate_event_time_for_possible_partially_unbounded_interval() - m.time_at_which_animals_had_zero_age) / 60.0 / 60.0 / 24.0) : "") << ","
-				<< (state_p->second.machine_identified ? ns_to_string((state_p->second.machine.best_estimate_event_time_for_possible_partially_unbounded_interval() - m.time_at_which_animals_had_zero_age) / 60.0 / 60.0 / 24.0) : "") << ",";
+				<< (state_p->second.by_hand_identified ? ns_to_string((state_p->second.by_hand.best_estimate_event_time_for_possible_partially_unbounded_interval() - m->second.time_at_which_animals_had_zero_age) / 60.0 / 60.0 / 24.0) : "") << ","
+				<< (state_p->second.machine_identified ? ns_to_string((state_p->second.machine.best_estimate_event_time_for_possible_partially_unbounded_interval() - m->second.time_at_which_animals_had_zero_age) / 60.0 / 60.0 / 24.0) : "") << ",";
 			if (state_p->second.machine_identified && state_p->second.by_hand_identified) {
 				const double r = abs(((double)state_p->second.machine.best_estimate_event_time_for_possible_partially_unbounded_interval() - (double)state_p->second.by_hand.best_estimate_event_time_for_possible_partially_unbounded_interval()) / 60.0 / 60.0 / 24.0);
 				o << r << "," << r * r;

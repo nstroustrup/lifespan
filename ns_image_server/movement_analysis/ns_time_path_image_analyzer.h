@@ -651,7 +651,8 @@ struct ns_movement_analysis_optimizatiom_stats{
 	std::vector<ns_movement_analysis_optimizatiom_stats_record> animals;
 	ns_64_bit region_id;
 	static void write_header(std::ostream & o);
-	void write_data(std::ostream & o, const ns_region_metadata & metadata);
+
+	void write_data(std::ostream & o, const std::map<ns_64_bit, ns_region_metadata> & metadata_cache);
 };
 struct ns_movement_analysis_shared_state;
 class ns_time_path_image_movement_analyzer {

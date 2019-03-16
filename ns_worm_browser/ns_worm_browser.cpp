@@ -2229,7 +2229,7 @@ void ns_worm_learner::output_movement_analysis_optimization_data(const ns_optimi
 }
 
 
-void ns_test_parameter_set_on_region(const unsigned long region_id,
+void ns_test_parameter_set_on_region(const ns_64_bit region_id,
 								const ns_emperical_posture_quantification_value_estimator & estimator, 
 								const ns_death_time_annotation_compiler & by_hand_annotations, 
 								const ns_time_series_denoising_parameters & time_series_denoising_parameters,ns_time_path_image_movement_analyzer & time_path_image_analyzer, ns_time_path_solution & time_path_solution,ns_sql & sql,
@@ -2237,7 +2237,7 @@ void ns_test_parameter_set_on_region(const unsigned long region_id,
 
 
 	ns_time_path_movement_markov_solver markov_solver(estimator);
-
+	output_stats.region_id = region_id;
 	//we might need to load everything again, if it has been cleared to reduce memory usage
 	if (time_path_image_analyzer.size() == 0) {
 
@@ -2313,7 +2313,7 @@ void ns_worm_learner::generate_experiment_movement_image_quantification_analysis
 
 	//hmm_observation_storage_and_model_generators are calculated for each type of plate in the experiment.
 	std::map<std::string,ns_emperical_posture_quantification_value_estimator> hmm_observation_storage_and_model_generators;
-	std::map<std::string, ns_region_metadata> metadata_cache;
+	std::map<ns_64_bit, ns_region_metadata> metadata_cache;
 
 	//useful data is cached for each region considered
 	std::map <ns_64_bit, ns_time_series_denoising_parameters> time_series_denoising_parameters_cache;
@@ -2490,12 +2490,15 @@ void ns_worm_learner::generate_experiment_movement_image_quantification_analysis
 								continue;
 
 							const std::string plate_type_summary(movement_results.samples[i].regions[j]->metadata.plate_type_summary("-", true));
-							metadata_cache[plate_type_summary] = movement_results.samples[i].regions[j]->metadata;
+							metadata_cache[movement_results.samples[i].regions[j]->metadata.region_id] = movement_results.samples[i].regions[j]->metadata;
 							a.stationary_path_id.detection_set_id = movement_results.samples[i].regions[j]->time_path_image_analyzer->db_analysis_id();
 							a.stationary_path_id.group_id = g;
 							a.stationary_path_id.path_id = p;
-							hmm_observation_storage_and_model_generators["all"].add_observation(NS_CURRENT_POSTURE_MODEL_VERSION, a, &movement_results.samples[i].regions[j]->time_path_image_analyzer->group(g).paths[p]);
-							hmm_observation_storage_and_model_generators[plate_type_summary].add_observation(NS_CURRENT_POSTURE_MODEL_VERSION, a, &movement_results.samples[i].regions[j]->time_path_image_analyzer->group(g).paths[p]);
+							a.region_info_id = movement_results.samples[i].regions[j]->metadata.region_id;
+							ns_analyzed_image_time_path * path = &movement_results.samples[i].regions[j]->time_path_image_analyzer->group(g).paths[p];
+							hmm_observation_storage_and_model_generators["all"].add_observation(NS_CURRENT_POSTURE_MODEL_VERSION, a, path);
+							hmm_observation_storage_and_model_generators[plate_type_summary].add_observation(NS_CURRENT_POSTURE_MODEL_VERSION, a, path);
+
 						}
 					}
 				}
@@ -2534,13 +2537,13 @@ void ns_worm_learner::generate_experiment_movement_image_quantification_analysis
 				const std::string plate_type_summary(movement_results.samples[i].regions[j]->metadata.plate_type_summary("-", true));
 				//calculate the stats using an estimator built on all plate types, and also for the current plate's type
 				for (std::map<string, ns_emperical_posture_quantification_value_estimator>::iterator p = hmm_observation_storage_and_model_generators.begin(); p != hmm_observation_storage_and_model_generators.end(); p++) {
-					cout << p->first << " " << plate_type_summary << " ";
+					//cout << p->first << " " << plate_type_summary << " ";
 					if (p->first == "all" || p->first == plate_type_summary) {
-						cout << "WRITTEN";
+					//	cout << "WRITTEN";
 						ns_test_parameter_set_on_region(movement_results.samples[i].regions[j]->metadata.region_id, p->second, movement_results.samples[i].regions[j]->by_hand_annotations,
 							time_series_denoising_parameters, *movement_results.samples[i].regions[j]->time_path_image_analyzer, movement_results.samples[i].regions[j]->time_path_solution, sql(), optimization_stats_for_each_plate_type[p->first]);
 					}
-					cout << "\n";
+					//cout << "\n";
 				}
 			}
 		}
@@ -2548,7 +2551,10 @@ void ns_worm_learner::generate_experiment_movement_image_quantification_analysis
 		for (auto p = optimization_stats_for_each_plate_type.begin(); p != optimization_stats_for_each_plate_type.end(); p++) {
 			ns_acquire_for_scope<ostream>  performance_stats_output(image_server.results_storage.time_path_image_analysis_quantification(sub, std::string("hmm_performance=") + p->first, true, sql()).output());
 			p->second.write_header(performance_stats_output());
-			p->second.write_data(performance_stats_output(),metadata_cache[p->first]);
+			auto m = metadata_cache.find(p->second.region_id);
+			if (m == metadata_cache.end())
+				throw ns_ex("Metadata mixup");
+			p->second.write_data(performance_stats_output(),m->second);
 			performance_stats_output.release();
 		}
 	}

@@ -404,6 +404,9 @@ public:
 			get_double(in, gmm_stdev[i]);
 			if (in.fail()) throw ns_ex("ns_emission_probabiliy_model():read():invalid format");
 		}
+		//std::cout << "Just read: ";
+		//write(std::cout);
+		//std::cout << "\n";
 	}
 private:
 	
@@ -460,12 +463,15 @@ public:
 		intensity.write(o);
 	}
 	void read(std::istream & i) {
+		ns_get_string get_string;
 		std::string tmp;
-		getline(i, tmp, ',');
+		int r = 0;
+		while (!i.fail()) {
+		get_string(i, tmp);
+
+		//std::cerr << "movement/intensity:" << tmp << " ";
 		if (i.fail())
 			throw ns_ex("ns_emission_probabiliy_model()::Bad model file");
-		int r= 0;
-		while (!i.fail()) {
 			if (tmp == "m")
 				movement.read(i);
 			else if (tmp == "i")
@@ -531,11 +537,18 @@ void ns_emperical_posture_quantification_value_estimator::write_observation_data
 		out << "a," << p->second.source.to_string() << "\n";
 	}
 }
-
+#include <iostream>
 void ns_emperical_posture_quantification_value_estimator::read(std::istream & i) {
 	std::string tmp;
+	ns_get_string get_string;
 	while (true) {
-		getline(i,tmp, ',');
+		get_string(i,tmp);
+		if (i.fail()) {
+			if (emission_probability_models.size() < 2)
+				throw ns_ex("ns_emperical_posture_quantification_value_estimator()::The estimator did not contain enough data.");
+			return;
+		}
+		//std::cerr << "hmm state:" << tmp << " ";
 		ns_hmm_movement_state s = ns_hmm_movement_state_from_string(tmp);
 		auto p2 = emission_probability_models.find(s);
 		if (p2 == emission_probability_models.end())

@@ -540,7 +540,7 @@ private:
 
 	//the state interval list has the transition times marked in absolute chronological time
 	typedef std::vector<ns_movement_state_observation_boundary_interval> ns_state_interval_list;
-	ns_state_interval_list state_intervals; //1 after the last index belonging to that state
+	ns_state_interval_list state_intervals; 
 
 	//the movement solution has the transition times marked in respect to indicies in the path object
 	ns_time_path_posture_movement_solution machine_movement_state_solution;
@@ -548,7 +548,7 @@ private:
 	void convert_movement_solution_to_state_intervals(const ns_movement_state_time_interval_indicies & frame_before_first_interval, const ns_time_path_posture_movement_solution &solution, ns_state_interval_list & list) const;
 	
 	std::vector<ns_death_time_annotation_time_interval> by_hand_annotation_event_times;
-	ns_time_path_posture_movement_solution reconstruct_movement_state_solution_from_annotations(const std::vector<ns_death_time_annotation_time_interval> & intervals);
+	ns_time_path_posture_movement_solution reconstruct_movement_state_solution_from_annotations(const unsigned long first_index, const unsigned long last_index,const std::vector<ns_death_time_annotation_time_interval> & intervals) const;
 
 	void quantify_movement(const ns_analyzed_time_image_chunk & chunk);
 
@@ -646,6 +646,11 @@ struct ns_movement_analysis_optimizatiom_stats_sub_record{
 	ns_death_time_annotation_time_interval by_hand, machine;
 	bool by_hand_identified, machine_identified;
 };
+struct ns_hmm_state_info {
+	double log_liklihood;
+	//state,log-liklihood of path up until that state
+	std::vector<std::pair<ns_hmm_movement_state,double> > path; 
+};
 struct ns_movement_analysis_optimizatiom_stats_record{
 	enum { number_of_states = 5 };
 	static const ns_movement_event states[number_of_states];
@@ -653,13 +658,19 @@ struct ns_movement_analysis_optimizatiom_stats_record{
 	ns_record_list measurements;
 	ns_stationary_path_id id;
 	ns_death_time_annotation properties;
+
+	ns_hmm_state_info by_hand_state_info, machine_state_info;
+	std::vector<double> state_times;
 };
 struct ns_movement_analysis_optimizatiom_stats{
 	std::vector<ns_movement_analysis_optimizatiom_stats_record> animals;
-	ns_64_bit region_id;
-	static void write_header(std::ostream & o);
 
-	void write_data(std::ostream & o, const std::map<ns_64_bit, ns_region_metadata> & metadata_cache);
+	static void write_error_header(std::ostream & o);
+	void write_error_data(std::ostream & o, const std::map<ns_64_bit, ns_region_metadata> & metadata_cache);
+
+	static void write_hmm_path_header(std::ostream & o);
+	void write_hmm_path_data(std::ostream & o, const std::map<ns_64_bit, ns_region_metadata> & metadata_cache);
+	
 };
 struct ns_movement_analysis_shared_state;
 class ns_time_path_image_movement_analyzer {
@@ -755,7 +766,7 @@ public:
 	friend class ns_worm_morphology_data_integrator;
 	std::string posture_model_version_used;
 
-	void calculate_optimzation_stats_for_current_estimator(ns_movement_analysis_optimizatiom_stats & s);
+	void calculate_optimzation_stats_for_current_hmm_estimator(ns_movement_analysis_optimizatiom_stats & s, const ns_emperical_posture_quantification_value_estimator * e);
 private:
 
 	unsigned long _number_of_invalid_images_encountered;

@@ -2230,10 +2230,10 @@ void ns_worm_learner::output_movement_analysis_optimization_data(const ns_optimi
 
 
 void ns_test_parameter_set_on_region(const ns_64_bit region_id,
-								const ns_emperical_posture_quantification_value_estimator & estimator, 
-								const ns_death_time_annotation_compiler & by_hand_annotations, 
-								const ns_time_series_denoising_parameters & time_series_denoising_parameters,ns_time_path_image_movement_analyzer & time_path_image_analyzer, ns_time_path_solution & time_path_solution,ns_sql & sql,
-								ns_movement_analysis_optimizatiom_stats & output_stats) {
+	const ns_emperical_posture_quantification_value_estimator & estimator,
+	const ns_death_time_annotation_compiler & by_hand_annotations,
+	const ns_time_series_denoising_parameters & time_series_denoising_parameters, ns_time_path_image_movement_analyzer & time_path_image_analyzer, ns_time_path_solution & time_path_solution, ns_sql & sql,
+	ns_movement_analysis_optimizatiom_stats & output_stats) {
 
 
 	ns_time_path_movement_markov_solver markov_solver(estimator);
@@ -2256,8 +2256,7 @@ void ns_test_parameter_set_on_region(const ns_64_bit region_id,
 		time_path_image_analyzer.add_by_hand_annotations(by_hand_annotations);
 		time_path_image_analyzer.reanalyze_with_different_movement_estimator(time_series_denoising_parameters, &markov_solver);
 	}
-	time_path_image_analyzer.calculate_optimzation_stats_for_current_estimator(output_stats);
-	//tbd
+	time_path_image_analyzer.calculate_optimzation_stats_for_current_hmm_estimator(output_stats,&markov_solver);
 
 }
 
@@ -2555,12 +2554,15 @@ void ns_worm_learner::generate_experiment_movement_image_quantification_analysis
 		//write all the different plate type stats to disk
 		for (auto p = optimization_stats_for_each_plate_type.begin(); p != optimization_stats_for_each_plate_type.end(); p++) {
 			ns_acquire_for_scope<ostream>  performance_stats_output(image_server.results_storage.time_path_image_analysis_quantification(sub, std::string("hmm_performance=") + p->first, true, sql()).output());
-			p->second.write_header(performance_stats_output());
-			auto m = metadata_cache.find(p->second.region_id);
-			if (m == metadata_cache.end())
-				throw ns_ex("Metadata mixup");
-			p->second.write_data(performance_stats_output(),metadata_cache);
+			p->second.write_error_header(performance_stats_output());
+			p->second.write_error_data(performance_stats_output(),metadata_cache);
 			performance_stats_output.release();
+
+			performance_stats_output.attach(image_server.results_storage.time_path_image_analysis_quantification(sub, std::string("hmm_path=") + p->first, true, sql()).output());
+			p->second.write_hmm_path_header(performance_stats_output());
+			p->second.write_hmm_path_data(performance_stats_output(), metadata_cache);
+			performance_stats_output.release();
+
 		}
 	}
 	

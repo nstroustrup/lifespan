@@ -9,32 +9,6 @@ double inline ns_catch_infinity(const double & d){
 	return (d==-std::numeric_limits<double>::infinity())?-20:d;
 }
 
-class ns_posture_change_markov_likelihood_estimator{
-	
-public:
-	ns_posture_change_markov_likelihood_estimator(const ns_emperical_posture_quantification_value_estimator & e,const int window_size=0):
-	  cumulatives_calculated(false),value_estimator(e),likelihood_window_size(window_size){ }
-	typedef enum {ns_moving=0,ns_slowing=1,ns_dead=2} ns_state;
-
-	double fill_in_loglikelihood_timeseries(int state, unsigned long index, const std::vector<double> & movement, const std::vector<double> & tm) const{
-		if (state == ns_slowing)
-		return this->operator()(state,0,index+1,movement,tm);
-		if (state == ns_dead)
-			return this->operator()(state,index,movement.size(),movement,tm);
-		return 1;
-		
-	}
-
-	double operator()(int current_state_id,int start_index,int stop_index, const std::vector<double> & movement, const std::vector<double> & tm) const{
-		return 0;
-	}
-	static int state_count(){return 3;}
-	const int likelihood_window_size;
-	mutable bool cumulatives_calculated;
-
-
-	const ns_emperical_posture_quantification_value_estimator value_estimator;
-};
 
 double inline ns_truncate_positive(const double & d){
 	return (d<=0)?(std::numeric_limits<double>::epsilon()):(d);
@@ -64,7 +38,7 @@ void ns_hmm_solver::solve(const ns_analyzed_image_time_path & path, const ns_emp
 	build_movement_state_solution_from_movement_transitions(path_indices, movement_transitions);
 }
 
-double ns_hmm_solver::probability_of_path_solution(const ns_analyzed_image_time_path & path, const ns_emperical_posture_quantification_value_estimator & estimator, const ns_time_path_posture_movement_solution & solution, std::vector<double> & log_probabilities) {
+double ns_hmm_solver::probability_of_path_solution(const ns_analyzed_image_time_path & path, const ns_emperical_posture_quantification_value_estimator & estimator, const ns_time_path_posture_movement_solution & solution, std::vector<std::pair<ns_hmm_movement_state,double> > & states) {
 	std::vector < ns_hmm_movement_state > movement_states(path.element_count(), ns_hmm_unknown_state);
 	if (!solution.moving.skipped) {
 		for (unsigned int i = solution.moving.start_index; i <= solution.moving.end_index; i++)
@@ -88,25 +62,24 @@ double ns_hmm_solver::probability_of_path_solution(const ns_analyzed_image_time_
 	}
 
 	std::vector<double> emission_probabilities;
-	ns_hmm_movement_state previous_state = ns_hmm_missing;
+	ns_hmm_movement_state previous_state = ns_hmm_moving_vigorously;
 
 	std::vector<std::vector<double> > transition_probability;
 	build_state_transition_matrix(transition_probability);
 	double cur_p = 0, log_liklihood(0);
 	for (unsigned int i = 0; i < movement_states.size(); i++) {
-		if (path.element(i).excluded || path.element(i).censored) {
-			log_probabilities[i] = cur_p;
-			continue;
-		}
-		if (movement_states[i] == ns_hmm_moving_vigorously){ //ignore missing and fast moving states.
-			log_probabilities[i] = cur_p;
+		if (path.element(i).excluded || path.element(i).censored || movement_states[i] == ns_hmm_moving_vigorously) {
+			states[i].second= cur_p;
+			states[i].first = previous_state;
 			continue;
 		}
 		estimator.probability_for_each_state(path.element(i).measurements, emission_probabilities);
 		cur_p = log(transition_probability[previous_state][movement_states[i]] *
 			emission_probabilities[movement_states[i]]);
-		log_probabilities[i] = cur_p;
+
 		log_liklihood += cur_p;
+		states[i].second = cur_p;
+		states[i].first = movement_states[i];
 		previous_state = movement_states[i];
 	}
 	return log_liklihood;

@@ -2250,14 +2250,14 @@ void ns_test_parameter_set_on_region(const ns_64_bit region_id,
 			sql,
 			false);
 		time_path_image_analyzer.add_by_hand_annotations(by_hand_annotations);
-		time_path_image_analyzer.calculate_optimzation_stats_for_current_estimator(output_stats);
 
 	}
 	else {
 		time_path_image_analyzer.add_by_hand_annotations(by_hand_annotations);
 		time_path_image_analyzer.reanalyze_with_different_movement_estimator(time_series_denoising_parameters, &markov_solver);
-		time_path_image_analyzer.calculate_optimzation_stats_for_current_estimator(output_stats);
 	}
+	time_path_image_analyzer.calculate_optimzation_stats_for_current_estimator(output_stats);
+	//tbd
 
 }
 

@@ -2679,6 +2679,7 @@ ns_movement_state_time_interval_indicies calc_frame_before_first(const ns_moveme
 	return frame_before_first;
 }
 
+
 //Welcome to the dark innards of the lifespan machine!
 //
 //detect_death_times_and_generate_annotations_from_movement_quantification() is the part of the machine
@@ -2784,27 +2785,25 @@ void ns_analyzed_image_time_path::detect_death_times_and_generate_annotations_fr
 			(elements[end_index].part_of_a_multiple_worm_disambiguation_group)?ns_death_time_annotation::ns_part_of_a_mutliple_worm_disambiguation_cluster:ns_death_time_annotation::ns_single_worm,
 			path_id,true,elements[end_index].inferred_animal_location,elements[end_index].subregion_info,"low_density"));
 	}
-	//in most cases movement_death_time_estimator is the class 
-	//ns_threshold_movement_posture_analyzer
-	ns_time_path_posture_movement_solution movement_state_solution(movement_death_time_estimator->operator()(this,true));
+	
+	machine_movement_state_solution = movement_death_time_estimator->operator()(this,true);
 
 	//Some movement detection algorithms need a significant amount of time after an animal has died
 	//to detect its death.  So, if we are going to censor an animal at the end of the experiment,
 	//we need to ask the movement detection about the latest time such an event can occur.
 	const unsigned long last_possible_death_time(movement_death_time_estimator->latest_possible_death_time(this,last_time_point_in_analysis));
 
-
-	const double loglikelihood_of_solution(movement_state_solution.loglikelihood_of_solution);
-	const string reason_to_be_censored(movement_state_solution.reason_for_animal_to_be_censored);
+	const double loglikelihood_of_solution(machine_movement_state_solution.loglikelihood_of_solution);
+	const string reason_to_be_censored(machine_movement_state_solution.reason_for_animal_to_be_censored);
 
 	ns_movement_state_observation_boundary_interval slow_moving_interval_including_missed_states,
 		posture_changing_interval_including_missed_states,
 		dead_interval_including_missed_states,
 		expansion_interval_including_missed_states;
 
-	slow_moving_interval_including_missed_states.longest_observation_gap_within_interval = movement_state_solution.slowing.longest_observation_gap_within_interval;
-	posture_changing_interval_including_missed_states.longest_observation_gap_within_interval = movement_state_solution.moving.longest_observation_gap_within_interval;
-	dead_interval_including_missed_states.longest_observation_gap_within_interval = movement_state_solution.dead.longest_observation_gap_within_interval;
+	slow_moving_interval_including_missed_states.longest_observation_gap_within_interval = machine_movement_state_solution.slowing.longest_observation_gap_within_interval;
+	posture_changing_interval_including_missed_states.longest_observation_gap_within_interval = machine_movement_state_solution.moving.longest_observation_gap_within_interval;
+	dead_interval_including_missed_states.longest_observation_gap_within_interval = machine_movement_state_solution.dead.longest_observation_gap_within_interval;
 	expansion_interval_including_missed_states.longest_observation_gap_within_interval = 0;
 	
 	unsigned long longest_skipped_interval_before_death = slow_moving_interval_including_missed_states.longest_observation_gap_within_interval;
@@ -2812,106 +2811,20 @@ void ns_analyzed_image_time_path::detect_death_times_and_generate_annotations_fr
 		longest_skipped_interval_before_death = posture_changing_interval_including_missed_states.longest_observation_gap_within_interval;	
 	
 	{
-		ns_movement_state_observation_boundary_interval slow_moving_interval,
-														posture_changing_interval,
-														dead_interval,
-														expansion_interval;
 
-		//the movement detection algorithms give us the first frame in which the animal was observed in each state.
-		//We need to conver these into *intervals* between frames during which the transition occurred.
-		//This is because events may have occurred at any time during the interval and we don't want to assume
-		//the event occurred at any specific time (yet!)
-		//We'll resolve this observational ambiguity later.
-	
 		ns_movement_state_time_interval_indicies frame_before_first = calc_frame_before_first(first_valid_element_id);
+		convert_movement_solution_to_state_intervals(frame_before_first, machine_movement_state_solution, state_intervals);
 
-		ns_movement_state_time_interval_indicies frame_after_last(elements.size()-1,elements.size());
-		frame_after_last.interval_occurs_after_observation_interval = true;
-
-
-		if (movement_state_solution.moving.skipped){
-			if (movement_state_solution.slowing.skipped &&
-				movement_state_solution.dead.skipped)
-				throw ns_ex("ns_analyzed_image_time_path::detect_death_times_and_generate_annotations_from_movement_quantification()::Movement death time estimator skipped all states!");
-			//if we skip slow moving, that means we start changing posture or death, which means
-			//we transition out of fast movement before the first frame of the path
-			slow_moving_interval.skipped = true;
-		}
-		else{
-			slow_moving_interval.skipped = false;
-			slow_moving_interval.entrance_interval = frame_before_first;
-			//if all following states are skipped, this state continues past the end of the observation interval
-			if (movement_state_solution.slowing.skipped && movement_state_solution.dead.skipped)
-				slow_moving_interval.exit_interval = frame_after_last;
-			else{
-				slow_moving_interval.exit_interval.period_end_index = movement_state_solution.moving.end_index;
-				slow_moving_interval.exit_interval.period_start_index = ns_find_last_valid_observation_index(movement_state_solution.moving.end_index,elements);
-				if (slow_moving_interval.exit_interval.period_start_index == -1) slow_moving_interval.exit_interval = frame_before_first;
-			}
-		}
-		if (movement_state_solution.slowing.skipped){
-			posture_changing_interval.skipped = true;
-		}
-		else{
-			posture_changing_interval.skipped = false;
-			//if the animal is never observed to be slow moving, it has been changing posture since before the observation interval
-			if (slow_moving_interval.skipped)
-				posture_changing_interval.entrance_interval = frame_before_first;
-			else 
-				posture_changing_interval.entrance_interval = slow_moving_interval.exit_interval;
-			//if the animal never dies, it continues to change posture until the end of observation interval
-			if (movement_state_solution.dead.skipped)
-				posture_changing_interval.exit_interval	= frame_after_last;
-			else{
-				posture_changing_interval.exit_interval.period_end_index = movement_state_solution.slowing.end_index;
-				posture_changing_interval.exit_interval.period_start_index = ns_find_last_valid_observation_index(movement_state_solution.slowing.end_index,elements); 
-				if (posture_changing_interval.exit_interval.period_start_index == -1) posture_changing_interval.exit_interval = frame_before_first;
-			}
-		}
-		if (movement_state_solution.dead.skipped){
-			dead_interval.skipped = true;
-		}
-		else{
-			dead_interval.skipped = false;
-			if (posture_changing_interval.skipped && slow_moving_interval.skipped)
-				dead_interval.entrance_interval = frame_before_first;
-			else if (posture_changing_interval.skipped)
-				dead_interval.entrance_interval = slow_moving_interval.exit_interval;
-			else
-				dead_interval.entrance_interval = posture_changing_interval.exit_interval;
-
-			dead_interval.exit_interval = frame_after_last;
-		}
-		if (movement_state_solution.expanding.skipped)
-			expansion_interval.skipped = true;
-		else {
-			expansion_interval.skipped = false;
-
-			expansion_interval.entrance_interval.period_end_index = movement_state_solution.expanding.start_index;
-			expansion_interval.entrance_interval.period_start_index = ns_find_last_valid_observation_index(movement_state_solution.expanding.start_index, elements);
-			if (expansion_interval.entrance_interval.period_start_index == -1)expansion_interval.entrance_interval = frame_before_first;
-
-
-			expansion_interval.exit_interval.period_end_index = movement_state_solution.expanding.end_index;
-			expansion_interval.exit_interval.period_start_index = ns_find_last_valid_observation_index(movement_state_solution.expanding.end_index, elements);
-			if (expansion_interval.exit_interval.period_start_index == -1)expansion_interval.exit_interval = frame_before_first;
-		}
-	
-		state_intervals[ns_movement_slow] = slow_moving_interval;
-		state_intervals[ns_movement_posture] = posture_changing_interval;
-		state_intervals[ns_movement_stationary] = dead_interval;
-		state_intervals[ns_movement_death_posture_relaxation] = expansion_interval;
-
-	
-		//ok we have the correct state intervals.  BUT we need to change them around because we know that animals have to pass through 
+		//ok, now we have the correct state intervals.  BUT we need to change them around because we know that animals have to pass through 
 		//fast to slow movement to posture, and posture to death.  If the movement detection algorithms didn't find any states
-		//that's because the animals went through too quickly.  So we make *new* intervals for this purpose with those assumptions in mind
+		//that's because the animals went through too quickly.  So we make *new* intervals for this purpose
+		//which involves transitioning through the missed state within a single frame
 		calculate_state_transitions_in_the_presence_of_missing_states(
 			frame_before_first,
-			slow_moving_interval,
-			posture_changing_interval,
-			dead_interval,
-			expansion_interval,
+			state_intervals[ns_movement_slow],
+			state_intervals[ns_movement_posture],
+			state_intervals[ns_movement_stationary],
+			state_intervals[ns_movement_death_posture_relaxation],
 			slow_moving_interval_including_missed_states,
 			posture_changing_interval_including_missed_states,
 			dead_interval_including_missed_states,
@@ -3017,12 +2930,6 @@ void ns_analyzed_image_time_path::detect_death_times_and_generate_annotations_fr
 	
 	if (posture_changing_interval_including_missed_states.skipped && dead_interval_including_missed_states.skipped)
 		return;
-	//ns_death_time_annotation_time_interval posture_changing_entrance_interval;
-	//if animals skip slow moving, we assume they transition from fast moving to dead within one interval
-	//if (posture_changing_interval.skipped){
-	//	posture_changing_entrance_interval = state_entrance_interval_time(dead_interval);
-	//else if (slow_moving_interval.skipped)
-	//	posture_changing_entrance_interval = state_entrance_interval_time(posture_changing_interval);
 	if (posture_changing_interval_including_missed_states.entrance_interval.period_start_index >
 		posture_changing_interval_including_missed_states.entrance_interval.period_end_index)
 		throw ns_ex("Death start interval boundaries appear to be reversed:") << posture_changing_interval_including_missed_states.entrance_interval.period_end_index << " vs "
@@ -3154,6 +3061,100 @@ void ns_analyzed_image_time_path::detect_death_times_and_generate_annotations_fr
 				elements[last_valid_element_id.period_end_index].subregion_info,
 				"",loglikelihood_of_solution));
 	}
+}
+
+
+
+void ns_analyzed_image_time_path::convert_movement_solution_to_state_intervals(const ns_movement_state_time_interval_indicies & frame_before_first, const ns_time_path_posture_movement_solution &solution, ns_state_interval_list & list) const{
+	ns_movement_state_observation_boundary_interval slow_moving_interval,
+		posture_changing_interval,
+		dead_interval,
+		expansion_interval;
+
+	//the movement detection algorithms give us the first frame in which the animal was observed in each state.
+	//We need to conver these into *intervals* between frames during which the transition occurred.
+	//This is because events may have occurred at any time during the interval and we don't want to assume
+	//the event occurred at any specific time (yet!)
+	//We'll resolve this observational ambiguity later.
+
+
+	ns_movement_state_time_interval_indicies frame_after_last(elements.size() - 1, elements.size());
+	frame_after_last.interval_occurs_after_observation_interval = true;
+
+
+	if (solution.moving.skipped) {
+		if (solution.slowing.skipped &&
+			solution.dead.skipped)
+			throw ns_ex("ns_analyzed_image_time_path::detect_death_times_and_generate_annotations_from_movement_quantification()::Movement death time estimator skipped all states!");
+		//if we skip slow moving, that means we start changing posture or death, which means
+		//we transition out of fast movement before the first frame of the path
+		slow_moving_interval.skipped = true;
+	}
+	else {
+		slow_moving_interval.skipped = false;
+		slow_moving_interval.entrance_interval = frame_before_first;
+		//if all following states are skipped, this state continues past the end of the observation interval
+		if (solution.slowing.skipped && solution.dead.skipped)
+			slow_moving_interval.exit_interval = frame_after_last;
+		else {
+			slow_moving_interval.exit_interval.period_end_index = solution.moving.end_index;
+			slow_moving_interval.exit_interval.period_start_index = ns_find_last_valid_observation_index(solution.moving.end_index, elements);
+			if (slow_moving_interval.exit_interval.period_start_index == -1) slow_moving_interval.exit_interval = frame_before_first;
+		}
+	}
+	if (solution.slowing.skipped) {
+		posture_changing_interval.skipped = true;
+	}
+	else {
+		posture_changing_interval.skipped = false;
+		//if the animal is never observed to be slow moving, it has been changing posture since before the observation interval
+		if (slow_moving_interval.skipped)
+			posture_changing_interval.entrance_interval = frame_before_first;
+		else
+			posture_changing_interval.entrance_interval = slow_moving_interval.exit_interval;
+		//if the animal never dies, it continues to change posture until the end of observation interval
+		if (solution.dead.skipped)
+			posture_changing_interval.exit_interval = frame_after_last;
+		else {
+			posture_changing_interval.exit_interval.period_end_index = solution.slowing.end_index;
+			posture_changing_interval.exit_interval.period_start_index = ns_find_last_valid_observation_index(solution.slowing.end_index, elements);
+			if (posture_changing_interval.exit_interval.period_start_index == -1) posture_changing_interval.exit_interval = frame_before_first;
+		}
+	}
+	if (solution.dead.skipped) {
+		dead_interval.skipped = true;
+	}
+	else {
+		dead_interval.skipped = false;
+		if (posture_changing_interval.skipped && slow_moving_interval.skipped)
+			dead_interval.entrance_interval = frame_before_first;
+		else if (posture_changing_interval.skipped)
+			dead_interval.entrance_interval = slow_moving_interval.exit_interval;
+		else
+			dead_interval.entrance_interval = posture_changing_interval.exit_interval;
+
+		dead_interval.exit_interval = frame_after_last;
+	}
+	if (solution.expanding.skipped)
+		expansion_interval.skipped = true;
+	else {
+		expansion_interval.skipped = false;
+
+		expansion_interval.entrance_interval.period_end_index = solution.expanding.start_index;
+		expansion_interval.entrance_interval.period_start_index = ns_find_last_valid_observation_index(solution.expanding.start_index, elements);
+		if (expansion_interval.entrance_interval.period_start_index == -1)expansion_interval.entrance_interval = frame_before_first;
+
+
+		expansion_interval.exit_interval.period_end_index = solution.expanding.end_index;
+		expansion_interval.exit_interval.period_start_index = ns_find_last_valid_observation_index(solution.expanding.end_index, elements);
+		if (expansion_interval.exit_interval.period_start_index == -1)expansion_interval.exit_interval = frame_before_first;
+	}
+
+	state_intervals[ns_movement_slow] = slow_moving_interval;
+	state_intervals[ns_movement_posture] = posture_changing_interval;
+	state_intervals[ns_movement_stationary] = dead_interval;
+	state_intervals[ns_movement_death_posture_relaxation] = expansion_interval;
+
 }
 
 void ns_analyzed_image_time_path::analyze_movement(const ns_analyzed_image_time_path_death_time_estimator * movement_death_time_estimator,const ns_stationary_path_id & path_id, const unsigned long last_timepoint_in_analysis){
@@ -3640,16 +3641,61 @@ void ns_time_path_image_movement_analyzer::add_by_hand_annotations(const ns_deat
 	}
 }
 
+std::pair<unsigned long, unsigned long> ns_find_index_for_time(const ns_death_time_annotation_time_interval & interval, const ns_analyzed_image_time_path & path) {
+	std::pair<unsigned long, unsigned long> p(0, 0);
+	if (interval.fully_unbounded())
+		return p;
+	std::pair<bool, bool> found(false, false);
+	for (unsigned int i = 0; i < path.element_count(); i++) {
+		if (!found.first && !interval.period_start_was_not_observed && path.element(i).absolute_time == interval.period_start) {
+			p.first = i;
+			found.first = true;
+		}
+		if (!found.second && !interval.period_end_was_not_observed && path.element(i).absolute_time == interval.period_end) {
+			p.second = i;
+			found.second = true;
+		}
+		if (found.first && found.second)
+			break;
+	}
+	return p;
+}
+ns_movement_state_observation_boundaries ns_set_boundary(const ns_death_time_annotation_time_interval & i, const ns_analyzed_image_time_path & path) {
+	ns_movement_state_observation_boundaries b;
+	if (i.fully_unbounded()) {
+		b.skipped = true;
+		return b;
+	}
+	b.skipped = false;
+	const std::pair<unsigned long, unsigned long> p(ns_find_index_for_time(i,path));
+	b.start_index = p.first;
+	b.end_index = p.second;
+	return b;
+}
+
+ns_time_path_posture_movement_solution ns_analyzed_image_time_path::reconstruct_movement_state_solution_from_annotations(const std::vector<ns_death_time_annotation_time_interval> & intervals) {
+	ns_time_path_posture_movement_solution s;
+	s.slowing.skipped = s.moving.skipped = s.expanding.skipped = s.dead.skipped = true;
+	if (intervals[(ns_translation_cessation)].fully_unbounded())
+		throw ns_ex("Animal never slowed");
+	std::pair<unsigned long, unsigned long>
+		translation_cessation(ns_find_index_for_time(intervals[(int)ns_death_posture_relaxation_start], *this)),
+		fast_movement_cessation(ns_find_index_for_time(intervals[(int)ns_death_posture_relaxation_start], *this)),
+		movement_cessation(ns_find_index_for_time(intervals[(int)ns_death_posture_relaxation_start], *this)),
+		expansion_start(ns_find_index_for_time(intervals[(int)ns_death_posture_relaxation_start], *this)),
+		expansion_end(ns_find_index_for_time(intervals[(int)ns_death_posture_relaxation_start], *this));
+	//tbd
+}
 
 void ns_analyzed_image_time_path::add_by_hand_annotations(const ns_death_time_annotation_compiler_location & l){
-//	if (l.properties.number_of_worms() > 1)
-//		cerr << "WHEE";
 	l.properties.transfer_sticky_properties(censoring_and_flag_details);
 	add_by_hand_annotations(l.annotations);
+
 }
 void ns_analyzed_image_time_path::add_by_hand_annotations(const ns_death_time_annotation_set & set){
 	for (unsigned int i = 0; i < set.events.size(); i++){
 		const ns_death_time_annotation & e(set.events[i]);
+		e.transfer_sticky_properties(censoring_and_flag_details);
 		if (e.type != ns_translation_cessation &&
 			e.type != ns_movement_cessation &&		
 			e.type != ns_fast_movement_cessation &&
@@ -3657,9 +3703,7 @@ void ns_analyzed_image_time_path::add_by_hand_annotations(const ns_death_time_an
 			e.type != ns_death_posture_relaxation_start)
 			continue;
 
-			e.transfer_sticky_properties(censoring_and_flag_details);
-			if (e.type != ns_no_movement_event)
-				by_hand_annotation_event_times[(int)e.type] = e.time;
+			by_hand_annotation_event_times[(int)e.type] = e.time;
 	}
 }
 

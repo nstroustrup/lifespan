@@ -64,7 +64,7 @@ void ns_hmm_solver::solve(const ns_analyzed_image_time_path & path, const ns_emp
 	build_movement_state_solution_from_movement_transitions(path_indices, movement_transitions);
 }
 
-double ns_hmm_solver::probability_of_path_solution(const ns_analyzed_image_time_path & path, const ns_emperical_posture_quantification_value_estimator & estimator, ns_time_path_posture_movement_solution & solution) {
+double ns_hmm_solver::probability_of_path_solution(const ns_analyzed_image_time_path & path, const ns_emperical_posture_quantification_value_estimator & estimator, const ns_time_path_posture_movement_solution & solution, std::vector<double> & log_probabilities) {
 	std::vector < ns_hmm_movement_state > movement_states(path.element_count(), ns_hmm_unknown_state);
 	if (!solution.moving.skipped) {
 		for (unsigned int i = solution.moving.start_index; i <= solution.moving.end_index; i++)
@@ -92,20 +92,24 @@ double ns_hmm_solver::probability_of_path_solution(const ns_analyzed_image_time_
 
 	std::vector<std::vector<double> > transition_probability;
 	build_state_transition_matrix(transition_probability);
-
-	double log_liklihood;
+	double cur_p = 0, log_liklihood(0);
 	for (unsigned int i = 0; i < movement_states.size(); i++) {
-		if (path.element(i).excluded || path.element(i).censored)
+		if (path.element(i).excluded || path.element(i).censored) {
+			log_probabilities[i] = cur_p;
 			continue;
-		if (movement_states[i] == ns_hmm_moving_vigorously) //ignore missing and fast moving states.
+		}
+		if (movement_states[i] == ns_hmm_moving_vigorously){ //ignore missing and fast moving states.
+			log_probabilities[i] = cur_p;
 			continue;
+		}
 		estimator.probability_for_each_state(path.element(i).measurements, emission_probabilities);
-		log_liklihood += log(transition_probability[previous_state][movement_states[i]] *
-								emission_probabilities[movement_states[i]]);
+		cur_p = log(transition_probability[previous_state][movement_states[i]] *
+			emission_probabilities[movement_states[i]]);
+		log_probabilities[i] = cur_p;
+		log_liklihood += cur_p;
 		previous_state = movement_states[i];
 	}
 	return log_liklihood;
-
 }
 
 

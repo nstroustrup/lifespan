@@ -17,7 +17,7 @@ public:
 	ns_time_path_posture_movement_solution movement_state_solution;
 
 	void solve(const ns_analyzed_image_time_path & path, const ns_emperical_posture_quantification_value_estimator & estimator);
-	static double probability_of_path_solution(const ns_analyzed_image_time_path & path, const ns_emperical_posture_quantification_value_estimator & estimator, ns_time_path_posture_movement_solution & solution);
+	static double probability_of_path_solution(const ns_analyzed_image_time_path & path, const ns_emperical_posture_quantification_value_estimator & estimator, const ns_time_path_posture_movement_solution & solution, std::vector<double> & log_probabilities);
 
 
 	//run the viterbi algorithm using the specified indicies of the path

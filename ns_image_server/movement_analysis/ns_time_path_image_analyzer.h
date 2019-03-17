@@ -538,10 +538,17 @@ private:
 	
 	ns_analyzed_image_time_path_event_index find_event_index_with_fallback(const ns_movement_event & event_to_align);
 
+	//the state interval list has the transition times marked in absolute chronological time
 	typedef std::vector<ns_movement_state_observation_boundary_interval> ns_state_interval_list;
 	ns_state_interval_list state_intervals; //1 after the last index belonging to that state
+
+	//the movement solution has the transition times marked in respect to indicies in the path object
+	ns_time_path_posture_movement_solution machine_movement_state_solution;
+
+	void convert_movement_solution_to_state_intervals(const ns_movement_state_time_interval_indicies & frame_before_first_interval, const ns_time_path_posture_movement_solution &solution, ns_state_interval_list & list) const;
 	
 	std::vector<ns_death_time_annotation_time_interval> by_hand_annotation_event_times;
+	ns_time_path_posture_movement_solution reconstruct_movement_state_solution_from_annotations(const std::vector<ns_death_time_annotation_time_interval> & intervals);
 
 	void quantify_movement(const ns_analyzed_time_image_chunk & chunk);
 

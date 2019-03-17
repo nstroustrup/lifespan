@@ -62,8 +62,13 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <iostream>
 #include <iomanip>
+#ifndef _WIN32
+#include "gsl/gsl_math.h"
+#include "gsl/gsl_sf_log.h"
+#else
 #include "gsl_math.h"
 #include "specfunc/gsl_sf_log.h"
+#endif
 #include <cmath>
 #include <limits>
 #include <ctime>
@@ -320,12 +325,16 @@ void GMM::update()
 	//Assign next iteration parameters to current parameters
 	for (int k = 0; k < numGaussians; k++)
 	{
+		const double prev_var = var[k],
+			prev_mean = mean[k],
+			prev_a = a[k];
 		a[k] = sum_wj[k] / double(dataSize);
 		mean[k] = sum_wj_xj[k] / sum_wj[k];
-		double prev_var = var[k];
 		var[k] = sum_wj_xj2[k] / sum_wj[k] - mean[k] * mean[k];
-		if (var[k] <= 0) { 
+		if (a[k] <= 0 || var[k] <= 0 || isinf(var[k]) || isnan(var[k]) || isnan(mean[k]) || isinf(mean[k])) {
+			mean[k] = prev_mean;
 			var[k] = prev_var; 
+			a[k] = prev_a;
 			//cout << "error: zero variance" << sum_wj_xj2[k] << " " << sum_wj[k] << " " << mean[k] << "\n"; 
 		}
 	}

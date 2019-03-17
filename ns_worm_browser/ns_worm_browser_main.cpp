@@ -1062,24 +1062,38 @@ class ns_worm_terminal_main_menu_organizer : public ns_menu_organizer{
 		worm_learner.generate_single_frame_posture_image_pixel_data((value.find("Plate") != std::string::npos));
 	}
 	static void generate_worm_markov_posture_model_from_by_hand_annotations(const std::string & value){
+		if (value.find("experiment") != value.npos) {
 
-		ns_choice_dialog c;
-		c.title = "What subject should be used?";
-		c.option_1 = "Current Plate";
-		c.option_2 = "Current Device";
-		c.option_3 = "All Devices";
-		ns_run_in_main_thread<ns_choice_dialog> b(&c);
-		ns_worm_learner::ns_optimization_subject sub;
-		switch (c.result) {
-		case 1: sub = ns_worm_learner::ns_plate; break;
-		case 2: sub = ns_worm_learner::ns_device; break;
-		case 3: sub = ns_worm_learner::ns_whole_experiment; break;
-		default: throw ns_ex("Unknown option");
+			ns_choice_dialog c;
+			c.title = "What subject should be used?";
+			c.option_1 = "Current Plate";
+			c.option_2 = "Current Device";
+			c.option_3 = "All Devices";
+			ns_run_in_main_thread<ns_choice_dialog> b(&c);
+			ns_worm_learner::ns_optimization_subject sub;
+			switch (c.result) {
+			case 1: sub = ns_worm_learner::ns_plate; break;
+			case 2: sub = ns_worm_learner::ns_device; break;
+			case 3: sub = ns_worm_learner::ns_whole_experiment; break;
+			default: throw ns_ex("Unknown option");
+			}
+
+			bool posture_req = value.find("Posture") != value.npos;
+			bool size_req = value.find("Size") != value.npos;
+			worm_learner.generate_experiment_movement_image_quantification_analysis_data(ns_worm_learner::ns_build_worm_markov_posture_model_from_by_hand_annotations, sub);
 		}
-
-		bool posture_req = value.find("Posture") != value.npos;
-		bool size_req = value.find("Size") != value.npos;
-		worm_learner.generate_experiment_movement_image_quantification_analysis_data(ns_worm_learner::ns_build_worm_markov_posture_model_from_by_hand_annotations,sub);	
+		else {
+			ns_file_chooser cc;
+			cc.choose_directory();
+			cc.title = "Choose the directory that holds HMM observation files ";
+			cc.default_directory = image_server.long_term_storage_directory;
+			ns_run_in_main_thread<ns_file_chooser> e(&cc);
+			if (!cc.chosen)
+				return;
+			if (cc.result.empty())
+				return;
+			worm_learner.calculate_hmm_from_files(cc.result);
+		};
 	
 	}
 	
@@ -1424,9 +1438,12 @@ public:
 
 		//add(ns_menu_item_spec(generate_survival_curve_from_hand_annotations,"&Calibration/Generate Survival Curves from by hand annotations"));
 		add(ns_menu_item_spec(compare_machine_and_by_hand_annotations,"&Calibration/_Compare Storyboard annotations to fully-automated results"));
-		add(ns_menu_item_spec(generate_movement_image_analysis_optimization_data,"Calibration/_Use Storyboard Annotations to Create improved Analysis Parameter Sets/Death Time Posture Changes"));
-		add(ns_menu_item_spec(generate_movement_image_analysis_optimization_data, "Calibration/Use Storyboard Annotations to Create improved Analysis Parameter Sets/Death Time Size Changes"));
-		add(ns_menu_item_spec(generate_movement_image_analysis_optimization_data, "Calibration/Use Storyboard Annotations to Create improved Analysis Parameter Sets/Both Posture and Size Changes"));
+
+		add(ns_menu_item_spec(generate_worm_markov_posture_model_from_by_hand_annotations, "Calibration/_Build new posture analysis model from storyboard annotations/_New HMM Model/From this experiment"));
+		add(ns_menu_item_spec(generate_worm_markov_posture_model_from_by_hand_annotations, "Calibration/_Build new posture analysis model from storyboard annotations/_New HMM Model/From Observation Files"));
+		add(ns_menu_item_spec(generate_movement_image_analysis_optimization_data, "Calibration/_Build new posture analysis model from storyboard annotations/Old Thresholding Model/Death Time Posture Changes"));
+		add(ns_menu_item_spec(generate_movement_image_analysis_optimization_data, "Calibration/_Build new posture analysis model from storyboard annotations/Old Thresholding Model/Death Time Size Changes"));
+		add(ns_menu_item_spec(generate_movement_image_analysis_optimization_data, "Calibration/_Build new posture analysis model from storyboard annotations/Old Thresholding Model/Both Posture and Size Changes"));
 		add(ns_menu_item_spec(masks_generate_composite, "Calibration/_Define Subregions/Generate Subregion Mask Composite"));
 		add(ns_menu_item_spec(masks_generate_composite, "Calibration/_Define Subregions/(Draw Plate Locations on Subregion Mask using Photoshop)", 0, FL_MENU_INACTIVE));
 		add(ns_menu_item_spec(masks_process_composite, "Calibration/_Define Subregions/Analyze Subregion Labels Drawn on Subregion Mask Composite"));
@@ -1446,7 +1463,6 @@ public:
 		//st4.options.push_back(ns_menu_item_options("Using Quiecent Lifespan Parameter Range"));
 		//add(st4);
 		
-		add(ns_menu_item_spec(generate_worm_markov_posture_model_from_by_hand_annotations,"Calibration/Build Hidden Markov Posture Model From By Hand Annotations"));
 
 		if (worm_learner.show_testing_menus) {
 			ns_menu_item_spec model_spec(specifiy_model, "&Testing/Worm Detection/Specify SVM Model");

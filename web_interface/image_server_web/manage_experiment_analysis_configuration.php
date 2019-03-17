@@ -537,9 +537,9 @@ output_editable_field("conversion_16_bit_upper_bound",$conversion_16_bit_upper_b
 <tr><td bgcolor="<?php echo $table_colors[1][0] ?>">Posture Analysis Method</td><td bgcolor="<?php echo $table_colors[1][1] ?>">
 
       <select name="posture_analysis_method" <?php if ($number_of_regions == 0) echo "disabled"?>>
-      <option value=""<?php if ($posture_analysis_method == '') echo "selected"?> >None Specified</option><!--
-<option value="hm" <?php if ($posture_analysis_method == 'hm') echo "selected"?> >Hidden Markov Model</option>-->
-<option value="thresh"<?php if ($posture_analysis_method == 'thresh') echo "selected"?> >Thresholding</option>
+      <option value=""<?php if ($posture_analysis_method == '') echo "selected"?> >None Specified</option>
+<option value="hm" <?php if ($posture_analysis_method == 'hm') echo "selected"?> >Hidden Markov Model</option>
+<option value="thresh"<?php if ($posture_analysis_method == 'thresh') echo "selected"?> >Old Thresholding</option>
 </select></td></tr>
 
 <tr><td bgcolor="<?php echo $table_colors[0][0] ?>">Single Model for All Plates</td><TD bgcolor="<?php echo $table_colors[0][1] ?>">

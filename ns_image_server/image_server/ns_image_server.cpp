@@ -3379,9 +3379,9 @@ void ns_posture_analysis_model_entry::load_from_external_source(const std::strin
 	name = name_;
 	model_specification.posture_analysis_method = external_source.analysis_method;
 	if (model_specification.posture_analysis_method == ns_posture_analysis_model::ns_hidden_markov) {
-		ifstream moving((external_source.model_directory + name + "_moving.csv").c_str());
+		ifstream moving((external_source.model_directory + name + ".csv").c_str());
 		if (moving.fail())
-			throw ns_ex("Could not load ") << external_source.model_directory + name + "_moving.csv";
+			throw ns_ex("Could not load ") << external_source.model_directory + name + ".csv";
 
 		model_specification.hmm_posture_estimator.read(moving);
 		model_specification.name = name_;

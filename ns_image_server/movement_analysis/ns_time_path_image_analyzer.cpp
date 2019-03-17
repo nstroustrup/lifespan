@@ -1414,12 +1414,12 @@ void ns_time_path_image_movement_analyzer::calculate_optimzation_stats_for_curre
 
 			//first calculate the probabilities of the machine and by hand solutions
 			ns_hmm_solver hmm_solver;
-			s.animals.rbegin()->machine_state_info.log_liklihood = hmm_solver.probability_of_path_solution(groups[g].paths[p], *e, groups[g].paths[p].machine_movement_state_solution, s.animals.rbegin()->machine_state_info.path);
+			s.animals.rbegin()->machine_state_info.log_likelihood = hmm_solver.probability_of_path_solution(groups[g].paths[p], *e, groups[g].paths[p].machine_movement_state_solution, s.animals.rbegin()->machine_state_info.path);
 			s.animals.rbegin()->state_times.resize(s.animals.rbegin()->machine_state_info.path.size());
 			for (unsigned int i = 0; i < s.animals.rbegin()->state_times.size(); i++)
 				s.animals.rbegin()->state_times[i] = groups[g].paths[p].element(i).relative_time;
 			ns_time_path_posture_movement_solution by_hand_posture_movement_solution(groups[g].paths[p].reconstruct_movement_state_solution_from_annotations(groups[g].paths[p].first_valid_element_id.period_start_index, groups[g].paths[p].last_valid_element_id.period_end_index, groups[g].paths[p].by_hand_annotation_event_times));
-			s.animals.rbegin()->by_hand_state_info.log_liklihood = hmm_solver.probability_of_path_solution(groups[g].paths[p], *e, by_hand_posture_movement_solution, s.animals.rbegin()->by_hand_state_info.path);
+			s.animals.rbegin()->by_hand_state_info.log_likelihood = hmm_solver.probability_of_path_solution(groups[g].paths[p], *e, by_hand_posture_movement_solution, s.animals.rbegin()->by_hand_state_info.path);
 
 			//now go through and calculate the errors betweeen the machine and by hand calculations
 			for (unsigned int i = 0; i < ns_movement_analysis_optimizatiom_stats_record::number_of_states; i++) {
@@ -3614,7 +3614,7 @@ void ns_movement_analysis_optimizatiom_stats::write_error_data(std::ostream & o,
 				<< (state_p->second.by_hand_identified ? ns_to_string((state_p->second.by_hand.best_estimate_event_time_for_possible_partially_unbounded_interval() - m->second.time_at_which_animals_had_zero_age) / 60.0 / 60.0 / 24.0) : "") << ","
 				<< (state_p->second.machine_identified ? ns_to_string((state_p->second.machine.best_estimate_event_time_for_possible_partially_unbounded_interval() - m->second.time_at_which_animals_had_zero_age) / 60.0 / 60.0 / 24.0) : "") << ",";
 			if (state_p->second.machine_identified && state_p->second.by_hand_identified) {
-				const double r = abs(((double)state_p->second.machine.best_estimate_event_time_for_possible_partially_unbounded_interval() - (double)state_p->second.by_hand.best_estimate_event_time_for_possible_partially_unbounded_interval()) / 60.0 / 60.0 / 24.0);
+				const double r = ((double)state_p->second.machine.best_estimate_event_time_for_possible_partially_unbounded_interval() - (double)state_p->second.by_hand.best_estimate_event_time_for_possible_partially_unbounded_interval()) / 60.0 / 60.0 / 24.0;
 				o << r << "," << r * r;
 			}
 			else o << ",";
@@ -3624,7 +3624,7 @@ void ns_movement_analysis_optimizatiom_stats::write_error_data(std::ostream & o,
 }
 
 void ns_movement_analysis_optimizatiom_stats::write_hmm_path_header(std::ostream & o) {
-	o << "Experiment,Plate Name,Group ID,Path ID,time,Machine HMM state, By Hand HMM state,machine liklihood, by hand liklihood, relative_liklihood\n";
+	o << "Experiment,Plate Name,Group ID,Path ID,time,Machine HMM state, By Hand HMM state,machine likelihood, by hand likelihood, relative_likelihood\n";
 }
 
 void ns_movement_analysis_optimizatiom_stats::write_hmm_path_data(std::ostream & o, const std::map<ns_64_bit, ns_region_metadata> & metadata_cache) {

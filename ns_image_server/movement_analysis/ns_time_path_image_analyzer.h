@@ -647,8 +647,8 @@ struct ns_movement_analysis_optimizatiom_stats_sub_record{
 	bool by_hand_identified, machine_identified;
 };
 struct ns_hmm_state_info {
-	double log_liklihood;
-	//state,log-liklihood of path up until that state
+	double log_likelihood;
+	//state,log-likelihood of path up until that state
 	std::vector<std::pair<ns_hmm_movement_state,double> > path; 
 };
 struct ns_movement_analysis_optimizatiom_stats_record{

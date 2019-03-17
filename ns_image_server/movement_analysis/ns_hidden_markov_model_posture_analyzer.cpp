@@ -66,7 +66,7 @@ double ns_hmm_solver::probability_of_path_solution(const ns_analyzed_image_time_
 
 	std::vector<std::vector<double> > transition_probability;
 	build_state_transition_matrix(transition_probability);
-	double cur_p = 0, log_liklihood(0);
+	double cur_p = 0, log_likelihood(0);
 	states.resize(movement_states.size());
 	unsigned int start_i = 0;
 	//find first not unknown state
@@ -86,12 +86,12 @@ double ns_hmm_solver::probability_of_path_solution(const ns_analyzed_image_time_
 		cur_p = log(transition_probability[previous_state][movement_states[i]] *
 			emission_probabilities[movement_states[i]]);
 
-		log_liklihood += cur_p;
+		log_likelihood += cur_p;
 		states[i].second = cur_p;
 		states[i].first = movement_states[i];
 		previous_state = movement_states[i];
 	}
-	return log_liklihood;
+	return log_likelihood;
 }
 
 
@@ -479,10 +479,6 @@ public:
 		if (is_zero) 
 			return zero_probability;
 		return (1 - zero_probability)*gmm.GetProbability(&val);
-		//double p = 0;
-		//for (unsigned int i = 0; i < 3; i++) 
-		//	p+=gmm_weights[i]*ns_likelihood_of_normal_zcore((val - gmm_means[i]) / gmm_var[i]);
-		//return p*(1-zero_probability);
 	}
 	void write(std::ostream & o) const {
 		o << zero_probability ;
@@ -595,14 +591,14 @@ public:
 void ns_emperical_posture_quantification_value_estimator::probability_for_each_state(const ns_analyzed_image_time_path_element_measurements & e, std::vector<double> & d) const {
 	d.resize(0);
 	d.resize((int)ns_hmm_unknown_state,0);
-	double sum(0);
+	//double sum(0);
 	for (auto p = emission_probability_models.begin(); p != emission_probability_models.end(); p++) {
 		const double tmp(p->second->point_emission_probability(e));
 		d[p->first] = tmp;
-		sum += tmp;
+		//sum += tmp;
 	}
-	for (unsigned int i = 0; i < d.size(); i++)
-		d[i] = d[i] / sum;
+	//for (unsigned int i = 0; i < d.size(); i++)
+	//	d[i] = d[i] / sum;
 }
 	
 

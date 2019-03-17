@@ -1426,7 +1426,7 @@ void ns_time_path_image_movement_analyzer::calculate_optimzation_stats_for_curre
 				const ns_movement_event st = ns_movement_analysis_optimizatiom_stats_record::states[i];
 				bool machine_skipped;
 				const ns_death_time_annotation_time_interval machine_result = groups[g].paths[p].machine_event_time(st, machine_skipped);
-				const ns_death_time_annotation_time_interval & by_hand_result = groups[g].paths[p].by_hand_annotation_event_times[st];
+				const ns_death_time_annotation_time_interval by_hand_result = groups[g].paths[p].by_hand_annotation_event_times[st];
 
 				s.animals.rbegin()->properties = groups[g].paths[p].censoring_and_flag_details;
 				s.animals.rbegin()->properties.stationary_path_id = ns_stationary_path_id(g, p, this->analysis_id);
@@ -3624,7 +3624,7 @@ void ns_movement_analysis_optimizatiom_stats::write_error_data(std::ostream & o,
 }
 
 void ns_movement_analysis_optimizatiom_stats::write_hmm_path_header(std::ostream & o) {
-	o << "Experiment,Plate Name,Group ID,Path ID,time,Machine HMM state, By Hand HMM state,machine likelihood, by hand likelihood, relative_likelihood\n";
+	o << "Experiment,Plate Name,Group ID,Path ID,time,Machine HMM state, By Hand HMM state,machine likelihood, by hand likelihood, relative_likelihood, Machine Movement Cessation Time Error (days), Machine Expansion time Error (days)\n";
 }
 
 void ns_movement_analysis_optimizatiom_stats::write_hmm_path_data(std::ostream & o, const std::map<ns_64_bit, ns_region_metadata> & metadata_cache) {
@@ -3635,10 +3635,21 @@ void ns_movement_analysis_optimizatiom_stats::write_hmm_path_data(std::ostream &
 		for (unsigned int i = 0; i < animals[k].machine_state_info.path.size(); i++) {
 			o << m->second.experiment_name << "," << m->second.plate_name()
 				<< "," << animals[k].id.group_id << "," << animals[k].id.path_id << ",";
-			o << animals[k].state_times[i] << ",";
+			o << (animals[k].state_times[i] / 60.0 / 60.0 / 24.0) << ",";
 			o << ns_hmm_movement_state_to_string(animals[k].machine_state_info.path[i].first) << "," << ns_hmm_movement_state_to_string(animals[k].by_hand_state_info.path[i].first) << ",";
 			o << animals[k].machine_state_info.path[i].second << "," << animals[k].by_hand_state_info.path[i].second << ",";
-			o << (animals[k].machine_state_info.path[i].second - animals[k].by_hand_state_info.path[i].second) << "\n";
+			o << (animals[k].machine_state_info.path[i].second - animals[k].by_hand_state_info.path[i].second) << ",";
+			if (!animals[k].measurements[ns_movement_cessation].by_hand.fully_unbounded() && !animals[k].measurements[ns_movement_cessation].machine.fully_unbounded()) {
+				double d = animals[k].measurements[ns_movement_cessation].machine.best_estimate_event_time_for_possible_partially_unbounded_interval() - animals[k].measurements[ns_movement_cessation].by_hand.best_estimate_event_time_for_possible_partially_unbounded_interval();
+				o << d / 60.0 / 60.0 / 24.0 << ",";
+			}
+			else o << ",";
+			if (!animals[k].measurements[ns_death_posture_relaxation_start].by_hand.fully_unbounded() && !animals[k].measurements[ns_death_posture_relaxation_start].machine.fully_unbounded()) {
+				double d = animals[k].measurements[ns_death_posture_relaxation_start].machine.best_estimate_event_time_for_possible_partially_unbounded_interval() - animals[k].measurements[ns_death_posture_relaxation_start].by_hand.best_estimate_event_time_for_possible_partially_unbounded_interval();
+				o << d/60.0/60.0/24.0 << ",";
+			}
+			else o << ",";
+			o << "\n";
 		}
 	}
 }

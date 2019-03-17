@@ -149,7 +149,7 @@
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>libmysql.lib;xvidcore.dll.a;freetype26d.lib;openjp2.lib;psapi.lib;gsl.lib;cblas.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>libmysql.lib;xvidcore.dll.a;freetype26d.lib;openjp2.lib;psapi.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <SubSystem>Console</SubSystem>
     </Link>
   </ItemDefinitionGroup>
@@ -214,7 +214,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalDependencies>libmysql.lib;xvidcore.dll.a;freetype26.lib;openjp2.lib;psapi.lib;gsl.lib;cblas.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>libmysql.lib;xvidcore.dll.a;freetype26.lib;openjp2.lib;psapi.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <LargeAddressAware>Yes</LargeAddressAware>
       <SubSystem>Console</SubSystem>
     </Link>
@@ -515,6 +515,7 @@
     </ClCompile>
     <ClCompile Include="..\external_libraries\ctmf\ctmf.c" />
     <ClCompile Include="..\external_libraries\gmm\gmm.cpp" />
+    <ClCompile Include="..\external_libraries\gmm\KMeans.cpp" />
     <ClCompile Include="..\external_libraries\libhungarian\hungarian.c" />
     <ClCompile Include="..\external_libraries\libsvm\svm.cpp" />
     <ClCompile Include="..\external_libraries\tinyxml\tinystr.cpp" />

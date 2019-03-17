@@ -691,6 +691,9 @@
     <ClCompile Include="..\external_libraries\gmm\gmm.cpp">
       <Filter>misc_lib\gmm</Filter>
     </ClCompile>
+    <ClCompile Include="..\external_libraries\gmm\KMeans.cpp">
+      <Filter>misc_lib\gmm</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\ns_image_server\system_base\ns_dir.h">

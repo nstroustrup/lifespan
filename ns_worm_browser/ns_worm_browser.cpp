@@ -2237,7 +2237,6 @@ void ns_test_parameter_set_on_region(const ns_64_bit region_id,
 
 
 	ns_time_path_movement_markov_solver markov_solver(estimator);
-	output_stats.region_id = region_id;
 	//we might need to load everything again, if it has been cleared to reduce memory usage
 	if (time_path_image_analyzer.size() == 0) {
 
@@ -2256,7 +2255,7 @@ void ns_test_parameter_set_on_region(const ns_64_bit region_id,
 		time_path_image_analyzer.add_by_hand_annotations(by_hand_annotations);
 		time_path_image_analyzer.reanalyze_with_different_movement_estimator(time_series_denoising_parameters, &markov_solver);
 	}
-	time_path_image_analyzer.calculate_optimzation_stats_for_current_hmm_estimator(output_stats,&markov_solver);
+	time_path_image_analyzer.calculate_optimzation_stats_for_current_hmm_estimator(output_stats,&estimator);
 
 }
 
@@ -2576,6 +2575,8 @@ void ns_worm_learner::calculate_hmm_from_files(const std::string & path) {
 	std::vector<std::string> files;
 	dir.load_masked(path,".csv", files);
 	for (unsigned int i = 0; i < files.size(); i++) {
+		if (files[i] == "hmm_model_file.csv")
+			continue;
 		std::ifstream in((path + DIR_CHAR_STR + files[i]).c_str());
 		estimator.read_observation_data(in);
 	}

@@ -151,7 +151,7 @@
     </ClCompile>
     <Link>
       <GenerateDebugInformation>DebugFastLink</GenerateDebugInformation>
-      <AdditionalDependencies>gsl.lib;cblas.lib;libmysql.lib;xvidcore.dll.a;freetype26d.lib;openjp2.lib;OpenCL.lib;psapi.lib;comctl32.lib;xvidcored.dll.a;glu32.lib;opengl32.lib;fltkd.lib;fltkimagesd.lib;fltkpngd.lib;fltkformsd.lib;fltkgld.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>libmysql.lib;xvidcore.dll.a;freetype26d.lib;openjp2.lib;OpenCL.lib;psapi.lib;comctl32.lib;xvidcored.dll.a;glu32.lib;opengl32.lib;fltkd.lib;fltkimagesd.lib;fltkpngd.lib;fltkformsd.lib;fltkgld.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -206,7 +206,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalDependencies>gsl.lib;cblas.lib;libmysql.lib;xvidcore.dll.a;freetype26d.lib;openjp2.lib;psapi.lib;comctl32.lib;freetype26.lib;glu32.lib;opengl32.lib;fltk.lib;fltkimages.lib;fltkpng.lib;fltkforms.lib;fltkgl.lib;OpenCL.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>libmysql.lib;xvidcore.dll.a;freetype26d.lib;openjp2.lib;psapi.lib;comctl32.lib;freetype26.lib;glu32.lib;opengl32.lib;fltk.lib;fltkimages.lib;fltkpng.lib;fltkforms.lib;fltkgl.lib;OpenCL.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <IgnoreSpecificDefaultLibraries>
       </IgnoreSpecificDefaultLibraries>
     </Link>
@@ -333,6 +333,7 @@
     <ClCompile Include="..\external_compile_libraries\libtiff-4.0.9\libtiff\tif_zip.c" />
     <ClCompile Include="..\external_libraries\ctmf\ctmf.c" />
     <ClCompile Include="..\external_libraries\gmm\gmm.cpp" />
+    <ClCompile Include="..\external_libraries\gmm\KMeans.cpp" />
     <ClCompile Include="..\external_libraries\libhungarian\hungarian.c" />
     <ClCompile Include="..\external_libraries\libsvm\svm.cpp" />
     <ClCompile Include="..\external_libraries\tinyxml\tinystr.cpp" />

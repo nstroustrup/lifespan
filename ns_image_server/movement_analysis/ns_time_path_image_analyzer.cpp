@@ -6,6 +6,7 @@
 #include "ns_thread_pool.h"
 #include "ns_linear_regression_model.h"
 #include "ns_annotation_handling_for_visualization.h"
+#include "ns_hidden_markov_model_posture_analyzer.h"
 #include "ns_image_statistics.h"
 #include <queue>
 
@@ -1401,7 +1402,7 @@ void ns_time_path_image_movement_analyzer::populate_movement_quantification_from
 void ns_time_path_image_movement_analyzer::calculate_optimzation_stats_for_current_hmm_estimator(ns_movement_analysis_optimizatiom_stats & s, const ns_emperical_posture_quantification_value_estimator * e) {
 	for (unsigned long g = 0; g < groups.size(); g++)
 		for (unsigned long p = 0; p < groups[g].paths.size(); p++) {
-			if (ns_skip_low_density_paths && groups[g].paths[p].is_low_density_path())
+			if (ns_skip_low_density_paths && groups[g].paths[p].is_low_density_path() || !groups[g].paths[p].by_hand_data_specified())
 				continue;
 
 		
@@ -1417,7 +1418,7 @@ void ns_time_path_image_movement_analyzer::calculate_optimzation_stats_for_curre
 			s.animals.rbegin()->state_times.resize(s.animals.rbegin()->machine_state_info.path.size());
 			for (unsigned int i = 0; i < s.animals.rbegin()->state_times.size(); i++)
 				s.animals.rbegin()->state_times[i] = groups[g].paths[p].element(i).relative_time;
-			ns_time_path_posture_movement_solution by_hand_posture_movement_solution(groups[g].paths[p].reconstruct_movement_state_solution_from_annotations(groups[g].paths[p].first_valid_element_id.period_start_index, groups[g].paths[p].last_valid_element_id.period_start_index, groups[g].paths[p].by_hand_annotation_event_times));
+			ns_time_path_posture_movement_solution by_hand_posture_movement_solution(groups[g].paths[p].reconstruct_movement_state_solution_from_annotations(groups[g].paths[p].first_valid_element_id.period_start_index, groups[g].paths[p].last_valid_element_id.period_end_index, groups[g].paths[p].by_hand_annotation_event_times));
 			s.animals.rbegin()->by_hand_state_info.log_liklihood = hmm_solver.probability_of_path_solution(groups[g].paths[p], *e, by_hand_posture_movement_solution, s.animals.rbegin()->by_hand_state_info.path);
 
 			//now go through and calculate the errors betweeen the machine and by hand calculations
@@ -3075,7 +3076,7 @@ void ns_analyzed_image_time_path::detect_death_times_and_generate_annotations_fr
 
 
 
-void ns_analyzed_image_time_path::convert_movement_solution_to_state_intervals(const ns_movement_state_time_interval_indicies & frame_before_first, const ns_time_path_posture_movement_solution &solution, ns_state_interval_list & list) const{
+void ns_analyzed_image_time_path::convert_movement_solution_to_state_intervals(const ns_movement_state_time_interval_indicies & frame_before_first, const ns_time_path_posture_movement_solution &solution, ns_state_interval_list & list) {
 	ns_movement_state_observation_boundary_interval slow_moving_interval,
 		posture_changing_interval,
 		dead_interval,
@@ -3272,19 +3273,24 @@ ns_death_time_annotation_time_interval ns_analyzed_image_time_path::by_hand_deat
 
 ns_hmm_movement_state ns_analyzed_image_time_path::by_hand_hmm_movement_state(const unsigned long & t) const {
 	//if the worm never arrives, give up
-	ns_death_time_annotation_time_interval fast_movement_end(cessation_of_fast_movement_interval());
+	ns_death_time_annotation_time_interval translation_end(cessation_of_fast_movement_interval());
 
-	if (!by_hand_annotation_event_times[(int)ns_fast_movement_cessation].period_end_was_not_observed)
-		fast_movement_end = by_hand_annotation_event_times[(int)ns_fast_movement_cessation];
+	if (!by_hand_annotation_event_times[(int)ns_translation_cessation].period_end_was_not_observed)
+		translation_end = by_hand_annotation_event_times[(int)ns_translation_cessation];
 
 	//if the worm hasn't arrived yet, it's missing.
-	if (t <= fast_movement_end.period_end)
+	if (t <= translation_end.period_end)
 		return ns_hmm_missing;
 
 	//if the worm hasn't slowed down yet, it's moving weakly
-	if (by_hand_annotation_event_times[(int)ns_translation_cessation].period_end_was_not_observed ||
-		t <= by_hand_annotation_event_times[(int)ns_translation_cessation].period_end)
+	if (!by_hand_annotation_event_times[(int)ns_fast_movement_cessation].period_end_was_not_observed &&
+		t <= by_hand_annotation_event_times[(int)ns_fast_movement_cessation].period_end ||
+		by_hand_annotation_event_times[(int)ns_fast_movement_cessation].period_end_was_not_observed &&
+		by_hand_annotation_event_times[(int)ns_movement_cessation].period_end_was_not_observed
+		) {
+		//std::cerr << "foo";
 		return ns_hmm_moving_vigorously;
+	}
 
 
 	//if the worm hasn't stopped moving yet, it's moving weakly
@@ -3706,7 +3712,7 @@ ns_movement_state_observation_boundaries ns_set_boundary(const ns_death_time_ann
 	return b;
 }
 
-ns_time_path_posture_movement_solution ns_analyzed_image_time_path::reconstruct_movement_state_solution_from_annotations(const unsigned long first_index,const unsigned long last_index,const std::vector<ns_death_time_annotation_time_interval> & time_intervals) const{
+ns_time_path_posture_movement_solution ns_analyzed_image_time_path::reconstruct_movement_state_solution_from_annotations(const unsigned long first_index, const unsigned long last_index, const std::vector<ns_death_time_annotation_time_interval> & time_intervals) const {
 	ns_time_path_posture_movement_solution s;
 	if (time_intervals[(ns_translation_cessation)].fully_unbounded())
 		throw ns_ex("Animal never slowed");
@@ -3718,6 +3724,15 @@ ns_time_path_posture_movement_solution ns_analyzed_image_time_path::reconstruct_
 		movement_cessation(ns_find_index_for_time(time_intervals[(int)ns_movement_cessation], *this)),
 		expansion_start(ns_find_index_for_time(time_intervals[(int)ns_death_posture_relaxation_start], *this)),
 		expansion_end(ns_find_index_for_time(time_intervals[(int)ns_death_posture_relaxation_termination], *this));
+
+	if (fast_movement_cessation.first == -1 && fast_movement_cessation.second == -1) {
+		fast_movement_cessation.first = state_intervals[(int)ns_fast_movement_cessation].exit_interval.period_start_index;
+		fast_movement_cessation.second = state_intervals[(int)ns_fast_movement_cessation].exit_interval.period_end_index;
+	}
+	if (translation_cessation.first == -1 && translation_cessation.second == -1){
+		translation_cessation.first = state_intervals[(int)ns_translation_cessation].exit_interval.period_start_index;
+		translation_cessation.second = state_intervals[(int)ns_translation_cessation].exit_interval.period_end_index;
+	}
 
 	if (translation_cessation.second == -1)
 		throw ns_ex("Worm never stopped!");

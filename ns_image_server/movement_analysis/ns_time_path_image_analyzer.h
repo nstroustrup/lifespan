@@ -545,7 +545,7 @@ private:
 	//the movement solution has the transition times marked in respect to indicies in the path object
 	ns_time_path_posture_movement_solution machine_movement_state_solution;
 
-	void convert_movement_solution_to_state_intervals(const ns_movement_state_time_interval_indicies & frame_before_first_interval, const ns_time_path_posture_movement_solution &solution, ns_state_interval_list & list) const;
+	void convert_movement_solution_to_state_intervals(const ns_movement_state_time_interval_indicies & frame_before_first_interval, const ns_time_path_posture_movement_solution &solution, ns_state_interval_list & list);
 	
 	std::vector<ns_death_time_annotation_time_interval> by_hand_annotation_event_times;
 	ns_time_path_posture_movement_solution reconstruct_movement_state_solution_from_annotations(const unsigned long first_index, const unsigned long last_index,const std::vector<ns_death_time_annotation_time_interval> & intervals) const;

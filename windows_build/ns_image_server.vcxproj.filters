@@ -1132,6 +1132,9 @@
     <ClCompile Include="..\external_libraries\gmm\gmm.cpp">
       <Filter>misc_lib\gmm</Filter>
     </ClCompile>
+    <ClCompile Include="..\external_libraries\gmm\KMeans.cpp">
+      <Filter>misc_lib\gmm</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="server_icon.ico">

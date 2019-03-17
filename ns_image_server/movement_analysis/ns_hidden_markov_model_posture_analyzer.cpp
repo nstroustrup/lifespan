@@ -43,8 +43,216 @@ double inline ns_truncate_positive(const double & d){
 double inline ns_truncate_negatives(const double & d){
 	return (d>=0?d:0);
 }
+
+
+void ns_hmm_solver::solve(const ns_analyzed_image_time_path & path, const ns_emperical_posture_quantification_value_estimator & estimator) {
+	ns_time_path_posture_movement_solution solution;
+	bool found_start_time(false);
+	unsigned long start_time_i(0);
+	std::vector<unsigned long> path_indices;
+	for (unsigned int i = start_time_i; i < path.element_count(); i++) {
+		if (!path.element(i).excluded && !path.element(i).censored) {
+			if (!found_start_time) {
+				start_time_i = i;
+				found_start_time = true;
+			}
+			path_indices.push_back(i);
+		}
+	}
+	std::vector<ns_hmm_state_transition_time_path_index > movement_transitions;
+	movement_state_solution.loglikelihood_of_solution = run_viterbi(path, estimator, path_indices, movement_transitions);
+	build_movement_state_solution_from_movement_transitions(path_indices, movement_transitions);
+}
+
+double ns_hmm_solver::probability_of_path_solution(const ns_analyzed_image_time_path & path, const ns_emperical_posture_quantification_value_estimator & estimator, ns_time_path_posture_movement_solution & solution) {
+	std::vector < ns_hmm_movement_state > movement_states(path.element_count(), ns_hmm_unknown_state);
+	if (!solution.moving.skipped) {
+		for (unsigned int i = solution.moving.start_index; i <= solution.moving.end_index; i++)
+			movement_states[i] = ns_hmm_moving_vigorously;
+	}
+	if (!solution.slowing.skipped) {
+		for (unsigned int i = solution.slowing.start_index; i <= solution.slowing.end_index; i++)
+			if (!solution.expanding.skipped && i >= solution.expanding.start_index && i <= solution.expanding.end_index)
+				movement_states[i] = ns_hmm_moving_weakly_expanding;
+			else if (!solution.expanding.skipped && i > solution.expanding.end_index)
+				movement_states[i] = ns_hmm_moving_weakly_post_expansion;
+			else movement_states[i] = ns_hmm_moving_weakly;
+	}
+	if (!solution.dead.skipped) {
+		for (unsigned int i = solution.dead.start_index; i <= solution.dead.end_index; i++)
+			if (!solution.expanding.skipped && i >= solution.expanding.start_index && i <= solution.expanding.end_index)
+				movement_states[i] = ns_hmm_not_moving_expanding;
+			else if (!solution.expanding.skipped && i < solution.expanding.start_index)
+				movement_states[i] = ns_hmm_not_moving_alive;
+			else movement_states[i] = ns_hmm_not_moving_dead;
+	}
+
+	std::vector<double> emission_probabilities;
+	ns_hmm_movement_state previous_state = ns_hmm_missing;
+
+	std::vector<std::vector<double> > transition_probability;
+	build_state_transition_matrix(transition_probability);
+
+	double log_liklihood;
+	for (unsigned int i = 0; i < movement_states.size(); i++) {
+		if (path.element(i).excluded || path.element(i).censored)
+			continue;
+		if (movement_states[i] == ns_hmm_moving_vigorously) //ignore missing and fast moving states.
+			continue;
+		estimator.probability_for_each_state(path.element(i).measurements, emission_probabilities);
+		log_liklihood += log(transition_probability[previous_state][movement_states[i]] *
+								emission_probabilities[movement_states[i]]);
+		previous_state = movement_states[i];
+	}
+	return log_liklihood;
+
+}
+
+
+//run the viterbi algorithm using the specified indicies of the path
+
+double ns_hmm_solver::run_viterbi(const ns_analyzed_image_time_path & path, const ns_emperical_posture_quantification_value_estimator & estimator, const std::vector<unsigned long> path_indices,
+	std::vector<ns_hmm_state_transition_time_path_index > &movement_transitions) {
+
+	const int number_of_states((int)ns_hmm_unknown_state);
+	std::vector<std::vector<double> > a;
+	build_state_transition_matrix(a);
+	const unsigned long nobs(path_indices.size());
+	const unsigned long mstat(number_of_states);
+	unsigned long lrnrm;
+	std::vector<std::vector<double> > alpha(nobs, std::vector<double>(mstat, 0)),
+		beta(nobs, std::vector<double>(mstat, 0)),
+		pstate(nobs, std::vector<double>(mstat, 0));
+	std::vector<unsigned long> arnrm(nobs, 0), brnrm(nobs, 0);
+
+	double BIG(1.e20), BIGI(1. / BIG), lhood;
+
+	std::vector<double> emission_probabilities;
+	estimator.probability_for_each_state(path.element(path_indices[0]).measurements, emission_probabilities);
+	int i, j, t;
+	double sum, asum, bsum;
+	for (i = 0; i < mstat; i++) alpha[0][i] = emission_probabilities[i];
+	arnrm[0] = 0;
+	for (t = 1; t < nobs; t++) {
+		if (path.element(t).excluded)
+			continue;
+		estimator.probability_for_each_state(path.element(path_indices[t]).measurements, emission_probabilities);
+		asum = 0;
+		for (j = 0; j < mstat; j++) {
+			sum = 0.;
+			for (i = 0; i < mstat; i++) sum += alpha[t - 1][i] * a[i][j] * emission_probabilities[j];  //probability of moving from state i at t-1 to state j at t
+			alpha[t][j] = sum;
+			asum += sum;
+		}
+		arnrm[t] = arnrm[t - 1];
+		if (asum < BIGI) {
+			++arnrm[t];
+			for (j = 0; j < mstat; j++) alpha[t][j] *= BIG;
+		}
+	}
+	for (i = 0; i < mstat; i++) beta[nobs - 1][i] = 1.;
+	brnrm[nobs - 1] = 0;
+	for (t = nobs - 2; t >= 0; t--) {
+
+		estimator.probability_for_each_state(path.element(path_indices[t + 1]).measurements, emission_probabilities);
+		bsum = 0.;
+		for (i = 0; i < mstat; i++) {
+			sum = 0.;
+			for (j = 0; j < mstat; j++) sum += a[i][j] * emission_probabilities[j] * beta[t + 1][j];
+			beta[t][i] = sum;
+			bsum += sum;
+		}
+		brnrm[t] = brnrm[t + 1];
+		if (bsum < BIGI) {
+			++brnrm[t];
+			for (j = 0; j < mstat; j++) beta[t][j] *= BIG;
+		}
+	}
+	lhood = 0.;
+	for (i = 0; i < mstat; i++) lhood += alpha[0][i] * beta[0][i];
+	lrnrm = arnrm[0] + brnrm[0];
+	while (lhood < BIGI) { lhood *= BIG; lrnrm++; }
+	for (t = 0; t < nobs; t++) {
+		sum = 0.;
+		for (i = 0; i < mstat; i++) sum += (pstate[t][i] = alpha[t][i] * beta[t][i]);
+		for (i = 0; i < mstat; i++) pstate[t][i] /= sum;
+	}
+
+	if (pstate.size() == 0)
+		throw ns_ex("No states!");
+	//now find transition of times between states
+	movement_transitions.push_back(ns_hmm_state_transition_time_path_index(most_probable_state(pstate[0]), 0));
+	for (unsigned int i = 1; i < pstate.size(); i++) {
+		const ns_hmm_movement_state s = most_probable_state(pstate[i]);
+		if (s != movement_transitions.rbegin()->first)
+			movement_transitions.push_back(ns_hmm_state_transition_time_path_index(s, i));
+
+	}
+	return log(lhood) + lrnrm * log(BIGI);
+}
+
+void ns_hmm_solver::build_movement_state_solution_from_movement_transitions(const std::vector<unsigned long> path_indices, const std::vector<ns_hmm_state_transition_time_path_index > & movement_transitions){
+	movement_state_solution.moving.start_index = path_indices[0];
+	ns_movement_state m = ns_movement_fast;
+	int expanding_state = 0;
+	movement_state_solution.expanding.skipped = true;
+	movement_state_solution.moving.skipped = false;
+	movement_state_solution.moving.end_index = *path_indices.rbegin();
+	//go through each of the state transitions and annotate what has happened in the solution.
+	for (unsigned int i = 0; i < movement_transitions.size(); i++) {
+		//look for movement transitions
+		if (m == ns_movement_fast && (movement_transitions[i].first != ns_hmm_missing && movement_transitions[i].first != ns_hmm_moving_vigorously)) {
+			if (i != 0) {
+				movement_state_solution.moving.skipped = false;
+				movement_state_solution.moving.end_index = path_indices[movement_transitions[i].second - 1];
+			}
+			else movement_state_solution.moving.skipped = true;
+			m = ns_movement_slow;
+			movement_state_solution.slowing.start_index = path_indices[movement_transitions[i].second];
+			movement_state_solution.slowing.skipped = false;
+			movement_state_solution.slowing.end_index = *path_indices.rbegin();
+		}
+		if (m == ns_movement_slow && (
+			movement_transitions[i].first != ns_hmm_moving_weakly &&
+			movement_transitions[i].first != ns_hmm_moving_weakly_expanding &&
+			movement_transitions[i].first != ns_hmm_moving_weakly_post_expansion)) {
+			if (path_indices[i] != movement_state_solution.slowing.start_index)
+				movement_state_solution.slowing.end_index = path_indices[movement_transitions[i].second - 1];
+			else movement_state_solution.slowing.skipped = true;
+			m = ns_movement_stationary;
+			movement_state_solution.dead.start_index = path_indices[movement_transitions[i].second];
+			movement_state_solution.dead.skipped = false;
+			movement_state_solution.dead.end_index = *path_indices.rbegin();
+		}
+		//now we handle expansions
+		switch (expanding_state) {
+		case 0:
+			if (movement_transitions[i].first == ns_hmm_moving_weakly_expanding ||
+				movement_transitions[i].first == ns_hmm_not_moving_expanding) {
+				movement_state_solution.expanding.skipped = false;
+				movement_state_solution.expanding.start_index = path_indices[movement_transitions[i].second];
+				movement_state_solution.expanding.end_index = *path_indices.rbegin();
+				expanding_state = 1;
+			}
+			if (movement_transitions[i].first == ns_hmm_moving_weakly_post_expansion)
+				throw ns_ex("Unexpected pre-expansion state!");
+			break;
+		case 1:
+			if (movement_transitions[i].first != ns_hmm_moving_weakly_expanding &&
+				movement_transitions[i].first != ns_hmm_not_moving_expanding) {
+				movement_state_solution.expanding.end_index = path_indices[movement_transitions[i].second - 1];
+				expanding_state = 2;
+			}
+			break;
+		case 2: if (movement_transitions[i].first != ns_hmm_moving_weakly_post_expansion &&
+			movement_transitions[i].first != ns_hmm_not_moving_dead)
+			throw ns_ex("Unexpected post-expansion state!");
+		}
+	}
+}
+
 //m[i][j] is the log probabilitiy that an individual in state i transitions to state j.
-void ns_build_state_transition_matrix(std::vector<std::vector<double> > & m) {
+void ns_hmm_solver::build_state_transition_matrix(std::vector<std::vector<double> > & m) {
 	m.resize((int)ns_hmm_unknown_state);
 	for (unsigned int i = 0; i < (int)ns_hmm_unknown_state; i++) {
 		m[i].resize(0);
@@ -89,11 +297,11 @@ void ns_build_state_transition_matrix(std::vector<std::vector<double> > & m) {
 		for (unsigned int j = 0; j < (int)ns_hmm_unknown_state; j++)
 			sum += m[i][j];
 		for (unsigned int j = 0; j < (int)ns_hmm_unknown_state; j++)
-			m[i][j] =  m[i][j] / (double)sum;
+			m[i][j] = m[i][j] / (double)sum;
 	}
 }
 
-ns_hmm_movement_state most_probable_state(const std::vector<double> & d) {
+ns_hmm_movement_state ns_hmm_solver::most_probable_state(const std::vector<double> & d) {
 	ns_hmm_movement_state s((ns_hmm_movement_state)0);
 	double p(d[0]);
 	for (unsigned int i = 1; i < d.size(); i++)
@@ -103,36 +311,21 @@ ns_hmm_movement_state most_probable_state(const std::vector<double> & d) {
 		}
 	return s;
 }
-ns_time_path_posture_movement_solution ns_time_path_movement_markov_solver::estimate_posture_movement_states(int software_version,const ns_analyzed_image_time_path * path, ns_analyzed_image_time_path * output_path, std::ostream * debug_output)const{
 
-	ns_time_path_posture_movement_solution solution;
-	bool found_start_time(false);
-	unsigned long start_time_i(0);
-	std::vector<unsigned long> path_indices;
-	for (unsigned int i = start_time_i; i < path->element_count(); i++) {
-		if (!path->element(i).excluded) {
-			if (!found_start_time) {
-				start_time_i = i;
-				found_start_time = true;
-			}
-			path_indices.push_back(i);
-		}
-	}
-	
-	const int number_of_states((int)ns_hmm_unknown_state);
-	std::vector<std::vector<double> > a;
-	ns_build_state_transition_matrix(a);
+/*
+void forward_backward(){
+	//forward backward model
 	unsigned long fbdone = 0, nobs(path_indices.size());
 	unsigned long mstat(number_of_states);
 	unsigned long lrnrm;
-	std::vector<std::vector<double> > alpha(nobs,std::vector<double>(mstat,0)), 
-									  beta(nobs, std::vector<double>(mstat, 0)),
-									  pstate(nobs, std::vector<double>(mstat, 0));
-	std::vector<unsigned long> arnrm(nobs,0), brnrm(nobs,0);
+	std::vector<std::vector<double> > alpha(nobs, std::vector<double>(mstat, 0)),
+		beta(nobs, std::vector<double>(mstat, 0)),
+		pstate(nobs, std::vector<double>(mstat, 0));
+	std::vector<unsigned long> arnrm(nobs, 0), brnrm(nobs, 0);
 
 	double BIG(1.e20), BIGI(1. / BIG), lhood;
-	
 	{
+
 		std::vector<double> emission_log_probabilities;
 		estimator.probability_for_each_state(path->element(path_indices[0]).measurements, emission_log_probabilities);
 		int i, j, t;
@@ -146,7 +339,7 @@ ns_time_path_posture_movement_solution ns_time_path_movement_markov_solver::esti
 			asum = 0;
 			for (j = 0; j < mstat; j++) {
 				sum = 0.;
-				for (i = 0; i < mstat; i++) sum += alpha[t - 1][i] * a[i][j] * emission_log_probabilities[j];
+				for (i = 0; i < mstat; i++) sum += alpha[t - 1][i] * a[i][j] * emission_log_probabilities[j];  //probability of moving from state i at t-1 to state j at t
 				alpha[t][j] = sum;
 				asum += sum;
 			}
@@ -188,109 +381,18 @@ ns_time_path_posture_movement_solution ns_time_path_movement_markov_solver::esti
 	}
 	if (pstate.size() == 0)
 		throw ns_ex("No states!");
-	//now find transition of times between states
-	typedef std::pair<ns_hmm_movement_state, unsigned long> ns_movement_transition;
-	std::vector<ns_movement_transition > movement_transitions;
-	movement_transitions.push_back(ns_movement_transition(most_probable_state(pstate[0]), 0));
-	for (unsigned int i = 1; i < pstate.size(); i++) {
-		const ns_hmm_movement_state s = most_probable_state(pstate[i]);
-		if (s != movement_transitions.rbegin()->first)
-			movement_transitions.push_back(ns_movement_transition(s, i));
-	}
-	solution.moving.start_index = path_indices[0];
-	ns_movement_state m = ns_movement_fast;
-	int expanding_state = 0;
-	solution.expanding.skipped = true;
-	solution.moving.skipped = false;
-	solution.moving.end_index = *path_indices.rbegin();
-	//go through each of the state transitions and annotate what has happened in the solution.
-	for (unsigned int i = 0; i < movement_transitions.size(); i++) {
-		//look for movement transitions
-		if (m == ns_movement_fast && (movement_transitions[i].first != ns_hmm_missing && movement_transitions[i].first != ns_hmm_moving_vigorously)) {
-			if (i != 0) {
-				solution.moving.skipped = false;
-				solution.moving.end_index = path_indices[movement_transitions[i].second - 1];
-			}
-			else solution.moving.skipped = true;
-			m = ns_movement_slow;
-			solution.slowing.start_index = path_indices[movement_transitions[i].second];
-			solution.slowing.skipped = false;
-			solution.slowing.end_index = *path_indices.rbegin();
-		}
-		if (m == ns_movement_slow && (
-			movement_transitions[i].first != ns_hmm_moving_weakly &&
-			movement_transitions[i].first != ns_hmm_moving_weakly_expanding &&
-			movement_transitions[i].first != ns_hmm_moving_weakly_post_expansion)) {
-			if (path_indices[i] != solution.slowing.start_index)
-				solution.slowing.end_index = path_indices[movement_transitions[i].second - 1];
-			else solution.slowing.skipped = true;
-			m = ns_movement_stationary;
-			solution.dead.start_index = path_indices[movement_transitions[i].second];
-			solution.dead.skipped = false;
-			solution.dead.end_index = *path_indices.rbegin();
-		}
-		//now we handle expansions
-		switch (expanding_state) {
-		case 0:
-			if (movement_transitions[i].first == ns_hmm_moving_weakly_expanding ||
-				movement_transitions[i].first == ns_hmm_not_moving_expanding) {
-				solution.expanding.skipped = false;
-				solution.expanding.start_index = path_indices[movement_transitions[i].second];
-				solution.expanding.end_index = *path_indices.rbegin();
-				expanding_state = 1;
-			}
-			if (movement_transitions[i].first == ns_hmm_moving_weakly_post_expansion)
-				throw ns_ex("Unexpected pre-expansion state!");
-			break;
-		case 1:
-			if (movement_transitions[i].first != ns_hmm_moving_weakly_expanding &&
-				movement_transitions[i].first != ns_hmm_not_moving_expanding) {
-				solution.expanding.end_index = path_indices[movement_transitions[i].second - 1];
-				expanding_state = 2;
-			}
-			break;
-		case 2: if (movement_transitions[i].first != ns_hmm_moving_weakly_post_expansion &&
-			movement_transitions[i].first != ns_hmm_not_moving_dead)
-			throw ns_ex("Unexpected post-expansion state!");
-		}
-	}
+}
+*/
 
-	return solution;
+
+ns_time_path_posture_movement_solution ns_time_path_movement_markov_solver::estimate_posture_movement_states(int software_version,const ns_analyzed_image_time_path * path, ns_analyzed_image_time_path * output_path, std::ostream * debug_output)const{
+
+	ns_hmm_solver solver;
+	solver.solve(*path, estimator);
+
+	return solver.movement_state_solution;
 }
 
-ns_time_path_posture_movement_solution ns_time_path_movement_markov_solver::estimate_posture_movement_states(const std::vector<double> & movement_ratio, const std::vector<double> & tm, bool output_loglikelihood_series, ns_sequential_hidden_markov_solution & markov_solution, std::ostream * debug_output)const {
-	/*	for (unsigned int i = 0; i < movement_ratio.size(); i++)
-			if (movement_ratio[i] <= 0)
-				throw ns_ex("ns_movement_markov_solver()::solve()::Cannot handle negative ratios!");*/
-
-	ns_time_path_posture_movement_solution sol;
-	ns_sequential_hidden_markov_state_estimator<3, ns_posture_change_markov_likelihood_estimator> markov_estimator(debug_output);
-
-	markov_estimator.run(markov_solution, movement_ratio, tm, ns_posture_change_markov_likelihood_estimator(estimator, 0), output_loglikelihood_series);
-	sol.loglikelihood_of_solution = markov_solution.cumulative_solution_loglikelihood;
-	sol.moving.skipped = markov_solution.state_was_skipped(0);
-	sol.slowing.skipped = markov_solution.state_was_skipped(1);
-	sol.dead.skipped = markov_solution.state_was_skipped(2);
-	if (!sol.moving.skipped) {
-		sol.moving.start_index = markov_solution.state_start_indices[0];
-		if (!sol.slowing.skipped)
-			sol.moving.end_index = markov_solution.state_start_indices[1];
-		else if (!sol.dead.skipped)
-			sol.moving.end_index = markov_solution.state_start_indices[2];
-		else sol.moving.end_index = movement_ratio.size();
-	}
-	if (!sol.slowing.skipped) {
-		sol.slowing.start_index = markov_solution.state_start_indices[1];
-		if (!sol.dead.skipped)
-			sol.slowing.end_index = markov_solution.state_start_indices[2];
-		else sol.slowing.end_index = movement_ratio.size();
-	}
-	if (!sol.dead.skipped) {
-		sol.dead.start_index = markov_solution.state_start_indices[2];
-		sol.dead.end_index = movement_ratio.size();
-	}
-	return sol;
-}
 template<class accessor_t>
 class ns_emission_probabiliy_sub_model {
 public:

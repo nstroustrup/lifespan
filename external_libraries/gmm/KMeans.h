@@ -9,7 +9,7 @@ History:
 
 #pragma once
 #include <fstream>
-
+#include <memory.h>
 class KMeans
 {
 public:

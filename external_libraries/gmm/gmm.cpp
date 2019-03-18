@@ -15,6 +15,7 @@ History:
 #include "KMeans.h"
 #include <cassert>
 #include <algorithm>
+#include <memory.h>
 using namespace std;
 
 //double M_PI=3.14159;

@@ -2,7 +2,7 @@
 #include "ns_time_path_image_analyzer.h"
 #include "ns_normal_distribution.h"
 #include "ns_posture_analysis_models.h"
-#include "gmm.h"
+#include "GMM.h"
 	
 
 double inline ns_catch_infinity(const double & d){

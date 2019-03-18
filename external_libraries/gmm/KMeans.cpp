@@ -12,6 +12,7 @@ History:
 #include <iostream>
 #include "KMeans.h"
 #include <cassert>
+#include <memory.h>
 using namespace std;
 
 

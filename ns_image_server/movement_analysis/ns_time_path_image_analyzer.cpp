@@ -4208,11 +4208,16 @@ void ns_analyzed_image_time_path::denoise_movement_series_and_calculate_intensit
 		
 		const int start_i = this->first_stationary_timepoint();  //do not use frames before worm arrives to calculate slope, as the worm's appearence will produce a very large spurious slope.
 		std::vector<ns_64_bit > tmp1, tmp2;
-		ns_slope_calculator<4, ns_slope_accessor_total_in_region> total_change_calculator(ns_slope_accessor_total_in_region(elements),start_i,tmp1,tmp2);
-		ns_slope_calculator<4, ns_slope_accessor_total_in_foreground> foreground_change_calculator(ns_slope_accessor_total_in_foreground(elements), start_i, tmp1, tmp2);
-		ns_slope_calculator<4, ns_slope_accessor_total_in_stabilized_1x> stabilized_change_calculator_1x(ns_slope_accessor_total_in_stabilized_1x(elements), start_i, tmp1, tmp2);
-		ns_slope_calculator<8, ns_slope_accessor_total_in_stabilized_2x> stabilized_change_calculator_2x(ns_slope_accessor_total_in_stabilized_2x(elements), start_i, tmp1, tmp2);
-		ns_slope_calculator<16, ns_slope_accessor_total_in_stabilized_4x> stabilized_change_calculator_4x(ns_slope_accessor_total_in_stabilized_4x(elements), start_i, tmp1, tmp2);
+		ns_slope_accessor_total_in_region a1 (elements);
+		ns_slope_calculator<4, ns_slope_accessor_total_in_region> total_change_calculator(a1,start_i,tmp1,tmp2);
+		ns_slope_accessor_total_in_foreground a2 (elements);
+		ns_slope_calculator<4, ns_slope_accessor_total_in_foreground> foreground_change_calculator(a2, start_i, tmp1, tmp2);
+		ns_slope_accessor_total_in_stabilized_1x a3(elements);
+		ns_slope_calculator<4, ns_slope_accessor_total_in_stabilized_1x> stabilized_change_calculator_1x(a3, start_i, tmp1, tmp2);
+		ns_slope_accessor_total_in_stabilized_2x a4(elements);		
+		ns_slope_calculator<8, ns_slope_accessor_total_in_stabilized_2x> stabilized_change_calculator_2x(a4, start_i, tmp1, tmp2);
+		ns_slope_accessor_total_in_stabilized_4x a5(elements);
+		ns_slope_calculator<16, ns_slope_accessor_total_in_stabilized_4x> stabilized_change_calculator_4x(a5,start_i, tmp1, tmp2);
 			
 		
 		return;

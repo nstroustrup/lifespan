@@ -515,20 +515,52 @@ private:
 		gmm_means[3],
 		gmm_var[3];
 };
-struct ns_intensity_accessor {
+struct ns_intensity_accessor_1x {
 	double operator()(const ns_analyzed_image_time_path_element_measurements & e) const {
-		return e.change_in_total_stabilized_intensity;
+		return e.change_in_total_stabilized_intensity_1x;
 	}	
 	bool is_zero(const ns_analyzed_image_time_path_element_measurements & e) const {
-		return e.change_in_total_stabilized_intensity == 0;
+		return e.change_in_total_stabilized_intensity_1x == 0;
 	}
 }; 
-struct ns_intensity_emission_accessor {
+struct ns_intensity_emission_accessor_1x {
 	double operator()(const ns_hmm_emission & e) const {
-		return e.measurement.change_in_total_stabilized_intensity;
+		return e.measurement.change_in_total_stabilized_intensity_1x;
 	}
 	bool is_zero(const ns_hmm_emission & e) const {
-		return e.measurement.change_in_total_stabilized_intensity == 0;
+		return e.measurement.change_in_total_stabilized_intensity_1x == 0;
+	}
+}; 
+struct ns_intensity_accessor_2x {
+	double operator()(const ns_analyzed_image_time_path_element_measurements & e) const {
+		return e.change_in_total_stabilized_intensity_2x;
+	}
+	bool is_zero(const ns_analyzed_image_time_path_element_measurements & e) const {
+		return e.change_in_total_stabilized_intensity_2x == 0;
+	}
+};
+struct ns_intensity_emission_accessor_2x {
+	double operator()(const ns_hmm_emission & e) const {
+		return e.measurement.change_in_total_stabilized_intensity_2x;
+	}
+	bool is_zero(const ns_hmm_emission & e) const {
+		return e.measurement.change_in_total_stabilized_intensity_2x == 0;
+	}
+};
+struct ns_intensity_accessor_4x {
+	double operator()(const ns_analyzed_image_time_path_element_measurements & e) const {
+		return e.change_in_total_stabilized_intensity_4x;
+	}
+	bool is_zero(const ns_analyzed_image_time_path_element_measurements & e) const {
+		return e.change_in_total_stabilized_intensity_4x == 0;
+	}
+};
+struct ns_intensity_emission_accessor_4x {
+	double operator()(const ns_hmm_emission & e) const {
+		return e.measurement.change_in_total_stabilized_intensity_4x;
+	}
+	bool is_zero(const ns_hmm_emission & e) const {
+		return e.measurement.change_in_total_stabilized_intensity_4x == 0;
 	}
 };
 struct ns_movement_accessor {
@@ -551,38 +583,64 @@ class ns_emission_probabiliy_model{
 public:
 	void build_from_data(const std::vector<ns_hmm_emission> & observations) {
 		movement.build_from_data<ns_movement_emission_accessor>(observations);
-		intensity.build_from_data< ns_intensity_emission_accessor>(observations);
+		intensity_1x.build_from_data< ns_intensity_emission_accessor_1x>(observations);
+		intensity_2x.build_from_data< ns_intensity_emission_accessor_2x>(observations);
+		intensity_4x.build_from_data< ns_intensity_emission_accessor_4x>(observations);
 	}
 	double point_emission_probability(const ns_analyzed_image_time_path_element_measurements & e) const {
-		return movement.point_emission_probability(e) * intensity.point_emission_probability(e);
+		return movement.point_emission_probability(e) * intensity_1x.point_emission_probability(e)
+													*intensity_2x.point_emission_probability(e)
+													*intensity_4x.point_emission_probability(e);
 	}
-	void write(std::ostream & o) const {
-		o << "m" << ",";
+	void write(const ns_hmm_movement_state state,std::ostream & o) const {
+		o << ns_hmm_movement_state_to_string(state) << ",m,";
 		movement.write(o);
-		o << "\ni,";
-		intensity.write(o);
+		o << "\n" <<ns_hmm_movement_state_to_string(state) << ",i1,";
+		intensity_1x.write(o);
+		o << "\n" << ns_hmm_movement_state_to_string(state) << ",i2,";
+		intensity_2x.write(o);
+		o << "\n" << ns_hmm_movement_state_to_string(state) << ",i4,";
+		intensity_4x.write(o);
 	}
-	void read(std::istream & i) {
+	ns_hmm_movement_state read(std::istream & i) {
+		ns_hmm_movement_state state;
 		ns_get_string get_string;
 		std::string tmp;
 		int r = 0;
 		while (!i.fail()) {
-		get_string(i, tmp);
-
-		//std::cerr << "movement/intensity:" << tmp << " ";
-		if (i.fail())
-			throw ns_ex("ns_emission_probabiliy_model()::Bad model file");
+			get_string(i, tmp);
+			if (i.fail()) {
+				if (r == 0)
+					return ns_hmm_unknown_state;
+				else
+					throw ns_ex("ns_emission_probabiliy_model::read()::Bad model file");
+			}
+			ns_hmm_movement_state state_temp = ns_hmm_movement_state_from_string(tmp);
+			if (r != 0 && state_temp != state)
+				throw ns_ex("ns_emission_probabiliy_model::read()::Mixed up order of emission probability model!");
+			state = state_temp;
+			get_string(i, tmp);
+			if (i.fail())
+				throw ns_ex("ns_emission_probabiliy_model::read()::Bad model file");
+			//std::cerr << "movement/intensity:" << tmp << " ";
 			if (tmp == "m")
 				movement.read(i);
-			else if (tmp == "i")
-				intensity.read(i);
+			else if (tmp == "i1")
+				intensity_1x.read(i);
+			else if (tmp == "i2")
+				intensity_2x.read(i);
+			else if (tmp == "i4")
+				intensity_4x.read(i);
 			r++;
-			if (r == 2)
+			if (r == 4)
 				break;
 		}
+		return state;
 	}
 	ns_emission_probabiliy_sub_model<ns_movement_accessor> movement;
-	ns_emission_probabiliy_sub_model<ns_intensity_accessor> intensity;
+	ns_emission_probabiliy_sub_model<ns_intensity_accessor_1x> intensity_1x;
+	ns_emission_probabiliy_sub_model<ns_intensity_accessor_2x> intensity_2x;
+	ns_emission_probabiliy_sub_model<ns_intensity_accessor_4x> intensity_4x;
 
 };
 
@@ -637,30 +695,40 @@ void ns_emperical_posture_quantification_value_estimator::write_observation_data
 		out << "a," << p->second.source.to_string() << "\n";
 	}
 }
-#include <iostream>
+
+ns_emperical_posture_quantification_value_estimator::~ns_emperical_posture_quantification_value_estimator() {
+	for (auto p = emission_probability_models.begin(); p != emission_probability_models.end(); ++p)
+		delete p->second;
+	emission_probability_models.clear();
+}
 void ns_emperical_posture_quantification_value_estimator::read(std::istream & i) {
 	std::string tmp;
 	ns_get_string get_string;
 	while (true) {
-		get_string(i,tmp);
-		if (i.fail()) {
-			if (emission_probability_models.size() < 2)
-				throw ns_ex("ns_emperical_posture_quantification_value_estimator()::The estimator did not contain enough data.");
-			return;
+		ns_emission_probabiliy_model * model = new ns_emission_probabiliy_model;
+		try {
+			ns_hmm_movement_state state = model->read(i);
+			if (state == ns_hmm_unknown_state || i.fail()) {
+				if (emission_probability_models.size() < 2)
+					throw ns_ex("ns_emperical_posture_quantification_value_estimator()::The estimator did not contain enough data.");
+				delete model; 
+				return;
+			}
+
+			auto p2 = emission_probability_models.find(state);
+			if (p2 == emission_probability_models.end())
+				p2 = emission_probability_models.insert(emission_probability_models.end(),
+					std::map < ns_hmm_movement_state, ns_emission_probabiliy_model *>::value_type(state, model));
 		}
-		//std::cerr << "hmm state:" << tmp << " ";
-		ns_hmm_movement_state s = ns_hmm_movement_state_from_string(tmp);
-		auto p2 = emission_probability_models.find(s);
-		if (p2 == emission_probability_models.end())
-			p2 = emission_probability_models.insert(emission_probability_models.end(),
-				std::map < ns_hmm_movement_state, ns_emission_probabiliy_model *>::value_type(s, new ns_emission_probabiliy_model));
-		p2->second->read(i);
+		catch (...) {
+			delete model;
+			throw;
+		}
 	}
 }
 void ns_emperical_posture_quantification_value_estimator::write(std::ostream & o)const {
 	for (auto p = emission_probability_models.begin(); p != emission_probability_models.end(); p++) {
-		o << ns_hmm_movement_state_to_string(p->first) << ",";
-		p->second->write(o);
+		p->second->write(p->first,o);
 		o << "\n";
 	}
 }

@@ -165,13 +165,15 @@ private:
 
 class ns_animal_telemetry {
 public:
-	typedef enum { ns_none, ns_movement, ns_movement_intensity, ns_movement_intensity_slope, ns_all,ns_number_of_graph_types } ns_graph_contents;
+	typedef enum { ns_none, ns_movement, ns_movement_intensity, ns_movement_intensity_slope_1x, ns_movement_intensity_slope_2x, ns_movement_intensity_slope_4x, ns_all,ns_number_of_graph_types } ns_graph_contents;
 	static std::string graph_type_string(const ns_graph_contents c) {
 		switch (c) {
 		case ns_none: return "no data";
 		case ns_movement: return "movement scores (white)";
 		case ns_movement_intensity: "movement scores (white),total intensity (blue)";
-		case ns_movement_intensity_slope: return "movement scores (white), total intensity (blue), change in total intensity (green)";
+		case ns_movement_intensity_slope_1x: return "movement scores (white), total intensity (blue), change in total intensity (green)";
+		case ns_movement_intensity_slope_2x: return "movement scores (white), total intensity (blue), change in total intensity (green)";
+		case ns_movement_intensity_slope_4x: return "movement scores (white), total intensity (blue), change in total intensity (green)";
 		case ns_all: return "all data";
 		default: throw ns_ex("ns_animal_telemetry::graph_type_string()::Unknown graph type");
 		}
@@ -198,6 +200,7 @@ private:
 	std::vector<double> temp1, temp2;
 	
 	unsigned long number_of_valid_elements, first_element;
+	
 	void draw_base_graph(const ns_graph_contents & graph_contents, const long marker_resize_factor, unsigned long start_time = 0, unsigned long stop_time = UINT_MAX) {
 		if (graph_contents == ns_none)
 			return;
@@ -347,7 +350,12 @@ private:
 			if (t < min_time) min_time = t;
 			if (t > max_time) max_time = t;
 			const double n(path->element(i + first_element).measurements.total_intensity_within_stabilized);
-			const double s(path->element(i + first_element).measurements.change_in_total_stabilized_intensity);
+			double s;
+			switch (graph_contents){
+				case ns_movement_intensity_slope_1x: s = path->element(i + first_element).measurements.change_in_total_stabilized_intensity_1x; break;
+				case ns_movement_intensity_slope_2x: s = path->element(i + first_element).measurements.change_in_total_stabilized_intensity_2x; break;
+				case ns_movement_intensity_slope_4x: s = path->element(i + first_element).measurements.change_in_total_stabilized_intensity_4x; break;
+			}
 			//cout << t / (60.0 * 60 * 24) << "," << s << "\n";
 			if (i < path->first_stationary_timepoint())
 				continue;
@@ -394,7 +402,14 @@ private:
 
 			//scale slope so that a slope of 0 is at .5 and the max devation from zero is either at -1 or 1
 			slope_vals[current_segment].x.push_back(time);
-			slope_vals[current_segment].y.push_back(.5*(path->element(i + first_element).measurements.change_in_total_stabilized_intensity  / (float)(intensity_slope_largest)+1));
+			double s;
+			switch (graph_contents) {
+				case ns_movement_intensity_slope_1x: s = path->element(i + first_element).measurements.change_in_total_stabilized_intensity_1x; break;
+				case ns_movement_intensity_slope_2x: s = path->element(i + first_element).measurements.change_in_total_stabilized_intensity_2x; break;
+				case ns_movement_intensity_slope_4x: s = path->element(i + first_element).measurements.change_in_total_stabilized_intensity_4x; break;
+			}
+
+			slope_vals[current_segment].y.push_back(.5*(s  / (float)(intensity_slope_largest)+1));
 			if (*slope_vals[current_segment].y.rbegin() < 0) *slope_vals[current_segment].y.rbegin() = 0;
 			if (*slope_vals[current_segment].y.rbegin() > 1) *slope_vals[current_segment].y.rbegin() = 1;
 		}
@@ -497,7 +512,9 @@ private:
 
 			switch (graph_contents) {	//deliberate read-through between plots
 				case ns_all:
-				case ns_movement_intensity_slope:
+				case ns_movement_intensity_slope_1x:
+				case ns_movement_intensity_slope_2x:
+				case ns_movement_intensity_slope_4x:
 				case ns_movement_intensity:
 					graph_bottom.add_reference(&smoothed_size_vals[i]);
 				case ns_movement:
@@ -505,7 +522,9 @@ private:
 				}
 			switch (graph_contents) {	//deliberate read-through between plots
 				case ns_all:
-				case ns_movement_intensity_slope:
+				case ns_movement_intensity_slope_1x:
+				case ns_movement_intensity_slope_2x:
+				case ns_movement_intensity_slope_4x:
 					graph_bottom.add_reference(&slope_vals[i]);
 				case ns_movement_intensity:
 					graph_bottom.add_reference(&size_vals[i]);
@@ -513,7 +532,10 @@ private:
 					graph_top.add_reference(&movement_vals[i]);
 			}
 		}
-		if (graph_contents == ns_movement_intensity_slope || graph_contents == ns_all) 
+		if (graph_contents == ns_movement_intensity_slope_1x ||
+			graph_contents == ns_movement_intensity_slope_2x ||
+			graph_contents == ns_movement_intensity_slope_4x ||
+			graph_contents == ns_all)
 			graph_bottom.add_reference(&zero_slope_object);
 	
 		graph_top.add_reference(&threshold_object);
@@ -603,13 +625,17 @@ private:
 				buffer[p] = 255;
 				buffer[p+1] = 0;
 				buffer[p+2] = 0;
-				if (graph_contents == ns_animal_telemetry::ns_all || graph_contents == ns_animal_telemetry::ns_movement_intensity || graph_contents == ns_animal_telemetry::ns_movement_intensity_slope) {
+				if (graph_contents == ns_animal_telemetry::ns_all || graph_contents == ns_animal_telemetry::ns_movement_intensity || graph_contents == ns_animal_telemetry::ns_movement_intensity_slope_1x
+					|| graph_contents == ns_animal_telemetry::ns_movement_intensity_slope_2x
+					|| graph_contents == ns_animal_telemetry::ns_movement_intensity_slope_4x) {
 					p = map_pixel_from_image_onto_buffer(x_size + x + border().x, y_size + y + border().y, position, buffer_size);
 					buffer[p] = 255;
 					buffer[p + 1] = 0;
 					buffer[p + 2] = 0;
 				}
-				if ( graph_contents == ns_animal_telemetry::ns_movement_intensity_slope) {
+				if (graph_contents == ns_animal_telemetry::ns_movement_intensity_slope_1x
+					|| graph_contents == ns_animal_telemetry::ns_movement_intensity_slope_2x
+					|| graph_contents == ns_animal_telemetry::ns_movement_intensity_slope_4x) {
 					p = map_pixel_from_image_onto_buffer(x_slope + x + border().x, y_slope + y + border().y, position, buffer_size);
 					buffer[p] = 255;
 					buffer[p + 1] = 0;

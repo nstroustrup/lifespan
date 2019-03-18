@@ -1700,7 +1700,13 @@ void ns_analyzed_image_time_path_element_measurements::read(istream & in, ns_vec
 	get_int(in, total_stabilized_area);//27
 	if (in.fail())
 		throw ns_ex("Invalid Specification 27");
-	get_int(in, change_in_total_stabilized_intensity);//28
+	get_int(in, change_in_total_stabilized_intensity_1x);//28
+	if (in.fail())
+	throw ns_ex("Invalid Specification 27");
+	get_int(in, change_in_total_stabilized_intensity_2x);//29
+	if (in.fail())
+	throw ns_ex("Invalid Specification 27");
+	get_int(in, change_in_total_stabilized_intensity_4x);//30
 	if (in.fail())
 		throw ns_ex("Invalid Specification 28");
 	string tmp;
@@ -1738,7 +1744,7 @@ void ns_analyzed_image_time_path_element_measurements::read(istream & in, ns_vec
 #endif
 
 	//open for future use
-	for (unsigned int i = 0; i < 9; i++) {
+	for (unsigned int i = 0; i < 7; i++) {
 		char a = get_int(in, tmp);
 		if (a == '\n')
 			break;
@@ -1853,7 +1859,9 @@ void ns_analyzed_image_time_path_element_measurements::write_header(ostream & ou
 		",denoised_spatial_averaged_movement_score "
 		",total_intensity_in_previous_frame_scaled_to_current_frames_histogram"
 		",total_stabilized_area "
-		",change_in_total_stabilized_intensity,";
+		",change_in_total_stabilized_intensity_1x,";
+		",change_in_total_stabilized_intensity_2x,";
+		",change_in_total_stabilized_intensity_4x,";
 
 	for (unsigned int i = 0; i < 9; i++)
 		out << "blank,";
@@ -1882,7 +1890,9 @@ void ns_analyzed_image_time_path_element_measurements::write(ostream & out,const
 		<< denoised_spatial_averaged_movement_score << ","//25
 		<< total_intensity_in_previous_frame_scaled_to_current_frames_histogram << ","//26
 		<< total_stabilized_area << ","//27
-		<< change_in_total_stabilized_intensity;//28
+		<< change_in_total_stabilized_intensity_1x << ","//28
+		<< change_in_total_stabilized_intensity_2x << ","//29
+		<< change_in_total_stabilized_intensity_4x;//30
 		#ifdef NS_CALCULATE_OPTICAL_FLOW
 		o << ","; //deliberately left blank to mark old record format
 		scaled_flow_magnitude.write(o); o << ",";
@@ -1893,7 +1903,7 @@ void ns_analyzed_image_time_path_element_measurements::write(ostream & out,const
 		raw_flow_dy.write(o);
 		#endif
 
-	for (unsigned int i = 0; i < 9; i++)
+	for (unsigned int i = 0; i < 7; i++)
 		out << ",";
 }
 void ns_time_path_image_movement_analyzer::save_movement_data_to_disk(ostream & o) const{
@@ -2212,7 +2222,9 @@ void ns_analyzed_image_time_path::write_detailed_movement_quantification_analysi
 		"Movement Alternate Worm Sum,"
 		"Total Foreground Area, Total Stabilized Area, Total Region Area,Total Alternate Worm Area,"
 		"Total Foreground Intensity, Total Stabilized Intensity,Total Region Intensity,Total Alternate Worm Intensity,"
-		"Change in Foreground Intensity (pix/hour),Change in Stabilized Intensity (pix/hour),Change in Region Intensity (pix/hour),"
+		"Change in Foreground Intensity (pix/hour),"
+		"Change in Stabilized Intensity 1x(pix/hour),Change in Stabilized Intensity 2x(pix/hour),Change in Stabilized Intensity 4x(pix/hour),"
+		"Change in Region Intensity (pix/hour),"
 		"Saturated Registration, Machine Error (Days ),"
 		"Death Time,"
 		"Total Foreground Area at Death,"
@@ -2347,7 +2359,9 @@ void ns_analyzed_image_time_path::write_detailed_movement_quantification_analysi
 				<< elements[k].measurements.total_intensity_within_alternate_worm << ","
 
 				<< elements[k].measurements.change_in_total_foreground_intensity << ","
-				<< elements[k].measurements.change_in_total_stabilized_intensity << ","
+				<< elements[k].measurements.change_in_total_stabilized_intensity_1x << ","
+				<< elements[k].measurements.change_in_total_stabilized_intensity_2x << ","
+				<< elements[k].measurements.change_in_total_stabilized_intensity_4x << ","
 				<< elements[k].measurements.change_in_total_region_intensity << ","
 			
 			
@@ -4056,113 +4070,150 @@ public:
 		}
 	}
 };
+struct ns_slope_accessor_total_in_region {
+	ns_slope_accessor_total_in_region(ns_analyzed_image_time_path::ns_element_list & l) :list(l) {};
+	inline const ns_s64_bit & total_intensity(const unsigned long i) {
+		return list[i].measurements.total_intensity_within_region;
+	}
+	inline ns_s64_bit & slope(const unsigned long i) {
+		return list[i].measurements.change_in_total_region_intensity;
+	}
+	ns_analyzed_image_time_path::ns_element_list::size_type size() const { return list.size(); }
+	unsigned long time(const unsigned long i) const { return list[i].absolute_time; }
+private:
+	ns_analyzed_image_time_path::ns_element_list & list;
+}; 
+struct ns_slope_accessor_total_in_foreground {
+	ns_slope_accessor_total_in_foreground(ns_analyzed_image_time_path::ns_element_list & l) :list(l) {};
+	inline const ns_s64_bit & total_intensity(const unsigned long i) {
+		return list[i].measurements.total_intensity_within_foreground;
+	}
+	inline ns_s64_bit & slope(const unsigned long i) {
+		return list[i].measurements.change_in_total_foreground_intensity;
+	}
+	ns_analyzed_image_time_path::ns_element_list::size_type size() const { return list.size(); }
+	unsigned long time(const unsigned long i) const { return list[i].absolute_time; }
+private:
+	ns_analyzed_image_time_path::ns_element_list & list;
+};
+struct ns_slope_accessor_total_in_stabilized_1x {
+	ns_slope_accessor_total_in_stabilized_1x(ns_analyzed_image_time_path::ns_element_list & l) :list(l) {};
+	inline const ns_s64_bit & total_intensity(const unsigned long i) {
+		return list[i].measurements.total_intensity_within_stabilized;
+	}
+	inline ns_s64_bit & slope(const unsigned long i) {
+		return list[i].measurements.change_in_total_stabilized_intensity_1x;
+	}
+	ns_analyzed_image_time_path::ns_element_list::size_type size() const { return list.size(); }
+	unsigned long time(const unsigned long i) const { return list[i].absolute_time; }
+private:
+	ns_analyzed_image_time_path::ns_element_list & list;
+}; 
+struct ns_slope_accessor_total_in_stabilized_2x {
+	ns_slope_accessor_total_in_stabilized_2x(ns_analyzed_image_time_path::ns_element_list & l) :list(l) {};
+	inline const ns_s64_bit & total_intensity(const unsigned long i) {
+		return list[i].measurements.total_intensity_within_stabilized;
+	}
+	inline ns_s64_bit & slope(const unsigned long i) {
+		return list[i].measurements.change_in_total_stabilized_intensity_2x;
+	}
+	ns_analyzed_image_time_path::ns_element_list::size_type size() const { return list.size(); }
+	unsigned long time(const unsigned long i) const { return list[i].absolute_time; }
+private:
+	ns_analyzed_image_time_path::ns_element_list & list;
+}; 
+struct ns_slope_accessor_total_in_stabilized_4x {
+	ns_slope_accessor_total_in_stabilized_4x(ns_analyzed_image_time_path::ns_element_list & l) :list(l) {};
+	inline const ns_s64_bit & total_intensity(const unsigned long i) {
+		return list[i].measurements.total_intensity_within_stabilized;
+	}
+	inline ns_s64_bit & slope(const unsigned long i) {
+		return list[i].measurements.change_in_total_stabilized_intensity_4x;
+	}
+	ns_analyzed_image_time_path::ns_element_list::size_type size() const { return list.size(); }
+	unsigned long time(const unsigned long i ) const { return list[i].absolute_time; }
+private:
+	ns_analyzed_image_time_path::ns_element_list & list;
+};
+
+//this calculates a time series of slope values, with the specified kernel width
+//the particular measurements used are specified by data_accessor_t
+template<int slope_kernel_half_width,class data_accessor_t>
+class ns_slope_calculator{
+public:
+	ns_slope_calculator< slope_kernel_half_width, data_accessor_t>(data_accessor_t & data, const int start_i, std::vector<ns_64_bit > & vals, std::vector<ns_64_bit > times){
+		
+		const int slope_kernel_width = slope_kernel_half_width * 2 + 1;
+
+		if (data.size() < slope_kernel_width + start_i)
+			return;
+
+		for (unsigned int i = 0; i < start_i; i++)
+			data.slope(i) = 0;// units: per hour
+
+		vals.resize(slope_kernel_width);
+		times.resize(slope_kernel_width);
+		for (unsigned int i = 0; i < slope_kernel_width; i++) {
+			vals[i] = data.total_intensity(i + start_i);
+			times[i] = data.time(i + start_i);
+		}
+		ns_linear_regression_model model;
+		ns_linear_regression_model_parameters params(model.fit(vals, times));
+
+		for (unsigned int i = 0; i < slope_kernel_half_width; i++) {
+			data.slope(i + start_i) = params.slope * 60 * 60; // units: per hour
+		}
+		int pos = 0;
+		for (unsigned int i = slope_kernel_half_width + start_i; ; i++) {
+			//calculate slope of current kernal
+			params = model.fit(vals, times);
+
+			data.slope(i) = params.slope * 60 * 60; // units/
+
+			if (i + slope_kernel_half_width + 2 >= data.size())
+				break;
+			//update kernal for next step, by replacing earliest value i
+			vals[pos] = data.total_intensity(i + slope_kernel_half_width + 2);
+			times[pos] = data.time(i + slope_kernel_half_width + 2);
+			pos++;
+			if (pos == slope_kernel_width)
+				pos = 0;
+		}
+		for (unsigned int i = data.size() - slope_kernel_half_width - 1; i < data.size(); i++) {
+			data.slope(i) = params.slope * 60 * 60; // units: per hour
+		}
+	}
+};
+
 void ns_analyzed_image_time_path::denoise_movement_series_and_calculate_intensity_slopes(const unsigned long change_time_in_seconds, const ns_time_series_denoising_parameters & times_series_denoising_parameters){
 	if (elements.size() == 0)
 		return;
 
 
 	const bool use_kernal_smoother(true);
-	if (use_kernal_smoother){
+	if (use_kernal_smoother) {
 		const int kernel_width(1);
 		ns_movement_data_accessor acc(elements);
 		ns_spatially_averaged_movement_data_accessor acc_spatial(elements);
-		
+
 
 		//calculate the slope at each point
 		//Here, ns_movement_data_accessor calculates the movement score and stores it.
-		for (unsigned int i = 0; i < elements.size(); i++){
+		for (unsigned int i = 0; i < elements.size(); i++) {
 			elements[i].measurements.movement_score = acc.raw(i);
 			elements[i].measurements.spatial_averaged_movement_score = acc_spatial.raw(i);
-		//	if (i > 0)
-			//	elements[i].measurements.change_in_total_worm_intensity =  (double)elements[i].measurements.total_intensity_within_worm_area - (double)elements[i-1].measurements.total_intensity_within_worm_area;
-			//else elements[i].measurements.change_in_total_worm_intensity = 0;
+
 		}
 
-		//Here, ns_movement_data_accessor calculates and provides the raw movement score to the kernel smoother,
-		//which then uses it to calculate the denoised movement scores
-		//These denoised movmenet scores are used for automated movement analaysis.
-		//If the "normalize_movement_timeseries_to_median" flag is set, the set smoothed movement score values
-		//for each object is subtracted out to zero.
-
-		ns_kernel_smoother<ns_movement_data_accessor>m;
-		ns_kernel_smoother<ns_spatially_averaged_movement_data_accessor>m_s;
-		m(kernel_width,acc);
-		m_s(kernel_width, acc_spatial);
-
-		/*for (unsigned int i= 0; i < elements.size(); i++){
-			elements[i].measurements.normalized_worm_area = elements[i].measurements.total_worm_area/(double)elements[first_stationary_timepoint()].measurements.total_worm_area;
-			if (elements[i].measurements.total_worm_area == 0)
-				elements[i].measurements.normalized_total_intensity = 0;
-			else elements[i].measurements.normalized_total_intensity = elements[i].measurements.total_intensity_within_worm_area / elements[i].measurements.total_worm_area;
-			elements[i].measurements.change_in_average_normalized_worm_intensity = 0;
-		}*/
-
-	/*	ns_kernel_smoother<ns_intensity_data_accessor> i;
-		ns_intensity_data_accessor acc2(elements);
-		i(kernel_width,acc2);*/
-
+		
 		const int start_i = this->first_stationary_timepoint();  //do not use frames before worm arrives to calculate slope, as the worm's appearence will produce a very large spurious slope.
-		//cout << start_i;
-		//use a kernal to calculate slope
-		const int slope_kernel_half_width(4);
-		const int slope_kernel_width = slope_kernel_half_width * 2 + 1;
-
-		if (elements.size() >= slope_kernel_width+ start_i) {
-
-			for (unsigned int i = 0; i < start_i; i++) {
-				elements[i].measurements.change_in_total_foreground_intensity = 0;// units: per hour
-				elements[i].measurements.change_in_total_region_intensity = 0; // units/hour
-				elements[i].measurements.change_in_total_stabilized_intensity = 0; // units/hour
-			}
-			std::vector<ns_64_bit > stabilized_vals(slope_kernel_width);
-			std::vector<ns_64_bit > foreground_vals(slope_kernel_width);
-			std::vector<ns_64_bit > region_vals(slope_kernel_width);
-			std::vector<ns_64_bit > times(slope_kernel_width);
-			for (unsigned int i = 0; i < slope_kernel_width; i++) {
-				foreground_vals[i] = elements[i+ start_i].measurements.total_intensity_within_foreground;
-				stabilized_vals[i] = elements[i + start_i].measurements.total_intensity_within_stabilized;
-				region_vals[i] = elements[i + start_i].measurements.total_intensity_within_region;
-				times[i] = elements[i + start_i].absolute_time;
-			}
-			ns_linear_regression_model model;
-			ns_linear_regression_model_parameters foreground_params(model.fit(foreground_vals, times));
-			ns_linear_regression_model_parameters region_params(model.fit(region_vals, times));
-			ns_linear_regression_model_parameters stabilized_params(model.fit(stabilized_vals, times));
-			for (unsigned int i = 0; i < slope_kernel_half_width; i++) {
-				elements[i + start_i].measurements.change_in_total_foreground_intensity = foreground_params.slope * 60 * 60; // units: per hour
-				elements[i + start_i].measurements.change_in_total_region_intensity = region_params.slope * 60 * 60; // units/hour
-				elements[i + start_i].measurements.change_in_total_stabilized_intensity = stabilized_params.slope * 60 * 60; // units/hour
-
-			}
-			int pos = 0;
-			for (unsigned int i = slope_kernel_half_width+start_i; ; i++) {
-				//calculate slope of current kernal
-				foreground_params = model.fit(foreground_vals, times);
-				region_params = model.fit(region_vals, times);
-				stabilized_params = model.fit(stabilized_vals, times);
-
-				elements[i].measurements.change_in_total_foreground_intensity = foreground_params.slope * 60 * 60; // units/
-				elements[i].measurements.change_in_total_region_intensity = region_params.slope * 60 * 60; // units/hour
-				elements[i].measurements.change_in_total_stabilized_intensity = stabilized_params.slope * 60 * 60; // units/hour
-
-				if (i + slope_kernel_half_width + 2 >= elements.size())
-					break;
-				//update kernal for next step, by replacing earliest value i
-				foreground_vals[pos] = elements[i + slope_kernel_half_width + 2].measurements.total_intensity_within_foreground;
-				stabilized_vals[pos] = elements[i + slope_kernel_half_width + 2].measurements.total_intensity_within_stabilized;
-				region_vals[pos] = elements[i + slope_kernel_half_width + 2].measurements.total_intensity_within_region;
-				times[pos] = elements[i + slope_kernel_half_width + 2].absolute_time;
-				pos++;
-				if (pos == slope_kernel_width)
-					pos = 0;
-			}
-			for (unsigned int i = elements.size() - slope_kernel_half_width - 1; i < elements.size(); i++) {
-				elements[i].measurements.change_in_total_foreground_intensity = foreground_params.slope * 60 * 60; // units/
-				elements[i].measurements.change_in_total_region_intensity = region_params.slope * 60 * 60; // units/hour
-				elements[i].measurements.change_in_total_stabilized_intensity = stabilized_params.slope * 60 * 60; // units/hour
-			}
-
-		}
+		std::vector<ns_64_bit > tmp1, tmp2;
+		ns_slope_calculator<4, ns_slope_accessor_total_in_region> total_change_calculator(ns_slope_accessor_total_in_region(elements),start_i,tmp1,tmp2);
+		ns_slope_calculator<4, ns_slope_accessor_total_in_foreground> foreground_change_calculator(ns_slope_accessor_total_in_foreground(elements), start_i, tmp1, tmp2);
+		ns_slope_calculator<4, ns_slope_accessor_total_in_stabilized_1x> stabilized_change_calculator_1x(ns_slope_accessor_total_in_stabilized_1x(elements), start_i, tmp1, tmp2);
+		ns_slope_calculator<8, ns_slope_accessor_total_in_stabilized_2x> stabilized_change_calculator_2x(ns_slope_accessor_total_in_stabilized_2x(elements), start_i, tmp1, tmp2);
+		ns_slope_calculator<16, ns_slope_accessor_total_in_stabilized_4x> stabilized_change_calculator_4x(ns_slope_accessor_total_in_stabilized_4x(elements), start_i, tmp1, tmp2);
+			
 		
 		return;
 	}
@@ -4322,19 +4373,22 @@ void ns_analyzed_image_time_path::quantify_movement(const ns_analyzed_time_image
 				}
 			}
 		}
-
-		if (first_frames) {
+		//these are calculated later
+		//if (first_frames) {
 			elements[i].measurements.change_in_total_foreground_intensity =
-				elements[i].measurements.change_in_total_region_intensity = elements[i].measurements.change_in_total_stabilized_intensity = 0;
-		}
-		else {
-			if (elements[i].measurements.total_foreground_area > 0 && elements[i - movement_time_kernel_width].measurements.total_foreground_area > 0) {
-				elements[i].measurements.change_in_total_foreground_intensity = elements[i].measurements.total_intensity_within_region / (double)elements[i].measurements.total_foreground_area
-					- elements[i - movement_time_kernel_width].measurements.total_intensity_within_region / (double)elements[i - movement_time_kernel_width].measurements.total_foreground_area;
+				elements[i].measurements.change_in_total_region_intensity = 
+				elements[i].measurements.change_in_total_stabilized_intensity_1x =
+				elements[i].measurements.change_in_total_stabilized_intensity_2x =
+				elements[i].measurements.change_in_total_stabilized_intensity_4x = 0;
+		//}
+		//else {
+		//	if (elements[i].measurements.total_foreground_area > 0 && elements[i - movement_time_kernel_width].measurements.total_foreground_area > 0) {
+		//		elements[i].measurements.change_in_total_foreground_intensity = elements[i].measurements.total_intensity_within_region / (double)elements[i].measurements.total_foreground_area
+		//			- elements[i - movement_time_kernel_width].measurements.total_intensity_within_region / (double)elements[i - movement_time_kernel_width].measurements.total_foreground_area;
+//
+		//	}
 
-			}
-
-		}
+		//}
 		const unsigned long border(0);
 #ifdef NS_CALCULATE_OPTICAL_FLOW
 		//note we provide image1 twice as we don't have access to image2.
@@ -5729,7 +5783,9 @@ void ns_analyzed_image_time_path_element_measurements::zero(){
 
 	change_in_total_foreground_intensity = 0;
 	change_in_total_region_intensity = 0;
-	change_in_total_stabilized_intensity = 0;
+	change_in_total_stabilized_intensity_1x = 0;
+	change_in_total_stabilized_intensity_2x = 0;
+	change_in_total_stabilized_intensity_4x = 0;
 
 	movement_score = 0;
 	denoised_movement_score = 0; 
@@ -5755,7 +5811,9 @@ void ns_analyzed_image_time_path_element_measurements::square() {
 
 	change_in_total_foreground_intensity = change_in_total_foreground_intensity*change_in_total_foreground_intensity;
 	change_in_total_region_intensity = change_in_total_region_intensity*change_in_total_region_intensity;
-	change_in_total_stabilized_intensity = change_in_total_stabilized_intensity*change_in_total_stabilized_intensity;
+	change_in_total_stabilized_intensity_1x = change_in_total_stabilized_intensity_1x*change_in_total_stabilized_intensity_1x;
+	change_in_total_stabilized_intensity_2x = change_in_total_stabilized_intensity_2x * change_in_total_stabilized_intensity_2x;
+	change_in_total_stabilized_intensity_4x = change_in_total_stabilized_intensity_4x * change_in_total_stabilized_intensity_4x;
 
 	movement_score = movement_score*movement_score;
 	denoised_movement_score = denoised_movement_score*denoised_movement_score;
@@ -5783,7 +5841,9 @@ void ns_analyzed_image_time_path_element_measurements::square_root() {
 
 	change_in_total_foreground_intensity  = sqrt(change_in_total_foreground_intensity);
 	change_in_total_region_intensity = sqrt(change_in_total_region_intensity);
-	change_in_total_stabilized_intensity = sqrt(change_in_total_stabilized_intensity);
+	change_in_total_stabilized_intensity_1x = sqrt(change_in_total_stabilized_intensity_1x);
+	change_in_total_stabilized_intensity_2x = sqrt(change_in_total_stabilized_intensity_2x);
+	change_in_total_stabilized_intensity_4x = sqrt(change_in_total_stabilized_intensity_4x);
 
 	movement_score = sqrt(movement_score);
 	denoised_movement_score = sqrt(denoised_movement_score);
@@ -5814,7 +5874,9 @@ ns_analyzed_image_time_path_element_measurements operator+(const ns_analyzed_ima
 
 	ret.change_in_total_foreground_intensity = a.change_in_total_foreground_intensity+b.change_in_total_foreground_intensity;
 	ret.change_in_total_region_intensity = a.change_in_total_region_intensity+b.change_in_total_region_intensity;
-	ret.change_in_total_stabilized_intensity = a.change_in_total_stabilized_intensity+b.change_in_total_stabilized_intensity;
+	ret.change_in_total_stabilized_intensity_1x = a.change_in_total_stabilized_intensity_1x +b.change_in_total_stabilized_intensity_1x;
+	ret.change_in_total_stabilized_intensity_2x = a.change_in_total_stabilized_intensity_2x + b.change_in_total_stabilized_intensity_2x;
+	ret.change_in_total_stabilized_intensity_4x = a.change_in_total_stabilized_intensity_4x + b.change_in_total_stabilized_intensity_4x;
 
 	ret.movement_score = a.movement_score+b.movement_score;
 	ret.denoised_movement_score = a.denoised_movement_score+b.denoised_movement_score;
@@ -5844,7 +5906,9 @@ ns_analyzed_image_time_path_element_measurements operator-(const ns_analyzed_ima
 
 	ret.change_in_total_foreground_intensity = a.change_in_total_foreground_intensity - b.change_in_total_foreground_intensity;
 	ret.change_in_total_region_intensity = a.change_in_total_region_intensity - b.change_in_total_region_intensity;
-	ret.change_in_total_stabilized_intensity = a.change_in_total_stabilized_intensity - b.change_in_total_stabilized_intensity;
+	ret.change_in_total_stabilized_intensity_1x = a.change_in_total_stabilized_intensity_1x - b.change_in_total_stabilized_intensity_1x;
+	ret.change_in_total_stabilized_intensity_2x = a.change_in_total_stabilized_intensity_2x - b.change_in_total_stabilized_intensity_2x;
+	ret.change_in_total_stabilized_intensity_4x = a.change_in_total_stabilized_intensity_4x - b.change_in_total_stabilized_intensity_4x;
 
 	ret.movement_score = a.movement_score - b.movement_score;
 	ret.denoised_movement_score = a.denoised_movement_score - b.denoised_movement_score;
@@ -5874,7 +5938,9 @@ ns_analyzed_image_time_path_element_measurements operator/(const ns_analyzed_ima
 	ret.total_intensity_within_alternate_worm = a.total_intensity_within_alternate_worm / d;
 	ret.change_in_total_foreground_intensity = a.change_in_total_foreground_intensity / d;
 	ret.change_in_total_region_intensity = a.change_in_total_region_intensity / d;
-	ret.change_in_total_stabilized_intensity = a.change_in_total_stabilized_intensity / d;
+	ret.change_in_total_stabilized_intensity_1x = a.change_in_total_stabilized_intensity_1x / d;
+	ret.change_in_total_stabilized_intensity_2x = a.change_in_total_stabilized_intensity_2x / d;
+	ret.change_in_total_stabilized_intensity_4x = a.change_in_total_stabilized_intensity_4x / d;
 	ret.movement_score = a.movement_score / d;
 	ret.denoised_movement_score = a.denoised_movement_score / d;
 	ret.spatial_averaged_movement_sum = a.spatial_averaged_movement_sum / d;
@@ -7414,7 +7480,7 @@ void ns_analyzed_image_time_path::identify_expansion_time(const unsigned long de
 
 			for (long tt = left_i; tt <= right_i; tt++) {
 				if (element(tt).excluded) continue;
-				total_intensity_change += element(tt).measurements.change_in_total_stabilized_intensity;
+				total_intensity_change += element(tt).measurements.change_in_total_stabilized_intensity_1x;
 				point_count++;
 			}
 
@@ -7449,7 +7515,7 @@ void ns_analyzed_image_time_path::identify_expansion_time(const unsigned long de
 				for (long tt = time_of_max_intensity_change; tt >= 0; tt--) {
 					if (element(tt).excluded)
 						continue;
-					if (element(tt).measurements.change_in_total_stabilized_intensity > 0) {
+					if (element(tt).measurements.change_in_total_stabilized_intensity_1x > 0) {
 						result.time_point_at_which_death_time_expansion_started = tt;
 					}
 					else
@@ -7458,7 +7524,7 @@ void ns_analyzed_image_time_path::identify_expansion_time(const unsigned long de
 				for (long tt = time_of_max_intensity_change; tt < element_count(); tt++) {
 					if (element(tt).excluded)
 						continue;
-					if (element(tt).measurements.change_in_total_stabilized_intensity > 0) {
+					if (element(tt).measurements.change_in_total_stabilized_intensity_1x > 0) {
 						result.time_point_at_which_death_time_expansion_stopped = tt;
 					}
 					else

@@ -27,7 +27,9 @@ struct ns_analyzed_image_time_path_element_measurements {
 
 	ns_s64_bit change_in_total_foreground_intensity,
 		change_in_total_region_intensity,
-		change_in_total_stabilized_intensity;
+		change_in_total_stabilized_intensity_1x,
+		change_in_total_stabilized_intensity_2x,
+		change_in_total_stabilized_intensity_4x;
 
 
 	double

@@ -19,9 +19,7 @@ History:
 using namespace std;
 
 //double M_PI=3.14159;
-
-GMM::GMM(int dimNum, int mixNum)
-{
+void GMM::set_dimandmixnums(int dimNum, int mixNum) {
 	m_dimNum = dimNum;
 	m_mixNum = mixNum;
 
@@ -40,6 +38,10 @@ GMM::GMM(int dimNum, int mixNum)
 			m_vars[i][d] = 1;
 		}
 	}
+}
+GMM::GMM(int dimNum, int mixNum)
+{
+	set_dimandmixnums(dimNum, mixNum);
 }
 
 GMM::~GMM()
@@ -77,7 +79,7 @@ void GMM::Dispose()
 	delete[] m_minVars;
 }
 
-void GMM::Copy(GMM* gmm)
+void GMM::Copy(const GMM* gmm)
 {
 	assert(m_mixNum == gmm->m_mixNum && m_dimNum == gmm->m_dimNum);
 
@@ -88,6 +90,25 @@ void GMM::Copy(GMM* gmm)
 		memcpy(m_vars[i], gmm->Variance(i), sizeof(double) * m_dimNum);
 	}
 	memcpy(m_minVars, gmm->m_minVars, sizeof(double) * m_dimNum);
+}
+
+GMM::GMM(const GMM & a) {
+
+	set_dimandmixnums(a.m_dimNum, a.m_mixNum);
+	/*if (m_dimNum != a.m_dimNum ||
+		m_mixNum != m_mixNum) {
+		if (m_dimNum != 0) Dispose();
+	}*/
+	Copy(&a);
+}
+GMM & GMM::operator=(const GMM & a) {
+	if (m_dimNum != a.m_dimNum ||
+		m_mixNum != m_mixNum) {
+		Dispose();
+		set_dimandmixnums(a.m_dimNum, a.m_mixNum);
+	}
+	Copy(&a);
+	return *this;
 }
 
 double GMM::GetProbability(const double* sample) const

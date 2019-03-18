@@ -630,7 +630,7 @@ void ns_graph::plot_object(const ns_graph_object & y, const ns_graph_object & x,
 						", dy: " << dy << ", boundary(2): " << axes.boundary(2) << " y.y[" << index << "]: " << y.y[index];
 				}
 				if (top > bottom){
-					unsigned int tmp = bottom;
+					int tmp = bottom;
 					bottom = top;
 					top = tmp;
 				}

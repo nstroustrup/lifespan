@@ -318,9 +318,13 @@ private:
 		}
 		max_raw_score = scores[scores.size() - scores.size() / 50 - 1];
 
+		
 		//make sure the axis minimum and maximum are not equal.
-		if (second_smallest_raw_score == max_raw_score || min_raw_score == max_raw_score)
+		if (second_smallest_raw_score == max_raw_score || min_raw_score == max_raw_score) {
 			max_raw_score += .01;
+			second_smallest_raw_score = max_raw_score * .01;
+			min_raw_score = max_raw_score * .001;
+		}
 
 
 		//now reuse scores memory for another purpose--storing normalized movement scores.
@@ -355,6 +359,7 @@ private:
 				case ns_movement_intensity_slope_1x: s = path->element(i + first_element).measurements.change_in_total_stabilized_intensity_1x; break;
 				case ns_movement_intensity_slope_2x: s = path->element(i + first_element).measurements.change_in_total_stabilized_intensity_2x; break;
 				case ns_movement_intensity_slope_4x: s = path->element(i + first_element).measurements.change_in_total_stabilized_intensity_4x; break;
+				default: s = 0;
 			}
 			//cout << t / (60.0 * 60 * 24) << "," << s << "\n";
 			if (i < path->first_stationary_timepoint())
@@ -407,9 +412,11 @@ private:
 				case ns_movement_intensity_slope_1x: s = path->element(i + first_element).measurements.change_in_total_stabilized_intensity_1x; break;
 				case ns_movement_intensity_slope_2x: s = path->element(i + first_element).measurements.change_in_total_stabilized_intensity_2x; break;
 				case ns_movement_intensity_slope_4x: s = path->element(i + first_element).measurements.change_in_total_stabilized_intensity_4x; break;
+				default: s = 0;
 			}
-
+			if (intensity_slope_largest != 0)
 			slope_vals[current_segment].y.push_back(.5*(s  / (float)(intensity_slope_largest)+1));
+			else slope_vals[current_segment].y.push_back(0);
 			if (*slope_vals[current_segment].y.rbegin() < 0) *slope_vals[current_segment].y.rbegin() = 0;
 			if (*slope_vals[current_segment].y.rbegin() > 1) *slope_vals[current_segment].y.rbegin() = 1;
 		}

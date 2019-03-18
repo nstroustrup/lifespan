@@ -388,7 +388,9 @@ public:
 		entirely_excluded(false), images_preallocated(false), 
 		low_density_path(false), output_reciever(0), flow_output_reciever(0), path_db_id(0), region_info_id(0), movement_image_storage(0), flow_movement_image_storage(0),
 		number_of_images_loaded(0), flow(0), stabilized_worm_region_total(0), unique_process_id(unique_process_id_){
-		by_hand_annotation_event_times.resize((int)ns_number_of_movement_event_types, ns_death_time_annotation_time_interval::unobserved_interval()); state_intervals.resize((int)ns_movement_number_of_states);
+		by_hand_annotation_event_times.resize((int)ns_number_of_movement_event_types, ns_death_time_annotation_time_interval::unobserved_interval());
+		by_hand_annotation_event_explicitness.resize((int)ns_number_of_movement_event_types, ns_death_time_annotation::ns_unknown_explicitness);
+		state_intervals.resize((int)ns_movement_number_of_states);
 	}
 	ns_64_bit unique_process_id;
 	~ns_analyzed_image_time_path();
@@ -548,6 +550,7 @@ private:
 	void convert_movement_solution_to_state_intervals(const ns_movement_state_time_interval_indicies & frame_before_first_interval, const ns_time_path_posture_movement_solution &solution, ns_state_interval_list & list);
 	
 	std::vector<ns_death_time_annotation_time_interval> by_hand_annotation_event_times;
+	std::vector<ns_death_time_annotation::ns_event_explicitness> by_hand_annotation_event_explicitness;
 	ns_time_path_posture_movement_solution reconstruct_movement_state_solution_from_annotations(const unsigned long first_index, const unsigned long last_index,const std::vector<ns_death_time_annotation_time_interval> & intervals) const;
 
 	void quantify_movement(const ns_analyzed_time_image_chunk & chunk);

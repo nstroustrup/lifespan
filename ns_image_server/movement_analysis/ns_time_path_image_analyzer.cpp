@@ -1434,7 +1434,8 @@ void ns_time_path_image_movement_analyzer::calculate_optimzation_stats_for_curre
 				s.animals.rbegin()->properties.region_info_id = this->region_info_id;
 				ns_movement_analysis_optimizatiom_stats_sub_record * result = &(s.animals.rbegin()->measurements[st]);
 
-				result->by_hand_identified = !by_hand_result.fully_unbounded();
+				result->by_hand_identified = !by_hand_result.fully_unbounded() && groups[g].paths[p].by_hand_annotation_event_explicitness[st] != ns_death_time_annotation::ns_explicitly_not_observed;
+
 				if (result->by_hand_identified)
 					result->by_hand = by_hand_result;
 
@@ -3819,6 +3820,7 @@ void ns_analyzed_image_time_path::add_by_hand_annotations(const ns_death_time_an
 			continue;
 
 			by_hand_annotation_event_times[(int)e.type] = e.time;
+			by_hand_annotation_event_explicitness[(int)e.type] = e.event_explicitness;
 	}
 }
 
@@ -4379,21 +4381,21 @@ void ns_analyzed_image_time_path::quantify_movement(const ns_analyzed_time_image
 			}
 		}
 		//these are calculated later
-		//if (first_frames) {
+		if (first_frames) {
 			elements[i].measurements.change_in_total_foreground_intensity =
 				elements[i].measurements.change_in_total_region_intensity = 
 				elements[i].measurements.change_in_total_stabilized_intensity_1x =
 				elements[i].measurements.change_in_total_stabilized_intensity_2x =
 				elements[i].measurements.change_in_total_stabilized_intensity_4x = 0;
-		//}
-		//else {
-		//	if (elements[i].measurements.total_foreground_area > 0 && elements[i - movement_time_kernel_width].measurements.total_foreground_area > 0) {
-		//		elements[i].measurements.change_in_total_foreground_intensity = elements[i].measurements.total_intensity_within_region / (double)elements[i].measurements.total_foreground_area
-		//			- elements[i - movement_time_kernel_width].measurements.total_intensity_within_region / (double)elements[i - movement_time_kernel_width].measurements.total_foreground_area;
-//
-		//	}
+		}
+		else {
+			if (elements[i].measurements.total_foreground_area > 0 && elements[i - movement_time_kernel_width].measurements.total_foreground_area > 0) {
+				elements[i].measurements.change_in_total_foreground_intensity = elements[i].measurements.total_intensity_within_region / (double)elements[i].measurements.total_foreground_area
+					- elements[i - movement_time_kernel_width].measurements.total_intensity_within_region / (double)elements[i - movement_time_kernel_width].measurements.total_foreground_area;
 
-		//}
+			}
+
+		}
 		const unsigned long border(0);
 #ifdef NS_CALCULATE_OPTICAL_FLOW
 		//note we provide image1 twice as we don't have access to image2.

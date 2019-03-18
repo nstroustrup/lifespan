@@ -299,10 +299,13 @@ void ns_hmm_solver::build_movement_state_solution_from_movement_transitions(cons
 //m[i][j] is the log probabilitiy that an individual in state i transitions to state j.
 void ns_hmm_solver::build_state_transition_matrix(std::vector<std::vector<double> > & m) {
 	m.resize((int)ns_hmm_unknown_state);
+
+	const double penalized_transition = 1e-8;
+
 	for (unsigned int i = 0; i < (int)ns_hmm_unknown_state; i++) {
 		m[i].resize(0);
 		m[i].resize((int)ns_hmm_unknown_state, 0);
-		m[i][i] = 1;
+		m[i][i] = 1000;	//make staying in the same state more probable than switching, to discourage short stays in each state
 	}
 	//if there are any loops anywhere here, the approach will not function
 	//because we set all the transition probabilities equal and this works
@@ -312,18 +315,18 @@ void ns_hmm_solver::build_state_transition_matrix(std::vector<std::vector<double
 	m[ns_hmm_missing][ns_hmm_moving_weakly_expanding] = 1;
 	m[ns_hmm_missing][ns_hmm_not_moving_alive] = 1;
 	m[ns_hmm_missing][ns_hmm_not_moving_expanding] = 1;
-	m[ns_hmm_missing][ns_hmm_not_moving_dead] = 1;
+	m[ns_hmm_missing][ns_hmm_not_moving_dead] = penalized_transition;	//we penalize any path that skips death time expansion
 
 	m[ns_hmm_moving_vigorously][ns_hmm_moving_weakly] = 1;
 	m[ns_hmm_moving_vigorously][ns_hmm_moving_weakly_expanding] = 1;
 	m[ns_hmm_moving_vigorously][ns_hmm_not_moving_alive] = 1;
 	m[ns_hmm_moving_vigorously][ns_hmm_not_moving_expanding] = 1;
-	m[ns_hmm_moving_vigorously][ns_hmm_not_moving_dead] = 1;
+	m[ns_hmm_moving_vigorously][ns_hmm_not_moving_dead] = penalized_transition;
 
 	m[ns_hmm_moving_weakly][ns_hmm_moving_weakly_expanding] = 1;
 	m[ns_hmm_moving_weakly][ns_hmm_not_moving_alive] = 1;
 	m[ns_hmm_moving_weakly][ns_hmm_not_moving_expanding] = 1;
-	m[ns_hmm_moving_weakly][ns_hmm_not_moving_dead] = 1;
+	m[ns_hmm_moving_weakly][ns_hmm_not_moving_dead] = penalized_transition;
 
 	m[ns_hmm_moving_weakly_expanding][ns_hmm_moving_weakly_post_expansion] = 1;
 	m[ns_hmm_moving_weakly_expanding][ns_hmm_not_moving_expanding] = 1;
@@ -334,7 +337,7 @@ void ns_hmm_solver::build_state_transition_matrix(std::vector<std::vector<double
 	m[ns_hmm_not_moving_expanding][ns_hmm_not_moving_dead] = 1;
 
 	m[ns_hmm_not_moving_alive][ns_hmm_not_moving_expanding] = 1;
-	m[ns_hmm_not_moving_alive][ns_hmm_not_moving_dead] = 1;
+	m[ns_hmm_not_moving_alive][ns_hmm_not_moving_dead] = penalized_transition;
 
 	//normalize all transition probabilities
 	for (unsigned int i = 0; i < (int)ns_hmm_unknown_state; i++) {
@@ -694,6 +697,23 @@ void ns_emperical_posture_quantification_value_estimator::write_observation_data
 			<< p->first.path_id << ",";
 		out << "a," << p->second.source.to_string() << "\n";
 	}
+}
+
+
+ns_emperical_posture_quantification_value_estimator::ns_emperical_posture_quantification_value_estimator() {}
+ns_emperical_posture_quantification_value_estimator::ns_emperical_posture_quantification_value_estimator(const ns_emperical_posture_quantification_value_estimator& a) {
+	normalization_stats = a.normalization_stats;
+	observed_values = a.observed_values;
+	for (auto p = a.emission_probability_models.begin(); p != a.emission_probability_models.end(); p++)
+		emission_probability_models.insert(emission_probability_models.begin(), std::map<ns_hmm_movement_state, ns_emission_probabiliy_model *>::value_type(p->first, new ns_emission_probabiliy_model(*p->second)));
+
+}
+ns_emperical_posture_quantification_value_estimator& ns_emperical_posture_quantification_value_estimator::operator=(const ns_emperical_posture_quantification_value_estimator& a) {
+	normalization_stats = a.normalization_stats;
+	observed_values = a.observed_values;
+	for (auto p = a.emission_probability_models.begin(); p != a.emission_probability_models.end(); p++)
+		emission_probability_models.insert(emission_probability_models.begin(), std::map<ns_hmm_movement_state, ns_emission_probabiliy_model *>::value_type(p->first, new ns_emission_probabiliy_model(*p->second)));
+	return *this;
 }
 
 ns_emperical_posture_quantification_value_estimator::~ns_emperical_posture_quantification_value_estimator() {

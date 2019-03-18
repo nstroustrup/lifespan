@@ -31,6 +31,9 @@ struct ns_emperical_posture_quantification_value_estimator{
 	void write(std::ostream & o)const;
 	void generate_estimators_from_samples();
 	static ns_emperical_posture_quantification_value_estimator dummy();
+	ns_emperical_posture_quantification_value_estimator();
+	ns_emperical_posture_quantification_value_estimator(const ns_emperical_posture_quantification_value_estimator&); 
+	ns_emperical_posture_quantification_value_estimator& operator=(const ns_emperical_posture_quantification_value_estimator&); 
 private:
 	void write_visualization(std::ostream & o,const std::string & experiment_name="") const;
 	std::map<ns_hmm_movement_state, ns_emission_probabiliy_model *> emission_probability_models;

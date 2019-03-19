@@ -634,11 +634,13 @@ void ns_analyzed_image_time_path::calculate_stabilized_worm_neighborhood(ns_imag
 bool ns_time_path_image_movement_analyzer::try_to_rebuild_after_failure() const {return  _number_of_invalid_images_encountered*10 <= number_of_timepoints_in_analysis_; }
 
 
-void ns_time_path_image_movement_analyzer::process_raw_images(const ns_64_bit region_id,const ns_time_path_solution & solution_, const ns_time_series_denoising_parameters & times_series_denoising_parameters,const ns_analyzed_image_time_path_death_time_estimator * e,ns_sql & sql, const long group_number,const bool write_status_to_db){
+void ns_time_path_image_movement_analyzer::process_raw_images(const ns_64_bit region_id,const ns_time_path_solution & solution_, const ns_time_series_denoising_parameters & times_series_denoising_parameters,
+																const ns_analyzed_image_time_path_death_time_estimator * e,ns_sql & sql, const long group_number,const bool write_status_to_db,
+																const ns_analysis_db_options &id_reanalysis_options){
 	if (e->software_version_number() != NS_CURRENT_POSTURE_MODEL_VERSION)
 		throw ns_ex("This software, which is running posture analysis version ") << NS_CURRENT_POSTURE_MODEL_VERSION << ", cannot use the incompatible posture analysis parameter set " << e->name << ", which is version " << e->software_version_number();
 	region_info_id = region_id; 
-	obtain_analysis_id_and_save_movement_data(region_id, sql, ns_force_creation_of_new_db_record,ns_do_not_write_data);
+	obtain_analysis_id_and_save_movement_data(region_id, sql, id_reanalysis_options,ns_do_not_write_data);
 	if (analysis_id == 0)
 		throw ns_ex("Could not obtain analysis id!");
 	try{
@@ -1393,6 +1395,24 @@ void ns_time_path_image_movement_analyzer::populate_movement_quantification_from
 		load_movement_data_from_disk(*i, skip_movement_data);
 		delete i;
 	}
+	catch (ns_ex & ex) {
+		delete i;
+		std::string data = "unknown";
+		try {
+			sql << "SELECT s.name,r.name FROM sample_region_image_info as r, capture_samples as s WHERE r.id = " << this->region_info_id << " and s.id = r.sample_id";
+			ns_sql_result res;
+			sql.get_rows(res);
+			if (res.size() > 0)
+				data = res[0][0] + "::" + res[0][1];
+		}
+		catch (ns_ex & ex) { cerr << ex.text() << "\n"; }
+		catch (...) {}
+		ns_ex ex2;
+		ex2 << ex.type();
+		ex2 << "Problem loading stored plate quantification for plate " << data << "(" << this->region_info_id << ").  Consider re-running worm movement analysis for this plate. " << ex.text();
+		throw ex2;
+
+	}
 	catch(...){
 		delete i;
 		throw;
@@ -1571,6 +1591,7 @@ void ns_time_path_image_movement_analyzer::obtain_analysis_id_and_save_movement_
 	im.id = ns_atoi64(res[0][0].c_str());
 
 	if (id_options == ns_require_existing_record && im.id == 0)
+		//do not change this text...it is recognized explicitly elsewhere
 		throw ns_ex(" ns_time_path_image_movement_analyzer::obtain_analysis_id_and_save_movement_data()::Could not find existing record.");
 
 	if (im.id != 0) { //load and check for bad filenames
@@ -1648,7 +1669,8 @@ void ns_analyzed_image_time_path_element_measurements::read(istream & in, ns_vec
 	if (in.fail()) throw ns_ex("Invalid Specification 7");
 	get_double(in, change_in_total_foreground_intensity);//8								  
 	if (in.fail()) throw ns_ex("Invalid Specification 8");
-	get_int(in, total_foreground_area);//9														
+	get_int(in, total_foreground_area);//9		
+	//cout << "fga: " << total_foreground_area << " ";
 	if (in.fail()) throw ns_ex("Invalid Specification 9");
 	get_int(in, total_intensity_within_foreground);//10										
 	if (in.fail()) throw ns_ex("Invalid Specification 10");
@@ -1708,6 +1730,8 @@ void ns_analyzed_image_time_path_element_measurements::read(istream & in, ns_vec
 	if (in.fail())
 	throw ns_ex("Invalid Specification 27");
 	get_int(in, change_in_total_stabilized_intensity_4x);//30
+
+	//cout << "ctsi: " << change_in_total_stabilized_intensity_4x << " ";
 	if (in.fail())
 		throw ns_ex("Invalid Specification 28");
 	string tmp;
@@ -1771,7 +1795,7 @@ void ns_time_path_image_movement_analyzer::load_movement_data_from_disk(istream 
 	} 
 	if (!version_specified)
 		posture_model_version_used = "2";
-
+	//cout << "Posture model: " << posture_model_version_used << "\n";
 	if (skip_movement_data)
 		return;
 		
@@ -1804,11 +1828,13 @@ void ns_time_path_image_movement_analyzer::load_movement_data_from_disk(istream 
 		if (groups[group_id].paths[path_id].elements.size() == 0)																									
 			throw ns_ex("ns_time_path_image_movement_analyzer::load_movement_data_from_disk()::Encountered an empty path");											
 		if (element_id >= groups[group_id].paths[path_id].elements.size())																							
-			throw ns_ex("ns_time_path_image_movement_analyzer::load_movement_data_from_disk()::Element is too large ") << path_id;									
-		get_int(in,groups[group_id].paths[path_id].elements[element_id].absolute_time);//4																			
+			throw ns_ex("ns_time_path_image_movement_analyzer::load_movement_data_from_disk()::Element is too large ") << path_id;		
+
+		get_int(in,groups[group_id].paths[path_id].elements[element_id].absolute_time);//4		
+		//cout << "Group id:" << group_id << "; Element id: " << element_id << "; time: " << groups[group_id].paths[path_id].elements[element_id].absolute_time << " ";
 		if(in.fail()) throw ns_ex("Invalid Specification 4");																										
 		groups[group_id].paths[path_id].elements[element_id].measurements.read(in, groups[group_id].paths[path_id].elements[element_id].registration_offset, groups[group_id].paths[path_id].elements[element_id].saturated_offset);
-	//	std::cerr << "\n";
+		//std::cout << "\n";
 
 	}
 	//check all data is loaded
@@ -1860,12 +1886,12 @@ void ns_analyzed_image_time_path_element_measurements::write_header(ostream & ou
 		",denoised_spatial_averaged_movement_score "
 		",total_intensity_in_previous_frame_scaled_to_current_frames_histogram"
 		",total_stabilized_area "
-		",change_in_total_stabilized_intensity_1x,";
-		",change_in_total_stabilized_intensity_2x,";
-		",change_in_total_stabilized_intensity_4x,";
+		",change_in_total_stabilized_intensity_1x";
+		",change_in_total_stabilized_intensity_2x";
+		",change_in_total_stabilized_intensity_4x";
 
-	for (unsigned int i = 0; i < 9; i++)
-		out << "blank,";
+	for (unsigned int i = 0; i < 7; i++)
+		out << ",blank";
 }
 void ns_analyzed_image_time_path_element_measurements::write(ostream & out,const ns_vector_2d & offset, const bool & saturated_offset) const {
 	out <<interframe_time_scaled_movement_sum << ","//5

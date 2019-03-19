@@ -736,6 +736,7 @@ ns_64_bit ns_processing_job_maintenance_processor::run_job(ns_sql & sql) {
 		case ns_maintenance_rebuild_movement_data:
 		case ns_maintenance_rebuild_movement_from_stored_images:
 		case ns_maintenance_rebuild_movement_from_stored_image_quantification:
+		case ns_maintenance_rebuild_movement_data_from_stored_solution:
 			analyze_worm_movement_across_frames(job, image_server, sql, true);
 			break;
 		case ns_maintenance_generate_movement_posture_visualization: {

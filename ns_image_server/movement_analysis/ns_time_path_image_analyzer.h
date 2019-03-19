@@ -698,8 +698,13 @@ public:
 	void output_allocation_state(const std::string & stage, long timepoint, std::ostream & out) const;
 	void output_allocation_state_header(std::ostream & out) const;
 
+	typedef enum { ns_use_existing_record_if_possible, ns_force_creation_of_new_db_record, ns_require_existing_record } ns_analysis_db_options;
+
 	//three ways to populate the movement quantification data
-	void process_raw_images(const ns_64_bit region_id,const ns_time_path_solution & solution_,const ns_time_series_denoising_parameters &,const ns_analyzed_image_time_path_death_time_estimator * e,ns_sql & sql, const long group_number=-1,const bool write_status_to_db=false);
+	void process_raw_images(const ns_64_bit region_id,const ns_time_path_solution & solution_,const ns_time_series_denoising_parameters &,
+							const ns_analyzed_image_time_path_death_time_estimator * e,ns_sql & sql, const long group_number=-1,const bool write_status_to_db=false,
+							const ns_analysis_db_options &analysis_options = ns_force_creation_of_new_db_record); //do not set ns_analysis_db_options to anything other than ns_force_creation_of_new_db_record unless you
+																												  //understand how this might effect all other cached data!
 	void reanalyze_stored_aligned_images(const ns_64_bit region_id,const ns_time_path_solution & solution_,const ns_time_series_denoising_parameters &,const ns_analyzed_image_time_path_death_time_estimator * e,ns_sql & sql,const bool load_images_after_last_valid_sample, const bool recalculate_flow_images);
 	bool load_completed_analysis(const ns_64_bit region_id, const ns_time_path_solution & solution_, const ns_time_series_denoising_parameters &, const ns_analyzed_image_time_path_death_time_estimator * e, ns_sql & sql, bool exclude_movement_quantification = false);
 	
@@ -722,7 +727,6 @@ public:
 	}
 	void back_port_by_hand_annotations_to_solution_elements(ns_time_path_solution & sol);
 
-	typedef enum { ns_use_existing_record_if_possible, ns_force_creation_of_new_db_record,ns_require_existing_record } ns_analysis_db_options;
 	typedef enum { ns_do_not_write_data, ns_write_data } ns_data_write_options;
 	void obtain_analysis_id_and_save_movement_data(const ns_64_bit region_id, ns_sql & sql, ns_analysis_db_options id_options, ns_data_write_options write_options);
 	void delete_from_db(const ns_64_bit region_id,ns_sql & sql);

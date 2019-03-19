@@ -2265,7 +2265,7 @@ void ns_worm_learner::generate_experiment_movement_image_quantification_analysis
 	ns_acquire_for_scope<ns_sql> sql(image_server.new_sql_connection(__FILE__,__LINE__));
 
 	ns_64_bit experiment_id = data_selector.current_experiment_id();
-	ns_64_bit plate_id;
+	ns_64_bit plate_id = 0;
 	std::string device_name;
 	if (subject == ns_plate || subject == ns_device) {
 		ns_experiment_region_chooser_region selected_region;
@@ -2280,7 +2280,7 @@ void ns_worm_learner::generate_experiment_movement_image_quantification_analysis
 
 	ns_image_server_results_subject sub;
 	sub.experiment_id = experiment_id;
-	if (plate_id)
+	if (plate_id != 0)
 		sub.region_id = plate_id;
 	if (!device_name.empty())
 		sub.device_name = device_name;

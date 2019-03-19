@@ -27,9 +27,9 @@ std::string ns_maintenance_task_to_string(const ns_maintenance_task & task){
 		case ns_maintenance_rebuild_movement_data:
 			return "Build Movement Data";
 		case ns_maintenance_rebuild_movement_from_stored_image_quantification:
-			return "Rebuild Movement Data From Stored Image Quantification";
+			return "Rebuild Movement Analysis From Stored Image Quantification";
 		case ns_maintenance_rebuild_movement_from_stored_images:
-			return "Rebuild Movement Data From Stored Images";
+			return "Rebuild Movement Analysis From Stored Images";
 		case ns_maintenance_generate_movement_posture_visualization:
 			return "Generate Movement Posture Visualization";
 		case ns_maintenance_recalculate_censoring:
@@ -64,6 +64,8 @@ std::string ns_maintenance_task_to_string(const ns_maintenance_task & task){
 			return "Compile worm morphology statistics";
 		case ns_maintenance_delete_movement_data:
 			return "Delete movement analysis";
+		case ns_maintenance_rebuild_movement_data_from_stored_solution:
+			return "Rebuild Movement Analysis from Stored Solution";
 		case ns_maintenance_last_task: throw ns_ex("ns_maintenance_task_to_string::last_task does not have a std::string representation");
 		default:
 			throw ns_ex("ns_maintenance_task_to_string::Unknown Maintenance task");

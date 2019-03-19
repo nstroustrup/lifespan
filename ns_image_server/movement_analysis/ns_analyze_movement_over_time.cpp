@@ -59,7 +59,8 @@ void analyze_worm_movement_across_frames(const ns_processing_job & job, ns_image
 		}
 	}
 	else if (job.maintenance_task == ns_maintenance_rebuild_movement_from_stored_images ||
-		job.maintenance_task == ns_maintenance_rebuild_movement_from_stored_image_quantification) {
+		job.maintenance_task == ns_maintenance_rebuild_movement_from_stored_image_quantification || 
+		job.maintenance_task == ns_maintenance_rebuild_movement_data_from_stored_solution) {
 		if (log_output)
 			image_server->register_server_event(ns_image_server_event("Loading point cloud solution from disk."), &sql);
 		time_path_solution.load_from_db(job.region_id, sql, false);
@@ -144,17 +145,27 @@ void analyze_worm_movement_across_frames(const ns_processing_job & job, ns_image
 
 	const ns_time_series_denoising_parameters time_series_denoising_parameters(ns_time_series_denoising_parameters::load_from_db(job.region_id, sql));
 
-	if (job.maintenance_task == ns_maintenance_rebuild_movement_data) {
+	if (job.maintenance_task == ns_maintenance_rebuild_movement_data || job.maintenance_task == ns_maintenance_rebuild_movement_data_from_stored_solution) {
 		//load in worm images and analyze them for non-translating animals for posture changes
 		if (log_output)
 			image_server->register_server_event(ns_image_server_event("Analyzing images for animal posture changes."), &sql);
 		unsigned long attempt_count(0);
 		while (true) {
 			try {
+				ns_time_path_image_movement_analyzer::ns_analysis_db_options analysis_options =
+					ns_time_path_image_movement_analyzer::ns_force_creation_of_new_db_record;  //the default behavior is to create a new id and invalidate all previous data.
+				if (job.maintenance_task == ns_maintenance_rebuild_movement_data_from_stored_solution)
+					analysis_options = ns_time_path_image_movement_analyzer::ns_require_existing_record;
+				if (job.maintenance_task == ns_maintenance_rebuild_movement_data_from_stored_solution)
 				time_path_image_analyzer.process_raw_images(job.region_id, time_path_solution, time_series_denoising_parameters, &death_time_estimator(), sql, -1, true);
 				break;
 			}
 			catch (ns_ex & ex) {
+				if (ex.text().find("obtain_analysis_id_and_save_movement_data()::Could not find existing record") != ex.text().npos)
+					throw ns_ex("Requesting a rebuild of movement analysis of a region without pre-existing analysis.");
+				if (job.maintenance_task == ns_maintenance_rebuild_movement_data_from_stored_solution) {
+					throw ns_ex("Re-analysis failed.  You will have to run movement analysis from scratch. (") << ex.text() << ")";
+				}
 				if (attempt_count > 1 || !time_path_image_analyzer.try_to_rebuild_after_failure())
 					throw ex;
 				else attempt_count++;
@@ -344,24 +355,7 @@ void analyze_worm_movement_across_frames(const ns_processing_job & job, ns_image
 		image_server->register_server_event(ex, &sql);
 	}
 
-	if (0) {
-		//generate optimization training set 
-		std:: vector<double> thresholds(25);
-		//log scale between .1 and .0001
-		for (unsigned int i = 0; i < 25; i++)
-			thresholds[i] = pow(10, -1 - (3.0*i / 25));
-		std::vector<unsigned long> hold_times(12);
-		hold_times[0] = 0;
-		hold_times[1] = 60 * 15;
-		for (unsigned int i = 0; i < 10; i++)
-			hold_times[i + 2] = i * 60 * 60;
-
-		ns_acquire_for_scope < std::ostream > o2(image_server->results_storage.time_path_image_analysis_quantification(sub, "optimization_stats", false, sql).output());
-		ns_analyzed_image_time_path::write_posture_analysis_optimization_data_header(o2());
-		o2() << "\n";
-		ns_parameter_optimization_results res(thresholds.size(), hold_times.size());
-		time_path_image_analyzer.write_posture_analysis_optimization_data(NS_CURRENT_POSTURE_MODEL_VERSION, thresholds, hold_times, metadata, o2(), res);
-	}
+	
 
 	//update db stats
 	sql << "UPDATE sample_region_image_info SET "

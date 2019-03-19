@@ -4206,6 +4206,10 @@ void ns_analyzed_image_time_path::denoise_movement_series_and_calculate_intensit
 			elements[i].measurements.spatial_averaged_movement_score = acc_spatial.raw(i);
 
 		}
+		ns_kernel_smoother<ns_movement_data_accessor>m;
+		ns_kernel_smoother<ns_spatially_averaged_movement_data_accessor>m_s;
+		m(kernel_width, acc);
+		m_s(kernel_width, acc_spatial);
 
 		
 		const int start_i = this->first_stationary_timepoint();  //do not use frames before worm arrives to calculate slope, as the worm's appearence will produce a very large spurious slope.

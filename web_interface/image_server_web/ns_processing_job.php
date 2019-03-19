@@ -88,7 +88,8 @@ $ns_maintenance_tasks = array('ns_maintenance_no_task'=>0,
 			      'ns_maintenance_rerun_image_registration'=>20,
 			      'ns_maintenance_recalc_image_stats'=>21,
 			      'ns_maintenance_recalc_worm_morphology_statistics'=>22,
-			      'ns_maintenance_delete_movement_data'=>23 
+			      'ns_maintenance_delete_movement_data'=>23,
+			      'ns_maintenance_rebuild_movement_from_stored_solution'=>24 
 );
 
 $ns_denoising_option_labels = array(
@@ -112,6 +113,7 @@ function ns_maintenance_task_order($is_region,$is_sample,$is_experiment){
     array_push($r,$ns_maintenance_tasks['ns_maintenance_rerun_image_registration']);
     array_push($r,$ns_maintenance_tasks['ns_maintenance_check_for_file_errors']);
     array_push($r,$ns_maintenance_tasks['ns_maintenance_rebuild_movement_from_stored_images']);
+    array_push($r,$ns_maintenance_tasks['ns_maintenance_rebuild_movement_from_stored_solution']);
     array_push($r,$ns_maintenance_tasks['ns_maintenance_delete_movement_data']);
     array_push($r,$ns_maintenance_tasks['ns_maintenance_generate_subregion_mask']);
     array_push($r,$ns_maintenance_tasks['ns_maintenance_recalc_image_stats']);
@@ -138,7 +140,7 @@ $ns_maintenance_task_labels = array(0=>'No Task',
 				    4=>'Delete Images',
 				    5=>'Execute File Deletion',
 				    6=>'Analyze Worm Movement',
-				    7=>'Analyze Worm Movement Using Cached Images',
+				    7=>'Rebuild Worm Analysis from Cached Image Analysis',
 				    8=>'Re-calculate Censoring and Death Times',
 				    9=>'Recalculate Censoring',
 				    10=>'Generate Posture Visualization',
@@ -151,12 +153,13 @@ $ns_maintenance_task_labels = array(0=>'No Task',
 				    17=>'Generate Animal Storyboard Subimage',
 				    18=>'Compress Stored Images',
 				    19=>'Generate Subregion Mask',
-				    20=>'Re-Run Image Registration',
+				    20=>'Re-Run Region Image Registration',
 				    21=>'Re-Calculate Image Statistics',
 				    22=>'Compile Worm Morphology Statistics',
-				    23=>'Delete Worm Movement Analysis'
+				    23=>'Delete Worm Movement Analysis',
+				    24=>'Rebuild Worm Analysis from Cached Solution'
 			      );
-$NS_LAST_MAINTENANCE_TASK = 22;
+$NS_LAST_MAINTENANCE_TASK = 24;
 
 $ns_maintenance_flags = array('ns_none'=>0,
 			     'ns_only_delete_processed_capture_images'=>1,

@@ -282,7 +282,7 @@ void ns_hmm_solver::build_state_transition_matrix(const ns_emperical_posture_qua
 	m.resize((int)ns_hmm_unknown_state);
 
 
-	const double penalized_transition = 1e-8;
+	const double penalized_transition = 1e-5;
 
 	for (unsigned int i = 0; i < (int)ns_hmm_unknown_state; i++) {
 		m[i].resize(0);
@@ -912,14 +912,14 @@ void ns_emperical_posture_quantification_value_estimator::build_estimator_from_o
 			p->second.insert(p->second.end(), observed_values[ns_hmm_moving_weakly].begin(),observed_values[ns_hmm_moving_weakly].end());
 
 	}
-	/*//we mix together expansion annotations with and without animal movement.
+	//we mix together expansion annotations with and without animal movement.
 	//this removes any bias the machine has as to whether expansion happens before or after the final movement.
 	auto p_expansion_moving = observed_values.find(ns_hmm_moving_weakly_expanding);
 	auto p_expansion_not_moving = observed_values.find(ns_hmm_not_moving_expanding);
 	if (p_expansion_moving != observed_values.end() && p_expansion_not_moving != observed_values.end()) {
 		p_expansion_moving->second.insert(p_expansion_moving->second.end(), p_expansion_not_moving->second.begin(), p_expansion_not_moving->second.end());
 		p_expansion_not_moving->second = p_expansion_moving->second;
-	}*/
+	}
 
 	std::vector<unsigned long > state_counts((int)(ns_hmm_unknown_state), 0);
 	for (auto p = observed_values.begin(); p != observed_values.end(); p++) {

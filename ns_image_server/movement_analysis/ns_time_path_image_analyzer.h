@@ -8,6 +8,7 @@
 #include "ns_subpixel_image_alignment.h"
 #include "ns_image_pool.h"
 #include "ns_analyzed_image_time_path_element_measurements.h"
+#include "ns_hidden_markov_model_posture_analyzer.h"
 
 #define NS_CURRENT_POSTURE_MODEL_VERSION "2.1"
 #undef NS_CALCULATE_OPTICAL_FLOW
@@ -424,7 +425,7 @@ public:
 	ns_death_time_annotation_time_interval machine_event_time(const ns_movement_event & e, bool & skipped) const;
 
 	ns_movement_state by_hand_movement_state(const unsigned long & t) const;
-	ns_hmm_movement_state by_hand_hmm_movement_state(const unsigned long & t) const;
+	ns_hmm_movement_state by_hand_hmm_movement_state(const unsigned long & t, const ns_emperical_posture_quantification_value_estimator & estimator) const;
 	void add_death_time_events_to_set(ns_death_time_annotation_set & set) const;
 	const ns_death_time_annotation_set & death_time_annotations() const { return death_time_annotation_set; }
 
@@ -645,36 +646,7 @@ struct ns_region_area {
 	ns_region_area():total_exclusion_time_in_seconds(0), total_inclusion_time_in_seconds(0), average_annotation_time_for_region(0),explicitly_by_hand_excluded(false){}
 	ns_64_bit total_exclusion_time_in_seconds, total_inclusion_time_in_seconds, average_annotation_time_for_region;
 };
-struct ns_movement_analysis_optimizatiom_stats_sub_record{
-	ns_death_time_annotation_time_interval by_hand, machine;
-	bool by_hand_identified, machine_identified;
-};
-struct ns_hmm_state_info {
-	double log_likelihood;
-	//state,log-likelihood of path up until that state
-	std::vector<std::pair<ns_hmm_movement_state,double> > path; 
-};
-struct ns_movement_analysis_optimizatiom_stats_record{
-	enum { number_of_states = 5 };
-	static const ns_movement_event states[number_of_states];
-	typedef std::map<ns_movement_event, ns_movement_analysis_optimizatiom_stats_sub_record> ns_record_list;
-	ns_record_list measurements;
-	ns_stationary_path_id id;
-	ns_death_time_annotation properties;
 
-	ns_hmm_state_info by_hand_state_info, machine_state_info;
-	std::vector<double> state_times;
-};
-struct ns_movement_analysis_optimizatiom_stats{
-	std::vector<ns_movement_analysis_optimizatiom_stats_record> animals;
-
-	static void write_error_header(std::ostream & o);
-	void write_error_data(std::ostream & o, const std::map<ns_64_bit, ns_region_metadata> & metadata_cache);
-
-	static void write_hmm_path_header(std::ostream & o);
-	void write_hmm_path_data(std::ostream & o, const std::map<ns_64_bit, ns_region_metadata> & metadata_cache);
-	
-};
 struct ns_movement_analysis_shared_state;
 class ns_time_path_image_movement_analyzer {
 public:
@@ -773,7 +745,7 @@ public:
 	friend class ns_worm_morphology_data_integrator;
 	std::string posture_model_version_used;
 
-	void calculate_optimzation_stats_for_current_hmm_estimator(ns_movement_analysis_optimizatiom_stats & s, const ns_emperical_posture_quantification_value_estimator * e);
+	void calculate_optimzation_stats_for_current_hmm_estimator(ns_hmm_movement_analysis_optimizatiom_stats & s, const ns_emperical_posture_quantification_value_estimator * e);
 private:
 
 	unsigned long _number_of_invalid_images_encountered;

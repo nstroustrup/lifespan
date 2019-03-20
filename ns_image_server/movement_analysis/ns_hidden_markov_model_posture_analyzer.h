@@ -6,8 +6,47 @@
 #include "ns_time_path_posture_movement_solution.h"
 #include "ns_posture_analysis_models.h"
 #include <limits.h>
+#include "ns_region_metadata.h"
 
+struct ns_hmm_movement_analysis_optimizatiom_stats_event_annotation {
+	ns_death_time_annotation_time_interval by_hand, machine;
+	bool by_hand_identified, machine_identified;
+};
 
+struct ns_hmm_movement_optimization_stats_record_path_element {
+	ns_hmm_movement_state state;
+	double total_probability;
+	std::vector<double> sub_probabilities;
+	std::vector<double> sub_measurements;
+};
+struct ns_hmm_movement_optimization_stats_record_path {
+	double log_likelihood;
+	//state,log-likelihood of path up until that state
+	std::vector<ns_hmm_movement_optimization_stats_record_path_element> path;
+};
+struct ns_hmm_movement_analysis_optimizatiom_stats_record {
+	enum { number_of_states = 5 };
+	static const ns_movement_event states[number_of_states];
+	typedef std::map<ns_movement_event, ns_hmm_movement_analysis_optimizatiom_stats_event_annotation> ns_record_list;
+	ns_record_list measurements;
+	ns_stationary_path_id id;
+	ns_death_time_annotation properties;
+	
+	ns_hmm_movement_optimization_stats_record_path by_hand_state_info, machine_state_info;
+	std::vector<double> state_info_times;
+	std::vector<std::string> state_info_variable_names;
+
+};
+struct ns_hmm_movement_analysis_optimizatiom_stats {
+	std::vector<ns_hmm_movement_analysis_optimizatiom_stats_record> animals;
+
+	static void write_error_header(std::ostream & o);
+	void write_error_data(std::ostream & o, const std::map<ns_64_bit, ns_region_metadata> & metadata_cache);
+
+	void write_hmm_path_header(std::ostream & o);
+	void write_hmm_path_data(std::ostream & o, const std::map<ns_64_bit, ns_region_metadata> & metadata_cache);
+
+};
 
 class ns_hmm_solver {
 public:
@@ -17,7 +56,7 @@ public:
 	ns_time_path_posture_movement_solution movement_state_solution;
 
 	void solve(const ns_analyzed_image_time_path & path, const ns_emperical_posture_quantification_value_estimator & estimator);
-	static double probability_of_path_solution(const ns_analyzed_image_time_path & path, const ns_emperical_posture_quantification_value_estimator & estimator, const ns_time_path_posture_movement_solution & solution, std::vector<std::pair<ns_hmm_movement_state, double> > & state_info);
+	static void probability_of_path_solution(const ns_analyzed_image_time_path & path, const ns_emperical_posture_quantification_value_estimator & estimator, const ns_time_path_posture_movement_solution & solution, ns_hmm_movement_optimization_stats_record_path  & state_info);
 
 
 	//run the viterbi algorithm using the specified indicies of the path
@@ -28,7 +67,7 @@ public:
 
 private:
 	//m[i][j] is the log probabilitiy that an individual in state i transitions to state j.
-	static void build_state_transition_matrix(std::vector<std::vector<double> > & m);
+	static void build_state_transition_matrix(const ns_emperical_posture_quantification_value_estimator & estimator, std::vector<std::vector<double> > & m);
 
 	static ns_hmm_movement_state most_probable_state(const std::vector<double> & d);
 

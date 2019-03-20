@@ -2233,7 +2233,7 @@ void ns_test_parameter_set_on_region(const ns_64_bit region_id,
 	const ns_emperical_posture_quantification_value_estimator & estimator,
 	const ns_death_time_annotation_compiler & by_hand_annotations,
 	const ns_time_series_denoising_parameters & time_series_denoising_parameters, ns_time_path_image_movement_analyzer & time_path_image_analyzer, ns_time_path_solution & time_path_solution, ns_sql & sql,
-	ns_movement_analysis_optimizatiom_stats & output_stats) {
+	ns_hmm_movement_analysis_optimizatiom_stats & output_stats) {
 
 
 	ns_time_path_movement_markov_solver markov_solver(estimator);
@@ -2518,15 +2518,23 @@ void ns_worm_learner::generate_experiment_movement_image_quantification_analysis
 			all_observations.release();
 		}
 		cout << "\nBuilding HMM Models...";
-		for (std::map<string, ns_emperical_posture_quantification_value_estimator>::iterator p = hmm_observation_storage_and_model_generators.begin(); p != hmm_observation_storage_and_model_generators.end(); p++) {
-			p->second.build_estimator_from_observations(); 
-			ns_acquire_for_scope<ostream> both_parameter_set(image_server.results_storage.optimized_posture_analysis_parameter_set(sub, std::string("hmm=")+ p->first, sql()).output());
-			p->second.write(both_parameter_set());
-			both_parameter_set.release();
+		for (std::map<string, ns_emperical_posture_quantification_value_estimator>::iterator p = hmm_observation_storage_and_model_generators.begin(); p != hmm_observation_storage_and_model_generators.end(); ) {
+			try {
+				cout << "**Model for " << p->first << ":\n";
+				p->second.build_estimator_from_observations();
+				ns_acquire_for_scope<ostream> both_parameter_set(image_server.results_storage.optimized_posture_analysis_parameter_set(sub, std::string("hmm=") + p->first, sql()).output());
+				p->second.write(both_parameter_set());
+				both_parameter_set.release();
+				p++;
+			}
+			catch (ns_ex & ex) {
+				cout << "**Could not build model for " << p->first << ": " << ex.text() << "\n";
+				p = hmm_observation_storage_and_model_generators.erase(p);
+			}
 		}
 		cout << "\nTesting HMM models on current experiment...";
 		//go through and calculate the optimization stats for each region
-		std::map<std::string, ns_movement_analysis_optimizatiom_stats> optimization_stats_for_each_plate_type;
+		std::map<std::string, ns_hmm_movement_analysis_optimizatiom_stats> optimization_stats_for_each_plate_type;
 		for (unsigned int i = 0; i < movement_results.samples.size(); i++) {
 			if (!device_name.empty() && movement_results.samples[i].device_name() != device_name)
 				continue;
@@ -6265,6 +6273,7 @@ bool ns_worm_learner::register_main_window_key_press(int key, const bool shift_k
 
 	if (shift_key_held && key == '=' || key == '+'){
 		dynamic_range_rescale+=.1;
+		current_annotater->request_refresh();
 		main_window.redraw_screen();
 		return true;
 	}
@@ -6272,6 +6281,7 @@ bool ns_worm_learner::register_main_window_key_press(int key, const bool shift_k
 		dynamic_range_rescale-=.1;
 		if(dynamic_range_rescale<=0)
 			dynamic_range_rescale=.1;
+		current_annotater->request_refresh();
 		main_window.redraw_screen();
 		return true;
 	}
@@ -6290,8 +6300,9 @@ bool ns_worm_learner::register_main_window_key_press(int key, const bool shift_k
 	}
 	else if (key == 'i') {
 		storyboard_annotater.overlay_worm_ids();
-		storyboard_annotater.display_current_frame();
-		main_window.redraw_screen();
+		storyboard_annotater.redraw_current_metadata(main_window.display_rescale_factor);
+		current_annotater->request_refresh(); 
+		report_changes_made_to_screen();
 		return true;
 	}
 
@@ -7321,6 +7332,7 @@ bool ns_worm_learner::start_death_time_annotation(const ns_behavior_mode m, cons
 
 			death_time_annotater.load_region(data_selector.current_region().region_id, type, this,worm_window.display_rescale_factor);
 			death_time_annotater.display_current_frame();
+			death_time_annotater.request_refresh();
 		}
 
 		set_behavior_mode(m);

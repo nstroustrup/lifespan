@@ -9,6 +9,7 @@
 class ns_analyzed_image_time_path;
 struct ns_hmm_emission {
 	ns_analyzed_image_time_path_element_measurements measurement;
+	unsigned long emission_time; //*NOT USED IN TRAINING...only for debugging and data visualization*/
 	ns_stationary_path_id path_id;
 };
 struct ns_hmm_emission_normalization_stats {
@@ -29,11 +30,16 @@ struct ns_emperical_posture_quantification_value_estimator{
 	
 	void read(std::istream & i);
 	void write(std::ostream & o)const;
-	void generate_estimators_from_samples();
 	static ns_emperical_posture_quantification_value_estimator dummy();
 	ns_emperical_posture_quantification_value_estimator();
 	ns_emperical_posture_quantification_value_estimator(const ns_emperical_posture_quantification_value_estimator&); 
 	ns_emperical_posture_quantification_value_estimator& operator=(const ns_emperical_posture_quantification_value_estimator&); 
+	bool state_specified_by_model(const ns_hmm_movement_state s) const;
+	//useful for debugging
+	void provide_measurements_and_sub_probabilities(const ns_hmm_movement_state & state, const ns_analyzed_image_time_path_element_measurements & e, std::vector<double> & measurement, std::vector<double> & sub_probabilitiy ) const;
+	void provide_sub_probability_names(std::vector<std::string> & names) const;
+	unsigned long number_of_sub_probabilities() const;
+	bool state_defined(const ns_hmm_movement_state & m) const;
 private:
 	void write_visualization(std::ostream & o,const std::string & experiment_name="") const;
 	std::map<ns_hmm_movement_state, ns_emission_probabiliy_model *> emission_probability_models;

@@ -49,4 +49,5 @@ public:
 	virtual std::string software_version_number() const =0 ;
 	std::string name;
 };
+
 #endif

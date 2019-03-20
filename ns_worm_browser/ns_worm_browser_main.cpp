@@ -694,6 +694,7 @@ class ns_worm_terminal_main_menu_organizer : public ns_menu_organizer{
 		else if (subject.find("Experiment") != subject.npos)
 			ns_start_death_time_annotation(ns_worm_learner::ns_annotate_storyboard_experiment,flavor);
 		else throw ns_ex("Unknown Storyboard Subject type:") << subject;
+
 	}
 	static void start_storyboard_annotation_whole_experiment(const std::string & value){
 		start_storyboard_annotation(value,"Experiment");
@@ -1665,6 +1666,7 @@ struct ns_asynch_region_picker{
 				worm_learner.data_selector.select_region(region_name);
 				::update_region_choice_menu();
 				worm_learner.start_death_time_annotation(ns_worm_learner::ns_annotate_storyboard_region,worm_learner.current_storyboard_flavor);
+				report_changes_made_to_screen();
 				return;
 			}
 			else{
@@ -2497,8 +2499,10 @@ void redraw_main_window(){
 	}
 	current_window->gl_window->damage(1);
 	current_window->gl_window->redraw();
+
 	//Fl::check();
 	Fl::unlock();
+	//report_changes_made_to_screen();
 }
 
 
@@ -2518,6 +2522,7 @@ void redraw_worm_window(){
 	worm_window->gl_window->redraw();
 	//Fl::check();
 	Fl::unlock();
+	//report_changes_made_to_screen();
 }
 
 

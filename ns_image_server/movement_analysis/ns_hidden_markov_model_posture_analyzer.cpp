@@ -612,9 +612,9 @@ public:
 		intensity_4x.build_from_data< ns_intensity_emission_accessor_4x>(observations);
 	}
 	double point_emission_probability(const ns_analyzed_image_time_path_element_measurements & e) const {
-		return movement.point_emission_probability(e) * intensity_1x.point_emission_probability(e)
-													*intensity_2x.point_emission_probability(e)
-													*intensity_4x.point_emission_probability(e);
+		return movement.point_emission_probability(e) * pow(intensity_1x.point_emission_probability(e)
+														*intensity_2x.point_emission_probability(e)
+														*intensity_4x.point_emission_probability(e),.33333333333);
 	}
 	void sub_probabilities(const ns_analyzed_image_time_path_element_measurements & m,std::vector<double> & measurements, std::vector<double> & probabilities) const {
 		measurements.resize(0);

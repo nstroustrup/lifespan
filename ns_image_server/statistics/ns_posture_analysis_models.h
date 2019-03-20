@@ -22,7 +22,7 @@ struct ns_emperical_posture_quantification_value_estimator{
 	~ns_emperical_posture_quantification_value_estimator();
 	friend class ns_time_path_movement_markov_solver;
 	bool add_observation(const std::string &software_version, const ns_death_time_annotation & properties, const ns_analyzed_image_time_path * path);
-	void build_estimator_from_observations();
+	void build_estimator_from_observations(std::string & output);
 
 	void probability_for_each_state(const ns_analyzed_image_time_path_element_measurements & e,std::vector<double> & p) const;
 	void read_observation_data(std::istream & in);

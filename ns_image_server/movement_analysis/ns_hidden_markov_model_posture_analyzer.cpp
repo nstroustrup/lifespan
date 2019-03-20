@@ -899,7 +899,7 @@ void ns_emperical_posture_quantification_value_estimator::read_observation_data(
 	}
 }
 
-void ns_emperical_posture_quantification_value_estimator::build_estimator_from_observations() {
+void ns_emperical_posture_quantification_value_estimator::build_estimator_from_observations(std::string & output) {
 
 	//if the user hasn't explicitly labeled moving weakly post expansion,
 	//use the moving weakly pre expansion as a proxy.
@@ -924,7 +924,7 @@ void ns_emperical_posture_quantification_value_estimator::build_estimator_from_o
 	std::vector<unsigned long > state_counts((int)(ns_hmm_unknown_state), 0);
 	for (auto p = observed_values.begin(); p != observed_values.end(); p++) {
 		if (p->second.size() < 100) {
-			std::cerr << "Very few annotations were made for state " << ns_hmm_movement_state_to_string(p->first) << ".  It will not be considered in the model.\n";
+			output+= "Very few annotations were made for state " + ns_hmm_movement_state_to_string(p->first) + ".  It will not be considered in the model.\n";
 			continue;
 		}
 		auto p2 = emission_probability_models.find(p->first);
@@ -937,9 +937,9 @@ void ns_emperical_posture_quantification_value_estimator::build_estimator_from_o
 	}
 	ns_hmm_movement_state required_states[3] = { ns_hmm_missing, ns_hmm_moving_weakly, ns_hmm_not_moving_dead };
 	ns_ex ex;
-	std::cout << "Observation counts:\n";
+	output+= "Observation counts:\n";
 	for (unsigned int i = 0; i < state_counts.size(); i++) 
-		std::cout << ns_hmm_movement_state_to_string((ns_hmm_movement_state)i) << "(" << i << ")\t" << state_counts[i] << "\n";
+		output+= ns_hmm_movement_state_to_string((ns_hmm_movement_state)i) + "\t"  + ns_to_string(state_counts[i]) +  "\n";
 	for (unsigned int i = 0; i < state_counts.size(); i++) {
 		if (state_counts[i] < 100) {
 
@@ -950,7 +950,7 @@ void ns_emperical_posture_quantification_value_estimator::build_estimator_from_o
 				}
 			}
 			if (state_counts[i] == 0)
-				std::cerr << "No annotations were made for state " << ns_hmm_movement_state_to_string((ns_hmm_movement_state)i) << ".  It will not be considered in the model.\n";
+				output += "No annotations were made for state " + ns_hmm_movement_state_to_string((ns_hmm_movement_state)i) + ".  It will not be considered in the model.\n";
 		}
 	}
 

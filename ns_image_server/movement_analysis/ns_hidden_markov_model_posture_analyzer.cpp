@@ -475,12 +475,20 @@ public:
 		double start_variance[3] = { 1,1,1 };
 		gmm.Train(data, number_of_non_zeros);
 		double sum_of_weights = 0;
+
+		//we sort in order of weights, so it's easy to visualize the output of the model
+		std::vector< ns_gmm_sorter> sorted(3);
+		for (unsigned int i = 0; i < 3; i++)
+			sorted[i] = ns_gmm_sorter(gmm.Prior(i), *gmm.Mean(i), *gmm.Variance(i));
+		std::sort(sorted.begin(), sorted.end());
+
 		for (unsigned int i = 0; i < 3; i++) {
-			gmm_weights[i] = gmm.Prior(i);
-			gmm_means[i] = *gmm.Mean(i);
-			gmm_var[i] = *gmm.Variance(i);
+			gmm_weights[i] = sorted[i].weight;
+			gmm_means[i] = sorted[i].mean;
+			gmm_var[i] = sorted[i].var;
 			sum_of_weights += gmm_weights[i];
 		}
+
 		if (abs(sum_of_weights - 1) > 0.01)
 			throw ns_ex("GMM problem");
 	}
@@ -499,15 +507,10 @@ public:
 		}
 
 	}
-	void write(std::ostream & o) const {
-		//output sorted by weight
-		std::vector< ns_gmm_sorter> sorted(3);
-		for (unsigned int i = 0; i < 3; i++)
-			sorted[i] = ns_gmm_sorter(gmm_weights[i], gmm_means[i], gmm_var[i]);
-		std::sort(sorted.begin(), sorted.end());
+	void write(std::ostream & o) const {		
 		o << zero_probability ;
 		for (unsigned int i = 0; i < 3; i++)
-			o << "," << sorted[i].weight << "," << sorted[i].mean << "," << sorted[i].var;
+			o << "," << gmm_weights[i] << "," << gmm_means[i] << "," << gmm_var[i];
 	}
 	void read(std::istream & in) {
 		ns_get_double get_double;
@@ -937,20 +940,20 @@ void ns_emperical_posture_quantification_value_estimator::build_estimator_from_o
 	}
 	ns_hmm_movement_state required_states[3] = { ns_hmm_missing, ns_hmm_moving_weakly, ns_hmm_not_moving_dead };
 	ns_ex ex;
-	output+= "Observation counts:\n";
+	output+= "By hand annotation entries per HMM state:\n";
 	for (unsigned int i = 0; i < state_counts.size(); i++) 
-		output+= ns_hmm_movement_state_to_string((ns_hmm_movement_state)i) + "\t"  + ns_to_string(state_counts[i]) +  "\n";
+		output+= ns_to_string(state_counts[i]) + "\t" + ns_hmm_movement_state_to_string((ns_hmm_movement_state)i) +"\n";
 	for (unsigned int i = 0; i < state_counts.size(); i++) {
 		if (state_counts[i] < 100) {
 
 			for (unsigned int j = 0; j < 3; j++) {
 				if (required_states[j] == i) {
-					ex << "Not enough annotations were provided for state " << ns_hmm_movement_state_to_string(required_states[i]) << " (" << state_counts[required_states[i]] << " provided).\n";
+					ex << "Warning: Too few annotations were provided to build a classifier for state " << ns_hmm_movement_state_to_string(required_states[i]) << " (" << state_counts[required_states[i]] << ").\n";
 					continue;
 				}
 			}
 			if (state_counts[i] == 0)
-				output += "No annotations were made for state " + ns_hmm_movement_state_to_string((ns_hmm_movement_state)i) + ".  It will not be considered in the model.\n";
+				output += "Warning: No annotations were made for state " + ns_hmm_movement_state_to_string((ns_hmm_movement_state)i) + ".  It will not be considered in the model.\n";
 		}
 	}
 

@@ -4159,69 +4159,44 @@ public:
 	}
 };
 struct ns_slope_accessor_total_in_region {
-	ns_slope_accessor_total_in_region(ns_analyzed_image_time_path::ns_element_list & l) :list(l) {};
-	inline const ns_s64_bit & total_intensity(const unsigned long i) {
+	static inline const ns_s64_bit & total_intensity(const unsigned long i, const ns_analyzed_image_time_path::ns_element_list & list) {
 		return list[i].measurements.total_intensity_within_region;
 	}
-	inline ns_s64_bit & slope(const unsigned long i) {
+	static inline ns_s64_bit & slope(const unsigned long i, ns_analyzed_image_time_path::ns_element_list & list) {
 		return list[i].measurements.change_in_total_region_intensity;
 	}
-	ns_analyzed_image_time_path::ns_element_list::size_type size() const { return list.size(); }
-	unsigned long time(const unsigned long i) const { return list[i].absolute_time; }
-private:
-	ns_analyzed_image_time_path::ns_element_list & list;
 }; 
 struct ns_slope_accessor_total_in_foreground {
-	ns_slope_accessor_total_in_foreground(ns_analyzed_image_time_path::ns_element_list & l) :list(l) {};
-	inline const ns_s64_bit & total_intensity(const unsigned long i) {
+	static inline const ns_s64_bit & total_intensity(const unsigned long i, const ns_analyzed_image_time_path::ns_element_list & list) {
 		return list[i].measurements.total_intensity_within_foreground;
 	}
-	inline ns_s64_bit & slope(const unsigned long i) {
+	static inline ns_s64_bit & slope(const unsigned long i, ns_analyzed_image_time_path::ns_element_list & list) {
 		return list[i].measurements.change_in_total_foreground_intensity;
 	}
-	ns_analyzed_image_time_path::ns_element_list::size_type size() const { return list.size(); }
-	unsigned long time(const unsigned long i) const { return list[i].absolute_time; }
-private:
-	ns_analyzed_image_time_path::ns_element_list & list;
 };
 struct ns_slope_accessor_total_in_stabilized_1x {
-	ns_slope_accessor_total_in_stabilized_1x(ns_analyzed_image_time_path::ns_element_list & l) :list(l) {};
-	inline const ns_s64_bit & total_intensity(const unsigned long i) {
+	static inline const ns_s64_bit & total_intensity(const unsigned long i, const ns_analyzed_image_time_path::ns_element_list & list) {
 		return list[i].measurements.total_intensity_within_stabilized;
 	}
-	inline ns_s64_bit & slope(const unsigned long i) {
+	static inline ns_s64_bit & slope(const unsigned long i, ns_analyzed_image_time_path::ns_element_list & list) {
 		return list[i].measurements.change_in_total_stabilized_intensity_1x;
 	}
-	ns_analyzed_image_time_path::ns_element_list::size_type size() const { return list.size(); }
-	unsigned long time(const unsigned long i) const { return list[i].absolute_time; }
-private:
-	ns_analyzed_image_time_path::ns_element_list & list;
 }; 
 struct ns_slope_accessor_total_in_stabilized_2x {
-	ns_slope_accessor_total_in_stabilized_2x(ns_analyzed_image_time_path::ns_element_list & l) :list(l) {};
-	inline const ns_s64_bit & total_intensity(const unsigned long i) {
+	static inline const ns_s64_bit & total_intensity(const unsigned long i, const ns_analyzed_image_time_path::ns_element_list & list) {
 		return list[i].measurements.total_intensity_within_stabilized;
 	}
-	inline ns_s64_bit & slope(const unsigned long i) {
+	static inline ns_s64_bit & slope(const unsigned long i, ns_analyzed_image_time_path::ns_element_list & list) {
 		return list[i].measurements.change_in_total_stabilized_intensity_2x;
 	}
-	ns_analyzed_image_time_path::ns_element_list::size_type size() const { return list.size(); }
-	unsigned long time(const unsigned long i) const { return list[i].absolute_time; }
-private:
-	ns_analyzed_image_time_path::ns_element_list & list;
 }; 
 struct ns_slope_accessor_total_in_stabilized_4x {
-	ns_slope_accessor_total_in_stabilized_4x(ns_analyzed_image_time_path::ns_element_list & l) :list(l) {};
-	inline const ns_s64_bit & total_intensity(const unsigned long i) {
+	static inline const ns_s64_bit & total_intensity(const unsigned long i, const ns_analyzed_image_time_path::ns_element_list & list) {
 		return list[i].measurements.total_intensity_within_stabilized;
 	}
-	inline ns_s64_bit & slope(const unsigned long i) {
+	static inline ns_s64_bit & slope(const unsigned long i, ns_analyzed_image_time_path::ns_element_list & list) {
 		return list[i].measurements.change_in_total_stabilized_intensity_4x;
 	}
-	ns_analyzed_image_time_path::ns_element_list::size_type size() const { return list.size(); }
-	unsigned long time(const unsigned long i ) const { return list[i].absolute_time; }
-private:
-	ns_analyzed_image_time_path::ns_element_list & list;
 };
 
 //this calculates a time series of slope values, with the specified kernel width
@@ -4229,46 +4204,46 @@ private:
 template<int slope_kernel_half_width,class data_accessor_t>
 class ns_slope_calculator{
 public:
-	ns_slope_calculator< slope_kernel_half_width, data_accessor_t>(data_accessor_t & data, const int start_i, std::vector<ns_64_bit > & vals, std::vector<ns_64_bit > times){
+	ns_slope_calculator< slope_kernel_half_width, data_accessor_t>(ns_analyzed_image_time_path::ns_element_list & list, const int start_i, std::vector<ns_64_bit > & vals, std::vector<ns_64_bit > times){
 		
 		const int slope_kernel_width = slope_kernel_half_width * 2 + 1;
 
-		if (data.size() < slope_kernel_width + start_i)
+		if (list.size() < slope_kernel_width + start_i)
 			return;
 
 		for (unsigned int i = 0; i < start_i; i++)
-			data.slope(i) = 0;// units: per hour
+			data_accessor_t::slope(i,list) = 0;// units: per hour
 
 		vals.resize(slope_kernel_width);
 		times.resize(slope_kernel_width);
 		for (unsigned int i = 0; i < slope_kernel_width; i++) {
-			vals[i] = data.total_intensity(i + start_i);
-			times[i] = data.time(i + start_i);
+			vals[i] = data_accessor_t::total_intensity(i + start_i, list);
+			times[i] = list[i + start_i].absolute_time;
 		}
 		ns_linear_regression_model model;
 		ns_linear_regression_model_parameters params(model.fit(vals, times));
 
 		for (unsigned int i = 0; i < slope_kernel_half_width; i++) {
-			data.slope(i + start_i) = params.slope * 60 * 60; // units: per hour
+			data_accessor_t::slope(i + start_i, list) = params.slope * 60 * 60; // units: per hour
 		}
 		int pos = 0;
 		for (unsigned int i = slope_kernel_half_width + start_i; ; i++) {
 			//calculate slope of current kernal
 			params = model.fit(vals, times);
 
-			data.slope(i) = params.slope * 60 * 60; // units/
+			data_accessor_t::slope(i,list) = params.slope * 60 * 60; // units/
 
-			if (i + slope_kernel_half_width + 2 >= data.size())
+			if (i + slope_kernel_half_width + 2 >= list.size())
 				break;
 			//update kernal for next step, by replacing earliest value i
-			vals[pos] = data.total_intensity(i + slope_kernel_half_width + 2);
-			times[pos] = data.time(i + slope_kernel_half_width + 2);
+			vals[pos] = data_accessor_t::total_intensity(i + slope_kernel_half_width + 2, list);
+			times[pos] = list[i + slope_kernel_half_width + 2].absolute_time;
 			pos++;
 			if (pos == slope_kernel_width)
 				pos = 0;
 		}
-		for (unsigned int i = data.size() - slope_kernel_half_width - 1; i < data.size(); i++) {
-			data.slope(i) = params.slope * 60 * 60; // units: per hour
+		for (unsigned int i = list.size() - slope_kernel_half_width - 1; i < list.size(); i++) {
+			data_accessor_t::slope(i, list) = params.slope * 60 * 60; // units: per hour
 		}
 	}
 };
@@ -4300,16 +4275,11 @@ void ns_analyzed_image_time_path::denoise_movement_series_and_calculate_intensit
 		
 		const int start_i = this->first_stationary_timepoint();  //do not use frames before worm arrives to calculate slope, as the worm's appearence will produce a very large spurious slope.
 		std::vector<ns_64_bit > tmp1, tmp2;
-		ns_slope_accessor_total_in_region a1 (elements);
-		ns_slope_calculator<4, ns_slope_accessor_total_in_region> total_change_calculator(a1,start_i,tmp1,tmp2);
-		ns_slope_accessor_total_in_foreground a2 (elements);
-		ns_slope_calculator<4, ns_slope_accessor_total_in_foreground> foreground_change_calculator(a2, start_i, tmp1, tmp2);
-		ns_slope_accessor_total_in_stabilized_1x a3(elements);
-		ns_slope_calculator<4, ns_slope_accessor_total_in_stabilized_1x> stabilized_change_calculator_1x(a3, start_i, tmp1, tmp2);
-		ns_slope_accessor_total_in_stabilized_2x a4(elements);		
-		ns_slope_calculator<8, ns_slope_accessor_total_in_stabilized_2x> stabilized_change_calculator_2x(a4, start_i, tmp1, tmp2);
-		ns_slope_accessor_total_in_stabilized_4x a5(elements);
-		ns_slope_calculator<16, ns_slope_accessor_total_in_stabilized_4x> stabilized_change_calculator_4x(a5,start_i, tmp1, tmp2);
+		ns_slope_calculator<4, ns_slope_accessor_total_in_region> total_change_calculator(elements,start_i,tmp1,tmp2);
+		ns_slope_calculator<4, ns_slope_accessor_total_in_foreground> foreground_change_calculator(elements, start_i, tmp1, tmp2);
+		ns_slope_calculator<4, ns_slope_accessor_total_in_stabilized_1x> stabilized_change_calculator_1x(elements, start_i, tmp1, tmp2);
+		ns_slope_calculator<8, ns_slope_accessor_total_in_stabilized_2x> stabilized_change_calculator_2x(elements, start_i, tmp1, tmp2);
+		ns_slope_calculator<16, ns_slope_accessor_total_in_stabilized_4x> stabilized_change_calculator_4x(elements,start_i, tmp1, tmp2);
 			
 		
 		return;

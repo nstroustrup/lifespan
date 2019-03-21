@@ -2313,6 +2313,7 @@ void ns_worm_learner::generate_experiment_movement_image_quantification_analysis
 	std::map<std::string,ns_emperical_posture_quantification_value_estimator> hmm_observation_storage_and_model_generators;
 	std::map<ns_64_bit, ns_region_metadata> metadata_cache;
 	std::map<std::string, ns_region_metadata> metadata_cache_by_name;
+	std::map<std::string, bool> model_building_failed;
 
 	//useful data is cached for each region considered
 	std::map <ns_64_bit, ns_time_series_denoising_parameters> time_series_denoising_parameters_cache;
@@ -2535,7 +2536,7 @@ void ns_worm_learner::generate_experiment_movement_image_quantification_analysis
 			all_observations.release();
 		}
 		cout << "\nBuilding HMM Models...";
-		for (std::map<string, ns_emperical_posture_quantification_value_estimator>::iterator p = hmm_observation_storage_and_model_generators.begin(); p != hmm_observation_storage_and_model_generators.end(); ) {
+		for (std::map<string, ns_emperical_posture_quantification_value_estimator>::iterator p = hmm_observation_storage_and_model_generators.begin(); p != hmm_observation_storage_and_model_generators.end(); ++p ) {
 			try {
 				if (p->first == "all")
 					model_building_and_testing_info[p->first] = "== HMM model built from all animal types ==\n";
@@ -2549,12 +2550,11 @@ void ns_worm_learner::generate_experiment_movement_image_quantification_analysis
 				ns_acquire_for_scope<ostream> both_parameter_set(ps.output());
 				p->second.write(both_parameter_set());
 				both_parameter_set.release();
-
-				p++;
+				model_building_failed[p->first] = false;
 			}
 			catch (ns_ex & ex) {
 				model_building_and_testing_info[p->first] += "**Error: Could not build model for " + p->first +":\n" + ex.text() + "**\n";
-				p = hmm_observation_storage_and_model_generators.erase(p);
+				model_building_failed[p->first] = true;
 			}
 		}
 		cout << "\nTesting HMM models on current experiment...";
@@ -2572,6 +2572,8 @@ void ns_worm_learner::generate_experiment_movement_image_quantification_analysis
 				const std::string plate_type_summary(movement_results.samples[i].regions[j]->metadata.plate_type_summary("-", true));
 				//calculate the stats using an estimator built on all plate types, and also for the current plate's type
 				for (std::map<string, ns_emperical_posture_quantification_value_estimator>::iterator p = hmm_observation_storage_and_model_generators.begin(); p != hmm_observation_storage_and_model_generators.end(); p++) {
+					if (model_building_failed[p->first]) 
+						continue;
 					//cout << p->first << " " << plate_type_summary << " ";
 					if (p->first == "all" || p->first == plate_type_summary) {
 					//	cout << "WRITTEN";
@@ -2584,15 +2586,16 @@ void ns_worm_learner::generate_experiment_movement_image_quantification_analysis
 		}
 		cout << "\nWriting HMM model test results to disk.\n";
 		//write all the different plate type stats to disk
-		
 		for (auto p = optimization_stats_for_each_plate_type.begin(); p != optimization_stats_for_each_plate_type.end(); p++) {
+			if (model_building_failed[p->first])
+				continue;
 			unsigned long movement_N(0), expansion_N(0);
 			double movement_square_error(0), expansion_square_error(0);
 			for (unsigned int i = 0; i < p->second.animals.size(); i++) {
 				if (p->second.animals[i].measurements[ns_movement_cessation].by_hand_identified &&
 					p->second.animals[i].measurements[ns_movement_cessation].machine_identified) {
 					const double d = (p->second.animals[i].measurements[ns_movement_cessation].machine.best_estimate_event_time_for_possible_partially_unbounded_interval() -
-						p->second.animals[i].measurements[ns_movement_cessation].by_hand.best_estimate_event_time_for_possible_partially_unbounded_interval())/24.0/60.0/60.0;
+						p->second.animals[i].measurements[ns_movement_cessation].by_hand.best_estimate_event_time_for_possible_partially_unbounded_interval()) / 24.0 / 60.0 / 60.0;
 					movement_square_error += d * d;
 					movement_N++;
 				}
@@ -2604,36 +2607,37 @@ void ns_worm_learner::generate_experiment_movement_image_quantification_analysis
 					expansion_N++;
 				}
 			}
-			model_building_and_testing_info[p->first] += "For movement cessation,  this model yielded an average error of " + ns_to_string_short(sqrt(movement_square_error / movement_N) ,2) + " days across " + ns_to_string(movement_N)+" animals.\n";
-			model_building_and_testing_info[p->first] += "For death time expansion, this model yielded an average error of " + ns_to_string_short(sqrt(expansion_square_error / expansion_N) , 2) + " days across "+ ns_to_string(expansion_N)+" animals.\n";
+			model_building_and_testing_info[p->first] += "For movement cessation,  this model yielded an average error of " + ns_to_string_short(sqrt(movement_square_error / movement_N), 2) + " days across " + ns_to_string(movement_N) + " animals.\n";
+			model_building_and_testing_info[p->first] += "For death time expansion, this model yielded an average error of " + ns_to_string_short(sqrt(expansion_square_error / expansion_N), 2) + " days across " + ns_to_string(expansion_N) + " animals.\n";
 			if (movement_N < 50 || expansion_N < 50)
 				model_building_and_testing_info[p->first] += "Warning: These results will not be meaningful until more worms are annotated by hand.\n";
 			else model_building_and_testing_info[p->first] += "The model file was written to \"" + model_filenames[p->first] + "\"\n";
 			ns_acquire_for_scope<ostream>  performance_stats_output(image_server.results_storage.time_path_image_analysis_quantification(sub, std::string("hmm_performance=") + p->first, true, sql()).output());
 			p->second.write_error_header(performance_stats_output());
-			p->second.write_error_data(performance_stats_output(),metadata_cache);
+			p->second.write_error_data(performance_stats_output(), metadata_cache);
 			performance_stats_output.release();
 
 			performance_stats_output.attach(image_server.results_storage.time_path_image_analysis_quantification(sub, std::string("hmm_path=") + p->first, true, sql()).output());
 			p->second.write_hmm_path_header(performance_stats_output());
 			p->second.write_hmm_path_data(performance_stats_output(), metadata_cache);
 			performance_stats_output.release();
+		}
+
+		for (auto p = model_building_and_testing_info.begin(); p != model_building_and_testing_info.end(); p++) 
 			results_text += model_building_and_testing_info[p->first] + "\n";
 
-		}
+		ns_acquire_for_scope<ostream> summary(image_server.results_storage.optimized_posture_analysis_parameter_set(sub, "hmm_optimization_summary", sql()).output());
+		summary() << results_text;
+		summary.release();
+		ns_text_dialog td;
+		td.grid_text.push_back(results_text);
+		td.title = "HMM Model Generation Results";
+		td.w = 1000;
+		td.h = 700;
+		ns_run_in_main_thread_custom_wait<ns_text_dialog> b(&td);
 	}
 	
 	o_all.release();
-
-	ns_acquire_for_scope<ostream> summary(image_server.results_storage.optimized_posture_analysis_parameter_set(sub, "hmm_optimization_summary", sql()).output());
-	summary() << results_text;
-	summary.release();
-	ns_text_dialog td;
-	td.grid_text.push_back(results_text);
-	td.title = "HMM Model Generation Results";
-	td.w = 1000;
-	td.h = 700;
-	ns_run_in_main_thread_custom_wait<ns_text_dialog> b(&td);
 
 	sql.release();
 }

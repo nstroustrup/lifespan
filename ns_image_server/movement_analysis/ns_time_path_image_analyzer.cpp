@@ -3371,46 +3371,49 @@ ns_hmm_movement_state ns_analyzed_image_time_path::by_hand_hmm_movement_state(co
 		return ns_hmm_missing;
 	if (!vigorous_skipped && t <= vigorous_end.period_end) {
 		if (estimator.state_defined(ns_hmm_moving_vigorously))
-		return ns_hmm_moving_vigorously;
+			return ns_hmm_moving_vigorously;
 		else return ns_hmm_moving_weakly;
 	}
 
-	//if the worm hasn't stopped moving yet, it's moving weakly
+	//if the worm never stops moving, or hasn't stopped moving yet
+	//it is eaither moving weakly or expanding.
 	if (by_hand_annotation_event_times[(int)ns_movement_cessation].period_end_was_not_observed ||
 		t <= by_hand_annotation_event_times[(int)ns_movement_cessation].period_end) {
-		//if the start and finish of the expansion was marked
-		if (!by_hand_annotation_event_times[ns_death_posture_relaxation_start].period_end_was_not_observed &&
-			!by_hand_annotation_event_times[ns_death_posture_relaxation_termination].period_end_was_not_observed) {
-			
-			if (t > by_hand_annotation_event_times[ns_death_posture_relaxation_start].period_end &&
-				t <= by_hand_annotation_event_times[ns_death_posture_relaxation_termination].period_end)
+
+		//if expansion end was marked
+		if (!by_hand_annotation_event_times[ns_death_posture_relaxation_termination].period_end_was_not_observed) {
+			//and we are after it
+			if (t > by_hand_annotation_event_times[ns_death_posture_relaxation_termination].period_end)
+				return ns_hmm_moving_weakly_post_expansion;
+			//if no start time was annotated
+			if (by_hand_annotation_event_times[ns_death_posture_relaxation_start].period_end_was_not_observed)
 				return ns_hmm_moving_weakly_expanding;
-			else 
-				return ns_hmm_moving_weakly;
+			//if we are after the start time
+			if (t >= by_hand_annotation_event_times[ns_death_posture_relaxation_start].period_end)
+				return ns_hmm_moving_weakly_expanding;
+			//if we are before the start time
+			return ns_hmm_moving_weakly;
 		}
-		//if only the end of the expansion was marked, we assume that it started at the final time of movement.
+		//no expansion was marked
 		return ns_hmm_moving_weakly;
 	}
-	//the animal has stopped moving
+	//the death time was annotated and we are after it.
 
-	//if the animal never expanded, it's dead
-	if (by_hand_annotation_event_times[ns_death_posture_relaxation_termination].period_end_was_not_observed)
+	//if the animal never expanded or has stopped expanding
+	if (by_hand_annotation_event_times[ns_death_posture_relaxation_termination].period_end_was_not_observed ||
+		t >= by_hand_annotation_event_times[ns_death_posture_relaxation_termination].period_end)
 		return ns_hmm_not_moving_dead;
 
 	//the animal hasn't stopped expanding yet
-	if (t < by_hand_annotation_event_times[ns_death_posture_relaxation_termination].period_end) {
 
-		
-		//if the animal started expanding right after death (eg the start was not annotated), it is still expanding
-		if (by_hand_annotation_event_times[(int)ns_death_posture_relaxation_start].period_end_was_not_observed)
-			return ns_hmm_not_moving_expanding;
-		//if the animal hasn't started expanding yet, it's alive
-		if (t < by_hand_annotation_event_times[ns_death_posture_relaxation_start].period_end)
-			return ns_hmm_not_moving_alive;
-		//otherwise it is expanding
+	//if the animal started expanding right after death (eg the start was not annotated), it is still expanding
+	if (by_hand_annotation_event_times[(int)ns_death_posture_relaxation_start].period_end_was_not_observed ||
+		t >= by_hand_annotation_event_times[ns_death_posture_relaxation_start].period_end)
 		return ns_hmm_not_moving_expanding;
-	}
-	return ns_hmm_not_moving_dead;
+
+	//if the animal hasn't started expanding yet, it's alive
+
+	return ns_hmm_not_moving_alive;
 }
 ns_movement_state ns_analyzed_image_time_path::by_hand_movement_state( const unsigned long & t) const{
 	
@@ -3707,7 +3710,7 @@ void ns_hmm_movement_analysis_optimizatiom_stats::write_error_data(std::ostream 
 }
 
 void ns_hmm_movement_analysis_optimizatiom_stats::write_hmm_path_header(std::ostream & o) {
-	o << "Experiment,Plate Name,Animal Details,Group ID,Path ID,Excluded,Censored,Number of Worms, Time (Days),Machine HMM state, By Hand HMM state, Machine likelihood, By hand likelihood, Machine - by hand liklihood ";
+	o << "Experiment,Plate Name,Animal Details,Group ID,Path ID,Excluded,Censored,Number of Worms, Time (Days),Machine HMM state, By Hand HMM state, Machine likelihood, By hand likelihood, (Machine - by hand) likelihood, Cumulative (Machine - by hand) likelihood ";
 
 	if (animals.size() > 0) {
 		for (unsigned int i = 0; i < animals[0].state_info_variable_names.size(); i++) {
@@ -3724,6 +3727,7 @@ void ns_hmm_movement_analysis_optimizatiom_stats::write_hmm_path_data(std::ostre
 		auto m = metadata_cache.find(animals[k].properties.region_info_id);
 		if (m == metadata_cache.end())
 			throw ns_ex("Could not find metadata for region ") << animals[k].properties.region_info_id;
+		double cumulative_differential_probability(0);
 		for (unsigned int i = 0; i < animals[k].machine_state_info.path.size(); i++) {
 			o << m->second.experiment_name << "," << m->second.plate_name() << "," << m->second.plate_type_summary("-")
 				<< "," << animals[k].id.group_id << "," << animals[k].id.path_id << ","
@@ -3733,7 +3737,10 @@ void ns_hmm_movement_analysis_optimizatiom_stats::write_hmm_path_data(std::ostre
 			o << ((animals[k].state_info_times[i] - m->second.time_at_which_animals_had_zero_age) / 60.0 / 60.0 / 24.0) << ",";
 			o << ns_hmm_movement_state_to_string(animals[k].machine_state_info.path[i].state) << "," << ns_hmm_movement_state_to_string(animals[k].by_hand_state_info.path[i].state) << ",";
 			o << animals[k].machine_state_info.path[i].total_probability << "," << animals[k].by_hand_state_info.path[i].total_probability << ",";
-			o << (animals[k].machine_state_info.path[i].total_probability - animals[k].by_hand_state_info.path[i].total_probability);
+			double diff_p = (animals[k].machine_state_info.path[i].total_probability - animals[k].by_hand_state_info.path[i].total_probability);
+			o << diff_p << ",";
+			cumulative_differential_probability += diff_p;
+			o << cumulative_differential_probability;
 			for (unsigned int pp = 0; pp < animals[0].state_info_variable_names.size(); pp++) {
 				o << "," << animals[k].machine_state_info.path[i].sub_measurements[pp];
 				o << "," << animals[k].machine_state_info.path[i].sub_probabilities[pp];

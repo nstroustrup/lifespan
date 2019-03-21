@@ -926,16 +926,16 @@ public:
 				for (unsigned int i = 0; i < current_region_data->machine_timing_data[worm.group_id].animals.size(); i++) {
 					if (current_region_data->machine_timing_data[worm.group_id].animals[i].movement_cessation.time.period_end > latest_death_time) {
 						latest_death_time = current_region_data->machine_timing_data[worm.group_id].animals[i].movement_cessation.time.period_end;
-						cerr << "m:" << latest_death_time << "\n";
+						//cerr << "m:" << latest_death_time << "\n";
 					}
 				}
 				for (unsigned int i = 0; i < current_region_data->by_hand_timing_data[worm.group_id].animals.size(); i++) {
 					if (current_region_data->by_hand_timing_data[worm.group_id].animals[i].movement_cessation.time.period_end > latest_death_time) {
 						latest_death_time = current_region_data->by_hand_timing_data[worm.group_id].animals[i].movement_cessation.time.period_end;
-						cerr << "h:" << latest_death_time << "\n";
+						//cerr << "h:" << latest_death_time << "\n";
 					}
 				}
-				cerr << "h:" << latest_death_time << "\n";
+				//cerr << "h:" << latest_death_time << "\n";
 				if (last_time_at_current_telementry_zoom() < latest_death_time) {
 					unsigned zoom_timepoint(0);
 					for (unsigned int zoom_timepoint = 0; zoom_timepoint < timepoints.size(); zoom_timepoint++) {
@@ -943,7 +943,7 @@ public:
 							break;
 					}
 					zoom_timepoint = zoom_timepoint + 0.25*(timepoints.size() - zoom_timepoint);
-					cout << zoom_timepoint << "\n";
+					//cout << zoom_timepoint << "\n";
 					if (zoom_timepoint != 0)
 						telemetry_zoom_factor = timepoints.size() / zoom_timepoint;
 				}

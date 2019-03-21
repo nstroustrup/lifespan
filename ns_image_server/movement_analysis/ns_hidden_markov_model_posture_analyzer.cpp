@@ -927,7 +927,7 @@ void ns_emperical_posture_quantification_value_estimator::build_estimator_from_o
 	std::vector<unsigned long > state_counts((int)(ns_hmm_unknown_state), 0);
 	for (auto p = observed_values.begin(); p != observed_values.end(); p++) {
 		if (p->second.size() < 100) {
-			output+= "Very few annotations were made for state " + ns_hmm_movement_state_to_string(p->first) + ".  It will not be considered in the model.\n";
+			output+= "Very few annotations were made for the state " + ns_hmm_movement_state_to_string(p->first) + ".  It will not be considered in the model.\n";
 			continue;
 		}
 		auto p2 = emission_probability_models.find(p->first);
@@ -948,7 +948,7 @@ void ns_emperical_posture_quantification_value_estimator::build_estimator_from_o
 
 			for (unsigned int j = 0; j < 3; j++) {
 				if (required_states[j] == i) {
-					ex << "Warning: Too few annotations were provided to build a classifier for state " << ns_hmm_movement_state_to_string(required_states[i]) << " (" << state_counts[required_states[i]] << ").\n";
+					ex << "Too few annotations were provided to build a required classifier for the state " << ns_hmm_movement_state_to_string(required_states[j]) << " (" << state_counts[required_states[j]] << ").\n";
 					continue;
 				}
 			}

@@ -19,9 +19,18 @@
 #include <set>
 using namespace std;
 
-void ns_to_lower(std::string & s){
+void ns_to_lower(std::string & s) {
 	for (unsigned int i = 0; i < s.size(); i++)
 		s[i] = tolower(s[i]);
+}
+void ns_worm_learner::reset_sql_connections() {
+
+	ns_acquire_lock_for_scope lock(persistant_sql_lock, __FILE__, __LINE__);
+	if (persistant_sql_connection != 0) {
+		delete persistant_sql_connection;
+		persistant_sql_connection = 0;
+	}
+	lock.release();
 }
 ns_sql & ns_worm_learner::get_sql_connection() {
 
@@ -801,7 +810,9 @@ void ns_worm_learner::output_device_timing_data(const unsigned long experiment_i
 		set.load_whole_experiment(experiment_ids[i],sql());
 		
 		for (unsigned int j = 0; j < set.samples.size(); j++){
+			cout << (100 * j) / set.samples.size() << "%...";
 			set.samples[j].output_jmp_format(o());
+			cout << "\n";
 		}
 	}
 	o.release();
@@ -2789,7 +2800,7 @@ void ns_calculate_running_extrema(const ns_extrema_plot_type & plot_type, const 
 			}
 			else {
 				for (unsigned int i = 0; i < dest[j].y_min.size(); i++) {
-					dest[j].y_min[i] = source[j].x[i];
+					dest[j].y_min[i] = source[j].x[i/ time_step_resample_factor];
 				}
 			}
 		}

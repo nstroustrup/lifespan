@@ -232,8 +232,8 @@ void ns_hmm_solver::build_movement_state_solution_from_movement_transitions(cons
 			else movement_state_solution.moving.skipped = true;
 			m = ns_movement_slow;
 			movement_state_solution.slowing.start_index = path_indices[movement_transitions[i].second];
-			movement_state_solution.slowing.skipped = false;
 			movement_state_solution.slowing.end_index = *path_indices.rbegin();
+			movement_state_solution.slowing.skipped = movement_state_solution.slowing.start_index == movement_state_solution.slowing.end_index;
 		}
 		if (m == ns_movement_slow && (
 			movement_transitions[i].first != ns_hmm_moving_weakly &&
@@ -244,8 +244,8 @@ void ns_hmm_solver::build_movement_state_solution_from_movement_transitions(cons
 			else movement_state_solution.slowing.skipped = true;
 			m = ns_movement_stationary;
 			movement_state_solution.dead.start_index = path_indices[movement_transitions[i].second];
-			movement_state_solution.dead.skipped = false;
 			movement_state_solution.dead.end_index = *path_indices.rbegin();
+			movement_state_solution.dead.skipped = movement_state_solution.dead.start_index == movement_state_solution.dead.end_index;
 		}
 		//now we handle expansions
 		switch (expanding_state) {
@@ -255,6 +255,7 @@ void ns_hmm_solver::build_movement_state_solution_from_movement_transitions(cons
 				movement_state_solution.expanding.skipped = false;
 				movement_state_solution.expanding.start_index = path_indices[movement_transitions[i].second];
 				movement_state_solution.expanding.end_index = *path_indices.rbegin();
+				movement_state_solution.expanding.skipped = movement_state_solution.expanding.start_index == movement_state_solution.expanding.end_index;
 				expanding_state = 1;
 			}
 			else if (movement_transitions[i].first == ns_hmm_moving_weakly_post_expansion)
@@ -265,6 +266,9 @@ void ns_hmm_solver::build_movement_state_solution_from_movement_transitions(cons
 				movement_transitions[i].first != ns_hmm_not_moving_expanding) {
 				movement_state_solution.expanding.end_index = path_indices[movement_transitions[i].second];
 				expanding_state = 2;
+				if (movement_state_solution.expanding.end_index == movement_state_solution.expanding.start_index)
+					std::cout << "invisble expansion transition";
+
 			}
 			break;
 		case 2: if (movement_transitions[i].first != ns_hmm_moving_weakly_post_expansion &&
@@ -272,9 +276,8 @@ void ns_hmm_solver::build_movement_state_solution_from_movement_transitions(cons
 			throw ns_ex("Unexpected post-expansion state!");
 		}
 	}
-	if (movement_state_solution.dead.start_index == 66 &&
-		movement_state_solution.dead.end_index == 400)
-		std::cerr << "WHA";
+	if (!movement_state_solution.expanding.skipped && movement_state_solution.expanding.end_index == movement_state_solution.expanding.start_index)
+		std::cout << "invisble expansion transition";
 }
 
 //m[i][j] is the log probabilitiy that an individual in state i transitions to state j.

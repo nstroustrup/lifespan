@@ -1955,6 +1955,8 @@ class ns_dying_animal_description_generator{
 			else if (annotations[i].annotation_source != ns_death_time_annotation::ns_unknown)
 				group = &animals[annotations[i].animal_id_at_position]->by_hand;
 			else continue;
+			if (annotations[i].event_explicitness == ns_death_time_annotation::ns_explicitly_not_observed)
+				continue;
 			switch(annotations[i].type){
 				case ns_translation_cessation:
 					group->last_slow_movement_annotation = & annotations[i];
@@ -1966,6 +1968,10 @@ class ns_dying_animal_description_generator{
 						group->death_posture_relaxation_termination_ = & annotations[i];
 					break;
 				case ns_death_posture_relaxation_start:
+						if (annotations[i].time.period_start == annotations[i].time.period_end && (!annotations[i].time.period_end_was_not_observed || !annotations[i].time.period_end_was_not_observed))
+							cerr << "Invalid skipped relaxation state transition\n";
+						//else 
+						//	cerr << "OK";
 						group->death_posture_relaxation_start= &annotations[i];
 						break;
 				case ns_stationary_worm_disappearance:
@@ -2406,9 +2412,25 @@ void ns_death_time_annotation_compiler_region::generate_survival_curve(ns_surviv
 							a[2]->time.best_estimate_event_time_for_possible_partially_unbounded_interval();
 
 						//we use this as debugging info in output file
-						if (a[3] != 0 && a[0] != 0) b.volatile_time_at_death_contraction_start = a[3]->time;
-						if (a[4] != 0 && a[0] != 0) b.volatile_time_at_death_contraction_end = a[4]->time;
-
+						if (a[3] != 0 && a[0] != 0) {
+							b.volatile_time_at_death_contraction_start = a[3]->time;
+							if (a[3]->time.period_start == a[3]->time.period_end && (!a[3]->time.period_end_was_not_observed || !a[3]->time.period_end_was_not_observed)) {
+								cout << "Encountered an undefined contraction start time for animal " << b.stationary_path_id.group_id << " in region " << a[3]->region_info_id << "!\n";
+								b.volatile_time_at_death_contraction_start.period_end_was_not_observed = b.volatile_time_at_death_contraction_start.period_start_was_not_observed = true;
+							}
+						}
+						else 
+							b.volatile_time_at_death_contraction_start.period_end_was_not_observed = b.volatile_time_at_death_contraction_start.period_start_was_not_observed = true;
+						if (a[4] != 0 && a[0] != 0) {
+							b.volatile_time_at_death_contraction_end = a[4]->time;
+							if (a[4]->time.period_start == a[4]->time.period_end && (!a[4]->time.period_end_was_not_observed || !a[4]->time.period_end_was_not_observed)) {
+								cout << "Encountered an undefined contraction end time for animal " << b.stationary_path_id.group_id << " in region " << a[3]->region_info_id << "!\n";
+								b.volatile_time_at_death_contraction_end.period_end_was_not_observed = b.volatile_time_at_death_contraction_end.period_start_was_not_observed = true;
+							}
+						}
+						else 
+							b.volatile_time_at_death_contraction_end.period_end_was_not_observed = b.volatile_time_at_death_contraction_end.period_start_was_not_observed = true;
+						
 						//regions can be re-analyzed. In this case,
 						//some locations can dissapear (as they no longer exist in the new analysis)
 						//hand anotations remain for these now non-existant locations.

@@ -146,7 +146,7 @@ void ns_machine_analysis_sample_data::load(const ns_death_time_annotation_set::n
 			regions[s]->load_from_db(annotation_type_to_load,loading_details,region_id,sql);
 			regions[s]->excluded = reg[i][1] != "0";
 			regions[s]->censored = reg[i][2] != "0";
-			std::cout << region_id << " " <<	regions[s]->metadata.plate_name() << " " << reg[i][2] << "\n";
+			//std::cout << region_id << " " <<	regions[s]->metadata.plate_name() << " " << reg[i][2] << "\n";
 			//break;
 		}
 		catch(ns_ex & ex){

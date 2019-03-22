@@ -873,6 +873,7 @@ public:
 	std::string current_mask_filename;
 	float dynamic_range_rescale;
 	ns_sql & get_sql_connection();
+	void reset_sql_connections();
 	ns_lock persistant_sql_lock;
 
 	ns_death_time_solo_posture_annotater_timepoint::ns_visualization_type solo_annotation_visualization_type;

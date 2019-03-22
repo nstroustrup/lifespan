@@ -2885,6 +2885,9 @@ void ns_analyzed_image_time_path::detect_death_times_and_generate_annotations_fr
 			dead_interval_including_missed_states,
 			expansion_interval_including_missed_states);
 	}
+	if (!expansion_interval_including_missed_states.skipped &&
+		expansion_interval_including_missed_states.entrance_interval.period_start_index == expansion_interval_including_missed_states.exit_interval.period_start_index)
+		cout << "empty unskipped expansion interval";
 
 	//if the path has extra worms at least 25% of the points leading up to it's death
 		//mark the path as containing that extra worm
@@ -2994,7 +2997,7 @@ void ns_analyzed_image_time_path::detect_death_times_and_generate_annotations_fr
 			path_id, part_of_a_full_trace, elements[expansion_interval_including_missed_states.entrance_interval.period_end_index].inferred_animal_location,
 			elements[expansion_interval_including_missed_states.entrance_interval.period_end_index].subregion_info,
 			reason_to_be_censored, loglikelihood_of_solution, longest_skipped_interval_before_death);
-		e1.event_explicitness = ns_death_time_annotation::ns_explicitly_observed;
+		e1.event_explicitness = ns_death_time_annotation::ns_explicitly_not_observed;
 		set.add(e1);
 
 		ns_death_time_annotation e2(ns_death_posture_relaxation_termination,
@@ -3222,7 +3225,8 @@ void ns_analyzed_image_time_path::convert_movement_solution_to_state_intervals(c
 		expansion_interval.skipped = true;
 	else {
 		expansion_interval.skipped = false;
-
+		if (solution.expanding.start_index == solution.expanding.end_index)
+			cout << "Blank expansion interval!\n";
 		expansion_interval.entrance_interval.period_end_index = solution.expanding.start_index;
 		expansion_interval.entrance_interval.period_start_index = ns_find_last_valid_observation_index(solution.expanding.start_index, elements);
 		if (expansion_interval.entrance_interval.period_start_index == -1)expansion_interval.entrance_interval = frame_before_first;
@@ -3858,7 +3862,7 @@ ns_time_path_posture_movement_solution ns_analyzed_image_time_path::reconstruct_
 	if (expansion_end.first != -1 && expansion_end.second == -1)
 		throw ns_ex("Unbounded expansion end interval!");
 
-	s.expanding.skipped = expansion_end.first == -1;
+	s.expanding.skipped = (expansion_end.first == -1);
 	if (!s.expanding.skipped) {
 			s.expanding.end_index = expansion_end.first;
 			if (expansion_start.second != -1)

@@ -123,7 +123,7 @@ void ns_machine_analysis_sample_data::load(const ns_death_time_annotation_set::n
 	bool calculate_missing_data = false;
 	device_name_ = sample_metadata.device;
 	ns_sql_result reg;
-	sql << "SELECT r.id FROM sample_region_image_info as r WHERE r.sample_id = " << sample_id << " AND r.censored=0 ";
+	sql << "SELECT r.id, r.excluded_from_analysis, r.censored FROM sample_region_image_info as r WHERE r.sample_id = " << sample_id << " AND r.censored=0 ";
 	if (!include_excluded_regions)
 			sql << " AND r.excluded_from_analysis=0";
 	if (specific_region_id!=0)
@@ -144,6 +144,9 @@ void ns_machine_analysis_sample_data::load(const ns_death_time_annotation_set::n
 			regions[s]->metadata.load_only_region_info_from_db(region_id,"",sql);
 			regions[s]->metadata.technique = "Lifespan Machine";
 			regions[s]->load_from_db(annotation_type_to_load,loading_details,region_id,sql);
+			regions[s]->excluded = reg[i][1] != "0";
+			regions[s]->censored = reg[i][2] != "0";
+			std::cout << region_id << " " <<	regions[s]->metadata.plate_name() << " " << reg[i][2] << "\n";
 			//break;
 		}
 		catch(ns_ex & ex){

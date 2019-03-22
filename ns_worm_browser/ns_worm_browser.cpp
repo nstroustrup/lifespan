@@ -2377,6 +2377,8 @@ void ns_worm_learner::generate_experiment_movement_image_quantification_analysis
 			for (unsigned int j = 0; j < movement_results.samples[i].regions.size(); j++) {
 				if (plate_id != 0 && plate_id != movement_results.samples[i].regions[j]->metadata.region_id)
 					continue;
+				if (movement_results.samples[i].regions[j]->excluded || movement_results.samples[i].regions[j]->censored)
+					continue;
 				region_count++;
 			}
 		}
@@ -2392,6 +2394,9 @@ void ns_worm_learner::generate_experiment_movement_image_quantification_analysis
 			for (unsigned int j = 0; j < movement_results.samples[i].regions.size(); j++){
 				if (plate_id != 0 && plate_id != movement_results.samples[i].regions[j]->metadata.region_id)
 					continue;
+				if (movement_results.samples[i].regions[j]->excluded || movement_results.samples[i].regions[j]->censored) {
+					continue;
+				}
 				cerr << 100*regions_processed/region_count << "%";
 				regions_processed++;
 

@@ -77,6 +77,7 @@ struct ns_processing_job{
 	}
 	bool is_a_multithreaded_job() const{
 		return maintenance_task == ns_maintenance_rebuild_movement_data ||
+			 maintenance_task == ns_maintenance_rebuild_movement_data_from_stored_solution ||
 			 maintenance_task == ns_maintenance_rebuild_movement_from_stored_images ||
 		//	 maintenance_task == ns_maintenance_rebuild_movement_from_stored_image_quantification ||
 			 operations.size() > (int)ns_process_compile_video  &&

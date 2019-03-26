@@ -188,14 +188,14 @@ public:
 class ns_multiple_worm_cluster_death_annotation_handler{
 public:
 	//we need the properties to make sure generated annotations have correct excluded, flag, etc information
-	static void generate_correct_annotations_for_multiple_worm_cluster(
+	static bool generate_correct_annotations_for_multiple_worm_cluster(
 				const ns_death_time_annotation::ns_multiworm_censoring_strategy & censoring_strategy,
 				const ns_death_time_annotation & properties,
 				const ns_dying_animal_description_set_const & d, 
 				ns_death_time_annotation_set & set,
 				const ns_death_time_annotation::ns_by_hand_annotation_integration_strategy & death_times_to_use);
 	
-	static void generate_correct_annotations_for_multiple_worm_cluster(
+	static bool generate_correct_annotations_for_multiple_worm_cluster(
 				const ns_death_time_annotation & properties,
 				const ns_dying_animal_description_set_const & d,
 				ns_death_time_annotation_set & set,

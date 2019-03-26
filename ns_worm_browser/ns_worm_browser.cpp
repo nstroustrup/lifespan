@@ -30,6 +30,9 @@ void ns_worm_learner::reset_sql_connections() {
 		delete persistant_sql_connection;
 		persistant_sql_connection = 0;
 	}
+	death_time_annotater.clear_sql();
+	death_time_solo_annotater.clear_sql();
+	storyboard_annotater.clear_sql();
 	lock.release();
 }
 ns_sql & ns_worm_learner::get_sql_connection() {
@@ -2244,7 +2247,7 @@ void ns_test_parameter_set_on_region(const ns_64_bit region_id,
 	const ns_emperical_posture_quantification_value_estimator & estimator,
 	const ns_death_time_annotation_compiler & by_hand_annotations,
 	const ns_time_series_denoising_parameters & time_series_denoising_parameters, ns_time_path_image_movement_analyzer & time_path_image_analyzer, ns_time_path_solution & time_path_solution, ns_sql & sql,
-	ns_hmm_movement_analysis_optimizatiom_stats & output_stats) {
+	ns_hmm_movement_analysis_optimizatiom_stats & output_stats,std::set<ns_stationary_path_id> & animals_to_test, bool generate_detailed_path_info) {
 
 
 	ns_time_path_movement_markov_solver markov_solver(estimator);
@@ -2266,12 +2269,214 @@ void ns_test_parameter_set_on_region(const ns_64_bit region_id,
 		time_path_image_analyzer.add_by_hand_annotations(by_hand_annotations);
 		time_path_image_analyzer.reanalyze_with_different_movement_estimator(time_series_denoising_parameters, &markov_solver);
 	}
-	time_path_image_analyzer.calculate_optimzation_stats_for_current_hmm_estimator(output_stats,&estimator);
+	time_path_image_analyzer.calculate_optimzation_stats_for_current_hmm_estimator(output_stats,&estimator,animals_to_test, generate_detailed_path_info);
 
 }
+#include <random>
+
+struct ns_hmm_subject_list {
+	std::set<unsigned long > device_ids;
+	std::set<ns_64_bit> plate_ids;
+	std::set<ns_stationary_path_id > animal_group_ids;
+	bool is_in_list(const unsigned long & device_id, const ns_64_bit & region_info_id, const ns_stationary_path_id & animal_group_id) const{
+		auto p1 = plate_ids.find(region_info_id);
+		if (p1 != plate_ids.end())
+			return true;
+		auto p2 = animal_group_ids.find(animal_group_id);
+		if (p2 != animal_group_ids.end()) 
+				return true;
+		auto p3 = device_ids.find(device_id);
+		if (p3 != device_ids.end())
+			return true;
+		return false;
+	}
+};
+class  ns_cross_validation_run {
+public:
+	ns_cross_validation_run() :model_building_completed(false){}
+	ns_hmm_subject_list training_set, test_set;
+	ns_emperical_posture_quantification_value_estimator estimator;
+	ns_hmm_movement_analysis_optimizatiom_stats results;
+	std::string description;
+	unsigned long replicate_id;
+	bool model_building_completed;
+	
+	void build_model(std::string & output, const ns_emperical_posture_quantification_value_estimator & source_estimator) {
+		model_building_completed = false;
+		estimator.normalization_stats = source_estimator.normalization_stats;
+
+		for (auto p = source_estimator.observed_values.begin(); p != source_estimator.observed_values.end(); p++) {
+			auto q = estimator.observed_values.find(p->first);
+			for (auto v = p->second.begin(); v != p->second.end(); v++) {
+				if (training_set.is_in_list(v->device_id, v->region_id, v->path_id)) {
+					if (q == estimator.observed_values.end())
+						q = estimator.observed_values.insert(estimator.observed_values.end(), ns_emperical_posture_quantification_value_estimator::ns_hmm_observed_values_list::value_type(p->first, std::vector<ns_hmm_emission>()));
+					q->second.push_back(*v);
+				}
+			}
+		}
+		if (estimator.observed_values.size() == 0)
+			throw ns_ex("No valid training data was specified for the model");
+		output += "= Cross Validation strategy: " + description + " =\n";
+		estimator.build_estimator_from_observations(output);
+		model_building_completed = true;
+		//free up memory
+		estimator.observed_values.clear();
+		estimator.normalization_stats.clear();
+	}
+	void build_by_droping_devices(double frac_to_drop, const ns_hmm_subject_list & all) {
+		build_by_random_dropping(frac_to_drop, all.device_ids, test_set.device_ids, training_set.device_ids);
+	}
+	void build_by_droping_plates(double frac_to_drop, const ns_hmm_subject_list & all) {
+		build_by_random_dropping(frac_to_drop, all.plate_ids, test_set.plate_ids, training_set.plate_ids);
+	}
+	void build_by_droping_animals(double frac_to_drop, const ns_hmm_subject_list & all) {
+		build_by_random_dropping(frac_to_drop, all.animal_group_ids, test_set.animal_group_ids, training_set.animal_group_ids);
+	}
+
+private:
+	template<class T>
+	//randomly shuffle observations, and assign the first N to the test set and the remaining to the training set.
+	static void build_by_random_dropping(double frac_in_test_set, const std::set<T> & subjects, std::set<T> & test_set_, std::set<T> & training_set_) {
+		test_set_.clear();
+		training_set_.clear();
+		if (frac_in_test_set >= 1)
+			throw ns_ex("Invalid test set size");
+		const unsigned long test_set_N(round(subjects.size()*(frac_in_test_set)));
+		if (test_set_N == 0 || test_set_N == subjects.size()) 
+			throw ns_ex("An insufficient number of subjects was specified to allow ") << frac_in_test_set << " to be used as a test set.";
+		
+		std::vector<const T *> shuffled_subjects;
+		shuffled_subjects.reserve(subjects.size());
+		for (std::set<T>::const_iterator p = subjects.begin(); p != subjects.end(); ++p)
+			shuffled_subjects.push_back(&(*p));
+		std::random_shuffle(shuffled_subjects.begin(), shuffled_subjects.end());
+		for (unsigned long i = 0; i < test_set_N; i++)
+			test_set_.emplace(*shuffled_subjects[i]);
+		for (unsigned long i = test_set_N; i < subjects.size(); i++)
+			training_set_.emplace(*shuffled_subjects[i]);
+	}
+};
+struct ns_hmm_cross_validation_set {
+	std::vector<ns_cross_validation_run> estimators;
+	void build_models(std::string & output, const ns_emperical_posture_quantification_value_estimator & source_estimator) {
+		for (unsigned int i = 0; i < estimators.size(); i++) {
+			try {
+				estimators[i].build_model(output, source_estimator);
+			}
+			catch (ns_ex & ex) {
+				output += "**Error: " + ex.text() + "\n";
+			}
+		}
+	}
+	const ns_cross_validation_run & all_vs_all() const { return estimators[0]; }
+	void generate_cross_validations_to_test(double frac_to_drop, const ns_hmm_subject_list & subject_list, const std::map<unsigned long, std::string> & device_name_lookup){
+		int mmin(round(1 / frac_to_drop));
+		estimators.resize(0);
+		if (frac_to_drop != 0)
+		estimators.reserve(3 * (mmin + 1) + 1);
+
+		estimators.resize(1);
+		estimators[0].training_set = subject_list;
+		estimators[0].test_set = subject_list;
+		estimators[0].description = "Testing on all";
+		estimators[0].replicate_id = 0;
+		if (frac_to_drop == 0)
+			return;
+		//if there are not many devices, systematically remove each device
+		if (subject_list.device_ids.size() > 1 && subject_list.device_ids.size() <= mmin) {
+			unsigned long replicate_id = 0;
+			for (auto p = subject_list.device_ids.begin(); p != subject_list.device_ids.end(); p++) {
+				estimators.resize(estimators.size() + 1);
+				auto n = device_name_lookup.find(*p);
+				if (n == device_name_lookup.end())
+					throw ns_ex("Could not find device name lookup for ") << *p;
+				estimators.rbegin()->replicate_id = replicate_id;
+				estimators.rbegin()->description = "Training on all devices but " + n->second + "; Testing on device " + n->second;
+				for (auto q = subject_list.device_ids.begin(); q != subject_list.device_ids.end(); q++) {
+					if (p == q)
+						estimators.rbegin()->test_set.device_ids.emplace(*q);
+					else 
+						estimators.rbegin()->training_set.device_ids.emplace(*q);
+				}
+				replicate_id++;
+			}
+		}
+		//if there are many devices, drop them randomly
+		if (subject_list.device_ids.size() > mmin) {
+			unsigned long replicate_id = 0;
+			for (unsigned int i = 0; i < mmin; i++) {
+				estimators.resize(estimators.size() + 1);
+				estimators.rbegin()->replicate_id = replicate_id;
+				estimators.rbegin()->description = "Training on " + ns_to_string((int)round(subject_list.device_ids.size()*(1- frac_to_drop))) + " devices; testing on " + ns_to_string((int)round(subject_list.device_ids.size()*frac_to_drop));
+				estimators.rbegin()->build_by_droping_devices(frac_to_drop, subject_list);
+				replicate_id++;
+			}
+		}
+
+		//if there are not many plates, systematically remove each plate
+		if (subject_list.plate_ids.size() > 1 && subject_list.plate_ids.size() <= mmin) {
+			unsigned long replicate_id = 0;
+			for (auto p = subject_list.plate_ids.begin(); p != subject_list.plate_ids.end(); p++) {
+				estimators.resize(estimators.size() + 1);
+				estimators.rbegin()->replicate_id = replicate_id;
+				estimators.rbegin()->description = "Training on all plates but " + ns_to_string(*p) + "; Testing on plate " + ns_to_string(*p);
+				for (auto q = subject_list.plate_ids.begin(); q != subject_list.plate_ids.end(); q++) {
+					if (p == q)
+						estimators.rbegin()->test_set.plate_ids.emplace(*q);
+					else 
+						estimators.rbegin()->training_set.plate_ids.emplace(*q);
+				}
+				replicate_id++;
+			}
+
+		}
+
+		//if there are many plates, drop them randomly
+		if (subject_list.plate_ids.size() > mmin) {
+			unsigned long replicate_id = 0;
+			for (unsigned int i = 0; i < mmin; i++) {
+				estimators.resize(estimators.size() + 1);
+				estimators.rbegin()->replicate_id = replicate_id;
+				estimators.rbegin()->description = "Training on " + ns_to_string((int)round(subject_list.plate_ids.size()*(1- frac_to_drop))) + " plates; testing on " + ns_to_string((int)round(subject_list.plate_ids.size()*frac_to_drop));
+				estimators.rbegin()->build_by_droping_plates(frac_to_drop, subject_list);
+				replicate_id++;
+			}
+		}
+		//if there are not many animals, systematically remove each plate
+		if (subject_list.animal_group_ids.size() > 1 && subject_list.animal_group_ids.size() <= mmin) {
+			unsigned long replicate_id = 0;
+			for (auto p = subject_list.animal_group_ids.begin(); p != subject_list.animal_group_ids.end(); p++) {
+				estimators.resize(estimators.size() + 1);
+				estimators.rbegin()->description = "Training on all animals but " + ns_to_string(p->group_id) + "; Testing on plate " + ns_to_string(p->group_id);
+				estimators.rbegin()->replicate_id = replicate_id;
+				for (auto q = subject_list.animal_group_ids.begin(); q != subject_list.animal_group_ids.end(); q++) {
+					if (p == q)
+						estimators.rbegin()->test_set.animal_group_ids.emplace(*q);
+					else 
+						estimators.rbegin()->training_set.animal_group_ids.emplace(*q);
+				}
+				replicate_id++;
+			}
+
+		}
+		//if there are many animals, drop them randomly
+		if (subject_list.animal_group_ids.size() > mmin) {
+			unsigned long replicate_id = 0;
+			for (unsigned int i = 0; i < mmin; i++) {
+				estimators.resize(estimators.size() + 1);
+				estimators.rbegin()->replicate_id = replicate_id;
+				estimators.rbegin()->description = "Training on " + ns_to_string((int)round(subject_list.animal_group_ids.size()*(1- frac_to_drop))) + " animals; testing on " + ns_to_string((int)round(subject_list.animal_group_ids.size()*frac_to_drop));
+				estimators.rbegin()->build_by_droping_animals(frac_to_drop, subject_list);
+				replicate_id++;
+			}
+		}
+	}
+	
+};
 
 void ns_worm_learner::generate_experiment_movement_image_quantification_analysis_data(ns_movement_quantification_type  detail_level, const ns_optimization_subject & subject){
-
+	bool run_hmm_cross_validation(true);
 	const std::string experiment_name(data_selector.current_experiment_name());
 	ns_acquire_for_scope<ns_sql> sql(image_server.new_sql_connection(__FILE__,__LINE__));
 
@@ -2321,14 +2526,18 @@ void ns_worm_learner::generate_experiment_movement_image_quantification_analysis
 	//We do that here.  Later, we will then use this set to build an HMM model.
 
 	//hmm_observation_storage_and_model_generators are calculated for each type of plate in the experiment.
-	std::map<std::string,ns_emperical_posture_quantification_value_estimator> hmm_observation_storage_and_model_generators;
+	std::map < std::string, ns_emperical_posture_quantification_value_estimator> base_observation_estimator;
+	std::map<std::string, ns_hmm_cross_validation_set> hmm_observation_storage_and_model_generators;
+	std::map < std::string, ns_hmm_subject_list> subjects_for_cross_validation;
 	std::map<ns_64_bit, ns_region_metadata> metadata_cache;
 	std::map<std::string, ns_region_metadata> metadata_cache_by_name;
-	std::map<std::string, bool> model_building_failed;
+	std::map<std::string, unsigned long> device_id_lookup;
+	std::map<unsigned long, std::string> device_id_reverse_lookup;
+	unsigned long max_device_id(0);
 
 	//useful data is cached for each region considered
 	std::map <ns_64_bit, ns_time_series_denoising_parameters> time_series_denoising_parameters_cache;
-
+	unsigned long region_count(0);
 	if (detail_level == ns_quantification_detailed){
 		bool header_written(false);
 		//if we're loading detailed information, there is so much data we load it from files created during movement analysis.
@@ -2375,13 +2584,14 @@ void ns_worm_learner::generate_experiment_movement_image_quantification_analysis
 		detail_level == ns_quantification_detailed_with_by_hand ||  
 		detail_level == ns_build_worm_markov_posture_model_from_by_hand_annotations || 
 		detail_level == ns_quantification_abbreviated_detailed){	
-		cout << "Loading time path image analysis data...";
+		cout << "Loading time path image analysis data...\n";
 		//since there is less data here, we calculate it on the fly.
 		bool header_written(false);
 		if (plate_id == 0)
 		movement_results.load(ns_death_time_annotation_set::ns_censoring_and_movement_transitions,0,0,experiment_id,sql(),false);
 		else movement_results.load(ns_death_time_annotation_set::ns_censoring_and_movement_transitions, plate_id, 0, experiment_id, sql(), false);
-		unsigned long region_count(0);
+
+		
 		for (unsigned int i = 0; i < movement_results.samples.size(); i++) {
 			if (!device_name.empty() && movement_results.samples[i].device_name() != device_name)
 				continue;
@@ -2408,7 +2618,7 @@ void ns_worm_learner::generate_experiment_movement_image_quantification_analysis
 				if (movement_results.samples[i].regions[j]->excluded || movement_results.samples[i].regions[j]->censored) {
 					continue;
 				}
-				cerr << 100*regions_processed/region_count << "%";
+				cerr << 100*regions_processed/region_count << "%...";
 				regions_processed++;
 
 				ns_hand_annotation_loader by_hand_annotations;
@@ -2468,6 +2678,8 @@ void ns_worm_learner::generate_experiment_movement_image_quantification_analysis
 					sql(),
 					false);
 				death_time_estimator.release();
+			
+
 				movement_results.samples[i].regions[j]->by_hand_annotations = by_hand_annotations.annotations;
 				movement_results.samples[i].regions[j]->time_path_image_analyzer->add_by_hand_annotations(by_hand_annotations.annotations);
 				if (detail_level==ns_quantification_abbreviated_detailed){
@@ -2498,84 +2710,130 @@ void ns_worm_learner::generate_experiment_movement_image_quantification_analysis
 					movement_results.samples[i].regions[j]->time_path_image_analyzer->write_detailed_movement_quantification_analysis_data(
 																	movement_results.samples[i].regions[j]->metadata,o_all(),(detail_level == ns_quantification_detailed_with_by_hand));
 				}
-				else if (detail_level == ns_build_worm_markov_posture_model_from_by_hand_annotations){
+				else if (detail_level == ns_build_worm_markov_posture_model_from_by_hand_annotations) {
+
+					//add subjects for cross validation
+
+					const std::string plate_type_summary(movement_results.samples[i].regions[j]->metadata.plate_type_summary("-", true));
+					metadata_cache[movement_results.samples[i].regions[j]->metadata.region_id] = movement_results.samples[i].regions[j]->metadata;
+					metadata_cache_by_name[plate_type_summary] = movement_results.samples[i].regions[j]->metadata;
+					unsigned long internal_device_id = 0;
+					const auto d = device_id_lookup.find(movement_results.samples[i].regions[j]->metadata.device);
+					if (d == device_id_lookup.end()) {
+						device_id_lookup[movement_results.samples[i].regions[j]->metadata.device] = max_device_id;
+						device_id_reverse_lookup[max_device_id] = movement_results.samples[i].regions[j]->metadata.device;
+						internal_device_id = max_device_id;
+						max_device_id++;
+					}
+					else internal_device_id = d->second;
+
+			
+					
 					bool added_data(false);
 					for (unsigned int g = 0; g < movement_results.samples[i].regions[j]->time_path_image_analyzer->size(); g++){
 						for (unsigned int p = 0; p < movement_results.samples[i].regions[j]->time_path_image_analyzer->group(g).paths.size(); p++){
 							ns_death_time_annotation a(movement_results.samples[i].regions[j]->time_path_image_analyzer->group(g).paths[p].sticky_properties());
-							if (a.is_excluded() || a.is_censored())
+							if (a.is_excluded() || a.is_censored() || movement_results.samples[i].regions[j]->time_path_image_analyzer->group(g).paths[p].by_hand_death_time().fully_unbounded())
 								continue;
 
-							const std::string plate_type_summary(movement_results.samples[i].regions[j]->metadata.plate_type_summary("-", true));
-							metadata_cache[movement_results.samples[i].regions[j]->metadata.region_id] = movement_results.samples[i].regions[j]->metadata;
-							metadata_cache_by_name[plate_type_summary] = movement_results.samples[i].regions[j]->metadata;
 							a.stationary_path_id.detection_set_id = movement_results.samples[i].regions[j]->time_path_image_analyzer->db_analysis_id();
 							a.stationary_path_id.group_id = g;
 							a.stationary_path_id.path_id = p;
 							a.region_info_id = movement_results.samples[i].regions[j]->metadata.region_id;
 							ns_analyzed_image_time_path * path = &movement_results.samples[i].regions[j]->time_path_image_analyzer->group(g).paths[p];
-							hmm_observation_storage_and_model_generators["all"].add_observation(NS_CURRENT_POSTURE_MODEL_VERSION, a, path);
-							hmm_observation_storage_and_model_generators[plate_type_summary].add_observation(NS_CURRENT_POSTURE_MODEL_VERSION, a, path);
+
+							unsigned long internal_device_id = device_id_lookup[movement_results.samples[i].regions[j]->metadata.device];
+							base_observation_estimator["all"].add_observation(NS_CURRENT_POSTURE_MODEL_VERSION, a, path, internal_device_id);
+							base_observation_estimator[plate_type_summary].add_observation(NS_CURRENT_POSTURE_MODEL_VERSION, a, path, internal_device_id);
+
+							subjects_for_cross_validation["all"].animal_group_ids.emplace(a.stationary_path_id);
+							subjects_for_cross_validation[plate_type_summary].animal_group_ids.emplace(a.stationary_path_id);
+
+							added_data = true;
+
 
 						}
 					}
+					if (added_data) {
+						subjects_for_cross_validation["all"].plate_ids.emplace(movement_results.samples[i].regions[j]->metadata.region_id);
+						subjects_for_cross_validation[plate_type_summary].plate_ids.emplace(movement_results.samples[i].regions[j]->metadata.region_id);
+						subjects_for_cross_validation["all"].device_ids.emplace(internal_device_id);
+						subjects_for_cross_validation[plate_type_summary].device_ids.emplace(internal_device_id);
+					}
+
 				}
 				else{
 					throw ns_ex("No longer implemented");
 				}
-				movement_results.samples[i].regions[j]->time_path_image_analyzer->clear();
+				//if we are running cross validation, we can't afford to reload all the data each time.
+				if (!run_hmm_cross_validation)	
+					movement_results.samples[i].regions[j]->time_path_image_analyzer->clear();
 			}
 		}
 	}	
+
 	cout << "\n";
-	std::string results_text;
-	results_text += "=== Automated Animal Death Time Identification Calibration Results === \n";
-	results_text += "A hidden markov model (HMM) classifier was built using all animals.\nAlso, ";
-	results_text += ns_to_string(hmm_observation_storage_and_model_generators.size()-1) + " HMM model";
-	if (hmm_observation_storage_and_model_generators.size() > 2)
-		results_text += "s";
-	results_text += " were built separately for groups:\n";
-	for (auto p = hmm_observation_storage_and_model_generators.begin(); p != hmm_observation_storage_and_model_generators.end(); p++) 
-		results_text += metadata_cache_by_name[p->first].device_regression_match_description() +"\n";
-	results_text += "All data was collated and analyzed at " + ns_format_time_string_for_human(ns_current_time()) + "\n\n";
 
 
 	if (detail_level == ns_build_worm_markov_posture_model_from_by_hand_annotations) {
+		std::string results_text;
+		results_text += "=== Automated Animal Death Time Identification Calibration Results === \n";
+		results_text += "A hidden markov model (HMM) classifier was built using all animals.\nAlso, ";
+		results_text += ns_to_string(hmm_observation_storage_and_model_generators.size() - 1) + " HMM model";
+		if (hmm_observation_storage_and_model_generators.size() > 2)
+			results_text += "s";
+		results_text += " were built separately for groups:\n";
+		for (auto p = hmm_observation_storage_and_model_generators.begin(); p != hmm_observation_storage_and_model_generators.end(); p++)
+			results_text += metadata_cache_by_name[p->first].device_regression_match_description() + "\n";
+		results_text += "All data was collated and analyzed at " + ns_format_time_string_for_human(ns_current_time()) + "\n\n";
 
 		std::map<std::string, std::string> model_building_and_testing_info;
 		std::map<std::string, std::string> model_filenames;
-		cout << "Compiling state emission data...";
+
+		cout << "Writing state emission data to disk...\n";
 		//for each type of plate, build an estimator from the observations collected.
-		for (auto p = hmm_observation_storage_and_model_generators.begin(); p != hmm_observation_storage_and_model_generators.end(); p++) {
+		unsigned long estimators_compiled(0);
+		for (auto p = base_observation_estimator.begin(); p != base_observation_estimator.end(); p++) {
+			std::cout << ns_to_string_short((100.0 * estimators_compiled) / base_observation_estimator.size(), 2) << "%...";
+			estimators_compiled++;
 			ns_acquire_for_scope<ostream> all_observations(image_server.results_storage.time_path_image_analysis_quantification(sub, std::string("hmm_obs=") + p->first, true, sql()).output());
 			p->second.write_observation_data(all_observations(), experiment_name);
 			all_observations.release();
 		}
-		cout << "\nBuilding HMM Models...";
-		for (std::map<string, ns_emperical_posture_quantification_value_estimator>::iterator p = hmm_observation_storage_and_model_generators.begin(); p != hmm_observation_storage_and_model_generators.end(); ++p ) {
-			try {
-				if (p->first == "all")
-					model_building_and_testing_info[p->first] = "== HMM model built from all animal types ==\n";
-				else {
-					const std::string plate_type_long = metadata_cache_by_name[p->first].device_regression_match_description();
-					model_building_and_testing_info[p->first] = "== HMM model for group \"" + plate_type_long + "\" ==\n";
-				}
-				p->second.build_estimator_from_observations(model_building_and_testing_info[p->first]);
-				ns_image_server_results_file ps(image_server.results_storage.optimized_posture_analysis_parameter_set(sub, std::string("hmm=") + p->first, sql()));
-				model_filenames[p->first] = ps.output_filename();
-				ns_acquire_for_scope<ostream> both_parameter_set(ps.output());
-				p->second.write(both_parameter_set());
-				both_parameter_set.release();
-				model_building_failed[p->first] = false;
-			}
-			catch (ns_ex & ex) {
-				model_building_and_testing_info[p->first] += "**Error: Could not build model for " + p->first +":\n" + ex.text() + "**\n";
-				model_building_failed[p->first] = true;
-			}
+
+		cout << "\nPrepping for Cross Validation...\n";
+		//set up models for cross validation
+		estimators_compiled = 0;
+		for (auto p = base_observation_estimator.begin(); p != base_observation_estimator.end(); p++) {
+			std::cout << ns_to_string_short((100.0 * estimators_compiled) / base_observation_estimator.size(), 2) << "%...";
+			estimators_compiled++;
+			auto v = hmm_observation_storage_and_model_generators.insert(std::pair<std::string, ns_hmm_cross_validation_set>(p->first,ns_hmm_cross_validation_set())).first;
+			double fraction_to_drop = run_hmm_cross_validation ? 0.2 : 1.0;
+			v->second.generate_cross_validations_to_test(fraction_to_drop, subjects_for_cross_validation[p->first], device_id_reverse_lookup);
 		}
-		cout << "\nTesting HMM models on current experiment...";
+
+		cout << "\nBuilding HMM Models...\n";
+		unsigned long num_built(0);
+		for (auto p = hmm_observation_storage_and_model_generators.begin(); p != hmm_observation_storage_and_model_generators.end(); ++p) {
+			std::cout << ns_to_string_short((100.0 * num_built) / hmm_observation_storage_and_model_generators.size(), 2) << "%...";
+			num_built++;
+			if (p->first == "all")
+				model_building_and_testing_info[p->first] = "== HMM model built from all animal types ==\n";
+			else {
+				const std::string plate_type_long = metadata_cache_by_name[p->first].device_regression_match_description();
+				model_building_and_testing_info[p->first] = "== HMM model for group \"" + plate_type_long + "\" ==\n";
+			}
+			p->second.build_models(model_building_and_testing_info[p->first], base_observation_estimator[p->first]);
+
+			ns_image_server_results_file ps(image_server.results_storage.optimized_posture_analysis_parameter_set(sub, std::string("hmm=") + p->first, sql()));
+			model_filenames[p->first] = ps.output_filename();
+			ns_acquire_for_scope<ostream> both_parameter_set(ps.output());
+			p->second.all_vs_all().estimator.write(both_parameter_set());
+			both_parameter_set.release();
+		}
+		cout << "\nTesting HMM models on current experiment...\n";
+		num_built = 0;
 		//go through and calculate the optimization stats for each region
-		std::map<std::string, ns_hmm_movement_analysis_optimizatiom_stats> optimization_stats_for_each_plate_type;
 		for (unsigned int i = 0; i < movement_results.samples.size(); i++) {
 			if (!device_name.empty() && movement_results.samples[i].device_name() != device_name)
 				continue;
@@ -2584,43 +2842,61 @@ void ns_worm_learner::generate_experiment_movement_image_quantification_analysis
 					continue;
 				if (!movement_results.samples[i].regions[j]->contains_a_by_hand_death_time_annotation)
 					continue;
+
+				std::cout << ns_to_string_short((100.0 * num_built) / region_count, 2) << "%...";
+				num_built++;
 				const ns_time_series_denoising_parameters time_series_denoising_parameters(time_series_denoising_parameters_cache[movement_results.samples[i].regions[j]->metadata.region_id]);
 				const std::string plate_type_summary(movement_results.samples[i].regions[j]->metadata.plate_type_summary("-", true));
 				//calculate the stats using an estimator built on all plate types, and also for the current plate's type
-				for (std::map<string, ns_emperical_posture_quantification_value_estimator>::iterator p = hmm_observation_storage_and_model_generators.begin(); p != hmm_observation_storage_and_model_generators.end(); p++) {
-					if (model_building_failed[p->first]) 
-						continue;
-					//cout << p->first << " " << plate_type_summary << " ";
+				for (auto p = hmm_observation_storage_and_model_generators.begin(); p != hmm_observation_storage_and_model_generators.end(); p++) {
+					
 					if (p->first == "all" || p->first == plate_type_summary) {
-					//	cout << "WRITTEN";
-						ns_test_parameter_set_on_region(movement_results.samples[i].regions[j]->metadata.region_id, p->second, movement_results.samples[i].regions[j]->by_hand_annotations,
-							time_series_denoising_parameters, *movement_results.samples[i].regions[j]->time_path_image_analyzer, movement_results.samples[i].regions[j]->time_path_solution, sql(), optimization_stats_for_each_plate_type[p->first]);
+						for (auto q = p->second.estimators.begin(); q != p->second.estimators.end(); q++) {
+							if (!q->model_building_completed)
+								continue;
+							if (!q->test_set.device_ids.empty() && q->test_set.device_ids.find(device_id_lookup[movement_results.samples[i].regions[j]->metadata.device]) == q->test_set.device_ids.end())
+								continue;
+							if (!q->test_set.plate_ids.empty() && q->test_set.plate_ids.find(movement_results.samples[i].regions[j]->metadata.region_id) == q->test_set.plate_ids.end())
+								continue;
+							if (q->results.animals.size() == 0)
+								q->results.animals.reserve(200);
+							ns_test_parameter_set_on_region(movement_results.samples[i].regions[j]->metadata.region_id, q->estimator, movement_results.samples[i].regions[j]->by_hand_annotations,
+								time_series_denoising_parameters, *movement_results.samples[i].regions[j]->time_path_image_analyzer, movement_results.samples[i].regions[j]->time_path_solution, sql(), q->results,q->test_set.animal_group_ids, q == p->second.estimators.begin());
+						}
 					}
-					//cout << "\n";
 				}
+				if (!run_hmm_cross_validation)
+					movement_results.samples[i].regions[j]->time_path_image_analyzer->clear();
 			}
 		}
 		cout << "\nWriting HMM model test results to disk.\n";
 		//write all the different plate type stats to disk
-		for (auto p = optimization_stats_for_each_plate_type.begin(); p != optimization_stats_for_each_plate_type.end(); p++) {
-			if (model_building_failed[p->first])
-				continue;
+		num_built = 0;
+		for (auto p = hmm_observation_storage_and_model_generators.begin(); p != hmm_observation_storage_and_model_generators.end(); p++) {
+			std::cout << ns_to_string_short((100.0 * num_built) / hmm_observation_storage_and_model_generators.size(), 2) << "%...";
+			num_built++;
 			unsigned long movement_N(0), expansion_N(0);
 			double movement_square_error(0), expansion_square_error(0);
-			for (unsigned int i = 0; i < p->second.animals.size(); i++) {
-				if (p->second.animals[i].measurements[ns_movement_cessation].by_hand_identified &&
-					p->second.animals[i].measurements[ns_movement_cessation].machine_identified) {
-					const double d = (p->second.animals[i].measurements[ns_movement_cessation].machine.best_estimate_event_time_for_possible_partially_unbounded_interval() -
-						p->second.animals[i].measurements[ns_movement_cessation].by_hand.best_estimate_event_time_for_possible_partially_unbounded_interval()) / 24.0 / 60.0 / 60.0;
-					movement_square_error += d * d;
-					movement_N++;
-				}
-				if (p->second.animals[i].measurements[ns_death_posture_relaxation_start].by_hand_identified &&
-					p->second.animals[i].measurements[ns_death_posture_relaxation_start].machine_identified) {
-					const double d = (p->second.animals[i].measurements[ns_death_posture_relaxation_start].machine.best_estimate_event_time_for_possible_partially_unbounded_interval() -
-						p->second.animals[i].measurements[ns_death_posture_relaxation_start].by_hand.best_estimate_event_time_for_possible_partially_unbounded_interval()) / 24.0 / 60.0 / 60.0;
-					expansion_square_error += d * d;
-					expansion_N++;
+			//start at 1 to skip the all vs all.
+			for (unsigned int e = 1; e < p->second.estimators.size(); e++) {
+				if (!p->second.estimators[e].model_building_completed)
+					continue;
+				for (unsigned int i = 0; i < p->second.estimators[e].results.animals.size(); i++) {
+					ns_hmm_movement_analysis_optimizatiom_stats_record & animal= p->second.estimators[e].results.animals[i];
+					if (animal.measurements[ns_movement_cessation].by_hand_identified &&
+						animal.measurements[ns_movement_cessation].machine_identified) {
+						const double d = (animal.measurements[ns_movement_cessation].machine.best_estimate_event_time_for_possible_partially_unbounded_interval() -
+							animal.measurements[ns_movement_cessation].by_hand.best_estimate_event_time_for_possible_partially_unbounded_interval()) / 24.0 / 60.0 / 60.0;
+						movement_square_error += d * d;
+						movement_N++;
+					}
+					if (animal.measurements[ns_death_posture_relaxation_start].by_hand_identified &&
+						animal.measurements[ns_death_posture_relaxation_start].machine_identified) {
+						const double d = (animal.measurements[ns_death_posture_relaxation_start].machine.best_estimate_event_time_for_possible_partially_unbounded_interval() -
+							animal.measurements[ns_death_posture_relaxation_start].by_hand.best_estimate_event_time_for_possible_partially_unbounded_interval()) / 24.0 / 60.0 / 60.0;
+						expansion_square_error += d * d;
+						expansion_N++;
+					}
 				}
 			}
 			model_building_and_testing_info[p->first] += "For movement cessation,  this model yielded an average error of " + ns_to_string_short(sqrt(movement_square_error / movement_N), 2) + " days across " + ns_to_string(movement_N) + " animals.\n";
@@ -2629,14 +2905,17 @@ void ns_worm_learner::generate_experiment_movement_image_quantification_analysis
 				model_building_and_testing_info[p->first] += "Warning: These results will not be meaningful until more worms are annotated by hand.\n";
 			else model_building_and_testing_info[p->first] += "The model file was written to \"" + model_filenames[p->first] + "\"\n";
 			ns_acquire_for_scope<ostream>  performance_stats_output(image_server.results_storage.time_path_image_analysis_quantification(sub, std::string("hmm_performance=") + p->first, true, sql()).output());
-			p->second.write_error_header(performance_stats_output());
-			p->second.write_error_data(performance_stats_output(), metadata_cache);
+			p->second.all_vs_all().results.write_error_header(performance_stats_output());
+			for (unsigned int e = 0; e < p->second.estimators.size(); e++) {
+				p->second.estimators[e].results.write_error_data(performance_stats_output(), p->second.estimators[e].description, p->second.estimators[e].replicate_id,metadata_cache);
+			}
 			performance_stats_output.release();
-
-			performance_stats_output.attach(image_server.results_storage.time_path_image_analysis_quantification(sub, std::string("hmm_path=") + p->first, true, sql()).output());
-			p->second.write_hmm_path_header(performance_stats_output());
-			p->second.write_hmm_path_data(performance_stats_output(), metadata_cache);
-			performance_stats_output.release();
+			if (!p->second.all_vs_all().results.animals.empty() && !p->second.all_vs_all().results.animals[0].state_info_times.size() != 0) {
+				performance_stats_output.attach(image_server.results_storage.time_path_image_analysis_quantification(sub, std::string("hmm_path=") + p->first, true, sql()).output());
+				p->second.all_vs_all().results.write_hmm_path_header(performance_stats_output());
+				p->second.all_vs_all().results.write_hmm_path_data(performance_stats_output(), metadata_cache);
+				performance_stats_output.release();
+			}
 		}
 
 		for (auto p = model_building_and_testing_info.begin(); p != model_building_and_testing_info.end(); p++) 

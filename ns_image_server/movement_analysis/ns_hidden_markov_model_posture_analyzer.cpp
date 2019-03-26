@@ -19,7 +19,8 @@ double inline ns_truncate_negatives(const double & d){
 }
 
 
-void ns_hmm_solver::solve(const ns_analyzed_image_time_path & path, const ns_emperical_posture_quantification_value_estimator & estimator) {
+void ns_hmm_solver::solve(const ns_analyzed_image_time_path & path, const ns_emperical_posture_quantification_value_estimator & estimator,
+	std::vector<double > & tmp_storage_1, std::vector<unsigned long > & tmp_storage_2) {
 	ns_time_path_posture_movement_solution solution;
 	bool found_start_time(false);
 	unsigned long start_time_i(0);
@@ -34,11 +35,11 @@ void ns_hmm_solver::solve(const ns_analyzed_image_time_path & path, const ns_emp
 		}
 	}
 	std::vector<ns_hmm_state_transition_time_path_index > movement_transitions;
-	movement_state_solution.loglikelihood_of_solution = run_viterbi(path, estimator, path_indices, movement_transitions);
+	movement_state_solution.loglikelihood_of_solution = run_viterbi(path, estimator, path_indices, movement_transitions, tmp_storage_1, tmp_storage_2);
 	build_movement_state_solution_from_movement_transitions(path_indices, movement_transitions);
 }
 
- void ns_hmm_solver::probability_of_path_solution(const ns_analyzed_image_time_path & path, const ns_emperical_posture_quantification_value_estimator & estimator, const ns_time_path_posture_movement_solution & solution, ns_hmm_movement_optimization_stats_record_path & state_info) {
+ void ns_hmm_solver::probability_of_path_solution(const ns_analyzed_image_time_path & path, const ns_emperical_posture_quantification_value_estimator & estimator, const ns_time_path_posture_movement_solution & solution, ns_hmm_movement_optimization_stats_record_path & state_info, bool generate_path_info) {
 	std::vector < ns_hmm_movement_state > movement_states(path.element_count(), ns_hmm_unknown_state);
 	if (!solution.moving.skipped) {
 		for (unsigned int i = 0; i <= solution.moving.start_index; i++)
@@ -104,22 +105,26 @@ void ns_hmm_solver::solve(const ns_analyzed_image_time_path & path, const ns_emp
 	ns_hmm_movement_state previous_state = movement_states[start_i];
 	double cur_p = 0, log_likelihood(0);
 	unsigned long cur_pi(0);
-	state_info.path.resize(movement_states.size());
-	state_info.path[cur_pi].sub_measurements.resize(estimator.number_of_sub_probabilities(), 0);
-	state_info.path[cur_pi].sub_probabilities.resize(estimator.number_of_sub_probabilities(), 0);
+	if (generate_path_info) {
+		state_info.path.resize(movement_states.size());
+		state_info.path[cur_pi].sub_measurements.resize(estimator.number_of_sub_probabilities(), 0);
+		state_info.path[cur_pi].sub_probabilities.resize(estimator.number_of_sub_probabilities(), 0);
 
-	for (unsigned int i = 0; i < start_i; i++) {
-		state_info.path[i].state= ns_hmm_unknown_state;
-		state_info.path[i].total_probability = 0;
-		state_info.path[i].sub_measurements.resize(estimator.number_of_sub_probabilities(), 0);
-		state_info.path[i].sub_probabilities.resize(estimator.number_of_sub_probabilities(), 0);
+		for (unsigned int i = 0; i < start_i; i++) {
+			state_info.path[i].state = ns_hmm_unknown_state;
+			state_info.path[i].total_probability = 0;
+			state_info.path[i].sub_measurements.resize(estimator.number_of_sub_probabilities(), 0);
+			state_info.path[i].sub_probabilities.resize(estimator.number_of_sub_probabilities(), 0);
+		}
 	}
 	for (unsigned int i = start_i; i < movement_states.size(); i++) {
 		if (path.element(i).excluded || path.element(i).censored) {
-			state_info.path[i].state = previous_state;
-			state_info.path[i].total_probability = cur_p;
-			state_info.path[i].sub_measurements = state_info.path[cur_pi].sub_measurements;
-			state_info.path[i].sub_probabilities = state_info.path[cur_pi].sub_probabilities;
+			if (generate_path_info) {
+				state_info.path[i].state = previous_state;
+				state_info.path[i].total_probability = cur_p;
+				state_info.path[i].sub_measurements = state_info.path[cur_pi].sub_measurements;
+				state_info.path[i].sub_probabilities = state_info.path[cur_pi].sub_probabilities;
+			}
 			continue;
 		}
 	
@@ -130,15 +135,14 @@ void ns_hmm_solver::solve(const ns_analyzed_image_time_path & path, const ns_emp
 			emission_probabilities[movement_states[i]]);
 
 		log_likelihood += cur_p;
-		state_info.path[i].state = movement_states[i];
-		state_info.path[i].total_probability = cur_p;
-		try {
+		if (generate_path_info) {
+			state_info.path[i].state = movement_states[i];
+			state_info.path[i].total_probability = cur_p;
+		}
+	
+		if (generate_path_info)
 			estimator.provide_measurements_and_sub_probabilities(movement_states[i], path.element(i).measurements, state_info.path[i].sub_measurements, state_info.path[i].sub_probabilities);
-		}
-		catch (...) {
-			std::cerr << "WHA";
-			throw;
-		}
+	
 		previous_state = movement_states[i];
 	}
 	state_info.log_likelihood = log_likelihood;
@@ -148,7 +152,7 @@ void ns_hmm_solver::solve(const ns_analyzed_image_time_path & path, const ns_emp
 //run the viterbi algorithm using the specified indicies of the path
 
 double ns_hmm_solver::run_viterbi(const ns_analyzed_image_time_path & path, const ns_emperical_posture_quantification_value_estimator & estimator, const std::vector<unsigned long> path_indices,
-	std::vector<ns_hmm_state_transition_time_path_index > &movement_transitions) {
+	std::vector<ns_hmm_state_transition_time_path_index > &movement_transitions, std::vector<double > & probabilitiy_of_path, std::vector<unsigned long > & previous_state) {
 	const int number_of_states((int)ns_hmm_unknown_state);
 	std::vector<std::vector<double> > a;
 	build_state_transition_matrix(estimator,a);
@@ -160,14 +164,17 @@ double ns_hmm_solver::run_viterbi(const ns_analyzed_image_time_path & path, cons
 		unsigned long fbdone = 0, nobs(path_indices.size());
 		unsigned long mstat(number_of_states);
 		unsigned long lrnrm;
-		std::vector<std::vector<double> > probabilitiy_of_path(nobs, std::vector<double>(mstat, 0));
-		std::vector< std::vector<unsigned long> > previous_state(nobs, std::vector<unsigned long>(mstat, 0));
+		probabilitiy_of_path.resize(0);
+		probabilitiy_of_path.resize(nobs*mstat, 0);
+		previous_state.resize(0);
+		previous_state.resize(nobs*mstat, 0);
+		
 		std::vector<double> emission_log_probabilities;
 		estimator.probability_for_each_state(path.element(path_indices[0]).measurements, emission_log_probabilities);
 		emission_log_probabilities[ns_hmm_moving_weakly_post_expansion] = 0; //do not allow animals to start as moving weakly post-expansion.  They can only start weakly /pre-expansion/ if the expansion was not observed!
 		int i, j, t;
 		double max_p, max_prev_i;
-		for (i = 0; i < mstat; i++) probabilitiy_of_path[0][i] = log(emission_log_probabilities[i]);
+		for (i = 0; i < mstat; i++) probabilitiy_of_path[i] = log(emission_log_probabilities[i]);
 		for (t = 1; t < nobs; t++) {
 			if (path.element(t).excluded)
 				continue;
@@ -177,27 +184,27 @@ double ns_hmm_solver::run_viterbi(const ns_analyzed_image_time_path & path, cons
 				max_p = -DBL_MAX;
 				max_prev_i = 0;
 				for (i = 0; i < mstat; i++) {
-					const double cur = probabilitiy_of_path[t - 1][i] + log(a[i][j] * emission_log_probabilities[j]);
+					const double cur = probabilitiy_of_path[mstat*(t - 1)+i] + log(a[i][j] * emission_log_probabilities[j]);
 					if (cur > max_p) {
 						max_p = cur;
 						max_prev_i = i;
 					}
 				}
 				//	std::cerr << max_prev_i << " " << max_p << "\n";
-				probabilitiy_of_path[t][j] = max_p;
-				previous_state[t][j] = max_prev_i;
+				probabilitiy_of_path[mstat*t+j] = max_p;
+				previous_state[t*mstat +j] = max_prev_i;
 			}
 		}
 		*optimal_path_state.rbegin() = 0;
 		optimal_path_log_probability = -DBL_MAX;
 		for (j = 0; j < mstat; j++) {
-			if (probabilitiy_of_path[nobs - 1][j] > optimal_path_log_probability) {
-				optimal_path_log_probability = probabilitiy_of_path[nobs - 1][j];
+			if (probabilitiy_of_path[mstat*(nobs - 1)+j] > optimal_path_log_probability) {
+				optimal_path_log_probability = probabilitiy_of_path[mstat*(nobs - 1)+j];
 				*optimal_path_state.rbegin() = j;
 			}
 		}
 		for (t = nobs - 1; t >= 1; t--)
-			optimal_path_state[t - 1] = previous_state[t][optimal_path_state[t]];
+			optimal_path_state[t - 1] = previous_state[mstat*t+optimal_path_state[t]];
 	}
 
 	//now find transition of times between states
@@ -427,10 +434,10 @@ ns_hmm_movement_state ns_hmm_solver::most_probable_state(const std::vector<doubl
 */
 
 
-ns_time_path_posture_movement_solution ns_time_path_movement_markov_solver::estimate_posture_movement_states(int software_version,const ns_analyzed_image_time_path * path, ns_analyzed_image_time_path * output_path, std::ostream * debug_output)const{
+ns_time_path_posture_movement_solution ns_time_path_movement_markov_solver::estimate_posture_movement_states(int software_version,const ns_analyzed_image_time_path * path, std::vector<double > & tmp_storage_1, std::vector<unsigned long > & tmp_storage_2, ns_analyzed_image_time_path * output_path, std::ostream * debug_output)const{
 
 	ns_hmm_solver solver;
-	solver.solve(*path, estimator);
+	solver.solve(*path, estimator, tmp_storage_1, tmp_storage_2);
 
 	return solver.movement_state_solution;
 }
@@ -595,18 +602,22 @@ struct ns_intensity_emission_accessor_4x {
 };
 struct ns_movement_accessor {
 	double operator()(const ns_analyzed_image_time_path_element_measurements & e) const {
-		return e.death_time_posture_analysis_measure_v2();
+		double d = e.death_time_posture_analysis_measure_v2();
+		if (d <= 0) return -DBL_MAX;
+		else return log(d);
 	}
 	bool is_zero(const ns_analyzed_image_time_path_element_measurements & e) const {
-		return abs(e.spatial_averaged_movement_sum) < .01;
+		return e.death_time_posture_analysis_measure_v2() <= 0;
 	}
 };
 struct ns_movement_emission_accessor {
 	double operator()(const ns_hmm_emission & e) const {
-		return e.measurement.death_time_posture_analysis_measure_v2();
+		double d = e.measurement.death_time_posture_analysis_measure_v2();
+		if (d <= 0) return -DBL_MAX;
+		else return log(d);
 	}
 	bool is_zero(const ns_hmm_emission & e) const {
-		return abs(e.measurement.spatial_averaged_movement_sum) < .01;
+		return e.measurement.death_time_posture_analysis_measure_v2() <= 0;
 	}
 };
 class ns_emission_probabiliy_model{
@@ -736,12 +747,12 @@ void ns_emperical_posture_quantification_value_estimator::provide_measurements_a
 }
 void ns_emperical_posture_quantification_value_estimator::provide_sub_probability_names(std::vector<std::string> & names) const {
 	if (emission_probability_models.empty())
-		throw ns_ex("ns_emperical_posture_quantification_value_estimator::provide_sub_probability_names()::Cannot find any probabiltiy model");
+		throw ns_ex("ns_emperical_posture_quantification_value_estimator::provide_sub_probability_names()::Cannot find any probability model");
 	emission_probability_models.begin()->second->sub_probability_names(names);
 }
 unsigned long ns_emperical_posture_quantification_value_estimator::number_of_sub_probabilities() const {
 	if (emission_probability_models.empty())
-		throw ns_ex("ns_emperical_posture_quantification_value_estimator::provide_sub_probability_names()::Cannot find any probabiltiy model");
+		throw ns_ex("ns_emperical_posture_quantification_value_estimator::provide_sub_probability_names()::Cannot find any probability model");
 	return emission_probability_models.begin()->second->number_of_sub_probabilities();
 }
 
@@ -966,7 +977,7 @@ void ns_emperical_posture_quantification_value_estimator::build_estimator_from_o
 void ns_emperical_posture_quantification_value_estimator::write_visualization(std::ostream & o, const std::string & experiment_name)const{
 }
 
-bool ns_emperical_posture_quantification_value_estimator::add_observation(const std::string &software_version, const ns_death_time_annotation & properties,const ns_analyzed_image_time_path * path){
+bool ns_emperical_posture_quantification_value_estimator::add_observation(const std::string &software_version, const ns_death_time_annotation & properties,const ns_analyzed_image_time_path * path, const unsigned long device_id){
 	//only consider paths with death times annotated.
 	if (!path->by_hand_death_time().fully_unbounded()){
 		ns_analyzed_image_time_path_element_measurements path_mean, path_mean_square,path_variance;
@@ -1008,6 +1019,8 @@ bool ns_emperical_posture_quantification_value_estimator::add_observation(const 
 			e.measurement = path->element(i).measurements;
 			e.path_id = properties.stationary_path_id;
 			e.emission_time = path->element(i).absolute_time;
+			e.device_id = device_id;
+			e.region_id = properties.region_info_id;
 			ns_hmm_emission_normalization_stats & stats = normalization_stats[e.path_id];
 			stats.path_mean = path_mean;
 			stats.path_variance = path_variance;

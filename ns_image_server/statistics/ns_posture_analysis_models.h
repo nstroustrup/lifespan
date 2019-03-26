@@ -11,6 +11,8 @@ struct ns_hmm_emission {
 	ns_analyzed_image_time_path_element_measurements measurement;
 	unsigned long emission_time; //*NOT USED IN TRAINING...only for debugging and data visualization*/
 	ns_stationary_path_id path_id;
+	ns_64_bit region_id;
+	unsigned long device_id;
 };
 struct ns_hmm_emission_normalization_stats {
 	ns_analyzed_image_time_path_element_measurements path_mean, path_variance;
@@ -21,7 +23,7 @@ class ns_emission_probabiliy_model;
 struct ns_emperical_posture_quantification_value_estimator{
 	~ns_emperical_posture_quantification_value_estimator();
 	friend class ns_time_path_movement_markov_solver;
-	bool add_observation(const std::string &software_version, const ns_death_time_annotation & properties, const ns_analyzed_image_time_path * path);
+	bool add_observation(const std::string &software_version, const ns_death_time_annotation & properties, const ns_analyzed_image_time_path * path, const unsigned long device_id );
 	void build_estimator_from_observations(std::string & output);
 
 	void probability_for_each_state(const ns_analyzed_image_time_path_element_measurements & e,std::vector<double> & p) const;
@@ -40,11 +42,12 @@ struct ns_emperical_posture_quantification_value_estimator{
 	void provide_sub_probability_names(std::vector<std::string> & names) const;
 	unsigned long number_of_sub_probabilities() const;
 	bool state_defined(const ns_hmm_movement_state & m) const;
+	typedef std::map<ns_hmm_movement_state, std::vector<ns_hmm_emission> > ns_hmm_observed_values_list;
+	ns_hmm_observed_values_list observed_values;
+	std::map<ns_stationary_path_id, ns_hmm_emission_normalization_stats > normalization_stats;
 private:
 	void write_visualization(std::ostream & o,const std::string & experiment_name="") const;
 	std::map<ns_hmm_movement_state, ns_emission_probabiliy_model *> emission_probability_models;
-	std::map<ns_hmm_movement_state, std::vector<ns_hmm_emission> > observed_values;
-	std::map<ns_stationary_path_id, ns_hmm_emission_normalization_stats > normalization_stats;
 };
 
 struct ns_threshold_movement_posture_analyzer_parameters{

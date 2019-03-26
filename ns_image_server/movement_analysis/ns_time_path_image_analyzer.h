@@ -567,6 +567,7 @@ private:
 	void add_by_hand_annotations(const ns_death_time_annotation_compiler_location & l);
 
 	void detect_death_times_and_generate_annotations_from_movement_quantification(const ns_stationary_path_id & path_id,const ns_analyzed_image_time_path_death_time_estimator * e,  ns_death_time_annotation_set & set, const unsigned long last_timepoint_in_analysis);
+	void detect_death_times_and_generate_annotations_from_movement_quantification(const ns_stationary_path_id & path_id, const ns_analyzed_image_time_path_death_time_estimator * e, ns_death_time_annotation_set & set, const unsigned long last_timepoint_in_analysis, std::vector<double > & tmp_storage_1, std::vector<unsigned long > & tmp_storage_2);
 	//ns_64_bit stationary_histogram[256];
 	//ns_64_bit movement_histogram[256];
 
@@ -745,7 +746,7 @@ public:
 	friend class ns_worm_morphology_data_integrator;
 	std::string posture_model_version_used;
 
-	void calculate_optimzation_stats_for_current_hmm_estimator(ns_hmm_movement_analysis_optimizatiom_stats & s, const ns_emperical_posture_quantification_value_estimator * e);
+	void calculate_optimzation_stats_for_current_hmm_estimator(ns_hmm_movement_analysis_optimizatiom_stats & s, const ns_emperical_posture_quantification_value_estimator * e, std::set<ns_stationary_path_id> & paths_to_test, bool generate_path_info);
 private:
 
 	unsigned long _number_of_invalid_images_encountered;

@@ -60,6 +60,7 @@ typedef enum {
 	ns_hmm_not_moving_alive,
 	ns_hmm_not_moving_expanding,
 	ns_hmm_not_moving_dead,
+	ns_hmm_contracting_post_expansion,
 	ns_hmm_unknown_state
 } ns_hmm_movement_state;
 std::string ns_hmm_movement_state_to_string(const ns_hmm_movement_state & t);

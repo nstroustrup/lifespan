@@ -162,7 +162,7 @@ protected:
 
 	ns_acquire_for_scope<ns_sql> sql;
 public:
-	
+	void clear_sql() { if (!sql.is_null())sql.release(); }
 
 	typedef enum {ns_none,ns_forward, ns_back, ns_fast_forward, ns_fast_back,ns_stop,ns_save,ns_rewind_to_zero,ns_number_of_annotater_actions} ns_image_series_annotater_action;
 

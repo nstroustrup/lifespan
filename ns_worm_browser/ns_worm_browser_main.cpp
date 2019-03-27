@@ -2436,6 +2436,8 @@ void ns_handle_worm_selection_button(Fl_Widget *w, void * data) {
 		std::cout << "Individual worms can be selected only in single-region storyboards.";
 	}
 	const char * result = fl_input("Enter the worm ID you would like to view:");
+	if (result == 0)
+		return;
 	for (unsigned int i = 0; result[i] != 0; i++)
 		if (result[i] < '0' && result[i] > '9') {
 			std::cout << "Not a valid entry.";
@@ -3203,6 +3205,7 @@ void ns_set_menu_bar_activity_internal(bool activate){
 
 		current_window->exclusion_menu->activate();   
 		worm_window->activate();
+		worm_window->annotation_group->activate();
 		worm_window->gl_window->activate();
 		current_window->main_menu->redraw();
 		if (worm_learner.current_behavior_mode() != ns_worm_learner::ns_draw_boxes)
@@ -3224,7 +3227,6 @@ void ns_set_menu_bar_activity_internal(bool activate){
 		worm_window->deactivate();
 		worm_window->gl_window->deactivate();
 		worm_window->annotation_group->deactivate();
-		current_window->annotation_group->deactivate();
 		ns_set_main_window_annotation_controls_activity(false);
 	//	worm_window->redraw();
 		current_window->main_menu->redraw();

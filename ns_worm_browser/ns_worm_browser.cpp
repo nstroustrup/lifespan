@@ -2249,7 +2249,6 @@ void ns_test_parameter_set_on_region(const ns_64_bit region_id,
 	const ns_time_series_denoising_parameters & time_series_denoising_parameters, ns_time_path_image_movement_analyzer & time_path_image_analyzer, ns_time_path_solution & time_path_solution, ns_sql & sql,
 	ns_hmm_movement_analysis_optimizatiom_stats & output_stats,std::set<ns_stationary_path_id> & animals_to_test, bool generate_detailed_path_info) {
 
-
 	ns_time_path_movement_markov_solver markov_solver(estimator);
 	//we might need to load everything again, if it has been cleared to reduce memory usage
 	if (time_path_image_analyzer.size() == 0) {
@@ -2293,11 +2292,12 @@ struct ns_hmm_subject_list {
 };
 class  ns_cross_validation_run {
 public:
-	ns_cross_validation_run() :model_building_completed(false){}
+	ns_cross_validation_run() :model_building_completed(false), generate_detailed_path_info(false){}
 	ns_hmm_subject_list training_set, test_set;
 	ns_emperical_posture_quantification_value_estimator estimator;
 	ns_hmm_movement_analysis_optimizatiom_stats results;
 	std::string description;
+	bool generate_detailed_path_info;
 	unsigned long replicate_id;
 	bool model_building_completed;
 	
@@ -2381,6 +2381,7 @@ struct ns_hmm_cross_validation_set {
 		estimators[0].test_set = subject_list;
 		estimators[0].description = "Testing on all";
 		estimators[0].replicate_id = 0;
+		estimators[0].generate_detailed_path_info = true;
 		if (frac_to_drop == 0)
 			return;
 		//if there are not many devices, systematically remove each device
@@ -2860,8 +2861,10 @@ void ns_worm_learner::generate_experiment_movement_image_quantification_analysis
 								continue;
 							if (q->results.animals.size() == 0)
 								q->results.animals.reserve(200);
+							//if (q->generate_detailed_path_info)
+							//	cout << "Generating detailed path info for " << p->first << " " << q->description << "\n";
 							ns_test_parameter_set_on_region(movement_results.samples[i].regions[j]->metadata.region_id, q->estimator, movement_results.samples[i].regions[j]->by_hand_annotations,
-								time_series_denoising_parameters, *movement_results.samples[i].regions[j]->time_path_image_analyzer, movement_results.samples[i].regions[j]->time_path_solution, sql(), q->results,q->test_set.animal_group_ids, q == p->second.estimators.begin());
+								time_series_denoising_parameters, *movement_results.samples[i].regions[j]->time_path_image_analyzer, movement_results.samples[i].regions[j]->time_path_solution, sql(), q->results,q->test_set.animal_group_ids, q->generate_detailed_path_info);
 						}
 					}
 				}
@@ -2910,11 +2913,24 @@ void ns_worm_learner::generate_experiment_movement_image_quantification_analysis
 				p->second.estimators[e].results.write_error_data(performance_stats_output(), p->second.estimators[e].description, p->second.estimators[e].replicate_id,metadata_cache);
 			}
 			performance_stats_output.release();
-			if (!p->second.all_vs_all().results.animals.empty() && !p->second.all_vs_all().results.animals[0].state_info_times.size() != 0) {
-				performance_stats_output.attach(image_server.results_storage.time_path_image_analysis_quantification(sub, std::string("hmm_path=") + p->first, true, sql()).output());
-				p->second.all_vs_all().results.write_hmm_path_header(performance_stats_output());
-				p->second.all_vs_all().results.write_hmm_path_data(performance_stats_output(), metadata_cache);
-				performance_stats_output.release();
+			unsigned int tmp = 0;
+			for (auto q = p->second.estimators.begin(); q != p->second.estimators.end(); q++) {
+				if (!q->generate_detailed_path_info || q->results.animals.empty())
+					continue;
+				std::string suffix;
+				if (tmp > 0)
+					suffix = "=" + ns_to_string(tmp);
+				//cout << "Writing path data for " << p->first << "\n";
+				ns_acquire_for_scope<ostream>  path_stats_output(image_server.results_storage.time_path_image_analysis_quantification(sub, std::string("hmm_path=") + p->first + suffix, true, sql()).output());
+				if (path_stats_output().fail()) {
+					cout << "Could not open file for " << p->first << "\n";
+					continue;
+				}
+				tmp++;
+				q->results.write_hmm_path_header(path_stats_output());
+				q->results.write_hmm_path_data(path_stats_output(), metadata_cache);
+				path_stats_output.release();
+				
 			}
 		}
 

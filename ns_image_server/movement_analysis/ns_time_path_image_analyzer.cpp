@@ -1451,7 +1451,8 @@ void ns_time_path_image_movement_analyzer::calculate_optimzation_stats_for_curre
 			hmm_solver.probability_of_path_solution(groups[g].paths[p], *e, groups[g].paths[p].machine_movement_state_solution, s.animals.rbegin()->machine_state_info, generate_path_info);
 			hmm_solver.probability_of_path_solution(groups[g].paths[p], *e, by_hand_posture_movement_solution, s.animals.rbegin()->by_hand_state_info, generate_path_info);
 			
-
+			s.animals.rbegin()->solution_loglikelihood = groups[g].paths[p].machine_movement_state_solution.loglikelihood_of_solution;
+			//std::cout << s.animals.rbegin()->solution_loglikelihood << "\n";
 			
 			//now go through and calculate the errors betweeen the machine and by hand calculations
 			for (unsigned int i = 0; i < ns_hmm_movement_analysis_optimizatiom_stats_record::number_of_states; i++) {
@@ -3693,7 +3694,7 @@ void ns_hmm_movement_analysis_optimizatiom_stats::write_error_header(std::ostrea
 		o << "," << state << " identified by hand?, " << state << " identified by machine?," <<
 			state << " time by hand (days)," << state << " time by machine (days), " << state << " Difference Between Machine and By Hand Event Times (Days), " << state << " Difference Squared (Days)";
 	}
-	o << "\n";
+	o << ", Solution log-likelihood\n";
 }
 
 void ns_hmm_movement_analysis_optimizatiom_stats::write_error_data(std::ostream & o, const std::string & cross_validation_info, const unsigned long & replicate_id,const std::map<ns_64_bit,ns_region_metadata> & metadata_cache) const{
@@ -3724,6 +3725,7 @@ void ns_hmm_movement_analysis_optimizatiom_stats::write_error_data(std::ostream 
 			}
 			else o << ",";
 		}
+		o << "," << animals[k].solution_loglikelihood;
 		o << "\n";
 	}
 }

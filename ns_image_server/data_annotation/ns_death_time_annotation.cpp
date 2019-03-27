@@ -283,6 +283,7 @@ std::string ns_hmm_movement_state_to_string(const ns_hmm_movement_state & t) {
 	case ns_hmm_not_moving_expanding: return "not moving; expanding";
 	case ns_hmm_not_moving_dead: return "not moving; dead";
 	case ns_hmm_unknown_state :return "unknown";
+	case ns_hmm_contracting_post_expansion: return "contracting after expansion";
 	default: throw ns_ex("ns_hmm_movement_state_to_string():Unknown hmm movement state");
 	}
 }
@@ -303,6 +304,8 @@ std::string ns_hmm_movement_state_to_string(const ns_hmm_movement_state & t) {
 		return ns_hmm_not_moving_expanding;
 	if (s == "not moving; dead")
 		return ns_hmm_not_moving_dead;
+	if (s == "contracting after expansion")
+		return ns_hmm_contracting_post_expansion;
 	if (s == "unknown")
 		return ns_hmm_unknown_state;
 	throw ns_ex("ns_hmm_movement_state_from_string():Unknown state ") << s;

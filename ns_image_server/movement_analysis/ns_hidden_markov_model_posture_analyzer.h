@@ -31,6 +31,7 @@ struct ns_hmm_movement_analysis_optimizatiom_stats_record {
 	ns_record_list measurements;
 	ns_stationary_path_id id;
 	ns_death_time_annotation properties;
+	double solution_loglikelihood;
 	
 	ns_hmm_movement_optimization_stats_record_path by_hand_state_info, machine_state_info;
 	std::vector<double> state_info_times;

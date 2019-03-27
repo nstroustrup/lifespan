@@ -8,8 +8,11 @@ struct ns_analyzed_image_time_path_element_measurements {
 	inline double & death_time_posture_analysis_measure_v1() { return denoised_movement_score; }
 
 	//This is the quantification used to identify death times in the current version
-	inline const double & death_time_posture_analysis_measure_v2() const { return denoised_spatial_averaged_movement_score; }
-	inline double & death_time_posture_analysis_measure_v2() { return denoised_spatial_averaged_movement_score; }
+	inline const double & death_time_posture_analysis_measure_v2_cropped() const { return spatial_averaged_movement_score_cropped; }
+	inline double & death_time_posture_analysis_measure_v2_cropped() { return spatial_averaged_movement_score_cropped; }
+
+	inline const double & death_time_posture_analysis_measure_v2_uncropped() const { return spatial_averaged_movement_score_uncropped; }
+	inline double & death_time_posture_analysis_measure_v2_uncropped() { return spatial_averaged_movement_score_uncropped; }
 
 
 	ns_64_bit interframe_time_scaled_movement_sum,
@@ -35,10 +38,10 @@ struct ns_analyzed_image_time_path_element_measurements {
 	double
 		movement_score,
 		denoised_movement_score,
-		spatial_averaged_movement_sum,
-		interframe_scaled_spatial_averaged_movement_sum,
-		spatial_averaged_movement_score,
-		denoised_spatial_averaged_movement_score;
+		spatial_averaged_movement_sum_cropped,
+		spatial_averaged_movement_sum_uncropped,
+		spatial_averaged_movement_score_cropped,
+		spatial_averaged_movement_score_uncropped;
 
 	ns_vector_2d registration_displacement;
 

@@ -618,22 +618,22 @@ struct ns_intensity_emission_accessor_4x {
 };
 struct ns_movement_accessor {
 	double operator()(const ns_analyzed_image_time_path_element_measurements & e) const {
-		double d = e.death_time_posture_analysis_measure_v2();
+		double d = e.death_time_posture_analysis_measure_v2_uncropped();
 		if (d <= 0) return -DBL_MAX;
 		else return log(d);
 	}
 	bool is_zero(const ns_analyzed_image_time_path_element_measurements & e) const {
-		return e.death_time_posture_analysis_measure_v2() <= 0;
+		return e.death_time_posture_analysis_measure_v2_uncropped() <= 0;
 	}
 };
 struct ns_movement_emission_accessor {
 	double operator()(const ns_hmm_emission & e) const {
-		double d = e.measurement.death_time_posture_analysis_measure_v2();
+		double d = e.measurement.death_time_posture_analysis_measure_v2_uncropped();
 		if (d <= 0) return -DBL_MAX;
 		else return log(d);
 	}
 	bool is_zero(const ns_hmm_emission & e) const {
-		return e.measurement.death_time_posture_analysis_measure_v2() <= 0;
+		return e.measurement.death_time_posture_analysis_measure_v2_uncropped() <= 0;
 	}
 };
 class ns_emission_probabiliy_model{

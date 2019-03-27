@@ -713,6 +713,25 @@ private:
 	bool cleared;
 };
 
+
+struct ns_time_series_denoising_parameters {
+	ns_time_series_denoising_parameters() :movement_score_normalization(ns_none) {}
+	typedef enum { ns_none = 0, ns_subtract_out_plate_median = 1, ns_subtract_out_median = 2, ns_subtract_out_median_of_end = 3, ns_subtract_out_device_median = 4 } ns_movement_score_normalization_type;
+	ns_movement_score_normalization_type movement_score_normalization;
+	static ns_time_series_denoising_parameters load_from_db(const ns_64_bit region_id, ns_sql & sql);
+	std::string to_string() const {
+		switch (movement_score_normalization) {
+		case ns_none: return "None";
+		case ns_subtract_out_median: return "Sub Med";
+		case ns_subtract_out_median_of_end: return "Sub End";
+		case ns_subtract_out_plate_median: return "Plate Med";
+		case ns_subtract_out_device_median: return "Device Med";
+		default: throw ns_ex("Unknown normalization technique:") << (unsigned long)movement_score_normalization;
+		}
+	}
+	static ns_movement_score_normalization_type default_strategy() { return ns_none; }
+};
+
 ///All behavior is coordinated through a global instance of the image server.
 ///This object needs to be defined somewhere in the execution unit.
 extern ns_image_server image_server;

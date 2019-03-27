@@ -299,22 +299,6 @@ struct ns_movement_image_collage_info{
 	void from_path(const ns_analyzed_image_time_path * p,const unsigned long only_output_first_n_frames=0);
 };
 
-struct ns_time_series_denoising_parameters{
-	ns_time_series_denoising_parameters():movement_score_normalization(ns_none){}
-	typedef enum{ns_none=0,ns_subtract_out_plate_median=1,ns_subtract_out_median=2,ns_subtract_out_median_of_end=3,ns_subtract_out_device_median=4} ns_movement_score_normalization_type;
-	ns_movement_score_normalization_type movement_score_normalization;
-	static ns_time_series_denoising_parameters load_from_db(const ns_64_bit region_id, ns_sql & sql);
-	std::string to_string() const{ 
-		switch(movement_score_normalization){
-			case ns_none: return "None";
-			case ns_subtract_out_median: return "Sub Med";
-			case ns_subtract_out_median_of_end: return "Sub End";
-			case ns_subtract_out_plate_median: return "Plate Med";
-			case ns_subtract_out_device_median: return "Device Med";
-			default: throw ns_ex("Unknown normalization technique:") << (unsigned long)movement_score_normalization;
-		}
-	}
-};
 
 	
 struct ns_analyzed_image_time_path_event_index{
@@ -784,7 +768,7 @@ private:
 
 	const ns_time_path_solution * solution;
 	void generate_movement_description_series();
-	void normalize_movement_scores_over_all_paths(const std::string & software_version,const ns_time_series_denoising_parameters &);
+	void normalize_movement_scores_over_all_paths(const std::string & software_version,const ns_time_series_denoising_parameters &, ns_sql & sql);
 	ns_worm_movement_description_series description_series;
 
 	ns_time_series_denoising_parameters denoising_parameters_used;

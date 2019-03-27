@@ -1050,10 +1050,10 @@ void ns_image_processing_pipeline::generate_sample_regions_from_mask(ns_64_bit s
 				<< ", mask_id = " << mask_id << ","
 				<< "sample_id = " << sample_id
 				<< ", name = '" << mask_regions[i].name << "'"
-				<< ", position_in_sample_x = '" << mask_regions[i].pos.x/capture_sample_image_resolution_in_dpi << "'"
-				<< ", position_in_sample_y = '" << mask_regions[i].pos.y/capture_sample_image_resolution_in_dpi << "'"
-				<< ", size_x = '" << mask_regions[i].size.x/capture_sample_image_resolution_in_dpi << "'"
-				<< ", size_y = '" << mask_regions[i].size.y/capture_sample_image_resolution_in_dpi << "'"
+				<< ", position_in_sample_x = '" << mask_regions[i].pos.x / capture_sample_image_resolution_in_dpi << "'"
+				<< ", position_in_sample_y = '" << mask_regions[i].pos.y / capture_sample_image_resolution_in_dpi << "'"
+				<< ", size_x = '" << mask_regions[i].size.x / capture_sample_image_resolution_in_dpi << "'"
+				<< ", size_y = '" << mask_regions[i].size.y / capture_sample_image_resolution_in_dpi << "'"
 				<< ", details = '',"
 				"reason_censored = '',"
 				"strain_condition_1 = '',"
@@ -1064,9 +1064,10 @@ void ns_image_processing_pipeline::generate_sample_regions_from_mask(ns_64_bit s
 				"food_source = '',"
 				"environmental_conditions = '',"
 				"posture_analysis_model = '" << default_posture_analysis_model << "',"
-				"posture_analysis_method = '"<< default_posture_analysis_method <<"',"
-				"worm_detection_model = '"<< default_worm_detection_model <<"',"
-				"position_analysis_model = '"<< default_position_analysis_model<<"',"
+				"posture_analysis_method = '" << default_posture_analysis_method << "',"
+				"worm_detection_model = '" << default_worm_detection_model << "',"
+				"position_analysis_model = '" << default_position_analysis_model << "',"
+				"time_series_denoising_flag" << (int)ns_time_series_denoising_parameters::default_strategy();
 				"strain=''";
 
 			sql.send_query();

@@ -299,7 +299,7 @@ private:
 		for (unsigned int i = 0; i < number_of_valid_elements; i++) {
 			if (path->element(i + first_element).excluded)
 				continue;
-			const double d(path->element(i + first_element).measurements.death_time_posture_analysis_measure_v2());
+			const double d(path->element(i + first_element).measurements.death_time_posture_analysis_measure_v2_uncropped());
 			scores.push_back(d);
 		}
 		//add in threshold
@@ -333,7 +333,7 @@ private:
 		for (unsigned int i = 0; i < number_of_valid_elements; i++) {
 			if (path->element(i + first_element).excluded)
 				continue;
-			double d(path->element(i + first_element).measurements.death_time_posture_analysis_measure_v2());
+			double d(path->element(i + first_element).measurements.death_time_posture_analysis_measure_v2_uncropped());
 			if (d >= max_raw_score) d = log(max_raw_score - min_raw_score);
 			else if (d <= min_raw_score)
 				d = log(second_smallest_raw_score - min_raw_score); //can't be zero before we take the log

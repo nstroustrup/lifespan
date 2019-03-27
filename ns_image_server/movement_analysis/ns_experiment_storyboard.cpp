@@ -579,7 +579,10 @@ void ns_experiment_storyboard_timepoint_element::simplify_and_condense_by_hand_m
 const ns_experiment_storyboard_timepoint_element & ns_experiment_storyboard::find_animal(const ns_64_bit region_info_id,const ns_stationary_path_id & id) const{
 	for (unsigned i = 0; i < divisions.size(); i++){
 		for (unsigned int j = 0; j < divisions[i].events.size(); j++){
-			if (divisions[i].events[j].event_annotation.region_info_id == region_info_id && divisions[i].events[j].event_annotation.stationary_path_id == id)
+			const bool id_matches = (id.detection_set_id != 0) ? divisions[i].events[j].event_annotation.stationary_path_id == id : 
+														  divisions[i].events[j].event_annotation.stationary_path_id.group_id == id.group_id;
+			
+			if (id_matches && divisions[i].events[j].event_annotation.region_info_id)
 				return divisions[i].events[j];
 		}
 	}

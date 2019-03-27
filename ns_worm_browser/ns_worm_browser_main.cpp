@@ -26,7 +26,7 @@ bool debug_handlers = false;
 #include <FL/Fl_Box.H>
 
 
-
+void ns_handle_worm_selection_button(Fl_Widget *w, void * data);
 void ns_worm_browser_output_debug(const unsigned long line_number,const std::string & source, const std::string & message){
 	if (!output_debug_messages)
 		return;
@@ -1237,6 +1237,7 @@ class ns_worm_terminal_main_menu_organizer : public ns_menu_organizer{
 		sql.release();
 		update_region_choice_menu();
 		update_strain_choice_menu();
+		update_exclusion_choice_menu();
 		ns_update_main_information_bar("");
 	}
 	
@@ -1599,6 +1600,7 @@ class ns_worm_terminal_strain_menu_organizer : public ns_menu_organizer{
 		worm_learner.data_selector.select_strain(value);
 		::update_strain_choice_menu();
 		::update_region_choice_menu();
+		::update_exclusion_choice_menu();
 	}
 public:
 	std::string strain_menu_name(){return "File/_Select Current Strain";}
@@ -1980,6 +1982,7 @@ public:
 	Fl_Menu_Bar *region_menu;       
 	Fl_Menu_Bar *exclusion_menu;  
 	Fl_Menu_Bar *strain_menu;  
+	Fl_Button * worm_id_selector;
 	Fl_Output * experiment_name_bar;
 	//Fl_Output * region_name_bar;
 	Fl_Output * info_bar;
@@ -1996,8 +1999,9 @@ public:
 
 	static unsigned long experiment_bar_width(){return 200;}
 	static unsigned long region_name_bar_width(){return 125;}
-	static unsigned long exclusion_bar_width(){return 30;}
-	static unsigned long strain_bar_width(){return 140;}
+	static unsigned long exclusion_bar_width(){return 75;}
+	static unsigned long strain_bar_width(){return 120;}
+	static unsigned long worm_input_width() {return 25;}
 
 	static unsigned long border_height() {return 0;}
 	static unsigned long border_width() {return 0;}
@@ -2059,8 +2063,11 @@ public:
 		region_menu_handler = new ns_worm_terminal_region_menu_organizer();
 		region_menu_handler->update_region_choice(*region_menu);
 
-		strain_menu = new Fl_Menu_Bar((int)(d*experiment_bar_width() + menu_d*region_name_bar_width()), (int)(H - info_bar_height()*menu_d), (int)(menu_d*strain_bar_width()), (int)(menu_d*info_bar_height()));
-		exclusion_menu = new Fl_Menu_Bar((int)(d*experiment_bar_width() + menu_d*(region_name_bar_width() + strain_bar_width())), (int)(H - menu_d*info_bar_height()),(int)(menu_d*exclusion_bar_width()), (int)(menu_d*info_bar_height()));
+		strain_menu = new Fl_Menu_Bar(   (int)(d*experiment_bar_width() + menu_d*region_name_bar_width()),												   (int)(H - menu_d*info_bar_height()), (int)(menu_d*strain_bar_width()),    (int)(menu_d*info_bar_height()));
+		exclusion_menu = new Fl_Menu_Bar((int)(d*experiment_bar_width() + menu_d*(region_name_bar_width() + strain_bar_width())),						   (int)(H - menu_d*info_bar_height()), (int)(menu_d*exclusion_bar_width()), (int)(menu_d*info_bar_height()));
+		worm_id_selector = new Fl_Button((int)(d*experiment_bar_width() + menu_d * (region_name_bar_width() + strain_bar_width()+ exclusion_bar_width())), (int)(H - menu_d*info_bar_height()), (int)(menu_d*worm_input_width()), (int)(menu_d*info_bar_height()),"w");
+		worm_id_selector->callback(ns_handle_worm_selection_button);
+		worm_id_selector->deactivate();
 		strain_menu_handler = new ns_worm_terminal_strain_menu_organizer();
 		strain_menu_handler->update_strain_choice(*strain_menu);
 		exclusion_menu_handler = new ns_worm_terminal_exclusion_menu_organizer();
@@ -2071,7 +2078,7 @@ public:
 		exclusion_menu->textfont(FL_HELVETICA);
 
 
-		int left_buttons_width(d*experiment_bar_width() + menu_d*(region_name_bar_width() + strain_bar_width() + exclusion_bar_width()));
+		int left_buttons_width(d*experiment_bar_width() + menu_d*(region_name_bar_width() + strain_bar_width() + exclusion_bar_width()+ worm_input_width()));
 		//cerr << W - left_buttons_width - ns_death_event_annotation_group::window_width << " ";
 		info_bar = new Fl_Output(left_buttons_width,
 										    (int)(h() - menu_d*info_bar_height()),
@@ -2170,7 +2177,11 @@ public:
 											bottom_bar_height,
 											exclusion_bar_width()*d,
 											info_bar_height()*menu_d);
-		int left_buttons_width((experiment_bar_width() + region_name_bar_width() + strain_bar_width() + exclusion_bar_width())*d);
+		worm_id_selector->resize((experiment_bar_width() + region_name_bar_width() + strain_bar_width() + exclusion_bar_width())*d,
+			bottom_bar_height,
+			worm_input_width()*d,
+			info_bar_height()*menu_d);
+		int left_buttons_width((experiment_bar_width() + region_name_bar_width() + strain_bar_width() + exclusion_bar_width() + worm_input_width())*d);
 		info_bar->resize(left_buttons_width,
 											bottom_bar_height,
 											w_*d- left_buttons_width -(ns_death_event_annotation_group::window_width)*d,
@@ -2420,7 +2431,20 @@ struct ns_asynch_annotation_saver {
 		}
 	}
 };
+void ns_handle_worm_selection_button(Fl_Widget *w, void * data) {
+	if (!worm_learner.data_selector.region_selected()) {
+		std::cout << "Individual worms can be selected only in single-region storyboards.";
+	}
+	const char * result = fl_input("Enter the worm ID you would like to view:");
+	for (unsigned int i = 0; result[i] != 0; i++)
+		if (result[i] < '0' && result[i] > '9') {
+			std::cout << "Not a valid entry.";
+			return;
+		}
+	unsigned long worm_id = atol(result);
+	ns_launch_worm_window_for_worm(worm_learner.data_selector.current_region().region_id, ns_stationary_path_id(worm_id, 0, 0), 0);
 
+}
 void ns_handle_death_time_annotation_button(Fl_Widget * w, void * data){
 	ns_image_series_annotater::ns_image_series_annotater_action action(*static_cast<ns_image_series_annotater::ns_image_series_annotater_action *>(data));
 	if (action == ns_image_series_annotater::ns_save){
@@ -3032,6 +3056,7 @@ int main() {
 		worm_learner.data_selector.set_current_experiment(1090, worm_learner.get_sql_connection());
 		update_region_choice_menu();
 		update_strain_choice_menu();
+		update_exclusion_choice_menu();
 		ns_update_main_information_bar("");
 		
 		ns_worm_browser_output_debug(__LINE__,__FILE__,"Setting default sample and region");
@@ -3135,9 +3160,14 @@ void ns_launch_worm_window_for_worm(const ns_64_bit region_id, const ns_stationa
 }
  
 void ns_set_main_window_annotation_controls_activity(const bool active){
-	if (active)
+	if (active) {
 		current_window->annotation_group->activate();
-	else current_window->annotation_group->deactivate();
+		current_window->worm_id_selector->activate();
+	}
+	else {
+		current_window->annotation_group->deactivate();
+		current_window->worm_id_selector->deactivate();
+	}
 }
 
 /*ns_thread_return_type asynch_redisplay(void *){
@@ -3165,16 +3195,18 @@ void ns_set_menu_bar_activity_internal(bool activate){
 			current_window->main_menu->mode(i,current_window->main_menu->mode(i) &  ~FL_MENU_INACTIVE);
 	//		current_window->draw_animation = false;
 		}
+
 		current_window->main_menu->activate();
 		current_window->gl_window->activate();
 		current_window->region_menu->activate();
 		current_window->strain_menu->activate();
-		current_window->annotation_group->activate();
+
+		current_window->exclusion_menu->activate();   
 		worm_window->activate();
 		worm_window->gl_window->activate();
-		worm_window->annotation_group->activate();
 		current_window->main_menu->redraw();
-		//worm_window->redraw();
+		if (worm_learner.current_behavior_mode() != ns_worm_learner::ns_draw_boxes)
+			ns_set_main_window_annotation_controls_activity(true);
 	}
 	else {
 
@@ -3188,10 +3220,12 @@ void ns_set_menu_bar_activity_internal(bool activate){
 		current_window->gl_window->deactivate();
 		current_window->region_menu->deactivate();
 		current_window->strain_menu->deactivate();
+		current_window->exclusion_menu->deactivate();
 		worm_window->deactivate();
 		worm_window->gl_window->deactivate();
 		worm_window->annotation_group->deactivate();
 		current_window->annotation_group->deactivate();
+		ns_set_main_window_annotation_controls_activity(false);
 	//	worm_window->redraw();
 		current_window->main_menu->redraw();
 	}

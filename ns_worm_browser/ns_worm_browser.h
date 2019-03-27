@@ -340,7 +340,7 @@ public:
 
 	bool select_default_sample_and_region(){
 		
-		ns_worm_browser_output_debug(__LINE__,__FILE__,"Slecting default sample and region");
+		ns_worm_browser_output_debug(__LINE__,__FILE__,"Selecting default sample and region");
 		cur_strain = 0;
 		//if (!experiment_strains.empty())
 		//	cur_strain = &experiment_strains.begin()->second;

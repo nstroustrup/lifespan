@@ -661,7 +661,7 @@ public:
 
 
 		if (require_exact && current_worm->element(current_timepoint_id).absolute_time != current_time && !give_up_on_preload)
-			throw ns_ex("Could not find requested element time:") << current_time;
+			throw ns_ex("ns_death_time_solo_posture_annotater::set_current_timepoint()::Could not find requested element time:") << current_time;
 		if (current_timepoint_id+1 < current_worm->element_count())
 			current_timepoint_id++;
 
@@ -916,7 +916,7 @@ public:
 				current_image.im = new ns_image_standard();
 
 			
-			set_current_timepoint(current_time, true, true);
+			set_current_timepoint(current_time,current_time!=0, true);
 			telemetry_zoom_factor = timepoints.size() / 250;
 			if (telemetry_zoom_factor < 1)
 				telemetry_zoom_factor = 1;

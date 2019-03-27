@@ -38,6 +38,7 @@ else $set_as_default = FALSE;
        $no_region_info = TRUE;
    }else{
    $denoising_flag = $_POST['time_series_median'];
+
    $number_of_stationary_images = $_POST['number_of_stationary_images'];
    }
     	$end_minute = (int)$_POST['end_minute'];
@@ -64,7 +65,7 @@ else $set_as_default = FALSE;
    $delete_captured_images = $_POST['delete_captured_images'] == "delete";
    //  die($_POST['delete_captured_images']);
    if (!$no_region_info){
-      $query = "UPDATE sample_region_image_info as r, capture_samples as s SET r.maximum_number_of_worms_per_plate=$maximum_number_of_worms WHERE r.sample_id = s.id AND s.experiment_id = $experiment_id";
+      $query = "UPDATE sample_region_image_info as r, capture_samples as s SET r.maximum_number_of_worms_per_plate=$maximum_number_of_worms, time_series_denoising_flag=$denoising_flag WHERE r.sample_id = s.id AND s.experiment_id = $experiment_id";
       $sql->send_query($query);   
    }
       $query = "UPDATE experiments SET delete_captured_images_after_mask=" . ($delete_captured_images?"1":"0") . ", compression_type='$image_compression',mask_time=$mask_date WHERE id = $experiment_id";
@@ -162,6 +163,7 @@ $time_series_denoising_flag = "";
 $maximum_number_of_worms = "";
 $number_of_stationary_images="";
 }
+
 $posture_analysis_method = '';
  $experiment_strains = array();
  for ($i = 0; $i < sizeof($exps); $i++){
@@ -404,7 +406,7 @@ catch(ns_exception $ex){
 <form action="manage_experiment_analysis_configuration.php?<?php echo $query_parameters . "&set_denoising_options=1"?>" method="post">
 
 <table align="center" border="0" cellpadding="0" cellspacing="1" bgcolor="#000000"><tr><td><table border="0" cellpadding="4" cellspacing="0" width="100%"><tr <?php echo $table_header_color?> ><td colspan=2><b>Image Analysis Options</b></td></tr>
-
+<!--
 <tr><td bgcolor="<?php echo $table_colors[1][0] ?>">Time Series Denoising</td><td bgcolor="<?php echo $table_colors[1][1] ?>">
 
 <select name="time_series_median" style="width: 245px"
@@ -421,7 +423,7 @@ catch(ns_exception $ex){
     }
 ?>
 </select></td></tr>
-
+-->
 <tr><td bgcolor="<?php echo $table_colors[0][0] ?>">Apply Vertical Image Registration</td><td bgcolor="<?php echo $table_colors[0][1] ?>">
 
 <select name="apply_vertical_image_registration">

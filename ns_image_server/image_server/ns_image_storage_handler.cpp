@@ -680,33 +680,51 @@ ofstream * ns_image_storage_handler::request_binary_output_for_captured_image(co
 }
 
 ofstream * ns_image_storage_handler::request_miscellaneous_storage(const std::string & filename){
-	std::string dir = long_term_storage_directory;
-	std::string partition = ns_get_default_partition();
-	if (partition.size() != 0) dir += DIR_CHAR_STR + partition;
-	dir +=DIR_CHAR_STR + ns_image_server_miscellaneous_directory();
-
-	std::string fname = dir + DIR_CHAR_STR + filename;
-	ns_dir::convert_slashes(fname);
-	ns_dir::convert_slashes(dir);
-	ns_dir::create_directory_recursive(dir);
-
-	ofstream * output = new ofstream(fname.c_str(), ios_base::binary);
-	try{
-		if (simulate_long_term_storage_errors || output->fail()){
-			ns_image_handler_submit_alert_to_central_db(
-				ns_alert::ns_long_term_storage_error,
-				"Could not access long term storage",
-				std::string("ns_image_storage_handler::request_miscellaneous_storage::Could not access volatile storage when attempting to write ") + filename);
-			throw ns_ex("ns_image_storage_handler::request_miscellaneous_storage()::Could not open requested position in long term storage: ") << fname << ns_network_io;
-		}
-		if (verbosity > ns_standard)
-			ns_image_handler_register_server_event_to_central_db(ns_image_server_event("ns_image_storage_handler::Opening ",false) << fname << " for binary output." << ns_ts_minor_event);
-	}
-	catch(...){
-		delete output;
-		throw;
-	}
-	return output;
+  for (unsigned int i = 0; i < 2; i++){
+    
+    std::string dir;
+    
+    if (i == 1) dir = volatile_storage_directory;
+    else{
+      dir = long_term_storage_directory;
+      std::string partition = ns_get_default_partition();
+      if (partition.size() != 0) dir += DIR_CHAR_STR + partition;
+    }
+    dir +=DIR_CHAR_STR + ns_image_server_miscellaneous_directory();
+    
+    std::string fname = dir + DIR_CHAR_STR + filename;
+    ns_dir::convert_slashes(fname);
+    ns_dir::convert_slashes(dir);
+    ns_dir::create_directory_recursive(dir);
+    
+    ofstream * output = new ofstream(fname.c_str(), ios_base::binary);
+    try{
+      if (simulate_long_term_storage_errors || output->fail()){
+	ns_image_handler_submit_alert_to_central_db(
+						    ns_alert::ns_long_term_storage_error,
+						    "Could not access long term storage",
+						    std::string("ns_image_storage_handler::request_miscellaneous_storage::Could not access volatile storage when attempting to write ") + filename);
+	throw ns_ex("ns_image_storage_handler::request_miscellaneous_storage()::Could not open requested position in long term storage: ") << fname << ns_network_io;
+      }
+      if (verbosity > ns_standard)
+	ns_image_handler_register_server_event_to_central_db(ns_image_server_event("ns_image_storage_handler::Opening ",false) << fname << " for binary output." << ns_ts_minor_event);
+    }
+    catch(ns_ex & ex){
+      delete output;
+      if (i == 0){
+	cout << ex.text();
+	continue;
+      }else
+	throw;
+      
+    }
+    catch(...){
+      delete output;
+      throw;
+    }
+    return output;
+  }
+  throw ns_ex("Code path error!");
 }
 
 ofstream * ns_image_storage_handler::request_volatile_binary_output(const std::string & filename){

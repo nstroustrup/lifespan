@@ -226,7 +226,7 @@ public:
 	void set_console_window_title(const std::string & title="") const;
 	#endif
 
-	static std::string miscellaneous_directory() {return "misc";}
+	static std::string miscellaneous_directory() {return "preview_captures";}
 
 	///Returns the ini-specified name of the subdirectory that local image caches use for
 	///disk storage (implemented by the ns_image_cache class)

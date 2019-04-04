@@ -37,7 +37,10 @@ else $set_as_default = FALSE;
        !array_key_exists('maximum_number_of_worms',$_POST)){
        $no_region_info = TRUE;
    }else{
+   if (array_key_exists('time_series_median',$_POST))
    $denoising_flag = $_POST['time_series_median'];
+   else $denoising_flag = 0;
+ 
 
    $number_of_stationary_images = $_POST['number_of_stationary_images'];
    }

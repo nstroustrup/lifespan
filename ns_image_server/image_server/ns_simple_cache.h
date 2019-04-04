@@ -77,6 +77,10 @@ public:
 	template<class a, class b>
 	friend class ns_cache_request;
 
+	bool eq(const ns_simple_cache_data_handle< data_t, cache_key_t, locked> & l) const {
+		return l.data == this->data;
+	}
+
 private:
 	data_t * data; //the image cached in memory.
 	bool unlinked_singleton;
@@ -113,7 +117,10 @@ private:
 	bool write;
 
 };
-
+template<class data_t, class cache_key_t, bool locked>
+bool operator==(const ns_simple_cache_data_handle<data_t, cache_key_t, locked> & l, const ns_simple_cache_data_handle<data_t, cache_key_t, locked> & r) {
+	return l.eq(r);
+}
 template<class second_t>
 struct ns_cache_object_sort_by_age {
 	ns_cache_object_sort_by_age() {}

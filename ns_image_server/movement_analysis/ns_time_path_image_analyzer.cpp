@@ -4567,7 +4567,9 @@ void ns_analyzed_image_time_path::quantify_movement(const ns_analyzed_time_image
 					spatially_average_movement(y, x, ns_time_path_image_movement_analyzer::ns_spatially_averaged_movement_kernal_half_size,elements[i].registered_images->movement_image_, averaged_sum, count);
 					long averaged_sum_cropped = averaged_sum;
 					if (abs(averaged_sum) < count*ns_time_path_image_movement_analyzer::ns_spatially_averaged_movement_threshold)
-						averaged_sum_cropped = 0;
+						averaged_sum_cropped = 0; 
+					if (abs(averaged_sum) < count*(ns_time_path_image_movement_analyzer::ns_spatially_averaged_movement_threshold/2))
+						averaged_sum = 0;
 					if (count > 0) {
 						elements[i].measurements.spatial_averaged_movement_sum_uncropped += abs(averaged_sum / (float)count);
 						elements[i].measurements.spatial_averaged_movement_sum_cropped += abs(averaged_sum_cropped / (float)count);

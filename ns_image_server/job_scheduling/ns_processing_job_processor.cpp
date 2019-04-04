@@ -631,6 +631,7 @@ ns_64_bit ns_processing_job_maintenance_processor::run_job(ns_sql & sql) {
 				throw ns_ex("No sample specified for region generation from mask");
 			sql << "SELECT image_resolution_dpi FROM capture_samples WHERE id = " << job.sample_id;
 			ns_sql_result res;
+			sql.get_rows(res);
 			if (res.size() == 0)
 				throw ns_ex("Could not find sample ") << job.sample_id << " in db.";
 

@@ -2965,7 +2965,12 @@ int main() {
 			d.act();
 		
 		ns_worm_browser_output_debug(__LINE__,__FILE__,"Loading detection models");
-		image_server.load_all_worm_detection_models(worm_learner.model_specifications);
+		try {
+			image_server.load_all_worm_detection_models(worm_learner.model_specifications);
+		}
+		catch (ns_ex & ex) {
+			cout << "Could not load worm detection models: " << ex.text() << "\n";
+		}
 		{
 		//	image_server.set_sql_database("image_server_archive");
 			
@@ -2998,7 +3003,7 @@ int main() {
 			sql.release();
 		}
 		
-		ns_worm_browser_output_debug(__LINE__,__FILE__,"Loading for models");
+		//ns_worm_browser_output_debug(__LINE__,__FILE__,"Loading worm detection models");
 		if (worm_learner.model_specifications.size() == 0){
 			cerr << "No model specifications were found in the default model directory.  Worm detection will probably not work.";
 			worm_learner.set_svm_model_specification(worm_learner.default_model);

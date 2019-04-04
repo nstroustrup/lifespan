@@ -189,7 +189,9 @@ void ns_worm_learner::calculate_movement_threshold(const std::string & filename,
 }
 void ns_worm_learner::set_svm_model_specification(ns_worm_detection_model_cache::const_handle_t & spec){
 	model_specification = &spec;
-	cout << "Using model specification " << spec().model_specification.model_name << "\n";
+	if (spec == default_model || !spec.is_valid())
+		cout << "No worm detection model specified.\n";
+	else cout << "Using model specification " << spec().model_specification.model_name << "\n";
 }
 void ns_worm_learner::calculate_heatmap_overlay(){
 	ns_image_standard tmp;
@@ -5567,6 +5569,10 @@ void make_experiment_from_dir(const std::string & filename){
 
 
 void ns_worm_learner::make_object_collage(){
+	if (model_specification == 0 || !model_specification->is_valid() || *model_specification == this->default_model){
+		cout << "Error: No worm detection model specified\n";
+		return;
+	}
 	if (worm_detection_results == 0)
 		worm_detection_results = worm_detector.run(0,0,current_image,detection_brightfield,detection_spatial_median,
 		static_mask,
@@ -5597,6 +5603,10 @@ void ns_output_svgs(std::vector<ns_svg> & objects,const std::string & path, cons
 
 }
 void ns_worm_learner::make_spine_collage(const bool svg,const std::string & svg_directory){
+	if (model_specification == 0 || !model_specification->is_valid() || *model_specification == this->default_model) {
+		cout << "Error: No worm detection model specified\n";
+		return;
+	}
 	if (worm_detection_results == 0)
 		worm_detection_results = worm_detector.run(0,0,current_image,detection_brightfield,
 		detection_spatial_median,
@@ -5615,6 +5625,10 @@ void ns_worm_learner::make_spine_collage(const bool svg,const std::string & svg_
 	}
 }
 void ns_worm_learner::make_spine_collage_with_stats(const bool svg,const std::string & svg_directory){
+	if (model_specification == 0 || !model_specification->is_valid() || *model_specification == this->default_model) {
+		cout << "Error: No worm detection model specified\n";
+		return;
+	}
 	if (worm_detection_results == 0)
 		worm_detection_results = worm_detector.run(0,0,current_image,detection_brightfield,
 		detection_spatial_median,
@@ -5635,6 +5649,10 @@ void ns_worm_learner::make_spine_collage_with_stats(const bool svg,const std::st
 }
 
 void ns_worm_learner::show_edges(){
+	if (model_specification == 0 || !model_specification->is_valid() || *model_specification == this->default_model) {
+		cout << "Error: No worm detection model specified\n";
+		return;
+	}
 	if (worm_detection_results == 0)
 		worm_detection_results = worm_detector.run(0,0,current_image,detection_brightfield,
 		detection_spatial_median,
@@ -5649,6 +5667,10 @@ void ns_worm_learner::show_edges(){
 }
 
 void ns_worm_learner::make_reject_spine_collage(const bool svg,const std::string & svg_directory){
+	if (model_specification == 0 || !model_specification->is_valid() || *model_specification == this->default_model) {
+		cout << "Error: No worm detection model specified\n";
+		return;
+	}
 	if (worm_detection_results == 0)
 		worm_detection_results = worm_detector.run(0,0,current_image,detection_brightfield,
 		detection_spatial_median,
@@ -5668,6 +5690,10 @@ void ns_worm_learner::make_reject_spine_collage(const bool svg,const std::string
 }
 
 void ns_worm_learner::make_reject_spine_collage_with_stats(const bool svg,const std::string & svg_directory){
+	if (model_specification == 0 || !model_specification->is_valid() || *model_specification == this->default_model) {
+		cout << "Error: No worm detection model specified\n";
+		return;
+	}
 	if (worm_detection_results == 0)
 		worm_detection_results = worm_detector.run(0,0,current_image,detection_brightfield,
 		detection_spatial_median,
@@ -5904,6 +5930,10 @@ void ns_worm_learner::set_static_mask(ns_image_standard & im){
 	im.pump(*static_mask,1024);
 }
 void ns_worm_learner::process_contiguous_regions(){
+	if (model_specification == 0 || !model_specification->is_valid() || *model_specification == this->default_model) {
+		cout << "Error: No worm detection model specified\n";
+		return;
+	}
 	if (worm_detection_results != 0)
 		delete worm_detection_results;	
 	unsigned long start_time = ns_current_time();
@@ -7982,11 +8012,18 @@ ns_worm_learner::~ns_worm_learner(){
 }
 
 void ns_worm_learner::train_from_data(const std::string & base_dir){
+	if (model_specification == 0 || !model_specification->is_valid() || *model_specification == this->default_model) {
+		cout << "Error: No worm detection model specified\n";
+		return;
+	}
 	ns_acquire_for_scope<ns_sql> sql(image_server.new_sql_connection(__FILE__,__LINE__));
 	training_file_generator.generate_from_curated_set(base_dir,(*model_specification)().model_specification,true,&sql());
 	sql.release();
 }
 const ns_svm_model_specification & ns_worm_learner::get_svm_model_specification(){
+	if (model_specification == 0 || !model_specification->is_valid() || *model_specification == this->default_model) 
+		throw ns_ex("Error: No worm detection model specified");
+	
 	return (*model_specification)().model_specification;
 }
 

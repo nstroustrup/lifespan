@@ -1238,8 +1238,8 @@ void ns_image_processing_pipeline::calculate_static_mask_and_heat_map(const vect
 	}
 	sql << "UPDATE sample_region_images SET currently_under_processing=0 WHERE region_info_id = " << region_image.region_info_id;
 	sql.send_query();
-	sql << "UPDATE worm_movement SET problem=0,calculated=0 WHERE region_info_id = " << region_image.region_info_id;
-	sql.send_query();
+	//sql << "UPDATE worm_movement SET problem=0,calculated=0 WHERE region_info_id = " << region_image.region_info_id;
+	//sql.send_query();
 	sql.send_query("COMMIT");
 
 	if (generate_static_mask){
@@ -2464,7 +2464,7 @@ void ns_image_processing_pipeline::get_reference_image(const ns_image_server_cap
 	bool registration_image_loaded = false;
 	unsigned long attempts = 0;
 	ns_image_server_image reference_image_db_record;
-	*external_source.sql << "SELECT image_id, id, never_delete_image FROM captured_images WHERE sample_id = " << captured_image.sample_id << " AND never_delete_image = 1 AND problem = 0 AND censored = 0 ORDER BY capture_time ASC LIMIT 5";
+	*external_source.sql << "SELECT image_id, id, never_delete_image FROM captured_images WHERE sample_id = " << captured_image.sample_id << " AND never_delete_image = 1 AND problem = 0 AND censored = 0 ORDER BY capture_time DESC LIMIT 5";
 	ns_sql_result res;
 	external_source.sql->get_rows(res);
 	if (res.size() == 0)

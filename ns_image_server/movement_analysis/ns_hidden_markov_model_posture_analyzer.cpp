@@ -899,9 +899,9 @@ void ns_emperical_posture_quantification_value_estimator::read_observation_data(
 		ns_stationary_path_id id;
 		id.detection_set_id = ns_atoi64(tmp.c_str());
 		getline(in, tmp, ',');
-		id.group_id = ns_atoi64(tmp.c_str());
+		id.group_id = atoi(tmp.c_str());
 		getline(in, tmp, ',');
-		id.path_id = ns_atoi64(tmp.c_str());
+		id.path_id = atoi(tmp.c_str());
 
 		getline(in, tmp, ',');
 		if (tmp == "m" || tmp == "v" || tmp == "a") { //reading in a normalization stat

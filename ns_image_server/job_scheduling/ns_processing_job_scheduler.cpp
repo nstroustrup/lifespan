@@ -571,17 +571,17 @@ void ns_handle_image_metadata_delete_action(ns_processing_job & job,ns_sql & sql
 						<< "sample_region_images.region_info_id = " << regions_to_delete[i]
 						<< " AND worm_interpolation_results_id = worm_detection_results.id";
 					sql.send_query();
-					sql << "DELETE worm_movement FROM worm_movement,sample_region_images WHERE "
+					/*sql << "DELETE worm_movement FROM worm_movement,sample_region_images WHERE "
 						<< "sample_region_images.region_info_id = " << regions_to_delete[i]
 						<< " AND worm_movement.id = sample_region_images.worm_movement_id";
-					sql.send_query();
+					sql.send_query();*/
 
 					sql << "DELETE i FROM image_statistics as i,sample_region_images as r "
 						<< "WHERE r.region_info_id = " << regions_to_delete[i] << " AND r.image_statistics_id = i.id";
 					sql.send_query();
 					//delete movement info
-					sql << "DELETE FROM worm_movement WHERE region_info_id = " << regions_to_delete[i];
-					sql.send_query();
+					//sql << "DELETE FROM worm_movement WHERE region_info_id = " << regions_to_delete[i];
+					//sql.send_query();
 					//delete time points
 					sql << "DELETE from sample_region_images WHERE region_info_id = " << regions_to_delete[i];
 					sql.send_query();

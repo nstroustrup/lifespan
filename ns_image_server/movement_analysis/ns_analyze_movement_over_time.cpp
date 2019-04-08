@@ -156,8 +156,7 @@ void analyze_worm_movement_across_frames(const ns_processing_job & job, ns_image
 					ns_time_path_image_movement_analyzer::ns_force_creation_of_new_db_record;  //the default behavior is to create a new id and invalidate all previous data.
 				if (job.maintenance_task == ns_maintenance_rebuild_movement_data_from_stored_solution)
 					analysis_options = ns_time_path_image_movement_analyzer::ns_require_existing_record;
-				if (job.maintenance_task == ns_maintenance_rebuild_movement_data_from_stored_solution)
-				time_path_image_analyzer.process_raw_images(job.region_id, time_path_solution, time_series_denoising_parameters, &death_time_estimator(), sql, -1, true);
+				time_path_image_analyzer.process_raw_images(job.region_id, time_path_solution, time_series_denoising_parameters, &death_time_estimator(), sql, -1, true,analysis_options);
 				break;
 			}
 			catch (ns_ex & ex) {

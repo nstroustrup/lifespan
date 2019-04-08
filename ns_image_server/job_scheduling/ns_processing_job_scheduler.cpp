@@ -339,9 +339,14 @@ void ns_delete_movement_analysis(const ns_64_bit region_id, bool delete_files,ns
 	ns_64_bit time_path_solution_id = ns_atoi64(ids[0][0].c_str()),
 		movement_image_analysis_quantification_id = ns_atoi64(ids[0][0].c_str());
 	if (time_path_solution_id != 0 && delete_files) {
-		ns_image_server_image im;
-		im.id = time_path_solution_id;
-		image_server.image_storage.delete_from_storage(im, ns_delete_both_volatile_and_long_term, &sql);
+		try {
+			ns_image_server_image im;
+			im.id = time_path_solution_id;
+			image_server.image_storage.delete_from_storage(im, ns_delete_both_volatile_and_long_term, &sql);
+		}
+		catch (ns_ex & ex) {
+			image_server.register_server_event(ex, &sql);
+		}
 	}
 	if (movement_image_analysis_quantification_id != 0) {
 		//delete all the path images
@@ -351,32 +356,46 @@ void ns_delete_movement_analysis(const ns_64_bit region_id, bool delete_files,ns
 			sql.get_rows(paths);
 			for (unsigned int i = 0; i < paths.size(); i++) {
 				for (unsigned int j = 1; j <= 2; j++) {
-					ns_image_server_image im;
-					im.id = ns_atoi64(paths[i][j].c_str());
-					if (im.id != 0)
-						image_server.image_storage.delete_from_storage(im, ns_delete_both_volatile_and_long_term, &sql);
+					try {
+						ns_image_server_image im;
+						im.id = ns_atoi64(paths[i][j].c_str());
+						if (im.id != 0)
+							image_server.image_storage.delete_from_storage(im, ns_delete_both_volatile_and_long_term, &sql);
+					}
+					catch (ns_ex & ex) {
+						image_server.register_server_event(ex, &sql);
+					}
 				}
 			}
 		}
+		
 		sql << "DELETE FROM path_data WHERE region_id = " << region_id;
 		sql.send_query();
 		//delete the record for all the movement analysis
 		if (delete_files) {
-			ns_image_server_image im;
-			im.id = movement_image_analysis_quantification_id;
-			image_server.image_storage.delete_from_storage(im, ns_delete_both_volatile_and_long_term, &sql);
+			try {
+				ns_image_server_image im;
+				im.id = movement_image_analysis_quantification_id;
+				image_server.image_storage.delete_from_storage(im, ns_delete_both_volatile_and_long_term, &sql);
+			}
+			catch (ns_ex & ex) {
+				image_server.register_server_event(ex, &sql);
+			}
 		}
 	}
 	ns_image_server_results_subject sub;
 	sub.region_id = region_id;
-	//ns_image_server_results_file results(image_server.results_storage.hand_curated_death_times(sub, sql));
-	//results.erase();
-	ns_image_server_results_file censoring_results(image_server.results_storage.machine_death_times(sub, ns_image_server_results_storage::ns_censoring_and_movement_transitions,
-		"time_path_image_analysis", sql));
-	ns_image_server_results_file state_results(image_server.results_storage.machine_death_times(sub, ns_image_server_results_storage::ns_worm_position_annotations,
-		"time_path_image_analysis", sql));
-	censoring_results.erase();
-	state_results.erase();
+	try {
+		ns_image_server_results_file censoring_results(image_server.results_storage.machine_death_times(sub, ns_image_server_results_storage::ns_censoring_and_movement_transitions,
+			"time_path_image_analysis", sql));
+		ns_image_server_results_file state_results(image_server.results_storage.machine_death_times(sub, ns_image_server_results_storage::ns_worm_position_annotations,
+			"time_path_image_analysis", sql));
+		censoring_results.erase();
+		state_results.erase();
+	}
+	catch (ns_ex & ex) {
+		image_server.register_server_event(ex, &sql);
+	}
 
 	sql << "UPDATE sample_region_image_info SET latest_movement_rebuild_timestamp =0, "
 		"last_timepoint_in_latest_movement_rebuild=0, "

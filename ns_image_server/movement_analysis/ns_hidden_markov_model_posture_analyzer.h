@@ -25,7 +25,7 @@ struct ns_hmm_movement_optimization_stats_record_path {
 	std::vector<ns_hmm_movement_optimization_stats_record_path_element> path;
 };
 struct ns_hmm_movement_analysis_optimizatiom_stats_record {
-	enum { number_of_states = 5 };
+	enum { number_of_states = 6 };
 	static const ns_movement_event states[number_of_states];
 	typedef std::map<ns_movement_event, ns_hmm_movement_analysis_optimizatiom_stats_event_annotation> ns_record_list;
 	ns_record_list measurements;

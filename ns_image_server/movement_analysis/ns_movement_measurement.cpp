@@ -6,6 +6,24 @@
 #include <algorithm>
 
 using namespace std;
+
+ns_color_8 ns_movement_colors::color(const ns_movement_state & m) {
+	switch (m) {
+	case ns_movement_death_associated_expansion: return ns_color_8(0, 200, 20);
+	case ns_movement_death_associated_post_expansion_contraction: return ns_color_8(200, 0, 20);
+	case ns_movement_stationary: return ns_color_8(255, 0, 0);
+	case ns_movement_posture: return ns_color_8(255, 255, 0);
+	case ns_movement_slow: return ns_color_8(0, 255, 0);
+	case ns_movement_fast:return  ns_color_8(255, 0, 255);
+	case ns_movement_machine_excluded: return ns_color_8(175, 175, 175);
+	case ns_movement_by_hand_excluded: return ns_color_8(225, 225, 225);
+
+	case ns_movement_not_calculated: return ns_color_8(0, 0, 0);
+	default: throw ns_ex("Uknown movement color request:") << (unsigned long)m;
+	}
+}
+
+
 template<class T>
 class ns_measurement_stationary_processed_accessor{
 public:
@@ -744,7 +762,8 @@ void ns_worm_movement_measurement_summary_timepoint_data::out_header(const std::
 			<< name << " Moving Slow," 
 			<< name << " Changing Posture,"
 			<< name << " Stationary," 
-			<< name << " Death Posture Relaxing, " 
+			<< name << " Death-Associated Expansion, " 
+			<< name << " Death-Associated post-expansion Contraction, "
 			<< name << " Cumulative Deaths,"
 			<< name << " Cumulative Observed Singletons Dead, "
 			<< name << " Cumulative Observed Multiples Dead, "
@@ -769,7 +788,8 @@ void ns_worm_movement_measurement_summary_timepoint_data::out_data(const unsigne
 		<< number_moving_slow << ","
 		<< number_changing_posture << ","
 		<< number_stationary << ","	
-		<< number_death_posture_relaxing << ","	
+		<< number_death_associated_expanding << ","	
+		<< number_death_associated_post_expansion_contracting << ","
 		<< number_cumulative_deaths() << ","
 		<< singleton_deaths.cumulative << ","
 		<< observed_multiple_deaths.cumulative << ","
@@ -798,7 +818,8 @@ void ns_worm_movement_measurement_summary_timepoint_data::add(const ns_worm_move
 	number_changing_posture				+=	s.number_changing_posture;				
 	number_stationary					+=	s.number_stationary;		
 	number_of_stationary_worm_dissapearances += s.number_of_stationary_worm_dissapearances;
-	number_death_posture_relaxing		+=	s.number_death_posture_relaxing;			
+	number_death_associated_expanding		+=	s.number_death_associated_expanding;
+	number_death_associated_post_expansion_contracting += s.number_death_associated_post_expansion_contracting;
 	number_of_missing_animals			+=	s.number_of_missing_animals;		
 	number_permanantly_lost	+=	s.number_permanantly_lost;	
 	number_permanantly_lost_before_end_of_experiment += s.number_permanantly_lost_before_end_of_experiment;
@@ -1179,6 +1200,8 @@ void ns_worm_movement_summary_series::from_death_time_annotations(const ns_death
 	}
 	
 }
+
+
 
 void ns_worm_movement_description_series::calculate_visualization_grid(const ns_vector_2i & extra_space_for_metadata) {
 	

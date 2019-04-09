@@ -2444,7 +2444,13 @@ void ns_handle_worm_selection_button(Fl_Widget *w, void * data) {
 			return;
 		}
 	unsigned long worm_id = atol(result);
-	ns_launch_worm_window_for_worm(worm_learner.data_selector.current_region().region_id, ns_stationary_path_id(worm_id, 0, 0), 0);
+	ns_stationary_path_id path_id;
+	unsigned long division_id;
+	bool found_worm = worm_learner.storyboard_annotater.find_worm_by_id(0,worm_id, path_id, division_id);
+	if (!found_worm)
+		cout << "Could not find worm.\n";
+	else
+	ns_launch_worm_window_for_worm(worm_learner.data_selector.current_region().region_id, path_id,0);
 
 }
 void ns_handle_death_time_annotation_button(Fl_Widget * w, void * data){

@@ -78,6 +78,22 @@ public:
 	const ns_experiment_storyboard & get_storyboard(){return storyboard;}
 	bool draw_group_ids;
 
+	bool find_worm_by_id(const ns_64_bit region_id, const unsigned long group_id, ns_stationary_path_id & path_id, unsigned long & division_id) {
+		for (unsigned int i = 0; i < divisions.size(); i++) {
+			for (unsigned int j = 0; j < divisions[i].division->events.size(); j++) {
+				cout << i << " " << j << ": " << divisions[i].division->events[j].event_annotation.stationary_path_id.group_id << "\n";
+				if ((region_id == 0 || divisions[i].division->events[j].event_annotation.region_info_id == region_id) &&
+					divisions[i].division->events[j].event_annotation.stationary_path_id.group_id == group_id) {
+					path_id = divisions[i].division->events[j].event_annotation.stationary_path_id;
+					division_id = i;
+					return true;
+				}
+			}
+		}
+		cout << "Could not find " << region_id << " " << group_id << "\n";
+		return false;
+	}
+
 
 private:
 	friend class ns_experiment_storyboard_annotater_timepoint;

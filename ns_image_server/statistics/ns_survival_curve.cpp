@@ -843,8 +843,8 @@ void ns_lifespan_experiment_set::out_simple_JMP_event_data(const ns_time_handing
 		ns_death_time_annotation  a(prop.events->events[i]);
 
 		std::string relaxation_vs_movement_death_times = "";
-		if (!a.volatile_time_at_death_contraction_start.fully_unbounded())
-			relaxation_vs_movement_death_times = ns_to_string((a.volatile_time_at_death_contraction_start.best_estimate_event_time_for_possible_partially_unbounded_interval() - a.time.best_estimate_event_time_for_possible_partially_unbounded_interval())/time_scaling_factor);
+		if (!a.volatile_time_at_death_associated_expansion_start.fully_unbounded())
+			relaxation_vs_movement_death_times = ns_to_string((a.volatile_time_at_death_associated_expansion_start.best_estimate_event_time_for_possible_partially_unbounded_interval() - a.time.best_estimate_event_time_for_possible_partially_unbounded_interval())/time_scaling_factor);
 
 		//we indicate right censoring via outputting a blank value for the end time
 		//of the interval during which the animal dies
@@ -911,10 +911,10 @@ void ns_lifespan_experiment_set::out_simple_JMP_event_data(const ns_time_handing
 		ns_output_JMP_time_interval(time_handling_behavior,a.time - metadata.time_at_which_animals_had_zero_age,
 							time_scaling_factor,o);
 		o << ",";
-		if (a.volatile_time_at_death_contraction_start.fully_unbounded())
+		if (a.volatile_time_at_death_associated_expansion_start.fully_unbounded())
 			o << (time_handling_behavior == ns_output_single_event_times ? "" : ",");
 		else
-		ns_output_JMP_time_interval(time_handling_behavior, a.volatile_time_at_death_contraction_start - metadata.time_at_which_animals_had_zero_age,
+		ns_output_JMP_time_interval(time_handling_behavior, a.volatile_time_at_death_associated_expansion_start - metadata.time_at_which_animals_had_zero_age,
 			time_scaling_factor, o);
 		o << ",";
 		o << relaxation_vs_movement_death_times << ",";

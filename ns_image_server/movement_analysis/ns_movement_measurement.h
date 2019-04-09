@@ -29,7 +29,8 @@ struct ns_worm_movement_measurement_summary_timepoint_data{
 		number_moving_slow(0),
 		number_changing_posture(0),
 		number_stationary(0),
-		number_death_posture_relaxing(0),
+		number_death_associated_expanding(0),
+		number_death_associated_post_expansion_contracting(0),
 		number_of_stationary_worm_dissapearances(0),
 		number_of_missing_animals(0),
 		number_permanantly_lost(0),
@@ -44,7 +45,8 @@ struct ns_worm_movement_measurement_summary_timepoint_data{
 		number_moving_slow,
 		number_changing_posture,
 		number_stationary,
-		number_death_posture_relaxing,
+		number_death_associated_expanding,
+		number_death_associated_post_expansion_contracting,
 		number_of_stationary_worm_dissapearances;
 
 	ns_worm_movement_measurement_summary_timepoint_data_departure_type singleton_deaths,
@@ -60,7 +62,7 @@ struct ns_worm_movement_measurement_summary_timepoint_data{
 	}
 	unsigned long number_alive()const{return number_moving_fast+number_moving_slow+number_changing_posture;}
 	unsigned long number_not_translating()const {return number_changing_posture+number_cumulative_deaths();}
-	unsigned long total_animals_observed()const{return number_alive() + number_cumulative_deaths()+number_cumulative_deaths();}
+	unsigned long total_animals_observed()const{return number_alive() + number_cumulative_deaths();}
 	unsigned long total_animals_inferred()const{return number_alive() + number_cumulative_deaths() +  number_permanantly_lost;}
 	
 	void add(const ns_worm_movement_measurement_summary_timepoint_data & s);
@@ -71,7 +73,8 @@ struct ns_worm_movement_measurement_summary_timepoint_data{
 			case ns_movement_slow: return number_moving_slow;
 			case ns_movement_posture: return number_changing_posture;
 			case ns_movement_stationary: return number_stationary;
-			case ns_movement_death_posture_relaxation: return number_death_posture_relaxing;
+			case ns_movement_death_associated_expansion: return number_death_associated_expanding;
+			case ns_movement_death_associated_post_expansion_contraction: return number_death_associated_post_expansion_contracting;
 			default:throw ns_ex("ns_worm_movement_measurement_summary::movement_state_count():: invalid state: " )<< (long)state;
 		}
 	}
@@ -341,19 +344,6 @@ public:
 
 class ns_movement_colors{
 public:
-	static ns_color_8 color(const ns_movement_state & m){
-		switch(m){
-			case ns_movement_death_posture_relaxation: return ns_color_8 (180,0,20);
-			case ns_movement_stationary: return ns_color_8(255,0,0);
-			case ns_movement_posture: return ns_color_8(255,255,0);
-			case ns_movement_slow: return ns_color_8(0,255,0);
-			case ns_movement_fast:return  ns_color_8(255,0,255);
-			case ns_movement_machine_excluded: return ns_color_8(175,175,175);
-			case ns_movement_by_hand_excluded: return ns_color_8(225,225,225);
-			
-			case ns_movement_not_calculated: return ns_color_8(0,0,0);
-			default: throw ns_ex("Uknown movement color request:") << (unsigned long)m;
-		}
-	}
+	static ns_color_8 color(const ns_movement_state & m);
 };
 #endif

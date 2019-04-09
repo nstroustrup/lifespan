@@ -235,9 +235,6 @@
     <ClInclude Include="..\ns_image_server\movement_analysis\ns_time_path_solver.h">
       <Filter>movement_analysis</Filter>
     </ClInclude>
-    <ClInclude Include="..\ns_image_server\movement_analysis\ns_hidden_markov_model.h">
-      <Filter>movement_analysis</Filter>
-    </ClInclude>
     <ClInclude Include="..\ns_image_server\movement_analysis\ns_hidden_markov_model_posture_analyzer.h">
       <Filter>movement_analysis</Filter>
     </ClInclude>

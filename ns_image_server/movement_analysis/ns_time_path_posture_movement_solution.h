@@ -12,7 +12,8 @@ struct ns_time_path_posture_movement_solution{
 	ns_movement_state_observation_boundaries moving,
 		slowing,
 		dead,
-		expanding;
+		expanding,
+		post_expansion_contracting;
 	std::string reason_for_animal_to_be_censored;
 	double loglikelihood_of_solution;
 };

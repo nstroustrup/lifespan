@@ -2736,7 +2736,10 @@ void ns_worm_learner::generate_experiment_movement_image_quantification_analysis
 					for (unsigned int g = 0; g < movement_results.samples[i].regions[j]->time_path_image_analyzer->size(); g++){
 						for (unsigned int p = 0; p < movement_results.samples[i].regions[j]->time_path_image_analyzer->group(g).paths.size(); p++){
 							ns_death_time_annotation a(movement_results.samples[i].regions[j]->time_path_image_analyzer->group(g).paths[p].sticky_properties());
-							if (a.is_excluded() || a.is_censored() || movement_results.samples[i].regions[j]->time_path_image_analyzer->group(g).paths[p].by_hand_death_time().fully_unbounded())
+							if (a.is_excluded() || 
+								a.is_censored() || 
+								movement_results.samples[i].regions[j]->time_path_image_analyzer->group(g).paths[p].sticky_properties().event_observation_type != ns_death_time_annotation::ns_single_worm || 
+								movement_results.samples[i].regions[j]->time_path_image_analyzer->group(g).paths[p].by_hand_death_time().fully_unbounded())
 								continue;
 
 							a.stationary_path_id.detection_set_id = movement_results.samples[i].regions[j]->time_path_image_analyzer->db_analysis_id();
@@ -2782,14 +2785,21 @@ void ns_worm_learner::generate_experiment_movement_image_quantification_analysis
 		std::string results_text;
 		results_text += "=== Automated Animal Death Time Identification Calibration Results === \n";
 		results_text += "A hidden markov model (HMM) classifier was built using all animals.\nAlso, ";
-		results_text += ns_to_string(hmm_observation_storage_and_model_generators.size() - 1) + " HMM model";
-		if (hmm_observation_storage_and_model_generators.size() > 2)
-			results_text += "s";
-		results_text += " were built separately for groups:\n";
-		for (auto p = hmm_observation_storage_and_model_generators.begin(); p != hmm_observation_storage_and_model_generators.end(); p++)
-			results_text += metadata_cache_by_name[p->first].device_regression_match_description() + "\n";
-		results_text += "All data was collated and analyzed at " + ns_format_time_string_for_human(ns_current_time()) + "\n\n";
+		if (hmm_observation_storage_and_model_generators.size() == 0)
+			results_text += "No group-specific HMM models were built";
+		else {
+			results_text += ns_to_string(hmm_observation_storage_and_model_generators.size() - 1) + " HMM model";
+			if (hmm_observation_storage_and_model_generators.size() > 2)
+				results_text += "s were";
+			else results_text += " was ";
+			
+			results_text += " built separately for groups:\n";
 
+			for (auto p = hmm_observation_storage_and_model_generators.begin(); p != hmm_observation_storage_and_model_generators.end(); p++)
+				results_text += metadata_cache_by_name[p->first].device_regression_match_description() + "\n";
+			results_text += "All data was collated and analyzed at " + ns_format_time_string_for_human(ns_current_time()) + "\n\n";
+		}
+		
 		std::map<std::string, std::string> model_building_and_testing_info;
 		std::map<std::string, std::string> model_filenames;
 
@@ -2880,8 +2890,8 @@ void ns_worm_learner::generate_experiment_movement_image_quantification_analysis
 		for (auto p = hmm_observation_storage_and_model_generators.begin(); p != hmm_observation_storage_and_model_generators.end(); p++) {
 			std::cout << ns_to_string_short((100.0 * num_built) / hmm_observation_storage_and_model_generators.size(), 2) << "%...";
 			num_built++;
-			unsigned long movement_N(0), expansion_N(0);
-			double movement_square_error(0), expansion_square_error(0);
+			unsigned long movement_N(0), expansion_N(0),contraction_N(0);
+			double movement_square_error(0), expansion_square_error(0),contraction_square_error(0);
 			//start at 1 to skip the all vs all.
 			for (unsigned int e = 1; e < p->second.estimators.size(); e++) {
 				if (!p->second.estimators[e].model_building_completed)
@@ -2895,17 +2905,28 @@ void ns_worm_learner::generate_experiment_movement_image_quantification_analysis
 						movement_square_error += d * d;
 						movement_N++;
 					}
-					if (animal.measurements[ns_death_posture_relaxation_start].by_hand_identified &&
-						animal.measurements[ns_death_posture_relaxation_start].machine_identified) {
-						const double d = (animal.measurements[ns_death_posture_relaxation_start].machine.best_estimate_event_time_for_possible_partially_unbounded_interval() -
-							animal.measurements[ns_death_posture_relaxation_start].by_hand.best_estimate_event_time_for_possible_partially_unbounded_interval()) / 24.0 / 60.0 / 60.0;
+					if (animal.measurements[ns_death_associated_post_expansion_contraction_start].by_hand_identified &&
+						animal.measurements[ns_death_associated_post_expansion_contraction_start].machine_identified) {
+						const double d = (animal.measurements[ns_death_associated_post_expansion_contraction_start].machine.best_estimate_event_time_for_possible_partially_unbounded_interval() -
+							animal.measurements[ns_death_associated_post_expansion_contraction_start].by_hand.best_estimate_event_time_for_possible_partially_unbounded_interval()) / 24.0 / 60.0 / 60.0;
+						contraction_square_error += d * d;
+						contraction_N++;
+					}
+					if (animal.measurements[ns_death_associated_expansion_start].by_hand_identified &&
+						animal.measurements[ns_death_associated_expansion_start].machine_identified) {
+						const double d = (animal.measurements[ns_death_associated_expansion_start].machine.best_estimate_event_time_for_possible_partially_unbounded_interval() -
+							animal.measurements[ns_death_associated_expansion_start].by_hand.best_estimate_event_time_for_possible_partially_unbounded_interval()) / 24.0 / 60.0 / 60.0;
 						expansion_square_error += d * d;
 						expansion_N++;
 					}
 				}
 			}
+			if (movement_N != 0)
 			model_building_and_testing_info[p->first] += "For movement cessation,  this model yielded an average error of " + ns_to_string_short(sqrt(movement_square_error / movement_N), 2) + " days across " + ns_to_string(movement_N) + " animals.\n";
+			if (expansion_N != 0)
 			model_building_and_testing_info[p->first] += "For death time expansion, this model yielded an average error of " + ns_to_string_short(sqrt(expansion_square_error / expansion_N), 2) + " days across " + ns_to_string(expansion_N) + " animals.\n";
+			if (contraction_N != 0)
+			model_building_and_testing_info[p->first] += "For death time contraction, this model yielded an average error of " + ns_to_string_short(sqrt(contraction_square_error / contraction_N), 2) + " days across " + ns_to_string(contraction_N) + " animals.\n";
 			if (movement_N < 50 || expansion_N < 50)
 				model_building_and_testing_info[p->first] += "Warning: These results will not be meaningful until more worms are annotated by hand.\n";
 			else model_building_and_testing_info[p->first] += "The model file was written to \"" + model_filenames[p->first] + "\"\n";
@@ -8644,7 +8665,7 @@ bool ns_death_time_solo_posture_annotater::ns_fix_annotation(ns_death_time_annot
 		cerr << "Could not repair the provided event time, as it occurred at a time during which no observation was made.\n";
 		return false;
 	}
-	if ((a.type == ns_death_posture_relaxation_start || a.type == ns_death_posture_relaxation_termination) && (a.time.period_start != 0 || a.time.period_end != 0)) {
+	if ((a.type == ns_death_associated_expansion_start || a.type == ns_death_associated_expansion_stop || a.type == ns_death_associated_post_expansion_contraction_start || a.type == ns_death_associated_post_expansion_contraction_stop) && (a.time.period_start != 0 || a.time.period_end != 0)) {
 		a.event_explicitness = ns_death_time_annotation::ns_explicitly_observed;
 		return true;
 	}

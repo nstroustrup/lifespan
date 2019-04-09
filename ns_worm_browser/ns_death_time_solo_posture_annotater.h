@@ -398,7 +398,8 @@ private:
 		case ns_movement_posture: return "Changing Posture";
 		case ns_movement_slow: return "Slow Moving";
 		case ns_movement_fast: return "Fast Moving";
-		case ns_movement_death_posture_relaxation: return "Death Posture Relaxation";
+		case ns_movement_death_associated_expansion: return "Death-Associated Expansion";
+		case ns_movement_death_associated_post_expansion_contraction: return "Death-Associated post-expansion Contraction";
 		default: return std::string("Unknown:") + ns_to_string((int)cur_state);
 		}
 	}
@@ -450,17 +451,15 @@ private:
 		//handle out of bound values
 		for (ns_animal_list_at_position::ns_animal_list::iterator p = current_by_hand_timing_data().animals.begin(); p != current_by_hand_timing_data().animals.end(); p++) {
 			ns_crop_time(observation_limit, first_path_obs, last_path_obs, p->fast_movement_cessation.time);
-			ns_crop_time(observation_limit, first_path_obs, last_path_obs, p->death_posture_relaxation_termination_.time);
-			ns_crop_time(observation_limit, first_path_obs, last_path_obs, p->death_posture_relaxation_start.time);
+			ns_crop_time(observation_limit, first_path_obs, last_path_obs, p->death_associated_expansion_stop.time);
+			ns_crop_time(observation_limit, first_path_obs, last_path_obs, p->death_associated_expansion_start.time);
+			ns_crop_time(observation_limit, first_path_obs, last_path_obs, p->death_associated_post_expansion_contraction_stop.time);
+			ns_crop_time(observation_limit, first_path_obs, last_path_obs, p->death_associated_post_expansion_contraction_start.time);
 			ns_crop_time(observation_limit, first_path_obs, last_path_obs, p->movement_cessation.time);
 			ns_crop_time(observation_limit, first_path_obs, last_path_obs, p->translation_cessation.time);
 		}
 
 		if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("Drawing timing."));
-		//if (!current_machine_timing_data->animals[0].death_posture_relaxation_start.time.period_start_was_not_observed)
-		//	cerr << "s:" << (current_machine_timing_data->animals[0].death_posture_relaxation_start.time.period_start - observation_limit.first_obsevation_of_plate.period_end) / 60.0 / 60.0 / 24.0 << "\n";
-		//if (!current_machine_timing_data->animals[0].death_posture_relaxation_termination_.time.period_start_was_not_observed)
-		//	cerr << "e:" << (current_machine_timing_data->animals[0].death_posture_relaxation_termination_.time.period_start - observation_limit.first_obsevation_of_plate.period_end) / 60.0 / 60.0 / 24.0 << "\n";
 
 		current_machine_timing_data->animals[0].draw_movement_diagram(bottom_margin_bottom,
 			ns_vector_2i(current_worm->element(current_element_id()).image().properties().width*ns_death_time_solo_posture_annotater_timepoint::ns_resolution_increase_factor, movement_vis_bar_height),
@@ -484,8 +483,10 @@ private:
 		ns_color_8 line_color[num_lines];
 		const ns_movement_state cur_by_hand_state(current_by_hand_timing_data().animals[current_animal_id].movement_state(current_worm->element(current_element_id()).absolute_time));
 		const ns_movement_state cur_machine_state(current_machine_timing_data->animals[0].movement_state(current_worm->element(current_element_id()).absolute_time));
-		const bool by_hand_death_contracting(current_by_hand_timing_data().animals[current_animal_id].is_death_time_contracting(current_worm->element(current_element_id()).absolute_time));
-		const bool machine_death_contracting(current_machine_timing_data->animals[0].is_death_time_contracting(current_worm->element(current_element_id()).absolute_time));
+		const bool by_hand_death_expanding(current_by_hand_timing_data().animals[current_animal_id].is_death_time_expanding(current_worm->element(current_element_id()).absolute_time));
+		const bool machine_death_expanding(current_machine_timing_data->animals[0].is_death_time_expanding(current_worm->element(current_element_id()).absolute_time));
+		const bool by_hand_death_post_expansion_contracting(current_by_hand_timing_data().animals[current_animal_id].is_death_time_post_expansion_contracting(current_worm->element(current_element_id()).absolute_time));
+		const bool machine_death_post_expansion_contracting(current_machine_timing_data->animals[0].is_death_time_post_expansion_contracting(current_worm->element(current_element_id()).absolute_time));
 		lines[0] = "Frame " + ns_to_string(current_element_id() + 1) + " of " + ns_to_string(timepoints.size()) + " ";
 		lines[0] += current_worm->element(current_element_id()).element_before_fast_movement_cessation ? "(B)" : "(A)";
 		lines[0] += current_worm->element(current_element_id()).inferred_animal_location ? "(I)" : "";
@@ -507,9 +508,9 @@ private:
 		ns_vector_2i p(current_worm->path_region_position + current_worm->path_region_size / 2);
 		lines[2] += " (" + ns_to_string(p.x) + "," + ns_to_string(p.y) + ")";
 
-		lines[3] = "Machine:" + state_label(cur_machine_state) + (machine_death_contracting ? "(Contr/Expr)" : "");
+		lines[3] = "Machine:" + state_label(cur_machine_state) + (machine_death_expanding ? "(Expanding)" : "") + (machine_death_post_expansion_contracting ? "(Contracting)" : "");
 		if (current_by_hand_timing_data().animals[current_animal_id].specified)
-			lines[4] += "Human: " + state_label(cur_by_hand_state) + (by_hand_death_contracting ? "(Contr/Expr)" : "");
+			lines[4] += "Human: " + state_label(cur_by_hand_state) + (by_hand_death_expanding ? "(Expanding)" : "") + (by_hand_death_post_expansion_contracting ? "(Contracting)" : "");
 		else lines[4] += "Human: Not Specified";
 		if (properties_for_all_animals.number_of_worms_at_location_marked_by_hand > 1) {
 			lines[4] += " +";
@@ -877,9 +878,13 @@ public:
 					saved_ = false;
 				if (ns_fix_annotation(current_region_data->by_hand_timing_data[worm.group_id].animals[j].movement_cessation,*current_worm))
 					saved_ = false;
-				if (ns_fix_annotation(current_region_data->by_hand_timing_data[worm.group_id].animals[j].death_posture_relaxation_termination_,*current_worm))
+				if (ns_fix_annotation(current_region_data->by_hand_timing_data[worm.group_id].animals[j].death_associated_expansion_stop,*current_worm))
 					saved_ = false;
-				if (ns_fix_annotation(current_region_data->by_hand_timing_data[worm.group_id].animals[j].death_posture_relaxation_start, *current_worm))
+				if (ns_fix_annotation(current_region_data->by_hand_timing_data[worm.group_id].animals[j].death_associated_expansion_start, *current_worm))
+					saved_ = false; 
+				if (ns_fix_annotation(current_region_data->by_hand_timing_data[worm.group_id].animals[j].death_associated_post_expansion_contraction_stop, *current_worm))
+					saved_ = false;
+				if (ns_fix_annotation(current_region_data->by_hand_timing_data[worm.group_id].animals[j].death_associated_post_expansion_contraction_start, *current_worm))
 					saved_ = false;
 			}
 

@@ -121,10 +121,6 @@ public:
 			std::string _unused_error_message;
 			matcher.load_timing_data_from_set((*machine_annotations.samples.begin()->regions.begin())->death_time_annotation_set, true,
 				machine_timing_data, _unused_orphaned_events, _unused_error_message);
-			//for (unsigned int i = 0; i < machine_timing_data.size(); i++)
-			//	if ((machine_timing_data[i].animals[0].death_posture_relaxation_start.time.period_start != 0 &&
-			//		machine_timing_data[i].animals[0].death_posture_relaxation_termination_.time.period_start != 0))
-			//		std::cerr << (machine_timing_data[i].animals[0].death_posture_relaxation_termination_.time.period_start - machine_timing_data[i].animals[0].death_posture_relaxation_start.time.period_start) << "\n";
 			return true;
 		}
 

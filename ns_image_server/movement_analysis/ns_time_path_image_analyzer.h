@@ -381,6 +381,9 @@ public:
 	~ns_analyzed_image_time_path();
 	bool animal_died() const {
 		return !state_intervals[(int)ns_movement_stationary].skipped;
+	}	
+	bool animal_contracted() const {
+		return !state_intervals[(int)ns_movement_death_associated_post_expansion_contraction].skipped;
 	}
 	unsigned long number_of_elements_not_processed_correctly() const;
 	void denoise_movement_series_and_calculate_intensity_slopes(const unsigned long change_time_in_seconds,const ns_time_series_denoising_parameters &);

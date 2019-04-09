@@ -57,7 +57,8 @@ std::string ns_death_time_annotation::brief_description() const {
 	bool multip_worm_event(number_of_worms() > 0);
 
 	bool volt(volatile_duration_of_time_not_fast_moving ||
-		!volatile_time_at_death_contraction_start.fully_unbounded() || !volatile_time_at_death_contraction_end.fully_unbounded() ||
+		!volatile_time_at_death_associated_expansion_start.fully_unbounded() || !volatile_time_at_death_associated_expansion_end.fully_unbounded() ||
+		volatile_time_at_death_associated_post_expansion_contraction_end.fully_unbounded() || volatile_time_at_death_associated_post_expansion_contraction_end.fully_unbounded() ||
 		volatile_matches_machine_detected_death);
 
 	//bool has_sticky_properties();
@@ -240,12 +241,15 @@ std::string ns_movement_event_to_string(const ns_movement_event & t){
 		case ns_slow_moving_worm_observed: return "slow-moving worm observed";
 		case ns_posture_changing_worm_observed: return "posture-changing worm observed";
 		case ns_stationary_worm_observed: return "stationary worm observed";
-		case ns_death_posture_relaxation_termination: return "death relaxation termination";
+		case ns_death_associated_expansion_stop: return "death-associated expansion stop";
 		case ns_stationary_worm_disappearance: return "stationary worm disappeared";
 		case ns_moving_worm_disappearance: return "moving worm dissapeared";
 		case ns_additional_worm_entry: return "additional worm entered path";
-		case ns_death_posture_relaxation_start: return "death relaxation start";
-		case ns_death_posture_relaxing_observed: return "death relaxation observed";
+		case ns_death_associated_expansion_start: return "death-associated expansion start";
+		case ns_death_associated_post_expansion_contraction_start: return "post-expansion contraction start";
+		case ns_death_associated_post_expansion_contraction_stop: return "post-expansion contraction stop";
+		case ns_death_associated_post_expansion_contraction_observed: return "post-expansion contraction observed";
+		case ns_death_associated_expansion_observed: return "death-associated expansion observed";
 		default:
 			throw ns_ex("ns_movement_event_to_string()::Unknown event type ") << (int)t;
 	}
@@ -261,12 +265,15 @@ std::string ns_movement_event_to_label(const ns_movement_event & t){
 		case ns_slow_moving_worm_observed: return "slow_moving_worm_observed";
 		case ns_posture_changing_worm_observed: return "posture_changing_worm_observed";
 		case ns_stationary_worm_observed: return "";
-		case ns_death_posture_relaxation_termination: return "death_relaxation_termination";
+		case ns_death_associated_expansion_stop: return "death_expansion_stop";
 		case ns_stationary_worm_disappearance: return "";
 		case ns_moving_worm_disappearance: return "";
 		case ns_additional_worm_entry: return "";
-		case ns_death_posture_relaxation_start: return "death_posture_relaxation_start";
-		case ns_death_posture_relaxing_observed: return "death_posture_relaxing_observed";
+		case ns_death_associated_expansion_start: return "death_expansion_start";
+		case ns_death_associated_expansion_observed: return "death_expansion_observed";
+		case ns_death_associated_post_expansion_contraction_start: return "post_expansion_contraction_start";
+		case ns_death_associated_post_expansion_contraction_stop: return "post_expansion_contraction_stop";
+		case ns_death_associated_post_expansion_contraction_observed: return "post_expansion_contraction_observed";
 		default: throw ns_ex("ns_movement_event_to_string()::Unknown event type ") << (int)t;
 	}
 }
@@ -316,8 +323,10 @@ bool ns_movement_event_is_a_state_transition_event(const ns_movement_event & t){
 		case ns_fast_movement_cessation:
 		case ns_translation_cessation:
 		case ns_movement_cessation:
-		case ns_death_posture_relaxation_termination:
-		case ns_death_posture_relaxation_start:
+		case ns_death_associated_expansion_stop:
+		case ns_death_associated_expansion_start:
+		case ns_death_associated_post_expansion_contraction_start:
+		case ns_death_associated_post_expansion_contraction_stop:
 		case ns_moving_worm_disappearance:
 		case ns_stationary_worm_disappearance:
 		case ns_additional_worm_entry:
@@ -327,7 +336,8 @@ bool ns_movement_event_is_a_state_transition_event(const ns_movement_event & t){
 		case ns_fast_moving_worm_observed:
 		case ns_slow_moving_worm_observed:
 		case ns_posture_changing_worm_observed:
-		case ns_death_posture_relaxing_observed:
+		case ns_death_associated_expansion_observed:
+		case ns_death_associated_post_expansion_contraction_observed:
 		case ns_stationary_worm_observed: return false;
 
 		case ns_no_movement_event: return false;
@@ -348,7 +358,8 @@ std::string ns_movement_state_to_string(const ns_movement_state & s){
 			case ns_movement_fast:  return "Moving Quickly";
 			case ns_movement_by_hand_excluded: return "By Hand Excluded";
 			case ns_movement_machine_excluded: return "Machine Excluded";
-			case ns_movement_death_posture_relaxation: return "Death-Associated Contraction";
+			case ns_movement_death_associated_expansion: return "Death-associated Contraction";
+			case ns_movement_death_associated_post_expansion_contraction: return "Death-associated post-contraction Expansion";
 			case ns_movement_total: return "Total";
 			case ns_movement_not_calculated: return "Not calculated";
 			case ns_movement_number_of_states: throw ns_ex("ns_movement_state_to_string()::Invalid movement state: ") << (int)s;
@@ -364,7 +375,8 @@ std::string ns_movement_state_to_string_short(const ns_movement_state & s) {
 	case ns_movement_fast:  return "Fast";
 	case ns_movement_by_hand_excluded: return "EX H";
 	case ns_movement_machine_excluded: return "EX M";
-	case ns_movement_death_posture_relaxation: return "SHR";
+	case ns_movement_death_associated_expansion: return "DAE";
+	case ns_movement_death_associated_post_expansion_contraction: return "DAPEC";
 	case ns_movement_total: return "Total";
 	case ns_movement_not_calculated: return "NA";
 	case ns_movement_number_of_states: throw ns_ex("ns_movement_state_to_string()::Invalid movement state: ") << (int)s;
@@ -441,12 +453,17 @@ void ns_death_time_annotation_compiler_region::output_visualization_csv(std::ost
 						state = ns_movement_slow; break;
 					case ns_fast_moving_worm_observed:
 						state = ns_movement_fast; break;
-					case ns_death_posture_relaxation_termination:
-						state = ns_movement_death_posture_relaxation;
-					case ns_death_posture_relaxation_start:
-						state = ns_movement_death_posture_relaxation;
+					case ns_death_associated_post_expansion_contraction_start:
+					case ns_death_associated_post_expansion_contraction_stop:
+						state = ns_movement_death_associated_post_expansion_contraction;
+						break;
+					case ns_death_associated_expansion_start:
+					case ns_death_associated_expansion_stop:
+						state = ns_movement_death_associated_expansion;
+						break;
 					case ns_movement_censored_worm_observed:
 						state = ns_movement_machine_excluded;
+						break;
 					default: throw ns_ex("ns_death_time_annotation_compiler_region::output_visualization_csv()::Unknown event type:") << p->annotations[i].type;
 				}
 			}
@@ -1338,8 +1355,10 @@ public:
 		if (!ns_movement_event_is_a_state_transition_event(e.type))
 			return;
 		if (e.type == ns_stationary_worm_disappearance ||
-			e.type == ns_death_posture_relaxation_start ||
-			e.type == ns_death_posture_relaxation_termination)
+			e.type == ns_death_associated_expansion_start ||
+			e.type == ns_death_associated_expansion_stop ||
+			e.type == ns_death_associated_post_expansion_contraction_start ||
+			e.type == ns_death_associated_post_expansion_contraction_stop )
 			return;
 	//	if (e.time.period_start_was_not_observed){
 	//		cerr << "Found an event whose start was not observed";
@@ -1967,16 +1986,22 @@ class ns_dying_animal_description_generator{
 				case ns_fast_movement_cessation:
 						group->last_fast_movement_annotation = & annotations[i];
 					break;
-				case ns_death_posture_relaxation_termination:
-						group->death_posture_relaxation_termination_ = & annotations[i];
+				case ns_death_associated_expansion_stop:
+						group->death_associated_expansion_stop = & annotations[i];
 					break;
-				case ns_death_posture_relaxation_start:
+				case ns_death_associated_expansion_start:
 						if (annotations[i].time.period_start == annotations[i].time.period_end && (!annotations[i].time.period_end_was_not_observed || !annotations[i].time.period_end_was_not_observed))
 							cerr << "Invalid skipped relaxation state transition\n";
-						//else 
-						//	cerr << "OK";
-						group->death_posture_relaxation_start= &annotations[i];
-						break;
+						group->death_associated_expansion_start= &annotations[i];
+						break; 
+				case ns_death_associated_post_expansion_contraction_stop:
+							group->death_associated_post_expansion_contraction_stop = &annotations[i];
+							break;
+				case ns_death_associated_post_expansion_contraction_start:
+					if (annotations[i].time.period_start == annotations[i].time.period_end && (!annotations[i].time.period_end_was_not_observed || !annotations[i].time.period_end_was_not_observed))
+						cerr << "Invalid skipped relaxation state transition\n";
+					group->death_associated_post_expansion_contraction_start = &annotations[i];
+					break;
 				case ns_stationary_worm_disappearance:
 						group->stationary_worm_dissapearance = & annotations[i];
 					break;
@@ -2004,9 +2029,6 @@ class ns_dying_animal_description_generator{
 			description_set.unassigned_multiple_worms = properties.number_of_worms() - by_hand_animals_annotated;
 		else description_set.unassigned_multiple_worms = 0;
 
-//		if (properties.stationary_path_id.group_id == 23)
-	//		cerr << " Found it";
-		//all by-hand annotated animals refer to the same machine annotation, so we copy them over.
 		for (unsigned int i = 0; i < description_set.descriptions.size(); i++) {
 			description_set.descriptions[i].machine = reference_machine_animal.machine;
 		}
@@ -2014,24 +2036,12 @@ class ns_dying_animal_description_generator{
 		if (reference_machine_animal.machine.death_annotation == 0)
 			return;
 		if (reference_machine_animal.machine.last_slow_movement_annotation == 0){
-			/*ns_death_time_annotation a(*death_annotation);
-			properties.transfer_sticky_properties(a);
-			aggregator.add(a);
-			ofstream o("c:\\debug.txt");
-			p->second.output_summary(o);
-			o.close();*/
 			if (warn_on_movement_problems && reference_machine_animal.machine.death_annotation->annotation_source==ns_death_time_annotation::ns_lifespan_machine){
 				cerr << "WARNING: An animal was recorded as dead without passing through slow movement, and has been excluded from the output. \n";
 				return;
 			}
 		}
 		if (reference_machine_animal.machine.last_fast_movement_annotation == 0){
-			/*ns_death_time_annotation a(*death_annotation);
-			properties.transfer_sticky_properties(a);
-			aggregator.add(a);
-			ofstream o("c:\\debug.txt");
-			p->second.output_summary(o);
-			o.close();*/
 			if (warn_on_movement_problems && reference_machine_animal.machine.death_annotation->annotation_source==ns_death_time_annotation::ns_lifespan_machine){
 				cerr << "WARNING:  An animal was recorded as dead without passing through fast movement, and has been excluded from the output. \n";
 
@@ -2347,8 +2357,8 @@ void ns_death_time_annotation_compiler_region::generate_survival_curve(ns_surviv
 			//by_hand == 1: add by_hand annotations
 			for (int by_hand = 0; by_hand < 2; by_hand++) {
 
-				//add 1) death 2) slow movement cessation, 3) fast movement cessation and 3) death time contraction termination
-				const ns_death_time_annotation *a[5] = { 0,0,0,0,0 };
+				//add 1) death 2) slow movement cessation, 3) fast movement cessation and 3) death time expansion start 4) death time expansion stop 5) death time contraction start, death time contraction stop
+				const ns_death_time_annotation *a[7] = { 0,0,0,0,0,0,0 };
 
 				bool matches_machine_detected_death(death.machine.death_annotation != 0);
 
@@ -2358,8 +2368,10 @@ void ns_death_time_annotation_compiler_region::generate_survival_curve(ns_surviv
 					a[0] = death.machine.death_annotation;
 					a[1] = death.machine.last_slow_movement_annotation;
 					a[2] = death.machine.last_fast_movement_annotation;
-					a[3] = death.machine.death_posture_relaxation_start;
-					a[4] = death.machine.death_posture_relaxation_termination_;
+					a[3] = death.machine.death_associated_expansion_start;
+					a[4] = death.machine.death_associated_expansion_stop;
+					a[5] = death.machine.death_associated_post_expansion_contraction_start;
+					a[6] = death.machine.death_associated_post_expansion_contraction_stop;
 				}
 				//add a by hand annotation, if required
 				else if (by_hand && (death_times_to_use == ns_death_time_annotation::ns_only_by_hand_annotations ||
@@ -2367,8 +2379,10 @@ void ns_death_time_annotation_compiler_region::generate_survival_curve(ns_surviv
 					a[0] = death.by_hand.death_annotation;
 					a[1] = death.by_hand.last_slow_movement_annotation;
 					a[2] = death.by_hand.last_fast_movement_annotation;
-					a[3] = death.by_hand.death_posture_relaxation_start;
-					a[4] = death.by_hand.death_posture_relaxation_termination_;
+					a[3] = death.by_hand.death_associated_expansion_start;
+					a[4] = death.by_hand.death_associated_expansion_stop;
+					a[5] = death.by_hand.death_associated_post_expansion_contraction_start;
+					a[6] = death.by_hand.death_associated_post_expansion_contraction_stop;
 				}
 				//add a by hand annotation, and if one doesn't exist, add a machine annotation
 				else if (!by_hand && (death_times_to_use == ns_death_time_annotation::ns_machine_annotations_if_no_by_hand)) {
@@ -2385,13 +2399,22 @@ void ns_death_time_annotation_compiler_region::generate_survival_curve(ns_surviv
 						a[2] = death.by_hand.last_fast_movement_annotation;
 					else a[2] = death.machine.last_fast_movement_annotation;
 
-					if (death.by_hand.death_posture_relaxation_start != 0)
-						a[3] = death.by_hand.death_posture_relaxation_start;
-					else a[3] = death.machine.death_posture_relaxation_start;
+					if (death.by_hand.death_associated_expansion_start != 0)
+						a[3] = death.by_hand.death_associated_expansion_start;
+					else a[3] = death.machine.death_associated_expansion_start;
 
-					if (death.by_hand.death_posture_relaxation_termination_ != 0)
-						a[4] = death.by_hand.death_posture_relaxation_termination_;
-					else a[4] = death.machine.death_posture_relaxation_termination_;
+					if (death.by_hand.death_associated_expansion_stop != 0)
+						a[4] = death.by_hand.death_associated_expansion_stop;
+					else a[4] = death.machine.death_associated_expansion_stop;
+
+					if (death.by_hand.death_associated_post_expansion_contraction_start != 0)
+						a[5] = death.by_hand.death_associated_post_expansion_contraction_start;
+					else a[5] = death.machine.death_associated_post_expansion_contraction_start;	
+					
+					if (death.by_hand.death_associated_post_expansion_contraction_stop != 0)
+						a[6] = death.by_hand.death_associated_post_expansion_contraction_stop;
+					else a[6] = death.machine.death_associated_post_expansion_contraction_stop;
+
 
 				}
 				else continue;
@@ -2439,23 +2462,43 @@ void ns_death_time_annotation_compiler_region::generate_survival_curve(ns_surviv
 
 						//we use this as debugging info in output file
 						if (a[3] != 0 && a[0] != 0) {
-							b.volatile_time_at_death_contraction_start = a[3]->time;
+							b.volatile_time_at_death_associated_expansion_start = a[3]->time;
 							if (a[3]->time.period_start == a[3]->time.period_end && (!a[3]->time.period_end_was_not_observed || !a[3]->time.period_end_was_not_observed)) {
-								cout << "Encountered an undefined contraction start time for animal " << b.stationary_path_id.group_id << " in region " << a[3]->region_info_id << "!\n";
-								b.volatile_time_at_death_contraction_start.period_end_was_not_observed = b.volatile_time_at_death_contraction_start.period_start_was_not_observed = true;
+								cout << "Encountered an undefined expansion start time for animal " << b.stationary_path_id.group_id << " in region " << a[3]->region_info_id << "!\n";
+								b.volatile_time_at_death_associated_expansion_start.period_end_was_not_observed = b.volatile_time_at_death_associated_expansion_start.period_start_was_not_observed = true;
 							}
 						}
 						else 
-							b.volatile_time_at_death_contraction_start.period_end_was_not_observed = b.volatile_time_at_death_contraction_start.period_start_was_not_observed = true;
+							b.volatile_time_at_death_associated_expansion_start.period_end_was_not_observed = b.volatile_time_at_death_associated_expansion_start.period_start_was_not_observed = true;
 						if (a[4] != 0 && a[0] != 0) {
-							b.volatile_time_at_death_contraction_end = a[4]->time;
+							b.volatile_time_at_death_associated_expansion_end = a[4]->time;
 							if (a[4]->time.period_start == a[4]->time.period_end && (!a[4]->time.period_end_was_not_observed || !a[4]->time.period_end_was_not_observed)) {
-								cout << "Encountered an undefined contraction end time for animal " << b.stationary_path_id.group_id << " in region " << a[3]->region_info_id << "!\n";
-								b.volatile_time_at_death_contraction_end.period_end_was_not_observed = b.volatile_time_at_death_contraction_end.period_start_was_not_observed = true;
+								cout << "Encountered an undefined expansion end time for animal " << b.stationary_path_id.group_id << " in region " << a[3]->region_info_id << "!\n";
+								b.volatile_time_at_death_associated_expansion_end.period_end_was_not_observed = b.volatile_time_at_death_associated_expansion_end.period_start_was_not_observed = true;
 							}
 						}
 						else 
-							b.volatile_time_at_death_contraction_end.period_end_was_not_observed = b.volatile_time_at_death_contraction_end.period_start_was_not_observed = true;
+							b.volatile_time_at_death_associated_expansion_end.period_end_was_not_observed = b.volatile_time_at_death_associated_expansion_end.period_start_was_not_observed = true;
+
+						if (a[5] != 0 && a[0] != 0) {
+							b.volatile_time_at_death_associated_post_expansion_contraction_start = a[5]->time;
+							if (a[5]->time.period_start == a[5]->time.period_end && (!a[5]->time.period_end_was_not_observed || !a[5]->time.period_end_was_not_observed)) {
+								cout << "Encountered an undefined contraction start time for animal " << b.stationary_path_id.group_id << " in region " << a[5]->region_info_id << "!\n";
+								b.volatile_time_at_death_associated_post_expansion_contraction_start.period_end_was_not_observed = b.volatile_time_at_death_associated_post_expansion_contraction_start.period_start_was_not_observed = true;
+							}
+						}
+						else
+							b.volatile_time_at_death_associated_post_expansion_contraction_start.period_end_was_not_observed = b.volatile_time_at_death_associated_post_expansion_contraction_start.period_start_was_not_observed = true;
+
+						if (a[6] != 0 && a[0] != 0) {
+							b.volatile_time_at_death_associated_post_expansion_contraction_end = a[6]->time;
+							if (a[6]->time.period_start == a[4]->time.period_end && (!a[6]->time.period_end_was_not_observed || !a[6]->time.period_end_was_not_observed)) {
+								cout << "Encountered an undefined contraction end time for animal " << b.stationary_path_id.group_id << " in region " << a[6]->region_info_id << "!\n";
+								b.volatile_time_at_death_associated_post_expansion_contraction_end.period_end_was_not_observed = b.volatile_time_at_death_associated_post_expansion_contraction_end.period_start_was_not_observed = true;
+							}
+						}
+						else
+							b.volatile_time_at_death_associated_post_expansion_contraction_end.period_end_was_not_observed = b.volatile_time_at_death_associated_post_expansion_contraction_end.period_start_was_not_observed = true;
 						
 						//regions can be re-analyzed. In this case,
 						//some locations can dissapear (as they no longer exist in the new analysis)

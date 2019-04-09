@@ -810,16 +810,30 @@ bool ns_experiment_storyboard::load_events_from_annotation_compiler(const ns_loa
 					found_storyboard_event = true;
 				}
 				break;
-			case ns_death_posture_relaxation_termination:
-				if (dd.machine.death_posture_relaxation_termination_ != 0) {
-					event_to_place_on_storyboard = *dd.machine.death_posture_relaxation_termination_;
+			case ns_death_associated_expansion_stop:
+				if (dd.machine.death_associated_expansion_stop != 0) {
+					event_to_place_on_storyboard = *dd.machine.death_associated_expansion_stop;
 					state_to_search = ns_stationary_worm_observed;
 					found_storyboard_event = true;
 				}
 				break; 
-			case ns_death_posture_relaxation_start:
-					if (dd.machine.death_posture_relaxation_start != 0) {
-						event_to_place_on_storyboard = *dd.machine.death_posture_relaxation_start;
+			case ns_death_associated_expansion_start:
+					if (dd.machine.death_associated_expansion_start != 0) {
+						event_to_place_on_storyboard = *dd.machine.death_associated_expansion_start;
+						state_to_search = ns_stationary_worm_observed;
+						found_storyboard_event = true;
+					}
+					break; 
+			case ns_death_associated_post_expansion_contraction_stop:
+					if (dd.machine.death_associated_post_expansion_contraction_stop != 0) {
+						event_to_place_on_storyboard = *dd.machine.death_associated_post_expansion_contraction_stop;
+						state_to_search = ns_stationary_worm_observed;
+						found_storyboard_event = true;
+					}
+					break;
+				case ns_death_associated_post_expansion_contraction_start:
+					if (dd.machine.death_associated_post_expansion_contraction_start != 0) {
+						event_to_place_on_storyboard = *dd.machine.death_associated_post_expansion_contraction_start;
 						state_to_search = ns_stationary_worm_observed;
 						found_storyboard_event = true;
 					}

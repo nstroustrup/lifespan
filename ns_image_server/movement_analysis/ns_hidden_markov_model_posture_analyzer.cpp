@@ -58,20 +58,25 @@ void ns_hmm_solver::solve(const ns_analyzed_image_time_path & path, const ns_emp
 			for (unsigned int i = 0; i <= solution.slowing.start_index; i++)
 				movement_states[i] = ns_hmm_missing;
 		}
-		for (unsigned int i = solution.slowing.start_index; i <= solution.slowing.end_index; i++)
-			if (!solution.expanding.skipped && i >= solution.expanding.start_index && i <= solution.expanding.end_index)
+		for (unsigned int i = solution.slowing.start_index; i <= solution.slowing.end_index; i++) {
+			if (!solution.post_expansion_contracting.skipped && i >= solution.post_expansion_contracting.start_index && i <= solution.post_expansion_contracting.end_index)
+				movement_states[i] = ns_hmm_contracting_post_expansion;
+			else if (!solution.expanding.skipped && i >= solution.expanding.start_index && i <= solution.expanding.end_index)
 				movement_states[i] = ns_hmm_moving_weakly_expanding;
 			else if (!solution.expanding.skipped && i > solution.expanding.end_index)
 				movement_states[i] = ns_hmm_moving_weakly_post_expansion;
 			else movement_states[i] = ns_hmm_moving_weakly;
+		}
 	}
 	if (!solution.dead.skipped) {
 		if (solution.moving.skipped && solution.slowing.skipped) {
 			for (unsigned int i = 0; i <= solution.dead.start_index; i++)
 				movement_states[i] = ns_hmm_missing;
 		}
-		for (unsigned int i = solution.dead.start_index; i <= solution.dead.end_index; i++)
-			if (!solution.expanding.skipped && i >= solution.expanding.start_index && i <= solution.expanding.end_index)
+		for (unsigned int i = solution.dead.start_index; i <= solution.dead.end_index; i++) {
+			if (!solution.post_expansion_contracting.skipped && i >= solution.post_expansion_contracting.start_index && i <= solution.post_expansion_contracting.end_index)
+				movement_states[i] = ns_hmm_contracting_post_expansion;
+			else if (!solution.expanding.skipped && i >= solution.expanding.start_index && i <= solution.expanding.end_index)
 				movement_states[i] = ns_hmm_not_moving_expanding;
 			else if (!solution.expanding.skipped && i < solution.expanding.start_index) {
 				if (estimator.state_defined(ns_hmm_not_moving_alive))
@@ -79,6 +84,7 @@ void ns_hmm_solver::solve(const ns_analyzed_image_time_path & path, const ns_emp
 				else  movement_states[i] = ns_hmm_not_moving_dead;
 			}
 			else movement_states[i] = ns_hmm_not_moving_dead;
+		}
 	}
 	//find first not excluded state
 	unsigned long start_i(0);
@@ -228,8 +234,9 @@ double ns_hmm_solver::run_viterbi(const ns_analyzed_image_time_path & path, cons
 void ns_hmm_solver::build_movement_state_solution_from_movement_transitions(const std::vector<unsigned long> path_indices, const std::vector<ns_hmm_state_transition_time_path_index > & movement_transitions){
 	movement_state_solution.moving.start_index = path_indices[0];
 	ns_movement_state m = ns_movement_fast;
-	int expanding_state = 0;
+	int expanding_state = 0, contracting_state = 0;
 	movement_state_solution.expanding.skipped = true;
+	movement_state_solution.post_expansion_contracting.skipped = true;
 	movement_state_solution.moving.skipped = false;
 	movement_state_solution.moving.end_index = *path_indices.rbegin();
 	//go through each of the state transitions and annotate what has happened in the solution.
@@ -287,6 +294,33 @@ void ns_hmm_solver::build_movement_state_solution_from_movement_transitions(cons
 			movement_transitions[i].first != ns_hmm_not_moving_dead &&
 			movement_transitions[i].first != ns_hmm_contracting_post_expansion)
 			throw ns_ex("Unexpected post-expansion state!");
+		}
+
+		//now we handle contractions
+		switch (contracting_state) {
+		case 0:
+			if (movement_transitions[i].first == ns_hmm_contracting_post_expansion) {
+				if (expanding_state == 0)
+					throw ns_ex("Encountered a contracting animal that had not first expanded.");
+				movement_state_solution.post_expansion_contracting.skipped = false;
+				movement_state_solution.post_expansion_contracting.start_index = path_indices[movement_transitions[i].second];
+				movement_state_solution.post_expansion_contracting.end_index = *path_indices.rbegin();
+				movement_state_solution.post_expansion_contracting.skipped = movement_state_solution.post_expansion_contracting.start_index == movement_state_solution.post_expansion_contracting.end_index;
+				contracting_state = 1;
+			}
+			
+			break;
+		case 1:
+			if (movement_transitions[i].first != ns_hmm_contracting_post_expansion) {
+				movement_state_solution.post_expansion_contracting.end_index = path_indices[movement_transitions[i].second];
+				expanding_state = 2;
+				if (movement_state_solution.post_expansion_contracting.end_index == movement_state_solution.post_expansion_contracting.start_index)
+					std::cout << "invisble contraction transition";
+
+			}
+			break;
+		case 2: if (movement_transitions[i].first == ns_hmm_contracting_post_expansion)
+			throw ns_ex("Re-entry into contraction state.");
 		}
 	}
 	if (!movement_state_solution.expanding.skipped && movement_state_solution.expanding.end_index == movement_state_solution.expanding.start_index)
@@ -986,7 +1020,7 @@ void ns_emperical_posture_quantification_value_estimator::build_estimator_from_o
 		contracting_data->second->intensity_4x.flip_model_sign();
 	}*/
 
-	ns_hmm_movement_state required_states[3] = { ns_hmm_missing, ns_hmm_moving_weakly, ns_hmm_not_moving_dead };
+	ns_hmm_movement_state required_states[3] = { ns_hmm_missing, ns_hmm_not_moving_dead };
 	ns_ex ex;
 	output+= "By hand annotation entries per HMM state:\n";
 	for (unsigned int i = 0; i < state_counts.size(); i++) 
@@ -1040,13 +1074,49 @@ bool ns_emperical_posture_quantification_value_estimator::add_observation(const 
 		}
 		unsigned long detect_contraction_state = 0;
 		double min_ix4 = 0;
+		bool expansion_contraction_state = 0;
+		bool animal_contracted = false;
+		for (unsigned int i = 0; i < path->element_count(); i++) {
+			if (path->element(i).excluded || path->element(i).censored)
+				continue;
+			if (path->by_hand_hmm_movement_state(path->element(i).absolute_time, *this) == ns_hmm_contracting_post_expansion) {
+				animal_contracted = true;
+				//std::cout << "Animal contracted\n";
+				break;
+			}
+		}
+
 		for (unsigned int i = 0; i < path->element_count(); i++) {
 			if (path->element(i).excluded || path->element(i).censored)
 				continue;
 			ns_hmm_movement_state by_hand_movement_state(path->by_hand_hmm_movement_state(path->element(i).absolute_time, *this));
+
+			//we don't enter in as evidence measurements taken after expansion has stopped but before contraction has begun.
+			if (animal_contracted) {
+				if (expansion_contraction_state == 0 && (
+					by_hand_movement_state == ns_hmm_moving_weakly_expanding || by_hand_movement_state == ns_hmm_not_moving_expanding)) {
+					expansion_contraction_state = 1;
+				}
+				else if (expansion_contraction_state == 1) {
+					if (by_hand_movement_state != ns_hmm_moving_weakly_expanding && by_hand_movement_state != ns_hmm_not_moving_expanding) {
+						if (by_hand_movement_state == ns_hmm_contracting_post_expansion)
+							expansion_contraction_state = 3;
+						else {
+							expansion_contraction_state = 2;
+							continue;
+						}
+					}
+				}
+				else if (expansion_contraction_state == 2) {
+					if (by_hand_movement_state == ns_hmm_contracting_post_expansion)
+						expansion_contraction_state = 3;
+					else continue;
+				}
+
+			}
+
 			if (by_hand_movement_state == ns_hmm_unknown_state)
 				throw ns_ex("Unknown state encountered!");
-
 			/*
 			//*automatically annotate death time contraction after expansion
 			switch (detect_contraction_state){

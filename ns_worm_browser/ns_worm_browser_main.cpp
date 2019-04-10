@@ -1976,12 +1976,12 @@ ns_thread_return_type asynch_redisplay(void *);*/
 class ns_worm_terminal_main_window : public Fl_Window {
 	bool have_focus;
 public:
-    ns_worm_terminal_gl_window * gl_window;
+	ns_worm_terminal_gl_window * gl_window;
 	ns_death_event_annotation_group * annotation_group;
-	Fl_Menu_Bar *main_menu;         
-	Fl_Menu_Bar *region_menu;       
-	Fl_Menu_Bar *exclusion_menu;  
-	Fl_Menu_Bar *strain_menu;  
+	Fl_Menu_Bar *main_menu;
+	Fl_Menu_Bar *region_menu;
+	Fl_Menu_Bar *exclusion_menu;
+	Fl_Menu_Bar *strain_menu;
 	Fl_Button * worm_id_selector;
 	Fl_Output * experiment_name_bar;
 	//Fl_Output * region_name_bar;
@@ -1994,14 +1994,18 @@ public:
 	ns_worm_terminal_strain_menu_organizer * strain_menu_handler;
 	ns_worm_terminal_exclusion_menu_organizer * exclusion_menu_handler;
 
-	static unsigned long menu_height() {return 23;}
-	static unsigned long info_bar_height(){return 24;}
+	static unsigned long menu_height() { return 23; }
+	static unsigned long info_bar_height() { return 24; }
 
-	static unsigned long experiment_bar_width(){return 200;}
-	static unsigned long region_name_bar_width(){return 125;}
-	static unsigned long exclusion_bar_width(){return 75;}
-	static unsigned long strain_bar_width(){return 120;}
-	static unsigned long worm_input_width() {return 25;}
+	static unsigned long experiment_bar_width() { return 200; }
+	static unsigned long region_name_bar_width() { return 125; }
+	static unsigned long exclusion_bar_width() { return 75; }
+	static unsigned long strain_bar_width() { return 120; }
+	static unsigned long worm_input_width() { return 25; }
+
+	static unsigned long min_bottom_toolbar_width(){
+		return experiment_bar_width() + region_name_bar_width() + strain_bar_width() + exclusion_bar_width() + worm_input_width() + ns_death_event_annotation_group::window_width;
+	}
 
 	static unsigned long border_height() {return 0;}
 	static unsigned long border_width() {return 0;}
@@ -2031,7 +2035,8 @@ public:
 	}
 
     ns_worm_terminal_main_window(int W,int H,const char*L=0) : Fl_Window(50,50,W,H,L), draw_animation(false),last_draw_animation(false),have_focus(false){
-        // OpenGL window
+		color(fl_rgb_color(0, 0, 0));
+		// OpenGL window
         gl_window = new ns_worm_terminal_gl_window(0, menu_height(), w()-border_width(), h()-menu_height()-info_bar_height());
 	
     	main_menu = new Fl_Menu_Bar(0,0,W,menu_height());
@@ -2132,6 +2137,8 @@ public:
 
 		w = worm_learner.main_window.gl_image_size.x*d,
 			h = worm_learner.main_window.gl_image_size.y*d+image_window_size_difference(worm_learner.main_window.display_rescale_factor).y ;
+		if (w < min_bottom_toolbar_width())
+			w = min_bottom_toolbar_width();
 		if (w == 0)
 			w = 600;
 		if (h == 0)
@@ -2156,7 +2163,7 @@ public:
 			w_*d,
 			h_*d);
 	
-		main_menu->resize(0,0,w_*d,menu_height()*menu_d);
+		main_menu->resize(0,0, window_size.x*d,menu_height()*menu_d);
 
 		int bottom_bar_height(h_*d+menu_height()*menu_d);
 		//cerr << "eb" << experiment_bar_width()*d << ","  << bottom_bar_height << "-" <<  bottom_bar_height+info_bar_height() << "\n";
@@ -2184,14 +2191,14 @@ public:
 		int left_buttons_width((experiment_bar_width() + region_name_bar_width() + strain_bar_width() + exclusion_bar_width() + worm_input_width())*d);
 		info_bar->resize(left_buttons_width,
 											bottom_bar_height,
-											w_*d- left_buttons_width -(ns_death_event_annotation_group::window_width)*d,
+											window_size.x*d- left_buttons_width -(ns_death_event_annotation_group::window_width)*d,
 											info_bar_height()*menu_d);
 
-		annotation_group->resize((w_-ns_death_event_annotation_group::window_width)*d,
+		annotation_group->resize((window_size.x-ns_death_event_annotation_group::window_width)*d,
 								bottom_bar_height,
 								 ns_death_event_annotation_group::window_width*d,
 								 ns_death_event_annotation_group::window_height*menu_d);
-
+		
 		lock.release();
 		if (w() != w_ || h() != h_)
 		  request_rate_limited_window_redraw_from_main_thread();

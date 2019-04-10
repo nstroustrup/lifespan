@@ -1424,7 +1424,7 @@ void ns_time_path_image_movement_analyzer::calculate_optimzation_stats_for_curre
 	for (unsigned long g = 0; g < groups.size(); g++)
 		for (unsigned long p = 0; p < groups[g].paths.size(); p++) {
 			if (ns_skip_low_density_paths && groups[g].paths[p].is_low_density_path() || !groups[g].paths[p].by_hand_data_specified() ||
-				groups[g].paths[p].sticky_properties().event_observation_type != ns_death_time_annotation::ns_single_worm ||
+				groups[g].paths[p].sticky_properties().disambiguation_type != ns_death_time_annotation::ns_single_worm ||
 				groups[g].paths[p].sticky_properties().excluded != ns_death_time_annotation::ns_not_excluded)
 				
 				continue;
@@ -4405,14 +4405,17 @@ public:
 
 		if (list.size() == start_i)
 			return;
+		//handle cases where the time series is smaller than the kernel
 		const unsigned long number_of_valid_measurements = list.size() - start_i;
-		unsigned long max_kernel_half_width = slope_kernel_half_width < number_of_valid_measurements / 2 ? slope_kernel_half_width : number_of_valid_measurements / 2;
+		unsigned long max_kernel_half_width = (number_of_valid_measurements - 1) / 2;
+		if (max_kernel_half_width > slope_kernel_half_width)
+			max_kernel_half_width = slope_kernel_half_width;
 
 		//first, we "warm up" by filling in the left-most times with increasingly large kernel widths
 		ns_linear_regression_model model;
 		data_accessor_t::slope(start_i, list) = 0;
-		for (unsigned int h_w = 1; h_w < max_kernel_half_width; h_w++) {
-			const int w(2 * h_w);
+		for (unsigned int h_w = 1; h_w <= max_kernel_half_width; h_w++) {
+			const int w(2 * h_w+1);
 			vals.resize(w);
 			times.resize(w);
 			for (unsigned int i = 0; i < w; i++) {
@@ -4420,13 +4423,11 @@ public:
 				times[i] = list[i + start_i].absolute_time;
 			}
 			ns_linear_regression_model_parameters params(model.fit(vals, times));
-			data_accessor_t::slope(start_i + h_w, list) = params.slope;
+			data_accessor_t::slope(start_i + h_w, list) = params.slope * 60 * 60;
 		}
-
+		//if there is enough data to run the full kernel, do so
 		if (max_kernel_half_width == slope_kernel_half_width) {
 
-			vals.resize(slope_kernel_width);
-			times.resize(slope_kernel_width);
 			int pos = 0;
 			for (unsigned int i = slope_kernel_half_width + start_i; ; i++) {
 				//calculate slope of current kernal
@@ -4434,28 +4435,28 @@ public:
 
 				data_accessor_t::slope(i, list) = params.slope * 60 * 60; // units/
 
-				if (i + slope_kernel_half_width + 2 >= list.size())
+				if (i + slope_kernel_half_width + 1 >= list.size())
 					break;
 				//update kernal for next step, by replacing earliest value i
-				vals[pos] = data_accessor_t::total_intensity(i + slope_kernel_half_width + 2, list);
-				times[pos] = list[i + slope_kernel_half_width + 2].absolute_time;
+				vals[pos] = data_accessor_t::total_intensity(i + slope_kernel_half_width + 1, list);
+				times[pos] = list[i + slope_kernel_half_width + 1].absolute_time;
 				pos++;
 				if (pos == slope_kernel_width)
 					pos = 0;
 			}
 		}
 
-		//first, we "warm down" by filling in the left-most times with increasingly small kernel widths
-		for (unsigned int h_w = max_kernel_half_width - 1; h_w >= 1; h_w--) {
-			const int w(2 * h_w);
+		//finally, we "warm down" by filling in the left-most times with increasingly small kernel widths
+		for (unsigned int h_w = max_kernel_half_width ; h_w >= 1; h_w--) {
+			const int w(2 * h_w+1);
 			vals.resize(w);
 			times.resize(w);
 			for (unsigned int i = 0; i < w; i++) {
-				vals[i] = data_accessor_t::total_intensity(list.size() - i - 1, list);
+				vals[i] = data_accessor_t::total_intensity(list.size() - i -1, list);
 				times[i] = list[list.size() - i - 1].absolute_time;
 			}
 			ns_linear_regression_model_parameters params(model.fit(vals, times));
-			data_accessor_t::slope(list.size() - h_w - 1, list) = params.slope;
+			data_accessor_t::slope(list.size() - h_w - 1, list) = params.slope * 60 * 60;
 		}
 		data_accessor_t::slope(list.size() - 1, list) = 0;
 

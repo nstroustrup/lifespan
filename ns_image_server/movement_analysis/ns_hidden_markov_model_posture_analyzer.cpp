@@ -214,7 +214,7 @@ double ns_hmm_solver::run_viterbi(const ns_analyzed_image_time_path & path, cons
 						continue;
 					const double cur = probabilitiy_of_path[mstat*(t - 1)+i] + log(a[i][j] * emission_log_probabilities[j]);
 				//	std::cout << j << "," << i << ":" << cur << " " << max_p << "\n";
-					if (!isnan(cur) && isfinite(cur) && (!found_valid || cur > max_p)) {
+					if (!std::isnan(cur) && std::isfinite(cur) && (!found_valid || cur > max_p)) {
 						max_p = cur;
 						max_prev_i = i;
 						found_valid = true;
@@ -227,7 +227,7 @@ double ns_hmm_solver::run_viterbi(const ns_analyzed_image_time_path & path, cons
 				probabilitiy_of_path[mstat*t+j] = max_p;
 				previous_state[t*mstat +j] = max_prev_i;
 
-				if (!isnan(max_p) && isfinite(max_p) && max_p > max_pp)
+				if (!std::isnan(max_p) && std::isfinite(max_p) && max_p > max_pp)
 					max_pp = max_p;
 			}
 
@@ -560,13 +560,18 @@ public:
 		}
 		
 		zero_probability = 1.0 - (number_of_non_zeros / (double)observations.size());
-		if (number_of_non_zeros == 0) {
+		if (number_of_non_zeros < 3) {
 			gmm_weights[0] = 1;
 			gmm_weights[1] = 0;
 			gmm_weights[2] = 0;
 			for (unsigned int i = 0; i < 3; i++) {
 				gmm_means[i] = 0;
 				gmm_var[i] = 1;
+			}
+			if (number_of_non_zeros > 1) {
+				for (unsigned int i = 0; i < number_of_non_zeros; i++)
+					gmm_means[0] += data[i];
+				gmm_means[0] /= number_of_non_zeros;
 			}
 			return;
 		}

@@ -4393,43 +4393,75 @@ public:
 		
 		const int slope_kernel_width = slope_kernel_half_width * 2 + 1;
 
-		if (list.size() < slope_kernel_width + start_i)
+		if (list.size() < start_i)
 			return;
 
 		for (unsigned int i = 0; i < start_i; i++)
 			data_accessor_t::slope(i,list) = 0;// units: per hour
 
-		vals.resize(slope_kernel_width);
+		vals.reserve(slope_kernel_width);
 		times.resize(slope_kernel_width);
-		for (unsigned int i = 0; i < slope_kernel_width; i++) {
-			vals[i] = data_accessor_t::total_intensity(i + start_i, list);
-			times[i] = list[i + start_i].absolute_time;
-		}
+
+
+		if (list.size() == start_i)
+			return;
+		const unsigned long number_of_valid_measurements = list.size() - start_i;
+		unsigned long max_kernel_half_width = slope_kernel_half_width < number_of_valid_measurements / 2 ? slope_kernel_half_width : number_of_valid_measurements / 2;
+
+		//first, we "warm up" by filling in the left-most times with increasingly large kernel widths
 		ns_linear_regression_model model;
-		ns_linear_regression_model_parameters params(model.fit(vals, times));
-
-		for (unsigned int i = 0; i < slope_kernel_half_width; i++) {
-			data_accessor_t::slope(i + start_i, list) = params.slope * 60 * 60; // units: per hour
+		data_accessor_t::slope(start_i, list) = 0;
+		for (unsigned int h_w = 1; h_w < max_kernel_half_width; h_w++) {
+			const int w(2 * h_w);
+			vals.resize(w);
+			times.resize(w);
+			for (unsigned int i = 0; i < w; i++) {
+				vals[i] = data_accessor_t::total_intensity(i + start_i, list);
+				times[i] = list[i + start_i].absolute_time;
+			}
+			ns_linear_regression_model_parameters params(model.fit(vals, times));
+			data_accessor_t::slope(start_i + h_w, list) = params.slope;
 		}
-		int pos = 0;
-		for (unsigned int i = slope_kernel_half_width + start_i; ; i++) {
-			//calculate slope of current kernal
-			params = model.fit(vals, times);
 
-			data_accessor_t::slope(i,list) = params.slope * 60 * 60; // units/
+		if (max_kernel_half_width == slope_kernel_half_width) {
 
-			if (i + slope_kernel_half_width + 2 >= list.size())
-				break;
-			//update kernal for next step, by replacing earliest value i
-			vals[pos] = data_accessor_t::total_intensity(i + slope_kernel_half_width + 2, list);
-			times[pos] = list[i + slope_kernel_half_width + 2].absolute_time;
-			pos++;
-			if (pos == slope_kernel_width)
-				pos = 0;
+			vals.resize(slope_kernel_width);
+			times.resize(slope_kernel_width);
+			int pos = 0;
+			for (unsigned int i = slope_kernel_half_width + start_i; ; i++) {
+				//calculate slope of current kernal
+				ns_linear_regression_model_parameters params = model.fit(vals, times);
+
+				data_accessor_t::slope(i, list) = params.slope * 60 * 60; // units/
+
+				if (i + slope_kernel_half_width + 2 >= list.size())
+					break;
+				//update kernal for next step, by replacing earliest value i
+				vals[pos] = data_accessor_t::total_intensity(i + slope_kernel_half_width + 2, list);
+				times[pos] = list[i + slope_kernel_half_width + 2].absolute_time;
+				pos++;
+				if (pos == slope_kernel_width)
+					pos = 0;
+			}
 		}
-		for (unsigned int i = list.size() - slope_kernel_half_width - 1; i < list.size(); i++) {
-			data_accessor_t::slope(i, list) = params.slope * 60 * 60; // units: per hour
+
+		//first, we "warm down" by filling in the left-most times with increasingly small kernel widths
+		for (unsigned int h_w = max_kernel_half_width - 1; h_w >= 1; h_w--) {
+			const int w(2 * h_w);
+			vals.resize(w);
+			times.resize(w);
+			for (unsigned int i = 0; i < w; i++) {
+				vals[i] = data_accessor_t::total_intensity(list.size() - i - 1, list);
+				times[i] = list[list.size() - i - 1].absolute_time;
+			}
+			ns_linear_regression_model_parameters params(model.fit(vals, times));
+			data_accessor_t::slope(list.size() - h_w - 1, list) = params.slope;
 		}
+		data_accessor_t::slope(list.size() - 1, list) = 0;
+
+		//for (unsigned int i = list.size() - slope_kernel_half_width - 1; i < list.size(); i++) {
+		//	data_accessor_t::slope(i, list) = params.slope * 60 * 60; // units: per hour
+		//}
 	}
 };
 
@@ -7795,6 +7827,9 @@ void ns_analyzed_image_time_path::identify_expansion_time(const unsigned long de
 			else {
 				result.found_death_time_expansion = false;
 			}
+
+			if (result.time_point_at_which_death_time_expansion_started == result.time_point_at_which_death_time_expansion_stopped)
+				result.found_death_time_expansion = false;
 		}
 	}
 }

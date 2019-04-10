@@ -66,7 +66,7 @@ public:
 		std::vector<ns_hmm_state_transition_time_path_index > &movement_transitions,
 		std::vector<double > & tmp_storage_1, std::vector<unsigned long > & tmp_storage_2);
 
-	void build_movement_state_solution_from_movement_transitions(const std::vector<unsigned long> path_indices, const std::vector<ns_hmm_state_transition_time_path_index > & movement_transitions);
+	void build_movement_state_solution_from_movement_transitions(const unsigned long first_stationary_path_index,const std::vector<unsigned long> path_indices, const std::vector<ns_hmm_state_transition_time_path_index > & movement_transitions);
 
 private:
 	//m[i][j] is the log probabilitiy that an individual in state i transitions to state j.

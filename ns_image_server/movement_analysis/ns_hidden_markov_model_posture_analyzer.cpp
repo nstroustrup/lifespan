@@ -24,6 +24,8 @@ void ns_hmm_solver::solve(const ns_analyzed_image_time_path & path, const ns_emp
 	ns_time_path_posture_movement_solution solution;
 	bool found_start_time(false);
 	unsigned long start_time_i(0);
+	const unsigned long first_stationary_timepoint = path.first_stationary_timepoint();
+	long first_stationary_timepoint_index = -1;
 	std::vector<unsigned long> path_indices;
 	for (unsigned int i = start_time_i; i < path.element_count(); i++) {
 		if (!path.element(i).excluded && !path.element(i).censored) {
@@ -32,11 +34,16 @@ void ns_hmm_solver::solve(const ns_analyzed_image_time_path & path, const ns_emp
 				found_start_time = true;
 			}
 			path_indices.push_back(i);
+			if (i >= first_stationary_timepoint && first_stationary_timepoint_index == -1)
+				first_stationary_timepoint_index = path_indices.size()-1;
+
 		}
 	}
+	if (first_stationary_timepoint_index == -1)
+		first_stationary_timepoint_index = 0;
 	std::vector<ns_hmm_state_transition_time_path_index > movement_transitions;
 	movement_state_solution.loglikelihood_of_solution = run_viterbi(path, estimator, path_indices, movement_transitions, tmp_storage_1, tmp_storage_2);
-	build_movement_state_solution_from_movement_transitions(path_indices, movement_transitions);
+	build_movement_state_solution_from_movement_transitions(first_stationary_timepoint_index,path_indices, movement_transitions);
 }
 
  void ns_hmm_solver::probability_of_path_solution(const ns_analyzed_image_time_path & path, const ns_emperical_posture_quantification_value_estimator & estimator, const ns_time_path_posture_movement_solution & solution, ns_hmm_movement_optimization_stats_record_path & state_info, bool generate_path_info) {
@@ -49,8 +56,10 @@ void ns_hmm_solver::solve(const ns_analyzed_image_time_path & path, const ns_emp
 				movement_states[i] = ns_hmm_moving_vigorously;
 		}
 		else {
-			for (unsigned int i = solution.moving.start_index; i <= solution.moving.end_index; i++)
+			for (unsigned int i = solution.moving.start_index; i <= solution.moving.end_index; i++) {
+				std::cout << "weakly from " << solution.moving.start_index << " to " << solution.moving.end_index << "\n";;
 				movement_states[i] = ns_hmm_moving_weakly;
+			}
 		}
 	}
 	if (!solution.slowing.skipped) {
@@ -163,9 +172,13 @@ double ns_hmm_solver::run_viterbi(const ns_analyzed_image_time_path & path, cons
 	std::vector<std::vector<double> > a;
 	build_state_transition_matrix(estimator,a);
 
+	std::vector<char > path_forbidden;
+
+	unsigned long first_appearance_id = path.first_stationary_timepoint();
+
 	std::vector<unsigned long>optimal_path_state(path_indices.size(), 0);
 	double optimal_path_log_probability;
-	//std::cerr << "Start:\n";
+	//std::cerr << "Start:\n"
 	{
 		unsigned long fbdone = 0, nobs(path_indices.size());
 		unsigned long mstat(number_of_states);
@@ -174,41 +187,65 @@ double ns_hmm_solver::run_viterbi(const ns_analyzed_image_time_path & path, cons
 		probabilitiy_of_path.resize(nobs*mstat, 0);
 		previous_state.resize(0);
 		previous_state.resize(nobs*mstat, 0);
+
+		path_forbidden.resize(nobs*mstat, 0);
 		
 		std::vector<double> emission_log_probabilities;
 		estimator.probability_for_each_state(path.element(path_indices[0]).measurements, emission_log_probabilities);
 		emission_log_probabilities[ns_hmm_moving_weakly_post_expansion] = 0; //do not allow animals to start as moving weakly post-expansion.  They can only start weakly /pre-expansion/ if the expansion was not observed!
-		emission_log_probabilities[ns_hmm_contracting_post_expansion] = 0; //do not allow animals to start as moving weakly post-expansion.  They can only start weakly /pre-expansion/ if the expansion was not observed!
+		emission_log_probabilities[ns_hmm_contracting_post_expansion] = 0; //do not allow animals to start as contracting post-expansion.  They can only start weakly /pre-expansion/ if the expansion was not observed!
+		if (first_appearance_id == 0) //if the animal is present in the first frame, disallow "missing"
+			emission_log_probabilities[ns_hmm_missing] = 0;
 		int i, j, t;
 		double max_p, max_prev_i;
 		for (i = 0; i < mstat; i++) probabilitiy_of_path[i] = log(emission_log_probabilities[i]);
 		for (t = 1; t < nobs; t++) {
+			bool missing_disalowed = t >= path_indices[first_appearance_id];
 			if (path.element(t).excluded)
 				continue;
 			estimator.probability_for_each_state(path.element(path_indices[t]).measurements, emission_log_probabilities);
-		//	if (emission_log_probabilities[ns_hmm_contracting_post_expansion] > .0000001)
-		//		std::cerr << "F";
-			for (j = 0; j < mstat; j++) { //probability of moving from i at time t-1 to j now
+			double max_pp = -DBL_MAX;
+			for (j = 0; j < mstat; j++) { //probability of moving from state i at time t-1 to state j now
 				max_p = -DBL_MAX;
 				max_prev_i = 0;
+				bool found_valid = false;
 				for (i = 0; i < mstat; i++) {
+					if (path_forbidden[mstat*(t - 1) + i])
+						continue;
 					const double cur = probabilitiy_of_path[mstat*(t - 1)+i] + log(a[i][j] * emission_log_probabilities[j]);
-					if (cur > max_p) {
+				//	std::cout << j << "," << i << ":" << cur << " " << max_p << "\n";
+					if (!isnan(cur) && isfinite(cur) && (!found_valid || cur > max_p)) {
 						max_p = cur;
 						max_prev_i = i;
+						found_valid = true;
 					}
 				}
-				//	std::cerr << max_prev_i << " " << max_p << "\n";
+				//if (!found_valid)
+				//	std::cout << "No valid paths left\n";
+				if (missing_disalowed && j == ns_hmm_missing)
+					path_forbidden[mstat*t + j] = 1;
 				probabilitiy_of_path[mstat*t+j] = max_p;
 				previous_state[t*mstat +j] = max_prev_i;
+
+				if (!isnan(max_p) && isfinite(max_p) && max_p > max_pp)
+					max_pp = max_p;
 			}
+
+			if (max_pp < -DBL_MAX / 2)
+				std::cout << "No likely pathways left\n";
+
 		}
 		*optimal_path_state.rbegin() = 0;
 		optimal_path_log_probability = -DBL_MAX;
+
+		bool found_valid = false;
 		for (j = 0; j < mstat; j++) {
-			if (probabilitiy_of_path[mstat*(nobs - 1)+j] > optimal_path_log_probability) {
+			if (path_forbidden[mstat*(nobs - 1) + j])
+				continue;
+			if (!found_valid || probabilitiy_of_path[mstat*(nobs - 1)+j] > optimal_path_log_probability) {
 				optimal_path_log_probability = probabilitiy_of_path[mstat*(nobs - 1)+j];
 				*optimal_path_state.rbegin() = j;
+				found_valid = true;
 			}
 		}
 		for (t = nobs - 1; t >= 1; t--) {
@@ -227,23 +264,28 @@ double ns_hmm_solver::run_viterbi(const ns_analyzed_image_time_path & path, cons
 		if (s != movement_transitions.rbegin()->first)
 			movement_transitions.push_back(ns_hmm_state_transition_time_path_index(s, i));
 	}
+	//if (movement_transitions.size() == 1)
+	//	std::cout << "YIKES";
 
 	return optimal_path_log_probability;
 }
 
-void ns_hmm_solver::build_movement_state_solution_from_movement_transitions(const std::vector<unsigned long> path_indices, const std::vector<ns_hmm_state_transition_time_path_index > & movement_transitions){
-	movement_state_solution.moving.start_index = path_indices[0];
+void ns_hmm_solver::build_movement_state_solution_from_movement_transitions(const unsigned long first_stationary_path_index,const std::vector<unsigned long> path_indices, const std::vector<ns_hmm_state_transition_time_path_index > & movement_transitions){
+	if (first_stationary_path_index >= path_indices.size())
+		throw ns_ex("ns_hmm_solver::build_movement_state_solution_from_movement_transitions()::Invalid first stationary path index");
+	movement_state_solution.moving.start_index = path_indices[first_stationary_path_index];
 	ns_movement_state m = ns_movement_fast;
 	int expanding_state = 0, contracting_state = 0;
 	movement_state_solution.expanding.skipped = true;
 	movement_state_solution.post_expansion_contracting.skipped = true;
 	movement_state_solution.moving.skipped = false;
+	movement_state_solution.moving.start_index = first_stationary_path_index;
 	movement_state_solution.moving.end_index = *path_indices.rbegin();
 	//go through each of the state transitions and annotate what has happened in the solution.
 	for (unsigned int i = 0; i < movement_transitions.size(); i++) {
 		//look for movement transitions
 		if (m == ns_movement_fast && (movement_transitions[i].first != ns_hmm_missing && movement_transitions[i].first != ns_hmm_moving_vigorously)) {
-			if (i != 0) {
+			if (i != 0 && movement_transitions[i-1].first != ns_hmm_missing) {
 				movement_state_solution.moving.skipped = false;
 				movement_state_solution.moving.end_index = path_indices[movement_transitions[i].second];
 			}
@@ -251,7 +293,7 @@ void ns_hmm_solver::build_movement_state_solution_from_movement_transitions(cons
 			m = ns_movement_slow;
 			movement_state_solution.slowing.start_index = path_indices[movement_transitions[i].second];
 			movement_state_solution.slowing.end_index = *path_indices.rbegin();
-			movement_state_solution.slowing.skipped = movement_state_solution.slowing.start_index == movement_state_solution.slowing.end_index;
+			movement_state_solution.slowing.skipped = (movement_state_solution.slowing.start_index == movement_state_solution.slowing.end_index);
 		}
 		if (m == ns_movement_slow && (
 			movement_transitions[i].first != ns_hmm_moving_weakly &&
@@ -322,6 +364,9 @@ void ns_hmm_solver::build_movement_state_solution_from_movement_transitions(cons
 		case 2: if (movement_transitions[i].first == ns_hmm_contracting_post_expansion)
 			throw ns_ex("Re-entry into contraction state.");
 		}
+	}
+	if (!movement_state_solution.moving.skipped) {
+		std::cerr << "HUH";
 	}
 	if (!movement_state_solution.expanding.skipped && movement_state_solution.expanding.end_index == movement_state_solution.expanding.start_index)
 		std::cout << "invisble expansion transition";
@@ -1074,7 +1119,7 @@ bool ns_emperical_posture_quantification_value_estimator::add_observation(const 
 		}
 		unsigned long detect_contraction_state = 0;
 		double min_ix4 = 0;
-		bool expansion_contraction_state = 0;
+		int expansion_contraction_state = 0;
 		bool animal_contracted = false;
 		for (unsigned int i = 0; i < path->element_count(); i++) {
 			if (path->element(i).excluded || path->element(i).censored)

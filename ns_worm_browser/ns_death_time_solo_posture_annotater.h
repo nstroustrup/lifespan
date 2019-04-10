@@ -239,8 +239,8 @@ public:
 
 	}
 	
-	void load_image(const unsigned long buffer_height,ns_annotater_image_buffer_entry & im,ns_sql & sql,ns_image_standard & temp_buffer, const unsigned long resize_factor_=1){
-		movement_analyzer->load_images_for_group(group_id,element_id+10,sql,false,false);
+	void load_image(const unsigned long buffer_height,ns_annotater_image_buffer_entry & im,ns_sql & sql,ns_image_standard & temp_buffer, ns_simple_local_image_cache & image_cache, const unsigned long resize_factor_=1){
+		movement_analyzer->load_images_for_group(group_id,element_id+10,sql,false,false,image_cache);
 	//	ns_annotater_timepoint::load_image(buffer_height,im,sql,temp_buffer,resize_factor_);
 		if (path_timepoint_element == 0){
 		  cerr << "Path timepoint element not specified";
@@ -371,6 +371,7 @@ private:
 	std::vector<ns_death_time_solo_posture_annotater_timepoint> timepoints;
 	static ns_death_time_posture_solo_annotater_data_cache data_cache;
 	ns_death_time_posture_solo_annotater_region_data * current_region_data;
+
 	ns_analyzed_image_time_path * current_worm;
 	ns_death_time_annotation properties_for_all_animals;
 
@@ -577,7 +578,7 @@ public:
 		}
 
 		ns_image_standard temp_buffer;
-		timepoints[current_timepoint_id].load_image(1024, current_image, sql(), temp_buffer, 1);
+		timepoints[current_timepoint_id].load_image(1024, current_image, sql(), temp_buffer,local_image_cache, 1);
 
 		draw_metadata(&timepoints[current_timepoint_id], *current_image.im, external_rescale_factor);
 		lock.release();
@@ -622,7 +623,7 @@ public:
 	}
 	void close_worm() {
 		if (current_region_data != 0)
-			current_region_data->clear_images_for_worm(properties_for_all_animals.stationary_path_id);
+			current_region_data->clear_images_for_worm(properties_for_all_animals.stationary_path_id,local_image_cache);
 		properties_for_all_animals = ns_death_time_annotation();
 		properties_for_all_animals.region_info_id = 0;
 		current_worm = 0;
@@ -656,9 +657,9 @@ public:
 		//load images for the worm.
 
 		//data_cache.load_images_for_worm(properties_for_all_animals.stationary_path_id,current_timepoint_id+10,sql);
-		current_region_data->clear_images_for_worm(properties_for_all_animals.stationary_path_id);
+		current_region_data->clear_images_for_worm(properties_for_all_animals.stationary_path_id,local_image_cache);
 
-		current_region_data->load_images_for_worm(properties_for_all_animals.stationary_path_id,current_timepoint_id+10,sql());
+		current_region_data->load_images_for_worm(properties_for_all_animals.stationary_path_id,current_timepoint_id+10,sql(),local_image_cache);
 
 
 		if (require_exact && current_worm->element(current_timepoint_id).absolute_time != current_time && !give_up_on_preload)
@@ -791,7 +792,7 @@ public:
 			if (current_region_data != 0) {
 
 				if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("Clearing images"));
-				current_region_data->clear_images_for_worm(properties_for_all_animals.stationary_path_id);
+				current_region_data->clear_images_for_worm(properties_for_all_animals.stationary_path_id,local_image_cache);
 			}
 	
 			properties_for_all_animals.region_info_id = region_info_id_;
@@ -963,7 +964,7 @@ public:
 				ns_image_standard temp_buffer;
 
 				if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("Loading first image."));
-				timepoints[current_timepoint_id].load_image(1024,current_image,sql(),temp_buffer,1);
+				timepoints[current_timepoint_id].load_image(1024,current_image,sql(),temp_buffer,local_image_cache,1);
 			}
 			if (previous_images.size() != max_buffer_size || next_images.size() != max_buffer_size) {
 				previous_images.resize(max_buffer_size);
@@ -1065,7 +1066,7 @@ public:
 			}
 			
 			ns_image_standard temp_buffer;
-			timepoints[current_timepoint_id].load_image(1024, current_image, sql, temp_buffer, 1);
+			timepoints[current_timepoint_id].load_image(1024, current_image, sql, temp_buffer,local_image_cache, 1);
 		 
 			lock.release();
 	}
@@ -1106,7 +1107,7 @@ public:
 
 	//	string base_filename(base_directory + DIR_CHAR_STR + filename);
 		ns_image_standard mvt_tmp;
-		current_region_data->load_images_for_worm(properties_for_all_animals.stationary_path_id,current_element_id()+1,sql);
+		current_region_data->load_images_for_worm(properties_for_all_animals.stationary_path_id,current_element_id()+1,sql,local_image_cache);
 		unsigned long num_dig = ceil(log10((double)this->current_element_id()));
 
 		for (unsigned int i = 0; i <= this->current_element_id(); i++){
@@ -1145,6 +1146,7 @@ public:
 	}
 		
 	ns_alignment_type alignment_type;
+
 };
 
 #endif

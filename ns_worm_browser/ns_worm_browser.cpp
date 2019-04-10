@@ -4167,6 +4167,7 @@ void ns_worm_learner::generate_single_frame_posture_image_pixel_data(const bool 
 	all_images.push_back(&images_equalized_cropped);
 	labels.push_back("Equalized with Low Cropping");
 	ns_image_standard output_vis;
+	ns_simple_local_image_cache worm_image_cache(1024 * 1024);
 	for (unsigned int i = 0; i < movement_results.samples.size(); i++){
 		cerr << "Sample " <<movement_results.samples[i].name() << " has " << movement_results.samples[i].regions.size() << " regions\n";
 		for (unsigned int j = 0; j < movement_results.samples[i].regions.size(); j++){
@@ -4194,7 +4195,7 @@ void ns_worm_learner::generate_single_frame_posture_image_pixel_data(const bool 
 						number_of_images--;
 					}
 
-					movement_results.samples[i].regions[j]->time_path_image_analyzer->load_images_for_group(w,start_i+number_of_images,sql(),true,false);
+					movement_results.samples[i].regions[j]->time_path_image_analyzer->load_images_for_group(w,start_i+number_of_images,sql(),true,false,worm_image_cache);
 					double avg_prev(0), stdev_prev(0);
 					ns_image_standard equalized,equalized_prev;
 					for (unsigned int k = start_i; k < start_i + number_of_images; k++){
@@ -7703,7 +7704,7 @@ void ns_experiment_storyboard_annotater::load_from_storyboard(const ns_region_me
 
 	current_timepoint_id = 0;
 
-	divisions[current_timepoint_id].load_image(0, current_image, sql, asynch_load_specification.temp_buffer, resize_factor);
+	divisions[current_timepoint_id].load_image(0, current_image, sql, asynch_load_specification.temp_buffer, local_image_cache, resize_factor);
 	draw_metadata(&divisions[current_timepoint_id], *current_image.im,external_rescale_factor);
 	this->saved_ = true;
 	request_refresh();
@@ -8788,7 +8789,7 @@ void ns_death_time_solo_posture_annotater::register_click(const ns_vector_2i & i
 				set_current_timepoint(requested_time, false);
 				{
 					ns_image_standard temp_buffer;
-					timepoints[current_timepoint_id].load_image(1024, current_image, sql(), temp_buffer, 1);
+					timepoints[current_timepoint_id].load_image(1024, current_image, sql(), temp_buffer, local_image_cache, 1);
 				}
 				change_made = true;
 			}

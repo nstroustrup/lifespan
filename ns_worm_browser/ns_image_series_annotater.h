@@ -19,10 +19,9 @@ struct ns_annotater_image_buffer_entry{
 ns_color_8 ns_annotation_flag_color(ns_death_time_annotation & a);
 class ns_annotater_timepoint{
 public:
-	
 	unsigned long resize_factor;
 	virtual ns_image_storage_source_handle<ns_8_bit> get_image(ns_sql & sql)=0;
-	virtual void load_image(const unsigned long bottom_border,ns_annotater_image_buffer_entry & im,ns_sql & sql,ns_image_standard & temp_buffer,const unsigned long resize_factor_=1){
+	virtual void load_image(const unsigned long bottom_border,ns_annotater_image_buffer_entry & im,ns_sql & sql,ns_image_standard & temp_buffer, ns_simple_local_image_cache &image_cache, const unsigned long resize_factor_=1){
 		resize_factor = resize_factor_;
 		get_image(sql).input_stream().pump(temp_buffer,1024);
 		ns_image_properties prop(temp_buffer.properties());
@@ -83,14 +82,16 @@ void report_changes_made_to_screen();
 
 class ns_image_series_annotater{
 protected:
-  virtual inline ns_annotater_timepoint * timepoint(const unsigned long i){throw ns_ex("should be redefined!");}
+
+
+    virtual inline ns_annotater_timepoint * timepoint(const unsigned long i){throw ns_ex("should be redefined!");}
 	virtual inline unsigned long number_of_timepoints(){throw ns_ex("should be redefined!");}
 	unsigned long resize_factor;
 	ns_lock image_buffer_access_lock;
 	ns_annotater_image_buffer_entry current_image;
 	std::vector<ns_annotater_image_buffer_entry> previous_images;
 	std::vector<ns_annotater_image_buffer_entry> next_images;
-	ns_image_series_annotater(const unsigned long resize_factor_, const unsigned long bottom_border_size):image_buffer_access_lock("ns_da_ib"),resize_factor(resize_factor_),image_bottom_border_size(bottom_border_size){}
+	ns_image_series_annotater(const unsigned long resize_factor_, const unsigned long bottom_border_size):local_image_cache(1024*1024*8),image_buffer_access_lock("ns_da_ib"),resize_factor(resize_factor_),image_bottom_border_size(bottom_border_size){}
 	
 	virtual void draw_metadata(ns_annotater_timepoint * tp,ns_image_standard & im, double external_rescale_factor)=0;
 	
@@ -112,7 +113,7 @@ protected:
 		ns_acquire_lock_for_scope lock2(spec.launch_lock,__FILE__,__LINE__);
 	
 		try{
-		spec.timepoint->load_image(spec.bottom_border_size,*spec.image,spec.sql(),spec.temp_buffer,spec.annotater->resize_factor);
+		spec.timepoint->load_image(spec.bottom_border_size,*spec.image,spec.sql(),spec.temp_buffer,spec.annotater->local_image_cache,spec.annotater->resize_factor);
 		}
 		catch(ns_ex & ex){
 			std::cerr << "Error: " << ex.text() << "\n";
@@ -162,6 +163,8 @@ protected:
 
 	ns_acquire_for_scope<ns_sql> sql;
 public:
+
+	ns_simple_local_image_cache local_image_cache;
 	void clear_sql() { if (!sql.is_null())sql.release(); }
 
 	typedef enum {ns_none,ns_forward, ns_back, ns_fast_forward, ns_fast_back,ns_stop,ns_save,ns_rewind_to_zero,ns_number_of_annotater_actions} ns_image_series_annotater_action;
@@ -244,7 +247,7 @@ public:
 			}
 			else{
 				if (debug_handlers) std::cerr << "Q";
-				timepoint(current_timepoint_id)->load_image(asynch_load_specification.bottom_border_size,previous_images[0],sql(),asynch_load_specification.temp_buffer,resize_factor);
+				timepoint(current_timepoint_id)->load_image(asynch_load_specification.bottom_border_size,previous_images[0],sql(),asynch_load_specification.temp_buffer,local_image_cache,resize_factor);
 				draw_metadata(timepoint(current_timepoint_id),*previous_images[0].im,external_rescale_factor);
 				ns_swap<ns_annotater_image_buffer_entry> s;
 				s(previous_images[0],current_image);
@@ -303,7 +306,7 @@ public:
 			else{
 
 				if (debug_handlers) std::cerr << "Q";
-				timepoint(current_timepoint_id)->load_image(asynch_load_specification.bottom_border_size,next_images[0],sql(),asynch_load_specification.temp_buffer,resize_factor);
+				timepoint(current_timepoint_id)->load_image(asynch_load_specification.bottom_border_size,next_images[0],sql(),asynch_load_specification.temp_buffer,local_image_cache,resize_factor);
 				draw_metadata(timepoint(current_timepoint_id),*next_images[0].im,external_rescale_factor);
 				ns_swap<ns_annotater_image_buffer_entry> s;
 				s(next_images[0],current_image);

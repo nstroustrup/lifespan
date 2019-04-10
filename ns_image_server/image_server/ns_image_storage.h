@@ -160,6 +160,8 @@ public:
   virtual void send_lines(ns_image_stream_static_offset_buffer<ns_component>		 & lines, unsigned int count, typename sender_t::internal_state_t & state)=0;
   virtual void send_lines(ns_image_stream_sliding_offset_buffer<ns_component>		 & lines, unsigned int count, typename sender_t::internal_state_t & state)=0;
   virtual void send_lines(ns_image_stream_safe_sliding_offset_buffer<ns_component> & lines, unsigned int count, typename sender_t::internal_state_t & state)=0;
+  virtual void close()=0;
+  virtual void reset()=0;
 	virtual ~ns_image_storage_source(){}
 
 	virtual typename sender_t::internal_state_t init_send() { return typename sender_t::internal_state_t(); }
@@ -181,7 +183,12 @@ public:
 		target->open_file(filename);
 		ns_image_storage_source<ns_component, low_memory_single_line_reads>::_properties = target->properties();
 	}
-
+	void close() {
+		_source.finish_send_const();
+	}
+	void reset() {
+		_source.seek_to_beginning();
+	}
 	//closing of files handled by their destructors
 	~ns_image_storage_source_from_disk(){}
 
@@ -220,7 +227,8 @@ public:
   void send_lines(ns_image_stream_sliding_offset_buffer<ns_component> & lines, unsigned int count, typename sender_t::internal_state_t & state){reciever.send_lines(lines,count,state);	}
   void send_lines(ns_image_stream_safe_sliding_offset_buffer<ns_component> & lines, unsigned int count, typename sender_t::internal_state_t & state){reciever.send_lines(lines,count,state);	}
 	void seek_to_beginning(){throw ns_ex("Not implemented");}
-
+	void close() {};
+	void reset() {};
 	~ns_image_storage_source_from_net(){
 		try{
 			_connection.close();	//can be done multiple times as ns_connection ignores duplicates

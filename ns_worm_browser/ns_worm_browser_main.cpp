@@ -3300,7 +3300,7 @@ void ask_if_schedule_should_be_submitted_to_db(bool & write_to_disk, bool & writ
 void ns_worm_terminal_main_menu_organizer::show_worm(const std::string & data) {
 	worm_window->show();
 }
- void ns_experiment_storyboard_annotater_timepoint::load_image(const unsigned long bottom_height,ns_annotater_image_buffer_entry & im,ns_sql & sql,ns_image_standard & temp_buffer,const unsigned long resize_factor_){
+ void ns_experiment_storyboard_annotater_timepoint::load_image(const unsigned long bottom_height,ns_annotater_image_buffer_entry & im,ns_sql & sql,ns_image_standard & temp_buffer, ns_simple_local_image_cache & image_cache, const unsigned long resize_factor_){
 	this->blacked_out_non_subject_animals = false;
 	if (division != 0){
 		for (unsigned int i = 0; i < this->division->events.size(); i++){

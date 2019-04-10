@@ -640,7 +640,7 @@ class ns_time_path_image_movement_analyzer {
 public:
 	enum { ns_spatially_averaged_movement_threshold = 4, ns_spatially_averaged_movement_kernal_half_size=2};
 	ns_time_path_image_movement_analyzer():paths_loaded_from_solution(false),
-		movement_analyzed(false),region_info_id(0),last_timepoint_in_analysis_(0), _number_of_invalid_images_encountered(0),
+		movement_analyzed(false),region_info_id(0),last_timepoint_in_analysis_(0), _number_of_invalid_images_encountered(0),image_cache(1024*1024*64),
 		number_of_timepoints_in_analysis_(0),image_db_info_loaded(false),externally_specified_plate_observation_interval(0,ULONG_MAX),posture_model_version_used(NS_CURRENT_POSTURE_MODEL_VERSION){}
 
 	~ns_time_path_image_movement_analyzer(){
@@ -672,8 +672,8 @@ public:
 
 
 	//provide access to group images
-	void load_images_for_group(const unsigned long group_id, const unsigned long number_of_images_to_load,ns_sql & sql,const bool load_images_after_last_valid_sample,const bool load_flow_images);
-	void clear_images_for_group(const unsigned long group_id);
+	void load_images_for_group(const unsigned long group_id, const unsigned long number_of_images_to_load,ns_sql & sql,const bool load_images_after_last_valid_sample,const bool load_flow_images,ns_simple_local_image_cache & image_cache);
+	void clear_images_for_group(const unsigned long group_id, ns_simple_local_image_cache & image_cache);
 
 	void clear(){
 		groups.clear();
@@ -787,7 +787,7 @@ private:
 	ns_death_time_annotation_time_interval externally_specified_plate_observation_interval;
 
 	void calculate_memory_pool_maximum_image_size(const unsigned int start_group,const unsigned int stop_group);
-	
+	ns_simple_local_image_cache image_cache;
 };
 
 struct ns_position_info{

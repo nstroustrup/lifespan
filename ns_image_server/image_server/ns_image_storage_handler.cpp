@@ -186,6 +186,16 @@ ns_image_storage_source_handle<ns_8_bit> ns_storage_request_from_storage(const n
 	return image_storage->request_from_storage(im, &sql);
 }
 
+
+ns_image_storage_source_handle<ns_8_bit> ns_request_cached_image(const ns_image_storage_handler * image_storage, ns_image_server_image & im, ns_sql & sql, std::string & unique_id) {
+	if (unique_id == "")
+		unique_id = image_storage->add_to_local_cache(im, ns_tiff_lzw, &sql);
+	return image_storage->request_from_local_cache(unique_id, false);
+}
+void ns_delete_from_local_cache(const ns_image_storage_handler * image_storage, const std::string & id) {
+	image_storage->delete_from_local_cache(id);
+}
+
 ns_image_storage_reciever_handle<ns_8_bit> ns_storage_request_local_cache_storage(const ns_image_storage_handler * image_storage,
 																				  const std::string & filename, const ns_image_type & image_type,const unsigned long max_line_length,
 																				  const bool report_to_db){

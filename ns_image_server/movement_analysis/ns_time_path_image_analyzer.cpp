@@ -6391,7 +6391,7 @@ bool ns_time_path_image_movement_analyzer::load_movement_image_db_info(const ns_
 	return true;
 }
 
-void ns_time_path_image_movement_analyzer::load_images_for_group(const unsigned long group_id, unsigned long number_of_images_to_load,ns_sql & sql, const bool load_images_after_last_valid_sample, const bool load_flow_images){
+void ns_time_path_image_movement_analyzer::load_images_for_group(const unsigned long group_id, unsigned long number_of_images_to_load,ns_sql & sql, const bool load_images_after_last_valid_sample, const bool load_flow_images, ns_simple_local_image_cache & image_cache){
 	#ifdef NS_CALCULATE_OPTICAL_FLOW
 	if (load_flow_images)
 		throw ns_ex("Attempting to load flow images with NS_CALCULATE_OPTICAL_FLOW set to false");
@@ -6426,12 +6426,13 @@ void ns_time_path_image_movement_analyzer::load_images_for_group(const unsigned 
 				throw ns_ex("ns_time_path_image_movement_analyzer::load_images_for_group()::Group has no stored image id specified");
 			}
 			groups[group_id].paths[j].output_image.load_from_db(groups[group_id].paths[j].output_image.id,&sql);
-			groups[group_id].paths[j].movement_image_storage = image_server_const.image_storage.request_from_storage(groups[group_id].paths[j].output_image,&sql);
-		//	cerr << group_id << " " << j <<( groups[group_id].paths[j].movement_image_storage.bound() ? "YES" : "NO" )<< "\n";
-			/*ns_image_storage_source<ns_8_bit> & tmp2 = 
-			unsigned long tmp = tmp2.init_send();
-			tmp--;
-			tmp++;*/
+			//groups[group_id].paths[j].movement_image_storage = image_server_const.image_storage.request_from_storage(groups[group_id].paths[j].output_image,&sql);
+			ns_simple_local_image_cache::const_handle_t handle;
+			ns_image_cache_data_source source(&image_server.image_storage, &sql);
+			image_cache.get_for_read(groups[group_id].paths[j].output_image, handle, source);
+			groups[group_id].paths[j].movement_image_storage = handle().source;
+			groups[group_id].paths[j].movement_image_storage.input_stream().reset();
+
 			groups[group_id].paths[j].movement_image_storage_internal_state = groups[group_id].paths[j].movement_image_storage.input_stream().init_send();
 			if (load_flow_images) {
 				groups[group_id].paths[j].flow_movement_image_storage = image_server_const.image_storage.request_from_storage_n_bits<float>(groups[group_id].paths[j].flow_output_image, &sql, ns_image_storage_handler::ns_long_term_storage);
@@ -6470,6 +6471,7 @@ void ns_time_path_image_movement_analyzer::load_images_for_group(const unsigned 
 		}
 		if (number_of_images_to_load == number_of_valid_elements){
 			groups[group_id].paths[j].end_movement_image_loading();
+			//groups[group_id].paths[j].movement_image_storage.input_stream().close();
 			groups[group_id].paths[j].movement_image_storage.clear();
 		}
 		groups[group_id].paths[j].number_of_images_loaded = number_of_images_to_load;
@@ -6481,7 +6483,7 @@ void ns_time_path_image_movement_analyzer::load_images_for_group(const unsigned 
 	}
 }
 
-void ns_time_path_image_movement_analyzer::clear_images_for_group(const unsigned long group_id){
+void ns_time_path_image_movement_analyzer::clear_images_for_group(const unsigned long group_id, ns_simple_local_image_cache & image_cache){
 	if (groups.size() <= group_id)
 		return;
 	for (unsigned int j = 0; j < groups[group_id].paths.size(); j++){
@@ -6632,7 +6634,7 @@ void ns_time_path_image_movement_analyzer::reanalyze_stored_aligned_images(const
 					for (long l = 0; l < stop; l++)
 						groups[i].paths[j].elements[l].clear_movement_images();*/
 				//}
-				clear_images_for_group(i);
+				clear_images_for_group(i, image_cache);
 				groups[i].paths[j].end_movement_image_loading();
 				groups[i].paths[j].denoise_movement_series_and_calculate_intensity_slopes(0,times_series_denoising_parameters);
 			

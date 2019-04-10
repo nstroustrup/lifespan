@@ -66,7 +66,7 @@ public:
 		return 0;
 	}
 
-	void load_image(const unsigned long bottom_height,ns_annotater_image_buffer_entry & im,ns_sql & sql,ns_image_standard & temp_buffer,const unsigned long resize_factor_);
+	void load_image(const unsigned long bottom_height,ns_annotater_image_buffer_entry & im,ns_sql & sql,ns_image_standard & temp_buffer, ns_simple_local_image_cache & image_cache, const unsigned long resize_factor_);
 	std::vector<char> has_had_extra_worms_annotated;
 };
 

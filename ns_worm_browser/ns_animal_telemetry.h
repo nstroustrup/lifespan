@@ -41,7 +41,7 @@ public:
 		if (load_movement_quantification)
 			movement_quantification_data_loaded = true;
 	}
-	void load_images_for_worm(const ns_stationary_path_id & path_id, const unsigned long number_of_images_to_load, ns_sql & sql) {
+	void load_images_for_worm(const ns_stationary_path_id & path_id, const unsigned long number_of_images_to_load, ns_sql & sql,ns_simple_local_image_cache & image_cache) {
 		const unsigned long current_time(ns_current_time());
 		const unsigned long max_number_of_cached_worms(2);
 		//don't allow more than 2 paths to be loaded (to prevent memory overflow). Delete animals that have been in the cache for longest.
@@ -51,7 +51,7 @@ public:
 			const unsigned long cutoff_time(current_time - 5 * 60);
 			for (ns_loading_time_cache::iterator p = image_loading_times_for_groups.begin(); p != image_loading_times_for_groups.end(); ) {
 				if (p->second < cutoff_time) {
-					movement_analyzer.clear_images_for_group(p->first);
+					movement_analyzer.clear_images_for_group(p->first,image_cache);
 					image_loading_times_for_groups.erase(p++);
 				}
 				else p++;
@@ -63,15 +63,15 @@ public:
 					if (youngest->second > p->second)
 						youngest = p;
 				}
-				movement_analyzer.clear_images_for_group(youngest->first);
+				movement_analyzer.clear_images_for_group(youngest->first,image_cache);
 				image_loading_times_for_groups.erase(youngest);
 			}
 		}
-		movement_analyzer.load_images_for_group(path_id.group_id, number_of_images_to_load, sql, false, false);
+		movement_analyzer.load_images_for_group(path_id.group_id, number_of_images_to_load, sql, false, false,image_cache);
 		image_loading_times_for_groups[path_id.group_id] = current_time;
 	}
-	void clear_images_for_worm(const ns_stationary_path_id & path_id) {
-		movement_analyzer.clear_images_for_group(path_id.group_id);
+	void clear_images_for_worm(const ns_stationary_path_id & path_id, ns_simple_local_image_cache & image_cache) {
+		movement_analyzer.clear_images_for_group(path_id.group_id,image_cache);
 		ns_loading_time_cache::iterator p = image_loading_times_for_groups.find(path_id.group_id);
 		if (p != image_loading_times_for_groups.end())
 			image_loading_times_for_groups.erase(p);
